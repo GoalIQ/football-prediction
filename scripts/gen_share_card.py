@@ -726,12 +726,26 @@ def _hex_to_rgb(c: str):
 
 
 def card_gw_outlook(args) -> dict:
-    """Kierroksen kuva: projisoidut maalit, nollapeli-% ja ottelut."""
-    doc = _load("fpl_cs_fdr.json")
+    """Kierroksen kuva: projisoidut maalit, nollapeli-% ja ottelut.
+
+    LAHDE ON fpl_projections_phase0.json EIKA fpl_cs_fdr.json (17.8). Ne ovat
+    eri mielta, ja ero on iso: MUN 41 % vs 31,2 % ja SUN 36 % vs 26,9 % GW1:ssa.
+    cs_fdr EI aja `fpl_context.fixture_adjustments`-kerrosta, joten se antaa
+    nousijan sarja-avaukseen kotona raa'an DC-luvun. Tasan sen korjaamiseksi
+    tuo moduuli on kirjoitettu — sen docstring nimeaa esimerkkinaan naivin
+    "Man Utd 43 % CS @ Hull":n, ja kortissa luki 41 %.
+
+    Kortti on jakopinta: sen luvun on oltava sama jonka lukija nakee
+    goaliq.app/fpl:sta. phase0 on se tiedosto jota build_fpl_page.py servaa,
+    joten lahde valitaan pinnan mukaan eika kentannimien mukavuuden mukaan
+    (kentat ovat samat molemmissa, mika on juuri se syy miksi vaara lahde ei
+    kaatanut mitaan vaan tuotti hiljaa vaarat luvut).
+    """
+    doc = _load("fpl_projections_phase0.json")
     gw = args.gw or min((f["gameweek"] for f in doc["fixtures"]), default=1)
     fx = [f for f in doc["fixtures"] if f["gameweek"] == gw]
     if not fx:
-        raise SystemExit(f"GW{gw}: ei otteluita fpl_cs_fdr.json:ssa.")
+        raise SystemExit(f"GW{gw}: ei otteluita fpl_projections_phase0.json:ssa.")
 
     teams = []
     for f in fx:
@@ -792,24 +806,48 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     f_s = _font(FONT_MED, 20)
     d.text((MX, 176), "Dixon-Coles match model", font=f_s, fill=MUTED)
 
+    PANEL_BG = (24, 23, 21)
+
+    def _ring(rgb: tuple) -> tuple:
+        """Palloviivan vari: vaalea jos tayttovari sulautuu paneeliin.
+
+        Fulhamin musta (#000) piirtyi paneelin taustaa (24,23,21) vasten
+        vakioviivalla (60,58,54) niin etta pallo luki REIKANA eika merkkina.
+        Kynnys on luminanssiero eika nimilista, jotta myos tulevat tummat
+        asut (esim. uusi nousija) hoituvat ilman etta joku muistaa lisata
+        ne kasin.
+        """
+        lum = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
+        bg = 0.2126 * PANEL_BG[0] + 0.7152 * PANEL_BG[1] + 0.0722 * PANEL_BG[2]
+        return (150, 146, 138) if abs(lum - bg) < 42 else (60, 58, 54)
+
     top = 236
     col_w, gap = 288, 26
+    # Paneelin korkeus: sisalto + ALAMARGINAALI. Ilman jalkimmaista termia
+    # ottelusarakkeen viimeinen rivi ULOTTUI paneelin ulkopuolelle (sen
+    # sisalto on 2 rivia a 24 px eika 1 x 40 px kuten kahdessa muussa), ja
+    # se luki kuvassa katkaistulta. Sama korkeus kaikkiin kolmeen, jotta ne
+    # pysyvat linjassa.
+    def _panel_bottom(n: int) -> int:
+        return top + 60 + n * 62
+
     f_hdr = _font(FONT_BOLD, 22)
     f_rank = _font(FONT_MED, 18)
     f_team = _font(FONT_BOLD, 30)
     f_val = _font(FONT_BOLD, 30)
 
     def column(x: int, title: str, rows: list, fmt) -> None:
-        d.rounded_rectangle([x, top, x + col_w, top + 40 + len(rows) * 62],
-                            radius=14, fill=(24, 23, 21))
+        d.rounded_rectangle([x, top, x + col_w, _panel_bottom(len(rows))],
+                            radius=14, fill=PANEL_BG)
         d.text((x + 16, top + 12), title, font=f_hdr, fill=AMBER)
         for i, r in enumerate(rows):
             y = top + 52 + i * 62
             d.text((x + 16, y + 14), f"{i + 1:>2}", font=f_rank, fill=MUTED)
             code = sh(r["team"])
             col, _ = _team_color(code)
-            d.ellipse([x + 48, y + 10, x + 76, y + 38], fill=_hex_to_rgb(col),
-                      outline=(60, 58, 54), width=2)
+            rgb = _hex_to_rgb(col)
+            d.ellipse([x + 48, y + 10, x + 76, y + 38], fill=rgb,
+                      outline=_ring(rgb), width=2)
             d.text((x + 88, y + 8), code, font=f_team, fill=CREAM)
             v = fmt(r)
             d.text((x + col_w - 16 - d.textlength(v, font=f_val), y + 8),
@@ -824,8 +862,8 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     fx_x = MX + 2 * (col_w + gap)
     fx_w = W - MX - fx_x
     fxs = spec["fixtures"]
-    d.rounded_rectangle([fx_x, top, fx_x + fx_w, top + 40 + len(fxs) * 62],
-                        radius=14, fill=(24, 23, 21))
+    d.rounded_rectangle([fx_x, top, fx_x + fx_w, _panel_bottom(len(fxs))],
+                        radius=14, fill=PANEL_BG)
     d.text((fx_x + 16, top + 12), "FIXTURES", font=f_hdr, fill=AMBER)
     f_fx = _font(FONT_BOLD, 22)
     f_fxs = _font(FONT_MED, 15)
@@ -842,14 +880,19 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
             code = sh(name)
             col, _ = _team_color(code)
             ry = y + 6 + j * 24
+            rgb = _hex_to_rgb(col)
             d.ellipse([fx_x + 14, ry + 2, fx_x + 30, ry + 18],
-                      fill=_hex_to_rgb(col), outline=(60, 58, 54), width=2)
+                      fill=rgb, outline=_ring(rgb), width=2)
             d.text((fx_x + 38, ry), code, font=f_fx, fill=CREAM)
             v = f"{xg:.2f}"
             d.text((fx_x + 156 - d.textlength(v, font=f_fxn), ry + 1),
                    v, font=f_fxn, fill=AMBER)
+        # Paivays OIKEAAN laitaan. Kiintea x+178 jatti paneelin oikeaan
+        # reunaan ~65 px tyhjaa kourua samalla kun vasen oli 14 px, ja
+        # sarake luki keskeneraiselta vaikka mitaan ei puuttunut.
         ko = (f.get("kickoff") or "").split(",")[0].replace(" 2026", "")
-        d.text((fx_x + 178, y + 18), ko, font=f_fxs, fill=MUTED)
+        d.text((fx_x + fx_w - 16 - d.textlength(ko, font=f_fxs), y + 18),
+               ko, font=f_fxs, fill=MUTED)
 
     f_foot = _font(FONT_MED, 19)
     d.text((MX, h - 84), "clean sheet % for every club on goaliq.app/fpl, free",
