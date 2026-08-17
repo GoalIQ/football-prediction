@@ -1,0 +1,206 @@
+# Tarkkuus-track-record (#100): knockout-pre-matchien ROBUSTI talteenotto.
+#
+# MIKSI: pre-match-ennustetta EI voi backfillata jälkikäteen luotettavasti (malli
+# voi muuttua). Knockoutit alkavat ~28.6. ja Villen lokaali Task Scheduler EI aja
+# luotettavasti reissun aikana (27.6.–4.7., epävarma verkko). Tämä workflow ajaa
+# GitHubin pilvessä — riippumaton Villen koneesta — ja LOGAA pre-match-ennusteet
+# ennen kickoffeja + reconciloi FT-tulokset.
+#
+# JULKAISU: committoi SUORAAN mainiin → Render auto-deploy → GET /api/accuracy
+# näyttää tuoreen track-recordin ILMAN manuaalista mergeä (Villen päätös #103:
+# track record päivittyy joka ajolla automaattisesti reissun aikana). Pipeline
+# koskee VAIN data/prediction_log.json + data/accuracy.json — EI mallikoodia eikä
+# /api/predict-polkua, joten julkaisu on matalan riskin (ei ship-gate-tarvetta).
+# Mallin oma ship-gate (G1/G2 sanity) elää erikseen wc-knockout-refresh.yml:ssä.
+#
+# YKSI TOTUUDEN LÄHDE: main on akkumulaattori. Pipeline upsertaa (ei koskaan
+# poista) → manuaaliset backfillit (esim. hubup-* MD2) säilyvät. EI enää
+# erillistä accuracy/auto-log-haaraa, joka aiemmin ylikirjoitti mainin backfillin.
+#
+# GUARDRAILIT: concurrency (ei päällekkäisajoa), skip-if-no-diff (ei tyhjiä
+# committeja), [skip ci] (ei CI-spämmiä data-committeista), rebase+retry (main on
+# jaettu wc-knockout-refreshin kanssa → ei kilpailukorruptiota).
+#
+# KERTALUONTOINEN SETUP (Ville, GitHub-UI):
+#   Settings → Secrets and variables → Actions → New repository secret:
+#     FOOTBALL_DATA_API_KEY = <sama avain kuin Renderissä>
+#
+# LUOTETTAVUUS: GitHub-schedule on best-effort — ajot driftaavat ja jäävät väliin
+# kuormassa (havaittu: 19:27Z vs odotettu 18:00Z, 09:00Z-tikki puuttui kokonaan).
+# Reissun knockout-ikkunan (27.6.–4.7.) yli tämä on riski → repository_dispatch
+# antaa ULKOISEN luotettavan triggerin:
+#   Ulkoinen cron (esim. cron-job.org, joka 1–3 h) →
+#     POST https://api.github.com/repos/Veikkoville/football-prediction/dispatches
+#     -H "Authorization: Bearer <fine-grained PAT: Actions=write, Contents=read>"
+#     -d '{"event_type":"accuracy-log"}'
+#   Schedule jää varatriggeriksi. wc-knockout-refresh dispatchaa tämän 28.6 (R32).
+
+name: accuracy-log
+
+on:
+  schedule:
+    # Joka 3. tunti — tihennetty knockouteille: pre-match-ikkuna on kireä (R32+
+    # kickoffit illalla UTC) ja reconcile täyttää FT-tulokset pian ottelun jälkeen.
+    # HUOM: best-effort, voi driftata/jäädä väliin → repository_dispatch alla on
+    # luotettavampi primääritrigger reissun aikana.
+    - cron: "0 */3 * * *"
+  repository_dispatch:
+    types: [accuracy-log]   # ulkoinen luotettava cron (ks. SETUP yllä)
+  workflow_dispatch: {}     # manuaalinen laukaisu + wc-knockout-refresh dispatchaa tämän
+
+# Vältä päällekkäiset ajot (commit-kilpailu mainissa). cancel-in-progress: false
+# → rinnakkaiset laukaisut (cron + knockout-refresh-dispatch) jonottavat, eivät kaadu.
+concurrency:
+  group: accuracy-log
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # commit + push main
+
+jobs:
+  log-and-reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0   # rebase tarvitsee historian
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Log pre-match + reconcile + recompute aggregate
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          # #110: domestic-liigojen logaus on OPT-IN (🔒 GO-portti). Kytkentä:
+          # Settings → Secrets and variables → Actions → Variables →
+          # ACC_DOMESTIC_COMPETITIONS = "BSA" (myöh. esim. "BSA,PL,PD,BL1,SA,FL1,CL").
+          # Muuttuja puuttuu/tyhjä → domestic ei logaa mitään, WC-putki ennallaan.
+          ACC_DOMESTIC_COMPETITIONS: ${{ vars.ACC_DOMESTIC_COMPETITIONS }}
+          # 1.8: runnerit saavat 403:n api.goaliq.app:sta (CF blokkaa
+          # datacenter-ASN:t ~30.7 alkaen) → CI kutsuu Render-originia
+          # suoraan. DNA-blokki koskee vain suomalaisia käyttäjiä, ei CI:tä.
+          # Muuttuja puuttuu → skripti käyttää oletusta (api.goaliq.app).
+          ACC_PREDICT_API_BASE: ${{ vars.ACC_PREDICT_API_BASE }}
+        run: python -m scripts.accuracy_pipeline run
+
+      # CF-eston vahti (8.8): ACC_PREDICT_API_BASE-kierto on ollut voimassa 1.8
+      # alkaen, mutta itse CF-saantoa ei ole koskaan tunnistettu, eika mikaan
+      # kertoisi meille jos esto poistuu. Ilman tata kierto jaa ikuisiksi ajoiksi
+      # paikalleen ja api.goaliq.app-polku jaa testaamatta.
+      # Read-only probe, continue-on-error: EI saa koskaan kaataa accuracy-lokia.
+      - name: CF-eston vahti (api.goaliq.app vs Render-origin)
+        continue-on-error: true
+        run: |
+          cf=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://api.goaliq.app/api/accuracy || echo 000)
+          origin=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://goaliq-api.onrender.com/api/accuracy || echo 000)
+          echo "api.goaliq.app=$cf  onrender-origin=$origin"
+          if [ "$cf" = "403" ]; then
+            echo "::notice::CF-esto YHA voimassa GH-runnerilta (403). ACC_PREDICT_API_BASE-kierto tarvitaan edelleen."
+          elif [ "$cf" = "200" ]; then
+            echo "::warning::CF-esto POISTUNUT: api.goaliq.app palautti 200 GH-runnerilta. ACC_PREDICT_API_BASE-kierto voidaan purkaa (poista repo-muuttuja)."
+          else
+            echo "::notice::api.goaliq.app palautti $cf (ei 403 eika 200) - tarkista erikseen."
+          fi
+          if [ "$origin" != "200" ]; then
+            echo "::error::Render-origin palautti $origin - ACC_PREDICT_API_BASE-kierto on rikki, accuracy-data voi olla vanhentunutta."
+          fi
+
+      # Recent-form-sync (4.7.→, Villen GO): täytä pelattujen knockouttien
+      # FT-tulokset international_results.csv:n NA-fixtureihin (sama FD-lähde
+      # ja tahti kuin reconcile yllä) → /api/team last_5/form pysyy tuoreena
+      # turnauksen loppuun. Fill/append-only (regen-suoja skriptissä).
+      # continue-on-error: results-sync ei saa kaataa accuracy-lokia.
+      # HUOM: wc-knockout-refresh (8.7 QF) kirjoittaa samaa CSV:tä — alla oleva
+      # rebase-retry hoitaa kilpailun; konfliktissa tämä ajo skippaa ja
+      # seuraava 3 h -tikki paikkaa. Post-WC (20.7.→) step on no-op (ei uusia
+      # WC-otteluita) — voi siivota pois turnauksen jälkeen.
+      - name: Backfill knockout FT results (recent-form)
+        continue-on-error: true
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python -m scripts.backfill_knockout_results
+
+      # #118: fpl/index/predictions-accuracy-luvut tuoreiksi joka ajolla
+      # (juurisyy #99-staleuteen oli viikkocadenssi — bake on halpa, stdlib-only).
+      # Fail-safe: builder exit 2 jos FPL-data ei available → continue-on-error.
+      # #TRACK-STALE: id:t + häntävahti alla — continue-on-error piilotti
+      # SyntaxErrorin 2 vrk (sivut jäätyivät 61.8/102:een vaikka run oli vihreä).
+      - name: Rebake accuracy numbers into web pages (#118)
+        id: bake_fpl
+        continue-on-error: true
+        run: python -m scripts.build_fpl_page
+
+      # #119: ohjelmalliset ennustesivut prediction_logista (sama data jonka
+      # yllä oleva run juuri päivitti → sivu = lokattu pre-match-ennuste).
+      # continue-on-error: sivugen ei saa kaataa accuracy-lokia.
+      - name: Build programmatic prediction pages (#119)
+        id: bake_predictions
+        continue-on-error: true
+        run: python -m scripts.build_prediction_pages
+
+      # 13.8: build_fpl_player_gw SIIRRETTY fpl-data-refresh-workflowhun. Se
+      # vaatii koko FPL-cachen (bootstrap + element-summaryt), jota VAIN
+      # refreshin builderit hakevat — tassa se failasi JOKA ajossa 9.8 alkaen
+      # ("Puuttuu: data/raw/fpl/bootstrap_static.json", 26 punaista ajoa)
+      # eika GW-ikkuna paivittynyt CI:sta kertaakaan. Longtail lukee alla
+      # fpl/player-gw.json:n checkoutista (refresh committoi sen ~3 h valein).
+
+      # #120: FPL-long-tail-sivut (best captain / differentials / price changes)
+      - name: Build FPL long-tail pages (#120)
+        id: bake_longtail
+        continue-on-error: true
+        run: python -m scripts.build_fpl_longtail
+
+      - name: Commit + push to main (Render auto-deploy → /api/accuracy)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/prediction_log.json data/accuracy.json data/international_results.csv
+          # llms.txt (#231-GEO 5.8): build_prediction_pages kirjoittaa nyt sen
+          # GEN:LLMS-lohkon. Ilman tata riviä ajo kirjoittaisi tiedoston ja
+          # muutos katoaisi aanettomasti — sama vikaluokka kuin itse ongelma.
+          git add predictions/ fpl/ sitemap.xml sitemap-core.xml sitemap-predictions.xml sitemap-fpl.xml predictions.html fpl.html index.html llms.txt || true
+          if git diff --cached --quiet; then
+            echo "Ei muutoksia (ei uusia pre-matcheja eikä tuloksia) — ohitetaan commit."
+            exit 0
+          fi
+          git commit -m "chore(accuracy): auto-log pre-match + reconcile [skip ci]"
+          # main on jaettu (wc-knockout-refresh voi pushata samaan ikkunaan 28.6).
+          # Eri tiedostot (data/*.json vs wc_model.json/elo/intl) → rebase aina puhdas.
+          # Rebase tuoreimman origin/main päälle + retry kilpailun varalta.
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                echo "Pushed to main (yritys $i) → Render auto-deploy."
+                exit 0
+              fi
+            else
+              git rebase --abort 2>/dev/null || true
+            fi
+            echo "Push-yritys $i epäonnistui (kilpailu?) — rebase + retry."
+            sleep 5
+          done
+          echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
+          exit 1
+
+      # #TRACK-STALE-vahti: punaa runin jos JOKIN sivubuilderi failasi — AJETAAN
+      # commitin JÄLKEEN, joten data-logaus/commit ei esty (continue-on-error
+      # säilyy buildereissa), mutta failure ei enää piiloudu vihreän runin taakse.
+      # Tausta: build_fpl_page.py:n SyntaxError (py3.11 vs lokaali 3.14) kaatoi
+      # kaikki 3 builderia 17.–19.7 eikä kukaan huomannut → sivut 4 ottelua jäljessä.
+      - name: Page-build health (fail loud, data jo committoitu)
+        if: always()
+        run: |
+          fail=0
+          [ "${{ steps.bake_fpl.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA — sivut eivät päivity (katso stepin loki)"; fail=1; }
+          [ "${{ steps.bake_predictions.outcome }}" = "failure" ] && { echo "::error::build_prediction_pages FAILAA"; fail=1; }
+          [ "${{ steps.bake_longtail.outcome }}" = "failure" ] && { echo "::error::build_fpl_longtail FAILAA"; fail=1; }
+          exit $fail

@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GoalIQ: Free FPL Tools &amp; Football Predictions</title>
+<meta name="description" content="Free FPL tools: clean sheet probability &amp; FDR, a filterable player stats table with shots, shots in the box and key passes, xG/xA/xGI leaders, rate my team with a captain pick, and price watch. Premium adds a team manager with gameweek planner, player xP, value ranking and a DefCon tracker. Published track record. Not betting." />
+<meta name="google-site-verification" content="cDKUnkdbiFULwQFPp9ws_mlwsmAA4CLT5xpmQP9x5Kw" />
+<link rel="canonical" href="https://goaliq.app/" />
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/brand/goaliq-favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
+<!-- pro.goaliq.app is a single page app and its boot costs time. Opening the
+     connection and DNS here means a click only pays for the download, not the
+     handshake. No effect on this page. -->
+<link rel="preconnect" href="https://pro.goaliq.app">
+<link rel="preconnect" href="https://api.goaliq.app" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<meta name="theme-color" content="#0B0A09">
+
+<!-- Open Graph / social preview -->
+<meta property="og:title" content="GoalIQ: Free FPL Tools &amp; Football Predictions" />
+<meta property="og:description" content="Free FPL tools - clean sheet probability &amp; FDR, a filterable player stats table with shots, shots in the box and key passes, xG/xA/xGI leaders, rate my team with a captain pick, and price watch. Premium adds a team manager with gameweek planner, player xP, value ranking and a DefCon tracker. Published, pre-match-logged track record. Football predictions too." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://goaliq.app/" />
+<meta property="og:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@goaliqapp" />
+<meta name="twitter:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "Organization",
+ "@id": "https://goaliq.app/#organization",
+ "name": "GoalIQ",
+ "logo": "https://goaliq.app/assets/brand/goaliq-appicon-512.png",
+ "url": "https://goaliq.app/",
+ "description": "GoalIQ makes FPL (Fantasy Premier League) tools - clean sheet probability and fixture difficulty, a player lookup with availability news, rate my team with a captain pick, a mini-league view and price watch free, plus an interactive team manager with a gameweek planner, player expected points (xP), the captain ranker, chip timing, transfer plan chains, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a DefCon tracker with price-band filters, shareable image cards (web), differentials, player compare for up to four players and transfer suggestions with apply on GoalIQ Premium - powered by a Dixon-Coles match model with a public, pre-match-logged prediction track record. Built by an independent developer in Finland. Analytics, not betting.",
+ "sameAs": [
+  "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
+  "https://apps.apple.com/app/id6780047163",
+  "https://x.com/goaliqapp",
+  "https://www.tiktok.com/@goaliqfpl",
+  "https://www.instagram.com/goaliqfpl/"
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareApplication",
+ "name": "GoalIQ",
+ "operatingSystem": "Android, iOS, Web",
+ "identifier": "com.veikkoville.goaliq",
+ "applicationCategory": "SportsApplication",
+ "description": "Free FPL assistant and football prediction app. Free FPL tools: clean sheet probability and fixture difficulty, rate my team with a captain pick, price watch, a filterable player stats table with shots and key passes, and shareable image cards of the free tables (web). GoalIQ Premium adds an interactive team manager with a gameweek planner, player expected points (xP), the captain ranker, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a DefCon tracker with price-band filters and a live in-gameweek panel for your own squad, shareable image cards (web), differentials, player compare for up to four players and transfer suggestions with apply. On the web it also shows upcoming fixtures and league tables. Also predicts any match - win probability, expected goals (xG) and the most likely score - using a Dixon-Coles model. Analytics, not betting.",
+ "url": "https://goaliq.app/",
+ "downloadUrl": [
+  "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
+  "https://apps.apple.com/app/id6780047163"
+ ],
+ "author": {
+  "@id": "https://goaliq.app/#organization"
+ },
+ "offers": [
+  {
+   "@type": "Offer",
+   "name": "GoalIQ app (free download)",
+   "price": "0",
+   "priceCurrency": "USD"
+  },
+  {
+   "@type": "Offer",
+   "name": "GoalIQ Premium on the web, monthly",
+   "price": "3.99",
+   "priceCurrency": "EUR",
+   "url": "https://pro.goaliq.app/checkout?plan=monthly"
+  },
+  {
+   "@type": "Offer",
+   "name": "GoalIQ Premium on the web, season (yearly)",
+   "price": "25",
+   "priceCurrency": "EUR",
+   "url": "https://pro.goaliq.app/checkout?plan=season"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is GoalIQ good for FPL?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture difficulty, rate my team with a captain pick, price watch with shareable image cards and the full xG/xA/xGI leaderboard are free, and GoalIQ Premium adds an interactive team manager with a gameweek planner, player expected points (xP), the captain ranker, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a DefCon tracker with price-band filters, differentials, shareable image cards (web) and transfer suggestions with apply. Every number comes from a match model with a published, pre-match-logged track record."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What FPL tools does GoalIQ have?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Free: clean sheet probabilities, fixture difficulty ratings (FDR) with separate attack and defence views, a player lookup with official availability news, start chance and set-piece roles, rate my team with a captain pick, a mini-league view with head-to-head win probability, a fit checker and pre-season draft rater with saved drafts, price watch, shareable image cards of the clean sheet outlook and price watch tables (web), xG/xA/xGI leaders for every player with data, and a filterable player stats table (shots, shots on target, shots in the box, headed attempts, non-penalty xG, key passes, tackles, clearances, recoveries and set-piece order) with per 90 and per start views and CSV export, and defence profiles showing what each team concedes by pitch zone. GoalIQ Premium: an interactive team manager with a rolling six-gameweek planner, player expected points (xP) with ownership, minutes outlook, the scoring rate per 90 minutes shown separately from expected minutes and CSV export (web), the captain ranker with a differential pick, chip timing for the best Wildcard, Bench Boost, Triple Captain and Free Hit windows, transfer plans that chain 1 to 2 moves over the coming gameweeks, an edge mode with rank-aware picks for your mini-league, transfer suggestions with apply, player value, a live DefCon panel that tracks your own squad against the threshold while a gameweek is being played (web), the full DefCon leaderboard, price-band filters with the model's xP on both leaderboards, shareable image cards of your XI, the captain ranker, the value ranking and leaderboards (web), GK rotation pairs, differentials, player compare for up to four players, and predicted starting minutes. The web app also predicts any match: win probability, expected goals, the most likely scorelines, upcoming fixtures and league tables. Available on the web, iOS and Android."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is GoalIQ a betting app?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. GoalIQ is an analytics and FPL tool, not a gambling service. It has no odds, no bookmaker links and gives no betting advice. Predictions are statistical estimates for fun and planning."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How accurate is GoalIQ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "GoalIQ publishes its full prediction track record: every prediction is logged before kick-off and graded after, hits and misses included. The current accuracy numbers are updated on goaliq.app and its FPL page after every round."
+   }
+  }
+ ]
+}
+</script>
+
+<!-- #85 GEO: track-record-Dataset. Sisallon (luvut + dateModified) kirjoittaa
+     build_fpl_page.update_index() samasta accuracy-lahteesta kuin chipit -
+     ala kasieditoi markereiden valia. -->
+<!-- GEN:ACC-DATASET-START -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "Dataset",
+ "name": "GoalIQ football prediction accuracy log (pre-match, publicly tracked)",
+ "description": "Every GoalIQ model prediction is logged before kickoff and reconciled against the final result, with no edits afterwards. Current aggregate: 52.3% correct 1X2 results across 176 completed matches. Includes per-match win/draw/loss probabilities, expected goals (xG) and reconciled outcomes.",
+ "url": "https://goaliq.app/",
+ "distribution": {
+  "@type": "DataDownload",
+  "encodingFormat": "application/json",
+  "contentUrl": "https://api.goaliq.app/api/accuracy"
+ },
+ "isAccessibleForFree": true,
+ "dateModified": "2026-08-17",
+ "creator": {
+  "@id": "https://goaliq.app/#organization"
+ },
+ "keywords": [
+  "football prediction accuracy",
+  "prediction track record",
+  "1X2 accuracy",
+  "pre-match predictions",
+  "model accountability"
+ ]
+}
+</script>
+<!-- GEN:ACC-DATASET-END -->
+
+<style>
+  /* ============================================================
+     Redesign 28 Jul "TELETEXT": 90s teletext dark look. Black base,
+     IBM Plex Mono, eight signal colors, flat color bars with page
+     numbers (P100-P107). No rounding, no shadows, no gradients
+     (exception: CRT overlays + the ticker's edge fade).
+
+     WHAT WAS KEPT:
+       - all head metas, JSON-LDs and GEN:ACC-DATASET as-is
+       - GEN:ACC-CHIP (.record-chip .num/.lbl), GEN:ACC-TRUST
+         (.trust-line), GEN:ACC-PROOF and GEN:ACC-BYCOMP (.wc-visual)
+         markers, class names and indentation unchanged
+       - the #72 GW countdown (ids cd-d/h/m/s, #gw-countdown) and its JS
+       - PostHog + data-cta metrics, every link target
+       - copy word for word (em dash gate: 0 hits)
+
+     COLOR DISCIPLINE (same rule as classic, flipped for dark):
+       magenta  ONLY as letterform (mark, the letter Q, live state).
+                NEVER as a fill.
+       amber    numbers, primary CTA, emphasized heading row
+       teal     links, secondary accent, Premium surface
+       green    free tier and positive bars
+       cream    neutral heading bar
+
+     CONTRASTS, measured with the WCAG 2.1 formula (not guessed),
+     base --bg #0B0A09:
+       cream   #F3F2F2  17.70:1   amber   #F5C542  12.20:1
+       muted   #A8A29A   7.82:1   teal    #2ED6C2  10.85:1
+       faint   #7A746B   4.27:1   green   #5FD97A  11.01:1
+       magenta #F5C542   5.60:1   ember   #FF8A5C   8.52:1
+       black #0B0A09 on amber 12.20:1, teal 10.85:1, green 11.01:1,
+       cream 17.70:1 (all black texts on the color bars).
+       NOTE: --panel (#141311) vs --bg is 1.07:1. That is intentional:
+       structure is carried by a 1-2 px hairline, NOT a fill. Do not make
+       the panel "more visible" without measuring contrast; that is
+       exactly the 0.08/0.14 trap from 28 Jul.
+
+       The brand's bright #B68235 (gold) lands at 5.87:1 on dark and
+       #00C2AD at 8.78:1: both would pass, but as numbers and small text
+       they die against black, so the dark variant's steps are --amber
+       and --teal. The canonical hexes still live on the classic surfaces
+       (longtail :root, pro-spa/theme.css, the app's lib/theme.ts).
+     ============================================================ */
+  :root {
+    --bg: #0B0A09;
+    --panel: #141311;
+    --track: #1F1D1A;
+    /* 28 Jul measured fix: --panel vs --bg is intentionally 1.07:1, so the
+       hairline is the only structure. 0.14 = 1.38:1 disappears; 0.24 =
+       1.97:1 separates surfaces and 0.40 = 3.50:1 carries control borders
+       past 1.4.11. */
+    --line: rgba(243,242,242,0.24);
+    --line-strong: rgba(243,242,242,0.40);
+    --line-soft: rgba(243,242,242,0.12);
+    --cream: #F3F2F2;
+    --muted: #A8A29A;
+    /* 28 Jul measured fix: #7A746B is 4.27:1, i.e. below AA (and .page-no is
+       11 px). #8A847A = 5.33:1 bg / 4.53:1 track. */
+    --faint: #8A847A;
+    --amber: #F5C542;
+    --teal: #2ED6C2;
+    --green: #5FD97A;
+    --ember: #FF8A5C;
+    --ink: #0B0A09;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --radius: 0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  html, body { overflow-x: clip; }
+  body {
+    background: var(--bg); color: var(--cream);
+    font-family: var(--font-mono); font-size: 15px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 clamp(14px, 3vw, 28px); }
+  section { padding: clamp(34px, 5vw, 60px) 0; }
+  h1, h2, h3 { font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; text-transform: uppercase; }
+  p { text-wrap: pretty; }
+  a { color: var(--teal); text-decoration: none; }
+  a:hover { background: var(--teal); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation: none !important; }
+    .crt { display: none !important; }
+    .ticker-track { transform: none !important; }
+  }
+
+  /* ---- CRT-overlayt. Puhtaasti koristeita, pointer-events pois. ---- */
+  .crt { position: fixed; inset: 0; pointer-events: none; }
+  .crt-scan { z-index: 90; background: repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 3px); }
+  .crt-vig { z-index: 91; background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.72) 100%); }
+  @media (max-width: 620px) { .crt-vig { display: none; } }
+
+  /* ---- Ylapalkki ---- */
+  .tt-top { position: sticky; top: 0; z-index: 60; background: var(--bg); border-bottom: 2px solid var(--line); }
+  .tt-top nav { display: flex; align-items: center; gap: clamp(10px, 2vw, 20px); flex-wrap: wrap; padding: 10px 0; }
+  .logo { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; letter-spacing: .16em; color: var(--cream); }
+  .logo:hover { background: none; color: var(--cream); }
+  .logo-mark { width: 34px; height: 34px; display: block; flex: none; }
+  .page-no { font-size: 11px; letter-spacing: .18em; color: var(--faint); border: 1px solid var(--line); padding: 2px 6px; }
+  .nav-links { display: flex; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+  .nav-links a { font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--cream); padding: 7px 9px; }
+  .nav-cta { background: var(--teal); color: var(--ink) !important; font-weight: 600; }
+  .nav-cta:hover { background: var(--amber) !important; }
+
+  /* ---- Tickernauha ---- */
+  .ticker { border-bottom: 2px solid var(--line); background: var(--panel); overflow: hidden; white-space: nowrap; }
+  .ticker-track { display: inline-flex; padding: 7px 0; animation: crawl 34s linear infinite; }
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+  .ticker-set { display: inline-flex; gap: 26px; padding-right: 26px; font-size: 11.5px; letter-spacing: .16em; color: var(--muted); text-transform: uppercase; }
+  .ticker-set b { font-weight: 400; }
+  .t-green { color: var(--green); } .t-amber { color: var(--amber); }
+  .t-teal { color: var(--teal); } .t-mag { color: var(--amber); }
+  @keyframes crawl { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  .cursor { animation: blink 1.1s step-end infinite; }
+
+  /* ---- Osioiden varipalkit (P-numerot) ---- */
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+         padding: 7px 12px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em;
+         text-transform: uppercase; background: var(--cream); color: var(--ink); }
+  .bar-teal { background: var(--teal); } .bar-amber { background: var(--amber); }
+  .bar-dim { background: var(--track); color: var(--cream); }
+  .bar-mag { background: var(--track); color: var(--amber); }
+  .bar + .panel, .bar + .table-wrap { border-top: 0; }
+
+  /* ---- Hero ---- */
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(24px, 4vw, 48px);
+          align-items: start; padding: clamp(30px, 5vw, 60px) 0 clamp(26px, 4vw, 44px); }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--ink);
+             font-size: 11.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+             padding: 4px 10px; margin-bottom: 22px; }
+  .eyebrow:hover { background: var(--amber); color: var(--ink); }
+  .hero h1 { font-size: clamp(32px, 5.2vw, 62px); margin-bottom: 20px; text-wrap: balance; }
+  .hero h1 .accent { color: var(--amber); }
+  .hero .sub { font-size: clamp(14px, 1.5vw, 16.5px); color: var(--muted); max-width: 52ch; margin-bottom: 26px; }
+  .cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+         padding: 13px 20px; font-size: 13.5px; font-weight: 700; letter-spacing: .1em;
+         text-transform: uppercase; border: 2px solid transparent; }
+  .btn-primary { background: var(--amber); color: var(--ink); }
+  .btn-primary:hover { background: var(--cream); color: var(--ink); }
+  .btn-ghost { border-color: var(--teal); color: var(--teal); font-weight: 600; }
+  .btn-ghost:hover { background: var(--teal); color: var(--ink); }
+  .btn-green { border-color: var(--green); color: var(--green); font-weight: 600; }
+  .btn-green:hover { background: var(--green); color: var(--ink); }
+  /* button-like control: the border is its only boundary -> 1.4.11 requires 3:1 */
+  .btn-quiet { border-color: var(--line-strong); color: var(--cream); font-weight: 600; }
+  .btn-quiet:hover { border-color: var(--cream); background: transparent; color: var(--cream); }
+  .cta-note { color: var(--faint); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; margin-top: 20px; }
+  /* GW1 to GW3 free window. An amber rule, not a filled box: the hero is
+     already dark, and a solid panel would pull attention off the CTA row,
+     which is the buying path. The window closes on 12 September and this
+     line goes with it. */
+  /* The first version of this was a bordered paragraph inside the hero, and it
+     read as fine print: the one thing a visitor skips. A solid amber band is
+     the loudest surface this palette has without adding a colour, and it sits
+     above everything else on the page. */
+  .free-band { background: var(--amber); color: var(--ink); border-bottom: 2px solid var(--ink); }
+  .free-band-in { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 15px 0; }
+  .free-band-txt { margin: 0; flex: 1 1 340px; display: flex; flex-direction: column; gap: 4px; }
+  .free-band-txt strong { font-size: clamp(17px, 3.3vw, 26px); font-weight: 700;
+    letter-spacing: -0.02em; line-height: 1.12; text-transform: uppercase; }
+  .free-band-txt span { font-size: 14px; opacity: .8; letter-spacing: .01em; }
+  .btn-band { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; background: var(--ink); color: var(--amber); font-weight: 700; font-size: 13.5px;
+    letter-spacing: .1em; text-transform: uppercase; padding: 13px 20px; white-space: nowrap;
+    border: 2px solid var(--ink); }
+  .btn-band:hover { background: transparent; color: var(--ink); }
+  @media (max-width: 620px) { .btn-band { width: 100%; text-align: center; } }
+  .cta-note a { color: var(--cream); border-bottom: 1px solid var(--line); }
+
+  /* Track record -chip herossa: GEN:ACC-CHIP writes here (.num/.lbl) */
+  .hero-side { display: flex; flex-direction: column; gap: clamp(16px, 2vw, 22px); }
+  .record-chip { border: 2px solid var(--teal); background: var(--panel); margin-top: 0; }
+  .record-chip .chip-head { display: flex; justify-content: space-between; background: var(--teal); color: var(--ink);
+                            padding: 7px 12px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .record-chip .chip-body { padding: clamp(18px, 2.6vw, 26px); }
+  .record-chip .num { font-size: clamp(52px, 8.5vw, 92px); font-weight: 700; line-height: .92;
+                      letter-spacing: -0.04em; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .record-chip .lbl { font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 8px; max-width: 40ch; line-height: 1.55; }
+  .record-chip .tr-links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; letter-spacing: .08em;
+                           text-transform: uppercase; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+  .record-chip .tr-links a.alt { color: var(--amber); }
+  .record-chip .tr-links a.alt:hover { background: var(--amber); color: var(--ink); }
+
+  /* #72: GW deadline countdown */
+  .countdown { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; }
+  .cd-label { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .cd-clock { display: flex; align-items: stretch; gap: 4px; }
+  .cd-box { border: 1px solid var(--line); padding: 7px 10px; min-width: 56px; text-align: center; }
+  .cd-num { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--cream); line-height: 1.15; }
+  .cd-unit { display: block; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .cd-sep { display: flex; align-items: center; color: var(--faint); font-size: 16px; }
+  .cd-cta { font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); }
+  .cd-cta:hover { background: var(--amber); color: var(--ink); }
+
+  /* ---- Preview table (real model numbers, updated by hand) ---- */
+  .table-wrap { border: 2px solid var(--line); background: var(--panel); overflow-x: auto; }
+  .table-inner { min-width: 560px; }
+  .mock-row { display: grid; grid-template-columns: 58px 1fr 92px 96px 108px; align-items: center;
+              padding: 12px 14px; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
+  .mock-row.head { padding: 9px 14px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+                   color: var(--faint); border-bottom: 1px solid var(--line); }
+  .mock-row:not(.head):hover { background: var(--track); }
+
+  /* 9 Aug: the landing preview table ran 217px past the screen on a phone,
+     so the first impression for anyone arriving from X was a sideways-
+     scrolling table. .table-inner{min-width:560px} forced it. On narrow
+     screens show three columns: team, player and xP -- Price and Owned are
+     context, and xP is the number this block sells.
+     CSS-only: the rows are generated between GEN:XP-TABLE markers, so a
+     markup edit would be undone by the next bake. */
+  @media (max-width: 560px) {
+    .table-inner { min-width: 0; }
+    .mock-row { grid-template-columns: 46px 1fr 72px; }
+    .mock-row > span:nth-child(3),
+    .mock-row > span:nth-child(4) { display: none; }
+  }
+  .mock-team { color: var(--teal); font-weight: 600; letter-spacing: .06em; }
+  .mock-name { font-weight: 600; }
+  .mock-meta { color: var(--faint); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; }
+  .mock-xp { text-align: right; color: var(--amber); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mock-foot { padding: 11px 14px; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .mock-foot strong { color: var(--green); font-weight: 400; }
+
+  /* ---- Paneelit ---- */
+  .toolkit { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 2.4vw, 26px); align-items: stretch; }
+  .panel { border: 2px solid var(--line); background: var(--panel); display: flex; flex-direction: column; }
+  .panel.premium-p { border-color: var(--amber); }
+  .panel-body { padding: clamp(18px, 2.4vw, 24px); display: flex; flex-direction: column; gap: 16px; flex: 1; }
+  .panel h3 { font-size: clamp(19px, 2.3vw, 25px); }
+  .panel h3 .price-tag { color: var(--amber); }
+  .panel h3 .price-tag span, .panel h3 .price-alt { color: var(--faint); font-weight: 400; }
+  .tool-list { list-style: none; display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+  .tool-list li { padding-left: 20px; position: relative; }
+  .tool-list li::before { content: "\25B8"; position: absolute; left: 0; color: var(--green); }
+  .premium-p .tool-list li::before { color: var(--amber); }
+  .panel-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+  .early-offer { border-left: 3px solid var(--amber); background: rgba(245,197,66,0.08);
+                 padding: 11px 13px; font-size: 12.5px; line-height: 1.6; color: var(--cream); }
+  .early-offer strong { color: var(--amber); }
+  .early-offer code { font-family: var(--font-mono); font-weight: 700; letter-spacing: .06em;
+                      background: var(--amber); color: var(--ink); padding: 1px 6px; }
+  .fineprint { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .trust-line, .free-note { text-align: center; font-size: 12.5px; letter-spacing: .05em; color: var(--faint); margin-top: 18px; }
+
+  /* ---- Section head ---- */
+  .section-head { margin-bottom: clamp(18px, 2.5vw, 26px); }
+  .section-head p { color: var(--muted); font-size: 14px; max-width: 62ch; margin-top: 12px; }
+
+  /* ---- Beat the model + founder ---- */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 2.4vw, 26px); align-items: start; }
+  .duo .panel-body p + p { margin-top: 12px; }
+  .duo .panel-body { gap: 0; }
+  .duo p { font-size: 14px; color: var(--muted); }
+  .link-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; }
+  .link-row a.mag { color: var(--amber); }
+  .link-row a.mag:hover { background: transparent; color: var(--cream); }
+  .link-row a.quiet { color: var(--cream); border-bottom: 1px solid var(--line); }
+
+  /* ---- Track record -osio: GEN:ACC-PROOF + GEN:ACC-BYCOMP ---- */
+  .wc-visual { border: 2px solid var(--line); border-top: 0; background: var(--panel); padding: clamp(18px, 2.4vw, 24px); }
+  .wc-visual > p { font-size: 14px; color: var(--muted); }
+  .wc-visual > p + p { margin-top: 12px; }
+  .wc-visual strong { color: var(--cream); }
+  .bycomp-scope { margin: 18px 0 4px; }
+
+  /* ---- How it works ---- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(14px, 2vw, 22px); }
+  .step { border-top: 3px solid var(--teal); padding-top: 16px; }
+  .step:nth-child(2) { border-top-color: var(--amber); }
+  .step:nth-child(3) { border-top-color: var(--green); }
+  .step .n { font-size: 42px; font-weight: 700; letter-spacing: -.04em; line-height: 1; color: var(--teal); margin-bottom: 12px; }
+  .step:nth-child(2) .n { color: var(--amber); }
+  .step:nth-child(3) .n { color: var(--green); }
+  .step h3 { font-size: 16px; letter-spacing: .02em; margin-bottom: 8px; }
+  .step p { font-size: 13.5px; color: var(--muted); }
+
+  /* ---- Leagues ---- */
+  .league-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .league-chip { border: 1px solid var(--line); padding: 9px 12px; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .league-chip:hover { border-color: var(--teal); color: var(--teal); }
+  .league-chip.live-chip { background: var(--green); border-color: var(--green); color: var(--ink); font-weight: 700; }
+  .league-note { font-size: 12.5px; color: var(--faint); max-width: 80ch; margin-top: 16px; }
+
+  /* ---- FAQ ---- */
+  .faq-list { border: 2px solid var(--line); border-top: 0; background: var(--panel); }
+  .faq-list dt { font-size: 14.5px; font-weight: 600; letter-spacing: .01em; color: var(--amber); line-height: 1.45; }
+  .faq-list dd { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+  .faq-item { display: grid; grid-template-columns: minmax(220px, 1fr) 1.4fr; gap: clamp(10px, 2vw, 24px);
+              padding: clamp(14px, 2vw, 20px) clamp(14px, 2vw, 18px); border-bottom: 1px solid var(--line-soft); }
+  .faq-item:last-child { border-bottom: 0; }
+
+  /* ---- Career-kaista ---- */
+  .career-band { border: 2px solid var(--teal); background: var(--panel); padding: clamp(20px, 3.2vw, 34px);
+                 display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
+  .career-band h2 { font-size: clamp(19px, 2.6vw, 28px); }
+  .career-band p { font-size: 13.5px; color: var(--muted); margin-top: 8px; max-width: 56ch; }
+
+  /* ---- Footer ---- */
+  footer { border-top: 2px solid var(--line); background: var(--panel); padding: clamp(20px, 3vw, 30px) 0 clamp(26px, 4vw, 40px); }
+  .foot-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 22px; }
+  .foot-keys a { padding: 13px 12px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+  .key-ember { background: var(--ember); } .key-green { background: var(--green); }
+  .key-amber { background: var(--amber); } .key-teal { background: var(--teal); }
+  .foot-keys a:hover { background: var(--cream); color: var(--ink); }
+  .foot-links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 18px; }
+  .foot-links a { color: var(--muted); }
+  .foot-base { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+               padding-top: 16px; border-top: 1px solid var(--line-soft); font-size: 11.5px; letter-spacing: .14em;
+               text-transform: uppercase; color: var(--faint); }
+  .foot-base .mark { display: flex; align-items: center; gap: 9px; }
+  .foot-note { color: rgba(243,242,242,0.28); }
+
+  @media (max-width: 900px) {
+    .hero, .toolkit, .duo, .steps { grid-template-columns: 1fr; }
+    .faq-item { grid-template-columns: 1fr; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    .page-no { display: none; }
+  }
+  @media (max-width: 560px) {
+    .foot-keys { grid-template-columns: 1fr 1fr; }
+    .cta-row .btn { width: 100%; }
+    .bar span:last-child { display: none; }
+  }
+/* GEN:MOBILE-CSS */
+/* Note shown only on narrow screens. Hidden by default so that pages on
+   wide screens do not change at all. */
+.m-only{display:none;}
+
+@media (max-width:560px){
+  .m-only{display:block;}
+
+  /* --- 1. NAV ----------------------------------------------------------
+     Bug: nav{justify-content:space-between} plus two inflexible children.
+     At 390px the brand and the link pair do not fit on one line, so both
+     wrapped internally instead: "GoalIQ" broke below the logo and the
+     "Try it live" button text spilled outside the button.
+     Fix: allow wrapping BETWEEN elements, not inside them. */
+  nav,.nav{flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px;}
+  .brand{font-size:18px;white-space:nowrap;flex:0 0 auto;}
+  .brand-icon{width:20px;height:20px;margin-right:6px;}
+  nav>span,.nav>span{flex:1 1 100%;font-size:13px;}
+  .nav-cta{display:inline-block;white-space:nowrap;padding:8px 14px;}
+
+  /* --- 2. MATCH ROWS ---------------------------------------------------
+     Bug: .mrow is a flex row where the team name took three lines and the
+     probability floated right at a different height, so the row could not
+     be read left to right. Fix: stack it. */
+  .mrow{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;}
+  .mrow>div{width:100%;}
+  /* Stacking shortened the match links (the name now fits on one line),
+     which dropped the touch target below 32px. Full width plus vertical
+     padding brings the row back to fingertip size. */
+  .mrow a{display:block;width:100%;padding:7px 0;}
+  .pick{font-size:14px;}
+
+  /* --- 3. TABLES: column priority (option (a), chosen 9 Aug) -----------
+     Builders mark the less important columns with .m-hide; on a narrow
+     screen only the key columns show. The full table stays unchanged on
+     wider screens. */
+  th.m-hide,td.m-hide{display:none;}
+
+  /* ...BUT hidden must not mean unreachable (raised 9 Aug). The trimming is
+     a DEFAULT, not an end state: "Show all columns" restores every column
+     in every table at once, and the table then scrolls horizontally just
+     as it does on a wide screen. Higher specificity inside the same media
+     query -> wins regardless of order. */
+  body.cols-all th.m-hide,body.cols-all td.m-hide{display:table-cell;}
+  body.cols-all .m-only{display:none;}
+
+  /* Bring a hidden column's number back into the row as a subline (10 Aug).
+     The column does not fit as a 5th column at 390px, but "Show all
+     columns" is two interactions too far from a number nobody knows to
+     look for yet. The subline gives the same number without the column,
+     and because it is .m-only it DISAPPEARS when the column comes back ->
+     the number is never shown twice. */
+  td .m-sub{font-size:11px;font-weight:400;opacity:.72;padding-top:2px;}
+
+  .colstoggle{display:inline-block;margin:10px 0 4px;padding:9px 14px;
+    min-height:40px;border:1px solid var(--line-strong,rgba(128,128,128,.5));
+    background:transparent;color:inherit;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;border-radius:0;}
+  .colstoggle[aria-pressed="true"]{border-color:var(--amber,#F5C542);
+    color:var(--amber,#F5C542);}
+
+  /* Long text cells may wrap; numbers may not (tabular-nums breaks down and
+     "1.25" would split across two lines). */
+  .lb th,.lb td,.scroll table th,.scroll table td{white-space:normal;}
+  .lb th.n,.lb td.n,.scroll table th.num,.scroll table td.num{
+    white-space:nowrap;}
+  .lb{font-size:13px;}
+  /* Horizontal padding 8px -> 5px. Measured: stats.html still came out at
+     404px (30px over) after the context columns were hidden, and across
+     nine columns the padding alone was 144px. Tighter padding keeps the
+     column; dropping a column would have lost information. */
+  .lb th,.lb td{padding:7px 5px;}
+
+  /* The tables' min-width forced scrolling even when enough columns were
+     hidden that the rest would have fit. */
+  .lb-wrap>.lb,.scroll>table,.table-wrap>table,.rec-scroll>table{
+    min-width:0;}
+  table{min-width:0;}
+
+  /* SILENT TRUNCATION (9 Aug, only ever caught in a screenshot):
+     width:auto + min-width:0 shrank the table to EXACTLY the wrapper
+     (tableW=374=wrapClient), so nowrap number columns no longer fit their
+     cells and "28.17" rendered as "28.". The table was not overwide and
+     the wrapper did not scroll, so NEITHER a width measurement NOR a
+     scrollWidth check could see this. Only the eye could.
+     width:max-content forces the table to its natural width: if it does not
+     fit, the wrapper scrolls visibly instead of data disappearing in
+     silence. Visible scrolling is bad, a quietly lost number is worse. */
+  .lb-wrap>.lb{width:max-content;max-width:none;}
+  /* SPECIFICITY WARNING: BYCOMP_CSS is injected into fpl.html and
+     predictions.html as its OWN <style> element LATER in the page, so it
+     beats this block on document order. A media query does not raise
+     specificity, so .rec-scroll table (0,1,1) would not be enough to
+     override its min-width:640px. The div. prefix raises it to (0,1,2) and
+     makes the rule order-independent. */
+  div.rec-scroll table{min-width:0;}
+  /* The match name was nowrap ("Nottingham Forest v Crystal Palace" =
+     277px on one line), which alone made the track record table three
+     screens wide. */
+  div.rec-scroll td.team,.scroll td.team{white-space:normal;}
+  div.rec-scroll th,div.rec-scroll td{padding:7px 6px;font-size:13px;}
+  /* Kick-off was "2026-08-21 19:00:00 UTC" on one line = 195px, so a single
+     column took a third of the phone's width. These values are dates rather
+     than numbers that need aligning, so wrapping is safe here. */
+  div.rec-scroll td.num,div.rec-scroll th.num{white-space:normal;}
+  /* An FDR grid cell is "ARS (H) 60%" = three parts on one line. nowrap kept
+     the grid at 472px even after columns had been hidden; a wrapping cell
+     takes two lines and halves the width. */
+  .fdr-grid td.num,.scroll td.num .fdr,.fdr{white-space:normal;}
+  .fdr{min-width:0;}
+
+  /* Scroll hint: appears only where the builder adds it, that is, in tables
+     that still scroll after columns have been hidden. */
+  .scrollhint{display:block;color:var(--muted,#A8A29A);font-size:12px;
+    margin:6px 0 0;}
+
+  /* --- 4. FILTER CHIPS -------------------------------------------------
+     Bug: .chips{display:inline-flex} without wrapping -> the chip row was
+     454px, and because html/body is overflow-x:clip the last chip ("Set
+     pieces") was physically unreachable on a phone.
+     Fix: allow wrapping, and give each filter group its own line. */
+  .lbctl{gap:6px 8px;}
+  .lbctl .lbl{flex:1 1 100%;margin:10px 0 0;}
+  .lbctl .lbl:first-child{margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;}
+  .chip{min-height:36px;}
+  .lbctl select,.lbctl input{min-height:36px;max-width:100%;}
+
+  /* --- 5. READABILITY --------------------------------------------------
+     12px monospace is below the readable limit on a phone. */
+  .meta,.note,.stat span,.legend,.mrow .meta,footer{font-size:13px;}
+  .hero .lede,.lede{font-size:16px;}
+  .stat b{font-size:24px;}
+
+  /* --- 6. TOUCH TARGETS ------------------------------------------------ */
+  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+    justify-content:center;}
+  .toolnav a{display:inline-block;padding:4px 0;}
+}
+
+/* Very narrow (e.g. iPhone SE 375px / Galaxy Fold cover screen 344px):
+   the brand and the CTA do not fit even when scaled down, and the hero
+   heading overflows if it contains long words. */
+@media (max-width:400px){
+  .wrap{padding-left:14px;padding-right:14px;}
+  .hero h1,h1{font-size:26px;overflow-wrap:break-word;}
+  .brand{font-size:17px;}
+  /* The font is NOT dropped to 12px here. Tried and measured 9 Aug: it took
+     1200 cells below 13px, which is under the readable limit, and hiding
+     columns was already enough to fit the tables without it.
+     Padding is tightened instead: stats.html is the densest table
+     (9 visible columns) and came out at 404px with 6px padding, i.e. 14px
+     over the phone's width. Its natural width (width:max-content) is 383px
+     at 4px padding; 3px takes it to 365px, which fits the wrapper (374). */
+  .lb th,.lb td{padding:6px 3px;}
+}
+/* /GEN:MOBILE-CSS */
+</style>
+<!-- PostHog (#38): cookieless site analytics - persistence=memory, no cookies, no PII -->
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true});
+posthog.register({platform:'web',source_app:'goaliq-static'});
+posthog.capture('web_landing_viewed',{page:location.pathname});
+</script>
+</head>
+<body>
+
+<div class="crt crt-scan" aria-hidden="true"></div>
+<div class="crt crt-vig" aria-hidden="true"></div>
+
+<div class="tt-top">
+  <div class="wrap">
+    <nav>
+      <!-- Mark: the IQ monogram. Q is magenta = the brand letterform rule
+           (magenta never as a fill; here it is a letter). -->
+      <a class="logo" href="#top">
+        <svg class="logo-mark" width="34" height="34" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>
+        GoalIQ
+      </a>
+      <span class="page-no">P100</span>
+      <div class="nav-links">
+        <a href="fpl.html">Free FPL tools</a>
+        <a href="/predictions">Match predictions</a>
+        <!-- Keep the career card in the top nav. It existed for a while but only
+             in three buried places and never up here, so nobody found it. -->
+        <a href="/career">Career card</a>
+        <!-- SPL keeps its own section, but discoverability comes from the top
+             nav. Same lesson as the career card: a buried link gets no users. -->
+        <a href="/spl">SPL tools</a>
+        <a class="nav-cta" href="https://pro.goaliq.app/?tab=premium" data-cta="nav">Try Premium</a>
+      </div>
+    </nav>
+  </div>
+</div>
+
+<!-- FREE WINDOW. Sits directly under the nav, above the ticker and the hero,
+     so it is the first thing on the page rather than a line inside the copy.
+     REMOVE THIS BLOCK AFTER 2026-09-12 12:30 UTC. -->
+<div class="free-band">
+  <div class="wrap free-band-in">
+    <p class="free-band-txt">
+      <strong>Premium is free until the 12 September deadline</strong>
+      <span>That is GW1 to GW3. Create a free account and it is on. No card, nothing to cancel.</span>
+    </p>
+    <a class="btn-band" href="https://pro.goaliq.app/" data-cta="band-freewindow">Get Premium free &#9656;</a>
+  </div>
+</div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span class="ticker-set">
+      <b class="t-green">&#9612; Every prediction logged before kick-off</b>
+      <!-- GEN:ACC-TICKER-START --><b>176 completed matches</b>
+      <b class="t-amber">&#9612; 52.3% correct results</b><!-- GEN:ACC-TICKER-END -->
+      <!-- GEN:ACC-WC-START --><b>World Cup 2026 &middot; 60.6%</b><!-- GEN:ACC-WC-END -->
+      <b class="t-mag">&#9612; Model XI plays this season</b>
+      <b>No odds, no bookmakers, not betting</b>
+      <b class="t-teal">&#9612; Made in Lahti, Finland</b>
+    </span>
+    <span class="ticker-set">
+      <b class="t-green">&#9612; Every prediction logged before kick-off</b>
+      <!-- GEN:ACC-TICKER-START --><b>176 completed matches</b>
+      <b class="t-amber">&#9612; 52.3% correct results</b><!-- GEN:ACC-TICKER-END -->
+      <!-- GEN:ACC-WC-START --><b>World Cup 2026 &middot; 60.6%</b><!-- GEN:ACC-WC-END -->
+      <b class="t-mag">&#9612; Model XI plays this season</b>
+      <b>No odds, no bookmakers, not betting</b>
+      <b class="t-teal">&#9612; Made in Lahti, Finland</b>
+    </span>
+  </div>
+</div>
+
+<div class="wrap" id="top">
+  <header class="hero">
+    <div>
+      <a class="eyebrow" href="fpl.html">Free FPL tools on the web · no sign-in needed <span class="cursor">&#9608;</span></a>
+      <h1>Free FPL tools, <span class="accent">backed by a real match model</span></h1>
+      <p class="sub">Clean sheet probability, fixture difficulty, rate my team, a fit checker,
+        a pre-season draft rater and price watch, free, and you can share any of it as an
+        image. GoalIQ Premium adds player xP, a
+        six-gameweek planner, the captain ranker, chip timing, transfer plans you can apply,
+        and player compare. Every number comes from the model behind our public,
+        pre-match-logged prediction record. <a href="/predictions">Football predictions for
+        the top leagues too</a>.</p>
+      <div class="cta-row" id="get">
+        <a class="btn btn-primary" href="https://pro.goaliq.app/" data-cta="hero-freewindow">Get Premium free &#9656;</a>
+        <a class="btn btn-ghost" href="fpl.html" data-cta="hero-free">Try the free tools</a>
+      </div>
+      <p class="cta-note">After 12 September it is &euro;3.99 a month or
+        <a href="https://pro.goaliq.app/checkout?plan=season" data-cta="hero">&euro;25 a year</a>.</p>
+      <p class="cta-note">Free download on <a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Google Play</a> and the <a href="https://apps.apple.com/app/id6780047163">App Store</a>. One subscription covers web, iOS and Android.</p>
+      <!-- #72: GW deadline countdown. Fallback = GW1 opening Fri 21 Aug 2026; JS
+           swaps in the official GW deadline from the /api/fantasy meta. -->
+      <div class="countdown" id="gw-countdown" hidden>
+        <span class="cd-label" id="cd-label">Season starts · GW1 (Fri 21 Aug)</span>
+        <div class="cd-clock" aria-hidden="true">
+          <span class="cd-box"><span class="cd-num" id="cd-d">-</span><span class="cd-unit">days</span></span>
+          <span class="cd-sep">:</span>
+          <span class="cd-box"><span class="cd-num" id="cd-h">-</span><span class="cd-unit">hrs</span></span>
+          <span class="cd-sep">:</span>
+          <span class="cd-box"><span class="cd-num" id="cd-m">-</span><span class="cd-unit">min</span></span>
+          <span class="cd-sep">:</span>
+          <span class="cd-box"><span class="cd-num" id="cd-s">-</span><span class="cd-unit">sec</span></span>
+        </div>
+        <a class="cd-cta" href="fpl.html" data-cta="countdown">See clean-sheet probability &amp; FDR &#9656;</a>
+      </div>
+    </div>
+
+    <div class="hero-side">
+    <div class="record-chip">
+      <div class="chip-head"><span>Track record</span><span>P104</span></div>
+      <div class="chip-body">
+        <!-- GEN:ACC-CHIP-START --><div class="num">52.3%</div><div class="lbl">result accuracy across 176 completed matches, all competitions</div><!-- GEN:ACC-CHIP-END -->
+        <div class="tr-links"><a href="/predictions#record">Full record &#9656;</a><a class="alt" href="fpl.html">See the tools it powers &#9656;</a></div>
+      </div>
+    </div>
+    <!-- Featured note: filled between the markers by
+         build_fpl_page.update_index from data/fpl_notes.json.
+         Position is deliberate: above the fold, in the hero. -->
+    <!-- GEN:LATEST-ARTICLES-START --><style>
+.note-list{display:flex;flex-direction:column;gap:10px}
+a.note-card{display:block;padding:clamp(16px,2.2vw,22px);border:2px solid var(--amber);
+background:var(--panel);text-decoration:none;color:inherit}
+a.note-card:hover{background:var(--track)}
+.note-date{display:block;font-size:.72rem;letter-spacing:.10em;
+text-transform:uppercase;color:var(--amber);margin-bottom:10px}
+.note-title{display:block;font-size:clamp(19px,2.2vw,25px);font-weight:800;
+line-height:1.25;margin-bottom:10px}
+.note-lede{display:block;font-size:.95rem;line-height:1.55;color:var(--muted)}
+.note-more{margin:2px 0 0;font-size:.85rem;letter-spacing:.04em;
+text-transform:uppercase}
+</style><div class="note-list"><a class="note-card" href="/fpl/notes#set-piece-xg-is-not-open-play-xg"><span class="note-date">2026-08-15</span><span class="note-title">The DEF column hides two different jobs</span><span class="note-lede">Everyone knows a centre-back&#x27;s goals come from corners. That part isn&#x27;t interesting. What I didn&#x27;t expect is that the share is sharp enough to tell you which defenders are centre-backs in the first place.</span></a></div><p class="note-more"><a href="/fpl/notes">All notes from the model &#9656;</a></p><!-- GEN:LATEST-ARTICLES-END -->
+    </div>
+  </header>
+</div>
+
+<!-- LIVE PROJECTIONS: real Total xP numbers from the production value run
+     24 Jul. Update if the data moves a lot (honesty: no mock season). -->
+<section>
+  <div class="wrap">
+    <div class="bar"><span>&#9612; Live model projections · GW1-6 · 2026/27</span><span>P101</span></div>
+    <div class="table-wrap" aria-hidden="true">
+      <div class="table-inner">
+        <div class="mock-row head"><span>Team</span><span>Player</span><span>Price</span><span>Owned</span><span class="mock-xp">Total xP</span></div>
+        <!-- GEN:XP-TABLE-START -->
+        <div class="mock-row"><span class="mock-team">MUN</span><span><span class="mock-name">B.Fernandes</span> <span class="mock-meta">&middot; MID</span></span><span>&pound;12.0</span><span>48.5%</span><span class="mock-xp">34.4</span></div>
+        <div class="mock-row"><span class="mock-team">MCI</span><span><span class="mock-name">Haaland</span> <span class="mock-meta">&middot; FWD</span></span><span>&pound;15.5</span><span>71.6%</span><span class="mock-xp">32.4</span></div>
+        <div class="mock-row"><span class="mock-team">ARS</span><span><span class="mock-name">Gabriel</span> <span class="mock-meta">&middot; DEF</span></span><span>&pound;8.0</span><span>28.3%</span><span class="mock-xp">30.1</span></div>
+        <div class="mock-row"><span class="mock-team">BRE</span><span><span class="mock-name">Thiago</span> <span class="mock-meta">&middot; FWD</span></span><span>&pound;8.0</span><span>17.2%</span><span class="mock-xp">28.7</span></div>
+        <div class="mock-foot">Model projections, next 6 gameweeks &middot; <strong>live numbers, not a mock season</strong></div>
+      <!-- GEN:XP-TABLE-END -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team news: generated between the markers by build_fpl_page.update_index
+     from the same artifact as /fpl/team-news. No hardcoded numbers. -->
+<section id="team-news">
+  <div class="wrap">
+    <div class="bar bar-amber"><span>&#9612; Team news &middot; updated daily</span><span>P108</span></div>
+    <!-- GEN:TEAM-NEWS-START -->
+<h2 id="team-news">Team news right now</h2>
+<p><strong>68 players are ruled out and 25 are doubtful</strong> for the next deadline, taken from the official Fantasy Premier League status feed. Most owned among them: Matheus N. (MCI), Mukiele (SUN), Kroupi.Jr (BOU).</p>
+<p>The full list is free and sorted by ownership, and every doubtful player carries the model's projected points with the reduced chance of playing already priced in, so you can see what the doubt actually costs: <a href="/fpl/team-news">FPL team news</a>.</p>
+<!-- GEN:TEAM-NEWS-END -->
+  </div>
+</section>
+
+<!-- FREE vs PREMIUM (#56-pricing sulautettu paneeleihin) -->
+<section id="pro">
+  <div class="wrap">
+    <div class="bar bar-teal"><span>&#9612; One model, a full FPL toolkit</span><span>P102</span></div>
+    <div class="section-head"><p>The free tier is genuinely useful. Premium goes deeper on the same engine.</p></div>
+    <div class="toolkit">
+      <div class="panel">
+        <div class="bar bar-dim"><span>Free · no sign-in</span></div>
+        <div class="panel-body">
+          <h3>Start with the model</h3>
+          <ul class="tool-list">
+            <li>Clean sheet probability &amp; fixture difficulty, attack and defence views, every PL team</li>
+            <li>Player lookup: official availability news, start chance, set-piece roles, price &amp; ownership</li>
+            <li>Rate my team, with a captain pick</li>
+            <li>Mini-league view: standings and head-to-head win probability</li>
+            <li>xG, xA and xGI leaders: every player with data, two decimals, no cut-off</li>
+            <li><a href="/fpl/stats" data-cta="toolkit-stats">Player stats</a>: shots, shots in
+              the box, key passes, tackles and the rest in one filterable table, per 90 or per
+              start, CSV export</li>
+            <li><a href="/fpl/defence" data-cta="toolkit-defence">Defence profiles</a>: what each
+              defence concedes by pitch zone, headers faced and set-piece xG</li>
+            <li>Fit checker: lock 1-3 players, get the best valid 15 around them, save it as a draft</li>
+            <li>Pre-season draft rater, no team ID needed, drafts auto-restore</li>
+            <li>Price watch</li>
+            <li>Beat the model: log your calls before the deadline, get them graded against the model's every gameweek</li>
+            <!-- COPY-SYNC 13 Aug: Beat the Model V2 season race. The race itself
+                 is free; the round-by-round breakdown is Premium (see below). -->
+            <li>Season race: the model's own squad is locked before every deadline and scored with official FPL points, so you can see your season against it</li>
+            <li>Catch your rival: pick anyone in your mini-league and see how likely you are to close the gap with the gameweeks that are left</li>
+            <li>Watchlist: track the players you are deciding on, price and availability at a glance (three players free)</li>
+          <!-- COPY-SYNC 28 Jul: match predictions, fixtures and league tables came
+               to the web today. Until then they were app-only. -->
+          <li>Predict any match on the web: win probability, most likely scorelines,
+            fixtures and league tables</li>
+          </ul>
+          <p class="panel-cta"><a class="btn btn-green" href="fpl.html" data-cta="toolkit-free">Open the free tools &#9656;</a></p>
+        </div>
+      </div>
+      <div class="panel premium-p">
+        <div class="bar bar-amber"><span>GoalIQ Premium</span><span>P103</span></div>
+        <div class="panel-body">
+          <!-- REMOVE the free-until part after 2026-09-12 12:30 UTC; the
+               original price tag stays.
+               THE PRICES MUST STAY VISIBLE, not be replaced by the notice.
+               Partners are told to check their own commission against this
+               page, so the numbers have to remain readable here without an
+               account. An earlier draft of this change replaced them outright,
+               which would have broken exactly that. -->
+          <h3><span class="price-tag">Free<span> until 12 Sept</span></span> <span class="price-alt">then &euro;25 / year or &euro;3.99 / month</span></h3>
+          <ul class="tool-list">
+            <li>Interactive team manager + rolling six-gameweek planner</li>
+            <li>Player xP with ownership, minutes outlook, the per 90 minute rate and CSV export</li>
+            <li>Captain ranker: top three, a differential pick and bonus expectation</li>
+            <li>Chip timing: the best Wildcard, Bench Boost, Triple Captain and Free Hit windows</li>
+            <li>Transfer plans: the best 1-2 move chains, hits priced in, plus one-tap apply</li>
+            <li>Edge mode: rank-aware picks to protect or climb in your mini-league</li>
+            <li>Player value, DefCon tracker with a gameweek-by-gameweek breakdown, price-band filters, differentials, a 50-player watchlist</li>
+          <li>Share as image: post-ready cards of your XI, the captain ranker and leaderboards (web)</li>
+          <li>Where the gap came from: captaincy, bench points and autosubs round by round, plus a decision journal of the calls you made differently</li>
+          <li>Which players actually close the gap on your mini-league rival, and whether they already have them</li>
+          <li>Compare up to four players side by side on projected points</li>
+          <li>Match predictions with expected goals, the full scoreline table
+            and 30 days of fixtures</li>
+          </ul>
+          <p class="panel-cta"><a class="btn btn-primary" href="https://pro.goaliq.app/checkout?plan=season" data-cta="pricing-season">Get the season pass &#9656;</a>
+            <a class="btn btn-quiet" href="https://pro.goaliq.app/checkout?plan=monthly" data-cta="pricing-monthly">Start Monthly</a></p>
+          <p class="fineprint">Cancel anytime. 30-day money back on web purchases. One subscription covers web, iOS and Android.</p>
+        </div>
+      </div>
+    </div>
+    <p class="trust-line"><!-- GEN:ACC-TRUST-START -->Built on a model with 52.3% correct 1X2 results across 176 completed matches, every prediction logged before kick-off.<!-- GEN:ACC-TRUST-END --></p>
+  </div>
+</section>
+
+<!-- BEAT THE MODEL (M29) + BUILT BY (founder-tarina 26.7) -->
+<section>
+  <div class="wrap">
+    <div class="duo">
+      <div class="panel">
+        <div class="bar bar-mag"><span>&#9612; The model plays FPL this season. Beat it.</span></div>
+        <div class="panel-body">
+          <p>GoalIQ's team picks itself from the model's numbers, squad public, every call
+            posted before the deadline. Season winner gets a year of Premium, free: one prize,
+            decided by the mini-league table when the season ends.</p>
+          <p class="link-row">
+            <a class="mag" href="/fpl/model-xi" data-cta="index-model-xi">See the Model XI &#9656;</a>
+            <a class="quiet" href="https://fantasy.premierleague.com/leagues/auto-join/jgi6j9" data-cta="league">Join the league · code jgi6j9</a>
+          </p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="bar bar-dim"><span>&#9612; Built by someone who kept missing the deadline</span></div>
+        <div class="panel-body">
+          <p>GoalIQ is made by one person. I have played Fantasy Premier League since 2012/13, and the
+            record is public:
+            <!-- GEN:FOUNDER-START --><a href="https://fantasy.premierleague.com/entry/1186244/history" rel="noopener" data-cta="founder-entry">12 seasons, anyone can check it</a>.
+            My best finish is 450,207 (2020/21). My worst is 6,138,376 (2021/22), the season I stopped
+            updating my team in October.<!-- GEN:FOUNDER-END --> One season I did not play at all.</p>
+          <p>That is the problem GoalIQ solves. Not beating the people who
+            spend five hours a week on this. Just getting a defensible team in before the deadline,
+            every week, without giving up your evening.</p>
+          <p>Every one of those seasons was played without the model. 2026/27
+            is the first one I use it myself, and I will publish how it went in May, including if it is
+            worse.</p>
+          <p class="link-row"><a class="quiet" href="https://x.com/goaliqapp/status/2081305839617409492" rel="noopener" data-cta="founder-thread">The full story is here &#9656;</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRACK RECORD (#74 + #111): PROOF + BYCOMP -->
+<section class="trust-band">
+  <div class="wrap">
+    <div class="bar"><span>&#9612; Published track record, hits and misses</span><span>P104</span></div>
+    <!-- The big number stays fresh through the CHIP marker in the hero; here
+         the same number as a proof line + per-competition breakdown (both
+         bot-maintained). -->
+    <div class="wc-visual">
+      <p><!-- GEN:ACC-PROOF-START -->The model logs every prediction before kickoff. 52.3% correct results across 176 completed matches.<!-- GEN:ACC-PROOF-END --></p>
+      <div class="bycomp-scope">
+      <!-- GEN:ACC-BYCOMP-START --><style>.bycomp{margin:14px 0 4px;max-width:520px;}.bycomp-title{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.65;margin-bottom:6px;}.bycomp-row{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-top:1px solid rgba(128,128,128,.25);font-size:15px;}.bycomp-name{flex:1;font-weight:600;}.bycomp-pct{font-weight:800;font-variant-numeric:tabular-nums;}.bycomp-n{opacity:.65;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;}</style><div class="bycomp" aria-label="Accuracy by competition"><div class="bycomp-title">By competition</div><div class="bycomp-row"><span class="bycomp-name">World Cup 2026</span><span class="bycomp-pct">60.6%</span><span class="bycomp-n">63 of 104</span></div><div class="bycomp-row"><span class="bycomp-name">Brasileirão Série A</span><span class="bycomp-pct">35.6%</span><span class="bycomp-n">16 of 45</span></div><div class="bycomp-row"><span class="bycomp-name">ELC</span><span class="bycomp-pct">22.2%</span><span class="bycomp-n">2 of 9</span></div><div class="bycomp-row"><span class="bycomp-name">DED</span><span class="bycomp-pct">62.5%</span><span class="bycomp-n">5 of 8</span></div><div class="bycomp-row"><span class="bycomp-name">PPL</span><span class="bycomp-pct">50%</span><span class="bycomp-n">3 of 6</span></div><div class="bycomp-row"><span class="bycomp-name">La Liga</span><span class="bycomp-pct">75%</span><span class="bycomp-n">3 of 4</span></div></div><!-- GEN:ACC-BYCOMP-END -->
+      </div>
+      <p class="link-row"><a href="/predictions#record">See the full record &#9656;</a> <a class="alt" href="fpl.html">See the tools it powers &#9656;</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+  <div class="wrap">
+    <div class="bar"><span>&#9612; How it works</span><span>P105</span></div>
+    <div class="section-head"><p>Three taps from a fixture to a full statistical breakdown.</p></div>
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div>
+        <h3>Pick the match</h3>
+        <p>Choose any two teams from any covered league or the Champions League.</p>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <h3>Let the model run</h3>
+        <p>A Dixon-Coles model computes the outcome in seconds.</p>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <h3>See the full picture</h3>
+        <p>Win probabilities, expected goals, likely scorelines and head-to-head history.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LEAGUES -->
+<section>
+  <div class="wrap">
+    <div class="bar bar-teal"><span>&#9612; Every match that matters</span><span>P106</span></div>
+    <div class="section-head"><p>Europe's top leagues and the Champions League, with Brasileirão live right now, plus the Championship, Eredivisie and Primeira Liga.</p></div>
+    <div class="league-grid"><!-- GEN:LEAGUES-START --><div class="league-chip">Premier League</div><div class="league-chip live-chip">La Liga &middot; live now</div><div class="league-chip">Bundesliga</div><div class="league-chip">Serie A</div><div class="league-chip">Ligue 1</div><div class="league-chip">Champions League</div><div class="league-chip live-chip">Brasileirão &middot; live now</div><div class="league-chip live-chip">Championship &middot; live now</div><div class="league-chip">Eredivisie</div><div class="league-chip live-chip">Primeira Liga &middot; live now</div><!-- GEN:LEAGUES-END -->
+    </div>
+    <!-- GEN:LEAGUE-NOTE-START --><p class="league-note">La Liga, Brasileirão, Championship and Primeira Liga are playing right now. The rest are supported and waiting on their next round.</p><!-- GEN:LEAGUE-NOTE-END -->
+  </div>
+</section>
+
+<!-- FAQ (#58 GEO): sama sisalto kuin FAQPage-JSON-LD headissa -->
+<section>
+  <div class="wrap">
+    <div class="bar"><span>&#9612; Quick answers</span><span>P107</span></div>
+    <dl class="faq-list">
+      <div class="faq-item">
+        <dt>Is GoalIQ good for FPL?</dt>
+        <dd>Yes. GoalIQ is built FPL-first: clean sheet probability, fixture difficulty, rate my team with a captain pick, price watch with shareable image cards and the full xG/xA/xGI leaderboard are free, and GoalIQ Premium adds an interactive team manager with a gameweek planner, player expected points (xP), the captain ranker, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a DefCon tracker with price-band filters, differentials, shareable image cards (web) and transfer suggestions with apply. Every number comes from a match model with a published, pre-match-logged track record.</dd>
+      </div>
+      <div class="faq-item">
+        <dt>What FPL tools does GoalIQ have?</dt>
+        <dd>Free: clean sheet probabilities, fixture difficulty ratings (FDR) with separate attack and defence views, a player lookup with official availability news, start chance and set-piece roles, rate my team with a captain pick, a mini-league view with head-to-head win probability, a fit checker and pre-season draft rater with saved drafts, price watch, shareable image cards of the clean sheet outlook and price watch tables (web), xG/xA/xGI leaders for every player with data, and a filterable player stats table (shots, shots on target, shots in the box, headed attempts, non-penalty xG, key passes, tackles, clearances, recoveries and set-piece order) with per 90 and per start views and CSV export, and defence profiles showing what each team concedes by pitch zone. GoalIQ Premium: an interactive team manager with a rolling six-gameweek planner, player expected points (xP) with ownership, minutes outlook, the scoring rate per 90 minutes shown separately from expected minutes and CSV export (web), the captain ranker with a differential pick, chip timing for the best Wildcard, Bench Boost, Triple Captain and Free Hit windows, transfer plans that chain 1 to 2 moves over the coming gameweeks, an edge mode with rank-aware picks for your mini-league, transfer suggestions with apply, player value, a live DefCon panel that tracks your own squad against the threshold while a gameweek is being played (web), the full DefCon leaderboard, price-band filters with the model's xP on both leaderboards, shareable image cards of your XI, the captain ranker, the value ranking and leaderboards (web), GK rotation pairs, differentials, player compare for up to four players, and predicted starting minutes. The web app also predicts any match: win probability, expected goals, the most likely scorelines, upcoming fixtures and league tables. Available on the web, iOS and Android.</dd>
+      </div>
+      <div class="faq-item">
+        <dt>Is GoalIQ a betting app?</dt>
+        <dd>No. GoalIQ is an analytics and FPL tool, not a gambling service. It has no odds, no bookmaker links and gives no betting advice. Predictions are statistical estimates for fun and planning.</dd>
+      </div>
+      <div class="faq-item">
+        <dt>How accurate is GoalIQ?</dt>
+        <dd>GoalIQ publishes its full prediction track record: every prediction is logged before kick-off and graded after, hits and misses included. The current accuracy numbers are updated on goaliq.app and its FPL page after every round.</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<!-- #78: career-kortin loydettavyys etusivulta -->
+<section>
+  <div class="wrap">
+    <div class="career-band">
+      <div>
+        <h2>New · your FPL Career Card</h2>
+        <p>Best season, all-time points and rank history on one shareable card. Free, no login.</p>
+      </div>
+      <a class="btn btn-ghost" href="/career" data-cta="index-career">Make my card &#9656;</a>
+    </div>
+  </div>
+</section>
+
+<!-- SPL-kaista (7.8): sama loydettavyyskuvio kuin career-band. -->
+<section>
+  <div class="wrap">
+    <div class="career-band">
+      <div>
+        <h2>New · Saudi Pro League fantasy tools</h2>
+        <p>Model xP, clean sheet probability and fixture difficulty for RSL Fantasy. Completely free, no login. Independent data tool, not affiliated with the SPL.</p>
+      </div>
+      <a class="btn btn-ghost" href="/spl" data-cta="index-spl">Open SPL tools &#9656;</a>
+    </div>
+  </div>
+</section>
+
+<!-- Creator program: its own band, not just a footer link. Same discovery
+     pattern as the career and SPL bands. Commission and full terms live on
+     /creators; this carries only the core of the offer. -->
+<section>
+  <div class="wrap">
+    <div class="career-band">
+      <div>
+        <h2>Make FPL content? Join the creator program</h2>
+        <p>Your code takes 30 percent off your audience's first payment at the web checkout, and you keep earning on the renewals after it. The free tools stay free to quote either way.</p>
+      </div>
+      <a class="btn btn-ghost" href="/creators" data-cta="index-creators">Read the terms &#9656;</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-keys">
+      <a class="key-ember" href="/predictions">Match predictions</a>
+      <a class="key-green" href="fpl.html">FPL clean sheets &amp; FDR</a>
+      <a class="key-amber" href="/fpl/best-captain">Captain picks</a>
+      <a class="key-teal" href="https://pro.goaliq.app">GoalIQ Premium (web)</a>
+    </div>
+    <div class="foot-links">
+      <a href="/fpl/team-news">Team news</a>
+      <a href="/fpl/club-best">Club pages</a>
+      <a href="/fpl/expected-points">Expected points</a>
+      <a href="/fpl/differentials">Differentials</a>
+      <a href="/fpl/price-changes">Price changes</a>
+      <a href="/fpl/xg-leaders">xG leaders</a>
+      <a href="/fpl/defcon">DefCon</a>
+      <a href="/fpl/stats">Player stats</a>
+      <a href="/fpl/defence">Defence profiles</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="faq.html">FAQ</a>
+      <a href="#get">Get the app</a>
+    </div>
+    <div class="foot-base">
+      <span class="mark">
+        <svg width="24" height="24" viewBox="0 0 34 34" role="img" aria-label="GoalIQ" focusable="false">
+          <rect x="1" y="1" width="32" height="32" fill="none" stroke="#7A746B" stroke-width="2"/>
+          <text x="17" y="23.5" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="16" font-weight="700" fill="#7A746B">I<tspan fill="#F5C542">Q</tspan></text>
+        </svg>
+        © 2026 GoalIQ · Made in Lahti, Finland
+      </span>
+      <span class="foot-note">Not a betting service · no odds, no bookmakers <span class="cursor" style="color:var(--teal)">&#9608;</span></span>
+    </div>
+  </div>
+</footer>
+
+<!-- #56: Pro CTA click metric (PostHog pro_cta_clicked) - non-blocking, no PII, still cookieless -->
+<script>
+document.addEventListener('click', function (e) {
+  var a = e.target && e.target.closest ? e.target.closest('a[data-cta]') : null;
+  if (a && window.posthog) { posthog.capture('pro_cta_clicked', {location: a.getAttribute('data-cta'), page: location.pathname}); }
+});
+/* Arrival attribution. This site runs analytics in memory-only mode and
+   pro.goaliq.app uses local storage, so the distinct id does not carry across
+   domains and the landing to pro handoff could not be counted at all. We attach
+   a non-identifying source tag to pro links, which the app reads into its page
+   view event. No cookie and no personal data, so the cookieless promise on
+   privacy.html still holds. */
+(function () {
+  var links = document.querySelectorAll('a[data-cta]');
+  for (var i = 0; i < links.length; i++) {
+    var a = links[i], href = a.getAttribute('href');
+    if (!href) continue;
+    try {
+      var u = new URL(href, location.href);
+      if (u.hostname !== 'pro.goaliq.app' || u.searchParams.has('src')) continue;
+      u.searchParams.set('src', a.getAttribute('data-cta'));
+      u.searchParams.set('srcp', location.pathname.replace(/^\/|\.html$/g, '') || 'index');
+      a.setAttribute('href', u.toString());
+    } catch (err) { /* malformed href: leave the link untouched */ }
+  }
+})();
+</script>
+
+<script>
+/* #72: GW deadline countdown. Fallback target = the GW1 opener (PL 26/27,
+   Fri 21 Aug 2026 ~20:00 UK). Progressive enhancement: /api/fantasy
+   meta.deadline_utc replaces the target and label once the season has
+   flipped. Hides itself once the target has passed. */
+(function () {
+  var target = new Date('2026-08-21T19:00:00Z');
+  var el = document.getElementById('gw-countdown');
+  if (!el) return;
+  var d = document.getElementById('cd-d'), h = document.getElementById('cd-h'),
+      m = document.getElementById('cd-m'), s = document.getElementById('cd-s'),
+      label = document.getElementById('cd-label');
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var left = target.getTime() - Date.now();
+    if (left <= 0) { el.hidden = true; return; }
+    el.hidden = false;
+    var sec = Math.floor(left / 1000);
+    d.textContent = String(Math.floor(sec / 86400));
+    h.textContent = pad(Math.floor(sec % 86400 / 3600));
+    m.textContent = pad(Math.floor(sec % 3600 / 60));
+    s.textContent = pad(sec % 60);
+  }
+  tick();
+  setInterval(tick, 1000);
+  fetch('https://api.goaliq.app/api/fantasy')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      var iso = data && data.meta && data.meta.deadline_utc;
+      var gw = data && data.meta && data.meta.next_gameweek;
+      if (!iso) return;
+      var t2 = new Date(iso);
+      if (isNaN(t2.getTime()) || t2.getTime() <= Date.now()) return;
+      target = t2;
+      label.textContent = 'GW' + (gw || '') + ' deadline';
+      tick();
+    })
+    .catch(function () { /* keep the fallback target */ });
+})();
+</script>
+
+<script>
+/* The track record number ticks up once per load. The final value is
+   already in the HTML (GEN:ACC-CHIP writes it), so without JS and for
+   crawlers the correct number shows. prefers-reduced-motion skips the
+   animation entirely. */
+(function () {
+  var el = document.querySelector('.record-chip .num');
+  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var m = /([\d.]+)/.exec(el.textContent || '');
+  if (!m) return;
+  var target = parseFloat(m[1]), suffix = (el.textContent || '').replace(m[1], '').trim();
+  var t0 = performance.now(), dur = 1100;
+  function step(t) {
+    var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = (target * e).toFixed(1) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+})();
+</script>
+
+<script>
+/* 31 Jul: Stripe Adaptive Pricing charges the visitor's currency at
+   checkout; this adds a DISPLAY approximation for UK/US visitors. The rates
+   are updated by hand, "about" keeps them honest. */
+(function () {
+  var region = '';
+  try { region = new Intl.Locale(navigator.language).maximize().region || ''; } catch (e) {}
+  // Hardcoded exchange rates go stale silently and no gate would catch it.
+  // Stripe shows the exact local amount at checkout, so naming the currency
+  // without quoting our own figure is enough here. We also avoid claiming
+  // anything about how the charge is made, and say only what is certainly true.
+  var local = (region === 'GB' || region === 'US')
+    ? 'your local price is shown at checkout' : null;
+  if (!local) return;
+  function add(sel, txt) {
+    var el = document.querySelector(sel);
+    if (el) el.insertAdjacentText('beforeend', ' (' + txt + ')');
+  }
+  add('[data-cta="hero"]', local);
+})();
+</script>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
+<script defer src="/ref-bridge.js"></script>
+</body>
+</html>

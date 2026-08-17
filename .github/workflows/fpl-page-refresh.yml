@@ -1,0 +1,160 @@
+# FPL-landing-sivun (fpl.html) viikoittainen data-refresh — SEO/GEO-freshness.
+#
+# MIKSI: fpl.html:n taulut (CS% + FDR) ja track record on BAKATTU staattiseen
+# HTML:ään (crawlerit + AI-moottorit lukevat initial HTML:n, ei JS-fetchiä).
+# Tämä workflow regeneroi sivun mainissa olevasta datasta ja committaa →
+# GitHub Pages servaa tuoreen version. Tuore sisältö = SEO/GEO-freshness-signaali.
+#
+# DATAKETJU (ei laskentaa täällä, stdlib-only, ei pip installia):
+#   - data/fpl_projections_phase0.json: Villen lokaali Task Scheduler
+#     (GoalIQ-FPL-Phase0-refresh, ma 09:00 EEST) buildaa + Ville pushaa
+#     manuaalisesti (builderissa EI auto-pushia, sanity-gate).
+#   - data/accuracy.json: accuracy-log.yml päivittää mainiin 3 h välein.
+#   → Tämä ajo (ma 09:30 UTC) poimii tuoreimman mainista. Vaikka FPL-JSON ei
+#     olisi päivittynyt, track record + lastmod päivittyvät viikoittain.
+#
+# FAIL-SAFE: build_fpl_page.py exit 2 jos FPL-data ei available / sanity_gate
+# FAIL → sivua ei kirjoiteta, vanha jää voimaan. continue-on-error alla estää
+# workflow-failure-spämmin; commit-step on diff-vartioitu.
+#
+# HUOM: [skip ci] commit-viestissä — data-commit, ei CI-tarvetta, ja Render
+# ignoroi (fpl.html ei kuulu API:in). Rebase-retry sama kuin accuracy-log.yml
+# (main jaettu accuracy-login kanssa).
+
+name: fpl-page-refresh
+
+on:
+  schedule:
+    # PÄIVITTÄIN 09:30 UTC (Villen päätös 1.8.2026). Oli ma-viikoittainen, mutta
+    # etusivun projektiotaulukko lupaa tuoretta dataa ja hinnat/omistus/xP
+    # liikkuvat joka päivä — viikkotahti teki lupauksesta valheellisen.
+    # Ajoitus: fpl-data-refresh rakentaa data/fpl_xp_projections.json 09:15 UTC,
+    # tämä lukee sen 15 min myöhemmin. Älä siirrä aikaisemmaksi.
+    - cron: "30 9 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: fpl-page-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  bake-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      # 17.8: RIIPPUVUUDET ON ASENNETTAVA. Tassa luki aiemmin "Stdlib-only,
+      # EI pip installia", ja se oletus piti paikkansa siihen asti kunnes
+      # 9.8. (`f6418b8e`) build_fpl_page.py alkoi importata
+      # `scripts.build_fpl_phase0`:aa saadakseen `map_name`in. Se vetaa
+      # numpyn, pandasin ja koko loader-ketjun. Bake kaatui siita paivasta
+      # lahtien joka ajolla `ModuleNotFoundError: No module named 'numpy'`.
+      # Sama lista kuin fpl-data-refreshissa, jotta ne eivat ajaudu erilleen.
+      - name: Install builder deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pandas>=2.1" "numpy>=1.26" "scipy>=1.11"             "statsmodels>=0.14" "requests>=2.31" "soccerdata>=1.8"             "python-dotenv>=1.0" "tqdm>=4.66"
+
+      # 🔴 `continue-on-error: true` OLI TASSA JA SE PIILOTTI YLLAOLEVAN
+      # KAHDEKSAN PAIVAA. Bake kaatui exit 1:lla, askel merkittiin
+      # onnistuneeksi, commit-askel naki "ei muutoksia" ja ohitti itsensä,
+      # ja deploy-verify vertasi livea VANHENTUNEESEEN HEADiin ja meni lapi.
+      # Tulos: vihrea workflow joka ei tehnyt mitaan, ja fpl.html:n luvut
+      # jaatyivat 9.8:aan (Arsenal 60,7 % kun malli sanoi 57,9 %).
+      #
+      # Exit 2 on YHA laillinen ohitus (build_fpl_page.py:n oma fail-safe kun
+      # FPL-data ei ole available / sanity gate ei mene lapi). Kaikki muu
+      # nollasta poikkeava on vika ja kaataa ajon.
+      - name: Bake fpl.html from repo data
+        run: |
+          set +e
+          python scripts/build_fpl_page.py
+          rc=$?
+          set -e
+          if [ "$rc" = "0" ]; then
+            echo "Bake OK."
+          elif [ "$rc" = "2" ]; then
+            echo "::notice::build_fpl_page.py exit 2 = fail-safe (FPL-data ei available). Ohitetaan."
+          else
+            echo "::error::build_fpl_page.py kaatui exit $rc - bake EI ajanut."
+            exit "$rc"
+          fi
+
+      - name: Commit + push to main (Pages serves fresh page)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add fpl.html sitemap.xml sitemap-core.xml index.html
+          if git diff --cached --quiet; then
+            echo "Ei muutoksia (data ennallaan tai bake fail-safe) — ohitetaan commit."
+            exit 0
+          fi
+          git commit -m "geo(fpl): weekly FPL-landing data refresh [skip ci]"
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                echo "Pushed to main (yritys $i) → Pages päivittyy."
+                exit 0
+              fi
+            else
+              git rebase --abort 2>/dev/null || true
+            fi
+            echo "Push-yritys $i epäonnistui (kilpailu?) — rebase + retry."
+            sleep 5
+          done
+          echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
+          exit 1
+
+      # Deploy-verify (P1 5.7): Pages-deploy failaa transientisti (~40 %
+      # 4.-5.7) → varmista että live goaliq.app todella servaa HEADin
+      # fpl.html+index.html:n ennen kuin workflow on vihreä. Hash-vertailu
+      # kestää superseeding-deployt (myöhempi commit ei muuta näitä
+      # tiedostoja → hash sama). Fail → punainen workflow + Pages-failuren
+      # oma deployment_status laukaisee pages-deploy-autoheal-rerunin.
+      - name: Deploy-verify — live servaa HEAD-sisällön
+        run: |
+          set -e
+          want_fpl=$(md5sum fpl.html | cut -d' ' -f1)
+          want_idx=$(md5sum index.html | cut -d' ' -f1)
+          echo "Odotetut hashit: fpl=$want_fpl index=$want_idx"
+          # Cloudflare injektoi challenge-platform-skriptin juuri ennen </body>,
+          # ja siina on PER-PYYNTO vaihtuva tunniste (__CF$cv$params r:'...').
+          # Siksi koko tiedoston md5 ei voi koskaan tasmata, ei edes onnistuneen
+          # deployn jalkeen. Riisutaan injektio ennen vertailua.
+          # Verifioitu 17.8: riisuttu live == repon tiedosto bittitarkasti, sed ei
+          # muuta repon tiedostoa, ja injektoitu sisaltomuutos jaa yha kiinni.
+          CF_STRIP='s|<script>(function(){function c(){var b=a\.contentDocument.*</script>||'
+
+          # 17.8: -L ON PAKOLLINEN. Hub siirtyi 15.8 Cloudflare Pagesiin, joka
+          # 308-ohjaa .html-URLit puhtaisiin polkuihin. Ilman -L curl palauttaa
+          # TYHJAN bodyn, jonka md5 on d41d8cd98f00b204e9800998ecf8427e - eli
+          # tama askel vertasi HEADia tyhjaan merkkijonoon ja epaonnistui joka
+          # ajolla siirron jalkeen. Vika nayttaytyi "Pages-deploy failasi"
+          # -virheena, mika osoitti vaaraan suuntaan.
+          for i in $(seq 1 24); do
+            got_fpl=$(curl -sfL --max-time 20 "https://goaliq.app/fpl.html"   | sed "$CF_STRIP" | md5sum | cut -d' ' -f1 || echo "fetch-fail")
+            got_idx=$(curl -sfL --max-time 20 "https://goaliq.app/index.html" | sed "$CF_STRIP" | md5sum | cut -d' ' -f1 || echo "fetch-fail")
+            if [ "$got_fpl" = "$want_fpl" ] && [ "$got_idx" = "$want_idx" ]; then
+              echo "OK (yritys $i): live-sisältö = HEAD. Deploy verifioitu."
+              exit 0
+            fi
+            echo "Yritys $i/24: live != HEAD (fpl=$got_fpl idx=$got_idx) — odotetaan 20 s..."
+            sleep 20
+          done
+          echo "VIRHE: goaliq.app ei servaa HEAD-sisältöä 8 min kuluttua."
+          echo "Pages-deploy todennäköisesti failannut — autoheal rerunaa;"
+          echo "jos tämä toistuu, tarkista Actions: pages build and deployment."
+          exit 1

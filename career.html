@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your FPL Career Card | GoalIQ</title>
+<meta name="description" content="Turn your FPL career into a shareable card: best season, all-time points and rank history, plus a GoalIQ model read on your squad in season. Free, no login - just your public FPL entry ID." />
+<link rel="canonical" href="https://goaliq.app/career" />
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/brand/goaliq-favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
+
+<!-- Open Graph / social preview -->
+<meta property="og:title" content="Your FPL Career Card | GoalIQ" />
+<meta property="og:description" content="Your FPL career on one card: best season, all-time points and rank history. Free, no login." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://goaliq.app/career" />
+<meta property="og:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@goaliqapp" />
+<meta name="twitter:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<meta name="theme-color" content="#0B0A09">
+
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true});
+posthog.register({platform:'web',source_app:'goaliq-static'});
+posthog.capture('web_landing_viewed',{page:location.pathname});
+</script>
+
+<style>
+  :root {/* 1 Aug 2026: magenta was removed from the palette; these replacement tokens were referenced but missing from :root. */--amber:#F5C542;--ember:#FF8A5C;--cream:#F3F2F2;
+    --bg: #0B0A09;
+    --bg-alt: #1F1D1A;
+    --card: #141311;
+    --ink: #F3F2F2;
+    --ink-2: #F3F2F2;
+    --line: rgba(243,242,242,0.24);
+    --text: #F3F2F2;
+    --muted: #A8A29A;
+    --hero-muted: #A8A29A;
+    --teal: #2ED6C2;
+    --teal-ink: #2ED6C2;
+    --radius: 2px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: clip; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    /* #78: body text moves to a readable system sans - Space Grotesk is a
+       display font and stays in headings, buttons and the card's canvas
+       type (the point of the split). */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .logo, .btn, .nav-cta {
+    font-family: "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  /* 2 Aug: this page had no global link rule at all -> body links rendered
+     browser-default blue in the middle of the dark teletext theme.
+     Underline stays (in body text color must not be the only distinction);
+     .hint a, footer a and .nav-cta override this with their own rules. */
+  a { color: var(--teal-ink); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 80px; }
+  /* Tumma ink-hero (redesign 24.7): sama gradientti + 6px magenta-raita kuin index.html */
+  /* 2 Aug: the banner was WHITE and the text drowned in it. On this page
+     --cream AND --ink are both #F3F2F2, so background and text were the
+     same color. Before 1 Aug --cream was missing from :root -> var(--cream)
+     was invalid -> the background stayed dark and the bug was invisible;
+     ADDING the missing token exposed it. The theme is dark teletext
+     (index.html), so the hero uses --bg and separates with an underline. */
+  .hero-shell {
+    background: var(--bg);
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero-shell .wrap { padding-bottom: 52px; }
+  .hero-shell h1 { color: var(--ink); }
+  .hero-shell .lede { color: var(--hero-muted); }
+  .hero-shell + .wrap { padding-top: 12px; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+  .logo { display: flex; align-items: center; gap:0; font-weight: 700; font-size: 20px; text-decoration: none; color: inherit; }
+  .logo span { color: var(--amber); }
+  .logo-mark-img { margin-right:10px; width: 32px; height: 32px; border-radius: 0; display: block; }
+  .nav-cta { background: transparent; color: var(--gold-deep,#F5C542); border: 1px solid var(--gold,#F5C542); font-weight: 700; padding: 10px 18px; border-radius: 0; text-decoration: none; font-size: 14px; }
+  .nav-cta:hover { background: rgba(245,197,66,0.14); }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.02em; margin: 44px 0 14px; }
+  h1 span { color: var(--gold-deep,#F5C542); }
+  .lede { font-size: 18px; color: var(--muted); max-width: 56ch; line-height: 1.7; }
+  .entry-form { margin: 28px 0 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .entry-form input {
+    flex: 1 1 220px; font: inherit; font-size: 17px; padding: 12px 16px;
+    border: 1px solid var(--line); border-radius: 0; background: var(--card); color: var(--text);
+  }
+  .entry-form input:focus { outline: 2px solid var(--amber); border-color: transparent; }
+  .btn {
+    display: inline-block; border: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: 16px;
+    background: transparent; color: var(--gold-deep,#F5C542); border: 1px solid var(--gold,#F5C542); padding: 12px 24px; border-radius: 0; text-decoration: none;
+  }
+  .btn:hover { background: rgba(245,197,66,0.14); }
+  .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .btn.secondary:hover { background: var(--bg-alt); }
+  .hint { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 62ch; margin-top: 2px; }
+  .hint a { color: var(--teal-ink); }
+  .status { margin: 18px 0; font-size: 15px; color: var(--muted); min-height: 1.4em; }
+  .status.error { color: var(--ember); font-weight: 500; }
+  .card-stage { display: none; margin-top: 8px; }
+  .card-stage.visible { display: block; }
+  #cardCanvas {
+    width: 100%; max-width: 432px; height: auto; display: block;
+    border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: 0 12px 40px rgba(10,8,32,0.10);
+  }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 8px; }
+  .fineprint { font-size: 13px; color: var(--muted); margin-top: 14px; max-width: 60ch; line-height: 1.6; }
+  .get-app { margin-top: 44px; padding: 24px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+  .get-app h2 { font-size: 20px; margin-bottom: 6px; }
+  .get-app p { color: var(--muted); font-size: 15px; margin-bottom: 14px; }
+  .store-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 28px 20px; text-align: center; margin-top: 60px; }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--amber); }
+/* GEN:MOBILE-CSS */
+/* Note shown only on narrow screens. Hidden by default so that pages on
+   wide screens do not change at all. */
+.m-only{display:none;}
+
+@media (max-width:560px){
+  .m-only{display:block;}
+
+  /* --- 1. NAV ----------------------------------------------------------
+     Bug: nav{justify-content:space-between} plus two inflexible children.
+     At 390px the brand and the link pair do not fit on one line, so both
+     wrapped internally instead: "GoalIQ" broke below the logo and the
+     "Try it live" button text spilled outside the button.
+     Fix: allow wrapping BETWEEN elements, not inside them. */
+  nav,.nav{flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px;}
+  .brand{font-size:18px;white-space:nowrap;flex:0 0 auto;}
+  .brand-icon{width:20px;height:20px;margin-right:6px;}
+  nav>span,.nav>span{flex:1 1 100%;font-size:13px;}
+  .nav-cta{display:inline-block;white-space:nowrap;padding:8px 14px;}
+
+  /* --- 2. MATCH ROWS ---------------------------------------------------
+     Bug: .mrow is a flex row where the team name took three lines and the
+     probability floated right at a different height, so the row could not
+     be read left to right. Fix: stack it. */
+  .mrow{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;}
+  .mrow>div{width:100%;}
+  /* Stacking shortened the match links (the name now fits on one line),
+     which dropped the touch target below 32px. Full width plus vertical
+     padding brings the row back to fingertip size. */
+  .mrow a{display:block;width:100%;padding:7px 0;}
+  .pick{font-size:14px;}
+
+  /* --- 3. TABLES: column priority (option (a), chosen 9 Aug) -----------
+     Builders mark the less important columns with .m-hide; on a narrow
+     screen only the key columns show. The full table stays unchanged on
+     wider screens. */
+  th.m-hide,td.m-hide{display:none;}
+
+  /* ...BUT hidden must not mean unreachable (raised 9 Aug). The trimming is
+     a DEFAULT, not an end state: "Show all columns" restores every column
+     in every table at once, and the table then scrolls horizontally just
+     as it does on a wide screen. Higher specificity inside the same media
+     query -> wins regardless of order. */
+  body.cols-all th.m-hide,body.cols-all td.m-hide{display:table-cell;}
+  body.cols-all .m-only{display:none;}
+
+  /* Bring a hidden column's number back into the row as a subline (10 Aug).
+     The column does not fit as a 5th column at 390px, but "Show all
+     columns" is two interactions too far from a number nobody knows to
+     look for yet. The subline gives the same number without the column,
+     and because it is .m-only it DISAPPEARS when the column comes back ->
+     the number is never shown twice. */
+  td .m-sub{font-size:11px;font-weight:400;opacity:.72;padding-top:2px;}
+
+  .colstoggle{display:inline-block;margin:10px 0 4px;padding:9px 14px;
+    min-height:40px;border:1px solid var(--line-strong,rgba(128,128,128,.5));
+    background:transparent;color:inherit;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;border-radius:0;}
+  .colstoggle[aria-pressed="true"]{border-color:var(--amber,#F5C542);
+    color:var(--amber,#F5C542);}
+
+  /* Long text cells may wrap; numbers may not (tabular-nums breaks down and
+     "1.25" would split across two lines). */
+  .lb th,.lb td,.scroll table th,.scroll table td{white-space:normal;}
+  .lb th.n,.lb td.n,.scroll table th.num,.scroll table td.num{
+    white-space:nowrap;}
+  .lb{font-size:13px;}
+  /* Horizontal padding 8px -> 5px. Measured: stats.html still came out at
+     404px (30px over) after the context columns were hidden, and across
+     nine columns the padding alone was 144px. Tighter padding keeps the
+     column; dropping a column would have lost information. */
+  .lb th,.lb td{padding:7px 5px;}
+
+  /* The tables' min-width forced scrolling even when enough columns were
+     hidden that the rest would have fit. */
+  .lb-wrap>.lb,.scroll>table,.table-wrap>table,.rec-scroll>table{
+    min-width:0;}
+  table{min-width:0;}
+
+  /* SILENT TRUNCATION (9 Aug, only ever caught in a screenshot):
+     width:auto + min-width:0 shrank the table to EXACTLY the wrapper
+     (tableW=374=wrapClient), so nowrap number columns no longer fit their
+     cells and "28.17" rendered as "28.". The table was not overwide and
+     the wrapper did not scroll, so NEITHER a width measurement NOR a
+     scrollWidth check could see this. Only the eye could.
+     width:max-content forces the table to its natural width: if it does not
+     fit, the wrapper scrolls visibly instead of data disappearing in
+     silence. Visible scrolling is bad, a quietly lost number is worse. */
+  .lb-wrap>.lb{width:max-content;max-width:none;}
+  /* SPECIFICITY WARNING: BYCOMP_CSS is injected into fpl.html and
+     predictions.html as its OWN <style> element LATER in the page, so it
+     beats this block on document order. A media query does not raise
+     specificity, so .rec-scroll table (0,1,1) would not be enough to
+     override its min-width:640px. The div. prefix raises it to (0,1,2) and
+     makes the rule order-independent. */
+  div.rec-scroll table{min-width:0;}
+  /* The match name was nowrap ("Nottingham Forest v Crystal Palace" =
+     277px on one line), which alone made the track record table three
+     screens wide. */
+  div.rec-scroll td.team,.scroll td.team{white-space:normal;}
+  div.rec-scroll th,div.rec-scroll td{padding:7px 6px;font-size:13px;}
+  /* Kick-off was "2026-08-21 19:00:00 UTC" on one line = 195px, so a single
+     column took a third of the phone's width. These values are dates rather
+     than numbers that need aligning, so wrapping is safe here. */
+  div.rec-scroll td.num,div.rec-scroll th.num{white-space:normal;}
+  /* An FDR grid cell is "ARS (H) 60%" = three parts on one line. nowrap kept
+     the grid at 472px even after columns had been hidden; a wrapping cell
+     takes two lines and halves the width. */
+  .fdr-grid td.num,.scroll td.num .fdr,.fdr{white-space:normal;}
+  .fdr{min-width:0;}
+
+  /* Scroll hint: appears only where the builder adds it, that is, in tables
+     that still scroll after columns have been hidden. */
+  .scrollhint{display:block;color:var(--muted,#A8A29A);font-size:12px;
+    margin:6px 0 0;}
+
+  /* --- 4. FILTER CHIPS -------------------------------------------------
+     Bug: .chips{display:inline-flex} without wrapping -> the chip row was
+     454px, and because html/body is overflow-x:clip the last chip ("Set
+     pieces") was physically unreachable on a phone.
+     Fix: allow wrapping, and give each filter group its own line. */
+  .lbctl{gap:6px 8px;}
+  .lbctl .lbl{flex:1 1 100%;margin:10px 0 0;}
+  .lbctl .lbl:first-child{margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;}
+  .chip{min-height:36px;}
+  .lbctl select,.lbctl input{min-height:36px;max-width:100%;}
+
+  /* --- 5. READABILITY --------------------------------------------------
+     12px monospace is below the readable limit on a phone. */
+  .meta,.note,.stat span,.legend,.mrow .meta,footer{font-size:13px;}
+  .hero .lede,.lede{font-size:16px;}
+  .stat b{font-size:24px;}
+
+  /* --- 6. TOUCH TARGETS ------------------------------------------------ */
+  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+    justify-content:center;}
+  .toolnav a{display:inline-block;padding:4px 0;}
+}
+
+/* Very narrow (e.g. iPhone SE 375px / Galaxy Fold cover screen 344px):
+   the brand and the CTA do not fit even when scaled down, and the hero
+   heading overflows if it contains long words. */
+@media (max-width:400px){
+  .wrap{padding-left:14px;padding-right:14px;}
+  .hero h1,h1{font-size:26px;overflow-wrap:break-word;}
+  .brand{font-size:17px;}
+  /* The font is NOT dropped to 12px here. Tried and measured 9 Aug: it took
+     1200 cells below 13px, which is under the readable limit, and hiding
+     columns was already enough to fit the tables without it.
+     Padding is tightened instead: stats.html is the densest table
+     (9 visible columns) and came out at 404px with 6px padding, i.e. 14px
+     over the phone's width. Its natural width (width:max-content) is 383px
+     at 4px padding; 3px takes it to 365px, which fits the wrapper (374). */
+  .lb th,.lb td{padding:6px 3px;}
+}
+/* /GEN:MOBILE-CSS */
+</style>
+
+<!-- #85 GEO: page-level structured data (the page had no JSON-LD at all).
+     Organization = same @id as the front page (compact copy, no drift). -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "Organization",
+ "@id": "https://goaliq.app/#organization",
+ "name": "GoalIQ",
+ "url": "https://goaliq.app/",
+ "logo": "https://goaliq.app/assets/brand/goaliq-appicon-512.png",
+ "sameAs": [
+  "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
+  "https://apps.apple.com/app/id6780047163",
+  "https://x.com/goaliqapp",
+  "https://www.tiktok.com/@goaliqfpl",
+  "https://www.instagram.com/goaliqfpl/"
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebApplication",
+ "name": "FPL Career Card by GoalIQ",
+ "url": "https://goaliq.app/career",
+ "applicationCategory": "SportsApplication",
+ "operatingSystem": "Any (web browser)",
+ "isAccessibleForFree": true,
+ "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+ "description": "Turn your public FPL entry ID into a shareable career card: best season, all-time points and rank history, plus a GoalIQ model read on your squad in season. Free, no login.",
+ "author": {"@id": "https://goaliq.app/#organization"}
+}
+</script>
+</head>
+<body>
+<div class="hero-shell">
+<div class="wrap">
+  <nav>
+    <a class="logo" href="https://goaliq.app/"><svg class="logo-mark-img" width="32" height="32" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a>
+    <a class="nav-cta" href="https://goaliq.app/fpl.html">FPL tools</a>
+  </nav>
+
+  <h1>Your FPL career, <span>on one card</span></h1>
+  <p class="lede">Your best season, all-time points and rank history on one shareable card. Free, no login - all it needs is your public FPL entry ID. Want the model's read on your squad before a ball is kicked? The <a href="https://goaliq.app/fpl.html">pre-season draft rater and fit checker</a> work right now, no team ID needed.</p>
+</div>
+</div>
+<div class="wrap">
+  <form class="entry-form" id="entryForm">
+    <input id="entryInput" type="number" inputmode="numeric" min="1" placeholder="Your FPL entry ID, e.g. 1578623" aria-label="FPL entry ID" required>
+    <button class="btn" type="submit">Build my card</button>
+  </form>
+  <p class="hint">Find your ID in the FPL site or app: Points page URL looks like <code>fantasy.premierleague.com/entry/<strong>1578623</strong>/event/38</code> - the number is your entry ID.</p>
+
+  <p class="status" id="status" role="status"></p>
+
+  <div class="card-stage" id="cardStage">
+    <canvas id="cardCanvas" width="1080" height="1350" aria-label="Your FPL career card"></canvas>
+    <div class="actions">
+      <button class="btn" id="shareBtn" type="button">Share card</button>
+      <button class="btn secondary" id="downloadBtn" type="button">Download PNG</button>
+      <button class="btn secondary" id="copyLinkBtn" type="button">Copy link</button>
+    </div>
+    <p class="fineprint">The squad projection uses GoalIQ model expected points against the best squad the rules allow inside the 100.0m budget - not FPL official numbers. For fun, not betting advice.</p>
+  </div>
+
+  <div class="get-app" id="get">
+    <h2>Get GoalIQ: FPL Assistant - free on iOS &amp; Android</h2>
+    <p>Free FPL tools: clean sheet probability, fixture difficulty, rate my team and price watch, plus match predictions with a public track record. Premium adds player xP, a gameweek planner and transfer suggestions; one subscription covers web, iOS and Android.</p>
+    <div class="store-links">
+      <a class="btn" href="https://apps.apple.com/app/id6780047163" data-cta="career-ios">App Store</a>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq" data-cta="career-android">Google Play</a>
+      <a class="btn secondary" href="https://goaliq.app/">goaliq.app</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 GoalIQ · Made in Lahti, Finland &middot; <a href="/predictions">Match predictions</a> &middot; <a href="/fpl.html">FPL clean sheets &amp; FDR</a> &middot; <a href="https://pro.goaliq.app">GoalIQ Premium (web)</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/faq.html">FAQ</a> &middot; <a href="/creators">Creator program</a> &middot; <a href="#get">Get the app</a>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  // Local dev points at the local API; production at our own domain.
+  // 27 Jul: off the shared *.onrender.com zone - a Finnish ISP's resolver
+  // blocked the whole zone (NXDOMAIN) and this page crashed for that
+  // ISP's users.
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:8000'
+    : 'https://api.goaliq.app';
+  var canvas = document.getElementById('cardCanvas');
+  var ctx = canvas.getContext('2d');
+  var statusEl = document.getElementById('status');
+  var stage = document.getElementById('cardStage');
+  var currentEntry = null;
+  var accuracyLine = null; // fetched live, never hardcoded (stale guard)
+
+  // 26 Jul CLASSIC: the card palette was still old (bluish ink #F3F2F2,
+  // warm cream #0B0A09, bluish muted #A8A29A) - the constants live in JS,
+  // so the CSS token passes never saw them. Fonts were already Cormorant.
+  // Magenta stays: here it is the mark (IQ), the 14px top bar line and
+  // the box border - not a fill, so within the look's rule.
+  var INK = '#F3F2F2', CREAM = '#0B0A09', MAGENTA = '#F5C542',
+      MUTED = '#A8A29A', WHITE = '#141311', LINE = 'rgba(243,242,242,0.24)';
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg || '';
+    statusEl.className = 'status' + (isError ? ' error' : '');
+  }
+
+  function fmtRank(r) {
+    if (r == null) return '-';
+    if (r >= 1e6) return (r / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (r >= 1e4) return Math.round(r / 1e3) + 'k';
+    return r.toLocaleString('en-GB');
+  }
+  function fmtPts(p) { return p == null ? '-' : p.toLocaleString('en-GB'); }
+
+  function fetchAccuracy() {
+    return fetch(API + '/api/accuracy').then(function (r) { return r.json(); })
+      .then(function (a) {
+        var at = a && a.all_time;
+        if (at && at.pct_1x2 && at.n) {
+          accuracyLine = (100 * at.pct_1x2).toFixed(1) + '% of results called right across ' + at.n + ' logged matches';
+        }
+      }).catch(function () { /* trust-rivi jaa yleiseksi */ });
+  }
+
+  function font(px, weight) { return (weight || 400) + ' ' + px + 'px "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; }
+
+  function fitText(text, maxPx, startSize, weight) {
+    var size = startSize;
+    ctx.font = font(size, weight);
+    while (size > 24 && ctx.measureText(text).width > maxPx) {
+      size -= 2;
+      ctx.font = font(size, weight);
+    }
+    return size;
+  }
+
+  function statBlock(x, y, label, value, valueSize, maxW) {
+    ctx.fillStyle = MUTED;
+    ctx.font = font(26, 500);
+    ctx.fillText(label.toUpperCase(), x, y);
+    ctx.fillStyle = INK;
+    var vs = valueSize || 64;
+    if (maxW) vs = fitText(value, maxW, vs, 700);
+    ctx.font = font(vs, 700);
+    ctx.fillText(value, x, y + (valueSize || 64) + 14);
+  }
+
+  function drawCard(d) {
+    var W = 1080, H = 1350, PAD = 72;
+    ctx.clearRect(0, 0, W, H);
+    ctx.textBaseline = 'alphabetic';
+
+    // Tausta + magenta-yläpalkki
+    ctx.fillStyle = CREAM;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = MAGENTA;
+    ctx.fillRect(0, 0, W, 14);
+
+    // Header: GoalIQ-wordmark + kortin nimi
+    ctx.fillStyle = INK;
+    ctx.font = font(44, 700);
+    ctx.fillText('Goal', PAD, 104);
+    var gw = ctx.measureText('Goal').width;
+    ctx.fillStyle = MAGENTA;
+    ctx.fillText('IQ', PAD + gw, 104);
+    ctx.fillStyle = MUTED;
+    ctx.font = font(28, 500);
+    ctx.textAlign = 'right';
+    ctx.fillText('FPL CAREER CARD', W - PAD, 104);
+    ctx.textAlign = 'left';
+
+    // Manager
+    var name = (d.manager && d.manager.name) || ('FPL entry ' + d.meta.entry);
+    var sz = fitText(name, W - 2 * PAD, 76, 700);
+    ctx.fillStyle = INK;
+    ctx.font = font(sz, 700);
+    ctx.fillText(name, PAD, 218);
+    // Empty/whitespace name -> the subtitle row is dropped entirely (no placeholder).
+    var teamName = String((d.manager && d.manager.team_name) || '').trim();
+    if (teamName) {
+      var tsz = fitText(teamName, W - 2 * PAD, 40, 500);
+      ctx.fillStyle = MAGENTA;
+      ctx.font = font(tsz, 500);
+      ctx.fillText(teamName, PAD, 270);
+    }
+    var s = d.summary || {};
+    ctx.fillStyle = MUTED;
+    ctx.font = font(30, 400);
+    var sinceBits = [];
+    if (s.since) sinceBits.push('Manager since ' + s.since);
+    if (s.seasons_played) sinceBits.push(s.seasons_played + ' season' + (s.seasons_played > 1 ? 's' : ''));
+    ctx.fillText(sinceBits.join('  ·  '), PAD, 322);
+
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(PAD, 360); ctx.lineTo(W - PAD, 360); ctx.stroke();
+
+    // Statit 2x2 (colW estää sarakkeiden ylivuodon - fitText kaventaa arvon)
+    var colX = [PAD, W / 2 + 20];
+    var colW = W / 2 - PAD - 40;
+    statBlock(colX[0], 432, 'All-time points', fmtPts(s.all_time_points), 84, colW);
+    statBlock(colX[1], 432, 'Best overall rank', fmtRank(s.best_rank), 84, colW);
+    var bs = s.best_season;
+    statBlock(colX[0], 640, 'Best season',
+      bs ? (bs.season + '  ·  ' + fmtPts(bs.points) + ' pts') : '-', 52, colW);
+    var lat = d.latest_season || {};
+    if (lat.available) {
+      var latLabel = lat.finished ? ('Last season' + (lat.season ? ' (' + lat.season + ')' : '')) : 'This season';
+      var latVal = fmtPts(lat.total_points) + ' pts';
+      // The 'pts' unit separates a points total from a gameweek number (GWs are 1-38).
+      if (lat.best_gw) latVal += '  ·  best GW: ' + lat.best_gw.points + ' pts';
+      statBlock(colX[1], 640, latLabel, latVal, 52, colW);
+    } else {
+      statBlock(colX[1], 640, 'New season', 'Starts GW1', 52, colW);
+    }
+
+    // Model teaser box (only if the backend returned it - no placeholder)
+    var boxTop = 790, boxH = 300;
+    var t = d.model_teaser;
+    if (t) {
+      ctx.fillStyle = WHITE;
+      ctx.strokeStyle = MAGENTA;
+      ctx.lineWidth = 3;
+      roundRect(PAD - 8, boxTop, W - 2 * PAD + 16, boxH, 24);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = MAGENTA;
+      ctx.font = font(26, 700);
+      ctx.fillText('GOALIQ MODEL READ ON YOUR SQUAD', PAD + 28, boxTop + 62);
+      ctx.fillStyle = INK;
+      ctx.font = font(58, 700);
+      ctx.fillText('Projected GW' + t.gw + ' xP ' + Number(t.team_xp_gw).toFixed(1), PAD + 28, boxTop + 138);
+      ctx.font = font(40, 500);
+      ctx.fillText(Number(t.percentile).toFixed(0) + '% of the best possible budget squad', PAD + 28, boxTop + 196);
+      ctx.fillStyle = MUTED;
+      ctx.font = font(25, 400);
+      var trust = accuracyLine
+        ? 'Same match model behind GoalIQ’s ' + accuracyLine + '.'
+        : 'Same match model behind GoalIQ’s public pre-match-logged track record.';
+      wrapText(trust, PAD + 28, boxTop + 248, W - 2 * PAD - 40, 32);
+    } else {
+      // Esikausi/teaseriton: kausilista täyttää tilan
+      ctx.fillStyle = MUTED;
+      ctx.font = font(26, 500);
+      ctx.fillText('SEASON BY SEASON', PAD, boxTop + 20);
+      ctx.fillStyle = INK;
+      ctx.font = font(34, 500);
+      var rows = (d.past_seasons || []).slice(-6).reverse();
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        ctx.fillText(r.season + '   ' + fmtPts(r.points) + ' pts   rank ' + fmtRank(r.rank),
+          PAD, boxTop + 76 + i * 46);
+      }
+      if (!rows.length) {
+        ctx.fillText('First season loading - good luck for GW1!', PAD, boxTop + 76);
+      }
+    }
+
+    // CTA-footer
+    ctx.fillStyle = INK;
+    ctx.fillRect(0, H - 190, W, 190);
+    ctx.fillStyle = CREAM;
+    ctx.font = font(40, 700);
+    ctx.fillText('Get GoalIQ - free on iOS & Android', PAD, H - 108);
+    ctx.fillStyle = MAGENTA;
+    ctx.font = font(30, 500);
+    ctx.fillText('goaliq.app/career', PAD, H - 56);
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function wrapText(text, x, y, maxW, lineH) {
+    var words = text.split(' '), line = '', yy = y;
+    for (var i = 0; i < words.length; i++) {
+      var test = line ? line + ' ' + words[i] : words[i];
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, yy);
+        line = words[i];
+        yy += lineH;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, x, yy);
+  }
+
+  function build(entry) {
+    currentEntry = entry;
+    setStatus('Fetching your FPL history…');
+    stage.classList.remove('visible');
+    var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    Promise.all([
+      fetch(API + '/api/fantasy/career?entry=' + encodeURIComponent(entry)),
+      fetchAccuracy(),
+      fontsReady
+    ]).then(function (res) {
+      var r = res[0];
+      if (!r.ok) {
+        return r.json().then(function (b) {
+          throw new Error((b && b.detail) || ('Request failed (' + r.status + ')'));
+        }, function () { throw new Error('Request failed (' + r.status + ')'); });
+      }
+      return r.json();
+    }).then(function (d) {
+      drawCard(d);
+      stage.classList.add('visible');
+      setStatus('');
+      if (window.posthog) posthog.capture('career_card_generated', { source: 'career_page' });
+      try {
+        var url = new URL(location.href);
+        url.searchParams.set('entry', entry);
+        history.replaceState(null, '', url.pathname + url.search);
+      } catch (e) { /* URL-päivitys on kosmetiikkaa */ }
+    }).catch(function (err) {
+      setStatus(err.message || 'Something went wrong. Try again in a moment.', true);
+    });
+  }
+
+  document.getElementById('entryForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var v = parseInt(document.getElementById('entryInput').value, 10);
+    if (v > 0) build(v);
+  });
+
+  document.getElementById('downloadBtn').addEventListener('click', function () {
+    canvas.toBlob(function (blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'goaliq-fpl-career-card.png';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      if (window.posthog) posthog.capture('career_card_downloaded', {});
+    }, 'image/png');
+  });
+
+  document.getElementById('shareBtn').addEventListener('click', function () {
+    canvas.toBlob(function (blob) {
+      var file = new File([blob], 'goaliq-fpl-career-card.png', { type: 'image/png' });
+      var shareUrl = 'https://goaliq.app/career' + (currentEntry ? '?entry=' + currentEntry : '');
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'My FPL Career Card', url: shareUrl })
+          .then(function () { if (window.posthog) posthog.capture('career_card_shared', { method: 'native' }); })
+          .catch(function () { /* peruutus on ok */ });
+      } else if (navigator.share) {
+        navigator.share({ title: 'My FPL Career Card', url: shareUrl })
+          .then(function () { if (window.posthog) posthog.capture('career_card_shared', { method: 'native_url' }); })
+          .catch(function () { /* peruutus on ok */ });
+      } else {
+        document.getElementById('downloadBtn').click();
+      }
+    }, 'image/png');
+  });
+
+  document.getElementById('copyLinkBtn').addEventListener('click', function () {
+    var link = 'https://goaliq.app/career' + (currentEntry ? '?entry=' + currentEntry : '');
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+      .then(function () {
+        setStatus('Link copied.');
+        if (window.posthog) posthog.capture('career_card_shared', { method: 'copy_link' });
+      })
+      .catch(function () { setStatus(link); });
+  });
+
+  document.querySelectorAll('[data-cta]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      if (window.posthog) posthog.capture('career_cta_clicked', { location: a.getAttribute('data-cta') });
+    });
+  });
+
+  // Jaettu linkki: ?entry=N -> rakenna kortti suoraan
+  var params = new URLSearchParams(location.search);
+  var pre = parseInt(params.get('entry') || '', 10);
+  if (pre > 0) {
+    document.getElementById('entryInput').value = pre;
+    build(pre);
+  }
+})();
+</script>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
+<script defer src="/ref-bridge.js"></script>
+</body>
+</html>

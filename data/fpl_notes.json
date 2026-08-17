@@ -1,0 +1,228 @@
+{
+  "_comment": [
+    "Kierrosmuistiot /fpl/notes-sivulle. YKSI URL joka kertyy, ei erillisia",
+    "sivuja per muistio: erillinen sivu jaisi orvoksi sisaisessa linkityksessa",
+    "(mitattu ongelma 15.8, ks. _TOOL_LINKS-kommentti build_fpl_longtail.py:ssa).",
+    "",
+    "JOKAINEN merkinta on kaynyt julkaisutarkistajan lapi ENNEN lisaamista, ja",
+    "sen luvut on ajettu uudelleen julkaisuhetkella. `claims` on lista niista",
+    "merkkijonoista jotka lukijan on loydettava `check_url`-sivulta.",
+    "scripts/check_claim_route.py ajaa sen, ja tests/test_fpl_notes.py vaatii",
+    "etta kentat ovat olemassa.",
+    "",
+    "Tekstia EI generoida. 15.8:n portti blokkasi koneelta kuulostavan version",
+    "neljalla tyylitunnusmerkilla; generaattori tuottaisi tasan ne.",
+    "",
+    "THIAW-POIKKEUS (kirjattu 15.8, julkaisutarkistajan suositus). Villen 10.8:n",
+    "saanto kieltaa Thiawin nostamisen nimena ja suosituksena. Erikoistilanne-",
+    "artikkelin taulukossa han on silti mukana, ja peruste on kolmiosainen:",
+    "1) han ei ole otsikossa eika og-kortissa, 2) vaite on paattynyt",
+    "historiatilasto (5.90 / 5.38) eika projektio, ja 10.8:n vastalause koski",
+    "hanen xG:nsa projisointia eteenpain, 3) han on koko liigan #1 set-piece",
+    "xG:lla, joten hanen poistamisensa olisi tarkistettavissa oleva puute",
+    "sivulla jonka koko lupaus on 'avaa ilmaissivu ja tarkista'.",
+    "",
+    "og_exclude: nimet jotka jatetaan pois JAKOKORTISTA vaikka ne ovat",
+    "artikkelin taulukossa. Kortti on markkinointikuva jossa nimi on nostettu,",
+    "taulukkorivi on dataa jonka lukija tarkistaa. Thiaw on kortissa poissa",
+    "10.8:n saannon takia mutta taulukossa mukana, ks. THIAW-POIKKEUS yllä."
+  ],
+  "notes": [
+    {
+      "slug": "gw1-team-news-75-percent-flag",
+      "date": "2026-08-15",
+      "title": "GW1 team news: a 75% flag is not a sell signal",
+      "check_url": "https://goaliq.app/fpl/team-news",
+      "claims": [
+        "61",
+        "15",
+        "Mukiele",
+        "4.3%",
+        "17.0",
+        "2.1%",
+        "11.3",
+        "Kroupi",
+        "Tavernier",
+        "26.1"
+      ],
+      "paragraphs": [
+        "61 players are ruled out for the GW1 deadline and 15 are doubtful. Only two of the doubtful are owned by more than 1%, so most of that list isn't your problem.",
+        "Mukiele is the one I'd look at. FPL has him 75% to play, 4.3% own him, and he's still the best six-gameweek projection on the entire doubtful list at 17.0, with the 75% already taken out of the number. The flag costs him less than the panic around it does.",
+        "Šeško is the other one over 1%. Same 75%, 2.1% owned, 11.3.",
+        "Kroupi is the most owned player who can't play at all, and Bournemouth's cover for him is Tavernier on 26.1. I'd move him and stop reading about it."
+      ],
+      "cta": "Full list, free, no sign-in"
+    },
+    {
+      "slug": "set-piece-xg-is-not-open-play-xg",
+      "date": "2026-08-15",
+      "title": "The DEF column hides two different jobs",
+      "check_url": "https://goaliq.app/fpl/stats",
+      "cta": "Open the stats page and check any of these",
+      "claims": [
+        "0.11",
+        "0.31",
+        "0.61",
+        "0.87",
+        "1.45",
+        "2.05",
+        "2.17",
+        "2.19",
+        "2.45",
+        "2.61",
+        "2.62",
+        "2.71",
+        "2.86",
+        "2.87",
+        "2.97",
+        "3.01",
+        "3.15",
+        "4.50",
+        "4.65",
+        "5.38",
+        "5.90",
+        "6.73",
+        "Dalot",
+        "Gabriel",
+        "Haaland",
+        "Hume",
+        "Lacroix",
+        "Mbeumo",
+        "Muñoz",
+        "O'Reilly",
+        "Sessegnon",
+        "Struijk",
+        "Tarkowski",
+        "Thiaw",
+        "Van de Ven"
+      ],
+      "paragraphs": [
+        "Everyone knows a centre-back's goals come from corners. That part isn't interesting. What I didn't expect is that the share is sharp enough to tell you which defenders are centre-backs in the first place.",
+        "Take the 23 defenders with at least 2.0 non-penalty xG. Ten are above 80% set pieces, six are below 50%, and the split is the one FPL doesn't draw for you. The ten are centre-backs. The six are full-backs and wing-backs. Nobody at all sits between 40% and 51%.",
+        "The neighbouring column says the same thing. Those ten centre-backs took between 8 and 26 headed shots last season. Five of the six full-backs took seven or fewer.",
+        "The one that breaks the pattern is also the one worth knowing. O'Reilly has the highest non-penalty xG of any defender in the league, 6.73, and only 22% of it is set pieces. The best attacking defender in the DEF column is on the wrong side of the stereotype.",
+        {
+          "h2": "The set-piece end"
+        },
+        {
+          "head": [
+            "Player",
+            "npxG",
+            "Set-piece xG",
+            "Share"
+          ],
+          "rows": [
+            [
+              "Gabriel",
+              "4.65",
+              "4.50",
+              "97%"
+            ],
+            [
+              "Lacroix",
+              "3.01",
+              "2.86",
+              "95%"
+            ],
+            [
+              "Thiaw",
+              "5.90",
+              "5.38",
+              "91%"
+            ],
+            [
+              "Tarkowski",
+              "2.87",
+              "2.61",
+              "91%"
+            ],
+            [
+              "Van de Ven",
+              "2.45",
+              "2.17",
+              "89%"
+            ],
+            [
+              "Struijk",
+              "2.97",
+              "2.62",
+              "88%"
+            ]
+          ]
+        },
+        {
+          "h2": "The open-play end"
+        },
+        {
+          "head": [
+            "Player",
+            "npxG",
+            "Set-piece xG",
+            "Share"
+          ],
+          "rows": [
+            [
+              "Dalot",
+              "2.19",
+              "0.87",
+              "40%"
+            ],
+            [
+              "O'Reilly",
+              "6.73",
+              "1.45",
+              "22%"
+            ],
+            [
+              "Muñoz",
+              "3.15",
+              "0.61",
+              "19%"
+            ],
+            [
+              "Hume",
+              "2.71",
+              "0.31",
+              "11%"
+            ],
+            [
+              "Sessegnon",
+              "2.05",
+              "0.11",
+              "5%"
+            ]
+          ]
+        },
+        {
+          "h2": "Why it matters"
+        },
+        "xG gets treated as one currency. You compare two players, the higher number wins, and for most of the league that's fine. Haaland's non-penalty xG is 10% set pieces. Mbeumo's is 2%.",
+        "For the defenders at the top of that first table the number comes from somewhere else. It depends on how many set pieces the team wins and on who is delivering them. Neither of those moves with the things that normally move a team's attack.",
+        "Take a club that sells its main striker. Open-play creation drops and the rating should drop with it. But the number of set pieces barely changes, and the centre-back who scores off them keeps scoring as long as the delivery is still there.",
+        {
+          "h2": "How I'd use it"
+        },
+        "If you're comparing two defenders on xG, look at what the xG is made of before you trust the gap. A 3.0 that's 90% set pieces and a 3.0 that's 30% set pieces are different bets, and the second one is closer to a normal attacking return.",
+        "And if a club changes who takes its corners, that's the transfer that should worry you about a set-piece defender, more than the striker leaving. The same view on the stats page lists the corner and free-kick taker order, so you can check who is on them now. I don't have a clean number for how much delivery quality matters, and I'd rather say that than invent one.",
+        {
+          "h2": "What this doesn't show"
+        },
+        "The shot data is 2025/26, not the season about to start, and some of the shares sit on thin samples. Van de Ven's 89% comes off 2.45 npxG, about two goals' worth of chances, and I wouldn't lean on it the way I'd lean on Gabriel's 4.65.",
+        "Set piece here means corners and free kicks, not corners alone, and the column doesn't split them. The centre-back and full-back labels are mine, not a column in the data.",
+        "Both columns are on our free stats page, no sign-in, but they sit in different views. Easiest route: type the name into \"Search player\", then switch between \"Goal threat\" for npxG and headed shots and \"Set pieces\" for Set-piece xG. If you want to sort the whole list instead, press \"Show all players\" first, because the table opens on the top 100 and several of the names above sit outside it on npxG. Basis is 2025/26, 400 players in this season's FPL squads.",
+        "goaliq.app/fpl/stats"
+      ],
+      "og_headline": [
+        "The best attacking defender",
+        "in FPL is 22% set pieces."
+      ],
+      "og_sub": "The DEF column hides two different jobs.",
+      "og_exclude": [
+        "Thiaw"
+      ],
+      "og_pin": [
+        "O'Reilly"
+      ]
+    }
+  ]
+}

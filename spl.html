@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Saudi Pro League Fantasy Tools: Free xP, Clean Sheets and FDR | GoalIQ</title>
+<meta name="description" content="Free model-based tools for RSL Fantasy, the official Saudi Pro League fantasy game: expected points per player, clean sheet probability and fixture difficulty from an independent match model. No login, no paywall." />
+<link rel="canonical" href="https://goaliq.app/spl" />
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/brand/goaliq-favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
+
+<!-- Open Graph / social preview -->
+<meta property="og:title" content="Saudi Pro League Fantasy Tools, free | GoalIQ" />
+<meta property="og:description" content="The first model-based xP for RSL Fantasy: expected points, clean sheet probability and fixture difficulty. Completely free." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://goaliq.app/spl" />
+<meta property="og:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@goaliqapp" />
+<meta name="twitter:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<meta name="theme-color" content="#0B0A09">
+<link rel="preconnect" href="https://pro.goaliq.app">
+
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true});
+posthog.register({platform:'web',source_app:'goaliq-static'});
+posthog.capture('web_landing_viewed',{page:location.pathname});
+</script>
+
+<!-- 2.8-konventio: pro.goaliq.app-linkkeihin src/srcp-lahdetagit (sama snippet
+     kuin muilla staattisilla sivuilla) -->
+<script>
+addEventListener('DOMContentLoaded',function(){
+  for (const a of document.querySelectorAll('a[href^="https://pro.goaliq.app"]')) {
+    try {
+      const u = new URL(a.href);
+      if (u.hostname !== 'pro.goaliq.app' || u.searchParams.has('src')) continue;
+      u.searchParams.set('src', a.dataset.cta || 'spl-page');
+      u.searchParams.set('srcp', 'spl');
+      a.href = u.toString();
+    } catch {}
+  }
+});
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "GoalIQ Saudi Pro League Fantasy Tools",
+  "url": "https://pro.goaliq.app/spl",
+  "applicationCategory": "SportsApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "description": "Free model-based tools for RSL Fantasy (Saudi Pro League): expected points per player per gameweek, captain picks, an optimized model squad, value and differential rankings, clean sheet probability and fixture difficulty from an independent Dixon-Coles match model.",
+  "publisher": { "@type": "Organization", "name": "GoalIQ", "url": "https://goaliq.app" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is GoalIQ's Saudi Pro League fantasy tool free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, completely free. No account, no login, no paywall. Expected points, clean sheet probability and fixture difficulty for RSL Fantasy are open to everyone at pro.goaliq.app/spl and in the GoalIQ app on iOS and Android." }
+    },
+    {
+      "@type": "Question",
+      "name": "What data does the SPL model use?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Team strengths come from a goals-based Dixon-Coles model fitted on two seasons of Saudi Pro League results. Player projections use realized goal and assist rates with RSL Fantasy's own scoring rules, and minutes are estimated from last season's aggregate playing time. No public per-match xG feed exists for the SPL, and the tool labels say so." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is GoalIQ affiliated with the Saudi Pro League?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. GoalIQ is an independent data tool and is not affiliated with, endorsed by, or paid by the Saudi Pro League, the RSL Fantasy game, or any club." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does GoalIQ also cover Fantasy Premier League?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. The same match model runs a full FPL toolkit with free tools and a Premium tier, including expected points with a public accuracy log, a transfer planner and a captain ranker." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root {
+    --amber:#F5C542;--ember:#FF8A5C;--cream:#F3F2F2;
+    --bg: #0B0A09; --bg-alt: #1F1D1A; --card: #141311;
+    --ink: #F3F2F2; --line: rgba(243,242,242,0.24);
+    --text: #F3F2F2; --muted: #A8A29A;
+    --teal: #2ED6C2; --teal-ink: #2ED6C2; --radius: 2px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: clip; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .btn { font-family: "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  a { color: var(--teal-ink); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 80px; }
+  header.hero { border-bottom: 6px solid var(--amber); padding: 48px 0 32px; }
+  h1 { font-size: clamp(24px, 4vw, 40px); line-height: 1.2; }
+  h1 .accent { color: var(--amber); }
+  .lede { margin-top: 14px; color: var(--muted); max-width: 60ch; }
+  .free-tag { display:inline-block; border:1px solid var(--teal); color: var(--teal);
+    padding: 2px 10px; font-size: 13px; margin-top: 14px; }
+  .btn { display: inline-block; background: var(--amber); color: #0B0A09;
+    padding: 12px 22px; text-decoration: none; font-weight: 700; border-radius: var(--radius);
+    margin-top: 22px; }
+  .btn:hover { filter: brightness(1.08); }
+  section { margin-top: 44px; }
+  h2 { font-size: clamp(18px, 2.6vw, 26px); margin-bottom: 12px; }
+  ul { padding-left: 20px; color: var(--muted); }
+  li { margin: 6px 0; }
+  li strong { color: var(--text); }
+  .card { background: var(--card); border: 1px solid var(--line); padding: 20px; margin-top: 14px; }
+  .disclaimer { border-left: 3px solid var(--amber); }
+  .disclaimer p { color: var(--muted); font-size: 14px; }
+  .disclaimer p + p { margin-top: 10px; }
+  footer { border-top: 1px solid var(--line); margin-top: 60px; padding-top: 18px;
+    font-size: 13px; color: var(--muted); }
+/* GEN:MOBILE-CSS */
+/* Note shown only on narrow screens. Hidden by default so that pages on
+   wide screens do not change at all. */
+.m-only{display:none;}
+
+@media (max-width:560px){
+  .m-only{display:block;}
+
+  /* --- 1. NAV ----------------------------------------------------------
+     Bug: nav{justify-content:space-between} plus two inflexible children.
+     At 390px the brand and the link pair do not fit on one line, so both
+     wrapped internally instead: "GoalIQ" broke below the logo and the
+     "Try it live" button text spilled outside the button.
+     Fix: allow wrapping BETWEEN elements, not inside them. */
+  nav,.nav{flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px;}
+  .brand{font-size:18px;white-space:nowrap;flex:0 0 auto;}
+  .brand-icon{width:20px;height:20px;margin-right:6px;}
+  nav>span,.nav>span{flex:1 1 100%;font-size:13px;}
+  .nav-cta{display:inline-block;white-space:nowrap;padding:8px 14px;}
+
+  /* --- 2. MATCH ROWS ---------------------------------------------------
+     Bug: .mrow is a flex row where the team name took three lines and the
+     probability floated right at a different height, so the row could not
+     be read left to right. Fix: stack it. */
+  .mrow{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;}
+  .mrow>div{width:100%;}
+  /* Stacking shortened the match links (the name now fits on one line),
+     which dropped the touch target below 32px. Full width plus vertical
+     padding brings the row back to fingertip size. */
+  .mrow a{display:block;width:100%;padding:7px 0;}
+  .pick{font-size:14px;}
+
+  /* --- 3. TABLES: column priority (option (a), chosen 9 Aug) -----------
+     Builders mark the less important columns with .m-hide; on a narrow
+     screen only the key columns show. The full table stays unchanged on
+     wider screens. */
+  th.m-hide,td.m-hide{display:none;}
+
+  /* ...BUT hidden must not mean unreachable (raised 9 Aug). The trimming is
+     a DEFAULT, not an end state: "Show all columns" restores every column
+     in every table at once, and the table then scrolls horizontally just
+     as it does on a wide screen. Higher specificity inside the same media
+     query -> wins regardless of order. */
+  body.cols-all th.m-hide,body.cols-all td.m-hide{display:table-cell;}
+  body.cols-all .m-only{display:none;}
+
+  /* Bring a hidden column's number back into the row as a subline (10 Aug).
+     The column does not fit as a 5th column at 390px, but "Show all
+     columns" is two interactions too far from a number nobody knows to
+     look for yet. The subline gives the same number without the column,
+     and because it is .m-only it DISAPPEARS when the column comes back ->
+     the number is never shown twice. */
+  td .m-sub{font-size:11px;font-weight:400;opacity:.72;padding-top:2px;}
+
+  .colstoggle{display:inline-block;margin:10px 0 4px;padding:9px 14px;
+    min-height:40px;border:1px solid var(--line-strong,rgba(128,128,128,.5));
+    background:transparent;color:inherit;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;border-radius:0;}
+  .colstoggle[aria-pressed="true"]{border-color:var(--amber,#F5C542);
+    color:var(--amber,#F5C542);}
+
+  /* Long text cells may wrap; numbers may not (tabular-nums breaks down and
+     "1.25" would split across two lines). */
+  .lb th,.lb td,.scroll table th,.scroll table td{white-space:normal;}
+  .lb th.n,.lb td.n,.scroll table th.num,.scroll table td.num{
+    white-space:nowrap;}
+  .lb{font-size:13px;}
+  /* Horizontal padding 8px -> 5px. Measured: stats.html still came out at
+     404px (30px over) after the context columns were hidden, and across
+     nine columns the padding alone was 144px. Tighter padding keeps the
+     column; dropping a column would have lost information. */
+  .lb th,.lb td{padding:7px 5px;}
+
+  /* The tables' min-width forced scrolling even when enough columns were
+     hidden that the rest would have fit. */
+  .lb-wrap>.lb,.scroll>table,.table-wrap>table,.rec-scroll>table{
+    min-width:0;}
+  table{min-width:0;}
+
+  /* SILENT TRUNCATION (9 Aug, only ever caught in a screenshot):
+     width:auto + min-width:0 shrank the table to EXACTLY the wrapper
+     (tableW=374=wrapClient), so nowrap number columns no longer fit their
+     cells and "28.17" rendered as "28.". The table was not overwide and
+     the wrapper did not scroll, so NEITHER a width measurement NOR a
+     scrollWidth check could see this. Only the eye could.
+     width:max-content forces the table to its natural width: if it does not
+     fit, the wrapper scrolls visibly instead of data disappearing in
+     silence. Visible scrolling is bad, a quietly lost number is worse. */
+  .lb-wrap>.lb{width:max-content;max-width:none;}
+  /* SPECIFICITY WARNING: BYCOMP_CSS is injected into fpl.html and
+     predictions.html as its OWN <style> element LATER in the page, so it
+     beats this block on document order. A media query does not raise
+     specificity, so .rec-scroll table (0,1,1) would not be enough to
+     override its min-width:640px. The div. prefix raises it to (0,1,2) and
+     makes the rule order-independent. */
+  div.rec-scroll table{min-width:0;}
+  /* The match name was nowrap ("Nottingham Forest v Crystal Palace" =
+     277px on one line), which alone made the track record table three
+     screens wide. */
+  div.rec-scroll td.team,.scroll td.team{white-space:normal;}
+  div.rec-scroll th,div.rec-scroll td{padding:7px 6px;font-size:13px;}
+  /* Kick-off was "2026-08-21 19:00:00 UTC" on one line = 195px, so a single
+     column took a third of the phone's width. These values are dates rather
+     than numbers that need aligning, so wrapping is safe here. */
+  div.rec-scroll td.num,div.rec-scroll th.num{white-space:normal;}
+  /* An FDR grid cell is "ARS (H) 60%" = three parts on one line. nowrap kept
+     the grid at 472px even after columns had been hidden; a wrapping cell
+     takes two lines and halves the width. */
+  .fdr-grid td.num,.scroll td.num .fdr,.fdr{white-space:normal;}
+  .fdr{min-width:0;}
+
+  /* Scroll hint: appears only where the builder adds it, that is, in tables
+     that still scroll after columns have been hidden. */
+  .scrollhint{display:block;color:var(--muted,#A8A29A);font-size:12px;
+    margin:6px 0 0;}
+
+  /* --- 4. FILTER CHIPS -------------------------------------------------
+     Bug: .chips{display:inline-flex} without wrapping -> the chip row was
+     454px, and because html/body is overflow-x:clip the last chip ("Set
+     pieces") was physically unreachable on a phone.
+     Fix: allow wrapping, and give each filter group its own line. */
+  .lbctl{gap:6px 8px;}
+  .lbctl .lbl{flex:1 1 100%;margin:10px 0 0;}
+  .lbctl .lbl:first-child{margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;}
+  .chip{min-height:36px;}
+  .lbctl select,.lbctl input{min-height:36px;max-width:100%;}
+
+  /* --- 5. READABILITY --------------------------------------------------
+     12px monospace is below the readable limit on a phone. */
+  .meta,.note,.stat span,.legend,.mrow .meta,footer{font-size:13px;}
+  .hero .lede,.lede{font-size:16px;}
+  .stat b{font-size:24px;}
+
+  /* --- 6. TOUCH TARGETS ------------------------------------------------ */
+  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+    justify-content:center;}
+  .toolnav a{display:inline-block;padding:4px 0;}
+}
+
+/* Very narrow (e.g. iPhone SE 375px / Galaxy Fold cover screen 344px):
+   the brand and the CTA do not fit even when scaled down, and the hero
+   heading overflows if it contains long words. */
+@media (max-width:400px){
+  .wrap{padding-left:14px;padding-right:14px;}
+  .hero h1,h1{font-size:26px;overflow-wrap:break-word;}
+  .brand{font-size:17px;}
+  /* The font is NOT dropped to 12px here. Tried and measured 9 Aug: it took
+     1200 cells below 13px, which is under the readable limit, and hiding
+     columns was already enough to fit the tables without it.
+     Padding is tightened instead: stats.html is the densest table
+     (9 visible columns) and came out at 404px with 6px padding, i.e. 14px
+     over the phone's width. Its natural width (width:max-content) is 383px
+     at 4px padding; 3px takes it to 365px, which fits the wrapper (374). */
+  .lb th,.lb td{padding:6px 3px;}
+}
+/* /GEN:MOBILE-CSS */
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Saudi Pro League <span class="accent">fantasy tools</span></h1>
+  <p class="lede">Expected points, clean sheet probability and fixture difficulty for
+  <strong>RSL Fantasy</strong>, the official Saudi Pro League fantasy game.
+  Built on an independent match model, using the game's own scoring rules.
+  As far as we know, the first model-based xP for this game anywhere.</p>
+  <span class="free-tag">Completely free · no login</span>
+  <div>
+    <a class="btn" href="https://pro.goaliq.app/spl" data-cta="spl-hero">Open the SPL tools &#9656;</a>
+  </div>
+  <p style="color:var(--muted);font-size:0.9em;margin-top:10px">Also in the GoalIQ app:
+  <a href="https://apps.apple.com/app/id6780047163">iOS</a> ·
+  <a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Android</a></p>
+</header>
+
+<section>
+  <h2>What you get</h2>
+  <ul>
+    <li><strong>Expected points (xP)</strong> per player per gameweek, next six gameweeks, scored with RSL Fantasy's actual rules: goals worth 5 or 6 by position, clean sheets 5/4/1, saves, tackles, defensive actions, shots on target, big chances and passes.</li>
+    <li><strong>Clean sheet probability</strong> for every team and fixture, from the match model's score matrix.</li>
+    <li><strong>Model fixture difficulty (FDR)</strong>, 1 to 5, derived from win probability and expected goals conceded, independent of any official difficulty rating.</li>
+    <li><strong>Captain picks</strong> for the next gameweek, ranked by single-GW xP among expected starters.</li>
+    <li><strong>The model squad</strong>: the strongest 15 the model found inside the 100.0m budget under RSL squad rules, starting XI marked.</li>
+    <li><strong>Best value</strong> (xP per million), <strong>differentials</strong> under 10% ownership, <strong>last season's leaders</strong> and a <strong>player comparison</strong> tool.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="card disclaimer">
+    <p><strong>Independent, and stated plainly:</strong> GoalIQ is not affiliated
+    with, endorsed by, or paid by the Saudi Pro League, the RSL Fantasy game, or
+    any club. These tools are free, so nobody is paying us to cover this league,
+    including you.</p>
+    <p><strong>Data basis:</strong> team strengths come from a goals-based
+    Dixon-Coles model fitted on two seasons of SPL results. No public per-match
+    xG feed exists for this league, so player attack projections use realized
+    goal and assist rates, and minutes are estimated from season-aggregate
+    playing time. This is coarser than our FPL pipeline and the confidence
+    labels on the tool say exactly that.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Play FPL too?</h2>
+  <p style="color:var(--muted)">The same match model runs our full
+  <a href="/fpl.html">FPL toolkit</a>: free clean sheet and FDR tools, plus
+  Premium with expected points backed by a
+  <a href="/predictions">public accuracy log</a>, a transfer planner and a
+  captain ranker.</p>
+</section>
+
+<footer>
+  <p>GoalIQ · independent football data tools ·
+  <a href="/">Home</a> · <a href="/fpl.html">FPL tools</a> ·
+  <a href="/privacy.html">Privacy</a> &middot;
+  <a href="/creators">Creator program</a></p>
+</footer>
+
+</div>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
+<script defer src="/ref-bridge.js"></script>
+</body>
+</html>

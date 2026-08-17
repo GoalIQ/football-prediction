@@ -1,0 +1,417 @@
+# FPL-projektioiden päivittäinen data-refresh (QUEUE #16) — deadline-tuoreus.
+#
+# MIKSI: xP-malli huomioi saatavuuden (status/chance_of_playing →
+# availability_factor → xMins → xP), mutta viikkorefreshillä (lokaali Task
+# Scheduler ma 09:00) viikonlopun deadlinella saatavuustieto voi olla 5-6 pv
+# vanha. FPL team news rikkoutuu to-la ja deadline on ~90 min ennen ottelua →
+# päivittäinen ajo = saatavuus <=24 h tuore, deadline-aamun lisäajo tuoreempi.
+# CI-ajo poistaa myös riippuvuuden Villen koneen päälläolosta.
+#
+# DATAKETJU: builderit hakevat FPL-API:n (bootstrap + element-summary,
+# julkinen JSON) + fixturet (FPL/pulselive) + Understat-datan DC-fittiin
+# (soccerdata; cache viikkoavaimella → joukkuevoimat päivittyvät viikoittain,
+# saatavuus joka ajolla — tarkoituksellinen jako). Committaa muuttuneet
+# data/fpl_projections_phase0.json + data/fpl_xp_projections.json → push
+# mainiin → Render auto-deployaa → /api/fantasy + /api/fantasy/xp tarjoilevat
+# tuoreet luvut.
+#
+# TURVA: data-only (EI malligatea — availability ei muuta mallia; muisti:
+# "results data decoupled from model gate"). Builderien omat sanity-gatet
+# ovat fail-safe: gate FAIL → exit 2 → EI committia → vanha data jää voimaan
+# ja workflow on punainen (näkyvä signaali, ei hiljaista stalenessia).
+# Rebase-retry-push sama pattern kuin accuracy-log.yml (jaettu main).
+# [skip ci] estää test-workflowt data-commiteista; Render EI skippaa
+# (tarkoitus — API servaa committatut JSONit levyltä).
+
+name: fpl-data-refresh
+
+on:
+  schedule:
+    # 3 h valein (25.7 Garner-case: FPL:n injury-flagit projektioihin max ~3 h
+    # viiveella ilman kasityota; aiemmin 1x/pv = jopa 24 h stale-ikkuna).
+    # GitHub-schedule on best-effort, drift mahdollinen.
+    - cron: "0 */3 * * *"
+    # Deadline-aamun boost 09:15 UTC — ajetaan vain jos tämän päivän aikana
+    # on GW-deadline (guard-step alla; tyypillinen la-deadline ~12:30 UTC →
+    # perjantain lehdistötilaisuuksien team news ehtii mukaan).
+    - cron: "15 9 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: fpl-data-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # 09:15-ajo vain deadline-päivinä; 06:00 + dispatch ajavat aina.
+      # FPL bootstrap events[].deadline_time on julkinen JSON.
+      - name: Deadline-day guard (only for 09:15 run)
+        id: guard
+        run: |
+          if [ "${{ github.event.schedule }}" != "15 9 * * *" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "06:00/dispatch-ajo — ajetaan aina."
+            exit 0
+          fi
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, urllib.request, datetime
+          try:
+              boot = json.load(urllib.request.urlopen(
+                  "https://fantasy.premierleague.com/api/bootstrap-static/",
+                  timeout=30))
+              today = datetime.datetime.now(datetime.timezone.utc).date()
+              is_deadline_day = any(
+                  e.get("deadline_time", "").startswith(str(today))
+                  for e in boot.get("events", []))
+              print(f"proceed={'true' if is_deadline_day else 'false'}")
+          except Exception as e:
+              # Guard-haun kaatuminen ei saa estää refreshiä — aja varmuudeksi.
+              print("proceed=true")
+          EOF
+
+      - name: Setup Python 3.11
+        if: steps.guard.outputs.proceed == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # Understat-cache VIIKKOAVAIMELLA (ei restore-keys-fallbackia →
+      # viikon vaihtuessa täysi kylmähaku): päivittäiset ajot osuvat cacheen
+      # (nopea, ei scrape-kuormaa understat.comiin), viikoittain täysi haku →
+      # DC-joukkuevoimat päivittyvät viikoittain (= nykyinen cadence),
+      # saatavuus FPL-API:sta joka ajolla (= tihennyksen pointti).
+      - name: Compute cache week
+        if: steps.guard.outputs.proceed == 'true'
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache soccerdata (Understat)
+        if: steps.guard.outputs.proceed == 'true'
+        uses: actions/cache@v6
+        with:
+          path: ~/soccerdata
+          key: soccerdata-understat-${{ steps.week.outputs.week }}
+
+      # Minimaalinen dep-setti (EI koko requirements.txt:tä — jupyterlab/
+      # streamlit/plotly turhia CI:ssä). soccerdata tuo omat riippuvuutensa.
+      - name: Install builder deps
+        if: steps.guard.outputs.proceed == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pandas>=2.1" "numpy>=1.26" "scipy>=1.11" \
+            "statsmodels>=0.14" "requests>=2.31" "soccerdata>=1.8" \
+            "python-dotenv>=1.0" "tqdm>=4.66"
+
+      # 17.8: PAATTYNEEN 25/26-KAUDEN ARKISTO RUNNERILLE.
+      #
+      # MIKSI: kolme cronin askelta lukee `data/raw/fpl/`-hakemistosta jota EI
+      # ole runnerilla — se on gitignorattu (`/data/*`) eika FPL:n API tarjoile
+      # paattyneita kausia, joten sita ei voi hakea uudelleen kuten
+      # kuluvan kauden bootstrapin:
+      #   * build_team_confidence      -> bootstrap_static_2526.archive.json
+      #   * build_fpl_defcon_gw        -> archive + summary_2526/
+      #   * build_fpl_player_gw        -> archive + summary_2526/ (niin kauan
+      #     kuin stats-basis on 25/26 eli kunnes GW1 on pelattu 21.8)
+      #
+      # 14.8 lisatyt askeleet (`build_team_confidence`, `build_fpl_defcon_gw`)
+      # kaatuivat tahan JOKA ajossa: `FileNotFoundError:
+      # .../bootstrap_static_2526.archive.json`. Kaatuminen tapahtui step 11:ssa
+      # eli ENNEN commit-steppia, joten koko ajo skippasi loput 17 askelta ->
+      # projektiot, hinnat, xP-freeze, mallirivin freeze ja push_dispatch olivat
+      # jaassa 14.8 10:15 UTC lahtien (~29 punaista ajoa putkeen). Sama
+      # juurisyyluokka kuin #19:ssa, kolmas kerta.
+      #
+      # Purku on ENNEN kaikkia buildereita eika vain kaatuvan askeleen edessa:
+      # naita kuluttajia on kolme ja tulee lisaa, ja jarjestysriippuvuus olisi
+      # tasan se ansa johon 14.8 astuttiin.
+      #
+      # --skip-old-files: lokaalilla koneella hakemisto on jo olemassa eika
+      # purku saa koskaan ylikirjoittaa oikeaa raakadataa.
+      - name: Unpack frozen 2025/26 FPL archive
+        if: steps.guard.outputs.proceed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p data/raw/fpl
+          tar xzf data/fpl_2526_archive.tar.gz -C data/raw/fpl --skip-old-files
+          n=$(find data/raw/fpl/summary_2526 -name 'element_*.json' | wc -l)
+          echo "summary_2526: $n tiedostoa"
+          # 841 = koko 25/26-pelaajalista. Vajaa purku ei saa mennä lapi
+          # hiljaa: se nakyisi vasta liputusten ja DefCon-rivien puuttumisena.
+          if [ "$n" -lt 800 ]; then
+            echo "::error::summary_2526 vajaa ($n < 800) — arkisto rikki."
+            exit 1
+          fi
+          python - <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path("data/raw/fpl/bootstrap_static_2526.archive.json")
+          boot = json.loads(p.read_text(encoding="utf-8"))
+          dl = boot["events"][0]["deadline_time"]
+          # Sama tarkistus jonka build_fpl_defcon_gw tekee itse: vaara kausi
+          # tuottaisi oikean nakoista mutta valheellista historiaa.
+          if not dl.startswith("2025-"):
+              sys.exit(f"VIRHE: arkistobootstrap ei ole 25/26-kautta ({dl})")
+          print(f"arkistobootstrap OK: GW1-deadline {dl}, "
+                f"{len(boot['elements'])} pelaajaa")
+          PY
+
+      # Sanity-gatet fail-safena: exit 2 → step fail → ei committia,
+      # vanha data jää voimaan, workflow punainen (näkyvä signaali).
+      - name: Build Phase 0 projections (CS% + FDR)
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.build_fpl_phase0
+
+      - name: Build Phase 1 xP projections
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.build_fpl_xp
+
+      # 14.8: NAMA KAKSI PUUTTUIVAT CRONISTA JA JAIVAT 25.7:N TILAAN.
+      # `fpl_cs_fdr.json` on koko kauden 380 fixturen CS%/FDR jota
+      # `api/fantasy_edge.py` tarjoilee, ja se oli sovitettu VANHAAN
+      # fit-ikkunaan ['2425','2526'] kolme viikkoa sen jalkeen kun malli
+      # siirtyi ikkunaan ['2526','2627']. Sen nousijalistasta puuttui myos
+      # Ipswich. Ilman tata askelta korjaukset eivat pysy: seuraava refresh
+      # ei koske tiedostoon lainkaan, joten se vanhenee uudelleen.
+      - name: Build season CS/FDR table
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.build_fpl_cs_fdr
+
+      # Nousijaliput ja vaihtuvuusluvut. Sama syy: liput renderoityvat
+      # ilmaissivulle ja menevat API:n `meta.team_confidence`iin, mutta
+      # tiedosto rakennettiin vain kasin.
+      - name: Build team confidence flags
+        if: steps.guard.outputs.proceed == 'true'
+        run: python scripts/build_team_confidence.py
+
+      # 14.8: tama ei ollut MISSAAN cronissa. Tiedosto on 25/26-kauden
+      # DefCon-arkisto NYKYKAUDEN pelaajille mapattuna, joten arkisto ei
+      # vanhene mutta PELAAJALISTA vanhenee: 1.8 jalkeen siirtyneilta puuttui
+      # DefCon-historia kokonaan. Mitattu 14.8: ajo nosti 373 -> 374 pelaajaa.
+      # Kesto 2 s, joten se mahtuu 3 h sykliin ilman ehtoja.
+      - name: Build per-GW DefCon matrix
+        if: steps.guard.outputs.proceed == 'true'
+        run: python scripts/build_fpl_defcon_gw.py
+
+      # SPL (7.8): samat refresh-hyödyt (saatavuusliput, hinnat) RSL-projektioille.
+      # continue-on-error: SPL EI saa koskaan kaataa FPL-refreshiä (Villen ehto:
+      # FPL-GW1-prep SPL:n edellä). SPL-gate-FAIL → vanha SPL-data jää voimaan
+      # ja warning näkyy; FPL-data pushautuu normaalisti.
+      - name: Build SPL Phase 0 projections (CS% + FDR)
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_spl_phase0
+
+      - name: Build SPL xP projections
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_spl_xp
+
+      # 30.7 tarkkuusloki: gradaa EDELLISEN yön price-ennuste ENNEN kuin
+      # builderi ylikirjoittaa sen (järjestys on koko lokin pointti).
+      - name: Grade previous price watch predictions
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.grade_price_watch
+
+      # #43: hinnanmuutosennuste samasta bootstrapista — hinnat liikkuvat öisin,
+      # päivittäinen cron riittää (ei omaa workflowta).
+      - name: Build price watch
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.build_fpl_price_watch
+
+      # 30.7 xP vs toteuma: gradaa ratkenneet jäädytetyt GW:t + jäädytä
+      # seuraava GW jos deadline on alle 30 h päässä (freeze TUOREESTA
+      # projektiosta → askel build_fpl_xp:n jälkeen).
+      - name: Grade finished frozen gameweeks (xP vs actual)
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.grade_fpl_xp_gw
+
+      # BTM V2 vaihe b (13.8): mallin lukitun rivin pisteet FPL:n omista
+      # luvuista (autosubit + kapteenisääntö). Gradaus ENNEN freezea kuten
+      # xP-puolella: ratkennut kierros suljetaan ennen kuin seuraava lukitaan.
+      - name: Grade finished model squad gameweeks
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.grade_model_squad_gw
+
+      - name: Freeze next gameweek xP at deadline window
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.freeze_fpl_xp_gw
+
+      # Beat the Model V2 vaihe a (13.8): mallin joukkue lukitaan SAMASSA
+      # ajossa ja samasta ikkunasta kuin xP yllä — eri hetki tarkoittaisi että
+      # "sinä vs malli" vertaa kahta eri maailmantilaa. Askel on tarkoituksella
+      # xP-freezen JÄLKEEN: free_optimum lukee juuri kirjoitetun projektion.
+      # EI fail-safea: laiton tai puuttuva mallirivi on kauden mittainen virhe
+      # (immutable), joten ajon KUULUU kaatua ennen kuin se jäätyy.
+      - name: Freeze model squad at deadline window
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.freeze_model_squad_gw
+
+      # 14.8: FREEZE EI KOSKETA FPL-TILIA. Rivi syotetaan FPL:aan kasin, joten
+      # jaadytetty tiedosto ja tili ovat kaksi eri totuutta mallin joukkueesta
+      # eika niiden valilla ollut mitaan joka huomaisi eron. Mitattu: entryn
+      # rivi valittiin 23.7 eli ENNEN 13.8:n P0-korjausta joka muutti mallin
+      # XI:n (101,5 m laiton -> 100,0 m). Jos entrya ei paivitetty, julkinen
+      # vaite "malli pelaa omaa FPL-joukkuettaan" osoittaa joukkueeseen jota
+      # malli ei valinnut — ja Beat the Model, Season race seka "logged before
+      # kickoff" nojaavat kaikki siihen.
+      #
+      # Vahti ei voi korjata tata (FPL-kirjautuminen on kasityota). Se tekee
+      # erosta aanekkaan: ennen deadlinea tulostaa rivin syotettavassa
+      # muodossa ja palauttaa 0, deadlinen jalkeen ero on exit 1.
+      # EI continue-on-erroria: taman kuuluu nakya punaisena.
+      - name: Verify FPL entry matches the frozen squad
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.verify_model_entry_matches_freeze
+
+      # #124/#125: xG- + DefCon-leaders samasta bootstrap+element-summary-
+      # datasta (levyvälimuisti — valmiin kauden summaryt eivät uudelleenhae).
+      # 1.8: perustajalohkon luvut julkisesta entrysta (ei kovakoodausta
+      # etusivulle). Fail-safe: jos FPL-API on nurin, askel ei kaada ajoa ja
+      # build_fpl_page jattaa markerin koskematta.
+      - name: Build founder entry stats
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_founder_stats
+
+      - name: Build player leaders (xG + DefCon)
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.build_fpl_player_leaders
+
+      # 8.8 STATS-ZONE: /fpl/stats -sivun raakataulukko. Sanity-gate FAIL →
+      # exit 2 → askel punaisena eikä JSONia kirjoiteta (vanha jää voimaan).
+      - name: Build player stats (free stats zone)
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.build_fpl_stats
+
+      # 13.8: SIIRRETTY accuracy-logista tänne. Steppi vaatii koko FPL-cachen
+      # (bootstrap + element-summaryt), jonka VAIN tämän workflown builderit
+      # hakevat — accuracy-logissa se failasi joka ajossa 9.8 alkaen
+      # ("Puuttuu: data/raw/fpl/bootstrap_static.json", 26 punaista ajoa)
+      # eikä stats-sivun GW-ikkuna päivittynyt CI:stä kertaakaan. Tässä cache
+      # on lämmin build_fpl_stats:n jäljiltä → nolla lisä-API-kuormaa.
+      # continue-on-error: GW-rivit eivät saa estää projektioiden pushia;
+      # health-steppi lopussa punaa runin silti (fail loud, data jo pushattu).
+      - name: Build per-gameweek player rows (stats GW window)
+        id: bake_player_gw
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_fpl_player_gw
+
+      # Beat the model V1: gradaa lukitut päätökset valmiilta kierroksilta.
+      # Idempotentti (gradatut ohitetaan, trigger estää uudelleengradauksen),
+      # joten päivittäinen kutsu on turvallinen myös GW:iden välissä.
+      # ADMIN_TOKEN = sama arvo kuin Renderin ADMIN_TOKEN-env. Jos secretiä ei
+      # ole asetettu, askel EI kaadu vaan kirjaa ohituksen näkyvästi — hiljaa
+      # kuoleva grader olisi sama vikaluokka kuin ajokelvoton ship-gate (28.7).
+      - name: Grade Beat-the-model decisions
+        if: steps.guard.outputs.proceed == 'true'
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then
+            echo "::warning::ADMIN_TOKEN-secret puuttuu — grading OHITETTU. Lisää repo-secret (sama arvo kuin Renderin ADMIN_TOKEN)."
+            exit 0
+          fi
+          resp=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "X-Admin-Token: $ADMIN_TOKEN" \
+            https://api.goaliq.app/api/admin/grade-decisions)
+          body=$(echo "$resp" | head -n -1); code=$(echo "$resp" | tail -1)
+          echo "grade-decisions HTTP $code: $body"
+          if [ "$code" != "200" ]; then
+            echo "::warning::grading epäonnistui (HTTP $code) — päätökset jäävät gradaamatta tähän ajoon."
+          fi
+
+      # PUSH-NOTIF vaiheet b+c (14.8): palvelinpushit (deadline / price /
+      # picks). Askel on TÄSSÄ eikä omassa workflowssaan kahdesta syystä:
+      # (1) se lukee juuri kirjoitetun price watchin ja xP-projektion, ja
+      # (2) sen idempotenssimarkkeri data/push_state.json committoidaan alla
+      # olevassa stepissä — ilman committia seuraava runner aloittaisi
+      # tyhjästä tilasta ja lähettäisi saman deadline-pushin uudelleen.
+      #
+      # ADMIN_TOKEN = sama arvo kuin Renderin ADMIN_TOKEN. Runner EI saa
+      # Supabasen service-avainta: /api/admin/push-targets tekee premium- ja
+      # watchlist-liitoksen palvelimella. Secretin puuttuminen ei kaada ajoa
+      # (skripti kirjaa ohituksen näkyvästi ja palauttaa 0).
+      #
+      # continue-on-error: push-kanavan vika EI saa estää projektioiden
+      # pushia — mutta se ei myöskään saa jäädä vihreän runin taakse, joten
+      # health-steppi lopussa punaa ajon (sama malli kuin bake_player_gw).
+      - name: Dispatch push notifications (deadline / price / picks)
+        id: push_dispatch
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+        run: python -m scripts.push_dispatch
+
+      - name: Commit + push to main (Render serves fresh data)
+        if: steps.guard.outputs.proceed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/fpl_projections_phase0.json data/fpl_xp_projections.json data/fpl_price_watch.json data/fpl_player_leaders.json data/fpl_player_stats.json data/fpl_cs_fdr.json data/team_confidence.json data/fpl_defcon_gw.json
+          # 30.7 tarkkuuslokit: olemassa vain kun gradattavaa/jäädytettävää on ollut
+          # 2.8: yhden valinnaisen tiedoston add EI saa kaataa koko pushia.
+          # Tausta: founder_entry.json puuttui .gitignoren !-poikkeuksista →
+          # git add exit 1 → shell `-e` tappoi stepin → projektiot, price watch
+          # ja leaders jäivät pushaamatta 4 ajossa (~14 h vanhaa dataa).
+          for f in data/fpl_price_accuracy.json data/fpl_xp_gw_accuracy.json data/founder_entry.json data/spl_projections_phase0.json data/spl_xp_projections.json; do
+            [ -f "$f" ] || continue
+            git add "$f" || echo "::warning::git add $f epäonnistui (gitignore?) — muu data pushataan silti"
+          done
+          [ -d data/fpl_xp_frozen ] && git add data/fpl_xp_frozen
+          # 13.8 (BTM V2 a): mallirivin freeze — sama kohtelu kuin xP-freezella.
+          [ -d data/model_squad_frozen ] && git add data/model_squad_frozen
+          # 13.8 (BTM V2 b): gradatut pisteet, append-only.
+          [ -f data/model_squad_gw_scores.json ] && git add data/model_squad_gw_scores.json
+          # 13.8: GW-rivit stats-sivulle (siirretty accuracy-logista, ks. yllä)
+          [ -f fpl/player-gw.json ] && git add fpl/player-gw.json
+          # 14.8 (PUSH-NOTIF b): idempotenssimarkkeri + toimituksen auditointi.
+          # TÄMÄ RIVI ON KOKO TUPLAPUSHISUOJA: ilman committia markkeri elää
+          # vain tämän runnerin levyllä.
+          [ -f data/push_state.json ] && git add data/push_state.json
+          true
+          if git diff --cached --quiet; then
+            echo "Ei muutoksia (data ennallaan) — ohitetaan commit."
+            exit 0
+          fi
+          git commit -m "chore(fpl): daily projections refresh (availability) [skip ci]"
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                echo "Pushed to main (yritys $i) → Render deployaa tuoreet projektiot."
+                exit 0
+              fi
+            else
+              git rebase --abort 2>/dev/null || true
+            fi
+            echo "Push-yritys $i epäonnistui (kilpailu accuracy-cronin kanssa?) — retry."
+            sleep 5
+          done
+          echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
+          exit 1
+
+      # 13.8: sama fail loud -malli kuin accuracy-login Page-build health.
+      # continue-on-error piilottaisi GW-buildin kaatumisen vihreän runin
+      # taakse — tasan se vikaluokka joka piti accuracy-login punaisena
+      # 26 ajoa ilman että kukaan huomasi.
+      - name: Step health (fail loud, data jo pushattu)
+        if: always() && steps.guard.outputs.proceed == 'true'
+        run: |
+          fail=0
+          [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
+          exit $fail

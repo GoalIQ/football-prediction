@@ -1,0 +1,79 @@
+# FPL — PELAAJATASON minuuttiohitukset. Builderi lukee tämän ennen xP-laskentaa.
+#
+# MIKSI TÄMÄ ON OLEMASSA
+# Minuuttimalli käyttää priorina viime kauden minuutteja eikä osaa erottaa
+# kahta täysin eri asiaa:
+#     "ei pelannut koska ei ollut tarpeeksi hyvä"      -> matala p_start on OIKEIN
+#     "ei pelannut koska oli myynnissä / loukkaantunut" -> matala p_start on VÄÄRIN
+# Malli näkee vain minuuttiluvun, ei syytä.
+#
+# TÄMÄ ON VÄLIAIKAINEN. Oikea korjaus on hintapriori: FPL:n oma hinnoittelu on
+# riippumaton arvio odotetusta roolista, ja se korjaisi koko tämän luokan
+# automaattisesti ilman käsityötä. Kun se on livenä ja backtestattu, nämä rivit
+# POISTETAAN. Älä kasvata tätä tiedostoa kiertotienä mallin parantamiselle.
+#
+# REHELLISYYSSÄÄNTÖ (ei neuvoteltavissa)
+# Jokainen ohitettu pelaaja saa payloadiin minutes_source="override" ja
+# minutes_override_reason, ja UI näyttää sen. Käsin korotettu projektio joka ei
+# näy käyttäjälle on täsmälleen se asia joka syö "todennettava malli" -lupauksen.
+#
+# SÄÄNNÖT RIVIN LISÄÄMISELLE
+#   1. Pelaajan on oltava FPL-statukseltaan saatavilla (status "a").
+#   2. Perusteen on oltava TODENNETTAVISSA ulkopuolelta, ei mutua roolista.
+#   3. review_by on pakollinen: ohitus on väliaikainen oletus, ei totuus.
+#      Kun pelaajalle kertyy oikeaa dataa, rivi poistetaan.
+#
+# Sarakkeet:
+#   player_id   FPL element id (kanoninen tunniste; web_name voi muuttua)
+#   web_name    vain luettavuutta varten, EI käytetä täsmäytykseen
+#   p_start     aloitus-tn 0..1 (korvaa mallin arvion, minuutit johdetaan tästä)
+#   reason      näytetään käyttäjälle
+#   review_by   PORTTI: vanhentunutta riviä EI sovelleta (yhtenäistetty
+#               joukkueohituksen kanssa 14.8 — ks. alla)
+#   xg_mult     maaliuhkan kerroin, oletus 1.0 (VALINNAINEN, viimeisenä jotta
+#               vanhat 5-sarakkeiset rivit pysyvät koskemattomina)
+#
+# 🔴 xg_mult (14.8.2026) — MIKSI TÄTÄ TARVITAAN
+# `p_start` säätää minuutteja. Se EI säädä maaliuhkaa, eikä joukkuetason
+# `attack_delta` säädä sitä myöskään — ei heikosti vaan EI LAINKAAN:
+#     goals     = rates["xg90"] * share * goal_mult * GOAL_PTS  (fpl_xp.py:762)
+#     goal_mult = lam(t, vast.) / lam_avg[t]              (fpl_context.py:239)
+# `lam_avg[t]` on saman joukkueen keskiarvo, joten attack[t] += d kertoo sekä
+# osoittajan että nimittäjän luvulla exp(d) ja kerroin supistuu pois
+# TÄSMÄLLEEN. Mitattu 14.8: Newcastlen hyökkäysvoiman leikkaus ~18 %:lla jätti
+# Osulan goals-komponentin lukemaan 1,09 -> 1,09.
+#
+# xg_mult kertoo xg90:n ja vaikuttaa siten suoraan goals-komponenttiin. Se EI
+# koske xa90:tä: pelaajan omat syötöt eivät ole sama asia kuin maalinteko.
+# Käyttötapaus jota varten se tehtiin: keskuspuolustaja jonka xG tuli kulmista,
+# ja kulmien syöttäjät lähtivät seurasta.
+#
+# 🔴 review_by ON NYT PORTTI TÄSSÄKIN TIEDOSTOSSA (muutos 14.8)
+# Aiemmin se oli pelkkää dokumentaatiota. Vanhentunut maaliuhkaleikkaus on
+# tasan yhtä haitallinen kuin vanhentunut joukkueleikkaus: molemmat alkavat
+# taistella mallia vastaan silloin kun mallilla on vihdoin oikeaa 26/27-dataa.
+# Vanhentunut rivi ohitetaan ÄÄNEKKÄÄSTI (::warning:: + lokirivi).
+player_id,web_name,p_start,reason,review_by,xg_mult,until_available
+379,Isak,0.85,"Last season's minutes reflect a transfer window, not his role. He is priced and signed as Liverpool's first-choice striker",2026-09-20
+#
+# HARKITTU JA HYLÄTTY — Havertz (ARS, 7.5M, p_start 0.25, xmins 15.5), 27.7:
+#   Sama juurisyy kuin Isakilla (rikkonainen 25/26), mutta EI ohiteta.
+#   Villen arvio roolista: "rotaatio hyökkäyksessä, ei varmaankaan 90 min
+#   pelaaja joka peliin."
+#
+#   Se ratkaisee asian mallin hyväksi. Rotaatiopelaajalle 25 % aloitus-tn on
+#   samassa SUURUUSLUOKASSA kuin todellisuus — matala mutta ei väärä. Isakin
+#   30 % oli väärässä suuruusluokassa ykköshyökkääjälle, ja siinä on koko ero.
+#
+#   Ohitus vaatisi keksityn luvun jolle ei ole mitattua perustetta, ja jokainen
+#   ohitus syö todennettavuuslupausta. Kapea ero ei ole sen arvoinen.
+#   Hintapriori korjaa tämän aikanaan oikeaa kautta.
+496,Kinsky,0.90,"De Zerbi named him Tottenham first choice for 26/27 and Vicario was placed on the transfer market (multiple reports 6/2026, incl. TeamTalk new contract + TribalFootball). Last season 630 min / 7 starts reflects Vicario being the incumbent, not Kinsky role now. He was excluded from the projection entirely at 19.5 percent owned",2026-09-06
+497,Dubravka,0.08,"Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",2026-09-06
+110,Rushworth,0.90,"Permanent signing from Brighton and Coventry's undisputed number one. Fantasy Football Scout 4/8/2026: 'Rushworth's return removes any uncertainty over Coventry's goalkeeping position' and 'started all 46 Championship matches last season and looks set to remain Lampard's first-choice goalkeeper in the Premier League'. Model had him at 0.38 with Dovin and Wilson on 0.16, so no Coventry keeper was projected as a starter at all",2026-09-30
+350,Alisson,0.80,"Liverpool's number one, not a job share. Model read last season's 26/10 split as an ongoing rotation. This Is Anfield 8/2026: back at the AXA training centre after the World Cup and 'set for his ninth season as Liverpool's undisputed number one goalkeeper'; Liverpool triggered a 12-month extension in March so he is contracted through 26/27, and reporting is that he 'remains the first choice despite the 29m deal for Mamardashvili'. Held at 0.80 rather than 0.90 because the same sources call it a DELAYED pre-season return, which is a real GW1 risk",2026-09-30
+351,Mamardashvili,0.15,"Successor in waiting, not the incumbent. Paired with the Alisson row: without it the club's keeper p_start sums to 1.22, i.e. more than one starting keeper. Same reasoning and sources as id 350",2026-09-30
+557,Tzolis,0.55,"Arsenal signed him from Club Brugge in July and he started the Community Shield against Manchester City at left wing on 16 August. His 0.096 was the model bottom tier for a player with no Premier League minutes, set by price rank inside the squad rather than by anything measured about him. Held at 0.55 and no higher because Martinelli started ahead of him against Como on 12 August",2026-09-13
+15,Ødegaard,0.70,"He started the Community Shield against Manchester City on 16 August as club captain, which is a competitive start rather than a friendly. The model had him on 0.428 because he played 1363 minutes and 16 starts last season, and the minutes prior cannot tell an injury from a benching. Held at 0.70 and not higher because Arsenal have been cautious with his return: he was left out of the Real Betis friendly after coming back from the World Cup",2026-09-13
+11,Mosquera,0.60,"He started the Community Shield against Manchester City on 16 August in a back four with White, Gabriel and Calafiori, and Hincapie did not start. The model had him on 0.39 from 986 minutes last season, his first at the club. Held at 0.60 because one competitive match is thin evidence for a centre back pairing that Arteta rotates",2026-09-13
+391,Gvardiol,0.75,"He started the Community Shield against Arsenal on 16 August at left back, which is a competitive match and not a friendly. The model had him on 0.22 from 1370 minutes last season, a spell cut short by a leg fracture, and the minutes prior cannot tell an injury from a benching. Manchester City signed him to a new deal to 2031 in July. Held at 0.75 rather than higher because Maresca is a new manager and his rotation is not known yet",2026-09-13

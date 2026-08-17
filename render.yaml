@@ -1,0 +1,49 @@
+# Render.com -konfiguraatio GoalIQ API:lle
+# Pushataan GitHubiin → Render havaitsee → autodeploy
+# Free tier: 512 MB RAM, sleep 15 min idle (herää 30s seuraavasta requestista)
+
+services:
+  - type: web
+    name: goaliq-api
+    runtime: python
+    region: frankfurt           # Lähinnä Suomea (matala latenssi)
+    plan: starter               # #109: tuotanto ON Starterilla (aina-päällä; main.py nojaa
+                                # siihen mm. esirakennetussa WC-mallissa) — free tässä olisi
+                                # antanut Blueprint-synkin pudottaa palvelun freehin (cold startit)
+    # #86-jatko (19.7.2026): slim + pinnattu API-riippuvuuslista. requirements.txt
+    # asensi ENNEN koko keittiön (streamlit/jupyter/lightgbm/optuna/… pinnaamattomina)
+    # → yksikin upstream-julkaisu kaatoi render-daily-deploy-hookin buildin. Nyt vain
+    # API:n todelliset ajonaikaiset depit, versiolukittuina cp311-wheeleille. Perustelut
+    # + ylläpito: ks. requirements-api.txt.
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    autoDeploy: true            # Koodi-push -> uusi deploy (ks. buildFilter alla)
+    # #86 (14.7.2026): data-bottien commitit (accuracy-autolog ~14x/vrk + FPL-refreshit)
+    # polttivat workspace-pipeline-minuutit — [skip ci] ei estä Renderin auto-deployta.
+    # Build skipataan kun KAIKKI committien muuttamat tiedostot osuvat ignoredPathsiin;
+    # yksikin koodimuutos (api/, src/, requirements) triggeröi yhä normaalisti.
+    # HUOM: data/** EI enää deployaudu automaattisesti — tuoreen datan vie Renderiin
+    # render-daily-deploy.yml (1 deploy/vrk deploy-hookilla) tai koodideploy.
+    buildFilter:
+      ignoredPaths:
+        - data/**               # accuracy.json, prediction_log, CSV:t, FPL-projektiot
+        - "**/*.html"           # GitHub Pages -sivut (goaliq.app), ei Renderin servaamia
+        - "**/*.md"             # dokumentaatio
+        - sitemap.xml
+        - robots.txt
+        - llms.txt
+        - tests/**              # testimuutokset eivät vaadi deployta (CI ajaa ne)
+        - web/**                # SPA deployataan wranglerilla (Cloudflare), ei Renderiin
+        - .github/**            # workflow-muutokset eivät vaadi API-deployta
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      # API-avain football-data.org:lle (asetetaan Render-dashboardissa secrets:eihin)
+      - key: FOOTBALL_DATA_API_KEY
+        sync: false             # sync: false = aseta käsin Render UI:ssa, ei pushata
+
+  # HUOM (#15, 6.7.2026): goaliq-pro-web (Streamlit) POISTETTU tästä —
+  # pro.goaliq.app kääntyi SvelteKit-SPA:han (Cloudflare Pages, projekti
+  # goaliq-pro-spa). Render-palvelun dekomissio = CoS/Ville dashboardista.
+  # Streamlit-koodi jää web/pro/-kansioon referenssiksi.

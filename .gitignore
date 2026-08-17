@@ -1,0 +1,231 @@
+# API-avaimet ja salaisuudet — EI KOSKAAN GitHubiin
+.env
+.env.local
+.env.*.local
+*.key
+secrets.toml
+
+# Streamlit asetukset (paitsi config.toml jonka voit pushata)
+.streamlit/secrets.toml
+
+# Python-virtuaaliymparisto
+.venv/
+venv/
+env/
+
+# Python-cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Datavalimuisti — voi olla iso, ei kuulu repoon
+# Huom: /data/ alussa = vain projektin juuren data/, EI src/data/
+# /data/* ignoroi sisällön mutta sallii poikkeukset (vendoroitu WC-data #79).
+raw_data/
+/data/*
+# Poikkeukset: vendoroitu martj42-maaotteludata (CC0) kuuluu repoon — Render
+# buildaa gitistä, ei live-pullia ajossa.
+!/data/international_results.csv
+!/data/international_results.README.md
+# Esirakennettu WC-malli (#79) — vendoroitu, ladataan ajossa (ei fittiä Renderillä).
+!/data/wc_model.json
+# Vendoroitu World Football Elo -snapshot (#79 konfederaatio-kalibrointi).
+!/data/elo_ratings.csv
+# Tarkkuus-track-record (#100): ajastettu putki ylläpitää, Render lukee gitistä.
+!/data/prediction_log.json
+!/data/accuracy.json
+# FPL Phase 0 -projektio: ajastettu refresh ylläpitää, Render lukee gitistä (/api/fantasy).
+!/data/fpl_projections_phase0.json
+# Ilmaisikkunan ja luojakohortin seurantasarjat (16.8): free-window-watch
+# kirjoittaa yhden rivin per vuorokausi. 🔴 Ilman naita poikkeuksia
+# `/data/*` nielaisee ne ja workflow kaatuu committiin joka yo klo 05:10 -
+# eli hiljaa, koska kukaan ei katso vihreaa workflowta. Loytyi ajamalla se
+# kerran kasin.
+!/data/free_window_log.jsonl
+!/data/affiliate_cohort_log.jsonl
+# SPL-fantasy Phase 0 (7.8): vendoroitu tuloshistoria (ESPN, DC-priorifitti)
+# + baked output. Sama !-kuvio kuin FPL:ssä — ilman näitä builderi toimisi
+# vain kehityskoneella ja endpoint 503:aisi tuotannossa.
+!/data/spl_results.csv
+!/data/spl_results.README.md
+!/data/spl_projections_phase0.json
+!/data/spl_xp_projections.json
+# 13.8: availability-overridet OSA LAHDEKOODIA - ilman tata CI-refresh
+# rebuildaa squadin ilman korjausta ja peruu sen hiljaa 3 h valein
+!/data/spl_availability_overrides.json
+# xP-backtestin tiiviste (26.7): rate-team-selite kertoo projektioiden
+# osuvuuden, ja taysi raportti on logs/-alla gitignorattuna -> Render lukee taman.
+!/data/fpl_xp_accuracy.json
+# FPL Phase 1 xP -projektio: sama refresh-konventio (/api/fantasy/xp).
+!/data/fpl_xp_projections.json
+# Koko kauden 380 fixturen CS/FDR/1X2 (chip-EV lukee Renderilla gitista;
+# ilman tata chip-ev degradoituu 6 GW:n ikkunaan).
+!/data/fpl_cs_fdr.json
+# Jäädytetyt 25/26-pelaajabaselinet (element code -avain) — pre-season-xP:n
+# lähde 26/27-flipin jälkeen (scripts/build_fpl_prev_baselines.py); CI
+# tarvitsee tämän repossa (25/26-data ei enää haettavissa API:sta).
+!/data/fpl_prev_baselines_2526.json
+# FPL Phase 1b: manuaaliset konteksti-yliajot (versioitu input, builderit lukevat).
+!/data/fpl_manual_overrides.csv
+# 15.8: KIERROSMUISTIOT JA ARTIKKELIT. Poikkeus PUUTTUI kun tiedosto luotiin
+# samana paivana -> molemmat muistiot elivat vain kehityskoneella. Sivu
+# `fpl/notes.html` on generoitu tasta, joten CI:n uudelleenajo olisi
+# rakentanut sivun TYHJASTA lahteesta ja poistanut artikkelit hiljaa. Sama
+# vika kuin 27.7 pelaajayliajoissa kaksi riviä alempana, ja sama luokka kuin
+# "gitignoroitu korjaus = hiljainen regressio".
+!/data/fpl_notes.json
+# 28.7: PELAAJATASON minuuttiohitukset. Tama poikkeus PUUTTUI kun tiedosto
+# luotiin 27.7 -> se jai vain kehityskoneelle, CI-runnerilla sita ei ollut, ja
+# load_player_overrides() palautti hiljaa tyhjan dictin. Seuraus: 27.7 korjattu
+# Isak (6.34 -> 18.93) oli tuotannossa yha 6.34. Sama refresh-konventio kuin
+# muilla versioiduilla inputeilla: builderi lukee taman gitista.
+!/data/fpl_player_overrides.csv
+# 14.8: JOUKKUETASON ohitus samasta syysta ja SAMALLA ansalla. Ilman tata
+# rivia CI ajaisi nolla joukkueohituksella, `load_team_overrides()` palauttaisi
+# hiljaa tyhjan dictin ja Newcastle-korjaus olisi olemassa vain
+# kehityskoneella — tasmalleen Isak-regressio uudelleen. Tama ohitus liikuttaa
+# KOKO SEURAA kerralla, joten sen hiljainen katoaminen olisi kalliimpaa.
+!/data/fpl_team_overrides.csv
+# #142 OSA A: PL-seura->MM-2026-minuuttikartta (versioitu artefakti, OSA B:n
+# mitoitusevidenssi; uusinta-ajo ~15.8 ennen GW1:ta).
+!/data/wc2026_club_load.csv
+# FPL price watch (#43): sama refresh-konventio (/api/fantasy/price-watch).
+!/data/fpl_price_watch.json
+
+# #124/#125: xG- + DefCon-leaders-cache (committattu → Render servaa levyltä)
+!/data/fpl_player_leaders.json
+
+# 8.8 STATS-ZONE vaihe 2: Understatin laukausaggregaatti. Päättynyt kausi on
+# staattinen, joten artefakti rakennetaan kerran lokaalisti ja committataan —
+# CI ei hae 380 ottelusivua eikä altista GH-runnerin IP:tä estoille.
+!/data/understat_player_shots_2526.json
+!/data/understat_team_defence_2526.json
+
+# 8.8 STATS-ZONE: /fpl/stats -sivun lähdedata (scripts/build_fpl_stats.py).
+# Ilman tätä !-poikkeusta tiedosto jää kehityskoneelle ja CI:n regenerointi
+# tuottaisi sivun tyhjästä datasta — sama vikaluokka kuin fpl_defcon_gw.
+!/data/fpl_player_stats.json
+
+# 17.8: JAADYTETTY 25/26-ARKISTO (bootstrap-arkisto + summary_2526/, 842
+# tiedostoa, 30 Mt raakana -> 2,0 Mt pakattuna). Miksi repoon:
+# `build_team_confidence`, `build_fpl_defcon_gw` ja `build_fpl_player_gw`
+# lukevat kaikki data/raw/fpl/:sta, joka on gitignorattu eika paady runnerille.
+# 14.8 lisatyt cron-askeleet kaatuivat siihen JOKA ajossa (~29 punaista putkeen)
+# ja koko fpl-data-refresh kuoli step 11:een. FPL:n API ei tarjoile paattyneita
+# kausia, joten dataa ei voi hakea uudelleen — se on haettava mukana.
+# Kausi on PAATTYNYT eli tiedosto on immutable: committoidaan kerran, ei kasva.
+!/data/fpl_2526_archive.tar.gz
+
+# 30.7: per-GW DefCon -matriisi (committattu → Render servaa levyltä).
+# HUOM: ilman tätä !-poikkeusta endpoint 503:aa tuotannossa vaikka kaikki
+# muu on pushattu — gitignoroitu-korjaus-vikaluokka.
+!/data/fpl_defcon_gw.json
+
+# 30.7: julkiset tarkkuuslokit + xP-deadline-freezet (append-only, CI kirjoittaa)
+!/data/fpl_price_accuracy.json
+!/data/fpl_xp_gw_accuracy.json
+!/data/fpl_xp_frozen/
+!/data/fpl_xp_frozen/*.json
+
+# 13.8 (Beat the Model V2 vaihe a): mallin joukkueen deadline-freeze.
+# Koko V2:n julkinen vaite on "logged before kickoff, todistettavissa
+# git-historiasta" — ilman tata !-poikkeusta freeze kirjoittuisi levylle,
+# git add ohittaisi sen aanettomasti (vrt. founder_entry.json alla) ja
+# vaite olisi todistamaton juuri silla mekanismilla jolla se myydaan.
+!/data/model_squad_frozen/
+!/data/model_squad_frozen/*.json
+# Vaihe b: gradatut pisteet (append-only). Sama peruste kuin freezella —
+# Season race -paneeli lukee taman, ja ilman !-poikkeusta luku eläisi vain
+# runnerilla eika koskaan paatyisi sivulle.
+!/data/model_squad_gw_scores.json
+
+# 14.8 (PUSH-NOTIF vaihe b): push_dispatchin idempotenssimarkkerit.
+# ILMAN TATA POIKKEUSTA TUPLAPUSHI ON VARMA: markkeri elaisi vain runnerin
+# levylla, seuraava runner aloittaisi tyhjasta tilasta ja lahettaisi saman
+# deadline-pushin uudelleen. Tiedosto on samalla toimituksen auditointiloki
+# (specin kova saanto 5) — sama "logged"-periaate kuin freezeilla yllä.
+!/data/push_state.json
+
+# 14.8 (WHY-THIS-PICK): selitykset per pelaaja. Committoidaan kahdesta syysta:
+# API servaa taman levylta (kuten projektiot), ja cache-hash elaisi muuten
+# vain runnerilla -> jokainen ajo maksaisi taydet API-kutsut uudelleen.
+!/data/fpl_why.json
+
+# 1.8: perustajalohkon luvut julkisesta entrysta (build_founder_stats.py).
+# Tama !-poikkeus PUUTTUI shipatessa -> data-refreshin commit-step kaatui
+# "paths are ignored"-virheeseen 4 ajossa (1.-2.8) eika MITAAN dataa pushattu.
+# build_fpl_page lukee taman repon puolelta, joten tiedoston on oltava mukana.
+!/data/founder_entry.json
+downloaded_files/
+~/soccerdata/
+
+# Mallin valimuisti
+*.pkl
+*.joblib
+*.lgb
+
+# Notebookien checkpoint-tiedostot
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# IDE-asetukset
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS-spesifit
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Optuna-tietokannat
+*.db
+optuna_studies/
+
+# Logitiedostot
+*.log
+logs/
+
+# Testikoodi
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build-tiedostot
+build/
+dist/
+*.egg-info/
+
+# Kehitystyokalun konfiguraatio
+CLAUDE.md
+
+supabase/.temp/
+
+# Jakokorttien generoidut PNG:t (scripts/gen_share_card.py) - aina uudelleen
+# ajettavissa datasta, joten niita ei versioida.
+outputs/cards/
+.env.txt
+.env.*
+# Pre-season-priorin validointi (9.8.2026): jaadytetyt kausihistoriat, joista
+# kesatauko-foldit ajetaan. Raakadata (data/raw/fpl/season_*) on isoa ja jaa
+# ignoreen; nama tiivisteet ovat portin syote. Ilman !-poikkeusta portti
+# toimisi vain kehityskoneella ja nayttaisi muualla "artefakti puuttuu".
+!/data/fpl_prev_season_minutes_*.json
+# Joukkueiden luottamuslippu (9.8.2026): builderit ja API lukevat taman, joten
+# se on oltava repossa kuten muutkin bake-artefaktit.
+!/data/team_confidence.json
+
+# 11.8: generoidut Reels-videot ovat artefakteja, ei lahdekoodia
+outputs/reels/
+# 14.8: GW-digest-vedokset. EI committoida tarkoituksella: vedos generoidaan
+# LAHETYSHETKELLA tuoreesta datasta, ja repossa lojuva viikon vanha vedos on
+# tasan se jonka joku lahettaa vahingossa (muisti: verifiointi
+# postaushetkella, ei valmisteluhetkella).
+outputs/gw_digest/
+
+
+# wrangler-valimuisti (tilitunnus, ei salaisuus, mutta ei kuulu repoon)
+.wrangler/

@@ -1,0 +1,92 @@
+# Render-datadeploy (#86, 14.7.2026): hallittu 1 deploy/vrk deploy-hookilla.
+#
+# MIKSI: render.yaml buildFilter estää data-committeja (accuracy-autolog ~14x/vrk,
+# FPL-refreshit) polttamasta pipeline-minuutteja — mutta /api/accuracy, /api/team
+# ym. lukevat data/**-tiedostoja DEPLOYATUSTA reposta, joten tuore data tarvitsee
+# silti deployn Renderiin. Tämä workflow vie datan kerran vuorokaudessa:
+# ~30 buildia/kk (ennen: ~200+/kk → 500 min/kk kiintiö loppui 14.7).
+#
+# KERTALUONTOINEN SETUP (Ville, 🔒 GO — Render-dashboard + GitHub-UI):
+#   1. Render dashboard → goaliq-api → Settings → Deploy Hook → kopioi URL
+#   2. GitHub: Settings → Secrets and variables → Actions → New repository secret:
+#        RENDER_DEPLOY_HOOK = <hook-URL>
+#
+# GUARDRAILIT: jos secret puuttuu → punainen run (deploy-workflow joka ei voi
+# deployata on rikki eikä "skipattu" — 14.8:n oppi).
+# 15.8: "jos data/** ei muuttunut 24 h:ssa → skip" on POISTETTU. Perustelu on
+# askeleen kommentissa: mallin kausidata ei ole data/**:ssa, joten ehto ei
+# mitannut sitä mitä deploy oikeasti vie.
+# Deploy-hook triggeröi Renderin normaalin buildin — buildFilter EI koske
+# hook-deployta (hook on eksplisiittinen pyyntö, ei commit-triggeri).
+
+name: render-daily-deploy
+
+on:
+  schedule:
+    # Kerran vuorokaudessa aamuyöllä UTC — edellisillan ottelut on reconciloitu
+    # (accuracy-log ajaa 3 h välein) → aamun deploy vie tuoreen track-recordin.
+    - cron: "45 4 * * *"
+  workflow_dispatch: {}   # manuaalinen laukaisu (esim. heti tärkeän tuloksen jälkeen)
+
+concurrency:
+  group: render-daily-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-if-data-changed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0   # git log -tarkastus tarvitsee historian
+
+      - name: Trigger Render deploy hook (jos dataa muuttunut)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          # 14.8: TAMA OLI HILJAINEN VIHREA. Aiemmin puuttuva secret tulosti
+          # ::notice:: ja poistui exit 0:lla, joten workflow raportoi
+          # ONNISTUNEEKSI tekematta mitaan — ja niin se oli tehnyt joka
+          # ajossa. Havaittu kun tuotannon API tarjoili vanhaa dataa vaikka
+          # "deploy" oli vihrea. Deploy-workflow joka ei voi deployata on
+          # rikki, ei "skipattu", ja sen on nayttava rikkinaiselta.
+          # (Sama vikaluokka kuin accuracy-login vahti joka huusi
+          # ::warning::-tasolla jota virhegreppi ei nahnyt.)
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK-secret puuttuu — Render EI ole deployattu."
+            echo "::error::Lisaa secret: gh secret set RENDER_DEPLOY_HOOK --repo Veikkoville/football-prediction"
+            echo "::error::Hook-URL: Render dashboard -> service -> Settings -> Deploy Hook."
+            exit 1
+          fi
+          # 15.8.2026: "skip jos data/** ei muuttunut 24 h:ssa" POISTETTU.
+          #
+          # Se ehto oli minuuttisaasto joka muuttui korrektiusaukoksi kun kaudet
+          # kaynnistyivat. DC-mallin otteludata EI ole data/**:ssa vaan se
+          # ladataan ajossa football-data.co.uk:sta, ja siina on kolme
+          # valimuistia joista yksikaan ei vanhene prosessin sisalla:
+          #   1. _hae_csv                  levylle kirjoitettu CSV, palautetaan ikuisesti
+          #   2. _lataa_otteludata_cached  DataFrame-cache, domestic-liigoille pysyva
+          #   3. _malli_vanhentunut        palauttaa domestic-liigoille AINA False
+          # Kontin uudelleenkaynnistys on siis ainoa reitti jolla uuden kauden
+          # ottelut paatyvat malliin, ja tama workflow on ainoa joka sen tekee.
+          #
+          # Mitattu 15.8: kaudesta 2627 oli julkaistu vasta N1 ja P1. E0, E1,
+          # SP1, D1, I1 ja F1 palauttivat 300/301 eli tiedostoa ei ole viela.
+          # Ne ilmestyvat paivien sisalla ja niiden pitaa siirtya malliin ilman
+          # etta kukaan muistaa painaa nappia (Villen toimeksianto 15.8). Vanha
+          # ehto teki siita sattumanvaraista: deploy laukesi vain jos
+          # accuracy-autolog sattui committaamaan data/**:aan samana vuorokautena.
+          echo "Deploy ajetaan ehdoitta: mallin kausidata paivittyy vain kontin restartilla."
+          HTTP=$(curl -s -o /tmp/hook-resp -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK")
+          cat /tmp/hook-resp || true
+          if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
+            echo "Render deploy-hook OK (HTTP $HTTP)."
+          else
+            echo "::error::Render deploy-hook epäonnistui (HTTP $HTTP)."
+            exit 1
+          fi

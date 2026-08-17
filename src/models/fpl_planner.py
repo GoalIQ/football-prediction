@@ -1,0 +1,480 @@
+"""#35 Transfer Planner -suite: monen GW:n siirtosuunnittelu + captain-picker +
+differential finder + pelaajavertailu.
+
+Kaikki nojaa OLEMASSA OLEVAAN xP-projektioon (/api/fantasy/xp, #33
+predicted-minutes mukana) ja #34-rate-teamin jaettuun infraan (build_context,
+resolve_squad, optimal_xi) — xP-malliin EI kosketa.
+
+PLANNER-HEURISTIIKKA (dokumentoitu rajaus, EI globaali optimoija — scope-kuri
+CoS-linjauksen mukaan; greedy + rajattu kandidaattijoukko riittää GW1-arvoon):
+  - Käydään horisontin GW:t järjestyksessä. Per GW arvioidaan yhden siirron
+    kandidaatit: ulos kuka tahansa rungon 15:stä, sisään saman position
+    TOP_CANDIDATES_PER_POS parasta poolipelaajaa (jäljellä olevan horisontin
+    xP:llä), budjetti (bank + lähtevän hinta) + max 3/klubi vaihdon jälkeen.
+  - Siirron arvo = sisään tulevan ja lähtevän xP-ero JÄLJELLÄ OLEVALLE
+    horisontille (ei koko kaudelle) − hit-kustannus (HIT_COST jos free
+    transferit loppu). Tehdään ahneesti niin kauan kuin paras arvo ylittää
+    MIN_GAIN_PER_TRANSFER:in, max MAX_TRANSFERS_PER_GW/GW.
+  - Free transferit: alussa `ft`-parametri (oletus 1), +1 per GW, katto
+    FT_CARRY_MAX (FPL 2024- säännöt: 5). "Roll transfer" kirjataan kun optimi
+    on säästää siirto.
+  - Gate: suunnitelman netto-xP (kumulatiivinen xP − hitit) ei koskaan alita
+    ei-siirtoja-baselinea — muuten palautetaan hold-suunnitelma (testattu).
+"""
+from __future__ import annotations
+
+from src.models.fpl_rate_team import (
+    AVAILABILITY_GATE_NOTE, HIT_COST_XP, HOLD_THRESHOLD_XP, POS_NAME,
+    MAX_PER_CLUB, RateTeamError, apply_availability_gate, build_context,
+    build_hold_verdict, captain_suggestion, clamp_gw_to_projections,
+    optimal_xi, resolve_squad, _gw_xp,
+)
+
+HIT_COST = HIT_COST_XP  # FPL:n -4; sama lähde kuin rate-teamin hold_verdict
+FT_CARRY_MAX = 5
+MAX_TRANSFERS_PER_GW = 2
+TOP_CANDIDATES_PER_POS = 8
+MIN_GAIN_PER_TRANSFER = 0.5  # alle tämän → roll (siirto ei ole vaivan arvoinen)
+DIFFERENTIAL_MAX_OWNERSHIP = 10.0
+DIFFERENTIAL_TOP_N = 20
+CAPTAIN_DIFFERENTIAL_EO = 10.0
+# #71 malli-vs-joukko: delta = mallin xP-persentiili − EO-persentiili (positio-
+# sisäisesti, jotta GKP/DEF eivät vertaudu hyökkääjien xP-tasoon). Listalle
+# vaaditaan aito erimielisyys (|delta| ≥ kynnys) JA riittävä taso omalla
+# akselilla — template-pelaajat joista malli on samaa mieltä eivät kuulu
+# kumpaankaan listaan (rehellisyys > listan täyttäminen).
+MODEL_VS_CROWD_TOP_N = 10
+MODEL_VS_CROWD_DELTA_MIN = 15.0
+MODEL_VS_CROWD_MIN_MODEL_PCT = 60.0
+MODEL_VS_CROWD_MIN_CROWD_PCT = 60.0
+
+
+def _horizon_gws(pool: list[dict], start_gw: int, horizon: int) -> list[int]:
+    covered = sorted({g.get("gw") for p in pool
+                      for g in (p.get("gameweeks") or [])})
+    gws = [g for g in covered if g >= start_gw][:horizon]
+    if not gws:
+        raise RateTeamError(503, "No projected gameweeks in range.")
+    return gws
+
+
+def _remaining_xp(player: dict, gws: list[int]) -> float:
+    return sum(_gw_xp(player, g) for g in gws)
+
+
+def _club_counts(squad: list[dict]) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for p in squad:
+        counts[p["club"]] = counts.get(p["club"], 0) + 1
+    return counts
+
+
+def _best_transfer(squad: list[dict], pool: list[dict], bank_tenths: int,
+                   gws_left: list[int]) -> dict | None:
+    """Paras yksittäinen siirto jäljellä olevalle horisontille (tai None)."""
+    squad_ids = {p["id"] for p in squad}
+    clubs = _club_counts(squad)
+    # Kandidaatit: per positio TOP_N jäljellä olevan horisontin xP:llä
+    by_pos: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: []}
+    for p in pool:
+        if p["id"] not in squad_ids:
+            by_pos[p["element_type"]].append(p)
+    for t in by_pos:
+        by_pos[t].sort(key=lambda p: _remaining_xp(p, gws_left), reverse=True)
+        by_pos[t] = by_pos[t][:TOP_CANDIDATES_PER_POS]
+
+    best: dict | None = None
+    for out_p in squad:
+        budget = bank_tenths + out_p["price"]
+        out_xp = _remaining_xp(out_p, gws_left)
+        for in_p in by_pos[out_p["element_type"]]:
+            if in_p["price"] > budget:
+                continue
+            after = clubs.get(in_p["club"], 0) + 1
+            if in_p["club"] != out_p["club"] and after > MAX_PER_CLUB:
+                continue
+            gain = _remaining_xp(in_p, gws_left) - out_xp
+            if best is None or gain > best["gain"]:
+                best = {"out": out_p, "in": in_p, "gain": gain}
+    return best
+
+
+def plan_transfers(entry: int | None = None, gw: int | None = None,
+                   players: list[int] | None = None, bank: float | None = None,
+                   horizon: int = 3, ft: int = 1) -> dict:
+    """Monen GW:n siirtosuunnitelma (greedy + jäljellä olevan horisontin arvo)."""
+    if not 2 <= horizon <= 6:
+        raise RateTeamError(400, "horizon must be between 2 and 6.")
+    if not 0 <= ft <= FT_CARRY_MAX:
+        raise RateTeamError(400, f"ft must be between 0 and {FT_CARRY_MAX}.")
+    xp_data, bootstrap, pool, pool_by_id = build_context()
+    squad_ids, _cap, bank_tenths, picks_gw = resolve_squad(
+        bootstrap, entry, gw, players, None, bank)
+    start_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+    gws = _horizon_gws(pool, start_gw, horizon)
+
+    squad = [pool_by_id[i] for i in squad_ids if i in pool_by_id]
+    if len(squad) < 11:
+        raise RateTeamError(422, "Too few of the squad's players have xP "
+                                 f"projections ({len(squad)}/15 matched).")
+    missing = [i for i in squad_ids if i not in pool_by_id]
+
+    # Baseline: ei siirtoja — sama XI-valinta per GW (penkkirotaatio sallittu)
+    def _gw_score(sq: list[dict], g: int) -> float:
+        xi = optimal_xi(sq)
+        cap = max(xi, key=lambda p: _gw_xp(p, g))
+        return sum(_gw_xp(p, g) for p in xi) + _gw_xp(cap, g)
+
+    baseline_total = sum(_gw_score(squad, g) for g in gws)
+    original_squad = list(squad)
+
+    plan = []
+    fts = ft
+    bank_now = bank_tenths
+    total_hits = 0.0
+    for idx, g in enumerate(gws):
+        gws_left = gws[idx:]
+        moves = []
+        n_moves = 0
+        while n_moves < MAX_TRANSFERS_PER_GW:
+            cand = _best_transfer(squad, pool, bank_now, gws_left)
+            if cand is None:
+                break
+            hit = 0.0 if fts > 0 else HIT_COST
+            net_gain = cand["gain"] - hit
+            if net_gain < MIN_GAIN_PER_TRANSFER:
+                break
+            # Toteuta siirto
+            squad = [p for p in squad if p["id"] != cand["out"]["id"]]
+            squad.append(cand["in"])
+            bank_now += cand["out"]["price"] - cand["in"]["price"]
+            if fts > 0:
+                fts -= 1
+            else:
+                total_hits += HIT_COST
+            n_moves += 1
+            moves.append({
+                "out": {"id": cand["out"]["id"],
+                        "web_name": cand["out"]["web_name"],
+                        "team_short": cand["out"]["team_short"]},
+                "in": {"id": cand["in"]["id"],
+                       "web_name": cand["in"]["web_name"],
+                       "team_short": cand["in"]["team_short"]},
+                "pos": POS_NAME[cand["out"]["element_type"]],
+                "gain_xp_remaining": round(cand["gain"], 2),
+                "hit": hit,
+            })
+        xi = optimal_xi(squad)
+        cap = max(xi, key=lambda p: _gw_xp(p, g))
+        gw_xp_val = sum(_gw_xp(p, g) for p in xi) + _gw_xp(cap, g)
+        plan.append({
+            "gw": g,
+            "transfers": moves,
+            "roll_transfer": not moves,
+            "captain": {"id": cap["id"], "web_name": cap["web_name"],
+                        "gw_xp": round(_gw_xp(cap, g), 2)},
+            "gw_xp": round(gw_xp_val, 2),
+            "free_transfers_left": fts,
+            "bank": round(bank_now / 10.0, 1),
+        })
+        fts = min(FT_CARRY_MAX, fts + 1)  # +1 FT seuraavaan GW:hen
+
+    plan_total = sum(p["gw_xp"] for p in plan) - total_hits
+    # Gate: suunnitelma ei koskaan alita ei-siirtoja-baselinea → hold-fallback
+    # (rakenteellisesti epätodennäköinen koska jokainen siirto vaatii
+    # MIN_GAIN-ylityksen hitin jälkeen, mutta vahditaan silti eksplisiittisesti)
+    if plan_total < baseline_total:
+        plan = []
+        fts_h = ft
+        for g in gws:
+            xi = optimal_xi(original_squad)
+            cap = max(xi, key=lambda p: _gw_xp(p, g))
+            plan.append({
+                "gw": g, "transfers": [], "roll_transfer": True,
+                "captain": {"id": cap["id"], "web_name": cap["web_name"],
+                            "gw_xp": round(_gw_xp(cap, g), 2)},
+                "gw_xp": round(sum(_gw_xp(p, g) for p in xi)
+                               + _gw_xp(cap, g), 2),
+                "free_transfers_left": fts_h,
+                "bank": round(bank_tenths / 10.0, 1),
+            })
+            fts_h = min(FT_CARRY_MAX, fts_h + 1)
+        plan_total = baseline_total
+        total_hits = 0.0
+
+    # #63: hero-verdikti — suunnitelman netto (hitit jo vähennetty) vs kynnys.
+    # Ei koskaan suosittele siirtoketjua jonka hyöty on kynnyksen alle.
+    n_moves = sum(len(p["transfers"]) for p in plan)
+    net_gain = round(plan_total - baseline_total, 2)
+    if n_moves == 0:
+        hv_message = (f"No transfer beats your team over the next {len(gws)} "
+                      f"GWs - holding is the play.")
+    elif net_gain < HOLD_THRESHOLD_XP:
+        hv_message = (f"Your best plan gains only {net_gain:+.1f} xP over "
+                      f"{len(gws)} GWs (hits included) - holding is the play.")
+    else:
+        plural = "s" if n_moves != 1 else ""
+        hv_message = (f"Recommended: {n_moves} transfer{plural} for "
+                      f"{net_gain:+.1f} xP net over {len(gws)} GWs.")
+    hold_verdict = {
+        "verdict": ("hold" if n_moves == 0 or net_gain < HOLD_THRESHOLD_XP
+                    else "transfer"),
+        "best_move_gain_xp": net_gain if n_moves else None,
+        "horizon_gws": len(gws),
+        "threshold_xp": HOLD_THRESHOLD_XP,
+        "transfers_planned": n_moves,
+        "message": hv_message,
+    }
+
+    return {
+        "meta": {
+            "entry": entry, "start_gw": gws[0], "horizon": len(gws),
+            "generated_at": xp_data["meta"].get("generated_at"),
+            "heuristic": ("greedy, remaining-horizon value, max "
+                          f"{MAX_TRANSFERS_PER_GW} transfers/GW, hit -4, "
+                          f"FT carry max {FT_CARRY_MAX} - not a global optimum"),
+            "note": "GoalIQ model projections - for fun and planning, "
+                    "not betting advice.",
+        },
+        "hold_verdict": hold_verdict,
+        "plan": plan,
+        "totals": {
+            "plan_xp": round(plan_total, 2),
+            "baseline_xp_no_transfers": round(baseline_total, 2),
+            "net_gain": round(plan_total - baseline_total, 2),
+            "hits_taken": int(total_hits / HIT_COST),
+        },
+        "missing_ids": missing,
+    }
+
+
+def captain_picker(entry: int | None = None, gw: int | None = None,
+                   players: list[int] | None = None) -> dict:
+    """Top-3 kapteeniehdokasta + differential-kapteeni (EO ≤ 10 %)."""
+    xp_data, bootstrap, pool, pool_by_id = build_context()
+    squad_ids, _cap, _bank, picks_gw = resolve_squad(
+        bootstrap, entry, gw, players, None, None)
+    target_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+    squad = [pool_by_id[i] for i in squad_ids if i in pool_by_id]
+    if len(squad) < 11:
+        raise RateTeamError(422, "Too few projected players in the squad.")
+    xi = optimal_xi(squad)
+    # Addendum 2: serve-time-portti. XI:n valinta pysyy ennallaan (runko on
+    # kayttajan oma), mutta LIVE-lipulla sivussa oleva ei kelpaa kapteeniksi.
+    # Jos portti tyhjentaisi listan (ei kaytannossa mahdollista), palataan
+    # suodattamattomaan XI:hin — vastaus ei koskaan katoa.
+    dropped = apply_availability_gate(xi, bootstrap)[1]
+    dropped_ids = {r["id"] for r in dropped}
+    gated_xi = [p for p in xi if p["id"] not in dropped_ids] or xi
+    ranked = sorted(gated_xi, key=lambda p: _gw_xp(p, target_gw), reverse=True)
+
+    def _fmt(p):
+        return {"id": p["id"], "web_name": p["web_name"],
+                "team_short": p["team_short"],
+                "gw_xp": round(_gw_xp(p, target_gw), 2),
+                "owned_pct": p.get("owned_pct")}
+
+    top3 = [_fmt(p) for p in ranked[:3]]
+    for i, t in enumerate(top3):
+        t["gap_to_top"] = round(top3[0]["gw_xp"] - t["gw_xp"], 2) if i else 0.0
+    diff = next((p for p in ranked
+                 if (p.get("owned_pct") or 100.0) <= CAPTAIN_DIFFERENTIAL_EO),
+                None)
+    return {
+        "meta": {"gw": target_gw,
+                 "generated_at": xp_data["meta"].get("generated_at"),
+                 "availability_gate": {
+                     "checked": True,
+                     "dropped": dropped,
+                     "note": AVAILABILITY_GATE_NOTE,
+                 }},
+        "top3": top3,
+        "differential": (_fmt(diff) if diff and diff["id"] not in
+                         {t["id"] for t in top3[:1]} else None),
+    }
+
+
+def _pct_ranks(values: list[float]) -> list[float]:
+    """Persentiililuvut 0–100 keskiarvotetuin tasapelein (ilman numpyä)."""
+    n = len(values)
+    if n == 1:
+        return [50.0]
+    order = sorted(range(n), key=lambda i: values[i])
+    pct = [0.0] * n
+    i = 0
+    while i < n:
+        j = i
+        while j + 1 < n and values[order[j + 1]] == values[order[i]]:
+            j += 1
+        p = 100.0 * ((i + j) / 2.0) / (n - 1)
+        for k in range(i, j + 1):
+            pct[order[k]] = p
+        i = j + 1
+    return pct
+
+
+def _model_vs_crowd(pool: list[dict]) -> dict[int, tuple[float, float, float]]:
+    """#71: pelaaja-id → (model_pct, crowd_pct, delta), positio-sisäisesti.
+
+    model_pct = xp_horizon_total-persentiili oman position sisällä,
+    crowd_pct = owned_pct-persentiili samoin. delta = model − crowd:
+    positiivinen = malli arvostaa korkeammalle kuin joukko omistaa.
+    """
+    out: dict[int, tuple[float, float, float]] = {}
+    for etype in {p["element_type"] for p in pool}:
+        grp = [p for p in pool if p["element_type"] == etype]
+        model = _pct_ranks([p["xp_horizon_total"] for p in grp])
+        crowd = _pct_ranks([(p.get("owned_pct") or 0.0) for p in grp])
+        for p, m, c in zip(grp, model, crowd):
+            m, c = round(m, 1), round(c, 1)
+            out[p["id"]] = (m, c, round(m - c, 1))
+    return out
+
+
+def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
+                        pos: str | None = None) -> dict:
+    """Matala EO × korkea xP -listaus koko poolista (ei vaadi entryä).
+
+    #71: mukana myös model_vs_crowd-osio — missä malli on ERI mieltä kuin
+    joukko (käänteinen "seuraa eliittiä": model_backs = malli edellä joukkoa,
+    crowd_backs = template-pelaajat joita malli ei rankkaa omistuksen tasolle).
+    """
+    if not 0 < max_ownership <= 100:
+        raise RateTeamError(400, "max_ownership must be in (0, 100].")
+    pos_by_name = {v: k for k, v in POS_NAME.items()}
+    if pos is not None and pos not in pos_by_name:
+        raise RateTeamError(400, f"pos must be one of {sorted(pos_by_name)}.")
+    xp_data, bootstrap, pool, _by_id = build_context()
+    # Persentiilit lasketaan TAYDESTA poolista (vertailukohta ei saa heilua
+    # yksittaisen loukkaantumisen mukana), vasta listat suodatetaan.
+    mvc = _model_vs_crowd(pool)
+    pool, dropped = apply_availability_gate(pool, bootstrap)
+
+    def _row(p):
+        m, c, d = mvc[p["id"]]
+        return {
+            "id": p["id"], "web_name": p["web_name"],
+            "team_short": p["team_short"], "pos": POS_NAME[p["element_type"]],
+            "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
+            "xp_per_gw": round(p["xp_per_gw"], 2),
+            "xp_horizon_total": round(p["xp_horizon_total"], 2),
+            "model_pct": m, "crowd_pct": c, "model_vs_crowd_delta": d,
+        }
+
+    cands = [p for p in pool
+             if (p.get("owned_pct") or 0.0) <= max_ownership
+             and (pos is None or p["element_type"] == pos_by_name[pos])]
+    cands.sort(key=lambda p: p["xp_horizon_total"], reverse=True)
+
+    # #71: model-vs-crowd-listat EIVÄT noudata max_ownership-filtteriä
+    # (crowd_backs on määritelmällisesti korkea-EO), pos-filtteri noudatetaan.
+    scoped = [p for p in pool
+              if pos is None or p["element_type"] == pos_by_name[pos]]
+    backs = sorted(
+        (p for p in scoped
+         if mvc[p["id"]][2] >= MODEL_VS_CROWD_DELTA_MIN
+         and mvc[p["id"]][0] >= MODEL_VS_CROWD_MIN_MODEL_PCT),
+        key=lambda p: mvc[p["id"]][2], reverse=True)
+    fades = sorted(
+        (p for p in scoped
+         if mvc[p["id"]][2] <= -MODEL_VS_CROWD_DELTA_MIN
+         and mvc[p["id"]][1] >= MODEL_VS_CROWD_MIN_CROWD_PCT),
+        key=lambda p: mvc[p["id"]][2])
+
+    return {
+        "meta": {"max_ownership": max_ownership, "pos": pos,
+                 "generated_at": xp_data["meta"].get("generated_at"),
+                 "horizon_gw": xp_data["meta"].get("horizon_gw"),
+                 "availability_gate": {"checked": True, "dropped": dropped,
+                                       "note": AVAILABILITY_GATE_NOTE}},
+        "players": [_row(p) for p in cands[:DIFFERENTIAL_TOP_N]],
+        "model_vs_crowd": {
+            "note": ("delta = model xP percentile minus ownership percentile, "
+                     "within position. Positive: the model rates the player "
+                     "higher than the crowd owns him. Ignores max_ownership."),
+            "model_backs": [_row(p) for p in backs[:MODEL_VS_CROWD_TOP_N]],
+            "crowd_backs": [_row(p) for p in fades[:MODEL_VS_CROWD_TOP_N]],
+        },
+    }
+
+
+def compare_players(player_ids: list[int]) -> dict:
+    """2–4 pelaajan rinnakkaisvertailu + suora kanta xP-erolla.
+
+    28.7: katto 3 -> 4. Neljä on realistinen kun mietit kahta siirtoa samalla
+    kertaa, ja se on myös se lupaus jolla kilpailijat myyvät vertailutyökalua.
+    Verdict on aina kahden kärjen välinen ero, joten laajennus ei muuta
+    olemassa olevien 2:n ja 3:n vastauksia millään tavalla.
+    """
+    if not 2 <= len(player_ids) <= 4:
+        raise RateTeamError(400, "compare takes 2 to 4 player IDs.")
+    if len(set(player_ids)) != len(player_ids):
+        raise RateTeamError(400, "compare IDs must be distinct.")
+    xp_data, _bootstrap, _pool, pool_by_id = build_context()
+
+    # 6.8 compare-V2 (Villen idea): pelipaikkarelevantit RAAKAstatit xP-osuuksien
+    # rinnalle — DEF saa SAMAN DefCon hit-raten jota leaders-lista käyttää
+    # (rank_defcon_season, nimittäjä = startit), hyökkääjät xG/xA per 90
+    # edelliskaudelta. Defensiivinen: artefaktin puute ei kaada vertailua,
+    # mutta puute näkyy metassa (ei hiljaista katoamista).
+    dc_by_id: dict[int, dict] = {}
+    dc_basis_season = None
+    try:
+        from src.models.fpl_leaders import load_defcon_gw, rank_defcon_season
+        _dc = rank_defcon_season(load_defcon_gw(), pos=None, top_n=400)
+        dc_by_id = {r["id"]: r for r in _dc.get("players", [])}
+        dc_basis_season = _dc.get("meta", {}).get("basis_season")
+    except Exception:
+        pass
+
+    rows = []
+    for pid in player_ids:
+        p = pool_by_id.get(pid)
+        if p is None:
+            raise RateTeamError(404, f"Player {pid} has no xP projection.")
+        row = {
+            "id": p["id"], "web_name": p["web_name"],
+            "team_short": p["team_short"], "pos": POS_NAME[p["element_type"]],
+            "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
+            "xmins": p.get("xmins"),
+            "predicted_starts": p.get("predicted_starts"),
+            "minutes_confidence": p.get("minutes_confidence"),
+            "xp_per_gw": round(p["xp_per_gw"], 2),
+            "xp_horizon_total": round(p["xp_horizon_total"], 2),
+            "components": p.get("components"),
+            "components_gw": p.get("components_gw"),
+        }
+        ls = p.get("last_season") or {}
+        mins = ls.get("minutes") or 0
+        # 450 min alaraja: alle viiden pelin per-90 on kohinaa eikä sitä
+        # esitetä vertailulukuna (sama henki kuin leaders-poolisäännöissä).
+        if mins >= 450 and ls.get("xg") is not None:
+            row["xg90_prev"] = round(float(ls["xg"]) * 90.0 / mins, 2)
+            row["xa90_prev"] = round(float(ls.get("xa") or 0.0) * 90.0 / mins, 2)
+            row["prev_season"] = ls.get("season")
+        d = dc_by_id.get(p["id"])
+        if d is not None:
+            row["defcon_hit_rate_pct"] = d.get("hit_rate_pct")
+            row["defcon_dc_per_game"] = d.get("dc_per_game")
+        rows.append(row)
+    ranked = sorted(rows, key=lambda r: r["xp_horizon_total"], reverse=True)
+    margin = round(ranked[0]["xp_horizon_total"] - ranked[1]["xp_horizon_total"], 2)
+    verdict = {
+        "pick": {"id": ranked[0]["id"], "web_name": ranked[0]["web_name"]},
+        "margin_xp_horizon": margin,
+        "text": (f"{ranked[0]['web_name']} projects {margin} xP more than "
+                 f"{ranked[1]['web_name']} over the horizon."
+                 if margin >= 0.5 else
+                 f"Too close to call - {ranked[0]['web_name']} edges it by "
+                 f"{margin} xP over the horizon."),
+    }
+    return {
+        "meta": {"generated_at": xp_data["meta"].get("generated_at"),
+                 "horizon_gw": xp_data["meta"].get("horizon_gw"),
+                 # V2: mistä raakastatit tulevat — frontend näyttää katteen
+                 # eikä myy edelliskauden lukua nykykauden mittauksena.
+                 "defcon_basis_season": dc_basis_season,
+                 "defcon_available": bool(dc_by_id)},
+        "players": rows,
+        "verdict": verdict,
+    }

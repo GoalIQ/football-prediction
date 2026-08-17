@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#0b0a09" />
+		<title>GoalIQ Premium | FPL tools</title>
+		<meta
+			name="description"
+			content="FPL tools from a real match model: player expected points with scoring rate and minutes shown separately, clean sheets, captain ranker and a transfer planner. Graded in public from GW1."
+		/>
+		<!-- Keep the 32 and 48 sizes: browsers pick the variant matching the tab
+		     size, and scaling 192 down blurred the mark. All icons are generated
+		     by gen_teletext_social.py so both hosts stay on one palette; the SPA
+		     keeps its own copies under static/ and drifted once because of it. -->
+		<link rel="icon" type="image/png" sizes="32x32" href="%sveltekit.assets%/goaliq-appicon-32.png" />
+		<link rel="icon" type="image/png" sizes="48x48" href="%sveltekit.assets%/goaliq-appicon-48.png" />
+		<link rel="icon" type="image/png" sizes="192x192" href="%sveltekit.assets%/goaliq-appicon-192.png" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/goaliq-appicon-192.png" />
+		<meta property="og:title" content="GoalIQ Premium | FPL tools" />
+		<meta
+			property="og:description"
+			content="FPL tools from a real match model: player expected points with scoring rate and minutes shown separately, clean sheets, captain ranker and a transfer planner. Graded in public from GW1."
+		/>
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://pro.goaliq.app/" />
+		<!-- og:image must stay absolute. It was relative once and social crawlers
+		     dropped it, so shared links had no image. Card type must stay
+		     summary_large_image: a small square loses to a large card in the feed,
+		     and goaliq.app links already use the 1200x630 one. Serve the image from
+		     this origin, not from goaliq.app, because some crawlers do not follow
+		     cross-host image URLs. -->
+		<meta property="og:image" content="https://pro.goaliq.app/goaliq-social-1200x630.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="GoalIQ: free FPL tools backed by a real match model" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content="@goaliqapp" />
+		<meta name="twitter:title" content="GoalIQ Premium | FPL tools" />
+		<meta
+			name="twitter:description"
+			content="FPL tools from a real match model: player expected points with scoring rate and minutes shown separately, clean sheets, captain ranker and a transfer planner. Graded in public from GW1."
+		/>
+		<meta name="twitter:image" content="https://pro.goaliq.app/goaliq-social-1200x630.png" />
+		<!-- Warm the API connection: it is called immediately after boot, so this
+		     takes the TLS handshake off the critical path. -->
+		<link rel="preconnect" href="https://api.goaliq.app" crossorigin />
+		<!-- Boot watchdog. This lives in the HTML, not in a module, on purpose:
+		     the in-app error buffer installs from the root layout's onMount, which
+		     only runs after that chunk has loaded and hydrated. When that import is
+		     the thing that fails, onMount never runs, no listener is installed and
+		     nothing is ever reported. The user sees SvelteKit's own error screen on
+		     top of a 200 response and no telemetry arrives at all. Reproduced by
+		     removing the root node chunk. Inline script runs before any module, so
+		     it cannot fail with one. -->
+		<script>
+			(function () {
+				var MAX = 10;
+				var buf = (window.__goaliqEarlyErrors = []);
+				function push(err, kind) {
+					if (buf.length < MAX) buf.push({ error: err, kind: kind });
+				}
+				function onErr(ev) {
+					push(ev.error || new Error(ev.message || 'Unknown error'), 'error');
+				}
+				function onRej(ev) {
+					push(ev.reason || new Error('Unhandled rejection'), 'unhandledrejection');
+				}
+				window.addEventListener('error', onErr);
+				window.addEventListener('unhandledrejection', onRej);
+				/* The app calls this once analytics takes over: drop our listeners
+				   to avoid double reporting, and cancel the watchdog. */
+				window.__goaliqEarlyDetach = function () {
+					window.removeEventListener('error', onErr);
+					window.removeEventListener('unhandledrejection', onRej);
+					clearTimeout(timer);
+				};
+				/* 10s. A slow but successful boot past ten seconds is itself a
+				   signal worth seeing, so we do not try to filter it out. A false
+				   positive is cheaper than a dead boot nobody can see. */
+				var timer = setTimeout(function () {
+					var KEY = 'phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7';
+					var HOST = 'https://us.i.posthog.com';
+					var did = null;
+					try {
+						/* Reuse the posthog-js distinct_id so the event attaches to
+						   the same person instead of creating a ghost profile. */
+						var raw = localStorage.getItem('ph_' + KEY + '_posthog');
+						if (raw) did = JSON.parse(raw).distinct_id || null;
+					} catch (e) {}
+					if (!did) did = 'boot-failsafe-' + Math.random().toString(36).slice(2);
+					var first = buf.length ? buf[0].error : null;
+					var body = JSON.stringify({
+						api_key: KEY,
+						event: 'web_boot_failed',
+						properties: {
+							distinct_id: did,
+							$current_url: location.href,
+							source: 'boot_failsafe',
+							error_count: buf.length,
+							first_error: first ? String((first && first.message) || first) : null,
+							first_error_kind: buf.length ? buf[0].kind : null,
+							/* Separates two failures, measured rather than guessed:
+							   false = the runtime came up and replaced this shell
+							   with its own error page (a route chunk failed);
+							   true = the runtime never started at all, for example
+							   the entry chunk never arrived. */
+							boot_shell_present: !!document.getElementById('boot'),
+							ready_state: document.readyState
+						}
+					});
+					try {
+						var blob = new Blob([body], { type: 'application/json' });
+						if (!navigator.sendBeacon || !navigator.sendBeacon(HOST + '/e/', blob)) {
+							fetch(HOST + '/e/', {
+								method: 'POST',
+								body: body,
+								keepalive: true,
+								mode: 'no-cors',
+								headers: { 'Content-Type': 'application/json' }
+							});
+						}
+					} catch (e) {}
+				}, 10000);
+			})();
+		</script>
+		<!-- "Show all columns" toggle. Narrow screens hide some columns with
+		     .m-hide, but hidden must never mean unreachable, so this is the way
+		     out. Same contract as the goaliq.app pages.
+
+		     Why an inline script with a MutationObserver instead of a Svelte
+		     component: tables here appear and disappear as tabs change, so a
+		     one-time attach would leave later tables without a toggle. As a
+		     component it would have to be added to sixteen table components by
+		     hand. The observer covers all of them, including future ones. -->
+		<script>
+			(function () {
+				var WRAP = '.table-wrap';
+				var btns = [];
+				function label(on) {
+					return on ? 'Show key columns' : 'Show all columns';
+				}
+				function sync(on) {
+					for (var i = 0; i < btns.length; i++) {
+						btns[i].textContent = label(on);
+						btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+					}
+				}
+				function toggle() {
+					sync(document.body.classList.toggle('cols-all'));
+				}
+				function attach() {
+					var on = document.body.classList.contains('cols-all');
+					var wraps = document.querySelectorAll(WRAP);
+					for (var i = 0; i < wraps.length; i++) {
+						var w = wraps[i];
+						if (w.dataset.colsToggle) continue;
+						if (!w.querySelector('.m-hide')) continue;
+						w.dataset.colsToggle = '1';
+						var host = document.createElement('p');
+						host.className = 'm-only';
+						host.style.margin = '0';
+						var b = document.createElement('button');
+						b.type = 'button';
+						b.className = 'colstoggle';
+						b.textContent = label(on);
+						b.setAttribute('aria-pressed', on ? 'true' : 'false');
+						b.addEventListener('click', toggle);
+						host.appendChild(b);
+						w.parentNode.insertBefore(host, w);
+						btns.push(b);
+					}
+					/* Drop detached buttons so sync() never touches removed nodes
+					   and the list cannot grow without bound. */
+					btns = btns.filter(function (b) {
+						return b.isConnected;
+					});
+				}
+				function start() {
+					attach();
+					new MutationObserver(attach).observe(document.body, {
+						childList: true,
+						subtree: true
+					});
+				}
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', start);
+				} else {
+					start();
+				}
+			})();
+		</script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<!-- preload plus onload rather than a render-blocking stylesheet, same
+		     pattern as the goaliq.app pages. The noscript block is the fallback. -->
+		<link
+			rel="preload"
+			as="style"
+			href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+			onload="this.rel='stylesheet'"
+		/>
+		<noscript>
+			<link
+				href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+				rel="stylesheet"
+			/>
+		</noscript>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<!-- The shell is a few kilobytes and the app is several hundred, so
+		     without this the screen was blank for the whole load. This markup is
+		     part of the HTML, so it paints from the first byte, and the root
+		     layout removes it on mount. Deliberately a frame only, not a fake
+		     skeleton of data we do not have yet: an empty row that fills in is
+		     honest, an invented number would not be. -->
+		<div id="boot" aria-hidden="true">
+			<div class="boot-bar">GoalIQ Premium</div>
+			<div class="boot-lines"><i></i><i></i><i></i></div>
+		</div>
+		<style>
+			#boot {
+				font-family: 'IBM Plex Mono', ui-monospace, monospace;
+				max-width: 960px;
+				margin: 0 auto;
+				padding: 16px;
+			}
+			#boot .boot-bar {
+				background: #f3f2f2;
+				color: #0b0a09;
+				font-size: 11.5px;
+				text-transform: uppercase;
+				letter-spacing: 0.16em;
+				padding: 6px 10px;
+			}
+			#boot .boot-lines {
+				display: grid;
+				gap: 8px;
+				margin-top: 12px;
+			}
+			#boot .boot-lines i {
+				display: block;
+				height: 14px;
+				background: #1f1d1a;
+			}
+			#boot .boot-lines i:nth-child(2) {
+				width: 72%;
+			}
+			#boot .boot-lines i:nth-child(3) {
+				width: 45%;
+			}
+		</style>
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

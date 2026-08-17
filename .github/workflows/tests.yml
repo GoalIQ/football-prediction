@@ -1,0 +1,34 @@
+# Nopea pytest-subset (ei slow-merkittyjä): WC smoke + name-aliakset +
+# gate-funktiot. Toimii committoidulla datalla (wc_model.json, elo_ratings.csv,
+# international_results.csv) — ei tarvitse FOOTBALL_DATA_API_KEY:tä.
+# Domestic golden (@slow) ajetaan vain lokaalisti (downloaded_files gitignored).
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  fast-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+      - name: Run fast test suite
+        run: pytest -m "not slow" -q
+
+      # 28.7: em dash -portti julkaistuille sivuille + SPA-markupille. Sääntö
+      # oli olemassa vain ihmisen muistissa, ja 27.7. sen ohi meni useita.
+      # Ei riipu asennetuista paketeista (pelkkä stdlib), joten se ajaa myös
+      # jos requirements muuttuu.
+      - name: Copy style (em dash)
+        run: python scripts/check_copy_style.py

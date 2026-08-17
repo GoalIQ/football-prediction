@@ -1,0 +1,406 @@
+"""Dixon-Coles -malli + joukkuekohtainen kotietu + ottelukohtaiset saadot."""
+
+from __future__ import annotations
+from dataclasses import dataclass, field
+import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
+from scipy.stats import poisson
+
+
+def _tau(x, y, lam, mu, rho):
+    if x == 0 and y == 0: return 1.0 - lam * mu * rho
+    if x == 0 and y == 1: return 1.0 + lam * rho
+    if x == 1 and y == 0: return 1.0 + mu * rho
+    if x == 1 and y == 1: return 1.0 - rho
+    return 1.0
+
+
+@dataclass
+class DixonColesModel:
+    attack: dict = field(default_factory=dict)
+    defence: dict = field(default_factory=dict)
+    home_advantage: float = 0.0           # globaali keskiarvo
+    home_advantage_per_team: dict = field(default_factory=dict)  # joukkuekohtainen lisays
+    rho: float = -0.1
+    teams_: list = field(default_factory=list)
+    per_team_home_adv: bool = True        # True = sovita joukkuekohtainen kotietu
+    model_type_: str = "dc"               # "dc" tai "bivariate_poisson"
+    # 17.8: optimoinnin lopputila. `fit` ottaa `result.x`:n riippumatta siita
+    # onnistuiko SLSQP, joten hajonnut sovitus paatyi malliin ilman etta sita
+    # pystyi jalkikateen huomaamaan. Nama kentat EIVAT muuta yhtaan lukua;
+    # ne tekevat tilan luettavaksi (sama korjausmuoto kuin juuriendpointin
+    # commit-kentta: tee tila luettavaksi ennen kuin arvailet).
+    fit_success_: bool = True
+    fit_message_: str = ""
+    fit_nit_: int = 0
+
+    def fit(self, matches, home_team_col="home_team", away_team_col="away_team",
+            home_goals_col="home_score", away_goals_col="away_score",
+            decay=0.0, date_col=None, l2_per_team=2.0,
+            l2_attack_defence=2.0, team_priors=None,
+            home_xg_col=None, away_xg_col=None, xg_weight=0.0,
+            model_type="dc", shrink_defence_to_mean=False,
+            competition_col=None, competition_weights=None,
+            default_competition_weight=1.0):
+        """
+        Sovita malli.
+
+        Parametrit
+        ----------
+        l2_per_team
+            Shrinkkaa joukkuekohtaisia home-advantage-poikkeamia kohti 0:aa
+            (estaa overfittingia kun joukkueella on vahan kotipeleja).
+        l2_attack_defence
+            **Bayes-prior** hyokkays/puolustus-parametreille. Vetaa joukkueiden
+            estimaatit kohti liigan keskiarvoa (joka on 0). Vahan dataa ->
+            estimaatti pysyy lahempana keskiarvoa, paljon dataa -> data dominoi.
+
+            Ekvivalentti Normal(0, sigma)-priorin MAP-estimoinnille jossa
+            sigma = sqrt(1 / (2 * l2_attack_defence)). Suositukset:
+              - 0.5 = heikko shrinkage, lahes pure MLE
+              - 2.0 = oletus, sopiva 1-2 kauden datalla
+              - 5.0 = vahva shrinkage, hyodyllinen kun joukkueella vahan otteluja
+              - 0   = ei prioriaa (vanha kayttaytyminen)
+        team_priors
+            Optionaalinen dict joukkuekohtaisia priorityyppeja:
+            ``{joukkue: {"attack": x, "defence": y, "weight": w}}``.
+            ``weight`` on shrinkage-vahvuuskerroin (oletus 1.0). Ilman tata
+            joukkueiden L2-prior on (0, 0); tama vaihtaa shrinkage-kohteen
+            (ja initialisoinnin) mainittuun arvoon. Hyodyllinen promotoiduille
+            joukkueille joiden alasarjaestimaatti tunnetaan.
+        home_xg_col, away_xg_col, xg_weight
+            **xG-painotettu likelihood**. Jos `xg_weight > 0` ja xG-sarakkeet
+            on annettu, lisataan likelihoodiin Gaussian-tyylinen termi joka
+            rankaisee mallin lambdan poikkeamaa toteutuneesta xG:sta.
+            Vaikutus: mallin estimaatit "siloittuvat" toteutuneiden xG:iden
+            mukaan eika perustu pelkille maaleille (jotka ovat noisy).
+            Suositus: 0.3-0.5 jos xG-data luotettava (Understat top-5 -liigat).
+        model_type
+            "dc" (oletus) = Dixon-Coles tau-korjauksella, "bivariate_poisson" =
+            Bivariate Poisson -malli (jaettu Z-komponentti). Bivariate Poisson
+            on matemaattisesti elegantimpi ratkaisu maalien korrelaatioon.
+        competition_col, competition_weights, default_competition_weight
+            **Kilpailu-paino** (#79). Jos `competition_col` ja `competition_weights`
+            on annettu ja sarake loytyy datasta, jokaisen ottelun decay-paino
+            kerrotaan kilpailun painolla (esim. WC-karsinta 1.0 > friendly 0.5).
+            Tuntematon kilpailu -> `default_competition_weight`. None (oletus) =
+            ei vaikutusta -> `painot` pysyy bittitarkasti ennallaan (domestic-polku).
+        shrink_defence_to_mean
+            False (oletus) = `defence`-parametrit shrinkataan kohti 0:aa
+            (tai team_priors-arvoa) — vanha kayttaytyminen.
+
+            True = `defence` shrinkataan kohti **omaa keskiarvoaan**, ei 0:aa.
+            Syy (#61): `attack` on summarajoitettu 0:aan, joten sen
+            shrinkkaaminen kohti 0:aa kaventaa vain joukkue-eroja. `defence`
+            sen sijaan **ei ole summarajoitettu** — se kantaa maalitason
+            absoluuttisen baselinen. Kohti 0:aa shrinkkaaminen vetaa siis koko
+            maalitason alas (deflatoi ennustetut maalit). Kohti keskiarvoa
+            shrinkkaaminen kaventaa vain joukkueiden valisia puolustuseroja ja
+            jattaa tason vapaaksi likelihoodin maaritettavaksi. Ekvivalentti
+            shrinkkaamattomalle interceptille + sum(defence)=0 -rajoitteelle.
+        """
+        df = matches.dropna(subset=[home_goals_col, away_goals_col]).copy()
+        df[home_goals_col] = df[home_goals_col].astype(int)
+        df[away_goals_col] = df[away_goals_col].astype(int)
+        teams = sorted(set(df[home_team_col]) | set(df[away_team_col]))
+        n = len(teams)
+        idx = {t: i for i, t in enumerate(teams)}
+
+        if decay > 0 and date_col is not None:
+            t = pd.to_datetime(df[date_col])
+            paivaa = (t.max() - t).dt.days.values
+            painot = np.exp(-decay * paivaa)
+        else:
+            painot = np.ones(len(df))
+
+        # Kilpailu-paino (#79): kerro per-ottelu-paino tournament-sarakkeesta.
+        # No-op kun competition_col=None → domestic-polku bittitarkasti ennallaan.
+        if (competition_col is not None and competition_weights
+                and competition_col in df.columns):
+            comp_w = (
+                df[competition_col].astype(str)
+                .map(lambda c: competition_weights.get(c, default_competition_weight))
+                .to_numpy(dtype=float)
+            )
+            painot = painot * comp_w
+
+        h_idx = df[home_team_col].map(idx).values
+        a_idx = df[away_team_col].map(idx).values
+        h_g = df[home_goals_col].values
+        a_g = df[away_goals_col].values
+
+        # xG-painotettu likelihood — varaa mask:t otteluille joilla xG-arvot
+        kayta_xg = (
+            xg_weight > 0
+            and home_xg_col is not None
+            and away_xg_col is not None
+            and home_xg_col in df.columns
+            and away_xg_col in df.columns
+        )
+        if kayta_xg:
+            h_xg_arr = pd.to_numeric(df[home_xg_col], errors="coerce").values
+            a_xg_arr = pd.to_numeric(df[away_xg_col], errors="coerce").values
+            xg_mask = ~(np.isnan(h_xg_arr) | np.isnan(a_xg_arr))
+        else:
+            h_xg_arr = None
+            a_xg_arr = None
+            xg_mask = None
+
+        # Rakenna prior-vektorit team_priors:sta. Default: kaikki nollia.
+        prior_attack = np.zeros(n)
+        prior_defence = np.zeros(n)
+        prior_weight = np.ones(n)
+        if team_priors:
+            for tnimi, p in team_priors.items():
+                if tnimi in idx:
+                    i = idx[tnimi]
+                    prior_attack[i] = float(p.get("attack", 0.0))
+                    prior_defence[i] = float(p.get("defence", 0.0))
+                    prior_weight[i] = float(p.get("weight", 1.0))
+
+        # Parametrivektori: [attack(n), defence(n), gamma_per_team(n), gamma_global, rho]
+        # = 3n + 2 parametria yhteensa
+        if self.per_team_home_adv:
+            n_per_team = n
+        else:
+            n_per_team = 0
+
+        def neg_log_lik(params):
+            attack = params[:n]
+            defence = params[n:2*n]
+            if self.per_team_home_adv:
+                gamma_team = params[2*n:3*n]
+                gamma_global = params[-2]
+                rho = params[-1]
+                lam = np.exp(attack[h_idx] + defence[a_idx] + gamma_global + gamma_team[h_idx])
+            else:
+                gamma_team = np.zeros(n)
+                gamma_global = params[-2]
+                rho = params[-1]
+                lam = np.exp(attack[h_idx] + defence[a_idx] + gamma_global)
+            mu = np.exp(attack[a_idx] + defence[h_idx])
+
+            if model_type == "bivariate_poisson":
+                # Bivariate Poisson: jaettu Z-komponentti rho-skaalauksella.
+                # P(X=h, Y=a) summa min(h,a)+1 termin yli.
+                # Tehokkuussyista lasketaan vain pienet tulokset (>10 -> Poisson)
+                lam3 = max(0.0, -rho) * np.minimum(lam, mu)  # rho<0 -> positiivinen Z
+                lam1 = np.maximum(lam - lam3, 1e-9)
+                lam2 = np.maximum(mu - lam3, 1e-9)
+                # Iteroitu summa
+                log_p = np.full(len(h_g), -np.inf)
+                from scipy.special import gammaln
+                for i in range(len(h_g)):
+                    h_i, a_i = int(h_g[i]), int(a_g[i])
+                    if h_i > 12 or a_i > 12:
+                        # Fallback: itsenainen Poisson
+                        log_p[i] = poisson.logpmf(h_i, lam[i]) + poisson.logpmf(a_i, mu[i])
+                        continue
+                    summa = 0.0
+                    for k in range(min(h_i, a_i) + 1):
+                        # P(X=h-k|lam1) * P(Y=a-k|lam2) * P(Z=k|lam3) summa
+                        log_term = (
+                            -lam1[i] + (h_i - k) * np.log(lam1[i]) - gammaln(h_i - k + 1)
+                            - lam2[i] + (a_i - k) * np.log(lam2[i]) - gammaln(a_i - k + 1)
+                            - lam3[i] + k * np.log(max(lam3[i], 1e-9)) - gammaln(k + 1)
+                        )
+                        summa += np.exp(log_term)
+                    log_p[i] = np.log(max(summa, 1e-300))
+            else:
+                # Standardi Dixon-Coles + tau-korjaus
+                log_p = poisson.logpmf(h_g, lam) + poisson.logpmf(a_g, mu)
+                tau_arr = np.ones(len(h_g))
+                m_00 = (h_g == 0) & (a_g == 0)
+                m_01 = (h_g == 0) & (a_g == 1)
+                m_10 = (h_g == 1) & (a_g == 0)
+                m_11 = (h_g == 1) & (a_g == 1)
+                tau_arr[m_00] = 1.0 - lam[m_00] * mu[m_00] * rho
+                tau_arr[m_01] = 1.0 + lam[m_01] * rho
+                tau_arr[m_10] = 1.0 + mu[m_10] * rho
+                tau_arr[m_11] = 1.0 - rho
+                tau_arr = np.clip(tau_arr, 1e-10, None)
+                log_p = log_p + np.log(tau_arr)
+
+            nll = -np.sum(painot * log_p)
+            # xG-painotettu likelihood: lisaa Gaussian-tyylinen rangaistus
+            # mallin lambdan poikkeamasta toteutuneeseen xG:hen.
+            if kayta_xg and xg_mask is not None and xg_mask.any():
+                lam_diff = lam[xg_mask] - h_xg_arr[xg_mask]
+                mu_diff = mu[xg_mask] - a_xg_arr[xg_mask]
+                xg_painot = painot[xg_mask] if hasattr(painot, "__len__") else painot
+                xg_penalty = np.sum(xg_painot * (lam_diff ** 2 + mu_diff ** 2))
+                nll += xg_weight * xg_penalty
+            # L2-shrinkage: rankaisee joukkuekohtaista poikkeamaa nollasta
+            if self.per_team_home_adv:
+                nll += l2_per_team * np.sum(gamma_team ** 2)
+            # Bayes-prior: vetaa attack/defence -estimaatit kohti prior_attack/
+            # prior_defence -arvoja (oletuksena 0 = liigan keskiarvo, mutta
+            # team_priors:lla voi vaihtaa esim. alasarjaestimaattiin).
+            # prior_weight skaalaa per-joukkue shrinkage-vahvuuden.
+            if l2_attack_defence > 0:
+                a_diff2 = prior_weight * (attack - prior_attack) ** 2
+                # #61: shrink_defence_to_mean → shrinkkaa puolustuksen HAJONTAA,
+                # ei absoluuttista tasoa. Ks. fit()-docstring.
+                if shrink_defence_to_mean:
+                    d_target = np.mean(defence)
+                else:
+                    d_target = prior_defence
+                d_diff2 = prior_weight * (defence - d_target) ** 2
+                nll += l2_attack_defence * (np.sum(a_diff2) + np.sum(d_diff2))
+            return nll
+
+        # Alustusarvot — priorit annettu joukkueille auttavat konvergoimaan
+        if self.per_team_home_adv:
+            x0 = np.concatenate([
+                prior_attack.copy(),     # attack (oletuksena 0)
+                prior_defence.copy(),    # defence (oletuksena 0)
+                np.zeros(n),             # gamma_team (joukkuekohtainen)
+                [0.25, -0.1],            # gamma_global, rho
+            ])
+        else:
+            x0 = np.concatenate([prior_attack.copy(), prior_defence.copy(), [0.25, -0.1]])
+
+        # Identifioitavuus: attack-summa = 0
+        constraints = ({"type": "eq", "fun": lambda p: np.sum(p[:n])},)
+        # Lisaa: per-team gamma -summa = 0 jotta gamma_global pysyy keskiarvona
+        if self.per_team_home_adv:
+            constraints = (
+                constraints[0],
+                {"type": "eq", "fun": lambda p: np.sum(p[2*n:3*n])},
+            )
+
+        result = minimize(neg_log_lik, x0, constraints=constraints,
+                          method="SLSQP", options={"maxiter": 300, "disp": False})
+        params = result.x
+        self.fit_success_ = bool(result.success)
+        self.fit_message_ = str(getattr(result, "message", ""))
+        self.fit_nit_ = int(getattr(result, "nit", 0))
+        self.attack = {t: params[i] for t, i in idx.items()}
+        self.defence = {t: params[n + i] for t, i in idx.items()}
+        if self.per_team_home_adv:
+            self.home_advantage_per_team = {t: params[2*n + i] for t, i in idx.items()}
+        else:
+            self.home_advantage_per_team = {t: 0.0 for t in teams}
+        self.home_advantage = params[-2]
+        self.rho = params[-1]
+        self.teams_ = teams
+        self.model_type_ = model_type
+        return self
+
+    def expected_goals(self, home_team, away_team, adjustments=None):
+        if home_team not in self.attack or away_team not in self.attack:
+            raise ValueError(f"Tuntematon joukkue: {home_team} tai {away_team}")
+        team_gamma = self.home_advantage_per_team.get(home_team, 0.0)
+        lam = np.exp(self.attack[home_team] + self.defence[away_team]
+                     + self.home_advantage + team_gamma)
+        mu = np.exp(self.attack[away_team] + self.defence[home_team])
+        if adjustments:
+            lam *= float(adjustments.get("home_factor", 1.0))
+            mu *= float(adjustments.get("away_factor", 1.0))
+        return float(lam), float(mu)
+
+    def _bp_score_matrix(self, lam, mu, rho_eff, max_goals):
+        """
+        Bivariate Poisson score-matriisi.
+        Decomposition: H = X1 + Z, A = X2 + Z, missa Z mallintaa "matsi-rytmin".
+        lam3 = max(0, -rho) * min(lam, mu) — rho<0 -> positiivinen kovarianssi.
+        """
+        from scipy.special import gammaln
+        lam3 = max(0.0, -rho_eff) * min(lam, mu)
+        lam1 = max(lam - lam3, 1e-9)
+        lam2 = max(mu - lam3, 1e-9)
+        M = np.zeros((max_goals + 1, max_goals + 1))
+        for h in range(max_goals + 1):
+            for a in range(max_goals + 1):
+                summa = 0.0
+                for k in range(min(h, a) + 1):
+                    log_term = (
+                        -lam1 + (h - k) * np.log(lam1) - gammaln(h - k + 1)
+                        - lam2 + (a - k) * np.log(lam2) - gammaln(a - k + 1)
+                        - lam3 + k * np.log(max(lam3, 1e-9)) - gammaln(k + 1)
+                    )
+                    summa += np.exp(log_term)
+                M[h, a] = summa
+        s = M.sum()
+        return M / s if s > 0 else M
+
+    def score_matrix(self, home_team, away_team, max_goals=10, adjustments=None):
+        lam, mu = self.expected_goals(home_team, away_team, adjustments=adjustments)
+        # Derby-adjustment rho:lle (jos adjustments antaa rho_delta:n)
+        rho_eff = self.rho
+        if adjustments and "rho_delta" in adjustments:
+            rho_eff = self.rho + float(adjustments["rho_delta"])
+
+        # Bivariate Poisson — kayta omaa score-matriisia
+        if getattr(self, "model_type_", "dc") == "bivariate_poisson":
+            return self._bp_score_matrix(lam, mu, rho_eff, max_goals)
+
+        # Standardi Dixon-Coles + tau-korjaus
+        h = poisson.pmf(np.arange(max_goals + 1), lam)
+        a = poisson.pmf(np.arange(max_goals + 1), mu)
+        m = np.outer(h, a)
+        # Estetaan ettei tau menee negatiiviseksi (turvallisuusrajat rho:lle)
+        for i in range(2):
+            for j in range(2):
+                t = _tau(i, j, lam, mu, rho_eff)
+                m[i, j] *= max(t, 1e-9)  # alalattia ettei mene negatiiviseksi
+        return m / m.sum()
+
+    def predict_1x2(self, home_team, away_team, adjustments=None):
+        m = self.score_matrix(home_team, away_team, adjustments=adjustments)
+        return {"home": float(np.tril(m, -1).sum()),
+                "draw": float(np.trace(m)),
+                "away": float(np.triu(m, 1).sum())}
+
+    def predict_over_under(self, home_team, away_team, line=2.5, adjustments=None):
+        m = self.score_matrix(home_team, away_team, adjustments=adjustments)
+        n = m.shape[0]
+        i_arr = np.arange(n)[:, None]
+        j_arr = np.arange(n)[None, :]
+        totals = i_arr + j_arr
+        over = float(m[totals > line].sum())
+        under = float(m[totals < line].sum())
+        return {"over": over, "under": under, "push": 1.0 - over - under}
+
+    def predict_btts(self, home_team, away_team, adjustments=None):
+        m = self.score_matrix(home_team, away_team, adjustments=adjustments)
+        p_h0 = float(m[0, :].sum())
+        p_a0 = float(m[:, 0].sum())
+        p_00 = float(m[0, 0])
+        yes = 1 - p_h0 - p_a0 + p_00
+        return {"btts_yes": yes, "btts_no": 1 - yes}
+
+    def todennakoisin_tulos(self, home_team, away_team, top_n=5, adjustments=None):
+        m = self.score_matrix(home_team, away_team, adjustments=adjustments)
+        rivit = [(f"{i}-{j}", float(m[i, j])) for i in range(m.shape[0]) for j in range(m.shape[1])]
+        rivit.sort(key=lambda x: x[1], reverse=True)
+        return rivit[:top_n]
+
+
+def apply_match_adjustments(home_injury_pct=0.0, away_injury_pct=0.0,
+                            home_motivation_pct=0.0, away_motivation_pct=0.0,
+                            home_rest_advantage_days=0.0, is_derby=False,
+                            weather_total_goals_delta=0.0):
+    home = 1.0 + home_injury_pct / 100.0
+    away = 1.0 + away_injury_pct / 100.0
+    home *= 1.0 + home_motivation_pct / 100.0
+    away *= 1.0 + away_motivation_pct / 100.0
+    home *= 1.0 + 0.015 * home_rest_advantage_days
+    away *= 1.0 - 0.015 * home_rest_advantage_days
+    rho_delta = 0.0
+    if is_derby:
+        # Derby: lievempi maaliboost (4% molemmille) + rho-adjustment
+        # joka nostaa tasapelitodennakoisyytta empiirisesti havaittuun tasoon
+        # (~+4 prosenttiyksikköä). Empiirinen havainto: derby-pelit ovat
+        # varovaisempia ja tasapeleja syntyy tilastollisesti useammin.
+        home *= 1.04
+        away *= 1.04
+        rho_delta = -0.07  # negatiivisempi rho -> enemman matalia tasapeleja
+    if weather_total_goals_delta != 0.0:
+        wm = 1.0 + weather_total_goals_delta / 3.0
+        home *= wm
+        away *= wm
+    home = max(0.3, min(2.5, home))
+    away = max(0.3, min(2.5, away))
+    return {"home_factor": home, "away_factor": away, "rho_delta": rho_delta}

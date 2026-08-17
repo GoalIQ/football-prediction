@@ -1,0 +1,634 @@
+/* GoalIQ Pro: brändi-tokenit + mittakaavat.
+   28.7 TELETEXT (Villen päätös): musta ruutu, monospace, litteä.
+   Sama tekniikka kuin 25.7. dark→light ja 26.7. classic -vaihdoissa:
+   muuttujien NIMET säilyvät, vain arvot vaihtuvat → komponentit seuraavat
+   automaattisesti. Arvot ovat tasan samat kuin landingin :root-lohkossa ja
+   goaliq-app/lib/theme.ts:ssä — viisi pintaa, yksi paletti.
+
+   VÄRIDISIPLIINI (designin sääntö, ei saa rikkoa komponenteissa):
+     magenta #FF2E7E — VAIN mark, captain-rengas, live-tila. EI KOSKAAN täyttönä.
+     amber   #F5C542 — luvut, viivat, primary action
+     teal    #2ED6C2 — voitot, linkit
+     coral   #FF8A5C — hitit, pudotukset, saatavuusliput
+   Numerot ovat sivun äänekkäin asia; väri kantaa merkitystä, ei koristetta.
+
+   KONTRASTIT (WCAG 2.1, mitattu — ei arvioitu; pohja --bg #0B0A09):
+     --text        #F3F2F2  17.70:1   --accent      #F5C542  12.20:1
+     --text-muted  #A8A29A   7.82:1   --accent-strong #F5C542 7.65:1
+     --faint       #8A847A   5.33:1   --positive    #5FD97A  11.01:1
+     --negative    #FF8A5C   8.52:1   --giq-teal    #2ED6C2  10.85:1
+     --giq-rust    #FF8A5C   FDR-5:n tintti (ei tekstivärinä)
+     ink --accentin päällä  12.20:1 (täyttönapin teksti)
+     --border 0.24 = 1.97:1 (pintaero), --border-strong 0.40 = 3.50:1 (1.4.11)
+   Jos muutat hexiä, laske suhde uudelleen — älä arvaa. */
+:root {
+	/* 1.8.2026 (Villen päätös): MAGENTA POISTETTU KOKONAAN — ei brändistä, ei
+	   markista, ei FDR-asteikosta. Se luki pinkkinä eikä istunut teletextiin,
+	   jonka koko ilme on amber + teal tummalla. Tokenit jätetään aliaksiksi
+	   VAIN siksi, ettei yksikään unohtunut viittaus renderöi läpinäkyvää tai
+	   mustaa; uusia viittauksia ei saa lisätä.
+	   Korvaajat: mark/live -> amber, linkit/korostus -> teal, FDR-5 -> rust.
+
+	   2.8.2026: "poistettu kokonaan" EI pitänyt paikkaansa renderissä. 24 kovaa
+	   rgba(255,46,126,...)-literaalia yhdeksässä komponentissa ohitti koko tämän
+	   tokenikerroksen, joten pinkkiä näkyi yhä pilleissä ja korostuspinnoissa —
+	   1.8:n ajo korvasi hex-arvoja eikä nähnyt rgba-muotoa. Literaalit vaihdettu
+	   rustiin samoilla alfoilla. Jos magentaa etsii jatkossa: grep myös
+	   "255, 46, 126" -muodossa, ei pelkkää #FF2E7E:tä. */
+	--giq-rust: #FF8A5C;
+	--giq-magenta: var(--giq-gold-deep);
+	--giq-magenta-deep: var(--giq-rust);
+	--giq-magenta-light: var(--giq-gold);
+	--giq-coral: #ff8a5c;
+	/* messinki sammuu mustaa vasten (lukuina se katoaa) -> amber */
+	--giq-gold: #F5C542;
+	--giq-gold-deep: #f5c542;
+	--giq-teal: #2ed6c2;
+	--giq-teal-deep: #2ED6C2;
+	/* ruutumusta, lämmin */
+	--giq-ink: #0b0a09;
+	--giq-ink-2: #141311;
+	--giq-cream: #f3f2f2;
+	--giq-paper: #1f1d1a;
+
+	/* roolit (tumma pohja) */
+	--bg: var(--giq-ink);
+	--surface: var(--giq-ink-2);
+	--surface-2: var(--giq-paper);
+	/* surface vs bg on tarkoituksella 1.07:1 -> viiva kantaa koko rakenteen,
+	   joten sen ON erotuttava: 0.24 = 1.97:1. Kontrollien reunat käyttävät
+	   --border-strongia (3.50:1), koska 1.4.11 koskee niitä. */
+	--border: rgba(243, 242, 242, 0.24);
+	--border-strong: rgba(243, 242, 242, 0.4);
+	--text: var(--giq-cream);
+	/* --giq-muted on brandi-tason alias, jotta komponentti joka JOUTUU
+	   ylikirjoittamaan --text-mutedin (Hero-bandin .menu) voi viitata samaan
+	   arvoon eika kovakoodaa omaansa. Juuri sellainen kovakoodaus jatti
+	   vanhan sinertavan #5c566b elamaan classic-vaihdon yli. */
+	--giq-muted: #a8a29a;
+	--text-muted: var(--giq-muted);
+	/* tertiääri: #7A746B olisi 4.27:1 eli AA:n alle -> #8A847A (5.33:1) */
+	--faint: #8a847a;
+	/* primary action = amber; korostus/linkki = teal. Muita ei ole. */
+	--accent: var(--giq-gold-deep);
+	/* 1.8.2026: oli #F5C542 (tumma messinki). Selainmittaus: landing ei kayta
+	   sita missaan — sen amber on aina #F5C542, myos tekstina (12.20:1).
+	   Tummempi savy nakyi prossa mm. PREMIUM-merkissa ja luki eri varina. */
+	--accent-strong: var(--giq-gold-deep);
+	/* ⚠️ KÄÄNTYI: täytön päällä on nyt ink, ei valkoinen. Valkoinen amberilla
+	   on 1.45:1. Sama flippi kuin mobiilin theme.textOnAccent. */
+	--accent-contrast: var(--giq-ink);
+	--positive: #5fd97a;
+	--negative: #ff8a5c;
+	--warn-text: #f5c542;
+
+	/* FDR 1-5 brändiasteikko; käytetään ~14-18 % tint-taustoina, joten
+	   pohjahexit saavat olla kylläisiä */
+	--fdr-1: var(--giq-teal-deep);
+	--fdr-2: var(--giq-teal);
+	--fdr-3: var(--giq-gold-deep);
+	--fdr-4: var(--giq-coral);
+	--fdr-5: var(--giq-rust);
+
+	/* typografia — 28.7 teletext: yksi monospace kantaa kaiken. Nimet
+	   --font-sans/--font-display säilyvät, jotta komponentteja ei tarvitse
+	   käydä läpi; kumpikaan ei enää tarkoita groteskia tai antiikvaa. */
+	--font-sans: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-display: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--step--1: clamp(0.82rem, 0.8rem + 0.1vw, 0.88rem);
+	--step-0: clamp(0.95rem, 0.92rem + 0.15vw, 1rem);
+	--step-1: clamp(1.15rem, 1.08rem + 0.35vw, 1.3rem);
+	--step-2: clamp(1.4rem, 1.28rem + 0.6vw, 1.7rem);
+	--step-3: clamp(1.75rem, 1.5rem + 1.2vw, 2.3rem);
+
+	/* tila (4px-pohja) */
+	--s-1: 0.25rem;
+	--s-2: 0.5rem;
+	--s-3: 0.75rem;
+	--s-4: 1rem;
+	/* --s-5 PUUTTUI, vaikka nelja komponenttia kayttaa sita (Differentials,
+	   Hero, Leaders, Value). Maarittelematon var() ilman fallbackia tekee
+	   koko deklaraatiosta virheellisen -> selain PUDOTTAA sen, eli nailta
+	   neljalta katosi margin/padding kokonaan. Portit eivat nae tallaista:
+	   CSS on syntaktisesti validia ja svelte-check ei tarkista tokeneita. */
+	--s-5: 1.25rem;
+	--s-6: 1.5rem;
+	--s-8: 2rem;
+	--s-12: 3rem;
+
+	/* 26.7 classic: hiusviivat kantavat rakenteen, ei varjot eikä pyöristys.
+	   Nimet säilyvät, jotta komponenttien var()-viittaukset toimivat. */
+	/* teletext: ei pyöristystä lainkaan (classicissa 2px) */
+	--radius: 0;
+	--radius-sm: 0;
+	--shadow-1: none;
+	--shell: 1180px;
+}
+
+/* 8.8 (Villen havainto): leveilla naytoilla taulukoiden sarakkeet jaivat
+   vaakavierityksen taakse, koska palsta oli lukittu 1180 pikseliin. Kasvatetaan
+   KOKO palstaa isoilla naytoilla sen sijaan etta yksittaiset taulukot
+   karkaisivat kehyksestaan: silloin kortit, otsikot ja taulukot pysyvat
+   linjassa keskenaan eika mikaan komponentti voi vuotaa kortin ulkopuolelle.
+   Alle 1400 px:n naytoilla mikaan ei muutu. */
+@media (min-width: 1400px) {
+	:root {
+		--shell: min(94vw, 1560px);
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	color-scheme: dark;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-sans);
+	font-size: var(--step-0);
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+	font-family: var(--font-display);
+	line-height: 1.1;
+	/* Cormorant on kapea ja korkea — negatiivinen välistys tekisi siitä
+	   tukkoisen, joten se nollataan ja paino jää kevyeksi (600, ei 700). */
+	/* 1.8.2026: landingin otsikkokieli — versaali + tiukka valistys.
+	   Aiempi kommentti puhui Cormorantista, jota ei ole kaytetty sitten
+	   teletext-siirtyman. */
+	letter-spacing: -0.02em;
+	text-transform: uppercase;
+	font-weight: 700;
+	margin: 0 0 var(--s-3);
+}
+
+/* Brändi ja display-luvut samalla fontilla kuin landingilla (globaali,
+   osuu Svelte-komponenttien class="brand"-elementteihin) */
+.brand {
+	font-family: var(--font-display);
+}
+
+h1 {
+	font-size: var(--step-3);
+}
+h2 {
+	font-size: var(--step-2);
+	margin-top: var(--s-8);
+}
+h3 {
+	font-size: var(--step-1);
+	margin-top: var(--s-6);
+}
+
+p {
+	margin: 0 0 var(--s-3);
+}
+
+a {
+	/* landing (goaliq.app) kayttaa tealia linkkivarina — sama tassa, jotta
+	   pinnat ovat samannakoiset. */
+	color: var(--giq-teal);
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
+hr {
+	/* color myos, jotta sivulla ei ole yhtaan selaimen oletusharmaata */
+	color: var(--border);
+	border: 0;
+	border-top: 1px solid var(--border);
+	margin: var(--s-5) 0;
+}
+
+small,
+.muted {
+	color: var(--text-muted);
+	font-size: var(--step--1);
+}
+
+/* metodologia-affordanssi taulukko-otsikoissa (#22) */
+abbr[title] {
+	text-decoration: underline dotted;
+	text-underline-offset: 2px;
+	cursor: help;
+}
+
+/* 26.7 classic: napit ovat outline-muotoisia — myös primary. Designin sääntö
+   1j:stä: "Primary stays an outline even here". Täyttö on varattu käytännössä
+   olemattomaksi, jotta luvut pysyvät sivun äänekkäimpänä asiana. */
+button {
+	font-family: var(--font-sans);
+	font-size: var(--step-0);
+	cursor: pointer;
+	border-radius: var(--radius);
+	/* kontrollin reuna, ei koriste -> 1.4.11 vaatii 3:1 (--border-strong) */
+	border: 1px solid var(--border-strong);
+	background: transparent;
+	color: var(--text);
+	padding: 0.6em 1.3em;
+	font-weight: 600;
+	min-height: 44px;
+	transition:
+		background 150ms ease-out,
+		border-color 150ms ease-out,
+		color 150ms ease-out;
+}
+
+button.primary {
+	background: transparent;
+	color: var(--accent-strong);
+	border-color: var(--accent);
+}
+button.primary:hover {
+	background: rgba(245, 197, 66, 0.14);
+	border-color: var(--accent);
+}
+
+button.secondary {
+	background: transparent;
+	color: var(--text);
+	border-color: var(--border-strong);
+}
+button.secondary:hover {
+	border-color: var(--accent);
+	color: var(--accent-strong);
+}
+
+button.ghost {
+	background: transparent;
+	color: var(--text-muted);
+	border-color: var(--border-strong);
+	font-weight: 500;
+}
+button.ghost:hover {
+	color: var(--text);
+	border-color: var(--text-muted);
+}
+
+/* #98 (design-audit vk3 = ui-fix P4 webissä): disabled-nappi neutraaliksi
+   paper-taustaksi + himmennetty teksti — EI läpikuultavaa magentaa (mobiilin
+   btnDisabled-pariteetti). :hover-variantti mukana, jotta .primary:hover ei
+   voita disabled-tilaa (sama spesifisyys → järjestys ratkaisee). */
+button:disabled,
+button:disabled:hover {
+	background: #141311;
+	border-color: var(--border);
+	/* tietoinen poikkeus: WCAG 1.4.3 rajaa disabloidut kontrollit ulkopuolelle,
+	   ja AA-tason teksti saisi disabloidun napin näyttämään aktiiviselta */
+	color: #8A847A;
+	opacity: 1;
+	cursor: default;
+}
+
+input,
+select {
+	font-family: inherit;
+	font-size: var(--step-0);
+	background: var(--surface);
+	color: var(--text);
+	/* lomakekontrolli: 1.4.11 koskee sen reunaa */
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	padding: 0.55em 0.8em;
+	min-height: 44px;
+}
+
+label {
+	display: block;
+	font-size: var(--step--1);
+	color: var(--text-muted);
+	margin-bottom: var(--s-1);
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent-strong);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* taulukot */
+.table-wrap {
+	overflow-x: auto;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--surface);
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: var(--step--1);
+	white-space: nowrap;
+}
+
+th,
+td {
+	padding: 0.5em 0.75em;
+	text-align: left;
+	border-bottom: 1px solid var(--border);
+}
+
+td.num,
+th.num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+thead th {
+	position: sticky;
+	top: 0;
+	background: var(--surface-2);
+	color: var(--text-muted);
+	font-weight: 500;
+	z-index: 1;
+}
+
+tbody tr:last-child td {
+	border-bottom: none;
+}
+
+tbody tr:hover td {
+	/* 28.7: oli rgba(10,8,32,.04) = tumma tummalla eli näkymätön. Tummalla
+	   teemalla korostus tehdään valolla, ei varjolla. */
+	background: rgba(243, 242, 242, 0.06);
+}
+
+/* apuluokat */
+.card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: var(--s-6);
+}
+
+.banner {
+	border-radius: var(--radius);
+	padding: var(--s-3) var(--s-4);
+	font-size: var(--step--1);
+}
+/* 28.7 teletext: banneri-teksti KÄÄNTYI. Classicissa success-teksti oli ink,
+   koska teal ei kantanut creamilla. Tummalla pohjalla se on päinvastoin:
+   ink olisi näkymätön (1.1:1 tintin päällä) ja teal on 10.85:1. */
+.banner.success {
+	background: rgba(46, 214, 194, 0.12);
+	border: 1px solid rgba(46, 214, 194, 0.42);
+	color: var(--giq-teal);
+}
+.banner.error {
+	background: rgba(255, 138, 92, 0.12);
+	border: 1px solid rgba(255, 138, 92, 0.42);
+	color: var(--negative);
+}
+
+/* PI-16 (28.7) / PI-16b: esikauden selite. EI virhevärejä — "FPL ei ole vielä
+   julkaissut kokoonpanoja" on kalenterin tila eikä käyttäjän virhe, ja se on
+   koko esikauden normaalitila kaikissa joukkuepohjaisissa työkaluissa.
+   Nostettu RateTeamin scoped-tyylistä tänne kun planner ja siirtoketjut saivat
+   saman tilan: kolme kopiota olisi ajautunut eroon. */
+.notice-preseason {
+	max-width: 640px;
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent, var(--border));
+	border-radius: var(--radius);
+	padding: var(--s-3) var(--s-4);
+	margin: 0 0 var(--s-3);
+	font-size: var(--step--1);
+}
+
+/* #48: FPL-työkalupaneeli (dashboard-kortti segmenttinavin alla).
+   Sama radius/border-kieli kuin .table-wrap/.card; paper-pohja jolloin
+   sisällä olevat valkoiset surface-kortit ja taulukot erottuvat. */
+.tool-card {
+	/* 24.7 redesign-pariteetti: laventeliblokki → valkoinen kortti kevyellä
+	   varjolla (sama paneelikieli kuin landingin free/premium-paneelit).
+	   Sisemmat .card/.table-wrap erottuvat borderilla + paper-theadilla. */
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow-1);
+	padding: var(--s-6);
+	margin-bottom: var(--s-6);
+}
+.tool-card > h2 {
+	margin-top: 0;
+}
+@media (max-width: 480px) {
+	.tool-card {
+		padding: var(--s-4);
+	}
+}
+
+/* --- Landingin osiootsikko (.bar) — 1.8.2026 ---
+   goaliq.app: cream-tausta, ink-teksti, 11.5px, versaali, letter-spacing .16em,
+   ja se ulottuu paneelin reunoihin. Se on ilmeen tunnusmerkki; ilman sita pro
+   oli tasaisen tumma ja siksi erinakoinen vaikka paletti oli sama.
+
+   Reunoihin ulottuminen tehdaan negatiivisella marginaalilla, joka lukee
+   kontin oman paddingin --card-pad-muuttujasta. Oletus --s-4 (16px) kattaa
+   section-kontit; .tool-card asettaa oman 24px:n alla.
+
+   !important on tassa tietoinen: Svelte-komponenttien scoped-saannot
+   (.weekly.svelte-x h3.svelte-x) ovat samaa tai korkeampaa spesifisyytta ja
+   latautuvat teeman jalkeen, joten ilman sita palkki jaisi puolittain paalle
+   komponenttikohtaisesti — mika olisi pahempi kuin sen puuttuminen. */
+.tool-card {
+	--card-pad: var(--s-6);
+}
+:is(.tool-card, section) > :is(h2, h3):first-child {
+	background: var(--giq-cream) !important;
+	color: var(--giq-ink) !important;
+	font-size: 11.5px !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.16em !important;
+	text-transform: uppercase !important;
+	line-height: 1.4 !important;
+	padding: 7px 12px !important;
+	margin: calc(-1 * var(--card-pad, var(--s-4))) calc(-1 * var(--card-pad, var(--s-4)))
+		var(--s-4) !important;
+	border-radius: 0 !important;
+}
+
+/* ===================================================================
+   MOBIILIKERROS (9.8.2026)
+   -------------------------------------------------------------------
+   Villen havainto X-liikenteesta: puhelimella avattu GoalIQ nayttaa
+   rikkinaiselta. Staattiset goaliq.app-sivut korjattiin
+   scripts/mobile_css.py:lla; tama on SAMA korjaus SPA:lle.
+
+   MIKSI TEEMASSA EIKA KOMPONENTEISSA: 41 komponentista yhdessa oli
+   @media-saanto ja 16:ssa on taulukko. Komponenttikohtainen korjaus
+   olisi osunut yhteen nakymaan kerrallaan ja loput olisivat jaaneet
+   rikki -- sama vika kuin liigalistoissa 8.8, jossa yhteen komponenttiin
+   haudattu korjaus jatti Fixtures- ja Table-nakymat 11 paivaksi vaaraan
+   lahteeseen. Teemaan kirjoitettuna korjaus koskee kaikkia kerralla.
+
+   Katkaisupiste 560px = sama kuin staattisilla sivuilla, jotta pinnat
+   eivat eriydy.
+   =================================================================== */
+
+/* Vain kapealla naytolla nakyva selite (pariteetti staattisten kanssa). */
+.m-only {
+	display: none;
+}
+
+@media (max-width: 560px) {
+	.m-only {
+		display: block;
+	}
+
+	/* Sarakeprioriteetti: komponentti merkitsee vahemman tarkeat sarakkeet
+	   .m-hide:lla, jolloin kapealla naytolla nakyvat vain avainsarakkeet.
+	   Leveilla naytoilla mikaan ei muutu. */
+	th.m-hide,
+	td.m-hide {
+		display: none;
+	}
+
+	/* Karsinta on OLETUS, ei lopputila (Villen huomio 9.8): piilotettu sarake
+	   ei saa olla saavuttamaton. "Show all columns" palauttaa jokaisen
+	   sarakkeen jokaisessa taulukossa kerralla; taulukko vierittaa vaakaan
+	   kuten leveallakin naytolla. Sama sopimus kuin goaliq.app-sivuilla. */
+	body.cols-all th.m-hide,
+	body.cols-all td.m-hide {
+		display: table-cell;
+	}
+	body.cols-all .m-only {
+		display: none;
+	}
+
+	.colstoggle {
+		display: inline-block;
+		margin: 8px 0 4px;
+		padding: 9px 14px;
+		min-height: 40px;
+		border: 1px solid var(--border-strong);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: var(--step--1);
+		font-weight: 600;
+		cursor: pointer;
+		border-radius: 0;
+	}
+	.colstoggle[aria-pressed='true'] {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+
+	/* table{white-space:nowrap} teki jokaisesta taulukosta ruutua leveamman
+	   riippumatta sarakemaarasta: pelaajan nimi ja fixture-merkkijono eivat
+	   saaneet rivittya lainkaan. Luvut pysyvat nowrapissa, koska rivittyva
+	   "12.34" on lukukelvoton ja tabular-nums hajoaa. */
+	table {
+		white-space: normal;
+	}
+	td.num,
+	th.num {
+		white-space: nowrap;
+	}
+	th,
+	td {
+		padding: 0.45em 0.3em;
+		font-size: var(--step--1);
+	}
+
+	/* Taulukko saa kayttaa kortin koko leveyden: kortin oma padding on
+	   leipatekstia varten, ja taulukossa se vain kaventaa dataa. Palauttaa
+	   ~24px, mika riitti viemaan kaksi viimeista taulukkoa vierityksen
+	   alta -- vaihtoehto olisi ollut piilottaa lisaa sarakkeita, mika olisi
+	   hukannut tietoa turhaan. */
+	.table-wrap {
+		margin-left: calc(-1 * var(--card-pad, var(--s-3)));
+		margin-right: calc(-1 * var(--card-pad, var(--s-3)));
+		width: auto;
+		border-left: 0;
+		border-right: 0;
+		border-radius: 0;
+	}
+
+	/* TILAN PALAUTUS: mitattu 9.8, taulukon kaare oli vain ~307px 390px:n
+	   ruudulla -- 83px meni sisakkaisiin paddingeihin (shell 16 + tool-card
+	   24, molemmat molemmilta puolilta). Sarakkeiden piilottaminen sen
+	   kompensoimiseksi olisi hukannut dataa turhaan; tila otetaan ensin
+	   takaisin ja vasta sitten karsitaan sarakkeita. */
+	.shell {
+		padding-left: var(--s-2);
+		padding-right: var(--s-2);
+	}
+	.tool-card {
+		padding-left: var(--s-3);
+		padding-right: var(--s-3);
+		--card-pad: var(--s-3);
+	}
+
+	/* Sticky-thead + vaakavieritys yhdessa jattaa otsikon jalkeen
+	   pystysuunnassa mutta ei vaakasuunnassa; kapealla naytolla se ei tuo
+	   hyotya ja vie tilaa. */
+	thead th {
+		position: static;
+	}
+
+	/* Tyokalujen suodatinnappirivit: samat kuin staattisten .chips --
+	   ilman rivitysta viimeiset napit jaavat ruudun ulkopuolelle. */
+	.chips,
+	.filters,
+	.seg,
+	.toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		max-width: 100%;
+	}
+
+	/* Kosketuskohteet sormenpaan kokoisiksi. */
+	button,
+	.btn,
+	select,
+	input[type='text'],
+	input[type='search'] {
+		min-height: 40px;
+	}
+
+	/* Mitattu 9.8: XpTablen pelaajavalitsin oli 401px eli 11px ruudun yli, ja
+	   koska sen ylapuolella ei ole vierityskaarta, oikea reuna leikkautui
+	   kokonaan pois. Koskee kaikkia lomake-elementteja. */
+	select,
+	input,
+	textarea,
+	label {
+		max-width: 100%;
+	}
+
+	/* max-width:100% EI riita natiiville selectille: se mitoittuu pisimman
+	   optionin mukaan ("Player Name (TEAM, POS)") ja levittaa myos emonsa,
+	   jolloin 100% on jo 397px. Mitattu 9.8. Viewport-suhteellinen katto ei
+	   ole emon leveydesta riippuvainen, joten se pitaa joka tapauksessa. */
+	select {
+		max-width: calc(100vw - 2.5rem);
+		width: 100%;
+	}
+
+	/* Sivun oma vaakavieritys ei ole koskaan haluttu: jos jokin yksittainen
+	   elementti ylivuotaa, se ei saa siirtaa koko sivua. */
+	html,
+	body {
+		overflow-x: hidden;
+	}
+}

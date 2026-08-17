@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="canonical" href="https://goaliq.app/privacy.html">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://goaliq.app/privacy.html">
+<meta property="og:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/brand/goaliq-favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<meta name="theme-color" content="#0B0A09">
+  <script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "Organization",
+ "@id": "https://goaliq.app/#organization",
+ "name": "GoalIQ",
+ "logo": "https://goaliq.app/assets/brand/goaliq-appicon-512.png",
+ "url": "https://goaliq.app/",
+ "description": "GoalIQ makes FPL (Fantasy Premier League) tools - clean sheet probability and fixture difficulty, rate my team with a captain pick, a fit checker, a pre-season draft rater and price watch free, plus an interactive team manager with a gameweek planner, player expected points (xP), the captain ranker, player value, a DefCon tracker, differentials and transfer suggestions with apply on GoalIQ Premium - powered by a Dixon-Coles match model with a public, pre-match-logged prediction track record. Built by an independent developer in Finland. Analytics, not betting.",
+ "sameAs": [
+  "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
+  "https://apps.apple.com/app/id6780047163",
+  "https://x.com/goaliqapp",
+  "https://www.tiktok.com/@goaliqfpl",
+  "https://www.instagram.com/goaliqfpl/"
+ ]
+}
+</script>
+  <title>GoalIQ: Privacy Policy</title>
+  <style>
+    /* #54 OSA B: vaalea branditeema (Ink -> Cream token-flip, brand-tokens.md).
+       Header-band pysyy tumman inkin varissa + magenta-bar (on-brand). */
+    :root {/* 1 Aug 2026: magenta was removed from the palette; these replacement tokens were referenced but missing from :root. */--amber:#F5C542;--ember:#FF8A5C;
+      --ink: #F3F2F2;
+      --ink2: #141311;
+      --cream: #0B0A09;
+      --card: #141311;
+      --line: rgba(243,242,242,0.24);
+      --muted: #A8A29A;
+      --hero-muted: #A8A29A;
+      --teal: #2ED6C2;
+      --radius: 2px;
+    }
+    * { box-sizing: border-box; }
+    html, body { overflow-x: clip; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .brand { font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .site-header { background: var(--cream); color: var(--ink); border-bottom: 1px solid var(--line); }
+    .bar { height:1px;background:var(--line); }
+    .nav {
+      max-width: 960px; margin: 0 auto; padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand { font-size: 20px; font-weight: 800; letter-spacing: .5px; }
+    .brand a { color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap:0; }
+    .brand-icon { margin-right:10px; width: 32px; height: 32px; border-radius: 0; display: block; }
+    .brand span { color: var(--amber); }
+    .nav-cta {
+      display: inline-block; background: transparent; color: var(--gold-deep,#F5C542); border: 1px solid var(--gold,#F5C542);
+      text-decoration: none; padding: 11px 20px; border-radius: 0; font-weight: 800; font-size: 14px;
+    }
+    .nav-cta:hover { background: rgba(245,197,66,0.14); }
+    .site-footer { border-top: 1px solid var(--line); padding: 30px 0 40px; font-size: 14px; }
+    .site-footer .foot { max-width: 960px; margin: 0 auto; padding: 0 20px; color: var(--hero-muted); }
+    .site-footer a { color: var(--hero-muted); }
+    .site-footer a:hover { color: var(--amber); }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    h1 {
+      color: var(--ink);
+      font-size: 32px;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    h2 {
+      color: var(--ember);
+      font-size: 20px;
+      margin-top: 36px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    h3 {
+      color: var(--ink);
+      font-size: 16px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .muted { color: var(--muted); font-size: 14px; }
+    .updated { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    p, li { color: var(--ink); font-size: 15px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+    code {
+      background: rgba(10,8,32,0.08);
+      padding: 1px 6px;
+      border-radius: 0;
+      font-size: 13px;
+    }
+  /* GEN:MOBILE-CSS */
+/* Note shown only on narrow screens. Hidden by default so that pages on
+   wide screens do not change at all. */
+.m-only{display:none;}
+
+@media (max-width:560px){
+  .m-only{display:block;}
+
+  /* --- 1. NAV ----------------------------------------------------------
+     Bug: nav{justify-content:space-between} plus two inflexible children.
+     At 390px the brand and the link pair do not fit on one line, so both
+     wrapped internally instead: "GoalIQ" broke below the logo and the
+     "Try it live" button text spilled outside the button.
+     Fix: allow wrapping BETWEEN elements, not inside them. */
+  nav,.nav{flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px;}
+  .brand{font-size:18px;white-space:nowrap;flex:0 0 auto;}
+  .brand-icon{width:20px;height:20px;margin-right:6px;}
+  nav>span,.nav>span{flex:1 1 100%;font-size:13px;}
+  .nav-cta{display:inline-block;white-space:nowrap;padding:8px 14px;}
+
+  /* --- 2. MATCH ROWS ---------------------------------------------------
+     Bug: .mrow is a flex row where the team name took three lines and the
+     probability floated right at a different height, so the row could not
+     be read left to right. Fix: stack it. */
+  .mrow{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;}
+  .mrow>div{width:100%;}
+  /* Stacking shortened the match links (the name now fits on one line),
+     which dropped the touch target below 32px. Full width plus vertical
+     padding brings the row back to fingertip size. */
+  .mrow a{display:block;width:100%;padding:7px 0;}
+  .pick{font-size:14px;}
+
+  /* --- 3. TABLES: column priority (option (a), chosen 9 Aug) -----------
+     Builders mark the less important columns with .m-hide; on a narrow
+     screen only the key columns show. The full table stays unchanged on
+     wider screens. */
+  th.m-hide,td.m-hide{display:none;}
+
+  /* ...BUT hidden must not mean unreachable (raised 9 Aug). The trimming is
+     a DEFAULT, not an end state: "Show all columns" restores every column
+     in every table at once, and the table then scrolls horizontally just
+     as it does on a wide screen. Higher specificity inside the same media
+     query -> wins regardless of order. */
+  body.cols-all th.m-hide,body.cols-all td.m-hide{display:table-cell;}
+  body.cols-all .m-only{display:none;}
+
+  /* Bring a hidden column's number back into the row as a subline (10 Aug).
+     The column does not fit as a 5th column at 390px, but "Show all
+     columns" is two interactions too far from a number nobody knows to
+     look for yet. The subline gives the same number without the column,
+     and because it is .m-only it DISAPPEARS when the column comes back ->
+     the number is never shown twice. */
+  td .m-sub{font-size:11px;font-weight:400;opacity:.72;padding-top:2px;}
+
+  .colstoggle{display:inline-block;margin:10px 0 4px;padding:9px 14px;
+    min-height:40px;border:1px solid var(--line-strong,rgba(128,128,128,.5));
+    background:transparent;color:inherit;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;border-radius:0;}
+  .colstoggle[aria-pressed="true"]{border-color:var(--amber,#F5C542);
+    color:var(--amber,#F5C542);}
+
+  /* Long text cells may wrap; numbers may not (tabular-nums breaks down and
+     "1.25" would split across two lines). */
+  .lb th,.lb td,.scroll table th,.scroll table td{white-space:normal;}
+  .lb th.n,.lb td.n,.scroll table th.num,.scroll table td.num{
+    white-space:nowrap;}
+  .lb{font-size:13px;}
+  /* Horizontal padding 8px -> 5px. Measured: stats.html still came out at
+     404px (30px over) after the context columns were hidden, and across
+     nine columns the padding alone was 144px. Tighter padding keeps the
+     column; dropping a column would have lost information. */
+  .lb th,.lb td{padding:7px 5px;}
+
+  /* The tables' min-width forced scrolling even when enough columns were
+     hidden that the rest would have fit. */
+  .lb-wrap>.lb,.scroll>table,.table-wrap>table,.rec-scroll>table{
+    min-width:0;}
+  table{min-width:0;}
+
+  /* SILENT TRUNCATION (9 Aug, only ever caught in a screenshot):
+     width:auto + min-width:0 shrank the table to EXACTLY the wrapper
+     (tableW=374=wrapClient), so nowrap number columns no longer fit their
+     cells and "28.17" rendered as "28.". The table was not overwide and
+     the wrapper did not scroll, so NEITHER a width measurement NOR a
+     scrollWidth check could see this. Only the eye could.
+     width:max-content forces the table to its natural width: if it does not
+     fit, the wrapper scrolls visibly instead of data disappearing in
+     silence. Visible scrolling is bad, a quietly lost number is worse. */
+  .lb-wrap>.lb{width:max-content;max-width:none;}
+  /* SPECIFICITY WARNING: BYCOMP_CSS is injected into fpl.html and
+     predictions.html as its OWN <style> element LATER in the page, so it
+     beats this block on document order. A media query does not raise
+     specificity, so .rec-scroll table (0,1,1) would not be enough to
+     override its min-width:640px. The div. prefix raises it to (0,1,2) and
+     makes the rule order-independent. */
+  div.rec-scroll table{min-width:0;}
+  /* The match name was nowrap ("Nottingham Forest v Crystal Palace" =
+     277px on one line), which alone made the track record table three
+     screens wide. */
+  div.rec-scroll td.team,.scroll td.team{white-space:normal;}
+  div.rec-scroll th,div.rec-scroll td{padding:7px 6px;font-size:13px;}
+  /* Kick-off was "2026-08-21 19:00:00 UTC" on one line = 195px, so a single
+     column took a third of the phone's width. These values are dates rather
+     than numbers that need aligning, so wrapping is safe here. */
+  div.rec-scroll td.num,div.rec-scroll th.num{white-space:normal;}
+  /* An FDR grid cell is "ARS (H) 60%" = three parts on one line. nowrap kept
+     the grid at 472px even after columns had been hidden; a wrapping cell
+     takes two lines and halves the width. */
+  .fdr-grid td.num,.scroll td.num .fdr,.fdr{white-space:normal;}
+  .fdr{min-width:0;}
+
+  /* Scroll hint: appears only where the builder adds it, that is, in tables
+     that still scroll after columns have been hidden. */
+  .scrollhint{display:block;color:var(--muted,#A8A29A);font-size:12px;
+    margin:6px 0 0;}
+
+  /* --- 4. FILTER CHIPS -------------------------------------------------
+     Bug: .chips{display:inline-flex} without wrapping -> the chip row was
+     454px, and because html/body is overflow-x:clip the last chip ("Set
+     pieces") was physically unreachable on a phone.
+     Fix: allow wrapping, and give each filter group its own line. */
+  .lbctl{gap:6px 8px;}
+  .lbctl .lbl{flex:1 1 100%;margin:10px 0 0;}
+  .lbctl .lbl:first-child{margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;}
+  .chip{min-height:36px;}
+  .lbctl select,.lbctl input{min-height:36px;max-width:100%;}
+
+  /* --- 5. READABILITY --------------------------------------------------
+     12px monospace is below the readable limit on a phone. */
+  .meta,.note,.stat span,.legend,.mrow .meta,footer{font-size:13px;}
+  .hero .lede,.lede{font-size:16px;}
+  .stat b{font-size:24px;}
+
+  /* --- 6. TOUCH TARGETS ------------------------------------------------ */
+  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+    justify-content:center;}
+  .toolnav a{display:inline-block;padding:4px 0;}
+}
+
+/* Very narrow (e.g. iPhone SE 375px / Galaxy Fold cover screen 344px):
+   the brand and the CTA do not fit even when scaled down, and the hero
+   heading overflows if it contains long words. */
+@media (max-width:400px){
+  .wrap{padding-left:14px;padding-right:14px;}
+  .hero h1,h1{font-size:26px;overflow-wrap:break-word;}
+  .brand{font-size:17px;}
+  /* The font is NOT dropped to 12px here. Tried and measured 9 Aug: it took
+     1200 cells below 13px, which is under the readable limit, and hiding
+     columns was already enough to fit the tables without it.
+     Padding is tightened instead: stats.html is the densest table
+     (9 visible columns) and came out at 404px with 6px padding, i.e. 14px
+     over the phone's width. Its natural width (width:max-content) is 383px
+     at 4px padding; 3px takes it to 365px, which fits the wrapper (374). */
+  .lb th,.lb td{padding:6px 3px;}
+}
+/* /GEN:MOBILE-CSS */
+</style>
+<!-- PostHog (#38): cookieless site analytics - persistence=memory, no cookies, no PII -->
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true});
+posthog.register({platform:'web',source_app:'goaliq-static'});
+posthog.capture('web_landing_viewed',{page:location.pathname});
+</script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="bar"></div>
+    <div class="nav">
+      <div class="brand"><a href="./"><svg class="brand-icon" width="26" height="26" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a></div>
+      <a class="nav-cta" href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Get the free app</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: 25 July 2026</p>
+
+    <p>
+      This Privacy Policy describes how <strong>Veikkoville</strong>
+      ("we", "us", or "our") collects, uses, and protects information
+      when you use the <strong>GoalIQ</strong> mobile application
+      ("the App") and related services.
+    </p>
+    <p>
+      By using the App you agree to the collection and use of information
+      in accordance with this policy. We comply with the EU General Data
+      Protection Regulation (GDPR) and the Finnish Data Protection Act.
+    </p>
+
+    <h2>1. Who we are</h2>
+    <div class="card">
+      <p style="margin: 0;">
+        <strong>Data controller:</strong> Veikkoville<br>
+        <strong>Country:</strong> Finland<br>
+        <strong>Contact:</strong>
+        <a href="mailto:hello@goaliq.app">hello@goaliq.app</a>
+      </p>
+    </div>
+
+    <h2>2. Information we collect</h2>
+
+    <h3>2.1 Account information</h3>
+    <p>When you create an account, we collect:</p>
+    <ul>
+      <li><strong>Email address</strong>: used for authentication and account recovery</li>
+      <li><strong>Password</strong>: stored as a salted hash, never in plain text</li>
+      <li><strong>Account creation date</strong></li>
+    </ul>
+    <p>
+      We do not collect your name, address, phone number, date of birth,
+      or any other personal identifiers in the App.
+    </p>
+
+    <h3>2.2 Subscription and payment information</h3>
+    <p>
+      When you upgrade to GoalIQ Premium, your payment is processed by the app
+      store you purchased through: the Apple App Store (on iOS) or Google Play
+      (on Android). Your subscription is managed through
+      <a href="https://www.revenuecat.com" target="_blank">RevenueCat</a>, our
+      subscription management provider. We do not see, store, or have access to
+      your payment card details. We receive only:
+    </p>
+    <ul>
+      <li>Subscription status (active / cancelled)</li>
+      <li>Subscription start and end dates</li>
+      <li>An anonymised subscriber ID linked to your account</li>
+    </ul>
+    <p>
+      RevenueCat processes this data under its own
+      <a href="https://www.revenuecat.com/privacy" target="_blank">privacy policy</a>.
+      Apple and Google process your payment under their respective privacy policies.
+    </p>
+
+    <h3>2.3 Usage data</h3>
+    <p>
+      We use <a href="https://posthog.com" target="_blank">PostHog</a>, a
+      product-analytics service, to understand how the app is used so we can
+      improve it. We collect pseudonymised events such as which screens you
+      open, which features you use (for example making a prediction or viewing
+      fixtures), and a user identifier associated with your account. We do not
+      collect advertising identifiers, we do not use this data for advertising,
+      and we do not sell it. PostHog processes this data under its own
+      <a href="https://posthog.com/privacy" target="_blank">privacy policy</a>.
+    </p>
+    <p>
+      Recent prediction queries you make are also stored locally on your device.
+    </p>
+    <p>
+      Our public website (goaliq.app) uses PostHog in a cookieless mode:
+      anonymous page-view counts are collected in memory only, no cookies or
+      other identifiers are stored on your device, and no personal data is
+      collected. This is why the website does not show a cookie banner.
+    </p>
+
+    <h2>3. How we use your information</h2>
+    <p>We use your data only to:</p>
+    <ul>
+      <li>Create and authenticate your account</li>
+      <li>Provide football match predictions through our API</li>
+      <li>Manage your Premium subscription status</li>
+      <li>Respond to support requests</li>
+      <li>
+        Send occasional emails to registered users about product updates,
+        feedback requests and offers on GoalIQ Premium. These are sent on the
+        basis of our legitimate interest in keeping our own users informed
+        about the service they signed up for, and every email has a one-click
+        unsubscribe link.
+      </li>
+      <li>Comply with legal obligations</li>
+    </ul>
+    <p>
+      <strong>We do not sell your data.</strong> We do not share your data
+      with advertisers, brokers, or other third parties for marketing purposes.
+    </p>
+
+    <h2>4. Third-party services</h2>
+    <p>The App relies on the following third-party services:</p>
+    <ul>
+      <li>
+        <strong>Supabase</strong> (hosted in the EU): authentication and user
+        profile storage.
+        <a href="https://supabase.com/privacy" target="_blank">Privacy policy</a>
+      </li>
+      <li>
+        <strong>Stripe</strong>: payment processing for GoalIQ Premium web
+        subscriptions (pro.goaliq.app). Card details are entered on Stripe's
+        secure checkout and never reach our servers.
+        <a href="https://stripe.com/privacy" target="_blank">Privacy policy</a>
+      </li>
+      <li>
+        <strong>RevenueCat</strong>: subscription management.
+        <a href="https://www.revenuecat.com/privacy" target="_blank">Privacy policy</a>
+      </li>
+      <li>
+        <strong>PostHog</strong> (hosted in the US): product analytics.
+        <a href="https://posthog.com/privacy" target="_blank">Privacy policy</a>
+      </li>
+      <li>
+        <strong>MailerLite</strong> (hosted in the EU): email delivery for
+        product updates and occasional offers sent to registered users. Your
+        email address is shared with MailerLite only for sending those
+        messages. Every email includes a one-click unsubscribe link, and
+        unsubscribing does not affect your account or your subscription.
+        <a href="https://www.mailerlite.com/legal/privacy-policy" target="_blank">Privacy policy</a>
+      </li>
+      <li>
+        <strong>Render</strong>: backend API hosting.
+        <a href="https://render.com/privacy" target="_blank">Privacy policy</a>
+      </li>
+      <li>
+        <strong>Expo / Expo Application Services</strong>: mobile app
+        delivery and over-the-air updates.
+        <a href="https://expo.dev/privacy" target="_blank">Privacy policy</a>
+      </li>
+    </ul>
+    <p>
+      <strong>GoalIQ Premium on the web:</strong> if you subscribe at
+      pro.goaliq.app, we store your email address and subscription status
+      (plan and renewal date) in Supabase (EU) so that one account unlocks
+      premium on the web and in the app. Payments are processed by Stripe
+      under EU/GDPR safeguards; we never see or store card numbers. You can
+      cancel at any time by emailing
+      <a href="mailto:hello@goaliq.app">hello@goaliq.app</a>.
+    </p>
+
+    <h2>5. Data retention</h2>
+    <p>
+      We retain your account information for as long as your account is
+      active. If you delete your account, we will permanently remove your
+      personal data within <strong>30 days</strong>, except where we are
+      legally required to retain certain records (e.g., billing records
+      for tax purposes, typically 6 years under Finnish law).
+    </p>
+
+    <h2>6. Your rights under GDPR</h2>
+    <p>You have the right to:</p>
+    <ul>
+      <li><strong>Access</strong> the personal data we hold about you</li>
+      <li><strong>Correct</strong> inaccurate data</li>
+      <li><strong>Request deletion</strong> ("right to be forgotten")</li>
+      <li><strong>Export</strong> your data in a portable format</li>
+      <li><strong>Restrict or object</strong> to certain processing</li>
+      <li><strong>Withdraw consent</strong> at any time</li>
+      <li><strong>Lodge a complaint</strong> with the Finnish Data
+        Protection Ombudsman
+        (<a href="https://tietosuoja.fi/en" target="_blank">tietosuoja.fi</a>)</li>
+    </ul>
+    <p>
+      To exercise any of these rights, email
+      <a href="mailto:hello@goaliq.app">hello@goaliq.app</a>.
+      We will respond within 30 days.
+    </p>
+
+    <h2>7. Account deletion</h2>
+    <p>
+      You can request account deletion at any time by emailing
+      <a href="mailto:hello@goaliq.app">hello@goaliq.app</a>
+      from the email address associated with your account.
+    </p>
+    <p>
+      Upon deletion, your account email, password hash, profile data
+      and any locally cached predictions will be permanently removed.
+      Active subscriptions must be cancelled separately in your device's
+      subscription settings (App Store or Google Play).
+    </p>
+
+    <h2>8. Security</h2>
+    <p>
+      We use industry-standard security practices to protect your data,
+      including encrypted connections (HTTPS/TLS), encrypted database
+      storage, and Row Level Security policies that prevent users from
+      accessing each other's data. However, no system is 100% secure,
+      and we cannot guarantee absolute security.
+    </p>
+
+    <h2>9. Children's privacy</h2>
+    <p>
+      The App is not directed at children under 13 years of age. We do not
+      knowingly collect personal data from children. If you believe a child
+      has provided us with personal data, please contact us and we will
+      delete it.
+    </p>
+
+    <h2>10. International data transfers</h2>
+    <p>
+      Your account data is primarily stored within the European Union (Supabase
+      EU region). Some service providers, including PostHog (analytics) and
+      Render (API hosting), process data in the United States. In those cases
+      the providers rely on GDPR-approved transfer mechanisms such as Standard
+      Contractual Clauses.
+    </p>
+
+    <h2>11. Changes to this policy</h2>
+    <p>
+      We may update this Privacy Policy from time to time. The "Last updated"
+      date at the top of this page reflects the most recent revision.
+      Significant changes will be communicated via in-app notification or
+      email when possible.
+    </p>
+
+    <h2>12. Disclaimer about predictions</h2>
+    <p>
+      GoalIQ provides statistical predictions for football matches based on
+      a Dixon-Coles statistical model. These predictions are provided
+      <strong>for informational and entertainment purposes only</strong>
+      and do not constitute betting advice or guarantee any outcomes.
+      The App does not facilitate gambling or accept wagers.
+    </p>
+
+    <h2>13. Contact</h2>
+    <div class="card">
+      <p style="margin: 0;">
+        For privacy questions, data requests, or to delete your account:<br>
+        <a href="mailto:hello@goaliq.app">hello@goaliq.app</a>
+      </p>
+    </div>
+
+    <p class="muted" style="margin-top: 40px; text-align: center;">
+      © 2026 Veikkoville · GoalIQ
+    </p>
+  </div>
+  <footer class="site-footer">
+    <div class="foot">
+      <p><a href="./">GoalIQ home</a> &middot;
+      <a href="fpl.html">FPL clean sheets &amp; FDR</a> &middot;
+      <a href="world-cup-2026-predictions.html">World Cup 2026 predictions</a> &middot;
+      <a href="faq.html">FAQ</a> &middot;
+      <a href="privacy.html">Privacy</a></p>
+    </div>
+  </footer>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
+<script defer src="/ref-bridge.js"></script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoalIQ: Delete Your Account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+  <meta name="theme-color" content="#0B0A09">
+  <style>
+    /* #54 OSA B: vaalea branditeema (Ink -> Cream token-flip, brand-tokens.md).
+       Header-band pysyy tumman inkin varissa + magenta-bar (on-brand). */
+    :root {/* 1 Aug 2026: magenta was removed from the palette; these replacement tokens were referenced but missing from :root. */--amber:#F5C542;--ember:#FF8A5C;
+      --ink: #F3F2F2;
+      --ink2: #141311;
+      --cream: #0B0A09;
+      --card: #141311;
+      --border: rgba(243,242,242,0.24);
+      --line: rgba(243,242,242,0.24);
+      --text: #F3F2F2;
+      --muted: #A8A29A;
+      --accent: #F5C542;
+      /* teal TEKSTINÄ vaalealla pohjalla: syvennetty sävy (AA 4.9:1 kermalla) */
+      --accent2: #2ED6C2;
+      /* coral-teksti vaalealla: syvennetty (AA 4.8:1 kermalla) */
+      --warn: #FF8A5C;
+      --radius: 2px;
+    }
+    * { box-sizing: border-box; }
+    html, body { overflow-x: clip; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .brand { font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .site-header { background: var(--cream); color: var(--ink); border-bottom: 1px solid var(--line); }
+    .bar { height:1px;background:var(--line); }
+    .nav {
+      max-width: 960px; margin: 0 auto; padding: 16px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand { font-size: 20px; font-weight: 800; letter-spacing: .5px; }
+    .brand a { color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap:0; }
+    .brand-icon { margin-right:10px; width: 32px; height: 32px; border-radius: 0; display: block; }
+    .brand span { color: var(--amber); }
+    .nav-cta {
+      display: inline-block; background: transparent; color: var(--gold-deep,#F5C542); border: 1px solid var(--gold,#F5C542);
+      text-decoration: none; padding: 11px 20px; border-radius: 0; font-weight: 800; font-size: 14px;
+    }
+    .nav-cta:hover { background: rgba(245,197,66,0.14); }
+    .site-footer { border-top: 1px solid var(--line); padding: 30px 0 40px; font-size: 14px; }
+    .site-footer .foot { max-width: 960px; margin: 0 auto; padding: 0 20px; color: var(--muted); }
+    .site-footer a { color: var(--muted); }
+    .site-footer a:hover { color: var(--amber); }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    h1 {
+      color: var(--text);
+      font-size: 32px;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    h2 {
+      color: var(--ember);
+      font-size: 20px;
+      margin-top: 36px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .updated { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    p, li { color: var(--text); font-size: 15px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    a { color: var(--teal); text-decoration: none; font-weight: 600; }
+    a:hover { text-decoration: underline; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      margin: 22px 0;
+    }
+    .step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 0;
+      background: transparent;
+      border: 1px solid var(--gold,#F5C542);
+      color: var(--gold-deep,#F5C542);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    /* 26.7 CLASSIC: magentatayttö -> gold outline (sivun muu CTA-konventio). */
+    .email-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 12px 22px;
+      background: transparent;
+      color: var(--gold-deep,#F5C542);
+      border: 1px solid var(--gold,#F5C542);
+      border-radius: 0;
+      font-weight: 700;
+    }
+    .email-btn:hover {
+      background: rgba(245,197,66,0.14);
+      text-decoration: none;
+    }
+  /* GEN:MOBILE-CSS */
+/* Note shown only on narrow screens. Hidden by default so that pages on
+   wide screens do not change at all. */
+.m-only{display:none;}
+
+@media (max-width:560px){
+  .m-only{display:block;}
+
+  /* --- 1. NAV ----------------------------------------------------------
+     Bug: nav{justify-content:space-between} plus two inflexible children.
+     At 390px the brand and the link pair do not fit on one line, so both
+     wrapped internally instead: "GoalIQ" broke below the logo and the
+     "Try it live" button text spilled outside the button.
+     Fix: allow wrapping BETWEEN elements, not inside them. */
+  nav,.nav{flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px;}
+  .brand{font-size:18px;white-space:nowrap;flex:0 0 auto;}
+  .brand-icon{width:20px;height:20px;margin-right:6px;}
+  nav>span,.nav>span{flex:1 1 100%;font-size:13px;}
+  .nav-cta{display:inline-block;white-space:nowrap;padding:8px 14px;}
+
+  /* --- 2. MATCH ROWS ---------------------------------------------------
+     Bug: .mrow is a flex row where the team name took three lines and the
+     probability floated right at a different height, so the row could not
+     be read left to right. Fix: stack it. */
+  .mrow{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;}
+  .mrow>div{width:100%;}
+  /* Stacking shortened the match links (the name now fits on one line),
+     which dropped the touch target below 32px. Full width plus vertical
+     padding brings the row back to fingertip size. */
+  .mrow a{display:block;width:100%;padding:7px 0;}
+  .pick{font-size:14px;}
+
+  /* --- 3. TABLES: column priority (option (a), chosen 9 Aug) -----------
+     Builders mark the less important columns with .m-hide; on a narrow
+     screen only the key columns show. The full table stays unchanged on
+     wider screens. */
+  th.m-hide,td.m-hide{display:none;}
+
+  /* ...BUT hidden must not mean unreachable (raised 9 Aug). The trimming is
+     a DEFAULT, not an end state: "Show all columns" restores every column
+     in every table at once, and the table then scrolls horizontally just
+     as it does on a wide screen. Higher specificity inside the same media
+     query -> wins regardless of order. */
+  body.cols-all th.m-hide,body.cols-all td.m-hide{display:table-cell;}
+  body.cols-all .m-only{display:none;}
+
+  /* Bring a hidden column's number back into the row as a subline (10 Aug).
+     The column does not fit as a 5th column at 390px, but "Show all
+     columns" is two interactions too far from a number nobody knows to
+     look for yet. The subline gives the same number without the column,
+     and because it is .m-only it DISAPPEARS when the column comes back ->
+     the number is never shown twice. */
+  td .m-sub{font-size:11px;font-weight:400;opacity:.72;padding-top:2px;}
+
+  .colstoggle{display:inline-block;margin:10px 0 4px;padding:9px 14px;
+    min-height:40px;border:1px solid var(--line-strong,rgba(128,128,128,.5));
+    background:transparent;color:inherit;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;border-radius:0;}
+  .colstoggle[aria-pressed="true"]{border-color:var(--amber,#F5C542);
+    color:var(--amber,#F5C542);}
+
+  /* Long text cells may wrap; numbers may not (tabular-nums breaks down and
+     "1.25" would split across two lines). */
+  .lb th,.lb td,.scroll table th,.scroll table td{white-space:normal;}
+  .lb th.n,.lb td.n,.scroll table th.num,.scroll table td.num{
+    white-space:nowrap;}
+  .lb{font-size:13px;}
+  /* Horizontal padding 8px -> 5px. Measured: stats.html still came out at
+     404px (30px over) after the context columns were hidden, and across
+     nine columns the padding alone was 144px. Tighter padding keeps the
+     column; dropping a column would have lost information. */
+  .lb th,.lb td{padding:7px 5px;}
+
+  /* The tables' min-width forced scrolling even when enough columns were
+     hidden that the rest would have fit. */
+  .lb-wrap>.lb,.scroll>table,.table-wrap>table,.rec-scroll>table{
+    min-width:0;}
+  table{min-width:0;}
+
+  /* SILENT TRUNCATION (9 Aug, only ever caught in a screenshot):
+     width:auto + min-width:0 shrank the table to EXACTLY the wrapper
+     (tableW=374=wrapClient), so nowrap number columns no longer fit their
+     cells and "28.17" rendered as "28.". The table was not overwide and
+     the wrapper did not scroll, so NEITHER a width measurement NOR a
+     scrollWidth check could see this. Only the eye could.
+     width:max-content forces the table to its natural width: if it does not
+     fit, the wrapper scrolls visibly instead of data disappearing in
+     silence. Visible scrolling is bad, a quietly lost number is worse. */
+  .lb-wrap>.lb{width:max-content;max-width:none;}
+  /* SPECIFICITY WARNING: BYCOMP_CSS is injected into fpl.html and
+     predictions.html as its OWN <style> element LATER in the page, so it
+     beats this block on document order. A media query does not raise
+     specificity, so .rec-scroll table (0,1,1) would not be enough to
+     override its min-width:640px. The div. prefix raises it to (0,1,2) and
+     makes the rule order-independent. */
+  div.rec-scroll table{min-width:0;}
+  /* The match name was nowrap ("Nottingham Forest v Crystal Palace" =
+     277px on one line), which alone made the track record table three
+     screens wide. */
+  div.rec-scroll td.team,.scroll td.team{white-space:normal;}
+  div.rec-scroll th,div.rec-scroll td{padding:7px 6px;font-size:13px;}
+  /* Kick-off was "2026-08-21 19:00:00 UTC" on one line = 195px, so a single
+     column took a third of the phone's width. These values are dates rather
+     than numbers that need aligning, so wrapping is safe here. */
+  div.rec-scroll td.num,div.rec-scroll th.num{white-space:normal;}
+  /* An FDR grid cell is "ARS (H) 60%" = three parts on one line. nowrap kept
+     the grid at 472px even after columns had been hidden; a wrapping cell
+     takes two lines and halves the width. */
+  .fdr-grid td.num,.scroll td.num .fdr,.fdr{white-space:normal;}
+  .fdr{min-width:0;}
+
+  /* Scroll hint: appears only where the builder adds it, that is, in tables
+     that still scroll after columns have been hidden. */
+  .scrollhint{display:block;color:var(--muted,#A8A29A);font-size:12px;
+    margin:6px 0 0;}
+
+  /* --- 4. FILTER CHIPS -------------------------------------------------
+     Bug: .chips{display:inline-flex} without wrapping -> the chip row was
+     454px, and because html/body is overflow-x:clip the last chip ("Set
+     pieces") was physically unreachable on a phone.
+     Fix: allow wrapping, and give each filter group its own line. */
+  .lbctl{gap:6px 8px;}
+  .lbctl .lbl{flex:1 1 100%;margin:10px 0 0;}
+  .lbctl .lbl:first-child{margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;}
+  .chip{min-height:36px;}
+  .lbctl select,.lbctl input{min-height:36px;max-width:100%;}
+
+  /* --- 5. READABILITY --------------------------------------------------
+     12px monospace is below the readable limit on a phone. */
+  .meta,.note,.stat span,.legend,.mrow .meta,footer{font-size:13px;}
+  .hero .lede,.lede{font-size:16px;}
+  .stat b{font-size:24px;}
+
+  /* --- 6. TOUCH TARGETS ------------------------------------------------ */
+  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+    justify-content:center;}
+  .toolnav a{display:inline-block;padding:4px 0;}
+}
+
+/* Very narrow (e.g. iPhone SE 375px / Galaxy Fold cover screen 344px):
+   the brand and the CTA do not fit even when scaled down, and the hero
+   heading overflows if it contains long words. */
+@media (max-width:400px){
+  .wrap{padding-left:14px;padding-right:14px;}
+  .hero h1,h1{font-size:26px;overflow-wrap:break-word;}
+  .brand{font-size:17px;}
+  /* The font is NOT dropped to 12px here. Tried and measured 9 Aug: it took
+     1200 cells below 13px, which is under the readable limit, and hiding
+     columns was already enough to fit the tables without it.
+     Padding is tightened instead: stats.html is the densest table
+     (9 visible columns) and came out at 404px with 6px padding, i.e. 14px
+     over the phone's width. Its natural width (width:max-content) is 383px
+     at 4px padding; 3px takes it to 365px, which fits the wrapper (374). */
+  .lb th,.lb td{padding:6px 3px;}
+}
+/* /GEN:MOBILE-CSS */
+</style>
+<link rel="icon" href="/favicon.ico" sizes="any">
+</head>
+<body>
+  <header class="site-header">
+    <div class="bar"></div>
+    <div class="nav">
+      <div class="brand"><a href="./"><svg class="brand-icon" width="32" height="32" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a></div>
+      <a class="nav-cta" href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Get the free app</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <h1>Delete Your GoalIQ Account</h1>
+    <p class="updated">Last updated: 25 July 2026</p>
+
+    <p>
+      You can request deletion of your GoalIQ account and associated personal
+      data at any time. We honor all deletion requests in accordance with
+      GDPR and the Finnish Data Protection Act.
+    </p>
+
+    <h2>How to request deletion</h2>
+
+    <div class="card">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <strong>Send an email from your account email address</strong> to
+          the address below. This helps us verify the request comes from you.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <strong>Subject line:</strong> "Account deletion request"
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <strong>Include in the message:</strong> the email address of the
+          GoalIQ account you wish to delete (it should match the sender).
+        </div>
+      </div>
+      <a class="email-btn"
+         href="mailto:hello@goaliq.app?subject=Account%20deletion%20request">
+        Email account deletion request
+      </a>
+    </div>
+
+    <h2>What will be deleted</h2>
+    <p>Within <strong>30 days</strong> of your request, we will permanently delete:</p>
+    <ul>
+      <li>Your account email and password hash</li>
+      <li>Your profile data (subscription status, account creation date)</li>
+      <li>Any locally cached predictions on your device (you can also clear these by uninstalling the app)</li>
+      <li>Your data from our authentication provider (Supabase)</li>
+    </ul>
+
+    <h2>What may be retained</h2>
+    <p>For legal and tax compliance, we may need to retain limited records:</p>
+    <ul>
+      <li>
+        <strong>Billing records:</strong> If you ever made a Premium payment,
+        invoice records are retained by Stripe for 6 years (Finnish accounting
+        law requirement). These contain only the transaction amount, date, and
+        a Stripe-internal customer ID. They do not include your account
+        password or other personal data.
+      </li>
+      <li>
+        <strong>Anonymized aggregate analytics:</strong> Statistics about app
+        usage that cannot be traced back to individual users.
+      </li>
+    </ul>
+
+    <h2>Cancel an active subscription first</h2>
+    <p>
+      If you have an active GoalIQ Premium subscription, please cancel it
+      before requesting account deletion:
+    </p>
+    <ul>
+      <li><strong>App Store or Google Play subscriptions:</strong> cancel in your
+        device's subscription settings (iOS: Settings → your name →
+        Subscriptions; Android: Google Play → Subscriptions), or open GoalIQ →
+        <strong>Profile</strong> tab → tap <strong>Manage subscription</strong></li>
+      <li><strong>Web subscriptions (pro.goaliq.app):</strong> email us at the
+        address below and we cancel immediately</li>
+      <li>Your subscription remains active until the end of the current billing period</li>
+    </ul>
+    <p>
+      If you cannot cancel through the app, mention this in your deletion email
+      and we will assist.
+    </p>
+
+    <h2>Response time</h2>
+    <p>
+      We will acknowledge your request within <strong>7 days</strong> and
+      complete the deletion within <strong>30 days</strong>. You will receive
+      a confirmation email when the deletion is complete.
+    </p>
+
+    <h2>Privacy policy</h2>
+    <p>
+      For full details on what data we collect and how we use it, see our
+      <a href="https://goaliq.app/privacy.html">
+        Privacy Policy
+      </a>.
+    </p>
+
+    <h2>Contact</h2>
+    <div class="card">
+      <p style="margin: 0;">
+        <strong>GoalIQ</strong> &middot; Veikkoville &middot; Finland<br>
+        <a href="mailto:hello@goaliq.app">hello@goaliq.app</a>
+      </p>
+    </div>
+
+    <p class="updated" style="margin-top: 40px; text-align: center;">
+      © 2026 Veikkoville · GoalIQ
+    </p>
+  </div>
+  <footer class="site-footer">
+    <div class="foot">
+      <p><a href="./">GoalIQ home</a> &middot;
+      <a href="faq.html">FAQ</a> &middot;
+      <a href="privacy.html">Privacy</a></p>
+    </div>
+  </footer>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
+<script defer src="/ref-bridge.js"></script>
+</body>
+</html>
