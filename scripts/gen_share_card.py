@@ -793,7 +793,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     d.text((MX, 176), "Dixon-Coles match model", font=f_s, fill=MUTED)
 
     top = 236
-    col_w, gap = 300, 30
+    col_w, gap = 288, 26
     f_hdr = _font(FONT_BOLD, 22)
     f_rank = _font(FONT_MED, 18)
     f_team = _font(FONT_BOLD, 30)
@@ -829,16 +829,27 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     d.text((fx_x + 16, top + 12), "FIXTURES", font=f_hdr, fill=AMBER)
     f_fx = _font(FONT_BOLD, 22)
     f_fxs = _font(FONT_MED, 15)
+    # 17.8 (Wolfyn ehdotus): projisoidut maalit ottelurivin viereen. Ilman
+    # niita tama sarake on ainoa jossa ei ole yhtaan lukua, eli rakennetta
+    # ilman tietoa. Vasen sarake vastaa kysymykseen "kuka tekee eniten",
+    # tama vastaa kysymykseen "mita tassa ottelussa tapahtuu" - eri
+    # kysymyksia, joten toisto on tarkoituksellista eika laiskuutta.
+    f_fxn = _font(FONT_BOLD, 20)
     for i, f in enumerate(fxs):
         y = top + 52 + i * 62
-        hs, as_ = sh(f["home"]), sh(f["away"])
-        for j, code in enumerate((hs, as_)):
+        for j, (name, xg) in enumerate(((f["home"], f["xg_home"]),
+                                        (f["away"], f["xg_away"]))):
+            code = sh(name)
             col, _ = _team_color(code)
-            d.ellipse([fx_x + 16 + j * 96, y + 12, fx_x + 36 + j * 96, y + 32],
+            ry = y + 6 + j * 24
+            d.ellipse([fx_x + 14, ry + 2, fx_x + 30, ry + 18],
                       fill=_hex_to_rgb(col), outline=(60, 58, 54), width=2)
-            d.text((fx_x + 42 + j * 96, y + 12), code, font=f_fx, fill=CREAM)
-        ko = (f.get("kickoff") or "").split(",")[0]
-        d.text((fx_x + 16, y + 40), ko, font=f_fxs, fill=MUTED)
+            d.text((fx_x + 38, ry), code, font=f_fx, fill=CREAM)
+            v = f"{xg:.2f}"
+            d.text((fx_x + 156 - d.textlength(v, font=f_fxn), ry + 1),
+                   v, font=f_fxn, fill=AMBER)
+        ko = (f.get("kickoff") or "").split(",")[0].replace(" 2026", "")
+        d.text((fx_x + 178, y + 18), ko, font=f_fxs, fill=MUTED)
 
     f_foot = _font(FONT_MED, 19)
     d.text((MX, h - 84), "clean sheet % for every club on goaliq.app/fpl, free",
