@@ -4,7 +4,7 @@ Ville tekee kohdat joissa 🔒 (secretit/GO). Kaikki muu on valmiina repossa.
 
 ## 1. Render Web Service (käsin, sama tapa kuin goaliq-api)
 
-Render-dashboard → New → Web Service → repo `Veikkoville/football-prediction`, branch `main`:
+Render-dashboard → New → Web Service → repo `GoalIQ/football-prediction`, branch `main`:
 
 | Asetus | Arvo |
 |---|---|

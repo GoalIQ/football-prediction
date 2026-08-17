@@ -30,7 +30,7 @@
 # Reissun knockout-ikkunan (27.6.–4.7.) yli tämä on riski → repository_dispatch
 # antaa ULKOISEN luotettavan triggerin:
 #   Ulkoinen cron (esim. cron-job.org, joka 1–3 h) →
-#     POST https://api.github.com/repos/Veikkoville/football-prediction/dispatches
+#     POST https://api.github.com/repos/GoalIQ/football-prediction/dispatches
 #     -H "Authorization: Bearer <fine-grained PAT: Actions=write, Contents=read>"
 #     -d '{"event_type":"accuracy-log"}'
 #   Schedule jää varatriggeriksi. wc-knockout-refresh dispatchaa tämän 28.6 (R32).

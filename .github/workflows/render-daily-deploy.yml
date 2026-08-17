@@ -59,7 +59,7 @@ jobs:
           # ::warning::-tasolla jota virhegreppi ei nahnyt.)
           if [ -z "$RENDER_DEPLOY_HOOK" ]; then
             echo "::error::RENDER_DEPLOY_HOOK-secret puuttuu — Render EI ole deployattu."
-            echo "::error::Lisaa secret: gh secret set RENDER_DEPLOY_HOOK --repo Veikkoville/football-prediction"
+            echo "::error::Lisaa secret: gh secret set RENDER_DEPLOY_HOOK --repo GoalIQ/football-prediction"
             echo "::error::Hook-URL: Render dashboard -> service -> Settings -> Deploy Hook."
             exit 1
           fi
