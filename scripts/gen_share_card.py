@@ -701,9 +701,160 @@ def card_club_best(args) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# GW-OUTLOOK: kolme saraketta (maalit, nollapelit, ottelut)
+# ---------------------------------------------------------------------------
+# Villen tilaus 17.8 (Wolfyn ehdotuksesta): jaettava kortti jossa on koko
+# kierroksen kuva yhdella silmayksella. Ulkoasu on kolme saraketta, ei
+# rivilista, joten `render()` ei kelpaa - se laskee korkeuden riveista ja
+# piirtaa yhden rivin per tietue.
+#
+# 🔴 NUMEROT OVAT MEIDAN MALLISTAMME. Ehdotuksen mukana tullut mallikuva
+# sisalsi toisen palvelun luvut, ja ne eroavat meidan luvuistamme
+# merkittavasti (NEW 1.41 vs meidan 1.82, BRE 1.54 vs 1.95). Kortti lukee
+# data/fpl_cs_fdr.json:ia eika mitaan muuta.
+#
+# Sana "odds" ei esiinny kortissa: positioimme analytiikaksi emmeka
+# vedonlyonniksi, ja otsikko on siksi "clean sheet %".
+
+def _hex_to_rgb(c: str):
+    from PIL import ImageColor
+    try:
+        return ImageColor.getrgb(c)
+    except ValueError:
+        return (120, 120, 120)
+
+
+def card_gw_outlook(args) -> dict:
+    """Kierroksen kuva: projisoidut maalit, nollapeli-% ja ottelut."""
+    doc = _load("fpl_cs_fdr.json")
+    gw = args.gw or min((f["gameweek"] for f in doc["fixtures"]), default=1)
+    fx = [f for f in doc["fixtures"] if f["gameweek"] == gw]
+    if not fx:
+        raise SystemExit(f"GW{gw}: ei otteluita fpl_cs_fdr.json:ssa.")
+
+    teams = []
+    for f in fx:
+        teams.append({"team": f["home"], "xg": f["xg_home"], "cs": f["cs_home_pct"]})
+        teams.append({"team": f["away"], "xg": f["xg_away"], "cs": f["cs_away_pct"]})
+
+    return {
+        "kind": "gw_outlook",
+        "gw": gw,
+        "goals": sorted(teams, key=lambda t: -t["xg"])[:10],
+        "cs": sorted(teams, key=lambda t: -t["cs"])[:10],
+        "fixtures": sorted(fx, key=lambda f: f.get("kickoff_ms") or 0),
+        "generated_at": doc.get("meta", {}).get("generated_at", ""),
+        "file": f"goaliq_gw_outlook_gw{gw}.png",
+    }
+
+
+def render_gw_outlook(spec: dict, out_path: Path) -> Path:
+    """Kolmen sarakkeen kortti. Oma renderoija, koska `render()` on rivilista."""
+    from PIL import Image, ImageDraw
+    from src.models.team_colors import _team_color
+
+    SHORT = {
+        "Arsenal": "ARS", "Aston Villa": "AVL", "Bournemouth": "BOU",
+        "Brentford": "BRE", "Brighton & Hove Albion": "BHA", "Chelsea": "CHE",
+        "Coventry City": "COV", "Crystal Palace": "CRY", "Everton": "EVE",
+        "Fulham": "FUL", "Hull City": "HUL", "Ipswich Town": "IPS",
+        "Leeds United": "LEE", "Liverpool": "LIV", "Manchester City": "MCI",
+        "Manchester United": "MUN", "Newcastle United": "NEW",
+        "Nottingham Forest": "NFO", "Sunderland": "SUN",
+        "Tottenham Hotspur": "TOT",
+    }
+
+    def sh(name: str) -> str:
+        return SHORT.get(name, (name or "?")[:3].upper())
+
+    h = 1010
+    grad = Image.new("RGB", (1, h))
+    for y in range(h):
+        t = y / max(h - 1, 1)
+        grad.putpixel((0, y),
+                      tuple(int(a + (b - a) * t) for a, b in zip(INK, INK2)))
+    canvas = grad.resize((W, h)).convert("RGBA")
+    d = ImageDraw.Draw(canvas)
+
+    if WORDMARK.exists():
+        wm = Image.open(WORDMARK).convert("RGBA")
+        wm_h = 60
+        wm = wm.resize((int(wm.width * wm_h / wm.height), wm_h), Image.LANCZOS)
+        canvas.alpha_composite(wm, (W - MX - wm.width, 52))
+
+    f_t = _font(FONT_BOLD, 52)
+    d.text((MX, 52), "PROJECTED GOALS", font=f_t, fill=CREAM)
+    d.text((MX, 108), "& CLEAN SHEET %", font=f_t, fill=CREAM)
+    gw_x = MX + d.textlength("& CLEAN SHEET % ", font=f_t)
+    d.text((gw_x, 108), f"GW{spec['gw']}", font=f_t, fill=AMBER)
+
+    f_s = _font(FONT_MED, 20)
+    d.text((MX, 176), "Dixon-Coles match model", font=f_s, fill=MUTED)
+
+    top = 236
+    col_w, gap = 300, 30
+    f_hdr = _font(FONT_BOLD, 22)
+    f_rank = _font(FONT_MED, 18)
+    f_team = _font(FONT_BOLD, 30)
+    f_val = _font(FONT_BOLD, 30)
+
+    def column(x: int, title: str, rows: list, fmt) -> None:
+        d.rounded_rectangle([x, top, x + col_w, top + 40 + len(rows) * 62],
+                            radius=14, fill=(24, 23, 21))
+        d.text((x + 16, top + 12), title, font=f_hdr, fill=AMBER)
+        for i, r in enumerate(rows):
+            y = top + 52 + i * 62
+            d.text((x + 16, y + 14), f"{i + 1:>2}", font=f_rank, fill=MUTED)
+            code = sh(r["team"])
+            col, _ = _team_color(code)
+            d.ellipse([x + 48, y + 10, x + 76, y + 38], fill=_hex_to_rgb(col),
+                      outline=(60, 58, 54), width=2)
+            d.text((x + 88, y + 8), code, font=f_team, fill=CREAM)
+            v = fmt(r)
+            d.text((x + col_w - 16 - d.textlength(v, font=f_val), y + 8),
+                   v, font=f_val, fill=AMBER)
+
+    column(MX, "PROJECTED GOALS", spec["goals"], lambda r: f"{r['xg']:.2f}")
+    column(MX + col_w + gap, "CLEAN SHEET %", spec["cs"],
+           lambda r: f"{r['cs']:.0f}%")
+
+    # Kolmas sarake: ottelut. Wolfyn ehdotus 17.8 - ottelut ovat dataa,
+    # "top takeaways" olisi mielipidetta.
+    fx_x = MX + 2 * (col_w + gap)
+    fx_w = W - MX - fx_x
+    fxs = spec["fixtures"]
+    d.rounded_rectangle([fx_x, top, fx_x + fx_w, top + 40 + len(fxs) * 62],
+                        radius=14, fill=(24, 23, 21))
+    d.text((fx_x + 16, top + 12), "FIXTURES", font=f_hdr, fill=AMBER)
+    f_fx = _font(FONT_BOLD, 22)
+    f_fxs = _font(FONT_MED, 15)
+    for i, f in enumerate(fxs):
+        y = top + 52 + i * 62
+        hs, as_ = sh(f["home"]), sh(f["away"])
+        for j, code in enumerate((hs, as_)):
+            col, _ = _team_color(code)
+            d.ellipse([fx_x + 16 + j * 96, y + 12, fx_x + 36 + j * 96, y + 32],
+                      fill=_hex_to_rgb(col), outline=(60, 58, 54), width=2)
+            d.text((fx_x + 42 + j * 96, y + 12), code, font=f_fx, fill=CREAM)
+        ko = (f.get("kickoff") or "").split(",")[0]
+        d.text((fx_x + 16, y + 40), ko, font=f_fxs, fill=MUTED)
+
+    f_foot = _font(FONT_MED, 19)
+    d.text((MX, h - 84), "clean sheet % for every club on goaliq.app/fpl, free",
+           font=f_foot, fill=MUTED)
+    d.text((MX, h - 52), "model projections, not betting advice",
+           font=_font(FONT_MED, 16), fill=MUTED)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(out_path, "PNG", optimize=True)
+    return out_path
+
+
 BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
             "xp": card_xp, "value": card_value, "club-best": card_club_best,
-            "price-tier": card_price_tier}
+            "price-tier": card_price_tier,
+            "gw-outlook": card_gw_outlook}
 GW_CAPABLE = {"cs"}
 
 
@@ -726,6 +877,8 @@ def main() -> int:
     ap.add_argument("--rank-cap", type=int, default=None,
                     help="price-tier: pudota rivit jotka eivat mahdu ilmaissivun "
                          "top-N:aan (tarkistettavuus). /fpl/expected-points = 100")
+    ap.add_argument("--gw", type=int, default=None,
+                    help="gw-outlook: kierros (oletus: pienin datassa)")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
 
@@ -741,6 +894,11 @@ def main() -> int:
 
     spec = BUILDERS[a.card](a)
     out = Path(a.out) if a.out else OUT_DIR / spec["file"]
+    if spec.get("kind") == "gw_outlook":
+        pth = render_gw_outlook(spec, out)
+        print("GW%s outlook (%d ottelua) -> %s"
+              % (spec["gw"], len(spec["fixtures"]), pth))
+        return 0
     p = render(spec, out)
     print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
     return 0
