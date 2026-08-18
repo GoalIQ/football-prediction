@@ -84,19 +84,46 @@ MULT_MIN, MULT_MAX = 0.5, 1.5
 
 
 def load_team_overrides(path: Path | None = None,
-                        today: _dt.date | None = None) -> tuple[dict, list[str]]:
+                        today: _dt.date | None = None,
+                        with_severity: bool = False):
     """(team -> {"attack": float, "defence": float, "reason", "review_by"}, varoitukset).
 
-    Puuttuva tai rikkinainen tiedosto -> tyhja dict. Ohituksen puuttuminen ei
-    saa KOSKAAN kaataa projektioajoa: ilman sita malli on tasmalleen se mika
-    se oli ennen tata mekanismia.
+    Puuttuva tiedosto -> tyhja dict. Ohituksen puuttuminen ei saa KOSKAAN
+    kaataa tata lukijaa: ilman sita malli on tasmalleen se mika se oli ennen
+    tata mekanismia.
+
+    🔴 VAKAVUUSJAKO (18.8.2026). Tama funktio pysyy fail-openina, koska se on
+    kirjasto: testit ja diagnostiikka lukevat sita ilman etta ajo saa kuolla.
+    Kaataminen kuuluu `apply_to_fit`ille, joka on BUILDERIN polku. Jotta se voi
+    tehda sen ilman merkkijonojen arvailua, pudotukset lajitellaan tassa:
+
+        BENIGNI  vanhentunut review_by. Tama on SUUNNITELTU pudotus: ohitus on
+                 valiaikainen silta ja sen kuuluu kadota itsestaan.
+        FATAALI  kaikki muu. Rivi on olemassa, se on tarkoitettu vaikuttamaan,
+                 eika se vaikuta. Se on tasmalleen se tila jossa "Newcastle on
+                 leikattu" on totta paperilla ja valhetta lukuna.
+
+    `with_severity=True` -> (out, warnings, fatal). Oletuksena 2-tuple, jotta
+    olemassa olevat kutsujat ja testit eivat riko.
     """
     p = path or OVERRIDES_PATH
     today = today or _dt.date.today()
     out: dict[str, dict] = {}
     warnings: list[str] = []
+    fatal: list[str] = []
+
+    def _drop(msg: str, benign: bool = False) -> None:
+        # `warnings` pysyy KAIKKIEN pudotusten unionina (vanhat kutsujat
+        # nakevat saman kuin ennen); `fatal` on se osajoukko joka kaataa.
+        warnings.append(msg)
+        if not benign:
+            fatal.append(msg)
+
+    def _ret():
+        return (out, warnings, fatal) if with_severity else (out, warnings)
+
     if not p.exists():
-        return out, warnings
+        return _ret()
     try:
         with p.open(encoding="utf-8", newline="") as fh:
             rows = [r for r in fh if not r.lstrip().startswith("#")]
@@ -108,10 +135,10 @@ def load_team_overrides(path: Path | None = None,
                 atk = float(str(r.get("attack_delta", "0") or 0).strip())
                 dfc = float(str(r.get("defence_delta", "0") or 0).strip())
             except (TypeError, ValueError):
-                warnings.append(f"{team}: delta ei ole luku, rivi ohitettu")
+                _drop(f"{team}: delta ei ole luku, rivi ohitettu")
                 continue
             if abs(atk) > MAX_DELTA or abs(dfc) > MAX_DELTA:
-                warnings.append(
+                _drop(
                     f"{team}: |delta| > {MAX_DELTA}, rivi ohitettu "
                     f"(attack {atk}, defence {dfc})")
                 continue
@@ -121,36 +148,41 @@ def load_team_overrides(path: Path | None = None,
                 try:
                     mult = float(raw_mult)
                 except ValueError:
-                    warnings.append(f"{team}: attack_mult ei ole luku, rivi ohitettu")
+                    _drop(f"{team}: attack_mult ei ole luku, rivi ohitettu")
                     continue
                 if not MULT_MIN <= mult <= MULT_MAX:
-                    warnings.append(
+                    _drop(
                         f"{team}: attack_mult {mult} rajojen "
                         f"[{MULT_MIN}, {MULT_MAX}] ulkopuolella, rivi ohitettu")
                     continue
             review = (r.get("review_by") or "").strip()
             if not review:
-                warnings.append(f"{team}: review_by puuttuu, rivi ohitettu")
+                _drop(f"{team}: review_by puuttuu, rivi ohitettu")
                 continue
             try:
                 due = _dt.date.fromisoformat(review)
             except ValueError:
-                warnings.append(f"{team}: review_by ei ole ISO-paiva, ohitettu")
+                _drop(f"{team}: review_by ei ole ISO-paiva, ohitettu")
                 continue
             if due < today:
                 # EI HILJAISTA JATKAMISTA. Vanhentunut joukkueohitus taistelisi
                 # mallia vastaan tasan silloin kun mallilla on vihdoin oikeaa
                 # 26/27-dataa jonka perusteella korjata itsensa.
-                warnings.append(
+                _drop(
                     f"{team}: review_by {review} on MENNYT -> ohitusta EI "
-                    f"sovelleta. Poista rivi tai paivita paiva.")
+                    f"sovelleta. Poista rivi tai paivita paiva.", benign=True)
                 continue
             out[team] = {"attack": atk, "defence": dfc, "attack_mult": mult,
                          "reason": (r.get("reason") or "").strip(),
                          "review_by": review}
-    except Exception as e:  # pragma: no cover — luku ei saa kaataa ajoa
-        return {}, [f"luku epaonnistui, jatketaan ilman: {type(e).__name__}: {e}"]
-    return out, warnings
+    except Exception as e:  # pragma: no cover
+        # Rikkinainen tiedosto on FATAALI: rivit ovat olemassa ja ne on
+        # tarkoitettu vaikuttamaan, mutta yksikaan ei paase perille.
+        msg = f"luku epaonnistui: {type(e).__name__}: {e}"
+        out.clear()
+        _drop(msg)
+        return _ret()
+    return _ret()
 
 
 def apply_to_fit(dc, surface: str, today: _dt.date | None = None) -> list[dict]:
@@ -176,23 +208,45 @@ def apply_to_fit(dc, surface: str, today: _dt.date | None = None) -> list[dict]:
     julkaistu osumatarkkuus mittaa kasisaatoa eika mallia. Rajaus on lukittu
     porttiin (`test_the_override_never_reaches_the_graded_prediction_surface`).
 
+    🔴 TAMA KAATAA AJON (18.8.2026). Aiemmin tuntematon joukkuenimi tulosti
+    `::error::`-rivin ja ajo JATKOI. Printti ei ole portti: workflow jai
+    vihreaksi ja artefaktin meta sanoi `found: false` paikassa jota kukaan ei
+    lue, eli "Newcastle on leikattu" olisi ollut totta tiedostossa ja valhetta
+    julkaistussa luvussa. Sama virheluokka on kirjattu repossa jo kahdesti
+    (vahti huusi tasolla jota greppi ei nahnyt; fail-open nielaisi
+    mutaatiotestin). Nyt fataali pudotus nostaa `SystemExit`in.
+
+    Kaatuminen on tarkoituksellisesti valittu vaihtoehto sille etta FPL-sivu
+    paivittyisi vaarilla luvuilla. Vanhentunut sivu on nakyva vika, hiljaa
+    leikkaamaton Newcastle ei ole.
+
     `surface` nakyy lokissa, jotta kolmen ajon tulosteet erottuvat toisistaan.
     """
-    overrides, warnings = load_team_overrides(today=today)
+    overrides, warnings, fatal = load_team_overrides(today=today,
+                                                     with_severity=True)
     for w in warnings:
+        # Benigni (vanhentunut rivi) nakyy varoituksena; fataali toistetaan
+        # alempana ::error::-tasolla ennen kaatumista.
         print(f"::warning::[Joukkueohitus/{surface}] {w}")
     applied = apply_team_overrides(dc, overrides)
     for r in applied:
         if not r["found"]:
             # Nimikirjoitusvirhe on todennakoisin tapa saada ohitus
             # nayttamaan toimivalta tekematta mitaan.
-            print(f"::error::[Joukkueohitus/{surface}] tuntematon joukkue "
-                  f"{r['team']!r} — ohitus EI vaikuttanut mihinkaan")
+            fatal.append(f"tuntematon joukkue {r['team']!r} — ohitus EI "
+                         f"vaikuttanut mihinkaan")
         else:
             print(f"      joukkueohitus/{surface} {r['team']}: "
                   f"attack {r['attack_before']:+.3f} -> {r['attack_after']:+.3f}, "
                   f"defence {r['defence_before']:+.3f} -> {r['defence_after']:+.3f} "
                   f"(review_by {r['review_by']})")
+    if fatal:
+        for f in fatal:
+            print(f"::error::[Joukkueohitus/{surface}] {f}")
+        raise SystemExit(
+            f"[Joukkueohitus/{surface}] {len(fatal)} ohitusta ei paassyt perille "
+            f"— ajo pysaytetty. Korjaa data/fpl_team_overrides.csv tai poista "
+            f"rivi. Vanhentunut review_by EI kaada (se on suunniteltu pudotus).")
     if not applied:
         # Tyhja on laillinen tila, mutta sen on nayttava: muuten "ei rivejä"
         # ja "lukija on rikki" nayttavat lokissa tasan samalta.

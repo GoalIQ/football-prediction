@@ -217,3 +217,107 @@ def test_shipped_csv_is_valid_and_not_expired():
         assert abs(o["attack"]) <= tov.MAX_DELTA
         assert abs(o["defence"]) <= tov.MAX_DELTA
         assert o["reason"], f"{team}: perustelu puuttuu"
+
+
+# --------------------------------------------------------------------------
+# 18.8.2026 — HILJAINEN PUDOTUS KAATAA AJON
+#
+# Ennen tata `apply_to_fit` tulosti `::error::`-rivin ja JATKOI. Printti ei
+# ole portti: ajo jai vihreaksi ja julkaistu luku oli leikkaamaton, vaikka
+# CSV sanoi etta se on leikattu. Naiden testien on eroteltava KAKSI asiaa:
+#   - fataali pudotus (rivi on olemassa eika vaikuta)   -> SystemExit
+#   - benigni pudotus (review_by mennyt, suunniteltu)   -> EI SystemExit
+# Jos ne eivat erotu, portti on joko hampaaton tai se kaataa oikean ajon.
+# --------------------------------------------------------------------------
+
+def _point_module_at(monkeypatch, tmp_path, body):
+    p = _write(tmp_path, body)
+    monkeypatch.setattr(tov, "OVERRIDES_PATH", p)
+    return p
+
+
+def test_apply_to_fit_dies_when_team_name_does_not_match(monkeypatch, tmp_path):
+    """Nimikirjoitusvirhe on todennakoisin tapa saada ohitus nayttamaan
+    toimivalta tekematta mitaan. 'Newcastle Utd' ei ole mallinimi."""
+    _point_module_at(monkeypatch, tmp_path,
+                     'Newcastle Utd,-0.10,0.05,"x",2026-10-05\n')
+    dc = FakeDC()
+    with pytest.raises(SystemExit) as e:
+        tov.apply_to_fit(dc, "testi", today=TODAY)
+    assert "ei paassyt perille" in str(e.value)
+    # ...ja mallia EI ole muutettu puoliksi.
+    assert dc.attack["Newcastle United"] == 0.20
+
+
+@pytest.mark.parametrize("body,mika", [
+    ('Newcastle United,ei-luku,0.05,"x",2026-10-05\n', "delta ei ole luku"),
+    ('Newcastle United,-0.99,0.05,"x",2026-10-05\n', "|delta| yli katon"),
+    ('Newcastle United,-0.10,0.05,"x",\n', "review_by puuttuu"),
+    ('Newcastle United,-0.10,0.05,"x",eilen\n', "review_by ei ole ISO"),
+])
+def test_apply_to_fit_dies_on_row_that_exists_but_does_nothing(
+        monkeypatch, tmp_path, body, mika):
+    _point_module_at(monkeypatch, tmp_path, body)
+    dc = FakeDC()
+    with pytest.raises(SystemExit):
+        tov.apply_to_fit(dc, "testi", today=TODAY)
+    assert dc.attack["Newcastle United"] == 0.20, f"malli muuttui silti: {mika}"
+
+
+def test_apply_to_fit_dies_when_attack_mult_is_out_of_bounds(monkeypatch, tmp_path):
+    p = tmp_path / "t.csv"
+    p.write_text("team,attack_delta,defence_delta,reason,review_by,attack_mult\n"
+                 'Newcastle United,-0.10,0.05,"x",2026-10-05,9.9\n', encoding="utf-8")
+    monkeypatch.setattr(tov, "OVERRIDES_PATH", p)
+    with pytest.raises(SystemExit):
+        tov.apply_to_fit(FakeDC(), "testi", today=TODAY)
+
+
+def test_expired_row_does_not_kill_the_run(monkeypatch, tmp_path):
+    """POSITIIVINEN ERO. Vanhentuminen on SUUNNITELTU pudotus: ohitus on
+    valiaikainen silta ja sen kuuluu kadota itsestaan kun malli saa dataa.
+    Jos tama kaatuisi, portti pysayttaisi paivittaisen ajon joka kerta kun
+    rivi vanhenee — eli portti olisi vaarin painpainen."""
+    _point_module_at(monkeypatch, tmp_path,
+                     'Newcastle United,-0.10,0.05,"x",2026-08-01\n')
+    dc = FakeDC()
+    applied = tov.apply_to_fit(dc, "testi", today=TODAY)   # ei nosta
+    assert applied == []
+    # ...ja rivi TODELLA putosi: ilman tata assertia testi lapaisisi myos
+    # silloin jos vanhentumisportti olisi vahingossa poistettu.
+    assert dc.attack["Newcastle United"] == 0.20
+
+
+def test_missing_file_does_not_kill_the_run(monkeypatch, tmp_path):
+    monkeypatch.setattr(tov, "OVERRIDES_PATH", tmp_path / "ei-ole.csv")
+    assert tov.apply_to_fit(FakeDC(), "testi", today=TODAY) == []
+
+
+def test_valid_row_applies_and_does_not_die(monkeypatch, tmp_path):
+    """KONTROLLI ETTA PORTTI EI OLE VAIN 'kaadu aina'."""
+    _point_module_at(monkeypatch, tmp_path,
+                     'Newcastle United,-0.10,0.05,"x",2026-10-05\n')
+    dc = FakeDC()
+    applied = tov.apply_to_fit(dc, "testi", today=TODAY)
+    assert len(applied) == 1 and applied[0]["found"] is True
+    assert dc.attack["Newcastle United"] == pytest.approx(0.10)
+
+
+def test_severity_split_is_real_not_a_string_match(tmp_path):
+    """Vakavuusjako ei saa nojata varoitustekstin muotoon. Sama tiedosto,
+    kaksi rivia: toinen vanhentunut (benigni), toinen rikki (fataali).
+    `warnings` sisaltaa molemmat, `fatal` VAIN jalkimmaisen."""
+    p = _write(tmp_path,
+               'Newcastle United,-0.10,0.05,"x",2026-08-01\n'
+               'Arsenal,ei-luku,0.05,"y",2026-10-05\n')
+    out, warn, fatal = tov.load_team_overrides(p, today=TODAY, with_severity=True)
+    assert out == {}
+    assert len(warn) == 2 and len(fatal) == 1
+    assert "Arsenal" in fatal[0] and "Newcastle" not in fatal[0]
+
+
+def test_two_tuple_signature_still_works(tmp_path):
+    """Vanhat kutsujat eivat saa rikkoutua vakavuusjaosta."""
+    p = _write(tmp_path, 'Newcastle United,-0.10,0.05,"x",2026-10-05\n')
+    out, warn = tov.load_team_overrides(p, today=TODAY)
+    assert "Newcastle United" in out and warn == []

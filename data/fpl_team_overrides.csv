@@ -14,13 +14,17 @@
 #   Heikentyneelle joukkueelle: attack NEGATIIVINEN, defence POSITIIVINEN.
 #   Väärä merkki defencessa PARANTAISI juuri sitä joukkuetta jota heikennät.
 #
-# 🔴 MIHIN TÄMÄ PÄTEE — JA MIHIN EI (kartoitettu 14.8.2026)
-# Repossa on NELJÄ erillistä Dixon-Coles-fittiä. Tämä ohitus sovelletaan
-# tasan yhdessä:
+# 🔴 MIHIN TÄMÄ PÄTEE — JA MIHIN EI (kartoitettu 14.8.2026, ajantasaistettu 18.8.2026)
+# Repossa on NELJÄ erillistä Dixon-Coles-fittiä. Ohitus sovelletaan KOLMEEN:
 #     scripts/build_fpl_xp.py       KYLLÄ  (xP-projektiot)
-#     scripts/build_fpl_cs_fdr.py   ei     (CS/FDR -> chip-EV, fixture-ticker)
-#     scripts/build_fpl_phase0.py   ei     (Phase 0 -projektiot)
+#     scripts/build_fpl_cs_fdr.py   KYLLÄ  (CS/FDR -> chip-EV, fixture-ticker)
+#     scripts/build_fpl_phase0.py   KYLLÄ  (Phase 0 -projektiot, goaliq.app/fpl)
 #     api/main.py                   ei     (/api/predict, ottelu-ennusteet)
+#
+# Kaikki kolme kutsuvat `fpl_team_overrides.apply_to_fit(dc, <pinta>)` samassa
+# kohdassa: promoted baselinen JÄLKEEN, laskennan EDELLÄ. Rajaus on lukittu
+# testiin `test_the_override_never_reaches_the_graded_prediction_surface`,
+# joka kaataa ajon jos neljäs pinta lisätään.
 #
 # /api/predict ON TARKOITUKSELLA ULKOPUOLELLA, älä "korjaa" sitä. Sen
 # ennusteet logataan pre-match julkiseen track recordiin
@@ -29,10 +33,19 @@
 # osumatarkkuutemme mittaisi käsisäätöä eikä mallia. Se on tasan se lupaus
 # jonka varaan koko tuote myydään.
 #
-# CS/FDR ja Phase 0 ovat eri asia: ne ovat FPL-pintoja eivätkä gradattuja
-# ennusteita, joten niiden jääminen ulkopuolelle tarkoittaa että kaksi
-# FPL-pintaa voi näyttää samasta seurasta eri lukua. Se on AVOIN kysymys
-# Villelle (jono: TEAM-OVERRIDE-SCOPE), ei tässä ratkaistu.
+# 🔴 HISTORIA, JOTTA TÄTÄ EI PALAUTETA: 14.8 ohitus oli kytketty VAIN
+# xP-builderiin, jolloin fixture-ticker ja Phase 0 näyttivät samasta seurasta
+# eri luvun kuin xP. Se yhtenäistettiin samana päivänä (jonorivi
+# TEAM-OVERRIDE-SCOPE, suljettu), mutta tämä lohko jäi väittämään vanhaa
+# rajausta 18.8 asti. Seuraus ei ollut kosmeettinen: 17.8 julkaistun
+# GW-outlook-jakokortin "NEW 1.82" tulee Phase 0:sta, eli kortin luku ON
+# leikattu — mutta tämän tiedoston oma otsikko väitti ettei se olisi.
+#
+# 🔴 attack_mult EI KULJE apply_to_fit:n kautta, eikä se ole epäjohdonmukaisuus:
+# se on pelaajavauhdin (xg90/xa90) kerroin, ei DC-suure, ja CS/FDR- ja Phase 0
+# -pinnoilla ei ole pelaajavauhteja lainkaan. Käytännössä attack_mult vaikuttaa
+# vain build_fpl_xp.py:ssä. Jos haluat vaikutuksen fixture-tason lukuihin, se
+# sanotaan attack_deltalla — se on se sarake joka liikuttaa lambdaa.
 #
 # 🔴 review_by ON PAKOLLINEN JA SE ON PORTTI
 # Vanhentunutta riviä EI sovelleta, se ohitetaan äänekkäästi. Syy: reittaus
