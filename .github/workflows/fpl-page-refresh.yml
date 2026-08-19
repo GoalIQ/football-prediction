@@ -39,6 +39,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write    # 19.8: hub-deployn dispatch (ks. alla)
 
 jobs:
   bake-and-commit:
@@ -93,6 +94,7 @@ jobs:
           fi
 
       - name: Commit + push to main (Pages serves fresh page)
+        id: push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -106,7 +108,8 @@ jobs:
             git fetch origin main || true
             if git rebase origin/main; then
               if git push origin HEAD:main; then
-                echo "Pushed to main (yritys $i) → Pages päivittyy."
+                echo "Pushed to main (yritys $i)."
+                echo "pushed=true" >> "$GITHUB_OUTPUT"
                 exit 0
               fi
             else
@@ -124,6 +127,22 @@ jobs:
       # kestää superseeding-deployt (myöhempi commit ei muuta näitä
       # tiedostoja → hash sama). Fail → punainen workflow + Pages-failuren
       # oma deployment_status laukaisee pages-deploy-autoheal-rerunin.
+      # 19.8: HUB-DEPLOY ON LAUKAISTAVA KASIN — sama vika kuin accuracy-logissa.
+      # `[skip ci]` estaa GitHubia kaynnistamasta kaikkia workflow'ta talle
+      # pushille, myos hub-deployn. Askeleen vanha kommentti ("Pages
+      # paivittyy") piti paikkansa GitHub Pagesilla; 15.8:n cutoverin jalkeen
+      # CF Pages on direct upload eika mikaan deployaa pushista itsestaan.
+      # Juuri tama teki alla olevasta deploy-verifysta punaisen 18.8: live oli
+      # vanhentunut HEADiin nahden koska botin push ei deployannut mitaan.
+      - name: Deploy hub (CF Pages) when pages changed
+        if: steps.push.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run hub-deploy.yml --ref main
+          echo "hub-deploy dispatched — odotetaan ennen deploy-verifya."
+          sleep 60
+
       - name: Deploy-verify — live servaa HEAD-sisällön
         run: |
           set -e
