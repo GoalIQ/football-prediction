@@ -593,12 +593,18 @@ def load_log() -> list[dict]:
 
 
 def _pick_txt(e: dict) -> tuple[str, str]:
-    """(1/X/2-symboli, joukkuenimi tai Draw) lokirivin pickistä."""
+    """(1/X/2-symboli, joukkuenimi tai Draw) lokirivin pickistä.
+
+    Nimi tulee `display_pair`:sta samoin kuin ottelusarake: ilman sita sama
+    rivi nimesi joukkueen kahdella tavalla vierekkaisissa soluissa
+    ("Real Betis v Real Sociedad" | "1 Real Betis Balompié").
+    """
     w = e.get("predicted_winner")
+    home, away = display_pair(e)
     if w == "home":
-        return "1", e.get("home_team", "")
+        return "1", home
     if w == "away":
-        return "2", e.get("away_team", "")
+        return "2", away
     if w == "draw":
         return "X", "Draw"
     return "-", ""
