@@ -12,6 +12,8 @@ import pytest
 
 from scripts.build_spl_phase0 import MODEL_TO_SHORT, SHORT_TO_MODEL
 from src.models import spl_xp as sx
+from src.models.dixon_coles import DixonColesModel
+from src.models.promoted_baseline import blend_thin_toward_baseline
 
 
 # ---------------------------------------------------------------------------
@@ -226,3 +228,71 @@ def test_model_squad_escapes_cheap_skeleton():
     assert sq is not None
     assert any(p["price"] >= 11.0 for p in sq["players"]), (
         "yksikaan tahti ei paassyt squadiin - vaihtosilmukka umpikujassa")
+
+
+# ---------------------------------------------------------------------------
+# SPL-INSEASON-FIT (19.8): ohuen otoksen nousijan blend baselinea kohti.
+# Mitattu artefakti jonka nama vartioivat: GW1:n naiivi lisays fittiin nosti
+# Al Diriyahin GW2 CS%:n +12,4 %-yks, koska yhden ottelun estimaatti
+# L2-kutistuu sarjan keskitasoon joka on nousijalle liian antelias.
+# ---------------------------------------------------------------------------
+def _dc_stub():
+    dc = DixonColesModel(per_team_home_adv=True)
+    # Viitetrio fitissa: baseline = keskiarvot (-0.2, +0.3, +0.1).
+    dc.attack = {"Ref A": -0.1, "Ref B": -0.2, "Ref C": -0.3, "Uusija": 0.1}
+    dc.defence = {"Ref A": 0.2, "Ref B": 0.3, "Ref C": 0.4, "Uusija": 0.0}
+    dc.home_advantage_per_team = {
+        "Ref A": 0.1, "Ref B": 0.1, "Ref C": 0.1, "Uusija": 0.4,
+    }
+    return dc
+
+
+REF = ("Ref A", "Ref B", "Ref C")
+
+
+def test_blend_one_match_is_one_sixth_of_the_way():
+    dc = _dc_stub()
+    info = blend_thin_toward_baseline(
+        dc, {"Uusija": 1}, ["Uusija"], reference=REF, n_min=6)
+    # base_att -0.2, fit 0.1 -> -0.2 + (1/6)*0.3 = -0.15
+    assert math.isclose(dc.attack["Uusija"], -0.15)
+    assert math.isclose(dc.defence["Uusija"], 0.3 + (1 / 6) * (0.0 - 0.3))
+    assert math.isclose(
+        dc.home_advantage_per_team["Uusija"], 0.1 + (1 / 6) * (0.4 - 0.1))
+    assert info["blended"]["Uusija"]["n"] == 1
+    assert info["source"] == "measured"
+
+
+def test_blend_leaves_full_sample_alone():
+    """n >= n_min: fitattu estimaatti jaa koskematta — blend vanhenee itse."""
+    dc = _dc_stub()
+    info = blend_thin_toward_baseline(
+        dc, {"Uusija": 6}, ["Uusija"], reference=REF, n_min=6)
+    assert dc.attack["Uusija"] == 0.1
+    assert info["blended"] == {}
+
+
+def test_blend_leaves_zero_sample_alone():
+    """n=0 kuuluu add_promoted_baselinelle (missing-polku), ei blendille."""
+    dc = _dc_stub()
+    blend_thin_toward_baseline(dc, {}, ["Uusija"], reference=REF, n_min=6)
+    assert dc.attack["Uusija"] == 0.1
+
+
+def test_blend_ignores_team_not_in_fit():
+    dc = _dc_stub()
+    info = blend_thin_toward_baseline(
+        dc, {"Tuntematon": 2}, ["Tuntematon"], reference=REF, n_min=6)
+    assert "Tuntematon" not in dc.attack
+    assert info["blended"] == {}
+
+
+def test_blend_without_reference_skips_visibly():
+    """Negatiivinen kontrolli: viiteryhma puuttuu eika frozen sallittu ->
+    nakyvä skip, parametreihin ei kosketa, ei arvattua baselinea."""
+    dc = _dc_stub()
+    info = blend_thin_toward_baseline(
+        dc, {"Uusija": 1}, ["Uusija"], reference=("Ei Ole",), n_min=6,
+        allow_frozen=False)
+    assert dc.attack["Uusija"] == 0.1
+    assert info["skipped"] == ["Uusija"]

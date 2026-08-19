@@ -37,6 +37,7 @@ import requests
 
 import config
 from scripts.build_spl_phase0 import (
+    BLEND_N_MIN,
     MODEL_TO_SHORT,
     REFERENCE_TRIO_SPL,
     SEASON_LABEL,
@@ -46,10 +47,14 @@ from scripts.build_spl_phase0 import (
     fetch_source,
     fit_model,
     short_name,
+    vendored_team_set,
 )
 from src.models import spl_xp as xp
 from src.models.fpl_context import fixture_contexts, neutral_lambda
-from src.models.promoted_baseline import add_promoted_baseline
+from src.models.promoted_baseline import (
+    add_promoted_baseline,
+    blend_thin_toward_baseline,
+)
 
 OUT_PATH = config.PROJECT_ROOT / "data" / "spl_xp_projections.json"
 HORIZON_GW = 6
@@ -271,17 +276,39 @@ def main() -> int:
     n_hist = sum(1 for v in history.values() if v)
     print(f"      {len(elements)} pelaajaa, {n_hist} RSL-kausihistorialla")
 
-    print("[3/6] Sovitetaan SPL-DC + nousijabaseline...")
-    dc, seasons = fit_model()
+    # SPL-INSEASON-FIT (19.8): sama liitos + blend kuin build_spl_phase0:ssa
+    # — kaksi builderia, yksi fittilahde, eika xP saa laskea eri voimilla
+    # kuin CS%/FDR-sivu.
+    inseason = src.get("results") or []
+    print(f"[3/6] Sovitetaan SPL-DC (+ {len(inseason)} pelattua 26/27-ottelua) "
+          "+ nousijabaseline...")
+    dc, seasons = fit_model(inseason)
     fixture_teams = sorted({f["home"] for f in src["fixtures"]}
                            | {f["away"] for f in src["fixtures"]})
+    promoted = sorted(set(fixture_teams) - vendored_team_set())
     missing = sorted(set(fixture_teams) - set(dc.attack))
     baseline = add_promoted_baseline(dc, missing, reference=REFERENCE_TRIO_SPL,
                                      allow_frozen=False)
     if missing and not baseline.get("trio_used"):
         print("VIRHE: nousijabaseline ei injektoitunut — keskeytetään.")
         return 1
-    print(f"      {len(dc.teams_)} joukkuetta, baseline: {missing or '-'}")
+    counts: dict[str, int] = {}
+    for r in inseason:
+        for t in (r["home_team"], r["away_team"]):
+            counts[t] = counts.get(t, 0) + 1
+    blend = blend_thin_toward_baseline(
+        dc, counts, promoted, reference=REFERENCE_TRIO_SPL,
+        n_min=BLEND_N_MIN, allow_frozen=False,
+    )
+    thin = {t for t in promoted
+            if t in dc.attack and 0 < counts.get(t, 0) < BLEND_N_MIN}
+    unblended = sorted(thin - set(blend.get("blended") or {}))
+    if unblended:
+        print(f"VIRHE: ohuen otoksen nousijat ilman blendia: {unblended} — "
+              "keskeytetään.")
+        return 1
+    print(f"      {len(dc.teams_)} joukkuetta, baseline: {missing or '-'}, "
+          f"blend: {sorted(blend.get('blended') or {}) or '-'}")
 
     print("[4/6] Vauhdit + minuuttimalli (kausiaggregaatit)...")
     pos_by_player = {e["id"]: e["element_type"] for e in elements}
@@ -478,7 +505,10 @@ def main() -> int:
             "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, "
                        "saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
             "team_strength_source": (
-                f"GoalIQ Dixon-Coles, SPL results (ESPN) {seasons} — goals-based fit"
+                f"GoalIQ Dixon-Coles, SPL results (ESPN) {seasons}"
+                + (f" incl. {len(inseason)} played 26/27 matches from the "
+                   "RSL Fantasy feed" if inseason else "")
+                + " — goals-based fit"
             ),
             "attack_basis": (
                 "Realized goal/assist rates per 90 (shrunk to position priors). "
@@ -493,7 +523,9 @@ def main() -> int:
                 "role priors measured on FPL data (0.47/0.21/0.05) — an "
                 "uncalibrated transfer, stated here deliberately."
             ),
-            "promoted_baseline_teams": missing,
+            "promoted_baseline_teams": promoted,
+            "inseason_matches_in_fit": len(inseason),
+            "thin_sample_blend": blend,
             "sanity_gate": "PASS",
             "next_gameweek": next_gw,
             "deadline_utc": src["deadline_utc"],

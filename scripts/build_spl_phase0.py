@@ -43,7 +43,10 @@ import requests
 
 import config
 from src.models.dixon_coles import DixonColesModel
-from src.models.promoted_baseline import add_promoted_baseline
+from src.models.promoted_baseline import (
+    add_promoted_baseline,
+    blend_thin_toward_baseline,
+)
 
 # Geneeriset osat FPL-builderista: add_fdr operoi puhtailla riveillä eikä
 # tunne liigaa; importti pitää FDR-menetelmän YHTENÄ lähteenä molemmille
@@ -61,6 +64,11 @@ from scripts.build_fpl_phase0 import (
 SPL_BASE = "https://fantasy.spl.com.sa/api"
 SPL_HEADERS = {"User-Agent": "Mozilla/5.0 (GoalIQ refresh job)"}
 SEASON_LABEL = "2026/27"
+# Kauden 26/27 kausiavain fittiin liitettaville feed-tuloksille.
+INSEASON_KEY = "2627"
+# Nousijan blend-paino saavuttaa 1.0 tassa ottelumaarassa (perustelu:
+# promoted_baseline.blend_thin_toward_baseline).
+BLEND_N_MIN = 6
 RESULTS_CSV = config.PROJECT_ROOT / "data" / "spl_results.csv"
 OUT_PATH = config.PROJECT_ROOT / "data" / "spl_projections_phase0.json"
 
@@ -128,6 +136,14 @@ def fetch_source() -> dict:
         )
 
     fixtures = []
+    # SPL-INSEASON-FIT (19.8, Villen GO): pelatut 26/27-ottelut skoreineen
+    # fitin syotteeksi. Fetch-skriptin docstring lupasi taman polun alusta
+    # asti ("kauden mittaan uudet tulokset tulevat SPL-fantasy-APIn
+    # /api/fixtures/-feedista") mutta kukaan ei rakentanut sita — fitti luki
+    # vain vendoroitua CSV:ta joka paattyy 21.5.2026, eika GW1 opettanut
+    # mallille mitaan. Skorit vaaditaan molemmat: finished ilman skoreja
+    # (API:n valitila) ei ole tulos.
+    results = []
     for f in raw_fixtures:
         th, ta = teams_by_id.get(f.get("team_h")), teams_by_id.get(f.get("team_a"))
         if not th or not ta:
@@ -143,6 +159,19 @@ def fetch_source() -> dict:
                 "away": SHORT_TO_MODEL[ta["short_name"]],
             }
         )
+        if (f.get("finished") and ko is not None
+                and f.get("team_h_score") is not None
+                and f.get("team_a_score") is not None):
+            results.append(
+                {
+                    "date": ko.strftime("%Y-%m-%d"),
+                    "season": INSEASON_KEY,
+                    "home_team": SHORT_TO_MODEL[th["short_name"]],
+                    "away_team": SHORT_TO_MODEL[ta["short_name"]],
+                    "home_score": int(f["team_h_score"]),
+                    "away_score": int(f["team_a_score"]),
+                }
+            )
 
     # 🔴 KIERROSNUMERO JA DEADLINE SAMASTA TAPAHTUMASTA (15.8.2026).
     #
@@ -180,8 +209,10 @@ def fetch_source() -> dict:
     teams = sorted(SHORT_TO_MODEL[t["short_name"]] for t in teams_by_id.values())
     print(f"      {len(fixtures)} fixturea, {len(teams)} joukkuetta, "
           f"seuraava GW{next_event_id} deadline {next_deadline}")
+    print(f"      pelattuja 26/27-otteluita fitin syotteeksi: {len(results)}")
     return {
         "fixtures": fixtures,
+        "results": results,
         "teams": teams,
         "deadline_utc": (
             next_deadline.isoformat(timespec="seconds") if next_deadline else None
@@ -196,12 +227,30 @@ def fetch_source() -> dict:
 # ---------------------------------------------------------------------------
 # 2. DC-fitti vendoroidusta tuloshistoriasta (maalipohjainen)
 # ---------------------------------------------------------------------------
-def fit_model() -> tuple[DixonColesModel, list[str]]:
+def vendored_team_set() -> set[str]:
+    """Joukkueet joilla on historiaa vendoroidussa CSV:ssa. Erotus kauden
+    osallistujiin = taman kauden nousijat — johdettu datasta, ei listasta,
+    joten se ei vanhene kausiflipissa."""
+    df = pd.read_csv(RESULTS_CSV, encoding="utf-8")
+    return set(df["home_team"]) | set(df["away_team"])
+
+
+def fit_model(
+    inseason: list[dict] | None = None,
+) -> tuple[DixonColesModel, list[str]]:
+    """DC-fitti vendoroidusta historiasta + kauden pelatuista otteluista.
+
+    `inseason` on fetch_sourcen `results`-lista (feedin finished-ottelut
+    skoreineen). None/tyhja = entinen kaytos bittitarkasti — se on myos
+    testien negatiivinen kontrolli.
+    """
     if not RESULTS_CSV.exists():
         raise SystemExit(
             f"{RESULTS_CSV} puuttuu — aja ensin scripts/fetch_spl_results_espn.py"
         )
     df = pd.read_csv(RESULTS_CSV, encoding="utf-8")
+    if inseason:
+        df = pd.concat([df, pd.DataFrame(inseason)], ignore_index=True)
     df["date"] = pd.to_datetime(df["date"])
     seasons = sorted(df["season"].astype(str).unique())
     dc = DixonColesModel(per_team_home_adv=True).fit(
@@ -367,12 +416,18 @@ def sanity_gate(team_view: list[dict], promoted: list[str]) -> bool:
 def main() -> int:
     src = fetch_source()
 
-    print("[2/5] Sovitetaan SPL Dixon-Coles (vendoroitu ESPN-tuloshistoria)...")
-    dc, seasons = fit_model()
+    inseason = src.get("results") or []
+    print("[2/5] Sovitetaan SPL Dixon-Coles (vendoroitu ESPN-historia "
+          f"+ {len(inseason)} pelattua 26/27-ottelua)...")
+    dc, seasons = fit_model(inseason)
     print(f"      {len(dc.teams_)} joukkuetta mallissa (kaudet {seasons})")
 
+    # Nousijat johdetaan datasta: kauden osallistujat joilla ei ole rivia
+    # vendoroidussa historiassa. `missing` (ei fitissa lainkaan) saa
+    # baselinen kuten ennen; fitissa OHUELLA otoksella olevat blendataan.
+    promoted = sorted(set(src["teams"]) - vendored_team_set())
     missing = sorted(set(src["teams"]) - set(dc.attack))
-    print(f"[3/5] Nousijat ilman SPL-dataa ikkunassa: {missing}")
+    print(f"[3/5] Nousijat: {promoted} (ilman yhtaan ottelua: {missing or '-'})")
     baseline = add_promoted_baseline(
         dc, missing, reference=REFERENCE_TRIO_SPL, allow_frozen=False,
     )
@@ -380,6 +435,26 @@ def main() -> int:
     if missing and not baseline.get("trio_used"):
         print("VIRHE: baseline ei injektoitunut (viitetrio puuttuu fitistä?) — "
               "nousijat putoaisivat hiljaa pois. Ei kirjoiteta.")
+        return 1
+    counts: dict[str, int] = {}
+    for r in inseason:
+        for t in (r["home_team"], r["away_team"]):
+            counts[t] = counts.get(t, 0) + 1
+    blend = blend_thin_toward_baseline(
+        dc, counts, promoted, reference=REFERENCE_TRIO_SPL,
+        n_min=BLEND_N_MIN, allow_frozen=False,
+    )
+    print(f"      thin-sample blend: {blend.get('blended') or '-'}")
+    # Fail-closed: jokainen ohuen otoksen nousija fitissa ON blendattava.
+    # Ehto lasketaan samasta datasta jolla blend valitsee, joten se ei kaadu
+    # myohemmin kaudella kun n >= BLEND_N_MIN ja blended on oikeutetusti tyhja.
+    thin = {t for t in promoted
+            if t in dc.attack and 0 < counts.get(t, 0) < BLEND_N_MIN}
+    unblended = sorted(thin - set(blend.get("blended") or {}))
+    if unblended:
+        print(f"VIRHE: ohuen otoksen nousijat ilman blendia: {unblended} — "
+              "yhden ottelun estimaatti menisi ulos taydella painolla. "
+              "Ei kirjoiteta.")
         return 1
 
     print("[4/5] Lasketaan CS% + win% + FDR per fixture (raaka DC)...")
@@ -420,8 +495,10 @@ def main() -> int:
             "source": src["source"],
             "fixture_source": src["source_label"],
             "team_strength_source": (
-                f"GoalIQ Dixon-Coles, SPL results (ESPN) {seasons} — "
-                f"goals-based fit (decay={FIT_DECAY}, bayes={FIT_BAYES}); "
+                f"GoalIQ Dixon-Coles, SPL results (ESPN) {seasons}"
+                + (f" incl. {len(inseason)} played 26/27 matches from the "
+                   "RSL Fantasy feed" if inseason else "")
+                + f" — goals-based fit (decay={FIT_DECAY}, bayes={FIT_BAYES}); "
                 "no free per-match xG feed exists for the SPL"
             ),
             "cs_method": "P(opponent scores 0) from the DC score matrix (tau corrected)",
@@ -434,15 +511,32 @@ def main() -> int:
                 "(little xG of your own means a hard fixture), quintile bucket "
                 "across every team fixture. 1 = easiest to attack against, 5 = hardest."
             ),
+            # Caveat seuraa datan pohjaa, ei kalenteria (sama saanto kuin
+            # FPL:n esikausivarauksessa 19.8): "Pre-season" vain kun yhtaan
+            # kauden ottelua ei ole fitissa.
             "caveat": (
-                "Pre-season: 26/27 team strengths are last-season priors from a "
-                "goals-based model (no xG data for the SPL), indicative only. "
-                "Promoted sides without top-flight data use an empirical promoted "
-                "baseline measured from last season's promoted trio. No manual "
-                "context layer (unlike FPL Phase 1b)."
+                (
+                    f"Team strengths are fitted on the last two seasons plus "
+                    f"the {len(inseason)} matches of 26/27 played so far "
+                    "(goals-based, no xG data for the SPL). Promoted sides "
+                    "blend from a measured promoted baseline toward their "
+                    f"fitted strength as real matches accumulate (full weight "
+                    f"at {BLEND_N_MIN}). No manual context layer (unlike FPL "
+                    "Phase 1b)."
+                )
+                if inseason
+                else (
+                    "Pre-season: 26/27 team strengths are last-season priors from a "
+                    "goals-based model (no xG data for the SPL), indicative only. "
+                    "Promoted sides without top-flight data use an empirical promoted "
+                    "baseline measured from last season's promoted trio. No manual "
+                    "context layer (unlike FPL Phase 1b)."
+                )
             ),
-            "promoted_baseline_teams": missing,
+            "promoted_baseline_teams": promoted,
             "promoted_baseline_values": baseline,
+            "inseason_matches_in_fit": len(inseason),
+            "thin_sample_blend": blend,
             "sanity_gate": "PASS",
             "next_gameweek": next_gw,
             "deadline_utc": src["deadline_utc"],

@@ -313,6 +313,104 @@ FROZEN_BASELINE: dict[str, float] = {
 FROZEN_PROVENANCE = "mitattu 27.7.2026, PL-ikkuna 2425+2526, trio Ipswich/Leicester/Southampton"
 
 
+def _baseline_values(
+    dc: DixonColesModel,
+    reference: tuple[str, ...],
+    allow_frozen: bool,
+) -> dict | None:
+    """Nousijabaselinen arvot: viiteryhmä nykyisestä fitistä, tai frozen.
+
+    Palauttaa None kun viiteryhmä ei ole fitissä eikä frozenia saa käyttää —
+    kutsuja päättää mitä puuttuminen tarkoittaa (skip, ei arvausta).
+    Factoroitu ulos `add_promoted_baseline`sta 19.8, koska blend-polku
+    (alla) tarvitsee samat arvot ilman että yhtään joukkuetta puuttuu.
+    """
+    trio = [t for t in reference if t in dc.attack]
+    if trio:
+        return {
+            "trio_used": trio,
+            "attack": float(np.mean([dc.attack[t] for t in trio])),
+            "defence": float(np.mean([dc.defence[t] for t in trio])),
+            "home_gamma": float(
+                np.mean([dc.home_advantage_per_team.get(t, 0.0) for t in trio])
+            ),
+            "source": "measured",
+        }
+    if allow_frozen:
+        return {
+            "trio_used": [],
+            "attack": FROZEN_BASELINE["attack"],
+            "defence": FROZEN_BASELINE["defence"],
+            "home_gamma": FROZEN_BASELINE["home_gamma"],
+            "source": "frozen",
+        }
+    return None
+
+
+def blend_thin_toward_baseline(
+    dc: DixonColesModel,
+    match_counts: dict[str, int],
+    promoted: list[str] | tuple[str, ...],
+    reference: tuple[str, ...],
+    n_min: int = 6,
+    allow_frozen: bool = False,
+) -> dict:
+    """Ohuen otoksen nousija: parametrit painotetaan baselinen ja fitin väliin.
+
+    ONGELMA JONKA TÄMÄ RATKAISEE (mitattu SPL GW1:llä 19.8.2026): heti kun
+    nousijalla on YKSI pelattu ottelu, se on `dc.attack`issa fitin jäljiltä ja
+    `add_promoted_baseline` ohittaa sen ("baseline ei koskaan ylikirjoita
+    oikeaa estimaattia"). Mutta yhden ottelun estimaatti L2-kutistuu sarjan
+    keskitasoon, joka on nousijalle LIIAN antelias — mitattu vaikutus GW2:n
+    CS-lukuihin oli +12,4 %-yks (Al Diriyah) kun mitattu baseline sanoo
+    nousijan olevan selvästi keskitason alla. Sama artefakti osuu PL:ään
+    heti GW1:n jälkeen.
+
+    Ratkaisu: w = n/n_min (n = kauden pelatut ottelut fitissä), ja parametri
+    on baseline + w * (fitattu - baseline). Determinististä ja itsestään
+    vanhenevaa: kun n >= n_min, paino on 1 eikä funktio kosketa joukkuetta.
+    n_min=6 vastaa promoted_baseline-docstringin omaa arviota siitä milloin
+    oikea data alkaa kantaa ("kunnes kullakin on ~5-8 pelattua ottelua").
+
+    Mutatoi `dc`:n paikan päällä; koskee VAIN `promoted`-listan joukkueita
+    joilla on 1..n_min-1 ottelua ja jotka ovat fitissä. Palauttaa telemetrian.
+    """
+    base = _baseline_values(dc, reference, allow_frozen)
+    if base is None:
+        return {"blended": {}, "skipped": list(promoted),
+                "reason": "viiteryhmä ei fitissä eikä frozen sallittu"}
+    blended: dict[str, dict] = {}
+    for t in promoted:
+        n = int(match_counts.get(t, 0))
+        if t not in dc.attack or n <= 0 or n >= n_min:
+            continue
+        w = n / float(n_min)
+        fitted = {
+            "attack": dc.attack[t],
+            "defence": dc.defence[t],
+            "home_gamma": dc.home_advantage_per_team.get(t, 0.0),
+        }
+        dc.attack[t] = base["attack"] + w * (fitted["attack"] - base["attack"])
+        dc.defence[t] = base["defence"] + w * (fitted["defence"] - base["defence"])
+        dc.home_advantage_per_team[t] = (
+            base["home_gamma"] + w * (fitted["home_gamma"] - base["home_gamma"])
+        )
+        blended[t] = {
+            "n": n,
+            "w": round(w, 3),
+            "attack": round(dc.attack[t], 4),
+            "defence": round(dc.defence[t], 4),
+        }
+    return {
+        "blended": blended,
+        "n_min": n_min,
+        "trio_used": base["trio_used"],
+        "source": base["source"],
+        "baseline_attack": round(base["attack"], 4),
+        "baseline_defence": round(base["defence"], 4),
+    }
+
+
 def add_promoted_baseline(
     dc: DixonColesModel,
     needed: list[str],
