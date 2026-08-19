@@ -364,6 +364,33 @@ def test_enabled_domestic_codes_gating(monkeypatch):
     assert ap.enabled_domestic_codes() == ["BSA", "PL"]  # typo ohitetaan
 
 
+def test_tyhja_api_base_putoaa_oletukseen(monkeypatch):
+    """TYHJA EI OLE PUUTTUVA (19.8).
+
+    Workflow valittaa `${{ vars.ACC_PREDICT_API_BASE }}`, joka on tyhja
+    merkkijono myos silloin kun repo-muuttujaa ei ole. `os.environ.get(k, def)`
+    palautti silloin tyhjan, base oli "" ja jokainen kutsu meni osoitteeseen
+    "/api/teams" -> MissingSchema -> domestic-logaus ohitettiin YHDEKSALLE
+    liigalle kerralla, hiljaa varoituksen takana. Repo-migraatio 17.8 pyyhki
+    muuttujat, ja se jaadytti julkisen track recordin.
+    """
+    import importlib
+    from scripts import accuracy_pipeline as ap
+    for arvo in ("", "   "):
+        monkeypatch.setenv("ACC_PREDICT_API_BASE", arvo)
+        importlib.reload(ap)
+        assert ap.PREDICT_API_BASE == "https://api.goaliq.app"
+    monkeypatch.delenv("ACC_PREDICT_API_BASE", raising=False)
+    importlib.reload(ap)
+    assert ap.PREDICT_API_BASE == "https://api.goaliq.app"
+    # eksplisiittinen arvo voittaa, ja perassa oleva kauttaviiva siivotaan
+    monkeypatch.setenv("ACC_PREDICT_API_BASE", "https://x.test/")
+    importlib.reload(ap)
+    assert ap.PREDICT_API_BASE == "https://x.test"
+    monkeypatch.delenv("ACC_PREDICT_API_BASE", raising=False)
+    importlib.reload(ap)
+
+
 def _fd_match(mid, home, away, utc, status="TIMED", score=None):
     m = {
         "id": mid, "status": status, "utcDate": utc,

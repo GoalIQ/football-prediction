@@ -118,9 +118,14 @@ DOMESTIC_COMPETITIONS: dict[str, dict] = {
 # näkevät — rehellisin mahdollinen pre-match-lähde). Ylikirjoitettavissa
 # testeihin/lokaaliin ympäristömuuttujalla.
 import os
-PREDICT_API_BASE = os.environ.get(
-    "ACC_PREDICT_API_BASE", "https://api.goaliq.app"
-)
+# 19.8: TYHJA EI OLE PUUTTUVA. Workflow valittaa `${{ vars.X }}`, joka on
+# tyhja merkkijono silloinkin kun repo-muuttujaa ei ole olemassa — ja
+# `os.environ.get(..., oletus)` palauttaa silloin sen tyhjan, ei oletusta.
+# Tuloksena base oli "" ja jokainen kutsu meni osoitteeseen "/api/teams":
+# MissingSchema, ja domestic-logaus ohitettiin YHDEKSALLE liigalle kerralla.
+# Workflow'n oma kommentti lupasi paivastoin ("muuttuja puuttuu -> oletus").
+PREDICT_API_BASE = (os.environ.get("ACC_PREDICT_API_BASE", "").strip() or
+                    "https://api.goaliq.app").rstrip("/")
 
 
 def enabled_domestic_codes() -> list[str]:
