@@ -1379,8 +1379,13 @@ def latest_articles_block(notes_doc: dict | None, limit: int = 1) -> str:
         if not paras or not n.get("title"):
             continue
         slug = escape(str(n.get("slug") or ""))
+        # 19.8: linkki osoittaa artikkelin OMAAN URLiin, ei kokoomasivun
+        # ankkuriin. Ankkurilinkki vie sivulle jonka jarjestys vaihtuu
+        # seuraavan muistion myota, ja alusta valimuistittaa esikatselun
+        # `og:url`:n mukaan — sama syy jonka takia note-sivut ylipaataan
+        # rakennettiin 15.8 (ks. render_note_page).
         kortit.append(
-            '<a class="note-card" href="/fpl/notes#' + slug + '">'
+            '<a class="note-card" href="/fpl/note/' + slug + '">'
             f'<span class="note-date">{escape(str(n.get("date") or ""))}</span>'
             f'<span class="note-title">{escape(str(n["title"]))}</span>'
             f'<span class="note-lede">{escape(str(paras[0]))}</span>'
