@@ -391,6 +391,55 @@ def test_tyhja_api_base_putoaa_oletukseen(monkeypatch):
     importlib.reload(ap)
 
 
+def test_wolves_resolvoituu_championshipissa():
+    """FD sanoo koko nimen, malli sanoo "Wolves", eika kumpikaan ole toisen
+    osajono. Ilman aliasta 45 ottelua ohitettiin yhdessa ajossa (19.8)."""
+    from scripts.accuracy_pipeline import (
+        DOMESTIC_COMPETITIONS, resolve_domestic_name)
+    ov = DOMESTIC_COMPETITIONS["ELC"]["overrides"]
+    teams = ["Wolves", "Preston", "Stoke", "West Ham"]
+    assert resolve_domestic_name("Wolverhampton Wanderers FC", teams, ov) == "Wolves"
+
+
+def test_teams_haku_yrittaa_uudelleen(monkeypatch):
+    """Yksi epaonnistunut kutsu ohitti KOKO liigan kolmeksi tunniksi (19.8:
+    Bundesliga ja Serie A saivat 404:n, kaksi minuuttia myohemmin 200)."""
+    from scripts import accuracy_pipeline as ap
+
+    class _R:
+        def __init__(self, code, teams=None):
+            self.status_code = code
+            self._t = teams or []
+
+        def json(self):
+            return {"teams": self._t}
+
+    kutsut = []
+
+    def fake_get(url, params=None, timeout=None):
+        kutsut.append(params["leagues"])
+        return _R(404) if len(kutsut) < 3 else _R(200, ["Bayern", "Dortmund"])
+
+    monkeypatch.setattr(ap, "PREDICT_API_BASE", "https://x.test")
+    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr("time.sleep", lambda *_a, **_k: None)
+    assert ap._fetch_model_teams("GER-Bundesliga-FD") == ["Bayern", "Dortmund"]
+    assert len(kutsut) == 3
+
+
+def test_teams_haku_luovuttaa_siististi(monkeypatch):
+    """Kolmen yrityksen jalkeen None — liiga ohitetaan, ajo ei kaadu."""
+    from scripts import accuracy_pipeline as ap
+
+    def fake_get(url, params=None, timeout=None):
+        raise RuntimeError("verkko nurin")
+
+    monkeypatch.setattr(ap, "PREDICT_API_BASE", "https://x.test")
+    monkeypatch.setattr("requests.get", fake_get)
+    monkeypatch.setattr("time.sleep", lambda *_a, **_k: None)
+    assert ap._fetch_model_teams("ITA-Serie A-FD") is None
+
+
 def _fd_match(mid, home, away, utc, status="TIMED", score=None):
     m = {
         "id": mid, "status": status, "utcDate": utc,

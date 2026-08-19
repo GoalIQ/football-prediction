@@ -102,6 +102,10 @@ DOMESTIC_COMPETITIONS: dict[str, dict] = {
     "ELC": {"league": "ENG-Championship", "overrides": {
         "Queens Park Rangers FC": "QPR",
         "West Bromwich Albion FC": "West Brom",
+        # 19.8: malli sanoo "Wolves", FD sanoo koko nimen, eika kumpikaan ole
+        # toisen osajono -> resolvointi ei osunut ja 45 ottelua ohitettiin
+        # YHDESSA ajossa. Nakyi vasta kun domestic-logaus palautettiin.
+        "Wolverhampton Wanderers FC": "Wolves",
     }},
     "DED": {"league": "NED-Eredivisie", "overrides": {
         "Fortuna Sittard": "For Sittard",
@@ -328,23 +332,43 @@ def resolve_domestic_name(
     return candidates[0] if len(candidates) == 1 else None
 
 
-def _fetch_model_teams(league: str) -> list[str] | None:
-    """Mallin joukkuenimet liigalle live-API:sta (/api/teams). None jos virhe."""
+def _fetch_model_teams(league: str, yrityksia: int = 3) -> list[str] | None:
+    """Mallin joukkuenimet liigalle live-API:sta (/api/teams). None jos virhe.
+
+    UUDELLEENYRITYS (19.8). Yksi epaonnistunut kutsu ohitti KOKO liigan
+    seuraavaan ajoon asti, eli kolmeksi tunniksi. 19.8 ajossa Bundesliga ja
+    Serie A saivat 404:n ja putosivat pois; kaksi minuuttia myohemmin sama
+    kutsu palautti 200 ja taydet joukkuelistat, eli vika oli ohimeneva.
+
+    Backoff on satunnaistettu: yhdeksan liigaa lahtee liikkeelle samasta
+    silmukasta, ja kiintea odotus toistaisi saman ryopyn joka kierroksella.
+    """
+    import random
+    import time
+
     import requests
-    try:
-        r = requests.get(
-            f"{PREDICT_API_BASE}/api/teams",
-            params={"leagues": league},
-            timeout=120,  # kylmä Render voi fitata mallin tässä
-        )
-    except Exception as e:
-        print(f"VAROITUS: /api/teams ({league}) epäonnistui: {type(e).__name__}: {e}")
-        return None
-    if r.status_code != 200:
-        print(f"VAROITUS: /api/teams ({league}) palautti {r.status_code}.")
-        return None
-    teams = r.json().get("teams") or []
-    return list(teams) if teams else None
+    for yritys in range(1, yrityksia + 1):
+        syy = None
+        try:
+            r = requests.get(
+                f"{PREDICT_API_BASE}/api/teams",
+                params={"leagues": league},
+                timeout=120,  # kylmä Render voi fitata mallin tässä
+            )
+            if r.status_code == 200:
+                teams = r.json().get("teams") or []
+                if teams:
+                    return list(teams)
+                syy = "tyhja joukkuelista"
+            else:
+                syy = f"HTTP {r.status_code}"
+        except Exception as e:
+            syy = f"{type(e).__name__}: {e}"
+        if yritys < yrityksia:
+            time.sleep(2 ** yritys + random.uniform(0, 1.5))
+    print(f"VAROITUS: /api/teams ({league}) epäonnistui {yrityksia} kertaa "
+          f"(viimeisin: {syy}).")
+    return None
 
 
 def domestic_prematch_prediction(

@@ -45,26 +45,35 @@ FD_PARTICIPANTS: dict[str, list[str]] = json.loads(
     .read_text(encoding="utf-8")
 )
 
-# Mallin joukkuenimet 15.8.2026 tuotannosta (/api/teams).
+# Mallin joukkuenimet 19.8.2026 tuotannosta (/api/teams).
+#
+# 🔴 TAMA LISTA VANHENEE KAUSIVAIHDOKSESSA. 15.8 otettu otos oli 19.8 jo
+# vaara: Championshipista vaihtui KUUSI joukkuetta (Coventry, Hull,
+# Ipswich, Leicester, Oxford, Sheffield Weds ulos; Bolton, Burnley,
+# Cardiff, Lincoln, West Ham, Wolves sisaan), ja Eredivisie seka Primeira
+# Liga kutistuivat. Vanhentunut otos kaataa alla olevat portit VAARASTA
+# syysta — ja pahempi suunta on hiljainen: override joka osoittaa
+# pudonneeseen joukkueeseen lapaisisi portin ja olisi silti rikki
+# tuotannossa. Paivita ajamalla /api/teams uudelleen kun kausi vaihtuu.
 MODEL_TEAMS = {
     "ELC": [
-        "Birmingham", "Blackburn", "Bristol City", "Charlton", "Coventry",
-        "Derby", "Hull", "Ipswich", "Leicester", "Middlesbrough", "Millwall",
-        "Norwich", "Oxford", "Portsmouth", "Preston", "QPR", "Sheffield United",
-        "Sheffield Weds", "Southampton", "Stoke", "Swansea", "Watford",
-        "West Brom", "Wrexham",
+        "Birmingham", "Blackburn", "Bolton", "Bristol City", "Burnley",
+        "Cardiff", "Charlton", "Derby", "Lincoln", "Middlesbrough",
+        "Millwall", "Norwich", "Portsmouth", "Preston", "QPR",
+        "Sheffield United", "Southampton", "Stoke", "Swansea", "Watford",
+        "West Brom", "West Ham", "Wolves", "Wrexham"
     ],
     "DED": [
         "AZ Alkmaar", "Ajax", "Cambuur", "Den Haag", "Excelsior", "Feyenoord",
-        "For Sittard", "Go Ahead Eagles", "Groningen", "Heerenveen", "Heracles",
-        "NAC Breda", "Nijmegen", "PSV Eindhoven", "Sparta Rotterdam", "Telstar",
-        "Twente", "Utrecht", "Volendam", "Willem II", "Zwolle",
+        "For Sittard", "Go Ahead Eagles", "Groningen", "Heerenveen",
+        "Nijmegen", "PSV Eindhoven", "Sparta Rotterdam", "Telstar", "Twente",
+        "Utrecht", "Willem II", "Zwolle"
     ],
     "PPL": [
-        "AVS", "Academico Viseu", "Alverca", "Arouca", "Benfica", "Casa Pia",
+        "Academico Viseu", "Alverca", "Arouca", "Benfica", "Casa Pia",
         "Estoril", "Estrela", "Famalicao", "Gil Vicente", "Guimaraes",
-        "Maritimo", "Moreirense", "Nacional", "Porto", "Rio Ave", "Santa Clara",
-        "Sp Braga", "Sp Lisbon", "Tondela",
+        "Maritimo", "Moreirense", "Nacional", "Porto", "Rio Ave",
+        "Santa Clara", "Sp Braga", "Sp Lisbon"
     ],
 }
 
@@ -73,10 +82,12 @@ MODEL_TEAMS = {
 # ollut viela julkaistu (football-data.co.uk palautti 300, mitattu 15.8).
 # Nama ohitetaan varoituksella. Jos joku "korjaa" ne overrideilla, se osoittaa
 # vaaraan joukkueeseen — siksi ne ovat tassa nimeltä.
-ELC_KNOWN_UNRESOLVED = [
-    "Bolton Wanderers FC", "Burnley FC", "Cardiff City FC",
-    "Lincoln City FC", "West Ham United FC", "Wolverhampton Wanderers FC",
-]
+# 19.8: TYHJA, ja se on tulos eika oletus. Kaikki kuusi 15.8 kirjattua
+# aukkoa (Bolton, Burnley, Cardiff, Lincoln, West Ham, Wolves) sulkeutui
+# kun mallin Championship-lista vaihtui 26/27-kauteen; Wolves resolvoituu
+# overriden kautta, loput suoraan. Alla oleva portti kaataa ajon myos
+# silloin kun aukko SULKEUTUU, jotta lista ei jaa kertomaan menneesta.
+ELC_KNOWN_UNRESOLVED: list[str] = []
 
 
 @pytest.mark.parametrize("code,league", [
