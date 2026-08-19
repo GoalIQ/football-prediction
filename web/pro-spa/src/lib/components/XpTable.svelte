@@ -5,6 +5,7 @@
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import ComponentSplit from './ComponentSplit.svelte';
+	import WhyThisPick from './WhyThisPick.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import SetPieceBadges from './SetPieceBadges.svelte';
 
@@ -86,17 +87,6 @@
 	   scripts/build_fpl_why.py:n DRIVERS-listassa ja mobiilin
 	   fantasy.xp.why_driver.* -avaimissa. Tuntematon arvo renderoityy
 	   raakana eika katoa: uusi ajuri backendissa ei saa hukata tietoa. */
-	const WHY_DRIVER_LABEL: Record<string, string> = {
-		minutes: 'Minutes',
-		attacking_output: 'Attacking output',
-		fixtures: 'Fixtures',
-		clean_sheets: 'Clean sheets',
-		set_pieces: 'Set pieces',
-		bonus: 'Bonus',
-		price: 'Price',
-		differential: 'Differential'
-	};
-
 	let selectedId = $state<number | null>(null);
 
 	let nextGw = $derived(data.meta.next_gameweek);
@@ -557,24 +547,7 @@
 		     Kumpaakaan lahdetta EI kutsuta "malliksi": tassa tuotteessa se sana
 		     tarkoittaa ottelumallia, ja lauseen kirjoittajan kutsuminen malliksi
 		     siirtaisi ottelumallin uskottavuuden sille. Sama saanto mobiilissa. -->
-		{#if selected.why?.sentence}
-			<div class="why">
-				<p class="why-title">Why this projection</p>
-				<p class="why-text">{selected.why.sentence}</p>
-				{#if selected.why.drivers?.length}
-					<div class="why-chips">
-						{#each selected.why.drivers as d (d)}
-							<span class="why-chip">{WHY_DRIVER_LABEL[d] ?? d}</span>
-						{/each}
-					</div>
-				{/if}
-				<p class="why-source">
-					{selected.why.source === 'model'
-						? "Written by an AI from the model's own numbers"
-						: "Auto-generated from the model's own numbers"}
-				</p>
-			</div>
-		{/if}
+		<WhyThisPick why={selected.why} />
 		<ComponentSplit player={selected} />
 		{#if typeof selected.predicted_starts === 'number'}
 			<p class="muted minutes-line">
@@ -740,44 +713,4 @@
 		font-size: var(--step--1);
 	}
 
-	/* WHY-THIS-PICK (14.8) */
-	.why {
-		background: var(--surface-alt, #1f1d1a);
-		border-left: 2px solid var(--teal, #2ed6c2);
-		border-radius: 2px;
-		padding: 10px 12px;
-		margin: 12px 0;
-	}
-	.why-title {
-		margin: 0 0 4px;
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--muted, #a8a29a);
-	}
-	.why-text {
-		margin: 0;
-		font-size: 13px;
-		line-height: 1.5;
-	}
-	.why-source {
-		margin: 6px 0 0;
-		font-size: 11px;
-		color: var(--muted, #a8a29a);
-	}
-	.why-chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		margin-top: 8px;
-	}
-	.why-chip {
-		font-size: 11px;
-		font-weight: 600;
-		color: var(--teal, #2ed6c2);
-		background: var(--surface, #141311);
-		border-radius: 2px;
-		padding: 3px 7px;
-	}
 </style>

@@ -1,24 +1,30 @@
-"""Pre-season-priorin validointi KESATAUON YLI (puuttuva ship-gate).
+"""Validating the pre-season minutes prior ACROSS THE SUMMER BREAK.
 
-Ship-gate ajaa walk-forwardia yhden kauden sisalla, joten se ei kosketa
-pre-season-polkua (`minutes_model(..., n_last=None)`) lainkaan. Juuri se polku
-tuottaa GW1-luvut, ja juuri sen vaimennuskerroin (PRESEASON_HALFLIFE = 10)
-valittiin 9.8.2026 HARKINTANA: kauden sisainen proxy suositti 4:aa, mutta proxy
-ei nae kesataukoa, joka on koko mekanismin olemassaolon syy. Harkinta jai siis
-mittaamatta.
+The ship gate walk-forwards inside a single season, so it never touches the
+pre-season path (`minutes_model(..., n_last=None)`) at all. That path is what
+produces the GW1 numbers, and its damping constant (PRESEASON_HALFLIFE = 10)
+was chosen on 2026-08-09 as a JUDGEMENT CALL: the within-season proxy argued
+for 4, but the proxy cannot see the summer break, which is the whole reason the
+mechanism exists. The judgement call was therefore never measured.
 
-Tama skripti mittaa sen aidolla foldilla:
-    priori kaudesta 24/25  ->  ennusta 25/26 GW1-6  ->  vertaa toteutuneeseen
+This script measures it on a real fold:
+    prior from 24/25  ->  predict 25/26 GW1-6  ->  compare to what happened
 
-Molemmat paat ovat jaadytettya dataa (ei live-API:a), joten ajo on toistettava.
+Both ends are frozen data (no live API), so the run is reproducible.
 
-Mitta on MINUUTIT, ei xP: priori ennustaa minuutteja, ja minuuttivirhe on se
-joka kaataa GW1-arvion (Palmer 43 vs 74 min). Vertailukohtana koko
-puoliintuma-avaruus + tasapaino, joka on sama asia kuin aareton puoliintuma
-(0.5**(x/inf) = 1) eika siis vaadi omaa koodipolkuaan.
+The metric is MINUTES, not xP: the prior predicts minutes, and minutes error is
+what breaks a GW1 projection (Palmer 43 vs 74 min). The reference points are the
+whole half-life space plus flat weighting, which is the same thing as an
+infinite half-life (0.5**(x/inf) = 1) and so needs no separate code path.
 
-Ajo:  python -m scripts.validate_preseason_prior
+Output note: the run prints TWO result blocks. Block 1 is the prior on its own.
+Block 2 re-runs the same comparison after the 1 keeper + 10 outfield
+normalisation the builder applies in production. They are different numbers on
+purpose; quote whichever one you mean.
+
+Run:  python -m scripts.validate_preseason_prior
       python -m scripts.validate_preseason_prior --to-gw 3
+      python -m scripts.validate_preseason_prior --all-folds
 """
 from __future__ import annotations
 
@@ -210,13 +216,13 @@ def measure_fold(from_season: str, to_season: str, to_gw: int) -> dict:
     for hl in HALFLIVES:
         pred = _predict(prev["players"], hl)
         xs = np.array([pred[c] for c in codes])
-        rows.append({"halflife": ("tasapaino" if hl == BALANCED else hl),
+        rows.append({"halflife": ("flat" if hl == BALANCED else hl),
                      "mae": float(np.mean(np.abs(xs - ys))),
                      "bias": float(np.mean(xs - ys))})
 
     live = next(r for r in rows if r["halflife"] == 10.0)
     best = min(rows, key=lambda r: r["mae"])
-    balanced = next(r for r in rows if r["halflife"] == "tasapaino")
+    balanced = next(r for r in rows if r["halflife"] == "flat")
     starters = [c for c in codes if live_pred[c] >= 60 and actual[c] > 0]
     sb = float(np.mean([live_pred[c] - actual[c] for c in starters]))
 
@@ -234,11 +240,11 @@ def run_all_folds(to_gw: int) -> int:
     """Monifold-portti: onko vaimennus perusteltu ja vakio lahella optimia."""
     res = [measure_fold(a, b, to_gw) for a, b in FOLDS]
     print("=" * 74)
-    print(f"PRE-SEASON-PRIORI — {len(FOLDS)} kesatauko-foldia, "
+    print(f"PRE-SEASON PRIOR: {len(FOLDS)} summer-break folds, "
           f"GW1-{to_gw}, live PRESEASON_HALFLIFE=10")
     print("=" * 74)
-    print(f"  {'fold':>12} {'n':>5} {'live':>7} {'paras':>7} {'(hl)':>6} "
-          f"{'tasap.':>7} {'ero':>7} {'avaajaharha':>12}")
+    print(f"  {'fold':>12} {'n':>5} {'live':>7} {'best':>7} {'(hl)':>6} "
+          f"{'flat':>7} {'gap':>7} {'starter bias':>13}")
     print("  " + "-" * 68)
     for r in res:
         hl = r["best_halflife"]
@@ -251,19 +257,19 @@ def run_all_folds(to_gw: int) -> int:
     near_opt = all(r["gap_to_best"] <= GATE_MAX_GAP_TO_BEST_MIN for r in res)
     passed = damping_ok and near_opt
     print()
-    print(f"  vaimennus parempi kuin tasapaino kaikissa foldeissa : "
-          f"{'KYLLA' if damping_ok else 'EI'}")
-    print(f"  live-vakio <= {GATE_MAX_GAP_TO_BEST_MIN} min optimista kaikissa  : "
-          f"{'KYLLA' if near_opt else 'EI'}")
+    print(f"  damping beats flat weighting in every fold : "
+          f"{'YES' if damping_ok else 'NO'}")
+    print(f"  live constant within {GATE_MAX_GAP_TO_BEST_MIN} min of best : "
+          f"{'YES' if near_opt else 'NO'}")
     print(f"\n  GATE: {'PASS' if passed else 'FAIL'}")
     sb = [r["starter_bias_min"] for r in res]
-    print(f"\n  TUNNETTU HARHA: odotetut avaajat (priori >=60 min, pelasivat) "
-          f"saavat\n  ennusteen joka on {min(sb):+.1f}...{max(sb):+.1f} min "
-          f"YLI toteutuneen (ka. {sum(sb)/len(sb):+.1f}).\n"
-          f"  Suunta on sama kaikissa {len(res)} kesassa. Rakenteellinen "
-          f"joukkuerajoite EI korjaa\n  tata (naulattujen suoja on "
-          f"tarkoituksellinen), eika saatavuuslippu koske\n  pelaajaa joka on "
-          f"terve ja pelaa.")
+    print(f"\n  KNOWN BIAS: players the prior expects to start (>=60 min) and who "
+          f"did play\n  are projected {min(sb):+.1f} to {max(sb):+.1f} min "
+          f"ABOVE what they actually played (mean {sum(sb)/len(sb):+.1f}).\n"
+          f"  The direction is the same in all {len(res)} summers. The "
+          f"structural squad\n  constraint does NOT correct it (protecting "
+          f"nailed-on starters is deliberate),\n  and the availability flag "
+          f"does not apply to a player who is fit and playing.")
     print("=" * 74)
     return 0 if passed else 2
 
@@ -300,23 +306,23 @@ def main() -> int:
     base_pred = _predict(prev["players"], xp.PRESEASON_HALFLIFE)
     codes = sorted(set(base_pred) & set(actual))
     if len(codes) < 50:
-        raise SystemExit(f"Populaatio liian pieni (n={len(codes)}) - "
-                         f"code-mappays epaonnistui todennakoisesti.")
+        raise SystemExit(f"Population too small (n={len(codes)}) - "
+                         f"the code mapping most likely failed.")
 
     ys = np.array([actual[c] for c in codes])
 
     print("=" * 74)
-    print(f"PRE-SEASON-PRIORI KESATAUON YLI: {PREV_SEASON} -> "
+    print(f"PRE-SEASON PRIOR ACROSS THE SUMMER BREAK: {PREV_SEASON} -> "
           f"{EVAL_SEASON} GW1-{args.to_gw}")
     print("=" * 74)
-    print(f"  populaatio: {len(codes)} pelaajaa "
-          f"(priori >= {MIN_PREV_ROUNDS} kierrosta 24/25:sta JA mukana 25/26:ssa)")
-    print(f"  kattavuus:  {len(codes)}/{len(base_pred)} priorillista pelaajaa "
-          f"loytyi kaudesta {EVAL_SEASON}")
-    print(f"  toteutunut: keskiminuutit {ys.mean():.1f} (mediaani "
+    print(f"  population: {len(codes)} players "
+          f"(prior from >= {MIN_PREV_ROUNDS} rounds of 24/25 AND present in 25/26)")
+    print(f"  coverage:   {len(codes)}/{len(base_pred)} players with a prior "
+          f"were found in {EVAL_SEASON}")
+    print(f"  actual:     mean minutes {ys.mean():.1f} (median "
           f"{np.median(ys):.1f})")
     print()
-    print(f"  {'puoliintuma':>14}  {'MAE min':>8}  {'bias':>7}  {'vs live':>8}")
+    print(f"  {'half-life':>14}  {'MAE min':>8}  {'bias':>7}  {'vs live':>8}")
     print("  " + "-" * 44)
 
     rows = []
@@ -328,7 +334,7 @@ def main() -> int:
         bias = float(np.mean(xs - ys))
         if hl == 10.0:
             live_mae = mae
-        rows.append({"halflife": ("tasapaino" if hl == BALANCED else hl),
+        rows.append({"halflife": ("flat" if hl == BALANCED else hl),
                      "mae": mae, "bias": bias})
 
     for r in rows:
@@ -341,13 +347,13 @@ def main() -> int:
     blabel = (best["halflife"] if isinstance(best["halflife"], str)
               else f"hl{best['halflife']:g}")
     print()
-    print(f"  Paras: {blabel} (MAE {best['mae']:.3f})")
+    print(f"  Best: {blabel} (MAE {best['mae']:.3f})")
     if live_mae is not None:
         print(f"  Live (hl10): MAE {live_mae:.3f}  "
-              f"= {live_mae - best['mae']:+.3f} vs paras")
+              f"= {live_mae - best['mae']:+.3f} vs best")
 
-    balanced = next(r for r in rows if r["halflife"] == "tasapaino")
-    print(f"  Tasapaino (pre-9.8. kaytos): MAE {balanced['mae']:.3f}  "
+    balanced = next(r for r in rows if r["halflife"] == "flat")
+    print(f"  Flat weighting (behaviour before 2026-08-09): MAE {balanced['mae']:.3f}  "
           f"= {balanced['mae'] - live_mae:+.3f} vs live")
 
     # Harha ei ole tasaisesti jakautunut, ja se ratkaisee onko se korjattava.
@@ -356,20 +362,21 @@ def main() -> int:
     # historiallisena -> tama mittaus on ILMAN sita. Leikkaukset kertovat
     # kumpi on kyseessa: "ei pelannut lainkaan" vai "pelasi odotettua vahemman".
     print()
-    print("  Leikkaukset (live hl10, bias = ennuste - toteutunut):")
+    print("  RESULTS BLOCK 1 - prior only "
+          "(live hl10, bias = projected - actual):")
     live_pred = _predict(prev["players"], 10.0)
     slices = {
-        "kaikki": codes,
-        "pelasi >=1 min GW1-6": [c for c in codes if actual[c] > 0],
-        "ei yhtaan minuuttia": [c for c in codes if actual[c] == 0],
-        "priori >=60 min (odotetut avaajat)": [c for c in codes
+        "all": codes,
+        "played >=1 min in GW1-6": [c for c in codes if actual[c] > 0],
+        "no minutes at all": [c for c in codes if actual[c] == 0],
+        "prior >=60 min (expected starters)": [c for c in codes
                                                if live_pred[c] >= 60],
-        "priori >=60 JA pelasi": [c for c in codes
+        "prior >=60 AND played": [c for c in codes
                                   if live_pred[c] >= 60 and actual[c] > 0],
     }
     for label, sel in slices.items():
         if len(sel) < 10:
-            print(f"      {label:<36} n={len(sel)} (liian pieni)")
+            print(f"      {label:<36} n={len(sel)} (too small)")
             continue
         xs = np.array([live_pred[c] for c in sel])
         yy = np.array([actual[c] for c in sel])
@@ -385,13 +392,14 @@ def main() -> int:
              / f"bootstrap_static_{EVAL_SEASON}.archive.json")
     if not bootp.exists():
         print()
-        print(f"  (rakenteellista rajoitetta ei ajettu: "
-              f"{bootp.name} puuttuu -> ei joukkuejakoa kaudelle {EVAL_SEASON})")
+        print(f"  (structural constraint not run: "
+              f"{bootp.name} missing -> no squad split for {EVAL_SEASON})")
     else:
         boot = json.loads(bootp.read_text(encoding="utf-8"))
         struct = _apply_structural(_predict_mm(prev["players"], 10.0), boot)
         print()
-        print("  Rakenteellisen joukkuerajoitteen JALKEEN (1 vahti + 10 kenttaa):")
+        print("  RESULTS BLOCK 2 - AFTER the structural squad constraint "
+              "(1 keeper + 10 outfield):")
         for label, sel in slices.items():
             sel = [c for c in sel if c in struct]
             if len(sel) < 10:

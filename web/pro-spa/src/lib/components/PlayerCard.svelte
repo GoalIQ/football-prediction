@@ -19,6 +19,8 @@
 	import { capture } from '$lib/analytics';
 	import PlayerSearch from './PlayerSearch.svelte';
 	import SetPieceBadges from './SetPieceBadges.svelte';
+	import WhyThisPick from './WhyThisPick.svelte';
+	import ComponentSplit from './ComponentSplit.svelte';
 	import { canShareToApps, sharePlayerCard, type PlayerCardCell } from '$lib/shareCard';
 
 	let pool = $state<CardPlayer[]>([]);
@@ -592,6 +594,21 @@
 									<strong>{goalOutlook.eg.toFixed(2)} goals</strong> expected in
 									GW{goalOutlook.gw}, a {goalOutlook.pct}% chance of scoring.
 								</p>
+							{/if}
+							<!-- 19.8 (Rowanin palaute): selitys ja komponenttierittely olivat
+							     VAIN xP-taulukon avatussa rivissa, eli "kuka" ja "miksi" olivat
+							     eri nakymissa. Molemmat ovat samoja komponentteja kuin siella —
+							     ei toista toteutusta, jotta labelit eivat paase eriytymaan.
+							     `why` tulee backendilta vain maskaamattomaan vastaukseen ja vain
+							     xP-karjelle, joten se puuttuu osalta riveista; komponentti
+							     renderoi silloin tyhjaa eika placeholderia. -->
+							<WhyThisPick why={player.why} />
+							{#if player.components}
+								<h4 class="gw-title">
+									Where the points come from
+									<span class="src">GW{player.components_gw}, expected points</span>
+								</h4>
+								<ComponentSplit {player} />
 							{/if}
 						{:else}
 							<p class="muted">

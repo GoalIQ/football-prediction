@@ -565,7 +565,7 @@ export function fetchFit(lockedIds: number[]): Promise<FitResponse> {
 }
 
 // Defensiivinen: projektiosta poissuljetulla rivillä gameweeks voi puuttua.
-export function gwXp(p: XpPlayer, gw: number | undefined): number {
+export function gwXp(p: CardPlayer, gw: number | undefined): number {
 	if (gw == null) return 0;
 	return p.gameweeks?.find((g) => g.gw === gw)?.xp ?? 0;
 }

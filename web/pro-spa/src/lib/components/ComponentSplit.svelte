@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { XpPlayer } from '$lib/api';
+	import type { CardPlayer } from '$lib/api';
 	import { gwXp } from '$lib/api';
 
 	// Labelit = mobiilin XpComponentSplit-pariteetti (goaliq-app lib/i18n/en.ts)
@@ -15,7 +15,10 @@
 		bonus: 'Bonus'
 	};
 
-	let { player }: { player: XpPlayer } = $props();
+	// 19.8: tyyppi CardPlayer (XpPlayer on sen alityyppi), jotta sama
+	// komponentti kelpaa myos pelaajakorttiin jossa rivi voi tulla
+	// excluded[]-listasta. Kentat ovat jo valinnaisia ja vartioituja.
+	let { player }: { player: CardPlayer } = $props();
 
 	let parts = $derived(
 		Object.entries(player.components ?? {})
