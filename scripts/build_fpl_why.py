@@ -1,0 +1,728 @@
+"""WHY-THIS-PICK: yhden virkkeen selitys mallin xP:lle (Claude API, 14.8).
+
+Kehityslista 12.8 (Villen paatos): "mallin komponentit (xG, minuutit, fixture)
+yhdeksi selitysvirkkeeksi per pelaaja. Erottaja jota Hubin musta laatikko ei
+tehnyt; provenienssi-linja jatkuu."
+
+KOKO SUUNNITTELUN YDIN: selitys EI SAA KEKSIA MITAAN. Malli saa vain
+komponentit, ja jokainen tuotettu virke ajetaan LUKUPROVENIENSSIPORTIN lapi:
+virkkeessa esiintyva luku joka ei ole faktalohkossa = virke hylataan ja
+tilalle tulee deterministinen mallipohjainen lause. Kehotus yksin ei ole
+portti — se on toive. Tama on mitattava tarkistus, ja sen negatiivinen
+kontrolli on testissa.
+
+Miksi luku eika vaite: hallusinoitu VAITE ("hyva vireessa") on epamaarainen
+mutta vaaraton, hallusinoitu LUKU ("6,2 xP") on tarkistettavissa ja tekee
+meista valehtelijoita samalla pinnalla jolla myymme tarkistettavuutta.
+
+KUSTANNUKSET
+- Batches API = 50 % listahinnasta, ja tama on tyypillinen eraajo (ei
+  latenssiherkka): cron ajaa, tulos committoidaan, sivu lukee tiedostoa.
+- Cache per GW + komponenttihash: pelaaja regeneroidaan vain jos hanen
+  lukunsa ovat oikeasti muuttuneet. Kaytannossa 3 h refresh liikuttaa
+  murto-osaa rivesta, joten toinen ajo samalla kierroksella on lahes ilmainen.
+- TOP_N rajaa joukon niihin joita kukaan katsoo (xP-jarjestys).
+
+Exit 0 myos kun ei generoitavaa; tekninen virhe -> 1.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import config
+
+XP_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
+OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_why.json"
+
+MODEL = "claude-opus-5"
+TOP_N = 150
+
+# Alle taman xGI/90 jatetaan pois lauseesta: se ei kanna painoa jonka
+# "leans on" sille antaisi (ks. template_sentence).
+XGI_MIN = 0.15
+
+# Nosta AINA kun `template_sentence` muuttuu: se on osa valimuistin avainta
+# mallipohjaisille lauseille. v2 (14.8): xGI-kynnys + kolme runkoa.
+# v3 (14.8): es/pt-lokalisointi — jokainen merkinta kantaa nyt kolme lausetta.
+TEMPLATE_VERSION = 3
+
+# Maksumuuri lupaa `paywall.bullet_why`-rivilla selityksen ostajan omalla
+# kielella es- ja pt-lokaaleilla. Ilman naita kaikki 150 lausetta olisivat
+# englanniksi ja espanjankielinen ostaja maksaisi lupauksesta jota tuote ei
+# pida. SPA on englanninkielinen eika kysy muuta kuin en:aa.
+LANGS = ("en", "es", "pt")
+DEFAULT_LANG = "en"
+
+# Kolme runkoa per kieli, valinta deterministinen pelaajan id:sta. Kaikki
+# sanovat saman asian; vain rakenne vaihtuu, jotta perakkain avatut rivit
+# eivat lue botilta. Runkojen MAARA on sama kaikilla kielilla, jotta sama
+# pelaaja saa saman rakenteen riippumatta lukijan kielesta.
+FRAMES = {
+    "en": [
+        "The projection leans on {lead}{tail}.",
+        "Most of this comes from {lead}{tail}.",
+        "This one rests on {lead}{tail}.",
+    ],
+    "es": [
+        "La proyección se apoya en {lead}{tail}.",
+        "La mayor parte viene de {lead}{tail}.",
+        "Esta se sostiene en {lead}{tail}.",
+    ],
+    "pt": [
+        "A projeção se apoia em {lead}{tail}.",
+        "A maior parte vem de {lead}{tail}.",
+        "Esta se sustenta em {lead}{tail}.",
+    ],
+}
+
+# Lauseen palaset per kieli. LUVUT EIVAT LOKALISOIDU: `0.65` pysyy pisteella
+# kaikilla kielilla, koska lukija tarkistaa luvun samalta riviltä jonka
+# taulukko renderoi, ja taulukko renderoi pisteen kaikilla lokaaleilla
+# (toFixed, ei toLocaleString). Desimaalipilkku lauseessa ja piste taulukossa
+# olisi kaksi eri lukua samasta asiasta.
+PHRASES = {
+    "en": {
+        "minutes": "about {mins} minutes a game",
+        "xgi": "{xgi} expected goal involvements per 90 last season",
+        "set_pieces": "set piece duties",
+        "join": " and ",
+        "tail": ", with {opps} to come",
+        "no_bits": "The projection is built from expected minutes and fixtures.",
+    },
+    "es": {
+        "minutes": "unos {mins} minutos por partido",
+        "xgi": "{xgi} participaciones de gol esperadas por 90 la temporada pasada",
+        "set_pieces": "los balones parados",
+        "join": " y ",
+        "tail": ", con {opps} por delante",
+        "no_bits": "La proyección se construye con los minutos esperados y el calendario.",
+    },
+    "pt": {
+        "minutes": "cerca de {mins} minutos por jogo",
+        "xgi": "{xgi} participações em gols esperadas por 90 na temporada passada",
+        "set_pieces": "as bolas paradas",
+        "join": " e ",
+        "tail": ", com {opps} pela frente",
+        "no_bits": "A projeção é construída com os minutos esperados e o calendário.",
+    },
+}
+MAX_TOKENS = 2000
+POLL_SECONDS = 20
+POLL_MAX_MINUTES = 55
+
+# Ajurit ovat SULJETTU LISTA: malli valitsee naista eika keksi omia
+# kategorioita. Ilman enumia "why" ajautuisi kausien mittaan eri sanastoon
+# eika sita voisi suodattaa tai kaantaa.
+DRIVERS = [
+    "minutes",          # xMins / aloitustodennakoisyys
+    "attacking_output", # viime kauden xGI/90, maalit, syotot
+    "fixtures",         # vastustajat horisontissa
+    "clean_sheets",     # puolustajat/maalivahdit
+    "set_pieces",       # pilkut, kulmat, vapaapotkut
+    "bonus",            # odotettu bonus
+    "price",            # hinta suhteessa tuotokseen
+    "differential",     # matala omistus
+]
+
+SYSTEM = """You explain a football model's expected-points projection for one \
+player in exactly one sentence, for a fantasy manager deciding whether to pick him.
+
+You are given a FACTS block. That block is the only information that exists. \
+Every number you write must appear verbatim in the FACTS block. Do not compute \
+new numbers, do not round differently, do not add league context, form \
+narratives, injury speculation, transfer rumours, or anything you happen to \
+know about the player. If the facts are thin, write a thinner sentence.
+
+Name the one or two things that actually drive the projection and say what they \
+mean for the pick. Write it the way a knowledgeable friend would say it out \
+loud: plain words, no jargon, no dashes joining clauses, no colon-separated \
+label. Do not open with the player's name and do not repeat his expected points \
+if the interface already shows it. Do not include internal or system XML tags \
+in your response."""
+
+SCHEMA = {
+    "type": "object",
+    "properties": {
+        "sentence": {"type": "string"},
+        "drivers": {
+            "type": "array",
+            "items": {"type": "string", "enum": DRIVERS},
+        },
+    },
+    "required": ["sentence", "drivers"],
+    "additionalProperties": False,
+}
+
+
+# --------------------------------------------------------------------------
+# Faktalohko (puhdas)
+# --------------------------------------------------------------------------
+
+def _num(value, ndigits: int = 1):
+    try:
+        return round(float(value), ndigits)
+    except (TypeError, ValueError):
+        return None
+
+
+def player_facts(player: dict, gw: int, horizon: int) -> dict:
+    """Mallin komponentit yhdeksi faktalohkoksi.
+
+    Vain kentat jotka ovat oikeasti mallin syotteita tai sen tuotoksia —
+    ei mitaan mita malli ei nae, koska selitys lupaa selittaa TAMAN mallin.
+    """
+    gws = player.get("gameweeks") or []
+    this_gw = next((g for g in gws if g.get("gw") == gw), None)
+    fixtures = []
+    for g in gws[:horizon]:
+        for opp in (g.get("opponents") or []):
+            fixtures.append(f"{opp.get('opp')} ({opp.get('venue')})")
+
+    last = player.get("last_season") or {}
+    per90 = last.get("per90") or {}
+    sp = player.get("set_pieces") or {}
+
+    facts = {
+        "id": player.get("id"),
+        "name": player.get("web_name"),
+        "team": player.get("team"),
+        "position": player.get("pos"),
+        "price_m": _num(player.get("price")),
+        "owned_pct": _num(player.get("owned_pct")),
+        "xp_this_gw": _num(this_gw.get("xp")) if this_gw else None,
+        "xp_next_{}_gws".format(horizon): _num(player.get("xp_horizon_total")),
+        "expected_minutes": _num(player.get("xmins"), 0),
+        "start_probability_pct": _num(
+            100.0 * float(player.get("p_start") or 0.0), 0),
+        "minutes_confidence": player.get("minutes_confidence"),
+        "expected_bonus": _num(player.get("e_bonus"), 2),
+        "next_opponents": fixtures,
+        "horizon_gws": horizon,
+    }
+    if last:
+        facts["last_season"] = {
+            "minutes": last.get("minutes"),
+            "starts": last.get("starts"),
+            "goals": last.get("goals"),
+            "assists": last.get("assists"),
+            "goals_per90": _num(per90.get("goals"), 2),
+            "assists_per90": _num(per90.get("assists"), 2),
+            "xgi_per90": _num(per90.get("xgi"), 2),
+        }
+    takers = [k for k in ("pens", "corners", "fk") if sp.get(k)]
+    if takers:
+        facts["set_piece_duties"] = takers
+    if player.get("news"):
+        facts["availability_note"] = player["news"]
+    return {k: v for k, v in facts.items() if v not in (None, [], {})}
+
+
+# --------------------------------------------------------------------------
+# Lukuprovenienssiportti (puhdas — tama on se joka oikeasti estaa keksimisen)
+# --------------------------------------------------------------------------
+
+_NUM_RE = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def _numeric_strings(value, out: set[str]) -> None:
+    if isinstance(value, dict):
+        for v in value.values():
+            _numeric_strings(v, out)
+        return
+    if isinstance(value, (list, tuple)):
+        for v in value:
+            _numeric_strings(v, out)
+        return
+    if isinstance(value, bool) or value is None:
+        return
+    if isinstance(value, (int, float)):
+        f = float(value)
+        # 4.50 -> "4.5" ja "4.50" ovat sama luku lukijalle; molemmat sallitaan.
+        # Kokonaisluvuksi pyoristaminen EI ole: 5.8 ei saa oikeuttaa "6":tta,
+        # koska lukija tarkistaa luvun sivulta jossa lukee 5.8.
+        out.add(f"{f:g}")
+        out.add(f"{f:.1f}")
+        out.add(f"{f:.2f}")
+        if f == int(f):
+            out.add(str(int(f)))
+            out.add(f"{f:.0f}")
+        return
+    if isinstance(value, str):
+        for m in _NUM_RE.findall(value):
+            out.add(m.replace(",", "."))
+
+
+def allowed_numbers(facts: dict) -> set[str]:
+    out: set[str] = set()
+    _numeric_strings(facts, out)
+    return out
+
+
+# "per 90" on jalkapallodatan vakioyksikko eika vaite, joten se on ainoa
+# sallittu luku jota faktalohko ei kanna. Lista on tarkoituksella yhden
+# mittainen: jokainen lisays tahan on reika portissa.
+UNIT_NUMBERS = {"90"}
+
+
+def ungrounded_numbers(sentence: str, facts: dict) -> list[str]:
+    """Virkkeen luvut jotka EIVAT ole faktalohkossa. Tyhja = puhdas."""
+    allowed = allowed_numbers(facts) | UNIT_NUMBERS
+    bad = []
+    for raw in _NUM_RE.findall(sentence or ""):
+        token = raw.replace(",", ".")
+        candidates = {token}
+        # Perakkaiset nollat karsitaan VAIN desimaaliosasta ("4.50" -> "4.5").
+        # Ilman tata ehtoa "90" typistyi "9":ksi ja lapaisi portin milla
+        # tahansa pelaajalla jolla oli 9 maalia — portti oli sokea tasan
+        # silla tavalla jota se oli rakennettu estamaan.
+        if "." in token:
+            candidates.add(token.rstrip("0").rstrip(".") or "0")
+        try:
+            f = float(token)
+            candidates |= {f"{f:g}", f"{f:.1f}", f"{f:.2f}"}
+            if f == int(f):
+                candidates.add(str(int(f)))
+        except ValueError:
+            pass
+        if not (candidates & allowed):
+            bad.append(raw)
+    return bad
+
+
+BANNED_SUBSTRINGS = (
+    "—",   # em dash (copy-portti koskee myos tata pintaa)
+    "–",   # en dash
+    "<thinking",
+    "<system",
+    "odds",     # brandilinja: tuloksiin, ei kertoimiin
+)
+
+
+def sentence_problems(sentence: str, facts: dict) -> list[str]:
+    """Kaikki syyt hylata virke. Tyhja lista = kelpaa julkaistavaksi."""
+    problems: list[str] = []
+    s = (sentence or "").strip()
+    if not s:
+        return ["tyhja virke"]
+    if len(s) > 240:
+        problems.append(f"liian pitka ({len(s)} merkkia)")
+    if s.count(".") > 2:
+        problems.append("useampi kuin yksi virke")
+    low = s.lower()
+    for bad in BANNED_SUBSTRINGS:
+        if bad in low:
+            problems.append(f"kielletty merkkijono: {bad!r}")
+    bad_nums = ungrounded_numbers(s, facts)
+    if bad_nums:
+        problems.append("pohjaton luku: " + ", ".join(sorted(set(bad_nums))))
+    return problems
+
+
+def template_sentence(facts: dict, lang: str = DEFAULT_LANG) -> str:
+    """Deterministinen varalause kun malli hylataan tai ei vastaa.
+
+    EI ole huono lopputulos: se on tarkka ja tylsa. Tyhja kentta olisi
+    huonompi kuin tylsa kentta, ja keksitty lause olisi huonompi kuin molemmat.
+
+    ILMAN `ANTHROPIC_API_KEY`:TA TAMA ON AINOA POLKU (Villen linjaus 14.8: ei
+    maksullisia ilman erillista hyvaksyntaa), joten `lang` ei ole varapolun
+    yksityiskohta vaan se ON koko lokalisointi: jokainen 150 lauseesta
+    kirjoitetaan taalla, kaikilla kolmella kielella.
+    """
+    ph = PHRASES.get(lang) or PHRASES[DEFAULT_LANG]
+    mins = facts.get("expected_minutes")
+    opponents = facts.get("next_opponents") or []
+    bits = []
+    if mins is not None:
+        bits.append(ph["minutes"].format(mins=f"{mins:g}"))
+    xgi = (facts.get("last_season") or {}).get("xgi_per90")
+    # KYNNYS: 48/138 lausetta siteerasi xGI/90:n alle 0,15 ja 23 alle 0,10
+    # (pienin 0,01). "The projection leans on 0.09 expected goal involvements
+    # per 90" vaittaa projektion nojaavan lukuun joka ei kanna mitaan — se on
+    # kaiken perusteleminen samalla syvyydella, eli konetunnusmerkki JA
+    # epatosi painotusvaite. Alle kynnyksen luku jatetaan pois, ei pyoristeta.
+    if xgi and float(xgi) >= XGI_MIN:
+        bits.append(ph["xgi"].format(xgi=f"{xgi:g}"))
+    if facts.get("set_piece_duties"):
+        bits.append(ph["set_pieces"])
+    if not bits:
+        return ph["no_bits"]
+    if len(bits) == 1:
+        lead = bits[0]
+    else:
+        lead = ", ".join(bits[:-1]) + ph["join"] + bits[-1]
+    # RUNGON VAIHTELU: kaikki 150 lausetta alkoivat "The projection" ja
+    # paattyivat "with A, B, C to come." Rivien avaaminen perakkain on tuotteen
+    # normaali kaytto, joten yksi runko luetaan botiksi. Valinta on
+    # DETERMINISTINEN pelaajan id:sta: sama rivi antaa aina saman lauseen,
+    # joten `component_hash` pysyy vakaana eika refresh vaihda tekstia turhaan.
+    n_opp = 2 if (facts.get("id") or 0) % 3 == 1 else 3
+    opps = opponents[:n_opp]
+    tail = (ph["tail"].format(opps=", ".join(opps)) if opps else "")
+    frames = FRAMES.get(lang) or FRAMES[DEFAULT_LANG]
+    frame = frames[(facts.get("id") or 0) % len(frames)]
+    return frame.format(lead=lead, tail=tail)
+
+
+def template_drivers(facts: dict) -> list[str]:
+    """Deterministiset ajurit samoista faktoista joista runkolause syntyy.
+
+    LLM-polku palauttaa ajurit itse, mutta ilman API-avainta (tuotannon
+    normaali tila, ks. template_sentence) `drivers` jai pysyvasti tyhjaksi:
+    mitattu 19.8, with_drivers=0 kuudessa perakkaisessa generoinnissa, eli
+    chip-rivi ei ollut renderoitynyt kertaakaan kummallakaan pinnalla.
+    Sama saanto kuin lauseessa: ei mitaan mita faktalohkossa ei ole.
+
+    Kynnykset eivat ole makua:
+    - 60 min on FPL:n oma tayden esiintymisen pisteraja (2 p pelaajalle
+      joka pelaa 60+)
+    - XGI_MIN on sama kynnys jolla runkolause siteeraa xGI:n
+    - GKP/DEF ovat positiot joiden pisteytys sisaltaa clean sheetin (4 p)
+    - alle 10 % omistus on FPL-yhteison vakiintunut differential-raja
+
+    `price`, `bonus` ja `fixtures` jaavat pois tarkoituksella: faktalohkossa
+    ei ole suhteellista mittaa (hinta vs. tuotto, fixture-vaikeus) jota
+    vasten vaite voisi nojata, ja kynnykseton ajuri olisi kaikilla riveilla
+    eli ei erottaisi ketaan.
+    """
+    out: list[str] = []
+    mins = facts.get("expected_minutes")
+    if mins is not None and float(mins) >= 60:
+        out.append("minutes")
+    xgi = (facts.get("last_season") or {}).get("xgi_per90")
+    if xgi and float(xgi) >= XGI_MIN:
+        out.append("attacking_output")
+    if facts.get("position") in ("GKP", "DEF"):
+        out.append("clean_sheets")
+    if facts.get("set_piece_duties"):
+        out.append("set_pieces")
+    owned = facts.get("owned_pct")
+    if owned is not None and float(owned) < 10.0:
+        out.append("differential")
+    # Kolme riittaa: kortissa ei ole rivitysta ja neljas chip putoaisi
+    # reunan yli (shareCard.ts pudottaa ylivuodon). Jarjestys on kiintea
+    # prioriteetti, ei satunnainen — sama rivi antaa aina samat chipit.
+    return out[:3]
+
+
+def component_hash(facts: dict) -> str:
+    """Faktalohkon sormenjalki. Sama hash = selitys on yha voimassa.
+
+    Ilman tata jokainen 3 h refresh maksaisi taydet 150 kutsua, vaikka
+    valtaosa riveista ei liiku lainkaan.
+    """
+    blob = json.dumps(facts, sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+
+
+def select_players(payload: dict, gw: int, top_n: int) -> list[dict]:
+    """TOP_N pelaajaa SILLA jarjestyksella jonka ostaja nakee ruudulla.
+
+    JARJESTYS ON `xp_horizon_total`, EI taman kierroksen xP. Molemmat pinnat
+    lajittelevat ja nayttavat horisonttiluvun (`XpTable.svelte` SORTS.total,
+    sarake "Total xP"; `FantasyScreen.tsx` oletuslajittelu 'total', rivin iso
+    luku `xp_horizon_total`). Kun valinta tehtiin GW1:n xP:lla, nakyvan top
+    150:n joukossa oli nelja rivia ILMAN selitysta (Van de Ven 132, Porro 134,
+    Maatsen 138, McGinn 143) ja nelja selitysta sen ULKOPUOLELLA (155-177).
+    Maksumuuri lupaa "top 150 by Total xP", ja ostaja tarkistaa sen 30
+    sekunnissa avaamalla rivin 132 — joten valinnan on vastattava lupausta.
+    Portti: `tests/test_fpl_why.py::test_selection_matches_visible_order`.
+
+    `gw`-parametri sailyy allekirjoituksessa: sita kaytetaan faktalohkon
+    poimintaan, ei enaa jarjestykseen.
+    """
+    def horizon(p: dict) -> float:
+        return float(p.get("xp_horizon_total") or 0.0)
+    players = [p for p in (payload.get("players") or []) if horizon(p) > 0]
+    players.sort(key=horizon, reverse=True)
+    return players[:top_n]
+
+
+def build_prompt(facts: dict) -> str:
+    return ("FACTS\n"
+            + json.dumps(facts, indent=1, ensure_ascii=False, sort_keys=True)
+            + "\n\nWrite the one-sentence explanation.")
+
+
+# --------------------------------------------------------------------------
+# Claude Batches API
+# --------------------------------------------------------------------------
+
+def submit_batch(client, jobs: list[dict]):
+    """jobs: [{custom_id, facts}] -> batch-objekti."""
+    requests_ = []
+    for job in jobs:
+        requests_.append({
+            "custom_id": job["custom_id"],
+            "params": {
+                "model": MODEL,
+                "max_tokens": MAX_TOKENS,
+                "system": SYSTEM,
+                # Matala effort + adaptiivinen ajattelu: tehtava on triviaali
+                # eika ajattelusta ole hyotya, mutta ajattelun POIS kytkeminen
+                # on Claude Opus 5:lla oma vikaluokkansa (sisaiset tagit
+                # vuotavat vastaukseen). Halpa ja turvallinen yhdistelma.
+                "thinking": {"type": "adaptive"},
+                "output_config": {
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": SCHEMA},
+                },
+                "messages": [
+                    {"role": "user", "content": build_prompt(job["facts"])},
+                ],
+            },
+        })
+    return client.messages.batches.create(requests=requests_)
+
+
+def await_batch(client, batch_id: str):
+    deadline = time.monotonic() + POLL_MAX_MINUTES * 60
+    while True:
+        batch = client.messages.batches.retrieve(batch_id)
+        if batch.processing_status == "ended":
+            return batch
+        if time.monotonic() > deadline:
+            raise TimeoutError(
+                f"batch {batch_id} ei valmistunut {POLL_MAX_MINUTES} min:ssa")
+        print(f"  ...{batch.processing_status} "
+              f"(kesken {batch.request_counts.processing})")
+        time.sleep(POLL_SECONDS)
+
+
+def collect_results(client, batch_id: str) -> dict[str, dict]:
+    """custom_id -> {"sentence", "drivers"} niille jotka onnistuivat."""
+    out: dict[str, dict] = {}
+    for result in client.messages.batches.results(batch_id):
+        if result.result.type != "succeeded":
+            print(f"::warning::{result.custom_id}: {result.result.type}")
+            continue
+        message = result.result.message
+        if message.stop_reason == "refusal":
+            print(f"::warning::{result.custom_id}: refusal")
+            continue
+        text = "".join(b.text for b in message.content if b.type == "text")
+        try:
+            out[result.custom_id] = json.loads(text)
+        except json.JSONDecodeError:
+            print(f"::warning::{result.custom_id}: JSON-jasennys epaonnistui")
+    return out
+
+
+def load_existing() -> dict:
+    if not OUT_PATH.exists():
+        return {"v": 1, "entries": {}}
+    try:
+        cur = json.loads(OUT_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"v": 1, "entries": {}}
+    cur.setdefault("entries", {})
+    return cur
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--top-n", type=int, default=TOP_N)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="rakenna faktat + varalauseet, ala kutsu APIa")
+    args = ap.parse_args()
+
+    if not XP_PATH.exists():
+        print(f"::warning::{XP_PATH.name} puuttuu — ohitetaan.")
+        return 0
+    payload = json.loads(XP_PATH.read_text(encoding="utf-8"))
+    meta = payload.get("meta") or {}
+    gws = sorted({g.get("gw") for p in (payload.get("players") or [])
+                  for g in (p.get("gameweeks") or []) if g.get("gw")})
+    if not gws:
+        print("::warning::projektiossa ei kierroksia — ohitetaan.")
+        return 0
+    gw = gws[0]
+    horizon = len(gws)
+
+    players = select_players(payload, gw, args.top_n)
+    print(f"GW{gw}, horisontti {horizon} kierrosta, {len(players)} pelaajaa")
+
+    store = load_existing()
+    entries = store["entries"]
+    jobs, facts_by_id = [], {}
+    reused = 0
+    for p in players:
+        facts = player_facts(p, gw, horizon)
+        pid = str(facts["id"])
+        facts_by_id[pid] = facts
+        h = component_hash(facts)
+        prev = entries.get(pid)
+        # MALLIPOHJAN VERSIO ON OSA AVAINTA. Ilman tata `template_sentence`in
+        # muutos ei paivittanyt mitaan: faktat eivat liiku, joten hash osui ja
+        # 140/150 vanhaa lausetta jai voimaan. Skripti olisi kertonut "OK"
+        # mutta tuote olisi ollut ennallaan. Sama vikaluokka kuin serve-time-
+        # kentta joka ei invalidoi ETagia.
+        #
+        # 14.8 (v3): EHTO KOSKEE NYT KAIKKIA MERKINTOJA, ei vain mallipohjaisia.
+        # Jokainen merkinta kantaa es/pt-lauseet jotka tulevat AINA rungosta,
+        # joten mallin kirjoittama en-lause ei enaa tarkoita etta merkinta olisi
+        # rungosta riippumaton. Aiempi `source == "template"` -rajaus jattaisi
+        # mallilta tulleiden rivien es/pt-lauseet ikuisesti vanhaan versioon.
+        # Tama EI maksa API-kutsuja: kirjoitussilmukka sailyttaa olemassa olevan
+        # mallilauseen kun hash on ennallaan (ks. `n_kept` alla).
+        stale_template = (prev is not None
+                          and prev.get("tpl") != TEMPLATE_VERSION)
+        if (prev and prev.get("hash") == h and prev.get("gw") == gw
+                and not stale_template):
+            reused += 1
+            continue
+        jobs.append({"custom_id": pid, "facts": facts})
+
+    # KARSINTA: varastoon jaa merkintoja pelaajista jotka ovat pudonneet
+    # valinnasta, ja `attach_why` liittaa selityksen KAIKILLE riveille joilta
+    # id loytyy — ei vain top 150:lle. Ilman tata maksumuurin lupaus "top 150
+    # by Total xP" on vaarin myos toiseen suuntaan: rivilla 177 olisi selitys
+    # jota copy ei lupaa. Mitattu 14.8: 4 tallaista merkintaa (154 vs 150).
+    keep = {str(p.get("id")) for p in players}
+    dropped = [k for k in entries if k not in keep]
+    for k in dropped:
+        del entries[k]
+    if dropped:
+        print(f"  karsittu {len(dropped)} merkintaa valinnan ulkopuolelta")
+
+    print(f"  cache-osumat {reused}, generoitavia {len(jobs)}")
+    if not jobs:
+        # KARSINTA ON KIRJOITETTAVA VAIKKA GENEROITAVIA EI OLE. Ensimmainen
+        # versio laski karsinnan ja palasi tasta ennen tallennusta, joten
+        # skripti tulosti "karsittu 4" ja tiedosto sailyi ennallaan — korjaus
+        # nayttaisi menneen lapi eika olisi tehnyt mitaan.
+        if dropped:
+            store["entries"] = entries
+            OUT_PATH.write_text(
+                json.dumps(store, ensure_ascii=False, indent=1, sort_keys=True),
+                encoding="utf-8")
+            print(f"OK: karsittu {len(dropped)}, ei uusia selityksia.")
+            return 0
+        print("OK: kaikki selitykset ajan tasalla.")
+        return 0
+
+    # KAKSI LUKKOA, EI YHTA (Villen linjaus 14.8: ei mitaan maksullista ilman
+    # erillista hyvaksyntaa). Pelkka avaimen olemassaolo EI riita kaynnistamaan
+    # maksullista polkua: jos `ANTHROPIC_API_KEY` joskus lisataan repoon jotain
+    # MUUTA tarkoitusta varten, tama cron alkaisi muuten kuluttaa rahaa
+    # hiljaa ja ilman paatosta. `WHY_USE_MODEL=1` on se paatos.
+    use_model = (os.environ.get("WHY_USE_MODEL") == "1"
+                 and bool(os.environ.get("ANTHROPIC_API_KEY")))
+    if args.dry_run or not use_model:
+        if not args.dry_run:
+            if not os.environ.get("ANTHROPIC_API_KEY"):
+                print("::notice::ANTHROPIC_API_KEY puuttuu — kirjoitetaan "
+                      "runkolauseet (ei virhe, ei kuluja).")
+            else:
+                print("::notice::WHY_USE_MODEL != 1 — maksullinen polku on "
+                      "pois paalta vaikka avain on olemassa. Runkolauseet.")
+        results: dict[str, dict] = {}
+    else:
+        import anthropic
+        client = anthropic.Anthropic()
+        batch = submit_batch(client, jobs)
+        print(f"  batch {batch.id} lahetetty ({len(jobs)} pyyntoa)")
+        batch = await_batch(client, batch.id)
+        print(f"  valmis: onnistui {batch.request_counts.succeeded}, "
+              f"virhe {batch.request_counts.errored}")
+        results = collect_results(client, batch.id)
+
+    n_model, n_template, n_rejected, n_kept = 0, 0, 0, 0
+    for job in jobs:
+        pid = job["custom_id"]
+        facts = job["facts"]
+        h = component_hash(facts)
+        prev = entries.get(pid) or {}
+        parsed = results.get(pid) or {}
+        sentence = (parsed.get("sentence") or "").strip()
+        drivers = [d for d in (parsed.get("drivers") or []) if d in DRIVERS]
+        problems = sentence_problems(sentence, facts) if sentence else ["ei vastausta"]
+        if not problems:
+            en_sentence, en_source = sentence, "model"
+            n_model += 1
+        else:
+            if sentence:
+                n_rejected += 1
+                print(f"::warning::{facts['name']}: hylatty portissa "
+                      f"({'; '.join(problems)})")
+            # SAILYTA OLEMASSA OLEVA MALLILAUSE kun regenerointi johtuu
+            # PELKASTA runkoversion noususta eika faktojen muutoksesta. Ilman
+            # tata `TEMPLATE_VERSION`-nosto ilman API-avainta DEGRADOISI
+            # mallilta saadut lauseet takaisin rungoiksi — korjaus nayttaisi
+            # menneen lapi ja tuote menisi taaksepain. Hash-ehto on olennainen:
+            # jos faktat ovat liikkuneet, vanha lause voi olla epatosi.
+            prev_en = (prev.get("sentences") or {}).get("en") or prev.get("sentence")
+            prev_src = (prev.get("sources") or {}).get("en") or prev.get("source")
+            if prev_en and prev_src == "model" and prev.get("hash") == h:
+                en_sentence, en_source = prev_en, "model"
+                drivers = drivers or prev.get("drivers") or []
+                n_kept += 1
+            else:
+                en_sentence = template_sentence(facts, DEFAULT_LANG)
+                en_source = "template"
+                n_template += 1
+        # Ajurit taytetaan deterministisesti kun mallilta ei tullut niita —
+        # muuten chipit olisivat olemassa vain maksullisella polulla jota
+        # tuotanto ei aja (19.8: with_drivers=0 jokaisessa generoinnissa).
+        drivers = drivers or template_drivers(facts)
+        # es/pt tulevat AINA rungosta: mallipolkua ei ajeta lainkaan ilman
+        # maksullista API-avainta, eika sita oteta kayttoon ilman Villen
+        # erillista hyvaksyntaa. Runkolause on tarkka ja tylsa, ei rikki.
+        sentences = {DEFAULT_LANG: en_sentence}
+        sources = {DEFAULT_LANG: en_source}
+        for lang in LANGS:
+            if lang == DEFAULT_LANG:
+                continue
+            sentences[lang] = template_sentence(facts, lang)
+            sources[lang] = "template"
+        entries[pid] = {
+            "gw": gw,
+            "hash": h,
+            # `sentence` + `source` sailyvat en-aliaksina: datatiedosto ja
+            # API-deploy ovat eri portaat (muisti: api-lukee-levylta-render-
+            # deploy), joten vanha deployattu backend lukee naita viela.
+            "sentence": en_sentence,
+            "source": en_source,
+            "sentences": sentences,
+            "sources": sources,
+            "drivers": drivers,
+            # Kaikilla merkinnoilla: es/pt tulevat rungosta myos silloin kun
+            # en on mallilta, joten runkoversio koskee jokaista merkintaa.
+            "tpl": TEMPLATE_VERSION,
+        }
+
+    store["meta"] = {
+        "product": "GoalIQ Fantasy - why this pick",
+        "model": MODEL,
+        "gw": gw,
+        "n_entries": len(entries),
+        "generated_from": meta.get("generated_at"),
+        "note": ("Explanations are generated from the model's own components. "
+                 "Every number is checked against those components before "
+                 "publishing; sentences that fail fall back to a template."),
+    }
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUT_PATH.write_text(
+        json.dumps(store, ensure_ascii=False, indent=1, sort_keys=True),
+        encoding="utf-8")
+    print(f"OK: {OUT_PATH.name} — mallilta {n_model}, mallipohja {n_template} "
+          f"(portti hylkasi {n_rejected}), cache {reused}")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Exception as exc:  # noqa: BLE001 — cron-steppi: virhe nakyviin
+        print(f"VIRHE: build_fpl_why kaatui: {exc}")
+        sys.exit(1)
