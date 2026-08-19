@@ -516,6 +516,17 @@
 					{#if typeof player.p_start === 'number'}
 						<div><dt>Starts</dt><dd>{Math.round(player.p_start * 100)}%</dd></div>
 					{/if}
+					<!-- SOLIO-OPPI (19.8): koko minuuttijako nakyviin, ei vain
+					     tooltippiin (XpTable.minutesTitle nayttaa saman jaon hoverilla,
+					     mutta hover ei ole olemassa puhelimessa). Sanasto on sama kuin
+					     tooltipissa: start / sub / unused. Ei uutta laskentaa —
+					     p_start + p_cameo + p_bench = 1 tulee payloadista. -->
+					{#if typeof player.p_cameo === 'number' && typeof player.p_bench === 'number'}
+						<div>
+							<dt>Sub / unused</dt>
+							<dd>{Math.round(player.p_cameo * 100)}% / {Math.round(player.p_bench * 100)}%</dd>
+						</div>
+					{/if}
 					{#if typeof player.owned_pct === 'number'}
 						<div><dt>Owned</dt><dd>{player.owned_pct.toFixed(1)}%</dd></div>
 					{/if}

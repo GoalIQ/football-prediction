@@ -279,7 +279,7 @@
 	const dcSeason = $derived(defcon?.meta?.window === 'season');
 	const hitRateHelp = $derived(
 		dcSeason
-			? 'Share of the player’s starts where he reached the DefCon threshold, the same basis the official FPL figures use'
+			? "Share of the player's starts where he reached the DefCon threshold, the same basis the official FPL figures use"
 			: 'Share of played games in the window where the player reached the DefCon threshold'
 	);
 	const dcSampleLabel = $derived(dcSeason ? 'Starts' : 'Games');

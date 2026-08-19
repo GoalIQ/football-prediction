@@ -951,6 +951,64 @@
 {#if error}
 	<p class="banner error">{error}</p>
 {:else if data}
+	<!-- SOLIO-OPPI (19.8, Villen tilaus): kolmen mittarin yhteenvetonauha ennen
+	     kortteja — yksi silmays kertoo kokonaiskuvan, kortit kantavat syvyyden.
+	     JOKAINEN arvo tulee payloadista jonka kortit jo nayttavat; nauha ei
+	     laske eika keksi mitaan uutta. Vareilla on kynnykset ja ne sanotaan
+	     tooltipissa auki — variarvio ilman perustetta olisi sama vikaluokka
+	     kuin luku ilman lahdetta. -->
+	<!-- Portin korjaukset 19.8: (1) siirtoverdikti on Premium-sisaltoa
+	     (MARKETING_QUEUE:n free/Premium-raja: HOLD on syvyys, ei
+	     free-vaittama) — chip renderoituu vain premiumille eika ilmaispinta
+	     saa lukua eika kantaa; (2) fallback-lause kantaa horisontin eika
+	     vaita viikkokynnysta; (3) close call -peruste talon hyvaksytylla
+	     muotoilulla + 0.00-tapaus omana lauseena; (4) siirtorivilta pallo
+	     pois — sana Hold/Move kantaa tiedon, variarvio ilman perustetta ei. -->
+	{@const stripRating = data.rating.rating ?? Math.round(data.rating.percentile)}
+	{@const capGap =
+		data.captain.alternative != null
+			? data.captain.pick.gw_xp - data.captain.alternative.gw_xp
+			: null}
+	{@const capClose = capGap != null && capGap < 0.15}
+	<div class="verdict-strip">
+		<span
+			class="strip-item"
+			title="GoalIQ model rating out of 100. Green from 90, amber from 75. The rating card below says what the 100 is measured against."
+		>
+			<span
+				class="strip-dot"
+				class:good={stripRating >= 90}
+				class:mid={stripRating >= 75 && stripRating < 90}
+				class:bad={stripRating < 75}
+			></span>
+			Squad <strong>{stripRating}/100</strong>
+		</span>
+		<span
+			class="strip-item"
+			title={capClose && capGap != null
+				? capGap < 0.005
+					? `${data.captain.alternative?.web_name} is level on xP this GW.`
+					: `${data.captain.alternative?.web_name} is only ${capGap.toFixed(2)} xP behind, so this one is close.`
+				: 'The model pick for the armband this gameweek.'}
+		>
+			Captain <strong>{data.captain.pick.web_name}</strong
+			>{#if capClose}<span class="strip-note">close call</span>{/if}
+		</span>
+		{#if premium}
+			{@const stripHold = data.transfers.hold_verdict?.verdict
+				? data.transfers.hold_verdict.verdict === 'hold'
+				: data.transfers.hold}
+			<span
+				class="strip-item"
+				title={data.transfers.hold_verdict?.message ??
+					(stripHold
+						? `No transfer beats holding over the next ${data.meta.horizon_gw ?? 6} GWs.`
+						: 'The model found a move worth making.')}
+			>
+				Transfers <strong>{stripHold ? 'Hold' : 'Move'}</strong>
+			</span>
+		{/if}
+	</div>
 	<!-- 14.8: TULOS JA SILMUKKA VIERELLE, EI ALLE.
 	     `.rating` on tarkoituksella `max-width: 680px` (lukumitta), joten
 	     kortin leventaminen olisi vaara korjaus — pitka tekstipalsta on
@@ -1029,7 +1087,13 @@
 				</p>
 				<!-- 26.7: metodologia auki. Villen havainto: FFS antoi samasta
 				     joukkueesta 83, me 97 -> ilman selitysta nayttaa silta etta
-				     joku on vaarassa. Kumpikaan ei ole: mittarit ovat eri. -->
+				     joku on vaarassa. Kumpikaan ei ole: mittarit ovat eri.
+				     19.8 (portin loydos): sama 28.7-vartija kuin subline-rivilla —
+				     vanha payload ilman rating_method/optimal_team_xp -kenttia ei
+				     saa vaittaa "best XI our model can build" -mittaperustaa
+				     taallakaan, ja verdict-nauhan tooltip ohjaa lukijan nyt
+				     aktiivisesti tahan lohkoon. -->
+				{#if !(data.meta.rating_method == null && data.rating.optimal_team_xp == null)}
 				<details class="method">
 					<summary>How this rating is calculated</summary>
 					<p>
@@ -1071,6 +1135,7 @@
 						{/if}
 					{/if}
 				</details>
+				{/if}
 			</div>
 		</div>
 		<div class="facts">
@@ -1968,5 +2033,50 @@
 	}
 	.roast p {
 		margin: 0 0 var(--s-2);
+	}
+
+	/* SOLIO-OPPI (19.8): yhteenvetonauha. Sama pintakieli kuin muissa
+	   korteissa (surface-alt + ohut reunus), pallot semanttisilla vareilla. */
+	.verdict-strip {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s-2) var(--s-4);
+		margin: var(--s-3) 0;
+		padding: var(--s-2) var(--s-3);
+		background: var(--surface-alt, #1f1d1a);
+		border: 1px solid var(--line, rgba(243, 242, 242, 0.13));
+		font-size: 13px;
+	}
+	.strip-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--muted, #a8a29a);
+		cursor: help;
+	}
+	.strip-item strong {
+		color: var(--text, #f3f2f2);
+	}
+	.strip-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--muted, #a8a29a);
+	}
+	.strip-dot.good {
+		background: var(--teal, #2ed6c2);
+	}
+	.strip-dot.mid {
+		background: var(--accent, #f5c542);
+	}
+	.strip-dot.bad {
+		background: #ff8a5c;
+	}
+	.strip-note {
+		margin-left: 6px;
+		font-size: 11px;
+		color: var(--accent, #f5c542);
+		border: 1px solid rgba(245, 197, 66, 0.4);
+		padding: 1px 5px;
 	}
 </style>

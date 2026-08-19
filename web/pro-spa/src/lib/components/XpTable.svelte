@@ -91,6 +91,27 @@
 
 	let nextGw = $derived(data.meta.next_gameweek);
 	let gwCols = $derived(data.players[0]?.gameweeks?.map((g) => g.gw) ?? []);
+	// SOLIO-OPPI (19.8, Villen tilaus): per-GW-solut lämpökartaksi — silmäys
+	// kertoo missä pisteviikot ovat lukematta yhtään lukua. Skaalan yläpää on
+	// näkyvien arvojen 95. persentiili, jottei yksi kapteeniviikko lataa koko
+	// muuta taulukkoa väljyksi. Väri on brändin amber matalalla alfalla:
+	// teema ei vaihdu, vain solun tausta kantaa arvon.
+	let heatMax = $derived.by(() => {
+		const vals: number[] = [];
+		for (const p of data.players) {
+			for (const g of p.gameweeks ?? []) {
+				if (typeof g.xp === 'number' && g.xp > 0) vals.push(g.xp);
+			}
+		}
+		if (vals.length === 0) return 0;
+		vals.sort((a, b) => a - b);
+		return vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.95))];
+	});
+	function heat(v: number): string {
+		if (!heatMax || v <= 0) return '';
+		const t = Math.min(1, v / heatMax);
+		return `background-color: rgba(245,197,66,${(t * 0.26).toFixed(3)})`;
+	}
 	let horizonN = $derived(data.meta.horizon_gw ?? gwCols.length ?? 6);
 	let horizonLabel = $derived(
 		gwCols.length > 0 ? `GW${gwCols[0]}–GW${gwCols[gwCols.length - 1]}` : `next ${horizonN} GWs`
@@ -504,7 +525,7 @@
 						</td>
 						<td class="num total-col">{p.xp_horizon_total.toFixed(2)}</td>
 						{#each gwCols as gw (gw)}
-							<td class="num m-hide">{gwXp(p, gw).toFixed(2)}</td>
+							<td class="num m-hide" style={heat(gwXp(p, gw))}>{gwXp(p, gw).toFixed(2)}</td>
 						{/each}
 					</tr>
 				{/each}

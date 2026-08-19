@@ -143,7 +143,7 @@
 			</p>
 			<div class="mvc-cols">
 				<div>
-					<h4>Model backs these, the crowd hasn’t caught on</h4>
+					<h4>Model backs these, the crowd hasn't caught on</h4>
 					{#if mvc.model_backs.length === 0}
 						<p class="muted">No strong disagreements right now.</p>
 					{:else}
@@ -163,7 +163,7 @@
 					{/if}
 				</div>
 				<div>
-					<h4>Template picks the model doesn’t rate</h4>
+					<h4>Template picks the model doesn't rate</h4>
 					{#if mvc.crowd_backs.length === 0}
 						<p class="muted">No strong disagreements right now.</p>
 					{:else}
