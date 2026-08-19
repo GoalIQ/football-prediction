@@ -13,6 +13,19 @@
 	let menuOpen = $state(false);
 	let resetNotice = $state<string | null>(null);
 	let resetBusy = $state(false);
+	// 19.8 (Villen havainto): valikko sulkeutui VAIN samasta napista.
+	// Klikkaus muualle ja Escape sulkevat nyt — dropdownin vakiokäytös.
+	// pointerdown eikä click: click laukeaa vasta upissa, jolloin valikon
+	// sisältä alkanut mutta ulos päättynyt veto sulkisi valikon turhaan.
+	let sessionEl = $state<HTMLElement | null>(null);
+	function closeOnOutside(e: PointerEvent) {
+		if (menuOpen && sessionEl && !sessionEl.contains(e.target as Node)) {
+			menuOpen = false;
+		}
+	}
+	function closeOnEscape(e: KeyboardEvent) {
+		if (menuOpen && e.key === 'Escape') menuOpen = false;
+	}
 
 	// #150b: valikkotila EI saa elää sign-outin yli (Hero ei unmounttaudu →
 	// auki jäänyt valikko pomppasi esiin seuraavassa kirjautumisessa).
@@ -70,7 +83,7 @@
 		</div>
 	</div>
 	{#if auth.user}
-		<div class="session">
+		<div class="session" bind:this={sessionEl}>
 			{#if auth.sub?.plan === 'gw1-3-free'}
 				<!-- 16.8: ikkunan aikana badge ei saa vaittaa ostettua tilausta,
 				     ja sen on pysyttava ostopolkuna: ikkuna piilottaa paywallit,
@@ -126,6 +139,8 @@
 		</div>
 	{/if}
 </header>
+
+<svelte:window onpointerdown={closeOnOutside} onkeydown={closeOnEscape} />
 
 <style>
 	.hero {
