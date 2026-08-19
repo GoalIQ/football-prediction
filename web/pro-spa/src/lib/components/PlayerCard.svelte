@@ -486,6 +486,37 @@
 				</p>
 			</header>
 
+			<!-- 19.8 (Rowanin palaute): "a Player Overview section where you can
+			     immediately see xP, expected minutes, ownership and the main
+			     factors without having to click through different sections".
+			     Luvut olivat kortilla mutta hajallaan kolmessa lohkossa ja osa
+			     vasta alempana. Tama rivi ei tuo yhtaan uutta lukua — se nostaa
+			     samat kentat yhteen paikkaan. xP on premium kuten muuallakin;
+			     free-pinnalla ruutu jaa pois eika nayta lukittua laatikkoa. -->
+			{#if !excluded}
+				{@const nextGwRow = (player.gameweeks ?? [])[0]}
+				<dl class="pc-overview">
+					{#if premium && typeof player.xp_per_gw === 'number'}
+						<div><dt>xP per GW</dt><dd>{player.xp_per_gw.toFixed(1)}</dd></div>
+					{/if}
+					{#if typeof player.xmins === 'number'}
+						<div><dt>Expected minutes</dt><dd>{Math.round(player.xmins)}</dd></div>
+					{/if}
+					{#if typeof player.p_start === 'number'}
+						<div><dt>Starts</dt><dd>{Math.round(player.p_start * 100)}%</dd></div>
+					{/if}
+					{#if typeof player.owned_pct === 'number'}
+						<div><dt>Owned</dt><dd>{player.owned_pct.toFixed(1)}%</dd></div>
+					{/if}
+					{#if nextGwRow}
+						<div>
+							<dt>GW{nextGwRow.gw}</dt>
+							<dd class="fx">{fixtureLabel(nextGwRow.opponents)}</dd>
+						</div>
+					{/if}
+				</dl>
+			{/if}
+
 			<div class="pc-grid">
 				<section class="pc-block">
 					<h4>Official FPL status <span class="src">source: FPL</span></h4>
@@ -797,6 +828,36 @@
 	}
 	/* Fakta vs estimaatti: virallinen blokki neutraalilla paper-pohjalla,
 	   malliblokki magenta-aksentilla — sama data ei sekoitu. */
+	.pc-overview {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+		gap: 1px;
+		background: var(--line, #2a2724);
+		border: 1px solid var(--line, #2a2724);
+		margin: 0 0 14px;
+	}
+	.pc-overview > div {
+		background: var(--surface-alt, #1f1d1a);
+		padding: 8px 10px;
+	}
+	.pc-overview dt {
+		font-size: 10px;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--muted, #a8a29a);
+		margin-bottom: 3px;
+	}
+	.pc-overview dd {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 700;
+		line-height: 1.1;
+	}
+	.pc-overview dd.fx {
+		font-size: 13px;
+		font-weight: 600;
+		padding-top: 4px;
+	}
 	.pc-block {
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
