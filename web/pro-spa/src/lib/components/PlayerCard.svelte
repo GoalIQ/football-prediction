@@ -604,9 +604,13 @@
 							     renderoi silloin tyhjaa eika placeholderia. -->
 							<WhyThisPick why={player.why} />
 							{#if player.components}
+								<!-- Otsikko kantaa GW:n itse (portin loydos 19.8): kaksi rivia
+								     ylempana lukee horisontin kokonais-xP, ja "Where the points
+								     come from" oli sen vieressa GW-kohtainen erittely ilman etta
+								     otsikko sanoi sita. `.src`-pikkuteksti ei riita erottimeksi. -->
 								<h4 class="gw-title">
-									Where the points come from
-									<span class="src">GW{player.components_gw}, expected points</span>
+									Where the GW{player.components_gw} points come from
+									<span class="src">expected points</span>
 								</h4>
 								<ComponentSplit {player} />
 							{/if}
