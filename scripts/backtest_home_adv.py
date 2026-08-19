@@ -19,12 +19,14 @@ Refit viikoittain = realistinen kadenssi.
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 import json
 import argparse
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, r"C:\users\vvsaa\documents\football-prediction")
+# Repon juuri tiedostosta (ks. analyze_squad_turnover.py).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data.loader import lataa_otteludata
 from src.models.dixon_coles import DixonColesModel

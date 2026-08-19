@@ -22,6 +22,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,8 +43,18 @@ SNAPSHOT_PATH = ROOT / "data" / "squad_signals_snapshot.json"
 FLAG_LOG_PATH = ROOT / "data" / "watch_flags.json"
 # Raportit elavat goaliq-app-hubissa (CLAUDE.md: QUEUE, promptit ja raportit
 # aina siella, koska CoS ei nae tata repoa).
-HUB_WATCH_DIR = Path(r"C:\Users\vvsaa\Documents\goaliq-app\cos-reports\watch")
-HUB_ROOT = HUB_WATCH_DIR.parents[1]
+#
+# 🔴 EI KOVAKOODATTUA C:-POLKUA. Windows-absoluuttinen polku on Linuxilla
+# YKSI suhteellinen segmentti, joten `.parents[1]` nosti IndexErrorin heti
+# importissa - ja koska tama moduuli tuodaan testeissa, KOKO tests-workflow
+# oli punaisena viisi ajoa perakkain (kirjattu 18.8 aamudigestissa). Vahti
+# itse ajetaan vain Villen koneelta, mutta tuonnin on onnistuttava
+# kaikkialla. Polku on ylikirjoitettavissa GOALIQ_HUB_DIR-muuttujalla.
+HUB_ROOT = Path(
+    os.environ.get("GOALIQ_HUB_DIR")
+    or Path.home() / "Documents" / "goaliq-app"
+)
+HUB_WATCH_DIR = HUB_ROOT / "cos-reports" / "watch"
 PROJECTIONS_PATH = ROOT / "data" / "fpl_xp_projections.json"
 OVERRIDES_PATH = ROOT / "data" / "fpl_player_overrides.csv"
 

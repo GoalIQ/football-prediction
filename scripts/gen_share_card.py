@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -51,10 +52,12 @@ AMBER, CREAM, MUTED = (245, 197, 66), (243, 242, 242), (168, 162, 154)
 LINE = (243, 242, 242, 34)
 TAG_LINE = (243, 242, 242, 84)
 
-_FONT_DIR = Path(
-    "C:/users/vvsaa/documents/goaliq-app/node_modules/@expo-google-fonts"
-    "/ibm-plex-mono"
-)
+# Fontit tulevat mobiilirepon node_modulesista. Polku johdetaan
+# kotihakemistosta ja on ylikirjoitettavissa GOALIQ_APP_DIR:lla: kovakoodattu
+# C:-polku ei loydy toiselta koneelta eika CI:sta.
+_APP_DIR = Path(os.environ.get("GOALIQ_APP_DIR")
+                or Path.home() / "Documents" / "goaliq-app")
+_FONT_DIR = _APP_DIR / "node_modules" / "@expo-google-fonts" / "ibm-plex-mono"
 FONT_BOLD = _FONT_DIR / "700Bold" / "IBMPlexMono_700Bold.ttf"
 FONT_MED = _FONT_DIR / "500Medium" / "IBMPlexMono_500Medium.ttf"
 WORDMARK = ROOT / "assets" / "brand" / "goaliq-wordmark-teletext.png"

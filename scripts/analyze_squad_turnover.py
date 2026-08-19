@@ -20,8 +20,12 @@ tulijat unohtuivat.
 
 Ajo:  python -m scripts.analyze_squad_turnover
 """
-import sys, json
-sys.path.insert(0, r'C:\Users\vvsaa\Documents\football-prediction')
+import json
+import sys
+from pathlib import Path
+# Repon juuri johdetaan tiedostosta, ei kovakoodata: absoluuttinen
+# C:-polku on toisella koneella pelkka merkkijono ja tuonti kaatuu.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from collections import defaultdict
 import config
 RAW = config.RAW_DATA_DIR / "fpl"
