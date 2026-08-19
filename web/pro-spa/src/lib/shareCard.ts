@@ -695,6 +695,13 @@ export interface PlayerCardSpec {
 	hero?: { value: string; label: string };
 	/** Premium-rivi (xP). Kutsuja jattaa pois freelta. */
 	modelLine?: string;
+	/** WHY-THIS-PICK-ajurit chip-rivina (SHARE-CARD-WHY, Rowanin palaute 19.8).
+	 *  Kutsuja antaa VALMIIT nayttonimet ($lib/whyDrivers) — renderoija ei
+	 *  mappaa avaimia, jottei kortti ja sivu voi kaantaa samaa avainta eri
+	 *  sanaksi. `why` tulee backendilta vain maskaamattomaan vastaukseen ja
+	 *  vain xP-karjelle, joten puuttuva/tyhja lista on normaali tila: lohkoa
+	 *  ei silloin piirreta eika sille varata korkeutta. */
+	drivers?: string[];
 	/** Tuotantorivi. title kantaa katteen (kausi + sarja + per 90 vai totaali)
 	 *  - ilman sita luvut vaittaisivat olevansa jotain muuta kuin ovat. */
 	production?: { title: string; cells: PlayerCardCell[]; totals?: string };
@@ -740,6 +747,8 @@ export async function renderPlayerCard(spec: PlayerCardSpec): Promise<Blob> {
 	if (spec.hero) h += 128;
 	const yModel = h;
 	if (spec.modelLine) h += 58;
+	const yDrivers = h;
+	if (spec.drivers?.length) h += 84;
 	const yProd = h;
 	if (spec.production) h += 40 + 92 + (spec.production.totals ? 40 : 0);
 	const yDefcon = h;
@@ -855,6 +864,31 @@ export async function renderPlayerCard(spec: PlayerCardSpec): Promise<Blob> {
 		ctx.font = bold(mPx);
 		ctx.fillStyle = CREAM;
 		ctx.fillText(spec.modelLine, MX, yModel + 12);
+	}
+
+	// --- WHY-ajurit (chip-rivi mallirivin alla) ---
+	if (spec.drivers?.length) {
+		// Sama otsikko kuin sivun WhyThisPick-lohkossa — kortti ja sivu
+		// nimeavat saman asian samoin sanoin.
+		ctx.font = med(18);
+		ctx.fillStyle = MUTED;
+		ctx.fillText('WHY THIS PROJECTION', MX, yDrivers + 8);
+		// Chipit pakkautuvat vasemmalta; reunan yli menevat pudotetaan.
+		// Kortissa ei ole rivitysta: kahdeksan ajurin lista ei mahdu, ja
+		// katkaistu chip olisi pahempi kuin puuttuva (luvut/labelit eivat
+		// saa leikkautua — sama vikaluokka kuin 17.8 layout-loydokset).
+		let cxp = MX;
+		for (const d of spec.drivers) {
+			ctx.font = bold(19);
+			const cw = ctx.measureText(d).width + 22;
+			if (cxp + cw > W - MX) break;
+			ctx.strokeStyle = TAG_LINE;
+			ctx.lineWidth = 1;
+			ctx.strokeRect(cxp, yDrivers + 38, cw, 34);
+			ctx.fillStyle = CREAM;
+			ctx.fillText(d, cxp + 11, yDrivers + 38 + 8);
+			cxp += cw + 10;
+		}
 	}
 
 	// --- Tuotantorivi ---

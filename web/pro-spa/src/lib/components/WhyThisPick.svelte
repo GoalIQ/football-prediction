@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { XpWhy } from '$lib/api';
+	import { WHY_DRIVER_LABEL } from '$lib/whyDrivers';
 
 	// WHY-THIS-PICK (14.8). Nostettu XpTablesta omaksi komponentiksi 19.8
 	// (Rowanin palaute): selitys oli vain xP-taulukon avatussa rivissa, eli
@@ -11,16 +12,7 @@
 	// lahdetta EI kutsuta "malliksi": tassa tuotteessa se sana tarkoittaa
 	// ottelumallia, ja lauseen kirjoittajan kutsuminen malliksi siirtaisi
 	// ottelumallin uskottavuuden sille. Sama saanto mobiilissa.
-	const WHY_DRIVER_LABEL: Record<string, string> = {
-		minutes: 'Minutes',
-		attacking_output: 'Attacking output',
-		fixtures: 'Fixtures',
-		clean_sheets: 'Clean sheets',
-		set_pieces: 'Set pieces',
-		bonus: 'Bonus',
-		price: 'Price',
-		differential: 'Differential'
-	};
+	// Ajurilabelit: $lib/whyDrivers (jaettu kortin kanssa 19.8).
 
 	let { why }: { why: XpWhy | undefined } = $props();
 </script>
