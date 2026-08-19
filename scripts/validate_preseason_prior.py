@@ -29,6 +29,7 @@ Run:  python -m scripts.validate_preseason_prior
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import sys
 from pathlib import Path
@@ -225,6 +226,10 @@ def measure_fold(from_season: str, to_season: str, to_gw: int) -> dict:
     balanced = next(r for r in rows if r["halflife"] == "flat")
     starters = [c for c in codes if live_pred[c] >= 60 and actual[c] > 0]
     sb = float(np.mean([live_pred[c] - actual[c] for c in starters]))
+    # 80+ erikseen: se on kynnys jonka /fpl/expected-points julkaisee.
+    st80 = [c for c in codes if live_pred[c] >= 80 and actual[c] > 0]
+    sb80 = (float(np.mean([live_pred[c] - actual[c] for c in st80]))
+            if st80 else None)
 
     return {
         "fold": f"{from_season}->{to_season}", "n": len(codes),
@@ -232,13 +237,21 @@ def measure_fold(from_season: str, to_season: str, to_gw: int) -> dict:
         "best_halflife": best["halflife"], "balanced_mae": balanced["mae"],
         "gap_to_best": live["mae"] - best["mae"],
         "starter_bias_min": sb, "n_starters": len(starters),
+        "starter_bias_80_min": sb80, "n_starters_80": len(st80),
         "rows": rows,
     }
 
 
-def run_all_folds(to_gw: int) -> int:
-    """Monifold-portti: onko vaimennus perusteltu ja vakio lahella optimia."""
+def run_all_folds(to_gw: int, kerays: list | None = None) -> int:
+    """Monifold-portti: onko vaimennus perusteltu ja vakio lahella optimia.
+
+    `kerays` on lista johon foldirivit lisataan --emit-ajoa varten. Se on
+    TASMALLEEN sama lista jonka portti tulostaa: emitoitu artefakti ei saa olla
+    eri ajo kuin se joka nakyy ruudulla.
+    """
     res = [measure_fold(a, b, to_gw) for a, b in FOLDS]
+    if kerays is not None:
+        kerays.extend(res)
     print("=" * 74)
     print(f"PRE-SEASON PRIOR: {len(FOLDS)} summer-break folds, "
           f"GW1-{to_gw}, live PRESEASON_HALFLIFE=10")
@@ -285,10 +298,20 @@ def main() -> int:
     ap.add_argument("--to-season", default=EVAL_SEASON,
                     help="kausi jonka GW1-n vastaan mitataan")
     ap.add_argument("--json", action="store_true", help="tulosta raportti JSONina")
+    ap.add_argument("--emit", metavar="POLKU",
+                    help="kirjoita koko raportti JSON-artefaktiksi "
+                         "(leikkaukset, puoliintumat, foldit). Julkinen sivu "
+                         "rakennetaan tasta, jotta luvut eivat ole kasin "
+                         "kirjoitettuja.")
     args = ap.parse_args()
 
-    if args.all_folds:
-        return run_all_folds(args.to_gw)
+    # --emit ajaa MOLEMMAT: foldit artefaktiin ja sen jalkeen yhden foldin
+    # leikkaukset. Pelkka --all-folds palauttaa portin exit-koodin kuten ennen.
+    foldit: list[dict] = []
+    if args.all_folds or args.emit:
+        rc_folds = run_all_folds(args.to_gw, foldit)
+        if not args.emit:
+            return rc_folds
 
     PREV_SEASON, EVAL_SEASON = args.from_season, args.to_season
     if PREV_SEASON == EVAL_SEASON:
@@ -373,13 +396,24 @@ def main() -> int:
                                                if live_pred[c] >= 60],
         "prior >=60 AND played": [c for c in codes
                                   if live_pred[c] >= 60 and actual[c] > 0],
+        # 80+ on julkaistun sivun ("about 14 minutes lower") kynnys. Ilman
+        # tata leikkausta artikkeli lahettaa lukijan sivulle jolla lukua ei
+        # ole — sama vika kuin 15.8, eri numerolla.
+        "prior >=80 AND played": [c for c in codes
+                                  if live_pred[c] >= 80 and actual[c] > 0],
     }
+    # Kerataan SAMASTA silmukasta josta tulostetaan: artefakti ei voi olla eri
+    # ajo kuin se joka nakyy ruudulla.
+    lohko1: list[dict] = []
     for label, sel in slices.items():
         if len(sel) < 10:
             print(f"      {label:<36} n={len(sel)} (too small)")
             continue
         xs = np.array([live_pred[c] for c in sel])
         yy = np.array([actual[c] for c in sel])
+        lohko1.append({"slice": label, "n": len(sel),
+                       "mae": float(np.mean(np.abs(xs - yy))),
+                       "bias": float(np.mean(xs - yy))})
         print(f"      {label:<36} n={len(sel):>3}  "
               f"MAE {np.mean(np.abs(xs - yy)):6.2f}  "
               f"bias {np.mean(xs - yy):+6.2f}")
@@ -390,6 +424,7 @@ def main() -> int:
     # tuotannosta jota ei ole tuotannosta mitattu.
     bootp = (config.RAW_DATA_DIR / "fpl"
              / f"bootstrap_static_{EVAL_SEASON}.archive.json")
+    lohko2: list[dict] = []
     if not bootp.exists():
         print()
         print(f"  (structural constraint not run: "
@@ -406,6 +441,9 @@ def main() -> int:
                 continue
             xs = np.array([struct[c]["xmins"] for c in sel])
             yy = np.array([actual[c] for c in sel])
+            lohko2.append({"slice": label, "n": len(sel),
+                           "mae": float(np.mean(np.abs(xs - yy))),
+                           "bias": float(np.mean(xs - yy))})
             print(f"      {label:<36} n={len(sel):>3}  "
                   f"MAE {np.mean(np.abs(xs - yy)):6.2f}  "
                   f"bias {np.mean(xs - yy):+6.2f}")
@@ -415,6 +453,37 @@ def main() -> int:
         print(json.dumps({"season_from": PREV_SEASON, "season_to": EVAL_SEASON,
                           "to_gw": args.to_gw, "n": len(codes), "rows": rows},
                          ensure_ascii=False, indent=1))
+
+    if args.emit:
+        # Julkinen sivu rakennetaan TASTA. Jokainen luku on peraisin samasta
+        # ajosta joka juuri tulostettiin — sivulla ei ole yhtaan kasin
+        # kirjoitettua lukua, eika sivu voi ajautua erilleen skriptista.
+        paras = min(rows, key=lambda r: r["mae"])
+        live = next(r for r in rows if r["halflife"] == 10.0)
+        flat = next(r for r in rows if r["halflife"] == "flat")
+        raportti = {
+            "generated_at": _dt.datetime.now(_dt.timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "script": "scripts/validate_preseason_prior.py",
+            "season_from": PREV_SEASON,
+            "season_to": EVAL_SEASON,
+            "to_gw": args.to_gw,
+            "population": len(codes),
+            "live_halflife": xp.PRESEASON_HALFLIFE,
+            "best": paras,
+            "live": live,
+            "flat": flat,
+            "halflives": rows,
+            "slices_prior_only": lohko1,
+            "slices_after_squad_constraint": lohko2,
+            "folds": [{k: v for k, v in f.items() if k != "rows"}
+                      for f in foldit],
+        }
+        polku = Path(args.emit)
+        polku.parent.mkdir(parents=True, exist_ok=True)
+        polku.write_text(json.dumps(raportti, ensure_ascii=False, indent=1)
+                         + "\n", encoding="utf-8")
+        print(f"\nArtefakti kirjoitettu: {polku}")
     return 0
 
 

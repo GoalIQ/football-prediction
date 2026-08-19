@@ -316,6 +316,7 @@ _TOOL_LINKS = [
     ("/fpl/stats", "Player stats"),
     ("/fpl/defence", "Defence profiles"),
     ("/fpl/predicted-lineups", "Predicted XI"),
+    ("/fpl/minutes-accuracy", "Minutes accuracy"),
 ]
 
 
@@ -335,7 +336,7 @@ _NAV_GROUPS: list[tuple[str, tuple[str, ...]]] = [
                "/fpl/predicted-lineups")),
     ("Numbers", ("/fpl/stats", "/fpl/xg-leaders", "/fpl/defcon",
                  "/fpl/price-changes")),
-    ("Reading", ("/fpl/notes",)),
+    ("Reading", ("/fpl/notes", "/fpl/minutes-accuracy")),
 ]
 
 
@@ -2737,6 +2738,193 @@ def render_notes(notes_doc: dict, now: datetime) -> str | None:
 NOTE_DIR = OUT_DIR / "note"
 
 
+MINUTES_VALIDATION_PATH = ROOT / "data" / "fpl_minutes_validation.json"
+
+SLICE_LABELS = {
+    "all": "Every player in the test",
+    "played >=1 min in GW1-6": "Played at least one minute",
+    "no minutes at all": "Never appeared",
+    "prior >=60 min (expected starters)": "We expected 60+ minutes",
+    "prior >=60 AND played": "We expected 60+ and they played",
+}
+
+
+def _minutes_caveat() -> str:
+    """Ylipredikointivaraus SUORAAN mittausartefaktista.
+
+    Ks. kutsupaikan kommentti: aiempi kovakoodattu "about 14 minutes" oli
+    peraisin kalibrointiskriptin sarakkeesta joka kertoo eri asian kuin lause
+    vaitti. Luku tulee nyt samasta artefaktista kuin /fpl/minutes-accuracy,
+    joten kaksi pintaa ei voi kertoa samasta asiasta eri lukua.
+
+    Artefakti puuttuu -> tyhja merkkijono. Varaus katoaa mieluummin kuin
+    nayttaa vaaran luvun; sivun muut varaukset jaavat paikalleen.
+    """
+    doc = _load(MINUTES_VALIDATION_PATH)
+    foldit = [f for f in ((doc or {}).get("folds") or [])
+              if f.get("starter_bias_80_min") is not None]
+    if not foldit:
+        return ""
+    ka = sum(f["starter_bias_80_min"] for f in foldit) / len(foldit)
+    return (
+        '<p class="note"><strong>Our pre-season minutes run high at the top.'
+        "</strong> We tested our own prior across "
+        f"{'three' if len(foldit) == 3 else str(len(foldit))} summer breaks. "
+        f"Players we projected at 80+ minutes came in about {ka:.0f} minutes "
+        "lower than we said, and players we projected at the bottom came in a "
+        "little higher. The order of this list is unchanged by that, and the "
+        "gap closes as 2026/27 results arrive. "
+        '<a href="/fpl/minutes-accuracy">The full measurement &#9656;</a></p>'
+    )
+
+
+def _kausipari(fold: str) -> str:
+    """'2223->2324' -> '22/23 to 23/24'. Raaka kausikoodi on sisainen muoto."""
+    osat = [x.strip() for x in fold.split("->")]
+    muoto = [f"{o[:2]}/{o[2:]}" if len(o) == 4 and o.isdigit() else o
+             for o in osat]
+    return " to ".join(muoto)
+
+
+def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
+    """/fpl/minutes-accuracy - mallin oman minuuttiarvion mitattu virhe.
+
+    MIKSI TAMA SIVU ON OLEMASSA (19.8.2026, Villen paatos). Artikkeli
+    "We measured our own worst column" lupasi lukijalle etta laskennan voi
+    toistaa, ja ainoa reitti oli julkinen repo. Ville: repoa ei nayteta.
+    Ilman korvaavaa reittia jaljelle olisi jaanyt "luota lukuihimme omasta
+    virheestamme", ja se on tasan se muoto jonka julkaisuportti kaataa.
+
+    Luvut tulevat artefaktista `data/fpl_minutes_validation.json`, jonka
+    `scripts/validate_preseason_prior.py --emit` kirjoittaa SAMASTA ajosta
+    jonka se tulostaa. Sivulla ei ole yhtaan kasin kirjoitettua lukua: jos
+    mittaus muuttuu, sivu muuttuu, eivatka ne voi ajautua erilleen.
+    """
+    if not doc or not doc.get("slices_prior_only"):
+        return None
+
+    def rivi(r, label_map=None):
+        nimi = (label_map or {}).get(r["slice"], r["slice"])
+        return (f"<tr><td>{escape(nimi)}</td>"
+                f'<td class="num">{r["n"]}</td>'
+                f'<td class="num">{r["mae"]:.1f}</td>'
+                f'<td class="num">{r["bias"]:+.1f}</td></tr>')
+
+    leikkaukset = "".join(rivi(r, SLICE_LABELS) for r in doc["slices_prior_only"])
+    jalkeen = "".join(rivi(r, SLICE_LABELS)
+                      for r in doc.get("slices_after_squad_constraint") or [])
+    foldit = "".join(
+        f'<tr><td>{escape(_kausipari(str(f["fold"])))}</td>'
+        f'<td class="num">{f["n"]}</td>'
+        f'<td class="num">{f["live_mae"]:.2f}</td>'
+        f'<td class="num">{f["best_mae"]:.2f}</td>'
+        f'<td class="num">{f["starter_bias_min"]:+.1f}</td>'
+        f'<td class="num">'
+        f'{("%+.1f" % f["starter_bias_80_min"]) if f.get("starter_bias_80_min") is not None else "-"}'
+        f'</td></tr>'
+        for f in doc.get("folds") or [])
+    puoliintumat = "".join(
+        f'<tr><td>{"Flat" if r["halflife"] == "flat" else "Half-life " + str(int(r["halflife"]))}'
+        f'{" (live)" if r["halflife"] == doc.get("live_halflife") else ""}</td>'
+        f'<td class="num">{r["mae"]:.3f}</td>'
+        f'<td class="num">{r["bias"]:+.2f}</td></tr>'
+        for r in doc.get("halflives") or [])
+
+    n = doc["population"]
+    to_gw = doc.get("to_gw", 6)
+    kaudet = f'{doc["season_from"][:2]}/{doc["season_from"][2:]}'
+    kausi_to = f'{doc["season_to"][:2]}/{doc["season_to"][2:]}'
+    url = f"{BASE}/fpl/minutes-accuracy"
+    otsikko = "How wrong our expected minutes are"
+    desc = (f"We tested the model's own minutes prior across three summer "
+            f"breaks. Mean absolute error is about {doc['live']['mae']:.0f} "
+            f"minutes per player per game, and almost all of the bias comes "
+            f"from players who never appeared.")
+
+    body = (
+        f"<p>Every expected points total we publish rests on a guess about how "
+        f"long someone will be on the pitch. This page is that guess measured "
+        f"against what happened.</p>"
+
+        f"<h2>The test</h2>"
+        f"<p>Build the minutes prior from {kaudet}, use it to predict the first "
+        f"{to_gw} gameweeks of {kausi_to}, then compare it to the minutes those "
+        f"players actually played. Both ends are FPL's own published data: last "
+        f"season's minutes in, this season's first {to_gw} gameweeks out. The "
+        f"prior is a decay-weighted average of a player's own past rounds, "
+        f"half-life {int(doc.get('live_halflife') or 10)} gameweeks, and nothing "
+        f"in it sees team news. {n} players had at least five rounds behind them "
+        f"and were still in the game the next season, so they qualified.</p>"
+
+        f"<h2>Where the error is</h2>"
+        f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+        f"<th>Group</th><th>Players</th><th>Average error, minutes</th>"
+        f"<th>Bias, minutes</th></tr></thead><tbody>{leikkaukset}"
+        f"</tbody></table></div>"
+        f"<p>Bias is how far we were above what happened. The column is "
+        f"close to unbiased for players who got on the pitch at all, and the "
+        f"whole overshoot sits with the players who never appeared.</p>"
+
+        + (f"<h2>After the squad constraint</h2>"
+           f"<p>The builder normalises each club to one keeper and ten outfield "
+           f"players before the numbers reach a page, so these are the same "
+           f"groups measured after that pass.</p>"
+           f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+           f"<th>Group</th><th>Players</th><th>Average error, minutes</th>"
+           f"<th>Bias, minutes</th></tr></thead><tbody>{jalkeen}"
+           f"</tbody></table></div>" if jalkeen else "")
+
+        + (f"<h2>Three summers, not one</h2>"
+           f"<p>One summer could be luck, so the same test runs on three.</p>"
+           f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+           f"<th>Prior to season</th><th>Players</th><th>Error, live setting</th>"
+           f"<th>Error, best setting</th><th>Overshoot, 60+ starters</th>"
+           f"<th>Overshoot, 80+ starters</th>"
+           f"</tr></thead><tbody>{foldit}</tbody></table></div>" if foldit else "")
+
+        + (f"<h2>Tuning doesn't fix it</h2>"
+           f"<p>The prior weights recent rounds more heavily than old ones. "
+           f"Here is the whole range, from very sharp to no decay at all.</p>"
+           f'<div class="tblwrap"><table class="note-tbl"><thead><tr>'
+           f"<th>Setting</th><th>Average error, minutes</th><th>Bias</th>"
+           f"</tr></thead><tbody>{puoliintumat}</tbody></table></div>"
+           f"<p>The best setting scores "
+           f'{doc["best"]["mae"]:.3f} and the one we run scores '
+           f'{doc["live"]["mae"]:.3f}, which is '
+           f'{doc["live"]["mae"] - doc["best"]["mae"]:.2f} of a minute apart. '
+           f"Flat weighting, which is where most people start, scores "
+           f'{doc["flat"]["mae"]:.3f}.</p>' if puoliintumat else "")
+
+        + f"<h2>What to do with this</h2>"
+        f"<p>Treat our expected minutes as a good estimate for players you're "
+        f"already sure are starting, and as close to no information for "
+        f"players you're not.</p>"
+        f'<p><a href="/fpl/note/we-measured-our-own-worst-column">The write-up '
+        f"of this measurement &#9656;</a> &middot; "
+        f'<a href="/fpl/expected-points">The projections it feeds &#9656;</a></p>'
+
+        + f"{UPSELL}{_cta()}"
+        f'<p class="note">Measured {escape(str(doc.get("generated_at", ""))[:10])}. '
+        f"These numbers are written to this page out of the run that produced "
+        f"them, so the page cannot drift from the measurement. "
+        f"{DISCLAIMER}</p>"
+    )
+
+    jsonld = [{
+        "@context": "https://schema.org", "@type": "Dataset",
+        "name": otsikko, "url": url, "description": desc,
+        "dateModified": now.strftime("%Y-%m-%d"),
+        "isPartOf": {"@id": f"{BASE}/#organization"},
+        "variableMeasured": [
+            {"@type": "PropertyValue", "name": "Mean absolute error, minutes",
+             "value": round(doc["live"]["mae"], 2)},
+            {"@type": "PropertyValue", "name": "Players in test", "value": n},
+        ],
+    }]
+    return _page(f"{otsikko} | GoalIQ", desc, url,
+                 f"<h1>{escape(otsikko)}</h1>", body, jsonld)
+
+
 def render_note_page(n: dict, now: datetime) -> str | None:
     """Yksi artikkeli omalla URLillaan: /fpl/note/<slug>.
 
@@ -3383,13 +3571,14 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # 10.8: mitattu harha julki (Villen valinta C). Nelja korjausyritysta
         # havisi, viimeisin ristiinvalidoitu kalibrointi kaikilla varianteilla,
         # joten lukua EI sadeta. Sama vaste kuin siirtosokeudessa: kerro se.
-        # Lahde: scripts/calibrate_preseason_minutes.py, 3 kesataukoa.
-        '<p class="note"><strong>Our pre-season minutes run high at the top.'
-        "</strong> We tested our own prior across the last three summers. "
-        "Players we projected at 80+ minutes came in about 14 minutes lower "
-        "than we said, and players we projected at the bottom came in a "
-        "little higher. The order of this list is unchanged by that, and the "
-        "gap closes as 2026/27 results arrive.</p>"
+        #
+        # 19.8: luku EI ole enaa kovakoodattu, ks. _minutes_caveat(). Rivilla
+        # luki "about 14 minutes lower", ja se oli peraisin
+        # calibrate_preseason_minutes.py:n sarakkeesta "karki >=75 min siirtyy"
+        # (affine -13.9) — se kertoo kuinka paljon KALIBROINTI siirtaisi
+        # karkea, ei kuinka paljon priori ylipredikoi. Suoraan mitattuna
+        # 80+ ylipredikointi on kolmen kesan keskiarvona noin 10 minuuttia.
+        + _minutes_caveat() +
         # 16.8: sokea piste sanottu ääneen. Villen päätös oli ettei vahti
         # kysy esikaudesta, joten rajoite kirjataan näkyviin siellä missä
         # luku esitetään. Laukaiseva tapaus 15.8: João Pedro teki kaksi
@@ -3458,6 +3647,14 @@ def main() -> int:
         if sivu:
             (OUT_DIR / "predicted-lineups.html").write_text(sivu, encoding="utf-8")
             built.append("predicted-lineups")
+
+    mv = _load(MINUTES_VALIDATION_PATH)
+    if mv:
+        sivu = render_minutes_accuracy(mv, now)
+        if sivu:
+            (OUT_DIR / "minutes-accuracy.html").write_text(
+                sivu, encoding="utf-8")
+            built.append("minutes-accuracy")
 
     notes_doc = _load(NOTES_PATH)
     if notes_doc:

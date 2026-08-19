@@ -228,12 +228,15 @@
       "slug": "we-measured-our-own-worst-column",
       "date": "2026-08-19",
       "title": "We measured our own worst column",
-      "check_url": "https://goaliq.app/fpl/expected-points",
-      "cta": "The expected points list this sits under",
+      "check_url": "https://goaliq.app/fpl/minutes-accuracy",
+      "cta": "The full measurement, every group and every setting",
       "claims": [
-        "three summers",
-        "80+ minutes",
-        "14 minutes"
+        "415",
+        "303",
+        "112",
+        "20.7",
+        "9.4",
+        "21.8"
       ],
       "paragraphs": [
         "Every projection we publish rests on a guess about how long someone will be on the pitch. Before this season started we went back and checked how good that guess has been.",
@@ -242,7 +245,7 @@
           "h2": "Where the error isn't"
         },
         "We went in assuming we hand out minutes too freely across the board. That's not what the split says.",
-        "For the 303 players who actually got on the pitch in those six gameweeks, our average error is 1.8 minutes too low. The entire positive bias comes from 112 players who never appeared at all. We gave them an average of 20.7 minutes each. They played none.",
+        "For the 303 players who actually got on the pitch in those six gameweeks we sit 1.8 minutes under on average, though the miss itself is still 21.8 minutes. The entire positive bias comes from 112 players who never appeared at all. We gave them an average of 20.7 minutes each. They played none.",
         "The column can't see one thing, and it's the thing you most want to know in August: is this player in the team at all? Once someone is in the team we're close. Deciding whether he is belongs to a manager, and we don't have one.",
         "That blindness is worst exactly where you'd use it. Narrow to the 124 players the prior expected to start, 60 minutes or more, and the error is 25 minutes with a 16 minute overshoot. Even the 111 of those who did play came in 9.4 minutes under our estimate. Across all three summers that starter overshoot runs between 5.4 and 9.4 minutes. The caveat on our expected points page is the short version of this, measured at 80+ minutes rather than 60+, which is where the 14 minutes quoted there comes from.",
         "So treat our expected minutes as a good estimate for players you already believe are starting, and as close to no information for players you're unsure about.",
@@ -252,10 +255,10 @@
         "The obvious response is that we weight last season too heavily or not heavily enough. We tested nine settings from very sharp to no decay at all. The best scores 21.332, we run 21.457, and the flat weighting everyone starts with is 22.291. A tenth of a minute between us and the best available.",
         "Twenty one minutes is what this method costs. Moving the dial doesn't buy it back, so we'd rather say so than imply precision the number doesn't have.",
         {
-          "h2": "Run it yourself"
+          "h2": "Where these numbers come from"
         },
-        "The script is scripts/validate_preseason_prior.py in our public repo, github.com/GoalIQ/football-prediction. The frozen inputs are committed next to it, so the run is deterministic. The default run is the 2024/25 to 2025/26 fold; add --all-folds for the three summer version. Every number above comes from the first results block, before the squad constraint pass.",
-        "If you get something different, we'd genuinely like to know."
+        "Every number above is on goaliq.app/fpl/minutes-accuracy, with the three summer version and the whole decay range next to it. Both ends are FPL's own published data, and the page says what the prior is and who qualified, so the method is there if you want to argue with it. The figures here are the prior on its own, before the squad constraint pass; the page carries both.",
+        "It's the weakest number we produce. If you cut the same six gameweeks yourself and get something else, we want to hear it."
       ]
     }
   ]
