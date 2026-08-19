@@ -14,6 +14,7 @@ Siksi alla ei testata "vastaako URL" vaan "onko rivi siella".
 """
 from __future__ import annotations
 
+import html as _html
 import importlib.util
 import json
 from datetime import datetime, timezone
@@ -40,9 +41,15 @@ def payload():
 
 @pytest.fixture(scope="module")
 def html():
+    """Sivun NAKYVA teksti, ei raaka lahde.
+
+    19.8: testi vertasi nimia raakaan HTMLiin ja kaatui heti kun karkeen
+    nousi nimi jossa on heittomerkki (O'Reilly -> `O&#x27;Reilly`). Rivi OLI
+    sivulla; testi ei nahnyt sita. Portti joka huutaa vaarasta syysta opitaan
+    ohittamaan, joten entiteetit puretaan ennen vertailua."""
     if not PAGE.exists():
         pytest.skip("sivua ei ole rakennettu talla koneella")
-    return PAGE.read_text(encoding="utf-8")
+    return _html.unescape(PAGE.read_text(encoding="utf-8"))
 
 
 # --------------------------------------------------------------------------

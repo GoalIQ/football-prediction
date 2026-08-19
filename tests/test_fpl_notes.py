@@ -123,12 +123,19 @@ def test_etusivun_lohko_nayttaa_VAIN_uusimman():
     assert kaksi.index("Uusi") < kaksi.index("Vanha")
 
 
-def test_etusivun_lohko_linkittaa_ankkuriin():
-    """Kortin on vietava SIIHEN muistioon eika vain sivun ylaosaan."""
+def test_etusivun_lohko_linkittaa_artikkelin_omaan_urliin():
+    """Kortin on vietava SIIHEN muistioon eika vain sivun ylaosaan.
+
+    19.8: kohde vaihtui kokoomasivun ankkurista artikkelin omaan URLiin.
+    Ankkuri taytti alkuperaisen vaatimuksen mutta vie sivulle jonka jarjestys
+    vaihtuu seuraavan muistion myota, ja alusta valimuistittaa esikatselun
+    `og:url`:n mukaan. Vaatimus on sama, kohde tarkempi."""
     from scripts.build_fpl_page import latest_articles_block
     html = latest_articles_block({"notes": [
         {"slug": "abc", "date": "2026-08-15", "title": "T", "paragraphs": ["A."]}]})
-    assert 'href="/fpl/notes#abc"' in html
+    assert 'href="/fpl/note/abc"' in html
+    # Kortti ei saa osoittaa pelkkaan kokoomasivuun: se on "sivun ylaosa".
+    assert 'class="note-card" href="/fpl/notes"' not in html
 
 
 def test_etusivun_lohko_ei_katkaise_ledea():
