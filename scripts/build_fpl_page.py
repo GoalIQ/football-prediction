@@ -674,7 +674,7 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             # puhelimen leveys; Date yksin oli 102px.
             f'<td class="num m-hide">{escape(date_txt)}</td>'
             f'<td class="m-hide">{escape(COMP_NAMES.get(code, code))}</td>'
-            f'<td class="team">{escape(e.get("home_team", ""))} v {escape(e.get("away_team", ""))}</td>'
+            f'<td class="team">{escape(" v ".join(display_pair(e)))}</td>'
             f'<td><strong>{pick_sym}</strong> {escape(pick_name)}'
             f'<span class="rec-pct">{_pick_pct(e)}</span></td>'
             f'<td class="num">{escape(score)}{star}</td>'
@@ -712,7 +712,7 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             f'<tr data-comp="{escape(code)}">'
             f'<td class="num">{escape(ko_txt)}</td>'
             f'<td class="m-hide">{escape(COMP_NAMES.get(code, code))}</td>'
-            f'<td class="team">{escape(e.get("home_team", ""))} v {escape(e.get("away_team", ""))}</td>'
+            f'<td class="team">{escape(" v ".join(display_pair(e)))}</td>'
             f'<td><strong>{pick_sym}</strong> {escape(pick_name)}'
             f'<span class="rec-pct">{_pick_pct(e)}</span></td>'
             # "Logged" on todiste ennen kickoffia, mutta kick-off-sarake
@@ -1327,6 +1327,147 @@ CSS = """
 
 
 NOTES_PATH = ROOT / "data" / "fpl_notes.json"
+
+
+# ---------------------------------------------------------------------------
+# Etusivun "next matches" -lohko (19.8.2026, Villen pyynto)
+# ---------------------------------------------------------------------------
+NEXT_MATCHES_PATH = ROOT / "data" / "prediction_log.json"
+
+
+
+def display_pair(e: dict) -> tuple[str, str]:
+    """(koti, vieras) NAYTTONIMINA, sama kartta kuin ottelusivuilla.
+
+    B4 (portti 19.8): etusivun lohko kaytti nayttonimia ja record-taulu raakoja
+    feed-nimia, joten lukija joka naki "Real Betis" ei loytanyt sita
+    tarkistuspinnalta jossa luki "Real Betis Balompie". Kartta on
+    build_prediction_pages:ssa; tama on ainoa paikka joka lukee sita talla
+    sivulla, jotta kolme kutsupaikkaa eivat voi eriytya.
+    """
+    from scripts.build_prediction_pages import DISPLAY_NAMES, DISPLAY_NAME_COMPS
+    home = e.get("home_team") or ""
+    away = e.get("away_team") or ""
+    if e.get("competition") in DISPLAY_NAME_COMPS:
+        home = DISPLAY_NAMES.get(home, home)
+        away = DISPLAY_NAMES.get(away, away)
+    return home, away
+
+
+def next_matches_rows(log: dict | None, now: _dt.datetime, limit: int = 6) -> list[dict]:
+    """Seuraavat ottelut joille ennuste on JO lokattu.
+
+    MIKSI TAMA ON ETUSIVULLA (Villen kysymys 19.8: "pitaisko match predictionia
+    tuoda enemman esille webissa"). Etusivu naytti ottelumallista vain
+    tarkkuusluvun ja linkkeja, vaikka se on se mista FPL-luvutkin syntyvat ja
+    ainoa asia jolla on julkinen ennakkoon lokattu track record.
+
+    Lahde on `data/prediction_log.json`, sama tiedosto josta tarkkuusluvut
+    lasketaan. Rivi otetaan mukaan VAIN jos `result` on tyhja ja potkaisu on
+    tulevaisuudessa — eli lukija nakee ennusteen ennen ottelua ja voi palata
+    tarkistamaan sen. `logged_at` on rivilla mukana juuri siksi.
+
+    Nayttonimet ja liigakartta tulevat `build_prediction_pages`:sta eivatka
+    omasta kopiosta: kaksi listaa ajautuisi erilleen ja etusivu nimeaisi
+    joukkueen eri tavalla kuin ottelusivu johon se linkittaa.
+    """
+    from scripts.build_prediction_pages import LEAGUES, _slug
+
+    rows = (log or {}).get("predictions") or []
+    if isinstance(log, list):
+        rows = log
+    out = []
+    for e in rows:
+        if e.get("result") is not None:
+            continue
+        comp = e.get("competition")
+        cfg = LEAGUES.get(comp)
+        if not cfg:
+            continue                      # ei ottelusivua -> ei riviä
+        try:
+            ko = _dt.datetime.fromisoformat(
+                (e.get("kickoff") or "").replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if ko <= now:
+            continue
+        home, away = display_pair(e)
+        # Linkki vain jos sivu on oikeasti rakennettu. Puuttuva sivu tekisi
+        # rivista lupauksen 404:aan, ja `/predictions/...` palauttaa 200 +
+        # hubisivun eika 404:aa, joten kirjoitusvirhe nayttaisi toimivalta.
+        # Tiedostonimi rakennetaan NAYTTONIMISTA, koska build_prediction_pages
+        # vaihtaa nimet ENNEN renderointia (_apply_display_names) ja slug
+        # syntyy siella vaihdetusta nimesta. Raa'alla feedinimella tehty slug
+        # osuisi olemattomaan tiedostoon nelja liigaa vaarin — ja koska
+        # /predictions/... palauttaa 200 + hubisivun, virhe nayttaisi
+        # toimivalta linkilta. Todennettu: la-liga/alaves-vs-atletico-madrid.
+        fname = f"{_slug(home)}-vs-{_slug(away)}.html"
+        page = ROOT / "predictions" / cfg["slug"] / fname
+        out.append({
+            "kickoff": ko,
+            "comp": cfg["name"],
+            "home": home,
+            "away": away,
+            "p_home": float(e.get("p_home") or 0.0),
+            "p_draw": float(e.get("p_draw") or 0.0),
+            "p_away": float(e.get("p_away") or 0.0),
+            "score": e.get("most_likely_score") or "",
+            "logged": (e.get("logged_at") or "")[:10],
+            "url": (f"/predictions/{cfg['slug']}/{fname[:-5]}"
+                    if page.exists() else ""),
+        })
+    out.sort(key=lambda r: r["kickoff"])
+    return out[:limit]
+
+
+def next_matches_block(log: dict | None, now: _dt.datetime, limit: int = 6) -> str:
+    """Lohkon HTML. Tyhja lista -> tyhja merkkijono -> markkeri jaa ennalleen.
+
+    EI todennakoisinta tulosta (portti 19.8, B3): linkitetty ottelusivu myy
+    sen Premiumina eika nayta lukua ilmaiseksi, joten etusivu julkaisisi
+    maksullisen luvun ilman yhtaan ilmaista tarkistuspintaa. Rivi `score`
+    sailyy datassa, jotta sarake voidaan palauttaa jos luku joskus avataan.
+    """
+    rows = next_matches_rows(log, now, limit)
+    if not rows:
+        return ""
+    tr = []
+    for r in rows:
+        call = max((r["p_home"], f"{r['home']}"), (r["p_draw"], "Draw"),
+                   (r["p_away"], f"{r['away']}"))
+        name = (f'<a href="{r["url"]}">{escape(r["home"])} v {escape(r["away"])}</a>'
+                if r["url"] else f'{escape(r["home"])} v {escape(r["away"])}')
+        tr.append(
+            "<tr>"
+            f'<td class="nm-ko">{r["kickoff"].strftime("%a %d %b, %H:%M")}</td>'
+            f'<td class="nm-tm">{name}<span class="nm-comp">{escape(r["comp"])}</span></td>'
+            f'<td class="nm-call">{escape(call[1])} <b>{call[0] * 100:.0f}%</b></td>'
+            f'<td class="nm-lg">{escape(r["logged"])}</td>'
+            "</tr>")
+    return (
+        f"<style>{NEXT_MATCHES_CSS}</style>"
+        '<div class="nm-wrap"><table class="nm">'
+        "<thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th>"
+        "<th>Logged</th></tr></thead>"
+        f"<tbody>{''.join(tr)}</tbody></table></div>"
+    )
+
+
+NEXT_MATCHES_CSS = """
+.nm-wrap{overflow-x:auto}
+table.nm{width:100%;border-collapse:collapse;font-size:14px}
+table.nm th{text-align:left;font-size:11px;letter-spacing:.08em;
+text-transform:uppercase;color:var(--faint);padding:0 10px 8px 0;font-weight:600}
+table.nm td{padding:10px 10px 10px 0;border-top:1px solid var(--line);
+vertical-align:top}
+.nm-ko{white-space:nowrap;color:var(--muted)}
+.nm-tm a{color:var(--cream);border-bottom:1px solid var(--line)}
+.nm-comp{display:block;font-size:11px;color:var(--faint);margin-top:2px}
+.nm-call{white-space:nowrap}
+.nm-call b{color:var(--amber)}
+.nm-sc{white-space:nowrap;color:var(--muted)}
+.nm-lg{white-space:nowrap;color:var(--faint);font-size:12px}
+"""
 
 
 def latest_articles_block(notes_doc: dict | None, limit: int = 1) -> str:
@@ -2081,6 +2222,17 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
     # 15.8: team news paasivulle. Villen havainto: "https://goaliq.app/ en nae
     # mitaan uutisjuttua ... toi on se meidan paasivu" — olin laittanut lohkon
     # vain fpl.html:aan. Sama sisalto, sama artefakti, ei kovakoodattuja lukuja.
+    matches_block = next_matches_block(_load_json(NEXT_MATCHES_PATH),
+                                       _dt.datetime.now(_dt.timezone.utc))
+    if matches_block:
+        new, n_nm = re.subn(
+            r"(<!-- GEN:NEXT-MATCHES-START -->).*?(<!-- GEN:NEXT-MATCHES-END -->)",
+            lambda m: m.group(1) + matches_block + m.group(2), new, flags=re.S)
+        if n_nm != 1:
+            raise RuntimeError(
+                f"index.html GEN:NEXT-MATCHES: odotettiin 1 markerilohko, "
+                f"loytyi {n_nm}")
+
     articles_block = latest_articles_block(_load_json(NOTES_PATH))
     if articles_block:
         new, n_art = re.subn(
