@@ -56,6 +56,7 @@ concurrency:
 
 permissions:
   contents: write   # commit + push main
+  actions: write    # 19.8: hub-deployn dispatch (ks. alla)
 
 jobs:
   log-and-reconcile:
@@ -159,6 +160,7 @@ jobs:
         run: python -m scripts.build_fpl_longtail
 
       - name: Commit + push to main (Render auto-deploy → /api/accuracy)
+        id: push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -180,6 +182,7 @@ jobs:
             if git rebase origin/main; then
               if git push origin HEAD:main; then
                 echo "Pushed to main (yritys $i) → Render auto-deploy."
+                echo "pushed=true" >> "$GITHUB_OUTPUT"
                 exit 0
               fi
             else
@@ -190,6 +193,29 @@ jobs:
           done
           echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
           exit 1
+
+      # 19.8: HUB-DEPLOY ON LAUKAISTAVA KASIN.
+      # Commit-viestissa on `[skip ci]`, ja se estaa GitHubia kaynnistamasta
+      # KAIKKIA workflow'ta talle pushille — myos hub-deployn. Ennen 15.8:n
+      # cutoveria se ei haitannut, koska GitHub Pages deployasi jokaisen
+      # pushin itsestaan riippumatta skip-lipusta. CF Pages on direct upload,
+      # joten sen ainoa polku on tama workflow.
+      #
+      # Seuraus jota tama korjaa: data paivittyi (api.goaliq.app naytti tuoreen
+      # luvun) mutta goaliq.app tarjoili vanhaa, kunnes joku muu push sattui
+      # laukaisemaan hub-deployn. Villen havainto 19.8: "sama lukema jo pari
+      # paivaa".
+      #
+      # continue-on-error: deploy-dispatch EI saa kaataa ajoa jonka data on jo
+      # committoitu — vanhentunut sivu on nakyva vika, kaatunut lokiajo ei.
+      - name: Deploy hub (CF Pages) when pages changed
+        if: steps.push.outputs.pushed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run hub-deploy.yml --ref main
+          echo "hub-deploy dispatched."
 
       # #TRACK-STALE-vahti: punaa runin jos JOKIN sivubuilderi failasi — AJETAAN
       # commitin JÄLKEEN, joten data-logaus/commit ei esty (continue-on-error
