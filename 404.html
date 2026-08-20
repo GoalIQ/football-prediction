@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- SEO-404-FALLBACK (2026-08-20): the existence of this file turns off
+       the CF Pages SPA fallback. Pages only serves index.html with 200 for
+       unknown paths when 404.html is missing. noindex so the error page
+       itself stays out of the index. -->
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0B0A09">
+  <title>Page not found | GoalIQ</title>
+  <style>
+    :root {
+      --ink: #F3F2F2; --cream: #0B0A09; --card: #141311;
+      --line: rgba(243,242,242,0.24); --muted: #A8A29A;
+      --teal: #2ED6C2; --amber: #F5C542;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--cream); color: var(--ink);
+      font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      line-height: 1.6; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    main { max-width: 560px; }
+    h1 { font-size: 1.6rem; margin: 0 0 12px; }
+    .code { color: var(--amber); }
+    p { color: var(--muted); margin: 0 0 20px; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { border-top: 1px solid var(--line); }
+    li:last-child { border-bottom: 1px solid var(--line); }
+    a { color: var(--teal); text-decoration: none; display: block; padding: 10px 4px; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1><span class="code">404</span> Page not found</h1>
+    <p>Match prediction pages come down once the match kicks off, so an old
+    link may have expired. The prediction itself stays in the public record.</p>
+    <ul>
+      <li><a href="/predictions">Match predictions and the public track record</a></li>
+      <li><a href="/fpl">FPL tools: clean sheet probability and fixture difficulty</a></li>
+      <li><a href="/">GoalIQ front page</a></li>
+    </ul>
+  </main>
+</body>
+</html>
