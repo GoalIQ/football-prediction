@@ -309,7 +309,42 @@ def fit_model() -> tuple[DixonColesModel, list[str]]:
         away_xg_col=config.DIXON_COLES_XG_COLS[1],
         xg_weight=config.DIXON_COLES_XG_WEIGHT,
     )
+    _blendaa_ohuet(dc, df, seasons)
     return dc, seasons
+
+
+def _blendaa_ohuet(dc: DixonColesModel, df, seasons: list[str]) -> None:
+    """FPL-THIN-BLEND (20.8): ohuen otoksen nousijat baselinen ja fitin
+    valiin — sama kytkenta kaikissa kolmessa fitissa (/api/predict,
+    build_fpl_phase0, build_fpl_cs_fdr), koska sivut lupaavat "sama
+    fit-config kuin /api/predict". Mittaus ja perustelu:
+    src/models/promoted_baseline.blendaa_ohuet_nousijat + logs-ajo
+    scripts/backtest_thin_blend.py. Esikaudella no-op (0 kauden ottelua).
+
+    Fail-closed kuten SPL-buildissa: fitissa oleva ohut nousija ILMAN
+    blendia tarkoittaa etta yhden ottelun estimaatti menisi julkisille
+    sivuille taydella painolla -> ajo kaatuu mieluummin kuin kirjoittaa."""
+    from src.models.promoted_baseline import (
+        PROMOTED_BY_SEASON,
+        blendaa_ohuet_nousijat,
+        kauden_ottelumaarat,
+    )
+    counts = kauden_ottelumaarat(df, seasons[-1])
+    blend = blendaa_ohuet_nousijat(
+        dc, ["ENG-Premier League"], seasons, counts)
+    if blend.get("blended"):
+        print(f"      thin-sample blend: {blend['blended']}")
+    promoted = (PROMOTED_BY_SEASON.get(str(seasons[-1])) or {}).get(
+        "ENG-Premier League", ())
+    ohuet_ilman = sorted(
+        t for t in promoted
+        if t in dc.attack and 0 < counts.get(t, 0) < 6
+        and t not in (blend.get("blended") or {})
+    )
+    if ohuet_ilman:
+        raise SystemExit(
+            f"VIRHE: ohuen otoksen nousijat ilman blendia: {ohuet_ilman} — "
+            "yhden ottelun estimaatti menisi ulos taydella painolla.")
 
 
 # 27.7: siirretty jaettuun moduuliin src/models/promoted_baseline.py.
