@@ -1,0 +1,133 @@
+{
+  "gameweek": 1,
+  "snapshot": {
+    "commit": "c7025ad1c6d94ea71938830ea125ee8d7d861368",
+    "generated_at": "2026-08-13T15:53:22",
+    "note": "Last build published before the round kicked off (first GW1 kickoff 13 Aug 2026, 16:15 UTC). Fitted on vendored history ending 21 May 2026, with no 26/27 results in the fit."
+  },
+  "sides": 18,
+  "expected_cs": 4.9,
+  "actual_cs": 4,
+  "brier": 0.1574,
+  "naive_brier": 0.1731,
+  "naive_p": 0.2394,
+  "naive_note": "Constant probability equal to the clean sheet share in the same two-season history the model is fitted on.",
+  "top3": [
+    {
+      "team": "Al Hilal (vs FSL)",
+      "cs_pct": 54.0,
+      "kept": false
+    },
+    {
+      "team": "Al Nassr (vs FAT)",
+      "cs_pct": 51.0,
+      "kept": true
+    },
+    {
+      "team": "Al Ahli (at DIR)",
+      "cs_pct": 46.1,
+      "kept": true
+    }
+  ],
+  "fixtures": [
+    {
+      "home": "Abha",
+      "away": "Al Hazem",
+      "home_short": "ABH",
+      "away_short": "HAZ",
+      "score": "1-2",
+      "cs_home_pct": 33.3,
+      "cs_away_pct": 25.3,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Shabab",
+      "away": "Al Qadsiah",
+      "home_short": "SHB",
+      "away_short": "QAD",
+      "score": "1-3",
+      "cs_home_pct": 9.7,
+      "cs_away_pct": 27.1,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Diriyah",
+      "away": "Al Ahli",
+      "home_short": "DIR",
+      "away_short": "AHL",
+      "score": "0-1",
+      "cs_home_pct": 17.1,
+      "cs_away_pct": 46.1,
+      "cs_home_kept": false,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Neom SC",
+      "away": "Al Fayha",
+      "home_short": "NEO",
+      "away_short": "FYH",
+      "score": "2-1",
+      "cs_home_pct": 38.7,
+      "cs_away_pct": 27.7,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Ettifaq",
+      "away": "Al Riyadh",
+      "home_short": "ETT",
+      "away_short": "RIY",
+      "score": "4-2",
+      "cs_home_pct": 34.0,
+      "cs_away_pct": 18.2,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Hilal",
+      "away": "Al Faisaly",
+      "home_short": "HIL",
+      "away_short": "FSL",
+      "score": "4-2",
+      "cs_home_pct": 54.0,
+      "cs_away_pct": 5.6,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Taawoun",
+      "away": "Al Khaleej",
+      "home_short": "TWN",
+      "away_short": "KLJ",
+      "score": "0-0",
+      "cs_home_pct": 31.7,
+      "cs_away_pct": 14.3,
+      "cs_home_kept": true,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Ittihad",
+      "away": "Al Kholood",
+      "home_short": "ITT",
+      "away_short": "KLD",
+      "score": "1-1",
+      "cs_home_pct": 34.3,
+      "cs_away_pct": 15.0,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Nassr",
+      "away": "Al Fateh",
+      "home_short": "NAS",
+      "away_short": "FAT",
+      "score": "3-0",
+      "cs_home_pct": 51.0,
+      "cs_away_pct": 7.3,
+      "cs_home_kept": true,
+      "cs_away_kept": false
+    }
+  ]
+}

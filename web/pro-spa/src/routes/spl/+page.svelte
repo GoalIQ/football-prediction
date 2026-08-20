@@ -50,6 +50,35 @@
 	});
 
 	let nearHorizon = $derived((cs?.meta?.near_horizon_gw as number) ?? 6);
+
+	/* SPL-GW1-RECON (20.8): kierrostäsmäytys tulee metan artefaktista
+	   (scripts/build_spl_recon.py -> build_spl_phase0 meta.gw_reconciliation).
+	   Jokainen lohkon luku renderöityy payloadista — sivulla ei ole yhtään
+	   käsin kirjoitettua lukua, joten copy ei voi ajautua eri lukuihin kuin
+	   artefakti. Avain puuttuu -> lohkoa ei ole. */
+	type ReconFixture = {
+		home: string;
+		away: string;
+		home_short: string;
+		away_short: string;
+		score: string;
+		cs_home_pct: number;
+		cs_away_pct: number;
+		cs_home_kept: boolean;
+		cs_away_kept: boolean;
+	};
+	type Recon = {
+		gameweek: number;
+		snapshot?: { generated_at?: string };
+		expected_cs: number;
+		actual_cs: number;
+		brier: number;
+		naive_brier: number;
+		naive_p: number;
+		top3: { team: string; cs_pct: number; kept: boolean }[];
+		fixtures: ReconFixture[];
+	};
+	let recon = $derived((cs?.meta?.gw_reconciliation as Recon | undefined) ?? null);
 	let nextGw = $derived((cs?.meta?.next_gameweek as number) ?? 1);
 	let deadline = $derived.by(() => {
 		const raw = cs?.meta?.deadline_utc as string | undefined;
@@ -469,6 +498,55 @@
 			</div>
 		{/if}
 	</section>
+
+	{#if recon}
+		<section>
+			<h2>How our GW{recon.gameweek} clean sheet calls went</h2>
+			<p>
+				Before GW{recon.gameweek} kicked off, the model had a clean sheet probability on
+				record for every side. Those numbers add up to <strong>{recon.expected_cs} expected
+				clean sheets</strong> across the round, and <strong>{recon.actual_cs} actually
+				happened</strong>. The three sides we rated highest went
+				{recon.top3.filter((t) => t.kept).length} from 3.
+			</p>
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th>Match</th>
+							<th class="num">Score</th>
+							<th class="num">Home CS%</th>
+							<th class="num">Away CS%</th>
+							<th>Clean sheets</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each recon.fixtures as f (f.home + f.away)}
+							<tr>
+								<td>{f.home} v {f.away}</td>
+								<td class="num">{f.score}</td>
+								<td class="num" class:strong={f.cs_home_kept}>{f.cs_home_pct.toFixed(1)}%</td>
+								<td class="num" class:strong={f.cs_away_kept}>{f.cs_away_pct.toFixed(1)}%</td>
+								<td>
+									{[f.cs_home_kept ? f.home_short : null, f.cs_away_kept ? f.away_short : null]
+										.filter(Boolean)
+										.join(', ') || 'none'}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			<p class="muted small">
+				Brier score {recon.brier.toFixed(3)}, against {recon.naive_brier.toFixed(3)} for a
+				flat guess at the base rate in the two seasons the model is fitted on
+				({(recon.naive_p * 100).toFixed(1)}%). Lower is better, but one round of 18 sides is
+				a thin sample. The probabilities come from the last projection build before the
+				round kicked off{#if recon.snapshot?.generated_at}&nbsp;({recon.snapshot.generated_at.slice(0, 10)}){/if};
+				they have not been recomputed since.
+			</p>
+		</section>
+	{/if}
 
 	<section>
 		<div class="head-row">

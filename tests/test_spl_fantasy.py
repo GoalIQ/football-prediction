@@ -296,3 +296,64 @@ def test_blend_without_reference_skips_visibly():
         allow_frozen=False)
     assert dc.attack["Uusija"] == 0.1
     assert info["skipped"] == ["Uusija"]
+
+
+# ---------------------------------------------------------------------------
+# SPL-GW1-RECON (20.8): täsmäytysartefakti ja sen läpivienti julkiselle
+# pinnalle. Sivun jokainen luku tulee artefaktista, joten artefaktin on
+# oltava sisäisesti konsistentti — summaluvut EIVÄT saa olla käsin
+# kirjoitettuja vaan riveistä uudelleenlaskettavia.
+# ---------------------------------------------------------------------------
+
+def _recon() -> dict | None:
+    import config, json
+    p = config.PROJECT_ROOT / "data" / "spl_gw1_recon.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+def test_recon_summary_recomputes_from_rows():
+    r = _recon()
+    if r is None:
+        pytest.skip("spl_gw1_recon.json ei generoitu tässä ympäristössä")
+    sides = [(f[f"cs_{s}_pct"] / 100.0, f[f"cs_{s}_kept"])
+             for f in r["fixtures"] for s in ("home", "away")]
+    assert len(sides) == r["sides"] == 18
+    assert math.isclose(sum(p for p, _ in sides), r["expected_cs"], abs_tol=0.005)
+    assert sum(1 for _, kept in sides if kept) == r["actual_cs"]
+    brier = sum((p - float(kept)) ** 2 for p, kept in sides) / len(sides)
+    assert math.isclose(brier, r["brier"], abs_tol=0.00005)
+    naive = sum((r["naive_p"] - float(kept)) ** 2 for _, kept in sides) / len(sides)
+    assert math.isclose(naive, r["naive_brier"], abs_tol=0.00005)
+    # Väite "malli voitti naiivin" elää sivulla — sen on pidettävä datassa.
+    assert r["brier"] < r["naive_brier"]
+
+
+def test_recon_top3_matches_rows():
+    r = _recon()
+    if r is None:
+        pytest.skip("spl_gw1_recon.json ei generoitu tässä ympäristössä")
+    kaikki = sorted(
+        (f[f"cs_{s}_pct"] for f in r["fixtures"] for s in ("home", "away")),
+        reverse=True)
+    assert [t["cs_pct"] for t in r["top3"]] == kaikki[:3]
+
+
+def test_recon_flows_to_spl_meta(client):
+    """Artefakti kulkee build-metan kautta API:iin — jos projektio on
+    rakennettu reconin olemassa ollessa, avaimen on oltava vastauksessa
+    samoilla summilla (jakopinta ei saa lukea eri tiedostoa kuin sivu)."""
+    r = _recon()
+    if r is None:
+        pytest.skip("spl_gw1_recon.json ei generoitu tässä ympäristössä")
+    resp = client.get("/api/fantasy?league=spl")
+    assert resp.status_code == 200
+    meta = resp.json()["meta"]
+    if not meta.get("available"):
+        pytest.skip("SPL-projektiota ei committattu tässä ympäristössä")
+    served = meta.get("gw_reconciliation")
+    assert served is not None, (
+        "projektio on rakennettu ilman recon-liitosta — aja build_spl_phase0 "
+        "uudelleen")
+    assert served["expected_cs"] == r["expected_cs"]
+    assert served["actual_cs"] == r["actual_cs"]
+    assert served["brier"] == r["brier"]
