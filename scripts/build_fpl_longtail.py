@@ -560,9 +560,10 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     title = f"Best FPL Captain GW{gw}: Model Pick | GoalIQ"
     desc = (
         f"The GoalIQ model's best FPL captain for Gameweek {gw}: "
-        f"{top['web_name']} ({top['team_short']}). Expected points and the "
-        f"full captain ranking are in GoalIQ Premium. Updated every round "
-        f"from the match model behind our public track record."
+        f"{top['web_name']} ({top['team_short']}). Horizon expected points "
+        f"for the top 100 players are free on our expected-points page; "
+        f"the gameweek-specific number and the full captain ranking are "
+        f"GoalIQ Premium. Updated every round."
     )
     hero = (
         f"<h1>Best FPL captain, Gameweek {gw}</h1>"
@@ -585,11 +586,11 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         f'<div class="stat-row">'
         f'<div class="stat"><b>{escape(top["web_name"])}</b>'
         f'<span>#1 pick · {escape(top["team_short"])} · {_start_txt(top)} '
-        "· xP in Premium</span></div>"
+        "· GW xP in Premium</span></div>"
         + "".join(
             f'<div class="stat"><b>{escape(p["web_name"])}</b>'
             f'<span>contender · {escape(p["team_short"])} · {_start_txt(p)} '
-            "· xP in Premium</span></div>"
+            "· GW xP in Premium</span></div>"
             for p in alts
         )
         + "</div>"
@@ -597,6 +598,17 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         "he is to be in the XI. Near 50 it is a coin flip, and a captaincy on a "
         "coin flip is a bet on team news. Check the press conference before you "
         "commit the armband.</p>"
+        # 21.8: FPL-XP-COPY-RISTIRIITA. Tama sivu vaitti "Expected points
+        # are in GoalIQ Premium" samalla kun /fpl/expected-points servaa
+        # horisontti-xP:n top-100:lle ilmaiseksi. Raja on oikeasti:
+        # top-100-horisontti-xP on sisaltoa (ilmainen), per-GW-luku ja
+        # tyokalut ovat tuote. Portti 21.8 kaatoi "every player" -muodon:
+        # ilmaissivu nayttaa tasan 100 rivia, ei jokaista pelaajaa.
+        '<p class="note">Horizon expected points for the top 100 players '
+        'are free on <a href="/fpl/expected-points">the expected points '
+        "table</a>. This ranking sorts by the gameweek-specific number "
+        "instead, and that number and the full ranked list are part of "
+        "GoalIQ Premium.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )
@@ -625,7 +637,7 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     desc = (
         f"GoalIQ's model differential for {gw_txt}: {top['web_name']} "
         f"({top['team_short']}), owned by just {top['owned_pct']}% of managers. "
-        f"Expected points and {len(players)} more low-owned picks in GoalIQ Premium."
+        f"GW expected points and {len(players)} more low-owned picks in GoalIQ Premium."
     )
     hero = (
         f"<h1>Best FPL differentials, {escape(gw_txt)}</h1>"
@@ -637,7 +649,7 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         f'<div class="stat-row">'
         f'<div class="stat"><b>{escape(top["web_name"])}</b>'
         f'<span>{escape(top["team_short"])} · owned {top["owned_pct"]}% · '
-        f"xP in Premium</span></div>"
+        f"GW xP in Premium</span></div>"
         f'<div class="stat"><b>+{len(players) - 1} more</b>'
         f"<span>full differential list in Premium</span></div>"
         f"</div>"
@@ -3509,14 +3521,18 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     rows = sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))
     n_gw = len(rows[0].get("gameweeks") or []) or 6
     url = f"{BASE}/fpl/expected-points"
-    title = (f"FPL Expected Points: Every Player Ranked by xP "
+    # 21.8 (portti): "every player ranked" saa esiintya vain top-100-
+    # rajauksen kanssa samassa lauseessa — ilmaissivu nayttaa tasan 100
+    # rivia koko projektiosta, ei jokaista pelaajaa.
+    title = (f"FPL Expected Points: Top 100 Players by xP "
              f"(next {n_gw} GWs) | GoalIQ")
     lead = rows[0]
     desc = (
         f"Every FPL player ranked by expected points over the next {n_gw} "
-        f"gameweeks. {lead['web_name']} leads on "
+        f"gameweeks; the top 100 of the full projection shown free, no "
+        f"sign-in. {lead['web_name']} leads on "
         f"{lead['xp_horizon_total']:.1f} xP. Scoring rate and minutes shown "
-        f"separately. Free, no sign-in."
+        f"separately."
     )
 
     top3 = "".join(
@@ -3567,11 +3583,12 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f"<tbody>{trows}</tbody></table></div>"
     )
     hero = (
-        "<h1>FPL expected points, every player ranked</h1>"
+        "<h1>FPL expected points, top 100 players ranked</h1>"
         '<p class="lede">What our match model projects each player to score '
-        f"over the next {n_gw} gameweeks. Scoring rate and expected minutes "
-        "are shown separately, so you can see which one is driving the "
-        "number. Free, no sign-in, updated daily.</p>"
+        f"over the next {n_gw} gameweeks, shown here for the top 100 of the "
+        f"full {len(rows)}-player projection. Scoring rate and expected "
+        "minutes are shown separately, so you can see which one is driving "
+        "the number. Free, no sign-in, updated daily.</p>"
     )
     body = (
         f'<div class="stat-row">{top3}</div>'
@@ -3580,10 +3597,13 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # sanaa datan eteen, eli X:sta tulija joutui vierittamaan kaksi
         # ruudullista mobiilissa paastakseen siihen lukuun joka hanelle
         # luvattiin. Sivun tyo on antaa luku ensin ja selittaa sitten.
+        # 21.8 (portti B3): xP/GW-sarake on selitettava — ilman tata mikaan
+        # ei kerro lukijalle ettei se ole se per-GW-luku jota Premium myy.
         '<p class="note">'
-        f"Ranked by total xP over the next {n_gw} gameweeks. <em>xP/90</em> "
-        "is the scoring rate, <em>Start%</em> is how likely he is to start, "
-        "<em>xMins</em> combines the two.</p>"
+        f"Ranked by total xP over the next {n_gw} gameweeks. <em>xP/GW</em> "
+        f"is that total divided by {n_gw}, not a single-gameweek projection. "
+        "<em>xP/90</em> is the scoring rate, <em>Start%</em> is how likely "
+        "he is to start, <em>xMins</em> combines the two.</p>"
         f"{kitdefs}{table}"
         + _tflag_note(xp, rows[:100], rows) +
         '<p class="note"><strong>Start% near 50 means the model is split.'

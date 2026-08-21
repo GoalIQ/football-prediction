@@ -453,7 +453,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "with data, a filterable player stats table with shots, "
                 "shots in the box and key passes, "
                 "are free, and GoalIQ Premium adds an interactive team manager "
-                "with a gameweek planner, player expected points (xP), the "
+                "with a gameweek planner, per-gameweek expected points (xP), the "
                 "captain ranker, chip timing for the best Wildcard, Bench Boost, "
                 "Triple Captain and Free Hit windows, transfer plans that chain "
                 "1 to 2 moves with hits priced in, an edge mode with rank-aware "
@@ -486,7 +486,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "watch tables on the web. GoalIQ "
                 "Premium: an interactive team manager (formations, bench swaps, "
                 "captaincy, a GW1 to GW6 gameweek planner with each player's "
-                "opponent per week), player expected points (xP), the captain "
+                "opponent per week), per-gameweek expected points (xP), the captain "
                 "ranker, transfer suggestions with one-tap apply to your "
                 "planned squad, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a live DefCon "
                 "panel that tracks your own squad against the threshold while "
@@ -537,8 +537,8 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
         (
             "Is there a full xP dashboard on top of this free page?",
             (
-                "Yes. GoalIQ Premium at pro.goaliq.app adds player expected points "
-                "(xP) for the coming gameweeks, a captain ranker and per-gameweek "
+                "Yes. GoalIQ Premium at pro.goaliq.app adds expected points "
+                "(xP) per player for the coming gameweeks, a captain ranker and per-gameweek "
                 "breakdowns, from the same match model as this page. 3.99 EUR "
                 "per month or 25 EUR per year, and one account unlocks premium "
                 "on the web, iOS and Android."
@@ -1084,7 +1084,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "probability and fixture difficulty, rate my team with a captain pick, "
             "a fit checker, a pre-season draft rater "
             "and price watch free, plus an interactive team manager with a "
-            "gameweek planner, player expected points (xP), the captain "
+            "gameweek planner, per-gameweek expected points (xP), the captain "
             "ranker, player value, a DefCon tracker, "
             "differentials, player compare for up to four players and transfer "
             "suggestions with apply on GoalIQ "
@@ -1107,8 +1107,8 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "clean sheet probability and fixture difficulty, rate my team with a "
             "captain pick, price watch, and shareable image cards of the free "
             "tables on the web. GoalIQ Premium adds an interactive "
-            "team manager with a GW1 to GW6 gameweek planner, player expected "
-            "points (xP), the captain ranker, chip timing for Wildcard, Bench "
+            "team manager with a GW1 to GW6 gameweek planner, per-gameweek "
+            "expected points (xP), the captain ranker, chip timing for Wildcard, Bench "
             "Boost, Triple Captain and Free Hit, transfer plans that chain 1 to "
             "2 moves, an edge mode with rank-aware picks, player value (xP per "
             "million) for the top 50 with position and team filters, showing "
@@ -1636,7 +1636,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         "every player, rate my team with a captain pick, "
         "fit checker, pre-season draft rater "
         "and price watch. Premium adds a team manager with gameweek planner, "
-        "player xP, value ranking and a DefCon tracker. "
+        "per-gameweek xP, value ranking and a DefCon tracker. "
         "Published track record. Not betting."
     )
 
@@ -1719,7 +1719,7 @@ published, pre-match-logged track record.
 This page gives clean sheet probability and fixture difficulty for every
 Premier League team, free and updated every gameweek. Rate my team, a captain
 pick and price watch are free too; GoalIQ Premium adds an interactive team
-manager with a gameweek planner, player expected points (xP), the captain
+manager with a gameweek planner, per-gameweek expected points (xP), the captain
 ranker, player value, a DefCon tracker and transfer suggestions
 you can apply to your planned squad.</p>
 <p class="meta">Season {c["season"]}. Data updated {c["data_date"]}.
@@ -1777,7 +1777,7 @@ tooltip. Model-derived, not the official FPL difficulty.</p>
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
 <p>GoalIQ Premium adds an interactive team manager (formations, bench swaps,
 captaincy and a GW1 to GW6 gameweek planner showing each player's opponent
-per week), player expected points (xP), a captain ranker, transfer suggestions
+per week), per-gameweek expected points (xP), a captain ranker, transfer suggestions
 you can apply straight to your planned squad, a player value ranking (xP per
 million), the full DefCon leaderboard with a gameweek-by-gameweek
 breakdown, goalkeeper rotation pairs,
@@ -1847,7 +1847,11 @@ for {c["season"]}.</p>
 one refreshes on the same schedule. No login, no paywall.</p>
 <ul class="toollist">
   <li><a href="/fpl/best-captain">Captain picks for the next deadline</a>:
-  every player ranked by expected points, not by last week's haul.</li>
+  the model's top pick and the contenders, with how likely each is to
+  start.</li>
+  <li><a href="/fpl/expected-points">Every player ranked by expected
+  points</a>: the top 100 of the full projection, with scoring rate and
+  expected minutes in separate columns.</li>
   <li><a href="/fpl/model-xi">The model's own XI</a>: the squad our numbers
   would pick inside the budget, published before every deadline.</li>
   <li><a href="/fpl/differentials">Differentials under 10% ownership</a>:
@@ -1891,7 +1895,7 @@ cannot be edited after the fact. If the model has a bad week, the log shows it.<
 </dl>
 
 <div class="cta-row">
-  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl">Open GoalIQ Premium: player xP and captain ranker</a>
+  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl">Open GoalIQ Premium: per-gameweek xP and captain ranker</a>
   <a class="cta secondary" href="{PLAY_URL}">Predict any fixture in the GoalIQ app</a>
   <a class="cta secondary" href="{APPSTORE_URL}">Download on the App Store</a>
 </div>
