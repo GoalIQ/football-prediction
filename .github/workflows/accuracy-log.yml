@@ -208,14 +208,24 @@ jobs:
       #
       # continue-on-error: deploy-dispatch EI saa kaataa ajoa jonka data on jo
       # committoitu — vanhentunut sivu on nakyva vika, kaatunut lokiajo ei.
+      # 21.8: MUTTA epaonnistumisen PITAA nakya (data-integrity-audit 20.8:
+      # fail-open piilotti dispatch-ongelman epailyn kokonaan). Siksi id +
+      # eksplisiittinen virhehaara, ja Page-build health -steppi alla punaa
+      # runin jos dispatch failasi — data on siina vaiheessa jo committoitu.
       - name: Deploy hub (CF Pages) when pages changed
+        id: hubdispatch
         if: steps.push.outputs.pushed == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run hub-deploy.yml --ref main
-          echo "hub-deploy dispatched."
+          if gh workflow run hub-deploy.yml --ref main; then
+            echo "hub-deploy dispatched."
+          else
+            echo "::warning::hub-deploy-dispatch EPAONNISTUI — goaliq.app jaa staleksi kunnes jokin muu deploy ajaa (CF Pages on direct upload, push ei deployaa itsestaan)"
+            echo "🔴 hub-deploy-dispatch epaonnistui — goaliq.app voi servata stalea" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
       # #TRACK-STALE-vahti: punaa runin jos JOKIN sivubuilderi failasi — AJETAAN
       # commitin JÄLKEEN, joten data-logaus/commit ei esty (continue-on-error
@@ -229,4 +239,5 @@ jobs:
           [ "${{ steps.bake_fpl.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA — sivut eivät päivity (katso stepin loki)"; fail=1; }
           [ "${{ steps.bake_predictions.outcome }}" = "failure" ] && { echo "::error::build_prediction_pages FAILAA"; fail=1; }
           [ "${{ steps.bake_longtail.outcome }}" = "failure" ] && { echo "::error::build_fpl_longtail FAILAA"; fail=1; }
+          [ "${{ steps.hubdispatch.outcome }}" = "failure" ] && { echo "::error::hub-deploy-dispatch FAILAA — goaliq.app servaa stalea kunnes dispatch korjataan (data on committoitu, vain sivudeploy jai valiin)"; fail=1; }
           exit $fail
