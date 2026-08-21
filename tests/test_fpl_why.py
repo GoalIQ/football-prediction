@@ -491,3 +491,90 @@ def test_paid_path_needs_two_locks_not_one(monkeypatch):
         "maksullisen polun toinen lukko on poistettu tai nimetty uudelleen")
     assert "use_model" in src and "if args.dry_run or not use_model:" in src, (
         "mallipolun vahti ei enaa portita batch-lahetysta")
+
+
+# --------------------------------------------------------------------------
+# Ajurien todisteluvut (SHARE-CARD-WHY-EMPHASIS 20.8, Rowanin palaute)
+# --------------------------------------------------------------------------
+
+def _rich_player() -> dict:
+    """Rivi jolla on kaikki ajurikentat — sama muoto kuin tuotannon payload."""
+    return {
+        "id": 1, "pos": "DEF", "xmins": 83.4, "owned_pct": 29.7, "price": 8.0,
+        "e_bonus": 0.6,
+        "last_season": {"per90": {"xgi": 0.15}},
+        "set_pieces": {"pens": None, "corners": 2, "fk": 4},
+        "components": {"clean_sheet": 2.03},
+        "gameweeks": [{"opponents": [{"opp": "COV", "venue": "H"}]},
+                      {"opponents": [{"opp": "AVL", "venue": "A"}]}],
+    }
+
+
+def test_driver_facts_reads_every_number_from_the_row():
+    from src.models.fpl_xp import driver_facts
+    f = driver_facts(_rich_player())
+    assert f["minutes"] == "83 mins a game"
+    assert f["attacking_output"] == "0.15 xGI/90 last season"
+    # 2.03 p / 4 p puhtaasta pelista = 51 %. Sama komponentti jonka kortin
+    # komponenttisplit jo nayttaa — ei toista totuutta.
+    assert f["clean_sheets"] == "51% clean sheet chance"
+    assert f["bonus"] == "0.6 bonus pts a game"
+    assert f["price"] == "£8.0m"
+    assert f["differential"] == "29.7% owned"
+    assert f["fixtures"] == "COV (H), AVL (A)"
+
+
+def test_driver_facts_set_pieces_only_counts_a_real_duty():
+    """Kolmas nimi listalla ei ole vastuu vaan jarjestysnumero — sama kynnys
+    kuin kortin set piece -merkeissa (1. tai 2. ottaja)."""
+    from src.models.fpl_xp import driver_facts
+    p = _rich_player()
+    assert driver_facts(p)["set_pieces"] == "Corners"
+    p["set_pieces"] = {"pens": 1, "corners": 2, "fk": None}
+    assert driver_facts(p)["set_pieces"] == "Penalties, corners"
+    p["set_pieces"] = {"pens": 3, "corners": 5, "fk": None}
+    assert "set_pieces" not in driver_facts(p)
+
+
+def test_driver_facts_omits_what_the_row_does_not_carry():
+    """Puuttuva kentta = ajuri ilman lukua. Placeholder olisi vaite datasta
+    jota ei ole ([[honest-data-labels]])."""
+    from src.models.fpl_xp import driver_facts
+    assert driver_facts({"id": 1, "pos": "DEF"}) == {}
+    # Hyokkaajalla ei ole puhtaan pelin pisteita, joten komponentista ei saa
+    # todennakoisyytta edes kun kentta on olemassa.
+    assert "clean_sheets" not in driver_facts(
+        {"id": 1, "pos": "FWD", "components": {"clean_sheet": 0.0}})
+
+
+def test_attach_why_carries_driver_facts_for_the_listed_drivers_only():
+    from src.models.fpl_xp import attach_why
+    p = _rich_player()
+    entries = {"1": {"sentence": "x", "drivers": ["minutes", "clean_sheets"],
+                     "source": "model"}}
+    w = attach_why({"meta": {}, "players": [p]}, entries)["players"][0]["why"]
+    assert w["drivers"] == ["minutes", "clean_sheets"]
+    assert set(w["driver_facts"]) == {"minutes", "clean_sheets"}
+    assert w["driver_facts"]["minutes"] == "83 mins a game"
+
+
+def test_attach_why_caps_the_driver_list_at_three_without_reordering():
+    """Raja on backendissa eika kummallakaan klientilla: kaksi erillista
+    slicea ajautuisi ennen pitkaa eri lukuun. Jarjestys on lauseen
+    kirjoittajan nakemys isoimmasta eika sita saa jarjestaa uusiksi."""
+    from src.models.fpl_xp import attach_why, WHY_DRIVER_MAX
+    entries = {"1": {"sentence": "x", "source": "model",
+                     "drivers": ["differential", "price", "bonus", "minutes"]}}
+    w = attach_why({"meta": {}, "players": [_rich_player()]},
+                   entries)["players"][0]["why"]
+    assert w["drivers"] == ["differential", "price", "bonus"]
+    assert len(w["drivers"]) == WHY_DRIVER_MAX
+    assert "minutes" not in w["driver_facts"], "pudotettu ajuri ei saa jattaa lukua"
+
+
+def test_attach_why_survives_a_row_with_no_numbers_at_all():
+    from src.models.fpl_xp import attach_why
+    entries = {"1": {"sentence": "x", "drivers": ["minutes"], "source": "model"}}
+    w = attach_why({"meta": {}, "players": [{"id": 1}]}, entries)["players"][0]["why"]
+    assert w["drivers"] == ["minutes"]
+    assert w["driver_facts"] == {}

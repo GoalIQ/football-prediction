@@ -695,13 +695,20 @@ export interface PlayerCardSpec {
 	hero?: { value: string; label: string };
 	/** Premium-rivi (xP). Kutsuja jattaa pois freelta. */
 	modelLine?: string;
-	/** WHY-THIS-PICK-ajurit chip-rivina (SHARE-CARD-WHY, Rowanin palaute 19.8).
-	 *  Kutsuja antaa VALMIIT nayttonimet ($lib/whyDrivers) — renderoija ei
-	 *  mappaa avaimia, jottei kortti ja sivu voi kaantaa samaa avainta eri
-	 *  sanaksi. `why` tulee backendilta vain maskaamattomaan vastaukseen ja
-	 *  vain xP-karjelle, joten puuttuva/tyhja lista on normaali tila: lohkoa
-	 *  ei silloin piirreta eika sille varata korkeutta. */
-	drivers?: string[];
+	/** WHY-THIS-PICK-ajurit (SHARE-CARD-WHY 19.8, todisteluvut 20.8).
+	 *  Kutsuja antaa VALMIIT rivit ($lib/whyDrivers.whyDriverRows) — renderoija
+	 *  ei mappaa avaimia eika johda lukuja, jottei kortti ja sivu voi kertoa
+	 *  samasta ajurista eri asiaa. `why` tulee backendilta vain maskaamattomaan
+	 *  vastaukseen ja vain xP-karjelle, joten puuttuva/tyhja lista on normaali
+	 *  tila: lohkoa ei silloin piirreta eika sille varata korkeutta.
+	 *
+	 *  20.8 Rowanin palaute: *"making the 2-3 biggest reasons stand out
+	 *  slightly more, so you can understand why the model likes the player
+	 *  within a second or two"*. Tasa-arvoiset chipit kertoivat MITKA syyt
+	 *  mutta eivat kuinka isoja, joten ajuri on nyt oma rivinsa jolla on
+	 *  todisteluku. `value` puuttuu kun rivi ei kanna sita lukua — silloin
+	 *  piirretaan pelkka nimi, ei placeholderia. */
+	drivers?: { key: string; label: string; value?: string }[];
 	/** Tuotantorivi. title kantaa katteen (kausi + sarja + per 90 vai totaali)
 	 *  - ilman sita luvut vaittaisivat olevansa jotain muuta kuin ovat. */
 	production?: { title: string; cells: PlayerCardCell[]; totals?: string };
@@ -748,7 +755,10 @@ export async function renderPlayerCard(spec: PlayerCardSpec): Promise<Blob> {
 	const yModel = h;
 	if (spec.modelLine) h += 58;
 	const yDrivers = h;
-	if (spec.drivers?.length) h += 84;
+	// Otsikko + rivi per ajuri. Kiintea 84 px riitti chip-riville; rivilayout
+	// kasvaa ajurien maaran mukaan, ja backend rajaa listan kolmeen.
+	const DRIVER_ROW_H = 46;
+	if (spec.drivers?.length) h += 34 + spec.drivers.length * DRIVER_ROW_H + 10;
 	const yProd = h;
 	if (spec.production) h += 40 + 92 + (spec.production.totals ? 40 : 0);
 	const yDefcon = h;
@@ -866,28 +876,42 @@ export async function renderPlayerCard(spec: PlayerCardSpec): Promise<Blob> {
 		ctx.fillText(spec.modelLine, MX, yModel + 12);
 	}
 
-	// --- WHY-ajurit (chip-rivi mallirivin alla) ---
+	// --- WHY-ajurit (mallirivin alla) ---
 	if (spec.drivers?.length) {
 		// Sama otsikko kuin sivun WhyThisPick-lohkossa — kortti ja sivu
 		// nimeavat saman asian samoin sanoin.
 		ctx.font = med(18);
 		ctx.fillStyle = MUTED;
 		ctx.fillText('WHY THIS PROJECTION', MX, yDrivers + 8);
-		// Chipit pakkautuvat vasemmalta; reunan yli menevat pudotetaan.
-		// Kortissa ei ole rivitysta: kahdeksan ajurin lista ei mahdu, ja
-		// katkaistu chip olisi pahempi kuin puuttuva (luvut/labelit eivat
-		// saa leikkautua — sama vikaluokka kuin 17.8 layout-loydokset).
-		let cxp = MX;
+
+		// Rivi per ajuri: amber-tolppa + nimi vasemmalle, todisteluku amberilla
+		// oikeaan reunaan. Chip-rivi (19.8) kertoi MITKA syyt mutta ei kuinka
+		// isoja, ja kahdeksan chipin rivi oli lisaksi tasapaksu — juuri se
+		// jonka Rowan pyysi erottumaan. Numero oikeassa reunassa syntyy samaan
+		// pystylinjaan joka rivilla, eli kolme ajuria luetaan yhdella silmayksella.
+		let ry = yDrivers + 34;
 		for (const d of spec.drivers) {
-			ctx.font = bold(19);
-			const cw = ctx.measureText(d).width + 22;
-			if (cxp + cw > W - MX) break;
-			ctx.strokeStyle = TAG_LINE;
-			ctx.lineWidth = 1;
-			ctx.strokeRect(cxp, yDrivers + 38, cw, 34);
+			ctx.fillStyle = AMBER;
+			ctx.fillRect(MX, ry + 4, 4, 28);
+
+			// Luku piirretaan ENSIN ja sen leveys varataan nimelta pois: ilman
+			// sita pitka nimi ja pitka luku voisivat mennä pallekkain (sama
+			// vikaluokka kuin 17.8 layout-loydoksissa, jotka nakyivat vasta
+			// kuvasta eivatka koodista).
+			let takenW = 0;
+			if (d.value) {
+				const vPx = shrink(ctx, d.value, 22, (W - 2 * MX) * 0.55, 14, bold);
+				ctx.font = bold(vPx);
+				const vw = ctx.measureText(d.value).width;
+				ctx.fillStyle = AMBER;
+				ctx.fillText(d.value, W - MX - vw, ry + 8);
+				takenW = vw + 24;
+			}
+			const lPx2 = shrink(ctx, d.label, 24, W - 2 * MX - 16 - takenW, 14, bold);
+			ctx.font = bold(lPx2);
 			ctx.fillStyle = CREAM;
-			ctx.fillText(d, cxp + 11, yDrivers + 38 + 8);
-			cxp += cw + 10;
+			ctx.fillText(d.label, MX + 16, ry + 7);
+			ry += DRIVER_ROW_H;
 		}
 	}
 

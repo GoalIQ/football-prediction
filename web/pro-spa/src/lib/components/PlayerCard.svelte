@@ -22,7 +22,7 @@
 	import WhyThisPick from './WhyThisPick.svelte';
 	import ComponentSplit from './ComponentSplit.svelte';
 	import { canShareToApps, sharePlayerCard, type PlayerCardCell } from '$lib/shareCard';
-	import { WHY_DRIVER_LABEL } from '$lib/whyDrivers';
+	import { whyDriverRows } from '$lib/whyDrivers';
 
 	let pool = $state<CardPlayer[]>([]);
 	let meta = $state<XpMeta | null>(null);
@@ -433,15 +433,17 @@
 								(p.gameweeks ?? []).length
 							} gameweeks`
 						: undefined,
-				// SHARE-CARD-WHY (Rowan 19.8): ajurit chippeina mallirivin alle.
+				// SHARE-CARD-WHY (Rowan 19.8) + todisteluvut (Rowan 20.8): ajurit
+				// omina riveinaan mallirivin alle, kukin oma lukunsa mukanaan.
 				// Sama premium-gate kuin modelLine: `why` on premium-datan
 				// johdannainen. Backend liittaa kentan vain maskaamattomaan
 				// vastaukseen ja vain xP-karjelle, joten puuttuva kentta on
-				// normaali tila — ei placeholderia. Labelit $lib/whyDrivers:sta,
-				// samasta lahteesta kuin sivun WhyThisPick-lohko.
+				// normaali tila — ei placeholderia. Rivit $lib/whyDrivers:sta,
+				// samasta lahteesta kuin sivun WhyThisPick-lohko: kortti ja sivu
+				// eivat voi nayttaa samaa ajuria eri nimella tai eri lukuna.
 				drivers:
 					premium && !excluded && p.why?.drivers?.length
-						? p.why.drivers.map((d) => WHY_DRIVER_LABEL[d] ?? d)
+						? whyDriverRows(p.why)
 						: undefined,
 				production:
 					cells.length > 0
