@@ -4262,7 +4262,12 @@ def fantasy_xp(
     # ilman uutta projektiota -> ilman nostoa ehdollinen pyynto validoisi
     # vanhan vastauksen 304:lla ja kentta jaisi puuttumaan tasan niilta
     # joilla vastaus on jo valimuistissa.
-    schema = "s6"
+    # 20.8 s7: `why` sai `driver_facts`-kentan (ajurin todisteluku) ja
+    # `drivers` kapenee kolmeen. Molemmat ovat serve-time-johdoksia ilman
+    # uutta projektiota -> ilman nostoa ehdollinen pyynto validoisi vanhan
+    # vastauksen 304:lla ja luvut jaisivat nakymatta tasan niilta joilla
+    # vastaus on jo valimuistissa, eli aktiivisimmilta kayttajilta.
+    schema = "s7"
     # Liiga-avain ETagiin: ilman sitä fpl- ja spl-vastaukset voisivat
     # 304-validoitua ristiin samasta selainvälimuistista (sama URL-polku,
     # eri query) — sama vikaluokka kuin mask-bitin puuttuminen olisi.

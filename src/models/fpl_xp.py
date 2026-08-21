@@ -906,6 +906,119 @@ def why_stamp(path: Path = WHY_PATH) -> str:
         return "0"
 
 
+# ---------------------------------------------------------------------------
+# WHY-THIS-PICK: ajurien todisteluvut (SHARE-CARD-WHY-EMPHASIS, 20.8)
+# ---------------------------------------------------------------------------
+
+#: Kortti ja sivu nayttavat korkeintaan kolme ajuria. Raja on kortin oma:
+#: nelja riviä tyontaisi tuotantolohkon alas ja Rowanin palaute puhuu
+#: nimenomaan "the 2-3 biggest reasons". Yksi raja tassa, ei kahta klientilla.
+WHY_DRIVER_MAX = 3
+
+_SET_PIECE_WORD = {"pens": "penalties", "corners": "corners", "fk": "free kicks"}
+
+#: Puhtaan pelin pisteet pelipaikan nimella (CS_PTS on element_type-avaimin).
+_CS_PTS_BY_POS = {POS_NAME[k]: float(v) for k, v in CS_PTS.items() if v}
+
+
+def _clean_sheet_pct(player: dict) -> float | None:
+    """P(clean sheet) headline-GW:lle mallin OMASTA komponentista.
+
+    `components.clean_sheet` on odotusarvo pisteina ja FPL:n saanto antaa
+    puhtaasta pelista 4 p (GKP/DEF) tai 1 p (MID), joten jakolasku palauttaa
+    tasan sen todennakoisyyden jolla malli itse laski. Ei uutta lukua eika
+    toista totuutta: sama komponentti on jo kortin komponenttisplitissa.
+    """
+    comps = player.get("components")
+    if not isinstance(comps, dict):
+        return None
+    pts = comps.get("clean_sheet")
+    if not isinstance(pts, (int, float)):
+        return None
+    per_cs = _CS_PTS_BY_POS.get(str(player.get("pos")))
+    if not per_cs:
+        return None
+    # Komponentti kantaa jo minuuttiodotuksen, joten yli 100 % on vain
+    # pyoristysta. Rajaus on varmistus, ei korjaus.
+    return max(0.0, min(100.0, 100.0 * float(pts) / per_cs))
+
+
+
+def driver_facts(player: dict) -> dict:
+    """Yhden rivin todiste jokaiselle ajurille, mallin omista kentista.
+
+    MIKSI SERVE-TIME. Sama peruste kuin `why`-lauseella itsellaan: selitykset
+    elavat omassa tiedostossaan ja projektio kirjoitetaan uusiksi 3 h valein,
+    joten yhdistaminen levylla pyyhkisi ne joka refreshissa. Tama johdos ei
+    myoskaan kosketa `build_fpl_why.component_hash`ia, eli olemassaolevia
+    selityksia EI generoida uusiksi — putkeen kirjoitettuna kentan lisays
+    olisi pakottanut 150 rivin LLM-ajon joka refreshissa.
+
+    MIKSI BACKENDISSA EIKA KUMMALLAKAAN KLIENTILLA. Rowanin palaute 20.8
+    ("making the 2-3 biggest reasons stand out slightly more") tarkoittaa
+    ettei ajuri ole enaa pelkka tagi vaan kantaa luvun. Jos johdos
+    kirjoitetaan erikseen Svelteen ja React Nativeen, sivu ja appi voivat
+    nayttaa saman ajurin eri lukuna — sama vikaluokka jonka takia ajurien
+    nayttonimet ovat jaetussa moduulissa (`whyDrivers.ts`).
+
+    KIELI ON ENGLANTI KAIKILLA LOKAALEILLA, ja se on tietoinen valinta:
+    ajurien nayttonimet ovat jo englanniksi molemmilla pinnoilla, joten
+    lukurivi seuraa niita eika vaita olevansa osa lauseen lokalisointia.
+    Arvot ovat lisaksi numeroetuisia ("84 mins a game").
+
+    Vain kentat jotka payloadissa OIKEASTI ovat: puuttuva kentta = ajuri
+    jaa ilman lukua, ei placeholderia eika arvausta.
+    """
+    out: dict[str, str] = {}
+
+    mins = player.get("xmins")
+    if isinstance(mins, (int, float)) and mins > 0:
+        out["minutes"] = f"{round(float(mins))} mins a game"
+
+    per90 = (player.get("last_season") or {}).get("per90") or {}
+    xgi = per90.get("xgi")
+    if isinstance(xgi, (int, float)) and xgi > 0:
+        out["attacking_output"] = f"{float(xgi):.2f} xGI/90 last season"
+
+    cs = _clean_sheet_pct(player)
+    if cs is not None:
+        out["clean_sheets"] = f"{round(cs)}% clean sheet chance"
+
+    sp = player.get("set_pieces")
+    if isinstance(sp, dict):
+        # Sama kynnys kuin kortin set piece -merkeissa: 1. tai 2. ottaja.
+        # Kolmas nimi listalla ei ole vastuu vaan jarjestysnumero.
+        duties = [_SET_PIECE_WORD[k] for k in ("pens", "corners", "fk")
+                  if isinstance(sp.get(k), (int, float)) and 1 <= sp[k] <= 2]
+        if duties:
+            out["set_pieces"] = ", ".join(duties).capitalize()
+
+    gws = player.get("gameweeks")
+    if isinstance(gws, list):
+        opps = []
+        for g in gws[:WHY_DRIVER_MAX]:
+            for o in ((g or {}).get("opponents") or []):
+                if o.get("opp"):
+                    venue = o.get("venue")
+                    opps.append(f"{o['opp']} ({venue})" if venue else str(o["opp"]))
+        if opps:
+            out["fixtures"] = ", ".join(opps[:WHY_DRIVER_MAX])
+
+    bonus = player.get("e_bonus")
+    if isinstance(bonus, (int, float)) and bonus > 0:
+        out["bonus"] = f"{float(bonus):.1f} bonus pts a game"
+
+    price = player.get("price")
+    if isinstance(price, (int, float)) and price > 0:
+        out["price"] = f"£{float(price):.1f}m"
+
+    owned = player.get("owned_pct")
+    if isinstance(owned, (int, float)):
+        out["differential"] = f"{float(owned):.1f}% owned"
+
+    return out
+
+
 WHY_DEFAULT_LANG = "en"
 WHY_LANGS = ("en", "es", "pt")
 
@@ -948,9 +1061,21 @@ def attach_why(payload: dict, entries: dict | None = None,
         if not sentence:
             continue
         sources = entry.get("sources") or {}
+        # Kolmen raja TASSA eika kummallakaan klientilla: LLM-polku saa
+        # palauttaa enemman kuin kolme ajuria, ja kaksi erillista slicea
+        # ajautuisi ennen pitkaa eri lukuun. Jarjestys sailyy sellaisenaan —
+        # se on lauseen kirjoittajan (tai templaten kiintean prioriteetin)
+        # oma nakemys siita mika on isoin, eika sita saa jarjestaa uusiksi.
+        drivers = [d for d in (entry.get("drivers") or []) if isinstance(d, str)]
+        drivers = drivers[:WHY_DRIVER_MAX]
+        facts = driver_facts(p)
         p["why"] = {
             "sentence": sentence,
-            "drivers": entry.get("drivers") or [],
+            "drivers": drivers,
+            # Todisteluku per ajuri (SHARE-CARD-WHY-EMPHASIS 20.8). Vain ne
+            # ajurit jotka tama rivi oikeasti kantaa; ilman lukua jaava ajuri
+            # renderoityy pelkkana nimena eika placeholderina.
+            "driver_facts": {d: facts[d] for d in drivers if d in facts},
             # Lukija saa tietää kummasta lähteestä lause tuli. "template" ei
             # ole vika vaan tarkka mutta tylsä lause; sen piilottaminen tekisi
             # provenienssilupauksesta valikoivan.

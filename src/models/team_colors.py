@@ -25,7 +25,11 @@ _TEAM_COLORS = {
     "MCI": ("#6CABDD", "#FFFFFF"), "MUN": ("#DA291C", "#FFFFFF"),
     "NEW": ("#241F20", "#FFFFFF"), "NFO": ("#DD0000", "#FFFFFF"),
     "SHU": ("#EE2737", "#FFFFFF"), "SOU": ("#D71920", "#FFFFFF"),
-    "SUN": ("#EB172B", "#FFFFFF"), "TOT": ("#132257", "#FFFFFF"),
+    # 31.7 (Villen havainto, teamColors.ts): Spursin identiteetti on VALKOINEN
+    # paita, navy on detaljivari -- navy-paita luki "sininen joukkue". Tama
+    # kopio jai navyksi 17.8-siirrossa asti = sivut ja SPA nayttivat Spursin
+    # eri varisena, tasan se "kaksi totuutta" -vika jota docstring varoittaa.
+    "SUN": ("#EB172B", "#FFFFFF"), "TOT": ("#FFFFFF", "#132257"),
     "WHU": ("#7A263A", "#FFFFFF"), "WOL": ("#FDB913", "#231F20"),
 }
 
@@ -34,6 +38,9 @@ _JERSEY = ("M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 "
            "L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z")
 _SLEEVE_L = "M 33 15 L 16 27 L 24 42 L 33 36 Z"
 _SLEEVE_R = "M 67 15 L 84 27 L 76 42 L 67 36 Z"
+# KIT-POLISH 21.8: kaulusrivat (paantien kaari offsetattuna ~4 yksikkoa),
+# sama polku kuin TeamKit.svelte / shareCard.ts / build_fpl_longtail.py.
+_COLLAR = "M 43 9 C 46 15 54 15 57 9 L 60.5 11.1 C 55 19 45 19 39.5 11.1 Z"
 
 
 def _hash_color(name: str) -> str:

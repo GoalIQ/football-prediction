@@ -728,6 +728,10 @@ _JERSEY = ("M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 "
            "L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z")
 _SLEEVE_L = "M 33 15 L 16 27 L 24 42 L 33 36 Z"
 _SLEEVE_R = "M 67 15 L 84 27 L 76 42 L 67 36 Z"
+# KIT-POLISH 21.8: kaulusrivat + valo/varjo-liuku, sama geometria ja
+# piirtojarjestys kuin TeamKit.svelte / shareCard.ts (runko -> hihat ->
+# kaulus -> liuku -> aariviiva).
+_COLLAR = "M 43 9 C 46 15 54 15 57 9 L 60.5 11.1 C 55 19 45 19 39.5 11.1 Z"
 
 
 def _hash_color(name: str) -> str:
@@ -759,7 +763,14 @@ def _kit_defs(shorts) -> str:
     sivun 175 kB -> 468 kB. Joukkueita on ~20, joten symboli per joukkue +
     pieni <use> per rivi pitaa sivun kevyena.
     """
-    out = []
+    out = [
+        '<linearGradient id="k-shade" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0" stop-color="rgba(255,255,255,0.14)"/>'
+        '<stop offset="0.35" stop-color="rgba(255,255,255,0)"/>'
+        '<stop offset="0.65" stop-color="rgba(0,0,0,0)"/>'
+        '<stop offset="1" stop-color="rgba(0,0,0,0.18)"/>'
+        "</linearGradient>"
+    ]
     for s in sorted({(x or "").upper() for x in shorts if x}):
         color, _ = _team_color(s)
         sleeve = _darken(color)
@@ -771,6 +782,8 @@ def _kit_defs(shorts) -> str:
             f'<path d="{_JERSEY}" fill="{color}"/>'
             f'<path d="{_SLEEVE_L}" fill="{sleeve}"/>'
             f'<path d="{_SLEEVE_R}" fill="{sleeve}"/>'
+            f'<path d="{_COLLAR}" fill="{sleeve}"/>'
+            f'<path d="{_JERSEY}" fill="url(#k-shade)"/>'
             f'<path d="{_JERSEY}" fill="none" stroke="rgba(10,8,32,0.28)" '
             f'stroke-width="3" stroke-linejoin="round"/>'
             f"</symbol>"

@@ -97,7 +97,16 @@ export interface LastSeason {
  *  lauseen ehto. */
 export interface XpWhy {
 	sentence: string;
+	/** Backend rajaa kolmeen (`WHY_DRIVER_MAX`) ja SAILYTTAA jarjestyksen —
+	 *  se on lauseen kirjoittajan nakemys siita mika on isoin. Klientti ei
+	 *  jarjesta eika rajaa uudelleen. */
 	drivers: string[];
+	/** Ajurin todisteluku ("83 mins a game"), avaimena `drivers`-alkio.
+	 *  SHARE-CARD-WHY-EMPHASIS 20.8 (Rowanin palaute): ajuri ei ole enaa
+	 *  pelkka tagi vaan kantaa luvun, jotta lukija nakee syyn sekunnissa.
+	 *  Defensiivinen: vanha deployattu backend ei tuo kenttaa, ja ajuri jolle
+	 *  rivi ei kanna lukua renderoityy pelkkana nimena — ei placeholderia. */
+	driver_facts?: Record<string, string>;
 	source: 'model' | 'template' | string;
 }
 

@@ -415,7 +415,11 @@ def test_pool_lisays_nosti_etag_skeemaversiota():
     # puri kuten kuuluu — se on ainoa asia joka pakottaa nostamaan version
     # kasin, ja se loysi noston puuttumisen ennen kuin kayttajat loysivat
     # tyhjan kentan valimuistista.
-    NYKYINEN = "s6"
+    # s7 (20.8): `why.driver_facts` + `drivers` kapenee kolmeen
+    # (SHARE-CARD-WHY-EMPHASIS). Ja taas testi puri: skeemanosto tehtiin
+    # patchissa jonka verifiointi ajoi vain why/xp-testit, ja tama vakio
+    # jai nostamatta kunnes koko setti ajettiin.
+    NYKYINEN = "s7"
     src = (API_DIR / "main.py").read_text(encoding="utf-8")
     assert f'schema = "{NYKYINEN}"' in src, (
         f"ETagin skeemaversio ei ole {NYKYINEN}. Jos lisasit pooliin kentan "
