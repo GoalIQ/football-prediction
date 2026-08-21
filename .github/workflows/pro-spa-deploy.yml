@@ -1,0 +1,58 @@
+# pro.goaliq.app-SPA:n deploy Cloudflare Pagesiin (projekti goaliq-pro-spa).
+#
+# MIKSI TAMA ON OLEMASSA (21.8.2026): SPA:lla ei ollut yhtaan deploy-polkua
+# reposta — CF Pagesin goaliq-pro-spa on direct upload -projekti (sama
+# asetelma josta hub-deploy.yml syntyi 16.8) ja deploy ajettiin kasin
+# wranglerilla Villen koneelta. Seuraus: repoon mergetty SPA-muutos ei
+# nakynyt tuotannossa ennen kuin joku muisti ajaa wranglerin.
+#
+# VAIN workflow_dispatch, EI push-triggeria: SPA-deploy on 🔒 Villen GO
+# -portin takana (toisin kuin hub, jonka paivittainen data-refresh vaatii
+# automaattisen polun). GO annetaan → tama ajetaan → tuotanto vastaa mainia.
+# Kaytetaan samoja CF-secreteja kuin hub-deploy.yml.
+
+name: pro-spa-deploy
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: pro-spa-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/pro-spa/package-lock.json
+
+      - name: Build
+        working-directory: web/pro-spa
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      # Sama portti-idea kuin hub-deployssa: buildin on synnyttava oikeasti.
+      # Tyhjan/vajaan hakemiston deploy nayttaisi vihrealta ja tarjoilisi
+      # rikkinaisen sivun.
+      - name: Portti - build syntyi
+        run: |
+          set -euo pipefail
+          test -f web/pro-spa/build/index.html
+          COUNT=$(find web/pro-spa/build -type f | wc -l)
+          echo "build: $COUNT tiedostoa"
+          [ "$COUNT" -ge 10 ] || { echo "::error::build nayttaa vajaalta"; exit 1; }
+
+      - name: Deploy Cloudflare Pagesiin
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy web/pro-spa/build --project-name=goaliq-pro-spa --branch=main --commit-dirty=true
