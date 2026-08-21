@@ -18,6 +18,7 @@
 	// primary-vari, EI pelaajakuvia eika krestejä. Renderoidaan <symbol>+<use>
 	// -parina (ks. PERF-huomio alempana), joten TeamKit-komponenttia ei tarvita.
 	import { teamColorByShort } from '$lib/teamColors';
+	import { kitByShort, kitLayers } from '$lib/teamKits';
 	import { fetchXp } from '$lib/api';
 	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import {
@@ -417,9 +418,10 @@
 		'L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z';
 	const SLEEVE_L = 'M 33 15 L 16 27 L 24 42 L 33 36 Z';
 	const SLEEVE_R = 'M 67 15 L 84 27 L 76 42 L 67 36 Z';
-	// KIT-POLISH 21.8: kaulusrivat + valo/varjo-liuku, sama geometria ja
-	// piirtojärjestys kuin TeamKit.svelte — kirjastokopio vain perf-syistä.
-	const COLLAR = 'M 43 9 C 46 15 54 15 57 9 L 60.5 11.1 C 55 19 45 19 39.5 11.1 Z';
+	// KIT-KUVIOT 21.8: kuvio + kaulus jaetusta $lib/teamKits-taulusta, sama
+	// geometria ja piirtojärjestys kuin TeamKit.svelte — kirjastokopio vain
+	// perf-syistä (symbol per joukkue kerran, rivit viittaavat <use>:lla).
+	const COLLAR = 'M 43 9 C 46 15 54 15 57 9';
 	function darken(hex: string, f = 0.7): string {
 		const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
 		if (!m) return hex;
@@ -430,7 +432,17 @@
 	const kitDefs = $derived(
 		teams.map((t) => {
 			const c = teamColorByShort(t);
-			return { short: t, color: c.color, sleeve: darken(c.color) };
+			const kit = kitByShort(t);
+			// 'sleeves' = kontrastihihat: hiha kakkosvärillä darken-johdon sijaan.
+			const sleeve =
+				kit?.pattern === 'sleeves' && kit.secondary ? kit.secondary : darken(c.color);
+			return {
+				short: t,
+				color: c.color,
+				sleeve,
+				secondary: kit?.secondary,
+				layers: kit?.secondary ? kitLayers(kit.pattern) : []
+			};
 		})
 	);
 </script>
@@ -438,19 +450,30 @@
 <!-- Paitakirjasto kerran: rivit viittaavat naihin <use>:lla (perf). -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
 	<defs>
-		<linearGradient id="lk-shade" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0" stop-color="rgba(255,255,255,0.14)" />
-			<stop offset="0.35" stop-color="rgba(255,255,255,0)" />
-			<stop offset="0.65" stop-color="rgba(0,0,0,0)" />
-			<stop offset="1" stop-color="rgba(0,0,0,0.18)" />
-		</linearGradient>
+		<clipPath id="lk-body"><path d={JERSEY} /></clipPath>
 		{#each kitDefs as k (k.short)}
 			<symbol id="lk{k.short}" viewBox="0 0 100 100">
 				<path d={JERSEY} fill={k.color} />
+				{#if k.layers.length > 0}
+					<g clip-path="url(#lk-body)">
+						{#each k.layers as l, i (i)}
+							{#if l.kind === 'rect'}
+								<rect x={l.x} y={l.y} width={l.w} height={l.h} fill={k.secondary} />
+							{:else}
+								<path d={l.d} fill={k.secondary} />
+							{/if}
+						{/each}
+					</g>
+				{/if}
 				<path d={SLEEVE_L} fill={k.sleeve} />
 				<path d={SLEEVE_R} fill={k.sleeve} />
-				<path d={COLLAR} fill={k.sleeve} />
-				<path d={JERSEY} fill="url(#lk-shade)" />
+				<path
+					d={COLLAR}
+					fill="none"
+					stroke={k.secondary ?? k.sleeve}
+					stroke-width="3.5"
+					stroke-linecap="round"
+				/>
 				<path
 					d={JERSEY}
 					fill="none"

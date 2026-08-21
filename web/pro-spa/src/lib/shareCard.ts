@@ -13,6 +13,7 @@
  */
 
 import { teamColorByShort } from './teamColors';
+import { kitByShort, kitLayers } from './teamKits';
 
 export interface CardRow {
 	rank: number;
@@ -267,11 +268,11 @@ const JERSEY =
 	'L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z';
 const SLEEVE_L = 'M 33 15 L 16 27 L 24 42 L 33 36 Z';
 const SLEEVE_R = 'M 67 15 L 84 27 L 76 42 L 67 36 Z';
-// KIT-POLISH 21.8: kaulusrivat + valo/varjo-liuku, sama geometria ja
-// piirtojärjestys kuin TeamKit.svelte (runko → hihat → kaulus → liuku →
-// ääriviiva → lyhenne). Kanvasjäljen on vastattava sivun SVG:tä 1:1 —
-// jaettu kuva ja sivu eivät saa näyttää eri paitaa.
-const COLLAR = 'M 43 9 C 46 15 54 15 57 9 L 60.5 11.1 C 55 19 45 19 39.5 11.1 Z';
+// KIT-KUVIOT 21.8: kuvio + kaulus jaetusta $lib/teamKits-taulusta, sama
+// geometria ja piirtojärjestys kuin TeamKit.svelte (runko → kuvio → hihat →
+// kaulus → ääriviiva → lyhenne halolla). Kanvasjäljen on vastattava sivun
+// SVG:tä 1:1 — jaettu kuva ja sivu eivät saa näyttää eri paitaa.
+const COLLAR = 'M 43 9 C 46 15 54 15 57 9';
 
 function darkenHex(hex: string, f = 0.7): string {
 	const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -310,28 +311,48 @@ function drawKit(
 	ctx.save();
 	ctx.translate(x, y);
 	ctx.scale(size / 100, size / 100);
+	const kit = kitByShort(p.team);
+	// 'sleeves' = kontrastihihat: hiha kakkosvärillä darken-johdon sijaan.
+	const sleeve = kit?.pattern === 'sleeves' && kit.secondary ? kit.secondary : darkenHex(p.color);
 	ctx.fillStyle = p.color;
 	ctx.fill(new Path2D(JERSEY));
-	ctx.fillStyle = darkenHex(p.color);
+	// Kuvio rungon sisällä (leikataan runkoon — raita ei saa vuotaa ääriviivan yli).
+	if (kit?.secondary) {
+		const layers = kitLayers(kit.pattern);
+		if (layers.length > 0) {
+			ctx.save();
+			ctx.clip(new Path2D(JERSEY));
+			ctx.fillStyle = kit.secondary;
+			for (const l of layers) {
+				if (l.kind === 'rect') ctx.fillRect(l.x, l.y, l.w, l.h);
+				else ctx.fill(new Path2D(l.d));
+			}
+			ctx.restore();
+		}
+	}
+	// Hihat kuvion PÄÄLLE: hiha on oma paneelinsa kuten oikeassa paidassa.
+	ctx.fillStyle = sleeve;
 	ctx.fill(new Path2D(SLEEVE_L));
 	ctx.fill(new Path2D(SLEEVE_R));
-	ctx.fill(new Path2D(COLLAR));
-	// Liuku siluetin y-alueen (9..90) yli, samat stopit kuin SVG:ssä.
-	const shade = ctx.createLinearGradient(0, 9, 0, 90);
-	shade.addColorStop(0, 'rgba(255,255,255,0.14)');
-	shade.addColorStop(0.35, 'rgba(255,255,255,0)');
-	shade.addColorStop(0.65, 'rgba(0,0,0,0)');
-	shade.addColorStop(1, 'rgba(0,0,0,0.18)');
-	ctx.fillStyle = shade;
-	ctx.fill(new Path2D(JERSEY));
+	// Kaulus
+	ctx.strokeStyle = kit?.secondary ?? sleeve;
+	ctx.lineWidth = 3.5;
+	ctx.lineCap = 'round';
+	ctx.stroke(new Path2D(COLLAR));
 	ctx.strokeStyle = 'rgba(243,242,242,0.35)';
 	ctx.lineWidth = 3;
 	ctx.lineJoin = 'round';
 	ctx.stroke(new Path2D(JERSEY));
-	ctx.fillStyle = p.textColor;
+	// Raidallisella paidalla lyhenne osuu kahdelle värille kerralla → halo
+	// (teksti kahdesti: paksu viiva alle, täyttö päälle — sama kuin SVG:ssä).
 	ctx.font = `800 17px ${FONT}`;
 	ctx.textBaseline = 'alphabetic';
 	const tw = ctx.measureText(p.team).width;
+	ctx.strokeStyle = relLum(p.textColor) > 0.5 ? 'rgba(11,10,9,0.55)' : 'rgba(255,255,255,0.6)';
+	ctx.lineWidth = 3.5;
+	ctx.lineJoin = 'round';
+	ctx.strokeText(p.team, 50 - tw / 2, 62);
+	ctx.fillStyle = p.textColor;
 	ctx.fillText(p.team, 50 - tw / 2, 62);
 	ctx.restore();
 	ctx.textBaseline = 'top';

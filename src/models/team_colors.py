@@ -19,8 +19,9 @@ _TEAM_COLORS = {
     "BHA": ("#0057B8", "#FFFFFF"), "BUR": ("#6C1D45", "#FFFFFF"),
     "CHE": ("#034694", "#FFFFFF"), "COV": ("#009CD8", "#FFFFFF"),
     "CRY": ("#1B458F", "#FFFFFF"), "EVE": ("#003399", "#FFFFFF"),
-    "FUL": ("#000000", "#FFFFFF"), "HUL": ("#F0A800", "#000000"),
-    "IPS": ("#4172B5", "#FFFFFF"), "LEE": ("#FFCD00", "#1D428A"),
+    # 21.8 kit-kuviot: FUL/LEE pelaavat valkoisessa (sama peruste kuin TOT).
+    "FUL": ("#FFFFFF", "#000000"), "HUL": ("#F0A800", "#000000"),
+    "IPS": ("#4172B5", "#FFFFFF"), "LEE": ("#FFFFFF", "#1D428A"),
     "LEI": ("#003090", "#FFFFFF"), "LIV": ("#C8102E", "#FFFFFF"),
     "MCI": ("#6CABDD", "#FFFFFF"), "MUN": ("#DA291C", "#FFFFFF"),
     "NEW": ("#241F20", "#FFFFFF"), "NFO": ("#DD0000", "#FFFFFF"),
@@ -38,9 +39,59 @@ _JERSEY = ("M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 "
            "L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z")
 _SLEEVE_L = "M 33 15 L 16 27 L 24 42 L 33 36 Z"
 _SLEEVE_R = "M 67 15 L 84 27 L 76 42 L 67 36 Z"
-# KIT-POLISH 21.8: kaulusrivat (paantien kaari offsetattuna ~4 yksikkoa),
-# sama polku kuin TeamKit.svelte / shareCard.ts / build_fpl_longtail.py.
-_COLLAR = "M 43 9 C 46 15 54 15 57 9 L 60.5 11.1 C 55 19 45 19 39.5 11.1 Z"
+# KIT-KUVIOT 21.8: kaulus (paantien kaari viivana) + kuratoitu kuviotaulu.
+# PEILI jaetusta teamKits.ts:sta (goaliq-app lib/teamKits.ts = web/pro-spa/
+# src/lib/teamKits.ts, sanatarkasti sama tiedosto molemmissa) — jos muutat
+# jotain naista, muuta kaikki kolme samassa yhteydessa, muuten sama joukkue
+# saa eri paidan eri pinnalta. IP-raja: EI kresteja/sponsoreita/valmistaja-
+# logoja; kuviotyypit ovat paidan yleista muotokielta, eivat trade dressia.
+_COLLAR = "M 43 9 C 46 15 54 15 57 9"
+
+#: short -> (pattern, secondary). Puuttuva rivi = solid ilman kakkosvaria.
+_KIT_BY_SHORT = {
+    # Premier League
+    "ARS": ("sleeves", "#FFFFFF"), "AVL": ("sleeves", "#94BEE5"),
+    "BOU": ("stripes", "#000000"), "BRE": ("stripes", "#FFFFFF"),
+    "BHA": ("stripes", "#FFFFFF"), "BUR": ("sleeves", "#99D6EA"),
+    "CRY": ("stripes", "#C4122E"), "FUL": ("solid", "#000000"),
+    "HUL": ("stripes", "#000000"), "LEE": ("solid", "#1D428A"),
+    "NEW": ("stripes", "#FFFFFF"), "SHU": ("stripes", "#FFFFFF"),
+    "SOU": ("stripes", "#FFFFFF"), "SUN": ("stripes", "#FFFFFF"),
+    "TOT": ("solid", "#132257"), "WHU": ("sleeves", "#7AC5E8"),
+    "WOL": ("solid", "#231F20"),
+    # La Liga
+    "ATH": ("stripes", "#FFFFFF"), "ATM": ("stripes", "#FFFFFF"),
+    "BAR": ("stripes", "#004D98"), "BET": ("stripes", "#FFFFFF"),
+    "GIR": ("stripes", "#FFFFFF"), "RMA": ("solid", "#00529F"),
+    "RSO": ("stripes", "#FFFFFF"),
+    # Serie A
+    "ATA": ("stripes", "#2E6BB0"), "BOL": ("stripes", "#1B2F5B"),
+    "GEN": ("halves", "#002147"), "INT": ("stripes", "#000000"),
+    "JUV": ("stripes", "#FFFFFF"), "MIL": ("stripes", "#000000"),
+    "UDI": ("stripes", "#FFFFFF"),
+    # Ligue 1
+    "ASM": ("sash", "#FFFFFF"), "LEN": ("halves", "#A8123A"),
+    "PSG": ("band", "#DA291C"),
+}
+
+
+def _kit_layers(pattern: str) -> list:
+    """Kuvion muodot rungon sisalla — peili teamKits.ts:n kitLayersista.
+
+    'sleeves' ei tuota runkomuotoja: se tarkoittaa etta hihat maalataan
+    secondary-varilla tummennetun johdoksen sijaan (renderoija lukee itse).
+    """
+    if pattern == "stripes":
+        return [("rect", x, 0, 5, 100) for x in (38, 48, 58)]
+    if pattern == "hoops":
+        return [("rect", 0, y, 100, 7) for y in (25, 45, 65)]
+    if pattern == "halves":
+        return [("rect", 50, 0, 50, 100)]
+    if pattern == "band":
+        return [("rect", 44, 0, 12, 100)]
+    if pattern == "sash":
+        return [("path", "M 85 0 L 100 15 L 15 100 L 0 85 Z")]
+    return []
 
 
 def _hash_color(name: str) -> str:
