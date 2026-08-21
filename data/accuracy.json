@@ -1,32 +1,32 @@
 {
-  "updated_at": "2026-08-21T18:50:03+00:00",
+  "updated_at": "2026-08-21T21:33:34+00:00",
   "logged_total": 3197,
-  "pending": 3010,
+  "pending": 3007,
   "voided": 5,
   "all_time": {
-    "n": 182,
-    "correct_1x2": 94,
-    "pct_1x2": 0.5165,
-    "decisive_n": 124,
-    "decisive_correct": 94,
-    "pct_decisive": 0.7581,
-    "exact_n": 134,
+    "n": 185,
+    "correct_1x2": 97,
+    "pct_1x2": 0.5243,
+    "decisive_n": 127,
+    "decisive_correct": 97,
+    "pct_decisive": 0.7638,
+    "exact_n": 137,
     "exact_correct": 22,
-    "pct_exact": 0.1642,
-    "brier": 0.5942,
-    "brier_n": 134
+    "pct_exact": 0.1606,
+    "brier": 0.5857,
+    "brier_n": 137
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 45,
-    "pct_1x2": 0.45,
-    "decisive_n": 65,
-    "decisive_correct": 45,
-    "pct_decisive": 0.6923,
+    "correct_1x2": 46,
+    "pct_1x2": 0.46,
+    "decisive_n": 66,
+    "decisive_correct": 46,
+    "pct_decisive": 0.697,
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.6384,
+    "brier": 0.6319,
     "brier_n": 100,
     "window": 100
   },
@@ -70,18 +70,44 @@
       "brier": null,
       "brier_n": 10
     },
-    "PD": {
-      "n": 7,
-      "correct_1x2": 4,
-      "pct_1x2": 0.5714,
-      "decisive_n": 4,
-      "decisive_correct": 4,
+    "FL1": {
+      "n": 1,
+      "correct_1x2": 1,
+      "pct_1x2": 1.0,
+      "decisive_n": 1,
+      "decisive_correct": 1,
       "pct_decisive": 1.0,
-      "exact_n": 7,
+      "exact_n": 1,
+      "exact_correct": 0,
+      "pct_exact": null,
+      "brier": null,
+      "brier_n": 1
+    },
+    "PD": {
+      "n": 8,
+      "correct_1x2": 5,
+      "pct_1x2": 0.625,
+      "decisive_n": 5,
+      "decisive_correct": 5,
+      "pct_decisive": 1.0,
+      "exact_n": 8,
       "exact_correct": 2,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 7
+      "brier_n": 8
+    },
+    "PL": {
+      "n": 1,
+      "correct_1x2": 1,
+      "pct_1x2": 1.0,
+      "decisive_n": 1,
+      "decisive_correct": 1,
+      "pct_decisive": 1.0,
+      "exact_n": 1,
+      "exact_correct": 0,
+      "pct_exact": null,
+      "brier": null,
+      "brier_n": 1
     },
     "PPL": {
       "n": 7,
@@ -112,22 +138,22 @@
   },
   "calibration": [
     {
-      "bin_mid": 0.0698,
-      "predicted": 0.0698,
-      "actual": 0.0909,
-      "n": 11
+      "bin_mid": 0.067,
+      "predicted": 0.067,
+      "actual": 0.0833,
+      "n": 12
     },
     {
-      "bin_mid": 0.1573,
-      "predicted": 0.1573,
-      "actual": 0.1296,
-      "n": 54
+      "bin_mid": 0.1582,
+      "predicted": 0.1582,
+      "actual": 0.1228,
+      "n": 57
     },
     {
-      "bin_mid": 0.2529,
-      "predicted": 0.2529,
-      "actual": 0.2938,
-      "n": 160
+      "bin_mid": 0.2527,
+      "predicted": 0.2527,
+      "actual": 0.2901,
+      "n": 162
     },
     {
       "bin_mid": 0.337,
@@ -142,16 +168,16 @@
       "n": 50
     },
     {
-      "bin_mid": 0.5382,
-      "predicted": 0.5382,
-      "actual": 0.5312,
-      "n": 32
+      "bin_mid": 0.538,
+      "predicted": 0.538,
+      "actual": 0.5455,
+      "n": 33
     },
     {
-      "bin_mid": 0.653,
-      "predicted": 0.653,
-      "actual": 0.64,
-      "n": 25
+      "bin_mid": 0.6513,
+      "predicted": 0.6513,
+      "actual": 0.6538,
+      "n": 26
     },
     {
       "bin_mid": 0.7276,
@@ -160,13 +186,55 @@
       "n": 8
     },
     {
-      "bin_mid": 0.8586,
-      "predicted": 0.8586,
-      "actual": 0.6667,
-      "n": 3
+      "bin_mid": 0.8524,
+      "predicted": 0.8524,
+      "actual": 0.75,
+      "n": 4
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-21",
+      "home_team": "Olympique de Marseille",
+      "away_team": "RC Strasbourg Alsace",
+      "predicted_winner": "home",
+      "p_winner": 0.5302,
+      "most_likely_score": "2-1",
+      "actual_score": "4-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-21",
+      "home_team": "Real Betis Balompié",
+      "away_team": "Real Sociedad de Fútbol",
+      "predicted_winner": "home",
+      "p_winner": 0.6079,
+      "most_likely_score": "2-1",
+      "actual_score": "1-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-21",
+      "home_team": "Arsenal",
+      "away_team": "Coventry",
+      "predicted_winner": "home",
+      "p_winner": 0.8338,
+      "most_likely_score": "2-0",
+      "actual_score": "3-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-20",
       "home_team": "Rayo Vallecano de Madrid",
@@ -400,48 +468,6 @@
       "most_likely_score": "1-1",
       "actual_score": "3-0",
       "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "Corinthians",
-      "away_team": "Cruzeiro",
-      "predicted_winner": "home",
-      "p_winner": 0.4379,
-      "most_likely_score": "1-0",
-      "actual_score": "1-2",
-      "actual_outcome": "away",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "Vitoria",
-      "away_team": "Botafogo RJ",
-      "predicted_winner": "home",
-      "p_winner": 0.3853,
-      "most_likely_score": "1-1",
-      "actual_score": "1-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "Mirassol",
-      "away_team": "Flamengo RJ",
-      "predicted_winner": "away",
-      "p_winner": 0.4457,
-      "most_likely_score": "1-1",
-      "actual_score": "1-5",
-      "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
