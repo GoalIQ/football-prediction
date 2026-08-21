@@ -21,10 +21,12 @@ const BY_SHORT: Record<string, [string, string]> = {
 	COV: ['#009CD8', '#FFFFFF'],
 	CRY: ['#1B458F', '#FFFFFF'],
 	EVE: ['#003399', '#FFFFFF'],
-	FUL: ['#000000', '#FFFFFF'],
+	// 21.8 kit-kuviot: FUL/LEE/RMA pelaavat valkoisessa — identiteetti on
+	// paita, brändiväri jää tekstiin. Sama peruste kuin TOT-fixissä 31.7.
+	FUL: ['#FFFFFF', '#000000'],
 	HUL: ['#F0A800', '#000000'],
 	IPS: ['#4172B5', '#FFFFFF'],
-	LEE: ['#FFCD00', '#1D428A'],
+	LEE: ['#FFFFFF', '#1D428A'],
 	LEI: ['#003090', '#FFFFFF'],
 	LIV: ['#C8102E', '#FFFFFF'],
 	MCI: ['#6CABDD', '#FFFFFF'],
@@ -40,7 +42,7 @@ const BY_SHORT: Record<string, [string, string]> = {
 	TOT: ['#FFFFFF', '#132257'],
 	WHU: ['#7A263A', '#FFFFFF'],
 	WOL: ['#FDB913', '#231F20'],
-	RMA: ['#00529F', '#FFFFFF'],
+	RMA: ['#FFFFFF', '#00529F'],
 	BAR: ['#A50044', '#FFFFFF'],
 	ATM: ['#CB3524', '#FFFFFF'],
 	ATH: ['#EE2523', '#FFFFFF'],
