@@ -106,13 +106,15 @@ def main() -> int:
         f'<svg width="0" height="0" style="position:absolute">{_kit_defs(shorts)}</svg>'
         '<div class="card">'
         '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
-        f'<div><div class="title">The model&#8217;s own FPL squad, GW{args.gw} ({shape})</div>'
+        f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})</div>'
         f'<div class="sub">Picked by the optimiser, frozen {frozen_at}, entered as-is</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>'
         f'<div class="ftr"><span><b>{total:.1f}m</b> even</span>'
+        # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
+        # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
         "<span>entry 116920 · public on fantasy.premierleague.com</span>"
-        "<span>goaliq.app/fpl/model-xi</span></div>"
+        "<span>goaliq.app</span></div>"
         "</div>")
 
     out_dir = Path(args.out)
