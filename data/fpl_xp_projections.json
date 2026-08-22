@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-08-22T09:15:45",
+    "generated_at": "2026-08-22T09:21:43",
     "season": "2026/27",
     "overrides_applied": 13,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -37520,7 +37520,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.6,
+      "owned_pct": 0.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -58733,44 +58733,6 @@
       "excluded_reason": "below_min_xp"
     },
     {
-      "id": 78,
-      "web_name": "Kroupi.Jr",
-      "full_name": "Junior Kroupi",
-      "team": "Bournemouth",
-      "team_short": "BOU",
-      "pos": "MID",
-      "price": 7.5,
-      "owned_pct": 0.5,
-      "status": "i",
-      "news": "Foot injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": 1,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1663,
-        "starts": 21,
-        "goals": 13,
-        "assists": 0,
-        "xg": 8.31,
-        "xa": 1.51,
-        "cs": 10,
-        "points": 113,
-        "per90": {
-          "goals": 0.7,
-          "assists": 0.0,
-          "xgi": 0.53
-        }
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable"
-    },
-    {
       "id": 582,
       "web_name": "Madjo",
       "full_name": "Brian Madjo",
@@ -58847,6 +58809,44 @@
       },
       "in_projection": false,
       "excluded_reason": "below_min_xp"
+    },
+    {
+      "id": 78,
+      "web_name": "Kroupi.Jr",
+      "full_name": "Junior Kroupi",
+      "team": "Bournemouth",
+      "team_short": "BOU",
+      "pos": "MID",
+      "price": 7.5,
+      "owned_pct": 0.4,
+      "status": "i",
+      "news": "Foot injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": 1,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1663,
+        "starts": 21,
+        "goals": 13,
+        "assists": 0,
+        "xg": 8.31,
+        "xa": 1.51,
+        "cs": 10,
+        "points": 113,
+        "per90": {
+          "goals": 0.7,
+          "assists": 0.0,
+          "xgi": 0.53
+        }
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable"
     },
     {
       "id": 494,
