@@ -54,8 +54,11 @@
 	   koska korkeus tulee sisallosta eika kuvasuhteesta.
 	   Paidan koko on komponentin propi eika CSS:aa, joten se on pakko
 	   johtaa ikkunan leveydesta taalla; media query ei ylla siihen. */
+	/* 22.8 (Villen palaute "pitäiskö pitch olla isompi"): penkki siirtyi
+	   kentän alle omaksi nauhakseen, joten kenttä saa koko sarakkeen
+	   leveyden — paidat kasvavat samassa suhteessa. */
 	let winW = $state(0);
-	const kitSize = $derived(winW >= 1040 ? 58 : 44);
+	const kitSize = $derived(winW >= 1040 ? 64 : 44);
 	let xiIds = $state<number[]>([]);
 	let captainId = $state<number | null>(null);
 	let viceId = $state<number | null>(null);
@@ -392,12 +395,12 @@
 				</button>
 			{/if}
 		</div>
-		<!-- 14.8 (Villen palaute "täyttää toi enemmän dashboard maiseksi"):
-		     penkki kentan VIEREEN eika alle leveilla ruuduilla. Kentta jatti
-		     oikealle tyhjan kaistan ja penkki oli neljan paidan rivi jonka
-		     alla sivu jatkui — nyt se tayttaa kaistan ja sivu lyhenee.
-		     Kapealla ruudulla penkki palaa kentan alle kuten ennen. -->
-		<div class="pitch-row" class:has-bench={bench.length > 0}>
+		<!-- 22.8 (Villen palaute "pitäiskö pitch olla isompi"): penkki EI ole
+		     enää kentän vieressä vaan sen alla omana nauhanaan (kuten FPL:n
+		     oma pinta) — 210px:n sivusarake söi kentältä neljänneksen
+		     leveydestä ja kenttä luki kapealta rate-teamin vasemmassa
+		     sarakkeessa. -->
+		<div class="pitch-row">
 		<div class="pitch">
 			<!-- 31.7 (Villen palaute "saataisko kentästä parempi" + tarkennus):
 			     PUOLIKAS kenttä kuten OfficialFPL/FFScout — maali+boksit ylhäällä,
@@ -431,7 +434,13 @@
 								{#if effCaptain === p.id}<span class="badge">C</span>{/if}
 								{#if effCaptain !== p.id && effVice === p.id}<span class="badge vice">V</span>{/if}
 							</span>
-							<span class="pname">{p.web_name}</span>
+							<!-- 22.8: nimi + xP tummalla laatalla nurmen päällä —
+							     tekstit suoraan raidoilla lukivat halvalta ja
+							     heikosti (vrt. FPL:n oma pinta, jossa laatta). -->
+							<span class="plabel">
+								<span class="pname">{p.web_name}</span>
+								<span class="pxp">{xpOf(p).toFixed(1)}</span>
+							</span>
 							{#if typeof p.chance_next === 'number' && p.chance_next < 100}
 								<span
 									class="doubt"
@@ -439,7 +448,6 @@
 									title={p.news ?? ''}
 								>{p.chance_next === 0 ? 'OUT' : `${p.chance_next}%`}</span>
 							{/if}
-							<span class="pxp">{xpOf(p).toFixed(1)}</span>
 							{#if oppOf(p)}
 								<span class="popp">{oppOf(p)}</span>
 							{/if}
@@ -448,9 +456,10 @@
 				</div>
 			{/each}
 		</div>
+		</div>
 
 		{#if bench.length > 0}
-			<div class="pitch-side">
+			<div class="bench-strip">
 			<p class="label bench-label">Bench</p>
 			<div class="benchrow">
 				{#each bench as p (p.id)}
@@ -462,16 +471,17 @@
 						onclick={() => onPlayerClick(p.id)}
 					>
 						<span class="kitwrap">
-							<TeamKit {...teamColorByShort(p.team_short)} label={p.team_short} size={34} />
+							<TeamKit {...teamColorByShort(p.team_short)} label={p.team_short} size={44} />
 						</span>
-						<span class="pname">{p.web_name}</span>
-						<span class="pxp">{xpOf(p).toFixed(1)}</span>
+						<span class="plabel">
+							<span class="pname">{p.web_name}</span>
+							<span class="pxp">{xpOf(p).toFixed(1)}</span>
+						</span>
 					</button>
 				{/each}
 			</div>
 			</div>
 		{/if}
-		</div>
 
 		{#if premium}
 			<p class="muted hint">
@@ -530,36 +540,9 @@
 		gap: var(--s-3);
 	}
 	.bench-label {
-		margin-top: var(--s-3);
+		margin: 0;
 	}
-	@media (min-width: 1040px) {
-		.pitch-block {
-			max-width: 1040px;
-		}
-		/* Penkki kentan viereen. `minmax(0, ...)` kentalle, jotta paidat
-		   eivat levita saraketta yli gridin. 210px riittaa kahdelle
-		   paidalle rinnakkain -> 4 penkkilaista asettuu 2x2. */
-		.pitch-row.has-bench {
-			grid-template-columns: minmax(0, 1fr) 210px;
-			align-items: start;
-			gap: var(--s-5);
-		}
-		.pitch-row.has-bench .benchrow {
-			flex-wrap: wrap;
-			justify-content: flex-start;
-			gap: var(--s-2);
-		}
-		.pitch-row.has-bench .bench-label {
-			margin-top: 0;
-		}
-		.player {
-			width: 90px;
-		}
-		.pname,
-		.popp {
-			max-width: 88px;
-		}
-		.doubt {
+	.doubt {
 		display: inline-block;
 		margin: 1px 0 0;
 		padding: 0 4px;
@@ -573,19 +556,34 @@
 	.doubt.out {
 		background: var(--negative, #ff8a5c);
 	}
-
-	.pname {
-			font-size: 11.5px;
+	@media (min-width: 1040px) {
+		.pitch-block {
+			max-width: 1040px;
+		}
+		.player {
+			width: 104px;
+		}
+		.plabel,
+		.popp {
+			max-width: 100px;
+		}
+		.pname {
+			font-size: 12px;
+		}
+		.pxp {
+			font-size: 11px;
 		}
 		.popp {
 			font-size: 10px;
 		}
 		.pitch {
-			background: repeating-linear-gradient(
-				180deg,
-				rgba(46, 214, 194, 0.2) 0 56px,
-				rgba(46, 214, 194, 0.27) 56px 112px
-			);
+			padding: var(--s-4) var(--s-2) var(--s-3);
+		}
+		.pitch::before {
+			background-size: 100% 128px;
+		}
+		.row {
+			margin: var(--s-3) 0;
 		}
 	}
 	.label {
@@ -670,17 +668,30 @@
 		   kaytannossa nakymaton, ja kuvakaappauksessa/skaalauksessa se katoaa
 		   kokonaan - jaljelle jaa vain 1 px:n reuna. Mitattu 0.24 = 1.215:1.
 		   Sama arvo kaikilla kolmella pinnalla (SPA, mobiili, longtail).
-		   31.7: + nurmiraidat (kaksi teal-alphaa) ja viivasto-SVG paalle. */
+		   31.7: + nurmiraidat (kaksi teal-alphaa) ja viivasto-SVG paalle.
+		   22.8: raidat siirtyivat ::before-kerrokseen (skaalautuvat leveilla
+		   ruuduilla) ja paalle tuli kevyt ylhaalta laskeva valogradientti —
+		   tasavari luki littealta isommassa koossa. */
 		position: relative;
-		background: repeating-linear-gradient(
-			180deg,
-			rgba(46, 214, 194, 0.2) 0 44px,
-			rgba(46, 214, 194, 0.27) 44px 88px
-		);
+		background:
+			linear-gradient(180deg, rgba(46, 214, 194, 0.1), transparent 55%),
+			rgba(46, 214, 194, 0.06);
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
 		padding: var(--s-2) var(--s-1);
 		overflow: hidden;
+	}
+	.pitch::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: repeating-linear-gradient(
+			180deg,
+			rgba(46, 214, 194, 0.14) 0 50%,
+			rgba(46, 214, 194, 0.22) 50% 100%
+		);
+		background-size: 100% 96px;
+		pointer-events: none;
 	}
 	.pitch-lines {
 		position: absolute;
@@ -694,6 +705,7 @@
 	}
 	.row {
 		position: relative;
+		z-index: 1;
 		display: flex;
 		justify-content: space-evenly;
 		margin: var(--s-2) 0;
@@ -744,23 +756,55 @@
 		border-color: var(--border);
 		color: var(--text-muted);
 	}
+	/* 22.8: nimi + xP yhdella tummalla laatalla (FPL:n oman kentan tapaan) —
+	   teksti suoraan nurmiraidoilla luki heikosti. Kiintea tumma tausta +
+	   vaalea teksti toimii seka dark- etta classic-teemassa, koska laatta
+	   istuu aina teal-nurmen paalla eika sivun taustalla. */
+	.plabel {
+		display: grid;
+		justify-items: center;
+		gap: 0;
+		max-width: 74px;
+		padding: 1px 6px 2px;
+		border-radius: 3px;
+		background: rgba(8, 10, 10, 0.62);
+	}
 	.pname {
 		font-size: 10px;
 		font-weight: 600;
-		max-width: 66px;
+		color: #f3f2f2;
+		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.pxp {
 		font-size: 10px;
-		color: var(--text-muted);
+		color: #f5c542;
+		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+	/* 22.8: penkki kentan alla omana nauhanaan — kentta sai koko leveyden. */
+	.bench-strip {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--s-3) var(--s-4);
+		margin-top: var(--s-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background:
+			linear-gradient(180deg, rgba(46, 214, 194, 0.05), transparent),
+			var(--surface);
+		padding: var(--s-2) var(--s-3);
+	}
+	.bench-strip .plabel {
+		background: rgba(8, 10, 10, 0.45);
 	}
 	.benchrow {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--s-1);
+		gap: var(--s-2) var(--s-3);
 	}
 	.hint {
 		margin: var(--s-2) 0 0;

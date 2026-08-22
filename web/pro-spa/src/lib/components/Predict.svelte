@@ -313,31 +313,36 @@
 		{/if}
 
 		{#if premium}
-			<div class="xg">
-				<div><span class="k">Expected goals</span></div>
-				<div class="xg-row">
-					<span>{data.home_team}</span>
-					<strong>{data.expected_goals_home.toFixed(2)}</strong>
+			<!-- 22.8 (Villen kuva "asettuu hassusti"): xG ja scorelines olivat
+			     kapea allekkainen lista sivun vasemmassa reunassa ja oikea
+			     puoli jäi tyhjäksi — nyt ne asettuvat rinnakkain ja tulos on
+			     rajattu kortiksi. -->
+			<div class="detail-grid">
+				<div class="xg">
+					<div><span class="k">Expected goals</span></div>
+					<div class="xg-row">
+						<span>{data.home_team}</span>
+						<strong>{data.expected_goals_home.toFixed(2)}</strong>
+					</div>
+					<div class="xg-row">
+						<span>{data.away_team}</span>
+						<strong>{data.expected_goals_away.toFixed(2)}</strong>
+					</div>
 				</div>
-				<div class="xg-row">
-					<span>{data.away_team}</span>
-					<strong>{data.expected_goals_away.toFixed(2)}</strong>
+				<div class="scores-box">
+					<h4>
+						Most likely {data.top_scores.length === 1 ? 'scoreline' : 'scorelines'}
+					</h4>
+					<ul class="scores">
+						{#each data.top_scores as s (s.score)}
+							<li>
+								<span class="sc">{s.score}</span>
+								<span class="sp">{(s.probability * 100).toFixed(1)}%</span>
+							</li>
+						{/each}
+					</ul>
 				</div>
 			</div>
-		{/if}
-
-		{#if premium}
-			<h4>
-				Most likely {data.top_scores.length === 1 ? 'scoreline' : 'scorelines'}
-			</h4>
-			<ul class="scores">
-				{#each data.top_scores as s (s.score)}
-					<li>
-						<span class="sc">{s.score}</span>
-						<span class="sp">{(s.probability * 100).toFixed(1)}%</span>
-					</li>
-				{/each}
-			</ul>
 		{/if}
 
 		{#if premium}
@@ -443,8 +448,21 @@
 		padding: var(--s-3) var(--s-4);
 		max-width: 62ch;
 	}
+	/* 22.8: tulos on kortti eikä sivun levyinen irtolista — prosenttikolmikko
+	   levittyi koko ruudun leveydelle samalla kun listat jäivät 380px:iin
+	   vasempaan reunaan (Villen kuva "asettuu hassusti"). */
 	.result {
 		margin-top: var(--s-5);
+		max-width: 900px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background:
+			linear-gradient(160deg, rgba(46, 214, 194, 0.06), transparent 45%),
+			var(--surface);
+		padding: var(--s-4) var(--s-5);
+	}
+	.result h3 {
+		margin-top: 0;
 	}
 	.outcome {
 		display: flex;
@@ -471,8 +489,7 @@
 		height: 10px;
 		border-radius: var(--radius);
 		overflow: hidden;
-		background: var(--surface);
-		max-width: 620px;
+		background: var(--giq-paper, var(--surface));
 	}
 	.seg-home {
 		background: var(--accent-strong, #8a6224);
@@ -485,9 +502,19 @@
 		background: var(--text-muted);
 		opacity: 0.25;
 	}
+	/* 22.8: xG ja scorelines rinnakkain; kapealla pinoutuvat */
+	.detail-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		gap: var(--s-3) var(--s-6);
+		align-items: start;
+		margin: var(--s-4) 0 var(--s-3);
+	}
+	.scores-box h4 {
+		margin: 0 0 var(--s-1);
+	}
 	.xg {
-		margin: var(--s-5) 0 var(--s-3);
-		max-width: 380px;
+		margin: 0;
 	}
 	.xg-row {
 		display: flex;
@@ -504,8 +531,7 @@
 	.scores {
 		list-style: none;
 		padding: 0;
-		margin: var(--s-2) 0 var(--s-4);
-		max-width: 380px;
+		margin: 0;
 	}
 	.scores li {
 		display: flex;
@@ -521,8 +547,7 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 		gap: var(--s-3);
-		max-width: 620px;
-		margin-bottom: var(--s-3);
+		margin: var(--s-4) 0 var(--s-3);
 	}
 	.tile {
 		border: 1px solid var(--border);
