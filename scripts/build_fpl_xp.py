@@ -49,7 +49,6 @@ from src.data import fpl_api
 from src.data.loader import lataa_otteludata
 from src.models import fpl_xp as xp
 from src.models.fpl_context import (
-    PROMOTED_HOME_OPENER_ATT_BOOST,
     build_context,
     fixture_adjustments,
     fixture_contexts,
@@ -650,8 +649,8 @@ def main(argv: list[str] | None = None) -> int:
                       for f in src["fixtures"] if f["gameweek"]]
     overrides = load_overrides()
     cfg = build_context(promoted, model_fixtures, overrides)
-    print(f"      nousijat: {sorted(promoted)} (koti-avaus-buusti "
-          f"x{PROMOTED_HOME_OPENER_ATT_BOOST}), yliajoja: {len(overrides)}")
+    print(f"      nousijat: {sorted(promoted)} (ei koti-avaus-buustia, "
+          f"poistettu 22.8), yliajoja: {len(overrides)}")
     ctx_notes: list[str] = []
     for f in model_fixtures:
         if f["gameweek"] not in horizon:
@@ -1318,12 +1317,15 @@ def main(argv: list[str] | None = None) -> int:
             },
             "context_layer": {
                 "promoted_teams": sorted(promoted),
-                "promoted_home_opener_att_boost": PROMOTED_HOME_OPENER_ATT_BOOST,
+                # 22.8: `promoted_home_opener_att_boost` poistettu payloadista
+                # kun mekanismi poistettiin. Kentta oli julkinen lupaus
+                # kertoimesta jolle ei ole katetta (133 koti-avausta: suhde
+                # 1.00), joten se ei saa jaada roikkumaan arvolla 1.0.
                 "manual_overrides": len(overrides),
                 "applied_in_horizon": ctx_notes,
-                "note": ("Phase 1b: promoted-side home opener attack boost, "
-                         "manual overrides (data/fpl_manual_overrides.csv) and "
-                         "World Cup fatigue factors"),
+                "note": ("Phase 1b: manual overrides "
+                         "(data/fpl_manual_overrides.csv) and World Cup "
+                         "fatigue factors"),
             },
             "sanity_gate": "PASS",
             "next_gameweek": next_gw,

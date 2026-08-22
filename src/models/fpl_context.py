@@ -1,16 +1,33 @@
 """FPL Phase 1b — konteksti/override-kerros DC-pohjaisiin FPL-projektioihin.
 
-Kolme mekanismia (scope-kuri: EI täydellistä kontekstimoottoria):
+Kaksi mekanismia (scope-kuri: EI täydellistä kontekstimoottoria).
 
-1. NOUSIJA-KOTI-AVAUS-BUUSTI (parametroitu, automaattinen):
-   Raaka DC + promoted-baseline aliarvioi nousijan hyökkäystä sarja-avauksessa
-   kotona → vastustajan CS-% ja puolustajien xP yliarvioituvat (esim. naivi
-   "Man Utd 43 % CS @ Hull"). Kalibrointi 25/26-datasta (walk-forward):
-   nousijat kotona elo-syyskuussa toteuma/odotus = 1.28 (n=9), koti-avauksissa
-   2.8 (n=3, jokainen ylitti odotuksen). Vieraissa 0.84 → EI buustia vieraisiin.
-   Konservatiivinen kerroin 1.30 vain ENSIMMÄISEEN kotipeliin.
+🔴 POISTETTU 22.8.2026: NOUSIJA-KOTI-AVAUS-BUUSTI (oli 1.30).
+   Kerroin oli kalibroitu 25/26-walk-forwardista jossa koti-avauksia oli
+   **kolme** (toteuma/odotus 2.8) ja alkukauden kotipeleja yhdeksän (1.28).
+   22.8 se mitattiin uudelleen isommalla otoksella
+   (`scripts/backtest_promoted_home_opener.py`): **133 nousijan koti-avausta
+   kuudessa liigassa** (BRA, SWE, NOR, DEN, FIN, PL), kausista 2015 alkaen,
+   walk-forward tuotannon fit-parametreilla.
 
-2. MANUAALISET YLIAJOT (data/fpl_manual_overrides.csv):
+   Tulos: toteutuneet kotimaalit 1.23, mallin odotus 1.23 → **suhde 1.00,
+   95 % CI [0.83, 1.18]**. Ilmiota ei ole. 1X2-log loss nousijan
+   koti-avauksissa oli PARAS kertoimella 1.00 (1.1261) ja huononi
+   monotonisesti (1.30 → 1.1520). Sama kerroin huononsi myos
+   ei-nousijoiden koti-avauksia (kontrolliryhma n=816), eli kyse ei ollut
+   edes vaarin kohdistetusta ilmiosta vaan kertoimesta jolle ei ole katetta.
+
+   Huomio jota ei saa unohtaa jos tama palaa poydalle: kerroin PARANSI
+   osumatarkkuutta (33.1 % → 39.1 %), koska se sai mallin veikkaamaan
+   kotivoittoa useammin. Todennakoisyydet menivat silti huonommiksi. Me
+   julkaisemme todennakoisyyksia, joten log loss ratkaisee.
+
+   Tausta: sama kerroin ei koskaan ollut ennustepolussa (`api/main.py` ei
+   importoi tata moduulia), joten sivusto antoi samalle ottelulle kaksi eri
+   lukua — GW1 2026/27 Hull–Man Utd: fantasy 20.0 %, ennuste 13.1 %.
+   Villen havainto 22.8. Ristiriita ratkesi poistamalla, ei levittamalla.
+
+1. MANUAALISET YLIAJOT (data/fpl_manual_overrides.csv):
    Joukkue/fixture-kohtaiset kertoimet joilla korjataan tunnetut naivit
    tapaukset käsin ilman koodimuutosta. Sama tiedosto kantaa myös
    MM-2026-väsymyskertoimet (scope=wc_fatigue): pelaajakohtaisia MM-minuutteja
@@ -18,7 +35,7 @@ Kolme mekanismia (scope-kuri: EI täydellistä kontekstimoottoria):
    international_results.csv on joukkuetaso) → seura-tason kertoimet
    syötetään käsin MM-finaalin (~19.7) jälkeen.
 
-3. xMINS-KERROIN (väsymys): overrides-rivin xmins_mult skaalaa joukkueen
+2. xMINS-KERROIN (väsymys): overrides-rivin xmins_mult skaalaa joukkueen
    pelaajien minuuttiodotusta annetulla GW-välillä (builderissa).
 
 Kerroin-semantiikka: attack_mult kertoo JOUKKUEEN oman maaliodotuksen (λ),
@@ -43,11 +60,6 @@ import numpy as np
 import config
 
 OVERRIDES_PATH = config.DATA_DIR / "fpl_manual_overrides.csv"
-
-# Kalibroitu 25/26 walk-forward -datasta (ks. moduulidocstring + Phase 1b
-# -raportti): koti-avauksen toteuma/odotus 2.8 (n=3), koko alkukauden koti
-# 1.28 (n=9). 1.30 = konservatiivinen, koskee vain yhtä fixturea per nousija.
-PROMOTED_HOME_OPENER_ATT_BOOST = 1.30
 
 _OVERRIDE_FIELDS = ("scope", "team", "opponent", "venue", "gw_from", "gw_to",
                     "attack_mult", "defence_mult", "xmins_mult", "note")
@@ -146,14 +158,12 @@ def fixture_adjustments(home: str, away: str, gw: int | None,
     hf = af = 1.0
     notes: list[str] = []
 
-    # 1. Nousija-koti-avaus-buusti (vain kotijoukkueelle, vain 1. kotipeli)
-    if (home in cfg.get("promoted", ())
-            and gw is not None
-            and cfg.get("first_home_gw", {}).get(home) == gw):
-        hf *= PROMOTED_HOME_OPENER_ATT_BOOST
-        notes.append(f"promoted-home-opener {home} x{PROMOTED_HOME_OPENER_ATT_BOOST}")
+    # 22.8: nousija-koti-avaus-buusti poistettu (ks. moduulidocstring).
+    # `promoted` ja `first_home_gw` jaavat cfg:hen, koska nousijastatusta
+    # kaytetaan muualla (baseline + team_confidence-lippu) — se on
+    # rehellisyysmerkinta eika mallikerroin.
 
-    # 2. Manuaaliset yliajot (molemmilta puolilta)
+    # Manuaaliset yliajot (molemmilta puolilta)
     for r in cfg.get("overrides", ()):
         for team, opp, venue in ((home, away, "H"), (away, home, "A")):
             if not _override_matches(r, team, opp, venue, gw):

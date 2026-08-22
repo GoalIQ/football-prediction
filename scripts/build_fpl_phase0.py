@@ -652,8 +652,8 @@ def main() -> int:
             "context_layer": {
                 "promoted_teams": sorted(promoted),
                 "manual_overrides": len(ctx_cfg["overrides"]),
-                "note": ("Phase 1b: promoted-side home opener attack boost "
-                         "and manual overrides (data/fpl_manual_overrides.csv)"),
+                "note": ("Phase 1b: manual overrides "
+                         "(data/fpl_manual_overrides.csv)"),
             },
             "fdr_method": (
                 "Model based 1-5: 0.55*rank(1 - win%) + 0.45*rank(expected goals conceded), "

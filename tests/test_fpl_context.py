@@ -24,7 +24,7 @@ def _cfg(overrides=None):
 
 
 # ---------------------------------------------------------------------------
-# Nousija-koti-avaus-buusti
+# Nousijastatus (buusti POISTETTU 22.8 — ks. testit alla)
 # ---------------------------------------------------------------------------
 def test_first_home_gw():
     fh = fc.first_home_gw(FIXTURES)
@@ -33,24 +33,31 @@ def test_first_home_gw():
     assert fh["Manchester United"] == 2
 
 
-def test_promoted_home_opener_boosted():
+def test_promoted_home_opener_is_no_longer_boosted():
+    """22.8: buusti poistettu. Nousijan koti-avaus on nyt raaka DC.
+
+    Mitattu 133 nousijan koti-avauksesta kuudessa liigassa: toteuma/odotus
+    1.00 (95 % CI [0.83, 1.18]). Kerroin 1.30 huononsi log lossia myos
+    kontrolliryhmassa, eli sille ei ollut katetta.
+
+    Tama on REGRESSIOTESTI: jos joku palauttaa kertoimen ilman uutta
+    mittausta, tama kaatuu ja pakottaa perustelun.
+    """
     adj, notes = fc.fixture_adjustments("Hull", "Manchester United", 1, _cfg())
-    assert adj["home_factor"] == pytest.approx(fc.PROMOTED_HOME_OPENER_ATT_BOOST)
-    assert adj["away_factor"] == 1.0
-    assert any("promoted-home-opener" in n for n in notes)
+    assert adj is None
+    assert notes == []
+    assert not hasattr(fc, "PROMOTED_HOME_OPENER_ATT_BOOST")
 
 
 def test_promoted_second_home_game_not_boosted():
-    # Hullin 2. kotipeli (GW5) — ei buustia
+    # Hullin 2. kotipeli (GW5) — ei buustia (eika ollut ennenkaan)
     adj, _ = fc.fixture_adjustments("Hull", "Everton", 5, _cfg())
     assert adj is None
 
 
 def test_promoted_away_not_boosted():
-    # Hull vieraissa Coventryn koti-avauksessa: vain Coventry saa buustin
     adj, _ = fc.fixture_adjustments("Coventry", "Hull", 2, _cfg())
-    assert adj["home_factor"] == pytest.approx(fc.PROMOTED_HOME_OPENER_ATT_BOOST)
-    assert adj["away_factor"] == 1.0
+    assert adj is None
 
 
 def test_non_promoted_home_opener_not_boosted():
@@ -109,11 +116,15 @@ def test_override_opponent_and_venue_filter():
     assert adj_wrong_venue is None
 
 
-def test_override_stacks_with_promoted_boost():
+def test_override_alone_applies_on_promoted_home_opener():
+    """Yliajo toimii yha nousijan koti-avauksessa — mutta YKSIN.
+
+    Ennen 22.8 tama testi varmisti etta yliajo kertautuu buustin kanssa
+    (1.30 x 1.1). Buusti on poistettu, joten jaljella on pelkka yliajo.
+    """
     ov = [_row(team="Hull", venue="H", attack_mult=1.1)]
     adj, _ = fc.fixture_adjustments("Hull", "Manchester United", 1, _cfg(ov))
-    assert adj["home_factor"] == pytest.approx(
-        fc.PROMOTED_HOME_OPENER_ATT_BOOST * 1.1)
+    assert adj["home_factor"] == pytest.approx(1.1)
 
 
 # ---------------------------------------------------------------------------
