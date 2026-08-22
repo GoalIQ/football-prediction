@@ -213,14 +213,20 @@ def fetch_fpl_official() -> dict | None:
                 "away": ta["name"],
             }
         )
-    next_deadline = min(
-        (d for ev in upcoming if (d := _parse_iso_utc(ev.get("deadline_time"))) and d > now),
-        default=None,
-    )
+    # 22.8: deadline-GW eksplisiittisesti. next_gameweek (pienin GW jolla on
+    # pelaamaton fixture) on KESKEN kierroksen yha kuluva GW, mutta deadline
+    # on jo seuraavan — etusivun laskuri naytti "GW1 deadline" GW2:n ajalla.
+    deadline_pairs = [
+        (d, ev.get("id"))
+        for ev in upcoming
+        if (d := _parse_iso_utc(ev.get("deadline_time"))) and d > now
+    ]
+    next_deadline, deadline_gw = min(deadline_pairs, default=(None, None))
     return {
         "fixtures": fixtures,
         "teams": sorted(t["name"] for t in boot.get("teams", [])),
         "deadline_utc": next_deadline.isoformat(timespec="seconds") if next_deadline else None,
+        "deadline_gw": deadline_gw,
         "source": "fpl-api",
         "source_label": "FPL official API (fantasy.premierleague.com)",
     }
@@ -271,6 +277,7 @@ def fetch_pulselive() -> dict:
         "fixtures": fixtures,
         "teams": sorted(t["name"] for t in r.json()),
         "deadline_utc": None,  # pulselive ei tunne FPL-deadlineja
+        "deadline_gw": None,
         "source": "pulselive-fallback",
         "source_label": f"premierleague.com (pulselive) compSeason {COMPSEASON_2627}",
     }
@@ -633,6 +640,9 @@ def main() -> int:
             "sanity_gate": "PASS",
             "next_gameweek": next_gw,
             "deadline_utc": src["deadline_utc"],
+            # 22.8: GW jonka deadline deadline_utc on — kesken kierroksen eri
+            # kuin next_gameweek (ks. fetch_fpl_official).
+            "deadline_gameweek": src.get("deadline_gw"),
             # horizon_gw = montako GW:tä teams[].fixtures TÄSSÄ tiedostossa
             # sisältää (nyt koko kausi). Endpoint YLIKIRJOITTAA tämän sillä
             # mitä se pyynnössä palautti, jotta klientti näkee aina totuuden

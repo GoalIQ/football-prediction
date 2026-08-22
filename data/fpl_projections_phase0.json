@@ -3,7 +3,7 @@
     "product": "GoalIQ Fantasy Phase 0 — clean sheet % + model FDR",
     "available": true,
     "phase": 0,
-    "generated_at": "2026-08-22T07:40:54",
+    "generated_at": "2026-08-22T11:05:21",
     "season": "2026/27",
     "source": "fpl-api",
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -22,12 +22,14 @@
     "att_fdr_method": "Attack FDR 1-5: rank(own expected xG in the fixture) inverted (little xG of your own means a hard fixture), quintile bucket across every team fixture. 1 = easiest to attack against, 5 = hardest.",
     "caveat": "Pre-season: 2026/27 team strengths are last-season priors, indicative only. Promoted sides with no top-flight data use an empirical baseline.",
     "promoted_baseline_teams": [
+      "Coventry",
       "Hull",
       "Ipswich"
     ],
     "promoted_baseline_values": {
       "trio_used": [],
       "applied_to": [
+        "Coventry",
         "Hull",
         "Ipswich"
       ],
@@ -40,6 +42,7 @@
     "sanity_gate": "PASS",
     "next_gameweek": 1,
     "deadline_utc": "2026-08-28T17:30:00+00:00",
+    "deadline_gameweek": 2,
     "horizon_gw": 38,
     "horizon_max": 38,
     "near_horizon_gw": 6,
@@ -61,7 +64,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 59.2
+          "cs_pct": 57.9
         },
         {
           "gw": 2,
@@ -73,7 +76,7 @@
           "def_fdr": 1,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 37.5
+          "cs_pct": 37.4
         },
         {
           "gw": 3,
@@ -85,7 +88,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 39.2
+          "cs_pct": 38.6
         },
         {
           "gw": 4,
@@ -97,7 +100,7 @@
           "def_fdr": 1,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 48.3
+          "cs_pct": 48.4
         },
         {
           "gw": 5,
@@ -121,7 +124,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 47.3
+          "cs_pct": 47.0
         },
         {
           "gw": 7,
@@ -186,7 +189,7 @@
           "kickoff_ms": 1795878000000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -230,7 +233,7 @@
           "kickoff_ms": 1797692400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -252,7 +255,7 @@
           "kickoff_ms": 1798660800000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -395,7 +398,7 @@
           "kickoff_ms": 1807365600000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -439,7 +442,7 @@
           "kickoff_ms": 1809784800000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -472,11 +475,11 @@
           "kickoff_ms": 1811689200000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 45.2,
+      "next_avg_cs_pct": 44.9,
       "next_avg_fdr": 1.0,
       "next_n": 6
     },
@@ -494,7 +497,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 29.7
+          "cs_pct": 29.3
         },
         {
           "gw": 2,
@@ -506,7 +509,7 @@
           "def_fdr": 2,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 30.2
+          "cs_pct": 30.4
         },
         {
           "gw": 3,
@@ -518,7 +521,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 50.1
+          "cs_pct": 48.9
         },
         {
           "gw": 4,
@@ -530,7 +533,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 19.0
+          "cs_pct": 19.1
         },
         {
           "gw": 5,
@@ -554,7 +557,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 23.9
+          "cs_pct": 24.1
         },
         {
           "gw": 7,
@@ -806,7 +809,7 @@
           "kickoff_ms": 1804950000000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -815,8 +818,8 @@
           "opponent_short": "MUN",
           "venue": "H",
           "kickoff_ms": 1805554800000,
-          "fdr": 1,
-          "def_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 1,
           "tier": "far"
         },
@@ -909,7 +912,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 32.8,
+      "next_avg_cs_pct": 32.6,
       "next_avg_fdr": 2.0,
       "next_n": 6
     },
@@ -927,7 +930,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 31.7
+          "cs_pct": 31.2
         },
         {
           "gw": 2,
@@ -939,7 +942,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 44.8
+          "cs_pct": 44.1
         },
         {
           "gw": 3,
@@ -951,7 +954,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 29.3
+          "cs_pct": 29.4
         },
         {
           "gw": 4,
@@ -963,7 +966,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 22.0
+          "cs_pct": 21.6
         },
         {
           "gw": 5,
@@ -987,7 +990,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 36.0
+          "cs_pct": 35.7
         },
         {
           "gw": 7,
@@ -1039,8 +1042,8 @@
           "opponent_short": "LIV",
           "venue": "A",
           "kickoff_ms": 1795273200000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -1292,9 +1295,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1809180000000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -1342,7 +1345,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 31.7,
+      "next_avg_cs_pct": 31.4,
       "next_avg_fdr": 1.83,
       "next_n": 6
     },
@@ -1358,9 +1361,9 @@
           "kickoff_ms": 1787490000000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 32.1
+          "cs_pct": 31.9
         },
         {
           "gw": 2,
@@ -1372,7 +1375,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 21.1
+          "cs_pct": 21.3
         },
         {
           "gw": 3,
@@ -1384,7 +1387,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 32.1
+          "cs_pct": 31.9
         },
         {
           "gw": 4,
@@ -1392,11 +1395,11 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1789304400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 36.0
+          "cs_pct": 40.5
         },
         {
           "gw": 5,
@@ -1408,7 +1411,7 @@
           "def_fdr": 4,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 20.8
+          "cs_pct": 20.4
         },
         {
           "gw": 6,
@@ -1420,7 +1423,7 @@
           "def_fdr": 2,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 33.1
+          "cs_pct": 33.3
         },
         {
           "gw": 7,
@@ -1518,7 +1521,7 @@
           "kickoff_ms": 1797087600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -1573,7 +1576,7 @@
           "kickoff_ms": 1799265600000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -1639,7 +1642,7 @@
           "kickoff_ms": 1803135600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -1683,7 +1686,7 @@
           "kickoff_ms": 1805554800000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 3,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -1692,8 +1695,8 @@
           "opponent_short": "AVL",
           "venue": "A",
           "kickoff_ms": 1807365600000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -1738,7 +1741,7 @@
           "kickoff_ms": 1809784800000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -1760,7 +1763,7 @@
           "kickoff_ms": 1811080800000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -1775,8 +1778,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 29.2,
-      "next_avg_fdr": 2.67,
+      "next_avg_cs_pct": 29.9,
+      "next_avg_fdr": 2.5,
       "next_n": 6
     },
     {
@@ -1793,7 +1796,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 29.5
+          "cs_pct": 29.2
         },
         {
           "gw": 2,
@@ -1805,7 +1808,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 17.7
+          "cs_pct": 17.8
         },
         {
           "gw": 3,
@@ -1817,7 +1820,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 22.0
+          "cs_pct": 21.7
         },
         {
           "gw": 4,
@@ -1829,7 +1832,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 27.6
+          "cs_pct": 27.8
         },
         {
           "gw": 5,
@@ -1839,9 +1842,9 @@
           "kickoff_ms": 1789826400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 40.4
+          "cs_pct": 39.6
         },
         {
           "gw": 6,
@@ -1853,7 +1856,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 36.9
+          "cs_pct": 36.4
         },
         {
           "gw": 7,
@@ -1896,7 +1899,7 @@
           "kickoff_ms": 1794063600000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 3,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -2015,9 +2018,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1800111600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -2171,7 +2174,7 @@
           "kickoff_ms": 1809784800000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -2208,7 +2211,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 29.0,
+      "next_avg_cs_pct": 28.8,
       "next_avg_fdr": 2.67,
       "next_n": 6
     },
@@ -2238,7 +2241,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 17.4
+          "cs_pct": 17.0
         },
         {
           "gw": 3,
@@ -2250,7 +2253,7 @@
           "def_fdr": 1,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 38.1
+          "cs_pct": 37.6
         },
         {
           "gw": 4,
@@ -2260,9 +2263,9 @@
           "kickoff_ms": 1789221600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 27.8
+          "cs_pct": 27.3
         },
         {
           "gw": 5,
@@ -2274,7 +2277,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 28.8
+          "cs_pct": 29.0
         },
         {
           "gw": 6,
@@ -2307,7 +2310,7 @@
           "kickoff_ms": 1792841400000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2382,9 +2385,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1797087600000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -2461,7 +2464,7 @@
           "kickoff_ms": 1800716400000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2582,7 +2585,7 @@
           "kickoff_ms": 1808575200000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -2602,8 +2605,8 @@
           "opponent_short": "BRE",
           "venue": "A",
           "kickoff_ms": 1809784800000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -2641,441 +2644,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 27.1,
+      "next_avg_cs_pct": 26.9,
       "next_avg_fdr": 2.83,
-      "next_n": 6
-    },
-    {
-      "name": "Coventry",
-      "short": "COV",
-      "fixtures": [
-        {
-          "gw": 1,
-          "opponent": "Arsenal",
-          "opponent_short": "ARS",
-          "venue": "A",
-          "kickoff_ms": 1787338800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 13.8
-        },
-        {
-          "gw": 2,
-          "opponent": "Hull",
-          "opponent_short": "HUL",
-          "venue": "H",
-          "kickoff_ms": 1788012000000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 1,
-          "tier": "near",
-          "cs_pct": 40.9
-        },
-        {
-          "gw": 3,
-          "opponent": "Manchester City",
-          "opponent_short": "MCI",
-          "venue": "A",
-          "kickoff_ms": 1788616800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 10.5
-        },
-        {
-          "gw": 4,
-          "opponent": "Brighton",
-          "opponent_short": "BHA",
-          "venue": "H",
-          "kickoff_ms": 1789304400000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 28.9
-        },
-        {
-          "gw": 5,
-          "opponent": "Nottingham Forest",
-          "opponent_short": "NFO",
-          "venue": "A",
-          "kickoff_ms": 1789835400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 26.4
-        },
-        {
-          "gw": 6,
-          "opponent": "Newcastle United",
-          "opponent_short": "NEW",
-          "venue": "H",
-          "kickoff_ms": 1791831600000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 39.0
-        },
-        {
-          "gw": 7,
-          "opponent": "Tottenham",
-          "opponent_short": "TOT",
-          "venue": "A",
-          "kickoff_ms": 1792436400000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 8,
-          "opponent": "Fulham",
-          "opponent_short": "FUL",
-          "venue": "H",
-          "kickoff_ms": 1792850400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 9,
-          "opponent": "Sunderland",
-          "opponent_short": "SUN",
-          "venue": "H",
-          "kickoff_ms": 1793458800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 10,
-          "opponent": "Everton",
-          "opponent_short": "EVE",
-          "venue": "A",
-          "kickoff_ms": 1794063600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 11,
-          "opponent": "Crystal Palace",
-          "opponent_short": "CRY",
-          "venue": "H",
-          "kickoff_ms": 1795273200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 12,
-          "opponent": "Leeds",
-          "opponent_short": "LEE",
-          "venue": "A",
-          "kickoff_ms": 1795878000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 13,
-          "opponent": "Ipswich",
-          "opponent_short": "IPS",
-          "venue": "H",
-          "kickoff_ms": 1796241600000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 14,
-          "opponent": "Manchester United",
-          "opponent_short": "MUN",
-          "venue": "A",
-          "kickoff_ms": 1796482800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 15,
-          "opponent": "Aston Villa",
-          "opponent_short": "AVL",
-          "venue": "H",
-          "kickoff_ms": 1797087600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 16,
-          "opponent": "Bournemouth",
-          "opponent_short": "BOU",
-          "venue": "A",
-          "kickoff_ms": 1797692400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 17,
-          "opponent": "Chelsea",
-          "opponent_short": "CHE",
-          "venue": "H",
-          "kickoff_ms": 1798297200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 18,
-          "opponent": "Brentford",
-          "opponent_short": "BRE",
-          "venue": "H",
-          "kickoff_ms": 1798660800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 19,
-          "opponent": "Liverpool",
-          "opponent_short": "LIV",
-          "venue": "A",
-          "kickoff_ms": 1798902000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 20,
-          "opponent": "Ipswich",
-          "opponent_short": "IPS",
-          "venue": "A",
-          "kickoff_ms": 1799265600000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 21,
-          "opponent": "Everton",
-          "opponent_short": "EVE",
-          "venue": "H",
-          "kickoff_ms": 1800111600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 22,
-          "opponent": "Sunderland",
-          "opponent_short": "SUN",
-          "venue": "A",
-          "kickoff_ms": 1800716400000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 23,
-          "opponent": "Leeds",
-          "opponent_short": "LEE",
-          "venue": "H",
-          "kickoff_ms": 1801321200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 24,
-          "opponent": "Crystal Palace",
-          "opponent_short": "CRY",
-          "venue": "A",
-          "kickoff_ms": 1801926000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 25,
-          "opponent": "Liverpool",
-          "opponent_short": "LIV",
-          "venue": "H",
-          "kickoff_ms": 1802289600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 26,
-          "opponent": "Brentford",
-          "opponent_short": "BRE",
-          "venue": "A",
-          "kickoff_ms": 1803135600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 27,
-          "opponent": "Bournemouth",
-          "opponent_short": "BOU",
-          "venue": "H",
-          "kickoff_ms": 1803740400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 28,
-          "opponent": "Chelsea",
-          "opponent_short": "CHE",
-          "venue": "A",
-          "kickoff_ms": 1804104000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 29,
-          "opponent": "Manchester City",
-          "opponent_short": "MCI",
-          "venue": "H",
-          "kickoff_ms": 1804950000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 30,
-          "opponent": "Brighton",
-          "opponent_short": "BHA",
-          "venue": "A",
-          "kickoff_ms": 1805554800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 31,
-          "opponent": "Arsenal",
-          "opponent_short": "ARS",
-          "venue": "H",
-          "kickoff_ms": 1807365600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 32,
-          "opponent": "Hull",
-          "opponent_short": "HUL",
-          "venue": "A",
-          "kickoff_ms": 1807970400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 33,
-          "opponent": "Aston Villa",
-          "opponent_short": "AVL",
-          "venue": "A",
-          "kickoff_ms": 1808575200000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 34,
-          "opponent": "Manchester United",
-          "opponent_short": "MUN",
-          "venue": "H",
-          "kickoff_ms": 1809180000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 35,
-          "opponent": "Newcastle United",
-          "opponent_short": "NEW",
-          "venue": "A",
-          "kickoff_ms": 1809784800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 36,
-          "opponent": "Tottenham",
-          "opponent_short": "TOT",
-          "venue": "H",
-          "kickoff_ms": 1810389600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 37,
-          "opponent": "Fulham",
-          "opponent_short": "FUL",
-          "venue": "A",
-          "kickoff_ms": 1811080800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 38,
-          "opponent": "Nottingham Forest",
-          "opponent_short": "NFO",
-          "venue": "H",
-          "kickoff_ms": 1811689200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        }
-      ],
-      "next_avg_cs_pct": 26.6,
-      "next_avg_fdr": 3.33,
       "next_n": 6
     },
     {
@@ -3092,7 +2662,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 25.5
+          "cs_pct": 25.8
         },
         {
           "gw": 2,
@@ -3104,7 +2674,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 27.6
+          "cs_pct": 27.5
         },
         {
           "gw": 3,
@@ -3128,7 +2698,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 38.1
+          "cs_pct": 38.6
         },
         {
           "gw": 5,
@@ -3140,7 +2710,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 29.1
+          "cs_pct": 28.8
         },
         {
           "gw": 6,
@@ -3152,7 +2722,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 13.1
+          "cs_pct": 13.5
         },
         {
           "gw": 7,
@@ -3184,7 +2754,7 @@
           "kickoff_ms": 1793458800000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -3217,7 +2787,7 @@
           "kickoff_ms": 1795878000000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -3281,8 +2851,8 @@
           "opponent_short": "HUL",
           "venue": "A",
           "kickoff_ms": 1798660800000,
-          "fdr": 1,
-          "def_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -3338,7 +2908,7 @@
           "kickoff_ms": 1801321200000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 4,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -3380,8 +2950,8 @@
           "opponent_short": "FUL",
           "venue": "A",
           "kickoff_ms": 1803740400000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -3426,7 +2996,7 @@
           "kickoff_ms": 1807365600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -3457,8 +3027,8 @@
           "opponent_short": "IPS",
           "venue": "A",
           "kickoff_ms": 1809180000000,
-          "fdr": 1,
-          "def_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -3501,13 +3071,13 @@
           "opponent_short": "CRY",
           "venue": "A",
           "kickoff_ms": 1811689200000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 25.7,
+      "next_avg_cs_pct": 25.8,
       "next_avg_fdr": 2.83,
       "next_n": 6
     },
@@ -3525,7 +3095,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 20.2
+          "cs_pct": 19.6
         },
         {
           "gw": 2,
@@ -3537,7 +3107,7 @@
           "def_fdr": 3,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 28.8
+          "cs_pct": 28.9
         },
         {
           "gw": 3,
@@ -3549,7 +3119,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 29.2
+          "cs_pct": 28.9
         },
         {
           "gw": 4,
@@ -3561,7 +3131,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 15.6
+          "cs_pct": 15.7
         },
         {
           "gw": 5,
@@ -3573,7 +3143,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 21.7
+          "cs_pct": 21.4
         },
         {
           "gw": 6,
@@ -3585,7 +3155,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 36.6
+          "cs_pct": 36.1
         },
         {
           "gw": 7,
@@ -3604,9 +3174,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1792850400000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -3694,7 +3264,7 @@
           "kickoff_ms": 1797692400000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
@@ -3925,7 +3495,7 @@
           "kickoff_ms": 1811080800000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 3,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -3940,7 +3510,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 25.3,
+      "next_avg_cs_pct": 25.1,
       "next_avg_fdr": 3.0,
       "next_n": 6
     },
@@ -3958,7 +3528,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 16.3
+          "cs_pct": 16.1
         },
         {
           "gw": 2,
@@ -3970,7 +3540,7 @@
           "def_fdr": 2,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 26.7
+          "cs_pct": 26.1
         },
         {
           "gw": 3,
@@ -3982,7 +3552,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 37.0
+          "cs_pct": 36.4
         },
         {
           "gw": 4,
@@ -3994,7 +3564,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 36.0
+          "cs_pct": 36.1
         },
         {
           "gw": 5,
@@ -4006,7 +3576,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 17.8
+          "cs_pct": 17.9
         },
         {
           "gw": 6,
@@ -4018,7 +3588,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 18.1
+          "cs_pct": 17.8
         },
         {
           "gw": 7,
@@ -4224,9 +3794,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1802289600000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -4259,7 +3829,7 @@
           "kickoff_ms": 1804104000000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -4312,8 +3882,8 @@
           "opponent_short": "LEE",
           "venue": "A",
           "kickoff_ms": 1808575200000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -4373,7 +3943,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 25.3,
+      "next_avg_cs_pct": 25.1,
       "next_avg_fdr": 2.67,
       "next_n": 6
     },
@@ -4391,7 +3961,7 @@
           "def_fdr": 5,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 13.8
+          "cs_pct": 13.7
         },
         {
           "gw": 2,
@@ -4403,7 +3973,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 38.1
+          "cs_pct": 38.6
         },
         {
           "gw": 3,
@@ -4415,7 +3985,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 26.3
+          "cs_pct": 26.5
         },
         {
           "gw": 4,
@@ -4425,9 +3995,9 @@
           "kickoff_ms": 1789230600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 32.0
+          "cs_pct": 31.7
         },
         {
           "gw": 5,
@@ -4439,7 +4009,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 28.5
+          "cs_pct": 28.2
         },
         {
           "gw": 6,
@@ -4451,7 +4021,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 12.1
+          "cs_pct": 12.0
         },
         {
           "gw": 7,
@@ -4461,7 +4031,7 @@
           "kickoff_ms": 1792436400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 4,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -4527,7 +4097,7 @@
           "kickoff_ms": 1796241600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -4571,7 +4141,7 @@
           "kickoff_ms": 1798297200000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -4602,8 +4172,8 @@
           "opponent_short": "FUL",
           "venue": "A",
           "kickoff_ms": 1799265600000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -4637,7 +4207,7 @@
           "kickoff_ms": 1801321200000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -4681,7 +4251,7 @@
           "kickoff_ms": 1803740400000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -4778,9 +4348,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1810389600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -4811,439 +4381,6 @@
       "next_n": 6
     },
     {
-      "name": "Nottingham Forest",
-      "short": "NFO",
-      "fixtures": [
-        {
-          "gw": 1,
-          "opponent": "Leeds",
-          "opponent_short": "LEE",
-          "venue": "H",
-          "kickoff_ms": 1787407200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 25.7
-        },
-        {
-          "gw": 2,
-          "opponent": "Liverpool",
-          "opponent_short": "LIV",
-          "venue": "A",
-          "kickoff_ms": 1788003000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 13.9
-        },
-        {
-          "gw": 3,
-          "opponent": "Tottenham",
-          "opponent_short": "TOT",
-          "venue": "H",
-          "kickoff_ms": 1788616800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 29.1
-        },
-        {
-          "gw": 4,
-          "opponent": "Aston Villa",
-          "opponent_short": "AVL",
-          "venue": "A",
-          "kickoff_ms": 1789221600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 16.8
-        },
-        {
-          "gw": 5,
-          "opponent": "Coventry",
-          "opponent_short": "COV",
-          "venue": "H",
-          "kickoff_ms": 1789835400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 38.6
-        },
-        {
-          "gw": 6,
-          "opponent": "Crystal Palace",
-          "opponent_short": "CRY",
-          "venue": "A",
-          "kickoff_ms": 1791723600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 19.2
-        },
-        {
-          "gw": 7,
-          "opponent": "Arsenal",
-          "opponent_short": "ARS",
-          "venue": "H",
-          "kickoff_ms": 1792337400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 8,
-          "opponent": "Ipswich",
-          "opponent_short": "IPS",
-          "venue": "A",
-          "kickoff_ms": 1792782000000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 9,
-          "opponent": "Brentford",
-          "opponent_short": "BRE",
-          "venue": "A",
-          "kickoff_ms": 1793458800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 10,
-          "opponent": "Manchester City",
-          "opponent_short": "MCI",
-          "venue": "H",
-          "kickoff_ms": 1794063600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 11,
-          "opponent": "Bournemouth",
-          "opponent_short": "BOU",
-          "venue": "A",
-          "kickoff_ms": 1795273200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 12,
-          "opponent": "Chelsea",
-          "opponent_short": "CHE",
-          "venue": "H",
-          "kickoff_ms": 1795878000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 13,
-          "opponent": "Hull",
-          "opponent_short": "HUL",
-          "venue": "A",
-          "kickoff_ms": 1796241600000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 14,
-          "opponent": "Brighton",
-          "opponent_short": "BHA",
-          "venue": "H",
-          "kickoff_ms": 1796482800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 15,
-          "opponent": "Sunderland",
-          "opponent_short": "SUN",
-          "venue": "A",
-          "kickoff_ms": 1797087600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 16,
-          "opponent": "Everton",
-          "opponent_short": "EVE",
-          "venue": "H",
-          "kickoff_ms": 1797692400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 17,
-          "opponent": "Manchester United",
-          "opponent_short": "MUN",
-          "venue": "A",
-          "kickoff_ms": 1798297200000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 18,
-          "opponent": "Newcastle United",
-          "opponent_short": "NEW",
-          "venue": "A",
-          "kickoff_ms": 1798660800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 19,
-          "opponent": "Fulham",
-          "opponent_short": "FUL",
-          "venue": "H",
-          "kickoff_ms": 1798902000000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 20,
-          "opponent": "Hull",
-          "opponent_short": "HUL",
-          "venue": "H",
-          "kickoff_ms": 1799265600000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 1,
-          "tier": "far"
-        },
-        {
-          "gw": 21,
-          "opponent": "Manchester City",
-          "opponent_short": "MCI",
-          "venue": "A",
-          "kickoff_ms": 1800111600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 22,
-          "opponent": "Bournemouth",
-          "opponent_short": "BOU",
-          "venue": "H",
-          "kickoff_ms": 1800716400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 23,
-          "opponent": "Chelsea",
-          "opponent_short": "CHE",
-          "venue": "A",
-          "kickoff_ms": 1801321200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 24,
-          "opponent": "Brentford",
-          "opponent_short": "BRE",
-          "venue": "H",
-          "kickoff_ms": 1801926000000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 25,
-          "opponent": "Fulham",
-          "opponent_short": "FUL",
-          "venue": "A",
-          "kickoff_ms": 1802289600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 26,
-          "opponent": "Manchester United",
-          "opponent_short": "MUN",
-          "venue": "H",
-          "kickoff_ms": 1803135600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 27,
-          "opponent": "Everton",
-          "opponent_short": "EVE",
-          "venue": "A",
-          "kickoff_ms": 1803740400000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 28,
-          "opponent": "Newcastle United",
-          "opponent_short": "NEW",
-          "venue": "H",
-          "kickoff_ms": 1804104000000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 29,
-          "opponent": "Tottenham",
-          "opponent_short": "TOT",
-          "venue": "A",
-          "kickoff_ms": 1804950000000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 30,
-          "opponent": "Aston Villa",
-          "opponent_short": "AVL",
-          "venue": "H",
-          "kickoff_ms": 1805554800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 31,
-          "opponent": "Leeds",
-          "opponent_short": "LEE",
-          "venue": "A",
-          "kickoff_ms": 1807365600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 32,
-          "opponent": "Liverpool",
-          "opponent_short": "LIV",
-          "venue": "H",
-          "kickoff_ms": 1807970400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 33,
-          "opponent": "Sunderland",
-          "opponent_short": "SUN",
-          "venue": "H",
-          "kickoff_ms": 1808575200000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 34,
-          "opponent": "Brighton",
-          "opponent_short": "BHA",
-          "venue": "A",
-          "kickoff_ms": 1809180000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 35,
-          "opponent": "Crystal Palace",
-          "opponent_short": "CRY",
-          "venue": "H",
-          "kickoff_ms": 1809784800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 36,
-          "opponent": "Arsenal",
-          "opponent_short": "ARS",
-          "venue": "A",
-          "kickoff_ms": 1810389600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 37,
-          "opponent": "Ipswich",
-          "opponent_short": "IPS",
-          "venue": "H",
-          "kickoff_ms": 1811080800000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 1,
-          "tier": "far"
-        },
-        {
-          "gw": 38,
-          "opponent": "Coventry",
-          "opponent_short": "COV",
-          "venue": "A",
-          "kickoff_ms": 1811689200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        }
-      ],
-      "next_avg_cs_pct": 23.9,
-      "next_avg_fdr": 3.33,
-      "next_n": 6
-    },
-    {
       "name": "Newcastle United",
       "short": "NEW",
       "fixtures": [
@@ -5257,7 +4394,7 @@
           "def_fdr": 3,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 18.3
+          "cs_pct": 17.8
         },
         {
           "gw": 2,
@@ -5269,7 +4406,7 @@
           "def_fdr": 4,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 24.5
+          "cs_pct": 24.6
         },
         {
           "gw": 3,
@@ -5281,7 +4418,7 @@
           "def_fdr": 3,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 18.0
+          "cs_pct": 17.5
         },
         {
           "gw": 4,
@@ -5293,7 +4430,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 16.1
+          "cs_pct": 16.0
         },
         {
           "gw": 5,
@@ -5305,7 +4442,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 37.1
+          "cs_pct": 36.2
         },
         {
           "gw": 6,
@@ -5313,11 +4450,11 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1791831600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 28.6
+          "cs_pct": 33.0
         },
         {
           "gw": 7,
@@ -5325,8 +4462,8 @@
           "opponent_short": "AVL",
           "venue": "H",
           "kickoff_ms": 1792254600000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -5479,8 +4616,8 @@
           "opponent_short": "FUL",
           "venue": "H",
           "kickoff_ms": 1800111600000,
-          "fdr": 1,
-          "def_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 1,
           "tier": "far"
         },
@@ -5672,8 +4809,441 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 23.8,
-      "next_avg_fdr": 3.17,
+      "next_avg_cs_pct": 24.2,
+      "next_avg_fdr": 3.0,
+      "next_n": 6
+    },
+    {
+      "name": "Nottingham Forest",
+      "short": "NFO",
+      "fixtures": [
+        {
+          "gw": 1,
+          "opponent": "Leeds",
+          "opponent_short": "LEE",
+          "venue": "H",
+          "kickoff_ms": 1787407200000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 25.4
+        },
+        {
+          "gw": 2,
+          "opponent": "Liverpool",
+          "opponent_short": "LIV",
+          "venue": "A",
+          "kickoff_ms": 1788003000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 13.9
+        },
+        {
+          "gw": 3,
+          "opponent": "Tottenham",
+          "opponent_short": "TOT",
+          "venue": "H",
+          "kickoff_ms": 1788616800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 28.7
+        },
+        {
+          "gw": 4,
+          "opponent": "Aston Villa",
+          "opponent_short": "AVL",
+          "venue": "A",
+          "kickoff_ms": 1789221600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 16.7
+        },
+        {
+          "gw": 5,
+          "opponent": "Coventry",
+          "opponent_short": "COV",
+          "venue": "H",
+          "kickoff_ms": 1789835400000,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 2,
+          "tier": "near",
+          "cs_pct": 37.1
+        },
+        {
+          "gw": 6,
+          "opponent": "Crystal Palace",
+          "opponent_short": "CRY",
+          "venue": "A",
+          "kickoff_ms": 1791723600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 19.2
+        },
+        {
+          "gw": 7,
+          "opponent": "Arsenal",
+          "opponent_short": "ARS",
+          "venue": "H",
+          "kickoff_ms": 1792337400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 8,
+          "opponent": "Ipswich",
+          "opponent_short": "IPS",
+          "venue": "A",
+          "kickoff_ms": 1792782000000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 9,
+          "opponent": "Brentford",
+          "opponent_short": "BRE",
+          "venue": "A",
+          "kickoff_ms": 1793458800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 10,
+          "opponent": "Manchester City",
+          "opponent_short": "MCI",
+          "venue": "H",
+          "kickoff_ms": 1794063600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 11,
+          "opponent": "Bournemouth",
+          "opponent_short": "BOU",
+          "venue": "A",
+          "kickoff_ms": 1795273200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 12,
+          "opponent": "Chelsea",
+          "opponent_short": "CHE",
+          "venue": "H",
+          "kickoff_ms": 1795878000000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 13,
+          "opponent": "Hull",
+          "opponent_short": "HUL",
+          "venue": "A",
+          "kickoff_ms": 1796241600000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 14,
+          "opponent": "Brighton",
+          "opponent_short": "BHA",
+          "venue": "H",
+          "kickoff_ms": 1796482800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 15,
+          "opponent": "Sunderland",
+          "opponent_short": "SUN",
+          "venue": "A",
+          "kickoff_ms": 1797087600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 16,
+          "opponent": "Everton",
+          "opponent_short": "EVE",
+          "venue": "H",
+          "kickoff_ms": 1797692400000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 17,
+          "opponent": "Manchester United",
+          "opponent_short": "MUN",
+          "venue": "A",
+          "kickoff_ms": 1798297200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 18,
+          "opponent": "Newcastle United",
+          "opponent_short": "NEW",
+          "venue": "A",
+          "kickoff_ms": 1798660800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 19,
+          "opponent": "Fulham",
+          "opponent_short": "FUL",
+          "venue": "H",
+          "kickoff_ms": 1798902000000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 20,
+          "opponent": "Hull",
+          "opponent_short": "HUL",
+          "venue": "H",
+          "kickoff_ms": 1799265600000,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 21,
+          "opponent": "Manchester City",
+          "opponent_short": "MCI",
+          "venue": "A",
+          "kickoff_ms": 1800111600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 22,
+          "opponent": "Bournemouth",
+          "opponent_short": "BOU",
+          "venue": "H",
+          "kickoff_ms": 1800716400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 23,
+          "opponent": "Chelsea",
+          "opponent_short": "CHE",
+          "venue": "A",
+          "kickoff_ms": 1801321200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 24,
+          "opponent": "Brentford",
+          "opponent_short": "BRE",
+          "venue": "H",
+          "kickoff_ms": 1801926000000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 25,
+          "opponent": "Fulham",
+          "opponent_short": "FUL",
+          "venue": "A",
+          "kickoff_ms": 1802289600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 26,
+          "opponent": "Manchester United",
+          "opponent_short": "MUN",
+          "venue": "H",
+          "kickoff_ms": 1803135600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 27,
+          "opponent": "Everton",
+          "opponent_short": "EVE",
+          "venue": "A",
+          "kickoff_ms": 1803740400000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 28,
+          "opponent": "Newcastle United",
+          "opponent_short": "NEW",
+          "venue": "H",
+          "kickoff_ms": 1804104000000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 29,
+          "opponent": "Tottenham",
+          "opponent_short": "TOT",
+          "venue": "A",
+          "kickoff_ms": 1804950000000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 30,
+          "opponent": "Aston Villa",
+          "opponent_short": "AVL",
+          "venue": "H",
+          "kickoff_ms": 1805554800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 31,
+          "opponent": "Leeds",
+          "opponent_short": "LEE",
+          "venue": "A",
+          "kickoff_ms": 1807365600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 32,
+          "opponent": "Liverpool",
+          "opponent_short": "LIV",
+          "venue": "H",
+          "kickoff_ms": 1807970400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 33,
+          "opponent": "Sunderland",
+          "opponent_short": "SUN",
+          "venue": "H",
+          "kickoff_ms": 1808575200000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 34,
+          "opponent": "Brighton",
+          "opponent_short": "BHA",
+          "venue": "A",
+          "kickoff_ms": 1809180000000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 35,
+          "opponent": "Crystal Palace",
+          "opponent_short": "CRY",
+          "venue": "H",
+          "kickoff_ms": 1809784800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 36,
+          "opponent": "Arsenal",
+          "opponent_short": "ARS",
+          "venue": "A",
+          "kickoff_ms": 1810389600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 37,
+          "opponent": "Ipswich",
+          "opponent_short": "IPS",
+          "venue": "H",
+          "kickoff_ms": 1811080800000,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 38,
+          "opponent": "Coventry",
+          "opponent_short": "COV",
+          "venue": "A",
+          "kickoff_ms": 1811689200000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        }
+      ],
+      "next_avg_cs_pct": 23.5,
+      "next_avg_fdr": 3.33,
       "next_n": 6
     },
     {
@@ -5690,7 +5260,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 23.4
+          "cs_pct": 23.5
         },
         {
           "gw": 2,
@@ -5698,11 +5268,11 @@
           "opponent_short": "MCI",
           "venue": "H",
           "kickoff_ms": 1787943600000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 5,
+          "def_fdr": 5,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 16.7
+          "cs_pct": 16.3
         },
         {
           "gw": 3,
@@ -5714,7 +5284,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 20.9
+          "cs_pct": 20.8
         },
         {
           "gw": 4,
@@ -5726,7 +5296,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 38.7
+          "cs_pct": 37.8
         },
         {
           "gw": 5,
@@ -5738,7 +5308,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 17.4
+          "cs_pct": 17.3
         },
         {
           "gw": 6,
@@ -5750,7 +5320,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 25.0
+          "cs_pct": 24.4
         },
         {
           "gw": 7,
@@ -5793,7 +5363,7 @@
           "kickoff_ms": 1794063600000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -5802,9 +5372,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1795273200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -5879,9 +5449,9 @@
           "opponent_short": "BOU",
           "venue": "H",
           "kickoff_ms": 1798660800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 2,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -5901,8 +5471,8 @@
           "opponent_short": "CHE",
           "venue": "H",
           "kickoff_ms": 1799265600000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -5947,7 +5517,7 @@
           "kickoff_ms": 1801926000000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 3,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -5956,8 +5526,8 @@
           "opponent_short": "BRE",
           "venue": "H",
           "kickoff_ms": 1802289600000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -5967,8 +5537,8 @@
           "opponent_short": "BOU",
           "venue": "A",
           "kickoff_ms": 1803135600000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -5980,7 +5550,7 @@
           "kickoff_ms": 1803740400000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -6002,7 +5572,7 @@
           "kickoff_ms": 1804950000000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -6024,7 +5594,7 @@
           "kickoff_ms": 1807365600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -6101,12 +5671,12 @@
           "kickoff_ms": 1811689200000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 23.7,
-      "next_avg_fdr": 3.17,
+      "next_avg_cs_pct": 23.3,
+      "next_avg_fdr": 3.33,
       "next_n": 6
     },
     {
@@ -6123,7 +5693,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 21.6
+          "cs_pct": 21.5
         },
         {
           "gw": 2,
@@ -6133,9 +5703,9 @@
           "kickoff_ms": 1788094800000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 27.6
+          "cs_pct": 27.2
         },
         {
           "gw": 3,
@@ -6147,7 +5717,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 12.7
+          "cs_pct": 13.1
         },
         {
           "gw": 4,
@@ -6159,7 +5729,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 39.5
+          "cs_pct": 38.7
         },
         {
           "gw": 5,
@@ -6171,7 +5741,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 13.4
+          "cs_pct": 13.3
         },
         {
           "gw": 6,
@@ -6183,7 +5753,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 20.1
+          "cs_pct": 19.6
         },
         {
           "gw": 7,
@@ -6215,7 +5785,7 @@
           "kickoff_ms": 1793449800000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -6301,9 +5871,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1798297200000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 2,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -6413,7 +5983,7 @@
           "kickoff_ms": 1803740400000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -6424,7 +5994,7 @@
           "kickoff_ms": 1804104000000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -6466,8 +6036,8 @@
           "opponent_short": "BHA",
           "venue": "A",
           "kickoff_ms": 1807970400000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -6538,7 +6108,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 22.5,
+      "next_avg_cs_pct": 22.2,
       "next_avg_fdr": 3.0,
       "next_n": 6
     },
@@ -6556,7 +6126,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 27.4
+          "cs_pct": 26.9
         },
         {
           "gw": 2,
@@ -6568,7 +6138,7 @@
           "def_fdr": 2,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 36.0
+          "cs_pct": 36.1
         },
         {
           "gw": 3,
@@ -6580,7 +6150,7 @@
           "def_fdr": 5,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 14.1
+          "cs_pct": 14.0
         },
         {
           "gw": 4,
@@ -6592,7 +6162,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 17.4
+          "cs_pct": 16.9
         },
         {
           "gw": 5,
@@ -6616,7 +6186,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 28.5
+          "cs_pct": 28.2
         },
         {
           "gw": 7,
@@ -6624,8 +6194,8 @@
           "opponent_short": "BOU",
           "venue": "A",
           "kickoff_ms": 1792328400000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -6646,9 +6216,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1793458800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -6679,8 +6249,8 @@
           "opponent_short": "TOT",
           "venue": "H",
           "kickoff_ms": 1795878000000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -6725,7 +6295,7 @@
           "kickoff_ms": 1797692400000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -6734,8 +6304,8 @@
           "opponent_short": "EVE",
           "venue": "A",
           "kickoff_ms": 1798297200000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -6778,8 +6348,8 @@
           "opponent_short": "CHE",
           "venue": "A",
           "kickoff_ms": 1800111600000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -6789,9 +6359,9 @@
           "opponent_short": "COV",
           "venue": "H",
           "kickoff_ms": 1800716400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -6971,7 +6541,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 22.3,
+      "next_avg_cs_pct": 22.1,
       "next_avg_fdr": 3.83,
       "next_n": 6
     },
@@ -6989,7 +6559,7 @@
           "def_fdr": 2,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 29.9
+          "cs_pct": 29.5
         },
         {
           "gw": 2,
@@ -7001,7 +6571,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 17.4
+          "cs_pct": 17.3
         },
         {
           "gw": 3,
@@ -7013,7 +6583,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 33.1
+          "cs_pct": 32.9
         },
         {
           "gw": 4,
@@ -7023,9 +6593,9 @@
           "kickoff_ms": 1789221600000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 16.3
+          "cs_pct": 16.4
         },
         {
           "gw": 5,
@@ -7037,7 +6607,7 @@
           "def_fdr": 3,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 18.9
+          "cs_pct": 18.4
         },
         {
           "gw": 6,
@@ -7147,7 +6717,7 @@
           "kickoff_ms": 1797087600000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -7178,9 +6748,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1798660800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -7224,7 +6794,7 @@
           "kickoff_ms": 1800716400000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -7378,7 +6948,7 @@
           "kickoff_ms": 1810389600000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -7404,7 +6974,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 22.2,
+      "next_avg_cs_pct": 22.0,
       "next_avg_fdr": 3.0,
       "next_n": 6
     },
@@ -7422,7 +6992,7 @@
           "def_fdr": 5,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 10.1
+          "cs_pct": 10.2
         },
         {
           "gw": 2,
@@ -7434,7 +7004,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 31.6
+          "cs_pct": 31.3
         },
         {
           "gw": 3,
@@ -7446,7 +7016,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 16.2
+          "cs_pct": 16.1
         },
         {
           "gw": 4,
@@ -7458,7 +7028,7 @@
           "def_fdr": 2,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 27.9
+          "cs_pct": 27.8
         },
         {
           "gw": 5,
@@ -7470,7 +7040,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 21.2
+          "cs_pct": 20.7
         },
         {
           "gw": 6,
@@ -7482,7 +7052,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 17.5
+          "cs_pct": 17.7
         },
         {
           "gw": 7,
@@ -7558,7 +7128,7 @@
           "kickoff_ms": 1796241600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -7591,7 +7161,7 @@
           "kickoff_ms": 1797692400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -7677,8 +7247,8 @@
           "opponent_short": "LEE",
           "venue": "A",
           "kickoff_ms": 1801926000000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -7710,9 +7280,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1803740400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 2,
+          "fdr": 1,
+          "def_fdr": 1,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -7822,7 +7392,7 @@
           "kickoff_ms": 1811080800000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -7837,8 +7407,441 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 20.8,
+      "next_avg_cs_pct": 20.6,
       "next_avg_fdr": 3.33,
+      "next_n": 6
+    },
+    {
+      "name": "Coventry",
+      "short": "COV",
+      "fixtures": [
+        {
+          "gw": 1,
+          "opponent": "Arsenal",
+          "opponent_short": "ARS",
+          "venue": "A",
+          "kickoff_ms": 1787338800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 7.7
+        },
+        {
+          "gw": 2,
+          "opponent": "Hull",
+          "opponent_short": "HUL",
+          "venue": "H",
+          "kickoff_ms": 1788012000000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "near",
+          "cs_pct": 30.2
+        },
+        {
+          "gw": 3,
+          "opponent": "Manchester City",
+          "opponent_short": "MCI",
+          "venue": "A",
+          "kickoff_ms": 1788616800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 5.2
+        },
+        {
+          "gw": 4,
+          "opponent": "Brighton",
+          "opponent_short": "BHA",
+          "venue": "H",
+          "kickoff_ms": 1789304400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 19.4
+        },
+        {
+          "gw": 5,
+          "opponent": "Nottingham Forest",
+          "opponent_short": "NFO",
+          "venue": "A",
+          "kickoff_ms": 1789835400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 17.7
+        },
+        {
+          "gw": 6,
+          "opponent": "Newcastle United",
+          "opponent_short": "NEW",
+          "venue": "H",
+          "kickoff_ms": 1791831600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 29.6
+        },
+        {
+          "gw": 7,
+          "opponent": "Tottenham",
+          "opponent_short": "TOT",
+          "venue": "A",
+          "kickoff_ms": 1792436400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 8,
+          "opponent": "Fulham",
+          "opponent_short": "FUL",
+          "venue": "H",
+          "kickoff_ms": 1792850400000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 9,
+          "opponent": "Sunderland",
+          "opponent_short": "SUN",
+          "venue": "H",
+          "kickoff_ms": 1793458800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 10,
+          "opponent": "Everton",
+          "opponent_short": "EVE",
+          "venue": "A",
+          "kickoff_ms": 1794063600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 11,
+          "opponent": "Crystal Palace",
+          "opponent_short": "CRY",
+          "venue": "H",
+          "kickoff_ms": 1795273200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 12,
+          "opponent": "Leeds",
+          "opponent_short": "LEE",
+          "venue": "A",
+          "kickoff_ms": 1795878000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 13,
+          "opponent": "Ipswich",
+          "opponent_short": "IPS",
+          "venue": "H",
+          "kickoff_ms": 1796241600000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 14,
+          "opponent": "Manchester United",
+          "opponent_short": "MUN",
+          "venue": "A",
+          "kickoff_ms": 1796482800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 15,
+          "opponent": "Aston Villa",
+          "opponent_short": "AVL",
+          "venue": "H",
+          "kickoff_ms": 1797087600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 16,
+          "opponent": "Bournemouth",
+          "opponent_short": "BOU",
+          "venue": "A",
+          "kickoff_ms": 1797692400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 17,
+          "opponent": "Chelsea",
+          "opponent_short": "CHE",
+          "venue": "H",
+          "kickoff_ms": 1798297200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 18,
+          "opponent": "Brentford",
+          "opponent_short": "BRE",
+          "venue": "H",
+          "kickoff_ms": 1798660800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 19,
+          "opponent": "Liverpool",
+          "opponent_short": "LIV",
+          "venue": "A",
+          "kickoff_ms": 1798902000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 20,
+          "opponent": "Ipswich",
+          "opponent_short": "IPS",
+          "venue": "A",
+          "kickoff_ms": 1799265600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 21,
+          "opponent": "Everton",
+          "opponent_short": "EVE",
+          "venue": "H",
+          "kickoff_ms": 1800111600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 22,
+          "opponent": "Sunderland",
+          "opponent_short": "SUN",
+          "venue": "A",
+          "kickoff_ms": 1800716400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 23,
+          "opponent": "Leeds",
+          "opponent_short": "LEE",
+          "venue": "H",
+          "kickoff_ms": 1801321200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 24,
+          "opponent": "Crystal Palace",
+          "opponent_short": "CRY",
+          "venue": "A",
+          "kickoff_ms": 1801926000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 25,
+          "opponent": "Liverpool",
+          "opponent_short": "LIV",
+          "venue": "H",
+          "kickoff_ms": 1802289600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 26,
+          "opponent": "Brentford",
+          "opponent_short": "BRE",
+          "venue": "A",
+          "kickoff_ms": 1803135600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 27,
+          "opponent": "Bournemouth",
+          "opponent_short": "BOU",
+          "venue": "H",
+          "kickoff_ms": 1803740400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 28,
+          "opponent": "Chelsea",
+          "opponent_short": "CHE",
+          "venue": "A",
+          "kickoff_ms": 1804104000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 29,
+          "opponent": "Manchester City",
+          "opponent_short": "MCI",
+          "venue": "H",
+          "kickoff_ms": 1804950000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 30,
+          "opponent": "Brighton",
+          "opponent_short": "BHA",
+          "venue": "A",
+          "kickoff_ms": 1805554800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 31,
+          "opponent": "Arsenal",
+          "opponent_short": "ARS",
+          "venue": "H",
+          "kickoff_ms": 1807365600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 32,
+          "opponent": "Hull",
+          "opponent_short": "HUL",
+          "venue": "A",
+          "kickoff_ms": 1807970400000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 33,
+          "opponent": "Aston Villa",
+          "opponent_short": "AVL",
+          "venue": "A",
+          "kickoff_ms": 1808575200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 34,
+          "opponent": "Manchester United",
+          "opponent_short": "MUN",
+          "venue": "H",
+          "kickoff_ms": 1809180000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 35,
+          "opponent": "Newcastle United",
+          "opponent_short": "NEW",
+          "venue": "A",
+          "kickoff_ms": 1809784800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 36,
+          "opponent": "Tottenham",
+          "opponent_short": "TOT",
+          "venue": "H",
+          "kickoff_ms": 1810389600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 37,
+          "opponent": "Fulham",
+          "opponent_short": "FUL",
+          "venue": "A",
+          "kickoff_ms": 1811080800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 38,
+          "opponent": "Nottingham Forest",
+          "opponent_short": "NFO",
+          "venue": "H",
+          "kickoff_ms": 1811689200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        }
+      ],
+      "next_avg_cs_pct": 18.3,
+      "next_avg_fdr": 4.0,
       "next_n": 6
     },
     {
@@ -7855,7 +7858,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 24.9
+          "cs_pct": 25.4
         },
         {
           "gw": 2,
@@ -7867,7 +7870,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 6.0
+          "cs_pct": 6.3
         },
         {
           "gw": 3,
@@ -7879,7 +7882,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 12.9
+          "cs_pct": 13.1
         },
         {
           "gw": 4,
@@ -7891,7 +7894,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 13.0
+          "cs_pct": 13.6
         },
         {
           "gw": 5,
@@ -7903,7 +7906,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 16.1
+          "cs_pct": 16.8
         },
         {
           "gw": 6,
@@ -7911,11 +7914,11 @@
           "opponent_short": "FUL",
           "venue": "H",
           "kickoff_ms": 1791640800000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 25.9
+          "cs_pct": 26.8
         },
         {
           "gw": 7,
@@ -7934,8 +7937,8 @@
           "opponent_short": "NFO",
           "venue": "H",
           "kickoff_ms": 1792782000000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -7967,8 +7970,8 @@
           "opponent_short": "TOT",
           "venue": "A",
           "kickoff_ms": 1795273200000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -7978,8 +7981,8 @@
           "opponent_short": "AVL",
           "venue": "H",
           "kickoff_ms": 1795878000000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -7989,9 +7992,9 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1796241600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -8046,7 +8049,7 @@
           "kickoff_ms": 1798660800000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 5,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -8066,9 +8069,9 @@
           "opponent_short": "COV",
           "venue": "H",
           "kickoff_ms": 1799265600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -8143,8 +8146,8 @@
           "opponent_short": "BHA",
           "venue": "H",
           "kickoff_ms": 1803740400000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -8270,8 +8273,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 16.5,
-      "next_avg_fdr": 4.5,
+      "next_avg_cs_pct": 17.0,
+      "next_avg_fdr": 4.33,
       "next_n": 6
     },
     {
@@ -8288,7 +8291,7 @@
           "def_fdr": 5,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 13.6
+          "cs_pct": 13.9
         },
         {
           "gw": 2,
@@ -8296,11 +8299,11 @@
           "opponent_short": "COV",
           "venue": "A",
           "kickoff_ms": 1788012000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 14.1
+          "cs_pct": 18.3
         },
         {
           "gw": 3,
@@ -8308,11 +8311,11 @@
           "opponent_short": "AVL",
           "venue": "H",
           "kickoff_ms": 1788625800000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 18.7
+          "cs_pct": 19.2
         },
         {
           "gw": 4,
@@ -8324,7 +8327,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 10.1
+          "cs_pct": 10.7
         },
         {
           "gw": 5,
@@ -8336,7 +8339,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 9.1
+          "cs_pct": 9.4
         },
         {
           "gw": 6,
@@ -8348,7 +8351,7 @@
           "def_fdr": 4,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 21.9
+          "cs_pct": 22.3
         },
         {
           "gw": 7,
@@ -8400,8 +8403,8 @@
           "opponent_short": "BHA",
           "venue": "H",
           "kickoff_ms": 1795273200000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -8422,8 +8425,8 @@
           "opponent_short": "NFO",
           "venue": "H",
           "kickoff_ms": 1796241600000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -8554,8 +8557,8 @@
           "opponent_short": "SUN",
           "venue": "H",
           "kickoff_ms": 1802289600000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -8611,7 +8614,7 @@
           "kickoff_ms": 1805554800000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 5,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -8631,9 +8634,9 @@
           "opponent_short": "COV",
           "venue": "H",
           "kickoff_ms": 1807970400000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -8642,8 +8645,8 @@
           "opponent_short": "TOT",
           "venue": "A",
           "kickoff_ms": 1808575200000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -8675,8 +8678,8 @@
           "opponent_short": "FUL",
           "venue": "H",
           "kickoff_ms": 1810389600000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -8703,8 +8706,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 14.6,
-      "next_avg_fdr": 4.83,
+      "next_avg_cs_pct": 15.6,
+      "next_avg_fdr": 4.5,
       "next_n": 6
     }
   ],
@@ -8718,13 +8721,13 @@
       "away": "Coventry",
       "home_short": "ARS",
       "away_short": "COV",
-      "xg_home": 1.984,
-      "xg_away": 0.524,
-      "p_home_win": 0.709,
-      "p_draw": 0.2162,
-      "p_away_win": 0.0748,
-      "cs_home_pct": 59.2,
-      "cs_away_pct": 13.8,
+      "xg_home": 2.56,
+      "xg_away": 0.546,
+      "p_home_win": 0.7993,
+      "p_draw": 0.1518,
+      "p_away_win": 0.0489,
+      "cs_home_pct": 57.9,
+      "cs_away_pct": 7.7,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -8741,13 +8744,13 @@
       "away": "Manchester United",
       "home_short": "HUL",
       "away_short": "MUN",
-      "xg_home": 1.149,
-      "xg_away": 1.999,
-      "p_home_win": 0.1997,
-      "p_draw": 0.2446,
-      "p_away_win": 0.5558,
-      "cs_home_pct": 13.6,
-      "cs_away_pct": 31.7,
+      "xg_home": 1.163,
+      "xg_away": 1.973,
+      "p_home_win": 0.2061,
+      "p_draw": 0.2472,
+      "p_away_win": 0.5466,
+      "cs_home_pct": 13.9,
+      "cs_away_pct": 31.2,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 4,
@@ -8764,13 +8767,13 @@
       "away": "Crystal Palace",
       "home_short": "EVE",
       "away_short": "CRY",
-      "xg_home": 1.452,
-      "xg_away": 1.221,
-      "p_home_win": 0.4059,
-      "p_draw": 0.2944,
-      "p_away_win": 0.2997,
-      "cs_home_pct": 29.5,
-      "cs_away_pct": 23.4,
+      "xg_home": 1.45,
+      "xg_away": 1.231,
+      "p_home_win": 0.4034,
+      "p_draw": 0.2942,
+      "p_away_win": 0.3024,
+      "cs_home_pct": 29.2,
+      "cs_away_pct": 23.5,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 3,
@@ -8787,13 +8790,13 @@
       "away": "Sunderland",
       "home_short": "IPS",
       "away_short": "SUN",
-      "xg_home": 1.294,
-      "xg_away": 1.391,
-      "p_home_win": 0.3298,
-      "p_draw": 0.2955,
-      "p_away_win": 0.3746,
-      "cs_home_pct": 24.9,
-      "cs_away_pct": 27.4,
+      "xg_home": 1.313,
+      "xg_away": 1.369,
+      "p_home_win": 0.3389,
+      "p_draw": 0.296,
+      "p_away_win": 0.3651,
+      "cs_home_pct": 25.4,
+      "cs_away_pct": 26.9,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 3,
@@ -8810,13 +8813,13 @@
       "away": "Leeds",
       "home_short": "NFO",
       "away_short": "LEE",
-      "xg_home": 1.365,
-      "xg_away": 1.359,
-      "p_home_win": 0.3547,
-      "p_draw": 0.2933,
-      "p_away_win": 0.3519,
-      "cs_home_pct": 25.7,
-      "cs_away_pct": 25.5,
+      "xg_home": 1.355,
+      "xg_away": 1.371,
+      "p_home_win": 0.3497,
+      "p_draw": 0.2932,
+      "p_away_win": 0.3571,
+      "cs_home_pct": 25.4,
+      "cs_away_pct": 25.8,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 3,
@@ -8833,13 +8836,13 @@
       "away": "Tottenham",
       "home_short": "BRE",
       "away_short": "TOT",
-      "xg_home": 1.98,
-      "xg_away": 1.207,
-      "p_home_win": 0.5384,
-      "p_draw": 0.2468,
-      "p_away_win": 0.2148,
-      "cs_home_pct": 29.9,
-      "cs_away_pct": 13.8,
+      "xg_home": 1.986,
+      "xg_away": 1.22,
+      "p_home_win": 0.5367,
+      "p_draw": 0.2464,
+      "p_away_win": 0.2169,
+      "cs_home_pct": 29.5,
+      "cs_away_pct": 13.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 1,
@@ -8856,16 +8859,16 @@
       "away": "Aston Villa",
       "home_short": "BHA",
       "away_short": "AVL",
-      "xg_home": 1.553,
-      "xg_away": 1.136,
-      "p_home_win": 0.4513,
-      "p_draw": 0.2883,
-      "p_away_win": 0.2604,
-      "cs_home_pct": 32.1,
+      "xg_home": 1.55,
+      "xg_away": 1.142,
+      "p_home_win": 0.4493,
+      "p_draw": 0.2885,
+      "p_away_win": 0.2622,
+      "cs_home_pct": 31.9,
       "cs_away_pct": 21.2,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 2,
+      "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 4
@@ -8879,13 +8882,13 @@
       "away": "Bournemouth",
       "home_short": "MCI",
       "away_short": "BOU",
-      "xg_home": 2.289,
-      "xg_away": 1.215,
-      "p_home_win": 0.6021,
-      "p_draw": 0.2185,
-      "p_away_win": 0.1794,
-      "cs_home_pct": 29.7,
-      "cs_away_pct": 10.1,
+      "xg_home": 2.288,
+      "xg_away": 1.229,
+      "p_home_win": 0.599,
+      "p_draw": 0.2189,
+      "p_away_win": 0.1821,
+      "cs_home_pct": 29.3,
+      "cs_away_pct": 10.2,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -8902,13 +8905,13 @@
       "away": "Liverpool",
       "home_short": "NEW",
       "away_short": "LIV",
-      "xg_home": 1.812,
-      "xg_away": 1.697,
-      "p_home_win": 0.3987,
-      "p_draw": 0.2498,
-      "p_away_win": 0.3516,
-      "cs_home_pct": 18.3,
-      "cs_away_pct": 16.3,
+      "xg_home": 1.825,
+      "xg_away": 1.724,
+      "p_home_win": 0.3965,
+      "p_draw": 0.248,
+      "p_away_win": 0.3555,
+      "cs_home_pct": 17.8,
+      "cs_away_pct": 16.1,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 1,
@@ -8925,13 +8928,13 @@
       "away": "Chelsea",
       "home_short": "FUL",
       "away_short": "CHE",
-      "xg_home": 1.531,
-      "xg_away": 1.602,
-      "p_home_win": 0.3501,
-      "p_draw": 0.269,
-      "p_away_win": 0.3808,
-      "cs_home_pct": 20.2,
-      "cs_away_pct": 21.6,
+      "xg_home": 1.537,
+      "xg_away": 1.628,
+      "p_home_win": 0.3467,
+      "p_draw": 0.2672,
+      "p_away_win": 0.3861,
+      "cs_home_pct": 19.6,
+      "cs_away_pct": 21.5,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 3,
@@ -8948,15 +8951,15 @@
       "away": "Manchester City",
       "home_short": "CRY",
       "away_short": "MCI",
-      "xg_home": 1.199,
-      "xg_away": 1.791,
-      "p_home_win": 0.239,
-      "p_draw": 0.2645,
-      "p_away_win": 0.4965,
-      "cs_home_pct": 16.7,
-      "cs_away_pct": 30.2,
-      "fdr_home": 4,
-      "def_fdr_home": 4,
+      "xg_home": 1.192,
+      "xg_away": 1.815,
+      "p_home_win": 0.2341,
+      "p_draw": 0.2624,
+      "p_away_win": 0.5035,
+      "cs_home_pct": 16.3,
+      "cs_away_pct": 30.4,
+      "fdr_home": 5,
+      "def_fdr_home": 5,
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
@@ -8971,12 +8974,12 @@
       "away": "Nottingham Forest",
       "home_short": "LIV",
       "away_short": "NFO",
-      "xg_home": 1.971,
-      "xg_away": 1.32,
-      "p_home_win": 0.5114,
-      "p_draw": 0.2475,
-      "p_away_win": 0.241,
-      "cs_home_pct": 26.7,
+      "xg_home": 1.97,
+      "xg_away": 1.342,
+      "p_home_win": 0.5065,
+      "p_draw": 0.2476,
+      "p_away_win": 0.246,
+      "cs_home_pct": 26.1,
       "cs_away_pct": 13.9,
       "fdr_home": 2,
       "def_fdr_home": 2,
@@ -8994,13 +8997,13 @@
       "away": "Everton",
       "home_short": "BOU",
       "away_short": "EVE",
-      "xg_home": 1.732,
-      "xg_away": 1.153,
-      "p_home_win": 0.4925,
-      "p_draw": 0.2706,
-      "p_away_win": 0.2369,
-      "cs_home_pct": 31.6,
-      "cs_away_pct": 17.7,
+      "xg_home": 1.725,
+      "xg_away": 1.161,
+      "p_home_win": 0.4891,
+      "p_draw": 0.2712,
+      "p_away_win": 0.2397,
+      "cs_home_pct": 31.3,
+      "cs_away_pct": 17.8,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -9017,19 +9020,19 @@
       "away": "Hull",
       "home_short": "COV",
       "away_short": "HUL",
-      "xg_home": 1.96,
-      "xg_away": 0.894,
-      "p_home_win": 0.6076,
-      "p_draw": 0.2427,
-      "p_away_win": 0.1496,
-      "cs_home_pct": 40.9,
-      "cs_away_pct": 14.1,
-      "fdr_home": 1,
-      "def_fdr_home": 1,
-      "att_fdr_home": 1,
-      "fdr_away": 5,
-      "def_fdr_away": 5,
-      "att_fdr_away": 5
+      "xg_home": 1.699,
+      "xg_away": 1.197,
+      "p_home_win": 0.4745,
+      "p_draw": 0.2732,
+      "p_away_win": 0.2523,
+      "cs_home_pct": 30.2,
+      "cs_away_pct": 18.3,
+      "fdr_home": 2,
+      "def_fdr_home": 2,
+      "att_fdr_home": 2,
+      "fdr_away": 4,
+      "def_fdr_away": 4,
+      "att_fdr_away": 4
     },
     {
       "gameweek": 2,
@@ -9040,13 +9043,13 @@
       "away": "Newcastle United",
       "home_short": "TOT",
       "away_short": "NEW",
-      "xg_home": 1.407,
-      "xg_away": 0.964,
-      "p_home_win": 0.4531,
-      "p_draw": 0.308,
-      "p_away_win": 0.2389,
-      "cs_home_pct": 38.1,
-      "cs_away_pct": 24.5,
+      "xg_home": 1.402,
+      "xg_away": 0.951,
+      "p_home_win": 0.4548,
+      "p_draw": 0.309,
+      "p_away_win": 0.2362,
+      "cs_home_pct": 38.6,
+      "cs_away_pct": 24.6,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 3,
@@ -9063,16 +9066,16 @@
       "away": "Brighton",
       "home_short": "CHE",
       "away_short": "BHA",
-      "xg_home": 1.558,
-      "xg_away": 1.288,
-      "p_home_win": 0.4191,
-      "p_draw": 0.2829,
-      "p_away_win": 0.298,
-      "cs_home_pct": 27.6,
-      "cs_away_pct": 21.1,
+      "xg_home": 1.548,
+      "xg_away": 1.302,
+      "p_home_win": 0.4137,
+      "p_draw": 0.2832,
+      "p_away_win": 0.3031,
+      "cs_home_pct": 27.2,
+      "cs_away_pct": 21.3,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 2,
+      "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 3
@@ -9086,13 +9089,13 @@
       "away": "Brentford",
       "home_short": "LEE",
       "away_short": "BRE",
-      "xg_home": 1.751,
-      "xg_away": 1.288,
-      "p_home_win": 0.4669,
-      "p_draw": 0.2668,
-      "p_away_win": 0.2663,
-      "cs_home_pct": 27.6,
-      "cs_away_pct": 17.4,
+      "xg_home": 1.753,
+      "xg_away": 1.292,
+      "p_home_win": 0.4665,
+      "p_draw": 0.2666,
+      "p_away_win": 0.267,
+      "cs_home_pct": 27.5,
+      "cs_away_pct": 17.3,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -9109,13 +9112,13 @@
       "away": "Fulham",
       "home_short": "SUN",
       "away_short": "FUL",
-      "xg_home": 1.245,
-      "xg_away": 1.022,
-      "p_home_win": 0.3937,
-      "p_draw": 0.3234,
-      "p_away_win": 0.283,
-      "cs_home_pct": 36.0,
-      "cs_away_pct": 28.8,
+      "xg_home": 1.241,
+      "xg_away": 1.018,
+      "p_home_win": 0.3933,
+      "p_draw": 0.3241,
+      "p_away_win": 0.2826,
+      "cs_home_pct": 36.1,
+      "cs_away_pct": 28.9,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 4,
@@ -9132,13 +9135,13 @@
       "away": "Ipswich",
       "home_short": "MUN",
       "away_short": "IPS",
-      "xg_home": 2.82,
-      "xg_away": 0.803,
-      "p_home_win": 0.7806,
-      "p_draw": 0.1496,
-      "p_away_win": 0.0699,
-      "cs_home_pct": 44.8,
-      "cs_away_pct": 6.0,
+      "xg_home": 2.763,
+      "xg_away": 0.82,
+      "p_home_win": 0.7694,
+      "p_draw": 0.1557,
+      "p_away_win": 0.075,
+      "cs_home_pct": 44.1,
+      "cs_away_pct": 6.3,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9155,13 +9158,13 @@
       "away": "Arsenal",
       "home_short": "AVL",
       "away_short": "ARS",
-      "xg_home": 0.982,
-      "xg_away": 1.749,
-      "p_home_win": 0.1939,
-      "p_draw": 0.2689,
-      "p_away_win": 0.5371,
-      "cs_home_pct": 17.4,
-      "cs_away_pct": 37.5,
+      "xg_home": 0.983,
+      "xg_away": 1.773,
+      "p_home_win": 0.191,
+      "p_draw": 0.2663,
+      "p_away_win": 0.5427,
+      "cs_home_pct": 17.0,
+      "cs_away_pct": 37.4,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -9178,13 +9181,13 @@
       "away": "Liverpool",
       "home_short": "IPS",
       "away_short": "LIV",
-      "xg_home": 0.995,
-      "xg_away": 2.046,
-      "p_home_win": 0.1616,
-      "p_draw": 0.2365,
-      "p_away_win": 0.6019,
-      "cs_home_pct": 12.9,
-      "cs_away_pct": 37.0,
+      "xg_home": 1.01,
+      "xg_away": 2.031,
+      "p_home_win": 0.1663,
+      "p_draw": 0.2386,
+      "p_away_win": 0.5951,
+      "cs_home_pct": 13.1,
+      "cs_away_pct": 36.4,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -9201,13 +9204,13 @@
       "away": "Bournemouth",
       "home_short": "NEW",
       "away_short": "BOU",
-      "xg_home": 1.818,
-      "xg_away": 1.713,
-      "p_home_win": 0.3971,
-      "p_draw": 0.2488,
-      "p_away_win": 0.3541,
-      "cs_home_pct": 18.0,
-      "cs_away_pct": 16.2,
+      "xg_home": 1.828,
+      "xg_away": 1.742,
+      "p_home_win": 0.3939,
+      "p_draw": 0.2471,
+      "p_away_win": 0.359,
+      "cs_home_pct": 17.5,
+      "cs_away_pct": 16.1,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 1,
@@ -9224,13 +9227,13 @@
       "away": "Sunderland",
       "home_short": "BRE",
       "away_short": "SUN",
-      "xg_home": 1.957,
-      "xg_away": 1.104,
-      "p_home_win": 0.5567,
-      "p_draw": 0.2481,
-      "p_away_win": 0.1952,
-      "cs_home_pct": 33.1,
-      "cs_away_pct": 14.1,
+      "xg_home": 1.963,
+      "xg_away": 1.112,
+      "p_home_win": 0.5563,
+      "p_draw": 0.2477,
+      "p_away_win": 0.1961,
+      "cs_home_pct": 32.9,
+      "cs_away_pct": 14.0,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9247,12 +9250,12 @@
       "away": "Leeds",
       "home_short": "BHA",
       "away_short": "LEE",
-      "xg_home": 1.574,
-      "xg_away": 1.137,
-      "p_home_win": 0.4568,
+      "xg_home": 1.573,
+      "xg_away": 1.143,
+      "p_home_win": 0.455,
       "p_draw": 0.2862,
-      "p_away_win": 0.2571,
-      "cs_home_pct": 32.1,
+      "p_away_win": 0.2588,
+      "cs_home_pct": 31.9,
       "cs_away_pct": 20.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
@@ -9270,13 +9273,13 @@
       "away": "Crystal Palace",
       "home_short": "FUL",
       "away_short": "CRY",
-      "xg_home": 1.565,
-      "xg_away": 1.231,
-      "p_home_win": 0.4332,
-      "p_draw": 0.2843,
-      "p_away_win": 0.2824,
-      "cs_home_pct": 29.2,
-      "cs_away_pct": 20.9,
+      "xg_home": 1.571,
+      "xg_away": 1.242,
+      "p_home_win": 0.4325,
+      "p_draw": 0.2835,
+      "p_away_win": 0.284,
+      "cs_home_pct": 28.9,
+      "cs_away_pct": 20.8,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -9293,13 +9296,13 @@
       "away": "Coventry",
       "home_short": "MCI",
       "away_short": "COV",
-      "xg_home": 2.254,
-      "xg_away": 0.691,
-      "p_home_win": 0.7167,
-      "p_draw": 0.1971,
-      "p_away_win": 0.0862,
-      "cs_home_pct": 50.1,
-      "cs_away_pct": 10.5,
+      "xg_home": 2.953,
+      "xg_away": 0.716,
+      "p_home_win": 0.815,
+      "p_draw": 0.1318,
+      "p_away_win": 0.0532,
+      "cs_home_pct": 48.9,
+      "cs_away_pct": 5.2,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9316,15 +9319,15 @@
       "away": "Tottenham",
       "home_short": "NFO",
       "away_short": "TOT",
-      "xg_home": 1.337,
-      "xg_away": 1.233,
-      "p_home_win": 0.3729,
+      "xg_home": 1.326,
+      "xg_away": 1.247,
+      "p_home_win": 0.3671,
       "p_draw": 0.3032,
-      "p_away_win": 0.3239,
-      "cs_home_pct": 29.1,
-      "cs_away_pct": 26.3,
-      "fdr_home": 2,
-      "def_fdr_home": 2,
+      "p_away_win": 0.3297,
+      "cs_home_pct": 28.7,
+      "cs_away_pct": 26.5,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 3,
       "fdr_away": 3,
       "def_fdr_away": 3,
@@ -9339,15 +9342,15 @@
       "away": "Aston Villa",
       "home_short": "HUL",
       "away_short": "AVL",
-      "xg_home": 0.965,
-      "xg_away": 1.675,
-      "p_home_win": 0.1997,
-      "p_draw": 0.2772,
-      "p_away_win": 0.5231,
-      "cs_home_pct": 18.7,
-      "cs_away_pct": 38.1,
-      "fdr_home": 5,
-      "def_fdr_home": 5,
+      "xg_home": 0.979,
+      "xg_away": 1.651,
+      "p_home_win": 0.2062,
+      "p_draw": 0.28,
+      "p_away_win": 0.5138,
+      "cs_home_pct": 19.2,
+      "cs_away_pct": 37.6,
+      "fdr_home": 4,
+      "def_fdr_home": 4,
       "att_fdr_home": 5,
       "fdr_away": 1,
       "def_fdr_away": 1,
@@ -9362,13 +9365,13 @@
       "away": "Manchester United",
       "home_short": "EVE",
       "away_short": "MUN",
-      "xg_home": 1.228,
-      "xg_away": 1.515,
-      "p_home_win": 0.2902,
-      "p_draw": 0.2887,
-      "p_away_win": 0.421,
-      "cs_home_pct": 22.0,
-      "cs_away_pct": 29.3,
+      "xg_home": 1.223,
+      "xg_away": 1.527,
+      "p_home_win": 0.2868,
+      "p_draw": 0.288,
+      "p_away_win": 0.4253,
+      "cs_home_pct": 21.7,
+      "cs_away_pct": 29.4,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 4,
@@ -9385,13 +9388,13 @@
       "away": "Chelsea",
       "home_short": "ARS",
       "away_short": "CHE",
-      "xg_home": 2.06,
-      "xg_away": 0.935,
-      "p_home_win": 0.6192,
-      "p_draw": 0.233,
-      "p_away_win": 0.1479,
-      "cs_home_pct": 39.2,
-      "cs_away_pct": 12.7,
+      "xg_home": 2.033,
+      "xg_away": 0.952,
+      "p_home_win": 0.6094,
+      "p_draw": 0.2366,
+      "p_away_win": 0.154,
+      "cs_home_pct": 38.6,
+      "cs_away_pct": 13.1,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9408,16 +9411,16 @@
       "away": "Nottingham Forest",
       "home_short": "AVL",
       "away_short": "NFO",
-      "xg_home": 1.785,
-      "xg_away": 1.281,
-      "p_home_win": 0.4768,
-      "p_draw": 0.264,
-      "p_away_win": 0.2593,
-      "cs_home_pct": 27.8,
-      "cs_away_pct": 16.8,
+      "xg_home": 1.787,
+      "xg_away": 1.3,
+      "p_home_win": 0.4731,
+      "p_draw": 0.2635,
+      "p_away_win": 0.2634,
+      "cs_home_pct": 27.3,
+      "cs_away_pct": 16.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 1,
+      "att_fdr_home": 2,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 3
@@ -9431,19 +9434,19 @@
       "away": "Brentford",
       "home_short": "BOU",
       "away_short": "BRE",
-      "xg_home": 1.814,
-      "xg_away": 1.276,
-      "p_home_win": 0.4846,
-      "p_draw": 0.2616,
-      "p_away_win": 0.2538,
-      "cs_home_pct": 27.9,
-      "cs_away_pct": 16.3,
+      "xg_home": 1.809,
+      "xg_away": 1.278,
+      "p_home_win": 0.483,
+      "p_draw": 0.262,
+      "p_away_win": 0.255,
+      "cs_home_pct": 27.8,
+      "cs_away_pct": 16.4,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 1,
       "fdr_away": 4,
       "def_fdr_away": 4,
-      "att_fdr_away": 3
+      "att_fdr_away": 4
     },
     {
       "gameweek": 4,
@@ -9454,13 +9457,13 @@
       "away": "Hull",
       "home_short": "CHE",
       "away_short": "HUL",
-      "xg_home": 2.296,
-      "xg_away": 0.929,
-      "p_home_win": 0.6679,
-      "p_draw": 0.2075,
-      "p_away_win": 0.1245,
-      "cs_home_pct": 39.5,
-      "cs_away_pct": 10.1,
+      "xg_home": 2.239,
+      "xg_away": 0.95,
+      "p_home_win": 0.652,
+      "p_draw": 0.2145,
+      "p_away_win": 0.1335,
+      "cs_home_pct": 38.7,
+      "cs_away_pct": 10.7,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9477,13 +9480,13 @@
       "away": "Ipswich",
       "home_short": "CRY",
       "away_short": "IPS",
-      "xg_home": 2.037,
-      "xg_away": 0.95,
-      "p_home_win": 0.6109,
-      "p_draw": 0.236,
-      "p_away_win": 0.1531,
-      "cs_home_pct": 38.7,
-      "cs_away_pct": 13.0,
+      "xg_home": 1.992,
+      "xg_away": 0.972,
+      "p_home_win": 0.5957,
+      "p_draw": 0.2417,
+      "p_away_win": 0.1625,
+      "cs_home_pct": 37.8,
+      "cs_away_pct": 13.6,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9500,13 +9503,13 @@
       "away": "Fulham",
       "home_short": "LIV",
       "away_short": "FUL",
-      "xg_home": 1.857,
-      "xg_away": 1.022,
-      "p_home_win": 0.5531,
-      "p_draw": 0.2575,
-      "p_away_win": 0.1894,
-      "cs_home_pct": 36.0,
-      "cs_away_pct": 15.6,
+      "xg_home": 1.854,
+      "xg_away": 1.018,
+      "p_home_win": 0.5533,
+      "p_draw": 0.2578,
+      "p_away_win": 0.1889,
+      "cs_home_pct": 36.1,
+      "cs_away_pct": 15.7,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9523,16 +9526,16 @@
       "away": "Everton",
       "home_short": "TOT",
       "away_short": "EVE",
-      "xg_home": 1.286,
-      "xg_away": 1.14,
-      "p_home_win": 0.3789,
-      "p_draw": 0.3128,
-      "p_away_win": 0.3083,
-      "cs_home_pct": 32.0,
-      "cs_away_pct": 27.6,
+      "xg_home": 1.278,
+      "xg_away": 1.148,
+      "p_home_win": 0.3749,
+      "p_draw": 0.313,
+      "p_away_win": 0.3121,
+      "cs_home_pct": 31.7,
+      "cs_away_pct": 27.8,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 3,
+      "att_fdr_home": 4,
       "fdr_away": 3,
       "def_fdr_away": 3,
       "att_fdr_away": 4
@@ -9546,13 +9549,13 @@
       "away": "Arsenal",
       "home_short": "SUN",
       "away_short": "ARS",
-      "xg_home": 0.727,
-      "xg_away": 1.75,
-      "p_home_win": 0.1351,
-      "p_draw": 0.2621,
-      "p_away_win": 0.6029,
-      "cs_home_pct": 17.4,
-      "cs_away_pct": 48.3,
+      "xg_home": 0.725,
+      "xg_away": 1.776,
+      "p_home_win": 0.132,
+      "p_draw": 0.2586,
+      "p_away_win": 0.6094,
+      "cs_home_pct": 16.9,
+      "cs_away_pct": 48.4,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -9569,19 +9572,19 @@
       "away": "Brighton",
       "home_short": "COV",
       "away_short": "BHA",
-      "xg_home": 1.023,
-      "xg_away": 1.24,
-      "p_home_win": 0.2842,
-      "p_draw": 0.3239,
-      "p_away_win": 0.392,
-      "cs_home_pct": 28.9,
-      "cs_away_pct": 36.0,
-      "fdr_home": 3,
-      "def_fdr_home": 3,
+      "xg_home": 0.903,
+      "xg_away": 1.639,
+      "p_home_win": 0.1894,
+      "p_draw": 0.2811,
+      "p_away_win": 0.5295,
+      "cs_home_pct": 19.4,
+      "cs_away_pct": 40.5,
+      "fdr_home": 4,
+      "def_fdr_home": 4,
       "att_fdr_home": 5,
-      "fdr_away": 2,
-      "def_fdr_away": 2,
-      "att_fdr_away": 4
+      "fdr_away": 1,
+      "def_fdr_away": 1,
+      "att_fdr_away": 2
     },
     {
       "gameweek": 4,
@@ -9592,13 +9595,13 @@
       "away": "Manchester City",
       "home_short": "MUN",
       "away_short": "MCI",
-      "xg_home": 1.66,
-      "xg_away": 1.516,
-      "p_home_win": 0.3977,
-      "p_draw": 0.2662,
-      "p_away_win": 0.3361,
-      "cs_home_pct": 22.0,
-      "cs_away_pct": 19.0,
+      "xg_home": 1.654,
+      "xg_away": 1.53,
+      "p_home_win": 0.3935,
+      "p_draw": 0.2659,
+      "p_away_win": 0.3406,
+      "cs_home_pct": 21.6,
+      "cs_away_pct": 19.1,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -9615,13 +9618,13 @@
       "away": "Newcastle United",
       "home_short": "LEE",
       "away_short": "NEW",
-      "xg_home": 1.829,
-      "xg_away": 0.965,
-      "p_home_win": 0.5604,
-      "p_draw": 0.2596,
-      "p_away_win": 0.18,
-      "cs_home_pct": 38.1,
-      "cs_away_pct": 16.1,
+      "xg_home": 1.833,
+      "xg_away": 0.953,
+      "p_home_win": 0.5643,
+      "p_draw": 0.259,
+      "p_away_win": 0.1767,
+      "cs_home_pct": 38.6,
+      "cs_away_pct": 16.0,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9638,13 +9641,13 @@
       "away": "Chelsea",
       "home_short": "BRE",
       "away_short": "CHE",
-      "xg_home": 2.008,
-      "xg_away": 1.665,
-      "p_home_win": 0.4489,
-      "p_draw": 0.2395,
-      "p_away_win": 0.3116,
-      "cs_home_pct": 18.9,
-      "cs_away_pct": 13.4,
+      "xg_home": 2.017,
+      "xg_away": 1.693,
+      "p_home_win": 0.4453,
+      "p_draw": 0.2382,
+      "p_away_win": 0.3165,
+      "cs_home_pct": 18.4,
+      "cs_away_pct": 13.3,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 1,
@@ -9661,13 +9664,13 @@
       "away": "Aston Villa",
       "home_short": "TOT",
       "away_short": "AVL",
-      "xg_home": 1.245,
-      "xg_away": 1.257,
-      "p_home_win": 0.343,
+      "xg_home": 1.237,
+      "xg_away": 1.265,
+      "p_home_win": 0.3391,
       "p_draw": 0.3084,
-      "p_away_win": 0.3486,
-      "cs_home_pct": 28.5,
-      "cs_away_pct": 28.8,
+      "p_away_win": 0.3525,
+      "cs_home_pct": 28.2,
+      "cs_away_pct": 29.0,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 4,
@@ -9685,11 +9688,11 @@
       "home_short": "BHA",
       "away_short": "ARS",
       "xg_home": 0.917,
-      "xg_away": 1.57,
-      "p_home_win": 0.2021,
-      "p_draw": 0.2894,
-      "p_away_win": 0.5084,
-      "cs_home_pct": 20.8,
+      "xg_away": 1.589,
+      "p_home_win": 0.1995,
+      "p_draw": 0.2872,
+      "p_away_win": 0.5133,
+      "cs_home_pct": 20.4,
       "cs_away_pct": 40.0,
       "fdr_home": 4,
       "def_fdr_home": 4,
@@ -9707,16 +9710,16 @@
       "away": "Ipswich",
       "home_short": "EVE",
       "away_short": "IPS",
-      "xg_home": 1.829,
-      "xg_away": 0.907,
-      "p_home_win": 0.5748,
-      "p_draw": 0.2584,
-      "p_away_win": 0.1668,
-      "cs_home_pct": 40.4,
-      "cs_away_pct": 16.1,
+      "xg_home": 1.786,
+      "xg_away": 0.926,
+      "p_home_win": 0.5598,
+      "p_draw": 0.2639,
+      "p_away_win": 0.1763,
+      "cs_home_pct": 39.6,
+      "cs_away_pct": 16.8,
       "fdr_home": 1,
       "def_fdr_home": 1,
-      "att_fdr_home": 1,
+      "att_fdr_home": 2,
       "fdr_away": 5,
       "def_fdr_away": 5,
       "att_fdr_away": 5
@@ -9730,13 +9733,13 @@
       "away": "Crystal Palace",
       "home_short": "LEE",
       "away_short": "CRY",
-      "xg_home": 1.75,
-      "xg_away": 1.235,
-      "p_home_win": 0.4785,
-      "p_draw": 0.2678,
-      "p_away_win": 0.2537,
-      "cs_home_pct": 29.1,
-      "cs_away_pct": 17.4,
+      "xg_home": 1.753,
+      "xg_away": 1.246,
+      "p_home_win": 0.4768,
+      "p_draw": 0.2674,
+      "p_away_win": 0.2557,
+      "cs_home_pct": 28.8,
+      "cs_away_pct": 17.3,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -9753,11 +9756,11 @@
       "away": "Sunderland",
       "home_short": "MCI",
       "away_short": "SUN",
-      "xg_home": 2.281,
-      "xg_away": 0.818,
-      "p_home_win": 0.691,
+      "xg_home": 2.282,
+      "xg_away": 0.82,
+      "p_home_win": 0.6909,
       "p_draw": 0.2029,
-      "p_away_win": 0.1061,
+      "p_away_win": 0.1062,
       "cs_home_pct": 44.1,
       "cs_away_pct": 10.2,
       "fdr_home": 1,
@@ -9776,13 +9779,13 @@
       "away": "Hull",
       "home_short": "NEW",
       "away_short": "HUL",
-      "xg_home": 2.396,
-      "xg_away": 0.993,
-      "p_home_win": 0.6721,
-      "p_draw": 0.2005,
-      "p_away_win": 0.1273,
-      "cs_home_pct": 37.1,
-      "cs_away_pct": 9.1,
+      "xg_home": 2.36,
+      "xg_away": 1.016,
+      "p_home_win": 0.6603,
+      "p_draw": 0.2051,
+      "p_away_win": 0.1346,
+      "cs_home_pct": 36.2,
+      "cs_away_pct": 9.4,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9799,18 +9802,18 @@
       "away": "Coventry",
       "home_short": "NFO",
       "away_short": "COV",
-      "xg_home": 1.332,
-      "xg_away": 0.952,
-      "p_home_win": 0.4349,
-      "p_draw": 0.317,
-      "p_away_win": 0.2481,
-      "cs_home_pct": 38.6,
-      "cs_away_pct": 26.4,
-      "fdr_home": 2,
-      "def_fdr_home": 2,
-      "att_fdr_home": 3,
-      "fdr_away": 4,
-      "def_fdr_away": 4,
+      "xg_home": 1.731,
+      "xg_away": 0.993,
+      "p_home_win": 0.5301,
+      "p_draw": 0.2711,
+      "p_away_win": 0.1988,
+      "cs_home_pct": 37.1,
+      "cs_away_pct": 17.7,
+      "fdr_home": 1,
+      "def_fdr_home": 1,
+      "att_fdr_home": 2,
+      "fdr_away": 5,
+      "def_fdr_away": 5,
       "att_fdr_away": 5
     },
     {
@@ -9822,13 +9825,13 @@
       "away": "Liverpool",
       "home_short": "BOU",
       "away_short": "LIV",
-      "xg_home": 1.727,
-      "xg_away": 1.552,
-      "p_home_win": 0.4067,
-      "p_draw": 0.2604,
-      "p_away_win": 0.3329,
-      "cs_home_pct": 21.2,
-      "cs_away_pct": 17.8,
+      "xg_home": 1.723,
+      "xg_away": 1.573,
+      "p_home_win": 0.4016,
+      "p_draw": 0.2599,
+      "p_away_win": 0.3385,
+      "cs_home_pct": 20.7,
+      "cs_away_pct": 17.9,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -9845,12 +9848,12 @@
       "away": "Manchester United",
       "home_short": "FUL",
       "away_short": "MUN",
-      "xg_home": 1.324,
-      "xg_away": 1.527,
-      "p_home_win": 0.3126,
-      "p_draw": 0.2838,
-      "p_away_win": 0.4036,
-      "cs_home_pct": 21.7,
+      "xg_home": 1.325,
+      "xg_away": 1.54,
+      "p_home_win": 0.3105,
+      "p_draw": 0.2828,
+      "p_away_win": 0.4067,
+      "cs_home_pct": 21.4,
       "cs_away_pct": 26.6,
       "fdr_home": 3,
       "def_fdr_home": 3,
@@ -9868,13 +9871,13 @@
       "away": "Leeds",
       "home_short": "ARS",
       "away_short": "LEE",
-      "xg_home": 2.034,
-      "xg_away": 0.748,
-      "p_home_win": 0.6601,
-      "p_draw": 0.2269,
-      "p_away_win": 0.113,
-      "cs_home_pct": 47.3,
-      "cs_away_pct": 13.1,
+      "xg_home": 2.005,
+      "xg_away": 0.754,
+      "p_home_win": 0.6524,
+      "p_draw": 0.2308,
+      "p_away_win": 0.1167,
+      "cs_home_pct": 47.0,
+      "cs_away_pct": 13.5,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -9891,11 +9894,11 @@
       "away": "Brentford",
       "home_short": "AVL",
       "away_short": "BRE",
-      "xg_home": 1.748,
-      "xg_away": 1.234,
-      "p_home_win": 0.4781,
-      "p_draw": 0.2681,
-      "p_away_win": 0.2538,
+      "xg_home": 1.749,
+      "xg_away": 1.236,
+      "p_home_win": 0.4779,
+      "p_draw": 0.268,
+      "p_away_win": 0.2542,
       "cs_home_pct": 29.1,
       "cs_away_pct": 17.4,
       "fdr_home": 2,
@@ -9914,13 +9917,13 @@
       "away": "Bournemouth",
       "home_short": "CHE",
       "away_short": "BOU",
-      "xg_home": 1.742,
-      "xg_away": 1.603,
-      "p_home_win": 0.4004,
-      "p_draw": 0.2575,
-      "p_away_win": 0.3421,
-      "cs_home_pct": 20.1,
-      "cs_away_pct": 17.5,
+      "xg_home": 1.734,
+      "xg_away": 1.63,
+      "p_home_win": 0.3933,
+      "p_draw": 0.2569,
+      "p_away_win": 0.3498,
+      "cs_home_pct": 19.6,
+      "cs_away_pct": 17.7,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -9937,15 +9940,15 @@
       "away": "Fulham",
       "home_short": "IPS",
       "away_short": "FUL",
-      "xg_home": 1.005,
-      "xg_away": 1.351,
-      "p_home_win": 0.2594,
-      "p_draw": 0.313,
-      "p_away_win": 0.4277,
-      "cs_home_pct": 25.9,
-      "cs_away_pct": 36.6,
-      "fdr_home": 4,
-      "def_fdr_home": 4,
+      "xg_home": 1.02,
+      "xg_away": 1.317,
+      "p_home_win": 0.2694,
+      "p_draw": 0.3161,
+      "p_away_win": 0.4145,
+      "cs_home_pct": 26.8,
+      "cs_away_pct": 36.1,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 5,
       "fdr_away": 2,
       "def_fdr_away": 2,
@@ -9960,13 +9963,13 @@
       "away": "Brighton",
       "home_short": "SUN",
       "away_short": "BHA",
-      "xg_home": 1.106,
-      "xg_away": 1.255,
-      "p_home_win": 0.3048,
-      "p_draw": 0.3176,
-      "p_away_win": 0.3776,
-      "cs_home_pct": 28.5,
-      "cs_away_pct": 33.1,
+      "xg_home": 1.099,
+      "xg_away": 1.267,
+      "p_home_win": 0.3005,
+      "p_draw": 0.317,
+      "p_away_win": 0.3824,
+      "cs_home_pct": 28.2,
+      "cs_away_pct": 33.3,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 4,
@@ -9983,13 +9986,13 @@
       "away": "Tottenham",
       "home_short": "MUN",
       "away_short": "TOT",
-      "xg_home": 2.116,
-      "xg_away": 1.02,
-      "p_home_win": 0.6107,
-      "p_draw": 0.23,
-      "p_away_win": 0.1593,
-      "cs_home_pct": 36.0,
-      "cs_away_pct": 12.1,
+      "xg_home": 2.118,
+      "xg_away": 1.029,
+      "p_home_win": 0.609,
+      "p_draw": 0.2301,
+      "p_away_win": 0.1609,
+      "cs_home_pct": 35.7,
+      "cs_away_pct": 12.0,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -10007,11 +10010,11 @@
       "home_short": "CRY",
       "away_short": "NFO",
       "xg_home": 1.652,
-      "xg_away": 1.385,
-      "p_home_win": 0.4222,
-      "p_draw": 0.2719,
-      "p_away_win": 0.3059,
-      "cs_home_pct": 25.0,
+      "xg_away": 1.409,
+      "p_home_win": 0.4173,
+      "p_draw": 0.2711,
+      "p_away_win": 0.3116,
+      "cs_home_pct": 24.4,
       "cs_away_pct": 19.2,
       "fdr_home": 3,
       "def_fdr_home": 3,
@@ -10029,13 +10032,13 @@
       "away": "Everton",
       "home_short": "HUL",
       "away_short": "EVE",
-      "xg_home": 0.997,
-      "xg_away": 1.519,
-      "p_home_win": 0.2301,
-      "p_draw": 0.2947,
-      "p_away_win": 0.4752,
-      "cs_home_pct": 21.9,
-      "cs_away_pct": 36.9,
+      "xg_home": 1.011,
+      "xg_away": 1.499,
+      "p_home_win": 0.2369,
+      "p_draw": 0.2968,
+      "p_away_win": 0.4663,
+      "cs_home_pct": 22.3,
+      "cs_away_pct": 36.4,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 5,
@@ -10052,13 +10055,13 @@
       "away": "Manchester City",
       "home_short": "LIV",
       "away_short": "MCI",
-      "xg_home": 1.43,
-      "xg_away": 1.707,
-      "p_home_win": 0.3073,
-      "p_draw": 0.2663,
-      "p_away_win": 0.4263,
-      "cs_home_pct": 18.1,
-      "cs_away_pct": 23.9,
+      "xg_home": 1.421,
+      "xg_away": 1.728,
+      "p_home_win": 0.3017,
+      "p_draw": 0.2652,
+      "p_away_win": 0.4331,
+      "cs_home_pct": 17.8,
+      "cs_away_pct": 24.1,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 3,
@@ -10075,19 +10078,19 @@
       "away": "Newcastle United",
       "home_short": "COV",
       "away_short": "NEW",
-      "xg_home": 1.251,
-      "xg_away": 0.942,
-      "p_home_win": 0.4141,
-      "p_draw": 0.3268,
-      "p_away_win": 0.2591,
-      "cs_home_pct": 39.0,
-      "cs_away_pct": 28.6,
-      "fdr_home": 2,
-      "def_fdr_home": 2,
+      "xg_home": 1.109,
+      "xg_away": 1.217,
+      "p_home_win": 0.3131,
+      "p_draw": 0.3209,
+      "p_away_win": 0.366,
+      "cs_home_pct": 29.6,
+      "cs_away_pct": 33.0,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 4,
-      "fdr_away": 3,
-      "def_fdr_away": 3,
-      "att_fdr_away": 5
+      "fdr_away": 2,
+      "def_fdr_away": 2,
+      "att_fdr_away": 4
     }
   ]
 }

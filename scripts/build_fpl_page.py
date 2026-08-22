@@ -214,6 +214,17 @@ def gw_date_label(fixtures: list[dict], gw: int) -> str:
     return dt.strftime("%A %d %B %Y").replace(" 0", " ")
 
 
+def gw_started(fixtures: list[dict], gw: int) -> bool:
+    """22.8: onko GW:n avausottelu jo alkanut. Kesken kierroksen next_gw on
+    yhä kuluva GW, ja "Gameweek 1 starts Friday 21 August" olisi futuuri
+    menneestä (auditoinnin P1-löydös)."""
+    gws = [f for f in fixtures if f.get("gameweek") == gw and f.get("kickoff_ms")]
+    if not gws:
+        return False
+    first_ms = min(f["kickoff_ms"] for f in gws)
+    return first_ms / 1000 < _dt.datetime.now(_dt.timezone.utc).timestamp()
+
+
 def build_context(fpl: dict, acc: dict) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
@@ -358,6 +369,7 @@ def build_context(fpl: dict, acc: dict) -> dict:
         "season": meta.get("season", "2026/27"),
         "next_gw": next_gw,
         "gw_label": gw_date_label(fixtures, next_gw),
+        "gw_started": gw_started(fixtures, next_gw),
         "cs_rows": cs_rows,
         "fdr_rows": fdr_rows,
         "gws": gws,
@@ -1725,7 +1737,7 @@ manager with a gameweek planner, per-gameweek expected points (xP), the captain
 ranker, player value, a DefCon tracker and transfer suggestions
 you can apply to your planned squad.</p>
 <p class="meta">Season {c["season"]}. Data updated {c["data_date"]}.
-Gameweek {c["next_gw"]} starts {c["gw_label"]}.</p>
+{f'Gameweek {c["next_gw"]} is being played, first kick-off was {c["gw_label"]}.' if c.get("gw_started") else f'Gameweek {c["next_gw"]} starts {c["gw_label"]}.'}</p>
 
 <div class="cta-row">
   <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl">See the full xP dashboard on GoalIQ Premium</a>
