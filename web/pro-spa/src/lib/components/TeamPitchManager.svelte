@@ -556,36 +556,6 @@
 	.doubt.out {
 		background: var(--negative, #ff8a5c);
 	}
-	@media (min-width: 1040px) {
-		.pitch-block {
-			max-width: 1040px;
-		}
-		.player {
-			width: 104px;
-		}
-		.plabel,
-		.popp {
-			max-width: 100px;
-		}
-		.pname {
-			font-size: 12px;
-		}
-		.pxp {
-			font-size: 11px;
-		}
-		.popp {
-			font-size: 10px;
-		}
-		.pitch {
-			padding: var(--s-4) var(--s-2) var(--s-3);
-		}
-		.pitch::before {
-			background-size: 100% 128px;
-		}
-		.row {
-			margin: var(--s-3) 0;
-		}
-	}
 	.label {
 		margin: 0 0 var(--s-1);
 		font-size: var(--step--1);
@@ -846,5 +816,40 @@
 		margin-left: auto;
 		color: var(--positive);
 		font-weight: 700;
+	}
+	/* 22.8: leveiden ruutujen mitat TYYLIEN LOPUSSA tarkoituksella — media
+	   query ei nosta spesifisyyttä, joten aiemmin tiedostossa ollut blokki
+	   hävisi myöhemmille base-säännöille (nimet katkesivat 74px:iin vaikka
+	   tilaa oli; sama järjestysvika oli jo vanhassa 11.5px-fonttisäännössä
+	   joka ei koskaan aktivoitunut). */
+	@media (min-width: 1040px) {
+		.pitch-block {
+			max-width: 1040px;
+		}
+		.player {
+			width: 104px;
+		}
+		.plabel,
+		.popp {
+			max-width: 100px;
+		}
+		.pname {
+			font-size: 12px;
+		}
+		.pxp {
+			font-size: 11px;
+		}
+		.popp {
+			font-size: 10px;
+		}
+		.pitch {
+			padding: var(--s-4) var(--s-2) var(--s-3);
+		}
+		.pitch::before {
+			background-size: 100% 128px;
+		}
+		.row {
+			margin: var(--s-3) 0;
+		}
 	}
 </style>

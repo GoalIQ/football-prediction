@@ -34,7 +34,15 @@
 		try {
 			const d = await fetchFantasy();
 			const m = d?.meta ?? {};
-			gw = typeof m.next_gameweek === 'number' ? m.next_gameweek : null;
+			/* 22.8: deadline_gameweek ensin — kesken kierroksen next_gameweek
+			 * on yha kuluva GW mutta deadline_utc on jo seuraavan, ja palkki
+			 * naytti "GAMEWEEK 1 DEADLINE Fri 28 Aug" (28.8 = GW2). */
+			gw =
+				typeof m.deadline_gameweek === 'number'
+					? m.deadline_gameweek
+					: typeof m.next_gameweek === 'number'
+						? m.next_gameweek
+						: null;
 			if (m.deadline_utc) {
 				const t = new Date(m.deadline_utc);
 				if (!isNaN(t.getTime())) deadline = t;

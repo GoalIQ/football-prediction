@@ -256,6 +256,10 @@ export interface FantasyResponse {
 		/** Pakollinen label kaukoriveille — näytetään sellaisenaan. */
 		far_basis_label?: string;
 		next_gameweek?: number | null;
+		/** 22.8: GW jonka deadline deadline_utc on. Kesken kierroksen ERI
+		 *  kuin next_gameweek (pelaamattomia fixtureita on yha kuluvassa
+		 *  GW:ssa mutta deadline on jo seuraavan). */
+		deadline_gameweek?: number | null;
 		/** FPL:n virallinen GW-deadline ISO-muodossa. Tyypitetty 15.8, kun
 		 *  tyotilapalkki alkoi kayttaa sita: se oli ennen vain
 		 *  index-signaturen alla, eli tsc ei olisi huomannut kirjoitusvirhetta
