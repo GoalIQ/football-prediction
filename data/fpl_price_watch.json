@@ -2,38 +2,49 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-22T12:55:26Z",
-  "total_players": 9215459,
+  "generated_at": "2026-08-22T14:47:36Z",
+  "total_players": 9243962,
   "n_players_scanned": 600,
-  "n_with_transfer_activity": 593,
+  "n_with_transfer_activity": 596,
   "source": "FPL official price projection",
   "official_projection": true,
   "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it."
  },
- "risers": [
-  {
-   "id": 8,
-   "web_name": "Calafiori",
-   "team": 1,
-   "now_cost": 5.5,
-   "status": "rising_watch",
-   "confidence": 0.25,
-   "progress_pct": 25.0,
-   "net_event": 41603,
-   "already_changed_today": false,
-   "eta_days": 2
-  }
- ],
+ "risers": [],
  "fallers": [
   {
-   "id": 431,
-   "web_name": "Amad",
-   "team": 16,
-   "now_cost": 6.0,
+   "id": 373,
+   "web_name": "C.Jones",
+   "team": 14,
+   "now_cost": 5.5,
    "status": "falling_watch",
-   "confidence": 0.03,
-   "progress_pct": 2.8,
-   "net_event": -1384,
+   "confidence": 0.15,
+   "progress_pct": 14.6,
+   "net_event": -213,
+   "already_changed_today": false,
+   "eta_days": 2
+  },
+  {
+   "id": 208,
+   "web_name": "Sarr",
+   "team": 8,
+   "now_cost": 6.5,
+   "status": "falling_watch",
+   "confidence": 0.05,
+   "progress_pct": 4.6,
+   "net_event": -3439,
+   "already_changed_today": false,
+   "eta_days": 2
+  },
+  {
+   "id": 485,
+   "web_name": "Bakwa",
+   "team": 18,
+   "now_cost": 5.5,
+   "status": "falling_watch",
+   "confidence": 0.02,
+   "progress_pct": 1.6,
+   "net_event": -4,
    "already_changed_today": false,
    "eta_days": 2
   }
