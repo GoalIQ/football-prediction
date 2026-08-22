@@ -2,10 +2,10 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-22T09:23:43Z",
-  "total_players": 9160612,
+  "generated_at": "2026-08-22T12:24:57Z",
+  "total_players": 9206713,
   "n_players_scanned": 600,
-  "n_with_transfer_activity": 593,
+  "n_with_transfer_activity": 595,
   "disclaimer": "Estimated from FPL net-transfer velocity - FPL's exact price thresholds are not public. Model estimate, not a guarantee."
  },
  "risers": [
@@ -15,9 +15,20 @@
    "team": 1,
    "now_cost": 7.5,
    "status": "rising_watch",
-   "confidence": 0.71,
-   "progress_pct": 70.6,
-   "net_event": 18120,
+   "confidence": 0.78,
+   "progress_pct": 78.1,
+   "net_event": 20500,
+   "already_changed_today": false
+  },
+  {
+   "id": 15,
+   "web_name": "Ødegaard",
+   "team": 1,
+   "now_cost": 6.5,
+   "status": "rising_watch",
+   "confidence": 0.55,
+   "progress_pct": 54.6,
+   "net_event": 21132,
    "already_changed_today": false
   }
  ],
@@ -28,9 +39,9 @@
    "team": 19,
    "now_cost": 5.0,
    "status": "falling_watch",
-   "confidence": 0.63,
-   "progress_pct": 62.6,
-   "net_event": -23668,
+   "confidence": 0.72,
+   "progress_pct": 72.1,
+   "net_event": -26901,
    "already_changed_today": false
   },
   {
@@ -39,9 +50,9 @@
    "team": 1,
    "now_cost": 7.0,
    "status": "falling_watch",
-   "confidence": 0.55,
-   "progress_pct": 54.7,
-   "net_event": -15414,
+   "confidence": 0.63,
+   "progress_pct": 63.1,
+   "net_event": -17851,
    "already_changed_today": false
   },
   {
@@ -50,9 +61,42 @@
    "team": 19,
    "now_cost": 4.5,
    "status": "falling_watch",
-   "confidence": 0.53,
-   "progress_pct": 52.5,
-   "net_event": -10510,
+   "confidence": 0.62,
+   "progress_pct": 62.2,
+   "net_event": -12433,
+   "already_changed_today": false
+  },
+  {
+   "id": 499,
+   "web_name": "Pedro Porro",
+   "team": 19,
+   "now_cost": 5.5,
+   "status": "falling_watch",
+   "confidence": 0.56,
+   "progress_pct": 55.6,
+   "net_event": -64150,
+   "already_changed_today": false
+  },
+  {
+   "id": 25,
+   "web_name": "Gyökeres",
+   "team": 1,
+   "now_cost": 7.5,
+   "status": "falling_watch",
+   "confidence": 0.51,
+   "progress_pct": 51.0,
+   "net_event": -31330,
+   "already_changed_today": false
+  },
+  {
+   "id": 400,
+   "web_name": "Doku",
+   "team": 15,
+   "now_cost": 7.5,
+   "status": "falling_watch",
+   "confidence": 0.5,
+   "progress_pct": 50.2,
+   "net_event": -10042,
    "already_changed_today": false
   }
  ],

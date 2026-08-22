@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-08-22T09:21:43",
+    "generated_at": "2026-08-22T12:19:55",
     "season": "2026/27",
     "overrides_applied": 13,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -180,7 +180,7 @@
       "promoted_prior_players": 195,
       "promoted_prior_method": "Promoted-club players with no Premier League minutes: minutes come from a role prior built on FPL price order (XI slots 1/4/4/2 per position; top p_start 0.72, next two 0.30, rest 0.08) times the FPL availability gate. Rates come from a position prior. data_basis=no_history, minutes_confidence=low, minutes_method=promoted_price_prior.",
       "player_basis_counts": {
-        "pl_history": 276,
+        "pl_history": 277,
         "limited_history": 57,
         "no_history": 157
       },
@@ -211,8 +211,8 @@
     "deadline_utc": "2026-08-28T17:30:00+00:00",
     "horizon_gw": 6,
     "min_xp_total": 1.0,
-    "n_players": 490,
-    "n_excluded": 110,
+    "n_players": 491,
+    "n_excluded": 109,
     "excluded_note": "excluded[] lists FPL players who are not in the projection (availability flag i/s/u/n, or horizon xP below 1.0). The rows exist for search and the player card: in_projection=false, with no xP/xmins/p_start fields. Older clients can ignore the list.",
     "todo": [
       "195 promoted-club players are on a position prior with no Premier League history: ['Hull']. Roles come from price order, and they sharpen as 2026/27 gameweeks are played."
@@ -226,8 +226,8 @@
       "team": "Manchester United",
       "team_short": "MUN",
       "pos": "MID",
-      "xmins": 85.6,
-      "predicted_starts": 87.7,
+      "xmins": 88.4,
+      "predicted_starts": 90.7,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
       "owned_pct": 51.9,
@@ -253,18 +253,18 @@
           "xgi": 0.68
         }
       },
-      "p_start": 0.877,
+      "p_start": 0.9072,
       "p_cameo": 0.0,
-      "p_bench": 0.123,
+      "p_bench": 0.0928,
       "set_pieces": {
         "pens": 1,
         "corners": 1,
         "fk": 1
       },
-      "e_bonus": 1.0,
-      "xp_per_gw": 5.77,
+      "e_bonus": 1.03,
+      "xp_per_gw": 5.96,
       "xp_per_90": 6.12,
-      "xp_horizon_total": 34.61,
+      "xp_horizon_total": 35.76,
       "gameweeks": [
         {
           "gw": 1,
@@ -274,7 +274,7 @@
               "venue": "A"
             }
           ],
-          "xp": 5.76
+          "xp": 5.95
         },
         {
           "gw": 2,
@@ -284,7 +284,7 @@
               "venue": "H"
             }
           ],
-          "xp": 7.24
+          "xp": 7.48
         },
         {
           "gw": 3,
@@ -294,7 +294,7 @@
               "venue": "A"
             }
           ],
-          "xp": 5.09
+          "xp": 5.26
         },
         {
           "gw": 4,
@@ -304,7 +304,7 @@
               "venue": "H"
             }
           ],
-          "xp": 5.26
+          "xp": 5.44
         },
         {
           "gw": 5,
@@ -314,7 +314,7 @@
               "venue": "A"
             }
           ],
-          "xp": 5.08
+          "xp": 5.25
         },
         {
           "gw": 6,
@@ -324,19 +324,19 @@
               "venue": "H"
             }
           ],
-          "xp": 6.18
+          "xp": 6.38
         }
       ],
       "components": {
-        "appearance": 1.86,
-        "goals": 1.46,
-        "assists": 0.98,
-        "clean_sheet": 0.29,
+        "appearance": 1.92,
+        "goals": 1.51,
+        "assists": 1.01,
+        "clean_sheet": 0.3,
         "conceded": 0.0,
         "saves": 0.0,
-        "defensive_contribution": 0.28,
-        "yellows": -0.14,
-        "bonus": 1.03
+        "defensive_contribution": 0.29,
+        "yellows": -0.15,
+        "bonus": 1.06
       },
       "components_gw": 1
     },
@@ -1077,7 +1077,7 @@
       "predicted_starts": 97.2,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 15.9,
+      "owned_pct": 15.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1682,7 +1682,7 @@
       "predicted_starts": 92.4,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 41.8,
+      "owned_pct": 41.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1925,7 +1925,7 @@
       "predicted_starts": 80.2,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 10.4,
+      "owned_pct": 10.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2036,6 +2036,127 @@
       "components_gw": 1
     },
     {
+      "id": 427,
+      "web_name": "Mbeumo",
+      "full_name": "Bryan Mbeumo",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 67.8,
+      "predicted_starts": 77.0,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 38.8,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 8.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 2611,
+        "starts": 31,
+        "goals": 11,
+        "assists": 3,
+        "xg": 11.98,
+        "xa": 4.99,
+        "cs": 8,
+        "points": 148,
+        "per90": {
+          "goals": 0.38,
+          "assists": 0.1,
+          "xgi": 0.58
+        }
+      },
+      "p_start": 0.7703,
+      "p_cameo": 0.1222,
+      "p_bench": 0.1075,
+      "set_pieces": {
+        "pens": 2,
+        "corners": 2,
+        "fk": 2
+      },
+      "e_bonus": 0.39,
+      "xp_per_gw": 4.16,
+      "xp_per_90": 5.22,
+      "xp_horizon_total": 24.96,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 4.15
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 5.16
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.71
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.81
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.7
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 4.44
+        }
+      ],
+      "components": {
+        "appearance": 1.7,
+        "goals": 1.47,
+        "assists": 0.39,
+        "clean_sheet": 0.26,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.04,
+        "yellows": -0.11,
+        "bonus": 0.4
+      },
+      "components_gw": 1
+    },
+    {
       "id": 397,
       "web_name": "Semenyo",
       "full_name": "Antoine Semenyo",
@@ -2046,7 +2167,7 @@
       "predicted_starts": 97.8,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 26.3,
+      "owned_pct": 26.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2288,7 +2409,7 @@
       "predicted_starts": 80.8,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 31.3,
+      "owned_pct": 31.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2516,127 +2637,6 @@
         "defensive_contribution": 0.0,
         "yellows": -0.13,
         "bonus": 0.7
-      },
-      "components_gw": 1
-    },
-    {
-      "id": 427,
-      "web_name": "Mbeumo",
-      "full_name": "Bryan Mbeumo",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 65.9,
-      "predicted_starts": 74.6,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 38.9,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 8.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 2611,
-        "starts": 31,
-        "goals": 11,
-        "assists": 3,
-        "xg": 11.98,
-        "xa": 4.99,
-        "cs": 8,
-        "points": 148,
-        "per90": {
-          "goals": 0.38,
-          "assists": 0.1,
-          "xgi": 0.58
-        }
-      },
-      "p_start": 0.7455,
-      "p_cameo": 0.1354,
-      "p_bench": 0.1191,
-      "set_pieces": {
-        "pens": 2,
-        "corners": 2,
-        "fk": 2
-      },
-      "e_bonus": 0.38,
-      "xp_per_gw": 4.05,
-      "xp_per_90": 5.22,
-      "xp_horizon_total": 24.31,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 4.04
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 5.02
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.61
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.71
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.6
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 4.33
-        }
-      ],
-      "components": {
-        "appearance": 1.66,
-        "goals": 1.43,
-        "assists": 0.38,
-        "clean_sheet": 0.25,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.04,
-        "yellows": -0.11,
-        "bonus": 0.39
       },
       "components_gw": 1
     },
@@ -2884,127 +2884,6 @@
       "components_gw": 1
     },
     {
-      "id": 412,
-      "web_name": "Lammens",
-      "full_name": "Senne Lammens",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "GKP",
-      "xmins": 89.4,
-      "predicted_starts": 89.6,
-      "minutes_confidence": "high",
-      "data_basis": "pl_history",
-      "owned_pct": 16.8,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 2880,
-        "starts": 32,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.0,
-        "cs": 8,
-        "points": 109,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.0
-        }
-      },
-      "p_start": 0.8963,
-      "p_cameo": 0.0,
-      "p_bench": 0.1037,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.32,
-      "xp_per_gw": 3.94,
-      "xp_per_90": 4.01,
-      "xp_horizon_total": 23.63,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 4.11
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 4.57
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.82
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.23
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.74
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 4.16
-        }
-      ],
-      "components": {
-        "appearance": 1.93,
-        "goals": 0.0,
-        "assists": 0.0,
-        "clean_sheet": 1.22,
-        "conceded": -0.34,
-        "saves": 0.98,
-        "defensive_contribution": 0.0,
-        "yellows": -0.02,
-        "bonus": 0.33
-      },
-      "components_gw": 1
-    },
-    {
       "id": 367,
       "web_name": "Gakpo",
       "full_name": "Cody Gakpo",
@@ -3015,7 +2894,7 @@
       "predicted_starts": 89.0,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 3.5,
+      "owned_pct": 3.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3257,7 +3136,7 @@
       "predicted_starts": 79.0,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 21.2,
+      "owned_pct": 21.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3741,7 +3620,7 @@
       "predicted_starts": 83.8,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 10.4,
+      "owned_pct": 10.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3862,7 +3741,7 @@
       "predicted_starts": 92.4,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 22.0,
+      "owned_pct": 21.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4104,7 +3983,7 @@
       "predicted_starts": 82.8,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 13.1,
+      "owned_pct": 13.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5910,6 +5789,127 @@
       "components_gw": 1
     },
     {
+      "id": 412,
+      "web_name": "Lammens",
+      "full_name": "Senne Lammens",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "GKP",
+      "xmins": 79.6,
+      "predicted_starts": 79.8,
+      "minutes_confidence": "high",
+      "data_basis": "pl_history",
+      "owned_pct": 16.8,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 2880,
+        "starts": 32,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.0,
+        "cs": 8,
+        "points": 109,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.0
+        }
+      },
+      "p_start": 0.7976,
+      "p_cameo": 0.0,
+      "p_bench": 0.2024,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.28,
+      "xp_per_gw": 3.5,
+      "xp_per_90": 4.01,
+      "xp_horizon_total": 21.03,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.65
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 4.07
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.4
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.88
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.33
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.7
+        }
+      ],
+      "components": {
+        "appearance": 1.71,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 1.09,
+        "conceded": -0.3,
+        "saves": 0.87,
+        "defensive_contribution": 0.0,
+        "yellows": -0.02,
+        "bonus": 0.29
+      },
+      "components_gw": 1
+    },
+    {
       "id": 60,
       "web_name": "Hill",
       "full_name": "James Hill",
@@ -6027,6 +6027,127 @@
         "defensive_contribution": 1.03,
         "yellows": -0.19,
         "bonus": 0.12
+      },
+      "components_gw": 1
+    },
+    {
+      "id": 428,
+      "web_name": "Cunha",
+      "full_name": "Matheus Santos Carneiro da Cunha",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 69.4,
+      "predicted_starts": 75.6,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 10.2,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 8.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 2493,
+        "starts": 29,
+        "goals": 10,
+        "assists": 4,
+        "xg": 6.9,
+        "xa": 3.36,
+        "cs": 8,
+        "points": 143,
+        "per90": {
+          "goals": 0.36,
+          "assists": 0.14,
+          "xgi": 0.37
+        }
+      },
+      "p_start": 0.7559,
+      "p_cameo": 0.0711,
+      "p_bench": 0.173,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.37,
+      "xp_per_gw": 3.49,
+      "xp_per_90": 4.38,
+      "xp_horizon_total": 20.92,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.47
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 4.21
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.16
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.22
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.15
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.7
+        }
+      ],
+      "components": {
+        "appearance": 1.63,
+        "goals": 0.94,
+        "assists": 0.3,
+        "clean_sheet": 0.25,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.09,
+        "yellows": -0.12,
+        "bonus": 0.38
       },
       "components_gw": 1
     },
@@ -6283,7 +6404,7 @@
       "predicted_starts": 88.4,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 0.7,
+      "owned_pct": 0.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6404,7 +6525,7 @@
       "predicted_starts": 54.0,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 7.8,
+      "owned_pct": 7.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6878,127 +6999,6 @@
       "components_gw": 1
     },
     {
-      "id": 428,
-      "web_name": "Cunha",
-      "full_name": "Matheus Santos Carneiro da Cunha",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 67.4,
-      "predicted_starts": 73.2,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 10.2,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 8.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 2493,
-        "starts": 29,
-        "goals": 10,
-        "assists": 4,
-        "xg": 6.9,
-        "xa": 3.36,
-        "cs": 8,
-        "points": 143,
-        "per90": {
-          "goals": 0.36,
-          "assists": 0.14,
-          "xgi": 0.37
-        }
-      },
-      "p_start": 0.7318,
-      "p_cameo": 0.0781,
-      "p_bench": 0.1901,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.36,
-      "xp_per_gw": 3.39,
-      "xp_per_90": 4.38,
-      "xp_horizon_total": 20.33,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.37
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 4.09
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.08
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.13
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.06
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.6
-        }
-      ],
-      "components": {
-        "appearance": 1.58,
-        "goals": 0.91,
-        "assists": 0.29,
-        "clean_sheet": 0.24,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.09,
-        "yellows": -0.11,
-        "bonus": 0.37
-      },
-      "components_gw": 1
-    },
-    {
       "id": 469,
       "web_name": "N.Williams",
       "full_name": "Neco Williams",
@@ -7253,7 +7253,7 @@
       "predicted_starts": 71.3,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 3.7,
+      "owned_pct": 3.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7738,7 +7738,7 @@
       "predicted_starts": 60.0,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 9.4,
+      "owned_pct": 9.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10530,7 +10530,7 @@
       "predicted_starts": 93.0,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 8.9,
+      "owned_pct": 9.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -11247,127 +11247,6 @@
       "components_gw": 1
     },
     {
-      "id": 417,
-      "web_name": "Dalot",
-      "full_name": "Diogo Dalot Teixeira",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "xmins": 68.0,
-      "predicted_starts": 69.5,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 2.8,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 2609,
-        "starts": 29,
-        "goals": 1,
-        "assists": 6,
-        "xg": 1.93,
-        "xa": 2.57,
-        "cs": 7,
-        "points": 111,
-        "per90": {
-          "goals": 0.03,
-          "assists": 0.21,
-          "xgi": 0.16
-        }
-      },
-      "p_start": 0.6948,
-      "p_cameo": 0.133,
-      "p_bench": 0.1722,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.24,
-      "xp_per_gw": 3.04,
-      "xp_per_90": 4.0,
-      "xp_horizon_total": 18.22,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.01
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.79
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.83
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.56
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.72
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.32
-        }
-      ],
-      "components": {
-        "appearance": 1.54,
-        "goals": 0.31,
-        "assists": 0.2,
-        "clean_sheet": 0.91,
-        "conceded": -0.26,
-        "saves": 0.0,
-        "defensive_contribution": 0.19,
-        "yellows": -0.13,
-        "bonus": 0.25
-      },
-      "components_gw": 1
-    },
-    {
       "id": 248,
       "web_name": "Beto",
       "full_name": "Norberto Bercique Gomes Betuncal",
@@ -11485,6 +11364,127 @@
         "defensive_contribution": 0.0,
         "yellows": -0.08,
         "bonus": 0.47
+      },
+      "components_gw": 1
+    },
+    {
+      "id": 417,
+      "web_name": "Dalot",
+      "full_name": "Diogo Dalot Teixeira",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "xmins": 67.7,
+      "predicted_starts": 69.1,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 2.8,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 2609,
+        "starts": 29,
+        "goals": 1,
+        "assists": 6,
+        "xg": 1.93,
+        "xa": 2.57,
+        "cs": 7,
+        "points": 111,
+        "per90": {
+          "goals": 0.03,
+          "assists": 0.21,
+          "xgi": 0.16
+        }
+      },
+      "p_start": 0.6914,
+      "p_cameo": 0.1345,
+      "p_bench": 0.1741,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.24,
+      "xp_per_gw": 3.02,
+      "xp_per_90": 4.0,
+      "xp_horizon_total": 18.14,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.0
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.77
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.81
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.55
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.71
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.3
+        }
+      ],
+      "components": {
+        "appearance": 1.54,
+        "goals": 0.31,
+        "assists": 0.2,
+        "clean_sheet": 0.9,
+        "conceded": -0.26,
+        "saves": 0.0,
+        "defensive_contribution": 0.19,
+        "yellows": -0.13,
+        "bonus": 0.24
       },
       "components_gw": 1
     },
@@ -12579,248 +12579,6 @@
       "components_gw": 1
     },
     {
-      "id": 431,
-      "web_name": "Amad",
-      "full_name": "Amad Diallo",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 61.9,
-      "predicted_starts": 67.0,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 1.7,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 6.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 2339,
-        "starts": 27,
-        "goals": 2,
-        "assists": 5,
-        "xg": 5.46,
-        "xa": 4.74,
-        "cs": 6,
-        "points": 91,
-        "per90": {
-          "goals": 0.08,
-          "assists": 0.19,
-          "xgi": 0.39
-        }
-      },
-      "p_start": 0.6701,
-      "p_cameo": 0.2125,
-      "p_bench": 0.1174,
-      "set_pieces": {
-        "pens": null,
-        "corners": 4,
-        "fk": null
-      },
-      "e_bonus": 0.18,
-      "xp_per_gw": 2.91,
-      "xp_per_90": 4.13,
-      "xp_horizon_total": 17.43,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.89
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.48
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.65
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.7
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.64
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.08
-        }
-      ],
-      "components": {
-        "appearance": 1.46,
-        "goals": 0.72,
-        "assists": 0.37,
-        "clean_sheet": 0.19,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.04,
-        "yellows": -0.07,
-        "bonus": 0.18
-      },
-      "components_gw": 1
-    },
-    {
-      "id": 418,
-      "web_name": "Maguire",
-      "full_name": "Harry Maguire",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "xmins": 59.9,
-      "predicted_starts": 64.9,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 18.4,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1649,
-        "starts": 19,
-        "goals": 1,
-        "assists": 2,
-        "xg": 1.12,
-        "xa": 0.5,
-        "cs": 7,
-        "points": 90,
-        "per90": {
-          "goals": 0.05,
-          "assists": 0.11,
-          "xgi": 0.09
-        }
-      },
-      "p_start": 0.6491,
-      "p_cameo": 0.0296,
-      "p_bench": 0.3214,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.15,
-      "xp_per_gw": 2.89,
-      "xp_per_90": 4.24,
-      "xp_horizon_total": 17.37,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.86
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.49
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.75
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.49
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.65
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.13
-        }
-      ],
-      "components": {
-        "appearance": 1.36,
-        "goals": 0.25,
-        "assists": 0.07,
-        "clean_sheet": 0.84,
-        "conceded": -0.23,
-        "saves": 0.0,
-        "defensive_contribution": 0.52,
-        "yellows": -0.11,
-        "bonus": 0.15
-      },
-      "components_gw": 1
-    },
-    {
       "id": 496,
       "web_name": "Kinsky",
       "full_name": "Antonín Kinský",
@@ -13061,6 +12819,127 @@
         "defensive_contribution": 0.05,
         "yellows": -0.06,
         "bonus": 0.14
+      },
+      "components_gw": 1
+    },
+    {
+      "id": 418,
+      "web_name": "Maguire",
+      "full_name": "Harry Maguire",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "xmins": 59.6,
+      "predicted_starts": 64.5,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 18.4,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1649,
+        "starts": 19,
+        "goals": 1,
+        "assists": 2,
+        "xg": 1.12,
+        "xa": 0.5,
+        "cs": 7,
+        "points": 90,
+        "per90": {
+          "goals": 0.05,
+          "assists": 0.11,
+          "xgi": 0.09
+        }
+      },
+      "p_start": 0.645,
+      "p_cameo": 0.0299,
+      "p_bench": 0.3251,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.15,
+      "xp_per_gw": 2.88,
+      "xp_per_90": 4.24,
+      "xp_horizon_total": 17.26,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.84
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.47
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.73
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.48
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.63
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.12
+        }
+      ],
+      "components": {
+        "appearance": 1.35,
+        "goals": 0.25,
+        "assists": 0.07,
+        "clean_sheet": 0.84,
+        "conceded": -0.22,
+        "saves": 0.0,
+        "defensive_contribution": 0.52,
+        "yellows": -0.11,
+        "bonus": 0.15
       },
       "components_gw": 1
     },
@@ -15372,6 +15251,127 @@
       "minutes_basis_flag": "short_season"
     },
     {
+      "id": 432,
+      "web_name": "Mainoo",
+      "full_name": "Kobbie Mainoo",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 66.9,
+      "predicted_starts": 68.5,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 1.0,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.5,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1653,
+        "starts": 16,
+        "goals": 1,
+        "assists": 2,
+        "xg": 0.48,
+        "xa": 1.27,
+        "cs": 6,
+        "points": 73,
+        "per90": {
+          "goals": 0.05,
+          "assists": 0.11,
+          "xgi": 0.1
+        }
+      },
+      "p_start": 0.6847,
+      "p_cameo": 0.1386,
+      "p_bench": 0.1767,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.14,
+      "xp_per_gw": 2.69,
+      "xp_per_90": 3.56,
+      "xp_horizon_total": 16.14,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.65
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.96
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.59
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.57
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.57
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.8
+        }
+      ],
+      "components": {
+        "appearance": 1.53,
+        "goals": 0.21,
+        "assists": 0.19,
+        "clean_sheet": 0.22,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.46,
+        "yellows": -0.1,
+        "bonus": 0.14
+      },
+      "components_gw": 1
+    },
+    {
       "id": 222,
       "web_name": "Strand Larsen",
       "full_name": "Jørgen Strand Larsen",
@@ -15979,127 +15979,6 @@
         "defensive_contribution": 0.13,
         "yellows": -0.05,
         "bonus": 0.26
-      },
-      "components_gw": 1
-    },
-    {
-      "id": 432,
-      "web_name": "Mainoo",
-      "full_name": "Kobbie Mainoo",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 65.2,
-      "predicted_starts": 66.4,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 1.0,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.5,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1653,
-        "starts": 16,
-        "goals": 1,
-        "assists": 2,
-        "xg": 0.48,
-        "xa": 1.27,
-        "cs": 6,
-        "points": 73,
-        "per90": {
-          "goals": 0.05,
-          "assists": 0.11,
-          "xgi": 0.1
-        }
-      },
-      "p_start": 0.6641,
-      "p_cameo": 0.1477,
-      "p_bench": 0.1882,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.13,
-      "xp_per_gw": 2.62,
-      "xp_per_90": 3.56,
-      "xp_horizon_total": 15.74,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.59
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.88
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.52
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.51
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.51
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.73
-        }
-      ],
-      "components": {
-        "appearance": 1.49,
-        "goals": 0.2,
-        "assists": 0.19,
-        "clean_sheet": 0.22,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.45,
-        "yellows": -0.1,
-        "bonus": 0.14
       },
       "components_gw": 1
     },
@@ -18059,7 +17938,7 @@
       "predicted_starts": 53.9,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 1.7,
+      "owned_pct": 1.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -18181,7 +18060,7 @@
       "predicted_starts": 53.8,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 1.3,
+      "owned_pct": 1.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -18775,6 +18654,248 @@
         "defensive_contribution": 0.58,
         "yellows": -0.09,
         "bonus": 0.19
+      },
+      "components_gw": 1
+    },
+    {
+      "id": 431,
+      "web_name": "Amad",
+      "full_name": "Amad Diallo",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 48.8,
+      "predicted_starts": 50.7,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 1.6,
+      "status": "d",
+      "news": "Unspecified injury - 75% chance of playing",
+      "chance_next": 75,
+      "yellows": 0,
+      "price": 6.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 2339,
+        "starts": 27,
+        "goals": 2,
+        "assists": 5,
+        "xg": 5.46,
+        "xa": 4.74,
+        "cs": 6,
+        "points": 91,
+        "per90": {
+          "goals": 0.08,
+          "assists": 0.19,
+          "xgi": 0.39
+        }
+      },
+      "p_start": 0.5074,
+      "p_cameo": 0.2379,
+      "p_bench": 0.2547,
+      "set_pieces": {
+        "pens": null,
+        "corners": 4,
+        "fk": null
+      },
+      "e_bonus": 0.14,
+      "xp_per_gw": 2.32,
+      "xp_per_90": 4.13,
+      "xp_horizon_total": 13.91,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.3
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.76
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.12
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.16
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.11
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.45
+        }
+      ],
+      "components": {
+        "appearance": 1.18,
+        "goals": 0.57,
+        "assists": 0.29,
+        "clean_sheet": 0.14,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.03,
+        "yellows": -0.06,
+        "bonus": 0.14
+      },
+      "components_gw": 1
+    },
+    {
+      "id": 439,
+      "web_name": "Šeško",
+      "full_name": "Benjamin Sesko",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "FWD",
+      "xmins": 39.1,
+      "predicted_starts": 44.1,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 1.3,
+      "status": "a",
+      "news": "",
+      "chance_next": 100,
+      "yellows": 0,
+      "price": 7.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1630,
+        "starts": 17,
+        "goals": 11,
+        "assists": 2,
+        "xg": 9.21,
+        "xa": 0.28,
+        "cs": 2,
+        "points": 111,
+        "per90": {
+          "goals": 0.61,
+          "assists": 0.11,
+          "xgi": 0.52
+        }
+      },
+      "p_start": 0.4405,
+      "p_cameo": 0.2836,
+      "p_bench": 0.2759,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.39,
+      "xp_per_gw": 2.31,
+      "xp_per_90": 4.95,
+      "xp_horizon_total": 13.89,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.31
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.83
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.06
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.16
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.07
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.46
+        }
+      ],
+      "components": {
+        "appearance": 1.03,
+        "goals": 0.89,
+        "assists": 0.03,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": -0.05,
+        "bonus": 0.4
       },
       "components_gw": 1
     },
@@ -19630,6 +19751,127 @@
       "components_gw": 1
     },
     {
+      "id": 43,
+      "web_name": "Tielemans",
+      "full_name": "Youri Tielemans",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 52.8,
+      "predicted_starts": 56.8,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 2.6,
+      "status": "a",
+      "news": "",
+      "chance_next": 100,
+      "yellows": 0,
+      "price": 6.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1857,
+        "starts": 21,
+        "goals": 0,
+        "assists": 4,
+        "xg": 1.14,
+        "xa": 3.26,
+        "cs": 4,
+        "points": 68,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.19,
+          "xgi": 0.21
+        }
+      },
+      "p_start": 0.5679,
+      "p_cameo": 0.1414,
+      "p_bench": 0.2907,
+      "set_pieces": {
+        "pens": 3,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.12,
+      "xp_per_gw": 2.18,
+      "xp_per_90": 3.56,
+      "xp_horizon_total": 13.08,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.16
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.48
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.06
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.06
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.04
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.28
+        }
+      ],
+      "components": {
+        "appearance": 1.25,
+        "goals": 0.23,
+        "assists": 0.28,
+        "clean_sheet": 0.18,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.13,
+        "yellows": -0.03,
+        "bonus": 0.12
+      },
+      "components_gw": 1
+    },
+    {
       "id": 46,
       "web_name": "Barkley",
       "full_name": "Ross Barkley",
@@ -19995,127 +20237,6 @@
       "components_gw": 1,
       "team_flag": "high_turnover",
       "minutes_basis_flag": "short_season"
-    },
-    {
-      "id": 43,
-      "web_name": "Tielemans",
-      "full_name": "Youri Tielemans",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 51.5,
-      "predicted_starts": 55.3,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 2.6,
-      "status": "a",
-      "news": "",
-      "chance_next": 100,
-      "yellows": 0,
-      "price": 6.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1857,
-        "starts": 21,
-        "goals": 0,
-        "assists": 4,
-        "xg": 1.14,
-        "xa": 3.26,
-        "cs": 4,
-        "points": 68,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.19,
-          "xgi": 0.21
-        }
-      },
-      "p_start": 0.5528,
-      "p_cameo": 0.1464,
-      "p_bench": 0.3008,
-      "set_pieces": {
-        "pens": 3,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.12,
-      "xp_per_gw": 2.13,
-      "xp_per_90": 3.56,
-      "xp_horizon_total": 12.79,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.11
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.43
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.01
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.02
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 2.0
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.23
-        }
-      ],
-      "components": {
-        "appearance": 1.23,
-        "goals": 0.22,
-        "assists": 0.27,
-        "clean_sheet": 0.17,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.12,
-        "yellows": -0.03,
-        "bonus": 0.12
-      },
-      "components_gw": 1
     },
     {
       "id": 347,
@@ -22388,127 +22509,6 @@
       "team_flag": "promoted"
     },
     {
-      "id": 439,
-      "web_name": "Šeško",
-      "full_name": "Benjamin Sesko",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "FWD",
-      "xmins": 31.3,
-      "predicted_starts": 34.8,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 1.3,
-      "status": "d",
-      "news": "Shin injury - 75% chance of playing",
-      "chance_next": 75,
-      "yellows": 0,
-      "price": 7.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1630,
-        "starts": 17,
-        "goals": 11,
-        "assists": 2,
-        "xg": 9.21,
-        "xa": 0.28,
-        "cs": 2,
-        "points": 111,
-        "per90": {
-          "goals": 0.61,
-          "assists": 0.11,
-          "xgi": 0.52
-        }
-      },
-      "p_start": 0.3484,
-      "p_cameo": 0.2477,
-      "p_bench": 0.4039,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.31,
-      "xp_per_gw": 1.87,
-      "xp_per_90": 4.95,
-      "xp_horizon_total": 11.2,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.86
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.28
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.67
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.74
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.67
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.98
-        }
-      ],
-      "components": {
-        "appearance": 0.84,
-        "goals": 0.72,
-        "assists": 0.03,
-        "clean_sheet": 0.0,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.0,
-        "yellows": -0.04,
-        "bonus": 0.32
-      },
-      "components_gw": 1
-    },
-    {
       "id": 230,
       "web_name": "Branthwaite",
       "full_name": "Jarrad Branthwaite",
@@ -22764,7 +22764,7 @@
       "predicted_starts": 57.1,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 3.7,
+      "owned_pct": 3.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -23473,6 +23473,128 @@
       "minutes_basis_flag": "short_season"
     },
     {
+      "id": 162,
+      "web_name": "Andrey Santos",
+      "full_name": "Andrey Nascimento dos Santos",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 38.4,
+      "predicted_starts": 43.7,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 1.1,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1247,
+        "starts": 13,
+        "goals": 1,
+        "assists": 0,
+        "xg": 2.0,
+        "xa": 0.88,
+        "cs": 1,
+        "points": 47,
+        "per90": {
+          "goals": 0.07,
+          "assists": 0.0,
+          "xgi": 0.21
+        }
+      },
+      "p_start": 0.4366,
+      "p_cameo": 0.2932,
+      "p_bench": 0.2702,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.11,
+      "xp_per_gw": 1.8,
+      "xp_per_90": 3.72,
+      "xp_horizon_total": 10.78,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.78
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.05
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.69
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.7
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.68
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.88
+        }
+      ],
+      "components": {
+        "appearance": 1.08,
+        "goals": 0.33,
+        "assists": 0.11,
+        "clean_sheet": 0.12,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.13,
+        "yellows": -0.1,
+        "bonus": 0.12
+      },
+      "components_gw": 1,
+      "minutes_basis_flag": "short_season"
+    },
+    {
       "id": 357,
       "web_name": "Frimpong",
       "full_name": "Jeremie Frimpong",
@@ -23835,7 +23957,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.6,
+      "owned_pct": 5.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -23942,128 +24064,6 @@
         "defensive_contribution": 0.0,
         "yellows": -0.05,
         "bonus": 0.24
-      },
-      "components_gw": 1,
-      "minutes_basis_flag": "short_season"
-    },
-    {
-      "id": 162,
-      "web_name": "Andrey Santos",
-      "full_name": "Andrey Nascimento dos Santos",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 37.9,
-      "predicted_starts": 42.7,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 1.1,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1247,
-        "starts": 13,
-        "goals": 1,
-        "assists": 0,
-        "xg": 2.0,
-        "xa": 0.88,
-        "cs": 1,
-        "points": 47,
-        "per90": {
-          "goals": 0.07,
-          "assists": 0.0,
-          "xgi": 0.21
-        }
-      },
-      "p_start": 0.4272,
-      "p_cameo": 0.2981,
-      "p_bench": 0.2747,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.11,
-      "xp_per_gw": 1.77,
-      "xp_per_90": 3.72,
-      "xp_horizon_total": 10.64,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.75
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.02
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.67
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.68
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.66
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.86
-        }
-      ],
-      "components": {
-        "appearance": 1.06,
-        "goals": 0.32,
-        "assists": 0.11,
-        "clean_sheet": 0.12,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.13,
-        "yellows": -0.1,
-        "bonus": 0.11
       },
       "components_gw": 1,
       "minutes_basis_flag": "short_season"
@@ -24559,128 +24559,6 @@
       "minutes_basis_flag": "short_season"
     },
     {
-      "id": 419,
-      "web_name": "Martinez",
-      "full_name": "Lisandro Martínez",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "xmins": 41.2,
-      "predicted_starts": 46.6,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 1.4,
-      "status": "a",
-      "news": "",
-      "chance_next": 100,
-      "yellows": 0,
-      "price": 5.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1229,
-        "starts": 13,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.15,
-        "xa": 0.6,
-        "cs": 5,
-        "points": 51,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.05
-        }
-      },
-      "p_start": 0.4663,
-      "p_cameo": 0.0738,
-      "p_bench": 0.46,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.08,
-      "xp_per_gw": 1.74,
-      "xp_per_90": 3.95,
-      "xp_horizon_total": 10.42,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.72
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 2.08
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.66
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.49
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.6
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.88
-        }
-      ],
-      "components": {
-        "appearance": 0.92,
-        "goals": 0.07,
-        "assists": 0.07,
-        "clean_sheet": 0.51,
-        "conceded": -0.16,
-        "saves": 0.0,
-        "defensive_contribution": 0.25,
-        "yellows": -0.03,
-        "bonus": 0.09
-      },
-      "components_gw": 1,
-      "minutes_basis_flag": "short_season"
-    },
-    {
       "id": 16,
       "web_name": "Madueke",
       "full_name": "Noni Madueke",
@@ -24803,51 +24681,51 @@
       "minutes_basis_flag": "short_season"
     },
     {
-      "id": 420,
-      "web_name": "Yoro",
-      "full_name": "Leny Yoro",
+      "id": 419,
+      "web_name": "Martinez",
+      "full_name": "Lisandro Martínez",
       "team": "Manchester United",
       "team_short": "MUN",
       "pos": "DEF",
-      "xmins": 36.6,
-      "predicted_starts": 38.7,
+      "xmins": 40.8,
+      "predicted_starts": 46.0,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 0.7,
+      "owned_pct": 1.4,
       "status": "a",
       "news": "",
-      "chance_next": null,
+      "chance_next": 100,
       "yellows": 0,
       "price": 5.0,
       "last_season": {
         "season": "2025/26",
         "league": "Premier League",
-        "minutes": 1730,
-        "starts": 18,
+        "minutes": 1229,
+        "starts": 13,
         "goals": 0,
-        "assists": 1,
-        "xg": 1.34,
-        "xa": 0.59,
-        "cs": 2,
-        "points": 56,
+        "assists": 0,
+        "xg": 0.15,
+        "xa": 0.6,
+        "cs": 5,
+        "points": 51,
         "per90": {
           "goals": 0.0,
-          "assists": 0.05,
-          "xgi": 0.1
+          "assists": 0.0,
+          "xgi": 0.05
         }
       },
-      "p_start": 0.3869,
-      "p_cameo": 0.3592,
-      "p_bench": 0.254,
+      "p_start": 0.4603,
+      "p_cameo": 0.0746,
+      "p_bench": 0.4651,
       "set_pieces": {
         "pens": null,
         "corners": null,
         "fk": null
       },
-      "e_bonus": 0.05,
-      "xp_per_gw": 1.73,
-      "xp_per_90": 3.86,
-      "xp_horizon_total": 10.37,
+      "e_bonus": 0.08,
+      "xp_per_gw": 1.72,
+      "xp_per_90": 3.95,
+      "xp_horizon_total": 10.3,
       "gameweeks": [
         {
           "gw": 1,
@@ -24857,7 +24735,7 @@
               "venue": "A"
             }
           ],
-          "xp": 1.71
+          "xp": 1.7
         },
         {
           "gw": 2,
@@ -24877,7 +24755,7 @@
               "venue": "A"
             }
           ],
-          "xp": 1.65
+          "xp": 1.64
         },
         {
           "gw": 4,
@@ -24887,7 +24765,7 @@
               "venue": "H"
             }
           ],
-          "xp": 1.51
+          "xp": 1.48
         },
         {
           "gw": 5,
@@ -24897,7 +24775,7 @@
               "venue": "A"
             }
           ],
-          "xp": 1.59
+          "xp": 1.58
         },
         {
           "gw": 6,
@@ -24911,17 +24789,18 @@
         }
       ],
       "components": {
-        "appearance": 1.05,
-        "goals": 0.17,
-        "assists": 0.05,
-        "clean_sheet": 0.43,
-        "conceded": -0.14,
+        "appearance": 0.91,
+        "goals": 0.07,
+        "assists": 0.07,
+        "clean_sheet": 0.5,
+        "conceded": -0.15,
         "saves": 0.0,
-        "defensive_contribution": 0.14,
-        "yellows": -0.04,
-        "bonus": 0.05
+        "defensive_contribution": 0.25,
+        "yellows": -0.03,
+        "bonus": 0.09
       },
-      "components_gw": 1
+      "components_gw": 1,
+      "minutes_basis_flag": "short_season"
     },
     {
       "id": 492,
@@ -25047,6 +24926,127 @@
       "components_gw": 1,
       "team_flag": "promoted",
       "minutes_basis_flag": "short_season"
+    },
+    {
+      "id": 420,
+      "web_name": "Yoro",
+      "full_name": "Leny Yoro",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "xmins": 36.1,
+      "predicted_starts": 38.0,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 0.7,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1730,
+        "starts": 18,
+        "goals": 0,
+        "assists": 1,
+        "xg": 1.34,
+        "xa": 0.59,
+        "cs": 2,
+        "points": 56,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.05,
+          "xgi": 0.1
+        }
+      },
+      "p_start": 0.3804,
+      "p_cameo": 0.3629,
+      "p_bench": 0.2566,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.05,
+      "xp_per_gw": 1.71,
+      "xp_per_90": 3.86,
+      "xp_horizon_total": 10.26,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.69
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.03
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.63
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.5
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.58
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.84
+        }
+      ],
+      "components": {
+        "appearance": 1.04,
+        "goals": 0.17,
+        "assists": 0.05,
+        "clean_sheet": 0.42,
+        "conceded": -0.14,
+        "saves": 0.0,
+        "defensive_contribution": 0.13,
+        "yellows": -0.04,
+        "bonus": 0.05
+      },
+      "components_gw": 1
     },
     {
       "id": 264,
@@ -25549,7 +25549,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.6,
+      "owned_pct": 1.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -28080,7 +28080,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.9,
+      "owned_pct": 1.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -29275,128 +29275,6 @@
       "components_gw": 1
     },
     {
-      "id": 422,
-      "web_name": "Mazraoui",
-      "full_name": "Noussair Mazraoui",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "xmins": 31.7,
-      "predicted_starts": 35.8,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 0.6,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 4.5,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 977,
-        "starts": 11,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.19,
-        "xa": 0.35,
-        "cs": 5,
-        "points": 53,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.05
-        }
-      },
-      "p_start": 0.3575,
-      "p_cameo": 0.229,
-      "p_bench": 0.4135,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.14,
-      "xp_per_gw": 1.48,
-      "xp_per_90": 3.73,
-      "xp_horizon_total": 8.88,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.46
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.78
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.4
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.27
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.35
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.6
-        }
-      ],
-      "components": {
-        "appearance": 0.88,
-        "goals": 0.07,
-        "assists": 0.04,
-        "clean_sheet": 0.42,
-        "conceded": -0.12,
-        "saves": 0.0,
-        "defensive_contribution": 0.11,
-        "yellows": -0.08,
-        "bonus": 0.14
-      },
-      "components_gw": 1,
-      "minutes_basis_flag": "short_season"
-    },
-    {
       "id": 334,
       "web_name": "Muharemović",
       "full_name": "Tarik Muharemović",
@@ -29505,6 +29383,128 @@
       "components_gw": 1
     },
     {
+      "id": 422,
+      "web_name": "Mazraoui",
+      "full_name": "Noussair Mazraoui",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "xmins": 31.2,
+      "predicted_starts": 35.1,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 0.7,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 4.5,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 977,
+        "starts": 11,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.19,
+        "xa": 0.35,
+        "cs": 5,
+        "points": 53,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.05
+        }
+      },
+      "p_start": 0.351,
+      "p_cameo": 0.2313,
+      "p_bench": 0.4177,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.14,
+      "xp_per_gw": 1.46,
+      "xp_per_90": 3.73,
+      "xp_horizon_total": 8.77,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.45
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.76
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.39
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.26
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.34
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.58
+        }
+      ],
+      "components": {
+        "appearance": 0.87,
+        "goals": 0.07,
+        "assists": 0.04,
+        "clean_sheet": 0.41,
+        "conceded": -0.12,
+        "saves": 0.0,
+        "defensive_contribution": 0.1,
+        "yellows": -0.08,
+        "bonus": 0.14
+      },
+      "components_gw": 1,
+      "minutes_basis_flag": "short_season"
+    },
+    {
       "id": 579,
       "web_name": "Araujo",
       "full_name": "Ronald Araujo",
@@ -29517,7 +29517,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 2.5,
+      "owned_pct": 2.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -29965,130 +29965,6 @@
       "components_gw": 1
     },
     {
-      "id": 440,
-      "web_name": "Zirkzee",
-      "full_name": "Joshua Zirkzee",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "FWD",
-      "xmins": 19.8,
-      "predicted_starts": 27.6,
-      "minutes_confidence": "med",
-      "minutes_source": "price_blend",
-      "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
-      "data_basis": "pl_history",
-      "owned_pct": 0.6,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.5,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 607,
-        "starts": 5,
-        "goals": 2,
-        "assists": 1,
-        "xg": 2.74,
-        "xa": 0.34,
-        "cs": 2,
-        "points": 42,
-        "per90": {
-          "goals": 0.3,
-          "assists": 0.15,
-          "xgi": 0.46
-        }
-      },
-      "p_start": 0.276,
-      "p_cameo": 0.4758,
-      "p_bench": 0.2481,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.16,
-      "xp_per_gw": 1.43,
-      "xp_per_90": 4.43,
-      "xp_horizon_total": 8.6,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.42
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.66
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.33
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.37
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.33
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.5
-        }
-      ],
-      "components": {
-        "appearance": 0.89,
-        "goals": 0.39,
-        "assists": 0.04,
-        "clean_sheet": 0.0,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.0,
-        "yellows": -0.06,
-        "bonus": 0.17
-      },
-      "components_gw": 1,
-      "minutes_basis_flag": "short_season"
-    },
-    {
       "id": 588,
       "web_name": "Khalaili",
       "full_name": "Anan Khalaili",
@@ -30317,6 +30193,130 @@
       },
       "components_gw": 1,
       "team_flag": "high_turnover",
+      "minutes_basis_flag": "short_season"
+    },
+    {
+      "id": 440,
+      "web_name": "Zirkzee",
+      "full_name": "Joshua Zirkzee",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "FWD",
+      "xmins": 19.2,
+      "predicted_starts": 26.1,
+      "minutes_confidence": "med",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
+      "data_basis": "pl_history",
+      "owned_pct": 0.6,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.5,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 607,
+        "starts": 5,
+        "goals": 2,
+        "assists": 1,
+        "xg": 2.74,
+        "xa": 0.34,
+        "cs": 2,
+        "points": 42,
+        "per90": {
+          "goals": 0.3,
+          "assists": 0.15,
+          "xgi": 0.46
+        }
+      },
+      "p_start": 0.2613,
+      "p_cameo": 0.4855,
+      "p_bench": 0.2532,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.16,
+      "xp_per_gw": 1.41,
+      "xp_per_90": 4.43,
+      "xp_horizon_total": 8.43,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.39
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.62
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.3
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.34
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.3
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.47
+        }
+      ],
+      "components": {
+        "appearance": 0.88,
+        "goals": 0.38,
+        "assists": 0.04,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": -0.06,
+        "bonus": 0.16
+      },
+      "components_gw": 1,
       "minutes_basis_flag": "short_season"
     },
     {
@@ -31265,15 +31265,15 @@
       "team": "Manchester United",
       "team_short": "MUN",
       "pos": "MID",
-      "xmins": 25.4,
-      "predicted_starts": 30.6,
+      "xmins": 25.7,
+      "predicted_starts": 31.1,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
       "owned_pct": 1.4,
       "status": "a",
       "news": "",
       "chance_next": null,
-      "yellows": 0,
+      "yellows": 1,
       "price": 6.0,
       "last_season": {
         "season": "2025/26",
@@ -31292,18 +31292,18 @@
           "xgi": 0.26
         }
       },
-      "p_start": 0.3063,
-      "p_cameo": 0.2708,
-      "p_bench": 0.4229,
+      "p_start": 0.3107,
+      "p_cameo": 0.269,
+      "p_bench": 0.4202,
       "set_pieces": {
         "pens": null,
         "corners": null,
         "fk": null
       },
       "e_bonus": 0.16,
-      "xp_per_gw": 1.33,
+      "xp_per_gw": 1.34,
       "xp_per_90": 3.97,
-      "xp_horizon_total": 7.98,
+      "xp_horizon_total": 8.05,
       "gameweeks": [
         {
           "gw": 1,
@@ -31313,7 +31313,7 @@
               "venue": "A"
             }
           ],
-          "xp": 1.32
+          "xp": 1.33
         },
         {
           "gw": 2,
@@ -31323,7 +31323,7 @@
               "venue": "H"
             }
           ],
-          "xp": 1.54
+          "xp": 1.55
         },
         {
           "gw": 3,
@@ -31333,7 +31333,7 @@
               "venue": "A"
             }
           ],
-          "xp": 1.24
+          "xp": 1.25
         },
         {
           "gw": 4,
@@ -31343,7 +31343,7 @@
               "venue": "H"
             }
           ],
-          "xp": 1.25
+          "xp": 1.26
         },
         {
           "gw": 5,
@@ -31353,7 +31353,7 @@
               "venue": "A"
             }
           ],
-          "xp": 1.23
+          "xp": 1.24
         },
         {
           "gw": 6,
@@ -31363,13 +31363,13 @@
               "venue": "H"
             }
           ],
-          "xp": 1.4
+          "xp": 1.41
         }
       ],
       "components": {
         "appearance": 0.78,
         "goals": 0.22,
-        "assists": 0.1,
+        "assists": 0.11,
         "clean_sheet": 0.08,
         "conceded": 0.0,
         "saves": 0.0,
@@ -31611,7 +31611,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 14.0,
+      "owned_pct": 13.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -32058,128 +32058,6 @@
         "bonus": 0.06
       },
       "components_gw": 1
-    },
-    {
-      "id": 421,
-      "web_name": "Heaven",
-      "full_name": "Ayden Heaven",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "xmins": 25.4,
-      "predicted_starts": 33.1,
-      "minutes_confidence": "med",
-      "data_basis": "pl_history",
-      "owned_pct": 0.4,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 4.5,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 920,
-        "starts": 11,
-        "goals": 0,
-        "assists": 1,
-        "xg": 0.34,
-        "xa": 0.18,
-        "cs": 2,
-        "points": 42,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.1,
-          "xgi": 0.05
-        }
-      },
-      "p_start": 0.3307,
-      "p_cameo": 0.148,
-      "p_bench": 0.5213,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.03,
-      "xp_per_gw": 1.29,
-      "xp_per_90": 4.05,
-      "xp_horizon_total": 7.74,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.27
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.51
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.24
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.13
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.2
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.38
-        }
-      ],
-      "components": {
-        "appearance": 0.71,
-        "goals": 0.07,
-        "assists": 0.03,
-        "clean_sheet": 0.34,
-        "conceded": -0.1,
-        "saves": 0.0,
-        "defensive_contribution": 0.23,
-        "yellows": -0.05,
-        "bonus": 0.03
-      },
-      "components_gw": 1,
-      "minutes_basis_flag": "short_season"
     },
     {
       "id": 303,
@@ -32750,6 +32628,128 @@
         "defensive_contribution": 0.0,
         "yellows": -0.02,
         "bonus": 0.15
+      },
+      "components_gw": 1,
+      "minutes_basis_flag": "short_season"
+    },
+    {
+      "id": 421,
+      "web_name": "Heaven",
+      "full_name": "Ayden Heaven",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "xmins": 24.9,
+      "predicted_starts": 32.4,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 0.4,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 4.5,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 920,
+        "starts": 11,
+        "goals": 0,
+        "assists": 1,
+        "xg": 0.34,
+        "xa": 0.18,
+        "cs": 2,
+        "points": 42,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.1,
+          "xgi": 0.05
+        }
+      },
+      "p_start": 0.3241,
+      "p_cameo": 0.1494,
+      "p_bench": 0.5265,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.03,
+      "xp_per_gw": 1.27,
+      "xp_per_90": 4.05,
+      "xp_horizon_total": 7.61,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.25
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.48
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.22
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.11
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.18
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.36
+        }
+      ],
+      "components": {
+        "appearance": 0.7,
+        "goals": 0.07,
+        "assists": 0.03,
+        "clean_sheet": 0.34,
+        "conceded": -0.09,
+        "saves": 0.0,
+        "defensive_contribution": 0.23,
+        "yellows": -0.05,
+        "bonus": 0.03
       },
       "components_gw": 1,
       "minutes_basis_flag": "short_season"
@@ -44253,7 +44253,7 @@
           "xgi": 0.28
         }
       },
-      "p_start": 0.1366,
+      "p_start": 0.1367,
       "p_cameo": 0.181,
       "p_bench": 0.6823,
       "set_pieces": {
@@ -45182,7 +45182,7 @@
       "status": "a",
       "news": "",
       "chance_next": null,
-      "yellows": 0,
+      "yellows": 1,
       "price": 4.5,
       "last_season": null,
       "p_start": 0.096,
@@ -51289,7 +51289,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.2,
+      "owned_pct": 0.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -53642,6 +53642,127 @@
       "team_flag": "promoted"
     },
     {
+      "id": 325,
+      "web_name": "Darlow",
+      "full_name": "Karl Darlow",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "GKP",
+      "xmins": 10.4,
+      "predicted_starts": 10.8,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 0.0,
+      "status": "a",
+      "news": "",
+      "chance_next": 100,
+      "yellows": 0,
+      "price": 4.5,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 1980,
+        "starts": 22,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.05,
+        "cs": 5,
+        "points": 71,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.0
+        }
+      },
+      "p_start": 0.1079,
+      "p_cameo": 0.0,
+      "p_bench": 0.8921,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.03,
+      "xp_per_gw": 0.46,
+      "xp_per_90": 3.98,
+      "xp_horizon_total": 2.74,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.48
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.53
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.44
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.37
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.44
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.48
+        }
+      ],
+      "components": {
+        "appearance": 0.23,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 0.14,
+        "conceded": -0.04,
+        "saves": 0.13,
+        "defensive_contribution": 0.0,
+        "yellows": -0.01,
+        "bonus": 0.03
+      },
+      "components_gw": 1
+    },
+    {
       "id": 308,
       "web_name": "Furlong",
       "full_name": "Darnell Furlong",
@@ -53654,7 +53775,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.6,
+      "owned_pct": 0.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -54423,8 +54544,8 @@
       "team": "Manchester United",
       "team_short": "MUN",
       "pos": "MID",
-      "xmins": 8.7,
-      "predicted_starts": 14.9,
+      "xmins": 8.4,
+      "predicted_starts": 14.5,
       "minutes_confidence": "high",
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
@@ -54448,18 +54569,18 @@
         "points": 3,
         "per90": null
       },
-      "p_start": 0.1493,
-      "p_cameo": 0.1038,
-      "p_bench": 0.7469,
+      "p_start": 0.1455,
+      "p_cameo": 0.1042,
+      "p_bench": 0.7503,
       "set_pieces": {
         "pens": null,
         "corners": null,
         "fk": null
       },
       "e_bonus": 0.03,
-      "xp_per_gw": 0.44,
+      "xp_per_gw": 0.43,
       "xp_per_90": 4.03,
-      "xp_horizon_total": 2.62,
+      "xp_horizon_total": 2.55,
       "gameweeks": [
         {
           "gw": 1,
@@ -54469,7 +54590,7 @@
               "venue": "A"
             }
           ],
-          "xp": 0.43
+          "xp": 0.42
         },
         {
           "gw": 2,
@@ -54479,7 +54600,7 @@
               "venue": "H"
             }
           ],
-          "xp": 0.5
+          "xp": 0.49
         },
         {
           "gw": 3,
@@ -54489,7 +54610,7 @@
               "venue": "A"
             }
           ],
-          "xp": 0.41
+          "xp": 0.4
         },
         {
           "gw": 4,
@@ -54499,7 +54620,7 @@
               "venue": "H"
             }
           ],
-          "xp": 0.41
+          "xp": 0.4
         },
         {
           "gw": 5,
@@ -54509,7 +54630,7 @@
               "venue": "A"
             }
           ],
-          "xp": 0.41
+          "xp": 0.4
         },
         {
           "gw": 6,
@@ -54519,11 +54640,11 @@
               "venue": "H"
             }
           ],
-          "xp": 0.46
+          "xp": 0.45
         }
       ],
       "components": {
-        "appearance": 0.26,
+        "appearance": 0.25,
         "goals": 0.08,
         "assists": 0.04,
         "clean_sheet": 0.02,
@@ -55887,8 +56008,8 @@
       "team": "Manchester United",
       "team_short": "MUN",
       "pos": "MID",
-      "xmins": 8.1,
-      "predicted_starts": 14.8,
+      "xmins": 7.9,
+      "predicted_starts": 14.5,
       "minutes_confidence": "high",
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
@@ -55916,18 +56037,18 @@
           "xgi": 0.04
         }
       },
-      "p_start": 0.1484,
-      "p_cameo": 0.0462,
-      "p_bench": 0.8055,
+      "p_start": 0.1446,
+      "p_cameo": 0.0464,
+      "p_bench": 0.8091,
       "set_pieces": {
         "pens": null,
         "corners": null,
         "fk": null
       },
       "e_bonus": 0.03,
-      "xp_per_gw": 0.35,
+      "xp_per_gw": 0.34,
       "xp_per_90": 3.82,
-      "xp_horizon_total": 2.08,
+      "xp_horizon_total": 2.01,
       "gameweeks": [
         {
           "gw": 1,
@@ -55937,7 +56058,7 @@
               "venue": "A"
             }
           ],
-          "xp": 0.34
+          "xp": 0.33
         },
         {
           "gw": 2,
@@ -55947,7 +56068,7 @@
               "venue": "H"
             }
           ],
-          "xp": 0.4
+          "xp": 0.39
         },
         {
           "gw": 3,
@@ -55957,7 +56078,7 @@
               "venue": "A"
             }
           ],
-          "xp": 0.32
+          "xp": 0.31
         },
         {
           "gw": 4,
@@ -55967,7 +56088,7 @@
               "venue": "H"
             }
           ],
-          "xp": 0.33
+          "xp": 0.32
         },
         {
           "gw": 5,
@@ -55977,7 +56098,7 @@
               "venue": "A"
             }
           ],
-          "xp": 0.32
+          "xp": 0.31
         },
         {
           "gw": 6,
@@ -55987,7 +56108,7 @@
               "venue": "H"
             }
           ],
-          "xp": 0.36
+          "xp": 0.35
         }
       ],
       "components": {
@@ -56371,130 +56492,6 @@
       "components_gw": 1
     },
     {
-      "id": 433,
-      "web_name": "Ugarte",
-      "full_name": "Manuel Ugarte Ribeiro",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "MID",
-      "xmins": 6.7,
-      "predicted_starts": 8.0,
-      "minutes_confidence": "med",
-      "minutes_source": "price_blend",
-      "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
-      "data_basis": "pl_history",
-      "owned_pct": 0.0,
-      "status": "i",
-      "news": "Knee injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 0,
-      "price": 5.0,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 876,
-        "starts": 8,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.72,
-        "xa": 0.16,
-        "cs": 1,
-        "points": 38,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.09
-        }
-      },
-      "p_start": 0.0801,
-      "p_cameo": 0.0,
-      "p_bench": 0.9199,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.01,
-      "xp_per_gw": 0.3,
-      "xp_per_90": 3.79,
-      "xp_horizon_total": 1.78,
-      "gameweeks": [
-        {
-          "gw": 1,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.29
-        },
-        {
-          "gw": 2,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.33
-        },
-        {
-          "gw": 3,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.28
-        },
-        {
-          "gw": 4,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.28
-        },
-        {
-          "gw": 5,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.28
-        },
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.31
-        }
-      ],
-      "components": {
-        "appearance": 0.16,
-        "goals": 0.04,
-        "assists": 0.01,
-        "clean_sheet": 0.02,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.06,
-        "yellows": -0.01,
-        "bonus": 0.01
-      },
-      "components_gw": 1,
-      "minutes_basis_flag": "short_season"
-    },
-    {
       "id": 563,
       "web_name": "Morita",
       "full_name": "Hidemasa Morita",
@@ -56602,6 +56599,130 @@
       },
       "components_gw": 1,
       "team_flag": "promoted"
+    },
+    {
+      "id": 433,
+      "web_name": "Ugarte",
+      "full_name": "Manuel Ugarte Ribeiro",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "MID",
+      "xmins": 6.4,
+      "predicted_starts": 7.7,
+      "minutes_confidence": "med",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
+      "data_basis": "pl_history",
+      "owned_pct": 0.0,
+      "status": "i",
+      "news": "Knee injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 0,
+      "price": 5.0,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 876,
+        "starts": 8,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.72,
+        "xa": 0.16,
+        "cs": 1,
+        "points": 38,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.09
+        }
+      },
+      "p_start": 0.0768,
+      "p_cameo": 0.0,
+      "p_bench": 0.9232,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.01,
+      "xp_per_gw": 0.28,
+      "xp_per_90": 3.79,
+      "xp_horizon_total": 1.71,
+      "gameweeks": [
+        {
+          "gw": 1,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.28
+        },
+        {
+          "gw": 2,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.32
+        },
+        {
+          "gw": 3,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.27
+        },
+        {
+          "gw": 4,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.27
+        },
+        {
+          "gw": 5,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.27
+        },
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.3
+        }
+      ],
+      "components": {
+        "appearance": 0.15,
+        "goals": 0.04,
+        "assists": 0.01,
+        "clean_sheet": 0.02,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.06,
+        "yellows": -0.01,
+        "bonus": 0.01
+      },
+      "components_gw": 1,
+      "minutes_basis_flag": "short_season"
     },
     {
       "id": 546,
@@ -58308,7 +58429,7 @@
       "team_short": "TOT",
       "pos": "DEF",
       "price": 5.5,
-      "owned_pct": 16.8,
+      "owned_pct": 16.7,
       "status": "i",
       "news": "Lack of match fitness - Expected back 29 Aug",
       "chance_next": 0,
@@ -58346,7 +58467,7 @@
       "team_short": "TOT",
       "pos": "DEF",
       "price": 5.0,
-      "owned_pct": 5.5,
+      "owned_pct": 5.4,
       "status": "i",
       "news": "Unspecified injury - Expected back 29 Aug",
       "chance_next": 0,
@@ -58460,7 +58581,7 @@
       "team_short": "TOT",
       "pos": "FWD",
       "price": 4.5,
-      "owned_pct": 1.7,
+      "owned_pct": 1.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -58494,7 +58615,7 @@
       "team_short": "TOT",
       "pos": "DEF",
       "price": 4.0,
-      "owned_pct": 1.1,
+      "owned_pct": 1.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -60693,44 +60814,6 @@
       },
       "in_projection": false,
       "excluded_reason": "unavailable"
-    },
-    {
-      "id": 325,
-      "web_name": "Darlow",
-      "full_name": "Karl Darlow",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "GKP",
-      "price": 4.5,
-      "owned_pct": 0.0,
-      "status": "d",
-      "news": "Unspecified injury - 75% chance of playing",
-      "chance_next": 75,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 1980,
-        "starts": 22,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.05,
-        "cs": 5,
-        "points": 71,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.0
-        }
-      },
-      "in_projection": false,
-      "excluded_reason": "below_min_xp"
     },
     {
       "id": 103,
