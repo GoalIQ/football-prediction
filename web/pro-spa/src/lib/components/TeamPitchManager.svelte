@@ -139,6 +139,17 @@
 		return p.xp_per_gw;
 	}
 
+	/** 22.8: toteutuneet pisteet. Backend lähettää ne VAIN payloadin omalle
+	 *  kierrokselle (`defaultGw`), joten muuta GW:tä katsottaessa lukua ei ole
+	 *  eikä sitä saa näyttää — muuten GW3:n kohdalla lukisi GW1:n pisteet.
+	 *  Vanha backend ei lähetä kenttää lainkaan → koko rivi jää pois. */
+	function actualFor(p: RatedPlayer): number | null {
+		if (selGw != null && defaultGw != null && selGw !== defaultGw) return null;
+		return typeof p.gw_points === 'number' ? p.gw_points : null;
+	}
+	/** Onko toteumia ylipäätään (ohjaa yhteenvetorivin ja listan näkymistä). */
+	const anyActuals = $derived(players.some((p) => actualFor(p) != null));
+
 	/** #123: valitun GW:n vastustaja(t): "HUL (A)", DGW molemmat, blank → "No game". */
 	function oppOf(p: RatedPlayer): string | null {
 		if (selGw == null || !p.gameweeks || p.gameweeks.length === 0) return null;
@@ -439,7 +450,18 @@
 							     heikosti (vrt. FPL:n oma pinta, jossa laatta). -->
 							<span class="plabel">
 								<span class="pname">{p.web_name}</span>
-								<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								<span class="pnums">
+									<span class="pxp">{xpOf(p).toFixed(1)}</span>
+									<!-- 22.8 (Villen tilaus): toteutuneet pisteet mallin
+									     odotuksen vierella. Naytetaan VAIN naytettavalle
+									     GW:lle ja vain kun luku on olemassa; puuttuva
+									     jatetaan tyhjaksi eika nollata. -->
+									{#if actualFor(p) != null}
+										<span class="ppts" title="Actual FPL points, GW{selGw ?? defaultGw}"
+											>{actualFor(p)} pts</span
+										>
+									{/if}
+								</span>
 							</span>
 							{#if typeof p.chance_next === 'number' && p.chance_next < 100}
 								<span
@@ -475,12 +497,70 @@
 						</span>
 						<span class="plabel">
 							<span class="pname">{p.web_name}</span>
-							<span class="pxp">{xpOf(p).toFixed(1)}</span>
+							<span class="pnums">
+								<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								{#if actualFor(p) != null}
+									<span class="ppts">{actualFor(p)} pts</span>
+								{/if}
+							</span>
 						</span>
 					</button>
 				{/each}
 			</div>
 			</div>
+		{/if}
+
+		<!-- 22.8 (Villen tilaus): erillinen lista jossa malli ja toteuma ovat
+		     rinnakkain, suurin ero ensin. Tama on ainoa nakyma jossa mallin
+		     virhe on luettavissa suoraan, joten se on tarkoituksella ILMAINEN
+		     (sama linja kuin julkinen track record) eika premiumin takana.
+		     Kentalla pisteet ovat kontekstia, taalla ne ovat mittari. -->
+		{#if anyActuals}
+			{@const rows = players
+				.map((p) => ({ p, act: actualFor(p), xp: xpOf(p) }))
+				.filter((r) => r.act != null)
+				.map((r) => ({ ...r, diff: (r.act as number) - r.xp }))
+				.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))}
+			<details class="actuals">
+				<summary>
+					Model vs actual, GW{selGw ?? defaultGw}
+					<span class="muted"
+						>{rows.reduce((n, r) => n + (r.act as number), 0)} points from
+						{rows.length}
+						{rows.length === 1 ? 'player' : 'players'}, projected
+						{rows.reduce((n, r) => n + r.xp, 0).toFixed(1)}</span
+					>
+				</summary>
+				<div class="table-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>Player</th>
+								<th class="num">Projected</th>
+								<th class="num">Actual</th>
+								<th class="num">Diff</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each rows as r (r.p.id)}
+								<tr>
+									<td>{r.p.web_name} <span class="muted">({r.p.team_short})</span></td>
+									<td class="num">{r.xp.toFixed(1)}</td>
+									<td class="num">{r.act}</td>
+									<td class="num" class:over={r.diff > 0} class:under={r.diff < 0}
+										>{r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}</td
+									>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<p class="muted hint">
+					Actual points come from the official FPL feed once a gameweek is played. Only
+					players with a match in this gameweek are listed, and bonus points land a few
+					hours after full time.
+				</p>
+			</details>
 		{/if}
 
 		{#if premium}
@@ -748,11 +828,70 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+	.pnums {
+		display: flex;
+		align-items: baseline;
+		justify-content: center;
+		gap: 5px;
+		white-space: nowrap;
+	}
 	.pxp {
 		font-size: 10px;
 		color: #f5c542;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+	/* Toteuma erottuu projektiosta VARILLA eika vain sijainnilla: kaksi
+	   samannakoista lukua vierekkain luettaisiin vaarin. */
+	.ppts {
+		font-size: 10px;
+		color: #7de2d1;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.actuals {
+		margin-top: var(--s-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: var(--s-2) var(--s-3);
+		background: var(--surface);
+	}
+	.actuals summary {
+		cursor: pointer;
+		font-weight: 700;
+		font-size: var(--step--1);
+	}
+	.actuals .table-wrap {
+		overflow-x: auto;
+		margin-top: var(--s-2);
+	}
+	.actuals table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--step--1);
+	}
+	.actuals th,
+	.actuals td {
+		text-align: left;
+		padding: 0.3rem 0.5rem 0.3rem 0;
+		border-top: 1px solid var(--border);
+	}
+	.actuals th.num,
+	.actuals td.num {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.actuals th {
+		font-size: var(--step--2);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--text-muted);
+	}
+	.actuals td.over {
+		color: var(--positive, #7de2d1);
+	}
+	.actuals td.under {
+		color: var(--text-muted);
 	}
 	/* 22.8: penkki kentan alla omana nauhanaan — kentta sai koko leveyden. */
 	.bench-strip {

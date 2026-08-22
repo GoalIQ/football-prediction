@@ -26,6 +26,7 @@ from pathlib import Path
 import requests
 
 from src.models.fpl_xp import load_xp
+from src.models import fpl_actuals
 
 # 26.7: projektioiden osuvuus rating-vastaukseen. Committoitu tiiviste
 # (logs/ on gitignored -> Render ei nakisi sita). Puuttuva tiedosto EI kaada
@@ -1359,6 +1360,10 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     cap_player = pool_by_id[effective_captain]
 
     team_xp_horizon = sum(p["xp_horizon_total"] for p in xi)
+    # 22.8: toteutuneet pisteet naytettavalle kierrokselle. Kausivartija
+    # estaa 25/26-arkiston esittamisen kuluvan kauden toteumana.
+    actual_points = fpl_actuals.points_for(
+        target_gw, xp_data["meta"].get("season"))
     team_xp_gw = sum(_gw_xp(p, target_gw) for p in xi)
     # Kapteeni tuplaa pisteensä (promptin vaatimus: huomioitu molemmissa)
     team_xp_horizon_c = team_xp_horizon + cap_player["xp_horizon_total"]
@@ -1427,6 +1432,10 @@ def rate_team(entry: int | None = None, gw: int | None = None,
                 # None = FPL ei ole liputtanut, ei "100 % varma".
                 "chance_next": p.get("chance_next"),
                 "news": (p.get("news") or "").strip()[:120] or None,
+                # 22.8 (Villen tilaus): mita pelaaja SAI oikeasti, mallin
+                # odotuksen vierella. None = kierrosta ei ole pelattu tai
+                # pelaaja ei ollut mukana; nolla olisi vaite eika totuus.
+                "gw_points": actual_points.get(p["id"]),
             } for p in squad],
             "missing_ids": missing,
             "bank": round(bank_tenths / 10.0, 1),

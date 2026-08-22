@@ -58,6 +58,10 @@ export interface RatedPlayer {
 	/** 15.8: FPL:n saatavuuslippu. null = ei liputettu, EI "100 % varma". */
 	chance_next?: number | null;
 	news?: string | null;
+	/** 22.8: TOTEUTUNEET FPL-pisteet naytettavalta kierrokselta. null tai
+	 *  puuttuva = kierrosta ei ole pelattu tai pelaaja ei ollut mukana —
+	 *  nollaa EI saa renderoida, se olisi vaite eika totuus. */
+	gw_points?: number | null;
 }
 
 export interface CaptainPick {
