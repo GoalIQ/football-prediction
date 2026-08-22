@@ -51,10 +51,17 @@ def test_slug_output_is_pinned():
 
 
 def test_display_names_cover_the_four_long_name_leagues():
-    """Hiljainen puolikas kattavuus on tässä talossa tunnettu vikaluokka."""
+    """Hiljainen puolikas kattavuus on tässä talossa tunnettu vikaluokka.
+
+    22.8: joukko kasvoi neljästä kuuteen kun Eredivisie ja Primeira Liga
+    saivat sivut (SEO-LEAGUES-ELC-PPL-DED). Testi pitää edelleen listan
+    KIINTEÄNÄ eikä salli hiljaista kasvua: uusi liiga on lisättävä tähän
+    tietoisesti, ja PL/BSA-poissulku tarkistetaan erikseen alla. ELC jäi
+    ulkopuolelle koska sen lokinimet ovat jo hakumuodossa.
+    """
     from scripts.build_prediction_pages import DISPLAY_NAMES, DISPLAY_NAME_COMPS
 
-    assert DISPLAY_NAME_COMPS == {"PD", "SA", "BL1", "FL1"}
+    assert DISPLAY_NAME_COMPS == {"PD", "SA", "BL1", "FL1", "DED", "PPL"}
     # PL ja BSA ovat rakenteellisesti ulkopuolella — ei sattumalta siksi että
     # niiden nimet eivät satu olemaan kartassa.
     for pl_or_bsa in ("Arsenal", "Coventry", "Sao Paulo", "Atletico-MG"):

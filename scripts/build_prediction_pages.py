@@ -100,6 +100,16 @@ LEAGUES: dict[str, dict] = {
     "SA": {"slug": "serie-a", "name": "Serie A"},
     "FL1": {"slug": "ligue-1", "name": "Ligue 1"},
     "CL": {"slug": "champions-league", "name": "Champions League"},
+    # 22.8 (SEO-LEAGUES-ELC-PPL-DED): nama kolme olivat julkisessa track
+    # recordissa ja mallin kattamia, mutta niilla ei ollut yhtaan sivua —
+    # 1 100 jo logattua tulevaa ottelua ilman URLia. Sivuton liiga nakyi
+    # lukijalle viela pahemmin: predictions.html merkitsi ne EI-liveiksi
+    # samalla kun etusivu merkitsi ne liveiksi, koska sivun "live now"
+    # tarkoitti "on hub" ja etusivun "on ottelu tassa ikkunassa". Sama sana,
+    # kaksi merkitysta, kaksi vastausta samaan hetkeen (Villen havainto 22.8).
+    "ELC": {"slug": "championship", "name": "Championship"},
+    "DED": {"slug": "eredivisie", "name": "Eredivisie"},
+    "PPL": {"slug": "primeira-liga", "name": "Primeira Liga"},
 }
 
 # 5.8.2026 (#229-SEO, F1): feedin virallinen pitka nimi ei ole se muoto jolla
@@ -112,7 +122,10 @@ LEAGUES: dict[str, dict] = {
 # PL:n ja BSA:n URLit ovat olleet indeksoitavissa pisimpaan, eika niita saa
 # liikuttaa. Puuttuva nimi -> feedin nimi sellaisenaan (ei kaadu), ja ajo
 # emitoi kattavuusluvun — hiljainen puolikas kattavuus on tunnettu vikaluokka.
-DISPLAY_NAME_COMPS = {"PD", "SA", "BL1", "FL1"}
+# 22.8: DED ja PPL mukaan. ELC jaa POIS tarkoituksella — sen lokinimet
+# ("West Brom", "Sheffield United", "QPR") ovat jo tasan ne muodot joilla
+# haetaan, joten kartta toisi vain ylimaaraisen paikan jossa nimi voi erota.
+DISPLAY_NAME_COMPS = {"PD", "SA", "BL1", "FL1", "DED", "PPL"}
 
 DISPLAY_NAMES: dict[str, str] = {
     # La Liga (PD)
@@ -195,6 +208,21 @@ DISPLAY_NAMES: dict[str, str] = {
     "Stade Brestois 29": "Brest",
     "Stade Rennais FC 1901": "Rennes",
     "Toulouse FC": "Toulouse",
+    # Eredivisie (DED) ja Primeira Liga (PPL), 22.8. Naiden lokinimet tulevat
+    # eri lahteesta kuin yllaolevat (lyhytnimia, ei FD.orgin pitkia), joten
+    # useimmat ovat jo hakumuodossa. Kartassa on VAIN ne joiden lokinimi ei ole
+    # se muoto jolla kukaan hakee: "Sp Lisbon vs Porto prediction" ei ole
+    # kenenkaan kysely. Puuttuva nimi menee lapi sellaisenaan.
+    "For Sittard": "Fortuna Sittard",
+    "Den Haag": "ADO Den Haag",
+    "Zwolle": "PEC Zwolle",
+    "Nijmegen": "NEC Nijmegen",
+    "Cambuur": "SC Cambuur",
+    "PSV Eindhoven": "PSV",
+    "Sp Lisbon": "Sporting Lisbon",
+    "Sp Braga": "Braga",
+    "Guimaraes": "Vitoria Guimaraes",
+    "Estrela": "Estrela Amadora",
 }
 
 # 24.7 redesign: sama brändi-ilme kuin fpl.html — Space Grotesk display-fontti,
@@ -669,10 +697,14 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
 
 
 # Sivun "Leagues the model covers" -ruudukko. Jarjestys on esitysjarjestys.
-# `code` = prediction_login competition-koodi kun liigalla ON hub; None kun
-# malli kattaa liigan (track record) muttei sivuja viela — nailla ei voi olla
-# live-merkkia, mika on tasan se rehellisyysrajoite jonka takia lista on
-# rakenteinen eika kasin kirjoitettu HTML.
+# `code` = prediction_lokin competition-koodi. None on varattu liigalle joka on
+# track recordissa muttei saa sivuja — silloin live-merkkia EI saa nayttaa.
+#
+# 22.8: ELC/DED/PPL olivat None, ja se tuotti nakyvan ristiriidan. Kolme
+# kautta oli kaynnissa, etusivu sanoi "live now" ja tama sivu ei sanonut
+# mitaan, koska taalla "live" tarkoitti "on hub". Korjaus ei ollut copy vaan
+# sivujen rakentaminen: nyt koodi on olemassa, ja live-merkki johtuu samasta
+# `live_hubs`-listasta kuin linkit.
 COVERAGE_CHIPS: list[tuple[str, str | None]] = [
     ("Premier League", "PL"),
     ("La Liga", "PD"),
@@ -681,9 +713,9 @@ COVERAGE_CHIPS: list[tuple[str, str | None]] = [
     ("Ligue 1", "FL1"),
     ("Champions League", "CL"),
     ("Brasileirão Série A", "BSA"),
-    ("Championship", None),
-    ("Eredivisie", None),
-    ("Primeira Liga", None),
+    ("Championship", "ELC"),
+    ("Eredivisie", "DED"),
+    ("Primeira Liga", "PPL"),
 ]
 
 
@@ -773,7 +805,8 @@ def update_llms_txt(counts: dict[str, int]) -> bool:
     s = LLMS_TXT.read_text(encoding="utf-8")
     if "GEN:LLMS-START" not in s:
         return False
-    order = ["PL", "PD", "SA", "BL1", "FL1", "BSA", "CL"]
+    order = ["PL", "PD", "SA", "BL1", "FL1", "BSA", "CL",
+             "ELC", "DED", "PPL"]
     live = [c for c in order if counts.get(c)] + [
         c for c in counts if c not in order and counts.get(c)
     ]

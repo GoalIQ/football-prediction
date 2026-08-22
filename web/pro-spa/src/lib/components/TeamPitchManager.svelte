@@ -411,10 +411,9 @@
 			     Ja tahti sanotaan aaneen — rakennamme luvut muutaman tunnin
 			     valein, joten "live" yksin lupaisi sekuntitarkkuutta. -->
 			<p class="live-note">
-				Gameweek {defaultGw} is not finished, so these numbers will still change. We rebuild
+				Gameweek {defaultGw} isn't finished, so these numbers will still change. We rebuild
 				them from FPL's feed every few hours, and a player who has already kicked off gains
-				expected minutes. If your team xP looks different from this morning, that is the
-				update, not an error.
+				expected minutes. That's why your team xP can look different from this morning.
 			</p>
 		{/if}
 
@@ -577,9 +576,10 @@
 					</table>
 				</div>
 				<p class="muted hint">
-					Actual points come from the official FPL feed once a gameweek is played. Only
-					players with a match in this gameweek are listed, and bonus points land a few
-					hours after full time.
+					Actual points come from the official FPL feed. A player appears here once
+					they've played, so mid-gameweek the list is short and fills in as matches
+					finish, bonus a few hours behind. The totals cover your whole squad and don't
+					double the captain, so they won't match your FPL score.
 				</p>
 			</details>
 		{/if}

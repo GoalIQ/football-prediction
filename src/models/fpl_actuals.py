@@ -83,11 +83,20 @@ def points_for(gw: int, season: str | None = None) -> dict[int, int]:
         return {}
     out: dict[int, int] = {}
     for pid, rows in (doc.get("players") or {}).items():
+        # 🔴 TUPLAKIERROS (korjattu 22.8, julkaisuportin loydos): aiempi versio
+        # katkaisi silmukan ENSIMMAISEN osuman jalkeen, joten kahden ottelun
+        # kierroksella vain toisen ottelun pisteet paatyivat lukuun. FPL:n oma
+        # GW-summa on molempien summa, joten sivu olisi nayttanyt pienempaa
+        # lukua kuin pelaajan oma FPL-tili — ja copy sanoo luvun tulevan
+        # "official FPL feed" -lahteesta. Vika olisi ilmennyt vasta kauden
+        # ensimmaisella DGW:lla eika mikaan olisi kaatunut.
+        yhteensa = None
         for r in rows:
             if len(r) > max(i_gw, i_pts) and r[i_gw] == gw:
                 try:
-                    out[int(pid)] = int(r[i_pts])
+                    yhteensa = (yhteensa or 0) + int(r[i_pts])
                 except (TypeError, ValueError):
                     pass
-                break
+        if yhteensa is not None:
+            out[int(pid)] = yhteensa
     return out
