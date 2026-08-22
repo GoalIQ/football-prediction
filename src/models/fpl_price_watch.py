@@ -19,14 +19,18 @@ PW_PATH = config.DATA_DIR / "fpl_price_watch.json"
 # ja se oli sivun nakyvin lause. Kaksi eri tekstia, koska kaksi eri lahdetta:
 # vaara varaus on pahempi kuin puuttuva.
 DISCLAIMER_OFFICIAL = (
-    "Straight from the official FPL price projection, updated hourly. A change "
-    "lands when the projection reaches 100 percent, and very late transfers "
-    "can still move it.")
+    "The percentages are FPL's own price projection, refreshed here every "
+    "three hours. The day is their projection too, so a late rush of "
+    "transfers still moves it.")
 DISCLAIMER_ESTIMATE = (
     "Estimated from FPL net-transfer velocity, used only when the official "
     "projection is unavailable. Model estimate, not a guarantee.")
 # Taaksepain-yhteensopivuus: mobiili ja vanhat pinnat lukevat taman nimen.
-DISCLAIMER = DISCLAIMER_OFFICIAL
+# 🔴 EI saa osoittaa DISCLAIMER_OFFICIALiin: `empty_price_watch()` kayttaa
+# tata, ja silloin tyhja tila vaittaisi virallista lahdetta vaikka dataa ei
+# ole lainkaan. Neutraali teksti on ainoa joka on tosi molemmissa tiloissa.
+DISCLAIMER = ("Price change candidates. The source is named in the meta for "
+              "each build.")
 
 
 def empty_price_watch() -> dict:

@@ -22,6 +22,18 @@
 
 	const CONF_LABEL = { low: 'low', med: 'medium', high: 'high' } as const;
 
+	/* 22.8 (portin loydos): `*_soon` syntyy myos pelkasta edistymisesta ilman
+	 * etta FPL:n projektio ylittaa kynnyksen kolmessa paivassa. Silloin rivi
+	 * lukisi "Rising soon | No date yet" eli kaksi vastakkaista vaitetta
+	 * vierekkain. Ilman paivaa nayta aina watch-taso. */
+	function statusLabel(r: PriceMove): string {
+		const s =
+			r.status.endsWith('_soon') && typeof r.eta_days !== 'number'
+				? r.status.replace('_soon', '_watch')
+				: r.status;
+		return STATUS_LABEL[s] ?? s;
+	}
+
 	let empty = $derived(
 		data != null && data.risers.length === 0 && data.fallers.length === 0
 	);
@@ -36,10 +48,12 @@
 		try {
 			const method = await shareCard({
 				title: `PRICE ${title.toUpperCase()}`,
-				// Disclaimer kortin kylkeen: FPL:n kynnysarvot eivät ole julkisia,
-				// joten tämä on arvio eikä virallinen. Sama rehellisyysrivi kuin
-				// endpointin metassa.
-				subtitle: 'estimated from transfer activity, not official',
+				// 22.8: kortti sanoi "not official" samalla kun sivu sanoo luvun
+				// olevan FPL:n oma — kortti menee ulos kuvana, joten se ei saa
+				// kantaa vastakkaista vaitetta. Seuraa samaa lippua kuin sivu.
+				subtitle: data?.meta.official_projection
+					? "FPL's own price projection"
+					: 'estimated from transfer activity, not official',
 				midLabel: 'PRICE',
 				valueLabel: 'PROGRESS',
 				fileName: `goaliq_price_${title.toLowerCase()}.png`,
@@ -91,14 +105,16 @@
 							<th>Status</th>
 							<!-- 22.8: FPL julkaisee nyt oman projektionsa, joten
 							     paiva kynnykseen on tiedossa. Se on syy avata
-							     sivu, joten se saa oman sarakkeensa. -->
+							     sivu, joten se saa oman sarakkeensa. "Projected"
+							     eika "due": FPL antaa jokaiselle projektiolle
+							     likelihood-luvun, joten varmuutta ei luvata. -->
 							<th
-								><abbr title="When the official FPL projection crosses the threshold"
-									>Change due</abbr
+								><abbr title="The day FPL's own projection crosses the threshold"
+									>Projected</abbr
 								></th
 							>
 							<th class="num"
-								><abbr title="How far the official projection has moved towards the threshold; the mark shows confidence"
+								><abbr title="How far FPL's own projection has moved towards the threshold; the mark shows confidence"
 									>Progress</abbr
 								></th
 							>
@@ -115,7 +131,7 @@
 								<td class="num">{r.now_cost.toFixed(1)}</td>
 								<td>
 									<span class="badge {r.status.startsWith('rising') ? 'up' : 'down'}">
-										{STATUS_LABEL[r.status] ?? r.status}
+										{statusLabel(r)}
 									</span>
 								</td>
 								<td class="eta">
@@ -126,7 +142,10 @@
 									{:else if typeof r.eta_days === 'number'}
 										In {r.eta_days} days
 									{:else}
-										<span class="muted">Not in 3 days</span>
+										<!-- "No date yet" eika "Not in 3 days": jalkimmainen on
+										     kaksitulkintainen, ja "on watch" torm aisi viereisen
+										     sarakkeen statuslabeliin. -->
+										<span class="muted">No date yet</span>
 									{/if}
 								</td>
 								<td class="num">
@@ -149,7 +168,7 @@
      aktivoituu, lukija näkee sen. -->
 <p class="muted">
 	{data?.meta.official_projection
-		? "The official FPL price projection, updated hourly, with the day each change is due."
+		? "FPL's own price projection, closest change first."
 		: 'Estimated price change candidates based on FPL net-transfer velocity.'}
 	Free tool.
 </p>

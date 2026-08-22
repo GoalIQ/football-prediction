@@ -669,14 +669,18 @@ def _eta_label(p: dict) -> str:
     """Paiva kynnykseen ihmisluettavana. 22.8: FPL julkaisee taman itse, ja
     se on sivun ainoa toimintaan johtava luku. Puuttuva kentta (vanha
     velocity-arvio) -> "on watch", EI "not soon" — arvio ei tiennyt paivaa."""
+    # "due" vaittaisi varmuutta jota lahde itse ei vaita: FPL antaa jokaiselle
+    # projektiolle likelihood-kentan. "projected" on se mita luku on.
+    # "no date yet" eika "on watch": jalkimmainen on SPA:ssa jo statuslabel
+    # eri merkityksessa, ja sama sanapari kahdessa merkityksessa luetaan vaarin.
     eta = p.get("eta_days")
     if eta == 0:
-        return "due tonight"
+        return "projected tonight"
     if eta == 1:
-        return "due tomorrow"
+        return "projected tomorrow"
     if isinstance(eta, int):
-        return f"due in {eta} days"
-    return "on watch"
+        return f"projected in {eta} days"
+    return "no date yet"
 
 
 def render_price_changes(pw: dict, now: datetime) -> str:
@@ -684,10 +688,10 @@ def render_price_changes(pw: dict, now: datetime) -> str:
     risers = (pw or {}).get("risers") or []
     fallers = (pw or {}).get("fallers") or []
     url = f"{BASE}/fpl/price-changes"
-    title = "FPL Price Changes Tonight: Predicted Risers & Fallers | GoalIQ"
+    title = "FPL Price Changes Tonight: Risers & Fallers | GoalIQ"
     desc = (
-        "Predicted FPL price changes from GoalIQ's transfer-velocity model: "
-        "tonight's likely risers and fallers, updated daily. Free, no sign-in."
+        "FPL's own price projection for tonight's risers and fallers, with "
+        "the day FPL projects each change. Free, no sign-in."
     )
 
     def rows(items, label):
@@ -695,9 +699,9 @@ def render_price_changes(pw: dict, now: datetime) -> str:
             return ""
         lines = "".join(
             f'<div class="mrow"><div><strong>{escape(p["web_name"])}</strong>'
-            f'<div class="meta">£{p["now_cost"]:.1f}m · {_eta_label(p)} · '
-            f'{round(float(p.get("confidence") or 0) * 100)}% of the way'
-            f'</div></div>'
+            f'<div class="meta">£{p["now_cost"]:.1f}m · '
+            f'{round(float(p.get("confidence") or 0) * 100)}% of the way · '
+            f'{_eta_label(p)}</div></div>'
             f'<span class="pick">{label}</span></div>'
             for p in items[:10]
         )
@@ -711,16 +715,16 @@ def render_price_changes(pw: dict, now: datetime) -> str:
         )
     else:
         content = (
-            ("<h2>Predicted risers</h2>" + rows(risers, "rising")) if risers else ""
+            ("<h2>Risers</h2>" + rows(risers, "rising")) if risers else ""
         ) + (
-            ("<h2>Predicted fallers</h2>" + rows(fallers, "falling")) if fallers else ""
+            ("<h2>Fallers</h2>" + rows(fallers, "falling")) if fallers else ""
         )
     official = bool(meta.get("official_projection"))
     hero = (
         "<h1>FPL price changes: risers and fallers</h1>"
         '<p class="lede">' + (
-            "The official FPL price projection, updated hourly, with the day "
-            "each change is due. Free on the web and in the app."
+            "FPL's own price projection, ordered so the closest change is at "
+            "the top. Free on the web and in the app."
             if official else
             "GoalIQ tracks net transfer velocity to estimate which players are "
             "about to rise or fall in price. Free on the web and in the app, "
