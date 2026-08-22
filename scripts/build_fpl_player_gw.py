@@ -31,9 +31,11 @@ from __future__ import annotations
 import gzip
 import json
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 CACHE = ROOT / "data" / "raw" / "fpl"
 STATS = ROOT / "data" / "fpl_player_stats.json"
 OUT = ROOT / "fpl" / "player-gw.json"
@@ -57,6 +59,10 @@ FLOAT_FIELDS = [
 
 SEASON_DIRS = {"2025/26": ("summary_2526", "bootstrap_static_2526.archive.json"),
                "2026/27": ("summary_2627", "bootstrap_static.json")}
+SEASON_KEYS = {"2026/27": "2627"}
+# Live-basiksella summary elaa joka GW — alle 6 h vanha tiedosto kelpaa
+# (sama ikkuna kuin fixtures-cachella), vanhempi haetaan uudelleen.
+LIVE_MAX_AGE_S = 6 * 3600
 
 
 def _load(p: Path) -> dict:
@@ -86,11 +92,30 @@ def build() -> dict:
     rows_total = 0
     missing: list[str] = []
 
+    # 22.8 (GW1-kausivaihdos): kun basis on KULUVA kausi, levylla olevat
+    # summaryt voivat olla ennen kierrosta haettuja (history tyhja) eika
+    # mikaan muu askel paivita niita ennen kuin GW1 on finished ja
+    # build_fpl_xp:n force-haku heraa. Ilman tata katettiin 0/31 pelaajaa
+    # ja steppi punasi jokaisen refreshin. Haetaan puuttuvat ja yli 6 h
+    # vanhat itse — kun xp-builderin force-haku palaa, tiedostot ovat
+    # minuutteja vanhoja ja tama ei tee yhtaan verkkokutsua.
+    live_basis = SEASON_KEYS.get(basis)
+
     for p in stats["players"]:
         cur_id = p[idx["id"]]
         code = code_by_cur_id.get(cur_id)
         basis_id = basis_id_by_code.get(code)
         f = summary_dir / f"element_{basis_id}.json" if basis_id else None
+        if f is not None and live_basis and (
+                not f.exists()
+                or time.time() - f.stat().st_mtime > LIVE_MAX_AGE_S):
+            try:
+                from src.data.fpl_api import fetch_element_summary
+                fetch_element_summary(basis_id, live_basis, force=True)
+            except Exception as e:
+                # Verkkovika: vanha tiedosto (jos on) kelpaa, puuttuva
+                # paatyy missing-listalle alla — sanity paattaa.
+                print(f"  varoitus: summary-haku {basis_id} epaonnistui: {e!r}")
         if not f or not f.exists():
             missing.append(str(p[idx["name"]]))
             continue
