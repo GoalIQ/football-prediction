@@ -824,10 +824,12 @@
 		</p>
 	</div>
 	<div class="start-col start-alt">
-		<p class="start-title">I am still drafting</p>
+		<p class="start-title">No FPL team yet?</p>
+		<!-- 22.8 (GW1-STALE-COPY): esikausiperustelu "before Gameweek 1 nobody
+		     can import one" vanheni GW1-deadlineen. Paneeli jaa: se palvelee
+		     ilman FPL-tiimia pelaavia ja mita jos -runkoja. -->
 		<p class="muted hint">
-			FPL publishes squads only after each deadline, so before Gameweek 1 nobody can import
-			one. Pick your 15 here and the model rates them exactly the same way.
+			Pick your 15 here and the model rates them exactly the same way, no entry ID needed.
 		</p>
 		<button
 			type="button"
@@ -1444,7 +1446,7 @@
 		class="linklike draft-toggle"
 		onclick={() => (draftOpenB = !draftOpenB)}
 	>
-		{draftOpenB ? 'Hide the draft rater' : 'Rate a draft instead (works before Gameweek 1)'}
+		{draftOpenB ? 'Hide the draft rater' : 'Rate a draft instead (no entry ID needed)'}
 	</button>
 	{#if draftOpenB}
 		<div class="draft-box">
