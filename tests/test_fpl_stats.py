@@ -10,7 +10,7 @@ import copy
 
 import pytest
 
-from scripts.build_fpl_stats import COLS, sanity
+from scripts.build_fpl_stats import COLS, prev_season_basis, sanity
 from scripts.build_fpl_longtail import (STATS_GROUPS, STATS_INT, STATS_LABELS,
                                         STATS_RATEABLE)
 
@@ -54,6 +54,41 @@ def test_healthy_data_passes():
 
 def test_too_few_players_fails():
     assert sanity(_healthy(50))
+
+
+# --- 22.8: kausivaihdosikkuna (GW1 kesken, totaalit jo nollattu) -----------
+
+def test_early_season_small_sample_passes():
+    """Basis = kuluva kausi + alle 3 valmista kierrosta → 31 rivin data on
+    oikein (yksi pelattu ottelu), ei sanity-vika. 21.8-regressio: tama kaatoi
+    koko fpl-data-refreshin."""
+    d = _data([_row(id=i, name=f"P{i}", mins=90) for i in range(31)])
+    d["meta"]["is_prev_season_basis"] = False
+    d["meta"]["finished_events"] = 0
+    assert sanity(d) == []
+
+
+def test_early_floor_requires_explicit_meta():
+    """Fail-closed: ilman is_prev_season_basis/finished_events-kenttia
+    31 rivia EI lapaise — lattia laskee vain eksplisiittisella metalla."""
+    d = _data([_row(id=i, name=f"P{i}", mins=90) for i in range(31)])
+    assert sanity(d)
+
+
+def test_early_floor_not_used_for_prev_basis():
+    d = _data([_row(id=i, name=f"P{i}") for i in range(31)])
+    d["meta"]["is_prev_season_basis"] = True
+    d["meta"]["finished_events"] = 0
+    assert sanity(d)
+
+
+def test_prev_season_basis_detection():
+    """finished==0 + arkistominuutit = prev; finished==0 + GW1-minuutit
+    (totaalit nollattu, kierros kesken) = kuluva kausi; finished>=1 = kuluva."""
+    assert prev_season_basis(0, 3330) is True
+    assert prev_season_basis(0, 90) is False
+    assert prev_season_basis(0, 0) is False
+    assert prev_season_basis(1, 180) is False
 
 
 @pytest.mark.parametrize("field,value", [

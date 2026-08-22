@@ -290,8 +290,16 @@ jobs:
 
       # 8.8 STATS-ZONE: /fpl/stats -sivun raakataulukko. Sanity-gate FAIL →
       # exit 2 → askel punaisena eikä JSONia kirjoiteta (vanha jää voimaan).
+      # 22.8: continue-on-error + health-steppi (sama malli kuin
+      # bake_player_gw). Ilman tätä stats-gaten FAIL esti commit-stepin ja
+      # jäädytti KAIKEN datan (projektiot, price watch, freezet) — näin kävi
+      # GW1-kausivaihdoksessa 21.8 18:22 → 22.8 (5 punaista ajoa putkeen).
+      # Sama vikaluokka kuin 14.8 (kolmas kerta): yksi sivutiedosto ei saa
+      # padota koko refreshiä.
       - name: Build player stats (free stats zone)
+        id: build_stats
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.build_fpl_stats
 
       # 13.8: SIIRRETTY accuracy-logista tänne. Steppi vaatii koko FPL-cachen
@@ -412,6 +420,7 @@ jobs:
         if: always() && steps.guard.outputs.proceed == 'true'
         run: |
           fail=0
+          [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
           exit $fail

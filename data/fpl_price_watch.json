@@ -2,15 +2,38 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-21T15:29:42Z",
-  "total_players": 8514928,
+  "generated_at": "2026-08-22T07:24:34Z",
+  "total_players": 9138989,
   "n_players_scanned": 600,
-  "n_with_transfer_activity": 0,
-  "disclaimer": "Estimated from FPL net-transfer velocity - FPL's exact price thresholds are not public. Model estimate, not a guarantee.",
-  "note": "Pre-season: no transfer activity yet - price watch goes live when the FPL game opens."
+  "n_with_transfer_activity": 597,
+  "disclaimer": "Estimated from FPL net-transfer velocity - FPL's exact price thresholds are not public. Model estimate, not a guarantee."
  },
- "risers": [],
- "fallers": [],
+ "risers": [
+  {
+   "id": 26,
+   "web_name": "Havertz",
+   "team": 1,
+   "now_cost": 7.5,
+   "status": "rising_watch",
+   "confidence": 0.65,
+   "progress_pct": 64.9,
+   "net_event": 16612,
+   "already_changed_today": false
+  }
+ ],
+ "fallers": [
+  {
+   "id": 503,
+   "web_name": "Van de Ven",
+   "team": 19,
+   "now_cost": 5.0,
+   "status": "falling_watch",
+   "confidence": 0.58,
+   "progress_pct": 58.2,
+   "net_event": -21942,
+   "already_changed_today": false
+  }
+ ],
  "prices": {
   "1": 60,
   "2": 50,

@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -123,9 +125,18 @@ def main() -> int:
     html_path.write_text(html, encoding="utf-8")
     print(f"HTML: {html_path}")
 
-    for exe in (r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"):
-        if Path(exe).exists():
+    # 22.8: ei kovakoodattua C:\-polkua (test_no_machine_specific_paths) —
+    # PATH ensin, sitten Windowsin ohjelmakansiot env-muuttujien kautta.
+    candidates = [shutil.which(n) for n in
+                  ("chrome", "google-chrome", "chromium", "msedge")]
+    for env in ("ProgramFiles", "ProgramFiles(x86)"):
+        base = os.environ.get(env)
+        if base:
+            candidates.append(
+                str(Path(base) / "Google" / "Chrome" / "Application"
+                    / "chrome.exe"))
+    for exe in candidates:
+        if exe and Path(exe).exists():
             png = out_dir / f"model-squad-gw{args.gw}.png"
             subprocess.run(
                 [exe, "--headless=new", f"--screenshot={png}",

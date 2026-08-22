@@ -90,6 +90,24 @@ def classify(net_event: int, owners: float,
     return status, round(progress, 2), round(100.0 * progress, 1)
 
 
+def _empty_note(bootstrap: dict, n_active: int) -> str:
+    """Tyhjien listojen selite. 22.8: "Pre-season" vain kun kausi EI ole
+    alkanut — vanha versio väitti esikautta myös GW1:n jälkeen (kuvakaappaus
+    Villeltä 22.8), koska ehto oli pelkkä n_active == 0. Kauden aikana tyhjä
+    lista tarkoittaa joko siirtolaskurien nollausikkunaa deadlinen jälkeen
+    tai sitä ettei kukaan ole kynnyksen tuntumassa."""
+    season_started = any(ev.get("finished") or ev.get("is_current")
+                         for ev in bootstrap.get("events") or [])
+    if not season_started:
+        return ("Pre-season: no transfer activity yet - price watch "
+                "goes live when the FPL game opens.")
+    if n_active == 0:
+        return ("No transfer activity in the FPL feed right now - "
+                "candidates appear as transfers come in.")
+    return ("No players are close to a price change right now - "
+            "candidates appear as net transfers build up.")
+
+
 def build_payload(bootstrap: dict) -> dict:
     total_players = int(bootstrap.get("total_players") or 0)
     rows = []
@@ -129,9 +147,11 @@ def build_payload(bootstrap: dict) -> dict:
             "n_players_scanned": len(rows),
             "n_with_transfer_activity": n_active,
             "disclaimer": DISCLAIMER,
-            **({"note": "Pre-season: no transfer activity yet - price watch "
-                        "goes live when the FPL game opens."}
-               if n_active == 0 else {}),
+            # Note aina kun molemmat listat ovat tyhjiä — ilman sitä sivujen
+            # fallback-copy ("goes live when the FPL game opens") valehtelisi
+            # kauden aikana kun aktiviteettia on mutta kynnys ei ylity.
+            **({"note": _empty_note(bootstrap, n_active)}
+               if not risers and not fallers else {}),
         },
         "risers": risers,
         "fallers": fallers,

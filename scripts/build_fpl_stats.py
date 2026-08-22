@@ -63,6 +63,10 @@ MIN_SHOT_COVERAGE = 0.97   # promptin hyvaksymiskynnys vaiheelle 2
 # Sanity-rajat. Nämä ovat tarkoituksella väljiä: portin tehtävä on estää
 # rikkinäisen datan julkaisu, ei toistaa mallin validointia.
 MIN_PLAYERS = 200
+# 22.8: kauden alussa (basis = kuluva kausi, alle 3 kierrosta valmiina) rivejä
+# on oikeasti vähän — yksi pelattu ottelu tuottaa ~30 pelaajaa joilla mins > 0.
+# 11 = yhden joukkueen avauskokoonpano; sen alle jäävä määrä on datavika.
+MIN_PLAYERS_EARLY = 11
 MAX_MINS = 4200           # 38 GW × 90 min + tuplakierrokset
 MAX_STARTS = 42
 MAX_XG_PER_90 = 2.5       # kukaan ei tuota tätä kestävästi
@@ -86,6 +90,18 @@ def _i(value, default: int = 0) -> int:
 def season_label(key: str) -> str:
     """"2526" → "2025/26"."""
     return f"20{key[:2]}/{key[2:]}"
+
+
+def prev_season_basis(finished: int, max_mins: int) -> bool:
+    """Ovatko bootstrapin kausitotaalit vielä EDELLISEN kauden?
+
+    FPL nollaa totaalit kun kauden avausottelu alkaa, mutta events[].finished
+    flippaa vasta kierroksen valmistuttua — joten `finished == 0` yksin
+    väittäisi prev-basista myös GW1:n aikana (21.8-vika: sanity kaatui
+    "vain 31 pelaajaa" ja koko fpl-data-refresh jäi punaiseksi). Erottava
+    signaali on max(minutes): arkistototaalit tuhansia, yksi GW <= ~180.
+    """
+    return finished == 0 and max_mins > 200
 
 
 def load_shots() -> tuple[list[dict], dict]:
@@ -175,12 +191,28 @@ def build() -> dict:
     # Ennen kohdekauden ensimmäistä pelattua kierrosta bootstrapin totaalit
     # ovat EDELLISEN kauden. Tämä ei ole arvaus vaan FPL:n käytös, ja se on
     # verifioitu 8.8.2026 (season_key 2627, 0 finished, Raya 3330 min = 25/26).
-    is_prev = finished == 0
+    # Detektio: ks. prev_season_basis (22.8: finished==0 yksin ei riitä).
+    max_mins = max((_i(e.get("minutes")) for e in boot.get("elements") or []),
+                   default=0)
+    is_prev = prev_season_basis(finished, max_mins)
     prev_key = f"{int(key[:2]) - 1:02d}{int(key[2:]) - 1:02d}"
     basis = season_label(prev_key) if is_prev else target
-    label = (f"Based on {basis} · updates as the new season plays"
-             if is_prev else f"{basis} season to date")
+    early = not is_prev and finished < 3
+    if is_prev:
+        label = f"Based on {basis} · updates as the new season plays"
+    elif early:
+        label = f"{basis} season to date · early season, small sample"
+    else:
+        label = f"{basis} season to date"
     shots, shots_meta = load_shots()
+    # Laukausartefakti kelpaa vain jos se on SAMAA kautta kuin basis: 25/26-
+    # laukausten liittäminen 26/27-riveihin olisi hiljainen kausisekoitus
+    # (ja matsays-gate kaataisi sen joka tapauksessa kattavuuteen).
+    if shots and (shots_meta.get("season") or "") != basis:
+        shots_meta = {"available": False,
+                      "reason": (f"shot data covers {shots_meta.get('season')}, "
+                                 f"stats basis is {basis}")}
+        shots = []
     rows, report = build_rows(boot, shots)
     return {
         "meta": {
@@ -219,8 +251,16 @@ def build() -> dict:
 def sanity(data: dict) -> list[str]:
     fails: list[str] = []
     rows = data.get("players") or []
-    if len(rows) < MIN_PLAYERS:
-        fails.append(f"vain {len(rows)} pelaajaa (min {MIN_PLAYERS})")
+    meta_head = data.get("meta", {})
+    # Fail-closed: alennettu lattia vain kun meta EKSPLISIITTISESTI kertoo
+    # basiksen olevan kuluva kausi alle 3 valmiilla kierroksella. Puuttuva
+    # kenttä → täysi 200 raja (vanha käytös).
+    early_basis = (meta_head.get("is_prev_season_basis") is False
+                   and isinstance(meta_head.get("finished_events"), int)
+                   and meta_head["finished_events"] < 3)
+    min_players = MIN_PLAYERS_EARLY if early_basis else MIN_PLAYERS
+    if len(rows) < min_players:
+        fails.append(f"vain {len(rows)} pelaajaa (min {min_players})")
     idx = {c: i for i, c in enumerate(COLS)}
     if not data.get("meta", {}).get("basis_label"):
         fails.append("basis_label puuttuu (data-rajoitus on ensiluokkainen)")
@@ -244,8 +284,15 @@ def sanity(data: dict) -> list[str]:
         if not 0 <= r[idx["starts"]] <= MAX_STARTS:
             fails.append(f"{name}: starts {r[idx['starts']]} rajan ulkona")
             break
+        # 22.8: pts ja bps ovat aidosti etumerkillisiä (miinuspisteet:
+        # kortit, omat maalit, BPS-vähennykset). Kausitotaaleissa ne jäävät
+        # käytännössä plussalle, mutta yhden ottelun jälkeen eivät —
+        # van Ewijk bps -8 GW1:ssä kaatoi ajon. Muut ovat kertymiä eivätkä
+        # voi olla negatiivisia.
+        signed_cols = {idx["pts"], idx["bps"]}
         if any(isinstance(v, (int, float)) and v < 0
-               for v in r[idx["mins"]:]):
+               for i, v in enumerate(r[idx["mins"]:], start=idx["mins"])
+               if i not in signed_cols):
             fails.append(f"{name}: negatiivinen arvo rivillä")
             break
         if mins >= MIN_MINS_FOR_RATE_CHECK:
