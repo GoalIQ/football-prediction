@@ -62,6 +62,10 @@ export interface RatedPlayer {
 	 *  puuttuva = kierrosta ei ole pelattu tai pelaaja ei ollut mukana —
 	 *  nollaa EI saa renderoida, se olisi vaite eika totuus. */
 	gw_points?: number | null;
+	/** 22.8 ilta: deadline-freezen xP samalle kierrokselle. Elava xP liikkuu
+	 *  kohti toteumaa kierroksen aikana, joten se EI kelpaa vertailukohdaksi
+	 *  "Model vs actual" -listalle. null/puuttuu -> listaa ei nayteta. */
+	gw_xp_frozen?: number | null;
 }
 
 export interface CaptainPick {
@@ -114,6 +118,9 @@ export interface RateTeamResponse {
 		 *  liikkuvat kun ottelut etenevat. Maaritelma on backendissa
 		 *  (gw_in_progress), jotta web ja mobiili eivat vastaa eri tavalla. */
 		gw_in_progress?: boolean;
+		/** Milloin kierroksen ennuste pinnattiin (ISO). */
+		xp_frozen_at?: string | null;
+		xp_frozen_deadline?: string | null;
 		/** #50: backendin uusi semantiikka ('optimal_team'), defensiivinen */
 		rating_method?: string;
 		/** 26.7: walk-forward-backtestin tiiviste, jotta rating on falsifioituva. */

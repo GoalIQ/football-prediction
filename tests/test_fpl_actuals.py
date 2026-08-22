@@ -75,6 +75,41 @@ def test_double_gameweek_sums_both_matches(doc, tmp_path, monkeypatch):
     assert fpl_actuals.points_for(1, "2026/27") == {20: 12}
 
 
+def test_frozen_xp_is_used_not_live(tmp_path, monkeypatch):
+    """Jaadytetty xP luetaan freezesta, ei elavasta projektiosta.
+
+    🔴 Vartioitava vikaluokka (Villen havainto 22.8): elava xP liikkuu kesken
+    ja jalkeen kierroksen kohti toteumaa, joten "Model vs actual" nayttaisi
+    mallin tarkempana kuin se oli. Mitattu tuotannosta: Gabriel 5.78 -> 5.14,
+    B.Fernandes 5.70 -> 4.74.
+
+    NEGATIIVINEN KONTROLLI: kierros jolle freezea ei ole palauttaa TYHJAN
+    kartan eika esimerkiksi nollia tai elavia lukuja — kutsuja piilottaa
+    listan silloin kokonaan.
+    """
+    fdir = tmp_path / "fpl_xp_frozen"
+    fdir.mkdir()
+    (fdir / "gw3.json").write_text(json.dumps({
+        "meta": {"gw": 3, "deadline": "2026-09-05T17:30:00Z",
+                 "frozen_at": "2026-09-04T12:00:00Z", "n_players": 2},
+        "players": [
+            {"id": 4, "web_name": "Gabriel", "xp": 5.78},
+            {"id": 426, "web_name": "B.Fernandes", "xp": 5.7},
+            {"id": 999, "web_name": "Rikki", "xp": None},
+        ],
+    }), encoding="utf-8")
+    monkeypatch.setattr(fpl_actuals, "FROZEN_DIR", fdir)
+    fpl_actuals._FROZEN_CACHE.clear()
+
+    fx = fpl_actuals.frozen_xp_for(3)
+    assert fx == {4: 5.78, 426: 5.7}, "rikkinainen rivi ohitetaan hiljaa"
+    assert fpl_actuals.frozen_meta(3)["frozen_at"] == "2026-09-04T12:00:00Z"
+
+    # Negatiivinen kontrolli: freezeamaton kierros
+    assert fpl_actuals.frozen_xp_for(4) == {}
+    assert fpl_actuals.frozen_meta(4) is None
+
+
 def test_zero_points_row_is_kept(doc):
     """Pelaaja joka PELASI ja sai 0 pistetta on eri asia kuin puuttuva."""
     doc()

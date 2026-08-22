@@ -150,8 +150,22 @@
 		if (selGw != null && defaultGw != null && selGw !== defaultGw) return null;
 		return typeof p.gw_points === 'number' ? p.gw_points : null;
 	}
-	/** Onko toteumia ylipäätään (ohjaa yhteenvetorivin ja listan näkymistä). */
-	const anyActuals = $derived(players.some((p) => actualFor(p) != null));
+	/** 22.8 ilta (Villen havainto): "Model vs actual" vertaa toteumaa
+	 *  DEADLINE-FREEZEN lukuun, ei elavaan xP:hen. Elava luku liikkuu kesken
+	 *  ja jalkeen kierroksen kohti toteumaa (mitattu tuotannosta: Gabriel
+	 *  5.78 -> 5.14, B.Fernandes 5.70 -> 4.74), joten vertailu nayttaisi
+	 *  mallin tarkempana kuin se oli. Sama saanto kuin ottelulokissa:
+	 *  ennuste on se joka kirjattiin ennen kickoffia.
+	 *  null = freezea ei ole -> rivi jaa listalta pois kokonaan. */
+	function frozenFor(p: RatedPlayer): number | null {
+		if (selGw != null && defaultGw != null && selGw !== defaultGw) return null;
+		return typeof p.gw_xp_frozen === 'number' ? p.gw_xp_frozen : null;
+	}
+	/** Onko toteumia ylipäätään (ohjaa yhteenvetorivin ja listan näkymistä).
+	 *  Vaatii MOLEMMAT: toteuman ja pinnatun ennusteen. */
+	const anyActuals = $derived(
+		players.some((p) => actualFor(p) != null && frozenFor(p) != null)
+	);
 
 	/** #123: valitun GW:n vastustaja(t): "HUL (A)", DGW molemmat, blank → "No game". */
 	function oppOf(p: RatedPlayer): string | null {
@@ -537,9 +551,9 @@
 		     Kentalla pisteet ovat kontekstia, taalla ne ovat mittari. -->
 		{#if anyActuals}
 			{@const rows = players
-				.map((p) => ({ p, act: actualFor(p), xp: xpOf(p) }))
-				.filter((r) => r.act != null)
-				.map((r) => ({ ...r, diff: (r.act as number) - r.xp }))
+				.map((p) => ({ p, act: actualFor(p), xp: frozenFor(p) }))
+				.filter((r) => r.act != null && r.xp != null)
+				.map((r) => ({ ...r, diff: (r.act as number) - (r.xp as number) }))
 				.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))}
 			<details class="actuals">
 				<summary>
@@ -548,7 +562,7 @@
 						>{rows.reduce((n, r) => n + (r.act as number), 0)} points from
 						{rows.length}
 						{rows.length === 1 ? 'player' : 'players'}, projected
-						{rows.reduce((n, r) => n + r.xp, 0).toFixed(1)}</span
+						{rows.reduce((n, r) => n + (r.xp as number), 0).toFixed(1)}</span
 					>
 				</summary>
 				<div class="table-wrap">
@@ -565,7 +579,7 @@
 							{#each rows as r (r.p.id)}
 								<tr>
 									<td>{r.p.web_name} <span class="muted">({r.p.team_short})</span></td>
-									<td class="num">{r.xp.toFixed(1)}</td>
+									<td class="num">{(r.xp as number).toFixed(1)}</td>
 									<td class="num">{r.act}</td>
 									<td class="num" class:over={r.diff > 0} class:under={r.diff < 0}
 										>{r.diff > 0 ? '+' : ''}{r.diff.toFixed(1)}</td
@@ -576,10 +590,12 @@
 					</table>
 				</div>
 				<p class="muted hint">
-					Actual points come from the official FPL feed. A player appears here once
-					they've played, so mid-gameweek the list is short and fills in as matches
-					finish, bonus a few hours behind. The totals cover your whole squad and don't
-					double the captain, so they won't match your FPL score.
+					Projected is the number we pinned before the deadline, not the one on the
+					pitch above. That one keeps updating through the gameweek as players start
+					and finish, which is what you want for planning and useless for scoring
+					ourselves. Actual points come from the official FPL feed once a player has
+					played, bonus a few hours behind. The totals cover your whole squad and
+					don't double the captain, so they won't match your FPL score.
 				</p>
 			</details>
 		{/if}

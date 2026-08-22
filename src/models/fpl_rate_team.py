@@ -1395,6 +1395,13 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     # estaa 25/26-arkiston esittamisen kuluvan kauden toteumana.
     actual_points = fpl_actuals.points_for(
         target_gw, xp_data["meta"].get("season"))
+    # 22.8 ilta (Villen havainto): "Model vs actual" EI saa verrata toteumaa
+    # elavaan xP:hen. Elava luku liikkuu kesken ja jalkeen kierroksen kohti
+    # toteumaa (mitattu: Gabriel 5.78 -> 5.14, B.Fernandes 5.70 -> 4.74),
+    # joten vertailu nayttaisi mallin tarkempana kuin se oli. Oikea
+    # vertailukohta on deadline-freeze, joka on immutable.
+    frozen_xp = fpl_actuals.frozen_xp_for(target_gw)
+    frozen_info = fpl_actuals.frozen_meta(target_gw)
     team_xp_gw = sum(_gw_xp(p, target_gw) for p in xi)
     # Kapteeni tuplaa pisteensä (promptin vaatimus: huomioitu molemmissa)
     team_xp_horizon_c = team_xp_horizon + cap_player["xp_horizon_total"]
@@ -1433,6 +1440,10 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # 22.8: kertoo klientille etta naytettava kierros on kesken ja
             # luvut siis liikkuvat. Ks. gw_in_progress-docstring.
             "gw_in_progress": gw_in_progress(target_gw, xp_data),
+            # Milloin kierroksen ennuste pinnattiin. UI sanoo taman aaneen:
+            # "projected" tarkoittaa TATA hetkea eika nykyhetkea.
+            "xp_frozen_at": (frozen_info or {}).get("frozen_at"),
+            "xp_frozen_deadline": (frozen_info or {}).get("deadline"),
             "picks_gw": picks_gw if mode == "entry" else None,
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),
@@ -1470,6 +1481,10 @@ def rate_team(entry: int | None = None, gw: int | None = None,
                 # odotuksen vierella. None = kierrosta ei ole pelattu tai
                 # pelaaja ei ollut mukana; nolla olisi vaite eika totuus.
                 "gw_points": actual_points.get(p["id"]),
+                # Deadline-freezen xP samalle kierrokselle. None = freezea ei
+                # ole -> klientti EI saa nayttaa Model vs actual -listaa
+                # lainkaan (elava luku ei kelpaa vertailukohdaksi).
+                "gw_xp_frozen": frozen_xp.get(p["id"]),
             } for p in squad],
             "missing_ids": missing,
             "bank": round(bank_tenths / 10.0, 1),
