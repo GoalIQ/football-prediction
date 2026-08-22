@@ -3647,12 +3647,33 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     return _page(title, desc, url, hero, body, jsonld)
 
 
+def _data_now(xp: dict | None) -> datetime:
+    """Sivujen "Updated"-leima + JSON-LD:n dateModified DATAN iästä, ei
+    ajohetkestä (STALE-UPDATED-LABEL). 22.8-cron-katkossa jokainen alasivu
+    sanoi "Updated 22 Aug 2026" vaikka data oli 21.8 15:24 -ajosta — sivu ei
+    saa väittää tuoreutta jota datalla ei ole, ja cron-korjaus ei poista
+    mekanismia (leima valehtelisi taas seuraavassa katkossa). Kaikki sivut
+    rakentuvat samasta refresh-nipusta, joten xP-metan aikaleima edustaa
+    nippua. Fallback ajohetkeen jos metaa ei ole (fail-open: parempi tuore
+    leima kuin kaatunut build)."""
+    ts = ((xp or {}).get("meta") or {}).get("generated_at")
+    if ts:
+        try:
+            d = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            return d
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
+
+
 def main() -> int:
-    now = datetime.now(timezone.utc)
     OUT_DIR.mkdir(exist_ok=True)
     built = []
 
     xp = _load(XP_PATH)
+    now = _data_now(xp)
     if xp:
         page = render_captain(xp, now)
         if page:
