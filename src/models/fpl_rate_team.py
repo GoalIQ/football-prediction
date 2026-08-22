@@ -1296,6 +1296,28 @@ def clamp_gw_to_projections(target_gw: int, pool: list[dict],
             or (min(covered) if covered else target_gw))
 
 
+def planning_start_gw(target_gw: int, pool: list[dict], xp_data: dict) -> int:
+    """SIIRTOSUUNNITTELUN aloitus-GW: ensimmäinen kierros jonka deadline on
+    vielä edessä.
+
+    22.8: kesken kierroksen `picks_gw` ja `next_gameweek` ovat molemmat yhä
+    KULUVA GW (pelaamattomia fixtureita on jäljellä), joten suunnitelma alkoi
+    kierroksesta joka on jo lukittu — sille ehdotettu siirto on hyödytön.
+    Mitattu tuotannosta 22.8: `/api/fantasy/plan?entry=` palautti
+    `start_gw: 1` kun GW1:n deadline oli mennyt edellisenä päivänä.
+
+    `deadline_gameweek` puuttuu (vanha payload) → käytös bittitarkasti
+    entinen. EI koske rate_teamin omaa target_gw:tä: "Team xP, GW1" kesken
+    kierroksen on oikein, se on mitä joukkue on juuri nyt keräämässä."""
+    start = clamp_gw_to_projections(target_gw, pool, xp_data)
+    dl_gw = xp_data.get("meta", {}).get("deadline_gameweek")
+    if isinstance(dl_gw, int) and dl_gw > start:
+        covered = {g.get("gw") for p in pool for g in (p.get("gameweeks") or [])}
+        if dl_gw in covered:
+            return dl_gw
+    return start
+
+
 def rate_team(entry: int | None = None, gw: int | None = None,
               players: list[int] | None = None, captain: int | None = None,
               bank: float | None = None, ft: int = 1) -> dict:

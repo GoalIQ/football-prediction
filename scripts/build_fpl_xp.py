@@ -1328,6 +1328,10 @@ def main(argv: list[str] | None = None) -> int:
             "sanity_gate": "PASS",
             "next_gameweek": next_gw,
             "deadline_utc": src["deadline_utc"],
+            # 22.8: GW jonka deadline deadline_utc on. Kesken kierroksen ERI
+            # kuin next_gameweek, ja siirtosuunnittelun on lahdettava tasta:
+            # lukitulle kierrokselle ehdotettu siirto on hyodyton.
+            "deadline_gameweek": src.get("deadline_gw"),
             "horizon_gw": HORIZON_GW,
             "min_xp_total": MIN_XP_TOTAL,
             "n_players": len(players),

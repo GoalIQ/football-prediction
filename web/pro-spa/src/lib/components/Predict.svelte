@@ -341,6 +341,17 @@
 							</li>
 						{/each}
 					</ul>
+					<!-- 22.8 (Villen havainto): "1-1 on todennäköisin mutta malli ei
+					     ennusta tasapeliä" luki ristiriidalta. Se ei ole ristiriita
+					     vaan kaksi eri kysymystä, ja se on sanottava sivulla eikä
+					     jätettävä lukijan pääteltäväksi. Mitattu 137 gradatusta
+					     ennusteesta: tasapeli ei ollut kertaakaan korkein tulos, ja
+					     korkein P(draw) koskaan oli 0,35. -->
+					<p class="muted scores-note">
+						The likeliest single score and the likeliest result are different questions. A
+						draw splits across 0-0, 1-1, 2-2 and the rest, so 1-1 can top this list while a
+						win still leads the result above.
+					</p>
 				</div>
 			</div>
 		{/if}
@@ -512,6 +523,10 @@
 	}
 	.scores-box h4 {
 		margin: 0 0 var(--s-1);
+	}
+	.scores-note {
+		margin: var(--s-2) 0 0;
+		font-size: var(--step--2);
 	}
 	.xg {
 		margin: 0;

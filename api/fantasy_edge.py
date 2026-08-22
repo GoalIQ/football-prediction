@@ -33,7 +33,7 @@ from src.models.fpl_planner import HIT_COST, TOP_CANDIDATES_PER_POS
 from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, MAX_PER_CLUB, POS_NAME, SQUAD_QUOTA, XI_MAX,
     XI_MIN, BUDGET_TENTHS, RateTeamError, _fetch_fpl, _gw_xp, _resolve_gw,
-    apply_availability_gate, build_context, clamp_gw_to_projections,
+    apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
     get_bootstrap, get_entry_picks, optimal_xi, resolve_squad,
 )
 from src.models.fpl_xp import load_xp
@@ -582,7 +582,7 @@ def fantasy_plan_chains(
         if payload is None:
             squad_ids, _cap, bank_tenths, picks_gw = resolve_squad(
                 bootstrap, entry, None, player_ids, None, None)
-            start_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+            start_gw = planning_start_gw(picks_gw, pool, xp_data)
             covered = _covered_gws(pool)
             gws = [g for g in covered if g >= start_gw][:horizon]
             if not gws:

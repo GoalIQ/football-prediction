@@ -26,7 +26,7 @@ from __future__ import annotations
 from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, HIT_COST_XP, HOLD_THRESHOLD_XP, POS_NAME,
     MAX_PER_CLUB, RateTeamError, apply_availability_gate, build_context,
-    build_hold_verdict, captain_suggestion, clamp_gw_to_projections,
+    build_hold_verdict, captain_suggestion, clamp_gw_to_projections, planning_start_gw,
     optimal_xi, resolve_squad, _gw_xp,
 )
 
@@ -110,7 +110,7 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     xp_data, bootstrap, pool, pool_by_id = build_context()
     squad_ids, _cap, bank_tenths, picks_gw = resolve_squad(
         bootstrap, entry, gw, players, None, bank)
-    start_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+    start_gw = planning_start_gw(picks_gw, pool, xp_data)
     gws = _horizon_gws(pool, start_gw, horizon)
 
     squad = [pool_by_id[i] for i in squad_ids if i in pool_by_id]
