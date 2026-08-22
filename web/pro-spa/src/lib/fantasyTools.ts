@@ -110,6 +110,10 @@ export interface RateTeamResponse {
 		picks_gw?: number | null;
 		horizon_gw?: number;
 		note?: string;
+		/** 22.8: naytettava kierros on parhaillaan kaynnissa, eli luvut
+		 *  liikkuvat kun ottelut etenevat. Maaritelma on backendissa
+		 *  (gw_in_progress), jotta web ja mobiili eivat vastaa eri tavalla. */
+		gw_in_progress?: boolean;
 		/** #50: backendin uusi semantiikka ('optimal_team'), defensiivinen */
 		rating_method?: string;
 		/** 26.7: walk-forward-backtestin tiiviste, jotta rating on falsifioituva. */

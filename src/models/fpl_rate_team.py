@@ -1297,6 +1297,37 @@ def clamp_gw_to_projections(target_gw: int, pool: list[dict],
             or (min(covered) if covered else target_gw))
 
 
+def gw_in_progress(target_gw: int, xp_data: dict) -> bool:
+    """Onko naytettava kierros PARHAILLAAN kaynnissa?
+
+    22.8 (Villen havainto): xP liikkuu kesken kierroksen, koska malli lukee
+    FPL:n live-dataa — kun pelaaja aloittaa, hanen odotetut minuuttinsa
+    nousevat ja xP sen mukana. Mitattu samana paivana: B.Fernandes
+    p_start 87,7 % -> 90,7 %, xmins 85,6 -> 88,4 ja GW-xP 5,76 -> 5,95
+    yhden ajon aikana, kesken Man Utdin ottelua. Sivu ei sanonut sita
+    missaan, joten lukija naki luvun muuttuvan ilman selitysta.
+
+    Ehto on RAKENTEELLINEN eika kellonaikaan sidottu, ja siina on KAKSI osaa:
+      1. naytettavan kierroksen deadline on mennyt (`deadline_gameweek` on jo
+         seuraavassa), ja
+      2. kierroksella on yha pelaamattomia otteluita, eli se on edelleen
+         projektioiden `next_gameweek`.
+
+    🔴 Kohta 2 puuttui ensimmaisesta versiosta ja portti nappasi sen: ilman
+    sita lippu jaa paalle viela kierroksen paatyttyakin, koska `target_gw`
+    tulee FPL:n `is_current`-lipusta joka flippaa vasta tuntien viiveella.
+    Ilmaissivu tarkisti taman implisiittisesti ja SPA ei — sama hetki, kaksi
+    eri vastausta, eli tasan se mita tama funktio on olemassa estamaan.
+
+    Kentta puuttuu (vanha payload) -> False, eli lisarivia ei nayteta.
+    """
+    meta = xp_data.get("meta", {})
+    dl_gw = meta.get("deadline_gameweek")
+    next_gw = meta.get("next_gameweek")
+    return (isinstance(dl_gw, int) and isinstance(next_gw, int)
+            and dl_gw > target_gw and next_gw == target_gw)
+
+
 def planning_start_gw(target_gw: int, pool: list[dict], xp_data: dict) -> int:
     """SIIRTOSUUNNITTELUN aloitus-GW: ensimmäinen kierros jonka deadline on
     vielä edessä.
@@ -1399,6 +1430,9 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "mode": mode,
             "entry": entry,
             "gw": target_gw,
+            # 22.8: kertoo klientille etta naytettava kierros on kesken ja
+            # luvut siis liikkuvat. Ks. gw_in_progress-docstring.
+            "gw_in_progress": gw_in_progress(target_gw, xp_data),
             "picks_gw": picks_gw if mode == "entry" else None,
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),

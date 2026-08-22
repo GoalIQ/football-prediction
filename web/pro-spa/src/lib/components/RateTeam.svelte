@@ -1252,6 +1252,7 @@
 		players={plannedPlayers}
 		{premium}
 		defaultGw={data.meta.gw}
+		gwInProgress={data.meta.gw_in_progress === true}
 		{onUpgrade}
 		initialCaptaincy={captaincy}
 		onCaptaincyChange={handleCaptaincyChange}
@@ -1565,6 +1566,7 @@
 			players={dataB.team.players}
 			{premium}
 			defaultGw={dataB.meta.gw}
+			gwInProgress={dataB.meta.gw_in_progress === true}
 			{onUpgrade}
 			initialCaptaincy={captaincyB}
 			onCaptaincyChange={handleCaptaincyChangeB}

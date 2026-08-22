@@ -728,7 +728,7 @@ def render_price_changes(pw: dict, now: datetime) -> str:
             if official else
             "GoalIQ tracks net transfer velocity to estimate which players are "
             "about to rise or fall in price. Free on the web and in the app, "
-            "updated daily.") + "</p>"
+            "rebuilt every few hours.") + "</p>"
     )
     body = (
         f"{content}"
@@ -1239,7 +1239,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     desc = (
         f"The top FPL expected-goals (xG) performers over each player's last "
         f"5 games: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
-        f"xG per game. From official FPL match data, updated daily."
+        f"xG per game. From official FPL match data, rebuilt every few hours."
     )
     top3 = "".join(
         '<div class="stat">'
@@ -1313,7 +1313,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         "<h1>Top xG performers in FPL</h1>"
         '<p class="lede">Which players generate the most expected goals (xG) '
         "per game? Ranked over each player's last five played matches from "
-        "official FPL match data. Free, no sign-in, updated daily.</p>"
+        "official FPL match data. Free, no sign-in, rebuilt every few hours.</p>"
     )
     body = (
         f'<p class="note"><strong>{escape(basis)}</strong></p>'
@@ -2402,7 +2402,7 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
         f"{escape(window)}. This page shows the leader at each club in each "
         "position, plus the gap to that club's second option, which tells you "
         "whether the club has one obvious pick or a real choice."
-        f"{lead_txt} Free, no sign-in, updated daily.</p>"
+        f"{lead_txt} Free, no sign-in, rebuilt every few hours.</p>"
     )
     body = (
         f"{_kit_defs(all_clubs)}"
@@ -2804,6 +2804,19 @@ SLICE_LABELS = {
     "prior >=60 min (expected starters)": "We expected 60+ minutes",
     "prior >=60 AND played": "We expected 60+ and they played",
 }
+
+
+def _preseason_basis(meta: dict) -> bool:
+    """Onko minuuttimalli yha edellisen kauden arkistolla?
+
+    22.8: esikausivaraukset renderoityivat EHDOITTA, ja ne ovat ristiriidassa
+    saman sivun "kierros on kesken" -rivin kanssa heti kun liigaminuutteja
+    alkaa kertya. Ehto on DATAN POHJA eika kierrosnumero — sama saanto kuin
+    appin esikausivarauksessa 19.8 — joten varaus poistuu itsestaan kun malli
+    vaihtaa kuluvan kauden dataan.
+    """
+    return (((meta or {}).get("data_coverage") or {})
+            .get("baseline_mode") == "prev_season_archive")
 
 
 def _minutes_caveat() -> str:
@@ -3377,7 +3390,7 @@ def render_club_page(short: str, players: list[dict], meta: dict,
         f"model over {escape(window)}. "
         f"{escape(str(lead['web_name']))} leads the squad on "
         f"{float(lead.get('xp_horizon_total') or 0):.1f} projected points. "
-        "Free, no sign-in, updated daily.</p>"
+        "Free, no sign-in, rebuilt every few hours.</p>"
     )
     body = (
         f"{_kit_defs([short])}"
@@ -3612,10 +3625,32 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f"over the next {n_gw} gameweeks, shown here for the top 100 of the "
         f"full {len(rows)}-player projection. Scoring rate and expected "
         "minutes are shown separately, so you can see which one is driving "
-        "the number. Free, no sign-in, updated daily.</p>"
+        "the number. Free, no sign-in, rebuilt every few hours.</p>"
     )
+    # 22.8 (Villen havainto): xP liikkuu kesken kierroksen, koska malli lukee
+    # FPL:n live-syotetta. Mitattu samana paivana: B.Fernandes xmins 85,6 ->
+    # 88,4 ja GW-xP 5,76 -> 5,95 yhden ajon aikana, kesken hanen ottelunsa.
+    # Sivu ei sanonut sita, joten luku muuttui lukijan silmissa ilman syyta.
+    # Rivi renderoityy VAIN kesken kierroksen (deadline mennyt mutta otteluita
+    # jaljella) — ehto on datassa, ei kellonajassa, eika rivi siis jaa
+    # roikkumaan kierrosten valiin.
+    dl_gw = meta.get("deadline_gameweek")
+    next_gw = meta.get("next_gameweek")
+    in_progress = (isinstance(dl_gw, int) and isinstance(next_gw, int)
+                   and dl_gw > next_gw)
+    # Eri runko kuin SPA:n vastaavalla rivilla (portti 22.8): sama lause
+    # sanatarkasti kahdella pinnalla on templaattitunnusmerkki. Tassa:
+    # tila -> mekanismi (because) -> tahti. "not finished" eika "is being
+    # played", koska GW:n ottelupaivien valissa on monen tunnin taukoja.
+    live_note = (
+        f'<p class="note"><strong>Gameweek {next_gw} is not finished.</strong> '
+        "Expected minutes climb once a player has kicked off, because the "
+        "model reads FPL's own match data. These pages rebuild every few "
+        "hours, so a row can differ from the one you saw this morning.</p>"
+    ) if in_progress else ""
     body = (
         f'<div class="stat-row">{top3}</div>'
+        f"{live_note}"
         f"<h2>Top 100 by expected points (of {len(rows)} players)</h2>"
         # Selitys taulukon ALLE, ei ylle (9.8): ensimmainen versio tyonsi 237
         # sanaa datan eteen, eli X:sta tulija joutui vierittamaan kaksi
@@ -3643,19 +3678,20 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # (affine -13.9) — se kertoo kuinka paljon KALIBROINTI siirtaisi
         # karkea, ei kuinka paljon priori ylipredikoi. Suoraan mitattuna
         # 80+ ylipredikointi on kolmen kesan keskiarvona noin 10 minuuttia.
-        + _minutes_caveat() +
+        + (_minutes_caveat() if _preseason_basis(meta) else "")
         # 16.8: sokea piste sanottu ääneen. Villen päätös oli ettei vahti
         # kysy esikaudesta, joten rajoite kirjataan näkyviin siellä missä
         # luku esitetään. Laukaiseva tapaus 15.8: João Pedro teki kaksi
         # esikauden maalia eikä lukumme liikkunut lainkaan, ja olin
         # kirjoittamassa siitä X-vastausta.
-        '<p class="note"><strong>Start% does not read pre-season.</strong> '
-        "It comes from last season's minutes and FPL's own availability "
-        "flags, and for players with no Premier League history yet, from how "
-        "they are priced in the squad. A player who has looked like a new "
-        "first choice in friendlies will not move this number until league "
-        "minutes arrive.</p>"
-        '<p class="note">This ranking is free and needs no account. The tools '
+        + (('<p class="note"><strong>Start% does not read pre-season.</strong> '
+            "It comes from last season's minutes and FPL's own availability "
+            "flags, and for players with no Premier League history yet, from "
+            "how they are priced in the squad. A player who has looked like a "
+            "new first choice in friendlies barely moves this number until "
+            "league minutes start to build up.</p>")
+           if _preseason_basis(meta) else "")
+        + '<p class="note">This ranking is free and needs no account. The tools '
         "built on top of it, rate my team, the transfer planner, the captain "
         "ranker and your watchlist, are part of GoalIQ Premium.</p>"
         + f"{UPSELL}{_cta()}"

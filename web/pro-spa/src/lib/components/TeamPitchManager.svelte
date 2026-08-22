@@ -18,6 +18,7 @@
 		players,
 		premium = false,
 		defaultGw = null,
+		gwInProgress = false,
 		onUpgrade,
 		initialCaptaincy,
 		onCaptaincyChange
@@ -26,6 +27,8 @@
 		premium?: boolean;
 		/** #123: aloitus-GW (rate-teamin meta.gw eli seuraava deadline). */
 		defaultGw?: number | null;
+		/** 22.8: naytettava kierros on kesken -> luvut liikkuvat. */
+		gwInProgress?: boolean;
 		onUpgrade?: () => void;
 		/** 29.7 (kapteeni/vice-persistointi, skeema 20260729233000): tallennettu
 		 *  pari. Ylikirjoittaa players.is_captain-fallbackin — käyttäjän tuorein
@@ -397,6 +400,24 @@
 			</div>
 		{/if}
 
+		<!-- 22.8 (Villen havainto): xP liikkui kesken kierroksen eika sivu
+		     sanonut miksi. Rivi nakyy VAIN kun naytettava kierros on kesken
+		     (backendin gw_in_progress), ei aina — muuten se olisi kohinaa joka
+		     viikko. Ja vain payloadin omalle GW:lle: muuta kierrosta
+		     katsottaessa mikaan ei ole kesken. -->
+		{#if gwInProgress && (selGw == null || selGw === defaultGw)}
+			<!-- "not finished" eika "is being played": GW1:ssa on 19 h ja 27 h
+			     tauot ottelupaivien valissa, joina jalkimmainen olisi valhe.
+			     Ja tahti sanotaan aaneen — rakennamme luvut muutaman tunnin
+			     valein, joten "live" yksin lupaisi sekuntitarkkuutta. -->
+			<p class="live-note">
+				Gameweek {defaultGw} is not finished, so these numbers will still change. We rebuild
+				them from FPL's feed every few hours, and a player who has already kicked off gains
+				expected minutes. If your team xP looks different from this morning, that is the
+				update, not an error.
+			</p>
+		{/if}
+
 		<div class="xi-head">
 			<p class="label" style="margin:0">Starting XI</p>
 			{#if premium}
@@ -699,6 +720,16 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	/* 22.8: kesken kierroksen -varaus. Amber-reuna erottaa sen
+	   vakioselityksista: tama koskee juuri nyt nakyvia lukuja. */
+	.live-note {
+		margin: 0 0 var(--s-3);
+		border-left: 3px solid var(--amber, #f5c542);
+		padding: var(--s-2) var(--s-3);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-size: var(--step--1);
 	}
 	/* #9a: Starting XI -otsikko + share-nappi samalle riville */
 	.xi-head {
