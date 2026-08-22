@@ -668,26 +668,85 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
     return _page(title, desc, url, hero, body, jsonld)
 
 
+# Sivun "Leagues the model covers" -ruudukko. Jarjestys on esitysjarjestys.
+# `code` = prediction_login competition-koodi kun liigalla ON hub; None kun
+# malli kattaa liigan (track record) muttei sivuja viela — nailla ei voi olla
+# live-merkkia, mika on tasan se rehellisyysrajoite jonka takia lista on
+# rakenteinen eika kasin kirjoitettu HTML.
+COVERAGE_CHIPS: list[tuple[str, str | None]] = [
+    ("Premier League", "PL"),
+    ("La Liga", "PD"),
+    ("Bundesliga", "BL1"),
+    ("Serie A", "SA"),
+    ("Ligue 1", "FL1"),
+    ("Champions League", "CL"),
+    ("Brasileirão Série A", "BSA"),
+    ("Championship", None),
+    ("Eredivisie", None),
+    ("Primeira Liga", None),
+]
+
+
+def _fmt_list(names: list[str]) -> str:
+    """['a','b','c'] -> 'a, b and c'."""
+    if len(names) <= 1:
+        return names[0] if names else ""
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def update_predictions_hub_links(live: list[str]) -> bool:
-    """Täytä predictions.html:n GEN:PRED-LEAGUES-markerit livenä olevilla
-    liigahubeilla (hub-spoke). Markerit puuttuvat → False (ei kaatoa)."""
+    """Täytä predictions.html:n GEN:PRED-markerit livenä olevista liigoista.
+
+    22.8: aiemmin VAIN linkkirivi oli generoitu; otsikkokappale, liigachipit
+    ja alahuomautus olivat käsin kirjoitettua HTML:ää ja vanhenivat hiljaa.
+    Sivu väitti vielä 22.8 "Brasileirão live right now and three more leagues
+    kicking off in August" ja "The European seasons return in August" — PL oli
+    silloin ollut käynnissä vuorokauden. Nyt kaikki neljä lohkoa tulevat
+    samasta `live`-listasta kuin linkit, joten ne eivät voi eriytyä.
+
+    Markerit puuttuvat → False (ei kaatoa, sama sopimus kuin ennen)."""
     if not PREDICTIONS_HTML.exists():
         return False
     s = PREDICTIONS_HTML.read_text(encoding="utf-8")
     if "GEN:PRED-LEAGUES-START" not in s:
         return False
+    live_set = set(live)
     links = " ".join(
         f'<a class="btn-ghost" href="/predictions/{LEAGUES[c]["slug"]}/" '
         f'style="margin:4px;">{escape(LEAGUES[c]["name"])} predictions</a>'
         for c in live
     )
-    block = links or '<span class="cta-note">League pages return with the new seasons.</span>'
-    new = re.sub(
-        r"(<!-- GEN:PRED-LEAGUES-START -->).*?(<!-- GEN:PRED-LEAGUES-END -->)",
-        lambda m: m.group(1) + block + m.group(2),
-        s,
-        flags=re.S,
+    chips = "".join(
+        f'<div class="league-chip{" live" if code in live_set else ""}">'
+        f'{escape(name)}{" &middot; live now" if code in live_set else ""}</div>'
+        for name, code in COVERAGE_CHIPS
     )
+    live_names = [escape(name) for name, code in COVERAGE_CHIPS
+                  if code in live_set]
+    if live_names:
+        intro = (f"Live predictions today in {_fmt_list(live_names)}. "
+                 f"Every league below is in the public track record.")
+    else:
+        intro = ("No league is mid-season right now. Every league below is in "
+                 "the public track record and pages return with the fixtures.")
+    note = ("A league gets pages here once its next fixtures are logged, and "
+            "each page comes down when that match kicks off. The prediction "
+            "itself stays in the record either way.")
+    blocks = {
+        "PRED-LEAGUES": links or
+        '<span class="cta-note">League pages return with the new seasons.</span>',
+        "PRED-CHIPS": chips,
+        "PRED-INTRO": intro,
+        "PRED-NOTE": note,
+    }
+    new = s
+    for marker, block in blocks.items():
+        new = re.sub(
+            rf"(<!-- GEN:{marker}-START -->).*?(<!-- GEN:{marker}-END -->)",
+            lambda m, b=block: m.group(1) + b + m.group(2),
+            new,
+            flags=re.S,
+        )
     if new != s:
         PREDICTIONS_HTML.write_text(new, encoding="utf-8")
         return True
