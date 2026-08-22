@@ -129,7 +129,9 @@ COMP_NAMES = {
 # servaa CNAME:n kautta juuresta → EI /football-prediction-polkuprefiksiä.
 # Vanhat veikkoville.github.io/football-prediction/* -URLit redirectaavat.
 BASE = "https://goaliq.app"
-CANONICAL = f"{BASE}/fpl.html"
+# 22.8 (SEO-CANONICAL-HTML): extensioniton — CF Pages 308-ohjaa .html-muodon,
+# eikä canonical saa osoittaa URLiin joka ei koskaan palauta 200:aa.
+CANONICAL = f"{BASE}/fpl"
 PLAY_URL = "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq"
 APPSTORE_URL = "https://apps.apple.com/app/id6780047163"
 PRO_URL = "https://pro.goaliq.app"
@@ -429,8 +431,8 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             (
                 f"On GoalIQ's model the top clean sheet chances in Gameweek {c['next_gw']} "
                 f"of the {c['season']} Premier League season are {top3_txt}. "
-                f"These are pre-season projections and will sharpen once {c['season']} "
-                f"results arrive."
+                f"Projections update daily and sharpen as {c['season']} "
+                f"results accumulate."
             ),
         ),
         (
@@ -448,7 +450,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture "
                 "difficulty, rate my team with a captain pick, a fit checker "
                 "that builds the best valid 15 around your must-have players, "
-                "a pre-season draft rater (no team ID needed), price watch and "
+                "a draft rater (no team ID needed), price watch and "
                 "the full xG/xA/xGI leaderboard for every player "
                 "with data, a filterable player stats table with shots, "
                 "shots in the box and key passes, "
@@ -1082,7 +1084,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
         "description": (
             "GoalIQ makes FPL (Fantasy Premier League) tools - clean sheet "
             "probability and fixture difficulty, rate my team with a captain pick, "
-            "a fit checker, a pre-season draft rater "
+            "a fit checker, a draft rater "
             "and price watch free, plus an interactive team manager with a "
             "gameweek planner, per-gameweek expected points (xP), the captain "
             "ranker, player value, a DefCon tracker, "
@@ -1634,7 +1636,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         "Free FPL tools: clean sheet probability & FDR, a filterable player "
         "stats table with shots and key passes, xG/xA/xGI leaders for "
         "every player, rate my team with a captain pick, "
-        "fit checker, pre-season draft rater "
+        "fit checker, draft rater "
         "and price watch. Premium adds a team manager with gameweek planner, "
         "per-gameweek xP, value ranking and a DefCon tracker. "
         "Published track record. Not betting."
@@ -1839,8 +1841,7 @@ Clean sheet probability comes from the score matrix: the chance the opponent
 scores zero. Fixture difficulty is derived from win and clean sheet
 probabilities, ranked across every team fixture of the season and bucketed
 into five tiers. Fixture data comes from the official Premier League fantasy
-API, with premierleague.com as the fixture source until the FPL game opens
-for {c["season"]}.</p>
+API.</p>
 
 <h2 id="tools">More free FPL tools</h2>
 <p>Every page below is built from the same model that powers this one, and each

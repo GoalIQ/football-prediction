@@ -483,7 +483,7 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         f"{_tool_nav(canonical)}"
         f'<footer>© 2026 GoalIQ · '
         f'<a href="/predictions">Football predictions</a> · '
-        f'<a href="/fpl.html">Free FPL tools</a> · '
+        f'<a href="/fpl">Free FPL tools</a> · '
         f'<a href="/privacy.html">Privacy</a><br>{DISCLAIMER}</footer>\n'
         "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
     )
@@ -521,7 +521,7 @@ def _cta() -> str:
     return (
         '<div class="cta-row">'
         '<a class="btn" href="https://pro.goaliq.app/?tab=premium">Open GoalIQ Premium</a>'
-        '<a class="btn ghost" href="/fpl.html">Free clean-sheet probability &amp; FDR</a>'
+        '<a class="btn ghost" href="/fpl">Free clean-sheet probability &amp; FDR</a>'
         "</div>"
     )
 
@@ -2044,7 +2044,7 @@ def render_stats(stats: dict, now: datetime) -> str | None:
                 {"@type": "ListItem", "position": 1, "name": "GoalIQ",
                  "item": BASE},
                 {"@type": "ListItem", "position": 2, "name": "Free FPL tools",
-                 "item": f"{BASE}/fpl.html"},
+                 "item": f"{BASE}/fpl"},
                 {"@type": "ListItem", "position": 3, "name": "Player stats",
                  "item": url},
             ],
@@ -2213,7 +2213,7 @@ def render_defence(defence: dict, now: datetime) -> str | None:
                 {"@type": "ListItem", "position": 1, "name": "GoalIQ",
                  "item": BASE},
                 {"@type": "ListItem", "position": 2, "name": "Free FPL tools",
-                 "item": f"{BASE}/fpl.html"},
+                 "item": f"{BASE}/fpl"},
                 {"@type": "ListItem", "position": 3,
                  "name": "Defence profiles", "item": url},
             ],
