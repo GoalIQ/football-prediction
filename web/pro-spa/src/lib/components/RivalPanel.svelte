@@ -16,6 +16,7 @@
 	 */
 	import { fetchRival, type RivalResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
+	import { shareRivalCard } from '$lib/shareCard';
 
 	let { entry, rival, leagueId, rivalName }: {
 		entry: number;
@@ -28,6 +29,35 @@
 	let error = $state<string | null>(null);
 	let loading = $state(false);
 	let loadedKey = $state<string | null>(null);
+	let sharing = $state(false);
+
+	/* 22.8 (Villen tilaus): jakokortti TÄHÄN osioon, koska tässä näkyy vain
+	 * rivaalin JOUKKUEEN nimi (julkinen liigataulukko). Kortille menee gap,
+	 * P(catch), GW:t jäljellä ja advice-lause — EI differentiaalipelaajia
+	 * eikä managerin nimeä. */
+	async function shareCard() {
+		if (!data) return;
+		sharing = true;
+		try {
+			capture('rival_card_shared', {
+				stance: data.stance,
+				behind: data.behind,
+				gameweeks_left: data.meta.gameweeks_left
+			});
+			await shareRivalCard({
+				rivalName,
+				gap: Math.abs(data.gap),
+				behind: data.behind,
+				pCatch: data.p_catch,
+				gameweeksLeft: data.meta.gameweeks_left,
+				gw: data.meta.gw,
+				advice: advice(data),
+				fileName: 'goaliq-catch-your-rival.png'
+			});
+		} finally {
+			sharing = false;
+		}
+	}
 
 	$effect(() => {
 		const key = `${entry}-${rival}-${leagueId}`;
@@ -54,17 +84,21 @@
 			});
 	});
 
-	/** Yksi lause per asema. UI ei keksi narratiivia — backend päättää aseman. */
+	/** Yksi lause per asema. UI ei keksi narratiivia — backend päättää aseman.
+	 * 22.8 (julkaisuportin B6): lyhenteet mukaan — sama teksti menee
+	 * jakokorttiin joka luetaan somepostauksena, ja lyhenteiden puute on
+	 * selkein konetunnusmerkki. Mobiilin i18n (en/es/pt) kantaa yhä vanhaa
+	 * muotoa — niputettava seuraavaan OTA:aan. */
 	function advice(d: RivalResponse): string {
 		switch (d.stance) {
 			case 'protect':
-				return `You are ahead. The risk is the players ${rivalName} has and you do not, so covering those protects the lead.`;
+				return `You're ahead. The risk is the players ${rivalName} has and you don't, so covering those protects the lead.`;
 			case 'chase_variance':
-				return `The gap is big for the gameweeks left, so steady gains will not close it. It takes players ${rivalName} does not have, and swings you can live with.`;
+				return `The gap is big for the gameweeks left, so steady gains won't close it. It takes players ${rivalName} doesn't have, and swings you can live with.`;
 			case 'chase_steady':
-				return `There is time. Ordinary points gains close this gap, so there is no need to reach for high-risk picks yet.`;
+				return `There's time. Ordinary points gains close this gap, no need to reach for high-risk picks yet.`;
 			default:
-				return `You are level. Maximising projected points is the whole job here.`;
+				return `You're level. Maximising projected points is the whole job here.`;
 		}
 	}
 </script>
@@ -89,11 +123,25 @@
 		</p>
 
 		<div class="pcatch">
-			<span class="lbl">{data.behind ? 'Chance to catch up' : 'Chance to stay ahead'}</span>
+			<!-- 22.8 (portin B2): tasatilanteessa luku on P(lopetat edellä),
+			     ei P(pysyt edellä) — etumatkaa jota ei ole ei väitetä. -->
+			<span class="lbl"
+				>{data.behind
+					? 'Chance to catch up'
+					: data.gap === 0
+						? 'Chance to finish ahead'
+						: 'Chance to stay ahead'}</span
+			>
 			<span class="num">{Math.round(data.p_catch * 100)}%</span>
 		</div>
 
 		<p class="advice">{advice(data)}</p>
+
+		<div class="share-row">
+			<button type="button" class="share-btn" disabled={sharing} onclick={shareCard}>
+				{sharing ? 'Building...' : 'Share as image'}
+			</button>
+		</div>
 
 		{#if data.differentials && data.differentials.length > 0}
 			<div class="table-wrap">
@@ -200,5 +248,21 @@
 	.small {
 		font-size: var(--step--2);
 		margin: var(--s-2) 0 0;
+	}
+	.share-row {
+		margin: 0 0 var(--s-3);
+	}
+	.share-btn {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		color: var(--text);
+		padding: 4px 12px;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.share-btn:disabled {
+		opacity: 0.6;
+		cursor: default;
 	}
 </style>

@@ -121,7 +121,9 @@
 		{
 			key: 'league',
 			title: 'Beat the Model league',
-			desc: 'Join the public mini-league and track the standings with head-to-head win probabilities.',
+			// 22.8 (portin sivuhuomio): jakokortin footer tuo lukijoita tänne
+			// hakemaan "Catch your rival" -työkalua — nimen on löydyttävä.
+			desc: 'Join the public mini-league, track the standings with head-to-head win probabilities and catch your rival: how likely you are to close the gap.',
 			premium: false
 		}
 	];

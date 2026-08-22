@@ -1019,6 +1019,12 @@
 	     nakyvissa samalla hetkella kun kayttaja nakee mita malli suosittaa —
 	     nyt vierella eika alla, eli itse asiassa varmemmin. -->
 	<div class="result-grid">
+	<!-- 22.8 (Villen kuvahavainto): sivupalkin kolme korttia ovat selvasti
+	     rating-korttia korkeammat, joten vasen sarake jatti ison tyhjan
+	     alueen ja pitch alkoi vasta gridin jalkeen. Kentta kuuluu ratingin
+	     alle samaan sarakkeeseen — silloin vasen sarake tayttyy sisallolla
+	     eika tyhjalla. -->
+	<div class="result-main">
 	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
 	     sen alla = "% of the best possible budget team" (uusi semantiikka,
 	     gap_to_optimal_xp defensiivisesti jos backend jo tarjoaa sen) -->
@@ -1236,6 +1242,20 @@
 		{/if}
 	</div>
 
+	<!-- #113: pitch + kitit + what-if-manager (pariteetti mobiilin #106+#112:lle;
+	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
+	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW.
+	     22.8: siirretty result-gridin vasempaan sarakkeeseen (ks. yllä). -->
+	<TeamPitchManager
+		players={plannedPlayers}
+		{premium}
+		defaultGw={data.meta.gw}
+		{onUpgrade}
+		initialCaptaincy={captaincy}
+		onCaptaincyChange={handleCaptaincyChange}
+	/>
+	</div>
+
 	<div class="result-side">
 		<!-- FM-silmukan etuovi. Sama sijoitus kuin mobiilissa: rate-team on
 		     ainoa paikka jossa kapteeni JA siirtoehdotus ovat samassa datassa,
@@ -1254,18 +1274,6 @@
 		<SeasonRace />
 	</div>
 	</div>
-
-	<!-- #113: pitch + kitit + what-if-manager (pariteetti mobiilin #106+#112:lle;
-	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
-	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW. -->
-	<TeamPitchManager
-		players={plannedPlayers}
-		{premium}
-		defaultGw={data.meta.gw}
-		{onUpgrade}
-		initialCaptaincy={captaincy}
-		onCaptaincyChange={handleCaptaincyChange}
-	/>
 
 	{#if premium}
 		<!-- #63: HOLD-verdikti HERO-kantana siirtolistan yläpuolella; backendin
@@ -1835,11 +1843,18 @@
 	/* 14.8: rate-tulos vasemmalle, viikkosilmukka oikealle.
 	   `.rating`in oma 680px:n lukumitta SAILYY — grid ei venyta sita, vaan
 	   antaa jaljelle jaavalle tilalle sisallon. Ilman `minmax(0, ...)`
-	   oikean sarakkeen taulukot levittaisivat rivin. Alle 1040px palataan
-	   allekkain samassa jarjestyksessa: tulos ensin, silmukka sen alle. */
+	   oikean sarakkeen taulukot levittaisivat rivin.
+	   22.8: vasen sarake = rating + pitch (.result-main), sivupalkki sai
+	   kiintean kaistan. Breakpoint nousi 1040 -> 1280: kentan viisikkorivi
+	   (5 x 90px paitaa + penkin 210px kaista) tarvitsee vasemmalta
+	   sarakkeelta ~520px pitch-osalle, ja se toteutuu vasta kun shell-palsta
+	   on taysi 1180px. Alle 1280px pinotaan: tulos, kentta, sivukortit. */
 	.result-grid {
 		display: grid;
 		gap: var(--s-4);
+	}
+	.result-main {
+		min-width: 0;
 	}
 	.result-side {
 		min-width: 0;
@@ -1847,9 +1862,9 @@
 		gap: var(--s-4);
 		align-content: start;
 	}
-	@media (min-width: 1040px) {
+	@media (min-width: 1280px) {
 		.result-grid {
-			grid-template-columns: minmax(0, 680px) minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
 			gap: var(--s-6);
 			align-items: start;
 		}

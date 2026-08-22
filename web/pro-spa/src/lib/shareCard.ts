@@ -1253,6 +1253,144 @@ export async function renderRoastCard(spec: RoastCardSpec): Promise<Blob> {
 	});
 }
 
+/* ---------- 22.8: Catch your rival -kortti (Villen tilaus) ----------
+ *
+ * "jakokortteja league catchiin ... tohon catch your rival missä näkyy vaa
+ * joukkueen nimi koska se on julkinen"
+ *
+ * 🔴 KORTILLA VAIN JULKISTA DATAA: rivaalin JOUKKUEEN nimi (FPL:n julkinen
+ * liigataulukko), piste-ero, P(catch) ja jäljellä olevat kierrokset. EI
+ * managerin nimeä eikä differentiaalipelaajia — manageri on henkilö ja
+ * differentiaalilista on premium-sisältöä; kumpikaan ei kuulu kuvaan joka
+ * on tehty leviämään muiden feedeihin.
+ *
+ * Luvut tulevat /api/fantasy/rival -payloadista sellaisenaan (P(catch) on
+ * backendin 5 %:iin pyöristämä) — kortti ei laske eikä muotoile uudelleen.
+ */
+
+export interface RivalCardSpec {
+	/** Rivaalin joukkueen nimi (julkinen). EI managerin nimi. */
+	rivalName: string;
+	/** Piste-ero (positiivinen luku). */
+	gap: number;
+	/** true = takaa-ajaja, false = johdossa. */
+	behind: boolean;
+	/** P(catch) 0..1, backendin pyöristämä. */
+	pCatch: number;
+	gameweeksLeft: number;
+	/** Kierros jonka tilanteesta luku on (meta.gw) — kuva elää feedissä
+	 * viikkoja, joten snapshot on leimattava (portin B3). */
+	gw: number;
+	/** Aseman yksilauseinen ohje (sama kuin paneelissa, ei pelaajanimiä). */
+	advice: string;
+	fileName: string;
+}
+
+const plural = (n: number, one: string) => `${n} ${n === 1 ? one : one + 's'}`;
+
+export async function renderRivalCard(spec: RivalCardSpec): Promise<Blob> {
+	await Promise.all([
+		document.fonts.load(bold(160)),
+		document.fonts.load(bold(44)),
+		document.fonts.load(bold(30)),
+		document.fonts.load(med(28))
+	]);
+
+	const probe = document.createElement('canvas').getContext('2d')!;
+	const maxW = W - 2 * MX;
+	// Portin B5: yksikkömuodot — "1 points behind" viimeisellä kierroksella
+	// olisi juuri se hetki jona korttia jaetaan eniten.
+	const headText = spec.behind
+		? `${plural(spec.gap, 'point')} behind ${spec.rivalName}`
+		: spec.gap === 0
+			? `Level with ${spec.rivalName}`
+			: `${plural(spec.gap, 'point')} ahead of ${spec.rivalName}`;
+	const headLines = wrapLines(probe, headText, bold(44), maxW);
+	const adviceLines = wrapLines(probe, spec.advice, med(28), maxW);
+
+	const HEAD_H = 118 + headLines.length * 58 + 30;
+	const NUM_H = 320;
+	const ADVICE_H = adviceLines.length * 40 + 60;
+	const H = HEAD_H + NUM_H + ADVICE_H + FOOT_H;
+
+	const canvas = document.createElement('canvas');
+	canvas.width = W;
+	canvas.height = H;
+	const ctx = canvas.getContext('2d')!;
+	ctx.textBaseline = 'top';
+
+	ctx.fillStyle = INK;
+	ctx.fillRect(0, 0, W, H);
+
+	ctx.font = bold(30);
+	ctx.fillStyle = AMBER;
+	ctx.fillText('CATCH YOUR RIVAL', MX, 56);
+	ctx.font = bold(44);
+	ctx.fillStyle = CREAM;
+	let y = 118;
+	for (const line of headLines) {
+		ctx.fillText(line, MX, y);
+		y += 58;
+	}
+	ctx.font = med(28);
+	ctx.fillStyle = MUTED;
+	// Portin B3: snapshot-leima — luku on hetken tilanne, ei pysyvä totuus.
+	ctx.fillText(`${plural(spec.gameweeksLeft, 'gameweek')} left, as of GW${spec.gw}`, MX, y);
+
+	// Iso luku omalla tummemmalla kaistalla — sama INK2-rakenne kuin roastissa.
+	const numTop = HEAD_H;
+	ctx.fillStyle = INK2;
+	ctx.fillRect(0, numTop, W, NUM_H);
+	ctx.font = bold(30);
+	ctx.fillStyle = MUTED;
+	// Portin B2: tasatilanteessa luku on P(lopetat edellä), ei P(pysyt
+	// edellä) — etumatkaa jota ei ole ei saa väittää.
+	const lbl = spec.behind
+		? 'CHANCE TO CATCH UP'
+		: spec.gap === 0
+			? 'CHANCE TO FINISH AHEAD'
+			: 'CHANCE TO STAY AHEAD';
+	ctx.fillText(lbl, MX, numTop + 44);
+	ctx.font = bold(160);
+	ctx.fillStyle = AMBER;
+	ctx.fillText(`${Math.round(spec.pCatch * 100)}%`, MX, numTop + 100);
+
+	ctx.fillStyle = LINE;
+	ctx.fillRect(MX, numTop + NUM_H, W - 2 * MX, 2);
+
+	y = numTop + NUM_H + 34;
+	ctx.font = med(28);
+	ctx.fillStyle = CREAM;
+	for (const line of adviceLines) {
+		ctx.fillText(line, MX, y);
+		y += 40;
+	}
+
+	ctx.font = med(20);
+	ctx.fillStyle = MUTED;
+	// Portin B1: reitti pro.goaliq.appiin — työkalu on siellä (free-tason
+	// takana), goaliq.app/fpl:llä sitä ei ole.
+	ctx.fillText('GoalIQ mini-league tools - pro.goaliq.app', MX, H - 88);
+	ctx.font = bold(20);
+	ctx.fillStyle = AMBER;
+	ctx.fillText('@goaliqapp', W - MX - ctx.measureText('@goaliqapp').width, H - 88);
+	ctx.font = med(17);
+	ctx.fillStyle = MUTED;
+	// Portin B4: paneelin datavaraus kulkee kortin mukana tiivistettynä.
+	ctx.fillText('model projection, a direction not a precise number. not betting advice', MX, H - 54);
+	ctx.fillStyle = AMBER;
+	ctx.fillRect(0, H - 8, W, 8);
+
+	return new Promise<Blob>((resolve, reject) => {
+		canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas toBlob failed'))), 'image/png');
+	});
+}
+
+export async function shareRivalCard(spec: RivalCardSpec): Promise<ShareOutcome> {
+	const blob = await renderRivalCard(spec);
+	return deliver(blob, spec.fileName);
+}
+
 export async function shareRoastCard(spec: RoastCardSpec): Promise<ShareOutcome> {
 	const blob = await renderRoastCard(spec);
 	return deliver(blob, spec.fileName);
