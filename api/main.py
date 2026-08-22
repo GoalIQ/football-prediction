@@ -796,7 +796,13 @@ def _lataa_otteludata_cached(liigat, kaudet) -> pd.DataFrame:
         if existing is not None:
             # Toinen säie ehti välissä — palautetaan sama instance kaikille.
             return existing
-        _DATA_CACHE[key] = new_df
+        # 22.8: tyhjää EI cacheta. Tyhjä df tarkoittaa epäonnistunutta hakua
+        # (esim. football-data.orgin 10/min rate limit lämmityksen aikana),
+        # ei "liigalla ei ole dataa" — ja pysyvä cache jäädytti sen koko
+        # prosessin eliniäksi: tuotannon /api/teams?leagues=ITA-Serie A-FD
+        # palautti 404 vaikka data latautui lokaalisti (380 riviä).
+        if not new_df.empty:
+            _DATA_CACHE[key] = new_df
         return new_df
 
 

@@ -16,6 +16,7 @@
 	 *   free    : 1X2 + todennäköisin tulos (top 5)
 	 *   premium : xG, top 10, over/under 2.5, BTTS, mallin fair value
 	 */
+	import { untrack } from 'svelte';
 	import {
 		fetchTeams,
 		predictMatch,
@@ -67,20 +68,45 @@
 	 *
 	 *  Tavallisia funktioita tarkoituksella: ei $state, ei $derived, ei uusia
 	 *  efekteja. Juuri uusi efekti rikkoi bind:valuen aiemmin tanaan. */
+	/** 22.8: diakriitit puretaan (Barça/Alavés/Vitória) ja "Utd" laajenee
+	 *  ("Sheffield Utd" -> "Sheffield United") — molemmat kaatoivat matchin
+	 *  aiemmin. Mitattu livedataa vasten: 10 liigan kaikki fixture-nimet
+	 *  (30 pv ikkuna) osuvat pooliin 0 failia. */
 	function norm(s: string): string {
 		return s
+			.normalize('NFD')
+			.replace(/[̀-ͯ]/g, '')
 			.toLowerCase()
+			.replace(/\butd\b/g, 'united')
 			.replace(/\b(fc|afc|cf|sc|ac|as|ss|us)\b/g, '')
 			.replace(/[^a-z0-9]/g, '');
 	}
-	/** Nimet joita etuliitesaanto ei saa kiinni: lyhenne ei ole mallin nimen
-	 *  etuliite eika painvastoin. Yleistetty samankaltaisuus sekoittaisi
-	 *  Man Cityn ja Man Unitedin, joten nama kirjataan kasin. */
+	/** Nimet joita substring-saanto ei saa kiinni: lyhenne ei sisally mallin
+	 *  nimeen eika painvastoin (PSG, HSV), tai osuma olisi moniselitteinen
+	 *  (Barça vs Espanyol de Barcelona, Deportivo vs Deportivo Alavés).
+	 *  Yleistetty samankaltaisuus sekoittaisi Man Cityn ja Man Unitedin,
+	 *  joten nama kirjataan kasin. Kartoitettu 22.8 livedatasta (football-
+	 *  data.orgin shortName -> mallin joukkuelista, kaikki 10 liigaa). */
 	const NAME_ALIASES: Record<string, string> = {
 		mancity: 'manchestercity',
 		manutd: 'manchesterunited',
 		manunited: 'manchesterunited',
-		spurs: 'tottenham'
+		spurs: 'tottenham',
+		wolverhampton: 'wolves',
+		psg: 'parissaintgermain',
+		rclens: 'lens',
+		mgladbach: 'gladbach',
+		hsv: 'hamburger',
+		atleti: 'atletico',
+		barca: 'fcbarcelona',
+		deportivo: 'lacoruna',
+		az: 'azalkmaar',
+		psv: 'psveindhoven',
+		nec: 'nijmegen',
+		sportingcp: 'splisbon',
+		vitoria: 'guimaraes',
+		amadora: 'estrela',
+		acadviseu: 'academicoviseu'
 	};
 	function matchTeam(name: string, pool: string[]): string | null {
 		if (pool.includes(name)) return name;
@@ -88,9 +114,12 @@
 		n = NAME_ALIASES[n] ?? n;
 		const exact = pool.find((x) => norm(x) === n);
 		if (exact) return exact;
-		// "Brighton Hove" -> "Brighton", "Nottingham" -> "Nottingham Forest".
-		// Vain YKSIKASITTEINEN osuma kelpaa, muuten jatetaan tyhjaksi eika arvata.
-		const partial = pool.filter((x) => n.startsWith(norm(x)) || norm(x).startsWith(n));
+		// "Atleti" -> "Club Atletico de Madrid", "Nottingham" -> "Nottingham
+		// Forest": substring kumpaan suuntaan vain. Alle 4 merkin nimi ei saa
+		// substring-osua (liian moniselitteinen), ja vain YKSIKASITTEINEN
+		// osuma kelpaa — muuten jatetaan tyhjaksi eika arvata.
+		if (n.length < 4) return null;
+		const partial = pool.filter((x) => norm(x).includes(n) || n.includes(norm(x)));
 		return partial.length === 1 ? partial[0] : null;
 	}
 
@@ -99,6 +128,30 @@
 		if (!prefill) return;
 		league = prefill.league;
 		pending = { home: prefill.home, away: prefill.away };
+	});
+
+	/* 22.8 (Villen bugiraportti "ei tule valmiina"): pending purettiin vain
+	 * fetchTeams-vastauksen callbackissa, joka ajaa VAIN liigan vaihtuessa.
+	 * Jos Predictissa oli jo sama liiga valittuna (tyypillinen tapaus:
+	 * kayttaja klikkaa useampaa saman liigan ottelua perakkain), pending jai
+	 * kasittelematta eika mikaan tayttynyt. Oma efekti riippuu pendingista
+	 * JA joukkuelistasta, joten se ajaa molemmissa tapauksissa. Kirjoitukset
+	 * untrackissa — efekti ei saa tilata omia kirjoituksiaan (28.7 opetus:
+	 * uusi efektikehä rikkoi bind:valuen). */
+	$effect(() => {
+		if (!pending || teamsLoading || teams.length === 0) return;
+		const p = pending;
+		const pool = teams;
+		untrack(() => {
+			const h = matchTeam(p.home, pool);
+			const a = matchTeam(p.away, pool);
+			if (h) home = h;
+			if (a) away = a;
+			// Jos molemmat ratkesivat, ajetaan ennuste heti; jos toinen jai
+			// auki, kayttaja valitsee sen itse eika arvata.
+			if (h && a && h !== a) void doPredict();
+			pending = null;
+		});
 	});
 
 	// Liigan vaihto tyhjentää joukkuevalinnat: vanha valinta ei kuulu uuteen
@@ -122,22 +175,9 @@
 				if (seq !== reqSeq) return;
 				teamsLoading = false;
 				teams = t.teams ?? [];
-				if (pending) {
-					// Nimet tulevat otteluohjelmasta (football-data.org) ja
-					// joukkuelista mallista. Täsmäytetään vain jos nimi löytyy,
-					// muuten jätetään käyttäjän valittavaksi eikä arvata.
-					const h = matchTeam(pending.home, teams);
-					const a = matchTeam(pending.away, teams);
-					if (h) home = h;
-					if (a) away = a;
-					// Villen havainto: otteluohjelman Predict vei valilehdelle mutta
-					// vaati viela napin painalluksen. Jos molemmat joukkueet
-					// ratkesivat, ajetaan ennuste heti. Jos toinen jai auki (esim.
-					// nousija jota ei viela ole mallissa), EI ajeta: silloin
-					// kayttajan pitaa valita se itse.
-					if (h && a && h !== a) void doPredict();
-					pending = null;
-				}
+				// 22.8: pending puretaan omassa efektissaan (ks. yllä) — se
+				// laukeaa myos silloin kun liiga ei vaihdu eika tama callback
+				// aja lainkaan.
 			},
 			() => {
 				if (seq !== reqSeq) return;

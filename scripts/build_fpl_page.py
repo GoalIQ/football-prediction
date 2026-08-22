@@ -469,7 +469,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             "What FPL tools does GoalIQ have?",
             (
                 "Free: clean sheet probabilities, fixture difficulty ratings "
-                "(FDR), rate my team with a captain pick, a pre-season draft "
+                "(FDR), rate my team with a captain pick, a draft "
                 "rater (pick 15, no team ID needed), the fit checker (lock "
                 "must-have players, the model builds the best valid 15 around "
                 "them), price watch, a season-long Beat the model scoreboard "
