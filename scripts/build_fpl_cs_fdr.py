@@ -167,6 +167,11 @@ def fit_model() -> tuple[DixonColesModel, list[str]]:
         away_xg_col=config.DIXON_COLES_XG_COLS[1],
         xg_weight=config.DIXON_COLES_XG_WEIGHT,
     )
+    # FPL-THIN-BLEND (20.8): sama kytkenta ja sama fail-closed-portti kuin
+    # build_fpl_phase0:ssa — jaettu funktio, jottei kaksi builderia voi
+    # ajautua eri kaytokseen nousijoista.
+    from scripts.build_fpl_phase0 import _blendaa_ohuet
+    _blendaa_ohuet(dc, df, seasons)
     return dc, seasons
 
 

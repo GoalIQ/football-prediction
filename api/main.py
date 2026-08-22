@@ -1010,11 +1010,27 @@ def _fit_malli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     # /api/predict ja CS%/FDR ovat samaa mieltä nousijoista — aiemmin logiikka
     # oli kopioituna kahteen generaattoriin eikä predictissä lainkaan.
     try:
-        from src.models.promoted_baseline import taydenna_nousijat
+        from src.models.promoted_baseline import (
+            blendaa_ohuet_nousijat,
+            kauden_ottelumaarat,
+            taydenna_nousijat,
+        )
         info = taydenna_nousijat(dc, liigat, kaudet)
         if info.get("applied_to"):
             print(f"[Promoted] baseline -> {info['applied_to']} "
                   f"(att={info.get('attack')}, def={info.get('defence')})")
+        # FPL-THIN-BLEND (20.8, mitattu walk-forwardilla ennen kytkentaa —
+        # perustelu ja luvut funktion docstringissa): 1..5 kauden ottelun
+        # nousija painotetaan baselinen ja fitin valiin. Esikaudella (0
+        # kauden ottelua) no-op -> kaytos bittitarkasti entinen.
+        if kaudet and "season" in df.columns:
+            blend = blendaa_ohuet_nousijat(
+                dc, liigat, kaudet, kauden_ottelumaarat(df, kaudet[-1]))
+            if blend.get("blended"):
+                print(f"[Promoted] thin-blend -> {blend['blended']}")
+            if blend.get("skipped_thin"):
+                print(f"[Promoted] VAROITUS: ohuet nousijat ilman blendia "
+                      f"(viiteryhma puuttuu): {blend['skipped_thin']}")
     except Exception as e:
         # Ei saa KOSKAAN kaataa fittiä: ilman täydennystä malli on täsmälleen
         # se mikä se oli ennen tätä muutosta.

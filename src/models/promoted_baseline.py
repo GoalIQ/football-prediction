@@ -484,6 +484,91 @@ def _kohortteina(
     return {"": tuple(arvo)} if arvo else {}
 
 
+def kauden_ottelumaarat(
+    df,
+    kausi: str,
+    home_team_col: str = "home_team",
+    away_team_col: str = "away_team",
+    season_col: str = "season",
+) -> dict[str, int]:
+    """Aktiivisen kauden pelatut ottelut per joukkue fittidatasta.
+
+    Blendin paino w = n/n_min tarvitsee taman. Kausi verrataan merkkijonona
+    (loader antaa '2627'-muotoa; int-sarake ei saa rikkoa vertailua).
+    """
+    osa = df[df[season_col].astype(str) == str(kausi)]
+    counts: dict[str, int] = {}
+    for col in (home_team_col, away_team_col):
+        for t, n in osa[col].value_counts().items():
+            counts[t] = counts.get(t, 0) + int(n)
+    return counts
+
+
+def blendaa_ohuet_nousijat(
+    dc: DixonColesModel,
+    liigat: tuple[str, ...] | list[str],
+    kaudet: tuple[str, ...] | list[str],
+    match_counts: dict[str, int],
+    n_min: int = 6,
+) -> dict:
+    """Blendaa fitissä OHUELLA otoksella (1..n_min-1 ottelua) olevat nousijat
+    kohti liigansa nousijabaselinea — `taydenna_nousijat`-injektion pari.
+
+    ONGELMA (QUEUE FPL-THIN-BLEND, mitattu SPL GW1:llä 19.8 ja walk-forwardilla
+    20.8): heti kun nousijalla on yksi pelattu ottelu, `taydenna_nousijat`
+    ohittaa sen ja yhden ottelun L2-kutistettu estimaatti menee ulos täydellä
+    painolla — se on nousijalle liian antelias. Mitattu top-5-liigoilla,
+    kaudet 2324-2526, 197 parittaista ennustetta tasan näistä otteluista:
+    log loss 1,03099 -> 0,98717 (delta -0,0438, t -3,36), voitto jokaisessa
+    viidessä liigassa erikseen; CS-Brier 0,1938 -> 0,1853; osumatarkkuus
+    48,2 % -> 52,8 %. Ajo: scripts/backtest_thin_blend.py.
+
+    Sama kohortti- ja viiteryhmälogiikka kuin `taydenna_nousijat`illa
+    (Championship: PL:stä pudonnut blendataan pudonneiden baselineen, ei
+    League Onesta nousseen). PL:n frozen-varakeino pätee blendiinkin — sama
+    sääntö, sama perustelu. Kutsutaan injektion JÄLKEEN; joukot ovat
+    erilliset (injektio koskee 0 ottelun, blend 1..n_min-1 ottelun rivejä),
+    joten järjestys ei muuta lukuja.
+
+    NOLLA KAUDEN OTTELUA (esikausi) -> match_counts ei sisällä nousijoita ->
+    no-op, bittitarkasti entinen käytös. Se on regressiotae, ei sivuseikka.
+    """
+    if not kaudet:
+        return {"blended": {}}
+    per_liiga = PROMOTED_BY_SEASON.get(str(kaudet[-1]))
+    if not per_liiga:
+        return {"blended": {}}
+    yhdiste: dict = {"blended": {}, "n_min": n_min}
+    for liiga in liigat:
+        ryhmat = _kohortteina(per_liiga.get(liiga, ()))
+        viitteet = _kohortteina(REFERENCE_BY_LEAGUE.get(liiga, ()))
+        for nimi, joukkueet in ryhmat.items():
+            info = blend_thin_toward_baseline(
+                dc, match_counts, joukkueet,
+                reference=viitteet.get(nimi, ()),
+                n_min=n_min,
+                allow_frozen=(liiga == "ENG-Premier League"),
+            )
+            if info.get("blended"):
+                yhdiste["blended"].update(info["blended"])
+                for k in ("trio_used", "source", "baseline_attack",
+                          "baseline_defence"):
+                    if k in info:
+                        yhdiste[k] = info[k]
+                if len(ryhmat) > 1:
+                    yhdiste.setdefault("cohorts", {})[nimi] = info
+            if info.get("skipped"):
+                # Viiteryhma puuttui fitista eika frozen sallittu — nakyva
+                # skip vain jos joku skipatuista on oikeasti ohut (muuten
+                # tama olisi kohinaa jokaisella esikausiajolla).
+                ohuet = [t for t in info["skipped"]
+                         if 0 < match_counts.get(t, 0) < n_min
+                         and t in dc.attack]
+                if ohuet:
+                    yhdiste.setdefault("skipped_thin", []).extend(ohuet)
+    return yhdiste
+
+
 def taydenna_nousijat(
     dc: DixonColesModel,
     liigat: tuple[str, ...] | list[str],
