@@ -1,32 +1,32 @@
 {
-  "updated_at": "2026-08-22T12:55:21+00:00",
+  "updated_at": "2026-08-22T15:26:15+00:00",
   "logged_total": 3197,
-  "pending": 3007,
+  "pending": 3003,
   "voided": 5,
   "all_time": {
-    "n": 185,
-    "correct_1x2": 97,
-    "pct_1x2": 0.5243,
-    "decisive_n": 127,
-    "decisive_correct": 97,
-    "pct_decisive": 0.7638,
-    "exact_n": 137,
+    "n": 189,
+    "correct_1x2": 98,
+    "pct_1x2": 0.5185,
+    "decisive_n": 130,
+    "decisive_correct": 98,
+    "pct_decisive": 0.7538,
+    "exact_n": 141,
     "exact_correct": 22,
-    "pct_exact": 0.1606,
-    "brier": 0.5857,
-    "brier_n": 137
+    "pct_exact": 0.156,
+    "brier": 0.593,
+    "brier_n": 141
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 46,
-    "pct_1x2": 0.46,
+    "correct_1x2": 44,
+    "pct_1x2": 0.44,
     "decisive_n": 66,
-    "decisive_correct": 46,
-    "pct_decisive": 0.697,
+    "decisive_correct": 44,
+    "pct_decisive": 0.6667,
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.6319,
+    "brier": 0.6403,
     "brier_n": 100,
     "window": 100
   },
@@ -58,17 +58,17 @@
       "brier_n": 8
     },
     "ELC": {
-      "n": 10,
-      "correct_1x2": 2,
-      "pct_1x2": 0.2,
-      "decisive_n": 7,
-      "decisive_correct": 2,
-      "pct_decisive": 0.2857,
-      "exact_n": 10,
+      "n": 13,
+      "correct_1x2": 3,
+      "pct_1x2": 0.2308,
+      "decisive_n": 9,
+      "decisive_correct": 3,
+      "pct_decisive": 0.3333,
+      "exact_n": 13,
       "exact_correct": 1,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 10
+      "brier_n": 13
     },
     "FL1": {
       "n": 1,
@@ -97,17 +97,17 @@
       "brier_n": 8
     },
     "PL": {
-      "n": 1,
+      "n": 2,
       "correct_1x2": 1,
-      "pct_1x2": 1.0,
-      "decisive_n": 1,
+      "pct_1x2": 0.5,
+      "decisive_n": 2,
       "decisive_correct": 1,
-      "pct_decisive": 1.0,
-      "exact_n": 1,
+      "pct_decisive": 0.5,
+      "exact_n": 2,
       "exact_correct": 0,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 1
+      "brier_n": 2
     },
     "PPL": {
       "n": 7,
@@ -144,28 +144,28 @@
       "n": 12
     },
     {
-      "bin_mid": 0.1582,
-      "predicted": 0.1582,
-      "actual": 0.1228,
-      "n": 57
+      "bin_mid": 0.1577,
+      "predicted": 0.1577,
+      "actual": 0.1379,
+      "n": 58
     },
     {
-      "bin_mid": 0.2527,
-      "predicted": 0.2527,
-      "actual": 0.2901,
-      "n": 162
+      "bin_mid": 0.2531,
+      "predicted": 0.2531,
+      "actual": 0.2917,
+      "n": 168
     },
     {
-      "bin_mid": 0.337,
-      "predicted": 0.337,
-      "actual": 0.322,
-      "n": 59
+      "bin_mid": 0.3364,
+      "predicted": 0.3364,
+      "actual": 0.3167,
+      "n": 60
     },
     {
-      "bin_mid": 0.449,
-      "predicted": 0.449,
-      "actual": 0.34,
-      "n": 50
+      "bin_mid": 0.4487,
+      "predicted": 0.4487,
+      "actual": 0.3396,
+      "n": 53
     },
     {
       "bin_mid": 0.538,
@@ -174,10 +174,10 @@
       "n": 33
     },
     {
-      "bin_mid": 0.6513,
-      "predicted": 0.6513,
-      "actual": 0.6538,
-      "n": 26
+      "bin_mid": 0.6509,
+      "predicted": 0.6509,
+      "actual": 0.6296,
+      "n": 27
     },
     {
       "bin_mid": 0.7276,
@@ -193,6 +193,62 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-22",
+      "home_team": "Lincoln",
+      "away_team": "Portsmouth",
+      "predicted_winner": "home",
+      "p_winner": 0.4489,
+      "most_likely_score": "1-1",
+      "actual_score": "1-3",
+      "actual_outcome": "away",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-22",
+      "home_team": "Millwall",
+      "away_team": "Norwich",
+      "predicted_winner": "home",
+      "p_winner": 0.4043,
+      "most_likely_score": "1-1",
+      "actual_score": "3-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-22",
+      "home_team": "Birmingham",
+      "away_team": "Bristol City",
+      "predicted_winner": "home",
+      "p_winner": 0.4774,
+      "most_likely_score": "1-1",
+      "actual_score": "2-2",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-22",
+      "home_team": "Hull",
+      "away_team": "Manchester United",
+      "predicted_winner": "away",
+      "p_winner": 0.6398,
+      "most_likely_score": "0-2",
+      "actual_score": "2-0",
+      "actual_outcome": "home",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-21",
       "home_team": "Olympique de Marseille",
@@ -411,62 +467,6 @@
       "p_winner": 0.5297,
       "most_likely_score": "1-1",
       "actual_score": "4-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "Nacional",
-      "away_team": "Estoril",
-      "predicted_winner": "home",
-      "p_winner": 0.4524,
-      "most_likely_score": "1-1",
-      "actual_score": "2-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "Watford",
-      "away_team": "Southampton",
-      "predicted_winner": "away",
-      "p_winner": 0.5876,
-      "most_likely_score": "1-1",
-      "actual_score": "2-1",
-      "actual_outcome": "home",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "Real Racing Club de Santander",
-      "away_team": "Villarreal CF",
-      "predicted_winner": "away",
-      "p_winner": 0.4323,
-      "most_likely_score": "1-1",
-      "actual_score": "2-2",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-16",
-      "home_team": "RCD Espanyol de Barcelona",
-      "away_team": "Levante UD",
-      "predicted_winner": "home",
-      "p_winner": 0.3937,
-      "most_likely_score": "1-1",
-      "actual_score": "3-0",
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
