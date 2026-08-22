@@ -13,8 +13,20 @@ import config
 
 PW_PATH = config.DATA_DIR / "fpl_price_watch.json"
 
-DISCLAIMER = ("Estimated from FPL net-transfer velocity - FPL's exact price "
-              "thresholds are not public. Model estimate, not a guarantee.")
+# 22.8.2026: FPL alkoi 26/27-kaudella julkaista hinnanmuutosdatan itse
+# (bootstrapin price_change_percent / price_change_projections). Vanha
+# varaus - "FPL's exact price thresholds are not public" - EI OLE ENAA TOSI,
+# ja se oli sivun nakyvin lause. Kaksi eri tekstia, koska kaksi eri lahdetta:
+# vaara varaus on pahempi kuin puuttuva.
+DISCLAIMER_OFFICIAL = (
+    "Straight from the official FPL price projection, updated hourly. A change "
+    "lands when the projection reaches 100 percent, and very late transfers "
+    "can still move it.")
+DISCLAIMER_ESTIMATE = (
+    "Estimated from FPL net-transfer velocity, used only when the official "
+    "projection is unavailable. Model estimate, not a guarantee.")
+# Taaksepain-yhteensopivuus: mobiili ja vanhat pinnat lukevat taman nimen.
+DISCLAIMER = DISCLAIMER_OFFICIAL
 
 
 def empty_price_watch() -> dict:

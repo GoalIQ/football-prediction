@@ -665,6 +665,20 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     return _page(title, desc, url, hero, body, jsonld)
 
 
+def _eta_label(p: dict) -> str:
+    """Paiva kynnykseen ihmisluettavana. 22.8: FPL julkaisee taman itse, ja
+    se on sivun ainoa toimintaan johtava luku. Puuttuva kentta (vanha
+    velocity-arvio) -> "on watch", EI "not soon" — arvio ei tiennyt paivaa."""
+    eta = p.get("eta_days")
+    if eta == 0:
+        return "due tonight"
+    if eta == 1:
+        return "due tomorrow"
+    if isinstance(eta, int):
+        return f"due in {eta} days"
+    return "on watch"
+
+
 def render_price_changes(pw: dict, now: datetime) -> str:
     meta = (pw or {}).get("meta") or {}
     risers = (pw or {}).get("risers") or []
@@ -681,8 +695,9 @@ def render_price_changes(pw: dict, now: datetime) -> str:
             return ""
         lines = "".join(
             f'<div class="mrow"><div><strong>{escape(p["web_name"])}</strong>'
-            f'<div class="meta">£{p["now_cost"]:.1f}m · confidence '
-            f'{round(float(p.get("confidence") or 0) * 100)}%</div></div>'
+            f'<div class="meta">£{p["now_cost"]:.1f}m · {_eta_label(p)} · '
+            f'{round(float(p.get("confidence") or 0) * 100)}% of the way'
+            f'</div></div>'
             f'<span class="pick">{label}</span></div>'
             for p in items[:10]
         )
@@ -700,11 +715,16 @@ def render_price_changes(pw: dict, now: datetime) -> str:
         ) + (
             ("<h2>Predicted fallers</h2>" + rows(fallers, "falling")) if fallers else ""
         )
+    official = bool(meta.get("official_projection"))
     hero = (
-        "<h1>FPL price changes: predicted risers and fallers</h1>"
-        '<p class="lede">GoalIQ tracks net transfer velocity to estimate which '
-        "players are about to rise or fall in price. Free on the web and in the "
-        "app, updated daily.</p>"
+        "<h1>FPL price changes: risers and fallers</h1>"
+        '<p class="lede">' + (
+            "The official FPL price projection, updated hourly, with the day "
+            "each change is due. Free on the web and in the app."
+            if official else
+            "GoalIQ tracks net transfer velocity to estimate which players are "
+            "about to rise or fall in price. Free on the web and in the app, "
+            "updated daily.") + "</p>"
     )
     body = (
         f"{content}"

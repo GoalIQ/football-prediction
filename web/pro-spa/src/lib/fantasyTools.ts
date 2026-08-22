@@ -176,6 +176,10 @@ export interface PriceMove {
 	progress_pct: number;
 	net_event: number;
 	already_changed_today: boolean;
+	/** 22.8: päiviä hinnanmuutokseen FPL:n omasta projektiosta (0 = tänä yönä).
+	 *  Puuttuu kun luku tulee vanhasta velocity-arviosta — se ei voinut tietää
+	 *  päivää, ja puuttuva kenttä on eri asia kuin "ei lähipäivinä". */
+	eta_days?: number;
 }
 
 export interface PriceWatchResponse {
@@ -184,6 +188,10 @@ export interface PriceWatchResponse {
 		generated_at: string | null;
 		disclaimer: string;
 		note?: string;
+		/** 22.8: true = rivit tulevat FPL:n omasta projektiosta, false/puuttuu
+		 *  = vanha velocity-arvio. Ohjaa sivun lupausta, siksi tyypitetty. */
+		official_projection?: boolean;
+		source?: string;
 		[key: string]: unknown;
 	};
 	risers: PriceMove[];

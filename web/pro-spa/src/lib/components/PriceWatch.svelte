@@ -89,8 +89,16 @@
 							<th>Player</th>
 							<th class="num">Price</th>
 							<th>Status</th>
+							<!-- 22.8: FPL julkaisee nyt oman projektionsa, joten
+							     paiva kynnykseen on tiedossa. Se on syy avata
+							     sivu, joten se saa oman sarakkeensa. -->
+							<th
+								><abbr title="When the official FPL projection crosses the threshold"
+									>Change due</abbr
+								></th
+							>
 							<th class="num"
-								><abbr title="Estimated progress towards the next price change; the mark shows confidence"
+								><abbr title="How far the official projection has moved towards the threshold; the mark shows confidence"
 									>Progress</abbr
 								></th
 							>
@@ -110,6 +118,17 @@
 										{STATUS_LABEL[r.status] ?? r.status}
 									</span>
 								</td>
+								<td class="eta">
+									{#if r.eta_days === 0}
+										Tonight
+									{:else if r.eta_days === 1}
+										Tomorrow
+									{:else if typeof r.eta_days === 'number'}
+										In {r.eta_days} days
+									{:else}
+										<span class="muted">Not in 3 days</span>
+									{/if}
+								</td>
 								<td class="num">
 									<span class="conf conf-{band}" title="{CONF_LABEL[band]} confidence">&#9679;</span
 									>{Math.round(r.progress_pct)}%
@@ -124,8 +143,15 @@
 {/snippet}
 
 <h2>Price watch</h2>
+<!-- 22.8: FPL alkoi julkaista hinnanmuutosdatan itse, joten "estimated ...
+     net-transfer velocity" ei ole enää se mitä sivu näyttää. Teksti seuraa
+     payloadin `source`-kenttää eikä ole kovakoodattu: jos varapolku joskus
+     aktivoituu, lukija näkee sen. -->
 <p class="muted">
-	Estimated price change candidates based on FPL net-transfer velocity. Free tool.
+	{data?.meta.official_projection
+		? "The official FPL price projection, updated hourly, with the day each change is due."
+		: 'Estimated price change candidates based on FPL net-transfer velocity.'}
+	Free tool.
 </p>
 
 {#if error}

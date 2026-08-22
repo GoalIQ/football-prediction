@@ -2,102 +2,64 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-22T12:24:57Z",
-  "total_players": 9206713,
+  "generated_at": "2026-08-22T12:41:44Z",
+  "total_players": 9212786,
   "n_players_scanned": 600,
   "n_with_transfer_activity": 595,
-  "disclaimer": "Estimated from FPL net-transfer velocity - FPL's exact price thresholds are not public. Model estimate, not a guarantee."
+  "source": "FPL official price projection",
+  "official_projection": true,
+  "disclaimer": "Straight from the official FPL price projection, updated hourly. A change lands when the projection reaches 100 percent, and very late transfers can still move it."
  },
  "risers": [
   {
-   "id": 26,
-   "web_name": "Havertz",
+   "id": 8,
+   "web_name": "Calafiori",
    "team": 1,
-   "now_cost": 7.5,
+   "now_cost": 5.5,
    "status": "rising_watch",
-   "confidence": 0.78,
-   "progress_pct": 78.1,
-   "net_event": 20500,
-   "already_changed_today": false
-  },
-  {
-   "id": 15,
-   "web_name": "Ødegaard",
-   "team": 1,
-   "now_cost": 6.5,
-   "status": "rising_watch",
-   "confidence": 0.55,
-   "progress_pct": 54.6,
-   "net_event": 21132,
-   "already_changed_today": false
+   "confidence": 0.25,
+   "progress_pct": 24.8,
+   "net_event": 41109,
+   "already_changed_today": false,
+   "eta_days": 2
   }
  ],
  "fallers": [
   {
-   "id": 503,
-   "web_name": "Van de Ven",
-   "team": 19,
-   "now_cost": 5.0,
-   "status": "falling_watch",
-   "confidence": 0.72,
-   "progress_pct": 72.1,
-   "net_event": -26901,
-   "already_changed_today": false
-  },
-  {
-   "id": 452,
-   "web_name": "Bruno G.",
+   "id": 18,
+   "web_name": "Martinelli",
    "team": 1,
-   "now_cost": 7.0,
+   "now_cost": 6.5,
    "status": "falling_watch",
-   "confidence": 0.63,
-   "progress_pct": 63.1,
-   "net_event": -17851,
-   "already_changed_today": false
+   "confidence": 0.3,
+   "progress_pct": 29.8,
+   "net_event": -1089,
+   "already_changed_today": false,
+   "eta_days": 2
   },
   {
-   "id": 505,
-   "web_name": "Spence",
-   "team": 19,
-   "now_cost": 4.5,
-   "status": "falling_watch",
-   "confidence": 0.62,
-   "progress_pct": 62.2,
-   "net_event": -12433,
-   "already_changed_today": false
-  },
-  {
-   "id": 499,
-   "web_name": "Pedro Porro",
-   "team": 19,
+   "id": 22,
+   "web_name": "Nwaneri",
+   "team": 1,
    "now_cost": 5.5,
    "status": "falling_watch",
-   "confidence": 0.56,
-   "progress_pct": 55.6,
-   "net_event": -64150,
-   "already_changed_today": false
+   "confidence": 0.2,
+   "progress_pct": 19.8,
+   "net_event": -43,
+   "already_changed_today": false,
+   "eta_days": 2
   },
   {
-   "id": 25,
-   "web_name": "Gyökeres",
-   "team": 1,
-   "now_cost": 7.5,
+   "id": 431,
+   "web_name": "Amad",
+   "team": 16,
+   "now_cost": 6.0,
    "status": "falling_watch",
-   "confidence": 0.51,
-   "progress_pct": 51.0,
-   "net_event": -31330,
-   "already_changed_today": false
-  },
-  {
-   "id": 400,
-   "web_name": "Doku",
-   "team": 15,
-   "now_cost": 7.5,
-   "status": "falling_watch",
-   "confidence": 0.5,
-   "progress_pct": 50.2,
-   "net_event": -10042,
-   "already_changed_today": false
+   "confidence": 0.03,
+   "progress_pct": 2.5,
+   "net_event": -1243,
+   "already_changed_today": false,
+   "eta_days": 2
   }
  ],
  "prices": {

@@ -138,7 +138,10 @@ def price_notes(watch: dict, limit: int = 3) -> dict:
             if len(out) >= limit:
                 break
         return out
-    return {"risers": rows("risers"), "fallers": rows("fallers")}
+    return {"risers": rows("risers"), "fallers": rows("fallers"),
+            # 22.8: kumpi lahde tuotti luvut -> vedoksen varaus seuraa sita.
+            "official_projection": bool(
+                (watch.get("meta") or {}).get("official_projection"))}
 
 
 def build_facts(deadline: dict, xp_payload: dict, watch: dict) -> dict:
@@ -185,8 +188,14 @@ def render_markdown(facts: dict) -> str:
         lines.append("Our price watch tonight:")
         lines += moves
         lines.append("")
-        lines.append("It's an estimate from net transfer velocity, since FPL "
-                     "doesn't publish the real thresholds.")
+        # 22.8: FPL alkoi julkaista hinnanmuutosdatan itse, joten vanha
+        # varaus ("FPL doesn't publish the real thresholds") ei ole enaa tosi.
+        # Lause seuraa payloadin lippua eika ole kovakoodattu.
+        lines.append(
+            "Those come straight from FPL's own price projection."
+            if prices.get("official_projection")
+            else "It's our estimate from net transfer velocity, used when the "
+                 "official projection isn't available.")
         lines.append("")
     else:
         lines.append("Nothing is close to a price change tonight, so there's "

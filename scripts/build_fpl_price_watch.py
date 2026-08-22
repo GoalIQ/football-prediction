@@ -5,7 +5,15 @@ Tuottaa `data/fpl_price_watch.json`:n jonka `/api/fantasy/price-watch` tarjoilee
 build_fpl_phase0/build_fpl_xp). Ajo: päivittäinen fpl-data-refresh.yml-cron
 (#16) tai käsin `python -m scripts.build_fpl_price_watch`.
 
-SIGNAALIKAAVA (dokumentoitu approksimaatio — FPL ei julkaise kynnyksiään):
+LÄHDE (22.8.2026 MUUTTUI): FPL alkoi 26/27-kaudella julkaista hinnanmuutokset
+itse (`price_change_percent`, `price_change_projections`, `hourly_rate`
+bootstrapissa). Ensisijainen polku lukee ne suoraan — se on tarkka eikä arvio,
+ja se antaa myös PÄIVÄN jolloin muutos osuu (`eta_days`), mitä heuristiikka ei
+voinut tietää. Alla oleva velocity-kaava jää FALLBACKIKSI siltä varalta että
+kentät katoavat; `has_official_fields` valitsee polun rakenteellisesti, ei
+kausiehdolla. Sama muutos lopetti LiveFPL:n oman hinnanennusteen.
+
+FALLBACK-SIGNAALIKAAVA (approksimaatio, käytössä vain ilman virallisia kenttiä):
   net_event   = transfers_in_event - transfers_out_event (bootstrap, per pelaaja)
   owners      = selected_by_percent / 100 * total_players
   threshold   = max(MIN_THRESHOLD, THRESHOLD_OWNER_RATE * owners)
@@ -22,8 +30,10 @@ SIGNAALIKAAVA (dokumentoitu approksimaatio — FPL ei julkaise kynnyksiään):
   ristiriidassa lasketun suunnan kanssa (nousi mutta luokka falling_* tms.),
   luokka clampataan stableksi (suunta-konsistenssi, ship-gate).
 
-REHELLISYYS: output kantaa disclaimeria "estimated - FPL's exact threshold
-isn't public". EI "guaranteed"-copyä. IP-puhdas (ei krestejä, vain tekstidata).
+REHELLISYYS: `meta.source` + `meta.official_projection` kertovat KUMPI polku
+tuotti rivit, ja disclaimer vaihtuu sen mukana. Vanha varaus ("FPL's exact
+price thresholds are not public") ei ole enää tosi eikä sitä saa näyttää
+virallisen datan vieressä. EI "guaranteed"-copyä. IP-puhdas (vain tekstidata).
 
 FAIL-SAFE: FPL-API alhaalla / vastaus rikki / sanity-gate kiinni → JSONia EI
 kirjoiteta (vanha jää voimaan), exit != 0 → cron-step punainen, ei committia.
@@ -41,7 +51,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import requests
 
 import config
-from src.models.fpl_price_watch import DISCLAIMER
+from src.models.fpl_price_watch import (DISCLAIMER_ESTIMATE,
+                                        DISCLAIMER_OFFICIAL)
 
 FPL_BASE = "https://fantasy.premierleague.com/api"
 FPL_HEADERS = {"User-Agent": "Mozilla/5.0 (GoalIQ refresh job)"}
@@ -61,6 +72,69 @@ def fetch_bootstrap() -> dict:
                      timeout=30)
     r.raise_for_status()
     return r.json()
+
+
+def _f(v, default: float = 0.0) -> float:
+    """FPL palauttaa projected_percentin merkkijonona ("5.7")."""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return default
+
+
+def has_official_fields(bootstrap: dict) -> bool:
+    """Onko FPL:n virallinen hinnanmuutosdata saatavilla?
+
+    26/27-kaudella FPL alkoi julkaista hinnanmuutokset läpinäkyvästi
+    (`price_change_percent`, `price_change_projections`, `hourly_rate`).
+    Todennettu tuotannon bootstrapista 22.8.2026: 600/600 pelaajaa kantaa
+    kentät, `price_change_calibrating` false kaikilla.
+
+    Tarkistus on RAKENTEELLINEN eikä kausikohtainen: jos FPL poistaa kentät,
+    palataan vanhaan velocity-heuristiikkaan automaattisesti eikä sivu jää
+    tyhjäksi.
+    """
+    for e in (bootstrap.get("elements") or [])[:20]:
+        if e.get("price_change_percent") is not None:
+            return True
+    return False
+
+
+def classify_official(pct_now: float, projections: list[dict],
+                      cost_change_event: int) -> tuple[str, float, float, int | None]:
+    """FPL:n omasta datasta → (status, confidence, progress_pct, eta_days).
+
+    `price_change_percent` on matka kynnykselle: +100 = nousu, -100 = lasku.
+    `price_change_projections` on lista {offset (vrk), projected_percent,
+    likelihood} seuraavalle kolmelle päivälle.
+
+    eta_days = ensimmäinen offset jolla |projected_percent| >= 100, eli päivä
+    jolloin FPL:n oma projektio ylittää kynnyksen. None = ei kolmen päivän
+    sisällä. TÄMÄ ON SE LUKU JOTA ARVIO EI VOINUT ANTAA.
+    """
+    direction = "rising" if pct_now > 0 else "falling" if pct_now < 0 else ""
+    if not direction:
+        return "stable", 0.0, 0.0, None
+    eta = None
+    for p in projections:
+        if abs(_f(p.get("projected_percent"))) >= 100.0:
+            off = p.get("offset")
+            eta = int(off) if isinstance(off, (int, float)) else None
+            break
+    progress = min(1.0, abs(pct_now) / 100.0)
+    if eta == 0 or progress >= SOON_PROGRESS:
+        status = f"{direction}_soon"
+    elif eta is not None or progress >= WATCH_PROGRESS:
+        status = f"{direction}_watch"
+    else:
+        status = "stable"
+    # Suunta-konsistenssi toteutuneeseen muutokseen — sama vartija kuin
+    # heuristiikkapolulla: nousi tänään → ei falling_*, ja päinvastoin.
+    if cost_change_event > 0 and status.startswith("falling"):
+        status = "stable"
+    if cost_change_event < 0 and status.startswith("rising"):
+        status = "stable"
+    return status, round(progress, 2), round(100.0 * progress, 1), eta
 
 
 def classify(net_event: int, owners: float,
@@ -110,6 +184,7 @@ def _empty_note(bootstrap: dict, n_active: int) -> str:
 
 def build_payload(bootstrap: dict) -> dict:
     total_players = int(bootstrap.get("total_players") or 0)
+    official = has_official_fields(bootstrap)
     rows = []
     for e in bootstrap.get("elements") or []:
         net_event = int(e.get("transfers_in_event") or 0) - \
@@ -120,7 +195,13 @@ def build_payload(bootstrap: dict) -> dict:
             owned_pct = 0.0
         owners = owned_pct / 100.0 * total_players
         cce = int(e.get("cost_change_event") or 0)
-        status, confidence, progress_pct = classify(net_event, owners, cce)
+        eta = None
+        if official:
+            status, confidence, progress_pct, eta = classify_official(
+                _f(e.get("price_change_percent")),
+                e.get("price_change_projections") or [], cce)
+        else:
+            status, confidence, progress_pct = classify(net_event, owners, cce)
         rows.append({
             "id": e["id"],
             "web_name": e.get("web_name") or "",
@@ -131,11 +212,23 @@ def build_payload(bootstrap: dict) -> dict:
             "progress_pct": progress_pct,
             "net_event": net_event,
             "already_changed_today": cce != 0,
+            # Vain viralliselta polulta: päivien määrä kynnykseen (0 = tänä
+            # yönä). Heuristiikka ei voinut tätä tietää, joten kenttä puuttuu
+            # kokonaan fallback-tilassa — tyhjä ei ole sama kuin "ei tänään".
+            **({"eta_days": eta} if official and eta is not None else {}),
         })
+    # Virallisella polulla kiireellisin ensin: pienin eta_days voittaa, ja
+    # vasta sen sisalla suurin edistyminen. Pelkka progress-jarjestys nostaisi
+    # karkeen pelaajan joka on 90 %:ssa mutta hidastunut, ja tyontaisi alas
+    # sen joka muuttuu TANA yona — se on juuri se rivi jota sivulta haetaan.
+    def _rank(r: dict) -> tuple[int, float]:
+        eta = r.get("eta_days")
+        return (eta if isinstance(eta, int) else 99, -r["progress_pct"])
+
     risers = sorted((r for r in rows if r["status"].startswith("rising")),
-                    key=lambda r: r["progress_pct"], reverse=True)[:TOP_N]
+                    key=_rank)[:TOP_N]
     fallers = sorted((r for r in rows if r["status"].startswith("falling")),
-                     key=lambda r: r["progress_pct"], reverse=True)[:TOP_N]
+                     key=_rank)[:TOP_N]
     n_active = sum(1 for r in rows if r["net_event"] != 0)
     return {
         "meta": {
@@ -146,7 +239,12 @@ def build_payload(bootstrap: dict) -> dict:
             "total_players": total_players,
             "n_players_scanned": len(rows),
             "n_with_transfer_activity": n_active,
-            "disclaimer": DISCLAIMER,
+            # Lahde nakyviin: lukija saa tietaa kumpaa han katsoo.
+            "source": ("FPL official price projection" if official
+                       else "GoalIQ net-transfer velocity estimate"),
+            "official_projection": official,
+            "disclaimer": (DISCLAIMER_OFFICIAL if official
+                           else DISCLAIMER_ESTIMATE),
             # Note aina kun molemmat listat ovat tyhjiä — ilman sitä sivujen
             # fallback-copy ("goes live when the FPL game opens") valehtelisi
             # kauden aikana kun aktiviteettia on mutta kynnys ei ylity.
@@ -164,14 +262,28 @@ def build_payload(bootstrap: dict) -> dict:
 
 
 def sanity_gate(payload: dict) -> list[str]:
-    """Ship-gate: suunta-konsistenssi + top-listojen eheys. → rikkeet."""
+    """Ship-gate: suunta-konsistenssi + top-listojen eheys. → rikkeet.
+
+    22.8: `net_event`-ehto koskee VAIN heuristiikkapolkua. FPL:n oma
+    projektio perustuu tuntinopeuteen eikä kierroksen nettosiirtoihin, joten
+    virallisella datalla nousija voi täysin laillisesti kantaa negatiivisen
+    `net_event`-luvun (esim. deadlinen jälkeen laskurit nollautuvat mutta
+    hintamomentti jatkuu). Ilman tätä erottelua portti olisi kaatanut ajon
+    ja JÄÄDYTTÄNYT koko price watchin — sama fail-safen kääntöpuoli joka
+    padotti data-refreshin 21.-22.8.
+    """
     errors = []
+    official = bool(payload.get("meta", {}).get("official_projection"))
     for r in payload["risers"]:
-        if not r["status"].startswith("rising") or r["net_event"] <= 0:
-            errors.append(f"riser-rikke: {r['web_name']} {r['status']} net={r['net_event']}")
+        if not r["status"].startswith("rising"):
+            errors.append(f"riser-rikke: {r['web_name']} {r['status']}")
+        elif not official and r["net_event"] <= 0:
+            errors.append(f"riser-rikke: {r['web_name']} net={r['net_event']}")
     for r in payload["fallers"]:
-        if not r["status"].startswith("falling") or r["net_event"] >= 0:
-            errors.append(f"faller-rikke: {r['web_name']} {r['status']} net={r['net_event']}")
+        if not r["status"].startswith("falling"):
+            errors.append(f"faller-rikke: {r['web_name']} {r['status']}")
+        elif not official and r["net_event"] >= 0:
+            errors.append(f"faller-rikke: {r['web_name']} net={r['net_event']}")
     for r in payload["risers"] + payload["fallers"]:
         if not 0.0 <= r["confidence"] <= 1.0 or not 0.0 <= r["progress_pct"] <= 100.0:
             errors.append(f"range-rikke: {r['web_name']}")
