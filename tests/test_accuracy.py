@@ -496,6 +496,221 @@ def test_log_domestic_matches_prematch_only_and_idempotent():
     assert len(log["predictions"]) == 1
 
 
+# ---------------------------------------------------------------------------
+# PRE-KICKOFF REFRESH (23.8.2026) — ennuste jäätyy kickoffiin, ei ensinäkemään
+# ---------------------------------------------------------------------------
+def _pending_entry(mid, kickoff, *, comp="ELC", league="ENG-Championship",
+                   winner="home", logged_at="2026-08-01T00:00:00+00:00"):
+    return {
+        "match_id": mid, "source": "fd", "competition": comp, "league": league,
+        "date": kickoff[:10], "kickoff": kickoff,
+        "home_team": "Preston", "away_team": "Wolves",
+        "p_home": 0.37, "p_draw": 0.30, "p_away": 0.33,
+        "xg_home": 1.34, "xg_away": 1.26,
+        "most_likely_score": "1-1", "predicted_winner": winner,
+        "logged_at": logged_at, "result": None,
+    }
+
+
+def _away_predict(league, home, away):
+    return {
+        "home_team": home, "away_team": away,
+        "p_home": 0.2844, "p_draw": 0.291, "p_away": 0.4246,
+        "xg_home": 1.18, "xg_away": 1.484,
+        "most_likely_score": "1-1", "predicted_winner": "away",
+    }
+
+
+def test_refresh_updates_upcoming_and_freezes_at_kickoff():
+    """Ikkunassa oleva tuleva ottelu päivittyy; kickoffin ohittanut EI."""
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 6, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    log["predictions"] += [
+        _pending_entry("fd-1", "2026-08-22T14:00:00Z"),   # 8 h päässä -> päivittyy
+        _pending_entry("fd-2", "2026-08-22T05:00:00Z"),   # jo alkanut -> lukossa
+        _pending_entry("fd-3", "2026-09-30T14:00:00Z"),   # ikkunan ulkona -> ei
+    ]
+
+    paivitetyt, ohitetut = refresh_prematch_predictions(
+        log, _away_predict, codes=["ELC"], now=now, window_h=48, sweep_max=0)
+
+    assert (paivitetyt, ohitetut) == (1, 0)
+    e1, e2, e3 = log["predictions"]
+    assert e1["predicted_winner"] == "away" and e1["p_away"] == 0.4246
+    assert e1["first_logged_at"] == "2026-08-01T00:00:00+00:00"
+    assert e1["logged_at"] != "2026-08-01T00:00:00+00:00"
+    assert e1["refresh_count"] == 1
+    # kickoffin jälkeen ja ikkunan ulkopuolella: bittitarkasti ennallaan
+    for e in (e2, e3):
+        assert e["predicted_winner"] == "home" and e["p_home"] == 0.37
+        assert "refreshed_at" not in e and "first_logged_at" not in e
+
+
+def test_refresh_skips_resolved_void_and_disabled_competitions():
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 6, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    gradattu = _pending_entry("fd-10", "2026-08-22T14:00:00Z")
+    log["predictions"].append(gradattu)
+    acc.set_result(log, "fd-10", 1, 3)
+    siirretty = _pending_entry("fd-11", "2026-08-22T14:00:00Z")
+    siirretty["void"] = True
+    log["predictions"].append(siirretty)
+    # kilpailu jota ei ole kytketty päälle
+    log["predictions"].append(
+        _pending_entry("fd-12", "2026-08-22T14:00:00Z", comp="BSA",
+                       league="BRA-Serie A"))
+
+    paivitetyt, ohitetut = refresh_prematch_predictions(
+        log, _away_predict, codes=["ELC"], now=now, window_h=48, sweep_max=0)
+
+    assert (paivitetyt, ohitetut) == (0, 0)
+    assert all(e["predicted_winner"] == "home" for e in log["predictions"])
+
+
+def test_refresh_keeps_old_prediction_when_api_fails():
+    """Kaatunut /api/predict EI saa tyhjentää tai rikkoa jo logattua riviä."""
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 6, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    log["predictions"].append(_pending_entry("fd-20", "2026-08-22T14:00:00Z"))
+    ennen = dict(log["predictions"][0])
+
+    paivitetyt, ohitetut = refresh_prematch_predictions(
+        log, lambda *_: None, codes=["ELC"], now=now, window_h=48, sweep_max=0)
+
+    assert (paivitetyt, ohitetut) == (0, 1)
+    assert log["predictions"][0] == ennen
+
+
+def test_refresh_cap_takes_nearest_kickoffs_first():
+    """Katto ei ole hiljainen ja se pudottaa kaukaisimmat kickoffit."""
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 0, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    for i, tunti in enumerate((20, 4, 12)):
+        log["predictions"].append(
+            _pending_entry(f"fd-3{i}", f"2026-08-22T{tunti:02d}:00:00Z"))
+
+    paivitetyt, _ = refresh_prematch_predictions(
+        log, _away_predict, codes=["ELC"], now=now, window_h=48, limit=2,
+        sweep_max=0)
+
+    assert paivitetyt == 2
+    paivittyi = {e["match_id"] for e in log["predictions"]
+                 if e["predicted_winner"] == "away"}
+    assert paivittyi == {"fd-31", "fd-32"}   # 04:00 ja 12:00, ei 20:00
+
+
+def test_sweep_refreshes_far_future_oldest_first():
+    """Ikkunan ulkopuoliset sivut päivittyvät kierrossa, vanhin ensin."""
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 6, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    # kaikki kaukana kickoffista -> ei kuumassa ikkunassa
+    log["predictions"] += [
+        _pending_entry("fd-vanha", "2027-03-03T15:00:00Z",
+                       logged_at="2026-08-01T00:00:00+00:00"),
+        _pending_entry("fd-uudempi", "2027-03-10T15:00:00Z",
+                       logged_at="2026-08-19T00:00:00+00:00"),
+        # juuri päivitetty -> alle min-iän, ei kosketa
+        _pending_entry("fd-tuore", "2027-03-17T15:00:00Z",
+                       logged_at="2026-08-22T02:00:00+00:00"),
+    ]
+
+    paivitetyt, _ = refresh_prematch_predictions(
+        log, _away_predict, codes=["ELC"], now=now, window_h=48,
+        sweep_max=1, sweep_min_age_h=20)
+
+    assert paivitetyt == 1
+    vanha, uudempi, tuore = log["predictions"]
+    assert vanha["predicted_winner"] == "away"      # vanhin ensin
+    assert uudempi["predicted_winner"] == "home"    # katto -> seuraavaan ajoon
+    assert tuore["predicted_winner"] == "home"      # alle min-iän
+
+
+def test_sweep_skips_recently_refreshed_even_without_cap():
+    """Min-ikä on oma vahtinsa: katto EI saa olla se joka rajaa tuoreen pois."""
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 6, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    log["predictions"] += [
+        _pending_entry("fd-vanha", "2027-03-03T15:00:00Z",
+                       logged_at="2026-08-01T00:00:00+00:00"),
+        _pending_entry("fd-tuore", "2027-03-17T15:00:00Z",
+                       logged_at="2026-08-22T02:00:00+00:00"),   # 4 h sitten
+    ]
+
+    # katto ei sido (10 >> 2) -> jos tuore päivittyy, min-ikä ei ole voimassa
+    paivitetyt, _ = refresh_prematch_predictions(
+        log, _away_predict, codes=["ELC"], now=now, window_h=48,
+        sweep_max=10, sweep_min_age_h=20)
+
+    assert paivitetyt == 1
+    vanha, tuore = log["predictions"]
+    assert vanha["predicted_winner"] == "away"
+    assert tuore["predicted_winner"] == "home"
+    assert "refreshed_at" not in tuore
+
+
+def test_sweep_off_leaves_far_future_untouched():
+    from datetime import datetime, timezone
+    from scripts.accuracy_pipeline import refresh_prematch_predictions
+
+    now = datetime(2026, 8, 22, 6, 0, tzinfo=timezone.utc)
+    log = acc.empty_log()
+    log["predictions"].append(_pending_entry("fd-kaukana", "2027-03-03T15:00:00Z"))
+
+    paivitetyt, _ = refresh_prematch_predictions(
+        log, _away_predict, codes=["ELC"], now=now, window_h=48, sweep_max=0)
+
+    assert paivitetyt == 0
+    assert log["predictions"][0]["predicted_winner"] == "home"
+
+
+# ---------------------------------------------------------------------------
+# LEAD-TIME: mitä track record oikeasti mittaa
+# ---------------------------------------------------------------------------
+def test_lead_hours_and_by_lead_split():
+    log = acc.empty_log()
+    tuore = _entry("fd-40", "home", mls="2-1", date="2026-08-22")
+    tuore.update(kickoff="2026-08-22T14:00:00Z",
+                 logged_at="2026-08-22T02:00:00+00:00")
+    vanha = _entry("fd-41", "home", mls="2-1", date="2026-08-22")
+    vanha.update(kickoff="2026-08-22T14:00:00Z",
+                 logged_at="2026-08-01T14:00:00+00:00")
+    siemen = _entry("fd-42", "home", mls="2-1", date="2026-08-22")
+    siemen.update(kickoff="2026-08-22T14:00:00Z")   # logged_at = None
+    for e in (tuore, vanha, siemen):
+        acc.upsert_prediction(log, e)
+        acc.set_result(log, e["match_id"], 2, 1)
+
+    assert acc.lead_hours(tuore) == 12.0
+    assert acc.lead_hours(vanha) == 504.0
+    assert acc.lead_hours(siemen) is None
+
+    by_lead = acc.compute_aggregate(log)["by_lead"]
+    assert by_lead["fresh"]["n"] == 1
+    assert by_lead["stale"]["n"] == 1
+    assert by_lead["unknown"]["n"] == 1
+    assert by_lead["fresh_max_lead_h"] == acc.LEAD_FRESH_MAX_H
+    # headline ei muutu lead-jaosta
+    assert acc.compute_aggregate(log)["all_time"]["n"] == 3
+
+
 def test_domestic_reconcile_via_combined_matches():
     """WC-lokirivit + domestic-rivi reconciloituvat samasta yhdistelmälistasta
     eikä WC-riveihin kosketa (fd-id:t uniikkeja)."""

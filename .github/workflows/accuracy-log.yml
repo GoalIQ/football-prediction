@@ -46,7 +46,12 @@ on:
     - cron: "0 */3 * * *"
   repository_dispatch:
     types: [accuracy-log]   # ulkoinen luotettava cron (ks. SETUP yllä)
-  workflow_dispatch: {}     # manuaalinen laukaisu + wc-knockout-refresh dispatchaa tämän
+  workflow_dispatch:        # manuaalinen laukaisu + wc-knockout-refresh dispatchaa tämän
+    inputs:
+      sweep_max:
+        description: "Montako kaukaista ennustetta päivitetään tässä ajossa (tyhjä = koodin oletus 250; esim. 4000 = koko loki kerralla)"
+        required: false
+        default: ""
 
 # Vältä päällekkäiset ajot (commit-kilpailu mainissa). cancel-in-progress: false
 # → rinnakkaiset laukaisut (cron + knockout-refresh-dispatch) jonottavat, eivät kaadu.
@@ -89,6 +94,11 @@ jobs:
           # suoraan. DNA-blokki koskee vain suomalaisia käyttäjiä, ei CI:tä.
           # Muuttuja puuttuu → skripti käyttää oletusta (api.goaliq.app).
           ACC_PREDICT_API_BASE: ${{ vars.ACC_PREDICT_API_BASE }}
+          # 23.8: pre-kickoff refresh. Kuuma ikkuna (kickoff <= 48 h) ajaa aina;
+          # rullaava kierto pitää kaukaisemmatkin ennustesivut mallin tasalla.
+          # Tyhjä input → skriptin oletus (250/ajo ≈ koko loki vuorokaudessa).
+          # Kertaluontoinen täysi kierto: aja workflow_dispatch sweep_max=4000.
+          ACC_REFRESH_SWEEP_MAX: ${{ github.event.inputs.sweep_max }}
         run: python -m scripts.accuracy_pipeline run
 
       # CF-eston vahti (8.8): ACC_PREDICT_API_BASE-kierto on ollut voimassa 1.8

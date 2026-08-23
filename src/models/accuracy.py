@@ -48,6 +48,15 @@ DEFAULT_RECENT_N = 20
 # harhaanjohtavaa "0 %"/"0.30" muutamasta ottelusta. Koskee all_time + rolling.
 MIN_DISPLAY_N = 30
 
+# LEAD = tunteja ennen kickoffia jolloin gradattu ennuste viimeksi jaatyi
+# (kickoff - logged_at). 23.8.2026 mitattiin etta domestic-rivit oli jaadytetty
+# mediaanilla 147 vrk ennen kickoffia, koska koko kauden otteluohjelma logattiin
+# kerralla eika rivia paivitetty. Pre-kickoff refresh korjasi sen eteenpain,
+# mutta jo gradattuja rivieja EI muokata jalkikateen ("no edits after kick-off"
+# on julkinen lupaus) -> sen sijaan kerrotaan MITA record mittaa.
+# Raja 48 h = sama ikkuna jossa refresh ajaa (ACC_REFRESH_WINDOW_H).
+LEAD_FRESH_MAX_H = 48
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -416,6 +425,45 @@ def _calibration(rows: list[dict], n_bins: int = 10) -> list[dict]:
     return out
 
 
+def lead_hours(e: dict) -> Optional[float]:
+    """Tunteja ennusteen (logged_at) ja kickoffin valissa. None jos leimaa ei ole.
+
+    WC-siemenriveilla logged_at on null (ne poimittiin julkaistulta hub-sivulta)
+    -> None, ja ne raportoidaan omana "unknown"-lohkonaan eika oleteta tuoreiksi.
+    """
+    la, ko = e.get("logged_at"), e.get("kickoff")
+    if not la or not ko:
+        return None
+    try:
+        t_log = datetime.fromisoformat(str(la).replace("Z", "+00:00"))
+        t_ko = datetime.fromisoformat(str(ko).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return round((t_ko - t_log).total_seconds() / 3600, 1)
+
+
+def _by_lead(rows: list[dict]) -> dict:
+    """Gradatut rivit lead-ajan mukaan: mita record oikeasti mittaa.
+
+    fresh   = ennuste oli voimassa <= LEAD_FRESH_MAX_H ennen kickoffia (eli
+              sama luku jonka /api/predict antoi ottelun alla)
+    stale   = jaatynyt aiemmin (esikauden ennuste, ei sama jonka appi naytti)
+    unknown = ei logged_at-leimaa (WC-siemennys)
+    """
+    kori: dict[str, list[dict]] = {"fresh": [], "stale": [], "unknown": []}
+    for e in rows:
+        lh = lead_hours(e)
+        if lh is None:
+            kori["unknown"].append(e)
+        elif lh <= LEAD_FRESH_MAX_H:
+            kori["fresh"].append(e)
+        else:
+            kori["stale"].append(e)
+    out = {k: _metrics_block(v) for k, v in kori.items()}
+    out["fresh_max_lead_h"] = LEAD_FRESH_MAX_H
+    return out
+
+
 def _recent_view(rows: list[dict], recent_n: int) -> list[dict]:
     """Viimeisimmät ottelut rehellistä missit-näyttöä varten (uusin ensin)."""
     out = []
@@ -427,6 +475,8 @@ def _recent_view(rows: list[dict], recent_n: int) -> list[dict]:
             "away_team": e.get("away_team"),
             "predicted_winner": e.get("predicted_winner"),
             "p_winner": _winner_pct(e),
+            # Kuinka lahella kickoffia tama ennuste oli voimassa (h).
+            "lead_h": lead_hours(e),
             "most_likely_score": e.get("most_likely_score"),
             "actual_score": res["actual_score"],
             "actual_outcome": res["actual_outcome"],
@@ -489,6 +539,9 @@ def compute_aggregate(
         "all_time": all_time,
         "rolling": rolling,
         "by_competition": by_comp,
+        # Additiivinen: kertoo kuinka moni gradattu rivi oli tuore kickoffissa
+        # ja kuinka moni esikauden jaannos. Headline ei muutu tasta.
+        "by_lead": _by_lead(rows),
         "calibration": _calibration(rows),
         "recent": _recent_view(rows, recent_n),
     }

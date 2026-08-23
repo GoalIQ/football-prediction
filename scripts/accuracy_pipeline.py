@@ -6,11 +6,16 @@ Kolme vaihetta, kaikki idempotentteja:
              julkaistuista pre-match-kutsuista (40 ottelua = WC-hubin 21/40).
              Aja kerran — uudet rivit lisätään vain jos puuttuvat.
   log        Logaa mallin pre-match-ennuste tuleville OIKEILLE WC-otteluille
-             (football-data.org SCHEDULED/TIMED, vain ennen kickoffia). Lukitsee
-             ennusteen = ei muutu vaikka malli myöhemmin virkistetään.
+             (football-data.org SCHEDULED/TIMED, vain ennen kickoffia). Rivi
+             päivittyy kickoffiin asti (`refresh`), joka jäädyttää sen.
   reconcile  Hae FT-tulokset (football-data.org FINISHED) ja täytä toteutuneet
              logattuihin ennusteisiin → laske aggregaatti uudelleen.
-  run        log + reconcile (oletus päivittäisajoon).
+  refresh    Päivitä jo logattujen, vielä pelaamattomien otteluiden ennuste.
+             Kuuma ikkuna (kickoff <= ACC_REFRESH_WINDOW_H) joka ajolla +
+             rullaava kierto lopuille (ACC_REFRESH_SWEEP_MAX/ajo, vanhin
+             ensin) → myös kaukaiset ennustesivut seuraavat mallia.
+             Kickoff jäädyttää rivin — sen jälkeen siihen ei kosketa.
+  run        log + refresh + reconcile (oletus päivittäisajoon).
   regrade    Re-gradaa jo reconciloidut ottelut nykyisellä normilla.
              Gradausnormi = 90 MIN (Villen päätös 20.7 ilta): pudotuspeli
              joka oli tasan täysajalla = tasapeli (ET JA pilkut).
@@ -130,6 +135,68 @@ import os
 # Workflow'n oma kommentti lupasi paivastoin ("muuttuja puuttuu -> oletus").
 PREDICT_API_BASE = (os.environ.get("ACC_PREDICT_API_BASE", "").strip() or
                     "https://api.goaliq.app").rstrip("/")
+
+
+def _env_int(name: str, default: int, salli_nolla: bool = False) -> int:
+    """Ei-negatiivinen kokonaisluku ymparistosta. Roska -> oletus + varoitus."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        arvo = int(raw)
+    except ValueError:
+        print(f"VAROITUS: {name}='{raw}' ei ole kokonaisluku - kaytetaan {default}.")
+        return default
+    if arvo < 0 or (arvo == 0 and not salli_nolla):
+        print(f"VAROITUS: {name}='{raw}' ei ole sallittu - kaytetaan {default}.")
+        return default
+    return arvo
+
+
+# ---------------------------------------------------------------------------
+# PRE-KICKOFF REFRESH (23.8.2026, Villen havainto) - ennuste jaadytetaan
+# KICKOFFIIN eika siihen hetkeen jolloin ottelu ensi kertaa nahtiin.
+# ---------------------------------------------------------------------------
+# MITATTU 23.8 lokista (3197 rivia): log_domestic_matches logaa KOKO kauden
+# otteluohjelman heti kun FD julkaisee sen, ja upsert_prediction ei koskaan
+# ylikirjoita. Mediaani-lead logged_at -> kickoff oli 147 vrk, ja 22.8 pelatun
+# kierroksen rivit oli jaadytetty 1.8 (PL/PD/SA/FL1 21 vrk, BSA 36 vrk,
+# ELC/DED/PPL 7 vrk). Track record gradasi siis ESIKAUDEN mallia, kun taas
+# /api/predict - jonka mobiili ja SPA nayttavat - antoi tuoreen luvun.
+#
+#   Preston-Wolves 22.8 (ELC): loki koti 0.3672 / vieras 0.3339 (logattu 19.8),
+#   live-malli 23.8 vieras 0.4246 / koti 0.2844, toteuma 1-3.
+#
+# Korjaus: rivi paivitetaan joka ajolla kunnes kickoff, ja vasta kickoff
+# jaadyttaa sen. Pre-match-lukko ei katoa - se siirtyy oikeaan kohtaan.
+# Ikkuna rajaa kutsumaaran: vain ottelut joiden kickoff on <= WINDOW_H paassa.
+# 48 h + 3 h cron kestaa ~15 valiin jaanytta ajoa ennen kuin ottelu jaisi
+# ilman yhtaan refreshia (GitHub-schedule driftaa - ks. workflow'n kommentti).
+#
+# KAKSI TASOA (Villen tarkennus 23.8: "kaikki prediction-sivut, kaikki missa
+# lukemat"). Pelkka kickoff-ikkuna korjaisi track recordin mutta jattaisi
+# 1 100 ohjelmallista ennustesivua nayttamaan 1.8:n esikausilukuja, koska
+# build_prediction_pages lukee TATA lokia:
+#
+#   1) KUUMA IKKUNA - kickoff <= REFRESH_WINDOW_H: joka ajolla. Tama on se
+#      taso joka ratkaisee gradauksen (viimeinen arvo ennen kickoffia).
+#   2) RULLAAVA KIERTO - kaikki muut pelaamattomat, vanhin logged_at ensin,
+#      katto per ajo. 3 h cronilla ~2 000 rivia/vrk eli koko loki (~3 000
+#      avointa) kiertaa vuorokaudessa - sivu on siis korkeintaan ~1 vrk
+#      jaljessa mallia, ei 21 vrk.
+REFRESH_WINDOW_H = _env_int("ACC_REFRESH_WINDOW_H", 48)
+REFRESH_MAX = _env_int("ACC_REFRESH_MAX", 150)
+# 0 = kierto pois paalta (kuuma ikkuna jaa yha voimaan).
+REFRESH_SWEEP_MAX = _env_int("ACC_REFRESH_SWEEP_MAX", 250, salli_nolla=True)
+# Ala koske riviin jota juuri paivitettiin - muuten kierto jauhaisi samoja
+# lahikickoffeja ja kaukaiset sivut eivat paivittyisi koskaan.
+REFRESH_SWEEP_MIN_AGE_H = _env_int("ACC_REFRESH_SWEEP_MIN_AGE_H", 20)
+
+# Kentat jotka refresh ylikirjoittaa. match_id/kickoff/competition eivat muutu.
+REFRESH_FIELDS = (
+    "p_home", "p_draw", "p_away", "xg_home", "xg_away",
+    "most_likely_score", "predicted_winner",
+)
 
 
 def enabled_domestic_codes() -> list[str]:
@@ -476,6 +543,130 @@ def log_domestic_matches(
     return added, skipped
 
 
+def _refreshable(e: dict, sallitut: set, now: datetime) -> datetime | None:
+    """Kickoff jos rivi on paivitettavissa, muuten None.
+
+    Ehdot: ei tulosta, ei void, kilpailu kytketty, mallinimet tallella ja
+    kickoff viela edessa. Kickoffin jalkeen rivissa on pre-match-lukko.
+    """
+    if e.get("result") or e.get("void"):
+        return None
+    if e.get("competition") not in sallitut:
+        return None
+    if not e.get("league") or not e.get("home_team") or not e.get("away_team"):
+        return None
+    try:
+        kickoff = datetime.fromisoformat(
+            str(e.get("kickoff") or "").replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    return kickoff if kickoff > now else None
+
+
+def _age_h(e: dict, now: datetime) -> float:
+    """Tunteja rivin viimeisesta paivityksesta. Ei leimaa -> aareton (kiireisin)."""
+    try:
+        t = datetime.fromisoformat(
+            str(e.get("logged_at") or "").replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return float("inf")
+    return (now - t).total_seconds() / 3600
+
+
+def _apply_refresh(rivit: list[dict], predict_fn) -> tuple[int, int, list[str]]:
+    """Aja predict jokaiselle riville ja kirjoita tulos. Epaonnistunut kutsu
+    JATTAA vanhan ennusteen paikalleen (ei tyhjenna rivia)."""
+    paivitetyt = ohitetut = 0
+    kaannokset: list[str] = []
+    for e in rivit:
+        pred = predict_fn(e["league"], e["home_team"], e["away_team"])
+        if pred is None:
+            ohitetut += 1
+            continue
+        vanha_voittaja = e.get("predicted_winner")
+        # first_logged_at sailoo alkuperaisen: sivun "logged on" seuraa tuoretta
+        # ennustetta, mutta tieto ensimmaisesta julkaisusta ei katoa.
+        e.setdefault("first_logged_at", e.get("logged_at"))
+        e.update({k: pred.get(k) for k in REFRESH_FIELDS})
+        e["logged_at"] = acc._now_iso()
+        e["refreshed_at"] = e["logged_at"]
+        e["refresh_count"] = int(e.get("refresh_count") or 0) + 1
+        paivitetyt += 1
+        if vanha_voittaja != e.get("predicted_winner"):
+            kaannokset.append(
+                f"  {e.get('competition')} {e['home_team']}-{e['away_team']} "
+                f"({str(e.get('kickoff'))[:16]}): {vanha_voittaja} -> "
+                f"{e.get('predicted_winner')}")
+    return paivitetyt, ohitetut, kaannokset
+
+
+def refresh_prematch_predictions(
+    log: dict,
+    predict_fn,
+    codes: list[str] | None = None,
+    now: datetime | None = None,
+    window_h: int | None = None,
+    limit: int | None = None,
+    sweep_max: int | None = None,
+    sweep_min_age_h: float | None = None,
+) -> tuple[int, int]:
+    """Paivita logattujen, viela pelaamattomien otteluiden ennuste.
+
+    Kaksi tasoa (ks. REFRESH_WINDOW_H-lohko ylla):
+      kuuma  - kickoff <= window_h paassa, joka ajolla
+      kierto - loput pelaamattomat, vanhin logged_at ensin, katto sweep_max
+
+    Kickoffin jalkeen riviin EI kosketa. Palauttaa (paivitetyt, ohitetut).
+    predict_fn injektoidaan -> testit ajavat ilman verkkoa.
+    """
+    now = now or datetime.now(timezone.utc)
+    window_h = REFRESH_WINDOW_H if window_h is None else window_h
+    limit = REFRESH_MAX if limit is None else limit
+    sweep_max = REFRESH_SWEEP_MAX if sweep_max is None else sweep_max
+    sweep_min_age_h = (REFRESH_SWEEP_MIN_AGE_H if sweep_min_age_h is None
+                       else sweep_min_age_h)
+    sallitut = set(codes if codes is not None else DOMESTIC_COMPETITIONS)
+
+    kuumat: list[tuple[datetime, dict]] = []
+    kylmat: list[tuple[float, dict]] = []
+    for e in log["predictions"]:
+        kickoff = _refreshable(e, sallitut, now)
+        if kickoff is None:
+            continue
+        if (kickoff - now).total_seconds() <= window_h * 3600:
+            kuumat.append((kickoff, e))
+        elif _age_h(e, now) >= sweep_min_age_h:
+            kylmat.append((-_age_h(e, now), e))
+
+    kuumat.sort(key=lambda t: t[0])          # lahin kickoff ensin
+    kylmat.sort(key=lambda t: t[0])          # vanhin logged_at ensin
+
+    # EI HILJAISTA KATTOA: pudotetut sanotaan aaneen molemmilla tasoilla.
+    if len(kuumat) > limit:
+        print(f"VAROITUS: REFRESH-ikkunassa {len(kuumat)} ottelua, katto {limit} "
+              f"(ACC_REFRESH_MAX) - {len(kuumat) - limit} jaa seuraavaan ajoon.")
+        kuumat = kuumat[:limit]
+    jonossa = len(kylmat)
+    if jonossa > sweep_max:
+        kylmat = kylmat[:sweep_max]
+
+    p1, o1, k1 = _apply_refresh([e for _, e in kuumat], predict_fn)
+    print(f"REFRESH[kuuma]: {p1} ennustetta paivitetty (kickoff <= {window_h} h)"
+          + (f", {o1} ohitettu - ei ennustetta." if o1 else "."))
+    p2, o2, k2 = _apply_refresh([e for _, e in kylmat], predict_fn)
+    print(f"REFRESH[kierto]: {p2}/{jonossa} paivitetty (katto {sweep_max}, "
+          f"vanhin ensin)" + (f", {o2} ohitettu - ei ennustetta." if o2 else ".")
+          + (f" {jonossa - len(kylmat)} jaa seuraavaan ajoon."
+             if jonossa > len(kylmat) else ""))
+
+    kaannokset = k1 + k2
+    if kaannokset:
+        print(f"REFRESH: {len(kaannokset)} 1X2-kutsua kaantyi:")
+        for rivi in kaannokset:
+            print(rivi)
+    return p1 + p2, o1 + o2
+
+
 def _disp_score(m: dict) -> tuple[int, int] | None:
     """NÄYTETTÄVÄ FT-tulos ilman rangaistuspotkuja (reg + jatkoaika).
 
@@ -671,8 +862,9 @@ def cmd_regrade(log: dict, matches: list[dict] | None) -> int:
 
 def main(argv: list[str]) -> int:
     cmd = argv[1] if len(argv) > 1 else "run"
-    if cmd not in ("seed", "log", "reconcile", "run", "regrade"):
-        print(f"Tuntematon komento '{cmd}'. Käytä: seed | log | reconcile | run | regrade")
+    if cmd not in ("seed", "log", "refresh", "reconcile", "run", "regrade"):
+        print(f"Tuntematon komento '{cmd}'. Käytä: "
+              f"seed | log | refresh | reconcile | run | regrade")
         return 2
 
     log = acc.load_log()
@@ -703,6 +895,15 @@ def main(argv: list[str]) -> int:
                 log_domestic_matches(
                     log, code, dm, teams, domestic_prematch_prediction
                 )
+        if cmd in ("log", "refresh", "run"):
+            # Pre-kickoff refresh: logatut rivit paivitetaan kickoffiin asti
+            # (ks. REFRESH_WINDOW_H yla). Ajetaan logauksen JALKEEN, jotta
+            # samassa ajossa lisatty lahikickoff on jo mukana ehdokkaissa.
+            # EI FD-hakua -> `refresh` yksinaan ei kuluta FD-kiintiota.
+            refresh_prematch_predictions(
+                log, domestic_prematch_prediction,
+                codes=enabled_domestic_codes(),
+            )
         if cmd in ("reconcile", "run"):
             # Yhdistetty lista: FD:n ottelu-id:t ovat globaalisti uniikkeja →
             # sama fd-<id>-avain toimii kaikille kilpailuille.

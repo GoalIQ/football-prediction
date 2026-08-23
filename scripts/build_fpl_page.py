@@ -409,7 +409,7 @@ def track_record_sentences(c: dict) -> list[str]:
     return [
         (
             f"The GoalIQ model has logged {c['acc_logged']} pre-match predictions, "
-            f"before kickoff, with no edits afterwards, starting with the 2026 "
+            f"before kickoff and never edited after kick-off, starting with the 2026 "
             f"World Cup and now covering domestic leagues."
         ),
         (
@@ -814,7 +814,7 @@ def record_table_html(preds: list[dict], c: dict) -> str:
         + '<div class="rec-scroll"><table>'
         + "<caption style=\"caption-side:bottom;font-size:13px;opacity:.7;"
         + "text-align:left;padding:8px 2px;\">Every graded GoalIQ pre-match "
-        + "prediction, newest first. Logged before kick-off, no edits afterwards.</caption>"
+        + "prediction, newest first. Logged before kick-off, never edited after it.</caption>"
         + '<thead><tr><th scope="col" class="m-hide">Date</th>'
         + '<th scope="col" class="m-hide">Competition</th>'
         + '<th scope="col">Match</th><th scope="col">Pick</th>'
@@ -1206,7 +1206,7 @@ def accuracy_dataset_ld(c: dict, page_url: str) -> dict:
         "name": "GoalIQ football prediction accuracy log (pre-match, publicly tracked)",
         "description": (
             f"Every GoalIQ model prediction is logged before kickoff and "
-            f"reconciled against the final result, with no edits afterwards. "
+            f"reconciled against the final result and never edited after kick-off. "
             f"Current aggregate: {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
             f"across {c['acc_n']} completed matches. Includes per-match win/draw/loss "
             f"probabilities, expected goals (xG) and reconciled outcomes."
