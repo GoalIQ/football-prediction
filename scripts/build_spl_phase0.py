@@ -489,7 +489,7 @@ def main() -> int:
     print("\n[5/5] Kirjoitetaan JSON...")
     out = {
         "meta": {
-            "product": "GoalIQ SPL Fantasy Phase 0 — clean sheet % + model FDR",
+            "product": "GoalIQ SPL Fantasy Phase 0 - clean sheet % + model FDR",
             "available": True,
             "phase": 0,
             "league": "SAU-Saudi Pro League",
@@ -501,7 +501,7 @@ def main() -> int:
                 f"GoalIQ Dixon-Coles, SPL results (ESPN) {seasons}"
                 + (f" incl. {len(inseason)} played 26/27 matches from the "
                    "RSL Fantasy feed" if inseason else "")
-                + f" — goals-based fit (decay={FIT_DECAY}, bayes={FIT_BAYES}); "
+                + f" - goals-based fit (decay={FIT_DECAY}, bayes={FIT_BAYES}); "
                 "no free per-match xG feed exists for the SPL"
             ),
             "cs_method": "P(opponent scores 0) from the DC score matrix (tau corrected)",

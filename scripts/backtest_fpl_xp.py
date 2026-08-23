@@ -66,6 +66,16 @@ MINUTES_CAVEAT = (
     "historiallisena. Gate mittaa siis minuuttimallin, ei koko builderia."
 )
 
+# 23.8.2026 (BACKEND-FI-JULKISESSA-PAYLOADISSA): ylla oleva teksti on
+# SISAINEN raportti. Se paatyi kuitenkin `data/fpl_xp_accuracy.json`:n
+# metaan, jonka `/api/fantasy/rate-team` palauttaa sellaisenaan -> suomea ja
+# em dash julkisella englanninkielisella pinnalla. Julkiselle pinnalle oma
+# englanninkielinen pari; sisainen raportti saa jaada suomeksi.
+MINUTES_CAVEAT_PUBLIC = (
+    "minutes_model (production path, n_last=6, per-player gameweeks). Does not include the builder's live layers: apply_availability (FPL availability flag) and club/position depth adjustment, neither of which exists historically. The gate therefore measures the minutes model, not the whole builder."
+)
+POPULATION_PUBLIC = "players with minutes (minutes > 0)"
+
 
 def seasons_for(season_key: str) -> list[str]:
     """[edellinen, backtestattava] kausi DC-fittiä varten.
@@ -865,9 +875,11 @@ def main() -> int:
                 "method": ("walk-forward backtest on the completed season; the "
                            "model only ever saw gameweeks before the one it "
                            "predicted"),
-                "population": report["gate"].get("population"),
+                # Julkinen pinta = englanti, ei em dashia. Sisainen
+                # report-lohko pitaa suomenkielisen sanamuotonsa.
+                "population": POPULATION_PUBLIC,
                 "gate_passed": bool(report["gate"]["PASS"]),
-                "minutes_path": report["minutes_path"],
+                "minutes_path": MINUTES_CAVEAT_PUBLIC,
             },
             "played": {
                 "gw_range": agg["gw_range"], "n_gws": agg["n_gws"],

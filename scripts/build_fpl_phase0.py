@@ -637,7 +637,7 @@ def main() -> int:
         )
     out = {
         "meta": {
-            "product": "GoalIQ Fantasy Phase 0 — clean sheet % + model FDR",
+            "product": "GoalIQ Fantasy Phase 0 - clean sheet % + model FDR",
             "available": True,
             "phase": 0,
             "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),

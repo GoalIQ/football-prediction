@@ -4,9 +4,9 @@
   "generated_at": "2026-08-10T06:52:05",
   "season": "2526",
   "method": "walk-forward backtest on the completed season; the model only ever saw gameweeks before the one it predicted",
-  "population": "pelanneet (minuutit > 0)",
+  "population": "players with minutes (minutes > 0)",
   "gate_passed": true,
-  "minutes_path": "minutes_model (tuotannon polku, n_last=6, pelaajakohtaiset kierrokset). EI sisällä builderin live-kerroksia: apply_availability (FPL:n saatavuuslippu) ja klubi+positio-syvyyskorjaus — kumpaakaan ei ole historiallisena. Gate mittaa siis minuuttimallin, ei koko builderia."
+  "minutes_path": "minutes_model (production path, n_last=6, per-player gameweeks). Does not include the builder's live layers: apply_availability (FPL availability flag) and club/position depth adjustment, neither of which exists historically. The gate therefore measures the minutes model, not the whole builder."
  },
  "played": {
   "gw_range": "2-38",

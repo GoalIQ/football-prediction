@@ -238,6 +238,119 @@ def scan_openapi() -> list[tuple[str, str]]:
     return osumat
 
 
+# ---------------------------------------------------------------------------
+# JULKISET JSON-ARTEFAKTIT (23.8.2026, BACKEND-FI-JULKISESSA-PAYLOADISSA)
+# ---------------------------------------------------------------------------
+# Portilla oli sama sokea piste kuin 16.8 openapi.jsonin kanssa: se skannasi
+# HTML:n ja SPA:n, muttei sita mita API palauttaa `data/`-artefakteista
+# SELLAISENAAN. Mitattu 23.8 tuotannosta:
+#
+#   /api/fantasy/rate-team -> meta.projection_accuracy.meta.population
+#       = "pelanneet (minuutit > 0)"
+#   ...                    -> meta.projection_accuracy.meta.minutes_path
+#       = suomenkielinen sisainen huomautus + em dash
+#
+# Naita ei renderoinut mikaan pinta viela, mutta `RivalPanel.tsx` tulostaa jo
+# `meta.method`in raakana — ensimmainen vastaava komponentti olisi vuotanut
+# suomen ulos. Sama vikaluokka kuin openapi 17.8.
+#
+# HUOM: aiempi saanto (em dash + aou-umlautit) EI olisi napannut merkkijonoa
+# "pelanneet (minuutit > 0)" — siina ei ole kumpaakaan. Siksi tassa on myos
+# suomen sanalista. Sanalista vanhenee (kirjattu ansa), joten se on pidettava
+# kapeana ja korkean tarkkuuden sanoissa, ja negatiivinen kontrolli ajetaan.
+PUBLIC_JSON = [
+    "data/accuracy.json",
+    "data/fpl_defcon_gw.json",
+    "data/fpl_player_leaders.json",
+    "data/fpl_price_watch.json",
+    "data/fpl_projections_phase0.json",
+    "data/fpl_why.json",
+    "data/fpl_xp_accuracy.json",
+    "data/fpl_xp_projections.json",
+    "data/fpl_price_accuracy.json",
+    "data/fpl_minutes_validation.json",
+    "data/spl_projections_phase0.json",
+    "data/spl_xp_projections.json",
+    "data/wc_model.json",
+]
+
+_FI_SANAT = re.compile(
+    r"\b(pelanneet|pelattu|pelaaja\w*|joukkue\w*|kierros\w*|ottelu\w*|kausi|"
+    r"kaude\w*|minuutit|tuotannon|sisalla|sisällä|kumpaakaan|historiallisena|"
+    r"saatavuuslippu|syvyyskorjaus|vahintaan|vähintään|selkeasti|selkeästi|"
+    r"keskiarvo|puuttuu|vanhentunut|paivittyy|päivittyy|lahde|lähde|ennuste\w*|"
+    r"arvio|jokainen|kaikki)\b",
+    re.IGNORECASE,
+)
+
+
+# Kopio-kentat: naissa arvo on TEKSTIA jonka kayttaja lukee. Muissa kentissa
+# arvo on DATAA (pelaajien ja seurojen nimia), ja niissa skandinaaviset merkit
+# ovat oikein: Lindelöf, Schär, Röhl, Abdülkadir Ömür. Ensimmainen versio
+# tasta portista huusi niista 200 kertaa — sanalista ilman kohdennusta on
+# hyodyton portti.
+_COPY_AVAIMET = re.compile(
+    r"\.(meta|note|notes|method|methodology|description|desc|disclaimer|caveat|"
+    r"population|product|label|text|title|summary|explanation|why|reason|"
+    r"minutes_path|criteria|baseline|footnote|source_note)",
+    re.IGNORECASE,
+)
+
+
+def _json_syy(teksti: str, polku: str = "") -> str | None:
+    """Miksi tama merkkijono ei kelpaa julkiselle englanninkieliselle pinnalle?
+
+    Em dash ja suomen sanat tarkistetaan KAIKISTA kentista (kumpikaan ei esiinny
+    pelaajanimissa). Skandinaaviset merkit vain kopio-kentista, koska nimissa ne
+    ovat oikein.
+    """
+    if any(d in teksti for d in DASHES):
+        return "em/en dash"
+    m = _FI_SANAT.search(teksti)
+    if m:
+        return f"suomenkielinen sana '{m.group(0)}'"
+    if _COPY_AVAIMET.search(polku) and re.search(r"[äöåÄÖÅ]", teksti):
+        return "skandinaaviset merkit kopio-kentassa"
+    return None
+
+
+def scan_public_json(root: Path | None = None) -> list[tuple[str, str, str]]:
+    """(tiedosto, polku_dokumentissa, syy) jokaiselle vuotaneelle merkkijonolle.
+
+    Puuttuva tiedosto ei ole vika (kaikkia artefakteja ei ole joka koneella),
+    mutta RIKKINAINEN on: fail-closed, koska poikkeus on huono todiste
+    "ei vuotoja".
+    """
+    import json as _json
+
+    root = root or ROOT
+    osumat: list[tuple[str, str, str]] = []
+    for rel in PUBLIC_JSON:
+        f = root / rel
+        if not f.exists():
+            continue
+        try:
+            doc = _json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            osumat.append((rel, "<tiedosto>", f"ei luettavissa: {type(e).__name__}"))
+            continue
+
+        def walk(o, polku: str = "") -> None:
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    walk(v, f"{polku}.{k}")
+            elif isinstance(o, list):
+                for i, v in enumerate(o):
+                    walk(v, f"{polku}[{i}]")
+            elif isinstance(o, str):
+                syy = _json_syy(o, polku)
+                if syy:
+                    osumat.append((rel, polku, f"{syy}: {' '.join(o.split())[:120]}"))
+
+        walk(doc)
+    return osumat
+
+
 def main() -> int:
     targets: list[Path] = []
     for g in HTML_GLOBS:
@@ -297,11 +410,21 @@ def main() -> int:
         )
         return 1
 
+    json_hits = scan_public_json()
+    if json_hits:
+        print(f"check_copy_style FAIL - {len(json_hits)} suomenkielista tai "
+              f"em dash -merkkijonoa JULKISISSA JSON-artefakteissa "
+              f"({len(PUBLIC_JSON)} tiedostoa skannattu):")
+        for tiedosto, polku, syy in json_hits[:20]:
+            print(f"  {tiedosto}{polku}  <- {syy}")
+        return 1
+
     if not all_hits:
         print(
             f"check_copy_style OK - 0 em dashia copyssa ({len(targets)} tiedostoa), "
             f"0 kattamatonta mallilupausta ({len(claim_targets)} pintaa), "
-            f"0 vuotoa openapi.jsonissa"
+            f"0 vuotoa openapi.jsonissa, "
+            f"0 vuotoa {len(PUBLIC_JSON)}:ssa julkisessa JSON-artefaktissa"
         )
         return 0
 

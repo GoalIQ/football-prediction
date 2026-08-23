@@ -27,7 +27,7 @@ def empty_phase0() -> dict:
     tyhjän tilan (available=False), ei kaadu."""
     return {
         "meta": {
-            "product": "GoalIQ Fantasy Phase 0 — clean sheet % + model FDR",
+            "product": "GoalIQ Fantasy Phase 0 - clean sheet % + model FDR",
             "available": False,
             "season": None,
             "generated_at": None,

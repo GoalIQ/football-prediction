@@ -1,6 +1,6 @@
 {
   "meta": {
-    "product": "GoalIQ SPL Fantasy Phase 0 — clean sheet % + model FDR",
+    "product": "GoalIQ SPL Fantasy Phase 0 - clean sheet % + model FDR",
     "available": true,
     "phase": 0,
     "league": "SAU-Saudi Pro League",
@@ -8,7 +8,7 @@
     "season": "2026/27",
     "source": "spl-fantasy-api",
     "fixture_source": "RSL Fantasy official API (fantasy.spl.com.sa)",
-    "team_strength_source": "GoalIQ Dixon-Coles, SPL results (ESPN) ['2425', '2526', '2627'] incl. 9 played 26/27 matches from the RSL Fantasy feed — goals-based fit (decay=0.0035, bayes=2.0); no free per-match xG feed exists for the SPL",
+    "team_strength_source": "GoalIQ Dixon-Coles, SPL results (ESPN) ['2425', '2526', '2627'] incl. 9 played 26/27 matches from the RSL Fantasy feed - goals-based fit (decay=0.0035, bayes=2.0); no free per-match xG feed exists for the SPL",
     "cs_method": "P(opponent scores 0) from the DC score matrix (tau corrected)",
     "fdr_method": "Model based 1-5: 0.55*rank(1 - win%) + 0.45*rank(expected goals conceded), quintile bucket across every team fixture of the season",
     "att_fdr_method": "Attack FDR 1-5: rank(own expected xG in the fixture) inverted (little xG of your own means a hard fixture), quintile bucket across every team fixture. 1 = easiest to attack against, 5 = hardest.",

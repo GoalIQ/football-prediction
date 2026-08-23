@@ -496,7 +496,7 @@ def main() -> int:
     print("\n[6/6] Kirjoitetaan JSON...")
     out = {
         "meta": {
-            "product": "GoalIQ SPL Fantasy — expected points (xP)",
+            "product": "GoalIQ SPL Fantasy - expected points (xP)",
             "available": True,
             "league": "SAU-Saudi Pro League",
             "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),
@@ -508,7 +508,7 @@ def main() -> int:
                 f"GoalIQ Dixon-Coles, SPL results (ESPN) {seasons}"
                 + (f" incl. {len(inseason)} played 26/27 matches from the "
                    "RSL Fantasy feed" if inseason else "")
-                + " — goals-based fit"
+                + " - goals-based fit"
             ),
             "attack_basis": (
                 "Realized goal/assist rates per 90 (shrunk to position priors). "
@@ -520,7 +520,7 @@ def main() -> int:
                 "history or starts). Two-mode estimate (start ~86min / cameo "
                 "~20min) + depth normalization to a typical XI; confidence is "
                 "'med' at best. Players with no RSL history use price-order "
-                "role priors measured on FPL data (0.47/0.21/0.05) — an "
+                "role priors measured on FPL data (0.47/0.21/0.05), an "
                 "uncalibrated transfer, stated here deliberately."
             ),
             "promoted_baseline_teams": promoted,

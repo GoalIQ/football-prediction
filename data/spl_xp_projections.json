@@ -1,15 +1,15 @@
 {
  "meta": {
-  "product": "GoalIQ SPL Fantasy — expected points (xP)",
+  "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
   "generated_at": "2026-08-23T07:05:36",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
-  "team_strength_source": "GoalIQ Dixon-Coles, SPL results (ESPN) ['2425', '2526', '2627'] incl. 9 played 26/27 matches from the RSL Fantasy feed — goals-based fit",
+  "team_strength_source": "GoalIQ Dixon-Coles, SPL results (ESPN) ['2425', '2526', '2627'] incl. 9 played 26/27 matches from the RSL Fantasy feed - goals-based fit",
   "attack_basis": "Realized goal/assist rates per 90 (shrunk to position priors). No free per-player xG feed exists for the SPL; this is NOT an xG-based projection and public copy must not claim it is.",
-  "minutes_basis": "Season-aggregate minutes only (the RSL API has no per-round history or starts). Two-mode estimate (start ~86min / cameo ~20min) + depth normalization to a typical XI; confidence is 'med' at best. Players with no RSL history use price-order role priors measured on FPL data (0.47/0.21/0.05) — an uncalibrated transfer, stated here deliberately.",
+  "minutes_basis": "Season-aggregate minutes only (the RSL API has no per-round history or starts). Two-mode estimate (start ~86min / cameo ~20min) + depth normalization to a typical XI; confidence is 'med' at best. Players with no RSL history use price-order role priors measured on FPL data (0.47/0.21/0.05), an uncalibrated transfer, stated here deliberately.",
   "promoted_baseline_teams": [
    "Abha",
    "Al Diriyah",
