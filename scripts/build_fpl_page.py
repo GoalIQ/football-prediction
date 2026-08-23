@@ -484,7 +484,8 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "(FDR), rate my team with a captain pick, a draft "
                 "rater (pick 15, no team ID needed), the fit checker (lock "
                 "must-have players, the model builds the best valid 15 around "
-                "them), price watch, a season-long Beat the model scoreboard "
+                "them), price watch, a per-gameweek points table where each player's actual FPL points sit next to the expected points the model published before that deadline, "
+                "a season-long Beat the model scoreboard "
                 "(log your calls before the deadline and they get graded "
                 "against the model's every gameweek), the season race "
                 "against the model's own squad, which is locked before every "
@@ -1875,6 +1876,10 @@ one refreshes on the same schedule. No login, no paywall.</p>
   numbers behind the point returns.</li>
   <li><a href="/fpl/defcon">DefCon leaders</a>: defensive contribution ranked
   under the current scoring rules.</li>
+  <li><a href="/fpl/points">Points: projected vs actual</a>: every player's
+  actual gameweek points next to the expected points the model published
+  before that deadline, with goals, assists, DefCon, bonus, BPS, xG and xA
+  broken out.</li>
   <li><a href="/fpl/stats">Player stats</a>: shots, shots in the box, key
   passes, tackles and the rest of the raw numbers in one filterable table,
   per 90 or per start, with CSV export.</li>
@@ -1931,6 +1936,7 @@ predictions and analytics. Not betting advice.</p>
   <a href="/fpl/price-changes">Price changes</a> &middot;
   <a href="/fpl/xg-leaders">xG leaders</a> &middot;
   <a href="/fpl/defcon">DefCon leaders</a> &middot;
+  <a href="/fpl/points">Points vs projection</a> &middot;
   <a href="/fpl/stats">Player stats</a> &middot;
   <a href="/fpl/defence">Defence profiles</a> &middot;
   <a href="/fpl/club-best">Best per club</a> &middot;
