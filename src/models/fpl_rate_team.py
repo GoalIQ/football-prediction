@@ -1455,6 +1455,8 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "projection_accuracy": _load_xp_accuracy(),
             "note": ("GoalIQ model projections, not FPL official expected "
                      "points. For fun and planning, not betting advice."),
+            # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaa tunniste kaannosta varten.
+            "note_code": "rate_team.note.model_projections",
         },
         "team": {
             "players": [{

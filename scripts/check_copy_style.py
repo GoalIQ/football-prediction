@@ -351,6 +351,60 @@ def scan_public_json(root: Path | None = None) -> list[tuple[str, str, str]]:
     return osumat
 
 
+# ---------------------------------------------------------------------------
+# KAANNETTAVUUS: proosakentta ilman vakaata tunnistetta (BACKEND-EN-VUOTAA-ES-PT)
+# ---------------------------------------------------------------------------
+# Mitattu 23.8: `meta.note`, `meta.disclaimer`, `meta.method`, `meta.caveat` ja
+# `meta.excluded_note` renderoidaan RAAKANA yhdessatoista paikassa mobiilissa ja
+# SPA:ssa (esim. `PriceWatch.svelte:192`, `RivalPanel.tsx:157`,
+# `FantasyTools.tsx:4981`). Espanjan- tai portugalinkielinen kayttaja saa siis
+# kaannetyn otsikon ja englanninkielisen alaviitteen.
+#
+# Oikea korjaus on kaannokset, mutta ne ovat UUTTA JULKISTA TEKSTIA ja kuuluvat
+# julkaisuporttiin. Valivaihe joka ei vaadi yhtaan uutta lausetta: backend
+# lahettaa proosan rinnalle VAKAAN tunnisteen, jolloin klientti voi kaantaa sen
+# omasta i18n-tiedostostaan ja proosa jaa varakieleksi.
+#
+# Tama portti pitaa huolen siita ettei velka kasva: uusi proosakentta ilman
+# tunnistetta punaa ajon. Ilman porttia seuraava kentta lisattaisiin taas
+# pelkkana englantina, eika kukaan huomaisi ennen kuin kayttaja valittaa.
+PROSE_META_KEYS = ("note", "disclaimer", "caveat", "method", "excluded_note")
+
+# Tunniste on TUNNISTE eika lause: piste-erotellut sanat, ei valilyonteja.
+_CODE_MUOTO = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
+
+
+def scan_meta_codes(root: Path | None = None) -> list[tuple[str, str, str]]:
+    """(tiedosto, kentta, syy) jokaiselle proosakentalle ilman kelvollista koodia."""
+    import json as _json
+
+    root = root or ROOT
+    puutteet: list[tuple[str, str, str]] = []
+    for rel in PUBLIC_JSON:
+        f = root / rel
+        if not f.exists():
+            continue
+        try:
+            doc = _json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue  # scan_public_json raportoi rikkinaisen tiedoston
+        meta = doc.get("meta") if isinstance(doc, dict) else None
+        if not isinstance(meta, dict):
+            continue
+        for avain in PROSE_META_KEYS:
+            arvo = meta.get(avain)
+            if not isinstance(arvo, str) or not arvo.strip():
+                continue
+            koodi = meta.get(f"{avain}_code")
+            if not koodi:
+                puutteet.append((rel, f"meta.{avain}",
+                                 f"proosa ilman {avain}_code-paria"))
+            elif not (isinstance(koodi, str) and _CODE_MUOTO.match(koodi)):
+                puutteet.append((rel, f"meta.{avain}_code",
+                                 f"ei ole tunniste: {str(koodi)[:60]!r}"))
+    return puutteet
+
+
 def main() -> int:
     targets: list[Path] = []
     for g in HTML_GLOBS:
@@ -410,6 +464,14 @@ def main() -> int:
         )
         return 1
 
+    code_gaps = scan_meta_codes()
+    if code_gaps:
+        print(f"check_copy_style FAIL - {len(code_gaps)} kaannettavaa "
+              f"proosakenttaa ilman vakaata tunnistetta:")
+        for tiedosto, kentta, syy in code_gaps:
+            print(f"  {tiedosto} {kentta}  <- {syy}")
+        return 1
+
     json_hits = scan_public_json()
     if json_hits:
         print(f"check_copy_style FAIL - {len(json_hits)} suomenkielista tai "
@@ -424,7 +486,8 @@ def main() -> int:
             f"check_copy_style OK - 0 em dashia copyssa ({len(targets)} tiedostoa), "
             f"0 kattamatonta mallilupausta ({len(claim_targets)} pintaa), "
             f"0 vuotoa openapi.jsonissa, "
-            f"0 vuotoa {len(PUBLIC_JSON)}:ssa julkisessa JSON-artefaktissa"
+            f"0 vuotoa {len(PUBLIC_JSON)}:ssa julkisessa JSON-artefaktissa, "
+            f"0 proosakenttaa ilman kaannostunnistetta"
         )
         return 0
 

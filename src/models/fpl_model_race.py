@@ -26,6 +26,13 @@ NOTE_NOT_STARTED = ("The model's first squad is locked before the GW1 "
 NOTE_NO_ENTRY = ("Add your FPL team ID to see your own line against the "
                  "model.")
 
+# BACKEND-EN-VUOTAA-ES-PT (23.8): jokaisella kayttajalle nakyvalla proosalla on
+# vakaa tunniste, jotta es/pt-klientti voi kaantaa sen omasta i18n:staan. Proosa
+# jaa paikalleen varakielena - tama on additiivinen eika riko yhtaan klienttia.
+CODE_NOT_STARTED = "model_race.note.not_started"
+CODE_NO_ENTRY = "model_race.note.no_entry"
+CODE_NO_OVERLAP = "model_race.note.no_overlap"
+
 
 def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
     """FPL entry/{id}/history/ → {gw: {"points": int, "bench": int}}.
@@ -57,7 +64,8 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     if not rows:
         return {
             "meta": {"available": False, "graded_gws": 0, "masked": False,
-                     "model_plays_chips": False, "note": NOTE_NOT_STARTED},
+                     "model_plays_chips": False, "note": NOTE_NOT_STARTED,
+                     "note_code": CODE_NOT_STARTED},
             "totals": {"model": 0, "you": None, "diff": None},
             "gameweeks": [],
         }
@@ -104,11 +112,16 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
         out_rows.append(row)
 
     note = None
+    note_code = None
     if not has_entry:
         note = NOTE_NO_ENTRY
+        note_code = CODE_NO_ENTRY
     elif compared == 0:
-        note = ("No overlapping gameweeks yet — your history starts after "
+        # 23.8: em dash pois. Julkinen API-payload on copy-pintaa siina missa
+        # HTML, ja em dash on kielletty copyssa.
+        note = ("No overlapping gameweeks yet: your history starts after "
                 "the model's first graded round.")
+        note_code = CODE_NO_OVERLAP
 
     return {
         "meta": {
@@ -118,6 +131,7 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "masked": not premium,
             "model_plays_chips": False,
             "note": note,
+            "note_code": note_code,
         },
         "totals": {
             "model": model_total,

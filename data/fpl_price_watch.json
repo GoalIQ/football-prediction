@@ -2,13 +2,14 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-23T09:24:35Z",
-  "total_players": 9340727,
+  "generated_at": "2026-08-23T09:50:13Z",
+  "total_players": 9342659,
   "n_players_scanned": 604,
-  "n_with_transfer_activity": 600,
+  "n_with_transfer_activity": 601,
   "source": "FPL official price projection",
   "official_projection": true,
-  "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it."
+  "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it.",
+  "disclaimer_code": "price_watch.disclaimer.official"
  },
  "risers": [
   {
@@ -17,14 +18,27 @@
    "team": 4,
    "now_cost": 5.5,
    "status": "rising_watch",
-   "confidence": 0.21,
-   "progress_pct": 21.4,
-   "net_event": 38239,
+   "confidence": 0.22,
+   "progress_pct": 21.7,
+   "net_event": 38837,
    "already_changed_today": false,
    "eta_days": 2
   }
  ],
- "fallers": [],
+ "fallers": [
+  {
+   "id": 99,
+   "web_name": "Milambo",
+   "team": 4,
+   "now_cost": 5.0,
+   "status": "falling_watch",
+   "confidence": 0.02,
+   "progress_pct": 2.2,
+   "net_event": -4,
+   "already_changed_today": false,
+   "eta_days": 2
+  }
+ ],
  "prices": {
   "1": 60,
   "2": 50,

@@ -3,7 +3,7 @@
   "source": "fpl_xp_backtest_2026-08-10.json",
   "generated_at": "2026-08-10T06:52:05",
   "season": "2526",
-  "method": "walk-forward backtest on the completed season; the model only ever saw gameweeks before the one it predicted",
+  "method_code": "fpl_xp_accuracy.method.v1", "method": "walk-forward backtest on the completed season; the model only ever saw gameweeks before the one it predicted",
   "population": "players with minutes (minutes > 0)",
   "gate_passed": true,
   "minutes_path": "minutes_model (production path, n_last=6, per-player gameweeks). Does not include the builder's live layers: apply_availability (FPL availability flag) and club/position depth adjustment, neither of which exists historically. The gate therefore measures the minutes model, not the whole builder."

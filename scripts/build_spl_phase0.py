@@ -517,6 +517,8 @@ def main() -> int:
             # Caveat seuraa datan pohjaa, ei kalenteria (sama saanto kuin
             # FPL:n esikausivarauksessa 19.8): "Pre-season" vain kun yhtaan
             # kauden ottelua ei ole fitissa.
+            # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaa tunniste kaannosta varten.
+            "caveat_code": "spl_phase0.caveat.v1",
             "caveat": (
                 (
                     f"Team strengths are fitted on the last two seasons plus "

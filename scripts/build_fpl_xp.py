@@ -1268,16 +1268,25 @@ def main(argv: list[str] | None = None) -> int:
                 "cards; formula in src/models/fpl_xp.py, validated with a "
                 "walk-forward backtest on 2025/26 (scripts/backtest_fpl_xp.py)"
             ),
+            # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaat tunnisteet proosan
+            # rinnalle, jotta es/pt-klientti voi kaantaa omasta i18n:staan.
+            # Additiivinen: proosa jaa varakieleksi.
+            "method_code": "fpl_xp.method.v1",
             # #151: bonus-proxyn historia oikaistu 26/27 BPS-sääntöihin
             # (CBI 1/3, pilkkutorjunta 7; premierleague.com news/4679946).
             "bps_rules": ("legacy 25/26 (vertailuajo)" if args.legacy_bps
                           else "2026/27 recalibrated (#151)"),
-            "caveat": (
+            # 23.8: caveat oli EHDOTON ja alkoi sanalla "Pre-season" - se
+            # muuttuu valheeksi sina hetkena kun GW1 valmistuu ja `preseason`
+            # kaantyy. Nyt se emittoidaan VAIN esikaudella. Kaudella kentta
+            # puuttuu, ja klientti nayttaa ennemmin ei mitaan kuin vaaraa.
+            # Kunnollinen kauden aikainen varaus on copy-tehtava (julkaisuportti).
+            **({"caveat": (
                 "Pre-season: player baselines come from last season's FPL "
                 "history, and the minutes estimate comes from end-of-season "
                 "rotation plus FPL availability. It sharpens automatically as "
-                "2026/27 gameweeks are played."
-            ),
+                "2026/27 gameweeks are played."),
+                "caveat_code": "fpl_xp.caveat.preseason"} if preseason else {}),
             "promoted_baseline_teams": missing,
             "promoted_baseline_values": baseline,
             # #143: rakenteinen katvealueraportti — sama tieto joka tähän asti
@@ -1347,6 +1356,9 @@ def main(argv: list[str] | None = None) -> int:
                 f"{MIN_XP_TOTAL}). The rows exist for search and the player "
                 "card: in_projection=false, with no xP/xmins/p_start fields. "
                 "Older clients can ignore the list."),
+            "excluded_note_code": "fpl_xp.excluded_note.v1",
+            # Numero erikseen, jotta kaannos ei joudu poimimaan sita proosasta.
+            "excluded_note_params": {"min_xp_total": MIN_XP_TOTAL},
             "todo": todo,
         },
         "players": players,

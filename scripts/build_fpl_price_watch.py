@@ -164,7 +164,7 @@ def classify(net_event: int, owners: float,
     return status, round(progress, 2), round(100.0 * progress, 1)
 
 
-def _empty_note(bootstrap: dict, n_active: int) -> str:
+def _empty_note(bootstrap: dict, n_active: int) -> tuple[str, str]:
     """Tyhjien listojen selite. 22.8: "Pre-season" vain kun kausi EI ole
     alkanut — vanha versio väitti esikautta myös GW1:n jälkeen (kuvakaappaus
     Villeltä 22.8), koska ehto oli pelkkä n_active == 0. Kauden aikana tyhjä
@@ -174,12 +174,15 @@ def _empty_note(bootstrap: dict, n_active: int) -> str:
                          for ev in bootstrap.get("events") or [])
     if not season_started:
         return ("Pre-season: no transfer activity yet - price watch "
-                "goes live when the FPL game opens.")
+                "goes live when the FPL game opens.",
+                "price_watch.note.preseason")
     if n_active == 0:
         return ("No transfer activity in the FPL feed right now - "
-                "candidates appear as transfers come in.")
+                "candidates appear as transfers come in.",
+                "price_watch.note.no_activity")
     return ("No players are close to a price change right now - "
-            "candidates appear as net transfers build up.")
+            "candidates appear as net transfers build up.",
+            "price_watch.note.none_near_threshold")
 
 
 def build_payload(bootstrap: dict) -> dict:
@@ -245,10 +248,16 @@ def build_payload(bootstrap: dict) -> dict:
             "official_projection": official,
             "disclaimer": (DISCLAIMER_OFFICIAL if official
                            else DISCLAIMER_ESTIMATE),
+            # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaa tunniste proosan rinnalle.
+            # Klientti voi kaantaa oman i18n-tiedostonsa avulla; proosa jaa
+            # paikalleen varakielena eika mikaan hajoa.
+            "disclaimer_code": ("price_watch.disclaimer.official" if official
+                                else "price_watch.disclaimer.estimate"),
             # Note aina kun molemmat listat ovat tyhjiä — ilman sitä sivujen
             # fallback-copy ("goes live when the FPL game opens") valehtelisi
             # kauden aikana kun aktiviteettia on mutta kynnys ei ylity.
-            **({"note": _empty_note(bootstrap, n_active)}
+            **(dict(zip(("note", "note_code"),
+                        _empty_note(bootstrap, n_active)))
                if not risers and not fallers else {}),
         },
         "risers": risers,

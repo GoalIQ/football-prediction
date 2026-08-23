@@ -707,6 +707,8 @@ def main() -> int:
         "gw": gw,
         "n_entries": len(entries),
         "generated_from": meta.get("generated_at"),
+        # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaa tunniste kaannosta varten.
+        "note_code": "fpl_why.note.v1",
         "note": ("Explanations are generated from the model's own components. "
                  "Every number is checked against those components before "
                  "publishing; sentences that fail fall back to a template."),

@@ -666,6 +666,8 @@ def main() -> int:
                 "(little xG of your own means a hard fixture), quintile bucket "
                 "across every team fixture. 1 = easiest to attack against, 5 = hardest."
             ),
+            # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaa tunniste kaannosta varten.
+            "caveat_code": "fpl_phase0.caveat.v1",
             "caveat": (
                 "Pre-season: 2026/27 team strengths are last-season priors, indicative "
                 "only. Promoted sides with no top-flight data use an empirical baseline."

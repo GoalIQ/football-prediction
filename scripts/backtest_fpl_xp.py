@@ -875,6 +875,8 @@ def main() -> int:
                 "method": ("walk-forward backtest on the completed season; the "
                            "model only ever saw gameweeks before the one it "
                            "predicted"),
+                # BACKEND-EN-VUOTAA-ES-PT (23.8): vakaa tunniste kaannosta varten.
+                "method_code": "fpl_xp_accuracy.method.v1",
                 # Julkinen pinta = englanti, ei em dashia. Sisainen
                 # report-lohko pitaa suomenkielisen sanamuotonsa.
                 "population": POPULATION_PUBLIC,
