@@ -212,7 +212,20 @@
 	// "Save as draft" kirjoittaa samaan storageen.
 	let savedDraftIds: number[] | null = loadDraftIds();
 	let draftCanSave = savedDraftIds == null;
-	if (savedDraftIds && savedDraftIds.length > 0) draftOpen = true; // triggaa pool-fetchin
+	// 23.8 (Villen pyynto): tallennettu draft EI ENAA avaa valitsinta itsestaan.
+	// Ennen tata jokainen sivulataus avasi draft-raterin heti kun localStoragessa
+	// tai tililla oli pikkeja, ja se peitti sen mita kayttaja ensisijaisesti
+	// hakee: OMAN joukkueensa FPL-ID:lla. Villen sanat: "haluan etta naen
+	// ensisijaisesti vain joukkueen mika tulee fpl id:lla ja ton sais halutessaa
+	// auki."
+	//
+	// Draft ei katoa mihinkaan - se on yha tallessa ja nappi kertoo montako
+	// pelaajaa siina on. Sivuvaikutuksena pool-fetch (~satoja rivejä) lahtee
+	// vasta kun valitsin oikeasti avataan, eika joka sivulatauksella.
+	//
+	// SAILYY: picks_not_published-haara (rivi ~162) avaa draftin yha, koska
+	// silloin entry-polku EI VOI onnistua eika vaihtoehtoa ole.
+	let savedDraftCount = $state(savedDraftIds?.length ?? 0);
 	// Web-perf-audit 31.7 kohta 2: persist-efekti laukesi myös pelkästä
 	// hydraatiosta → joka sivulataus uudelleenleimasi lokaalin aikaleiman JA
 	// työnsi muuttumattoman draftin tilille (set_fpl_draft joka bootissa).
@@ -235,7 +248,7 @@
 		savedDraftIds = remoteIds;
 		lastPersistedSig = remoteIds.join(','); // tili voitti → tämä on persistoitu tila
 		draftCanSave = false;
-		draftOpen = true;
+		savedDraftCount = remoteIds.length;
 	});
 	// UX-palaute-erä kohta 4: täysi tallennettu draft → tulosnäkymä palautuu
 	// automaattisesti ilman uutta "Rate my draft" -painallusta, ja valitsin
@@ -836,7 +849,11 @@
 			class="linklike draft-toggle"
 			onclick={() => (draftOpen = !draftOpen)}
 		>
-			{draftOpen ? 'Hide the draft rater' : 'Rate a draft instead'}
+			{draftOpen
+				? 'Hide the draft rater'
+				: savedDraftCount > 0
+					? `Open your saved draft (${savedDraftCount}/15)`
+					: 'Rate a draft instead'}
 		</button>
 	</div>
 </div>
