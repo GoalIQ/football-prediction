@@ -69,6 +69,10 @@ PW_PATH = ROOT / "data" / "fpl_price_watch.json"
 LEADERS_PATH = ROOT / "data" / "fpl_player_leaders.json"
 # 8.8 STATS-ZONE: ilmainen suodatettava raakataulukko (scripts/build_fpl_stats.py)
 STATS_PATH = ROOT / "data" / "fpl_player_stats.json"
+# FPL-PLAYER-POINTS-TABLE (23.8.2026, Villen tilaus): toteutuneet pisteet
+# kierroksittain + kierroksen alla JAADYTETTY xP samalla rivilla.
+PLAYER_GW_PATH = ROOT / "fpl" / "player-gw.json"
+XP_FROZEN_DIR = ROOT / "data" / "fpl_xp_frozen"
 # 8.8: joukkuetason puolustusprofiili (scripts/build_understat_team_defence.py)
 DEFENCE_PATH = ROOT / "data" / "understat_team_defence_2526.json"
 API = "https://api.goaliq.app"  # 27.7: pois estetysta onrender.com-vyohykkeesta
@@ -313,6 +317,7 @@ _TOOL_LINKS = [
     ("/fpl/price-changes", "Price changes"),
     ("/fpl/xg-leaders", "xG leaders"),
     ("/fpl/defcon", "DefCon leaders"),
+    ("/fpl/points", "Points vs projection"),
     ("/fpl/stats", "Player stats"),
     ("/fpl/defence", "Defence profiles"),
     ("/fpl/predicted-lineups", "Predicted XI"),
@@ -334,8 +339,8 @@ _NAV_GROUPS: list[tuple[str, tuple[str, ...]]] = [
                "/fpl/expected-points")),
     ("Teams", ("/fpl/club-best", "/fpl/defence", "/fpl/team-news",
                "/fpl/predicted-lineups")),
-    ("Numbers", ("/fpl/stats", "/fpl/xg-leaders", "/fpl/defcon",
-                 "/fpl/price-changes")),
+    ("Numbers", ("/fpl/points", "/fpl/stats", "/fpl/xg-leaders",
+                 "/fpl/defcon", "/fpl/price-changes")),
     ("Reading", ("/fpl/notes", "/fpl/minutes-accuracy")),
 ]
 
@@ -3728,6 +3733,189 @@ def _data_now(xp: dict | None) -> datetime:
     return datetime.now(timezone.utc)
 
 
+# ---------------------------------------------------------------------------
+# /fpl/points - toteutuneet pisteet vs kierroksen alla jaadytetty ennuste
+# ---------------------------------------------------------------------------
+# MIKSI (Villen tilaus 23.8): *"erillinen lista kaikkien pelaajien fpl
+# pisteist eroteltuna defconit ja kaikki mahollinen"*.
+#
+# EROTTAJA EI OLE TAULUKKO VAAN VIEREINEN SARAKE. Raakaluvut ovat ilmaisia
+# kaikkialla (kirjattu: raakaluvut ilmaiseksi, malli maksaa), ja pelkka
+# pistetaulukko olisi kymmenes kopio samasta datasta. Mutta **mita malli
+# ennusti ENNEN kierrosta vs mita tapahtui, pelaajakohtaisesti ja julkisesti
+# logattuna** on sama puolustettava asset kuin ottelu-track-record - eika
+# sita ole kenellakaan muulla.
+#
+# xP-SARAKE ON JAADYTETTY, EI ELAVA. `data/fpl_xp_frozen/gw{n}.json`
+# kirjoitetaan deadlinella ja on immutable. Elava xP liikkuu kesken ja
+# jalkeen kierroksen kohti toteumaa (mitattu 22.8: Gabriel 5.78 -> 5.14,
+# B.Fernandes 5.70 -> 4.74), joten sen vertaaminen toteumaan nayttaisi mallin
+# tarkempana kuin se oli. Sama korjaus kuin mobiilin Model vs actual -listassa.
+#
+# PUUTTUVA RIVI ON TOTUUS. `player-gw.json` kantaa rivin vain pelaajalle jolla
+# on pelattu ottelu. Nolla olisi vaite ("pelasi eika saanut pisteita"),
+# puuttuminen on tosiasia ("ei ole viela pelannut").
+#
+# EI RIIPPUVUUTTA data/raw/fpl:aan: tama builderi ajetaan MYOS
+# accuracy-log.yml:ssa, jossa FPL-cachea ei ole. Molemmat lahteet ovat
+# committoituja artefakteja.
+POINTS_COLS = [
+    ("g", "G", "Goals scored"),
+    ("a", "A", "Assists"),
+    ("dc", "DC", "Defensive contribution actions (the DefCon stat)"),
+    ("cs", "CS", "Clean sheet"),
+    ("bps", "BPS", "Bonus points system score"),
+    ("bonus", "B", "Bonus points awarded"),
+    ("xg", "xG", "Expected goals in the match"),
+    ("xa", "xA", "Expected assists in the match"),
+]
+
+
+def _latest_frozen_gw(gw: int) -> dict | None:
+    """Kierroksen deadlinella jaadytetty xP-lumikuva, tai None."""
+    return _load(XP_FROZEN_DIR / f"gw{gw}.json")
+
+
+def render_points(player_gw: dict, now: datetime) -> str | None:
+    meta = (player_gw or {}).get("meta") or {}
+    players = (player_gw or {}).get("players") or {}
+    gw = meta.get("max_gw")
+    cols = meta.get("cols") or []
+    if not players or not gw or "pts" not in cols:
+        return None
+    ci = {c: i for i, c in enumerate(cols)}
+
+    frozen = _latest_frozen_gw(int(gw)) or {}
+    fmeta = frozen.get("meta") or {}
+    fro = {int(r["id"]): r for r in (frozen.get("players") or []) if r.get("id")}
+
+    rivit = []
+    ilman_ennustetta = 0
+    for pid, gws in players.items():
+        try:
+            key = int(pid)
+        except (TypeError, ValueError):
+            continue
+        rivi = next((r for r in gws if r and r[ci["gw"]] == gw), None)
+        if rivi is None:
+            continue
+        f = fro.get(key)
+        if not f:
+            # Pelasi, mutta deadline-lumikuvassa ei ole hanta (esim. siirto
+            # kierroksen aikana). Rivi jaa pois - ilman jaadytettya ennustetta
+            # sarakeparilla ei ole kulmaa - mutta MAARA sanotaan aaneen alla.
+            # Hiljainen pudotus tekisi taulusta vajaan ilman etta kukaan nakee.
+            ilman_ennustetta += 1
+            continue
+        pts = rivi[ci["pts"]]
+        xp = float(f.get("xp") or 0.0)
+        rivit.append({
+            "id": key,
+            "name": str(f.get("web_name") or ""),
+            "team": str(f.get("team_short") or ""),
+            "pos": str(f.get("pos") or ""),
+            "price": float(f.get("price") or 0.0),
+            "xp": round(xp, 2),
+            "pts": pts,
+            "diff": round(pts - xp, 2),
+            "mins": rivi[ci["mins"]] if "mins" in ci else 0,
+            **{k: rivi[ci[k]] for k, _, _ in POINTS_COLS if k in ci},
+        })
+    if not rivit:
+        return None
+    rivit.sort(key=lambda r: (-r["pts"], -r["xp"]))
+
+    # Mallin oma tarkkuus tassa kierroksessa. Lasketaan riveista, EI
+    # kovakoodata: luku vanhenisi hiljaa seuraavassa kierroksessa.
+    n = len(rivit)
+    mae = round(sum(abs(r["diff"]) for r in rivit) / n, 2)
+    yli = sum(1 for r in rivit if r["diff"] > 0)
+
+    def solu(r: dict) -> str:
+        merkki = "pos" if r["diff"] > 0 else ("neg" if r["diff"] < 0 else "")
+        return (
+            "<tr>"
+            f'<td>{escape(r["name"])}</td>'
+            f'<td>{escape(r["team"])}</td>'
+            f'<td class="m-hide">{escape(r["pos"])}</td>'
+            f'<td class="n m-hide">{r["price"]:.1f}</td>'
+            f'<td class="n">{r["xp"]:.2f}</td>'
+            f'<td class="n"><strong>{r["pts"]}</strong></td>'
+            f'<td class="n {merkki}">{r["diff"]:+.2f}</td>'
+            f'<td class="n m-hide">{r["mins"]}</td>'
+            + "".join(f'<td class="n m-hide">{r.get(k, "")}</td>'
+                      for k, _, _ in POINTS_COLS)
+            + "</tr>"
+        )
+
+    thead = (
+        '<tr><th data-k="name">Player</th><th data-k="team">Team</th>'
+        '<th class="m-hide" data-k="pos">Pos</th>'
+        '<th class="n m-hide" data-k="price">Price</th>'
+        '<th class="n" data-k="xp" title="The projection frozen at the GW '
+        'deadline, before a ball was kicked">xP</th>'
+        '<th class="n" data-k="pts" title="Actual FPL points scored">Pts</th>'
+        '<th class="n" data-k="diff" title="Actual minus projected">Diff</th>'
+        '<th class="n m-hide" data-k="mins">Mins</th>'
+        + "".join(f'<th class="n m-hide" data-k="{k}" title="{escape(t)}">{lbl}</th>'
+                  for k, lbl, t in POINTS_COLS)
+        + "</tr>"
+    )
+    table = ('<div class="lb-wrap"><table class="lb">'
+             f"<thead>{thead}</thead><tbody>"
+             + "".join(solu(r) for r in rivit) + "</tbody></table></div>")
+
+    url = f"{BASE}/fpl/points"
+    title = f"FPL Points GW{gw}: Projected vs Actual, Every Player | GoalIQ"
+    desc = (
+        f"Every player's actual Gameweek {gw} FPL points next to the expected "
+        f"points GoalIQ's model published before the deadline, with goals, "
+        f"assists, defensive contribution (DefCon), bonus, BPS, xG and xA "
+        f"broken out. {n} players. Free, no sign-in."
+    )
+    frozen_at = fmeta.get("frozen_at") or ""
+    deadline = fmeta.get("deadline") or ""
+    hero = (
+        f"<h1>FPL points GW{gw}: projected vs actual</h1>"
+        '<p class="lede">The xP column is the projection this model published '
+        "<strong>before the deadline</strong>, not a number recalculated "
+        "afterwards. Actual points come from the official FPL API. Both are "
+        "on the same row so you can check the model instead of taking its "
+        "word for it.</p>"
+    )
+    body = (
+        f'<div class="card"><p class="lede" style="margin:0">'
+        f"Across the {n} players who have played, the model's mean absolute "
+        f"error is <strong>{mae} points</strong>. It was too low on "
+        f"{yli} of them and too high on {n - yli}."
+        f"</p></div>"
+        f"{table}"
+        f'<p class="note">A player with no row has not played yet, so the '
+        f"table grows as each match finishes. A missing row is not a zero."
+        + (f" {ilman_ennustetta} player"
+           + ("s" if ilman_ennustetta != 1 else "")
+           + " who did play "
+           + ("are" if ilman_ennustetta != 1 else "is")
+           + " also left out, because "
+           + ("they were" if ilman_ennustetta != 1 else "he was")
+           + " not in the projection frozen at the deadline and there is "
+             "nothing to compare the points against."
+           if ilman_ennustetta else "")
+        + "</p>"
+        f"{UPSELL}{_cta()}"
+        f'<p class="note">Projection frozen {escape(str(frozen_at)[:16])} UTC '
+        f"for the GW{gw} deadline {escape(str(deadline)[:16])} UTC. "
+        f'Updated {now.strftime("%d %b %Y")}. {DISCLAIMER}</p>'
+    )
+    jsonld = [{
+        "@context": "https://schema.org", "@type": "WebPage",
+        "name": title, "url": url, "description": desc,
+        "isPartOf": {"@id": f"{BASE}/#organization"},
+        "dateModified": now.strftime("%Y-%m-%d"),
+    }]
+    return _page(title, desc, url, hero, body, jsonld)
+
+
 def main() -> int:
     OUT_DIR.mkdir(exist_ok=True)
     built = []
@@ -3769,6 +3957,15 @@ def main() -> int:
         if sivu:
             (OUT_DIR / "predicted-lineups.html").write_text(sivu, encoding="utf-8")
             built.append("predicted-lineups")
+
+    # FPL-PLAYER-POINTS-TABLE: molemmat lahteet ovat committoituja
+    # artefakteja, joten tama rakentuu myos accuracy-logissa (ei FPL-cachea).
+    pgw = _load(PLAYER_GW_PATH)
+    if pgw:
+        page = render_points(pgw, now)
+        if page:
+            (OUT_DIR / "points.html").write_text(page, encoding="utf-8")
+            built.append("points")
 
     mv = _load(MINUTES_VALIDATION_PATH)
     if mv:
