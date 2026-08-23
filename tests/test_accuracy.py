@@ -682,6 +682,65 @@ def test_sweep_off_leaves_far_future_untouched():
 
 
 # ---------------------------------------------------------------------------
+# KICKOFF-SYNC (23.8.2026, PREDICTIONS-KICKOFF-TS)
+# ---------------------------------------------------------------------------
+def test_sync_kickoffs_paivittaa_siirretyn_ottelun_ajan():
+    """Celta-Osasuna: loki sanoi 16.8, FD sanoo 27.8 → sivu näytti mennyttä."""
+    from scripts.accuracy_pipeline import sync_kickoffs
+
+    log = acc.empty_log()
+    e = _pending_entry("fd-564636", "2026-08-16T19:30:00Z", comp="PD",
+                       league="ESP-La Liga-FD")
+    log["predictions"].append(e)
+
+    n = sync_kickoffs(log, [_fd_match(564636, "RC Celta de Vigo", "CA Osasuna",
+                                      "2026-08-27T18:30:00Z")])
+
+    assert n == 1
+    assert e["kickoff"] == "2026-08-27T18:30:00Z"
+    assert e["date"] == "2026-08-27"
+    # alkuperäinen aika ei katoa
+    assert e["kickoff_logged"] == "2026-08-16T19:30:00Z"
+    # ENNUSTE ei muutu — vain fixtuurin aika seuraa feediä
+    assert (e["p_home"], e["p_draw"], e["p_away"]) == (0.37, 0.30, 0.33)
+    assert e["predicted_winner"] == "home"
+
+
+def test_sync_kickoffs_ei_koske_gradattuun_eika_voidiin():
+    from scripts.accuracy_pipeline import sync_kickoffs
+
+    log = acc.empty_log()
+    gradattu = _pending_entry("fd-1", "2026-08-16T19:30:00Z", comp="PD",
+                              league="ESP-La Liga-FD")
+    log["predictions"].append(gradattu)
+    acc.set_result(log, "fd-1", 1, 0)
+    siirretty = _pending_entry("fd-2", "2026-08-16T19:30:00Z", comp="PD",
+                               league="ESP-La Liga-FD")
+    siirretty["void"] = "POSTPONED"
+    log["predictions"].append(siirretty)
+
+    n = sync_kickoffs(log, [
+        _fd_match(1, "A", "B", "2026-09-09T18:30:00Z"),
+        _fd_match(2, "C", "D", "2026-09-09T18:30:00Z"),
+    ])
+
+    assert n == 0
+    assert all(e["kickoff"] == "2026-08-16T19:30:00Z" for e in log["predictions"])
+
+
+def test_sync_kickoffs_sama_aika_ei_ole_muutos():
+    from scripts.accuracy_pipeline import sync_kickoffs
+
+    log = acc.empty_log()
+    e = _pending_entry("fd-3", "2026-08-16T19:30:00Z", comp="PD",
+                       league="ESP-La Liga-FD")
+    log["predictions"].append(e)
+
+    assert sync_kickoffs(log, [_fd_match(3, "A", "B", "2026-08-16T19:30:00Z")]) == 0
+    assert "kickoff_logged" not in e
+
+
+# ---------------------------------------------------------------------------
 # LEAD-TIME: mitä track record oikeasti mittaa
 # ---------------------------------------------------------------------------
 def test_lead_hours_and_by_lead_split():

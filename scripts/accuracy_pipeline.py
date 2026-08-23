@@ -766,6 +766,59 @@ def cmd_log(log: dict, matches: list[dict] | None) -> int:
     return 0
 
 
+def sync_kickoffs(log: dict, matches: list[dict] | None) -> int:
+    """Paivita PELAAMATTOMIEN rivien kickoff-aika feedista.
+
+    23.8.2026 (PREDICTIONS-KICKOFF-TS, bio-portin loydos 22.8): julkisen
+    /predictions-sivun "awaiting result" -taulun KARJESSA oli Celta-Osasuna
+    kickoffilla 2026-08-16 19:30 UTC — ottelua ei pelattu sina paivana. FD
+    kertoo sen olevan 27.8: ottelua ei peruttu vaan SIIRRETTIIN, ja reconciler
+    paivittaa vain tuloksia, ei pending-rivien aikoja. Lista on
+    kickoff-jarjestyksessa, joten menneisyyteen jaanyt aika nostaa rivin
+    karkeen ja sivu vaittaa odottavansa tulosta ottelusta joka on jo "ohi".
+    Sivun myyntilupaus on "nothing edited once logged", joten vaara aikaleima
+    on rehellisyysvirhe.
+
+    MITATTU 23.8: pelkastaan La Ligassa **351 pelaamatonta rivia** oli eri
+    kickoffilla kuin FD. Suurin osa on kierroksen paikkamerkkiajan (15:00)
+    tarkentumista, mutta karjessa oleva 11 vrk:n siirto on nakyva vika.
+
+    TAMA EI KOSKE ENNUSTETTA. Vain `kickoff` ja `date` seuraavat feedia;
+    p_home/p_draw/p_away pysyvat ennallaan (niita paivittaa
+    `refresh_prematch_predictions` omalla saannollaan). Gradattuun tai void-
+    riviin ei kosketa lainkaan.
+
+    Aja ENNEN refreshia: refreshin kuuma ikkuna lasketaan kickoffista, ja
+    vaara aika lopettaisi paivitykset liian aikaisin.
+    """
+    if not matches:
+        return 0
+    by_id = {m.get("id"): m for m in matches}
+    muutetut = 0
+    for e in log["predictions"]:
+        if e.get("result") is not None or e.get("void"):
+            continue
+        mid = e.get("match_id", "")
+        if not mid.startswith("fd-"):
+            continue
+        try:
+            fd_id = int(mid[3:])
+        except ValueError:
+            continue
+        m = by_id.get(fd_id)
+        if not m:
+            continue
+        utc = m.get("utcDate")
+        if not utc or utc == e.get("kickoff"):
+            continue
+        e["kickoff_logged"] = e.get("kickoff_logged", e.get("kickoff"))
+        e["kickoff"] = utc
+        e["date"] = utc[:10]
+        muutetut += 1
+    print(f"KICKOFF-SYNC: {muutetut} pelaamattoman rivin aika paivitetty feedista.")
+    return muutetut
+
+
 def cmd_reconcile(log: dict, matches: list[dict] | None) -> int:
     """Hae FT-tulokset ja täytä toteutuneet logattuihin ennusteisiin."""
     if matches is None:
@@ -895,7 +948,21 @@ def main(argv: list[str]) -> int:
                 log_domestic_matches(
                     log, code, dm, teams, domestic_prematch_prediction
                 )
+        # Yhdistetty FD-lista: id:t ovat globaalisti uniikkeja -> sama
+        # fd-<id>-avain toimii kaikille kilpailuille. Rakennetaan KERRAN ja
+        # ennen refreshia, koska kickoff-sync on refreshin esiehto.
+        combined: list[dict] | None
+        if matches is None and not domestic:
+            combined = None
+        else:
+            combined = list(matches or [])
+            for dm in domestic.values():
+                combined.extend(dm)
         if cmd in ("log", "refresh", "run"):
+            # Pending-rivien kickoff seuraa feedia ENNEN refreshia: refreshin
+            # kuuma ikkuna lasketaan kickoffista, ja vanhentunut aika
+            # lopettaisi paivitykset liian aikaisin.
+            sync_kickoffs(log, combined)
             # Pre-kickoff refresh: logatut rivit paivitetaan kickoffiin asti
             # (ks. REFRESH_WINDOW_H yla). Ajetaan logauksen JALKEEN, jotta
             # samassa ajossa lisatty lahikickoff on jo mukana ehdokkaissa.
@@ -905,15 +972,6 @@ def main(argv: list[str]) -> int:
                 codes=enabled_domestic_codes(),
             )
         if cmd in ("reconcile", "run"):
-            # Yhdistetty lista: FD:n ottelu-id:t ovat globaalisti uniikkeja →
-            # sama fd-<id>-avain toimii kaikille kilpailuille.
-            combined: list[dict] | None
-            if matches is None and not domestic:
-                combined = None
-            else:
-                combined = list(matches or [])
-                for dm in domestic.values():
-                    combined.extend(dm)
             cmd_reconcile(log, combined)
         if cmd == "regrade":
             rc = cmd_regrade(log, matches)
