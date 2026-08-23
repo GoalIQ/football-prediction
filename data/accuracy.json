@@ -1,20 +1,20 @@
 {
-  "updated_at": "2026-08-23T09:37:02+00:00",
+  "updated_at": "2026-08-23T12:56:33+00:00",
   "logged_total": 3197,
-  "pending": 2970,
+  "pending": 2968,
   "voided": 5,
   "all_time": {
-    "n": 222,
-    "correct_1x2": 108,
-    "pct_1x2": 0.4865,
-    "decisive_n": 151,
-    "decisive_correct": 108,
-    "pct_decisive": 0.7152,
-    "exact_n": 174,
+    "n": 224,
+    "correct_1x2": 109,
+    "pct_1x2": 0.4866,
+    "decisive_n": 153,
+    "decisive_correct": 109,
+    "pct_decisive": 0.7124,
+    "exact_n": 176,
     "exact_correct": 23,
-    "pct_exact": 0.1322,
-    "brier": 0.6081,
-    "brier_n": 174
+    "pct_exact": 0.1307,
+    "brier": 0.6056,
+    "brier_n": 176
   },
   "rolling": {
     "n": 100,
@@ -26,7 +26,7 @@
     "exact_n": 100,
     "exact_correct": 8,
     "pct_exact": 0.08,
-    "brier": 0.6574,
+    "brier": 0.6483,
     "brier_n": 100,
     "window": 100
   },
@@ -45,30 +45,30 @@
       "brier_n": 49
     },
     "DED": {
-      "n": 11,
-      "correct_1x2": 5,
-      "pct_1x2": 0.4545,
-      "decisive_n": 8,
-      "decisive_correct": 5,
-      "pct_decisive": 0.625,
-      "exact_n": 11,
+      "n": 12,
+      "correct_1x2": 6,
+      "pct_1x2": 0.5,
+      "decisive_n": 9,
+      "decisive_correct": 6,
+      "pct_decisive": 0.6667,
+      "exact_n": 12,
       "exact_correct": 0,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 11
+      "brier_n": 12
     },
     "ELC": {
-      "n": 21,
+      "n": 22,
       "correct_1x2": 4,
-      "pct_1x2": 0.1905,
-      "decisive_n": 13,
+      "pct_1x2": 0.1818,
+      "decisive_n": 14,
       "decisive_correct": 4,
-      "pct_decisive": 0.3077,
-      "exact_n": 21,
+      "pct_decisive": 0.2857,
+      "exact_n": 22,
       "exact_correct": 2,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 21
+      "brier_n": 22
     },
     "FL1": {
       "n": 6,
@@ -151,17 +151,17 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 38,
-      "correct_1x2": 20,
-      "pct_1x2": 0.5263,
-      "decisive_n": 30,
-      "decisive_correct": 20,
-      "pct_decisive": 0.6667,
-      "exact_n": 38,
+      "n": 40,
+      "correct_1x2": 21,
+      "pct_1x2": 0.525,
+      "decisive_n": 32,
+      "decisive_correct": 21,
+      "pct_decisive": 0.6562,
+      "exact_n": 40,
       "exact_correct": 2,
-      "pct_exact": 0.0526,
-      "brier": 0.5955,
-      "brier_n": 38
+      "pct_exact": 0.05,
+      "brier": 0.5848,
+      "brier_n": 40
     },
     "stale": {
       "n": 136,
@@ -193,16 +193,16 @@
   },
   "calibration": [
     {
-      "bin_mid": 0.069,
-      "predicted": 0.069,
-      "actual": 0.0625,
-      "n": 16
+      "bin_mid": 0.0696,
+      "predicted": 0.0696,
+      "actual": 0.0588,
+      "n": 17
     },
     {
-      "bin_mid": 0.1592,
-      "predicted": 0.1592,
-      "actual": 0.1642,
-      "n": 67
+      "bin_mid": 0.1593,
+      "predicted": 0.1593,
+      "actual": 0.1618,
+      "n": 68
     },
     {
       "bin_mid": 0.2539,
@@ -211,10 +211,10 @@
       "n": 206
     },
     {
-      "bin_mid": 0.3364,
-      "predicted": 0.3364,
-      "actual": 0.321,
-      "n": 81
+      "bin_mid": 0.3363,
+      "predicted": 0.3363,
+      "actual": 0.3214,
+      "n": 84
     },
     {
       "bin_mid": 0.4487,
@@ -235,10 +235,10 @@
       "n": 31
     },
     {
-      "bin_mid": 0.7276,
-      "predicted": 0.7276,
+      "bin_mid": 0.7302,
+      "predicted": 0.7302,
       "actual": 1.0,
-      "n": 8
+      "n": 9
     },
     {
       "bin_mid": 0.8516,
@@ -248,6 +248,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-23",
+      "home_team": "West Brom",
+      "away_team": "Burnley",
+      "predicted_winner": "away",
+      "p_winner": 0.359,
+      "lead_h": 1.4,
+      "most_likely_score": "1-1",
+      "actual_score": "3-1",
+      "actual_outcome": "home",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-23",
+      "home_team": "Go Ahead Eagles",
+      "away_team": "Den Haag",
+      "predicted_winner": "home",
+      "p_winner": 0.7509,
+      "lead_h": 0.6,
+      "most_likely_score": "2-0",
+      "actual_score": "3-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-22",
       "home_team": "Preston",
@@ -514,36 +544,6 @@
       "actual_score": "0-0",
       "actual_outcome": "draw",
       "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-22",
-      "home_team": "Le Mans FC",
-      "away_team": "Stade Brestois 29",
-      "predicted_winner": "home",
-      "p_winner": 0.4884,
-      "lead_h": 512.5,
-      "most_likely_score": "1-1",
-      "actual_score": "2-2",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-22",
-      "home_team": "FC Internazionale Milano",
-      "away_team": "AC Monza",
-      "predicted_winner": "home",
-      "p_winner": 0.8489,
-      "lead_h": 510.2,
-      "most_likely_score": "3-0",
-      "actual_score": "4-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
