@@ -277,6 +277,32 @@ def _parse_matches(data: dict, liiga: str, kausi: str) -> pd.DataFrame:
     return pd.DataFrame(rivit).dropna(subset=["date"])
 
 
+class OsittainenKausijoukko(RuntimeError):
+    """Osa pyydetyista kausista epaonnistui, osa onnistui.
+
+    23.8.2026 (Villen jonorivi FL1-TEAM-COVERAGE): tuotannossa
+    `/api/teams?leagues=FRA-Ligue 1-FD` palautti **12 joukkuetta 18:sta**, ja
+    `/api/predict` antoi 404:n PSG:lle, Lillelle, Monacolle, Rennesille,
+    Angersille ja Le Havrelle. Mitattu: yhden kauden kysely
+    (`seasons=2526`) palautti 18 joukkuetta, PARI (`2526`+`2627`) palautti 12
+    — eli tasan ne jotka olivat ehtineet pelata 26/27-kaudella.
+
+    Juurisyy oli tassa funktiossa: epaonnistunut kausihaku (429 / verkkovirhe)
+    putosi `if data and "_error" not in data` -ehdosta HILJAA, ja malli
+    fitattiin jaljelle jaaneella kaudella. `_saa_malli` cachettaa mallin
+    prosessin eliniaksi, joten YKSI 429 instanssin kaynnistyessa rikkoi
+    liigan pysyvasti — ja rikkoutuminen nakyi vain siina etta joukkueita oli
+    vahemman kuin pitaisi. Ei virhetta, ei lokiriviä, ei mitaan.
+
+    Nyt tama nostetaan. Kutsuja (`loader`) nappaa sen liigakohtaisesti, joten
+    liiga jaa TALLA kierroksella ilman dataa eika mallia cacheta — ja seuraava
+    pyynto hakee kaudet uudelleen. Ohimenevasta viasta tulee ohimeneva.
+
+    HUOM: TYHJA mutta onnistunut kausi ei ole virhe (esikausi, 0 ottelua) —
+    vain haun epaonnistuminen on.
+    """
+
+
 def lataa(liiga: str, kaudet: list[str]) -> pd.DataFrame:
     api_key = _api_key()
     if not api_key:
@@ -285,15 +311,28 @@ def lataa(liiga: str, kaudet: list[str]) -> pd.DataFrame:
         return pd.DataFrame()
     code = COMPETITION_CODES[liiga]
     palaset = []
+    epaonnistuneet: list[str] = []
     for k in kaudet:
         year = _kausi_to_year(k)
         # #71: rate-limit-sleep on siirretty _fetch_from_api:n alkuun
         # (_await_rate_limit). Cache-hit ei enää aiheuta sleeppejä.
         data = _hae_kausi(code, year, api_key)
-        if data and "_error" not in data:
-            df = _parse_matches(data, liiga, k)
-            if not df.empty:
-                palaset.append(df)
+        if not data or "_error" in data:
+            syy = (data or {}).get("_error", "ei vastausta")
+            print(f"VAROITUS: football-data.org {liiga} kausi {k}: {syy}")
+            epaonnistuneet.append(f"{k} ({syy})")
+            continue
+        df = _parse_matches(data, liiga, k)
+        if not df.empty:
+            palaset.append(df)
+    if epaonnistuneet and palaset:
+        # Osittainen data on VAARALLISEMPI kuin ei dataa: se nayttaa
+        # onnistumiselta ja tuottaa vaaria ennusteita vaarasta otoksesta.
+        raise OsittainenKausijoukko(
+            f"{liiga}: {len(epaonnistuneet)}/{len(kaudet)} kautta epaonnistui "
+            f"({'; '.join(epaonnistuneet)}) mutta {len(palaset)} onnistui. "
+            f"Mallia EI fitata vajaalla kausijoukolla."
+        )
     return pd.concat(palaset, ignore_index=True) if palaset else pd.DataFrame()
 
 
