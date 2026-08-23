@@ -4108,7 +4108,15 @@
       "most_likely_score": "1-1",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T18:41:28+00:00",
-      "result": null,
+      "result": {
+        "home_score": 1,
+        "away_score": 0,
+        "actual_score": "1-0",
+        "actual_outcome": "home",
+        "hit_1x2": true,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-07-17T08:11:50+00:00",
       "refreshed_at": "2026-08-23T18:41:28+00:00",
       "refresh_count": 7
@@ -4130,7 +4138,15 @@
       "most_likely_score": "2-0",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T18:41:28+00:00",
-      "result": null,
+      "result": {
+        "home_score": 4,
+        "away_score": 1,
+        "actual_score": "4-1",
+        "actual_outcome": "home",
+        "hit_1x2": true,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-07-17T08:11:50+00:00",
       "refreshed_at": "2026-08-23T18:41:28+00:00",
       "refresh_count": 7
@@ -4152,7 +4168,15 @@
       "most_likely_score": "1-1",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T18:41:28+00:00",
-      "result": null,
+      "result": {
+        "home_score": 0,
+        "away_score": 2,
+        "actual_score": "0-2",
+        "actual_outcome": "away",
+        "hit_1x2": false,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-07-17T08:11:51+00:00",
       "refreshed_at": "2026-08-23T18:41:28+00:00",
       "refresh_count": 7
@@ -4217,11 +4241,11 @@
       "xg_away": 0.981,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:30+00:00",
+      "logged_at": "2026-08-23T21:30:34+00:00",
       "result": null,
       "first_logged_at": "2026-07-17T08:11:51+00:00",
-      "refreshed_at": "2026-08-23T18:41:30+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:34+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-554970",
@@ -4239,11 +4263,11 @@
       "xg_away": 1.056,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:32+00:00",
+      "logged_at": "2026-08-23T21:30:35+00:00",
       "result": null,
       "first_logged_at": "2026-07-17T08:11:52+00:00",
-      "refreshed_at": "2026-08-23T18:41:32+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:35+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-554980",
@@ -7606,18 +7630,18 @@
       "kickoff": "2026-08-24T19:00:00Z",
       "home_team": "Fulham",
       "away_team": "Chelsea",
-      "p_home": 0.3499,
-      "p_draw": 0.2655,
-      "p_away": 0.3846,
-      "xg_home": 1.524,
-      "xg_away": 1.605,
+      "p_home": 0.3988,
+      "p_draw": 0.29,
+      "p_away": 0.3112,
+      "xg_home": 1.488,
+      "xg_away": 1.295,
       "most_likely_score": "1-1",
-      "predicted_winner": "away",
-      "logged_at": "2026-08-23T18:41:31+00:00",
+      "predicted_winner": "home",
+      "logged_at": "2026-08-23T21:30:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:02+00:00",
-      "refreshed_at": "2026-08-23T18:41:31+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:34+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-560555",
@@ -16270,7 +16294,15 @@
       "most_likely_score": "1-1",
       "predicted_winner": "away",
       "logged_at": "2026-08-23T18:41:29+00:00",
-      "result": null,
+      "result": {
+        "home_score": 0,
+        "away_score": 5,
+        "actual_score": "0-5",
+        "actual_outcome": "away",
+        "hit_1x2": true,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-01T09:44:59+00:00",
       "refreshed_at": "2026-08-23T18:41:29+00:00",
       "refresh_count": 7
@@ -16284,18 +16316,18 @@
       "kickoff": "2026-08-24T17:30:00Z",
       "home_team": "CA Osasuna",
       "away_team": "Levante UD",
-      "p_home": 0.5533,
-      "p_draw": 0.2352,
-      "p_away": 0.2115,
-      "xg_home": 1.786,
-      "xg_away": 1.014,
+      "p_home": 0.5536,
+      "p_draw": 0.2335,
+      "p_away": 0.2129,
+      "xg_home": 1.782,
+      "xg_away": 1.013,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:31+00:00",
+      "logged_at": "2026-08-23T21:30:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:00+00:00",
-      "refreshed_at": "2026-08-23T18:41:31+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:34+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-564637",
@@ -16306,18 +16338,18 @@
       "kickoff": "2026-08-25T19:00:00Z",
       "home_team": "Valencia CF",
       "away_team": "Real Betis Balompié",
-      "p_home": 0.376,
-      "p_draw": 0.2747,
-      "p_away": 0.3493,
-      "xg_home": 1.271,
-      "xg_away": 1.215,
+      "p_home": 0.3751,
+      "p_draw": 0.2727,
+      "p_away": 0.3521,
+      "xg_home": 1.262,
+      "xg_away": 1.214,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T06:44:08+00:00",
+      "logged_at": "2026-08-23T21:30:35+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:00+00:00",
-      "refreshed_at": "2026-08-23T06:44:08+00:00",
-      "refresh_count": 1
+      "refreshed_at": "2026-08-23T21:30:35+00:00",
+      "refresh_count": 2
     },
     {
       "match_id": "fd-564631",
@@ -22365,7 +22397,15 @@
       "most_likely_score": "1-0",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T18:41:27+00:00",
-      "result": null,
+      "result": {
+        "home_score": 2,
+        "away_score": 1,
+        "actual_score": "2-1",
+        "actual_outcome": "home",
+        "hit_1x2": true,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-01T09:45:56+00:00",
       "refreshed_at": "2026-08-23T18:41:27+00:00",
       "refresh_count": 7
@@ -22387,7 +22427,15 @@
       "most_likely_score": "1-1",
       "predicted_winner": "away",
       "logged_at": "2026-08-23T18:41:27+00:00",
-      "result": null,
+      "result": {
+        "home_score": 1,
+        "away_score": 2,
+        "actual_score": "1-2",
+        "actual_outcome": "away",
+        "hit_1x2": true,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-01T09:45:57+00:00",
       "refreshed_at": "2026-08-23T18:41:27+00:00",
       "refresh_count": 7
@@ -22401,18 +22449,18 @@
       "kickoff": "2026-08-24T16:30:00Z",
       "home_team": "Bologna FC 1909",
       "away_team": "SS Lazio",
-      "p_home": 0.3653,
-      "p_draw": 0.3059,
-      "p_away": 0.3287,
-      "xg_home": 1.008,
-      "xg_away": 0.939,
+      "p_home": 0.3635,
+      "p_draw": 0.3036,
+      "p_away": 0.3329,
+      "xg_home": 1.002,
+      "xg_away": 0.944,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:30+00:00",
+      "logged_at": "2026-08-23T21:30:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:57+00:00",
-      "refreshed_at": "2026-08-23T18:41:30+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:34+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-558638",
@@ -22423,18 +22471,18 @@
       "kickoff": "2026-08-24T18:45:00Z",
       "home_team": "AS Roma",
       "away_team": "ACF Fiorentina",
-      "p_home": 0.6113,
-      "p_draw": 0.2189,
-      "p_away": 0.1697,
-      "xg_home": 1.824,
-      "xg_away": 0.833,
+      "p_home": 0.6095,
+      "p_draw": 0.2178,
+      "p_away": 0.1727,
+      "xg_home": 1.818,
+      "xg_away": 0.839,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:31+00:00",
+      "logged_at": "2026-08-23T21:30:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:57+00:00",
-      "refreshed_at": "2026-08-23T18:41:31+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:34+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-558620",
@@ -28687,7 +28735,15 @@
       "most_likely_score": "2-1",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T18:41:27+00:00",
-      "result": null,
+      "result": {
+        "home_score": 2,
+        "away_score": 2,
+        "actual_score": "2-2",
+        "actual_outcome": "draw",
+        "hit_1x2": false,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-01T09:46:57+00:00",
       "refreshed_at": "2026-08-23T18:41:27+00:00",
       "refresh_count": 6
@@ -38751,7 +38807,15 @@
       "most_likely_score": "1-0",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T15:31:35+00:00",
-      "result": null,
+      "result": {
+        "home_score": 1,
+        "away_score": 0,
+        "actual_score": "1-0",
+        "actual_outcome": "home",
+        "hit_1x2": true,
+        "exact_hit": true,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-01T10:14:37+00:00",
       "refreshed_at": "2026-08-23T15:31:35+00:00",
       "refresh_count": 6
@@ -38765,18 +38829,18 @@
       "kickoff": "2026-08-24T19:30:00Z",
       "home_team": "Málaga CF",
       "away_team": "RC Deportivo La Coruña",
-      "p_home": 0.423,
-      "p_draw": 0.2817,
-      "p_away": 0.2953,
+      "p_home": 0.42,
+      "p_draw": 0.2783,
+      "p_away": 0.3018,
       "xg_home": 1.299,
-      "xg_away": 1.038,
+      "xg_away": 1.057,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:32+00:00",
+      "logged_at": "2026-08-23T21:30:35+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T10:14:37+00:00",
-      "refreshed_at": "2026-08-23T18:41:32+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:35+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-564654",
@@ -54511,7 +54575,15 @@
       "most_likely_score": "0-0",
       "predicted_winner": "away",
       "logged_at": "2026-08-23T15:31:35+00:00",
-      "result": null,
+      "result": {
+        "home_score": 1,
+        "away_score": 0,
+        "actual_score": "1-0",
+        "actual_outcome": "home",
+        "hit_1x2": false,
+        "exact_hit": false,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-15T07:11:45+00:00",
       "refreshed_at": "2026-08-23T15:31:35+00:00",
       "refresh_count": 6
@@ -54533,7 +54605,15 @@
       "most_likely_score": "2-0",
       "predicted_winner": "home",
       "logged_at": "2026-08-23T18:41:29+00:00",
-      "result": null,
+      "result": {
+        "home_score": 2,
+        "away_score": 0,
+        "actual_score": "2-0",
+        "actual_outcome": "home",
+        "hit_1x2": true,
+        "exact_hit": true,
+        "reconciled_at": "2026-08-23T21:30:35+00:00"
+      },
       "first_logged_at": "2026-08-15T07:11:46+00:00",
       "refreshed_at": "2026-08-23T18:41:29+00:00",
       "refresh_count": 7
@@ -54554,11 +54634,11 @@
       "xg_away": 0.697,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-08-23T18:41:31+00:00",
+      "logged_at": "2026-08-23T21:30:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:11:46+00:00",
-      "refreshed_at": "2026-08-23T18:41:31+00:00",
-      "refresh_count": 7
+      "refreshed_at": "2026-08-23T21:30:34+00:00",
+      "refresh_count": 8
     },
     {
       "match_id": "fd-567291",
