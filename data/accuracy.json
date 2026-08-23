@@ -1,32 +1,32 @@
 {
-  "updated_at": "2026-08-23T12:56:33+00:00",
+  "updated_at": "2026-08-23T15:31:40+00:00",
   "logged_total": 3197,
-  "pending": 2968,
+  "pending": 2964,
   "voided": 5,
   "all_time": {
-    "n": 224,
-    "correct_1x2": 109,
-    "pct_1x2": 0.4866,
-    "decisive_n": 153,
-    "decisive_correct": 109,
-    "pct_decisive": 0.7124,
-    "exact_n": 176,
-    "exact_correct": 23,
-    "pct_exact": 0.1307,
-    "brier": 0.6056,
-    "brier_n": 176
+    "n": 228,
+    "correct_1x2": 113,
+    "pct_1x2": 0.4956,
+    "decisive_n": 157,
+    "decisive_correct": 113,
+    "pct_decisive": 0.7197,
+    "exact_n": 180,
+    "exact_correct": 24,
+    "pct_exact": 0.1333,
+    "brier": 0.599,
+    "brier_n": 180
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 39,
-    "pct_1x2": 0.39,
-    "decisive_n": 67,
-    "decisive_correct": 39,
-    "pct_decisive": 0.5821,
+    "correct_1x2": 41,
+    "pct_1x2": 0.41,
+    "decisive_n": 69,
+    "decisive_correct": 41,
+    "pct_decisive": 0.5942,
     "exact_n": 100,
-    "exact_correct": 8,
-    "pct_exact": 0.08,
-    "brier": 0.6483,
+    "exact_correct": 9,
+    "pct_exact": 0.09,
+    "brier": 0.6362,
     "brier_n": 100,
     "window": 100
   },
@@ -45,17 +45,17 @@
       "brier_n": 49
     },
     "DED": {
-      "n": 12,
-      "correct_1x2": 6,
-      "pct_1x2": 0.5,
-      "decisive_n": 9,
-      "decisive_correct": 6,
-      "pct_decisive": 0.6667,
-      "exact_n": 12,
+      "n": 13,
+      "correct_1x2": 7,
+      "pct_1x2": 0.5385,
+      "decisive_n": 10,
+      "decisive_correct": 7,
+      "pct_decisive": 0.7,
+      "exact_n": 13,
       "exact_correct": 0,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 12
+      "brier_n": 13
     },
     "ELC": {
       "n": 22,
@@ -71,17 +71,17 @@
       "brier_n": 22
     },
     "FL1": {
-      "n": 6,
-      "correct_1x2": 3,
-      "pct_1x2": 0.5,
-      "decisive_n": 3,
-      "decisive_correct": 3,
+      "n": 7,
+      "correct_1x2": 4,
+      "pct_1x2": 0.5714,
+      "decisive_n": 4,
+      "decisive_correct": 4,
       "pct_decisive": 1.0,
-      "exact_n": 6,
+      "exact_n": 7,
       "exact_correct": 0,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 6
+      "brier_n": 7
     },
     "PD": {
       "n": 11,
@@ -97,17 +97,17 @@
       "brier_n": 11
     },
     "PL": {
-      "n": 6,
-      "correct_1x2": 3,
-      "pct_1x2": 0.5,
-      "decisive_n": 6,
-      "decisive_correct": 3,
-      "pct_decisive": 0.5,
-      "exact_n": 6,
-      "exact_correct": 0,
+      "n": 8,
+      "correct_1x2": 5,
+      "pct_1x2": 0.625,
+      "decisive_n": 8,
+      "decisive_correct": 5,
+      "pct_decisive": 0.625,
+      "exact_n": 8,
+      "exact_correct": 1,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 6
+      "brier_n": 8
     },
     "PPL": {
       "n": 10,
@@ -151,17 +151,17 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 40,
-      "correct_1x2": 21,
-      "pct_1x2": 0.525,
-      "decisive_n": 32,
-      "decisive_correct": 21,
-      "pct_decisive": 0.6562,
-      "exact_n": 40,
-      "exact_correct": 2,
-      "pct_exact": 0.05,
-      "brier": 0.5848,
-      "brier_n": 40
+      "n": 44,
+      "correct_1x2": 25,
+      "pct_1x2": 0.5682,
+      "decisive_n": 36,
+      "decisive_correct": 25,
+      "pct_decisive": 0.6944,
+      "exact_n": 44,
+      "exact_correct": 3,
+      "pct_exact": 0.0682,
+      "brier": 0.5597,
+      "brier_n": 44
     },
     "stale": {
       "n": 136,
@@ -199,28 +199,28 @@
       "n": 17
     },
     {
-      "bin_mid": 0.1593,
-      "predicted": 0.1593,
-      "actual": 0.1618,
-      "n": 68
+      "bin_mid": 0.16,
+      "predicted": 0.16,
+      "actual": 0.1528,
+      "n": 72
     },
     {
       "bin_mid": 0.2539,
       "predicted": 0.2539,
-      "actual": 0.3058,
-      "n": 206
+      "actual": 0.3014,
+      "n": 209
     },
     {
-      "bin_mid": 0.3363,
-      "predicted": 0.3363,
-      "actual": 0.3214,
-      "n": 84
+      "bin_mid": 0.336,
+      "predicted": 0.336,
+      "actual": 0.3176,
+      "n": 85
     },
     {
-      "bin_mid": 0.4487,
-      "predicted": 0.4487,
-      "actual": 0.2985,
-      "n": 67
+      "bin_mid": 0.4493,
+      "predicted": 0.4493,
+      "actual": 0.3188,
+      "n": 69
     },
     {
       "bin_mid": 0.5401,
@@ -229,10 +229,10 @@
       "n": 40
     },
     {
-      "bin_mid": 0.6479,
-      "predicted": 0.6479,
-      "actual": 0.6452,
-      "n": 31
+      "bin_mid": 0.6478,
+      "predicted": 0.6478,
+      "actual": 0.6667,
+      "n": 33
     },
     {
       "bin_mid": 0.7302,
@@ -248,6 +248,66 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-23",
+      "home_team": "Angers SCO",
+      "away_team": "Lille OSC",
+      "predicted_winner": "away",
+      "p_winner": 0.4965,
+      "lead_h": 0.1,
+      "most_likely_score": "0-1",
+      "actual_score": "0-2",
+      "actual_outcome": "away",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-23",
+      "home_team": "Brighton",
+      "away_team": "Aston Villa",
+      "predicted_winner": "home",
+      "p_winner": 0.4432,
+      "lead_h": 0.1,
+      "most_likely_score": "1-1",
+      "actual_score": "4-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-23",
+      "home_team": "Manchester City",
+      "away_team": "Bournemouth",
+      "predicted_winner": "home",
+      "p_winner": 0.6038,
+      "lead_h": 0.1,
+      "most_likely_score": "2-1",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": true,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-23",
+      "home_team": "PSV Eindhoven",
+      "away_team": "Groningen",
+      "predicted_winner": "home",
+      "p_winner": 0.6875,
+      "lead_h": 2.9,
+      "most_likely_score": "2-1",
+      "actual_score": "5-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-23",
       "home_team": "West Brom",
@@ -485,66 +545,6 @@
       "actual_outcome": "draw",
       "hit_1x2": false,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-22",
-      "home_team": "Swansea",
-      "away_team": "Sheffield United",
-      "predicted_winner": "home",
-      "p_winner": 0.4667,
-      "lead_h": 174.8,
-      "most_likely_score": "1-1",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-22",
-      "home_team": "Millwall",
-      "away_team": "Norwich",
-      "predicted_winner": "home",
-      "p_winner": 0.4043,
-      "lead_h": 172.3,
-      "most_likely_score": "1-1",
-      "actual_score": "3-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-22",
-      "home_team": "Birmingham",
-      "away_team": "Bristol City",
-      "predicted_winner": "home",
-      "p_winner": 0.4774,
-      "lead_h": 172.3,
-      "most_likely_score": "1-1",
-      "actual_score": "2-2",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-22",
-      "home_team": "ES Troyes AC",
-      "away_team": "Paris FC",
-      "predicted_winner": "home",
-      "p_winner": 0.3783,
-      "lead_h": 512.5,
-      "most_likely_score": "1-1",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
