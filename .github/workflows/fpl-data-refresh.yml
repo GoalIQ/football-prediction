@@ -416,6 +416,20 @@ jobs:
       # continue-on-error piilottaisi GW-buildin kaatumisen vihreän runin
       # taakse — tasan se vikaluokka joka piti accuracy-login punaisena
       # 26 ajoa ilman että kukaan huomasi.
+      # PLAYER-GW-STALE-GUARD (23.8): portti tapaukselle "ajoi, ei tehnyt
+      # mitaan". 22.-23.8 tama steppi oli VIHREA 25 tuntia samalla kun
+      # fpl/player-gw.json oli jaassa 31 pelaajassa — builderi tulosti "SKIP"
+      # ja palautti 0, eika mitaan committoitu, joten diffiakaan ei syntynyt.
+      #  ei nae sita. Tama mittaa TUOTOSTA: elavalla
+      # basis-kaudella outputin on oltava alle 12 h vanha ja katteen taysi.
+      # Ajetaan committin JALKEEN, joten data ei jaa lahettamatta jos portti
+      # huutaa (sama malli kuin muissakin health-tarkistuksissa).
+      - name: player-gw freshness guard
+        id: gw_freshness
+        if: always() && steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.check_player_gw_freshness
+
       - name: Step health (fail loud, data jo pushattu)
         if: always() && steps.guard.outputs.proceed == 'true'
         run: |
@@ -423,4 +437,5 @@ jobs:
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
+          [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa — builderi ajoi mutta ei tuottanut mitaan (PLAYER-GW-STALE-GUARD)"; fail=1; }
           exit $fail
