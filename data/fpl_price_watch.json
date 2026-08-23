@@ -2,16 +2,28 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-23T07:05:37Z",
-  "total_players": 9332506,
+  "generated_at": "2026-08-23T09:24:35Z",
+  "total_players": 9340727,
   "n_players_scanned": 604,
-  "n_with_transfer_activity": 601,
+  "n_with_transfer_activity": 600,
   "source": "FPL official price projection",
   "official_projection": true,
-  "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it.",
-  "note": "No players are close to a price change right now - candidates appear as net transfers build up."
+  "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it."
  },
- "risers": [],
+ "risers": [
+  {
+   "id": 565,
+   "web_name": "M.Sangaré",
+   "team": 4,
+   "now_cost": 5.5,
+   "status": "rising_watch",
+   "confidence": 0.21,
+   "progress_pct": 21.4,
+   "net_event": 38239,
+   "already_changed_today": false,
+   "eta_days": 2
+  }
+ ],
  "fallers": [],
  "prices": {
   "1": 60,
