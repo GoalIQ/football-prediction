@@ -33,6 +33,53 @@ def test_skip_kun_output_on_samalta_jaadytetylta_kaudelta(runner_ymparisto):
     assert gw.main() == 0
 
 
+def test_elava_kausi_ei_skippaa_vaikka_summary_hakemisto_puuttuu(
+        monkeypatch, tmp_path):
+    """23.8: SKIP jäädytti ELÄVÄN kauden outputin.
+
+    Runnerilta puuttuu `summary_2627/` aina (gitignore). Jäädytetyn kauden
+    SKIP-ehto osui siihen ja `fpl/player-gw.json` jäi 22.8 tilaan — vihreänä,
+    koska skip palauttaa 0. Kuluvan kauden summaryt ovat haettavissa, joten
+    puuttuva hakemisto EI ole skipin peruste.
+    """
+    stats = tmp_path / "fpl_player_stats.json"
+    stats.write_text(json.dumps({"meta": {"basis_season": "2026/27"}}),
+                     encoding="utf-8")
+    cache = tmp_path / "raw_fpl"
+    cache.mkdir()
+    (cache / "bootstrap_static.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(gw, "STATS", stats)
+    monkeypatch.setattr(gw, "CACHE", cache)
+    monkeypatch.setattr(gw, "OUT", tmp_path / "player-gw.json")
+    gw.OUT.write_text(json.dumps({"meta": {"basis_season": "2026/27"},
+                                  "players": {}}), encoding="utf-8")
+
+    ajettiin = {"build": False}
+
+    def fake_build():
+        ajettiin["build"] = True
+        raise RuntimeError("build kutsuttiin — juuri niin kuin pitääkin")
+
+    monkeypatch.setattr(gw, "build", fake_build)
+    with pytest.raises(RuntimeError):
+        gw.main()
+    assert ajettiin["build"], "elävällä kaudella pitää rakentaa, ei skipata"
+    # tyhjä summary-hakemisto luodaan valmiiksi hakua varten
+    assert (cache / "summary_2627").is_dir()
+
+
+def test_elava_kausi_ilman_bootstrapia_on_aito_virhe(monkeypatch, tmp_path):
+    stats = tmp_path / "fpl_player_stats.json"
+    stats.write_text(json.dumps({"meta": {"basis_season": "2026/27"}}),
+                     encoding="utf-8")
+    monkeypatch.setattr(gw, "STATS", stats)
+    monkeypatch.setattr(gw, "CACHE", tmp_path / "raw_fpl")
+    monkeypatch.setattr(gw, "OUT", tmp_path / "player-gw.json")
+    gw.OUT.write_text(json.dumps({"meta": {"basis_season": "2026/27"},
+                                  "players": {}}), encoding="utf-8")
+    assert gw.main() == 1
+
+
 def test_virhe_kun_outputtia_ei_ole(runner_ymparisto):
     assert gw.main() == 1
 

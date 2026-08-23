@@ -100,6 +100,7 @@ def build() -> dict:
     # vanhat itse — kun xp-builderin force-haku palaa, tiedostot ovat
     # minuutteja vanhoja ja tama ei tee yhtaan verkkokutsua.
     live_basis = SEASON_KEYS.get(basis)
+    haettu = 0
 
     for p in stats["players"]:
         cur_id = p[idx["id"]]
@@ -112,6 +113,7 @@ def build() -> dict:
             try:
                 from src.data.fpl_api import fetch_element_summary
                 fetch_element_summary(basis_id, live_basis, force=True)
+                haettu += 1
             except Exception as e:
                 # Verkkovika: vanha tiedosto (jos on) kelpaa, puuttuva
                 # paatyy missing-listalle alla — sanity paattaa.
@@ -133,6 +135,9 @@ def build() -> dict:
             players[str(cur_id)] = rows
             rows_total += len(rows)
 
+    if haettu:
+        print(f"player-gw: haettiin {haettu} element-summarya (kuluva kausi, "
+              f"cache oli tyhja tai yli {LIVE_MAX_AGE_S // 3600} h vanha).")
     return {
         "meta": {
             "basis_season": basis,
@@ -195,8 +200,29 @@ def main() -> int:
     # flippaa kuluvaan kauteen (GW1+), lähteet tulevat builderien tuoreesta
     # cachesta ja buildi ajaa CI:ssä normaalisti. Ilman tätä steppi failasi
     # accuracy-logissa joka ajossa 9.8–13.8 (26 punaista runia).
+    # 23.8 (Villen havainto: "miksei fantasyssa pelaajien oikeat pisteet ole
+    # paivittyneet muuten kuin Gabriel ja Tzolis"): ylla oleva SKIP kirjoitettiin
+    # kun basis oli PAATTYNYT 25/26-kausi. Kun basis flippasi 22.8 kuluvaan
+    # kauteen, sama ehto alkoi jaadyttaa ELAVAA outputtia: runnerilta puuttuu
+    # `summary_2627/` (gitignore), joten jokainen ajo tulosti "SKIP" ja
+    # `fpl/player-gw.json` jai 22.8 klo 07:45 tilaan — 31 pelaajaa, eli tasan ne
+    # jotka olivat pelanneet ennen lauantain kierrosta. Steppi oli VIHREA koko
+    # ajan, koska skip palauttaa 0.
+    #
+    # Kuluvan kauden summaryt ovat haettavissa (toisin kuin paattyneen kauden),
+    # joten puuttuva hakemisto ei ole este vaan tyhja cache: luodaan se ja
+    # annetaan build():n hakea puuttuvat (22.8:n lisays). SKIP jaa voimaan vain
+    # jaadytetylle basis-kaudelle, jolle se kirjoitettiin.
     basis = stats["meta"].get("basis_season")
-    if basis in SEASON_DIRS:
+    live = SEASON_KEYS.get(basis)
+    if basis in SEASON_DIRS and live:
+        summary_dir_name, boot_name = SEASON_DIRS[basis]
+        if not (CACHE / boot_name).exists():
+            print(f"Puuttuu kuluvan kauden {basis} bootstrap ({boot_name}) — "
+                  f"build_fpl_stats ei ole ajanut. Aito virhe.")
+            return 1
+        (CACHE / summary_dir_name).mkdir(parents=True, exist_ok=True)
+    elif basis in SEASON_DIRS:
         summary_dir_name, boot_name = SEASON_DIRS[basis]
         if not (CACHE / boot_name).exists() or not (CACHE / summary_dir_name).exists():
             out_basis = None
