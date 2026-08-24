@@ -2,10 +2,10 @@
  "meta": {
   "product": "GoalIQ Fantasy - price watch",
   "available": true,
-  "generated_at": "2026-08-24T12:33:51Z",
-  "total_players": 9486298,
+  "generated_at": "2026-08-24T13:51:57Z",
+  "total_players": 9492960,
   "n_players_scanned": 609,
-  "n_with_transfer_activity": 607,
+  "n_with_transfer_activity": 608,
   "source": "FPL official price projection",
   "official_projection": true,
   "disclaimer": "The percentages are FPL's own price projection, refreshed here every three hours. The day is their projection too, so a late rush of transfers still moves it.",
@@ -18,9 +18,9 @@
    "team": 5,
    "now_cost": 4.5,
    "status": "rising_watch",
-   "confidence": 0.58,
-   "progress_pct": 57.6,
-   "net_event": 116151,
+   "confidence": 0.6,
+   "progress_pct": 60.3,
+   "net_event": 121475,
    "already_changed_today": false,
    "eta_days": 1
   },
@@ -30,9 +30,9 @@
    "team": 4,
    "now_cost": 5.5,
    "status": "rising_watch",
-   "confidence": 0.57,
-   "progress_pct": 57.5,
-   "net_event": 109804,
+   "confidence": 0.59,
+   "progress_pct": 59.5,
+   "net_event": 113665,
    "already_changed_today": false,
    "eta_days": 1
   },
@@ -42,11 +42,10 @@
    "team": 1,
    "now_cost": 5.5,
    "status": "rising_watch",
-   "confidence": 0.62,
-   "progress_pct": 62.4,
-   "net_event": 116764,
-   "already_changed_today": false,
-   "eta_days": 2
+   "confidence": 0.63,
+   "progress_pct": 63.3,
+   "net_event": 118711,
+   "already_changed_today": false
   },
   {
    "id": 15,
@@ -54,35 +53,36 @@
    "team": 1,
    "now_cost": 6.5,
    "status": "rising_watch",
-   "confidence": 0.53,
-   "progress_pct": 52.7,
-   "net_event": 99418,
+   "confidence": 0.54,
+   "progress_pct": 53.7,
+   "net_event": 101363,
    "already_changed_today": false
   }
  ],
  "fallers": [
-  {
-   "id": 217,
-   "web_name": "M.França",
-   "team": 8,
-   "now_cost": 5.0,
-   "status": "falling_watch",
-   "confidence": 0.35,
-   "progress_pct": 34.7,
-   "net_event": -209,
-   "already_changed_today": false,
-   "eta_days": 2
-  },
   {
    "id": 18,
    "web_name": "Martinelli",
    "team": 1,
    "now_cost": 6.5,
    "status": "falling_watch",
-   "confidence": 0.65,
-   "progress_pct": 65.0,
-   "net_event": -2414,
-   "already_changed_today": false
+   "confidence": 0.66,
+   "progress_pct": 66.4,
+   "net_event": -2467,
+   "already_changed_today": false,
+   "eta_days": 2
+  },
+  {
+   "id": 22,
+   "web_name": "Nwaneri",
+   "team": 1,
+   "now_cost": 5.5,
+   "status": "falling_watch",
+   "confidence": 0.49,
+   "progress_pct": 48.8,
+   "net_event": -118,
+   "already_changed_today": false,
+   "eta_days": 2
   },
   {
    "id": 9,
@@ -90,9 +90,9 @@
    "team": 1,
    "now_cost": 5.5,
    "status": "falling_watch",
-   "confidence": 0.54,
-   "progress_pct": 54.1,
-   "net_event": -15743,
+   "confidence": 0.55,
+   "progress_pct": 55.0,
+   "net_event": -16011,
    "already_changed_today": false
   },
   {
@@ -101,9 +101,9 @@
    "team": 1,
    "now_cost": 7.5,
    "status": "falling_watch",
-   "confidence": 0.54,
-   "progress_pct": 53.8,
-   "net_event": -76738,
+   "confidence": 0.55,
+   "progress_pct": 54.8,
+   "net_event": -78043,
    "already_changed_today": false
   },
   {
@@ -112,9 +112,9 @@
    "team": 1,
    "now_cost": 5.5,
    "status": "falling_watch",
-   "confidence": 0.53,
-   "progress_pct": 53.4,
-   "net_event": -859,
+   "confidence": 0.55,
+   "progress_pct": 54.5,
+   "net_event": -877,
    "already_changed_today": false
   }
  ],
