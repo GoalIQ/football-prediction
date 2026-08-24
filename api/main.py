@@ -3118,8 +3118,9 @@ def grade_decisions(request: Request):
     """
     require_admin(request)
     from src.models.fpl_grade import (
-        NOTE_NO_ENTRY, fetch_live_points, finished_gws, grade_one,
-        make_picks_fetchers,
+        NOTE_LOGGED_AFTER_DEADLINE, NOTE_NO_ENTRY, fetch_live_points,
+        finished_gws, grade_one, logged_after_deadline, make_picks_fetchers,
+        true_deadlines,
     )
 
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
@@ -3134,13 +3135,22 @@ def grade_decisions(request: Request):
     done = finished_gws()
     if not done:
         return {"graded": 0, "skipped": 0, "gws": []}
+    # 🔴 RIIPPUMATON DEADLINE-LAHDE. `log_fpl_decision` vertaa klientin
+    # LAHETTAMAAN deadlineen, joten vaara pari (kierros N + kierroksen N+1
+    # deadline) lapaisee kannan lukituksen - nain kavi 24.8. Gradaus on
+    # ainoa vaihe joka paattaa mika menee track recordiin, joten se
+    # ristiintarkistaa `locked_at`in (palvelinaikaa) FPL:n omaan deadlineen.
+    # Klienttikorjaus ei riita: vanhat bundlet elavat laitteilla ja RPC on
+    # suoraan kutsuttavissa.
+    deadlines = true_deadlines()
 
     # Gradaamattomat päätökset valmiilta kierroksilta. PostgREST in-lista.
     gw_list = ",".join(str(g) for g in sorted(done))
     rows = requests.get(
         f"{SUPABASE_URL}/rest/v1/fpl_decisions"
         f"?graded_at=is.null&gw=in.({gw_list})"
-        f"&select=id,user_id,gw,kind,model_choice,user_choice,followed",
+        f"&select=id,user_id,gw,kind,model_choice,user_choice,followed,"
+        f"locked_at",
         headers=sb_headers, timeout=30,
     ).json()
     if not isinstance(rows, list) or not rows:
@@ -3170,11 +3180,17 @@ def grade_decisions(request: Request):
             live_by_gw[gw] = fetch_live_points(gw)
             fetchers_by_gw[gw] = make_picks_fetchers(gw)
         fetch_captain, fetch_transfers = fetchers_by_gw[gw]
-        model_pts, user_pts, note = grade_one(
-            r["kind"], r.get("model_choice") or {}, r.get("user_choice") or {},
-            bool(r["followed"]), live_by_gw[gw],
-            entry_by_user.get(r["user_id"]), fetch_captain, fetch_transfers,
-        )
+        if logged_after_deadline(r.get("locked_at"), deadlines.get(gw)):
+            # Ei ennuste vaan jalkiviisaus. Merkitaan gradatuksi ilman
+            # pisteita, jotta rivi ei jaa jonoon eika laske track recordiin.
+            model_pts, user_pts, note = None, None, NOTE_LOGGED_AFTER_DEADLINE
+        else:
+            model_pts, user_pts, note = grade_one(
+                r["kind"], r.get("model_choice") or {},
+                r.get("user_choice") or {}, bool(r["followed"]),
+                live_by_gw[gw], entry_by_user.get(r["user_id"]),
+                fetch_captain, fetch_transfers,
+            )
         patch = requests.patch(
             f"{SUPABASE_URL}/rest/v1/fpl_decisions?id=eq.{r['id']}",
             headers=sb_headers, timeout=15,

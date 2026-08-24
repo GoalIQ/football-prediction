@@ -36,6 +36,9 @@ NOTE_NO_ENTRY = "no_entry_id"
 NOTE_PICKS_UNAVAILABLE = "picks_unavailable"
 NOTE_PLAYER_MISSING = "player_missing"
 NOTE_KIND_NOT_GRADED = "kind_not_graded"
+# 24.8: rivi joka on kirjattu VASTA kierroksen deadlinen jalkeen ei ole
+# ennuste vaan jalkiviisaus, eika se saa kelvata track recordiin.
+NOTE_LOGGED_AFTER_DEADLINE = "logged_after_deadline"
 
 # Palautettu tulos: (model_points, user_points, grade_note)
 GradeResult = tuple[float | None, float | None, str]
@@ -178,6 +181,62 @@ def make_picks_fetchers(gw: int):
         return transfers_cache[entry_id]
 
     return fetch_captain, fetch_transfers
+
+
+def true_deadlines() -> dict[int, str]:
+    """Kierros -> FPL:n OMA deadline (ISO). Riippumaton lahde klientista.
+
+    🔴 MIKSI TAMA ON OLEMASSA. `log_fpl_decision` (Supabase-migraatio
+    20260727220000) vertaa `now() >= p_deadline_utc`, jossa `p_deadline_utc`
+    tulee KLIENTILTA. Kanta ei siis tieda kierroksen oikeaa deadlinea, ja
+    vaara pari (kierros N + kierroksen N+1 deadline) lapaisee lukituksen.
+    Tasan nain kavi 24.8: mobiili luki kierroksen rate-teamista ja deadlinen
+    Phase 0:sta, ja GW1-paatoksia pystyi kirjaamaan kolme paivaa GW1:n
+    jalkeen - tulokset tiedossa.
+
+    Klienttikorjaus tehtiin, mutta se on klientti: vanhat bundlet elavat
+    laitteilla ja RPC on suoraan kutsuttavissa. Siksi gradaus - joka on
+    ainoa vaihe joka paattaa mika menee track recordiin - ristiintarkistaa
+    `locked_at`in (palvelinaikaa, `now()`) taman lahteen deadlinea vasten.
+    Migraation oma kommentti ennakoi tata: "ratkaisuvaihe voi lisaksi
+    ristiintarkistaa sen oikeaa FPL-deadlinea vasten".
+    """
+    import requests
+
+    r = requests.get(f"{FPL_BASE}/bootstrap-static/", timeout=30,
+                     headers={"User-Agent": "GoalIQ/1.0"})
+    r.raise_for_status()
+    out: dict[int, str] = {}
+    for e in r.json().get("events", []):
+        gw, dl = e.get("id"), e.get("deadline_time")
+        if isinstance(gw, int) and isinstance(dl, str):
+            out[gw] = dl
+    return out
+
+
+def logged_after_deadline(locked_at: str | None, deadline: str | None) -> bool:
+    """Onko rivi kirjattu vasta deadlinen jalkeen? Tuntematon -> False.
+
+    Tuntematon EI ole syyllinen: puuttuva aikaleima on datavika eika todiste
+    jalkiviisaudesta, ja rivin hylkaaminen sen perusteella rankaisisi
+    kayttajaa infran ongelmasta.
+    """
+    from datetime import datetime
+
+    def parse(x: str | None):
+        if not x:
+            return None
+        try:
+            return datetime.fromisoformat(x.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    a, b = parse(locked_at), parse(deadline)
+    if a is None or b is None:
+        return False
+    try:
+        return a > b
+    except TypeError:
+        return False
 
 
 def finished_gws() -> set[int]:
