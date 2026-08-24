@@ -1309,6 +1309,27 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         f'<tbody id="xgb">{trows}</tbody></table></div>'
         '<button type="button" class="chip" id="xgmore" '
         'style="margin:4px 0 8px;">Show all players</button>'
+        + _share_button("4px 0 8px")
+        + _table_share_card(
+            table_sel="#xgt2",
+            # Sarakkeet: #(0) Player(1) Team(2) Pos(3) Price(4) xG(5) xA(6)
+            # HUOM: kortti seuraa suodatettua ja lajiteltua nakymaa, koska se
+            # lukee tbodyn - sivun JS kirjoittaa #xgb:n uudelleen.
+            name_i=1, team_i=2, tag_i=3, mid_i=6, value_i=5,
+            title="XG LEADERS",
+            # 🔴 KAUSI KUULUU ALAOTSIKKOON, EI VAIN SIVULLE. Sivu kantaa
+            # basis-labelin ("Based on 2025/26 ...") omana rivinaan, mutta
+            # jaettu kuva irtoaa sivusta: ilman kautta lukija olettaa
+            # kuluvan kauden luvut. Sama vikaluokka kuin julkaistu luku
+            # vaarasta sarakkeesta - luku on oikein sivulla ja vaara
+            # vaitteeseen. Ikkuna (5 ottelua) on toinen pakollinen rajaus:
+            # ilman sita luku nayttaa kausitotaalilta.
+            subtitle=(f"{_basis_short(basis)}, per game, last 5 played "
+                      f"matches each" if _basis_short(basis)
+                      else "per game, last 5 played matches each"),
+            mid_label="XA", value_label="XG",
+            foot="official FPL API data, free at goaliq.app/fpl/xg-leaders",
+            file_name="goaliq-xg-leaders.png")
     )
     payload = (
         '<script id="xgdata">window.__XG__='
@@ -1912,6 +1933,87 @@ _DEFENCE_SPEC_FN = r"""function(){
 
 def _defence_share_card() -> str:
     return SHARE_CARD_JS.replace("__CARD_ROWS_FN__", _DEFENCE_SPEC_FN)
+
+
+# ---------------------------------------------------------------------------
+# Jaettu taulukkokortti (24.8)
+# ---------------------------------------------------------------------------
+# MIKSI YKSI GENERAATTORI EIKA KOLMAS KASIN KIRJOITETTU JS-FUNKTIO: stats- ja
+# defence-korteista on jo kaksi erillista toteutusta samasta asiasta, ja
+# kolmas olisi tehnyt eroista pysyvia. Mitattu 24.8: 15 ilmaissivusta kortti
+# oli kahdella.
+#
+# LUKEE SIVUN OMAN TAULUKON, EI DATAA UUDELLEEN. Kortti ei saa voida nayttaa
+# muuta kuin mita lukija nakee samalla sivulla - se on koko kortin peruste
+# (kirjattu: jakokortti verifioidaan kuvana, ja vaite tarvitsee reitin).
+# Siksi rivit poimitaan renderoidusta DOMista sarakeindekseilla eika
+# rinnakkaisesta JSON-payloadista.
+#
+# 🔴 SARAKEINDEKSI ON SOPIMUS. Jos taulukon sarakejarjestys muuttuu, kortti
+# nayttaa hiljaa vaaran sarakkeen - ei tyhjaa. Siksi jokainen kutsu antaa
+# indeksit nimettyina ja `test_share_card_columns` lukee ne renderoidusta
+# HTML:sta theadin otsikoita vasten.
+def _table_card_fn(*, table_sel: str, name_i: int, value_i: int,
+                   team_i=None, tag_i=None, mid_i=None,
+                   title: str, subtitle: str, value_label: str,
+                   name_label: str = "PLAYER", mid_label: str = "",
+                   foot: str = "",
+                   foot2: str = "free at goaliq.app, not betting advice",
+                   file_name: str) -> str:
+    """Palauttaa JS-funktion joka lukee taulukon ja rakentaa korttispecin."""
+    def opt(i, key):
+        return (f"{key}:(td[{i}]?td[{i}].textContent:'').trim()," if i is not None
+                else "")
+    need = max(x for x in (name_i, value_i, team_i, tag_i, mid_i)
+               if x is not None) + 1
+    spec = (f"title:{json.dumps(title)},"
+            f"subtitle:{json.dumps(subtitle)},"
+            f"nameLabel:{json.dumps(name_label)},"
+            + (f"midLabel:{json.dumps(mid_label)}," if mid_label else "")
+            + f"valueLabel:{json.dumps(value_label)},"
+            + (f"footNote:{json.dumps(foot)}," if foot else "")
+            + f"footNote2:{json.dumps(foot2)},"
+            f"rows:rows,fileName:{json.dumps(file_name)}")
+    return chr(10).join([
+        "function(){",
+        f" var t=document.querySelector({json.dumps(table_sel)});",
+        " if(!t)return null;",
+        " var rows=[],trs=t.querySelectorAll('tbody tr'),i;",
+        " for(i=0;i<trs.length&&rows.length<10;i++){",
+        "  var td=trs[i].children;",
+        f"  if(td.length<{need})continue;",
+        "  rows.push({rank:rows.length+1,"
+        f"name:(td[{name_i}].textContent||'').trim(),"
+        + opt(team_i, "team") + opt(tag_i, "tag") + opt(mid_i, "mid")
+        + f"value:(td[{value_i}].textContent||'').trim()}});",
+        " }",
+        " return {" + spec + "};",
+        "}",
+    ])
+
+
+def _basis_short(label: str) -> str:
+    """Poimii kauden basis-labelista kortin alaotsikkoon ("2025/26").
+
+    Koko labeli ("Based on 2025/26 - updates as the new season plays") ei
+    mahdu alaotsikkoon eika kuulu sinne: kortti tarvitsee kauden, ei sivun
+    selityksen. Jos kautta ei loydy, palautetaan tyhja - kortti jattaa
+    kausiviitteen POIS eika arvaa. Vaara kausi olisi pahempi kuin puuttuva.
+    """
+    m = re.search(r"(20\d{2}/\d{2})", label or "")
+    return m.group(1) if m else ""
+
+
+def _table_share_card(**kw) -> str:
+    return SHARE_CARD_JS.replace("__CARD_ROWS_FN__", _table_card_fn(**kw))
+
+
+# Nappi on sama kaikilla sivuilla. Oma funktio, jotta teksti ei eriydy:
+# stats sanoo "Share as image" ja defence sanoi saman, mutta kolmas sivu olisi
+# helposti saanut oman sanamuodon.
+def _share_button(margin: str = "10px 0 4px") -> str:
+    return ('<button type="button" class="chip" id="sharecard" '
+            f'style="margin:{margin};">Share as image</button>')
 
 
 def render_stats(stats: dict, now: datetime) -> str | None:
@@ -3668,9 +3770,24 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f"is that total divided by {n_gw}, not a single-gameweek projection. "
         "<em>xP/90</em> is the scoring rate, <em>Start%</em> is how likely "
         "he is to start, <em>xMins</em> combines the two.</p>"
-        f"{kitdefs}{table}"
-        + _tflag_note(xp, rows[:100], rows) +
-        '<p class="note"><strong>Start% near 50 means the model is split.'
+        + _share_button()
+        + f"{kitdefs}{table}"
+        + _table_share_card(
+            table_sel="table.lb",
+            # Sarakkeet: #(0) Player(1) Team(2) Pos(3) Price(4) 6GW xP(5)
+            name_i=1, team_i=2, tag_i=3, mid_i=4, value_i=5,
+            title="TOP 10 BY EXPECTED POINTS",
+            subtitle=f"next {n_gw} gameweeks, GoalIQ match model",
+            mid_label="PRICE", value_label=f"{n_gw}GW xP",
+            # Reitti tarkistukseen kuuluu korttiin: kuva irtoaa sivusta, ja
+            # ilman osoitetta lukija ei voi tarkistaa mistaan onko top-10
+            # poimittu suuremmasta listasta. foot2 vaihdettu moduulin
+            # oletukseen, koska "free at goaliq.app" olisi sanottu kahdesti.
+            foot="the full top 100 is free on goaliq.app/fpl/expected-points",
+            foot2="model projections, not betting advice",
+            file_name="goaliq-expected-points.png")
+        + _tflag_note(xp, rows[:100], rows)
+        +         '<p class="note"><strong>Start% near 50 means the model is split.'
         "</strong> Those totals are a bet on team news, not a settled "
         "projection. A keeper on 51% is not a 45-minute keeper.</p>"
         # 10.8: mitattu harha julki (Villen valinta C). Nelja korjausyritysta
@@ -3889,8 +4006,20 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
         f"error is <strong>{mae} points</strong>. It was too low on "
         f"{yli} of them and too high on {n - yli}."
         f"</p></div>"
-        f"{table}"
-        f'<p class="note">A player with no row has not played yet, so the '
+        + _share_button()
+        + f"{table}"
+        + _table_share_card(
+            table_sel="table.lb",
+            # Sarakkeet: Player(0) Team(1) Pos(2) Price(3) xP(4) Pts(5) Diff(6)
+            name_i=0, team_i=1, tag_i=2, mid_i=4, value_i=5,
+            title=f"GW{gw} PROJECTED VS ACTUAL",
+            # Alaotsikko kantaa kortin koko kulman: xP ei ole jalkikateen
+            # laskettu. Ilman tata kortti olisi kymmenes pistetaulukko.
+            subtitle="xP frozen at the deadline, points from the FPL API",
+            mid_label="xP", value_label="PTS",
+            foot="projection published before kickoff, not recalculated after",
+            file_name=f"goaliq-points-gw{gw}.png")
+        +         f'<p class="note">A player with no row has not played yet, so the '
         f"table grows as each match finishes. A missing row is not a zero."
         + (f" {ilman_ennustetta} player"
            + ("s" if ilman_ennustetta != 1 else "")
