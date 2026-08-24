@@ -1179,6 +1179,11 @@ def fantasy_defcon_player(
             "counts_recoveries": pos in ("MID", "FWD"),
             "components_available": have_components,
             "basis_season": meta.get("basis_season"),
+            # 24.8: SPA nayttaa season-sarakkeen ja rullaavan ikkunan samassa
+            # taulukossa, ja ne tulevat ERI KAUSILTA kausivaihdossa (ikkuna =
+            # recent_games basis-kaudelta, season = elava bootstrap). Ilman
+            # tata kenttaa klientti ei voi nimeta kumpaakaan oikein.
+            "target_season": meta.get("target_season"),
             "is_prev_season_basis": meta.get("is_prev_season_basis"),
             "basis_label": meta.get("basis_label"),
             "generated_at": meta.get("generated_at"),

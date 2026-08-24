@@ -337,7 +337,30 @@
 		}
 		capture('leaders_sorted', { list: 'defcon', key: k, desc: dcSortDesc });
 	}
-	const basisLabel = $derived(xg?.meta?.basis_label ?? defcon?.meta?.basis_label ?? null);
+	// 24.8: `basis_label` kantaa muodon "Based on 2025/26 · updates as the new
+	// season plays". Jalkimmainen puolisko on kadenssilupaus jota lukija ei
+	// voi tarkistaa, ja se oli epatosi: artefakti ei liikkunut vaikka uusi
+	// kausi oli alkanut. Artefaktit ovat committoituja, joten lahteen korjaus
+	// ei nay taalla ennen niiden seuraavaa ajoa - pudotetaan lupausosa tassa.
+	function ilmanKadenssia(label: string | null | undefined): string | null {
+		if (!label) return null;
+		const osa = label.split(' · ')[0];
+		return osa.startsWith('Based on ')
+			? `Numbers are from the ${osa.slice('Based on '.length)} season`
+			: osa;
+	}
+	// Ikkunan kausi luetaan RIVEILTA eika metasta: kausivaihdossa meta kertoo
+	// target-kauden mutta rivit kantavat yha edellisen kauden otteluita, ja
+	// sekatilassa yhta kautta ei ole - silloin kausi jatetaan sanomatta.
+	const xgIkkunaKausi = $derived.by(() => {
+		const kaudet = new Set(
+			(xg?.players ?? []).map((p) => p.basis).filter((b): b is string => !!b)
+		);
+		return kaudet.size === 1 ? [...kaudet][0] : '';
+	});
+	const basisLabel = $derived(
+		ilmanKadenssia(xg?.meta?.basis_label ?? defcon?.meta?.basis_label)
+	);
 
 	function unlock() {
 		capture('upgrade_tapped', { source: 'fantasy_leaders' });
@@ -630,8 +653,10 @@
 		{/if}
 		<p class="muted count">
 			{xgVisible.length} players{per90 ? ', per 90 minutes' : seasonView ? ', season totals' : ', per game'}{seasonView
-				? ', full season'
-				: `, last ${xg?.meta?.window ?? gameWindow} games each`}{minMins
+				? `, ${xg?.meta?.target_season ?? 'current'} season so far`
+				: `, last ${xg?.meta?.window ?? gameWindow} games each${
+						xgIkkunaKausi ? `, ${xgIkkunaKausi}` : ''
+					}`}{minMins
 				? `, at least ${minMins} minutes played`
 				: ''}{xgBand.label === 'All' ? '' : `, price ${xgBand.label}m`}
 		</p>
@@ -826,7 +851,7 @@
 												g.hits} above the threshold of {g.threshold} ({Math.round(
 												g.hit_rate * 100
 											)}%), worth {g.dc_points} DefCon points across all {g.games} appearances.
-											{gwData.meta.basis_label}
+											{ilmanKadenssia(gwData.meta.basis_label)}
 										</p>
 									{/if}
 								</td>

@@ -90,7 +90,7 @@
 			<p class="muted">Log your first call above and the season scoreboard starts here.</p>
 		{:else if score.gradedCount === 0}
 			<p class="muted">
-				Your logged calls get graded once the gameweek finishes. First scores land after GW1.
+				Your logged calls get graded once the gameweek finishes and FPL has scored it.
 			</p>
 		{:else}
 			<div class="totals">

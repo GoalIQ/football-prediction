@@ -112,10 +112,17 @@
 	<!-- PI-16b (28.7): vanha teksti sanoi "before that this tool has no squad to
 	     plan from". Se piti paikkansa ennen tätä korjausta eikä pidä enää:
 	     tallennettu draft kelpaa syötteeksi. -->
+	<!-- 24.8 (GW1-STALE-COPY-2): "Before the Gameweek 1 deadline" vanheni 21.8,
+	     mutta lohko on !entryValid-ehdon takana joka laukeaa yha. Sama korjaus
+	     kuin EdgeModessa: kausiriippumaton sanamuoto, sama lopputulos. -->
+	<!-- 24.8: kausisidonnaisuuden korjaus meni yli. "No entry ID yet? The
+	     chains run on your draft" nakyy tasan silloin kun ID:ta EI ole, ja
+	     silloin lupaus on epatosi kahdesti: submit on disabled (rivi 107) ja
+	     runWithSquadFallback vaatii entry-numeron JA picks_not_published-
+	     koodin. Draft-polku on olemassa mutta se aukeaa vasta ID:n kanssa. -->
 	<p class="muted hint">
-		Enter your public FPL entry ID (the number in your Points page URL). Before the Gameweek 1
-		deadline FPL keeps every squad private, so the chains run on the 15 you drafted in Rate my
-		team instead.
+		Enter your public FPL entry ID (the number in your Points page URL). If FPL has not
+		published your squad yet, the chains run on the 15 you drafted in Rate my team.
 	</p>
 {/if}
 
@@ -125,8 +132,8 @@
 
 {#if needsDraft}
 	<p class="notice-preseason">
-		<strong>Your squad is not public yet.</strong> FPL publishes every team only after the
-		Gameweek 1 deadline. Until then, draft your 15 in Rate my team and the chain search runs on
+		<strong>Your squad is not public yet.</strong> FPL keeps a team private until the first
+		deadline it plays. Until then, draft your 15 in Rate my team and the chain search runs on
 		that draft.
 	</p>
 {:else if error}
@@ -134,8 +141,7 @@
 {:else if data && hero}
 	{#if basedOn === 'draft'}
 		<p class="notice-preseason">
-			Based on your saved draft of 15, because FPL does not publish squads until the Gameweek
-			1 deadline.
+			Based on your saved draft of 15, because your squad is not public yet.
 		</p>
 	{/if}
 	{#if data.meta.timeout_degraded}

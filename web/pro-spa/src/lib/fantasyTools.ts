@@ -495,6 +495,11 @@ export interface LeadersMeta {
 	/** Pelien maara ikkunassa TAI 'season' (koko basis-kausi, 30.7 #7). */
 	window: number | 'season';
 	basis_season: string | null;
+	/** 24.8: kausi jota SEASON-sarake kuvaa. Ei sama kuin `basis_season`
+	 *  kausivaihdossa: rullaava ikkuna lukee edellisen kauden otteluita kun
+	 *  season-sarake tulee elavasta bootstrapista. Defensiivinen: vanha
+	 *  backend ei lahetta. */
+	target_season?: string | null;
 	is_prev_season_basis?: boolean;
 	basis_label: string | null;
 	generated_at: string | null;

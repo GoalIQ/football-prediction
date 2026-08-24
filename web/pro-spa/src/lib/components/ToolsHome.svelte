@@ -435,7 +435,9 @@
 				{:else if !xp}
 					<p class="muted">Loading expected points…</p>
 				{:else if !xp.meta?.available}
-					<p class="banner success">xP projections go live before Gameweek 1.</p>
+					<!-- 24.8 (GW1-STALE-COPY-2): luki "go live before Gameweek 1". Haara
+					     laukeaa aina kun available=false, ei vain esikaudella. -->
+					<p class="banner success">xP projections are not available for this gameweek yet.</p>
 				{:else}
 					<div class="tool-card" id="pc-captain"><CaptainRanker data={xp} /></div>
 					<div class="tool-card" id="pc-swing"><FixtureSwing data={xp} /></div>

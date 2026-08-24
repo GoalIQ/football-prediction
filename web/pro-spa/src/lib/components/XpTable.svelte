@@ -295,8 +295,8 @@
 	horizon. <strong>xP/90</strong> is the rate over a full 90 minutes, shown next to
 	<strong>xMins</strong> so the minutes assumption is visible instead of multiplied into one number. Click a row to see how a player's xP is built.{#if hasSetPieces}
 		The <strong>P</strong>, <strong>C</strong> and <strong>FK</strong> badges mark players
-		first or second in line for penalties, corners and direct free kicks (FPL squad data,
-		updated through pre-season).{/if}
+		first or second in line for penalties, corners and direct free kicks (FPL squad
+		data).{/if}
 </p>
 
 <MethodNote summary="How xP is built">

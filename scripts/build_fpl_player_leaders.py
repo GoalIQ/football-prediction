@@ -182,8 +182,13 @@ def build_from_cache_2526() -> dict:
 def _package(season: str, players: list[dict]) -> dict:
     is_prev = season != TARGET_SEASON or all(
         p.get("basis") != TARGET_SEASON for p in players)
+    # 24.8: luki "Based on {season} · updates as the new season plays".
+    # Kadenssilupaus, ja epatosi: generated_at ei ollut liikkunut 23.7.
+    # jalkeen vaikka 26/27 GW1 oli pelattu. Vain hinta/seura/pelipaikka
+    # paivittyvat (refresh_current_attrs). Sanotaan mika data on, ei
+    # milloin se paivittyy - lukija voi tarkistaa edellisen, ei jalkimmaista.
     basis_label = (
-        f"Based on {season} · updates as the new season plays"
+        f"Rolling-window numbers are from the {season} season"
         if season != TARGET_SEASON else
         "Mixed basis: players with under 3 games this season show last "
         "season's data (per-row basis field)."

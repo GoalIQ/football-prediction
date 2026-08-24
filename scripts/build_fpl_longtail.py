@@ -1054,6 +1054,16 @@ def _xg_payload(leaders: dict) -> str:
 
 # Selainlogiikka: ikkuna (3/5/10), per game vs per 90, lajittelu, suodattimet.
 # Ei em dashia missaan nakyvassa tekstissa (viestintatyyli SS1b).
+# 🔴 KAKSI ERI KAUTTA SAMASSA TAULUKOSSA (24.8). Rullaavat ikkunat (3/5/10)
+# lukevat `recent_games`ia joka on BASIS-kauden otteluita; Season-ikkuna
+# lukee `season`-lohkoa jonka `refresh_current_attrs` tayttaa ELAVASTA
+# bootstrapista eli KULUVASTA kaudesta. Ennen 24.8 Season-ikkuna sanoi "full
+# season" ilman kautta, ja sen ylapuolella oleva basis-rivi sanoi "2025/26" -
+# luvut olivat 26/27:n GW1:sta. Nyt kumpikin ikkuna nimeaa kautensa
+# (BASIS_K / TARGET_K, injektoidaan render_xg_leadersissa).
+#
+# HUOM: tahan merkkijonoon EI kirjoiteta suomea, se shippaa julkiselle
+# englanninkieliselle sivulle. Portti: tests/test_no_finnish_in_public_js.py
 XG_JS = """
 <script>
 (function(){
@@ -1079,6 +1089,7 @@ XG_JS = """
  var minm=0;
  var tb=document.getElementById('xgb'),cnt=document.getElementById('xgc');
  if(!tb)return;
+ var BASIS_K='__BASIS_K__',TARGET_K='__TARGET_K__';
  function agg(p){
   if(w==='S'){
    // Full season: bootstrap totals. "Per game" mode shows TOTALS (per
@@ -1099,7 +1110,7 @@ XG_JS = """
  function rows(){
   var r=[];
   for(var i=0;i<D.length;i++){
-   // Sama saanto kuin palvelimella (fpl_leaders.rank_xg_leaders): maalivahdit
+   // Same rule as on the server (fpl_leaders.rank_xg_leaders): goalkeepers
    // out by default, because this is an xG list, not a saves list. The GKP
    // filter shows them separately. Without this the page would give two
    // different numbers.
@@ -1146,7 +1157,9 @@ XG_JS = """
   // bootstrap provides starts). The header says which one, no guessing.
   var hh=document.querySelectorAll('#xgt2 thead th');
   if(hh&&hh[9])hh[9].textContent=(w==='S')?'Starts':'Games';
-  var span=(w==='S')?', full season':', last '+w+' games each';
+  // Each window names its own season: they come from different sources.
+  var span=(w==='S')?', '+TARGET_K+' season so far'
+                    :(', last '+w+' games each'+(BASIS_K?', '+BASIS_K:''));
   var rate=per90?', per 90 minutes':((w==='S')?', season totals':', per game');
   // The count must match what is on screen. Saying "400 players" while the
   // table renders 100 is the same failure as a claim the reader cannot check:
@@ -1238,13 +1251,72 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     rows = out["players"]
     if not rows:
         return None
-    basis = out["meta"].get("basis_label") or ""
+    # rank_xg_leaders karsii metan, joten target_season luetaan raakadatan
+    # metasta. Molemmat tarkistetaan: tyhja kausi pudottaa vaitteen pois
+    # eika tuota "from  matches" -tyyppista rikkinaista lausetta.
+    _lm = (leaders.get("meta") or {})
+    _om = (out.get("meta") or {})
+    _basis_k = str(_om.get("basis_season") or _lm.get("basis_season") or "")
+    _target_k = str(_om.get("target_season") or _lm.get("target_season") or "")
+    # 🔴 META EI RIITA KAUSIVAIHDOSSA. Kun FPL kaantaa GW1:n finished-lipun,
+    # `basis_season` muuttuu target-kaudeksi mutta MIN_CURRENT_GAMES=3
+    # tarkoittaa etta lahes jokainen rivi kantaa yha edellisen kauden
+    # otteluita (per-rivi `basis`). Pelkkaan metaan nojaava lause vaittaisi
+    # silloin kautta jota rivien data ei ole - ja pudottaisi samalla
+    # artefaktin oman rehellisen "Mixed basis" -varauksen. Rivit ovat
+    # totuus, meta on tarjoilijan nakemys.
+    _rivikaudet = sorted({str(x.get("basis") or "")
+                          for x in (leaders.get("players") or [])} - {""})
+    _sekakausi = len(_rivikaudet) > 1
+    # Ikkunan kausimerkinta JS:lle: sekatilassa tyhja, koska yhta kautta ei
+    # ole. Vaara kausi olisi pahempi kuin puuttuva.
+    _ikkuna_k = "" if _sekakausi else (_rivikaudet[0] if _rivikaudet else _basis_k)
+
+    # 🔴 EI TALLENNETTUA LABELIA. `basis_label` on rakennushetkella kirjoitettu
+    # proosa, ja se lupasi kadenssin ("updates as the new season plays") joka
+    # oli epatosi: artefakti ei ollut liikkunut 23.7. jalkeen. Sama saanto
+    # kuin kortin kausiviitteessa - johda rakenteisista kentista, ala parsi
+    # tai toista viereista proosaa. Nain korjaus patee heti eika vasta
+    # seuraavan artefaktiajon jalkeen.
+    if _sekakausi:
+        basis = (f"Rolling-window numbers mix seasons: a player with fewer "
+                 f"than 3 games in {_target_k} still shows his "
+                 f"{_rivikaudet[0]} matches. The season column is "
+                 f"{_target_k} so far")
+    elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
+        basis = (f"Rolling-window numbers are from the {_ikkuna_k} season; "
+                 f"the season column is {_target_k} so far")
+    elif _ikkuna_k and _target_k:
+        basis = (f"Rolling-window numbers and the season column are both "
+                 f"{_target_k}")
+    else:
+        basis = out["meta"].get("basis_label") or ""
+    # 🔴 KAKSI ERI KAUTTA SAMALLA SIVULLA, JA "rebuilt every few hours" OLI
+    # EPATOSI MOLEMMILLE. Rullaavat ikkunat (3/5/10) lukevat `recent_games`ia
+    # joka on BASIS-kauden otteluita (viimeinen pelattu toukokuussa, artefakti
+    # rakennettu 23.7); Season-ikkuna lukee `season`-lohkoa jonka
+    # refresh_current_attrs tayttaa ELAVASTA bootstrapista. Yksi tuoreusluku
+    # on siis aina vaara jommallekummalle, ja kadenssilupaus oli vaara
+    # molemmille. Sanotaan mika data on, ei milloin se paivittyy.
+    if _sekakausi:
+        xg_tuoreus = (
+            f"rolling windows mix seasons until a player has 3 games in "
+            f"{_target_k}, the season column uses {_target_k} totals so far")
+    elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
+        xg_tuoreus = (f"rolling windows use {_ikkuna_k} matches, the season "
+                      f"column uses {_target_k} totals so far")
+    elif _ikkuna_k:
+        xg_tuoreus = (f"rolling windows and the season column are both "
+                      f"{_ikkuna_k}")
+    else:
+        xg_tuoreus = "see the basis line below"
+
     url = f"{BASE}/fpl/xg-leaders"
     title = "Top xG Performers: FPL Expected Goals Leaders | GoalIQ"
     desc = (
         f"The top FPL expected-goals (xG) performers over each player's last "
         f"5 games: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
-        f"xG per game. From official FPL match data, rebuilt every few hours."
+        f"xG per game. From official FPL match data: {xg_tuoreus}."
     )
     top3 = "".join(
         '<div class="stat">'
@@ -1318,7 +1390,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         "<h1>Top xG performers in FPL</h1>"
         '<p class="lede">Which players generate the most expected goals (xG) '
         "per game? Ranked over each player's last five played matches from "
-        "official FPL match data. Free, no sign-in, rebuilt every few hours.</p>"
+        f"official FPL match data. Free, no sign-in: {xg_tuoreus}.</p>"
     )
     body = (
         f'<p class="note"><strong>{escape(basis)}</strong></p>'
@@ -1329,7 +1401,8 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         "game window, filter by position or team, and sort any column. No "
         "cut-off and no sign-in: this is public FPL match data, so it is not "
         "behind a subscription.</p>"
-        f"{kitdefs}{controls}{table}{payload}{XG_JS}"
+        f"{kitdefs}{controls}{table}{payload}"
+        + XG_JS.replace("__BASIS_K__", _ikkuna_k).replace("__TARGET_K__", _target_k)
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )
@@ -1364,7 +1437,13 @@ def render_defcon(leaders: dict, now: datetime) -> str | None:
     if not rows:
         return None
     per = "starts" if out["meta"].get("hit_rate_denominator") == "starts" else "games"
-    basis = out["meta"].get("basis_label") or ""
+    # 24.8: luki tallennettua `basis_label`ia, jossa oli kadenssilupaus
+    # ("updates as the new season plays"). Artefakti on committoitu, joten
+    # lahteen korjaus ei nakyisi ennen seuraavaa ajoa - ja kadenssilupaus oli
+    # livena juuri regeneroidulla sivulla. Pudotetaan lupausosa taalla.
+    basis = (out["meta"].get("basis_label") or "").split(" · ")[0]
+    if basis.startswith("Based on "):
+        basis = "Numbers are from the " + basis[len("Based on "):] + " season"
     url = f"{BASE}/fpl/defcon"
     title = "Best DefCon Players: FPL Defensive Contribution Leaders | GoalIQ"
     desc = (
@@ -1546,8 +1625,7 @@ STATS_JS = """
  function fmt(row,k){
   var v=val(row,k);
   // null = the player was not matched to shot data. An empty dash is the
-  // truth,
-  // nolla olisi vaite ettei han laukonut kertaakaan.
+  // truth; a zero would be a claim that he never had a shot.
   if(v===null||v===undefined)return '\\u2013';
   if(k==='pen'||k==='cor'||k==='fk')return v?String(v):'\\u2013';
   if(typeof v!=='number')return v;
@@ -1607,9 +1685,9 @@ STATS_JS = """
    s+='<tr><td class="n">'+(j+1)+'</td><td>'+r[C.name]+'</td>'
     +'<td>'+r[C.team]+'</td><td class="m-hide">'+r[C.pos]+'</td>'
     +'<td class="n m-hide">'+r[C.price].toFixed(1)+'</td>'
-    // Mins and Starts are windowable: without raw() they showed the season
-    // lukuja GW-otsikon alla (Haaland 2953 min "GW1-6:lla"). Loytyi vasta
-    // by looking at the live page, not from code.
+    // Mins and Starts are windowable: without raw() they showed season
+    // numbers under a GW heading (Haaland 2953 min for "GW1-6"). Found by
+    // looking at the live page, not from the code.
     +'<td class="n m-hide">'+raw(r,'mins')+'</td>';
    if(mode==='pstart')s+='<td class="n m-hide">'+raw(r,'starts')+'</td>';
    for(var m=0;m<ks.length;m++){
@@ -1820,8 +1898,7 @@ _STATS_SPEC_FN = r"""function(){
   if(tm&&tm.value)bits.push(tm.value);
   var pr=document.getElementById('stprice');
   // The price picker's default is the upper bound (99), which is NOT a
-  // filter. Without
-  // tarkistusta kortti sanoi "max 99" jokaisessa kuvassa.
+  // filter. Without this check the card said "max 99" on every image.
   if(pr&&pr.value&&Number(pr.value)<99)bits.push('max '+Number(pr.value).toFixed(1)+'m');
   var qq=document.getElementById('stq');
   if(qq&&qq.value.trim())bits.push('"'+qq.value.trim()+'"');
@@ -3562,16 +3639,22 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
 
     rows = sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))
     n_gw = len(rows[0].get("gameweeks") or []) or 6
+    # 🔴 KIERROSNUMEROT, EI "next N". Ks. yllä: `next_gameweek` on kesken
+    # oleva kierros, joten "next 6" luetaan seuraavaksi kuudeksi ja se on
+    # kokonaisen kierroksen verran vaarin heti kun kierros on pelattu.
+    _first_gw = meta.get("next_gameweek")
+    window = (f"GW{_first_gw}-{_first_gw + n_gw - 1}"
+              if isinstance(_first_gw, int) else f"the next {n_gw} GWs")
     url = f"{BASE}/fpl/expected-points"
     # 21.8 (portti): "every player ranked" saa esiintya vain top-100-
     # rajauksen kanssa samassa lauseessa — ilmaissivu nayttaa tasan 100
     # rivia koko projektiosta, ei jokaista pelaajaa.
     title = (f"FPL Expected Points: Top 100 Players by xP "
-             f"(next {n_gw} GWs) | GoalIQ")
+             f"({window}) | GoalIQ")
     lead = rows[0]
     desc = (
-        f"Every FPL player ranked by expected points over the next {n_gw} "
-        f"gameweeks; the top 100 of the full projection shown free, no "
+        f"Every FPL player ranked by expected points over {window}; "
+        f"the top 100 of the full projection shown free, no "
         f"sign-in. {lead['web_name']} leads on "
         f"{lead['xp_horizon_total']:.1f} xP. Scoring rate and minutes shown "
         f"separately."
@@ -3627,7 +3710,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     hero = (
         "<h1>FPL expected points, top 100 players ranked</h1>"
         '<p class="lede">What our match model projects each player to score '
-        f"over the next {n_gw} gameweeks, shown here for the top 100 of the "
+        f"over {window}, shown here for the top 100 of the "
         f"full {len(rows)}-player projection. Scoring rate and expected "
         "minutes are shown separately, so you can see which one is driving "
         "the number. Free, no sign-in, rebuilt every few hours.</p>"
@@ -3664,7 +3747,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # 21.8 (portti B3): xP/GW-sarake on selitettava — ilman tata mikaan
         # ei kerro lukijalle ettei se ole se per-GW-luku jota Premium myy.
         '<p class="note">'
-        f"Ranked by total xP over the next {n_gw} gameweeks. <em>xP/GW</em> "
+        f"Ranked by total xP over {window}. <em>xP/GW</em> "
         f"is that total divided by {n_gw}, not a single-gameweek projection. "
         "<em>xP/90</em> is the scoring rate, <em>Start%</em> is how likely "
         "he is to start, <em>xMins</em> combines the two.</p>"

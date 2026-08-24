@@ -160,7 +160,9 @@
 		{/each}
 	</div>
 {:else if !data.meta?.available}
-	<p class="banner success">Projections go live before Gameweek 1. Check back soon.</p>
+	<!-- 24.8 (GW1-STALE-COPY-2): lause lupasi projektiot "before Gameweek 1".
+	     Haara laukeaa aina kun API sanoo available=false, ei vain esikaudella. -->
+	<p class="banner success">Clean sheet projections are not available for this gameweek yet.</p>
 {:else}
 	<section class="tool-card">
 		<h2>

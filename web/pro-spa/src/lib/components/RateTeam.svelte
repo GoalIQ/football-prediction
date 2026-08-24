@@ -863,8 +863,8 @@
 	     toteutus näytti punaisen 404:n ja jätti käyttäjän umpikujaan juuri
 	     vuoden korkeimman ostoaikeen ikkunassa. -->
 	<p class="notice-preseason">
-		<strong>Your squad is not public yet.</strong> FPL publishes every team only after the
-		Gameweek 1 deadline, so nobody can import a squad before then. Rate the draft you are
+		<strong>Your squad is not public yet.</strong> FPL keeps a team private until the first
+		deadline it plays, so it cannot be imported before then. Rate the draft you are
 		planning instead: pick your 15 below and the model rates it exactly the same way, with the
 		same best XI, captain pick and projected points.
 	</p>
@@ -1455,8 +1455,9 @@
 	</p>
 	{#if picksNotPublishedB}
 		<p class="notice-preseason">
-			<strong>Squads are not public before the Gameweek 1 deadline.</strong> Build the comparison
-			draft below instead and the model rates it exactly the same way.
+			<strong>That squad is not public yet.</strong> FPL keeps a team private until the first
+			deadline it plays. Build the comparison draft below instead and the model rates it
+			exactly the same way.
 		</p>
 	{/if}
 	<button

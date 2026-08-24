@@ -121,7 +121,7 @@
 </div>
 <p class="muted">
 	Projected points per million spent over the next {data?.meta?.horizon_gw ?? 6} gameweeks, with a
-	fixture-swing flag. Pre-season prices come from the 2025/26 game until GW1.
+	fixture-swing flag.
 </p>
 
 {#if loading}

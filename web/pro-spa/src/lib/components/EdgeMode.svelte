@@ -101,10 +101,15 @@
 	</button>
 </form>
 {#if !entryValid}
+	<!-- 24.8 (GW1-STALE-COPY-2): viimeinen lause oli "FPL publishes squads only
+	     after the Gameweek 1 deadline". Se vanheni 21.8 deadlineen, mutta lohko
+	     on ehdon !entryValid takana - ja EHTO EI VANHENE, TEKSTI VANHENEE: ehto
+	     tarkoittaa "kayttajalla ei ole entry ID:ta", ei "on esikausi", joten
+	     lause nakyi yha jokaiselle uudelle kayttajalle. Poistettu kokonaan:
+	     kausisidonnainen perustelu ei kuulu ohjeeseen joka nakyy ympari vuoden. -->
 	<p class="muted hint">
 		This tool needs your public FPL entry ID (the number in your Points page URL) so it
-		can compare your squad against the field. FPL publishes squads only after the
-		Gameweek 1 deadline.
+		can compare your squad against the field.
 	</p>
 {/if}
 

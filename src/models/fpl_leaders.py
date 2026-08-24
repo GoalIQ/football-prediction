@@ -237,6 +237,9 @@ def rank_defcon_season(data: dict, pos: str | None = None,
             # numerosta (38 ei päde DGW/blank-kausiin).
             "window": "season",
             "basis_season": m.get("basis_season"),
+            # 24.8: season-sarake ja rullaava ikkuna ovat kausivaihdossa ERI
+            # kausilta, joten klientin on saatava molemmat nimet.
+            "target_season": m.get("target_season"),
             "is_prev_season_basis": m.get("is_prev_season_basis", True),
             "basis_label": m.get("basis_label"),
             "generated_at": m.get("generated_at"),
@@ -266,6 +269,7 @@ def _out_meta(data: dict, window: int) -> dict:
     return {
         "window": window,
         "basis_season": m.get("basis_season"),
+        "target_season": m.get("target_season"),
         "is_prev_season_basis": m.get("is_prev_season_basis"),
         "basis_label": m.get("basis_label"),
         "generated_at": m.get("generated_at"),

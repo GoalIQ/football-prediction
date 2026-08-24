@@ -26,9 +26,9 @@ export interface SquadRun<T> {
 export class NoSquadInputError extends Error {
 	constructor() {
 		super(
-			'FPL has not published any squads yet. They open up after the GW1 ' +
-				'deadline. Until then, draft your 15 in Rate my team and this tool ' +
-				'runs on that draft.'
+			'Your squad is not public yet. FPL keeps a team private until the ' +
+				'first deadline it plays. Until then, draft your 15 in Rate my team ' +
+				'and this tool runs on that draft.'
 		);
 		this.name = 'NoSquadInputError';
 	}

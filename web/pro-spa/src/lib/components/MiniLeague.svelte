@@ -153,8 +153,8 @@
 
 	{#if data.standings.length === 0}
 		<p class="banner success">
-			No standings yet: FPL fills league tables once Gameweek 1 has been played. The
-			league exists, check back after the first deadline.
+			No standings yet: FPL fills league tables once a gameweek has been played and
+			scored. The league exists, check back once the next gameweek is scored.
 		</p>
 	{:else}
 		<p class="muted">

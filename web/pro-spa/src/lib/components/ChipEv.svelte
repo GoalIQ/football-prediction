@@ -28,6 +28,9 @@
 	let data = $state<ChipEvResponse | null>(null);
 	/** Selite kun entry annettiin mutta picksit eivät vielä julki (pre-GW1). */
 	let entryFallback = $state(false);
+	/** true vain kun backend nimesi syyn (picks_not_published). Muut viat
+	 *  saavat neutraalin selitteen: kortti ei saa arvata syytä. */
+	let fallbackPicks = $state(false);
 
 	let entryValid = $derived(/^\d{1,10}$/.test(fplEntry.entry.trim()));
 
@@ -36,14 +39,22 @@
 		loading = true;
 		error = null;
 		entryFallback = false;
+		fallbackPicks = false;
 		try {
 			if (entryValid) {
 				try {
 					data = await fetchChipEv(Number(fplEntry.entry.trim()));
-				} catch {
-					// Esikausi: FPL ei ole julkaissut picksejä → mallirunko selitteellä
+				} catch (err) {
+					// 24.8 (portti): tämä oli PALJAS catch, ja teksti alla väitti
+					// syyn faktana ("because FPL publishes squads only after the
+					// GW1 deadline"). Mikä tahansa vika — kirjoitusvirhe ID:ssä,
+					// 500, verkkokatko — sai käyttäjän lukemaan väärän selityksen.
+					// Kausisidonnaisuuden korjaaminen olisi tehnyt tilapäisesti
+					// väärästä selityksestä pysyvästi väärän, joten syy luetaan
+					// nyt koodista kuten RateTeam.svelte:159 tekee.
 					data = await fetchChipEv(null);
 					entryFallback = true;
+					fallbackPicks = (err as { code?: string })?.code === 'picks_not_published';
 				}
 			} else {
 				data = await fetchChipEv(null);
@@ -80,8 +91,9 @@
 	When to play Wildcard, Bench Boost, Triple Captain and Free Hit: each remaining gameweek
 	gets a rough expected-value estimate per chip, and the best window is highlighted.
 	{#if data?.meta?.mode === 'model_xi'}Based on the model's optimal squad{#if entryFallback},
-			because FPL publishes squads only after the GW1 deadline (your entry will be used once
-			picks are live){/if}.{:else if data?.meta?.entry != null}Based on your squad (entry
+			because {fallbackPicks
+				? "your entry's picks are not public yet (it will be used once they are)"
+				: 'your entry could not be loaded just now'}{/if}.{:else if data?.meta?.entry != null}Based on your squad (entry
 		{data.meta.entry}).{/if}
 </p>
 

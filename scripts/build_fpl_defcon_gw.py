@@ -195,7 +195,11 @@ def build() -> dict:
             "available": True,
             "generated_at": _dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
             "basis_season": BASIS_SEASON,
-            "basis_label": f"Based on {BASIS_SEASON} · updates as the new season plays",
+            # 24.8: luki "Based on {BASIS_SEASON} · updates as the new season
+            # plays". Kadenssilupaus jota lukija ei voi tarkistaa, ja se oli
+            # epatosi: artefakti ei liikkunut vaikka uusi kausi oli alkanut.
+            # Sanotaan mika data on, ei milloin se paivittyy.
+            "basis_label": f"Numbers are from the {BASIS_SEASON} season",
             "row_format": ["gw", "opp", "venue", "minutes", "dc", "start"],
             "thresholds": dict(DEFCON_THRESHOLD),
             # #226-DC: nimittäjä + poolisääntö näkyviin, jotta klientti voi

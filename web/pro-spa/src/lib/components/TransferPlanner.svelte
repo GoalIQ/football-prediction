@@ -112,8 +112,8 @@
 	<!-- PI-16b: kalenterin tila, ei käyttäjän virhe → neutraali selite eikä
 	     punainen virhelaatikko. Toimiva polku nimetään suoraan. -->
 	<p class="notice-preseason">
-		<strong>Your squad is not public yet.</strong> FPL publishes every team only after the
-		Gameweek 1 deadline. Until then, draft your 15 in Rate my team and this planner runs on
+		<strong>Your squad is not public yet.</strong> FPL keeps a team private until the first
+		deadline it plays. Until then, draft your 15 in Rate my team and this planner runs on
 		that draft.
 	</p>
 {:else if error}
@@ -121,8 +121,7 @@
 {:else if data}
 	{#if basedOn === 'draft'}
 		<p class="notice-preseason">
-			Based on your saved draft of 15, because FPL does not publish squads until the Gameweek
-			1 deadline.
+			Based on your saved draft of 15, because your squad is not public yet.
 		</p>
 	{/if}
 	<!-- #63: mallin kanta ensin (hold vs transfer, xP-matikka näkyvissä),

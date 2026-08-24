@@ -592,8 +592,7 @@ border-bottom:1px solid var(--line);padding-bottom:1px;}
  function fmt(row,k){
   var v=val(row,k);
   // null = the player was not matched to shot data. An empty dash is the
-  // truth,
-  // nolla olisi vaite ettei han laukonut kertaakaan.
+  // truth; a zero would be a claim that he never had a shot.
   if(v===null||v===undefined)return '\u2013';
   if(k==='pen'||k==='cor'||k==='fk')return v?String(v):'\u2013';
   if(typeof v!=='number')return v;
@@ -653,9 +652,9 @@ border-bottom:1px solid var(--line);padding-bottom:1px;}
    s+='<tr><td class="n">'+(j+1)+'</td><td>'+r[C.name]+'</td>'
     +'<td>'+r[C.team]+'</td><td class="m-hide">'+r[C.pos]+'</td>'
     +'<td class="n m-hide">'+r[C.price].toFixed(1)+'</td>'
-    // Mins and Starts are windowable: without raw() they showed the season
-    // lukuja GW-otsikon alla (Haaland 2953 min "GW1-6:lla"). Loytyi vasta
-    // by looking at the live page, not from code.
+    // Mins and Starts are windowable: without raw() they showed season
+    // numbers under a GW heading (Haaland 2953 min for "GW1-6"). Found by
+    // looking at the live page, not from the code.
     +'<td class="n m-hide">'+raw(r,'mins')+'</td>';
    if(mode==='pstart')s+='<td class="n m-hide">'+raw(r,'starts')+'</td>';
    for(var m=0;m<ks.length;m++){
@@ -1016,8 +1015,7 @@ border-bottom:1px solid var(--line);padding-bottom:1px;}
   if(tm&&tm.value)bits.push(tm.value);
   var pr=document.getElementById('stprice');
   // The price picker's default is the upper bound (99), which is NOT a
-  // filter. Without
-  // tarkistusta kortti sanoi "max 99" jokaisessa kuvassa.
+  // filter. Without this check the card said "max 99" on every image.
   if(pr&&pr.value&&Number(pr.value)<99)bits.push('max '+Number(pr.value).toFixed(1)+'m');
   var qq=document.getElementById('stq');
   if(qq&&qq.value.trim())bits.push('"'+qq.value.trim()+'"');
