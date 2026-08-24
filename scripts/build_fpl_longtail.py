@@ -1122,7 +1122,7 @@ XG_JS = """
    if(a.m<minm)continue;
    r.push(a);
   }
-  // Indeksit vastaavat sarakeotsikoita: 0 #, 1 Player, 2 Team, 3 Pos,
+  // Indices match the column headings: 0 #, 1 Player, 2 Team, 3 Pos,
   // 4 Price, 5 xG, 6 xA, 7 xGI, 8 Mins, 9 Games.
   var ks=['n','n','t','p','c','xg','xa','xgi','m','g'];
   var k=ks[key];
@@ -1956,6 +1956,62 @@ def _player_gw_meta() -> dict | None:
         return None
 
 
+# PAATOS 24.8: EI NIMIESTOLISTAA KORTTIIN.
+#
+# Julkaisutarkistaja nosti asian: kortti on nyt automaattisesti generoitua
+# brandattya materiaalia, ja kirjattu markkinointisaanto sanoo ettei tiettyja
+# nimia kayteta (heikoin puolustettava nimi). Han on tanaan sijalla 24 eika
+# siis kortilla, mutta mikaan ei esta hanta nousemasta.
+#
+# Estolistaa EI lisata, ja syy on rakenteellinen: kortin koko peruste on
+# ETTA SE ON SAMA KUIN SIVU. Rivin vaientaminen kortilta palauttaisi tasan
+# sen "kortti nayttaa muuta kuin taulukko" -luokan jonka poistamiseen tama
+# rakennemuutos tehtiin, ja `test_share_card_server_rows` kaatuisi oikein.
+#
+# Saanto koskee VALITTUJA markkinointikulmia - sita kenesta me paatamme
+# puhua - ei faktuaalista jarjestysta jonka lukija nakee samalta sivulta.
+# Jos nimi nousee korttiin, se on datan tulos eika meidan vaitteemme.
+#
+# 🔴 Tama on kirjaus, ei ohitus: jos joku haluaa eston, se on tehtava
+# TAULUKKOON eika korttiin, jolloin sivu ja kuva pysyvat samana.
+def _card_spec_attr(*, title: str, subtitle: str, rows: list[dict],
+                    file_name: str, name_label: str = "PLAYER",
+                    mid_label: str = "", value_label: str = "",
+                    foot: str = "",
+                    foot2: str = "model projections, not betting advice") -> str:
+    """Palvelimen kirjoittama korttispec HTML-attribuutiksi.
+
+    🔴 KORTTI EI LUE ELAVAA DOMIA. Rivit tulevat SAMASTA listasta josta
+    taulukkokin renderoidaan, joten kortti on aina se nakyma jonka linkista
+    tuleva lukija nakee - ei se johon jakaja oli sattunut suodattaa.
+
+    Taustaa: jokainen `table.lb` saa GEN:TABLE-TOOLSilta klikkilajittelun ja
+    suodatinpalkin. DOM-lukija tuotti siksi kuvia jotka sanoivat vastakkaista
+    kuin data ("TOP 10 BY EXPECTED POINTS" = kymmenen kalleinta kahdella
+    klikkauksella), ja suodattimet piilottavat rivit `display:none`-tyylilla
+    jota `querySelectorAll` ei nae. Julkaisutarkistaja blokkasi kortit nelja
+    kierrosta, ja kaksi lukijan korjausyritysta tuotti kumpikin uusia
+    valheita. Tama poistaa koko luokan.
+
+    `rows`: [{rank,name,team?,tag?,mid?,value}] valmiiksi muotoiltuina
+    merkkijonoina - muotoilu kuuluu sinne missa luvutkin ovat.
+    """
+    spec = {"title": title, "subtitle": subtitle, "nameLabel": name_label,
+            "valueLabel": value_label, "rows": rows[:10],
+            "fileName": file_name, "footNote2": foot2}
+    if mid_label:
+        spec["midLabel"] = mid_label
+    if foot:
+        spec["footNote"] = foot
+    return " data-card-spec='" + escape(
+        json.dumps(spec, ensure_ascii=False), quote=True).replace("'", "&#39;") + "'"
+
+
+def _share_button(margin: str = "10px 0 4px") -> str:
+    return ('<button type="button" class="chip" id="sharecard" '
+            f'style="margin:{margin};">Share as image</button>')
+
+
 def _stats_share_card() -> str:
     return SHARE_CARD_JS.replace("__CARD_ROWS_FN__", _STATS_SPEC_FN)
 
@@ -2053,7 +2109,15 @@ def render_stats(stats: dict, now: datetime) -> str | None:
         '<button type="button" class="chip" id="stcsv">Download CSV</button>'
         # Jakokortti (Villen pyynto 9.8): sama kortti kuin SPA:ssa ja
         # viikkopostauksessa. Vapaata dataa, joten ei premium-porttia.
-        '<button type="button" class="chip" id="sharecard">Share as image</button>'
+        # 24.8: JAKONAPPI POIS KUNNES TAMA SIVU ON SIIRRETTY
+        # PALVELINRIVEILLE. Taman sivun kortti lukee yha elavaa DOMia
+        # (`_STATS_SPEC_FN`), ja se lukija on todettu nelja kertaa
+        # valehtelevaksi: taulukko on klikkilajiteltava ja suodatettava,
+        # joten otsikko ja rivit voivat eriytya kahdella klikkauksella.
+        # Uusi portti EI mittaa tata sivua, joten "portti on nyt olemassa"
+        # ei ole peruste jattaa nappia pystyyn. Ks. jonorivi
+        # SHARE-CARD-SERVER-ROWS.
+        ''
         "</div>"
         f'<p class="note" id="stc">{len(rows)} players, season totals. '
         "Showing 100. Click a column to sort, or press Show all players.</p>"
@@ -2101,7 +2165,7 @@ def render_stats(stats: dict, now: datetime) -> str | None:
         "projected points) is a model output rather than a raw stat, so it "
         "lives in the app and the DefCon column here is the raw count. A dash "
         "means we have no data for that player, not zero.</p>"
-        f"{controls}{table}{payload}{_stats_js()}{_stats_share_card()}"
+        f"{controls}{table}{payload}{_stats_js()}"
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )
@@ -2235,8 +2299,9 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         '<p class="note m-only">Central, wide, edge, long range and set-piece '
         "xG are in the same table on a wider screen.</p>"
         # Jakokortti (Villen pyynto 9.8)
-        '<button type="button" class="chip" id="sharecard" '
-        'style="margin:10px 0 4px;">Share as image</button>'
+        # 24.8: jakonappi pois, sama syy kuin stats-sivulla - kortti lukee
+        # yha elavaa DOMia eika uusi portti mittaa tata sivua.
+        ''
     )
     hero = (
         "<h1>What each Premier League defence concedes</h1>"
@@ -2278,8 +2343,7 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         "expected-goals model, so the numbers are not Opta's and we do not "
         "call them that.</p>"
         f"{table}"
-        + _defence_share_card()
-        + f"{UPSELL}{_cta()}"
+                + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )
     jsonld = [
@@ -3642,6 +3706,11 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     # 🔴 KIERROSNUMEROT, EI "next N". Ks. yllä: `next_gameweek` on kesken
     # oleva kierros, joten "next 6" luetaan seuraavaksi kuudeksi ja se on
     # kokonaisen kierroksen verran vaarin heti kun kierros on pelattu.
+    dl_gw = meta.get("deadline_gameweek")
+    next_gw = meta.get("next_gameweek")
+    in_progress = (isinstance(dl_gw, int) and isinstance(next_gw, int)
+                   and dl_gw > next_gw)
+    esikausi = str(meta.get("caveat_code") or "").endswith(".preseason")
     _first_gw = meta.get("next_gameweek")
     window = (f"GW{_first_gw}-{_first_gw + n_gw - 1}"
               if isinstance(_first_gw, int) else f"the next {n_gw} GWs")
@@ -3691,8 +3760,43 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         for i, r in enumerate(rows[:100])
     )
     kitdefs = _kit_defs(p.get("team_short") for p in rows[:100])
+    # Jakokortti PALVELIMEN riveilta, samasta `rows`-listasta kuin taulukko.
+    # Teksti on julkaisutarkistajan hyvaksyma (ajo 2): kierrosnumerot eivat
+    # "next 6" (koska next_gameweek on KESKEN oleva kierros, joten "next 6"
+    # luetaan seuraavaksi kuudeksi), esikausivaraus kun mallin metassa on
+    # `caveat_code`, ja tarkistusreitti footNotessa.
+    kortti = _card_spec_attr(
+        title="TOP 10 BY EXPECTED POINTS",
+        subtitle=(f"{window}, pre-season baselines from last season, "
+                  f"GoalIQ match model" if esikausi
+                  else f"{window}, GoalIQ match model"),
+        mid_label="PRICE", value_label=f"{n_gw}GW xP",
+        foot="the full top 100 is free on goaliq.app/fpl/expected-points",
+        # 🔴 PAIVAMAARA. Portti (24.8): sivu sanoo omin sanoin "These pages
+        # rebuild every few hours, so a row can differ from the one you saw
+        # this morning", ja builderin oma kirjaus 22.8 mittasi liikkeen
+        # kesken ottelun (B.Fernandes GW-xP 5,76 -> 5,95 yhden ajon aikana).
+        # Paivaamaton kuva luvusta jonka sivu itse sanoo liikkuvan
+        # tunneittain on sama vika kuin pistekortilla, vain vahvempana -
+        # ja "pre-season" on kortilla ehdoton vaikka sivu kvalifioi sen.
+        # Eri runko kuin kortti 1:lla: sama runko perakkain on tunnusmerkki.
+        # 🔴 EI TILAVAITETTA IKKUNAN ALKUPAASTA. Ensimmainen versio sanoi
+        # "GW{n} still running", ja portti mittasi miksi se harhauttaa:
+        # rankkausluku on GW1-6, ja GW1:sta oli 9/10 ottelua pelattu eli
+        # 16,7 % luvusta on ottelu jonka tulos on jo kirjoissa. "Still
+        # running" on kirjaimellisesti tosi mutta kytkee lukijan ikkunan
+        # alkuun ja lupaa etta se on edessa. Se olisi lisaksi vanhentunut
+        # tunneissa. Paivamaara ja "rows move" kantavat saman varauksen
+        # ilman tilavaitetta, ja ne pysyvat tosina kaikissa tiloissa.
+        foot2=(f"As of {now.strftime('%d %b').lstrip('0')}. "
+               "Rows move on every rebuild, not betting advice"),
+        rows=[{"rank": i + 1, "name": r["web_name"], "team": r["team_short"],
+               "tag": r.get("pos") or "", "mid": ("%.1f" % (r.get("price") or 0)),
+               "value": ("%.1f" % (r.get("xp_horizon_total") or 0))}
+              for i, r in enumerate(rows[:10])],
+        file_name="goaliq-expected-points.png")
     table = (
-        '<div class="lb-wrap"><table class="lb">'
+        f'<div class="lb-wrap"><table class="lb"{kortti}>'
         "<thead><tr>"
         '<th class="n">#</th><th>Player</th><th>Team</th>'
         # 15.8: Pos ja Price EIVAT ole enaa m-hide. Ne ovat suodattimen
@@ -3722,10 +3826,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     # Rivi renderoityy VAIN kesken kierroksen (deadline mennyt mutta otteluita
     # jaljella) — ehto on datassa, ei kellonajassa, eika rivi siis jaa
     # roikkumaan kierrosten valiin.
-    dl_gw = meta.get("deadline_gameweek")
-    next_gw = meta.get("next_gameweek")
-    in_progress = (isinstance(dl_gw, int) and isinstance(next_gw, int)
-                   and dl_gw > next_gw)
+
     # Eri runko kuin SPA:n vastaavalla rivilla (portti 22.8): sama lause
     # sanatarkasti kahdella pinnalla on templaattitunnusmerkki. Tassa:
     # tila -> mekanismi (because) -> tahti. "not finished" eika "is being
@@ -3751,7 +3852,9 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f"is that total divided by {n_gw}, not a single-gameweek projection. "
         "<em>xP/90</em> is the scoring rate, <em>Start%</em> is how likely "
         "he is to start, <em>xMins</em> combines the two.</p>"
-        f"{kitdefs}{table}"
+        + _share_button()
+        + f"{kitdefs}{table}"
+        + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
         + _tflag_note(xp, rows[:100], rows) +
         '<p class="note"><strong>Start% near 50 means the model is split.'
         "</strong> Those totals are a bet on team news, not a settled "
@@ -3854,6 +3957,75 @@ POINTS_COLS = [
 ]
 
 
+def _gw_still_running(gw: int) -> bool:
+    """Onko kierros gw yha kesken? Luetaan komittoidusta xp-artefaktista.
+
+    🔴 EI BOOTSTRAPISTA. Tama builderi ajetaan MYOS accuracy-log.yml:ssa jossa
+    `data/raw/fpl` ei ole olemassa, joten FPL:n oma `event.finished` ei ole
+    kaytettavissa. `fpl_xp_projections.json`:n `next_gameweek` kertoo saman:
+    se on kesken olevan kierroksen numero ja kasvaa vasta kun kierros on ohi.
+    Mitattu 24.8: `next_gameweek 1`, `deadline_gameweek 2` = GW1 kesken.
+
+    🔴 MITTAA OTTELUT, EI BONUSVAHVISTUSTA. `next_gameweek` on
+    `min(gw | not fixture.finished)` (build_fpl_xp.py:634), joten se kaantyy
+    VIIMEISEN OTTELUN VIHELLYKSEEN - tunteja ennen kuin FPL vahvistaa
+    bonukset (`data_checked`). Talle varaukselle on siis ikkuna jossa se on
+    jo pudonnut vaikka pisteet voivat yha liikkua.
+
+    Siksi kortin footNote2 kantaa AINA paivamaaran ("as of 24 Aug") eika vain
+    "not final" -lippua: paivamaara on tosi molemmissa tiloissa ja rajaa
+    lukijan odotuksen ilman etta se nojaa tahan mittariin. Alkuperainen
+    perustelu nojasi `data_checked`iin jota tama funktio ei lue, ja portti
+    kiinnitti sen 24.8 - sama luokka kuin "selitys nimeaa vaaran mekanismin".
+
+    Tuntematon tila palautetaan keskeneraisena: liikaa varausta on halvempaa
+    kuin liian vahan.
+    """
+    xp = _load(XP_PATH) or {}
+    nxt = ((xp.get("meta") or {}).get("next_gameweek"))
+    if nxt is None:
+        return True
+    try:
+        return int(nxt) <= int(gw)
+    except (TypeError, ValueError):
+        return True
+
+
+def _ennen(a: str, b: str) -> bool:
+    """Onko aikaleima a aidosti ennen b:ta? False jos kumpaakaan ei jasennы.
+
+    Olemassa jotta kortti ei vaita aikajarjestysta jota se ei ole mitannut.
+    Portti blokkasi 24.8 kahdesti perakkain tasan taman takia: ensin
+    "frozen at the deadline" (epatosi), sitten "before the GW1 deadline"
+    (tosi mutta mittaamaton). Molemmat aikaleimat ovat gw{n}.json:n metassa.
+    """
+    def parse(x: str):
+        try:
+            return datetime.fromisoformat(x.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    pa, pb = parse(a), parse(b)
+    if not (pa and pb):
+        return False
+    try:
+        return pa < pb
+    except TypeError:
+        # Naivi vs aware -vertailu heittaa. Tanaan molemmissa on Z, mutta
+        # jos toinen menettaa vyohykkeen, builderi ei saa kaatua - kortti
+        # jattaa relaation sanomatta, mika on koko funktion tarkoitus.
+        return False
+
+
+def _pvm_lyhyt(iso: str) -> str:
+    """'2026-08-20T12:33:43Z' -> '20 Aug'. Tyhja jos ei jasenny."""
+    if not iso:
+        return ""
+    try:
+        return datetime.strptime(iso[:10], "%Y-%m-%d").strftime("%d %b").lstrip("0")
+    except ValueError:
+        return ""
+
+
 def _latest_frozen_gw(gw: int) -> dict | None:
     """Kierroksen deadlinella jaadytetty xP-lumikuva, tai None."""
     return _load(XP_FROZEN_DIR / f"gw{gw}.json")
@@ -3949,7 +4121,43 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
                   for k, lbl, t in POINTS_COLS)
         + "</tr>"
     )
-    table = ('<div class="lb-wrap"><table class="lb">'
+    # Jakokortin varaukset samasta datasta kuin sivun omat luvut.
+    kesken = _gw_still_running(int(gw))
+    jaadytetty = _pvm_lyhyt(str(fmeta.get("frozen_at") or ""))
+    ennen_dl = _ennen(str(fmeta.get("frozen_at") or ""),
+                      str(fmeta.get("deadline") or ""))
+    kortti = _card_spec_attr(
+        # 🔴 KAIKKI PORTIN LOYDOKSET SISALLA (4 kierrosta):
+        # "SO FAR" koska kierros voi olla kesken · relaatio "before the
+        # deadline" MITATAAN (`_ennen`) eika kirjoiteta, koska "frozen at the
+        # deadline" oli epatosi 29 tunnilla · MAE-ankkuri, koska kortin
+        # kymmenen rivia ovat rakenteellisesti mallin suurimmat alilyonnit ja
+        # sivu ankkuroi ne heti taulukon ylla · EI "all", koska n on
+        # VERRATTUJEN maara eika pelanneiden · paivamaara AINA, koska
+        # kesken-mittari putoaa viimeiseen vihellykseen mutta bonukset
+        # vahvistuvat myohemmin.
+        title=(f"GW{gw} SO FAR: PROJECTED VS ACTUAL" if kesken
+               else f"GW{gw}: PROJECTED VS ACTUAL"),
+        subtitle=(f"xP frozen {jaadytetty}, before the deadline. "
+                  f"Points from the FPL API."
+                  if jaadytetty and ennen_dl else
+                  f"xP frozen {jaadytetty}. Points from the FPL API."
+                  if jaadytetty else
+                  "xP frozen before kickoff. Points from the FPL API."),
+        mid_label="xP", value_label="PTS",
+        foot=f"model MAE {mae} pts across {n} compared players",
+        foot2=((f"GW{gw} not final. " if kesken else "")
+               + f"As of {now.strftime('%d %b').lstrip('0')}. "
+               + "goaliq.app/fpl/points, not betting advice"),
+        # Muotoilu tehdaan tassa, ei JS:ssa: luvut ja niiden esitys kuuluvat
+        # samaan paikkaan. (Sisakkaiset samat lainausmerkit f-stringissa ovat
+        # syntaksivirhe alle 3.12:ssa, siksi erillinen muuttuja.)
+        rows=[{"rank": i + 1, "name": r["name"], "team": r["team"],
+               "tag": r["pos"], "mid": ("%.2f" % r["xp"]),
+               "value": str(r["pts"])}
+              for i, r in enumerate(rivit[:10])],
+        file_name=f"goaliq-points-gw{gw}.png")
+    table = (f'<div class="lb-wrap"><table class="lb"{kortti}>'
              f"<thead>{thead}</thead><tbody>"
              + "".join(solu(r) for r in rivit) + "</tbody></table></div>")
 
@@ -3973,13 +4181,20 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
     )
     body = (
         f'<div class="card"><p class="lede" style="margin:0">'
-        f"Across the {n} players who have played, the model's mean absolute "
+        # 24.8: luki "the {n} players who have played". n on VERRATTUJEN maara,
+        # ei pelanneiden - ja sama sivu kumoaa sen kolme kappaletta alempana
+        # ("N players who did play are also left out"). Sama kvanttori
+        # korjattiin ensin korttiin ja sivu jai; nyt molemmat.
+        f"Across the {n} players in both the projection and the results, "
+        f"the model's mean absolute "
         f"error is <strong>{mae} points</strong>. It was too low on "
         f"{yli} of them and too high on {n - yli}."
         f"</p></div>"
-        f"{table}"
-        f'<p class="note">A player with no row has not played yet, so the '
-        f"table grows as each match finishes. A missing row is not a zero."
+        + _share_button()
+        + f"{table}"
+        + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
+        + '<p class="note">A player with no row has not played yet, so the '
+        + "table grows as each match finishes. A missing row is not a zero."
         + (f" {ilman_ennustetta} player"
            + ("s" if ilman_ennustetta != 1 else "")
            + " who did play "

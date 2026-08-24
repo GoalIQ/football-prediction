@@ -15,6 +15,22 @@ on muutettava, muuten syntyy kolmas erinakoinen kortti.
 MUUTTUJAT (korvataan kutsujassa):
   __CARD_ROWS_FN__  JS-funktio joka palauttaa {title,subtitle,nameLabel,
                     midLabel,valueLabel,rows,fileName}
+
+🔴 ENSISIJAINEN LAHDE ON PALVELIN, EI DOM (24.8). Kortti lukee ensin
+`[data-card-spec]`-attribuutin, jonka builderi kirjoittaa SAMASTA
+rivilistasta josta taulukkokin renderoidaan. `__CARD_ROWS_FN__` on enaa
+fallback niille sivuille joita ei ole viela siirretty.
+
+MIKSI: elavan DOMin lukeminen tuotti brandattuja kuvia jotka sanoivat
+vastakkaista kuin data. Jokainen `table.lb` saa GEN:TABLE-TOOLSilta
+klikkilajittelun ja suodatinpalkin, joten "TOP 10 BY EXPECTED POINTS"
+muuttui KAHDELLA klikkauksella kymmeneksi kalleimmaksi - ja suodattimet
+piilottavat rivit `display:none`-tyylilla jota `querySelectorAll` ei nae,
+joten kortti kantoi globaalin top-10:n vaikka jakaja katsoi DEF-listaa.
+Julkaisutarkistaja blokkasi kortit nelja kierrosta perakkain, ja kaksi
+yritysta korjata lukija SAILYTTAEN elava DOM tuotti kumpikin uusia
+valheita. Palvelinrivit poistavat koko luokan: kortti on aina se nakyma
+jonka linkista tuleva lukija nakee.
 """
 
 # Huom: tama on JS-lahdekoodia Python-merkkijonossa. Aaltosulkeita EI saa
@@ -37,8 +53,8 @@ SHARE_CARD_JS = r"""
    wmP=new Promise(function(res){
     var img=new Image();
     img.onload=function(){res(img);};
-    // The card must not fail on a missing asset: the fallback draws the wordmark
-    // tekstina. Sama sopimus kuin SPA:ssa.
+    // The card must not fail on a missing asset: the fallback draws the
+    // wordmark as text, the same contract as in the SPA.
     img.onerror=function(){res(null);};
     img.src='/assets/brand/goaliq-wordmark-teletext.png';
    });
@@ -158,9 +174,10 @@ SHARE_CARD_JS = r"""
    ctx.fillText(fn,MX,H-88);
    ctx.font=bold(20);ctx.fillStyle=AMBER;
    ctx.fillText('@goaliqapp',W-MX-hw,H-88);
-   ctx.font=med(17);ctx.fillStyle=MUTED;
-   ctx.fillText(spec.footNote2||'model projections, not betting advice',
-                MX,H-54);
+   var f2=spec.footNote2||'model projections, not betting advice';
+   var f2s=shrink(ctx,f2,17,W-2*MX,11,med);
+   ctx.font=med(f2s);ctx.fillStyle=MUTED;
+   ctx.fillText(f2,MX,H-54);
    ctx.fillStyle=AMBER;ctx.fillRect(0,H-8,W,8);
 
    return new Promise(function(res,rej){
@@ -188,9 +205,17 @@ SHARE_CARD_JS = r"""
 
  var btn=document.getElementById('sharecard');
  if(!btn)return;
+ function specFromServer(){
+  // Exactly one spec per page. With two tables querySelector would take
+  // whichever came first in the document and the card would show the wrong
+  // one silently. Refuse rather than guess.
+  var els=document.querySelectorAll('[data-card-spec]');
+  if(els.length!==1)return null;
+  try{return JSON.parse(els[0].getAttribute('data-card-spec'));}catch(e){return null;}
+ }
  btn.addEventListener('click',function(){
-  var spec=null;
-  try{spec=(__CARD_ROWS_FN__)();}catch(e){spec=null;}
+  var spec=specFromServer();
+  if(!spec){try{spec=(__CARD_ROWS_FN__)();}catch(e){spec=null;}}
   if(!spec||!spec.rows||!spec.rows.length){
    btn.textContent='Nothing to share yet';
    return;
