@@ -289,7 +289,22 @@ def sanity(data: dict) -> list[str]:
         # käytännössä plussalle, mutta yhden ottelun jälkeen eivät —
         # van Ewijk bps -8 GW1:ssä kaatoi ajon. Muut ovat kertymiä eivätkä
         # voi olla negatiivisia.
-        signed_cols = {idx["pts"], idx["bps"]}
+        #
+        # 24.8: sama vika toistui YHDEN sarakkeen päässä. 22.8 lisättiin pts
+        # ja bps, mutta EI ppg:tä, joka on FPL:n `points_per_game` eli pts
+        # jaettuna otteluilla — se on määritelmän mukaan yhtä etumerkillinen
+        # kuin pts. Cash sai GW1:ssä -1 pistettä (punainen kortti), jolloin
+        # ppg = -1.0 ja portti kaatoi koko stats-buildin. Seuraus ei ollut
+        # paikallinen: `build_fpl_player_gw` lukee pelaajalistansa tästä
+        # samasta tiedostosta, joten myös per-GW-rivit jäätyivät 23.8:aan ja
+        # /fpl/points näytti vain perjantain ja lauantain ottelut. Sunnuntain
+        # pelaajat eivät puuttuneet virheenä vaan siksi, ettei heitä ollut
+        # listalla lainkaan.
+        #
+        # SÄÄNTÖ: jokainen sarake joka JOHDETAAN pts:stä tai bps:stä perii
+        # niiden etumerkin. Älä lisää tähän kertymäsarakkeita (g, a, cs...) —
+        # niissä negatiivinen on aito datavika.
+        signed_cols = {idx["pts"], idx["bps"], idx["ppg"]}
         if any(isinstance(v, (int, float)) and v < 0
                for i, v in enumerate(r[idx["mins"]:], start=idx["mins"])
                if i not in signed_cols):

@@ -103,6 +103,34 @@ def test_out_of_range_values_fail(field, value):
     assert sanity(d), f"{field}={value} olisi pitanyt kiinnittaa"
 
 
+# --- 24.8: ETUMERKILLISET SARAKKEET ---------------------------------------
+# Sama vika on nyt osunut kahdesti kolmen paivan sisalla: 22.8 van Ewijkin
+# bps -8 ja 24.8 Cashin ppg -1.0 (punainen kortti GW1:ssa). Jalkimmainen
+# jaadytti /fpl/stats-sivun JA /fpl/points-sivun 24 tunniksi, koska
+# build_fpl_player_gw lukee pelaajalistansa samasta tiedostosta. Korjaus
+# yksittaiseen sarakkeeseen ei estanyt toistoa; testi estaa.
+#
+# SAANTO: pts, bps ja niista JOHDETUT sarakkeet ovat etumerkillisia.
+# Kertymat (g, a, cs, rec...) eivat ole — niissa negatiivinen on datavika.
+@pytest.mark.parametrize("field,value", [
+    ("pts", -1),      # oma maali / punainen kortti yhden ottelun jalkeen
+    ("bps", -8),      # van Ewijk GW1 22.8
+    ("ppg", -1.0),    # Cash GW1 24.8 — pts jaettuna otteluilla, siis sama merkki
+])
+def test_signed_columns_may_be_negative(field, value):
+    d = _healthy()
+    d["players"][0][IDX[field]] = value
+    assert sanity(d) == [], f"{field}={value} on laillinen, ei olisi saanut kaataa"
+
+
+@pytest.mark.parametrize("field", ["g", "a", "cs", "dc", "saves", "bonus"])
+def test_accumulator_columns_may_not_be_negative(field):
+    """Negatiivinen kontrolli: sallivuus ei saa vuotaa kertymasarakkeisiin."""
+    d = _healthy()
+    d["players"][0][IDX[field]] = -1
+    assert sanity(d), f"{field}=-1 olisi pitanyt kiinnittaa"
+
+
 def test_absurd_rate_fails():
     """3.0 xG/90 kestavasti ei ole olemassa — rikkinainen minuuttikentta."""
     d = _healthy()
