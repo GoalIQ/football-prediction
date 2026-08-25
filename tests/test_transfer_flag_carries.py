@@ -65,3 +65,34 @@ def test_klientti_valittaa_lipun_eteenpain():
         "plannedPlayers rakentaa sisaan tulevan pelaajan ilman "
         "`chance_next`ia — lippu katoaa siirron jalkeen")
     assert "news: s.in.news" in lohko, "`news` ei vality sisaan tulevalle"
+
+
+def test_lippu_renderoityy_seka_XI_ssa_etta_PENKILLA():
+    """🔴 VILLE NAYTTI KUVAKAAPPAUKSEN JOSSA EI OLLUT YHTAAN LIPPUA.
+
+    Badge renderoityi VAIN XI-silmukassa, ja hanen kolme liputettua pelaajaansa
+    (Anderson 75 %, Gibbs-White 75 %, F.Kadioglu 75 %) olivat KAIKKI penkilla.
+    Olin verifioinut ominaisuuden lukemalla komponentista yhden osuman ja
+    julistanut sen valmiiksi — yksi renderointipolku kahdesta.
+
+    Penkki on lisaksi se paikka jossa lippu painaa eniten: penkkipelaaja on se
+    jonka nostat XI:hin.
+
+    🔴 PORTTI LASKEE OSUMAT, EI TARKISTA OLEMASSAOLOA. Pelkka "onko `doubt`
+    komponentissa" olisi mennyt lapi koko ajan.
+    """
+    from pathlib import Path
+    p = (Path(__file__).resolve().parents[1] / "web" / "pro-spa" / "src"
+         / "lib" / "components" / "TeamPitchManager.svelte")
+    if not p.exists():
+        return
+    s = p.read_text(encoding="utf-8")
+    n = s.count('class="doubt"')
+    assert n >= 2, (
+        f'`class="doubt"` esiintyy {n} kertaa — XI ja penkki ovat eri '
+        f"silmukoita, joten molemmat tarvitsevat oman renderoinnin")
+    # ...ja molemmat ovat oikeasti eri silmukoissa, eivat vierekkain samassa.
+    xi = s.index("{#each row as p")
+    penkki = s.index("{#each bench as p")
+    assert s.count('class="doubt"', xi, penkki) >= 1, "XI:sta puuttuu lippu"
+    assert s.count('class="doubt"', penkki) >= 1, "penkilta puuttuu lippu"

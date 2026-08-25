@@ -533,6 +533,20 @@
 							<span class="pname">{p.web_name}</span>
 							<span class="pnums">
 								<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								<!-- 🔴 LIPPU MYOS PENKILLE. Se renderoityi VAIN XI:ssa, ja
+								     Villen kolme liputettua pelaajaa olivat kaikki
+								     penkilla — han ei nahnyt yhtaan lippua vaikka
+								     ominaisuus oli "valmis". Penkki on lisaksi se paikka
+								     jossa lippu painaa eniten: penkkipelaaja on se jonka
+								     nostat XI:hin. Mobiilissa tata vikaa ei ole, koska
+								     siella penkki kayttaa samaa komponenttia kuin XI. -->
+								{#if typeof p.chance_next === 'number' && p.chance_next < 100}
+									<span
+										class="doubt"
+										class:out={p.chance_next === 0}
+										title={p.news ?? ''}
+									>{p.chance_next === 0 ? 'OUT' : `${p.chance_next}%`}</span>
+								{/if}
 								{#if actualFor(p) != null}
 									<span class="ppts">{actualFor(p)} pts</span>
 								{/if}
