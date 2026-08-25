@@ -36,6 +36,7 @@ from src.models.fpl_rate_team import (
     apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
     get_bootstrap, get_entry_picks, optimal_xi, resolve_squad,
 )
+from src.models import fpl_wildcard
 from src.models.fpl_xp import load_xp
 
 from api.premium import (
@@ -516,6 +517,96 @@ def fantasy_chip_ev(
                                    "(free preview)"}
         payload["windows"] = payload["windows"][:FREE_CHIP_WINDOWS]
         payload["best"] = {}
+    return payload
+
+
+# ---------------------------------------------------------------------------
+# GET /api/fantasy/wildcard-plan — MIKSI, MIHIN joukkueeseen, ja pitka nakyma
+# ---------------------------------------------------------------------------
+# 🔴 Villen ohje 25.8: "jos se ehdottaa nii pitaa perustella miksi ja mihin
+# joukkueeseen (ottaen huomioon pitemman aikavalin pelit kans)". `chip-ev` antoi
+# pelkan luvun, ja se luku oli lisaksi vertailukelvoton rivien valilla
+# (ks. src/models/fpl_wildcard.py, vika 1).
+# Ilmaispinta nakee VERDIKTIN ja sen luvun — sen tiedon jolla voi paattaa onko
+# tyokalu ostamisen arvoinen. Rivisto ja pelaajanimet ovat premiumia.
+# 🔴 Maski poistaa nimeavat perustelut MYOS `reasons`-listasta: muuten
+# ilmaispinta saisi karkipoiminnan lauseen sisalla.
+# 🔴 `timing` ON MUKANA TARKOITUKSELLA. Se on menetelmavaraus ("aikaisin
+# voittaa koska malli ei hinnoittele tulevaa tietoa"), ja jos se jaa maskin
+# taakse, ilmaispinta saa EV-luvun ILMAN sen ehtoa. Varaus joka on eri pinnalla
+# kuin luku ei ole kerrottu. `window` oli tassa listassa nimena joka ei enaa
+# ole olemassa — kuollut avain olisi vaientanut lauseen aanettomasti.
+FREE_WILDCARD_REASONS = {"cost", "ev", "hold", "flags", "timing"}
+
+
+@router.get("/api/fantasy/wildcard-plan",
+            description="Whether a wildcard is worth playing, which squad it "
+                        "builds, and why. Long-horizon fixtures are reported "
+                        "separately from player xP, never added to it.")
+def fantasy_wildcard_plan(
+    request: Request, response: Response,
+    entry: int | None = Query(default=None,
+                              description="Julkinen FPL entry-ID (valinnainen; "
+                                          "ilman -> mallin oma runko)"),
+):
+    response.headers["Cache-Control"] = "no-store"
+    premium = is_premium_request(request)
+    try:
+        xp_data, bootstrap, pool, pool_by_id = build_context()
+        cache_key = ("wildcard_plan", entry,
+                     xp_data["meta"].get("generated_at"))
+        payload = _cache_get(cache_key)
+        if payload is None:
+            squad, _picks_gw, mode = _squad_from_entry_or_model(
+                pool, pool_by_id, bootstrap, entry)
+            fixtures = _load_cs_fdr().get("fixtures") or []
+            mallinimet = {f.get(k) for f in fixtures
+                          for k in ("home_model", "away_model")} - {None}
+            teams = bootstrap.get("teams") or []
+            # 🔴 Aukkovahti: kartoittamaton nimi pudottaisi joukkueen pitkasta
+            # nakymasta hiljaa. Pyyntoa EI kaadeta — aukot kerrotaan metassa ja
+            # jatketaan, koska xP-osa on oikein ilman fixture-lukuakin.
+            aukot = fpl_wildcard.nimikartta_aukot(teams, mallinimet)
+            id_to_name = {t["id"]: fpl_wildcard.FPL_TO_MODEL.get(
+                t["name"], t["name"]) for t in teams}
+            plan = fpl_wildcard.wildcard_plan(
+                squad, pool, _playable_gws(pool, xp_data), fixtures,
+                id_to_name, _optimal_xi_for)
+            payload = {
+                "meta": {
+                    "entry": entry, "mode": mode,
+                    "generated_at": xp_data["meta"].get("generated_at"),
+                    "team_name_gaps": aukot,
+                    "notes": [
+                        "Rows are ranked per gameweek, not on window totals: "
+                        "a later gameweek covers fewer rounds, so its total "
+                        "is smaller by construction rather than by merit.",
+                        "The squad is a legal 15 (2/5/5/3, max 3 per club) "
+                        "built on the same budget, not an XI.",
+                        "long_view is team-level fixture difficulty for the "
+                        "gameweeks past the xP horizon. Different basis, "
+                        "reported next to the xP number and never added.",
+                        "Free transfers already used and price changes "
+                        "between now and the chosen gameweek are ignored.",
+                    ],
+                    "disclaimer": DISCLAIMER,
+                },
+                "plan": plan,
+            }
+            _cache_put(cache_key, payload)
+    except RateTeamError as e:
+        raise _http(e)
+    if not premium:
+        plan = dict(payload.get("plan") or {})
+        for kentta in ("squad", "in", "out", "long_view", "candidates"):
+            plan.pop(kentta, None)
+        plan["reasons"] = [r for r in (plan.get("reasons") or [])
+                           if r.get("code") in FREE_WILDCARD_REASONS]
+        payload = {**payload, "plan": plan,
+                   "meta": {**payload["meta"], "masked": True,
+                            "mask": "verdict and its number are free; the "
+                                    "squad, the named players and the "
+                                    "long-horizon block are Premium"}}
     return payload
 
 

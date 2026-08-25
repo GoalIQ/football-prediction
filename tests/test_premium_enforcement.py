@@ -37,6 +37,12 @@ GATED_EXPECTED = {
     "/api/fantasy/xp.csv",
     "/api/fantasy/plan",
     "/api/fantasy/chip-ev",
+    # 25.8: WILDCARD-PLAN on GATED, mutta sen maski on osittainen — verdikti
+    # ("kannattaako, ja kuinka paljon per kierros") on ilmainen, rivisto ja
+    # pelaajanimet premiumia. 🔴 Maski poistaa nimeavat perustelut MYOS
+    # `reasons`-listasta: pelkka kenttien pudotus olisi jattanyt karkipoiminnan
+    # nakyviin lauseen sisalle ("The strongest it brings in is X at 5.79").
+    "/api/fantasy/wildcard-plan",
     "/api/fantasy/plan-chains",
     "/api/fantasy/edge",
 }
