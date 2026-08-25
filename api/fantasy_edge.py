@@ -543,7 +543,7 @@ def fantasy_chip_ev(
                         "promise.",
                         "Bench Boost, Triple Captain and Free Hit are scored "
                         "for one gameweek each, so their rows compare "
-                        "directly. Wildcard is different: it is the gain over "
+                        "directly. Wildcard is different: it's the gain over "
                         "every remaining gameweek from that point on, because "
                         "the squad stays after you play it. Each Wildcard row "
                         "says how many rounds it covers, and a later row "

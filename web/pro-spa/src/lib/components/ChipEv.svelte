@@ -135,6 +135,7 @@
 	<div class="chip-grid">
 		{#each CHIPS as chip (chip.key)}
 			{@const best = data.best?.[chip.key]}
+			{@const est = data.best_estimate?.[chip.key as 'bb' | 'tc' | 'fh']}
 			<div class="chip-card card">
 				<div class="chip-head">
 					<h3>{chip.label}</h3>
@@ -157,6 +158,14 @@
 						{/if}
 					</p>
 				{/if}
+				<!-- 🔴 KARKEA ARVIO RENDERÖIDÄÄN. Ilman tätä selite lupasi että se
+				     "raportoidaan erikseen", mutta se eli vain API-vastauksessa —
+				     ja raaka JSON ei ole tarkistusreitti vaan este. -->
+				{#if est}
+					<p class="est-line">
+						Rougher estimate GW{est.gw}: {est.ev > 0 ? '+' : ''}{est.ev.toFixed(1)}
+					</p>
+				{/if}
 				<table class="chip-top3">
 					<tbody>
 						{#each top3(chip) as w (w.gw)}
@@ -165,7 +174,12 @@
 											class="basis-mark"
 											title="Team-level estimate beyond the player-projection horizon">*</span
 										>{/if}</td>
-								<td class="num">{(chip.ev(w) as number) > 0 ? '+' : ''}{(chip.ev(w) as number).toFixed(1)}</td>
+								<td class="num"
+									>{(chip.ev(w) as number) > 0 ? '+' : ''}{(chip.ev(w) as number).toFixed(1)}<!--
+									-->{#if chip.key === 'wc' && w.wc_window_gws != null}<span
+											class="window-note">over {w.wc_window_gws} GWs</span
+										>{/if}</td
+								>
 							</tr>
 						{/each}
 					</tbody>
@@ -175,10 +189,14 @@
 	</div>
 	{#if hasTeamApprox}
 		<p class="muted basis-note">
-			* Gameweeks beyond the current player-projection horizon (GW{(data.meta.horizon_gws?.at(
-				-1
-			) ?? 6) + 1}+) use a team-level estimate from full-season fixture quality, not
-			per-player projections. Treat those windows as rougher.
+			<!-- 🔴 ALAVIITE VÄITTI KAIKISTA horisontin ulkopuolisista kierroksista
+			     että ne käyttävät joukkuetason arviota. Wildcardille se on epätosi:
+			     rivi on `null` ja `top3()` suodattaa sen pois, joten lukija näkisi
+			     Wildcard-kortin ilman yhtään tähdellistä riviä ja alaviitteen joka
+			     lupaa niitä olevan. -->
+			* Beyond GW{(data.meta.horizon_gws?.at(-1) ?? 6) + 1}, the Bench Boost, Triple
+			Captain and Free Hit rows use a team-level estimate from full-season fixture
+			quality. Treat those windows as rougher. Wildcard has no rows out there.
 		</p>
 	{/if}
 	<MethodNote summary="How chip EV is estimated (and its limits)">
@@ -186,15 +204,11 @@
 			{#each data.meta.notes as n (n)}
 				<p>{n}</p>
 			{/each}
-		{:else}
-			<p>
-				Rough MVP estimates: Triple Captain = best XI score with an extra captain
-				multiplier, Bench Boost = bench xP, Free Hit and Wildcard = best budget team vs
-				your squad. Within the next six gameweeks the numbers come from player projections;
-				beyond that from team-level fixture quality.
-			</p>
 		{/if}
-		<p>GoalIQ model projections, for fun and planning, not betting advice.</p>
+		<!-- 🔴 KUOLLUT FALLBACK POISTETTU. Se renderöityi vain jos `meta.notes`
+		     on tyhjä, mitä se ei koskaan ole, ja se sanoi yhä "beyond that from
+		     team-level fixture quality" myös wildcardista. Lipun takana oleva
+		     copy näyttää hoidetulta eikä vanhene kenenkään silmissä. -->
 	</MethodNote>
 {/if}
 
@@ -264,6 +278,11 @@
 		font-weight: 700;
 		margin-left: 2px;
 		cursor: help;
+	}
+	.est-line {
+		margin: 2px 0 6px;
+		font-size: 0.75rem;
+		opacity: 0.7;
 	}
 	.window-note {
 		font-size: 0.72rem;
