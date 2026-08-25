@@ -1,0 +1,22 @@
+{
+ "meta": {
+  "product": "GoalIQ per-GW xP accuracy log",
+  "rules": "Projection frozen before the deadline (immutable), graded once the gameweek finishes. All frozen players graded, including those who did not play. Append-only."
+ },
+ "gameweeks": [
+  {
+   "gw": 1,
+   "graded_at": "2026-08-25T12:35:42Z",
+   "frozen_at": "2026-08-20T12:33:43Z",
+   "n": 490,
+   "mae": 1.757,
+   "bias": 0.194,
+   "mae_by_pos": {
+    "DEF": 1.916,
+    "FWD": 1.731,
+    "GKP": 1.348,
+    "MID": 1.742
+   }
+  }
+ ]
+}
