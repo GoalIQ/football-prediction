@@ -31,6 +31,23 @@ on:
     # Ajoitus: fpl-data-refresh rakentaa data/fpl_xp_projections.json 09:15 UTC,
     # tämä lukee sen 15 min myöhemmin. Älä siirrä aikaisemmaksi.
     - cron: "30 9 * * *"
+
+  # 🔴 KETJUTUS 25.8: sivu ajetaan jokaisen onnistuneen data-refreshin JALKEEN.
+  #
+  # Ennen tata sivu paivittyi kerran vuorokaudessa mutta data 3 h valein
+  # (8x/vrk), joten sivu oli jaljessa suurimman osan vuorokaudesta. Mitattu
+  # 25.8: data 12:31, sivu edellisesta aamusta -> viisi club_best-testia
+  # punaisena, eivatka ne kertoneet rikkinaisesta koodista vaan
+  # kadenssierosta. Suite oli punainen noin 21 h joka vuorokausi, ja
+  # pysyvasti punainen putki nielee seuraavan OIKEAN regression.
+  #
+  # `workflow_run` eika pelkka cron-siirto: nain sivu lukee varmasti sen
+  # datan joka juuri valmistui, eika kilpaile sen kanssa. Yllaoleva
+  # 09:30-cron jaa varmistukseksi jos ketjutus jostain syysta ei laukea.
+  workflow_run:
+    workflows: ["fpl-data-refresh"]
+    types: [completed]
+
   workflow_dispatch: {}
 
 concurrency:
@@ -43,6 +60,12 @@ permissions:
 
 jobs:
   bake-and-commit:
+    # Ketjutetussa ajossa: vain onnistuneen data-refreshin perään. Kaatuneen
+    # ajon jalkeen data on kesken, ja sen paalle baketty sivu olisi pahempi
+    # kuin vanha sivu.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success' 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main

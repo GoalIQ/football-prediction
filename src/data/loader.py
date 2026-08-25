@@ -198,7 +198,55 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
 
     if palaset:
         tulos.data = pd.concat(palaset, ignore_index=True).sort_values("date").reset_index(drop=True)
+        tulos.data = _taydenna_xg_fpl_datasta(tulos.data)
     return tulos
+
+
+def _taydenna_xg_fpl_datasta(df: pd.DataFrame) -> pd.DataFrame:
+    """Taydenna PUUTTUVA xG FPL:n omasta datasta (25.8.2026).
+
+    🔴 MIKSI: Understat lakkasi palvelemasta palvelinhakuja, ja football-data
+    -fallback ei sisalla xG:ta lainkaan. Mitattu 25.8: 26/27:n PL-otteluista
+    0/10 kantoi xG:ta, eli DC-fitti sovitti pelkkiin maaleihin. Se tapahtui
+    HILJAA - `home_xg` on vain `NA` eika mikaan kaadu.
+
+    FPL:n element-summary kantaa `expected_goals`:n per pelaaja per ottelu
+    (Opta-lahtoista), ja joukkueen ottelu-xG saadaan summaamalla. Data on jo
+    levylla, joten tama ei lisaa yhtaan verkkokutsua.
+
+    🔴 TAYDENTAA VAIN PUUTTUVAT. Understatin xG jaa koskemattomaksi siella
+    missa se on: kahden lahteen sekoittaminen samalle riville tekisi fitista
+    epamaaraisen, ja vanhat kaudet ovat Understatilla taysia.
+
+    Vika lahteessa ei saa kaataa latausta: poikkeus -> data palautetaan
+    sellaisenaan, ja fitti jatkaa maaleilla kuten ennen tata funktiota.
+    """
+    if df is None or df.empty or "home_xg" not in df.columns:
+        return df
+    puuttuu = df["home_xg"].isna() | df["away_xg"].isna()
+    if not puuttuu.any():
+        return df
+    try:
+        from src.data.fpl_match_xg import match_xg_rows
+        kaudet = {str(k) for k in df.loc[puuttuu, "season"].dropna().unique()}
+        kartta: dict[tuple[str, str], tuple[float, float]] = {}
+        for kausi in kaudet:
+            for r in match_xg_rows(kausi):
+                kartta[(r["home_team"], r["away_team"])] = (r["home_xg"],
+                                                            r["away_xg"])
+        if not kartta:
+            return df
+        osumia = 0
+        for i in df.index[puuttuu]:
+            avain = (df.at[i, "home_team"], df.at[i, "away_team"])
+            arvot = kartta.get(avain)
+            if arvot is None:
+                continue
+            df.at[i, "home_xg"], df.at[i, "away_xg"] = arvot
+            osumia += 1
+    except Exception:
+        return df
+    return df
 
 
 def lataa_otteludata(liigat: Iterable[str], kaudet: Iterable[str]) -> pd.DataFrame:
