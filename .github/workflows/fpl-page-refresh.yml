@@ -116,17 +116,47 @@ jobs:
             exit "$rc"
           fi
 
+      # 🔴 25.8: KETJUTUS EI YKSIN RIITTANYT. Ketjutin taman ajon data-refreshin
+      # peraan, ja `fpl.html` tuli tuoreeksi — mutta `test_club_best_page` jai
+      # PUNAISEKSI. Syy: 15 long-tail-sivua (club-best, best-captain, points,
+      # differentials, price-changes, ...) EI rakenneta tassa ajossa lainkaan
+      # vaan `accuracy-log.yml`:ssa, jolla on OMA 3 h cron. Kaksi riippumatonta
+      # 3 h cronia joista toinen lukee sen mita toinen kirjoittaa: jarjestys on
+      # sattumanvarainen, eli sivu vastaa dataa vain sattumalta.
+      # Mitattu: data 13:47 nosti Guehin DEF-karkeen (ohitusten poiston jalkeen),
+      # club-best.html oli 13:03:n versio eika tuntenut hanta lainkaan.
+      # Siksi bake tehdaan TASSA, samasta datasta joka juuri laskeutui.
+      # accuracy-log jatkaa oman bakensa varmistuksena.
+      - name: Bake FPL long-tail pages from the same data
+        id: longtail
+        run: |
+          out=$(python -m scripts.build_fpl_longtail) || {
+            echo "::error::build_fpl_longtail kaatui - 15 long-tail-sivua jaa vanhaksi"
+            exit 1
+          }
+          echo "$out"
+          # 🔴 JAATYMISVAHTI. `main()` palauttaa 0 MYOS kun se ei rakenna
+          # yhtaan sivua ("ei sivuja (data puuttuu)"), eli pelkka exit-koodi
+          # ei erota tehtya tyota tekemattomasta. Sama vikaluokka joka piti
+          # fpl.html:n jaassa kahdeksan paivaa. Mitataan TUOTOS, ei varia.
+          case "$out" in
+            *"ei sivuja"*)
+              echo "::error::build_fpl_longtail ajoi mutta EI rakentanut yhtaan sivua"
+              exit 1 ;;
+          esac
+
       - name: Commit + push to main (Pages serves fresh page)
         id: push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add fpl.html sitemap.xml sitemap-core.xml index.html
+          # `fpl/` kattaa long-tail-sivut seka alihakemistot club/ ja note/.
+          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml
           if git diff --cached --quiet; then
             echo "Ei muutoksia (data ennallaan tai bake fail-safe) — ohitetaan commit."
             exit 0
           fi
-          git commit -m "geo(fpl): weekly FPL-landing data refresh [skip ci]"
+          git commit -m "geo(fpl): FPL-landing + long-tail refresh [skip ci]"
           for i in 1 2 3 4 5; do
             git fetch origin main || true
             if git rebase origin/main; then
