@@ -336,3 +336,117 @@ def test_xg_kirjoitetaan_pienella_x(sivu):
         arvo = str(spec.get(kentta) or "")
         assert not re.search(r"XG", arvo), (
             f"{sivu}.{kentta}: 'XG' pitaa olla 'xG' — {arvo!r}")
+
+
+# ---------------------------------------------------------------------------
+# KAUSIVAITE JOHDETAAN KORTIN OMISTA RIVEISTA (25.8.2026)
+# ---------------------------------------------------------------------------
+# 🔴 JULKAISUPORTTI LOYSI TAMANKIN. Kausivaite laskettiin `_rivikaudet`ista,
+# joka tulee KOKO aineistosta (442 pelaajaa); kortti nayttaa 10. Tanaan joukot
+# osuvat yhteen, joten vaite on tosi — SATTUMALTA. Kauden edetessa
+# karkikymmenikko tayttyy 2026/27-riveilla kun hanta kantaa 2025/26:n pitkalle
+# kevaaseen, ja kortti sanoisi "mixing 2025/26 and 2026/27" kymmenesta rivista
+# jotka ovat KAIKKI tata kautta.
+#
+# 🔴 MERKKIJONOTESTI EI OLISI PURRUT: tuloste on tanaan identtinen kummallakin
+# johtamistavalla. Portin on verrattava vaitetta KORTIN OMIEN RIVIEN
+# kausiperustaan, ei sen nykyiseen sanamuotoon.
+
+
+def _kortin_rivien_kaudet() -> set[str] | None:
+    """Kortin kymmenen rivin kausiperusta lahdedatasta."""
+    import json as _json
+    d = ROOT / "data" / "fpl_player_leaders.json"
+    if not d.exists():
+        return None
+    try:
+        from src.models.fpl_leaders import rank_xg_leaders
+    except Exception:
+        return None
+    out = rank_xg_leaders(_json.loads(d.read_text(encoding="utf-8")),
+                          window=5, top_n=10)
+    return {str(r.get("basis") or "") for r in out["players"][:10]} - {""}
+
+
+def test_xg_kortti_nimeaa_TASAN_omien_riviensa_kaudet():
+    """🔴 Ei koko aineiston kausia. Vaite koskee kymmenta rivia, joten se on
+    johdettava niista kymmenesta."""
+    odotus = _kortin_rivien_kaudet()
+    if not odotus:
+        pytest.skip("leaders-data ei saatavilla")
+    teksti = _kortin_spec("xg-leaders")["subtitle"]
+    mainitut = set(re.findall(r"20\d\d/\d\d", teksti))
+    assert mainitut == odotus, (
+        f"kortti mainitsee {sorted(mainitut)} mutta sen omat rivit ovat "
+        f"{sorted(odotus)} — vaite on johdettu vaarasta joukosta")
+
+
+def test_defence_ei_vaita_each_kun_ottelumaarat_eroavat():
+    """🔴 `max()` ei todista sanaa "each". Tanaan kaikilla 17 joukkueella on 38
+    ottelua, mutta kesken kauden ajettu artefakti antaisi eri lukuja ja `max`
+    vaittaisi silti "each"."""
+    import json as _json
+    d = ROOT / "data" / "understat_team_defence_2526.json"
+    if not d.exists():
+        pytest.skip("defence-data ei saatavilla")
+    doc = _json.loads(d.read_text(encoding="utf-8"))
+    rivit = doc.get("teams") or doc.get("rows") or []
+    maarat = {r.get("matches") or 0 for r in rivit}
+    teksti = _kortin_spec("defence")["footNote2"]
+    if len(maarat) == 1:
+        assert "each" in teksti, "kaikilla sama ottelumaara -> 'each' on tosi"
+        assert str(next(iter(maarat))) in teksti
+    else:
+        assert "each" not in teksti, (
+            f"ottelumaarat eroavat ({sorted(maarat)}) mutta kortti sanoo "
+            f"'each' — {teksti!r}")
+
+
+# ---------------------------------------------------------------------------
+# MEKANISMI SYNTEETTISELLA SYOTTEELLA
+# ---------------------------------------------------------------------------
+# 🔴 KAKSI EDELLISTA TESTIA OLIVAT SOKEITA, JA MUTAATIO NAYTTI SEN.
+# Ne nojaavat tuotantodataan, ja 25.8 koko aineistosta ja karkikymmenikosta
+# johdettu kausijoukko ovat IDENTTISET. Mutaatio `rows[:10]` -> `rows` lapaisi
+# molemmat. Sama `each`-vahdilla: kaikilla 17 joukkueella on 38 ottelua, joten
+# `_dsama = True` lapaisi.
+#
+# Mekanismi on siksi irrotettu omiksi funktioikseen ja testataan SYNTEETTISELLA
+# syotteella jossa joukot AIDOSTI eroavat. Vasta se erottaa oikean johtamisen
+# vaarasta.
+from scripts.build_fpl_longtail import kortin_kaudet, ottelumaara_lause
+
+
+def test_kausi_luetaan_vain_karkikymmenikosta():
+    """Karki on yhta kautta, hanta toista. Kortti nayttaa karjen."""
+    rivit = ([{"basis": "2026/27"}] * 10) + ([{"basis": "2025/26"}] * 400)
+    assert kortin_kaudet(rivit) == ["2026/27"], (
+        "kausi luettiin hannasta jota kortti ei nayta")
+
+
+def test_sekakausi_tunnistetaan_kun_karki_on_sekainen():
+    """Vastapari: kun karki AIDOSTI sekoittaa kausia, se sanotaan."""
+    rivit = ([{"basis": "2026/27"}] * 6 + [{"basis": "2025/26"}] * 4
+             + [{"basis": "2024/25"}] * 50)
+    assert kortin_kaudet(rivit) == ["2025/26", "2026/27"]
+
+
+def test_tyhja_basis_ei_muutu_kaudeksi():
+    """Puuttuva kausi jaa pois, ei tyhjaksi merkkijonoksi listaan."""
+    assert kortin_kaudet([{"basis": ""}, {}, {"basis": None}]) == []
+
+
+def test_each_sanotaan_vain_kun_kaikilla_sama_ottelumaara():
+    assert ottelumaara_lause({38}) == "38 matches each. "
+
+
+def test_each_ei_sanota_kun_maarat_eroavat():
+    """🔴 `max()` olisi sanonut "38 matches each" vaikka yhdella on 12."""
+    lause = ottelumaara_lause({38, 37, 12})
+    assert "each" not in lause, lause
+    assert "at least 12" in lause
+
+
+def test_ottelumaarasta_ei_synny_lausetta_ilman_dataa():
+    assert ottelumaara_lause(set()) == ""
+    assert ottelumaara_lause({0}) == ""

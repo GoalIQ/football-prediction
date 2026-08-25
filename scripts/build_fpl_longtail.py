@@ -1406,12 +1406,23 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     # renderoitynyt lahes minimikoossa. Varaus pienimmassa mahdollisessa
     # fontissa on sama vikaluokka kuin varaus vaarassa paikassa: se on
     # muodollisesti lasna ja kaytannossa poissa.
+    _korttikaudet = kortin_kaudet(rows)
     kortti = _card_spec_attr(
         title="TOP xG PER GAME",
+        # 🔴 KAUSI JOHDETAAN KORTIN OMISTA RIVEISTA, EI KOKO AINEISTOSTA.
+        # `_rivikaudet` lasketaan kaikista 442 pelaajasta; kortti nayttaa 10.
+        # Tanaan joukot osuvat yhteen, mutta kauden edetessa karkikymmenikko
+        # tayttyy 2026/27-riveilla (basis kaantyy kolmen ottelun jalkeen) kun
+        # hanta — loukkaantuneet ja reunapelaajat, satoja — kantaa 2025/26:n
+        # pitkalle kevaaseen. Silloin `_sekakausi` on yha tosi ja kortti
+        # sanoisi "mixing 2025/26 and 2026/27" kymmenesta rivista jotka ovat
+        # KAIKKI tata kautta. Vaite kaantyisi epatodeksi ilman etta kukaan
+        # koskee koodiin. Sivun oma basis-lause saa jaada koko aineiston
+        # mukaiseksi, koska se kuvaa taulukkoa.
         subtitle=("Each player's last 5 games"
-                  + (f", mixing {' and '.join(_rivikaudet)}"
-                     if _sekakausi and len(_rivikaudet) > 1
-                     else (f", {_rivikaudet[0]}" if _rivikaudet else ""))),
+                  + (f", mixing {' and '.join(_korttikaudet)}"
+                     if len(_korttikaudet) > 1
+                     else (f", {_korttikaudet[0]}" if _korttikaudet else ""))),
         mid_label="GAMES",
         value_label="xG/GAME",
         foot="every player with data is free on goaliq.app/fpl/xg-leaders",
@@ -1963,6 +1974,32 @@ def _player_gw_meta() -> dict | None:
 #
 # 🔴 Tama on kirjaus, ei ohitus: jos joku haluaa eston, se on tehtava
 # TAULUKKOON eika korttiin, jolloin sivu ja kuva pysyvat samana.
+def kortin_kaudet(rivit: list[dict], n: int = 10) -> list[str]:
+    """Kausiperustat KORTIN omilta riveilta, ei koko aineistosta.
+
+    🔴 TAMA ON OMA FUNKTIONSA JOTTA SE VOIDAAN TESTATA. Sisakkaisena
+    lausekkeena vika oli nakymaton: koko aineistosta ja karkikymmenikosta
+    johdettu joukko ovat 25.8 IDENTTISET, joten mikaan tuotantodataan nojaava
+    testi ei erota niita. Kauden edetessa ne eroavat, ja silloin kortti
+    vaittaisi kahta kautta kymmenesta rivista jotka ovat yhta.
+    """
+    return sorted({str(r.get("basis") or "") for r in rivit[:n]} - {""})
+
+
+def ottelumaara_lause(maarat: set[int]) -> str:
+    """Ottelumaaralause. `each` VAIN kun kaikilla on sama maara.
+
+    🔴 `max()` ei todista sanaa "each". Kesken kautta ajettu artefakti antaa
+    eri lukuja joukkueittain, ja `max` vaittaisi silti "each".
+    """
+    puhtaat = {m for m in maarat if m}
+    if not puhtaat:
+        return ""
+    if len(puhtaat) == 1:
+        return f"{next(iter(puhtaat))} matches each. "
+    return f"at least {min(puhtaat)} matches per team. "
+
+
 def _card_spec_attr(*, title: str, subtitle: str, rows: list[dict],
                     file_name: str, name_label: str = "PLAYER",
                     mid_label: str = "", value_label: str = "",
@@ -2252,7 +2289,10 @@ def render_defence(defence: dict, now: datetime) -> str | None:
     # tata kautta. Kausi ja ottelumaara luetaan metasta, ei kovakoodata.
     _dmeta = (defence.get("meta") or {})
     _dkausi = str(_dmeta.get("season") or "")
-    _dottelut = max((r.get("matches") or 0) for r in rows) if rows else 0
+    # 🔴 `max()` EI TODISTA "each". Tanaan kaikilla 17 joukkueella on 38
+    # ottelua, mutta kesken kauden ajettu artefakti antaisi eri lukuja ja
+    # `max` vaittaisi silti "each". Sana kaytetaan vain kun arvot ovat samat.
+    _dlause = ottelumaara_lause({r.get("matches") or 0 for r in rows})
     kortti = _card_spec_attr(
         title="FEWEST xG CONCEDED",
         subtitle=("Expected goals conceded per match, "
@@ -2263,8 +2303,7 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         foot="the full table is free on goaliq.app/fpl/defence",
         # Kausi on alaotsikossa; alaviite kertoo vain otoskoon eika toista
         # sita. Sama varaus kahdesti samassa kuvassa on tunnusmerkki.
-        foot2=((f"{_dottelut} matches each. " if _dottelut else "")
-               + "Shot-level data, own expected-goals model"),
+        foot2=(_dlause + "Shot-level data, own expected-goals model"),
         rows=[{"rank": i + 1, "name": r["team"], "team": "", "tag": "",
                "mid": ("%.1f" % r["shots_pm"]),
                "value": ("%.2f" % r["xg_pm"])}
