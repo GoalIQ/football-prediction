@@ -141,3 +141,107 @@ def parse_kickoff(s: str | None) -> _dt.datetime | None:
         return _dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
     except ValueError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Yleisliigan standings + entryn picks (EO-BY-TIER, 25.8)
+# ---------------------------------------------------------------------------
+# 🔴 NAMA EIVAT TOIMI GH-RUNNERILTA. Kirjattu tapaus: FPL-suuntaiset kutsut
+# estettiin GitHubin IP-avaruudesta. Aja Renderista tai paikallisesti.
+#
+# 🔴 EIVAT MYOSKAAN ENNEN KIERROKSEN DEADLINEA. Mitattu 15.8: yleisliigan 314
+# standings palautti 0 rivia ja entryn picks vastasi "Not found" - valinnat
+# eivat ole julkisia ennen deadlinea. Mitattu uudelleen 25.8 GW1:n jalkeen:
+# molemmat vastaavat normaalisti.
+OVERALL_LEAGUE_ID = 314
+
+# Standings-sivutus on raskaampi kuin element-summary (isompi vastaus, ja
+# haemme naita satoja), joten tahti on hitaampi kuin SUMMARY_DELAY_S.
+STANDINGS_DELAY_S = 0.35
+PICKS_DELAY_S = 0.25
+
+
+def fetch_league_standings(page: int, league_id: int = OVERALL_LEAGUE_ID,
+                           max_age_s: float = 12 * 3600,
+                           force: bool = False) -> dict:
+    """Yksi sivu klassisen liigan standingsia (50 riviä/sivu).
+
+    Valimuisti on TTL-pohjainen eika ikuinen: sijoitukset muuttuvat joka
+    kierroksella, joten jaadytetty sivu antaisi vaaran otoksen seuraavalla
+    kierroksella.
+    """
+    path = _cache_path(f"standings/{league_id}-p{page}.json")
+    if not force:
+        cached = _read_cache(path, max_age_s)
+        if cached is not None:
+            return cached
+    url = (f"{FPL_BASE}/leagues-classic/{league_id}/standings/"
+           f"?page_standings={page}")
+    data = _get_json(url)
+    _write_cache(path, data)
+    time.sleep(STANDINGS_DELAY_S)
+    return data
+
+
+def fetch_entry_picks(entry_id: int, gw: int, force: bool = False) -> dict | None:
+    """Yhden entryn valinnat yhdelle kierrokselle.
+
+    Valimuisti on IKUINEN (max_age_s=None): pelatun kierroksen valinnat eivat
+    enaa muutu. Tama on koko haun kannattavuuden ehto - ilman sita jokainen
+    ajo maksaisi tuhansia pyyntoja uudelleen.
+
+    Palauttaa None jos entrylla ei ole rivia talle kierrokselle (404). Se ei
+    ole virhe: manageri on voinut liittya myohemmin. 🔴 None EI ole sama kuin
+    "ei valintoja" - kutsuja ei saa laskea sita nollaksi vaan jattaa otoksesta.
+    """
+    path = _cache_path(f"picks/{gw}/{entry_id}.json")
+    if not force:
+        cached = _read_cache(path, None)
+        if cached is not None:
+            return cached
+    url = f"{FPL_BASE}/entry/{entry_id}/event/{gw}/picks/"
+    try:
+        data = _get_json(url)
+    except requests.HTTPError as e:
+        if e.response is not None and e.response.status_code == 404:
+            return None
+        raise
+    _write_cache(path, data)
+    time.sleep(PICKS_DELAY_S)
+    return data
+
+
+def fetch_entry_history(entry_id: int, max_age_s: float = 600,
+                        force: bool = False) -> dict:
+    """Entryn kausihistoria: pisteet, penkkipisteet ja siirtokustannus per GW.
+
+    TTL on lyhyt eika ikuinen: kesken kierroksen `points` elaa, ja bonukset
+    voivat viela liikuttaa jo pelattuakin kierrosta kunnes FPL merkitsee sen
+    `data_checked`:iksi.
+    """
+    path = _cache_path(f"entry-history/{entry_id}.json")
+    if not force:
+        cached = _read_cache(path, max_age_s)
+        if cached is not None:
+            return cached
+    data = _get_json(f"{FPL_BASE}/entry/{entry_id}/history/")
+    _write_cache(path, data)
+    return data
+
+
+def fetch_event_live(gw: int, max_age_s: float = 600,
+                     force: bool = False) -> dict:
+    """Kierroksen live-pistedata per pelaaja (event/{gw}/live/).
+
+    Sama TTL-perustelu kuin entry-historialla: luku ei ole lukossa ennen
+    `data_checked`:ia, joten ikuinen valimuisti jaadyttaisi provisionaalisen
+    arvon lopulliseksi.
+    """
+    path = _cache_path(f"event-live/{gw}.json")
+    if not force:
+        cached = _read_cache(path, max_age_s)
+        if cached is not None:
+            return cached
+    data = _get_json(f"{FPL_BASE}/event/{gw}/live/")
+    _write_cache(path, data)
+    return data
