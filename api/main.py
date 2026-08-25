@@ -2645,7 +2645,16 @@ def fantasy_gw_review(
         except (OSError, ValueError):
             prov = []
 
-    return build_review(int(katsottava), picks, frozen, points, info, pw, prov)
+    out = build_review(int(katsottava), picks, frozen, points, info, pw, prov)
+
+    # "The model says" -paneeli: luonnollinen kieli lukujen VIERESSA.
+    # 🔴 Jokainen lause on JOHDETTU samasta luvusta joka on payloadissa, ei
+    # vapaamuotoinen. Lukija voi verrata lausetta viereiseen numeroon.
+    from src.models.fpl_model_says import flag_lines, review_lines
+    _seur = int(katsottava) + 1
+    out["model_says"] = (review_lines(out.get("review"))
+                         + flag_lines(out.get("flags"), _seur))
+    return out
 
 
 @app.get("/api/fantasy/my-team-ledger",
