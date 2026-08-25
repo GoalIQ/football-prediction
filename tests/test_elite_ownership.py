@@ -75,10 +75,29 @@ def _write_snapshot(tmp_path, after_gw):
     return p
 
 
+def _isolate(m, tmp_path, monkeypatch, after_gw):
+    """Eristä moduuli oikeasta datahakemistosta JA verkosta.
+
+    🔴 Tama ei ole ylivarovaisuutta. Mutaatioajossa 25.8 vahti tehtiin
+    fail-openiksi, jolloin `test_sama_kierros_molemmille_estetaan` jatkoi
+    vahdin ohi, kutsui oikeaa `build()`:ia, teki oikeita FPL-kutsuja ja
+    kirjoitti oikeaan `data/fpl_elite_ownership.json`:iin. Testi joka odottaa
+    virhepolkua EI saa pudota tuotantopolulle silloin kun vahti pettaa - se on
+    tasan se hetki jolloin vahti on rikki.
+    """
+    monkeypatch.setattr(m, "SNAPSHOT_PATH", _write_snapshot(tmp_path, after_gw))
+    monkeypatch.setattr(m, "OUT_PATH", tmp_path / "out.json")
+
+    def _no_network(*a, **kw):
+        raise AssertionError("testi yritti verkkokutsua")
+
+    monkeypatch.setattr(m, "build", _no_network)
+    return m
+
+
 def test_sama_kierros_molemmille_estetaan(tmp_path, monkeypatch, capsys):
     """Sijoitus GW1:n jalkeen + GW1:n valinnat = kehapaatelma -> exit 2."""
-    m = _load()
-    monkeypatch.setattr(m, "SNAPSHOT_PATH", _write_snapshot(tmp_path, 1))
+    m = _isolate(_load(), tmp_path, monkeypatch, 1)
     assert m.main(["--picks", "--gw", "1"]) == 2
     err = capsys.readouterr().err
     assert "KEHAPAATELMA" in err
@@ -88,8 +107,7 @@ def test_sama_kierros_molemmille_estetaan(tmp_path, monkeypatch, capsys):
 def test_aiempi_kierros_estetaan_myos(tmp_path, monkeypatch):
     """Sijoitus GW3:n jalkeen + GW2:n valinnat on yha kehallinen: sijoitus
     tuntee jo GW2:n lopputuloksen."""
-    m = _load()
-    monkeypatch.setattr(m, "SNAPSHOT_PATH", _write_snapshot(tmp_path, 3))
+    m = _isolate(_load(), tmp_path, monkeypatch, 3)
     assert m.main(["--picks", "--gw", "2"]) == 2
 
 
