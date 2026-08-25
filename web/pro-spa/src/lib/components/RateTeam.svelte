@@ -33,6 +33,7 @@
 	import WeeklyActions, { type WeeklyAction } from './WeeklyActions.svelte';
 	import { isOpenForLogging, loadDecisions, logDecision } from '$lib/fplDecisions';
 	import BeatTheModel from './BeatTheModel.svelte';
+	import GwReview from './GwReview.svelte';
 	import SeasonRace from './SeasonRace.svelte';
 	import { fetchFantasy } from '$lib/api';
 	import ModelWorking from './ModelWorking.svelte';
@@ -752,6 +753,7 @@
 				<BeatTheModel />
 				<!-- V2 (13.8): mallin joukkue pysyvana rivaalina. V1 vertaa
 				     PAATOKSIA, tama JOUKKUEITA - eri kysymys, sama silmukka. -->
+				<GwReview />
 				<SeasonRace />
 			</div>
 		</div>
