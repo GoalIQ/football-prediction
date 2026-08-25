@@ -1377,9 +1377,18 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     # se on historiaa ja pitchin kuuluu nayttaa seuraava. `display_gameweek`
     # tekee tasan taman eron, ja `meta.completed_gameweeks` kertoo sille
     # kumpi tilanne on.
+    # 🔴 KUTSUJAN EKSPLISIITTINEN `gw` VOITTAA AINA. Ilman tata siirto ohitti
+    # nimenomaisen pyynnon: `/api/fantasy/gw-review` pyysi GW1:ta katsausta
+    # varten ja sai GW2:n, jolloin vertailtavaa ei ollut lainkaan ja katsaus
+    # vastasi `available: false` juuri silloin kun se on ajankohtaisin.
+    # Automaattinen siirto on OLETUS, ei pakotus.
     from src.models.fpl_gameweek import display_gameweek as _disp
-    _shown = _disp(xp_data.get("meta") or {})
-    _base = _shown if isinstance(_shown, int) and _shown > picks_gw else picks_gw
+    if gw is not None:
+        _base = picks_gw
+    else:
+        _shown = _disp(xp_data.get("meta") or {})
+        _base = (_shown if isinstance(_shown, int) and _shown > picks_gw
+                 else picks_gw)
     target_gw = clamp_gw_to_projections(_base, pool, xp_data)
 
     squad: list[dict] = []

@@ -52,6 +52,11 @@ FREE_EXPECTED = {
     # maksumuurin takana kumoaa itsensa - koko tuote myydaan silla etta
     # tarkkuuden voi tarkistaa ennen maksamista.
     "/api/fantasy/my-team-ledger",
+    # 25.8: POST-GW-KATSAUS samasta syysta. Sen `worst_call`-kentta nayttaa
+    # mallin PAHIMMAN hudin kierroksella, ja se on koko pinnan tarkoitus:
+    # rehellisyys on kayttoliittyma. Huti maksumuurin takana on sama asia kuin
+    # ei hutia.
+    "/api/fantasy/gw-review",
     "/api/fantasy/price-watch",
     "/api/fantasy/rate-team",
     "/api/fantasy/fit",

@@ -2552,6 +2552,102 @@ def clear_cache(request: Request):
     }
 
 
+@app.get("/api/fantasy/gw-review",
+         description="Post-gameweek review: what the model said, what happened, and what needs attention before the next deadline.")
+def fantasy_gw_review(
+    request: Request,
+    response: Response,
+    entry: int = Query(..., ge=1, le=99_999_999,
+                       description="Julkinen FPL entry-ID"),
+    gw: int | None = Query(default=None, ge=1, le=38,
+                           description="Kierros (oletus: viimeisin pelattu)"),
+):
+    """POST-GW-KATSAUS (Team Manager / FM-silmukka, vaihe 1).
+
+    Teesi: FPL:n oma sovellus on transaktiotyokalu. Kukaan ei omista hetkea
+    "peliviikko meni, mita nyt" - se on kalenteriongelma eika taito-ongelma.
+
+    🔴 LUKEE HISTORIALLISIA LAHTEITA. Ensimmainen versio kokosi katsauksen
+    `rate_team`ista ja se ei toiminut: projektiotiedosto pudottaa pelatun
+    kierroksen, joten pyynto GW1 clampautui GW2:een eika vertailtavaa ollut.
+    Lahteet ovat deadline-freeze ja toteutuneet pisteet.
+
+    🔴 `worst_call` on payloadissa yhta nakyvasti kuin `best_call`.
+    Rehellisyys on kayttoliittyma, ei alaviite.
+
+    FREE: sama peruste kuin my-team-ledgerilla.
+    """
+    import json as _json
+
+    from src.data import fpl_api as _fapi
+    from src.models import fpl_actuals as _act
+    from src.models.fpl_gameweek import completed_gameweeks
+    from src.models.fpl_gw_review import build_review
+
+    response.headers["Cache-Control"] = "no-store"
+
+    # Viimeisin PELATTU kierros, ellei kutsuja nimennyt toista.
+    katsottava = gw
+    if katsottava is None:
+        try:
+            _p0 = PROJECT_ROOT / "data" / "fpl_projections_phase0.json"
+            _doc = _json.loads(_p0.read_text(encoding="utf-8"))
+            _done = ((_doc.get("meta") or {}).get("completed_gameweeks")
+                     or completed_gameweeks(_doc.get("fixtures") or []))
+            katsottava = max((int(g) for g in _done), default=None)
+        except (OSError, ValueError):
+            katsottava = None
+    # Projektiot voivat pudottaa pelatun kierroksen, joten paattyneen
+    # kierroksen loytaminen nojaa freezeen: se on immutable eika katoa.
+    if katsottava is None:
+        katsottava = _act.max_gw()
+
+    if not katsottava:
+        return build_review(None, None, None, None)
+
+    try:
+        picks = _fapi.fetch_entry_picks(entry, int(katsottava))
+    except Exception:
+        raise HTTPException(status_code=404,
+                            detail="FPL entry not found or FPL is unavailable.")
+
+    frozen = _act.frozen_xp_for(int(katsottava))
+    points = _act.points_for(int(katsottava))
+
+    boot = _fapi.fetch_bootstrap()
+    teams = {t["id"]: t["short_name"] for t in boot["teams"]}
+    poss = {t["id"]: t["singular_name_short"] for t in boot["element_types"]}
+    info = {
+        e["id"]: {
+            "web_name": e["web_name"],
+            "team_short": teams.get(e["team"], "?"),
+            "pos": poss.get(e["element_type"], "?"),
+            "chance_next": e.get("chance_of_playing_next_round"),
+            "news": e.get("news"),
+        }
+        for e in boot["elements"]
+    }
+
+    pw = None
+    try:
+        _pwp = PROJECT_ROOT / "data" / "fpl_price_watch.json"
+        if _pwp.exists():
+            pw = _json.loads(_pwp.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pw = None
+
+    prov: list[int] = []
+    _p = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
+    if _p.exists():
+        try:
+            prov = list((_json.loads(_p.read_text(encoding="utf-8"))
+                         .get("meta") or {}).get("provisional_gws") or [])
+        except (OSError, ValueError):
+            prov = []
+
+    return build_review(int(katsottava), picks, frozen, points, info, pw, prov)
+
+
 @app.get("/api/fantasy/my-team-ledger",
          description="Your own team: what the model projected before each deadline against what you actually scored, cumulative.")
 def fantasy_my_team_ledger(
