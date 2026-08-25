@@ -60,8 +60,16 @@ OTSIKKO = {
     # 🔴 SUUNTA ON OSA OTSIKKOA. Taulukko on NOUSEVASSA jarjestyksessa
     # (Arsenal 0,91 = paras puolustus), ja ensimmainen ehdotus oli
     # "MOST XG CONCEDED" eli tasan painvastainen kuin data.
-    "defence": ("FEWEST XG CONCEDED", "xGC"),
+    "defence": ("FEWEST xG CONCEDED", "xGC"),
 }
+
+
+def _kortin_spec(nimi: str) -> dict:
+    """Palvelimen kirjoittama korttispec sivulta."""
+    import html as _html
+    m = re.search(r"data-card-spec='([^']*)'", _sivu(nimi))
+    assert m, f"{nimi}: sivulla ei ole data-card-speciä"
+    return json.loads(_html.unescape(m.group(1).replace("&#39;", "'")))
 
 
 def _sivu(nimi: str) -> str:
@@ -272,3 +280,59 @@ def test_card_title_names_the_value_column(sivu):
         f"({otsikossa!r})")
     assert arvossa.lower() in spec["valueLabel"].lower(), (
         f"{sivu}: valueLabel {spec['valueLabel']!r} ei vastaa otsikkoa")
+
+
+# ---------------------------------------------------------------------------
+# KAUSI JA TUOREUSVAITE (25.8.2026)
+# ---------------------------------------------------------------------------
+# 🔴 JULKAISUPORTTI LOYSI TAMAN, EIVAT NAMA TESTIT. Kumpikin kortti pudotti
+# kausitiedon ja korvasi sen paivamaaralla:
+#
+#   defence  : lahde on KOKO PAATTYNYT 2025/26 (38 ottelua per joukkue,
+#              artefakti jaadytetty 8.8). Kortti sanoi "As of 25 Aug".
+#              Sivu mainitsee kauden viidesti, kortti ei kertaakaan.
+#   xg-leaders: kymmenesta rivista KUUSI on `basis=2025/26`. Rullaava ikkuna
+#              sekoittaa kausia kunnes pelaajalla on 3 ottelua talla kaudella.
+#
+# "As of {pvm}" ei ollut kopioitu maneeri vaan AKTIIVINEN TUOREUSVAITE, ja se
+# oli epatosi kaikilla defencen riveilla ja kuudella xg-kortin kymmenesta.
+KAUSIPAKOLLINEN = ["xg-leaders", "defence"]
+
+
+@pytest.mark.parametrize("sivu", KAUSIPAKOLLINEN)
+def test_kortti_nimeaa_kauden(sivu):
+    """Kortti jonka data on menneelta kaudelta ON nimettava se kausi. Lukija ei
+    nae sivun ymparoivaa tekstia — kortti matkustaa yksin."""
+    spec = _kortin_spec(sivu)
+    teksti = " ".join(str(spec.get(k) or "")
+                      for k in ("title", "subtitle", "footNote", "footNote2"))
+    assert re.search(r"20\d\d/\d\d", teksti), (
+        f"{sivu}: kortti ei nimea kautta lainkaan — {teksti!r}")
+
+
+@pytest.mark.parametrize("sivu", KAUSIPAKOLLINEN)
+def test_kortti_ei_vaita_tuoreutta_paivamaaralla(sivu):
+    """🔴 "As of {pvm}" lukee tuoreutena. Naiden kahden kortin data ei ole
+    tuoretta siina merkityksessa, joten paivamaara on vaite eika leima.
+
+    (Points- ja expected-points-korteilla paivamaara ON oikein: niiden luvut
+    liikkuvat joka ajossa. Siksi tama portti koskee vain naita kahta.)
+    """
+    spec = _kortin_spec(sivu)
+    teksti = " ".join(str(spec.get(k) or "")
+                      for k in ("subtitle", "footNote", "footNote2"))
+    assert "As of" not in teksti, (
+        f"{sivu}: kortti vaittaa tuoreutta paivamaaralla vaikka data on "
+        f"menneelta kaudelta — {teksti!r}")
+
+
+@pytest.mark.parametrize("sivu", PALVELINKORTTI)
+def test_xg_kirjoitetaan_pienella_x(sivu):
+    """`xG` on termi jonka kirjoitusasu kantaa merkitysta. `XG` versaali-
+    otsikossa lukee silta ettei kirjoittaja tunne sita, ja sisarkortti sailytti
+    pienen x:n samassa generaattorissa."""
+    spec = _kortin_spec(sivu)
+    for kentta in ("title", "subtitle", "valueLabel", "midLabel"):
+        arvo = str(spec.get(kentta) or "")
+        assert not re.search(r"XG", arvo), (
+            f"{sivu}.{kentta}: 'XG' pitaa olla 'xG' — {arvo!r}")

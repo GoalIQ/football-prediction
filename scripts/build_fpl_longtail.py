@@ -1386,14 +1386,36 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     # 79 min). Per-game-luku yhden ottelun otoksesta ei ole vaara, mutta ilman
     # otoskokoa se luetaan kauden tasoksi. Sivulla lukija nakee Games-sarakkeen
     # ja Min mins -suodattimen; kortin on kannettava sama tieto.
+    # 🔴 KAUSI ON KORTILLA, PAIVAMAARA EI. Julkaisuportti mittasi 25.8 etta
+    # kortin kymmenesta rivista KUUSI on viime kaudelta (`basis=2025/26`):
+    # rullaava ikkuna sekoittaa kausia kunnes pelaajalla on 3 ottelua talla
+    # kaudella. "As of 25 Aug" ei ollut kopioitu maneeri vaan AKTIIVINEN
+    # TUOREUSVAITE, ja se oli epatosi kuudella rivilla kymmenesta.
+    #
+    # 🔴 JA `GAMES`-SARAKE, JONKA LISASIN VARAUKSEKSI, KAANTYI VAARAAN
+    # SUUNTAAN. Mitattu: jokainen 5 ottelun rivi on 2025/26 ja jokainen yhden
+    # ottelun rivi on 2026/27. Otoskokoa katsova lukija paatyy siis
+    # jarjestelmallisesti VANHIMPAAN dataan. Sarake jaa — se on oikea varaus —
+    # mutta vasta kausimerkinnan kanssa se lukee oikein pain.
+    #
+    # Kausi johdetaan rakenteisista kentista (`_sekakausi`, `_rivikaudet`,
+    # `_target_k`), ei kovakoodata eika toisteta viereista proosaa.
+    # 🔴 KAUSI ALAOTSIKKOON, EI ALAVIITTEESEEN. Renderoija kutistaa alaviitteen
+    # 17px -> 11px ja alaotsikon 22px -> 13px. Kausiversio alaviitteessa oli
+    # 104 merkkia (hyvaksyttyjen korttien haarukka on 55-60), joten se olisi
+    # renderoitynyt lahes minimikoossa. Varaus pienimmassa mahdollisessa
+    # fontissa on sama vikaluokka kuin varaus vaarassa paikassa: se on
+    # muodollisesti lasna ja kaytannossa poissa.
     kortti = _card_spec_attr(
         title="TOP xG PER GAME",
-        subtitle="Last 5 games each, no minimum minutes applied",
+        subtitle=("Each player's last 5 games"
+                  + (f", mixing {' and '.join(_rivikaudet)}"
+                     if _sekakausi and len(_rivikaudet) > 1
+                     else (f", {_rivikaudet[0]}" if _rivikaudet else ""))),
         mid_label="GAMES",
         value_label="xG/GAME",
         foot="every player with data is free on goaliq.app/fpl/xg-leaders",
-        foot2=(f"As of {now.strftime('%d %b').lstrip('0')}. "
-               "FPL shot data, not betting advice"),
+        foot2="FPL shot data, not betting advice",
         rows=[{"rank": i + 1, "name": r["web_name"],
                "team": r.get("team_short") or "", "tag": r.get("pos") or "",
                "mid": str(r.get("games") or 0),
@@ -2222,15 +2244,27 @@ def render_defence(defence: dict, now: datetime) -> str | None:
     # 🔴 OTSIKKO ON SUUNTAVAITE. Ensimmainen ehdotus oli "MOST XG CONCEDED",
     # ja taulukko on NOUSEVASSA jarjestyksessa (Arsenal 0.91 = paras puolustus)
     # eli otsikko olisi vaittanyt tasan painvastaista kuin data.
+    # 🔴 KAUSI ON KORTILLA, PAIVAMAARA EI. Lahde on KOKO PAATTYNYT KAUSI:
+    # `understat_team_defence_2526.json` meta sanoo season 2025/26,
+    # matches_read 380, generated_at 8.8 — ja Arsenalin 0,91 on 38 ottelun
+    # keskiarvo. Artefakti ei liiku. Sivu mainitsee kauden viidesti; kortti ei
+    # kertaakaan, ja "As of 25 Aug" luki tuoreutena joka lukijalle tarkoittaa
+    # tata kautta. Kausi ja ottelumaara luetaan metasta, ei kovakoodata.
+    _dmeta = (defence.get("meta") or {})
+    _dkausi = str(_dmeta.get("season") or "")
+    _dottelut = max((r.get("matches") or 0) for r in rows) if rows else 0
     kortti = _card_spec_attr(
-        title="FEWEST XG CONCEDED",
-        subtitle="Expected goals conceded per match, lowest is best",
+        title="FEWEST xG CONCEDED",
+        subtitle=("Expected goals conceded per match, "
+                  + (f"{_dkausi}, " if _dkausi else "") + "lowest is best"),
         name_label="TEAM",
         mid_label="SHOTS",
         value_label="xGC",
         foot="the full table is free on goaliq.app/fpl/defence",
-        foot2=(f"As of {now.strftime('%d %b').lstrip('0')}. "
-               "Shot-level data, own expected-goals model"),
+        # Kausi on alaotsikossa; alaviite kertoo vain otoskoon eika toista
+        # sita. Sama varaus kahdesti samassa kuvassa on tunnusmerkki.
+        foot2=((f"{_dottelut} matches each. " if _dottelut else "")
+               + "Shot-level data, own expected-goals model"),
         rows=[{"rank": i + 1, "name": r["team"], "team": "", "tag": "",
                "mid": ("%.1f" % r["shots_pm"]),
                "value": ("%.2f" % r["xg_pm"])}
