@@ -211,3 +211,59 @@ def test_ei_valikointia_lupaavaa_sanamuotoa():
                          "pct_dec": 84.0, "draw_n": 29})
     assert "Winner named" not in sub, sub
     assert "when the match had a winner" in sub, sub
+
+
+# ---------------------------------------------------------------------------
+# 25.8: sivu ei saa nayttaa jo pelatun kierroksen projektioita
+# ---------------------------------------------------------------------------
+def _fx(gw, n, kickoff_ms):
+    return [{"gameweek": gw, "kickoff_ms": kickoff_ms + i} for i in range(n)]
+
+
+def test_siirtyy_seuraavaan_kun_kaikki_ottelut_alkaneet():
+    """🔴 MITATTU VIKA. Sivu naytti Gameweek 1:n nollapeliprojektiot vaikka
+    kaikki GW1:n ottelut oli pelattu. Arsenalille luki 53 % (koti, Coventry)
+    kun GW2:n luku on 38 % (vieras, Aston Villa). Projektio jo pelatulle
+    ottelulle on historiaa vaarassa asussa.
+
+    `meta.next_gameweek` tulee FPL:n lipuista jotka laahaavat tunteja."""
+    m = _bfp()
+    import datetime as dt
+    menneisyys = int((dt.datetime.now(dt.timezone.utc).timestamp() - 86400) * 1000)
+    meta = {"next_gameweek": 1, "deadline_gameweek": 2}
+    assert m.display_gw(meta, _fx(1, 10, menneisyys)) == 2
+
+
+def test_kesken_kierroksen_pysytaan_paikallaan():
+    """🔴 Ehto on tiukka tarkoituksella: YKSIKIN alkamaton ottelu pitaa sivun
+    kuluvassa kierroksessa. Se on mita lukijan joukkue on juuri nyt
+    keraamassa (22.8 linjaus rate_teamin target_gw:sta)."""
+    m = _bfp()
+    import datetime as dt
+    now = dt.datetime.now(dt.timezone.utc).timestamp() * 1000
+    fx = _fx(1, 9, int(now - 86400000)) + [{"gameweek": 1,
+                                            "kickoff_ms": int(now + 3600000)}]
+    meta = {"next_gameweek": 1, "deadline_gameweek": 2}
+    assert m.display_gw(meta, fx) == 1, "yksi alkamaton ottelu -> ei siirryta"
+
+
+def test_deadline_samassa_kierroksessa_ei_siirra():
+    """Ennen deadlinea `deadline_gameweek == next_gameweek` -> ei liiketta,
+    vaikka jokin ottelu olisi jo alkanut (DGW/siirretty ottelu)."""
+    m = _bfp()
+    import datetime as dt
+    menneisyys = int((dt.datetime.now(dt.timezone.utc).timestamp() - 86400) * 1000)
+    meta = {"next_gameweek": 2, "deadline_gameweek": 2}
+    assert m.display_gw(meta, _fx(2, 10, menneisyys)) == 2
+
+
+def test_puuttuva_deadline_kentta_ei_muuta_kaytosta():
+    """Vanha payload -> bittitarkasti entinen kaytos."""
+    m = _bfp()
+    import datetime as dt
+    menneisyys = int((dt.datetime.now(dt.timezone.utc).timestamp() - 86400) * 1000)
+    fx = _fx(1, 10, menneisyys)
+    assert m.display_gw({"next_gameweek": 1}, fx) == 1
+    assert m.display_gw({"next_gameweek": 1, "deadline_gameweek": None}, fx) == 1
+    # ...eika merkkijono saa lapaista int-tarkistusta
+    assert m.display_gw({"next_gameweek": 1, "deadline_gameweek": "2"}, fx) == 1

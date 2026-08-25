@@ -4183,7 +4183,12 @@ def fantasy_phase0(
     if not isinstance(teams, list) or not isinstance(meta, dict):
         return data  # available=False-runko tms. → ei rajausta
 
-    next_gw = meta.get("next_gameweek")
+    # 25.8: actionable eika next_gameweek. Horisontti on ENNUSTE, ja kesken
+    # kierroksen `next_gameweek` osoittaa jo lukittuun kierrokseen -> "seuraavat
+    # 6 kierrosta" sisaltaisi jo pelatun kierroksen, eli lukija saisi viisi
+    # kayttokelpoista kierrosta kuudeksi merkittyna. Ks. fpl_gameweek.py.
+    from src.models.fpl_gameweek import actionable_gameweek
+    next_gw = actionable_gameweek(meta)
     if next_gw is None:
         return data
 

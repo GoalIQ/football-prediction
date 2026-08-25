@@ -20,6 +20,8 @@ RateTeamError, ei kaatumista.
 
 from __future__ import annotations
 
+from src.models.fpl_gameweek import actionable_gameweek
+
 from statistics import pstdev
 
 from src.models.fpl_phase0 import load_phase0
@@ -98,7 +100,10 @@ def value_list(top_n: int = 20) -> dict:
         "meta": {
             "available": True,
             "season": meta.get("season"),
-            "gw": meta.get("next_gameweek"),
+            # 25.8: actionable eika next_gameweek. Arvolista on ENNUSTE, ja
+            # kesken kierroksen next_gameweek osoittaa jo lukittuun
+            # kierrokseen. Ks. src/models/fpl_gameweek.py.
+            "gw": actionable_gameweek(meta),
             "horizon_gw": meta.get("horizon_gw"),
             "generated_at": meta.get("generated_at"),
             "note": VALUE_NOTE,
@@ -187,7 +192,7 @@ def gk_rotation_pairs(top_n: int = 10) -> dict:
     # Payload väitti siis 38:aa ja näytti gw_splitissä 6:ta. Sama vikaluokka
     # kuin muistin `honest-data-labels`: leima lupasi kattavuutta jota ei ole.
     cs_gws = {gw for per_gw in cs_by_short.values() for gw in per_gw}
-    next_gw = p0_meta.get("next_gameweek")
+    next_gw = actionable_gameweek(p0_meta)
     horizon_actual = (
         max(cs_gws) - next_gw + 1 if cs_gws and next_gw is not None else None
     )
@@ -195,7 +200,7 @@ def gk_rotation_pairs(top_n: int = 10) -> dict:
     return {
         "meta": {
             "available": True,
-            "gw": p0_meta.get("next_gameweek"),
+            "gw": actionable_gameweek(p0_meta),
             "horizon_gw": horizon_actual,
             "note": ("Best rotating goalkeeper duo: each gameweek you field the "
                      "keeper with the higher model clean sheet probability."),

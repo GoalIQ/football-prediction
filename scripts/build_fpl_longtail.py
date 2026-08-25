@@ -90,6 +90,12 @@ UPSELL = (
 # tumma ink-hero, cream-body, paper-kortit, pillerinapit). Longtail-sivuilla
 # OMA template — build_prediction_pages.CSS/NAV/_page jää prediction-sivujen
 # vanhaan asuun, ei sivuvaikutuksia sinne.
+def _window_label(meta: dict, gws, fallback_n: int) -> str:
+    """Ohut kaare jaettuun `fpl_gameweek.window_label`:iin (25.8)."""
+    from src.models.fpl_gameweek import window_label
+    return window_label(meta, gws, fallback_n)
+
+
 def _strip_css_comments(css: str) -> str:
     """Poista /* ... */ -kommentit ENNEN kuin CSS kirjoitetaan sivulle.
 
@@ -536,7 +542,11 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     players = xp.get("players") or []
     if not meta.get("available") or not players:
         return None
-    gw = meta.get("next_gameweek") or "?"
+    # 25.8: actionable eika next_gameweek. Otsikko lupaa "Best FPL Captain
+    # GW{n}", ja kesken kierroksen next_gameweek osoittaa jo lukittuun
+    # kierrokseen -> sivu suosittelisi kapteenia kierrokselle joka on pelattu.
+    from src.models.fpl_gameweek import actionable_gameweek as _act_gw
+    gw = _act_gw(meta) or "?"
 
     # 8.8.2026 (Villen havainto): sivu lupaa otsikossa "Best FPL Captain GW{n}"
     # mutta sorttasi xp_per_gw:lla (koko horisontin keskiarvo) -> sivu ja appin
@@ -2481,9 +2491,12 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
     if not meta.get("available") or not players:
         return None
 
-    n_gw = len(((players[0] if players else {}).get("gameweeks")) or []) or 6
-    first_gw = meta.get("next_gameweek")
-    window = f"GW{first_gw}-{first_gw + n_gw - 1}" if first_gw else f"next {n_gw} GWs"
+    _gws = ((players[0] if players else {}).get("gameweeks")) or []
+    n_gw = len(_gws) or 6
+    # 25.8: ikkuna johdetaan TODELLISISTA kierroksista eika kaavasta
+    # `first + n - 1`, joka valehtelee heti kun lista ja aloituskierros ovat
+    # eri mielta. Ks. src/models/fpl_gameweek.window_label.
+    window = _window_label(meta, _gws, n_gw)
     url = f"{BASE}/fpl/club-best"
 
     sections, all_clubs, lead = [], [], None
@@ -2617,9 +2630,12 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
     if not meta.get("available") or not players:
         return None
 
-    n_gw = len(((players[0] if players else {}).get("gameweeks")) or []) or 6
-    first_gw = meta.get("next_gameweek")
-    window = f"GW{first_gw}-{first_gw + n_gw - 1}" if first_gw else f"next {n_gw} GWs"
+    _gws = ((players[0] if players else {}).get("gameweeks")) or []
+    n_gw = len(_gws) or 6
+    # 25.8: ikkuna johdetaan TODELLISISTA kierroksista eika kaavasta
+    # `first + n - 1`, joka valehtelee heti kun lista ja aloituskierros ovat
+    # eri mielta. Ks. src/models/fpl_gameweek.window_label.
+    window = _window_label(meta, _gws, n_gw)
     url = f"{BASE}/fpl/team-news"
 
     def _owned(r):
@@ -3443,8 +3459,8 @@ def render_club_page(short: str, players: list[dict], meta: dict,
     nimi = str(players[0].get("team") or short)
     url = f"{BASE}/fpl/club/{slug}"
     n_gw = len(((players[0]).get("gameweeks")) or []) or 6
-    first_gw = (meta or {}).get("next_gameweek")
-    window = f"GW{first_gw}-{first_gw + n_gw - 1}" if first_gw else f"next {n_gw} GWs"
+    _gws3 = ((players[0] if players else {}).get("gameweeks")) or []
+    window = _window_label(meta or {}, _gws3, n_gw)
 
     karki = sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))[:8]
     best_rows = "".join(
@@ -3711,9 +3727,8 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     in_progress = (isinstance(dl_gw, int) and isinstance(next_gw, int)
                    and dl_gw > next_gw)
     esikausi = str(meta.get("caveat_code") or "").endswith(".preseason")
-    _first_gw = meta.get("next_gameweek")
-    window = (f"GW{_first_gw}-{_first_gw + n_gw - 1}"
-              if isinstance(_first_gw, int) else f"the next {n_gw} GWs")
+    _gws2 = ((players[0] if players else {}).get("gameweeks")) or []
+    window = _window_label(meta, _gws2, n_gw)
     url = f"{BASE}/fpl/expected-points"
     # 21.8 (portti): "every player ranked" saa esiintya vain top-100-
     # rajauksen kanssa samassa lauseessa — ilmaissivu nayttaa tasan 100

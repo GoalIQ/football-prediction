@@ -675,9 +675,15 @@ def card_club_best(args) -> dict:
             stamp = f", as of {int(dd)} {months[int(m) - 1]}"
         except (ValueError, IndexError):
             stamp = ""
-    first_gw = data.get("meta", {}).get("next_gameweek")
-    window = (f"GW{first_gw}-{first_gw + n_gw - 1}" if first_gw
-              else f"next {n_gw} gameweeks")
+    # 🔴 25.8: kortti on JULKINEN pinta ja tama kaava valehteli kahdesti.
+    # (1) `next_gameweek` osoittaa kesken kierroksen jo lukittuun kierrokseen,
+    #     joten kortti olisi sanonut "GW1-6" sen jalkeen kun GW1 pelattiin.
+    # (2) `first + n - 1` tuottaa kierroksen jota listalla ei ole heti kun
+    #     aloitus ja lista ovat eri mielta ("GW2-7" kun data on GW1-6).
+    # Ikkuna johdetaan nyt todellisista kierroksista. Ks. fpl_gameweek.py.
+    from src.models.fpl_gameweek import window_label
+    _gws = ((players[0] if players else {}).get("gameweeks")) or []
+    window = window_label(data.get("meta") or {}, _gws, n_gw)
     return {
         "title": f"BEST {pos} AT EVERY CLUB",
         "subtitle": f"projected points, {window}{stamp}",

@@ -233,6 +233,20 @@ def gw_started(fixtures: list[dict], gw: int) -> bool:
     return first_ms / 1000 < _dt.datetime.now(_dt.timezone.utc).timestamp()
 
 
+def display_gw(meta: dict, fixtures: list[dict]) -> int:
+    """Ohut kaare jaettuun `fpl_gameweek.display_gameweek`:iin.
+
+    Logiikka EI asu taalla: sama kysymys on nelja kertaa vastattu vaarin
+    eri tiedostoissa (siirtosuunnittelu 22.8, chip-EV 24.8, jakokortti 25.8,
+    tama sivu 25.8), joten vastaus on nyt yhdessa paikassa.
+    """
+    from src.models.fpl_gameweek import display_gameweek
+    gw = display_gameweek(meta, fixtures)
+    if gw is not None:
+        return gw
+    return min((f["gameweek"] for f in fixtures if f.get("gameweek")), default=1)
+
+
 def build_context(fpl: dict, acc: dict) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
@@ -265,9 +279,7 @@ def build_context(fpl: dict, acc: dict) -> dict:
     teams_all = fpl["teams"]
     teams = [_near_only(t) for t in teams_all]
     fixtures = fpl["fixtures"]
-    next_gw = meta.get("next_gameweek") or min(
-        f["gameweek"] for f in fixtures if f.get("gameweek")
-    )
+    next_gw = display_gw(meta, fixtures)
 
     # CS-taulun rivit: per joukkue, next_gw:n fixture
     cs_rows = []
