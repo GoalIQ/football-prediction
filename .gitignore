@@ -140,6 +140,14 @@ raw_data/
 # Season race -paneeli lukee taman, ja ilman !-poikkeusta luku eläisi vain
 # runnerilla eika koskaan paatyisi sivulle.
 !/data/model_squad_gw_scores.json
+# EO-by-tier (25.8): sijoitusotos + laskettu tulos. 🔴 MOLEMMAT tarvitaan
+# repoon. Otos otetaan kierroksen N jalkeen ja valinnat haetaan vasta
+# kierroksen N+1 deadlinen jalkeen (kehapaatelmavahti), eli naiden kahden ajon
+# valissa on paivia. Jos otos jaa gitignoreen, se elaa vain silla koneella
+# jolla se otettiin ja jalkimmainen ajo kaatuu muualla - sama vikaluokka kuin
+# free_window_log.jsonl:lla, joka kaatoi workflown hiljaa joka yo.
+!/data/fpl_rank_snapshot.json
+!/data/fpl_elite_ownership.json
 
 # 14.8 (PUSH-NOTIF vaihe b): push_dispatchin idempotenssimarkkerit.
 # ILMAN TATA POIKKEUSTA TUPLAPUSHI ON VARMA: markkeri elaisi vain runnerin
