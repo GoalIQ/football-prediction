@@ -13,6 +13,7 @@
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import { fetchDefconLive, type DefconLiveResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
+	import { shareCard, canShareToApps } from '$lib/shareCard';
 
 	const POLL_MS = 60_000;
 	let data = $state<DefconLiveResponse | null>(null);
@@ -70,6 +71,41 @@
 	);
 	const hits = $derived(rows.filter((p) => p.hit).length);
 
+	let sharing = $state(false);
+
+	// 🔴 KORTTI ON KESKEN KIERROKSEN OTETTU TILANNEKUVA, JA SE SANOTAAN.
+	// Ilman kellonaikaa lukija ei tieda onko luku lopullinen, ja DefCon-luvut
+	// liikkuvat viela. Sama syy kuin gw-outlook-kortin "as of" -leimalla.
+	async function share() {
+		if (sharing) return;
+		sharing = true;
+		try {
+			const method = await shareCard({
+				title: 'DEFCON LIVE',
+				subtitle: `GW${data?.meta.gw}, ${hits} of ${rows.length} at the threshold, in progress`,
+				midLabel: 'MINS',
+				valueLabel: 'DEFCON',
+				fileName: 'goaliq_defcon_live.png',
+				rows: rows.slice(0, 10).map((p, i) => ({
+					rank: i + 1,
+					name: p.is_captain ? `${p.web_name} (C)` : p.web_name,
+					tag: p.pos,
+					// `team_short` on DefCon-live-payloadissa nullable; kortin
+					// CardRow vaatii stringin. Tyhja on oikea fallback: joukkuetta
+					// ei arvata.
+					team: p.team_short ?? '',
+					mid: `${p.minutes}'`,
+					// Kynnys mukaan: pelkka luku ei kerro onko se riittava, ja
+					// kynnys vaihtelee positioittain.
+					value: `${p.defcon}/${p.threshold}`
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'defcon_live', method });
+		} finally {
+			sharing = false;
+		}
+	}
+
 	let announced = false;
 	$effect(() => {
 		if (rows.length > 0 && !announced) {
@@ -82,7 +118,10 @@
 {#if rows.length > 0}
 	<section class="dcl" aria-label="Defensive contribution, live">
 		<div class="bar">
-			DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
+			<span>DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold</span>
+			<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+				{sharing ? 'Rendering…' : canShareToApps() ? 'Share' : 'Download'}
+			</button>
 		</div>
 		<ul>
 			{#each rows as p (p.id)}
@@ -110,6 +149,28 @@
 {/if}
 
 <style>
+	.bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
+	}
 	.dcl {
 		border: 1px solid var(--track);
 		background: var(--panel);
