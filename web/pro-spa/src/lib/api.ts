@@ -719,6 +719,116 @@ export interface ModelRaceResponse {
 	gameweeks: ModelRaceGameweek[];
 }
 
+// ---------------------------------------------------------------------------
+// MY TEAM LEDGER (25.8) — sinun rivisi ennuste vs toteuma, kumuloituva.
+// Vertailukohta on kierroksen DEADLINE-FREEZE eika elava projektio.
+// Pinta-pariteetti: goaliq-app/lib/api.ts LedgerResponse.
+// ---------------------------------------------------------------------------
+export interface LedgerGameweek {
+	gw: number;
+	projected: number;
+	actual: number;
+	/** toteuma - ennuste. Positiivinen = ylitit ennusteen. */
+	diff: number;
+	cumulative_diff: number;
+	/** Kuinka moni 15:sta loytyi freezesta. < 15 = vajaa kattavuus. */
+	players_matched: number;
+	bench_points: number;
+	transfer_cost: number;
+	provisional: boolean;
+}
+
+export interface LedgerResponse {
+	meta: {
+		available: boolean;
+		graded_gws: number;
+		/** Kierrokset jotka jaivat pois koska freezea ei ole. EI nolla. */
+		missing_freeze_gws?: number[];
+		provisional_gws?: number[];
+		basis?: string;
+		note: string | null;
+		note_code?: string | null;
+	};
+	totals: { projected: number | null; actual: number | null; diff: number | null };
+	gameweeks: LedgerGameweek[];
+}
+
+export async function fetchMyTeamLedger(entry: number): Promise<LedgerResponse> {
+	return getJson<LedgerResponse>(`/api/fantasy/my-team-ledger?entry=${entry}`);
+}
+
+// ---------------------------------------------------------------------------
+// POST-GW-KATSAUS (25.8) — mita malli sanoi, mita tapahtui, mita nyt.
+// 🔴 `worst_call` on renderoitava yhta nakyvasti kuin `best_call`.
+// ---------------------------------------------------------------------------
+export interface ReviewPlayer {
+	id: number;
+	web_name: string;
+	team_short: string;
+	pos: string;
+	projected: number;
+	actual: number;
+	diff: number;
+	multiplier: number;
+	in_xi: boolean;
+	is_captain: boolean;
+}
+
+export interface ReviewFlagAvailability {
+	id: number;
+	web_name: string;
+	team_short: string;
+	chance_next: number | null;
+	/** FPL:n oma uutisteksti sellaisenaan, ei meidan tulkintaamme. */
+	news: string | null;
+}
+
+export interface ReviewFlagPrice {
+	id: number;
+	web_name: string;
+	direction: 'rise' | 'fall';
+	progress_pct: number | null;
+	eta_days: number | null;
+	confidence: number | null;
+}
+
+/** Johdettu lause + vakaa koodi lokalisointia varten. */
+export interface ModelSaysLine {
+	code: string;
+	text: string;
+}
+
+export interface GwReviewResponse {
+	meta: {
+		available: boolean;
+		reviewed_gw: number | null;
+		provisional?: boolean;
+		players_compared?: number;
+		basis?: string;
+		note: string | null;
+		note_code?: string | null;
+	};
+	review: {
+		projected: number | null;
+		actual: number | null;
+		diff: number | null;
+		best_call: ReviewPlayer | null;
+		worst_call: ReviewPlayer | null;
+		captain: ReviewPlayer | null;
+		players: ReviewPlayer[];
+	} | null;
+	flags: { availability: ReviewFlagAvailability[]; price: ReviewFlagPrice[] };
+	model_says?: ModelSaysLine[];
+}
+
+export async function fetchGwReview(
+	entry: number,
+	gw?: number | null
+): Promise<GwReviewResponse> {
+	const g = gw != null ? `&gw=${gw}` : '';
+	return getJson<GwReviewResponse>(`/api/fantasy/gw-review?entry=${entry}${g}`);
+}
+
 export async function fetchModelRace(entry?: number | null): Promise<ModelRaceResponse> {
 	const q = entry != null ? `?entry=${entry}` : '';
 	return getJson<ModelRaceResponse>(`/api/fantasy/model-race${q}`);
