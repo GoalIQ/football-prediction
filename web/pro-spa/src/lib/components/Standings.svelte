@@ -14,6 +14,8 @@
 	// $lib/leagues.ts:ssä, koska oikea kausikoodi riippuu liigasta (BSA =
 	// kalenterivuosi, '26' eikä '2627').
 	import { STANDINGS_LEAGUES, seasonChoices, defaultSeason } from '$lib/leagues';
+	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { capture } from '$lib/analytics';
 
 	let league = $state('ENG-Premier League');
 	let season = $state(defaultSeason('ENG-Premier League'));
@@ -26,6 +28,48 @@
 	/** Liigan vaihto siirtää kauden uuden liigan koodiavaruuteen. Tavallinen
 	 *  funktio tarkoituksella: kaksi $effectiä jotka lukevat ja kirjoittavat
 	 *  samaa statea tappaisi sidonnan hiljaa (todettu 3.8). */
+	let sharing = $state(false);
+
+	/**
+	 * Jakokortti sarjataulukosta.
+	 *
+	 * 🔴 OTSIKON ON KANNETTAVA LIIGA JA KAUSI. Tassa komponentissa on jo vahti
+	 * sille etta hitaampi VANHEMPI vastaus kirjoittaa rivit viimeisena (16.8) —
+	 * kortti ilman liiga- ja kausimerkintaa toisi saman vian takaisin kuvana,
+	 * jota lukija ei voi tarkistaa mistaan. Nimi luetaan samasta valinnasta josta
+	 * rivitkin.
+	 *
+	 * Kortti lukee `rows`-staten, EI DOMia: taulukon lajittelu tai suodatus ei voi
+	 * saada korttia kantamaan eri jarjestysta kuin nakyma.
+	 */
+	async function share() {
+		if (sharing || rows.length < 3) return;
+		sharing = true;
+		try {
+			const lg = STANDINGS_LEAGUES.find((l) => l.code === league);
+			const se = seasons.find((x) => x.value === season);
+			const method = await shareCard({
+				title: 'LEAGUE TABLE',
+				subtitle: `${lg?.label ?? league}, ${se?.label ?? season}`,
+				nameLabel: 'TEAM',
+				midLabel: 'PL',
+				valueLabel: 'PTS',
+				fileName: 'goaliq_standings.png',
+				rows: rows.slice(0, 10).map((r) => ({
+					rank: r.position,
+					name: r.team_short_name || r.team_name,
+					tag: '',
+					team: '',
+					mid: String(r.played_games),
+					value: String(r.points)
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'standings', method });
+		} finally {
+			sharing = false;
+		}
+	}
+
 	function selectLeague(code: string) {
 		league = code;
 		if (!seasonChoices(code).some((s) => s.value === season)) {
@@ -101,6 +145,12 @@
 	<p class="muted">No table available for this league and season yet.</p>
 {:else}
 	<div class="table-wrap">
+{#if rows.length >= 3}
+	<!-- Jakokortti: sarjataulukko on ILMAISTA dataa, joten kortti on vapaa. -->
+	<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+	</button>
+{/if}
 		<table>
 			<thead>
 				<tr>

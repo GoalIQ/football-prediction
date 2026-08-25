@@ -14,6 +14,7 @@ import { authHeaders } from './api';
 
 export type FantasyTool =
 	| 'rate_team'
+	| 'wildcard_plan'
 	| 'rate_team_draft'
 	| 'model_squad'
 	| 'price_watch'
@@ -692,6 +693,78 @@ export interface ChipEvResponse {
 export function fetchChipEv(entry?: number | null): Promise<ChipEvResponse> {
 	const q = entry != null ? `?entry=${entry}` : '';
 	return getTool(`/api/fantasy/chip-ev${q}`, 'chip_ev');
+}
+
+/* ---------- Wildcard-suunnitelma (25.8): MIKSI ja MIHIN joukkueeseen ---------- */
+
+export interface WildcardRow {
+	id: number;
+	web_name: string;
+	pos: string;
+	team_short: string | null;
+	price: number;
+	xp_window: number;
+	xp_per_gw: number;
+	chance_next?: number | null;
+}
+
+export interface WildcardReason {
+	code: string;
+	text: string;
+}
+
+export interface WildcardCandidate {
+	gw: number;
+	window_gws: number;
+	base_xp: number;
+	new_xp: number;
+	ev_total: number;
+	ev_per_gw: number;
+}
+
+export interface WildcardPlanResponse {
+	meta: {
+		entry: number | null;
+		mode: string;
+		generated_at?: string;
+		team_name_gaps?: string[];
+		notes?: string[];
+		disclaimer?: string;
+		masked?: boolean;
+		mask?: string;
+		[key: string]: unknown;
+	};
+	plan: {
+		available: boolean;
+		note?: string;
+		recommend?: boolean;
+		gw?: number;
+		ev_total?: number;
+		ev_per_gw?: number;
+		window_gws?: number;
+		threshold_per_gw?: number;
+		basis?: string;
+		/** Premium. Maskattuna avain PUUTTUU kokonaan. */
+		squad?: { xi: WildcardRow[]; bench: WildcardRow[]; changes: number; proven: boolean };
+		in?: WildcardRow[];
+		out?: WildcardRow[];
+		candidates?: WildcardCandidate[];
+		long_view?: {
+			gws: number[];
+			basis: string;
+			incoming_att_fdr: number | null;
+			outgoing_att_fdr: number | null;
+			incoming_def_fdr: number | null;
+			outgoing_def_fdr: number | null;
+			note: string;
+		} | null;
+		reasons: WildcardReason[];
+	};
+}
+
+export function fetchWildcardPlan(entry?: number | null): Promise<WildcardPlanResponse> {
+	const q = entry != null ? `?entry=${entry}` : '';
+	return getTool(`/api/fantasy/wildcard-plan${q}`, 'wildcard_plan');
 }
 
 /* ---------- Edge-sprint: plan-chains (solver-light) ---------- */

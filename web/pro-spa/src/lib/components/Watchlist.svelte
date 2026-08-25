@@ -24,6 +24,7 @@
 	import PlayerSearch from './PlayerSearch.svelte';
 	import TeamKit from './TeamKit.svelte';
 	import { teamColorByShort } from '$lib/teamColors';
+	import { shareCard, canShareToApps } from '$lib/shareCard';
 
 	let { premium = false }: { premium?: boolean } = $props();
 
@@ -137,6 +138,52 @@
 		return true;
 	}
 	let visibleRows = $derived(rows.filter(inBands));
+
+	let sharing = $state(false);
+
+	/**
+	 * Jakokortti seurantalistasta.
+	 *
+	 * 🔴 KORTTI LUKEE `visibleRows`:N, EI `rows`:IA. Suodattimet ovat kaytossa
+	 * (hinta, omistus, joukkue), ja koko listan jakaminen suodatetusta nakymasta
+	 * antaisi kuvan jota lukija ei nae sivulta. Samasta syysta otsikko NIMEAA
+	 * aktiiviset suodattimet.
+	 *
+	 * 🔴 SAATAVUUSLIPPU KULKEE MUKANA badgena. Ilman sita kortti esittaisi
+	 * loukkaantuneen pelaajan puhtaana seurantakohteena, ja se on juuri se tieto
+	 * jonka takia rivia seurataan.
+	 */
+	async function share() {
+		if (sharing || visibleRows.length === 0) return;
+		sharing = true;
+		try {
+			const osat = [
+				...(priceBand.label !== 'All' ? [`${priceBand.label} price`] : []),
+				...(ownBand.label !== 'All' ? [`${ownBand.label} owned`] : []),
+				...(teamFilter ? [teamFilter] : [])
+			];
+			const method = await shareCard({
+				title: 'MY WATCHLIST',
+				subtitle: osat.length ? osat.join(', ') : 'every player I am tracking',
+				midLabel: 'PRICE',
+				valueLabel: 'PRICE WATCH',
+				fileName: 'goaliq_watchlist.png',
+				rows: visibleRows.slice(0, 10).map((p, i) => ({
+					rank: i + 1,
+					name: p.web_name,
+					tag: p.pos,
+					team: p.team_short,
+					badges: p.status != null && p.status !== 'a' ? ['FLAG'] : [],
+					mid: p.price != null ? p.price.toFixed(1) : '',
+					// Tyhja = ei signaalia. "-" olisi vaite ettei liiketta ole.
+					value: TREND[priceMap.get(p.id) ?? '']?.label ?? ''
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'watchlist', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	let filtered = $derived(
 		priceBand.label !== 'All' || ownBand.label !== 'All' || teamFilter !== ''
 	);
@@ -186,6 +233,11 @@
 		</div>
 	{/if}
 
+	{#if visibleRows.length > 0}
+		<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		</button>
+	{/if}
 	{#each visibleRows as p (p.id)}
 		{@const flagged = p.status != null && p.status !== 'a'}
 		{@const tc = teamColorByShort(p.team_short)}

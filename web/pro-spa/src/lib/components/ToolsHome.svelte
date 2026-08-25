@@ -40,6 +40,7 @@
 	import Differentials from './Differentials.svelte';
 	import ComparePlayers from './ComparePlayers.svelte';
 	import ChipEv from './ChipEv.svelte';
+	import WildcardPlan from './WildcardPlan.svelte';
 	import PlanChains from './PlanChains.svelte';
 	import EdgeMode from './EdgeMode.svelte';
 	import MiniLeague from './MiniLeague.svelte';
@@ -485,6 +486,7 @@
 				</button>
 				{#if openTool === 'chips'}
 					<div class="tool-card"><ChipEv /></div>
+					<div class="tool-card"><WildcardPlan /></div>
 				{:else if openTool === 'chains'}
 					<div class="tool-card"><PlanChains /></div>
 				{:else if openTool === 'edge'}
