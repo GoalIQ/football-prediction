@@ -88,6 +88,18 @@
 				<p class="muted">{data.meta.note}</p>
 			{/if}
 
+			<!-- 🔴 Nakyva selite, EI pelkka tooltip: `title` ei aukea
+			     kosketuslaitteella, ja pro.goaliq.app puhelimessa olisi
+			     nayttanyt kehystetyn merkin ilman mitaan selitysta.
+			     Varaus jota lukija ei nae on sama kuin ei varausta. -->
+			{#if data.meta.provisional_gws?.length}
+				<p class="prov-note">
+					GW{data.meta.provisional_gws.join(', GW')}
+					{data.meta.provisional_gws.length === 1 ? 'is' : 'are'} provisional.
+					FPL hasn't confirmed bonus points yet, so these totals can still move.
+				</p>
+			{/if}
+
 			<ul>
 				{#each rows as r (r.gw)}
 					<li>
@@ -95,7 +107,7 @@
 						<!-- 25.8: kierros pelattu mutta FPL ei ole vahvistanut bonuksia.
 						     Luku nakyy heti, mutta se ei saa esiintya lopullisena. -->
 						{#if r.provisional}
-							<span class="prov" title="Played, but FPL has not confirmed bonus points yet. This can still move.">not final</span>
+							<span class="prov">provisional</span>
 						{/if}
 						<span class="pts">
 							{#if r.your_points != null}
@@ -224,10 +236,15 @@
 		padding: 0 0 0.3rem;
 		font-size: var(--step--2);
 	}
+	.prov-note {
+		font-size: 0.78rem;
+		line-height: 1.45;
+		opacity: 0.7;
+		margin: 0 0 8px;
+	}
 	.prov {
 		font-size: 0.72rem;
 		font-weight: 600;
-		text-transform: uppercase;
 		letter-spacing: 0.04em;
 		opacity: 0.7;
 		border: 1px solid currentColor;

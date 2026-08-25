@@ -328,7 +328,12 @@ def _metrics_block(rows: list[dict]) -> dict:
     # miss pct_1x2:ssa. Ilman tata lukua liigarivi "ELC 18,2 %" nayttaa
     # kyvyttomyydelta, vaikka 36 % sen otteluista oli lajityypiltaan
     # voittamattomia tuolla mittarilla. Mitattu 25.8: pct_1x2:n rakenteellinen
-    # katto koko otoksessa on 69,8 % (75/248 gradatusta oli tasapeleja).
+    # katto koko otoksessa on 69,8 % (77/255 gradatusta oli tasapeleja,
+    # mitattu tuotannon /api/accuracy:sta 25.8 klo 08:35 UTC).
+    # 🔴 Aiempi versio tasta kommentista sanoi 75/248. Se oli lokaalista
+    # kopiosta joka oli yhden CI-ajon jaljessa. Katto osui silti oikein
+    # (173/248 = 69,75 %, 178/255 = 69,80 %), joten virhe EI olisi paljastunut
+    # tarkistamalla vain lopputulosta - vain nimittajaa katsomalla.
     draw_n = n - len(decisive)
 
     block = {

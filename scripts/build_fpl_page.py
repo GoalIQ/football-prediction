@@ -376,8 +376,17 @@ def build_context(fpl: dict, acc: dict) -> dict:
             "dec_n": m.get("decisive_n", 0),
             "dec_correct": m.get("decisive_correct", 0),
             "pct_dec": (m.get("pct_decisive") or 0.0) * 100,
-            "draw_n": m.get("draw_n", 0),
-            "pct_draw": (m.get("pct_draw") or 0.0) * 100,
+            # 🔴 JOHDETTU, EI LUETTU. `draw_n`/`pct_draw` ovat uusia kenttia,
+            # mutta builderi ajetaan servattua `data/accuracy.json`:aa vasten
+            # joka voi olla vanhaa skeemaa: `fpl-page-refresh` (cron 09:30)
+            # bakettaa sivun AJAMATTA accuracy-pipelinea, joten koodi ja
+            # artefakti eivat paivity samassa ajossa. `.get(...) or 0.0` olisi
+            # fail-open joka kaantaa "kentta puuttuu" vaitteeksi "nolla
+            # tasapelia" - mitattu 25.8: sivu olisi julkaissut "0% were draws"
+            # jokaisella rivilla, myos WC:lla jolla oli 29 tasapelia.
+            # n - decisive_n on olemassa joka skeemaversiossa.
+            "draw_n": m.get("draw_n") if m.get("draw_n") is not None
+            else max(0, m.get("n", 0) - m.get("decisive_n", 0)),
         }
         for code, m in (acc.get("by_competition") or {}).items()
         if m.get("n", 0) > 0
@@ -601,9 +610,8 @@ def by_comp_html(c: dict) -> str:
     return (
         '<div class="bycomp" aria-label="Accuracy by competition">'
         '<div class="bycomp-title">By competition</div>'
-        '<p class="bycomp-note">The model always names a winner, so every draw '
-        'counts as a miss in the first column. The second line splits that out.'
-        "</p>"
+        '<p class="bycomp-note">The model never picks a draw, so every draw is '
+        'a miss in the first column.</p>' 
         + rows
         + "</div>"
     )
@@ -612,19 +620,38 @@ def by_comp_html(c: dict) -> str:
 # CSS jaettuna fpl.html-templaten ja predictions.html-markerin kesken —
 # injektoidaan inline record-lohkoon jotta marker-fill ei riipu sivun
 # omasta tyylitiedostosta.
+# Alle taman ratkenneen ottelun maaran prosenttia ei nayteta lainkaan.
+MIN_PCT_N = 10
+
+
 def _bycomp_sub(r: dict) -> str:
     """Toinen rivi: decisive-% ja tasapeliosuus. Renderoidaan vain jos liigalla
     ON ratkenneita otteluita — `dec_n == 0` tarkoittaa etta kaikki sen gradatut
     ottelut olivat tasapeleja, jolloin "0 of 0" olisi harhaanjohtava."""
-    if not r.get("dec_n"):
+    dec_n = r.get("dec_n") or 0
+    if not dec_n:
         return ""
-    return (
-        '<div class="bycomp-sub">'
-        f'Winner named {fmt_pct(r["pct_dec"])} '
-        f'({r["dec_correct"]} of {r["dec_n"]})'
-        f' &middot; {fmt_pct(r["pct_draw"])} were draws'
-        "</div>"
-    )
+    # 🔴 EI "Winner named". 1.8.2026 tehtiin nimenomainen rehellisyyskorjaus
+    # (ks. saman tiedoston kommentti ~437): malli nimeaa voittajan JOKA
+    # ottelussa, joten "kun malli nimesi voittajan" antaa ymmartaa valikointia
+    # jota ei ole. Nimittaja 75 ei ole "ottelut joissa nimettiin voittaja" vaan
+    # "ottelut jotka ratkesivat". Lisaksi lohkon otsikkorivi sanoo "never picks
+    # a draw", joten "Winner named 84 %" olisi sen kanssa sanatarkasti
+    # ristiriidassa.
+    if dec_n >= MIN_PCT_N:
+        head = (f'{fmt_pct(r["pct_dec"])} when the match had a winner '
+                f'({r["dec_correct"]} of {dec_n})')
+    else:
+        # 🔴 Alle 10 ratkenneen ottelun prosentti on kuvakaappauksessa
+        # puolustuskelvoton ("100% (5 of 5)") ja se seisoisi juuri sen rivin
+        # vieressa joka selittaa matalia lukuja -> koko lohko lukisi
+        # valikoivana. Pelkat luvut, ei prosenttia.
+        head = f'{r["dec_correct"]} of {dec_n} when the match had a winner'
+    draws = r.get("draw_n") or 0
+    # Tasapelit RAAKALUKUNA: lukija tarkistaa sen ylarivin n:sta
+    # vahennyslaskulla, prosentti vaatisi laskimen.
+    tail = f'{draws} draw' if draws == 1 else f'{draws} draws'
+    return f'<div class="bycomp-sub">{head} &middot; {tail}</div>'
 
 
 BYCOMP_CSS = (

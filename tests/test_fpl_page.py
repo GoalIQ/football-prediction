@@ -129,3 +129,85 @@ def test_comp_names_cover_every_league_page():
                 f"{code}: ennustesivu sanoo {name!r}, track record "
                 f"{fpl_page.COMP_NAMES[code]!r}"
             )
+
+
+# ---------------------------------------------------------------------------
+# 25.8: tasapeliluku johdetaan, ei lueta (fail-open olisi julkaissut "0 draws")
+# ---------------------------------------------------------------------------
+def _bfp():
+    import importlib.util
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "build_fpl_page", root / "scripts" / "build_fpl_page.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_tasapeliluku_johdetaan_vanhasta_skeemasta():
+    """🔴 TAMA ON SE VIKA JOKA MELKEIN SHIPPASI.
+
+    `draw_n`/`pct_draw` ovat uusia kenttia, mutta builderi ajetaan servattua
+    `data/accuracy.json`:aa vasten joka voi olla vanhaa skeemaa:
+    `fpl-page-refresh` (cron 09:30 UTC) bakettaa sivun AJAMATTA
+    accuracy-pipelinea, joten koodi ja artefakti eivat paivity samassa ajossa.
+
+    Mitattu 25.8: `(m.get("pct_draw") or 0.0)` olisi julkaissut jokaisella
+    rivilla "0% were draws" - myos World Cupilla jolla oli 29 tasapelia
+    (104 gradattua, 75 ratkennutta). Lukija tarkistaa sen vahennyslaskulla
+    viidessa sekunnissa.
+    """
+    m = _bfp()
+    # Vanha skeema: EI draw_n:aa eika pct_draw:ta.
+    vanha = {"n": 104, "correct_1x2": 63, "pct_1x2": 0.6058,
+             "decisive_n": 75, "decisive_correct": 63, "pct_decisive": 0.84,
+             "exact_n": 56, "exact_correct": 11, "pct_exact": 0.1964,
+             "brier": 0.49, "brier_n": 56}
+    ctx = m.build_context_by_comp_row("WC", vanha) if hasattr(
+        m, "build_context_by_comp_row") else {
+        "name": "World Cup 2026",
+        "dec_n": vanha["decisive_n"], "dec_correct": vanha["decisive_correct"],
+        "pct_dec": vanha["pct_decisive"] * 100,
+        "draw_n": vanha.get("draw_n") if vanha.get("draw_n") is not None
+        else max(0, vanha["n"] - vanha["decisive_n"]),
+    }
+    sub = m._bycomp_sub(ctx)
+    assert "29 draws" in sub, sub
+    assert "0 draws" not in sub, f"fail-open palasi: {sub}"
+
+
+def test_pienesta_otoksesta_ei_nayteta_prosenttia():
+    """🔴 "100% (5 of 5)" on kuvakaappauksessa puolustuskelvoton, ja se
+    seisoisi juuri sen rivin vieressa joka selittaa matalia lukuja -> koko
+    lohko lukisi valikoivana. Ligue 1:lla dec_n oli 5."""
+    m = _bfp()
+    pieni = {"name": "Ligue 1", "dec_n": 5, "dec_correct": 5,
+             "pct_dec": 100.0, "draw_n": 4}
+    sub = m._bycomp_sub(pieni)
+    assert "%" not in sub, sub
+    assert "5 of 5" in sub
+    # ...mutta riittavan iso otos SAA prosentin
+    iso = {"name": "WC", "dec_n": 75, "dec_correct": 63, "pct_dec": 84.0,
+           "draw_n": 29}
+    assert "84%" in m._bycomp_sub(iso)
+
+
+def test_yhden_tasapelin_yksikkomuoto():
+    m = _bfp()
+    yksi = {"name": "PL", "dec_n": 9, "dec_correct": 6, "pct_dec": 66.7,
+            "draw_n": 1}
+    sub = m._bycomp_sub(yksi)
+    assert "1 draw " in sub or sub.rstrip("</div>").endswith("1 draw"), sub
+    assert "1 draws" not in sub, sub
+
+
+def test_ei_valikointia_lupaavaa_sanamuotoa():
+    """🔴 1.8.2026 tehtiin nimenomainen rehellisyyskorjaus: malli nimeaa
+    voittajan JOKA ottelussa, joten "kun malli nimesi voittajan" antaa
+    ymmartaa valikointia jota ei ole. Uusi alarivi ei saa palauttaa sita."""
+    m = _bfp()
+    sub = m._bycomp_sub({"name": "WC", "dec_n": 75, "dec_correct": 63,
+                         "pct_dec": 84.0, "draw_n": 29})
+    assert "Winner named" not in sub, sub
+    assert "when the match had a winner" in sub, sub
