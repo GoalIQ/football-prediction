@@ -45,6 +45,13 @@ GATED_EXPECTED = {
 # price watch, leaderboardien karki, career, mini-liiga). Jos jokin naista
 # muuttuu premiumiksi, se lisataan GATED_EXPECTEDiin ja gate koodiin.
 FREE_EXPECTED = {
+    # 25.8: MY TEAM LEDGER on tietoisesti ilmainen. Se nayttaa kuinka paljon
+    # mallin ennuste erosi lukijan TOTEUTUNEISTA pisteista, eli se on luku joka
+    # voi nolata mallin. Mitattu ensimmaisella ajolla: mallin oma joukkue
+    # yliennustettiin 14,6 pisteella (55,64 -> 41). Rehellisyyspinta
+    # maksumuurin takana kumoaa itsensa - koko tuote myydaan silla etta
+    # tarkkuuden voi tarkistaa ennen maksamista.
+    "/api/fantasy/my-team-ledger",
     "/api/fantasy/price-watch",
     "/api/fantasy/rate-team",
     "/api/fantasy/fit",

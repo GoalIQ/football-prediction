@@ -2552,6 +2552,65 @@ def clear_cache(request: Request):
     }
 
 
+@app.get("/api/fantasy/my-team-ledger",
+         description="Your own team: what the model projected before each deadline against what you actually scored, cumulative.")
+def fantasy_my_team_ledger(
+    request: Request,
+    response: Response,
+    entry: int = Query(..., ge=1, le=99_999_999,
+                       description="Julkinen FPL entry-ID"),
+):
+    """MY TEAM LEDGER (Villen kysymys): sinun rivisi ennuste vs toteuma.
+
+    🔴 Vertailukohta on DEADLINE-FREEZE eika elava projektio. Elava xP liikkuu
+    kohti toteumaa kierroksen aikana, joten elavaa vastaan vertaaminen saisi
+    mallin nayttamaan tarkemmalta kuin se on. Sama vika loydettiin ja
+    korjattiin "Model vs actual" -listasta 22.8.
+
+    FREE: koko ledger. Tama on rehellisyyspinta eika premium-ominaisuus - luku
+    joka voi nolata mallin ei kuulu maksumuurin taakse.
+    """
+    from src.data import fpl_api as _fapi
+    from src.models.fpl_my_team_ledger import build_ledger
+    from src.models.fpl_rate_team import RateTeamError
+
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        history = _fapi.fetch_entry_history(entry)
+    except Exception:
+        raise HTTPException(status_code=404,
+                            detail="FPL entry not found or FPL is unavailable.")
+
+    # Provisionaaliset kierrokset samasta lahteesta kuin model-race, jotta
+    # kaksi pintaa eivat voi olla eri mielta samasta kierroksesta.
+    import json as _json
+    prov: list[int] = []
+    _p = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
+    if _p.exists():
+        try:
+            prov = list((_json.loads(_p.read_text(encoding="utf-8"))
+                         .get("meta") or {}).get("provisional_gws") or [])
+        except (OSError, ValueError):
+            prov = []
+
+    picks_by_gw: dict[int, dict] = {}
+    for h in (history.get("current") or []):
+        gw = h.get("event")
+        if gw is None:
+            continue
+        try:
+            pk = _fapi.fetch_entry_picks(entry, int(gw))
+        except Exception:
+            continue
+        if pk is not None:
+            picks_by_gw[int(gw)] = pk
+
+    try:
+        return build_ledger(history, picks_by_gw, prov)
+    except RateTeamError as e:
+        raise _http(e)
+
+
 @app.get("/api/admin/model-squad-scores",
          description="Grade the model's own FPL squad per gameweek. Requires an admin token.")
 def admin_model_squad_scores(request: Request, gw: int | None = None):
