@@ -323,10 +323,20 @@ def _metrics_block(rows: list[dict]) -> dict:
     exact_rows = [e for e in rows if e["result"]["exact_hit"] is not None]
     exact_correct = sum(1 for e in exact_rows if e["result"]["exact_hit"])
 
+    # 25.8: tasapeliosuus omana kenttanaan. `named_winner` ei koskaan nimea
+    # tasapelia (ks. sen docstring), joten JOKAINEN tasapeli on automaattisesti
+    # miss pct_1x2:ssa. Ilman tata lukua liigarivi "ELC 18,2 %" nayttaa
+    # kyvyttomyydelta, vaikka 36 % sen otteluista oli lajityypiltaan
+    # voittamattomia tuolla mittarilla. Mitattu 25.8: pct_1x2:n rakenteellinen
+    # katto koko otoksessa on 69,8 % (75/248 gradatusta oli tasapeleja).
+    draw_n = n - len(decisive)
+
     block = {
         "n": n,
         "correct_1x2": correct,
         "pct_1x2": round(correct / n, 4) if n else None,
+        "draw_n": draw_n,
+        "pct_draw": round(draw_n / n, 4) if n else None,
         "decisive_n": len(decisive),
         "decisive_correct": decisive_correct,
         "pct_decisive": round(decisive_correct / len(decisive), 4) if decisive else None,
@@ -550,6 +560,7 @@ def compute_aggregate(
 def empty_aggregate() -> dict:
     base = {
         "n": 0, "correct_1x2": 0, "pct_1x2": None,
+        "draw_n": 0, "pct_draw": None,
         "decisive_n": 0, "decisive_correct": 0, "pct_decisive": None,
         "exact_n": 0, "exact_correct": 0, "pct_exact": None,
         "brier": None, "brier_n": 0,

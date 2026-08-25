@@ -82,3 +82,50 @@ def test_xp_table_foot_states_horizon_not_daily_promise():
                           "players": [_xp_player("Fit", 30.0)]}, n=1)
     assert "next 6 gameweeks" in html
     assert "refreshed daily" not in html
+
+
+# ---------------------------------------------------------------------------
+# 25.8: nayttonimien drift kahden listan valilla
+# ---------------------------------------------------------------------------
+def test_comp_names_cover_every_league_page():
+    """Track recordin liiganimien on katettava JOKAINEN liiga jolla on sivu.
+
+    Miksi tama on portti eika kommentti: ELC, DED ja PPL lisattiin liigoiksi
+    22.8 ja saivat omat ennustesivunsa, mutta `build_fpl_page.COMP_NAMES` jai
+    paivittamatta. Seuraus ei ollut kosmeettinen vaan lukijalle nakyva:
+    /predictions -sivun track record listasi ne raakakoodeina "ELC", "DED",
+    "PPL" siina missa muut liigat naytettiin nimella. Sama kartta on
+    DUPLIKOITU mobiiliin (screens/ModelAccuracyScreen.tsx), jota tama testi ei
+    nae — jos lisaat liigan, lisaa se molempiin.
+    """
+    import importlib.util
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+
+    def _load(name: str):
+        spec = importlib.util.spec_from_file_location(
+            name, root / "scripts" / f"{name}.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    pages = _load("build_prediction_pages")
+    fpl_page = _load("build_fpl_page")
+
+    missing = sorted(set(pages.LEAGUES) - set(fpl_page.COMP_NAMES))
+    assert not missing, (
+        f"liigalla on ennustesivu mutta ei nayttonimea track recordissa: "
+        f"{missing}. Lisaa build_fpl_page.COMP_NAMES:iin JA mobiilin "
+        f"ModelAccuracyScreen.tsx:n COMP_NAMES:iin."
+    )
+
+    # ...ja nimen on oltava sama molemmissa, ei vain olemassa. Ilman tata
+    # "Championship" ja "EFL Championship" lapaisisivat molemmat.
+    for code, meta in pages.LEAGUES.items():
+        name = meta.get("name")
+        if name:
+            assert fpl_page.COMP_NAMES[code] == name, (
+                f"{code}: ennustesivu sanoo {name!r}, track record "
+                f"{fpl_page.COMP_NAMES[code]!r}"
+            )

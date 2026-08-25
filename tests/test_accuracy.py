@@ -890,3 +890,58 @@ def test_is_pending_is_the_single_source_for_both_surfaces():
     src = inspect.getsource(bp.update_predictions)
     assert 'not e.get("result")' not in src, (
         "sivubuilderilla on taas oma pending-ehto - kaytä acc_is_pending")
+
+
+# ---------------------------------------------------------------------------
+# 25.8: tasapeliosuus + decisive liigakohtaisesti
+# ---------------------------------------------------------------------------
+def test_draw_share_is_reported_per_competition():
+    """`pct_draw` kertoo kuinka moni gradattu ottelu paattyi tasapeliin.
+
+    Miksi tama on oma kenttansa eika johdettu frontendissa: `named_winner` ei
+    koskaan nimea tasapelia, joten jokainen tasapeli on automaattinen miss
+    `pct_1x2`:ssa. Ilman lukua liigarivi nayttaa kyvyttomyydelta silloinkin kun
+    kyse on liigan lajityypista. Mitattu tuotannosta 25.8: BSA 36,4 % 1X2 mutta
+    60,6 % decisive, ja 40 % sen otteluista oli tasapeleja.
+    """
+    log = acc.empty_log()
+    # BSA: 4 ottelua, 2 tasapelia, molemmat ratkenneet osuivat
+    for i, (winner, hs, as_) in enumerate(
+        [("home", 2, 0), ("away", 0, 1), ("home", 1, 1), ("home", 2, 2)]
+    ):
+        e = _entry(f"b{i}", winner, mls="1-0", p=(0.5, 0.3, 0.2))
+        e["competition"] = "BSA"
+        acc.upsert_prediction(log, e)
+        acc.set_result(log, f"b{i}", hs, as_)
+
+    bsa = acc.compute_aggregate(log)["by_competition"]["BSA"]
+    assert bsa["n"] == 4
+    assert bsa["draw_n"] == 2
+    assert bsa["pct_draw"] == pytest.approx(0.5, abs=1e-4)
+    # 1X2 rankaisee molemmista tasapeleista...
+    assert bsa["correct_1x2"] == 2
+    assert bsa["pct_1x2"] == pytest.approx(0.5, abs=1e-4)
+    # ...mutta decisive kertoo etta ratkenneissa oltiin 2/2
+    assert bsa["decisive_n"] == 2
+    assert bsa["pct_decisive"] == pytest.approx(1.0, abs=1e-4)
+    # invariantti joka sitoo kentat toisiinsa: sarakkeet eivat voi ajautua erilleen
+    assert bsa["draw_n"] + bsa["decisive_n"] == bsa["n"]
+
+
+def test_draw_share_counts_90min_result_not_the_displayed_score():
+    """Tasapeliosuuden on seurattava samaa 90 min -normia kuin 1X2 (Villen 20.7).
+
+    Jatkoajalla ratkennut ottelu on gradauksessa TASAPELI. Jos `draw_n` laskisi
+    naytettavasta tuloksesta, sama ottelu olisi yhtaikaa 'decisive' 1X2:ssa ja
+    'ei tasapeli' tassa sarakkeessa, ja sarakkeiden summa ei tasmaisi n:aan.
+    """
+    log = acc.empty_log()
+    e = _entry("aet1", "home", mls="1-0", p=(0.5, 0.3, 0.2))
+    acc.upsert_prediction(log, e)
+    # 2-1 jatkoajalla, 1-1 taysajalla -> gradataan tasapelina
+    acc.set_result(log, "aet1", 2, 1, duration="EXTRA_TIME",
+                   regular_home=1, regular_away=1)
+    at = acc.compute_aggregate(log)["all_time"]
+    assert at["draw_n"] == 1
+    assert at["decisive_n"] == 0
+    assert at["draw_n"] + at["decisive_n"] == at["n"]

@@ -123,6 +123,14 @@ COMP_NAMES = {
     "SA": "Serie A",
     "FL1": "Ligue 1",
     "CL": "Champions League",
+    # 25.8: ELC/DED/PPL lisattiin liigoiksi 22.8 mutta nayttonimet eivat
+    # seuranneet, joten track record naytti lukijalle raakakoodit "ELC",
+    # "DED", "PPL" sekä webissa etta mobiilissa. Nimet ovat samat kuin
+    # build_prediction_pages.LEAGUE_PAGES:ssa; drift on nyt sidottu testiin
+    # test_comp_names_cover_every_league_page.
+    "ELC": "Championship",
+    "DED": "Eredivisie",
+    "PPL": "Primeira Liga",
 }
 
 # Custom domain (goaliq.app, Cloudflare, rekisteröity 4.7.2026). GitHub Pages
@@ -359,6 +367,17 @@ def build_context(fpl: dict, acc: dict) -> dict:
             "n": m.get("n", 0),
             "correct": m.get("correct_1x2", 0),
             "pct": m.get("pct_1x2", 0.0) * 100,
+            # 25.8: decisive + tasapeliosuus liigakohtaisesti. Molemmat tulevat
+            # samasta _metrics_block:sta kuin headline, eli ne EIVAT ole uusi
+            # laskenta vaan aiemmin pudotettuja kenttia. Ilman naita
+            # "ELC 18,2 %" ja "BSA 36,4 %" lukevat kyvyttomyytena, vaikka
+            # nimetty voittaja ei koskaan ole tasapeli -> jokainen tasapeli on
+            # automaattinen miss ensimmaisessa sarakkeessa.
+            "dec_n": m.get("decisive_n", 0),
+            "dec_correct": m.get("decisive_correct", 0),
+            "pct_dec": (m.get("pct_decisive") or 0.0) * 100,
+            "draw_n": m.get("draw_n", 0),
+            "pct_draw": (m.get("pct_draw") or 0.0) * 100,
         }
         for code, m in (acc.get("by_competition") or {}).items()
         if m.get("n", 0) > 0
@@ -570,15 +589,21 @@ def by_comp_html(c: dict) -> str:
         return ""
     rows = "".join(
         '<div class="bycomp-row">'
+        '<div class="bycomp-main">'
         f'<span class="bycomp-name">{escape(r["name"])}</span>'
         f'<span class="bycomp-pct">{fmt_pct(r["pct"])}</span>'
         f'<span class="bycomp-n">{r["correct"]} of {r["n"]}</span>'
         "</div>"
+        + _bycomp_sub(r)
+        + "</div>"
         for r in c["by_comp"]
     )
     return (
         '<div class="bycomp" aria-label="Accuracy by competition">'
         '<div class="bycomp-title">By competition</div>'
+        '<p class="bycomp-note">The model always names a winner, so every draw '
+        'counts as a miss in the first column. The second line splits that out.'
+        "</p>"
         + rows
         + "</div>"
     )
@@ -587,11 +612,30 @@ def by_comp_html(c: dict) -> str:
 # CSS jaettuna fpl.html-templaten ja predictions.html-markerin kesken —
 # injektoidaan inline record-lohkoon jotta marker-fill ei riipu sivun
 # omasta tyylitiedostosta.
+def _bycomp_sub(r: dict) -> str:
+    """Toinen rivi: decisive-% ja tasapeliosuus. Renderoidaan vain jos liigalla
+    ON ratkenneita otteluita — `dec_n == 0` tarkoittaa etta kaikki sen gradatut
+    ottelut olivat tasapeleja, jolloin "0 of 0" olisi harhaanjohtava."""
+    if not r.get("dec_n"):
+        return ""
+    return (
+        '<div class="bycomp-sub">'
+        f'Winner named {fmt_pct(r["pct_dec"])} '
+        f'({r["dec_correct"]} of {r["dec_n"]})'
+        f' &middot; {fmt_pct(r["pct_draw"])} were draws'
+        "</div>"
+    )
+
+
 BYCOMP_CSS = (
     ".bycomp{margin:14px 0 4px;max-width:520px;}"
+    ".bycomp-note{font-size:12.5px;line-height:1.45;opacity:.6;margin:0 0 8px;}"
+    ".bycomp-main{display:flex;align-items:baseline;gap:10px;}"
+    ".bycomp-sub{font-size:12.5px;opacity:.6;margin-top:2px;"
+    "font-variant-numeric:tabular-nums;}"
     ".bycomp-title{font-size:12px;font-weight:700;letter-spacing:.08em;"
     "text-transform:uppercase;opacity:.65;margin-bottom:6px;}"
-    ".bycomp-row{display:flex;align-items:baseline;gap:10px;padding:6px 0;"
+    ".bycomp-row{padding:7px 0;"
     "border-top:1px solid rgba(128,128,128,.25);font-size:15px;}"
     ".bycomp-name{flex:1;font-weight:600;}"
     ".bycomp-pct{font-weight:800;font-variant-numeric:tabular-nums;}"
