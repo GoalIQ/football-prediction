@@ -597,10 +597,17 @@ def fantasy_wildcard_plan(
                         "5 defenders, 5 midfielders, 3 forwards, and at most "
                         "three players from one club. The bench is in there "
                         "because it costs money the XI then cannot spend.",
+                        # 🔴 Varaus ("eri perusta, ei koskaan lisatty") EI ole
+                        # enaa tassa. Se oli MethodNoten <details>-lohkossa
+                        # joka on OLETUKSENA KIINNI, samalla kun luku
+                        # renderoidaan nakyviin — eli varaus oli eri paikassa
+                        # kuin luku. Se on tasan se mita tama paneeli kieltaa
+                        # omassa saannossaan. Varaus renderoidaan nyt luvun
+                        # VIERESSA molemmilla pinnoilla, ja tama note kertoo
+                        # vain mita lohko lukee.
                         "The 'Past the projection horizon' block reads team "
                         "fixture difficulty for the gameweeks xP does not "
-                        "reach. It sits beside the xP number and is never "
-                        "added to it.",
+                        "reach.",
                         "Free transfers already used and price changes "
                         "between now and the chosen gameweek are ignored.",
                     ],

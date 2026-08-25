@@ -160,6 +160,13 @@
 			     samasta varauksesta samassa nakymassa. Varaus elaa
 			     MethodNote-lohkossa. -->
 			<p class="line">{reason('long_view')}</p>
+			<!-- 🔴 VARAUS TASSA, EI MethodNotessa. `MethodNote` on <details>
+			     ilman `open`-attribuuttia, eli se on oletuksena KIINNI. Varaus
+			     suljetun lohkon takana samalla kun luku on nakyvissa on sama
+			     asia kuin ei varausta. -->
+			<p class="muted small">
+				Different basis from xP, so it sits beside that number and is never added to it.
+			</p>
 		{/if}
 
 		{#if plan.candidates?.length}

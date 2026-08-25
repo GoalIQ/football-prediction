@@ -295,14 +295,16 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                        for c in kandidaatit],
         "long_view": long_view,
         "reasons": _reasons(paras, ulos, sisaan, squad, suosita, long_view,
-                            len(kaikki), oma_rivisto, min(gws)),
+                            len(kaikki), oma_rivisto, min(gws),
+                            {x: uusi_per_gw[x] - vanha_per_gw[x]
+                             for x in kaikki}),
     }
 
 
 def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],
              squad: list[dict], suosita: bool, long_view: dict | None,
              horisontti_gws: int, oma_rivisto: bool,
-             aikaisin_gw: int) -> list[dict]:
+             aikaisin_gw: int, deltat: dict[int, float]) -> list[dict]:
     """Perustelulauseet. Jokainen kantaa OMAN lukunsa.
 
     🔴 Lause jonka luku puuttuu jatetaan pois, ei arvata. Ja KUSTANNUS sanotaan
@@ -315,7 +317,10 @@ def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],
     n = paras["window_gws"]
     ikkuna = (f"GW{paras['gw']}" if n == 1
               else f"GW{paras['gw']}–{paras['gw'] + n - 1}")
-    kenen = "your" if oma_rivisto else "the model's own"
+    # Jalkimmainen omistusmuoto vaihdetaan: "the model's own 15" ->
+    # "the model's own best lineup" kolisi kahdessa perakkaisessa
+    # lauseessa.
+    kenen = "your" if oma_rivisto else "that squad's"
     rivisto = "your 15" if oma_rivisto else "the model's own 15"
 
     out.append({"code": "cost",
@@ -376,17 +381,49 @@ def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],
     #
     # Korjaus ei ole pehmentaminen vaan universaalin vaitteen POISTO: lause
     # kertoo mita TASSA datassa tapahtui, ja erikseen sen mita malli ei nae.
-    if paras["gw"] == aikaisin_gw:
+    # 🔴 KORJASIN TAMAN KERRAN JA LOIN SAMAN VIAN UUDESSA MUODOSSA.
+    # Toinen versio haarautti ehdolla `paras["gw"] == aikaisin_gw` ja sanoi
+    # silloin "the rebuilt squad is ahead in every round". Ehto EI implikoi
+    # sita: aikaisin voittaa jos SUFFIKSISUMMAT pysyvat pienempina, ja
+    # yksittainen kierros saa silti olla tappiollinen. Portin vastaesimerkki,
+    # jonka ajoin itse:
+    #     deltat  GW2 +33,00 · GW3 -11,00 · GW4 +22,00  -> valinta GW2
+    #     taulukko GW2 44,00 · GW3 11,00 · GW4 22,00
+    # Myohempi rivi ei voi olla korkeampi ellei jokin kierros ole tappiollinen,
+    # eli lukija kumoaa vaitteen suoraan viereisesta taulukosta — tasan sama
+    # vikaluokka kuin ensimmaisessa versiossa.
+    #
+    # Ja OMA testini kattoi vain else-haaran, joten se meni lapi. Vaite
+    # johdetaan nyt DELTOISTA eika `gw`-vertailusta.
+    # 🔴 TAPPIOLLISET LUETAAN KOKO HORISONTISTA, EI VALITUSTA IKKUNASTA.
+    # Ensimmainen yritykseni suodatti `paras["window"]`:iin, jolloin
+    # else-tapaus (voittaja ei ole aikaisin) nakyi "ei tappiollisia" -haarana:
+    # ikkuna alkaa vasta voittajasta, joten se EI sisalla sita kierrosta jonka
+    # takia voittaja siirtyi myohemmaksi. Lause olisi silloin sanonut
+    # "Playing it at the first chance..." kierroksesta joka ei ole aikaisin.
+    # Ehto "yhtaan tappiollista kierrosta ei ole" implikoi `gw == aikaisin`
+    # vain koko horisontin yli laskettuna.
+    tappiolliset = sorted(x for x, d in deltat.items() if d < 0)
+    if not tappiolliset:
         miksi = ("Playing it at the first chance scores highest here, because "
-                 "the rebuilt squad is ahead in every round.")
+                 "the rebuilt squad is ahead in every round of the window.")
+    elif paras["gw"] == aikaisin_gw:
+        miksi = (f"GW{paras['gw']} still scores highest, even though the "
+                 f"current squad is ahead in {len(tappiolliset)} of those "
+                 f"rounds.")
     else:
+        # 🔴 "ahead in the rounds before it" luki KIERROSKOHTAISENA, mutta ehto
+        # on summa. "taken together" tekee lauseesta toden.
         miksi = (f"GW{paras['gw']} scores highest here, because the current "
-                 f"squad is still ahead in the rounds before it.")
+                 f"squad outscores it in the rounds before that, taken "
+                 f"together.")
+    # 🔴 Viimeinen virke ("That's the case for waiting...") on POISTETTU:
+    # edellinen virke sanoi jo saman, ja koristeellinen yhteenveto lopussa on
+    # AI-tunnusmerkki.
     out.append({"code": "timing", "text":
                 f"Every switch point is scored over the same {horisontti_gws}"
                 f"-gameweek window, so the only thing moving is when you play "
                 f"it. {miksi} The model can't price what hasn't happened yet, "
                 f"so injuries and price moves that land later aren't in this "
-                f"number. That's the case for waiting, and it's the one thing "
-                f"the tool can't score for you."})
+                f"number."})
     return out

@@ -223,8 +223,67 @@ def test_ajoituslause_ei_vaita_ettei_odottaminen_voi_tuottaa(monkeypatch):
     t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
     assert "can only lose" not in t, (
         "universaali vaite odottamisesta on epatosi tassa datassa: " + t)
-    # ...ja lause kertoo MITA tassa datassa tapahtui.
-    assert "GW3" in t and "still ahead" in t
+    # ...ja lause kertoo MITA tassa datassa tapahtui. 🔴 "taken together":
+    # ehto on SUMMA, ja kierroskohtaiselta kuulostava sanamuoto olisi taas
+    # kumottavissa viereisesta taulukosta.
+    assert "GW3" in t and "taken together" in t
+
+
+def test_ajoituslause_ei_vaita_taydellisyytta_kun_kierros_on_tappiollinen(monkeypatch):
+    """🔴 KORJASIN B1:N KERRAN JA LOIN SAMAN VIAN UUDESSA MUODOSSA.
+
+    Toinen versio haarautti ehdolla `plan["gw"] == aikaisin` ja sanoi silloin
+    "the rebuilt squad is ahead in every round". Ehto EI implikoi sita:
+    aikaisin voittaa kun SUFFIKSISUMMAT pysyvat pienempina, ja yksittainen
+    kierros saa silti olla tappiollinen.
+
+        deltat   GW2 +33,00 · GW3 -11,00 · GW4 +22,00  -> valinta GW2
+        taulukko GW2  44,00 · GW3  11,00 · GW4  22,00
+
+    Myohempi rivi ei voi olla korkeampi ellei jokin kierros ole tappiollinen,
+    eli lukija kumoaa vaitteen suoraan viereisesta taulukosta.
+
+    🔴 Ja OMA edellinen testini rakensi `plan["gw"] == 3`, eli ajoi VAIN
+    else-haaran. If-haaraa ei testattu negatiivisella deltalla kertaakaan.
+    """
+    vanha = _rivisto(1, 0.0)
+    for q in vanha:
+        q["gameweeks"] = [{"gw": 2, "xp": 1.0}, {"gw": 3, "xp": 5.0},
+                          {"gw": 4, "xp": 1.0}]
+    uusi = _rivisto(100, 0.0)
+    for q in uusi:
+        q["gameweeks"] = [{"gw": 2, "xp": 4.0}, {"gw": 3, "xp": 4.0},
+                          {"gw": 4, "xp": 3.0}]
+    plan = _kutsu(vanha, uusi, monkeypatch=monkeypatch)
+
+    evt = {k["gw"]: k["ev_total"] for k in plan["candidates"]}
+    assert plan["gw"] == 2, "esiehto: aikaisin voittaa"
+    assert evt[4] > evt[3], (
+        "esiehto: myohempi rivi on korkeampi, eli jokin kierros on tappiollinen")
+
+    t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
+    assert "in every round" not in t, (
+        "vaite taydellisyydesta on kumottavissa viereisesta taulukosta: " + t)
+    assert "even though" in t and "1 of those rounds" in t
+
+
+def test_ajoituslause_saa_vaittaa_taydellisyytta_kun_se_on_totta(monkeypatch):
+    """Vastapari: kun jokainen delta on positiivinen, vahvempi lause on tosi ja
+    se saa sanoa niin. Ilman tata korjaus voisi vaientaa lauseen aina."""
+    plan = _kutsu(_rivisto(1, 1.0), _rivisto(100, 6.0),
+                  monkeypatch=monkeypatch)
+    t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
+    assert "ahead in every round of the window" in t
+
+
+def test_ajoituslause_ei_paaty_koristeelliseen_yhteenvetoon(monkeypatch):
+    """🔴 Yhteenvetolause lopussa on AI-tunnusmerkki, ja edellinen virke sanoi
+    jo saman. Lause paattyy nyt lukuun."""
+    plan = _kutsu(_rivisto(1, 1.0), _rivisto(100, 6.0),
+                  monkeypatch=monkeypatch)
+    t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
+    assert t.rstrip().endswith("aren't in this number.")
+    assert "the one thing" not in t
 
 
 def test_copy_ei_omista_mallin_rivistoa_lukijalle(monkeypatch):
