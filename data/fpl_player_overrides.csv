@@ -53,8 +53,28 @@
 # tasan yhtä haitallinen kuin vanhentunut joukkueleikkaus: molemmat alkavat
 # taistella mallia vastaan silloin kun mallilla on vihdoin oikeaa 26/27-dataa.
 # Vanhentunut rivi ohitetaan ÄÄNEKKÄÄSTI (::warning:: + lokirivi).
+#
+# 🔴 POISTETTU 2026-08-25: 11 NOSTAVAA OHITUSTA.
+# Esikausi paattyi kun FPL merkitsi GW1:n finishediksi 25.8, jolloin
+# minuuttimalli vaihtoi jaadytetysta 25/26-baselinesta eläviin 26/27-lukuihin.
+# Tiedoston oma saanto 3: "Kun pelaajalle kertyy oikeaa dataa, rivi poistetaan."
+#
+# Verifioitu ENNEN poistoa FPL:n bootstrapista, kaikki 11 tayttivat ehdon
+# starts >= 1 JA minuutteja >= 60:
+#   Isak 90 · Kinsky 90 · Rushworth 90 · Alisson 90 · Tzolis 75 · Odegaard 75
+#   Mosquera 90 · Gvardiol 90 · Rice 67 · Guehi 90 · Foden 81
+#
+# Ohitukset olivat mitattavasti VAARASSA suunnassa: Tzolis xmins 41,2 kun han
+# pelasi 75, Odegaard 52,5 kun han pelasi 75, Rice 43,6 kun han pelasi 67.
+# Villen havainto 22.8 ("Tzolis sai 6 pistetta mutta xP ei liikkunut") johtui
+# tasta, ei mallin hitaasta oppimisesta.
+#
+# JAAVAT: Dubravka (0.08) ja Mamardashvili (0.15). Molemmat pelasivat GW1:ssa
+# 0 minuuttia, eli data TUKEE niita. 🔴 Ja niiden poisto laukaisisi
+# hintapriori-ansan: `mins <= 0` putoaa hintapriorin ulkopuolelle
+# (build_fpl_xp.py:547) ja paatyy historiattomien positioprioriin, jolloin
+# varamiesvahti voi ponnahtaa YLOS tasan kun suoja poistuu.
 player_id,web_name,p_start,reason,review_by,xg_mult,until_available
-379,Isak,0.85,"Last season's minutes reflect a transfer window, not his role. He is priced and signed as Liverpool's first-choice striker",2026-09-20
 #
 # HARKITTU JA HYLÄTTY — Havertz (ARS, 7.5M, p_start 0.25, xmins 15.5), 27.7:
 #   Sama juurisyy kuin Isakilla (rikkonainen 25/26), mutta EI ohiteta.
@@ -68,15 +88,5 @@ player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #   Ohitus vaatisi keksityn luvun jolle ei ole mitattua perustetta, ja jokainen
 #   ohitus syö todennettavuuslupausta. Kapea ero ei ole sen arvoinen.
 #   Hintapriori korjaa tämän aikanaan oikeaa kautta.
-496,Kinsky,0.90,"De Zerbi named him Tottenham first choice for 26/27 and Vicario was placed on the transfer market (multiple reports 6/2026, incl. TeamTalk new contract + TribalFootball). Last season 630 min / 7 starts reflects Vicario being the incumbent, not Kinsky role now. He was excluded from the projection entirely at 19.5 percent owned",2026-09-06
 497,Dubravka,0.08,"Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",2026-09-06
-110,Rushworth,0.90,"Permanent signing from Brighton and Coventry's undisputed number one. Fantasy Football Scout 4/8/2026: 'Rushworth's return removes any uncertainty over Coventry's goalkeeping position' and 'started all 46 Championship matches last season and looks set to remain Lampard's first-choice goalkeeper in the Premier League'. Model had him at 0.38 with Dovin and Wilson on 0.16, so no Coventry keeper was projected as a starter at all",2026-09-30
-350,Alisson,0.80,"Liverpool's number one, not a job share. Model read last season's 26/10 split as an ongoing rotation. This Is Anfield 8/2026: back at the AXA training centre after the World Cup and 'set for his ninth season as Liverpool's undisputed number one goalkeeper'; Liverpool triggered a 12-month extension in March so he is contracted through 26/27, and reporting is that he 'remains the first choice despite the 29m deal for Mamardashvili'. Held at 0.80 rather than 0.90 because the same sources call it a DELAYED pre-season return, which is a real GW1 risk",2026-09-30
 351,Mamardashvili,0.15,"Successor in waiting, not the incumbent. Paired with the Alisson row: without it the club's keeper p_start sums to 1.22, i.e. more than one starting keeper. Same reasoning and sources as id 350",2026-09-30
-557,Tzolis,0.55,"Arsenal signed him from Club Brugge in July and he started the Community Shield against Manchester City at left wing on 16 August. His 0.096 was the model bottom tier for a player with no Premier League minutes, set by price rank inside the squad rather than by anything measured about him. Held at 0.55 and no higher because Martinelli started ahead of him against Como on 12 August",2026-09-13
-15,Ødegaard,0.70,"He started the Community Shield against Manchester City on 16 August as club captain, which is a competitive start rather than a friendly. The model had him on 0.428 because he played 1363 minutes and 16 starts last season, and the minutes prior cannot tell an injury from a benching. Held at 0.70 and not higher because Arsenal have been cautious with his return: he was left out of the Real Betis friendly after coming back from the World Cup",2026-09-13
-11,Mosquera,0.60,"He started the Community Shield against Manchester City on 16 August in a back four with White, Gabriel and Calafiori, and Hincapie did not start. The model had him on 0.39 from 986 minutes last season, his first at the club. Held at 0.60 because one competitive match is thin evidence for a centre back pairing that Arteta rotates",2026-09-13
-391,Gvardiol,0.75,"He started the Community Shield against Arsenal on 16 August at left back, which is a competitive match and not a friendly. The model had him on 0.22 from 1370 minutes last season, a spell cut short by a leg fracture, and the minutes prior cannot tell an injury from a benching. Manchester City signed him to a new deal to 2031 in July. Held at 0.75 rather than higher because Maresca is a new manager and his rotation is not known yet",2026-09-13
-13,Rice,0.65,"He was an unused substitute in the Community Shield against Manchester City on 16 August, five days before the opening fixture, and he had not featured in any Arsenal pre-season match after playing seven games at the World Cup. Arteta held back the whole World Cup group (Rice, Saka, Zubimendi) and started Bruno Guimaraes alongside Lewis-Skelly instead. The model had him on 0.849 from last season's minutes, which cannot see either the tournament load or a 75m signing arriving in his position. Held at 0.65 and not lower because he is fit and the reporting is about managed minutes, not an injury",2026-09-13
-388,Guéhi,0.62,"He was on the bench for the Community Shield on 16 August and Maresca's back four was Khusanov, Ruben Dias, Gvardiol and O'Reilly. He also carried the second heaviest World Cup load at the club (663 minutes) and joined in January under a different manager. The model had him on 0.890, the highest of any City defender, from minutes played at Crystal Palace. Held at 0.62 because one match under a new manager is thin evidence and he is fit",2026-09-13
-398,Foden,0.68,"He started the Community Shield against Arsenal on 16 August as the number ten, which is a competitive match and not a friendly. The model had him on 0.480 from a 2078 minute season that the minutes prior reads as rotation. Held at 0.68 rather than higher because City rested several World Cup players for that match, so the selection is partly a fitness decision",2026-09-13

@@ -186,10 +186,43 @@ def test_built_artifact_carries_the_flag():
     if not p.exists():
         pytest.skip("projektioartefaktia ei ole")
     players = json.loads(p.read_text(encoding="utf-8"))["players"]
+
+    # 🔴 EHTO EI VANHENE, OLETUS VANHENEE. Alkuperainen versio vaati etta
+    # artefaktissa on AINA vahintaan yksi liputettu rivi. Se piti paikkansa
+    # esikaudella, mutta 25.8 FPL merkitsi GW1:n finishediksi ja koko liiga
+    # vaihtui `pl_history` -> `limited_history`/`no_history`: kenellakaan ei ole
+    # enaa taytta kauden historiaa johon lippu viittaa, joten se EI VOI lauet a.
+    # Mitattu: 515 pelaajaa, 310 limited_history, 205 no_history, 0 pl_history.
+    #
+    # Testi jai punaiseksi ilman etta mikaan oli rikki - ja pysyvasti punainen
+    # putki nielee seuraavan oikean regression.
+    kelpoisia = [r for r in players
+                 if r.get("data_basis") == "pl_history"
+                 and r.get("minutes_source") != "override"]
     flagged = [r for r in players if r.get("minutes_basis_flag")]
-    assert flagged, "artefaktissa ei ole yhtaan liputettua rivia"
+    if kelpoisia:
+        assert flagged, (
+            f"{len(kelpoisia)} riviä on pl_history-pohjalla mutta yhtaan ei "
+            f"ole liputettu - katosiko attach_minutes_basis_flag builderista?")
     for r in flagged:
         mins = (r.get("last_season") or {}).get("minutes")
         assert mins is not None and mins < xpb.SHORT_SEASON_MINUTES
         assert r.get("data_basis") == "pl_history"
         assert r.get("minutes_source") != "override"
+
+
+def test_builder_kutsuu_liputusta():
+    """Lahdetason vahti sille mita artefaktitesti ei enaa voi nahda.
+
+    🔴 Artefaktitesti muuttui ehdolliseksi 25.8, koska koko liiga siirtyi
+    `pl_history`:sta `limited_history`:yn eika lippu voi laueta. Ilman tata
+    tarkistusta `attach_minutes_basis_flag`:n kutsun voisi poistaa builderista
+    ja kaikki testit menisivat lapi - se on tasan se hiljainen katoaminen jota
+    alkuperainen testi vahti.
+    """
+    from pathlib import Path
+    juuri = Path(__file__).resolve().parents[1]
+    src = (juuri / "scripts" / "build_fpl_xp.py").read_text(encoding="utf-8")
+    kutsut = [ln for ln in src.splitlines()
+              if "attach_minutes_basis_flag(" in ln and not ln.strip().startswith("def ")]
+    assert kutsut, "attach_minutes_basis_flag ei kutsuta build_fpl_xp.py:sta"
