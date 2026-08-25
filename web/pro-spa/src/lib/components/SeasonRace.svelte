@@ -92,6 +92,11 @@
 				{#each rows as r (r.gw)}
 					<li>
 						<span class="gw">GW{r.gw}</span>
+						<!-- 25.8: kierros pelattu mutta FPL ei ole vahvistanut bonuksia.
+						     Luku nakyy heti, mutta se ei saa esiintya lopullisena. -->
+						{#if r.provisional}
+							<span class="prov" title="Played, but FPL has not confirmed bonus points yet. This can still move.">not final</span>
+						{/if}
 						<span class="pts">
 							{#if r.your_points != null}
 								you {r.your_points} · model {r.model_points}
@@ -218,6 +223,18 @@
 		border-top: none;
 		padding: 0 0 0.3rem;
 		font-size: var(--step--2);
+	}
+	.prov {
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		opacity: 0.7;
+		border: 1px solid currentColor;
+		border-radius: 0;
+		padding: 0 4px;
+		margin-left: 6px;
+		white-space: nowrap;
 	}
 	.gw {
 		font-weight: 700;

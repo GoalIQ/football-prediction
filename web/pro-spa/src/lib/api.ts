@@ -684,6 +684,10 @@ export interface ModelRaceGameweek {
 	gw: number;
 	model_points: number;
 	fpl_average: number | null;
+	/** 25.8: kierros on pelattu mutta FPL ei ole vahvistanut bonuksia
+	 *  (`data_checked` false). Luku nakyy heti, mutta se EI saa esiintya
+	 *  lopullisena. Optionaalinen: vanha backend ei tuo kenttaa -> lopullinen. */
+	provisional?: boolean;
 	/** null = kierrosta ei ole omassa historiassa (EI nolla — ks. backend). */
 	your_points: number | null;
 	diff: number | null;
@@ -706,6 +710,9 @@ export interface ModelRaceResponse {
 		compared_gws?: number;
 		masked: boolean;
 		model_plays_chips: boolean;
+		/** Kierrokset joiden luku on viela provisionaalinen. Tyhja = kaikki
+		 *  lopullisia. Rivikohtainen `provisional` on sama tieto per rivi. */
+		provisional_gws?: number[];
 		note: string | null;
 	};
 	totals: { model: number; you: number | null; diff: number | null };
