@@ -596,7 +596,7 @@ def fantasy_wildcard_plan(
                         "The build is a full 15 on the same budget: 2 keepers, "
                         "5 defenders, 5 midfielders, 3 forwards, and at most "
                         "three players from one club. The bench is in there "
-                        "because it costs money the XI then cannot spend.",
+                        "because it costs money the XI then can't spend.",
                         # 🔴 Varaus ("eri perusta, ei koskaan lisatty") EI ole
                         # enaa tassa. Se oli MethodNoten <details>-lohkossa
                         # joka on OLETUKSENA KIINNI, samalla kun luku

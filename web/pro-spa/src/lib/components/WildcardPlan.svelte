@@ -157,8 +157,9 @@
 			<!-- 🔴 ERI PERUSTA, OMA OTSIKKO. Ei koskaan summattu xP-lukuun. -->
 			<h3>Past the projection horizon</h3>
 			<!-- 🔴 `plan.long_view.note` EI renderoidy: se oli kolmas kopio
-			     samasta varauksesta samassa nakymassa. Varaus elaa
-			     MethodNote-lohkossa. -->
+			     samasta varauksesta samassa nakymassa. Varaus on nyt tasan
+			     yhdessa paikassa, ja se paikka on LUVUN ALLA muutama rivi
+			     alempana — EI MethodNotessa, joka on suljettu <details>. -->
 			<p class="line">{reason('long_view')}</p>
 			<!-- 🔴 VARAUS TASSA, EI MethodNotessa. `MethodNote` on <details>
 			     ilman `open`-attribuuttia, eli se on oletuksena KIINNI. Varaus

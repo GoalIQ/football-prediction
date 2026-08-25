@@ -264,7 +264,8 @@ def test_ajoituslause_ei_vaita_taydellisyytta_kun_kierros_on_tappiollinen(monkey
     t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
     assert "in every round" not in t, (
         "vaite taydellisyydesta on kumottavissa viereisesta taulukosta: " + t)
-    assert "even though" in t and "1 of those rounds" in t
+    # 🔴 "one", ei "1": numeraali yksikossa kolisee englanniksi.
+    assert "even though" in t and "one of those rounds" in t
 
 
 def test_ajoituslause_saa_vaittaa_taydellisyytta_kun_se_on_totta(monkeypatch):

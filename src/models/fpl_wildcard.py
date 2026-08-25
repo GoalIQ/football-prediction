@@ -408,9 +408,10 @@ def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],
         miksi = ("Playing it at the first chance scores highest here, because "
                  "the rebuilt squad is ahead in every round of the window.")
     elif paras["gw"] == aikaisin_gw:
+        # Numeraali yksikossa kolisee englanniksi: "1 of those rounds".
+        maara = "one" if len(tappiolliset) == 1 else str(len(tappiolliset))
         miksi = (f"GW{paras['gw']} still scores highest, even though the "
-                 f"current squad is ahead in {len(tappiolliset)} of those "
-                 f"rounds.")
+                 f"current squad is ahead in {maara} of those rounds.")
     else:
         # 🔴 "ahead in the rounds before it" luki KIERROSKOHTAISENA, mutta ehto
         # on summa. "taken together" tekee lauseesta toden.
