@@ -105,6 +105,31 @@ def _covered_gws(pool: list[dict]) -> list[int]:
                    if g.get("gw") is not None})
 
 
+def _playable_gws(pool: list[dict], xp_data: dict) -> list[int]:
+    """Kierrokset joille chipin VOI viela pelata: projektiohorisontti miinus ne
+    kierrokset joiden deadline on jo mennyt.
+
+    🔴 Tama ei ole copy-vika vaan datavika. Mitattu tuotannosta 24.8:
+    `/api/fantasy/chip-ev` palautti `horizon_gws: [1,2,3,4,5,6]` ja
+    `windows[0].gw = 1`, vaikka `deadline_gameweek` oli 2 ja GW1:n deadline
+    meni 21.8. Tyokalu siis kehotti pelaamaan chipin kierrokselle jota ei voi
+    enaa pelata, ja `best`-lohkon "paras ikkuna" saattoi osua siihen.
+    Sanamuodon korjaaminen olisi tehnyt siita pysyvasti vaaran.
+
+    Sama vikaluokka korjattiin siirtosuunnitteluun 22.8
+    (`fpl_rate_team.planning_start_gw`) mutta chip-EV jai ulos. Lahde on sama
+    `meta.deadline_gameweek`, jotta nama kaksi pintaa eivat voi olla eri mielta
+    samasta hetkesta.
+
+    Kentta puuttuu (vanha payload) -> kaytos bittitarkasti entinen.
+    """
+    covered = _covered_gws(pool)
+    dl_gw = (xp_data.get("meta") or {}).get("deadline_gameweek")
+    if not isinstance(dl_gw, int):
+        return covered
+    return [g for g in covered if g >= dl_gw]
+
+
 def _remaining_xp(player: dict, gws: list[int]) -> float:
     return sum(_gw_xp(player, g) for g in gws)
 
@@ -406,7 +431,7 @@ def fantasy_chip_ev(
         if payload is None:
             squad, _picks_gw, mode = _squad_from_entry_or_model(
                 pool, pool_by_id, bootstrap, entry)
-            covered = _covered_gws(pool)
+            covered = _playable_gws(pool, xp_data)
             windows = []
             per_chip: dict[str, list[float]] = {
                 "wc": [], "bb": [], "tc": [], "fh": []}
