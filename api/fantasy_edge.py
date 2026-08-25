@@ -157,7 +157,7 @@ def _optimal_xi_for(squad: list[dict], key) -> list[dict]:
             if best is None or total > best[0]:
                 best = (total, xi)
     if best is None:
-        raise RateTeamError(400, "Squad cannot form a legal XI.")
+        raise RateTeamError(400, "Squad cannot form a valid XI (1 keeper, 3-5 defenders, 2-5 midfielders, 1-3 forwards).")
     return best[1]
 
 
@@ -571,21 +571,36 @@ def fantasy_wildcard_plan(
                 t["name"], t["name"]) for t in teams}
             plan = fpl_wildcard.wildcard_plan(
                 squad, pool, _playable_gws(pool, xp_data), fixtures,
-                id_to_name, _optimal_xi_for)
+                id_to_name, _optimal_xi_for, mode)
             payload = {
                 "meta": {
                     "entry": entry, "mode": mode,
                     "generated_at": xp_data["meta"].get("generated_at"),
                     "team_name_gaps": aukot,
+                    # 🔴 KOLME KORJAUSTA JULKAISUPORTISTA 25.8:
+                    # 1. Ensimmainen note kuvasi VAARAA MENETELMAA. Se sanoi
+                    #    "ranked per gameweek, not on window totals", mutta
+                    #    koodi rankkaa `ev_total`:lla eli nimenomaan ikkunan
+                    #    summalla. Jaanne hylatysta ensimmaisesta korjauksesta.
+                    #    Menetelmavaraus joka kertoo vaaran menetelman on
+                    #    pahempi kuin ei varausta.
+                    # 2. "legal 15" on ratkaisijakoodin kielta, ei FPL-yhteison
+                    #    (Villen paatos 28.7). Saannot kirjoitetaan auki.
+                    # 3. "long_view is..." oli JSON-kentannimi kayttajatekstissa
+                    #    ja lisaksi kolmas kopio samasta varauksesta.
                     "notes": [
-                        "Rows are ranked per gameweek, not on window totals: "
-                        "a later gameweek covers fewer rounds, so its total "
-                        "is smaller by construction rather than by merit.",
-                        "The squad is a legal 15 (2/5/5/3, max 3 per club) "
-                        "built on the same budget, not an XI.",
-                        "long_view is team-level fixture difficulty for the "
-                        "gameweeks past the xP horizon. Different basis, "
-                        "reported next to the xP number and never added.",
+                        "Switch points are ranked on Gain, which covers the "
+                        "whole window. Per GW is that same gain divided by the "
+                        "rounds left, so it reads squad quality while Gain "
+                        "reads timing.",
+                        "The build is a full 15 on the same budget: 2 keepers, "
+                        "5 defenders, 5 midfielders, 3 forwards, and at most "
+                        "three players from one club. The bench is in there "
+                        "because it costs money the XI then cannot spend.",
+                        "The 'Past the projection horizon' block reads team "
+                        "fixture difficulty for the gameweeks xP does not "
+                        "reach. It sits beside the xP number and is never "
+                        "added to it.",
                         "Free transfers already used and price changes "
                         "between now and the chosen gameweek are ignored.",
                     ],

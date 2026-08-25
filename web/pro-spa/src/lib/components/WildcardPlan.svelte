@@ -60,7 +60,10 @@
 	const reason = (code: string) => plan?.reasons?.find((r) => r.code === code)?.text ?? null;
 
 	function fmtRow(r: WildcardRow) {
-		return `${r.pos} · ${r.team_short ?? '—'} · £${r.price.toFixed(1)}m`;
+		// 🔴 Em dash on kova saanto (0 osumaa) ja se koskee myos
+		// tallaista fallbackia. Puuttuva lyhenne jatetaan pois kokonaan.
+		const osat = [r.pos, r.team_short, `£${r.price.toFixed(1)}m`];
+		return osat.filter(Boolean).join(' · ');
 	}
 </script>
 
@@ -74,7 +77,7 @@
 	{/if}
 
 	{#if loading}
-		<p class="muted">Rebuilding a legal 15 and scoring every switch point…</p>
+		<p class="muted">Rebuilding a full 15 and scoring every switch point...</p>
 	{:else if error}
 		<p class="muted">Could not reach the API. Try again in a moment.</p>
 	{:else if plan && !plan.available}
@@ -153,8 +156,10 @@
 		{#if plan.long_view && reason('long_view')}
 			<!-- 🔴 ERI PERUSTA, OMA OTSIKKO. Ei koskaan summattu xP-lukuun. -->
 			<h3>Past the projection horizon</h3>
+			<!-- 🔴 `plan.long_view.note` EI renderoidy: se oli kolmas kopio
+			     samasta varauksesta samassa nakymassa. Varaus elaa
+			     MethodNote-lohkossa. -->
 			<p class="line">{reason('long_view')}</p>
-			<p class="muted small">{plan.long_view.note}</p>
 		{/if}
 
 		{#if plan.candidates?.length}

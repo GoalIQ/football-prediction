@@ -41,7 +41,8 @@ def _xi_fn(squad, key):
     return sorted(squad, key=key, reverse=True)[:11]
 
 
-def _kutsu(squad, uusi_15, gws=(2, 3, 4), fixtures=None, monkeypatch=None):
+def _kutsu(squad, uusi_15, gws=(2, 3, 4), fixtures=None, monkeypatch=None,
+           mode="entry"):
     """Ajaa `wildcard_plan` niin etta optimoija palauttaa annetun rungon.
 
     🔴 Optimoija on `fpl_rate_team`:n vastuulla; tama moduuli vastaa
@@ -50,8 +51,11 @@ def _kutsu(squad, uusi_15, gws=(2, 3, 4), fixtures=None, monkeypatch=None):
     """
     monkeypatch.setattr(wc, "_optimi", lambda pool, g: {
         "xi": uusi_15[:11], "bench": uusi_15[11:], "proven": True})
+    # club-id -> mallinimi. `_rivisto` jakaa klubit 1..6, ja fixturet kayttavat
+    # nimia "A"/"B", joten kartta on oltava tai `long_view` jaa tyhjaksi.
+    kartta = {i: nimi for i, nimi in enumerate("ABCDEF", start=1)}
     return wc.wildcard_plan(squad, list(squad) + list(uusi_15), list(gws),
-                            fixtures or [], {}, _xi_fn)
+                            fixtures or [], kartta, _xi_fn, mode)
 
 
 def _rivisto(alku, xp, gws=(2, 3, 4), **kw):
@@ -178,12 +182,82 @@ def test_jokainen_perustelu_kantaa_numeron(monkeypatch):
 
 
 def test_ajoituslause_kertoo_ettei_malli_hinnoittele_tulevaa(monkeypatch):
-    """🔴 Ilman tata tyokalu nayttaisi "loytaneen" parhaan viikon. Aikaisin
-    voittaa koska malli EI nae tulevaa tietoa — se on rajoite, ei loyto."""
+    """Malli EI nae tulevaa tietoa, ja se sanotaan aareen — muuten tyokalu
+    nayttaisi "loytaneen" parhaan viikon."""
     plan = _kutsu(_rivisto(1, 1.0), _rivisto(100, 6.0),
                   monkeypatch=monkeypatch)
     t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
-    assert "does not have yet" in t and "same" in t
+    assert "hasn't happened yet" in t and "same" in t
+
+
+def test_ajoituslause_ei_vaita_ettei_odottaminen_voi_tuottaa(monkeypatch):
+    """🔴 LAUSE VALEHTELI, JA JULKAISUPORTTI RAKENSI VASTAESIMERKIN.
+
+    Vanha teksti sanoi EHDOITTA "Waiting can only lose points here". Suositus on
+    `max(ev_total)`, joten jos uusi runko on jollain kierroksella nykyista
+    HUONOMPI, odottaminen KASVATTAA hyotya. Ajettu vastaesimerkki:
+
+        GW2 ev 33,00 · GW3 ev 66,00 · GW4 ev 33,00  -> valinta GW3
+
+    eli paneeli olisi tulostanut "Play it in GW3", taulukon jossa odottaminen
+    tuotti +33, ja niiden viereen lauseen ettei odottaminen voi tuottaa. Sama
+    nakyma kumosi itsensa.
+
+    🔴 Ja edellinen testi meni tasta lapi: se tarkisti vain etta merkkijono
+    "does not have yet" on mukana. Portti loysi sen, testi ei.
+    """
+    vanha = _rivisto(1, 0.0, gws=(2, 3, 4))
+    for q in vanha:                       # vanha on PAREMPI GW2:lla
+        q["gameweeks"] = [{"gw": 2, "xp": 5.0}, {"gw": 3, "xp": 1.0},
+                          {"gw": 4, "xp": 1.0}]
+    uusi = _rivisto(100, 0.0, gws=(2, 3, 4))
+    for q in uusi:
+        q["gameweeks"] = [{"gw": 2, "xp": 2.0}, {"gw": 3, "xp": 4.0},
+                          {"gw": 4, "xp": 4.0}]
+    plan = _kutsu(vanha, uusi, monkeypatch=monkeypatch)
+
+    evt = {k["gw"]: k["ev_total"] for k in plan["candidates"]}
+    assert evt[3] > evt[2], "esiehto: odottamisen PITAA tuottaa tassa datassa"
+    assert plan["gw"] == 3
+
+    t = next(r["text"] for r in plan["reasons"] if r["code"] == "timing")
+    assert "can only lose" not in t, (
+        "universaali vaite odottamisesta on epatosi tassa datassa: " + t)
+    # ...ja lause kertoo MITA tassa datassa tapahtui.
+    assert "GW3" in t and "still ahead" in t
+
+
+def test_copy_ei_omista_mallin_rivistoa_lukijalle(monkeypatch):
+    """🔴 "your 15" ilman entry-ID:ta on vaite jota lukija ei voi tarkistaa:
+    rivisto on silloin MALLIN oma. Mitattu ilmaispinnalta 25.8."""
+    plan = _kutsu(_rivisto(1, 1.0), _rivisto(100, 6.0),
+                  monkeypatch=monkeypatch, mode="model_xi")
+    teksti = " ".join(r["text"] for r in plan["reasons"])
+    assert "your 15" not in teksti and "your best lineup" not in teksti
+    assert "the model's own 15" in teksti
+
+
+def test_tautologinen_nollatulos_ei_ole_tulos(monkeypatch):
+    """🔴 Ilman entrya mallin optimia verrataan mallin omaan optimiin: 0
+    muutosta, 0.0 pistetta, "hold". Se ei ole vastaus vaan sama luku kahdesti,
+    ja ensikavijan ilmaiskokemus olisi paneeli joka sanoo ettei se muuta
+    mitaan. Kerrotaan mika puuttuu."""
+    sama = _rivisto(1, 3.0)
+    plan = _kutsu(sama, list(sama), monkeypatch=monkeypatch, mode="model_xi")
+    assert plan["available"] is False
+    assert "team ID" in plan["note"]
+
+
+def test_varaus_sanotaan_kerran_ei_kolmesti(monkeypatch):
+    """🔴 25.8 sama varaus oli KOLMESSA paikassa samassa nakymassa (long_view-
+    lause, `long_view.note` ja meta.notes). Toistettu varaus on AI-tunnusmerkki
+    ja se laimentaa itseaan."""
+    plan = _kutsu(_rivisto(1, 1.0), _rivisto(100, 6.0),
+                  fixtures=[_fixture(5, "A", "B")], monkeypatch=monkeypatch)
+    t = next(r["text"] for r in plan["reasons"] if r["code"] == "long_view")
+    assert "not xP" not in t, "varaus toistui perustelulauseessa"
+    assert "note" not in (plan["long_view"] or {}), (
+        "long_view kantaa yha oman varauskopionsa")
 
 
 def test_liputetut_pelaajat_lasketaan_nykyisesta_rungosta(monkeypatch):

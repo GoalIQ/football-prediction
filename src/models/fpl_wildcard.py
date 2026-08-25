@@ -13,7 +13,8 @@ rivilta 1186244.
    GW2:n luku on kuuden kierroksen summa ja GW7:n yhden. Per kierros jarjestys
    KAANTYY: 6,33 · 6,71 · 6,43 · 6,74 · 7,97 · **10,37**. Tyokalu suositteli
    aikaisinta kierrosta rakenteesta eika ansiosta.
-   -> Ranking tehdaan `ev_per_gw`:lla ja `window_gws` kerrotaan rivilla.
+   -> Ranking tehdaan `ev_total`:lla YHTEISELLA ikkunalla (vain kytkentahetki
+      liikkuu), ja `window_gws` kerrotaan rivilla.
 
 2. EHDOTETTU JOUKKUE LASKETTIIN JA HEITETTIIN POIS. `fantasy_edge.py` rakensi
    `wc_xi`:n, summasi siita luvun eika koskaan palauttanut rivistoa. Kayttaja
@@ -147,10 +148,13 @@ def _optimi(pool: list[dict], gws: list[int]) -> dict | None:
 
 def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                   fixtures: list[dict], id_to_name: dict[int, str],
-                  xi_fn) -> dict:
+                  xi_fn, mode: str = "entry") -> dict:
     """Paras wildcard-kierros, sen joukkue ja perustelut.
 
     `gws`   = kierrokset joille chipin voi VIELA pelata (deadline ei mennyt).
+    `mode`  = "entry" kun rivisto on LUKIJAN, muuten mallin oma. 🔴 Copy sanoo
+              "your 15" vain ensimmaisessa: mallin rungosta puhuminen lukijan
+              omistusmuodossa on vaite jota lukija ei voi tarkistaa.
     `xi_fn` = (squad, key) -> paras laillinen XI. Annetaan ulkoa, jotta tama
               moduuli ei tuo tuontikeha `api.fantasy_edge`:n kanssa.
     """
@@ -174,8 +178,9 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
     uusi = _optimi(pool, pisin)
     if not uusi:
         return {"available": False,
-                "note": "Could not build a legal squad from the current pool."}
+                "note": "Could not build a full 15 from the current pool."}
     uusi_15 = uusi["xi"] + uusi["bench"]
+    oma_rivisto = mode == "entry"
 
     # --- 2. Kandidaattikierrokset YHTEISELLA arviointi-ikkunalla -----------
     # 🔴 KORJASIN TAMAN KERRAN VAARIN JA AJO NAYTTI SEN. Ensimmainen versio
@@ -212,6 +217,18 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
         })
 
     paras = max(kandidaatit, key=lambda k: k["ev_total"])
+
+    # 🔴 TAUTOLOGIA ON ERI ASIA KUIN TULOS. Ilman entrya rivisto on mallin oma
+    # optimi, ja sita verrataan mallin omaan optimiin: 0 muutosta, 0.0 pistetta,
+    # "hold". Mitattu ilmaispinnalta 25.8. Se ei ole vastaus vaan sama luku
+    # kahdesti, ja ensikavijan ilmaiskokemus olisi paneeli joka sanoo ettei se
+    # muuta mitaan. Kerrotaan mita puuttuu sen sijaan etta esitettaisiin
+    # nollatulos loydoksena.
+    if not oma_rivisto and paras["ev_total"] <= 0.01:
+        return {"available": False,
+                "note": ("Add your FPL team ID above to see whether a wildcard "
+                         "is worth playing. Without one this compares the "
+                         "model's own squad against itself.")}
     # Kynnys mitataan PER KIERROS vaikka ranking on kokonaishyodylla: "onko
     # runko tarpeeksi parempi" ei saa riippua siita montako kierrosta sattuu
     # olemaan jaljella.
@@ -251,9 +268,11 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
             "outgoing_att_fdr": _keski(ulos, "att_fdr"),
             "incoming_def_fdr": _keski(sisaan, "def_fdr"),
             "outgoing_def_fdr": _keski(ulos, "def_fdr"),
-            "note": ("Team-level fixture difficulty from the full-season "
-                     "fixture file, not player xP. Lower is easier. It sits "
-                     "next to the xP number and is never added to it."),
+            # 🔴 VARAUS SANOTAAN KERRAN. Sama asia oli 25.8 kolmessa
+            # paikassa samassa nakymassa (tama, `long_view`-lause ja
+            # meta.notes[2]). Toistettu varaus on AI-tunnusmerkki ja se myos
+            # laimentaa itseaan: kolmesti sanottu kuulostaa puolustelulta.
+            # Jaljella oleva kopio on meta.notes-lohkossa.
         }
 
     return {
@@ -276,36 +295,42 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                        for c in kandidaatit],
         "long_view": long_view,
         "reasons": _reasons(paras, ulos, sisaan, squad, suosita, long_view,
-                            len(kaikki)),
+                            len(kaikki), oma_rivisto, min(gws)),
     }
 
 
 def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],
-             squad: list[dict], suosita: bool,
-             long_view: dict | None, horisontti_gws: int) -> list[dict]:
+             squad: list[dict], suosita: bool, long_view: dict | None,
+             horisontti_gws: int, oma_rivisto: bool,
+             aikaisin_gw: int) -> list[dict]:
     """Perustelulauseet. Jokainen kantaa OMAN lukunsa.
 
     🔴 Lause jonka luku puuttuu jatetaan pois, ei arvata. Ja KUSTANNUS sanotaan
     ennen hyotya: paneeli joka avaa omalla voitollaan on mainos.
+
+    🔴 `oma_rivisto=False` -> EI omistusmuotoa. Ilman entrya rivisto on mallin
+    oma, ja "your 15" olisi vaite jota lukija ei voi tarkistaa mistaan.
     """
     out: list[dict] = []
     n = paras["window_gws"]
-    ikkuna_teksti = (f"GW{paras['gw']}" if n == 1
-                     else f"GW{paras['gw']}-{paras['gw'] + n - 1}")
+    ikkuna = (f"GW{paras['gw']}" if n == 1
+              else f"GW{paras['gw']}–{paras['gw'] + n - 1}")
+    kenen = "your" if oma_rivisto else "the model's own"
+    rivisto = "your 15" if oma_rivisto else "the model's own 15"
 
     out.append({"code": "cost",
-                "text": f"A wildcard here changes {len(sisaan)} of your 15."})
+                "text": f"A wildcard here changes {len(sisaan)} of {rivisto}."})
 
     if suosita:
         out.append({"code": "ev", "text":
                     f"The rebuilt squad projects {paras['ev_per_gw']} points "
-                    f"per gameweek more than your own best lineup over "
-                    f"{ikkuna_teksti}, {paras['ev_total']} in total."})
+                    f"per gameweek more than {kenen} best lineup over "
+                    f"{ikkuna}, {paras['ev_total']} in total."})
     else:
         out.append({"code": "hold", "text":
-                    f"That is worth {paras['ev_per_gw']} points per gameweek, "
-                    f"below the {MIN_EV_PER_GW} the model asks before burning "
-                    f"a chip you only get once. The model says hold."})
+                    f"That's worth {paras['ev_per_gw']} points per gameweek, "
+                    f"under the {MIN_EV_PER_GW} the model wants before you burn "
+                    f"a chip you only get once. It says hold."})
 
     if ulos:
         w = ulos[0]
@@ -318,34 +343,50 @@ def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],
                     f"The strongest it brings in is {b['web_name']} at "
                     f"{b['xp_per_gw']}."})
 
-    liputetut = [p for p in squad
-                 if isinstance(p.get("chance_next"), int)
-                 and p["chance_next"] < 100]
+    liputetut = [q for q in squad
+                 if isinstance(q.get("chance_next"), int)
+                 and q["chance_next"] < 100]
     if liputetut:
+        omistus = "your current 15" if oma_rivisto else "the current 15"
         out.append({"code": "flags", "text":
-                    f"{len(liputetut)} of your current 15 carry an FPL "
-                    f"availability flag right now."})
+                    f"{len(liputetut)} of {omistus} carry an FPL availability "
+                    f"flag right now."})
 
-    if long_view and long_view.get("incoming_att_fdr") is not None \
-            and long_view.get("outgoing_att_fdr") is not None:
+    if long_view and long_view.get("incoming_att_fdr") is not None             and long_view.get("outgoing_att_fdr") is not None:
         yli = long_view["gws"]
+        # 🔴 Loppuvaraus ("that is a team-level read, not xP") on POISTETTU
+        # tasta. Sama asia sanottiin 25.8 kolmessa paikassa samassa nakymassa;
+        # se on AI-tunnusmerkki ja kolmesti sanottuna se kuulostaa
+        # puolustelulta. Varaus elaa nyt vain meta.notes-lohkossa.
         out.append({"code": "long_view", "text":
-                    f"Past the projection horizon, over GW{min(yli)}-"
+                    f"Past the projection horizon, over GW{min(yli)}–"
                     f"{max(yli)}, the incoming players' teams average "
                     f"{long_view['incoming_att_fdr']} attack difficulty "
                     f"against {long_view['outgoing_att_fdr']} for the ones "
-                    f"leaving. That is a team-level fixture read, not xP."})
+                    f"leaving."})
 
-    # 🔴 MIKSI AIKAISIN VOITTAA. Ilman tata lausetta tyokalu nayttaisi
-    # "loytaneen" parhaan viikon, vaikka se ei voi tietaa tulevaa. Malli ei
-    # hinnoittele odottamisen ainoaa oikeaa perustetta (uutta tietoa), joten
-    # se sanotaan aareen sen sijaan etta annettaisiin vaikutelma valinnasta.
+    # 🔴 TAMA LAUSE VALEHTELI, JA JULKAISUPORTTI RAKENSI VASTAESIMERKIN.
+    # Vanha versio sanoi ehdoitta "Waiting can only lose points here". Suositus
+    # on `max(ev_total)`, joten jos uusi runko on jollain kierroksella nykyista
+    # HUONOMPI, odottaminen kasvattaa hyotya. Ajettu vastaesimerkki:
+    #     GW2 ev 33,00 · GW3 ev 66,00 · GW4 ev 33,00  -> valinta GW3
+    # eli paneeli olisi tulostanut "Play it in GW3", taulukon jossa odottaminen
+    # tuotti +33, ja niiden viereen lauseen ettei odottaminen voi tuottaa. Sama
+    # nakyma kumosi itsensa.
+    #
+    # Korjaus ei ole pehmentaminen vaan universaalin vaitteen POISTO: lause
+    # kertoo mita TASSA datassa tapahtui, ja erikseen sen mita malli ei nae.
+    if paras["gw"] == aikaisin_gw:
+        miksi = ("Playing it at the first chance scores highest here, because "
+                 "the rebuilt squad is ahead in every round.")
+    else:
+        miksi = (f"GW{paras['gw']} scores highest here, because the current "
+                 f"squad is still ahead in the rounds before it.")
     out.append({"code": "timing", "text":
-                f"Every gameweek is compared over the same "
-                f"{horisontti_gws}-gameweek window, with only the switch "
-                f"point moving. Waiting can only lose points here, because "
-                f"the model prices no information it does not have yet: "
-                f"injuries, price moves and fixture swings that arrive later "
-                f"are exactly why a human waits."})
+                f"Every switch point is scored over the same {horisontti_gws}"
+                f"-gameweek window, so the only thing moving is when you play "
+                f"it. {miksi} The model can't price what hasn't happened yet, "
+                f"so injuries and price moves that land later aren't in this "
+                f"number. That's the case for waiting, and it's the one thing "
+                f"the tool can't score for you."})
     return out
-
