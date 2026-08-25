@@ -734,6 +734,20 @@ def _hex_to_rgb(c: str):
         return (120, 120, 120)
 
 
+def _rajatasapeli(jarjestetty: list[dict], kentta: str, n: int = 10) -> bool:
+    """Pyoristyvatko sijat n ja n+1 samaksi kahden desimaalin luvuksi?
+
+    Jos pyoristyvat, top-n-lista ja sen ulkopuolinen rivi nayttavat kortissa
+    identtiselta arvolta mutta saavat eri kohtelun, eika lukija voi tietaa
+    miksi. Ei ole virhe leikata listaa, mutta on virhe leikata se NAKYMATTOMAN
+    eron kohdalta.
+    """
+    if len(jarjestetty) <= n:
+        return False
+    return (f"{jarjestetty[n - 1][kentta]:.2f}"
+            == f"{jarjestetty[n][kentta]:.2f}")
+
+
 def card_gw_outlook(args) -> dict:
     """Kierroksen kuva: projisoidut maalit, nollapeli-% ja ottelut.
 
@@ -756,17 +770,42 @@ def card_gw_outlook(args) -> dict:
     if not fx:
         raise SystemExit(f"GW{gw}: ei otteluita fpl_projections_phase0.json:ssa.")
 
+    # 🔴 LYHENNE TULEE JSONISTA, EI NIMIKARTASTA. Renderoijan `SHORT`-kartan
+    # avain oli "Brighton & Hove Albion" mutta JSON sanoo "Brighton", joten
+    # kartta ei osunut ja fallback `name[:3]` teki siita "BRI". Mitattu 25.8:
+    # 6/20 seurasta putosi fallbackiin ja niista 5 osui oikein SATTUMALTA.
+    # FPL-yleisolle Brighton on BHA poikkeuksetta. `home_short`/`away_short`
+    # on auktoritatiivinen kentta ja se oli koko ajan payloadissa.
+    promoted = set((doc.get("meta", {}).get("context_layer") or {})
+                   .get("promoted_teams") or [])
     teams = []
     for f in fx:
-        teams.append({"team": f["home"], "xg": f["xg_home"], "cs": f["cs_home_pct"]})
-        teams.append({"team": f["away"], "xg": f["xg_away"], "cs": f["cs_away_pct"]})
+        for koti in (True, False):
+            nimi = f["home"] if koti else f["away"]
+            teams.append({
+                "team": nimi,
+                "short": f.get("home_short" if koti else "away_short"),
+                "xg": f["xg_home"] if koti else f["xg_away"],
+                "cs": f["cs_home_pct"] if koti else f["cs_away_pct"],
+                # 🔴 Nousijalla ei ole omaa PL-historiaa: sivu merkitsee sen
+                # "baseline rating" -tekstilla, ja ilman samaa merkintaa kortti
+                # olisi EPAREHELLISEMPI kuin sivu jolle se lukijan lahettaa.
+                "promoted": nimi in promoted,
+            })
 
     return {
         "kind": "gw_outlook",
         "gw": gw,
         "goals": sorted(teams, key=lambda t: -t["xg"])[:10],
         "cs": sorted(teams, key=lambda t: -t["cs"])[:10],
+        # 🔴 Rajatasapeli: jos sijat 10 ja 11 pyoristyvat SAMAKSI luvuksi,
+        # kortti nayttaa toisen karkikympissa ja toisen otteluissa identtisella
+        # arvolla, ja on siten ristiriidassa itsensa kanssa. Mitattu 25.8:
+        # Brighton 1,301 ja Sunderland 1,300 -> molemmat "1.30". Lippu kertoo
+        # renderoijalle etta sarake tarvitsee kolmannen desimaalin.
+        "goals_tie": _rajatasapeli(sorted(teams, key=lambda t: -t["xg"]), "xg"),
         "fixtures": sorted(fx, key=lambda f: f.get("kickoff_ms") or 0),
+        "promoted": sorted(promoted),
         "generated_at": doc.get("meta", {}).get("generated_at", ""),
         "file": f"goaliq_gw_outlook_gw{gw}.png",
     }
@@ -788,8 +827,10 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
         "Tottenham Hotspur": "TOT",
     }
 
-    def sh(name: str) -> str:
-        return SHORT.get(name, (name or "?")[:3].upper())
+    # Rivin oma `short` voittaa aina; kartta jaa varalle fixture-sarakkeelle
+    # jossa rivilla ei ole valmista lyhennetta.
+    def sh(name: str, oma: str | None = None) -> str:
+        return oma or SHORT.get(name, (name or "?")[:3].upper())
 
     h = 1010
     grad = Image.new("RGB", (1, h))
@@ -813,7 +854,21 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     d.text((gw_x, 108), f"GW{spec['gw']}", font=f_t, fill=AMBER)
 
     f_s = _font(FONT_MED, 20)
-    d.text((MX, 176), "Dixon-Coles match model", font=f_s, fill=MUTED)
+    # 🔴 PAIVAYS. Projektiot paivittyvat paivittain ja kortti postataan
+    # tyypillisesti 1-3 vrk generoinnin jalkeen. Ilman aikaleimaa kortti
+    # nayttaa vaaralta sina hetkena kun luvut liikkuvat, eika lukija voi
+    # tietaa kummalla on oikeassa.
+    _gen = (spec.get("generated_at") or "")[:10]
+    _stamp = ""
+    if len(_gen) == 10:
+        _kk = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        try:
+            _stamp = (f"  ·  as of {int(_gen[8:10])} "
+                      f"{_kk[int(_gen[5:7]) - 1]}")
+        except (ValueError, IndexError):
+            _stamp = ""
+    d.text((MX, 176), "Dixon-Coles match model" + _stamp, font=f_s, fill=MUTED)
 
     PANEL_BG = (24, 23, 21)
 
@@ -852,17 +907,25 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
         for i, r in enumerate(rows):
             y = top + 52 + i * 62
             d.text((x + 16, y + 14), f"{i + 1:>2}", font=f_rank, fill=MUTED)
-            code = sh(r["team"])
+            code = sh(r["team"], r.get("short"))
             col, _ = _team_color(code)
             rgb = _hex_to_rgb(col)
             d.ellipse([x + 48, y + 10, x + 76, y + 38], fill=rgb,
                       outline=_ring(rgb), width=2)
+            # Nousija saa tahden: sivu merkitsee sen "baseline rating"
+            # -tekstilla, ja ilman samaa merkintaa kortti vaittaisi enemman
+            # kuin sivu jolle se lukijan lahettaa.
+            if r.get("promoted"):
+                code = code + "*"
             d.text((x + 88, y + 8), code, font=f_team, fill=CREAM)
             v = fmt(r)
             d.text((x + col_w - 16 - d.textlength(v, font=f_val), y + 8),
                    v, font=f_val, fill=AMBER)
 
-    column(MX, "PROJECTED GOALS", spec["goals"], lambda r: f"{r['xg']:.2f}")
+    # Kolmas desimaali VAIN kun raja on nakymaton (ks. _rajatasapeli).
+    _gd = 3 if spec.get("goals_tie") else 2
+    column(MX, "PROJECTED GOALS", spec["goals"],
+           lambda r: f"{r['xg']:.{_gd}f}")
     column(MX + col_w + gap, "CLEAN SHEET %", spec["cs"],
            lambda r: f"{r['cs']:.0f}%")
 
@@ -884,9 +947,10 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     f_fxn = _font(FONT_BOLD, 20)
     for i, f in enumerate(fxs):
         y = top + 52 + i * 62
-        for j, (name, xg) in enumerate(((f["home"], f["xg_home"]),
-                                        (f["away"], f["xg_away"]))):
-            code = sh(name)
+        for j, (name, xg, lyh) in enumerate((
+                (f["home"], f["xg_home"], f.get("home_short")),
+                (f["away"], f["xg_away"], f.get("away_short")))):
+            code = sh(name, lyh)
             col, _ = _team_color(code)
             ry = y + 6 + j * 24
             rgb = _hex_to_rgb(col)
@@ -904,6 +968,13 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
                ko, font=f_fxs, fill=MUTED)
 
     f_foot = _font(FONT_MED, 19)
+    # 🔴 NOUSIJA-ALAVIITE. Ilman tata "COV #3" lukee ansaittuna reittauksena
+    # ja on kortin toimintakehotus (osta nousijan puolustaja), vaikka luku on
+    # empiirinen nousijabaseline eika mitattu PL-suoritus.
+    if spec.get("promoted"):
+        d.text((MX, h - 116),
+               "* promoted side, baseline rating with no PL history yet",
+               font=_font(FONT_MED, 16), fill=MUTED)
     d.text((MX, h - 84), "clean sheet % for every club on goaliq.app/fpl, free",
            font=f_foot, fill=MUTED)
     d.text((MX, h - 52), "model projections, not betting advice",
