@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fetchDifferentials, type DifferentialsResponse, type Pos } from '$lib/fantasyTools';
+	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { capture } from '$lib/analytics';
 
 	const POSITIONS = ['All', 'GKP', 'DEF', 'MID', 'FWD'] as const;
 
@@ -14,6 +16,40 @@
 	// #71: delta-kentät + model_vs_crowd ovat optionaalisia kunnes backend on livenä
 	let hasDelta = $derived(data?.players.some((p) => p.model_vs_crowd_delta != null) ?? false);
 	let mvc = $derived(data?.model_vs_crowd ?? null);
+
+	let sharing = $state(false);
+
+	// 🔴 SUODATTIMET OVAT SUBTITLESSA. Ilman niita kortti vaittaisi olevansa
+	// "differentiaalit" yleisesti, vaikka lista on rajattu omistus- ja
+	// positiosuodattimilla. Kortti = se nakyma jonka jakaja katsoi.
+	async function share() {
+		if (sharing) return;
+		sharing = true;
+		try {
+			const sub = [
+				`under ${maxOwnership}% owned`,
+				...(pos === 'All' ? [] : [pos])
+			].join(', ');
+			const method = await shareCard({
+				title: 'DIFFERENTIALS',
+				subtitle: `${sub}, GoalIQ model`,
+				midLabel: 'OWNED',
+				valueLabel: 'xP',
+				fileName: 'goaliq_differentials.png',
+				rows: (data?.players ?? []).slice(0, 10).map((p, i) => ({
+					rank: i + 1,
+					name: p.web_name,
+					tag: p.pos,
+					team: p.team_short,
+					mid: `${p.owned_pct.toFixed(1)}%`,
+					value: p.xp_horizon_total.toFixed(2)
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'differentials', method });
+		} finally {
+			sharing = false;
+		}
+	}
 
 	async function load() {
 		if (!maxValid || loading) return;
@@ -39,7 +75,16 @@
 	});
 </script>
 
-<h2><abbr title="A differential: low ownership, high projected points">Differentials</abbr></h2>
+<div class="head-row">
+	<h2><abbr title="A differential: low ownership, high projected points">Differentials</abbr></h2>
+	<!-- 🔴 Nappi vain kun listalla ON rivejä: tyhjasta nakymasta tehty kortti
+	     olisi tyhja kortti, ja se nayttaisi virheelta eika tyhjalta tulokselta. -->
+	{#if (data?.players?.length ?? 0) > 0}
+		<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		</button>
+	{/if}
+</div>
 <p class="muted">
 	Low-ownership players with high projected points: where the GoalIQ model disagrees with
 	the crowd. Ownership comes from the FPL game, projections from the GoalIQ model.
@@ -188,6 +233,31 @@
 {/if}
 
 <style>
+	.head-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.head-row h2 {
+		margin: 0;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
+	}
 	.diff-form {
 		display: flex;
 		flex-wrap: wrap;

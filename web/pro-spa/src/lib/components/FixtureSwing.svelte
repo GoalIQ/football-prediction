@@ -11,6 +11,7 @@
 	 */
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
+	import { shareCard, canShareToApps } from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
 
@@ -29,6 +30,36 @@
 	function gwLabel(g: { opponents: { opp: string; venue: string }[] }): string {
 		if (!g.opponents.length) return 'Blank';
 		return g.opponents.map((o) => `${o.venue === 'H' ? 'vs' : 'at'} ${o.opp}`).join(', ');
+	}
+
+	let sharing = $state(false);
+
+	// 🔴 Kortti nayttaa PARHAAN ja HUONOIMMAN vastustajan xP:n, ei yhta lukua.
+	// Yksi luku vaittaisi pelaajan olevan "nain hyva", kun koko listan idea on
+	// etta sama pelaaja on eri pelaaja eri vastustajaa vastaan.
+	async function share() {
+		if (sharing) return;
+		sharing = true;
+		try {
+			const method = await shareCard({
+				title: 'FIXTURE SWING',
+				subtitle: 'same player, best and worst opponent, next six gameweeks',
+				midLabel: 'WORST → BEST',
+				valueLabel: 'SWING',
+				fileName: 'goaliq_fixture_swing.png',
+				rows: rows.slice(0, 10).map((r, i) => ({
+					rank: i + 1,
+					name: r.p.web_name,
+					tag: r.p.pos,
+					team: r.p.team_short,
+					mid: `${r.min.xp.toFixed(1)} → ${r.max.xp.toFixed(1)}`,
+					value: r.swing.toFixed(1)
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'fixture_swing', method });
+		} finally {
+			sharing = false;
+		}
 	}
 
 	const rows = $derived.by<SwingRow[]>(() => {
@@ -79,7 +110,14 @@
 </script>
 
 <section class="swing">
-	<h3>Fixture swing</h3>
+	<div class="head-row">
+		<h3>Fixture swing</h3>
+		{#if rows.length > 0}
+			<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+				{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			</button>
+		{/if}
+	</div>
 	<p class="muted">
 		Where fixtures actually move points: the same player's projected xP at his best and worst
 		opponent over the next six gameweeks. Goals, assists, bonus and clean sheets scale with the
@@ -161,6 +199,31 @@
 </section>
 
 <style>
+	.head-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.head-row h3 {
+		margin: 0;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
+	}
 	h3 {
 		margin: 0 0 var(--s-1);
 		font-size: var(--step-1);
