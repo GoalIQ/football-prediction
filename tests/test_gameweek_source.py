@@ -136,3 +136,62 @@ def test_skannaus_ei_ole_tyhja():
     kayttoja, joten tyhja tulos tarkoittaa rikkinaista skannausta."""
     osumat = _skannaa()
     assert len(osumat) >= 3, f"skannaus loysi vain {len(osumat)} tiedostoa"
+
+
+# ---------------------------------------------------------------------------
+# completed_gameweeks: payload kertoo mika kierros on ohi
+# ---------------------------------------------------------------------------
+from src.models.fpl_gameweek import (  # noqa: E402
+    completed_gameweeks, display_gameweek)
+
+
+def _f(gw, ms):
+    return {"gameweek": gw, "kickoff_ms": ms}
+
+
+def _nyt_ms():
+    import datetime as dt
+    return dt.datetime.now(dt.timezone.utc).timestamp() * 1000
+
+
+def test_completed_vaatii_ETTA_JOKAINEN_ottelu_on_alkanut():
+    """🔴 `all` eika `any`. Yksikin alkamaton ottelu tarkoittaa etta kierros
+    on kesken, ja silloin pinnan kuuluu pysya siina."""
+    now = _nyt_ms()
+    ohi = [_f(1, now - 86400000) for _ in range(10)]
+    kesken = [_f(2, now - 3600000)] * 9 + [_f(2, now + 3600000)]
+    assert completed_gameweeks(ohi + kesken) == [1]
+
+
+def test_completed_ei_nojaa_fpl_finished_lippuun():
+    """🔴 Mitattu 25.8: FPL:n `finished` oli False 14 h viimeisen ottelun
+    jalkeen, ja aiemmin samana paivana ottelut olivat `finished: False`
+    vaikka ne oli pelattu. Kickoff-aika ei voi laahata."""
+    now = _nyt_ms()
+    fx = [{"gameweek": 1, "kickoff_ms": now - 86400000, "finished": False}]
+    assert completed_gameweeks(fx) == [1], "lippu ei saa vaikuttaa"
+
+
+def test_completed_ohittaa_kickoffittomat():
+    """Kickoffiton ottelu (siirretty, TBD) ei saa tehda kierroksesta
+    'paattynytta' eika estaa muita kierroksia."""
+    now = _nyt_ms()
+    assert completed_gameweeks([{"gameweek": 3}]) == []
+    assert completed_gameweeks([_f(1, now - 1000), {"gameweek": 1}]) == [1]
+
+
+def test_display_kayttaa_completed_listaa_ilman_fixtureita():
+    """🔴 rate_teamin payloadissa EI ole kickoff-aikoja lainkaan, joten se ei
+    voisi paatella kierroksen paattymista. Siksi builderi emitoi listan."""
+    kesken = {"next_gameweek": 1, "deadline_gameweek": 2,
+              "completed_gameweeks": []}
+    ohi = {"next_gameweek": 1, "deadline_gameweek": 2,
+           "completed_gameweeks": [1]}
+    assert display_gameweek(kesken) == 1, "kesken kierroksen pysytaan"
+    assert display_gameweek(ohi) == 2, "kierros ohi -> siirrytaan"
+
+
+def test_display_vanha_payload_ei_kaadu():
+    """Kentta puuttuu -> entinen kaytos, ei poikkeusta."""
+    assert display_gameweek({"next_gameweek": 1, "deadline_gameweek": 2}) == 2
+    assert display_gameweek({"next_gameweek": 1}) == 1

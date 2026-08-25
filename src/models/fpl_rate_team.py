@@ -1367,7 +1367,20 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     # Esikausiclamppi: picks voi tulla viime kauden GW:stä (esim. GW38), mutta
     # projektiot kattavat tulevan horisontin (GW1–6) → xP-laskennan GW on aina
     # projektioiden kattama. picks_gw raportoidaan erikseen metassa.
-    target_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+    # 25.8 (Villen havainto): my teamin pitchilla naytti yha GW1:n pelit sen
+    # jalkeen kun GW1 oli pelattu. `picks_gw` tulee FPL:n picks-vastauksesta ja
+    # se pysyy GW1:ssa niin kauan kuin FPL:n `is_current` laahaa - mitattu 25.8
+    # klo 09:05 etta lippu oli yha GW1:ssa 14 h viimeisen ottelun jalkeen.
+    #
+    # Kesken kierroksen GW1 on OIKEA vastaus: se on mita joukkue juuri nyt
+    # keraa (linjaus 22.8). Mutta kun kierroksen jokainen ottelu on pelattu,
+    # se on historiaa ja pitchin kuuluu nayttaa seuraava. `display_gameweek`
+    # tekee tasan taman eron, ja `meta.completed_gameweeks` kertoo sille
+    # kumpi tilanne on.
+    from src.models.fpl_gameweek import display_gameweek as _disp
+    _shown = _disp(xp_data.get("meta") or {})
+    _base = _shown if isinstance(_shown, int) and _shown > picks_gw else picks_gw
+    target_gw = clamp_gw_to_projections(_base, pool, xp_data)
 
     squad: list[dict] = []
     for pid in squad_ids:

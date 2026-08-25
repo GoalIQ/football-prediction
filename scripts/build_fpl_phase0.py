@@ -573,6 +573,11 @@ def sanity_gate(team_view: list[dict], promoted: list[str]) -> bool:
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
+def _completed_gws(fixtures):
+    from src.models.fpl_gameweek import completed_gameweeks
+    return completed_gameweeks(fixtures)
+
+
 def main() -> int:
     src = fetch_source()
 
@@ -680,6 +685,11 @@ def main() -> int:
             # 22.8: GW jonka deadline deadline_utc on — kesken kierroksen eri
             # kuin next_gameweek (ks. fetch_fpl_official).
             "deadline_gameweek": src.get("deadline_gw"),
+            # 25.8: kierrokset joiden JOKAINEN ottelu on alkanut. Emitoidaan
+            # payloadiin jotta kuluttajien (mobiili, SPA, sivut, rate_team) ei
+            # tarvitse paatella sita - rate_teamin datassa ei ole kickoff-aikoja
+            # lainkaan. Ks. src/models/fpl_gameweek.completed_gameweeks.
+            "completed_gameweeks": _completed_gws(src["fixtures"]),
             # horizon_gw = montako GW:tä teams[].fixtures TÄSSÄ tiedostossa
             # sisältää (nyt koko kausi). Endpoint YLIKIRJOITTAA tämän sillä
             # mitä se pyynnössä palautti, jotta klientti näkee aina totuuden

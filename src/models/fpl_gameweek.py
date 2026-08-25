@@ -89,6 +89,12 @@ def display_gameweek(meta: dict, fixtures: list[dict] | None = None) -> int | No
     act = actionable_gameweek(meta)
     if cur is None or act is None or act <= cur:
         return cur if cur is not None else act
+    # 25.8: builderit emitoivat `completed_gameweeks`:n payloadiin, joten
+    # kuluttaja jolla EI ole kickoff-aikoja (esim. rate_team) voi silti
+    # vastata oikein. Tama on ensisijainen lahde; `fixtures` on fallback.
+    done = (meta or {}).get("completed_gameweeks")
+    if isinstance(done, list):
+        return act if cur in done else cur
     if fixtures is None:
         return act
     fx = [f for f in fixtures
@@ -146,3 +152,27 @@ def window_label(meta: dict, gws, fallback_n: int | None = None) -> str:
     if len(act) == 1:
         return f"GW{act[0]}"
     return f"GW{act[0]}-{act[-1]}"
+
+
+def completed_gameweeks(fixtures) -> list[int]:
+    """Kierrokset joiden JOKAINEN ottelu on jo alkanut.
+
+    🔴 EI FPL:N `finished`-LIPPUA. Mitattu 25.8: kierroksen ottelut olivat
+    `finished` mutta `event.finished` oli False, ja aiemmin samana paivana
+    ottelut olivat `finished: False` vaikka ne oli pelattu. Kickoff-aika ei voi
+    laahata eika sita voi unohtaa kaantaa.
+
+    Tama emitoidaan projektiopayloadiin, jotta jokaisen KULUTTAJAN - mobiili,
+    SPA, sivut - ei tarvitse paatella sita itse. Mitattu tarve: `rate_team`in
+    payloadissa ei ole kickoff-aikoja lainkaan, joten se ei olisi voinut
+    tietaa etta kierros on ohi.
+    """
+    import collections
+    per_gw = collections.defaultdict(list)
+    for f in fixtures or []:
+        gw, ms = f.get("gameweek"), f.get("kickoff_ms")
+        if gw is not None and ms:
+            per_gw[int(gw)].append(ms)
+    now_ms = _dt.datetime.now(_dt.timezone.utc).timestamp() * 1000
+    return sorted(gw for gw, mss in per_gw.items()
+                  if all(ms < now_ms for ms in mss))

@@ -351,6 +351,11 @@ def attach_team_confidence(players: list[dict]) -> dict:
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
+def _completed_gws(fixtures):
+    from src.models.fpl_gameweek import completed_gameweeks
+    return completed_gameweeks(fixtures)
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser()
@@ -1343,6 +1348,11 @@ def main(argv: list[str] | None = None) -> int:
             # kuin next_gameweek, ja siirtosuunnittelun on lahdettava tasta:
             # lukitulle kierrokselle ehdotettu siirto on hyodyton.
             "deadline_gameweek": src.get("deadline_gw"),
+            # 25.8: kierrokset joiden JOKAINEN ottelu on alkanut. Emitoidaan
+            # payloadiin jotta kuluttajien (mobiili, SPA, sivut, rate_team) ei
+            # tarvitse paatella sita - rate_teamin datassa ei ole kickoff-aikoja
+            # lainkaan. Ks. src/models/fpl_gameweek.completed_gameweeks.
+            "completed_gameweeks": _completed_gws(src["fixtures"]),
             "horizon_gw": HORIZON_GW,
             "min_xp_total": MIN_XP_TOTAL,
             "n_players": len(players),
