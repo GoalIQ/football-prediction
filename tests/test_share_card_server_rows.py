@@ -450,3 +450,61 @@ def test_each_ei_sanota_kun_maarat_eroavat():
 def test_ottelumaarasta_ei_synny_lausetta_ilman_dataa():
     assert ottelumaara_lause(set()) == ""
     assert ottelumaara_lause({0}) == ""
+
+
+# ---------------------------------------------------------------------------
+# KYTKENTA: renderoija KAYTTAA johdantaa (25.8.2026)
+# ---------------------------------------------------------------------------
+# 🔴 EDELLISET TESTIT JATTIVAT TAMAN AUKON, JA JULKAISUPORTTI OSOITTI SEN.
+# `kortin_kaudet` voi olla taydellinen ja kortti silti vaara: mikaan testi ei
+# vaittanyt etta `render_xg_leaders` KAYTTAA sen tulosta. Mutaatio
+# `_korttikaudet = _rivikaudet` olisi mennyt lapi kaikista 34 testista, koska
+# tuotantodatalla tulos on sama. Se on tasan se vikaluokka jossa portti mittaa
+# eri koodipolkua kuin artefaktin tuottava.
+#
+# Tama testi ajaa RENDEROIJAN synteettisella syotteella jossa karki ja hanta
+# aidosti eroavat, ja lukee kortin subtitlen renderoidysta HTML:sta.
+from datetime import datetime
+
+
+def _pelaaja(pid: int, basis: str, xg: float) -> dict:
+    return {
+        "id": pid, "code": pid, "web_name": f"P{pid}", "team_short": "AAA",
+        "pos": "FWD", "price": 5.0, "owned_pct": 1.0, "basis": basis,
+        "games_total": 5,
+        # `xgi` on pakollinen: fpl_leaders lukee sen suoraan.
+        "recent_games": [{"round": 1, "opp": "BBB", "venue": "H",
+                          "minutes": 90, "xg": xg, "xa": 0.0, "xgi": xg,
+                          "dc": 0, "cbi": 0, "tkl": 0, "rec": 0}],
+    }
+
+
+def test_renderoija_nimeaa_KARJEN_kauden_kun_hanta_on_eri_kautta():
+    """🔴 Karki 10 x 2026/27, hanta 400 x 2025/26. Kortti nayttaa karjen, joten
+    sen on nimettava vain sen kausi. Ilman tata testia johdanta voi olla oikea
+    ja kutsu vaara."""
+    from scripts.build_fpl_longtail import render_xg_leaders
+    players = ([_pelaaja(i, "2026/27", 0.90) for i in range(10)]
+               + [_pelaaja(1000 + i, "2025/26", 0.10) for i in range(400)])
+    html_ = render_xg_leaders(
+        {"meta": {"available": True, "basis_season": "2025/26",
+                  "target_season": "2026/27"}, "players": players},
+        datetime(2026, 8, 25))
+    assert html_, "renderoija palautti tyhjan"
+    m = re.search(r"data-card-spec='([^']*)'", html_)
+    assert m, "renderoidyssa sivussa ei ole korttispekia"
+    sub = json.loads(html.unescape(m.group(1).replace("&#39;", "'")))["subtitle"]
+    assert "2025/26" not in sub, (
+        f"kortti nimeaa hannan kauden vaikka nayttaa karjen rivit: {sub!r}")
+    assert "2026/27" in sub, sub
+
+
+def test_korttirivien_maara_on_yksi_vakio():
+    """🔴 `10` oli kirjoitettu VIITEEN paikkaan eivatka ne olleet kytkettyja.
+    Jos joku muuttaa kortin nayttamaan 12 rivia, `kortin_kaudet` lukisi yha
+    kymmenen ja kortti nimeaisi vaaran joukon kaudet."""
+    lahde = (ROOT / "scripts" / "build_fpl_longtail.py").read_text(
+        encoding="utf-8")
+    assert "CARD_ROWS = 10" in lahde
+    assert "rows[:10]" not in lahde, (
+        "kortin rivimaara on yha kovakoodattu jossain — kayta CARD_ROWSia")

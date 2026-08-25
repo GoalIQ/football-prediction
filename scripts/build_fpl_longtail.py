@@ -1431,7 +1431,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
                "team": r.get("team_short") or "", "tag": r.get("pos") or "",
                "mid": str(r.get("games") or 0),
                "value": ("%.2f" % (r.get("xg_per_game") or 0.0))}
-              for i, r in enumerate(rows[:10])],
+              for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-xg-leaders.png")
     table = (
         f'<div class="lb-wrap"><table class="lb" id="xgt2"{kortti}>'
@@ -1974,7 +1974,16 @@ def _player_gw_meta() -> dict | None:
 #
 # 🔴 Tama on kirjaus, ei ohitus: jos joku haluaa eston, se on tehtava
 # TAULUKKOON eika korttiin, jolloin sivu ja kuva pysyvat samana.
-def kortin_kaudet(rivit: list[dict], n: int = 10) -> list[str]:
+# 🔴 KORTIN RIVIMAARA ON YKSI VAKIO. Se oli kirjoitettu VIITEEN paikkaan
+# (kolme kutsujaa, `_card_spec_attr`:n oma leikkaus ja `kortin_kaudet`:n
+# oletus), eivatka ne olleet kytkettyja toisiinsa. Jos joku muuttaa kortin
+# nayttamaan 12 rivia, han muuttaa `_card_spec_attr`:n leikkauksen ja
+# `kortin_kaudet` lukee yha kymmenen: kortti nayttaisi 12 rivia kahdelta
+# kaudelta ja nimeaisi yhden. Sama vika kuin E1, eri reitti.
+CARD_ROWS = 10
+
+
+def kortin_kaudet(rivit: list[dict], n: int = CARD_ROWS) -> list[str]:
     """Kausiperustat KORTIN omilta riveilta, ei koko aineistosta.
 
     🔴 TAMA ON OMA FUNKTIONSA JOTTA SE VOIDAAN TESTATA. Sisakkaisena
@@ -2023,7 +2032,7 @@ def _card_spec_attr(*, title: str, subtitle: str, rows: list[dict],
     merkkijonoina - muotoilu kuuluu sinne missa luvutkin ovat.
     """
     spec = {"title": title, "subtitle": subtitle, "nameLabel": name_label,
-            "valueLabel": value_label, "rows": rows[:10],
+            "valueLabel": value_label, "rows": rows[:CARD_ROWS],
             "fileName": file_name, "footNote2": foot2}
     if mid_label:
         spec["midLabel"] = mid_label
@@ -2307,7 +2316,7 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         rows=[{"rank": i + 1, "name": r["team"], "team": "", "tag": "",
                "mid": ("%.1f" % r["shots_pm"]),
                "value": ("%.2f" % r["xg_pm"])}
-              for i, r in enumerate(rows[:10])],
+              for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-defence-xgc.png")
     table = (
         f'<div class="lb-wrap"><table class="lb"{kortti}>'
@@ -3832,7 +3841,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         rows=[{"rank": i + 1, "name": r["web_name"], "team": r["team_short"],
                "tag": r.get("pos") or "", "mid": ("%.1f" % (r.get("price") or 0)),
                "value": ("%.1f" % (r.get("xp_horizon_total") or 0))}
-              for i, r in enumerate(rows[:10])],
+              for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-expected-points.png")
     table = (
         f'<div class="lb-wrap"><table class="lb"{kortti}>'
