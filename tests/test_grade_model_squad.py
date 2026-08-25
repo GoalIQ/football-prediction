@@ -130,3 +130,99 @@ def test_tyhja_loki_sanoo_yha_ettei_ole_alkanut():
     assert race["meta"]["available"] is False
     assert race["meta"]["graded_gws"] == 0
     assert race["gameweeks"] == []
+
+
+# ---------------------------------------------------------------------------
+# 25.8: idempotenssi — muuttumaton data ei saa tuottaa committia
+# ---------------------------------------------------------------------------
+def test_muuttumaton_rivi_sailyttaa_graded_at_leiman(tmp_path, monkeypatch):
+    """🔴 `graded_at` on "milloin TAMA RIVI gradattiin", ei "milloin skripti
+    viimeksi ajoi".
+
+    Mitattu 25.8: cronin ensimmainen ajo tuotti committin jossa diff oli
+    PELKAT kaksi aikaleimaa. 6 h cronilla se olisi neljä turhaa committia
+    vuorokaudessa ikuisesti, ja git-historia lakkaisi kertomasta milloin luku
+    oikeasti muuttui.
+    """
+    g = _load_grader()
+    out = tmp_path / "scores.json"
+    monkeypatch.setattr(g, "OUT_PATH", out)
+
+    boot = _boot([{"id": 1, "finished": False, "data_checked": False,
+                   "average_entry_score": 48}])
+    fixtures = [{"event": 1, "finished_provisional": True}]
+    monkeypatch.setattr(g.fpl_api, "fetch_bootstrap", lambda **kw: boot)
+    monkeypatch.setattr(g.fpl_api, "fetch_fixtures", lambda **kw: fixtures)
+    monkeypatch.setattr(g.fpl_api, "fetch_entry_history", lambda *a, **kw: {
+        "current": [{"event": 1, "points": 41, "points_on_bench": 12,
+                     "event_transfers_cost": 0}]})
+    monkeypatch.setattr(g.fpl_api, "fetch_entry_picks", lambda *a, **kw: {
+        "active_chip": None, "automatic_subs": [],
+        "picks": [{"element": 426, "multiplier": 2, "is_captain": True}]})
+    monkeypatch.setattr(g.fpl_api, "fetch_event_live", lambda *a, **kw: {
+        "elements": [{"id": 426, "stats": {"total_points": 1}}]})
+
+    import json as _j
+    eka = g.build(verbose=False)
+
+    # 🔴 EI "aja kahdesti ja vertaa". Ensimmainen versio tasta testista teki
+    # tasan niin, ja MUTAATIOTESTI PALJASTI SEN SOKEAKSI: molemmat ajot osuvat
+    # samaan sekuntiin, ja `.replace(microsecond=0)` pyoristaa leimat samaksi
+    # myos silloin kun idempotenssi on rikki. Kolme mutaatiota meni lapi.
+    #
+    # Nyt levylla oleva leima on ERIKSEEN VANHA, joten "sailytettiin" ja
+    # "generoitiin nyt" eroavat vuosilla eivatka mikrosekunneilla.
+    VANHA = "2020-01-01T00:00:00+00:00"
+    levylla = _j.loads(_j.dumps(eka))
+    levylla["meta"]["generated_at"] = VANHA
+    levylla["gameweeks"][0]["graded_at"] = VANHA
+    out.write_text(_j.dumps(levylla, ensure_ascii=False), encoding="utf-8")
+
+    toka = g.build(verbose=False)
+
+    assert toka["gameweeks"][0]["graded_at"] == VANHA, (
+        "muuttumaton rivi sai uuden graded_at-leiman -> cron committaisi "
+        "joka ajolla")
+    assert toka["meta"]["generated_at"] == VANHA, (
+        "muuttumaton tiedosto sai uuden generated_at-leiman")
+    # ...ja kaikki muu on identtista
+    assert {k: v for k, v in toka["gameweeks"][0].items() if k != "graded_at"} ==            {k: v for k, v in eka["gameweeks"][0].items() if k != "graded_at"}
+
+
+def test_muuttunut_pistemaara_paivittaa_leiman(tmp_path, monkeypatch):
+    """...mutta oikea muutos SAA uuden leiman. Ilman tata idempotenssikorjaus
+    olisi jaadyttanyt leiman ikuisesti ja piilottanut bonuspaivityksen."""
+    g = _load_grader()
+    out = tmp_path / "scores.json"
+    monkeypatch.setattr(g, "OUT_PATH", out)
+    import json as _j
+    out.write_text(_j.dumps({
+        "meta": {"generated_at": "2026-08-25T00:00:00+00:00"},
+        "gameweeks": [{"gw": 1, "points": 39, "bench_points": 12,
+                       "transfer_cost": 0, "fpl_average": 48,
+                       "captain_id": 426, "captain_points_added": 1,
+                       "active_chip": None, "autosubs": [],
+                       "provisional": True,
+                       "graded_at": "2026-08-25T00:00:00+00:00"}],
+    }), encoding="utf-8")
+
+    boot = _boot([{"id": 1, "finished": False, "data_checked": False,
+                   "average_entry_score": 48}])
+    monkeypatch.setattr(g.fpl_api, "fetch_bootstrap", lambda **kw: boot)
+    monkeypatch.setattr(g.fpl_api, "fetch_fixtures",
+                        lambda **kw: [{"event": 1, "finished_provisional": True}])
+    # bonukset nostivat 39 -> 41
+    monkeypatch.setattr(g.fpl_api, "fetch_entry_history", lambda *a, **kw: {
+        "current": [{"event": 1, "points": 41, "points_on_bench": 12,
+                     "event_transfers_cost": 0}]})
+    monkeypatch.setattr(g.fpl_api, "fetch_entry_picks", lambda *a, **kw: {
+        "active_chip": None, "automatic_subs": [],
+        "picks": [{"element": 426, "multiplier": 2, "is_captain": True}]})
+    monkeypatch.setattr(g.fpl_api, "fetch_event_live", lambda *a, **kw: {
+        "elements": [{"id": 426, "stats": {"total_points": 1}}]})
+
+    uusi = g.build(verbose=False)
+    assert uusi["gameweeks"][0]["points"] == 41
+    assert uusi["gameweeks"][0]["graded_at"] != "2026-08-25T00:00:00+00:00", (
+        "oikea muutos ei saanut uutta leimaa")
+    assert uusi["meta"]["generated_at"] != "2026-08-25T00:00:00+00:00"

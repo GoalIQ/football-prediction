@@ -156,12 +156,17 @@ def build(only_gw: int | None = None, verbose: bool = True) -> dict:
     # Sailyta aiemmin gradatut rivit: lopullinen rivi ei saa muuttua takaisin
     # provisionaaliseksi jos FPL:n vastaus hetkellisesti puuttuu.
     existing: dict[int, dict] = {}
+    _prev_generated_at = None
     if OUT_PATH.exists():
         try:
             prev = json.loads(OUT_PATH.read_text(encoding="utf-8"))
             existing = {int(r["gw"]): r for r in (prev.get("gameweeks") or [])}
+            _prev_generated_at = (prev.get("meta") or {}).get("generated_at")
         except (OSError, ValueError, KeyError):
             existing = {}
+    if _prev_generated_at is None:
+        _prev_generated_at = (_dt.datetime.now(_dt.timezone.utc)
+                              .replace(microsecond=0).isoformat())
 
     rows: dict[int, dict] = dict(existing)
     for gw, st in sorted(status.items()):
@@ -179,19 +184,38 @@ def build(only_gw: int | None = None, verbose: bool = True) -> dict:
             if verbose:
                 print(f"   GW{gw}: jo lopullinen, ohitetaan")
             continue
-        rows[gw] = _grade_gw(gw, history_by_gw, st)
+        uusi = _grade_gw(gw, history_by_gw, st)
+        # 🔴 `graded_at` on "milloin TAMA RIVI gradattiin", ei "milloin skripti
+        # viimeksi ajoi". Jos sisalto on identtinen, sailytetaan vanha leima.
+        # Ilman tata 6 h cron committaisi joka ajolla vaikka mikaan ei muuttunut
+        # (mitattu 25.8: ensimmainen ajo tuotti committin jossa diff oli PELKAT
+        # aikaleimat), ja git-historia lakkaisi kertomasta milloin luku muuttui.
+        if old is not None:
+            vertailu = {k: v for k, v in uusi.items() if k != "graded_at"}
+            vanha_vertailu = {k: v for k, v in old.items() if k != "graded_at"}
+            if vertailu == vanha_vertailu:
+                uusi["graded_at"] = old.get("graded_at", uusi["graded_at"])
+        rows[gw] = uusi
         if verbose:
             flag = " (PROVISIONAALINEN)" if st["provisional"] else ""
             print(f"   GW{gw}: {rows[gw]['points']} p, keskiarvo "
                   f"{st['fpl_average']}{flag}")
 
     ordered = [rows[g] for g in sorted(rows)]
+    # Sama syy kuin `graded_at`:lla: jos yksikaan rivi ei muuttunut, tiedosto ei
+    # ole "generoitu uudelleen" vaan sama tiedosto. Muuttuva leima tekisi
+    # jokaisesta cron-ajosta committin.
+    muuttui = ordered != [existing[g] for g in sorted(existing)]
+    generated_at = (
+        _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat()
+        if muuttui or not existing
+        else _prev_generated_at
+    )
     return {
         "meta": {
             "entry_id": ENTRY_ID,
             "source": "FPL entry history + picks (not recomputed)",
-            "generated_at": _dt.datetime.now(_dt.timezone.utc)
-            .replace(microsecond=0).isoformat(),
+            "generated_at": generated_at,
             "provisional_gws": [r["gw"] for r in ordered if r.get("provisional")],
         },
         "gameweeks": ordered,

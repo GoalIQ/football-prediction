@@ -92,6 +92,28 @@ jobs:
               print(f'::error::vastauksessa {len(rows)} kierrosta mutta '
                     f'repossa jo {n_old}. EI ylikirjoiteta.')
               sys.exit(1)
+
+          # 🔴 Ala kirjoita jos vain aikaleimat muuttuivat. Renderin oma kopio
+          # voi olla eri tahdissa kuin repo, jolloin se regeneroi `generated_at`:n
+          # vaikka sisalto on sama. Mitattu 25.8: ensimmainen ajo tuotti
+          # committin jossa diff oli PELKAT kaksi aikaleimaa. 6 h cronilla se
+          # olisi 4 turhaa committia vuorokaudessa ikuisesti, ja git-historia
+          # lakkaisi kertomasta milloin luku oikeasti muuttui.
+          def _ilman_leimoja(x):
+              x = json.loads(json.dumps(x))
+              (x.get('meta') or {}).pop('generated_at', None)
+              for r in (x.get('gameweeks') or []):
+                  r.pop('graded_at', None)
+              return x
+
+          try:
+              vanha = json.load(open('data/model_squad_gw_scores.json', encoding='utf-8'))
+          except (OSError, ValueError):
+              vanha = None
+          if vanha is not None and _ilman_leimoja(vanha) == _ilman_leimoja(d):
+              print('sisalto ennallaan (vain aikaleimat) - ei kirjoiteta')
+              sys.exit(0)
+
           json.dump(d, open('data/model_squad_gw_scores.json', 'w', encoding='utf-8'),
                     ensure_ascii=False, indent=1)
           prov = d.get('meta', {}).get('provisional_gws') or []
