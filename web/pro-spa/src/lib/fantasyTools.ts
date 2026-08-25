@@ -87,6 +87,13 @@ export interface TransferSuggestion {
 	out: TransferPlayer;
 	/** #121: in-pelaajan planner-kentät optional (vanha backend → ei Applya). */
 	in: TransferPlayer & {
+		/** 🔴 Saatavuuslippu seuraa siirrossa sisaan tulevaa pelaajaa.
+		 *  Ilman naita `plannedPlayers` rakentaa rivin kasin ilman lippua, ja
+		 *  pitch nayttaa liputetun pelaajan puhtaana juuri silla hetkella kun
+		 *  kayttaja valitsee hanet. Mitattu 25.8: `in`-objektissa ei ollut
+		 *  `chance_next`ia lainkaan. */
+		chance_next?: number | null;
+		news?: string | null;
 		xp_per_gw?: number;
 		xp_horizon_total?: number;
 		gameweeks?: RatedPlayerGw[];

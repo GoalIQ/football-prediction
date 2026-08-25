@@ -438,7 +438,13 @@
 							xp_horizon_total: s.in.xp_horizon_total ?? 0,
 							gameweeks: s.in.gameweeks,
 							in_xi: p.in_xi,
-							is_captain: p.is_captain
+							is_captain: p.is_captain,
+							// 🔴 Lippu SEURAA sisaan tulevaa pelaajaa. Ilman tata
+							// rivi rakennetaan kasin ilman `chance_next`ia ja
+							// pitch nayttaa liputetun pelaajan puhtaana juuri
+							// silla hetkella kun kayttaja valitsee hanet.
+							chance_next: s.in.chance_next ?? null,
+							news: s.in.news ?? null
 						}
 					: p
 			);

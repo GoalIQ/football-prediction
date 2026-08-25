@@ -1034,6 +1034,15 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
                    "price": in_p["price"] / 10.0,
                    "xp_per_gw": round(in_p["xp_per_gw"], 2),
                    "xp_horizon_total": round(in_p["xp_horizon_total"], 2),
+                   # 🔴 SAATAVUUSLIPPU MUKAAN. Ilman naita klientti rakentaa
+                   # sisaan tulevan pelaajan rivin KASIN naista kentista, ja
+                   # lippu katoaa: pitch nayttaa 75 %:n pelaajan puhtaana
+                   # tasan siina kohtaa jossa kayttaja VALITSEE hanet.
+                   # Mitattu 25.8 Villen rivilta: `in`-objektissa ei ollut
+                   # `chance_next`ia lainkaan, joten kyse ei ollut klientin
+                   # mappauksesta vaan puuttuvasta datasta.
+                   "chance_next": in_p.get("chance_next"),
+                   "news": in_p.get("news"),
                    "gameweeks": _player_gameweeks(in_p)},
             "pos": POS_NAME[out_p["element_type"]],
             # Hyöty AVAUSKOKOONPANOON, ei pelaajien raakaerotus (28.7).
