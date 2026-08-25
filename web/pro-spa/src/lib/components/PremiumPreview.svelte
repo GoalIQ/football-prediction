@@ -33,6 +33,11 @@
 		// "jokaiselle" olisi kate jota ei ole. Synkattu paywall.bullet_why:hyn.
 		'Why a projection looks the way it does, in one line, for the top 150 by Total xP',
 		'Captain ranker with top picks',
+		// 🔴 PINTAERO, EI 1:1. Mobiilin vastine (paywall.bullet_share) EI lupaa
+		// "the value ranking": mobiilissa jaettavat listat ovat XI, captain,
+		// xp_list, clean_sheets, xg, defcon ja price - value-listaa ei ole
+		// jaettavana. Aiempi kommentti tassa tiedostossa vaitti 1:1-vastaavuutta
+		// ja se oli vaara; copy-sync-auditointi 25.8 loysi sen.
 		'Share as image: post-ready cards from your XI, the captain ranker, the value ranking and leaderboards',
 		'Differential finder: low ownership, high xP',
 		'Multi-gameweek transfer planner and plan chains',
