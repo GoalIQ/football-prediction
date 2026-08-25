@@ -245,3 +245,30 @@ def fetch_event_live(gw: int, max_age_s: float = 600,
     data = _get_json(f"{FPL_BASE}/event/{gw}/live/")
     _write_cache(path, data)
     return data
+
+
+def fetch_entry_transfers(entry_id: int, force: bool = False) -> list | None:
+    """Entryn KAIKKI siirrot kauden alusta (entry/{id}/transfers/).
+
+    🔴 TYHJA LISTA ON DATAA, EI PUUTTUVAA TIETOA. Manageri joka ei tehnyt
+    yhtaan siirtoa palauttaa `[]`, ja se on merkityksellinen havainto (hold on
+    myos valinta). Vain 404 tarkoittaa "ei rivia" -> None. Kutsuja ei saa
+    kohdella naita samoin: `[]` kuuluu otokseen, `None` ei.
+
+    Valimuisti on TTL-pohjainen eika ikuinen: lista KASVAA kauden mittaan, ja
+    jaadytetty kopio jattaisi uusimmat siirrot nakymatta.
+    """
+    path = _cache_path(f"transfers/{entry_id}.json")
+    if not force:
+        cached = _read_cache(path, 900)
+        if cached is not None:
+            return cached
+    try:
+        data = _get_json(f"{FPL_BASE}/entry/{entry_id}/transfers/")
+    except requests.HTTPError as e:
+        if e.response is not None and e.response.status_code == 404:
+            return None
+        raise
+    _write_cache(path, data)
+    time.sleep(PICKS_DELAY_S)
+    return data
