@@ -1375,8 +1375,33 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         f'<p class="note" id="xgc">{len(rows)} players, per game, '
         "last 5 games each. Click a column to sort.</p>"
     )
+    # 🔴 JAKOKORTTI PALVELIMEN RIVEILTA (SHARE-CARD-SERVER-ROWS).
+    # Sivulla on suodattimet (Games / Rate / Min mins / Position / Team) JA
+    # klikkilajittelu, joten DOM-lukija olisi kantanut sen nakyman johon jakaja
+    # oli sattunut suodattaa — ei sita jonka linkista tuleva lukija nakee.
+    #
+    # 🔴 OTTELUIDEN MAARA ON KORTILLA, JA SE ON PAKKO OLLA. Lista on
+    # jarjestetty xG:lla PER OTTELU, ja mitattu 25.8: oletusnakyman karjessa on
+    # kolme YHDEN ottelun pelaajaa (Emersonn 65 min, Gonzalo 90 min, Maeda
+    # 79 min). Per-game-luku yhden ottelun otoksesta ei ole vaara, mutta ilman
+    # otoskokoa se luetaan kauden tasoksi. Sivulla lukija nakee Games-sarakkeen
+    # ja Min mins -suodattimen; kortin on kannettava sama tieto.
+    kortti = _card_spec_attr(
+        title="TOP xG PER GAME",
+        subtitle="Last 5 games each, no minimum minutes applied",
+        mid_label="GAMES",
+        value_label="xG/GAME",
+        foot="every player with data is free on goaliq.app/fpl/xg-leaders",
+        foot2=(f"As of {now.strftime('%d %b').lstrip('0')}. "
+               "FPL shot data, not betting advice"),
+        rows=[{"rank": i + 1, "name": r["web_name"],
+               "team": r.get("team_short") or "", "tag": r.get("pos") or "",
+               "mid": str(r.get("games") or 0),
+               "value": ("%.2f" % (r.get("xg_per_game") or 0.0))}
+              for i, r in enumerate(rows[:10])],
+        file_name="goaliq-xg-leaders.png")
     table = (
-        '<div class="lb-wrap"><table class="lb" id="xgt2">'
+        f'<div class="lb-wrap"><table class="lb" id="xgt2"{kortti}>'
         "<thead><tr>"
         # Mobiili (a) 9.8: Pos/Price/Mins/Games ovat suodatinkontekstia, xG/xA/
         # xGI on se mita sivulta tullaan katsomaan. Taulukko oli 589px = 1,5 x
@@ -1411,7 +1436,11 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         "game window, filter by position or team, and sort any column. No "
         "cut-off and no sign-in: this is public FPL match data, so it is not "
         "behind a subscription.</p>"
-        f"{kitdefs}{controls}{table}{payload}"
+        + _share_button()
+        + f"{kitdefs}{controls}{table}{payload}"
+        # Kortti lukee palvelimen `data-card-spec`-attribuutin; DOM-lukija on
+        # tarkoituksella `null`.
+        + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
         + XG_JS.replace("__BASIS_K__", _ikkuna_k).replace("__TARGET_K__", _target_k)
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
@@ -1857,78 +1886,6 @@ def _stats_js() -> str:
         "(function(){\n var GROUPNAMES=" + json.dumps(names) + ";", 1)
 
 
-# Jakokortin spec luetaan RENDEROIDYSTA taulukosta eika datasta: silloin
-# kortti vastaa tasmalleen sita mita kayttaja nakee ruudulla (valittu
-# tilastoryhma, lajittelu, suodattimet). Datasta rakennettu kortti voisi
-# eriytya nakymasta huomaamatta.
-_STATS_SPEC_FN = r"""function(){
-  var tb=document.getElementById('stb'),head=document.getElementById('sth');
-  if(!tb||!head)return null;
-  var ths=head.querySelectorAll('th'),hiIdx=-1,i;
-  for(i=0;i<ths.length;i++){
-   if(/[▾▴]/.test(ths[i].textContent)){hiIdx=i;break;}
-  }
-  var label=(hiIdx>=0?ths[hiIdx].textContent:'Pts')
-             .replace(/[▾▴]/g,'').trim();
-  var rows=[],trs=tb.querySelectorAll('tr');
-  for(i=0;i<trs.length&&rows.length<10;i++){
-   var td=trs[i].children;
-   if(td.length<4)continue;
-   rows.push({rank:rows.length+1,
-              name:(td[1].textContent||'').trim(),
-              tag:(td[3]?td[3].textContent:'').trim(),
-              team:(td[2].textContent||'').trim(),
-              value:(hiIdx>=0&&td[hiIdx]?td[hiIdx].textContent:'').trim()});
-  }
-  // The subtitle collects the ACTIVE filters, not just a row count.
-  // Without it a shared card would say "40 players" without saying they
-  // are defenders, from one club, or under a price cap -- the reader
-  // cannot know what they are looking at. Values are read from the visible
-  // controls, so they cannot drift away from what is on screen.
-  function chipOn(id){
-   var e=document.getElementById(id);
-   if(!e)return '';
-   var b=e.querySelector('.chip.on');
-   return b?(b.textContent||'').trim():'';
-  }
-  var bits=[];
-  // Gameweek window FIRST: it is the strongest scope, and a shared card
-  // without it would claim season numbers. Values are read from the pickers,
-  // not from memory.
-  var gf=document.getElementById('stgwf'),gt=document.getElementById('stgwt');
-  if(gf&&gf.value){
-   var a=gf.value,b=(gt&&gt.value)||a;
-   bits.push('GW'+a+(b!==a?'-'+b:''));
-  }
-  var grp=chipOn('stg'); if(grp)bits.push(grp);
-  var mode=chipOn('stm'); if(mode&&mode!=='Total')bits.push(mode.toLowerCase());
-  var pos=chipOn('stp'); if(pos&&pos!=='All')bits.push(pos);
-  var mins=chipOn('stmin'); if(mins&&mins!=='0')bits.push(mins+'+ mins');
-  var tm=document.getElementById('stteam');
-  if(tm&&tm.value)bits.push(tm.value);
-  var pr=document.getElementById('stprice');
-  // The price picker's default is the upper bound (99), which is NOT a
-  // filter. Without this check the card said "max 99" on every image.
-  if(pr&&pr.value&&Number(pr.value)<99)bits.push('max '+Number(pr.value).toFixed(1)+'m');
-  var qq=document.getElementById('stq');
-  if(qq&&qq.value.trim())bits.push('"'+qq.value.trim()+'"');
-  var cnt=document.getElementById('stc');
-  var n=cnt?(cnt.textContent||'').split(' ')[0]:'';
-  if(n)bits.push(n+' players');
-  var sub=bits.join(' · ');
-  return {title:('Top 10 by '+label).toUpperCase(),
-          subtitle:sub,
-          nameLabel:'PLAYER',
-          valueLabel:label.toUpperCase(),
-          // This card is RAW DATA, not a model prediction. The default footer
-          // ("logged before kickoff, graded in public") would be a false claim.
-          footNote:'free FPL stats at goaliq.app',
-          footNote2:'official FPL API and shot-level data, not betting advice',
-          rows:rows,
-          fileName:'goaliq-fpl-stats-'
-                   +label.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.png'};
- }"""
-
 
 def _stats_gw_controls() -> str:
     """Gameweek-ikkunan valikot.
@@ -2022,39 +1979,9 @@ def _share_button(margin: str = "10px 0 4px") -> str:
             f'style="margin:{margin};">Share as image</button>')
 
 
-def _stats_share_card() -> str:
-    return SHARE_CARD_JS.replace("__CARD_ROWS_FN__", _STATS_SPEC_FN)
 
 
-# Defence-sivun taulukko on palvelimella renderoity ja jarjestetty xGC:lla,
-# joten kortti on aina "eniten xG:ta paastavat" -lista.
-_DEFENCE_SPEC_FN = r"""function(){
-  var t=document.querySelector('table.lb');
-  if(!t)return null;
-  var rows=[],trs=t.querySelectorAll('tbody tr'),i;
-  for(i=0;i<trs.length&&rows.length<10;i++){
-   var td=trs[i].children;
-   if(td.length<3)continue;
-   rows.push({rank:rows.length+1,
-              name:(td[1].textContent||'').trim(),
-              value:(td[2].textContent||'').trim()});
-  }
-  // The table is in ASCENDING order (Arsenal 0.91 = best defence). The
-  // first proposed heading "MOST XG CONCEDED" claimed exactly the opposite
-  // of the data, and it would have gone out to X as it was.
-  return {title:'FEWEST XG CONCEDED',
-          subtitle:'Expected goals conceded per match, lowest is best',
-          nameLabel:'TEAM',
-          valueLabel:'XGC',
-          footNote:'shot-level data, own expected-goals model',
-          footNote2:'free at goaliq.app, not betting advice',
-          rows:rows,
-          fileName:'goaliq-defence-xgc.png'};
- }"""
 
-
-def _defence_share_card() -> str:
-    return SHARE_CARD_JS.replace("__CARD_ROWS_FN__", _DEFENCE_SPEC_FN)
 
 
 def render_stats(stats: dict, now: datetime) -> str | None:
@@ -2287,8 +2214,30 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         "</tr>"
         for i, r in enumerate(rows)
     )
+    # 🔴 JAKOKORTTI PALVELIMEN RIVEILTA (SHARE-CARD-SERVER-ROWS).
+    # Aiempi versio luki elavaa DOMia (`_DEFENCE_SPEC_FN`), ja `table.lb` saa
+    # GEN:TABLE-TOOLSilta klikkilajittelun: kaksi klikkausta kaansi listan ja
+    # kortti olisi sanonut "FEWEST" kymmenesta ENITEN paastavasta. Rivit
+    # tulevat nyt samasta `rows`-listasta josta taulukkokin.
+    # 🔴 OTSIKKO ON SUUNTAVAITE. Ensimmainen ehdotus oli "MOST XG CONCEDED",
+    # ja taulukko on NOUSEVASSA jarjestyksessa (Arsenal 0.91 = paras puolustus)
+    # eli otsikko olisi vaittanyt tasan painvastaista kuin data.
+    kortti = _card_spec_attr(
+        title="FEWEST XG CONCEDED",
+        subtitle="Expected goals conceded per match, lowest is best",
+        name_label="TEAM",
+        mid_label="SHOTS",
+        value_label="xGC",
+        foot="the full table is free on goaliq.app/fpl/defence",
+        foot2=(f"As of {now.strftime('%d %b').lstrip('0')}. "
+               "Shot-level data, own expected-goals model"),
+        rows=[{"rank": i + 1, "name": r["team"], "team": "", "tag": "",
+               "mid": ("%.1f" % r["shots_pm"]),
+               "value": ("%.2f" % r["xg_pm"])}
+              for i, r in enumerate(rows[:10])],
+        file_name="goaliq-defence-xgc.png")
     table = (
-        '<div class="lb-wrap"><table class="lb">'
+        f'<div class="lb-wrap"><table class="lb"{kortti}>'
         "<thead><tr>"
         '<th class="n">#</th><th>Team</th>'
         '<th class="n" title="Expected goals conceded per match">xGC</th>'
@@ -2352,7 +2301,9 @@ def render_defence(defence: dict, now: datetime) -> str | None:
         "save-points candidate. These come from shot-level data with its own "
         "expected-goals model, so the numbers are not Opta's and we do not "
         "call them that.</p>"
-        f"{table}"
+        + _share_button()
+        + f"{table}"
+        + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
                 + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )

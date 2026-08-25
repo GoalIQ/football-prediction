@@ -28,7 +28,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-PALVELINKORTTI = ["points", "expected-points"]
+PALVELINKORTTI = ["points", "expected-points", "xg-leaders", "defence"]
 
 # 🔴 KENTTA -> SARAKEOTSIKKO. Pelkka "arvo on jokin rivin soluista" ei riita:
 # portti mittasi 24.8 etta `mid` sai arvon rivin xA-solusta ja `value` osui
@@ -40,6 +40,14 @@ SARAKKEET = {
                "mid": "xp", "value": "pts"},
     "expected-points": {"name": "player", "team": "team", "tag": "pos",
                         "mid": "price", "value": "6gw xp"},
+    # 25.8: siirretty palvelinriveille. Molemmilla sivuilla on klikkilajittelu
+    # ja xg-leadersilla lisaksi viisi suodatinta, joten DOM-lukija olisi
+    # kantanut sen nakyman johon jakaja sattui suodattamaan.
+    "xg-leaders": {"name": "player", "team": "team", "tag": "pos",
+                   "mid": "games", "value": "xg"},
+    # 🔴 Defence on JOUKKUElista: ei team- eika pos-saraketta, ja nimisarake
+    # on "Team". `name_label="TEAM"` pinnataan erikseen alla.
+    "defence": {"name": "team", "mid": "shots", "value": "xgc"},
 }
 
 # Otsikon on nimettava sama suure kuin arvosarake. Ilman tata "TOP 10 BY
@@ -48,6 +56,11 @@ SARAKKEET = {
 OTSIKKO = {
     "points": ("ACTUAL", "PTS"),
     "expected-points": ("EXPECTED POINTS", "xP"),
+    "xg-leaders": ("xG PER GAME", "xG/GAME"),
+    # 🔴 SUUNTA ON OSA OTSIKKOA. Taulukko on NOUSEVASSA jarjestyksessa
+    # (Arsenal 0,91 = paras puolustus), ja ensimmainen ehdotus oli
+    # "MOST XG CONCEDED" eli tasan painvastainen kuin data.
+    "defence": ("FEWEST XG CONCEDED", "xGC"),
 }
 
 
