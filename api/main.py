@@ -2552,6 +2552,34 @@ def clear_cache(request: Request):
     }
 
 
+@app.get("/api/admin/model-squad-scores",
+         description="Grade the model's own FPL squad per gameweek. Requires an admin token.")
+def admin_model_squad_scores(request: Request, gw: int | None = None):
+    """Gradaa mallin FPL-rivi ja PALAUTA tulos - ala kirjoita levylle.
+
+    🔴 MIKSI TAMA ON ENDPOINT EIKA SUORAAN CI-SKRIPTI: FPL-suuntaiset kutsut
+    on estetty GitHubin IP-avaruudesta (kirjattu tapaus), joten GH-runner ei
+    voi hakea FPL:sta. Render voi. Sama kuvio kuin muissa admin-reiteissa:
+    runner kayttaa ADMIN_TOKENia, Render tekee ulkoisen haun, ja runner
+    committaa tuloksen gitiin.
+
+    🔴 MIKSI PALAUTETAAN EIKA KIRJOITETA: Renderin levy ei ole git, ja
+    `data/*.json` luetaan gitista deployssa. Levylle kirjoitettu tulos katoaisi
+    seuraavassa deployssa ja endpoint palauttaisi hiljaa vanhentunutta dataa.
+    Kutsuja committaa - sama sopimus kuin accuracy-putkella.
+    """
+    require_admin(request)
+    import sys as _sys
+    if str(PROJECT_ROOT) not in _sys.path:
+        _sys.path.insert(0, str(PROJECT_ROOT))
+    from scripts.grade_model_squad import build as _build_scores
+    try:
+        return _build_scores(gw, verbose=False)
+    except Exception as e:
+        raise HTTPException(status_code=502,
+                            detail=f"FPL fetch or grading failed: {e}")
+
+
 # ---------------------------------------------------------------------------
 # Affiliate-laskenta (jaettu admin-raportin ja luojan oman nakyman kesken)
 # ---------------------------------------------------------------------------

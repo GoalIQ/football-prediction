@@ -1,0 +1,113 @@
+name: model-squad-grade
+
+# Gradaa mallin oma FPL-rivi kierroksittain -> data/model_squad_gw_scores.json.
+#
+# 🔴 MIKSI TAMA KULKEE RENDERIN KAUTTA EIKA AJA SKRIPTIA SUORAAN:
+# FPL-suuntaiset kutsut on estetty GitHubin IP-avaruudesta (kirjattu tapaus,
+# sama syy kuin accuracy-log 403:lla). Runner ei siis voi hakea FPL:sta. Render
+# voi. Sama kuvio kuin muissa admin-reiteissa: runner kayttaa ADMIN_TOKENia,
+# Render tekee ulkoisen haun ja palauttaa JSONin, runner committaa sen gitiin.
+#
+# 🔴 MIKSI RUNNER COMMITTAA EIKA RENDER KIRJOITA LEVYLLE:
+# Renderin levy ei ole git, ja `data/*.json` luetaan gitista deployssa. Levylle
+# kirjoitettu tulos katoaisi seuraavassa deployssa ja endpoint palauttaisi
+# hiljaa vanhentunutta dataa. Sama sopimus kuin accuracy-putkella.
+#
+# 🔴 MIKSI AJO ON TIHEA VAIKKA KIERROKSIA ON YKSI VIIKOSSA:
+# Rivi kirjoitetaan `provisional: true` heti kun kaikki kierroksen ottelut on
+# pelattu, ja se on gradattava UUDELLEEN kun FPL kaantaa `data_checked`:in.
+# Ilman jalkimmaista ajoa luku jaa pysyvasti merkityksi "provisional" ja
+# tuotteessa lukee ikuisesti etta bonukset ovat vahvistamatta. Mitattu 25.8:
+# GW1 pelattiin 21.-24.8 ja lippu oli yha kaantamatta 13 h viimeisen ottelun
+# jalkeen, joten ikkunaa ei voi ennustaa - siksi pollataan.
+
+on:
+  schedule:
+    # Joka 6. tunti. Kierroksen paatyttya tama nappaa provisionaalisen rivin
+    # muutamassa tunnissa ja lopullisen seuraavassa ajossa.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      gw:
+        description: "Vain tama kierros (tyhja = kaikki gradattavat)"
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  # Rinnakkainen ajo committaisi saman tiedoston kahdesti -> konflikti.
+  group: model-squad-grade
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Hae gradaus Renderin kautta
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GW: ${{ inputs.gw }}
+        run: |
+          # 🔴 Tyhja secret on tyhja MERKKIJONO eika puuttuva muuttuja, joten
+          # `-z` on oikea tarkistus. Ilman tata ajo lahettaisi tyhjan tokenin,
+          # saisi 403:n ja nayttaisi "API-vika" vaikka kyse on konfiguraatiosta.
+          if [ -z "$ADMIN_TOKEN" ]; then
+            echo "::error::ADMIN_TOKEN-secret puuttuu tai on tyhja."
+            exit 1
+          fi
+          url="https://api.goaliq.app/api/admin/model-squad-scores"
+          [ -n "$GW" ] && url="$url?gw=$GW"
+          code=$(curl -sS --http1.1 -o /tmp/scores.json -w '%{http_code}' \
+            -H "X-Admin-Token: $ADMIN_TOKEN" "$url")
+          echo "HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Render palautti $code"
+            head -c 500 /tmp/scores.json
+            exit 1
+          fi
+
+      - name: Vartioi vastaus ennen kirjoitusta
+        run: |
+          python - <<'PY'
+          import json, sys
+          d = json.load(open('/tmp/scores.json', encoding='utf-8'))
+          rows = d.get('gameweeks')
+          # 🔴 Tyhja lista EI ole virhe: ennen ensimmaisen kierroksen paattymista
+          # gradattavaa ei ole. Mutta se ei myoskaan saa YLIKIRJOITTAA jo
+          # gradattuja rivejä - se olisi hiljainen datan menetys jonka
+          # vihrea ajo peittaisi.
+          if rows is None:
+              print('::error::vastauksesta puuttuu gameweeks-kentta'); sys.exit(1)
+          try:
+              old = json.load(open('data/model_squad_gw_scores.json', encoding='utf-8'))
+              n_old = len(old.get('gameweeks') or [])
+          except (OSError, ValueError):
+              n_old = 0
+          if len(rows) < n_old:
+              print(f'::error::vastauksessa {len(rows)} kierrosta mutta '
+                    f'repossa jo {n_old}. EI ylikirjoiteta.')
+              sys.exit(1)
+          json.dump(d, open('data/model_squad_gw_scores.json', 'w', encoding='utf-8'),
+                    ensure_ascii=False, indent=1)
+          prov = d.get('meta', {}).get('provisional_gws') or []
+          print(f"kierroksia {len(rows)}, provisionaalisia {prov}")
+          PY
+
+      - name: Committaa jos muuttui
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/model_squad_gw_scores.json; then
+            echo "ei muutosta"
+            exit 0
+          fi
+          git add data/model_squad_gw_scores.json
+          git commit -m "chore(model-race): gradaa mallin rivi [skip ci]"
+          # Rebase ennen pushia: data-refresh-ajot committaavat samaan haaraan.
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
