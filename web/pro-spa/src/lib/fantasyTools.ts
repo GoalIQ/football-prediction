@@ -660,7 +660,12 @@ export function confBand(confidence: number): 'low' | 'med' | 'high' {
 
 export interface ChipWindow {
 	gw: number;
-	wc_ev: number;
+	/** 🔴 `null` horisontin ULKOPUOLELLA. Wildcardin luku on kumulatiivinen,
+	 *  eika sita voi skaalata joukkuetason indeksilla ilman etta luku on
+	 *  keksitty. Muut kolme ovat yhden kierroksen lukuja ja saavat arvionsa. */
+	wc_ev: number | null;
+	/** Montako kierrosta wildcard-luku kattaa. `null` = ei lukua. */
+	wc_window_gws: number | null;
 	bb_ev: number;
 	tc_ev: number;
 	fh_ev: number;
@@ -672,6 +677,8 @@ export interface ChipBest {
 	gw: number;
 	ev: number;
 	basis: string;
+	/** Vain wildcardilla: montako kierrosta luku kattaa. */
+	window_gws?: number;
 }
 
 export interface ChipEvResponse {
@@ -687,6 +694,10 @@ export interface ChipEvResponse {
 	windows: ChipWindow[];
 	/** Maskattuna {} (premium-teaser) — komponentti käsittelee puuttuvat avaimet. */
 	best: Partial<Record<'wc' | 'bb' | 'tc' | 'fh', ChipBest>>;
+	/** 🔴 Karkea joukkuetason arvio horisontin ULKOPUOLELTA, omalla nimellaan.
+	 *  Aiemmin nama rivit kilpailivat samassa `best`-maksimissa mitattujen
+	 *  kanssa ja voittivat sen. Maskattuna {}. */
+	best_estimate?: Partial<Record<'bb' | 'tc' | 'fh', ChipBest>>;
 }
 
 /** entry valinnainen: annettuna käyttäjän runko, ilman mallin optimi-XI. */

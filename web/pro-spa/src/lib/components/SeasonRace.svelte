@@ -20,6 +20,7 @@
 	import { fetchModelRace, type ModelRaceResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
+	import { shareCard, canShareToApps } from '$lib/shareCard';
 
 	let data = $state<ModelRaceResponse | null>(null);
 	let failed = $state(false);
@@ -54,6 +55,51 @@
 	});
 
 	let rows = $derived(data ? [...data.gameweeks].reverse() : []);
+
+	let sharing = $state(false);
+
+	/**
+	 * Jakokortti kausikisasta.
+	 *
+	 * 🔴 PROVISIONAALISET KIERROKSET MERKITAAN KORTTIIN. Kuva elaa feedissa
+	 * viikkoja, ja FPL vahvistaa bonukset vasta jalkikateen. Kortti jossa
+	 * vahvistamaton luku esiintyy lopullisena on vaite jota ei voi puolustaa
+	 * silloin kun joku sen tarkistaa.
+	 * 🔴 OTSIKKO KANTAA KIERROSMAARAN. "Olen mallia edella" ilman kierroksia on
+	 * eri vaite eri hetkina.
+	 * Kortti lukee `data`-staten, ei DOMia.
+	 */
+	async function share() {
+		if (sharing || !data?.meta.available || rows.length === 0) return;
+		sharing = true;
+		try {
+			const d = data.totals.diff;
+			const otsikko =
+				d == null ? 'THE MODEL SO FAR' : d > 0 ? 'AHEAD OF THE MODEL' : d < 0 ? 'BEHIND THE MODEL' : 'LEVEL WITH THE MODEL';
+			const n = data.meta.compared_gws ?? rows.length;
+			const method = await shareCard({
+				title: otsikko,
+				subtitle: `after ${n} gameweek${n === 1 ? '' : 's'}, you ${data.totals.you ?? 0} to ${data.totals.model} GoalIQ model`,
+				nameLabel: 'GAMEWEEK',
+				midLabel: 'MODEL',
+				valueLabel: 'YOU',
+				fileName: 'goaliq_season_race.png',
+				rows: rows.slice(0, 10).map((r, i) => ({
+					rank: i + 1,
+					name: `GW${r.gw}`,
+					tag: '',
+					team: '',
+					// Vahvistamaton kierros merkitaan, ei piiloteta.
+					badges: r.provisional ? ['PROV'] : [],
+					mid: String(r.model_points),
+					value: r.your_points != null ? String(r.your_points) : ''
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'season_race', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	let diff = $derived(data?.totals.diff ?? null);
 </script>
 
@@ -100,6 +146,11 @@
 				</p>
 			{/if}
 
+			{#if rows.length > 0}
+				<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+					{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+				</button>
+			{/if}
 			<ul>
 				{#each rows as r (r.gw)}
 					<li>

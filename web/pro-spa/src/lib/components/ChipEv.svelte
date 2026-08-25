@@ -78,7 +78,13 @@
 
 	function top3(chip: (typeof CHIPS)[number]): ChipWindow[] {
 		if (!data) return [];
-		return [...data.windows].sort((a, b) => chip.ev(b) - chip.ev(a)).slice(0, 3);
+		// 🔴 `null` on "emme anna lukua", ei nolla. Wildcardilla ei ole lukua
+		// horisontin ulkopuolella, ja `null`-rivin lajittelu nollana nostaisi
+		// sen listalle numerona jota ei ole.
+		return [...data.windows]
+			.filter((w) => chip.ev(w) != null)
+			.sort((a, b) => (chip.ev(b) as number) - (chip.ev(a) as number))
+			.slice(0, 3);
 	}
 
 	let hasTeamApprox = $derived(
@@ -138,9 +144,15 @@
 				</div>
 				{#if best && typeof best.ev === 'number'}
 					<p class="best-ev">
-						<span class="ev-num">+{best.ev.toFixed(1)}</span>
+						<span class="ev-num">{best.ev > 0 ? '+' : ''}{best.ev.toFixed(1)}</span>
 						<span class="ev-unit">xP est.</span>
-						{#if best.basis && best.basis !== 'player_xp'}
+						{#if best.window_gws != null}
+						<!-- 🔴 Kumulatiivinen luku sanoo mita se kattaa, LUVUN
+						     VIERESSA. Ilman tata lukija vertaa 6 kierroksen
+						     summaa naapurirumman yhden kierroksen lukuun. -->
+						<span class="window-note">over {best.window_gws} gameweeks</span>
+					{/if}
+					{#if best.basis && best.basis !== 'player_xp'}
 							<span class="basis-mark" title="Team-level estimate beyond the player-projection horizon">*</span>
 						{/if}
 					</p>
@@ -153,7 +165,7 @@
 											class="basis-mark"
 											title="Team-level estimate beyond the player-projection horizon">*</span
 										>{/if}</td>
-								<td class="num">+{chip.ev(w).toFixed(1)}</td>
+								<td class="num">{(chip.ev(w) as number) > 0 ? '+' : ''}{(chip.ev(w) as number).toFixed(1)}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -252,6 +264,11 @@
 		font-weight: 700;
 		margin-left: 2px;
 		cursor: help;
+	}
+	.window-note {
+		font-size: 0.72rem;
+		opacity: 0.75;
+		margin-left: 4px;
 	}
 	.basis-note {
 		margin-top: 0;

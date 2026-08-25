@@ -445,7 +445,8 @@ def fantasy_chip_ev(
                 bb = sum(_gw_xp(p, g) for p in bench)
                 tc = max((_gw_xp(p, g) for p in xi_g), default=0.0)
                 fh_xi = _greedy_budget_xi(pool, key=lambda p: _gw_xp(p, g))
-                fh = max(0.0, sum(_gw_xp(p, g) for p in fh_xi) - xi_total)
+                # Sama peruste kuin `wc`:lla: nolla ei ole sama kuin "oma XI voitti".
+                fh = sum(_gw_xp(p, g) for p in fh_xi) - xi_total
                 wc_xi = _greedy_budget_xi(
                     pool, key=lambda p: _remaining_xp(p, gws_left))
                 wc_total = sum(_remaining_xp(p, gws_left) for p in wc_xi)
@@ -453,8 +454,21 @@ def fantasy_chip_ev(
                     sum(_gw_xp(p, x) for p in
                         _optimal_xi_for(squad, key=lambda q: _gw_xp(q, x)))
                     for x in gws_left)
-                wc = max(0.0, wc_total - base_total)
-                row = {"gw": g, "wc_ev": round(wc, 2), "bb_ev": round(bb, 2),
+                # 🔴 Nollaan leikkaaminen (`max(0.0, ...)`) teki "oma runkosi on
+                # PAREMPI kuin tuore rakennus" erottamattomaksi tasapelista.
+                # Se on kayttajalle arvokas signaali eika virhetila.
+                wc = wc_total - base_total
+                row = {"gw": g,
+                       "wc_ev": round(wc, 2),
+                       # 🔴 `wc_ev` on KUMULATIIVINEN: se kattaa kierrokset
+                       # g..horisontin loppu, koska wildcardin jalkeen runko jaa
+                       # voimaan. `bb`/`tc`/`fh` ovat YHDEN kierroksen lukuja.
+                       # Ilman tata kenttaa nelja saraketta nayttavat samalta
+                       # suureelta, ja lukija vertaa 6 kierroksen summaa yhden
+                       # kierroksen lukuun. Mitattu Villen rivilta 25.8:
+                       # GW2 38,00 (6 kierrosta) vs GW7 10,37 (1 kierros).
+                       "wc_window_gws": len(gws_left),
+                       "bb_ev": round(bb, 2),
                        "tc_ev": round(tc, 2), "fh_ev": round(fh, 2),
                        "basis": "player_xp"}
                 windows.append(row)
@@ -473,32 +487,81 @@ def fantasy_chip_ev(
                 q = quality.get(g, 1.0)
                 windows.append({
                     "gw": g,
-                    "wc_ev": round(base["wc"] * q, 2),
+                    # 🔴 WILDCARDILLE EI ANNETA LUKUA HORISONTIN ULKOPUOLELLA.
+                    # Skaalaus kertoi `base["wc"]`:lla, joka on ERI PITUISTEN
+                    # IKKUNOIDEN SUMMIEN keskiarvo — ei mikaan suure. Mitattu
+                    # 25.8: keskiarvo 23,97, ja siita johdettu GW8 24,65.
+                    # Luku nayttti tarkalta ja oli keksitty. `bb`/`tc`/`fh`
+                    # ovat yhden kierroksen lukuja, joten niiden skaalaus on
+                    # dokumentoitu approksimaatio; wc:n ei ole.
+                    "wc_ev": None,
+                    "wc_window_gws": None,
                     "bb_ev": round(base["bb"] * q, 2),
                     "tc_ev": round(base["tc"] * q, 2),
                     "fh_ev": round(base["fh"] * q, 2),
                     "basis": "team_approx_cs_fdr",
                 })
 
-            best = {}
+            # 🔴 `best` VERTASI YLI BASIS-RAJAN. Mitattu Villen rivilta 25.8:
+            # BB ja TC valitsivat GW26:n `team_approx_cs_fdr`-rivilta
+            # (8,23 / 5,51) pelaajatason rivien ohi. Karkea joukkue-
+            # approksimaatio voitti siis puolustettavan pelaajatason luvun, ja
+            # `basis`-kentta kertoi sen vasta jalkikateen pienella.
+            # Paras poimitaan nyt VAIN pelaajatason riveilta; karkea arvio
+            # raportoidaan erikseen omalla nimellaan.
+            tarkat = [w for w in windows if w["basis"] == "player_xp"]
+            karkeat = [w for w in windows if w["basis"] != "player_xp"]
+            best, best_estimate = {}, {}
             for chip in ("wc", "bb", "tc", "fh"):
-                if windows:
-                    top = max(windows, key=lambda r: r[f"{chip}_ev"])
+                kelpaa = [w for w in tarkat if w.get(f"{chip}_ev") is not None]
+                if kelpaa:
+                    top = max(kelpaa, key=lambda r: r[f"{chip}_ev"])
                     best[chip] = {"gw": top["gw"], "ev": top[f"{chip}_ev"],
                                   "basis": top["basis"]}
+                    # Vain wildcardilla on ikkuna; muille kentta olisi aina
+                    # None eli pelkkaa kohinaa.
+                    if top.get(f'{chip}_window_gws') is not None:
+                        best[chip]['window_gws'] = top[f'{chip}_window_gws']
+                arvio = [w for w in karkeat if w.get(f"{chip}_ev") is not None]
+                if arvio:
+                    top = max(arvio, key=lambda r: r[f"{chip}_ev"])
+                    best_estimate[chip] = {
+                        "gw": top["gw"], "ev": top[f"{chip}_ev"],
+                        "basis": top["basis"]}
             payload = {
                 "meta": {
                     "entry": entry, "mode": mode,
                     "horizon_gws": covered,
                     "generated_at": xp_data["meta"].get("generated_at"),
+                    # 🔴 KAKSI KOODINIMEA POIS KAYTTAJATEKSTISTA. "basis=
+                    # player_xp" ja "basis=team_approx_cs_fdr" ovat JSON-arvoja,
+                    # eivat lukijan kielta — sama vikaluokka kuin
+                    # wildcard-paneelin "long_view is..." ja kielletty
+                    # "legal squad". Selitteet kirjoitetaan auki.
                     "notes": [
-                        "Rough MVP estimates - EV in expected FPL points, "
-                        "not a guarantee.",
-                        "basis=player_xp: player-level xP inside the "
-                        "projection horizon.",
-                        "basis=team_approx_cs_fdr: horizon average scaled by "
-                        "a team-level gameweek quality index from the full-"
-                        "season CS%/1X2 file (double gameweeks raise it).",
+                        "These are estimates in expected FPL points, not a "
+                        "promise.",
+                        "Bench Boost, Triple Captain and Free Hit are scored "
+                        "for one gameweek each, so their rows compare "
+                        "directly. Wildcard is different: it is the gain over "
+                        "every remaining gameweek from that point on, because "
+                        "the squad stays after you play it. Each Wildcard row "
+                        "says how many rounds it covers, and a later row "
+                        "covers fewer. For the full call with the squad it "
+                        "builds, use the Wildcard plan.",
+                        "Inside the projection horizon every number comes "
+                        "from player-level expected points. Past it there is "
+                        "no player projection, so the Bench Boost, Triple "
+                        "Captain and Free Hit rows are the horizon average "
+                        "scaled by how good each team's fixtures look that "
+                        "week, read from the full-season file. Double "
+                        "gameweeks raise it. Wildcard gets no number out "
+                        "there at all, because scaling a cumulative figure "
+                        "would invent one.",
+                        "The best window is picked only from the "
+                        "player-level rows. The rougher estimate is reported "
+                        "separately so a scaled figure cannot outrank a "
+                        "measured one.",
                         "Free transfers and squad churn between now and the "
                         "window are ignored.",
                     ],
@@ -506,6 +569,7 @@ def fantasy_chip_ev(
                 },
                 "windows": windows,
                 "best": best,
+                "best_estimate": best_estimate,
             }
             _cache_put(cache_key, payload)
     except RateTeamError as e:
@@ -516,7 +580,10 @@ def fantasy_chip_ev(
                            "mask": f"first {FREE_CHIP_WINDOWS} windows "
                                    "(free preview)"}
         payload["windows"] = payload["windows"][:FREE_CHIP_WINDOWS]
+        # 🔴 `best_estimate` on maskattava samoin: se on sama premium-tieto
+        # toisella nimella, ja pelkka `best`:n tyhjennys jattaisi sen nakyviin.
         payload["best"] = {}
+        payload["best_estimate"] = {}
     return payload
 
 
