@@ -130,6 +130,53 @@ def test_alaviite_nimeaa_chipit_eika_lupaa_wildcardille_riveja():
         assert "Wildcard" in teksti, (loc, "wildcardin poikkeus puuttuu")
 
 
+def test_kaannos_ei_kaanna_laatua_vaikeudeksi():
+    """🔴 KORJAUKSENI KAANSI SUUNNAN es/pt:ssa, JA PORTTI LOYSI SEN.
+
+    `_gw_quality_index()` on LAATUindeksi: score = P(voitto) + 0.5 * CS%,
+    normalisoitu, ja silla KERROTAAN EV ylospain (`base["bb"] * q`). Korkea
+    arvo = paremmat ottelut = suurempi luku.
+
+    Kirjoittaessani alaviitteen uusiksi kaansin `calidad`/`qualidade` ->
+    `dificultad`/`dificuldade`. Espanjan- ja portugalinkielinen lukija olisi
+    saanut KAANTEISEN suhteen: hanelle olisi kerrottu etta arvio perustuu
+    kalenterin VAIKEUTEEN, jolloin korkea luku tarkoittaisi vaikeampaa. Se ei
+    ole synonyymivalinta vaan suuntavaite.
+
+    Englanti sailyi oikeana ("fixture quality"), joten vika nakyi vain
+    vertaamalla lokaaleja toisiinsa.
+    """
+    kielletyt = {"es": ("dificultad", "dificultades"),
+                 "pt": ("dificuldade", "dificuldades")}
+    vaaditut = {"en": "quality", "es": "calidad", "pt": "qualidade"}
+    for loc, sana in vaaditut.items():
+        t = _lue(I18N / f"{loc}.ts")
+        if t is None:
+            continue
+        m = re.search(r'"fantasy\.chips\.basis_note": "([^"]*)"', t)
+        assert m, loc
+        teksti = m.group(1).lower()
+        assert sana in teksti, (
+            f"{loc}: alaviite ei sano laatua ({sana!r}) — indeksi on "
+            f"laatuindeksi, ja korkea arvo NOSTAA lukua")
+        for kielletty in kielletyt.get(loc, ()):
+            assert kielletty not in teksti, (
+                f"{loc}: alaviite sanoo vaikeutta ({kielletty!r}) suureesta "
+                f"jonka korkea arvo tarkoittaa PAREMPIA otteluita")
+
+
+def test_arviorivilla_on_yksikko_kolmella_lokaalilla():
+    """Paaluku sanoo "xP est.". Arviorivi ilman yksikkoa jattaa lukijan
+    arvaamaan onko kyse samasta suureesta eri perustalla."""
+    for loc in ("en", "es", "pt"):
+        t = _lue(I18N / f"{loc}.ts")
+        if t is None:
+            continue
+        m = re.search(r'"fantasy\.chips\.rough_estimate": "([^"]*)"', t)
+        assert m, loc
+        assert m.group(1).rstrip().endswith("xP"), (loc, m.group(1))
+
+
 def test_kuollutta_fallback_copya_ei_ole():
     """🔴 `ChipEv.svelte`ssa oli haara joka renderoityi vain jos `meta.notes` on
     tyhja — mita se ei koskaan ole — ja se sanoi yha vanhentunutta. Lipun takana

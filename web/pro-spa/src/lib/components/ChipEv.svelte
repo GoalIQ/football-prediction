@@ -135,7 +135,11 @@
 	<div class="chip-grid">
 		{#each CHIPS as chip (chip.key)}
 			{@const best = data.best?.[chip.key]}
-			{@const est = data.best_estimate?.[chip.key as 'bb' | 'tc' | 'fh']}
+			<!-- 🔴 EI castia. Cast `as 'bb'|'tc'|'fh'` vaitti tyypissa ettei `chip.key`
+			     voi olla `'wc'`, vaikka voi — se piilotti juuri sen invariantin jonka
+			     mobiili sanoo aareen. Wildcardille EI ole karkeaa arviota, koska sen
+			     rivi on `null` horisontin ulkopuolella. -->
+			{@const est = chip.key === 'wc' ? undefined : data.best_estimate?.[chip.key]}
 			<div class="chip-card card">
 				<div class="chip-head">
 					<h3>{chip.label}</h3>
@@ -151,7 +155,7 @@
 						<!-- 🔴 Kumulatiivinen luku sanoo mita se kattaa, LUVUN
 						     VIERESSA. Ilman tata lukija vertaa 6 kierroksen
 						     summaa naapurirumman yhden kierroksen lukuun. -->
-						<span class="window-note">over {best.window_gws} gameweeks</span>
+						<span class="window-note">over {best.window_gws} GWs</span>
 					{/if}
 					{#if best.basis && best.basis !== 'player_xp'}
 							<span class="basis-mark" title="Team-level estimate beyond the player-projection horizon">*</span>
@@ -163,7 +167,7 @@
 				     ja raaka JSON ei ole tarkistusreitti vaan este. -->
 				{#if est}
 					<p class="est-line">
-						Rougher estimate GW{est.gw}: {est.ev > 0 ? '+' : ''}{est.ev.toFixed(1)}
+						Rougher estimate GW{est.gw}: {est.ev > 0 ? '+' : ''}{est.ev.toFixed(1)} xP
 					</p>
 				{/if}
 				<table class="chip-top3">
