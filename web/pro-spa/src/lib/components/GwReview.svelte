@@ -97,7 +97,7 @@
 		{/if}
 		{#if rv.best_call}
 			<div class="call best">
-				<span class="lbl">Furthest under</span>
+				<span class="lbl">Biggest underestimate</span>
 				<span class="who">{rv.best_call.web_name}</span>
 				<span class="num"
 					>{rv.best_call.projected.toFixed(1)} → {rv.best_call.actual}</span

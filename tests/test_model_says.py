@@ -68,7 +68,7 @@ def test_mallin_huti_tulee_ennen_mallin_osumaa():
 def test_huti_lause_nimeaa_subjektin():
     r = [x for x in MS.review_lines(_rev(50, 40, best=_p("Tav", 3.7, 10)))
          if x["code"] == "review.best"][0]
-    assert r["text"].startswith("The model"), r["text"]
+    assert r["text"].startswith("The model's biggest underestimate"), r["text"]
 
 
 def test_positiivinen_diff_ei_paady_worst_calliksi():
@@ -164,6 +164,8 @@ def test_haviaja_saa_oman_lauseensa():
     assert "plans.best" in koodit and "plans.worst" in koodit
     worst = [r for r in rivit if r["code"] == "plans.worst"][0]
     assert "4.1" in worst["text"], worst["text"]
+    # 🔴 "of the three" oli kovakoodattu vaikka vartija on len > 1.
+    assert "three" not in worst["text"], worst["text"]
 
 
 def test_hold_on_tulos_eika_puuttuva_suositus():
@@ -203,3 +205,38 @@ def test_ei_em_dashia_eika_kaarevia_merkkeja():
         for kielletty in ("—", "–", "‘", "’",
                           "“", "”"):
             assert kielletty not in r["text"], (r["code"], r["text"])
+
+
+def test_kahdella_suunnitelmalla_ei_vaiteta_kolmea():
+    """🔴 Mitattu: `len(kelpo) > 1` paastaa kaksi suunnitelmaa lapi, mutta
+    teksti sanoi "The weakest of the three". Superlatiivi jota ei ole
+    mitattu."""
+    rivit = MS.plan_lines([{"net_ev_vs_hold": 5.0, "hits_taken": 0},
+                           {"net_ev_vs_hold": 2.0, "hits_taken": 0}])
+    worst = [r for r in rivit if r["code"] == "plans.worst"][0]
+    assert "three" not in worst["text"].lower(), worst["text"]
+    # `_pts` pudottaa turhat desimaalit: 3.0 -> "3". Testi oletti "3.0" ja oli
+    # itse vaarassa, ei koodi.
+    assert "3 points" in worst["text"], worst["text"]
+
+
+def test_puuttuva_hintasuunta_ohitetaan_ei_arvata():
+    """🔴 `else "fall"` julkaisi NOUSEVAN pelaajan laskevana kun `direction`
+    puuttui, ja /api/fantasy/price-watch palauttaa risers-riveilla null."""
+    assert MS.flag_lines({"price": [{"web_name": "X", "direction": None,
+                                     "progress_pct": 68}]}) == []
+    assert MS.flag_lines({"price": [{"web_name": "X", "direction": "sideways",
+                                     "progress_pct": 68}]}) == []
+    ok = MS.flag_lines({"price": [{"web_name": "X", "direction": "fall",
+                                   "progress_pct": 68}]})
+    assert len(ok) == 1 and "price fall" in ok[0]["text"]
+
+
+def test_paneeli_ei_selita_omaa_designperiaatettaan():
+    """Ainoa lause joka ei kanna lukua vaan kertoo miksi paneeli on tehty
+    nain. Se on ilmeisen perustelemista."""
+    kaikki = MS.plan_lines([{"net_ev_vs_hold": 5.0, "hits_taken": 0},
+                            {"net_ev_vs_hold": 2.0, "hits_taken": 0}])
+    for r in kaikki:
+        assert "argue with the model" not in r["text"], r["text"]
+        assert "top line" not in r["text"], r["text"]

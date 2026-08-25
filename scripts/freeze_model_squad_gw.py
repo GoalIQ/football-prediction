@@ -149,6 +149,138 @@ def slim(p: dict, gw: int) -> dict:
             "xp": round(gw_xp(p, gw), 3)}
 
 
+# 🔴 SIIRTORAJOITE (25.8.2026, Villen paatos "korjaa malli").
+#
+# Ennen tata `free_optimum()` rakensi mallin rungon ALUSTA joka kierros: ei
+# viittausta edelliseen runkoon, ei siirtorajaa, ei hit-kustannusta. Mitattu
+# 25.8 GW1 -> GW2: 7 pelaajaa 15:sta olisi vaihtunut. Ihminen saa YHDEN
+# ilmaisen siirron; seitseman maksaisi -24 pistetta. Malli ei maksanut mitaan.
+#
+# Ja kayttajalle nakyi samaan aikaan lause "The model's squad is locked before
+# every deadline and plays no chips." Se on teknisesti tosi (FPL-chippia ei
+# aktivoida) mutta antaa ymmartaa etta malli pelaa samoilla saannoilla kuin
+# lukija. Alusta rakentaminen on VAHVEMPI kuin wildcard, jonka ihminen saa
+# kerran tai kaksi kaudessa. Kisa oli rakenteellisesti epareilu.
+#
+# Nyt: ensimmainen kierros on vapaa valinta (kauden aloitus, kuten ihmisellakin),
+# ja siita eteenpain runko peritaan ja siihen tehdaan FPL:n saannoilla sallitut
+# siirrot samalla funktiolla jota TUOTE suosittelee kayttajille.
+FT_PER_GW = 1
+# Konservatiivinen: klassinen saanto sallii yhden rullauksen (max 2). Jos
+# kausisaanto sallii enemman, malli on tassa ALIRAJOITETTU eika ylirajoitettu -
+# ja se on oikea suunta epavarmuudessa, koska virhe ei silloin imartele mallia.
+FT_MAX = 2
+
+
+def _prev_freeze(gw: int) -> tuple[int, dict] | None:
+    """Lahin AIEMPI jaadytetty kierros ja sen sisalto, tai None.
+
+    Ei oleteta gw-1: kierros voi jaada valiin (ajo kaatui, kausitauko), ja
+    silloin runko peritaan silti viimeisimmasta joka on olemassa.
+    """
+    ehdokkaat = []
+    for f in FROZEN_DIR.glob("gw*.json"):
+        try:
+            n = int(f.stem[2:])
+        except ValueError:
+            continue
+        if n < gw:
+            ehdokkaat.append((n, f))
+    if not ehdokkaat:
+        return None
+    n, f = max(ehdokkaat)
+    try:
+        return n, json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _ft_available(prev_meta: dict) -> int:
+    """Kaytettavissa olevat ilmaiset siirrot.
+
+    Rullaus: kayttamaton FT siirtyy seuraavalle kierrokselle FT_MAX:iin asti.
+    Vanha freeze ilman kenttaa -> oletus FT_PER_GW (ei rullausta), eli
+    konservatiivinen.
+    """
+    jaljella = prev_meta.get("ft_left")
+    if not isinstance(jaljella, int):
+        jaljella = 0
+    return min(jaljella + FT_PER_GW, FT_MAX)
+
+
+def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
+                           ft: int) -> dict | None:
+    """Peri edellinen runko ja tee siihen FPL:n saannoilla sallitut siirrot.
+
+    🔴 Kayttaa `transfer_suggestions`ia eli TASMALLEEN samaa funktiota jolla
+    tuote suosittelee siirtoja kayttajalle. Oma kopio siirtologiikasta tekisi
+    mallista eri mielta kuin sen oma neuvo.
+
+    Hitti otetaan vain kun horisontti-hyoty YLITTAA sen hinnan (HIT_COST_XP),
+    eli sama kynnys jolla tuote kehottaa ottamaan hitin.
+    """
+    from src.models.fpl_rate_team import HIT_COST_XP, transfer_suggestions
+
+    by_id = {p["id"]: p for p in pool}
+    edellinen = (prev.get("xi") or []) + (prev.get("bench") or [])
+    squad = [by_id[p["id"]] for p in edellinen if p["id"] in by_id]
+    if len(squad) != 15:
+        # Pelaaja poistunut poolista (siirto ulos liigasta tms.) -> emme voi
+        # peria runkoa rehellisesti. Kutsuja putoaa vapaaseen optimiin ja se
+        # KERROTAAN metassa, ei vaieta.
+        return None
+
+    budjetti = int(round(float(prev.get("meta", {}).get("budget", 100.0)) * 10))
+    kaytetty = sum(int(p.get("price") or 0) for p in squad)
+    bank = budjetti - kaytetty
+
+    siirrot: list[dict] = []
+    hitit = 0
+    for _ in range(FT_MAX + 3):          # ylaraja: hitteja ei oteta loputtomiin
+        ehdotus = transfer_suggestions(squad, pool, bank)
+        rivit = ehdotus.get("suggestions") or []
+        if not rivit or ehdotus.get("hold"):
+            break
+        paras = rivit[0]
+        # 🔴 `delta_xp_horizon` ON XI-HYOTY. `delta_xp_squad` on RAAKAEROTUS,
+        # ja nimet ovat harhaanjohtavat toisin pain kuin luulisi. Valitsin ensin
+        # `delta_xp_squad`:in sen nimen perusteella ja mittasin sitten:
+        #     Steele -> Verbruggen: delta_xp_squad 17,0 · delta_xp_horizon 2,41
+        #     todellinen XI-hyoty (optimal_xi ennen/jalkeen): +2,41
+        # Raakaerotus on 17,0 vain koska Steele on PENKKIVAHTI (5,75); XI-vahti
+        # on Lammens (20,34), joten Verbruggen syrjayttaa hanet eika Steelea.
+        # Verifioitu kaikilla viidella ehdotuksella: `delta_xp_horizon` tasmaa
+        # todelliseen XI-hyotyyn joka kerta.
+        #
+        # Tuote kayttaa oikeaa kenttaa kaikilla pinnoilla (FantasyTools,
+        # RateTeam, hold-kynnys) - tama oli vain taman skriptin virhe. Malli
+        # joka valitsisi raakaerotuksella ottaisi -4 hitin siirrosta joka
+        # tuottaa +2,41, eli tarkalleen sen virheen jota 28.7 korjattiin.
+        hyoty = float(paras.get("delta_xp_horizon") or 0.0)
+        maksaa = 0.0 if len(siirrot) < ft else HIT_COST_XP
+        if hyoty <= maksaa:
+            break
+        out_id = (paras.get("out") or {}).get("id")
+        in_id = (paras.get("in") or {}).get("id")
+        if out_id is None or in_id is None or in_id not in by_id:
+            break
+        out_p = next((q for q in squad if q["id"] == out_id), None)
+        in_p = by_id[in_id]
+        if out_p is None:
+            break
+        bank += int(out_p.get("price") or 0) - int(in_p.get("price") or 0)
+        squad = [in_p if q["id"] == out_id else q for q in squad]
+        siirrot.append({"out": out_id, "in": in_id,
+                        "gain_xp": round(hyoty, 2),
+                        "hit": maksaa > 0})
+        if maksaa > 0:
+            hitit += 1
+
+    return {"squad": squad, "bank": bank, "transfers": siirrot,
+            "hits": hitit, "ft_available": ft,
+            "ft_left": max(0, ft - len(siirrot))}
+
+
 def next_freeze_gw(events: list[dict], now: _dt.datetime):
     """Seuraava deadline freeze-ikkunassa → (gw, deadline) tai None."""
     for ev in events:
@@ -185,15 +317,41 @@ def main() -> int:
 
     # Sama polku kuin /api/fantasy/model-squad — ei omaa optimointia.
     from src.models.fpl_rate_team import (
-        RateTeamError, build_context, free_optimum)
+        RateTeamError, build_context, free_optimum, optimal_xi)
     try:
         xp_data, _bootstrap, pool, _by_id = build_context()
-        free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
     except RateTeamError as e:
-        print(f"VIRHE: mallin runkoa ei saatu ({e.detail}).")
+        print(f"VIRHE: kontekstia ei saatu ({e.detail}).")
         return 1
 
-    xi, bench = list(free.get("xi") or []), list(free.get("bench") or [])
+    # 🔴 PERITTY RUNKO, EI ALUSTA RAKENNETTU. Ks. FT_PER_GW:n kommentti yllä.
+    edellinen = _prev_freeze(gw)
+    siirtotiedot = None
+    free = None
+    if edellinen is not None:
+        prev_gw, prev = edellinen
+        prev_meta = prev.get("meta") or {}
+        rajoitettu = _constrained_from_prev(
+            prev, pool, gw, _ft_available(prev_meta))
+        if rajoitettu is None:
+            # Pelaaja poistunut poolista -> runkoa ei voi peria rehellisesti.
+            # Pudotaan vapaaseen optimiin ja KERROTAAN se metassa.
+            print(f"VAROITUS: GW{prev_gw}:n runkoa ei voitu peria "
+                  f"(pelaaja poistunut poolista) — vapaa optimi.")
+        else:
+            siirtotiedot = rajoitettu
+            squad = rajoitettu["squad"]
+            xi = optimal_xi(squad)
+            xi_ids = {p["id"] for p in xi}
+            bench = [p for p in squad if p["id"] not in xi_ids]
+
+    if siirtotiedot is None:
+        try:
+            free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
+        except RateTeamError as e:
+            print(f"VIRHE: mallin runkoa ei saatu ({e.detail}).")
+            return 1
+        xi, bench = list(free.get("xi") or []), list(free.get("bench") or [])
     if not xi or len(bench) != 4:
         print(f"VIRHE: runko vajaa (XI {len(xi)}, penkki {len(bench)}).")
         return 1
@@ -217,9 +375,22 @@ def main() -> int:
             "frozen_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "projection_generated_at": xp_data.get("meta", {}).get("generated_at"),
             "cost": round(cost / 10, 1),
-            "xi_xp_horizon": round(float(free.get("xi_xp") or 0.0), 2),
+            "xi_xp_horizon": round(
+                float(free.get("xi_xp") or 0.0) if free
+                else sum(p.get("xp_horizon_total") or 0.0 for p in xi), 2),
             "xi_xp_gw": round(sum(gw_xp(p, gw) for p in xi), 2),
-            "optimal_proven": bool(free.get("proven")),
+            "optimal_proven": bool(free.get("proven")) if free else None,
+            # 🔴 SIIRROT JULKISEEN LOKIIN. Ilman naita "malli sai X pistetta"
+            # ei kerro maksoiko se siita, ja kisa nayttaisi reilulta vaikka se
+            # ei olisi. Ensimmainen kierros: `from_gw` null = vapaa valinta
+            # (kauden aloitus, kuten ihmisellakin).
+            "budget": 100.0,
+            "from_gw": (edellinen[0] if edellinen and siirtotiedot else None),
+            "transfers": (siirtotiedot or {}).get("transfers") or [],
+            "hits": (siirtotiedot or {}).get("hits", 0),
+            "ft_available": (siirtotiedot or {}).get("ft_available"),
+            "ft_left": (siirtotiedot or {}).get("ft_left", 0),
+            "squad_rebuilt": siirtotiedot is None,
             # Malli ei pelaa chippejä (spec) — kerrotaan datassa asti, jotta
             # paneeli ei joudu arvaamaan sitä copyn perusteella.
             "chip": None,

@@ -90,7 +90,10 @@ def review_lines(review: dict | None) -> list[dict]:
         out.append({
             "code": "review.best",
             # "It" jatti epaselvaksi kuka - subjekti nimetaan.
-            "text": (f"The model was furthest under on {_nimi(best)}: "
+            # "furthest under" jatti auki KUMPI oli alle: pelaaja vai malli.
+            # Ja viereinen rivi on "worst call" (substantiivi), joten lukija
+            # lukee ne parina - rinnakkaisuus rikkoutui.
+            "text": (f"The model's biggest underestimate was {_nimi(best)}: "
                      f"{_pts(best['projected'])} projected, "
                      f"{_pts(best['actual'])} scored."),
         })
@@ -130,7 +133,14 @@ def flag_lines(flags: dict | None, next_gw: int | None = None) -> list[dict]:
         p = f.get("progress_pct")
         if p is None:
             continue
-        suunta = "rise" if f.get("direction") == "rise" else "fall"
+        # 🔴 PUUTTUVA SUUNTA OHITETAAN, EI ARVATA. `else "fall"` julkaisi
+        # nousevan pelaajan laskevana jos `direction` puuttui - ja
+        # /api/fantasy/price-watch palauttaa risers-riveilla `direction: null`.
+        # Talla hetkella gw_review asettaa suunnan itse listan avaimesta, joten
+        # vika ei laukea, mutta oletusarvo oli vaara suunta.
+        suunta = f.get("direction")
+        if suunta not in ("rise", "fall"):
+            continue
         eta = f.get("eta_days")
         # 🔴 "Voi nousta" eika "nousee". Hintamuutos on ennuste eika tapahtuma,
         # ja `progress_pct` on edistyma kynnysta kohti eika varmuus.
@@ -195,9 +205,14 @@ def plan_lines(plans: list[dict] | None,
         if ero >= 0.1:
             out.append({
                 "code": "plans.worst",
-                "text": (f"The weakest of the three is {_pts(ero)} points "
-                         f"behind it, and it is shown so you can argue with "
-                         f"the model rather than take the top line."),
+                # 🔴 "of the three" oli KOVAKOODATTU vaikka vartija on
+                # `len(kelpo) > 1`: kahdella suunnitelmalla teksti vaitti
+                # kolmea. Tiedoston oma saanto kieltaa superlatiivit joita ei
+                # ole mitattu. Loppuosa ("shown so you can argue with the
+                # model rather than take the top line") oli lisaksi ainoa lause
+                # koko setissa joka ei kanna lukua vaan selittaa paneelin oman
+                # designperiaatteen kayttajalle.
+                "text": f"The weakest plan is {_pts(ero)} points behind it.",
             })
     if baseline_xp is not None:
         out.append({

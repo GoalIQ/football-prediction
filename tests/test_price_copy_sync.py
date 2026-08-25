@@ -152,3 +152,53 @@ def test_hintapintoja_loytyy_oikeasti():
     loytyi = [n for n in HINTAPINNAT
               if (s := _lue(n)) is not None and HINTA.search(s)]
     assert len(loytyi) >= 4, f"vain {loytyi} - onko HINTA-regex rikki?"
+
+
+# ---------------------------------------------------------------------------
+# Applen kentta rajat
+# ---------------------------------------------------------------------------
+# 🔴 MITATTU REGRESSIO 25.8: korjatessani store-kuvauksen tarkkuuslukua laitoin
+# uuden lauseen vanhan VIEREEN enka tilalle. Seuraus oli kaksi: sama vaite
+# kahdesti perakkain, ja en-US 4020 / es-ES 4028 merkkia eli YLI Applen 4000
+# rajan. Edellinen commit oli tehnyt nimenomaan tyon "kolme kuvausta alle
+# rajan" - kumosin sen huomaamatta. Submit olisi kaatunut tai kentta olisi
+# katkennut kesken lauseen.
+APPLE_RAJAT = {"description": 4000, "keywords": 100,
+               "subtitle": 30, "promotionalText": 170}
+
+
+def test_store_kuvaukset_mahtuvat_applen_rajoihin():
+    p = ROOT.parent / "goaliq-app" / "store.config.json"
+    if not p.exists():
+        return
+    d = json.loads(p.read_text(encoding="utf-8"))
+    info = ((d.get("apple") or {}).get("info") or {})
+    yli = []
+    for loc, kentat in info.items():
+        for kentta, raja in APPLE_RAJAT.items():
+            v = kentat.get(kentta)
+            if isinstance(v, str) and len(v) > raja:
+                yli.append(f"{loc}.{kentta}: {len(v)}/{raja}")
+    assert not yli, (
+        "Store-kentta yli Applen rajan (submit kaatuu tai teksti katkeaa): "
+        + " | ".join(yli))
+
+
+def test_store_kuvaus_ei_toista_samaa_vaitetta():
+    """🔴 Kaksoiskappale syntyi kun korjaus lisattiin vanhan viereen. Se on
+    myos AI-tunnusmerkki: sama asia sanottuna kahdesti hieman eri sanoin."""
+    p = ROOT.parent / "goaliq-app" / "store.config.json"
+    if not p.exists():
+        return
+    d = json.loads(p.read_text(encoding="utf-8"))
+    info = ((d.get("apple") or {}).get("info") or {})
+    tunnisteet = {"en-US": "logged before kick-off",
+                  "es-ES": "se registra antes",
+                  "pt-BR": "registrada antes"}
+    toistot = []
+    for loc, avain in tunnisteet.items():
+        t = (info.get(loc) or {}).get("description") or ""
+        if t.count(avain) > 1:
+            toistot.append(f"{loc}: {avain!r} x{t.count(avain)}")
+    assert not toistot, ("sama vaite toistuu kuvauksessa: "
+                         + " | ".join(toistot))
