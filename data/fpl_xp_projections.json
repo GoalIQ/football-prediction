@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-08-26T00:46:49",
+    "generated_at": "2026-08-26T03:48:55",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -346,7 +346,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 6.0,
+      "owned_pct": 6.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -469,7 +469,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 5.8,
+      "owned_pct": 5.9,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -2171,7 +2171,7 @@
       "predicted_starts": 100.0,
       "minutes_confidence": "low",
       "data_basis": "limited_history",
-      "owned_pct": 2.2,
+      "owned_pct": 2.3,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -2772,7 +2772,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 1.9,
+      "owned_pct": 2.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6005,7 +6005,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 49.4,
+      "owned_pct": 49.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6493,7 +6493,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 23.2,
+      "owned_pct": 23.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -8314,7 +8314,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 25.0,
+      "owned_pct": 24.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -38086,7 +38086,7 @@
       },
       "e_bonus": 0.02,
       "xp_per_gw": 1.29,
-      "xp_per_90": 3.85,
+      "xp_per_90": 3.84,
       "xp_horizon_total": 7.73,
       "gameweeks": [
         {
@@ -61717,28 +61717,6 @@
       "excluded_reason": "unavailable"
     },
     {
-      "id": 582,
-      "web_name": "Madjo",
-      "full_name": "Brian Madjo",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "FWD",
-      "price": 5.5,
-      "owned_pct": 0.5,
-      "status": "i",
-      "news": "Unspecified injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": null,
-      "in_projection": false,
-      "excluded_reason": "unavailable"
-    },
-    {
       "id": 298,
       "web_name": "Destan",
       "full_name": "Enis Destan",
@@ -61795,6 +61773,28 @@
           "xgi": 0.53
         }
       },
+      "in_projection": false,
+      "excluded_reason": "unavailable"
+    },
+    {
+      "id": 582,
+      "web_name": "Madjo",
+      "full_name": "Brian Madjo",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "FWD",
+      "price": 5.5,
+      "owned_pct": 0.4,
+      "status": "i",
+      "news": "Unspecified injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": null,
       "in_projection": false,
       "excluded_reason": "unavailable"
     },
