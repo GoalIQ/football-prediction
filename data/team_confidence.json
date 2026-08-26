@@ -71,7 +71,9 @@
    "is_promoted": true,
    "minutes_churn_pct": null,
    "flag": "promoted",
-   "note": "Promoted side. No results inside the model's current fitting window, so this team runs on a measured baseline from recent promoted sides instead of a rating of its own."
+   "basis": "own_thin_fit",
+   "own_matches": 1,
+   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 1 match of Premier League football, so it moves a lot with each result."
   },
   {
    "team": "Crystal Palace",
@@ -103,7 +105,9 @@
    "is_promoted": true,
    "minutes_churn_pct": null,
    "flag": "promoted",
-   "note": "Promoted side. No results inside the model's current fitting window, so this team runs on a measured baseline from recent promoted sides instead of a rating of its own."
+   "basis": "own_thin_fit",
+   "own_matches": 1,
+   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 1 match of Premier League football, so it moves a lot with each result."
   },
   {
    "team": "Ipswich Town",
@@ -111,7 +115,9 @@
    "is_promoted": true,
    "minutes_churn_pct": null,
    "flag": "promoted",
-   "note": "Promoted side. No results inside the model's current fitting window, so this team runs on a measured baseline from recent promoted sides instead of a rating of its own."
+   "basis": "own_thin_fit",
+   "own_matches": 1,
+   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 1 match of Premier League football, so it moves a lot with each result."
   },
   {
    "team": "Leeds",

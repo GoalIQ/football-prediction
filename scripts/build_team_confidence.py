@@ -46,6 +46,43 @@ HISTORICAL_MEDIAN_PCT = 13.0
 RAW = config.RAW_DATA_DIR / "fpl"
 
 
+def _promoted_basis() -> tuple[set[str], dict[str, int]]:
+    """Kumpi vaite on tosi TANAAN: nousijabaseline vai oma ohut fitti.
+
+    26.8: sivu ja API kertoivat etta Coventry/Hull/Ipswich "ajavat mitatulla
+    nousijabaselinella eika omalla luokituksellaan". Mitattu artefaktista
+    (`fpl_xp_projections.json`, generoitu 25.8 18:27):
+    `promoted_baseline_values.applied_to == []` — baselinea ei sovellettu
+    YHTEENKAAN joukkueeseen, koska GW1 2627 on fit-ikkunassa ja jokaisella
+    kolmella on nyt oma luokitus. Vaite oli siis livena epatosi ilmaispinnalla.
+
+    Teksti johdetaan nyt ajetusta fitista. FAIL-CLOSED: jos artefaktia ei ole,
+    nostetaan — hiljainen paluu kovakoodattuun vaitteeseen on tasan se
+    vikaluokka jota tama korjaa.
+    """
+    p = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
+    if not p.exists():
+        raise SystemExit(
+            "team_confidence: fpl_xp_projections.json puuttuu — nousijavaitetta "
+            "ei voi johtaa, eika sita arvata (aja build_fpl_xp ensin)")
+    meta = json.loads(p.read_text(encoding="utf-8")).get("meta") or {}
+    applied = set((meta.get("promoted_baseline_values") or {}).get("applied_to")
+                  or meta.get("promoted_baseline_teams") or [])
+
+    # Otteluita talla kaudella per malli-joukkue — luku joka korvaa baselinen
+    # kun se ei ole enaa kaytossa.
+    played: dict[str, int] = defaultdict(int)
+    fx = json.loads((RAW / "fixtures.json").read_text(encoding="utf-8"))
+    boot = json.loads((RAW / "bootstrap_static.json").read_text(encoding="utf-8"))
+    tname = {t["id"]: t["name"] for t in boot["teams"]}
+    for f in fx:
+        if not f.get("finished"):
+            continue
+        for side in ("team_h", "team_a"):
+            played[map_name(tname[f[side]])] += 1
+    return applied, dict(played)
+
+
 def _prev_season_minutes() -> tuple[dict[int, str], dict[int, float], set[str]]:
     """25/26: code -> joukkue, code -> minuutit, ja joukkuenimet."""
     boot = json.loads((RAW / f"bootstrap_static_{PREV_SEASON}.archive.json")
@@ -87,13 +124,23 @@ def build() -> dict:
         if now != team:
             gone[team] += m
 
+    on_baseline, played = _promoted_basis()
+
     teams = []
     for team in sorted(cur_names):
         if team in promoted:
+            mt = map_name(team)
+            uses_baseline = mt in on_baseline
+            n = played.get(mt, 0)
             teams.append({
-                "team": team, "model_team": map_name(team),
+                "team": team, "model_team": mt,
                 "is_promoted": True, "minutes_churn_pct": None,
                 "flag": "promoted",
+                # 26.8: VAITE JOHDETAAN AJETUSTA FITISTA, EI KAUDENALUSTA.
+                # `basis` kertoo kumpi on totta juuri nyt; `own_matches` on
+                # se luku jonka lukija oikeasti tarvitsee ohuessa fitissa.
+                "basis": "promoted_baseline" if uses_baseline else "own_thin_fit",
+                "own_matches": n,
                 # 14.8: EDELLINEN TEKSTI OLI VAARA. Se sanoi "No Premier
                 # League results to fit a rating on", mutta Ipswich pelasi
                 # PL:aa 2024/25 — ja meidan oma nousijabaseline on MITATTU
@@ -103,10 +150,15 @@ def build() -> dict:
                 # englantina se oli valhe yhdesta kolmesta seurasta, ja se oli
                 # livena ilmaissivulla seka API:ssa. Uusi teksti sanoo mika on
                 # oikeasti totta: naillä ei ole OMAA luokitusta nykyikkunasta.
-                "note": ("Promoted side. No results inside the model's "
-                         "current fitting window, so this team runs on a "
-                         "measured baseline from recent promoted sides "
-                         "instead of a rating of its own."),
+                "note": (
+                    ("Promoted side. No results inside the model's current "
+                     "fitting window, so this team runs on a measured "
+                     "baseline from recent promoted sides instead of a "
+                     "rating of its own.") if uses_baseline else
+                    (f"Promoted side. The model now has a rating of its own, "
+                     f"but it is fitted on {n} "
+                     f"{'match' if n == 1 else 'matches'} of Premier League "
+                     f"football, so it moves a lot with each result.")),
             })
             continue
         t, g = total.get(team, 0.0), gone.get(team, 0.0)

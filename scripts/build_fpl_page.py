@@ -171,6 +171,38 @@ API_BASE = "https://api.goaliq.app"   # #85: accuracy-Datasetin distribution
 # ---------------------------------------------------------------------------
 # 1. Data
 # ---------------------------------------------------------------------------
+def _strength_basis_note(c: dict) -> str:
+    """Metodivaraus joka ei vanhene hiljaa.
+
+    26.8: tama kappale alkoi EHDOTTOMASTI sanalla "Pre-season projection" ja
+    vaitti etta nousijat ajavat baselinella. Molemmat olivat epatosia
+    ilmaispinnalla: GW1 pelattiin 21.-24.8, ja artefaktin
+    `promoted_baseline_values.applied_to` oli tyhja. Sama vikaluokka jonka
+    `meta.caveat` sai korjatun 23.8 — mutta sivun oma proosa jai kovakoodatuksi.
+    """
+    window = _strength_window_label(c)
+    done = c.get("completed_gws") or 0
+    thin = c.get("promoted_thin") or []
+    if done:
+        lead = (f"Team strengths are fitted on {window} results, "
+                f"{done} gameweek{'' if done == 1 else 's'} of "
+                f"{c['season']} included.")
+    else:
+        lead = (f"Pre-season projection: team strengths are fitted on "
+                f"{window} results.")
+    if thin:
+        n = min(int(x.get("own_matches") or 0) for x in thin)
+        names = ", ".join(sorted(x["team"] for x in thin))
+        tail = (f" {names} came up this summer, so their ratings rest on "
+                f"{n} Premier League match{'' if n == 1 else 'es'} each and "
+                f"move a lot with every result.")
+    else:
+        tail = (" Newly promoted sides use an empirical promoted-team "
+                "baseline measured from recent promoted seasons.")
+    return lead + tail + (f" The numbers sharpen as {c['season']} "
+                          f"results arrive.")
+
+
 def _strength_window_label(c: dict) -> str:
     """Fit-ikkuna ARTEFAKTISTA, ei kovakoodattuna.
 
@@ -421,6 +453,16 @@ def build_context(fpl: dict, acc: dict) -> dict:
         # varasanamuotoon ja sivu menettaa juuri ne vuodet jotka tarkka
         # lukija tarkistaa.
         "team_strength_source": (fpl.get("meta") or {}).get("team_strength_source") or "",
+        # 26.8: metodivarauksen kaksi muuttujaa artefakteista, ei proosasta.
+        # `completed_gws` kaataa "Pre-season"-johdannon heti kun kierros on
+        # pelattu; `promoted_thin` kertoo mitka nousijat ajavat OMALLA ohuella
+        # fitilla eivatka baselinella (mitattu, ei oletettu).
+        "completed_gws": len((fpl.get("meta") or {}).get("completed_gameweeks") or []),
+        "promoted_thin": [
+            {"team": t["model_team"], "own_matches": t.get("own_matches") or 0}
+            for t in _turnover_by_model_team().values()
+            if t.get("is_promoted") and t.get("basis") == "own_thin_fit"
+        ],
         "top3": cs_rows[:3],
         "acc_n": n,
         "acc_pct_1x2": pct_1x2,
@@ -951,10 +993,23 @@ def cs_table_html(c: dict) -> str:
             #     `title=`-attribuutissa, jota ei nae kosketuslaitteella eika
             #     nappaimistolla — sama tooltip-ansa joka puri 11.8 (`vs crowd`
             #     -yksikko oli tooltipissa). Nyt sana kantaa merkityksen itse.
-            churn = ('<span title="Promoted: runs on a measured '
-                     'promoted-side baseline, not a rating of its own">'
-                     'baseline</span>')
-            sub = "baseline rating"
+            #
+            # 26.8 KOLMAS KORJAUS: teksti vaitti baselinea vaikka artefaktin
+            # `promoted_baseline_values.applied_to` on tyhja — GW1 2627 on
+            # fit-ikkunassa, joten kaikilla kolmella ON oma luokitus. Vaite oli
+            # livena epatosi. Haara luetaan nyt `basis`-kentasta.
+            if t.get("basis") == "own_thin_fit":
+                n = int(t.get("own_matches") or 0)
+                word = "match" if n == 1 else "matches"
+                churn = (f'<span title="Promoted: has a rating of its own, but '
+                         f'it is fitted on {n} Premier League {word} so far">'
+                         f'{n} {word}</span>')
+                sub = f"rating from {n} {word}"
+            else:
+                churn = ('<span title="Promoted: runs on a measured '
+                         'promoted-side baseline, not a rating of its own">'
+                         'baseline</span>')
+                sub = "baseline rating"
         elif t and t.get("minutes_churn_pct") is not None:
             churn = f'{t["minutes_churn_pct"]:.0f}%'
             sub = f'{t["minutes_churn_pct"]:.0f}% turnover'
@@ -967,7 +1022,14 @@ def cs_table_html(c: dict) -> str:
         # paapinta. Alarivi antaa saman luvun ilman saraketta ja katoaa kun
         # sarake palautetaan (body.cols-all .m-only), joten lukua ei nayteta
         # kahdesti kummassakaan tilassa.
-        sub_html = (f'<span class="m-only m-sub">{escape(sub)}</span>'
+        # Varaus ei ole tilasto. Vaihtuvuus-% saa jaada kapealle naytolle
+        # (sarake kantaa sen leveallä), mutta nousijan varaus on syy olla
+        # luottamatta lukuun — se nakyy joka leveydella. Mitattu 26.8: tama
+        # alarivi oli `.m-only`, eli tyopoydalla varaus oli vain
+        # `title=`-tooltipissa vaihtuvuussarakkeessa.
+        promoted_row = bool(t and t.get("is_promoted"))
+        sub_cls = "m-sub is-caveat" if promoted_row else "m-only m-sub"
+        sub_html = (f'<span class="{sub_cls}">{escape(sub)}</span>'
                     if sub else "")
         rows.append(
             "<tr>"
@@ -1854,10 +1916,7 @@ log, match by match with every miss included, is published on the
 Gameweek {c["next_gw"]} ({c["gw_label"]}). FDR is GoalIQ's model fixture
 difficulty for that match, 1 easiest to 5 hardest.</p>
 {cs_table}
-<p class="note">Pre-season projection: team strengths are fitted on
-{_strength_window_label(c)} results, and newly promoted sides use an empirical
-promoted-team baseline measured from recent promoted seasons. The numbers
-sharpen as {c["season"]} results arrive.</p>
+<p class="note">{_strength_basis_note(c)}</p>
 
 <h2 id="fixture-difficulty">Fixture difficulty for the next six gameweeks</h2>
 <p>Clean sheet probability per team and gameweek. Each cell shows the opponent,

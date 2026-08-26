@@ -65,15 +65,50 @@ def test_cs_table_turnover_reaches_narrow_screen(monkeypatch):
     # Luku on rivilla ILMAN etta sarake tarvitsee palauttaa...
     assert '<span class="m-only m-sub">21% turnover</span>' in html
     # 14.8: teksti oli "no PL record", mutta se oli VAARA — Ipswich pelasi
-    # PL:aa 24/25 ja on osa mitattua nousijabaselinea. Nyt merkinta kertoo
-    # mika on totta: naillä ei ole omaa luokitusta nykyisesta fit-ikkunasta.
-    assert '<span class="m-only m-sub">baseline rating</span>' in html
+    # PL:aa 24/25 ja on osa mitattua nousijabaselinea.
+    # 26.8: VARAUS EI OLE ENAA .m-only. Vaihtuvuus-% on tilasto ja saa jaada
+    # kapealle naytolle (sarake kantaa sen leveallä), mutta nousijan varaus on
+    # syy olla luottamatta lukuun — se renderoidaan joka leveydella. Ilman
+    # tata tyopoytalukija sai varauksen vain `title=`-tooltipista.
+    assert '<span class="m-sub is-caveat">baseline rating</span>' in html
     # ...ja sarake on yha paikallaan leveille naytoille.
     assert '<td class="num m-hide">21%</td>' in html
     # Negatiivinen kontrolli: ilman tata testi menisi lapi myos jos alarivi
-    # liimattaisiin jokaiseen riviin datasta riippumatta.
-    assert html.count('class="m-only m-sub"') == 2, "alarivi ilman dataa"
+    # liimattaisiin jokaiseen riviin datasta riippumatta. Vaihtuvuusrivi on
+    # tasan yksi (Brighton); Coventryn varaus on eri luokassa.
+    assert html.count('class="m-only m-sub"') == 1, "alarivi ilman dataa"
+    assert html.count('class="m-sub is-caveat"') == 1, "varaus ilman dataa"
     assert "Tuntematon FC" in html
+
+
+def test_cs_table_seuraa_fitin_tilaa_eika_kovakoodaa_baselinea(monkeypatch):
+    """26.8: sama rivi, eri `basis` -> eri vaite. Ilman tata haaraa sivu
+
+    vaittaisi baselinea myos silloin kun sita ei sovelleta yhteenkaan
+    joukkueeseen, mika oli livena tilanne 25.-26.8.
+    """
+    from scripts import build_fpl_page as bp
+    from scripts.build_fpl_phase0 import map_name
+
+    def _aja(basis, n):
+        monkeypatch.setattr(bp, "_turnover_by_model_team", lambda: {
+            map_name("Coventry City"): {"is_promoted": True,
+                                        "minutes_churn_pct": None,
+                                        "basis": basis, "own_matches": n},
+        })
+        return bp.cs_table_html({
+            "next_gw": 2, "season": "2026/27",
+            "cs_rows": [_cs_row("Coventry City", 36.3, "Hull", "H", 2)]})
+
+    oma = _aja("own_thin_fit", 1)
+    assert "rating from 1 match" in oma
+    assert "baseline" not in oma, oma
+    assert "fitted on 1 Premier League match" in oma  # tooltip kertoo saman
+
+    # NEGATIIVINEN KONTROLLI: kaanna tila -> vaitteen ON vaihduttava.
+    base = _aja("promoted_baseline", 0)
+    assert "baseline rating" in base
+    assert "rating from" not in base, base
 
 
 def test_xp_table_foot_states_horizon_not_daily_promise():

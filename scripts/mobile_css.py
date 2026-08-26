@@ -36,6 +36,14 @@ _RULES = """
    wide screens do not change at all. */
 .m-only{display:none;}
 
+/* A CAVEAT IS NOT A STATISTIC (26 Aug). A trimmed column's number may live
+   behind "Show all columns"; a reason not to trust the number may not. This
+   subline renders at every width, so the promoted-side caveat is on the page
+   for a desktop reader too -- it used to be .m-only, which left the desktop
+   reader with the word in a tooltip inside a column headed "Squad turnover". */
+td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
+  padding-top:2px;}
+
 @media (max-width:560px){
   .m-only{display:block;}
 

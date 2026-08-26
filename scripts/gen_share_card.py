@@ -811,6 +811,30 @@ def card_gw_outlook(args) -> dict:
     }
 
 
+def _promoted_footnote() -> str:
+    """Alaviite SAMASTA lahteesta kuin sivun merkinta.
+
+    26.8: alaviite oli kovakoodattu ("baseline rating with no PL history yet")
+    ja meni GW2-kortin mukana ulos 25.8. Molemmat puolikkaat olivat silloin jo
+    epatosia: GW1 pelattiin 21.-24.8 (= PL-historiaa on) ja artefaktin
+    `promoted_baseline_values.applied_to` oli tyhja (= baselinea ei sovelleta).
+    Kortti = sivu, joten alaviite luetaan samasta `team_confidence.json`:sta.
+    Fail-closed: puuttuva lahde nostaa, ei palaa vanhaan vaitteeseen.
+    """
+    p = DATA / "team_confidence.json"
+    if not p.exists():
+        raise SystemExit("kortti: team_confidence.json puuttuu — "
+                         "nousija-alaviitetta ei voi johtaa")
+    teams = json.loads(p.read_text(encoding="utf-8"))["teams"]
+    thin = [t for t in teams
+            if t.get("is_promoted") and t.get("basis") == "own_thin_fit"]
+    if not thin:
+        return "* promoted side, baseline rating with no PL history yet"
+    n = min(int(t.get("own_matches") or 0) for t in thin)
+    return (f"* promoted side, rating fitted on {n} PL "
+            f"{'match' if n == 1 else 'matches'} so far")
+
+
 def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     """Kolmen sarakkeen kortti. Oma renderoija, koska `render()` on rivilista."""
     from PIL import Image, ImageDraw
@@ -972,9 +996,19 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     # ja on kortin toimintakehotus (osta nousijan puolustaja), vaikka luku on
     # empiirinen nousijabaseline eika mitattu PL-suoritus.
     if spec.get("promoted"):
-        d.text((MX, h - 116),
-               "* promoted side, baseline rating with no PL history yet",
-               font=_font(FONT_MED, 16), fill=MUTED)
+        foot = _promoted_footnote()
+        f_note = _font(FONT_MED, 16)
+        # 🔴 MITTAA, ALA OLETA. Ensimmainen johdettu sanamuoto oli 7 merkkia
+        # pidempi kuin kovakoodattu ja VALUI ottelupaneelin alle: alaviite
+        # luki "...match so fa" renderoidyssa kuvassa. Teksti joka katkeaa
+        # keskella varausta on huonompi kuin ei varausta, joten leveys on
+        # portti eika tyylikysymys.
+        avail = fx_x - MX - 12
+        if d.textlength(foot, font=f_note) > avail:
+            raise SystemExit(
+                f"kortti: nousija-alaviite ei mahdu ({foot!r}, "
+                f"{d.textlength(foot, font=f_note):.0f}px > {avail}px)")
+        d.text((MX, h - 116), foot, font=f_note, fill=MUTED)
     d.text((MX, h - 84), "clean sheet % for every club on goaliq.app/fpl, free",
            font=f_foot, fill=MUTED)
     d.text((MX, h - 52), "model projections, not betting advice",
