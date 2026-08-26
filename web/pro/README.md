@@ -26,7 +26,7 @@ Tilauksen aktivointi on kaksipolkuinen ja idempotentti:
 
 1. **Supabase** (sama projekti): aja `sql/web_subscriptions.sql` SQL-editorissa.
 2. **Stripe (test-mode):** ✅ TEHTY (CoS 5.7) — tuote "GoalIQ Pro (web)" + 2
-   recurring-hintaa (25 €/vuosi + 3,99 €/kk), id:t `STRIPE_SUPABASE_CONFIG.md`:ssä.
+   recurring-hintaa (kuukausi + vuosi); id:t ovat privaatissa konfiguraatiodokumentissa, eivät tässä repossa.
 3. **Secretit:** kopioi `.env.example` → täytä (test-avaimet!) → lokaalisti
    `.env`/ympäristö TAI hostin secret-dashboard.
 4. **Aja:** `pip install -r web/pro/requirements.txt` →

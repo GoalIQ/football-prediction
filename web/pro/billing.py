@@ -28,7 +28,7 @@ from auth import upsert_subscription
 PLANS = {
     # UI-oletus = kausi. Villen päätös 5.7 (tarkennettu): 25 €/vuosi VUOSITTAIN
     # UUSIUTUVA subscription (ei one-time) — Stripe-hinta luotu recurring-
-    # yearlyna (ks. STRIPE_SUPABASE_CONFIG.md). MOLEMMAT mode='subscription'.
+    # yearlyna (konfiguraatio privaatissa repossa). MOLEMMAT mode='subscription'.
     "season": {"label": "Season pass: 25 €/year", "env": "STRIPE_PRICE_SEASON_ID",
                "mode": "subscription"},
     "monthly": {"label": "Monthly: 3.99 €/mo", "env": "STRIPE_PRICE_MONTHLY_ID",

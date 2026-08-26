@@ -42,11 +42,11 @@ gmail.com läpi).
 
 Kaikki alla oleva koskee tuotanto-authia → ei ajeta ilman erillistä GO:ta.
 
-1. `supabase login` + `supabase link --project-ref bhcgommvjlhqcktrbtxf`
+1. `supabase login` + `supabase link --project-ref <project-ref>`
 2. Deploy ILMAN JWT-vahvistusta (Auth kutsuu webhook-allekirjoituksella):
    `supabase functions deploy before-user-created --no-verify-jwt`
 3. Dashboard → Authentication → Hooks → **Before User Created** →
-   HTTPS-hook → URL `https://bhcgommvjlhqcktrbtxf.supabase.co/functions/v1/before-user-created`
+   HTTPS-hook → URL `https://<project-ref>.supabase.co/functions/v1/before-user-created`
    → Generate secret → kopioi.
 4. `supabase secrets set BEFORE_USER_CREATED_HOOK_SECRET="v1,whsec_..."`
 5. Verify: signup rikkinäisellä domainilla (esim. `test@gmail.comaa`) →
