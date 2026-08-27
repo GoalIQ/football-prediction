@@ -568,6 +568,16 @@
 							</p>
 						{/if}
 					{/if}
+					<!-- PLAYER-FORM 27.8: FPL:n oma form-luku + otoskoko. Lohko puuttuu
+					     esikaudella (backend fail-closed), joten tyhjaa lupausta ei ole.
+					     Otoskoko on pakko sanoa: GW1:n jalkeen form = GW1-pisteet. -->
+					{#if player.form}
+						<p class="muted">
+							FPL form {player.form.value.toFixed(1)}: points per match over the last 30
+							days, {player.form.gws} {player.form.gws === 1 ? 'gameweek' : 'gameweeks'} played
+							so far.
+						</p>
+					{/if}
 					{#if player.set_pieces}
 						{#if spListed}
 							<p class="muted sp-line">Set pieces: <SetPieceBadges sp={player.set_pieces} /></p>

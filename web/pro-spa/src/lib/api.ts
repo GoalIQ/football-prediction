@@ -183,6 +183,10 @@ export interface XpPlayer {
 	 * vielä EDELLISEN kauden lukemia (tunnistus:
 	 * meta.data_coverage.baseline_mode === 'prev_season_archive'). */
 	yellows?: number;
+	/** PLAYER-FORM 27.8: FPL:n virallinen form (pisteet per ottelu, 30 pv)
+	 * + otoskoko kierroksina. null/puuttuu = esikausi tai ei pelattua
+	 * kierrosta ikkunassa -> rivia ei renderoida. */
+	form?: { value: number; gws: number; basis: string } | null;
 	/** Hinta miljoonina (bootstrapin now_cost / 10). */
 	price?: number;
 	/** Edge-sprint addendum: edellisen kauden historia. Puuttuu / null =

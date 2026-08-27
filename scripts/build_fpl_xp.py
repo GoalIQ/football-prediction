@@ -356,6 +356,45 @@ def _completed_gws(fixtures):
     return completed_gameweeks(fixtures)
 
 
+FORM_WINDOW_DAYS = 30
+FORM_BASIS = "FPL form: points per match over the last 30 days"
+
+
+def _form_block(e: dict, boot: dict, preseason: bool,
+                now: _dt.datetime | None = None) -> dict | None:
+    """PLAYER-FORM (27.8): FPL:n virallinen `form` pelaajakortin viralliseen
+    osioon, VAIN kun se tarkoittaa jotain.
+
+    FPL:n form = pisteet per ottelu viimeisen 30 paivan aikana. Esikaudella
+    kentta on tyhja/0 kaikilla, ja tyhja rivi joka lupaa "recent form" on
+    huonompi kuin ei rivia (Rowan 19.8). Mitattu 27.8 GW1:n jalkeen: form on
+    tasan GW1-pisteet (De Cuyper 17.0 = 17 p), eli yhden kierroksen otos.
+    Siksi lohko kantaa `gws`-otoskoon: montako pelattua kierrosta ikkunaan
+    osuu. Ilman sita 17.0 luetaan kauden tasoksi.
+
+    Fail-closed: esikausi TAI 0 pelattua kierrosta ikkunassa -> None, ja
+    klientit eivat renderoi rivia lainkaan. Luku tulee bootstrapista
+    sellaisenaan (tarkistettavissa FPL:n omasta pelaajakortista)."""
+    if preseason:
+        return None
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    cutoff = now - _dt.timedelta(days=FORM_WINDOW_DAYS)
+    gws = 0
+    for ev in boot.get("events", []) or []:
+        if not ev.get("finished"):
+            continue
+        dl = fpl_api.parse_kickoff(ev.get("deadline_time"))
+        if dl is not None and dl >= cutoff:
+            gws += 1
+    if gws == 0:
+        return None
+    try:
+        value = float(e.get("form") or 0.0)
+    except (TypeError, ValueError):
+        return None
+    return {"value": round(value, 1), "gws": gws, "basis": FORM_BASIS}
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser()
@@ -929,6 +968,10 @@ def main(argv: list[str] | None = None) -> int:
             },
             # Player cardin historiaosio toimii myos ilman projektiota.
             "last_season": _last_season(e),
+            # PLAYER-FORM (27.8): FPL:n virallinen form + otoskoko, None
+            # esikaudella (ks. _form_block). Klientit piilottavat rivin
+            # kun lohko puuttuu - ei tyhjaa lupausta.
+            "form": _form_block(e, boot, preseason),
             # EI xP/xmins/p_start-arvoja: naille riveille ei ole mallilukuja.
             "in_projection": False,
             "excluded_reason": reason,
@@ -1157,6 +1200,10 @@ def main(argv: list[str] | None = None) -> int:
             # jäädytetystä 25/26-artefaktista. null = ei PL-kautta 25/26
             # (nousijapelaaja / ulkomailta tullut) — sarjatasoa EI sekoiteta.
             "last_season": _last_season(e),
+            # PLAYER-FORM (27.8): FPL:n virallinen form + otoskoko, None
+            # esikaudella (ks. _form_block). Klientit piilottavat rivin
+            # kun lohko puuttuu - ei tyhjaa lupausta.
+            "form": _form_block(e, boot, preseason),
             # EDGE: minuuttijakauma (ks. p_start_e-kommentti yllä).
             # p_start on sama kalibroitu tn kuin predicted_starts/100.
             "p_start": round(p_start_e, 4),
