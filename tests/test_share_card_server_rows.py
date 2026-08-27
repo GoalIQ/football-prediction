@@ -28,7 +28,13 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-PALVELINKORTTI = ["points", "expected-points", "xg-leaders", "defence"]
+PALVELINKORTTI = ["points", "expected-points", "xg-leaders", "defence",
+                  # 27.8 batch 2: team-news (Ruled out -taulukko, arvo = Owned)
+                  "team-news"]
+# 27.8 batch 2: sivut joilla kortti ei lue table.lb:ta vaan omaa rivilistaa.
+# Kullekin oma lukija joka palauttaa [(nimi, arvo, mid)] sivun NAKYVISTA
+# riveista, jotta sama "kortti == sivu" -invariantti patee.
+EI_TAULUKKO = ["price-changes", "best-captain"]
 
 # 🔴 KENTTA -> SARAKEOTSIKKO. Pelkka "arvo on jokin rivin soluista" ei riita:
 # portti mittasi 24.8 etta `mid` sai arvon rivin xA-solusta ja `value` osui
@@ -51,6 +57,8 @@ SARAKKEET = {
     # 🔴 Defence on JOUKKUElista: ei team- eika pos-saraketta, ja nimisarake
     # on "Team". `name_label="TEAM"` pinnataan erikseen alla.
     "defence": {"name": "team", "mid": "shots", "value": "xgc"},
+    "team-news": {"name": "player", "team": "club", "tag": "pos",
+                  "value": "owned"},
 }
 
 # Otsikon on nimettava sama suure kuin arvosarake. Ilman tata "TOP 10 BY
@@ -64,6 +72,7 @@ OTSIKKO = {
     # (Arsenal 0,91 = paras puolustus), ja ensimmainen ehdotus oli
     # "MOST XG CONCEDED" eli tasan painvastainen kuin data.
     "defence": ("FEWEST xG CONCEDED", "xGC"),
+    "team-news": ("RULED OUT", "OWNED"),
 }
 
 
@@ -520,3 +529,66 @@ def test_korttirivien_maara_on_yksi_vakio():
     assert "CARD_ROWS = 10" in lahde
     assert "rows[:10]" not in lahde, (
         "kortin rivimaara on yha kovakoodattu jossain — kayta CARD_ROWSia")
+
+
+# ---------------------------------------------------------------------------
+# 27.8 batch 2: ei-taulukkosivut. Kortin rivit verrataan sivun omaan
+# rivilistaan (.mrow / .stat), samat arvot samassa jarjestyksessa.
+# ---------------------------------------------------------------------------
+
+def _price_rows(h: str) -> list[tuple[str, str, str]]:
+    """Risers-kortin (.card .mrow) rivit: (nimi, '82%', '£7.5m')."""
+    kortti = re.search(r'<div class="card" data-card-spec=[^>]*>(.*?)</div>\s*(?:<h2>|$)', h, re.S)
+    assert kortti, "price-changes: risers-korttia (.card + data-card-spec) ei loydy"
+    out = []
+    for m in re.finditer(r'<div class="mrow"><div><strong>(.*?)</strong><div class="meta">(.*?)</div>', kortti.group(1), re.S):
+        nimi = html.unescape(m.group(1))
+        meta = html.unescape(re.sub(r"<[^>]+>", "", m.group(2)))
+        hinta = re.search(r"£\d+\.\d+m", meta).group(0)
+        pct = re.search(r"(\d+)% of the way", meta).group(1) + "%"
+        out.append((nimi, pct, hinta))
+    return out
+
+
+def _captain_rows(h: str) -> list[tuple[str, str, str]]:
+    """Kapteenitiilet (.stat-row .stat): (nimi, 'starts 92%' -> '92%', team)."""
+    rivi = re.search(r'<div class="stat-row" data-card-spec=[^>]*>(.*?)</div>\s*<p', h, re.S)
+    assert rivi, "best-captain: stat-row + data-card-spec ei loydy"
+    out = []
+    for m in re.finditer(r'<div class="stat"><b>(.*?)</b><span>(.*?)</span></div>', rivi.group(1), re.S):
+        nimi = html.unescape(m.group(1)); meta = html.unescape(m.group(2))
+        osat = [o.strip() for o in meta.split("·")]
+        team = osat[1]
+        sm = re.search(r"starts (\d+)%", meta)
+        assert sm, f"best-captain: tiilella ei ole Start%-lukua: {meta}"
+        out.append((nimi, sm.group(1) + "%", team))
+    return out
+
+
+@pytest.mark.parametrize("sivu", EI_TAULUKKO)
+def test_non_table_card_rows_match_the_page(sivu):
+    h = _sivu(sivu)
+    if "data-card-spec" not in h:
+        pytest.skip(f"{sivu}: ei korttia (lista tyhja)")
+    spec = _spec(h)
+    rivit = _price_rows(h) if sivu == "price-changes" else _captain_rows(h)
+    assert len(spec["rows"]) == len(rivit), (len(spec["rows"]), len(rivit))
+    for i, (k, (nimi, arvo, kolmas)) in enumerate(zip(spec["rows"], rivit), start=1):
+        assert k["rank"] == i
+        assert k["name"] == nimi, (k["name"], nimi)
+        assert k["value"] == arvo, (k["value"], arvo)
+        if sivu == "price-changes":
+            assert k["mid"] == kolmas, (k["mid"], kolmas)
+        else:
+            assert k["team"] == kolmas, (k["team"], kolmas)
+
+
+@pytest.mark.parametrize("sivu", EI_TAULUKKO)
+def test_non_table_card_is_inert_without_server_spec(sivu):
+    h = _sivu(sivu)
+    if "data-card-spec" not in h:
+        pytest.skip(f"{sivu}: ei korttia")
+    assert "specFromServer" in h
+    js = re.search(r"var spec=specFromServer\(\);(.*?)\}\);", h, re.S)
+    assert js and "function(){return null;}" in js.group(1)
+    assert h.count("data-card-spec='") == 1

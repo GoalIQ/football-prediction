@@ -2,6 +2,8 @@
 	import { draftPool, fetchFit, fetchXp, type FitResponse, type XpPoolPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { saveDraftIds } from '$lib/draft';
+	import { canShareToApps, sharePitchCard, type PitchCardPlayer } from '$lib/shareCard';
+	import { teamColorByShort } from '$lib/teamColors';
 	import MethodNote from './MethodNote.svelte';
 	import PlayerSearch from './PlayerSearch.svelte';
 
@@ -92,6 +94,42 @@
 	}
 
 	// Kohta 3: tuloksen XI + penkki = tasan 15 ID:tä → jaettu draft-storage.
+	// SHARE-CARD-SPA 27.8: sama pitch-kortti kuin rate my team / draft.
+	// Kortti nayttaa tasan sivun XI:n ja penkin, xP per GW pelaajan alla.
+	let sharing = $state(false);
+	function pitchPlayer(p: { web_name: string; team_short: string; xp_per_gw: number }): PitchCardPlayer {
+		const tc = teamColorByShort(p.team_short);
+		return {
+			name: p.web_name,
+			team: p.team_short,
+			color: tc.color,
+			textColor: tc.textColor,
+			xp: p.xp_per_gw.toFixed(1)
+		};
+	}
+	async function shareFit() {
+		if (sharing || !result) return;
+		sharing = true;
+		try {
+			const res = result;
+			const order = ['GKP', 'DEF', 'MID', 'FWD'] as const;
+			const rows = order
+				.map((pos) => res.xi.filter((p) => p.pos === pos).map(pitchPlayer))
+				.filter((r) => r.length > 0);
+			const locked = chosen.map((p) => p.web_name).join(', ');
+			const method = await sharePitchCard({
+				title: 'FIT CHECK',
+				subtitle: `${locked} locked, best legal 15 around ${chosen.length === 1 ? 'him' : 'them'}, ${res.totals.xi_xp_horizon.toFixed(1)} xP over ${res.meta.horizon_gw} GWs`,
+				unitNote: 'xP per GW',
+				rows,
+				bench: res.bench.map(pitchPlayer),
+				fileName: 'goaliq_fit_checker.png'
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'fit', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	let draftSaved = $state(false);
 	const draftIds = $derived(
 		result ? [...result.xi, ...result.bench].map((p) => p.id) : []
@@ -167,6 +205,12 @@
 
 		{#if result && !loading}
 			<p class="verdict">{result.message}</p>
+			<div class="head-row">
+				<span class="muted">Share this squad</span>
+				<button type="button" class="window-chip" onclick={shareFit} disabled={sharing}>
+				{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+				</button>
+			</div>
 
 			<h3>Best XI around your locks</h3>
 			<div class="table-wrap">
@@ -319,5 +363,29 @@
 	}
 	.linklike:hover {
 		text-decoration: underline;
+	}
+
+	/* SHARE-CARD-SPA 27.8: sama chip kuin muissa jaettavissa listoissa */
+	.head-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
 	}
 </style>

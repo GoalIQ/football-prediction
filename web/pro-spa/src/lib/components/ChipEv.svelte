@@ -6,6 +6,7 @@
 	// mallirunkoon selitteellä. Basis-alaviite: GW7+ = team-level estimate.
 	import { fetchChipEv, type ChipEvResponse, type ChipWindow } from '$lib/fantasyTools';
 	import { capture } from '$lib/analytics';
+	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
@@ -87,12 +88,57 @@
 			.slice(0, 3);
 	}
 
+	// SHARE-CARD-SPA 27.8: jokaisen chipin paras ikkuna yhdella kortilla.
+	// Kortti nayttaa VAIN sen mita sivulla on (top3()[0] per chip), ja jos
+	// wildcardin luku on horisontin ulkopuolella (null) rivi jaa pois.
+	let sharing = $state(false);
+	async function shareChips() {
+		if (sharing || !data) return;
+		sharing = true;
+		try {
+			const rows = CHIPS.flatMap((chip, i) => {
+				const w = top3(chip)[0];
+				if (!w) return [];
+				return [
+					{
+						rank: i + 1,
+						name: chip.label,
+						tag: `GW${w.gw}`,
+						team: '',
+						mid: chip.key === 'wc' && w.wc_window_gws ? `${w.wc_window_gws} GWs` : '',
+						value: (chip.ev(w) as number).toFixed(1)
+					}
+				];
+			});
+			if (rows.length === 0) return;
+			const basis = data.meta?.mode === 'model_xi' ? "the model's squad" : 'your squad';
+			const method = await shareCard({
+				title: 'BEST CHIP WINDOWS',
+				subtitle: `${basis}, best gameweek per chip, GoalIQ model`,
+				nameLabel: 'CHIP',
+				midLabel: 'WINDOW',
+				valueLabel: 'xP',
+				fileName: 'goaliq_chip_timing.png',
+				rows
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'chips', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	let hasTeamApprox = $derived(
 		data?.windows?.some((w) => w.basis !== 'player_xp') ?? false
 	);
 </script>
 
-<h2>Chip timing: expected value per gameweek</h2>
+<div class="head-row">
+	<h2>Chip timing: expected value per gameweek</h2>
+	{#if data && data.windows.length > 0}
+		<button type="button" class="window-chip" onclick={shareChips} disabled={sharing}>
+		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		</button>
+	{/if}
+</div>
 <p class="muted">
 	When to play Wildcard, Bench Boost, Triple Captain and Free Hit: each remaining gameweek
 	gets a rough expected-value estimate per chip, and the best window is highlighted.
@@ -295,5 +341,32 @@
 	}
 	.basis-note {
 		margin-top: 0;
+	}
+
+	/* SHARE-CARD-SPA 27.8: sama chip kuin muissa jaettavissa listoissa */
+	.head-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.head-row h2 {
+		margin: 0;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
 	}
 </style>

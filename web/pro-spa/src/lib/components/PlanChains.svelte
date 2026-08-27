@@ -10,6 +10,7 @@
 	} from '$lib/fantasyTools';
 	import { runWithSquadFallback, NoSquadInputError, type SquadBasis } from '$lib/squadInput';
 	import { capture } from '$lib/analytics';
+	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
@@ -65,6 +66,52 @@
 	}
 
 	let hero = $derived(data?.plans?.[0] ?? null);
+	// SHARE-CARD-SPA 27.8: paras ketju siirto per rivi, hitti nakyvissa.
+	let sharing = $state(false);
+	async function shareChain() {
+		if (sharing || !hero || !data) return;
+		sharing = true;
+		try {
+			const rows: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
+			for (const g of hero.gws) {
+				if (g.moves.length === 0) {
+					rows.push({
+						rank: rows.length + 1,
+						name: `Roll, captain ${g.captain.web_name}`,
+						tag: `GW${g.gw}`,
+						team: '',
+						mid: '',
+						value: g.gw_xp.toFixed(1)
+					});
+					continue;
+				}
+				for (const m of g.moves) {
+					rows.push({
+						rank: rows.length + 1,
+						name: `${m.out.web_name} to ${m.in.web_name}`,
+						tag: `GW${g.gw}`,
+						team: m.in.team_short,
+						mid: m.hit ? `-${m.hit}` : '',
+						value: `${m.gain_xp_remaining >= 0 ? '+' : ''}${m.gain_xp_remaining.toFixed(1)}`
+					});
+				}
+			}
+			const net = `${hero.net_ev_vs_hold >= 0 ? '+' : ''}${hero.net_ev_vs_hold.toFixed(1)}`;
+			const hits = hero.hits_taken === 1 ? '1 hit' : `${hero.hits_taken} hits`;
+			const method = await shareCard({
+				title: 'BEST TRANSFER CHAIN',
+				subtitle: `${net} xP vs holding over ${data.meta.horizon} GWs, ${hits}, GoalIQ model`,
+				nameLabel: 'MOVE',
+				midLabel: 'HIT',
+				valueLabel: 'xP',
+				fileName: 'goaliq_transfer_chain.png',
+				rows: rows.slice(0, 10)
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'chains', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	let alternatives = $derived(data?.plans?.slice(1, 3) ?? []);
 
 	function movesSummary(plan: { gws: { moves: { out: { web_name: string }; in: { web_name: string } }[] }[] }): string {
@@ -159,6 +206,9 @@
 				>{hero.net_ev_vs_hold >= 0 ? '+' : ''}{hero.net_ev_vs_hold.toFixed(1)} xP vs
 				holding</span
 			>
+			<button type="button" class="window-chip" onclick={shareChain} disabled={sharing}>
+			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			</button>
 		</div>
 		<p class="muted rationale">{hero.rationale}</p>
 		<div class="chain-timeline">
@@ -353,5 +403,22 @@
 	}
 	.alt-meta {
 		margin: 0;
+	}
+
+	/* SHARE-CARD-SPA 27.8: sama chip kuin muissa jaettavissa listoissa */
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
 	}
 </style>

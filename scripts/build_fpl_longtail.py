@@ -600,8 +600,25 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         return f"starts {v}%" if v is not None \
             else "start probability in Premium"
 
+    # SHARE-CARD-BATCH-2 (27.8): kolmen rivin kortti samoista kolmesta
+    # pelaajasta kuin sivun tiilet. Arvo on Start% (ilmainen), EI xP
+    # (premium, 3.8-linja). Jos jollakin ei ole p_startia, korttia ei tehda.
+    _picks = [top] + list(alts)
+    kortti_cap = _card_spec_attr(
+        title=f"CAPTAIN PICK, GW{gw}",
+        subtitle="the model's pick and two contenders, with how likely each is to start",
+        value_label="STARTS",
+        foot="the pick and the contenders are free on goaliq.app/fpl/best-captain",
+        foot2="model projections, not betting advice",
+        rows=[{"rank": i + 1, "name": str(p["web_name"]),
+               "team": str(p["team_short"]),
+               "value": f"{start_pct(p)}%"}
+              for i, p in enumerate(_picks)],
+        file_name=f"goaliq-captain-gw{gw}.png"
+    ) if all(start_pct(p) is not None for p in _picks) else ""
     body = (
-        f'<div class="stat-row">'
+        (_share_button("0 0 8px") if kortti_cap else "")
+        + f'<div class="stat-row"{kortti_cap}>'
         f'<div class="stat"><b>{escape(top["web_name"])}</b>'
         f'<span>#1 pick · {escape(top["team_short"])} · {_start_txt(top)} '
         "· GW xP in Premium</span></div>"
@@ -629,6 +646,8 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         "GoalIQ Premium.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
+        + (SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
+           if kortti_cap else "")
     )
     jsonld = [{
         "@context": "https://schema.org", "@type": "WebPage",
@@ -712,7 +731,7 @@ def render_price_changes(pw: dict, now: datetime) -> str:
         "the day FPL projects each change. Free, no sign-in."
     )
 
-    def rows(items, label):
+    def rows(items, label, attr=""):
         if not items:
             return ""
         lines = "".join(
@@ -723,7 +742,23 @@ def render_price_changes(pw: dict, now: datetime) -> str:
             f'<span class="pick">{label}</span></div>'
             for p in items[:10]
         )
-        return f'<div class="card">{lines}</div>'
+        return f'<div class="card"{attr}>{lines}</div>'
+
+    # SHARE-CARD-BATCH-2 (27.8): kortti risers[:10]-listasta, samat luvut
+    # kuin riveilla (hinta + % of the way). Otsikko ei sano "tonight", koska
+    # eta vaihtelee rivi rivilta; se on rivien meta-tekstissa sivulla.
+    kortti_risers = _card_spec_attr(
+        title="CLOSEST TO A PRICE RISE",
+        subtitle="FPL's own projection, how far along each player is",
+        mid_label="PRICE",
+        value_label="OF THE WAY",
+        foot="fallers and projected days are free on goaliq.app/fpl/price-changes",
+        foot2="FPL price data, not betting advice",
+        rows=[{"rank": i + 1, "name": str(p["web_name"]),
+               "mid": f"£{p['now_cost']:.1f}m",
+               "value": f"{round(float(p.get('confidence') or 0) * 100)}%"}
+              for i, p in enumerate(risers[:CARD_ROWS])],
+        file_name="goaliq-price-risers.png") if risers else ""
 
     if not risers and not fallers:
         content = (
@@ -733,7 +768,8 @@ def render_price_changes(pw: dict, now: datetime) -> str:
         )
     else:
         content = (
-            ("<h2>Risers</h2>" + rows(risers, "rising")) if risers else ""
+            ("<h2>Risers</h2>" + _share_button("6px 0 4px")
+             + rows(risers, "rising", kortti_risers)) if risers else ""
         ) + (
             ("<h2>Fallers</h2>" + rows(fallers, "falling")) if fallers else ""
         )
@@ -753,6 +789,8 @@ def render_price_changes(pw: dict, now: datetime) -> str:
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · '
         f'{escape(meta.get("disclaimer") or "")} {DISCLAIMER}</p>'
+        + (SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
+           if risers else "")
     )
     jsonld = [{
         "@context": "https://schema.org", "@type": "WebPage",
@@ -2821,9 +2859,25 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             + "</tr>"
             for r in out_rows
         )
+        # SHARE-CARD-BATCH-2 (27.8): kortti SAMASTA out_rows-listasta kuin
+        # taulukko, kymmenen ensimmaista = omistetuimmat poissaolijat.
+        # Arvo on omistus-% (ilmainen, FPL:n oma luku), ei xP:ta.
+        kortti_out = _card_spec_attr(
+            title="RULED OUT, MOST OWNED FIRST",
+            subtitle=f"official FPL availability, {window}",
+            value_label="OWNED",
+            foot="cover options for each one are free on goaliq.app/fpl/team-news",
+            foot2="FPL availability data, not betting advice",
+            rows=[{"rank": i + 1, "name": str(r.get("web_name", "")),
+                   "team": str(r.get("team_short", "")),
+                   "tag": str(r.get("pos", "")),
+                   "value": f"{_owned(r):.1f}%"}
+                  for i, r in enumerate(out_rows[:CARD_ROWS])],
+            file_name="goaliq-ruled-out.png")
         sections.append(
             '<h2 id="out">Ruled out</h2>'
-            '<div class="lb-wrap"><table class="lb">'
+            + _share_button("6px 0 4px")
+            + f'<div class="lb-wrap"><table class="lb"{kortti_out}>'
             "<thead><tr><th>Player</th><th>Club</th>"
             '<th class="m-hide">Pos</th><th>Status</th>'
             '<th class="n">Owned</th>'
@@ -2895,6 +2949,8 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
           "yet.</p>"
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
+        + (SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
+           if out_rows else "")
     )
     jsonld = [{
         "@context": "https://schema.org", "@type": "WebPage",

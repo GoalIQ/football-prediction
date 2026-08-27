@@ -13,6 +13,7 @@
 	 */
 	import { auth } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
+	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import {
 		latestDebrief,
 		loadDecisions,
@@ -76,6 +77,43 @@
 		)
 	);
 	let debrief = $derived(rows ? latestDebrief(rows) : null);
+	// SHARE-CARD-SPA 27.8: tuloskortti on silmukan palkinto ja FREE, joten se
+	// on myos jaettava. Vain gradatut rivit (molemmat puolet pisteytetty), sama
+	// joukko josta kausisumma lasketaan. Ei arvata gradaamattomia.
+	const KIND_LABEL: Record<string, string> = {
+		captain: 'Captain',
+		transfer: 'Transfer',
+		chip: 'Chip',
+		lineup: 'Lineup'
+	};
+	let sharing = $state(false);
+	async function shareScore() {
+		if (sharing || !score || score.gradedCount === 0) return;
+		sharing = true;
+		try {
+			const recent = [...gradedRows].sort((a, b) => b.gw - a.gw).slice(0, 10);
+			const calls = score.gradedCount === 1 ? 'call' : 'calls';
+			const method = await shareCard({
+				title: 'ME VS THE MODEL',
+				subtitle: `${score.userTotal.toFixed(1)} to ${score.modelTotal.toFixed(1)} over ${score.gradedCount} graded ${calls}, FPL points`,
+				nameLabel: 'CALL',
+				midLabel: 'MODEL',
+				valueLabel: 'ME',
+				fileName: 'goaliq_beat_the_model.png',
+				rows: recent.map((r, i) => ({
+					rank: i + 1,
+					name: `GW${r.gw} ${KIND_LABEL[r.kind] ?? r.kind}`,
+					tag: r.followed ? 'SAME' : 'DIFF',
+					team: '',
+					mid: `${r.model_points}`,
+					value: `${r.user_points}`
+				}))
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'beat', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	// V2 päätöspäiväkirja: mitä poikkeaminen maksoi tai tuotti. Premium —
 	// tuloskortti itse pysyy ilmaisena (V1-linjaus).
 	let whatIf = $derived(rows ? whatIfRows(rows) : []);
@@ -93,6 +131,12 @@
 				Your logged calls get graded once the gameweek finishes and FPL has scored it.
 			</p>
 		{:else}
+			<div class="head-row">
+				<span class="muted">Season scoreboard</span>
+				<button type="button" class="window-chip" onclick={shareScore} disabled={sharing}>
+				{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+				</button>
+			</div>
 			<div class="totals">
 				<div><span class="lbl">You</span><span class="num">{score.userTotal.toFixed(1)}</span></div>
 				<div>
@@ -342,5 +386,29 @@
 	}
 	.objective button.quiet {
 		color: var(--text-muted);
+	}
+
+	/* SHARE-CARD-SPA 27.8: sama chip kuin muissa jaettavissa listoissa */
+	.head-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
 	}
 </style>

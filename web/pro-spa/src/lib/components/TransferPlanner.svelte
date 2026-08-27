@@ -3,6 +3,8 @@
 	import { runWithSquadFallback, NoSquadInputError, type SquadBasis } from '$lib/squadInput';
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
 	import HoldVerdictCard from './HoldVerdictCard.svelte';
+	import { capture } from '$lib/analytics';
+	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
 
@@ -32,6 +34,73 @@
 
 	let entryValid = $derived(/^\d{1,10}$/.test(fplEntry.entry.trim()));
 
+	// SHARE-CARD-SPA 27.8: HOLD-verdikti on charterin #1 jaettava hetki
+	// ("the model told me to hold"). Otsikko on mallin kanta, rivit ovat
+	// suunnitelma sellaisenaan: siirto per rivi hitin kanssa, tai hold +
+	// kapteeni kierroksilla joilla ei siirreta. Luvut samat kuin sivulla.
+	let sharing = $state(false);
+	async function sharePlan() {
+		if (sharing || !data) return;
+		sharing = true;
+		try {
+			const v = data.hold_verdict;
+			const rows: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
+			for (const g of data.plan) {
+				if (g.transfers.length === 0) {
+					rows.push({
+						rank: rows.length + 1,
+						name: `Hold, captain ${g.captain.web_name}`,
+						tag: `GW${g.gw}`,
+						team: '',
+						mid: '',
+						value: g.gw_xp.toFixed(1)
+					});
+					continue;
+				}
+				for (const tr of g.transfers) {
+					rows.push({
+						rank: rows.length + 1,
+						name: `${tr.out.web_name} to ${tr.in.web_name}`,
+						tag: `GW${g.gw}`,
+						team: tr.in.team_short,
+						mid: tr.hit ? `-${tr.hit}` : '',
+						value: `${tr.gain_xp_remaining >= 0 ? '+' : ''}${tr.gain_xp_remaining.toFixed(1)}`
+					});
+				}
+			}
+			let subtitle: string;
+			if (v) {
+				const gain =
+					v.best_move_gain_xp === null
+						? null
+						: `${v.best_move_gain_xp >= 0 ? '+' : ''}${v.best_move_gain_xp.toFixed(1)}`;
+				const hit = v.hit_applied_xp ? ', after a -4 hit' : '';
+				if (v.verdict === 'hold') {
+					subtitle =
+						gain === null
+							? `no move improves the squad over the next ${v.horizon_gws} GWs`
+							: `best move ${gain} xP over ${v.horizon_gws} GWs, under the ${v.threshold_xp.toFixed(1)} xP threshold${hit}`;
+				} else {
+					subtitle = `best move ${gain} xP over ${v.horizon_gws} GWs, clears the ${v.threshold_xp.toFixed(1)} xP threshold${hit}`;
+				}
+			} else {
+				const net = `${data.totals.net_gain >= 0 ? '+' : ''}${data.totals.net_gain.toFixed(1)}`;
+				subtitle = `${net} xP vs no transfers over ${data.meta.horizon} GWs, GoalIQ model`;
+			}
+			const method = await shareCard({
+				title: v ? (v.verdict === 'hold' ? 'THE MODEL SAYS HOLD' : 'THE MODEL SAYS MOVE') : 'TRANSFER PLAN',
+				subtitle,
+				nameLabel: 'MOVE',
+				midLabel: 'HIT',
+				valueLabel: 'xP',
+				fileName: 'goaliq_hold_verdict.png',
+				rows: rows.slice(0, 10)
+			});
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'planner', method });
+		} finally {
+			sharing = false;
+		}
+	}
 	async function build(e: SubmitEvent) {
 		e.preventDefault();
 		if (!entryValid || loading) return;
@@ -131,6 +200,12 @@
 			<HoldVerdictCard verdict={data.hold_verdict} surface="planner" />
 		</div>
 	{/if}
+	<div class="head-row">
+		<span class="muted">Share the model's call</span>
+		<button type="button" class="window-chip" onclick={sharePlan} disabled={sharing}>
+		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		</button>
+	</div>
 	<MethodNote summary="How this plan is built (and its limits)">
 		<p>{data.meta.heuristic}</p>
 		{#if data.meta.note}
@@ -269,5 +344,29 @@
 	.fact .val {
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* SHARE-CARD-SPA 27.8: sama chip kuin muissa jaettavissa listoissa */
+	.head-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--s-2);
+		flex-wrap: wrap;
+	}
+	.window-chip {
+		flex: 0 0 auto;
+		min-width: 36px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		color: var(--text-muted);
+		font-weight: 700;
+		font-size: var(--step--1);
+		padding: 4px 12px;
+		cursor: pointer;
+		text-align: center;
+		white-space: nowrap;
+		line-height: 1.4;
 	}
 </style>
