@@ -27,6 +27,16 @@
 			label: 'Expected minutes (high to low)',
 			cmp: (a: XpPlayer, b: XpPlayer) => b.xmins - a.xmins
 		},
+		haul: {
+			label: 'Chance of 10+ points (high to low)',
+			cmp: (a: XpPlayer, b: XpPlayer) =>
+				(b.xp_dist?.p_haul ?? -1) - (a.xp_dist?.p_haul ?? -1) || b.xp_per_gw - a.xp_per_gw
+		},
+		safe: {
+			label: 'Chance of a blank (low to high)',
+			cmp: (a: XpPlayer, b: XpPlayer) =>
+				(a.xp_dist?.p_blank ?? 2) - (b.xp_dist?.p_blank ?? 2) || b.xp_per_gw - a.xp_per_gw
+		},
 		pos: {
 			label: 'Position (GKP to FWD)',
 			cmp: (a: XpPlayer, b: XpPlayer) =>
@@ -438,6 +448,24 @@
 					>
 				{/if}
 				<th class="num"><abbr title="Average expected points per gameweek">xP/GW</abbr></th>
+				<!-- XP-DISTRIBUTION 27.8: xP on keskiarvo. Nama kolme kertovat muodon:
+				     P(10+), P(blank) ja katto, 2000 simuloitua ottelua per pelaaja
+				     samoista komponenteista. Nakyvat myos kapealla (10+ ja Blank). -->
+				<th class="num"
+					><abbr title="Chance of 10 or more points in the next gameweek, from 2,000 simulated gameweeks built on the same numbers as xP"
+						>10+</abbr
+					></th
+				>
+				<th class="num"
+					><abbr title="Chance of 2 points or fewer in the next gameweek, from the same 2,000 simulated gameweeks"
+						>Blank</abbr
+					></th
+				>
+				<th class="num m-hide"
+					><abbr title="A strong week. He goes past this in fewer than one gameweek in ten (90th percentile of the same simulations)"
+						>Ceiling</abbr
+					></th
+				>
 				<th class="num m-hide"
 					><abbr title="Expected points if the player completes a full 90 minutes. This is the rate, so read it next to xMins, which is what he is actually expected to play."
 						>xP/90</abbr
@@ -514,6 +542,15 @@
 							</td>
 						{/if}
 						<td class="num">{p.xp_per_gw.toFixed(2)}</td>
+						<td class="num">
+							{#if p.xp_dist}{Math.round(p.xp_dist.p_haul * 100)}%{:else}<span class="muted" title="No fixture in the next gameweek">-</span>{/if}
+						</td>
+						<td class="num">
+							{#if p.xp_dist}{Math.round(p.xp_dist.p_blank * 100)}%{:else}<span class="muted">-</span>{/if}
+						</td>
+						<td class="num m-hide">
+							{#if p.xp_dist}{p.xp_dist.p90}{:else}<span class="muted">-</span>{/if}
+						</td>
 						<td class="num m-hide">
 							{#if p.xp_per_90 == null}
 								<span class="muted" title="Too few expected minutes for a rate to mean anything"

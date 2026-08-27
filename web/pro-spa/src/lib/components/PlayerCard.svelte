@@ -618,6 +618,15 @@
 									player.data_basis}.
 							</p>
 						{/if}
+						<!-- XP-DISTRIBUTION 27.8: pistearvion muoto. Tulee API:sta vain
+						     premium-riveilla (sama maski kuin xP), joten ehto riittaa. -->
+						{#if player.xp_dist}
+							<p class="dist-line">
+								GW{player.xp_dist.gw} range: {Math.round(player.xp_dist.p_haul * 100)}% chance of
+								10 or more points, {Math.round(player.xp_dist.p_blank * 100)}% chance of 2 or
+								fewer. He goes past {player.xp_dist.p90} in fewer than one week in ten.
+							</p>
+						{/if}
 						<!-- 4.8: aloitus-tn:n LÄHDE kun se ei ole puhtaasti mallin laskema.
 						     Payload on tuonut `override`-arvon 27.7. lähtien, mutta mikään
 						     pinta ei näyttänyt sitä: Isakin käsin nostettu 0.30 -> 0.85 on

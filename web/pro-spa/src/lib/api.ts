@@ -187,6 +187,20 @@ export interface XpPlayer {
 	 * + otoskoko kierroksina. null/puuttuu = esikausi tai ei pelattua
 	 * kierrosta ikkunassa -> rivia ei renderoida. */
 	form?: { value: number; gws: number; basis: string } | null;
+	/** XP-DISTRIBUTION 27.8: headline-GW:n pistejakauma 2000 simulaatiosta
+	 *  samoista komponenteista joista xP lasketaan. null = blank GW. */
+	xp_dist?: {
+		gw: number;
+		n: number;
+		mean: number;
+		p_haul: number;
+		p_blank: number;
+		p10: number;
+		median: number;
+		p90: number;
+		haul_pts: number;
+		blank_pts: number;
+	} | null;
 	/** Hinta miljoonina (bootstrapin now_cost / 10). */
 	price?: number;
 	/** Edge-sprint addendum: edellisen kauden historia. Puuttuu / null =

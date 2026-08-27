@@ -5,9 +5,14 @@ vakiomuodolla: 4-5 korttia (kapteeni, korkein katto, turvallisin, uhkapeli)
 + tuotekuva, joka kierros sama. Meilta puuttui toistuva muoto.
 
 LAHDE: data/fpl_xp_projections.json, VAIN XP-DISTRIBUTION-kentat (xp_dist)
-+ xp_per_gw. Ei keksittyja lukuja. Kortti EI nayta per-pelaaja-xP:ta
-(Premium) vaan todennakoisyyksia ja prosentteja; erottaja alatunnisteessa:
-mallin oma entry liigassa + "graded in public".
++ headline-GW:n xp (gameweeks[].xp). Ei keksittyja lukuja. Kortti EI nayta
+per-pelaaja-xP:ta (lukija tarkistaa prosentit ilmaissivulta
+/fpl/expected-points, jolla on samat sarakkeet); erottaja alatunnisteessa:
+mallin oma entry liigassa + joka kierros julkisesti pisteytetty.
+JULKAISUPORTTI 27.8: kapteeni valitaan GW-xP:lla (ei 6 GW:n keskiarvolla,
+sama metriikka kuin kapteenirankerissa), "past p90 in fewer than 1 week in
+10" (kokonaisluvut + typistys: P(X >= p90) voi olla 20 %), ei "floor"-sanaa,
+Thiaw-esto _pool():ssa, linkki sivulle jolla luvut nakyvat.
 
 Valinnat (kaikki headline-GW:sta, vain pelaajat joilla p_start >= 0.6 ja
 status a, jotta kortti ei nosta penkkilaista):
@@ -36,6 +41,10 @@ import config
 
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
 MIN_P_START = 0.6
+# Kova saanto: ei Thiaw-juttuja markkinointiin (muisti thiaw-ei-markkinointiin).
+# Esto kuuluu generaattoriin, koska yksi refresh riittaa nostamaan hanet
+# "safest"-tiileen (nailed DEF, korkea CS%).
+EXCLUDED_NAMES = {"Thiaw"}
 SAFE_MIN_XP = 4.0
 GAMBLE_MIN_BLANK = 0.35
 
@@ -64,7 +73,7 @@ overflow:hidden;text-overflow:ellipsis;}
 .tile .range b{color:var(--cream);font-weight:600;}
 .tile .big{font-size:54px;font-weight:700;color:var(--teal);margin-top:auto;
 line-height:1;font-variant-numeric:tabular-nums;}
-.tile .big small{font-size:18px;color:var(--muted);font-weight:500;margin-left:6px;}
+.tile .big small{font-size:18px;white-space:nowrap;color:var(--muted);font-weight:500;margin-left:6px;}
 .tile .why{color:var(--muted);font-size:14px;margin-top:8px;min-height:36px;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
@@ -75,7 +84,18 @@ font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
 def _pool(players: list[dict]) -> list[dict]:
     return [p for p in players
             if p.get("xp_dist") and p.get("status", "a") == "a"
-            and float(p.get("p_start") or 0) >= MIN_P_START]
+            and float(p.get("p_start") or 0) >= MIN_P_START
+            and p.get("web_name") not in EXCLUDED_NAMES
+            and gw_xp(p) is not None]
+
+
+def gw_xp(p: dict):
+    """Headline-GW:n xP riville (gameweeks[].xp), EI xp_per_gw (6 GW:n keskiarvo)."""
+    gw = (p.get("xp_dist") or {}).get("gw")
+    for g in p.get("gameweeks") or []:
+        if g.get("gw") == gw:
+            return float(g.get("xp") or 0.0)
+    return None
 
 
 def pick_standouts(players: list[dict]) -> dict:
@@ -92,12 +112,12 @@ def pick_standouts(players: list[dict]) -> dict:
         return [p for p in pool if p["id"] not in taken] if all("id" in p for p in pool)             else [p for p in pool if p["web_name"] not in taken]
     def key(p):
         return p.get("id", p["web_name"])
-    captain = max(pool, key=lambda p: (p["xp_per_gw"], d(p)["p_haul"]))
+    captain = max(pool, key=lambda p: (gw_xp(p), d(p)["p_haul"]))
     taken.append(key(captain))
     ceiling = max(rest(), key=lambda p: (d(p)["p90"], d(p)["p_haul"])) if rest() else None
     if ceiling: taken.append(key(ceiling))
-    safe_pool = [p for p in rest() if p["xp_per_gw"] >= SAFE_MIN_XP]
-    safest = (min(safe_pool, key=lambda p: (d(p)["p_blank"], -p["xp_per_gw"]))
+    safe_pool = [p for p in rest() if gw_xp(p) >= SAFE_MIN_XP]
+    safest = (min(safe_pool, key=lambda p: (d(p)["p_blank"], -gw_xp(p)))
               if safe_pool else None)
     if safest: taken.append(key(safest))
     gamble_pool = [p for p in rest() if d(p)["p_blank"] >= GAMBLE_MIN_BLANK]
@@ -116,8 +136,8 @@ def _tile(lbl: str, p: dict | None, big: str, small: str, why: str) -> str:
             f'<div class="name">{escape(p["web_name"])}</div>'
             f'<div class="meta">{escape(p["pos"])} · {escape(p["team_short"])}'
             f' · {float(p.get("price") or 0):.1f}m</div>'
-            f'<div class="range">floor <b>{p["xp_dist"]["p10"]}</b> · median '
-            f'<b>{p["xp_dist"]["median"]}</b> · ceiling <b>{p["xp_dist"]["p90"]}</b> pts</div>'
+            f'<div class="range">median <b>{p["xp_dist"]["median"]}</b> pts, '
+            f'range <b>{p["xp_dist"]["p10"]}</b> to <b>{p["xp_dist"]["p90"]}</b></div>'
             f'<div class="big">{escape(big)}<small>{escape(small)}</small></div>'
             f'<div class="why">{escape(why)}</div></div>')
 
@@ -132,17 +152,18 @@ def build_html(data: dict) -> tuple[str, dict]:
         _tile("Captain pick", s["captain"],
               pct(s["captain"]["xp_dist"]["p_haul"]) if s["captain"] else "-",
               "10+ pts",
-              (f"highest projection of the week, blanks {pct(s['captain']['xp_dist']['p_blank'])}"
+              (f"top GW{gw} projection in the pool, blanks {pct(s['captain']['xp_dist']['p_blank'])}"
                if s["captain"] else "")),
         _tile("Highest ceiling", s["ceiling"],
               str(s["ceiling"]["xp_dist"]["p90"]) if s["ceiling"] else "-",
-              "pts, 1 week in 10",
-              (f"10+ in {pct(s['ceiling']['xp_dist']['p_haul'])} of simulated weeks"
+              "pts",
+              (f"past it in fewer than 1 week in 10, 10+ in {pct(s['ceiling']['xp_dist']['p_haul'])}"
                if s["ceiling"] else "")),
         _tile("Safest pick", s["safest"],
-              pct(s["safest"]["xp_dist"]["p_blank"]) if s["safest"] else "-",
-              "blank chance",
-              (f"floor {s['safest']['xp_dist']['p10']}, median {s['safest']['xp_dist']['median']} pts"
+              pct(1.0 - s["safest"]["xp_dist"]["p_blank"]) if s["safest"] else "-",
+              "3+ pts",
+              (f"median {s['safest']['xp_dist']['median']} pts, under "
+               f"{s['safest']['xp_dist']['p10']} in fewer than 1 week in 10"
                if s["safest"] else "")),
         _tile("The gamble", s["gamble"],
               pct(s["gamble"]["xp_dist"]["p_haul"]) if s["gamble"] else "-",
@@ -157,13 +178,13 @@ def build_html(data: dict) -> tuple[str, dict]:
         '<div class="card">'
         '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
         f'<div><div class="title">GW{gw} standouts from {n:,} simulated gameweeks</div>'
-        '<div class="sub">Same numbers as our xP, shown as chances instead of averages. '
-        'Likely starters only.</div></div></div>'
+        '<div class="sub">Same numbers as our xP, run 2,000 times. Only players with '
+        'at least a 60% chance of starting.</div></div></div>'
         f'<div class="tiles">{tiles}</div>'
         '<div class="ftr"><span>The model plays too: <b>entry 116920</b>, '
-        'graded in public every gameweek</span>'
+        'every gameweek scored in public</span>'
         '<span>model projections, not betting advice</span>'
-        '<span>goaliq.app/fpl</span></div>'
+        '<span>goaliq.app/fpl/expected-points</span></div>'
         "</div>")
     return html, s
 

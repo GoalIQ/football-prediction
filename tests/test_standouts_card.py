@@ -10,7 +10,8 @@ from scripts.render_standouts_card import pick_standouts, build_html
 
 def _p(name, xp, p_start, haul, blank, p90, status="a", pos="MID"):
     return {"web_name": name, "pos": pos, "team_short": "TST", "price": 7.5,
-            "status": status, "p_start": p_start, "xp_per_gw": xp,
+            "status": status, "p_start": p_start, "xp_per_gw": xp * 0.5,
+            "gameweeks": [{"gw": 2, "xp": xp}],
             "xp_dist": {"gw": 2, "n": 2000, "mean": xp, "p_haul": haul,
                         "p_blank": blank, "p10": 1, "median": 4, "p90": p90,
                         "haul_pts": 10, "blank_pts": 2}}
@@ -54,9 +55,21 @@ def test_four_distinct_names():
     assert len(names) == len(set(names)) == 4
 
 
+def test_thiaw_never_on_card():
+    ps = [_p("Thiaw", 6.0, 0.95, 0.4, 0.1, 14), _p("Other", 4.0, 0.9, 0.2, 0.3, 10)]
+    s = pick_standouts(ps)
+    assert all((s[k] is None or s[k]["web_name"] != "Thiaw") for k in s)
+
+
+def test_captain_uses_gameweek_xp_not_horizon_average():
+    a = _p("HorizonKing", 4.0, 0.95, 0.2, 0.3, 10); a["xp_per_gw"] = 9.0
+    b = _p("ThisWeek", 5.5, 0.95, 0.2, 0.3, 10); b["xp_per_gw"] = 3.0
+    assert pick_standouts([a, b])["captain"]["web_name"] == "ThisWeek"
+
+
 def test_html_carries_no_per_player_xp():
     ps = [_p("Cap", 6.37, 0.95, 0.30, 0.30, 13)]
     html, _ = build_html({"meta": {"next_gameweek": 2}, "players": ps})
-    assert "6.37" not in html and "6.4" not in html
+    assert "6.37" not in html and "6.4" not in html and "floor" not in html
     assert "GW2 standouts" in html and "entry 116920" in html
     assert "—" not in html  # em dash
