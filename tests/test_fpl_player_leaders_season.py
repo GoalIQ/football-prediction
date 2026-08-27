@@ -90,7 +90,9 @@ def test_committed_artefact_obeys_the_published_basis_rule():
         `starts < 3` on valttamaton ehto (ei riittava);
     (b) kohdekauden rivi = kaikki sen ottelut ovat kuluvaa kautta, eli
         games_total == len(recent_games) <= RECENT_KEEP eika rivi voi
-        kantaa 10 viime kauden ottelua.
+        kantaa 10 viime kauden ottelua. Haara (b) mittaa vaitteen SEURAUSTA
+        ("ei 25/26-dataa lainkaan" ei nay artefaktista); jos kohdekauden rivi
+        saa joskus edelliskauden dataa oikean pituisena, tama ei nae sita.
     Jos merge-logiikka muuttuu, tama kaatuu ennen kuin lause vanhenee."""
     import json
     from src.models.fpl_leaders import LEADERS_PATH, MIN_CURRENT_GAMES
