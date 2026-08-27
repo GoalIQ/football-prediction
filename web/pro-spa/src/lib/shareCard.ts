@@ -20,6 +20,9 @@ export interface CardRow {
 	name: string;
 	/** pos-tagi heti nimen vieressä (Wolfyn layout-palaute) */
 	tag: string;
+	/** toinen tagi samassa laatikossa: rivin kausi ("25/26") sekakausilistalla.
+	 *  27.8: sama kenttä vanilla-JS-kortissa (scripts/share_card_js.py). */
+	tag2?: string;
 	team: string;
 	/** P/FK-tyyliset amber-badget nimen perään */
 	badges?: string[];
@@ -187,6 +190,19 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		ctx.strokeRect(x, cy - 15, pw, 30);
 		ctx.fillText(r.tag, x + 8, cy - 10);
 		x += pw + 12;
+
+		// Toinen tagi samassa laatikossa: rivin kausi sekakausilistalla.
+		// Alaotsikko ei voi sanoa kumpi rivi on kumpaa kautta.
+		if (r.tag2) {
+			ctx.font = bold(17);
+			ctx.fillStyle = MUTED;
+			const pw2 = ctx.measureText(r.tag2).width + 16;
+			ctx.strokeStyle = TAG_LINE;
+			ctx.lineWidth = 1;
+			ctx.strokeRect(x, cy - 15, pw2, 30);
+			ctx.fillText(r.tag2, x + 8, cy - 10);
+			x += pw2 + 12;
+		}
 
 		ctx.font = med(20);
 		ctx.fillStyle = MUTED;

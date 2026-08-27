@@ -103,8 +103,29 @@ def _player_rows(boot: dict, summaries: dict, season: str,
             "games_total": len(played),
             "basis": season,
             "recent_games": rows,
+            # 🔴 KAUSITOTAALIT AINA, EI VAIN ESIKAUDELLA (27.8). Ennen tata
+            # `season`-lohkon kirjoitti vain refresh_current_attrs, jota main()
+            # kutsuu pelkastaan kun yhtaan GW:ta ei ole pelattu. GW1:n jalkeen
+            # build() ajoi ja pudotti lohkon: sivun Season-ikkuna nayttivat
+            # nollia 477/477 rivilla, SPA ja mobiili piilottivat koko nakyman,
+            # ja basis-lause lupasi silti "the season column is 2026/27 so
+            # far". Sama lahde kuin per-ottelu-rivit, yksi kutsu.
+            "season": _season_block(e),
         })
     return players
+
+
+def _season_block(e: dict) -> dict:
+    """Kuluvan kauden totaalit bootstrapin elementista: [mins, starts, xG,
+    xA, xGI]. Rullaava 3/5/10 kertoo vireesta, tama otoskoosta - ja
+    kausivaihdossa tama on AINOA lohko joka on varmasti kuluvaa kautta."""
+    return {
+        "mins": int(e.get("minutes") or 0),
+        "starts": int(e.get("starts") or 0),
+        "xg": round(float(e.get("expected_goals") or 0.0), 2),
+        "xa": round(float(e.get("expected_assists") or 0.0), 2),
+        "xgi": round(float(e.get("expected_goal_involvements") or 0.0), 2),
+    }
 
 
 def build() -> dict:
@@ -271,13 +292,7 @@ def refresh_current_attrs(boot: dict) -> dict | None:
         # Kausitotaalit suoraan bootstrapista (sama lahde kuin per-ottelu-
         # rivit). Nailla saa "koko kausi" -ikkunan ilman yhtaan lisahakua:
         # rullaava 3/5/10 kertoo vireesta, kausitotaali otoskoosta.
-        p["season"] = {
-            "mins": int(e.get("minutes") or 0),
-            "starts": int(e.get("starts") or 0),
-            "xg": round(float(e.get("expected_goals") or 0.0), 2),
-            "xa": round(float(e.get("expected_assists") or 0.0), 2),
-            "xgi": round(float(e.get("expected_goal_involvements") or 0.0), 2),
-        }
+        p["season"] = _season_block(e)
         kept.append(p)
     data["players"] = kept
     meta = data.setdefault("meta", {})

@@ -43,8 +43,11 @@ SARAKKEET = {
     # 25.8: siirretty palvelinriveille. Molemmilla sivuilla on klikkilajittelu
     # ja xg-leadersilla lisaksi viisi suodatinta, joten DOM-lukija olisi
     # kantanut sen nakyman johon jakaja sattui suodattamaan.
+    # 27.8: `tag2` = rivin kausi. Sekakausilistalla alaotsikko ei kerro
+    # kumpi rivi on kumpaa; portti vaatii tagin identtiseksi Season-solun
+    # kanssa, jotta kortti ei voi vaittaa eri kautta kuin taulukko.
     "xg-leaders": {"name": "player", "team": "team", "tag": "pos",
-                   "mid": "games", "value": "xg"},
+                   "tag2": "season", "mid": "games", "value": "xg"},
     # 🔴 Defence on JOUKKUElista: ei team- eika pos-saraketta, ja nimisarake
     # on "Team". `name_label="TEAM"` pinnataan erikseen alla.
     "defence": {"name": "team", "mid": "shots", "value": "xgc"},

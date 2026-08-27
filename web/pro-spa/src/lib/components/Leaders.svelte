@@ -203,6 +203,20 @@
 
 	const teams = $derived([...new Set(xgRowsRaw.map((r) => r.team_short))].sort());
 
+	/** "2025/26" -> "25/26": solu ja kortin tagi ovat kapeita, koko
+	 *  vuosiluku on basis-rivillä. */
+	function lyhytKausi(k: string | null | undefined): string {
+		const s = k ?? '';
+		return /^\d{4}\/\d{2}$/.test(s) ? `${s.slice(2, 4)}/${s.slice(5)}` : s;
+	}
+	/** Rivin kausi: Season-näkymässä totaalit ovat aina kohdekautta (elävä
+	 *  bootstrap), rullaavassa ikkunassa rivin oma `basis`. */
+	function rowSeason(a: Agg): string {
+		return seasonView
+			? lyhytKausi(xg?.meta?.target_season ?? xg?.meta?.basis_season)
+			: lyhytKausi(a.row.basis);
+	}
+
 	const xgVisible = $derived.by(() => {
 		const out: Agg[] = [];
 		for (const r of xgRowsRaw) {
@@ -392,6 +406,8 @@
 					rank: i + 1,
 					name: a.row.web_name,
 					tag: a.row.pos,
+					// 27.8: rivin kausi kortille, sama kuin taulukon Season-solu
+					tag2: rowSeason(a),
 					team: a.row.team_short,
 					mid: a.row.price.toFixed(1),
 					value: a.xg.toFixed(2)
@@ -613,6 +629,11 @@
 						<th class="num"><button type="button" class="sortbtn" onclick={() => sortBy('xgi')}>xGI</button></th>
 						<th class="num m-hide"><button type="button" class="sortbtn" onclick={() => sortBy('mins')}>Mins</button></th>
 						<th class="num m-hide"><button type="button" class="sortbtn" onclick={() => sortBy('games')}>{seasonView ? 'Starts' : 'Games'}</button></th>
+						<!-- XG-KAUSI-SARAKE 27.8: rivin kausi. Rullaava ikkuna on viime
+						     kautta kunnes pelaajalla on 3 ottelua tällä kaudella, ja
+						     1 ottelun rivi 5 ottelun rivin vieressä ei ole luettavissa
+						     ilman tätä. Näkyy myös kapealla (ei m-hide). -->
+						<th class="num">Season</th>
 						{#if hasXpCol}
 							<!-- #9b-c: mallin projektio rinnalle (vain premium — xP on
 							     eteenpäin katsovaa mallidataa, ei ilmaista hyödykedataa) -->
@@ -637,6 +658,7 @@
 							<td class="num">{a.xgi.toFixed(2)}</td>
 							<td class="num m-hide">{a.mins}</td>
 							<td class="num m-hide">{a.games}</td>
+							<td class="num">{rowSeason(a)}</td>
 							{#if hasXpCol}
 								{@const xv = xpById?.get(a.row.id)}
 								<td class="num">{typeof xv === 'number' ? xv.toFixed(1) : ''}</td>

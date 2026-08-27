@@ -1058,8 +1058,20 @@ def _xg_payload(leaders: dict) -> str:
             list(_team_color(p.get("team_short", ""))[:1])
             + [_darken(_team_color(p.get("team_short", ""))[0])]
             + [_team_color(p.get("team_short", ""))[1]],
+            # 7: rivin kausi (lyhyt, "25/26"). Rullaavat ikkunat lukevat
+            # taman kauden otteluita; Season-ikkuna korvaa sen kohdekaudella.
+            lyhyt_kausi(p.get("basis")),
         ])
     return json.dumps(out, separators=(",", ":"), ensure_ascii=False)
+
+
+def lyhyt_kausi(kausi: str | None) -> str:
+    """"2025/26" -> "25/26". Taulukon solu ja kortin tagi ovat kapeita;
+    koko vuosiluku on sivun basis-lauseessa ja Season-ikkunan nimessa."""
+    k = str(kausi or "")
+    if len(k) == 7 and k[4] == "/" and k[:4].isdigit():
+        return f"{k[2:4]}/{k[5:]}"
+    return k
 
 
 # Selainlogiikka: ikkuna (3/5/10), per game vs per 90, lajittelu, suodattimet.
@@ -1099,22 +1111,28 @@ XG_JS = """
  var minm=0;
  var tb=document.getElementById('xgb'),cnt=document.getElementById('xgc');
  if(!tb)return;
- var BASIS_K='__BASIS_K__',TARGET_K='__TARGET_K__';
+ var BASIS_K='__BASIS_K__',TARGET_K='__TARGET_K__',TARGET_KS='__TARGET_KS__';
  function agg(p){
   if(w==='S'){
    // Full season: bootstrap totals. "Per game" mode shows TOTALS (per
    // match is not meaningful for the season: we have starts, not
    // appearances), "Per 90" divides by minutes.
+   // Every row is the target season here: the totals come from the live
+   // bootstrap, so the Season column names that season for all rows.
    var s=p[5]||[0,0,0,0,0],d=per90?(s[0]/90):1;
    if(!d)d=1;
-   return {n:p[0],t:p[1],p:p[2],c:p[3],g:s[1],m:s[0],k:p[6],
+   return {n:p[0],t:p[1],p:p[2],c:p[3],g:s[1],m:s[0],k:p[6],b:TARGET_KS,
            xg:s[2]/d,xa:s[3]/d,xgi:s[4]/d};
   }
   var g=p[4].slice(-w),m=0,xg=0,xa=0,xgi=0;
   for(var i=0;i<g.length;i++){m+=g[i][0];xg+=g[i][1];xa+=g[i][2];xgi+=g[i][3];}
   var d=per90?(m/90):g.length;
   if(!d)d=1;
-  return {n:p[0],t:p[1],p:p[2],c:p[3],g:g.length,m:m,k:p[6],
+  // The Season column is per ROW: until a player has 3 games this season
+  // his window is last season's matches, and a 1-game row next to a
+  // 5-game row is otherwise unreadable (every 5-game row was 2025/26 and
+  // every 1-game row 2026/27 on 26 Aug).
+  return {n:p[0],t:p[1],p:p[2],c:p[3],g:g.length,m:m,k:p[6],b:p[7]||'',
           xg:xg/d,xa:xa/d,xgi:xgi/d};
  }
  function rows(){
@@ -1133,8 +1151,8 @@ XG_JS = """
    r.push(a);
   }
   // Indices match the column headings: 0 #, 1 Player, 2 Team, 3 Pos,
-  // 4 Price, 5 xG, 6 xA, 7 xGI, 8 Mins, 9 Games.
-  var ks=['n','n','t','p','c','xg','xa','xgi','m','g'];
+  // 4 Price, 5 xG, 6 xA, 7 xGI, 8 Mins, 9 Games, 10 Season.
+  var ks=['n','n','t','p','c','xg','xa','xgi','m','g','b'];
   var k=ks[key];
   r.sort(function(x,y){
    var A=x[k],B=y[k];
@@ -1154,6 +1172,7 @@ XG_JS = """
     +a.xg.toFixed(2)+'</td><td class="n">'+a.xa.toFixed(2)+'</td><td class="n">'
     +a.xgi.toFixed(2)+'</td><td class="n m-hide">'+a.m
     +'</td><td class="n m-hide">'+a.g
+    +'</td><td class="n">'+a.b
     +'</td></tr>';
   }
   tb.innerHTML=h;
@@ -1291,13 +1310,14 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     if _sekakausi:
         basis = (f"Rolling-window numbers mix seasons: a player with fewer "
                  f"than 3 games in {_target_k} still shows his "
-                 f"{_rivikaudet[0]} matches. The season column is "
-                 f"{_target_k} so far")
+                 f"{_rivikaudet[0]} matches, and the Season column says "
+                 f"which season each row is from. The Season view is "
+                 f"{_target_k} totals so far")
     elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
         basis = (f"Rolling-window numbers are from the {_ikkuna_k} season; "
-                 f"the season column is {_target_k} so far")
+                 f"the Season view is {_target_k} totals so far")
     elif _ikkuna_k and _target_k:
-        basis = (f"Rolling-window numbers and the season column are both "
+        basis = (f"Rolling-window numbers and the Season view are both "
                  f"{_target_k}")
     else:
         basis = out["meta"].get("basis_label") or ""
@@ -1311,12 +1331,13 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     if _sekakausi:
         xg_tuoreus = (
             f"rolling windows mix seasons until a player has 3 games in "
-            f"{_target_k}, the season column uses {_target_k} totals so far")
+            f"{_target_k} and each row names its season, the Season view "
+            f"uses {_target_k} totals so far")
     elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
-        xg_tuoreus = (f"rolling windows use {_ikkuna_k} matches, the season "
-                      f"column uses {_target_k} totals so far")
+        xg_tuoreus = (f"rolling windows use {_ikkuna_k} matches, the Season "
+                      f"view uses {_target_k} totals so far")
     elif _ikkuna_k:
-        xg_tuoreus = (f"rolling windows and the season column are both "
+        xg_tuoreus = (f"rolling windows and the Season view are both "
                       f"{_ikkuna_k}")
     else:
         xg_tuoreus = "see the basis line below"
@@ -1357,6 +1378,12 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         f'<td class="n">{r["xgi_per_game"]:.2f}</td>'
         f'<td class="n">{mins5.get(r["id"], 0)}</td>'
         f'<td class="n">{r["games"]}</td>'
+        # KAUSI PER RIVI (XG-KAUSI-SARAKE, 27.8). Mitattu 26.8: #1 Emersonn
+        # Games 1 = GW1 26/27, #2 Mbeumo Games 5 = viime kausi, ja otsikko
+        # sanoi vain "xG". Basis-lause sivun ylalaidassa ei riita, koska
+        # lukija vertaa RIVEJA. Naytetaan myos puhelimella (ei m-hide): tama
+        # on se tieto jota ilman lista lukee vaarin pain.
+        f'<td class="n">{lyhyt_kausi(r.get("basis"))}</td>'
         "</tr>"
         # Palvelin renderoi 100 riviä, sama raja kuin JS:n oletus. Koko
         # aineisto on payloadissa (suodatus/lajittelu koskee kaikkia), joten
@@ -1427,8 +1454,14 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         value_label="xG/GAME",
         foot="every player with data is free on goaliq.app/fpl/xg-leaders",
         foot2="FPL shot data, not betting advice",
+        # KAUSI MYOS RIVILLE, EI VAIN ALAOTSIKKOON (27.8). Alaotsikko
+        # sanoo "mixing 2025/26 and 2026/27" mutta ei KUMPI rivi on kumpaa;
+        # Games-sarake ohjaa vanhimpaan dataan. `tag2` piirtyy samanlaisena
+        # laatikkona kuin positio, ja portti vaatii sen taulukon
+        # Season-solun kanssa identtiseksi.
         rows=[{"rank": i + 1, "name": r["web_name"],
                "team": r.get("team_short") or "", "tag": r.get("pos") or "",
+               "tag2": lyhyt_kausi(r.get("basis")),
                "mid": str(r.get("games") or 0),
                "value": ("%.2f" % (r.get("xg_per_game") or 0.0))}
               for i, r in enumerate(rows[:CARD_ROWS])],
@@ -1445,6 +1478,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         '<th class="n m-hide">Price</th><th class="n">xG</th>'
         '<th class="n">xA</th><th class="n">xGI</th>'
         '<th class="n m-hide">Mins</th><th class="n m-hide">Games</th>'
+        '<th class="n">Season</th>'
         "</tr></thead>"
         f'<tbody id="xgb">{trows}</tbody></table></div>'
         '<button type="button" class="chip" id="xgmore" '
@@ -1475,6 +1509,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         # tarkoituksella `null`.
         + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
         + XG_JS.replace("__BASIS_K__", _ikkuna_k).replace("__TARGET_K__", _target_k)
+        .replace("__TARGET_KS__", lyhyt_kausi(_target_k))
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )

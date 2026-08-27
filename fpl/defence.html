@@ -608,6 +608,16 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
      ctx.fillText(r.tag,x+8,cy-10);
      x+=pw+12;
     }
+    // Second tag, same box: the season a row's numbers come from. On a
+    // mixed-season list the subtitle alone cannot say which row is which.
+    if(r.tag2){
+     ctx.font=bold(17);ctx.fillStyle=MUTED;
+     var pw2=ctx.measureText(r.tag2).width+16;
+     ctx.strokeStyle=TAG_LINE;ctx.lineWidth=1;
+     ctx.strokeRect(x,cy-15,pw2,30);
+     ctx.fillText(r.tag2,x+8,cy-10);
+     x+=pw2+12;
+    }
 
     if(r.team){
      ctx.font=med(20);ctx.fillStyle=MUTED;
