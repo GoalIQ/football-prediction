@@ -72,40 +72,45 @@
 		if (sharing || !hero || !data) return;
 		sharing = true;
 		try {
-			const rows: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
+			// JULKAISUPORTTI 27.8: yksi suure per kortti. Siirtorivit = gain vs
+			// hold kahdella desimaalilla kuten sivulla; roll-kierrokset jaavat
+			// pois (kierroksen kokonais-xP olisi eri suure samassa sarakkeessa).
+			// Jos ketjussa ei ole yhtaan siirtoa, kortti sanoo sen otsikossa ja
+			// rivit ovat kierrosten kokonais-xP samalla yksikolla.
+			const moves: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
 			for (const g of hero.gws) {
-				if (g.moves.length === 0) {
-					rows.push({
-						rank: rows.length + 1,
-						name: `Roll, captain ${g.captain.web_name}`,
-						tag: `GW${g.gw}`,
-						team: '',
-						mid: '',
-						value: g.gw_xp.toFixed(1)
-					});
-					continue;
-				}
 				for (const m of g.moves) {
-					rows.push({
-						rank: rows.length + 1,
+					moves.push({
+						rank: moves.length + 1,
 						name: `${m.out.web_name} to ${m.in.web_name}`,
 						tag: `GW${g.gw}`,
 						team: m.in.team_short,
 						mid: m.hit ? `-${m.hit}` : '',
-						value: `${m.gain_xp_remaining >= 0 ? '+' : ''}${m.gain_xp_remaining.toFixed(1)}`
+						value: `${m.gain_xp_remaining >= 0 ? '+' : ''}${m.gain_xp_remaining.toFixed(2)}`
 					});
 				}
 			}
+			const allRoll = moves.length === 0;
+			const rows = allRoll
+				? hero.gws.map((g, i) => ({
+						rank: i + 1,
+						name: `Roll, captain ${g.captain.web_name}`,
+						tag: `GW${g.gw}`,
+						team: '',
+						mid: 'GW total',
+						value: g.gw_xp.toFixed(1)
+					}))
+				: moves;
 			const net = `${hero.net_ev_vs_hold >= 0 ? '+' : ''}${hero.net_ev_vs_hold.toFixed(1)}`;
 			const hits = hero.hits_taken === 1 ? '1 hit' : `${hero.hits_taken} hits`;
 			const method = await shareCard({
-				title: 'BEST TRANSFER CHAIN',
-				subtitle: `${net} xP vs holding over ${data.meta.horizon} GWs, ${hits}, GoalIQ model`,
+				title: allRoll ? 'THE MODEL SAYS ROLL' : 'BEST TRANSFER CHAIN',
+				subtitle: `${net} xP vs holding over ${data.meta.horizon} GWs, ${hits}`,
 				nameLabel: 'MOVE',
-				midLabel: 'HIT',
-				valueLabel: 'xP',
+				midLabel: allRoll ? '' : 'HIT',
+				valueLabel: allRoll ? 'xP' : 'xP GAIN',
 				fileName: 'goaliq_transfer_chain.png',
-				rows: rows.slice(0, 10)
+				rows: rows.slice(0, 12)
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'chains', method });
 		} finally {

@@ -91,11 +91,15 @@
 		if (sharing || !score || score.gradedCount === 0) return;
 		sharing = true;
 		try {
+			// JULKAISUPORTTI 27.8: suunta sanotaan (me X, model Y), luvut
+			// samalla muotoilulla kuin sivulla (.toFixed(1)), tag kertoo mita se
+			// tarkoittaa (FOLLOWED / MY CALL), ja jos rivit ovat otos, se sanotaan.
 			const recent = [...gradedRows].sort((a, b) => b.gw - a.gw).slice(0, 10);
 			const calls = score.gradedCount === 1 ? 'call' : 'calls';
+			const shown = gradedRows.length > 10 ? ', latest 10 shown' : '';
 			const method = await shareCard({
 				title: 'ME VS THE MODEL',
-				subtitle: `${score.userTotal.toFixed(1)} to ${score.modelTotal.toFixed(1)} over ${score.gradedCount} graded ${calls}, FPL points`,
+				subtitle: `me ${score.userTotal.toFixed(1)}, model ${score.modelTotal.toFixed(1)} over ${score.gradedCount} graded ${calls}${shown}`,
 				nameLabel: 'CALL',
 				midLabel: 'MODEL',
 				valueLabel: 'ME',
@@ -103,10 +107,10 @@
 				rows: recent.map((r, i) => ({
 					rank: i + 1,
 					name: `GW${r.gw} ${KIND_LABEL[r.kind] ?? r.kind}`,
-					tag: r.followed ? 'SAME' : 'DIFF',
+					tag: r.followed ? 'FOLLOWED' : 'MY CALL',
 					team: '',
-					mid: `${r.model_points}`,
-					value: `${r.user_points}`
+					mid: (r.model_points as number).toFixed(1),
+					value: (r.user_points as number).toFixed(1)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'beat', method });

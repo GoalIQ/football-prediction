@@ -44,36 +44,41 @@
 		sharing = true;
 		try {
 			const v = data.hold_verdict;
-			const rows: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
+			// JULKAISUPORTTI 27.8: yksi suure per kortti (siirtorivit = gain vs
+			// hold, 2 desimaalia kuten HoldVerdictCard; hold-kierrokset = GW-
+			// kokonais-xP vain kun siirtoja ei ole lainkaan), max 12 rivia
+			// (6 GW x 2 siirtoa), verdiktin gain 2 desimaalilla ettei kortti
+			// voi pyoristaa itsensa kynnyksen vaaralle puolelle.
+			const moves: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
 			for (const g of data.plan) {
-				if (g.transfers.length === 0) {
-					rows.push({
-						rank: rows.length + 1,
-						name: `Hold, captain ${g.captain.web_name}`,
-						tag: `GW${g.gw}`,
-						team: '',
-						mid: '',
-						value: g.gw_xp.toFixed(1)
-					});
-					continue;
-				}
 				for (const tr of g.transfers) {
-					rows.push({
-						rank: rows.length + 1,
+					moves.push({
+						rank: moves.length + 1,
 						name: `${tr.out.web_name} to ${tr.in.web_name}`,
 						tag: `GW${g.gw}`,
 						team: tr.in.team_short,
 						mid: tr.hit ? `-${tr.hit}` : '',
-						value: `${tr.gain_xp_remaining >= 0 ? '+' : ''}${tr.gain_xp_remaining.toFixed(1)}`
+						value: `${tr.gain_xp_remaining >= 0 ? '+' : ''}${tr.gain_xp_remaining.toFixed(2)}`
 					});
 				}
 			}
+			const allHold = moves.length === 0;
+			const rows = allHold
+				? data.plan.map((g, i) => ({
+						rank: i + 1,
+						name: `Hold, captain ${g.captain.web_name}`,
+						tag: `GW${g.gw}`,
+						team: '',
+						mid: 'GW total',
+						value: g.gw_xp.toFixed(1)
+					}))
+				: moves;
 			let subtitle: string;
 			if (v) {
 				const gain =
 					v.best_move_gain_xp === null
 						? null
-						: `${v.best_move_gain_xp >= 0 ? '+' : ''}${v.best_move_gain_xp.toFixed(1)}`;
+						: `${v.best_move_gain_xp >= 0 ? '+' : ''}${v.best_move_gain_xp.toFixed(2)}`;
 				const hit = v.hit_applied_xp ? ', after a -4 hit' : '';
 				if (v.verdict === 'hold') {
 					subtitle =
@@ -85,16 +90,16 @@
 				}
 			} else {
 				const net = `${data.totals.net_gain >= 0 ? '+' : ''}${data.totals.net_gain.toFixed(1)}`;
-				subtitle = `${net} xP vs no transfers over ${data.meta.horizon} GWs, GoalIQ model`;
+				subtitle = `${net} xP vs no transfers over ${data.meta.horizon} GWs`;
 			}
 			const method = await shareCard({
 				title: v ? (v.verdict === 'hold' ? 'THE MODEL SAYS HOLD' : 'THE MODEL SAYS MOVE') : 'TRANSFER PLAN',
 				subtitle,
 				nameLabel: 'MOVE',
-				midLabel: 'HIT',
-				valueLabel: 'xP',
+				midLabel: allHold ? '' : 'HIT',
+				valueLabel: allHold ? 'xP' : 'xP GAIN',
 				fileName: 'goaliq_hold_verdict.png',
-				rows: rows.slice(0, 10)
+				rows: rows.slice(0, 12)
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'planner', method });
 		} finally {

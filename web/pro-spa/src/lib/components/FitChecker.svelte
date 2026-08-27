@@ -97,14 +97,18 @@
 	// SHARE-CARD-SPA 27.8: sama pitch-kortti kuin rate my team / draft.
 	// Kortti nayttaa tasan sivun XI:n ja penkin, xP per GW pelaajan alla.
 	let sharing = $state(false);
-	function pitchPlayer(p: { web_name: string; team_short: string; xp_per_gw: number }): PitchCardPlayer {
+	// JULKAISUPORTTI 27.8: free-pinta EI nayta per-pelaaja-xP:ta (sivun
+	// taulukko on Pos/Player/Team/Price), joten kortti kantaa HINNAN, ei xP:ta.
+	// "legal" on kielletty termi (Villen paatos 28.7, no-solver-jargon), ja
+	// "best" vain kun optimal_proven ei ole false (sama saanto kuin sivulla).
+	function pitchPlayer(p: { web_name: string; team_short: string; price: number }): PitchCardPlayer {
 		const tc = teamColorByShort(p.team_short);
 		return {
 			name: p.web_name,
 			team: p.team_short,
 			color: tc.color,
 			textColor: tc.textColor,
-			xp: p.xp_per_gw.toFixed(1)
+			xp: p.price.toFixed(1)
 		};
 	}
 	async function shareFit() {
@@ -116,11 +120,15 @@
 			const rows = order
 				.map((pos) => res.xi.filter((p) => p.pos === pos).map(pitchPlayer))
 				.filter((r) => r.length > 0);
-			const locked = chosen.map((p) => p.web_name).join(', ');
+			// Alaotsikko ei kutistu renderoijassa (~72 merkkia mahtuu), joten
+			// pitka lukkolista korvataan lukumaaralla.
+			const names = chosen.map((p) => p.web_name).join(', ');
+			const locked = names.length > 30 ? `${chosen.length} players` : names;
+			const provenBest = res.totals.optimal_proven !== false;
 			const method = await sharePitchCard({
-				title: 'FIT CHECK',
-				subtitle: `${locked} locked, best legal 15 around ${chosen.length === 1 ? 'him' : 'them'}, ${res.totals.xi_xp_horizon.toFixed(1)} xP over ${res.meta.horizon_gw} GWs`,
-				unitNote: 'xP per GW',
+				title: provenBest ? 'BEST 15 AROUND YOUR LOCKS' : 'BEST 15 THE MODEL FOUND',
+				subtitle: `${locked} locked, XI ${res.totals.xi_xp_horizon.toFixed(1)} xP over ${res.meta.horizon_gw} GWs, ${res.meta.budget_cap.toFixed(1)}m budget`,
+				unitNote: 'price, m',
 				rows,
 				bench: res.bench.map(pitchPlayer),
 				fileName: 'goaliq_fit_checker.png'

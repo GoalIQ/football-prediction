@@ -96,28 +96,37 @@
 		if (sharing || !data) return;
 		sharing = true;
 		try {
-			const rows = CHIPS.flatMap((chip, i) => {
-				const w = top3(chip)[0];
-				if (!w) return [];
+			// JULKAISUPORTTI 27.8: sama lahde kuin sivun pillerilla (`data.best`,
+			// backend poimii vain player_xp-riveilta), EI oma top3()-lajittelu
+			// joka nostaisi team_approx-rivit (25.8 korjattu regressio). Rivit
+			// EV-jarjestyksessa (rivi 1 = hero-kehys), etumerkki ja "est." kuten
+			// sivulla, ja WINDOW aina taytetty: wildcard on kumulatiivinen, muut
+			// yhden kierroksen lukuja, eika niita saa lukea rinnakkain ilman sita.
+			const best = data.best ?? {};
+			const rows = CHIPS.flatMap((chip) => {
+				const b = best[chip.key];
+				if (!b) return [];
 				return [
 					{
-						rank: i + 1,
+						ev: b.ev,
 						name: chip.label,
-						tag: `GW${w.gw}`,
+						tag: `GW${b.gw}`,
 						team: '',
-						mid: chip.key === 'wc' && w.wc_window_gws ? `${w.wc_window_gws} GWs` : '',
-						value: (chip.ev(w) as number).toFixed(1)
+						mid: chip.key === 'wc' && b.window_gws ? `over ${b.window_gws} GWs` : 'one GW',
+						value: `${b.ev > 0 ? '+' : ''}${b.ev.toFixed(1)}`
 					}
 				];
-			});
+			})
+				.sort((a, b) => b.ev - a.ev)
+				.map(({ ev: _ev, ...r }, i) => ({ rank: i + 1, ...r }));
 			if (rows.length === 0) return;
 			const basis = data.meta?.mode === 'model_xi' ? "the model's squad" : 'your squad';
 			const method = await shareCard({
 				title: 'BEST CHIP WINDOWS',
-				subtitle: `${basis}, best gameweek per chip, GoalIQ model`,
+				subtitle: `${basis}, best gameweek per chip`,
 				nameLabel: 'CHIP',
 				midLabel: 'WINDOW',
-				valueLabel: 'xP',
+				valueLabel: 'xP est.',
 				fileName: 'goaliq_chip_timing.png',
 				rows
 			});
@@ -133,7 +142,7 @@
 
 <div class="head-row">
 	<h2>Chip timing: expected value per gameweek</h2>
-	{#if data && data.windows.length > 0}
+	{#if data && Object.keys(data.best ?? {}).length > 0}
 		<button type="button" class="window-chip" onclick={shareChips} disabled={sharing}>
 		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
 		</button>
