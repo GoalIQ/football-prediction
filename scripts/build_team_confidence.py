@@ -107,7 +107,9 @@ def _prev_season_minutes() -> tuple[dict[int, str], dict[int, float], set[str]]:
 
 def build() -> dict:
     prev_team, prev_mins, prev_names = _prev_season_minutes()
-    cur = json.loads((RAW / "bootstrap_static.json").read_text(encoding="utf-8"))
+    # 27.8: fetcherin kautta (cache + verkko), ei suoraa levylukua (ks. _promoted_basis).
+    from src.data.fpl_api import fetch_bootstrap
+    cur = fetch_bootstrap()
     cur_tname = {t["id"]: t["name"] for t in cur["teams"]}
     cur_team_by_code = {e["code"]: cur_tname[e["team"]] for e in cur["elements"]}
     cur_names = set(cur_tname.values())

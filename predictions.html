@@ -125,9 +125,9 @@
 }
 </script>
 
-<!-- #105 GEO: track-record-Dataset. Sisallon (luvut + dateModified) kirjoittaa
-     build_fpl_page.update_predictions() samasta accuracy-lahteesta kuin chipit -
-     ala kasieditoi markereiden valia. -->
+<!-- #105 GEO: track-record Dataset. The content (numbers + dateModified) is
+     written by build_fpl_page.update_predictions() from the same accuracy
+     source as the chips: do not hand-edit between the markers. -->
 <!-- GEN:ACC-DATASET-START -->
 <script type="application/ld+json">
 {
@@ -158,10 +158,10 @@
 <!-- GEN:ACC-DATASET-END -->
 
 <style>
-  /* Redesign 24.7 (brand-tokens.md): sama kieli kuin index.html - Space
-     Grotesk -display-fontti, tumma ink-hero + 6px magenta-raita, cream-body.
-     GEN:ACC-/GEN:PRED-markerit sailyvat: chip herossa (.num/.lbl), proof
-     demossa, record + leagues sisallossa, trust premium-kortissa. */
+  /* Redesign 24.7 (brand-tokens.md): same language as index.html: Space
+     Grotesk display font, dark ink hero + 6px magenta stripe, cream body.
+     GEN:ACC-/GEN:PRED markers stay: chip in the hero (.num/.lbl), proof
+     in the demo, record + leagues in the content, trust in the premium card. */
   :root {/* 1 Aug 2026: magenta was removed from the palette; these replacement tokens were referenced but missing from :root. */--amber:#F5C542;--ember:#FF8A5C;--cream:#F3F2F2;--paper:#1F1D1A;
     --bg: #0B0A09;
     --bg-alt: #1F1D1A;
@@ -255,7 +255,7 @@
   .ghost-group { display: inline-flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
   .cta-note { color: var(--muted); font-size: 14px; margin-top: 14px; }
 
-  /* Track record -kortti tummassa herossa: GEN:ACC-CHIP elaa taalla (.num/.lbl) */
+  /* Track record card in the dark hero: GEN:ACC-CHIP lives here (.num/.lbl) */
   .tr-hero {
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
     border-radius: var(--radius);
@@ -543,7 +543,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 </head>
 <body>
 
-<!-- Tumma ink-hero (redesign 24.7): nav + hero samassa shellissa kuten index.html -->
+<!-- Dark ink hero (redesign 24.7): nav + hero in the same shell as index.html -->
 <div class="hero-shell">
 <div class="wrap">
   <nav>
@@ -662,7 +662,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   </div>
 </section>
 
-<!-- BEAT THE MODEL (M29): sama nauha kuin etusivulla -->
+<!-- BEAT THE MODEL (M29): same band as on the front page -->
 <div class="league-band">
   <div class="wrap league-inner">
     <div>

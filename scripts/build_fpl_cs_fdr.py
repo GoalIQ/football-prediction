@@ -282,39 +282,25 @@ def team_aggregates(rows: list[dict], horizon_gw: int = 6) -> dict:
 # ---------------------------------------------------------------------------
 # 6. Sanity-gate + sample-taulukko
 # ---------------------------------------------------------------------------
-def sanity_and_sample(rows: list[dict], teams_agg: dict, promoted: list[str]) -> bool:
+def sanity_and_sample(rows: list[dict], teams_agg: dict, promoted: list[str],
+                      dc=None) -> bool:
+    """27.8: RAKENTEELLINEN portti (src/models/fpl_sanity), ei nousijalista.
+
+    Vanha portti vertasi kovakoodattua kärkeä (MCI/ARS/LIV) nousijoihin ja
+    vaati nousijoilta FDR >= 3.5. GW1:n jälkeen nousijat ajavat
+    live-historialla ja tiedosto meni livenä tilaan `sanity_gate: FAIL`
+    vaikka data oli kunnossa. Nyt tasot tulevat samasta fitistä josta luvut
+    lasketaan, ja `promoted` on vain lokia varten.
+    """
+    from src.models.fpl_sanity import model_strength, print_checks, structural_checks
     print("\n" + "=" * 64)
-    print("SANITY-GATE  (suunta-/separaatiotesti, ei absoluuttiset kynnykset)")
+    print("SANITY-GATE  (rakenteellinen: määrä, arvoalueet, suunta, mallin tasot)")
     print("=" * 64)
-    ok = True
-
-    # Vahvat (mallin kärki att-def) vs nousijat (promoted baseline).
-    strong = ["Manchester City", "Arsenal", "Liverpool"]
-    strong = [t for t in strong if t in teams_agg]
-    weak = [t for t in promoted if t in teams_agg]
-
-    print("  next6-aggregaatit:")
-    for t in strong + weak:
-        a = teams_agg[t]
-        tag = "promoted" if t in weak else "kärki"
-        print(f"    {t:20s} fdr={a['next6_avg_fdr']:.2f}  cs={a['next6_avg_cs_pct']:.1f}%  ({tag})")
-
-    s_fdr = float(np.mean([teams_agg[t]["next6_avg_fdr"] for t in strong]))
-    s_cs = float(np.mean([teams_agg[t]["next6_avg_cs_pct"] for t in strong]))
-    w_fdr = float(np.mean([teams_agg[t]["next6_avg_fdr"] for t in weak]))
-    w_cs = float(np.mean([teams_agg[t]["next6_avg_cs_pct"] for t in weak]))
-
-    checks = [
-        ("kärki avg FDR < nousijat avg FDR (margin >=1.0)", w_fdr - s_fdr >= 1.0),
-        ("kärki avg CS% > nousijat avg CS% (margin >=8pp)", s_cs - w_cs >= 8.0),
-        ("jokainen kärkijoukkue FDR <= 3.2", all(teams_agg[t]["next6_avg_fdr"] <= 3.2 for t in strong)),
-        ("jokainen nousija FDR >= 3.5", all(teams_agg[t]["next6_avg_fdr"] >= 3.5 for t in weak)),
-    ]
-    print(f"\n  kärki:   FDR={s_fdr:.2f}  CS={s_cs:.1f}%")
-    print(f"  nousijat: FDR={w_fdr:.2f}  CS={w_cs:.1f}%")
-    for label, passed in checks:
-        print(f"  [{'OK ' if passed else 'FAIL'}] {label}")
-        ok = ok and passed
+    if promoted:
+        print(f"  nousijat (vain lokiin): {promoted}")
+    strength = model_strength(dc) if dc is not None else {}
+    ok = print_checks(structural_checks(
+        teams_agg, strength, fdr_key="next6_avg_fdr", cs_key="next6_avg_cs_pct"))
 
     # GW1 CS%-taulukko (koti+vieras perspektiivit erikseen)
     min_gw = min(r["gameweek"] for r in rows if r["gameweek"])
@@ -344,7 +330,7 @@ def sanity_and_sample(rows: list[dict], teams_agg: dict, promoted: list[str]) ->
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
-def main() -> None:
+def main() -> int:
     print("[1/5] Haetaan 26/27 fixturet + joukkueet (premierleague.com)...")
     fixtures = fetch_fixtures()
     teams_2627 = fetch_teams()
@@ -372,7 +358,13 @@ def main() -> None:
     add_fdr(rows)
     teams_agg = team_aggregates(rows)
 
-    gate_pass = sanity_and_sample(rows, teams_agg, missing)
+    gate_pass = sanity_and_sample(rows, teams_agg, missing, dc=dc)
+    if not gate_pass:
+        # 27.8: FAIL-CLOSED kuten build_fpl_phase0. Aiemmin tiedosto
+        # kirjoitettiin lipulla `sanity_gate: FAIL` ja meni livenä sellaisena
+        # (fpl_wildcard lukee tämän). Vanha data jää voimaan, askel punainen.
+        print("SANITY-GATE FAIL — data/fpl_cs_fdr.json EI kirjoitettu.")
+        return 2
 
     print("\n[5/5] Kirjoitetaan JSON...")
     out = {
@@ -411,7 +403,8 @@ def main() -> None:
     }
     OUT_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"      → {OUT_PATH}  ({len(rows)} fixturea)")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

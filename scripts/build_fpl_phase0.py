@@ -534,38 +534,21 @@ def _horizon_span(team_view: list[dict]) -> int:
     return (max(gws) - min(gws) + 1) if gws else 0
 
 
-def sanity_gate(team_view: list[dict], promoted: list[str]) -> bool:
+def sanity_gate(team_view: list[dict], promoted: list[str], dc=None) -> bool:
+    """27.8: RAKENTEELLINEN portti (src/models/fpl_sanity), ei nousijalista.
+    Sama syy kuin build_fpl_cs_fdr: vanha portti oletti nousijoiden olevan
+    heikoimpia, ja GW1:n jälkeen se ei ole enää oletus vaan mittaus jonka
+    fitti tekee itse. `promoted` vain lokiin."""
+    from src.models.fpl_sanity import model_strength, print_checks, structural_checks
     print("\n" + "=" * 64)
-    print("SANITY-GATE  (suunta-/separaatiotesti, ei absoluuttiset kynnykset)")
+    print("SANITY-GATE  (rakenteellinen: määrä, arvoalueet, suunta, mallin tasot)")
     print("=" * 64)
+    if promoted:
+        print(f"  nousijat (vain lokiin): {promoted}")
     agg = {t["name"]: t for t in team_view}
-    strong = [t for t in ("Manchester City", "Arsenal", "Liverpool") if t in agg]
-    weak = [t for t in promoted if t in agg]
-
-    for t in strong + weak:
-        a = agg[t]
-        tag = "promoted" if t in weak else "kärki"
-        print(f"    {t:20s} fdr={a['next_avg_fdr']:.2f}  cs={a['next_avg_cs_pct']:.1f}%  ({tag})")
-
-    ok = True
-    checks: list[tuple[str, bool]] = []
-    if not strong:
-        checks.append(("kärkijoukkueet löytyvät aggregaateista", False))
-    else:
-        checks.append(("jokainen kärkijoukkue FDR <= 3.2",
-                       all(agg[t]["next_avg_fdr"] <= 3.2 for t in strong)))
-    if weak:
-        s_fdr = float(np.mean([agg[t]["next_avg_fdr"] for t in strong])) if strong else 5.0
-        s_cs = float(np.mean([agg[t]["next_avg_cs_pct"] for t in strong])) if strong else 0.0
-        w_fdr = float(np.mean([agg[t]["next_avg_fdr"] for t in weak]))
-        w_cs = float(np.mean([agg[t]["next_avg_cs_pct"] for t in weak]))
-        checks.append(("kärki avg FDR < nousijat avg FDR (margin >=1.0)", w_fdr - s_fdr >= 1.0))
-        checks.append(("kärki avg CS% > nousijat avg CS% (margin >=8pp)", s_cs - w_cs >= 8.0))
-        checks.append(("jokainen nousija FDR >= 3.5",
-                       all(agg[t]["next_avg_fdr"] >= 3.5 for t in weak)))
-    for label, passed in checks:
-        print(f"  [{'OK ' if passed else 'FAIL'}] {label}")
-        ok = ok and passed
+    strength = model_strength(dc) if dc is not None else {}
+    ok = print_checks(structural_checks(
+        agg, strength, fdr_key="next_avg_fdr", cs_key="next_avg_cs_pct"))
     print(f"\nGATE: {'PASS' if ok else 'FAIL'}")
     return ok
 
@@ -628,7 +611,7 @@ def main() -> int:
         and not r["finished"]
     ]
 
-    if not sanity_gate(team_view, missing):
+    if not sanity_gate(team_view, missing, dc=dc):
         print("SANITY-GATE FAIL — data/fpl_projections_phase0.json EI kirjoitettu.")
         return 2
 

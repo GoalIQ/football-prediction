@@ -184,12 +184,23 @@ jobs:
       # Ipswich. Ilman tata askelta korjaukset eivat pysy: seuraava refresh
       # ei koske tiedostoon lainkaan, joten se vanhenee uudelleen.
       - name: Build season CS/FDR table
+        id: build_cs_fdr
         if: steps.guard.outputs.proceed == 'true'
+        # 27.8: fail-closed builder (gate FAIL -> exit 2, vanha data jaa) +
+        # continue-on-error + health-rivi, jotta punainen portti nakyy muttei
+        # pysayta freezea/committia alavirrassa. Sama malli kuin stats/gw.
+        continue-on-error: true
         run: python -m scripts.build_fpl_cs_fdr
 
       # Nousijaliput ja vaihtuvuusluvut. Sama syy: liput renderoityvat
       # ilmaissivulle ja menevat API:n `meta.team_confidence`iin, mutta
       # tiedosto rakennettiin vain kasin.
+      # 🔴 27.8: TAMA ASKEL KAATOI KOKO REFRESHIN 26.8 19:39 -> 27.8 13:20
+      # (3 ajoa): build_team_confidence luki `data/raw/fpl/fixtures.json`
+      # suoraan levylta (lisatty 26.8), tiedosto oli lokaalissa cachessa
+      # muttei runnerilla -> FileNotFoundError -> commit + GW2-freeze
+      # SKIPATTIIN ja artefakti jai 26.8 16:13:een. Korjattu 273db0042
+      # (fpl_api-fetcherit). Vahti: tests/test_no_raw_disk_reads.py.
       - name: Build team confidence flags
         if: steps.guard.outputs.proceed == 'true'
         run: python scripts/build_team_confidence.py
@@ -434,6 +445,7 @@ jobs:
         if: always() && steps.guard.outputs.proceed == 'true'
         run: |
           fail=0
+          [ "${{ steps.build_cs_fdr.outcome }}" = "failure" ] && { echo "::error::build_fpl_cs_fdr FAILAA (sanity-gate tai kaatuminen; fpl_cs_fdr.json jaa vanhaksi, wildcard lukee sita)"; fail=1; }
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }

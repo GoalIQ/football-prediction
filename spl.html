@@ -37,8 +37,8 @@ posthog.register({platform:'web',source_app:'goaliq-static'});
 posthog.capture('web_landing_viewed',{page:location.pathname});
 </script>
 
-<!-- 2.8-konventio: pro.goaliq.app-linkkeihin src/srcp-lahdetagit (sama snippet
-     kuin muilla staattisilla sivuilla) -->
+<!-- 2.8 convention: src/srcp source tags on pro.goaliq.app links (same snippet
+     as on the other static pages) -->
 <script>
 addEventListener('DOMContentLoaded',function(){
   for (const a of document.querySelectorAll('a[href^="https://pro.goaliq.app"]')) {

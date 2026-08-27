@@ -72,7 +72,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
      .hint a, footer a and .nav-cta override this with their own rules. */
   a { color: var(--teal-ink); }
   .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 80px; }
-  /* Tumma ink-hero (redesign 24.7): sama gradientti + 6px magenta-raita kuin index.html */
+  /* Dark ink hero (redesign 24.7): same gradient + 6px magenta stripe as index.html */
   /* 2 Aug: the banner was WHITE and the text drowned in it. On this page
      --cream AND --ink are both #F3F2F2, so background and text were the
      same color. Before 1 Aug --cream was missing from :root -> var(--cream)
@@ -414,7 +414,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         if (at && at.pct_1x2 && at.n) {
           accuracyLine = (100 * at.pct_1x2).toFixed(1) + '% of results called right across ' + at.n + ' logged matches';
         }
-      }).catch(function () { /* trust-rivi jaa yleiseksi */ });
+      }).catch(function () { /* the trust line stays generic */ });
   }
 
   function font(px, weight) { return (weight || 400) + ' ' + px + 'px "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; }
@@ -445,13 +445,13 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     ctx.clearRect(0, 0, W, H);
     ctx.textBaseline = 'alphabetic';
 
-    // Tausta + magenta-yläpalkki
+    // Background + magenta top bar
     ctx.fillStyle = CREAM;
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = MAGENTA;
     ctx.fillRect(0, 0, W, 14);
 
-    // Header: GoalIQ-wordmark + kortin nimi
+    // Header: GoalIQ wordmark + card title
     ctx.fillStyle = INK;
     ctx.font = font(44, 700);
     ctx.fillText('Goal', PAD, 104);
@@ -490,7 +490,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(PAD, 360); ctx.lineTo(W - PAD, 360); ctx.stroke();
 
-    // Statit 2x2 (colW estää sarakkeiden ylivuodon - fitText kaventaa arvon)
+    // Stats 2x2 (colW prevents column overflow, fitText shrinks the value)
     var colX = [PAD, W / 2 + 20];
     var colW = W / 2 - PAD - 40;
     statBlock(colX[0], 432, 'All-time points', fmtPts(s.all_time_points), 84, colW);
@@ -533,7 +533,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         : 'Same match model behind GoalIQ’s public pre-match-logged track record.';
       wrapText(trust, PAD + 28, boxTop + 248, W - 2 * PAD - 40, 32);
     } else {
-      // Esikausi/teaseriton: kausilista täyttää tilan
+      // Pre-season or no teaser: the season list fills the space
       ctx.fillStyle = MUTED;
       ctx.font = font(26, 500);
       ctx.fillText('SEASON BY SEASON', PAD, boxTop + 20);
@@ -612,7 +612,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         var url = new URL(location.href);
         url.searchParams.set('entry', entry);
         history.replaceState(null, '', url.pathname + url.search);
-      } catch (e) { /* URL-päivitys on kosmetiikkaa */ }
+      } catch (e) { /* the URL update is cosmetic */ }
     }).catch(function (err) {
       setStatus(err.message || 'Something went wrong. Try again in a moment.', true);
     });
@@ -669,7 +669,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     });
   });
 
-  // Jaettu linkki: ?entry=N -> rakenna kortti suoraan
+  // Shared link: ?entry=N -> build the card directly
   var params = new URLSearchParams(location.search);
   var pre = parseInt(params.get('entry') || '', 10);
   if (pre > 0) {
