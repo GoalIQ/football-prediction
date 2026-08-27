@@ -81,3 +81,33 @@ def test_merge_keeps_fresh_season_totals_with_last_season_rolling(monkeypatch, t
     assert isak["recent_games"][0]["round"] == 36
     assert isak["season"]["xg"] == 1.09        # totaalit = kuluva kausi
     assert isak["price"] == 9.0                # attribuutit = kuluva kausi
+
+
+def test_committed_artefact_obeys_the_published_basis_rule():
+    """Sivun basis-lause on kaksisuuntainen vaite (27.8, julkaisuportti):
+    (a) 2025/26-rivi = pelaajalla alle MIN_CURRENT_GAMES kuluvan kauden
+        ottelua; artefaktissa on vain `starts`, ja starts <= pelatut, joten
+        `starts < 3` on valttamaton ehto (ei riittava);
+    (b) kohdekauden rivi = kaikki sen ottelut ovat kuluvaa kautta, eli
+        games_total == len(recent_games) <= RECENT_KEEP eika rivi voi
+        kantaa 10 viime kauden ottelua.
+    Jos merge-logiikka muuttuu, tama kaatuu ennen kuin lause vanhenee."""
+    import json
+    from src.models.fpl_leaders import LEADERS_PATH, MIN_CURRENT_GAMES
+    if not LEADERS_PATH.exists():
+        import pytest
+        pytest.skip("artefaktia ei ole")
+    d = json.loads(LEADERS_PATH.read_text(encoding="utf-8"))
+    target = d["meta"]["target_season"]
+    if d["meta"]["basis_season"] != target:
+        return  # esikausi: saanto ei ole voimassa
+    for p in d["players"]:
+        s = p.get("season") or {}
+        assert "mins" in s, f"{p['web_name']}: season-lohko puuttuu"
+        if p["basis"] != target:
+            assert int(s.get("starts") or 0) < MIN_CURRENT_GAMES, (
+                f"{p['web_name']}: {p['basis']}-rivi mutta {s['starts']} "
+                f"startia kaudella {target}")
+        else:
+            assert p["games_total"] == len(p["recent_games"]), (
+                f"{p['web_name']}: kohdekauden rivi kantaa vierasta dataa")

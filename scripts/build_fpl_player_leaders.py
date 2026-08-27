@@ -217,7 +217,8 @@ def _package(season: str, players: list[dict]) -> dict:
         # Nakyy SPA:ssa ja mobiilissa sellaisenaan.
         "Mixed basis: a row is last season's data until the player has 3 "
         "games this season, or this season's from his first game if he has "
-        "no last-season FPL data (promoted clubs, new signings)."
+        "no last-season FPL data (promoted clubs and anyone who did not "
+        "play in FPL last season)."
         if any(p.get("basis") != TARGET_SEASON for p in players) else
         "This season's data."
     )

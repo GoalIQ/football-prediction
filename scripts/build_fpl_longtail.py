@@ -1317,9 +1317,9 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
                  f"says which season each row is from. A row is "
                  f"{_rivikaudet[0]} until that player has 3 games in "
                  f"{_target_k}, and {_target_k} from his first game if he "
-                 f"has no {_rivikaudet[0]} FPL data at all (promoted clubs, "
-                 f"new signings). The Season view is {_target_k} totals so "
-                 f"far")
+                 f"has no {_rivikaudet[0]} FPL data at all (promoted clubs "
+                 f"and anyone who did not play in FPL last season). The "
+                 f"Season view is {_target_k} totals so far.")
     elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
         basis = (f"Rolling-window numbers are from the {_ikkuna_k} season; "
                  f"the Season view is {_target_k} totals so far")
@@ -1356,7 +1356,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     # "Up to 5" + otoskoko luvun vieressa - sama sana kaikkialla sivulla.
     _g0 = int(rows[0].get("games") or 0)
     desc = (
-        f"The top FPL expected-goals (xG) performers over up to 5 games "
+        f"The top FPL expected-goals (xG) performers from up to 5 games "
         f"each: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
         f"xG per game from {_g0} game{'' if _g0 == 1 else 's'}. From "
         f"official FPL match data: {xg_tuoreus}."
