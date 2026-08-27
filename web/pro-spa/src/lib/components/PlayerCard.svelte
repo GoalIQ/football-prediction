@@ -573,9 +573,8 @@
 					     Otoskoko on pakko sanoa: GW1:n jalkeen form = GW1-pisteet. -->
 					{#if player.form}
 						<p class="muted">
-							FPL form {player.form.value.toFixed(1)}: points per match over the last 30
-							days, {player.form.gws} {player.form.gws === 1 ? 'gameweek' : 'gameweeks'} played
-							so far.
+							FPL form {player.form.value.toFixed(1)}: points per match their club played in the
+							last 30 days (window so far: {player.form.gws} GW)
 						</p>
 					{/if}
 					{#if player.set_pieces}

@@ -357,7 +357,12 @@ def _completed_gws(fixtures):
 
 
 FORM_WINDOW_DAYS = 30
-FORM_BASIS = "FPL form: points per match over the last 30 days"
+# JULKAISUPORTTI 27.8: jakaja on SEURAN ottelut, ei pelaajan (FPL:n oma
+# bundle: "average score per match, calculated from all matches played by
+# his club in the last 30 days"). Siksi 0 minuuttia pelannut saa 0.0 eika
+# tyhjaa: mitattu 306/616 pelaajaa bootstrapissa 27.8.
+FORM_BASIS = ("FPL form: average score per match the player's club played "
+              "in the last 30 days")
 
 
 def _form_block(e: dict, boot: dict, preseason: bool,
@@ -365,7 +370,9 @@ def _form_block(e: dict, boot: dict, preseason: bool,
     """PLAYER-FORM (27.8): FPL:n virallinen `form` pelaajakortin viralliseen
     osioon, VAIN kun se tarkoittaa jotain.
 
-    FPL:n form = pisteet per ottelu viimeisen 30 paivan aikana. Esikaudella
+    FPL:n form = pisteet per SEURAN ottelu 30 pv ikkunassa (jakaja on seuran
+    ottelut, siksi 0 minuuttia pelannut saa 0.0 eika tyhjaa: 306/616
+    bootstrapissa 27.8). Esikaudella
     kentta on tyhja/0 kaikilla, ja tyhja rivi joka lupaa "recent form" on
     huonompi kuin ei rivia (Rowan 19.8). Mitattu 27.8 GW1:n jalkeen: form on
     tasan GW1-pisteet (De Cuyper 17.0 = 17 p), eli yhden kierroksen otos.

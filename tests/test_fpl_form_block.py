@@ -45,7 +45,9 @@ def test_window_counts_only_finished_gws_inside_30_days():
 
 
 def test_zero_form_is_emitted_as_zero_not_hidden():
-    """0.0 pistetta on tieto (pelasi, ei pisteita), ei puuttuva arvo."""
+    """0.0 on tieto, ei puuttuva arvo. Jakaja on seuran ottelut, joten 0.0
+    tarkoittaa yleensa ETTEI pelannut: mitattu 306/616 pelaajaa joilla 0 min
+    ja form 0.0 (bootstrap 27.8). Sama kuin FPL:n oma kortti."""
     boot = _boot((True, "2026-08-21T17:30:00Z"))
     out = _form_block({"form": "0.0"}, boot, preseason=False, now=NOW)
     assert out is not None and out["value"] == 0.0
