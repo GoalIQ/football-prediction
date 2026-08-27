@@ -2242,8 +2242,24 @@ def render_stats(stats: dict, now: datetime) -> str | None:
         f'<p class="note" id="stc">{len(rows)} players, season totals. '
         "Showing 100. Click a column to sort, or press Show all players.</p>"
     )
+    # STATS-CARD (27.8): kortti nimeaa nakymansa, koska sivulla on ryhma-,
+    # per 90/per start -kytkin ja suodattimet. Kortti = oletusnakyma jonka
+    # palvelin renderoi: Key-ryhma, kauden totaalit, pisteiden mukaan,
+    # kymmenen ensimmaista rivia. Sama lista kuin taulukossa, ei DOM-lukua.
+    kortti_st = _card_spec_attr(
+        title="MOST FPL POINTS SO FAR",
+        subtitle="season totals, sorted by points, minutes alongside",
+        mid_label="MINS",
+        value_label="PTS",
+        foot="shots, xG, set pieces and more for every player, free on goaliq.app/fpl/stats",
+        foot2="official FPL data, not betting advice",
+        rows=[{"rank": i + 1, "name": str(r[idx["name"]]),
+               "team": str(r[idx["team"]]), "tag": str(r[idx["pos"]]),
+               "mid": str(r[idx["mins"]]), "value": str(r[idx["pts"]])}
+              for i, r in enumerate(rows[:CARD_ROWS])],
+        file_name="goaliq-fpl-points.png")
     table = (
-        '<div class="lb-wrap"><table class="lb">'
+        f'<div class="lb-wrap"><table class="lb"{kortti_st}>'
         f'<thead id="sth">{thead}</thead>'
         f'<tbody id="stb">{trows}</tbody></table></div>'
         '<button type="button" class="chip" id="stmore" '
@@ -2285,8 +2301,9 @@ def render_stats(stats: dict, now: datetime) -> str | None:
         "projected points) is a model output rather than a raw stat, so it "
         "lives in the app and the DefCon column here is the raw count. A dash "
         "means we have no data for that player, not zero.</p>"
-        f"{controls}{table}{payload}{_stats_js()}"
+        f"{controls}{_share_button()}{table}{payload}{_stats_js()}"
         + f"{UPSELL}{_cta()}"
+        + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )
     # GEO/SEO: Dataset kertoo koneluettavasti MITA sarakkeita sivulla on ja

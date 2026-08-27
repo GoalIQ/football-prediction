@@ -30,7 +30,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PALVELINKORTTI = ["points", "expected-points", "xg-leaders", "defence",
                   # 27.8 batch 2: team-news (Ruled out -taulukko, arvo = Owned)
-                  "team-news"]
+                  "team-news", "stats"]
 # 27.8 batch 2: sivut joilla kortti ei lue table.lb:ta vaan omaa rivilistaa.
 # Kullekin oma lukija joka palauttaa [(nimi, arvo, mid)] sivun NAKYVISTA
 # riveista, jotta sama "kortti == sivu" -invariantti patee.
@@ -59,6 +59,8 @@ SARAKKEET = {
     "defence": {"name": "team", "mid": "shots", "value": "xgc"},
     "team-news": {"name": "player", "team": "club", "tag": "pos",
                   "value": "owned"},
+    "stats": {"name": "player", "team": "team", "tag": "pos",
+              "mid": "mins", "value": "pts"},
 }
 
 # Otsikon on nimettava sama suure kuin arvosarake. Ilman tata "TOP 10 BY
@@ -73,6 +75,7 @@ OTSIKKO = {
     # "MOST XG CONCEDED" eli tasan painvastainen kuin data.
     "defence": ("FEWEST xG CONCEDED", "xGC"),
     "team-news": ("RULED OUT", "OWNED"),
+    "stats": ("FPL POINTS", "PTS"),
 }
 
 
@@ -98,7 +101,8 @@ def _spec(h: str) -> dict:
 
 
 def _otsikot(h: str) -> list[str]:
-    m = re.search(r"<thead>(.*?)</thead>", h, re.S)
+    # 27.8: stats-sivun thead kantaa id:n (<thead id="sth">), sama rakenne.
+    m = re.search(r"<thead[^>]*>(.*?)</thead>", h, re.S)
     assert m, "taulukosta puuttuu thead"
     out = []
     for t in re.findall(r"<th[^>]*>(.*?)</th>", m.group(1), re.S):
