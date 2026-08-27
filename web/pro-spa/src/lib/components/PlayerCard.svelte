@@ -574,7 +574,7 @@
 					{#if player.form}
 						<p class="muted">
 							FPL form {player.form.value.toFixed(1)}: points per match their club played in the
-							last 30 days (window so far: {player.form.gws} GW)
+							last 30 days (window so far: {player.form.gws} GW).
 						</p>
 					{/if}
 					{#if player.set_pieces}
