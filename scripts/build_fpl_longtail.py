@@ -223,6 +223,8 @@ border-bottom:1px solid var(--line);white-space:nowrap;}
 color:var(--muted);font-weight:700;}
 .lb td.n,.lb th.n{text-align:right;font-variant-numeric:tabular-nums;}
 .lb td.hi{color:var(--amber);font-weight:700;}
+.lb tr.noclear td{color:var(--muted);}.lb tr.noclear td.hi{color:var(--muted);font-weight:400;}
+.lb .muted{color:var(--muted);font-weight:400;}
 .lb tbody tr:last-child td{border-bottom:none;}
 .lb thead th:hover{color:var(--amber);}
 .lbctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 6px;}
@@ -1064,6 +1066,11 @@ def _xg_payload(leaders: dict) -> str:
             lyhyt_kausi(p.get("basis")),
         ])
     return json.dumps(out, separators=(",", ":"), ensure_ascii=False)
+
+
+# Predicted XI:n slotti nimeaa pelaajan vain kun malli pitaa avausta
+# todennakoisempana kuin penkkia. Alle taman: "No clear starter".
+XI_STARTER_FLOOR = 0.50
 
 
 def start_pct(p: dict) -> int | None:
@@ -3492,14 +3499,33 @@ def _xi_rows(players: list[dict]) -> tuple[str, int, list[dict]]:
     # sortautui listan HANNILLE. Kentalla se on absurdi jarjestys.
     jarj = {pos: i for i, pos in enumerate(POSITIONS)}
     valitut.sort(key=lambda p: (jarj.get(p.get("pos"), 9), -p["predicted_starts"]))
-    rivit = "".join(
-        "<tr>"
-        f'<td>{escape(str(p["web_name"]))}{_no_history_flag(p)}</td>'
-        f'<td class="m-hide">{escape(str(p.get("pos", "")))}</td>'
-        f'<td class="n">{float(p.get("price") or 0):.1f}</td>'
-        f'<td class="n hi">{start_pct(p)}%</td>'
-        "</tr>"
-        for p in valitut)
+    # PREDICTED-XI-KYNNYS (27.8). Slotit taytettiin jarjestyksessa
+    # todennakoisyydesta riippumatta, joten "Model Predicted XI" listasi
+    # Cherkin (17 %) ja Marmoushin (38 %) XI:hin. Otsikko lupasi enemman
+    # kuin luvut kestavat, ja julkaisuportti mittasi etta reply "ei avaajan
+    # rooli" olisi kumoutunut omalla sivullamme. Alle XI_STARTER_FLOOR:n
+    # slotti sanoo nyt ettei selvaa avaajaa ole, ja nayttaa parhaan
+    # vaihtoehdon lukuineen. Sama funktio ajaa club-sivut, joten kynnys
+    # patee molemmilla.
+    def _rivi(p: dict) -> str:
+        pct = start_pct(p)
+        if pct is not None and pct < round(XI_STARTER_FLOOR * 100):
+            return (
+                '<tr class="noclear">'
+                f'<td>No clear starter <span class="muted">(best option '
+                f'{escape(str(p["web_name"]))}{_no_history_flag(p)})</span></td>'
+                f'<td class="m-hide">{escape(str(p.get("pos", "")))}</td>'
+                f'<td class="n">{float(p.get("price") or 0):.1f}</td>'
+                f'<td class="n hi">{pct}%</td>'
+                "</tr>")
+        return (
+            "<tr>"
+            f'<td>{escape(str(p["web_name"]))}{_no_history_flag(p)}</td>'
+            f'<td class="m-hide">{escape(str(p.get("pos", "")))}</td>'
+            f'<td class="n">{float(p.get("price") or 0):.1f}</td>'
+            f'<td class="n hi">{pct}%</td>'
+            "</tr>")
+    rivit = "".join(_rivi(p) for p in valitut)
     return rivit, len(valitut), valitut
 
 
@@ -3741,6 +3767,8 @@ def render_predicted_lineups(xp: dict, now: datetime) -> str | None:
         "<h1>Model Predicted XI</h1>"
         '<p class="lede">The eleven our model expects to start at every club, '
         "with each player's projected chance of starting next to his name. "
+        "When nobody in a slot projects to start more often than not, the slot "
+        "says so and shows the best option with its number. "
         "This is a projection from minutes history, not a lineup leak. We do "
         "not watch press conferences, and when a manager surprises everyone "
         "this table will be wrong with him.</p>"

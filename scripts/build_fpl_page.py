@@ -2010,6 +2010,9 @@ one refreshes on the same schedule. No login, no paywall.</p>
   expected minutes in separate columns.</li>
   <li><a href="/fpl/model-xi">The model's own XI</a>: the squad our numbers
   would pick inside the budget, published before every deadline.</li>
+  <li><a href="/fpl/predicted-lineups">Model Predicted XI for every club</a>:
+  who the minutes model expects to start at all 20 clubs, with each
+  player's chance of starting. A projection, not a lineup leak.</li>
   <li><a href="/fpl/differentials">Differentials under 10% ownership</a>:
   where the model disagrees with the crowd.</li>
   <li><a href="/fpl/price-changes">Price change watch</a>: who is close to
@@ -2074,6 +2077,7 @@ predictions and analytics. Not betting advice.</p>
   <a href="/predictions">Match predictions</a> &middot;
   <a href="/fpl/best-captain">Captain picks</a> &middot;
   <a href="/fpl/model-xi">Model XI</a> &middot;
+  <a href="/fpl/predicted-lineups">Predicted XI</a> &middot;
   <a href="/fpl/differentials">Differentials</a> &middot;
   <a href="/fpl/price-changes">Price changes</a> &middot;
   <a href="/fpl/xg-leaders">xG leaders</a> &middot;
