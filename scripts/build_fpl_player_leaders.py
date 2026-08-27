@@ -211,8 +211,13 @@ def _package(season: str, players: list[dict]) -> dict:
     basis_label = (
         f"Rolling-window numbers are from the {season} season"
         if season != TARGET_SEASON else
-        "Mixed basis: players with under 3 games this season show last "
-        "season's data (per-row basis field)."
+        # JULKAISUPORTTI 27.8: vanha "players with under 3 games this
+        # season show last season's data" oli epatosi nousijoille ja uusille
+        # (ei viime kauden dataa -> talla kaudella ensimmaisesta ottelusta).
+        # Nakyy SPA:ssa ja mobiilissa sellaisenaan.
+        "Mixed basis: a row is last season's data until the player has 3 "
+        "games this season, or this season's from his first game if he has "
+        "no last-season FPL data (promoted clubs, new signings)."
         if any(p.get("basis") != TARGET_SEASON for p in players) else
         "This season's data."
     )

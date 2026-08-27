@@ -1188,7 +1188,7 @@ XG_JS = """
   if(hh&&hh[9])hh[9].textContent=(w==='S')?'Starts':'Games';
   // Each window names its own season: they come from different sources.
   var span=(w==='S')?', '+TARGET_K+' season so far'
-                    :(', last '+w+' games each'+(BASIS_K?', '+BASIS_K:''));
+                    :(', up to '+w+' games each'+(BASIS_K?', '+BASIS_K:''));
   var rate=per90?', per 90 minutes':((w==='S')?', season totals':', per game');
   // The count must match what is on screen. Saying "400 players" while the
   // table renders 100 is the same failure as a claim the reader cannot check:
@@ -1308,11 +1308,18 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     # tai toista viereista proosaa. Nain korjaus patee heti eika vasta
     # seuraavan artefaktiajon jalkeen.
     if _sekakausi:
-        basis = (f"Rolling-window numbers mix seasons: a player with fewer "
-                 f"than 3 games in {_target_k} still shows his "
-                 f"{_rivikaudet[0]} matches, and the Season column says "
-                 f"which season each row is from. The Season view is "
-                 f"{_target_k} totals so far")
+        # JULKAISUPORTTI 27.8: ensimmainen versio sanoi "a player with fewer
+        # than 3 games in 2026/27 still shows his 2025/26 matches", ja sivun
+        # rivi #1 (Emersonn, Games 1, Season 26/27) kumosi sen. Nousijoilla ja
+        # uusilla tulokkailla ei ole viime kauden dataa johon pudota, joten
+        # saannolla on kaksi haaraa ja molemmat sanotaan.
+        basis = (f"Rolling-window numbers mix seasons, and the Season column "
+                 f"says which season each row is from. A row is "
+                 f"{_rivikaudet[0]} until that player has 3 games in "
+                 f"{_target_k}, and {_target_k} from his first game if he "
+                 f"has no {_rivikaudet[0]} FPL data at all (promoted clubs, "
+                 f"new signings). The Season view is {_target_k} totals so "
+                 f"far")
     elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
         basis = (f"Rolling-window numbers are from the {_ikkuna_k} season; "
                  f"the Season view is {_target_k} totals so far")
@@ -1329,10 +1336,10 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     # on siis aina vaara jommallekummalle, ja kadenssilupaus oli vaara
     # molemmille. Sanotaan mika data on, ei milloin se paivittyy.
     if _sekakausi:
+        # Saantoa ei toisteta 160 merkin metassa; Season-sarake kantaa sen.
         xg_tuoreus = (
-            f"rolling windows mix seasons until a player has 3 games in "
-            f"{_target_k} and each row names its season, the Season view "
-            f"uses {_target_k} totals so far")
+            f"rolling windows mix seasons and the Season column names each "
+            f"row's season, the Season view uses {_target_k} totals so far")
     elif _ikkuna_k and _target_k and _ikkuna_k != _target_k:
         xg_tuoreus = (f"rolling windows use {_ikkuna_k} matches, the Season "
                       f"view uses {_target_k} totals so far")
@@ -1344,16 +1351,22 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
 
     url = f"{BASE}/fpl/xg-leaders"
     title = "Top xG Performers: FPL Expected Goals Leaders | GoalIQ"
+    # JULKAISUPORTTI 27.8: "last 5 games" oli epatosi 11 rivilla 100:sta
+    # (yhden ottelun 26/27-rivit), ja meta nimesi Emersonnin ilman otoskokoa.
+    # "Up to 5" + otoskoko luvun vieressa - sama sana kaikkialla sivulla.
+    _g0 = int(rows[0].get("games") or 0)
     desc = (
-        f"The top FPL expected-goals (xG) performers over each player's last "
-        f"5 games: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
-        f"xG per game. From official FPL match data: {xg_tuoreus}."
+        f"The top FPL expected-goals (xG) performers over up to 5 games "
+        f"each: {rows[0]['web_name']} leads at {rows[0]['xg_per_game']:.2f} "
+        f"xG per game from {_g0} game{'' if _g0 == 1 else 's'}. From "
+        f"official FPL match data: {xg_tuoreus}."
     )
     top3 = "".join(
         '<div class="stat">'
         f'<b>{escape(r["web_name"])}</b>'
         f'<span>#{i + 1} · {escape(r["team_short"])} · {r["xg_per_game"]:.2f} '
-        f'xG/game · {r["games"]} games</span></div>'
+        f'xG/game · {r["games"]} game{"" if r["games"] == 1 else "s"}'
+        "</span></div>"
         for i, r in enumerate(rows[:3])
     )
     # Koko lista taulukkona. Kaksi desimaalia on tarkoituksellista: 0.46 ja
@@ -1400,7 +1413,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         '<select id="xgt" aria-label="Filter by team"></select>'
         "</div>"
         f'<p class="note" id="xgc">{len(rows)} players, per game, '
-        "last 5 games each. Click a column to sort.</p>"
+        "up to 5 games each. Click a column to sort.</p>"
     )
     # 🔴 JAKOKORTTI PALVELIMEN RIVEILTA (SHARE-CARD-SERVER-ROWS).
     # Sivulla on suodattimet (Games / Rate / Min mins / Position / Team) JA
@@ -1446,7 +1459,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         # KAIKKI tata kautta. Vaite kaantyisi epatodeksi ilman etta kukaan
         # koskee koodiin. Sivun oma basis-lause saa jaada koko aineiston
         # mukaiseksi, koska se kuvaa taulukkoa.
-        subtitle=("Each player's last 5 games"
+        subtitle=("Up to 5 games each"
                   + (f", mixing {' and '.join(_korttikaudet)}"
                      if len(_korttikaudet) > 1
                      else (f", {_korttikaudet[0]}" if _korttikaudet else ""))),
@@ -1491,8 +1504,9 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     hero = (
         "<h1>Top xG performers in FPL</h1>"
         '<p class="lede">Which players generate the most expected goals (xG) '
-        "per game? Ranked over each player's last five played matches from "
-        f"official FPL match data. Free, no sign-in: {xg_tuoreus}.</p>"
+        "per game? Ranked over each player's last five played matches, or "
+        "all of them if he has played fewer, from official FPL match data. "
+        f"Free, no sign-in: {xg_tuoreus}.</p>"
     )
     body = (
         f'<p class="note"><strong>{escape(basis)}</strong></p>'
