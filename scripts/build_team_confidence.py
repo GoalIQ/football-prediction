@@ -72,8 +72,13 @@ def _promoted_basis() -> tuple[set[str], dict[str, int]]:
     # Otteluita talla kaudella per malli-joukkue — luku joka korvaa baselinen
     # kun se ei ole enaa kaytossa.
     played: dict[str, int] = defaultdict(int)
-    fx = json.loads((RAW / "fixtures.json").read_text(encoding="utf-8"))
-    boot = json.loads((RAW / "bootstrap_static.json").read_text(encoding="utf-8"))
+    # 27.8: EI suoraa levylukua. `data/raw/fpl/fixtures.json` oli lokaalissa
+    # cachessa muttei runnerilla -> FileNotFoundError kaatoi koko
+    # fpl-data-refreshin 26.8 19:39 alkaen (3 ajoa, freeze ja commit
+    # skipattiin). fpl_api hakee ja cachettaa samaan polkuun.
+    from src.data.fpl_api import fetch_bootstrap, fetch_fixtures
+    fx = fetch_fixtures()
+    boot = fetch_bootstrap()
     tname = {t["id"]: t["name"] for t in boot["teams"]}
     for f in fx:
         if not f.get("finished"):
