@@ -62,7 +62,13 @@
 					});
 				}
 			}
-			const allHold = moves.length === 0;
+			// Kierros 2: verdikti voi olla `hold` vaikka plan sisaltaa siirtoja
+			// (fpl_planner: hold jos net_gain < kynnys) -> HOLD-kortti ei saa
+			// listata siirtoja. Ja best_move_gain_xp on KOKO suunnitelman hyoty
+			// (plan_total - baseline_total), joten se sanotaan "best plan", ei
+			// "best move". (HoldVerdictCard.svelte:35 sanoo yha "Best available
+			// move" -> oma jonorivi + mobiilipariteetti.)
+			const allHold = v?.verdict === 'hold' || moves.length === 0;
 			const rows = allHold
 				? data.plan.map((g, i) => ({
 						rank: i + 1,
@@ -80,13 +86,15 @@
 						? null
 						: `${v.best_move_gain_xp >= 0 ? '+' : ''}${v.best_move_gain_xp.toFixed(2)}`;
 				const hit = v.hit_applied_xp ? ', after a -4 hit' : '';
+				const nMoves = v.transfers_planned ?? moves.length;
+				const plan = `best plan (${nMoves} ${nMoves === 1 ? 'move' : 'moves'})`;
 				if (v.verdict === 'hold') {
 					subtitle =
 						gain === null
 							? `no move improves the squad over the next ${v.horizon_gws} GWs`
-							: `best move ${gain} xP over ${v.horizon_gws} GWs, under the ${v.threshold_xp.toFixed(1)} xP threshold${hit}`;
+							: `${plan} ${gain} xP over ${v.horizon_gws} GWs, under the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
 				} else {
-					subtitle = `best move ${gain} xP over ${v.horizon_gws} GWs, clears the ${v.threshold_xp.toFixed(1)} xP threshold${hit}`;
+					subtitle = `${plan} ${gain} xP over ${v.horizon_gws} GWs, clears the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
 				}
 			} else {
 				const net = `${data.totals.net_gain >= 0 ? '+' : ''}${data.totals.net_gain.toFixed(1)}`;

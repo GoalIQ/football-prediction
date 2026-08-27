@@ -99,7 +99,7 @@
 			const shown = gradedRows.length > 10 ? ', latest 10 shown' : '';
 			const method = await shareCard({
 				title: 'ME VS THE MODEL',
-				subtitle: `me ${score.userTotal.toFixed(1)}, model ${score.modelTotal.toFixed(1)} over ${score.gradedCount} graded ${calls}${shown}`,
+				subtitle: `me ${score.userTotal.toFixed(1)}, model ${score.modelTotal.toFixed(1)} over ${score.gradedCount} graded ${calls}, FPL points${shown}`,
 				nameLabel: 'CALL',
 				midLabel: 'MODEL',
 				valueLabel: 'ME',

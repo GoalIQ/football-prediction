@@ -123,10 +123,11 @@
 			// Alaotsikko ei kutistu renderoijassa (~72 merkkia mahtuu), joten
 			// pitka lukkolista korvataan lukumaaralla.
 			const names = chosen.map((p) => p.web_name).join(', ');
-			const locked = names.length > 30 ? `${chosen.length} players` : names;
+			const locked =
+				names.length > 24 ? `${chosen[0].web_name} +${chosen.length - 1}` : names;
 			const provenBest = res.totals.optimal_proven !== false;
 			const method = await sharePitchCard({
-				title: provenBest ? 'BEST 15 AROUND YOUR LOCKS' : 'BEST 15 THE MODEL FOUND',
+				title: provenBest ? 'BEST 15 AROUND YOUR LOCKS' : 'STRONGEST 15 THE MODEL FOUND',
 				subtitle: `${locked} locked, XI ${res.totals.xi_xp_horizon.toFixed(1)} xP over ${res.meta.horizon_gw} GWs, ${res.meta.budget_cap.toFixed(1)}m budget`,
 				unitNote: 'price, m',
 				rows,

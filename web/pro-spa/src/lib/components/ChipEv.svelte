@@ -112,7 +112,7 @@
 						name: chip.label,
 						tag: `GW${b.gw}`,
 						team: '',
-						mid: chip.key === 'wc' && b.window_gws ? `over ${b.window_gws} GWs` : 'one GW',
+						mid: chip.key === 'wc' && b.window_gws ? `over ${b.window_gws} GW${b.window_gws === 1 ? '' : 's'}` : 'one GW',
 						value: `${b.ev > 0 ? '+' : ''}${b.ev.toFixed(1)}`
 					}
 				];
@@ -123,7 +123,9 @@
 			const basis = data.meta?.mode === 'model_xi' ? "the model's squad" : 'your squad';
 			const method = await shareCard({
 				title: 'BEST CHIP WINDOWS',
-				subtitle: `${basis}, best gameweek per chip`,
+				// Kierros 2: EV-jarjestys rinnastaa wildcardin monen GW:n summan yhden
+				// kierroksen lukuihin, joten se sanotaan alaotsikossa.
+				subtitle: `${basis}, best gameweek per chip (Wildcard is a multi-GW total)`,
 				nameLabel: 'CHIP',
 				midLabel: 'WINDOW',
 				valueLabel: 'xP est.',
