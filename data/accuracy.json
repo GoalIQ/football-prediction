@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-08-26T19:58:57+00:00",
+  "updated_at": "2026-08-27T00:41:00+00:00",
   "logged_total": 3199,
-  "pending": 2938,
+  "pending": 2937,
   "voided": 5,
   "all_time": {
-    "n": 256,
-    "correct_1x2": 129,
-    "pct_1x2": 0.5039,
+    "n": 257,
+    "correct_1x2": 130,
+    "pct_1x2": 0.5058,
     "draw_n": 77,
-    "pct_draw": 0.3008,
-    "decisive_n": 179,
-    "decisive_correct": 129,
-    "pct_decisive": 0.7207,
-    "exact_n": 208,
+    "pct_draw": 0.2996,
+    "decisive_n": 180,
+    "decisive_correct": 130,
+    "pct_decisive": 0.7222,
+    "exact_n": 209,
     "exact_correct": 30,
-    "pct_exact": 0.1442,
-    "brier": 0.5925,
-    "brier_n": 208
+    "pct_exact": 0.1435,
+    "brier": 0.5901,
+    "brier_n": 209
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.6003,
+    "brier": 0.5979,
     "brier_n": 100,
     "window": 100
   },
@@ -96,19 +96,19 @@
       "brier_n": 9
     },
     "PD": {
-      "n": 17,
-      "correct_1x2": 8,
-      "pct_1x2": 0.4706,
+      "n": 18,
+      "correct_1x2": 9,
+      "pct_1x2": 0.5,
       "draw_n": 7,
-      "pct_draw": 0.4118,
-      "decisive_n": 10,
-      "decisive_correct": 8,
-      "pct_decisive": 0.8,
-      "exact_n": 17,
+      "pct_draw": 0.3889,
+      "decisive_n": 11,
+      "decisive_correct": 9,
+      "pct_decisive": 0.8182,
+      "exact_n": 18,
       "exact_correct": 4,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 17
+      "brier_n": 18
     },
     "PL": {
       "n": 10,
@@ -173,19 +173,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 72,
-      "correct_1x2": 41,
-      "pct_1x2": 0.5694,
+      "n": 73,
+      "correct_1x2": 42,
+      "pct_1x2": 0.5753,
       "draw_n": 14,
-      "pct_draw": 0.1944,
-      "decisive_n": 58,
-      "decisive_correct": 41,
-      "pct_decisive": 0.7069,
-      "exact_n": 72,
+      "pct_draw": 0.1918,
+      "decisive_n": 59,
+      "decisive_correct": 42,
+      "pct_decisive": 0.7119,
+      "exact_n": 73,
       "exact_correct": 9,
-      "pct_exact": 0.125,
-      "brier": 0.5563,
-      "brier_n": 72
+      "pct_exact": 0.1233,
+      "brier": 0.5498,
+      "brier_n": 73
     },
     "stale": {
       "n": 136,
@@ -221,16 +221,16 @@
   },
   "calibration": [
     {
-      "bin_mid": 0.0711,
-      "predicted": 0.0711,
-      "actual": 0.0556,
-      "n": 18
+      "bin_mid": 0.0721,
+      "predicted": 0.0721,
+      "actual": 0.0526,
+      "n": 19
     },
     {
-      "bin_mid": 0.1594,
-      "predicted": 0.1594,
-      "actual": 0.1481,
-      "n": 81
+      "bin_mid": 0.1592,
+      "predicted": 0.1592,
+      "actual": 0.1463,
+      "n": 82
     },
     {
       "bin_mid": 0.2537,
@@ -263,10 +263,10 @@
       "n": 39
     },
     {
-      "bin_mid": 0.7298,
-      "predicted": 0.7298,
+      "bin_mid": 0.7332,
+      "predicted": 0.7332,
       "actual": 1.0,
-      "n": 10
+      "n": 11
     },
     {
       "bin_mid": 0.8516,
@@ -276,6 +276,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-26",
+      "home_team": "Real Madrid CF",
+      "away_team": "Real Sociedad de Fútbol",
+      "predicted_winner": "home",
+      "p_winner": 0.7668,
+      "lead_h": 2.6,
+      "most_likely_score": "2-0",
+      "actual_score": "4-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-25",
       "home_team": "Valencia CF",
@@ -557,21 +572,6 @@
       "actual_score": "2-1",
       "actual_outcome": "home",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-23",
-      "home_team": "Santa Clara",
-      "away_team": "Famalicao",
-      "predicted_winner": "away",
-      "p_winner": 0.3426,
-      "lead_h": 1.5,
-      "most_likely_score": "0-0",
-      "actual_score": "1-0",
-      "actual_outcome": "home",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
