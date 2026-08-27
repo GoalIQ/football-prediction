@@ -1080,6 +1080,11 @@ def main(argv: list[str] | None = None) -> int:
         # matalan minuutin pelaajille. Keskiarvo per FIXTURE eikä per GW: per-90
         # on ottelukohtainen luku, joten tupla-GW ei saa painaa tuplasti.
         full90_sum, full90_n = 0.0, 0
+        # XP-DISTRIBUTION (27.8): jakauma headline-GW:lle samoista syotteista
+        # joista komponentit lasketaan. Deterministinen siemen per pelaaja,
+        # jotta kaksi ajoa samalla datalla antaa saman luvun.
+        dist_samples = None
+        dist_rng = np.random.default_rng(1_000_003 * int(pid) + int(next_gw))
         for g in horizon:
             ctxs = ctx_by_gw.get(g, {}).get(fid, [])
             opps = opp_by_gw.get(g, {}).get(fid, [])
@@ -1102,6 +1107,9 @@ def main(argv: list[str] | None = None) -> int:
                     for k, v in comp.items():
                         if k != "total":
                             headline_comps[k] = headline_comps.get(k, 0.0) + v
+                    sim = xp.simulate_fixture_points(pos, rates, xm_g, p60_g,
+                                                     p1_g, c, dist_rng)
+                    dist_samples = sim if dist_samples is None else dist_samples + sim
             total += gw_xp
             gws.append({
                 "gw": g,
@@ -1211,6 +1219,9 @@ def main(argv: list[str] | None = None) -> int:
             # esikaudella (ks. _form_block). Klientit piilottavat rivin
             # kun lohko puuttuu - ei tyhjaa lupausta.
             "form": _form_block(e, boot, preseason),
+            # XP-DISTRIBUTION: None kun headline-GW on blank (ei fixturea).
+            "xp_dist": (xp.summarize_distribution(dist_samples, next_gw)
+                        if dist_samples is not None else None),
             # EDGE: minuuttijakauma (ks. p_start_e-kommentti yllä).
             # p_start on sama kalibroitu tn kuin predicted_starts/100.
             "p_start": round(p_start_e, 4),

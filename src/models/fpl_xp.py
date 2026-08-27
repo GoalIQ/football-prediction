@@ -829,6 +829,103 @@ def xp_components(pos: int, rates: dict, xmins: float, p60: float, p1_59: float,
 # Nolla taas lukisi "ei tuota pisteitä", mikä on eri väite kuin "emme tiedä".
 
 
+# ---------------------------------------------------------------------------
+# XP-DISTRIBUTION (27.8.2026): jakauma pistearvion rinnalle
+# ---------------------------------------------------------------------------
+# xp_per_gw on keskiarvo. Kilpailijan (NextXI, 1000 simulaatiota) koko postaus
+# rakentuu luvuista joita keskiarvo ei anna: P(10+), P(blank), katto. Sama
+# komponenttidata josta xP lasketaan antaa jakauman suoraan: simuloidaan
+# minuuttitila x Poisson-maalit x Poisson-syotot x CS-Bernoulli x bonus.
+#
+# KALIBROINTI ON PORTTI: simulaation keskiarvon on oltava ~xp_components.total
+# samoilla syotteilla (tests/test_xp_distribution.py). Jakauma ei saa olla
+# toinen totuus keskiarvon rinnalla. Tiedetyt, dokumentoidut poikkeamat:
+# maalivahdin torjuntapisteet ovat FPL:ssa floor(saves/3) -> simulaation
+# keskiarvo on hieman xP:n lineaarista odotusarvoa pienempi.
+DIST_N = 2000
+DIST_HAUL_PTS = 10      # "haul" = vahintaan 10 pistetta
+DIST_BLANK_PTS = 2      # "blank" = enintaan 2 pistetta (esiintyminen tai ei mitaan)
+DIST_SHORT_SHARE = 0.25  # cameo ~22 min
+
+
+def simulate_fixture_points(pos: int, rates: dict, xmins: float, p60: float,
+                            p1_59: float, ctx: dict, rng, n: int = DIST_N):
+    """Pistejakauma yhdelle fixturelle: n simuloitua kokonaispistetta.
+
+    Minuuttitila: >=60 (p60), 1-59 (p1_59), ei pelaa. Ehdollinen peliosuus
+    valitaan niin etta E[osuus] = xmins/90 (sama odotusarvo kuin xp_components).
+    """
+    import numpy as np
+    n = int(n)
+    p60 = min(max(p60, 0.0), 1.0)
+    p1_59 = min(max(p1_59, 0.0), 1.0 - p60)
+    u = rng.random(n)
+    full = u < p60
+    short = (~full) & (u < p60 + p1_59)
+    share_target = xmins / 90.0
+    s_full, s_short = 1.0, DIST_SHORT_SHARE
+    if p60 > 0:
+        s_full = (share_target - p1_59 * DIST_SHORT_SHARE) / p60
+        s_full = min(max(s_full, 60.0 / 90.0), 1.0)
+    # Jos taysi osuus katkeaa 1.0:aan, loppu odotusarvosta siirtyy cameoon:
+    # muuten E[osuus] jaisi alle xmins/90 ja maalit/syotot aliarvioituisivat.
+    if p1_59 > 0:
+        rest = share_target - p60 * s_full
+        s_short = min(max(rest / p1_59, 0.05), 59.0 / 90.0)
+    share = np.where(full, s_full, np.where(short, s_short, 0.0))
+    played = full | short
+    played_frac = max(float(played.mean()), 1e-9)
+    goal_mult = ctx.get("goal_mult", 1.0)
+    pts = np.zeros(n)
+    pts += np.where(full, 2.0, np.where(short, 1.0, 0.0))
+    pts += rng.poisson(rates["xg90"] * share * goal_mult) * GOAL_PTS[pos]
+    pts += rng.poisson(rates["xa90"] * share * goal_mult) * ASSIST_PTS
+    cs_prob = ctx.get("cs_prob", 0.0)
+    if CS_PTS[pos] and cs_prob > 0:
+        pts += np.where(full & (rng.random(n) < cs_prob), CS_PTS[pos], 0.0)
+    pts -= np.where(rng.random(n) < np.minimum(rates["yc90"] * share, 1.0), 1.0, 0.0)
+    if pos in (1, 2):
+        dist = np.asarray(ctx.get("conceded_dist", [1.0]), dtype=float)
+        if dist.sum() > 0:
+            dist = dist / dist.sum()
+            k = rng.choice(len(dist), size=n, p=dist)
+            # Sama odotusarvo kuin expected_conceded_penalty * share:
+            # rangaistus realisoituu osuuden todennakoisyydella.
+            pts -= np.where(rng.random(n) < share, k // 2, 0)
+    if pos == 1:
+        saves = rng.poisson(rates["saves90"] * share * ctx.get("opp_goal_mult", 1.0))
+        pts += saves // int(SAVE_PTS_PER)
+    if pos in DC_THRESHOLD:
+        pts += np.where(full & (rng.random(n) < rates["dc_freq"]), DC_PTS, 0.0)
+    b_mean = min(rates["bonus90"] * share_target * _bonus_fixture_mult(goal_mult), 3.0)
+    if b_mean > 0:
+        # Binomi(3, p) vain pelanneille, p skaalattu niin etta odotusarvo koko
+        # otoksessa on b_mean (sama kuin xp_components). Kokonaisluvut 0..3.
+        p_b = min(b_mean / (3.0 * played_frac), 1.0)
+        pts += np.where(played, rng.binomial(3, p_b, size=n), 0)
+    return pts
+
+
+def summarize_distribution(samples, gw: int) -> dict:
+    """Pistejakauman tiivistys riville. Lukuja EI pyoristeta ylos: 0.244 -> 24 %."""
+    import numpy as np
+    s = np.asarray(samples, dtype=float)
+    if s.size == 0:
+        return None
+    return {
+        "gw": int(gw),
+        "n": int(s.size),
+        "mean": round(float(s.mean()), 2),
+        "p_haul": round(float((s >= DIST_HAUL_PTS).mean()), 3),
+        "p_blank": round(float((s <= DIST_BLANK_PTS).mean()), 3),
+        "p10": int(np.percentile(s, 10)),
+        "median": int(np.median(s)),
+        "p90": int(np.percentile(s, 90)),
+        "haul_pts": DIST_HAUL_PTS,
+        "blank_pts": DIST_BLANK_PTS,
+    }
+
+
 def xp_full_90(pos: int, rates: dict, ctx: dict) -> float:
     """xP yhdelle fixturelle jos pelaaja pelaisi TÄYDET 90 minuuttia.
 
