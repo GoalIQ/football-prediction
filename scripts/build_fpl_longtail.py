@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 import sys
 import urllib.request
@@ -593,8 +594,8 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     # personointi), joten sen nayttaminen ei syo tuotetta - se tekee
     # suosituksesta luettavan.
     def _start_txt(p: dict) -> str:
-        v = p.get("p_start")
-        return f"starts {round(float(v) * 100)}%" if isinstance(v, (int, float)) \
+        v = start_pct(p)
+        return f"starts {v}%" if v is not None \
             else "start probability in Premium"
 
     body = (
@@ -885,7 +886,7 @@ def _xi_start_risk(xi) -> str:
                 "The total does not rest on anyone who might be benched.</p>")
     risky.sort(key=lambda p: p["p_start"])
     names = ", ".join(
-        f"{escape(p['web_name'])} {round(p['p_start'] * 100)}%" for p in risky)
+        f"{escape(p['web_name'])} {start_pct(p)}%" for p in risky)
     return ('<p class="note"><strong>Not everyone here is nailed.</strong> '
             f"{names}. Those totals are an average of two outcomes, playing "
             "and not playing, so the XI total is less certain than it looks. "
@@ -1063,6 +1064,26 @@ def _xg_payload(leaders: dict) -> str:
             lyhyt_kausi(p.get("basis")),
         ])
     return json.dumps(out, separators=(",", ":"), ensure_ascii=False)
+
+
+def start_pct(p: dict) -> int | None:
+    """Start% YHDESTA lahteesta yhdella pyoristyksella (27.8).
+
+    Julkaisuportti mittasi: Rogers oli 92 % predicted-lineups- ja club-sivulla
+    mutta 91 % expected-points-sivulla. Syy: toinen polku tulosti
+    `predicted_starts` (jo kerran pyoristetty 91.5) `.0f`:lla -> 92, toinen
+    `p_start*100` -> 91. Kumpi tahansa julkaistu luku oli kumottavissa
+    toisella sivullamme. Nyt kaikki sivut lukevat `p_start`in ja pyoristavat
+    puolikkaat YLOS (sama kuin SPA:n/mobiilin Math.round), ei Pythonin
+    parillispyoristys. `predicted_starts` vain fallbackina jos p_start puuttuu.
+    """
+    v = p.get("p_start")
+    if isinstance(v, (int, float)):
+        return int(math.floor(float(v) * 100.0 + 0.5))
+    w = p.get("predicted_starts")
+    if isinstance(w, (int, float)):
+        return int(math.floor(float(w) + 0.5))
+    return None
 
 
 def lyhyt_kausi(kausi: str | None) -> str:
@@ -3476,7 +3497,7 @@ def _xi_rows(players: list[dict]) -> tuple[str, int, list[dict]]:
         f'<td>{escape(str(p["web_name"]))}{_no_history_flag(p)}</td>'
         f'<td class="m-hide">{escape(str(p.get("pos", "")))}</td>'
         f'<td class="n">{float(p.get("price") or 0):.1f}</td>'
-        f'<td class="n hi">{p["predicted_starts"]:.0f}%</td>'
+        f'<td class="n hi">{start_pct(p)}%</td>'
         "</tr>"
         for p in valitut)
     return rivit, len(valitut), valitut
@@ -3506,7 +3527,7 @@ def _xi_omissions(players: list[dict], valitut: list[dict]) -> str:
     for p in ulkona[:4]:
         mins = (p.get("last_season") or {}).get("minutes")
         osat.append(f'{escape(str(p["web_name"]))} '
-                    f'({p["predicted_starts"]:.0f}%, {mins} min)')
+                    f'({start_pct(p)}%, {mins} min)')
     return ('<p class="note">Missing from that eleven, and the reason is the '
             "same in each case: they played a short season, so the estimate "
             "reads them as rotation. "
@@ -3848,7 +3869,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f'<td class="n hi">{r["xp_horizon_total"]:.1f}</td>'
         f'<td class="n m-hide">{(r.get("xp_per_gw") or 0):.2f}</td>'
         f'<td class="n">{(r.get("xp_per_90") or 0):.2f}</td>'
-        f'<td class="n">{(r.get("p_start") or 0) * 100:.0f}</td>'
+        f'<td class="n">{start_pct(r) if start_pct(r) is not None else 0}</td>'
         f'<td class="n m-hide">{(r.get("xmins") or 0):.0f}</td>'
         f'<td class="n m-hide">{(r.get("owned_pct") or 0):.1f}</td>'
         "</tr>"

@@ -103,8 +103,17 @@ def _taulukon_rivit(h: str, maara: int = 10) -> list[list[str]]:
     assert tb, "taulukosta puuttuu tbody"
     out = []
     for tr in re.findall(r"<tr>(.*?)</tr>", tb.group(1), re.S)[:maara]:
-        out.append([re.sub(r"<[^>]+>", "", c).strip()
-                    for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)])
+        solut = []
+        for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S):
+            # 27.8: joukkueen luottamuslippu (`<span class="tflag">turnover
+            # </span>`) renderoityy joukkuesolun SISAAN. Se on sivun oma
+            # varaus eika osa joukkuekoodia, ja kortti kantaa tarkoituksella
+            # vain koodin. Ilman tata portti kaatui heti kun CI:n
+            # team_confidence liputti Brightonin (BHA -> "BHAturnover").
+            # Poistetaan VAIN tama yksi luokka, ei mitaan muuta.
+            c = re.sub(r'<span class="tflag">[^<]*</span>', "", c)
+            solut.append(re.sub(r"<[^>]+>", "", c).strip())
+        out.append(solut)
     return out
 
 
