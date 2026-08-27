@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import {
 		fetchRateTeam,
 		fetchRateTeamManual,
@@ -135,6 +136,36 @@
 	/** 28.7 (PI-16): FPL ei ole vielä julkaissut kokoonpanoja. Erillään
 	 *  `error`:sta, koska tämä ei ole virhe vaan ohjaus toimivaan polkuun. */
 	let picksNotPublished = $state(false);
+
+	// RATE-TEAM-PICKS-GW-LABEL (27.8): deadline paikallisena kellonaikana
+	// selitysrivia varten. Rikkinainen aikaleima -> null, rivi nakyy silti
+	// ilman kellonaikaa (vaara aika olisi huonompi kuin puuttuva).
+	let pickDeadlineLocal = $derived.by<string | null>(() => {
+		const iso = data?.meta?.deadline_time;
+		if (typeof iso !== 'string') return null;
+		const d = new Date(iso);
+		if (Number.isNaN(d.getTime())) return null;
+		// timeZoneName mukana (portin suositus 27.8): aika on lukijan
+		// paikallinen eika FPL:n sivun UK-aika, ja ilman vyohyketta ero
+		// nayttaisi virheelta.
+		return d.toLocaleString(undefined, {
+			weekday: 'short',
+			day: 'numeric',
+			month: 'short',
+			hour: '2-digit',
+			minute: '2-digit',
+			timeZoneName: 'short'
+		});
+	});
+	let draftBoxEl = $state<HTMLElement | null>(null);
+	function openDraftFromNotice() {
+		draftOpen = true;
+		pickerCollapsed = false;
+		// Draft-laatikko on tulosten YLAPUOLELLA, joten pelkka avaaminen ei
+		// nay — rullataan siihen. tick-viive: elementti on olemassa vasta
+		// renderin jalkeen.
+		void tick().then(() => draftBoxEl?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+	}
 
 	async function runRate() {
 		if (!entryValid || loading) return;
@@ -884,7 +915,7 @@
      14.8: avausnappi siirtyi ylos `.start-grid`in oikeaan sarakkeeseen —
      valitsin itse jaa tanne, koska se tarvitsee koko leveyden. -->
 {#if draftOpen}
-	<div class="draft-box">
+	<div class="draft-box" bind:this={draftBoxEl}>
 		{#if poolError}
 			<p class="banner error">
 				Could not load the player pool right now. Please try again shortly.
@@ -991,6 +1022,30 @@
 	     vaita viikkokynnysta; (3) close call -peruste talon hyvaksytylla
 	     muotoilulla + 0.00-tapaus omana lauseena; (4) siirtorivilta pallo
 	     pois — sana Hold/Move kantaa tiedon, variarvio ilman perustetta ei. -->
+	<!-- RATE-TEAM-PICKS-GW-LABEL (27.8, Villen kysymys "miksi hakee viime
+	     kierroksen joukkueen"): FPL julkaisee uuden GW:n picksit vasta
+	     deadlinen jalkeen (mitattu: /event/2/picks/ 404 deadlineen asti,
+	     eivatka vahvistetut siirrotkaan nay — 7,67 M GW2-siirtoa, 0/121
+	     entryn julkisessa listassa). Naytetty runko on siis pakosta
+	     edellisen kierroksen, ja ilman tata rivia kayttaja paattelee etta
+	     tuote on rikki. Ehto tulee backendista (meta.picks_outdated). -->
+	{#if data.meta.picks_outdated === true && typeof data.meta.picks_gw === 'number' && typeof data.meta.deadline_gameweek === 'number'}
+		<!-- Sanamuoto julkaisuportin 27.8 korjaamana: (1) ei luvata hetkea
+		     ("shortly after" nojasi n=1-mittaukseen ja osui ikkunaan jossa
+		     oma cache + is_current-flippi voivat antaa virheen), vaan
+		     annetaan tarkistusreitti (FPL:n oma sivu); (2) CTA ei vaita
+		     etta draft-rater saisi uuden rungon valmiina — kayttaja poimii
+		     15 kasin, ja se sanotaan. -->
+		<p class="notice-preseason">
+			<strong>This is your GW{data.meta.picks_gw} squad.</strong>
+			FPL publishes GW{data.meta.deadline_gameweek} squads a while after the
+			deadline{#if pickDeadlineLocal}&nbsp;({pickDeadlineLocal}){/if}, so import again once
+			yours is public on the FPL site. Changed your team already?
+			<button type="button" class="linklike" onclick={openDraftFromNotice}>
+				Rate my draft</button
+			> instead: pick the new 15 by hand and the model rates them now.
+		</p>
+	{/if}
 	{@const stripRating = data.rating.rating ?? Math.round(data.rating.percentile)}
 	{@const capGap =
 		data.captain.alternative != null

@@ -120,6 +120,16 @@ export interface RateTeamResponse {
 		mode: string;
 		gw: number;
 		picks_gw?: number | null;
+		/** RATE-TEAM-PICKS-GW-LABEL (27.8): picksit ovat vanhemmalta
+		 *  kierrokselta kuin suunniteltava. FPL julkaisee uuden GW:n picksit
+		 *  vasta deadlinen jalkeen, joten tama on normaalitila deadlinea
+		 *  edeltavina paivina — UI:n on sanottava se aaneen. Maaritelma on
+		 *  backendissa (picks_outdated), jotta web ja mobiili eivat vastaa
+		 *  eri tavalla. */
+		picks_outdated?: boolean;
+		deadline_gameweek?: number | null;
+		/** Deadline-GW:n deadline ISO-aikana (UTC), esitysta varten. */
+		deadline_time?: string | null;
 		horizon_gw?: number;
 		note?: string;
 		/** 22.8: naytettava kierros on parhaillaan kaynnissa, eli luvut

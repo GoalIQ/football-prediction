@@ -1337,6 +1337,53 @@ def gw_in_progress(target_gw: int, xp_data: dict) -> bool:
             and dl_gw > target_gw and next_gw == target_gw)
 
 
+def picks_outdated(picks_gw, deadline_gw) -> bool:
+    """Ovatko naytetyt picksit VANHEMMALTA kierrokselta kuin se jota
+    kayttaja suunnittelee?
+
+    RATE-TEAM-PICKS-GW-LABEL (26.8, Villen kysymys "miksi hakee viime
+    kierroksen joukkueen"): FPL ei julkaise tulevan kierroksen pickeja
+    kenellekaan ennen deadlinea (mitattu entrylla 1186244: /event/1/picks/
+    200, /event/2/picks/ 404) — eika vahvistettuja siirtojakaan (mitattu
+    27.8: GW2-siirtoja tehty 7,67 M, 0/121 entryn /transfers/-listassa
+    yhtaan ennen deadlinea). Rate my team nayttaa siis pakosta GW{n-1}:n
+    rungon, ja ilman selitysta kayttaja paattelee etta tuote on rikki.
+
+    Tama lippu kertoo klienteille MILLOIN selitysrivi naytetaan. Teksti
+    renderoidaan klienttien omista i18n-tiedostoista (linjaus 23.8:
+    vakaat kentat backendista, ei proosaa).
+
+    🔴 Ehto vaatii etta ero on TASAN yksi kierros (julkaisuportin
+    blokkaava loydos 27.8): `picks_gw` tulee elavasta bootstrapista
+    (is_current, 10 min cache) ja `deadline_gameweek` artefaktista jonka
+    cron ajaa 3 h valein — deadlinen ymparilla lahteet voivat erota
+    kaksi kierrosta, jolloin loysempi ehto (`<`) tuottaisi rivin "This
+    is your GW1 squad, GW3 picks..." kayttajalle jonka GW2-runko on jo
+    julkinen. Vaara selitys on huonompi kuin ei selitysta -> silloin ei
+    rivia.
+
+    Kentta puuttuu tai on rikki -> False, eli lisarivia ei nayteta.
+    bool on intin alaluokka, joten se torjutaan erikseen.
+    """
+    return (isinstance(picks_gw, int) and not isinstance(picks_gw, bool)
+            and isinstance(deadline_gw, int)
+            and not isinstance(deadline_gw, bool)
+            and deadline_gw == picks_gw + 1)
+
+
+def deadline_time_for(bootstrap: dict, deadline_gw) -> str | None:
+    """Deadline-kellonaika (ISO, UTC) kierrokselle FPL-bootstrapista.
+    Puuttuva kierros tai rikkinainen syote -> None (klientti jattaa
+    kellonajan pois rivista, rivi itse nakyy silti)."""
+    if not isinstance(deadline_gw, int) or isinstance(deadline_gw, bool):
+        return None
+    for e in (bootstrap or {}).get("events") or []:
+        if e.get("id") == deadline_gw:
+            t = e.get("deadline_time")
+            return t if isinstance(t, str) else None
+    return None
+
+
 def planning_start_gw(target_gw: int, pool: list[dict], xp_data: dict) -> int:
     """SIIRTOSUUNNITTELUN aloitus-GW: ensimmäinen kierros jonka deadline on
     vielä edessä.
@@ -1463,6 +1510,8 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     transfers["hold_verdict"] = build_hold_verdict(
         best_gain, int(xp_data["meta"].get("horizon_gw") or 6), ft)
 
+    _dl_gw = xp_data["meta"].get("deadline_gameweek")
+
     return {
         "meta": {
             "mode": mode,
@@ -1476,6 +1525,13 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "xp_frozen_at": (frozen_info or {}).get("frozen_at"),
             "xp_frozen_deadline": (frozen_info or {}).get("deadline"),
             "picks_gw": picks_gw if mode == "entry" else None,
+            # RATE-TEAM-PICKS-GW-LABEL (27.8): klientti nayttaa selitysrivin
+            # kun picksit ovat vanhemmalta kierrokselta kuin suunniteltava.
+            # Kentat ovat vakaita tunnisteita/arvoja, teksti klienttien i18n:sta.
+            "deadline_gameweek": _dl_gw,
+            "deadline_time": deadline_time_for(bootstrap, _dl_gw),
+            "picks_outdated": (picks_outdated(picks_gw, _dl_gw)
+                               if mode == "entry" else False),
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
