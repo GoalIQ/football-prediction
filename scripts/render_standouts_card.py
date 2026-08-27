@@ -16,10 +16,13 @@ Thiaw-esto _pool():ssa, linkki sivulle jolla luvut nakyvat.
 
 Valinnat (kaikki headline-GW:sta, vain pelaajat joilla p_start >= 0.6 ja
 status a, jotta kortti ei nosta penkkilaista):
-  CAPTAIN PICK   suurin xp_per_gw
-  HIGHEST CEILING suurin p90 (tasapeli: p_haul)
-  SAFEST PICK    pienin p_blank niista joiden xp_per_gw >= 4
+  CAPTAIN PICK   suurin GW-xP (gameweeks[].xp headline-GW:lle)
+  CEILING        suurin p90 (tasapeli: p_haul) - ei "highest", koska p90 on
+                 kokonaisluku ja sama katto voi olla usealla (27.8: 10 kolmella)
+  SAFEST PICK    pienin p_blank niista joiden GW-xP >= 4
   THE GAMBLE     suurin p_haul niista joiden p_blank >= 0.35
+  Nelja eri nimea (poissulku jarjestyksessa). Nousija (team_flag promoted)
+  saa tahden + alaviitteen kuten 25.8 GW2-outlook-kortti.
 
 Tuloste: HTML + PNG (Chrome headless) kuten render_frozen_squad_card.
     python -m scripts.render_standouts_card --out outputs/cards
@@ -44,7 +47,14 @@ MIN_P_START = 0.6
 # Kova saanto: ei Thiaw-juttuja markkinointiin (muisti thiaw-ei-markkinointiin).
 # Esto kuuluu generaattoriin, koska yksi refresh riittaa nostamaan hanet
 # "safest"-tiileen (nailed DEF, korkea CS%).
-EXCLUDED_NAMES = {"Thiaw"}
+EXCLUDED_NAMES = {"thiaw"}
+
+
+def _excluded(name: str) -> bool:
+    """Vertailu sukunimiosalla ja pienin kirjaimin: 'M.Thiaw' ja 'Thiaw' ovat
+    sama pelaaja, eika esto saa lakata jos FPL lisaa etukirjaimen."""
+    tail = str(name or "").split(".")[-1].strip().lower()
+    return tail in EXCLUDED_NAMES
 SAFE_MIN_XP = 4.0
 GAMBLE_MIN_BLANK = 0.35
 
@@ -75,6 +85,7 @@ overflow:hidden;text-overflow:ellipsis;}
 line-height:1;font-variant-numeric:tabular-nums;}
 .tile .big small{font-size:18px;white-space:nowrap;color:var(--muted);font-weight:500;margin-left:6px;}
 .tile .why{color:var(--muted);font-size:14px;margin-top:8px;min-height:36px;}
+.fn{color:var(--muted);font-size:13px;margin:-8px 0 8px;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
 .ftr b{color:var(--cream);}
@@ -85,7 +96,7 @@ def _pool(players: list[dict]) -> list[dict]:
     return [p for p in players
             if p.get("xp_dist") and p.get("status", "a") == "a"
             and float(p.get("p_start") or 0) >= MIN_P_START
-            and p.get("web_name") not in EXCLUDED_NAMES
+            and not _excluded(p.get("web_name"))
             and gw_xp(p) is not None]
 
 
@@ -127,17 +138,25 @@ def pick_standouts(players: list[dict]) -> dict:
             "gamble": gamble}
 
 
+def _promoted(p: dict) -> bool:
+    return (p.get("team_flag") or "") == "promoted"
+
+
 def _tile(lbl: str, p: dict | None, big: str, small: str, why: str) -> str:
     if p is None:
         return (f'<div class="tile"><div class="lbl">{escape(lbl)}</div>'
                 '<div class="name">-</div><div class="meta">no pick this week</div>'
                 '<div class="big">-</div></div>')
+    star = "*" if _promoted(p) else ""
     return (f'<div class="tile"><div class="lbl">{escape(lbl)}</div>'
             f'<div class="name">{escape(p["web_name"])}</div>'
-            f'<div class="meta">{escape(p["pos"])} · {escape(p["team_short"])}'
+            f'<div class="meta">{escape(p["pos"])} · {escape(p["team_short"])}{star}'
             f' · {float(p.get("price") or 0):.1f}m</div>'
-            f'<div class="range">median <b>{p["xp_dist"]["median"]}</b> pts, '
-            f'range <b>{p["xp_dist"]["p10"]}</b> to <b>{p["xp_dist"]["p90"]}</b></div>'
+            # "8 weeks in 10 between a and b": vali p10..p90 kattaa rakenteellisesti
+            # >= 80 % (typistys nostaa). EI "range"/"floor": havaittu vaihteluvali
+            # oli 0-31 (mitattu n=200 000), joten sisaltavyytta ei luvata.
+            f'<div class="range">8 weeks in 10 between <b>{p["xp_dist"]["p10"]}</b> '
+            f'and <b>{p["xp_dist"]["p90"]}</b></div>'
             f'<div class="big">{escape(big)}<small>{escape(small)}</small></div>'
             f'<div class="why">{escape(why)}</div></div>')
 
@@ -154,10 +173,13 @@ def build_html(data: dict) -> tuple[str, dict]:
               "10+ pts",
               (f"top GW{gw} projection in the pool, blanks {pct(s['captain']['xp_dist']['p_blank'])}"
                if s["captain"] else "")),
-        _tile("Highest ceiling", s["ceiling"],
+        # "Ceiling", ei "Highest": p90 on kokonaisluku ja sama katto voi olla
+        # usealla (27.8: 10 kolmella, kaikki kortilla). Why sanoo tasapelisaannon.
+        _tile("Ceiling", s["ceiling"],
               str(s["ceiling"]["xp_dist"]["p90"]) if s["ceiling"] else "-",
               "pts",
-              (f"past it in fewer than 1 week in 10, 10+ in {pct(s['ceiling']['xp_dist']['p_haul'])}"
+              (f"top ceiling in the pool, and he reaches it most often: 10+ in "
+               f"{pct(s['ceiling']['xp_dist']['p_haul'])}"
                if s["ceiling"] else "")),
         _tile("Safest pick", s["safest"],
               pct(1.0 - s["safest"]["xp_dist"]["p_blank"]) if s["safest"] else "-",
@@ -168,9 +190,17 @@ def build_html(data: dict) -> tuple[str, dict]:
         _tile("The gamble", s["gamble"],
               pct(s["gamble"]["xp_dist"]["p_haul"]) if s["gamble"] else "-",
               "10+ pts",
-              (f"but blanks {pct(s['gamble']['xp_dist']['p_blank'])} of the time"
-               if s["gamble"] else "")),
+              # Sama pyoristetty haul kuin kapteenilla sanotaan aaneen, ei piiloteta.
+              ((f"same haul chance as our captain pick, but blanks "
+                f"{pct(s['gamble']['xp_dist']['p_blank'])} of the time")
+               if s["gamble"] and s["captain"]
+               and pct(s["gamble"]["xp_dist"]["p_haul"]) == pct(s["captain"]["xp_dist"]["p_haul"])
+               else (f"but blanks {pct(s['gamble']['xp_dist']['p_blank'])} of the time"
+                     if s["gamble"] else ""))),
     ])
+    promoted_on_card = any(_promoted(s[k]) for k in s if s[k])
+    footnote = ('<div class="fn">*promoted side, rating fitted on one PL match</div>'
+                if promoted_on_card else "")
     n = (s["captain"] or {}).get("xp_dist", {}).get("n", 2000) if s["captain"] else 2000
     html = (
         "<!doctype html><meta charset='utf-8'>"
@@ -178,9 +208,9 @@ def build_html(data: dict) -> tuple[str, dict]:
         '<div class="card">'
         '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
         f'<div><div class="title">GW{gw} standouts from {n:,} simulated gameweeks</div>'
-        '<div class="sub">Same numbers as our xP, run 2,000 times. Only players with '
+        '<div class="sub">Same numbers as our xP, run that many times. Only players with '
         'at least a 60% chance of starting.</div></div></div>'
-        f'<div class="tiles">{tiles}</div>'
+        f'<div class="tiles">{tiles}</div>{footnote}'
         '<div class="ftr"><span>The model plays too: <b>entry 116920</b>, '
         'every gameweek scored in public</span>'
         '<span>model projections, not betting advice</span>'

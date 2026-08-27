@@ -3893,6 +3893,18 @@ def render_club_pages(xp: dict, now: datetime) -> list[str]:
     return tehdyt
 
 
+def _dist_cell(r: dict, key: str) -> str:
+    """xp_dist-solu: prosentti (p_haul/p_blank) tai kokonaisluku (p90); "-" kun
+    lohko puuttuu (blank GW tai vanha artefakti). Ei nollaa: nolla olisi vaite."""
+    d = r.get("xp_dist") or {}
+    v = d.get(key)
+    if v is None:
+        return "-"
+    if key in ("p_haul", "p_blank"):
+        return f"{round(float(v) * 100)}%"
+    return str(int(v))
+
+
 def render_expected_points(xp: dict, now: datetime) -> str | None:
     """Koko xP-lista ilmaiseksi, ilman kirjautumista (9.8.2026).
 
@@ -3970,6 +3982,12 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f'<td class="n hi">{r["xp_horizon_total"]:.1f}</td>'
         f'<td class="n">{(r.get("xp_per_gw") or 0):.2f}</td>'
         f'<td class="n m-hide">{(r.get("xp_per_90") or 0):.2f}</td>'
+        # XP-DISTRIBUTION (27.8): P(10+), P(blank) nakyvat myos puhelimessa,
+        # katto m-hide. Sama lahde kuin SPA:n XpTable (xp_dist), sama maski
+        # kuin xP:lla (sivu on jo ilmainen top 100). Blank-GW = "-".
+        f'<td class="n">{_dist_cell(r, "p_haul")}</td>'
+        f'<td class="n">{_dist_cell(r, "p_blank")}</td>'
+        f'<td class="n m-hide">{_dist_cell(r, "p90")}</td>'
         f'<td class="n">{start_pct(r) if start_pct(r) is not None else 0}</td>'
         f'<td class="n m-hide">{(r.get("xmins") or 0):.0f}</td>'
         f'<td class="n m-hide">{(r.get("owned_pct") or 0):.1f}</td>'
@@ -4030,6 +4048,17 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # lainaavat; xP/90 on rate joka johtaa harhaan ilman minuutteja
         # (per-90-ansa, note 17.8). Sarakemaara puhelimessa ei muutu.
         '<th class="n">xP/GW</th><th class="n m-hide">xP/90</th>'
+        # XP-DISTRIBUTION (27.8): jakauma seuraavalle kierrokselle, 2000
+        # simuloitua kierrosta samoista komponenteista kuin xP. Kortti
+        # (render_standouts_card) linkittaa tanne, joten luvut ovat tassa.
+        '<th class="n"><abbr title="Chance of 10 or more points in the next '
+        'gameweek, from 2,000 simulated gameweeks built on the same numbers as '
+        'xP">10+</abbr></th>'
+        '<th class="n"><abbr title="Chance of 2 points or fewer in the next '
+        'gameweek, from the same 2,000 simulated gameweeks">Blank</abbr></th>'
+        '<th class="n m-hide"><abbr title="A strong week. He goes past this in '
+        'fewer than one gameweek in ten (90th percentile of the same '
+        'simulations)">Ceiling</abbr></th>'
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
         "</tr></thead>"

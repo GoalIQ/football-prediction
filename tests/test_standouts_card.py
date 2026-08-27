@@ -56,9 +56,20 @@ def test_four_distinct_names():
 
 
 def test_thiaw_never_on_card():
-    ps = [_p("Thiaw", 6.0, 0.95, 0.4, 0.1, 14), _p("Other", 4.0, 0.9, 0.2, 0.3, 10)]
+    ps = [_p("Thiaw", 6.0, 0.95, 0.4, 0.1, 14), _p("M.Thiaw", 6.0, 0.95, 0.4, 0.1, 14),
+          _p("Other", 4.0, 0.9, 0.2, 0.3, 10)]
     s = pick_standouts(ps)
-    assert all((s[k] is None or s[k]["web_name"] != "Thiaw") for k in s)
+    assert all((s[k] is None or "Thiaw" not in s[k]["web_name"]) for k in s)
+
+
+def test_promoted_side_gets_star_and_footnote():
+    a = _p("Keeper", 4.6, 0.95, 0.01, 0.2, 8, pos="GKP"); a["team_flag"] = "promoted"
+    html, _ = build_html({"meta": {"next_gameweek": 2},
+                          "players": [a, _p("B", 4.0, 0.9, 0.2, 0.3, 10)]})
+    assert "TST*" in html and "promoted side" in html
+    html2, _ = build_html({"meta": {"next_gameweek": 2},
+                           "players": [_p("B", 4.0, 0.9, 0.2, 0.3, 10)]})
+    assert "promoted side" not in html2
 
 
 def test_captain_uses_gameweek_xp_not_horizon_average():
@@ -71,5 +82,6 @@ def test_html_carries_no_per_player_xp():
     ps = [_p("Cap", 6.37, 0.95, 0.30, 0.30, 13)]
     html, _ = build_html({"meta": {"next_gameweek": 2}, "players": ps})
     assert "6.37" not in html and "6.4" not in html and "floor" not in html
+    assert "typical range" not in html and ">range" not in html
     assert "GW2 standouts" in html and "entry 116920" in html
     assert "—" not in html  # em dash
