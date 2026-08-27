@@ -3895,8 +3895,8 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f'<td>{escape(r["pos"])}</td>'
         f'<td class="n">{r["price"]:.1f}</td>'
         f'<td class="n hi">{r["xp_horizon_total"]:.1f}</td>'
-        f'<td class="n m-hide">{(r.get("xp_per_gw") or 0):.2f}</td>'
-        f'<td class="n">{(r.get("xp_per_90") or 0):.2f}</td>'
+        f'<td class="n">{(r.get("xp_per_gw") or 0):.2f}</td>'
+        f'<td class="n m-hide">{(r.get("xp_per_90") or 0):.2f}</td>'
         f'<td class="n">{start_pct(r) if start_pct(r) is not None else 0}</td>'
         f'<td class="n m-hide">{(r.get("xmins") or 0):.0f}</td>'
         f'<td class="n m-hide">{(r.get("owned_pct") or 0):.1f}</td>'
@@ -3951,7 +3951,12 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # esti julkaisutarkistajaa verifioimasta hintavaitetta puhelimella.
         '<th>Pos</th><th class="n">Price</th>'
         f'<th class="n">{n_gw}GW xP</th>'
-        '<th class="n m-hide">xP/GW</th><th class="n">xP/90</th>'
+        # XP-GW-SARAKE-MOBIILI (27.8): xP/GW nakyviin puhelimessa, xP/90
+        # piiloon. Julkaisuportti mittasi ettei per-GW-lukua (4.17) voinut
+        # tarkistaa puhelimella, ja se on juuri se luku jota postaukset
+        # lainaavat; xP/90 on rate joka johtaa harhaan ilman minuutteja
+        # (per-90-ansa, note 17.8). Sarakemaara puhelimessa ei muutu.
+        '<th class="n">xP/GW</th><th class="n m-hide">xP/90</th>'
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
         "</tr></thead>"
