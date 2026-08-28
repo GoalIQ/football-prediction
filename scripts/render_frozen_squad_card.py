@@ -83,6 +83,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gw", type=int, default=1)
     ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs"))
+    ap.add_argument("--hide-bench", action="store_true",
+                    help="jata penkkirivi pois (promopinnan nimiesto, esim. Thiaw)")
     args = ap.parse_args()
 
     frozen = json.loads(
@@ -111,7 +113,7 @@ def main() -> int:
         f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})</div>'
         f'<div class="sub">Picked by the optimiser, frozen {frozen_at}, entered as-is</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
-        f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>'
+        ("" if args.hide_bench else f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>')
         f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>'
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
