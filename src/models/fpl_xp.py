@@ -116,6 +116,96 @@ def accumulate_history(rows: list[dict]) -> dict:
     return acc
 
 
+# Viime kauden paino kuluvan kauden vauhdeissa (28.8.2026, XP-SEASON-CARRY).
+#
+# 🔴 MITATTU VIKA. Kausihaara rakensi accin VAIN kuluvan kauden
+# element-summarysta: GW1:n jalkeen jokaisella pelaajalla oli ~90 min otos,
+# _shrink90 (M_PRIOR_ATTACK 450) antoi omalle vauhdille 17 % painon ja
+# positiopriorille 83 %. Artefaktin meta 28.8: pl_history 0 / limited 310 /
+# no_history 202 - B.Fernandes (3065 min, 9 G 24 A) oli #51 ja
+# "limited_history". Esikausihaara kaytti arkistoa, kausihaara ei: sama
+# vikaluokka kuin muistissa "kentta vain yhdessa haarassa katoaa
+# kausivaihdossa".
+#
+# Miksi 0.5 eika 1.0: viime kausi on eri joukkue ja eri rooli osalle
+# pelaajista (siirrot, valmentajavaihdokset), joten se ei ole taysipainoista
+# naytetta. Puolella painolla 3000 min -> 1500 "tehominuuttia": pelaajan oma
+# vauhti kantaa heti ~77 % (1500+90 / 1500+90+450) ja kuluva kausi ohittaa
+# arkiston painossa noin GW17:n jalkeen (1500 min). Nolla ei kelpaa (mitattu
+# yllä) ja 1.0 pitaisi kuluvan kauden alisteisena koko syksyn.
+PREV_SEASON_CARRY = 0.5
+
+
+def carry_prev_season(acc: dict, prev_acc: dict | None,
+                      carry: float = PREV_SEASON_CARRY) -> dict:
+    """Yhdista kuluvan kauden acc ja viime kauden arkisto-acc painolla carry.
+
+    Puhdas funktio: palauttaa uuden dictin. prev_acc None tai tyhja ->
+    acc sellaisenaan (uusi PL-tulokas pysyy no_history/limited).
+    Kaikki kentat skaalataan samalla kertoimella, jotta per-90-vauhdit ja
+    dc_freq (osumat / n60) sailyttavat suhteensa.
+    """
+    if not prev_acc or not (prev_acc.get("mins") or 0) or carry <= 0:
+        return dict(acc)
+    out = dict(acc)
+    for k in ("mins", "xg", "xa", "saves", "yc", "bonus", "n60", "dc_hits"):
+        out[k] = (acc.get(k, 0) or 0) + carry * float(prev_acc.get(k, 0) or 0)
+    return out
+
+
+# Esikausiarvion "vahvuus" kierroksina kausihaaran minuuttisekoituksessa:
+# w_cur = n_cur / (n_cur + PREV_MINUTES_PRIOR_ROUNDS), cap 1.0 kun n_cur >=
+# START_WINDOW. Arvolla 1.0: GW1 50/50, GW2 67/33, GW3 75/25, GW4+ 100/0.
+#
+# Mitattu 28.8 vaihtoehdolla w_cur = n_cur/START_WINDOW (GW1 25/75): viime
+# kaudella loukkaantuneet mutta GW1:n avanneet putosivat liikaa (Palmer
+# xMins 82 -> 53, Saka 67 -> 47, Isak 90 -> 42), koska esikausiarvio kantaa
+# vanhan loukkaantumisjakson. Tuore 90 min avaus + FPL-status a on vahvempi
+# nayte roolista kuin viime kevaan poissaolo. 🔴 KALIBROIMATON: mittaa
+# GW2-4:n toteutuneilla minuuteilla (data/fpl_xp_gw_accuracy.json) kumpi
+# painotus antaa pienemman xMins-MAE:n, ja paivita tama luku sen mukaan.
+PREV_MINUTES_PRIOR_ROUNDS = 1.0
+# Kytkin: sekoitetaanko esikausiarvio minuutteihin kausihaarassa. Mitattu
+# 28.8 (n/(n+1)): korjaa GW1:n valiin jattaneet (Watkins 34 -> 43 xMins)
+# mutta pudottaa viime kaudella loukkaantuneet GW1-avaajat (Palmer 82 -> 58,
+# Isak 90 -> 56, White 86 -> 56). Oletus POIS: vauhtien arkistokorjaus
+# shippaa yksin, minuutit kuten ennen (kuluva kausi + hintapriori). Kytke
+# paalle vasta kun GW2-4:n xMins-MAE on mitattu molemmilla.
+MINUTES_PREV_BLEND = False
+
+
+def prev_minutes_weight(n_cur: int) -> float:
+    """Kuluvan kauden paino minuuttisekoituksessa (1.0 = arkisto ei vaikuta)."""
+    if n_cur >= START_WINDOW:
+        return 1.0
+    return n_cur / (n_cur + PREV_MINUTES_PRIOR_ROUNDS)
+
+
+def blend_minutes(mm_cur: dict, mm_prev: dict, w_cur: float) -> dict:
+    """Sekoita kuluvan kauden minuuttimalli (recency-ikkuna) ja viime kauden
+    arkistosta laskettu esikausiarvio (koko kausi, half-life) painolla
+    w_cur = kuluvan kauden kierrokset / START_WINDOW (cap 1.0).
+
+    🔴 MIKSI NAIN EIKA YHDISTAMALLA KIERROKSET: kokeiltu 28.8 (arkiston
+    kierrokset siirretyilla avaimilla samaan recency-ikkunaan) -> last-4
+    painotti viime kauden KOLMEA VIIMEISTA kierrosta, jotka ovat kauden
+    huonoin nayte (loppukauden lepuutus: Haaland GW38 0 min -> xMins 90 ->
+    75; siirtoikkuna: Isak 90 -> 45, Guehi 89 -> 75). Esikausipolku
+    ratkaisi saman ongelman koko kauden half-lifella, joten kausihaara
+    perii SEN arvion ja liu'uttaa kuluvaan kauteen START_WINDOW:n aikana.
+    Ilman sekoitusta GW1:n valiin jattanyt pelaaja putosi xMins 0:aan
+    (Watkins, Gyokeres, Pope; 90 pelaajaa pois projektiosta).
+    """
+    w = max(0.0, min(1.0, float(w_cur)))
+    out = dict(mm_cur)
+    for k in ("p_start_raw", "p_start", "p_sub", "e_min_start", "e_min_sub",
+              "p60_start", "p60_sub"):
+        out[k] = w * float(mm_cur.get(k, 0.0)) + (1.0 - w) * float(mm_prev.get(k, 0.0))
+    out["n_obs"] = int(mm_cur.get("n_obs") or 0)
+    out["minutes_blend_prev_weight"] = round(1.0 - w, 3)
+    return recompute_minutes(out)
+
+
 def dc_hit(row: dict, pos: int) -> bool:
     """Täyttyikö defensive contribution -kynnys tällä rivillä."""
     thr = DC_THRESHOLD.get(pos)

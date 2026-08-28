@@ -68,6 +68,9 @@ OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 # kausien yli pysyvä element code. Kun kohdekauden kierroksia alkaa kertyä,
 # normaali live-polku jatkaa automaattisesti (sama koodipolku kuin ennen).
 PREV_BASELINES_PATH = config.PROJECT_ROOT / "data" / "fpl_prev_baselines_2526.json"
+# Sanity-gaten tahtitesti kayttaa arkistopisteita kunnes nain monta kierrosta
+# on pelattu (kuluvan kauden pisteranking on sita ennen kohinaa).
+GATE_MIN_LIVE_GWS = 6
 
 # Pudota kuollut paino JSONista (ei minuutteja odotettavissa, ei pisteitä).
 MIN_XP_TOTAL = 1.0
@@ -473,8 +476,14 @@ def main(argv: list[str] | None = None) -> int:
     print("[4/6] Pelaajavauhdit + minuuttimalli (koko saatavilla oleva historia)...")
     pos_by_player = {e["id"]: e["element_type"] for e in boot["elements"]}
     acc_by_player: dict[int, dict] = {}
+    # Kuluvan kauden minuutit erikseen: minuuttimallin ohuen otoksen portit
+    # (hintapriori, historiattomien priori) katsovat NAITA, eivat arkistolla
+    # taydennettya accia - muuten GW1:n valiin jattanyt viime kauden avaaja
+    # (Watkins/Gyokeres/Pope) putoaa xMins 0:aan (mitattu 28.8, 90 pelaajaa).
+    cur_mins_by_player: dict[int, float] = {}
     mins_by_round: dict[int, dict[int, float]] = {}
     starts_by_round: dict[int, dict[int, int]] = {}
+    prev_rounds_by_player: dict[int, tuple[dict, dict]] = {}
     for e in boot["elements"]:
         pid = e["id"]
         if prev_players is not None:
@@ -485,16 +494,28 @@ def main(argv: list[str] | None = None) -> int:
             b = prev_players.get(str(e.get("code")))
             if b is not None:
                 acc_by_player[pid] = dict(b["acc"])
+                cur_mins_by_player[pid] = float(b["acc"].get("mins", 0.0) or 0.0)
                 mins_by_round[pid] = {int(k): v for k, v in b["mins_by_round"].items()}
                 starts_by_round[pid] = {int(k): int(v) for k, v in b["starts_by_round"].items()}
             else:
                 acc_by_player[pid] = xp.accumulate_history([])
+                cur_mins_by_player[pid] = 0.0
                 mins_by_round[pid] = {}
                 starts_by_round[pid] = {}
             continue
         hist = summaries.get(pid, [])
         acc = xp.accumulate_history(hist)
         acc["dc_hits"] = xp.count_dc_hits(hist, pos_by_player[pid])
+        # XP-SEASON-CARRY (28.8.2026): kausihaara PERII viime kauden arkiston
+        # painolla PREV_SEASON_CARRY. Ilman tata GW1:n jalkeen jokaisella
+        # pelaajalla oli ~90 min otos ja positiopriori kantoi 83 % painosta
+        # (meta 28.8: pl_history 0 / limited 310 / no_history 202; Bruno
+        # Fernandes #51 "limited_history" 3065 arkistominuutilla). Arkisto
+        # on element code -avaimella, joten seuranvaihto ei riko mappausta;
+        # arkiston bonus on jo 26/27 BPS-oikaistu (ei oikaista uudelleen).
+        prev_b = prev_by_code.get(str(e.get("code")))
+        cur_mins_by_player[pid] = float(acc.get("mins", 0.0) or 0.0)
+        acc = xp.carry_prev_season(acc, (prev_b or {}).get("acc"))
         acc_by_player[pid] = acc
         mr: dict[int, float] = defaultdict(float)
         sr: dict[int, int] = defaultdict(int)
@@ -504,6 +525,12 @@ def main(argv: list[str] | None = None) -> int:
                 sr[r["round"]] += r.get("starts", 0) or 0
         mins_by_round[pid] = dict(mr)
         starts_by_round[pid] = dict(sr)
+        # XP-SEASON-CARRY: esikausiarvio minuuteille (koko arkistokausi,
+        # half-life) sekoitetaan kuluvan kauden ikkunaan alla (blend_minutes).
+        if prev_b and prev_b.get("mins_by_round"):
+            prev_rounds_by_player[pid] = (
+                {int(k): float(v) for k, v in prev_b["mins_by_round"].items()},
+                {int(k): int(v) for k, v in prev_b["starts_by_round"].items()})
     priors = xp.position_priors(acc_by_player, pos_by_player)
 
     # #33: probabilistinen minuuttimalli — kaksi passia:
@@ -526,6 +553,16 @@ def main(argv: list[str] | None = None) -> int:
         pid = e["id"]
         mm = xp.minutes_model(mins_by_round[pid], starts_by_round[pid],
                               prounds_by_player[pid], n_last=mm_window)
+        # XP-SEASON-CARRY (28.8): kausihaara perii esikausiarvion ja
+        # liu'uttaa kuluvaan kauteen START_WINDOW:n aikana. Ilman tata GW1:n
+        # valiin jattanyt pelaaja sai xMins 0 (Watkins/Gyokeres/Pope, 90
+        # pelaajaa pois projektiosta) ja arkistokierrosten yhdistaminen
+        # samaan ikkunaan painotti loppukauden lepuutusta (ks. blend_minutes).
+        if xp.MINUTES_PREV_BLEND and recency_window and pid in prev_rounds_by_player:
+            pm, ps = prev_rounds_by_player[pid]
+            mm_prev = xp.minutes_model(pm, ps, sorted(pm), n_last=None)
+            w_cur = xp.prev_minutes_weight(len(prounds_by_player[pid]))
+            mm = xp.blend_minutes(mm, mm_prev, w_cur)
         mm_by_player[pid] = xp.apply_availability(
             mm, e.get("status", "a"), e.get("chance_of_playing_next_round"))
     groups: dict[tuple[int, int], list[int]] = defaultdict(list)
@@ -593,7 +630,7 @@ def main(argv: list[str] | None = None) -> int:
     blended_pids: set[int] = set()
     for e in boot["elements"]:
         pid = e["id"]
-        mins = acc_by_player[pid].get("mins", 0.0) or 0.0
+        mins = cur_mins_by_player.get(pid, 0.0)
         # mins == 0 kuuluu historiattomien prioriin (alempana), ei tanne.
         if mins <= 0 or mins >= xp.PRICE_PRIOR_THIN_MINUTES:
             continue
@@ -744,7 +781,7 @@ def main(argv: list[str] | None = None) -> int:
             fplteam_to_fid[t["id"]] = name_to_fid[model]
     history_fids = {
         fplteam_to_fid[e["team"]] for e in boot["elements"]
-        if e["team"] in fplteam_to_fid and acc_by_player[e["id"]]["mins"] > 0}
+        if e["team"] in fplteam_to_fid and cur_mins_by_player.get(e["id"], 0.0) > 0}
 
     # -----------------------------------------------------------------
     # Addendum 2, tehtava 1: NOUSIJAPELAAJAT pooliin positiopriorilla.
@@ -833,7 +870,7 @@ def main(argv: list[str] | None = None) -> int:
             grp = sorted((e for e in club if e["element_type"] == etype),
                          key=lambda e: (-(e.get("now_cost") or 0), e["id"]))
             for rank, e in enumerate(grp):
-                if acc_by_player[e["id"]]["mins"] > 0:
+                if cur_mins_by_player.get(e["id"], 0.0) > 0:
                     continue          # oma PL-historia -> mallipolku ennallaan
                 tier = 0 if rank < slots else (1 if rank < slots + 2 else 2)
                 p_start, p_sub = PROMOTED_PRIOR_TIERS[tier]
@@ -1269,6 +1306,22 @@ def main(argv: list[str] | None = None) -> int:
         gate_points = {
             e["id"]: prev_players.get(str(e.get("code")), {}).get("total_points", 0)
             for e in boot["elements"]}
+    else:
+        # XP-SEASON-CARRY (28.8): kauden alussa bootstrapin total_points on
+        # 1-5 kierroksen kohinaa, ja tahtitesti "top-10 xP:sta >= 7 kauden
+        # top-100-pisteissa" mittaisi silloin vain sen, seuraako malli
+        # GW1:n pisteita. Se on tasan se vika jota korjataan (vanha artefakti
+        # LAPAISI gaten koska sen top-10 oli GW1:n pistekarkea). Alle
+        # GATE_MIN_LIVE_GWS pelatulla kierroksella pisteranking = viime
+        # kauden arkistopisteet + kuluvan kauden pisteet.
+        n_finished = sum(1 for ev in boot.get("events", []) if ev.get("finished"))
+        if n_finished < GATE_MIN_LIVE_GWS:
+            gate_points = {
+                e["id"]: (prev_by_code.get(str(e.get("code")), {}).get("total_points", 0)
+                          + (e.get("total_points") or 0))
+                for e in boot["elements"]}
+            print(f"      sanity-gate: pisteranking = arkisto 25/26 + kuluva "
+                  f"kausi ({n_finished} GW pelattu < {GATE_MIN_LIVE_GWS})")
     if not sanity_gate(players, boot, coverable, points_by_id=gate_points):
         print("SANITY-GATE FAIL — data/fpl_xp_projections.json EI kirjoitettu.")
         return 2
@@ -1385,6 +1438,16 @@ def main(argv: list[str] | None = None) -> int:
                     for v in xp.DATA_BASIS_VALUES
                 },
                 "basis_threshold_minutes": xp.M_PRIOR_ATTACK,
+                # XP-SEASON-CARRY: kausihaara perii arkiston tallä painolla.
+                "prev_season_carry": (None if preseason
+                                      else xp.PREV_SEASON_CARRY),
+                "prev_season_carry_note": (
+                    None if preseason else
+                    f"Last season's minutes and rates count at "
+                    f"{xp.PREV_SEASON_CARRY:g} weight alongside this season's "
+                    f"rows, so a player's own rate carries most of the weight "
+                    f"from GW1 and this season overtakes the archive around "
+                    f"GW{int(round(3000 * xp.PREV_SEASON_CARRY / 90))}."),
                 "note": (
                     "data_basis per player: pl_history = the player's own "
                     "Premier League history carries at least 50% of the weight; "

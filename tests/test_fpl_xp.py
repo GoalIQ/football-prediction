@@ -832,3 +832,68 @@ def test_data_confidence_is_fail_safe_on_unknown_team():
     from api.main import _data_confidence
 
     assert _data_confidence("Ei Olemassa FC", "Toinen Ei-Olemassa") == {}
+
+
+# ---------------------------------------------------------------------------
+# XP-SEASON-CARRY (28.8.2026): kausihaara ei saa pudottaa viime kauden arkistoa
+# ---------------------------------------------------------------------------
+def test_carry_prev_season_keeps_own_rate_when_archive_exists():
+    """3000 arkistominuuttia + 90 kuluvan kauden minuuttia -> pl_history ja
+    xg90 lahempana omaa vauhtia kuin positioprioria."""
+    from src.models import fpl_xp as xp
+    prev = {"mins": 3000.0, "xg": 30.0, "xa": 6.0, "saves": 0.0, "yc": 3.0,
+            "bonus": 40.0, "n60": 33, "dc_hits": 2}          # 0.90 xG/90
+    cur = xp.accumulate_history([{"minutes": 90, "expected_goals": "0.9",
+                                  "expected_assists": "0.1", "saves": 0,
+                                  "yellow_cards": 0, "bonus": 3}])
+    acc = xp.carry_prev_season(cur, prev, 0.5)
+    assert xp.data_basis(acc) == xp.DATA_BASIS_FULL
+    priors = {4: {"xg90": 0.30, "xa90": 0.10, "saves90": 0, "yc90": 0.1,
+                  "bonus90": 0.3, "dc_freq": 0.05}}
+    r = xp.player_rates(acc, 4, priors)
+    own = 0.90
+    prior = priors[4]["xg90"]
+    assert abs(r["xg90"] - own) < abs(r["xg90"] - prior), r
+
+
+def test_carry_prev_season_without_archive_is_unchanged():
+    """Negatiivinen kontrolli: ilman arkistorivia acc ei muutu ja perusta on
+    limited (90 min) tai no_history (0 min)."""
+    from src.models import fpl_xp as xp
+    cur = xp.accumulate_history([{"minutes": 90, "expected_goals": "0.9"}])
+    assert xp.carry_prev_season(cur, None) == cur
+    assert xp.carry_prev_season(cur, {"mins": 0}) == cur
+    assert xp.data_basis(cur) == xp.DATA_BASIS_LIMITED
+    assert xp.data_basis(xp.carry_prev_season(
+        xp.accumulate_history([]), None)) == xp.DATA_BASIS_NONE
+
+
+def test_carry_prev_season_scales_all_fields_with_same_factor():
+    """dc_freq ja per-90-vauhdit sailyttavat suhteensa: kaikki kentat samalla
+    kertoimella, ei vain minuutit."""
+    from src.models import fpl_xp as xp
+    prev = {"mins": 1800.0, "xg": 9.0, "xa": 3.0, "saves": 0.0, "yc": 4.0,
+            "bonus": 10.0, "n60": 20, "dc_hits": 10}
+    acc = xp.carry_prev_season(xp.accumulate_history([]), prev, 0.5)
+    assert acc["mins"] == 900.0 and acc["xg"] == 4.5 and acc["dc_hits"] == 5.0
+    assert acc["n60"] == 10.0
+
+
+def test_blend_minutes_keeps_missed_gw1_starter_off_zero():
+    """GW1 valiin jattanyt viime kauden avaaja: kuluva kausi (1 kierros, 0 min)
+    painaa 1/4, esikausiarvio 3/4 -> xMins selvasti yli nollan. Kun kuluvan
+    kauden kierroksia on START_WINDOW, arkisto ei enaa vaikuta."""
+    from src.models import fpl_xp as xp
+    prev_m = {r: 90.0 for r in range(1, 39)}
+    prev_s = {r: 1 for r in range(1, 39)}
+    mm_prev = xp.minutes_model(prev_m, prev_s, sorted(prev_m), n_last=None)
+    mm_cur = xp.minutes_model({1: 0.0}, {1: 0}, [1], n_last=xp.START_WINDOW)
+    w1 = xp.prev_minutes_weight(1)
+    assert 0.4 <= w1 <= 0.6 and xp.prev_minutes_weight(xp.START_WINDOW) == 1.0
+    mixed = xp.blend_minutes(mm_cur, mm_prev, w1)
+    assert mixed["xmins"] > 35, mixed
+    assert mixed["minutes_blend_prev_weight"] == round(1 - w1, 3)
+    full = xp.blend_minutes(mm_cur, mm_prev, 1.0)
+    assert full["xmins"] == mm_cur["xmins"] and full["minutes_blend_prev_weight"] == 0.0
+    # negatiivinen kontrolli: ilman sekoitusta sama pelaaja on lahella nollaa
+    assert mm_cur["xmins"] < 15, mm_cur
