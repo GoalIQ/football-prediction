@@ -209,29 +209,41 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     # manuaalisyöttöön sen sijaan että käyttäjä päättelee tuotteen olevan rikki.
     _dl_gw = xp_data["meta"].get("deadline_gameweek")
     _stale = (players is None and picks_outdated(picks_gw, _dl_gw))
+    # Vakaat kentat, ei proosaa (linjaus 23.8: klientti renderoi i18n:sta).
+    # `deadline_gw` on sama lahde kuin rate-teamin picks_outdated, jotta
+    # "GW{n+1}" ei ole klientin arvaus.
     squad_source = {
         "mode": "manual" if players else "entry",
         "gw": picks_gw,
+        "deadline_gw": _dl_gw if isinstance(_dl_gw, int) else None,
         "stale": bool(_stale),
-        "note": ("FPL publishes this gameweek's transfers only after the "
-                 "deadline, so this plan starts from your GW"
-                 f"{picks_gw} squad. Enter your current 15 to plan from it."
-                 if _stale else None),
     }
 
     return {
         "meta": {
             "entry": entry, "start_gw": gws[0], "horizon": len(gws),
             "generated_at": xp_data["meta"].get("generated_at"),
+            # Julkaisuportti 28.8: kolme painotusehtoa auki (vastaa
+            # fpl_transfers.confidence_weight() rivi rivilta), luvun status
+            # sanottu (oletus, ei kalibroitu), naytetyt luvut painottamattomia.
+            # "optimum" on ratkaisijasanastoa jonka Ville torjui 28.7.
             "heuristic": ("gain measured on the starting XI over the remaining "
                           f"horizon, max {MAX_TRANSFERS_PER_GW} transfers/GW, "
-                          "two-move combinations checked, hit -4 without a free "
-                          "transfer, thin-sample players discounted to "
-                          f"{_engine.LOW_CONFIDENCE_WEIGHT:.2f} in the decision, "
-                          f"FT carry max {FT_CARRY_MAX} - not a global optimum"),
+                          "single moves and two-move swaps both checked, hit -4 "
+                          "without a free transfer, FT carry max "
+                          f"{FT_CARRY_MAX}. When it compares moves it counts "
+                          "three groups at "
+                          f"{_engine.LOW_CONFIDENCE_WEIGHT:.2f} of their "
+                          "projection: players with no Premier League history, "
+                          "players whose minutes are still estimated from price, "
+                          "and everyone at a promoted club. The xP numbers shown "
+                          f"are undiscounted, and the {_engine.LOW_CONFIDENCE_WEIGHT:.2f} "
+                          "is a fixed default, not calibrated against results "
+                          "yet. Documented rules, not a search for the best "
+                          "possible plan."),
             "note": "GoalIQ model projections - for fun and planning, "
                     "not betting advice.",
-            "engine": "fpl_transfers.plan_gw",
+            "engine": "transfers.v2",
             "squad_source": squad_source,
         },
         "hold_verdict": hold_verdict,

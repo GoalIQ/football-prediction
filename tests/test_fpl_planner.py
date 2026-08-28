@@ -21,7 +21,8 @@ def test_plan_structure_and_baseline_gate():
     assert [p["gw"] for p in out["plan"]] == [1, 2, 3]
     assert out["totals"]["plan_xp"] >= out["totals"]["baseline_xp_no_transfers"]
     assert out["totals"]["net_gain"] >= 0
-    assert "not a global optimum" in out["meta"]["heuristic"]
+    assert "not a search for the best possible plan" in out["meta"]["heuristic"]
+    assert "optimum" not in out["meta"]["heuristic"]
 
 
 def test_plan_best_squad_rolls_transfers():

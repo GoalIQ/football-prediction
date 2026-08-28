@@ -70,7 +70,7 @@ def test_planner_first_gw_matches_engine(_mock_fpl):
     got = [(m["out"]["id"], m["in"]["id"]) for m in out["plan"][0]["transfers"]]
     want = [(m["out"]["id"], m["in"]["id"]) for m in step["moves"]]
     assert got == want
-    assert out["meta"]["engine"] == "fpl_transfers.plan_gw"
+    assert out["meta"]["engine"] == "transfers.v2"  # ei moduulipolkua julkiseen payloadiin
     assert out["meta"]["horizon"] == 6
 
 
@@ -236,7 +236,7 @@ def test_pool_carries_promoted_flag(_mock_fpl, monkeypatch):
 def test_plan_squad_source_manual_is_never_stale(_mock_fpl):
     out = pl.plan_transfers(players=WEAK_SQUAD, horizon=3, bank=10.0)
     src = out["meta"]["squad_source"]
-    assert src["mode"] == "manual" and src["stale"] is False and src["note"] is None
+    assert src["mode"] == "manual" and src["stale"] is False and "note" not in src
 
 
 def test_plan_squad_source_entry_stale_when_deadline_gw_is_next(_mock_fpl, monkeypatch):
@@ -246,11 +246,25 @@ def test_plan_squad_source_entry_stale_when_deadline_gw_is_next(_mock_fpl, monke
     out = pl.plan_transfers(entry=424242, horizon=3)
     src = out["meta"]["squad_source"]
     assert src["mode"] == "entry" and src["gw"] == 1 and src["stale"] is True
-    assert "after the deadline" in src["note"]
-    assert "—" not in src["note"]
+    assert src["deadline_gw"] == 2 and "note" not in src  # proosa klientin i18n:sta
 
 
 def test_plan_squad_source_entry_not_stale_without_gap(_mock_fpl):
     # deadline_gameweek puuttuu (vanha payload) -> ei vaitetta
     out = pl.plan_transfers(entry=424242, horizon=3)
     assert out["meta"]["squad_source"]["stale"] is False
+
+
+def test_squad_source_is_structured_not_prose(_mock_fpl):
+    """28.8 julkaisuportti: backend ei kirjoita proosaa (klientti renderoi
+    i18n:sta) ja deadline_gw tulee samasta lahteesta kuin picks_outdated."""
+    out = pl.plan_transfers(players=WEAK_SQUAD, horizon=6, bank=10.0, ft=1)
+    ss = out["meta"]["squad_source"]
+    assert set(ss) == {"mode", "gw", "deadline_gw", "stale"}
+    assert "note" not in ss
+    assert ss["mode"] == "manual" and ss["stale"] is False
+    # Negatiivinen kontrolli: vanha proosa ei saa palata mihinkaan payloadiin
+    import json
+    blob = json.dumps(out)
+    assert "Enter your current 15" not in blob
+    assert "thin-sample" not in blob and "global optimum" not in blob

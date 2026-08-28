@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fetchPlan, fetchPlanDraft, type PlanResponse } from '$lib/fantasyTools';
-	import { runWithSquadFallback, NoSquadInputError, type SquadBasis } from '$lib/squadInput';
+	import { runWithSquadFallback, NoSquadInputError, savedDraft15, type SquadBasis } from '$lib/squadInput';
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
 	import HoldVerdictCard from './HoldVerdictCard.svelte';
 	import { capture } from '$lib/analytics';
@@ -33,6 +33,37 @@
 	let basedOn = $state<SquadBasis>('entry');
 	/** Esikausi ilman tallennettua draftia: ohjaus, ei virhe. */
 	let needsDraft = $state(false);
+	/** 28.8 (julkaisuportti): stale-tilassa entry-kutsu ONNISTUU, joten
+	 *  runWithSquadFallbackin draft-polku ei laukea. Tallennettu 15 on
+	 *  silti kaytettavissa; kayttaja valitsee sen napilla, ei lupauksella. */
+	let hasSavedDraft = $state(false);
+	/** Miksi suunnitelma on draft-pohjainen: FPL ei ole julkaissut runkoa
+	 *  lainkaan (esikausi) vai naytti edellisen kierroksen rungon (stale). */
+	let draftReason = $state<'not_public' | 'stale'>('not_public');
+	let stale = $derived(
+		data?.meta.squad_source?.stale === true &&
+			typeof data.meta.squad_source.gw === 'number'
+	);
+	let staleNext = $derived(
+		typeof data?.meta.squad_source?.deadline_gw === 'number'
+			? data.meta.squad_source.deadline_gw
+			: (data?.meta.squad_source?.gw ?? 0) + 1
+	);
+	async function useSavedDraft() {
+		const ids = savedDraft15();
+		if (!ids || loading) return;
+		loading = true;
+		error = null;
+		try {
+			data = await fetchPlanDraft(ids, horizon, ft);
+			basedOn = 'draft';
+			draftReason = 'stale';
+			capture('planner_stale_draft_used', { source: 'pro_spa', horizon });
+		} catch (err) {
+			error = err instanceof Error ? err.message : String(err);
+		}
+		loading = false;
+	}
 
 	let entryValid = $derived(/^\d{1,10}$/.test(fplEntry.entry.trim()));
 
@@ -134,6 +165,8 @@
 			);
 			data = run.data;
 			basedOn = run.basedOn;
+			draftReason = 'not_public';
+			hasSavedDraft = savedDraft15() !== null;
 			void persistEntry(id); // #66: talteen vasta onnistuneesta hausta
 		} catch (err) {
 			data = null;
@@ -205,18 +238,32 @@
 {:else if data}
 	{#if basedOn === 'draft'}
 		<p class="notice-preseason">
-			Based on your saved draft of 15, because your squad is not public yet.
+			{#if draftReason === 'stale'}
+				Based on your saved draft of 15, not on the GW{data.meta.squad_source?.gw} squad FPL shows for this entry.
+			{:else}
+				Based on your saved draft of 15, because your squad is not public yet.
+			{/if}
 		</p>
-	{/if}
-	<!-- 28.8 (PLANNER-FREEZE-DIVERGENCE): FPL julkaisee kierroksen siirrot vasta
-	     deadlinen jalkeen, joten entry-polku suunnittelee EDELLISEN kierroksen
-	     rungosta. Ehto tulee backendista (meta.squad_source.stale), sama
-	     lahde kuin rate-teamin picks_outdated. -->
-	{#if data.meta.squad_source?.stale === true && typeof data.meta.squad_source.gw === 'number'}
+	{:else if stale}
+		<!-- 28.8 (PLANNER-FREEZE-DIVERGENCE + julkaisuportti): FPL julkaisee
+		     kierroksen siirrot vasta deadlinen jalkeen, joten entry-polku
+		     suunnittelee EDELLISEN kierroksen rungosta. Ehto ja deadline_gw
+		     tulevat backendista (meta.squad_source), sama lahde kuin
+		     rate-teamin picks_outdated. Draft-polku on NAPPI, ei lupaus:
+		     stale-tilassa entry-kutsu onnistuu eika fallback laukea. -->
 		<p class="notice-preseason">
-			<strong>This plan starts from your GW{data.meta.squad_source.gw} squad.</strong>
-			FPL publishes a gameweek's transfers only after its deadline. Changed your team
-			already? Draft your current 15 in Rate my team and this planner runs on that draft.
+			<strong>This plan starts from your GW{data.meta.squad_source?.gw} squad.</strong>
+			FPL publishes GW{staleNext} squads a while after the deadline, so any transfers you
+			already made are not in it.
+			{#if hasSavedDraft}
+				Your saved 15 from Rate my team is here if that is closer to your team now.
+				<button type="button" class="window-chip" onclick={useSavedDraft} disabled={loading}>
+					Use my saved 15
+				</button>
+			{:else}
+				Run this again once yours is public on the FPL site. In the meantime Rate my team
+				scores a hand-picked 15.
+			{/if}
 		</p>
 	{/if}
 	<!-- #63: mallin kanta ensin (hold vs transfer, xP-matikka näkyvissä),
