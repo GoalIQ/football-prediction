@@ -104,6 +104,8 @@ def main() -> int:
     bench_html = "".join(cell(p, cap=-1, vice=-1, size=42) for p in bench)
     shorts = [p["team_short"] for p in xi + bench]
 
+    bench_block = ("" if args.hide_bench
+                   else f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>')
     html = (
         "<!doctype html><meta charset='utf-8'>"
         f"<style>{CSS}</style>"
@@ -113,7 +115,7 @@ def main() -> int:
         f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})</div>'
         f'<div class="sub">Picked by the optimiser, frozen {frozen_at}, entered as-is</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
-        ("" if args.hide_bench else f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>')
+        f'{bench_block}'
         f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>'
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
