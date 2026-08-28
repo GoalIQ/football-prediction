@@ -22,6 +22,10 @@ ole: karkea portti joka kaataa poiston on parempi kuin ei porttia.
 """
 from __future__ import annotations
 
+import os
+
+import pytest
+
 
 import re
 from pathlib import Path
@@ -196,4 +200,9 @@ def test_kuollutta_fallback_copya_ei_ole():
 def test_portti_lukee_oikeat_tiedostot():
     """Portti joka ei loyda tiedostojaan lapaisee tyhjana."""
     assert _lue(SPA), "ChipEv.svelte ei loydy — portti olisi lapaissyt tyhjana"
+    if _lue(MOBILE) is None and os.environ.get("CI"):
+        # goaliq-app on privaatti eika ole fp:n CI-checkoutissa; mobiiliportti
+        # ajetaan lokaalisti. Skip on EKSPLISIITTINEN, ei hiljainen lapaisy
+        # (AUTO-S1 28.8: tama kaatoi tests.yml:n jokaisessa ajossa).
+        pytest.skip("goaliq-app ei ole CI-checkoutissa: mobiiliportti ajetaan lokaalisti")
     assert _lue(MOBILE), "FantasyEdge.tsx ei loydy"

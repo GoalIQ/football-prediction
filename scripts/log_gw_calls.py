@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import config  # noqa: E402
 from scripts.render_standouts_card import pick_standouts  # noqa: E402
 from src.models.gw_calls import (NEW_LOG, DeadlinePassed,  # noqa: E402
+from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
                                  build_entry, upsert)
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
@@ -46,7 +47,7 @@ def main(argv=None) -> int:
 
     xp = json.loads(XP_PATH.read_text(encoding="utf-8"))
     meta = xp.get("meta") or {}
-    gw = args.gw or int(meta.get("next_gameweek") or 0)
+    gw = args.gw or int(actionable_gameweek(meta) or 0)
     frozen_path = FROZEN_DIR / f"gw{gw}.json"
     if not gw or not frozen_path.exists():
         print(f"GW{gw}: ei freezea ({frozen_path.name}) - ei kirjattavaa.")

@@ -41,6 +41,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
 
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
 # GW-CALLS-LOKI (28.8): kortin nelja nimea kirjataan data/gw_calls.json:iin
@@ -231,7 +232,7 @@ def reconcile_with_log(s: dict, gw: int, log: dict | None, now,
 def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict]:
     players = data.get("players") or []
     meta = data.get("meta") or {}
-    gw = int(meta.get("next_gameweek") or 0)
+    gw = int(actionable_gameweek(meta) or 0)
     s = reconcile_with_log(pick_standouts(players), gw, log, now, players)
     pct = lambda x: f"{round(x * 100)}%"
     tiles = "".join([
@@ -294,7 +295,7 @@ def main() -> int:
     log = (json.loads(CALLS_LOG_PATH.read_text(encoding="utf-8"))
            if CALLS_LOG_PATH.exists() else None)
     html, s = build_html(data, log=log)
-    gw = int((data.get("meta") or {}).get("next_gameweek") or 0)
+    gw = int(actionable_gameweek(data.get("meta") or {}) or 0)
     out_dir = Path(args.out).resolve()  # file-URI vaatii absoluuttisen polun
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / f"goaliq_standouts_gw{gw}.html"
