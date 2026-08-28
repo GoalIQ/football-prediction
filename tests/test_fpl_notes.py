@@ -196,7 +196,10 @@ def test_seurasivun_XI_alkaa_maalivahdista_ja_on_11():
         blk = re.search(r'<h2 id="xi">.*?</table>', h, re.S)
         if not blk:
             continue
-        rivit = [r for r in re.findall(r"<tr>(.*?)</tr>", blk.group(0), re.S)
+        # PREDICTED-XI-KYNNYS (27.8): alle kynnyksen slotti renderoituu
+        # <tr class="noclear">-rivina. Pelkka "<tr>" ohitti ne ja testi
+        # laski 9-10 pelaajaa vaikka sivulla oli 11 rivia (AUTO-S1 28.8).
+        rivit = [r for r in re.findall(r"<tr[^>]*>(.*?)</tr>", blk.group(0), re.S)
                  if "<td" in r]
         assert len(rivit) == 11, f"{f.stem}: XI:ssa {len(rivit)} pelaajaa"
         eka = re.findall(r"<td[^>]*>(.*?)</td>", rivit[0], re.S)
