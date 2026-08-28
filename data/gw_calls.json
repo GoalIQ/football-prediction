@@ -1,0 +1,138 @@
+{
+ "meta": {
+  "product": "GoalIQ gameweek calls log",
+  "version": 1,
+  "rules": "Every public call for a gameweek (the model squad captain and the four standouts card picks) is written here before the FPL deadline and scored with official FPL points after the gameweek. A gameweek row can be updated until its deadline and never after it. Scores are provisional until FPL confirms bonus points."
+ },
+ "gameweeks": [
+  {
+   "gw": 2,
+   "deadline_utc": "2026-08-28T17:30:00Z",
+   "logged_at": "2026-08-28T13:55:27Z",
+   "source": {
+    "freeze_frozen_at": "2026-08-27T17:04:43Z",
+    "projection_generated_at": "2026-08-28T00:12:32"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 388,
+     "web_name": "Guéhi",
+     "team_short": "MCI",
+     "pos": "DEF",
+     "metric": "gw_xp",
+     "value": 4.76,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 379,
+     "web_name": "Isak",
+     "team_short": "LIV",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.142,
+     "criterion": "10+ pts",
+     "gw_xp": 4.91,
+     "xp_dist": {
+      "p_haul": 0.142,
+      "p_blank": 0.375,
+      "p10": 2,
+      "median": 5,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 388,
+     "web_name": "Guéhi",
+     "team_short": "MCI",
+     "pos": "DEF",
+     "metric": "p90",
+     "value": 10,
+     "criterion": "reached p90",
+     "gw_xp": 4.76,
+     "xp_dist": {
+      "p_haul": 0.108,
+      "p_blank": 0.359,
+      "p10": 1,
+      "median": 4,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 335,
+     "web_name": "Stach",
+     "team_short": "LEE",
+     "pos": "MID",
+     "metric": "p_3plus",
+     "value": 0.805,
+     "criterion": "3+ pts",
+     "gw_xp": 4.79,
+     "xp_dist": {
+      "p_haul": 0.065,
+      "p_blank": 0.195,
+      "p10": 2,
+      "median": 4,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 115,
+     "web_name": "De Cuyper",
+     "team_short": "BHA",
+     "pos": "DEF",
+     "metric": "p_haul",
+     "value": 0.096,
+     "criterion": "10+ pts",
+     "gw_xp": 4.6,
+     "xp_dist": {
+      "p_haul": 0.096,
+      "p_blank": 0.433,
+      "p10": 1,
+      "median": 3,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [
+    {
+     "out": 229,
+     "out_name": "Tarkowski",
+     "in": 388,
+     "in_name": "Guéhi",
+     "hit": false
+    },
+    {
+     "out": 498,
+     "out_name": "Senesi",
+     "in": 10,
+     "in_name": "White",
+     "hit": true
+    },
+    {
+     "out": 113,
+     "out_name": "F.Kadıoğlu",
+     "in": 115,
+     "in_name": "De Cuyper",
+     "hit": true
+    }
+   ],
+   "graded": null
+  }
+ ]
+}

@@ -1780,6 +1780,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     tr = track_record_sentences(c)
     jsonld = jsonld_blocks(c, faq)
     cs_table = cs_table_html(c)
+    gw_calls = gw_calls_html(_load_json(GW_CALLS_PATH))
     fdr_grid = fdr_grid_html(c)
     far_grid = far_grid_html(c)
     # 26.7 CLASSIC: legenda seuraa solujen kaavaa (kolme luokkaa, ei
@@ -1910,6 +1911,7 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 <p class="note">Source: GoalIQ prediction log, updated {c["acc_date"]}. The full
 log, match by match with every miss included, is published on the
 <a href="/predictions#record">prediction record page</a>.</p>
+{gw_calls}
 
 {team_news}<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for all 20 Premier League teams in
@@ -2116,6 +2118,108 @@ XP_PATH = ROOT / "data" / "fpl_xp_projections.json"
 # Perustajan FPL-historia (scripts/build_founder_stats.py) — luvut samasta
 # julkisesta entrystä johon etusivun teksti linkkaa.
 FOUNDER_PATH = ROOT / "data" / "founder_entry.json"
+# GW-CALLS-LOKI (28.8): mallin julkiset kierroskutsut, kirjattu ennen deadlinea
+# ja gradattu FPL:n pisteilla (scripts/log_gw_calls.py, grade_gw_calls.py).
+GW_CALLS_PATH = ROOT / "data" / "gw_calls.json"
+
+
+def _fmt_logged(row: dict) -> str:
+    """'28 Aug 14:05 UTC, 3 h 25 min before the deadline'. Sanoo 'after' jos
+    logged_at ei ole ennen deadlinea: lause 'logged before the deadline' saa
+    nakya vain kun aikaleimat todistavat sen."""
+    from src.models.gw_calls import parse_utc
+    logged = parse_utc(row["logged_at"])
+    deadline = parse_utc(row["deadline_utc"])
+    delta = deadline - logged
+    secs = int(abs(delta.total_seconds()))
+    h, m = divmod(secs // 60, 60)
+    span = f"{h} h {m} min" if h else f"{m} min"
+    when = logged.strftime("%d %b %H:%M UTC").lstrip("0")
+    return (f"{when}, {span} before the deadline" if delta.total_seconds() > 0
+            else f"{when}, {span} after the deadline")
+
+
+def _call_said(call: dict) -> str:
+    v = call.get("value")
+    m = call.get("metric")
+    if v is None:
+        return ""
+    if m == "p_haul":
+        return f"{round(float(v) * 100)}% chance of 10+"
+    if m == "p_3plus":
+        return f"{round(float(v) * 100)}% chance of 3+"
+    if m == "p90":
+        return f"ceiling {int(v)} pts"
+    if m == "gw_xp":
+        # Per-GW xP on Premium-luku; ilmaissivu sanoo saannon, ei lukua.
+        # Luku on lokissa (data/gw_calls.json) jota Source-linkki osoittaa.
+        return "highest gameweek projection in the squad, points doubled"
+    return str(v)
+
+
+def _call_result(call: dict, graded: dict | None) -> tuple[str, str]:
+    """(points-solu, result-solu). Pending kunnes gradattu. Provisionaalinen
+    merkitaan, koska bonus voi viela muuttaa luvun."""
+    if not graded:
+        return "pending", "pending"
+    r = (graded.get("by_call") or {}).get(call["call"]) or {}
+    pts = r.get("points")
+    if pts is None:
+        return "no data", "no data"
+    prov = " (provisional)" if graded.get("provisional") else ""
+    if call["call"] == "model_captain":
+        return f"{pts}{prov}", f"{r.get('captain_total', pts * 2)} as captain"
+    met = r.get("met")
+    if met is None:
+        return f"{pts}{prov}", "pending"
+    return f"{pts}{prov}", ("hit" if met else "miss")
+
+
+def gw_calls_html(log: dict | None) -> str:
+    """Track-record-osio: mallin kierroskutsut lokista. Tyhja loki -> ei
+    osiota (ei lupailla lokia jota ei ole)."""
+    from src.models.gw_calls import CALL_LABELS
+    rows = (log or {}).get("gameweeks") or []
+    if not rows:
+        return ""
+    trs = []
+    for gw_row in sorted(rows, key=lambda r: -int(r.get("gw", 0))):
+        graded = gw_row.get("graded")
+        logged = _fmt_logged(gw_row)
+        for call in gw_row.get("calls") or []:
+            pts, res = _call_result(call, graded)
+            name = f"{call.get('web_name') or '?'} ({call.get('team_short') or '?'})"
+            trs.append(
+                "<tr>"
+                f'<td class="num">GW{gw_row["gw"]}</td>'
+                f"<td>{escape(CALL_LABELS.get(call['call'], call['call']))}</td>"
+                f"<td>{escape(name)}</td>"
+                f'<td class="m-hide">{escape(logged)}</td>'
+                f"<td>{escape(_call_said(call))}</td>"
+                f'<td class="num">{escape(pts)}</td>'
+                f"<td>{escape(res)}</td>"
+                "</tr>")
+    return (
+        '<h3 id="gw-calls">Gameweek calls, logged and scored</h3>'
+        "<p>The captain of the model's own FPL squad and the four picks on the "
+        "weekly standouts card (captain pick, ceiling, safest pick, the gamble) "
+        "go into a log with a timestamp. The log closes at the FPL deadline. "
+        "Once the gameweek has been played, each call is scored with official "
+        "FPL points. A hit means the player did what the call said: 10 or more "
+        "points for the captain pick and the gamble, the ceiling figure for "
+        "ceiling, 3 or more for the safest pick. Provisional rows wait for FPL "
+        "to confirm bonus points.</p>"
+        '<div class="scroll"><table>'
+        "<caption>The model's gameweek calls with the time each one was logged, "
+        "what it said at the time and the FPL points that followed.</caption>"
+        '<thead><tr><th scope="col">GW</th><th scope="col">Call</th>'
+        '<th scope="col">Player</th><th scope="col" class="m-hide">Logged</th>'
+        '<th scope="col">What it said</th><th scope="col" class="num">Points</th>'
+        '<th scope="col">Result</th></tr></thead><tbody>'
+        + "".join(trs) + "</tbody></table></div>"
+        '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/gw_calls.json">data/gw_calls.json</a> '
+        "in the public repository. The commit history shows when each row was "
+        "written.</p>")
 
 
 def _load_json(path) -> dict | None:

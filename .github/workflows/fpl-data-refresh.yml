@@ -254,6 +254,12 @@ jobs:
         if: steps.guard.outputs.proceed == 'true'
         run: python -m scripts.grade_model_squad_gw
 
+      # GW-CALLS-LOKI (28.8): kutsujen gradaus FPL:n pisteilla samaan
+      # tiedostoon (data/gw_calls.json). Provisionaalinen kunnes data_checked.
+      - name: Grade logged gameweek calls
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.grade_gw_calls
+
       - name: Freeze next gameweek xP at deadline window
         if: steps.guard.outputs.proceed == 'true'
         run: python -m scripts.freeze_fpl_xp_gw
@@ -267,6 +273,15 @@ jobs:
       - name: Freeze model squad at deadline window
         if: steps.guard.outputs.proceed == 'true'
         run: python -m scripts.freeze_model_squad_gw
+
+      # GW-CALLS-LOKI (28.8): mallin rivin kapteeni + standouts-kortin nelja
+      # valintaa lokiin ENNEN deadlinea. Freezen jalkeen, koska kapteeni tulee
+      # freezesta. Idempotentti per GW; deadlinen jalkeen skripti kieltaytyy
+      # kirjoittamasta (exit 1 vain jos GW:n rivi puuttuu kokonaan, jolloin
+      # kutsu jai kirjaamatta ja sen kuuluu nakya punaisena).
+      - name: Log gameweek calls before the deadline
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.log_gw_calls
 
       # 14.8: FREEZE EI KOSKETA FPL-TILIA. Rivi syotetaan FPL:aan kasin, joten
       # jaadytetty tiedosto ja tili ovat kaksi eri totuutta mallin joukkueesta
@@ -395,6 +410,8 @@ jobs:
           [ -d data/model_squad_frozen ] && git add data/model_squad_frozen
           # 13.8 (BTM V2 b): gradatut pisteet, append-only.
           [ -f data/model_squad_gw_scores.json ] && git add data/model_squad_gw_scores.json
+          # 28.8 (GW-CALLS-LOKI): kutsut + gradaus, git-historia todistaa ajan.
+          [ -f data/gw_calls.json ] && git add data/gw_calls.json
           # 13.8: GW-rivit stats-sivulle (siirretty accuracy-logista, ks. yllä)
           [ -f fpl/player-gw.json ] && git add fpl/player-gw.json
           # 14.8 (PUSH-NOTIF b): idempotenssimarkkeri + toimituksen auditointi.
