@@ -112,7 +112,7 @@ def main() -> int:
         f'<div class="sub">Picked by the optimiser, frozen {frozen_at}, entered as-is</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>'
-        f'<div class="ftr"><span><b>{total:.1f}m</b> even</span>'
+        f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>'
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
         "<span>entry 116920 · public on fantasy.premierleague.com</span>"
