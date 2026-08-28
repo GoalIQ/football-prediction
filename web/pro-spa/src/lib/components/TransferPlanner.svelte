@@ -21,7 +21,9 @@
 
 	// #66: entry-kenttä on jaettu RateTeamin kanssa (fplEntry.entry) - yksi
 	// entry-ID koko työkalusetille; kirjautuneena tallennettu ID esitäyttää.
-	let horizon = $state(3);
+	// 28.8: oletus 6 = xP-artefaktin ja mallin oman rungon horisontti. Kolmella
+	// planner vastasi eri kysymykseen kuin freeze (PLANNER-FREEZE-DIVERGENCE).
+	let horizon = $state(6);
 	let ft = $state(1);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
@@ -204,6 +206,17 @@
 	{#if basedOn === 'draft'}
 		<p class="notice-preseason">
 			Based on your saved draft of 15, because your squad is not public yet.
+		</p>
+	{/if}
+	<!-- 28.8 (PLANNER-FREEZE-DIVERGENCE): FPL julkaisee kierroksen siirrot vasta
+	     deadlinen jalkeen, joten entry-polku suunnittelee EDELLISEN kierroksen
+	     rungosta. Ehto tulee backendista (meta.squad_source.stale), sama
+	     lahde kuin rate-teamin picks_outdated. -->
+	{#if data.meta.squad_source?.stale === true && typeof data.meta.squad_source.gw === 'number'}
+		<p class="notice-preseason">
+			<strong>This plan starts from your GW{data.meta.squad_source.gw} squad.</strong>
+			FPL publishes a gameweek's transfers only after its deadline. Changed your team
+			already? Draft your current 15 in Rate my team and this planner runs on that draft.
 		</p>
 	{/if}
 	<!-- #63: mallin kanta ensin (hold vs transfer, xP-matikka näkyvissä),

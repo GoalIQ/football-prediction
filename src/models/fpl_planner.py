@@ -27,14 +27,19 @@ from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, HIT_COST_XP, HOLD_THRESHOLD_XP, POS_NAME,
     MAX_PER_CLUB, RateTeamError, apply_availability_gate, build_context,
     build_hold_verdict, captain_suggestion, clamp_gw_to_projections, planning_start_gw,
-    optimal_xi, resolve_squad, _gw_xp,
+    optimal_xi, picks_outdated, resolve_squad, _gw_xp,
 )
+from src.models import fpl_transfers as _engine
 
 HIT_COST = HIT_COST_XP  # FPL:n -4; sama lähde kuin rate-teamin hold_verdict
 FT_CARRY_MAX = 5
-MAX_TRANSFERS_PER_GW = 2
-TOP_CANDIDATES_PER_POS = 8
-MIN_GAIN_PER_TRANSFER = 0.5  # alle tämän → roll (siirto ei ole vaivan arvoinen)
+# 28.8 (PLANNER-FREEZE-DIVERGENCE): siirtologiikka asuu fpl_transfers-moottorissa
+# jota myös rate-team ja freeze käyttävät. Vakiot re-exportataan täältä, jotta
+# vanhat kutsujat (testit, fantasy_edge) näkevät saman arvon kuin moottori.
+MAX_TRANSFERS_PER_GW = _engine.MAX_TRANSFERS_PER_GW
+TOP_CANDIDATES_PER_POS = _engine.TOP_CANDIDATES_PER_POS
+MIN_GAIN_PER_TRANSFER = _engine.MIN_GAIN_PER_TRANSFER
+DEFAULT_HORIZON = 6  # sama kuin xP-artefakti ja freeze; oli 3 (divergenssin syy #2)
 DIFFERENTIAL_MAX_OWNERSHIP = 10.0
 DIFFERENTIAL_TOP_N = 20
 CAPTAIN_DIFFERENTIAL_EO = 10.0
@@ -69,40 +74,15 @@ def _club_counts(squad: list[dict]) -> dict[int, int]:
     return counts
 
 
-def _best_transfer(squad: list[dict], pool: list[dict], bank_tenths: int,
-                   gws_left: list[int]) -> dict | None:
-    """Paras yksittäinen siirto jäljellä olevalle horisontille (tai None)."""
-    squad_ids = {p["id"] for p in squad}
-    clubs = _club_counts(squad)
-    # Kandidaatit: per positio TOP_N jäljellä olevan horisontin xP:llä
-    by_pos: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: []}
-    for p in pool:
-        if p["id"] not in squad_ids:
-            by_pos[p["element_type"]].append(p)
-    for t in by_pos:
-        by_pos[t].sort(key=lambda p: _remaining_xp(p, gws_left), reverse=True)
-        by_pos[t] = by_pos[t][:TOP_CANDIDATES_PER_POS]
-
-    best: dict | None = None
-    for out_p in squad:
-        budget = bank_tenths + out_p["price"]
-        out_xp = _remaining_xp(out_p, gws_left)
-        for in_p in by_pos[out_p["element_type"]]:
-            if in_p["price"] > budget:
-                continue
-            after = clubs.get(in_p["club"], 0) + 1
-            if in_p["club"] != out_p["club"] and after > MAX_PER_CLUB:
-                continue
-            gain = _remaining_xp(in_p, gws_left) - out_xp
-            if best is None or gain > best["gain"]:
-                best = {"out": out_p, "in": in_p, "gain": gain}
-    return best
-
-
 def plan_transfers(entry: int | None = None, gw: int | None = None,
                    players: list[int] | None = None, bank: float | None = None,
-                   horizon: int = 3, ft: int = 1) -> dict:
-    """Monen GW:n siirtosuunnitelma (greedy + jäljellä olevan horisontin arvo)."""
+                   horizon: int = DEFAULT_HORIZON, ft: int = 1) -> dict:
+    """Monen GW:n siirtosuunnitelma yhteisellä siirtomoottorilla.
+
+    Per GW: `fpl_transfers.plan_gw` (XI-hyöty jäljellä olevalle horisontille,
+    hit -4 ilman vapaata siirtoa, netto >= 0.5, kahden siirron yhdistelmähaku,
+    luottamuspaino hintapriori-pelaajille). Sama funktio kuin rate-teamin
+    suosituksissa ja mallin oman rungon freezessä."""
     if not 2 <= horizon <= 6:
         raise RateTeamError(400, "horizon must be between 2 and 6.")
     if not 0 <= ft <= FT_CARRY_MAX:
@@ -134,36 +114,34 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     total_hits = 0.0
     for idx, g in enumerate(gws):
         gws_left = gws[idx:]
+        step = _engine.plan_gw(squad, pool, bank_now, gws_left, fts,
+                               max_moves=MAX_TRANSFERS_PER_GW)
         moves = []
-        n_moves = 0
-        while n_moves < MAX_TRANSFERS_PER_GW:
-            cand = _best_transfer(squad, pool, bank_now, gws_left)
-            if cand is None:
-                break
-            hit = 0.0 if fts > 0 else HIT_COST
-            net_gain = cand["gain"] - hit
-            if net_gain < MIN_GAIN_PER_TRANSFER:
-                break
-            # Toteuta siirto
-            squad = [p for p in squad if p["id"] != cand["out"]["id"]]
-            squad.append(cand["in"])
-            bank_now += cand["out"]["price"] - cand["in"]["price"]
-            if fts > 0:
-                fts -= 1
-            else:
+        for m in step["moves"]:
+            if m["hit"] > 0:
                 total_hits += HIT_COST
-            n_moves += 1
             moves.append({
-                "out": {"id": cand["out"]["id"],
-                        "web_name": cand["out"]["web_name"],
-                        "team_short": cand["out"]["team_short"]},
-                "in": {"id": cand["in"]["id"],
-                       "web_name": cand["in"]["web_name"],
-                       "team_short": cand["in"]["team_short"]},
-                "pos": POS_NAME[cand["out"]["element_type"]],
-                "gain_xp_remaining": round(cand["gain"], 2),
-                "hit": hit,
+                "out": {"id": m["out"]["id"],
+                        "web_name": m["out"]["web_name"],
+                        "team_short": m["out"]["team_short"]},
+                "in": {"id": m["in"]["id"],
+                       "web_name": m["in"]["web_name"],
+                       "team_short": m["in"]["team_short"]},
+                "pos": m["pos"],
+                # Painottamaton XI-hyöty jäljellä olevalle horisontille (näyttö).
+                "gain_xp_remaining": round(m["gain"], 2),
+                "hit": m["hit"],
+                # 28.8: päätösluvut näkyviin, ei piiloon. confidence_weight < 1
+                # = tulijan projektio nojaa hintaprioriin tai nousijaseuran
+                # yhden ottelun ratingiin; pair = siirto on osa kahden siirron
+                # yhdistelmää jonka hyöty on laskettu yhdessä.
+                "gain_xp_weighted": round(m["gain_weighted"], 2),
+                "confidence_weight": m["confidence_weight"],
+                "pair": bool(m.get("pair")),
             })
+        squad = step["squad"]
+        bank_now = step["bank_tenths"]
+        fts = step["ft_left"]
         xi = optimal_xi(squad)
         cap = max(xi, key=lambda p: _gw_xp(p, g))
         gw_xp_val = sum(_gw_xp(p, g) for p in xi) + _gw_xp(cap, g)
@@ -226,15 +204,35 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
         "message": hv_message,
     }
 
+    # 28.8: entry-moodissa FPL näyttää edellisen kierroksen rungon deadlineen
+    # asti. Kerrotaan se rakenteisena, jotta klientti voi ohjata
+    # manuaalisyöttöön sen sijaan että käyttäjä päättelee tuotteen olevan rikki.
+    _dl_gw = xp_data["meta"].get("deadline_gameweek")
+    _stale = (players is None and picks_outdated(picks_gw, _dl_gw))
+    squad_source = {
+        "mode": "manual" if players else "entry",
+        "gw": picks_gw,
+        "stale": bool(_stale),
+        "note": ("FPL publishes this gameweek's transfers only after the "
+                 "deadline, so this plan starts from your GW"
+                 f"{picks_gw} squad. Enter your current 15 to plan from it."
+                 if _stale else None),
+    }
+
     return {
         "meta": {
             "entry": entry, "start_gw": gws[0], "horizon": len(gws),
             "generated_at": xp_data["meta"].get("generated_at"),
-            "heuristic": ("greedy, remaining-horizon value, max "
-                          f"{MAX_TRANSFERS_PER_GW} transfers/GW, hit -4, "
+            "heuristic": ("gain measured on the starting XI over the remaining "
+                          f"horizon, max {MAX_TRANSFERS_PER_GW} transfers/GW, "
+                          "two-move combinations checked, hit -4 without a free "
+                          "transfer, thin-sample players discounted to "
+                          f"{_engine.LOW_CONFIDENCE_WEIGHT:.2f} in the decision, "
                           f"FT carry max {FT_CARRY_MAX} - not a global optimum"),
             "note": "GoalIQ model projections - for fun and planning, "
                     "not betting advice.",
+            "engine": "fpl_transfers.plan_gw",
+            "squad_source": squad_source,
         },
         "hold_verdict": hold_verdict,
         "plan": plan,

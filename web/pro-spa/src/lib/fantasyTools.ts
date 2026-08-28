@@ -253,6 +253,9 @@ export interface PlanResponse {
 		horizon: number;
 		heuristic: string;
 		note?: string;
+		/** 28.8: entry-moodissa FPL nayttaa edellisen kierroksen rungon
+		 *  deadlineen asti; stale=true -> UI ohjaa manuaalisyottoon. */
+		squad_source?: { mode: 'entry' | 'manual'; gw: number; stale: boolean; note: string | null };
 		[key: string]: unknown;
 	};
 	hold_verdict?: HoldVerdict;

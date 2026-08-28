@@ -98,53 +98,11 @@ def test_myohempi_freeze_ei_kelpaa_lahteeksi(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Siirtorajoite
 # ---------------------------------------------------------------------------
-def test_ilman_ilmaisia_siirtoja_hitti_vaatii_hyodyn_yli_neljan(monkeypatch):
-    """🔴 Hitti otetaan VAIN kun horisontti-hyoty ylittaa sen hinnan. Sama
-    kynnys jolla tuote kehottaa kayttajaa ottamaan hitin."""
-    m = _load()
-    pool = [_p(1), _p(2, xp=9.0)]
-    kutsut = {"n": 0}
-
-    def fake(squad, p, bank):
-        kutsut["n"] += 1
-        # Ensimmainen ehdotus +3,0 (alle 4) -> hitti EI kannata
-        return {"hold": False, "suggestions": [
-            {"out": {"id": 1}, "in": {"id": 2}, "delta_xp_horizon": 3.0}]}
-
-    monkeypatch.setattr("src.models.fpl_rate_team.transfer_suggestions", fake)
-    prev = _freeze(list(range(1, 16)), {"budget": 100.0})
-    pool = [_p(i) for i in range(1, 16)] + [_p(99, xp=9.0)]
-    out = m._constrained_from_prev(prev, pool, 2, ft=0)
-    assert out["transfers"] == [], "3,0 < 4,0 -> ei hittia"
-    assert out["hits"] == 0
-
-
-def test_ilmainen_siirto_kaytetaan_pienellakin_hyodyllä(monkeypatch):
-    m = _load()
-
-    def fake(squad, p, bank):
-        return {"hold": False, "suggestions": [
-            {"out": {"id": 1}, "in": {"id": 99}, "delta_xp_horizon": 0.5}]}
-
-    monkeypatch.setattr("src.models.fpl_rate_team.transfer_suggestions", fake)
-    prev = _freeze(list(range(1, 16)), {"budget": 100.0})
-    pool = [_p(i) for i in range(1, 16)] + [_p(99, xp=9.0)]
-    out = m._constrained_from_prev(prev, pool, 2, ft=1)
-    assert len(out["transfers"]) == 1
-    assert out["hits"] == 0
-    assert out["transfers"][0]["hit"] is False
-
-
-def test_hold_pysayttaa_siirrot(monkeypatch):
-    m = _load()
-    monkeypatch.setattr("src.models.fpl_rate_team.transfer_suggestions",
-                        lambda s, p, b: {"hold": True, "suggestions": [
-                            {"out": {"id": 1}, "in": {"id": 99},
-                             "delta_xp_horizon": 99.0}]})
-    prev = _freeze(list(range(1, 16)), {"budget": 100.0})
-    pool = [_p(i) for i in range(1, 16)] + [_p(99)]
-    out = m._constrained_from_prev(prev, pool, 2, ft=2)
-    assert out["transfers"] == [], "hold on tulos, ei ohitettava"
+# 28.8 (PLANNER-FREEZE-DIVERGENCE): freeze kayttaa nyt fpl_transfers.plan_gw:ta,
+# ei rate-teamin transfer_suggestionsia omalla hit-saannolla. Saannon testit
+# (netto >= 0.5, ilmainen siirto samalla kynnyksella, hold, ft_left) elavat
+# tests/test_transfer_engine_parity.py:ssa oikealla laillisella rungolla;
+# mockatut versiot poistettiin koska ne mittasivat vanhaa polkua.
 
 
 def test_pelaaja_poissa_poolista_estaa_perimisen():
@@ -157,11 +115,10 @@ def test_pelaaja_poissa_poolista_estaa_perimisen():
     assert m._constrained_from_prev(prev, pool, 2, ft=1) is None
 
 
-def test_ft_left_kertoo_kayttamattomat(monkeypatch):
+def test_ft_left_kertoo_kayttamattomat():
     m = _load()
-    monkeypatch.setattr("src.models.fpl_rate_team.transfer_suggestions",
-                        lambda s, p, b: {"hold": True, "suggestions": []})
-    prev = _freeze(list(range(1, 16)), {"budget": 100.0})
-    pool = [_p(i) for i in range(1, 16)]
-    out = m._constrained_from_prev(prev, pool, 2, ft=2)
+    from tests.test_transfer_engine_parity import _legal_squad, _prev_from
+    squad = _legal_squad()
+    out = m._constrained_from_prev(_prev_from(squad), squad, 2, ft=2)
+    assert out["transfers"] == []
     assert out["ft_left"] == 2, "kayttamattomat rullaavat eteenpain"

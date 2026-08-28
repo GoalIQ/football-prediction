@@ -36,6 +36,7 @@ perustan summaaminen tekisi luvusta sellaisen jota kukaan ei voi tarkistaa.
 from __future__ import annotations
 
 from src.models import fpl_rate_team as rt
+from src.models.fpl_transfers import confidence_weight
 
 # Kuinka pitkalle fixture-nakyma ulottuu xP-horisontin YLI.
 LONG_VIEW_GWS = 6
@@ -86,6 +87,16 @@ def _xp_window(p: dict, gws: list[int]) -> float:
     return sum(_xp_gw(p, g) for g in gws)
 
 
+def _xp_gw_w(p: dict, gw: int) -> float:
+    """Painotettu kierros-xP paatoksiin: hintapriori-pelaajan luku kerrotaan
+    luottamuspainolla (28.8). Nayttoluvut pysyvat painottamattomina."""
+    return _xp_gw(p, gw) * confidence_weight(p)
+
+
+def _xp_window_w(p: dict, gws: list[int]) -> float:
+    return sum(_xp_gw_w(p, g) for g in gws)
+
+
 def team_outlook(fixtures: list[dict], gws: set[int]) -> dict[str, dict]:
     """Per joukkue: hyokkays- ja puolustusvaikeus annetuilla kierroksilla.
 
@@ -123,6 +134,7 @@ def _rivi(p: dict, gws: list[int]) -> dict:
         "xp_window": round(total, 2),
         "xp_per_gw": round(total / n, 2),
         "chance_next": p.get("chance_next"),
+        "confidence_weight": confidence_weight(p),
     }
 
 
@@ -137,7 +149,10 @@ def _optimi(pool: list[dict], gws: list[int]) -> dict | None:
     pisteytetty = []
     for p in pool:
         q = dict(p)
-        q["xp_horizon_total"] = _xp_window(p, gws)
+        # 28.8: runko rakennetaan PAINOTETULLA arvolla, jotta 40 xP:n
+        # wildcard ei rakennu nousijoiden hintapriori-pelaajista joiden
+        # projektiolla ei ole vielä mittaushistoriaa.
+        q["xp_horizon_total"] = _xp_window_w(p, gws)
         pisteytetty.append(q)
     try:
         res = rt.build_optimal_squad(pisteytetty)
@@ -163,11 +178,17 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                 "note": "No gameweek left in the projection horizon."}
 
     def _paras_xi_xp(rivisto: list[dict], gw: int) -> float:
-        """Rungon OMA optimi talle kierrokselle.
+        """Rungon OMA optimi talle kierrokselle, PAINOTETTUNA (28.8): sama
+        luottamuspaino molemmille rungoille, muuten uusi runko saisi taydet
+        pisteet hintapriorista jota vanhaan ei sovelleta.
 
         🔴 Vertailukohta on oma optimi eika nykyinen XI: wildcardia ei saa
         kehua hyodysta jonka kayttaja saisi pelkalla penkkijarjestyksella.
         """
+        xi = xi_fn(rivisto, lambda p: _xp_gw_w(p, gw))
+        return sum(_xp_gw_w(p, gw) for p in xi)
+
+    def _paras_xi_xp_plain(rivisto: list[dict], gw: int) -> float:
         xi = xi_fn(rivisto, lambda p: _xp_gw(p, gw))
         return sum(_xp_gw(p, gw) for p in xi)
 
@@ -200,6 +221,9 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
     kaikki = list(gws)
     vanha_per_gw = {x: _paras_xi_xp(squad, x) for x in kaikki}
     uusi_per_gw = {x: _paras_xi_xp(uusi_15, x) for x in kaikki}
+    # Painottamaton vertailu raportoidaan rinnalla lapinakyvyyden vuoksi.
+    vanha_plain = {x: _paras_xi_xp_plain(squad, x) for x in kaikki}
+    uusi_plain = {x: _paras_xi_xp_plain(uusi_15, x) for x in kaikki}
     kandidaatit = []
     for g in gws:
         ikkuna = [x for x in kaikki if x >= g]
@@ -213,6 +237,8 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
             # Toissijainen: kuinka paljon parempi runko on silla aikaa kun se
             # on pelissa. EI ajoitusmittari — ks. yllä.
             "ev_per_gw": round(ev / len(ikkuna), 2),
+            "ev_total_unweighted": round(
+                sum(uusi_plain[x] - vanha_plain[x] for x in ikkuna), 2),
             "window": ikkuna,
         })
 
@@ -281,9 +307,13 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
         "gw": paras["gw"],
         "ev_per_gw": paras["ev_per_gw"],
         "ev_total": paras["ev_total"],
+        "ev_total_unweighted": paras["ev_total_unweighted"],
         "window_gws": paras["window_gws"],
         "threshold_per_gw": MIN_EV_PER_GW,
         "basis": "player_xp",
+        # 28.8: hintapriori-pelaajat (nousijat, ei PL-historiaa) painotetaan
+        # kertoimella paatoksessa; nayttoluvut riveilla ovat painottamattomia.
+        "confidence_weighted": True,
         "squad": {
             "xi": [_rivi(p, ikkuna) for p in uusi["xi"]],
             "bench": [_rivi(p, ikkuna) for p in uusi["bench"]],

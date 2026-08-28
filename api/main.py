@@ -4759,12 +4759,13 @@ def fantasy_plan(
     gw: int | None = Query(default=None, ge=1, le=38),
     players: str | None = Query(default=None),
     bank: float | None = Query(default=None, ge=0, le=100),
-    horizon: int = Query(default=3, ge=2, le=6),
+    horizon: int = Query(default=6, ge=2, le=6),
     ft: int = Query(default=1, ge=0, le=5),
 ):
     """FPL transfer planner (#35): monen GW:n siirtosuunnitelma olemassa olevan
-    xP-projektion päällä (greedy + jäljellä olevan horisontin arvo, hit -4,
-    FT-carry max 5 — dokumentoitu heuristiikka, ei globaali optimi)."""
+    xP-projektion päällä. 28.8: sama siirtomoottori kuin rate-team ja freeze
+    (fpl_transfers), oletushorisontti 6 = xP-artefaktin horisontti (oli 3,
+    jolloin planner ja freeze vastasivat eri kysymykseen)."""
     from src.models.fpl_planner import plan_transfers
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"

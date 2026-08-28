@@ -955,103 +955,49 @@ def captain_suggestion(xi: list[dict], gw: int) -> dict:
 
 def transfer_suggestions(squad: list[dict], pool: list[dict],
                          bank_tenths: int) -> dict:
-    """Top 3–5 yhden pelaajan siirtoa: sama positio, budjetti (bank + myyntihinta
+    """Top 3-5 yhden pelaajan siirtoa: sama positio, budjetti (bank + myyntihinta
     = now_cost, MVP-yksinkertaistus), max 3/klubi vaihdon JÄLKEEN, suurin
-    horisontti-xP-delta. Deltat ovat per-siirto (eivät summaudu — budjetti
-    jaetaan). 'hold' jos paras delta < kynnys."""
-    squad_ids = {p["id"] for p in squad}
-    club_counts: dict[int, int] = {}
-    for p in squad:
-        club_counts[p["club"]] = club_counts.get(p["club"], 0) + 1
+    horisontti-xP-hyöty AVAUSKOKOONPANOON. 'hold' jos paras delta < kynnys.
 
-    # 28.7 (Villen bugilöytö): delta lasketaan AVAUSKOKOONPANOSTA, ei pelaajien
-    # raakaerotuksesta.
-    #
-    # Vanha kaava (in.xP - out.xP) lupasi Villelle "+18.74 xP over the horizon"
-    # kakkosvahdin vaihdosta. Todennettu tuotannosta ajamalla sama 15 ennen ja
-    # jälkeen: XI-xP 315.31 -> 315.31, rating 92 -> 92. Muutos oli TASAN NOLLA,
-    # koska kumpikaan vahti ei nouse Verbruggenin ohi. Luku oli tosi pelaajien
-    # välillä ja epätosi pisteinä — ja se on silmukan pääsuositus, johon
-    # käyttäjä kirjaa "following the model".
-    #
-    # Raakaerotus säilyy YLÄRAJANA ja siksi kelpaa haarukointiin: jos uusi XI
-    # käyttää tulokasta, hänen korvaamisensa lähtijällä antaa laillisen vanhan
-    # XI:n (sama positio) → XI-hyöty ≤ raakaerotus. Käydään kandidaatit läpi
-    # raakaerotus laskevassa järjestyksessä ja lopetetaan kun se alittaa jo
-    # löydetyn parhaan todellisen hyödyn: tulos on eksakti, ei otos.
-    base_xi_xp = sum(p["xp_horizon_total"] for p in optimal_xi(squad))
-    squad_by_id = {p["id"]: p for p in squad}
+    28.8 (PLANNER-FREEZE-DIVERGENCE): laskenta siirtyi `fpl_transfers.single_moves`
+    -moottoriin, jota myös planner ja freeze käyttävät. Kentät ennallaan;
+    lisäksi `confidence_weight` (hintapriori-pelaajan kerroin) ja
+    `delta_xp_weighted` (luku jolla lista on järjestetty). `delta_xp_horizon`
+    on edelleen painottamaton XI-hyöty eli se mitä käyttäjälle näytetään.
 
-    def _xi_gain(out_p: dict, in_p: dict) -> float:
-        new_squad = [in_p if p["id"] == out_p["id"] else p for p in squad]
-        return sum(p["xp_horizon_total"] for p in optimal_xi(new_squad)) - base_xi_xp
-
-    cands = []
-    for out_p in squad:
-        budget = bank_tenths + out_p["price"]
-        for in_p in pool:
-            if in_p["id"] in squad_ids:
-                continue
-            if in_p["element_type"] != out_p["element_type"]:
-                continue
-            if in_p["price"] > budget:
-                continue
-            # klubiraja vaihdon jälkeen
-            after = club_counts.get(in_p["club"], 0) + 1
-            if in_p["club"] != out_p["club"] and after > MAX_PER_CLUB:
-                continue
-            raw = in_p["xp_horizon_total"] - out_p["xp_horizon_total"]
-            if raw <= 0:
-                continue
-            cands.append((raw, out_p["id"], in_p["id"], out_p, in_p))
-
-    cands.sort(key=lambda c: c[0], reverse=True)
-    scored: list[tuple[float, float, dict, dict]] = []
-    best_gain = 0.0
-    for raw, _oid, _iid, out_p, in_p in cands:
-        # Haarukointi: raakaerotus on yläraja, joten tästä eteenpäin ei voi
-        # enää löytyä 5. parasta parempaa kun lista on jo täynnä.
-        if len(scored) >= 5 and raw <= min(s[0] for s in scored):
-            break
-        gain = _xi_gain(out_p, in_p)
-        if gain <= 0:
-            continue
-        best_gain = max(best_gain, gain)
-        scored.append((gain, raw, out_p, in_p))
-        scored.sort(key=lambda s: s[0], reverse=True)
-        del scored[5:]
-
+    28.7 (Villen bugilöytö): delta lasketaan AVAUSKOKOONPANOSTA, ei pelaajien
+    raakaerotuksesta: vanha kaava lupasi "+18.74 xP" kakkosvahdin vaihdosta
+    jonka todellinen XI-hyöty oli tasan nolla. Raakaerotus säilyy kentässä
+    `delta_xp_squad` läpinäkyvyyden vuoksi.
+    """
+    from src.models.fpl_transfers import single_moves, window_xp
+    moves = single_moves(squad, pool, bank_tenths, None, top_k=5)
     suggestions = []
-    for gain, raw, out_p, in_p in scored:
+    for m in moves:
+        out_p, in_p = m["out"], m["in"]
+        raw = window_xp(in_p, None) - window_xp(out_p, None)
         suggestions.append({
             "out": {"id": out_p["id"], "web_name": out_p["web_name"],
                     "team_short": out_p["team_short"],
                     "price": out_p["price"] / 10.0},
-            # #121: in-pelaajalle täydet planner-kentät → apply-to-planner
-            # voi liittää pelaajan pitchiin ilman lisäkutsua.
+            # #121: in-pelaajalle täydet planner-kentät, jotta apply-to-planner
+            # voi liittää pelaajan pitchiin ilman lisäkutsua. Saatavuuslippu
+            # mukaan (25.8): ilman sitä klientti rakentaa rivin käsin ja lippu
+            # katoaa tasan siinä kohtaa jossa käyttäjä valitsee pelaajan.
             "in": {"id": in_p["id"], "web_name": in_p["web_name"],
                    "team_short": in_p["team_short"],
                    "price": in_p["price"] / 10.0,
                    "xp_per_gw": round(in_p["xp_per_gw"], 2),
                    "xp_horizon_total": round(in_p["xp_horizon_total"], 2),
-                   # 🔴 SAATAVUUSLIPPU MUKAAN. Ilman naita klientti rakentaa
-                   # sisaan tulevan pelaajan rivin KASIN naista kentista, ja
-                   # lippu katoaa: pitch nayttaa 75 %:n pelaajan puhtaana
-                   # tasan siina kohtaa jossa kayttaja VALITSEE hanet.
-                   # Mitattu 25.8 Villen rivilta: `in`-objektissa ei ollut
-                   # `chance_next`ia lainkaan, joten kyse ei ollut klientin
-                   # mappauksesta vaan puuttuvasta datasta.
                    "chance_next": in_p.get("chance_next"),
                    "news": in_p.get("news"),
                    "gameweeks": _player_gameweeks(in_p)},
             "pos": POS_NAME[out_p["element_type"]],
-            # Hyöty AVAUSKOKOONPANOON, ei pelaajien raakaerotus (28.7).
-            "delta_xp_horizon": round(gain, 2),
-            # Raakaerotus jää näkyviin läpinäkyvyyden vuoksi: se kertoo
-            # pelaajien eron, ja ero näihin kahteen lukuun ON se asia jonka
-            # vanha versio piilotti (syvyysparannus ≠ pisteparannus).
+            "delta_xp_horizon": round(m["gain"], 2),
             "delta_xp_squad": round(raw, 2),
             "delta_cost": round((in_p["price"] - out_p["price"]) / 10.0, 1),
+            "delta_xp_weighted": round(m["gain_weighted"], 2),
+            "confidence_weight": m["confidence_weight"],
         })
     top = suggestions[:5]
     hold = not top or top[0]["delta_xp_horizon"] < HOLD_THRESHOLD_XP
@@ -1110,6 +1056,12 @@ def _projection_pool(xp_data: dict, price_by_id: dict[int, dict]) -> list[dict]:
     pudotetaan poolista (ei voida hinnoitella siirtoa/otosta)."""
     pool = []
     pos_by_name = {v: k for k, v in POS_NAME.items()}
+    # 28.8 (PLANNER-FREEZE-DIVERGENCE): nousijaseurat artefaktin
+    # team_confidence-lohkosta -> `is_promoted` kulkee poolin mukana, jotta
+    # siirtomoottorin luottamuspaino nakee sen. Puuttuva lohko -> ei lippua.
+    _tc = ((xp_data.get("meta") or {}).get("team_confidence") or {}).get("teams") or {}
+    promoted_teams = {name for name, row in _tc.items()
+                      if isinstance(row, dict) and row.get("is_promoted")}
     for p in xp_data.get("players") or []:
         boot = price_by_id.get(p["id"])
         if not boot:
@@ -1158,6 +1110,11 @@ def _projection_pool(xp_data: dict, price_by_id: dict[int, dict]) -> list[dict]:
             # vertailukohta). Vanha projektio ilman kenttaa -> None -> portti
             # kohtelee sita "a":na (sama kayttaytyminen kuin ennen).
             "status": p.get("status"),
+            # 28.8: luottamuspainon syotteet (ks. fpl_transfers.confidence_weight).
+            "data_basis": p.get("data_basis"),
+            "minutes_source": p.get("minutes_source"),
+            "team": p.get("team"),
+            "is_promoted": bool(p.get("team") in promoted_teams),
         })
     return pool
 

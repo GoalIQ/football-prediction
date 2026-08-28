@@ -212,14 +212,19 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
                            ft: int) -> dict | None:
     """Peri edellinen runko ja tee siihen FPL:n saannoilla sallitut siirrot.
 
-    🔴 Kayttaa `transfer_suggestions`ia eli TASMALLEEN samaa funktiota jolla
-    tuote suosittelee siirtoja kayttajalle. Oma kopio siirtologiikasta tekisi
-    mallista eri mielta kuin sen oma neuvo.
+    28.8 (PLANNER-FREEZE-DIVERGENCE): kayttaa `fpl_transfers.plan_gw`:ta eli
+    TASMALLEEN samaa moottoria jolla /api/fantasy/plan ja rate-team
+    suosittelevat siirtoja. Aiempi versio kutsui rate-teamin
+    `transfer_suggestions`ia omalla hit-saannolla (hyoty > 4.0), ja planner
+    kaytti kolmatta logiikkaa: GW2:ssa freeze otti Whiten -4:lla nettona
+    +0.34 kun tuote olisi sanonut "ei". Nyt saanto on yksi: netto >= 0.5
+    per siirto, yhdistelmahaku, luottamuspaino hintapriori-pelaajille.
 
-    Hitti otetaan vain kun horisontti-hyoty YLITTAA sen hinnan (HIT_COST_XP),
-    eli sama kynnys jolla tuote kehottaa ottamaan hitin.
+    Siirtoja per kierros enintaan max(MAX_TRANSFERS_PER_GW, ft): vapaita
+    siirtoja ei jateta kayttamatta, hitteja enintaan moottorin saannon
+    verran.
     """
-    from src.models.fpl_rate_team import HIT_COST_XP, transfer_suggestions
+    from src.models.fpl_transfers import MAX_TRANSFERS_PER_GW, plan_gw
 
     by_id = {p["id"]: p for p in pool}
     edellinen = (prev.get("xi") or []) + (prev.get("bench") or [])
@@ -234,51 +239,62 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
     kaytetty = sum(int(p.get("price") or 0) for p in squad)
     bank = budjetti - kaytetty
 
-    siirrot: list[dict] = []
-    hitit = 0
-    for _ in range(FT_MAX + 3):          # ylaraja: hitteja ei oteta loputtomiin
-        ehdotus = transfer_suggestions(squad, pool, bank)
-        rivit = ehdotus.get("suggestions") or []
-        if not rivit or ehdotus.get("hold"):
-            break
-        paras = rivit[0]
-        # 🔴 `delta_xp_horizon` ON XI-HYOTY. `delta_xp_squad` on RAAKAEROTUS,
-        # ja nimet ovat harhaanjohtavat toisin pain kuin luulisi. Valitsin ensin
-        # `delta_xp_squad`:in sen nimen perusteella ja mittasin sitten:
-        #     Steele -> Verbruggen: delta_xp_squad 17,0 · delta_xp_horizon 2,41
-        #     todellinen XI-hyoty (optimal_xi ennen/jalkeen): +2,41
-        # Raakaerotus on 17,0 vain koska Steele on PENKKIVAHTI (5,75); XI-vahti
-        # on Lammens (20,34), joten Verbruggen syrjayttaa hanet eika Steelea.
-        # Verifioitu kaikilla viidella ehdotuksella: `delta_xp_horizon` tasmaa
-        # todelliseen XI-hyotyyn joka kerta.
-        #
-        # Tuote kayttaa oikeaa kenttaa kaikilla pinnoilla (FantasyTools,
-        # RateTeam, hold-kynnys) - tama oli vain taman skriptin virhe. Malli
-        # joka valitsisi raakaerotuksella ottaisi -4 hitin siirrosta joka
-        # tuottaa +2,41, eli tarkalleen sen virheen jota 28.7 korjattiin.
-        hyoty = float(paras.get("delta_xp_horizon") or 0.0)
-        maksaa = 0.0 if len(siirrot) < ft else HIT_COST_XP
-        if hyoty <= maksaa:
-            break
-        out_id = (paras.get("out") or {}).get("id")
-        in_id = (paras.get("in") or {}).get("id")
-        if out_id is None or in_id is None or in_id not in by_id:
-            break
-        out_p = next((q for q in squad if q["id"] == out_id), None)
-        in_p = by_id[in_id]
-        if out_p is None:
-            break
-        bank += int(out_p.get("price") or 0) - int(in_p.get("price") or 0)
-        squad = [in_p if q["id"] == out_id else q for q in squad]
-        siirrot.append({"out": out_id, "in": in_id,
-                        "gain_xp": round(hyoty, 2),
-                        "hit": maksaa > 0})
-        if maksaa > 0:
-            hitit += 1
+    covered = sorted({g.get("gw") for p in pool for g in (p.get("gameweeks") or [])
+                      if isinstance(g.get("gw"), int)})
+    gws = [g for g in covered if g >= gw] or None
+    step = plan_gw(squad, pool, bank, gws, ft,
+                   max_moves=max(MAX_TRANSFERS_PER_GW, ft))
+    siirrot = [{"out": m["out"]["id"], "in": m["in"]["id"],
+                "gain_xp": round(m["gain"], 2),
+                "gain_xp_weighted": round(m["gain_weighted"], 2),
+                "confidence_weight": m["confidence_weight"],
+                "pair": bool(m.get("pair")),
+                "hit": m["hit"] > 0}
+               for m in step["moves"]]
+    return {"squad": step["squad"], "bank": step["bank_tenths"],
+            "transfers": siirrot, "hits": step["hits"], "ft_available": ft,
+            "ft_left": step["ft_left"], "engine": "fpl_transfers.plan_gw"}
 
-    return {"squad": squad, "bank": bank, "transfers": siirrot,
-            "hits": hitit, "ft_available": ft,
-            "ft_left": max(0, ft - len(siirrot))}
+
+def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
+                     xp_data: dict) -> dict:
+    """Wildcard-arvio mallin omalle rungolle samalla moottorilla kuin
+    /api/fantasy/wildcard-plan (28.8, Villen kysymys "malli suosittelee
+    wildcardia, pitaisiko sen mukaan menna").
+
+    v0: freeze EI pelaa chippia automaattisesti. Arvio kirjataan nakyviin,
+    jotta mallin oma rivi ei ole hiljaa eri mielta oman wildcard-sivunsa
+    kanssa. Virhe arvioinnissa ei kaada freezea: kirjataan `error`.
+    """
+    try:
+        from src.models import fpl_wildcard
+        from src.models.fpl_transfers import optimal_xi_by_key
+        covered = sorted({g.get("gw") for p in pool for g in (p.get("gameweeks") or [])
+                          if isinstance(g.get("gw"), int)})
+        gws = [g for g in covered if g >= gw]
+        plan = fpl_wildcard.wildcard_plan(squad, pool, gws, [], {},
+                                          optimal_xi_by_key, mode="model")
+    except Exception as e:  # noqa: BLE001 - arvio ei saa kaataa freezea
+        return {"available": False, "error": repr(e), "decision": "not_played",
+                "reason": "chip decisions require Ville's GO in v0"}
+    if not plan.get("available"):
+        return {"available": False, "note": plan.get("note"),
+                "decision": "not_played",
+                "reason": "chip decisions require Ville's GO in v0"}
+    return {
+        "available": True,
+        "chip": "wildcard",
+        "best_gw": plan.get("gw"),
+        "wildcard_ev_per_gw": plan.get("ev_per_gw"),
+        "wildcard_ev_total": plan.get("ev_total"),
+        "wildcard_ev_total_unweighted": plan.get("ev_total_unweighted"),
+        "window_gws": plan.get("window_gws"),
+        "threshold": plan.get("threshold_per_gw"),
+        "recommend": bool(plan.get("recommend")),
+        "changes": (plan.get("squad") or {}).get("changes"),
+        "decision": "not_played",
+        "reason": "chip decisions require Ville's GO in v0",
+    }
 
 
 def next_freeze_gw(events: list[dict], now: _dt.datetime):
@@ -328,9 +344,17 @@ def main() -> int:
     edellinen = _prev_freeze(gw)
     siirtotiedot = None
     free = None
+    chip_eval = None
     if edellinen is not None:
         prev_gw, prev = edellinen
         prev_meta = prev.get("meta") or {}
+        # Chip-arvio PERITYLLE rungolle ennen siirtoja: samalla moottorilla
+        # kuin wildcard-sivu, jotta rivi ja sivu eivat ole eri mielta.
+        _by_id = {p["id"]: p for p in pool}
+        _peritty = [_by_id[p["id"]] for p in (prev.get("xi") or []) + (prev.get("bench") or [])
+                    if p["id"] in _by_id]
+        if len(_peritty) == 15:
+            chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data)
         rajoitettu = _constrained_from_prev(
             prev, pool, gw, _ft_available(prev_meta))
         if rajoitettu is None:
@@ -391,9 +415,14 @@ def main() -> int:
             "ft_available": (siirtotiedot or {}).get("ft_available"),
             "ft_left": (siirtotiedot or {}).get("ft_left", 0),
             "squad_rebuilt": siirtotiedot is None,
-            # Malli ei pelaa chippejä (spec) — kerrotaan datassa asti, jotta
-            # paneeli ei joudu arvaamaan sitä copyn perusteella.
+            # Malli ei pelaa chippejä v0:ssa — kerrotaan datassa asti, jotta
+            # paneeli ei joudu arvaamaan sitä copyn perusteella. 28.8: arvio
+            # kirjataan silti (`chip_evaluation`), koska wildcard-sivu voi
+            # suositella chippiä samalle rungolle ja hiljainen erimielisyys
+            # oman sivun kanssa on huonompi kuin kirjattu "ei pelattu".
             "chip": None,
+            "chip_evaluation": chip_eval,
+            "transfer_engine": (siirtotiedot or {}).get("engine"),
         },
         "captain": cap["id"],
         "vice_captain": vice["id"],
