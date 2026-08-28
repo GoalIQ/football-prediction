@@ -231,7 +231,11 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
                           f"horizon, max {MAX_TRANSFERS_PER_GW} transfers/GW, "
                           "single moves and two-move swaps both checked, hit -4 "
                           "without a free transfer, FT carry max "
-                          f"{FT_CARRY_MAX}. When it compares moves it counts "
+                          f"{FT_CARRY_MAX}. For each player you could sell it "
+                          f"only looks at the {_engine.TOP_CANDIDATES_PER_POS} "
+                          "best projected replacements in that position your "
+                          "budget allows, so it doesn't try every possible plan. "
+                          "When it compares moves it counts "
                           "three groups at "
                           f"{_engine.LOW_CONFIDENCE_WEIGHT:.2f} of their "
                           "projection: players with no Premier League history, "
@@ -239,8 +243,7 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
                           "and everyone at a promoted club. The xP numbers shown "
                           f"are undiscounted, and the {_engine.LOW_CONFIDENCE_WEIGHT:.2f} "
                           "is a fixed default, not calibrated against results "
-                          "yet. Documented rules, not a search for the best "
-                          "possible plan."),
+                          "yet."),
             "note": "GoalIQ model projections - for fun and planning, "
                     "not betting advice.",
             "engine": "transfers.v2",

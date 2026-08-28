@@ -239,7 +239,7 @@
 	{#if basedOn === 'draft'}
 		<p class="notice-preseason">
 			{#if draftReason === 'stale'}
-				Based on your saved draft of 15, not on the GW{data.meta.squad_source?.gw} squad FPL shows for this entry.
+				Based on your saved draft of 15. FPL still shows the GW{data.meta.squad_source?.gw} squad for this entry.
 			{:else}
 				Based on your saved draft of 15, because your squad is not public yet.
 			{/if}
@@ -254,9 +254,9 @@
 		<p class="notice-preseason">
 			<strong>This plan starts from your GW{data.meta.squad_source?.gw} squad.</strong>
 			FPL publishes GW{staleNext} squads a while after the deadline, so any transfers you
-			already made are not in it.
+			already made aren't in it.
 			{#if hasSavedDraft}
-				Your saved 15 from Rate my team is here if that is closer to your team now.
+				Your saved 15 from Rate my team is here if that's closer to your team now.
 				<button type="button" class="window-chip" onclick={useSavedDraft} disabled={loading}>
 					Use my saved 15
 				</button>
