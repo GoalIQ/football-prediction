@@ -83,12 +83,16 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gw", type=int, default=1)
     ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs"))
+    ap.add_argument("--squad-file", default=None,
+                    help="lue runko tasta JSONista freeze-hakemiston sijaan")
+    ap.add_argument("--subtitle", default=None,
+                    help="korvaa alaotsikko (esim. deadline-paivan uudelleenrakennus)")
     ap.add_argument("--hide-bench", action="store_true",
                     help="jata penkkirivi pois (promopinnan nimiesto, esim. Thiaw)")
     args = ap.parse_args()
 
     frozen = json.loads(
-        (FROZEN_DIR / f"gw{args.gw}.json").read_text(encoding="utf-8"))
+        (Path(args.squad_file) if args.squad_file else FROZEN_DIR / f"gw{args.gw}.json").read_text(encoding="utf-8"))
     xi, bench = frozen["xi"], frozen["bench"]
     cap, vice = frozen["captain"], frozen["vice_captain"]
     total = sum(p["price"] for p in xi + bench) / 10.0
@@ -113,7 +117,7 @@ def main() -> int:
         '<div class="card">'
         '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
         f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})</div>'
-        f'<div class="sub">Picked by the optimiser, frozen {frozen_at}, entered as-is</div></div></div>'
+        f'<div class="sub">{args.subtitle or f"Picked by the optimiser, frozen {frozen_at}, entered as-is"}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'{bench_block}'
         f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>'
