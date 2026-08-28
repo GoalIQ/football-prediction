@@ -116,6 +116,43 @@ def accumulate_history(rows: list[dict]) -> dict:
     return acc
 
 
+# Viime kauden paino kuluvan kauden vauhdeissa (28.8.2026, XP-SEASON-CARRY).
+#
+# 🔴 MITATTU VIKA. Kausihaara rakensi accin VAIN kuluvan kauden
+# element-summarysta: GW1:n jalkeen jokaisella pelaajalla oli ~90 min otos,
+# _shrink90 (M_PRIOR_ATTACK 450) antoi omalle vauhdille 17 % painon ja
+# positiopriorille 83 %. Artefaktin meta 28.8: pl_history 0 / limited 310 /
+# no_history 202 - B.Fernandes (3065 min, 9 G 24 A) oli #51 ja
+# "limited_history". Esikausihaara kaytti arkistoa, kausihaara ei: sama
+# vikaluokka kuin muistissa "kentta vain yhdessa haarassa katoaa
+# kausivaihdossa".
+#
+# Miksi 0.5 eika 1.0: viime kausi on eri joukkue ja eri rooli osalle
+# pelaajista (siirrot, valmentajavaihdokset), joten se ei ole taysipainoista
+# naytetta. Puolella painolla 3000 min -> 1500 "tehominuuttia": pelaajan oma
+# vauhti kantaa heti ~77 % (1500+90 / 1500+90+450) ja kuluva kausi ohittaa
+# arkiston painossa noin GW17:n jalkeen (1500 min). Nolla ei kelpaa (mitattu
+# yllä) ja 1.0 pitaisi kuluvan kauden alisteisena koko syksyn.
+PREV_SEASON_CARRY = 0.5
+
+
+def carry_prev_season(acc: dict, prev_acc: dict | None,
+                      carry: float = PREV_SEASON_CARRY) -> dict:
+    """Yhdista kuluvan kauden acc ja viime kauden arkisto-acc painolla carry.
+
+    Puhdas funktio: palauttaa uuden dictin. prev_acc None tai tyhja ->
+    acc sellaisenaan (uusi PL-tulokas pysyy no_history/limited).
+    Kaikki kentat skaalataan samalla kertoimella, jotta per-90-vauhdit ja
+    dc_freq (osumat / n60) sailyttavat suhteensa.
+    """
+    if not prev_acc or not (prev_acc.get("mins") or 0) or carry <= 0:
+        return dict(acc)
+    out = dict(acc)
+    for k in ("mins", "xg", "xa", "saves", "yc", "bonus", "n60", "dc_hits"):
+        out[k] = (acc.get(k, 0) or 0) + carry * float(prev_acc.get(k, 0) or 0)
+    return out
+
+
 def dc_hit(row: dict, pos: int) -> bool:
     """Täyttyikö defensive contribution -kynnys tällä rivillä."""
     thr = DC_THRESHOLD.get(pos)

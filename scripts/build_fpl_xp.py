@@ -68,6 +68,9 @@ OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 # kausien yli pysyvä element code. Kun kohdekauden kierroksia alkaa kertyä,
 # normaali live-polku jatkaa automaattisesti (sama koodipolku kuin ennen).
 PREV_BASELINES_PATH = config.PROJECT_ROOT / "data" / "fpl_prev_baselines_2526.json"
+# Sanity-gaten tahtitesti kayttaa arkistopisteita kunnes nain monta kierrosta
+# on pelattu (kuluvan kauden pisteranking on sita ennen kohinaa).
+GATE_MIN_LIVE_GWS = 6
 
 # Pudota kuollut paino JSONista (ei minuutteja odotettavissa, ei pisteitä).
 MIN_XP_TOTAL = 1.0
@@ -495,6 +498,15 @@ def main(argv: list[str] | None = None) -> int:
         hist = summaries.get(pid, [])
         acc = xp.accumulate_history(hist)
         acc["dc_hits"] = xp.count_dc_hits(hist, pos_by_player[pid])
+        # XP-SEASON-CARRY (28.8.2026): kausihaara PERII viime kauden arkiston
+        # painolla PREV_SEASON_CARRY. Ilman tata GW1:n jalkeen jokaisella
+        # pelaajalla oli ~90 min otos ja positiopriori kantoi 83 % painosta
+        # (meta 28.8: pl_history 0 / limited 310 / no_history 202; Bruno
+        # Fernandes #51 "limited_history" 3065 arkistominuutilla). Arkisto
+        # on element code -avaimella, joten seuranvaihto ei riko mappausta;
+        # arkiston bonus on jo 26/27 BPS-oikaistu (ei oikaista uudelleen).
+        prev_b = prev_by_code.get(str(e.get("code")))
+        acc = xp.carry_prev_season(acc, (prev_b or {}).get("acc"))
         acc_by_player[pid] = acc
         mr: dict[int, float] = defaultdict(float)
         sr: dict[int, int] = defaultdict(int)
@@ -1269,6 +1281,22 @@ def main(argv: list[str] | None = None) -> int:
         gate_points = {
             e["id"]: prev_players.get(str(e.get("code")), {}).get("total_points", 0)
             for e in boot["elements"]}
+    else:
+        # XP-SEASON-CARRY (28.8): kauden alussa bootstrapin total_points on
+        # 1-5 kierroksen kohinaa, ja tahtitesti "top-10 xP:sta >= 7 kauden
+        # top-100-pisteissa" mittaisi silloin vain sen, seuraako malli
+        # GW1:n pisteita. Se on tasan se vika jota korjataan (vanha artefakti
+        # LAPAISI gaten koska sen top-10 oli GW1:n pistekarkea). Alle
+        # GATE_MIN_LIVE_GWS pelatulla kierroksella pisteranking = viime
+        # kauden arkistopisteet + kuluvan kauden pisteet.
+        n_finished = sum(1 for ev in boot.get("events", []) if ev.get("finished"))
+        if n_finished < GATE_MIN_LIVE_GWS:
+            gate_points = {
+                e["id"]: (prev_by_code.get(str(e.get("code")), {}).get("total_points", 0)
+                          + (e.get("total_points") or 0))
+                for e in boot["elements"]}
+            print(f"      sanity-gate: pisteranking = arkisto 25/26 + kuluva "
+                  f"kausi ({n_finished} GW pelattu < {GATE_MIN_LIVE_GWS})")
     if not sanity_gate(players, boot, coverable, points_by_id=gate_points):
         print("SANITY-GATE FAIL — data/fpl_xp_projections.json EI kirjoitettu.")
         return 2
@@ -1385,6 +1413,16 @@ def main(argv: list[str] | None = None) -> int:
                     for v in xp.DATA_BASIS_VALUES
                 },
                 "basis_threshold_minutes": xp.M_PRIOR_ATTACK,
+                # XP-SEASON-CARRY: kausihaara perii arkiston tallä painolla.
+                "prev_season_carry": (None if preseason
+                                      else xp.PREV_SEASON_CARRY),
+                "prev_season_carry_note": (
+                    None if preseason else
+                    f"Last season's minutes and rates count at "
+                    f"{xp.PREV_SEASON_CARRY:g} weight alongside this season's "
+                    f"rows, so a player's own rate carries most of the weight "
+                    f"from GW1 and this season overtakes the archive around "
+                    f"GW{int(round(3000 * xp.PREV_SEASON_CARRY / 90))}."),
                 "note": (
                     "data_basis per player: pl_history = the player's own "
                     "Premier League history carries at least 50% of the weight; "
