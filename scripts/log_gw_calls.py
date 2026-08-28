@@ -25,8 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import config  # noqa: E402
 from scripts.render_standouts_card import pick_standouts  # noqa: E402
 from src.models.gw_calls import (NEW_LOG, DeadlinePassed,  # noqa: E402
-from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
                                  build_entry, upsert)
+from src.models.fpl_gameweek import actionable_gameweek  # noqa: E402  portti: ei next_gameweek suoraan
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
