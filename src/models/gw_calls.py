@@ -19,6 +19,11 @@ SAANNOT
 
 Puhdas logiikka, ei verkkoa: skriptit `scripts/log_gw_calls.py` ja
 `scripts/grade_gw_calls.py` hakevat datan ja kutsuvat naita.
+
+EI NIMIESTOA TAHALLAAN: render_standouts_card.py:n EXCLUDED_NAMES (Thiaw)
+koskee promopintoja (kortit ja postaukset), ei track-record-lokia. Loki
+kirjaa sen mita kortti valitsi; kortti on jo suodattanut, ja jos suodatin
+joskus poistuu, loki nayttaa sen eika piilota. Sensuroiva loki ei olisi loki.
 """
 from __future__ import annotations
 

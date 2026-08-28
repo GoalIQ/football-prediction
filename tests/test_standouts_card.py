@@ -85,3 +85,72 @@ def test_html_carries_no_per_player_xp():
     assert "typical range" not in html and ">range" not in html
     assert "GW2 standouts" in html and "entry 116920" in html
     assert "—" not in html  # em dash
+
+
+# ---------------------------------------------------------------------------
+# GW-CALLS-LOKI (28.8): kortti ei saa erota data/gw_calls.json:sta
+# ---------------------------------------------------------------------------
+import datetime as _dt
+
+import pytest
+
+from scripts.render_standouts_card import reconcile_with_log
+
+_DL = "2026-08-28T17:30:00Z"
+_BEFORE = _dt.datetime(2026, 8, 28, 14, 0, tzinfo=_dt.timezone.utc)
+_AFTER = _dt.datetime(2026, 8, 28, 18, 0, tzinfo=_dt.timezone.utc)
+
+
+def _card_players():
+    return [_p("Cap", 6.0, 0.95, 0.30, 0.30, 13),
+            _p("Ceil", 5.0, 0.90, 0.28, 0.40, 15),
+            _p("Safe", 4.5, 0.92, 0.10, 0.12, 9),
+            _p("Gamb", 3.9, 0.80, 0.29, 0.45, 12),
+            _p("Old", 4.0, 0.85, 0.20, 0.40, 11)]
+
+
+def _log(cap="Cap", ceil="Ceil", safe="Safe", gamb="Gamb"):
+    def c(call, name, haul=0.2, blank=0.3, p90=11):
+        return {"call": call, "web_name": name, "team_short": "LOG",
+                "pos": "MID", "metric": "p_haul", "value": haul, "gw_xp": 4.0,
+                "xp_dist": {"p_haul": haul, "p_blank": blank, "p10": 1,
+                            "median": 4, "p90": p90, "haul_pts": 10,
+                            "blank_pts": 2, "n": 2000}}
+    return {"gameweeks": [{"gw": 2, "deadline_utc": _DL,
+                           "logged_at": "2026-08-28T13:55:00Z",
+                           "calls": [c("captain_pick", cap), c("ceiling", ceil),
+                                     c("safest", safe), c("gamble", gamb)]}]}
+
+
+def test_kortti_sama_kuin_loki_menee_lapi_sellaisenaan():
+    """Negatiivinen kontrolli: kun nimet tasmaavat, ei kaatumista eika
+    lokin lukuja. Kortti pitaa tuoreen projektion luvut."""
+    ps = _card_players()
+    s = reconcile_with_log(pick_standouts(ps), 2, _log(), _BEFORE, ps)
+    assert s["captain"]["web_name"] == "Cap"
+    assert s["captain"]["xp_dist"]["p_haul"] == 0.30  # projektion luku, ei lokin 0.2
+    # ei lokirivia talle GW:lle -> sellaisenaan
+    s2 = reconcile_with_log(pick_standouts(ps), 3, _log(), _BEFORE, ps)
+    assert s2["captain"]["web_name"] == "Cap"
+
+
+def test_ennen_deadlinea_eroava_kortti_kaatuu():
+    ps = _card_players()
+    with pytest.raises(RuntimeError, match="log_gw_calls"):
+        reconcile_with_log(pick_standouts(ps), 2, _log(gamb="Old"), _BEFORE, ps)
+    data = {"meta": {"next_gameweek": 2}, "players": ps}
+    with pytest.raises(RuntimeError):
+        build_html(data, log=_log(cap="Old"), now=_BEFORE)
+
+
+def test_deadlinen_jalkeen_kortti_renderoi_lokin_nimet_ja_luvut():
+    ps = _card_players()
+    log = _log(gamb="Old")
+    s = reconcile_with_log(pick_standouts(ps), 2, log, _AFTER, ps)
+    assert s["gamble"]["web_name"] == "Old"
+    assert s["gamble"]["xp_dist"]["p_haul"] == 0.2   # lokin luku, ei projektion
+    assert s["captain"]["xp_dist"]["p_haul"] == 0.2   # kaikki nelja lokista
+    data = {"meta": {"next_gameweek": 2}, "players": ps}
+    html, s2 = build_html(data, log=log, now=_AFTER)
+    assert "Old" in html and s2["gamble"]["web_name"] == "Old"
+

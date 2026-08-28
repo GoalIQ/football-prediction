@@ -2152,8 +2152,12 @@ def _call_said(call: dict) -> str:
         return f"ceiling {int(v)} pts"
     if m == "gw_xp":
         # Per-GW xP on Premium-luku; ilmaissivu sanoo saannon, ei lukua.
-        # Luku on lokissa (data/gw_calls.json) jota Source-linkki osoittaa.
-        return "highest gameweek projection in the squad, points doubled"
+        # Luku on lokissa (data/gw_calls.json), mutta vertailujoukko (mallin
+        # rivi jonka sisalla kapteeni oli korkein) on model_squad_frozen:ssa,
+        # ei lokissa -> sivu ei vaita vertailua jota Source-linkki ei nayta.
+        # Portti 28.8: ilmaissivu nayttaa Guehille xP/GW 5.19 (6 GW:n keskiarvo),
+        # loki 4.76 (GW-xP); "highest projection" olisi lukenut vaarin.
+        return "captain, points doubled"
     return str(v)
 
 
@@ -2206,20 +2210,23 @@ def gw_calls_html(log: dict | None) -> str:
         "go into a log with a timestamp. The log closes at the FPL deadline. "
         "Once the gameweek has been played, each call is scored with official "
         "FPL points. A hit means the player did what the call said: 10 or more "
-        "points for the captain pick and the gamble, the ceiling figure for "
-        "ceiling, 3 or more for the safest pick. Provisional rows wait for FPL "
-        "to confirm bonus points.</p>"
+        "points for the captain pick and the gamble, the ceiling number or more "
+        "for ceiling, 3 or more for the safest pick. Provisional rows wait for "
+        "FPL to confirm bonus points.</p>"
         '<div class="scroll"><table>'
-        "<caption>The model's gameweek calls with the time each one was logged, "
-        "what it said at the time and the FPL points that followed.</caption>"
+        "<caption>The model's gameweek calls, scored after each gameweek.</caption>"
         '<thead><tr><th scope="col">GW</th><th scope="col">Call</th>'
         '<th scope="col">Player</th><th scope="col" class="m-hide">Logged</th>'
         '<th scope="col">What it said</th><th scope="col" class="num">Points</th>'
         '<th scope="col">Result</th></tr></thead><tbody>'
         + "".join(trs) + "</tbody></table></div>"
         '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/gw_calls.json">data/gw_calls.json</a> '
-        "in the public repository. The commit history shows when each row was "
-        "written.</p>")
+        "in the public repository, with the squad the captain came from in "
+        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen">data/model_squad_frozen</a>. '
+        "The commit history shows when each row was written. The percentages "
+        "are the same simulations as the 10+, Blank and Ceiling columns on the "
+        '<a href="/fpl/expected-points">free expected points page</a>, where a '
+        "3+ chance is 100 minus Blank.</p>")
 
 
 def _load_json(path) -> dict | None:

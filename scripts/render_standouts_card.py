@@ -43,6 +43,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import config
 
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
+# GW-CALLS-LOKI (28.8): kortin nelja nimea kirjataan data/gw_calls.json:iin
+# ennen deadlinea (scripts/log_gw_calls.py). Kortti ei saa erota lokista:
+# ennen deadlinea eroava kortti = loki on vanha -> kaadu ja pyyda ajamaan
+# log_gw_calls; deadlinen jalkeen loki on lukossa -> kortti renderoi LOKIN
+# nimet ja luvut, ei tuoretta projektiota (postaus deadlinen jalkeen ei saa
+# nayttaa kutsua jota ei kirjattu).
+CALLS_LOG_PATH = config.DATA_DIR / "gw_calls.json"
+LOG_KEYS = (("captain", "captain_pick"), ("ceiling", "ceiling"),
+            ("safest", "safest"), ("gamble", "gamble"))
 MIN_P_START = 0.6
 # Kova saanto: ei Thiaw-juttuja markkinointiin (muisti thiaw-ei-markkinointiin).
 # Esto kuuluu generaattoriin, koska yksi refresh riittaa nostamaan hanet
@@ -161,11 +170,69 @@ def _tile(lbl: str, p: dict | None, big: str, small: str, why: str) -> str:
             f'<div class="why">{escape(why)}</div></div>')
 
 
-def build_html(data: dict) -> tuple[str, dict]:
+def _same_player(card_p: dict | None, call: dict | None) -> bool:
+    if card_p is None or call is None:
+        return card_p is None and call is None
+    if card_p.get("id") is not None and call.get("player_id") is not None:
+        return int(card_p["id"]) == int(call["player_id"])
+    return str(card_p.get("web_name")) == str(call.get("web_name"))
+
+
+def reconcile_with_log(s: dict, gw: int, log: dict | None, now,
+                       players: list[dict]) -> dict:
+    """Vertaa kortin valinnat lokiin (data/gw_calls.json). Ei lokirivia ->
+    kortti sellaisenaan. Sama -> sellaisenaan. Eroaa: ennen deadlinea
+    RuntimeError ("run scripts.log_gw_calls first"), deadlinen jalkeen
+    palautetaan lokin nimet ja luvut."""
+    import datetime as _dt
+    row = next((r for r in (log or {}).get("gameweeks") or []
+                if int(r.get("gw", -1)) == int(gw)), None)
+    if row is None:
+        return s
+    calls = {c["call"]: c for c in row.get("calls") or []}
+    diffs = [k for k, lk in LOG_KEYS if not _same_player(s.get(k), calls.get(lk))]
+    if not diffs:
+        return s
+    deadline = _dt.datetime.fromisoformat(
+        str(row["deadline_utc"]).replace("Z", "+00:00"))
+    if now is None:
+        now = _dt.datetime.now(_dt.timezone.utc)
+    if now < deadline:
+        raise RuntimeError(
+            f"GW{gw} standouts differ from data/gw_calls.json in {diffs} "
+            f"(log written {row.get('logged_at')}); run scripts.log_gw_calls "
+            "first so the card and the log say the same names.")
+    by_id = {int(p["id"]): p for p in players if p.get("id") is not None}
+    by_name = {str(p.get("web_name")): p for p in players}
+    out = {}
+    for k, lk in LOG_KEYS:
+        c = calls.get(lk)
+        if c is None:
+            out[k] = None
+            continue
+        base = (by_id.get(int(c["player_id"]))
+                if c.get("player_id") is not None else None)
+        base = base or by_name.get(str(c.get("web_name"))) or {}
+        p = dict(base)
+        p.update({"id": c.get("player_id"), "web_name": c.get("web_name"),
+                  "team_short": c.get("team_short") or p.get("team_short"),
+                  "pos": c.get("pos") or p.get("pos"),
+                  "price": p.get("price") or 0.0})
+        d = dict(p.get("xp_dist") or {})
+        d.update(c.get("xp_dist") or {})
+        d["gw"] = gw
+        p["xp_dist"] = d
+        if c.get("gw_xp") is not None:
+            p["gameweeks"] = [{"gw": gw, "xp": c["gw_xp"]}]
+        out[k] = p
+    return out
+
+
+def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict]:
     players = data.get("players") or []
     meta = data.get("meta") or {}
     gw = int(meta.get("next_gameweek") or 0)
-    s = pick_standouts(players)
+    s = reconcile_with_log(pick_standouts(players), gw, log, now, players)
     pct = lambda x: f"{round(x * 100)}%"
     tiles = "".join([
         _tile("Captain pick", s["captain"],
@@ -224,7 +291,9 @@ def main() -> int:
     ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs" / "cards"))
     args = ap.parse_args()
     data = json.loads(XP_PATH.read_text(encoding="utf-8"))
-    html, s = build_html(data)
+    log = (json.loads(CALLS_LOG_PATH.read_text(encoding="utf-8"))
+           if CALLS_LOG_PATH.exists() else None)
+    html, s = build_html(data, log=log)
     gw = int((data.get("meta") or {}).get("next_gameweek") or 0)
     out_dir = Path(args.out).resolve()  # file-URI vaatii absoluuttisen polun
     out_dir.mkdir(parents=True, exist_ok=True)
