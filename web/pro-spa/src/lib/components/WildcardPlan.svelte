@@ -134,7 +134,7 @@
 				</div>
 			</div>
 			<p class="muted small">
-				Points per gameweek over GW{plan.gw}–{(plan.gw ?? 0) + (plan.window_gws ?? 1) - 1}.
+				Points per gameweek over GW{plan.gw} to {(plan.gw ?? 0) + (plan.window_gws ?? 1) - 1}.
 			</p>
 		{/if}
 
