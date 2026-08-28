@@ -476,6 +476,11 @@ def main(argv: list[str] | None = None) -> int:
     print("[4/6] Pelaajavauhdit + minuuttimalli (koko saatavilla oleva historia)...")
     pos_by_player = {e["id"]: e["element_type"] for e in boot["elements"]}
     acc_by_player: dict[int, dict] = {}
+    # Kuluvan kauden minuutit erikseen: minuuttimallin ohuen otoksen portit
+    # (hintapriori, historiattomien priori) katsovat NAITA, eivat arkistolla
+    # taydennettya accia - muuten GW1:n valiin jattanyt viime kauden avaaja
+    # (Watkins/Gyokeres/Pope) putoaa xMins 0:aan (mitattu 28.8, 90 pelaajaa).
+    cur_mins_by_player: dict[int, float] = {}
     mins_by_round: dict[int, dict[int, float]] = {}
     starts_by_round: dict[int, dict[int, int]] = {}
     prev_rounds_by_player: dict[int, tuple[dict, dict]] = {}
@@ -489,10 +494,12 @@ def main(argv: list[str] | None = None) -> int:
             b = prev_players.get(str(e.get("code")))
             if b is not None:
                 acc_by_player[pid] = dict(b["acc"])
+                cur_mins_by_player[pid] = float(b["acc"].get("mins", 0.0) or 0.0)
                 mins_by_round[pid] = {int(k): v for k, v in b["mins_by_round"].items()}
                 starts_by_round[pid] = {int(k): int(v) for k, v in b["starts_by_round"].items()}
             else:
                 acc_by_player[pid] = xp.accumulate_history([])
+                cur_mins_by_player[pid] = 0.0
                 mins_by_round[pid] = {}
                 starts_by_round[pid] = {}
             continue
@@ -507,6 +514,7 @@ def main(argv: list[str] | None = None) -> int:
         # on element code -avaimella, joten seuranvaihto ei riko mappausta;
         # arkiston bonus on jo 26/27 BPS-oikaistu (ei oikaista uudelleen).
         prev_b = prev_by_code.get(str(e.get("code")))
+        cur_mins_by_player[pid] = float(acc.get("mins", 0.0) or 0.0)
         acc = xp.carry_prev_season(acc, (prev_b or {}).get("acc"))
         acc_by_player[pid] = acc
         mr: dict[int, float] = defaultdict(float)
@@ -550,7 +558,7 @@ def main(argv: list[str] | None = None) -> int:
         # valiin jattanyt pelaaja sai xMins 0 (Watkins/Gyokeres/Pope, 90
         # pelaajaa pois projektiosta) ja arkistokierrosten yhdistaminen
         # samaan ikkunaan painotti loppukauden lepuutusta (ks. blend_minutes).
-        if recency_window and pid in prev_rounds_by_player:
+        if xp.MINUTES_PREV_BLEND and recency_window and pid in prev_rounds_by_player:
             pm, ps = prev_rounds_by_player[pid]
             mm_prev = xp.minutes_model(pm, ps, sorted(pm), n_last=None)
             w_cur = xp.prev_minutes_weight(len(prounds_by_player[pid]))
@@ -622,7 +630,7 @@ def main(argv: list[str] | None = None) -> int:
     blended_pids: set[int] = set()
     for e in boot["elements"]:
         pid = e["id"]
-        mins = acc_by_player[pid].get("mins", 0.0) or 0.0
+        mins = cur_mins_by_player.get(pid, 0.0)
         # mins == 0 kuuluu historiattomien prioriin (alempana), ei tanne.
         if mins <= 0 or mins >= xp.PRICE_PRIOR_THIN_MINUTES:
             continue
@@ -773,7 +781,7 @@ def main(argv: list[str] | None = None) -> int:
             fplteam_to_fid[t["id"]] = name_to_fid[model]
     history_fids = {
         fplteam_to_fid[e["team"]] for e in boot["elements"]
-        if e["team"] in fplteam_to_fid and acc_by_player[e["id"]]["mins"] > 0}
+        if e["team"] in fplteam_to_fid and cur_mins_by_player.get(e["id"], 0.0) > 0}
 
     # -----------------------------------------------------------------
     # Addendum 2, tehtava 1: NOUSIJAPELAAJAT pooliin positiopriorilla.
@@ -862,7 +870,7 @@ def main(argv: list[str] | None = None) -> int:
             grp = sorted((e for e in club if e["element_type"] == etype),
                          key=lambda e: (-(e.get("now_cost") or 0), e["id"]))
             for rank, e in enumerate(grp):
-                if acc_by_player[e["id"]]["mins"] > 0:
+                if cur_mins_by_player.get(e["id"], 0.0) > 0:
                     continue          # oma PL-historia -> mallipolku ennallaan
                 tier = 0 if rank < slots else (1 if rank < slots + 2 else 2)
                 p_start, p_sub = PROMOTED_PRIOR_TIERS[tier]

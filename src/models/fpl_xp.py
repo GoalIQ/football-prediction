@@ -165,6 +165,13 @@ def carry_prev_season(acc: dict, prev_acc: dict | None,
 # GW2-4:n toteutuneilla minuuteilla (data/fpl_xp_gw_accuracy.json) kumpi
 # painotus antaa pienemman xMins-MAE:n, ja paivita tama luku sen mukaan.
 PREV_MINUTES_PRIOR_ROUNDS = 1.0
+# Kytkin: sekoitetaanko esikausiarvio minuutteihin kausihaarassa. Mitattu
+# 28.8 (n/(n+1)): korjaa GW1:n valiin jattaneet (Watkins 34 -> 43 xMins)
+# mutta pudottaa viime kaudella loukkaantuneet GW1-avaajat (Palmer 82 -> 58,
+# Isak 90 -> 56, White 86 -> 56). Oletus POIS: vauhtien arkistokorjaus
+# shippaa yksin, minuutit kuten ennen (kuluva kausi + hintapriori). Kytke
+# paalle vasta kun GW2-4:n xMins-MAE on mitattu molemmilla.
+MINUTES_PREV_BLEND = False
 
 
 def prev_minutes_weight(n_cur: int) -> float:
