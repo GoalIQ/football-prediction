@@ -478,6 +478,7 @@ def main(argv: list[str] | None = None) -> int:
     acc_by_player: dict[int, dict] = {}
     mins_by_round: dict[int, dict[int, float]] = {}
     starts_by_round: dict[int, dict[int, int]] = {}
+    prev_rounds_by_player: dict[int, tuple[dict, dict]] = {}
     for e in boot["elements"]:
         pid = e["id"]
         if prev_players is not None:
@@ -516,6 +517,12 @@ def main(argv: list[str] | None = None) -> int:
                 sr[r["round"]] += r.get("starts", 0) or 0
         mins_by_round[pid] = dict(mr)
         starts_by_round[pid] = dict(sr)
+        # XP-SEASON-CARRY: esikausiarvio minuuteille (koko arkistokausi,
+        # half-life) sekoitetaan kuluvan kauden ikkunaan alla (blend_minutes).
+        if prev_b and prev_b.get("mins_by_round"):
+            prev_rounds_by_player[pid] = (
+                {int(k): float(v) for k, v in prev_b["mins_by_round"].items()},
+                {int(k): int(v) for k, v in prev_b["starts_by_round"].items()})
     priors = xp.position_priors(acc_by_player, pos_by_player)
 
     # #33: probabilistinen minuuttimalli — kaksi passia:
@@ -538,6 +545,16 @@ def main(argv: list[str] | None = None) -> int:
         pid = e["id"]
         mm = xp.minutes_model(mins_by_round[pid], starts_by_round[pid],
                               prounds_by_player[pid], n_last=mm_window)
+        # XP-SEASON-CARRY (28.8): kausihaara perii esikausiarvion ja
+        # liu'uttaa kuluvaan kauteen START_WINDOW:n aikana. Ilman tata GW1:n
+        # valiin jattanyt pelaaja sai xMins 0 (Watkins/Gyokeres/Pope, 90
+        # pelaajaa pois projektiosta) ja arkistokierrosten yhdistaminen
+        # samaan ikkunaan painotti loppukauden lepuutusta (ks. blend_minutes).
+        if recency_window and pid in prev_rounds_by_player:
+            pm, ps = prev_rounds_by_player[pid]
+            mm_prev = xp.minutes_model(pm, ps, sorted(pm), n_last=None)
+            w_cur = xp.prev_minutes_weight(len(prounds_by_player[pid]))
+            mm = xp.blend_minutes(mm, mm_prev, w_cur)
         mm_by_player[pid] = xp.apply_availability(
             mm, e.get("status", "a"), e.get("chance_of_playing_next_round"))
     groups: dict[tuple[int, int], list[int]] = defaultdict(list)

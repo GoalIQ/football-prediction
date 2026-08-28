@@ -877,3 +877,23 @@ def test_carry_prev_season_scales_all_fields_with_same_factor():
     acc = xp.carry_prev_season(xp.accumulate_history([]), prev, 0.5)
     assert acc["mins"] == 900.0 and acc["xg"] == 4.5 and acc["dc_hits"] == 5.0
     assert acc["n60"] == 10.0
+
+
+def test_blend_minutes_keeps_missed_gw1_starter_off_zero():
+    """GW1 valiin jattanyt viime kauden avaaja: kuluva kausi (1 kierros, 0 min)
+    painaa 1/4, esikausiarvio 3/4 -> xMins selvasti yli nollan. Kun kuluvan
+    kauden kierroksia on START_WINDOW, arkisto ei enaa vaikuta."""
+    from src.models import fpl_xp as xp
+    prev_m = {r: 90.0 for r in range(1, 39)}
+    prev_s = {r: 1 for r in range(1, 39)}
+    mm_prev = xp.minutes_model(prev_m, prev_s, sorted(prev_m), n_last=None)
+    mm_cur = xp.minutes_model({1: 0.0}, {1: 0}, [1], n_last=xp.START_WINDOW)
+    w1 = xp.prev_minutes_weight(1)
+    assert 0.4 <= w1 <= 0.6 and xp.prev_minutes_weight(xp.START_WINDOW) == 1.0
+    mixed = xp.blend_minutes(mm_cur, mm_prev, w1)
+    assert mixed["xmins"] > 35, mixed
+    assert mixed["minutes_blend_prev_weight"] == round(1 - w1, 3)
+    full = xp.blend_minutes(mm_cur, mm_prev, 1.0)
+    assert full["xmins"] == mm_cur["xmins"] and full["minutes_blend_prev_weight"] == 0.0
+    # negatiivinen kontrolli: ilman sekoitusta sama pelaaja on lahella nollaa
+    assert mm_cur["xmins"] < 15, mm_cur
