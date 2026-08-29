@@ -62,6 +62,9 @@ BANNED = {
     r"across \S* ?GWs": "yksikkomuoto puuttuu: 'across 1 GWs'",
     # k5: \S* ei ylita valilyontia lausekkeen sisalla ({a ?? 6}).
     r"over the next \{[^}]*\} ?GWs": "kayta '{n}-GW horizon'",
+    # k7: sama reika oli auki 'gameweeks'-muodolle. Portti oli vihrea koska se
+    # ei nahnyt rivia, ei koska rivi noudatti saantoa.
+    r"over the next \{[^}]*\} ?gameweeks": "kayta '{n}-gameweek horizon'",
     r"this week": "ristiriita saman kortin horisonttilauseen kanssa",
 }
 
@@ -194,6 +197,7 @@ SAMPLES = [
     '	msg = "gains 1.2 xP over 6 GWs"',
     '	"x": "projected points over the next {n} gameweeks",',
     '	Dead level over the next {data.meta.horizon_gw ?? 6} GWs.',
+    '	projected points over the next {data.meta.horizon_gw ?? 6} gameweeks',
     '	const plan = `(${n} moves across ${h} GWs)`;',
 ]
 

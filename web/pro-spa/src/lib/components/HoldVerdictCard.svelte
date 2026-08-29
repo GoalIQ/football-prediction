@@ -37,15 +37,25 @@
 	// rate-team hakee vain yksittaisia siirtoja ja plannerin oma
 	// heuristiikkateksti sanoo "it doesn't try every possible plan".
 	// "{n}-GW horizon" kestaa myos arvon 1, toisin kuin "over the next 1 GWs".
-	const span = $derived(nMoves > 1 ? '' : ` over the ${verdict.horizon_gws}-GW horizon`);
+	// 29.8 portti k7: copy nimeaa kierrokset, ei kierrosmaaraa. Samalla
+	// ruudulla on kaksi eri horisonttia (arvosana 6, siirrot 5) ja pelkka luku
+	// ei kertonut kummasta on kyse. Vanha payload ilman rajoja -> maara.
+	const gwSpan = $derived(
+		verdict.gw_from != null && verdict.gw_to != null
+			? verdict.gw_from === verdict.gw_to
+				? `GW${verdict.gw_from}`
+				: `GW${verdict.gw_from}-GW${verdict.gw_to}`
+			: `the ${verdict.horizon_gws}-GW horizon`
+	);
+	const span = $derived(nMoves > 1 ? '' : ` over ${gwSpan}`);
 	const planLabel = $derived(
 		nMoves > 1
-			? `Best plan the model checked (${nMoves} moves across the ${verdict.horizon_gws}-GW horizon)`
+			? `Best plan the model checked (${nMoves} moves across ${gwSpan})`
 			: 'Best move the model checked'
 	);
 	const goLabel = $derived(
 		nMoves > 1
-			? `Best plan the model checked (${nMoves} moves across the ${verdict.horizon_gws}-GW horizon) nets`
+			? `Best plan the model checked (${nMoves} moves across ${gwSpan}) nets`
 			: 'Best move the model checked nets'
 	);
 </script>
@@ -60,7 +70,7 @@
 		<p class="title">Hold - nothing the model checked gains enough</p>
 		<p class="math">
 			{#if gainText === null}
-				Nothing the model checked improves your projected xP over the {verdict.horizon_gws}-GW horizon.
+				Nothing the model checked improves your projected xP over {gwSpan}.
 			{:else}
 				{planLabel}: {gainText} xP{span}{hitNote}, below the {verdict.threshold_xp.toFixed(1)} xP
 				threshold.

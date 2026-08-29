@@ -188,22 +188,26 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     # Ei koskaan suosittele siirtoketjua jonka hyöty on kynnyksen alle.
     n_moves = sum(len(p["transfers"]) for p in plan)
     net_gain = round(plan_total - baseline_total, 2)
+    # 29.8 k7: copy nimeaa kierrokset eika lukua, jotta samalla ruudulla ei ole
+    # kahta eri lukua joita molempia kutsutaan sanalla "the horizon".
+    _span = f"GW{gws[0]}-GW{gws[-1]}" if len(gws) > 1 else f"GW{gws[0]}"
     if n_moves == 0:
-        hv_message = (f"No move the model checked improves your team over the "
-                      f"{len(gws)}-GW horizon.")
+        hv_message = (f"No move the model checked improves your team over "
+                      f"{_span}.")
     elif net_gain < HOLD_THRESHOLD_XP:
         hv_message = (f"Your best plan gains only {net_gain:+.1f} xP over "
-                      f"the {len(gws)}-GW horizon (hits included) - holding is "
-                      "the play.")
+                      f"{_span} (hits included) - holding is the play.")
     else:
         plural = "s" if n_moves != 1 else ""
         hv_message = (f"Recommended: {n_moves} transfer{plural} for "
-                      f"{net_gain:+.1f} xP net over the {len(gws)}-GW horizon.")
+                      f"{net_gain:+.1f} xP net over {_span}.")
     hold_verdict = {
         "verdict": ("hold" if n_moves == 0 or net_gain < HOLD_THRESHOLD_XP
                     else "transfer"),
         "best_move_gain_xp": net_gain if n_moves else None,
         "horizon_gws": len(gws),
+        "gw_from": gws[0],
+        "gw_to": gws[-1],
         "threshold_xp": HOLD_THRESHOLD_XP,
         "transfers_planned": n_moves,
         # HOLD-VERDICT-BEST-PLAN-COPY (portti 29.8): hittien MAARA koko

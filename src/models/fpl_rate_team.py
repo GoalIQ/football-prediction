@@ -1012,6 +1012,12 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
     return {
         "suggestions": top,
         "hold": hold,
+        # 29.8 k7: MISTA kierroksista delta on laskettu. Ilman tata kentta
+        # deltan ikkuna oli havaitsematon: mutaatio joka palautti sen koko
+        # artefaktin horisonttiin jatti sviitin vihreaksi, koska raportoitu
+        # `horizon_gws` tuli eri lahteesta. Nyt ikkuna on payloadissa ja
+        # testi voi vaittaa siita.
+        "window_gws": list(gws) if gws else None,
         # 29.8 julkaisuportti k3: "Best available" oli sama skooppaamaton
         # kattavuusvaite kuin hero-verdikissa (tassa haetaan vain yksittaisia
         # siirtoja), ja "this week" oli ristiriidassa kaksi lohkoa ylempana
@@ -1024,12 +1030,23 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
 
 
 def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
-                       ft: int = 1) -> dict:
+                       ft: int = 1, gws: list[int] | None = None) -> dict:
     """#63: eksplisiittinen hero-verdikti UI-kannaksi. Hit-tietoinen: ilman
     vapaata siirtoa (ft=0) siirron netto = delta - HIT_COST_XP → verdikti
     lasketaan hitin JÄLKEEN (vanha `hold`-bool jää bruttona ennalleen,
-    yhteensopivuus). Kynnys = HOLD_THRESHOLD_XP netolle."""
+    yhteensopivuus). Kynnys = HOLD_THRESHOLD_XP netolle.
+
+    29.8 julkaisuportti k7: sama ruutu naytti kaksi eri lukua joita molempia
+    kutsuttiin sanalla "the horizon" — arvosanan 6 (koko projektio, ml. kesken
+    oleva kierros) ja siirtojen 5. Lukija ei voi tietaa kumpi on oikea, ja
+    numero kantoi enemman varmuutta kuin silla on. Korjaus ei ole pehmennys
+    vaan vaitteen vaihto: `gws` annettuna copy nimeaa KIERROKSET (GW3-GW7),
+    jolloin tasmaytettavaa ei jaa. `gw_from`/`gw_to` kulkevat payloadissa,
+    jotta jokainen pinta voi sanoa saman."""
     hit = 0.0 if ft > 0 else HIT_COST_XP
+    span = (f"GW{gws[0]}-GW{gws[-1]}" if gws and len(gws) > 1
+            else (f"GW{gws[0]}" if gws else f"the {horizon_gws}-GW horizon"))
+    bounds = {"gw_from": gws[0], "gw_to": gws[-1]} if gws else {}
     if best_gain_xp is None:
         return {
             "verdict": "hold",
@@ -1038,19 +1055,18 @@ def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
             "threshold_xp": HOLD_THRESHOLD_XP,
             "hit_applied_xp": hit,
             "message": (f"No move the model checked improves your team over "
-                        f"the {horizon_gws}-GW horizon."),
+                        f"{span}."),
+            **bounds,
         }
     net = round(best_gain_xp - hit, 2)
     hold = net < HOLD_THRESHOLD_XP
     hit_note = " after a -4 hit" if hit else ""
     if hold:
         message = (f"The best move the model checked gains only {net:+.1f} xP "
-                   f"over the {horizon_gws}-GW horizon{hit_note} - holding is "
-                   "the play.")
+                   f"over {span}{hit_note} - holding is the play.")
     else:
         message = (f"The best move the model checked gains {net:+.1f} xP over "
-                   f"the {horizon_gws}-GW horizon{hit_note} - worth a "
-                   "transfer.")
+                   f"{span}{hit_note} - worth a transfer.")
     return {
         "verdict": "hold" if hold else "transfer",
         "best_move_gain_xp": net,
@@ -1058,6 +1074,7 @@ def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
         "threshold_xp": HOLD_THRESHOLD_XP,
         "hit_applied_xp": hit,
         "message": message,
+        **bounds,
     }
 
 
@@ -1511,14 +1528,19 @@ def rate_team(entry: int | None = None, gw: int | None = None,
 
     # 29.8: siirtoehdotukset ja hold-verdikti lasketaan VAIN niille
     # kierroksille joihin siirto ehtii vaikuttaa. Sama lahde kuin plannerilla.
-    _t_gws = transfer_horizon_gws(pool, xp_data, target_gw)
+    _t_gws = transfer_horizon_gws(
+        pool, xp_data, target_gw,
+        # cap samasta lahteesta kuin plannerilla: jos builderi joskus tuottaa
+        # yli nimellisen horisontin, pariteetti ei saa hajota hiljaa.
+        cap=int(xp_data["meta"].get("horizon_gw") or 6))
     transfers = transfer_suggestions(squad, pool, bank_tenths, _t_gws or None)
     # #63: hero-verdikti — paras yksittäinen siirto hitin jälkeen vs kynnys
     best_gain = (transfers["suggestions"][0]["delta_xp_horizon"]
                  if transfers["suggestions"] else None)
     transfers["hold_verdict"] = build_hold_verdict(
         best_gain,
-        len(_t_gws) or int(xp_data["meta"].get("horizon_gw") or 6), ft)
+        len(_t_gws) or int(xp_data["meta"].get("horizon_gw") or 6), ft,
+        gws=_t_gws or None)
 
     _dl_gw = xp_data["meta"].get("deadline_gameweek")
 

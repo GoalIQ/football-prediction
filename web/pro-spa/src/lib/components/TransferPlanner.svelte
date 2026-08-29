@@ -123,6 +123,13 @@
 				// transfers_planned, hits_taken, message), joten hit-nootti ei
 				// renderoitynyt koskaan talla kortilla. HoldVerdictCard ja mobiilin
 				// jakokortti lukevat jo hits_taken:ia; tama yksi jai.
+				// 29.8 portti k7: subtitle nimeaa kierrokset, ei kierrosmaaraa.
+				const vSpan = (x: { gw_from?: number; gw_to?: number; horizon_gws: number }) =>
+					x.gw_from != null && x.gw_to != null
+						? x.gw_from === x.gw_to
+							? `GW${x.gw_from}`
+							: `GW${x.gw_from}-GW${x.gw_to}`
+						: `the ${x.horizon_gws}-GW horizon`;
 				const hitsN = v.hits_taken ?? (v.hit_applied_xp ? 1 : 0);
 				const hit =
 					hitsN === 0 ? '' : hitsN === 1 ? ', after a -4 hit' : `, after ${hitsN} hits (-${hitsN * 4} xP)`;
@@ -131,10 +138,10 @@
 				if (v.verdict === 'hold') {
 					subtitle =
 						gain === null
-							? `nothing the model checked improves the squad over the ${v.horizon_gws}-GW horizon`
-							: `${plan} ${gain} xP over the ${v.horizon_gws}-GW horizon, under the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
+							? `nothing the model checked improves the squad over ${vSpan(v)}`
+							: `${plan} ${gain} xP over ${vSpan(v)}, under the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
 				} else {
-					subtitle = `${plan} ${gain} xP over the ${v.horizon_gws}-GW horizon, clears the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
+					subtitle = `${plan} ${gain} xP over ${vSpan(v)}, clears the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
 				}
 			} else {
 				const net = `${data.totals.net_gain >= 0 ? '+' : ''}${data.totals.net_gain.toFixed(1)}`;

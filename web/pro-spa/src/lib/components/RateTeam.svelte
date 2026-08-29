@@ -1190,7 +1190,7 @@
 				<details class="method">
 					<summary>How this rating is calculated</summary>
 					<p>
-						We compare your XI's projected points over the next {data.meta.horizon_gw ?? 6} gameweeks
+						We compare your XI's projected points over a {data.meta.horizon_gw ?? 6}-gameweek horizon
 						to the best XI our model can build under the same squad rules: a 100.0m budget and
 						no more than three players from one club. 100 means you captured every projected
 						point those rules allow.

@@ -280,8 +280,12 @@ def test_hold_verdict_golden_master_entry():
         # "no plan" olisi ylikvanttori, ja plannerin oma heuristiikkateksti
         # sanoo samalla ruudulla "it doesn't try every possible plan".
         # Lause rajaa nyt siihen mita malli oikeasti tarkisti.
-        "message": ("No move the model checked improves your team over "
-                    "the 6-GW horizon."),
+        # 29.8 k7: copy nimeaa KIERROKSET eika kierrosmaaraa. Samalla ruudulla
+        # on kaksi eri horisonttia (arvosana laskee kesken olevan kierroksen
+        # mukaan, siirrot eivat), eika pelkka luku kertonut kummasta on kyse.
+        "gw_from": 1,
+        "gw_to": 6,
+        "message": "No move the model checked improves your team over GW1-GW6.",
     }
 
 

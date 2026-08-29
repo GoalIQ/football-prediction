@@ -77,3 +77,53 @@ def test_kontrolli_havaitsee_eron():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# ---------------------------------------------------------------------------
+# OIKEA POLKU. Kaikki ylla oleva testaa apufunktiota ERILLAAN, eika mikaan
+# niista vaita etta `rate_team()` kutsuu sita. Portti k7 mittasi sen:
+# molemmat mutaatiot (nimellinen horisontti takaisin, deltat takaisin koko
+# artefaktin ikkunalle) jattivat koko 2264 testin sviitin vihreaksi.
+# Nama kaksi ajavat oikeat moottorit.
+
+ENTRY = 116920
+
+
+def _live():
+    from src.models.fpl_planner import plan_transfers
+    from src.models.fpl_rate_team import rate_team
+    return rate_team(entry=ENTRY), plan_transfers(entry=ENTRY, horizon=6)
+
+
+def test_moottorit_sanovat_saman_horisontin_oikealla_polulla():
+    r, p = _live()
+    rhv, phv = r["transfers"]["hold_verdict"], p["hold_verdict"]
+    assert rhv["horizon_gws"] == phv["horizon_gws"], (
+        f"rate-team {rhv['horizon_gws']} vs planner {phv['horizon_gws']}"
+    )
+    assert rhv["horizon_gws"] == r["meta"]["transfer_horizon_gw"]
+    assert (rhv["gw_from"], rhv["gw_to"]) == (phv["gw_from"], phv["gw_to"])
+
+
+def test_kontrolli_artefaktissa_on_mennyt_deadline():
+    """Ilman tata edellinen testi olisi vihrea myos silloin, kun artefaktissa
+    ei ole kesken olevaa kierrosta - eli se ei mittaisi mitaan."""
+    r, _ = _live()
+    assert r["meta"]["transfer_horizon_gw"] < r["meta"]["horizon_gw"], (
+        "artefaktissa ei ole mennytta deadlinea; testi ei mittaa eroa. "
+        "Ala poista testia - odota kunnes kierros on kaynnissa, tai rakenna "
+        "artefakti jossa deadline_gameweek > pienin gameweeks-gw."
+    )
+
+
+def test_deltan_ikkuna_on_sama_kuin_raportoitu_horisontti():
+    """Mutaatio joka palauttaa deltat koko artefaktin ikkunaan EI nakynyt
+    missaan, koska raportoitu `horizon_gws` tulee eri lahteesta. Deltan ikkuna
+    on nyt payloadissa, joten siita voi vaittaa."""
+    r, p = _live()
+    win = r["transfers"]["window_gws"]
+    hv = r["transfers"]["hold_verdict"]
+    assert win, "window_gws puuttuu - delta laskettiin koko horisontilta"
+    assert len(win) == hv["horizon_gws"]
+    assert (win[0], win[-1]) == (hv["gw_from"], hv["gw_to"])
+    assert win == list(range(p["meta"]["start_gw"], p["meta"]["start_gw"] + len(win)))
