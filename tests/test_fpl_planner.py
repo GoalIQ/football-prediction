@@ -108,6 +108,7 @@ def test_plan_hold_verdict_best_squad_holds():
     assert "the model checked" in hv["message"]
     assert "beats" not in hv["message"].lower()
     assert "no plan" not in hv["message"].lower()
+    assert "available" not in hv["message"].lower()
 
 
 def test_plan_hold_verdict_weak_squad_transfers():

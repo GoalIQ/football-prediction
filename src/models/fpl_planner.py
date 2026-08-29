@@ -186,14 +186,15 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     net_gain = round(plan_total - baseline_total, 2)
     if n_moves == 0:
         hv_message = (f"No move the model checked improves your team over the "
-                      f"next {len(gws)} GWs.")
+                      f"{len(gws)}-GW horizon.")
     elif net_gain < HOLD_THRESHOLD_XP:
         hv_message = (f"Your best plan gains only {net_gain:+.1f} xP over "
-                      f"{len(gws)} GWs (hits included) - holding is the play.")
+                      f"the {len(gws)}-GW horizon (hits included) - holding is "
+                      "the play.")
     else:
         plural = "s" if n_moves != 1 else ""
         hv_message = (f"Recommended: {n_moves} transfer{plural} for "
-                      f"{net_gain:+.1f} xP net over {len(gws)} GWs.")
+                      f"{net_gain:+.1f} xP net over the {len(gws)}-GW horizon.")
     hold_verdict = {
         "verdict": ("hold" if n_moves == 0 or net_gain < HOLD_THRESHOLD_XP
                     else "transfer"),

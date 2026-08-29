@@ -148,7 +148,7 @@ def window_label(meta: dict, gws, fallback_n: int | None = None) -> str:
     """
     act = actionable_gameweeks(meta, gws)
     if not act:
-        return f"the next {fallback_n} GWs" if fallback_n else "the next GWs"
+        return f"a {fallback_n}-GW horizon" if fallback_n else "the next GWs"
     if len(act) == 1:
         return f"GW{act[0]}"
     return f"GW{act[0]}-{act[-1]}"

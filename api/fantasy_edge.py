@@ -891,8 +891,9 @@ def fantasy_plan_chains(
                 net = round(st["score"] - baseline, 2)
                 hits_n = int(st["hits"] / HIT_COST) if HIT_COST else 0
                 if n_moves == 0:
-                    rationale = ("Hold: rolling transfers beats every chain "
-                                 f"searched over {len(gws)} GWs.")
+                    rationale = ("Hold: no chain the model searched beats "
+                                 f"rolling the transfer over the {len(gws)}-GW "
+                                 "horizon.")
                 else:
                     first = next(r for r in st["rows"] if r["moves"])
                     mv0 = first["moves"][0]
@@ -900,7 +901,7 @@ def fantasy_plan_chains(
                                 if hits_n else ", no hits")
                     rationale = (
                         f"{n_moves} move{'s' if n_moves != 1 else ''} over "
-                        f"{len(gws)} GWs starting GW{first['gw']} "
+                        f"the {len(gws)}-GW horizon from GW{first['gw']} "
                         f"({mv0['out']['web_name']} -> "
                         f"{mv0['in']['web_name']}): {net:+.1f} xP net vs "
                         f"holding{hit_note}.")

@@ -105,7 +105,7 @@
 			const hits = hero.hits_taken === 1 ? '1 hit' : `${hero.hits_taken} hits`;
 			const method = await shareCard({
 				title: allRoll ? 'THE MODEL SAYS ROLL' : 'BEST TRANSFER CHAIN',
-				subtitle: `${net} xP vs holding over ${data.meta.horizon} GWs, ${hits}`,
+				subtitle: `${net} xP vs holding over the ${data.meta.horizon}-GW horizon, ${hits}`,
 				nameLabel: 'MOVE',
 				midLabel: allRoll ? '' : 'HIT',
 				valueLabel: allRoll ? 'xP' : 'xP GAIN',

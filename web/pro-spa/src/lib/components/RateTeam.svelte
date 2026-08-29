@@ -812,13 +812,13 @@
 		</p>
 		<p class="muted compare-verdict">
 			{#if Math.abs(compareDiff ?? 0) < 0.5}
-				Dead level over the next {data.meta.horizon_gw ?? 6} GWs.
+				Dead level over the {data.meta.horizon_gw ?? 6}-GW horizon.
 			{:else if (compareDiff ?? 0) > 0}
-				Team 1 ahead by {Math.abs(compareDiff ?? 0).toFixed(1)} xP over the next
-				{data.meta.horizon_gw ?? 6} GWs.
+				Team 1 ahead by {Math.abs(compareDiff ?? 0).toFixed(1)} xP over the
+				{data.meta.horizon_gw ?? 6}-GW horizon.
 			{:else}
-				Team 2 ahead by {Math.abs(compareDiff ?? 0).toFixed(1)} xP over the next
-				{data.meta.horizon_gw ?? 6} GWs.
+				Team 2 ahead by {Math.abs(compareDiff ?? 0).toFixed(1)} xP over the
+				{data.meta.horizon_gw ?? 6}-GW horizon.
 			{/if}
 		</p>
 	</div>
@@ -1084,7 +1084,7 @@
 				class="strip-item"
 				title={data.transfers.hold_verdict?.message ??
 					(stripHold
-						? `No move the model checked improves your team over the next ${data.meta.horizon_gw ?? 6} GWs.`
+						? `No move the model checked improves your team over the ${data.meta.horizon_gw ?? 6}-GW horizon.`
 						: 'The model found a move worth making.')}
 			>
 				Transfers <strong>{stripHold ? 'Hold' : 'Move'}</strong>
@@ -1376,7 +1376,7 @@
 				Verdict: <abbr
 					title="Keeping (rolling) your free transfer this week instead of spending it"
 					>hold</abbr
-				> your transfer, rolling it looks like the better play this week.
+				> your transfer, rolling it looks like the better play over the projection horizon.
 			</p>
 		{:else if data.transfers.suggestions.length > 0}
 			{@const top = data.transfers.suggestions[0]}

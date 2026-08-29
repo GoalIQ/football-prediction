@@ -118,20 +118,27 @@
 					v.best_move_gain_xp === null
 						? null
 						: `${v.best_move_gain_xp >= 0 ? '+' : ''}${v.best_move_gain_xp.toFixed(2)}`;
-				const hit = v.hit_applied_xp ? ', after a -4 hit' : '';
+				// 29.8: plannerin payloadissa ei ole hit_applied_xp:ta lainkaan (kentat:
+				// verdict, best_move_gain_xp, horizon_gws, threshold_xp,
+				// transfers_planned, hits_taken, message), joten hit-nootti ei
+				// renderoitynyt koskaan talla kortilla. HoldVerdictCard ja mobiilin
+				// jakokortti lukevat jo hits_taken:ia; tama yksi jai.
+				const hitsN = v.hits_taken ?? (v.hit_applied_xp ? 1 : 0);
+				const hit =
+					hitsN === 0 ? '' : hitsN === 1 ? ', after a -4 hit' : `, after ${hitsN} hits (-${hitsN * 4} xP)`;
 				const nMoves = v.transfers_planned ?? moves.length;
-				const plan = `best plan (${nMoves} ${nMoves === 1 ? 'move' : 'moves'})`;
+				const plan = `best plan the model checked (${nMoves} ${nMoves === 1 ? 'move' : 'moves'})`;
 				if (v.verdict === 'hold') {
 					subtitle =
 						gain === null
-							? `no move improves the squad over the next ${v.horizon_gws} GWs`
-							: `${plan} ${gain} xP over ${v.horizon_gws} GWs, under the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
+							? `nothing the model checked improves the squad over the ${v.horizon_gws}-GW horizon`
+							: `${plan} ${gain} xP over the ${v.horizon_gws}-GW horizon, under the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
 				} else {
-					subtitle = `${plan} ${gain} xP over ${v.horizon_gws} GWs, clears the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
+					subtitle = `${plan} ${gain} xP over the ${v.horizon_gws}-GW horizon, clears the ${v.threshold_xp.toFixed(1)} threshold${hit}`;
 				}
 			} else {
 				const net = `${data.totals.net_gain >= 0 ? '+' : ''}${data.totals.net_gain.toFixed(1)}`;
-				subtitle = `${net} xP vs no transfers over ${data.meta.horizon} GWs`;
+				subtitle = `${net} xP vs no transfers over the ${data.meta.horizon}-GW horizon`;
 			}
 			const method = await shareCard({
 				title: v ? (v.verdict === 'hold' ? 'THE MODEL SAYS HOLD' : 'THE MODEL SAYS MOVE') : 'TRANSFER PLAN',

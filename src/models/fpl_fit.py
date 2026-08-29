@@ -115,12 +115,12 @@ def fit_squad(locked_ids: list[int]) -> dict:
         tail = ("the model's best budget XI" if proven
                 else "the strongest budget XI the model found")
         message = (f"Locking {locked_names} costs nothing: this is "
-                   f"{tail} over the next {horizon} GWs.")
+                   f"{tail} over the {horizon}-GW horizon.")
     else:
         tail = ("the model's best free squad" if proven
                 else "the strongest free squad the model found")
         message = (f"Fitting {locked_names} costs {abs(delta):.1f} xP over "
-                   f"the next {horizon} GWs vs {tail}. "
+                   f"the {horizon}-GW horizon vs {tail}. "
                    f"Model projection, not advice you have to follow.")
 
     return {

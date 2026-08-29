@@ -1011,8 +1011,12 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
     return {
         "suggestions": top,
         "hold": hold,
-        "note": ("Best available single-transfer gain is small - holding your "
-                 "team is a fine play this week." if hold else
+        # 29.8 julkaisuportti k3: "Best available" oli sama skooppaamaton
+        # kattavuusvaite kuin hero-verdikissa (tassa haetaan vain yksittaisia
+        # siirtoja), ja "this week" oli ristiriidassa kaksi lohkoa ylempana
+        # olevan "over the {n}-GW horizon" -lauseen kanssa.
+        "note": ("The best single transfer the model checked gains little over "
+                 "the projection horizon - holding is a fine play." if hold else
                  "Deltas are per single transfer over the projection horizon; "
                  "they do not simply add up (budget is shared)."),
     }
@@ -1033,17 +1037,19 @@ def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
             "threshold_xp": HOLD_THRESHOLD_XP,
             "hit_applied_xp": hit,
             "message": (f"No move the model checked improves your team over "
-                        f"the next {horizon_gws} GWs."),
+                        f"the {horizon_gws}-GW horizon."),
         }
     net = round(best_gain_xp - hit, 2)
     hold = net < HOLD_THRESHOLD_XP
     hit_note = " after a -4 hit" if hit else ""
     if hold:
-        message = (f"Your best move gains only {net:+.1f} xP over "
-                   f"{horizon_gws} GWs{hit_note} - holding is the play.")
+        message = (f"The best move the model checked gains only {net:+.1f} xP "
+                   f"over the {horizon_gws}-GW horizon{hit_note} - holding is "
+                   "the play.")
     else:
-        message = (f"Your best move gains {net:+.1f} xP over "
-                   f"{horizon_gws} GWs{hit_note} - worth a transfer.")
+        message = (f"The best move the model checked gains {net:+.1f} xP over "
+                   f"the {horizon_gws}-GW horizon{hit_note} - worth a "
+                   "transfer.")
     return {
         "verdict": "hold" if hold else "transfer",
         "best_move_gain_xp": net,

@@ -128,7 +128,7 @@
 			const provenBest = res.totals.optimal_proven !== false;
 			const method = await sharePitchCard({
 				title: provenBest ? 'BEST 15 AROUND YOUR LOCKS' : 'STRONGEST 15 THE MODEL FOUND',
-				subtitle: `${locked} locked, XI ${res.totals.xi_xp_horizon.toFixed(1)} xP over ${res.meta.horizon_gw} GWs, ${res.meta.budget_cap.toFixed(1)}m budget`,
+				subtitle: `${locked} locked, XI ${res.totals.xi_xp_horizon.toFixed(1)} xP over the ${res.meta.horizon_gw}-GW horizon, ${res.meta.budget_cap.toFixed(1)}m budget`,
 				unitNote: 'price, m',
 				rows,
 				bench: res.bench.map(pitchPlayer),

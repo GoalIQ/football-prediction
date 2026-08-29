@@ -228,6 +228,7 @@ def test_hold_verdict_optimized_team_holds():
     assert "the model checked" in hv["message"]
     assert "beats" not in hv["message"].lower()
     assert "no plan" not in hv["message"].lower()
+    assert "available" not in hv["message"].lower()
 
 
 def test_hold_verdict_weak_team_transfers():
@@ -280,7 +281,7 @@ def test_hold_verdict_golden_master_entry():
         # sanoo samalla ruudulla "it doesn't try every possible plan".
         # Lause rajaa nyt siihen mita malli oikeasti tarkisti.
         "message": ("No move the model checked improves your team over "
-                    "the next 6 GWs."),
+                    "the 6-GW horizon."),
     }
 
 
@@ -618,3 +619,23 @@ def test_season_started_flags():
     assert rt.season_started({"events": [{"is_current": False, "finished": True}]})
     assert not rt.season_started({"events": [{"is_current": False, "is_next": True}]})
     assert not rt.season_started({})
+
+
+def test_hold_message_ei_saa_olla_skooppaamaton():
+    """Negatiivinen kontrolli portin k2-loydokselle.
+
+    Kierroksella 2 kavi ilmi etta `assert "the model checked" in message` on
+    substring-osuma: se lapaisisi myos lauseen jossa skooppaamaton vaite on
+    rinnalla. Talla mitataan ETTA vahti oikeasti kaataa vanhat sanamuodot.
+    """
+    for bad in (
+        "No available move improves your projected xP over the next 6 GWs.",
+        "No transfer beats your team over the next 6 GWs - holding is the play.",
+        "No plan is worth the move over the next 6 GWs.",
+    ):
+        assert not (
+            "the model checked" in bad
+            and "beats" not in bad.lower()
+            and "no plan" not in bad.lower()
+            and "available" not in bad.lower()
+        ), f"vahti paastaisi lapi skooppaamattoman lauseen: {bad}"

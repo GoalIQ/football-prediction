@@ -32,14 +32,21 @@
 	const hitNote = $derived(
 		hits === 0 ? '' : hits === 1 ? ' after a -4 hit' : ` after ${hits} hits (-${hits * 4} xP)`
 	);
-	const span = $derived(nMoves > 1 ? '' : ` over ${verdict.horizon_gws} GWs`);
+	// 29.8 julkaisuportti k2: otsikko skooppasi ("nothing the model checked")
+	// mutta mathrivi ei. "available" on sama kattavuusvaite pienoiskoossa:
+	// rate-team hakee vain yksittaisia siirtoja ja plannerin oma
+	// heuristiikkateksti sanoo "it doesn't try every possible plan".
+	// "{n}-GW horizon" kestaa myos arvon 1, toisin kuin "over the next 1 GWs".
+	const span = $derived(nMoves > 1 ? '' : ` over the ${verdict.horizon_gws}-GW horizon`);
 	const planLabel = $derived(
 		nMoves > 1
-			? `Best available plan (${nMoves} moves across ${verdict.horizon_gws} GWs)`
-			: 'Best available move'
+			? `Best plan the model checked (${nMoves} moves across the ${verdict.horizon_gws}-GW horizon)`
+			: 'Best move the model checked'
 	);
 	const goLabel = $derived(
-		nMoves > 1 ? `Best plan (${nMoves} moves across ${verdict.horizon_gws} GWs) nets` : 'Best move nets'
+		nMoves > 1
+			? `Best plan the model checked (${nMoves} moves across the ${verdict.horizon_gws}-GW horizon) nets`
+			: 'Best move the model checked nets'
 	);
 </script>
 
@@ -53,7 +60,7 @@
 		<p class="title">Hold - nothing the model checked gains enough</p>
 		<p class="math">
 			{#if gainText === null}
-				No available move improves your projected xP over the next {verdict.horizon_gws} GWs.
+				Nothing the model checked improves your projected xP over the {verdict.horizon_gws}-GW horizon.
 			{:else}
 				{planLabel}: {gainText} xP{span}{hitNote}, below the {verdict.threshold_xp.toFixed(1)} xP
 				threshold.

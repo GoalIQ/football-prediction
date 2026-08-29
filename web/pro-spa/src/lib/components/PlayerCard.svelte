@@ -426,9 +426,9 @@
 						: undefined,
 				modelLine:
 					premium && !excluded && typeof p.xp_horizon_total === 'number'
-						? `${p.xp_horizon_total.toFixed(1)} xP projected over the next ${
+						? `${p.xp_horizon_total.toFixed(1)} xP projected over a ${
 								(p.gameweeks ?? []).length
-							} gameweeks`
+							}-gameweek horizon`
 						: undefined,
 				// SHARE-CARD-WHY (Rowan 19.8) + todisteluvut (Rowan 20.8): ajurit
 				// omina riveinaan mallirivin alle, kukin oma lukunsa mukanaan.
