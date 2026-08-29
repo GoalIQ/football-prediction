@@ -221,6 +221,10 @@ supabase/.temp/
 
 # Jakokorttien generoidut PNG:t (scripts/gen_share_card.py) - aina uudelleen
 # ajettavissa datasta, joten niita ei versioida.
+# 29.8: koko outputs/ on tyokansio (kortit, PNG:t, ajojen valitulokset).
+# Aiemmin vain alikansiot olivat ignoressa, ja `git add -A` veti juuritiedostot
+# committiin merge-vaiheessa.
+outputs/
 outputs/cards/
 .env.txt
 .env.*
