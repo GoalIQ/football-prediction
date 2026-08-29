@@ -121,3 +121,123 @@ def test_latest_frozen_sorts_numerically(frozen_dir):
     for gw in (2, 9, 10):
         _write(frozen_dir, gw, PAST, IDS)
     assert w.latest_frozen().name == "gw10.json"
+
+
+# ---------------------------------------------------------------- kirjattu poikkeus (29.8)
+# GW2: Ville pelasi wildcardin korjatulla mallilla, freeze oli vanhan mallin
+# kanta. Vahti kaatui oikein mutta padotti commit-askeleen -> data jaassa
+# 3 ajoa. Poikkeustiedosto muuttaa eron varoitukseksi VAIN silla kierroksella
+# ja VAIN kun syy on kirjattu; se ei ole vapaakortti.
+
+def _write_exception(d, gw, reason="Ville pelasi wildcardin korjatulla mallilla",
+                     decided_by="Ville", decided_at="2026-08-28"):
+    (d / f"gw{gw}.exception.json").write_text(json.dumps({
+        "gw": gw, "reason": reason, "decided_by": decided_by,
+        "decided_at": decided_at}), encoding="utf-8")
+
+
+def _mismatch(monkeypatch):
+    wrong = IDS[:-1] + [999]
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
+        [{"element": i, "is_captain": i == 101} for i in wrong], "200"))
+    monkeypatch.setattr("sys.argv", ["x"])
+
+
+def test_recorded_exception_turns_mismatch_into_warning(frozen_dir, monkeypatch, capsys):
+    _write(frozen_dir, 1, PAST, IDS)
+    _write_exception(frozen_dir, 1)
+    _mismatch(monkeypatch)
+    assert w.main() == 0
+    out = capsys.readouterr().out
+    assert "::warning::" in out and "KIRJATTU POIKKEUS" in out
+    assert "::error::" not in out
+    assert "P115" in out and "999" in out     # ero nakyy silti lokissa
+
+
+def test_exception_for_another_gw_does_not_apply(frozen_dir, monkeypatch, capsys):
+    """NEGATIIVINEN KONTROLLI: GW2:n poikkeus ei vaienna GW1:n eroa."""
+    _write(frozen_dir, 1, PAST, IDS)
+    _write_exception(frozen_dir, 2)
+    _mismatch(monkeypatch)
+    assert w.main() == 1
+    assert "EI VASTAA" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("bad", [
+    {"reason": ""},                    # syy puuttuu
+    {"decided_by": " "},               # paattaja puuttuu
+    {"gw": 2},                         # vaara kierros tiedoston sisalla
+])
+def test_broken_exception_is_an_error_not_a_free_pass(frozen_dir, monkeypatch, capsys, bad):
+    _write(frozen_dir, 1, PAST, IDS)
+    d = {"gw": 1, "reason": "x", "decided_by": "Ville", "decided_at": "2026-08-28"}
+    d.update(bad)
+    (frozen_dir / "gw1.exception.json").write_text(json.dumps(d), encoding="utf-8")
+    _mismatch(monkeypatch)
+    assert w.main() == 1
+    assert "Poikkeustiedosto on rikki" in capsys.readouterr().out
+
+
+def test_exception_covers_captain_only_difference(frozen_dir, monkeypatch, capsys):
+    _write(frozen_dir, 1, PAST, IDS, captain=101)
+    _write_exception(frozen_dir, 1)
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
+        [{"element": i, "is_captain": i == 102} for i in IDS], "200"))
+    monkeypatch.setattr("sys.argv", ["x"])
+    assert w.main() == 0
+    assert "KAPTEENI eroaa" in capsys.readouterr().out
+
+
+def test_stale_exception_is_flagged_when_squads_match(frozen_dir, monkeypatch, capsys):
+    _write(frozen_dir, 1, PAST, IDS)
+    _write_exception(frozen_dir, 1)
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
+        [{"element": i, "is_captain": i == 101} for i in IDS], "200"))
+    monkeypatch.setattr("sys.argv", ["x"])
+    assert w.main() == 0
+    assert "vanhentunut" in capsys.readouterr().out
+
+
+def test_live_gw2_exception_file_is_valid():
+    """Repon oikea poikkeus (GW2, 29.8) lapaisee saman validoinnin kuin testit."""
+    d, err = w.load_exception(2)
+    if not (w.FROZEN_DIR / "gw2.exception.json").exists():
+        pytest.skip("gw2.exception.json poistettu (GW3 jalkeen ok)")
+    assert err is None, err
+    assert d["decided_by"] == "Ville"
+
+
+# ---------------------------------------------------------------- workflow-rakenne
+# Vahti ei tuota dataa. Jos se saa padota commit-askeleen, yksi entryn ero
+# jaadyttaa projektiot, price watchin ja freezet (mitattu 28.-29.8: 3 ajoa).
+# Sama vikaluokka kuin stats-gate 21.8 ja player-gw 14.8: fail-safe jaatyy
+# alavirtaan.
+
+WORKFLOW = w.config.PROJECT_ROOT / ".github" / "workflows" / "fpl-data-refresh.yml"
+WATCH_STEPS = {"Verify FPL entry matches the frozen squad": "verify_entry"}
+
+
+def _refresh_steps():
+    import yaml
+    doc = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    return doc["jobs"]["build-and-commit"]["steps"]
+
+
+def test_watch_steps_cannot_block_the_commit():
+    steps = _refresh_steps()
+    by_name = {s.get("name"): s for s in steps}
+    health = by_name["Step health (fail loud, data jo pushattu)"]["run"]
+    for name, step_id in WATCH_STEPS.items():
+        st = by_name[name]
+        assert st.get("continue-on-error") is True, f"{name}: continue-on-error puuttuu"
+        assert st.get("id") == step_id, f"{name}: id {step_id} puuttuu"
+        assert f"steps.{step_id}.outcome" in health, (
+            f"{name}: ei Step healthissa -> punainen ei enaa nay missaan")
+
+
+def test_watch_steps_run_before_the_commit():
+    """Jos vahti siirtyy commitin jalkeen, edellinen testi on tyhja."""
+    names = [s.get("name") for s in _refresh_steps()]
+    commit = next(i for i, n in enumerate(names) if n and n.startswith("Commit + push"))
+    for name in WATCH_STEPS:
+        assert names.index(name) < commit

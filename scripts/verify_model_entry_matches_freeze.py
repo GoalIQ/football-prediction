@@ -22,6 +22,16 @@ Ennen-deadlinea-haara on tarkoituksella exit 0: rivin syöttäminen on
 Villen tehtävä eikä puuttuva syöttö ole vielä virhe. Jälkeen-haara on
 exit 1, koska silloin se on peruuttamaton.
 
+KIRJATTU POIKKEUS (29.8). GW2:ssa Ville pelasi wildcardin XP-SEASON-CARRY-
+korjatun mallin optimilla, mutta gw2.json oli jäädytetty vanhan mallin
+kannalla ja jäi Villen päätöksellä arkistoksi. Vahti kaatui oikein — mutta
+koska sillä ei ollut continue-on-erroria, se padotti commit-askeleen ja
+KOKO refresh-data jäätyi 28.8 17:08:aan (3 punaista ajoa). Nyt: tiedosto
+`gw{N}.exception.json` samassa hakemistossa (kentät gw, reason, decided_by,
+decided_at) muuttaa eron ::warning::-riviksi ja exit 0:ksi VAIN sille
+kierrokselle. Poikkeus ilman syytä tai väärälle kierrokselle on itsessään
+virhe (exit 1) — se ei ole vapaakortti.
+
 Käyttö:
     python -m scripts.verify_model_entry_matches_freeze          # uusin GW
     python -m scripts.verify_model_entry_matches_freeze --gw 1
@@ -90,6 +100,28 @@ def enterable(frozen: dict) -> str:
     return "\n".join(lines)
 
 
+EXCEPTION_KEYS = ("gw", "reason", "decided_by", "decided_at")
+
+
+def load_exception(gw: int) -> tuple[dict | None, str | None]:
+    """(poikkeus, virhe). Poikkeus on voimassa vain jos tiedosto on olemassa,
+    sen gw on sama ja kaikki kentat ovat epatyhjia. Vaara tai vajaa poikkeus
+    palautetaan virheena, ei ohiteta hiljaa."""
+    path = FROZEN_DIR / f"gw{gw}.exception.json"
+    if not path.exists():
+        return None, None
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return None, f"{path.name}: ei kelvollista JSONia ({e!r})"
+    missing = [k for k in EXCEPTION_KEYS if not str(d.get(k) or "").strip()]
+    if missing:
+        return None, f"{path.name}: kentat puuttuvat tai tyhjia: {', '.join(missing)}"
+    if int(d.get("gw") or 0) != gw:
+        return None, f"{path.name}: gw={d.get('gw')} mutta tiedosto on GW{gw}:n"
+    return d, None
+
+
 def fetch_picks(entry: int, gw: int):
     """(picks, status). picks=None kun ei saatavilla."""
     url = f"{FPL_BASE}/entry/{entry}/event/{gw}/picks/"
@@ -154,22 +186,48 @@ def main() -> int:
     if args.always_print:
         print(enterable(frozen))
 
+    exception, exc_err = load_exception(gw)
+    if exc_err:
+        print(f"::error::Poikkeustiedosto on rikki: {exc_err}. Poikkeus ei ole "
+              f"vapaakortti — korjaa tiedosto tai poista se.")
+        return 1
+
     if not missing and not extra:
         cap_entry = next((int(p["element"]) for p in picks
                           if p.get("is_captain")), None)
         cap_frozen = frozen.get("captain")
         if cap_entry != cap_frozen:
+            if exception:
+                print(f"::warning::KAPTEENI eroaa (tilillä {cap_entry}, "
+                      f"jaadytetyssa {cap_frozen}) — kirjattu poikkeus GW{gw}: "
+                      f"{exception['reason']} ({exception['decided_by']} "
+                      f"{exception['decided_at']})")
+                return 0
             print(f"::error::15 tasmaa mutta KAPTEENI eroaa: tilillä "
                   f"{cap_entry}, jaadytetyssa {cap_frozen}. Kapteeni on "
                   f"kaksinkertainen pistevaikutus, joten tama ei ole "
                   f"kosmeettinen ero.")
             return 1
+        if exception:
+            print(f"::warning::GW{gw}:lle on kirjattu poikkeus mutta rivit "
+                  f"tasmaavat (15/15 + kapteeni) — poikkeus on vanhentunut, "
+                  f"poista {FROZEN_DIR.name}/gw{gw}.exception.json.")
         print(f"OK: entry {ENTRY_ID} vastaa GW{gw}:n jaadytettya runkoa "
               f"(15/15 + kapteeni).")
         return 0
 
     names = {p["id"]: p.get("web_name", "?")
              for p in (frozen.get("xi") or []) + (frozen.get("bench") or [])}
+    if exception:
+        print(f"::warning::ENTRY {ENTRY_ID} eroaa GW{gw}:n jaadytetysta rungosta "
+              f"({len(missing)} puuttuu, {len(extra)} ylimaaraista) — KIRJATTU "
+              f"POIKKEUS: {exception['reason']} ({exception['decided_by']} "
+              f"{exception['decided_at']}). Data-askeleet jatkuvat.")
+        print("  Jaadytetyssa mutta EI tilillä: "
+              + ", ".join(f"{names.get(i, i)} ({i})" for i in sorted(missing)))
+        print("  Tilillä mutta EI jaadytetyssa: "
+              + ", ".join(str(i) for i in sorted(extra)))
+        return 0
     print(f"::error::ENTRY {ENTRY_ID} EI VASTAA GW{gw}:N JAADYTETTYA RUNKOA.")
     print(f"::error::Julkinen vaite 'malli pelaa omaa FPL-joukkuettaan' "
           f"osoittaa joukkueeseen jota malli ei valinnut.")

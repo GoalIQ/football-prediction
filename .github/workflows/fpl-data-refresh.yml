@@ -295,9 +295,16 @@ jobs:
       # Vahti ei voi korjata tata (FPL-kirjautuminen on kasityota). Se tekee
       # erosta aanekkaan: ennen deadlinea tulostaa rivin syotettavassa
       # muodossa ja palauttaa 0, deadlinen jalkeen ero on exit 1.
-      # EI continue-on-erroria: taman kuuluu nakya punaisena.
+      # 29.8: continue-on-error + Step health. Ilman sita vahdin punainen
+      # (GW2: Ville pelasi wildcardin korjatulla mallilla, freeze oli vanhan
+      # mallin kanta) padotti commit-askeleen ja KOKO refresh-data jaatyi
+      # 28.8 17:08 -> 3 punaista ajoa. Vahti ei tuota dataa, joten se ei saa
+      # estaa datan pushia; se nakyy silti punaisena Step healthin kautta.
+      # Kirjattu poikkeus: data/model_squad_frozen/gw{N}.exception.json.
       - name: Verify FPL entry matches the frozen squad
+        id: verify_entry
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.verify_model_entry_matches_freeze
 
       # #124/#125: xG- + DefCon-leaders samasta bootstrap+element-summary-
@@ -467,4 +474,5 @@ jobs:
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
           [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa — builderi ajoi mutta ei tuottanut mitaan (PLAYER-GW-STALE-GUARD)"; fail=1; }
+          [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus gw{N}.exception.json tai korjaa entry"; fail=1; }
           exit $fail
