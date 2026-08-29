@@ -22,14 +22,25 @@
 			? null
 			: `${verdict.best_move_gain_xp >= 0 ? '+' : ''}${verdict.best_move_gain_xp.toFixed(2)}`
 	);
-	const hitNote = $derived(verdict.hit_applied_xp ? ', after a -4 hit' : '');
 	// HOLD-VERDICT-BEST-PLAN-COPY (29.8): best_move_gain_xp on KOKO suunnitelman
 	// netto (plan_total - baseline_total, fpl_planner.py), ei yhden siirron.
-	// Kun suunnitelmassa on useampi siirto, lause sanoo sen (jakokortti 27.8
-	// sanoo jo "best plan (N moves)").
+	// Kun suunnitelmassa on useampi siirto, lause sanoo sen ja siirrot ovat
+	// koko horisontin siirtoja ("across N GWs"), ei "nyt". Hitit: plannerin
+	// hits_taken (maara), rate-teamin hit_applied_xp on aina yksi hitti.
 	const nMoves = $derived(verdict.transfers_planned ?? 1);
-	const planLabel = $derived(nMoves > 1 ? `Best available plan (${nMoves} moves)` : 'Best available move');
-	const goLabel = $derived(nMoves > 1 ? `Best plan (${nMoves} moves) nets` : 'Best move nets');
+	const hits = $derived(verdict.hits_taken ?? (verdict.hit_applied_xp ? 1 : 0));
+	const hitNote = $derived(
+		hits === 0 ? '' : hits === 1 ? ', after a -4 hit' : `, after ${hits} hits (-${hits * 4} xP)`
+	);
+	const span = $derived(nMoves > 1 ? '' : ` over ${verdict.horizon_gws} GWs`);
+	const planLabel = $derived(
+		nMoves > 1
+			? `Best available plan (${nMoves} moves across ${verdict.horizon_gws} GWs)`
+			: 'Best available move'
+	);
+	const goLabel = $derived(
+		nMoves > 1 ? `Best plan (${nMoves} moves across ${verdict.horizon_gws} GWs) nets` : 'Best move nets'
+	);
 </script>
 
 {#if verdict.verdict === 'hold'}
@@ -39,7 +50,7 @@
 			{#if gainText === null}
 				No available move improves your projected xP over the next {verdict.horizon_gws} GWs.
 			{:else}
-				{planLabel}: {gainText} xP over {verdict.horizon_gws} GWs (below the {verdict.threshold_xp.toFixed(
+				{planLabel}: {gainText} xP{span} (below the {verdict.threshold_xp.toFixed(
 					1
 				)} xP threshold{hitNote}).
 			{/if}
@@ -49,7 +60,7 @@
 	<div class="verdict-hero go" role="status">
 		<p class="title">{verdict.message}</p>
 		<p class="math">
-			{goLabel} {gainText} xP over {verdict.horizon_gws} GWs (clears the {verdict.threshold_xp.toFixed(
+			{goLabel} {gainText} xP{span} (clears the {verdict.threshold_xp.toFixed(
 				1
 			)} xP threshold{hitNote}).
 		</p>

@@ -111,6 +111,8 @@ export interface HoldVerdict {
 	horizon_gws: number;
 	threshold_xp: number;
 	hit_applied_xp?: number;
+	/** 29.8: plannerin hittien maara koko suunnitelmassa (rate-team ei laheta). */
+	hits_taken?: number;
 	transfers_planned?: number;
 	message: string;
 }

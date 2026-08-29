@@ -23,6 +23,18 @@ def test_plan_structure_and_baseline_gate():
     assert out["totals"]["net_gain"] >= 0
     assert "doesn't try every possible plan" in out["meta"]["heuristic"]
     assert "optimum" not in out["meta"]["heuristic"]
+    # HEURISTIC-I18N (29.8): parametrit vakaina kenttina, ja proosa kertoo
+    # SAMAT luvut (muuten es/pt-kaannos ja en-proosa eroaisivat hiljaa).
+    hp = out["meta"]["heuristic_params"]
+    for key in ("max_transfers_per_gw", "hit_cost", "ft_carry_max",
+                "top_candidates_per_pos", "low_confidence_weight", "calibrated"):
+        assert key in hp, key
+    assert hp["calibrated"] is False
+    prose = out["meta"]["heuristic"]
+    assert f"max {hp['max_transfers_per_gw']} transfers/GW" in prose
+    assert f"FT carry max {hp['ft_carry_max']}" in prose
+    assert f"looks at the {hp['top_candidates_per_pos']} best" in prose
+    assert f"{hp['low_confidence_weight']:.2f} of their projection" in prose
 
 
 def test_plan_best_squad_rolls_transfers():
@@ -73,6 +85,9 @@ def test_plan_hit_math_ft_zero():
         assert m["gain_xp_remaining"] - m["hit"] >= pl.MIN_GAIN_PER_TRANSFER
     assert out["totals"]["hits_taken"] == sum(
         1 for p in out["plan"] for m in p["transfers"] if m["hit"] > 0)
+    # Portti 29.8: hero-verdikti kantaa saman hittimaaran kuin totals, jotta
+    # klientti voi sanoa "after 2 hits (-8 xP)" eika "after a -4 hit".
+    assert out["hold_verdict"]["hits_taken"] == out["totals"]["hits_taken"]
 
 
 def test_plan_hold_verdict_best_squad_holds():
@@ -97,6 +112,7 @@ def test_plan_hold_verdict_weak_squad_transfers():
     assert hv["best_move_gain_xp"] == out["totals"]["net_gain"]
     assert hv["best_move_gain_xp"] >= rt.HOLD_THRESHOLD_XP
     assert "Recommended" in hv["message"]
+    assert hv["hits_taken"] == out["totals"]["hits_taken"]
 
 
 def test_plan_param_validation():

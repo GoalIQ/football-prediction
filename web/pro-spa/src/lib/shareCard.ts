@@ -142,10 +142,14 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	ctx.fill();
 
 	// Otsikko + alaotsikko
-	ctx.font = bold(60);
+	// SHARE-CARD-SUBTITLE-SHRINK (29.8): otsikko ja alaotsikko kutistuvat kuten
+	// pelaajanimet. Plex Mono 22 px ~ 13,2 px/merkki -> ~72 merkkia mahtui, sen yli
+	// leikkautui molemmista paista ilman virhetta (FitChecker 88, TransferPlanner 73
+	// mitattu julkaisuportissa 27.8).
+	shrink(ctx, spec.title, 60, W - 2 * MX, 36, bold);
 	ctx.fillStyle = CREAM;
 	ctx.fillText(spec.title, (W - ctx.measureText(spec.title).width) / 2, 226);
-	ctx.font = med(22);
+	shrink(ctx, spec.subtitle, 22, W - 2 * MX, 14, med);
 	ctx.fillStyle = MUTED;
 	ctx.fillText(spec.subtitle, (W - ctx.measureText(spec.subtitle).width) / 2, 306);
 
@@ -405,10 +409,14 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 	ctx.beginPath();
 	ctx.roundRect((W - 120) / 2, 176, 120, 6, 3);
 	ctx.fill();
-	ctx.font = bold(60);
+	// SHARE-CARD-SUBTITLE-SHRINK (29.8): otsikko ja alaotsikko kutistuvat kuten
+	// pelaajanimet. Plex Mono 22 px ~ 13,2 px/merkki -> ~72 merkkia mahtui, sen yli
+	// leikkautui molemmista paista ilman virhetta (FitChecker 88, TransferPlanner 73
+	// mitattu julkaisuportissa 27.8).
+	shrink(ctx, spec.title, 60, W - 2 * MX, 36, bold);
 	ctx.fillStyle = CREAM;
 	ctx.fillText(spec.title, (W - ctx.measureText(spec.title).width) / 2, 226);
-	ctx.font = med(22);
+	shrink(ctx, spec.subtitle, 22, W - 2 * MX, 14, med);
 	ctx.fillStyle = MUTED;
 	ctx.fillText(spec.subtitle, (W - ctx.measureText(spec.subtitle).width) / 2, 306);
 
@@ -638,10 +646,14 @@ export async function renderCompareCard(spec: CompareCardSpec): Promise<Blob> {
 	ctx.beginPath();
 	ctx.roundRect((W - 120) / 2, 176, 120, 6, 3);
 	ctx.fill();
-	ctx.font = bold(60);
+	// SHARE-CARD-SUBTITLE-SHRINK (29.8): otsikko ja alaotsikko kutistuvat kuten
+	// pelaajanimet. Plex Mono 22 px ~ 13,2 px/merkki -> ~72 merkkia mahtui, sen yli
+	// leikkautui molemmista paista ilman virhetta (FitChecker 88, TransferPlanner 73
+	// mitattu julkaisuportissa 27.8).
+	shrink(ctx, spec.title, 60, W - 2 * MX, 36, bold);
 	ctx.fillStyle = CREAM;
 	ctx.fillText(spec.title, (W - ctx.measureText(spec.title).width) / 2, 226);
-	ctx.font = med(22);
+	shrink(ctx, spec.subtitle, 22, W - 2 * MX, 14, med);
 	ctx.fillStyle = MUTED;
 	ctx.fillText(spec.subtitle, (W - ctx.measureText(spec.subtitle).width) / 2, 306);
 

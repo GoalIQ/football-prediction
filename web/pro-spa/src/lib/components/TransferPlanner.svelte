@@ -271,6 +271,15 @@
 	{#if data.hold_verdict}
 		<div class="verdict-slot">
 			<HoldVerdictCard verdict={data.hold_verdict} surface="planner" />
+			{#if data.plan.length < data.meta.horizon}
+				<!-- Portti 29.8: ilmaismaski leikkaa plan-listan yhteen GW:hen mutta
+				     hero laskee koko horisontin siirrot. Sanotaan se, jotta luku ei
+				     lupaa siirtoja joita lukija ei nae. -->
+				<p class="muted">
+					Free preview shows the first gameweek only. The full {data.meta.horizon}-GW plan is
+					Premium.
+				</p>
+			{/if}
 		</div>
 	{/if}
 	<div class="head-row">

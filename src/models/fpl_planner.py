@@ -201,6 +201,11 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
         "horizon_gws": len(gws),
         "threshold_xp": HOLD_THRESHOLD_XP,
         "transfers_planned": n_moves,
+        # HOLD-VERDICT-BEST-PLAN-COPY (portti 29.8): hittien MAARA koko
+        # suunnitelmassa. Uusi kentta, ei rate-teamin hit_applied_xp (se on
+        # aina 0 tai tasan 4.0 = yksi hitti); vanhat klientit tulostaisivat
+        # siita "-4" kun oikea on -8 tai -12.
+        "hits_taken": int(round(total_hits / HIT_COST)) if HIT_COST else 0,
         "message": hv_message,
     }
 
@@ -244,6 +249,17 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
                           f"are undiscounted, and the {_engine.LOW_CONFIDENCE_WEIGHT:.2f} "
                           "is a fixed default, not calibrated against results "
                           "yet."),
+            # HEURISTIC-I18N (29.8): vakaat parametrit klientin i18n:lle
+            # (linjaus 23.8: proosa klientista, parametrit backendista).
+            # `heuristic`-proosa jaa vanhoille klienteille ja SPA:lle.
+            "heuristic_params": {
+                "max_transfers_per_gw": MAX_TRANSFERS_PER_GW,
+                "hit_cost": 4,
+                "ft_carry_max": FT_CARRY_MAX,
+                "top_candidates_per_pos": _engine.TOP_CANDIDATES_PER_POS,
+                "low_confidence_weight": round(float(_engine.LOW_CONFIDENCE_WEIGHT), 2),
+                "calibrated": False,
+            },
             "note": "GoalIQ model projections - for fun and planning, "
                     "not betting advice.",
             "engine": "transfers.v2",
