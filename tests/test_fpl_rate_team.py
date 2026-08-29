@@ -554,3 +554,54 @@ def test_bench_skips_cheap_non_players():
     # Varamaalivahti saa olla halvin vaikka ei pelaa (tietoinen poikkeus).
     assert "GK_CHEAP" in names
     assert cost > 0
+
+
+# ---------------------------------------------------------------- manual 15 yli 100.0m (Barry 28.8)
+# "Can the model be built so that it can handle team values above 100. If you
+# have players that increased in value, it is generating an error." Manual-moodi
+# on kaudella myos "Use my saved 15" -polku, ja oikean joukkueen arvo nykyhinnoin
+# ylittaa 100.0m heti kun pelaajat nousevat. Katto kuuluu vain esikausidraftille.
+
+def _boot_15(cost_first: int, *, started: bool) -> tuple[dict, list[int]]:
+    types = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4]
+    elements = [{"id": 100 + i, "element_type": et, "now_cost": 40}
+                for i, et in enumerate(types)]
+    elements[0]["now_cost"] = cost_first
+    events = ([{"id": 1, "is_current": True, "is_next": False, "finished": False}]
+              if started else
+              [{"id": 1, "is_current": False, "is_next": True, "finished": False}])
+    return {"elements": elements, "events": events}, [e["id"] for e in elements]
+
+
+def test_manual_squad_over_100_allowed_in_season():
+    # 14 x 4.0 + 46.0 = 102.0m
+    boot, ids = _boot_15(460, started=True)
+    squad, cap, bank_tenths, gw = rt.resolve_squad(boot, None, None, ids, None, None)
+    assert squad == ids and bank_tenths == 0 and gw == 1
+
+
+def test_manual_squad_over_100_keeps_given_bank_in_season():
+    boot, ids = _boot_15(460, started=True)
+    _, _, bank_tenths, _ = rt.resolve_squad(boot, None, None, ids, None, 1.5)
+    assert bank_tenths == 15
+
+
+def test_manual_draft_over_100_still_rejected_pre_season():
+    """NEGATIIVINEN KONTROLLI: esikausidraftin katto sailyy."""
+    boot, ids = _boot_15(460, started=False)
+    with pytest.raises(rt.RateTeamError) as e:
+        rt.resolve_squad(boot, None, None, ids, None, None)
+    assert e.value.status_code == 400 and "100.0m" in str(e.value.detail)
+
+
+def test_manual_draft_under_100_pre_season_bank_is_remainder():
+    boot, ids = _boot_15(40, started=False)    # 15 x 4.0 = 60.0m
+    _, _, bank_tenths, _ = rt.resolve_squad(boot, None, None, ids, None, None)
+    assert bank_tenths == 400
+
+
+def test_season_started_flags():
+    assert rt.season_started({"events": [{"is_current": True}]})
+    assert rt.season_started({"events": [{"is_current": False, "finished": True}]})
+    assert not rt.season_started({"events": [{"is_current": False, "is_next": True}]})
+    assert not rt.season_started({})

@@ -135,6 +135,13 @@ def get_bootstrap() -> dict:
     return _fetch_fpl("/bootstrap-static/")
 
 
+def season_started(bootstrap: dict) -> bool:
+    """Onko kausi alkanut: jokin kierros on kaynnissa tai pelattu. Esikaudella
+    kaikki eventit ovat is_current=False ja GW1 on is_next."""
+    return any(bool(e.get("is_current")) or bool(e.get("finished"))
+               for e in (bootstrap.get("events") or []))
+
+
 def _resolve_gw(bootstrap: dict, gw: int | None) -> int:
     if gw is not None:
         if not 1 <= gw <= 38:
@@ -1228,14 +1235,21 @@ def resolve_squad(bootstrap: dict, entry: int | None, gw: int | None,
                      f"{pos_have[3]} MID, {pos_have[4]} FWD.")
         cost_tenths = sum(int(elements[pid].get("now_cost") or 0)
                           for pid in players)
-        if cost_tenths > 1000:
+        # 29.8 (Barry @UnitedCynic 28.8: "team values above 100 ... generating
+        # an error"): 100.0m on ESIKAUSIDRAFTIN katto. Kauden alettua manual-
+        # moodi on myos "Use my saved 15" -polku (28.8) oikealle joukkueelle,
+        # jonka arvo nykyhinnoin ylittaa 100.0m heti kun pelaajat nousevat.
+        # Katto puree vain ennen GW1:n alkua ja vain kun bankia ei annettu
+        # (annettu bank = kayttajan oma tili, arvo on hanen).
+        if cost_tenths > 1000 and bank is None and not season_started(bootstrap):
             raise RateTeamError(
                 400, f"This draft costs {cost_tenths / 10:.1f}m, over the "
                      "100.0m budget. Swap something pricey for a cheaper "
                      "pick and try again.")
-        # Manual-draftin bank = budjetin jäännös (informatiivinen).
+        # Manual-draftin bank = budjetin jaannos (informatiivinen); kaudella
+        # yli 100.0m:n runko ilman bankia = 0.0m pankissa (ei negatiivista).
         if bank is None:
-            bank_tenths = 1000 - cost_tenths
+            bank_tenths = max(0, 1000 - cost_tenths)
         return list(players), captain, bank_tenths, _resolve_gw(bootstrap, gw)
     if entry is None:
         raise RateTeamError(400, "Provide either entry or players.")
