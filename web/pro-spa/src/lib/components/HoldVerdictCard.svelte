@@ -45,7 +45,12 @@
 
 {#if verdict.verdict === 'hold'}
 	<div class="verdict-hero hold" role="status">
-		<p class="title">Hold - no transfer beats your team this GW</p>
+		<!-- HOLD-TITLE-HORISONTTI (29.8): otsikko sanoi "this GW" vaikka verdikti
+		     lasketaan koko horisontilta ja hold voi syntya kun suunnitelmassa ON
+		     siirtoja mutta netto jaa kynnyksen alle ("Best available plan (3 moves
+		     across 6 GWs): +1.20 xP"). Otsikko ja mathrivi vetivat eri suuntaan.
+		     "beats" olisi yha vaara: suunnitelma voittaa, mutta ei tarpeeksi. -->
+		<p class="title">Hold - no plan is worth the move over the next {verdict.horizon_gws} GWs</p>
 		<p class="math">
 			{#if gainText === null}
 				No available move improves your projected xP over the next {verdict.horizon_gws} GWs.

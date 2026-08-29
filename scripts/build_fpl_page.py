@@ -1921,9 +1921,9 @@ log, match by match with every miss included, is published on the
 {xp_accuracy}
 
 {team_news}<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
-<p>Model clean sheet probability for all 20 Premier League teams in
-Gameweek {c["next_gw"]} ({c["gw_label"]}). FDR is GoalIQ's model fixture
-difficulty for that match, 1 easiest to 5 hardest.</p>
+<p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
+with a fixture in Gameweek {c["next_gw"]} ({c["gw_label"]}). FDR is GoalIQ's model
+fixture difficulty for that match, 1 easiest to 5 hardest.</p>
 {cs_table}
 <p class="note">{_strength_basis_note(c)}</p>
 
