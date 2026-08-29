@@ -75,7 +75,9 @@ def test_upsert_on_idempotentti_ennen_deadlinea():
     assert len(log["gameweeks"]) == 1, "sama GW ei saa tuplaantua"
     cap = [c for c in log["gameweeks"][0]["calls"] if c["call"] == "captain_pick"][0]
     assert cap["web_name"] == "NewCap", "viimeisin kortti voittaa ennen deadlinea"
-    assert log["gameweeks"][0]["logged_at"] == "2026-08-28T15:00:00Z"
+    # DEADLINE-SNAPSHOT (29.8): ensimmainen kirjaus sailyy, viimeisin erikseen.
+    assert log["gameweeks"][0]["logged_at"] == "2026-08-28T14:00:00Z"
+    assert log["gameweeks"][0]["updated_at"] == "2026-08-28T15:00:00Z"
 
 
 def test_kirjaus_deadlinen_jalkeen_on_kielletty():
@@ -87,6 +89,7 @@ def test_kirjaus_deadlinen_jalkeen_on_kielletty():
     with pytest.raises(DeadlinePassed):
         upsert(log, e, AFTER)
     assert log["gameweeks"][0]["logged_at"] == "2026-08-28T14:00:00Z"
+    assert log["gameweeks"][0]["updated_at"] == "2026-08-28T14:00:00Z"
 
 
 def test_gradattua_rivia_ei_kirjoiteta_yli():
@@ -148,6 +151,12 @@ def test_sivun_osio_sanoo_before_vain_kun_aikaleimat_todistavat():
     assert "after the deadline" in _fmt_logged(row)
     assert "before" not in _fmt_logged(row)
     assert gw_calls_html({"gameweeks": []}) == ""
+    # DEADLINE-SNAPSHOT (29.8): Logged-sarake nayttaa viimeisimman kirjauksen.
+    row = {"gw": 2, "logged_at": "2026-08-27T17:04:00Z",
+           "updated_at": "2026-08-28T16:00:00Z", "deadline_utc": DL,
+           "calls": [], "graded": None}
+    assert "1 h 30 min before the deadline" in _fmt_logged(row)
+    assert "28 Aug 16:00" in _fmt_logged(row)
     e = build_entry(_frozen(), _standouts(), {}, BEFORE)
     html = gw_calls_html({"gameweeks": [e]})
     assert "pending" in html and "Guehi (MCI)" in html

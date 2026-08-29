@@ -35,6 +35,14 @@ on:
     # on GW-deadline (guard-step alla; tyypillinen la-deadline ~12:30 UTC →
     # perjantain lehdistötilaisuuksien team news ehtii mukaan).
     - cron: "15 9 * * *"
+    # DEADLINE-SNAPSHOT (29.8): tuntiajo deadline-paivan tunteina, ajetaan
+    # vain kun deadline on 30-180 min paassa (guard alla,
+    # scripts/deadline_snapshot_guard.py). Tarkoitus: log_gw_calls kirjoittaa
+    # kutsurivin uudelleen pressien JALKEEN tuoreella projektiolla, erillaan
+    # siirtofreezesta (T-24 h). Ikkuna 150 min > cadenssi 60 min + drift
+    # (mitattu ~50 min), joten vahintaan yksi ajo osuu aina. 07-18 UTC kattaa
+    # kauden deadlinet (la 10:00-11:30 UTC, arki 17:30-18:30 UTC) T-2 h:lla.
+    - cron: "40 7-18 * * *"
   workflow_dispatch: {}
 
 concurrency:
@@ -54,14 +62,21 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      # 09:15-ajo vain deadline-päivinä; 06:00 + dispatch ajavat aina.
+      # 09:15-ajo vain deadline-päivinä; 3 h -ajo + dispatch ajavat aina.
+      # Tuntiajo (40 7-18) vain kun deadline on snapshot-ikkunassa.
       # FPL bootstrap events[].deadline_time on julkinen JSON.
       - name: Deadline-day guard (only for 09:15 run)
         id: guard
         run: |
+          if [ "${{ github.event.schedule }}" = "40 7-18 * * *" ]; then
+            # DEADLINE-SNAPSHOT: stdlib-only, ei riippuvuuksia (ajetaan
+            # ennen pip installia). Tulostaa proceed=true|false.
+            python3 scripts/deadline_snapshot_guard.py >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "${{ github.event.schedule }}" != "15 9 * * *" ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
-            echo "06:00/dispatch-ajo — ajetaan aina."
+            echo "3 h -ajo/dispatch — ajetaan aina."
             exit 0
           fi
           python3 - <<'EOF' >> "$GITHUB_OUTPUT"
@@ -289,6 +304,10 @@ jobs:
       # freezesta. Idempotentti per GW; deadlinen jalkeen skripti kieltaytyy
       # kirjoittamasta (exit 1 vain jos GW:n rivi puuttuu kokonaan, jolloin
       # kutsu jai kirjaamatta ja sen kuuluu nakya punaisena).
+      # DEADLINE-SNAPSHOT (29.8): sama askel kirjoittaa rivin UUDELLEEN
+      # jokaisessa ajossa ennen deadlinea, myos tuntiajon T-2 h -ikkunassa,
+      # tuoreella projektiolla. logged_at = ensimmainen kirjaus, updated_at =
+      # viimeisin; kortin projected_xi-kutsu sailyy rivilla.
       - name: Log gameweek calls before the deadline
         if: steps.guard.outputs.proceed == 'true'
         run: python -m scripts.log_gw_calls

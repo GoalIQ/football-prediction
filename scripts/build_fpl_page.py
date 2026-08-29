@@ -2125,10 +2125,22 @@ GW_CALLS_PATH = ROOT / "data" / "gw_calls.json"
 
 def _fmt_logged(row: dict) -> str:
     """'28 Aug 14:05 UTC, 3 h 25 min before the deadline'. Sanoo 'after' jos
-    logged_at ei ole ennen deadlinea: lause 'logged before the deadline' saa
-    nakya vain kun aikaleimat todistavat sen."""
+    aikaleima ei ole ennen deadlinea: lause 'logged before the deadline' saa
+    nakya vain kun aikaleimat todistavat sen.
+
+    DEADLINE-SNAPSHOT (29.8): sarake nayttaa VIIMEISIMMAN kirjauksen
+    (`updated_at`), koska rivi kirjoitetaan uudelleen T-2 h -ikkunassa
+    tuoreella projektiolla.
+
+    Fallback `logged_at`:iin koskee VAIN ennen 29.8 kirjattuja riveja (GW2),
+    joissa vanha koodi ylikirjoitti `logged_at`:in joka refreshissa -> se ON
+    niissa viimeisin kirjaus, ei ensimmainen. Sarake nayttaa siis oikean
+    luvun molemmissa, mutta sivun copy EI saa vaittaa etta tiedostossa on
+    ensimmainen kirjaus ennen kuin `updated_at` on siella (portti 29.8, B1:
+    tuotannon gw_calls.json:ssa on 0 kpl updated_at ja GW2 ei saa sita
+    koskaan, koska upsert on fail-closed deadlinen jalkeen)."""
     from src.models.gw_calls import parse_utc
-    logged = parse_utc(row["logged_at"])
+    logged = parse_utc(row.get("updated_at") or row["logged_at"])
     deadline = parse_utc(row["deadline_utc"])
     delta = deadline - logged
     secs = int(abs(delta.total_seconds()))
@@ -2215,7 +2227,9 @@ def gw_calls_html(log: dict | None) -> str:
         '<h3 id="gw-calls">Gameweek calls, logged and scored</h3>'
         "<p>The captain of the model's own FPL squad and the four picks on the "
         "weekly standouts card (captain pick, ceiling, safest pick, the gamble) "
-        "go into a log with a timestamp. The log closes at the FPL deadline. "
+        "go into a log with a timestamp. A row is rewritten whenever the "
+        "projection updates, up to the FPL deadline and never after it. The "
+        "Logged column shows the last write before the deadline. "
         "Once the gameweek has been played, each call is scored with official "
         "FPL points. A hit means the player did what the call said: 10 or more "
         "points for the captain pick and the gamble, the ceiling number or more "
@@ -2231,7 +2245,7 @@ def gw_calls_html(log: dict | None) -> str:
         '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/gw_calls.json">data/gw_calls.json</a> '
         "in the public repository, with the squad the captain came from in "
         '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen">data/model_squad_frozen</a>. '
-        "The commit history shows when each row was written. The percentages "
+        "The commit history shows every version of each row. The percentages "
         "are the same simulations as the 10+, Blank and Ceiling columns on the "
         '<a href="/fpl/expected-points">free expected points page</a>, where a '
         "3+ chance is 100 minus Blank.</p>")
