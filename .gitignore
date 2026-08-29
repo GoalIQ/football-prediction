@@ -136,6 +136,10 @@ raw_data/
 # vaite olisi todistamaton juuri silla mekanismilla jolla se myydaan.
 !/data/model_squad_frozen/
 !/data/model_squad_frozen/*.json
+# 29.8: kirjatut entry-vs-freeze-poikkeukset (verify_model_entry_matches_freeze)
+!/data/model_squad_exceptions/
+!/data/model_squad_exceptions/*.json
+!/data/model_squad_exceptions/README.md
 # Vaihe b: gradatut pisteet (append-only). Sama peruste kuin freezella —
 # Season race -paneeli lukee taman, ja ilman !-poikkeusta luku eläisi vain
 # runnerilla eika koskaan paatyisi sivulle.

@@ -243,21 +243,31 @@ jobs:
       # 30.7 xP vs toteuma: gradaa ratkenneet jäädytetyt GW:t + jäädytä
       # seuraava GW jos deadline on alle 30 h päässä (freeze TUOREESTA
       # projektiosta → askel build_fpl_xp:n jälkeen).
+      # 29.8: graderit eivat saa padota commit-askelta (continue-on-error +
+      # Step health). grade_model_squad_gw kaatui 07:06 (vieras tiedosto
+      # freeze-kansiossa) ja kaikki sen jalkeinen skipattiin: toinen datan
+      # jaatyminen samana aamuna. Gradauksen vika nakyy punaisena healthissa.
       - name: Grade finished frozen gameweeks (xP vs actual)
+        id: grade_xp
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.grade_fpl_xp_gw
 
       # BTM V2 vaihe b (13.8): mallin lukitun rivin pisteet FPL:n omista
       # luvuista (autosubit + kapteenisääntö). Gradaus ENNEN freezea kuten
       # xP-puolella: ratkennut kierros suljetaan ennen kuin seuraava lukitaan.
       - name: Grade finished model squad gameweeks
+        id: grade_squad
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.grade_model_squad_gw
 
       # GW-CALLS-LOKI (28.8): kutsujen gradaus FPL:n pisteilla samaan
       # tiedostoon (data/gw_calls.json). Provisionaalinen kunnes data_checked.
       - name: Grade logged gameweek calls
+        id: grade_calls
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.grade_gw_calls
 
       - name: Freeze next gameweek xP at deadline window
@@ -300,7 +310,8 @@ jobs:
       # mallin kanta) padotti commit-askeleen ja KOKO refresh-data jaatyi
       # 28.8 17:08 -> 3 punaista ajoa. Vahti ei tuota dataa, joten se ei saa
       # estaa datan pushia; se nakyy silti punaisena Step healthin kautta.
-      # Kirjattu poikkeus: data/model_squad_frozen/gw{N}.exception.json.
+      # Kirjattu poikkeus: data/model_squad_exceptions/gw{N}.json (OMA kansio:
+      # freeze-kansion glob("gw*.json") lukisi sen runkona, mitattu 29.8 07:06).
       - name: Verify FPL entry matches the frozen squad
         id: verify_entry
         if: steps.guard.outputs.proceed == 'true'
@@ -474,5 +485,8 @@ jobs:
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
           [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa — builderi ajoi mutta ei tuottanut mitaan (PLAYER-GW-STALE-GUARD)"; fail=1; }
-          [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus gw{N}.exception.json tai korjaa entry"; fail=1; }
+          [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus data/model_squad_exceptions/gw{N}.json tai korjaa entry"; fail=1; }
+          [ "${{ steps.grade_xp.outcome }}" = "failure" ] && { echo "::error::grade_fpl_xp_gw FAILAA (xP-gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
+          [ "${{ steps.grade_squad.outcome }}" = "failure" ] && { echo "::error::grade_model_squad_gw FAILAA (mallirivin gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
+          [ "${{ steps.grade_calls.outcome }}" = "failure" ] && { echo "::error::grade_gw_calls FAILAA (kutsujen gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           exit $fail

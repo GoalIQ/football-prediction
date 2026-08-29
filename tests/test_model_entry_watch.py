@@ -36,6 +36,9 @@ def frozen_dir(tmp_path, monkeypatch):
     d = tmp_path / "model_squad_frozen"
     d.mkdir()
     monkeypatch.setattr(w, "FROZEN_DIR", d)
+    e = tmp_path / "model_squad_exceptions"
+    e.mkdir()
+    monkeypatch.setattr(w, "EXCEPTIONS_DIR", e)
     return d
 
 
@@ -131,7 +134,8 @@ def test_latest_frozen_sorts_numerically(frozen_dir):
 
 def _write_exception(d, gw, reason="Ville pelasi wildcardin korjatulla mallilla",
                      decided_by="Ville", decided_at="2026-08-28"):
-    (d / f"gw{gw}.exception.json").write_text(json.dumps({
+    # d = frozen_dir; poikkeus menee sen RINNALLE (EXCEPTIONS_DIR), ei sisaan.
+    (w.EXCEPTIONS_DIR / f"gw{gw}.json").write_text(json.dumps({
         "gw": gw, "reason": reason, "decided_by": decided_by,
         "decided_at": decided_at}), encoding="utf-8")
 
@@ -172,7 +176,7 @@ def test_broken_exception_is_an_error_not_a_free_pass(frozen_dir, monkeypatch, c
     _write(frozen_dir, 1, PAST, IDS)
     d = {"gw": 1, "reason": "x", "decided_by": "Ville", "decided_at": "2026-08-28"}
     d.update(bad)
-    (frozen_dir / "gw1.exception.json").write_text(json.dumps(d), encoding="utf-8")
+    (w.EXCEPTIONS_DIR / "gw1.json").write_text(json.dumps(d), encoding="utf-8")
     _mismatch(monkeypatch)
     assert w.main() == 1
     assert "Poikkeustiedosto on rikki" in capsys.readouterr().out
@@ -200,11 +204,35 @@ def test_stale_exception_is_flagged_when_squads_match(frozen_dir, monkeypatch, c
 
 def test_live_gw2_exception_file_is_valid():
     """Repon oikea poikkeus (GW2, 29.8) lapaisee saman validoinnin kuin testit."""
+    if not (w.EXCEPTIONS_DIR / "gw2.json").exists():
+        pytest.skip("model_squad_exceptions/gw2.json poistettu (GW3 jalkeen ok)")
     d, err = w.load_exception(2)
-    if not (w.FROZEN_DIR / "gw2.exception.json").exists():
-        pytest.skip("gw2.exception.json poistettu (GW3 jalkeen ok)")
     assert err is None, err
     assert d["decided_by"] == "Ville"
+
+
+def test_frozen_dir_holds_only_freezes():
+    """Graderit ja freeze lukevat freeze-kansion glob("gw*.json"):lla ja
+    olettavat jokaisen tiedoston olevan runko (meta.gw). 29.8 07:06
+    gw2.exception.json siella kaatoi grade_model_squad_gw:n (int(None)) ja
+    padotti commit-askeleen — sama vikaluokka jota poikkeus yritti korjata."""
+    import re
+    if not w.FROZEN_DIR.exists():
+        pytest.skip("ei freezeja viela")
+    bad = [p.name for p in w.FROZEN_DIR.iterdir()
+           if not re.fullmatch(r"gw\d+\.json", p.name)]
+    assert not bad, f"freeze-kansiossa muuta kuin gw{{N}}.json: {bad}"
+
+
+def test_exception_in_frozen_dir_is_not_read(frozen_dir, monkeypatch, capsys):
+    """NEGATIIVINEN KONTROLLI: vanhaan paikkaan (freeze-kansio) kirjoitettu
+    poikkeus EI vaienna eroa — se olisi taas graderien tiella."""
+    _write(frozen_dir, 1, PAST, IDS)
+    (frozen_dir / "gw1.exception.json").write_text(json.dumps({
+        "gw": 1, "reason": "x", "decided_by": "Ville", "decided_at": "2026-08-28"}),
+        encoding="utf-8")
+    _mismatch(monkeypatch)
+    assert w.main() == 1
 
 
 # ---------------------------------------------------------------- workflow-rakenne
@@ -214,7 +242,16 @@ def test_live_gw2_exception_file_is_valid():
 # alavirtaan.
 
 WORKFLOW = w.config.PROJECT_ROOT / ".github" / "workflows" / "fpl-data-refresh.yml"
-WATCH_STEPS = {"Verify FPL entry matches the frozen squad": "verify_entry"}
+# Askeleet jotka eivat saa padota commit-askelta: vahti (ei tuota dataa) ja
+# graderit (kirjoittavat omaa lokiaan; jos gradaus kaatuu, projektiot, price
+# watch ja freezet on silti pushattava). 29.8 07:06: grade_model_squad_gw
+# kaatui ja kaikki sen jalkeinen skipattiin — toinen jaatyminen samana aamuna.
+WATCH_STEPS = {
+    "Verify FPL entry matches the frozen squad": "verify_entry",
+    "Grade finished frozen gameweeks (xP vs actual)": "grade_xp",
+    "Grade finished model squad gameweeks": "grade_squad",
+    "Grade logged gameweek calls": "grade_calls",
+}
 
 
 def _refresh_steps():

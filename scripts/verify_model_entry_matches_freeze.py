@@ -27,10 +27,13 @@ korjatun mallin optimilla, mutta gw2.json oli jäädytetty vanhan mallin
 kannalla ja jäi Villen päätöksellä arkistoksi. Vahti kaatui oikein — mutta
 koska sillä ei ollut continue-on-erroria, se padotti commit-askeleen ja
 KOKO refresh-data jäätyi 28.8 17:08:aan (3 punaista ajoa). Nyt: tiedosto
-`gw{N}.exception.json` samassa hakemistossa (kentät gw, reason, decided_by,
+`data/model_squad_exceptions/gw{N}.json` (kentät gw, reason, decided_by,
 decided_at) muuttaa eron ::warning::-riviksi ja exit 0:ksi VAIN sille
 kierrokselle. Poikkeus ilman syytä tai väärälle kierrokselle on itsessään
-virhe (exit 1) — se ei ole vapaakortti.
+virhe (exit 1) — se ei ole vapaakortti. OMA HAKEMISTO: ensimmäinen versio
+(29.8 aamu) pani tiedoston freeze-kansioon nimellä gw2.exception.json, ja
+graderien `glob("gw*.json")` luki sen runkona → int(None) → commit padottui
+uudelleen. Freeze-kansiossa saa olla vain gw{N}.json (testi vartioi).
 
 Käyttö:
     python -m scripts.verify_model_entry_matches_freeze          # uusin GW
@@ -54,6 +57,8 @@ import requests
 import config
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
+# Poikkeukset OMASSA hakemistossa: freeze-kansion glob("gw*.json") lukisi ne runkoina.
+EXCEPTIONS_DIR = config.PROJECT_ROOT / "data" / "model_squad_exceptions"
 FPL_BASE = "https://fantasy.premierleague.com/api"
 FPL_HEADERS = {"User-Agent": "Mozilla/5.0 (GoalIQ entry-check job)"}
 
@@ -107,7 +112,7 @@ def load_exception(gw: int) -> tuple[dict | None, str | None]:
     """(poikkeus, virhe). Poikkeus on voimassa vain jos tiedosto on olemassa,
     sen gw on sama ja kaikki kentat ovat epatyhjia. Vaara tai vajaa poikkeus
     palautetaan virheena, ei ohiteta hiljaa."""
-    path = FROZEN_DIR / f"gw{gw}.exception.json"
+    path = EXCEPTIONS_DIR / f"gw{gw}.json"
     if not path.exists():
         return None, None
     try:
@@ -211,7 +216,7 @@ def main() -> int:
         if exception:
             print(f"::warning::GW{gw}:lle on kirjattu poikkeus mutta rivit "
                   f"tasmaavat (15/15 + kapteeni) — poikkeus on vanhentunut, "
-                  f"poista {FROZEN_DIR.name}/gw{gw}.exception.json.")
+                  f"poista {EXCEPTIONS_DIR.name}/gw{gw}.json.")
         print(f"OK: entry {ENTRY_ID} vastaa GW{gw}:n jaadytettya runkoa "
               f"(15/15 + kapteeni).")
         return 0
