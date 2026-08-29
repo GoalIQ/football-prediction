@@ -219,7 +219,15 @@ def test_hold_verdict_optimized_team_holds():
             or hv["best_move_gain_xp"] < rt.HOLD_THRESHOLD_XP)
     assert hv["horizon_gws"] == 6
     assert hv["threshold_xp"] == rt.HOLD_THRESHOLD_XP
-    assert "holding" in hv["message"].lower()
+    # 29.8: aiemmin tassa luki `assert "holding" in message`. Se ei mitannut
+    # vaitteen TARKKUUTTA, ja lause "No transfer beats your team" laksi
+    # tarkastamattomana ulos viidelle pinnalle. Nyt mitataan kaksi asiaa:
+    # lause nimeaa mita malli tarkisti, EIKA se saa palata ylikvanttoriin
+    # ("beats" / "no plan"), jonka plannerin oma heuristiikkateksti kumoaa
+    # samalla ruudulla ("it doesn't try every possible plan").
+    assert "the model checked" in hv["message"]
+    assert "beats" not in hv["message"].lower()
+    assert "no plan" not in hv["message"].lower()
 
 
 def test_hold_verdict_weak_team_transfers():
@@ -266,8 +274,13 @@ def test_hold_verdict_golden_master_entry():
         "horizon_gws": 6,
         "threshold_xp": rt.HOLD_THRESHOLD_XP,
         "hit_applied_xp": 0.0,
-        "message": ("No transfer beats your team over the next 6 GWs - "
-                    "holding is the play."),
+        # 29.8: "No transfer beats your team" oli vaara kahdesta syysta.
+        # Rate-team tutkii VAIN yksittaisia siirtoja (single_moves), joten
+        # "no plan" olisi ylikvanttori, ja plannerin oma heuristiikkateksti
+        # sanoo samalla ruudulla "it doesn't try every possible plan".
+        # Lause rajaa nyt siihen mita malli oikeasti tarkisti.
+        "message": ("No move the model checked improves your team over "
+                    "the next 6 GWs."),
     }
 
 

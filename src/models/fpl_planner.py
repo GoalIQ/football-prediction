@@ -185,8 +185,8 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     n_moves = sum(len(p["transfers"]) for p in plan)
     net_gain = round(plan_total - baseline_total, 2)
     if n_moves == 0:
-        hv_message = (f"No transfer beats your team over the next {len(gws)} "
-                      f"GWs - holding is the play.")
+        hv_message = (f"No move the model checked improves your team over the "
+                      f"next {len(gws)} GWs.")
     elif net_gain < HOLD_THRESHOLD_XP:
         hv_message = (f"Your best plan gains only {net_gain:+.1f} xP over "
                       f"{len(gws)} GWs (hits included) - holding is the play.")

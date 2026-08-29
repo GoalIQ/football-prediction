@@ -99,7 +99,15 @@ def test_plan_hold_verdict_best_squad_holds():
     assert hv["best_move_gain_xp"] is None
     assert hv["horizon_gws"] == 3
     assert hv["threshold_xp"] == rt.HOLD_THRESHOLD_XP
-    assert "holding" in hv["message"].lower()
+    # 29.8: aiemmin tassa luki `assert "holding" in message`. Se ei mitannut
+    # vaitteen TARKKUUTTA, ja lause "No transfer beats your team" laksi
+    # tarkastamattomana ulos viidelle pinnalle. Nyt mitataan kaksi asiaa:
+    # lause nimeaa mita malli tarkisti, EIKA se saa palata ylikvanttoriin
+    # ("beats" / "no plan"), jonka plannerin oma heuristiikkateksti kumoaa
+    # samalla ruudulla ("it doesn't try every possible plan").
+    assert "the model checked" in hv["message"]
+    assert "beats" not in hv["message"].lower()
+    assert "no plan" not in hv["message"].lower()
 
 
 def test_plan_hold_verdict_weak_squad_transfers():

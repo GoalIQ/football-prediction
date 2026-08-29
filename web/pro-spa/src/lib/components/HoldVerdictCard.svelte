@@ -50,7 +50,7 @@
 		     siirtoja mutta netto jaa kynnyksen alle ("Best available plan (3 moves
 		     across 6 GWs): +1.20 xP"). Otsikko ja mathrivi vetivat eri suuntaan.
 		     "beats" olisi yha vaara: suunnitelma voittaa, mutta ei tarpeeksi. -->
-		<p class="title">Hold - no plan is worth the move over the next {verdict.horizon_gws} GWs</p>
+		<p class="title">Hold - nothing the model checked gains enough</p>
 		<p class="math">
 			{#if gainText === null}
 				No available move improves your projected xP over the next {verdict.horizon_gws} GWs.

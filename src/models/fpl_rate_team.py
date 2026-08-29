@@ -1032,8 +1032,8 @@ def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
             "horizon_gws": horizon_gws,
             "threshold_xp": HOLD_THRESHOLD_XP,
             "hit_applied_xp": hit,
-            "message": (f"No transfer beats your team over the next "
-                        f"{horizon_gws} GWs - holding is the play."),
+            "message": (f"No move the model checked improves your team over "
+                        f"the next {horizon_gws} GWs."),
         }
     net = round(best_gain_xp - hit, 2)
     hold = net < HOLD_THRESHOLD_XP

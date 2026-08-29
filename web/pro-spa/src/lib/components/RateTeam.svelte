@@ -1084,7 +1084,7 @@
 				class="strip-item"
 				title={data.transfers.hold_verdict?.message ??
 					(stripHold
-						? `No transfer beats holding over the next ${data.meta.horizon_gw ?? 6} GWs.`
+						? `No move the model checked improves your team over the next ${data.meta.horizon_gw ?? 6} GWs.`
 						: 'The model found a move worth making.')}
 			>
 				Transfers <strong>{stripHold ? 'Hold' : 'Move'}</strong>
