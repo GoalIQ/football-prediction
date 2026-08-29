@@ -125,7 +125,14 @@ def _taulukon_rivit(h: str, maara: int = 10) -> list[list[str]]:
             # team_confidence liputti Brightonin (BHA -> "BHAturnover").
             # Poistetaan VAIN tama yksi luokka, ei mitaan muuta.
             c = re.sub(r'<span class="tflag">[^<]*</span>', "", c)
-            solut.append(re.sub(r"<[^>]+>", "", c).strip())
+            # 29.8: entiteetit puretaan, koska kortin spec on JSONia
+            # (`json.loads(html.unescape(...))`) ja taulukko on HTML:aa.
+            # GW2:n O'Reilly paljasti eron: kortti kantaa "O'Reilly", solu
+            # "O&#x27;Reilly", ja portti sanoi niita eri arvoiksi vaikka ne
+            # ovat sama merkkijono eri esityksessa. Purku EI loysenna
+            # vertailua: se on yha tasmallinen, ks. negatiivinen kontrolli
+            # test_row_gate_still_catches_a_different_name.
+            solut.append(html.unescape(re.sub(r"<[^>]+>", "", c)).strip())
         out.append(solut)
     return out
 
@@ -173,6 +180,17 @@ def test_card_rows_match_the_server_rendered_table(sivu):
                 f"rivi {i}: kortin {kentta}={arvo!r} ei vastaa saraketta "
                 f"{otsikko!r} (={rivi[j]!r}) - oikea rivi mutta vaara "
                 f"sarake tai eri lahde")
+
+
+def test_row_gate_still_catches_a_different_name():
+    """NEGATIIVINEN KONTROLLI entiteettipurulle (29.8). Purku saa poistaa
+    esityseron, ei aitoa eroa: eri nimi, katkaistu nimi ja eri kirjoitusasu
+    kaatavat yha."""
+    rivi = _taulukon_rivit(
+        "<table><tbody><tr><td>O&#x27;Reilly</td><td>BHA</td></tr></tbody></table>")[0]
+    assert rivi[0] == "O'Reilly"          # sama merkkijono, ei entiteetti
+    for vaara in ("O'Reilly Jr", "O'Reill", "OReilly", "O`Reilly", "o'reilly"):
+        assert vaara != rivi[0], f"{vaara!r} ei saa vastata solua {rivi[0]!r}"
 
 
 @pytest.mark.parametrize("sivu", PALVELINKORTTI)

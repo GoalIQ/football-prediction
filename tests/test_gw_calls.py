@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime as _dt
 
+import json
 import pytest
 
 from src.models.gw_calls import (DeadlinePassed, build_entry, grade_entry,
@@ -152,3 +153,71 @@ def test_sivun_osio_sanoo_before_vain_kun_aikaleimat_todistavat():
     html = gw_calls_html({"gameweeks": [e]})
     assert "pending" in html and "Guehi (MCI)" in html
     assert "—" not in html
+
+
+# ---------------------------------------------------------------- poikkeusnootti (29.8)
+# Portti k2 (M70): sivu ei kertonut etta GW2-rivi (Guehi C) ja entry (wildcard,
+# B.Fernandes C) eroavat; lukija loysi sen vasta entry-linkista. Nootti tulee
+# samasta tiedostosta jolla entry-vahti sallii eron, ja vain sen englannin-
+# kielisesta public_note-kentasta.
+
+def _log_row(gw: int) -> dict:
+    return {"gw": gw, "deadline_utc": "2026-08-28T17:30:00Z",
+            "logged_at": "2026-08-28T17:13:07Z", "graded": None,
+            "calls": [{"call": "model_captain", "player_id": 388, "web_name": "Guéhi",
+                       "team_short": "MCI", "pos": "DEF", "metric": "gw_xp",
+                       "value": 4.76, "criterion": "captain return, points doubled"}]}
+
+
+def test_exception_note_renders_under_its_gameweek():
+    from scripts.build_fpl_page import gw_calls_html
+    html = gw_calls_html({"gameweeks": [_log_row(2)]}, {2: "The row is scored as written."})
+    assert 'class="gw-note"' in html and "The row is scored as written." in html
+    # nootti tulee ENNEN kierroksen kutsurivia (rivin alla visuaalisesti = sama lohko)
+    assert html.index("gw-note") < html.index("Model squad captain")
+
+
+def test_exception_note_only_for_matching_gameweek():
+    """NEGATIIVINEN KONTROLLI: GW3:n nootti ei tartu GW2:n riviin."""
+    from scripts.build_fpl_page import gw_calls_html
+    html = gw_calls_html({"gameweeks": [_log_row(2)]}, {3: "wrong gw"})
+    assert "gw-note" not in html and "wrong gw" not in html
+
+
+def test_exception_note_escapes_html():
+    from scripts.build_fpl_page import gw_calls_html
+    html = gw_calls_html({"gameweeks": [_log_row(2)]}, {2: "<b>x</b>"})
+    assert "&lt;b&gt;x&lt;/b&gt;" in html and "<b>x</b>" not in html
+
+
+def test_gw_exception_notes_reads_only_public_note(tmp_path):
+    from scripts.build_fpl_page import gw_exception_notes
+    (tmp_path / "gw2.json").write_text(json.dumps({
+        "gw": 2, "reason": "suomenkielinen syy", "decided_by": "Ville",
+        "decided_at": "2026-08-28", "public_note": "  English note  "}), encoding="utf-8")
+    (tmp_path / "gw3.json").write_text(json.dumps({
+        "gw": 3, "reason": "vain suomea", "decided_by": "Ville", "decided_at": "x"}),
+        encoding="utf-8")                      # ei public_note -> ei riviä
+    (tmp_path / "gw4.json").write_text(json.dumps({
+        "gw": 9, "public_note": "gw mismatch"}), encoding="utf-8")   # gw != nimi
+    (tmp_path / "gw5.json").write_text("{not json", encoding="utf-8")
+    (tmp_path / "gw6.exception.json").write_text(json.dumps({"gw": 6, "public_note": "z"}),
+                                                 encoding="utf-8")   # vaara nimi
+    notes = gw_exception_notes(tmp_path)
+    assert notes == {2: "English note"}
+    assert "suomenkielinen" not in json.dumps(notes)
+
+
+def test_gw_exception_notes_missing_dir_is_empty(tmp_path):
+    from scripts.build_fpl_page import gw_exception_notes
+    assert gw_exception_notes(tmp_path / "nope") == {}
+
+
+def test_live_gw2_exception_has_english_public_note():
+    """Repon oikea poikkeus kantaa nootin jonka sivu renderoi (portti 29.8)."""
+    from scripts.build_fpl_page import gw_exception_notes, EXCEPTIONS_DIR
+    if not (EXCEPTIONS_DIR / "gw2.json").exists():
+        pytest.skip("gw2-poikkeus poistettu")
+    notes = gw_exception_notes()
+    assert 2 in notes and "B.Fernandes" in notes[2]
+    assert "\u2014" not in notes[2]          # ei em dashia

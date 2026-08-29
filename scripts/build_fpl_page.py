@@ -2121,6 +2121,36 @@ FOUNDER_PATH = ROOT / "data" / "founder_entry.json"
 # GW-CALLS-LOKI (28.8): mallin julkiset kierroskutsut, kirjattu ennen deadlinea
 # ja gradattu FPL:n pisteilla (scripts/log_gw_calls.py, grade_gw_calls.py).
 GW_CALLS_PATH = ROOT / "data" / "gw_calls.json"
+# GW-CALLS-EXCEPTION-NOTE (29.8): kun entry ja jaadytetty runko eroavat Villen
+# paatoksella (data/model_squad_exceptions/gw{N}.json, sama tiedosto jolla
+# verify_model_entry_matches_freeze sallii eron), sivu sanoo sen rivin alla.
+# Renderoidaan VAIN `public_note`-kentta (englanti, portin lapi); suomenkielinen
+# `reason` ei paady sivulle. Portti 29.8 k2: M70 estyi koska sivu ei kertonut
+# GW2:n ristiriidasta (Guehi C lokissa, wildcard + B.Fernandes C entryssa).
+EXCEPTIONS_DIR = ROOT / "data" / "model_squad_exceptions"
+
+
+def gw_exception_notes(exceptions_dir=None) -> dict[int, str]:
+    """{gw: public_note} niille kierroksille joilla on kirjattu poikkeus JA
+    julkinen nootti. Rikkinainen tiedosto tai puuttuva nootti -> ei riviä
+    (ei tyhjaa lausetta, ei suomea)."""
+    import re as _re
+    d = exceptions_dir or EXCEPTIONS_DIR
+    out: dict[int, str] = {}
+    if not d.exists():
+        return out
+    for f in sorted(d.glob("gw*.json")):
+        m = _re.fullmatch(r"gw(\d+)\.json", f.name)
+        if not m:
+            continue
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        note = str(data.get("public_note") or "").strip()
+        if note and int(data.get("gw") or 0) == int(m.group(1)):
+            out[int(m.group(1))] = note
+    return out
 
 
 def _fmt_logged(row: dict) -> str:
@@ -2187,17 +2217,25 @@ def _call_result(call: dict, graded: dict | None) -> tuple[str, str]:
     return f"{pts}{prov}", ("hit" if met else "miss")
 
 
-def gw_calls_html(log: dict | None) -> str:
+def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = None) -> str:
     """Track-record-osio: mallin kierroskutsut lokista. Tyhja loki -> ei
-    osiota (ei lupailla lokia jota ei ole)."""
+    osiota (ei lupailla lokia jota ei ole). `exception_notes` ({gw: nootti})
+    renderoidaan kierroksen rivien alle: sivu kertoo itse kun rivi ja entry
+    eroavat, eika lukija loyda sita vasta entry-linkista."""
     from src.models.gw_calls import CALL_LABELS
     rows = (log or {}).get("gameweeks") or []
     if not rows:
         return ""
+    notes = gw_exception_notes() if exception_notes is None else exception_notes
     trs = []
     for gw_row in sorted(rows, key=lambda r: -int(r.get("gw", 0))):
         graded = gw_row.get("graded")
         logged = _fmt_logged(gw_row)
+        note = notes.get(int(gw_row.get("gw", 0)))
+        if note:
+            trs.append(
+                '<tr class="gw-note"><td class="num">'
+                f'GW{gw_row["gw"]}</td><td colspan="6">{escape(note)}</td></tr>')
         for call in gw_row.get("calls") or []:
             pts, res = _call_result(call, graded)
             name = f"{call.get('web_name') or '?'} ({call.get('team_short') or '?'})"

@@ -4,5 +4,7 @@
   "decided_by": "Ville",
   "decided_at": "2026-08-28",
   "recorded_by": "CC 2026-08-29 (fpl-data-refresh oli punainen 3 ajoa, data jaassa 28.8 17:08 alkaen)",
-  "applies_until": "GW3-freeze (gw3.json) korvaa taman latest_frozen()-valinnassa"
+  "applies_until": "GW3-freeze (gw3.json) korvaa taman latest_frozen()-valinnassa",
+  "public_note": "The Model squad captain row below points at the squad frozen on 27 August, before the model was rebuilt on deadline day. The entry that played GW2 wildcarded and captained B.Fernandes. The row was not updated before the deadline, so it is scored as logged. The four card calls in this gameweek were recomputed with the rebuilt model at 17:13 UTC.",
+  "note_gate": "julkaisutarkistaja 29.8 kierros 1 blokkasi ensimmaisen version: se vaitti rivin kirjoitetun ennen mallikorjausta, mutta logged_at 17:13:07Z on merge 1b9e845b4 (17:05:22Z) JALKEEN, ja vain model_captain on vanhalta mallilta (muut neljä kutsua laskettiin uudelleen 17:08:35 projektiosta)."
 }
