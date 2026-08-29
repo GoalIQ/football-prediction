@@ -961,7 +961,8 @@ def captain_suggestion(xi: list[dict], gw: int) -> dict:
 
 
 def transfer_suggestions(squad: list[dict], pool: list[dict],
-                         bank_tenths: int) -> dict:
+                         bank_tenths: int,
+                         gws: list[int] | None = None) -> dict:
     """Top 3-5 yhden pelaajan siirtoa: sama positio, budjetti (bank + myyntihinta
     = now_cost, MVP-yksinkertaistus), max 3/klubi vaihdon JÄLKEEN, suurin
     horisontti-xP-hyöty AVAUSKOKOONPANOON. 'hold' jos paras delta < kynnys.
@@ -978,7 +979,7 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
     `delta_xp_squad` läpinäkyvyyden vuoksi.
     """
     from src.models.fpl_transfers import single_moves, window_xp
-    moves = single_moves(squad, pool, bank_tenths, None, top_k=5)
+    moves = single_moves(squad, pool, bank_tenths, gws, top_k=5)
     suggestions = []
     for m in moves:
         out_p, in_p = m["out"], m["in"]
@@ -1383,6 +1384,34 @@ def planning_start_gw(target_gw: int, pool: list[dict], xp_data: dict) -> int:
     return start
 
 
+def transfer_horizon_gws(pool: list[dict], xp_data: dict, target_gw: int,
+                         cap: int | None = None) -> list[int]:
+    """Kierrokset joihin siirto voi VIELA vaikuttaa. Yksi lahde molemmille
+    moottoreille.
+
+    29.8 mitattu tuotannosta samalle entrylle samalla sekunnilla:
+    `/api/fantasy/rate-team` sanoi `horizon_gws: 6` ja `/api/fantasy/plan`
+    sanoi `5`. Rate-team luki artefaktin nimellisen `meta.horizon_gw`:n, joka
+    sisaltaa kesken olevan kierroksen jonka deadline on jo mennyt — siihen ei
+    voi enaa tehda siirtoa, mutta sen xP oli mukana jokaisen siirtoehdotuksen
+    hyodyssa. Planner pudotti sen. Kaksi moottoria, kaksi vastausta, ja
+    jakokortti julkaisi rate-teamin luvun.
+
+    HUOM: tama EI koske joukkueen ARVOSANAA. "Team xP, GW2" kesken kierroksen
+    on oikein — se on mita joukkue on juuri nyt keraamassa (ks.
+    `planning_start_gw`in docstring). Vain siirtojen ja hold-verdiktin
+    horisontti rajataan.
+    """
+    start = planning_start_gw(target_gw, pool, xp_data)
+    covered = sorted({g.get("gw") for p in pool
+                      for g in (p.get("gameweeks") or [])
+                      if g.get("gw") is not None})
+    gws = [g for g in covered if g >= start]
+    if cap:
+        gws = gws[:cap]
+    return gws
+
+
 def rate_team(entry: int | None = None, gw: int | None = None,
               players: list[int] | None = None, captain: int | None = None,
               bank: float | None = None, ft: int = 1) -> dict:
@@ -1480,12 +1509,16 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     gap_to_optimal = round(max(0.0, optimal_xp - team_xp_horizon), 2)
     strongest, weakest = _line_strength(xi, pool)
 
-    transfers = transfer_suggestions(squad, pool, bank_tenths)
+    # 29.8: siirtoehdotukset ja hold-verdikti lasketaan VAIN niille
+    # kierroksille joihin siirto ehtii vaikuttaa. Sama lahde kuin plannerilla.
+    _t_gws = transfer_horizon_gws(pool, xp_data, target_gw)
+    transfers = transfer_suggestions(squad, pool, bank_tenths, _t_gws or None)
     # #63: hero-verdikti — paras yksittäinen siirto hitin jälkeen vs kynnys
     best_gain = (transfers["suggestions"][0]["delta_xp_horizon"]
                  if transfers["suggestions"] else None)
     transfers["hold_verdict"] = build_hold_verdict(
-        best_gain, int(xp_data["meta"].get("horizon_gw") or 6), ft)
+        best_gain,
+        len(_t_gws) or int(xp_data["meta"].get("horizon_gw") or 6), ft)
 
     _dl_gw = xp_data["meta"].get("deadline_gameweek")
 
@@ -1512,6 +1545,10 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
+            # Arvosana lasketaan koko artefaktin horisontilta (ml. kesken oleva
+            # kierros), siirrot vain niilta kierroksilta joihin siirto ehtii.
+            # Kaksi eri lukua tarkoituksella, molemmat nimetty.
+            "transfer_horizon_gw": len(_t_gws) or None,
             "rating_method": "vs_optimal_budget_team",
             # 26.7: projektioiden osuvuus mukaan vastaukseen, jotta rating on
             # falsifioituva eika vain sisaisesti johdonmukainen. Lahde on

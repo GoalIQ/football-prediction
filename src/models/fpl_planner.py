@@ -55,8 +55,12 @@ MODEL_VS_CROWD_MIN_CROWD_PCT = 60.0
 
 
 def _horizon_gws(pool: list[dict], start_gw: int, horizon: int) -> list[int]:
+    """Sama laskenta kuin rate-teamilla (29.8: kaksi moottoria antoi kaksi eri
+    horisonttia samalle entrylle). `transfer_horizon_gws` on yksi lahde;
+    tama sailyttaa plannerin oman 503-virheen tyhjalle ikkunalle."""
     covered = sorted({g.get("gw") for p in pool
-                      for g in (p.get("gameweeks") or [])})
+                      for g in (p.get("gameweeks") or [])
+                      if g.get("gw") is not None})
     gws = [g for g in covered if g >= start_gw][:horizon]
     if not gws:
         raise RateTeamError(503, "No projected gameweeks in range.")
