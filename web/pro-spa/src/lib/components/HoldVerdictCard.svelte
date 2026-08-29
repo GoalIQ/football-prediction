@@ -30,7 +30,7 @@
 	const nMoves = $derived(verdict.transfers_planned ?? 1);
 	const hits = $derived(verdict.hits_taken ?? (verdict.hit_applied_xp ? 1 : 0));
 	const hitNote = $derived(
-		hits === 0 ? '' : hits === 1 ? ', after a -4 hit' : `, after ${hits} hits (-${hits * 4} xP)`
+		hits === 0 ? '' : hits === 1 ? ' after a -4 hit' : ` after ${hits} hits (-${hits * 4} xP)`
 	);
 	const span = $derived(nMoves > 1 ? '' : ` over ${verdict.horizon_gws} GWs`);
 	const planLabel = $derived(
@@ -50,19 +50,20 @@
 			{#if gainText === null}
 				No available move improves your projected xP over the next {verdict.horizon_gws} GWs.
 			{:else}
-				{planLabel}: {gainText} xP{span} (below the {verdict.threshold_xp.toFixed(
-					1
-				)} xP threshold{hitNote}).
+				{planLabel}: {gainText} xP{span}{hitNote}, below the {verdict.threshold_xp.toFixed(1)} xP
+				threshold.
 			{/if}
 		</p>
 	</div>
 {:else}
 	<div class="verdict-hero go" role="status">
-		<p class="title">{verdict.message}</p>
+		<!-- Portti 29.8 k2: otsikko klientista samalla luvulla kuin mathrivi (backendin
+		     message pyoristaa 1 desimaaliin -> sama luku kahdella tarkkuudella), ei
+		     sisakkaisia sulkuja; sama lause kuin mobiilin go_title/go_line. -->
+		<p class="title">Recommended: {nMoves} transfer{nMoves === 1 ? '' : 's'} ({gainText} xP net)</p>
 		<p class="math">
-			{goLabel} {gainText} xP{span} (clears the {verdict.threshold_xp.toFixed(
-				1
-			)} xP threshold{hitNote}).
+			{goLabel} {gainText} xP{span}{hitNote}, clears the {verdict.threshold_xp.toFixed(1)} xP
+			threshold.
 		</p>
 	</div>
 {/if}
