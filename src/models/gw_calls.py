@@ -12,6 +12,13 @@ SAANNOT
 - Yksi rivi per GW, `data/gw_calls.json`, versioitu (ei outputs/).
 - Kirjaus on idempotentti ENNEN deadlinea: sama GW paivitetaan (kortti
   regeneroidaan postaushetkella, ja loki seuraa viimeisinta korttia).
+- DEADLINE-SNAPSHOT (29.8): rivi kirjoitetaan uudelleen tuoreella
+  projektiolla T-2 h -ikkunassa (pressien jalkeen, xMins/start% paivittyneet),
+  erillaan siirtofreezesta (T-24 h). Kaksi aikaleimaa: `logged_at` on
+  ENSIMMAINEN kirjaus eika muutu koskaan, `updated_at` on VIIMEISIN kirjaus
+  ennen deadlinea. `source.projection_generated_at` seuraa viimeisinta.
+  Paivitys ei pudota kutsuja joita se ei itse tuota (projected_xi tulee
+  kortista): ne sailyvat rivilla.
 - Deadlinen JALKEEN kirjaus on kielletty (fail-closed, `DeadlinePassed`):
   kutsu joka kirjataan deadlinen jalkeen ei ole kutsu vaan jalkiviisaus.
 - Gradaus kirjoittaa `graded`-lohkon samaan riviin. Provisionaalinen kunnes
@@ -43,8 +50,12 @@ NEW_LOG = {
             "four standouts card picks and the projected XI card) is written "
             "here before the FPL deadline "
             "and scored with official FPL points after the gameweek. A gameweek "
-            "row can be updated until its deadline and never after it. Scores "
-            "are provisional until FPL confirms bonus points."),
+            "row can be updated until its deadline and never after it. In "
+            "each row, logged_at is the first write and updated_at the last "
+            "write before the deadline. A row without updated_at was written "
+            "before the log kept both timestamps, and there logged_at is the "
+            "last write. Scores are provisional until FPL confirms bonus "
+            "points."),
     },
     "gameweeks": [],
 }
@@ -107,20 +118,27 @@ def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
              for p in (frozen.get("xi") or []) + (frozen.get("bench") or [])}
     calls: list[dict] = []
 
-    cap = (squad.get(int(frozen["captain"]))
-           if frozen.get("captain") is not None else None)
-    if cap is not None:
-        calls.append({
-            "call": "model_captain", **_slim(cap),
-            "metric": "gw_xp", "value": cap.get("xp"),
-            "criterion": "captain return, points doubled",
-        })
-
     def _gw_xp(p: dict):
         for g in p.get("gameweeks") or []:
             if int(g.get("gw", -1)) == gw:
                 return g.get("xp")
         return None
+
+    cap = (squad.get(int(frozen["captain"]))
+           if frozen.get("captain") is not None else None)
+    if cap is not None:
+        # Kapteenin HENKILO tulee freezesta (immutable, Ville syottaa rivin
+        # entryyn T-24 h). ARVO tulee tuoreesta projektiosta jos se on
+        # annettu: snapshot kirjaa sen mita malli sanoo kirjaushetkella, ei
+        # sita mita se sanoi vuorokausi aiemmin.
+        fresh = _gw_xp((players_by_id or {}).get(int(cap["id"])) or {})
+        calls.append({
+            "call": "model_captain", **_slim(cap),
+            "metric": "gw_xp",
+            "value": fresh if fresh is not None else cap.get("xp"),
+            "frozen_value": cap.get("xp"),
+            "criterion": "captain return, points doubled",
+        })
 
     # pick_standouts() avaimet: captain/ceiling/safest/gamble. Lokissa kortin
     # kapteeni on "captain_pick", jotta se ei sekoitu mallin rivin kapteeniin.
@@ -164,6 +182,7 @@ def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
         "gw": gw,
         "deadline_utc": _iso(deadline),
         "logged_at": _iso(now),
+        "updated_at": _iso(now),
         "source": {
             "freeze_frozen_at": meta.get("frozen_at"),
             "projection_generated_at": xp_meta.get("generated_at"),
@@ -264,7 +283,8 @@ def upsert_call(log: dict, gw: int, deadline_utc: str, call: dict,
     row = next((r for r in rows if int(r.get("gw", -1)) == int(gw)), None)
     if row is None:
         row = {"gw": int(gw), "deadline_utc": _iso(deadline),
-               "logged_at": _iso(now), "source": dict(source or {}),
+               "logged_at": _iso(now), "updated_at": _iso(now),
+               "source": dict(source or {}),
                "calls": [], "model_transfers": [], "graded": None}
         rows.append(row)
         rows.sort(key=lambda r: int(r.get("gw", 0)))
@@ -273,7 +293,7 @@ def upsert_call(log: dict, gw: int, deadline_utc: str, call: dict,
     calls = [c for c in row.get("calls") or [] if c.get("call") != call["call"]]
     calls.append(call)
     row["calls"] = calls
-    row["logged_at"] = _iso(now)
+    row["updated_at"] = _iso(now)   # logged_at = ensimmainen kirjaus, ei muutu
     if source:
         row.setdefault("source", {}).update(source)
     return log
@@ -336,7 +356,13 @@ def score_projected_xi(call: dict, points: dict[int, int],
 
 def upsert(log: dict, entry: dict, now: _dt.datetime) -> dict:
     """Lisaa tai paivita GW-rivi. Fail-closed deadlinen jalkeen, myos silloin
-    kun rivi on jo olemassa (paivitys deadlinen jalkeen muuttaisi kutsua)."""
+    kun rivi on jo olemassa (paivitys deadlinen jalkeen muuttaisi kutsua).
+
+    Paivitys (DEADLINE-SNAPSHOT 29.8): uuden entryn kutsut korvaavat samat
+    kutsut, `logged_at` sailyy ensimmaisesta kirjauksesta, `updated_at` =
+    now, ja kutsut joita entry ei tuota (projected_xi kortista) sailyvat.
+    Aiempi versio korvasi koko rivin ja pudotti kortin kutsun jokaisessa
+    3 h -refreshissa ennen deadlinea."""
     deadline = parse_utc(entry["deadline_utc"])
     if now >= deadline:
         raise DeadlinePassed(
@@ -348,9 +374,19 @@ def upsert(log: dict, entry: dict, now: _dt.datetime) -> dict:
             if r.get("graded"):
                 raise DeadlinePassed(
                     f"GW{entry['gw']} on jo gradattu, kutsua ei muuteta.")
+            mine = {c.get("call") for c in entry.get("calls") or []}
+            kept = [c for c in r.get("calls") or [] if c.get("call") not in mine]
+            entry["calls"] = list(entry.get("calls") or []) + kept
+            entry["logged_at"] = r.get("logged_at") or entry["logged_at"]
+            entry["updated_at"] = _iso(now)
+            src = dict(r.get("source") or {})
+            src.update({k: v for k, v in (entry.get("source") or {}).items()
+                        if v is not None})
+            entry["source"] = src
             rows[i] = entry
             break
     else:
+        entry.setdefault("updated_at", entry["logged_at"])
         rows.append(entry)
     rows.sort(key=lambda r: int(r.get("gw", 0)))
     return log
@@ -392,20 +428,37 @@ def _met(call: dict, pts: int):
 
 
 def grade_entry(entry: dict, points: dict[int, int], minutes: dict[int, int],
-                provisional: bool, now: _dt.datetime) -> dict:
+                provisional: bool, now: _dt.datetime,
+                starts: dict[int, int] | None = None) -> dict:
     """Kirjoita `graded`-lohko. Pisteet FPL:n event/{gw}/live total_points.
-    Puuttuva pelaaja -> None (ei nolla: nolla vaittaisi blankia)."""
+    Puuttuva pelaaja -> None (ei nolla: nolla vaittaisi blankia).
+
+    `starts` (FPL live stats `starts`, 29.8 DEADLINE-SNAPSHOT-mittari M1):
+    kirjaa `started` per kutsu, jotta minuuttivirhe (ei aloittanut) erottuu
+    mallivirheesta (aloitti, ei tuottanut). Ilman dataa `started` = None."""
     if entry.get("graded") and not entry["graded"].get("provisional"):
         return entry  # lopullinen, ei kirjoiteta yli
     by_call = {}
+
+    def _started(pid: int):
+        if starts is None or pid not in starts:
+            return None
+        return int(starts.get(pid) or 0) > 0
+
     for c in entry.get("calls") or []:
         if c["call"] == PROJECTED_XI_CALL:
-            by_call[c["call"]] = score_projected_xi(c, points, minutes)
+            xi_row = score_projected_xi(c, points, minutes)
+            xi_ids = [int(r["player_id"]) for r in c.get("xi") or []]
+            flags = [_started(pid) for pid in xi_ids]
+            xi_row["xi_started"] = (None if any(f is None for f in flags)
+                                    else sum(1 for f in flags if f))
+            by_call[c["call"]] = xi_row
             continue
         pid = int(c["player_id"])
         pts = points.get(pid)
         mins = minutes.get(pid)
-        row = {"points": pts, "minutes": mins, "met": None}
+        row = {"points": pts, "minutes": mins, "met": None,
+               "started": _started(pid)}
         if pts is not None:
             row["met"] = _met(c, int(pts))
             if c["call"] == "model_captain":
@@ -417,3 +470,29 @@ def grade_entry(entry: dict, points: dict[int, int], minutes: dict[int, int],
         "by_call": by_call,
     }
     return entry
+
+
+def start_share(log: dict, gws) -> dict:
+    """Mittari M1 (DEADLINE-SNAPSHOT 29.8): montako kutsuttua pelaajaa aloitti.
+
+    Lasketaan lokista gradatuilta riveilta, pelaajakutsut (ei projected_xi).
+    `started` tulee gradauksesta (FPL live `starts`); jos se puuttuu, rivi
+    ei ole mukana (ei arvata minuuteista: 1 min vaihdolta ei ole aloitus).
+    Vertailu: start_share(log, [1, 2]) vs start_share(log, [3, 4]).
+    """
+    want = {int(g) for g in gws}
+    n = started = 0
+    for row in log.get("gameweeks") or []:
+        if int(row.get("gw", -1)) not in want or not row.get("graded"):
+            continue
+        by_call = row["graded"].get("by_call") or {}
+        for c in row.get("calls") or []:
+            if c["call"] == PROJECTED_XI_CALL:
+                continue
+            st = (by_call.get(c["call"]) or {}).get("started")
+            if st is None:
+                continue
+            n += 1
+            started += 1 if st else 0
+    return {"gws": sorted(want), "calls": n, "started": started,
+            "share": (round(started / n, 3) if n else None)}

@@ -165,10 +165,13 @@ def test_upsert_call_before_deadline_and_fail_closed_after():
     upsert_call(log, GW, DL, dict(c, value=1.0), BEFORE + _dt.timedelta(hours=1))
     assert [x["call"] for x in row["calls"]] == ["captain_pick", "projected_xi"]
     assert row["calls"][1]["value"] == 1.0
-    assert row["logged_at"] == "2026-08-28T15:00:00Z"
+    # DEADLINE-SNAPSHOT (29.8): logged_at = ensimmainen, updated_at = viimeisin
+    assert row["logged_at"] == "2026-08-28T14:00:00Z"
+    assert row["updated_at"] == "2026-08-28T15:00:00Z"
     with pytest.raises(DeadlinePassed):
         upsert_call(log, GW, DL, c, AFTER)
-    assert row["logged_at"] == "2026-08-28T15:00:00Z"
+    assert row["logged_at"] == "2026-08-28T14:00:00Z"
+    assert row["updated_at"] == "2026-08-28T15:00:00Z"
 
 
 def _xi_call_fixture():

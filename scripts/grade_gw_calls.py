@@ -56,11 +56,15 @@ def main() -> int:
         except Exception as e:
             print(f"VIRHE: event/{gw}/live epaonnistui: {e!r}")
             return 1
-        points, minutes = {}, {}
+        points, minutes, starts = {}, {}, {}
         for el in live.get("elements") or []:
             s = el.get("stats") or {}
             points[int(el["id"])] = int(s.get("total_points") or 0)
             minutes[int(el["id"])] = int(s.get("minutes") or 0)
+            # 29.8 (DEADLINE-SNAPSHOT, mittari M1): FPL:n live-stats `starts`
+            # erottaa aloittajan vaihtopelaajasta; minuutit eivat riita.
+            if "starts" in s:
+                starts[int(el["id"])] = int(s.get("starts") or 0)
         # 29.8: mita TILI teki (chip, siirrot, hitit). Ilman tata
         # `model_transfers` on ainoa siirtoluku lokissa, ja se on mallin
         # aikomus - GW2:ssa ne erosivat (freeze 3 siirtoa / 2 hittia,
@@ -75,7 +79,8 @@ def main() -> int:
                 row["entry_actual"] = entry_actual(hrow, picks)
             except Exception as e:
                 print(f"HUOM: entry_actual GW{gw} ei luettavissa: {e!r}")
-        grade_entry(row, points, minutes, st["provisional"], now)
+        grade_entry(row, points, minutes, st["provisional"], now,
+                    starts=starts or None)
         changed += 1
         flag = " (provisionaalinen)" if st["provisional"] else ""
         print(f"OK: GW{gw} gradattu{flag}: " + ", ".join(

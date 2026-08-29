@@ -8,6 +8,12 @@ Ajo (CI: fpl-data-refresh, freezen jalkeen; kasin ennen kortin postausta):
     python -m scripts.log_gw_calls            # seuraava GW jos freeze on
     python -m scripts.log_gw_calls --gw 2
 
+DEADLINE-SNAPSHOT (29.8): sama skripti ajetaan uudelleen T-2 h -ikkunassa
+(workflow'n tuntiajo + scripts/deadline_snapshot_guard.py), jolloin rivi
+kirjoitetaan uudelleen tuoreella projektiolla. `logged_at` sailyy
+ensimmaisesta kirjauksesta, `updated_at` on viimeisin, ja kortin projected_xi-
+kutsu sailyy rivilla (src/models/gw_calls.upsert).
+
 Exit 0: kirjattu tai ei mitaan kirjattavaa (ei freezea / deadline ohi ja rivi
 on jo lokissa). Exit 1: deadline ohi eika rivia ole (kutsu jai kirjaamatta,
 se on virhe joka kuuluu nakya), tai tekninen virhe.
@@ -35,7 +41,10 @@ LOG_PATH = config.DATA_DIR / "gw_calls.json"
 
 def load_log() -> dict:
     if LOG_PATH.exists():
-        return json.loads(LOG_PATH.read_text(encoding="utf-8"))
+        log = json.loads(LOG_PATH.read_text(encoding="utf-8"))
+        # Saantoteksti seuraa koodia (29.8: kaksi aikaleimaa). Versio pysyy.
+        log.setdefault("meta", {})["rules"] = NEW_LOG["meta"]["rules"]
+        return log
     return json.loads(json.dumps(NEW_LOG))
 
 
@@ -76,8 +85,10 @@ def main(argv=None) -> int:
         return 0
     LOG_PATH.write_text(json.dumps(log, ensure_ascii=False, indent=1) + "\n",
                         encoding="utf-8")
-    print(f"OK: GW{gw} kutsut kirjattu {entry['logged_at']} "
-          f"(deadline {entry['deadline_utc']}) -> {LOG_PATH.name}")
+    print(f"OK: GW{gw} kutsut kirjattu: ensimmainen {entry['logged_at']}, "
+          f"viimeisin {entry['updated_at']} (deadline {entry['deadline_utc']}, "
+          f"projektio {entry['source'].get('projection_generated_at')}) "
+          f"-> {LOG_PATH.name}")
     return 0
 
 
