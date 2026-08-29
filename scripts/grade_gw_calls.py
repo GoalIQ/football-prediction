@@ -18,8 +18,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config  # noqa: E402
 from src.data import fpl_api  # noqa: E402
-from src.models.gw_calls import grade_entry, gw_status  # noqa: E402
+from src.models.gw_calls import (entry_actual, grade_entry,  # noqa: E402
+                                 gw_status)
 
+import os
+ENTRY_ID = int(os.environ.get("FPL_MODEL_ENTRY_ID", "116920"))
 LOG_PATH = config.DATA_DIR / "gw_calls.json"
 
 
@@ -58,6 +61,20 @@ def main() -> int:
             s = el.get("stats") or {}
             points[int(el["id"])] = int(s.get("total_points") or 0)
             minutes[int(el["id"])] = int(s.get("minutes") or 0)
+        # 29.8: mita TILI teki (chip, siirrot, hitit). Ilman tata
+        # `model_transfers` on ainoa siirtoluku lokissa, ja se on mallin
+        # aikomus - GW2:ssa ne erosivat (freeze 3 siirtoa / 2 hittia,
+        # entry wildcard / 0 / 0). Fail-open: jos FPL ei vastaa, kentta
+        # jaa entiselleen eika gradaus kaadu.
+        if not row.get("entry_actual"):
+            try:
+                hist = fpl_api.fetch_entry_history(ENTRY_ID, force=True)
+                hrow = next((h for h in (hist.get("current") or [])
+                             if int(h.get("event") or 0) == gw), None)
+                picks = fpl_api.fetch_entry_picks(ENTRY_ID, gw, force=True)
+                row["entry_actual"] = entry_actual(hrow, picks)
+            except Exception as e:
+                print(f"HUOM: entry_actual GW{gw} ei luettavissa: {e!r}")
         grade_entry(row, points, minutes, st["provisional"], now)
         changed += 1
         flag = " (provisionaalinen)" if st["provisional"] else ""

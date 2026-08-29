@@ -169,9 +169,38 @@ def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
             "projection_generated_at": xp_meta.get("generated_at"),
         },
         "calls": calls,
+        # Mallin AIKOMUS freezesta. Se ei ole sama kuin mita tili teki:
+        # 28.8 freeze listasi 3 siirtoa ja 2 hittia, mutta entry pelasi
+        # wildcardin (0 siirtoa, 0 hittia). Julkaisuportti 29.8: lahdelinkki
+        # nayttaa taman lohkon ilman kontekstia ja lukija lukee sen tilin
+        # tekemisiksi. `entry_actual` taytetaan gradauksessa FPL:n omasta
+        # datasta, ja sivu voi nayttaa ne rinnakkain.
         "model_transfers": transfers,
+        "entry_actual": None,
         "graded": None,
     }
+
+
+def entry_actual(history_row: dict | None, picks: dict | None) -> dict | None:
+    """Mita TILI teki kierroksella, FPL:n omasta datasta.
+
+    `history_row` = entry/{id}/history -&gt; current[] alkio, `picks` =
+    entry/{id}/event/{gw}/picks. Palauttaa None jos kumpikaan ei ole
+    luettavissa (nolla ei ole sama kuin ei tietoa).
+    """
+    if not history_row and not picks:
+        return None
+    out: dict = {}
+    if history_row:
+        out["transfers"] = int(history_row.get("event_transfers") or 0)
+        out["transfers_cost"] = int(history_row.get("event_transfers_cost") or 0)
+        out["points"] = history_row.get("points")
+    if picks:
+        out["chip"] = picks.get("active_chip")
+        cap = [int(p["element"]) for p in (picks.get("picks") or [])
+               if p.get("is_captain")]
+        out["captain"] = cap[0] if cap else None
+    return out or None
 
 
 # ---------------------------------------------------------------------------

@@ -221,3 +221,49 @@ def test_live_gw2_exception_has_english_public_note():
     notes = gw_exception_notes()
     assert 2 in notes and "B.Fernandes" in notes[2]
     assert "\u2014" not in notes[2]          # ei em dashia
+
+
+# ---------------------------------------------------------------- entry_actual (29.8)
+# `model_transfers` on mallin AIKOMUS freezesta. GW2:ssa se listasi 3 siirtoa ja
+# 2 hittia, mutta tili pelasi wildcardin: 0 siirtoa, 0 hittia. Sivun lahdelinkki
+# nayttaa lohkon ilman kontekstia -> lukija lukee sen tilin tekemisiksi
+# (julkaisuportti 29.8). `entry_actual` on FPL:n oma luku samasta kierroksesta.
+
+def test_entry_actual_reads_both_sources():
+    from src.models.gw_calls import entry_actual
+    out = entry_actual(
+        {"event": 2, "event_transfers": 0, "event_transfers_cost": 0, "points": 15},
+        {"active_chip": "wildcard",
+         "picks": [{"element": 426, "is_captain": True},
+                   {"element": 411, "is_vice_captain": True}]})
+    assert out == {"transfers": 0, "transfers_cost": 0, "points": 15,
+                   "chip": "wildcard", "captain": 426}
+
+
+def test_entry_actual_without_sources_is_none_not_zero():
+    """NEGATIIVINEN KONTROLLI: puuttuva data ei saa nayttaa nollalta siirrolta."""
+    from src.models.gw_calls import entry_actual
+    assert entry_actual(None, None) is None
+
+
+def test_entry_actual_partial_sources():
+    from src.models.gw_calls import entry_actual
+    only_hist = entry_actual({"event_transfers": 2, "event_transfers_cost": 4}, None)
+    assert only_hist["transfers"] == 2 and "chip" not in only_hist
+    only_picks = entry_actual(None, {"active_chip": None, "picks": []})
+    assert only_picks["chip"] is None and only_picks["captain"] is None
+    assert "transfers" not in only_picks
+
+
+def test_live_gw2_row_carries_entry_actual():
+    """Repon GW2-rivi kantaa tilin oikeat luvut: wildcard, ei siirtoja."""
+    import config
+    log = json.loads((config.DATA_DIR / "gw_calls.json").read_text(encoding="utf-8"))
+    row = next((r for r in log["gameweeks"] if int(r["gw"]) == 2), None)
+    if row is None:
+        pytest.skip("GW2-rivi poistettu")
+    ea = row.get("entry_actual")
+    assert ea, "GW2-rivilta puuttuu entry_actual"
+    assert ea["chip"] == "wildcard" and ea["transfers"] == 0
+    assert row["model_transfers"], "model_transfers pitaa sailya (mallin aikomus)"
+
