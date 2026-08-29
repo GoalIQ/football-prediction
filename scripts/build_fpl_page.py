@@ -2158,6 +2158,10 @@ def _call_said(call: dict) -> str:
         # Portti 28.8: ilmaissivu nayttaa Guehille xP/GW 5.19 (6 GW:n keskiarvo),
         # loki 4.76 (GW-xP); "highest projection" olisi lukenut vaarin.
         return "captain, points doubled"
+    if m == "xi_gw_xp":
+        # PROJECTED-XI-KORTTI (29.8): XI:n GW-xP-summa on Premium-luku, sivu
+        # sanoo saannon. Luku on lokissa (value) ja kortilla.
+        return "XI total, captain doubled, bench subs count"
     return str(v)
 
 
@@ -2173,6 +2177,10 @@ def _call_result(call: dict, graded: dict | None) -> tuple[str, str]:
     prov = " (provisional)" if graded.get("provisional") else ""
     if call["call"] == "model_captain":
         return f"{pts}{prov}", f"{r.get('captain_total', pts * 2)} as captain"
+    if call["call"] == "projected_xi":
+        n_sub = len(r.get("autosubs") or [])
+        return f"{pts}{prov}", (f"XI total, {n_sub} auto sub" + ("s" if n_sub != 1 else "")
+                                if n_sub else "XI total")
     met = r.get("met")
     if met is None:
         return f"{pts}{prov}", "pending"
