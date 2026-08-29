@@ -48,6 +48,8 @@ from scripts.mobile_css import (  # noqa: E402
     MOBILE_CSS,
     MOBILE_GW_COLS,
 )
+from scripts.public_text import assert_public_copy  # artefaktikentat sivulle
+from scripts.ranking import ranked  # deterministinen tasapelin katkaisu
 from scripts.slugs import slug as _slug  # noqa: E402
 from scripts.build_fpl_phase0 import map_name  # noqa: E402
 
@@ -1756,7 +1758,9 @@ def team_news_block(xp: dict | None) -> str:
 
     n_out = sum(1 for r in rows if r.get("chance_next") == 0)
     n_doubt = len(rows) - n_out
-    top = sorted(rows, key=owned, reverse=True)[:3]
+    # Tasapeli id:lla: 'Most owned among them' on julkinen vaite, eika se saa
+    # vaihtua sen mukaan missa jarjestyksessa rivit sattuvat tulemaan.
+    top = ranked(rows, owned, 3)
     names = ", ".join(
         f'{escape(str(r.get("web_name", "")))} ({escape(str(r.get("team_short", "")))})'
         for r in top
@@ -2150,7 +2154,9 @@ def gw_exception_notes(exceptions_dir=None) -> dict[int, str]:
             data = json.loads(f.read_text(encoding="utf-8"))
         except Exception:
             continue
-        note = str(data.get("public_note") or "").strip()
+        # Sama portti kuin EO:n metricille: nootti on artefaktista tuleva
+        # kopiokentta joka renderoityy englanninkieliselle sivulle.
+        note = assert_public_copy(data.get("public_note"), f"{f.name} public_note")
         if note and int(data.get("gw") or 0) == int(m.group(1)):
             out[int(m.group(1))] = note
     return out
@@ -2662,7 +2668,7 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
     def eo_of(p, key):
         return float(((p.get("tiers") or {}).get(key) or {}).get("eo_pct") or 0.0)
 
-    top = sorted(players, key=lambda p: -eo_of(p, lead_key))[:EO_TABLE_ROWS]
+    top = ranked(players, lambda p: eo_of(p, lead_key), EO_TABLE_ROWS)
 
     # Paataulukko: pelaaja + jokaisen tason EO + koko kentan omistus.
     # Mobiili (<=390 px): pelaaja, ensimmainen taso ja overall nakyvat,
@@ -2687,8 +2693,11 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
     def cap_of(p, key):
         return float(((p.get("tiers") or {}).get(key) or {}).get("captain_pct") or 0.0)
 
-    caps = [p for p in sorted(players, key=lambda p: -cap_of(p, lead_key))
-            if cap_of(p, lead_key) > 0][:EO_MGR_ROWS]
+    # 29.8: GW2:ssa Mbeumo ja Isak ovat molemmat 3.5 %:ssa juuri viidennella
+    # sijalla. Ilman id-tasapelia 'viides kapteeni' riippui syotteen
+    # jarjestyksesta, joka on eri sivulla kuin jakokortilla.
+    caps = ranked([p for p in players if cap_of(p, lead_key) > 0],
+                  lambda p: cap_of(p, lead_key), EO_MGR_ROWS)
     cap_ths = ['<th scope="col">Captain</th>'] + [
         f'<th scope="col" class="num">{escape(label)}, n={n}</th>'
         for key, label, n in tiers]
@@ -2708,7 +2717,9 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
             "<tbody>" + "".join(cap_trs) + "</tbody></table></div>")
 
     n_txt = ", ".join(f"{escape(label)} n={n}" for _, label, n in tiers)
-    metric = str(meta.get("metric") or "").strip()
+    # Artefaktista tuleva kopiokentta menee sivulle sellaisenaan, joten se
+    # kaytetaan portin lapi: ei-ASCII tai em dash kaataa buildin.
+    metric = assert_public_copy(meta.get("metric"), "eo meta.metric")
     generated = str(meta.get("generated_at") or "")[:10]
     return (
         '\n<h2 id="eo-by-tier">What the top ranks own: effective ownership by rank tier</h2>\n'

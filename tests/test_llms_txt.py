@@ -48,6 +48,11 @@ def _exists_on_disk(url: str) -> bool:
     jalkeen ne alkoivat raportoida puuttuvaksi sivuja jotka ovat olemassa.
     Portin pitaa kysya "onko sivu olemassa", ei "mainostetaanko sita nyt".
     """
+    # 29.8: llms.txt sai syvalinkkeja (/fpl#gw-calls). Ankkuri ei ole oma
+    # sivunsa, joten se karsitaan ennen tiedostohakua. ETTA ankkuri on
+    # oikeasti sivulla, on eri portti: scripts/check_llms_txt_sync.py
+    # (tests/test_llms_txt_sync.py).
+    url = url.split("#", 1)[0]
     path = url.rstrip("/").removeprefix("https://goaliq.app").lstrip("/")
     if not path:
         return True
