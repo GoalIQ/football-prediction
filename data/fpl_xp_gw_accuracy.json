@@ -1,7 +1,15 @@
 {
  "meta": {
   "product": "GoalIQ per-GW xP accuracy log",
-  "rules": "Projection frozen before the deadline (immutable), graded once the gameweek finishes. All frozen players graded, including those who did not play. Append-only."
+  "rules": "Projection frozen before the deadline (immutable), graded once the gameweek finishes. All frozen players graded, including those who did not play. Append-only.",
+  "comparison_method_code": "fpl_xp_gw_accuracy.comparison.v1",
+  "comparison_method": "Each frozen player is scored against official FPL points for the gameweek. MAE is the mean absolute error in points. by_class groups players by what actually happened (dnp = 0 minutes, blank = 2 points or fewer with minutes, ticker = 3 to 9 points, haul = 10 or more). The comparison block scores GoalIQ xP, the FPL ep_next field and the FPL form field on the same players; a player is included only when all three numbers were frozen before the deadline. A missing ep_next is skipped, never treated as 0.",
+  "classes": {
+   "dnp": "Did not play (0 minutes)",
+   "blank": "Blank (2 points or fewer, played)",
+   "ticker": "Ticker (3 to 9 points)",
+   "haul": "Haul (10 or more points)"
+  }
  },
  "gameweeks": [
   {
@@ -16,6 +24,52 @@
     "FWD": 1.731,
     "GKP": 1.348,
     "MID": 1.742
+   },
+   "by_class": {
+    "dnp": {
+     "n": 190,
+     "mae": 1.092,
+     "bias": -1.092
+    },
+    "blank": {
+     "n": 192,
+     "mae": 1.062,
+     "bias": -0.708
+    },
+    "ticker": {
+     "n": 89,
+     "mae": 3.042,
+     "bias": 2.916
+    },
+    "haul": {
+     "n": 19,
+     "mae": 9.414,
+     "bias": 9.414
+    }
+   },
+   "comparison": null,
+   "enriched_at": "2026-08-29T11:46:32Z",
+   "by_pos_stats": {
+    "DEF": {
+     "n": 166,
+     "mae": 1.916,
+     "bias": 0.357
+    },
+    "FWD": {
+     "n": 57,
+     "mae": 1.731,
+     "bias": -0.286
+    },
+    "GKP": {
+     "n": 53,
+     "mae": 1.348,
+     "bias": -0.274
+    },
+    "MID": {
+     "n": 214,
+     "mae": 1.742,
+     "bias": 0.311
+    }
    }
   }
  ]

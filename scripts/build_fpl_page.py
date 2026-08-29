@@ -1782,6 +1782,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     cs_table = cs_table_html(c)
     gw_calls = gw_calls_html(_load_json(GW_CALLS_PATH))
     eo_by_tier = eo_by_tier_html(_load_json(EO_PATH), _load_json(ELITE_MGR_PATH))
+    xp_accuracy = xp_accuracy_html(_load_json(XP_GW_ACC_PATH))
     fdr_grid = fdr_grid_html(c)
     far_grid = far_grid_html(c)
     # 26.7 CLASSIC: legenda seuraa solujen kaavaa (kolme luokkaa, ei
@@ -1913,6 +1914,7 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 log, match by match with every miss included, is published on the
 <a href="/predictions#record">prediction record page</a>.</p>
 {gw_calls}
+{xp_accuracy}
 
 {team_news}<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for all 20 Premier League teams in
@@ -2159,6 +2161,7 @@ def gw_exception_notes(exceptions_dir=None) -> dict[int, str]:
 # tasoa jolta n puuttuu: otoskoko on osa lukua, ei alaviite.
 EO_PATH = ROOT / "data" / "fpl_elite_ownership.json"
 ELITE_MGR_PATH = ROOT / "data" / "fpl_elite_managers.json"
+XP_GW_ACC_PATH = ROOT / "data" / "fpl_xp_gw_accuracy.json"
 
 
 def _fmt_logged(row: dict) -> str:
@@ -2294,7 +2297,213 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
         "The commit history has the earlier versions of each row. The percentages "
         "are the same simulations as the 10+, Blank and Ceiling columns on the "
         '<a href="/fpl/expected-points">free expected points page</a>, where a '
-        "3+ chance is 100 minus Blank.</p>")
+        "3+ chance is 100 minus the Blank column on the free page (2 points "
+        "or fewer, including not playing).</p>")
+
+
+def _mae_cell(v) -> str:
+    """MAE 2 desimaalilla; None -> 'not frozen' (luku puuttuu, ei nolla)."""
+    if v is None:
+        return '<span class="rec-pending">not frozen</span>'
+    return f"{float(v):.2f}"
+
+
+def _xp_acc_pooled(rows: list[dict]) -> tuple[dict, dict, bool]:
+    """Yhdista GW-rivit luokka- ja positioryhmiksi.
+
+    Jos yksikin GW sisaltaa vertailulohkon (kaikki kolme lukua jaadytetty),
+    poolataan VAIN vertailulohkot: silloin jokainen rivi on samalla
+    pelaajajoukolla ja sarakkeet ovat vertailukelpoisia. Muuten poolataan
+    GoalIQ:n omat luokkaluvut ja FPL/form-sarakkeet ovat 'not frozen'.
+    Palauttaa (by_class, by_pos, has_comparison)."""
+    from src.models.fpl_xp_accuracy import CLASSES, pool_groups
+    cmp_rows = [r["comparison"] for r in rows if r.get("comparison")]
+    if cmp_rows:
+        by_class = {c: pool_groups([cr["by_class"].get(c) for cr in cmp_rows])
+                    for c in CLASSES}
+        positions = sorted({pos for cr in cmp_rows for pos in (cr.get("by_pos") or {})})
+        by_pos = {pos: pool_groups([(cr.get("by_pos") or {}).get(pos) for cr in cmp_rows])
+                  for pos in positions}
+        return by_class, by_pos, True
+    by_class = {c: pool_groups([(r.get("by_class") or {}).get(c) for r in rows])
+                for c in CLASSES}
+    # by_pos_stats kantaa n:n; vanha mae_by_pos ilman n:aa ei poolaudu
+    # tarkasti eika sita kayteta (vaara luku olisi pahempi kuin puuttuva).
+    positions = sorted({pos for r in rows for pos in (r.get("by_pos_stats") or {})})
+    by_pos = {pos: pool_groups([(r.get("by_pos_stats") or {}).get(pos) for r in rows])
+              for pos in positions}
+    return by_class, by_pos, False
+
+
+def _first_cmp_gw(rows: list[dict]) -> int | None:
+    """Ensimmainen kierros jolla FPL-luvut on jaadytetty — datasta, ei
+    kovakoodattuna. Kutsutaan vain kun vertailurivi on olemassa."""
+    gws = [int(r["gw"]) for r in rows if r.get("comparison")]
+    return min(gws) if gws else None
+
+
+def xp_accuracy_html(log: dict | None) -> str:
+    """Track-record-osio: jaadytetty per-pelaaja-xP gradattuna GW:n jalkeen,
+    valinnaisesti verrattuna FPL:n ep_next-kenttaan ja form-lukuun samalla
+    pelaajajoukolla. Tyhja loki -> ei osiota. EI 'parempi kuin FPL'
+    -lausetta: taulukko nayttaa luvut ja teksti sanoo mita ne mittaavat.
+
+    Julkaisuportti 29.8, kierros 2: FPL-sarakkeet, niita kuvaava P1-lause ja
+    'not frozen' -alaviite renderoidaan VAIN kun n_cmp > 0. Aiempi versio
+    naytti 24 solua joissa luki 'not frozen' ja kaytti 34 sanaa kuvaillakseen
+    vertailua jota lukija ei paase mistaan tarkistamaan (GW1/GW2 jaadytettiin
+    ilman ep_next-kenttaa). Kolme osaa liikkuvat YHDESSA: jos sarakkeet
+    piilotetaan mutta alaviite jaa, sivulle jaa lause 'A cell reads not
+    frozen...' vaikka yksikaan solu ei lue niin — uusi epatosi lause."""
+    from src.models.fpl_xp_accuracy import (
+        CLASSES, CLASS_LABELS, PRED_EP_NEXT, PRED_FORM, PRED_GOALIQ)
+    rows = [r for r in ((log or {}).get("gameweeks") or []) if r.get("mae") is not None]
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -int(r.get("gw", 0)))
+    n_gws = len(rows)
+    n_cmp = sum(1 for r in rows if r.get("comparison"))
+    # Yksi kytkin kolmelle osalle: sarakkeet, P1-lause, alaviite.
+    show_fpl = n_cmp > 0
+
+    def _cells(g, e, f) -> str:
+        """MAE-solut. Ilman vertailua FPL-sarakkeita ei ole olemassa."""
+        out = f'<td class="num">{_mae_cell(g)}</td>'
+        if show_fpl:
+            out += f'<td class="num">{_mae_cell(e)}</td>'
+            out += f'<td class="num">{_mae_cell(f)}</td>'
+        return out
+
+    def _triple(m):
+        if isinstance(m, dict):
+            return m.get(PRED_GOALIQ), m.get(PRED_EP_NEXT), m.get(PRED_FORM)
+        return m, None, None
+
+    trs = []
+    for r in rows:
+        cmp_ = r.get("comparison")
+        if cmp_:
+            n = cmp_["n"]
+            g, e, f = _triple(cmp_["mae"])
+        else:
+            n, g, e, f = r.get("n"), r.get("mae"), None, None
+        trs.append(
+            "<tr>"
+            f'<td class="num">GW{r["gw"]}</td>'
+            f'<td class="num">{n}</td>'
+            + _cells(g, e, f) + "</tr>")
+    by_class, by_pos, has_cmp = _xp_acc_pooled(rows)
+    grp = []
+    for c in CLASSES:
+        gstat = by_class.get(c)
+        if not gstat:
+            continue
+        g, e, f = _triple(gstat["mae"])
+        grp.append(
+            "<tr>"
+            f"<td>{escape(CLASS_LABELS[c])}</td>"
+            f'<td class="num">{gstat["n"]}</td>'
+            + _cells(g, e, f) + "</tr>")
+    for pos, gstat in by_pos.items():
+        if not gstat:
+            continue
+        g, e, f = _triple(gstat["mae"])
+        grp.append(
+            "<tr>"
+            f"<td>{escape(pos)}</td>"
+            f'<td class="num">{gstat["n"]}</td>'
+            + _cells(g, e, f) + "</tr>")
+    fpl_cols = ('<th scope="col" class="num">FPL ep_next</th>'
+                '<th scope="col" class="num">FPL form</th>') if show_fpl else ""
+    head = ('<thead><tr><th scope="col">GW</th>'
+            '<th scope="col" class="num">Players</th>'
+            '<th scope="col" class="num">GoalIQ xP</th>'
+            + fpl_cols + "</tr></thead>")
+    grp_head = ('<thead><tr><th scope="col">Group</th>'
+                '<th scope="col" class="num">Players</th>'
+                '<th scope="col" class="num">GoalIQ xP</th>'
+                + fpl_cols + "</tr></thead>")
+    # Poissulun sanamuoto seuraa API:n excluded_note-kanonia (status i/s/u/n
+    # TAI horisontti-xP alle MIN_XP_TOTAL=1.0 HORIZON_GW=6 kierroksella) — EI
+    # "playing time", joka lupaisi minuutteja pisteiden sijaan.
+    #
+    # Kierros 3: P1:n runko oli yha #gw-calls:n runko ("X menee lokiin/
+    # tiedostoon" -> "Once the gameweek ..." + passiivi + FPL:n pisteet).
+    # Kaksi perakkaista h3:a samalla rungolla luetaan koneen kirjoittamaksi,
+    # joten tama avaa lukituksesta eika tapahtumajarjestyksesta.
+    #
+    # Ei enaa GW-numeroa kovakoodattuna: jos GW3:n freeze ei saa ep_next:ia
+    # (freeze varoittaa mutta jaadyttaa silti), "from gameweek 3" olisi
+    # epatosi juuri silla hetkella kun se ilmestyy. Numero luetaan datasta.
+    # Ei myoskaan "read at the same moment, SO the same players": sama
+    # pelaajajoukko syntyy "kaikki kolme jaadytetty" -saannosta, ei lukuhetkesta.
+    fpl_sentence = (
+        " The freeze also stores FPL's own expected points for the coming "
+        "gameweek (the ep_next field) and the player's FPL form, read from "
+        "the FPL API at the moment of the freeze. A player counts in those "
+        "columns only when all three numbers were frozen." if show_fpl else "")
+    # Portti k4: DNP-lause ("pelaamaton sai 0 p, joten luku on naiden
+    # keskimaarainen projektio") POISTETTU. Vahti mae == -bias oli
+    # tautologia: jaadytetty xp on aina >= 0 ja 0-minuuttisen pisteet aina
+    # <= 0, joten kaikki virheet ovat samansuuntaisia joka datajoukolla.
+    # Toistettu mallin omalla gradaajalla: kortin saanut pelaamaton (-1 p)
+    # lapaisi vahdin, mutta rivin MAE oli 2.333 kun keskiprojektio oli 2.0.
+    # Lause oli myos osion ainoa vaite jota lukija EI voi tarkistaa
+    # kummastakaan linkatusta tiedostosta (jaadytetyssa ei ole toteumaa,
+    # accuracy-JSONissa ei ole pelaajarivejä). Luokkanimi "Did not play
+    # (0 minutes)" kantaa asian ilman lausetta. ALA palauta lausetta
+    # pehmennettyna: mika tahansa muotoilu joka nimeaa luvun projektioiden
+    # keskiarvoksi vaatii saman todistuksen (toteuman luokkakohtainen
+    # keskiarvo gradaukseen).
+    dnp_sentence = ""
+    if has_cmp:
+        pooled_note = (
+            "The rows below pool every gameweek where all three numbers were "
+            "frozen, so the columns can be read against each other.")
+    elif n_gws == 1:
+        # Taulukossa on luokka- JA positiorivit; positioita ei jaeta sen
+        # mukaan mita tapahtui, joten johdantolause sanoo molemmat.
+        pooled_note = ("The same gameweek, split by what actually happened "
+                       "and by position.")
+    else:
+        pooled_note = "The rows below pool the graded gameweeks."
+    # Alaviitteen FPL-osa liikkuu sarakkeiden mukana. Populaatiovaroitus
+    # nimeaa myos KENTAN: vertailurivin luku on comparison-lohkosta, ei
+    # GW-rivin omasta mae/n-kentasta, joten lukija ei etsi sita vaarasta
+    # kohdasta tiedostoa.
+    fpl_note = (
+        " A cell reads not frozen when that number was not saved for that "
+        f"gameweek; the FPL numbers start with the gameweek {_first_cmp_gw(rows)} "
+        "freeze. On a row where the FPL numbers are frozen, all three come "
+        "from the comparison block in the file, which counts only the players "
+        "who had all three numbers, so that row shows fewer players than were "
+        "frozen and a different GoalIQ figure than the gameweek's own mae."
+        if show_fpl else "")
+    return (
+        '<h3 id="xp-accuracy">How far off the per player projections were</h3>'
+        "<p>The projection is locked into a file before the deadline, so it "
+        "can't be tidied up afterwards. Every player in the projection is in "
+        "there, and all of them are graded against the points FPL gave them, "
+        "the ones who never got on the pitch included. The figure is the mean "
+        "absolute error, MAE: the average gap in points between the "
+        "projection and what the player scored."
+        + fpl_sentence + "</p>"
+        '<div class="scroll"><table>'
+        f"<caption>MAE per gameweek, {n_gws} graded"
+        f"{f', {n_cmp} with the FPL numbers frozen' if n_cmp else ''}.</caption>"
+        + head + "<tbody>" + "".join(trs) + "</tbody></table></div>"
+        f"<p>{pooled_note}{dnp_sentence}</p>"
+        '<div class="scroll"><table>'
+        "<caption>MAE by what the player actually did, and by position.</caption>"
+        + grp_head + "<tbody>" + "".join(grp) + "</tbody></table></div>"
+        '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/fpl_xp_gw_accuracy.json">data/fpl_xp_gw_accuracy.json</a> '
+        "in the public repository, with the frozen projections in "
+        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/fpl_xp_frozen">data/fpl_xp_frozen</a>, '
+        "each written in a single commit dated before the deadline it "
+        "was frozen for. Players outside "
+        "the projection are not in these counts: FPL flagged them out (status "
+        "i, s, u or n), or the model projects under 1.0 points for them "
+        "across the next six gameweeks." + fpl_note + "</p>")
 
 
 EO_TIER_LABELS = {"top1k": "top 1k", "top10k": "top 10k", "top100k": "top 100k"}
