@@ -1781,6 +1781,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     jsonld = jsonld_blocks(c, faq)
     cs_table = cs_table_html(c)
     gw_calls = gw_calls_html(_load_json(GW_CALLS_PATH))
+    eo_by_tier = eo_by_tier_html(_load_json(EO_PATH), _load_json(ELITE_MGR_PATH))
     fdr_grid = fdr_grid_html(c)
     far_grid = far_grid_html(c)
     # 26.7 CLASSIC: legenda seuraa solujen kaavaa (kolme luokkaa, ei
@@ -1931,7 +1932,7 @@ tooltip. Model-derived, not the official FPL difficulty.</p>
 {far_grid}
 <p class="legend">Clean sheet scale: {cs_legend}
 (low CS% = hard fixture, high CS% = easy). H home, A away.</p>
-
+{eo_by_tier}
 <aside class="upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
 <p>GoalIQ Premium adds an interactive team manager (formations, bench swaps,
@@ -2121,6 +2122,13 @@ FOUNDER_PATH = ROOT / "data" / "founder_entry.json"
 # GW-CALLS-LOKI (28.8): mallin julkiset kierroskutsut, kirjattu ennen deadlinea
 # ja gradattu FPL:n pisteilla (scripts/log_gw_calls.py, grade_gw_calls.py).
 GW_CALLS_PATH = ROOT / "data" / "gw_calls.json"
+# EO-BY-TIER (29.8, Villen GO "n nakyviin"): efektiivinen omistus
+# sijoitustasoittain + karkimanagerien siirrot. scripts/fpl_elite_ownership.py
+# ja scripts/fpl_elite_managers.py, molemmat ajetaan paikallisesti (FPL estaa
+# GH-runnerin). Renderoija EI nayta kehallista payloadia (meta.circular) eika
+# tasoa jolta n puuttuu: otoskoko on osa lukua, ei alaviite.
+EO_PATH = ROOT / "data" / "fpl_elite_ownership.json"
+ELITE_MGR_PATH = ROOT / "data" / "fpl_elite_managers.json"
 
 
 def _fmt_logged(row: dict) -> str:
@@ -2235,6 +2243,239 @@ def gw_calls_html(log: dict | None) -> str:
         "are the same simulations as the 10+, Blank and Ceiling columns on the "
         '<a href="/fpl/expected-points">free expected points page</a>, where a '
         "3+ chance is 100 minus Blank.</p>")
+
+
+EO_TIER_LABELS = {"top1k": "top 1k", "top10k": "top 10k", "top100k": "top 100k"}
+EO_TABLE_ROWS = 15
+EO_MGR_ROWS = 5
+EO_REPO_DATA = "https://github.com/GoalIQ/football-prediction/blob/main/data/"
+
+
+def _eo_tiers(meta: dict) -> list[tuple[str, str, int]]:
+    """(avain, otsikko, n) niille tasoille joilla on otoskoko.
+
+    🔴 Taso ilman n:aa EI renderoidy. n on osa lukua (skriptin docstring:
+    "n on julkistettava aina luvun vieressa"), joten prosentti ilman n:aa
+    olisi puolikas luku. Jarjestys on skriptin TIERS-jarjestys, ei dictin.
+    """
+    sample = meta.get("sample") or {}
+    out = []
+    for key, label in EO_TIER_LABELS.items():
+        n = (sample.get(key) or {}).get("n_sampled")
+        if isinstance(n, int) and n > 0:
+            out.append((key, label, n))
+    return out
+
+
+def _eo_pct(v) -> str:
+    try:
+        return f"{float(v):.1f}%"
+    except (TypeError, ValueError):
+        return "n/a"
+
+
+def _eo_name(r: dict) -> str:
+    return f"{r.get('web_name') or '?'} ({r.get('team') or '?'})"
+
+
+def _eo_managers_html(mgr: dict | None, tiers: list[tuple[str, str, int]]) -> str:
+    """Karkimanagerien siirrot ja kapteenit (fpl_elite_managers.py).
+
+    Oma otos (sama snapshot, oma n), joten n luetaan TASTA payloadista eika
+    EO-payloadista. Kehallinen payload -> ei lohkoa, sama saanto kuin EO:lla.
+    """
+    if not mgr:
+        return ""
+    meta = mgr.get("meta") or {}
+    if meta.get("circular"):
+        return ""
+    data = mgr.get("tiers") or {}
+    mgr_generated = str(meta.get("generated_at") or "")[:10]
+    gw = meta.get("gameweek")
+    blocks = []
+    # 🔴 "Five per direction" on tosi vain jos jokaisessa listassa ON viisi
+    # rivia. names() tulostaa vahemman jos data on ohut (chip-viikko,
+    # osittainen ajo), jolloin lause lupaisi enemman kuin sivu nayttaa.
+    # Lause on siis ehdollinen, ei vakioteksti (portti kierros 4, huomio 2).
+    kaikki_taydet = True
+    for key, label, _ in tiers:
+        t = data.get(key) or {}
+        n = t.get("n_sampled")
+        if not isinstance(n, int) or n <= 0:
+            continue
+
+        # 🔴 AVOIN (kierros 2, loydos 1): tasapeli 5. sijalla katkaistaan
+        # hiljaa - 29.8 top1k:n ulos-listalta putosi Virgil (5.0 %) vaikka
+        # Trafford samalla luvulla nakyy. Tasapelien mukaanotto kokeiltiin ja
+        # peruttiin: top10k:n ulos-lista kasvoi kymmeneen riviin (kahdeksan
+        # tasan 2.0 %:ssa). Oikea korjaus = jaettu deterministinen tiebreak
+        # fpl_elite_managers.py:hyn ja fpl_elite_ownership.py:hyn + ajojen
+        # uusinta, oma jonorivinsa.
+        def names(rows):
+            return ", ".join(
+                f"{escape(_eo_name(r))} {_eo_pct(r.get('pct'))}"
+                for r in (rows or [])[:EO_MGR_ROWS]) or "none in the sample"
+
+        held = t.get("hold_pct")
+        hit = t.get("took_hit_pct")
+        # 🔴 Siirtojen keskiarvoa EI nayteta: wildcard ja free hit laskevat
+        # rajattomat siirrot mukaan ja 5 wildcardia 200:sta nostaa keskiarvon
+        # kaksinkertaiseksi (mitattu 29.8: top1k 1.77 vs top10k 0.85 vaikka
+        # hold oli 61 % vs 67 %). Chip-maarat kertovat saman rehellisesti.
+        chips = t.get("chips") or {}
+        line = []
+        if held is not None:
+            line.append(f"{_eo_pct(held)} made no transfer")
+        if hit is not None:
+            line.append(f"{_eo_pct(hit)} took a points hit")
+        # 🔴 Chipit ovat LUKUMAARIA ja hold/hit prosentteja: ne eivat mahdu
+        # samaan virkkeeseen. "5 played a wildcard" luettiin 5 %:ksi (oikea
+        # 2,5 %) ja "15 played triple captain" (7,5 %) nayttI pienemmalta kuin
+        # "7.0% took a points hit". Oma virke ja "out of {n}" lukujen edessa.
+        chip_txt = ", ".join(
+            f"{word} {chips.get(chip)}"
+            for chip, word in (("wildcard", "wildcard"), ("freehit", "free hit"),
+                               ("bboost", "bench boost"), ("3xc", "triple captain"))
+            if chips.get(chip))
+        tail = ""
+        if line:
+            tail += f"<br>{escape(' and '.join(line))}."
+        if chip_txt:
+            tail += " " + escape(f"Chips used, out of {n}: {chip_txt}") + "."
+        # 🔴 Kapteenirivi POISTETTU: kapteenitaulukko ylla kattaa jo kaikki
+        # kolme tasoa, ja tasapelissa (2 pelaajaa samalla countilla) kaksi
+        # tiedostoa katkaisivat top-5:n eri jarjestyksessa -> sivu naytti
+        # kaksi eri viidetta kapteenia samasta otoksesta (29.8 portti B5).
+        for suunta in ("transfers_in", "transfers_out"):
+            if len(t.get(suunta) or []) < EO_MGR_ROWS:
+                kaikki_taydet = False
+        blocks.append(
+            f'<h4>{escape(label)}, n={n}</h4>'
+            f"<p>Moved in: {names(t.get('transfers_in'))}.<br>"
+            f"Moved out: {names(t.get('transfers_out'))}."
+            + tail
+            + "</p>")
+    if not blocks:
+        return ""
+    return (
+        '<h3 id="elite-transfers">What the top ranks moved for '
+        f'Gameweek {escape(str(gw))}</h3>'
+        "<p>Same managers, same sample, this time their transfers. The share "
+        "is the part of the sample that made that move; a manager who kept "
+        "the squad unchanged is counted too."
+        + (" Five per direction; where moves tie, the list cuts at five."
+           if kaikki_taydet else "")
+        + "</p>"
+        + "".join(blocks)
+        + f'<p class="note">Source: <a href="{EO_REPO_DATA}fpl_elite_managers.json">'
+        "data/fpl_elite_managers.json</a> in the public repository"
+        # Oma ajopaiva: siirtolohko on eri ajo kuin EO-taulukko (29.8
+        # 07:19Z vs 11:11Z), joten sisartekstin paivays ei kelpaa tanne.
+        + (f", generated {escape(mgr_generated)}" if mgr_generated else "")
+        + ".</p>")
+
+
+def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
+    """EO-BY-TIER-osio fpl.html:aan (29.8.2026, Villen GO "n nakyviin").
+
+    Tyhja tai puuttuva data -> ei osiota. 🔴 `meta.circular` -> ei osiota:
+    kehallinen payload mittaa lopputulosta eika valintaa, ja skriptin
+    docstring kieltaa sen julkaisun lukuna. Tama ei ole varoitusteksti vaan
+    poisjatto, koska varoitus kaukana luvusta ei toimi (muisti).
+    """
+    if not eo:
+        return ""
+    meta = eo.get("meta") or {}
+    players = [p for p in (eo.get("players") or []) if isinstance(p, dict)]
+    if meta.get("circular") or not players:
+        return ""
+    tiers = _eo_tiers(meta)
+    if not tiers:
+        return ""
+    picks_gw = meta.get("picks_gameweek")
+    rank_gw = meta.get("rank_after_gw")
+    if picks_gw is None or rank_gw is None:
+        return ""
+    lead_key = tiers[0][0]
+
+    def eo_of(p, key):
+        return float(((p.get("tiers") or {}).get(key) or {}).get("eo_pct") or 0.0)
+
+    top = sorted(players, key=lambda p: -eo_of(p, lead_key))[:EO_TABLE_ROWS]
+
+    # Paataulukko: pelaaja + jokaisen tason EO + koko kentan omistus.
+    # Mobiili (<=390 px): pelaaja, ensimmainen taso ja overall nakyvat,
+    # muut tasot .m-hide (sama nappi kuin muissa taulukoissa).
+    ths = ['<th scope="col">Player</th>']
+    for i, (key, label, n) in enumerate(tiers):
+        cls = "num" + ("" if i == 0 else " m-hide")
+        ths.append(f'<th scope="col" class="{cls}">EO {escape(label)}, n={n}</th>')
+    ths.append('<th scope="col" class="num">Owned overall</th>')
+    trs = []
+    for p in top:
+        tds = [f"<td>{escape(_eo_name(p))}</td>"]
+        for i, (key, label, n) in enumerate(tiers):
+            cls = "num" + ("" if i == 0 else " m-hide")
+            tds.append(f'<td class="{cls}">'
+                       f"{_eo_pct(((p.get('tiers') or {}).get(key) or {}).get('eo_pct'))}</td>")
+        tds.append(f'<td class="num">{_eo_pct(p.get("overall_pct"))}</td>')
+        trs.append("<tr>" + "".join(tds) + "</tr>")
+
+    # Kapteenit: viisi eniten kapteenoitua ensimmaisen tason mukaan, jokaisen
+    # tason kapteeniosuus vierekkain. Neljä kapeaa saraketta mahtuu 390 px:aan.
+    def cap_of(p, key):
+        return float(((p.get("tiers") or {}).get(key) or {}).get("captain_pct") or 0.0)
+
+    caps = [p for p in sorted(players, key=lambda p: -cap_of(p, lead_key))
+            if cap_of(p, lead_key) > 0][:EO_MGR_ROWS]
+    cap_ths = ['<th scope="col">Captain</th>'] + [
+        f'<th scope="col" class="num">{escape(label)}, n={n}</th>'
+        for key, label, n in tiers]
+    cap_trs = []
+    for p in caps:
+        cap_trs.append(
+            "<tr>" + f"<td>{escape(_eo_name(p))}</td>"
+            + "".join(f'<td class="num">{_eo_pct(cap_of(p, key))}</td>'
+                      for key, _, _ in tiers)
+            + "</tr>")
+    cap_html = ""
+    if cap_trs:
+        cap_html = (
+            '<div class="scroll"><table>'
+            f"<caption>Share of each sample that captained the player in Gameweek {escape(str(picks_gw))}.</caption>"
+            "<thead><tr>" + "".join(cap_ths) + "</tr></thead>"
+            "<tbody>" + "".join(cap_trs) + "</tbody></table></div>")
+
+    n_txt = ", ".join(f"{escape(label)} n={n}" for _, label, n in tiers)
+    metric = str(meta.get("metric") or "").strip()
+    generated = str(meta.get("generated_at") or "")[:10]
+    return (
+        '\n<h2 id="eo-by-tier">What the top ranks own: effective ownership by rank tier</h2>\n'
+        "<p>The ownership figure on the FPL site counts every team in the "
+        "game. A manager chasing rank wants a different number: what the "
+        "top of the table holds. This table samples managers from three "
+        f"rank ranges as they stood after Gameweek {escape(str(rank_gw))} "
+        f"and reads their Gameweek {escape(str(picks_gw))} squads from the "
+        "official FPL picks feed. Chip points count towards rank, so the "
+        f"{escape(tiers[0][1])} column is who led after "
+        f"Gameweek {escape(str(rank_gw))}, not who is best.</p>\n"
+        f"<p>{escape(metric)} That is why a figure can go "
+        f"above 100%. Sorted by the {escape(tiers[0][1])} column.</p>\n"
+        '<div class="scroll"><table>'
+        f"<caption>Effective ownership by rank tier, Gameweek {escape(str(picks_gw))} squads.</caption>"
+        "<thead><tr>" + "".join(ths) + "</tr></thead>"
+        "<tbody>" + "".join(trs) + "</tbody></table></div>\n"
+        + cap_html
+        + f"<p class=\"note\">Each tier is a sample ({n_txt}), not the whole "
+        f"tier, so one manager in the {escape(tiers[0][1])} sample is "
+        f"{100.0 / tiers[0][2]:.1f} percentage points. The ranks "
+        f"were taken after Gameweek {escape(str(rank_gw))} and the squads "
+        f"come from Gameweek {escape(str(picks_gw))}, because taking both "
+        "from the same gameweek would be circular: a rank after a gameweek "
+        "is partly the result of who the manager owned in it. Source: "
+        f'<a href="{EO_REPO_DATA}fpl_elite_ownership.json">data/fpl_elite_ownership.json</a> '
+        f"in the public repository, generated {escape(generated)}.</p>\n"
+        + _eo_managers_html(mgr, tiers))
 
 
 def _load_json(path) -> dict | None:
