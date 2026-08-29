@@ -8,6 +8,7 @@
 	import { capture } from '$lib/analytics';
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, shareCompareCard } from '$lib/shareCard';
+	import { startPct } from '$lib/startPct';
 
 	// Valinnat populoituvat jo ladatusta xP-datasta (sama prop kuin XpTable) -
 	// ei erillistä pelaajahakua eikä käsin syötettäviä ID:itä.
@@ -139,10 +140,11 @@
 					},
 					{
 						label: 'START %',
-						values: rows.map((p) =>
-							p.predicted_starts != null ? `${Math.round(p.predicted_starts)}%` : '-'
-						),
-						bestIndex: best(rows.map((p) => p.predicted_starts))
+						values: rows.map((p) => {
+							const sp = startPct(p);
+							return sp != null ? `${sp}%` : '-';
+						}),
+						bestIndex: best(rows.map((p) => startPct(p)))
 					},
 					/* 6.8 V1 (Villen idea): pelipaikkakohtaiset rivit kun KAIKKI samaa
 					 * paikkaa. Luvut = xP-komponentit YHDELLE GW:lle (components_gw) —
@@ -278,8 +280,8 @@
 					<div>
 						<dt>Predicted starts</dt>
 						<dd>
-							{#if p.predicted_starts != null}
-								{Math.round(p.predicted_starts)}%
+							{#if startPct(p) != null}
+								{startPct(p)}%
 								{#if p.minutes_confidence}
 									<span
 										class="conf conf-{p.minutes_confidence}"

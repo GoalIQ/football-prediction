@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { startPct } from '$lib/startPct';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
 	// (Dubravka-case). FREE — kaikki kortin data on julkista (FPL bootstrap +
 	// julkaistut GoalIQ-projektiot). Rehellisyysraja pidetään visuaalisesti:
@@ -307,11 +308,7 @@
 	// on koko sivun oma lupaus ("Free ...").
 	let sharing = $state(false);
 
-	function startPct(p: CardPlayer): number | null {
-		if (typeof p.p_start === 'number') return Math.round(p.p_start * 100);
-		if (typeof p.predicted_starts === 'number') return Math.round(p.predicted_starts);
-		return null;
-	}
+	// 29.8: jaettu $lib/startPct (sama saanto Compare-nakymassa).
 
 	/** Poimi solut avainjarjestyksessa, pudota puuttuvat. Pelipaikka ratkaisee:
 	 *  maalivahdin maalit/syotot per 90 olisivat nollarivi eivatka kerro mitaan. */

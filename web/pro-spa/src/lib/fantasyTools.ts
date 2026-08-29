@@ -327,6 +327,8 @@ export interface ComparePlayer {
 	owned_pct: number | null;
 	xmins: number | null;
 	predicted_starts: number | null;
+	/** 29.8: Start%:n ainoa lahde (0..1); vanha payload ei tuo -> fallback. */
+	p_start?: number | null;
 	minutes_confidence: 'low' | 'med' | 'high' | null;
 	xp_per_gw: number;
 	xp_horizon_total: number;

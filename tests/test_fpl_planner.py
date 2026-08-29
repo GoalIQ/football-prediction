@@ -179,6 +179,13 @@ def test_model_vs_crowd_pos_filter():
 def test_compare_players_verdict():
     out = pl.compare_players([15, 24])  # paras MID vs huonoin MID
     assert len(out["players"]) == 2
+    # 29.8 COMPARE-START-PCT: rivi kantaa p_start:n (Start%:n ainoa lahde),
+    # ei vain kerran pyoristettya predicted_starts:ia. Avaimen on oltava
+    # olemassa myos kun arvo on None (klientti erottaa "ei tietoa" ja "vanha payload").
+    for row in out["players"]:
+        assert "p_start" in row, row.keys()
+        if row["p_start"] is not None:
+            assert 0.0 <= row["p_start"] <= 1.0
     assert out["verdict"]["pick"]["id"] == 15
     assert out["verdict"]["margin_xp_horizon"] > 0
     with pytest.raises(rt.RateTeamError):

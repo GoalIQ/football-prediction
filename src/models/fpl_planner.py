@@ -451,6 +451,11 @@ def compare_players(player_ids: list[int]) -> dict:
             "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
             "xmins": p.get("xmins"),
             "predicted_starts": p.get("predicted_starts"),
+            # 29.8 COMPARE-START-PCT: p_start (0..1) on Start%:n ainoa lahde
+            # kaikilla pinnoilla (27.8 start_pct = floor(p_start*100+0.5)).
+            # predicted_starts on jo kerran pyoristetty (91.5) -> SPA/mobiilin
+            # Math.round siita antoi 92 kun sivut nayttivat 91.
+            "p_start": p.get("p_start"),
             "minutes_confidence": p.get("minutes_confidence"),
             "xp_per_gw": round(p["xp_per_gw"], 2),
             "xp_horizon_total": round(p["xp_horizon_total"], 2),

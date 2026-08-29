@@ -23,6 +23,13 @@
 			: `${verdict.best_move_gain_xp >= 0 ? '+' : ''}${verdict.best_move_gain_xp.toFixed(2)}`
 	);
 	const hitNote = $derived(verdict.hit_applied_xp ? ', after a -4 hit' : '');
+	// HOLD-VERDICT-BEST-PLAN-COPY (29.8): best_move_gain_xp on KOKO suunnitelman
+	// netto (plan_total - baseline_total, fpl_planner.py), ei yhden siirron.
+	// Kun suunnitelmassa on useampi siirto, lause sanoo sen (jakokortti 27.8
+	// sanoo jo "best plan (N moves)").
+	const nMoves = $derived(verdict.transfers_planned ?? 1);
+	const planLabel = $derived(nMoves > 1 ? `Best available plan (${nMoves} moves)` : 'Best available move');
+	const goLabel = $derived(nMoves > 1 ? `Best plan (${nMoves} moves) nets` : 'Best move nets');
 </script>
 
 {#if verdict.verdict === 'hold'}
@@ -32,7 +39,7 @@
 			{#if gainText === null}
 				No available move improves your projected xP over the next {verdict.horizon_gws} GWs.
 			{:else}
-				Best available move: {gainText} xP over {verdict.horizon_gws} GWs (below the {verdict.threshold_xp.toFixed(
+				{planLabel}: {gainText} xP over {verdict.horizon_gws} GWs (below the {verdict.threshold_xp.toFixed(
 					1
 				)} xP threshold{hitNote}).
 			{/if}
@@ -42,7 +49,7 @@
 	<div class="verdict-hero go" role="status">
 		<p class="title">{verdict.message}</p>
 		<p class="math">
-			Best move nets {gainText} xP over {verdict.horizon_gws} GWs (clears the {verdict.threshold_xp.toFixed(
+			{goLabel} {gainText} xP over {verdict.horizon_gws} GWs (clears the {verdict.threshold_xp.toFixed(
 				1
 			)} xP threshold{hitNote}).
 		</p>
