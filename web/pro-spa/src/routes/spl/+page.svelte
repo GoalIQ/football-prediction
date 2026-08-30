@@ -27,8 +27,7 @@
 		canShareToApps,
 		shareCard,
 		sharePitchCard,
-		type PitchCardPlayer
-	} from '$lib/shareCard';
+		type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { teamColorByShort } from '$lib/teamColors';
 	import SquadPitch from '$lib/components/SquadPitch.svelte';
 
@@ -265,7 +264,7 @@
 		}
 	}
 	const shareLabel = (key: string) =>
-		sharingList === key ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image';
+		sharingList === key ? 'Rendering…' : shareButtonLabel();
 
 	const shareCsCard = () =>
 		shareList('spl_cs', {
@@ -553,7 +552,7 @@
 			<h2>Expected points <span class="muted">(next {(xp?.meta?.horizon_gw as number) ?? 6} GWs, top 50)</span></h2>
 			{#if xp?.meta?.available && players.length >= 3}
 				<button type="button" class="share-btn" onclick={shareXpCard} disabled={sharingXp}>
-					{sharingXp ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+					{sharingXp ? 'Rendering…' : shareButtonLabel()}
 				</button>
 			{/if}
 		</div>
@@ -614,7 +613,7 @@
 				<h2>Captain picks <span class="muted">(GW{nextGw})</span></h2>
 				{#if captainPicks.length >= 3}
 					<button type="button" class="share-btn" onclick={shareCaptainCard} disabled={sharingCaptain}>
-						{sharingCaptain ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+						{sharingCaptain ? 'Rendering…' : shareButtonLabel()}
 					</button>
 				{/if}
 			</div>
@@ -655,7 +654,7 @@
 				<div class="head-row">
 					<h2>The model squad <span class="muted">({modelSquad.cost.toFixed(1)}m of 100.0m)</span></h2>
 					<button type="button" class="share-btn" onclick={shareSquadCard} disabled={sharingSquad}>
-						{sharingSquad ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+						{sharingSquad ? 'Rendering…' : shareButtonLabel()}
 					</button>
 				</div>
 				<p class="muted small">

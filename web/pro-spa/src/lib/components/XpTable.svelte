@@ -3,7 +3,7 @@
 	import { gwXp } from '$lib/api';
 	import { downloadXpCsv } from '$lib/fantasyTools';
 	import { capture } from '$lib/analytics';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import ComponentSplit from './ComponentSplit.svelte';
 	import WhyThisPick from './WhyThisPick.svelte';
 	import MethodNote from './MethodNote.svelte';
@@ -401,7 +401,7 @@
 	</button>
 	<!-- 8.8: jakokortti näkyvästä näkymästä, CSV:n vierestä -->
 	<button type="button" class="ghost" disabled={sharing} onclick={share}>
-		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		{sharing ? 'Rendering…' : shareButtonLabel()}
 	</button>
 </div>
 <!-- fi/eu-Excel lukee pisteellisen desimaalin paivamaaraksi ja nayttaa '####'.

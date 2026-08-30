@@ -8,7 +8,7 @@
 	 */
 	import { capture } from '$lib/analytics';
 	import { fetchValue, type ValueResponse } from '$lib/fantasyTools';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 
 	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
@@ -115,7 +115,7 @@
 	{#if premium && players.length > 0}
 		<!-- 4.8: jaettava kortti nakyvasta nakymasta (premium) -->
 		<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	{/if}
 </div>

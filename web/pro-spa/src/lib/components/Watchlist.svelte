@@ -24,7 +24,7 @@
 	import PlayerSearch from './PlayerSearch.svelte';
 	import TeamKit from './TeamKit.svelte';
 	import { teamColorByShort } from '$lib/teamColors';
-	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { premium = false }: { premium?: boolean } = $props();
 
@@ -235,7 +235,7 @@
 
 	{#if visibleRows.length > 0}
 		<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	{/if}
 	{#each visibleRows as p (p.id)}

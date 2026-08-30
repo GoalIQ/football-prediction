@@ -11,7 +11,7 @@
 	 */
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
 
@@ -114,7 +114,7 @@
 		<h3>Fixture swing</h3>
 		{#if rows.length > 0}
 			<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-				{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+				{sharing ? 'Rendering…' : shareButtonLabel()}
 			</button>
 		{/if}
 	</div>

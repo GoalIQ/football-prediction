@@ -11,7 +11,7 @@
 	import { capture } from '$lib/analytics';
 	import type { RatedPlayer } from '$lib/fantasyTools';
 	import { teamColorByShort } from '$lib/teamColors';
-	import { canShareToApps, sharePitchCard, type PitchCardPlayer } from '$lib/shareCard';
+	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import TeamKit from './TeamKit.svelte';
 
 	let {
@@ -436,7 +436,7 @@
 			{#if premium}
 				<!-- #9a: pitch-kortti (XI + penkki) — sama kortti draftille ja ID-ratelle -->
 				<button type="button" class="chip" onclick={shareImage} disabled={sharing}>
-					{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+					{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>
 			{/if}
 		</div>

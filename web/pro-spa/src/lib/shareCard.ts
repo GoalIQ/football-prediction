@@ -1083,6 +1083,18 @@ export function canCopyImage(): boolean {
 	);
 }
 
+/** Napin teksti. PEILAA `deliver()`:n haaraa tasmalleen.
+ *
+ * 🔴 30.8: desktop-polku vaihdettiin latauksesta leikepoydalle mutta NAPPIA ei
+ * muutettu, joten 24 nappia sanoi yha "Download image" samalla kun mitaan ei
+ * latautunut ja ruutuun tuli "Card copied". Kayttaja olisi etsinyt tiedostoa
+ * Lataukset-kansiosta jossa sita ei ole. Se on sama vika jota muutos korjaa,
+ * vain toisin pain. Nimike tulee siksi samasta paikasta kuin polku. */
+export function shareButtonLabel(): string {
+	return canShareToApps() ? 'Share as image' : canCopyImage() ? 'Copy image' : 'Download image';
+}
+
+
 /** Lyhyt vahvistus leikepoytakopiolle.
  *
  * 🔴 Miksi tama on pakko: latauksesta selain nayttaa oman latauspalkkinsa, eli
@@ -1123,7 +1135,7 @@ async function deliver(blob: Blob, fileName: string): Promise<ShareOutcome> {
 	if (canCopyImage()) {
 		try {
 			await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-			toast('Card copied. Paste it into your post.');
+			toast('Card copied.');
 			return 'copied';
 		} catch {
 			// Leikepoyta voi epaonnistua ilman kayttajaelettä tai luvatta.

@@ -4,7 +4,7 @@
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
 	import HoldVerdictCard from './HoldVerdictCard.svelte';
 	import { capture } from '$lib/analytics';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
 
@@ -299,7 +299,7 @@
 	<div class="head-row">
 		<span class="muted">Share the model's call</span>
 		<button type="button" class="window-chip" onclick={sharePlan} disabled={sharing}>
-		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	</div>
 	<MethodNote summary="How this plan is built (and its limits)">

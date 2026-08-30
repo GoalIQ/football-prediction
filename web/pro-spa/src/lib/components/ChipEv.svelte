@@ -6,7 +6,7 @@
 	// mallirunkoon selitteellä. Basis-alaviite: GW7+ = team-level estimate.
 	import { fetchChipEv, type ChipEvResponse, type ChipWindow } from '$lib/fantasyTools';
 	import { capture } from '$lib/analytics';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
@@ -146,7 +146,7 @@
 	<h2>Chip timing: expected value per gameweek</h2>
 	{#if data && Object.keys(data.best ?? {}).length > 0}
 		<button type="button" class="window-chip" onclick={shareChips} disabled={sharing}>
-		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	{/if}
 </div>

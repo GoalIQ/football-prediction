@@ -529,8 +529,8 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       ctx.fillStyle = MUTED;
       ctx.font = font(25, 400);
       var trust = accuracyLine
-        ? 'Same match model behind GoalIQ’s ' + accuracyLine + '.'
-        : 'Same match model behind GoalIQ’s public pre-match-logged track record.';
+        ? 'Same match model behind GoalIQ\'s ' + accuracyLine + '.'
+        : 'Same match model behind GoalIQ\'s public pre-match-logged track record.';
       wrapText(trust, PAD + 28, boxTop + 248, W - 2 * PAD - 40, 32);
     } else {
       // Pre-season or no teaser: the season list fills the space
@@ -635,18 +635,17 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     }, 'image/png');
   });
 
-  /* Share funnel fix, 30 Aug. Measured over 60 days: 22 people generated a
-     card, 2 shared it. Two causes, both in this file:
+  /* Share funnel fix, 30 Aug. Two causes, both in this file:
 
      (1) navigator.share WITH A FILE is effectively a mobile API. On desktop
          this button did not share, it downloaded a PNG and left the user alone
-         with a file. Desktop now copies the image to the clipboard so it can be
-         pasted straight into a post. Download stays as the last fallback.
+         with a file. Desktop now copies the image to the clipboard. Download
+         stays as the last fallback.
 
-     (2) The click itself was never measured. Only outcomes were, so "2 shared"
-         could equally have meant "20 pressed and the path broke". The click is
-         now recorded before the branch, each branch records its own outcome,
-         and a cancel is told apart from a real failure (AbortError). */
+     (2) The click itself was never measured, only outcomes were, so the funnel
+         could not be diagnosed. The click is now recorded before the branch,
+         each branch records its own outcome, and a cancel is told apart from a
+         real failure. */
   function shareOutcome(method, extra) {
     if (!window.posthog) return;
     var props = { method: method };
@@ -655,7 +654,12 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   }
 
   function shareFailed(method, err) {
-    var aborted = err && (err.name === 'AbortError' || err.name === 'NotAllowedError');
+    /* NotAllowedError means "cancelled" on the share sheet, but on the
+       clipboard path it is the technical failure we want to measure
+       (missing transient activation, Safari). Same name, different
+       meaning per path. */
+    var aborted = err && err.name === 'AbortError' &&
+                  method !== 'clipboard';
     if (!window.posthog) return;
     posthog.capture(aborted ? 'career_card_share_cancelled' : 'career_card_share_failed',
                     { method: method, error: err && err.name ? err.name : 'unknown' });
@@ -684,13 +688,14 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       } else if (canClip) {
         copyImageToClipboard(blob)
           .then(function () {
-            setStatus('Card copied. Paste it into your post.');
+            setStatus('Card copied.');
             shareOutcome('clipboard');
           })
           .catch(function (e) {
             shareFailed('clipboard', e);
             document.getElementById('downloadBtn').click();
-            shareOutcome('download_fallback');
+            if (window.posthog) posthog.capture('career_card_download_fallback', {});
+            setStatus('Card downloaded instead.');
           });
       } else if (navigator.share) {
         navigator.share({ title: 'My FPL Career Card', url: shareUrl })
@@ -698,7 +703,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
           .catch(function (e) { shareFailed('native_url', e); });
       } else {
         document.getElementById('downloadBtn').click();
-        shareOutcome('download_fallback');
+        if (window.posthog) posthog.capture('career_card_download_fallback', {});
       }
     }, 'image/png');
   });

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fetchDifferentials, type DifferentialsResponse, type Pos } from '$lib/fantasyTools';
-	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 
 	const POSITIONS = ['All', 'GKP', 'DEF', 'MID', 'FWD'] as const;
@@ -81,7 +81,7 @@
 	     olisi tyhja kortti, ja se nayttaisi virheelta eika tyhjalta tulokselta. -->
 	{#if (data?.players?.length ?? 0) > 0}
 		<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	{/if}
 </div>

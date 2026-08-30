@@ -14,7 +14,7 @@
 	// $lib/leagues.ts:ssä, koska oikea kausikoodi riippuu liigasta (BSA =
 	// kalenterivuosi, '26' eikä '2627').
 	import { STANDINGS_LEAGUES, seasonChoices, defaultSeason } from '$lib/leagues';
-	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 
 	let league = $state('ENG-Premier League');
@@ -148,7 +148,7 @@
 {#if rows.length >= 3}
 	<!-- Jakokortti: sarjataulukko on ILMAISTA dataa, joten kortti on vapaa. -->
 	<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-		{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+		{sharing ? 'Rendering…' : shareButtonLabel()}
 	</button>
 {/if}
 		<table>

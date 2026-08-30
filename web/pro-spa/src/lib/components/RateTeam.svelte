@@ -10,7 +10,7 @@
 	} from '$lib/fantasyTools';
 	import { draftPool, fetchXp, type XpPoolPlayer } from '$lib/api';
 	import { buildRoast, roastTier, roastHeadline } from '$lib/roast';
-	import { shareRoastCard } from '$lib/shareCard';
+	import { shareRoastCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 	import { auth } from '$lib/auth.svelte';
 	import {
@@ -1303,7 +1303,7 @@
 						} finally {
 							roastSharing = false;
 						}
-					}}>{roastSharing ? 'Building...' : 'Share as image'}</button
+					}}>{roastSharing ? 'Building...' : shareButtonLabel()}</button
 				>
 				</div>
 			</div>

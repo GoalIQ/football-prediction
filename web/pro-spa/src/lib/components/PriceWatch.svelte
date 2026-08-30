@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fetchPriceWatch, confBand, type PriceWatchResponse, type PriceMove } from '$lib/fantasyTools';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 
 	let data = $state<PriceWatchResponse | null>(null);
@@ -90,9 +90,7 @@
 					<button type="button" class="share-btn" onclick={() => shareMoves(title, rows)} disabled={sharing !== ''}>
 						{sharing === title
 							? 'Rendering…'
-							: canShareToApps()
-								? 'Share as image'
-								: 'Download image'}
+							: shareButtonLabel()}
 					</button>
 				</div>
 			{/if}

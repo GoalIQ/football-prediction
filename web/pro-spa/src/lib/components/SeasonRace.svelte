@@ -20,7 +20,7 @@
 	import { fetchModelRace, type ModelRaceResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
-	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let data = $state<ModelRaceResponse | null>(null);
 	let failed = $state(false);
@@ -148,7 +148,7 @@
 
 			{#if rows.length > 0}
 				<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-					{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+					{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>
 			{/if}
 			<ul>

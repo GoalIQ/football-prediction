@@ -7,7 +7,7 @@
 	 * -värisäännöt) – vain kuori vaihtui.
 	 */
 	import { fetchFantasy, type FantasyResponse, type FantasyTeam } from '$lib/api';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 	import MethodNote from './MethodNote.svelte';
 
@@ -258,9 +258,7 @@
 				<button type="button" class="gw-reset" onclick={shareCs} disabled={sharing}>
 					{sharing
 						? 'Rendering…'
-						: canShareToApps()
-							? 'Share as image'
-							: 'Download image'}
+						: shareButtonLabel()}
 				</button>
 			</div>
 		{/if}

@@ -16,7 +16,7 @@
 	 */
 	import { fetchRival, type RivalResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { shareRivalCard } from '$lib/shareCard';
+	import { shareRivalCard, shareButtonLabel} from '$lib/shareCard';
 
 	let { entry, rival, leagueId, rivalName }: {
 		entry: number;
@@ -139,7 +139,7 @@
 
 		<div class="share-row">
 			<button type="button" class="share-btn" disabled={sharing} onclick={shareCard}>
-				{sharing ? 'Building...' : 'Share as image'}
+				{sharing ? 'Building...' : shareButtonLabel()}
 			</button>
 		</div>
 

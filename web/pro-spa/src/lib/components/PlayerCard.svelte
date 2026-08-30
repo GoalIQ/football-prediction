@@ -22,7 +22,7 @@
 	import SetPieceBadges from './SetPieceBadges.svelte';
 	import WhyThisPick from './WhyThisPick.svelte';
 	import ComponentSplit from './ComponentSplit.svelte';
-	import { canShareToApps, sharePlayerCard, type PlayerCardCell } from '$lib/shareCard';
+	import { canShareToApps, sharePlayerCard, type PlayerCardCell, shareButtonLabel} from '$lib/shareCard';
 	import { whyDriverRows } from '$lib/whyDrivers';
 
 	let pool = $state<CardPlayer[]>([]);
@@ -484,7 +484,7 @@
 					<h3 class="pc-name">{player.web_name}</h3>
 					<!-- 4.8: jaettava kortti. Nakyy myos freelle, ks. share()-kommentti. -->
 					<button type="button" class="share-btn" onclick={share} disabled={sharing}>
-						{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+						{sharing ? 'Rendering…' : shareButtonLabel()}
 					</button>
 				</div>
 				<p class="muted pc-sub">

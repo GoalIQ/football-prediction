@@ -20,7 +20,7 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import { kitByShort, kitLayers } from '$lib/teamKits';
 	import { fetchXp } from '$lib/api';
-	import { canShareToApps, shareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import {
 		fetchDefconGw,
 		fetchDefconLeaders,
@@ -530,7 +530,7 @@
 	{#if premium}
 		<!-- #9a: jaettava kortti näkyvästä näkymästä (premium) -->
 		<button type="button" class="window-chip" onclick={shareXg} disabled={sharing !== ''}>
-			{sharing === 'xg' ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			{sharing === 'xg' ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	{/if}
 </div>
@@ -689,7 +689,7 @@
 		{#if premium}
 			<!-- #9a: jaettava kortti näkyvästä näkymästä (premium) -->
 			<button type="button" class="window-chip" onclick={shareDc} disabled={sharing !== ''}>
-				{sharing === 'defcon' ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+				{sharing === 'defcon' ? 'Rendering…' : shareButtonLabel()}
 			</button>
 		{/if}
 	</div>

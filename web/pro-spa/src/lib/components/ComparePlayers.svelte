@@ -7,7 +7,7 @@
 	} from '$lib/fantasyTools';
 	import { capture } from '$lib/analytics';
 	import { teamColorByShort } from '$lib/teamColors';
-	import { canShareToApps, shareCompareCard } from '$lib/shareCard';
+	import { canShareToApps, shareCompareCard, shareButtonLabel} from '$lib/shareCard';
 	import { startPct } from '$lib/startPct';
 
 	// Valinnat populoituvat jo ladatusta xP-datasta (sama prop kuin XpTable) -
@@ -265,7 +265,7 @@
 	<div class="verdict-row">
 		<p class="verdict">{data.verdict.text}</p>
 		<button type="button" class="share-chip" onclick={shareImage} disabled={sharing}>
-			{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	</div>
 	<div class="cmp-grid">

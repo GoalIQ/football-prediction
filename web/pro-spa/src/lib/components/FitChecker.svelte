@@ -2,7 +2,7 @@
 	import { draftPool, fetchFit, fetchXp, type FitResponse, type XpPoolPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { saveDraftIds } from '$lib/draft';
-	import { canShareToApps, sharePitchCard, type PitchCardPlayer } from '$lib/shareCard';
+	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { teamColorByShort } from '$lib/teamColors';
 	import MethodNote from './MethodNote.svelte';
 	import PlayerSearch from './PlayerSearch.svelte';
@@ -217,7 +217,7 @@
 			<div class="head-row">
 				<span class="muted">Share this squad</span>
 				<button type="button" class="window-chip" onclick={shareFit} disabled={sharing}>
-				{sharing ? 'Rendering…' : canShareToApps() ? 'Share as image' : 'Download image'}
+				{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>
 			</div>
 
