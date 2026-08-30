@@ -740,6 +740,87 @@ app.add_middleware(
     expose_headers=["X-GoalIQ-Error-Code"],
 )
 
+# ---------------------------------------------------------------------------
+# API-VIRHETELEMETRIA (30.8.2026). Villen paatos: "lisaa jos ei kustannuksia".
+#
+# MIKSI: Barryn 400 (@UnitedCynic 28.8) oli tuotannossa viisi vuorokautta, ja
+# se loytyi vasta kun han twiittasi siita. Meilla ei ollut yhtaan lahdetta
+# API:n virheprosentille: Renderin lokit vaativat avaimen, CI:hin ei laiteta
+# service-avaimia, PostHog on oma GO:nsa. Synteettinen endpoint-koestus EI
+# olisi napannut sita, koska se laukesi vain yli 100.0m:n rungolla - eli
+# vaarasta lahteesta rakennettu signaali olisi ollut sokea juuri silla
+# tapaukselle jota varten se rakennettaisiin.
+#
+# KUSTANNUS: nolla. Muistinvarainen sanakirja samassa prosessissa, ei uutta
+# palvelua, ei avainta, ei levykirjoitusta pyynnon aikana.
+#
+# RAJAUKSET (tarkoituksellisia):
+# - Avaimena on REITTIPOHJA (`/api/fantasy/plan-chains`), ei raakapolku.
+#   Raakapolku raajayttaisi kardinaliteetin (entry-id:t, query-parametrit) ja
+#   olisi samalla kayttajadataa muistissa.
+# - Ei polkuparametreja, ei query-stringia, ei runkoja, ei IP:ta. Vain
+#   reittipohja ja statusluokka.
+# - Laskurit nollautuvat deployssa. Siksi `since` kulkee mukana: ilman sita
+#   luku ei ole tulkittavissa (muisti: nolla-ei-ole-sama-kuin-ei-tietoa).
+# - Kattoraja `_ERR_MAX_ROUTES`: jos reittipohja jostain syysta puuttuu,
+#   sanakirja ei saa kasvaa rajatta.
+import threading as _threading
+
+_ERR_LOCK = _threading.Lock()
+_ERR_COUNTS: dict = {}
+_ERR_SINCE = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+_ERR_MAX_ROUTES = 200
+
+
+def _status_class(code: int) -> str:
+    if code >= 500:
+        return "5xx"
+    if code >= 400:
+        return "4xx"
+    return "ok"
+
+
+@app.middleware("http")
+async def _count_status_classes(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        route = request.scope.get("route")
+        # `route.path` on reittipohja (esim. /api/predict), ei raakapolku.
+        avain = getattr(route, "path", None)
+        if avain is None:
+            # Tuntematon reitti (404 reitittamattomaan polkuun): yksi kori,
+            # ei raakapolkua muistiin.
+            avain = "<unrouted>"
+        luokka = _status_class(response.status_code)
+        with _ERR_LOCK:
+            if avain not in _ERR_COUNTS and len(_ERR_COUNTS) >= _ERR_MAX_ROUTES:
+                avain = "<overflow>"
+            rivi = _ERR_COUNTS.setdefault(avain, {"ok": 0, "4xx": 0, "5xx": 0})
+            rivi[luokka] = rivi.get(luokka, 0) + 1
+    except Exception:
+        # Telemetria ei saa KOSKAAN kaataa pyyntoa.
+        pass
+    return response
+
+
+@app.get("/api/admin/error-counts",
+         description="Per-route status class counts since process start. "
+                     "Requires an admin token.")
+def admin_error_counts(request: Request):
+    """Reittikohtaiset statusluokat prosessin kaynnistyksesta.
+
+    Ei kayttajadataa: vain reittipohja ja kolme lukua. `since` kertoo
+    milloin laskenta alkoi, koska deploy nollaa sen.
+    """
+    require_admin(request)
+    with _ERR_LOCK:
+        rivit = {k: dict(v) for k, v in _ERR_COUNTS.items()}
+    return {"since": _ERR_SINCE,
+            "generated_at": datetime.now(timezone.utc)
+                            .isoformat().replace("+00:00", "Z"),
+            "routes": rivit}
+
+
 # Edge-sprint: uudet fantasy-endpointit (chip-ev, plan-chains, league, h2h,
 # edge, xp.csv) omassa moduulissa — main.py:n olemassa olevat polut eivat
 # muutu. Importti tassa (ei tiedoston alussa) jotta app + CORS ovat valmiit.

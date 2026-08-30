@@ -169,12 +169,43 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_fpl_longtail
 
+      # API-VIRHETELEMETRIA (30.8): tilannekuva reittikohtaisista
+      # statusluokista levylle, jotta autopilotin signaali voi lukea sen
+      # ILMAN salaisuuksia. goaliq-appin CI:ssa ei ole ADMIN_TOKENia eika
+      # sita sinne laiteta (muisti: admin-endpoint-ei-service-avainta-ciihin),
+      # joten keraus tehdaan taalla ja tulos luetaan raakana githubista.
+      # Puuttuva secret EI kaada ajoa vaan kirjaa ohituksen nakyvasti.
+      - name: Snapshot API error counts
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then
+            echo "::warning::ADMIN_TOKEN puuttuu - virhetelemetria OHITETTU."
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/errc.json -w "%{http_code}" \
+            -H "X-Admin-Token: $ADMIN_TOKEN" \
+            https://api.goaliq.app/api/admin/error-counts || echo 000)
+          if [ "$code" != "200" ]; then
+            echo "::warning::error-counts HTTP $code - ei kirjoiteta levylle."
+            exit 0
+          fi
+          # Fail-closed: rikkinainen JSON levylla nayttaisi datalta mutta
+          # olisi este. Kirjoitetaan vasta kun se jasentyy.
+          if ! python -c "import json,sys; json.load(open('/tmp/errc.json'))"; then
+            echo "::warning::error-counts ei jasenny - ei kirjoiteta."
+            exit 0
+          fi
+          cp /tmp/errc.json data/api_error_counts.json
+          echo "snapshot kirjoitettu"
+
       - name: Commit + push to main (Render auto-deploy → /api/accuracy)
         id: push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/prediction_log.json data/accuracy.json data/international_results.csv
+          git add data/api_error_counts.json 2>/dev/null || true
           # llms.txt (#231-GEO 5.8): build_prediction_pages kirjoittaa nyt sen
           # GEN:LLMS-lohkon. Ilman tata riviä ajo kirjoittaisi tiedoston ja
           # muutos katoaisi aanettomasti — sama vikaluokka kuin itse ongelma.
