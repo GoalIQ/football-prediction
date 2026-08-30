@@ -282,6 +282,56 @@ def display_gw(meta: dict, fixtures: list[dict]) -> int:
     return min((f["gameweek"] for f in fixtures if f.get("gameweek")), default=1)
 
 
+def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
+    """CS-ruudukon rivit. Oma funktio jotta testi voi ajaa TAMAN polun.
+
+    30.8: ensimmainen versio yhteenvetosarakkeista testattiin syottamalla
+    rivi kasin `fdr_grid_html`:lle, jolloin testi ei koskaan ajanut tata
+    kohtaa. Testi oli vihrea samalla kun oikea rakennuspolku pudotti
+    double gameweekin toisen ottelun (muisti: portti-voi-mitata-eri-koodipolkua).
+
+    🔴 TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): `by_gw` on dict jonka avain on
+    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTAA
+    edellisen ja katoaa ruudukosta - samalla kun `next_n` laskee sen ja
+    `next_avg_cs_pct` sisaltaa sen keskiarvossa. Sivun copy EI saa luvata
+    etta double nakyy ruudukossa ennen kuin tama on korjattu.
+    """
+    rows = []
+    for t in teams:
+        by_gw = {f["gw"]: f for f in t["fixtures"]}
+        rows.append(
+            {
+                "team": t["name"],
+                "cells": [by_gw.get(g) for g in gws],
+                "avg_fdr": t["next_avg_fdr"],
+                "avg_cs": t["next_avg_cs_pct"],
+                # next_n on otteluiden maara lahihorisontissa. Ilman sita
+                # blank GW nayttaisi "0.0%" eli MITATUN nollan.
+                "n": t["next_n"],
+            }
+        )
+    rows.sort(key=lambda r: r["avg_fdr"])
+    # 30.8 (portti k2): fail-closed double gameweekille. Jos rivilla on
+    # enemman otteluita kuin soluja, ruudukko PIILOTTAA ottelun samalla kun
+    # Games-sarake ja Avg CS% laskevat sen mukaan. Sivun luvut olisivat silloin
+    # keskenaan ristiriidassa ilman etta mikaan huutaisi
+    # (muisti: ehto-ei-vanhene-teksti-vanhenee).
+    #
+    # Fail-closed kuten fpl_cs_fdr:n sanity-gate: vanha fpl.html jaa voimaan ja
+    # askel menee punaiseksi. Se on parempi kuin sivu joka valehtelee itselleen.
+    # Korjaus on QUEUE: FDR-GRID-DGW.
+    for r in rows:
+        nakyvia = len([c for c in r["cells"] if c is not None])
+        if r["n"] > nakyvia:
+            raise SystemExit(
+                f"FDR-GRID-DGW: {r['team']} - rivilla {r['n']} ottelua mutta "
+                f"{nakyvia} solua. Double gameweek piilottaisi ottelun "
+                f"ruudukosta samalla kun Games ja Avg CS% laskevat sen. "
+                f"Korjaa fdr_rows_from_teams (by_gw -> lista per GW) ennen "
+                f"kuin sivu regeneroidaan.")
+    return rows
+
+
 def build_context(fpl: dict, acc: dict) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
@@ -335,18 +385,7 @@ def build_context(fpl: dict, acc: dict) -> dict:
 
     # FDR-gridin rivit: per joukkue, kaikki horisontin GW:t
     gws = sorted({f["gw"] for t in teams for f in t["fixtures"]})
-    fdr_rows = []
-    for t in teams:
-        by_gw = {f["gw"]: f for f in t["fixtures"]}
-        fdr_rows.append(
-            {
-                "team": t["name"],
-                "cells": [by_gw.get(g) for g in gws],
-                "avg_fdr": t["next_avg_fdr"],
-                "avg_cs": t["next_avg_cs_pct"],
-            }
-        )
-    fdr_rows.sort(key=lambda r: r["avg_fdr"])
+    fdr_rows = fdr_rows_from_teams(teams, gws)
 
     # ------------------------------------------------------------------
     # 27.7 KAUKOHORISONTTI, 6 GW:n lohkokeskiarvoina.
@@ -1173,6 +1212,31 @@ def far_grid_html(c: dict) -> str:
     )
 
 
+def avg_cells(r: dict) -> str:
+    """Rivin yhteenvetosarakkeet: Avg CS%, Avg FDR, Games.
+
+    30.8 NEXT6-PINTA. Sivulla oli yksi sarake otsikolla "Avg", ja se naytti
+    FDR-keskiarvon prosenttirivin paassa: Arsenalin rivi oli
+    38/37/48/35/49/48 % ja Avg-sarake "1.00". Lukija joka laskee rivin
+    keskiarvon saa 42,5 %, eika sivulla ollut mitaan mika kertoisi etta luku
+    on eri suure. SPA ja mobiili nayttivat molemmat luvut nimettyina jo.
+
+    Blank GW: n == 0 -> viiva, EI "0.0%". Nolla ei ole sama kuin ei tietoa,
+    ja artefaktin next_avg_cs_pct on tyhjalle ikkunalle 0.0 (build_fpl_phase0).
+    """
+    if not r.get("n"):
+        return (
+            '<td class="num">-</td>'
+            '<td class="num m-hide">-</td>'
+            '<td class="num m-hide">0</td>'
+        )
+    return (
+        f'<td class="num"><strong>{r["avg_cs"]:.1f}%</strong></td>'
+        f'<td class="num m-hide">{r["avg_fdr"]:.2f}</td>'
+        f'<td class="num m-hide">{r["n"]}</td>'
+    )
+
+
 def fdr_grid_html(c: dict) -> str:
     # Mobiili 9.8, Villen valinta (a): kapealla naytolla nakyvat vain Team +
     # kolme seuraavaa gameweekia + Avg. Kahdeksan sarakkeen ruudukko oli
@@ -1196,22 +1260,29 @@ def fdr_grid_html(c: dict) -> str:
                 # mobiilin #144:n kanssa); FDR-luokka siirtyi tooltippiin.
                 # #152: solu on linkki predict-pinnalle (mobiilin solu-tap-pariteetti).
                 # 26.7 CLASSIC: ei taustatäyttöä — luokka värittää LUVUN.
-                cls = cs_cell_class(float(fx["cs_pct"]))
+                # 30.8 (portti k2, B3): vari JA luku samasta arvosta.
+                # Aiemmin luokka laskettiin raakaarvosta ja solu naytettiin
+                # :.0f:lla, joten 20.1 luki "20%" muttei saanut coralia -
+                # captionin lupaus "20% or less in coral" oli livena
+                # kumottavissa kolmella nakyvalla solulla (MCI GW4, MUN GW4,
+                # EVE GW6). Sama pyoristysjuuri kuin Avg CS% -korjauksessa.
+                shown = format(float(fx["cs_pct"]), ".0f")
+                cls = cs_cell_class(float(shown))
                 href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
                 cells.append(
                     f'<td class="num {cls}{m}"><a class="fdr" href="{href}" '
                     f'title="{escape(fx["opponent"])} ({fx["venue"]}) '
                     f'&middot; FDR {fx["fdr"]} &middot; view model prediction">'
                     f'{escape(fx["opponent_short"])} ({fx["venue"]}) '
-                    f'{fx["cs_pct"]:.0f}%'
+                    f'{shown}%'
                     f"</a></td>"
                 )
         rows.append(
             "<tr>"
             f'<td class="team">{escape(r["team"])}</td>'
             + "".join(cells)
-            + f'<td class="num"><strong>{r["avg_fdr"]:.2f}</strong></td>'
-            "</tr>"
+            + avg_cells(r)
+            + "</tr>"
         )
     return (
         '<div class="scroll"><table>'
@@ -1219,9 +1290,17 @@ def fdr_grid_html(c: dict) -> str:
         f"{len(c['gws'])} gameweeks, with opponent and venue. Easy fixtures "
         f"({CS_EASY_MIN:.0f}% or more) are picked out in gold, hard ones "
         f"({CS_HARD_MAX:.0f}% or less) in coral (model FDR in the cell tooltip). "
-        f"Sorted by easiest run.</caption>"
+        f"Avg CS% is the model's average clean sheet probability across that "
+        f"row's fixtures, taken before the cells are rounded to whole percent. "
+        f"Avg FDR is the GoalIQ model's fixture difficulty, not FPL's official "
+        f"FDR, on a 1 to 5 scale where 1 is easiest. Games is how many fixtures "
+        f"that row has in these {len(c['gws'])} gameweeks. "
+        f"Sorted by easiest run (Avg FDR).</caption>"
         "<thead><tr>"
-        '<th scope="col">Team</th>' + head + '<th scope="col" class="num">Avg</th>'
+        '<th scope="col">Team</th>' + head
+        + '<th scope="col" class="num">Avg CS%</th>'
+        + '<th scope="col" class="num m-hide">Avg FDR</th>'
+        + '<th scope="col" class="num m-hide">Games</th>'
         "</tr></thead><tbody>"
         + "".join(rows)
         + "</tbody></table></div>"

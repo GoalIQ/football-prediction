@@ -68,6 +68,125 @@ def stale_anchors(html: str, llms: str) -> list[str]:
     return sorted(llms_anchors(llms) - page_anchors(html))
 
 
+# ---------------------------------------------------------------------------
+# VAITEPORTTI (30.8.2026, LLMS-SYNC-CLAIM-GATE)
+#
+# Ankkuriportti yllä mittaa etta lohko on KUVATTU. Se ei mittaa etta kuvaus on
+# TOSI. 29.8 julkaisutarkistaja loysi llms.txt:n /fpl-osiosta viisi vikaa
+# (liioiteltu gradauskattavuus, sivun oman varauksen vastainen parafraasi,
+# vanheneva luku "all 20 teams", "logged and scored" ilman yhtaan gradattua
+# rivia, kielletty "rather than") ja KAIKKI menivat ankkuriportin lapi
+# vihreana. Portti mittasi eri asiaa kuin se vaitti mittaavansa.
+#
+# Tama osa vertaa syvalinkkirivin LUKUJA sivun vastaavaan lohkoon.
+
+#: Luvut 1-9 ovat proosaa ("1 to 5", "three free"), eivat dataväitteitä.
+#: Portti katsoo lukuja jotka lukija lukisi mittaustuloksena: >= 10, tai
+#: desimaaliluku, tai prosentti.
+CLAIM_NUM_RE = re.compile(r"\b(\d+\.\d+|\d{2,})\s*%?")
+
+#: Sanat joiden kayttö on aiemmin hylätty portissa. Lista vanhenee (muisti:
+#: portin-sanalista-vanhenee), joten se on lisäportti eikä ainoa portti.
+BANNED_PHRASES = ("rather than",)
+
+H2_RE = re.compile(r'<h2 id="([a-z0-9][a-z0-9-]*)"')
+
+
+def block_text(html: str, anchor: str) -> str:
+    """Ankkurin lohko tekstina: sen h2:sta seuraavaan h2:een."""
+    starts = [(m.group(1), m.start()) for m in H2_RE.finditer(html)]
+    for i, (a, pos) in enumerate(starts):
+        if a != anchor:
+            continue
+        end = starts[i + 1][1] if i + 1 < len(starts) else len(html)
+        chunk = html[pos:end]
+        chunk = re.sub(r"(?is)<(script|style)[^>]*>.*?</>", " ", chunk)
+        return re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", chunk))
+    return ""
+
+
+def llms_lines_by_anchor(llms: str) -> dict:
+    """Ankkuri -> se llms.txt-rivi joka siihen syvalinkittaa."""
+    out = {}
+    for line in llms.splitlines():
+        for a in LINK_RE.findall(line):
+            out.setdefault(a, []).append(line.strip())
+    return out
+
+
+def _nums(text: str) -> set:
+    return {m.group(1) for m in CLAIM_NUM_RE.finditer(text)}
+
+
+def unsupported_numbers(html: str, llms: str) -> list:
+    """Luvut joita syvalinkkirivi vaittaa mutta joita lohkossa ei ole.
+
+    Tama on se vika jonka "all 20 teams" oli: luku joka oli kerran tosi ja
+    jonka sivu on sittemmin jattanyt sanomatta.
+    """
+    bad = []
+    for a, lines in llms_lines_by_anchor(llms).items():
+        block = block_text(html, a)
+        if not block:
+            continue  # ankkuriportti hoitaa puuttuvat lohkot
+        have = _nums(block)
+        for line in lines:
+            for n in sorted(_nums(line) - have):
+                bad.append((a, n, line[:90]))
+    return bad
+
+
+def banned_phrases(llms: str) -> list:
+    """Hylatty sanamuoto /fpl-syvalinkkiriveilla (BLOKKAA).
+
+    Rajattu tasan siihen mita LLMS-SYNC-CLAIM-GATE pyysi: syvalinkkirivien
+    vaitteet. Koko tiedoston kattava kielto olisi tehnyt portista punaisen
+    heti syntymassa kolmen vanhan rivin takia, ja paivittain punainen portti
+    tulee ohitetuksi (muisti: pysyvasti-punainen-putki-nielee-regression).
+    Muut osumat raportoidaan noottina, ks. `banned_phrases_elsewhere`.
+    """
+    out = []
+    for a, lines in llms_lines_by_anchor(llms).items():
+        for line in lines:
+            for ph in BANNED_PHRASES:
+                if ph in line.lower():
+                    out.append((a, ph))
+    return sorted(set(out))
+
+
+def banned_phrases_elsewhere(llms: str) -> list:
+    """Samat sanamuodot muualla tiedostossa: NOOTTI, ei blokkaus.
+
+    Nakyy jotta loydos ei katoa; korjaus on oma copy-rivinsa jonossa
+    (QUEUE: LLMS-RATHER-THAN) koska se on julkista tekstia -> portti.
+    """
+    anchored = {ln for lines in llms_lines_by_anchor(llms).values() for ln in lines}
+    out = []
+    for i, line in enumerate(llms.splitlines(), 1):
+        if line.strip() in anchored:
+            continue
+        for ph in BANNED_PHRASES:
+            if ph in line.lower():
+                out.append((i, ph))
+    return out
+
+
+def free_claim_gating(html: str, llms: str) -> list:
+    """`Free`-vaite edellyttaa etta lohko renderoityy ilman premium-ehtoa.
+
+    fpl.html on kokonaan ilmainen eika siina ole premium-gatetusta (mitattu
+    30.8: nolla osumaa). Tama vahti on siksi fail-closed TULEVAISUUTTA
+    varten: jos gatetus joskus ilmestyy sivulle samalla kun llms.txt yha
+    lupaa Free, portti kaatuu.
+    """
+    gated = re.findall(r'class="[^"]*\bis-premium\b[^"]*"|data-premium', html)
+    if not gated:
+        return []
+    claims = [a for a, lines in llms_lines_by_anchor(llms).items()
+              if any("free" in ln.lower() for ln in lines)]
+    return sorted(claims)
+
+
 def main() -> int:
     if not PAGE.exists():
         print(f"FAIL: {PAGE} puuttuu - porttia ei voi todentaa (fail-closed).")
@@ -81,8 +200,24 @@ def main() -> int:
 
     missing = missing_anchors(html, llms)
     stale = stale_anchors(html, llms)
+    nums = unsupported_numbers(html, llms)
+    banned = banned_phrases(llms)
+    gated = free_claim_gating(html, llms)
 
-    if not missing and not stale:
+    for a, n, line in nums:
+        print(f"FAIL: llms.txt vaittaa luvun {n} lohkosta #{a}, mutta sivun "
+              f"lohkossa ei ole sita lukua. Rivi: {line}")
+    for a, ph in banned:
+        print(f"FAIL: /fpl#{a} -rivi sisaltaa aiemmin hylatyn sanamuodon {ph!r} "
+              f"(AI-TELL-CHECKLIST: negatiivinen parallelismi).")
+    for ln, ph in banned_phrases_elsewhere(llms):
+        print(f"NOTE: llms.txt rivi {ln} sisaltaa {ph!r} (ei /fpl-rivi, ei "
+              f"blokkaa; QUEUE: LLMS-RATHER-THAN).")
+    for a in gated:
+        print(f"FAIL: llms.txt lupaa lohkon #{a} ilmaiseksi, mutta sivulla on "
+              f"premium-gatetusta. Tarkista kumpi on oikein.")
+
+    if not missing and not stale and not nums and not banned and not gated:
         described = sorted(page_anchors(html) - set(EXEMPT))
         print(f"OK: llms.txt kuvaa kaikki {len(described)} /fpl-sisaltolohkoa.")
         return 0

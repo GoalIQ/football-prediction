@@ -252,14 +252,52 @@ def add_fdr(rows: list[dict]) -> None:
 # ---------------------------------------------------------------------------
 # 5. Per-joukkue aggregaatit (seuraavat 6 GW)
 # ---------------------------------------------------------------------------
-def team_aggregates(rows: list[dict], horizon_gw: int = 6) -> dict:
+def aggregate_window(rows: list[dict], horizon_gw: int = 6,
+                     now_ms: int | None = None) -> tuple[int, int] | None:
+    """(ensimmainen_gw, viimeinen_gw) jonka aggregaatti kattaa, tai None.
+
+    Ensimmainen kierros jossa on viela pelaamaton ottelu. Kesken kierroksen
+    tama on kuluva GW, mika vastaa fpl_projections_phase0:n lahihorisonttia.
+    """
     if not rows:
+        return None
+    gws = [r["gameweek"] for r in rows if r["gameweek"]]
+    if not gws:
+        return None
+    if now_ms is None:
+        now_ms = int(_dt.datetime.now(_dt.timezone.utc).timestamp() * 1000)
+    upcoming = [r["gameweek"] for r in rows
+                if r["gameweek"] and (r.get("kickoff_ms") or 0) >= now_ms]
+    min_gw = min(upcoming) if upcoming else min(gws)
+    return min_gw, min_gw + horizon_gw - 1
+
+
+def team_aggregates(rows: list[dict], horizon_gw: int = 6,
+                    now_ms: int | None = None) -> dict:
+    """Per-joukkue keskiarvot SEURAAVILLE horizon_gw kierrokselle.
+
+    30.8.2026 (NEXT6-PINTA). Tama laski aiemmin min_gw:n KOKO kauden 380
+    fixturesta, eli `min_gw` oli aina 1 ja `teams_next6` oli aina GW1-GW6 -
+    myos elokuun lopussa kun GW1 oli pelattu ja GW2 kesken. Kentan nimi
+    lupasi "next 6" ja sisalto oli kauden alku, ikuisesti.
+
+    Tama on sama vikaluokka jonka src/models/fpl_gameweek.py dokumentoi
+    NELJASTI (siirtosuunnittelu 22.8, chip-EV 24.8, jakokortti 25.8,
+    /fpl-sivu 25.8): horisontti johdetaan kentasta joka ei liiku ajan mukana.
+    Tama oli viides. Talla artefaktilla ei ole FPL:n metaa (fixture-lahde on
+    pulselive), joten kierros paatellaan kickoffista eika `is_current`-lipusta
+    - se on sama periaate jota fpl_gameweek soveltaa: aikaleima, ei lippu.
+    """
+    win = aggregate_window(rows, horizon_gw, now_ms)
+    if win is None:
         return {}
-    min_gw = min(r["gameweek"] for r in rows if r["gameweek"])
-    gw_cut = min_gw + horizon_gw - 1
+    min_gw, gw_cut = win
     agg: dict[str, dict] = {}
     for r in rows:
-        if not r["gameweek"] or r["gameweek"] > gw_cut:
+        # Molemmat rajat. Aiemmin min_gw oli aina listan minimi, joten
+        # alaraja oli implisiittinen; nyt ikkuna liikkuu ja jo pelatut
+        # kierrokset on suodatettava eksplisiittisesti pois.
+        if not r["gameweek"] or not (min_gw <= r["gameweek"] <= gw_cut):
             continue
         for side in ("home", "away"):
             team = r["home"] if side == "home" else r["away"]
@@ -357,6 +395,10 @@ def main() -> int:
     rows = compute_fixtures(dc, fixtures)
     add_fdr(rows)
     teams_agg = team_aggregates(rows)
+    # Mika ikkuna aggregaatti oikeasti on. Ilman tata kentan NIMI on ainoa
+    # lahde sille mita se kattaa, ja se nimi valehteli 30.8. asti.
+    _win = aggregate_window(rows)
+    horizon_label = f"GW{_win[0]}-GW{_win[1]}" if _win else ""
 
     gate_pass = sanity_and_sample(rows, teams_agg, missing, dc=dc)
     if not gate_pass:
@@ -398,6 +440,7 @@ def main() -> int:
             "sanity_gate": "PASS" if gate_pass else "FAIL",
             "phase": "Phase 0 — pohjatyö, EI shipattava feature",
         },
+        "teams_next6_horizon": horizon_label,
         "teams_next6": teams_agg,
         "fixtures": rows,
     }
