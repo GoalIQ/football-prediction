@@ -580,7 +580,7 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         f"The GoalIQ model's best FPL captain for Gameweek {gw}: "
         f"{top['web_name']} ({top['team_short']}). Horizon expected points "
         f"for the top 100 players are free on our expected-points page; "
-        f"the full ranked list on the gameweek-specific number is "
+        f"the ranked list on the gameweek-specific number is "
         f"GoalIQ Premium. Updated every round."
     )
     hero = (
@@ -621,11 +621,11 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         + f'<div class="stat-row"{kortti_cap}>'
         f'<div class="stat"><b>{escape(top["web_name"])}</b>'
         f'<span>#1 pick · {escape(top["team_short"])} · {_start_txt(top)} '
-        "· GW xP in Premium</span></div>"
+        "</span></div>"
         + "".join(
             f'<div class="stat"><b>{escape(p["web_name"])}</b>'
             f'<span>contender · {escape(p["team_short"])} · {_start_txt(p)} '
-            "· GW xP in Premium</span></div>"
+            "</span></div>"
             for p in alts
         )
         + "</div>"
@@ -649,8 +649,8 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         # (julkaisutarkistajan B2, 30.8). Maksullinen raja on KOKO LISTA
         # elavana, ei yksittainen luku. Tama ei lupaa korttia jota ei ole
         # viela julkaistu: lupaus siita on oma copy-muutoksensa.
-        "instead. The full ranked list, for every player and updated "
-        "through the week, is GoalIQ Premium.</p>"
+        "instead, and the ranked list on that number is GoalIQ "
+        "Premium.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
         + (SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
@@ -692,8 +692,8 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     body = (
         f'<div class="stat-row">'
         f'<div class="stat"><b>{escape(top["web_name"])}</b>'
-        f'<span>{escape(top["team_short"])} · owned {top["owned_pct"]}% · '
-        f"GW xP in Premium</span></div>"
+        f'<span>{escape(top["team_short"])} · owned {top["owned_pct"]}%'
+        f"</span></div>"
         f'<div class="stat"><b>+{len(players) - 1} more</b>'
         f"<span>full differential list in Premium</span></div>"
         f"</div>"
