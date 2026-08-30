@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-08-29T23:15:47+00:00",
+  "updated_at": "2026-08-30T05:08:14+00:00",
   "logged_total": 3199,
-  "pending": 2887,
+  "pending": 2884,
   "voided": 5,
   "all_time": {
-    "n": 307,
-    "correct_1x2": 155,
-    "pct_1x2": 0.5049,
+    "n": 310,
+    "correct_1x2": 157,
+    "pct_1x2": 0.5065,
     "draw_n": 87,
-    "pct_draw": 0.2834,
-    "decisive_n": 220,
-    "decisive_correct": 155,
-    "pct_decisive": 0.7045,
-    "exact_n": 259,
+    "pct_draw": 0.2806,
+    "decisive_n": 223,
+    "decisive_correct": 157,
+    "pct_decisive": 0.704,
+    "exact_n": 262,
     "exact_correct": 34,
-    "pct_exact": 0.1313,
-    "brier": 0.5885,
-    "brier_n": 259
+    "pct_exact": 0.1298,
+    "brier": 0.5873,
+    "brier_n": 262
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 49,
-    "pct_1x2": 0.49,
-    "draw_n": 22,
-    "pct_draw": 0.22,
-    "decisive_n": 78,
-    "decisive_correct": 49,
-    "pct_decisive": 0.6282,
+    "correct_1x2": 51,
+    "pct_1x2": 0.51,
+    "draw_n": 20,
+    "pct_draw": 0.2,
+    "decisive_n": 80,
+    "decisive_correct": 51,
+    "pct_decisive": 0.6375,
     "exact_n": 100,
-    "exact_correct": 12,
-    "pct_exact": 0.12,
-    "brier": 0.5825,
+    "exact_correct": 11,
+    "pct_exact": 0.11,
+    "brier": 0.5687,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 7
     },
     "BSA": {
-      "n": 56,
-      "correct_1x2": 20,
-      "pct_1x2": 0.3571,
+      "n": 59,
+      "correct_1x2": 22,
+      "pct_1x2": 0.3729,
       "draw_n": 22,
-      "pct_draw": 0.3929,
-      "decisive_n": 34,
-      "decisive_correct": 20,
-      "pct_decisive": 0.5882,
-      "exact_n": 56,
+      "pct_draw": 0.3729,
+      "decisive_n": 37,
+      "decisive_correct": 22,
+      "pct_decisive": 0.5946,
+      "exact_n": 59,
       "exact_correct": 9,
-      "pct_exact": 0.1607,
-      "brier": 0.6681,
-      "brier_n": 56
+      "pct_exact": 0.1525,
+      "brier": 0.6586,
+      "brier_n": 59
     },
     "DED": {
       "n": 18,
@@ -188,19 +188,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 123,
-      "correct_1x2": 67,
-      "pct_1x2": 0.5447,
+      "n": 126,
+      "correct_1x2": 69,
+      "pct_1x2": 0.5476,
       "draw_n": 24,
-      "pct_draw": 0.1951,
-      "decisive_n": 99,
-      "decisive_correct": 67,
-      "pct_decisive": 0.6768,
-      "exact_n": 123,
+      "pct_draw": 0.1905,
+      "decisive_n": 102,
+      "decisive_correct": 69,
+      "pct_decisive": 0.6765,
+      "exact_n": 126,
       "exact_correct": 13,
-      "pct_exact": 0.1057,
-      "brier": 0.5629,
-      "brier_n": 123
+      "pct_exact": 0.1032,
+      "brier": 0.5609,
+      "brier_n": 126
     },
     "stale": {
       "n": 136,
@@ -242,16 +242,16 @@
       "n": 22
     },
     {
-      "bin_mid": 0.1598,
-      "predicted": 0.1598,
-      "actual": 0.1443,
-      "n": 97
+      "bin_mid": 0.1595,
+      "predicted": 0.1595,
+      "actual": 0.1429,
+      "n": 98
     },
     {
-      "bin_mid": 0.2535,
-      "predicted": 0.2535,
-      "actual": 0.2925,
-      "n": 294
+      "bin_mid": 0.2538,
+      "predicted": 0.2538,
+      "actual": 0.291,
+      "n": 299
     },
     {
       "bin_mid": 0.3375,
@@ -260,10 +260,10 @@
       "n": 146
     },
     {
-      "bin_mid": 0.447,
-      "predicted": 0.447,
-      "actual": 0.3265,
-      "n": 98
+      "bin_mid": 0.4471,
+      "predicted": 0.4471,
+      "actual": 0.33,
+      "n": 100
     },
     {
       "bin_mid": 0.5428,
@@ -272,10 +272,10 @@
       "n": 57
     },
     {
-      "bin_mid": 0.6478,
-      "predicted": 0.6478,
-      "actual": 0.7209,
-      "n": 43
+      "bin_mid": 0.6472,
+      "predicted": 0.6472,
+      "actual": 0.7273,
+      "n": 44
     },
     {
       "bin_mid": 0.7329,
@@ -291,6 +291,51 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-30",
+      "home_team": "Vasco",
+      "away_team": "Cruzeiro",
+      "predicted_winner": "away",
+      "p_winner": 0.439,
+      "lead_h": 1.1,
+      "most_likely_score": "1-1",
+      "actual_score": "3-1",
+      "actual_outcome": "home",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-29",
+      "home_team": "Sao Paulo",
+      "away_team": "Bragantino",
+      "predicted_winner": "home",
+      "p_winner": 0.4629,
+      "lead_h": 2.1,
+      "most_likely_score": "1-1",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-29",
+      "home_team": "Atletico-MG",
+      "away_team": "Vitoria",
+      "predicted_winner": "home",
+      "p_winner": 0.6208,
+      "lead_h": 0.6,
+      "most_likely_score": "1-0",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-29",
       "home_team": "Zwolle",
@@ -542,51 +587,6 @@
       "actual_score": "2-1",
       "actual_outcome": "home",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-29",
-      "home_team": "Arouca",
-      "away_team": "Maritimo",
-      "predicted_winner": "home",
-      "p_winner": 0.4355,
-      "lead_h": 4.5,
-      "most_likely_score": "1-1",
-      "actual_score": "2-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-29",
-      "home_team": "Alverca",
-      "away_team": "Santa Clara",
-      "predicted_winner": "away",
-      "p_winner": 0.3675,
-      "lead_h": 4.5,
-      "most_likely_score": "0-1",
-      "actual_score": "1-1",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-29",
-      "home_team": "RC Strasbourg Alsace",
-      "away_team": "Racing Club de Lens",
-      "predicted_winner": "away",
-      "p_winner": 0.4466,
-      "lead_h": 5.3,
-      "most_likely_score": "1-1",
-      "actual_score": "2-1",
-      "actual_outcome": "home",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
