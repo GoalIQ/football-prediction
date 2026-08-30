@@ -187,6 +187,81 @@ def free_claim_gating(html: str, llms: str) -> list:
     return sorted(claims)
 
 
+
+
+# ---------------------------------------------------------------------------
+# SIVULUOKKAPORTTI (30.8.2026)
+#
+# Ankkuriportti kattaa /fpl-sivun lohkot. Se ei nae kokonaisia SIVUTYYPPEJA:
+# 30.8 mitattiin etta sitemapissa on 401 URLia ja /faq ei ollut kuvattu
+# lainkaan, vaikka se on kuudella kysymyksella ja FAQPage-skeemalla juuri se
+# sivutyyppi jota tekoalykoneet siteeraavat.
+#
+# Portti EI vaadi jokaista URLia: 349 ottelusivua kuvataan kuviona, ja niin
+# kuuluukin. Se vaatii etta jokaisella sivuLUOKALLA on maininta. Uusi
+# sivutyyppi ei siis voi jaada nakymattomaksi.
+
+SITEMAP_GLOB = "sitemap*.xml"
+LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
+#: Luokat joita ei vaadita kuvattavaksi, perusteluineen.
+CLASS_EXEMPT = {
+    "/privacy": "lakisivu, ei tuotesisaltoa",
+    "/delete-account": "lomake, ei sisaltoa jota siteerata",
+    "/sitemap-core.xml": "sitemap itse",
+    "/sitemap-fpl.xml": "sitemap itse",
+    "/sitemap-predictions.xml": "sitemap itse",
+    "/fpl/note/<x>": ("indeksisivu /fpl/notes on kuvattu ja linkitetty, ja se "
+                      "listaa jokaisen muistion; yksittaisten slugien "
+                      "linkittaminen vanhenisi joka julkaisussa"),
+}
+
+
+def sitemap_urls() -> list:
+    out = []
+    for f in sorted(ROOT.glob(SITEMAP_GLOB)):
+        try:
+            out += LOC_RE.findall(f.read_text(encoding="utf-8", errors="ignore"))
+        except OSError:
+            continue
+    return out
+
+
+def url_class(path: str) -> str:
+    """Sivutyyppi polusta. /fpl/club/arsenal -> /fpl/club/<x>."""
+    p = path.rstrip("/")
+    osat = [x for x in p.split("/") if x]
+    if not osat:
+        return "/"
+    if osat[0] == "predictions" and len(osat) >= 3:
+        return "/predictions/<liiga>/<ottelu>"
+    if osat[:2] == ["fpl", "club"] and len(osat) == 3:
+        return "/fpl/club/<x>"
+    if osat[:2] == ["fpl", "note"] and len(osat) == 3:
+        return "/fpl/note/<x>"
+    return "/" + "/".join(osat)
+
+
+def undescribed_classes(llms: str, urls: list) -> list:
+    """Sivuluokat joista llms.txt ei mainitse yhtaan esimerkkia."""
+    low = llms.lower()
+    luokat = {}
+    for u in urls:
+        polku = u.replace("https://goaliq.app", "").replace("http://goaliq.app", "")
+        luokat.setdefault(url_class(polku), []).append(polku)
+    puuttuu = []
+    for luokka, esimerkit in sorted(luokat.items()):
+        if luokka in CLASS_EXEMPT:
+            continue
+        # riittaa etta YKSI luokan polku mainitaan jossain muodossa
+        if any(e.rstrip("/").lower() in low for e in esimerkit if e.rstrip("/")):
+            continue
+        if luokka == "/" and "goaliq.app/" in low:
+            continue
+        puuttuu.append((luokka, len(esimerkit), esimerkit[0]))
+    return puuttuu
+
+
+
 def main() -> int:
     if not PAGE.exists():
         print(f"FAIL: {PAGE} puuttuu - porttia ei voi todentaa (fail-closed).")
@@ -201,6 +276,7 @@ def main() -> int:
     missing = missing_anchors(html, llms)
     stale = stale_anchors(html, llms)
     nums = unsupported_numbers(html, llms)
+    luokat = undescribed_classes(llms, sitemap_urls())
     banned = banned_phrases(llms)
     gated = free_claim_gating(html, llms)
 
@@ -213,11 +289,15 @@ def main() -> int:
     for ln, ph in banned_phrases_elsewhere(llms):
         print(f"NOTE: llms.txt rivi {ln} sisaltaa {ph!r} (ei /fpl-rivi, ei "
               f"blokkaa; QUEUE: LLMS-RATHER-THAN).")
+    for luokka, n, esim in luokat:
+        print(f"FAIL: sivuluokkaa {luokka} ({n} sivua, esim. {esim}) ei mainita "
+              f"llms.txt:ssa. Kuvaa luokka KERRAN kuviona, tai lisaa "
+              f"CLASS_EXEMPT-listaan perusteluineen.")
     for a in gated:
         print(f"FAIL: llms.txt lupaa lohkon #{a} ilmaiseksi, mutta sivulla on "
               f"premium-gatetusta. Tarkista kumpi on oikein.")
 
-    if not missing and not stale and not nums and not banned and not gated:
+    if not missing and not stale and not nums and not banned and not gated and not luokat:
         described = sorted(page_anchors(html) - set(EXEMPT))
         print(f"OK: llms.txt kuvaa kaikki {len(described)} /fpl-sisaltolohkoa.")
         return 0

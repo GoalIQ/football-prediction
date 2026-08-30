@@ -137,3 +137,60 @@ def test_lines_are_grouped_by_anchor():
     got = llms_lines_by_anchor(_llms(
         "- [FDR](https://goaliq.app/fpl#fixture-difficulty): x."))
     assert set(got) == {"clean-sheets", "fixture-difficulty"}
+
+
+# ---------------------------------------------------------------------------
+# 6. Sivuluokkaportti (GEO): uusi sivutyyppi ei saa jaada nakymattomaksi
+# ---------------------------------------------------------------------------
+# Ankkuriportti kattaa /fpl-sivun lohkot, ei kokonaisia sivuTYYPPEJA. 30.8
+# mitattiin etta sitemapissa on 401 URLia ja /faq ei ollut kuvattu lainkaan,
+# vaikka se on kuudella kysymyksella ja FAQPage-skeemalla juuri se sivutyyppi
+# jota tekoalykoneet siteeraavat.
+from scripts.check_llms_txt_sync import (  # noqa: E402
+    CLASS_EXEMPT, undescribed_classes, url_class)
+
+
+def test_url_class_collapses_templated_paths():
+    """349 ottelusivua on YKSI luokka, ei 349 vaadittua rivia."""
+    assert url_class("/predictions/premier-league/a-vs-b") == "/predictions/<liiga>/<ottelu>"
+    assert url_class("/fpl/club/arsenal") == "/fpl/club/<x>"
+    assert url_class("/fpl/note/some-slug") == "/fpl/note/<x>"
+
+
+def test_url_class_keeps_real_pages_separate():
+    """Kontrolli: ilman tata kaikki romahtaisi yhdeksi luokaksi ja portti
+    olisi aina vihrea."""
+    assert url_class("/faq") == "/faq"
+    assert url_class("/fpl/points") == "/fpl/points"
+    assert url_class("/fpl") == "/fpl"
+    assert url_class("/") == "/"
+
+
+def test_a_page_class_nobody_describes_is_caught():
+    """Tasan se vika joka /faq oli."""
+    llms = "- [FPL](https://goaliq.app/fpl): tools.\n"
+    urls = ["https://goaliq.app/fpl", "https://goaliq.app/faq"]
+    out = undescribed_classes(llms, urls)
+    assert [(c, n) for c, n, _ in out] == [("/faq", 1)], out
+
+
+def test_negative_control_described_class_passes():
+    """Ilman tata portti huutaisi kaikesta."""
+    llms = "- [FPL](https://goaliq.app/fpl)\n- [FAQ](https://goaliq.app/faq)\n"
+    urls = ["https://goaliq.app/fpl", "https://goaliq.app/faq"]
+    assert undescribed_classes(llms, urls) == []
+
+
+def test_one_example_covers_a_whole_templated_class():
+    """Kuvion kuvaaminen KERRAN riittaa; 349 rivia olisi vaara korjaus."""
+    llms = "Club pages: https://goaliq.app/fpl/club/arsenal, /liverpool and so on.\n"
+    urls = ["https://goaliq.app/fpl/club/arsenal",
+            "https://goaliq.app/fpl/club/liverpool",
+            "https://goaliq.app/fpl/club/chelsea"]
+    assert undescribed_classes(llms, urls) == []
+
+
+def test_every_exemption_carries_a_reason():
+    """Poikkeus on tietoinen paatos, ei oletus."""
+    for luokka, syy in CLASS_EXEMPT.items():
+        assert isinstance(syy, str) and len(syy) > 10, luokka
