@@ -34,7 +34,7 @@ from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, MAX_PER_CLUB, POS_NAME, SQUAD_QUOTA, XI_MAX,
     XI_MIN, BUDGET_TENTHS, RateTeamError, _fetch_fpl, _gw_xp, _resolve_gw,
     apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
-    get_bootstrap, get_entry_picks, optimal_xi, resolve_squad,
+    get_bootstrap, get_entry_picks, optimal_xi, picks_outdated, resolve_squad,
 )
 from src.models import fpl_wildcard
 from src.models.fpl_xp import load_xp
@@ -913,6 +913,20 @@ def fantasy_plan_chains(
                 if len(plans) == 3:
                     break
 
+            # PLAN-CHAINS-SQUAD-SOURCE (29.8): sama squad_source-sopimus kuin
+            # /api/fantasy/plan:ssa (fpl_planner.plan_transfers), jotta
+            # PlanChains.svelte voi renderoida stale-rivin ja "Use my saved
+            # 15" -napin kuten TransferPlanner jo tekee. `deadline_gw` tulee
+            # samasta lahteesta kuin rate-teamin picks_outdated.
+            _dl_gw = xp_data["meta"].get("deadline_gameweek")
+            _stale = (player_ids is None and picks_outdated(picks_gw, _dl_gw))
+            squad_source = {
+                "mode": "manual" if player_ids else "entry",
+                "gw": picks_gw,
+                "deadline_gw": _dl_gw if isinstance(_dl_gw, int) else None,
+                "stale": bool(_stale),
+            }
+
             payload = {
                 "meta": {
                     "entry": entry, "start_gw": gws[0], "horizon": len(gws),
@@ -924,6 +938,7 @@ def fantasy_plan_chains(
                                   "remaining-horizon xP - not a global "
                                   "optimum"),
                     "note": DISCLAIMER,
+                    "squad_source": squad_source,
                 },
                 "baseline_xp_no_transfers": round(baseline, 2),
                 "plans": plans,
