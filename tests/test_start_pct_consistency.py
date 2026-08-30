@@ -65,17 +65,35 @@ def _club_pages() -> dict[tuple[str, str], int]:
     return out
 
 
+
+# 🔴 30.8 (FREE-GW-XP): `/fpl/expected-points` kantaa nyt KAKSI taulukkoa -
+# yhden kierroksen GW-xP top 20 ensin, sitten horisontin top 100. Molemmat
+# testit lukivat sivun ENSIMMAISTA <tbody>:a, joten uusi osio sieppasi
+# mittauksen aanettomasti ja ne mittasivat vaaraa taulukkoa. Taulukko
+# valitaan nyt sen OTSIKOSTA, jolloin uusi osio sivulla ei voi enaa siirtaa
+# mittauskohdetta (muisti: yksi-renderointipolku-kahdesta,
+# portti-voi-mitata-eri-koodipolkua).
+def _tbody_after(html: str, otsikko: str) -> str:
+    i = html.find(otsikko)
+    assert i > 0, f"sivulta puuttuu otsikko {otsikko!r}"
+    m = re.search(r"<tbody[^>]*>(.*?)</tbody>", html[i:], re.S)
+    assert m, f"otsikon {otsikko!r} jalkeen ei ole taulukkoa"
+    return m.group(1)
+
+
 def _expected_points() -> dict[str, int]:
     """{nimi: start%} expected-points-taulukosta (Start%-sarake theadista)."""
     h = _sivu("expected-points.html")
-    thead = re.search(r"<thead>(.*?)</thead>", h, re.S)
+    i = h.find("Top 100 by expected points")
+    assert i > 0, "sivulta puuttuu top 100 -otsikko"
+    thead = re.search(r"<thead>(.*?)</thead>", h[i:], re.S)
     assert thead
     ots = [_teksti(t).lower() for t in re.findall(r"<th[^>]*>(.*?)</th>", thead.group(1), re.S)]
     assert "start%" in ots, ots
     j = ots.index("start%")
     nimi_j = ots.index("player")
     out: dict[str, int] = {}
-    body = re.search(r"<tbody[^>]*>(.*?)</tbody>", h, re.S).group(1)
+    body = _tbody_after(h, "Top 100 by expected points")
     for tr in re.findall(r"<tr>(.*?)</tr>", body, re.S):
         tds = re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S)
         if len(tds) <= max(j, nimi_j):

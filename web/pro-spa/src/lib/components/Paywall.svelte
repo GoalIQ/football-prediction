@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
 	import { PLANS, planApprox, startCheckout, type PlanKey } from '$lib/billing';
 	import { capture } from '$lib/analytics';
@@ -27,7 +28,7 @@
 
 	let top3 = $derived.by(() => {
 		if (!teaser?.meta?.available) return [];
-		const gw = teaser.meta.next_gameweek;
+		const gw = actionableGameweek(teaser.meta);
 		return [...teaser.players].sort((a, b) => gwXp(b, gw) - gwXp(a, gw)).slice(0, 3);
 	});
 </script>
@@ -77,7 +78,7 @@
 
 {#if top3.length > 0}
 	<div class="teaser card">
-		<div class="muted">Top xP for GW{teaser?.meta.next_gameweek} (Premium)</div>
+		<div class="muted">Top xP for GW{actionableGameweek(teaser?.meta)} (Premium)</div>
 		{#each top3 as p, i (p.id)}
 			<div class="row">
 				<span>{i + 1}. {p.web_name} <span class="muted">({p.team_short}, {p.pos})</span></span>

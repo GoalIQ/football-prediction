@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
@@ -79,7 +80,7 @@
 	// (•.••) → ei premium-arvovuotoa, mutta käyttäjä näkee MITÄ avaa.
 	let top3 = $derived.by(() => {
 		if (!teaser?.meta?.available) return [];
-		const gw = teaser.meta.next_gameweek;
+		const gw = actionableGameweek(teaser.meta);
 		return [...teaser.players].sort((a, b) => gwXp(b, gw) - gwXp(a, gw)).slice(0, 3);
 	});
 </script>
@@ -118,7 +119,7 @@
 				<thead>
 					<tr>
 						<th>Player</th>
-						<th class="num"><abbr title="Expected points from the GoalIQ match model">xP</abbr> · GW{teaser?.meta.next_gameweek}</th>
+						<th class="num"><abbr title="Expected points from the GoalIQ match model">xP</abbr> · GW{actionableGameweek(teaser?.meta)}</th>
 					</tr>
 				</thead>
 				<tbody>

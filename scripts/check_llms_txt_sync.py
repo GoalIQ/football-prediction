@@ -44,6 +44,14 @@ EXEMPT: dict[str, str] = {
 ANCHOR_RE = re.compile(r'id="([a-z0-9][a-z0-9-]*)"')
 LINK_RE = re.compile(r"goaliq\.app/fpl#([a-z0-9][a-z0-9-]*)")
 
+#: ALASIVUJEN syvalinkit, esim. goaliq.app/fpl/expected-points#gw-xp.
+#: 🔴 30.8: lukuvahti luki VAIN fpl.html:aa, joten alasivun ankkuriin
+#: osoittava rivi ohitettiin aanettomasti (`block_text` palautti tyhjan ->
+#: `continue`). Se on sama sokea piste kuin koko portin syntysyy, vain
+#: yhta tasoa syvemmalla: uusi ilmaispinta sai luvata luvun jota mikaan
+#: ei tarkista. Nyt jokainen alasivurivi mitataan SEN sivun lohkosta.
+SUB_LINK_RE = re.compile(r"goaliq\.app/(fpl/[a-z0-9][a-z0-9/-]*)#([a-z0-9][a-z0-9-]*)")
+
 
 def page_anchors(html: str) -> set[str]:
     return set(ANCHOR_RE.findall(html))
@@ -90,15 +98,23 @@ CLAIM_NUM_RE = re.compile(r"\b(\d+\.\d+|\d{2,})\s*%?")
 BANNED_PHRASES = ("rather than",)
 
 H2_RE = re.compile(r'<h2 id="([a-z0-9][a-z0-9-]*)"')
+#: 🔴 30.8: lohkon LOPPU on mika tahansa seuraava <h2>, ei vain sellainen jolla
+#: on id. `/fpl`-sivulla lahes jokaisella h2:lla on id, joten ero ei nakynyt;
+#: alasivulla ei ole, ja #gw-xp-lohko nieli koko loppusivun - 12 496 merkkia ja
+#: 387 lukua, eli lukuvahti olisi hyvaksynyt kaytannossa mita tahansa. Portti
+#: joka lapaisee liian isolla lohkolla on sama vika kuin portti joka lapaisee
+#: tyhjana (muisti: kontrolli-lapaisi-tyhjana, gate-substring-osuma-on-sokea).
+H2_ANY_RE = re.compile("<h2[ >]")
 
 
 def block_text(html: str, anchor: str) -> str:
-    """Ankkurin lohko tekstina: sen h2:sta seuraavaan h2:een."""
+    """Ankkurin lohko tekstina: sen h2:sta SEURAAVAAN h2:een (id tai ei)."""
     starts = [(m.group(1), m.start()) for m in H2_RE.finditer(html)]
     for i, (a, pos) in enumerate(starts):
         if a != anchor:
             continue
-        end = starts[i + 1][1] if i + 1 < len(starts) else len(html)
+        nxt = H2_ANY_RE.search(html, pos + 1)
+        end = nxt.start() if nxt else len(html)
         chunk = html[pos:end]
         chunk = re.sub(r"(?is)<(script|style)[^>]*>.*?</>", " ", chunk)
         return re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", chunk))
@@ -112,6 +128,23 @@ def llms_lines_by_anchor(llms: str) -> dict:
         for a in LINK_RE.findall(line):
             out.setdefault(a, []).append(line.strip())
     return out
+
+
+def sub_lines_by_page(llms: str) -> dict:
+    """(sivupolku, ankkuri) -> ne llms.txt-rivit jotka siihen syvalinkittavat."""
+    out: dict = {}
+    for line in llms.splitlines():
+        for path, a in SUB_LINK_RE.findall(line):
+            out.setdefault((path, a), []).append(line.strip())
+    return out
+
+
+def sub_page_html(path: str) -> str:
+    """Alasivun HTML levylta. Puuttuva sivu -> "" (ankkuriportti ei kata
+    alasivuja, joten tassa ei kaadeta puuttuvasta tiedostosta; luvut vain
+    jaavat tarkistamatta ja se sanotaan ääneen kutsujassa)."""
+    f = ROOT / (path + ".html")
+    return f.read_text(encoding="utf-8") if f.exists() else ""
 
 
 def _nums(text: str) -> set:
@@ -133,6 +166,33 @@ def unsupported_numbers(html: str, llms: str) -> list:
         for line in lines:
             for n in sorted(_nums(line) - have):
                 bad.append((a, n, line[:90]))
+    return bad
+
+
+def unsupported_numbers_subpages(llms: str) -> list:
+    """Sama lukuvahti alasivujen syvalinkeille (esim. #gw-xp).
+
+    Palauttaa myos rivit joiden sivua EI loytynyt levylta: tarkistamaton
+    vaite ei saa nayttaa tarkistetulta (muisti: kontrolli-lapaisi-tyhjana).
+    """
+    bad = []
+    for (path, a), lines in sorted(sub_lines_by_page(llms).items()):
+        html = sub_page_html(path)
+        if not html:
+            for line in lines:
+                bad.append((f"{path}#{a}", "?", f"sivua {path}.html ei ole - "
+                            f"lukuja ei voitu tarkistaa: {line[:70]}"))
+            continue
+        block = block_text(html, a)
+        if not block:
+            for line in lines:
+                bad.append((f"{path}#{a}", "-", f"sivulla {path} ei ole lohkoa "
+                            f"#{a}: {line[:70]}"))
+            continue
+        have = _nums(block)
+        for line in lines:
+            for n in sorted(_nums(line) - have):
+                bad.append((f"{path}#{a}", n, line[:90]))
     return bad
 
 
@@ -276,6 +336,7 @@ def main() -> int:
     missing = missing_anchors(html, llms)
     stale = stale_anchors(html, llms)
     nums = unsupported_numbers(html, llms)
+    subnums = unsupported_numbers_subpages(llms)
     luokat = undescribed_classes(llms, sitemap_urls())
     banned = banned_phrases(llms)
     gated = free_claim_gating(html, llms)
@@ -283,6 +344,9 @@ def main() -> int:
     for a, n, line in nums:
         print(f"FAIL: llms.txt vaittaa luvun {n} lohkosta #{a}, mutta sivun "
               f"lohkossa ei ole sita lukua. Rivi: {line}")
+    for a, n, line in subnums:
+        print(f"FAIL: llms.txt vaittaa luvun {n} alasivun lohkosta {a}, mutta "
+              f"sita ei ole siella. Rivi: {line}")
     for a, ph in banned:
         print(f"FAIL: /fpl#{a} -rivi sisaltaa aiemmin hylatyn sanamuodon {ph!r} "
               f"(AI-TELL-CHECKLIST: negatiivinen parallelismi).")
@@ -297,9 +361,11 @@ def main() -> int:
         print(f"FAIL: llms.txt lupaa lohkon #{a} ilmaiseksi, mutta sivulla on "
               f"premium-gatetusta. Tarkista kumpi on oikein.")
 
-    if not missing and not stale and not nums and not banned and not gated and not luokat:
+    if not (missing or stale or nums or subnums or banned or gated or luokat):
         described = sorted(page_anchors(html) - set(EXEMPT))
-        print(f"OK: llms.txt kuvaa kaikki {len(described)} /fpl-sisaltolohkoa.")
+        n_sub = len(sub_lines_by_page(llms))
+        print(f"OK: llms.txt kuvaa kaikki {len(described)} /fpl-sisaltolohkoa "
+              f"({n_sub} alasivuankkuria lukutarkistettu).")
         return 0
 
     for a in missing:

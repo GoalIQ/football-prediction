@@ -137,6 +137,23 @@ def _taulukon_rivit(h: str, maara: int = 10) -> list[list[str]]:
     return out
 
 
+#: Sivut joilla on USEAMPI taulukko: mista otsikosta kortin taulukko alkaa.
+#: 🔴 30.8 (FREE-GW-XP): `/fpl/expected-points` sai eteensa yhden kierroksen
+#: GW-xP top 20 -osion, ja koska apurit lukevat ENSIMMAISEN thead/tbody-parin,
+#: portti alkoi mitata vaaraa taulukkoa aanettomasti. Kortin taulukko
+#: nimetaan nyt otsikolla eika sijainnilla.
+KORTTITAULUKKO = {"expected-points": "Top 100 by expected points"}
+
+
+def _korttitaulukon_html(h: str, sivu: str) -> str:
+    otsikko = KORTTITAULUKKO.get(sivu)
+    if not otsikko:
+        return h
+    i = h.find(otsikko)
+    assert i > 0, f"{sivu}: otsikkoa {otsikko!r} ei loydy sivulta"
+    return h[i:]
+
+
 @pytest.mark.parametrize("sivu", PALVELINKORTTI)
 def test_card_rows_match_the_server_rendered_table(sivu):
     """Kortin rivit ovat SAMAT kuin sivun oletusnakyman kymmenen ensimmaista.
@@ -146,8 +163,9 @@ def test_card_rows_match_the_server_rendered_table(sivu):
     """
     h = _sivu(sivu)
     spec = _spec(h)
-    taulukko = _taulukon_rivit(h)
-    otsikot = _otsikot(h)
+    taulu = _korttitaulukon_html(h, sivu)
+    taulukko = _taulukon_rivit(taulu)
+    otsikot = _otsikot(taulu)
     assert len(spec["rows"]) == len(taulukko) == 10
     for i, (kortti, rivi) in enumerate(zip(spec["rows"], taulukko), start=1):
         assert kortti["rank"] == i, f"rivi {i}: sijaluku ei ole jarjestyksessa"
@@ -281,6 +299,22 @@ def test_points_card_claims_match_the_page():
         f"{spec['title']!r} / {spec['footNote2']!r}")
 
 
+
+# 🔴 30.8 (FREE-GW-XP): `/fpl/expected-points` kantaa nyt KAKSI taulukkoa -
+# yhden kierroksen GW-xP top 20 ensin, sitten horisontin top 100. Molemmat
+# testit lukivat sivun ENSIMMAISTA <tbody>:a, joten uusi osio sieppasi
+# mittauksen aanettomasti ja ne mittasivat vaaraa taulukkoa. Taulukko
+# valitaan nyt sen OTSIKOSTA, jolloin uusi osio sivulla ei voi enaa siirtaa
+# mittauskohdetta (muisti: yksi-renderointipolku-kahdesta,
+# portti-voi-mitata-eri-koodipolkua).
+def _tbody_after(html: str, otsikko: str) -> str:
+    i = html.find(otsikko)
+    assert i > 0, f"sivulta puuttuu otsikko {otsikko!r}"
+    m = re.search(r"<tbody[^>]*>(.*?)</tbody>", html[i:], re.S)
+    assert m, f"otsikon {otsikko!r} jalkeen ei ole taulukkoa"
+    return m.group(1)
+
+
 def test_expected_points_card_claims_match_the_page():
     """Kortti 2:n ikkuna ja ilmaislupaus ovat sivulta tarkistettavissa."""
     h = _sivu("expected-points")
@@ -297,8 +331,9 @@ def test_expected_points_card_claims_match_the_page():
     assert "free on goaliq.app" in spec["footNote"], spec["footNote"]
     luvattu = re.search(r"the full top (\d+) is free", spec["footNote"])
     assert luvattu, f"footNote ei nimea maaraa: {spec['footNote']!r}"
-    rivit = len(re.findall(r"<tr>", re.search(
-        r"<tbody[^>]*>(.*?)</tbody>", h, re.S).group(1)))
+    # Kortin lupaus koskee HORISONTTITAULUKKOA (top 100), ei sivun uutta
+    # yhden kierroksen top 20 -osiota.
+    rivit = len(re.findall(r"<tr>", _tbody_after(h, "Top 100 by expected points")))
     assert rivit == int(luvattu.group(1)), (
         f"kortti lupaa top {luvattu.group(1)} mutta sivulla on {rivit} rivia")
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { actionableGameweek } from '$lib/gameweek';
 	/**
 	 * WorkspaceBar — pysyva GW- ja deadline-rivi (15.8.2026).
 	 *
@@ -37,12 +38,7 @@
 			/* 22.8: deadline_gameweek ensin — kesken kierroksen next_gameweek
 			 * on yha kuluva GW mutta deadline_utc on jo seuraavan, ja palkki
 			 * naytti "GAMEWEEK 1 DEADLINE Fri 28 Aug" (28.8 = GW2). */
-			gw =
-				typeof m.deadline_gameweek === 'number'
-					? m.deadline_gameweek
-					: typeof m.next_gameweek === 'number'
-						? m.next_gameweek
-						: null;
+			gw = actionableGameweek(m) ?? null;
 			if (m.deadline_utc) {
 				const t = new Date(m.deadline_utc);
 				if (!isNaN(t.getTime())) deadline = t;

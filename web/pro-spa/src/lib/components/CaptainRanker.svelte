@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
 	import type { XpResponse } from '$lib/api';
 	import { gwXp, gwOpponents } from '$lib/api';
@@ -8,7 +9,7 @@
 
 	let { data }: { data: XpResponse } = $props();
 
-	let nextGw = $derived(data.meta.next_gameweek);
+	let nextGw = $derived(actionableGameweek(data.meta));
 	let top = $derived(
 		[...data.players].sort((a, b) => gwXp(b, nextGw) - gwXp(a, nextGw)).slice(0, 10)
 	);

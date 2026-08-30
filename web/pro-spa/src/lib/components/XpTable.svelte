@@ -99,6 +99,10 @@
 	   raakana eika katoa: uusi ajuri backendissa ei saa hukata tietoa. */
 	let selectedId = $state<number | null>(null);
 
+	/* 🔴 TASSA `next_gameweek` ON OIKEIN, alä vaihda actionableGameweekiin.
+	   Se on vain `components_gw`:n fallback, ja backend laskee komponentit
+	   nimenomaan `next_gw`:lle (build_fpl_xp.py: components_gw = next_gw).
+	   Deadline-kierros tahan tekisi nimilapusta eri kierroksen kuin data. */
 	let nextGw = $derived(data.meta.next_gameweek);
 	let gwCols = $derived(data.players[0]?.gameweeks?.map((g) => g.gw) ?? []);
 	// SOLIO-OPPI (19.8, Villen tilaus): per-GW-solut lämpökartaksi — silmäys

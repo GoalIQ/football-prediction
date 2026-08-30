@@ -21,9 +21,18 @@
 		);
 	});
 
+	/* 🔴 VARI JA LUKU SAMASTA ARVOSTA (30.8). Solu renderoi `Math.round(cs_pct)`
+	   mutta luokka luettiin PYORISTAMATTOMASTA arvosta, joten 20,1 luki "20%"
+	   ilman coralia samalla kun caption lupaa "20% or less". Sivulla sama vika
+	   korjattiin `838ed2a1d`:ssa; SPA jai. Pyoristys tehdaan nyt KERRAN ja
+	   molemmat lukevat saman luvun. */
+	function csRounded(csPct: number): number {
+		return Math.round(csPct);
+	}
 	function csCellClass(csPct: number): string {
-		if (csPct >= 44) return 'is-easy';
-		if (csPct <= 20) return 'is-hard';
+		const v = csRounded(csPct);
+		if (v >= 44) return 'is-easy';
+		if (v <= 20) return 'is-hard';
 		return '';
 	}
 	function fdrCellClass(fdr: number): string {
@@ -175,8 +184,10 @@
 			swings are, but a precise percentage would not be honest.
 			<strong>Avg FDR</strong> = average fixture difficulty from the GoalIQ model (win% +
 			xG), not FPL's official FDR; 1 = easiest, 5 = hardest. Each GW cell shows opponent,
-			venue and that fixture's clean sheet probability; the cell colour follows the same
-			probability on a continuous scale (model FDR in the cell tooltip).{#if hasDuoAny}
+			venue and that fixture's clean sheet probability. Only the two ends are coloured:
+			44% or more reads gold, 20% or less reads coral, and everything between stays
+			plain, so the colour marks a threshold and not a gradient (model FDR in the
+			cell tooltip).{#if hasDuoAny}
 				The <strong>D · A</strong> chip splits difficulty by direction:
 				<strong>D</strong> = how hard it is to keep a clean sheet,
 				<strong>A</strong> = how hard it is to score, both 1 (easiest) to 5 (hardest).{/if}
@@ -284,41 +295,56 @@
 							<td class="num m-hide">{a.avgFdr != null ? a.avgFdr.toFixed(2) : '–'}</td>
 							<td class="num m-hide">{a.n}</td>
 							{#each gwCols as gw (gw)}
-								{@const f = t.fixtures.find((x) => x.gw === gw)}
-								{#if f}
-									{@const hasDuo =
-										typeof f.def_fdr === 'number' && typeof f.att_fdr === 'number'}
-									{@const fdrTitle = hasDuo
-										? `Defence FDR ${f.def_fdr} (clean sheet angle) · Attack FDR ${f.att_fdr} (scoring angle)`
-										: `FDR ${f.fdr}`}
-									{#if typeof f.cs_pct === 'number'}
-										<td
-											class="cs-link-cell {csCellClass(f.cs_pct)}"
-											class:m-hide={gw > minGw + 1}
-											title="{f.opponent ?? f.opponent_short} ({f.venue}) · {fdrTitle} · view model prediction"
-										>
-											<a
-												class="cs-cell-a"
-												href="https://goaliq.app/predictions"
-												target="_blank"
-												rel="noopener"
-											>
-												{f.opponent_short} ({f.venue}) {Math.round(f.cs_pct)}%{#if hasDuo}
-													<span class="fdr-duo">D{f.def_fdr} · A{f.att_fdr}</span>{/if}
-											</a>
-										</td>
-									{:else}
-										<td
-											class={fdrCellClass(f.fdr)}
-											class:m-hide={gw > minGw + 1}
-											title={hasDuo ? fdrTitle : undefined}
-										>
-											{f.opponent_short} ({f.venue})
-											{#if hasDuo}
-												<span class="fdr-duo">D{f.def_fdr} · A{f.att_fdr}</span>
-											{:else}{f.fdr}{/if}
-										</td>
-									{/if}
+								<!-- 🔴 filter, EI find (30.8, FDR-GRID-DGW). `find` palautti doublesta
+								     vain ensimmaisen ottelun, joten jalkimmainen KATOSI ruudukosta
+								     samalla kun Games-sarake laski sen ja sarakkeen tooltip lupaa
+								     "2+ = double gameweek". Solu lupasi siis vahemman kuin sen oma
+								     otsikko. -->
+								{@const fs = t.fixtures.filter((x) => x.gw === gw)}
+								{#if fs.length}
+									{@const csAll = fs.every((x) => typeof x.cs_pct === 'number')}
+									<td
+										class="cs-link-cell {fs.length === 1 && typeof fs[0].cs_pct === 'number'
+											? csCellClass(fs[0].cs_pct)
+											: fs.length === 1
+												? fdrCellClass(fs[0].fdr)
+												: ''}"
+										class:m-hide={gw > minGw + 1}
+										title={fs
+											.map(
+												(x) =>
+													`${x.opponent ?? x.opponent_short} (${x.venue}) · ${
+														typeof x.def_fdr === 'number' && typeof x.att_fdr === 'number'
+															? `Defence FDR ${x.def_fdr} (clean sheet angle) · Attack FDR ${x.att_fdr} (scoring angle)`
+															: `FDR ${x.fdr}`
+													}`
+											)
+											.join(' · ') +
+											(fs.length > 1
+												? ' · double gameweek, so the cell is left uncoloured: the two fixtures can pull in opposite directions'
+												: '') +
+											(csAll ? ' · view model prediction' : '')}
+									>
+										{#each fs as f, i (f.gw + '-' + (f.opponent_short ?? i))}
+											{#if i > 0}<span class="dgw-sep"> + </span>{/if}
+											{#if typeof f.cs_pct === 'number'}
+												<a
+													class="cs-cell-a"
+													href="https://goaliq.app/predictions"
+													target="_blank"
+													rel="noopener"
+												>
+													{f.opponent_short} ({f.venue}) {csRounded(f.cs_pct)}%{#if typeof f.def_fdr === 'number' && typeof f.att_fdr === 'number'}
+														<span class="fdr-duo">D{f.def_fdr} · A{f.att_fdr}</span>{/if}
+												</a>
+											{:else}
+												{f.opponent_short} ({f.venue})
+												{#if typeof f.def_fdr === 'number' && typeof f.att_fdr === 'number'}
+													<span class="fdr-duo">D{f.def_fdr} · A{f.att_fdr}</span>
+												{:else}{f.fdr}{/if}
+											{/if}
+										{/each}
+									</td>
 								{:else}
 									<td class="muted" class:m-hide={gw > minGw + 1}>Blank</td>
 								{/if}
@@ -402,6 +428,11 @@
 	:global(td.is-hard),
 	:global(td.is-hard) .cs-cell-a {
 		color: var(--negative);
+	}
+	/* Doublen erotin: molemmat ottelut samassa solussa, jotta jalkimmainen
+	   ei katoa (FDR-GRID-DGW). */
+	.dgw-sep {
+		opacity: 0.5;
 	}
 	.fdr-duo {
 		display: inline-block;

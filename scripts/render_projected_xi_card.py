@@ -54,6 +54,12 @@ import config
 from scripts.build_fpl_longtail import _kit_defs, _kit_svg
 from scripts.publish_gate import blocked_names, load_blocklist
 from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
+# FREE-GW-XP (30.8): valintafunktiot ovat jaetussa moduulissa, jotta kortti ja
+# ilmaissivun tarkistusreitti EIVAT voi laskea eri listaa. Ks. src/models/fpl_gw_xp.
+from src.models.fpl_gw_xp import (EXCLUDED_NAMES, club_of as _club_of,
+                                  eligible, excluded as _excluded, gw_xp,
+                                  opponent_text as _opp_text,
+                                  top_projected as _top_projected)
 from src.models.gw_calls import (PROJECTED_XI_CALL, DeadlinePassed, NEW_LOG,
                                  build_projected_xi_call, parse_utc,
                                  upsert_call)
@@ -65,7 +71,6 @@ POS_TYPE = {"GKP": 1, "DEF": 2, "MID": 3, "FWD": 4}
 TYPE_POS = {v: k for k, v in POS_TYPE.items()}
 # Kova saanto: ei Thiaw-juttuja markkinointiin (muisti thiaw-ei-markkinointiin).
 # Sama esto kuin standouts-kortilla; estolista taydentaa sita.
-EXCLUDED_NAMES = {"thiaw"}
 # Copy-portti: sanat joita kortilla ei saa olla (em dash, vedonlyonti,
 # Premium-termi ilmaispinnalla, optimoijan sisainen sanasto).
 BANNED_COPY = ("—", r"\bodds\b", r"\bPro\b", r"\boptimi[sz]er\b", r"\bsolver\b",
@@ -131,77 +136,24 @@ svg.kit{display:block;margin:0 auto;}
 # Puhtaat valintafunktiot (testattavat)
 # ---------------------------------------------------------------------------
 
-def _excluded(name: str, blocklist: list[dict] | None = None) -> bool:
-    """Sukunimiosalla ja pienin kirjaimin: 'M.Thiaw' ja 'Thiaw' ovat sama
-    pelaaja. Estolistan nimet (publish_blocklist.json) samalla saannolla."""
-    tail = str(name or "").split(".")[-1].strip().lower()
-    names = set(EXCLUDED_NAMES)
-    for e in blocklist or ():
-        names.add(str(e.get("name") or "").split(".")[-1].strip().lower())
-    return tail in names
 
-
-def gw_xp(p: dict, gw: int):
-    """Pelaajan xP TALLE kierrokselle (gameweeks[].xp), EI xp_per_gw."""
-    for g in p.get("gameweeks") or []:
-        if g.get("gw") == gw:
-            return float(g.get("xp") or 0.0)
-    return None
-
-
-def _opp_text(p: dict, gw: int) -> str:
-    for g in p.get("gameweeks") or []:
-        if g.get("gw") == gw:
-            opps = g.get("opponents") or []
-            if not opps:
-                return "blank"
-            return ", ".join(f"{o.get('opp')} ({o.get('venue')})" for o in opps)
-    return ""
-
-
-def eligible(players: list[dict], gw: int,
-             blocklist: list[dict] | None = None) -> list[dict]:
-    """Kortin pooli: status a, ei estolistalla, GW-xP olemassa."""
-    return [p for p in players
-            if p.get("status", "a") == "a"
-            and not _excluded(p.get("web_name"), blocklist)
-            and gw_xp(p, gw) is not None]
-
-
-def _club_of(p: dict):
-    """Sama seura-avain kuin optimoijan poolissa (_xi_pool)."""
-    return p.get("team") or p.get("team_short")
 
 
 def top_projected(players: list[dict], gw: int, n: int = TOP_N,
                   blocklist: list[dict] | None = None) -> list[dict]:
-    """GW-xP top n laskevasti, KORKEINTAAN MAX_PER_CLUB per seura.
+    """Kortin GW-xP top n. Toteutus on `src.models.fpl_gw_xp.top_projected`.
 
-    30.8 (Villen paatos): ilman seurakattoa lista oli GW3:lle 8x Man City +
-    3x Hull viidestatoista, eli 11/15 kahdesta ottelusta. Se ei ole vaara
+    30.8 (Villen paatos): seurakatto. Ilman sita lista oli GW3:lle 8x Man City
+    + 3x Hull viidestatoista, eli 11/15 kahdesta ottelusta. Se ei ole vaara
     mallilta - molemmat kohtaavat nousijan - mutta **FPL sallii korkeintaan
     kolme pelaajaa per seura**, joten viisi rivia viidestatoista oli
-    saantojen takia pelikelvottomia. Kortin vasen puoli on pelaajavalinta-
-    lista, ei ranking-taulukko, joten se noudattaa samaa saantoa kuin
-    oikean puolen XI (free_optimum noudatti sita jo).
+    saantojen takia pelikelvottomia.
 
-    MAX_PER_CLUB tulee samasta moduulista kuin optimoijan oma rajoite, jotta
-    kortin kaksi puoliskoa eivat voi ajautua eri saantoon.
+    Funktio jaettiin 30.8 ilmaissivun kanssa (FREE-GW-XP): kortin alapalkin
+    tarkistusreitti osoittaa nyt taulukkoon joka on laskettu TASTA samasta
+    funktiosta, joten kortti ja sivu eivat voi ajautua eri listaan.
     """
-    from src.models.fpl_rate_team import MAX_PER_CLUB
-    pool = eligible(players, gw, blocklist)
-    pool.sort(key=lambda p: (-gw_xp(p, gw), int(p.get("id") or 0)))
-    out: list[dict] = []
-    clubs: dict = {}
-    for p in pool:
-        c = _club_of(p)
-        if clubs.get(c, 0) >= MAX_PER_CLUB:
-            continue
-        clubs[c] = clubs.get(c, 0) + 1
-        out.append(p)
-        if len(out) >= n:
-            break
-    return out
+    return _top_projected(players, gw, n, blocklist)
 
 
 def _xi_pool(players: list[dict], gw: int,
@@ -418,7 +370,14 @@ def build_html(data: dict, log: dict | None = None, now=None,
         '<div class="ftr"><span>The model plays too: <b>entry 116920</b>, '
         'every gameweek scored in public</span>'
         f'<span>model projections, not betting advice · card made {card_at}</span>'
-        '<span>goaliq.app/fpl/expected-points</span></div>'
+        # 🔴 TARKISTUSREITTI, EI KOTISIVUOSOITE (KORTTI-TARKISTUSREITTI 30.8).
+        # Alapalkki osoitti `/fpl/expected-points`-sivun JUUREEN, joka rankkaa
+        # kuuden kierroksen yhteissummalla: Haaland oli kortilla 6.2 ja
+        # sivulla 35.6, ja jarjestys oli eri. Lukija joka kavelee reitin
+        # loytaa toiset luvut kuin ne joita han tuli tarkistamaan, eli reitti
+        # oli pahempi kuin ei reittia. `#gw-xp` on sama lista samasta
+        # funktiosta (src.models.fpl_gw_xp.top_projected).
+        '<span>projected points list: goaliq.app/fpl/expected-points#gw-xp</span></div>'
         "</div>")
     payload = {"gw": gw, "deadline_utc": meta.get("deadline_utc"),
                "top": top, "squad": sq, "call": xi_call(sq)}

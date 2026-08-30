@@ -556,13 +556,30 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     # CaptainRanker antoivat ERI ykkosen (B.Fernandes vs Gabriel) samasta
     # datasta. Kapteeni valitaan YHDEKSI kierrokseksi, joten avain on seuraavan
     # GW:n xp. Fallback xp_per_gw:hen jos gameweeks puuttuu (vanha payload).
+    # 🔴 30.8 (julkaisutarkistaja): 25.8:n korjaus vaihtoi OTSIKON
+    # `actionable_gameweek`iin mutta jatti RANKKAUKSEN `gameweeks[0]`:aan.
+    # Ne eivat ole sama kierros: `gameweeks[0].gw` oli 30.8 **2** kaikilla
+    # 515 pelaajalla samalla kun otsikko sanoi GW3. Sivu siis nimesi
+    # kapteenin kierrokselle jonka deadline oli jo mennyt, ja sanoi silti
+    # "GW3". Mitattu ero: GW2-perusta antoi Haaland / Isak / Gibbs-White,
+    # GW3 antaa Haaland / Guehi / O'Reilly. Kuudes esiintyma siita
+    # vikaluokasta jonka `fpl_gameweek.py` dokumentoi.
+    #
+    # Rankkaus lukee nyt SAMAN funktion kuin ilmaissivun GW-xP-taulukko ja
+    # kortti, joten kolme pintaa ei voi nimeta eri kapteenia samasta datasta.
+    from src.models.fpl_gw_xp import gw_xp as _gw_xp_of
+
     def _next_gw_xp(p: dict) -> float:
-        gws = p.get("gameweeks") or []
-        if gws and gws[0].get("xp") is not None:
-            return float(gws[0]["xp"])
+        v = _gw_xp_of(p, gw) if isinstance(gw, int) else None
+        if v is not None:
+            return v
+        # Blank GW tai vanha payload: horisontin keskiarvo on ainoa luku joka
+        # on olemassa. Se ei nosta ketaan karkeen, koska GW-xP on aina
+        # suurempi kuin sama pelaaja jaettuna kuudella - mutta se pitaa
+        # rivin listalla sen sijaan etta pudottaisi sen aanettomasti.
         return float(p.get("xp_per_gw") or 0.0)
 
-    ranked = sorted(players, key=_next_gw_xp, reverse=True)
+    ranked = sorted(players, key=lambda p: (-_next_gw_xp(p), int(p.get("id") or 0)))
     top = ranked[0]
     alts = ranked[1:3]
     url = f"{BASE}/fpl/best-captain"
@@ -2606,18 +2623,40 @@ def _tflag_note(xp: dict, shown: list[dict], allrows: list[dict]) -> str:
                    if v.get("flag") == "high_turnover")
     if not promoted and not churn:
         return ""
+    # 🔴 30.8 (SIVU-NOUSIJAVARAUS-VANHENTUNUT): teksti oli kovakoodattu ja
+    # se VANHENI VASTAKKAISEKSI. Rivi sanoi "there are no Premier League
+    # results to fit a team rating on and the model starts them from a
+    # baseline", mika oli tosi ennen GW1:ta. Data sanoo nyt `own_matches = 1`
+    # ja `basis = own_thin_fit`, eli rating ON fitattu - ja artefaktin oma
+    # `note` kertoi sen jo oikein ("fitted on 1 match of Premier League
+    # football, so it moves a lot with each result") samalla kun sivu vaitti
+    # painvastaista. Kortit lukivat notea, sivu ei.
+    #
+    # Nyt teksti tulee DATASTA. Ehto ei vanhene, teksti vanhenee (muisti:
+    # ehto-ei-vanhene-teksti-vanhenee): kovakoodattu kausivaraus nayttaa
+    # hoidetulta koko sen ajan kun se on jo vaara.
+    def _notes(nimet: list[str]) -> str:
+        # Sama note voi koskea montaa joukkuetta (kaikki nousijat saavat
+        # saman lauseen) -> ryhmitellaan, ettei sama virke toistu kolmesti.
+        ryhmat: dict[str, list[str]] = {}
+        for t in nimet:
+            note = str((teams.get(t) or {}).get("note") or "").strip()
+            if note:
+                ryhmat.setdefault(note, []).append(t)
+        return " ".join(
+            f"<strong>{escape(', '.join(ts))}</strong>: {escape(note)}"
+            for note, ts in ryhmat.items())
+
     bits = []
-    if promoted:
-        bits.append(
-            f"<strong>{escape(', '.join(promoted))}</strong> "
-            f"{'are' if len(promoted) > 1 else 'is'} newly promoted, so "
-            "there are no Premier League results to fit a team rating on and "
-            "the model starts them from a baseline.")
-    if churn:
-        bits.append(
-            f"<strong>{escape(', '.join(churn))}</strong> lost an unusually "
-            "large share of last season's minutes, and team ratings are "
-            "fitted on results, so they still read as last season's squad.")
+    for nimet in (promoted, churn):
+        if not nimet:
+            continue
+        # Note puuttuu (vanha payload) -> nimetaan joukkueet ILMAN keksittya
+        # perustelua. Selite ei saa kadota kokonaan: sen loppuosa kertoo mita
+        # lippu tarkoittaa ja loytyyko merkki taulukosta, ja se on tosi
+        # ilman noteakin.
+        bits.append(_notes(nimet)
+                    or f"<strong>{escape(', '.join(nimet))}</strong>.")
     n_shown = sum(1 for r in shown if r.get("team_flag"))
     if n_shown:
         where = (f" Their players carry a tag in the table, {n_shown} of them "
@@ -3900,6 +3939,35 @@ def render_club_pages(xp: dict, now: datetime) -> list[str]:
     return tehdyt
 
 
+def _dist_gw_label(rows: list[dict], dl_gw: int | None = None) -> str:
+    """"gameweek N" jakaumasarakkeille, kierros luettuna DATASTA.
+
+    `xp_dist` lasketaan `next_gameweek`ille, joka on KESKEN oleva kierros heti
+    kun kierroksen ensimmainen ottelu on alkanut. 30.8 mitattu: `xp_dist.gw`
+    oli 2 kaikilla 515 pelaajalla samalla kun `deadline_gameweek` oli 3.
+    Sarakkeet lupasivat "the next gameweek", eli lukija luki GW2:n luvut
+    GW3:n lupauksena. Yleisnimi ei voi olla oikein molemmissa tiloissa;
+    kierrosnumero on.
+
+    Fallback "the next gameweek" vain kun kierrosta EI ole datassa - silloin
+    yleisnimi on ainoa tosi muoto, ei arvaus.
+    """
+    for r in rows:
+        d = r.get("xp_dist") or {}
+        gw = d.get("gw")
+        if isinstance(gw, int):
+            # 🔴 Kun jakauman kierros EI ole se johon voi viela vaikuttaa,
+            # se sanotaan TOOLTIPIN SISALLA. Varoitus joka on sivun herossa
+            # ("Gameweek 2 is not finished") on kaukana luvusta, ja sarake
+            # istuu rivilla jonka oma ikkuna on GW3-7 - lukija lukee siis
+            # "10+ in gameweek 2" taulukossa johon GW2 ei edes kuulu
+            # (muisti: varoitus-kaukana-luvusta).
+            if isinstance(dl_gw, int) and gw != dl_gw:
+                return f"gameweek {gw}, which is still being played"
+            return f"gameweek {gw}"
+    return "the next gameweek"
+
+
 def _dist_cell(r: dict, key: str) -> str:
     """xp_dist-solu: prosentti (p_haul/p_blank) tai kokonaisluku (p90); "-" kun
     lohko puuttuu (blank GW tai vanha artefakti). Ei nollaa: nolla olisi vaite."""
@@ -3910,6 +3978,92 @@ def _dist_cell(r: dict, key: str) -> str:
     if key in ("p_haul", "p_blank"):
         return f"{round(float(v) * 100)}%"
     return str(int(v))
+
+
+def _gw_xp_section(xp: dict) -> str:
+    """FREE-GW-XP (Villen GO 30.8): YHDEN kierroksen xP top 20 ilmaiseksi.
+
+    MIKSI TAMA EIKA PELKKA SARAKE: sivun oma taulukko rankkaa kuuden
+    kierroksen YHTEISSUMMALLA, ja sanoo sen itse. Kortit, postaukset ja
+    `/fpl/best-captain` puhuvat sen sijaan YHDEN kierroksen xP:sta. Luku jota
+    lukija ei voi tarkistaa ilmaispinnalta on julkaisutarkistajan portti 1, ja
+    se on blokannut omia GW-xP-vaitteitamme (M68, standouts-kortti). Tama on
+    se tarkistusreitti.
+
+    RIVIT TULEVAT SAMASTA FUNKTIOSTA KUIN KORTIN VASEN PUOLI
+    (`src.models.fpl_gw_xp.top_projected`), joten kortin alapalkin
+    "check it on goaliq.app" ei voi nayttaa eri lukua kuin kortti. Erillinen
+    silmukka tahan olisi toinen renderointipolku samalle vaitteelle (muisti:
+    sama-vaite-monella-renderointipolulla).
+
+    🔴 SEURAKATTO ON OSA LUPAUSTA, EI KOSMETIIKKAA. Mitattu 30.8 ilman
+    kattoa: 10/20 rivia Man Cityn, 7 eri seuraa; FPL:n oma `ep_next` samalle
+    kierrokselle antaa 11 eri seuraa. Kattamaton lista ei ole vaara mallilta
+    (MCI kotona nousijaa vastaan nostaa koko puolustuksen kerralla), mutta
+    **FPL sallii korkeintaan kolme pelaajaa per seura**, joten se olisi
+    ilmaispinta taynna rivea joita lukija ei voi pelata. Katto sanotaan
+    myos aaneen taulukon alla: piilotettu suodatin on vaite ilman ehtoa.
+    """
+    from src.models.fpl_gw_xp import free_rows, gw_xp, opponent_text
+    from scripts.publish_gate import load_blocklist
+    from src.models.fpl_rate_team import MAX_PER_CLUB
+
+    gw, rows = free_rows(xp, load_blocklist())
+    if not gw or not rows:
+        return ""
+    # 🔴 AIKALEIMA, EI SUHTEELLINEN VAITE (julkaisutarkistaja 30.8). Ensimmainen
+    # versio sanoi "the next one you can still transfer into". Se on tosi vain
+    # RAKENNUSHETKELLA: sivu rakentuu 3 h valein, joten se kantaisi lauseen
+    # 1-3 tuntia deadlinen JALKEEN ja lupaisi siirron kierrokseen joka on jo
+    # lukossa. Sama vikaluokka jonka `fpl_gameweek.py` dokumentoi. Absoluuttinen
+    # deadline ei vanhene vaaraksi: lukija vertaa sita omaan kelloonsa.
+    dl = (xp.get("meta") or {}).get("deadline_utc")
+    dl_teksti = ""
+    if dl:
+        try:
+            t = datetime.fromisoformat(str(dl).replace("Z", "+00:00"))
+            t = t.astimezone(timezone.utc)
+            dl_teksti = (f" The gameweek {gw} deadline is "
+                         f"{t.strftime('%a')} {t.day} {t.strftime('%b %H:%M')} UTC.")
+        except ValueError:
+            dl_teksti = ""
+    trows = "".join(
+        "<tr>"
+        f'<td class="n">{i + 1}</td>'
+        f'<td>{escape(r["web_name"])}</td>'
+        f'<td class="tm">{_kit_svg(r["team_short"])}'
+        f'<span>{escape(r["team_short"])}</span></td>'
+        f'<td>{escape(r.get("pos") or "")}</td>'
+        f'<td class="n">{(r.get("price") or 0):.1f}</td>'
+        f'<td class="n hi">{gw_xp(r, gw):.1f}</td>'
+        f'<td class="m-hide">{escape(opponent_text(r, gw))}</td>'
+        f'<td class="n">{start_pct(r) if start_pct(r) is not None else 0}</td>'
+        "</tr>"
+        for i, r in enumerate(rows)
+    )
+    return (
+        f'<h2 id="gw-xp">Gameweek {gw} expected points, top {len(rows)}</h2>'
+        '<p class="note">'
+        f"One gameweek, not a total. This is what the model projects each "
+        f"player to score in gameweek {gw} alone.{dl_teksti} The "
+        f"projected-points list on our gameweek card is this same list, so "
+        f"you can check it here without an account.</p>"
+        f'<div class="lb-wrap"><table class="lb">'
+        "<thead><tr>"
+        '<th class="n">#</th><th>Player</th><th>Team</th>'
+        '<th>Pos</th><th class="n">Price</th>'
+        f'<th class="n">GW{gw} xP</th>'
+        '<th class="m-hide">Opponent</th><th class="n">Start%</th>'
+        f"</tr></thead><tbody>{trows}</tbody></table></div>"
+        # 🔴 YKSI PERUSTELU, EI KOLMEA (julkaisutarkistaja 30.8). Ensimmainen
+        # versio perusteli itsestaanselvan saannon kolmesti perakkain
+        # (AI-TELL-CHECKLIST A4), ja yksi perusteluista oli KOVAKOODATTU
+        # mittaustulos ("half one club") sivulla joka rakentuu 3 h valein ja
+        # vaihtaa kierrosta joka viikko - se olisi vanhentunut aanettomasti.
+        '<p class="note">'
+        f"<strong>At most {MAX_PER_CLUB} players per club</strong>, because "
+        f"FPL will not let you own a fourth.</p>"
+    )
 
 
 def render_expected_points(xp: dict, now: datetime) -> str | None:
@@ -4055,17 +4209,26 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # lainaavat; xP/90 on rate joka johtaa harhaan ilman minuutteja
         # (per-90-ansa, note 17.8). Sarakemaara puhelimessa ei muutu.
         '<th class="n">xP/GW</th><th class="n m-hide">xP/90</th>'
-        # XP-DISTRIBUTION (27.8): jakauma seuraavalle kierrokselle, 2000
-        # simuloitua kierrosta samoista komponenteista kuin xP. Kortti
-        # (render_standouts_card) linkittaa tanne, joten luvut ovat tassa.
-        '<th class="n"><abbr title="Chance of 10 or more points in the next '
-        'gameweek, from 2,000 simulated gameweeks built on the same numbers as '
+        # XP-DISTRIBUTION (27.8): jakauma, 2000 simuloitua kierrosta samoista
+        # komponenteista kuin xP. Kortti (render_standouts_card) linkittaa
+        # tanne, joten luvut ovat tassa.
+        #
+        # 🔴 30.8: sarakkeet sanoivat "in the next gameweek", ja se oli
+        # epatosi. `xp_dist` lasketaan `next_gameweek`ille, joka oli tanaan
+        # **2** samalla kun kierros johon lukija voi viela vaikuttaa on 3 -
+        # eli sarakkeet kuvasivat KESKEN OLEVAA kierrosta ja lukija luki ne
+        # tulevana. Sama sivu sanoi kaksi riviä ylempänä "Gameweek 2 is not
+        # finished". Kierros nimetaan nyt DATASTA (`xp_dist.gw`), jolloin
+        # nimilappu ei voi ajautua erilleen luvusta.
+        f'<th class="n"><abbr title="Chance of 10 or more points in {_dist_gw_label(rows, dl_gw if isinstance(dl_gw, int) else None)}'
+        ', from 2,000 simulated gameweeks built on the same numbers as '
         'xP">10+</abbr></th>'
-        '<th class="n"><abbr title="Chance of 2 points or fewer in the next '
-        'gameweek, from the same 2,000 simulated gameweeks">Blank</abbr></th>'
-        '<th class="n m-hide"><abbr title="A strong week. He reaches this in '
-        'about one gameweek in ten (90th percentile of the same '
-        'simulations)">Ceiling</abbr></th>'
+        f'<th class="n"><abbr title="Chance of 2 points or fewer in '
+        f'{_dist_gw_label(rows, dl_gw if isinstance(dl_gw, int) else None)}, from the same 2,000 simulated gameweeks'
+        '">Blank</abbr></th>'
+        f'<th class="n m-hide"><abbr title="A strong week in '
+        f'{_dist_gw_label(rows, dl_gw if isinstance(dl_gw, int) else None)}. He reaches this in about one gameweek in ten '
+        '(90th percentile of the same simulations)">Ceiling</abbr></th>'
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
         "</tr></thead>"
@@ -4100,6 +4263,11 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     body = (
         f'<div class="stat-row">{top3}</div>'
         f"{live_note}"
+        # FREE-GW-XP: yhden kierroksen lista ENNEN horisonttitaulukkoa. Kortit
+        # ja postaukset linkittavat tanne (#gw-xp), ja jos osio olisi 100
+        # rivin alla, tarkistusreitti vaatisi vierityksen jonka jalkeen
+        # lukija on jo ohittanut sen luvun jota han tuli tarkistamaan.
+        + _gw_xp_section(xp) +
         f"<h2>Top 100 by expected points (of {len(rows)} players)</h2>"
         # Selitys taulukon ALLE, ei ylle (9.8): ensimmainen versio tyonsi 237
         # sanaa datan eteen, eli X:sta tulija joutui vierittamaan kaksi
