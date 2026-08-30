@@ -1,7 +1,7 @@
 {
   "meta": {
     "product": "GoalIQ FPL Phase 0 — clean sheet % + model FDR",
-    "generated_at": "2026-08-30T08:44:33",
+    "generated_at": "2026-08-30T14:10:35",
     "season": "2026/27",
     "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
     "team_strength_source": "GoalIQ Dixon-Coles, Understat PL ['2526', '2627'] (sama fit-config kuin /api/predict: decay=0.0035, bayes=2.0)",
@@ -30,15 +30,41 @@
     "sanity_gate": "PASS",
     "phase": "Phase 0 — pohjatyö, EI shipattava feature"
   },
+  "teams_next6_horizon": "GW2-GW7",
   "teams_next6": {
-    "Arsenal": {
-      "next6_avg_cs_pct": 43.1,
-      "next6_avg_fdr": 1.0,
+    "Crystal Palace": {
+      "next6_avg_cs_pct": 19.2,
+      "next6_avg_fdr": 4.0,
+      "next6_fixtures": 6
+    },
+    "Manchester City": {
+      "next6_avg_cs_pct": 34.6,
+      "next6_avg_fdr": 1.5,
+      "next6_fixtures": 6
+    },
+    "Liverpool": {
+      "next6_avg_cs_pct": 20.4,
+      "next6_avg_fdr": 3.5,
+      "next6_fixtures": 6
+    },
+    "Nottingham Forest": {
+      "next6_avg_cs_pct": 22.5,
+      "next6_avg_fdr": 3.5,
+      "next6_fixtures": 6
+    },
+    "Bournemouth": {
+      "next6_avg_cs_pct": 24.5,
+      "next6_avg_fdr": 2.67,
+      "next6_fixtures": 6
+    },
+    "Everton": {
+      "next6_avg_cs_pct": 23.7,
+      "next6_avg_fdr": 3.5,
       "next6_fixtures": 6
     },
     "Coventry City": {
-      "next6_avg_cs_pct": 29.2,
-      "next6_avg_fdr": 2.67,
+      "next6_avg_cs_pct": 32.1,
+      "next6_avg_fdr": 2.17,
       "next6_fixtures": 6
     },
     "Hull City": {
@@ -46,54 +72,54 @@
       "next6_avg_fdr": 2.83,
       "next6_fixtures": 6
     },
-    "Manchester United": {
-      "next6_avg_cs_pct": 29.1,
-      "next6_avg_fdr": 2.17,
-      "next6_fixtures": 6
-    },
-    "Everton": {
-      "next6_avg_cs_pct": 25.5,
+    "Tottenham Hotspur": {
+      "next6_avg_cs_pct": 26.7,
       "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
-    "Crystal Palace": {
-      "next6_avg_cs_pct": 20.4,
-      "next6_avg_fdr": 3.83,
+    "Newcastle United": {
+      "next6_avg_cs_pct": 22.1,
+      "next6_avg_fdr": 3.33,
       "next6_fixtures": 6
     },
-    "Ipswich Town": {
-      "next6_avg_cs_pct": 28.9,
-      "next6_avg_fdr": 2.67,
+    "Chelsea": {
+      "next6_avg_cs_pct": 21.2,
+      "next6_avg_fdr": 3.33,
       "next6_fixtures": 6
     },
-    "Sunderland": {
-      "next6_avg_cs_pct": 20.7,
-      "next6_avg_fdr": 4.0,
-      "next6_fixtures": 6
-    },
-    "Nottingham Forest": {
-      "next6_avg_cs_pct": 24.5,
-      "next6_avg_fdr": 3.17,
+    "Brighton & Hove Albion": {
+      "next6_avg_cs_pct": 29.0,
+      "next6_avg_fdr": 2.33,
       "next6_fixtures": 6
     },
     "Leeds United": {
-      "next6_avg_cs_pct": 26.5,
+      "next6_avg_cs_pct": 25.5,
       "next6_avg_fdr": 3.0,
       "next6_fixtures": 6
     },
     "Brentford": {
-      "next6_avg_cs_pct": 23.1,
-      "next6_avg_fdr": 2.83,
+      "next6_avg_cs_pct": 20.7,
+      "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
-    "Tottenham Hotspur": {
+    "Sunderland": {
+      "next6_avg_cs_pct": 20.2,
+      "next6_avg_fdr": 4.17,
+      "next6_fixtures": 6
+    },
+    "Fulham": {
       "next6_avg_cs_pct": 23.4,
       "next6_avg_fdr": 3.5,
       "next6_fixtures": 6
     },
-    "Brighton & Hove Albion": {
-      "next6_avg_cs_pct": 29.2,
-      "next6_avg_fdr": 2.33,
+    "Manchester United": {
+      "next6_avg_cs_pct": 28.9,
+      "next6_avg_fdr": 2.17,
+      "next6_fixtures": 6
+    },
+    "Ipswich Town": {
+      "next6_avg_cs_pct": 24.7,
+      "next6_avg_fdr": 3.33,
       "next6_fixtures": 6
     },
     "Aston Villa": {
@@ -101,34 +127,9 @@
       "next6_avg_fdr": 3.67,
       "next6_fixtures": 6
     },
-    "Manchester City": {
-      "next6_avg_cs_pct": 32.7,
-      "next6_avg_fdr": 1.5,
-      "next6_fixtures": 6
-    },
-    "Bournemouth": {
-      "next6_avg_cs_pct": 20.5,
-      "next6_avg_fdr": 3.33,
-      "next6_fixtures": 6
-    },
-    "Newcastle United": {
-      "next6_avg_cs_pct": 20.3,
-      "next6_avg_fdr": 3.67,
-      "next6_fixtures": 6
-    },
-    "Liverpool": {
-      "next6_avg_cs_pct": 21.2,
-      "next6_avg_fdr": 3.33,
-      "next6_fixtures": 6
-    },
-    "Fulham": {
-      "next6_avg_cs_pct": 21.2,
-      "next6_avg_fdr": 3.83,
-      "next6_fixtures": 6
-    },
-    "Chelsea": {
-      "next6_avg_cs_pct": 20.8,
-      "next6_avg_fdr": 3.5,
+    "Arsenal": {
+      "next6_avg_cs_pct": 42.5,
+      "next6_avg_fdr": 1.0,
       "next6_fixtures": 6
     }
   },
@@ -854,7 +855,7 @@
       "cs_away_pct": 21.5,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 2,
+      "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 4
@@ -1031,8 +1032,8 @@
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 1,
-      "fdr_away": 5,
-      "def_fdr_away": 5,
+      "fdr_away": 4,
+      "def_fdr_away": 4,
       "att_fdr_away": 2
     },
     {
@@ -2520,7 +2521,7 @@
       "xg_home": 1.048,
       "xg_away": 1.943,
       "p_home_win": 0.1863,
-      "p_draw": 0.2452,
+      "p_draw": 0.2453,
       "p_away_win": 0.5684,
       "cs_home_pct": 14.3,
       "cs_away_pct": 35.1,
@@ -3123,7 +3124,7 @@
       "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
-      "att_fdr_away": 5
+      "att_fdr_away": 4
     },
     {
       "gameweek": 14,
@@ -3275,8 +3276,8 @@
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 2,
-      "fdr_away": 4,
-      "def_fdr_away": 4,
+      "fdr_away": 5,
+      "def_fdr_away": 5,
       "att_fdr_away": 5
     },
     {
@@ -5738,7 +5739,7 @@
       "cs_away_pct": 21.5,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 3,
+      "att_fdr_home": 2,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 4
@@ -6178,7 +6179,7 @@
       "cs_away_pct": 21.5,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 2,
+      "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 4
@@ -6203,7 +6204,7 @@
       "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
-      "att_fdr_away": 4
+      "att_fdr_away": 5
     },
     {
       "gameweek": 28,
@@ -8051,7 +8052,7 @@
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
-      "att_fdr_away": 3
+      "att_fdr_away": 2
     },
     {
       "gameweek": 37,
