@@ -52,6 +52,19 @@ def surfaces() -> list[Path]:
     return [p for p in out if p.is_file()]
 
 
+#: SPA renderoi lupauksen ehdollisesti ({#if freePremiumWindowActive()}),
+#: joten sen lahdekoodissa oleva teksti EI ole vanheneva vaite. Portti greppaa
+#: raakaa lahdekoodia eika nae ehtoa, joten ilman tata rajausta se antaisi
+#: vaaran positiivisen 12.9 ja menisi punaiseksi tiedostoista jotka ovat
+#: kunnossa - ja paivittain punainen portti tulee ohitetuksi.
+GUARD_RE = re.compile(r"freePremiumWindowActive")
+
+
+def is_guarded_source(path: Path, txt: str) -> bool:
+    """Onko tama SPA-tiedosto joka vartioi lupauksen ajassa."""
+    return path.suffix in (".svelte", ".ts") and bool(GUARD_RE.search(txt))
+
+
 def hits(paths=None) -> list[tuple[str, int, str]]:
     found = []
     for p in (paths if paths is not None else surfaces()):
@@ -59,13 +72,80 @@ def hits(paths=None) -> list[tuple[str, int, str]]:
             txt = p.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
+        if is_guarded_source(p, txt):
+            continue
         for m in CLAIM_RE.finditer(txt):
             line = txt[:m.start()].count("\n") + 1
             found.append((str(p.relative_to(ROOT)), line, m.group(0)))
     return found
 
 
-def main() -> int:
+def guarded_files(paths=None) -> list[str]:
+    """SPA-tiedostot jotka mainitsevat lupauksen JA vartioivat sen."""
+    out = []
+    for p in (paths if paths is not None else surfaces()):
+        try:
+            txt = p.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if CLAIM_RE.search(txt) and is_guarded_source(p, txt):
+            out.append(str(p.relative_to(ROOT)))
+    return out
+
+
+#: Lauseen raja. JSON-LD:ssa ja meta-attribuutissa lupaus on osa pidempaa
+#: merkkijonoa, joten sita ei voi kaaria HTML-kommenttiin: ainoa turvallinen
+#: primitiivi on poistaa LAUSE joka kantaa vaitteen.
+_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def strip_claim(text: str) -> tuple[str, int]:
+    """Poista lupauksen kantavat lauseet. Palauttaa (uusi_teksti, montako)."""
+    out, poistettu = [], 0
+    for chunk in text.split("\n"):
+        if not CLAIM_RE.search(chunk):
+            out.append(chunk)
+            continue
+        lauseet = _SENT_SPLIT.split(chunk)
+        pidetyt = [l for l in lauseet if not CLAIM_RE.search(l)]
+        poistettu += len(lauseet) - len(pidetyt)
+        out.append(" ".join(pidetyt))
+    return "\n".join(out), poistettu
+
+
+def fix(paths=None) -> list[tuple[str, int]]:
+    """Siivoa lupaus kasin yllapidetyilta pinnoilta. Vain ikkunan sulkeuduttua.
+
+    Kutsutaan sivubuildista, joten ensimmainen ajo 12.9 jalkeen siivoaa
+    tiedostot itse eika siivous jaa kenenkaan muistin varaan.
+    """
+    if is_open():
+        return []
+    muutetut = []
+    for p in (paths if paths is not None else surfaces()):
+        try:
+            txt = p.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if is_guarded_source(p, txt) or not CLAIM_RE.search(txt):
+            continue
+        uusi, n = strip_claim(txt)
+        if n:
+            p.write_text(uusi, encoding="utf-8")
+            muutetut.append((str(p.relative_to(ROOT)), n))
+    return muutetut
+
+
+def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if "--fix" in argv:
+        muutetut = fix()
+        if not muutetut:
+            print("fix: ei muutettavaa (ikkuna auki tai pinnat jo puhtaat).")
+            return 0
+        for f, n in muutetut:
+            print(f"fix: {f} - {n} lupauslausetta poistettu")
+        return 0
     paths = surfaces()
     if not paths:
         print("FAIL: yhtaan julkista pintaa ei loytynyt - porttia ei voi "
@@ -78,8 +158,12 @@ def main() -> int:
               f"tiedostossa:")
         for f, ln, _ in found:
             print(f"     {f}:{ln}")
-        print("     (generoidut pinnat siivoutuvat itse; kasin yllapidetyt "
-              "eivat - tama portti kaatuu niista kun ikkuna sulkeutuu)")
+        g = guarded_files(paths)
+        if g:
+            print(f"     lisaksi {len(g)} SPA-tiedostoa mainitsee lupauksen "
+                  f"mutta VARTIOI sen ajassa: {', '.join(g)}")
+        print("     (generoidut ja vartioidut pinnat siivoutuvat itse; kasin "
+              "yllapidetyt eivat - aja `--fix` tai portti kaatuu 12.9)")
         return 0
     if not found:
         print(f"OK: ilmaisikkuna on kiinni ({day_label()} mennyt) eika "

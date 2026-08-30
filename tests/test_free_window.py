@@ -135,3 +135,103 @@ def test_negative_control_unrelated_free_text_does_not_match():
     for s in ("Free, no sign-in", "the free expected points table",
               "Create a free account"):
         assert not g.CLAIM_RE.search(s), s
+
+
+# ---------------------------------------------------------------------------
+# 4. SPA:n vartioitu teksti ei ole vanheneva vaite
+# ---------------------------------------------------------------------------
+def test_guarded_svelte_source_is_not_flagged(tmp_path):
+    """SPA renderoi lupauksen {#if freePremiumWindowActive()} -ehdolla.
+
+    Portti greppaa raakaa lahdekoodia eika nae ehtoa. Ilman tata rajausta se
+    menisi 12.9 punaiseksi tiedostoista jotka ovat kunnossa, ja paivittain
+    punainen portti tulee ohitetuksi.
+    """
+    import scripts.check_free_window as g
+    f = tmp_path / "Paywall.svelte"
+    f.write_text("{#if freePremiumWindowActive()}\n"
+                 "<p>Premium is free until the GW4 deadline on 12 September.</p>\n"
+                 "{/if}", encoding="utf-8")
+    monkey = g.ROOT
+    g.ROOT = tmp_path
+    try:
+        assert g.hits([f]) == []
+        assert g.guarded_files([f]) == ["Paywall.svelte"]
+    finally:
+        g.ROOT = monkey
+
+
+def test_negative_control_unguarded_svelte_is_flagged(tmp_path):
+    """Kontrolli: ilman vartiota SPA-tiedostokin on vanheneva vaite."""
+    import scripts.check_free_window as g
+    f = tmp_path / "Loose.svelte"
+    f.write_text("<p>Premium is free until the GW4 deadline on 12 September.</p>",
+                 encoding="utf-8")
+    old = g.ROOT
+    g.ROOT = tmp_path
+    try:
+        assert len(g.hits([f])) == 1
+    finally:
+        g.ROOT = old
+
+
+# ---------------------------------------------------------------------------
+# 5. --fix siivoaa kasin yllapidetyt pinnat
+# ---------------------------------------------------------------------------
+def test_strip_claim_removes_only_the_sentence_that_carries_it():
+    import scripts.check_free_window as g
+    txt = ("GoalIQ is a model tool. Premium is free on the web until the GW4 "
+           "deadline on 12 September. Cancel anytime.")
+    out, n = g.strip_claim(txt)
+    assert n == 1
+    assert "free on the web until" not in out
+    assert "GoalIQ is a model tool." in out, out
+    assert "Cancel anytime." in out, out
+
+
+def test_strip_claim_leaves_clean_text_untouched():
+    """Kontrolli: ilman tata funktio voisi poistaa mita tahansa."""
+    import scripts.check_free_window as g
+    txt = "Premium is 25 EUR a year. Cancel anytime."
+    out, n = g.strip_claim(txt)
+    assert n == 0 and out == txt
+
+
+def test_fix_cleans_static_files_once_the_window_has_closed(tmp_path,
+                                                            monkeypatch):
+    import scripts.check_free_window as g
+    monkeypatch.setattr(g, "is_open", lambda now=None: False)
+    f = tmp_path / "faq.html"
+    f.write_text("<p>Hello. Premium is free on the web until the GW4 deadline "
+                 "on 12 September. Bye.</p>", encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    muutetut = g.fix([f])
+    assert muutetut == [("faq.html", 1)], muutetut
+    after = f.read_text(encoding="utf-8")
+    assert "free on the web until" not in after
+    assert "Hello." in after and "Bye." in after
+
+
+def test_negative_control_fix_does_nothing_while_the_window_is_open(tmp_path,
+                                                                   monkeypatch):
+    """🔴 Tarkein kontrolli: fix ei saa poistaa voimassa olevaa lupausta."""
+    import scripts.check_free_window as g
+    monkeypatch.setattr(g, "is_open", lambda now=None: True)
+    f = tmp_path / "faq.html"
+    alku = "<p>Premium is free on the web until the GW4 deadline on 12 September.</p>"
+    f.write_text(alku, encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    assert g.fix([f]) == []
+    assert f.read_text(encoding="utf-8") == alku
+
+
+def test_fix_does_not_touch_guarded_spa_files(tmp_path, monkeypatch):
+    import scripts.check_free_window as g
+    monkeypatch.setattr(g, "is_open", lambda now=None: False)
+    f = tmp_path / "Paywall.svelte"
+    alku = ("{#if freePremiumWindowActive()}<p>Premium is free until the GW4 "
+            "deadline on 12 September.</p>{/if}")
+    f.write_text(alku, encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    assert g.fix([f]) == []
+    assert f.read_text(encoding="utf-8") == alku
