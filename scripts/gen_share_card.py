@@ -835,6 +835,12 @@ def _promoted_footnote() -> str:
             f"{'match' if n == 1 else 'matches'} so far")
 
 
+#: Julkinen nimi samalle apurille. Kortteja on kolme generaattoria ja
+#: kovakoodattu "one PL match" on shipannut jo kerran (25.8), joten
+#: alaviite luetaan YHDESTA paikasta (muisti: kuratoitu-lista-jaettuun-moduuliin).
+promoted_footnote = _promoted_footnote
+
+
 def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     """Kolmen sarakkeen kortti. Oma renderoija, koska `render()` on rivilista."""
     from PIL import Image, ImageDraw

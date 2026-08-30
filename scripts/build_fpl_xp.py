@@ -1357,7 +1357,14 @@ def main(argv: list[str] | None = None) -> int:
             "available": True,
             "team_confidence": tc_meta,
             "phase": 1,
-            "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),
+            # 30.8 (portti B8): tz-aware. Tama oli naiivi datetime.now(),
+            # ja `gw_calls.parse_utc` liimaa naiiviin tzinfo=UTC kysymatta.
+            # CI-runner ajaa UTC:ssa joten luku oli oikein VAHINGOSSA; jos
+            # projektiot ajetaan kerran Villen koneella (UTC+3), kortti ja
+            # sivu julkaisisivat kolme tuntia vaaran ajan UTC-merkittyna
+            # eika mikaan huutaisi. parse_utc kasittelee awaren oikein.
+            "generated_at": _dt.datetime.now(
+                _dt.timezone.utc).isoformat(timespec="seconds"),
             "season": SEASON_LABEL,
             # 28.7: ohitusten määrä payloadiin, jotta niiden katoaminen näkyy
             # TUOTANNOSTA eikä vaadi että joku sattuu katsomaan yhtä pelaajaa.

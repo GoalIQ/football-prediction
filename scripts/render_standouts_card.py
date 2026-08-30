@@ -267,7 +267,9 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
                      if s["gamble"] else ""))),
     ])
     promoted_on_card = any(_promoted(s[k]) for k in s if s[k])
-    footnote = ('<div class="fn">*promoted side, rating fitted on one PL match</div>'
+    from scripts.gen_share_card import promoted_footnote
+    # 30.8 (portti): sama kovakoodaus kuin projected-XI-kortissa.
+    footnote = (f'<div class="fn">{promoted_footnote()}</div>'
                 if promoted_on_card else "")
     n = (s["captain"] or {}).get("xp_dist", {}).get("n", 2000) if s["captain"] else 2000
     html = (

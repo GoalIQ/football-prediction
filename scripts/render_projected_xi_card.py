@@ -256,7 +256,13 @@ def free_hit_xi(players: list[dict], gw: int, cache_key: str,
     formation = f"{counts[2]}-{counts[3]}-{counts[4]}"
     return {"xi": xi, "bench": bench, "captain": captain, "vice": vice,
             "formation": formation,
-            "xi_xp": round(sum(p["gw_xp"] for p in xi) + captain["gw_xp"], 2)}
+            # 30.8 (portti B5): summa lasketaan NAYTETYISTA luvuista.
+            # Aiemmin se laskettiin pyoristamattomista (53.90 + 6.15 = 60.05
+            # -> "60.0"), kun taas kortin omat 1 desimaalin luvut summautuvat
+            # 60.3:een. Lukija jolla on laskin nakee ristiriidan kortin
+            # sisalla, ja se on tasan se yleiso jolle kortti tehdaan.
+            "xi_xp": round(sum(round(p["gw_xp"], 1) for p in xi)
+                           + round(captain["gw_xp"], 1), 1)}
 
 
 # ---------------------------------------------------------------------------
@@ -370,9 +376,13 @@ def build_html(data: dict, log: dict | None = None, now=None,
     bench_html = "".join(_cell(p, -1, -1, size=36) for p in sq["bench"])
     shorts = [p["team_short"] for p in sq["xi"] + sq["bench"]]
     promoted_on_card = any(_promoted(p) for p in top)
-    footnote = ('<div class="fn">*promoted side, rating fitted on one PL match'
-                '<br>Squad rules cap you at three players from one club, so the '
-                'list follows the same cap</div>'
+    from scripts.gen_share_card import promoted_footnote
+    # 30.8 (portti): luku oli kovakoodattu "one PL match". own_matches on 1
+    # tanaan ja 2 kun GW2 gradataan ma 31.8 - eli VAARIN silla hetkella kun
+    # kortti julkaistaan 4.9. Sama kovakoodaus shippasi jo 25.8 ja korjattiin
+    # gen_share_cardiin; tama generaattori ei kutsunut korjausta.
+    footnote = (f'<div class="fn">{escape(promoted_footnote())}'
+                '<br>Max 3 per club</div>'
                 if promoted_on_card else "")
     deadline = _fmt_utc(meta.get("deadline_utc"), with_day=True)
     proj_at = _fmt_utc(meta.get("generated_at"))
