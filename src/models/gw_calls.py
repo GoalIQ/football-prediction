@@ -213,7 +213,15 @@ def entry_actual(history_row: dict | None, picks: dict | None) -> dict | None:
     if history_row:
         out["transfers"] = int(history_row.get("event_transfers") or 0)
         out["transfers_cost"] = int(history_row.get("event_transfers_cost") or 0)
-        out["points"] = history_row.get("points")
+        # 🔴 `points` EI kuulu tanne (poistettu 30.8, julkaisutarkistaja B5).
+        # Lohko kirjoitetaan kerran (`grade_gw_calls.py`: `if not
+        # row.get("entry_actual")`), joten provisionaalisessa gradauksessa
+        # napattu luku jaatyy pysyvasti. GW2: tiedostoon jai 15, kun FPL:n
+        # oma luku oli jo 28. Sivu LINKKAA tahan tiedostoon lahteena, joten
+        # lukija olisi nahnyt kaksi eri lukua samasta kierroksesta.
+        # Chip, kapteeni ja siirrot ovat lukittuja deadlinen jalkeen; pisteet
+        # eivat ole. Jos pisteet joskus tarvitaan, ne luetaan FPL:sta
+        # gradaushetkella, ei tasta lohkosta.
     if picks:
         out["chip"] = picks.get("active_chip")
         cap = [int(p["element"]) for p in (picks.get("picks") or [])

@@ -245,7 +245,11 @@ def test_entry_actual_reads_both_sources():
         {"active_chip": "wildcard",
          "picks": [{"element": 426, "is_captain": True},
                    {"element": 411, "is_vice_captain": True}]})
-    assert out == {"transfers": 0, "transfers_cost": 0, "points": 15,
+    # 30.8: `points` poistettu lohkosta. Lohko kirjoitetaan kerran, joten
+    # provisionaalinen pisteluku jaatyi pysyvasti (15, kun FPL:n oma luku oli
+    # jo 28) ja sivu linkkaa tahan tiedostoon lahteena. Chip, kapteeni ja
+    # siirrot ovat lukittuja deadlinen jalkeen; pisteet eivat ole.
+    assert out == {"transfers": 0, "transfers_cost": 0,
                    "chip": "wildcard", "captain": 426}
 
 
@@ -276,3 +280,177 @@ def test_live_gw2_row_carries_entry_actual():
     assert ea["chip"] == "wildcard" and ea["transfers"] == 0
     assert row["model_transfers"], "model_transfers pitaa sailya (mallin aikomus)"
 
+
+
+# ---------------------------------------------------------------------------
+# ENTRY-ACTUAL-RIVI (30.8.2026, S9-etusignaalin loydos)
+#
+# Julkaisutarkistaja blokkasi taman KAHDESTI. Toisen kierroksen kovin loydos:
+# hiljaisen kierroksen fixture oli TYHJEMPI KUIN TUOTANTODATA (siita puuttui
+# `captain`, joka on tuotannossa aina mukana `picks[].is_captain`:sta), joten
+# "ei tyhjaa lausetta" -kontrolli lapaisi tyhjana ja rivi olisi silti
+# renderoitynyt joka kierros. Nama fixturet ovat tuotannon muotoisia.
+# ---------------------------------------------------------------------------
+
+MC = [{"call": "model_captain", "player_id": 388, "web_name": "Guehi"}]
+NIMET = {388: "Guehi", 426: "B.Fernandes"}
+
+
+def _row(gw, calls=None, **ea):
+    return {"gw": gw, "calls": calls if calls is not None else MC,
+            "entry_actual": ea}
+
+
+def test_hiljainen_kierros_ei_tuota_rivia_vaikka_kapteeni_on_mukana():
+    """Portin loydos B7. Kapteeni on tuotannossa AINA mukana; jos rivi syntyy
+    pelkasta kapteenista, se toistuu ~38 kertaa ja sanoo saman kuin
+    valittomasti sen alla oleva Model squad captain -rivi."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(5, calls=[{"call": "model_captain", "player_id": 426}],
+                transfers=0, transfers_cost=0, captain=426)
+    assert entry_actual_sentence(rivi, NIMET, {}) == ("", "")
+
+
+def test_kapteeni_mainitaan_vain_kun_se_eroaa_lokista():
+    """Parikontrolli edelliselle: sama hiljainen kierros, ERI kapteeni."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(6, transfers=0, transfers_cost=0, captain=426)
+    lause, href = entry_actual_sentence(rivi, NIMET, {})
+    assert lause == ("The squad captained B.Fernandes in GW6. "
+                     "The logged captain was Guehi. Its picks are public at ")
+    assert href.endswith("/entry/116920/event/6")
+
+
+def test_no_transfers_haaraa_ei_ole():
+    """Portin loydos B8: perustelin haaran silla etta `model_transfers` nakyy
+    sivulla. S9 loysi sen nimenomaan kenttana jota MIKAAN pinta ei renderoi,
+    eli kontrasti olisi ollut tyhjaa vastaan."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(5, calls=[{"call": "model_captain", "player_id": 426}],
+                transfers=0, captain=426)
+    rivi["model_transfers"] = [{"out": 1, "in": 2}]
+    lause, _ = entry_actual_sentence(rivi, NIMET, {})
+    assert lause == ""
+
+
+def test_siirtokierros_yksinaan_ei_tuota_rivia():
+    """Portin loydokset B11 ja B13, kolmas kierros.
+
+    B11 mitattiin anonyymilla selaimella: `/entry/116920/transfers` -sivun
+    sarakkeet ovat Time, In, Out, Active - **hittia ei ole siella missaan
+    muodossa**. Vaite "took a 4 point hit, listed at <linkki>" osoitti siis
+    sivulle jolla puolet vaitteesta ei ole.
+
+    B13: siirtohaara laukesi lahes joka kierroksella eli tuotti ~30 riviä
+    samalla rungolla, eika luku kvalifioi yhtakaan taulukon kutsua. Se on
+    kontrasti tyhjaa vastaan tasan samalla tavalla kuin poistettu
+    "no transfers" -haara."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(3, calls=[{"call": "model_captain", "player_id": 426}],
+                transfers=2, transfers_cost=4, captain=426)
+    assert entry_actual_sentence(rivi, NIMET, {}) == ("", "")
+
+
+def test_kapteeniero_sailyy_myos_siirtokierroksella():
+    """Portin loydos B12: haarat olivat toisensa poissulkevia ja siirtohaara
+    testattiin ensin, joten kapteeniero - koko rivin olemassaolon syy - olisi
+    pudonnut pois jokaisella kierroksella jolla tehtiin siirtoja."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(12, transfers=3, transfers_cost=8, captain=426)
+    lause, href = entry_actual_sentence(rivi, NIMET, {})
+    assert lause == ("The squad captained B.Fernandes in GW12. "
+                     "The logged captain was Guehi. Its picks are public at ")
+    assert href.endswith("/entry/116920/event/12")
+
+
+def test_mikaan_lause_ei_vaita_siirtoja_tai_hittia():
+    """B10: artikkeli oli kovakoodattu ja tuotti 'a 8 point hit'. Haara on
+    poistettu, joten mikaan muoto ei saa enaa puhua siirroista."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    for rivi in (_row(3, transfers=3, transfers_cost=8, captain=426),
+                 _row(2, chip="wildcard", transfers=5, transfers_cost=8,
+                      captain=426)):
+        lause, _ = entry_actual_sentence(rivi, NIMET, {})
+        assert "transfer" not in lause and "hit" not in lause
+
+
+def test_chip_kierros_ei_kerro_siirtolukua():
+    """FPL:n `event_transfers` oli 0 wildcard-kierroksella (mitattu API:sta
+    30.8), eli luku ei kerro mita joukkueella tehtiin."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    lause, href = entry_actual_sentence(
+        _row(2, transfers=0, transfers_cost=0, chip="wildcard", captain=426),
+        NIMET, {})
+    assert lause == ("The squad played a Wildcard in GW2 and captained "
+                     "B.Fernandes. The logged captain was Guehi. "
+                     "Its picks are public at ")
+    assert "transfer" not in lause
+    assert href.endswith("/entry/116920/event/2")
+
+
+def test_chip_ilman_kapteenieroa_on_pelkka_chip():
+    from scripts.build_fpl_page import entry_actual_sentence
+    lause, _ = entry_actual_sentence(
+        _row(11, calls=[{"call": "model_captain", "player_id": 426}],
+             chip="3xc", captain=426), NIMET, {})
+    assert lause == ("The squad played a Triple Captain in GW11. "
+                     "Its picks are public at ")
+
+
+def test_ei_riviä_kierrokselle_jolla_on_nootti():
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(2, chip="wildcard", captain=426)
+    assert entry_actual_sentence(rivi, NIMET, {2: "nootti"}) == ("", "")
+
+
+def test_kapteenieroa_ei_vaiteta_ilman_nimea():
+    """Pelkka elementti-id ei ole tarkistettavissa, joten eroa ei mainita."""
+    from scripts.build_fpl_page import entry_actual_sentence
+    rivi = _row(6, transfers=0, captain=999)
+    assert entry_actual_sentence(rivi, NIMET, {}) == ("", "")
+
+
+def test_puuttuva_entry_actual_ei_tuota_rivia():
+    from scripts.build_fpl_page import entry_actual_sentence
+    assert entry_actual_sentence({"gw": 5}, NIMET, {}) == ("", "")
+    assert entry_actual_sentence({"gw": 5, "entry_actual": {}}, NIMET, {}) == ("", "")
+
+
+def test_entry_actual_ei_enaa_sisalla_pistelukua():
+    """Portin loydos B5: lohko kirjoitetaan kerran, joten provisionaalinen
+    pisteluku jaatyi pysyvasti (15, kun FPL:n oma luku oli 28) - ja sivu
+    LINKKAA siihen tiedostoon lahteena."""
+    from src.models.gw_calls import entry_actual
+    ea = entry_actual({"event_transfers": 1, "event_transfers_cost": 0,
+                       "points": 15}, {"active_chip": None, "picks": []})
+    assert "points" not in ea
+
+
+def test_gw_calls_json_ei_sisalla_pistelukua():
+    """Julkaistu tiedosto, ei vain koodi."""
+    import json
+    from pathlib import Path
+    d = json.loads(Path("data/gw_calls.json").read_text(encoding="utf-8"))
+    for gw in d.get("gameweeks", []):
+        assert "points" not in (gw.get("entry_actual") or {}), gw.get("gw")
+
+
+def test_player_names_ohittaa_rikkinaiset_rivit():
+    from scripts.build_fpl_page import player_names
+    xp = {"players": [{"id": 1, "web_name": "A"}, {"id": "x", "web_name": "B"},
+                      {"web_name": "C"}, {"id": 4, "web_name": "  "}]}
+    assert player_names(xp) == {1: "A"}
+    assert player_names(None) == {}
+
+
+def test_gw_calls_html_linkki_on_lauseen_sisalla():
+    """Portin loydos (kierros 2 c): irrallinen 'FPL entry 116920.' lauseen
+    perassa on kaksi pistetta ja jalkimmainen ei ole lause."""
+    from scripts.build_fpl_page import gw_calls_html
+    log = {"gameweeks": [{"gw": 6, "logged_at": "2026-08-29T17:13:07Z",
+                          "deadline_utc": "2026-08-30T10:00:00Z",
+                          "calls": MC,
+                          "entry_actual": {"transfers": 1, "captain": 426}}]}
+    html = gw_calls_html(log, exception_notes={}, names=NIMET)
+    assert ("public at <a href=\"https://fantasy.premierleague.com/entry/116920"
+            "/event/6\">FPL entry 116920</a>.") in html

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import os
 import re
 import sys
 from html import escape
@@ -1784,7 +1785,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     tr = track_record_sentences(c)
     jsonld = jsonld_blocks(c, faq)
     cs_table = cs_table_html(c)
-    gw_calls = gw_calls_html(_load_json(GW_CALLS_PATH))
+    gw_calls = gw_calls_html(_load_json(GW_CALLS_PATH), names=player_names(xp))
     eo_by_tier = eo_by_tier_html(_load_json(EO_PATH), _load_json(ELITE_MGR_PATH))
     xp_accuracy = xp_accuracy_html(_load_json(XP_GW_ACC_PATH))
     fdr_grid = fdr_grid_html(c)
@@ -2246,7 +2247,124 @@ def _call_result(call: dict, graded: dict | None) -> tuple[str, str]:
     return f"{pts}{prov}", ("hit" if met else "miss")
 
 
-def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = None) -> str:
+# FPL:n omat chip-koodit -> lukijan nakema nimi. Tuntematon koodi menee lapi
+# sellaisenaan, koska keksitty nimi olisi pahempi kuin raaka koodi.
+# Sama lahde kuin gradauksessa (`grade_gw_calls.py`), ei uutta
+# kovakoodausta renderoijaan.
+FPL_ENTRY_ID = int(os.environ.get("FPL_MODEL_ENTRY_ID", "116920"))
+
+CHIP_LABELS = {
+    "wildcard": "Wildcard",
+    "bboost": "Bench Boost",
+    "3xc": "Triple Captain",
+    "freehit": "Free Hit",
+    "manager": "Assistant Manager",
+}
+
+
+def _model_captain_id(gw_row: dict):
+    """Kierroksen `model_captain`-kutsun pelaaja, tai None."""
+    for c in gw_row.get("calls") or []:
+        if c.get("call") == "model_captain":
+            pid = c.get("player_id")
+            return int(pid) if pid is not None else None
+    return None
+
+
+def entry_actual_sentence(gw_row: dict, names: dict | None = None,
+                          notes: dict | None = None) -> tuple[str, str]:
+    """Mita joukkue teki kierroksella JA mita taulukko ei jo naeta.
+
+    Palauttaa (lause, href). Lause menee `escape()`:n lapi, linkki ei.
+
+    S9-etusignaalin loydos 30.8: `entry_actual` oli `gw_calls.json`:ssa 29.8
+    alkaen mutta yksikaan pinta ei renderoinyt sita.
+
+    🔴 Julkaisutarkistaja blokkasi taman kahdesti, ja toisen kierroksen
+    loydokset maarittelevat koko renderointisaannon. Rivi syntyy VAIN kun
+    entry teki jotain jota taulukko ei jo nayta:
+
+    1. chip on pelattu, TAI
+    2. kapteeni EROAA lokin `model_captain`-rivista.
+
+    🔴 **Siirtohaara poistettiin kolmannella kierroksella**, ja se sulki nelja
+    loydosta yhdella muutoksella:
+    - Portti ajoi `/entry/116920/transfers`-sivun anonyymilla selaimella:
+      sarakkeet ovat Time, In, Out, Active. **Hittia ei ole siella missaan
+      muodossa.** Vaite "took a 4 point hit, listed at <linkki>" osoitti siis
+      sivulle jolla puolet vaitteesta ei ole. Edellinen korjaus vaihtoi
+      vaarasta sivusta toiseen vaaraan sivuun.
+    - Siirtohaara SOI kapteenieron: haarat ovat toisensa poissulkevia, ja
+      siirtoja tehdaan lahes joka kierros, joten koko rivin olemassaolon syy
+      (GW2:n kapteeniero) olisi pudonnut pois kaytannossa aina.
+    - `f"a {cost} point hit"` tuotti `"a 8 point hit"`. 8 pisteen hitti on
+      toiseksi yleisin.
+    - Ja B8:n oma perustelu koski sita itseaan: poistin "no transfers"-haaran
+      koska `model_transfers` ei renderoidy millaan pinnalla, mutta
+      "made 2 transfers" on kontrasti tyhjaa vastaan tasan samalla tavalla.
+      Se ei kvalifioi yhtakaan taulukon kutsua.
+
+    Muuten `("", "")`. Perustelut, joista jokainen oli oma blokkauksensa:
+
+    - **Kapteeni mainitaan vain kun se eroaa.** Normaalikierroksella entryn
+      kapteeni ON `model_captain`, ja se nakyy jo taulukon omalla rivilla
+      valittomasti taman alla. Kaksi perakkaista rivia samasta nimesta lukee
+      koneelta. GW2 oli poikkeus, ei saanto.
+    """
+    ea = gw_row.get("entry_actual")
+    if not isinstance(ea, dict) or not ea:
+        return "", ""
+    gw = gw_row.get("gw")
+    # Kierroksella jolla on julkinen nootti EI renderoida tata: nootti kertoo
+    # saman tarkemmin, ja kaksi perakkaista note-rivia lukee koneelta.
+    if notes and gw in notes:
+        return "", ""
+
+    entry_url = f"https://fantasy.premierleague.com/entry/{FPL_ENTRY_ID}"
+    chip = ea.get("chip")
+    t = ea.get("transfers")
+    cost = ea.get("transfers_cost")
+    cap = ea.get("captain")
+    mc = _model_captain_id(gw_row)
+    nimet = names or {}
+    cap_nimi = nimet.get(int(cap)) if cap is not None else None
+    mc_nimi = nimet.get(int(mc)) if mc is not None else None
+    kapteeni_eroaa = (cap is not None and mc is not None and int(cap) != int(mc)
+                      and bool(cap_nimi))
+
+    if chip:
+        lause = f"The squad played a {CHIP_LABELS.get(chip, chip)} in GW{gw}"
+        if kapteeni_eroaa:
+            lause += f" and captained {cap_nimi}."
+            if mc_nimi:
+                lause += f" The logged captain was {mc_nimi}."
+        else:
+            lause += "."
+        return lause + " Its picks are public at ", f"{entry_url}/event/{gw}"
+
+    if kapteeni_eroaa:
+        lause = f"The squad captained {cap_nimi} in GW{gw}."
+        if mc_nimi:
+            lause += f" The logged captain was {mc_nimi}."
+        return lause + " Its picks are public at ", f"{entry_url}/event/{gw}"
+
+    return "", ""
+
+
+def player_names(xp: dict | None) -> dict:
+    """{element_id: web_name} projektioista. Kapteenin nimi ilman tata olisi
+    pelkka numero, jota lukija ei voi tarkistaa."""
+    out = {}
+    for r in ((xp or {}).get("players") or []):
+        try:
+            out[int(r["id"])] = str(r.get("web_name") or "").strip()
+        except (KeyError, TypeError, ValueError):
+            continue
+    return {k: v for k, v in out.items() if v}
+
+
+def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = None,
+                  names: dict | None = None) -> str:
     """Track-record-osio: mallin kierroskutsut lokista. Tyhja loki -> ei
     osiota (ei lupailla lokia jota ei ole). `exception_notes` ({gw: nootti})
     renderoidaan kierroksen rivien alle: sivu kertoo itse kun rivi ja entry
@@ -2265,6 +2383,16 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
             trs.append(
                 '<tr class="gw-note"><td class="num">'
                 f'GW{gw_row["gw"]}</td><td colspan="6">{escape(note)}</td></tr>')
+        actual, entry_href = entry_actual_sentence(gw_row, names, notes)
+        if actual:
+            # Linkki on lauseen viimeinen osa, ei erillinen fragmentti sen
+            # perassa: "... public at FPL entry 116920." on lause, kun taas
+            # "... B.Fernandes. FPL entry 116920." on kaksi pistetta ja
+            # jalkimmainen ei ole lause (julkaisutarkistaja, kierros 2 c).
+            trs.append(
+                '<tr class="gw-note"><td class="num">'
+                f'GW{gw_row["gw"]}</td><td colspan="6">{escape(actual)}'
+                f'<a href="{entry_href}">FPL entry {FPL_ENTRY_ID}</a>.</td></tr>')
         for call in gw_row.get("calls") or []:
             pts, res = _call_result(call, graded)
             name = f"{call.get('web_name') or '?'} ({call.get('team_short') or '?'})"
