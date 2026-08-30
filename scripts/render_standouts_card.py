@@ -121,6 +121,37 @@ def gw_xp(p: dict):
     return None
 
 
+def assert_dist_gameweek(players: list[dict], gw: int) -> None:
+    """Kaadu jos `xp_dist` on eri kierrokselta kuin kortin otsikko.
+
+    🔴 30.8 (julkaisutarkistaja): kortin otsikko kayttaa `actionable_gameweek`ia
+    mutta JOKAINEN luku tulee `xp_dist`:sta, joka lasketaan `next_gameweek`ille.
+    Mitattu: otsikko sanoi GW3 ja luvut olivat GW2:n (captain Haaland 5.77, kun
+    GW3:n luku on 6.2; gamble B.Fernandes, joka ei ole GW3:n karjessa lainkaan).
+    Kortti olisi julkaissut vaaran kierroksen luvut oikean kierroksen nimella.
+
+    🔴 Tarkistus on TASSA eika `build_html`:ssa, koska `pick_standouts`illa on
+    KAKSI kuluttajaa: kortti ja `scripts/log_gw_calls.py`, joka ajetaan CI:ssa
+    ja nimeaa rivin samalla `actionable_gameweek`illa. Vain kortin suojaaminen
+    olisi jattanyt lokipolun auki; se on tanaan turvassa vain siksi etta GW3:n
+    freezea ei viela ole, eli sattumalta (muisti:
+    yksi-renderointipolku-kahdesta).
+
+    Korjaus on ylavirrassa (`build_fpl_xp.py`: `xp_dist` lasketaan `next_gw`:lle,
+    QUEUE: XP-DIST-KIERROS). Siihen asti fail-closed.
+    """
+    dist_gws = {(p.get("xp_dist") or {}).get("gw") for p in players
+                if p.get("xp_dist")}
+    dist_gws.discard(None)
+    if dist_gws and dist_gws != {gw}:
+        raise SystemExit(
+            f"STANDOUTS-KIERROSRISTIRIITA: valinta nimetaan kierrokselle GW{gw} "
+            f"(actionable_gameweek) mutta xp_dist on kierrokselta "
+            f"{sorted(dist_gws)}. Luvut olisivat vaaralta kierrokselta oikean "
+            f"kierroksen nimella. Korjaa xp_dist:n kierros "
+            f"(QUEUE: XP-DIST-KIERROS) ennen julkaisua.")
+
+
 def pick_standouts(players: list[dict]) -> dict:
     """Puhdas valintafunktio (testattava). Palauttaa avaimet
     captain/ceiling/safest/gamble -> pelaajarivi tai None."""
@@ -235,28 +266,7 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     players = data.get("players") or []
     meta = data.get("meta") or {}
     gw = int(actionable_gameweek(meta) or 0)
-    # 🔴 FAIL-CLOSED: OTSIKON JA LUKUJEN KIERROS ON SAMA (julkaisutarkistaja 30.8).
-    # Kortin otsikko kayttaa `actionable_gameweek`ia, mutta jokainen luku tulee
-    # `xp_dist`:sta, joka lasketaan `next_gameweek`ille. 30.8 mitattu: otsikko
-    # sanoi GW3 ja luvut olivat GW2:n (captain Haaland 5.77, kun GW3:n luku on
-    # 6.2; gamble B.Fernandes, joka ei ole GW3:n karjessa lainkaan). Kortti
-    # olisi julkaissut vaaran kierroksen luvut oikean kierroksen nimella.
-    #
-    # Korjaus on ylavirrassa (`build_fpl_xp.py`: `xp_dist` lasketaan
-    # `next_gw`:lle; QUEUE: XP-DIST-KIERROS). Siihen asti kortti KAATUU sen
-    # sijaan etta julkaisisi ristiriidan - se on GO-portin takana, joten
-    # kaatuminen ei riko tuotantoa (muisti: fail-safe-jaatyy-alavirtaan ei
-    # pade tassa, koska mikaan ei kuluta korttia automaattisesti).
-    dist_gws = {(pp.get("xp_dist") or {}).get("gw") for pp in players
-                if pp.get("xp_dist")}
-    dist_gws.discard(None)
-    if dist_gws and dist_gws != {gw}:
-        raise SystemExit(
-            f"STANDOUTS-KIERROSRISTIRIITA: kortin otsikko sanoo GW{gw} "
-            f"(actionable_gameweek) mutta xp_dist on kierrokselta "
-            f"{sorted(dist_gws)}. Kortti nayttaisi vaaran kierroksen luvut "
-            f"oikean kierroksen nimella. Korjaa xp_dist:n kierros "
-            f"(QUEUE: XP-DIST-KIERROS) ennen kuin kortti julkaistaan.")
+    assert_dist_gameweek(players, gw)
     s = reconcile_with_log(pick_standouts(players), gw, log, now, players)
     pct = lambda x: f"{round(x * 100)}%"
     tiles = "".join([

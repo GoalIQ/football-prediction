@@ -567,19 +567,28 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     #
     # Rankkaus lukee nyt SAMAN funktion kuin ilmaissivun GW-xP-taulukko ja
     # kortti, joten kolme pintaa ei voi nimeta eri kapteenia samasta datasta.
-    from src.models.fpl_gw_xp import gw_xp as _gw_xp_of
+    # 🔴 POOLI ON SAMA KUIN TAULUKON (julkaisutarkistaja k2). Ensimmainen
+    # korjaukseni rankkasi KAIKISTA pelaajista ja putosi `xp_per_gw`:hen kun
+    # GW-rivi puuttui. Perustelin sen silla etta "GW-xP on aina suurempi kuin
+    # sama pelaaja jaettuna kuudella" - se on tosi SAMAN pelaajan sisalla ja
+    # merkityksetön lajittelussa, joka on pelaajien VALINEN. Mitattu: suurin
+    # `xp_per_gw` on 5.94 ja taulukon #2 on 5.46, eli pelaaja jolta GW-rivi
+    # puuttuu olisi noussut kapteenisivun sijalle 2 kuuden kierroksen
+    # keskiarvolla. Oma korjaus on yhta altis.
+    #
+    # Sama vaihto sulkee kaksi muuta aukkoa: kapteenirankkaus ei ajanut
+    # `status`-suodatinta eika estolistaa lainkaan (Thiaw oli 3.84 eli 0,07 xP
+    # taulukon kynnyksen alla). `eligible` on maaritelmalta sama pooli kuin
+    # ilmaispinnan taulukolla, joten llms.txt:n lupaus "sama numero" on tosi
+    # RAKENTEESTA eika sattumasta.
+    from src.models.fpl_gw_xp import eligible as _eligible, gw_xp as _gw_xp_of
+    from scripts.publish_gate import load_blocklist as _blocklist
 
-    def _next_gw_xp(p: dict) -> float:
-        v = _gw_xp_of(p, gw) if isinstance(gw, int) else None
-        if v is not None:
-            return v
-        # Blank GW tai vanha payload: horisontin keskiarvo on ainoa luku joka
-        # on olemassa. Se ei nosta ketaan karkeen, koska GW-xP on aina
-        # suurempi kuin sama pelaaja jaettuna kuudella - mutta se pitaa
-        # rivin listalla sen sijaan etta pudottaisi sen aanettomasti.
-        return float(p.get("xp_per_gw") or 0.0)
-
-    ranked = sorted(players, key=lambda p: (-_next_gw_xp(p), int(p.get("id") or 0)))
+    pool = _eligible(players, gw, _blocklist()) if isinstance(gw, int) else []
+    if not pool:
+        return None
+    ranked = sorted(pool, key=lambda p: (-(_gw_xp_of(p, gw) or 0.0),
+                                         int(p.get("id") or 0)))
     top = ranked[0]
     alts = ranked[1:3]
     url = f"{BASE}/fpl/best-captain"
@@ -596,9 +605,9 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     desc = (
         f"The GoalIQ model's best FPL captain for Gameweek {gw}: "
         f"{top['web_name']} ({top['team_short']}). Horizon expected points "
-        f"for the top 100 players are free on our expected-points page; "
-        f"the ranked list on the gameweek-specific number is "
-        f"GoalIQ Premium. Updated every round."
+        f"for the top 100 players are free on our expected-points page, "
+        f"and so are the top 20 on the gameweek-specific number; the full "
+        f"ranked list on that number is GoalIQ Premium. Updated every round."
     )
     hero = (
         f"<h1>Best FPL captain, Gameweek {gw}</h1>"
@@ -666,8 +675,14 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         # (julkaisutarkistajan B2, 30.8). Maksullinen raja on KOKO LISTA
         # elavana, ei yksittainen luku. Tama ei lupaa korttia jota ei ole
         # viela julkaistu: lupaus siita on oma copy-muutoksensa.
-        "instead, and the ranked list on that number is GoalIQ "
-        "Premium.</p>"
+        # 🔴 30.8: tama lause kaantyi EPATODEKSI samassa shipissa joka teki
+        # top 20:sta ilmaisen. Lukija olisi lukenut "tama on Premium" ja
+        # nahnyt yhden klikin paassa 20 rivia samaa lukua ilmaiseksi -
+        # maksumuurivalhe vaaraan suuntaan, tasan silla pinnalla johon uusi
+        # copy osoittaa (julkaisutarkistaja k2).
+        'instead. The top 20 on that number are free on '
+        '<a href="/fpl/expected-points#gw-xp">the gameweek xP table</a>, '
+        "and the full ranked list is GoalIQ Premium.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
         + (SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
@@ -4022,6 +4037,12 @@ def _gw_xp_section(xp: dict) -> str:
     if dl:
         try:
             t = datetime.fromisoformat(str(dl).replace("Z", "+00:00"))
+            # 🔴 Naiivi aikaleima tulkittaisiin RAKENTAJAN paikallisajaksi
+            # (CI on UTC, Villen kone EEST) ja sivu painaisi deadlinen 3 h
+            # vaarin ilman yhtaan virhetta. Kentta kantaa tanaan offsetin,
+            # mutta se ei ole taattu.
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
             t = t.astimezone(timezone.utc)
             dl_teksti = (f" The gameweek {gw} deadline is "
                          f"{t.strftime('%a')} {t.day} {t.strftime('%b %H:%M')} UTC.")

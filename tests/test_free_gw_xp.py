@@ -305,6 +305,27 @@ def test_standouts_kaatuu_kun_otsikko_ja_luvut_eri_kierrokselta():
     assert "STANDOUTS-KIERROSRISTIRIITA" in str(e.value)
 
 
+def test_myos_gw_calls_loki_perii_saman_vahdin():
+    """🔴 `pick_standouts`illa on KAKSI kuluttajaa. Vahti vain kortilla olisi
+    jattanyt lokipolun auki, ja loki on gradattava kutsu eli virhe jaisi
+    pysyvaksi. Tanaan lokipolku on turvassa vain koska GW3:n freezea ei ole -
+    se on sattuma, ei vaite (muisti: yksi-renderointipolku-kahdesta)."""
+    import scripts.log_gw_calls as lg
+    assert hasattr(lg, "assert_dist_gameweek"), "loki ei importoi vahtia"
+    src = (__import__("pathlib").Path(__file__).resolve().parents[1]
+           / "scripts" / "log_gw_calls.py").read_text(encoding="utf-8")
+    assert "assert_dist_gameweek(players, gw)" in src, "vahtia ei kutsuta"
+
+
+def test_vahti_on_valintafunktion_luona_ei_vain_renderoijassa():
+    import scripts.render_standouts_card as card
+    with pytest.raises(SystemExit):
+        card.assert_dist_gameweek(
+            [{"xp_dist": {"gw": 2}}, {"xp_dist": {"gw": 2}}], 3)
+    card.assert_dist_gameweek([{"xp_dist": {"gw": 3}}], 3)   # ei kaadu
+    card.assert_dist_gameweek([{"web_name": "ei distia"}], 3)  # ei dataa -> ei vaitetta
+
+
 def test_standouts_ei_kaadu_kun_kierrokset_tasmaavat():
     """Negatiivinen kontrolli: ilman tata vahti voisi kaataa kortin aina."""
     import scripts.render_standouts_card as card

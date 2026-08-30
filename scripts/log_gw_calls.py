@@ -29,7 +29,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config  # noqa: E402
-from scripts.render_standouts_card import pick_standouts  # noqa: E402
+from scripts.render_standouts_card import (assert_dist_gameweek,  # noqa: E402
+                                           pick_standouts)
 from src.models.gw_calls import (NEW_LOG, DeadlinePassed,  # noqa: E402
                                  build_entry, upsert)
 from src.models.fpl_gameweek import actionable_gameweek  # noqa: E402  portti: ei next_gameweek suoraan
@@ -63,6 +64,12 @@ def main(argv=None) -> int:
         return 0
     frozen = json.loads(frozen_path.read_text(encoding="utf-8"))
     players = xp.get("players") or []
+    # 🔴 Sama fail-closed kuin kortilla: rivi nimetaan kierrokselle `gw`, mutta
+    # `pick_standouts` lukee luvut `xp_dist`:sta. Jos ne eroavat, LOKIIN
+    # kirjattaisiin vaaran kierroksen luvut oikean kierroksen nimella - ja loki
+    # on gradattava kutsu, eli virhe jaisi pysyvaksi (julkaisutarkistaja 30.8:
+    # vahti oli vain kortilla, ja lokipolku oli turvassa vain sattumalta).
+    assert_dist_gameweek(players, gw)
     by_id = {int(p["id"]): p for p in players if "id" in p}
     standouts = pick_standouts(players)
     now = _dt.datetime.now(_dt.timezone.utc)
