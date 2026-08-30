@@ -151,7 +151,13 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # `fpl/` kattaa long-tail-sivut seka alihakemistot club/ ja note/.
-          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml
+          # 🔴 30.8: lista on oltava build_fpl_page.py:n KIRJOITUSKOHTEIDEN
+          # ylijoukko. `predictions.html` ja `world-cup-2026-predictions.html`
+          # puuttuivat: builder kirjoittaa ne, mutta ne jaivat vaiheistamatta
+          # -> rebase kieltaytyi -> sivu jaatyi (26.8, 28.8, 30.8 kaikki heti
+          # UTC-keskiyon jalkeen). `test_workflow_stage_paths.py` pitaa taman
+          # listan ja builderin synkassa - ala muokkaa vain toista.
+          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml predictions.html world-cup-2026-predictions.html
           if git diff --cached --quiet; then
             echo "Ei muutoksia (data ennallaan tai bake fail-safe) — ohitetaan commit."
             exit 0
@@ -159,16 +165,24 @@ jobs:
           git commit -m "geo(fpl): FPL-landing + long-tail refresh [skip ci]"
           for i in 1 2 3 4 5; do
             git fetch origin main || true
-            if git rebase origin/main; then
-              if git push origin HEAD:main; then
-                echo "Pushed to main (yritys $i)."
-                echo "pushed=true" >> "$GITHUB_OUTPUT"
-                exit 0
-              fi
-            else
+            # 30.8: --autostash. Bake kirjoittaa myos `git add` -whitelistin
+            # ulkopuolelle (build_fpl_page.py:n LIVE_BACK/FWD-ikkuna siirtyy
+            # UTC-vuorokauden vaihtuessa -> predictions.html muuttuu). Ilman
+            # autostashia rebase kieltaytyy ("cannot rebase: You have unstaged
+            # changes") ja KAIKKI viisi yritysta kaatuvat samaan asiaan. Se ei
+            # ole kilpailu vaan deterministinen jaatyminen, ja loki nimesi sen
+            # vaarin: sivu jai 5 h datasta jalkeen eika mikaan huutanut.
+            if ! rebase_virhe=$(git rebase --autostash origin/main 2>&1); then
+              echo "$rebase_virhe"
               git rebase --abort 2>/dev/null || true
+              echo "Yritys $i: REBASE kaatui (EI push-kilpailu) - ks. syy ylla."
+            elif git push origin HEAD:main; then
+              echo "Pushed to main (yritys $i)."
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            else
+              echo "Yritys $i: push hylattiin (kilpailu?) - rebase + retry."
             fi
-            echo "Push-yritys $i epäonnistui (kilpailu?) — rebase + retry."
             sleep 5
           done
           echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."

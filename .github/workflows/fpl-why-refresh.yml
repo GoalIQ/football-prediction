@@ -91,15 +91,23 @@ jobs:
           git commit -m "chore(fpl): why-this-pick explanations refresh [skip ci]"
           for i in 1 2 3 4 5; do
             git fetch origin main || true
-            if git rebase origin/main; then
-              if git push origin HEAD:main; then
-                echo "Pushed to main (yritys $i)."
-                exit 0
-              fi
-            else
+            # 30.8: --autostash. Bake kirjoittaa myos `git add` -whitelistin
+            # ulkopuolelle (build_fpl_page.py:n LIVE_BACK/FWD-ikkuna siirtyy
+            # UTC-vuorokauden vaihtuessa -> predictions.html muuttuu). Ilman
+            # autostashia rebase kieltaytyy ("cannot rebase: You have unstaged
+            # changes") ja KAIKKI viisi yritysta kaatuvat samaan asiaan. Se ei
+            # ole kilpailu vaan deterministinen jaatyminen, ja loki nimesi sen
+            # vaarin: sivu jai 5 h datasta jalkeen eika mikaan huutanut.
+            if ! rebase_virhe=$(git rebase --autostash origin/main 2>&1); then
+              echo "$rebase_virhe"
               git rebase --abort 2>/dev/null || true
+              echo "Yritys $i: REBASE kaatui (EI push-kilpailu) - ks. syy ylla."
+            elif git push origin HEAD:main; then
+              echo "Pushed to main (yritys $i)."
+              exit 0
+            else
+              echo "Yritys $i: push hylattiin (kilpailu data-cronin kanssa?) - rebase + retry."
             fi
-            echo "Push-yritys $i epäonnistui (kilpailu data-cronin kanssa?) — retry."
             sleep 5
           done
           echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
