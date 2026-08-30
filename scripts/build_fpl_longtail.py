@@ -580,7 +580,7 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         f"The GoalIQ model's best FPL captain for Gameweek {gw}: "
         f"{top['web_name']} ({top['team_short']}). Horizon expected points "
         f"for the top 100 players are free on our expected-points page; "
-        f"the gameweek-specific number and the full captain ranking are "
+        f"the full ranked list on the gameweek-specific number is "
         f"GoalIQ Premium. Updated every round."
     )
     hero = (
@@ -642,8 +642,15 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         '<p class="note">Horizon expected points for the top 100 players '
         'are free on <a href="/fpl/expected-points">the expected points '
         "table</a>. This ranking sorts by the gameweek-specific number "
-        "instead, and that number and the full ranked list are part of "
-        "GoalIQ Premium.</p>"
+        # 30.8: aiemmin "that number and the full ranked list are part of
+        # GoalIQ Premium". Se vaitti LUVUN itsensa maksulliseksi, ja
+        # projected-XI-kortti julkaisisi 30 sellaista lukua kuvana ennen
+        # deadlinea -> sivu ja kortti olisivat suoraan ristiriidassa
+        # (julkaisutarkistajan B2, 30.8). Maksullinen raja on KOKO LISTA
+        # elavana, ei yksittainen luku. Tama ei lupaa korttia jota ei ole
+        # viela julkaistu: lupaus siita on oma copy-muutoksensa.
+        "instead. The full ranked list, for every player and updated "
+        "through the week, is GoalIQ Premium.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
         + (SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
