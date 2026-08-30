@@ -1052,7 +1052,7 @@ export async function sharePlayerCard(spec: PlayerCardSpec): Promise<ShareOutcom
 	return deliver(blob, spec.fileName);
 }
 
-export type ShareOutcome = 'shared' | 'downloaded' | 'aborted';
+export type ShareOutcome = 'shared' | 'copied' | 'downloaded' | 'aborted';
 
 /** Share-arkki vain mobiilissa (31.7, Villen havainto): Windowsin share-arkissa
  * ei ole X-kohdetta eikä tallennusta — pöytäkoneella suora PNG-lataus on
@@ -1066,7 +1066,49 @@ export function canShareToApps(): boolean {
 	);
 }
 
-/** Mobiili: navigator.share tiedostolla. Desktop + kaikki virhepolut: PNG-lataus. */
+/** Voiko selain kopioida KUVAN leikepoydalle (ei siis vain tekstia).
+ *
+ * 30.8: tama on eri polku kuin share-arkki. Villen havainto 31.7 piti
+ * paikkansa - Windowsin share-arkissa ei ole X-kohdetta - mutta siita
+ * paateltiin etta desktopilla ainoa polku on lataus. Leikepoytaa ei kokeiltu.
+ * Mitattu 60 vrk: `xp_card_shared` 130 tapahtumasta 97 oli `downloaded`, eli
+ * kolme neljasosaa "jaoista" oli PNG joka paatyi Lataukset-kansioon. Kopioitu
+ * kuva liittyy postaukseen yhdella Ctrl+V:lla. */
+export function canCopyImage(): boolean {
+	return (
+		typeof navigator !== 'undefined' &&
+		!!navigator.clipboard &&
+		typeof navigator.clipboard.write === 'function' &&
+		typeof ClipboardItem === 'function'
+	);
+}
+
+/** Lyhyt vahvistus leikepoytakopiolle.
+ *
+ * 🔴 Miksi tama on pakko: latauksesta selain nayttaa oman latauspalkkinsa, eli
+ * kayttaja saa palautteen ilmaiseksi. Leikepoytakopio on TAYSIN nakymaton -
+ * ilman ilmoitusta kayttaja painaa "Share" eika nae mitaan ja paattelee ettei
+ * se toiminut. Se olisi ollut regressio, ei parannus.
+ *
+ * Toteutettu tassa eika komponenteissa, koska `deliver` on ainoa kuristuskohta:
+ * viisitoista kutsujaa saa palautteen ilman etta yhtakaan niista muutetaan. */
+function toast(msg: string): void {
+	if (typeof document === 'undefined') return;
+	const el = document.createElement('div');
+	el.setAttribute('role', 'status');
+	el.textContent = msg;
+	el.style.cssText =
+		'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);' +
+		'background:#141311;color:#F3F2F2;border:1px solid rgba(243,242,242,.24);' +
+		'padding:10px 16px;border-radius:8px;font:14px system-ui,sans-serif;' +
+		'z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4)';
+	document.body.appendChild(el);
+	setTimeout(() => el.remove(), 3200);
+}
+
+
+/** Mobiili: navigator.share tiedostolla. Desktop: kuva leikepoydalle.
+ * Kaikki virhepolut: PNG-lataus. */
 async function deliver(blob: Blob, fileName: string): Promise<ShareOutcome> {
 	const file = new File([blob], fileName, { type: 'image/png' });
 	if (canShareToApps() && navigator.canShare({ files: [file] })) {
@@ -1076,6 +1118,16 @@ async function deliver(blob: Blob, fileName: string): Promise<ShareOutcome> {
 		} catch (e) {
 			// Käyttäjä perui share-arkin — ei fallback-latausta perumisen päälle.
 			if (e instanceof DOMException && e.name === 'AbortError') return 'aborted';
+		}
+	}
+	if (canCopyImage()) {
+		try {
+			await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+			toast('Card copied. Paste it into your post.');
+			return 'copied';
+		} catch {
+			// Leikepoyta voi epaonnistua ilman kayttajaelettä tai luvatta.
+			// Lataus on silloin oikea varapolku, ei virhe.
 		}
 	}
 	const url = URL.createObjectURL(blob);

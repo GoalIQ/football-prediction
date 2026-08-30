@@ -635,20 +635,70 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     }, 'image/png');
   });
 
+  /* Share funnel fix, 30 Aug. Measured over 60 days: 22 people generated a
+     card, 2 shared it. Two causes, both in this file:
+
+     (1) navigator.share WITH A FILE is effectively a mobile API. On desktop
+         this button did not share, it downloaded a PNG and left the user alone
+         with a file. Desktop now copies the image to the clipboard so it can be
+         pasted straight into a post. Download stays as the last fallback.
+
+     (2) The click itself was never measured. Only outcomes were, so "2 shared"
+         could equally have meant "20 pressed and the path broke". The click is
+         now recorded before the branch, each branch records its own outcome,
+         and a cancel is told apart from a real failure (AbortError). */
+  function shareOutcome(method, extra) {
+    if (!window.posthog) return;
+    var props = { method: method };
+    for (var k in (extra || {})) props[k] = extra[k];
+    posthog.capture('career_card_shared', props);
+  }
+
+  function shareFailed(method, err) {
+    var aborted = err && (err.name === 'AbortError' || err.name === 'NotAllowedError');
+    if (!window.posthog) return;
+    posthog.capture(aborted ? 'career_card_share_cancelled' : 'career_card_share_failed',
+                    { method: method, error: err && err.name ? err.name : 'unknown' });
+  }
+
+  function copyImageToClipboard(blob) {
+    if (!navigator.clipboard || typeof window.ClipboardItem !== 'function') {
+      return Promise.reject(new Error('no-clipboard-image'));
+    }
+    return navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+  }
+
   document.getElementById('shareBtn').addEventListener('click', function () {
     canvas.toBlob(function (blob) {
       var file = new File([blob], 'goaliq-fpl-career-card.png', { type: 'image/png' });
       var shareUrl = 'https://goaliq.app/career' + (currentEntry ? '?entry=' + currentEntry : '');
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      var canFiles = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+      var canClip = !!(navigator.clipboard && typeof window.ClipboardItem === 'function');
+      var path = canFiles ? 'native' : (canClip ? 'clipboard' : (navigator.share ? 'native_url' : 'download'));
+      if (window.posthog) posthog.capture('career_card_share_clicked', { path: path });
+
+      if (canFiles) {
         navigator.share({ files: [file], title: 'My FPL Career Card', url: shareUrl })
-          .then(function () { if (window.posthog) posthog.capture('career_card_shared', { method: 'native' }); })
-          .catch(function () { /* peruutus on ok */ });
+          .then(function () { shareOutcome('native'); })
+          .catch(function (e) { shareFailed('native', e); });
+      } else if (canClip) {
+        copyImageToClipboard(blob)
+          .then(function () {
+            setStatus('Card copied. Paste it into your post.');
+            shareOutcome('clipboard');
+          })
+          .catch(function (e) {
+            shareFailed('clipboard', e);
+            document.getElementById('downloadBtn').click();
+            shareOutcome('download_fallback');
+          });
       } else if (navigator.share) {
         navigator.share({ title: 'My FPL Career Card', url: shareUrl })
-          .then(function () { if (window.posthog) posthog.capture('career_card_shared', { method: 'native_url' }); })
-          .catch(function () { /* peruutus on ok */ });
+          .then(function () { shareOutcome('native_url'); })
+          .catch(function (e) { shareFailed('native_url', e); });
       } else {
         document.getElementById('downloadBtn').click();
+        shareOutcome('download_fallback');
       }
     }, 'image/png');
   });
