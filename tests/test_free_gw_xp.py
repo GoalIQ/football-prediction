@@ -331,3 +331,55 @@ def test_standouts_ei_kaadu_kun_kierrokset_tasmaavat():
     import scripts.render_standouts_card as card
     html, _ = card.build_html(_standouts_data(dist_gw=3, title_gw=3))
     assert "GW3" in html
+
+
+# --- kapteenikandidaattien seurakatto (Villen paatos 30.8) -----------------
+
+def test_kapteenikatto_on_kaksi_ei_kolme():
+    from src.models.fpl_gw_xp import MAX_CAPTAIN_PER_CLUB
+    assert MAX_CAPTAIN_PER_CLUB == 2
+
+
+def test_kolmen_karki_ei_voi_olla_yhta_seuraa():
+    """🔴 Mitattu: GW3 ja GW5 antoivat karjen jossa kaikki kolme olivat MCI:n.
+
+    Kolme saman joukkueen pelaajaa samaa vastustajaa vastaan on yksi veto
+    kolmella nimella - jos joukkue epaonnistuu, kaikki kolme kaatuvat yhdessa.
+    """
+    from src.models.fpl_gw_xp import MAX_CAPTAIN_PER_CLUB
+    players = ([_pl(i, f"City{i}", "Man City", 9.0 - i * 0.1) for i in range(6)]
+               + [_pl(50 + i, f"Muu{i}", f"Club{i}", 4.0 - i * 0.1) for i in range(5)])
+    top3 = top_projected(players, 3, 3, max_per_club=MAX_CAPTAIN_PER_CLUB)
+    seurat = {p["team"] for p in top3}
+    assert len(top3) == 3
+    assert len(seurat) >= 2, f"kolmen karki on yhta seuraa: {seurat}"
+
+
+def test_oletuskatto_on_yha_fpl_saanto_eika_kapteenikatto():
+    """Negatiivinen kontrolli: ilmaispinnan taulukko EI saa kaventua kahteen -
+    se noudattaa FPL:n saantoa (3), ja kapteenikatto on eri paatos."""
+    players = [_pl(i, f"City{i}", "Man City", 9.0 - i * 0.1) for i in range(6)]
+    assert len(top_projected(players, 3, FREE_TOP_N)) == 3
+
+
+def test_kapteenisivu_kayttaa_kapteenikattoa():
+    src = (__import__("pathlib").Path(__file__).resolve().parents[1]
+           / "scripts" / "build_fpl_longtail.py").read_text(encoding="utf-8")
+    assert "max_per_club=MAX_CAPTAIN_PER_CLUB" in src, "kapteenisivu ei raja kahteen"
+
+
+def test_tuotannon_kapteenisivulla_on_vahintaan_kaksi_seuraa():
+    """Elava mittaus rakennetulta sivulta."""
+    import json
+    from pathlib import Path
+    from scripts.publish_gate import load_blocklist
+    from src.models.fpl_gameweek import actionable_gameweek
+    from src.models.fpl_gw_xp import MAX_CAPTAIN_PER_CLUB
+    f = Path(__file__).resolve().parents[1] / "data" / "fpl_xp_projections.json"
+    if not f.exists():
+        pytest.skip("artefaktia ei ole")
+    xp = json.loads(f.read_text(encoding="utf-8"))
+    gw = actionable_gameweek(xp["meta"])
+    top3 = top_projected(xp["players"], gw, 3, load_blocklist(),
+                         max_per_club=MAX_CAPTAIN_PER_CLUB)
+    assert len({p["team_short"] for p in top3}) >= 2, [p["web_name"] for p in top3]

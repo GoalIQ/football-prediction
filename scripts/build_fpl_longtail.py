@@ -581,14 +581,20 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     # taulukon kynnyksen alla). `eligible` on maaritelmalta sama pooli kuin
     # ilmaispinnan taulukolla, joten llms.txt:n lupaus "sama numero" on tosi
     # RAKENTEESTA eika sattumasta.
-    from src.models.fpl_gw_xp import eligible as _eligible, gw_xp as _gw_xp_of
+    # 🔴 SEURAKATTO 2 (Villen paatos 30.8). Mitattu kuudelta kierrokselta:
+    # GW3 ja GW5 antoivat karjen jossa kaikki kolme olivat Man Cityn pelaajia,
+    # molemmat Cityn kotiotteluita heikkoa vastustajaa vastaan. Kolme saman
+    # joukkueen pelaajaa samaa vastustajaa vastaan on yksi veto kolmella
+    # nimella: jos joukkue epaonnistuu, kaikki kolme kaatuvat yhdessa, eika
+    # sivu silloin tarjoa vaihtoehtoja vaan saman vedon kolmesti.
+    from src.models.fpl_gw_xp import (MAX_CAPTAIN_PER_CLUB, gw_xp as _gw_xp_of,
+                                      top_projected as _top)
     from scripts.publish_gate import load_blocklist as _blocklist
 
-    pool = _eligible(players, gw, _blocklist()) if isinstance(gw, int) else []
-    if not pool:
+    ranked = _top(players, gw, 3, _blocklist(),
+                  max_per_club=MAX_CAPTAIN_PER_CLUB) if isinstance(gw, int) else []
+    if not ranked:
         return None
-    ranked = sorted(pool, key=lambda p: (-(_gw_xp_of(p, gw) or 0.0),
-                                         int(p.get("id") or 0)))
     top = ranked[0]
     alts = ranked[1:3]
     url = f"{BASE}/fpl/best-captain"

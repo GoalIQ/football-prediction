@@ -104,9 +104,30 @@ def club_of(p: dict):
     return p.get("team") or p.get("team_short")
 
 
+# Kapteenikandidaattien seurakatto (Villen paatos 30.8.2026). ERI luku kuin
+# `MAX_PER_CLUB`, ja syy on eri: FPL:n sääntö sallii kolme pelaajaa per seura,
+# mutta kapteeniehdokkaita ei valita saannon vaan HAJAUTUKSEN takia.
+#
+# 🔴 Mitattu 30.8 kuudelta kierrokselta: GW3 ja GW5 antoivat kolmen karjen
+# jossa KAIKKI kolme olivat Man Cityn pelaajia (Haaland, Guehi, O'Reilly),
+# molemmat Cityn kotiotteluita heikkoa vastustajaa vastaan. Se ei ole
+# satunnaista vaan toistuu aina samalla fixture-kuviolla: vahva kotiottelu
+# nostaa koko joukkueen kerralla.
+#
+# Kolme saman joukkueen pelaajaa samaa vastustajaa vastaan on YKSI veto
+# kolmella nimella - jos joukkue epaonnistuu, kaikki kolme kaatuvat yhdessa.
+# Kapteenisivun tehtava on antaa vaihtoehtoja, joten kandidaatteja rajataan
+# kahteen per seura. Tama on tuotepaatos, ei saantopakko.
+MAX_CAPTAIN_PER_CLUB = 2
+
+
 def top_projected(players: list[dict], gw: int, n: int,
-                  blocklist: list[dict] | None = None) -> list[dict]:
+                  blocklist: list[dict] | None = None,
+                  max_per_club: int | None = None) -> list[dict]:
     """GW-xP top n laskevasti, korkeintaan `MAX_PER_CLUB` per seura.
+
+    `max_per_club` oletuksena `MAX_PER_CLUB` (FPL:n saanto). Kapteenisivu
+    antaa `MAX_CAPTAIN_PER_CLUB`, koska sen rajaus on hajautusta eika saanto.
 
     Tasapeli ratkaistaan `id`:lla eika nimella: nimi ei ole avain (muisti:
     web-name-ei-ole-avain, 9 duplikaattia), ja ilman deterministista
@@ -115,14 +136,16 @@ def top_projected(players: list[dict], gw: int, n: int,
     # Katto luetaan KUTSUHETKELLA optimoijan omasta moduulista, ei tuoda
     # nimena tanne: nimeksi tuotu vakio jaatyisi import-hetkeen, ja silloin
     # kortin puoliskot voisivat ajautua eri sääntöön ilman etta mikaan huutaa.
-    from src.models.fpl_rate_team import MAX_PER_CLUB
+    if max_per_club is None:
+        from src.models.fpl_rate_team import MAX_PER_CLUB
+        max_per_club = MAX_PER_CLUB
     pool = eligible(players, gw, blocklist)
     pool.sort(key=lambda p: (-gw_xp(p, gw), int(p.get("id") or 0)))
     out: list[dict] = []
     clubs: dict = {}
     for p in pool:
         c = club_of(p)
-        if clubs.get(c, 0) >= MAX_PER_CLUB:
+        if clubs.get(c, 0) >= max_per_club:
             continue
         clubs[c] = clubs.get(c, 0) + 1
         out.append(p)
