@@ -306,6 +306,51 @@ def test_plan_chains_requires_entry_or_players(client):
 
 
 # ---------------------------------------------------------------------------
+# PLAN-CHAINS-SQUAD-SOURCE (29.8): plan-chains ei emittoinut squad_source-
+# kenttää, joten PlanChains.svelte ei voinut näyttää stale-riviä tai
+# "Use my saved 15" -nappia kuten TransferPlanner jo tekee /plan:n kautta.
+# Sama sopimus kuin fpl_planner.plan_transfers (ks. test_transfer_engine_
+# parity.py:n squad_source-testit) — tässä ajettuna FastAPI-endpointin läpi,
+# koska plan-chainsilla ei ole erillistä testattavaa funktiota.
+# ---------------------------------------------------------------------------
+
+def _clear_plan_chains_cache():
+    import api.fantasy_edge as fe
+    fe._RESULT_CACHE.clear()
+
+
+def test_plan_chains_squad_source_manual_is_never_stale(client):
+    _clear_plan_chains_cache()
+    r = client.get("/api/fantasy/plan-chains?horizon=3&players="
+                    + ",".join(str(i) for i in SQUAD_IDS))
+    assert r.status_code == 200, r.text
+    src = r.json()["meta"]["squad_source"]
+    assert src["mode"] == "manual" and src["stale"] is False
+
+
+def test_plan_chains_squad_source_entry_stale_when_deadline_gw_is_next(
+        client, monkeypatch):
+    xp = dict(FAKE_XP)
+    xp["meta"] = {**FAKE_XP["meta"], "deadline_gameweek": 2}
+    monkeypatch.setattr(rt, "load_xp", lambda: xp)
+    _clear_plan_chains_cache()
+    r = client.get("/api/fantasy/plan-chains?entry=424242&horizon=3")
+    assert r.status_code == 200, r.text
+    src = r.json()["meta"]["squad_source"]
+    assert src["mode"] == "entry" and src["gw"] == 1 and src["stale"] is True
+    assert src["deadline_gw"] == 2
+
+
+def test_plan_chains_squad_source_is_structured_not_prose(client):
+    _clear_plan_chains_cache()
+    r = client.get("/api/fantasy/plan-chains?horizon=3&players="
+                    + ",".join(str(i) for i in SQUAD_IDS))
+    assert r.status_code == 200, r.text
+    ss = r.json()["meta"]["squad_source"]
+    assert set(ss) == {"mode", "gw", "deadline_gw", "stale"}
+
+
+# ---------------------------------------------------------------------------
 # 28.7 (Villen bugilöytö): siirtoehdotuksen delta on AVAUSKOKOONPANON hyöty.
 #
 # Vanha kaava (in.xP - out.xP) lupasi kakkosvahdin vaihdosta "+18.74 xP over
