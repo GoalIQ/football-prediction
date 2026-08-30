@@ -332,6 +332,46 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     return rows
 
 
+def free_window_block() -> str:
+    """Ilmaisikkunan lohko: nootti + CTA + hintanootti, ikkunan tilan mukaan.
+
+    30.8: tassa oli kovakoodattu lause ja sen vieressa KOMMENTTI ihmiselle
+    ("REMOVE the free window after 2026-09-12 12:30 UTC"). Sellaista
+    muistutusta ei muisteta, ja lause olisi jaanyt vaittamaan Premiumin
+    ilmaiseksi 12.9 jalkeen. Kolme kohtaa riippuu ikkunasta: nootti, CTA:n
+    teksti ja "After 12 September" -hintalause joka menneessa on outo.
+    Kaikki kolme johdetaan nyt src.free_window:sta, sama aikaleima kuin
+    mobiilin lib/freePremiumWindow.ts:ssa.
+
+    Nootti on CTA:n YLAPUOLELLA tarkoituksella (alkuperainen kommentti):
+    toisin pain sivu tarjosi ostonapin suoraan sen lauseen ylapuolella joka
+    sanoo ettei tarvitse maksaa viela.
+    """
+    from src.free_window import day_label, is_open, note
+    hinta_loppu = (
+        f"\u20ac3.99 a month. One subscription covers web, iOS and Android. "
+        f"Cancel anytime. 30-day money back on web purchases.</p>")
+    if is_open():
+        return (
+            f'<p class="price-note"><b>{note()}</b></p>\n'
+            f'<div class="cta-row">\n'
+            f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-freewindow">'
+            f'Get Premium free</a>\n'
+            f'</div>\n'
+            f'<p class="price-note">After {day_label()} it is \u20ac25 a year, '
+            f'which is under \u20ac2.10 a month, or '
+            + hinta_loppu)
+    # Ikkuna kiinni: ei ilmaislupausta, CTA takaisin ostoon, hinta preesensissa.
+    return (
+        f'<div class="cta-row">\n'
+        f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-premium">'
+        f'Get Premium</a>\n'
+        f'</div>\n'
+        f'<p class="price-note">\u20ac25 a year, which is under '
+        f'\u20ac2.10 a month, or '
+        + hinta_loppu)
+
+
 def build_context(fpl: dict, acc: dict) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
@@ -2031,18 +2071,7 @@ differential picks, player compare for up to four players and predicted
   starting minutes, from the
 same match model as this page. Rate my team, a captain pick, price watch and
 the top three of every leaderboard are free.</p>
-<!-- REMOVE the free window after 2026-09-12 12:30 UTC: the CTA goes back to
-     checkout and the first price note goes away. The notice sits above the CTA
-     on purpose; the other way round the page offered a buy button directly
-     above the sentence saying you do not need to pay yet. -->
-<p class="price-note"><b>Premium is free on the web until the GW4 deadline on 12 September,
-so GW1 to GW3. Create a free account and it's on. No card, nothing to cancel.</b></p>
-<div class="cta-row">
-  <a class="cta" href="{PRO_URL}" data-cta="fpl-freewindow">Get Premium free</a>
-</div>
-<p class="price-note">After 12 September it is €25 a year, which is under €2.10 a month, or
-€3.99 a month. One subscription covers web, iOS and Android. Cancel anytime.
-30-day money back on web purchases.</p>
+{free_window_block()}
 </aside>
 
 <!-- Career card discoverability. This is a free distribution tool, so the teal

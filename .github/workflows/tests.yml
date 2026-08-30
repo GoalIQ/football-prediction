@@ -46,3 +46,12 @@ jobs:
       #      eika rivilla ole aiemmin hylattyja sanamuotoja
       - name: Copy sync (llms.txt vs /fpl, luvut ja vaitteet)
         run: python scripts/check_llms_txt_sync.py
+
+      # 30.8: ilmaisikkuna. Lupaus "Premium is free on the web until 12
+      # September" elaa 15 kohdassa 8 tiedostossa, joista vain YKSI on
+      # generoitu. Loput ovat kasin yllapidettyja eika mikaan poista niita.
+      # Portti on vihrea niin kauan kuin ikkuna on auki ja menee punaiseksi
+      # sina hetkena kun se sulkeutuu -> siivous ei jaa kenenkaan muistin
+      # varaan (muisti: ehto-ei-vanhene-teksti-vanhenee).
+      - name: Free window (lupaus ei saa jaada elamaan)
+        run: python scripts/check_free_window.py
