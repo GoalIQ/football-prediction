@@ -36,6 +36,8 @@ import shutil
 import subprocess
 import sys
 from html import escape
+
+from src.brand import logo_svg
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -69,7 +71,7 @@ SAFE_MIN_XP = 4.0
 GAMBLE_MIN_BLANK = 0.35
 
 CSS = """
-:root{--teal:#2ED6C2;--amber:#F5C542;--ink:#0B0A09;--ink2:#141311;
+:root{--amber:#F5C542;--ink:#0B0A09;--ink2:#141311;
 --cream:#F3F2F2;--muted:#A8A29A;--line:rgba(243,242,242,0.24);}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#000;}
@@ -78,7 +80,7 @@ linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
 font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
 padding:34px 44px 26px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
-.brand{color:var(--teal);font-weight:700;font-size:26px;letter-spacing:.5px;}
+.brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
 .title{font-size:22px;font-weight:600;}
 .sub{color:var(--muted);font-size:15px;margin-top:4px;text-align:right;}
 .tiles{display:flex;gap:18px;margin:26px 0 18px;flex:1;}
@@ -91,7 +93,7 @@ overflow:hidden;text-overflow:ellipsis;}
 .tile .meta{color:var(--muted);font-size:15px;margin-top:2px;}
 .tile .range{color:var(--muted);font-size:15px;margin-top:26px;}
 .tile .range b{color:var(--cream);font-weight:600;}
-.tile .big{font-size:54px;font-weight:700;color:var(--teal);margin-top:auto;
+.tile .big{font-size:54px;font-weight:700;color:var(--amber);margin-top:auto;
 line-height:1;font-variant-numeric:tabular-nums;}
 .tile .big small{font-size:18px;white-space:nowrap;color:var(--muted);font-weight:500;margin-left:6px;}
 .tile .why{color:var(--muted);font-size:14px;margin-top:8px;min-height:36px;}
@@ -276,7 +278,13 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
         "<!doctype html><meta charset='utf-8'>"
         f"<style>{CSS}</style>"
         '<div class="card">'
-        '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
+        '<div class="hdr"><div><span class="brand">'
+        # 30.8 (Villen huomio: vaara variteema): merkki tulee
+        # `src/brand.py`:sta, joka on Villen 1.8 paatos "logo on
+        # kaikilla sivuilla sama". Kortti renderoi aiemmin pelkkaa
+        # turkoosia tekstia ilman amber-laatikkoa, eli KOLMANNEN
+        # merkkiversion - tasan sen jonka 1.8 paatos poisti.
+        + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
         f'<div><div class="title">GW{gw} standouts from {n:,} simulated gameweeks</div>'
         '<div class="sub">Same numbers as our xP, run that many times. Only players with '
         'at least a 60% chance of starting.</div></div></div>'

@@ -44,6 +44,8 @@ import shutil
 import subprocess
 import sys
 from html import escape
+
+from src.brand import logo_svg
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -70,7 +72,7 @@ BANNED_COPY = ("—", r"\bodds\b", r"\bPro\b", r"\boptimi[sz]er\b", r"\bsolver\b
                r"\blegal\b", r"\bfeasible\b", r"\bconstraints?\b")
 
 CSS = """
-:root{--teal:#2ED6C2;--amber:#F5C542;--ink:#0B0A09;--ink2:#141311;
+:root{--amber:#F5C542;--ink:#0B0A09;--ink2:#141311;
 --cream:#F3F2F2;--muted:#A8A29A;--line:rgba(243,242,242,0.24);}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#000;}
@@ -79,7 +81,7 @@ linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
 font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
 padding:26px 40px 20px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
-.brand{color:var(--teal);font-weight:700;font-size:26px;letter-spacing:.5px;}
+.brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
 .title{font-size:21px;font-weight:600;}
 .sub{color:var(--muted);font-size:14px;margin-top:3px;text-align:right;}
 .body{display:flex;gap:26px;margin-top:14px;flex:1;min-height:0;}
@@ -94,7 +96,7 @@ td.rk{color:var(--muted);width:26px;text-align:right;padding-right:8px;}
 td.nm{font-weight:600;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
 td.tm{color:var(--muted);width:92px;}
 td.ps{color:var(--muted);width:44px;}
-td.xp{color:var(--teal);font-weight:700;text-align:right;width:52px;font-size:16px;}
+td.xp{color:var(--amber);font-weight:700;text-align:right;width:52px;font-size:16px;}
 .pitch{background:rgba(46,214,194,0.13);border:1px solid var(--line);
 padding:4px 2px;flex:1;display:flex;flex-direction:column;
 justify-content:space-evenly;min-height:0;}
@@ -104,7 +106,7 @@ justify-content:space-evenly;min-height:0;}
 white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .xip span{display:block;font-size:12px;color:var(--muted);
 font-variant-numeric:tabular-nums;white-space:nowrap;}
-.xip span i{font-style:normal;color:var(--teal);font-weight:700;}
+.xip span i{font-style:normal;color:var(--amber);font-weight:700;}
 .badge{position:absolute;top:-3px;right:20px;background:var(--amber);
 color:var(--ink);font-size:12px;font-weight:700;width:20px;height:20px;
 border-radius:50%;line-height:20px;}
@@ -116,7 +118,7 @@ padding-top:6px;margin-top:8px;}
 .bench .xip b{font-size:13px;}
 .lblrow{display:flex;justify-content:space-between;align-items:baseline;}
 .tot{color:var(--muted);font-size:13px;white-space:nowrap;margin-bottom:6px;}
-.tot b{color:var(--teal);font-size:17px;font-variant-numeric:tabular-nums;}
+.tot b{color:var(--amber);font-size:17px;font-variant-numeric:tabular-nums;}
 .fn{color:var(--muted);font-size:12px;margin-top:6px;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:13px;border-top:1px solid var(--line);padding-top:8px;margin-top:8px;}
@@ -393,7 +395,13 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f"<style>{CSS}</style>"
         f'<svg width="0" height="0" style="position:absolute">{_kit_defs(shorts)}</svg>'
         '<div class="card">'
-        '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
+        '<div class="hdr"><div><span class="brand">'
+        # 30.8 (Villen huomio: vaara variteema): merkki tulee
+        # `src/brand.py`:sta, joka on Villen 1.8 paatos "logo on
+        # kaikilla sivuilla sama". Kortti renderoi aiemmin pelkkaa
+        # turkoosia tekstia ilman amber-laatikkoa, eli KOLMANNEN
+        # merkkiversion - tasan sen jonka 1.8 paatos poisti.
+        + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
         f'<div><div class="title">GW{gw} projected points and the model&#39;s free-hit XI</div>'
         f'<div class="sub">GW{gw} deadline {deadline} · GoalIQ model, projection run {proj_at}</div></div></div>'
         '<div class="body">'

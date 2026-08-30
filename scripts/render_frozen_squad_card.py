@@ -22,6 +22,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from src.brand import logo_svg
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
@@ -30,7 +32,7 @@ from scripts.build_fpl_longtail import _kit_defs, _kit_svg
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
 
 CSS = """
-:root{--teal:#2ED6C2;--amber:#F5C542;--ink:#0B0A09;--ink2:#141311;
+:root{--amber:#F5C542;--ink:#0B0A09;--ink2:#141311;
 --cream:#F3F2F2;--paper:#1F1D1A;--muted:#A8A29A;
 --line:rgba(243,242,242,0.24);}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -40,7 +42,7 @@ linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
 font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
 padding:34px 44px 26px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
-.brand{color:var(--teal);font-weight:700;font-size:26px;letter-spacing:.5px;}
+.brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
 .title{font-size:21px;font-weight:600;}
 .sub{color:var(--muted);font-size:15px;margin-top:4px;text-align:right;}
 .pitch{background:rgba(46,214,194,0.13);border:1px solid var(--line);
@@ -115,7 +117,9 @@ def main() -> int:
         f"<style>{CSS}</style>"
         f'<svg width="0" height="0" style="position:absolute">{_kit_defs(shorts)}</svg>'
         '<div class="card">'
-        '<div class="hdr"><div><span class="brand">GoalIQ</span></div>'
+        '<div class="hdr"><div><span class="brand">'
+        # 30.8: merkki src/brand.py:sta (Villen 1.8 paatos).
+        + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
         f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})</div>'
         f'<div class="sub">{args.subtitle or f"Picked by the optimiser, frozen {frozen_at}, entered as-is"}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
