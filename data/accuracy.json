@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-08-30T20:58:14+00:00",
+  "updated_at": "2026-08-30T23:25:22+00:00",
   "logged_total": 3199,
-  "pending": 2862,
+  "pending": 2860,
   "voided": 5,
   "all_time": {
-    "n": 332,
+    "n": 334,
     "correct_1x2": 174,
-    "pct_1x2": 0.5241,
-    "draw_n": 91,
-    "pct_draw": 0.2741,
-    "decisive_n": 241,
+    "pct_1x2": 0.521,
+    "draw_n": 92,
+    "pct_draw": 0.2754,
+    "decisive_n": 242,
     "decisive_correct": 174,
-    "pct_decisive": 0.722,
-    "exact_n": 284,
+    "pct_decisive": 0.719,
+    "exact_n": 286,
     "exact_correct": 38,
-    "pct_exact": 0.1338,
-    "brier": 0.5813,
-    "brier_n": 284
+    "pct_exact": 0.1329,
+    "brier": 0.5837,
+    "brier_n": 286
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 58,
-    "pct_1x2": 0.58,
+    "correct_1x2": 57,
+    "pct_1x2": 0.57,
     "draw_n": 19,
     "pct_draw": 0.19,
     "decisive_n": 81,
-    "decisive_correct": 58,
-    "pct_decisive": 0.716,
+    "decisive_correct": 57,
+    "pct_decisive": 0.7037,
     "exact_n": 100,
-    "exact_correct": 13,
-    "pct_exact": 0.13,
-    "brier": 0.5509,
+    "exact_correct": 12,
+    "pct_exact": 0.12,
+    "brier": 0.558,
     "brier_n": 100,
     "window": 100
   },
@@ -111,19 +111,19 @@
       "brier_n": 18
     },
     "PD": {
-      "n": 27,
+      "n": 28,
       "correct_1x2": 16,
-      "pct_1x2": 0.5926,
+      "pct_1x2": 0.5714,
       "draw_n": 7,
-      "pct_draw": 0.2593,
-      "decisive_n": 20,
+      "pct_draw": 0.25,
+      "decisive_n": 21,
       "decisive_correct": 16,
-      "pct_decisive": 0.8,
-      "exact_n": 27,
+      "pct_decisive": 0.7619,
+      "exact_n": 28,
       "exact_correct": 5,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 27
+      "brier_n": 28
     },
     "PL": {
       "n": 19,
@@ -141,19 +141,19 @@
       "brier_n": 19
     },
     "PPL": {
-      "n": 20,
+      "n": 21,
       "correct_1x2": 12,
-      "pct_1x2": 0.6,
-      "draw_n": 3,
-      "pct_draw": 0.15,
+      "pct_1x2": 0.5714,
+      "draw_n": 4,
+      "pct_draw": 0.1905,
       "decisive_n": 17,
       "decisive_correct": 12,
       "pct_decisive": 0.7059,
-      "exact_n": 20,
+      "exact_n": 21,
       "exact_correct": 3,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 20
+      "brier_n": 21
     },
     "SA": {
       "n": 18,
@@ -188,19 +188,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 148,
+      "n": 150,
       "correct_1x2": 86,
-      "pct_1x2": 0.5811,
-      "draw_n": 28,
-      "pct_draw": 0.1892,
-      "decisive_n": 120,
+      "pct_1x2": 0.5733,
+      "draw_n": 29,
+      "pct_draw": 0.1933,
+      "decisive_n": 121,
       "decisive_correct": 86,
-      "pct_decisive": 0.7167,
-      "exact_n": 148,
+      "pct_decisive": 0.7107,
+      "exact_n": 150,
       "exact_correct": 17,
-      "pct_exact": 0.1149,
-      "brier": 0.5534,
-      "brier_n": 148
+      "pct_exact": 0.1133,
+      "brier": 0.5582,
+      "brier_n": 150
     },
     "stale": {
       "n": 136,
@@ -248,10 +248,10 @@
       "n": 108
     },
     {
-      "bin_mid": 0.2542,
-      "predicted": 0.2542,
-      "actual": 0.2809,
-      "n": 324
+      "bin_mid": 0.2539,
+      "predicted": 0.2539,
+      "actual": 0.2835,
+      "n": 328
     },
     {
       "bin_mid": 0.3384,
@@ -260,16 +260,16 @@
       "n": 156
     },
     {
-      "bin_mid": 0.4476,
-      "predicted": 0.4476,
-      "actual": 0.3645,
-      "n": 107
+      "bin_mid": 0.448,
+      "predicted": 0.448,
+      "actual": 0.3611,
+      "n": 108
     },
     {
-      "bin_mid": 0.5441,
-      "predicted": 0.5441,
-      "actual": 0.5312,
-      "n": 64
+      "bin_mid": 0.5444,
+      "predicted": 0.5444,
+      "actual": 0.5231,
+      "n": 65
     },
     {
       "bin_mid": 0.6469,
@@ -291,6 +291,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-30",
+      "home_team": "Famalicao",
+      "away_team": "Gil Vicente",
+      "predicted_winner": "home",
+      "p_winner": 0.4874,
+      "lead_h": 2.9,
+      "most_likely_score": "1-0",
+      "actual_score": "0-0",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-08-30",
+      "home_team": "RC Celta de Vigo",
+      "away_team": "Athletic Club",
+      "predicted_winner": "home",
+      "p_winner": 0.563,
+      "lead_h": 2.9,
+      "most_likely_score": "1-0",
+      "actual_score": "0-2",
+      "actual_outcome": "away",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-30",
       "home_team": "Cambuur",
@@ -557,36 +587,6 @@
       "actual_score": "1-0",
       "actual_outcome": "home",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-30",
-      "home_team": "Athletico-PR",
-      "away_team": "Fluminense",
-      "predicted_winner": "home",
-      "p_winner": 0.5076,
-      "lead_h": 2.2,
-      "most_likely_score": "1-0",
-      "actual_score": "3-3",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-30",
-      "home_team": "Feyenoord",
-      "away_team": "Den Haag",
-      "predicted_winner": "home",
-      "p_winner": 0.8029,
-      "lead_h": 0.7,
-      "most_likely_score": "2-0",
-      "actual_score": "2-2",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
