@@ -166,12 +166,40 @@ def eligible(players: list[dict], gw: int,
             and gw_xp(p, gw) is not None]
 
 
+def _club_of(p: dict):
+    """Sama seura-avain kuin optimoijan poolissa (_xi_pool)."""
+    return p.get("team") or p.get("team_short")
+
+
 def top_projected(players: list[dict], gw: int, n: int = TOP_N,
                   blocklist: list[dict] | None = None) -> list[dict]:
-    """GW-xP top n laskevasti; tasapeli id:lla (sama data -> sama kortti)."""
+    """GW-xP top n laskevasti, KORKEINTAAN MAX_PER_CLUB per seura.
+
+    30.8 (Villen paatos): ilman seurakattoa lista oli GW3:lle 8x Man City +
+    3x Hull viidestatoista, eli 11/15 kahdesta ottelusta. Se ei ole vaara
+    mallilta - molemmat kohtaavat nousijan - mutta **FPL sallii korkeintaan
+    kolme pelaajaa per seura**, joten viisi rivia viidestatoista oli
+    saantojen takia pelikelvottomia. Kortin vasen puoli on pelaajavalinta-
+    lista, ei ranking-taulukko, joten se noudattaa samaa saantoa kuin
+    oikean puolen XI (free_optimum noudatti sita jo).
+
+    MAX_PER_CLUB tulee samasta moduulista kuin optimoijan oma rajoite, jotta
+    kortin kaksi puoliskoa eivat voi ajautua eri saantoon.
+    """
+    from src.models.fpl_rate_team import MAX_PER_CLUB
     pool = eligible(players, gw, blocklist)
     pool.sort(key=lambda p: (-gw_xp(p, gw), int(p.get("id") or 0)))
-    return pool[:n]
+    out: list[dict] = []
+    clubs: dict = {}
+    for p in pool:
+        c = _club_of(p)
+        if clubs.get(c, 0) >= MAX_PER_CLUB:
+            continue
+        clubs[c] = clubs.get(c, 0) + 1
+        out.append(p)
+        if len(out) >= n:
+            break
+    return out
 
 
 def _xi_pool(players: list[dict], gw: int,
@@ -342,7 +370,9 @@ def build_html(data: dict, log: dict | None = None, now=None,
     bench_html = "".join(_cell(p, -1, -1, size=36) for p in sq["bench"])
     shorts = [p["team_short"] for p in sq["xi"] + sq["bench"]]
     promoted_on_card = any(_promoted(p) for p in top)
-    footnote = ('<div class="fn">*promoted side, rating fitted on one PL match</div>'
+    footnote = ('<div class="fn">*promoted side, rating fitted on one PL match'
+                '<br>Squad rules cap you at three players from one club, so the '
+                'list follows the same cap</div>'
                 if promoted_on_card else "")
     deadline = _fmt_utc(meta.get("deadline_utc"), with_day=True)
     proj_at = _fmt_utc(meta.get("generated_at"))
@@ -357,7 +387,8 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f'<div><div class="title">GW{gw} projected points and the model&#39;s free-hit XI</div>'
         f'<div class="sub">GW{gw} deadline {deadline} · GoalIQ model, projection run {proj_at}</div></div></div>'
         '<div class="body">'
-        f'<div class="left"><div class="lbl">Projected points, top {len(top)}</div>'
+        f'<div class="left"><div class="lbl">Projected points, best {len(top)} '
+        f'at most three per club</div>'
         f'<table><tbody>{rows}</tbody></table>{footnote}</div>'
         f'<div class="right"><div class="lblrow"><div class="lbl">Free-hit XI for GW{gw} only ({sq["formation"]})</div>'
         f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div></div>'

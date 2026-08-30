@@ -32,3 +32,17 @@ jobs:
       # jos requirements muuttuu.
       - name: Copy style (em dash)
         run: python scripts/check_copy_style.py
+
+      # 30.8 (Villen huomio): COPY-SYNC oli PELKKA IHMISEN KURINALAISUUS.
+      # CLAUDE.md:n COPY-SYNC-GATE on ollut saanto vuodesta, mutta ainoa
+      # koneellinen portti julkaistuille teksteille oli em dash yllä.
+      # `check_llms_txt_sync.py` on ollut olemassa 29.8 asti eika se ajanut
+      # missaan workflow'ssa, eli se suojasi vain silloin kun joku muisti
+      # ajaa sen kasin. Sama vikaluokka kuin em dash -portilla 27.7.
+      #
+      # Portti tarkistaa kaksi asiaa:
+      #   1. jokainen /fpl-sivun sisaltolohko on kuvattu llms.txt:ssa (GEO)
+      #   2. syvalinkkirivin LUVUT ja Free-vaitteet vastaavat sivun lohkoa,
+      #      eika rivilla ole aiemmin hylattyja sanamuotoja
+      - name: Copy sync (llms.txt vs /fpl, luvut ja vaitteet)
+        run: python scripts/check_llms_txt_sync.py

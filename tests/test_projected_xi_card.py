@@ -282,3 +282,67 @@ def test_html_has_numbers_one_decimal_and_no_em_dash():
     assert "28 Aug 17:30 UTC" in html and "card made 28 Aug 14:00 UTC" in html
     gate(html, [{"name": "Thiaw"}])
     assert payload["call"]["call"] == "projected_xi"
+
+
+# ---------------------------------------------------------------------------
+# Seurakatto top-15-listalla (Villen päätös 30.8)
+# ---------------------------------------------------------------------------
+# Ilman kattoa GW3-lista oli 8x MCI + 3x HUL viidestatoista, eli 11/15
+# kahdesta ottelusta. Malli ei ollut vaarassa (molemmat kohtaavat nousijan),
+# mutta FPL sallii korkeintaan 3 per seura, joten viisi rivia oli
+# saantojen takia pelikelvottomia.
+
+def _pl(i, name, club, xp, pos="MID"):
+    return {"id": i, "web_name": name, "team": club, "team_short": club[:3].upper(),
+            "pos": pos, "price": 5.0, "status": "a",
+            "gameweeks": [{"gw": 3, "xp": xp}]}
+
+
+def _by_gw(players, gw=3):
+    from scripts.render_projected_xi_card import top_projected
+    return top_projected(players, gw, n=15)
+
+
+def test_no_more_than_three_players_from_one_club():
+    import collections
+    from src.models.fpl_rate_team import MAX_PER_CLUB
+    # 8 pelaajaa samasta seurasta karjessa + tayte muualta
+    players = [_pl(i, f"City{i}", "Man City", 9.0 - i * 0.1) for i in range(8)]
+    players += [_pl(100 + i, f"Other{i}", f"Club{i}", 5.0 - i * 0.1) for i in range(20)]
+    got = _by_gw(players)
+    counts = collections.Counter(p["team"] for p in got)
+    assert len(got) == 15
+    assert max(counts.values()) <= MAX_PER_CLUB, counts
+    assert counts["Man City"] == MAX_PER_CLUB
+
+
+def test_the_three_kept_are_the_highest_scoring_of_that_club():
+    """Katto ei saa pudottaa vaaria: jaljelle jaavat kolme parasta."""
+    players = [_pl(i, f"City{i}", "Man City", 9.0 - i * 0.1) for i in range(8)]
+    players += [_pl(100 + i, f"Other{i}", f"Club{i}", 5.0 - i * 0.1) for i in range(20)]
+    kept = [p["web_name"] for p in _by_gw(players) if p["team"] == "Man City"]
+    assert kept == ["City0", "City1", "City2"], kept
+
+
+def test_negative_control_list_below_the_cap_is_untouched():
+    """Kontrolli: ilman tata testi lapaisisi toteutuksella joka pudottaa
+    rivejä muutenkin."""
+    players = [_pl(i, f"P{i}", f"Club{i % 10}", 9.0 - i * 0.1) for i in range(15)]
+    got = _by_gw(players)
+    assert len(got) == 15
+    assert [p["web_name"] for p in got] == [f"P{i}" for i in range(15)]
+
+
+def test_cap_uses_the_shared_constant_not_a_local_number():
+    """Kortin kaksi puoliskoa eivat saa ajautua eri saantoon.
+
+    Oikea puoli (free_optimum) kayttaa MAX_PER_CLUBia; vasemman on
+    kaytettava samaa. Jos joku muuttaa vakiota, taman on seurattava.
+    """
+    import collections
+    from unittest import mock
+    players = [_pl(i, f"City{i}", "Man City", 9.0 - i * 0.1) for i in range(8)]
+    players += [_pl(100 + i, f"Other{i}", f"Club{i}", 5.0 - i * 0.1) for i in range(20)]
+    with mock.patch("src.models.fpl_rate_team.MAX_PER_CLUB", 2):
+        counts = collections.Counter(p["team"] for p in _by_gw(players))
+    assert counts["Man City"] == 2, counts
