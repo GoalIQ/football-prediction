@@ -32,11 +32,27 @@ jobs:
           cache: npm
           cache-dependency-path: web/pro-spa/package-lock.json
 
-      - name: Build
+      - name: Asenna riippuvuudet
         working-directory: web/pro-spa
         run: |
           set -euo pipefail
           npm ci
+
+      # 30.8: svelte-check EI ajanut missaan. `npm run build` ei tyyppitarkista,
+      # joten 29.8 HOLD-TITLE-HORISONTTI shippasi kortin joka luki
+      # `verdict.gw_from`ia jota tyypissa ei ollut - 7 virhetta jotka nakyivat
+      # vain jos joku ajoi `npm run check` kasin. Deploy oli vihrea koko ajan.
+      # Portti tahan, ei erilliseen workflow'hun: sama ajo joka julkaisee.
+      - name: Portti - svelte-check (tyypit)
+        working-directory: web/pro-spa
+        run: |
+          set -euo pipefail
+          npm run check
+
+      - name: Build
+        working-directory: web/pro-spa
+        run: |
+          set -euo pipefail
           npm run build
 
       # Sama portti-idea kuin hub-deployssa: buildin on synnyttava oikeasti.

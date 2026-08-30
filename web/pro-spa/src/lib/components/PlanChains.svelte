@@ -8,7 +8,12 @@
 		fetchPlanChainsDraft,
 		type PlanChainsResponse
 	} from '$lib/fantasyTools';
-	import { runWithSquadFallback, NoSquadInputError, type SquadBasis } from '$lib/squadInput';
+	import {
+		runWithSquadFallback,
+		NoSquadInputError,
+		savedDraft15,
+		type SquadBasis
+	} from '$lib/squadInput';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard } from '$lib/shareCard';
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
@@ -32,6 +37,36 @@
 	let basedOn = $state<SquadBasis>('entry');
 	let needsDraft = $state(false);
 	let data = $state<PlanChainsResponse | null>(null);
+	/** PLAN-CHAINS-SQUAD-SOURCE (30.8): sama stale-tila kuin TransferPlannerissa.
+	 *  Stale-tilassa entry-kutsu ONNISTUU, joten runWithSquadFallbackin
+	 *  draft-polku ei laukea - tallennettu 15 tarjotaan nappina, ei lupauksena. */
+	let hasSavedDraft = $state(false);
+	let draftReason = $state<'not_public' | 'stale'>('not_public');
+	let stale = $derived(
+		data?.meta.squad_source?.stale === true &&
+			typeof data.meta.squad_source.gw === 'number'
+	);
+	let staleNext = $derived(
+		typeof data?.meta.squad_source?.deadline_gw === 'number'
+			? data.meta.squad_source.deadline_gw
+			: (data?.meta.squad_source?.gw ?? 0) + 1
+	);
+
+	async function useSavedDraft() {
+		const ids = savedDraft15();
+		if (!ids || loading) return;
+		loading = true;
+		error = null;
+		try {
+			data = await fetchPlanChainsDraft(ids, horizon);
+			basedOn = 'draft';
+			draftReason = 'stale';
+			capture('plan_chains_viewed', { source: 'pro_spa', horizon, basis: 'draft' });
+		} catch (err) {
+			error = err instanceof Error ? err.message : String(err);
+		}
+		loading = false;
+	}
 
 	let entryValid = $derived(/^\d{1,10}$/.test(fplEntry.entry.trim()));
 
@@ -52,6 +87,8 @@
 			);
 			data = run.data;
 			basedOn = run.basedOn;
+			draftReason = 'not_public';
+			hasSavedDraft = savedDraft15() !== null;
 			void persistEntry(id); // #66: talteen vasta onnistuneesta hausta
 			capture('plan_chains_viewed', { source: 'pro_spa', horizon, basis: run.basedOn });
 		} catch (err) {
@@ -193,7 +230,35 @@
 {:else if data && hero}
 	{#if basedOn === 'draft'}
 		<p class="notice-preseason">
-			Based on your saved draft of 15, because your squad is not public yet.
+			{#if draftReason === 'stale'}
+				Based on your saved draft of 15. FPL still shows the GW{data.meta.squad_source?.gw} squad for this entry.
+			{:else}
+				Based on your saved draft of 15, because your squad is not public yet.
+			{/if}
+		</p>
+	{:else if stale}
+		<!-- PLAN-CHAINS-SQUAD-SOURCE (30.8): sama rivi ja sama copy kuin
+		     TransferPlannerissa. FPL julkaisee kierroksen siirrot vasta
+		     deadlinen jalkeen, joten entry-polku ketjuttaa EDELLISEN
+		     kierroksen rungosta. Ehto ja deadline_gw tulevat backendista
+		     (meta.squad_source), sama lahde kuin rate-teamin picks_outdated. -->
+		<p class="notice-preseason">
+			<!-- Merkkijono on TASMALLEEN sama kuin TransferPlannerissa, koska se on
+			     jo kaynyt julkaisutarkistajan lapi (28.8). "These chains start from"
+			     olisi tarkempi kolmen ketjun nakymassa, mutta se olisi UUTTA
+			     julkista tekstia -> portti ensin. Kirjattu raporttiin. -->
+			<strong>This plan starts from your GW{data.meta.squad_source?.gw} squad.</strong>
+			FPL publishes GW{staleNext} squads a while after the deadline, so any transfers you
+			already made aren't in it.
+			{#if hasSavedDraft}
+				Your saved 15 from Rate my team is here if that's closer to your team now.
+				<button type="button" class="window-chip" onclick={useSavedDraft} disabled={loading}>
+					Use my saved 15
+				</button>
+			{:else}
+				Run this again once yours is public on the FPL site. In the meantime Rate my team
+				scores a hand-picked 15.
+			{/if}
 		</p>
 	{/if}
 	{#if data.meta.timeout_degraded}

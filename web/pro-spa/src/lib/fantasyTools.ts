@@ -114,6 +114,12 @@ export interface HoldVerdict {
 	/** 29.8: plannerin hittien maara koko suunnitelmassa (rate-team ei laheta). */
 	hits_taken?: number;
 	transfers_planned?: number;
+	/** 29.8 (HOLD-TITLE-HORISONTTI): kierrosten rajat, jotta copy voi nimeta
+	 *  kierrokset (GW3-GW7) eika pelkkaa maaraa. Backend lahettaa nama
+	 *  (fpl_planner.py:209, fpl_rate_team.py:1049); tyyppi jai 29.8 lisaamatta,
+	 *  jolloin svelte-check oli punainen 7 virhetta eika mikaan ajanut sita. */
+	gw_from?: number | null;
+	gw_to?: number | null;
 	message: string;
 }
 
@@ -847,6 +853,9 @@ export interface PlanChainsResponse {
 		timeout_degraded?: boolean;
 		heuristic?: string;
 		note?: string;
+		/** PLAN-CHAINS-SQUAD-SOURCE (29.8): sama sopimus kuin PlanResponsessa,
+		 *  jotta stale-rivi renderoityy identtisesti molemmissa tyokaluissa. */
+		squad_source?: { mode: 'entry' | 'manual'; gw: number; deadline_gw: number | null; stale: boolean };
 		[key: string]: unknown;
 	};
 	baseline_xp_no_transfers: number;

@@ -124,7 +124,7 @@
 				// renderoitynyt koskaan talla kortilla. HoldVerdictCard ja mobiilin
 				// jakokortti lukevat jo hits_taken:ia; tama yksi jai.
 				// 29.8 portti k7: subtitle nimeaa kierrokset, ei kierrosmaaraa.
-				const vSpan = (x: { gw_from?: number; gw_to?: number; horizon_gws: number }) =>
+				const vSpan = (x: { gw_from?: number | null; gw_to?: number | null; horizon_gws: number }) =>
 					x.gw_from != null && x.gw_to != null
 						? x.gw_from === x.gw_to
 							? `GW${x.gw_from}`
