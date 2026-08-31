@@ -191,6 +191,16 @@ jobs:
         if: steps.guard.outputs.proceed == 'true'
         run: python -m scripts.build_fpl_xp
 
+      # PORTTI (31.8): otsikkokierros on se johon voi VIELA vaikuttaa.
+      # Mitattu livena 31.8: deadline_gameweek 3, xp_dist.gw 2 kaikilla 519
+      # pelaajalla. Portti ajetaan HETI builderin jalkeen jotta se mittaa
+      # tuoretta tuotosta - vanhaa artefaktia vasten se olisi pysyvasti
+      # punainen, ja pysyvasti punainen portti tulee ohitetuksi
+      # (muisti: pysyvasti-punainen-putki-nielee-regression).
+      - name: Gate - xP headline gameweek is actionable
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m scripts.check_xp_headline_gw
+
       # 14.8: NAMA KAKSI PUUTTUIVAT CRONISTA JA JAIVAT 25.7:N TILAAN.
       # `fpl_cs_fdr.json` on koko kauden 380 fixturen CS%/FDR jota
       # `api/fantasy_edge.py` tarjoilee, ja se oli sovitettu VANHAAN

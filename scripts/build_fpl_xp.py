@@ -47,6 +47,7 @@ from scripts.build_fpl_phase0 import (
 )
 from src.data import fpl_api
 from src.data.loader import lataa_otteludata
+from src.models import fpl_gameweek as fplgw
 from src.models import fpl_xp as xp
 from src.models.fpl_context import (
     build_context,
@@ -724,6 +725,32 @@ def main(argv: list[str] | None = None) -> int:
         print("VIRHE: ei pelaamattomia fixtureita — ei kirjoiteta.")
         return 1
     horizon = [g for g in range(next_gw, next_gw + HORIZON_GW)]
+
+    # 🔴 OTSIKKOKIERROS EI OLE HORISONTIN ENSIMMAINEN KIERROS.
+    # `next_gw` on `min(pelaamaton fixture)`, eli KESKEN oleva kierros niin
+    # kauan kuin sen viimeinen ottelu on pelaamatta. Jakauma ja komponentit
+    # kuvasivat siksi kierrosta johon lukija ei voi enaa vaikuttaa: mitattu
+    # 31.8 livena `deadline_gameweek = 3` mutta `xp_dist.gw = 2` kaikilla
+    # 519 pelaajalla. Sama vikaluokka jonka `src/models/fpl_gameweek.py`
+    # dokumentoi neljasti; tama on seitsemas.
+    #
+    # Horisontin ALKUA ei siirreta tassa: `gameweeks[]` on 12 kuluttajan
+    # sopimus (gradaus, kortit, API, SPA) ja se on oma rivinsa. Otsikko on
+    # se mika oli vaarin.
+    headline_gw = fplgw.actionable_gameweek({
+        "deadline_gameweek": src.get("deadline_gw"),
+        "next_gameweek": next_gw,
+    })
+    if headline_gw not in horizon:
+        # Fail-loud: otsikko horisontin ulkopuolella tuottaisi tyhjat
+        # komponentit ja `xp_dist = None` KAIKILLE pelaajille, ja se nayttaisi
+        # rikkinaiselta putkelta eika vaaralta kierrokselta.
+        print(f"::warning::otsikkokierros GW{headline_gw} ei ole horisontissa "
+              f"{horizon} - kaytetaan GW{next_gw}")
+        headline_gw = next_gw
+    if headline_gw != next_gw:
+        print(f"      otsikkokierros GW{headline_gw} (horisontti alkaa GW{next_gw}: "
+              f"GW{next_gw} on kesken eika siihen voi enaa vaikuttaa)")
     lam_avg = neutral_lambda(dc, fixture_teams)
 
     # Phase 1b -kontekstikerros: nousijat (fixture-joukkueet − edellisen
@@ -1121,7 +1148,7 @@ def main(argv: list[str] | None = None) -> int:
         # joista komponentit lasketaan. Deterministinen siemen per pelaaja,
         # jotta kaksi ajoa samalla datalla antaa saman luvun.
         dist_samples = None
-        dist_rng = np.random.default_rng(1_000_003 * int(pid) + int(next_gw))
+        dist_rng = np.random.default_rng(1_000_003 * int(pid) + int(headline_gw))
         for g in horizon:
             ctxs = ctx_by_gw.get(g, {}).get(fid, [])
             opps = opp_by_gw.get(g, {}).get(fid, [])
@@ -1140,7 +1167,7 @@ def main(argv: list[str] | None = None) -> int:
                 # kysymys "jos hän pelaa 90" sisällä sitä.
                 full90_sum += xp.xp_full_90(pos, rates, c)
                 full90_n += 1
-                if g == next_gw:
+                if g == headline_gw:
                     for k, v in comp.items():
                         if k != "total":
                             headline_comps[k] = headline_comps.get(k, 0.0) + v
@@ -1257,7 +1284,7 @@ def main(argv: list[str] | None = None) -> int:
             # kun lohko puuttuu - ei tyhjaa lupausta.
             "form": _form_block(e, boot, preseason),
             # XP-DISTRIBUTION: None kun headline-GW on blank (ei fixturea).
-            "xp_dist": (xp.summarize_distribution(dist_samples, next_gw)
+            "xp_dist": (xp.summarize_distribution(dist_samples, headline_gw)
                         if dist_samples is not None else None),
             # EDGE: minuuttijakauma (ks. p_start_e-kommentti yllä).
             # p_start on sama kalibroitu tn kuin predicted_starts/100.
@@ -1289,7 +1316,7 @@ def main(argv: list[str] | None = None) -> int:
             player_row["minutes_method"] = "promoted_price_prior"
         if components is not None:
             player_row["components"] = components
-            player_row["components_gw"] = next_gw
+            player_row["components_gw"] = headline_gw
         players.append(player_row)
     players.sort(key=lambda p: -p["xp_horizon_total"])
     excluded.sort(key=lambda p: (-p["owned_pct"], p["web_name"]))

@@ -546,7 +546,16 @@ def main() -> int:
     if not gws:
         print("::warning::projektiossa ei kierroksia — ohitetaan.")
         return 0
-    gw = gws[0]
+    # 🔴 EI `gws[0]`: horisontin ensimmainen kierros on KESKEN oleva kierros
+    # niin kauan kuin sen viimeinen ottelu on pelaamatta. Mitattu 31.8:
+    # `gameweeks[0].gw` oli 2 samalla kun `deadline_gameweek` oli 3, eli
+    # selitykset olisivat koskeneet kierrosta johon lukija ei voi vaikuttaa.
+    # Sama vikaluokka kuin `render_captain`issa 30.8 (`fpl_gameweek.py`).
+    gw = fplgw.actionable_gameweek(meta)
+    if gw not in gws:
+        print(f"::warning::otsikkokierros GW{gw} ei ole projektiossa {gws} "
+              f"- kaytetaan GW{gws[0]}")
+        gw = gws[0]
     horizon = len(gws)
 
     players = select_players(payload, gw, args.top_n)
