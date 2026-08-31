@@ -295,6 +295,16 @@ jobs:
         continue-on-error: true
         run: python -m scripts.grade_gw_calls
 
+      # GW-RECAP (31.8): kokoaa gradatut luvut yhteen artefaktiin viikoittaista
+      # recap-muistiota ja X-postausta varten. Ajetaan gradausten JALKEEN,
+      # muuten se kokoaisi vanhat luvut. continue-on-error: recap on
+      # raportointia - sen kaatuminen ei saa pysayttaa projektioputkea.
+      - name: Build gameweek recap
+        id: build_recap
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_gw_recap
+
       - name: Freeze next gameweek xP at deadline window
         if: steps.guard.outputs.proceed == 'true'
         run: python -m scripts.freeze_fpl_xp_gw
@@ -526,4 +536,5 @@ jobs:
           [ "${{ steps.grade_xp.outcome }}" = "failure" ] && { echo "::error::grade_fpl_xp_gw FAILAA (xP-gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_squad.outcome }}" = "failure" ] && { echo "::error::grade_model_squad_gw FAILAA (mallirivin gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_calls.outcome }}" = "failure" ] && { echo "::error::grade_gw_calls FAILAA (kutsujen gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
+          [ "${{ steps.build_recap.outcome }}" = "failure" ] && { echo "::error::build_gw_recap FAILAA (viikkorecapin luvut jaavat vanhoiksi)"; fail=1; }
           exit $fail
