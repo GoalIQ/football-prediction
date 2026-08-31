@@ -61,8 +61,10 @@ def _get(c):
     return c.get(REITTI, headers={"X-Admin-Token": "adm"})
 
 
-def _users(n):
-    return [{"id": f"u{i}", "created_at": "2026-08-01T00:00:00Z"} for i in range(n)]
+def _users(n, comp=()):
+    return [{"id": f"u{i}", "created_at": "2026-08-01T00:00:00Z",
+             "user_metadata": ({"comp": True} if f"u{i}" in comp else {})}
+            for i in range(n)]
 
 
 # --- portti ---------------------------------------------------------------
@@ -76,33 +78,75 @@ def test_vaaralla_tokenilla_403(monkeypatch):
     assert c.get(REITTI, headers={"X-Admin-Token": "vaara"}).status_code == 403
 
 
-# --- luku -----------------------------------------------------------------
+# --- kolme amparia -------------------------------------------------------
 
-def test_laskee_konversion_summista(monkeypatch):
-    c = _wire(monkeypatch, _users(10), web=["u0", "u1"], app_prem=["u2"])
+def test_web_comp_ja_attribuoimaton_ovat_eri_amparit(monkeypatch):
+    c = _wire(monkeypatch, _users(10, comp=["u2"]), web=["u0", "u1"],
+              app_prem=["u2", "u3"])
     d = _get(c).json()
     assert d["total_accounts"] == 10
-    assert d["premium_web"] == 2 and d["premium_app"] == 1
-    assert d["premium_accounts"] == 3
-    assert d["conversion_pct"] == 30.0
+    assert d["premium_web"] == 2
+    assert d["premium_comp"] == 1
+    assert d["premium_unattributed"] == 1
+    assert d["premium_accounts"] == 4
+
+
+def test_comp_ei_ole_konversio_kummassakaan_rajassa(monkeypatch):
+    """Comp-tili ei ole konversio: kukaan ei maksanut siita."""
+    c = _wire(monkeypatch, _users(10, comp=["u2", "u3"]), web=["u0"],
+              app_prem=["u2", "u3"])
+    d = _get(c).json()
+    assert d["premium_comp"] == 2 and d["premium_unattributed"] == 0
+    assert d["conversion_pct_min"] == 10.0 and d["conversion_pct_max"] == 10.0
+
+
+def test_negatiivinen_kontrolli_comp_merkinnan_lisays_ei_nosta_konversiota(monkeypatch):
+    """DoD-vaatimus: comp-tilin merkitseminen saa vain LASKEA ylarajaa."""
+    ilman = _get(_wire(monkeypatch, _users(10), web=["u0"], app_prem=["u2"])).json()
+    kanssa = _get(_wire(monkeypatch, _users(10, comp=["u2"]), web=["u0"],
+                        app_prem=["u2"])).json()
+    assert ilman["conversion_pct_max"] == 20.0
+    assert kanssa["conversion_pct_max"] == 10.0
+    assert kanssa["conversion_pct_min"] == ilman["conversion_pct_min"] == 10.0
+
+
+def test_attribuoimaton_tekee_luvusta_valin(monkeypatch):
+    d = _get(_wire(monkeypatch, _users(10), web=["u0"], app_prem=["u2", "u3"])).json()
+    assert d["conversion_pct_min"] == 10.0
+    assert d["conversion_pct_max"] == 30.0
+    assert d["conversion_exact"] is False
+
+
+def test_kun_kaikki_on_attribuoitu_vali_sulkeutuu(monkeypatch):
+    d = _get(_wire(monkeypatch, _users(10, comp=["u2"]), web=["u0"], app_prem=["u2"])).json()
+    assert d["conversion_pct_min"] == d["conversion_pct_max"] == 10.0
+    assert d["conversion_exact"] is True
 
 
 def test_store_osto_ei_kaksoislaskeudu_web_tilauksen_kanssa(monkeypatch):
-    """`app` = is_premium ILMAN web-tilausta. u0 on molemmissa listoissa."""
     c = _wire(monkeypatch, _users(4), web=["u0"], app_prem=["u0"])
     d = _get(c).json()
-    assert d["premium_web"] == 1 and d["premium_app"] == 0
+    assert d["premium_web"] == 1 and d["premium_unattributed"] == 0
     assert d["premium_accounts"] == 1
+
+
+def test_comp_merkinta_ilman_premiumia_ei_lasketa(monkeypatch):
+    """Merkitty mutta ei is_premium -> ei kuulu yhteenkaan ampariin."""
+    d = _get(_wire(monkeypatch, _users(5, comp=["u4"]), web=["u0"], app_prem=["u1"])).json()
+    assert d["premium_comp"] == 0 and d["premium_accounts"] == 2
 
 
 def test_nolla_premiumia_on_nolla_ei_none(monkeypatch):
     d = _get(_wire(monkeypatch, _users(5))).json()
-    assert d["premium_accounts"] == 0 and d["conversion_pct"] == 0.0
+    assert d["premium_accounts"] == 0
+    assert d["conversion_pct_min"] == 0.0 and d["conversion_pct_max"] == 0.0
 
 
 def test_ei_yhtaan_tilia_ei_jaa_nollalla(monkeypatch):
     d = _get(_wire(monkeypatch, [])).json()
-    assert d["total_accounts"] == 0 and d["conversion_pct"] is None
+    assert d["total_accounts"] == 0
+    assert d["conversion_pct_min"] is None and d["conversion_pct_max"] is None
+    assert d["conversion_exact"] is False
 
 
 # --- fail-closed: nolla ei ole sama kuin "ei tietoa" ----------------------
@@ -144,3 +188,76 @@ def test_vastaus_ei_sisalla_yhtaan_kayttajatunnistetta(monkeypatch):
     teksti = json.dumps(_get(c).json())
     for kielletty in ("u0", "u1", "u2", "@", "email"):
         assert kielletty not in teksti, kielletty
+
+
+# --- comp-merkinta (POST /api/admin/comp-premium) -------------------------
+#
+# Merkinta on ainoa tapa erottaa comp store-ostosta: sita EI voi paatella
+# nykydatasta jalkikateen, koska comp on kirjoitettu kasin is_premiumiin.
+
+MERKINTA = "/api/admin/comp-premium"
+
+
+def _wire_put(monkeypatch, users, put_status=200):
+    c = _wire(monkeypatch, users)
+    nahty = {}
+
+    def fake_put(url, json=None, headers=None, timeout=None):
+        nahty["url"], nahty["json"] = url, json
+        return _Resp({}, put_status)
+
+    monkeypatch.setattr(m.requests, "put", fake_put)
+    return c, nahty
+
+
+def _kayttaja(email, meta=None):
+    return {"id": "u0", "email": email, "created_at": "2026-08-01T00:00:00Z",
+            "user_metadata": meta or {}}
+
+
+def test_merkinta_vaatii_admin_tokenin(monkeypatch):
+    c, _ = _wire_put(monkeypatch, [_kayttaja("a@b.c")])
+    assert c.post(MERKINTA, json={"email": "a@b.c"}).status_code == 403
+
+
+def test_merkinta_asettaa_comp_lipun(monkeypatch):
+    c, nahty = _wire_put(monkeypatch, [_kayttaja("a@b.c")])
+    r = c.post(MERKINTA, json={"email": "a@b.c"},
+               headers={"X-Admin-Token": "adm"})
+    assert r.status_code == 200
+    assert r.json()["comp_before"] is False and r.json()["comp_now"] is True
+    assert nahty["json"]["user_metadata"]["comp"] is True
+
+
+def test_merkinta_ei_pudota_muuta_metadataa(monkeypatch):
+    """creator-coden opetus: kasin editointi ylikirjoittaa herkasti `ref`in."""
+    c, nahty = _wire_put(monkeypatch, [
+        _kayttaja("a@b.c", {"ref": "WOLFY", "creator_code": "WOLFY"})])
+    c.post(MERKINTA, json={"email": "a@b.c"}, headers={"X-Admin-Token": "adm"})
+    meta = nahty["json"]["user_metadata"]
+    assert meta["ref"] == "WOLFY" and meta["creator_code"] == "WOLFY"
+    assert meta["comp"] is True
+
+
+def test_merkinnan_poisto_jattaa_muun_metadatan(monkeypatch):
+    c, nahty = _wire_put(monkeypatch, [
+        _kayttaja("a@b.c", {"comp": True, "ref": "DAZ"})])
+    r = c.post(MERKINTA, json={"email": "a@b.c", "comp": False},
+               headers={"X-Admin-Token": "adm"})
+    assert r.json()["comp_before"] is True and r.json()["comp_now"] is False
+    assert "comp" not in nahty["json"]["user_metadata"]
+    assert nahty["json"]["user_metadata"]["ref"] == "DAZ"
+
+
+def test_tuntematon_sahkoposti_on_404_ei_hiljainen_ok(monkeypatch):
+    c, _ = _wire_put(monkeypatch, [_kayttaja("a@b.c")])
+    r = c.post(MERKINTA, json={"email": "ei@ole.c"},
+               headers={"X-Admin-Token": "adm"})
+    assert r.status_code == 404
+
+
+def test_supabasen_virhe_kirjoituksessa_on_502(monkeypatch):
+    c, _ = _wire_put(monkeypatch, [_kayttaja("a@b.c")], put_status=500)
+    r = c.post(MERKINTA, json={"email": "a@b.c"},
+               headers={"X-Admin-Token": "adm"})
+    assert r.status_code == 502

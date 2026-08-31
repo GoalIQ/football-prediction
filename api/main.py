@@ -3193,16 +3193,40 @@ def admin_conversion(request: Request):
                                    "This is not zero subscribers.")
 
     total = len(ids)
-    web, app_ = len(paid["web"]), len(paid["app"])
-    premium = web + app_
+    # 🔴 KOLME AMPARIA, EI KAHTA. Ensimmainen versio (31.8) palautti
+    # `premium_app` = is_premium ilman web-tilausta ja DIGEST rendersi sen
+    # muodossa "store 15". Se oli vaite jota data ei kanna: comp-Premiumit on
+    # annettu KASIN Supabaseen eivatka ne eroa store-ostosta millaan tavalla
+    # jota tama data naytaisi. Ampari on siksi nimeltaan `unattributed`, ja
+    # se kutistuu itsestaan sita mukaa kun tileja merkitaan.
+    comp_ids = {u["id"] for u in users
+                if (u.get("user_metadata") or {}).get("comp") is True
+                and u.get("id")}
+    web_set, rest = paid["web"], paid["app"]
+    comp_set = rest & comp_ids
+    unattributed = rest - comp_ids
+    web, comp, unatt = len(web_set), len(comp_set), len(unattributed)
+    premium = web + comp + unatt
     window = free_premium_window_active()
+
+    # Konversio on VALI, ei luku, niin kauan kuin yksikin tili on
+    # attribuoimatta. Alaraja laskee vain todistetusti maksavat (web-tilaus);
+    # ylaraja olettaa jokaisen attribuoimattoman maksaneeksi. Kun
+    # `unattributed` on 0, rajat ovat sama luku ja `exact` on tosi.
+    # Comp-tilit EIVAT ole kummassakaan rajassa: ne eivat ole konversioita.
+    lo = round(100.0 * web / total, 2) if total else None
+    hi = round(100.0 * (web + unatt) / total, 2) if total else None
+
     return {
         "measured_at": datetime.now(timezone.utc).isoformat(),
         "total_accounts": total,
         "premium_accounts": premium,
         "premium_web": web,
-        "premium_app": app_,
-        "conversion_pct": round(100.0 * premium / total, 2) if total else None,
+        "premium_comp": comp,
+        "premium_unattributed": unatt,
+        "conversion_pct_min": lo,
+        "conversion_pct_max": hi,
+        "conversion_exact": total > 0 and unatt == 0,
         "window_active": window,
         "comparable": not window,
         "caveat": (
@@ -3211,10 +3235,68 @@ def admin_conversion(request: Request):
             "the product. Do not compare a window number against a non-window "
             "one."
             if window else
-            "Aggregate only. premium_app is profiles.is_premium without a web "
-            "subscription, so store purchases are counted but not attributable."
+            "Aggregate only. premium_unattributed is profiles.is_premium with "
+            "no web subscription and no comp marker: a store purchase or an "
+            "unmarked comp account, and this data cannot tell them apart. "
+            "Mark comp accounts with POST /api/admin/comp-premium and the "
+            "range closes."
         ),
     }
+
+
+class CompPremiumRequest(BaseModel):
+    email: str
+    comp: bool = True
+
+
+@app.post("/api/admin/comp-premium")
+def set_comp_premium(req: CompPremiumRequest, request: Request):
+    """Merkitse tili comp-Premiumiksi (`user_metadata.comp`).
+
+    🔴 MIKSI MERKINTA TARVITAAN. Villen antamat comp-Premiumit (luojille) on
+    kirjoitettu kasin `profiles.is_premium`iin, eika niissa ole mitaan mista
+    ne erottaisi store-ostosta. `/api/admin/conversion` laski ne siksi 31.8
+    samaan lukuun store-ostojen kanssa, ja konversio nousi ilman etta kukaan
+    oli maksanut. Merkinta on ainoa tapa erottaa ne: sita EI voi paatella
+    nykydatasta jalkikateen.
+
+    Sama varovaisuus kuin `creator-code`ssa: metadata LUETAAN, yksi avain
+    muuttuu ja kokonaisuus kirjoitetaan takaisin, jotta `ref` ja
+    `creator_code` eivat katoa.
+    """
+    require_admin(request)
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise HTTPException(status_code=503, detail="Supabase is not configured.")
+    email = (req.email or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="email is required")
+
+    key = SUPABASE_SERVICE_ROLE_KEY
+    headers = {"apikey": key, "Authorization": f"Bearer {key}",
+               "Content-Type": "application/json"}
+    users = _supabase_users()
+    if users is None:
+        raise HTTPException(status_code=503,
+                            detail="Could not read the account list just now.")
+    user = next((u for u in users
+                 if (u.get("email") or "").strip().lower() == email), None)
+    if not user:
+        raise HTTPException(status_code=404, detail="No account with that email.")
+
+    meta = dict(user.get("user_metadata") or {})
+    previous = meta.get("comp") is True
+    if req.comp:
+        meta["comp"] = True
+    else:
+        meta.pop("comp", None)
+    r = requests.put(f"{SUPABASE_URL}/auth/v1/admin/users/{user['id']}",
+                     json={"user_metadata": meta}, headers=headers, timeout=15)
+    if r.status_code not in (200, 201):
+        raise HTTPException(status_code=502,
+                            detail=f"Supabase update failed ({r.status_code})")
+    print(f"[comp] {email} comp {previous} -> {bool(req.comp)}")
+    return {"email": email, "user_id": user["id"],
+            "comp_before": previous, "comp_now": bool(req.comp)}
 
 
 @app.get("/api/admin/free-window-report",
