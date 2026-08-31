@@ -14,6 +14,7 @@ track recordin voi julkaista:
 from __future__ import annotations
 
 import datetime as _dt
+import pathlib
 
 from scripts.build_gw_recap import (build, calls_block, headline_miss,
                                     running_record)
@@ -179,3 +180,22 @@ def test_kierrokset_ovat_jarjestyksessa():
     doc = build(None, {"gameweeks": [_squad(3, 70, 60), _squad(1, 41, 50),
                                      _squad(2, 93, 66)]}, None, NYT)
     assert [g["gw"] for g in doc["gameweeks"]] == [1, 2, 3]
+
+
+# --- artefakti paasee repoon ----------------------------------------------
+
+def test_gw_recap_ei_ole_gitignoressa():
+    """🔴 `/data/*` on ignoroitu ja poikkeukset luetellaan kasin. Ilman
+    `!/data/gw_recap.json`-rivia artefakti ei paase repoon, S13 ei nae sita
+    raw.githubista, ja koko peliviikkokadenssi on inertti - hiljaa.
+
+    `.gitignore` dokumentoi taman ansan itse: edelliset poikkeukset loytyivat
+    vasta ajamalla workflow kasin (muisti: gitignored-fix-silent-regression).
+    """
+    gi = (pathlib.Path(__file__).resolve().parents[1] / ".gitignore"
+          ).read_text(encoding="utf-8")
+    rivit = [r.strip() for r in gi.splitlines()]
+    assert "!/data/gw_recap.json" in rivit
+    # Negatiivinen kontrolli: testi ei saa lapaista pelkalla merkkijonolla
+    # kommentissa - poikkeuksen on oltava OMALLA rivillaan.
+    assert "/data/*" in rivit

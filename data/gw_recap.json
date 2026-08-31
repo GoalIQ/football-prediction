@@ -1,0 +1,60 @@
+{
+ "meta": {
+  "generated_at": "2026-08-31T16:33:08+00:00",
+  "sources": {
+   "gw_calls": true,
+   "model_squad_gw_scores": true,
+   "fpl_xp_gw_accuracy": true
+  },
+  "complete": true
+ },
+ "running": {
+  "gameweeks": 1,
+  "gw_list": [
+   1
+  ],
+  "total_diff": -9,
+  "avg_diff": -9.0,
+  "beat_average": 0,
+  "below_average": 1,
+  "per_gw": [
+   {
+    "gw": 1,
+    "points": 41,
+    "average": 50,
+    "diff": -9
+   }
+  ]
+ },
+ "gameweeks": [
+  {
+   "gw": 1,
+   "provisional": false,
+   "squad": {
+    "points": 41,
+    "average": 50,
+    "diff": -9,
+    "bench_points": 12,
+    "transfer_cost": 0,
+    "chip": null,
+    "captain_id": 426,
+    "captain_points_added": 2,
+    "graded_at": "2026-08-25T13:12:37+00:00"
+   },
+   "calls": null,
+   "accuracy": {
+    "mae": 1.757,
+    "n": 490,
+    "bias": 0.194
+   },
+   "headline_miss": {
+    "segment": "haul",
+    "n": 19,
+    "bias": 9.41,
+    "mae": 9.41,
+    "x_mae": 5.4,
+    "direction": "aliarvio"
+   }
+  }
+ ]
+}
