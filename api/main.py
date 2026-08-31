@@ -3154,6 +3154,69 @@ def affiliate_cohort(request: Request):
     }
 
 
+@app.get("/api/admin/conversion",
+         description="Free-to-premium conversion as one aggregate number. No emails, no per-user rows. Requires an admin token.")
+def admin_conversion(request: Request):
+    """Tavoitefunktio 1: ilmais->Premium-konversio, yhtena aggregaattilukuna.
+
+    🔴 MIKSI TAMA ON OMA ENDPOINT. Autopilotin DIGEST on sanonut 29.8
+    lahtien "ilmais->Premium-konversio: mitataan sessiossa", eli
+    ENSISIJAISTA tavoitefunktiota ei ole mitattu kertaakaan
+    automaattisesti. Silmukka ei voi optimoida mittaria jota se ei nae.
+    `affiliate-report` ja `affiliate-cohort` palauttavat luojakohtaisia
+    rivejä; CI ei tarvitse eika saa niita. Tama palauttaa VAIN summia.
+
+    🔴 EI SERVICE-AVAINTA CI:HIN. Render pitaa Supabase-avaimen ja tekee
+    haun; CI lahettaa vain ADMIN_TOKENin. Sama linja kuin
+    `model-squad-scores`illa.
+
+    🔴 ILMAISIKKUNA VAARISTAA LUVUN, ja siksi vastaus sanoo sen itse.
+    Kun Premium on ilmainen webissa, kukaan ei osta sita webista: konversio
+    painuu eika se kerro tuotteesta mitaan. `window_active` on tosi silloin,
+    ja `comparable` on epatosi. Ilman tata kentta DIGEST nayttaisi putoavan
+    kayran ja ajaisi jahtaamaan haamua.
+
+    Nolla ei ole sama kuin "ei tietoa": jos jompikumpi haku epaonnistuu,
+    vastaus on 503 eika luku.
+    """
+    require_admin(request)
+    users = _supabase_users()
+    if users is None:
+        raise HTTPException(status_code=503,
+                            detail="Could not read the account list just now. "
+                                   "This is not zero accounts.")
+    ids = [u["id"] for u in users if u.get("id")]
+    paid = _paid_user_ids(ids)
+    if paid is None:
+        raise HTTPException(status_code=503,
+                            detail="Could not read subscription state just now. "
+                                   "This is not zero subscribers.")
+
+    total = len(ids)
+    web, app_ = len(paid["web"]), len(paid["app"])
+    premium = web + app_
+    window = free_premium_window_active()
+    return {
+        "measured_at": datetime.now(timezone.utc).isoformat(),
+        "total_accounts": total,
+        "premium_accounts": premium,
+        "premium_web": web,
+        "premium_app": app_,
+        "conversion_pct": round(100.0 * premium / total, 2) if total else None,
+        "window_active": window,
+        "comparable": not window,
+        "caveat": (
+            "Premium is free on the web during the free window, so nobody buys "
+            "it there and the rate drops for a reason that says nothing about "
+            "the product. Do not compare a window number against a non-window "
+            "one."
+            if window else
+            "Aggregate only. premium_app is profiles.is_premium without a web "
+            "subscription, so store purchases are counted but not attributable."
+        ),
+    }
+
+
 @app.get("/api/admin/free-window-report",
          description="Accounts created during the free window, measured against the daily median of the fourteen days before it. Requires an admin token.")
 def free_window_report(request: Request):
