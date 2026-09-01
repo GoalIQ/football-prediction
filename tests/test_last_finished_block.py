@@ -140,3 +140,87 @@ def test_puuttuva_toteuma_on_null_eika_nolla(wired, monkeypatch):
     b = rt.last_finished_block(1, BS, {}, "2026/27")
     kapteeni = next(r for r in b["players"] if r["id"] == 1)
     assert kapteeni["points"] is None, "nolla olisi vaite, puuttuva on totuus"
+
+# --- ottelutulostaulu (1.9) -------------------------------------------------
+
+def test_vs_model_lasketaan_molemmista(wired, monkeypatch):
+    monkeypatch.setattr(rt, "model_squad_gw",
+                        lambda g: {"entry_id": 999, "points": 50, "fpl_average": 50,
+                                   "provisional": False})
+    monkeypatch.setattr(rt, "_entry_identity", lambda e, g: {
+        "manager_name": "Testi Nimi", "team_name": "Testi FC",
+        "overall_rank": 1000, "rank_change": 250})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["model_points"] == 50
+    assert b["vs_model"] == 61 - 50
+    assert b["manager_name"] == "Testi Nimi"
+    assert b["overall_rank"] == 1000
+    assert b["rank_change"] == 250
+
+
+def test_oma_rivi_ei_pelaa_itseaan_vastaan(wired, monkeypatch):
+    """Jos katsottava entry ON mallin rivi, ottelua ei ole. "108 vs 108,
+    voitit 0:lla" olisi holynpolya joka nayttaisi rikkinaiselta."""
+    monkeypatch.setattr(rt, "model_squad_gw",
+                        lambda g: {"entry_id": 1, "points": 61, "fpl_average": 50,
+                                   "provisional": False})
+    monkeypatch.setattr(rt, "_entry_identity", lambda e, g: {
+        "manager_name": None, "team_name": None,
+        "overall_rank": None, "rank_change": None})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["model_points"] is None
+    assert b["vs_model"] is None
+
+
+def test_puuttuva_mallirivi_pudottaa_vain_vertailun(wired, monkeypatch):
+    """NEGATIIVINEN KONTROLLI: puolikas ottelu ei ole ottelu, mutta se ei saa
+    pudottaa koko lohkoa - pistemaara ja kentta ovat yha oikein."""
+    monkeypatch.setattr(rt, "model_squad_gw", lambda g: None)
+    monkeypatch.setattr(rt, "_entry_identity", lambda e, g: {
+        "manager_name": None, "team_name": None,
+        "overall_rank": None, "rank_change": None})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["model_points"] is None and b["vs_model"] is None
+    assert b["points"] == 61
+    assert len(b["players"]) == 3
+
+
+def test_identiteetin_kaatuminen_ei_kaada_lohkoa(wired, monkeypatch):
+    """Nimi ja sijoitus ovat vapaaehtoisia: FPL:n entry- tai history-kutsun
+    kaatuminen saa viedä ne kentat, ei koko kierroksen tulosta."""
+    def boom(path):
+        raise rt.RateTeamError(503, "upstream down")
+    monkeypatch.setattr(rt, "_fetch_fpl", boom)
+    monkeypatch.setattr(rt, "model_squad_gw", lambda g: None)
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b is not None
+    assert b["manager_name"] is None and b["overall_rank"] is None
+    assert b["points"] == 61
+
+
+def test_sijoitusmuutos_on_positiivinen_kun_noustiin(monkeypatch):
+    """FPL:n sijoitusluku PIENENEE kun nousee. Kentta kaantaa merkin, jotta
+    kayttoliittyman ei tarvitse muistaa sita - jos merkki kaantyisi vain
+    UI:ssa, toinen pinta piirtaisi nuolen vaarin paain."""
+    hist = {"current": [{"event": 1, "overall_rank": 500_000},
+                        {"event": 2, "overall_rank": 120_000}]}
+    def fake(path):
+        if path.endswith("/history/"):
+            return hist
+        return {"player_first_name": "A", "player_last_name": "B", "name": "T"}
+    monkeypatch.setattr(rt, "_fetch_fpl", fake)
+    out = rt._entry_identity(1, 2)
+    assert out["overall_rank"] == 120_000
+    assert out["rank_change"] == 380_000, "nousu on positiivinen luku"
+
+
+def test_ensimmaisella_kierroksella_ei_ole_muutosta(monkeypatch):
+    def fake(path):
+        if path.endswith("/history/"):
+            return {"current": [{"event": 1, "overall_rank": 500_000}]}
+        return {}
+    monkeypatch.setattr(rt, "_fetch_fpl", fake)
+    out = rt._entry_identity(1, 1)
+    assert out["overall_rank"] == 500_000
+    assert out["rank_change"] is None
+

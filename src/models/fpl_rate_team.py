@@ -1450,6 +1450,78 @@ def transfer_horizon_gws(pool: list[dict], xp_data: dict, target_gw: int,
 # autosubit ja chipit ovat siina valmiiksi. Me laskemme vain xP-puolen.
 
 
+# --- Ottelutulostaulu (1.9.2026, Villen tilaus) ------------------------------
+# "Voitit oman odotusarvosi 57:lla" on MEIDAN mittarimme, ei kayttajan
+# saavutus, ja se kutsuu vastauksen "eli mallinne on pielessa". Jaettava luku
+# on se jossa on VASTUSTAJA: mallilla on oma rivi jonka pisteet julkaistaan
+# joka kierros, ja sivulla on jo Beat the Model -miniliiga. Kortti on sen
+# ottelun tulostaulu, ja poikkeama on siina twisti eika otsikko.
+
+_MODEL_SQUAD_PATH = Path(__file__).resolve().parents[2] / "data" / "model_squad_gw_scores.json"
+
+
+def model_squad_gw(gw: int) -> dict | None:
+    """Mallin oman rivin tulos kierrokselta, committatusta lokista.
+
+    Ei uutta verkkokutsua: sama tiedosto jonka `grade_model_squad` kirjoittaa.
+    None kun kierrosta ei ole lokissa -> vertailu jatetaan pois kokonaan
+    (puolikas ottelu ei ole ottelu).
+    """
+    try:
+        doc = json.loads(_MODEL_SQUAD_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    for r in (doc.get("gameweeks") or []):
+        if r.get("gw") == gw:
+            return {
+                "entry_id": (doc.get("meta") or {}).get("entry_id"),
+                "points": r.get("points"),
+                "fpl_average": r.get("fpl_average"),
+                "provisional": bool(r.get("provisional")),
+            }
+    return None
+
+
+def _entry_identity(entry_id: int, gw: int) -> dict:
+    """Nimi ja sijoitusmuutos kortille.
+
+    🔴 Kuvan aihe on IHMINEN, ei joukkue. Referenssikuvassa (LiveFPL) ylhaalla
+    on managerin nimi ja sijoitus vihrealla nuolella; ilman niita kuva ei ole
+    kenenkaan eika sita jaeta.
+
+    Kaksi kutsua, molemmat 10 min cachessa ja molemmat vapaaehtoisia: jos
+    kumpi tahansa kaatuu, kortti renderoityy ilman naita kenttia eika koko
+    lohko katoa.
+    """
+    out: dict = {"manager_name": None, "team_name": None,
+                 "overall_rank": None, "rank_change": None}
+    try:
+        e = _fetch_fpl(f"/entry/{entry_id}/")
+        first = (e.get("player_first_name") or "").strip()
+        last = (e.get("player_last_name") or "").strip()
+        out["manager_name"] = (f"{first} {last}".strip() or None)
+        out["team_name"] = (e.get("name") or "").strip() or None
+    except RateTeamError:
+        pass
+    try:
+        h = _fetch_fpl(f"/entry/{entry_id}/history/")
+        rows = {int(r["event"]): r for r in (h.get("current") or [])
+                if isinstance(r.get("event"), int)}
+        now = rows.get(gw) or {}
+        prev = rows.get(gw - 1) or {}
+        r_now = now.get("overall_rank")
+        r_prev = prev.get("overall_rank")
+        if isinstance(r_now, int):
+            out["overall_rank"] = r_now
+            # Positiivinen = NOUSI (sijoitusluku pieneni). Nuolen suunta
+            # luetaan tasta, ei erotuksen etumerkista kayttoliittymassa.
+            if isinstance(r_prev, int):
+                out["rank_change"] = r_prev - r_now
+    except RateTeamError:
+        pass
+    return out
+
+
 def last_finished_gameweek(bootstrap: dict) -> int | None:
     """Suurin kierros jonka FPL itse merkitsee valmiiksi JA tarkistetuksi.
 
@@ -1542,6 +1614,15 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     hist = picks.get("entry_history") or {}
     points = hist.get("points")
     points = points if isinstance(points, int) else None
+
+    ident = _entry_identity(entry_id, gw)
+    model = model_squad_gw(gw)
+    # Jos kayttaja ON mallin rivi, ottelua ei ole. "121 vs 121, voitit 0:lla"
+    # olisi holynpolya, joten vertailu jatetaan pois.
+    if model and model.get("entry_id") == entry_id:
+        model = None
+    model_points = (model or {}).get("points")
+    model_points = model_points if isinstance(model_points, int) else None
     xp_round = round(xp_total, 2)
     fmeta = fpl_actuals.frozen_meta(gw) or {}
     ev = _event_meta(bootstrap, gw)
@@ -1557,6 +1638,19 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         "points_on_bench": (hist.get("points_on_bench")
                             if isinstance(hist.get("points_on_bench"), int) else None),
         "chip": picks.get("active_chip"),
+        # --- ottelutulostaulu ---
+        "manager_name": ident["manager_name"],
+        "team_name": ident["team_name"],
+        "overall_rank": ident["overall_rank"],
+        # Positiivinen = nousi. None = edellista kierrosta ei ole (GW1) tai
+        # historia ei ollut saatavilla.
+        "rank_change": ident["rank_change"],
+        "model_points": model_points,
+        # Positiivinen = kayttaja voitti mallin. None kun jompikumpi puuttuu:
+        # puolikas ottelu ei ole ottelu.
+        "vs_model": ((points - model_points)
+                     if points is not None and model_points is not None
+                     else None),
         "average_entry_score": (ev.get("average_entry_score")
                                 if isinstance(ev.get("average_entry_score"), int) else None),
         "xp": xp_round if complete else None,

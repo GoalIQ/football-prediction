@@ -144,6 +144,16 @@ export interface LastFinishedGw {
 	points_on_bench: number | null;
 	chip: string | null;
 	average_entry_score: number | null;
+	/** --- ottelutulostaulu --- */
+	manager_name: string | null;
+	team_name: string | null;
+	overall_rank: number | null;
+	/** Positiivinen = NOUSI. Backend kaantaa merkin, jotta pinnat eivat piirra
+	 *  nuolta eri suuntiin. null = ei edellista kierrosta. */
+	rank_change: number | null;
+	model_points: number | null;
+	/** Positiivinen = kayttaja voitti mallin. null = puolikas ottelu. */
+	vs_model: number | null;
 	xp: number | null;
 	diff: number | null;
 	complete: boolean;

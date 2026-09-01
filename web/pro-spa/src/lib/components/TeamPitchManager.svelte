@@ -467,41 +467,77 @@
 		{/if}
 
 		{#if lastFinished && lastFinished.points != null}
-			<!-- LUCK-PITCH (1.9): kierroksen tulos mallia vasten. Luvut tulevat
-			     backendin last_finished-lohkosta, eivat what-if-tilasta. -->
-			<p class="label" style="margin-bottom:var(--s-2)">
-				GW{lastFinished.gw} vs the model
-			</p>
-			<div class="luck-row">
-				<div class="luck-cell">
-					<span class="luck-key">Points</span>
-					<span class="luck-val">{lastFinished.points}</span>
+			<!-- OTTELUTULOSTAULU (1.9). Jaettava luku on se jossa on vastustaja:
+			     "voitit oman odotusarvosi 57:lla" on meidan mittarimme eika
+			     kayttajan saavutus. Poikkeama on twisti, ei otsikko. -->
+			<div class="score-card">
+				<div class="score-head">
+					<span class="score-gw">Gameweek {lastFinished.gw}</span>
+					{#if lastFinished.manager_name || lastFinished.team_name}
+						<span class="score-who">
+							{lastFinished.manager_name ?? ''}{#if lastFinished.manager_name && lastFinished.team_name}<span
+									class="dot">·</span
+								>{/if}{lastFinished.team_name ?? ''}
+						</span>
+					{/if}
 				</div>
-				<div class="luck-cell">
-					<span class="luck-key">Projected</span>
-					<span class="luck-val"
-						>{lastFinished.xp != null ? lastFinished.xp.toFixed(1) : '—'}</span
-					>
+
+				<div class="score-row">
+					<div class="score-side">
+						<span class="score-key">You</span>
+						<span class="score-val">{lastFinished.points}</span>
+					</div>
+					{#if lastFinished.model_points != null}
+						<div class="score-side">
+							<span class="score-key">Model</span>
+							<span class="score-val model">{lastFinished.model_points}</span>
+						</div>
+					{/if}
 				</div>
-				<div class="luck-cell">
-					<span class="luck-key"
-						>{lastFinished.diff == null || lastFinished.diff >= 0
-							? 'Over model'
-							: 'Under model'}</span
-					>
-					<span class="luck-val" class:under={(lastFinished.diff ?? 0) < 0}
-						>{lastFinished.diff == null
-							? '—'
-							: `${lastFinished.diff >= 0 ? '+' : ''}${lastFinished.diff.toFixed(1)}`}</span
-					>
-				</div>
-			</div>
-			{#if lastFinished.average_entry_score != null}
-				<p class="luck-note">
-					FPL average that week: {lastFinished.average_entry_score} points.
+
+				{#if lastFinished.vs_model != null}
+					<p class="score-verdict" class:lost={lastFinished.vs_model < 0}>
+						{#if lastFinished.vs_model > 0}
+							You beat the model by {lastFinished.vs_model}
+						{:else if lastFinished.vs_model < 0}
+							The model beat you by {-lastFinished.vs_model}
+						{:else}
+							Level with the model
+						{/if}
+					</p>
+				{/if}
+
+				<p class="score-meta">
+					{#if lastFinished.average_entry_score != null}
+						FPL average {lastFinished.average_entry_score}
+					{/if}
+					{#if lastFinished.overall_rank != null}
+						<span class="dot">·</span> Overall rank
+						{lastFinished.overall_rank.toLocaleString('en-GB')}
+						{#if lastFinished.rank_change != null && lastFinished.rank_change !== 0}
+							<span class="rank-move" class:down={lastFinished.rank_change < 0}
+								>{lastFinished.rank_change > 0 ? '▲' : '▼'}
+								{Math.abs(lastFinished.rank_change).toLocaleString('en-GB')}</span
+							>
+						{/if}
+					{/if}
 				</p>
-			{/if}
-			<p class="luck-note">Projection frozen before the deadline.</p>
+
+				{#if lastFinished.xp != null}
+					<!-- Poikkeama PIENEMPANA: se synnyttaa kommentit, se ei myy
+					     postausta. -->
+					<p class="score-xp">
+						Your XI was worth {lastFinished.xp.toFixed(1)} xP
+						{#if lastFinished.diff != null}
+							<span class="xp-diff" class:under={lastFinished.diff < 0}
+								>({lastFinished.diff >= 0 ? '+' : ''}{lastFinished.diff.toFixed(1)})</span
+							>
+						{/if}
+					</p>
+				{/if}
+				<p class="score-legend">🎲 got lucky · 💀 got robbed</p>
+				<p class="score-note">Projection frozen before the deadline.</p>
+			</div>
 		{/if}
 
 		<div class="xi-head">
@@ -1069,42 +1105,109 @@
 		user-select: none;
 		z-index: 0;
 	}
-	.luck-row {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+	/* --- ottelutulostaulu (1.9) ---
+	   Kaksi lukua vierekkain, ei kolmea saraketta. Vertailu on OTTELU eika
+	   mittaristo: kaksi numeroa ja yksi lause on se mita ihminen kaappaa. */
+	.score-card {
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
+		padding: var(--s-3);
+		margin-bottom: var(--s-3);
+	}
+	.score-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--s-2);
 		margin-bottom: var(--s-2);
-		overflow: hidden;
 	}
-	.luck-cell {
-		display: grid;
-		gap: 2px;
-		padding: var(--s-2) var(--s-3);
-	}
-	.luck-cell + .luck-cell {
-		border-left: 1px solid var(--border);
-	}
-	.luck-key {
+	.score-gw {
 		font-size: 10px;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--text-muted);
 	}
-	.luck-val {
-		font-size: var(--step-1);
-		font-weight: 800;
-		font-variant-numeric: tabular-nums;
+	.score-who {
+		font-size: var(--step--1);
+		font-weight: 700;
+		color: var(--text);
 	}
-	.luck-val.under {
+	.dot {
+		color: var(--text-muted);
+		padding: 0 0.35em;
+	}
+	.score-row {
+		display: flex;
+		gap: var(--s-5, 32px);
+		align-items: flex-end;
+	}
+	.score-side {
+		display: grid;
+		gap: 1px;
+	}
+	.score-key {
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.score-val {
+		font-size: clamp(30px, 6vw, 44px);
+		font-weight: 800;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+		color: var(--amber);
+	}
+	.score-val.model {
+		color: var(--text-muted);
+	}
+	.score-verdict {
+		margin: var(--s-2) 0 0;
+		font-size: var(--step-0);
+		font-weight: 700;
+		color: #7de2d1;
+	}
+	.score-verdict.lost {
 		color: var(--negative, #ff8a5c);
 	}
-	.luck-note {
-		margin: 0 0 var(--s-3);
+	.score-meta {
+		margin: var(--s-1) 0 0;
+		font-size: 11px;
+		color: var(--text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.rank-move {
+		color: #7de2d1;
+		font-weight: 700;
+	}
+	.rank-move.down {
+		color: var(--negative, #ff8a5c);
+	}
+	.score-xp {
+		margin: var(--s-2) 0 0;
+		font-size: 11px;
+		color: var(--text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.xp-diff {
+		color: #7de2d1;
+		font-weight: 700;
+	}
+	.xp-diff.under {
+		color: var(--negative, #ff8a5c);
+	}
+	.score-legend {
+		margin: var(--s-2) 0 0;
+		font-size: 11px;
+		color: var(--text-muted);
+	}
+	.score-note {
+		margin: 2px 0 0;
 		font-size: 11px;
 		font-style: italic;
 		color: var(--text-muted);
 	}
+
 	.actuals {
 		margin-top: var(--s-3);
 		border: 1px solid var(--border);
