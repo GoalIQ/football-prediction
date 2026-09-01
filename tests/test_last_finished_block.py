@@ -224,3 +224,35 @@ def test_ensimmaisella_kierroksella_ei_ole_muutosta(monkeypatch):
     assert out["overall_rank"] == 500_000
     assert out["rank_change"] is None
 
+
+def test_isoin_heilahdus_nimetaan_kun_yksi_selittaa_neljasosan(wired):
+    """GW2:sta mitattu: kapteeni vei 67 % koko erosta. Ilman tata rivia
+    "+57 yli mallin" on mystinen luku."""
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    # xp 11.0, points 61 -> diff 50.0. Kapteeni: (23-4.0)*2 = 38.0 = 76 %.
+    assert b["biggest_swing"] == {"web_name": "Kapteeni", "contribution": 38.0}
+
+
+def test_penkkipelaaja_ei_voi_olla_heilahdus(wired, monkeypatch):
+    """Kerroin 0 = ei vaikuta summaan, joten se ei voi selittaa eroa vaikka
+    olisi tehnyt eniten pisteita."""
+    monkeypatch.setattr(rt.fpl_actuals, "points_for", lambda g, s=None: {1: 4, 2: 4, 3: 60})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["biggest_swing"] is None or b["biggest_swing"]["web_name"] != "Penkki"
+
+
+def test_tasaisesti_jakautunut_ero_ei_saa_nimea(wired, monkeypatch):
+    """NEGATIIVINEN KONTROLLI: jos mikaan yksittainen pelaaja ei selita
+    neljasosaa, "suurin naista" olisi mielivaltainen eika havainto."""
+    monkeypatch.setattr(rt.fpl_actuals, "points_for", lambda g, s=None: {1: 5, 2: 5, 3: 5})
+    monkeypatch.setattr(rt.fpl_actuals, "frozen_xp_for", lambda g: {1: 4.5, 2: 4.5, 3: 4.5})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["biggest_swing"] is None
+
+
+def test_vaillinainen_freeze_pudottaa_myos_heilahduksen(wired, monkeypatch):
+    """Jos erotusta ei anneta, ei anneta senkaan selitysta."""
+    monkeypatch.setattr(rt.fpl_actuals, "frozen_xp_for", lambda g: {1: 4.0})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["complete"] is False and b["biggest_swing"] is None
+

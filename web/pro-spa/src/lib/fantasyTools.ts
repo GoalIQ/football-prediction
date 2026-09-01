@@ -151,6 +151,8 @@ export interface LastFinishedGw {
 	/** Positiivinen = NOUSI. Backend kaantaa merkin, jotta pinnat eivat piirra
 	 *  nuolta eri suuntiin. null = ei edellista kierrosta. */
 	rank_change: number | null;
+	/** Yksi pelaaja joka selittaa >= 25 % erosta. null = ero jakautui. */
+	biggest_swing: { web_name: string | null; contribution: number } | null;
 	model_points: number | null;
 	/** Positiivinen = kayttaja voitti mallin. null = puolikas ottelu. */
 	vs_model: number | null;

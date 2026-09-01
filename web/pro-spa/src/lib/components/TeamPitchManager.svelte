@@ -535,6 +535,17 @@
 						{/if}
 					</p>
 				{/if}
+				{#if lastFinished.biggest_swing}
+					<!-- Kapteeninauha tuplaa poikkeaman, joten otsikkoluku on
+					     rakenteellisesti yhden valinnan varassa. Nimetty rivi tekee
+					     siita luettavan. -->
+					<p class="score-swing">
+						{lastFinished.biggest_swing.web_name} alone was
+						{lastFinished.biggest_swing.contribution >= 0 ? '+' : ''}{lastFinished.biggest_swing.contribution.toFixed(
+							1
+						)} of it.
+					</p>
+				{/if}
 				<p class="score-legend">🎲 got lucky · 💀 got robbed</p>
 				<p class="score-note">Projection frozen before the deadline.</p>
 			</div>
@@ -1195,6 +1206,12 @@
 	}
 	.xp-diff.under {
 		color: var(--negative, #ff8a5c);
+	}
+	.score-swing {
+		margin: 2px 0 0;
+		font-size: 11px;
+		color: var(--text);
+		font-variant-numeric: tabular-nums;
 	}
 	.score-legend {
 		margin: var(--s-2) 0 0;

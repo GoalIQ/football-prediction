@@ -1624,6 +1624,26 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     model_points = (model or {}).get("points")
     model_points = model_points if isinstance(model_points, int) else None
     xp_round = round(xp_total, 2)
+
+    # ISOIN HEILAHDUS (1.9, Villen tilaus). Mitattu GW2:sta: kapteeni
+    # B.Fernandes vei +38.08 koko +57.15:sta eli 67 %. Kapteeninauha TUPLAA
+    # poikkeaman, joten otsikkoluku on rakenteellisesti yhden valinnan varassa;
+    # ilman tata rivia "+57 yli mallin" on mystinen luku, sen kanssa se on
+    # luettava lause.
+    #
+    # Rivi annetaan vain kun yksi pelaaja selittaa vahintaan neljasosan koko
+    # erosta. Muuten se olisi mielivaltainen "suurin naista" eika havainto.
+    swing = None
+    if complete and points is not None:
+        cands = [(r["web_name"], round((r["points"] - r["xp_frozen"]) * r["multiplier"], 2))
+                 for r in rows
+                 if r["points"] is not None and r["xp_frozen"] is not None
+                 and r["multiplier"] > 0]
+        if cands:
+            top = max(cands, key=lambda c: abs(c[1]))
+            total = abs(points - xp_round)
+            if total > 0 and abs(top[1]) / total >= 0.25:
+                swing = {"web_name": top[0], "contribution": top[1]}
     fmeta = fpl_actuals.frozen_meta(gw) or {}
     ev = _event_meta(bootstrap, gw)
     return {
@@ -1645,6 +1665,8 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         # Positiivinen = nousi. None = edellista kierrosta ei ole (GW1) tai
         # historia ei ollut saatavilla.
         "rank_change": ident["rank_change"],
+        # Yksi pelaaja joka selittaa >= 25 % erosta. None = ero jakautui.
+        "biggest_swing": swing,
         "model_points": model_points,
         # Positiivinen = kayttaja voitti mallin. None kun jompikumpi puuttuu:
         # puolikas ottelu ei ole ottelu.
