@@ -9,39 +9,52 @@
  * 10 ja 2 ovat FPL-yhteison omat rajat (haul / blank), 5.0 on xP:n taso jolla
  * pelaaja on valittu NIMENOMAAN tuottamaan. Ne eivat ole viritettyja dataan.
  */
-export const LUCK_HAUL_PTS = 10;
-export const LUCK_BLANK_PTS = 2;
-export const LUCK_HIGH_XP = 5;
+/**
+ * MITATTU, ei arvattu. Ensimmainen versio vertasi pisteita absoluuttisiin
+ * rajoihin (haul >= 10, blank <= 2) ja xP:ta rajaan 5.0. Aineistossa
+ * (GW1-GW2, 607 pelaaja-kierrosta) xP >= 5.0 tayttyi 4 kertaa 607:sta ja
+ * suurin freeze oli 5.78 - kynnys ei jakanut populaatiota vaan oli seina,
+ * ja merkin sai 61 % pelaajista (6,8 / XI). Syy oli skaalavirhe: xP:n
+ * mediaani on ~2 kun "haul" on 10+.
+ *
+ * Nyt tuomio luetaan pelaajan omasta POIKKEAMASTA. Kynnykset ovat
+ * epasymmetriset koska jakauma on: alisuoritus on rajattu, ylisuoritus ei
+ * (p05 -2.9, p50 -0.1, p95 +7.0). Valitut arvot: 1,6 merkkia / XI, 43 yli /
+ * 48 alle. Jos naita muuttaa, aja mittaus uudelleen.
+ *
+ * `tests/test_luck_parity.py` kaatuu jos nama eroavat mobiilista.
+ */
+export const LUCK_OVER_DIFF = 6;
+export const LUCK_UNDER_DIFF = 2.5;
 
-export type LuckVerdict = 'called' | 'lucky' | 'robbed' | 'cold' | null;
+/**
+ * Kaksi tuomiota, ei nelja. "Malli osui" ja "ansaittu nolla" poistettiin
+ * mittauksen perusteella: ensimmainen oli mahdoton, toinen oli perustaso
+ * (125 osumaa 151:sta).
+ */
+export type LuckVerdict = 'lucky' | 'robbed' | null;
 
 /**
  * @param xp     PINNATTU ennuste (deadline-freeze), pelaajan oma luku.
  * @param actual Toteutuneet pisteet, pelaajan oma luku.
  *
- * 🔴 Molemmat ovat KERTOIMETTOMIA. Kapteenin tuplaus kertoo kapteeninauhasta,
- * ei siita osuiko malli, ja tuplattuna sama suoritus ylittaisi haul-rajan
- * puolet helpommin. Kerroin kuuluu summaan, ei tuomioon.
- *
- * `null` on tarkoituksellinen enemmisto: jos jokainen pelaaja saa merkin,
- * merkki on koriste eika tuomio.
+ * 🔴 Molemmat KERTOIMETTOMIA: kapteenin tuplaus kaksinkertaistaisi poikkeaman
+ * automaattisesti. Kerroin kuuluu summaan, ei tuomioon.
  */
 export function luckVerdict(
 	xp: number | null | undefined,
 	actual: number | null | undefined
 ): LuckVerdict {
 	if (typeof xp !== 'number' || typeof actual !== 'number') return null;
-	const expected = xp >= LUCK_HIGH_XP;
-	if (actual >= LUCK_HAUL_PTS) return expected ? 'called' : 'lucky';
-	if (actual <= LUCK_BLANK_PTS) return expected ? 'robbed' : 'cold';
+	const diff = actual - xp;
+	if (diff >= LUCK_OVER_DIFF) return 'lucky';
+	if (diff <= -LUCK_UNDER_DIFF) return 'robbed';
 	return null;
 }
 
 export const LUCK_MARK: Record<Exclude<LuckVerdict, null>, string> = {
-	called: '🎯',
 	lucky: '🎲',
-	robbed: '💀',
-	cold: '🧊'
+	robbed: '💀'
 };
 
 export interface SquadLuck {

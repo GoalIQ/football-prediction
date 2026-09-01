@@ -22,6 +22,12 @@ tarkemmalta kuin se on (kirjattu vika, korjattu 22.8).
 kuin `best_call`: rehellisyys on kayttoliittyma, ei alaviite. Mitattu
 ensimmaisella ajolla etta mallin OMA joukkue yliennustettiin 14,6 pisteella -
 jos se ei nay tuotteessa, tuote valehtelee.
+
+🔗 SAMA VAITE TOISESTA LAHTEESTA: `fpl_rate_team.last_finished_block` laskee
+saman kierroksen tuloksen pitch-nakymaa ja jakokorttia varten. Muoto eroaa
+tarkoituksella (siella rivit ovat KERTOIMETTOMIA, jotta tuomiomerkki lasketaan
+pelaajan omasta suorituksesta eika kapteeninauhasta), mutta SUMMAT eivat saa
+erota: `tests/test_luck_review_agreement.py` kaatuu jos ne erkanevat.
 """
 from __future__ import annotations
 

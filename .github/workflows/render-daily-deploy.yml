@@ -26,6 +26,17 @@ on:
     # Kerran vuorokaudessa aamuyöllä UTC — edellisillan ottelut on reconciloitu
     # (accuracy-log ajaa 3 h välein) → aamun deploy vie tuoreen track-recordin.
     - cron: "45 4 * * *"
+    # 1.9.2026: TOINEN AJO ILTAPAIVALLA. buildFilterin vuoto korjattiin samana
+    # paivana ja `fpl/**` lisattiin ignoredPathsiin, joten myos player-gw.json
+    # ja mallirivin gradaustulos kulkevat Renderiin vain taman workflown
+    # mukana. Yhdella ajolla live-pinnan `provisional`-lippu olisi voinut olla
+    # jopa 24 h vanha: se kirjoitetaan gradaushetken tilasta, ja FPL vahvistaa
+    # bonukset tyypillisesti kierroksen jalkeisena paivana kesken paivan.
+    # Mitattu 1.9: rivi sanoi "provisional" viela klo 16 vaikka FPL:n
+    # data_checked oli kaantynyt - sivu vaitti "FPL hasn't confirmed bonus
+    # points yet" kun se oli jo vahvistanut.
+    # Kustannus: ~30 buildia/kk lisaa = ~66 min. Yhteensa ~90 min / 500.
+    - cron: "45 16 * * *"
   workflow_dispatch: {}   # manuaalinen laukaisu (esim. heti tärkeän tuloksen jälkeen)
 
 concurrency:
