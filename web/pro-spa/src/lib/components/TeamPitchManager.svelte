@@ -12,6 +12,7 @@
 	import type { RatedPlayer } from '$lib/fantasyTools';
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
+	import { luckVerdict, squadLuck, LUCK_MARK } from '$lib/luck';
 	import TeamKit from './TeamKit.svelte';
 
 	let {
@@ -213,6 +214,45 @@
 		return base.reduce((s, p) => s + xpOf(p), 0) + (cap ? xpOf(cap) : 0);
 	});
 	const editDelta = $derived(gwXp - baselineXp);
+
+	/* LUCK-PITCH (1.9): rivin summa toteumana ja pinnattuna ennusteena.
+	 *
+	 * 🔴 VAIN LADATULLE RIVILLE. `xi` on what-if-tila: kayttaja voi vaihtaa
+	 * penkkia, muodostelmaa ja kapteenia. Sellaisen rivin summa ei ole hanen
+	 * kierroksensa tulos, ja pistemaara sen ylla olisi vaite kierroksesta jota
+	 * ei pelattu. Lohko piiloutuu heti kun rivi eroaa ladatusta, ja tilalle
+	 * tulee yksi lause joka kertoo miksi. Sama saanto mobiilissa. */
+	const isLoadedLineup = $derived.by(() => {
+		const loaded = players.filter((p) => p.in_xi).map((p) => p.id).sort((a, b) => a - b);
+		const cur = [...xiIds].sort((a, b) => a - b);
+		const loadedCap = players.find((p) => p.is_captain)?.id ?? null;
+		return (
+			loaded.length === cur.length &&
+			loaded.every((id, i) => id === cur[i]) &&
+			loadedCap === effCaptain
+		);
+	});
+	const luckRows = $derived.by(() =>
+		xi
+			.map((p) => ({ item: p, xp: frozenFor(p), actual: actualFor(p) }))
+			.filter((r): r is { item: RatedPlayer; xp: number; actual: number } =>
+				typeof r.xp === 'number' && typeof r.actual === 'number'
+			)
+	);
+	const luck = $derived(
+		isLoadedLineup
+			? squadLuck(luckRows, (p: RatedPlayer) => (p.id === effCaptain ? 2 : 1))
+			: null
+	);
+	const luckHiddenByEdit = $derived(!isLoadedLineup && luckRows.length > 0);
+	/** Solun tuomio ja erotus. Kierros on RATKENNUT vasta kun molemmat luvut
+	 *  ovat olemassa; puolikas vertailu jaa vanhaan muotoon. */
+	function settledOf(p: RatedPlayer): { actual: number; xp: number; diff: number } | null {
+		const a = actualFor(p);
+		const f = frozenFor(p);
+		if (typeof a !== 'number' || typeof f !== 'number') return null;
+		return { actual: a, xp: f, diff: a - f };
+	}
 	const selectedInXi = $derived(selectedId != null && xiIds.includes(selectedId));
 
 	/** FPL-säännöt: 11 pelaajaa, 1 MV, DEF 3–5, MID 2–5, FWD 1–3. */
@@ -431,6 +471,33 @@
 			</p>
 		{/if}
 
+		{#if luck}
+			<!-- LUCK-PITCH (1.9): kierroksen tulos mallia vasten. Nakyy vain
+			     ladatulle riville, ks. isLoadedLineup. -->
+			<p class="label" style="margin-bottom:var(--s-2)">This week vs the model</p>
+			<div class="luck-row">
+				<div class="luck-cell">
+					<span class="luck-key">Points</span>
+					<span class="luck-val">{luck.points}</span>
+				</div>
+				<div class="luck-cell">
+					<span class="luck-key">Projected</span>
+					<span class="luck-val">{luck.xp.toFixed(1)}</span>
+				</div>
+				<div class="luck-cell">
+					<span class="luck-key">{luck.diff >= 0 ? 'Over model' : 'Under model'}</span>
+					<span class="luck-val" class:under={luck.diff < 0}
+						>{luck.diff >= 0 ? '+' : ''}{luck.diff.toFixed(1)}</span
+					>
+				</div>
+			</div>
+			<p class="luck-note">Projection frozen before the deadline.</p>
+		{:else if luckHiddenByEdit}
+			<p class="luck-note">
+				You have changed the lineup. Reload your team to see the round you actually played.
+			</p>
+		{/if}
+
 		<div class="xi-head">
 			<p class="label" style="margin:0">Starting XI</p>
 			{#if premium}
@@ -447,6 +514,11 @@
 		     sarakkeessa. -->
 		<div class="pitch-row">
 		<div class="pitch">
+			<!-- LUCK-PITCH (1.9): vesileima NURMEEN, ei alatunnisteeseen.
+			     Alatunniste on juuri se joka rajataan pois ruutukaappauksesta;
+			     nurmea ei voi. Sama mekanismi jolla LiveFPL:n merkki matkaa
+			     jokaisessa jaetussa kuvassa. -->
+			<span class="turfmark" aria-hidden="true">GOALIQ</span>
 			<!-- 31.7 (Villen palaute "saataisko kentästä parempi" + tarkennus):
 			     PUOLIKAS kenttä kuten OfficialFPL/FFScout — maali+boksit ylhäällä,
 			     alareuna = keskiviiva keskiympyränkaarineen → FWD-rivi istuu
@@ -478,24 +550,51 @@
 								/>
 								{#if effCaptain === p.id}<span class="badge">C</span>{/if}
 								{#if effCaptain !== p.id && effVice === p.id}<span class="badge vice">V</span>{/if}
+								<!-- LUCK-PITCH (1.9): tuomio kitin VASEMPAAN ylakulmaan.
+								     Kapteenibadge on oikealla ja saatavuuslippu alhaalla,
+								     joten kolmas merkki tarvitsee oman kulmansa. Merkki on
+								     harvinainen: tavallinen kierros ei saa yhtaan. -->
+								{#if luckVerdict(frozenFor(p), actualFor(p)) != null}
+									<span class="mark" aria-hidden="true"
+										>{LUCK_MARK[luckVerdict(frozenFor(p), actualFor(p))!]}</span
+									>
+								{/if}
 							</span>
 							<!-- 22.8: nimi + xP tummalla laatalla nurmen päällä —
 							     tekstit suoraan raidoilla lukivat halvalta ja
 							     heikosti (vrt. FPL:n oma pinta, jossa laatta). -->
 							<span class="plabel">
 								<span class="pname">{p.web_name}</span>
-								<span class="pnums">
-									<span class="pxp">{xpOf(p).toFixed(1)}</span>
-									<!-- 22.8 (Villen tilaus): toteutuneet pisteet mallin
-									     odotuksen vierella. Naytetaan VAIN naytettavalle
-									     GW:lle ja vain kun luku on olemassa; puuttuva
-									     jatetaan tyhjaksi eika nollata. -->
-									{#if actualFor(p) != null}
-										<span class="ppts" title="Actual FPL points, GW{selGw ?? defaultGw}"
-											>{actualFor(p)} pts</span
+								{#if settledOf(p)}
+									{@const sp = settledOf(p)!}
+									<!-- Ratkennut kierros: toteuma on OTSIKKOLUKU ja pinnattu
+									     ennuste sen alla erotuksen kanssa. Kaksi samankokoista
+									     lukua vierekkain luettiin saman suureen osiksi. -->
+									<span class="pbig" title="Actual FPL points, GW{selGw ?? defaultGw}"
+										>{sp.actual}</span
+									>
+									<span class="pnums">
+										<span class="pxpfrozen" title="Projection frozen before the deadline"
+											>{sp.xp.toFixed(1)}</span
 										>
-									{/if}
-								</span>
+										<span class="pdiff" class:under={sp.diff < 0}
+											>{sp.diff >= 0 ? '+' : ''}{sp.diff.toFixed(1)}</span
+										>
+									</span>
+								{:else}
+									<span class="pnums">
+										<span class="pxp">{xpOf(p).toFixed(1)}</span>
+										<!-- 22.8 (Villen tilaus): toteutuneet pisteet mallin
+										     odotuksen vierella. Naytetaan VAIN naytettavalle
+										     GW:lle ja vain kun luku on olemassa; puuttuva
+										     jatetaan tyhjaksi eika nollata. -->
+										{#if actualFor(p) != null}
+											<span class="ppts" title="Actual FPL points, GW{selGw ?? defaultGw}"
+												>{actualFor(p)} pts</span
+											>
+										{/if}
+									</span>
+								{/if}
 							</span>
 							{#if typeof p.chance_next === 'number' && p.chance_next < 100}
 								<span
@@ -547,7 +646,13 @@
 										title={p.news ?? ''}
 									>{p.chance_next === 0 ? 'OUT' : `${p.chance_next}%`}</span>
 								{/if}
-								{#if actualFor(p) != null}
+								{#if settledOf(p)}
+									{@const sp = settledOf(p)!}
+									<span class="ppts">{sp.actual}</span>
+									<span class="pdiff" class:under={sp.diff < 0}
+										>{sp.diff >= 0 ? '+' : ''}{sp.diff.toFixed(1)}</span
+									>
+								{:else if actualFor(p) != null}
 									<span class="ppts">{actualFor(p)} pts</span>
 								{/if}
 							</span>
@@ -909,6 +1014,92 @@
 		color: #7de2d1;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* --- LUCK-PITCH (1.9) -------------------------------------------------
+	   Ratkennut kierros: toteuma on otsikkoluku, pinnattu ennuste ja erotus
+	   sen alla pienempina. Kokoero kertoo kumpi luku on tulos ja kumpi
+	   mittari; samankokoisina ne luettiin saman suureen osiksi. */
+	.pbig {
+		font-size: 15px;
+		font-weight: 800;
+		color: #7de2d1;
+		font-variant-numeric: tabular-nums;
+		line-height: 1.15;
+	}
+	.pxpfrozen {
+		font-size: 10px;
+		color: var(--text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.pdiff {
+		font-size: 10px;
+		font-weight: 700;
+		color: #7de2d1;
+		font-variant-numeric: tabular-nums;
+	}
+	.pdiff.under {
+		color: var(--negative, #ff8a5c);
+	}
+	/* Tuomio kitin vasempaan ylakulmaan (kapteenibadge on oikealla). */
+	.mark {
+		position: absolute;
+		top: -6px;
+		left: -6px;
+		font-size: 15px;
+		line-height: 1;
+		pointer-events: none;
+	}
+	/* Vesileima nurmeen. Rajattukin ruutukaappaus kantaa merkin. */
+	.turfmark {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: clamp(38px, 9vw, 72px);
+		font-weight: 800;
+		letter-spacing: 0.3em;
+		color: rgb(11 10 9 / 0.055);
+		pointer-events: none;
+		user-select: none;
+		z-index: 0;
+	}
+	.luck-row {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		margin-bottom: var(--s-2);
+		overflow: hidden;
+	}
+	.luck-cell {
+		display: grid;
+		gap: 2px;
+		padding: var(--s-2) var(--s-3);
+	}
+	.luck-cell + .luck-cell {
+		border-left: 1px solid var(--border);
+	}
+	.luck-key {
+		font-size: 10px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.luck-val {
+		font-size: var(--step-1);
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+	}
+	.luck-val.under {
+		color: var(--negative, #ff8a5c);
+	}
+	.luck-note {
+		margin: 0 0 var(--s-3);
+		font-size: 11px;
+		font-style: italic;
+		color: var(--text-muted);
 	}
 	.actuals {
 		margin-top: var(--s-3);
