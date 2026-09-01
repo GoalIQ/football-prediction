@@ -284,6 +284,39 @@ def test_html_has_numbers_one_decimal_and_no_em_dash():
     assert payload["call"]["call"] == "projected_xi"
 
 
+def test_right_panel_footnote_describes_the_right_panel_not_the_left():
+    """QUEUE: KORTTI-BEST15-KAKSIMERKITYS. Ennen: oikean paneelin (XI +
+    penkki) alaviite sanoi "Best 15 ... under the same squad rules", mutta
+    "Best 15" on VASEMMAN paneelin top-lista (TOP_N=15). Alaviite kuvasi siis
+    naapuripaneelia eika omaansa."""
+    html, _ = build_html(_data(_players()), now=BEFORE)
+    assert "Best XI inside the 100.0m budget" in html
+    assert "cheapest cover that still projects minutes" in html
+
+
+def test_negative_control_best15_wording_does_not_return_on_the_right():
+    """Kontrolli: vanha, kahta paneelia sekoittava sanamuoto ei saa palata."""
+    html, _ = build_html(_data(_players()), now=BEFORE)
+    assert "Best 15 for this gameweek alone under the same squad rules" not in html
+
+
+def test_entry_footer_says_this_is_not_the_models_own_team():
+    """QUEUE: KORTTI-ENTRY-EROTUS. Ennen: "The model plays too: entry
+    116920" nimesi entry 116920:n tasan talla kortilla, jonka oikea puoli on
+    free-hit-XI jota malli EI pelaa (wildcard GW2:ssa). Uusi teksti sanoo
+    eksplisiittisesti etta tama EI ole mallin oma joukkue."""
+    html, _ = build_html(_data(_players()), now=BEFORE)
+    assert "Not the model&#39;s own team" in html
+    assert "entry 116920" in html
+
+
+def test_negative_control_the_model_plays_too_wording_does_not_return():
+    """Kontrolli: vanha sanamuoto, joka nimeaa entryn korjaamatta
+    yhdistysta, ei saa palata."""
+    html, _ = build_html(_data(_players()), now=BEFORE)
+    assert "The model plays too" not in html
+
+
 # ---------------------------------------------------------------------------
 # Seurakatto top-15-listalla (Villen päätös 30.8)
 # ---------------------------------------------------------------------------

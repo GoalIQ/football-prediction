@@ -131,7 +131,6 @@ def test_negative_control_non_blank_row_still_shows_numbers():
 # Se ei koskaan ajanut `fdr_rows_from_teams`:ia, eli portti mittasi eri
 # koodipolkua kuin tuotanto: testi oli vihrea samalla kun oikea buildi
 # pudotti doublen toisen ottelun (muisti: portti-voi-mitata-eri-koodipolkua).
-import pytest  # noqa: E402
 
 
 def _team(name, fixtures, avg_cs, avg_fdr, n):
@@ -148,28 +147,17 @@ def test_games_column_comes_from_the_real_row_builder():
     assert (cs, fdr, games) == ("35.0", "2.00", "2")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): fdr_rows_from_teams kayttaa "
-    "dictia jonka avain on gameweek, joten doublen jalkimmainen ottelu "
-    "ylikirjoittaa edellisen ja katoaa ruudukosta. Kun tama korjataan, "
-    "testi XPASSaa ja pytest huutaa -> poista xfail-merkinta."))
 def test_double_gameweek_keeps_both_fixtures_in_the_grid():
-    """Se mita ruudukon PITAISI tehda doublessa.
+    """KORJATTU 1.9 (QUEUE: FDR-GRID-DGW). Ennen: rivilla oli yksi solu ja
 
-    Nyt: rivilla on yksi solu ja toinen ottelu on olemassa vain
-    keskiarvossa ja Games-luvussa. Sivun copy ei siksi saa luvata etta
-    double nakyy ruudukossa.
-    """
+    toinen ottelu oli olemassa vain keskiarvossa ja Games-luvussa. Nyt
+    `fdr_rows_from_teams` palauttaa molemmat otteluita `cells`-listassa
+    (xfail-merkinta poistettu, testi XPASSasi ennen tata siivousta)."""
     from scripts.build_fpl_page import fdr_rows_from_teams
     teams = [_team("Doublers", [_fx(2, 30.0), _fx(2, 40.0)], 35.0, 2.0, 2)]
     rows = fdr_rows_from_teams(teams, [2])
     kept = [c for c in rows[0]["cells"] if c is not None]
     assert len(kept) == 2, "doublen molempien otteluiden pitaisi sailya"
-
-
-# (Poistettu 30.8: testi kuvasi tilaa jossa DGW renderoityy vajaana mutta
-# Games paljastaa ottelun. Fail-closed-vahti tekee siita tilasta
-# saavuttamattoman, joten testi olisi kuvannut kaytosta jota ei ole.)
 
 
 # ---------------------------------------------------------------------------
@@ -223,21 +211,47 @@ def test_negative_control_raw_value_below_the_line_is_not_promoted():
     assert "is-hard" not in by_num["21"], by_num["21"]
 
 
-def test_build_fails_closed_when_a_double_gameweek_would_hide_a_fixture():
-    """Vahti: rivilla enemman otteluita kuin soluja -> buildi kaatuu.
+def test_double_gameweek_renders_both_fixtures_in_one_cell_via_real_build_path():
+    """1.9, FDR-GRID-DGW: proof from the REAL path (fdr_rows_from_teams ->
+    fdr_grid_html), not hand-fed HTML (muisti: portti-voi-mitata-eri-koodipolkua).
 
-    Ilman tata sivu nayttaisi 6 solua, Games-sarake 7, ja se seitsemas
-    ottelu olisi olemassa vain keskiarvossa. Mikaan ei huutaisi.
+    Rivilla on double GW2:ssa, yksittainen ottelu GW3:ssa ja blank GW4:ssa.
+    Tama todistaa etta double ei enaa hukkaa ottelua eika luo ylimaaraista
+    saraketta (rivin <td>-maara pysyy tasan gws-listan mittaisena + team +
+    kolme yhteenvetosolua), ja etta yhden ottelun sarakkeet renderoivat
+    tismalleen kuten ennenkin.
     """
-    import pytest as _pt
-    from scripts.build_fpl_page import fdr_rows_from_teams
-    teams = [_team("Doublers", [_fx(2, 30.0), _fx(2, 40.0)], 35.0, 2.0, 2)]
-    with _pt.raises(SystemExit, match="FDR-GRID-DGW"):
-        fdr_rows_from_teams(teams, [2])
+    from scripts.build_fpl_page import fdr_grid_html, fdr_rows_from_teams
+    teams = [_team("Doublers", [_fx(2, 30.0), _fx(2, 40.0), _fx(3, 50.0)],
+                    35.0, 2.0, 3)]
+    rows = fdr_rows_from_teams(teams, [2, 3, 4])
+    html = fdr_grid_html({"gws": [2, 3, 4], "fdr_rows": rows})
+    row = re.search(r'<td class="team">Doublers</td>.*?</tr>', html)
+    assert row, "riviä ei löytynyt"
+    tail = row.group(0)
+    # team + 3 GW-saraketta (GW2 double, GW3 single, GW4 blank) + 3 yhteenvetosolua
+    assert tail.count("<td") == 7, f"sarakemaara muuttui: {tail!r}"
+    assert tail.count('<a class="fdr"') == 3, (
+        "GW2:n molemmat ottelut + GW3:n yksi ottelu = 3 linkkia yhteensa")
+    assert "40%" in tail and "30%" in tail, "molemmat GW2-otteluista puuttuvat solusta"
+    assert "50%" in tail, "GW3:n yksittäinen ottelu ei säilynyt"
+    assert '<td class="num">-</td>' in tail, "GW4:n blank ei renderoinut viivaa"
 
 
-def test_negative_control_normal_row_does_not_trip_the_dgw_guard():
-    """Kontrolli: vahti ei saa kaataa tavallista riviä."""
+def test_negative_control_single_fixture_cell_html_is_unchanged():
+    """Kontrolli: DGW-korjaus ei saa muuttaa tavallisen (ei-double) solun
+    HTML-muotoa. Ilman tata edellinen testi lapaisisi myos toteutuksella
+    joka rikkoo GW3:n yhden ottelun solun (esim. kietoo senkin dgw-haaraan)."""
+    from scripts.build_fpl_page import fdr_grid_html, fdr_rows_from_teams
+    teams = [_team("Singles", [_fx(2, 30.0), _fx(3, 40.0)], 35.0, 2.0, 2)]
+    rows = fdr_rows_from_teams(teams, [2, 3])
+    html = fdr_grid_html({"gws": [2, 3], "fdr_rows": rows})
+    assert '<td class="num dgw">' not in html, "ei-double solu meni dgw-haaraan"
+    assert html.count('<a class="fdr"') == 2
+
+
+def test_negative_control_normal_row_still_returns_one_row():
+    """Kontrolli: rakennuspolku ei saa kadottaa tai kahdentaa rivia."""
     from scripts.build_fpl_page import fdr_rows_from_teams
     teams = [_team("Normal", [_fx(2, 30.0), _fx(3, 40.0)], 35.0, 2.0, 2)]
     assert len(fdr_rows_from_teams(teams, [2, 3])) == 1

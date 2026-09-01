@@ -364,11 +364,23 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'<div class="bench"><span class="blbl">Bench</span>{bench_html}</div>'
-        '<div class="fn">Best 15 for this gameweek alone under the same squad rules: '
-        '100.0m budget, no more than three players from one club. C = captain, V = vice.</div>'
+        # 1.9 (QUEUE: KORTTI-BEST15-KAKSIMERKITYS). Ennen: alaviite sanoi
+        # "Best 15 for this gameweek alone under the same squad rules" -
+        # mutta "Best 15" ON vasemman paneelin top-lista (TOP_N = 15), ei
+        # tama oikea paneeli (XI + halvin penkki). Alaviite kuvasi siis
+        # VIERESSA olevaa paneelia, ei omaansa. Portin suositus 30.8.
+        '<div class="fn">Best XI inside the 100.0m budget. The bench is the '
+        'cheapest cover that still projects minutes, so the money goes into '
+        'the XI. C = captain, V = vice.</div>'
         '</div></div>'
-        '<div class="ftr"><span>The model plays too: <b>entry 116920</b>, '
-        'every gameweek scored in public</span>'
+        # 1.9 (QUEUE: KORTTI-ENTRY-EROTUS). Ennen: "The model plays too:
+        # entry 116920" nimesi entry 116920:n TASAN talla kortilla jonka
+        # oikea puoli on free-hit-XI jota malli EI pelaa (wildcard kaytettiin
+        # GW2:ssa) - lukija joka avaa entryn deadlinen jalkeen nakee eri
+        # joukkueen. Portin suositus 30.8: sano eksplisiittisesti etta tama
+        # EI ole mallin oma joukkue.
+        '<div class="ftr"><span>Not the model&#39;s own team. That one is '
+        'public: <b>entry 116920</b>, scored every gameweek</span>'
         f'<span>model projections, not betting advice · card made {card_at}</span>'
         # 🔴 TARKISTUSREITTI, EI KOTISIVUOSOITE (KORTTI-TARKISTUSREITTI 30.8).
         # Alapalkki osoitti `/fpl/expected-points`-sivun JUUREEN, joka rankkaa

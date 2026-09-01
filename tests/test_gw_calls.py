@@ -164,6 +164,28 @@ def test_sivun_osio_sanoo_before_vain_kun_aikaleimat_todistavat():
     assert "—" not in html
 
 
+def test_logged_sarake_pyoristaa_lahimpaan_minuuttiin_eika_katkaise():
+    """QUEUE: LOGGED-SARAKE-KATKAISEE. `secs // 60` katkaisi aina alaspain,
+    joten 16 min 53 s renderoitui "16 min" - suunta joka nayttaa kirjauksen
+    aina MYOHEMPANA (tuoreempana dataa) kuin se todellisuudessa on."""
+    from scripts.build_fpl_page import _fmt_logged
+    row = {"gw": 2, "logged_at": "2026-08-28T17:13:07Z",
+           "deadline_utc": DL, "calls": [], "graded": None}
+    assert "17 min before the deadline" in _fmt_logged(row), _fmt_logged(row)
+    assert "16 min" not in _fmt_logged(row)
+
+
+def test_negative_control_katkainen_alaraja_ei_pyoristy_ylos():
+    """Kontrolli 16 min 00 s -tapaukselle (rivin oma DoD): tasan 16 minuuttia
+    ei saa pyoristya 17:aan. Ilman tata edellinen lapaisisi myos
+    toteutuksella joka aina lisaa yhden minuutin."""
+    from scripts.build_fpl_page import _fmt_logged
+    row = {"gw": 2, "logged_at": "2026-08-28T17:14:00Z",
+           "deadline_utc": DL, "calls": [], "graded": None}
+    assert "16 min before the deadline" in _fmt_logged(row), _fmt_logged(row)
+    assert "17 min" not in _fmt_logged(row)
+
+
 # ---------------------------------------------------------------- poikkeusnootti (29.8)
 # Portti k2 (M70): sivu ei kertonut etta GW2-rivi (Guehi C) ja entry (wildcard,
 # B.Fernandes C) eroavat; lukija loysi sen vasta entry-linkista. Nootti tulee
