@@ -25,12 +25,34 @@ services:
     # yksikin koodimuutos (api/, src/, requirements) triggeröi yhä normaalisti.
     # HUOM: data/** EI enää deployaudu automaattisesti — tuoreen datan vie Renderiin
     # render-daily-deploy.yml (1 deploy/vrk deploy-hookilla) tai koodideploy.
+    # 🔴 1.9.2026 MITATTU VUOTO. Sama vika kuin 14.7, korjaus jäi puolitiehen.
+    # 924 deployta 2.8. alkaen, mediaani 2,2 min = ~2 100 build-minuuttia
+    # kuukaudessa kun kiintiö on 500. Kolme bottia riitti:
+    #   92  chore(accuracy): auto-log pre-match + reconcile
+    #   76  chore(fpl): daily projections refresh
+    #   34  geo(fpl): FPL-landing + long-tail refresh
+    # Ne koskevat data/**:n LISÄKSI juuritason index.html / fpl.html /
+    # predictions.html, predictions/**, fpl/** ja sitemap-*.xml -tiedostoja.
+    # `**/*.html` EI osu juuritason tiedostoon useimmissa glob-toteutuksissa,
+    # joten juuritaso listataan erikseen eikä oleteta kumpaakaan semantiikkaa.
+    #
+    # Kustannus ei ollut vain raha: jokainen deploy tappaa lämpimän prosessin
+    # ja liigamallit fitataan uudelleen, eli 20-50 kylmäkäynnistystä/vrk.
+    #
+    # Tuore data menee Renderiin render-daily-deploy.yml:n deploy-hookilla
+    # (~30 buildia/kk). Hook on eksplisiittinen pyyntö eikä commit-triggeri,
+    # joten buildFilter EI koske sitä. Tämä on suunniteltu polku, ei kiertotie.
     buildFilter:
       ignoredPaths:
         - data/**               # accuracy.json, prediction_log, CSV:t, FPL-projektiot
-        - "**/*.html"           # GitHub Pages -sivut (goaliq.app), ei Renderin servaamia
+        - fpl/**                # player-gw.json + FPL-sivut; API lukee ne, daily-deploy vie
+        - predictions/**        # generoidut ottelusivut (Cloudflare Pages, ei Render)
+        - outputs/**            # kortit ja generoidut kuvat
+        - "*.html"              # JUURITASO: index, fpl, predictions, spl, career, faq...
+        - "**/*.html"           # alihakemistot; Renderin FastAPI ei servaa yhtään HTML:ää
+        - "*.md"
         - "**/*.md"             # dokumentaatio
-        - sitemap.xml
+        - "sitemap*.xml"        # sitemap.xml + sitemap-core/fpl/predictions
         - robots.txt
         - llms.txt
         - tests/**              # testimuutokset eivät vaadi deployta (CI ajaa ne)
