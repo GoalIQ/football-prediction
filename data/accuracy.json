@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-01T00:34:15+00:00",
+  "updated_at": "2026-09-01T08:35:33+00:00",
   "logged_total": 3199,
-  "pending": 2847,
+  "pending": 2846,
   "voided": 6,
   "all_time": {
-    "n": 346,
+    "n": 347,
     "correct_1x2": 184,
-    "pct_1x2": 0.5318,
+    "pct_1x2": 0.5303,
     "draw_n": 93,
-    "pct_draw": 0.2688,
-    "decisive_n": 253,
+    "pct_draw": 0.268,
+    "decisive_n": 254,
     "decisive_correct": 184,
-    "pct_decisive": 0.7273,
-    "exact_n": 298,
+    "pct_decisive": 0.7244,
+    "exact_n": 299,
     "exact_correct": 42,
-    "pct_exact": 0.1409,
-    "brier": 0.5742,
-    "brier_n": 298
+    "pct_exact": 0.1405,
+    "brier": 0.5745,
+    "brier_n": 299
   },
   "rolling": {
     "n": 100,
     "correct_1x2": 59,
     "pct_1x2": 0.59,
-    "draw_n": 19,
-    "pct_draw": 0.19,
-    "decisive_n": 81,
+    "draw_n": 18,
+    "pct_draw": 0.18,
+    "decisive_n": 82,
     "decisive_correct": 59,
-    "pct_decisive": 0.7284,
+    "pct_decisive": 0.7195,
     "exact_n": 100,
-    "exact_correct": 14,
-    "pct_exact": 0.14,
-    "brier": 0.5405,
+    "exact_correct": 13,
+    "pct_exact": 0.13,
+    "brier": 0.5394,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 9
     },
     "BSA": {
-      "n": 65,
+      "n": 66,
       "correct_1x2": 25,
-      "pct_1x2": 0.3846,
+      "pct_1x2": 0.3788,
       "draw_n": 24,
-      "pct_draw": 0.3692,
-      "decisive_n": 41,
+      "pct_draw": 0.3636,
+      "decisive_n": 42,
       "decisive_correct": 25,
-      "pct_decisive": 0.6098,
-      "exact_n": 65,
+      "pct_decisive": 0.5952,
+      "exact_n": 66,
       "exact_correct": 10,
-      "pct_exact": 0.1538,
-      "brier": 0.6466,
-      "brier_n": 65
+      "pct_exact": 0.1515,
+      "brier": 0.6473,
+      "brier_n": 66
     },
     "DED": {
       "n": 23,
@@ -188,19 +188,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 162,
+      "n": 163,
       "correct_1x2": 96,
-      "pct_1x2": 0.5926,
+      "pct_1x2": 0.589,
       "draw_n": 30,
-      "pct_draw": 0.1852,
-      "decisive_n": 132,
+      "pct_draw": 0.184,
+      "decisive_n": 133,
       "decisive_correct": 96,
-      "pct_decisive": 0.7273,
-      "exact_n": 162,
+      "pct_decisive": 0.7218,
+      "exact_n": 163,
       "exact_correct": 21,
-      "pct_exact": 0.1296,
-      "brier": 0.5427,
-      "brier_n": 162
+      "pct_exact": 0.1288,
+      "brier": 0.5436,
+      "brier_n": 163
     },
     "stale": {
       "n": 136,
@@ -248,16 +248,16 @@
       "n": 117
     },
     {
-      "bin_mid": 0.2538,
-      "predicted": 0.2538,
-      "actual": 0.2802,
-      "n": 339
+      "bin_mid": 0.2539,
+      "predicted": 0.2539,
+      "actual": 0.2794,
+      "n": 340
     },
     {
-      "bin_mid": 0.3382,
-      "predicted": 0.3382,
-      "actual": 0.3165,
-      "n": 158
+      "bin_mid": 0.3384,
+      "predicted": 0.3384,
+      "actual": 0.3187,
+      "n": 160
     },
     {
       "bin_mid": 0.4478,
@@ -291,6 +291,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-08-31",
+      "home_team": "Remo",
+      "away_team": "Coritiba",
+      "predicted_winner": "home",
+      "p_winner": 0.3961,
+      "lead_h": 2.2,
+      "most_likely_score": "1-1",
+      "actual_score": "2-3",
+      "actual_outcome": "away",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-08-31",
       "home_team": "FC Barcelona",
@@ -573,21 +588,6 @@
       "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-30",
-      "home_team": "RC Deportivo La Coruña",
-      "away_team": "Valencia CF",
-      "predicted_winner": "home",
-      "p_winner": 0.3777,
-      "lead_h": 0.9,
-      "most_likely_score": "1-1",
-      "actual_score": "3-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
