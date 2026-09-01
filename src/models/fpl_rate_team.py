@@ -1429,6 +1429,147 @@ def transfer_horizon_gws(pool: list[dict], xp_data: dict, target_gw: int,
     return gws
 
 
+# ---------------------------------------------------------------------------
+# LUCK-PITCH (1.9.2026): paattyneen kierroksen lohko
+# ---------------------------------------------------------------------------
+# 🔴 MIKSI OMA LOHKO EIKA `gw_points`-KENTAT: mitattu tuotannosta 1.9 klo
+# ~12 UTC, entry 116920 -> `gw_points` ja `gw_xp_frozen` olivat None KAIKILLA
+# 15 rivilla, vaikka GW1:n ja GW2:n toteumat ja freezet ovat levylla (281 ja
+# 310 riviä + 490/511 freeze-rivia). Syy: ne luetaan `target_gw`:lle, joka on
+# aina seuraava TOIMITTAVA kierros (GW2:n deadlinen jalkeen 3), eika
+# paattyneelle. Sama esto pimensi 22.8 shipatun "Model vs actual" -lohkon.
+#
+# 🔴 TOINEN SYY, ISOMPI: rivien `in_xi` on MALLIN OPTIMI-XI, ei sita mita
+# kayttaja pelasi (`xi = optimal_xi(squad)`). Kierroksen tulosta ei siis voi
+# laskea naista riveista lainkaan — se vaatii FPL:n omat picksit kertoimineen.
+# Tama lohko hakee ne ja on siksi ainoa lahde jolle "your points" saa
+# otsikoida mitaan.
+#
+# Kolmas periaate: PISTEMAARA ON FPL:N OMA LUKU (`entry_history.points`),
+# ei meidan summamme. Kayttaja voi verrata sen omaan FPL-tiliinsa, ja
+# autosubit ja chipit ovat siina valmiiksi. Me laskemme vain xP-puolen.
+
+
+def last_finished_gameweek(bootstrap: dict) -> int | None:
+    """Suurin kierros jonka FPL itse merkitsee valmiiksi JA tarkistetuksi.
+
+    🔴 TASSA `finished`-lippu ON oikea lahde, toisin kuin
+    `fpl_gameweek.completed_gameweeks`issa. Se lippu laahaa PERASSA (mitattu
+    25.8: ottelut olivat pelattu ennen kuin `event.finished` kaantyi), ja
+    laahaus on tassa suuntaan johon halutaan erehtya: naytamme kierroksen
+    vasta kun FPL sanoo sen olevan lopullinen. Kesken olevan kierroksen
+    esittaminen "final"-lohkossa olisi vaite joka vanhenee kadessa.
+
+    `data_checked` on mukana koska pisteet voivat viela muuttua (bonukset,
+    kurinpito) kunnes se kaantyy.
+    """
+    best: int | None = None
+    for e in bootstrap.get("events") or []:
+        if e.get("finished") and e.get("data_checked"):
+            gid = e.get("id")
+            if isinstance(gid, int) and (best is None or gid > best):
+                best = gid
+    return best
+
+
+def _event_meta(bootstrap: dict, gw: int) -> dict:
+    for e in bootstrap.get("events") or []:
+        if e.get("id") == gw:
+            return e
+    return {}
+
+
+def last_finished_block(entry_id: int | None, bootstrap: dict,
+                        pool_by_id: dict[int, dict],
+                        season: str | None) -> dict | None:
+    """Paattyneen kierroksen rivi: FPL:n omat picksit + toteumat + freeze.
+
+    Palauttaa None kun mitaan luotettavaa ei ole naytettavaksi. Puuttuva
+    lohko on aina parempi kuin puolikas: kutsuja ei voi erottaa vaillinaista
+    summaa oikeasta, joten se paatos tehdaan taalla.
+    """
+    if entry_id is None:
+        return None
+    gw = last_finished_gameweek(bootstrap)
+    if gw is None:
+        return None
+    actuals = fpl_actuals.points_for(gw, season)
+    frozen = fpl_actuals.frozen_xp_for(gw)
+    if not actuals or not frozen:
+        return None
+    try:
+        picks = get_entry_picks(entry_id, gw)
+    except RateTeamError:
+        # Entry ei ole julkinen tai kierrokselta ei ole pickseja. Ei virhetta:
+        # koko rate-team-vastaus ei saa kaatua taman lohkon takia.
+        return None
+
+    elements = {e["id"]: e for e in (bootstrap.get("elements") or [])}
+    rows: list[dict] = []
+    xp_total = 0.0
+    complete = True
+    for pk in picks.get("picks") or []:
+        pid = pk.get("element")
+        mult = pk.get("multiplier")
+        if not isinstance(pid, int) or not isinstance(mult, int):
+            continue
+        el = elements.get(pid) or {}
+        meta = pool_by_id.get(pid) or {}
+        pts = actuals.get(pid)
+        xp = frozen.get(pid)
+        if isinstance(xp, (int, float)):
+            xp_total += float(xp) * mult
+        elif mult > 0:
+            # Pelanneelta pelaajalta puuttuu freeze -> summa olisi ALAKANTTIIN
+            # ja malli nayttaisi paremmalta kuin se oli. Merkitaan vaillinaiseksi
+            # ja jatetaan erotus kokonaan pois.
+            complete = False
+        rows.append({
+            "id": pid,
+            "web_name": meta.get("web_name") or el.get("web_name"),
+            "team_short": meta.get("team_short"),
+            "pos": POS_NAME.get(el.get("element_type")) or meta.get("pos"),
+            "multiplier": mult,
+            "is_captain": bool(pk.get("is_captain")),
+            "is_vice_captain": bool(pk.get("is_vice_captain")),
+            # None (eika 0) kun lukua ei ole: nolla olisi vaite eika totuus.
+            "points": pts if isinstance(pts, int) else None,
+            "xp_frozen": round(float(xp), 2) if isinstance(xp, (int, float)) else None,
+        })
+    if not rows:
+        return None
+
+    hist = picks.get("entry_history") or {}
+    points = hist.get("points")
+    points = points if isinstance(points, int) else None
+    xp_round = round(xp_total, 2)
+    fmeta = fpl_actuals.frozen_meta(gw) or {}
+    ev = _event_meta(bootstrap, gw)
+    return {
+        "gw": gw,
+        "players": rows,
+        # FPL:n oma pistemaara, ei meidan summamme — kayttaja voi verrata sen
+        # omaan tiliinsa suoraan.
+        "points": points,
+        "points_source": "FPL entry history",
+        "transfer_cost": (hist.get("event_transfers_cost")
+                          if isinstance(hist.get("event_transfers_cost"), int) else None),
+        "points_on_bench": (hist.get("points_on_bench")
+                            if isinstance(hist.get("points_on_bench"), int) else None),
+        "chip": picks.get("active_chip"),
+        "average_entry_score": (ev.get("average_entry_score")
+                                if isinstance(ev.get("average_entry_score"), int) else None),
+        "xp": xp_round if complete else None,
+        # Erotus vain kun MOLEMMAT luvut ovat kokonaisia. Puolikas erotus
+        # nayttaisi mallin systemaattisesti paremmalta.
+        "diff": (round(points - xp_round, 2)
+                 if complete and points is not None else None),
+        "complete": complete,
+        "frozen_at": fmeta.get("frozen_at"),
+        "deadline": fmeta.get("deadline"),
+    }
+
+
 def rate_team(entry: int | None = None, gw: int | None = None,
               players: list[int] | None = None, captain: int | None = None,
               bank: float | None = None, ft: int = 1) -> dict:
@@ -1614,6 +1755,14 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "missing_ids": missing,
             "bank": round(bank_tenths / 10.0, 1),
         },
+        # LUCK-PITCH (1.9): paattynyt kierros omana lohkonaan. EI `team`in
+        # sisalla, koska `team.players` on suunnittelun rivi (mallin optimi-XI
+        # tulevalle kierrokselle) ja tama on se rivi joka PELATTIIN. Kaksi eri
+        # asiaa samassa listassa olisi juuri se sekaannus joka tahan asti
+        # esti kierroksen tuloksen nayttamisen oikein.
+        "last_finished": (last_finished_block(
+            entry, bootstrap, pool_by_id, xp_data["meta"].get("season"))
+            if mode == "entry" else None),
         "rating": {
             "team_xp_gw": round(team_xp_gw_c, 2),
             "team_xp_horizon": round(team_xp_horizon_c, 2),
