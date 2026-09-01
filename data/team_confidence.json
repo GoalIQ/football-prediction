@@ -4,7 +4,7 @@
  "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
  "high_turnover_threshold_pct": 25.0,
  "historical_median_pct": 13.0,
- "season_median_pct": 14.1,
+ "season_median_pct": 15.8,
  "promoted": [
   "Coventry City",
   "Hull City",
@@ -72,16 +72,16 @@
    "minutes_churn_pct": null,
    "flag": "promoted",
    "basis": "own_thin_fit",
-   "own_matches": 1,
-   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 1 match of Premier League football, so it moves a lot with each result."
+   "own_matches": 2,
+   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 2 matches of Premier League football, so it moves a lot with each result."
   },
   {
    "team": "Crystal Palace",
    "model_team": "Crystal Palace",
    "is_promoted": false,
-   "minutes_churn_pct": 14.1,
+   "minutes_churn_pct": 20.4,
    "flag": null,
-   "note": "14% of last season's minutes have left the club."
+   "note": "20% of last season's minutes have left the club."
   },
   {
    "team": "Everton",
@@ -106,8 +106,8 @@
    "minutes_churn_pct": null,
    "flag": "promoted",
    "basis": "own_thin_fit",
-   "own_matches": 1,
-   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 1 match of Premier League football, so it moves a lot with each result."
+   "own_matches": 2,
+   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 2 matches of Premier League football, so it moves a lot with each result."
   },
   {
    "team": "Ipswich Town",
@@ -116,8 +116,8 @@
    "minutes_churn_pct": null,
    "flag": "promoted",
    "basis": "own_thin_fit",
-   "own_matches": 1,
-   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 1 match of Premier League football, so it moves a lot with each result."
+   "own_matches": 2,
+   "note": "Promoted side. The model now has a rating of its own, but it is fitted on 2 matches of Premier League football, so it moves a lot with each result."
   },
   {
    "team": "Leeds",

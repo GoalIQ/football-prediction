@@ -6,7 +6,7 @@
   "comparison_method": "Each frozen player is scored against official FPL points for the gameweek. MAE is the mean absolute error in points. by_class groups players by what actually happened (dnp = 0 minutes, blank = 2 points or fewer with minutes, ticker = 3 to 9 points, haul = 10 or more). The comparison block scores GoalIQ xP, the FPL ep_next field and the FPL form field on the same players; a player is included only when all three numbers were frozen before the deadline. A missing ep_next is skipped, never treated as 0.",
   "classes": {
    "dnp": "Did not play (0 minutes)",
-   "blank": "Blank (2 points or fewer, played)",
+   "blank": "Played, blank (2 points or fewer)",
    "ticker": "Ticker (3 to 9 points)",
    "haul": "Haul (10 or more points)"
   }
@@ -71,6 +71,65 @@
      "bias": 0.311
     }
    }
+  },
+  {
+   "gw": 2,
+   "graded_at": "2026-09-01T13:57:01Z",
+   "frozen_at": "2026-08-27T17:04:42Z",
+   "n": 511,
+   "mae": 1.594,
+   "bias": -0.314,
+   "mae_by_pos": {
+    "DEF": 1.616,
+    "FWD": 1.87,
+    "GKP": 1.424,
+    "MID": 1.55
+   },
+   "by_class": {
+    "dnp": {
+     "n": 204,
+     "mae": 1.08,
+     "bias": -1.08
+    },
+    "blank": {
+     "n": 201,
+     "mae": 1.372,
+     "bias": -1.194
+    },
+    "ticker": {
+     "n": 92,
+     "mae": 2.098,
+     "bias": 1.896
+    },
+    "haul": {
+     "n": 14,
+     "mae": 8.954,
+     "bias": 8.954
+    }
+   },
+   "by_pos_stats": {
+    "DEF": {
+     "n": 172,
+     "mae": 1.616,
+     "bias": -0.494
+    },
+    "FWD": {
+     "n": 57,
+     "mae": 1.87,
+     "bias": -0.318
+    },
+    "GKP": {
+     "n": 56,
+     "mae": 1.424,
+     "bias": -0.887
+    },
+    "MID": {
+     "n": 226,
+     "mae": 1.55,
+     "bias": -0.035
+    }
+   },
+   "comparison": null
   }
  ]
 }
