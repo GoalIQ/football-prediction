@@ -16,7 +16,8 @@ REHELLISYYS (V1-linja säilyy):
   - Kierros joka on gradattu mallille mutta puuttuu käyttäjän historiasta
     (esim. liittyi kesken kauden) jätetään eroon laskematta — sitä EI
     tulkita nollaksi, koska nolla olisi väite jota ei tehty.
-  - Malli ei pelaa chippejä; se kerrotaan datassa asti (`model_plays_chips`),
+  - Chipit kerrotaan datassa asti (`model_plays_chips`, `chip_gws`, rivin
+    `model_chip`) — lippu johdetaan lokista eika oleteta,
     jotta paneelin ei tarvitse päätellä sitä copysta.
 """
 from __future__ import annotations
@@ -89,6 +90,11 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # Rivikohtainen lippu, jotta klientti voi merkita YHDEN kierroksen
             # ilman etta sen tarvitsee ristiinlukea meta.provisional_gws.
             "provisional": bool(r.get("provisional")),
+            # 1.9: chippi on FREE-kentta samasta syysta kuin provisional.
+            # Kierros jolla malli pelasi chipin ei ole vertailukelpoinen
+            # lukijan kierroksen kanssa, ja se on kerrottava siina missa
+            # luku itse. None = ei chippia.
+            "model_chip": r.get("active_chip"),
             "your_points": None,
             "diff": None,
             "cumulative_diff": None,
@@ -133,13 +139,23 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     # merkittava nama kierrokset. Tyhja lista = kaikki luvut ovat lopullisia.
     provisional_gws = [int(r.get("gw") or 0) for r in rows if r.get("provisional")]
 
+    # 🔴 1.9.2026: TAMA OLI KOVAKOODATTU `False` ja se muuttui EPATODEKSI
+    # 28.8, kun entry 116920 pelasi wildcardin GW2:lla (gw_calls.json
+    # `entry_actual.chip`, model_squad_gw_scores.json `active_chip`).
+    # Lippu ohjaa lausetta "The model's squad is locked before every deadline
+    # and plays no chips." (SeasonRace.svelte + mobiilin SeasonRace.tsx), eli
+    # ilmaispinta vaitti painvastoin kuin data. Johdetaan lokista, jotta
+    # lause katoaa itsestaan sina hetkena kun chippi on pelattu.
+    chip_gws = [int(r.get("gw") or 0) for r in rows if r.get("active_chip")]
+
     return {
         "meta": {
             "available": True,
             "graded_gws": len(rows),
             "compared_gws": compared,
             "masked": not premium,
-            "model_plays_chips": False,
+            "model_plays_chips": bool(chip_gws),
+            "chip_gws": chip_gws,
             "provisional_gws": provisional_gws,
             "note": note,
             "note_code": note_code,

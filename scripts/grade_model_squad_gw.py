@@ -40,7 +40,8 @@ _NEW_LOG = {
                   "(immutable, provable from git history) and scored with "
                   "official FPL points once the gameweek finishes. "
                   "Autosubs and the captain/vice rule are applied exactly as "
-                  "FPL applies them. The model plays no chips. Append-only."),
+                  "FPL applies them. Any chip the entry played is recorded "
+                  "per gameweek in active_chip. Append-only."),
     },
     "gameweeks": [],
 }

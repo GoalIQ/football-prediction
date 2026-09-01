@@ -60,9 +60,36 @@ def test_mallin_rivit_naytetaan_ilman_entrya():
     assert "Add your FPL team ID" in r["meta"]["note"]
 
 
-def test_malli_ei_pelaa_chippeja_lukee_datassa():
+def test_ilman_chippia_lippu_on_epatosi():
     r = build_race(_log(_mrow(1, 61)), None)
     assert r["meta"]["model_plays_chips"] is False
+    assert r["meta"]["chip_gws"] == []
+    assert all(g["model_chip"] is None for g in r["gameweeks"])
+
+
+def test_pelattu_chippi_kaantaa_lipun_ja_nakyy_rivilla():
+    """🔴 Lippu oli kovakoodattu `False` ja muuttui epatodeksi 28.8, kun entry
+    pelasi wildcardin GW2:lla. Se ohjaa lausetta "The model's squad is locked
+    before every deadline and plays no chips.", eli ilmaispinta vaitti
+    painvastoin kuin data. Lippu johdetaan nyt lokista.
+
+    Chippi on FREE-kentta: kierros jolla malli pelasi chipin ei ole
+    vertailukelpoinen lukijan kierroksen kanssa.
+    """
+    r = build_race(_log(_mrow(1, 41), _mrow(2, 108, active_chip="wildcard")),
+                   None)
+    assert r["meta"]["model_plays_chips"] is True
+    assert r["meta"]["chip_gws"] == [2]
+    assert [g["model_chip"] for g in r["gameweeks"]] == [None, "wildcard"]
+
+
+def test_chip_lippu_ei_vuoda_premium_puolelle():
+    """Negatiivinen kontrolli: sama tulos ilman premiumia. Kilpailun
+    rehellisyys ei ole maksumuurin takana (V1-linjaus)."""
+    log = _log(_mrow(2, 108, active_chip="bboost"))
+    free = build_race(log, None, premium=False)
+    assert free["meta"]["model_plays_chips"] is True
+    assert free["gameweeks"][0]["model_chip"] == "bboost"
 
 
 def test_rivit_jarjestetaan_kierroksen_mukaan():
