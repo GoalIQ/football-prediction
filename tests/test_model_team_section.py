@@ -92,3 +92,47 @@ def test_ankkuri_on_llms_txt_ssa():
     llms = (pathlib.Path(__file__).resolve().parents[1] / "llms.txt"
             ).read_text(encoding="utf-8")
     assert "goaliq.app/fpl#model-team" in llms
+
+
+def test_poikkeus_renderoi_eroavuuslauseen():
+    """🔴 Portin blokkaava löydös 1.9: kappale väitti että jokainen luku tulee
+    ennen deadlinea kirjatusta rungosta. GW2:n 108 tulee PELANNEESTA
+    joukkueesta (entry wildcardasi ja malli rakennettiin uusiksi deadline-
+    päivänä), ja lohko linkkasi `data/model_squad_frozen`-hakemistoon jonka
+    gw2.json sanoo `chip: null` ja eri kapteenin. Lukija olisi avannut
+    todisteen joka kumoaa taulukon.
+
+    Lause luetaan poikkeushakemistosta (Villen kirjattu päätös), ei
+    kovakoodata GW2:ta."""
+    from scripts.build_fpl_page import model_team_html
+    log = {"gameweeks": [_row(1, 41, 50), _row(2, 108, 79, chip="wildcard")]}
+    h = model_team_html(log, exception_gws=[2])
+    assert ("GW2 is scored from the team that played, and that team differs "
+            "from the squad file written before that deadline.") in h
+
+
+def test_ilman_poikkeusta_ei_eroavuuslausetta():
+    """Negatiivinen kontrolli: lause ei saa esiintyä aina. Muuten se olisi
+    koriste eikä mittaus, ja normaalikierros väittäisi eroa jota ei ole."""
+    from scripts.build_fpl_page import model_team_html
+    h = model_team_html({"gameweeks": [_row(1, 41, 50)]}, exception_gws=[])
+    assert "differs from the squad file" not in h
+    assert "The squad is written to a public file before each deadline." in h
+
+
+def test_poikkeus_kierrokselle_jota_taulukossa_ei_ole_ei_renderoidy():
+    """Poikkeustiedosto voi olla kierrokselle jota ei ole vielä gradattu.
+    Silloin lause viittaisi riviin jota lukija ei näe."""
+    from scripts.build_fpl_page import model_team_html
+    h = model_team_html({"gameweeks": [_row(1, 41, 50)]}, exception_gws=[5])
+    assert "GW5" not in h
+
+
+def test_kappale_ei_vaita_fpl_n_nimittajaa():
+    """Portin löydös B3: "the average score of every FPL manager" on väite
+    FPL:n nimittäjästä jota emme ole mitanneet. Lähde on FPL:n oma
+    `average_entry_score`."""
+    from scripts.build_fpl_page import model_team_html
+    h = model_team_html({"gameweeks": [_row(1, 41, 50)]}, exception_gws=[])
+    assert "every FPL manager" not in h
+    assert "FPL's own average score for the gameweek" in h

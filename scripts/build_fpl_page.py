@@ -652,8 +652,8 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "a season-long Beat the model scoreboard "
                 "(log your calls before the deadline and they get graded "
                 "against the model's every gameweek), the season race "
-                "against the model's own squad, which is locked before every "
-                "deadline and scored with official FPL points, and Catch your rival "
+                "against the model's own squad, scored with official FPL "
+                "points every gameweek, and Catch your rival "
                 "(how likely you are to close the gap to anyone in your "
                 "mini-league with the gameweeks left), a watchlist for the "
                 "players you are deciding on, the "
@@ -2565,7 +2565,7 @@ def _signed(n: int) -> str:
     return f"+{n}" if n > 0 else str(n)
 
 
-def model_team_html(log: dict | None) -> str:
+def model_team_html(log: dict | None, exception_gws=None) -> str:
     """Mallin oman FPL-joukkueen kierrosrivi: pisteet vs FPL:n keskiarvo.
 
     🔴 MIKSI TAMA ON OLEMASSA (1.9.2026). Luvut olivat kolmessa paikassa,
@@ -2591,6 +2591,13 @@ def model_team_html(log: dict | None) -> str:
     if not rows:
         return ""
     rows.sort(key=lambda r: int(r.get("gw") or 0))
+    # 🔴 Poikkeus ei ole kovakoodattu GW2-lause vaan luetaan samasta
+    # hakemistosta kuin `verify_model_entry_matches_freeze` (Villen kirjattu
+    # paatos). Ilman tata kappale vaittaisi jokaisen luvun tulevan
+    # jaadytetysta rungosta, ja GW2:n 108 tulee pelanneesta joukkueesta.
+    exc = sorted(int(g) for g in (
+        exception_gws if exception_gws is not None
+        else gw_exception_notes().keys()))
 
     trs = []
     for r in rows:
@@ -2628,11 +2635,26 @@ def model_team_html(log: dict | None) -> str:
                     + ("it is" if len(held) == 1 else "they are")
                     + " not in that number.")
 
+    seen = {int(r.get("gw") or 0) for r in rows}
+    exc = [g for g in exc if g in seen]
+    if exc:
+        labels = _join_gws([f"GW{g}" for g in exc])
+        differs = (
+            f" {labels} is scored from the team that played, and that team "
+            "differs from the squad file written before that deadline."
+            if len(exc) == 1 else
+            f" {labels} are scored from the teams that played, and those "
+            "teams differ from the squad files written before those "
+            "deadlines.")
+    else:
+        differs = ""
+
     return (
         '<h3 id="model-team">The model runs its own FPL team</h3>'
-        f"<p>The model picks a squad for entry {FPL_ENTRY_ID} and freezes it "
-        "before every deadline. It is scored with official FPL points, next "
-        "to the average score of every FPL manager in that gameweek. A "
+        f"<p>The model runs a real FPL team, entry {FPL_ENTRY_ID}. The points "
+        "here are the ones FPL gave that entry, next to FPL's own average "
+        "score for the gameweek. The squad is written to a public file "
+        f"before each deadline.{differs} A "
         "gameweek where the team played a chip says so, because a chip "
         "gameweek is not a like for like comparison with a manager who "
         f"did not play one. {running} Provisional rows wait for FPL to "
@@ -2647,9 +2669,12 @@ def model_team_html(log: dict | None) -> str:
         '<th scope="col">Chip</th></tr></thead><tbody>'
         + "".join(trs) + "</tbody></table></div>"
         '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/model_squad_gw_scores.json">data/model_squad_gw_scores.json</a> '
-        "in the public repository, graded from FPL's own entry history, with "
-        "the frozen squads in "
-        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen">data/model_squad_frozen</a>. '
+        "in the public repository, taken from FPL's own entry history for "
+        f"entry {FPL_ENTRY_ID}. The squads written before each deadline are in "
+        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen">data/model_squad_frozen</a>, '
+        "and a gameweek where the team that played differs from that file is "
+        "recorded in "
+        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_exceptions">data/model_squad_exceptions</a>. '
         "The FPL average is FPL's own average score for the gameweek, not a "
         "number the model computes.</p>")
 
