@@ -1907,6 +1907,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     jsonld = jsonld_blocks(c, faq)
     cs_table = cs_table_html(c)
     gw_calls = gw_calls_html(_load_json(GW_CALLS_PATH), names=player_names(xp))
+    model_team = model_team_html(_load_json(MODEL_SQUAD_SCORES_PATH))
     eo_by_tier = eo_by_tier_html(_load_json(EO_PATH), _load_json(ELITE_MGR_PATH))
     xp_accuracy = xp_accuracy_html(_load_json(XP_GW_ACC_PATH))
     fdr_grid = fdr_grid_html(c)
@@ -2039,6 +2040,7 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 <p class="note">Source: GoalIQ prediction log, updated {c["acc_date"]}. The full
 log, match by match with every miss included, is published on the
 <a href="/predictions#record">prediction record page</a>.</p>
+{model_team}
 {gw_calls}
 {xp_accuracy}
 
@@ -2239,6 +2241,11 @@ FOUNDER_PATH = ROOT / "data" / "founder_entry.json"
 # GW-CALLS-LOKI (28.8): mallin julkiset kierroskutsut, kirjattu ennen deadlinea
 # ja gradattu FPL:n pisteilla (scripts/log_gw_calls.py, grade_gw_calls.py).
 GW_CALLS_PATH = ROOT / "data" / "gw_calls.json"
+# MALLIN OMA FPL-RIVI (1.9): gradatut kierrospisteet entrylle 116920.
+# Sama tiedosto jota /api/fantasy/model-race lukee; sivu on sen ILMAINEN,
+# kirjautumaton pinta. Villen paatos 1.9: luku esitetaan verkkosivulla eika
+# postata GitHub-linkkia lukijalle.
+MODEL_SQUAD_SCORES_PATH = ROOT / "data" / "model_squad_gw_scores.json"
 # GW-CALLS-EXCEPTION-NOTE (29.8): kun entry ja jaadytetty runko eroavat Villen
 # paatoksella (data/model_squad_exceptions/gw{N}.json, sama tiedosto jolla
 # verify_model_entry_matches_freeze sallii eron), sivu sanoo sen rivin alla.
@@ -2543,6 +2550,108 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
         '<a href="/fpl/expected-points">free expected points page</a>, where a '
         "3+ chance is 100 minus the Blank column on the free page (2 points "
         "or fewer, including not playing).</p>")
+
+
+def _join_gws(labels: list[str]) -> str:
+    """GW1 / GW1 and GW2 / GW1, GW2 and GW3. Oxford-pilkkua ei kayteta muualla
+    sivulla, joten ei tassakaan."""
+    if len(labels) <= 1:
+        return labels[0] if labels else ""
+    return ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
+def _signed(n: int) -> str:
+    """Etumerkki nakyviin molempiin suuntiin: +29 ja -9, ei "29" ja "-9"."""
+    return f"+{n}" if n > 0 else str(n)
+
+
+def model_team_html(log: dict | None) -> str:
+    """Mallin oman FPL-joukkueen kierrosrivi: pisteet vs FPL:n keskiarvo.
+
+    🔴 MIKSI TAMA ON OLEMASSA (1.9.2026). Luvut olivat kolmessa paikassa,
+    joista yksikaan ei ollut sivu: julkinen repo-tiedosto, ilmainen
+    `/api/fantasy/model-race` ja FPL:n oma entry. Julkaisutarkistaja mittasi
+    fpl.html:sta 0 osumaa luvuille 41/50/108/79, eli jokainen mallin
+    kausisuoritusta koskeva postaus olisi linkannut sivulle jolla vaitetta
+    ei ole. Villen paatos: sivulle, ei GitHub-linkkia postaukseen.
+
+    Kolme saantoa, jotka ovat koko syy miksi rivin voi julkaista:
+
+    1. **Tappio nakyy samassa taulukossa kuin voitto.** Rivi ei suodata.
+    2. **Chip merkitaan.** Kierros jolla malli pelasi wildcardin ei ole
+       vertailukelpoinen lukijan kierroksen kanssa, ja se on kerrottava
+       siina missa luku itse (sama saanto kuin `model_chip` API:ssa).
+    3. **Provisionaalinen kierros ei mene juoksevaan riviin.** Sama
+       rehellisyyssaanto kuin `build_gw_recap.py`:ssa: gradaamaton ei ole
+       nolla. Juokseva luku kertoo itse montako kierrosta se kattaa.
+    """
+    rows = list((log or {}).get("gameweeks") or [])
+    rows = [r for r in rows if r.get("points") is not None
+            and r.get("fpl_average") is not None]
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: int(r.get("gw") or 0))
+
+    trs = []
+    for r in rows:
+        gw = int(r.get("gw") or 0)
+        pts = int(r["points"])
+        avg = int(r["fpl_average"])
+        prov = " (provisional)" if r.get("provisional") else ""
+        chip = CHIP_LABELS.get(r.get("active_chip") or "",
+                               r.get("active_chip") or "")
+        trs.append(
+            "<tr>"
+            f'<td class="num">GW{gw}</td>'
+            f'<td class="num">{escape(str(pts) + prov)}</td>'
+            f'<td class="num">{avg}</td>'
+            f'<td class="num">{_signed(pts - avg)}</td>'
+            f"<td>{escape(chip)}</td>"
+            "</tr>")
+
+    final = [r for r in rows if not r.get("provisional")]
+    held = [f"GW{int(r.get('gw') or 0)}" for r in rows if r.get("provisional")]
+    total = sum(int(r["points"]) - int(r["fpl_average"]) for r in final)
+    if final:
+        names = _join_gws([f"GW{int(r.get('gw') or 0)}" for r in final])
+        running = (f"{names} is confirmed and the team is {_signed(total)} "
+                   "against the average there."
+                   if len(final) == 1 else
+                   f"Across the confirmed gameweeks, {names}, the team is "
+                   f"{_signed(total)} against the average.")
+    else:
+        running = ("No gameweek is confirmed yet, so there is no season "
+                   "number to give.")
+    if held:
+        running += (f" {_join_gws(held)} " + ("is" if len(held) == 1 else "are")
+                    + " played but still provisional, so "
+                    + ("it is" if len(held) == 1 else "they are")
+                    + " not in that number.")
+
+    return (
+        '<h3 id="model-team">The model runs its own FPL team</h3>'
+        f"<p>The model picks a squad for entry {FPL_ENTRY_ID} and freezes it "
+        "before every deadline. It is scored with official FPL points, next "
+        "to the average score of every FPL manager in that gameweek. A "
+        "gameweek where the team played a chip says so, because a chip "
+        "gameweek is not a like for like comparison with a manager who "
+        f"did not play one. {running} Provisional rows wait for FPL to "
+        "confirm bonus points.</p>"
+        '<div class="scroll"><table>'
+        "<caption>The model's own FPL team, scored against the FPL average "
+        "each gameweek.</caption>"
+        '<thead><tr><th scope="col">GW</th>'
+        '<th scope="col" class="num">Model points</th>'
+        '<th scope="col" class="num">FPL average</th>'
+        '<th scope="col" class="num">Difference</th>'
+        '<th scope="col">Chip</th></tr></thead><tbody>'
+        + "".join(trs) + "</tbody></table></div>"
+        '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/model_squad_gw_scores.json">data/model_squad_gw_scores.json</a> '
+        "in the public repository, graded from FPL's own entry history, with "
+        "the frozen squads in "
+        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen">data/model_squad_frozen</a>. '
+        "The FPL average is FPL's own average score for the gameweek, not a "
+        "number the model computes.</p>")
 
 
 def _mae_cell(v) -> str:
