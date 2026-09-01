@@ -123,7 +123,40 @@ export interface HoldVerdict {
 	message: string;
 }
 
+export interface LastFinishedGw {
+	gw: number;
+	players: {
+		id: number;
+		web_name: string | null;
+		team_short: string | null;
+		pos: string | null;
+		/** 0 = penkki, 1 = pelaava, 2 = kapteeni, 3 = triple captain. */
+		multiplier: number;
+		is_captain: boolean;
+		is_vice_captain: boolean;
+		/** null = pelaaja ei ollut mukana. Nolla olisi vaite eika totuus. */
+		points: number | null;
+		xp_frozen: number | null;
+	}[];
+	/** FPL:n oma pistemaara (entry_history.points), ei meidan summamme. */
+	points: number | null;
+	transfer_cost: number | null;
+	points_on_bench: number | null;
+	chip: string | null;
+	average_entry_score: number | null;
+	xp: number | null;
+	diff: number | null;
+	complete: boolean;
+	frozen_at: string | null;
+	deadline: string | null;
+}
+
 export interface RateTeamResponse {
+	/** LUCK-PITCH (1.9): paattynyt kierros. `team.players[].in_xi` on MALLIN
+	 *  optimi-XI eika sita mita kayttaja pelasi, joten kierroksen tulos EI ole
+	 *  johdettavissa siita listasta. null = ei kierrosta / entry ei julkinen /
+	 *  vanha backend. */
+	last_finished?: LastFinishedGw | null;
 	meta: {
 		mode: string;
 		gw: number;

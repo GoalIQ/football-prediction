@@ -9,7 +9,7 @@
 	 * Pitch-tausta = teal-tint (#108-paletti, ei uutta nurmiväriä).
 	 */
 	import { capture } from '$lib/analytics';
-	import type { RatedPlayer } from '$lib/fantasyTools';
+	import type { RatedPlayer, LastFinishedGw } from '$lib/fantasyTools';
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { luckVerdict, squadLuck, LUCK_MARK } from '$lib/luck';
@@ -22,7 +22,9 @@
 		gwInProgress = false,
 		onUpgrade,
 		initialCaptaincy,
-		onCaptaincyChange
+		onCaptaincyChange,
+		lastFinished = null,
+		picksGw = null
 	}: {
 		players: RatedPlayer[];
 		premium?: boolean;
@@ -37,6 +39,11 @@
 		initialCaptaincy?: { captain_id: number | null; vice_id: number | null };
 		/** Kutsutaan kun kapteeni TAI vice vaihtuu — parent persistoi draftiin. */
 		onCaptaincyChange?: (captainId: number | null, viceId: number | null) => void;
+		/** LUCK-PITCH (1.9): paattyneen kierroksen lohko backendilta. */
+		lastFinished?: LastFinishedGw | null;
+		/** Milta kierrokselta ladatut picksit ovat. Pelaajakohtaiset luvut vain
+		 *  kun tama on sama kuin `lastFinished.gw`. */
+		picksGw?: number | null;
 	} = $props();
 
 	/** Validit FPL-muodostelmat [DEF, MID, FWD] (GK aina 1, yht. 11). */
@@ -215,43 +222,31 @@
 	});
 	const editDelta = $derived(gwXp - baselineXp);
 
-	/* LUCK-PITCH (1.9): rivin summa toteumana ja pinnattuna ennusteena.
+	/* LUCK-PITCH (1.9): paattyneen kierroksen luvut backendin omasta lohkosta.
 	 *
-	 * 🔴 VAIN LADATULLE RIVILLE. `xi` on what-if-tila: kayttaja voi vaihtaa
-	 * penkkia, muodostelmaa ja kapteenia. Sellaisen rivin summa ei ole hanen
-	 * kierroksensa tulos, ja pistemaara sen ylla olisi vaite kierroksesta jota
-	 * ei pelattu. Lohko piiloutuu heti kun rivi eroaa ladatusta, ja tilalle
-	 * tulee yksi lause joka kertoo miksi. Sama saanto mobiilissa. */
-	const isLoadedLineup = $derived.by(() => {
-		const loaded = players.filter((p) => p.in_xi).map((p) => p.id).sort((a, b) => a - b);
-		const cur = [...xiIds].sort((a, b) => a - b);
-		const loadedCap = players.find((p) => p.is_captain)?.id ?? null;
-		return (
-			loaded.length === cur.length &&
-			loaded.every((id, i) => id === cur[i]) &&
-			loadedCap === effCaptain
-		);
+	 * 🔴 EI `xi`:sta lasketa mitaan. `in_xi` on MALLIN OPTIMI-XI, ei sita mita
+	 * kayttaja pelasi. `last_finished.points` on FPL:n oma luku. Sama saanto
+	 * mobiilissa. */
+	const luckSameSquad = $derived(
+		lastFinished != null && picksGw != null && picksGw === lastFinished.gw
+	);
+	const luckById = $derived.by(() => {
+		const m = new Map<number, { points: number | null; xp: number | null }>();
+		if (!luckSameSquad || !lastFinished) return m;
+		for (const r of lastFinished.players) m.set(r.id, { points: r.points, xp: r.xp_frozen });
+		return m;
 	});
-	const luckRows = $derived.by(() =>
-		xi
-			.map((p) => ({ item: p, xp: frozenFor(p), actual: actualFor(p) }))
-			.filter((r): r is { item: RatedPlayer; xp: number; actual: number } =>
-				typeof r.xp === 'number' && typeof r.actual === 'number'
-			)
-	);
-	const luck = $derived(
-		isLoadedLineup
-			? squadLuck(luckRows, (p: RatedPlayer) => (p.id === effCaptain ? 2 : 1))
-			: null
-	);
-	const luckHiddenByEdit = $derived(!isLoadedLineup && luckRows.length > 0);
 	/** Solun tuomio ja erotus. Kierros on RATKENNUT vasta kun molemmat luvut
 	 *  ovat olemassa; puolikas vertailu jaa vanhaan muotoon. */
 	function settledOf(p: RatedPlayer): { actual: number; xp: number; diff: number } | null {
-		const a = actualFor(p);
-		const f = frozenFor(p);
-		if (typeof a !== 'number' || typeof f !== 'number') return null;
-		return { actual: a, xp: f, diff: a - f };
+		const r = luckById.get(p.id);
+		if (!r || typeof r.points !== 'number' || typeof r.xp !== 'number') return null;
+		return { actual: r.points, xp: r.xp, diff: r.points - r.xp };
+	}
+	function markOf(p: RatedPlayer): string | null {
+		const r = luckById.get(p.id);
+		const v = luckVerdict(r?.xp, r?.points);
+		return v == null ? null : LUCK_MARK[v];
 	}
 	const selectedInXi = $derived(selectedId != null && xiIds.includes(selectedId));
 
@@ -471,31 +466,42 @@
 			</p>
 		{/if}
 
-		{#if luck}
-			<!-- LUCK-PITCH (1.9): kierroksen tulos mallia vasten. Nakyy vain
-			     ladatulle riville, ks. isLoadedLineup. -->
-			<p class="label" style="margin-bottom:var(--s-2)">This week vs the model</p>
+		{#if lastFinished && lastFinished.points != null}
+			<!-- LUCK-PITCH (1.9): kierroksen tulos mallia vasten. Luvut tulevat
+			     backendin last_finished-lohkosta, eivat what-if-tilasta. -->
+			<p class="label" style="margin-bottom:var(--s-2)">
+				GW{lastFinished.gw} vs the model
+			</p>
 			<div class="luck-row">
 				<div class="luck-cell">
 					<span class="luck-key">Points</span>
-					<span class="luck-val">{luck.points}</span>
+					<span class="luck-val">{lastFinished.points}</span>
 				</div>
 				<div class="luck-cell">
 					<span class="luck-key">Projected</span>
-					<span class="luck-val">{luck.xp.toFixed(1)}</span>
+					<span class="luck-val"
+						>{lastFinished.xp != null ? lastFinished.xp.toFixed(1) : '—'}</span
+					>
 				</div>
 				<div class="luck-cell">
-					<span class="luck-key">{luck.diff >= 0 ? 'Over model' : 'Under model'}</span>
-					<span class="luck-val" class:under={luck.diff < 0}
-						>{luck.diff >= 0 ? '+' : ''}{luck.diff.toFixed(1)}</span
+					<span class="luck-key"
+						>{lastFinished.diff == null || lastFinished.diff >= 0
+							? 'Over model'
+							: 'Under model'}</span
+					>
+					<span class="luck-val" class:under={(lastFinished.diff ?? 0) < 0}
+						>{lastFinished.diff == null
+							? '—'
+							: `${lastFinished.diff >= 0 ? '+' : ''}${lastFinished.diff.toFixed(1)}`}</span
 					>
 				</div>
 			</div>
+			{#if lastFinished.average_entry_score != null}
+				<p class="luck-note">
+					FPL average that week: {lastFinished.average_entry_score} points.
+				</p>
+			{/if}
 			<p class="luck-note">Projection frozen before the deadline.</p>
-		{:else if luckHiddenByEdit}
-			<p class="luck-note">
-				You have changed the lineup. Reload your team to see the round you actually played.
-			</p>
 		{/if}
 
 		<div class="xi-head">
@@ -554,10 +560,8 @@
 								     Kapteenibadge on oikealla ja saatavuuslippu alhaalla,
 								     joten kolmas merkki tarvitsee oman kulmansa. Merkki on
 								     harvinainen: tavallinen kierros ei saa yhtaan. -->
-								{#if luckVerdict(frozenFor(p), actualFor(p)) != null}
-									<span class="mark" aria-hidden="true"
-										>{LUCK_MARK[luckVerdict(frozenFor(p), actualFor(p))!]}</span
-									>
+								{#if markOf(p)}
+									<span class="mark" aria-hidden="true">{markOf(p)}</span>
 								{/if}
 							</span>
 							<!-- 22.8: nimi + xP tummalla laatalla nurmen päällä —

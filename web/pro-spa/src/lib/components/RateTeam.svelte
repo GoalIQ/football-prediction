@@ -1338,6 +1338,8 @@
 		{premium}
 		defaultGw={data.meta.gw}
 		gwInProgress={data.meta.gw_in_progress === true}
+		lastFinished={data.last_finished ?? null}
+		picksGw={data.meta.picks_gw ?? null}
 		{onUpgrade}
 		initialCaptaincy={captaincy}
 		onCaptaincyChange={handleCaptaincyChange}
@@ -1653,6 +1655,8 @@
 			{premium}
 			defaultGw={dataB.meta.gw}
 			gwInProgress={dataB.meta.gw_in_progress === true}
+			lastFinished={dataB.last_finished ?? null}
+			picksGw={dataB.meta.picks_gw ?? null}
 			{onUpgrade}
 			initialCaptaincy={captaincyB}
 			onCaptaincyChange={handleCaptaincyChangeB}
