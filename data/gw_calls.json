@@ -132,7 +132,43 @@
      "hit": true
     }
    ],
-   "graded": null,
+   "graded": {
+    "graded_at": "2026-09-01T00:21:09Z",
+    "provisional": true,
+    "by_call": {
+     "model_captain": {
+      "points": 2,
+      "minutes": 90,
+      "met": null,
+      "started": true,
+      "captain_total": 4
+     },
+     "captain_pick": {
+      "points": 23,
+      "minutes": 90,
+      "met": true,
+      "started": true
+     },
+     "ceiling": {
+      "points": 13,
+      "minutes": 90,
+      "met": true,
+      "started": true
+     },
+     "safest": {
+      "points": 4,
+      "minutes": 90,
+      "met": true,
+      "started": true
+     },
+     "gamble": {
+      "points": 2,
+      "minutes": 90,
+      "met": false,
+      "started": true
+     }
+    }
+   },
    "entry_actual": {
     "transfers": 0,
     "transfers_cost": 0,
