@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-08-31T16:33:08+00:00",
+  "generated_at": "2026-09-01T08:00:35+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -55,6 +55,85 @@
     "x_mae": 5.4,
     "direction": "aliarvio"
    }
+  },
+  {
+   "gw": 2,
+   "provisional": true,
+   "squad": {
+    "points": 108,
+    "average": 79,
+    "diff": 29,
+    "bench_points": 5,
+    "transfer_cost": 0,
+    "chip": "wildcard",
+    "captain_id": 426,
+    "captain_points_added": 23,
+    "graded_at": "2026-08-31T22:52:06+00:00"
+   },
+   "calls": {
+    "logged_at": "2026-08-28T17:13:07Z",
+    "deadline_utc": "2026-08-28T17:30:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": true,
+    "hits": 3,
+    "misses": 1,
+    "ungraded": 1,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "Guéhi",
+      "team_short": "MCI",
+      "criterion": "captain return, points doubled",
+      "predicted": 4.76,
+      "points": 2,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "10+ pts",
+      "predicted": 0.146,
+      "points": 23,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "reached p90",
+      "predicted": 10,
+      "points": 13,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "safest",
+      "web_name": "Stach",
+      "team_short": "LEE",
+      "criterion": "3+ pts",
+      "predicted": 0.806,
+      "points": 4,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "gamble",
+      "web_name": "Guéhi",
+      "team_short": "MCI",
+      "criterion": "10+ pts",
+      "predicted": 0.084,
+      "points": 2,
+      "started": true,
+      "met": false
+     }
+    ]
+   },
+   "accuracy": null,
+   "headline_miss": null
   }
  ]
 }

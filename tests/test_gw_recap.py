@@ -199,3 +199,29 @@ def test_gw_recap_ei_ole_gitignoressa():
     # Negatiivinen kontrolli: testi ei saa lapaista pelkalla merkkijonolla
     # kommentissa - poikkeuksen on oltava OMALLA rivillaan.
     assert "/data/*" in rivit
+
+
+def test_workflow_committaa_gw_recapin():
+    """🔴 Gitignoren poikkeus EI riita: commit-askel lisaa tiedostot kasin
+    lueteltuna, ja ilman `git add data/gw_recap.json` -rivia artefakti jaa
+    runnerin levylle vaikka `build_gw_recap` on vihrea.
+
+    Nain kavi 31.8-1.9: poikkeus lisattiin, `git add` ei, ja julkaistu
+    artefakti jai 31.8 16:33 tilaan seitseman ajon lapi. Sama vikaluokka kuin
+    `player-gw`-jaatyminen 22.-23.8: askel on vihrea, tuotos ei liiku.
+    """
+    wf = (pathlib.Path(__file__).resolve().parents[1] / ".github" /
+          "workflows" / "fpl-data-refresh.yml").read_text(encoding="utf-8")
+    commit_askel = wf.split("Commit + push to main", 1)
+    assert len(commit_askel) == 2, "commit-askelta ei loytynyt workflow'sta"
+    runko = commit_askel[1].split("- name:", 1)[0]
+    assert "git add data/gw_recap.json" in runko
+
+    # Negatiivinen kontrolli 1: rivin on oltava COMMIT-askeleessa, ei missa
+    # tahansa tiedostossa - `build_gw_recap` esiintyy yllakin omana askeleenaan.
+    assert "git add data/gw_recap.json" not in commit_askel[0]
+
+    # Negatiivinen kontrolli 2: askel ei saa olla `-e`-kuolemanloukku. Sama
+    # syy kuin 2.8:n founder_entry-korjauksessa: yhden valinnaisen tiedoston
+    # add ei saa kaataa koko pushia, joten rivi on `[ -f ... ] &&` -muodossa.
+    assert "[ -f data/gw_recap.json ] && git add data/gw_recap.json" in runko

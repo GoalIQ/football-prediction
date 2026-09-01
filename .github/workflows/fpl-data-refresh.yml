@@ -469,6 +469,12 @@ jobs:
           [ -f data/model_squad_gw_scores.json ] && git add data/model_squad_gw_scores.json
           # 28.8 (GW-CALLS-LOKI): kutsut + gradaus, git-historia todistaa ajan.
           [ -f data/gw_calls.json ] && git add data/gw_calls.json
+          # 1.9 (GW-RECAP-EI-PAASSYT-REPOON): `build_gw_recap` ajoi vihreana
+          # joka kolmas tunti 31.8 alkaen, mutta tuotos jai runnerin levylle
+          # koska tata rivia ei ollut. .gitignoren poikkeus lisattiin 31.8,
+          # `git add` ei -> julkaistu artefakti jai 31.8 16:33 tilaan, S13 luki
+          # sita raw.githubista ja koko peliviikkokadenssi oli inertti hiljaa.
+          [ -f data/gw_recap.json ] && git add data/gw_recap.json
           # 13.8: GW-rivit stats-sivulle (siirretty accuracy-logista, ks. yllä)
           [ -f fpl/player-gw.json ] && git add fpl/player-gw.json
           # 14.8 (PUSH-NOTIF b): idempotenssimarkkeri + toimituksen auditointi.
