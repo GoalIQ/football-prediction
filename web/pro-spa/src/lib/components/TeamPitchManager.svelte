@@ -394,16 +394,49 @@
 	}
 	/** Tuloskortin poikkeamalause (portti 2.9). Sama teksti mobiilissa. */
 	function projectionLine(xp: number, diff: number, projectedInStrip: boolean): string {
-		const d = Math.abs(diff).toFixed(1);
+		// Portti 2.9 k2: vertailu NAYTETTAVASTA luvusta (diff 0.04 -> "matched").
+		const d = Math.abs(diff);
+		const s = d.toFixed(1);
 		if (projectedInStrip) {
-			if (diff > 0) return `You beat the projection by ${d}.`;
-			if (diff < 0) return `You came in ${d} under the projection.`;
-			return 'You matched the projection.';
+			if (d < 0.05) return 'You matched the projection.';
+			return diff > 0 ? `You beat the projection by ${s}.` : `You came in ${s} under the projection.`;
 		}
 		const base = `Your XI was worth ${xp.toFixed(1)} xP`;
-		if (diff > 0) return `${base}, you beat it by ${d}.`;
-		if (diff < 0) return `${base}, you came in ${d} under it.`;
-		return `${base}, you matched it.`;
+		if (d < 0.05) return `${base}, you matched it.`;
+		return diff > 0 ? `${base}, you beat it by ${s}.` : `${base}, you came in ${s} under it.`;
+	}
+	/** Isoin heilahdus ILMAN kerrointa (portti 2.9 k2): lauseen luku on sama
+	 *  kuin solussa ja /fpl/points-reitilla; kerroin sanotaan aaneen. null =
+	 *  ei lausetta (vastakkaismerkkinen heilahdus tai lukua ei loydy).
+	 *  Sama logiikka mobiilin FantasyTools.tsx:ssa. */
+	interface SwingInfo {
+		name: string;
+		raw: string;
+		mult: number;
+		over: boolean;
+	}
+	function swingInfo(lf: LastFinishedGw): SwingInfo | null {
+		const bs = lf.biggest_swing;
+		if (!bs || !bs.web_name || lf.diff == null) return null;
+		if (bs.contribution > 0 !== lf.diff > 0) return null;
+		const hit = lf.players.find(
+			(c) =>
+				c.multiplier > 0 &&
+				c.points != null &&
+				c.xp_frozen != null &&
+				Math.abs((c.points - c.xp_frozen) * c.multiplier - bs.contribution) < 0.06
+		);
+		if (!hit || hit.points == null || hit.xp_frozen == null) return null;
+		const raw = Math.abs(hit.points - hit.xp_frozen);
+		if (raw < 0.05) return null;
+		return { name: hit.web_name ?? bs.web_name, raw: raw.toFixed(1), mult: hit.multiplier, over: bs.contribution > 0 };
+	}
+	function swingLineEn(s: SwingInfo): string {
+		if (s.mult >= 2) {
+			const x = s.mult >= 3 ? 'tripled' : 'doubled';
+			return `${s.name} was ${s.raw} ${s.over ? 'over' : 'short'}, ${x} by the armband.`;
+		}
+		return `${s.name} was ${s.raw} of that.`;
 	}
 	function luckCardSpec() {
 		if (!luckSameSquad || !lastFinished || lastFinished.points == null) return null;
@@ -472,9 +505,8 @@
 		} else if (lf.xp != null && !projectedInStrip) {
 			notes.push(`Your XI was worth ${lf.xp.toFixed(1)} xP.`);
 		}
-		if (lf.biggest_swing && lf.biggest_swing.web_name) {
-			notes.push(`${lf.biggest_swing.web_name} alone was ${lf.biggest_swing.contribution.toFixed(1)} of that.`);
-		}
+		const sw = swingInfo(lf);
+		if (sw) notes.push(swingLineEn(sw));
 		const benchCards = benched.map(toCard);
 		const hasMark = [...cardRows.flat(), ...benchCards].some((p) => p.mark != null);
 		return {
@@ -661,14 +693,12 @@
 				{/if}
 				{#if lastFinished.biggest_swing}
 					<!-- Kapteeninauha tuplaa poikkeaman, joten otsikkoluku on
-					     rakenteellisesti yhden valinnan varassa. Nimetty rivi tekee
-					     siita luettavan. -->
-					<p class="score-swing">
-						{lastFinished.biggest_swing.web_name} alone was
-						{lastFinished.biggest_swing.contribution >= 0 ? '+' : ''}{lastFinished.biggest_swing.contribution.toFixed(
-							1
-						)} of it.
-					</p>
+					     rakenteellisesti yhden valinnan varassa. Portti 2.9 k2: sama
+					     lause kuin kortilla — luku ilman kerrointa, kerroin aaneen. -->
+					{@const sw = swingInfo(lastFinished)}
+					{#if sw}
+						<p class="score-swing">{swingLineEn(sw)}</p>
+					{/if}
 				{/if}
 				<!-- Portti 2.9: selite vain kun merkki on olemassa. -->
 				{#if lastFinished.players.some((r) => luckVerdict(r.xp_frozen, r.points) != null)}
