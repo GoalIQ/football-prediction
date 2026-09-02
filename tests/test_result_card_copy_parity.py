@@ -25,11 +25,38 @@ HERE = Path(__file__).resolve()
 WEB = HERE.parents[1] / "web" / "pro-spa" / "src" / "lib" / "components" / "TeamPitchManager.svelte"
 MOBILE = HERE.parents[2] / "goaliq-app" / "lib" / "fantasyResultCopy.ts"
 
-FUNCS = ("projectionLine", "swingInfo", "swingLineEn")
+MOBILE_SPEC = HERE.parents[2] / "goaliq-app" / "components" / "FantasyTools.tsx"
+
+FUNCS = ("projectionLine", "swingInfo", "swingLineEn", "chipLabel")
+
+# Kortin spec-funktio: reitti (mallin entry-id avaimessa, /fpl/points
+# alatunnisteessa) ja muut kortin literaalit asuvat TAALLA, eivat
+# lausefunktioissa. Kierros 4 osoitti mutaatiolla etta pelkat lausefunktiot
+# eivat huomaa reitin katoamista.
+SPEC_LITERALS = (
+    "You",
+    "Model · entry ${",
+    "You win by",
+    "Model wins by",
+    "Projected",
+    "Gameweek ${",
+    "FPL average ${",
+    "rank ${",
+    "model on ${",
+    "got lucky",
+    "got robbed",
+    "frozen before the deadline · goaliq.app/fpl/points",
+    "n/a",
+)
+
+
+def _unescape(s: str) -> str:
+    return re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), s)
 
 
 def _function_body(src: str, name: str) -> str:
-    m = re.search(r"function " + name + r"\(", src)
+    # `function name(` TAI `const name = (...) =>` (mobiilin luckCardSpec).
+    m = re.search(r"function " + name + r"\(|const " + name + r" = \(", src)
     assert m, f"{name} puuttuu"
     i = src.index("{", m.end())
     depth = 0
@@ -43,12 +70,19 @@ def _function_body(src: str, name: str) -> str:
     raise AssertionError(f"{name}: sulkeva aaltosulku puuttuu")
 
 
+def _strip_comments(src: str) -> str:
+    src = re.sub(r"/\*.*?\*/", "", src, flags=re.DOTALL)
+    return re.sub(r"//[^\n]*", "", src)
+
+
 def _literals(body: str) -> set[str]:
     out: set[str] = set()
-    for m in re.finditer(r"`([^`]*)`|'([^']*)'", body):
-        s = m.group(1) if m.group(1) is not None else m.group(2)
+    # Kommentit pois ensin: perustelukommentin lainaus ("matched") ei ole copya.
+    body = _strip_comments(body)
+    for m in re.finditer(r"`([^`]*)`|'([^']*)'|\"([^\"]*)\"", body):
+        s = next(g for g in m.groups() if g is not None)
         if s:
-            out.add(s)
+            out.add(_unescape(s))
     return out
 
 
@@ -60,6 +94,23 @@ def test_kortin_lauseet_ovat_samat_molemmilla_pinnoilla(name: str):
     assert web == mob, (
         f"{name}: vain webissa {sorted(web - mob)} · vain mobiilissa {sorted(mob - web)}"
     )
+
+
+@pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
+@pytest.mark.parametrize("literal", SPEC_LITERALS)
+def test_kortin_spec_literaalit_molemmilla_pinnoilla(literal: str):
+    web = _unescape(_function_body(WEB.read_text(encoding="utf-8"), "luckCardSpec"))
+    mob = _unescape(_function_body(MOBILE_SPEC.read_text(encoding="utf-8"), "luckCardSpec"))
+    assert literal in web, f"webin luckCardSpec ei sisalla {literal!r}"
+    assert literal in mob, f"mobiilin luckCardSpec ei sisalla {literal!r}"
+
+
+@pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
+def test_mallin_luku_vain_reitin_kanssa():
+    """Reitti ei saa kadota hiljaa: mallisolu vaatii entry-id:n molemmilla."""
+    web = _function_body(WEB.read_text(encoding="utf-8"), "luckCardSpec")
+    mob = _function_body(MOBILE_SPEC.read_text(encoding="utf-8"), "luckCardSpec")
+    assert "model_entry_id != null" in web and "model_entry_id != null" in mob
 
 
 def test_hylatyt_sanamuodot_eivat_palaa():

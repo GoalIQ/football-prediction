@@ -467,7 +467,8 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 				ctx.lineTo(x, y + boxH);
 				ctx.stroke();
 			}
-			ctx.font = med(16);
+			// Portti 2.9 k4: ainoa teksti ilman shrinkkia oli tama avain.
+			shrink(ctx, h.key.toUpperCase(), 16, cellW - 40, 11, med);
 			ctx.fillStyle = MUTED;
 			ctx.fillText(h.key.toUpperCase(), x + 20, y + 14);
 			ctx.font = bold(42);

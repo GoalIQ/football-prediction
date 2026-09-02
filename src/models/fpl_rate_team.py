@@ -1478,6 +1478,8 @@ def model_squad_gw(gw: int) -> dict | None:
                 "points": r.get("points"),
                 "fpl_average": r.get("fpl_average"),
                 "provisional": bool(r.get("provisional")),
+                # Portti 2.9 k4: mallin chip kortille kayttajan chipin rinnalle.
+                "chip": r.get("active_chip"),
             }
     return None
 
@@ -1621,6 +1623,10 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     # olisi holynpolya, joten vertailu jatetaan pois.
     if model and model.get("entry_id") == entry_id:
         model = None
+    # Portti 2.9 k4: provisional-rivi (ennen bonuksia) ei saa paatya kortille
+    # lopullisena — reitti nayttaisi eri luvun kuin kortti.
+    if model and model.get("provisional"):
+        model = None
     model_points = (model or {}).get("points")
     model_points = model_points if isinstance(model_points, int) else None
     xp_round = round(xp_total, 2)
@@ -1673,6 +1679,8 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         # mallirivia ei ole -> kortti pudottaa mallisolut.
         "model_entry_id": ((model or {}).get("entry_id")
                            if model_points is not None else None),
+        "model_chip": ((model or {}).get("chip")
+                       if model_points is not None else None),
         # Positiivinen = kayttaja voitti mallin. None kun jompikumpi puuttuu:
         # puolikas ottelu ei ole ottelu.
         "vs_model": ((points - model_points)

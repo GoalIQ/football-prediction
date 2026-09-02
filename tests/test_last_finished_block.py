@@ -266,10 +266,23 @@ def test_vaillinainen_freeze_pudottaa_myos_heilahduksen(wired, monkeypatch):
 def test_model_entry_id_kulkee_mallin_luvun_mukana(wired, monkeypatch):
     monkeypatch.setattr(rt, "model_squad_gw", lambda g: {
         "entry_id": 116920, "points": 108, "fpl_average": 81, "provisional": False,
+        "chip": "wildcard",
     })
     b = rt.last_finished_block(1, BS, {}, "2026/27")
     assert b["model_points"] == 108
     assert b["model_entry_id"] == 116920
+    assert b["model_chip"] == "wildcard"
+
+
+def test_provisional_mallirivi_ei_paase_kortille(wired, monkeypatch):
+    monkeypatch.setattr(rt, "model_squad_gw", lambda g: {
+        "entry_id": 116920, "points": 99, "fpl_average": 81, "provisional": True,
+        "chip": None,
+    })
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["model_points"] is None
+    assert b["model_entry_id"] is None
+    assert b["model_chip"] is None
 
 
 def test_model_entry_id_puuttuu_ilman_mallirivia(wired, monkeypatch):

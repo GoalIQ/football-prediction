@@ -156,6 +156,8 @@ export interface LastFinishedGw {
 	model_points: number | null;
 	/** Mallin oman FPL-entryn id (julkinen) — kortin reitti mallin luvulle. */
 	model_entry_id?: number | null;
+	/** Mallin oman rivin chip samalla kierroksella (FPL active_chip -koodi). */
+	model_chip?: string | null;
 	/** Positiivinen = kayttaja voitti mallin. null = puolikas ottelu. */
 	vs_model: number | null;
 	xp: number | null;

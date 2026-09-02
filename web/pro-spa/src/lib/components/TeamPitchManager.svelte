@@ -503,7 +503,9 @@
 					(lf.rank_change != null && lf.rank_change !== 0
 						? ` ${lf.rank_change > 0 ? '\u25b2' : '\u25bc'} ${Math.abs(lf.rank_change).toLocaleString('en-GB')}`
 						: '')
-				: null
+				: null,
+			// Portti 2.9 k4: mallin chip samalla rivilla kuin kayttajan.
+			modelRoute && chipLabel(lf.model_chip) ? `model on ${chipLabel(lf.model_chip)}` : null
 		]
 			.filter(Boolean)
 			.join(' \u00b7 ');
@@ -656,15 +658,17 @@
 						<span class="score-key">You</span>
 						<span class="score-val">{lastFinished.points}</span>
 					</div>
-					{#if lastFinished.model_points != null}
+					<!-- Portti 2.9 k4: mallin luku VAIN reitin kanssa, sama saanto
+					     kuin kortilla. -->
+					{#if lastFinished.model_points != null && lastFinished.model_entry_id != null}
 						<div class="score-side">
-							<span class="score-key">Model</span>
+							<span class="score-key">Model · entry {lastFinished.model_entry_id}</span>
 							<span class="score-val model">{lastFinished.model_points}</span>
 						</div>
 					{/if}
 				</div>
 
-				{#if lastFinished.vs_model != null}
+				{#if lastFinished.vs_model != null && lastFinished.model_entry_id != null}
 					<p class="score-verdict" class:lost={lastFinished.vs_model < 0}>
 						{#if lastFinished.vs_model > 0}
 							You beat the model by {lastFinished.vs_model}
