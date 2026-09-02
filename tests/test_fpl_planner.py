@@ -440,14 +440,16 @@ def test_replacements_same_pos_bracket_sorted_and_reason():
     assert rows[0]["xp_window"] == 27.5 and rows[0]["xp_gap_vs_target"] == 5.5
     assert rows[0]["owned_pct"] == 40.0
     for r in rows:
-        assert r["reason"]["kind"] in ("minutes", "fixture_peak", "xp_gap")
+        assert r["reason"]["kind"] in ("minutes", "fixture")
+        assert r["reason"]["text"], "Ville 2.9: syy joka rivilla"
         assert len(r["gameweeks"]) == 5
     # Fixture: tasainen xP joka GW + ei p_start -> syy on xP-ero, ja luku on
     # sama kuin rivin oma gap (yksi lahde kahdelle kentalle).
-    assert rows[0]["reason"]["kind"] == "xp_gap"
-    assert rows[0]["reason"]["value"] == rows[0]["xp_gap_vs_target"]
-    # PORTTI 2.9: xp_gap ei kanna tekstia (vs-sarake kantaa saman luvun).
-    assert rows[0]["reason"]["text"] == ""
+    # Fixture: tasainen xP -> paras kierros on ikkunan ensimmainen (tasapeli
+    # -> aikaisin), ei piikki. Teksti on eri fakta kuin vs-sarake.
+    assert rows[0]["reason"]["kind"] == "fixture"
+    assert rows[0]["reason"]["gw"] == 1 and rows[0]["reason"]["peak"] is False
+    assert rows[0]["reason"]["text"] == "GW1 blank is the biggest week, 5.5 xP"
     assert out["meta"]["reason_note"].endswith("over GW1-GW5, not a single gameweek.")
 
 
@@ -492,10 +494,9 @@ def test_replacements_reason_minutes_and_peak(monkeypatch):
     rows = {r["id"]: r for r in out["players"]}
     assert rows[15]["reason"]["kind"] == "minutes"
     assert rows[15]["reason"]["text"] == "projected to start 92% of games, P20 55%"
-    assert rows[16]["reason"]["kind"] == "fixture_peak"
+    assert rows[16]["reason"]["kind"] == "fixture" and rows[16]["reason"]["peak"] is True
     assert rows[16]["reason"]["gw"] == 3
-    assert rows[16]["reason"]["text"] == (
-        "GW3 C09 (H) is the biggest week in the projection, 9.0 xP")
+    assert rows[16]["reason"]["text"] == "GW3 C09 (H) is the biggest week, 9.0 xP"
 
 
 def test_replacements_availability_gate_drops_live_out(monkeypatch):

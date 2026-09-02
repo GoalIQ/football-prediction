@@ -100,9 +100,6 @@
 	);
 	let nextN = $derived(data ? data.meta.gws.length : gws);
 	let dropped = $derived(data?.meta.availability_gate?.dropped ?? []);
-	// PORTTI 2.9: xp_gap-syylla ei ole tekstia (vs-sarake kantaa luvun), joten
-	// Reason-sarake nakyy vain kun jollakin rivilla on muu syy.
-	let hasReason = $derived(data?.players.some((p) => p.reason.kind !== 'xp_gap' && p.reason.text) ?? false);
 
 	// Kortti = se nakyma jonka jakaja katsoi: kohde, haarukka ja ikkuna
 	// otsikossa, jotta lista ei vaita olevansa "parhaat korvaajat" yleisesti.
@@ -127,10 +124,13 @@
 					rank: i + 1,
 					name: p.web_name,
 					tag: p.pos,
+					// Ville 2.9: Rowan jakaa KUVAN, joten hinta ja syy kortille.
+					tag2: `${p.price.toFixed(1)}m`,
 					team: p.team_short,
 					badges: p.status === 'd' && p.chance_next != null ? [`${p.chance_next}%`] : undefined,
 					mid: `${p.owned_pct.toFixed(1)}%`,
-					value: p.xp_window.toFixed(1)
+					value: p.xp_window.toFixed(1),
+					sub: p.reason.text
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'replacements', method });
@@ -248,7 +248,7 @@
 								>vs {data.target.web_name}</abbr
 							></th
 						>
-						{#if hasReason}<th>Reason</th>{/if}
+						<th>Reason</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -274,7 +274,7 @@
 								class:gap-pos={p.xp_gap_vs_target > 0}
 								class:gap-neg={p.xp_gap_vs_target < 0}>{gap(p)}</td
 							>
-							{#if hasReason}<td class="reason">{p.reason.text}</td>{/if}
+							<td class="reason">{p.reason.text}</td>
 						</tr>
 					{/each}
 				</tbody>

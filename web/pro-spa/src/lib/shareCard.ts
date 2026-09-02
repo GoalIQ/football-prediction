@@ -30,6 +30,9 @@ export interface CardRow {
 	mid?: string;
 	/** oikean laidan arvo (xP / xG / hit rate) */
 	value: string;
+	/** 2.9: toinen rivi nimen alle (replacements: syy). Kasvattaa rivikorkeutta
+	 *  koko kortilla jos yhdellakin rivilla on. */
+	sub?: string;
 }
 
 export interface CardSpec {
@@ -109,7 +112,9 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	const wm = await loadWordmark();
 
 	const n = spec.rows.length;
-	const H = ROW_TOP + n * ROW_H + FOOT_H;
+	const hasSub = spec.rows.some((r) => !!r.sub);
+	const rowH = hasSub ? ROW_H + 30 : ROW_H;
+	const H = ROW_TOP + n * rowH + FOOT_H;
 	const canvas = document.createElement('canvas');
 	canvas.width = W;
 	canvas.height = H;
@@ -171,14 +176,15 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 
 	for (let i = 0; i < n; i++) {
 		const r = spec.rows[i];
-		const y = ROW_TOP + i * ROW_H;
-		const cy = y + ROW_H / 2;
+		const y = ROW_TOP + i * rowH;
+		// sub-rivilla paarivi nousee ylos ja syy piirretaan sen alle
+		const cy = hasSub ? y + 40 : y + rowH / 2;
 		const first = i === 0;
 
 		// Rivikehys: karkirivi amber-kehyksella, muut ohuella viivalla
 		ctx.strokeStyle = first ? AMBER : LINE;
 		ctx.lineWidth = first ? 2 : 1;
-		ctx.strokeRect(MX - 12, y + 4, W - 2 * (MX - 12), ROW_H - 8);
+		ctx.strokeRect(MX - 12, y + 4, W - 2 * (MX - 12), rowH - 8);
 
 		// rank oikeaan reunaan tasattuna
 		ctx.font = bold(28);
@@ -242,6 +248,13 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		ctx.font = bold(36);
 		ctx.fillStyle = first ? AMBER : CREAM;
 		ctx.fillText(r.value, W - MX - ctx.measureText(r.value).width, cy - 36 * 0.58);
+
+		if (r.sub) {
+			const sPx = shrink(ctx, r.sub, 20, W - 2 * MX - 76, 14, med);
+			ctx.font = med(sPx);
+			ctx.fillStyle = MUTED;
+			ctx.fillText(r.sub, MX + 76, y + rowH - 34);
+		}
 	}
 
 	// Footer + amber-alaraita (brandin tunniste)

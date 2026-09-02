@@ -584,24 +584,25 @@ def _replacement_reason(cand: dict, target: dict, gws: list[int]) -> dict:
             "text": "projected to start {}% of games, {} {}%".format(
                 c_pct, target["web_name"], t_pct),
         }
-    per_gw = [(_gw_xp(cand, g), g) for g in gws]
+    # Ville 2.9 ilta: syy nakyi vasta 6 GW:n ikkunalla, koska xp_gap-haara
+    # (lahes joka rivi) ei kantanut tekstia. Rowan pyysi syyn JOKA riville.
+    # Ratkaisu joka ei toista vs-saraketta: rivin paras kierros ikkunassa
+    # (vastustaja, koti/vieras, xP) on aina eri fakta kuin ero lahtijaan.
+    # `peak` kertoo onko se selvasti muita parempi (entinen fixture_peak).
+    per_gw = [(_gw_xp(cand, g), -g) for g in gws]   # tasapeli -> aikaisin GW
     total = sum(x for x, _ in per_gw)
-    if n >= 2 and total > 0:
-        best_xp, best_gw = max(per_gw)
-        if best_xp >= REASON_PEAK_RATIO * (total / n) and best_xp >= REASON_PEAK_MIN_XP:
-            return {
-                "kind": "fixture_peak",
-                "value": round(best_xp, 2),
-                "gw": best_gw,
-                "text": "GW{} {} is the biggest week in the projection, {:.1f} xP".format(
-                    best_gw, _gw_opponents_text(cand, best_gw), best_xp),
-            }
-    gap = total - _remaining_xp(target, gws)
+    best_xp, neg_gw = max(per_gw)
+    best_gw = -neg_gw
+    peak = (n >= 2 and total > 0
+            and best_xp >= REASON_PEAK_RATIO * (total / n)
+            and best_xp >= REASON_PEAK_MIN_XP)
     return {
-        "kind": "xp_gap",
-        "value": round(gap, 2),
-        # Ei tekstia: rivin xp_gap_vs_target ja UI:n vs-sarake kantavat luvun.
-        "text": "",
+        "kind": "fixture",
+        "value": round(best_xp, 2),
+        "gw": best_gw,
+        "peak": bool(peak),
+        "text": "GW{} {} is the biggest week, {:.1f} xP".format(
+            best_gw, _gw_opponents_text(cand, best_gw), best_xp),
     }
 
 
@@ -681,9 +682,12 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "candidates_in_bracket": len(cands),
             "availability_gate": {"checked": True, "dropped": dropped,
                                   "note": AVAILABILITY_GATE_NOTE},
-            "reason_note": ("Ownership is FPL's selected-by percentage. xP is "
-                            "the GoalIQ projection over GW{}-GW{}, not a single "
-                            "gameweek.".format(window[0], window[-1])),
+            "reason_note": ("Reason is the row's biggest projected week in the "
+                            "window, or the starts gap when the player going "
+                            "out is a minutes doubt. Ownership is FPL's "
+                            "selected-by percentage. xP is the GoalIQ projection "
+                            "over GW{}-GW{}, not a single gameweek."
+                            .format(window[0], window[-1])),
         },
         "target": {
             "id": target["id"], "web_name": target["web_name"],
