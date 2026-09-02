@@ -9,7 +9,7 @@
       "historical_median_pct": 13.0,
       "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
       "note": "Descriptive, not predictive. The flag says a rating is built on weaker information; it does not say which way that moves the projection.",
-      "n_flagged_players": 160,
+      "n_flagged_players": 187,
       "teams": {
         "Arsenal": {
           "flag": null,
@@ -42,10 +42,10 @@
           "minutes_churn_pct": 25.7
         },
         "Chelsea": {
-          "flag": null,
-          "note": "17% of last season's minutes have left the club.",
+          "flag": "high_turnover",
+          "note": "28% of last season's minutes were played by players who have since left. The rating is fitted on results, so it has not priced that in yet.",
           "is_promoted": false,
-          "minutes_churn_pct": 17.2
+          "minutes_churn_pct": 27.7
         },
         "Coventry": {
           "flag": "promoted",
@@ -61,9 +61,9 @@
         },
         "Everton": {
           "flag": null,
-          "note": "13% of last season's minutes have left the club.",
+          "note": "20% of last season's minutes have left the club.",
           "is_promoted": false,
-          "minutes_churn_pct": 13.0
+          "minutes_churn_pct": 20.1
         },
         "Fulham": {
           "flag": null,
@@ -121,9 +121,9 @@
         },
         "Tottenham": {
           "flag": null,
-          "note": "14% of last season's minutes have left the club.",
+          "note": "18% of last season's minutes have left the club.",
           "is_promoted": false,
-          "minutes_churn_pct": 13.5
+          "minutes_churn_pct": 17.6
         },
         "Sunderland": {
           "flag": null,
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-02T18:17:54+00:00",
+    "generated_at": "2026-09-02T22:57:43+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -223,7 +223,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 70.8,
+      "owned_pct": 70.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -503,7 +503,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 26.5,
+      "owned_pct": 26.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -643,7 +643,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 10.5,
+      "owned_pct": 10.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -783,7 +783,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 30.0,
+      "owned_pct": 29.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -923,7 +923,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 19.0,
+      "owned_pct": 18.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1188,7 +1188,8 @@
         "yellows": -0.15,
         "bonus": 0.53
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 398,
@@ -1203,7 +1204,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.0,
+      "owned_pct": 5.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1468,7 +1469,8 @@
         "yellows": -0.18,
         "bonus": 0.28
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 8,
@@ -1483,7 +1485,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 43.5,
+      "owned_pct": 43.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1623,7 +1625,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.4,
+      "owned_pct": 16.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2185,7 +2187,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 20.8,
+      "owned_pct": 20.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2589,7 +2591,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 13.8,
+      "owned_pct": 13.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2869,7 +2871,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 26.6,
+      "owned_pct": 26.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3149,7 +3151,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 15.0,
+      "owned_pct": 14.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3429,7 +3431,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 11.2,
+      "owned_pct": 11.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3710,7 +3712,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 17.7,
+      "owned_pct": 17.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3851,7 +3853,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 13.0,
+      "owned_pct": 13.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4255,7 +4257,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.6,
+      "owned_pct": 14.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4538,7 +4540,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.9,
+      "owned_pct": 4.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5098,7 +5100,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 7.9,
+      "owned_pct": 8.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5799,7 +5801,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.3,
+      "owned_pct": 4.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6346,7 +6348,8 @@
         "yellows": -0.13,
         "bonus": 0.16
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 40,
@@ -6361,7 +6364,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 25.0,
+      "owned_pct": 24.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6486,7 +6489,8 @@
         "yellows": -0.17,
         "bonus": 0.23
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 98,
@@ -7061,7 +7065,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 6.9,
+      "owned_pct": 7.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7326,7 +7330,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 18.0,
+      "owned_pct": 17.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7606,7 +7610,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 11.4,
+      "owned_pct": 11.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -9408,7 +9412,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.1,
+      "owned_pct": 14.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -9952,7 +9956,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 6.6,
+      "owned_pct": 6.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10092,7 +10096,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 8.4,
+      "owned_pct": 8.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10233,7 +10237,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 15.1,
+      "owned_pct": 15.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10793,7 +10797,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.5,
+      "owned_pct": 14.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -12843,7 +12847,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.8,
+      "owned_pct": 1.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -12983,7 +12987,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 1.0,
+      "owned_pct": 1.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -14495,7 +14499,7 @@
       "predicted_starts": 97.5,
       "minutes_confidence": "low",
       "data_basis": "limited_history",
-      "owned_pct": 7.8,
+      "owned_pct": 8.0,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -14881,7 +14885,7 @@
       "predicted_starts": 97.5,
       "minutes_confidence": "low",
       "data_basis": "limited_history",
-      "owned_pct": 4.3,
+      "owned_pct": 4.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -15264,7 +15268,8 @@
         "yellows": -0.15,
         "bonus": 0.1
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 109,
@@ -15420,7 +15425,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 7.9,
+      "owned_pct": 7.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -15560,7 +15565,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 8.1,
+      "owned_pct": 8.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -16507,7 +16512,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 20.2,
+      "owned_pct": 20.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -16788,7 +16793,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 2.5,
+      "owned_pct": 2.6,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -18856,7 +18861,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.8,
+      "owned_pct": 4.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -19661,7 +19666,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 9.2,
+      "owned_pct": 9.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -20330,7 +20335,8 @@
         "yellows": -0.18,
         "bonus": 0.08
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 357,
@@ -20903,7 +20909,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 2.1,
+      "owned_pct": 2.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -21852,7 +21858,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 10.2,
+      "owned_pct": 10.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -22240,7 +22246,8 @@
         "yellows": -0.12,
         "bonus": 0.13
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 455,
@@ -22437,7 +22444,7 @@
       "set_pieces": {
         "pens": null,
         "corners": null,
-        "fk": null
+        "fk": 3
       },
       "e_bonus": 0.21,
       "xp_per_gw": 2.8,
@@ -23215,7 +23222,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.9,
+      "owned_pct": 16.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -23355,7 +23362,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.5,
+      "owned_pct": 4.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -24691,7 +24698,7 @@
       "predicted_starts": 93.5,
       "minutes_confidence": "low",
       "data_basis": "limited_history",
-      "owned_pct": 5.0,
+      "owned_pct": 5.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -25592,7 +25599,8 @@
         "yellows": -0.05,
         "bonus": 0.09
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 105,
@@ -25747,7 +25755,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 22.1,
+      "owned_pct": 21.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -26664,7 +26672,8 @@
         "yellows": -0.05,
         "bonus": 0.11
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 399,
@@ -26679,7 +26688,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 25.3,
+      "owned_pct": 25.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -29017,6 +29026,7 @@
         "bonus": 0.05
       },
       "components_gw": 3,
+      "team_flag": "high_turnover",
       "minutes_basis_flag": "short_season"
     },
     {
@@ -29833,7 +29843,8 @@
         "yellows": -0.13,
         "bonus": 0.13
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 320,
@@ -31736,7 +31747,8 @@
         "yellows": -0.07,
         "bonus": 0.14
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 25,
@@ -32017,7 +32029,8 @@
         "yellows": -0.08,
         "bonus": 0.09
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 405,
@@ -33690,7 +33703,8 @@
         "yellows": -0.1,
         "bonus": 0.03
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 619,
@@ -40262,7 +40276,8 @@
         "yellows": -0.06,
         "bonus": 0.04
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 119,
@@ -41712,7 +41727,8 @@
         "yellows": -0.03,
         "bonus": 0.08
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 478,
@@ -44794,7 +44810,8 @@
         "yellows": -0.05,
         "bonus": 0.04
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 292,
@@ -45481,7 +45498,8 @@
         "yellows": -0.03,
         "bonus": 0.03
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 303,
@@ -46690,7 +46708,8 @@
         "yellows": -0.04,
         "bonus": 0.03
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 343,
@@ -48835,7 +48854,8 @@
         "yellows": -0.03,
         "bonus": 0.03
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 251,
@@ -53445,7 +53465,8 @@
         "yellows": -0.02,
         "bonus": 0.02
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 435,
@@ -54129,7 +54150,8 @@
         "yellows": -0.02,
         "bonus": 0.03
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 74,
@@ -54561,7 +54583,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.3,
+      "owned_pct": 1.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -55073,7 +55095,8 @@
         "yellows": -0.02,
         "bonus": 0.04
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 159,
@@ -55213,7 +55236,8 @@
         "yellows": -0.03,
         "bonus": 0.02
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 20,
@@ -56329,7 +56353,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.2,
+      "owned_pct": 0.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -57642,7 +57666,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.0,
+      "owned_pct": 0.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -59374,7 +59398,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.3,
+      "owned_pct": 1.2,
       "status": "u",
       "news": "Has joined Juventus on loan for the rest of the season",
       "chance_next": 0,
@@ -63634,7 +63658,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "pl_history",
-      "owned_pct": 9.8,
+      "owned_pct": 9.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -64022,7 +64046,8 @@
         "yellows": -0.01,
         "bonus": 0.02
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 633,
@@ -64429,7 +64454,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.1,
+      "owned_pct": 0.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -66841,7 +66866,8 @@
         "yellows": -0.02,
         "bonus": 0.02
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 72,
@@ -68460,7 +68486,7 @@
       "set_pieces": {
         "pens": null,
         "corners": null,
-        "fk": 3
+        "fk": 4
       },
       "e_bonus": 0.03,
       "xp_per_gw": 0.42,
@@ -69089,7 +69115,8 @@
         "yellows": -0.02,
         "bonus": 0.01
       },
-      "components_gw": 3
+      "components_gw": 3,
+      "team_flag": "high_turnover"
     },
     {
       "id": 287,
@@ -69229,7 +69256,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.7,
+      "owned_pct": 0.6,
       "status": "i",
       "news": "Calf injury - Unknown return date",
       "chance_next": 0,
@@ -69507,7 +69534,7 @@
       "team_short": "AVL",
       "pos": "FWD",
       "price": 7.8,
-      "owned_pct": 5.3,
+      "owned_pct": 5.2,
       "status": "u",
       "news": "Has joined Al Hilal permanently",
       "chance_next": 0,
@@ -69921,49 +69948,6 @@
       "excluded_reason": "unavailable"
     },
     {
-      "id": 477,
-      "web_name": "Abbott",
-      "full_name": "Zach Abbott",
-      "team": "Nottingham Forest",
-      "team_short": "NFO",
-      "pos": "DEF",
-      "price": 4.0,
-      "owned_pct": 0.3,
-      "status": "u",
-      "news": "Has joined Southampton on loan for the rest of the season",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "minutes": 165,
-        "starts": 2,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.01,
-        "cs": 0,
-        "points": 3,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.01
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable"
-    },
-    {
       "id": 298,
       "web_name": "Destan",
       "full_name": "Enis Destan",
@@ -70136,6 +70120,49 @@
           "goals": 0.0,
           "assists": 0.0,
           "xgi": 0.12
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable"
+    },
+    {
+      "id": 477,
+      "web_name": "Abbott",
+      "full_name": "Zach Abbott",
+      "team": "Nottingham Forest",
+      "team_short": "NFO",
+      "pos": "DEF",
+      "price": 4.0,
+      "owned_pct": 0.2,
+      "status": "u",
+      "news": "Has joined Southampton on loan for the rest of the season",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "minutes": 165,
+        "starts": 2,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.01,
+        "cs": 0,
+        "points": 3,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.01
         }
       },
       "form": {
