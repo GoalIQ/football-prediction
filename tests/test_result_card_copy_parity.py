@@ -113,6 +113,18 @@ def test_mallin_luku_vain_reitin_kanssa():
     assert "model_entry_id != null" in web and "model_entry_id != null" in mob
 
 
+@pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
+def test_ruudun_mallisolu_vaatii_reitin():
+    """Kierros 4 B1: korjaus meni kortille muttei ruudulle. Ruutu on toinen
+    renderointipolku samalle luvulle, joten sama ehto vartioidaan siella."""
+    web = _strip_comments(WEB.read_text(encoding="utf-8"))
+    mob = _strip_comments(MOBILE_SPEC.read_text(encoding="utf-8"))
+    assert "lastFinished.model_points != null && lastFinished.model_entry_id != null" in web
+    assert "lastFinished.vs_model != null && lastFinished.model_entry_id != null" in web
+    assert "lf.model_points != null && lf.model_entry_id != null" in mob
+    assert "lf.vs_model != null && lf.model_entry_id != null" in mob
+
+
 def test_hylatyt_sanamuodot_eivat_palaa():
     """Portin hylkaamat muodot (k1-k3) eivat saa palata kummallekaan pinnalle.
     Kommentit riisutaan ensin: niissa hylatty muoto SAA olla perusteluna."""
