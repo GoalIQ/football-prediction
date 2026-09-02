@@ -50,6 +50,10 @@ FREE_EDGE_DIFFERENTIALS = 2
 # premium-ominaisuuden. Villen paatos: maskaa yhteen valintaan, jolloin raja
 # on tasmalleen se mita copy jo lupaa eika copya tarvitse muuttaa.
 FREE_CAPTAIN_PICKS = 1
+# FANTASY-TOOLS-ENDPOINT-AUTH (2.9): replacements on myyty premium-riville
+# (paywall.bullet_replacements) ja portti oli vain selaimessa. Anonyymi
+# API-kutsu sai koko listan mitattuna 2.9. Free = kohde + paras rivi.
+FREE_REPLACEMENTS_ROWS = 1
 FREE_EDGE_TEMPLATE_RISKS = 1
 
 
@@ -330,6 +334,22 @@ def mask_captain_payload(payload: dict) -> dict:
         f"top {FREE_CAPTAIN_PICKS} of {len(top)} captain picks, no "
         "differential (free preview - GoalIQ Premium unlocks the ranker)"
     )
+    out["meta"] = meta
+    return out
+
+
+def mask_replacements_payload(payload: dict) -> dict:
+    """/api/fantasy/replacements freelle: kohde ja paras korvaaja, ei listaa.
+
+    Rivi on taysi (renderointi ei kaadu), meta kertoo maskin. Lahtijan omat
+    luvut sailyvat: ne ovat ilmaispinnalla jo (rate-team / free GW-xP)."""
+    out = dict(payload)
+    rows = list(out.get("players") or [])
+    out["players"] = rows[:FREE_REPLACEMENTS_ROWS]
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["mask"] = (f"top {FREE_REPLACEMENTS_ROWS} of {len(rows)} replacements "
+                    "(free preview - GoalIQ Premium unlocks the list)")
     out["meta"] = meta
     return out
 

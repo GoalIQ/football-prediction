@@ -5078,6 +5078,7 @@ def fantasy_differentials(
 @app.get("/api/fantasy/replacements",
          description="Who replaces a player: same position, similar price, ranked by expected points over the coming gameweeks, with ownership and the gap to the player being replaced on every row.")
 def fantasy_replacements(
+    request: Request,
     response: Response,
     player: int = Query(..., ge=1, description="FPL element ID of the player being replaced."),
     gws: int = Query(default=5, ge=1, le=6, description="Gameweeks in the window (default 5)."),
@@ -5087,15 +5088,22 @@ def fantasy_replacements(
 ):
     """ROWAN-REPLACEMENTS (2.9): luojan tilaama "who replaces X" -lista.
     Sama datalahde kuin differentials (committattu xP-projektio + elava
-    bootstrap-omistus), ei laskentaa pyynnossa. Premium-portitus hoidetaan
-    frontendissa kuten differentials."""
+    bootstrap-omistus), ei laskentaa pyynnossa.
+
+    FANTASY-TOOLS-ENDPOINT-AUTH (2.9): portti oli vain selaimessa ja anonyymi
+    kutsu sai koko listan (mitattu 2.9, `xp` oli samaan aikaan maskattu).
+    Enforcement paalla ei-premium saa kohteen + parhaan rivin."""
     from src.models.fpl_planner import replacements
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
     try:
-        return replacements(player_id=player, gws=gws, bracket=bracket, top_n=top)
+        payload = replacements(player_id=player, gws=gws, bracket=bracket, top_n=top)
     except RateTeamError as e:
         raise _http_from_rate_team_error(e)
+    if not is_premium_request(request):
+        from api.premium import mask_replacements_payload
+        payload = mask_replacements_payload(payload)
+    return payload
 
 
 @app.get("/api/fantasy/value",

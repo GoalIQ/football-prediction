@@ -45,6 +45,9 @@ GATED_EXPECTED = {
     "/api/fantasy/wildcard-plan",
     "/api/fantasy/plan-chains",
     "/api/fantasy/edge",
+    # 2.9 FANTASY-TOOLS-ENDPOINT-AUTH: myyty premium-riville, mitattu
+    # anonyymina taysi lista -> gate + mask (free = kohde + 1 rivi).
+    "/api/fantasy/replacements",
 }
 
 # Nama ovat tarkoituksella ilmaisia (rate my team, kapteenipoiminta,

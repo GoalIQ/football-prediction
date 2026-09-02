@@ -525,3 +525,17 @@ def test_endpoint_replacements(client):
     assert client.get("/api/fantasy/replacements?player=99999").status_code == 404
     assert client.get("/api/fantasy/replacements").status_code == 422
     assert client.get("/api/fantasy/replacements?player=20&gws=9").status_code == 422
+
+
+def test_endpoint_replacements_masked_without_premium(client, monkeypatch):
+    """FANTASY-TOOLS-ENDPOINT-AUTH (2.9): anonyymi ei saa listaa kun enforcement
+    on paalla; premium saa taman. Negatiivinen kontrolli: enforce off -> taysi."""
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    r = client.get("/api/fantasy/replacements?player=20")
+    assert r.status_code == 200
+    b = r.json()
+    assert b["meta"]["masked"] is True and len(b["players"]) == 1
+    assert b["target"]["id"] == 20 and b["players"][0]["id"] == 15
+    monkeypatch.setenv("PREMIUM_ENFORCE", "off")
+    b = client.get("/api/fantasy/replacements?player=20").json()
+    assert "masked" not in b["meta"] and len(b["players"]) == 5
