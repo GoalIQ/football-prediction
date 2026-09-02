@@ -370,18 +370,103 @@
 			badge: effCaptain === p.id ? 'C' : effVice === p.id ? 'V' : undefined
 		};
 	}
+	/* LUCK-PITCH (2.9, pariteetti mobiilin luckCardSpecin kanssa): kun
+	   katsottavana on PAATTYNYT kierros, kortti on sen kierroksen TULOS eika
+	   suunnitelma. Rivi rakennetaan FPL:n omista pickseista kertoimineen.
+	   Tulostaulun lauseet (Villen pyynto 2.9) ovat samat kuin ruudulla. */
+	function fmtSigned(v: number, digits = 1): string {
+		return `${v >= 0 ? '+' : ''}${v.toFixed(digits)}`;
+	}
+	function luckCardSpec() {
+		if (!luckSameSquad || !lastFinished || lastFinished.points == null) return null;
+		const lf = lastFinished;
+		const toCard = (r: LastFinishedGw['players'][number]): PitchCardPlayer => {
+			const tc = teamColorByShort(r.team_short ?? '');
+			const diff = r.points != null && r.xp_frozen != null ? r.points - r.xp_frozen : null;
+			const verdict = luckVerdict(r.xp_frozen, r.points);
+			return {
+				name: r.web_name ?? '',
+				team: r.team_short ?? '',
+				color: tc.color,
+				textColor: tc.textColor,
+				xp: r.xp_frozen != null ? r.xp_frozen.toFixed(1) : '\u2014',
+				pts: r.points != null ? String(r.points) : '\u2014',
+				diff: diff != null ? fmtSigned(diff) : undefined,
+				under: diff != null ? diff < 0 : undefined,
+				mark: verdict != null ? LUCK_MARK[verdict] : undefined,
+				badge: r.is_captain ? 'C' : r.is_vice_captain ? 'V' : undefined
+			};
+		};
+		const played = lf.players.filter((r) => r.multiplier > 0);
+		const benched = lf.players.filter((r) => r.multiplier === 0);
+		const cardRows = POS_ORDER.map((pos) => played.filter((r) => r.pos === pos).map(toCard)).filter(
+			(row) => row.length > 0
+		);
+		if (cardRows.length === 0) return null;
+		const headline: { key: string; value: string; under?: boolean }[] = [
+			{ key: 'You', value: String(lf.points) }
+		];
+		if (lf.model_points != null) headline.push({ key: 'Model', value: String(lf.model_points) });
+		if (lf.vs_model != null && lf.vs_model !== 0) {
+			headline.push({
+				key: lf.vs_model > 0 ? 'You win by' : 'Model wins by',
+				value: String(Math.abs(lf.vs_model)),
+				under: lf.vs_model < 0
+			});
+		} else if (lf.xp != null) {
+			headline.push({ key: 'Projected', value: lf.xp.toFixed(1) });
+		}
+		const sub = [
+			`Gameweek ${lf.gw}`,
+			lf.average_entry_score != null ? `FPL average ${lf.average_entry_score}` : null,
+			lf.overall_rank != null
+				? `rank ${lf.overall_rank.toLocaleString('en-GB')}` +
+					(lf.rank_change != null && lf.rank_change !== 0
+						? ` ${lf.rank_change > 0 ? '\u25b2' : '\u25bc'} ${Math.abs(lf.rank_change).toLocaleString('en-GB')}`
+						: '')
+				: null
+		]
+			.filter(Boolean)
+			.join(' \u00b7 ');
+		const who = [lf.manager_name, lf.team_name].filter(Boolean).join(' \u00b7 ');
+		const notes: string[] = [];
+		if (lf.xp != null) {
+			notes.push(
+				`Your XI was worth ${lf.xp.toFixed(1)} xP` + (lf.diff != null ? ` (${fmtSigned(lf.diff)})` : '')
+			);
+		}
+		if (lf.biggest_swing && lf.biggest_swing.web_name) {
+			notes.push(`${lf.biggest_swing.web_name} alone was ${fmtSigned(lf.biggest_swing.contribution)} of it.`);
+		}
+		const benchCards = benched.map(toCard);
+		const hasMark = [...cardRows.flat(), ...benchCards].some((p) => p.mark != null);
+		return {
+			title: who || `GAMEWEEK ${lf.gw} RESULT`,
+			subtitle: sub,
+			fileName: `goaliq_gw${lf.gw}_result.png`,
+			rows: cardRows,
+			bench: benchCards,
+			headline,
+			notes,
+			legend: hasMark ? `${LUCK_MARK.lucky} got lucky \u00b7 ${LUCK_MARK.robbed} got robbed` : undefined,
+			footNote: 'projection frozen before the deadline'
+		};
+	}
 	async function shareImage() {
 		if (sharing) return;
 		sharing = true;
 		try {
-			const method = await sharePitchCard({
-				title: selGw != null ? `GAMEWEEK ${selGw} XI` : 'MY FPL XI',
-				subtitle: `projected ${gwXp.toFixed(1)} points, captain doubled, GoalIQ model`,
-				unitNote: 'xP under each name',
-				fileName: selGw != null ? `goaliq_xi_gw${selGw}.png` : 'goaliq_xi.png',
-				rows: rows.map((row) => row.map(toCardPlayer)),
-				bench: bench.map(toCardPlayer)
-			});
+			const luckSpec = luckCardSpec();
+			const method = await sharePitchCard(
+				luckSpec ?? {
+					title: selGw != null ? `GAMEWEEK ${selGw} XI` : 'MY FPL XI',
+					subtitle: `projected ${gwXp.toFixed(1)} points, captain doubled, GoalIQ model`,
+					unitNote: 'xP under each name',
+					fileName: selGw != null ? `goaliq_xi_gw${selGw}.png` : 'goaliq_xi.png',
+					rows: rows.map((row) => row.map(toCardPlayer)),
+					bench: bench.map(toCardPlayer)
+				}
+			);
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'pitch', method });
 		} finally {
 			sharing = false;

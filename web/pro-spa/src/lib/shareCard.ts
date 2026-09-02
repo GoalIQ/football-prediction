@@ -63,6 +63,10 @@ const FONT = '"IBM Plex Mono", ui-monospace, monospace';
 const bold = (px: number) => `700 ${px}px ${FONT}`;
 const med = (px: number) => `500 ${px}px ${FONT}`;
 
+// LUCK-PITCH: erotuksen varit, samat tokenit kuin sovelluksen teemassa.
+const LUCK_TEAL = '#2ED6C2';
+const LUCK_CORAL = '#FF8A5C';
+
 let wordmarkP: Promise<HTMLImageElement | null> | null = null;
 function loadWordmark(): Promise<HTMLImageElement | null> {
 	wordmarkP ??= new Promise((resolve) => {
@@ -264,6 +268,16 @@ export interface PitchCardPlayer {
 	textColor: string;
 	xp: string;
 	badge?: 'C' | 'V';
+	/** LUCK-PITCH (2.9, pariteetti mobiilin FantasyPitchShareCardin kanssa):
+	 *  ratkenneen kierroksen luvut. Kun `pts` on annettu, solu vaihtaa muotoon
+	 *  jossa toteuma on otsikkoluku ja `xp` + `diff` ovat sen alla. */
+	pts?: string;
+	/** Etumerkillinen erotus, esim. "+7.0". */
+	diff?: string;
+	/** true = erotus negatiivinen (koralli), muuten teal. */
+	under?: boolean;
+	/** Tuomiomerkki (arpakuutio / paakallo). */
+	mark?: string;
 }
 
 export interface PitchCardSpec {
@@ -279,6 +293,15 @@ export interface PitchCardSpec {
 	rows: PitchCardPlayer[][];
 	bench: PitchCardPlayer[];
 	fileName: string;
+	/** LUCK-PITCH: lukunauha otsikon alle (You / Model / You win by tai
+	 *  You / Projected). Puuttuu -> ei nauhaa, kortti kuten ennen. */
+	headline?: { key: string; value: string; under?: boolean }[];
+	/** Ruudun tulostaulun lauseet kortille sellaisinaan (2.9, Villen pyynto). */
+	notes?: string[];
+	/** Tuomiomerkkien selite; annetaan vain kun kortilla on merkki. */
+	legend?: string;
+	/** Alatunnisteen lahdeleima; oletus on suunnitelmakortin rivi. */
+	footNote?: string;
 }
 
 // Sama neutraali jersey-siluetti kuin TeamKit/Leaders (IP-turva: ei oikeita
@@ -386,19 +409,22 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 	]).catch(() => undefined);
 	const wm = await loadWordmark();
 
-	const H = 1350;
+	// Korkeus ratkeaa vasta sisallon jalkeen (tuloskortti on korkeampi), joten
+	// piirretaan ylimitoitettuun tyokanvaasiin ja leikataan lopuksi.
+	const SCRATCH_H = 2400;
 	const canvas = document.createElement('canvas');
 	canvas.width = W;
-	canvas.height = H;
-	const ctx = canvas.getContext('2d');
-	if (!ctx) throw new Error('canvas 2d context unavailable');
+	canvas.height = SCRATCH_H;
+	const ctx0 = canvas.getContext('2d');
+	if (!ctx0) throw new Error('canvas 2d context unavailable');
+	let ctx: CanvasRenderingContext2D = ctx0;
 	ctx.textBaseline = 'top';
 
-	const g = ctx.createLinearGradient(0, 0, 0, H);
+	const g = ctx.createLinearGradient(0, 0, 0, 1350);
 	g.addColorStop(0, INK);
 	g.addColorStop(1, INK2);
 	ctx.fillStyle = g;
-	ctx.fillRect(0, 0, W, H);
+	ctx.fillRect(0, 0, W, SCRATCH_H);
 
 	if (wm) {
 		const wmH = 84;
@@ -420,11 +446,52 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 	ctx.fillStyle = MUTED;
 	ctx.fillText(spec.subtitle, (W - ctx.measureText(spec.subtitle).width) / 2, 306);
 
+	// LUCK-PITCH (2.9): tulostila. Solu on korkeampi (toteuma + xP/erotus),
+	// joten rivikorkeus on kiintea 234 (= mobiilin 78 px x 3) eika 704/n.
+	// Mobiilissa sama vika nakyi 2.9 kun 236/4 = 59 px ei riittanyt 72 px
+	// solulle ja rivit peittivat toisensa; tassa korkeus lasketaan sisallosta.
+	const luck = spec.rows.some((row) => row.some((p) => p.pts != null));
+	let y = 340;
+	if (spec.headline && spec.headline.length > 0) {
+		const boxW = W - 2 * MX;
+		const boxH = 96;
+		const cellW = boxW / spec.headline.length;
+		ctx.strokeStyle = 'rgba(243,242,242,0.16)';
+		ctx.lineWidth = 2;
+		ctx.strokeRect(MX, y, boxW, boxH);
+		spec.headline.forEach((h, i) => {
+			const x = MX + cellW * i;
+			if (i > 0) {
+				ctx.beginPath();
+				ctx.moveTo(x, y);
+				ctx.lineTo(x, y + boxH);
+				ctx.stroke();
+			}
+			ctx.font = med(16);
+			ctx.fillStyle = MUTED;
+			ctx.fillText(h.key.toUpperCase(), x + 20, y + 14);
+			ctx.font = bold(42);
+			ctx.fillStyle = h.under == null ? CREAM : h.under ? LUCK_CORAL : LUCK_TEAL;
+			ctx.fillText(h.value, x + 20, y + 38);
+		});
+		y += boxH + 12;
+	}
+	if (spec.notes && spec.notes.length > 0) {
+		for (const n of spec.notes) {
+			shrink(ctx, n, 24, W - 2 * MX, 16, med);
+			ctx.fillStyle = CREAM;
+			ctx.fillText(n, (W - ctx.measureText(n).width) / 2, y);
+			y += 32;
+		}
+		y += 8;
+	}
+
 	// Kenttä: tumma teal-nurmi raidoilla + viivat (sama teal-token kuin appissa)
 	const PX = MX;
-	const PY = 356;
+	const PY = y;
 	const PW = W - 2 * MX;
-	const PH = 704;
+	const nRowsPre = spec.rows.length || 1;
+	const PH = luck ? 234 * nRowsPre : 704;
 	ctx.save();
 	ctx.beginPath();
 	ctx.roundRect(PX, PY, PW, PH, 14);
@@ -476,8 +543,14 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 			const p = row[i];
 			const cx = PX + cellW * i + cellW / 2;
 			const kx = cx - KIT / 2;
-			const ky = cy - 62;
+			// Tulostilassa solu ladotaan rivin ylareunasta, jotta kolme
+			// tekstirivia mahtuu; suunnitelmakortti pysyy keskitettyna.
+			const ky = luck ? PY + rowH * r + 12 : cy - 62;
 			drawKit(ctx, p, kx, ky, KIT);
+			if (p.mark) {
+				ctx.font = `28px ${FONT}`;
+				ctx.fillText(p.mark, kx - 8, ky - 6);
+			}
 			if (p.badge) {
 				// C = amber-rengas, V = himmeä (korttipaletti: ei magentaa)
 				const bx = kx + KIT - 4;
@@ -496,18 +569,27 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 			const nPx = shrink(ctx, p.name, 22, cellW - 12, 14, bold);
 			ctx.font = bold(nPx);
 			ctx.fillStyle = CREAM;
-			ctx.fillText(p.name, cx - ctx.measureText(p.name).width / 2, cy + 28);
-			ctx.font = med(18);
-			ctx.fillStyle = MUTED;
-			ctx.fillText(p.xp, cx - ctx.measureText(p.xp).width / 2, cy + 56);
+			const ny = luck ? ky + KIT + 6 : cy + 28;
+			ctx.fillText(p.name, cx - ctx.measureText(p.name).width / 2, ny);
+			if (p.pts != null) {
+				ctx.font = bold(36);
+				ctx.fillStyle = AMBER;
+				ctx.fillText(p.pts, cx - ctx.measureText(p.pts).width / 2, ny + 28);
+				drawXpDiff(ctx, p, cx, ny + 70, 18);
+			} else {
+				ctx.font = med(18);
+				ctx.fillStyle = MUTED;
+				ctx.fillText(p.xp, cx - ctx.measureText(p.xp).width / 2, cy + 56);
+			}
 		}
 	}
+	y = PY + PH;
 
 	// Penkki
 	if (spec.bench.length > 0) {
 		ctx.font = med(19);
 		ctx.fillStyle = MUTED;
-		ctx.fillText('BENCH', MX, 1082);
+		ctx.fillText('BENCH', MX, y + 22);
 		const BK = 64;
 		const cellW = Math.min(200, (W - 2 * MX) / spec.bench.length);
 		const total = cellW * spec.bench.length;
@@ -515,20 +597,49 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 		for (let i = 0; i < spec.bench.length; i++) {
 			const p = spec.bench[i];
 			const cx = x0 + cellW * i + cellW / 2;
-			drawKit(ctx, p, cx - BK / 2, 1112, BK);
+			drawKit(ctx, p, cx - BK / 2, y + 52, BK);
+			if (p.mark) {
+				ctx.font = `22px ${FONT}`;
+				ctx.fillText(p.mark, cx - BK / 2 - 6, y + 46);
+			}
 			const nPx = shrink(ctx, p.name, 18, cellW - 10, 12, bold);
 			ctx.font = bold(nPx);
 			ctx.fillStyle = CREAM;
-			ctx.fillText(p.name, cx - ctx.measureText(p.name).width / 2, 1184);
-			ctx.font = med(16);
-			ctx.fillStyle = MUTED;
-			ctx.fillText(p.xp, cx - ctx.measureText(p.xp).width / 2, 1208);
+			ctx.fillText(p.name, cx - ctx.measureText(p.name).width / 2, y + 124);
+			if (p.pts != null) {
+				ctx.font = bold(26);
+				ctx.fillStyle = AMBER;
+				ctx.fillText(p.pts, cx - ctx.measureText(p.pts).width / 2, y + 148);
+				drawXpDiff(ctx, p, cx, y + 180, 16);
+			} else {
+				ctx.font = med(16);
+				ctx.fillStyle = MUTED;
+				ctx.fillText(p.xp, cx - ctx.measureText(p.xp).width / 2, y + 148);
+			}
 		}
+		y += luck ? 220 : 190;
 	}
+	if (spec.legend) {
+		ctx.font = med(19);
+		ctx.fillStyle = MUTED;
+		ctx.fillText(spec.legend, (W - ctx.measureText(spec.legend).width) / 2, y + 12);
+		y += 40;
+	}
+	// Korkeus sisallosta: suunnitelmakortti paatyy tasan entiseen 1350:een
+	// (356 + 704 + penkki 190 + 100), tuloskortti kasvaa rivien mukana.
+	const H = y + 100;
+	const full = document.createElement('canvas');
+	full.width = W;
+	full.height = H;
+	const fctx = full.getContext('2d');
+	if (!fctx) throw new Error('canvas 2d context unavailable');
+	fctx.drawImage(canvas, 0, 0);
+	ctx = fctx;
+	ctx.textBaseline = 'top';
 
 	ctx.font = med(20);
 	ctx.fillStyle = MUTED;
-	ctx.fillText('projections from the GoalIQ match model', MX, H - 88);
+	ctx.fillText(spec.footNote ?? 'projections from the GoalIQ match model', MX, H - 88);
 	ctx.font = bold(20);
 	ctx.fillStyle = AMBER;
 	ctx.fillText('@goaliqapp', W - MX - ctx.measureText('@goaliqapp').width, H - 88);
@@ -539,8 +650,33 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 	ctx.fillRect(0, H - 8, W, 8);
 
 	return new Promise<Blob>((resolve, reject) => {
-		canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas toBlob failed'))), 'image/png');
+		full.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas toBlob failed'))), 'image/png');
 	});
+}
+
+/** Tulossolun alarivi: pinnattu xP harmaana + etumerkillinen erotus
+ *  teal/koralli, keskitettyna. Sama muoto kuin mobiilin kitSplit. */
+function drawXpDiff(
+	ctx: CanvasRenderingContext2D,
+	p: PitchCardPlayer,
+	cx: number,
+	y: number,
+	px: number
+): void {
+	ctx.font = med(px);
+	const xpW = ctx.measureText(p.xp).width;
+	ctx.font = bold(px);
+	const dW = p.diff != null ? ctx.measureText(p.diff).width + 8 : 0;
+	let x = cx - (xpW + dW) / 2;
+	ctx.font = med(px);
+	ctx.fillStyle = MUTED;
+	ctx.fillText(p.xp, x, y);
+	x += xpW + 8;
+	if (p.diff != null) {
+		ctx.font = bold(px);
+		ctx.fillStyle = p.under ? LUCK_CORAL : LUCK_TEAL;
+		ctx.fillText(p.diff, x, y);
+	}
 }
 
 export async function sharePitchCard(spec: PitchCardSpec): Promise<ShareOutcome> {
