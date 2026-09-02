@@ -440,16 +440,17 @@ def test_replacements_same_pos_bracket_sorted_and_reason():
     assert rows[0]["xp_window"] == 27.5 and rows[0]["xp_gap_vs_target"] == 5.5
     assert rows[0]["owned_pct"] == 40.0
     for r in rows:
-        assert r["reason"]["kind"] in ("minutes", "fixture")
+        assert r["reason"]["kind"] in ("minutes", "fixture", "flat")
         assert r["reason"]["text"], "Ville 2.9: syy joka rivilla"
         assert len(r["gameweeks"]) == 5
     # Fixture: tasainen xP joka GW + ei p_start -> syy on xP-ero, ja luku on
     # sama kuin rivin oma gap (yksi lahde kahdelle kentalle).
     # Fixture: tasainen xP -> paras kierros on ikkunan ensimmainen (tasapeli
     # -> aikaisin), ei piikki. Teksti on eri fakta kuin vs-sarake.
-    assert rows[0]["reason"]["kind"] == "fixture"
-    assert rows[0]["reason"]["gw"] == 1 and rows[0]["reason"]["peak"] is False
-    assert rows[0]["reason"]["text"] == "GW1 blank is the biggest week, 5.5 xP"
+    # Tasainen xP -> ei erottuvaa viikkoa (portti k3: "the biggest week" ei
+    # pida kun ero on alle esitystarkkuuden) -> vaihteluvali.
+    assert rows[0]["reason"]["kind"] == "flat"
+    assert rows[0]["reason"]["text"] == "no standout week, 5.5-5.5 xP"
     assert out["meta"]["reason_note"].endswith("over GW1-GW5, not a single gameweek.")
 
 
@@ -493,10 +494,23 @@ def test_replacements_reason_minutes_and_peak(monkeypatch):
     out = pl.replacements(20, gws=5)
     rows = {r["id"]: r for r in out["players"]}
     assert rows[15]["reason"]["kind"] == "minutes"
-    assert rows[15]["reason"]["text"] == "projected to start 92% of games, P20 55%"
-    assert rows[16]["reason"]["kind"] == "fixture" and rows[16]["reason"]["peak"] is True
+    assert rows[15]["reason"]["text"] == "projected to start 92% of games, P20 55% of starts"
+    assert rows[16]["reason"]["kind"] == "fixture"
     assert rows[16]["reason"]["gw"] == 3
-    assert rows[16]["reason"]["text"] == "GW3 C09 (H) is the biggest week, 9.0 xP"
+    assert rows[16]["reason"]["text"] == "best week GW3 C09 (H), 9.0 xP"
+
+
+def test_replacements_minutes_reason_caps_at_99(monkeypatch):
+    """Portti k3: 100 % on varmuusvaite jaettavassa kuvassa -> katto 99."""
+    xp_data, boot, pool, by_id = pl.build_context()
+    pool = [dict(p) for p in pool]
+    by = {p["id"]: p for p in pool}
+    by[20]["p_start"] = 0.5
+    by[15]["p_start"] = 1.0
+    monkeypatch.setattr(pl, "build_context", lambda: (xp_data, boot, pool, by))
+    out = pl.replacements(20, gws=5)
+    r = {x["id"]: x for x in out["players"]}[15]
+    assert r["reason"]["value"] == 99 and r["reason"]["text"].startswith("projected to start 99%")
 
 
 def test_replacements_availability_gate_drops_live_out(monkeypatch):

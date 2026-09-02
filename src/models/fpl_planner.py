@@ -553,8 +553,7 @@ REPLACEMENTS_DEFAULT_BRACKET = 0.5   # miljoonaa, +-
 REPLACEMENTS_MAX_BRACKET = 3.0
 REASON_MINUTES_MIN_P_START = 0.85
 REASON_MINUTES_MAX_TARGET_P_START = 0.70
-REASON_PEAK_RATIO = 1.3
-REASON_PEAK_MIN_XP = 4.0
+REASON_MARGIN_XP = 0.1   # esitystarkkuus: alle taman ero ei nay yhdella desimaalilla
 
 
 def _gw_opponents_text(player: dict, gw: int) -> str:
@@ -577,11 +576,14 @@ def _replacement_reason(cand: dict, target: dict, gws: list[int]) -> dict:
     if (isinstance(cp, (int, float)) and isinstance(tp, (int, float))
             and cp >= REASON_MINUTES_MIN_P_START
             and tp <= REASON_MINUTES_MAX_TARGET_P_START):
-        c_pct, t_pct = int(cp * 100 + 0.5), int(tp * 100 + 0.5)
+        # PORTTI 2.9 k3: 100 % on varmuusvaite jaettavassa kuvassa (6 pelaajaa
+        # poolissa p_start == 1.0) -> katto 99. "of starts" erottaa luvun
+        # FPL:n "75% chance of playing" -lipusta joka on samalla ruudulla.
+        c_pct, t_pct = min(99, int(cp * 100 + 0.5)), int(tp * 100 + 0.5)
         return {
             "kind": "minutes",
             "value": c_pct,
-            "text": "projected to start {}% of games, {} {}%".format(
+            "text": "projected to start {}% of games, {} {}% of starts".format(
                 c_pct, target["web_name"], t_pct),
         }
     # Ville 2.9 ilta: syy nakyi vasta 6 GW:n ikkunalla, koska xp_gap-haara
@@ -589,20 +591,27 @@ def _replacement_reason(cand: dict, target: dict, gws: list[int]) -> dict:
     # Ratkaisu joka ei toista vs-saraketta: rivin paras kierros ikkunassa
     # (vastustaja, koti/vieras, xP) on aina eri fakta kuin ero lahtijaan.
     # `peak` kertoo onko se selvasti muita parempi (entinen fixture_peak).
-    per_gw = [(_gw_xp(cand, g), -g) for g in gws]   # tasapeli -> aikaisin GW
-    total = sum(x for x, _ in per_gw)
-    best_xp, neg_gw = max(per_gw)
+    per_gw = sorted(((_gw_xp(cand, g), -g) for g in gws), reverse=True)
+    best_xp, neg_gw = per_gw[0]
     best_gw = -neg_gw
-    peak = (n >= 2 and total > 0
-            and best_xp >= REASON_PEAK_RATIO * (total / n)
-            and best_xp >= REASON_PEAK_MIN_XP)
+    second = per_gw[1][0] if len(per_gw) > 1 else 0.0
+    # PORTTI 2.9 k3: mitattu poolista (513 rivia, GW3-7): 7 %:lla paras viikko on
+    # TASAN toisen kanssa ja 32 %:lla ero on alle esitystarkkuuden (0,1 xP).
+    # "the biggest week" ei silloin pida naytetyilla luvuilla -> kaksi haaraa.
+    if best_xp - second >= REASON_MARGIN_XP:
+        return {
+            "kind": "fixture",
+            "value": round(best_xp, 2),
+            "gw": best_gw,
+            "text": "best week GW{} {}, {:.1f} xP".format(
+                best_gw, _gw_opponents_text(cand, best_gw), best_xp),
+        }
+    lo = min(x for x, _ in per_gw)
     return {
-        "kind": "fixture",
+        "kind": "flat",
         "value": round(best_xp, 2),
         "gw": best_gw,
-        "peak": bool(peak),
-        "text": "GW{} {} is the biggest week, {:.1f} xP".format(
-            best_gw, _gw_opponents_text(cand, best_gw), best_xp),
+        "text": "no standout week, {:.1f}-{:.1f} xP".format(lo, best_xp),
     }
 
 
@@ -682,12 +691,12 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "candidates_in_bracket": len(cands),
             "availability_gate": {"checked": True, "dropped": dropped,
                                   "note": AVAILABILITY_GATE_NOTE},
-            "reason_note": ("Reason is the row's biggest projected week in the "
-                            "window, or the starts gap when the player going "
-                            "out is a minutes doubt. Ownership is FPL's "
-                            "selected-by percentage. xP is the GoalIQ projection "
-                            "over GW{}-GW{}, not a single gameweek."
-                            .format(window[0], window[-1])),
+            "reason_note": ("Reason is the row's best week in the window, or "
+                            "the range when no week stands out, or the starts "
+                            "gap when the player going out is a minutes doubt. "
+                            "Ownership is FPL's selected-by percentage. xP is "
+                            "the GoalIQ projection over GW{}-GW{}, not a single "
+                            "gameweek.".format(window[0], window[-1])),
         },
         "target": {
             "id": target["id"], "web_name": target["web_name"],

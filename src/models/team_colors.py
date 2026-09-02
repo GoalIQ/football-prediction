@@ -35,17 +35,22 @@ _TEAM_COLORS = {
 }
 
 # Sama siluetti kuin TeamKit.svelte / TeamKit.tsx (1:1).
-_JERSEY = ("M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 "
-           "L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z")
-_SLEEVE_L = "M 33 15 L 16 27 L 24 42 L 33 36 Z"
-_SLEEVE_R = "M 67 15 L 84 27 L 76 42 L 67 36 Z"
+# 2.9 PAITAPAIVITYS (Villen tilaus): realistisempi siluetti — leveammat
+# olkapaat, kapeneva runko, hihansuut omina paneeleina, syvempi kaulus.
+# Rintaan GOALIQ-merkki sponsorin paikalle (renderoijat >= 40 px).
+_JERSEY = ("M 31 14 L 40 10 C 44 20 56 20 60 10 L 69 14 L 88 26 L 82 44 L 69 39 "
+           "L 70 88 Q 70 92 66 92 L 34 92 Q 30 92 30 88 L 31 39 L 18 44 L 12 26 Z")
+_SLEEVE_L = "M 31 14 L 12 26 L 18 44 L 31 39 Z"
+_SLEEVE_R = "M 69 14 L 88 26 L 82 44 L 69 39 Z"
+_CUFF_L = "M 12 26 L 18 44 L 21.8 42.7 L 15.8 24.7 Z"
+_CUFF_R = "M 88 26 L 82 44 L 78.2 42.7 L 84.2 24.7 Z"
 # KIT-KUVIOT 21.8: kaulus (paantien kaari viivana) + kuratoitu kuviotaulu.
 # PEILI jaetusta teamKits.ts:sta (goaliq-app lib/teamKits.ts = web/pro-spa/
 # src/lib/teamKits.ts, sanatarkasti sama tiedosto molemmissa) — jos muutat
 # jotain naista, muuta kaikki kolme samassa yhteydessa, muuten sama joukkue
 # saa eri paidan eri pinnalta. IP-raja: EI kresteja/sponsoreita/valmistaja-
 # logoja; kuviotyypit ovat paidan yleista muotokielta, eivat trade dressia.
-_COLLAR = "M 43 9 C 46 15 54 15 57 9"
+_COLLAR = "M 40 10 C 44 20 56 20 60 10"
 
 #: short -> (pattern, secondary). Puuttuva rivi = solid ilman kakkosvaria.
 _KIT_BY_SHORT = {
@@ -53,8 +58,12 @@ _KIT_BY_SHORT = {
     "ARS": ("sleeves", "#FFFFFF"), "AVL": ("sleeves", "#94BEE5"),
     "BOU": ("stripes", "#000000"), "BRE": ("stripes", "#FFFFFF"),
     "BHA": ("stripes", "#FFFFFF"), "BUR": ("sleeves", "#99D6EA"),
-    "CRY": ("stripes", "#C4122E"), "FUL": ("solid", "#000000"),
-    "HUL": ("stripes", "#000000"), "LEE": ("solid", "#1D428A"),
+    "CHE": ("solid", "#FFFFFF"), "COV": ("solid", "#FFFFFF"),
+    "CRY": ("stripes", "#C4122E"), "EVE": ("solid", "#FFFFFF"),
+    "FUL": ("solid", "#000000"), "HUL": ("stripes", "#000000"),
+    "IPS": ("sleeves", "#FFFFFF"), "LEE": ("solid", "#1D428A"),
+    "LIV": ("solid", "#FFFFFF"), "MCI": ("solid", "#1C2C5B"),
+    "MUN": ("solid", "#FFFFFF"), "NFO": ("solid", "#FFFFFF"),
     "NEW": ("stripes", "#FFFFFF"), "SHU": ("stripes", "#FFFFFF"),
     "SOU": ("stripes", "#FFFFFF"), "SUN": ("stripes", "#FFFFFF"),
     "TOT": ("solid", "#132257"), "WHU": ("sleeves", "#7AC5E8"),
@@ -114,3 +123,11 @@ def _darken(hex_color: str, factor: float = 0.7) -> str:
     n = int(m.group(1), 16)
     parts = [max(0, round(((n >> s) & 0xFF) * factor)) for s in (16, 8, 0)]
     return "#{:02x}{:02x}{:02x}".format(*parts)
+
+
+def _cuff_color(color: str, pattern: str, secondary) -> str:
+    """Hihansuun vari: kontrastihihalla runkovari, muuten kakkosvari tai
+    tummennettu runko. Sama saanto TeamKit.tsx / .svelte / shareCard.ts."""
+    if pattern == "sleeves":
+        return color
+    return secondary or _darken(color, 0.55)

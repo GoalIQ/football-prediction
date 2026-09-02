@@ -858,19 +858,17 @@ def render_price_changes(pw: dict, now: datetime) -> str:
 # jotta jakokortti kayttaa TASMALLEEN samoja varaja kuin sivut.
 from src.models.team_colors import (  # noqa: E402
     _TEAM_COLORS, _hash_color, _team_color, _darken,
-    _KIT_BY_SHORT, _kit_layers,
+    _KIT_BY_SHORT, _kit_layers, _cuff_color,
+    _JERSEY, _SLEEVE_L, _SLEEVE_R, _CUFF_L, _CUFF_R,
 )
 
 
-_JERSEY = ("M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 "
-           "L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z")
-_SLEEVE_L = "M 33 15 L 16 27 L 24 42 L 33 36 Z"
-_SLEEVE_R = "M 67 15 L 84 27 L 76 42 L 67 36 Z"
+# 2.9 PAITAPAIVITYS: geometria tulee team_colors.py:sta (yksi lahde pythonille).
 # KIT-KUVIOT 21.8: kaulus + kuviotaulu tulevat src/models/team_colors.py:sta
 # (peili jaetusta teamKits.ts:sta) — sama geometria ja piirtojarjestys kuin
 # TeamKit.svelte / shareCard.ts (runko -> kuvio -> hihat -> kaulus ->
 # aariviiva). Kuvio leikataan runkoon clipPathilla.
-_COLLAR = "M 43 9 C 46 15 54 15 57 9"
+_COLLAR = "M 40 10 C 44 20 56 20 60 10"
 
 
 def _hash_color(name: str) -> str:
@@ -927,8 +925,10 @@ def _kit_defs(shorts) -> str:
             f"{pattern_svg}"
             f'<path d="{_SLEEVE_L}" fill="{sleeve}"/>'
             f'<path d="{_SLEEVE_R}" fill="{sleeve}"/>'
+            f'<path d="{_CUFF_L}" fill="{_cuff_color(color, pattern, secondary)}"/>'
+            f'<path d="{_CUFF_R}" fill="{_cuff_color(color, pattern, secondary)}"/>'
             f'<path d="{_COLLAR}" fill="none" stroke="{collar}" '
-            f'stroke-width="3.5" stroke-linecap="round"/>'
+            f'stroke-width="4" stroke-linecap="round"/>'
             f'<path d="{_JERSEY}" fill="none" stroke="rgba(10,8,32,0.28)" '
             f'stroke-width="3" stroke-linejoin="round"/>'
             f"</symbol>"

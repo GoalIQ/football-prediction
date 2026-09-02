@@ -32,15 +32,19 @@
 	}: { color: string; textColor: string; label: string; size?: number } = $props();
 
 	const JERSEY_PATH =
-		'M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 ' +
-		'L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z';
+		'M 31 14 L 40 10 C 44 20 56 20 60 10 L 69 14 L 88 26 L 82 44 L 69 39 ' +
+		'L 70 88 Q 70 92 66 92 L 34 92 Q 30 92 30 88 L 31 39 L 18 44 L 12 26 Z';
 
 	// #126: hihat kaksivärisyyteen (sama geometria + darken-johto kuin mobiili)
-	const SLEEVE_LEFT = 'M 33 15 L 16 27 L 24 42 L 33 36 Z';
-	const SLEEVE_RIGHT = 'M 67 15 L 84 27 L 76 42 L 67 36 Z';
+	const SLEEVE_LEFT = 'M 31 14 L 12 26 L 18 44 L 31 39 Z';
+	const SLEEVE_RIGHT = 'M 69 14 L 88 26 L 82 44 L 69 39 Z';
+	// 2.9 PAITAPAIVITYS: hihansuut omina paneeleina + GOALIQ rintaan
+	// sponsorin paikalle (lyhenne pois paidasta: se on aina tekstina vieressa).
+	const CUFF_LEFT = 'M 12 26 L 18 44 L 21.8 42.7 L 15.8 24.7 Z';
+	const CUFF_RIGHT = 'M 88 26 L 82 44 L 78.2 42.7 L 84.2 24.7 Z';
 	/** Kaula-aukon kaari omana viivanaan (kaulus) — sama käyrä kuin rungon
 	 *  yläreunassa, joten se istuu pikselilleen eikä ole oma muotonsa. */
-	const COLLAR_PATH = 'M 43 9 C 46 15 54 15 57 9';
+	const COLLAR_PATH = 'M 40 10 C 44 20 56 20 60 10';
 
 	function darken(hex: string, factor = 0.7): string {
 		const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -77,6 +81,9 @@
 	// Raidallisella paidalla lyhenne osuu kahdelle värille kerralla, joten se
 	// saa halon: teksti kahdesti, paksu viiva alle (sama ratkaisu mobiilissa).
 	const halo = $derived(isLight(textColor) ? 'rgba(11,10,9,0.55)' : 'rgba(255,255,255,0.6)');
+	const cuff = $derived(
+		kit?.pattern === 'sleeves' ? color : (kit?.secondary ?? darken(color, 0.55))
+	);
 </script>
 
 <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
@@ -97,11 +104,13 @@
 	{/if}
 	<path d={SLEEVE_LEFT} fill={sleeve} />
 	<path d={SLEEVE_RIGHT} fill={sleeve} />
+	<path d={CUFF_LEFT} fill={cuff} />
+	<path d={CUFF_RIGHT} fill={cuff} />
 	<path
 		d={COLLAR_PATH}
 		fill="none"
 		stroke={kit?.secondary ?? sleeve}
-		stroke-width="3.5"
+		stroke-width="4"
 		stroke-linecap="round"
 	/>
 	<path
@@ -111,18 +120,21 @@
 		stroke-width="3"
 		stroke-linejoin="round"
 	/>
-	<text
-		x="50"
-		y="58"
-		font-size="16"
-		font-weight="800"
-		fill="none"
-		stroke={halo}
-		stroke-width="3.5"
-		stroke-linejoin="round"
-		text-anchor="middle">{label}</text
-	>
-	<text x="50" y="58" font-size="16" font-weight="800" fill={textColor} text-anchor="middle">
-		{label}
-	</text>
+	{#if size >= 40}
+		<text
+			x="50"
+			y="60"
+			font-size="9"
+			font-weight="800"
+			letter-spacing="1"
+			fill="none"
+			stroke={halo}
+			stroke-width="2.5"
+			stroke-linejoin="round"
+			text-anchor="middle">GOALIQ</text
+		>
+		<text x="50" y="60" font-size="9" font-weight="800" letter-spacing="1" fill={textColor} text-anchor="middle">
+			GOALIQ
+		</text>
+	{/if}
 </svg>

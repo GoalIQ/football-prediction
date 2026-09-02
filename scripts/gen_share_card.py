@@ -734,6 +734,91 @@ def _hex_to_rgb(c: str):
         return (120, 120, 120)
 
 
+# ---------------------------------------------------------------------------
+# PAITAPAIVITYS 2.9: PIL-paita varipallon tilalle. Sama geometria kuin
+# team_colors._JERSEY (SVG-polku -> monikulmio), samat kuviot ja hihansuut.
+# Kortti on rasteri (PIL), joten polku litistetaan: M/L suoraan, C/Q 8 askelta.
+# ---------------------------------------------------------------------------
+def _flatten_path(d: str, steps: int = 8) -> list[tuple[float, float]]:
+    toks = d.replace(",", " ").split()
+    pts: list[tuple[float, float]] = []
+    i = 0
+    cur = (0.0, 0.0)
+    while i < len(toks):
+        c = toks[i]
+        if c == "M" or c == "L":
+            cur = (float(toks[i + 1]), float(toks[i + 2])); pts.append(cur); i += 3
+        elif c == "C":
+            p1 = (float(toks[i + 1]), float(toks[i + 2]))
+            p2 = (float(toks[i + 3]), float(toks[i + 4]))
+            p3 = (float(toks[i + 5]), float(toks[i + 6]))
+            p0 = cur
+            for k in range(1, steps + 1):
+                t = k / steps
+                x = (1-t)**3*p0[0] + 3*(1-t)**2*t*p1[0] + 3*(1-t)*t*t*p2[0] + t**3*p3[0]
+                y = (1-t)**3*p0[1] + 3*(1-t)**2*t*p1[1] + 3*(1-t)*t*t*p2[1] + t**3*p3[1]
+                pts.append((x, y))
+            cur = p3; i += 7
+        elif c == "Q":
+            p1 = (float(toks[i + 1]), float(toks[i + 2]))
+            p2 = (float(toks[i + 3]), float(toks[i + 4]))
+            p0 = cur
+            for k in range(1, steps + 1):
+                t = k / steps
+                x = (1-t)**2*p0[0] + 2*(1-t)*t*p1[0] + t*t*p2[0]
+                y = (1-t)**2*p0[1] + 2*(1-t)*t*p1[1] + t*t*p2[1]
+                pts.append((x, y))
+            cur = p2; i += 5
+        elif c == "Z":
+            i += 1
+        else:
+            i += 1
+    return pts
+
+
+def _draw_kit_pil(canvas, x: int, y: int, size: int, short: str,
+                  outline=(243, 242, 242, 90)) -> None:
+    """Piirra joukkueen paita (size x size) kortille kohtaan (x, y)."""
+    from PIL import Image, ImageDraw
+    from src.models.team_colors import (
+        _team_color, _darken, _KIT_BY_SHORT, _kit_layers, _cuff_color,
+        _JERSEY, _SLEEVE_L, _SLEEVE_R, _CUFF_L, _CUFF_R, _COLLAR,
+    )
+    S = 4  # supersample -> siistit viistot reunat
+    W = size * S
+    sc = W / 100.0
+    def P(pts): return [(px * sc, py * sc) for px, py in pts]
+    color, _ = _team_color(short)
+    pattern, secondary = _KIT_BY_SHORT.get((short or "").upper(), ("solid", None))
+    sleeve = secondary if (pattern == "sleeves" and secondary) else _darken(color)
+    cuff = _cuff_color(color, pattern, secondary)
+    body = P(_flatten_path(_JERSEY))
+    layer = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.polygon(body, fill=_hex_to_rgb(color))
+    layers = _kit_layers(pattern) if secondary else []
+    if layers:
+        pat = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+        pd = ImageDraw.Draw(pat)
+        for l in layers:
+            if l[0] == "rect":
+                pd.rectangle([l[1] * sc, l[2] * sc, (l[1] + l[3]) * sc, (l[2] + l[4]) * sc],
+                             fill=_hex_to_rgb(secondary))
+            else:
+                pd.polygon(P(_flatten_path(l[1])), fill=_hex_to_rgb(secondary))
+        mask = Image.new("L", (W, W), 0)
+        ImageDraw.Draw(mask).polygon(body, fill=255)
+        layer.paste(pat, (0, 0), Image.composite(mask, Image.new("L", (W, W), 0), pat.split()[3]))
+        d = ImageDraw.Draw(layer)
+    for path_, col in ((_SLEEVE_L, sleeve), (_SLEEVE_R, sleeve), (_CUFF_L, cuff), (_CUFF_R, cuff)):
+        d.polygon(P(_flatten_path(path_)), fill=_hex_to_rgb(col))
+    collar = P(_flatten_path(_COLLAR))
+    d.line(collar, fill=_hex_to_rgb(secondary or sleeve), width=max(1, int(4 * sc)), joint="curve")
+    d.line(body + body[:1], fill=outline, width=max(1, int(3 * sc)), joint="curve")
+    small = layer.resize((size, size), Image.LANCZOS)
+    canvas.paste(small, (x, y), small)
+
+
 def _rajatasapeli(jarjestetty: list[dict], kentta: str, n: int = 10) -> bool:
     """Pyoristyvatko sijat n ja n+1 samaksi kahden desimaalin luvuksi?
 
@@ -939,9 +1024,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
             d.text((x + 16, y + 14), f"{i + 1:>2}", font=f_rank, fill=MUTED)
             code = sh(r["team"], r.get("short"))
             col, _ = _team_color(code)
-            rgb = _hex_to_rgb(col)
-            d.ellipse([x + 48, y + 10, x + 76, y + 38], fill=rgb,
-                      outline=_ring(rgb), width=2)
+            _draw_kit_pil(canvas, x + 44, y + 4, 40, code)
             # Nousija saa tahden: sivu merkitsee sen "baseline rating"
             # -tekstilla, ja ilman samaa merkintaa kortti vaittaisi enemman
             # kuin sivu jolle se lukijan lahettaa.
@@ -983,9 +1066,12 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
             code = sh(name, lyh)
             col, _ = _team_color(code)
             ry = y + 6 + j * 24
-            rgb = _hex_to_rgb(col)
-            d.ellipse([fx_x + 14, ry + 2, fx_x + 30, ry + 18],
-                      fill=rgb, outline=_ring(rgb), width=2)
+            _draw_kit_pil(canvas, fx_x + 10, ry - 2, 24, code)
+            # Portti 2.9: nousijatahti myos ottelusarakkeeseen. Ilman sita kortin
+            # karkiluku (MCI 41 % v COV) oli ainoa jonka ohut osapuoli jai
+            # merkitsematta, kun sivu merkitsee Coventryn omalla rivillaan.
+            if name in (spec.get("promoted") or []):
+                code = code + "*"
             d.text((fx_x + 38, ry), code, font=f_fx, fill=CREAM)
             v = f"{xg:.2f}"
             d.text((fx_x + 156 - d.textlength(v, font=f_fxn), ry + 1),

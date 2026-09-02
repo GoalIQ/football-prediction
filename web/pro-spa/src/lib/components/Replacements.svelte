@@ -127,7 +127,8 @@
 					// Ville 2.9: Rowan jakaa KUVAN, joten hinta ja syy kortille.
 					tag2: `${p.price.toFixed(1)}m`,
 					team: p.team_short,
-					badges: p.status === 'd' && p.chance_next != null ? [`${p.chance_next}%`] : undefined,
+					// Portti k3: paljas "75%" OWNED-sarakkeen vieressa luettiin omistukseksi -> yksikko.
+					badges: p.status === 'd' && p.chance_next != null ? [`${p.chance_next}% to play`] : undefined,
 					mid: `${p.owned_pct.toFixed(1)}%`,
 					value: p.xp_window.toFixed(1),
 					sub: p.reason.text

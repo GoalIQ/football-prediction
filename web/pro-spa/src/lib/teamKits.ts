@@ -92,7 +92,17 @@ const KIT_BY_SHORT: Record<string, TeamKitSpec> = {
 	BRE: { pattern: 'stripes', secondary: '#FFFFFF' },
 	BHA: { pattern: 'stripes', secondary: '#FFFFFF' },
 	BUR: { pattern: 'sleeves', secondary: '#99D6EA' },
+	// 2.9 PAITAPAIVITYS: kaikki 26/27 PL-seurat taulussa, jotta kaulus ja
+	// hihansuut saavat kuratoidun varin myos yksivarisella paidalla.
+	CHE: { pattern: 'solid', secondary: '#FFFFFF' },
+	COV: { pattern: 'solid', secondary: '#FFFFFF' },
 	CRY: { pattern: 'stripes', secondary: '#C4122E' },
+	EVE: { pattern: 'solid', secondary: '#FFFFFF' },
+	IPS: { pattern: 'sleeves', secondary: '#FFFFFF' },
+	LIV: { pattern: 'solid', secondary: '#FFFFFF' },
+	MCI: { pattern: 'solid', secondary: '#1C2C5B' },
+	MUN: { pattern: 'solid', secondary: '#FFFFFF' },
+	NFO: { pattern: 'solid', secondary: '#FFFFFF' },
 	FUL: { pattern: 'solid', secondary: '#000000' },
 	HUL: { pattern: 'stripes', secondary: '#000000' },
 	LEE: { pattern: 'solid', secondary: '#1D428A' },

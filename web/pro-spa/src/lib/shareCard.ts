@@ -323,15 +323,18 @@ export interface PitchCardSpec {
 // Sama neutraali jersey-siluetti kuin TeamKit/Leaders (IP-turva: ei oikeita
 // kittikuvioita). Path2D syö SVG-polun sellaisenaan, viewBox 100x100.
 const JERSEY =
-	'M 33 15 L 43 9 C 46 15 54 15 57 9 L 67 15 L 84 27 L 76 42 L 67 36 ' +
-	'L 67 86 Q 67 90 63 90 L 37 90 Q 33 90 33 86 L 33 36 L 24 42 L 16 27 Z';
-const SLEEVE_L = 'M 33 15 L 16 27 L 24 42 L 33 36 Z';
-const SLEEVE_R = 'M 67 15 L 84 27 L 76 42 L 67 36 Z';
+	'M 31 14 L 40 10 C 44 20 56 20 60 10 L 69 14 L 88 26 L 82 44 L 69 39 ' +
+	'L 70 88 Q 70 92 66 92 L 34 92 Q 30 92 30 88 L 31 39 L 18 44 L 12 26 Z';
+const SLEEVE_L = 'M 31 14 L 12 26 L 18 44 L 31 39 Z';
+const SLEEVE_R = 'M 69 14 L 88 26 L 82 44 L 69 39 Z';
+// 2.9 PAITAPAIVITYS: hihansuut + GOALIQ rintaan (sama kuin TeamKit.svelte/tsx).
+const CUFF_L = 'M 12 26 L 18 44 L 21.8 42.7 L 15.8 24.7 Z';
+const CUFF_R = 'M 88 26 L 82 44 L 78.2 42.7 L 84.2 24.7 Z';
 // KIT-KUVIOT 21.8: kuvio + kaulus jaetusta $lib/teamKits-taulusta, sama
 // geometria ja piirtojärjestys kuin TeamKit.svelte (runko → kuvio → hihat →
 // kaulus → ääriviiva → lyhenne halolla). Kanvasjäljen on vastattava sivun
 // SVG:tä 1:1 — jaettu kuva ja sivu eivät saa näyttää eri paitaa.
-const COLLAR = 'M 43 9 C 46 15 54 15 57 9';
+const COLLAR = 'M 40 10 C 44 20 56 20 60 10';
 
 function darkenHex(hex: string, f = 0.7): string {
 	const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -393,26 +396,32 @@ function drawKit(
 	ctx.fillStyle = sleeve;
 	ctx.fill(new Path2D(SLEEVE_L));
 	ctx.fill(new Path2D(SLEEVE_R));
+	ctx.fillStyle = kit?.pattern === 'sleeves' ? p.color : (kit?.secondary ?? darkenHex(p.color, 0.55));
+	ctx.fill(new Path2D(CUFF_L));
+	ctx.fill(new Path2D(CUFF_R));
 	// Kaulus
 	ctx.strokeStyle = kit?.secondary ?? sleeve;
-	ctx.lineWidth = 3.5;
+	ctx.lineWidth = 4;
 	ctx.lineCap = 'round';
 	ctx.stroke(new Path2D(COLLAR));
 	ctx.strokeStyle = 'rgba(243,242,242,0.35)';
 	ctx.lineWidth = 3;
 	ctx.lineJoin = 'round';
 	ctx.stroke(new Path2D(JERSEY));
-	// Raidallisella paidalla lyhenne osuu kahdelle värille kerralla → halo
-	// (teksti kahdesti: paksu viiva alle, täyttö päälle — sama kuin SVG:ssä).
-	ctx.font = `800 17px ${FONT}`;
-	ctx.textBaseline = 'alphabetic';
-	const tw = ctx.measureText(p.team).width;
-	ctx.strokeStyle = relLum(p.textColor) > 0.5 ? 'rgba(11,10,9,0.55)' : 'rgba(255,255,255,0.6)';
-	ctx.lineWidth = 3.5;
-	ctx.lineJoin = 'round';
-	ctx.strokeText(p.team, 50 - tw / 2, 62);
-	ctx.fillStyle = p.textColor;
-	ctx.fillText(p.team, 50 - tw / 2, 62);
+	// 2.9 PAITAPAIVITYS: GOALIQ rintaan sponsorin paikalle, lyhenne pois paidasta
+	// (se on aina tekstina paidan vieressa). Halo kuten ennen raidoille.
+	if (size >= 40) {
+		ctx.font = `800 9px ${FONT}`;
+		ctx.textBaseline = 'alphabetic';
+		const mark = 'GOALIQ';
+		const tw = ctx.measureText(mark).width;
+		ctx.strokeStyle = relLum(p.textColor) > 0.5 ? 'rgba(11,10,9,0.55)' : 'rgba(255,255,255,0.6)';
+		ctx.lineWidth = 2.5;
+		ctx.lineJoin = 'round';
+		ctx.strokeText(mark, 50 - tw / 2, 60);
+		ctx.fillStyle = p.textColor;
+		ctx.fillText(mark, 50 - tw / 2, 60);
+	}
 	ctx.restore();
 	ctx.textBaseline = 'top';
 }

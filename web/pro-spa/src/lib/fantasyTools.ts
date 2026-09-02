@@ -379,9 +379,7 @@ export interface DifferentialsResponse {
 /** Yksi mitattu syy per nimi. `text` on backendin muotoilema lause;
  *  `kind` kertoo minka mittarin se lukee. */
 export interface ReplacementReason {
-	kind: 'minutes' | 'fixture';
-	/** fixture: onko paras kierros selvasti muita parempi. */
-	peak?: boolean;
+	kind: 'minutes' | 'fixture' | 'flat';
 	value: number;
 	text: string;
 	gw?: number;
