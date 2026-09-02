@@ -4,7 +4,7 @@
  "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
  "high_turnover_threshold_pct": 25.0,
  "historical_median_pct": 13.0,
- "season_median_pct": 15.8,
+ "season_median_pct": 17.6,
  "promoted": [
   "Coventry City",
   "Hull City",
@@ -15,7 +15,7 @@
   "West Ham",
   "Wolves"
  ],
- "n_flagged": 6,
+ "n_flagged": 7,
  "teams": [
   {
    "team": "Arsenal",
@@ -61,9 +61,9 @@
    "team": "Chelsea",
    "model_team": "Chelsea",
    "is_promoted": false,
-   "minutes_churn_pct": 17.2,
-   "flag": null,
-   "note": "17% of last season's minutes have left the club."
+   "minutes_churn_pct": 27.7,
+   "flag": "high_turnover",
+   "note": "28% of last season's minutes were played by players who have since left. The rating is fitted on results, so it has not priced that in yet."
   },
   {
    "team": "Coventry City",
@@ -87,9 +87,9 @@
    "team": "Everton",
    "model_team": "Everton",
    "is_promoted": false,
-   "minutes_churn_pct": 13.0,
+   "minutes_churn_pct": 20.1,
    "flag": null,
-   "note": "13% of last season's minutes have left the club."
+   "note": "20% of last season's minutes have left the club."
   },
   {
    "team": "Fulham",
@@ -171,9 +171,9 @@
    "team": "Spurs",
    "model_team": "Tottenham",
    "is_promoted": false,
-   "minutes_churn_pct": 13.5,
+   "minutes_churn_pct": 17.6,
    "flag": null,
-   "note": "14% of last season's minutes have left the club."
+   "note": "18% of last season's minutes have left the club."
   },
   {
    "team": "Sunderland",
