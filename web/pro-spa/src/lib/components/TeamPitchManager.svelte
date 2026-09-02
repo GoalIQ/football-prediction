@@ -415,28 +415,36 @@
 		mult: number;
 		over: boolean;
 	}
+	type SwingPlayer = LastFinishedGw['players'][number];
 	function swingInfo(lf: LastFinishedGw): SwingInfo | null {
 		const bs = lf.biggest_swing;
 		if (!bs || !bs.web_name || lf.diff == null) return null;
 		if (bs.contribution > 0 !== lf.diff > 0) return null;
-		const hit = lf.players.find(
-			(c) =>
-				c.multiplier > 0 &&
-				c.points != null &&
-				c.xp_frozen != null &&
-				Math.abs((c.points - c.xp_frozen) * c.multiplier - bs.contribution) < 0.06
-		);
+		const matches = (c: SwingPlayer): boolean =>
+			c.multiplier > 0 &&
+			c.points != null &&
+			c.xp_frozen != null &&
+			Math.abs((c.points - c.xp_frozen) * c.multiplier - bs.contribution) < 0.06;
+		const hit =
+			lf.players.find((c) => c.web_name === bs.web_name && matches(c)) ?? lf.players.find(matches);
 		if (!hit || hit.points == null || hit.xp_frozen == null) return null;
 		const raw = Math.abs(hit.points - hit.xp_frozen);
 		if (raw < 0.05) return null;
-		return { name: hit.web_name ?? bs.web_name, raw: raw.toFixed(1), mult: hit.multiplier, over: bs.contribution > 0 };
+		return {
+			name: hit.web_name ?? bs.web_name,
+			raw: raw.toFixed(1),
+			mult: hit.multiplier,
+			over: bs.contribution > 0
+		};
 	}
+	/** Kortin englanninkielinen swing-rivi. Ei viittaa kokonaiseroon. */
 	function swingLineEn(s: SwingInfo): string {
+		const dir = s.over ? 'over' : 'short';
 		if (s.mult >= 2) {
 			const x = s.mult >= 3 ? 'tripled' : 'doubled';
-			return `${s.name} was ${s.raw} ${s.over ? 'over' : 'short'}, ${x} by the armband.`;
+			return `${s.name} was ${s.raw} ${dir}, ${x} by the armband.`;
 		}
-		return `${s.name} was ${s.raw} of that.`;
+		return `${s.name} was ${s.raw} ${dir}.`;
 	}
 	function luckCardSpec() {
 		if (!luckSameSquad || !lastFinished || lastFinished.points == null) return null;
@@ -469,8 +477,13 @@
 		const headline: { key: string; value: string; under?: boolean }[] = [
 			{ key: 'You', value: String(lf.points) }
 		];
-		if (lf.model_points != null) headline.push({ key: 'Model', value: String(lf.model_points) });
-		if (lf.vs_model != null && lf.vs_model !== 0) {
+		/* Portti 2.9 k3: mallin luku kortille VAIN reitin kanssa (entry-id
+		   solun avaimessa). Ilman id:ta kortti palaa You/Projected-muotoon. */
+		const modelRoute = lf.model_points != null && lf.model_entry_id != null;
+		if (modelRoute) {
+			headline.push({ key: `Model \u00b7 entry ${lf.model_entry_id}`, value: String(lf.model_points) });
+		}
+		if (modelRoute && lf.vs_model != null && lf.vs_model !== 0) {
 			headline.push({
 				key: lf.vs_model > 0 ? 'You win by' : 'Model wins by',
 				value: String(Math.abs(lf.vs_model)),

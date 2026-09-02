@@ -154,6 +154,8 @@ export interface LastFinishedGw {
 	/** Yksi pelaaja joka selittaa >= 25 % erosta. null = ero jakautui. */
 	biggest_swing: { web_name: string | null; contribution: number } | null;
 	model_points: number | null;
+	/** Mallin oman FPL-entryn id (julkinen) — kortin reitti mallin luvulle. */
+	model_entry_id?: number | null;
 	/** Positiivinen = kayttaja voitti mallin. null = puolikas ottelu. */
 	vs_model: number | null;
 	xp: number | null;

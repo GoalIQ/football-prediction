@@ -256,3 +256,24 @@ def test_vaillinainen_freeze_pudottaa_myos_heilahduksen(wired, monkeypatch):
     b = rt.last_finished_block(1, BS, {}, "2026/27")
     assert b["complete"] is False and b["biggest_swing"] is None
 
+
+
+# --- model_entry_id (portti 2.9 k3) ----------------------------------------
+# Kortin "Model 108" tarvitsee reitin: mallin FPL-entry on julkinen ja sen
+# id kulkee mallin luvun mukana. Ilman mallirivia id on None, jotta kortti
+# pudottaa mallisolut eika nayta lukua ilman reittia.
+
+def test_model_entry_id_kulkee_mallin_luvun_mukana(wired, monkeypatch):
+    monkeypatch.setattr(rt, "model_squad_gw", lambda g: {
+        "entry_id": 116920, "points": 108, "fpl_average": 81, "provisional": False,
+    })
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["model_points"] == 108
+    assert b["model_entry_id"] == 116920
+
+
+def test_model_entry_id_puuttuu_ilman_mallirivia(wired, monkeypatch):
+    monkeypatch.setattr(rt, "model_squad_gw", lambda g: None)
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert b["model_points"] is None
+    assert b["model_entry_id"] is None

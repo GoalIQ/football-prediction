@@ -1668,6 +1668,11 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         # Yksi pelaaja joka selittaa >= 25 % erosta. None = ero jakautui.
         "biggest_swing": swing,
         "model_points": model_points,
+        # Portti 2.9 k3: mallin luku tarvitsee reitin. Mallin FPL-entry on
+        # julkinen; kortti nayttaa id:n mallisolun avaimessa. None kun
+        # mallirivia ei ole -> kortti pudottaa mallisolut.
+        "model_entry_id": ((model or {}).get("entry_id")
+                           if model_points is not None else None),
         # Positiivinen = kayttaja voitti mallin. None kun jompikumpi puuttuu:
         # puolikas ottelu ei ole ottelu.
         "vs_model": ((points - model_points)
