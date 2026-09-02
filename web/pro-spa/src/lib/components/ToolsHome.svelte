@@ -38,6 +38,7 @@
 	import Value from './Value.svelte';
 	import Leaders from './Leaders.svelte';
 	import Differentials from './Differentials.svelte';
+	import Replacements from './Replacements.svelte';
 	import ComparePlayers from './ComparePlayers.svelte';
 	import ChipEv from './ChipEv.svelte';
 	import WildcardPlan from './WildcardPlan.svelte';
@@ -80,6 +81,7 @@
 		value: 'players',
 		leaders: 'players',
 		differentials: 'players',
+		replacements: 'players',
 		compare: 'players',
 		pricewatch: 'prices',
 		league: 'tools',
@@ -423,7 +425,7 @@
 		<div id="panel-players" role="tabpanel" aria-labelledby="seg-players">
 			<div class="onpage" style="top: {segNavH}px">
 				<span class="muted">On this page:</span>
-				{#each [['pc-card', 'Player card'], ...(premium ? [['pc-captain', 'Captain ranker'], ['pc-swing', 'Fixture swing'], ['pc-xp', 'Player xP']] : []), ['pc-cs', 'Clean sheets'], ['pc-value', 'Value'], ['pc-leaders', 'Leaders'], ...(premium ? [['pc-diff', 'Differentials'], ['pc-compare', 'Compare']] : [])] as [id, label] (id)}
+				{#each [['pc-card', 'Player card'], ...(premium ? [['pc-captain', 'Captain ranker'], ['pc-swing', 'Fixture swing'], ['pc-xp', 'Player xP']] : []), ['pc-cs', 'Clean sheets'], ['pc-value', 'Value'], ['pc-leaders', 'Leaders'], ...(premium ? [['pc-diff', 'Differentials'], ['pc-repl', 'Replacements'], ['pc-compare', 'Compare']] : [])] as [id, label] (id)}
 					<button type="button" onclick={() => jumpTo(id)}>{label}</button>
 				{/each}
 			</div>
@@ -460,6 +462,8 @@
 			{#if premium}
 				<div class="tool-card" id="pc-diff"><Differentials /></div>
 				{#if xp}
+					<!-- ROWAN-REPLACEMENTS (2.9): "who replaces X", luojan tilaama muoto. -->
+					<div class="tool-card" id="pc-repl"><Replacements {xp} /></div>
 					<div class="tool-card" id="pc-compare"><ComparePlayers {xp} /></div>
 				{/if}
 			{/if}

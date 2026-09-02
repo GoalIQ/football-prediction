@@ -5075,6 +5075,29 @@ def fantasy_differentials(
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
+@app.get("/api/fantasy/replacements",
+         description="Who replaces a player: same position, similar price, ranked by expected points over the coming gameweeks, with ownership and the gap to the player being replaced on every row.")
+def fantasy_replacements(
+    response: Response,
+    player: int = Query(..., ge=1, description="FPL element ID of the player being replaced."),
+    gws: int = Query(default=5, ge=1, le=6, description="Gameweeks in the window (default 5)."),
+    bracket: float = Query(default=0.5, ge=0, le=3.0,
+                           description="Price bracket in millions, plus or minus (default 0.5)."),
+    top: int = Query(default=5, ge=1, le=10),
+):
+    """ROWAN-REPLACEMENTS (2.9): luojan tilaama "who replaces X" -lista.
+    Sama datalahde kuin differentials (committattu xP-projektio + elava
+    bootstrap-omistus), ei laskentaa pyynnossa. Premium-portitus hoidetaan
+    frontendissa kuten differentials."""
+    from src.models.fpl_planner import replacements
+    from src.models.fpl_rate_team import RateTeamError
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return replacements(player_id=player, gws=gws, bracket=bracket, top_n=top)
+    except RateTeamError as e:
+        raise _http_from_rate_team_error(e)
+
+
 @app.get("/api/fantasy/value",
          description="Expected points per million, fixture swing, and the best pair of goalkeepers to rotate.")
 def fantasy_value(

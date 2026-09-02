@@ -671,7 +671,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "panel that tracks your own squad against the threshold while "
                 "a gameweek is being played (web), the full DefCon "
                 "(defensive contribution) leaderboard, goalkeeper "
-                "rotation pairs, differentials, a round-by-round breakdown of where "
+                "rotation pairs, differentials, who replaces a player at a similar price, a round-by-round breakdown of where "
                 "the gap to the model came from (captaincy, bench points and "
                 "autosubs) with a decision journal of the calls you made "
                 "differently, the players that actually close the gap to your "
@@ -1368,7 +1368,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "and price watch free, plus an interactive team manager with a "
             "gameweek planner, per-gameweek expected points (xP) for every player in the projection, the captain "
             "ranker, player value, a DefCon tracker, "
-            "differentials, player compare for up to four players and transfer "
+            "differentials, who replaces a player at a similar price, player compare for up to four players and transfer "
             "suggestions with apply on GoalIQ "
             "Premium - powered by a Dixon-Coles match model "
             "with a public, pre-match-logged prediction track record. Built by "
@@ -2069,7 +2069,7 @@ per week), per-gameweek expected points (xP) for every player in the projection,
 you can apply straight to your planned squad, a player value ranking (xP per
 million), the full DefCon leaderboard with a gameweek-by-gameweek
 breakdown, goalkeeper rotation pairs,
-differential picks, player compare for up to four players and predicted
+differential picks, who replaces a player at a similar price, player compare for up to four players and predicted
   starting minutes, from the
 same match model as this page. Rate my team, a captain pick, price watch and
 the top three of every leaderboard are free.</p>

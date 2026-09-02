@@ -41,6 +41,7 @@
 		// ja se oli vaara; copy-sync-auditointi 25.8 loysi sen.
 		'Share as image: post-ready cards from your XI, the captain ranker, the value ranking and leaderboards',
 		'Differential finder: low ownership, high xP',
+		'Replacements: who replaces a player, same position and a similar price, ranked by xP over the coming gameweeks',
 		'Multi-gameweek transfer planner and plan chains',
 		'Chip timing: best window for Wildcard, Bench Boost, Triple Captain and Free Hit',
 		'Edge mode: protect or climb your rank with ownership-weighted picks',

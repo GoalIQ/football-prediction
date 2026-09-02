@@ -415,3 +415,113 @@ def test_delta_never_exceeds_raw_player_difference():
     assert out["suggestions"], "heikolle rungolle pitää löytyä parannuksia"
     for s in out["suggestions"]:
         assert s["delta_xp_horizon"] <= s["delta_xp_squad"] + 1e-6
+
+
+# ---------------------------------------------------------------------------
+# ROWAN-REPLACEMENTS (2.9): "who replaces X" — sama pelipaikka, hintahaarukka,
+# ikkunan xP, omistus, yksi mitattu syy. Fixture: MID 15-24 kaikki 70 (7.0m),
+# xP 5.5 -> 3.6, EO 40 % kahdella parhaalla.
+# ---------------------------------------------------------------------------
+
+def test_replacements_same_pos_bracket_sorted_and_reason():
+    out = pl.replacements(20, gws=5)          # MID 20 = xP 4.4/GW
+    assert out["target"]["id"] == 20 and out["target"]["pos"] == "MID"
+    assert out["meta"]["gws"] == [1, 2, 3, 4, 5]
+    rows = out["players"]
+    assert len(rows) == 5
+    assert [r["id"] for r in rows] == [15, 16, 17, 18, 19]  # xP-jarjestys, ei lahtijaa
+    assert all(r["pos"] == "MID" for r in rows)
+    assert all(out["meta"]["price_min"] <= r["price"] <= out["meta"]["price_max"]
+               for r in rows)
+    assert out["meta"]["bracket_widened"] is False
+    xs = [r["xp_window"] for r in rows]
+    assert xs == sorted(xs, reverse=True)
+    # 5 x 5.5 - 5 x 4.4 = 5.5
+    assert rows[0]["xp_window"] == 27.5 and rows[0]["xp_gap_vs_target"] == 5.5
+    assert rows[0]["owned_pct"] == 40.0
+    for r in rows:
+        assert r["reason"]["kind"] in ("minutes", "fixture_peak", "xp_gap")
+        assert len(r["gameweeks"]) == 5
+    # Fixture: tasainen xP joka GW + ei p_start -> syy on xP-ero, ja luku on
+    # sama kuin rivin oma gap (yksi lahde kahdelle kentalle).
+    assert rows[0]["reason"]["kind"] == "xp_gap"
+    assert rows[0]["reason"]["value"] == rows[0]["xp_gap_vs_target"]
+    # PORTTI 2.9: xp_gap ei kanna tekstia (vs-sarake kantaa saman luvun).
+    assert rows[0]["reason"]["text"] == ""
+    assert out["meta"]["reason_note"].endswith("over GW1-GW5, not a single gameweek.")
+
+
+def test_replacements_errors():
+    with pytest.raises(rt.RateTeamError) as e:
+        pl.replacements(99999)
+    assert e.value.status_code == 404
+    for kw in ({"gws": 0}, {"gws": 7}, {"bracket": -1}, {"bracket": 9}, {"top_n": 0}):
+        with pytest.raises(rt.RateTeamError) as e:
+            pl.replacements(20, **kw)
+        assert e.value.status_code == 400
+
+
+def test_replacements_bracket_widens_and_reports(monkeypatch):
+    """Hintaskaalan paassa +-0.5m on tyhja -> haarukka levenee 0.5m askelin
+    ja meta kertoo seka pyydetyn etta kaytetyn. Ei hiljaista levennysta."""
+    xp_data, boot, pool, by_id = pl.build_context()
+    # MID 15 hinnoitellaan 10.0m -> +-0.5m ei osu keneenkaan (muut 7.0m);
+    # +-3.0m osuu kaikkiin.
+    pool = [dict(p, price=100) if p["id"] == 15 else p for p in pool]
+    monkeypatch.setattr(pl, "build_context",
+                        lambda: (xp_data, boot, pool, {p["id"]: p for p in pool}))
+    out = pl.replacements(15, gws=5, bracket=0.5)
+    m = out["meta"]
+    assert m["bracket_requested"] == 0.5 and m["bracket"] == 3.0
+    assert m["bracket_widened"] is True
+    assert m["price_min"] == 7.0 and m["price_max"] == 13.0
+    assert [r["id"] for r in out["players"]] == [16, 17, 18, 19, 20]
+
+
+def test_replacements_reason_minutes_and_peak(monkeypatch):
+    xp_data, boot, pool, by_id = pl.build_context()
+    pool = [dict(p) for p in pool]
+    by = {p["id"]: p for p in pool}
+    by[20]["p_start"] = 0.55                      # lahtija epavarma
+    by[15]["p_start"] = 0.92                      # -> minutes
+    by[16]["p_start"] = 0.60                      # ei minutes; tee GW3-piikki
+    by[16]["gameweeks"] = [{"gw": g, "opponents": [{"opp": "C09", "venue": "H"}] if g == 3 else [],
+                            "xp": 9.0 if g == 3 else 4.0} for g in range(1, 7)]
+    monkeypatch.setattr(pl, "build_context", lambda: (xp_data, boot, pool, by))
+    out = pl.replacements(20, gws=5)
+    rows = {r["id"]: r for r in out["players"]}
+    assert rows[15]["reason"]["kind"] == "minutes"
+    assert rows[15]["reason"]["text"] == "projected to start 92% of games, P20 55%"
+    assert rows[16]["reason"]["kind"] == "fixture_peak"
+    assert rows[16]["reason"]["gw"] == 3
+    assert rows[16]["reason"]["text"] == (
+        "GW3 C09 (H) is the biggest week in the projection, 9.0 xP")
+
+
+def test_replacements_availability_gate_drops_live_out(monkeypatch):
+    """Elavassa bootstrapissa sivuun merkitty ei ole korvaaja; lahtija saa
+    olla sivussa (se on usein kysymyksen syy)."""
+    import copy
+    xp_data, boot, pool, by_id = pl.build_context()
+    boot2 = copy.deepcopy(boot)
+    for e in boot2["elements"]:
+        if e["id"] in (15, 20):
+            e["status"] = "i"
+    monkeypatch.setattr(pl, "build_context",
+                        lambda: (xp_data, boot2, pool, by_id))
+    out = pl.replacements(20, gws=5)
+    ids = [r["id"] for r in out["players"]]
+    assert 15 not in ids and ids == [16, 17, 18, 19, 21]
+    assert [d["id"] for d in out["meta"]["availability_gate"]["dropped"]
+            if d["id"] == 15]
+
+
+def test_endpoint_replacements(client):
+    r = client.get("/api/fantasy/replacements?player=20")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["target"]["id"] == 20 and len(body["players"]) == 5
+    assert r.headers.get("cache-control") == "no-store"
+    assert client.get("/api/fantasy/replacements?player=99999").status_code == 404
+    assert client.get("/api/fantasy/replacements").status_code == 422
+    assert client.get("/api/fantasy/replacements?player=20&gws=9").status_code == 422

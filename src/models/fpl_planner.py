@@ -521,3 +521,180 @@ def compare_players(player_ids: list[int]) -> dict:
         "players": rows,
         "verdict": verdict,
     }
+
+
+# ---------------------------------------------------------------------------
+# ROWAN-REPLACEMENTS (2.9.2026): "who replaces X"
+# ---------------------------------------------------------------------------
+# Luojan (Rowan, 74k katselua GoalIQ:n 5 GW:n xPts-ketjulla 1.9) itse
+# maarittelema muoto: Player -> same price bracket -> next 5 GWs -> top 5
+# replacements, with xP, ownership and a quick reason for each.
+#
+# Syy on YKSI projektiosta luettu asia per nimi, ei generoitua tekstia.
+# Kolme lajia, tassa jarjestyksessa (ensimmainen joka tayttyy).
+# PORTTI 2.9: mitattu koko poolista 5 GW:n ikkunalla: fixture_peak laukeaa
+# 4/513 pelaajalle ja minutes vaatii lahtijan p_start <= 0.70, joten xp_gap
+# on kaytannossa oletustila. Silla EI ole tekstia: `vs`-sarake kantaa saman
+# luvun jo, ja sama luku kahdesti rivilla oli portin blokki. Copy ei saa
+# luvata "kolmea syyta" (tasavertainen lista kuolleista haaroista).
+#   minutes       korvaaja on projektiossa selvasti varmempi aloittaja kuin
+#                 lahtija (p_start >= 0.85 ja lahtijan p_start <= 0.70)
+#   fixture_peak  yksi kierros ikkunassa on selvasti muita parempi
+#                 (>= 1.3 x korvaajan oma ikkunakeskiarvo ja >= 4.0 xP)
+#   xp_gap        ikkunan xP-ero lahtijaan (aina laskettavissa, myos
+#                 negatiivinen: lista on hintahaarukan paras viisikko, ei
+#                 lupaus etta jokainen on lahtijaa parempi)
+# Jokainen rivi kantaa lisaksi xp_gap_vs_target:in erikseen, jotta ketjun
+# kirjoittaja voi kayttaa eroa vaikka syy olisi toinen.
+REPLACEMENTS_TOP_N = 5
+REPLACEMENTS_MAX_TOP_N = 10
+REPLACEMENTS_DEFAULT_GWS = 5
+REPLACEMENTS_DEFAULT_BRACKET = 0.5   # miljoonaa, +-
+REPLACEMENTS_MAX_BRACKET = 3.0
+REASON_MINUTES_MIN_P_START = 0.85
+REASON_MINUTES_MAX_TARGET_P_START = 0.70
+REASON_PEAK_RATIO = 1.3
+REASON_PEAK_MIN_XP = 4.0
+
+
+def _gw_opponents_text(player: dict, gw: int) -> str:
+    """'COV (H)' / 'MUN (A), IPS (H)' / 'blank'. Sama sisalto kuin
+    gameweeks[].opponents, vain tekstiksi tiivistettyna."""
+    for g in player.get("gameweeks") or []:
+        if g.get("gw") == gw:
+            opps = g.get("opponents") or []
+            if not opps:
+                return "blank"
+            return ", ".join(
+                "{} ({})".format(o.get("opp") or "?", o.get("venue") or "?")
+                for o in opps)
+    return "blank"
+
+
+def _replacement_reason(cand: dict, target: dict, gws: list[int]) -> dict:
+    n = len(gws)
+    cp, tp = cand.get("p_start"), target.get("p_start")
+    if (isinstance(cp, (int, float)) and isinstance(tp, (int, float))
+            and cp >= REASON_MINUTES_MIN_P_START
+            and tp <= REASON_MINUTES_MAX_TARGET_P_START):
+        c_pct, t_pct = int(cp * 100 + 0.5), int(tp * 100 + 0.5)
+        return {
+            "kind": "minutes",
+            "value": c_pct,
+            "text": "projected to start {}% of games, {} {}%".format(
+                c_pct, target["web_name"], t_pct),
+        }
+    per_gw = [(_gw_xp(cand, g), g) for g in gws]
+    total = sum(x for x, _ in per_gw)
+    if n >= 2 and total > 0:
+        best_xp, best_gw = max(per_gw)
+        if best_xp >= REASON_PEAK_RATIO * (total / n) and best_xp >= REASON_PEAK_MIN_XP:
+            return {
+                "kind": "fixture_peak",
+                "value": round(best_xp, 2),
+                "gw": best_gw,
+                "text": "GW{} {} is the biggest week in the projection, {:.1f} xP".format(
+                    best_gw, _gw_opponents_text(cand, best_gw), best_xp),
+            }
+    gap = total - _remaining_xp(target, gws)
+    return {
+        "kind": "xp_gap",
+        "value": round(gap, 2),
+        # Ei tekstia: rivin xp_gap_vs_target ja UI:n vs-sarake kantavat luvun.
+        "text": "",
+    }
+
+
+def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
+                 bracket: float = REPLACEMENTS_DEFAULT_BRACKET,
+                 top_n: int = REPLACEMENTS_TOP_N) -> dict:
+    """Top-N korvaajaa samasta pelipaikasta ja hintahaarukasta (+-bracket m),
+    ikkunan xP:lla jarjestettyna. Ei vaadi entrya: kysymys on "kuka korvaa
+    X:n", ei "kuka korvaa X:n minun rungossani" (se on planner)."""
+    if not 1 <= gws <= 6:
+        raise RateTeamError(400, "gws must be between 1 and 6.")
+    if not 0 <= bracket <= REPLACEMENTS_MAX_BRACKET:
+        raise RateTeamError(400, "bracket must be between 0 and {}.".format(
+            REPLACEMENTS_MAX_BRACKET))
+    if not 1 <= top_n <= REPLACEMENTS_MAX_TOP_N:
+        raise RateTeamError(400, "top must be between 1 and {}.".format(
+            REPLACEMENTS_MAX_TOP_N))
+    xp_data, bootstrap, pool, by_id = build_context()
+    target = by_id.get(player_id)
+    if target is None:
+        raise RateTeamError(404, "Player {} has no xP projection.".format(player_id))
+    # Ikkuna = kierrokset joihin siirto voi VIELA vaikuttaa (sama lahde kuin
+    # rate-team ja planner 29.8 lahtien). Kesken olevaa kierrosta ei lasketa.
+    from src.models.fpl_rate_team import _resolve_gw, transfer_horizon_gws
+    window = transfer_horizon_gws(pool, xp_data, _resolve_gw(bootstrap, None), cap=gws)
+    if not window:
+        raise RateTeamError(503, "No projected gameweeks in range.")
+    # Serve-time saatavuusportti: elavassa bootstrapissa sivuun merkitty ei
+    # ole korvaaja. Lahtijaa ei portiteta — hanen sivussaolonsa on usein juuri
+    # kysymyksen syy.
+    live_pool, dropped = apply_availability_gate(pool, bootstrap)
+    same_pos = [p for p in live_pool
+                if p["id"] != target["id"]
+                and p["element_type"] == target["element_type"]]
+
+    def _in_bracket(b: float) -> tuple[int, int, list[dict]]:
+        lo_ = target["price"] - int(round(b * 10))
+        hi_ = target["price"] + int(round(b * 10))
+        return lo_, hi_, [p for p in same_pos if lo_ <= p["price"] <= hi_]
+
+    # Hintahaarukan levennys: hintaskaalan paassa (Bruno 12.0m, Haaland
+    # 15.5m) +-0.5m on tyhja. Levennetaan 0.5m askelin kunnes kandidaatteja
+    # on vahintaan top_n tai katto tulee vastaan, ja meta kertoo REHELLISESTI
+    # seka pyydetyn etta kaytetyn haarukan. Ei tehda hiljaa.
+    bracket_used = bracket
+    lo, hi, cands = _in_bracket(bracket_used)
+    while len(cands) < top_n and bracket_used < REPLACEMENTS_MAX_BRACKET:
+        bracket_used = min(REPLACEMENTS_MAX_BRACKET, round(bracket_used + 0.5, 1))
+        lo, hi, cands = _in_bracket(bracket_used)
+    scored = sorted(((_remaining_xp(p, window), p) for p in cands),
+                    key=lambda t: (-t[0], t[1]["price"], t[1]["web_name"]))
+    target_total = _remaining_xp(target, window)
+
+    def _row(total: float, p: dict) -> dict:
+        return {
+            "id": p["id"], "web_name": p["web_name"],
+            "team_short": p["team_short"], "pos": POS_NAME[p["element_type"]],
+            "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
+            "xp_window": round(total, 2),
+            "xp_gap_vs_target": round(total - target_total, 2),
+            "gameweeks": [{"gw": g, "opponents": _gw_opponents_text(p, g),
+                           "xp": round(_gw_xp(p, g), 2)} for g in window],
+            "p_start": p.get("p_start"),
+            "status": p.get("status") or "a",
+            "chance_next": p.get("chance_next"),
+            "news": (p.get("news") or "")[:140],
+            "reason": _replacement_reason(p, target, window),
+        }
+
+    return {
+        "meta": {
+            "generated_at": xp_data["meta"].get("generated_at"),
+            "gws": window,
+            "bracket_requested": bracket, "bracket": bracket_used,
+            "bracket_widened": bracket_used != bracket,
+            "price_min": lo / 10.0, "price_max": hi / 10.0,
+            "candidates_in_bracket": len(cands),
+            "availability_gate": {"checked": True, "dropped": dropped,
+                                  "note": AVAILABILITY_GATE_NOTE},
+            "reason_note": ("Ownership is FPL's selected-by percentage. xP is "
+                            "the GoalIQ projection over GW{}-GW{}, not a single "
+                            "gameweek.".format(window[0], window[-1])),
+        },
+        "target": {
+            "id": target["id"], "web_name": target["web_name"],
+            "team_short": target["team_short"],
+            "pos": POS_NAME[target["element_type"]],
+            "price": target["price"] / 10.0, "owned_pct": target["owned_pct"],
+            "xp_window": round(target_total, 2),
+            "p_start": target.get("p_start"),
+            "status": target.get("status") or "a",
+            "chance_next": target.get("chance_next"),
+            "news": (target.get("news") or "")[:140],
+        },
+        "players": [_row(total, p) for total, p in scored[:top_n]],
+    }

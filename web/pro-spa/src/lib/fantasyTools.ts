@@ -21,6 +21,7 @@ export type FantasyTool =
 	| 'plan'
 	| 'captain'
 	| 'differentials'
+	| 'replacements'
 	| 'compare'
 	| 'value'
 	| 'xg_leaders'
@@ -373,6 +374,78 @@ export interface DifferentialsResponse {
 	model_vs_crowd?: ModelVsCrowd;
 }
 
+/* ---------- replacements (ROWAN-REPLACEMENTS 2.9) ---------- */
+
+/** Yksi mitattu syy per nimi. `text` on backendin muotoilema lause;
+ *  `kind` kertoo minka mittarin se lukee. */
+export interface ReplacementReason {
+	kind: 'minutes' | 'fixture_peak' | 'xp_gap';
+	value: number;
+	text: string;
+	gw?: number;
+}
+
+export interface ReplacementGw {
+	gw: number;
+	/** 'COV (H)' / 'MUN (A), IPS (H)' / 'blank' */
+	opponents: string;
+	xp: number;
+}
+
+export interface ReplacementRow {
+	id: number;
+	web_name: string;
+	team_short: string;
+	pos: Pos;
+	price: number;
+	owned_pct: number;
+	/** xP summattuna ikkunan kierroksilta (meta.gws). */
+	xp_window: number;
+	/** xp_window miinus korvattavan xp_window. */
+	xp_gap_vs_target: number;
+	gameweeks: ReplacementGw[];
+	p_start: number | null;
+	status: string;
+	chance_next: number | null;
+	news: string;
+	reason: ReplacementReason;
+}
+
+export interface ReplacementTarget {
+	id: number;
+	web_name: string;
+	team_short: string;
+	pos: Pos;
+	price: number;
+	owned_pct: number;
+	xp_window: number;
+	p_start: number | null;
+	status: string;
+	chance_next: number | null;
+	news: string;
+}
+
+export interface ReplacementsResponse {
+	meta: {
+		generated_at: string | null;
+		gws: number[];
+		bracket_requested: number;
+		bracket: number;
+		bracket_widened: boolean;
+		price_min: number;
+		price_max: number;
+		candidates_in_bracket: number;
+		availability_gate?: {
+			checked: boolean;
+			dropped: { id: number; web_name: string; team_short: string; status: string; news: string }[];
+			note: string;
+		};
+		reason_note?: string;
+	};
+	target: ReplacementTarget;
+	players: ReplacementRow[];
+}
+
 /* ---------- compare ---------- */
 
 export interface ComparePlayer {
@@ -508,6 +581,17 @@ export function fetchDifferentials(
 ): Promise<DifferentialsResponse> {
 	const posQ = pos ? `&pos=${pos}` : '';
 	return getTool(`/api/fantasy/differentials?max_ownership=${maxOwnership}${posQ}`, 'differentials');
+}
+
+export function fetchReplacements(
+	playerId: number,
+	gws = 5,
+	bracket = 0.5
+): Promise<ReplacementsResponse> {
+	return getTool(
+		`/api/fantasy/replacements?player=${playerId}&gws=${gws}&bracket=${bracket}&top=5`,
+		'replacements'
+	);
 }
 
 export function fetchComparePlayers(ids: number[]): Promise<CompareResponse> {

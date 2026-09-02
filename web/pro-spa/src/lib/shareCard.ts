@@ -43,6 +43,9 @@ export interface CardSpec {
 	valueLabel: string;
 	rows: CardRow[];
 	fileName: string;
+	/** 2.9 (portti): listakortin lahderivi. Oletus = entinen kovakoodattu rivi;
+	 *  kortti jonka sarake on FPL:n dataa (OWNED) attribuoi sen itse. */
+	footNote?: string;
 }
 
 const W = 1080;
@@ -244,7 +247,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	// Footer + amber-alaraita (brandin tunniste)
 	ctx.font = med(20);
 	ctx.fillStyle = MUTED;
-	ctx.fillText('projections from the GoalIQ match model', MX, H - 88);
+	ctx.fillText(spec.footNote ?? 'projections from the GoalIQ match model', MX, H - 88);
 	ctx.font = bold(20);
 	ctx.fillStyle = AMBER;
 	ctx.fillText('@goaliqapp', W - MX - ctx.measureText('@goaliqapp').width, H - 88);

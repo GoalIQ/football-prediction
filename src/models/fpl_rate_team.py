@@ -1123,6 +1123,11 @@ def _projection_pool(xp_data: dict, price_by_id: dict[int, dict]) -> list[dict]:
             # listassa katoaa aanettomasti — juuri siksi alkuperainen toteutus
             # laski vauhdin uudestaan value-listalla (ja laski sen vaarin).
             "predicted_starts": p.get("predicted_starts"),
+            # 2.9 ROWAN-REPLACEMENTS: aloitustodennakoisyys on korvaajalistan
+            # "minutes"-syyn ainoa lahde (sama kentta kuin compare 29.8).
+            # Pool muotoilee rivin uusiksi -> kentta joka ei ole TASSA listassa
+            # katoaa aanettomasti (ks. 5.8 ja 15.8 alla).
+            "p_start": p.get("p_start"),
             "minutes_confidence": p.get("minutes_confidence"),
             # 15.8: saatavuus kentalle. Lisasin nama ensin VAIN vastausriviin
             # ja arvo oli `None` tuotannossa — tasan se ansa jota yllaoleva
