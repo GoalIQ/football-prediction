@@ -290,19 +290,22 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     kohtaa. Testi oli vihrea samalla kun oikea rakennuspolku pudotti
     double gameweekin toisen ottelun (muisti: portti-voi-mitata-eri-koodipolkua).
 
-    🔴 TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): `by_gw` on dict jonka avain on
-    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTAA
-    edellisen ja katoaa ruudukosta - samalla kun `next_n` laskee sen ja
-    `next_avg_cs_pct` sisaltaa sen keskiarvossa. Sivun copy EI saa luvata
-    etta double nakyy ruudukossa ennen kuin tama on korjattu.
+    KORJATTU 2.9 (QUEUE: FDR-GRID-DGW): `cells` oli aiemmin dict jonka avain
+    oli gameweek (`by_gw`), joten double gameweekissa jalkimmainen ottelu
+    YLIKIRJOITTI edellisen ja katosi ruudukosta - samalla kun `next_n` laski
+    sen ja `next_avg_cs_pct` sisalsi sen keskiarvossa. `cells` on nyt LISTA
+    kaikista otteluista joiden gw kuuluu pyydettyyn ikkunaan (ei yhta paikkaa
+    per gw), joten kumpikin doublen ottelu sailyy. `fdr_grid_html` ryhmittelee
+    ne takaisin gw:n mukaan renderoidessaan sarakkeita.
     """
+    gw_set = set(gws)
     rows = []
     for t in teams:
-        by_gw = {f["gw"]: f for f in t["fixtures"]}
+        cells = [f for f in t["fixtures"] if f["gw"] in gw_set]
         rows.append(
             {
                 "team": t["name"],
-                "cells": [by_gw.get(g) for g in gws],
+                "cells": cells,
                 "avg_fdr": t["next_avg_fdr"],
                 "avg_cs": t["next_avg_cs_pct"],
                 # next_n on otteluiden maara lahihorisontissa. Ilman sita
@@ -311,24 +314,19 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
             }
         )
     rows.sort(key=lambda r: r["avg_fdr"])
-    # 30.8 (portti k2): fail-closed double gameweekille. Jos rivilla on
-    # enemman otteluita kuin soluja, ruudukko PIILOTTAA ottelun samalla kun
-    # Games-sarake ja Avg CS% laskevat sen mukaan. Sivun luvut olisivat silloin
-    # keskenaan ristiriidassa ilman etta mikaan huutaisi
+    # 30.8 (portti k2), voimassa yha 2.9:n korjauksen jalkeen: fail-closed jos
+    # `next_n` ei tasmaa todellisiin ikkunan otteluihin. Alkuperainen syy oli
+    # double gameweek (korjattu ylla), mutta vahti jaa suojaamaan MUULTA
+    # epajohdonmukaisuudelta (esim. `next_n` laskettu eri lahteesta kuin
+    # `fixtures`) - sivu ei saa nayttaa Games-lukua jota solut eivat todista
     # (muisti: ehto-ei-vanhene-teksti-vanhenee).
-    #
-    # Fail-closed kuten fpl_cs_fdr:n sanity-gate: vanha fpl.html jaa voimaan ja
-    # askel menee punaiseksi. Se on parempi kuin sivu joka valehtelee itselleen.
-    # Korjaus on QUEUE: FDR-GRID-DGW.
     for r in rows:
-        nakyvia = len([c for c in r["cells"] if c is not None])
+        nakyvia = len(r["cells"])
         if r["n"] > nakyvia:
             raise SystemExit(
-                f"FDR-GRID-DGW: {r['team']} - rivilla {r['n']} ottelua mutta "
-                f"{nakyvia} solua. Double gameweek piilottaisi ottelun "
-                f"ruudukosta samalla kun Games ja Avg CS% laskevat sen. "
-                f"Korjaa fdr_rows_from_teams (by_gw -> lista per GW) ennen "
-                f"kuin sivu regeneroidaan.")
+                f"FDR-GRID-DGW: {r['team']} - next_n sanoo {r['n']} ottelua "
+                f"mutta cells kantaa vain {nakyvia}. Games- ja Avg CS%"
+                f"-sarakkeet laskisivat ottelun jota ruudukko ei nayta.")
     return rows
 
 
@@ -1290,12 +1288,22 @@ def fdr_grid_html(c: dict) -> str:
     )
     rows = []
     for r in c["fdr_rows"]:
+        # FDR-GRID-DGW (2.9): `r["cells"]` on nyt lista kaikista rivin
+        # otteluista (fdr_rows_from_teams voi kantaa kaksi samalla gw:lla),
+        # joten sarakkeet renderoidaan gw:n mukaan RYHMITELTYNA eika
+        # listan indeksin mukaan - muuten double gameweekin toinen ottelu
+        # tyontaisi kaikki myohemmat sarakkeet vaarin kohdin.
+        by_gw: dict[int, list[dict]] = {}
+        for fx in r["cells"]:
+            if fx is not None:
+                by_gw.setdefault(fx["gw"], []).append(fx)
         cells = []
-        for i, fx in enumerate(r["cells"]):
+        for i, g in enumerate(c["gws"]):
             m = " m-hide" if i >= MOBILE_GW_COLS else ""
-            if fx is None:
+            fixtures = by_gw.get(g, [])
+            if not fixtures:
                 cells.append(f'<td class="num{m}">-</td>')
-            else:
+            elif len(fixtures) == 1:
                 # #148: solussa vastustaja + venue + per-fixture CS% (pariteetti
                 # mobiilin #144:n kanssa); FDR-luokka siirtyi tooltippiin.
                 # #152: solu on linkki predict-pinnalle (mobiilin solu-tap-pariteetti).
@@ -1306,6 +1314,7 @@ def fdr_grid_html(c: dict) -> str:
                 # captionin lupaus "20% or less in coral" oli livena
                 # kumottavissa kolmella nakyvalla solulla (MCI GW4, MUN GW4,
                 # EVE GW6). Sama pyoristysjuuri kuin Avg CS% -korjauksessa.
+                fx = fixtures[0]
                 shown = format(float(fx["cs_pct"]), ".0f")
                 cls = cs_cell_class(float(shown))
                 href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
@@ -1317,6 +1326,23 @@ def fdr_grid_html(c: dict) -> str:
                     f'{shown}%'
                     f"</a></td>"
                 )
+            else:
+                # Double gameweek: yksi <td> ei voi kantaa kahta eri FDR-varia,
+                # joten luokka siirtyy kummankin ottelun omalle linkille.
+                links = []
+                for fx in fixtures:
+                    shown = format(float(fx["cs_pct"]), ".0f")
+                    cls = cs_cell_class(float(shown))
+                    href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
+                    links.append(
+                        f'<a class="fdr {cls}" href="{href}" '
+                        f'title="{escape(fx["opponent"])} ({fx["venue"]}) '
+                        f'&middot; FDR {fx["fdr"]} &middot; view model prediction">'
+                        f'{escape(fx["opponent_short"])} ({fx["venue"]}) '
+                        f'{shown}%'
+                        f"</a>"
+                    )
+                cells.append(f'<td class="num dgw{m}">' + "".join(links) + "</td>")
         rows.append(
             "<tr>"
             f'<td class="team">{escape(r["team"])}</td>'
@@ -2302,7 +2328,8 @@ def _fmt_logged(row: dict) -> str:
     deadline = parse_utc(row["deadline_utc"])
     delta = deadline - logged
     secs = int(abs(delta.total_seconds()))
-    h, m = divmod(secs // 60, 60)
+    total_min = round(secs / 60)  # floor(secs // 60) truncated toward "logged later than it was"
+    h, m = divmod(total_min, 60)
     span = f"{h} h {m} min" if h else f"{m} min"
     when = logged.strftime("%d %b %H:%M UTC").lstrip("0")
     return (f"{when}, {span} before the deadline" if delta.total_seconds() > 0
