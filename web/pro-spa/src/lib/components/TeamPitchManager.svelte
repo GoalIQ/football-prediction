@@ -377,6 +377,34 @@
 	function fmtSigned(v: number, digits = 1): string {
 		return `${v >= 0 ? '+' : ''}${v.toFixed(digits)}`;
 	}
+	/** FPL:n chip-koodi -> kortin nimi; tuntematon -> null. Sama kartta mobiilissa. */
+	function chipLabel(chip: string | null | undefined): string | null {
+		switch (chip) {
+			case 'wildcard':
+				return 'Wildcard';
+			case 'bboost':
+				return 'Bench Boost';
+			case '3xc':
+				return 'Triple Captain';
+			case 'freehit':
+				return 'Free Hit';
+			default:
+				return null;
+		}
+	}
+	/** Tuloskortin poikkeamalause (portti 2.9). Sama teksti mobiilissa. */
+	function projectionLine(xp: number, diff: number, projectedInStrip: boolean): string {
+		const d = Math.abs(diff).toFixed(1);
+		if (projectedInStrip) {
+			if (diff > 0) return `You beat the projection by ${d}.`;
+			if (diff < 0) return `You came in ${d} under the projection.`;
+			return 'You matched the projection.';
+		}
+		const base = `Your XI was worth ${xp.toFixed(1)} xP`;
+		if (diff > 0) return `${base}, you beat it by ${d}.`;
+		if (diff < 0) return `${base}, you came in ${d} under it.`;
+		return `${base}, you matched it.`;
+	}
 	function luckCardSpec() {
 		if (!luckSameSquad || !lastFinished || lastFinished.points == null) return null;
 		const lf = lastFinished;
@@ -389,8 +417,10 @@
 				team: r.team_short ?? '',
 				color: tc.color,
 				textColor: tc.textColor,
-				xp: r.xp_frozen != null ? r.xp_frozen.toFixed(1) : '\u2014',
-				pts: r.points != null ? String(r.points) : '\u2014',
+				// Portti 2.9: em dash on kielletty julkisella pinnalla, ja 19 %
+				// pelaajista puuttuu freezesta (penkki ei kaanna complete-lippua).
+				xp: r.xp_frozen != null ? r.xp_frozen.toFixed(1) : 'n/a',
+				pts: r.points != null ? String(r.points) : 'n/a',
 				diff: diff != null ? fmtSigned(diff) : undefined,
 				under: diff != null ? diff < 0 : undefined,
 				mark: verdict != null ? LUCK_MARK[verdict] : undefined,
@@ -418,6 +448,9 @@
 		}
 		const sub = [
 			`Gameweek ${lf.gw}`,
+			// Portti 2.9: chip kortille — 108 p + wildcard ilman mainintaa on
+			// puolikas vaite kontekstitta leviavalla kuvalla.
+			chipLabel(lf.chip),
 			lf.average_entry_score != null ? `FPL average ${lf.average_entry_score}` : null,
 			lf.overall_rank != null
 				? `rank ${lf.overall_rank.toLocaleString('en-GB')}` +
@@ -429,14 +462,18 @@
 			.filter(Boolean)
 			.join(' \u00b7 ');
 		const who = [lf.manager_name, lf.team_name].filter(Boolean).join(' \u00b7 ');
+		/* Portti 2.9: kun nauhassa on jo PROJECTED, lause ei toista lukua;
+		   Model-vertailussa xP sanotaan lauseessa. Swing-rivi ilman
+		   etumerkkiprefiksia. Sama teksti mobiilin FantasyTools.tsx:ssa. */
 		const notes: string[] = [];
-		if (lf.xp != null) {
-			notes.push(
-				`Your XI was worth ${lf.xp.toFixed(1)} xP` + (lf.diff != null ? ` (${fmtSigned(lf.diff)})` : '')
-			);
+		const projectedInStrip = headline.some((h) => h.key === 'Projected');
+		if (lf.xp != null && lf.diff != null) {
+			notes.push(projectionLine(lf.xp, lf.diff, projectedInStrip));
+		} else if (lf.xp != null && !projectedInStrip) {
+			notes.push(`Your XI was worth ${lf.xp.toFixed(1)} xP.`);
 		}
 		if (lf.biggest_swing && lf.biggest_swing.web_name) {
-			notes.push(`${lf.biggest_swing.web_name} alone was ${fmtSigned(lf.biggest_swing.contribution)} of it.`);
+			notes.push(`${lf.biggest_swing.web_name} alone was ${lf.biggest_swing.contribution.toFixed(1)} of that.`);
 		}
 		const benchCards = benched.map(toCard);
 		const hasMark = [...cardRows.flat(), ...benchCards].some((p) => p.mark != null);
@@ -449,7 +486,9 @@
 			headline,
 			notes,
 			legend: hasMark ? `${LUCK_MARK.lucky} got lucky \u00b7 ${LUCK_MARK.robbed} got robbed` : undefined,
-			footNote: 'projection frozen before the deadline'
+			// Portti 2.9: vaite tarvitsee reitin. Per-GW-arkisto jonossa
+			// FPL-POINTS-GW-ARKISTO (sivu nayttaa vain kuluvan kierroksen).
+			footNote: 'frozen before the deadline \u00b7 goaliq.app/fpl/points'
 		};
 	}
 	async function shareImage() {
@@ -631,7 +670,10 @@
 						)} of it.
 					</p>
 				{/if}
-				<p class="score-legend">🎲 got lucky · 💀 got robbed</p>
+				<!-- Portti 2.9: selite vain kun merkki on olemassa. -->
+				{#if lastFinished.players.some((r) => luckVerdict(r.xp_frozen, r.points) != null)}
+					<p class="score-legend">🎲 got lucky · 💀 got robbed</p>
+				{/if}
 				<p class="score-note">Projection frozen before the deadline.</p>
 			</div>
 		{/if}
