@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-02T20:58:17+00:00",
+  "updated_at": "2026-09-02T23:16:36+00:00",
   "logged_total": 3199,
-  "pending": 2835,
+  "pending": 2834,
   "voided": 6,
   "all_time": {
-    "n": 358,
+    "n": 359,
     "correct_1x2": 189,
-    "pct_1x2": 0.5279,
-    "draw_n": 96,
-    "pct_draw": 0.2682,
+    "pct_1x2": 0.5265,
+    "draw_n": 97,
+    "pct_draw": 0.2702,
     "decisive_n": 262,
     "decisive_correct": 189,
     "pct_decisive": 0.7214,
-    "exact_n": 310,
-    "exact_correct": 44,
-    "pct_exact": 0.1419,
-    "brier": 0.5764,
-    "brier_n": 310
+    "exact_n": 311,
+    "exact_correct": 45,
+    "pct_exact": 0.1447,
+    "brier": 0.5773,
+    "brier_n": 311
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 59,
-    "pct_1x2": 0.59,
-    "draw_n": 19,
-    "pct_draw": 0.19,
-    "decisive_n": 81,
-    "decisive_correct": 59,
-    "pct_decisive": 0.7284,
+    "correct_1x2": 58,
+    "pct_1x2": 0.58,
+    "draw_n": 20,
+    "pct_draw": 0.2,
+    "decisive_n": 80,
+    "decisive_correct": 58,
+    "pct_decisive": 0.725,
     "exact_n": 100,
-    "exact_correct": 14,
-    "pct_exact": 0.14,
-    "brier": 0.5432,
+    "exact_correct": 15,
+    "pct_exact": 0.15,
+    "brier": 0.5515,
     "brier_n": 100,
     "window": 100
   },
@@ -81,19 +81,19 @@
       "brier_n": 23
     },
     "ELC": {
-      "n": 45,
+      "n": 46,
       "correct_1x2": 15,
-      "pct_1x2": 0.3333,
-      "draw_n": 13,
-      "pct_draw": 0.2889,
+      "pct_1x2": 0.3261,
+      "draw_n": 14,
+      "pct_draw": 0.3043,
       "decisive_n": 32,
       "decisive_correct": 15,
       "pct_decisive": 0.4688,
-      "exact_n": 45,
-      "exact_correct": 5,
-      "pct_exact": 0.1111,
-      "brier": 0.7004,
-      "brier_n": 45
+      "exact_n": 46,
+      "exact_correct": 6,
+      "pct_exact": 0.1304,
+      "brier": 0.7038,
+      "brier_n": 46
     },
     "FL1": {
       "n": 18,
@@ -188,19 +188,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 174,
+      "n": 175,
       "correct_1x2": 101,
-      "pct_1x2": 0.5805,
-      "draw_n": 33,
-      "pct_draw": 0.1897,
+      "pct_1x2": 0.5771,
+      "draw_n": 34,
+      "pct_draw": 0.1943,
       "decisive_n": 141,
       "decisive_correct": 101,
       "pct_decisive": 0.7163,
-      "exact_n": 174,
-      "exact_correct": 23,
-      "pct_exact": 0.1322,
-      "brier": 0.5488,
-      "brier_n": 174
+      "exact_n": 175,
+      "exact_correct": 24,
+      "pct_exact": 0.1371,
+      "brier": 0.5505,
+      "brier_n": 175
     },
     "stale": {
       "n": 136,
@@ -250,8 +250,8 @@
     {
       "bin_mid": 0.2546,
       "predicted": 0.2546,
-      "actual": 0.2735,
-      "n": 351
+      "actual": 0.2748,
+      "n": 353
     },
     {
       "bin_mid": 0.3392,
@@ -260,10 +260,10 @@
       "n": 175
     },
     {
-      "bin_mid": 0.4476,
-      "predicted": 0.4476,
-      "actual": 0.386,
-      "n": 114
+      "bin_mid": 0.4479,
+      "predicted": 0.4479,
+      "actual": 0.3826,
+      "n": 115
     },
     {
       "bin_mid": 0.5439,
@@ -291,6 +291,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-02",
+      "home_team": "Burnley",
+      "away_team": "Middlesbrough",
+      "predicted_winner": "away",
+      "p_winner": 0.4754,
+      "lead_h": 2.5,
+      "most_likely_score": "1-1",
+      "actual_score": "1-1",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": true,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-02",
       "home_team": "QPR",
@@ -571,21 +586,6 @@
       "most_likely_score": "0-1",
       "actual_score": "0-4",
       "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-08-30",
-      "home_team": "Bahia",
-      "away_team": "Internacional",
-      "predicted_winner": "home",
-      "p_winner": 0.5219,
-      "lead_h": 1.5,
-      "most_likely_score": "1-1",
-      "actual_score": "3-2",
-      "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
