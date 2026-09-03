@@ -412,6 +412,12 @@ def build_context(fpl: dict, acc: dict) -> dict:
         fx = next((f for f in t["fixtures"] if f["gw"] == next_gw), None)
         if not fx:
             continue
+        # 3.9: kuuden kierroksen keskiarvo SAMOISTA riveista joista alla
+        # oleva ruudukko piirretaan. Luku on artefaktissa (`teams_next6`)
+        # valmiina, mutta se ajaa eri nousijasaannon kuin tama sivu
+        # (jonorivi CS-FDR-META-ERI-MIELTA), joten se lasketaan tassa: yksi
+        # sivu, yksi lahde, ja lukija voi laskea sen ruudukosta itse.
+        _run = [f["cs_pct"] for f in t["fixtures"] if f.get("cs_pct") is not None]
         cs_rows.append(
             {
                 "team": t["name"],
@@ -419,6 +425,8 @@ def build_context(fpl: dict, acc: dict) -> dict:
                 "opponent": fx["opponent"],
                 "venue": fx["venue"],
                 "fdr": fx["fdr"],
+                "run_cs_pct": (sum(_run) / len(_run)) if _run else None,
+                "run_n": len(_run),
             }
         )
     cs_rows.sort(key=lambda r: r["cs_pct"], reverse=True)
@@ -1058,6 +1066,18 @@ def _turnover_by_model_team() -> dict[str, dict]:
     return {t["model_team"]: t for t in doc["teams"]}
 
 
+def _run_cell(r: dict) -> str:
+    """Kuuden kierroksen CS-keskiarvo. Rivi kertoo montako ottelua keskiarvo
+    kattaa, koska tuplakierros ja tyhja kierros muuttavat sen: 6 ei ole
+    vakio."""
+    v = r.get("run_cs_pct")
+    if v is None:
+        return "&ndash;"
+    n = int(r.get("run_n") or 0)
+    return (f'<span title="Average clean sheet probability over the next '
+            f'{n} matches in the grid below">{v:.0f}%</span>')
+
+
 def cs_table_html(c: dict) -> str:
     conf = _turnover_by_model_team()
     rows = []
@@ -1119,6 +1139,7 @@ def cs_table_html(c: dict) -> str:
             f'<td class="num">{fmt_pct(r["cs_pct"])}</td>'
             f'<td>{escape(r["opponent"])} ({r["venue"]})</td>'
             f'<td class="num fdr {fdr_cell_class(fdr)}">{fdr}</td>'
+            f'<td class="num">{_run_cell(r)}</td>'
             f'<td class="num m-hide">{churn}</td>'
             "</tr>"
         )
@@ -1137,6 +1158,7 @@ def cs_table_html(c: dict) -> str:
         "<thead><tr>"
         '<th scope="col">Team</th><th scope="col" class="num">Clean sheet %</th>'
         '<th scope="col">Next opponent</th><th scope="col" class="num">FDR</th>'
+        '<th scope="col" class="num">Next 6 CS%</th>'
         '<th scope="col" class="num m-hide">Squad turnover</th>'
         "</tr></thead><tbody>"
         + "".join(rows)
@@ -2045,7 +2067,9 @@ log, match by match with every miss included, is published on the
 {team_news}<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
 with a fixture in Gameweek {c["next_gw"]} ({c["gw_label"]}). FDR is GoalIQ's model
-fixture difficulty for that match, 1 easiest to 5 hardest.</p>
+fixture difficulty for that match, 1 easiest to 5 hardest. Next 6 CS% averages the
+same probability over the run in the grid below, so one good fixture and a good
+run are not the same column.</p>
 {cs_table}
 <p class="note">{_strength_basis_note(c)}</p>
 
