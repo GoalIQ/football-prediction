@@ -324,6 +324,13 @@ export interface PlanTransfer {
 	pos: Pos;
 	gain_xp_remaining: number;
 	hit: number;
+	/** 3.9: molemmat luottamuspainot erikseen. Rivilla nakynyt paino oli
+	 *  TULIJAN, mutta paatoksen teki usein LAHTIJAN alennus (nousijaseura),
+	 *  ja silloin rivi vaitti painoksi 1.0 siirrolle jonka painottamaton
+	 *  hyoty oli negatiivinen. `weighting_decided` = juuri se tapaus. */
+	confidence_weight_in?: number;
+	confidence_weight_out?: number;
+	weighting_decided?: boolean;
 }
 
 export interface PlanGw {
@@ -1099,6 +1106,13 @@ export interface ChainMove {
 	in: ChainMovePlayer;
 	gain_xp_remaining: number;
 	hit: number;
+	/** 3.9: molemmat luottamuspainot erikseen. Rivilla nakynyt paino oli
+	 *  TULIJAN, mutta paatoksen teki usein LAHTIJAN alennus (nousijaseura),
+	 *  ja silloin rivi vaitti painoksi 1.0 siirrolle jonka painottamaton
+	 *  hyoty oli negatiivinen. `weighting_decided` = juuri se tapaus. */
+	confidence_weight_in?: number;
+	confidence_weight_out?: number;
+	weighting_decided?: boolean;
 }
 
 export interface ChainGw {

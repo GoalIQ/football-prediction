@@ -215,6 +215,11 @@
 		</p>
 	{:else if data.meta.squad && !data.meta.squad.available && data.meta.squad.note}
 		<p class="muted">Your squad was not read: {data.meta.squad.note}</p>
+	{:else}
+		<!-- 3.9 ilta: sama hiljainen aukko kuin GK-rotaatiossa. -->
+		<p class="muted">
+			This list does not know your squad yet, so it cannot say which of your 15 are moving tonight. Put your FPL entry ID into Rate my team under My team.
+		</p>
 	{/if}
 	<div class="watch-grid">
 		{@render moveTable('Risers', data.risers)}

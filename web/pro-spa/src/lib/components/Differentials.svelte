@@ -142,6 +142,12 @@
 		</p>
 	{:else if squad && !squad.available && squad.note}
 		<p class="muted">Your squad was not read: {squad.note}</p>
+	{:else}
+		<!-- 3.9 ilta: sama hiljainen aukko kuin GK-rotaatiossa. Ilman entrya
+		     lista ei jata omistamiasi pois, eika mikaan kerro sita. -->
+		<p class="muted">
+			This list does not know your squad yet, so it cannot leave out the players you already own. Put your FPL entry ID into Rate my team under My team.
+		</p>
 	{/if}
 	<div class="table-wrap">
 		<table>

@@ -32,7 +32,9 @@ Tama moduuli on se yksi funktio. Saannot, samat kaikille:
      kaikilla 516 pelaajalla (kausi on yhden kierroksen vanha), joten se ei
      erottele ketaan.
 
-Painon arvo 0.75 on OLETUS, ei mittaus: `data/fpl_xp_gw_accuracy.json`
+🔴 3.9: paino on nyt MITATTU ja arvo on 1.0 (ks. LOW_CONFIDENCE_WEIGHT).
+Alla oleva teksti kuvaa tilannetta ENNEN mittausta ja jaa historiaksi.
+Painon arvo 0.75 oli OLETUS, ei mittaus: `data/fpl_xp_gw_accuracy.json`
 kirjaa GW1:n MAE:n vain positioittain (DEF 1.92 .. GKP 1.35), ei
 promoted-vs-muut-jakoa, joten kalibrointiin ei viela ole dataa.
 TODO(kalibrointi): kun 3+ kierrosta on gradattu, laske MAE erikseen
@@ -49,7 +51,31 @@ from src.models.fpl_rate_team import (
 MIN_GAIN_PER_TRANSFER = 0.5
 MAX_TRANSFERS_PER_GW = 2
 TOP_CANDIDATES_PER_POS = 12
-LOW_CONFIDENCE_WEIGHT = 0.75
+# 🔴 MITATTU 3.9.2026 (Villen GO), oli 0.75 OLETUKSENA.
+#
+# Paino on olemassa koska nousijaseurojen pelaajien xP nojaa joukkuetason
+# ratingiin jolla ei ole mittaushistoriaa, ja 28.8 juuri he nousivat plannerin
+# karkeen. Huoli oli aito. SUUNTA EI OLLUT.
+#
+# `scripts/measure_promoted_bias.py`, GW1+GW2 deadline-freeze vs FPL:n
+# toteuma, pelanneet (min > 0):
+#     nousijaseurat  n= 90  bias +1.059  se 0.334  MAE 2.185
+#     muut           n=517  bias +0.516  se 0.134  MAE 2.033
+#     ero +0.543, z +1.51 (EI merkitseva)
+# bias = toteuma - ennuste, eli POSITIIVINEN = malli aliarvioi. Malli
+# aliarvioi nousijaseuroja enemman kuin muita — 0.75 painoi alaspain tasan
+# sita ryhmaa jonka se jo arvioi liian matalaksi.
+#
+# Mitattu ero ei ole merkitseva (n=90, kaksi kierrosta), joten oikea luku ei
+# ole 1.25 vaan 1.0: alennusta jolle ei ole mittausta ei pideta yllä. Mekanismi
+# jaa paikalleen, jotta mitattu kerroin voidaan asettaa kun dataa on enemman —
+# mutta `tests/test_promoted_weight_measured.py` vaatii silloin mittauksen
+# tahan tiedostoon, ei uutta oletusta.
+#
+# Vaikutus entry 116920:lle: ykkosehdotus oli "Tzolakis ulos" jonka
+# PAINOTTAMATON hyoty oli -0.87 xP. Painolla 1.0 se siirto katoaa ja jokaisen
+# jaljelle jaavan siirron painottamaton hyoty on positiivinen.
+LOW_CONFIDENCE_WEIGHT = 1.0
 # Yhdistelmahaun XI-arviointien katto per kutsu: bracketing pudottaa lahes
 # kaikki parit, mutta katto pitaa API:n vasteajan ennustettavana.
 MAX_PAIR_EVALS = 2500
@@ -148,13 +174,32 @@ def _apply(squad: list[dict], outs: list[dict], ins: list[dict]) -> list[dict]:
 
 
 def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float) -> dict:
+    """🔴 3.9 ILTA (Villen loydos): rivi ei ollut luettavissa.
+
+    Rivi nayttti `gain -0.87`, `gain_weighted +4.84` ja `confidence_weight 1.0`,
+    eika lukija voinut mitenkaan paatella miksi siirto suositellaan vaikka se
+    HAVIAA mallin omilla luvuilla. Syy oli LAHTIJAN paino (Tzolakis, HUL,
+    0.75), mutta rivilla nakyva paino oli TULIJAN (Trafford 1.0). Moduulin oma
+    sopimus sanoo "paatosluvut nakyviin, ei piiloon" — paatosluku nakyi, sen
+    syy ei.
+
+    Molemmat painot nimetaan nyt erikseen. `confidence_weight` jaa tulijan
+    painoksi (taaksepain yhteensopiva, klientit lukevat sita).
+    """
+    w_in = confidence_weight(in_p)
+    w_out = confidence_weight(out_p)
     return {
         "out": out_p, "in": in_p,
         "gain": round(gain, 4),              # painottamaton XI-hyoty (naytto)
         "gain_weighted": round(gain_w, 4),   # paatosluku
         "hit": hit,
         "net": round(gain_w - hit, 4),
-        "confidence_weight": confidence_weight(in_p),
+        "confidence_weight": w_in,
+        "confidence_weight_in": w_in,
+        "confidence_weight_out": w_out,
+        # True kun paatos ja naytto eroavat merkin verran: siirto suositellaan
+        # vaikka painottamaton hyoty on <= 0. Klientti nayttaa silloin syyn.
+        "weighting_decided": bool(gain <= 0 < gain_w),
         "pos": POS_NAME[out_p["element_type"]],
     }
 

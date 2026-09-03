@@ -142,6 +142,13 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
                 # yhdistelmää jonka hyöty on laskettu yhdessä.
                 "gain_xp_weighted": round(m["gain_weighted"], 2),
                 "confidence_weight": m["confidence_weight"],
+                # 3.9 ilta: molemmat painot erikseen. Rivilla nakyva paino oli
+                # TULIJAN, mutta paatoksen teki usein LAHTIJAN alennus — ja
+                # silloin rivi vaitti "confidence_weight 1.0" siirrolle jonka
+                # painottamaton hyoty oli negatiivinen.
+                "confidence_weight_in": m["confidence_weight_in"],
+                "confidence_weight_out": m["confidence_weight_out"],
+                "weighting_decided": m["weighting_decided"],
                 "pair": bool(m.get("pair")),
             })
         squad = step["squad"]

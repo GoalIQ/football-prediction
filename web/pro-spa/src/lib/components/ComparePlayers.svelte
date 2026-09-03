@@ -270,6 +270,20 @@
 			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	</div>
+	<!-- 🔴 3.9 ilta: tama oli neljasta hiljaisesta aukosta pahin. Kortti nayttaa
+	     "owned"-merkin vain omistamillesi, ja ilman entrya `owned` on null
+	     JOKAISELLA — eli merkin PUUTTUMINEN luetaan vaitteeksi "et omista
+	     ketaan naista". Poissaolo ei ole tieto ellei sita sanota. -->
+	{#if (data.meta.squad?.available ?? false) !== true}
+		<p class="muted small">
+			{#if data.meta.squad && !data.meta.squad.available && data.meta.squad.note}
+				Your squad was not read: {data.meta.squad.note} Nobody is marked as owned below.
+			{:else}
+				This does not know your squad yet, so nobody is marked as owned below. Put your
+				FPL entry ID into Rate my team under My team.
+			{/if}
+		</p>
+	{/if}
 	<div class="cmp-grid">
 		{#each data.players as p (p.id)}
 			<div class="card cmp-card" class:winner={p.id === data.verdict.pick.id}>

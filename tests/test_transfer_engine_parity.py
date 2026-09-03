@@ -183,7 +183,18 @@ def _squad_with_weak_mid():
 # ---------------------------------------------------------------------------
 # 4. Luottamuspaino
 # ---------------------------------------------------------------------------
-def test_confidence_weight_prefers_proven_over_price_prior():
+def test_confidence_weight_prefers_proven_over_price_prior(monkeypatch):
+    """MEKANISMI, ei tuotantoarvo.
+
+    🔴 3.9: tama testi lukitsi arvon 0.75 aritmetiikkaansa
+    (`10.0 * 0.75 - 5.0`). Kun paino mitattiin ja asetettiin 1.0:aan
+    (`scripts/measure_promoted_bias.py`: malli ALIarvioi nousijaseuroja,
+    ei yliarvioi), testi kaatui — vaikka mekanismi oli ehja. Testi asettaa
+    nyt alennuksen ITSE, jolloin se mittaa etta paino VAIKUTTAA
+    jarjestykseen ja etta naytto- ja paatosluku erottuvat. Tuotantoarvo on
+    eri kysymys ja se on pinnattu `tests/test_promoted_weight_measured.py`:ssa
+    mittausta vasten."""
+    monkeypatch.setattr(tr, "LOW_CONFIDENCE_WEIGHT", 0.75)
     squad = _squad_with_weak_mid()
     proven = _p(90, 3, 50, 9.0)
     prior = _p(91, 3, 50, 10.0, data_basis="no_history")   # raakana parempi
@@ -191,7 +202,11 @@ def test_confidence_weight_prefers_proven_over_price_prior():
     assert moves[0]["in"]["id"] == proven["id"]
     assert moves[0]["confidence_weight"] == 1.0
     prior_move = next(m for m in moves if m["in"]["id"] == prior["id"])
-    assert prior_move["confidence_weight"] == tr.LOW_CONFIDENCE_WEIGHT
+    assert prior_move["confidence_weight"] == 0.75
+    # 3.9: molemmat painot nimetaan erikseen — rivilla nakynyt paino oli
+    # TULIJAN, mutta paatoksen teki usein LAHTIJAN alennus.
+    assert prior_move["confidence_weight_in"] == 0.75
+    assert prior_move["confidence_weight_out"] == 1.0
     # nayttoluku on painottamaton, paatosluku painotettu
     assert prior_move["gain"] == pytest.approx(5.0)
     assert prior_move["gain_weighted"] == pytest.approx(10.0 * 0.75 - 5.0)
@@ -208,15 +223,31 @@ def test_confidence_weight_negative_control(monkeypatch):
     assert moves[0]["in"]["id"] == prior["id"]
 
 
-@pytest.mark.parametrize("field,value,expected", [
-    ("data_basis", "no_history", tr.LOW_CONFIDENCE_WEIGHT),
-    ("minutes_source", "price_prior", tr.LOW_CONFIDENCE_WEIGHT),
-    ("is_promoted", True, tr.LOW_CONFIDENCE_WEIGHT),
-    ("minutes_confidence", "low", 1.0),   # kaikilla 516:lla 28.8 -> ei ehto
-    ("data_basis", "limited_history", 1.0),
-])
-def test_confidence_weight_conditions(field, value, expected):
-    assert tr.confidence_weight({field: value}) == expected
+# 🔴 3.9: `expected` oli `tr.LOW_CONFIDENCE_WEIGHT`, ja kun se on 1.0 nama
+# rivit vaittavat vain "1.0 == 1.0" — portti olisi jaanyt sokeaksi tasan
+# silloin kun tuotantoarvo lakkasi olemasta alennus. Alennus asetetaan tassa,
+# jotta ehdot mitataan riippumatta tuotantoarvosta.
+LIPUTETUT = [
+    ("data_basis", "no_history"),
+    ("minutes_source", "price_prior"),
+    ("is_promoted", True),
+]
+LIPUTTAMATTOMAT = [
+    ("minutes_confidence", "low"),   # kaikilla 516:lla 28.8 -> ei ehto
+    ("data_basis", "limited_history"),
+]
+
+
+@pytest.mark.parametrize("field,value", LIPUTETUT)
+def test_confidence_weight_lipputtaa(field, value, monkeypatch):
+    monkeypatch.setattr(tr, "LOW_CONFIDENCE_WEIGHT", 0.5)
+    assert tr.confidence_weight({field: value}) == 0.5
+
+
+@pytest.mark.parametrize("field,value", LIPUTTAMATTOMAT)
+def test_confidence_weight_ei_liputa(field, value, monkeypatch):
+    monkeypatch.setattr(tr, "LOW_CONFIDENCE_WEIGHT", 0.5)
+    assert tr.confidence_weight({field: value}) == 1.0
 
 
 def test_pool_carries_promoted_flag(_mock_fpl, monkeypatch):

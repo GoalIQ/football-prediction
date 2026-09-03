@@ -297,8 +297,13 @@
 									{m.out.web_name} <span class="muted">({m.out.team_short})</span>
 									<span class="arrow">→</span>
 									{m.in.web_name} <span class="muted">({m.in.team_short})</span>
-									<span class="gain">+{m.gain_xp_remaining.toFixed(2)}</span>
+									<!-- 🔴 3.9 ilta: merkki oli kovakoodattu "+", joten negatiivinen
+									     hyoty renderoityi muodossa "+-0.87". -->
+									<span class="gain" class:negative={m.gain_xp_remaining < 0}
+										>{m.gain_xp_remaining >= 0 ? '+' : ''}{m.gain_xp_remaining.toFixed(2)}</span
+									>
 									{#if m.hit}<span class="hit">{m.hit} hit</span>{/if}
+									{#if m.weighting_decided}<span class="wnote" title="The player leaving is on a promoted club, so the model discounts his projection by {Math.round((1 - (m.confidence_weight_out ?? 1)) * 100)}% when deciding. On the raw projection this move loses points.">low confidence out</span>{/if}
 								</li>
 							{/each}
 						</ul>
@@ -437,6 +442,18 @@
 	.arrow {
 		color: var(--giq-rust);
 		font-weight: 700;
+	}
+	.gain.negative {
+		color: var(--text-muted);
+	}
+	.wnote {
+		font-size: var(--step--2);
+		color: var(--text-muted);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0 6px;
+		margin-left: 6px;
+		white-space: nowrap;
 	}
 	.gain {
 		color: var(--positive);

@@ -221,6 +221,12 @@
 		</p>
 	{:else if squad && !squad.available && squad.note}
 		<p class="muted">Your squad was not read: {squad.note}</p>
+	{:else}
+		<!-- 3.9 ilta: sama hiljainen aukko kuin GK-rotaatiossa. Ilman entrya
+		     hinta ei ole katkaistu pankkiisi eika omistettuja jateta pois. -->
+		<p class="muted">
+			This list does not know your squad yet, so the price is not capped at your bank and the players you already own are still on the list. Put your FPL entry ID into Rate my team under My team.
+		</p>
 	{/if}
 	{#if data.meta.bracket_widened}
 		<p class="muted">

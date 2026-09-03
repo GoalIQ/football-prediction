@@ -198,3 +198,40 @@ def test_gk_lista_kertoo_kun_se_ei_tunne_joukkuetta():
     assert "{#if" not in haara[else_i:], (
         "tekstin ja `{:else}`:n valissa on uusi ehto — se voi nakya myos "
         "entryn kanssa")
+
+
+# ---------------------------------------------------------------------------
+# Entry-tietoiset tyokalut: poissaolo ei ole tieto ellei sita sanota
+# ---------------------------------------------------------------------------
+
+# Jokainen tyokalu joka LAHETTAA entryn on myos velvollinen kertomaan kun sita
+# ei ole. Lista on `currentEntryId()`-kutsujista; uusi kutsuja joutuu joko
+# lisaamaan haaran tai perustelemaan poikkeuksen tassa.
+ENTRY_TYOKALUT = ["Value.svelte", "Differentials.svelte", "PriceWatch.svelte",
+                  "Replacements.svelte", "ComparePlayers.svelte"]
+
+
+def test_kaikki_entry_tyokalut_lahettavat_entryn():
+    """Lista ei saa hiljaa lyhentya: jos joku poistaa `currentEntryId()`-
+    kutsun, tyokalu palaa entry-tietamattomaksi eika mikaan huuda."""
+    for t in ENTRY_TYOKALUT:
+        s = _src(COMPONENTS / t)
+        assert "currentEntryId()" in s, f"{t}: ei laheta entrya lainkaan"
+
+
+@pytest.mark.parametrize("tiedosto", ENTRY_TYOKALUT)
+def test_entry_tyokalu_kertoo_kun_entrya_ei_ole(tiedosto):
+    """🔴 MITATTU 3.9 ILTA. Ville sanoi kolmesti etta GK-rotaatio "nayttaa
+    yha Raya + Donnarumman". Kolmannella kerralla vika ei ollut rankkauksessa
+    vaan siina etta osio nayttti globaalin listan JA OLI HILJAA — eika lukija
+    voi erottaa "tyokalu ei valita joukkueestani" ja "en ole antanut sille
+    joukkuettani talla pinnalla".
+
+    Kun se korjattiin, sama aukko oli NELJASSA MUUSSA tyokalussa viidesta.
+    Pahin oli ComparePlayers: se merkitsee omistamasi "owned"-merkilla, ja
+    ilman entrya `owned` on null jokaisella — merkin PUUTTUMINEN luetaan
+    vaitteeksi "et omista ketaan naista"."""
+    s = _src(COMPONENTS / tiedosto)
+    assert "does not know your squad yet" in s, (
+        f"{tiedosto}: ei kerro kun entrya ei ole — vastaus nayttaa vain "
+        f"vaaralta")
