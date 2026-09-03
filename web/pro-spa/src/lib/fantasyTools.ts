@@ -1031,6 +1031,8 @@ export interface WildcardPlanResponse {
 	};
 	plan: {
 		available: boolean;
+		/** 3.9: false = chip jo pelatty talla puolikkaalla (luku on hypoteettinen). */
+		chip_available?: boolean;
 		note?: string;
 		recommend?: boolean;
 		gw?: number;

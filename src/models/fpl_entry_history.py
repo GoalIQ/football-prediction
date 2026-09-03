@@ -19,7 +19,12 @@ Molemmat ovat julkisia ilman kirjautumista. Kaksi johdettua lukua:
 from __future__ import annotations
 
 FT_MAX = 5
-FT_START = 1
+# 3.9 PORTTI: alkuarvo oli 1 ja tuotti systemaattisesti yhden liikaa.
+# GW1 on rajattomien siirtojen kierros, joten GW2:een tullaan 1 FT:lla, ei
+# kahdella. Portti mittasi 450 entrysta: GW2:ssa tr=2 maksoi -4 (n=7), eli
+# saldo oli 1; funktio olisi sanonut 2. Silmukka lisaa +1 jokaisen pelatun
+# kierroksen jalkeen, joten alkuarvo on 0.
+FT_START = 0
 
 
 def team_value_tenths(history: dict | None) -> int | None:
@@ -44,6 +49,9 @@ def infer_free_transfers(history: dict | None) -> int | None:
     ft = FT_START
     for r in rows:
         made = int(r.get("event_transfers") or 0)
+        # Chip-haara on puolustus, ei mekanismi: FPL raportoi wildcard- ja
+        # free hit -kierroksen `event_transfers = 0` (portti mittasi 7/7),
+        # joten tama ei kaytannossa laukea. Sita EI mainita copyssa.
         if r["event"] not in chip_gws:
             ft = max(ft - made, 0)
         ft = min(FT_MAX, ft + 1)

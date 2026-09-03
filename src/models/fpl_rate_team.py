@@ -931,9 +931,16 @@ def _gw_xp(player: dict, gw: int) -> float:
     return 0.0
 
 
-def _player_gameweeks(p: dict) -> list[dict]:
+def _player_gameweeks(p: dict, min_gw: int | None = None) -> list[dict]:
     """#122/#123: per-GW-xP + vastustajat vastaukseen (sama muoto kuin
-    /api/fantasy/xp:n FantasyXpGameweek). DGW = useampi opponent, BGW = []."""
+    /api/fantasy/xp:n FantasyXpGameweek). DGW = useampi opponent, BGW = [].
+
+    3.9 (Villen havainto): kentta nayttivat GW2:n lukuja kun GW3 oli auki.
+    Syy EI ollut oletusvalinnassa vaan siina etta artefaktin `gameweeks[]`
+    alkaa yha menneesta kierroksesta (jonorivi XP-HORISONTIN-ALKU), joten
+    kerran valittu GW2 pysyi "kelvollisena" eika koskaan siirtynyt. Vastaus
+    ei enaa tarjoa kierrosta jota ennen taman payloadin oma kierros alkaa;
+    artefakti jaa koskematta (silla on 12 muuta kuluttajaa)."""
     return [
         {
             "gw": g.get("gw"),
@@ -941,6 +948,7 @@ def _player_gameweeks(p: dict) -> list[dict]:
             "xp": round(float(g.get("xp") or 0.0), 2),
         }
         for g in (p.get("gameweeks") or [])
+        if min_gw is None or (isinstance(g.get("gw"), int) and g["gw"] >= min_gw)
     ]
 
 
@@ -999,7 +1007,8 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
                    "xp_horizon_total": round(in_p["xp_horizon_total"], 2),
                    "chance_next": in_p.get("chance_next"),
                    "news": in_p.get("news"),
-                   "gameweeks": _player_gameweeks(in_p)},
+                   "gameweeks": _player_gameweeks(
+                       in_p, min_gw=(gws[0] if gws else None))},
             "pos": POS_NAME[out_p["element_type"]],
             "delta_xp_horizon": round(m["gain"], 2),
             "delta_xp_squad": round(raw, 2),
@@ -1867,7 +1876,7 @@ def rate_team(entry: int | None = None, gw: int | None = None,
                 # #122/#123: per-GW-xP + vastustajat manageriin — summary ja
                 # manageri laskevat samasta GW-kohtaisesta luvusta (ei enää
                 # keskiarvo-vs-GW1-ristiriitaa), ja GW-valitsin saa datansa.
-                "gameweeks": _player_gameweeks(p),
+                "gameweeks": _player_gameweeks(p, min_gw=target_gw),
                 "in_xi": p["id"] in xi_ids,
                 "is_captain": p["id"] == effective_captain,
                 # 15.8: saatavuus kentalle asti. Luvut olivat projektiossa jo,

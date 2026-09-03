@@ -348,8 +348,7 @@
 		<p>
 			{#if data.meta.ft_source === 'inferred_from_history'}
 				Free transfers start at {data.meta.ft_assumed}, worked out from your public transfer
-				history (one added per gameweek, up to five, wildcard and free hit rounds do not spend
-				them). The game's own count wins if they differ.
+				history. The game's own count wins if they differ.
 			{:else}
 				Free transfers are assumed at {data.meta.ft_assumed} to start (the FPL API does not
 				expose your banked transfers).

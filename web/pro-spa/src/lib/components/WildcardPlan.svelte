@@ -88,8 +88,20 @@
 			<p class="cost">{reason('cost')}</p>
 		{/if}
 
-		<div class="verdict" class:go={plan.recommend} class:hold={!plan.recommend}>
-			<span class="lbl">{plan.recommend ? `Play it in GW${plan.gw}` : 'Hold the chip'}</span>
+		<div
+			class="verdict"
+			class:go={plan.recommend && plan.chip_available !== false}
+			class:hold={!plan.recommend || plan.chip_available === false}
+		>
+			<!-- 3.9: chip jo pelatty -> verdikti ei saa sanoa "Play it". Luku jaa
+			     nakyviin, se kertoo mita tuore 15 toisi jos chip olisi kaytossa. -->
+			<span class="lbl"
+				>{plan.chip_available === false
+					? 'No Wildcard to play'
+					: plan.recommend
+						? `Play it in GW${plan.gw}`
+						: 'Hold the chip'}</span
+			>
 			{#if plan.ev_per_gw != null}
 				<span class="num">{plan.ev_per_gw > 0 ? '+' : ''}{plan.ev_per_gw.toFixed(2)}</span>
 				<span class="unit">pts / gameweek</span>

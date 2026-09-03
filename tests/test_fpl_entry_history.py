@@ -15,22 +15,36 @@ def test_team_value_is_latest_gw_value():
     assert team_value_tenths(None) is None
 
 
+def test_first_gameweek_leaves_exactly_one_free_transfer():
+    """3.9 PORTTI: GW1 on rajattomien siirtojen kierros -> GW2:een tullaan
+    yhdella FT:lla. Aiempi versio sanoi kaksi, ja portti mittasi 450 entrysta
+    ettei yksikaan saanut toista siirtoa ilmaiseksi GW2:ssa."""
+    assert infer_free_transfers({"current": [_row(1, 0)], "chips": []}) == 1
+
+
 def test_ft_accrues_one_per_gw_capped_at_five():
     h = {"current": [_row(g) for g in range(1, 8)], "chips": []}
     assert infer_free_transfers(h) == 5
 
 
 def test_ft_consumed_by_transfers_and_hits_do_not_go_negative():
-    # GW1: 0 siirtoa -> 2; GW2: 3 siirtoa (1 hitti) -> max(2-3,0)+1 = 1
+    # GW1: 0 siirtoa -> 1; GW2: 3 siirtoa (2 hittia) -> max(1-3,0)+1 = 1
     h = {"current": [_row(1, 0), _row(2, 3)], "chips": []}
     assert infer_free_transfers(h) == 1
+    # kontrolli: yksi siirto GW2:ssa kuluttaa saldon -> 1
+    assert infer_free_transfers(
+        {"current": [_row(1, 0), _row(2, 1)], "chips": []}) == 1
+    # kontrolli: siirtamatta jattaminen kerryttaa -> 2
+    assert infer_free_transfers(
+        {"current": [_row(1, 0), _row(2, 0)], "chips": []}) == 2
 
 
 def test_wildcard_gw_preserves_and_accrues():
-    # entry 116920 3.9: GW1 0 siirtoa, GW2 wildcard -> GW3 saldo 3
+    # entry 116920 3.9: GW1 0 siirtoa, GW2 wildcard (FPL raportoi
+    # event_transfers 0) -> GW3 saldo 2
     h = {"current": [_row(1, 0), _row(2, 0)],
          "chips": [{"name": "wildcard", "event": 2}]}
-    assert infer_free_transfers(h) == 3
+    assert infer_free_transfers(h) == 2
     # negatiivinen kontrolli: sama historia ilman chippia mutta 5 siirtoa
     # GW2:ssa -> saldo 1
     h2 = {"current": [_row(1, 0), _row(2, 5)], "chips": []}

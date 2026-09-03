@@ -431,3 +431,19 @@ def test_compare_endpoint_entry(client):
     b1 = client.get("/api/fantasy/compare?players=15,24&entry=1").json()
     assert b1["meta"]["squad"]["available"] is False
     assert all("owned" not in r for r in b1["players"])
+
+
+# --- 3.9: pitch ei saa tarjota mennytta kierrosta ---------------------------
+def test_player_gameweeks_drops_rounds_before_the_payload_gw():
+    """Villen havainto 3.9: kentta nayttivat GW2:n lukuja kun GW3 oli auki.
+    Artefaktin `gameweeks[]` alkaa yha menneesta kierroksesta, joten kerran
+    valittu GW2 pysyi kelvollisena eika siirtynyt. Vastaus ei enaa tarjoa
+    sita. Negatiivinen kontrolli: ilman rajaa kaikki kierrokset sailyvat."""
+    from src.models.fpl_rate_team import _player_gameweeks
+    p = {"gameweeks": [{"gw": 2, "opponents": [], "xp": 5.0},
+                       {"gw": 3, "opponents": [{"opp": "COV", "venue": "H"}], "xp": 7.9},
+                       {"gw": 4, "opponents": [], "xp": 4.1}]}
+    assert [g["gw"] for g in _player_gameweeks(p, min_gw=3)] == [3, 4]
+    assert [g["gw"] for g in _player_gameweeks(p)] == [2, 3, 4]
+    # kesken kierroksen: payloadin oma GW sailyy (se on se jota kerataan)
+    assert [g["gw"] for g in _player_gameweeks(p, min_gw=2)] == [2, 3, 4]

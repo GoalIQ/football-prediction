@@ -417,6 +417,25 @@ def _entry_history(entry: int | None) -> dict | None:
         return None
 
 
+def _wc_below_bar(windows: list[dict], state: dict[str, dict]) -> bool:
+    """True vain kun wildcard-ikkunoita OLI pelattavissa mutta yksikaan ei
+    ylittanyt per-kierros-kynnysta. Pelattu chip -> False (syyn kertoo
+    `_chip_notes`, ei tama)."""
+    kelpaa = [w for w in windows
+              if w["basis"] == "player_xp" and w.get("wc_ev") is not None
+              and fpl_chips.gw_allowed(state, "wc", w["gw"])]
+    if not kelpaa:
+        return False
+    return not any(_wc_per_gw(w) >= fpl_wildcard.MIN_EV_PER_GW for w in kelpaa)
+
+
+def _wc_per_gw(w: dict) -> float:
+    if w.get("wc_ev_per_gw") is not None:
+        return float(w["wc_ev_per_gw"])
+    n = w.get("wc_window_gws")
+    return float(w["wc_ev"]) / n if n else 0.0
+
+
 def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]:
     """Paras ikkuna per chip VAIN riveilta joilla chipin voi viela pelata
     (fpl_chips.gw_allowed: puolikkaan ikkuna + entryn pelatut chipit).
@@ -433,9 +452,7 @@ def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]
             # sama per-kierros-kynnys kuin wildcard-planissa (1,5 xP/GW),
             # muuten kaksi paneelia ovat eri mielta samassa nakymassa.
             kelpaa = [w for w in kelpaa
-                      if (w.get("wc_ev_per_gw") if w.get("wc_ev_per_gw") is not None
-                          else (w["wc_ev"] / w["wc_window_gws"] if w.get("wc_window_gws") else 0.0))
-                      >= fpl_wildcard.MIN_EV_PER_GW]
+                      if _wc_per_gw(w) >= fpl_wildcard.MIN_EV_PER_GW]
         if kelpaa:
             top = max(kelpaa, key=lambda r: r[f"{chip}_ev"])
             best[chip] = {"gw": top["gw"], "ev": top[f"{chip}_ev"],
@@ -452,18 +469,26 @@ def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]
     return best, best_estimate
 
 
-def _budget_notes(budget_tenths: int, entry: int | None, best: dict) -> list[str]:
+def _budget_notes(budget_tenths: int, budget_source: str,
+                  wc_below_bar: bool) -> list[str]:
+    """3.9 PORTTI kolme korjausta: (1) haara luetaan LAHTEESTA eika luvusta,
+    koska team value voi olla tasan 100.0m ja nootti vaitti silloin flattia;
+    (2) kynnyslause vain kun kynnys oikeasti pudotti ikkunan - aiemmin se
+    laukesi myos pelatulle chipille ja keksi toisen syyn viereiselle,
+    todelle nootille; (3) `value` on VIIME DEADLINEN arvo, ei tamanhetkinen."""
     out = []
-    if entry is not None and budget_tenths != BUDGET_TENTHS:
-        out.append(f"Free Hit and Wildcard squads are built on this entry's team "
-                   f"value from the official game, {budget_tenths / 10:.1f}m with "
-                   "the bank included, not a flat 100.0m.")
+    if budget_source == "entry_team_value":
+        out.append("Free Hit and Wildcard squads are built on your team value "
+                   f"at the last deadline, \u00a3{budget_tenths / 10:.1f}m with "
+                   "the bank in it.")
     else:
-        out.append("Free Hit and Wildcard squads are built on a flat 100.0m.")
-    if "wc" not in best:
-        out.append("A Wildcard window is only named as best when it clears "
-                   f"{fpl_wildcard.MIN_EV_PER_GW:.1f} expected points per gameweek, "
-                   "the same bar the Wildcard plan uses.")
+        out.append("Without a team ID the Free Hit and Wildcard squads are "
+                   "built on \u00a3100.0m.")
+    if wc_below_bar:
+        out.append("No Wildcard window cleared "
+                   f"{fpl_wildcard.MIN_EV_PER_GW:.1f} expected points per "
+                   "gameweek, the same bar the Wildcard plan uses, so none is "
+                   "named best.")
     return out
 
 
@@ -481,10 +506,10 @@ def _chip_notes(state: dict[str, dict], history_loaded: bool,
     played = [(v["label"], g) for v in state.values() for g in v.get("played_gws") or []]
     if entry is not None and history_loaded and played:
         lst = ", ".join(f"{lbl} in GW{g}" for lbl, g in played)
-        out.append(f"Already played on entry {entry}: {lst}. Those chips are "
+        out.append(f"Already played on this squad: {lst}. Those chips are "
                    "dropped from the half they were used in.")
     elif entry is not None and not history_loaded:
-        out.append("The chips already played on this entry could not be read "
+        out.append("The chips already played on this squad could not be read "
                    "just now, so every window is shown as available.")
     return out
 
@@ -529,8 +554,10 @@ def fantasy_chip_ev(
             chip_state = fpl_chips.chip_state(bootstrap, history, current_gw)
             # CHIP-EV-BUDGET (3.9): FH/WC-runko rakennetaan entryn omalla
             # joukkueen arvolla, ei 100,0 m:lla. Mitattu: 116920 = 99,9 m.
-            budget_tenths = (fpl_entry_history.team_value_tenths(history)
-                             if entry is not None else None) or BUDGET_TENTHS
+            _entry_value = (fpl_entry_history.team_value_tenths(history)
+                            if entry is not None else None)
+            budget_tenths = _entry_value or BUDGET_TENTHS
+            budget_source = "entry_team_value" if _entry_value else "flat_100"
             windows = []
             per_chip: dict[str, list[float]] = {
                 "wc": [], "bb": [], "tc": [], "fh": []}
@@ -651,7 +678,8 @@ def fantasy_chip_ev(
                         "Free transfers and squad churn between now and the "
                         "window are ignored.",
                         *_chip_notes(chip_state, history is not None, entry),
-                        *_budget_notes(budget_tenths, entry, best),
+                        *_budget_notes(budget_tenths, budget_source,
+                                       _wc_below_bar(windows, chip_state)),
                     ],
                     "disclaimer": DISCLAIMER,
                 },
@@ -662,11 +690,7 @@ def fantasy_chip_ev(
                 "chips": {"history_loaded": history is not None,
                           "current_gw": current_gw,
                           "state": chip_state},
-                "budget": {"tenths": budget_tenths,
-                           "source": ("entry_team_value" if budget_tenths != BUDGET_TENTHS
-                                      or (entry is not None and history is not None
-                                          and fpl_entry_history.team_value_tenths(history))
-                                      else "flat_100")},
+                "budget": {"tenths": budget_tenths, "source": budget_source},
             }
             _cache_put(cache_key, payload)
     except RateTeamError as e:
@@ -681,6 +705,11 @@ def fantasy_chip_ev(
         # toisella nimella, ja pelkka `best`:n tyhjennys jattaisi sen nakyviin.
         payload["best"] = {}
         payload["best_estimate"] = {}
+        # 3.9 PORTTI: `best` on maskattu, joten sita kuvaava nootti puhuu
+        # asiasta jota ilmaiskayttaja ei nae. Pudotetaan se, muut jaavat.
+        payload["meta"] = {**payload["meta"], "notes": [
+            n for n in (payload["meta"].get("notes") or [])
+            if "named best" not in n]}
     return payload
 
 
@@ -745,12 +774,17 @@ def fantasy_wildcard_plan(
                 _pl[0] if _pl else int(xp_data["meta"].get("deadline_gameweek") or 1),
             ).get("wc") or {}
             _wc_note = []
+            # 3.9 PORTTI: paneeli sanoi "Play it in GW8" samalla kun viereinen
+            # nootti sanoi chipin olevan pelattu. Verdikti kertoo nyt itse
+            # ettei chippia ole - luku jaa nakyviin hypoteettisena.
+            if entry is not None and _hist is not None:
+                plan["chip_available"] = bool(_wc.get("available_now"))
             if entry is not None and _hist is not None and not _wc.get("available_now"):
                 _nxt = next((r for r in _wc.get("windows") or [] if r["available"]), None)
                 _pg = _wc.get("played_gws") or []
                 _wc_note.append(
-                    (f"Entry {entry} has already played its Wildcard in GW{_pg[-1]}. "
-                     if _pg else f"Entry {entry} has no Wildcard left in this half. ")
+                    (f"This squad has already played its Wildcard in GW{_pg[-1]}. "
+                     if _pg else "This squad has no Wildcard left in this half. ")
                     + (f"The next one opens in GW{_nxt['start_gw']}." if _nxt
                        else "There is no Wildcard window left this season.")
                     + " The plan below still shows what a fresh 15 would gain.")

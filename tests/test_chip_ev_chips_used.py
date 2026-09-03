@@ -83,11 +83,37 @@ def test_wildcard_best_requires_per_gw_bar():
     assert "wc" not in best2 and best2["bb"]["gw"] == 4
 
 
-def test_budget_notes_name_entry_value_or_flat():
-    assert any("99.9m" in n for n in fe._budget_notes(999, 116920, {"wc": {}}))
-    flat = fe._budget_notes(1000, None, {})
-    assert any("flat 100.0m" in n for n in flat)
-    assert any("1.5 expected points per gameweek" in n for n in flat)
+def test_budget_notes_branch_on_source_not_on_the_number():
+    """3.9 portti: haara luettiin luvusta, joten team value tasan 100.0m
+    sai nootin "flat 100.0m" vaikka lahde oli entryn oma arvo."""
+    own = fe._budget_notes(999, "entry_team_value", False)
+    assert any("99.9m" in n and "last deadline" in n for n in own)
+    # sama luku kuin flat, mutta lahde on entryn oma -> ei saa sanoa flattia
+    tasan = fe._budget_notes(1000, "entry_team_value", False)
+    assert any("100.0m" in n and "last deadline" in n for n in tasan)
+    assert not any("Without a team ID" in n for n in tasan)
+    flat = fe._budget_notes(1000, "flat_100", False)
+    assert any("Without a team ID" in n for n in flat)
+    # kynnyslause vain kun kynnys oikeasti pudotti ikkunan
+    assert not any("named best" in n for n in flat)
+    assert any("named best" in n
+               for n in fe._budget_notes(1000, "flat_100", True))
+
+
+def test_wc_below_bar_is_false_when_the_chip_is_already_played():
+    """Pelattu wildcard EI saa laukaista kynnyslausetta: syyn kertoo
+    _chip_notes, ja kaksi eri syyta samasta asiasta on ristiriita."""
+    played = chip_state(BOOT, {"chips": [{"name": "wildcard", "event": 2}]}, 3)
+    rows = [dict(w, wc_ev_per_gw=0.1 if w["wc_ev"] is not None else None)
+            for w in WINDOWS]
+    assert fe._wc_below_bar(rows, played) is False
+    # sama data ilman pelattua chippia -> kynnys pudotti, lause sallitaan
+    vapaa = chip_state(BOOT, {"chips": []}, 3)
+    assert fe._wc_below_bar(rows, vapaa) is True
+    # kontrolli: kynnyksen ylittava rivi -> ei lausetta
+    hyva = [dict(w, wc_ev_per_gw=3.0 if w["wc_ev"] is not None else None)
+            for w in WINDOWS]
+    assert fe._wc_below_bar(hyva, vapaa) is False
 
 
 def test_greedy_budget_xi_respects_entry_budget():
