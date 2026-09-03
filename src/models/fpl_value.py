@@ -299,9 +299,24 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
             meta["own_budget"] = round(own_budget_tenths / 10.0, 1)
             meta["own_note"] = GK_OWN_NOTE
             if own_pair is None:
+                # 3.9: nimea syy per vahti. Entry 116920:n toinen vahti (Dovin,
+                # COV) oli status u (lahtenyt liigasta) -> ei poolissa, ja
+                # "fewer than two of your keepers have a projection" piilotti
+                # sen ainoan tiedon jolla kayttaja voi toimia.
+                syyt = []
+                for pid in sorted(own_ids):
+                    e = boot_by_id.get(pid)
+                    if e is None or e.get("element_type") != 1 or pid in pool_by_id:
+                        continue
+                    nimi = e.get("web_name") or str(pid)
+                    if (e.get("status") or "a") == "u":
+                        syyt.append(f"{nimi} has left the Premier League")
+                    else:
+                        syyt.append(f"{nimi} has no clean sheet projection")
                 meta["own_pair_note"] = (
-                    "Could not score your pair: fewer than two of your "
-                    "keepers have a clean sheet projection.")
+                    "Could not score your pair: " + ("; ".join(syyt) + "."
+                    if syyt else "fewer than two of your keepers have a "
+                    "clean sheet projection."))
         out["own_pair"] = own_pair
     return out
 

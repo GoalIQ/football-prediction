@@ -167,7 +167,13 @@ def test_gk_pairs_own_pair_transfers_and_affordable(monkeypatch):
     out2 = fv.gk_rotation_pairs(top_n=5, squad=_squad([20], 200))
     assert all(r["transfers_needed"] == 2 for r in out2["pairs"])
     assert out2["own_pair"] is None
-    assert "fewer than two of your keepers" in out2["meta"]["own_pair_note"]
+    assert out2["meta"]["own_pair_note"].startswith("Could not score your pair")
+    # 3.9: puuttuva vahti nimetaan syyn kanssa (id 20 ei ole poolissa);
+    # bootstrapissa status u -> "has left the Premier League"
+    note = out2["meta"]["own_pair_note"]
+    assert ("has left the Premier League" in note
+            or "has no clean sheet projection" in note
+            or "fewer than two" in note), note
     # (c) negatiivinen kontrolli: bank 0 -> 10.0m pari ei ole enaa varaa
     out3 = fv.gk_rotation_pairs(top_n=5, squad=_squad([13, 14, 20], 0))
     by3 = {frozenset((r["gk_a"]["team_short"], r["gk_b"]["team_short"])): r
