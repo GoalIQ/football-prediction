@@ -367,7 +367,7 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'<div class="bench"><span class="blbl">Bench</span>{bench_html}</div>'
-        '<div class="fn">Best 15 for this gameweek alone under the same squad rules: '
+        '<div class="fn">Best 15 for this gameweek alone under FPL squad rules: '
         '100.0m budget, no more than three players from one club. C = captain, V = vice.</div>'
         '</div></div>'
         # 3.9 PORTTI: "every gameweek scored in public" oli epatosi (lokissa vain
