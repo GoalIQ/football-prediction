@@ -1102,6 +1102,8 @@ export interface PlanChainsResponse {
 		start_gw: number;
 		horizon: number;
 		ft_assumed: number;
+		/** 3.9: 'inferred_from_history' | 'assumed' */
+		ft_source?: string;
 		beam_width?: number;
 		generated_at?: string;
 		timeout_degraded?: boolean;

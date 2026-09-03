@@ -66,3 +66,43 @@ def test_chip_notes_name_played_chips_and_halves():
     # ilman historiaa: rehellinen varaus, ei pelattu-listaa
     n2 = fe._chip_notes(chip_state(BOOT, None, 3), False, 116920)
     assert any("could not be read" in n for n in n2)
+
+
+def test_wildcard_best_requires_per_gw_bar():
+    """CHIP-EV-BUDGET: wc_ev on kumulatiivinen; paras vain jos per-GW >= 1.5."""
+    st = chip_state(BOOT, {"chips": []}, 3)
+    low = [dict(w, wc_ev_per_gw=(w["wc_ev"] / 3 if w["wc_ev"] is not None else None))
+           for w in WINDOWS]
+    # 9.0/3 = 3.0 >= 1.5 -> mukana
+    best, _ = fe._pick_best(low, st)
+    assert best["wc"]["gw"] == 3
+    # kaikki alle kynnyksen -> ei wc-parasta, muut ennallaan (kontrolli)
+    tiny = [dict(w, wc_ev=(1.2 if w["wc_ev"] is not None else None),
+                 wc_ev_per_gw=(0.4 if w["wc_ev"] is not None else None)) for w in WINDOWS]
+    best2, _ = fe._pick_best(tiny, st)
+    assert "wc" not in best2 and best2["bb"]["gw"] == 4
+
+
+def test_budget_notes_name_entry_value_or_flat():
+    assert any("99.9m" in n for n in fe._budget_notes(999, 116920, {"wc": {}}))
+    flat = fe._budget_notes(1000, None, {})
+    assert any("flat 100.0m" in n for n in flat)
+    assert any("1.5 expected points per gameweek" in n for n in flat)
+
+
+def test_greedy_budget_xi_respects_entry_budget():
+    """Pienempi budjetti ei voi tuottaa kalliimpaa XI:ta (kontrolli: sama
+    budjetti -> sama XI)."""
+    pool = []
+    pid = 1
+    for t, n in ((1, 3), (2, 6), (3, 6), (4, 4)):
+        for i in range(n):
+            pool.append({"id": pid, "element_type": t, "club": pid % 9 + 1,
+                         "price": 40 + 10 * i, "xp": 2.0 + i})
+            pid += 1
+    key = lambda p: p["xp"]
+    full = fe._greedy_budget_xi(pool, key=key)
+    same = fe._greedy_budget_xi(pool, key=key, budget_tenths=1000)
+    tight = fe._greedy_budget_xi(pool, key=key, budget_tenths=900)
+    assert [p["id"] for p in full] == [p["id"] for p in same]
+    assert tight and sum(p["price"] for p in tight) <= sum(p["price"] for p in full)

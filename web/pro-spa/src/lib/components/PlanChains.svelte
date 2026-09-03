@@ -346,9 +346,15 @@
 				'Beam search, 0-2 transfers per GW, hit -4, remaining-horizon xP, not a global optimum.'}
 		</p>
 		<p>
-			Free transfers are assumed at {data.meta.ft_assumed} to start (the FPL API does not
-			expose your banked transfers). The top plans can be near-identical when the search
-			converges, that is expected.
+			{#if data.meta.ft_source === 'inferred_from_history'}
+				Free transfers start at {data.meta.ft_assumed}, worked out from your public transfer
+				history (one added per gameweek, up to five, wildcard and free hit rounds do not spend
+				them). The game's own count wins if they differ.
+			{:else}
+				Free transfers are assumed at {data.meta.ft_assumed} to start (the FPL API does not
+				expose your banked transfers).
+			{/if}
+			The top plans can be near-identical when the search converges, that is expected.
 		</p>
 		<p>{data.meta.note ?? 'GoalIQ model projections, for fun and planning, not betting advice.'}</p>
 	</MethodNote>

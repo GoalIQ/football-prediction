@@ -36,7 +36,7 @@ from src.models.fpl_rate_team import (
     apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
     get_bootstrap, get_entry_picks, optimal_xi, picks_outdated, resolve_squad,
 )
-from src.models import fpl_chips, fpl_wildcard
+from src.models import fpl_chips, fpl_entry_history, fpl_wildcard
 from src.models.fpl_xp import load_xp
 
 from api.premium import (
@@ -161,7 +161,8 @@ def _optimal_xi_for(squad: list[dict], key) -> list[dict]:
     return best[1]
 
 
-def _greedy_budget_xi(pool: list[dict], key) -> list[dict]:
+def _greedy_budget_xi(pool: list[dict], key,
+                      budget_tenths: int = BUDGET_TENTHS) -> list[dict]:
     """Paras laillinen budjetti-XI annetulla avainfunktiolla — sama
     dokumentoitu ahne heuristiikka kuin fpl_rate_team.optimal_budget_team_xp
     (penkkireservi + kiintio-/klubi-/budjettiturvaus), mutta palauttaa XI:n
@@ -174,7 +175,9 @@ def _greedy_budget_xi(pool: list[dict], key) -> list[dict]:
     cheapest_gk = min(p["price"] for p in by_pos[1])
     outfield_prices = sorted(p["price"] for t in (2, 3, 4) for p in by_pos[t])
     bench_reserve = cheapest_gk + sum(outfield_prices[:3])
-    xi_budget = BUDGET_TENTHS - bench_reserve
+    # CHIP-EV-BUDGET (3.9): entryn oma joukkueen arvo (FPL history `value`,
+    # bank mukana) kun se tiedetaan; 100,0 m vain mallin omalle rungolle.
+    xi_budget = budget_tenths - bench_reserve
     min_price = min(p["price"] for p in pool)
 
     ranked = sorted(pool, key=key, reverse=True)
@@ -425,6 +428,14 @@ def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]
     for chip in ("wc", "bb", "tc", "fh"):
         kelpaa = [w for w in tarkat if w.get(f"{chip}_ev") is not None
                   and fpl_chips.gw_allowed(state, chip, w["gw"])]
+        if chip == "wc":
+            # CHIP-EV-BUDGET (3.9): kumulatiivinen wc_ev suosii aina "nyt";
+            # sama per-kierros-kynnys kuin wildcard-planissa (1,5 xP/GW),
+            # muuten kaksi paneelia ovat eri mielta samassa nakymassa.
+            kelpaa = [w for w in kelpaa
+                      if (w.get("wc_ev_per_gw") if w.get("wc_ev_per_gw") is not None
+                          else (w["wc_ev"] / w["wc_window_gws"] if w.get("wc_window_gws") else 0.0))
+                      >= fpl_wildcard.MIN_EV_PER_GW]
         if kelpaa:
             top = max(kelpaa, key=lambda r: r[f"{chip}_ev"])
             best[chip] = {"gw": top["gw"], "ev": top[f"{chip}_ev"],
@@ -439,6 +450,21 @@ def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]
                 "gw": top["gw"], "ev": top[f"{chip}_ev"],
                 "basis": top["basis"]}
     return best, best_estimate
+
+
+def _budget_notes(budget_tenths: int, entry: int | None, best: dict) -> list[str]:
+    out = []
+    if entry is not None and budget_tenths != BUDGET_TENTHS:
+        out.append(f"Free Hit and Wildcard squads are built on this entry's team "
+                   f"value from the official game, {budget_tenths / 10:.1f}m with "
+                   "the bank included, not a flat 100.0m.")
+    else:
+        out.append("Free Hit and Wildcard squads are built on a flat 100.0m.")
+    if "wc" not in best:
+        out.append("A Wildcard window is only named as best when it clears "
+                   f"{fpl_wildcard.MIN_EV_PER_GW:.1f} expected points per gameweek, "
+                   "the same bar the Wildcard plan uses.")
+    return out
 
 
 def _chip_notes(state: dict[str, dict], history_loaded: bool,
@@ -501,6 +527,10 @@ def fantasy_chip_ev(
             current_gw = covered[0] if covered else int(
                 xp_data["meta"].get("deadline_gameweek") or 1)
             chip_state = fpl_chips.chip_state(bootstrap, history, current_gw)
+            # CHIP-EV-BUDGET (3.9): FH/WC-runko rakennetaan entryn omalla
+            # joukkueen arvolla, ei 100,0 m:lla. Mitattu: 116920 = 99,9 m.
+            budget_tenths = (fpl_entry_history.team_value_tenths(history)
+                             if entry is not None else None) or BUDGET_TENTHS
             windows = []
             per_chip: dict[str, list[float]] = {
                 "wc": [], "bb": [], "tc": [], "fh": []}
@@ -512,11 +542,13 @@ def fantasy_chip_ev(
                 bench = [p for p in squad if p["id"] not in xi_ids]
                 bb = sum(_gw_xp(p, g) for p in bench)
                 tc = max((_gw_xp(p, g) for p in xi_g), default=0.0)
-                fh_xi = _greedy_budget_xi(pool, key=lambda p: _gw_xp(p, g))
+                fh_xi = _greedy_budget_xi(pool, key=lambda p: _gw_xp(p, g),
+                                          budget_tenths=budget_tenths)
                 # Sama peruste kuin `wc`:lla: nolla ei ole sama kuin "oma XI voitti".
                 fh = sum(_gw_xp(p, g) for p in fh_xi) - xi_total
                 wc_xi = _greedy_budget_xi(
-                    pool, key=lambda p: _remaining_xp(p, gws_left))
+                    pool, key=lambda p: _remaining_xp(p, gws_left),
+                    budget_tenths=budget_tenths)
                 wc_total = sum(_remaining_xp(p, gws_left) for p in wc_xi)
                 base_total = sum(
                     sum(_gw_xp(p, x) for p in
@@ -536,6 +568,8 @@ def fantasy_chip_ev(
                        # kierroksen lukuun. Mitattu Villen rivilta 25.8:
                        # GW2 38,00 (6 kierrosta) vs GW7 10,37 (1 kierros).
                        "wc_window_gws": len(gws_left),
+                       # per kierros = sama mittari kuin wildcard-planin kynnys
+                       "wc_ev_per_gw": round(wc / len(gws_left), 2) if gws_left else None,
                        "bb_ev": round(bb, 2),
                        "tc_ev": round(tc, 2), "fh_ev": round(fh, 2),
                        "basis": "player_xp"}
@@ -617,6 +651,7 @@ def fantasy_chip_ev(
                         "Free transfers and squad churn between now and the "
                         "window are ignored.",
                         *_chip_notes(chip_state, history is not None, entry),
+                        *_budget_notes(budget_tenths, entry, best),
                     ],
                     "disclaimer": DISCLAIMER,
                 },
@@ -627,6 +662,11 @@ def fantasy_chip_ev(
                 "chips": {"history_loaded": history is not None,
                           "current_gw": current_gw,
                           "state": chip_state},
+                "budget": {"tenths": budget_tenths,
+                           "source": ("entry_team_value" if budget_tenths != BUDGET_TENTHS
+                                      or (entry is not None and history is not None
+                                          and fpl_entry_history.team_value_tenths(history))
+                                      else "flat_100")},
             }
             _cache_put(cache_key, payload)
     except RateTeamError as e:
@@ -883,8 +923,13 @@ def fantasy_plan_chains(
                 baseline += s
 
             # state: (squad, bank, fts, hits, cum_score, gw_rows, sig)
+            # CHIP-EV-BUDGET (3.9): FT-saldo paatellaan julkisesta
+            # historiasta (kausi 1, +1/GW, katto 5, WC/FH ei kuluta) sen
+            # sijaan etta oletetaan aina 1. Merkitaan lahde metaan.
+            _ft_inferred = fpl_entry_history.infer_free_transfers(_entry_history(entry))
+            ft_start = _ft_inferred if _ft_inferred is not None else CHAIN_FT_ASSUMED
             beam = [{"squad": squad, "bank": bank_tenths,
-                     "fts": CHAIN_FT_ASSUMED, "hits": 0.0, "score": 0.0,
+                     "fts": ft_start, "hits": 0.0, "score": 0.0,
                      "rows": [], "sig": ()}]
             for idx, g in enumerate(gws):
                 gws_left = gws[idx:]
@@ -1007,7 +1052,9 @@ def fantasy_plan_chains(
             payload = {
                 "meta": {
                     "entry": entry, "start_gw": gws[0], "horizon": len(gws),
-                    "ft_assumed": CHAIN_FT_ASSUMED,
+                    "ft_assumed": ft_start,
+                    "ft_source": ("inferred_from_history" if _ft_inferred is not None
+                                  else "assumed"),
                     "beam_width": BEAM_WIDTH,
                     "generated_at": xp_data["meta"].get("generated_at"),
                     "timeout_degraded": timed_out,
