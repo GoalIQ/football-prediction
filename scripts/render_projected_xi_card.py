@@ -119,13 +119,13 @@ border-radius:50%;line-height:20px;}
 .bench{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);
 padding-top:6px;margin-top:8px;}
 .bench .blbl{color:var(--muted);font-size:13px;width:52px;}
-.bench .xip{width:104px;}
+.bench .xip{width:124px;}
 .bench .xip b{font-size:13px;}
 .lblrow{display:flex;justify-content:space-between;align-items:baseline;}
 .tot{color:var(--muted);font-size:13px;white-space:nowrap;margin-bottom:6px;}
 .tot b{color:var(--amber);font-size:17px;font-variant-numeric:tabular-nums;}
 .fn{color:var(--muted);font-size:12px;margin-top:6px;}
-.ftr{display:flex;justify-content:space-between;color:var(--muted);
+.ftr{display:flex;justify-content:space-between;gap:14px;white-space:nowrap;color:var(--muted);
 font-size:13px;border-top:1px solid var(--line);padding-top:8px;margin-top:8px;}
 .ftr b{color:var(--cream);}
 svg.kit{display:block;margin:0 auto;}
@@ -354,21 +354,25 @@ def build_html(data: dict, log: dict | None = None, now=None,
         # turkoosia tekstia ilman amber-laatikkoa, eli KOLMANNEN
         # merkkiversion - tasan sen jonka 1.8 paatos poisti.
         + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
-        f'<div><div class="title">GW{gw} projected points and the model&#39;s free-hit XI</div>'
+        f'<div><div class="title">GW{gw} projected points and the model&#39;s best XI for one round</div>'
         f'<div class="sub">GW{gw} deadline {deadline} · GoalIQ model, projection run {proj_at}</div></div></div>'
         '<div class="body">'
         f'<div class="left"><div class="lbl">Projected points, best {len(top)} '
         f'at most three per club</div>'
         f'<table><tbody>{rows}</tbody></table>{footnote}</div>'
-        f'<div class="right"><div class="lblrow"><div class="lbl">Free-hit XI for GW{gw} only ({sq["formation"]})</div>'
+        f'<div class="right"><div class="lblrow"><div class="lbl">Best XI for GW{gw} alone ({sq["formation"]})</div>'
         f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'<div class="bench"><span class="blbl">Bench</span>{bench_html}</div>'
         '<div class="fn">Best 15 for this gameweek alone under the same squad rules: '
         '100.0m budget, no more than three players from one club. C = captain, V = vice.</div>'
         '</div></div>'
-        '<div class="ftr"><span>The model plays too: <b>entry 116920</b>, '
-        'every gameweek scored in public</span>'
+        # 3.9 PORTTI: "every gameweek scored in public" oli epatosi (lokissa vain
+        # GW2, ja taman kortin XI-kutsu kirjataan vasta GO-hetkella). "Free-hit"
+        # luki chip-suosituksena kun entry pelasi WC:n GW2:ssa -> "best XI for
+        # one round". Entry-rivi erottaa hypoteettisen XI:n oikeasta joukkueesta.
+        '<div class="ftr"><span>The model plays too: <b>entry 116920</b> is the '
+        'squad it actually fields</span>'
         f'<span>model projections, not betting advice · card made {card_at}</span>'
         # 🔴 TARKISTUSREITTI, EI KOTISIVUOSOITE (KORTTI-TARKISTUSREITTI 30.8).
         # Alapalkki osoitti `/fpl/expected-points`-sivun JUUREEN, joka rankkaa
