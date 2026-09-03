@@ -77,6 +77,33 @@
 		}
 	} as const;
 
+	/** Valitun sortin kierros, tai null kun sortti ei ole kierroskohtainen. */
+	function gwOfSort(key: string): number | null {
+		const m = /^gw(\d+)$/.exec(key);
+		return m ? Number(m[1]) : null;
+	}
+	/** Pelaajan xP yhdelle kierrokselle. Puuttuva kierros (blank tai pelaaja
+	 *  ilman projektiota) on -1 eika 0: nolla olisi vaite "nolla pistetta",
+	 *  ja se nostaisi rivin blank-pelaajien tasolle. */
+	function gwXpOf(p: XpPlayer, gw: number): number {
+		const g = p.gameweeks?.find((x) => x.gw === gw);
+		return typeof g?.xp === 'number' ? g.xp : -1;
+	}
+	function cmpFor(key: string): (a: XpPlayer, b: XpPlayer) => number {
+		const gw = gwOfSort(key);
+		if (gw != null) {
+			return (a, b) =>
+				gwXpOf(b, gw) - gwXpOf(a, gw) || b.xp_horizon_total - a.xp_horizon_total;
+		}
+		return (SORTS[key as keyof typeof SORTS] ?? SORTS.total).cmp;
+	}
+	function labelFor(key: string): string {
+		const gw = gwOfSort(key);
+		return gw != null
+			? `GW${gw} xP (high to low)`
+			: (SORTS[key as keyof typeof SORTS] ?? SORTS.total).label;
+	}
+
 	// xP per miljoona. Ilman hintaa arvo on -1, jolloin rivi valuu listan
 	// hantaan sen sijaan etta jakolasku tuottaisi Infinityn ja nostaisi sen karkeen.
 	function xpPerMillion(p: XpPlayer): number {
@@ -87,7 +114,10 @@
 	const CONF_LABEL = { low: 'low', med: 'medium', high: 'high' } as const;
 
 	let pos = $state<(typeof POSITIONS)[number]>('All');
-	let sortBy = $state<keyof typeof SORTS>('total');
+	/** 3.9 (Villen tilaus): sortti voi olla myos yksittainen kierros, `gw3`.
+	 *  GW-sarakkeet tulevat datasta eivatka ole tiedossa kaannosaikana, joten
+	 *  avain on merkkijono ja `cmpFor` ratkaisee sen. */
+	let sortBy = $state<string>('total');
 	// Hintakatto, ei kaistoja: kayttajan kysymys on "parhaat 5,5 miljoonan
 	// keskarit", ja kaista 4.6-6.0 vastaisi siihen vaarin. Katto = "talla
 	// budjetilla tai halvemmalla", joka on se mita joukkuetta rakentaessa kysytaan.
@@ -126,6 +156,7 @@
 		const t = Math.min(1, v / heatMax);
 		return `background-color: rgba(245,197,66,${(t * 0.26).toFixed(3)})`;
 	}
+	let sortGw = $derived(gwOfSort(sortBy));
 	let horizonN = $derived(data.meta.horizon_gw ?? gwCols.length ?? 6);
 	let horizonLabel = $derived(
 		gwCols.length > 0 ? `GW${gwCols[0]}–GW${gwCols[gwCols.length - 1]}` : `next ${horizonN} GWs`
@@ -173,7 +204,7 @@
 					normSearch(p.team).includes(q) ||
 					normSearch(p.team_short).includes(q)
 			)
-			.toSorted(SORTS[sortBy].cmp);
+			.toSorted(cmpFor(sortBy));
 	});
 	// 26.7 PERF: koko 373 pelaajan lista renderöityi kerralla (~4 500 DOM-solmua
 	// pelkkään tähän tauluun) ja lajittelu/suodatus siirteli ne kaikki. Sama
@@ -258,7 +289,7 @@
 		try {
 			// Vain ensimmäinen kirjain pieneksi — .toLowerCase() rikkoisi
 			// xP-kirjoitusasun ("by total xp").
-			const sortLabel = SORTS[sortBy].label.replace(/\s*\(.*\)$/, '');
+			const sortLabel = labelFor(sortBy).replace(/\s*\(.*\)$/, '');
 			const sub = [
 				horizonLabel,
 				`by ${sortLabel.charAt(0).toLowerCase()}${sortLabel.slice(1)}`,
@@ -379,6 +410,17 @@
 			{#each Object.entries(SORTS).filter(([k]) => (k !== 'starts' || hasStarts) && (!['price', 'value'].includes(k) || hasPrice)) as [key, s] (key)}
 				<option value={key}>{s.label}</option>
 			{/each}
+			<!-- 3.9 (Villen tilaus): yksittainen kierros sorttiperusteeksi. Horisontin
+			     summa vastaa kysymykseen "kuka kuuden viikon yli", ei kysymykseen
+			     "kuka tallä viikolla" — ja jalkimmainen on se jolla siirto tehdaan.
+			     Kierrokset tulevat datasta, joten lista seuraa horisonttia itsestaan. -->
+			{#if gwCols.length > 0}
+				<optgroup label="One gameweek">
+					{#each gwCols as gw (gw)}
+						<option value={`gw${gw}`}>GW{gw} xP (high to low)</option>
+					{/each}
+				</optgroup>
+			{/if}
 		</select>
 	</div>
 	<label class="toggle">
@@ -477,7 +519,11 @@
 				>
 				<th class="num"><abbr title="Sum of expected points, {horizonLabel}">Total xP</abbr></th>
 				{#each gwCols as gw (gw)}
-					<th class="num m-hide">GW{gw}</th>
+					<!-- Sortattu kierros ei saa olla piilossa kapealla naytolla:
+					     jarjestys ilman saraketta on lukijalle satunnainen. -->
+					<th class="num" class:m-hide={sortGw !== gw} class:sortcol={sortGw === gw}
+						>GW{gw}</th
+					>
 				{/each}
 			</tr>
 		</thead>
@@ -566,7 +612,12 @@
 						</td>
 						<td class="num total-col">{p.xp_horizon_total.toFixed(2)}</td>
 						{#each gwCols as gw (gw)}
-							<td class="num m-hide" style={heat(gwXp(p, gw))}>{gwXp(p, gw).toFixed(2)}</td>
+							<td
+								class="num"
+								class:m-hide={sortGw !== gw}
+								class:sortcol={sortGw === gw}
+								style={heat(gwXp(p, gw))}>{gwXp(p, gw).toFixed(2)}</td
+							>
 						{/each}
 					</tr>
 				{/each}
@@ -690,6 +741,14 @@
 		color: var(--positive);
 		font-weight: 700;
 		cursor: default;
+	}
+	/* 3.9: sortattu kierros erottuu, jotta jarjestys on luettavissa myos
+	   kapealla naytolla jossa muut GW-sarakkeet ovat piilossa. */
+	.sortcol {
+		font-weight: 700;
+		box-shadow:
+			inset 2px 0 0 rgba(245, 197, 66, 0.55),
+			inset -2px 0 0 rgba(245, 197, 66, 0.55);
 	}
 	td.total-col {
 		font-weight: 700;
