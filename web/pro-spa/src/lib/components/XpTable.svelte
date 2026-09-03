@@ -82,18 +82,19 @@
 		const m = /^gw(\d+)$/.exec(key);
 		return m ? Number(m[1]) : null;
 	}
-	/** Pelaajan xP yhdelle kierrokselle. Puuttuva kierros (blank tai pelaaja
-	 *  ilman projektiota) on -1 eika 0: nolla olisi vaite "nolla pistetta",
-	 *  ja se nostaisi rivin blank-pelaajien tasolle. */
-	function gwXpOf(p: XpPlayer, gw: number): number {
-		const g = p.gameweeks?.find((x) => x.gw === gw);
-		return typeof g?.xp === 'number' ? g.xp : -1;
-	}
+	/** 🔴 YKSI LUKIJA kierroksen xP:lle: jaettu `gwXp` ($lib/api), sama jota
+	 *  taulukon solu ja jakokortti kayttavat. Ensimmainen versio kirjoitti
+	 *  sortille oman funktion joka palautti puuttuvalle kierrokselle -1 kun
+	 *  solu nayttti 0.00 — kaksi vastausta samaan kysymykseen, ja
+	 *  jarjestys olisi eronnut siita mita ruudulla lukee. Tyhja kierros ON
+	 *  nolla pistetta, joten 0 on oikea luku molemmille. Tasapelin ratkaisee
+	 *  horisontin summa, jotta nollien keskinainen jarjestys ei ole
+	 *  satunnainen. */
 	function cmpFor(key: string): (a: XpPlayer, b: XpPlayer) => number {
 		const gw = gwOfSort(key);
 		if (gw != null) {
 			return (a, b) =>
-				gwXpOf(b, gw) - gwXpOf(a, gw) || b.xp_horizon_total - a.xp_horizon_total;
+				gwXp(b, gw) - gwXp(a, gw) || b.xp_horizon_total - a.xp_horizon_total;
 		}
 		return (SORTS[key as keyof typeof SORTS] ?? SORTS.total).cmp;
 	}
@@ -290,8 +291,15 @@
 			// Vain ensimmäinen kirjain pieneksi — .toLowerCase() rikkoisi
 			// xP-kirjoitusasun ("by total xp").
 			const sortLabel = labelFor(sortBy).replace(/\s*\(.*\)$/, '');
+			// 🔴 3.9 ILTA (Villen havainto): kortin arvosarake luki AINA
+			// `xp_horizon_total`ia. Kun lista on sortattu yhdella kierroksella,
+			// nimet ja jarjestys olivat oikein mutta luku oli kuuden kierroksen
+			// summa — eli kortti vastasi eri kysymykseen kuin otsikko lupasi.
+			// Sama koskee ikkunalabelia: "GW3-GW8" on valhe GW3-kortilla.
+			const cardGw = sortGw;
+			const windowLabel = cardGw != null ? `GW${cardGw}` : horizonLabel;
 			const sub = [
-				horizonLabel,
+				windowLabel,
 				`by ${sortLabel.charAt(0).toLowerCase()}${sortLabel.slice(1)}`,
 				...(pos !== 'All' ? [pos] : []),
 				...(maxPrice != null ? [`max £${maxPrice.toFixed(1)}m`] : []),
@@ -301,7 +309,8 @@
 				title: 'EXPECTED POINTS',
 				subtitle: `${sub}, GoalIQ model`,
 				...(hasPrice ? { midLabel: 'PRICE' } : {}),
-				valueLabel: sortBy === 'value' ? 'xP/£m' : 'xP',
+				valueLabel:
+					sortBy === 'value' ? 'xP/£m' : cardGw != null ? `GW${cardGw} xP` : 'xP',
 				fileName: 'goaliq_xp_list.png',
 				rows: pool.slice(0, 10).map((p, i) => ({
 					rank: i + 1,
@@ -312,7 +321,9 @@
 					value:
 						sortBy === 'value'
 							? xpPerMillion(p).toFixed(2)
-							: p.xp_horizon_total.toFixed(1)
+							: cardGw != null
+								? gwXp(p, cardGw).toFixed(2)
+								: p.xp_horizon_total.toFixed(1)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'xp', method });

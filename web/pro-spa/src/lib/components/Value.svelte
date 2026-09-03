@@ -70,6 +70,16 @@
 	const ownPair = $derived(data?.gk?.own_pair ?? null);
 	const reachablePair = $derived(data?.gk?.reachable_pair ?? null);
 	const affordablePair = $derived(data?.gk?.affordable_pair ?? null);
+	/** 🔴 3.9 ILTA (Villen toinen havainto): kaksi PROOSARIVIA eivat riittaneet.
+	 *  Kayttaja lukee taulukon, ja taulukon karki oli yha globaali paras pari
+	 *  (11.5 M, kaksi siirtoa) vaikka hanen budjettinsa on 9.4 M. Kun entry on
+	 *  luettu, taulukko nayttaa OLETUKSENA vain ne parit joihin raha riittaa
+	 *  (`for_you`); koko lista on chipin takana eika katoa. */
+	const forYou = $derived(data?.gk?.for_you ?? null);
+	let gkScope = $state<'you' | 'all'>('you');
+	const gkRows = $derived(
+		forYou && forYou.length > 0 && gkScope === 'you' ? forYou : pairs
+	);
 	const squad = $derived(data?.gk?.meta?.squad ?? data?.meta?.squad ?? null);
 	const hasSquad = $derived(squad?.available === true);
 
@@ -286,6 +296,27 @@
 			{:else if squad && !squad.available && squad.note}
 				<p class="muted">Your squad was not read: {squad.note}</p>
 			{/if}
+			{#if forYou && forYou.length > 0}
+				<div class="gk-scope">
+					<button
+						type="button"
+						class="window-chip"
+						class:on={gkScope === 'you'}
+						onclick={() => (gkScope = 'you')}>Ones you can afford</button
+					>
+					<button
+						type="button"
+						class="window-chip"
+						class:on={gkScope === 'all'}
+						onclick={() => (gkScope = 'all')}>All pairs</button
+					>
+				</div>
+				{#if gkScope === 'you' && data?.gk?.meta?.for_you_note}
+					<p class="muted small">{data.gk.meta.for_you_note}</p>
+				{/if}
+			{:else if hasSquad && data?.gk?.meta?.for_you_note}
+				<p class="muted small">{data.gk.meta.for_you_note}</p>
+			{/if}
 			<div class="table-wrap">
 				<table>
 					<thead>
@@ -308,7 +339,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each pairs.slice(0, 5) as pair (pair.gk_a.id + '-' + pair.gk_b.id)}
+						{#each gkRows.slice(0, 5) as pair (pair.gk_a.id + '-' + pair.gk_b.id)}
 							<tr class:own-row={pair.transfers_needed === 0}>
 								<td>
 									{pair.gk_a.web_name} <span class="muted">({pair.gk_a.team_short})</span> +
@@ -344,8 +375,8 @@
 		<button type="button" class="teaser-row" onclick={unlock}>
 			<span>
 				Top 50 value ranking, position and team filters, and GK rotation pairs. Save your
-				FPL ID and you also get your own pair ranked on the same formula and the best pair
-				one transfer away that your bank can pay for
+				FPL ID and the pair list narrows to the ones your bank can actually pay for, with
+				your own pair ranked on the same formula
 				<span class="muted">(top 3 shown free)</span>
 			</span>
 			<span class="locked" aria-label="Locked">•.••</span>
@@ -377,6 +408,12 @@
 	}
 	.window-row > span {
 		flex: 0 0 auto;
+	}
+	.gk-scope {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+		margin: 10px 0 6px;
 	}
 	.window-chip {
 		flex: 0 0 auto;

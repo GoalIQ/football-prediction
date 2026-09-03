@@ -522,3 +522,52 @@ def test_reachable_keys_absent_without_a_squad(monkeypatch):
            "gw": None, "note": "Entry 1 has no picks for GW1."}
     out2 = fv.gk_rotation_pairs(top_n=3, squad=ctx)
     assert "reachable_pair" not in out2 and "affordable_pair" not in out2
+
+
+def test_for_you_lista_sisaltaa_vain_ostettavissa_olevat(monkeypatch):
+    """Villen havainto 3.9 ilta: listan KARKI oli globaali paras pari, joka
+    vaati kaksi siirtoa ja enemman rahaa kuin budjetti. Kaksi lisattya
+    proosariviä eivat auttaneet, koska pinta renderoi listan.
+
+    `pairs` katkaistaan `top_n`:aan ENNEN suodatusta, joten klientti ei voi
+    tehda tata: kymmenen parhaan joukossa voi olla nolla ostettavissa olevaa.
+    Siksi rajaus on palvelimella."""
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    # Budjetti 9.5 + 0 = 9.5m -> ARS+MCI (10.5) ja ARS+TOT (10.0) eivat mahdu.
+    out = fv.gk_rotation_pairs(top_n=5, squad=_squad([13, 14, 20], 0))
+    fy = out["for_you"]
+    assert fy, "ostettavissa olevia pareja on, listan pitaa olla epatyhja"
+    assert all(r["affordable"] for r in fy)
+    assert all(r["combined_price"] <= out["meta"]["own_budget"] + 1e-9 for r in fy)
+    # Globaali karki EI ole listalla, ja se on koko pointti.
+    assert {fy[0]["gk_a"]["team_short"], fy[0]["gk_b"]["team_short"]} == {"MCI", "TOT"}
+    assert {out["pairs"][0]["gk_a"]["team_short"],
+            out["pairs"][0]["gk_b"]["team_short"]} == {"ARS", "MCI"}
+    # Sijoitus on KOKO listan sijoitus, ei rajatun listan juokseva numero.
+    assert fy[0]["of"] == len(out["pairs"]) == 3
+    assert fy[0]["rank"] == 3
+    assert "9.5m" in out["meta"]["for_you_note"]
+
+
+def test_for_you_tyhjana_kertoo_syyn_eika_katoa(monkeypatch):
+    """Negatiivinen kontrolli: kun raha ei riita yhteenkaan pariin, avain on
+    silti paikalla tyhjana ja meta kertoo miksi. Puuttuva avain olisi
+    'ei laskettu', tyhja lista on 'ei ole'."""
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    # Vain kentta+bank 0 -> budjetti 0.0m, mikaan pari ei mahdu.
+    out = fv.gk_rotation_pairs(top_n=5, squad=_squad([20], 0))
+    assert out["for_you"] == []
+    assert "No pair fits" in out["meta"]["for_you_note"]
+    assert len(out["pairs"]) == 3, "koko lista ei saa kadota"
+
+
+def test_for_you_ei_ilmesty_ilman_entrya(monkeypatch):
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    out = fv.gk_rotation_pairs(top_n=3)
+    assert "for_you" not in out and "for_you_note" not in out["meta"]

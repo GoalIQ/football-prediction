@@ -348,6 +348,35 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
             # siihen ettei kenttaa laskettu.
             # Sama luku jolla oma pari rankattiin, ei pyoristetysta
             # kentasta uudelleen laskettu (eri luku, sama nimi).
+            # 🔴 3.9 ILTA, Villen toinen havainto: "GK rotation nayttaa
+            # edelleen Raya + Donnarumma vaikka mun maalivahti on Tzolakis".
+            # Kaksi lisattya PROOSARIVIA eivat riittaneet, koska TAULUKKO oli
+            # yha globaali lista jonka karki maksaa 11.5 M ja vaatii kaksi
+            # siirtoa. Kayttaja lukee taulukon, ei alaviitetta.
+            #
+            # `for_you` on sama lista rajattuna siihen mihin RAHA riittaa.
+            # Rajaus tehdaan TASSA eika klientissa: `pairs` katkaistaan
+            # `top_n`:aan ennen suodatusta, joten kymmenen parhaan joukossa voi
+            # olla nolla ostettavissa olevaa — juuri niin kavi. Siirtojen
+            # maara on rivilla, koska se on kayttajan valinta; raha ei ole.
+            for_you = []
+            for row, sc in zip(pairs, scores):
+                if not row.get("affordable"):
+                    continue
+                r = dict(row)
+                r["rank"] = sum(1 for x in scores if x > sc) + 1
+                r["of"] = len(pairs)
+                for_you.append(r)
+                if len(for_you) >= top_n:
+                    break
+            out["for_you"] = for_you
+            meta["for_you_note"] = (
+                f"Pairs your two keepers plus your bank can pay for "
+                f"({meta['own_budget']:.1f}m). Transfers needed counts how many "
+                f"of the pair you do not own."
+                if for_you else
+                f"No pair fits your two keepers plus your bank "
+                f"({meta['own_budget']:.1f}m). The full list is below.")
             reachable = _best_reachable(own_score_val)
             out["reachable_pair"] = reachable
             # Paras pari johon RAHA riittaa, siirtojen maarasta riippumatta.

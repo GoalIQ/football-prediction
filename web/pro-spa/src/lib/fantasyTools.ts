@@ -738,6 +738,7 @@ export interface ValueResponse {
 			own_pair_note?: string;
 			reachable_note?: string;
 			affordable_note?: string;
+			for_you_note?: string;
 		};
 		pairs: GkPair[];
 		/** MY-TEAM-CONTEXT (3.9): avain vain kun entry lähetettiin; null kun
@@ -749,6 +750,9 @@ export interface ValueResponse {
 		reachable_pair?: ReachableGkPair | null;
 		/** Paras pari johon RAHA riittaa, siirtojen maarasta riippumatta. */
 		affordable_pair?: ReachableGkPair | null;
+		/** Sama lista rajattuna niihin pareihin joihin raha riittaa. Tyhja
+		 *  lista = budjetti ei riita yhteenkaan (meta.for_you_note kertoo). */
+		for_you?: ReachableGkPair[];
 	};
 }
 
