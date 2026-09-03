@@ -253,6 +253,15 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_spl_xp
 
+      # 3.9: SPL-sivun datapohjalause ARTEFAKTISTA. Sivu on kasin
+      # yllapidetty ja sanoi "two seasons" kun fitissa oli jo kolme kautta
+      # ja 36 taman kauden ottelua. Luku ei saa elaa kasin kirjoitettuna
+      # (CLAUDE.md 6a), joten se paivitetaan joka ajossa.
+      - name: Sync SPL page data basis from the artefact
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.update_spl_page_basis
+
       # 30.7 tarkkuusloki: gradaa EDELLISEN yön price-ennuste ENNEN kuin
       # builderi ylikirjoittaa sen (järjestys on koko lokin pointti).
       - name: Grade previous price watch predictions

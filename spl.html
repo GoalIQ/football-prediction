@@ -79,7 +79,7 @@ addEventListener('DOMContentLoaded',function(){
     {
       "@type": "Question",
       "name": "What data does the SPL model use?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Team strengths come from a goals-based Dixon-Coles model fitted on two seasons of Saudi Pro League results. Player projections use realized goal and assist rates with RSL Fantasy's own scoring rules, and minutes are estimated from last season's aggregate playing time. No public per-match xG feed exists for the SPL, and the tool labels say so." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Team strengths come from a goals-based Dixon-Coles model fitted on three seasons of Saudi Pro League results, including 36 matches already played this season. Player projections use realized goal and assist rates with RSL Fantasy's own scoring rules, and minutes are estimated from last season's aggregate playing time. No public per-match xG feed exists for the SPL, and the tool labels say so." }
     },
     {
       "@type": "Question",
@@ -329,12 +329,15 @@ addEventListener('DOMContentLoaded',function(){
     with, endorsed by, or paid by the Saudi Pro League, the RSL Fantasy game, or
     any club. These tools are free, so nobody is paying us to cover this league,
     including you.</p>
+    <!-- GEN:SPL-BASIS -->
     <p><strong>Data basis:</strong> team strengths come from a goals-based
-    Dixon-Coles model fitted on two seasons of SPL results. No public per-match
-    xG feed exists for this league, so player attack projections use realized
-    goal and assist rates, and minutes are estimated from season-aggregate
-    playing time. This is coarser than our FPL pipeline and the confidence
-    labels on the tool say exactly that.</p>
+    Dixon-Coles model fitted on three seasons of SPL results. Team strengths are refitted on every result, so they include 36 matches already played this season.
+    No public per-match xG feed exists for this league, so player attack
+    projections use realized goal and assist rates. Minutes are the coarse
+    part: the RSL Fantasy API publishes season totals and no per-round
+    history, so a player's minutes estimate moves with his season aggregate
+    rather than with last week. The confidence labels on the tool say so.</p>
+    <!-- /GEN:SPL-BASIS -->
   </div>
 </section>
 
