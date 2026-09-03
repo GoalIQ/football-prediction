@@ -12,7 +12,7 @@
 	import type { RatedPlayer, LastFinishedGw } from '$lib/fantasyTools';
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
-	import { luckVerdict, squadLuck, LUCK_MARK } from '$lib/luck';
+	import { luckVerdict, squadLuck, LUCK_MARK, settledGwReadable } from '$lib/luck';
 	import TeamKit from './TeamKit.svelte';
 
 	let {
@@ -122,22 +122,41 @@
 		onCaptaincyChange?.(captainId, viceId);
 	});
 
+	/* LUCK-PITCH (1.9) tunnistus nostettu tanne, koska GW-chipit tarvitsevat
+	   sen. 🔴 EI `xi`:sta lasketa mitaan: `in_xi` on MALLIN optimi-XI, ei sita
+	   mita kayttaja pelasi. `last_finished.points` on FPL:n oma luku. */
+	const luckSameSquad = $derived(
+		lastFinished != null && picksGw != null && picksGw === lastFinished.gw
+	);
+	const luckGw = $derived(lastFinished?.gw ?? null);
+
 	// #123: GW-valitsin — GW:t datasta (vain kun backend lähettää gameweeks).
 	const gwsAvailable = $derived.by(() => {
 		const s = new Set<number>();
 		for (const p of players) for (const g of p.gameweeks ?? []) s.add(g.gw);
 		return Array.from(s).sort((a, b) => a - b);
 	});
+	/** 3.9: chipit = paattynyt kierros (kun sen luvut ovat tassa payloadissa)
+	 *  + ennustekierrokset. Paattynyt on OMA sarakkeensa eika oletus, joten
+	 *  toteutuneet pisteet eivat voi enaa nakya ennustekierroksen paikalla. */
+	const gwChips = $derived(
+		luckSameSquad && luckGw != null && !gwsAvailable.includes(luckGw)
+			? [luckGw, ...gwsAvailable]
+			: gwsAvailable
+	);
+	const resultMode = $derived(selGw != null && luckGw != null && selGw === luckGw);
 	$effect(() => {
-		if (gwsAvailable.length === 0) {
+		if (gwChips.length === 0) {
 			selGw = null;
 			return;
 		}
-		if (selGw != null && gwsAvailable.includes(selGw)) return;
+		if (selGw != null && gwChips.includes(selGw)) return;
+		// Oletus on AINA tuleva kierros, ei paattynyt: naytto avataan
+		// deadlinen alla, ja `defaultGw` on payloadin oma kierros.
 		selGw =
 			defaultGw != null && gwsAvailable.includes(defaultGw)
 				? defaultGw
-				: gwsAvailable[0];
+				: (gwsAvailable[0] ?? gwChips[0]);
 	});
 
 	// #122: valitun GW:n xP — SAMA GW-kohtainen luku kuin summaryn team_xp_gw
@@ -177,6 +196,9 @@
 
 	/** #123: valitun GW:n vastustaja(t): "HUL (A)", DGW molemmat, blank → "No game". */
 	function oppOf(p: RatedPlayer): string | null {
+		// 3.9: tulosmoodissa (paattynyt kierros) projektiorivia ei ole, ja
+		// "No game" olisi valhe pelatusta ottelusta. Rivi jaa pois.
+		if (resultMode) return null;
 		if (selGw == null || !p.gameweeks || p.gameweeks.length === 0) return null;
 		const g = p.gameweeks.find((x) => x.gw === selGw);
 		if (!g || g.opponents.length === 0) return 'No game';
@@ -227,15 +249,41 @@
 	 * 🔴 EI `xi`:sta lasketa mitaan. `in_xi` on MALLIN OPTIMI-XI, ei sita mita
 	 * kayttaja pelasi. `last_finished.points` on FPL:n oma luku. Sama saanto
 	 * mobiilissa. */
-	const luckSameSquad = $derived(
-		lastFinished != null && picksGw != null && picksGw === lastFinished.gw
-	);
+	/** 3.9 (Villen havainto): settled-luvut kuuluvat `lastFinished.gw`:hun ja
+	 *  VAIN siihen. Kartta on tyhja kun katsottava kierros on eri, joten
+	 *  yksikaan kutsuja ei voi lukea vaaran kierroksen pisteita ruudulle —
+	 *  sama ehto joka `actualFor`/`frozenFor`:lla oli jo, mutta joka jai
+	 *  taalta pois. Ilman tata pitch nayttaa GW2:n pisteet GW3:n xP:n
+	 *  paikalla koko GW2:n paattymisen ja GW3:n deadlinen valisen ajan,
+	 *  koska FPL pitaa picksit GW2:ssa deadlineen asti. */
 	const luckById = $derived.by(() => {
 		const m = new Map<number, { points: number | null; xp: number | null }>();
-		if (!luckSameSquad || !lastFinished) return m;
+		if (!lastFinished) return m;
+		// Ilmaispinnalla EI ole GW-valitsinta (chipit ovat `{#if premium}`
+		// -lohkossa), joten "mita kierrosta katsotaan" ei ole siella
+		// kysymys — `null` kertoo lukijalle sen. Ilman tata ilmaispinnan
+		// paattyneen kierroksen lohko (tuomiot + Model vs actual, jotka ovat
+		// tarkoituksella lukon YLAPUOLELLA) katosi kokonaan.
+		if (!settledGwReadable(premium ? selGw : null, luckGw, luckSameSquad)) return m;
 		for (const r of lastFinished.players) m.set(r.id, { points: r.points, xp: r.xp_frozen });
 		return m;
 	});
+	/** Tulosmoodin vertailuluku: deadline-freezen xP kerrottuna sen
+	 *  multiplierilla jonka FPL kirjasi. null kun yhdeltakin pelanneelta
+	 *  puuttuu freeze — osasumma nayttaisi mallin liian matalalta, ja
+	 *  puuttuva luku ei ole nolla. */
+	const luckFrozenTotal = $derived.by(() => {
+		if (!luckSameSquad || !lastFinished) return null;
+		let sum = 0;
+		for (const r of lastFinished.players) {
+			const m = r.multiplier ?? 0;
+			if (m === 0) continue;
+			if (typeof r.xp_frozen !== 'number') return null;
+			sum += r.xp_frozen * m;
+		}
+		return sum;
+	});
+
 	/** Solun tuomio ja erotus. Kierros on RATKENNUT vasta kun molemmat luvut
 	 *  ovat olemassa; puolikas vertailu jaa vanhaan muotoon. */
 	function settledOf(p: RatedPlayer): { actual: number; xp: number; diff: number } | null {
@@ -574,17 +622,17 @@
 -->
 <div class="pitch-block">
 		{#if premium}
-			{#if gwsAvailable.length > 1}
+			{#if gwChips.length > 1}
 				<p class="label">Gameweek</p>
 				<div class="chips">
-					{#each gwsAvailable as gw (gw)}
+					{#each gwChips as gw (gw)}
 						<button
 							type="button"
 							class="chip"
 							class:on={selGw === gw}
 							onclick={() => (selGw = gw)}
 						>
-							GW{gw}
+							GW{gw}{#if gw === luckGw}&nbsp;result{/if}
 						</button>
 					{/each}
 				</div>
@@ -605,18 +653,36 @@
 				<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
 			</div>
 			<div class="xp-row">
-				<span class="label" style="margin:0"
-					>Projected {selGw != null ? `GW${selGw}` : 'GW'} xP
-					<span class="muted">(captain doubled)</span></span
-				>
-				<span class="xp-col">
-					<span class="xp-val">{gwXp.toFixed(1)}</span>
-					{#if Math.abs(editDelta) >= 0.05}
-						<span class="xp-delta"
-							>{editDelta > 0 ? '+' : ''}{editDelta.toFixed(1)} xP vs your loaded lineup</span
-						>
-					{/if}
-				</span>
+				{#if resultMode}
+					<!-- 3.9: tulosmoodissa otsikkoluku on TOTEUMA. Ennusteen kaava
+					     (`gwXp`) lukee `gameweeks`-rivit, joita paattyneella
+					     kierroksella ei ole — se olisi nayttanyt 0.0. -->
+					<span class="label" style="margin:0"
+						>GW{luckGw} points
+						<span class="muted">(FPL's own total)</span></span
+					>
+					<span class="xp-col">
+						<span class="xp-val">{lastFinished?.points ?? '–'}</span>
+						{#if luckFrozenTotal != null}
+							<span class="xp-delta"
+								>{luckFrozenTotal.toFixed(1)} projected before the deadline</span
+							>
+						{/if}
+					</span>
+				{:else}
+					<span class="label" style="margin:0"
+						>Projected {selGw != null ? `GW${selGw}` : 'GW'} xP
+						<span class="muted">(captain doubled)</span></span
+					>
+					<span class="xp-col">
+						<span class="xp-val">{gwXp.toFixed(1)}</span>
+						{#if Math.abs(editDelta) >= 0.05}
+							<span class="xp-delta"
+								>{editDelta > 0 ? '+' : ''}{editDelta.toFixed(1)} xP vs your loaded lineup</span
+							>
+						{/if}
+					</span>
+				{/if}
 			</div>
 		{/if}
 
@@ -795,7 +861,7 @@
 									<!-- Ratkennut kierros: toteuma on OTSIKKOLUKU ja pinnattu
 									     ennuste sen alla erotuksen kanssa. Kaksi samankokoista
 									     lukua vierekkain luettiin saman suureen osiksi. -->
-									<span class="pbig" title="Actual FPL points, GW{selGw ?? defaultGw}"
+									<span class="pbig" title="Actual FPL points, GW{luckGw ?? selGw ?? defaultGw}"
 										>{sp.actual}</span
 									>
 									<span class="pnums">

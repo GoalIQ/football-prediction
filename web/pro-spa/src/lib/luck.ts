@@ -87,3 +87,25 @@ export function squadLuck<T>(
 	const round2 = (n: number) => Math.round(n * 100) / 100;
 	return { points: round2(points), xp: round2(xp), diff: round2(points - xp), n: rows.length };
 }
+
+/**
+ * Saako paattyneen kierroksen luvut (toteuma + deadline-freeze) nayttaa, kun
+ * pinta katsoo kierrosta `selGw`?
+ *
+ * 🔴 TAMA ON AINOA LUKIJA. Pitchin kartta rakennettiin `last_finished`
+ * -lohkosta ilman ehtoa, ja silloin GW2:n pisteet nakyivat GW3:n xP:n
+ * paikalla. Ehto ei ole "kierros juuri paattyi": FPL pitaa entryn picksit
+ * edellisessa kierroksessa deadlineen asti, joten `picksGw ===
+ * lastFinished.gw` on totta koko suunnitteluikkunan ajan (3.9.2026).
+ *
+ * Sama funktio mobiilissa: `goaliq-app/lib/fantasyDisplay.ts`.
+ */
+export function settledGwReadable(
+	selGw: number | null | undefined,
+	luckGw: number | null | undefined,
+	sameSquad: boolean
+): boolean {
+	if (!sameSquad || luckGw == null) return false;
+	if (selGw == null) return true;
+	return selGw === luckGw;
+}

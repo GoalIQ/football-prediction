@@ -706,6 +706,15 @@ export interface OwnGkPair extends GkPair {
 	of: number;
 }
 
+/** Sama lista rajattuna siihen mihin kayttaja yltaa (3.9 ilta). */
+export interface ReachableGkPair extends GkPair {
+	common_gws?: number;
+	transfers_needed: 0 | 1 | 2;
+	affordable: boolean;
+	rank: number;
+	of: number;
+}
+
 export interface ValueResponse {
 	meta: {
 		available: boolean;
@@ -727,11 +736,19 @@ export interface ValueResponse {
 			own_budget?: number;
 			own_note?: string;
 			own_pair_note?: string;
+			reachable_note?: string;
+			affordable_note?: string;
 		};
 		pairs: GkPair[];
 		/** MY-TEAM-CONTEXT (3.9): avain vain kun entry lähetettiin; null kun
 		 *  alle kahdella omalla vahdilla on CS-projektio (meta.own_pair_note). */
 		own_pair?: OwnGkPair | null;
+		/** Paras YHDEN siirron pari johon budjetti riittaa; null kun sellaista
+		 *  ei ole. Avain on paikalla aina kun squad luettiin, joten null
+		 *  tarkoittaa "ei ole" eika "ei laskettu". */
+		reachable_pair?: ReachableGkPair | null;
+		/** Paras pari johon RAHA riittaa, siirtojen maarasta riippumatta. */
+		affordable_pair?: ReachableGkPair | null;
 	};
 }
 

@@ -447,3 +447,78 @@ def test_player_gameweeks_drops_rounds_before_the_payload_gw():
     assert [g["gw"] for g in _player_gameweeks(p)] == [2, 3, 4]
     # kesken kierroksen: payloadin oma GW sailyy (se on se jota kerataan)
     assert [g["gw"] for g in _player_gameweeks(p, min_gw=2)] == [2, 3, 4]
+
+
+# --- 3.9 ILTA: vastauksen on oltava KAYTTAJAN ULOTTUVILLA ------------------
+# Villen havainto: "GK rotation nayttaa edelleen geneerisesti Raya + joku".
+# Lista oli entry-tietoinen (transfers_needed/affordable rivilla), mutta
+# vastauksen KARKI oli pari jota han ei voi ottaa: kaksi siirtoa ja 11.5m
+# kun budjettia oli 9.4m. Kun oma pari ei ollut pisteytettavissa (toinen
+# vahti oli lahtenyt liigasta), pinnalla ei ollut yhtaan riviä hanen
+# joukkueestaan. Nama kaksi lukijaa eivat voi palauttaa ulottumatonta paria.
+
+def test_reachable_pair_keeps_a_keeper_you_own_and_beats_your_own_pair(monkeypatch):
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    # Oma pari MCI+TOT = 37.5 (rank 3/3), budjetti 9.5 + 0.5 = 10.0m
+    out = fv.gk_rotation_pairs(top_n=5, squad=_squad([13, 14, 20], 5))
+    r = out["reachable_pair"]
+    assert r is not None
+    # ARS+TOT: 45.0, 10.0m, yksi siirto (KeeperC jaa), mahtuu budjettiin
+    assert {r["gk_a"]["team_short"], r["gk_b"]["team_short"]} == {"ARS", "TOT"}
+    assert r["transfers_needed"] == 1 and r["affordable"] is True
+    assert r["avg_best_cs_pct"] == pytest.approx(45.0)
+    # Parannus, ei sivuaskel: oma pari on 37.5
+    assert r["avg_best_cs_pct"] > out["own_pair"]["avg_best_cs_pct"]
+    # Sijoitus mukana, jotta huono vaihtoehto nakyy huonona
+    assert r["rank"] == 2 and r["of"] == 3
+    assert "keep KeeperC" in out["meta"]["reachable_note"]
+    assert "KeeperA" in out["meta"]["reachable_note"]
+
+
+def test_reachable_pair_is_none_when_no_single_transfer_fits(monkeypatch):
+    """Negatiivinen kontrolli 1: raha ei riita yhden siirron pariin."""
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    # Sama joukkue, bank 0 -> budjetti 9.5m; ARS+TOT maksaa 10.0m
+    out = fv.gk_rotation_pairs(top_n=5, squad=_squad([13, 14, 20], 0))
+    assert out["reachable_pair"] is None
+    assert "reachable_note" not in out["meta"]
+    # ...mutta rahalle riittava pari on yha olemassa: oma pari itse.
+    a = out["affordable_pair"]
+    assert a is not None and a["transfers_needed"] == 0
+    assert a["combined_price"] <= out["meta"]["own_budget"]
+
+
+def test_reachable_pair_is_none_without_a_keeper_of_your_own(monkeypatch):
+    """Negatiivinen kontrolli 2: yhtaan omaa vahtia -> ei yhden siirron paria.
+
+    Rahalle riittava pari annetaan silti, jotta vastaus ei ole tyhja."""
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    out = fv.gk_rotation_pairs(top_n=5, squad=_squad([20], 200))
+    assert out["own_pair"] is None
+    assert out["reachable_pair"] is None
+    a = out["affordable_pair"]
+    assert a is not None and a["transfers_needed"] == 2
+    assert {a["gk_a"]["team_short"], a["gk_b"]["team_short"]} == {"ARS", "MCI"}
+    assert "2 transfers" in out["meta"]["affordable_note"]
+
+
+def test_reachable_keys_absent_without_a_squad(monkeypatch):
+    """Negatiivinen kontrolli 3: ilman entrya vastaus on entinen."""
+    pool, teams = _gk_fixture()
+    monkeypatch.setattr(fv, "build_context", lambda: _ctx(pool))
+    monkeypatch.setattr(fv, "load_phase0", lambda: _phase0(teams))
+    out = fv.gk_rotation_pairs(top_n=3)
+    assert "reachable_pair" not in out and "affordable_pair" not in out
+    assert "reachable_note" not in out["meta"]
+    # Entry annettu mutta picksit puuttuvat: avaimet EIVAT ilmesty
+    # puolittain, koska budjettia ei ole.
+    ctx = {"available": False, "entry": 1, "ids": set(), "bank_tenths": 0,
+           "gw": None, "note": "Entry 1 has no picks for GW1."}
+    out2 = fv.gk_rotation_pairs(top_n=3, squad=ctx)
+    assert "reachable_pair" not in out2 and "affordable_pair" not in out2

@@ -269,6 +269,28 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
     # Paras rotaatio ensin; sama painotettu CS% -> halvempi pari voittaa
     pairs.sort(key=lambda r: (-r["_score"], r["combined_price"]))
     scores = [r.pop("_score") for r in pairs]
+    # 3.9 ilta (Villen havainto): kun omaa paria ei voi pisteyttaa, vastaus
+    # putosi geneeriseen listaan jonka karki vaatii KAKSI siirtoa. Poimitaan
+    # sama lista siihen mihin kayttaja yltaa: parhaat parit joissa hanella on
+    # jo toinen vahti ja jotka mahtuvat hanen budjettiinsa. Lista on jo
+    # jarjestyksessa, joten ensimmainen osuma on paras.
+    def _best_reachable(min_score: float | None) -> dict | None:
+        """Paras yhden siirron pari johon budjetti riittaa.
+
+        `min_score` = oman parin pistemaara kun se on pisteytettavissa:
+        huonompaa vaihtoehtoa ei tarjota siirroksi. None (= paria ei voitu
+        pisteyttaa) tarkoittaa etta mika tahansa toimiva pari on parannus.
+        """
+        for row, sc in zip(pairs, scores):
+            if row.get("transfers_needed") != 1 or not row.get("affordable"):
+                continue
+            if min_score is not None and sc <= min_score:
+                continue
+            out_row = dict(row)
+            out_row["rank"] = sum(1 for x in scores if x > sc) + 1
+            out_row["of"] = len(pairs)
+            return out_row
+        return None
 
     meta = {
         "available": True,
@@ -281,6 +303,7 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
     if squad is not None:
         meta["squad"] = squad_meta(squad)
         own_pair = None
+        own_score_val: float | None = None
         if len(own_gks) >= 2:
             ga, gb = own_gks[0], own_gks[1]
             a, b = ga["team_short"], gb["team_short"]
@@ -293,6 +316,7 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
                     own_pair["affordable"] = True
                     # Sijoitus listalla samalla painotuksella (1 = paras).
                     own_score = _weighted(avg_best, len(split))
+                    own_score_val = own_score
                     own_pair["rank"] = sum(1 for sc in scores if sc > own_score) + 1
                     own_pair["of"] = len(pairs)
         if squad.get("available"):
@@ -318,6 +342,45 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
                     if syyt else "fewer than two of your keepers have a "
                     "clean sheet projection."))
         out["own_pair"] = own_pair
+        if squad.get("available"):
+            # Avain on aina paikalla kun entry annettiin: null kertoo etta
+            # yhtaan yhden siirron paria ei ole varaa ottaa, eika sekoitu
+            # siihen ettei kenttaa laskettu.
+            # Sama luku jolla oma pari rankattiin, ei pyoristetysta
+            # kentasta uudelleen laskettu (eri luku, sama nimi).
+            reachable = _best_reachable(own_score_val)
+            out["reachable_pair"] = reachable
+            # Paras pari johon RAHA riittaa, siirtojen maarasta riippumatta.
+            # Ilman tata listan karki (Raya + Donnarumma, 11.5m) on kahden
+            # siirron JA budjetin ulkopuolella, eli vastaus ei ollut
+            # kayttajan joukkueesta millaan tavalla.
+            affordable = None
+            for row, sc in zip(pairs, scores):
+                if not row.get("affordable"):
+                    continue
+                affordable = dict(row)
+                affordable["rank"] = sum(1 for x in scores if x > sc) + 1
+                affordable["of"] = len(pairs)
+                break
+            out["affordable_pair"] = affordable
+            if affordable is not None:
+                meta["affordable_note"] = (
+                    "Best pair your two keepers plus your bank can pay for "
+                    f"({meta['own_budget']:.1f}m): "
+                    f"{affordable['gk_a']['web_name']} + "
+                    f"{affordable['gk_b']['web_name']}, "
+                    f"{affordable['combined_price']:.1f}m, "
+                    f"{affordable['transfers_needed']} transfer"
+                    f"{'s' if affordable['transfers_needed'] != 1 else ''}.")
+            if reachable is not None:
+                keep = (reachable["gk_a"] if reachable["gk_a"]["id"] in own_ids
+                        else reachable["gk_b"])
+                add = (reachable["gk_b"] if reachable["gk_a"]["id"] in own_ids
+                       else reachable["gk_a"])
+                meta["reachable_note"] = (
+                    f"One transfer away: keep {keep['web_name']} and pair him "
+                    f"with {add['web_name']} ({add['team_short']}, "
+                    f"{add['price']:.1f}m).")
     return out
 
 

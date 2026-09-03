@@ -68,6 +68,8 @@
 	});
 	const pairs = $derived(data?.gk?.pairs ?? []);
 	const ownPair = $derived(data?.gk?.own_pair ?? null);
+	const reachablePair = $derived(data?.gk?.reachable_pair ?? null);
+	const affordablePair = $derived(data?.gk?.affordable_pair ?? null);
 	const squad = $derived(data?.gk?.meta?.squad ?? data?.meta?.squad ?? null);
 	const hasSquad = $derived(squad?.available === true);
 
@@ -261,6 +263,26 @@
 				{:else if data?.gk?.meta?.own_pair_note}
 					<p class="muted">{data.gk.meta.own_pair_note}</p>
 				{/if}
+				<!-- 3.9 ilta (Villen havainto): kun omaa paria ei voi pisteyttaa,
+				     lista yksin on vastaus JOHON KAYTTAJA EI YLLA — sen karki
+				     vaatii kaksi siirtoa ja enemman rahaa kuin hanella on. Nama
+				     kaksi rivia ovat sama lista rajattuna siihen mihin han
+				     ylttaa, ja molemmat kertovat sijoituksensa jotta huono
+				     vaihtoehto nakyy huonona. -->
+				{#if reachablePair && data?.gk?.meta?.reachable_note}
+					<p class="own-line">
+						{data.gk.meta.reachable_note}
+						<strong>{reachablePair.avg_best_cs_pct.toFixed(1)}%</strong>
+						<span class="muted">(rank {reachablePair.rank} of {reachablePair.of})</span>
+					</p>
+				{/if}
+				{#if affordablePair && data?.gk?.meta?.affordable_note && affordablePair.transfers_needed !== 1}
+					<p class="own-line">
+						{data.gk.meta.affordable_note}
+						<strong>{affordablePair.avg_best_cs_pct.toFixed(1)}%</strong>
+						<span class="muted">(rank {affordablePair.rank} of {affordablePair.of})</span>
+					</p>
+				{/if}
 			{:else if squad && !squad.available && squad.note}
 				<p class="muted">Your squad was not read: {squad.note}</p>
 			{/if}
@@ -321,7 +343,9 @@
 		<!-- 🔒 sama gate kuin mobiili #114: top-3 free, loput + GK-parit premium -->
 		<button type="button" class="teaser-row" onclick={unlock}>
 			<span>
-				Top 50 value ranking, position and team filters, and GK rotation pairs
+				Top 50 value ranking, position and team filters, and GK rotation pairs. Save your
+				FPL ID and you also get your own pair ranked on the same formula and the best pair
+				one transfer away that your bank can pay for
 				<span class="muted">(top 3 shown free)</span>
 			</span>
 			<span class="locked" aria-label="Locked">•.••</span>

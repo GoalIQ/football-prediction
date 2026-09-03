@@ -1,0 +1,224 @@
+{
+  "gameweek": 4,
+  "snapshot": {
+    "commit": "ed252c639e25df74e1dd65577f8b299e3efa6892",
+    "generated_at": "2026-08-28T14:47:04",
+    "kickoff_utc": "2026-08-28T15:50:00Z",
+    "note": "Last build committed before the round kicked off (57 min before the first GW4 kickoff).",
+    "inseason_matches_in_fit": 26
+  },
+  "naive_p": 0.2394,
+  "naive_note": "Constant probability equal to the clean sheet share in the two completed seasons before this one. The model is fitted on those plus the matches played so far this season.",
+  "top3": [
+    {
+      "team": "Al Ahli (at KLD)",
+      "cs_pct": 49.0,
+      "kept": false
+    },
+    {
+      "team": "Al Qadsiah (vs FSL)",
+      "cs_pct": 48.1,
+      "kept": false
+    },
+    {
+      "team": "Al Hilal (at KLJ)",
+      "cs_pct": 41.7,
+      "kept": false
+    }
+  ],
+  "fixtures": [
+    {
+      "home": "Al Riyadh",
+      "away": "Neom SC",
+      "home_short": "RIY",
+      "away_short": "NEO",
+      "score": "1-0",
+      "cs_home_pct": 21.4,
+      "cs_away_pct": 39.7,
+      "cs_home_kept": true,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Fayha",
+      "away": "Abha",
+      "home_short": "FYH",
+      "away_short": "ABH",
+      "score": "3-2",
+      "cs_home_pct": 37.6,
+      "cs_away_pct": 26.0,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Khaleej",
+      "away": "Al Hilal",
+      "home_short": "KLJ",
+      "away_short": "HIL",
+      "score": "1-5",
+      "cs_home_pct": 7.7,
+      "cs_away_pct": 41.7,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Nassr",
+      "away": "Al Taawoun",
+      "home_short": "NAS",
+      "away_short": "TWN",
+      "score": "2-1",
+      "cs_home_pct": 39.5,
+      "cs_away_pct": 9.9,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Kholood",
+      "away": "Al Ahli",
+      "home_short": "KLD",
+      "away_short": "AHL",
+      "score": "3-1",
+      "cs_home_pct": 16.0,
+      "cs_away_pct": 49.0,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Ettifaq",
+      "away": "Al Diriyah",
+      "home_short": "ETT",
+      "away_short": "DIR",
+      "score": "0-3",
+      "cs_home_pct": 37.9,
+      "cs_away_pct": 23.0,
+      "cs_home_kept": false,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Fateh",
+      "away": "Al Ittihad",
+      "home_short": "FAT",
+      "away_short": "ITT",
+      "score": "0-0",
+      "cs_home_pct": 18.0,
+      "cs_away_pct": 30.6,
+      "cs_home_kept": true,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Hazem",
+      "away": "Al Shabab",
+      "home_short": "HAZ",
+      "away_short": "SHB",
+      "score": "1-1",
+      "cs_home_pct": 28.0,
+      "cs_away_pct": 23.3,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Qadsiah",
+      "away": "Al Faisaly",
+      "home_short": "QAD",
+      "away_short": "FSL",
+      "score": "3-1",
+      "cs_home_pct": 48.1,
+      "cs_away_pct": 8.9,
+      "cs_home_kept": false,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Hilal",
+      "away": "Al Ahli",
+      "home_short": "HIL",
+      "away_short": "AHL",
+      "score": "3-0",
+      "cs_home_pct": 35.6,
+      "cs_away_pct": 20.7,
+      "cs_home_kept": true,
+      "cs_away_kept": false
+    }
+  ],
+  "gameweeks": [
+    {
+      "gameweek": 1,
+      "snapshot": {
+        "commit": "c7025ad1c6d94ea71938830ea125ee8d7d861368",
+        "generated_at": "2026-08-13T15:53:22",
+        "kickoff_utc": "2026-08-13T16:15:00Z",
+        "note": "Last build published before the round kicked off (first GW1 kickoff 13 Aug 2026, 16:15 UTC; this build is 15:53:22, 22 min earlier). Fitted on vendored history ending 21 May 2026, with no 26/27 results in the fit.",
+        "inseason_matches_in_fit": 0
+      },
+      "sides": 18,
+      "expected_cs": 4.9,
+      "actual_cs": 4,
+      "brier": 0.1574,
+      "naive_brier": 0.1731
+    },
+    {
+      "gameweek": 2,
+      "snapshot": {
+        "commit": "09bb28762840e61b7c4a297fe7ce6befff48a116",
+        "generated_at": "2026-08-20T15:25:52",
+        "kickoff_utc": "2026-08-20T18:00:00Z",
+        "note": "Last build committed before the round kicked off (149 min before the first GW2 kickoff).",
+        "inseason_matches_in_fit": 9
+      },
+      "sides": 18,
+      "expected_cs": 4.77,
+      "actual_cs": 9,
+      "brier": 0.2789,
+      "naive_brier": 0.3179
+    },
+    {
+      "gameweek": 3,
+      "snapshot": {
+        "commit": "5a437f13175b52ffcc56c61dd345e195477aa2d5",
+        "generated_at": "2026-08-24T15:30:49",
+        "kickoff_utc": "2026-08-24T16:40:00Z",
+        "note": "Last build committed before the round kicked off (63 min before the first GW3 kickoff).",
+        "inseason_matches_in_fit": 18
+      },
+      "sides": 16,
+      "expected_cs": 4.34,
+      "actual_cs": 3,
+      "brier": 0.1455,
+      "naive_brier": 0.155
+    },
+    {
+      "gameweek": 4,
+      "snapshot": {
+        "commit": "ed252c639e25df74e1dd65577f8b299e3efa6892",
+        "generated_at": "2026-08-28T14:47:04",
+        "kickoff_utc": "2026-08-28T15:50:00Z",
+        "note": "Last build committed before the round kicked off (57 min before the first GW4 kickoff).",
+        "inseason_matches_in_fit": 26
+      },
+      "sides": 20,
+      "expected_cs": 5.63,
+      "actual_cs": 5,
+      "brier": 0.2158,
+      "naive_brier": 0.1876
+    }
+  ],
+  "season_to_date": {
+    "gameweeks": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "matches": 36,
+    "naive_p": 0.2394,
+    "sides": 72,
+    "expected_cs": 19.63,
+    "actual_cs": 21,
+    "brier": 0.2014,
+    "naive_brier": 0.2093
+  },
+  "sides": 20,
+  "expected_cs": 5.63,
+  "actual_cs": 5,
+  "brier": 0.2158,
+  "naive_brier": 0.1876,
+  "generated_at": "2026-09-03T13:51:18+00:00"
+}

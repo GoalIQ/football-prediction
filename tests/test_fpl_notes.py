@@ -155,6 +155,41 @@ def test_paasivulla_on_latest_articles_markerit():
     assert idx.count("<!-- GEN:LATEST-ARTICLES-END -->") == 1
 
 
+def test_etusivun_lohko_on_SAMA_kuin_notes_json():
+    """Julkaisu ei ole valmis ennen kuin etusivu tuntee sen.
+
+    🔴 MITATTU VIKA 3.9.2026 (Villen havainto). Muistio "the best clean sheet
+    this week is not the best run" committoitiin 09:23 UTC. Etusivun featured
+    -kortti nimesi 21.8 kirjoitettua Arsenal-muistiota viela 12:15 UTC asti,
+    jolloin ajastettu geo-refresh sattui ajamaan ja splissasi lohkon. Kolme
+    tuntia sivun nakyvin sisaltopaikka mainosti kahden viikon takaista tekstia.
+
+    Lohko OLI automaatiossa. Automaatio oli vain ajastin eika julkaisun osa,
+    ja sama ajastin on ollut mitatusti 5-12 h myohassa 27.8 alkaen. Ajastin
+    jaa varmistukseksi; tama testi tekee myohastymisesta nakyvan heti.
+
+    Vertailu on TASMALLINEN eika substring: uusin muistio voi olla lohkossa ja
+    lohko silti vanha (esim. kaksi korttia joista toinen on vanhentunut).
+
+    Korjaus on yksi komento samaan committiin:
+
+        .venv/Scripts/python.exe -c "from scripts.build_fpl_page import             sync_index_articles; sync_index_articles()"
+    """
+    from scripts.build_fpl_page import latest_articles_block, _load_json, NOTES_PATH
+    odotettu = latest_articles_block(_load_json(NOTES_PATH))
+    if not odotettu:  # pragma: no cover - muistioita ei ole
+        pytest.skip("data/fpl_notes.json on tyhja")
+    idx = (ROOT / "index.html").read_text(encoding="utf-8")
+    alku = idx.index("<!-- GEN:LATEST-ARTICLES-START -->") + len(
+        "<!-- GEN:LATEST-ARTICLES-START -->")
+    loppu = idx.index("<!-- GEN:LATEST-ARTICLES-END -->")
+    livena = idx[alku:loppu]
+    assert livena == odotettu, (
+        "etusivun featured-lohko ei vastaa data/fpl_notes.json:ia — uusi "
+        "muistio ei ole etusivulla. Aja samaan committiin: "
+        "sync_index_articles() (scripts/build_fpl_page.py)")
+
+
 def test_lohko_on_HERON_SISALLA_eika_sen_alla():
     """🔴 SIJAINTI ON OSA VAATIMUSTA, ja se mitattiin selaimella.
 

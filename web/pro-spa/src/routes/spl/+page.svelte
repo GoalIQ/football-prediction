@@ -66,18 +66,41 @@
 		cs_home_kept: boolean;
 		cs_away_kept: boolean;
 	};
-	type Recon = {
-		gameweek: number;
-		snapshot?: { generated_at?: string };
+	type ReconScores = {
+		sides: number;
 		expected_cs: number;
 		actual_cs: number;
 		brier: number;
 		naive_brier: number;
+	};
+	type Recon = ReconScores & {
+		gameweek: number;
+		snapshot?: { generated_at?: string };
 		naive_p: number;
 		top3: { team: string; cs_pct: number; kept: boolean }[];
 		fixtures: ReconFixture[];
+		/* 3.9: kausi tahan asti. Ylatason luvut ovat UUSIMMAN ratkenneen
+		   kierroksen; sivun vaite kuuluu kaudelle, koska yksi kierros on
+		   18-20 joukkue-sivua eli liian ohut otos. */
+		gameweeks: (ReconScores & { gameweek: number })[];
+		season_to_date: ReconScores & {
+			gameweeks: number[];
+			matches: number;
+			naive_p: number;
+		};
 	};
 	let recon = $derived((cs?.meta?.gw_reconciliation as Recon | undefined) ?? null);
+	/** Kierros jonka toteuma erosi eniten odotuksesta. `null` kun yksikaan ei
+	 *  eroa tarpeeksi, jotta lohko ei selita kohinaa poikkeamana. Kynnys 3
+	 *  puhdasta peliä = noin yksi keskihajonta 16-20 sivun kierroksella. */
+	let outlierGw = $derived.by(() => {
+		const gws = recon?.gameweeks ?? [];
+		if (gws.length < 2) return null;
+		const worst = gws.reduce((a, b) =>
+			Math.abs(b.actual_cs - b.expected_cs) > Math.abs(a.actual_cs - a.expected_cs) ? b : a
+		);
+		return Math.abs(worst.actual_cs - worst.expected_cs) >= 3 ? worst : null;
+	});
 	let nextGw = $derived((cs?.meta?.next_gameweek as number) ?? 1);
 	let deadline = $derived.by(() => {
 		const raw = cs?.meta?.deadline_utc as string | undefined;
@@ -500,14 +523,83 @@
 
 	{#if recon}
 		<section>
-			<h2>How our GW{recon.gameweek} clean sheet calls went</h2>
+			<h2>How our clean sheet calls have gone</h2>
 			<p>
-				Before GW{recon.gameweek} kicked off, the model had a clean sheet probability on
-				record for every side. Those numbers add up to <strong>{recon.expected_cs} expected
-				clean sheets</strong> across the round, and <strong>{recon.actual_cs} actually
-				happened</strong>. The three sides we rated highest went
-				{recon.top3.filter((t) => t.kept).length} from 3.
+				Before every round kicks off the model puts a clean sheet probability on record
+				for each side, and we keep the file that was published at the time. Over
+				GW{recon.season_to_date.gameweeks[0]} to
+				GW{recon.season_to_date.gameweeks[recon.season_to_date.gameweeks.length - 1]}
+				that is {recon.season_to_date.sides} team-rounds across
+				{recon.season_to_date.matches} matches. They add up to
+				{recon.season_to_date.expected_cs} expected clean sheets, and
+				{recon.season_to_date.actual_cs} happened. Brier score
+				{recon.season_to_date.brier.toFixed(3)}, against
+				{recon.season_to_date.naive_brier.toFixed(3)} for a flat guess at the clean sheet
+				rate in the two completed seasons before this one
+				({(recon.season_to_date.naive_p * 100).toFixed(1)}%). Lower is better, but
+				{recon.season_to_date.sides} sides is a small sample and a gap that size is inside
+				the noise. The archived files are in the public repo, one per round:
+				<a
+					href="https://github.com/GoalIQ/football-prediction/tree/main/data/spl_deadline_snapshots"
+					rel="noopener">data/spl_deadline_snapshots</a
+				>.
 			</p>
+			<!-- 3.9: kierroskohtainen erittely on osa rehellisyytta. Kauden luku
+			     on mallin puolella, mutta se ei ole sita joka kierros, ja
+			     yhteisluku yksin piilottaisi sen. -->
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th>Round</th>
+							<th class="num">Sides</th>
+							<th class="num">Expected CS</th>
+							<th class="num">Actual</th>
+							<th class="num">Brier</th>
+							<th class="num">Flat guess</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each recon.gameweeks as g (g.gameweek)}
+							<tr>
+								<td>GW{g.gameweek}</td>
+								<td class="num">{g.sides}</td>
+								<td class="num">{g.expected_cs.toFixed(2)}</td>
+								<td class="num">{g.actual_cs}</td>
+								<td class="num" class:strong={g.brier < g.naive_brier}
+									>{g.brier.toFixed(3)}</td
+								>
+								<td class="num">{g.naive_brier.toFixed(3)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			<p class="muted small">
+				Bold means the model came in under the flat guess that round. Rounds do not all
+				have nine matches: the league feed counts a postponed match in the round it is
+				actually played, which is why the sides column moves. With 16 to 20 sides in a
+				round, no single row here proves much.
+			</p>
+			<!-- 3.9: poikkeava kierros luetaan ARTEFAKTISTA. Kasin kirjoitettuna
+			     ("GW2 is the outlier: nine against 4.77") lause olisi ollut tosi
+			     tasan sen paivan ja jaanyt sivulle vaarana. Sama saanto kuin
+			     lohkon muilla luvuilla. -->
+			{#if outlierGw}
+				<p class="muted small">
+					GW{outlierGw.gameweek} is the outlier: {outlierGw.actual_cs} clean sheets
+					against {outlierGw.expected_cs.toFixed(2)} expected.
+					{#if outlierGw.brier < outlierGw.naive_brier}
+						The model still came in under the flat guess that round, because it had the
+						probability on the right sides even though the overall level was too low.
+					{:else}
+						It came in over the flat guess that round, so the level and the ordering
+						were both off.
+					{/if}
+				</p>
+			{/if}
+			<h3>GW{recon.gameweek} match by match</h3>
+			<p>The most recent round that finished.</p>
 			<div class="table-wrap">
 				<table>
 					<thead>
@@ -537,11 +629,10 @@
 				</table>
 			</div>
 			<p class="muted small">
-				Brier score {recon.brier.toFixed(3)}, against {recon.naive_brier.toFixed(3)} for a
-				flat guess at the base rate in the two seasons the model is fitted on
-				({(recon.naive_p * 100).toFixed(1)}%). Lower is better, but one round of 18 sides is
-				a thin sample. The probabilities come from the last projection build before the
-				round kicked off{#if recon.snapshot?.generated_at}&nbsp;({recon.snapshot.generated_at.slice(0, 10)}){/if};
+				GW{recon.gameweek} on its own: Brier {recon.brier.toFixed(3)} against
+				{recon.naive_brier.toFixed(3)} for the flat guess, over {recon.sides} sides. The
+				probabilities come from the last projection build before this round kicked
+				off{#if recon.snapshot?.generated_at}&nbsp;({recon.snapshot.generated_at.slice(0, 10)}){/if};
 				they have not been recomputed since.
 			</p>
 		</section>

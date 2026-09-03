@@ -307,31 +307,59 @@ def test_blend_without_reference_skips_visibly():
 
 def _recon() -> dict | None:
     import config, json
-    p = config.PROJECT_ROOT / "data" / "spl_gw1_recon.json"
+    p = config.PROJECT_ROOT / "data" / "spl_recon.json"
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def test_recon_summary_recomputes_from_rows():
     r = _recon()
     if r is None:
-        pytest.skip("spl_gw1_recon.json ei generoitu tässä ympäristössä")
+        pytest.skip("spl_recon.json ei generoitu tässä ympäristössä")
     sides = [(f[f"cs_{s}_pct"] / 100.0, f[f"cs_{s}_kept"])
              for f in r["fixtures"] for s in ("home", "away")]
-    assert len(sides) == r["sides"] == 18
+    # 3.9: sivujen määrä lasketaan riveistä eikä ole 18. Kierroksissa on
+    # 8-10 ottelua (siirretyt ottelut), ja luku 18 oli GW1:n oma.
+    assert len(sides) == r["sides"] == 2 * len(r["fixtures"])
     assert math.isclose(sum(p for p, _ in sides), r["expected_cs"], abs_tol=0.005)
     assert sum(1 for _, kept in sides if kept) == r["actual_cs"]
     brier = sum((p - float(kept)) ** 2 for p, kept in sides) / len(sides)
     assert math.isclose(brier, r["brier"], abs_tol=0.00005)
     naive = sum((r["naive_p"] - float(kept)) ** 2 for _, kept in sides) / len(sides)
     assert math.isclose(naive, r["naive_brier"], abs_tol=0.00005)
-    # Väite "malli voitti naiivin" elää sivulla — sen on pidettävä datassa.
-    assert r["brier"] < r["naive_brier"]
+
+
+def test_recon_season_total_recomputes_from_every_gameweek():
+    """Kauden luvut ovat kierroslohkojen summa, ei erikseen kirjoitettu.
+
+    🔴 TÄMÄ TESTI KORVASI VÄITTEEN `brier < naive_brier` (20.8). Se piti
+    GW1:ssä ja pinnattiin testiin, mutta GW4:ssä malli oli naiivia HUONOMPI
+    (0.2158 vs 0.1876). Kierroskohtainen paremmuus ei ole invariantti eikä sitä
+    saa vahtia kuin se olisi: sivun väite kuuluu kauden luvulle, ja se on
+    `season_to_date`. Vrt. CLAUDE.md 6a (3): invariantti mitataan joka
+    vaiheessa, ei siinä jossa se sattuu pitämään."""
+    r = _recon()
+    if r is None:
+        pytest.skip("spl_recon.json ei generoitu tässä ympäristössä")
+    s = r["season_to_date"]
+    blocks = r["gameweeks"]
+    assert [b["gameweek"] for b in blocks] == s["gameweeks"]
+    assert sum(b["sides"] for b in blocks) == s["sides"]
+    assert sum(b["actual_cs"] for b in blocks) == s["actual_cs"]
+    assert math.isclose(sum(b["expected_cs"] for b in blocks),
+                        s["expected_cs"], abs_tol=0.02)
+    # Brier on keskiarvo, joten summa on painotettava sivujen määrällä.
+    painotettu = sum(b["brier"] * b["sides"] for b in blocks) / s["sides"]
+    assert math.isclose(painotettu, s["brier"], abs_tol=0.0005)
+    # Uusin kierros on lohkojen viimeinen, ja ylätason luvut ovat sen omat.
+    viim = blocks[-1]
+    assert r["gameweek"] == viim["gameweek"]
+    assert r["brier"] == viim["brier"] and r["sides"] == viim["sides"]
 
 
 def test_recon_top3_matches_rows():
     r = _recon()
     if r is None:
-        pytest.skip("spl_gw1_recon.json ei generoitu tässä ympäristössä")
+        pytest.skip("spl_recon.json ei generoitu tässä ympäristössä")
     kaikki = sorted(
         (f[f"cs_{s}_pct"] for f in r["fixtures"] for s in ("home", "away")),
         reverse=True)
@@ -344,7 +372,7 @@ def test_recon_flows_to_spl_meta(client):
     samoilla summilla (jakopinta ei saa lukea eri tiedostoa kuin sivu)."""
     r = _recon()
     if r is None:
-        pytest.skip("spl_gw1_recon.json ei generoitu tässä ympäristössä")
+        pytest.skip("spl_recon.json ei generoitu tässä ympäristössä")
     resp = client.get("/api/fantasy?league=spl")
     assert resp.status_code == 200
     meta = resp.json()["meta"]
@@ -357,3 +385,35 @@ def test_recon_flows_to_spl_meta(client):
     assert served["expected_cs"] == r["expected_cs"]
     assert served["actual_cs"] == r["actual_cs"]
     assert served["brier"] == r["brier"]
+
+
+def test_spl_recon_lohkossa_ei_ole_kasin_kirjoitettuja_lukuja():
+    """Jokainen luku lohkossa tulee artefaktista, ei lahdekoodista.
+
+    🔴 Julkaisutarkistajan loydos 3.9: lohko oli saanut kasin kirjoitetut
+    "2 from 3" ja "nine clean sheets against 4.77 expected". Molemmat olivat
+    tosia sina paivana ja vaaria seuraavalla kierroksella. Sivu ei voi
+    ajautua artefaktista eri lukuihin jos siella ei ole lukuja.
+
+    Sallittu: `toFixed(3)`, `>= 3`, `* 100` — kokonaisluvut ovat kynnyksia ja
+    muotoiluargumentteja. Kielletty: desimaaliluku (`4.77`), joka on aina
+    mittaustulos. Negatiivinen kontrolli: testi kaatuu jos sellainen
+    lisataan takaisin (todennettu mutaatiolla)."""
+    import re, config
+    p = (config.PROJECT_ROOT / "web" / "pro-spa" / "src" / "routes" / "spl"
+         / "+page.svelte")
+    src = p.read_text(encoding="utf-8")
+    alku = src.index("{#if recon}")
+    # 🔴 Ensimmainen versio haki lopuksi seuraavan "<section>":n — mutta lohko
+    # ALKAA sellaisella, joten viipale oli kaytannossa tyhja ja portti
+    # lapaisi mutaatiotestin. Lohko paattyy YLATASON `{/if}`:iin, joka on
+    # sisennetty yhdella tabilla (sisemmat ovat syvemmalla).
+    loppu = src.index("\n\t{/if}", alku)
+    lohko = src[alku:loppu]
+    assert len(lohko) > 2000, f"viipale on liian lyhyt ({len(lohko)}) — rakenne muuttui"
+    # Kommentit pois: perustelut saavat sisaltaa mitattuja lukuja.
+    lohko = re.sub(r"<!--.*?-->", "", lohko, flags=re.S)
+    desimaalit = re.findall(r"(?<![\w.])\d+\.\d+", lohko)
+    assert not desimaalit, (
+        f"SPL-recon-lohkossa on kasin kirjoitettuja desimaalilukuja "
+        f"{desimaalit} — jokaisen luvun on tultava artefaktista")

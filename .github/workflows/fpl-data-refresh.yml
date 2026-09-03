@@ -253,6 +253,26 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_spl_xp
 
+      # 3.9: SPL:n clean sheet -tasmaytys RULLAA kierroksen mukana. Se oli
+      # kerta-ajo (GW = 1 moduulivakiona) ja sivu tarjosi GW1:n track
+      # recordia kun kausi oli kierroksessa 5. Kaksi askelta: --extract
+      # vendoroi puuttuvan deadline-snapshotin git-historiasta (viimeinen
+      # artefakticommit ENNEN avauspotkua), sitten build laskee uusimman
+      # ratkenneen kierroksen ja kauden yhteisluvut. Ajetaan phase0:n
+      # JALKEEN, koska snapshot poimitaan phase0-artefaktin historiasta, ja
+      # ENNEN page-basis-synkkaa. Puuttuva snapshot kaataa buildin
+      # tarkoituksella (osittaista track recordia ei julkaista);
+      # continue-on-error jattaa vanhan artefaktin voimaan.
+      - name: Vendor missing SPL deadline snapshots
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_spl_recon --extract
+
+      - name: Build SPL clean sheet reconciliation
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_spl_recon
+
       # 3.9: SPL-sivun datapohjalause ARTEFAKTISTA. Sivu on kasin
       # yllapidetty ja sanoi "two seasons" kun fitissa oli jo kolme kautta
       # ja 36 taman kauden ottelua. Luku ei saa elaa kasin kirjoitettuna
@@ -467,11 +487,20 @@ jobs:
           # Tausta: founder_entry.json puuttui .gitignoren !-poikkeuksista →
           # git add exit 1 → shell `-e` tappoi stepin → projektiot, price watch
           # ja leaders jäivät pushaamatta 4 ajossa (~14 h vanhaa dataa).
-          for f in data/fpl_price_accuracy.json data/fpl_xp_gw_accuracy.json data/founder_entry.json data/spl_projections_phase0.json data/spl_xp_projections.json; do
+          # 3.9: `spl.html` ja `data/spl_recon.json` LISATTIIN TANNE. Ilman
+          # niita `update_spl_page_basis` ja `build_spl_recon` kirjoittivat
+          # runnerin levylle ja EI MIHINKAAN — askel nayttti lokissa
+          # onnistuneelta ja sivu jai paikalleen. Sama luokka kuin 2.8:n
+          # `git add` -aukko yllä.
+          for f in data/fpl_price_accuracy.json data/fpl_xp_gw_accuracy.json data/founder_entry.json data/spl_projections_phase0.json data/spl_xp_projections.json data/spl_recon.json spl.html; do
             [ -f "$f" ] || continue
             git add "$f" || echo "::warning::git add $f epäonnistui (gitignore?) — muu data pushataan silti"
           done
           [ -d data/fpl_xp_frozen ] && git add data/fpl_xp_frozen
+          # 3.9: SPL:n deadline-snapshotit (yksi per ratkennut kierros).
+          # Ilman committia `--extract` vendoroi ne joka ajossa uudelleen ja
+          # rullaava track record jaisi runnerin levylle.
+          [ -d data/spl_deadline_snapshots ] && git add data/spl_deadline_snapshots
           # 13.8 (BTM V2 a): mallirivin freeze — sama kohtelu kuin xP-freezella.
           [ -d data/model_squad_frozen ] && git add data/model_squad_frozen
           # 13.8 (BTM V2 b): gradatut pisteet, append-only.

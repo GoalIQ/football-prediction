@@ -3193,6 +3193,41 @@ def update_index_leagues(api_base: str = "https://api.goaliq.app") -> bool:
     return True
 
 
+def sync_index_articles() -> bool:
+    """Splissaa VAIN etusivun featured-lohkon `data/fpl_notes.json`:sta.
+
+    Miksi tama on erillaan `update_index`ista (3.9.2026, Villen havainto):
+    uusi muistio julkaistiin klo 09:23 UTC, mutta etusivulle se paatyi vasta
+    12:15 UTC kun ajastettu geo-refresh sattui ajamaan. Kolme tuntia sivun
+    "Latest from the model" -kortti nimesi 21.8 kirjoitetun muistion. Lohko oli
+    automaatiossa, mutta automaatio oli AJASTIN eika julkaisun osa — ja ajastin
+    on ollut mitatusti 5-12 h myohassa 27.8 alkaen.
+
+    Tama funktio ei tarvitse FPL-dataa eika verkkoa, joten se voi ajaa samassa
+    committiassa kuin muistio itse:
+
+        .venv/Scripts/python.exe -c "from scripts.build_fpl_page import             sync_index_articles; sync_index_articles()"
+
+    Palauttaa True kun tiedosto muuttui.
+    """
+    idx = ROOT / "index.html"
+    s = idx.read_text(encoding="utf-8")
+    block = latest_articles_block(_load_json(NOTES_PATH))
+    if not block:
+        return False
+    new, n = re.subn(
+        r"(<!-- GEN:LATEST-ARTICLES-START -->).*?(<!-- GEN:LATEST-ARTICLES-END -->)",
+        lambda m: m.group(1) + block + m.group(2), s, flags=re.S)
+    if n != 1:
+        raise RuntimeError(
+            f"index.html GEN:LATEST-ARTICLES: odotettiin 1 markerilohko, "
+            f"loytyi {n}")
+    if new == s:
+        return False
+    idx.write_text(new, encoding="utf-8", newline="\n")
+    return True
+
+
 def update_index(c: dict, xp: dict | None = None) -> bool:
     """Täytä index.html:n GEN:ACC-markerit tuoreilla accuracy-luvuilla.
     Sama lähde ja refresh-tahti kuin fpl.html (ei staleja kovakoodauksia)."""

@@ -71,9 +71,11 @@ INSEASON_KEY = "2627"
 BLEND_N_MIN = 6
 RESULTS_CSV = config.PROJECT_ROOT / "data" / "spl_results.csv"
 OUT_PATH = config.PROJECT_ROOT / "data" / "spl_projections_phase0.json"
-# GW1-täsmäytysartefakti (scripts/build_spl_recon.py) — liitetään metaan
-# jos olemassa, ks. kommentti meta-lohkossa.
-RECON_PATH = config.PROJECT_ROOT / "data" / "spl_gw1_recon.json"
+# Kierrostäsmäytysartefakti (scripts/build_spl_recon.py) — liitetään metaan
+# jos olemassa, ks. kommentti meta-lohkossa. 3.9: oli `spl_gw1_recon.json`,
+# eli kerta-ajo joka jäätyi kauden avaukseen. Nyt tiedosto kantaa uusimman
+# ratkenneen kierroksen JA kauden yhteisluvut.
+RECON_PATH = config.PROJECT_ROOT / "data" / "spl_recon.json"
 
 # ---------------------------------------------------------------------------
 # Joukkuemappaus: SPL-fantasy-APIn short_name → mallin nimi (= ESPN:n
@@ -549,13 +551,13 @@ def main() -> int:
             "horizon_max": _horizon_span(team_view),
             "near_horizon_gw": NEAR_HORIZON_GW,
             "far_basis_label": FAR_BASIS_LABEL,
-            # SPL-GW1-RECON (20.8): kierrostäsmäytys kulkee metassa jotta
-            # SPA saa sen ilman uutta endpointtia. Artefakti on erillisen
-            # kerta-ajon tulos (scripts/build_spl_recon.py) eikä synny tässä
-            # ajossa — puuttuva tiedosto = ei avainta, sivu ei renderöi
-            # lohkoa. Se on tarkoituksellista fail-quietia: täsmäytys on
-            # historiallinen fakta eikä refreshin oma tuotos, joten sen
-            # puuttuminen ei saa estää projektiorefreshiä.
+            # SPL-RECON (20.8, rullaava 3.9): kierrostäsmäytys kulkee
+            # metassa jotta SPA saa sen ilman uutta endpointtia. Artefakti
+            # syntyy omassa ajossaan (scripts/build_spl_recon.py), joka on
+            # 3.9 alkaen samassa refreshissä tämän jälkeen — puuttuva
+            # tiedosto = ei avainta, sivu ei renderöi lohkoa. Fail-quiet on
+            # tarkoituksellista: täsmäytys on toteutunut fakta eikä
+            # projektio, joten sen puuttuminen ei saa estää refreshiä.
             **(
                 {"gw_reconciliation": json.loads(RECON_PATH.read_text(encoding="utf-8"))}
                 if RECON_PATH.exists() else {}
