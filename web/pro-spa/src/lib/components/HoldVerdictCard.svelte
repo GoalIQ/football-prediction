@@ -48,6 +48,23 @@
 			: `the ${verdict.horizon_gws}-GW horizon`
 	);
 	const span = $derived(nMoves > 1 ? '' : ` over ${gwSpan}`);
+	// 3.9 (siirtokynnys, kohta 4 + julkaisuportti B5/B6): hold-haaran mathrivi
+	// KORVATAAN per-kierros-lauseella kun backend lahettaa paatosluvun ja
+	// SOVELLETUN riman. Ei lisata viidetta sanamuotoa samalle kortille: sama
+	// vaite eli 29.8 seitsemalla renderointipolulla ja portti loysi joka
+	// kierroksella yhden lisaa. Luku ja rima tulevat samasta lohkosta kuin
+	// vertailu (`best_move_case`), joten kortti ei voi vaittaa vertailua jota
+	// ei tehty. Rate-team ei laheta naita kenttia -> vanha rivi, kuten ennen.
+	const perGw = $derived(verdict.best_move_gain_xp_per_gw);
+	const perGwBar = $derived(verdict.applied_bar_xp_per_gw);
+	const bestCase = $derived(verdict.best_move_case ?? null);
+	const bestWindow = $derived(
+		verdict.best_move_window_gws && verdict.best_move_window_gws.length > 0
+			? verdict.best_move_window_gws.length > 1
+				? `GW${verdict.best_move_window_gws[0]}-GW${verdict.best_move_window_gws[verdict.best_move_window_gws.length - 1]}`
+				: `GW${verdict.best_move_window_gws[0]}`
+			: gwSpan
+	);
 	const planLabel = $derived(
 		nMoves > 1
 			? `Best plan the model checked (${nMoves} moves across ${gwSpan})`
@@ -69,7 +86,13 @@
 		     "beats" olisi yha vaara: suunnitelma voittaa, mutta ei tarpeeksi. -->
 		<p class="title">Hold - nothing the model checked gains enough</p>
 		<p class="math">
-			{#if gainText === null}
+			{#if bestCase === 'below_bar' && perGw != null && perGwBar != null}
+				Best move the model checked: {perGw >= 0 ? '+' : ''}{perGw.toFixed(2)} xP per gameweek over
+				{bestWindow}, under your {perGwBar.toFixed(2)} threshold. Hold and bank the transfer.
+			{:else if bestCase === 'later'}
+				Best move the model checked pays off later than {bestWindow}. Hold and bank the transfer,
+				you can still buy him then.
+			{:else if gainText === null}
 				Nothing the model checked improves your projected xP over {gwSpan}.
 			{:else}
 				{planLabel}: {gainText} xP{span}{hitNote}, below the {verdict.threshold_xp.toFixed(1)} xP

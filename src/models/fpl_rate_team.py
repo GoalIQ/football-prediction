@@ -60,9 +60,36 @@ XI_MAX = {1: 1, 2: 5, 3: 5, 4: 3}
 MAX_PER_CLUB = 3
 BUDGET_TENTHS = 1000  # 100.0 m — satunnaisotoksen budjettiraja
 
+# ---------------------------------------------------------------------------
+# 🔴 YKSI KYNNYS, KAKSI IKKUNAA (3.9.2026, spec kohta 5)
+#
+# Samalla ruudulla oli kaksi lukua jotka antoivat eri vastauksen: hero-verdikti
+# `HOLD_THRESHOLD_XP = 2.0` (koko horisontti) sanoi "hold", ja suunnitelma
+# listasi nelja siirtoa koska sen oma kynnys `MIN_GAIN_PER_TRANSFER = 0.5` oli
+# eri luku eri ikkunassa. Lukija ei voi paatella kumpi on tuotteen kanta.
+#
+# Nyt molemmat johdetaan TASTA yhdesta luvusta, ja luku on ilmaistu siina
+# yksikossa jossa se on luettavissa: xP per kierros. "0.5 xP kuudella
+# kierroksella" on 0.08/GW eika tarkoita lukijalle mitaan.
+#
+# Luvun perustelu (`cos-reports/siirtomoottorin-paatoskynnykset.md` + 3.9
+# pyyhkaisy 4 entrylla x ft 0/1/3/5): kynnysten 0.75-2.0 ero moottorin omalla
+# mittarilla on korkeintaan 1.3 xP / 6 kierrosta, kun saman mittarin oma
+# kohinakaista on +-10.62 p. Ero EI erotu kohinasta, joten valinta tehdaan
+# silla mika erottuu: vahemman siirtoja, vahemman churnia ja sailytetty
+# optioarvo. 0.5/GW = 1.0 lahi-ikkunalle (2 GW) ja 3.0 horisontille (6 GW).
+DECISION_BAR_XP_PER_GW = 0.5
+# Kuinka monta kierrosta hero-verdikti kattaa (xP-artefaktin horisontti).
+HOLD_HORIZON_GWS = 6
 # "Hold"-kynnys: paras yksittäisen siirron horisontti-xP-delta alle tämän →
-# suositus on pitää joukkue (siirto ei ole hitin arvoinen; -4 p ≈ 2 GW:n etu).
-HOLD_THRESHOLD_XP = 2.0
+# suositus on pitää joukkue. JOHDETTU, ei oma vakio (oli 2.0).
+HOLD_THRESHOLD_XP = round(DECISION_BAR_XP_PER_GW * HOLD_HORIZON_GWS, 2)
+
+
+def hold_threshold_for(n_gws: int | None) -> float:
+    """Hold-kynnys annetulle ikkunalle, samasta per-kierros-luvusta."""
+    n = HOLD_HORIZON_GWS if not n_gws or n_gws <= 0 else int(n_gws)
+    return round(DECISION_BAR_XP_PER_GW * n, 2)
 # FPL:n siirtohitti (-4 p). #63: hold_verdict lasketaan hitin JÄLKEEN —
 # ilman vapaata siirtoa (ft=0) netto = delta - 4. fpl_planner käyttää samaa
 # arvoa (HIT_COST importataan täältä).
@@ -1017,7 +1044,11 @@ def transfer_suggestions(squad: list[dict], pool: list[dict],
             "confidence_weight": m["confidence_weight"],
         })
     top = suggestions[:5]
-    hold = not top or top[0]["delta_xp_horizon"] < HOLD_THRESHOLD_XP
+    # Sama kynnys kuin hero-verdiktilla, samasta funktiosta ja SAMALLE
+    # ikkunalle (spec kohta 5: kaksi kynnysta samalla ruudulla antoi eri
+    # vastauksen samaan kysymykseen).
+    hold = not top or top[0]["delta_xp_horizon"] < hold_threshold_for(
+        len(gws) if gws else HOLD_HORIZON_GWS)
     return {
         "suggestions": top,
         "hold": hold,
@@ -1056,19 +1087,25 @@ def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
     span = (f"GW{gws[0]}-GW{gws[-1]}" if gws and len(gws) > 1
             else (f"GW{gws[0]}" if gws else f"the {horizon_gws}-GW horizon"))
     bounds = {"gw_from": gws[0], "gw_to": gws[-1]} if gws else {}
+    # 3.9 (spec kohta 5): kynnys on YKSI luku per kierros, kerrottuna sen
+    # ikkunan pituudella jota tama verdikti koskee. Kiintea 2.0 tarkoitti eri
+    # rimaa eri horisontilla (0.33/GW kuudella, 0.67/GW kolmella) vaikka
+    # lukija naki saman luvun.
+    bar = hold_threshold_for(len(gws) if gws else horizon_gws)
     if best_gain_xp is None:
         return {
             "verdict": "hold",
             "best_move_gain_xp": None,
             "horizon_gws": horizon_gws,
-            "threshold_xp": HOLD_THRESHOLD_XP,
+            "threshold_xp": bar,
+            "threshold_xp_per_gw": DECISION_BAR_XP_PER_GW,
             "hit_applied_xp": hit,
             "message": (f"No move the model checked improves your team over "
                         f"{span}."),
             **bounds,
         }
     net = round(best_gain_xp - hit, 2)
-    hold = net < HOLD_THRESHOLD_XP
+    hold = net < bar
     hit_note = " after a -4 hit" if hit else ""
     if hold:
         message = (f"The best move the model checked gains only {net:+.1f} xP "
@@ -1080,7 +1117,8 @@ def build_hold_verdict(best_gain_xp: float | None, horizon_gws: int,
         "verdict": "hold" if hold else "transfer",
         "best_move_gain_xp": net,
         "horizon_gws": horizon_gws,
-        "threshold_xp": HOLD_THRESHOLD_XP,
+        "threshold_xp": bar,
+        "threshold_xp_per_gw": DECISION_BAR_XP_PER_GW,
         "hit_applied_xp": hit,
         "message": message,
         **bounds,

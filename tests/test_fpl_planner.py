@@ -98,7 +98,14 @@ def test_plan_hold_verdict_best_squad_holds():
     assert hv["transfers_planned"] == 0
     assert hv["best_move_gain_xp"] is None
     assert hv["horizon_gws"] == 3
-    assert hv["threshold_xp"] == rt.HOLD_THRESHOLD_XP
+    # 3.9: kynnys on per kierros (DECISION_BAR_XP_PER_GW) kerrottuna ikkunalla,
+    # ei kiintea luku joka tarkoitti eri rimaa eri horisontilla.
+    assert hv["threshold_xp"] == rt.hold_threshold_for(3)
+    # 3.9 (julkaisuportti B2): pinnalle menee SOVELLETTU rima, ei
+    # moduulivakio — kynnys on entry-kohtainen (ft + rungon tila), ja
+    # moduulivakio olisi ollut tosi vain yhdelle managerityypille viidesta.
+    assert "applied_bar_xp_per_gw" in hv
+    assert "best_move_case" in hv
     # 29.8: aiemmin tassa luki `assert "holding" in message`. Se ei mitannut
     # vaitteen TARKKUUTTA, ja lause "No transfer beats your team" laksi
     # tarkastamattomana ulos viidelle pinnalle. Nyt mitataan kaksi asiaa:

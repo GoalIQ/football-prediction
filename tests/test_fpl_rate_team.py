@@ -205,8 +205,12 @@ def test_hold_when_no_meaningful_upgrade():
 
 # Heikko runko (per positio poolin huonoimmat) — jaettu myös planner-testeihin
 WEAK_SQUAD_IDS = [3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 28, 29, 30]
-# Runko jossa paras upgrade on FWD 28 (4.6/GW) -> 27 (5.0/GW) = +2.4 xP gross
-# 6 GW:lle: ft=1 -> netto 2.4 >= kynnys 2.0 (transfer); ft=0 -> 2.4-4 = -1.6 (hold)
+# Runko jossa paras upgrade on FWD 28 (4.6/GW) -> 27 (5.0/GW) = +2.4 xP gross.
+# 3.9: kynnys nousi 2.0 -> 3.0 (0.5/GW x 6 GW), joten +2.4 on nyt riman ALLA
+# molemmilla ft-arvoilla. Fixture-poolin xP-hajonta ei salli isompaa YKSITTAISEN
+# siirron XI-hyotya (mitattu: koko poolin maksimi on 2.4), joten kynnyksen
+# ylittava flippi testataan `build_hold_verdict`illa suoraan — pooli ei voi
+# ilmaista sita, ja sen teeskentely olisi ollut fixturen vaaristamista.
 NEAR_OPTIMAL_SQUAD_IDS = [1, 2, 5, 6, 7, 8, 9, 15, 16, 17, 18, 19, 25, 26, 28]
 
 
@@ -246,18 +250,39 @@ def test_hold_verdict_weak_team_transfers():
 
 
 def test_hold_verdict_hit_aware():
-    # (c) siirto joka voittaa brutto +2.4 xP: ft=1 -> transfer;
-    # ft=0 -> -4 hitti -> netto -1.6 -> HOLD (hit-tietoisuus)
+    # (c) hit-tietoisuus END-TO-END: sama runko, ft=1 vs ft=0 -> netto putoaa
+    # tasan hitin verran ja lause nimeaa hitin.
     with_ft = rt.rate_team(players=NEAR_OPTIMAL_SQUAD_IDS, bank=0.0, ft=1)
-    assert with_ft["transfers"]["hold_verdict"]["verdict"] == "transfer"
-    assert with_ft["transfers"]["hold_verdict"]["best_move_gain_xp"] == 2.4
+    gross = with_ft["transfers"]["hold_verdict"]["best_move_gain_xp"]
+    assert with_ft["transfers"]["hold_verdict"]["hit_applied_xp"] == 0.0
 
     no_ft = rt.rate_team(players=NEAR_OPTIMAL_SQUAD_IDS, bank=0.0, ft=0)
     hv = no_ft["transfers"]["hold_verdict"]
-    assert hv["verdict"] == "hold"
     assert hv["hit_applied_xp"] == rt.HIT_COST_XP
-    assert hv["best_move_gain_xp"] == round(2.4 - rt.HIT_COST_XP, 2)
+    assert hv["best_move_gain_xp"] == round(gross - rt.HIT_COST_XP, 2)
+    assert hv["verdict"] == "hold"
     assert "hit" in hv["message"]
+
+
+def test_hold_verdict_flippaa_kynnyksen_ymparilla():
+    """(c2) Verdiktin flippi kynnyksen ymparilla, hitti mukaan luettuna.
+
+    3.9: fixture-pooli ei voi tuottaa kynnyksen (3.0) ylittavaa YKSITTAISEN
+    siirron XI-hyotya — poolin maksimi on 2.4 — joten flippi mitataan siita
+    funktiosta joka sen tekee. Ilman tata kynnyksen nosto olisi jaanyt
+    mittaamatta juuri silta osin jota se koskee.
+    """
+    bar = rt.hold_threshold_for(6)
+    over = rt.build_hold_verdict(bar + 0.5, 6, ft=1)
+    assert over["verdict"] == "transfer" and over["threshold_xp"] == bar
+    under = rt.build_hold_verdict(bar - 0.1, 6, ft=1)
+    assert under["verdict"] == "hold"
+    # Sama brutto, ei vapaata siirtoa -> hitti vie sen riman alle.
+    hit = rt.build_hold_verdict(bar + 0.5, 6, ft=0)
+    assert hit["verdict"] == "hold"
+    assert hit["hit_applied_xp"] == rt.HIT_COST_XP
+    # Ikkuna skaalaa riman: puolet kierroksista, puolet rimasta.
+    assert rt.build_hold_verdict(bar + 0.5, 3)["threshold_xp"] ==         rt.hold_threshold_for(3)
 
 
 def test_hold_verdict_ft_validation():
@@ -274,6 +299,7 @@ def test_hold_verdict_golden_master_entry():
         "best_move_gain_xp": None,
         "horizon_gws": 6,
         "threshold_xp": rt.HOLD_THRESHOLD_XP,
+        "threshold_xp_per_gw": rt.DECISION_BAR_XP_PER_GW,
         "hit_applied_xp": 0.0,
         # 29.8: "No transfer beats your team" oli vaara kahdesta syysta.
         # Rate-team tutkii VAIN yksittaisia siirtoja (single_moves), joten
@@ -350,14 +376,25 @@ def test_endpoint_bad_players_param(client):
 
 
 def test_endpoint_hold_verdict_and_ft_param(client):
-    # #63: hold_verdict kulkee endpointin läpi + ft=0 flippaa hit-tietoisesti
+    # #63: hold_verdict kulkee endpointin läpi + ft=0 flippaa hit-tietoisesti.
+    # 3.9: verdikti on molemmilla ft-arvoilla hold (poolin paras siirto 2.4 <
+    # kynnys 3.0), joten endpointista mitataan se mika siina on mitattavaa:
+    # kentat kulkevat lapi ja ft muuttaa hittia. Kynnyksen flippi:
+    # `test_hold_verdict_flippaa_kynnyksen_ymparilla`.
     ids = ",".join(str(i) for i in NEAR_OPTIMAL_SQUAD_IDS)
     r1 = client.get(f"/api/fantasy/rate-team?players={ids}&bank=0")
     assert r1.status_code == 200
-    assert r1.json()["transfers"]["hold_verdict"]["verdict"] == "transfer"
+    hv1 = r1.json()["transfers"]["hold_verdict"]
+    assert hv1["hit_applied_xp"] == 0.0
+    assert hv1["threshold_xp"] == rt.HOLD_THRESHOLD_XP
+    assert hv1["threshold_xp_per_gw"] == rt.DECISION_BAR_XP_PER_GW
     r0 = client.get(f"/api/fantasy/rate-team?players={ids}&bank=0&ft=0")
     assert r0.status_code == 200
-    assert r0.json()["transfers"]["hold_verdict"]["verdict"] == "hold"
+    hv0 = r0.json()["transfers"]["hold_verdict"]
+    assert hv0["verdict"] == "hold"
+    assert hv0["hit_applied_xp"] == rt.HIT_COST_XP
+    assert hv0["best_move_gain_xp"] == round(
+        hv1["best_move_gain_xp"] - rt.HIT_COST_XP, 2)
     r_bad = client.get(f"/api/fantasy/rate-team?players={ids}&ft=99")
     assert r_bad.status_code == 422  # FastAPI Query(le=5)
 

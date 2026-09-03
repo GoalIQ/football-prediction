@@ -132,6 +132,15 @@ export interface HoldVerdict {
 	 *  jolloin svelte-check oli punainen 7 virhetta eika mikaan ajanut sita. */
 	gw_from?: number | null;
 	gw_to?: number | null;
+	/** 3.9 (siirtokynnys, kohta 4): paras TARJOLLA oleva siirto per kierros,
+	 *  myos kun suositus on hold, + kynnys samassa yksikossa. Ilman naita
+	 *  "hold" ei kertonut kuinka paljon parhaasta siirrosta puuttui. */
+	best_move_gain_xp_per_gw?: number | null;
+	/** SOVELLETTU rima samassa yksikossa ja ikkunassa kuin luku yllä (ei
+	 *  moduulivakio: kynnys on entry-kohtainen, ks. transfer_bar). */
+	applied_bar_xp_per_gw?: number | null;
+	best_move_case?: 'below_bar' | 'over_bar' | 'later' | null;
+	best_move_window_gws?: number[] | null;
 	message: string;
 }
 

@@ -45,10 +45,45 @@ from __future__ import annotations
 import itertools
 
 from src.models.fpl_rate_team import (
-    HIT_COST_XP, MAX_PER_CLUB, POS_NAME, RateTeamError, _best_split, _gw_xp,
+    DECISION_BAR_XP_PER_GW, HIT_COST_XP, MAX_PER_CLUB, POS_NAME, RateTeamError,
+    _best_split, _gw_xp, hold_threshold_for,
 )
 
-MIN_GAIN_PER_TRANSFER = 0.5
+# ---------------------------------------------------------------------------
+# PAATOSKYNNYKSET (3.9.2026, Villen GO — `cos-reports/siirtomoottorin-
+# paatoskynnykset.md` sisaltaa kaikki mittaukset)
+#
+# 🔴 MITATTU, EI VALITTU. Entry 116920, suunnittelu GW3:sta, ft=1:
+#     kynnys 0.5 -> 4 siirtoa, +3.27 xP     kynnys 1.0 -> 3 siirtoa, +3.53 xP
+# Vahemman siirtoja JA enemman hyotya moottorin omalla mittarilla. Syy nakyy
+# sisallossa: 0.5 osti Mosqueran GW4 (+0.70) ja myi hanet GW8 (+0.66), eli
+# kaksi siirtoa paatyakseen sinne minne olisi paassyt suoraan.
+# 🔴 JOHDETTU, ei oma vakio (spec kohta 5): sama per-kierros-luku kuin
+# hero-verdiktin `HOLD_THRESHOLD_XP`, kerrottuna LAHI-ikkunalla. Naita kahta
+# ei voi enaa asettaa toisistaan riippumatta — se oli koko kohdan 5 vika.
+MIN_GAIN_PER_TRANSFER = round(DECISION_BAR_XP_PER_GW * 2, 2)
+# Hitti on ERI PAATOS kuin vapaa siirto, joten sille on oma vakio. Vanha saanto
+# oli `netto = hyoty - 4.0 >= 0.5` eli hyoty >= 4.5 — mutta kahden pelaajan
+# erotuksen keskihajonta YHDELLA kierroksella on +-4.34 p (mitattu GW1+GW2,
+# n=607). Tuote otti varman -4:n kolikonheitosta.
+MIN_GAIN_FOR_HIT = 6.0
+# Lahi-ikkuna: paatos tehdaan seuraavista kierroksista, ei kuuden summasta.
+# Jos pelaaja on parempi vasta GW7:ssa, hanet voi ostaa GW6:ssa ja pitaa
+# siirron siihen asti — horisonttisumma kohtelee "osta nyt" ja "osta myohemmin"
+# samana vaikka jalkimmainen sailyttaa option. Horisontti jaa RANKKAUKSEEN.
+NEAR_WINDOW_GWS = 2
+# Hitille ei riita etta lahi-ikkuna on positiivinen: -4 maksetaan nyt, joten
+# valtaosan hyodysta on tultava nyt.
+NEAR_SHARE_FOR_HIT = 0.5
+# FPL:n saanto, ei malliparametri: vapaasiirtopankin katto.
+FT_CARRY_MAX = 5
+# Pankki katossa: kayttamatta jattaminen HUKKAA seuraavan kertymän, joten
+# siirron marginaalihinta on nolla -> ota mika tahansa aito parannus.
+BAR_BANK_FULL = 0.01
+# 3-4 siirtoa pankissa: jousto ei ole niukkaa, rima puolittuu.
+BAR_BANK_DEEP_FACTOR = 0.5
+# Korjaus ei ole optimointi: pelaaja jota ei voi pelata on 0 xP joka kierros.
+BAR_REPAIR = 0.01
 MAX_TRANSFERS_PER_GW = 2
 TOP_CANDIDATES_PER_POS = 12
 # 🔴 MITATTU 3.9.2026 (Villen GO), oli 0.75 OLETUKSENA.
@@ -99,6 +134,123 @@ def confidence_weight(p: dict) -> float:
     if p.get("is_promoted"):
         return LOW_CONFIDENCE_WEIGHT
     return 1.0
+
+
+def placeholder_player(pid: int, bootstrap: dict) -> dict | None:
+    """Rungon pelaaja JOLLE EI OLE PROJEKTIOTA, poolin muodossa ja 0 xP:lla.
+
+    🔴 MIKSI TAMA ON OLEMASSA (3.9.2026, spec kohta 6b). xP-artefakti pudottaa
+    pelaajan jonka FPL-saatavuus on i/s/u/n, ja `plan_transfers` rakensi
+    rungon poolista — eli loukkaantunut tai liigasta lahtenyt pelaaja EI OLLUT
+    RUNGOSSA moottorin silmissa lainkaan. Silloin moottori ei voinut ehdottaa
+    hanen myymistaan: se myi jonkun muun. Korjaus jonka pitaisi olla helpoin
+    suositus koko tuotteessa oli rakenteellisesti mahdoton.
+
+    Placeholder tuo hanet takaisin rungon jasenena arvolla 0 (mika han on):
+    hanta ei koskaan valita XI:hin, ja hanen korvaamisensa saa `transfer_bar`in
+    korjausriman (`needs_repair`).
+    """
+    el = {e["id"]: e for e in (bootstrap.get("elements") or [])}.get(pid)
+    if not el:
+        return None
+    teams = {int(t["id"]): (t.get("short_name") or t.get("name") or "")
+             for t in (bootstrap.get("teams") or [])}
+    return {
+        "id": pid,
+        "web_name": el.get("web_name") or str(pid),
+        "team_short": teams.get(int(el.get("team") or 0), ""),
+        "element_type": el.get("element_type"),
+        "club": el.get("team"),
+        "price": el.get("now_cost") or 0,
+        "owned_pct": 0.0,
+        "xp_per_gw": 0.0,
+        "xp_horizon_total": 0.0,
+        "gameweeks": [],
+        "status": el.get("status"),
+        "chance_next": el.get("chance_of_playing_next_round"),
+        "news": el.get("news"),
+        # Lippu jonka `needs_repair` lukee. EI `status`in varassa: FPL voi
+        # merkita pelaajan "a":ksi ja artefakti pudottaa hanet silti (xP alle
+        # min_xp_total), ja hanen korvaamisensa on silti korjaus.
+        "no_projection": True,
+    }
+
+
+def near_gws(gws: list[int] | None) -> list[int] | None:
+    """Lahi-ikkuna: kierrokset joista paatos tehdaan (None = ei ikkunaa)."""
+    if not gws:
+        return None
+    return list(gws[:NEAR_WINDOW_GWS])
+
+
+def needs_repair(p: dict) -> bool:
+    """Onko lahtija pelaaja jota EI VOI PELATA (korjaus, ei optimointi).
+
+    Kolme lahdetta: (1) rungon pelaaja jolle ei ole projektiota lainkaan
+    (`no_projection`, ks. `placeholder_player`) — FPL:n saatavuusportti on
+    pudottanut hanet artefaktista; (2) projektiohetken status muu kuin "a";
+    (3) `chance_next == 0`. Kaikissa hanen xP:nsa on nolla joka kierros, eika
+    haneen verrattua "hyotya" kuulu mitata samalla rimalla kuin toimivaan
+    pelaajaan.
+    """
+    if p.get("no_projection"):
+        return True
+    if (p.get("status") or "a") != "a":
+        return True
+    if p.get("chance_next") == 0:
+        return True
+    return False
+
+
+def transfer_bar(ft_left: int, *, entry_known: bool = True,
+                 repair: bool = False,
+                 near_len: int = NEAR_WINDOW_GWS) -> dict:
+    """🔴 YKSI LUKIJA paatoskynnykselle. Kaikki siirtopaatokset lukevat taman.
+
+    Palauttaa `min_net` (verrataan siirron `net`-lukuun), `min_gain` (sama
+    rima ennen hitin vahennysta, naytolle) ja `reason` (miksi tama rima).
+
+    KYNNYS ON ENTRY-KOHTAINEN (Villen lisays 3.9). Sama +0.8 xP:n siirto on
+    eri paatos eri managerille, ja ero on laskettavissa entryn omasta tilasta
+    eika ole makuasia:
+
+      ft = 0      hitti — oma rima (MIN_GAIN_FOR_HIT), eri paatos
+      ft >= 5     pankki katossa: kayttamatta jattaminen hukkaa kertyman,
+                  marginaalihinta 0 -> ota mika tahansa aito parannus
+      ft = 3-4    jousto ei ole niukkaa -> rima puolittuu
+      ft = 1-2    siirto on ainoa jousto ensi viikkoon -> taysi rima
+      korjaus     pelaaja jota ei voi pelata -> matalin rima (ei koske
+                  hittia: -4 maksetaan silti nyt)
+
+    NEGATIIVINEN KONTROLLI: `entry_known=False` (manual/draft-moodi, ei
+    `ft`-tietoa) palauttaa AINA moduulivakion. Kynnys ei saa muuttua siella
+    missa entryn tilaa ei tunneta.
+
+    `near_len` on ikkunan pituus kierroksina. Rima on YKSI luku per kierros
+    (`DECISION_BAR_XP_PER_GW`), joten se kerrotaan ikkunalla — lyhyella
+    horisontilla sama vakio olisi ollut kaksi kertaa tiukempi kuin miksi se
+    on kirjoitettu.
+    """
+    n = max(1, int(near_len or 1))
+    full = round(DECISION_BAR_XP_PER_GW * n, 4)
+    if ft_left <= 0:
+        return {"min_gain": MIN_GAIN_FOR_HIT,
+                "min_net": round(MIN_GAIN_FOR_HIT - HIT_COST_XP, 4),
+                "hit": True, "reason": "hit"}
+    if not entry_known:
+        return {"min_gain": full, "min_net": full,
+                "hit": False, "reason": "default"}
+    if repair:
+        return {"min_gain": BAR_REPAIR, "min_net": BAR_REPAIR,
+                "hit": False, "reason": "repair"}
+    if ft_left >= FT_CARRY_MAX:
+        return {"min_gain": BAR_BANK_FULL, "min_net": BAR_BANK_FULL,
+                "hit": False, "reason": "bank_full"}
+    if ft_left >= 3:
+        v = round(full * BAR_BANK_DEEP_FACTOR, 4)
+        return {"min_gain": v, "min_net": v, "hit": False, "reason": "bank_deep"}
+    return {"min_gain": full, "min_net": full,
+            "hit": False, "reason": "default"}
 
 
 def optimal_xi_by_key(squad: list[dict], key) -> list[dict]:
@@ -173,7 +325,9 @@ def _apply(squad: list[dict], outs: list[dict], ins: list[dict]) -> list[dict]:
     return [p for p in squad if p["id"] not in out_ids] + list(ins)
 
 
-def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float) -> dict:
+def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float,
+          gain_near: float | None = None,
+          gain_near_weighted: float | None = None) -> dict:
     """🔴 3.9 ILTA (Villen loydos): rivi ei ollut luettavissa.
 
     Rivi nayttti `gain -0.87`, `gain_weighted +4.84` ja `confidence_weight 1.0`,
@@ -194,6 +348,17 @@ def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float) -> di
         "gain_weighted": round(gain_w, 4),   # paatosluku
         "hit": hit,
         "net": round(gain_w - hit, 4),
+        # Lahi-ikkunan hyoty (NEAR_WINDOW_GWS ensimmaista kierrosta). Tama on
+        # se luku josta paatos tehdaan; `gain` on horisontti eli rankkaus.
+        # None = ikkunaa ei annettu (rate-teamin lista, ei paatos).
+        "gain_near": None if gain_near is None else round(gain_near, 4),
+        "gain_near_weighted": (None if gain_near_weighted is None
+                               else round(gain_near_weighted, 4)),
+        # Paatosluku VAPAALLE siirrolle: lahi-ikkunan hyoty hitin jalkeen.
+        # Hitti paattaa horisontista (`net`) + lahi-ikkunan osuusehdosta, koska
+        # -4 on kertakustannus koko horisontille — ks. `transfer_bar`.
+        "net_near": (None if gain_near_weighted is None
+                     else round(gain_near_weighted - hit, 4)),
         "confidence_weight": w_in,
         "confidence_weight_in": w_in,
         "confidence_weight_out": w_out,
@@ -206,7 +371,9 @@ def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float) -> di
 
 def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
                  gws: list[int] | None, *, top_k: int = 5,
-                 top_per_pos: int = TOP_CANDIDATES_PER_POS) -> list[dict]:
+                 top_per_pos: int = TOP_CANDIDATES_PER_POS,
+                 near: list[int] | None = None,
+                 near_min_share: float = 0.0) -> list[dict]:
     """Parhaat yksittaiset siirrot painotetulla XI-hyodylla, laskevasti.
 
     Eksakti kandidaattijoukon sisalla: raakaerotus on XI-hyodyn ylaraja
@@ -216,6 +383,12 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
     Kandidaatit per lahtija: saman position top_per_pos parasta
     painotetulla ikkuna-xP:lla joihin budjetti riittaa (bank + lahtijan
     hinta), max 3/klubi vaihdon jalkeen.
+
+    `near` (3.9): lahi-ikkuna josta PAATOS tehdaan. Kun se annetaan, siirto
+    kelpaa vain jos se parantaa joukkuetta jo siella — horisontti jaa
+    rankkaukseen. `near_min_share` vaatii lisaksi ettei hyoty ole horisontin
+    hannassa (hitille NEAR_SHARE_FOR_HIT). Ilman `near`ia kaytos on entinen:
+    tama funktio on myos rate-teamin LISTA, eika lista ole paatos.
     """
     squad_ids = {p["id"] for p in squad}
     clubs = _club_counts(squad)
@@ -258,7 +431,18 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
         if gain_w <= 0:
             continue
         gain = xi_value(new_squad, gws, weighted=False) - base_plain
-        scored.append(_move(out_p, in_p, gain, gain_w, 0.0))
+        gain_near = gain_near_w = None
+        if near:
+            gain_near_w = (xi_value(new_squad, near, weighted=True)
+                           - xi_value(squad, near, weighted=True))
+            if gain_near_w <= 0:
+                continue
+            if near_min_share > 0 and gain_near_w < near_min_share * gain_w:
+                continue
+            gain_near = (xi_value(new_squad, near, weighted=False)
+                         - xi_value(squad, near, weighted=False))
+        scored.append(_move(out_p, in_p, gain, gain_w, 0.0,
+                            gain_near, gain_near_w))
         scored.sort(key=lambda m: m["gain_weighted"], reverse=True)
         del scored[top_k:]
     return scored
@@ -266,7 +450,9 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
 
 def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
               gws: list[int] | None, *,
-              top_per_pos: int = TOP_CANDIDATES_PER_POS) -> dict | None:
+              top_per_pos: int = TOP_CANDIDATES_PER_POS,
+              near: list[int] | None = None,
+              near_min_share: float = 0.0) -> dict | None:
     """Paras kahden siirron yhdistelma (painotettu XI-hyoty), tai None.
 
     Budjettiehto on YHDISTELMALLE: bank + lahtijoiden hinnat >= tulijoiden
@@ -279,6 +465,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
     clubs = _club_counts(squad)
     base = xi_value(squad, gws, weighted=True)
     base_plain = None
+    base_near = xi_value(squad, near, weighted=True) if near else 0.0
     wval = {p["id"]: window_xp(p, gws) * confidence_weight(p) for p in pool}
     for p in squad:
         wval.setdefault(p["id"], window_xp(p, gws) * confidence_weight(p))
@@ -333,6 +520,16 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
         gain_w = xi_value(new_squad, gws, weighted=True) - base
         if gain_w <= 0:
             continue
+        # Lahi-ikkunan ehto (3.9): sama saanto kuin yksittaiselle siirrolle.
+        # Ilman tata pari olisi ollut portti jonka lapi horisontin hannan
+        # liikkeet olisivat palanneet takaisin.
+        gain_near_w = None
+        if near:
+            gain_near_w = xi_value(new_squad, near, weighted=True) - base_near
+            if gain_near_w <= 0:
+                continue
+            if near_min_share > 0 and gain_near_w < near_min_share * gain_w:
+                continue
         if best is None or gain_w > best["gain_weighted"]:
             if base_plain is None:
                 base_plain = xi_value(squad, gws, weighted=False)
@@ -343,19 +540,89 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
             if (o1["price"] - i1["price"]) < (o2["price"] - i2["price"]):
                 first, second = second, first
             best = {"moves": [first, second], "gain": round(gain, 4),
-                    "gain_weighted": round(gain_w, 4), "evals": evals}
+                    "gain_weighted": round(gain_w, 4), "evals": evals,
+                    "gain_near_weighted": (None if gain_near_w is None
+                                           else round(gain_near_w, 4))}
     return best
+
+
+def best_move_summary(squad: list[dict], pool: list[dict], bank_tenths: int,
+                      gws: list[int] | None, ft: int, *,
+                      entry_known: bool = True,
+                      top_per_pos: int = TOP_CANDIDATES_PER_POS) -> dict | None:
+    """Paras TARJOLLA oleva siirto — SAMALLA lukijalla jolla paatos tehdaan.
+
+    🔴 MIKSI TAMA ON OMA FUNKTIO (julkaisuportti 3.9, loydokset B1-B3).
+    Ensimmainen versio haki taman luvun `single_moves`illa ILMAN lahi-ikkunaa
+    ja vertasi sita moduulivakioon, kun taas paatos tehtiin lahi-ikkunalla ja
+    entry-kohtaisella rimalla. Lause "under the 0.50 bar" saattoi siis
+    tulostua luvulle 1.33 — tuote olisi kertonut kayttajalle etta 1,33 on
+    alle 0,50. Portti rakensi tapauksen ja ajoi sen.
+
+    Palauttaa `case`n joka on PAATELTY vertailusta, ei muotoiltu lauseeseen:
+      "below_bar" paras siirto jai oman rimansa alle
+      "over_bar"  paras siirto ylittaa riman (suunnitelma ottaa sen)
+      "later"     lahi-ikkunassa ei ole hyotya, horisontissa on
+      None        mikaan siirto ei paranna joukkuetta
+    Arvo ja rima ovat AINA samassa yksikossa ja samasta ikkunasta.
+    """
+    near = near_gws(gws)
+    win = near if near else (gws or [])
+    n_win = max(1, len(win))
+    bar = transfer_bar(ft, entry_known=entry_known, near_len=n_win)
+    # Hitti on horisonttipaatos (-4 maksetaan kerran koko horisontille),
+    # vapaa siirto lahi-ikkunapaatos. Ikkuna valitaan riman mukaan, ei
+    # toisin pain — muuten luku ja rima olisivat eri ikkunasta.
+    if bar["hit"]:
+        win = list(gws or [])
+        n_win = max(1, len(win))
+    best = single_moves(squad, pool, bank_tenths, gws, top_k=1,
+                        top_per_pos=top_per_pos,
+                        near=None if bar["hit"] else near)
+    if best:
+        m = best[0]
+        value = (m["gain_weighted"] - HIT_COST_XP if bar["hit"]
+                 else (m["gain_near_weighted"] if m["gain_near_weighted"] is not None
+                       else m["gain_weighted"]))
+        return {
+            "case": "below_bar" if value < bar["min_net"] else "over_bar",
+            "value_xp": round(value, 2),
+            "value_xp_per_gw": round(value / n_win, 2),
+            "bar_xp": round(bar["min_net"], 2),
+            "bar_xp_per_gw": round(bar["min_net"] / n_win, 2),
+            "window_gws": list(win),
+            "bar_reason": bar["reason"],
+            "out": m["out"], "in": m["in"],
+        }
+    # Lahi-ikkuna tyhjeni: onko hyotya myohemmin?
+    later = single_moves(squad, pool, bank_tenths, gws, top_k=1,
+                         top_per_pos=top_per_pos)
+    if later:
+        return {"case": "later", "value_xp": None, "value_xp_per_gw": None,
+                "bar_xp": round(bar["min_net"], 2),
+                "bar_xp_per_gw": round(bar["min_net"] / n_win, 2),
+                "window_gws": list(near or gws or []),
+                "bar_reason": bar["reason"],
+                "out": later[0]["out"], "in": later[0]["in"]}
+    return None
 
 
 def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             gws: list[int] | None, ft: int, *,
             max_moves: int = MAX_TRANSFERS_PER_GW,
-            top_per_pos: int = TOP_CANDIDATES_PER_POS) -> dict:
+            top_per_pos: int = TOP_CANDIDATES_PER_POS,
+            entry_known: bool = True) -> dict:
     """Yhden kierroksen siirrot samoilla saannoilla kaikille pinnoille.
 
     Palauttaa {"moves": [...], "squad", "bank_tenths", "ft_left", "hits"}.
     Jokainen move: out, in, gain (painottamaton XI-hyoty), gain_weighted,
-    hit, net, confidence_weight, pos, pair (bool).
+    gain_near (lahi-ikkuna, paatosluku), hit, net, confidence_weight, pos,
+    pair (bool), bar (kynnys josta paatos tehtiin).
+
+    3.9: paatos tehdaan LAHI-IKKUNASTA (`near_gws`) ja kynnys tulee
+    `transfer_bar`ista, joka on entry-kohtainen (ft + rungon tila).
+    `entry_known=False` = manual/draft-moodi -> moduulivakio, kayttaytyminen
+    tasmalleen entinen.
     """
     squad = list(squad)
     bank = bank_tenths
@@ -366,27 +633,62 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
     def _hit_for(n_free_used: int) -> float:
         return 0.0 if fts - n_free_used > 0 else HIT_COST_XP
 
+    near = near_gws(gws)
     while len(moves) < max_moves:
-        singles = single_moves(squad, pool, bank, gws, top_k=1,
-                               top_per_pos=top_per_pos)
+        # Hitin lahi-ikkunavaatimus on tiukempi: -4 maksetaan nyt.
+        share = NEAR_SHARE_FOR_HIT if fts <= 0 else 0.0
+        # top_k=3 eika 1: paras horisonttisiirto voi kaatua omaan kynnykseensa
+        # (esim. optimointi taydella rimalla) kun seuraava lapaisisi omansa
+        # (korjaus matalalla rimalla). Yhdella kandidaatilla korjaus ei olisi
+        # koskaan loytynyt.
+        singles = single_moves(squad, pool, bank, gws, top_k=3,
+                               top_per_pos=top_per_pos,
+                               near=near, near_min_share=share)
         best_single = None
-        if singles:
-            s = singles[0]
+        for cand in singles:
             hit = _hit_for(0)
-            s = _move(s["out"], s["in"], s["gain"], s["gain_weighted"], hit)
-            if s["net"] >= MIN_GAIN_PER_TRANSFER:
-                best_single = s
+            m = _move(cand["out"], cand["in"], cand["gain"],
+                      cand["gain_weighted"], hit,
+                      cand.get("gain_near"), cand.get("gain_near_weighted"))
+            bar = transfer_bar(fts, entry_known=entry_known,
+                               repair=needs_repair(cand["out"]),
+                               near_len=len(near) if near else 1)
+            # 🔴 IKKUNA JA KYNNYS SAMASTA YKSIKOSTA. Vapaan siirron rima on
+            # LAHI-ikkunan luku (1.0 = 0.5/GW x 2 GW); horisontin summaan
+            # verrattuna sama luku olisi 0.17/GW eli loysempi kuin miksi se
+            # on kirjoitettu. Hitti on eri paatos: -4 maksetaan kerran koko
+            # horisontille, joten sen rima on horisontissa (`net`) ja
+            # lahi-ikkunan osuusehto hoidetaan hakuvaiheessa.
+            decide = m["net"] if bar["hit"] else (
+                m["net_near"] if m["net_near"] is not None else m["net"])
+            if decide >= bar["min_net"]:
+                m["bar"] = bar
+                best_single = m
+                break
 
         chosen: list[dict] = []
         if max_moves - len(moves) >= 2:
-            pr = best_pair(squad, pool, bank, gws, top_per_pos=top_per_pos)
+            pr = best_pair(squad, pool, bank, gws, top_per_pos=top_per_pos,
+                           near=near, near_min_share=share)
             if pr is not None:
                 hit_a = _hit_for(0)
                 hit_b = _hit_for(1)
                 net_pair = pr["gain_weighted"] - hit_a - hit_b
-                floor = (best_single["net"] + MIN_GAIN_PER_TRANSFER
-                         if best_single is not None
-                         else 2 * MIN_GAIN_PER_TRANSFER)
+                if not (hit_a or hit_b) and pr.get("gain_near_weighted") is not None:
+                    net_pair = pr["gain_near_weighted"]
+                (_o1, _i1), (_o2, _i2) = pr["moves"]
+                pair_bar = transfer_bar(
+                    fts, entry_known=entry_known,
+                    repair=needs_repair(_o1) or needs_repair(_o2),
+                    near_len=len(near) if near else 1)
+                _bs = None
+                if best_single is not None:
+                    _bs = (best_single["net"] if pair_bar["hit"]
+                           else (best_single["net_near"]
+                                 if best_single["net_near"] is not None
+                                 else best_single["net"]))
+                floor = (_bs + pair_bar["min_net"] if _bs is not None
+                         else 2 * pair_bar["min_net"])
                 if net_pair >= floor:
                     (o1, i1), (o2, i2) = pr["moves"]
                     # Parin hyoty jaetaan nayttoon siirroittain: ensimmainen
@@ -400,6 +702,11 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                     m1 = _move(o1, i1, g1, g1w, hit_a)
                     m2 = _move(o2, i2, pr["gain"] - g1, pr["gain_weighted"] - g1w, hit_b)
                     m1["pair"] = m2["pair"] = True
+                    # Pari arvioitiin YHTENA paatoksena: lahi-ikkunan luku ja
+                    # kynnys ovat parin omat, ei kummankaan siirron erikseen.
+                    m1["bar"] = m2["bar"] = pair_bar
+                    m1["gain_near_weighted"] = m2["gain_near_weighted"] = (
+                        pr.get("gain_near_weighted"))
                     chosen = [m1, m2]
         if not chosen and best_single is not None:
             best_single["pair"] = False

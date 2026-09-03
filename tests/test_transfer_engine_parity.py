@@ -101,17 +101,27 @@ def test_freeze_uses_same_engine_as_planner():
 
 
 # ---------------------------------------------------------------------------
-# 2. Hit-saanto on yksi: netto >= 0.5
+# 2. Hitilla on OMA rima (3.9): gain >= MIN_GAIN_FOR_HIT, ei netto >= 0.5
+#
+# Vanha luku oli 4.5 (netto 0.5 hitin jalkeen). Kahden pelaajan erotuksen
+# keskihajonta YHDELLA kierroksella on +-4.34 p (mitattu GW1+GW2, n=607),
+# joten tuote otti varman -4:n kolikonheitosta. Uusi rima 6.0 on eri paatos
+# eika sama luku kuin vapaalle siirrolle.
 # ---------------------------------------------------------------------------
 def test_hit_needs_net_gain_over_min():
     m = _load_freeze()
     squad = _legal_squad()
-    # +4.3 brutto: vanha freeze otti hitin (4.3 > 4.0), moottori ei (netto 0.3)
+    # +4.3 brutto: vanha freeze otti hitin (4.3 > 4.0), moottori ei
     pool = squad + [_p(90, 3, 50, 9.3)]
     out = m._constrained_from_prev(_prev_from(squad), pool, 2, ft=0)
     assert out["transfers"] == [] and out["hits"] == 0
-    # +4.6 brutto -> netto 0.6 >= 0.5 -> hitti otetaan
+    # +4.6 brutto: VANHA saanto olisi ottanut hitin (netto 0.6 >= 0.5),
+    # uusi ei — 4.6 on kohinakaistan sisalla.
     pool = squad + [_p(90, 3, 50, 9.6)]
+    out = m._constrained_from_prev(_prev_from(squad), pool, 2, ft=0)
+    assert out["transfers"] == [] and out["hits"] == 0
+    # +6.5 brutto -> yli riman (6.0) -> hitti otetaan
+    pool = squad + [_p(90, 3, 50, 11.5)]
     out = m._constrained_from_prev(_prev_from(squad), pool, 2, ft=0)
     assert [t["in"] for t in out["transfers"]] == [90]
     assert out["hits"] == 1 and out["transfers"][0]["hit"] is True

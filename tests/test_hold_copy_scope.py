@@ -45,7 +45,13 @@ SCANNED = [
 NOT_SCANNED: dict[str, str] = {}
 
 BANNED = {
-    r"Best available": "kattavuusvaite: malli hakee vain osan vaihtoehdoista",
+    # 3.9 (julkaisuportti B4): kuvio oli `Best available` ja se on SUBSTRING-
+    # sokea. Kirjoitin "Best move available" ja hylatty kattavuusvaite palasi
+    # tuotantoon VIHREAN portin lapi — sama kuvio kuin muistissa
+    # [gate-substring-osuma-on-sokea]. Nyt sanojen valiin mahtuu jotain.
+    r"\bBest\b[^.\n]{0,24}\bavailable\b": (
+        "kattavuusvaite: malli hakee vain osan vaihtoehdoista "
+        "(kayta 'Best move the model checked')"),
     r"No available move": "sama kattavuusvaite kielletyssa muodossa",
     r"\bbeats your team\b": "ylikvanttori, korvattu muodolla 'the model checked'",
     r"\bbeats my team\b": "ylikvanttori jakokortilla",
@@ -167,6 +173,25 @@ def scan(text_lines: list[tuple[int, str]]) -> list[str]:
             if re.search(pat, ln):
                 hits.append(f"rivi {lineno}: {pat} ({why}) -> {ln.strip()[:100]}")
     return hits
+
+
+def test_portti_osuu_hylattyyn_sanamuotoon():
+    """NEGATIIVINEN KONTROLLI portille itselleen (3.9).
+
+    3.9 kirjoitin `Best move available` ja portti oli vihrea: kuvio oli
+    `Best available`, eika substring-osuma nae sanaa valissa. Portti joka ei
+    osu on portti jota ei ole, ja se loytyy vain nain: syota sille rivi jonka
+    sen PITAA hylata.
+    """
+    for bad in ("Best move available: +0.19 xP per gameweek",
+                "Best available plan (3 moves)",
+                "Best single move available this week",
+                "No available move improves your team"):
+        assert scan([(1, bad)]), f"portti EI osunut: {bad}"
+    # ...eika osu sallittuun muotoon (muuten portti kieltaisi kaiken)
+    for ok in ("Best move the model checked: +0.06 xP per gameweek",
+               "No move the model checked improves your projected xP"):
+        assert not scan([(1, ok)]), f"portti osui sallittuun: {ok}"
 
 
 def test_tuotantopinnat_ovat_skoopattuja():
