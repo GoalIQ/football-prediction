@@ -243,26 +243,21 @@ jobs:
       # continue-on-error: SPL EI saa koskaan kaataa FPL-refreshiä (Villen ehto:
       # FPL-GW1-prep SPL:n edellä). SPL-gate-FAIL → vanha SPL-data jää voimaan
       # ja warning näkyy; FPL-data pushautuu normaalisti.
-      - name: Build SPL Phase 0 projections (CS% + FDR)
-        if: steps.guard.outputs.proceed == 'true'
-        continue-on-error: true
-        run: python -m scripts.build_spl_phase0
-
-      - name: Build SPL xP projections
-        if: steps.guard.outputs.proceed == 'true'
-        continue-on-error: true
-        run: python -m scripts.build_spl_xp
-
       # 3.9: SPL:n clean sheet -tasmaytys RULLAA kierroksen mukana. Se oli
       # kerta-ajo (GW = 1 moduulivakiona) ja sivu tarjosi GW1:n track
-      # recordia kun kausi oli kierroksessa 5. Kaksi askelta: --extract
-      # vendoroi puuttuvan deadline-snapshotin git-historiasta (viimeinen
-      # artefakticommit ENNEN avauspotkua), sitten build laskee uusimman
-      # ratkenneen kierroksen ja kauden yhteisluvut. Ajetaan phase0:n
-      # JALKEEN, koska snapshot poimitaan phase0-artefaktin historiasta, ja
-      # ENNEN page-basis-synkkaa. Puuttuva snapshot kaataa buildin
-      # tarkoituksella (osittaista track recordia ei julkaista);
-      # continue-on-error jattaa vanhan artefaktin voimaan.
+      # recordia kun kausi oli kierroksessa 5.
+      #
+      # 🔴 JARJESTYS ON OSA KORJAUSTA. Tama ajetaan ENNEN build_spl_phase0:aa,
+      # koska phase0 upottaa reconin metaansa (`gw_reconciliation`) ja API
+      # tarjoilee sen SIELTA, ei `spl_recon.json`:sta. Toisin pain phase0
+      # upottaisi aina EDELLISEN ajon reconin, eli sivu olisi pysyvasti yhden
+      # ajon jaljessa. Sama vika osui kasin 3.9: korjasin `naive_note`n,
+      # regeneroin reconin, mutta en phase0:aa — ja tuotanto tarjoili vanhaa
+      # lausetta. Snapshotit poimitaan phase0-artefaktin GIT-HISTORIASTA, ei
+      # levylla olevasta tiedostosta, joten tama ei tarvitse tuoretta phase0:aa.
+      #
+      # Puuttuva snapshot kaataa buildin tarkoituksella (osittaista track
+      # recordia ei julkaista); continue-on-error jattaa vanhan voimaan.
       - name: Vendor missing SPL deadline snapshots
         if: steps.guard.outputs.proceed == 'true'
         continue-on-error: true
@@ -272,6 +267,16 @@ jobs:
         if: steps.guard.outputs.proceed == 'true'
         continue-on-error: true
         run: python -m scripts.build_spl_recon
+
+      - name: Build SPL Phase 0 projections (CS% + FDR)
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_spl_phase0
+
+      - name: Build SPL xP projections
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_spl_xp
 
       # 3.9: SPL-sivun datapohjalause ARTEFAKTISTA. Sivu on kasin
       # yllapidetty ja sanoi "two seasons" kun fitissa oli jo kolme kautta

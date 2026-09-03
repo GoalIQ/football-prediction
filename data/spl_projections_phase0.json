@@ -4,7 +4,7 @@
     "available": true,
     "phase": 0,
     "league": "SAU-Saudi Pro League",
-    "generated_at": "2026-09-03T16:32:29",
+    "generated_at": "2026-09-03T17:18:51",
     "season": "2026/27",
     "source": "spl-fantasy-api",
     "fixture_source": "RSL Fantasy official API (fantasy.spl.com.sa)",
@@ -76,7 +76,7 @@
         "inseason_matches_in_fit": 26
       },
       "naive_p": 0.2394,
-      "naive_note": "Constant probability equal to the clean sheet share in the same two-season history the model is fitted on.",
+      "naive_note": "Constant probability equal to the clean sheet share in the two completed seasons before this one. The model is fitted on those plus the matches played so far this season.",
       "top3": [
         {
           "team": "Al Ahli (at KLD)",
@@ -288,7 +288,7 @@
       "actual_cs": 5,
       "brier": 0.2158,
       "naive_brier": 0.1876,
-      "generated_at": "2026-09-03T13:30:17+00:00"
+      "generated_at": "2026-09-03T13:51:18+00:00"
     },
     "todo": []
   },

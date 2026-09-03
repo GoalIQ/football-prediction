@@ -385,6 +385,15 @@ def test_recon_flows_to_spl_meta(client):
     assert served["expected_cs"] == r["expected_cs"]
     assert served["actual_cs"] == r["actual_cs"]
     assert served["brier"] == r["brier"]
+    # 🔴 3.9 ILTA: kolme lukua ei riita. Korjasin `naive_note`n ja regeneroin
+    # reconin, mutta en phase0:aa — ja koska API tarjoilee reconin phase0:n
+    # METAN sisalta, tuotanto tarjoili viela vanhaa lausetta jonka
+    # julkaisuportti oli juuri blokannut. Luvut tasmasivat koko ajan.
+    # Vertaa KOKO lohko: upotettu kopio ei saa erota lahteesta miltaan osin.
+    assert served == r, (
+        "phase0:n metaan upotettu gw_reconciliation ei ole sama kuin "
+        "data/spl_recon.json — aja build_spl_recon ENNEN build_spl_phase0:aa "
+        "ja committaa molemmat")
 
 
 def test_spl_recon_lohkossa_ei_ole_kasin_kirjoitettuja_lukuja():
