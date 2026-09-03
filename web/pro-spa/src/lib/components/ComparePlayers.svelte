@@ -9,6 +9,7 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, shareCompareCard, shareButtonLabel} from '$lib/shareCard';
 	import { startPct } from '$lib/startPct';
+	import { currentEntryId } from '$lib/fplEntry.svelte';
 
 	// Valinnat populoituvat jo ladatusta xP-datasta (sama prop kuin XpTable) -
 	// ei erillistä pelaajahakua eikä käsin syötettäviä ID:itä.
@@ -64,7 +65,8 @@
 		loading = true;
 		error = null;
 		try {
-			data = await fetchComparePlayers(picked);
+			// MY-TEAM-CONTEXT (3.9): entry mukaan -> owned per pelaaja.
+			data = await fetchComparePlayers(picked, currentEntryId());
 		} catch (err) {
 			data = null;
 			error = err instanceof Error ? err.message : String(err);
@@ -271,7 +273,10 @@
 	<div class="cmp-grid">
 		{#each data.players as p (p.id)}
 			<div class="card cmp-card" class:winner={p.id === data.verdict.pick.id}>
-				<h3>{p.web_name} <span class="muted">({p.team_short}, {p.pos})</span></h3>
+				<h3>
+					{p.web_name} <span class="muted">({p.team_short}, {p.pos})</span>{#if p.owned}
+						<span class="own-badge" title="In your squad">owned</span>{/if}
+				</h3>
 				<dl>
 					<div><dt>Total xP, next {data.meta.horizon_gw ?? 6} GWs</dt><dd class="strong">{p.xp_horizon_total.toFixed(2)}</dd></div>
 					<div><dt>xP per GW</dt><dd>{p.xp_per_gw.toFixed(2)}</dd></div>
@@ -375,6 +380,17 @@
 	}
 	.cmp-card h3 {
 		margin-top: 0;
+	}
+	.own-badge {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 0 6px;
+		border-radius: var(--radius);
+		border: 1px solid rgba(0, 148, 130, 0.4);
+		color: var(--positive);
+		font-size: var(--step--1);
+		font-weight: 700;
+		vertical-align: middle;
 	}
 	dl {
 		margin: 0 0 var(--s-3);

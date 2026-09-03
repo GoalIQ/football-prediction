@@ -22,6 +22,14 @@ import { fetchOwnProfileRow, invalidateProfileRow } from './profileRow';
 
 const VALID = /^\d{1,10}$/;
 
+/** MY-TEAM-CONTEXT (3.9): entry-ID jota työkalut lähettävät `?entry=`-
+ *  parametrina. Kentän arvo voittaa, tallennettu on fallback. null kun
+ *  kumpikaan ei ole validi: työkalu toimii silloin kuten ennen. */
+export function currentEntryId(): number | null {
+	const raw = (fplEntry.entry || fplEntry.savedEntry || '').trim();
+	return VALID.test(raw) ? Number(raw) : null;
+}
+
 export const fplEntry = $state({
 	/** Jaettu kenttäarvo (RateTeam + TransferPlanner bindaavat tähän). */
 	entry: '',

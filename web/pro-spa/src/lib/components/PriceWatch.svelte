@@ -2,16 +2,33 @@
 	import { fetchPriceWatch, confBand, type PriceWatchResponse, type PriceMove } from '$lib/fantasyTools';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
+	import { currentEntryId } from '$lib/fplEntry.svelte';
 
 	let data = $state<PriceWatchResponse | null>(null);
 	let error = $state<string | null>(null);
 
+	// MY-TEAM-CONTEXT (3.9): jaettu entry mukaan -> omat rivit merkitään.
 	$effect(() => {
-		fetchPriceWatch().then(
+		const entry = currentEntryId();
+		fetchPriceWatch(entry).then(
 			(d) => (data = d),
 			(e) => (error = e instanceof Error ? e.message : String(e))
 		);
 	});
+
+	const owned = $derived(data?.owned ?? null);
+	function ownedLine(o: NonNullable<PriceWatchResponse['owned']>): string {
+		const parts: string[] = [];
+		if (o.n_tonight > 0) {
+			parts.push(`${o.n_tonight} of your ${o.squad_size} move tonight`);
+		}
+		const rest = o.n_rising + o.n_falling - o.n_tonight;
+		if (rest > 0) {
+			parts.push(`${rest} more on watch`);
+		}
+		if (parts.length === 0) return `None of your ${o.squad_size} are on these lists.`;
+		return parts.join(', ') + '.';
+	}
 
 	const STATUS_LABEL: Record<string, string> = {
 		rising_soon: 'Rising soon',
@@ -123,7 +140,8 @@
 							{@const band = confBand(r.confidence)}
 							<tr>
 								<td
-									>{r.web_name}{#if r.already_changed_today}
+									>{r.web_name}{#if r.owned}
+										<span class="own-badge" title="In your squad">owned</span>{/if}{#if r.already_changed_today}
 										<span class="muted"> (changed today)</span>{/if}</td
 								>
 								<td class="num">{r.now_cost.toFixed(1)}</td>
@@ -180,6 +198,20 @@
 		{data.meta.note ?? 'No price change candidates right now. Check back later.'}
 	</p>
 {:else}
+	{#if owned}
+		<!-- MY-TEAM-CONTEXT (3.9): omat 15 listoilla, nimet mukana -->
+		<p class="owned-line">
+			<strong>{ownedLine(owned)}</strong>
+			{#if owned.rising.length > 0}
+				<span class="muted">Rising: {owned.rising.map((m) => m.web_name).join(', ')}.</span>
+			{/if}
+			{#if owned.falling.length > 0}
+				<span class="muted">Falling: {owned.falling.map((m) => m.web_name).join(', ')}.</span>
+			{/if}
+		</p>
+	{:else if data.meta.squad && !data.meta.squad.available && data.meta.squad.note}
+		<p class="muted">Your squad was not read: {data.meta.squad.note}</p>
+	{/if}
 	<div class="watch-grid">
 		{@render moveTable('Risers', data.risers)}
 		{@render moveTable('Fallers', data.fallers)}
@@ -258,5 +290,18 @@
 	}
 	.disclaimer {
 		margin-top: var(--s-3);
+	}
+	.owned-line {
+		margin: 0 0 var(--s-3);
+	}
+	.own-badge {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 0 6px;
+		border-radius: var(--radius);
+		border: 1px solid rgba(0, 148, 130, 0.4);
+		color: var(--positive);
+		font-size: var(--step--1);
+		font-weight: 700;
 	}
 </style>

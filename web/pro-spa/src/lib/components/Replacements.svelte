@@ -8,6 +8,7 @@
 	import PlayerSearch, { type SearchItem } from './PlayerSearch.svelte';
 	import { shareCard, shareButtonLabel } from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
+	import { currentEntryId } from '$lib/fplEntry.svelte';
 
 	/* ROWAN-REPLACEMENTS (2.9.2026): "who replaces X". Luoja (Rowan) maaritteli
 	 * muodon itse: Player -> same price bracket -> next 5 GWs -> top 5
@@ -67,7 +68,9 @@
 		loading = true;
 		error = null;
 		try {
-			data = await fetchReplacements(target.id, gws, bracket);
+			// MY-TEAM-CONTEXT (3.9): entry mukaan -> hinnan ylaraja = bank +
+			// lahtijan hinta kun han on rungossa, omistetut pois ehdokkaista.
+			data = await fetchReplacements(target.id, gws, bracket, currentEntryId());
 		} catch (err) {
 			data = null;
 			error = err instanceof Error ? err.message : String(err);
@@ -100,6 +103,8 @@
 	);
 	let nextN = $derived(data ? data.meta.gws.length : gws);
 	let dropped = $derived(data?.meta.availability_gate?.dropped ?? []);
+	let squad = $derived(data?.meta.squad ?? null);
+	let hasSquad = $derived(squad?.available === true);
 
 	// Kortti = se nakyma jonka jakaja katsoi: kohde, haarukka ja ikkuna
 	// otsikossa, jotta lista ei vaita olevansa "parhaat korvaajat" yleisesti.
@@ -210,6 +215,13 @@
 			<span class="muted">· {data.target.chance_next}% chance of playing the next round</span>
 		{/if}
 	</p>
+	{#if hasSquad && data.meta.budget_note}
+		<p class="muted">
+			{#if data.meta.target_owned}<span class="own-badge">in your squad</span> {/if}{data.meta.budget_note}
+		</p>
+	{:else if squad && !squad.available && squad.note}
+		<p class="muted">Your squad was not read: {squad.note}</p>
+	{/if}
 	{#if data.meta.bracket_widened}
 		<p class="muted">
 			No one within ±{data.meta.bracket_requested.toFixed(1)}m of {data.target.price.toFixed(1)}m.
@@ -374,5 +386,14 @@
 	}
 	.small {
 		font-size: var(--step--1);
+	}
+	.own-badge {
+		display: inline-block;
+		padding: 0 6px;
+		border-radius: var(--radius);
+		border: 1px solid rgba(0, 148, 130, 0.4);
+		color: var(--positive);
+		font-size: var(--step--1);
+		font-weight: 700;
 	}
 </style>

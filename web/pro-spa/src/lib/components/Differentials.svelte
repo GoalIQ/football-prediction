@@ -3,6 +3,7 @@
 	import { fetchDifferentials, type DifferentialsResponse, type Pos } from '$lib/fantasyTools';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
+	import { currentEntryId } from '$lib/fplEntry.svelte';
 
 	const POSITIONS = ['All', 'GKP', 'DEF', 'MID', 'FWD'] as const;
 
@@ -16,6 +17,10 @@
 	// #71: delta-kentät + model_vs_crowd ovat optionaalisia kunnes backend on livenä
 	let hasDelta = $derived(data?.players.some((p) => p.model_vs_crowd_delta != null) ?? false);
 	let mvc = $derived(data?.model_vs_crowd ?? null);
+	// MY-TEAM-CONTEXT (3.9): omistetut pois listalta + template you are missing
+	let squad = $derived(data?.meta?.squad ?? null);
+	let hasSquad = $derived(squad?.available === true);
+	let templateMissing = $derived(data?.template_missing ?? []);
 
 	let sharing = $state(false);
 
@@ -56,7 +61,11 @@
 		loading = true;
 		error = null;
 		try {
-			data = await fetchDifferentials(maxOwnership, pos === 'All' ? null : (pos as Pos));
+			data = await fetchDifferentials(
+				maxOwnership,
+				pos === 'All' ? null : (pos as Pos),
+				currentEntryId()
+			);
 		} catch (err) {
 			data = null;
 			error = err instanceof Error ? err.message : String(err);
@@ -122,6 +131,14 @@
 {:else if data.players.length === 0}
 	<p class="muted">No players under {maxOwnership}% ownership match. Try a higher limit.</p>
 {:else}
+	{#if hasSquad}
+		<p class="muted">
+			Players you already own are left out{#if (data.meta.owned_excluded ?? 0) > 0}
+				({data.meta.owned_excluded} under this limit){/if}.
+		</p>
+	{:else if squad && !squad.available && squad.note}
+		<p class="muted">Your squad was not read: {squad.note}</p>
+	{/if}
 	<div class="table-wrap">
 		<table>
 			<thead>
@@ -177,6 +194,28 @@
 		</table>
 	</div>
 
+	{#if hasSquad}
+		<section class="mvc">
+			<h3>Template you are missing</h3>
+			{#if templateMissing.length === 0}
+				<p class="muted">You own every player above 20% ownership in this position filter.</p>
+			{:else}
+				<p class="muted">
+					The most owned players not in your squad. When one of them scores and you do not own
+					him, your rank slides.
+				</p>
+				<ul class="mvc-list">
+					{#each templateMissing as p (p.id)}
+						<li>
+							<span>{p.web_name} <span class="muted">{p.team_short} · {p.pos} · {p.price.toFixed(1)}m</span></span>
+							<span class="num">{p.owned_pct.toFixed(1)}% owned · {p.xp_horizon_total.toFixed(1)} xP</span>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</section>
+	{/if}
+
 	{#if mvc && (mvc.model_backs.length > 0 || mvc.crowd_backs.length > 0)}
 		<section class="mvc">
 			<h3>Where the model disagrees with the crowd</h3>
@@ -195,7 +234,10 @@
 						<ul class="mvc-list">
 							{#each mvc.model_backs as p (p.id)}
 								<li>
-									<span>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span></span>
+									<span
+										>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span>{#if p.owned}
+											<span class="own-badge">owned</span>{/if}</span
+									>
 									<span class="num"
 										>{p.owned_pct.toFixed(1)}% owned ·
 										<strong class="delta-pos"
@@ -215,7 +257,10 @@
 						<ul class="mvc-list">
 							{#each mvc.crowd_backs as p (p.id)}
 								<li>
-									<span>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span></span>
+									<span
+										>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span>{#if p.owned}
+											<span class="own-badge">owned</span>{/if}</span
+									>
 									<span class="num"
 										>{p.owned_pct.toFixed(1)}% owned ·
 										<strong class="delta-neg"
@@ -297,5 +342,15 @@
 		gap: var(--s-3);
 		padding: var(--s-2) 0;
 		border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+	}
+	.own-badge {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 0 6px;
+		border-radius: var(--radius);
+		border: 1px solid rgba(0, 148, 130, 0.4);
+		color: var(--positive);
+		font-size: var(--step--1);
+		font-weight: 700;
 	}
 </style>

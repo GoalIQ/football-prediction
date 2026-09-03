@@ -36,6 +36,17 @@ export type FantasyTool =
 
 export type Pos = 'GKP' | 'DEF' | 'MID' | 'FWD';
 
+/** MY-TEAM-CONTEXT (3.9): joukkuekonteksti metassa kun `entry` lähetettiin.
+ *  available=false = entry annettiin mutta joukkuetta ei saatu (esikausi,
+ *  väärä id); työkalu toimii silloin kuten ilman entryä ja `note` kertoo. */
+export interface SquadMeta {
+	available: boolean;
+	entry: number | null;
+	gw: number | null;
+	bank: number | null;
+	note: string | null;
+}
+
 /* ---------- rate-team ---------- */
 
 /** #123: yhden GW:n xp + vastustajat (DGW = useampi, blank = []). */
@@ -267,6 +278,15 @@ export interface PriceMove {
 	 *  Puuttuu kun luku tulee vanhasta velocity-arviosta — se ei voinut tietää
 	 *  päivää, ja puuttuva kenttä on eri asia kuin "ei lähipäivinä". */
 	eta_days?: number;
+	/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
+	owned?: boolean;
+}
+
+export interface PriceWatchOwnedMove {
+	id: number;
+	web_name: string;
+	status: string;
+	eta_days?: number | null;
 }
 
 export interface PriceWatchResponse {
@@ -275,6 +295,7 @@ export interface PriceWatchResponse {
 		generated_at: string | null;
 		disclaimer: string;
 		note?: string;
+		squad?: SquadMeta;
 		/** 22.8: true = rivit tulevat FPL:n omasta projektiosta, false/puuttuu
 		 *  = vanha velocity-arvio. Ohjaa sivun lupausta, siksi tyypitetty. */
 		official_projection?: boolean;
@@ -283,6 +304,16 @@ export interface PriceWatchResponse {
 	};
 	risers: PriceMove[];
 	fallers: PriceMove[];
+	/** MY-TEAM-CONTEXT (3.9): omat 15 listoilla. Puuttuu ilman entryä. */
+	owned?: {
+		squad_size: number;
+		rising: PriceWatchOwnedMove[];
+		falling: PriceWatchOwnedMove[];
+		n_rising: number;
+		n_falling: number;
+		n_tonight: number;
+		note: string;
+	};
 }
 
 /* ---------- transfer planner ---------- */
@@ -360,6 +391,8 @@ export interface DifferentialPlayer {
 	model_pct?: number;
 	crowd_pct?: number;
 	model_vs_crowd_delta?: number;
+	/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
+	owned?: boolean;
 }
 
 export interface ModelVsCrowd {
@@ -369,9 +402,19 @@ export interface ModelVsCrowd {
 }
 
 export interface DifferentialsResponse {
-	meta: { max_ownership: number; pos: string | null; horizon_gw?: number; [key: string]: unknown };
+	meta: {
+		max_ownership: number;
+		pos: string | null;
+		horizon_gw?: number;
+		squad?: SquadMeta;
+		owned_excluded?: number;
+		template_note?: string;
+		[key: string]: unknown;
+	};
 	players: DifferentialPlayer[];
 	model_vs_crowd?: ModelVsCrowd;
+	/** MY-TEAM-CONTEXT (3.9): korkeimman omistuksen pelaajat joita rungossa ei ole. */
+	template_missing?: DifferentialPlayer[];
 }
 
 /* ---------- replacements (ROWAN-REPLACEMENTS 2.9) ---------- */
@@ -441,6 +484,13 @@ export interface ReplacementsResponse {
 			note: string;
 		};
 		reason_note?: string;
+		/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
+		squad?: SquadMeta;
+		owned_excluded?: number;
+		target_owned?: boolean;
+		/** bank + lähtijän hinta kun lähtijä on rungossa, muuten null. */
+		budget?: number | null;
+		budget_note?: string;
 	};
 	target: ReplacementTarget;
 	players: ReplacementRow[];
@@ -471,10 +521,12 @@ export interface ComparePlayer {
 	prev_season?: string | null;
 	defcon_hit_rate_pct?: number | null;
 	defcon_dc_per_game?: number | null;
+	/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
+	owned?: boolean;
 }
 
 export interface CompareResponse {
-	meta: { horizon_gw?: number; [key: string]: unknown };
+	meta: { horizon_gw?: number; squad?: SquadMeta; [key: string]: unknown };
 	players: ComparePlayer[];
 	verdict: {
 		pick: { id: number; web_name: string };
@@ -545,8 +597,10 @@ export function fetchModelSquad(): Promise<ModelSquadResponse> {
 	return getTool('/api/fantasy/model-squad', 'model_squad');
 }
 
-export function fetchPriceWatch(): Promise<PriceWatchResponse> {
-	return getTool('/api/fantasy/price-watch', 'price_watch');
+/** entry valinnainen (MY-TEAM-CONTEXT 3.9): annettuna omat rivit merkitään. */
+export function fetchPriceWatch(entry?: number | null): Promise<PriceWatchResponse> {
+	const q = entry != null ? `?entry=${entry}` : '';
+	return getTool(`/api/fantasy/price-watch${q}`, 'price_watch');
 }
 
 export function fetchPlan(entry: number, horizon: number, ft: number): Promise<PlanResponse> {
@@ -577,25 +631,33 @@ export function fetchCaptain(entry: number): Promise<CaptainResponse> {
 
 export function fetchDifferentials(
 	maxOwnership: number,
-	pos: Pos | null
+	pos: Pos | null,
+	entry?: number | null
 ): Promise<DifferentialsResponse> {
 	const posQ = pos ? `&pos=${pos}` : '';
-	return getTool(`/api/fantasy/differentials?max_ownership=${maxOwnership}${posQ}`, 'differentials');
+	const entryQ = entry != null ? `&entry=${entry}` : '';
+	return getTool(
+		`/api/fantasy/differentials?max_ownership=${maxOwnership}${posQ}${entryQ}`,
+		'differentials'
+	);
 }
 
 export function fetchReplacements(
 	playerId: number,
 	gws = 5,
-	bracket = 0.5
+	bracket = 0.5,
+	entry?: number | null
 ): Promise<ReplacementsResponse> {
+	const entryQ = entry != null ? `&entry=${entry}` : '';
 	return getTool(
-		`/api/fantasy/replacements?player=${playerId}&gws=${gws}&bracket=${bracket}&top=5`,
+		`/api/fantasy/replacements?player=${playerId}&gws=${gws}&bracket=${bracket}&top=5${entryQ}`,
 		'replacements'
 	);
 }
 
-export function fetchComparePlayers(ids: number[]): Promise<CompareResponse> {
-	return getTool(`/api/fantasy/compare?players=${ids.join(',')}`, 'compare');
+export function fetchComparePlayers(ids: number[], entry?: number | null): Promise<CompareResponse> {
+	const entryQ = entry != null ? `&entry=${entry}` : '';
+	return getTool(`/api/fantasy/compare?players=${ids.join(',')}${entryQ}`, 'compare');
 }
 
 /* ---------- #127: value + GK rotation pairs (#114-web-pariteetti) ---------- */
@@ -617,6 +679,8 @@ export interface ValuePlayer {
 	 *  vanha payload ei tuo kumpaakaan. */
 	xmins?: number | null;
 	xp_per_90?: number | null;
+	/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
+	owned?: boolean;
 }
 
 export interface GkPair {
@@ -625,6 +689,21 @@ export interface GkPair {
 	gk_a: { id: number; web_name: string; team_short: string; price: number };
 	gk_b: { id: number; web_name: string; team_short: string; price: number };
 	gw_split: { gw: number; team_short: string; cs_pct: number }[];
+	/** 3.9: vain kun pari kattaa horisonttia vähemmän kierroksia (rankkaus
+	 *  painottaa: avg * common / horizon). */
+	common_gws?: number;
+	/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
+	transfers_needed?: 0 | 1 | 2;
+	affordable?: boolean;
+}
+
+/** Oma pari samalla kaavalla + sijoitus listalla (1 = paras). */
+export interface OwnGkPair extends GkPair {
+	common_gws: number;
+	transfers_needed: 0;
+	affordable: true;
+	rank: number;
+	of: number;
 }
 
 export interface ValueResponse {
@@ -635,11 +714,24 @@ export interface ValueResponse {
 		horizon_gw: number | null;
 		generated_at: string | null;
 		note: string;
+		squad?: SquadMeta;
 	};
 	players: ValuePlayer[];
 	gk: {
-		meta: { available: boolean; gw?: number | null; horizon_gw?: number | null; note: string };
+		meta: {
+			available: boolean;
+			gw?: number | null;
+			horizon_gw?: number | null;
+			note: string;
+			squad?: SquadMeta;
+			own_budget?: number;
+			own_note?: string;
+			own_pair_note?: string;
+		};
 		pairs: GkPair[];
+		/** MY-TEAM-CONTEXT (3.9): avain vain kun entry lähetettiin; null kun
+		 *  alle kahdella omalla vahdilla on CS-projektio (meta.own_pair_note). */
+		own_pair?: OwnGkPair | null;
 	};
 }
 
@@ -647,8 +739,9 @@ export interface ValueResponse {
  *  `top_n: int = Query(default=20, ge=1, le=100)`); 20 oli klientin oletus
  *  eika rajoite. 50 rivilla pelipaikkasuodatin antaa jokaiselle positiolle
  *  mielekkaan listan (20 rivista GKP-suodatin tuotti 1-2 rivia). */
-export function fetchValue(): Promise<ValueResponse> {
-	return getTool('/api/fantasy/value?top_n=50', 'value');
+export function fetchValue(entry?: number | null): Promise<ValueResponse> {
+	const entryQ = entry != null ? `&entry=${entry}` : '';
+	return getTool(`/api/fantasy/value?top_n=50${entryQ}`, 'value');
 }
 
 /* ---------- #124/#125: xG leaders + DefCon tracker ---------- */

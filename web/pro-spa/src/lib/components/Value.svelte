@@ -9,6 +9,7 @@
 	import { capture } from '$lib/analytics';
 	import { fetchValue, type ValueResponse } from '$lib/fantasyTools';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
+	import { currentEntryId } from '$lib/fplEntry.svelte';
 
 	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
@@ -33,9 +34,12 @@
 	let sortKey = $state<SortKey>('value');
 	let sharing = $state(false);
 
+	// MY-TEAM-CONTEXT (3.9): jaettu entry (Rate my team -kenttä / tallennettu)
+	// kulkee mukaan. Efekti lukee sen, joten kentän muutos hakee uudelleen.
 	$effect(() => {
+		const entry = currentEntryId();
 		loading = true;
-		fetchValue()
+		fetchValue(entry)
 			.then((d) => (data = d))
 			.catch((e) => (error = e instanceof Error ? e.message : String(e)))
 			.finally(() => (loading = false));
@@ -63,6 +67,16 @@
 			.sort((a, b) => v(b) - v(a) || b.value - a.value);
 	});
 	const pairs = $derived(data?.gk?.pairs ?? []);
+	const ownPair = $derived(data?.gk?.own_pair ?? null);
+	const squad = $derived(data?.gk?.meta?.squad ?? data?.meta?.squad ?? null);
+	const hasSquad = $derived(squad?.available === true);
+
+	function transfersLabel(n: number | undefined): string {
+		if (n === 0) return 'your pair';
+		if (n === 1) return 'needs 1 transfer';
+		if (n === 2) return 'needs 2 transfers';
+		return '';
+	}
 
 	function unlock() {
 		capture('upgrade_tapped', { source: 'fantasy_value' });
@@ -186,7 +200,10 @@
 					{#each visible as p, i (p.id)}
 						<tr>
 							<td class="muted">{i + 1}</td>
-							<td>{p.web_name} <span class="muted">({p.team_short})</span></td>
+							<td
+								>{p.web_name} <span class="muted">({p.team_short})</span>{#if p.owned}
+									<span class="own-badge" title="In your squad">owned</span>{/if}</td
+							>
 							<td class="m-hide">{p.pos}</td>
 							<td class="num m-hide">{p.price.toFixed(1)}</td>
 							<td class="num strong">{p.value.toFixed(2)}</td>
@@ -227,8 +244,26 @@
 			<h2 class="gk-title">GK rotation pairs</h2>
 			<p class="muted">
 				Two budget keepers whose fixtures alternate: start whichever has the better clean-sheet
-				chance each week.
+				chance each week. Pairs are ranked by that average scaled by how many of the next
+				{data?.gk?.meta?.horizon_gw ?? 6} gameweeks both clubs have a projection for.
 			</p>
+			{#if hasSquad}
+				<!-- MY-TEAM-CONTEXT (3.9): oma pari vertailuriviksi samalla kaavalla -->
+				{#if ownPair}
+					<p class="own-line">
+						Your pair: {ownPair.gk_a.web_name} + {ownPair.gk_b.web_name},
+						<strong>{ownPair.avg_best_cs_pct.toFixed(1)}%</strong>
+						<span class="muted"
+							>(rank {ownPair.rank} of {ownPair.of}{#if data?.gk?.meta?.own_budget != null},
+								{data.gk.meta.own_budget.toFixed(1)}m to spend on two keepers{/if})</span
+						>
+					</p>
+				{:else if data?.gk?.meta?.own_pair_note}
+					<p class="muted">{data.gk.meta.own_pair_note}</p>
+				{/if}
+			{:else if squad && !squad.available && squad.note}
+				<p class="muted">Your squad was not read: {squad.note}</p>
+			{/if}
 			<div class="table-wrap">
 				<table>
 					<thead>
@@ -240,18 +275,36 @@
 									>Avg best CS%</abbr
 								></th
 							>
+							{#if hasSquad}
+								<th
+									><abbr title="How many of the two you do not own, and whether the pair fits your two keepers plus bank"
+										>For you</abbr
+									></th
+								>
+							{/if}
 							<th class="m-hide">Start plan</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each pairs.slice(0, 5) as pair (pair.gk_a.id + '-' + pair.gk_b.id)}
-							<tr>
+							<tr class:own-row={pair.transfers_needed === 0}>
 								<td>
 									{pair.gk_a.web_name} <span class="muted">({pair.gk_a.team_short})</span> +
 									{pair.gk_b.web_name} <span class="muted">({pair.gk_b.team_short})</span>
+									{#if pair.common_gws != null}
+										<span class="muted small"
+											>({pair.common_gws} of {data?.gk?.meta?.horizon_gw ?? '?'} GWs)</span
+										>
+									{/if}
 								</td>
 								<td class="num">{pair.combined_price.toFixed(1)}</td>
 								<td class="num strong">{pair.avg_best_cs_pct.toFixed(1)}%</td>
+								{#if hasSquad}
+									<td class="small">
+										{transfersLabel(pair.transfers_needed)}{#if pair.transfers_needed && pair.affordable === false},
+											<span class="over">over budget</span>{/if}
+									</td>
+								{/if}
 								<td class="muted plan-cells m-hide">
 									{pair.gw_split.map((s) => `GW${s.gw} ${s.team_short}`).join(' · ')}
 								</td>
@@ -260,6 +313,9 @@
 					</tbody>
 				</table>
 			</div>
+			{#if hasSquad && data?.gk?.meta?.own_note}
+				<p class="muted note">{data.gk.meta.own_note}</p>
+			{/if}
 		{/if}
 	{:else if (data?.players?.length ?? 0) > FREE_ROWS}
 		<!-- 🔒 sama gate kuin mobiili #114: top-3 free, loput + GK-parit premium -->
@@ -346,6 +402,28 @@
 	.plan-cells {
 		font-size: var(--step--1);
 		white-space: nowrap;
+	}
+	.small {
+		font-size: var(--step--1);
+	}
+	.own-line {
+		margin: 0 0 var(--s-2);
+	}
+	.own-row td {
+		background: rgba(46, 214, 194, 0.08);
+	}
+	.over {
+		color: var(--negative);
+	}
+	.own-badge {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 0 6px;
+		border-radius: var(--radius);
+		border: 1px solid rgba(0, 148, 130, 0.4);
+		color: var(--positive);
+		font-size: var(--step--1);
+		font-weight: 700;
 	}
 	.teaser-row {
 		display: flex;
