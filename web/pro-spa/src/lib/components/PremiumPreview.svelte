@@ -40,8 +40,8 @@
 		// jaettavana. Aiempi kommentti tassa tiedostossa vaitti 1:1-vastaavuutta
 		// ja se oli vaara; copy-sync-auditointi 25.8 loysi sen.
 		'Share as image: post-ready cards from your XI, the captain ranker, the value ranking and leaderboards',
-		'Differential finder: low ownership, high xP',
-		'Replacements: who replaces a player, same position and a similar price, ranked by xP over the coming gameweeks',
+		'Differential finder: low ownership, high xP. With your team ID the players you own drop off the list',
+		'Replacements: who replaces a player, same position, ranked by xP over the coming gameweeks. With your team ID the price ceiling is your bank plus his current price',
 		'Multi-gameweek transfer planner and plan chains',
 		'Chip timing: best window for Wildcard, Bench Boost, Triple Captain and Free Hit',
 		'Edge mode: protect or climb your rank with ownership-weighted picks',
