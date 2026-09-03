@@ -15,8 +15,6 @@ fpl_my_team-moduulista. Ei verkkoa.
 """
 from __future__ import annotations
 
-import copy
-
 import pytest
 
 import src.models.fpl_my_team as mt
