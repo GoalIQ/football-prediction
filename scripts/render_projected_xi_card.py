@@ -357,8 +357,11 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f'<div><div class="title">GW{gw} projected points and the model&#39;s best XI for one round</div>'
         f'<div class="sub">GW{gw} deadline {deadline} · GoalIQ model, projection run {proj_at}</div></div></div>'
         '<div class="body">'
-        f'<div class="left"><div class="lbl">Projected points, best {len(top)} '
-        f'at most three per club</div>'
+        # 3.9 PORTTI k2: "best 15 at most three per club" vasemmalla ja "Best 15
+        # for this gameweek alone" oikealla olivat KAKSI ERI 15:ta (leikkaus
+        # 9/15) samalla nimella. Vasen on rankinglista -> sivun oma sanamuoto
+        # "top 15"; joukkuesaanto jaa oikean paneelin alaviitteeseen.
+        f'<div class="left"><div class="lbl">GW{gw} projected points, top {len(top)}</div>'
         f'<table><tbody>{rows}</tbody></table>{footnote}</div>'
         f'<div class="right"><div class="lblrow"><div class="lbl">Best XI for GW{gw} alone ({sq["formation"]})</div>'
         f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div></div>'

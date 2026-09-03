@@ -346,3 +346,18 @@ def test_cap_uses_the_shared_constant_not_a_local_number():
     with mock.patch("src.models.fpl_rate_team.MAX_PER_CLUB", 2):
         counts = collections.Counter(p["team"] for p in _by_gw(players))
     assert counts["Man City"] == 2, counts
+
+
+def test_card_names_only_one_best_15():
+    """3.9 portti k2: "best N" saa esiintya kortilla vain kerran (oikean
+    paneelin joukkue). Vasen rankinglista on "top N" - muuten kaksi eri
+    15:ta kulkee samalla nimella ja lukija saa Sakalle kylla/ei.
+    Negatiivinen kontrolli: vanha sanamuoto tuottaisi kaksi osumaa."""
+    import re
+    html, _ = build_html(_data(_players()), now=BEFORE)
+    text = re.sub(r"<[^>]+>", " ", html)
+    assert len(re.findall(r"best \d+", text, flags=re.I)) == 1, text[:300]
+    assert re.search(r"top \d+", text)
+    assert "free-hit" not in text.lower() and "scored in public" not in text
+    old = text.replace("projected points, top", "projected points, best")
+    assert len(re.findall(r"best \d+", old, flags=re.I)) == 2
