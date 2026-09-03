@@ -164,10 +164,18 @@
 			];
 			const method = await shareCard({
 				title: 'MY WATCHLIST',
-				subtitle: osat.length ? osat.join(', ') : 'every player I am tracking',
+				// 🔴 3.9 (audit): "every player I am tracking" oli valhe heti kun
+				// listalla on yli 10 nimea, koska kortti on `slice(0, 10)`.
+				subtitle: osat.length
+					? osat.join(', ')
+					: visibleRows.length > 10
+						? `top 10 of ${visibleRows.length} I am tracking`
+						: 'every player I am tracking',
 				midLabel: 'PRICE',
 				valueLabel: 'PRICE WATCH',
 				fileName: 'goaliq_watchlist.png',
+				// 3.9 (audit): PRICE-sarake on FPL:n omaa dataa.
+				footNote: 'price watch from the GoalIQ model, price from FPL',
 				rows: visibleRows.slice(0, 10).map((p, i) => ({
 					rank: i + 1,
 					name: p.web_name,
@@ -175,8 +183,12 @@
 					team: p.team_short,
 					badges: p.status != null && p.status !== 'a' ? ['FLAG'] : [],
 					mid: p.price != null ? p.price.toFixed(1) : '',
-					// Tyhja = ei signaalia. "-" olisi vaite ettei liiketta ole.
-					value: TREND[priceMap.get(p.id) ?? '']?.label ?? ''
+					// 3.9 (audit): tyhja renderoityi TYHJANA sarakkeena, ja hiljaisena
+					// paivana koko kortin otsikkosarake oli tyhja kymmenella
+					// rivilla. "Steady" on se mita puuttuva signaali tarkoittaa
+					// hintavahdissa: ei liiketta tanaan. Se ei ole vaite
+					// suunnasta, vaan luettava arvo.
+					value: TREND[priceMap.get(p.id) ?? '']?.label ?? 'Steady'
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'watchlist', method });

@@ -86,7 +86,21 @@
 				midLabel: 'MINS',
 				valueLabel: 'DEFCON',
 				fileName: 'goaliq_defcon_live.png',
-				rows: rows.slice(0, 10).map((p, i) => ({
+				footNote: 'live FPL match feed',
+				footNote2: 'not betting advice',
+				// 🔴 3.9 (audit): `rows` on jarjestetty niin etta JO OSUNEET ovat
+				// viimeisena (kentalla se on oikein: niissa ei ole enaa mitaan
+				// seurattavaa). `slice(0, 10)` pudotti siis tasan ne rivit joista
+				// alaotsikko puhuu — "2 of 12 at the threshold" ja kuvassa nolla.
+				// Sama vika korjattiin mobiilissa jo; web jai. Osuneet ensin
+				// kortille, loput lahimpana kynnysta.
+				rows: [...rows]
+					.sort((a, b) => {
+						if (a.hit !== b.hit) return a.hit ? -1 : 1;
+						return (a.remaining ?? 99) - (b.remaining ?? 99);
+					})
+					.slice(0, 10)
+					.map((p, i) => ({
 					rank: i + 1,
 					name: p.is_captain ? `${p.web_name} (C)` : p.web_name,
 					tag: p.pos,
@@ -97,7 +111,8 @@
 					mid: `${p.minutes}'`,
 					// Kynnys mukaan: pelkka luku ei kerro onko se riittava, ja
 					// kynnys vaihtelee positioittain.
-					value: `${p.defcon}/${p.threshold}`
+					// Osuma merkitaan: kortilla ei ole varia joka kertoisi sen.
+					value: `${p.defcon}/${p.threshold}${p.hit ? ' ✓' : ''}`
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'defcon_live', method });

@@ -49,7 +49,18 @@ export interface CardSpec {
 	/** 2.9 (portti): listakortin lahderivi. Oletus = entinen kovakoodattu rivi;
 	 *  kortti jonka sarake on FPL:n dataa (OWNED) attribuoi sen itse. */
 	footNote?: string;
+	/** 3.9 (audit): toinen alarivi. Oli kovakoodattu "model projections, not
+	 *  betting advice" — kortilla joka nayttaa TOTEUTUNEITA lukuja (lopputaulukko,
+	 *  pelatut pisteet, live-syote) se on kaksi valhetta perakkain. Mobiilissa
+	 *  tama on ollut olemassa 27.8 alkaen; web jai ilman. */
+	footNote2?: string;
 }
+
+/** Alle taman rivimaaran kortti ei ole lista vaan ilmoitus. Sama luku kuin
+ *  mobiilissa (`useListShareCard.tsx`), joka on vahtinut tata 27.8 alkaen —
+ *  webilla ei ollut vahtia lainkaan, ja tyhja suodatus tuotti kortin jossa on
+ *  vain otsikko ja alatunniste (H = 404 + 0 + 146 = 550 px). */
+export const CARD_MIN_ROWS = 3;
 
 const W = 1080;
 const MX = 60;
@@ -200,13 +211,18 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		ctx.fillText(r.name, x, cy - nPx * 0.62);
 		x += ctx.measureText(r.name).width + 16;
 
-		ctx.font = bold(17);
-		const pw = ctx.measureText(r.tag).width + 16;
-		ctx.strokeStyle = TAG_LINE;
-		ctx.lineWidth = 1;
-		ctx.strokeRect(x, cy - 15, pw, 30);
-		ctx.fillText(r.tag, x + 8, cy - 10);
-		x += pw + 12;
+		// 3.9 (audit): tyhja tagi piirsi 16x30 px:n TYHJAN kehyksen joka riville.
+		// Osui Standingsiin (tag aina '') ja Season raceen (tag vain osalla
+		// riveista -> repaleinen sekoitus). Mobiili on vahtinut tata alusta.
+		if (r.tag) {
+			ctx.font = bold(17);
+			const pw = ctx.measureText(r.tag).width + 16;
+			ctx.strokeStyle = TAG_LINE;
+			ctx.lineWidth = 1;
+			ctx.strokeRect(x, cy - 15, pw, 30);
+			ctx.fillText(r.tag, x + 8, cy - 10);
+			x += pw + 12;
+		}
 
 		// Toinen tagi samassa laatikossa: rivin kausi sekakausilistalla.
 		// Alaotsikko ei voi sanoa kumpi rivi on kumpaa kautta.
@@ -266,7 +282,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	ctx.fillText('@goaliqapp', W - MX - ctx.measureText('@goaliqapp').width, H - 88);
 	ctx.font = med(17);
 	ctx.fillStyle = MUTED;
-	ctx.fillText('model projections, not betting advice', MX, H - 54);
+	ctx.fillText(spec.footNote2 ?? 'model projections, not betting advice', MX, H - 54);
 	ctx.fillStyle = AMBER;
 	ctx.fillRect(0, H - 8, W, 8);
 
@@ -1214,7 +1230,14 @@ export async function sharePlayerCard(spec: PlayerCardSpec): Promise<ShareOutcom
 	return deliver(blob, spec.fileName);
 }
 
-export type ShareOutcome = 'shared' | 'copied' | 'downloaded' | 'aborted';
+/** `too_few_rows` (3.9): kutsuja pyysi korttia listasta joka on liian lyhyt.
+ *  Ei virhe vaan kieltaytyminen — kutsuja saa kertoa sen kayttajalle. */
+export type ShareOutcome =
+	| 'shared'
+	| 'copied'
+	| 'downloaded'
+	| 'aborted'
+	| 'too_few_rows';
 
 /** Share-arkki vain mobiilissa (31.7, Villen havainto): Windowsin share-arkissa
  * ei ole X-kohdetta eikä tallennusta — pöytäkoneella suora PNG-lataus on
@@ -1314,6 +1337,12 @@ async function deliver(blob: Blob, fileName: string): Promise<ShareOutcome> {
 }
 
 export async function shareCard(spec: CardSpec): Promise<ShareOutcome> {
+	// 3.9 (audit): yksi vahti kaikille kutsujille. Kuusi kutsupaikkaa saattoi
+	// tuottaa tyhjan tai kahden rivin kortin (haku joka ei osu, suodatin joka
+	// tyhjentaa listan), ja kortti renderoitui silti otsikoineen ja
+	// alatunnisteineen. Mobiilissa vahti on `useListShareCard`issa; web sai
+	// saman rajan tanne, jotta jokainen uusi kortti perii sen.
+	if (spec.rows.length < CARD_MIN_ROWS) return 'too_few_rows';
 	const blob = await renderCard(spec);
 	return deliver(blob, spec.fileName);
 }

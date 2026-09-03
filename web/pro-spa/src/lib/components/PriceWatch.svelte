@@ -79,7 +79,11 @@
 					name: r.web_name,
 					tag: confBand(r.confidence).toUpperCase(),
 					team: '',
-					mid: typeof r.now_cost === 'number' ? (r.now_cost / 10).toFixed(1) : '',
+					// 🔴 3.9 (audit): tassa oli `/ 10` toisen kerran. Builderi
+					// (`build_fpl_price_watch.py`) kirjoittaa `now_cost`in JO
+					// miljoonina, ja saman naytön taulukko renderoi sen suoraan —
+					// eli kortti sanoi 0.6 siina missa taulukko sen vieressa sanoi 5.5.
+					mid: typeof r.now_cost === 'number' ? r.now_cost.toFixed(1) : '',
 					value: `${Math.round(r.progress_pct)}%`
 				}))
 			});

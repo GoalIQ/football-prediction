@@ -151,6 +151,8 @@
 		price?: number;
 		owned_pct?: number;
 		last_season?: {
+			/** 3.9: kausilabel tulee riveilta, ei metasta (meta.season = kuluva). */
+			season?: string;
 			minutes?: number;
 			goals?: number;
 			assists?: number;
@@ -188,6 +190,18 @@
 	);
 
 	/** Viime kauden leaderit payloadin last_season-lohkosta. */
+	/** Kausi luetaan RIVEILTA, ei metasta: rivit ovat `last_season`ia ja
+	 *  `meta.season` on kuluva kausi. Null kun rivit eivat ole yksimielisia
+	 *  tai kenttaa ei ole — silloin kortti ei vaita kautta lainkaan. */
+	const leadersSeason = $derived.by(() => {
+		const ss = new Set(
+			(players as SplPlayer[])
+				.map((p) => p.last_season?.season)
+				.filter((v): v is string => typeof v === 'string')
+		);
+		return ss.size === 1 ? [...ss][0] : null;
+	});
+
 	function leaders(key: 'goals' | 'assists' | 'points') {
 		return pool
 			.filter((p) => p.last_season && (p.last_season[key] ?? 0) > 0)
@@ -309,10 +323,15 @@
 	const shareValueCard = () =>
 		shareList('spl_value', {
 			title: 'RSL VALUE PICKS',
-			subtitle: `xP per million, next ${(xp?.meta?.horizon_gw as number) ?? 6} GWs, GoalIQ model`,
+			// 🔴 3.9 (audit): `vpm` on xP PER KIERROS per miljoona, mutta kortti
+			// otsikoi sen horisontin luvuksi ("next 6 GWs"). Luku on noin
+			// kuudesosa siita mita kuvateksti lupasi. Sisarkortti
+			// (differentials) teki taman oikein alusta asti.
+			subtitle: 'xP per gameweek per million, GoalIQ model',
 			midLabel: 'PRICE',
-			valueLabel: 'xP/m',
+			valueLabel: 'xP/GW per £m',
 			fileName: 'goaliq_spl_value.png',
+			footNote: 'xP from the GoalIQ model, price from RSL Fantasy',
 			rows: valuePicks.slice(0, 10).map(({ p, vpm }, i) => ({
 				rank: i + 1,
 				name: p.web_name,
@@ -341,10 +360,20 @@
 	const shareLeadersCard = () =>
 		shareList('spl_leaders', {
 			title: 'RSL FANTASY LEADERS',
-			subtitle: '2025/26 season points, RSL Fantasy data',
+			// 🔴 3.9 (audit): kausi oli kovakoodattu '2025/26'. Sama vika kuin
+			// FPL:n Leaders-kortissa, joka sai basis-labelin datasta juuri siksi
+			// etta kovakoodattu kausi vanheni hiljaa.
+			//
+			// 🔴 JA ENSIMMAINEN KORJAUKSENI OLI PAHEMPI: otin `meta.season`in,
+			// joka on KULUVA kausi (2026/27). Nama rivit ovat `last_season`ista.
+			// Label luetaan riveilta itseltaan, eli samasta paikasta kuin luvut.
+			subtitle: `${leadersSeason ?? 'last season'} points, RSL Fantasy data`,
 			midLabel: 'GOALS',
 			valueLabel: 'PTS',
 			fileName: 'goaliq_spl_leaders.png',
+			// Toteutuneita pisteita, ei projektioita.
+			footNote: 'season totals from RSL Fantasy',
+			footNote2: 'not betting advice',
 			rows: leaders('points')
 				.slice(0, 10)
 				.map((p, i) => ({
@@ -776,7 +805,11 @@
 
 		<section>
 			<div class="head-row">
-				<h2>Best value <span class="muted">(xP per million, next {(xp?.meta?.horizon_gw as number) ?? 6} GWs)</span></h2>
+				<!-- 3.9 (audit): otsikko lupasi horisontin luvun, mutta `vpm` on
+				     xP per KIERROS per miljoona. Sarakeotsikko sanoi sen jo
+				     oikein ("xP / m" rivilla jossa on "xP / GW" vieressa), mutta
+				     h2 luki toisin. -->
+				<h2>Best value <span class="muted">(xP per gameweek per million)</span></h2>
 				{#if valuePicks.length >= 3}
 					<button type="button" class="share-btn" onclick={shareValueCard} disabled={sharingList !== null}>
 						{shareLabel('spl_value')}
@@ -786,7 +819,7 @@
 			<div class="table-wrap">
 				<table>
 					<thead>
-						<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Price</th><th class="num">xP / GW</th><th class="num">xP / m</th></tr>
+						<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Price</th><th class="num">xP / GW</th><th class="num">xP / GW per &pound;m</th></tr>
 					</thead>
 					<tbody>
 						{#each valuePicks as { p, vpm } (p.id)}

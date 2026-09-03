@@ -43,7 +43,10 @@
 		try {
 			const method = await shareCard({
 				title: 'FIXTURE SWING',
-				subtitle: 'same player, best and worst opponent, next six gameweeks',
+				// 3.9 (audit): "next six gameweeks" oli kovakoodattu, vaikka rivit
+				// tulevat koko `p.gameweeks`-listasta. 5 tai 8 kierroksen
+				// payloadilla alaotsikko olisi ollut vaara.
+				subtitle: `same player, best and worst opponent, next ${swingGws} gameweeks`,
 				midLabel: 'WORST → BEST',
 				valueLabel: 'SWING',
 				fileName: 'goaliq_fixture_swing.png',
@@ -61,6 +64,14 @@
 			sharing = false;
 		}
 	}
+
+	/** Horisontti DATASTA: `meta.horizon_gw`, fallback pisimpaan riviin.
+	 *  Kovakoodattu "six" oli sivulla kahdessa paikassa (kortti + selite) ja
+	 *  molemmat olisivat vanhentuneet hiljaa horisontin muuttuessa. */
+	const swingGws = $derived(
+		(data?.meta?.horizon_gw as number | undefined) ??
+			Math.max(0, ...(data?.players ?? []).map((p) => (p.gameweeks ?? []).length))
+	);
 
 	const rows = $derived.by<SwingRow[]>(() => {
 		const out: SwingRow[] = [];
@@ -120,7 +131,7 @@
 	</div>
 	<p class="muted">
 		Where fixtures actually move points: the same player's projected xP at his best and worst
-		opponent over the next six gameweeks. Goals, assists, bonus and clean sheets scale with the
+		opponent over the next {swingGws} gameweeks. Goals, assists, bonus and clean sheets scale with the
 		opponent. DefCon does not (about 2% in 25/26 data), which is why it is not in this list.
 	</p>
 	{#if rows.length === 0}

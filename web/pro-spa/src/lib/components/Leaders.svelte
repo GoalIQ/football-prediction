@@ -395,13 +395,32 @@
 			const basisPart = seasonView
 				? 'season totals'
 				: `last ${xg?.meta?.window ?? gameWindow} games`;
-			const sub = [basisPart, ...(per90 ? ['per 90'] : []), ...bandPart(xgBand)].join(', ');
+			// 🔴 3.9 (audit): kortti oli lukittu xG:hen ja jatti suodattimet
+			// nimeamatta, vaikka lista voi olla jarjestetty xA:n, laukausten,
+			// hinnan tai xP:n mukaan ja suodatettu positiolla, joukkueella ja
+			// minuuttirajalla. DEF-only 900 min -kortti vaitti olevansa
+			// kokonaislistan karki. Value ja Differentials tekivat taman
+			// oikein; Leaders oli poikkeus.
+			const XG_LABEL: Record<string, string> = {
+				xg: 'xG', xa: 'xA', xgi: 'xGI', mins: 'minutes',
+				games: 'games', price: 'price', xp6: 'xP', name: 'name'
+			};
+			const sub = [
+				basisPart,
+				...(per90 ? ['per 90'] : []),
+				...bandPart(xgBand),
+				...(posFilter ? [posFilter] : []),
+				...(teamFilter ? [teamFilter] : []),
+				...(minMins > 0 ? [`min ${minMins} mins`] : []),
+				`by ${XG_LABEL[sortKey] ?? sortKey}`
+			].join(', ');
 			const method = await shareCard({
-				title: 'XG LEADERS TOP 10',
+				title: `${(XG_LABEL[sortKey === 'name' ? 'xg' : sortKey] ?? sortKey).toUpperCase()} LEADERS TOP 10`,
 				subtitle: `${sub}, official FPL data`,
 				midLabel: 'PRICE',
-				valueLabel: 'xG',
+				valueLabel: XG_LABEL[sortKey === 'name' ? 'xg' : sortKey] ?? 'xG',
 				fileName: 'goaliq_xg_leaders.png',
+				footNote: 'official FPL match data',
 				rows: xgVisible.slice(0, 10).map((a, i) => ({
 					rank: i + 1,
 					name: a.row.web_name,
@@ -410,7 +429,18 @@
 					tag2: rowSeason(a),
 					team: a.row.team_short,
 					mid: a.row.price.toFixed(1),
-					value: a.xg.toFixed(2)
+					// Arvosarake = se luku jolla lista on jarjestetty. Nimisortti
+					// ei ole luku, joten se palaa xG:hen (ja otsikko sanoo sen).
+					value:
+						sortKey === 'price'
+							? a.row.price.toFixed(1)
+							: sortKey === 'xp6'
+								? (xpById?.get(a.row.id) ?? 0).toFixed(1)
+								: sortKey === 'mins' || sortKey === 'games'
+									? String(Math.round(a[sortKey]))
+									: sortKey === 'name'
+										? a.xg.toFixed(2)
+										: a[sortKey].toFixed(2)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'xg', method });
@@ -426,20 +456,47 @@
 				dcBasis === 'season'
 					? `full ${defcon?.meta?.basis_season ?? 'previous'} season`
 					: `last ${dcWindow} games`;
-			const sub = [basisPart, ...bandPart(dcBand)].join(', ');
+			// 3.9 (audit): sama korjaus kuin xG-kortilla. Lista voi olla
+			// jarjestetty dc/game, hinta, pisteet, ottelut tai xP — kortti sanoi
+			// aina "hit rate per game" ja naytti aina hit raten.
+			const DC_LABEL: Record<string, string> = {
+				hit: 'hit rate', dc: 'DC per game', price: 'price',
+				pts: 'DefCon points', games: 'games', xp6: 'xP',
+				name: 'name', pos: 'position'
+			};
+			const dcMetric = dcSortKey === 'name' || dcSortKey === 'pos' ? 'hit' : dcSortKey;
+			const sub = [
+				basisPart,
+				...bandPart(dcBand),
+				`by ${DC_LABEL[dcSortKey] ?? dcSortKey}`
+			].join(', ');
 			const method = await shareCard({
 				title: 'DEFCON LEADERS TOP 10',
-				subtitle: `${sub}, DefCon hit rate per ${dcBasis === 'season' ? 'start' : 'game'}, GoalIQ`,
+				subtitle: `${sub}, per ${dcBasis === 'season' ? 'start' : 'game'}, GoalIQ`,
 				midLabel: 'PRICE',
-				valueLabel: 'HIT',
+				valueLabel: (DC_LABEL[dcMetric] ?? 'hit rate').toUpperCase(),
 				fileName: 'goaliq_defcon_leaders.png',
+				footNote: 'DefCon counts from official FPL match data',
 				rows: dcSorted.slice(0, 10).map((p, i) => ({
 					rank: i + 1,
 					name: p.web_name,
 					tag: p.pos,
 					team: p.team_short,
 					mid: p.price.toFixed(1),
-					value: `${Math.round(p.hit_rate_pct)}%`
+					value:
+						dcMetric === 'hit'
+							? `${Math.round(p.hit_rate_pct)}%`
+							: dcMetric === 'price'
+								? p.price.toFixed(1)
+								: dcMetric === 'xp6'
+									? (xpById?.get(p.id) ?? 0).toFixed(1)
+									: dcMetric === 'dc'
+										? p.dc_per_game.toFixed(1)
+										: String(
+												Math.round(
+													p[DC_SORT_FIELDS[dcMetric as keyof typeof DC_SORT_FIELDS]] as number
+												)
+											)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'defcon', method });

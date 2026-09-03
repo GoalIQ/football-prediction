@@ -39,8 +39,12 @@
 				title: 'DIFFERENTIALS',
 				subtitle: `${sub}, GoalIQ model`,
 				midLabel: 'OWNED',
-				valueLabel: 'xP',
+				// 3.9 (audit): `xp_horizon_total` on SUMMA, ja pelkka "xP" luetaan
+				// kierroksen luvuksi. Ikkuna sarakeotsikkoon, kuten Valuessa.
+				valueLabel: `xP ${data?.meta?.horizon_gw ?? 6} GW`,
 				fileName: 'goaliq_differentials.png',
+				// 3.9 (audit): OWNED-sarake on FPL:n omaa dataa.
+				footNote: 'xP from the GoalIQ model, ownership from FPL',
 				rows: (data?.players ?? []).slice(0, 10).map((p, i) => ({
 					rank: i + 1,
 					name: p.web_name,

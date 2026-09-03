@@ -118,15 +118,25 @@
 				title: 'TOP VALUE PICKS',
 				subtitle: `${sub}, GoalIQ model`,
 				midLabel: 'PRICE',
-				valueLabel: 'xP/£m',
+				// 🔴 3.9 (audit): arvosarake oli kovakoodattu xP/£m vaikka
+				// alaotsikko sanoi "by projected xP". Kortti vaitti olevansa
+				// jarjestetty luvulla jota siina ei nakynyt, eli ainoa nakyva
+				// sarake luki kohinana. Nyt luku on se jolla lista on jarjestetty.
+				// Hinta on jo `mid`-sarakkeessa, joten hintasortissa arvosarake
+				// nayttaa xP:n eika toista hintaa kahdesti.
+				valueLabel: sortKey === 'value' ? 'xP/£m' : 'xP',
 				fileName: 'goaliq_value.png',
+				footNote: 'xP from the GoalIQ model, price from FPL',
 				rows: visible.slice(0, 10).map((p, i) => ({
 					rank: i + 1,
 					name: p.web_name,
 					tag: p.pos,
 					team: p.team_short,
 					mid: p.price.toFixed(1),
-					value: p.value.toFixed(2)
+					value:
+						sortKey === 'value'
+							? p.value.toFixed(2)
+							: p.xp_horizon_total.toFixed(1)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'value', method });

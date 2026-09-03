@@ -104,6 +104,9 @@
 				midLabel: 'MODEL',
 				valueLabel: 'ME',
 				fileName: 'goaliq_beat_the_model.png',
+				// 3.9 (audit): toteutuneita FPL-pisteita, ei projektioita.
+				footNote: 'model squad locked before each deadline, scored with official FPL points',
+				footNote2: 'not betting advice',
 				rows: recent.map((r, i) => ({
 					rank: i + 1,
 					name: `GW${r.gw} ${KIND_LABEL[r.kind] ?? r.kind}`,

@@ -55,6 +55,9 @@
 				midLabel: 'PL',
 				valueLabel: 'PTS',
 				fileName: 'goaliq_standings.png',
+				// 3.9 (audit): valmis sarjataulukko ei ole mallin projektio.
+				footNote: 'official table via football-data.org',
+				footNote2: 'not betting advice',
 				rows: rows.slice(0, 10).map((r) => ({
 					rank: r.position,
 					name: r.team_short_name || r.team_name,

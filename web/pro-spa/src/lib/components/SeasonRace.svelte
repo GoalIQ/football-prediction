@@ -79,11 +79,20 @@
 			const n = data.meta.compared_gws ?? rows.length;
 			const method = await shareCard({
 				title: otsikko,
-				subtitle: `after ${n} gameweek${n === 1 ? '' : 's'}, you ${data.totals.you ?? 0} to ${data.totals.model} GoalIQ model`,
+				// 🔴 3.9 (audit): `?? 0` painoi TUNTEMATTOMAN nollaksi — ilman
+				// entrya kortti vaitti "you 0 to model 412". Kun omaa lukua ei
+				// ole, kortti kertoo vain mallin luvun.
+				subtitle:
+					data.totals.you != null
+						? `after ${n} gameweek${n === 1 ? '' : 's'}, you ${data.totals.you} to ${data.totals.model} GoalIQ model`
+						: `after ${n} gameweek${n === 1 ? '' : 's'}, GoalIQ model ${data.totals.model}`,
 				nameLabel: 'GAMEWEEK',
 				midLabel: 'MODEL',
 				valueLabel: 'YOU',
 				fileName: 'goaliq_season_race.png',
+				// 3.9 (audit): toteutuneita FPL-pisteita, ei projektioita.
+				footNote: 'model squad locked before each deadline, scored with official FPL points',
+				footNote2: 'not betting advice',
 				rows: rows.slice(0, 10).map((r, i) => ({
 					rank: i + 1,
 					name: `GW${r.gw}`,
@@ -92,7 +101,9 @@
 					// Vahvistamaton kierros merkitaan, ei piiloteta.
 					badges: r.provisional ? ['PROV'] : [],
 					mid: String(r.model_points),
-					value: r.your_points != null ? String(r.your_points) : ''
+					// 3.9 (audit): tyhja renderoityi tyhjana sarakkeena; "-" kertoo
+					// etta lukua ei ole. Sama merkki kuin mobiilissa.
+					value: r.your_points != null ? String(r.your_points) : '-'
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'season_race', method });
