@@ -1042,6 +1042,45 @@ def empty_xp() -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# KIERROSVAIHTO: yksi lukija joka ei voi antaa mennytta kierrosta
+# ---------------------------------------------------------------------------
+# Villen pyynto 3.9.2026: "suunnittelet ne siten ettei niihin vaan tule
+# bugeja". Kierrosvaihdon vikoja oli yhtena paivana nelja, ja kaikissa sama
+# rakenne: pinta luki artefaktin `gameweeks[]`-listan RAAKANA, lista alkaa
+# menneesta kierroksesta, ja jokainen lukija joutui muistamaan suodattaa sen
+# itse. Yksikaan ei muistanut samalla tavalla.
+#
+# Vahti ei riita, koska se loytaa vian vasta kun se on kirjoitettu. Siksi
+# suodatus on nyt LUKIJASSA: `load_xp_actionable()` palauttaa saman datan
+# ilman kierroksia joiden deadline on mennyt, ja `tests/test_xp_reader_
+# discipline.py` pitaa kirjaa siita kuka lukee raakaa `load_xp()`:ta ja miksi.
+# Uusi pinta saa oikean kayttaytymisen ilman etta kukaan muistaa mitaan.
+def load_xp_actionable(path: Path = XP_PATH) -> dict:
+    """`load_xp()` ilman kierroksia joihin ei voi enaa vaikuttaa.
+
+    Rajaus luetaan `meta.deadline_gameweek`:sta (sama lahde kuin
+    `fpl_gameweek.actionable_gameweek`), ei kellosta eika `is_current`-
+    lipusta. `meta.trimmed_from` kertoo mista rajattiin, jotta pinta voi
+    sanoa sen aaneen. Kentan puuttuessa data palautuu muuttumattomana:
+    puuttuva tieto ei ole todiste siita etta deadline olisi mennyt.
+    """
+    data = load_xp(path)
+    from src.models.fpl_gameweek import actionable_gameweek
+    gw = actionable_gameweek(data.get("meta") or {})
+    if not isinstance(gw, int):
+        return data
+    for pl in data.get("players") or []:
+        rows = pl.get("gameweeks")
+        if isinstance(rows, list):
+            pl["gameweeks"] = [g for g in rows
+                               if not isinstance(g.get("gw"), int)
+                               or g["gw"] >= gw]
+    meta = data.setdefault("meta", {})
+    meta["trimmed_from"] = gw
+    return data
+
+
 def load_xp(path: Path = XP_PATH) -> dict:
     if not path.exists():
         return empty_xp()
