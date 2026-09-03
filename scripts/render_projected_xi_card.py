@@ -290,7 +290,7 @@ def _promoted(p: dict) -> bool:
     return (p.get("team_flag") or "") == "promoted"
 
 
-def _cell(p: dict, cap_id: int, vice_id: int, size: int = 46) -> str:
+def _cell(p: dict, cap_id: int, vice_id: int, size: int = 52) -> str:
     badge = ""
     if int(p["id"]) == cap_id:
         badge = '<span class="badge">C</span>'
@@ -327,7 +327,7 @@ def build_html(data: dict, log: dict | None = None, now=None,
     by_type = {t: [p for p in sq["xi"] if p["element_type"] == t] for t in (1, 2, 3, 4)}
     pitch = "".join('<div class="xirow">' + "".join(_cell(p, cap_id, vice_id) for p in by_type[t])
                     + "</div>" for t in (1, 2, 3, 4))
-    bench_html = "".join(_cell(p, -1, -1, size=36) for p in sq["bench"])
+    bench_html = "".join(_cell(p, -1, -1, size=40) for p in sq["bench"])
     shorts = [p["team_short"] for p in sq["xi"] + sq["bench"]]
     promoted_on_card = any(_promoted(p) for p in top)
     from scripts.gen_share_card import promoted_footnote
