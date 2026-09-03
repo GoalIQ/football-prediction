@@ -166,3 +166,35 @@ def test_kausilabel_luetaan_riveilta_ei_kovakoodata():
     assert "leadersSeason" in s
     assert "p.last_season?.season" in s, (
         "kausi luetaan muualta kuin niilta riveilta joita kortti nayttaa")
+
+
+# ---------------------------------------------------------------------------
+# GK-lista: hiljaisuus ei ole vastaus
+# ---------------------------------------------------------------------------
+
+def test_gk_lista_kertoo_kun_se_ei_tunne_joukkuetta():
+    """🔴 Ville sanoi kolme kertaa etta 'GK rotation nayttaa yha Raya +
+    Donnarumma'. Ensimmaisella kerralla vika oli backendissa, toisella
+    taulukossa, ja KOLMANNELLA sita ei ollut lainkaan: ilman entrya osio
+    nayttti globaalin listan ja oli hiljaa. Lukija ei voi erottaa "tyokalu ei
+    valita joukkueestani" ja "en ole antanut sille joukkuettani talla
+    pinnalla" — ja han luki sen ensimmaisella tavalla joka kerta.
+
+    Puuttuva tieto sanotaan aaneen. Ilman tata haara on hiljainen ja
+    kayttajan ainoa vihje on lista joka nayttaa vaaralta."""
+    s = _src(COMPONENTS / "Value.svelte")
+    gk = s[s.index("{#if pairs.length > 0}"):]
+    assert "This list does not know your squad yet" in gk, (
+        "GK-osio ei kerro kun entrya ei ole — lista nayttaa vain vaaralta")
+    # Ehto on `{:else}`, eli se kattaa TASAN sen tapauksen jossa squadia ei
+    # ole luettu eika lukuvirhettakaan ole. Negatiivinen kontrolli: teksti ei
+    # saa nakya kun squad on luettu.
+    i = gk.index("This list does not know your squad yet")
+    # Lahin edeltava kontrollirakenne on `{:else}`, eika valissa ole uutta
+    # `{#if}`:ia joka avaisi toisen ehdon. (Kommentti valissa on sallittu.)
+    haara = gk[:i]
+    else_i = haara.rfind("{:else}")
+    assert else_i != -1, "tekstille ei ole `{:else}`-haaraa"
+    assert "{#if" not in haara[else_i:], (
+        "tekstin ja `{:else}`:n valissa on uusi ehto — se voi nakya myos "
+        "entryn kanssa")

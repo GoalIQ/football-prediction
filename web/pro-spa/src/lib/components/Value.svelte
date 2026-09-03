@@ -305,6 +305,17 @@
 				{/if}
 			{:else if squad && !squad.available && squad.note}
 				<p class="muted">Your squad was not read: {squad.note}</p>
+			{:else}
+				<!-- 🔴 3.9 ILTA (Villen kolmas havainto samasta asiasta): ilman
+				     entrya osio nayttti globaalin listan JA OLI HILJAA. Lukija ei
+				     voi erottaa "tyokalu ei valita joukkueestani" ja "en ole
+				     antanut sille joukkuettani talla pinnalla" — ja Ville luki sen
+				     ensimmaisella tavalla, kahdesti. Puuttuva tieto sanotaan. -->
+				<p class="muted">
+					This list does not know your squad yet, so it is the best pairs in the game
+					rather than the ones you can buy. Put your FPL entry ID into Rate my team
+					under My team, and this section narrows to your two keepers plus your bank.
+				</p>
 			{/if}
 			{#if forYou && forYou.length > 0}
 				<div class="gk-scope">
