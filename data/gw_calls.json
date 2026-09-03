@@ -175,6 +175,153 @@
     "chip": "wildcard",
     "captain": 426
    }
+  },
+  {
+   "gw": 3,
+   "deadline_utc": "2026-09-04T17:30:00Z",
+   "logged_at": "2026-09-03T07:03:08Z",
+   "updated_at": "2026-09-03T07:03:08Z",
+   "source": {
+    "projection_generated_at": "2026-09-03T06:12:52+00:00"
+   },
+   "calls": [
+    {
+     "call": "projected_xi",
+     "player_id": 411,
+     "web_name": "5-2-3 XI, captain Haaland",
+     "team_short": "MCI",
+     "pos": "XI",
+     "metric": "xi_gw_xp",
+     "value": 67.67,
+     "criterion": "XI points with the captain doubled, FPL automatic substitutions applied from the bench in order",
+     "formation": "5-2-3",
+     "captain": {
+      "player_id": 411,
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "pos": "FWD",
+      "gw_xp": 7.92
+     },
+     "vice_captain": {
+      "player_id": 379,
+      "web_name": "Isak",
+      "team_short": "LIV",
+      "pos": "FWD",
+      "gw_xp": 6.27
+     },
+     "xi": [
+      {
+       "player_id": 82,
+       "web_name": "Kelleher",
+       "team_short": "BRE",
+       "pos": "GKP",
+       "gw_xp": 4.32
+      },
+      {
+       "player_id": 388,
+       "web_name": "Guéhi",
+       "team_short": "MCI",
+       "pos": "DEF",
+       "gw_xp": 5.82
+      },
+      {
+       "player_id": 4,
+       "web_name": "Gabriel",
+       "team_short": "ARS",
+       "pos": "DEF",
+       "gw_xp": 5.11
+      },
+      {
+       "player_id": 84,
+       "web_name": "Collins",
+       "team_short": "BRE",
+       "pos": "DEF",
+       "gw_xp": 4.77
+      },
+      {
+       "player_id": 115,
+       "web_name": "De Cuyper",
+       "team_short": "BHA",
+       "pos": "DEF",
+       "gw_xp": 4.71
+      },
+      {
+       "player_id": 8,
+       "web_name": "Calafiori",
+       "team_short": "ARS",
+       "pos": "DEF",
+       "gw_xp": 4.58
+      },
+      {
+       "player_id": 398,
+       "web_name": "Foden",
+       "team_short": "MCI",
+       "pos": "MID",
+       "gw_xp": 5.72
+      },
+      {
+       "player_id": 368,
+       "web_name": "Szoboszlai",
+       "team_short": "LIV",
+       "pos": "MID",
+       "gw_xp": 5.34
+      },
+      {
+       "player_id": 411,
+       "web_name": "Haaland",
+       "team_short": "MCI",
+       "pos": "FWD",
+       "gw_xp": 7.92
+      },
+      {
+       "player_id": 379,
+       "web_name": "Isak",
+       "team_short": "LIV",
+       "pos": "FWD",
+       "gw_xp": 6.27
+      },
+      {
+       "player_id": 106,
+       "web_name": "Thiago",
+       "team_short": "BRE",
+       "pos": "FWD",
+       "gw_xp": 5.19
+      }
+     ],
+     "bench": [
+      {
+       "player_id": 111,
+       "web_name": "Steele",
+       "team_short": "BHA",
+       "pos": "GKP",
+       "gw_xp": 0.96
+      },
+      {
+       "player_id": 290,
+       "web_name": "Slater",
+       "team_short": "HUL",
+       "pos": "MID",
+       "gw_xp": 3.72
+      },
+      {
+       "player_id": 51,
+       "web_name": "George Hemmings",
+       "team_short": "AVL",
+       "pos": "MID",
+       "gw_xp": 3.33
+      },
+      {
+       "player_id": 605,
+       "web_name": "Yalcouyé",
+       "team_short": "BHA",
+       "pos": "MID",
+       "gw_xp": 3.05
+      }
+     ]
+    }
+   ],
+   "model_transfers": [],
+   "graded": null
   }
  ]
 }
