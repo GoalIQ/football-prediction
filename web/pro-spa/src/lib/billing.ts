@@ -135,6 +135,26 @@ export function captureRef(search = ''): string | null {
 	}
 }
 
+/** 3.9: URL ilman `ref`-parametria (muut parametrit ja hash sailyvat).
+ *  Ref on jo talletettu captureRefissa; osoiterivilla se vain nakyy ja
+ *  kopioituu eteenpain (Ville: "pro.goaliq.app/?...&ref=ROWAN#tools=week"). */
+export function urlWithoutRef(pathname: string, search: string, hash: string): string | null {
+	const q = new URLSearchParams(search);
+	if (!q.has('ref')) return null;
+	q.delete('ref');
+	const s = q.toString();
+	return pathname + (s ? '?' + s : '') + (hash || '');
+}
+
+export function stripRefFromAddressBar(): void {
+	try {
+		const next = urlWithoutRef(location.pathname, location.search, location.hash);
+		if (next) history.replaceState(history.state, '', next);
+	} catch {
+		/* cosmetic only */
+	}
+}
+
 export function storedRef(): string | null {
 	try {
 		return cleanRef(localStorage.getItem(REF_KEY));

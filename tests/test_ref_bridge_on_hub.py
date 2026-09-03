@@ -139,3 +139,13 @@ def test_non_landing_pages_are_exempt():
     assert not (names & NOT_LANDABLE)
     assert (ROOT / "reset-password.html").exists(), (
         "vapautuslista viittaa sivuun jota ei ole; siivoa lista")
+
+
+def test_bridge_strips_ref_from_address_bar_after_capture():
+    """3.9: ref tallennetaan ja poistetaan osoiteriviltä. Ilman tätä
+    ?ref=X seurasi jokaisella sivulla ja kopioitui eteenpäin."""
+    src = (ROOT / "ref-bridge.js").read_text(encoding="utf-8")
+    assert "searchParams.delete('ref')" in src
+    assert "history.replaceState" in src
+    # poisto tapahtuu capturen JÄLKEEN (muuten ref katoaa ennen tallennusta)
+    assert src.index("var REF = capture();") < src.index("searchParams.delete('ref')")

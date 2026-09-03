@@ -64,6 +64,24 @@
 	}
 
 	var REF = capture();
+
+	// 3.9: the ref is stored now, so it has no business staying in the address
+	// bar. Ville saw goaliq.app/...?ref=ROWAN on every page after opening a
+	// creator link once; a visitor sees the same and may copy it onward.
+	// Attribution lives in localStorage and on the rewritten links below, not
+	// in what the visitor reads. Only `ref` is removed; src/srcp and the hash stay.
+	function stripRefFromAddressBar() {
+		try {
+			var u = new URL(location.href);
+			if (!u.searchParams.has('ref')) return;
+			u.searchParams.delete('ref');
+			history.replaceState(history.state, '', u.pathname + (u.search || '') + (u.hash || ''));
+		} catch (e) {
+			/* no history API; the ugly URL is cosmetic, attribution already captured */
+		}
+	}
+	stripRefFromAddressBar();
+
 	if (!REF) return;
 
 	function withRef(href) {
