@@ -47,6 +47,51 @@ def empty_price_watch() -> dict:
     }
 
 
+OWNED_NOTE = (
+    "Owned counts how many of your 15 are on the risers and fallers lists. "
+    "Tonight means FPL's own projection crosses the threshold at the next "
+    "price update."
+)
+
+
+def annotate_owned(payload: dict, squad_ids: set[int]) -> dict:
+    """MY-TEAM-CONTEXT (3.9): merkitse omistetut rivit ja tiivista `owned`-lohko.
+
+    Ei muuta rivien jarjestysta eika poista mitaan: vain `owned: bool` joka
+    riville ja `owned`-yhteenveto juureen. Ilman entrya tata ei kutsuta,
+    joten vanha vastaus on tasmalleen entinen.
+    """
+    ids = set(squad_ids)
+
+    def _mark(rows):
+        out = []
+        for r in rows or []:
+            r2 = dict(r)
+            r2["owned"] = r2.get("id") in ids
+            out.append(r2)
+        return out
+
+    payload["risers"] = _mark(payload.get("risers"))
+    payload["fallers"] = _mark(payload.get("fallers"))
+    own_r = [r for r in payload["risers"] if r["owned"]]
+    own_f = [r for r in payload["fallers"] if r["owned"]]
+    tonight = [r for r in own_r + own_f if r.get("eta_days") == 0]
+    payload["owned"] = {
+        "squad_size": len(ids),
+        "rising": [{"id": r["id"], "web_name": r["web_name"],
+                    "status": r.get("status"), "eta_days": r.get("eta_days")}
+                   for r in own_r],
+        "falling": [{"id": r["id"], "web_name": r["web_name"],
+                     "status": r.get("status"), "eta_days": r.get("eta_days")}
+                    for r in own_f],
+        "n_rising": len(own_r),
+        "n_falling": len(own_f),
+        "n_tonight": len(tonight),
+        "note": OWNED_NOTE,
+    }
+    return payload
+
+
 def load_price_watch(path: Path = PW_PATH) -> dict:
     if not path.exists():
         return empty_price_watch()

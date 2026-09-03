@@ -30,6 +30,7 @@ from src.models.fpl_rate_team import (
     optimal_xi, picks_outdated, resolve_squad, _gw_xp,
 )
 from src.models import fpl_transfers as _engine
+from src.models.fpl_my_team import squad_meta
 
 HIT_COST = HIT_COST_XP  # FPL:n -4; sama lähde kuin rate-teamin hold_verdict
 FT_CARRY_MAX = 5
@@ -369,13 +370,26 @@ def _model_vs_crowd(pool: list[dict]) -> dict[int, tuple[float, float, float]]:
     return out
 
 
+# MY-TEAM-CONTEXT (3.9): sama kynnys kuin fantasy_edge.EDGE_TEMPLATE_MIN_EO.
+# Ei importata edge-moduulista (se on reititin, jolla on FastAPI-riippuvuus).
+TEMPLATE_MISSING_MIN_EO = 20.0
+TEMPLATE_MISSING_TOP_N = 3
+
+
 def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
-                        pos: str | None = None) -> dict:
+                        pos: str | None = None,
+                        squad: dict | None = None) -> dict:
     """Matala EO × korkea xP -listaus koko poolista (ei vaadi entryä).
 
     #71: mukana myös model_vs_crowd-osio — missä malli on ERI mieltä kuin
     joukko (käänteinen "seuraa eliittiä": model_backs = malli edellä joukkoa,
     crowd_backs = template-pelaajat joita malli ei rankkaa omistuksen tasolle).
+
+    MY-TEAM-CONTEXT (3.9): `squad` (fpl_my_team.squad_context) -> omistetut
+    pois `players`-listalta (differentiaali jonka jo omistat ei ole
+    differentiaali sinulle), jokaiselle riville `owned`, ja `template_missing`
+    = korkeimman omistuksen pelaajat joita rungossa EI ole (sama kuvio kuin
+    edge-endpointin template_risks). Ilman squadia vastaus on entinen.
     """
     if not 0 < max_ownership <= 100:
         raise RateTeamError(400, "max_ownership must be in (0, 100].")
@@ -388,9 +402,11 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
     mvc = _model_vs_crowd(pool)
     pool, dropped = apply_availability_gate(pool, bootstrap)
 
+    own_ids = set(squad["ids"]) if squad and squad.get("available") else None
+
     def _row(p):
         m, c, d = mvc[p["id"]]
-        return {
+        row = {
             "id": p["id"], "web_name": p["web_name"],
             "team_short": p["team_short"], "pos": POS_NAME[p["element_type"]],
             "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
@@ -398,10 +414,17 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
             "xp_horizon_total": round(p["xp_horizon_total"], 2),
             "model_pct": m, "crowd_pct": c, "model_vs_crowd_delta": d,
         }
+        if own_ids is not None:
+            row["owned"] = p["id"] in own_ids
+        return row
 
     cands = [p for p in pool
              if (p.get("owned_pct") or 0.0) <= max_ownership
              and (pos is None or p["element_type"] == pos_by_name[pos])]
+    owned_excluded = 0
+    if own_ids is not None:
+        owned_excluded = sum(1 for p in cands if p["id"] in own_ids)
+        cands = [p for p in cands if p["id"] not in own_ids]
     cands.sort(key=lambda p: p["xp_horizon_total"], reverse=True)
 
     # #71: model-vs-crowd-listat EIVÄT noudata max_ownership-filtteriä
@@ -419,7 +442,7 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
          and mvc[p["id"]][1] >= MODEL_VS_CROWD_MIN_CROWD_PCT),
         key=lambda p: mvc[p["id"]][2])
 
-    return {
+    out = {
         "meta": {"max_ownership": max_ownership, "pos": pos,
                  "generated_at": xp_data["meta"].get("generated_at"),
                  "horizon_gw": xp_data["meta"].get("horizon_gw"),
@@ -434,9 +457,33 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
             "crowd_backs": [_row(p) for p in fades[:MODEL_VS_CROWD_TOP_N]],
         },
     }
+    if squad is not None:
+        out["meta"]["squad"] = squad_meta(squad)
+        if own_ids is not None:
+            out["meta"]["owned_excluded"] = owned_excluded
+            # Template you are missing: korkein omistus joita rungossa ei ole.
+            # Sama kuvio kuin edge: top-3 EO:n mukaan, katkaistaan kun EO
+            # putoaa alle kynnyksen ja lista ei ole tyhja.
+            template = []
+            for p in sorted((p for p in scoped if p["id"] not in own_ids),
+                            key=lambda p: float(p.get("owned_pct") or 0.0),
+                            reverse=True)[:TEMPLATE_MISSING_TOP_N]:
+                eo = float(p.get("owned_pct") or 0.0)
+                # Tiukempi kuin edge: alle kynnyksen ei ole template, ja
+                # tyhja lista on rehellinen kun runko omistaa koko templaten.
+                if eo < TEMPLATE_MISSING_MIN_EO:
+                    break
+                template.append(_row(p))
+            out["template_missing"] = template
+            out["meta"]["template_note"] = (
+                "Template missing = the most owned players in this position "
+                "filter that are not in your squad. When one of them scores "
+                "and you do not own him, your rank slides.")
+    return out
 
 
-def compare_players(player_ids: list[int]) -> dict:
+def compare_players(player_ids: list[int],
+                    squad: dict | None = None) -> dict:
     """2–4 pelaajan rinnakkaisvertailu + suora kanta xP-erolla.
 
     28.7: katto 3 -> 4. Neljä on realistinen kun mietit kahta siirtoa samalla
@@ -499,6 +546,9 @@ def compare_players(player_ids: list[int]) -> dict:
         if d is not None:
             row["defcon_hit_rate_pct"] = d.get("hit_rate_pct")
             row["defcon_dc_per_game"] = d.get("dc_per_game")
+        # MY-TEAM-CONTEXT (3.9): omistettu-lippu vain kun squad annettiin.
+        if squad is not None and squad.get("available"):
+            row["owned"] = pid in squad["ids"]
         rows.append(row)
     ranked = sorted(rows, key=lambda r: r["xp_horizon_total"], reverse=True)
     margin = round(ranked[0]["xp_horizon_total"] - ranked[1]["xp_horizon_total"], 2)
@@ -511,13 +561,16 @@ def compare_players(player_ids: list[int]) -> dict:
                  f"Too close to call - {ranked[0]['web_name']} edges it by "
                  f"{margin} xP over the horizon."),
     }
+    meta = {"generated_at": xp_data["meta"].get("generated_at"),
+            "horizon_gw": xp_data["meta"].get("horizon_gw"),
+            # V2: mistä raakastatit tulevat — frontend näyttää katteen
+            # eikä myy edelliskauden lukua nykykauden mittauksena.
+            "defcon_basis_season": dc_basis_season,
+            "defcon_available": bool(dc_by_id)}
+    if squad is not None:
+        meta["squad"] = squad_meta(squad)
     return {
-        "meta": {"generated_at": xp_data["meta"].get("generated_at"),
-                 "horizon_gw": xp_data["meta"].get("horizon_gw"),
-                 # V2: mistä raakastatit tulevat — frontend näyttää katteen
-                 # eikä myy edelliskauden lukua nykykauden mittauksena.
-                 "defcon_basis_season": dc_basis_season,
-                 "defcon_available": bool(dc_by_id)},
+        "meta": meta,
         "players": rows,
         "verdict": verdict,
     }
@@ -617,10 +670,18 @@ def _replacement_reason(cand: dict, target: dict, gws: list[int]) -> dict:
 
 def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
                  bracket: float = REPLACEMENTS_DEFAULT_BRACKET,
-                 top_n: int = REPLACEMENTS_TOP_N) -> dict:
+                 top_n: int = REPLACEMENTS_TOP_N,
+                 squad: dict | None = None) -> dict:
     """Top-N korvaajaa samasta pelipaikasta ja hintahaarukasta (+-bracket m),
     ikkunan xP:lla jarjestettyna. Ei vaadi entrya: kysymys on "kuka korvaa
-    X:n", ei "kuka korvaa X:n minun rungossani" (se on planner)."""
+    X:n", ei "kuka korvaa X:n minun rungossani" (se on planner).
+
+    MY-TEAM-CONTEXT (3.9): `squad` annettuna ja lahtija rungossa -> hinnan
+    ylaraja on oikea varallisuus `bank + lahtijan hinta` (sama aritmetiikka
+    kuin fantasy_edge._top_transfers), ei symmetrinen haarukka. Alaraja
+    pysyy `hinta - bracket` ja levenee kuten ennen. Omistetut pelaajat eivat
+    ole ehdokkaita. Jos lahtija EI ole rungossa, hinta toimii kuten ennen ja
+    meta kertoo sen. Ilman squadia vastaus on entinen."""
     if not 1 <= gws <= 6:
         raise RateTeamError(400, "gws must be between 1 and 6.")
     if not 0 <= bracket <= REPLACEMENTS_MAX_BRACKET:
@@ -643,13 +704,24 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
     # ole korvaaja. Lahtijaa ei portiteta — hanen sivussaolonsa on usein juuri
     # kysymyksen syy.
     live_pool, dropped = apply_availability_gate(pool, bootstrap)
+    own_ids = set(squad["ids"]) if squad and squad.get("available") else None
     same_pos = [p for p in live_pool
                 if p["id"] != target["id"]
                 and p["element_type"] == target["element_type"]]
+    owned_excluded = 0
+    if own_ids is not None:
+        owned_excluded = sum(1 for p in same_pos if p["id"] in own_ids)
+        same_pos = [p for p in same_pos if p["id"] not in own_ids]
+    # Varallisuus: bank + lahtijan hinta, vain kun lahtija on rungossa.
+    budget_tenths = None
+    if own_ids is not None and target["id"] in own_ids:
+        budget_tenths = int(squad["bank_tenths"]) + int(target["price"])
 
     def _in_bracket(b: float) -> tuple[int, int, list[dict]]:
         lo_ = target["price"] - int(round(b * 10))
         hi_ = target["price"] + int(round(b * 10))
+        if budget_tenths is not None:
+            hi_ = budget_tenths
         return lo_, hi_, [p for p in same_pos if lo_ <= p["price"] <= hi_]
 
     # Hintahaarukan levennys: hintaskaalan paassa (Bruno 12.0m, Haaland
@@ -681,6 +753,22 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "reason": _replacement_reason(p, target, window),
         }
 
+    meta_squad = {}
+    if squad is not None:
+        meta_squad["squad"] = squad_meta(squad)
+        if own_ids is not None:
+            meta_squad["owned_excluded"] = owned_excluded
+            meta_squad["target_owned"] = target["id"] in own_ids
+            meta_squad["budget"] = (round(budget_tenths / 10.0, 1)
+                                    if budget_tenths is not None else None)
+            meta_squad["budget_note"] = (
+                "Price ceiling is your bank plus {}'s current price ({}m). "
+                "Players you already own are left out.".format(
+                    target["web_name"], round(budget_tenths / 10.0, 1))
+                if budget_tenths is not None else
+                "{} is not in your squad, so the price bracket is used as "
+                "is. Players you already own are left out.".format(
+                    target["web_name"]))
     return {
         "meta": {
             "generated_at": xp_data["meta"].get("generated_at"),
@@ -689,6 +777,7 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "bracket_widened": bracket_used != bracket,
             "price_min": lo / 10.0, "price_max": hi / 10.0,
             "candidates_in_bracket": len(cands),
+            **meta_squad,
             "availability_gate": {"checked": True, "dropped": dropped,
                                   "note": AVAILABILITY_GATE_NOTE},
             "reason_note": ("Reason is the row's best week in the window, or "

@@ -24,6 +24,7 @@ from src.models.fpl_gameweek import actionable_gameweek
 
 from statistics import pstdev
 
+from src.models.fpl_my_team import squad_context, squad_meta
 from src.models.fpl_phase0 import load_phase0
 from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, POS_NAME, RateTeamError, apply_availability_gate,
@@ -129,15 +130,69 @@ def _starter_gk_by_club(pool: list[dict]) -> dict[str, dict]:
     return best
 
 
-def gk_rotation_pairs(top_n: int = 10) -> dict:
+GK_PAIRS_NOTE = (
+    "Best rotating goalkeeper duo: each gameweek you field the keeper with "
+    "the higher model clean sheet probability. Pairs are ranked by that "
+    "average scaled by how many of the horizon gameweeks both clubs have a "
+    "projection for, so a pair that only lines up for two of six weeks "
+    "cannot outrank a pair that lines up for all six."
+)
+GK_OWN_NOTE = (
+    "Your pair is scored with the same formula as the list. Transfers needed "
+    "counts how many of the pair you do not own. Affordable means the pair "
+    "costs no more than your two keepers plus your bank at current prices."
+)
+
+
+def _pair_split(cs_a: dict[int, float], cs_b: dict[int, float], a: str, b: str
+                ) -> tuple[list[dict], float]:
+    """Yhteisten kierrosten per-GW max(CS%) + keskiarvo. Sama kaava listalle
+    ja omalle parille (yksi lahde kahdelle luvulle)."""
+    common = sorted(set(cs_a) & set(cs_b))
+    split = []
+    for gw in common:
+        ca, cb = cs_a[gw], cs_b[gw]
+        pick = a if ca >= cb else b
+        split.append({"gw": gw, "team_short": pick,
+                      "cs_pct": round(max(ca, cb), 1)})
+    if not split:
+        return [], 0.0
+    return split, sum(x["cs_pct"] for x in split) / len(split)
+
+
+def _pair_row(ga: dict, gb: dict, a: str, b: str, split: list[dict],
+              avg_best: float) -> dict:
+    return {
+        "avg_best_cs_pct": round(avg_best, 1),
+        "combined_price": round((ga["price"] + gb["price"]) / 10.0, 1),
+        "gk_a": {"id": ga["id"], "web_name": ga["web_name"],
+                 "team_short": a, "price": round(ga["price"] / 10.0, 1)},
+        "gk_b": {"id": gb["id"], "web_name": gb["web_name"],
+                 "team_short": b, "price": round(gb["price"] / 10.0, 1)},
+        "gw_split": split,
+    }
+
+
+def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
     """Paras 2-vahdin pari: per-GW max(CS%) kahdesta eri seurasta.
 
-    Nostaa RateTeamErrorin jos xP-pooli puuttuu; CS-data puuttuu →
+    Nostaa RateTeamErrorin jos xP-pooli puuttuu; CS-data puuttuu ->
     available=False-runko (ei kaatumista).
+
+    MY-TEAM-CONTEXT (3.9): `squad` = fpl_my_team.squad_context(). Kun se on
+    saatavilla, vastaus saa `own_pair`-lohkon (kayttajan kaksi vahtia samalla
+    kaavalla), ja jokainen pari `transfers_needed` (0/1/2) + `affordable`
+    (combined_price <= omien vahtien hinta + bank). Ilman squadia vastaus on
+    entinen: ei uusia avaimia riveilla eika metassa.
+
+    Rankkaus (3.9): avg_best_cs_pct * common_gws / horizon_gws. Aiemmin pari
+    jolla oli 2 yhteista kierrosta rankattiin samoin kuin 6:n pari, ja lyhyt
+    hyva patka voitti koko horisontin. `common_gws` naytetaan rivilla vain
+    kun se on horisonttia lyhyempi (muuten se olisi sama luku joka rivilla).
     """
-    _xp, bootstrap, pool, _ = build_context()
+    _xp, bootstrap, pool, pool_by_id = build_context()
     # Sivussa oleva vahti ei kelpaa rotaatioparin puolikkaaksi (serve-time).
-    pool, _dropped = apply_availability_gate(pool, bootstrap)
+    live_pool, _dropped = apply_availability_gate(pool, bootstrap)
     phase0 = load_phase0()
     p0_meta = phase0.get("meta", {})
     if not p0_meta.get("available") or not phase0.get("teams"):
@@ -156,65 +211,122 @@ def gk_rotation_pairs(top_n: int = 10) -> dict:
             if f.get("gw") is not None and f.get("cs_pct") is not None
         }
 
-    gks = _starter_gk_by_club(pool)
-    shorts = sorted(s for s in gks if s in cs_by_short)
-
-    pairs = []
-    for i, a in enumerate(shorts):
-        for b in shorts[i + 1:]:
-            common = sorted(set(cs_by_short[a]) & set(cs_by_short[b]))
-            if not common:
-                continue
-            split = []
-            for gw in common:
-                ca, cb = cs_by_short[a][gw], cs_by_short[b][gw]
-                pick = a if ca >= cb else b
-                split.append({"gw": gw, "team_short": pick,
-                              "cs_pct": round(max(ca, cb), 1)})
-            avg_best = sum(s["cs_pct"] for s in split) / len(split)
-            ga, gb = gks[a], gks[b]
-            pairs.append({
-                "avg_best_cs_pct": round(avg_best, 1),
-                "combined_price": round((ga["price"] + gb["price"]) / 10.0, 1),
-                "gk_a": {"id": ga["id"], "web_name": ga["web_name"],
-                         "team_short": a, "price": round(ga["price"] / 10.0, 1)},
-                "gk_b": {"id": gb["id"], "web_name": gb["web_name"],
-                         "team_short": b, "price": round(gb["price"] / 10.0, 1)},
-                "gw_split": split,
-            })
-    # Paras rotaatio ensin; sama CS% → halvempi pari voittaa
-    pairs.sort(key=lambda r: (-r["avg_best_cs_pct"], r["combined_price"]))
-
-    # 29.7 (Villen havainto): horizon_gw kertoo mitä TÄSSÄ vastauksessa on, ei
-    # mitä tiedoston metassa lukee. Aiemmin tämä luki p0_meta["horizon_gw"]:n,
-    # joka on koko fixture-tiedoston kattavuus (38) — mutta pari lasketaan vain
-    # kierroksista joilla MOLEMMILLA seuroilla on cs_pct, eli lähihorisontista.
-    # Payload väitti siis 38:aa ja näytti gw_splitissä 6:ta. Sama vikaluokka
+    # 29.7 (Villen havainto): horizon_gw kertoo mita TASSA vastauksessa on, ei
+    # mita tiedoston metassa lukee. Pari lasketaan vain kierroksista joilla
+    # MOLEMMILLA seuroilla on cs_pct, eli lahihorisontista. Sama vikaluokka
     # kuin muistin `honest-data-labels`: leima lupasi kattavuutta jota ei ole.
     cs_gws = {gw for per_gw in cs_by_short.values() for gw in per_gw}
     next_gw = actionable_gameweek(p0_meta)
     horizon_actual = (
         max(cs_gws) - next_gw + 1 if cs_gws and next_gw is not None else None
     )
+    # Painotuksen nimittaja: horisontin kierrosmaara. Jos sita ei voi johtaa,
+    # kayta laajinta CS-kattavuutta (silloin taysi pari saa painon 1.0).
+    horizon_n = horizon_actual if horizon_actual and horizon_actual > 0 else (
+        max((len(v) for v in cs_by_short.values()), default=0))
 
-    return {
-        "meta": {
-            "available": True,
-            "gw": actionable_gameweek(p0_meta),
-            "horizon_gw": horizon_actual,
-            "note": ("Best rotating goalkeeper duo: each gameweek you field the "
-                     "keeper with the higher model clean sheet probability."),
-        },
-        "pairs": pairs[:top_n],
+    def _weighted(avg_best: float, n_common: int) -> float:
+        if not horizon_n:
+            return avg_best
+        return avg_best * min(n_common, horizon_n) / horizon_n
+
+    gks = _starter_gk_by_club(live_pool)
+    shorts = sorted(s for s in gks if s in cs_by_short)
+
+    own_ids = set(squad["ids"]) if squad and squad.get("available") else set()
+    own_gks = [pool_by_id[i] for i in own_ids
+               if i in pool_by_id and pool_by_id[i]["element_type"] == 1]
+    own_gks.sort(key=lambda p: p["id"])
+    # Omien vahtien hinta: pool (=bootstrap now_cost joinattuna); jos vahdilla
+    # ei ole projektiota, hinta luetaan suoraan bootstrapista.
+    own_gk_tenths = 0
+    if own_ids:
+        boot_by_id = {e["id"]: e for e in (bootstrap.get("elements") or [])}
+        for pid in own_ids:
+            row = pool_by_id.get(pid) or boot_by_id.get(pid)
+            if row is None or row.get("element_type") != 1:
+                continue
+            own_gk_tenths += int(row["price"] if "price" in row
+                                 else row.get("now_cost") or 0)
+    own_budget_tenths = own_gk_tenths + (squad["bank_tenths"] if own_ids else 0)
+
+    pairs = []
+    for i, a in enumerate(shorts):
+        for b in shorts[i + 1:]:
+            split, avg_best = _pair_split(cs_by_short[a], cs_by_short[b], a, b)
+            if not split:
+                continue
+            ga, gb = gks[a], gks[b]
+            row = _pair_row(ga, gb, a, b, split, avg_best)
+            if horizon_n and len(split) < horizon_n:
+                row["common_gws"] = len(split)
+            row["_score"] = _weighted(avg_best, len(split))
+            if own_ids:
+                pair_ids = {ga["id"], gb["id"]}
+                row["transfers_needed"] = len(pair_ids - own_ids)
+                row["affordable"] = (ga["price"] + gb["price"]) <= own_budget_tenths
+            pairs.append(row)
+    # Paras rotaatio ensin; sama painotettu CS% -> halvempi pari voittaa
+    pairs.sort(key=lambda r: (-r["_score"], r["combined_price"]))
+    scores = [r.pop("_score") for r in pairs]
+
+    meta = {
+        "available": True,
+        "gw": actionable_gameweek(p0_meta),
+        "horizon_gw": horizon_actual,
+        "note": GK_PAIRS_NOTE,
     }
+    out = {"meta": meta, "pairs": pairs[:top_n]}
+
+    if squad is not None:
+        meta["squad"] = squad_meta(squad)
+        own_pair = None
+        if len(own_gks) >= 2:
+            ga, gb = own_gks[0], own_gks[1]
+            a, b = ga["team_short"], gb["team_short"]
+            if a in cs_by_short and b in cs_by_short:
+                split, avg_best = _pair_split(cs_by_short[a], cs_by_short[b], a, b)
+                if split:
+                    own_pair = _pair_row(ga, gb, a, b, split, avg_best)
+                    own_pair["common_gws"] = len(split)
+                    own_pair["transfers_needed"] = 0
+                    own_pair["affordable"] = True
+                    # Sijoitus listalla samalla painotuksella (1 = paras).
+                    own_score = _weighted(avg_best, len(split))
+                    own_pair["rank"] = sum(1 for sc in scores if sc > own_score) + 1
+                    own_pair["of"] = len(pairs)
+        if squad.get("available"):
+            meta["own_budget"] = round(own_budget_tenths / 10.0, 1)
+            meta["own_note"] = GK_OWN_NOTE
+            if own_pair is None:
+                meta["own_pair_note"] = (
+                    "Could not score your pair: fewer than two of your "
+                    "keepers have a clean sheet projection.")
+        out["own_pair"] = own_pair
+    return out
 
 
-def value_and_gk(top_n_value: int = 20, top_n_pairs: int = 10) -> dict:
-    """Yhdistetty payload /api/fantasy/value-endpointille (yksi kutsu, yksi
-    build_context-lataus molemmille osille)."""
+def value_and_gk(top_n_value: int = 20, top_n_pairs: int = 10,
+                 entry: int | None = None,
+                 players: list[int] | None = None) -> dict:
+    """Yhdistetty payload /api/fantasy/value-endpointille.
+
+    MY-TEAM-CONTEXT (3.9): `entry` (tai `players` = 15 id:ta) -> sama
+    resolve_squad kuin rate-teamissa. Value-rivit saavat `owned`-lipun ja
+    GK-parit oman parin + siirto-/budjettimerkinnat. Ilman kumpaakaan
+    vastaus on tasmalleen entinen. Entry-virhe ei kaada: meta.squad kertoo.
+    """
     value = value_list(top_n=top_n_value)
+    squad = None
+    if entry is not None or players:
+        _xp, bootstrap, _pool, _by_id = build_context()
+        squad = squad_context(bootstrap, entry, players)
+        value["meta"]["squad"] = squad_meta(squad)
+        if squad and squad["available"]:
+            for r in value["players"]:
+                r["owned"] = r["id"] in squad["ids"]
     try:
-        gk = gk_rotation_pairs(top_n=top_n_pairs)
+        gk = gk_rotation_pairs(top_n=top_n_pairs, squad=squad)
     except RateTeamError:
         gk = {"meta": {"available": False, "note": "GK data unavailable."},
               "pairs": []}

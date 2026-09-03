@@ -4761,8 +4761,13 @@ def fantasy_xp(
 
 
 @app.get("/api/fantasy/price-watch",
-         description="Price change forecast for FPL players, rising and falling.")
-def fantasy_price_watch(response: Response):
+         description="Price change forecast for FPL players, rising and falling. With entry, marks which of your 15 are on the lists.")
+def fantasy_price_watch(
+    response: Response,
+    entry: int | None = Query(default=None,
+                              description="Julkinen FPL entry-ID (valinnainen): "
+                                          "merkitsee omistetut rivit"),
+):
     """FPL price watch (#43) — hinnanmuutosennuste (rising/falling) per pelaaja.
 
     Palauttaa committatun ennusteen (data/fpl_price_watch.json). Rakennetaan
@@ -4796,6 +4801,20 @@ def fantasy_price_watch(response: Response):
                 }
     except Exception:
         pass  # loki ei saa kaataa price watchia
+    # MY-TEAM-CONTEXT (3.9): entry -> omistetut rivit + owned-yhteenveto.
+    # Entry-virhe ei kaada price watchia (fail-safe squad_context).
+    if entry is not None:
+        from src.models.fpl_my_team import squad_context, squad_meta
+        from src.models.fpl_price_watch import annotate_owned
+        from src.models.fpl_rate_team import RateTeamError, get_bootstrap
+        try:
+            squad = squad_context(get_bootstrap(), entry)
+        except RateTeamError as e:
+            squad = {"available": False, "entry": entry, "ids": set(),
+                     "bank_tenths": 0, "gw": None, "note": e.detail}
+        payload.setdefault("meta", {})["squad"] = squad_meta(squad)
+        if squad and squad["available"]:
+            payload = annotate_owned(payload, squad["ids"])
     return payload
 
 
@@ -5067,16 +5086,32 @@ def fantasy_differentials(
     response: Response,
     max_ownership: float = Query(default=10.0, gt=0, le=100),
     pos: str | None = Query(default=None),
+    entry: int | None = Query(default=None,
+                              description="Julkinen FPL entry-ID (valinnainen): "
+                                          "omistetut pois, template_missing"),
 ):
     """FPL differential finder (#35): matala EO × korkea xP (FPL-API ownership
-    + xP-projektio)."""
+    + xP-projektio). MY-TEAM-CONTEXT (3.9): entry -> omistetut pois listalta +
+    template_missing."""
     from src.models.fpl_planner import differential_finder
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
     try:
-        return differential_finder(max_ownership=max_ownership, pos=pos)
+        squad = _squad_ctx(entry)
+        return differential_finder(max_ownership=max_ownership, pos=pos,
+                                   squad=squad)
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+
+def _squad_ctx(entry: int | None, players: list[int] | None = None):
+    """MY-TEAM-CONTEXT (3.9): jaettu joukkuekonteksti tai None. Ei nosta
+    entry-virhetta (tyokalu jatkaa kuten ilman entrya, meta kertoo)."""
+    if entry is None and not players:
+        return None
+    from src.models.fpl_my_team import squad_context
+    from src.models.fpl_rate_team import get_bootstrap
+    return squad_context(get_bootstrap(), entry, players)
 
 
 @app.get("/api/fantasy/replacements",
@@ -5089,6 +5124,10 @@ def fantasy_replacements(
     bracket: float = Query(default=0.5, ge=0, le=3.0,
                            description="Price bracket in millions, plus or minus (default 0.5)."),
     top: int = Query(default=5, ge=1, le=10),
+    entry: int | None = Query(default=None,
+                              description="Julkinen FPL entry-ID (valinnainen): "
+                                          "budjetti = bank + lahtijan hinta, "
+                                          "omistetut pois"),
 ):
     """ROWAN-REPLACEMENTS (2.9): luojan tilaama "who replaces X" -lista.
     Sama datalahde kuin differentials (committattu xP-projektio + elava
@@ -5101,7 +5140,8 @@ def fantasy_replacements(
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
     try:
-        payload = replacements(player_id=player, gws=gws, bracket=bracket, top_n=top)
+        payload = replacements(player_id=player, gws=gws, bracket=bracket,
+                               top_n=top, squad=_squad_ctx(entry))
     except RateTeamError as e:
         raise _http_from_rate_team_error(e)
     if not is_premium_request(request):
@@ -5116,15 +5156,24 @@ def fantasy_value(
     response: Response,
     top_n: int = Query(default=20, ge=1, le=100),
     pairs_n: int = Query(default=10, ge=1, le=50),
+    entry: int | None = Query(default=None,
+                              description="Julkinen FPL entry-ID (valinnainen): "
+                                          "oma GK-pari, siirrot ja budjetti"),
+    players: str | None = Query(default=None,
+                                description="Vaihtoehto entrylle: 15 FPL "
+                                            "element-ID:ta pilkuilla"),
 ):
     """FPL value/consistency + GK rotation pairs (#114): xP/£-ranking +
     fixture-swing + paras 2-vahdin CS%-rotaatio. Rakentuu xP-projektion ja
-    phase0-CS%:n päälle — ei uutta dataputkea."""
+    phase0-CS%:n päälle — ei uutta dataputkea. MY-TEAM-CONTEXT (3.9): entry
+    tai players -> own_pair + transfers_needed/affordable pareille."""
     from src.models.fpl_rate_team import RateTeamError
     from src.models.fpl_value import value_and_gk
     response.headers["Cache-Control"] = "no-store"
+    player_ids = _parse_id_csv(players, "players") if players else None
     try:
-        return value_and_gk(top_n_value=top_n, top_n_pairs=pairs_n)
+        return value_and_gk(top_n_value=top_n, top_n_pairs=pairs_n,
+                            entry=entry, players=player_ids)
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -5262,14 +5311,19 @@ def fantasy_defcon_live(
 def fantasy_compare(
     response: Response,
     players: str = Query(..., description="Two to four FPL element IDs, comma separated"),
+    entry: int | None = Query(default=None,
+                              description="Julkinen FPL entry-ID (valinnainen): "
+                                          "owned-lippu per pelaaja"),
 ):
     """FPL pelaajavertailu (#35): 2-4 pelaajan xP-komponenttierittely +
-    hinta/EO/predicted minutes + suora kanta xP-erolla."""
+    hinta/EO/predicted minutes + suora kanta xP-erolla. MY-TEAM-CONTEXT
+    (3.9): entry -> `owned` per rivi."""
     from src.models.fpl_planner import compare_players
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
     try:
-        return compare_players(_parse_id_csv(players, "players"))
+        return compare_players(_parse_id_csv(players, "players"),
+                               squad=_squad_ctx(entry))
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
