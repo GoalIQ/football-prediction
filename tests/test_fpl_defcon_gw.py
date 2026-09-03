@@ -151,3 +151,16 @@ def test_sanity_catches_incoherent_starts():
     players[0]["starts"] = 99                  # startteja enemman kuin otteluita
     fails = sanity({"players": players})
     assert any("epakoherentit" in f for f in fails)
+
+
+def test_matrix_skips_status_u():
+    """3.9: liigasta lahtenyt (status u) ei paady matriisiin vaikka
+    arkistorivit loytyvat. Kontrolli: status a samalla datalla on mukana."""
+    gone = _elem(1, 111, "Gone", 2)
+    gone["status"] = "u"
+    here = _elem(2, 222, "Here", 2)
+    rows = {111: _rows(10, 12), 222: _rows(10, 12)}
+    out = matrix_players([gone, here], TEAMS, rows)
+    assert [p["web_name"] for p in out] == ["Here"]
+    gone["status"] = "a"
+    assert {p["web_name"] for p in matrix_players([gone, here], TEAMS, rows)} == {"Gone", "Here"}

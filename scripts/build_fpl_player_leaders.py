@@ -44,6 +44,17 @@ def season_label(key: str) -> str:
     return f"20{key[:2]}/{key[2:]}"
 
 
+def left_league(e: dict) -> bool:
+    """FPL-status `u` = pelaaja ei ole enaa valittavissa (siirtynyt pois
+    liigasta / lainalle ulkomaille). FPL PITAA hanet bootstrapissa kauden
+    loppuun (Watkins 'Has joined Al Hilal permanently' oli edelleen id 55,
+    seura AVL), joten "ei bootstrapissa" -pudotus ei koskaan laukea ja
+    viime kauden xG-rivit jaivat listalle. Mitattu 3.9.2026: 52/499
+    leaders-rivia ja 45 DefCon-matriisin rivia oli status u.
+    Loukkaantuneet (i/d/s) PYSYVAT: he ovat valittavissa ja palaavat."""
+    return (e.get("status") or "a") == "u"
+
+
 def _player_rows(boot: dict, summaries: dict, season: str,
                  keep_empty: bool) -> list[dict]:
     """Rakenna per-pelaaja-rivit bootstrap+summary-datasta. keep_empty=True
@@ -55,6 +66,8 @@ def _player_rows(boot: dict, summaries: dict, season: str,
         pos = POS_NAME.get(e["element_type"])
         if pos is None:
             continue
+        if left_league(e):
+            continue  # 3.9: lahtenyt liigasta -> ei listalle (ks. left_league)
         history = summaries.get(e["id"]) or []
         played = [r for r in history if (r.get("minutes") or 0) > 0]
         played.sort(key=lambda r: (r.get("round") or 0, r.get("kickoff_time") or ""))
@@ -98,6 +111,10 @@ def _player_rows(boot: dict, summaries: dict, season: str,
             "web_name": e["web_name"],
             "team_short": teams.get(e["team"], ""),
             "pos": pos,
+            # 3.9: FPL-status mukaan riviin (a/d/i/s), jotta rankkaaja ja
+            # pinnat voivat suodattaa ilman uutta bootstrap-hakua. u ei
+            # koskaan paady tanne (left_league yllä).
+            "status": e.get("status") or "a",
             "price": (e.get("now_cost") or 0) / 10.0,
             "owned_pct": float(e.get("selected_by_percent") or 0.0),
             "games_total": len(played),
@@ -286,13 +303,14 @@ def refresh_current_attrs(boot: dict) -> dict | None:
     for p in data.get("players", []):
         e = by_code.get(p.get("code"))
         pos = POS_NAME.get(e["element_type"]) if e else None
-        if e is None or pos is None:
+        if e is None or pos is None or left_league(e):
             dropped += 1
             continue
         p["id"] = e["id"]
         p["web_name"] = e["web_name"]
         p["team_short"] = teams.get(e["team"], p.get("team_short", ""))
         p["pos"] = pos
+        p["status"] = e.get("status") or "a"
         p["price"] = e["now_cost"] / 10.0
         p["owned_pct"] = float(e.get("selected_by_percent") or 0.0)
         # Kausitotaalit suoraan bootstrapista (sama lahde kuin per-ottelu-
@@ -316,10 +334,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--freeze-prev-2526", action="store_true",
                     help="Rakenna snapshot lokaalista 25/26-cachesta "
                          "(kertaluontoinen kausivaihtoajo, lisää code-kentät)")
+    ap.add_argument("--refresh-attrs", action="store_true",
+                    help="Paivita vain kuluvan kauden attribuutit + pudota "
+                         "liigasta lahteneet (1 API-kutsu, ei summaryja)")
     args = ap.parse_args(argv)
 
     if args.freeze_prev_2526:
         data = build_from_cache_2526()
+    elif args.refresh_attrs:
+        data = refresh_current_attrs(fetch_bootstrap())
+        if data is None:
+            print("ei aiempaa snapshottia — ei mitään päivitettävää.")
+            return 0
     else:
         boot = fetch_bootstrap()
         season = season_label(season_key_from_bootstrap(boot))

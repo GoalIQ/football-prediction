@@ -275,6 +275,13 @@ def sanity_gate(players: list[dict], boot: dict, coverable_teams: set[str],
 SHORT_SEASON_MINUTES = 1500
 
 
+def price_blend_allowed(element: dict) -> bool:
+    """Hintapriori-sekoitus vain kun FPL:n saatavuusportti ei ole nolla.
+    i/s/u/n-pelaajan p_start on jo 0 eika ohut otos anna syyta nostaa sita;
+    sekoitus nollan ja priorin valilla olisi puhdas priori."""
+    return availability_factor(element) > 0.0
+
+
 def attach_minutes_basis_flag(players: list[dict]) -> int:
     """Merkitsee rivit joiden minuuttipriori nojaa katkenneeseen kauteen."""
     n = 0
@@ -636,6 +643,13 @@ def main(argv: list[str] | None = None) -> int:
         if mins <= 0 or mins >= xp.PRICE_PRIOR_THIN_MINUTES:
             continue
         if price_pct_by_id[pid] < PRICE_BLEND_MIN_PCT:
+            continue
+        if not price_blend_allowed(e):
+            # 3.9: saatavuusportti ajettiin JO (apply_availability yllä),
+            # mutta sekoitus toi nollatulle p_startille massaa takaisin
+            # hintapriorista: Woltemade (status u, Juventus-laina) sai
+            # p_start 0.15 ja 0.56 xP/GW, ja paatyi "best option" -riville
+            # predicted-lineups-sivulle. Portti 0 -> ei sekoitusta.
             continue
         before = mm_by_player[pid]["p_start"]
         mm_by_player[pid] = xp.apply_price_prior(

@@ -93,6 +93,8 @@ def rank_xg_leaders(data: dict, window: int = WINDOW_DEFAULT,
     window = max(WINDOW_MIN, min(WINDOW_MAX, window))
     rows = []
     for p in data.get("players", []):
+        if p.get("status") == "u":
+            continue  # liigasta lahtenyt (builderi pudottaa; tama on vyo)
         if p["pos"] == "GKP" and pos != "GKP":
             continue
         if pos and p["pos"] != pos:
@@ -134,6 +136,8 @@ def rank_defcon_leaders(data: dict, window: int = WINDOW_DEFAULT,
     window = max(WINDOW_MIN, min(WINDOW_MAX, window))
     rows = []
     for p in data.get("players", []):
+        if p.get("status") == "u":
+            continue
         if p["pos"] == "GKP":
             continue
         if pos and p["pos"] != pos:

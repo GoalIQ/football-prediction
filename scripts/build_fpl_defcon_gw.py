@@ -136,6 +136,10 @@ def matrix_players(cur_elements: list[dict], cur_teams: dict[int, str],
         pos = POS_NAME.get(e["element_type"])
         if pos in (None, "GKP"):
             continue
+        if (e.get("status") or "a") == "u":
+            # 3.9: liigasta lahtenyt (FPL pitaa rivin bootstrapissa kauden
+            # loppuun, status u). Sama saanto kuin leaders-builderissa.
+            continue
         rows = rows_by_code.get(e.get("code")) or []
         if not rows:
             continue

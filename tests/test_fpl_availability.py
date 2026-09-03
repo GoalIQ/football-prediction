@@ -34,3 +34,21 @@ def test_doubtful_without_chance_is_half():
 @pytest.mark.parametrize("status", ["i", "s", "u", "n"])
 def test_out_statuses_zero(status: str):
     assert availability_factor({"status": status}) == 0.0
+
+
+# --- 3.9.2026: hintapriori-sekoitus ei saa ohittaa nollaporttia ----------
+from scripts.build_fpl_xp import price_blend_allowed
+
+
+@pytest.mark.parametrize("status", ["i", "s", "u", "n"])
+def test_price_blend_blocked_for_out_statuses(status: str):
+    assert not price_blend_allowed({"status": status})
+
+
+def test_price_blend_allowed_for_available_and_doubtful():
+    assert price_blend_allowed({"status": "a"})
+    assert price_blend_allowed({})
+    assert price_blend_allowed({"status": "d", "chance_of_playing_next_round": 25})
+    # d ilman chance-arvoa = 0.5 -> sallittu; d chance 0 -> portti 0 -> estetty
+    assert price_blend_allowed({"status": "d", "chance_of_playing_next_round": None})
+    assert not price_blend_allowed({"status": "d", "chance_of_playing_next_round": 0})

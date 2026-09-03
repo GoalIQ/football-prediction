@@ -194,3 +194,20 @@ def test_defcon_season_pos_change_carries_official_number():
     row = rank_defcon_season(data)["players"][0]
     assert row["hit_rate_pct"] == 60 and row["pos_changed"] is True
     assert row["basis_pos"] == "MID" and row["hit_rate_basis_pos_pct"] == 25
+
+
+def test_rank_skips_status_u_rows():
+    """3.9: vyo builderin left_league-suodattimelle — jos cacheen paatyy
+    status u -rivi, rankkaaja ei nayta sita. Negatiivinen kontrolli: sama
+    rivi statuksella a on listalla."""
+    gone = _player(1, "FWD", 8, xg=0.9, dc=13)
+    gone["status"] = "u"
+    here = _player(2, "FWD", 8, xg=0.9, dc=13)
+    here["status"] = "a"
+    xg = rank_xg_leaders(_data([gone, here]), window=5, top_n=10)
+    assert [r["id"] for r in xg["players"]] == [2]
+    dc = rank_defcon_leaders(_data([gone, here]), window=5, top_n=10)
+    assert [r["id"] for r in dc["players"]] == [2]
+    gone["status"] = "a"
+    assert {r["id"] for r in rank_xg_leaders(_data([gone, here]), window=5,
+                                            top_n=10)["players"]} == {1, 2}

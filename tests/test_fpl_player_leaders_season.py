@@ -113,3 +113,59 @@ def test_committed_artefact_obeys_the_published_basis_rule():
         else:
             assert p["games_total"] == len(p["recent_games"]), (
                 f"{p['web_name']}: kohdekauden rivi kantaa vierasta dataa")
+
+
+# --- 3.9.2026: liigasta lahteneet (FPL status u) pois listalta -------------
+# Tausta: Watkins (Al Hilal) nakyi xG leaders -listalla viime kauden riveilla,
+# koska FPL pitaa lahteneen bootstrapissa kauden loppuun (status u, seura
+# ennallaan) ja pudotus laukesi vain "ei bootstrapissa" -ehdosta.
+
+from scripts.build_fpl_player_leaders import left_league, refresh_current_attrs
+import scripts.build_fpl_player_leaders as _blp
+import json as _json
+
+
+def _boot_with_status():
+    b = _boot()
+    b["elements"][0]["status"] = "u"   # Isak "lahtenyt"
+    b["elements"][1]["status"] = "i"   # Emersonn loukkaantunut -> pysyy
+    return b
+
+
+def _summaries():
+    row = {"round": 1, "minutes": 90, "expected_goals": "0.5"}
+    return {379: [row], 316: [row]}
+
+
+def test_left_league_only_status_u():
+    assert left_league({"status": "u"})
+    for s in ("a", "d", "i", "s", "n", None):
+        assert not left_league({"status": s})
+    assert not left_league({})
+
+
+def test_player_rows_drop_status_u_keep_injured():
+    rows = _player_rows(_boot_with_status(), _summaries(), "2026/27",
+                        keep_empty=True)
+    names = {r["web_name"]: r for r in rows}
+    assert "Isak" not in names
+    assert names["Emersonn"]["status"] == "i"
+    # negatiivinen kontrolli: sama pelaaja statuksella a on listalla
+    b = _boot_with_status()
+    b["elements"][0]["status"] = "a"
+    rows = _player_rows(b, _summaries(), "2026/27", keep_empty=True)
+    assert "Isak" in {r["web_name"] for r in rows}
+
+
+def test_refresh_current_attrs_drops_status_u(tmp_path, monkeypatch):
+    snap = {"meta": {"available": True},
+            "players": _player_rows(_boot(), _summaries(), "2025/26",
+                                    keep_empty=True)}
+    assert {p["web_name"] for p in snap["players"]} == {"Isak", "Emersonn"}
+    path = tmp_path / "leaders.json"
+    path.write_text(_json.dumps(snap), encoding="utf-8")
+    monkeypatch.setattr(_blp, "LEADERS_PATH", path)
+    out = refresh_current_attrs(_boot_with_status())
+    assert [p["web_name"] for p in out["players"]] == ["Emersonn"]
+    assert out["players"][0]["status"] == "i"
+    assert out["meta"]["n_players"] == 1
