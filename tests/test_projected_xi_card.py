@@ -356,8 +356,8 @@ def test_card_names_only_one_best_15():
     import re
     html, _ = build_html(_data(_players()), now=BEFORE)
     text = re.sub(r"<[^>]+>", " ", html)
-    assert len(re.findall(r"best \d+", text, flags=re.I)) == 1, text[:300]
-    assert re.search(r"top \d+", text)
+    assert len(re.findall(r"\bbest \d+\b", text, flags=re.I)) == 1, text[:300]
+    assert re.search(r"\btop \d+\b", text)
     assert "free-hit" not in text.lower() and "scored in public" not in text
     old = text.replace("projected points, top", "projected points, best")
-    assert len(re.findall(r"best \d+", old, flags=re.I)) == 2
+    assert len(re.findall(r"\bbest \d+\b", old, flags=re.I)) == 2
