@@ -36,7 +36,7 @@ from src.models.fpl_rate_team import (
     apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
     get_bootstrap, get_entry_picks, optimal_xi, picks_outdated, resolve_squad,
 )
-from src.models import fpl_wildcard
+from src.models import fpl_chips, fpl_wildcard
 from src.models.fpl_xp import load_xp
 
 from api.premium import (
@@ -402,6 +402,67 @@ def fantasy_xp_csv(
 # GET /api/fantasy/chip-ev — chip-ajoituksen EV-ikkunat
 # ---------------------------------------------------------------------------
 
+def _entry_history(entry: int | None) -> dict | None:
+    """entry/{id}/history/ -> pelatut chipit. Fail-open: None jos entrya ei
+    ole tai haku kaatuu (vastaus kertoo `chips.history_loaded`), koska
+    chip-EV on kaytettavissa myos ilman entrya."""
+    if entry is None:
+        return None
+    try:
+        return _fetch_fpl(f"/entry/{entry}/history/")
+    except Exception:
+        return None
+
+
+def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]:
+    """Paras ikkuna per chip VAIN riveilta joilla chipin voi viela pelata
+    (fpl_chips.gw_allowed: puolikkaan ikkuna + entryn pelatut chipit).
+    Mitattu 3.9: entry 116920 pelasi wildcardin GW2:ssa ja `best.wc` osoitti
+    silti GW3:een. Mitatut (player_xp) ja karkeat rivit erikseen kuten ennen."""
+    tarkat = [w for w in windows if w["basis"] == "player_xp"]
+    karkeat = [w for w in windows if w["basis"] != "player_xp"]
+    best, best_estimate = {}, {}
+    for chip in ("wc", "bb", "tc", "fh"):
+        kelpaa = [w for w in tarkat if w.get(f"{chip}_ev") is not None
+                  and fpl_chips.gw_allowed(state, chip, w["gw"])]
+        if kelpaa:
+            top = max(kelpaa, key=lambda r: r[f"{chip}_ev"])
+            best[chip] = {"gw": top["gw"], "ev": top[f"{chip}_ev"],
+                          "basis": top["basis"]}
+            if top.get(f'{chip}_window_gws') is not None:
+                best[chip]['window_gws'] = top[f'{chip}_window_gws']
+        arvio = [w for w in karkeat if w.get(f"{chip}_ev") is not None
+                 and fpl_chips.gw_allowed(state, chip, w["gw"])]
+        if arvio:
+            top = max(arvio, key=lambda r: r[f"{chip}_ev"])
+            best_estimate[chip] = {
+                "gw": top["gw"], "ev": top[f"{chip}_ev"],
+                "basis": top["basis"]}
+    return best, best_estimate
+
+
+def _chip_notes(state: dict[str, dict], history_loaded: bool,
+                entry: int | None) -> list[str]:
+    """Selkokieliset lauseet chip-ikkunoista ja pelatuista chipeista."""
+    halves = (state.get("wc") or {}).get("windows") or []
+    out = []
+    if len(halves) >= 2:
+        out.append(
+            "Each chip can be played twice this season, once in each half: "
+            f"the first set runs to GW{halves[0]['stop_gw']} and the second "
+            f"from GW{halves[1]['start_gw']}. The best window is picked only "
+            "from gameweeks where that chip can still be played.")
+    played = [(v["label"], g) for v in state.values() for g in v.get("played_gws") or []]
+    if entry is not None and history_loaded and played:
+        lst = ", ".join(f"{lbl} in GW{g}" for lbl, g in played)
+        out.append(f"Already played on entry {entry}: {lst}. Those chips are "
+                   "dropped from the half they were used in.")
+    elif entry is not None and not history_loaded:
+        out.append("The chips already played on this entry could not be read "
+                   "just now, so every window is shown as available.")
+    return out
+
+
 @router.get("/api/fantasy/chip-ev",
             description="Expected value of each chip for every remaining gameweek. The response states which basis each number rests on.")
 def fantasy_chip_ev(
@@ -433,6 +494,13 @@ def fantasy_chip_ev(
             squad, _picks_gw, mode = _squad_from_entry_or_model(
                 pool, pool_by_id, bootstrap, entry)
             covered = _playable_gws(pool, xp_data)
+            # CHIP-EV-CHIPS-USED (3.9): puolikkaiden ikkunat bootstrapista +
+            # entryn pelatut chipit historysta. Vain ikkunat joilla chipin voi
+            # viela pelata kelpaavat `best`-valintaan.
+            history = _entry_history(entry)
+            current_gw = covered[0] if covered else int(
+                xp_data["meta"].get("deadline_gameweek") or 1)
+            chip_state = fpl_chips.chip_state(bootstrap, history, current_gw)
             windows = []
             per_chip: dict[str, list[float]] = {
                 "wc": [], "bb": [], "tc": [], "fh": []}
@@ -509,25 +577,7 @@ def fantasy_chip_ev(
             # `basis`-kentta kertoi sen vasta jalkikateen pienella.
             # Paras poimitaan nyt VAIN pelaajatason riveilta; karkea arvio
             # raportoidaan erikseen omalla nimellaan.
-            tarkat = [w for w in windows if w["basis"] == "player_xp"]
-            karkeat = [w for w in windows if w["basis"] != "player_xp"]
-            best, best_estimate = {}, {}
-            for chip in ("wc", "bb", "tc", "fh"):
-                kelpaa = [w for w in tarkat if w.get(f"{chip}_ev") is not None]
-                if kelpaa:
-                    top = max(kelpaa, key=lambda r: r[f"{chip}_ev"])
-                    best[chip] = {"gw": top["gw"], "ev": top[f"{chip}_ev"],
-                                  "basis": top["basis"]}
-                    # Vain wildcardilla on ikkuna; muille kentta olisi aina
-                    # None eli pelkkaa kohinaa.
-                    if top.get(f'{chip}_window_gws') is not None:
-                        best[chip]['window_gws'] = top[f'{chip}_window_gws']
-                arvio = [w for w in karkeat if w.get(f"{chip}_ev") is not None]
-                if arvio:
-                    top = max(arvio, key=lambda r: r[f"{chip}_ev"])
-                    best_estimate[chip] = {
-                        "gw": top["gw"], "ev": top[f"{chip}_ev"],
-                        "basis": top["basis"]}
+            best, best_estimate = _pick_best(windows, chip_state)
             payload = {
                 "meta": {
                     "entry": entry, "mode": mode,
@@ -554,22 +604,29 @@ def fantasy_chip_ev(
                         "no player projection, so the Bench Boost, Triple "
                         "Captain and Free Hit rows are the horizon average "
                         "scaled by how good each team's fixtures look that "
-                        "week, read from the full-season file. Double "
-                        "gameweeks raise it. Wildcard gets no number out "
-                        "there at all, because scaling a cumulative figure "
-                        "would invent one.",
+                        # 3.9: "Double gameweeks raise it" poistettu — hanta
+                        # lukee esikauden fixture-listaa jossa on 10 ottelua
+                        # joka kierroksella, eli tuplaa ei koskaan nay.
+                        "week, read from the full-season file. Wildcard gets "
+                        "no number out there at all, because scaling a "
+                        "cumulative figure would invent one.",
                         "The best window is picked only from the "
                         "player-level rows. The rougher estimate is reported "
                         "separately so a scaled figure cannot outrank a "
                         "measured one.",
                         "Free transfers and squad churn between now and the "
                         "window are ignored.",
+                        *_chip_notes(chip_state, history is not None, entry),
                     ],
                     "disclaimer": DISCLAIMER,
                 },
                 "windows": windows,
                 "best": best,
                 "best_estimate": best_estimate,
+                # Per chip: puolikkaiden ikkunat, pelattu GW, tarjolla nyt.
+                "chips": {"history_loaded": history is not None,
+                          "current_gw": current_gw,
+                          "state": chip_state},
             }
             _cache_put(cache_key, payload)
     except RateTeamError as e:
@@ -636,14 +693,33 @@ def fantasy_wildcard_plan(
             aukot = fpl_wildcard.nimikartta_aukot(teams, mallinimet)
             id_to_name = {t["id"]: fpl_wildcard.FPL_TO_MODEL.get(
                 t["name"], t["name"]) for t in teams}
+            _pl = _playable_gws(pool, xp_data)
             plan = fpl_wildcard.wildcard_plan(
-                squad, pool, _playable_gws(pool, xp_data), fixtures,
+                squad, pool, _pl, fixtures,
                 id_to_name, _optimal_xi_for, mode)
+            # CHIP-EV-CHIPS-USED (3.9): onko wildcard ylipaataan pelattavissa
+            # talla puolikkaalla (entry 116920 pelasi sen GW2:ssa).
+            _hist = _entry_history(entry)
+            _wc = fpl_chips.chip_state(
+                bootstrap, _hist,
+                _pl[0] if _pl else int(xp_data["meta"].get("deadline_gameweek") or 1),
+            ).get("wc") or {}
+            _wc_note = []
+            if entry is not None and _hist is not None and not _wc.get("available_now"):
+                _nxt = next((r for r in _wc.get("windows") or [] if r["available"]), None)
+                _pg = _wc.get("played_gws") or []
+                _wc_note.append(
+                    (f"Entry {entry} has already played its Wildcard in GW{_pg[-1]}. "
+                     if _pg else f"Entry {entry} has no Wildcard left in this half. ")
+                    + (f"The next one opens in GW{_nxt['start_gw']}." if _nxt
+                       else "There is no Wildcard window left this season.")
+                    + " The plan below still shows what a fresh 15 would gain.")
             payload = {
                 "meta": {
                     "entry": entry, "mode": mode,
                     "generated_at": xp_data["meta"].get("generated_at"),
                     "team_name_gaps": aukot,
+                    "wildcard_chip": {**_wc, "history_loaded": _hist is not None},
                     # 🔴 KOLME KORJAUSTA JULKAISUPORTISTA 25.8:
                     # 1. Ensimmainen note kuvasi VAARAA MENETELMAA. Se sanoi
                     #    "ranked per gameweek, not on window totals", mutta
@@ -677,6 +753,7 @@ def fantasy_wildcard_plan(
                         "reach.",
                         "Free transfers already used and price changes "
                         "between now and the chosen gameweek are ignored.",
+                        *_wc_note,
                     ],
                     "disclaimer": DISCLAIMER,
                 },

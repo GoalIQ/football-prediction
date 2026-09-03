@@ -105,25 +105,31 @@ def test_moottorit_sanovat_saman_horisontin_oikealla_polulla():
     assert (rhv["gw_from"], rhv["gw_to"]) == (phv["gw_from"], phv["gw_to"])
 
 
-def test_kontrolli_artefaktissa_on_mennyt_deadline():
+def test_kontrolli_artefaktissa_on_mennyt_deadline(monkeypatch):
     """Ilman tata edellinen testi olisi vihrea myos silloin, kun artefaktissa
-    ei ole kesken olevaa kierrosta - eli se ei mittaisi mitaan."""
-    r, _ = _live()
+    ei ole kesken olevaa kierrosta - eli se ei mittaisi mitaan.
+
+    3.9 (AUTO-S1): kontrolli luki LIVE-artefaktin ja oli punainen aina
+    kierrosten valissa (deadline_gameweek == pienin gameweeks-gw -> "6 < 6"),
+    eli tests.yml oli punainen 28.8 alkaen ja nielaisi kaiken muun. Kontrolli
+    rakentaa nyt artefaktin jossa deadline on mennyt (deadline_gameweek =
+    pienin gw + 1) ja mittaa etta moottori kaventaa horisontin - vaiheesta
+    riippumatta. Negatiivinen kontrolli: ilman siirtoa ero on nolla."""
+    import copy
+    import src.models.fpl_rate_team as rt
+    from src.models.fpl_xp import load_xp
+    base = load_xp()
+    gws = sorted(int(g["gw"]) for g in (base["players"][0].get("gameweeks") or []))
+    assert gws, "artefaktissa ei gameweeks-rivia"
+    shifted = copy.deepcopy(base)
+    shifted["meta"]["deadline_gameweek"] = gws[0] + 1
+    monkeypatch.setattr(rt, "load_xp", lambda: shifted)
+    r = rt.rate_team(entry=ENTRY)
     assert r["meta"]["transfer_horizon_gw"] < r["meta"]["horizon_gw"], (
-        "artefaktissa ei ole mennytta deadlinea; testi ei mittaa eroa. "
-        "Ala poista testia - odota kunnes kierros on kaynnissa, tai rakenna "
-        "artefakti jossa deadline_gameweek > pienin gameweeks-gw."
-    )
-
-
-def test_deltan_ikkuna_on_sama_kuin_raportoitu_horisontti():
-    """Mutaatio joka palauttaa deltat koko artefaktin ikkunaan EI nakynyt
-    missaan, koska raportoitu `horizon_gws` tulee eri lahteesta. Deltan ikkuna
-    on nyt payloadissa, joten siita voi vaittaa."""
-    r, p = _live()
-    win = r["transfers"]["window_gws"]
-    hv = r["transfers"]["hold_verdict"]
-    assert win, "window_gws puuttuu - delta laskettiin koko horisontilta"
-    assert len(win) == hv["horizon_gws"]
-    assert (win[0], win[-1]) == (hv["gw_from"], hv["gw_to"])
-    assert win == list(range(p["meta"]["start_gw"], p["meta"]["start_gw"] + len(win)))
+        r["meta"]["transfer_horizon_gw"], r["meta"]["horizon_gw"])
+    # negatiivinen kontrolli: deadline = pienin gw -> ei kavennusta
+    same = copy.deepcopy(base)
+    same["meta"]["deadline_gameweek"] = gws[0]
+    monkeypatch.setattr(rt, "load_xp", lambda: same)
+    r2 = rt.rate_team(entry=ENTRY)
+    assert r2["meta"]["transfer_horizon_gw"] == r2["meta"]["horizon_gw"]

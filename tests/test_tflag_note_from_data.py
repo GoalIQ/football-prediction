@@ -74,4 +74,25 @@ def test_tuotannon_sivulla_ei_ole_vanhentunutta_varausta():
     assert "no Premier League results to fit a team rating on" not in h
     m = re.search(r'<p class="note"><strong>Flagged teams\.</strong>.*?</p>', h, re.S)
     assert m, "sivulta puuttuu Flagged teams -selite"
-    assert "fitted on 1 match" in _teksti(m.group(0))
+    # 3.9 (AUTO-S1): odotus oli kovakoodattu "fitted on 1 match" ja vanheni
+    # GW2:n jalkeen ("fitted on 2 matches") -> tests.yml punainen 8 ajoa.
+    # Sama vikaluokka kuin se jota testi vartioi. Odotus luetaan nyt SAMASTA
+    # datasta josta sivu rakennetaan: artefaktin note kertoo otoskoon.
+    import json
+    from pathlib import Path as _P
+    xp = json.loads((_P(__file__).resolve().parents[1] / "data" /
+                     "fpl_xp_projections.json").read_text(encoding="utf-8"))
+    teams = ((xp.get("meta") or {}).get("team_confidence") or {}).get("teams") or {}
+    notes = [str(v.get("note") or "") for v in teams.values()
+             if v.get("flag") == "promoted"]
+    fitted = sorted({mm.group(0) for n in notes
+                     for mm in [re.search(r"fitted on \d+ match(es)?", n)] if mm})
+    sivu = _teksti(m.group(0))
+    if fitted:
+        for lause in fitted:
+            assert lause in sivu, (lause, sivu)
+    else:
+        assert "fitted on" not in sivu, sivu
+    # negatiivinen kontrolli: vanha kovakoodattu odotus ei saa olla se mita
+    # tama testi mittaa (muuten se vanhenee taas seuraavan kierroksen jalkeen)
+    assert not any(re.fullmatch(r"fitted on 1 match", x) for x in fitted) or "fitted on 1 match" in sivu

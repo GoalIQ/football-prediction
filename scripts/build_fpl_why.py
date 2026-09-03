@@ -39,6 +39,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+# 3.9 (AUTO-S1): `fplgw` oli kaytossa rivilla ~554 ilman importtia -> NameError
+# joka ajolla 1.9 alkaen (fpl-why-refresh punainen kahdesti). Vahti:
+# tests/test_scripts_no_undefined_globals.py.
+from src.models import fpl_gameweek as fplgw  # noqa: E402
 
 XP_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_why.json"

@@ -825,6 +825,10 @@ def admin_error_counts(request: Request):
 # edge, xp.csv) omassa moduulissa — main.py:n olemassa olevat polut eivat
 # muutu. Importti tassa (ei tiedoston alussa) jotta app + CORS ovat valmiit.
 from api.fantasy_edge import router as _fantasy_edge_router  # noqa: E402
+# 3.9 (AUTO-S1-vahti): my-team-ledger nosti `_http(e)` jota main.py ei
+# maaritellyt -> RateTeamError-polku olisi kaatunut NameErroriin (500 ilman
+# koodia). Loytyi tests/test_scripts_no_undefined_globals.py:lla.
+from api.fantasy_edge import _http  # noqa: E402
 app.include_router(_fantasy_edge_router)
 
 
