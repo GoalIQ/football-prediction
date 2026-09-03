@@ -844,6 +844,26 @@ export interface ChipBest {
 	window_gws?: number;
 }
 
+/** CHIP-EV-CHIPS-USED (3.9): puolikkaan ikkuna + entryn pelattu chip. */
+export interface ChipHalfWindow {
+	half: number;
+	start_gw: number;
+	stop_gw: number;
+	played_gw: number | null;
+	available: boolean;
+}
+export interface ChipState {
+	label: string;
+	windows: ChipHalfWindow[];
+	played_gws: number[];
+	available_now: boolean;
+}
+export function chipGwAllowed(state: ChipState | undefined, gw: number): boolean {
+	if (!state) return true;
+	const w = state.windows.find((r) => r.start_gw <= gw && gw <= r.stop_gw);
+	return w ? w.available : false;
+}
+
 export interface ChipEvResponse {
 	meta: {
 		entry: number | null;
@@ -861,6 +881,12 @@ export interface ChipEvResponse {
 	 *  Aiemmin nama rivit kilpailivat samassa `best`-maksimissa mitattujen
 	 *  kanssa ja voittivat sen. Maskattuna {}. */
 	best_estimate?: Partial<Record<'bb' | 'tc' | 'fh', ChipBest>>;
+	/** Per chip: puolikkaiden ikkunat, pelattu GW, tarjolla nyt. */
+	chips?: {
+		history_loaded: boolean;
+		current_gw: number;
+		state: Partial<Record<'wc' | 'bb' | 'tc' | 'fh', ChipState>>;
+	};
 }
 
 /** entry valinnainen: annettuna käyttäjän runko, ilman mallin optimi-XI. */
@@ -902,6 +928,8 @@ export interface WildcardPlanResponse {
 		mode: string;
 		generated_at?: string;
 		team_name_gaps?: string[];
+		/** 3.9: onko wildcard viela pelattavissa talla puolikkaalla. */
+		wildcard_chip?: ChipState & { history_loaded: boolean };
 		notes?: string[];
 		disclaimer?: string;
 		masked?: boolean;

@@ -4,7 +4,7 @@
 	// entry → käyttäjän runko; ilman → mallin optimirunko (meta.mode=model_xi).
 	// Esikaudella entry-picksit puuttuvat (404) → automaattinen fallback
 	// mallirunkoon selitteellä. Basis-alaviite: GW7+ = team-level estimate.
-	import { fetchChipEv, type ChipEvResponse, type ChipWindow } from '$lib/fantasyTools';
+	import { fetchChipEv, chipGwAllowed, type ChipEvResponse, type ChipWindow } from '$lib/fantasyTools';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { fplEntry } from '$lib/fplEntry.svelte';
@@ -77,13 +77,28 @@
 		}
 	});
 
+	// CHIP-EV-CHIPS-USED (3.9): pelattu chip ei ole tarjolla samalla
+	// puolikkaalla. Rivi jota ei voi pelata ei saa nakya listalla, ja kortti
+	// sanoo miksi paras puuttuu ("Played in GW2, next window from GW20").
+	function chipState(key: string) {
+		return data?.chips?.state?.[key as 'wc' | 'bb' | 'tc' | 'fh'];
+	}
+	function playedLine(key: string): string | null {
+		const st = chipState(key);
+		if (!st || st.available_now) return null;
+		const next = st.windows.find((w) => w.available);
+		const played = st.played_gws.at(-1);
+		const head = played != null ? `Played in GW${played}.` : 'Not available in this half.';
+		return next ? `${head} Next window opens in GW${next.start_gw}.` : `${head} No window left this season.`;
+	}
+
 	function top3(chip: (typeof CHIPS)[number]): ChipWindow[] {
 		if (!data) return [];
 		// 🔴 `null` on "emme anna lukua", ei nolla. Wildcardilla ei ole lukua
 		// horisontin ulkopuolella, ja `null`-rivin lajittelu nollana nostaisi
 		// sen listalle numerona jota ei ole.
 		return [...data.windows]
-			.filter((w) => chip.ev(w) != null)
+			.filter((w) => chip.ev(w) != null && chipGwAllowed(chipState(chip.key), w.gw))
 			.sort((a, b) => (chip.ev(b) as number) - (chip.ev(a) as number))
 			.slice(0, 3);
 	}
@@ -202,8 +217,13 @@
 					<h3>{chip.label}</h3>
 					{#if best && typeof best.gw === 'number'}
 						<span class="best-pill">Best: GW{best.gw}</span>
+					{:else if playedLine(chip.key)}
+						<span class="best-pill played">Played</span>
 					{/if}
 				</div>
+				{#if playedLine(chip.key)}
+					<p class="est-line">{playedLine(chip.key)}</p>
+				{/if}
 				{#if best && typeof best.ev === 'number'}
 					<p class="best-ev">
 						<span class="ev-num">{best.ev > 0 ? '+' : ''}{best.ev.toFixed(1)}</span>
@@ -295,6 +315,9 @@
 		justify-content: space-between;
 		align-items: baseline;
 		gap: var(--s-2);
+	}
+	.best-pill.played {
+		opacity: 0.75;
 	}
 	.chip-head h3 {
 		margin: 0;

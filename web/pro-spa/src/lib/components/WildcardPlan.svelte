@@ -96,6 +96,18 @@
 			{/if}
 		</div>
 
+		<!-- CHIP-EV-CHIPS-USED (3.9): chip jo pelattu talla puolikkaalla ->
+		     sanotaan VERDIKTIN VIERESSA, ei MethodNoten suljetun <details>-
+		     lohkon takana (varaus eri paikassa kuin luku ei ole kerrottu). -->
+		{#if data?.meta?.wildcard_chip?.history_loaded && data.meta.wildcard_chip.available_now === false}
+			{@const wc = data.meta.wildcard_chip}
+			{@const next = wc.windows.find((w) => w.available)}
+			<p class="line chip-gone">
+				{#if wc.played_gws.length}Entry {data.meta.entry} already played its Wildcard in GW{wc.played_gws.at(-1)}.{:else}No Wildcard left in this half.{/if}
+				{#if next}The next one opens in GW{next.start_gw}.{:else}No Wildcard window left this season.{/if}
+				The plan shows what a fresh 15 would gain.
+			</p>
+		{/if}
 		{#if reason('ev')}<p class="line">{reason('ev')}</p>{/if}
 		{#if reason('hold')}<p class="line">{reason('hold')}</p>{/if}
 		{#if reason('flags')}<p class="line">{reason('flags')}</p>{/if}
