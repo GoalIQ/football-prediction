@@ -572,6 +572,73 @@ def test_attach_why_caps_the_driver_list_at_three_without_reordering():
     assert "minutes" not in w["driver_facts"], "pudotettu ajuri ei saa jattaa lukua"
 
 
+# --------------------------------------------------------------------------
+# main() — todellinen ajo, ei vain lahdetekstin haku (2.9.2026)
+#
+# `test_why_sivu_valitsee_saman_kierroksen` (ks. test_xp_dist_actionable_gw.py)
+# tarkisti vain etta rivi "gw = fplgw.actionable_gameweek(meta)" ON LAHTEESSA.
+# Se lapaisi vaikka `fplgw` ei ollut tuotu moduuliin lainkaan: NameError syntyy
+# vasta `main()`ia ajettaessa, eika mikaan testi kutsunut sita. Tuotannossa
+# `fpl-why-refresh.yml` kaatui NameErroriin 1.-2.9 (kaksi perakkaista ajoa).
+# Tama testi ajaa oikean `main()`in.
+# --------------------------------------------------------------------------
+
+def test_main_selects_the_actionable_gameweek_not_gws0(tmp_path, monkeypatch):
+    """Deadline GW3, kesken oleva GW2: otsikkokierroksen TAYTYY olla 3, ei
+    horisontin ensimmainen (2). Ajaa `why.main()`in oikeasti sen sijaan etta
+    tarkistaisi vain lahdetekstin — muuten puuttuva `fplgw`-tuonti ei nakyisi."""
+    import json
+    import sys
+
+    payload = {
+        "meta": {"deadline_gameweek": 3, "next_gameweek": 2,
+                  "generated_at": "2026-09-02T00:00:00Z"},
+        "players": [
+            {"id": 1, "web_name": "A", "xp_horizon_total": 10.0,
+             "gameweeks": [{"gw": 2, "xp": 3.0}, {"gw": 3, "xp": 4.0},
+                           {"gw": 4, "xp": 3.0}]},
+        ],
+    }
+    xp_path = tmp_path / "fpl_xp_projections.json"
+    xp_path.write_text(json.dumps(payload), encoding="utf-8")
+    out_path = tmp_path / "fpl_why.json"
+    monkeypatch.setattr(why, "XP_PATH", xp_path)
+    monkeypatch.setattr(why, "OUT_PATH", out_path)
+    monkeypatch.setattr(sys, "argv", ["build_fpl_why.py", "--dry-run"])
+
+    assert why.main() == 0
+    written = json.loads(out_path.read_text(encoding="utf-8"))
+    assert written["meta"]["gw"] == 3, (
+        "otsikkokierros ei ole deadline-kierros — sama vikaluokka jonka "
+        "src/models/fpl_gameweek.py dokumentoi")
+
+
+def test_main_falls_back_to_gws0_when_actionable_gw_is_outside_the_horizon(
+        tmp_path, monkeypatch):
+    """Negatiivinen kontrolli edelliselle: jos deadline-kierros EI ole
+    projektiossa, varaputoaminen `gws[0]`:aan on yha oikein."""
+    import json
+    import sys
+
+    payload = {
+        "meta": {"deadline_gameweek": 9, "next_gameweek": 2},
+        "players": [
+            {"id": 1, "web_name": "A", "xp_horizon_total": 10.0,
+             "gameweeks": [{"gw": 2, "xp": 3.0}, {"gw": 3, "xp": 4.0}]},
+        ],
+    }
+    xp_path = tmp_path / "fpl_xp_projections.json"
+    xp_path.write_text(json.dumps(payload), encoding="utf-8")
+    out_path = tmp_path / "fpl_why.json"
+    monkeypatch.setattr(why, "XP_PATH", xp_path)
+    monkeypatch.setattr(why, "OUT_PATH", out_path)
+    monkeypatch.setattr(sys, "argv", ["build_fpl_why.py", "--dry-run"])
+
+    assert why.main() == 0
+    written = json.loads(out_path.read_text(encoding="utf-8"))
+    assert written["meta"]["gw"] == 2
+
+
 def test_attach_why_survives_a_row_with_no_numbers_at_all():
     from src.models.fpl_xp import attach_why
     entries = {"1": {"sentence": "x", "drivers": ["minutes"], "source": "model"}}

@@ -164,6 +164,29 @@ def test_sivun_osio_sanoo_before_vain_kun_aikaleimat_todistavat():
     assert "—" not in html
 
 
+def test_logged_sarake_pyoristaa_ei_katkaise():
+    """LOGGED-SARAKE-KATKAISEE (31.8, julkaisutarkistajan M74-loydos):
+    `secs // 60` katkaisi sekunnit ja katkaisu suosi AINA meita — 16 min
+    53 s renderoitui "16 min", eli enemman aikaa jaljella kuin
+    todellisuudessa. Tuotannon oikea rivi: `logged_at` 17:13:07Z,
+    `deadline_utc` 17:30:00Z -> 16 min 53 s, pyoristettyna 17 min."""
+    from scripts.build_fpl_page import _fmt_logged
+    row = {"gw": 2, "logged_at": "2026-08-28T17:13:07Z",
+           "deadline_utc": "2026-08-28T17:30:00Z", "calls": [], "graded": None}
+    assert "17 min before the deadline" in _fmt_logged(row)
+    assert "16 min" not in _fmt_logged(row)
+
+
+def test_logged_sarake_negatiivinen_kontrolli_tasan_16_min():
+    """NEGATIIVINEN KONTROLLI: tasan 16 min 0 s EI saa pyoristya 17:aan —
+    ilman tata `round()`-korjaus voisi olla ylipyoristava eika oikea."""
+    from scripts.build_fpl_page import _fmt_logged
+    row = {"gw": 2, "logged_at": "2026-08-28T17:14:00Z",
+           "deadline_utc": "2026-08-28T17:30:00Z", "calls": [], "graded": None}
+    assert "16 min before the deadline" in _fmt_logged(row)
+    assert "17 min" not in _fmt_logged(row)
+
+
 # ---------------------------------------------------------------- poikkeusnootti (29.8)
 # Portti k2 (M70): sivu ei kertonut etta GW2-rivi (Guehi C) ja entry (wildcard,
 # B.Fernandes C) eroavat; lukija loysi sen vasta entry-linkista. Nootti tulee

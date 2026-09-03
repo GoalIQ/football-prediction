@@ -2302,7 +2302,14 @@ def _fmt_logged(row: dict) -> str:
     deadline = parse_utc(row["deadline_utc"])
     delta = deadline - logged
     secs = int(abs(delta.total_seconds()))
-    h, m = divmod(secs // 60, 60)
+    # 🔴 LOGGED-SARAKE-KATKAISEE (31.8): `secs // 60` KATKAISEE sekunnit eika
+    # pyorista, ja katkaisu suosii AINA meita — 16 min 53 s renderoitui
+    # "16 min before the deadline", eli rivi nayttaa kirjatun MYOHEMMIN
+    # deadlinea kohti (enemman aikaa jaljella) kuin todellisuudessa. Juuri se
+    # suunta jonka skeptikko laskee itse `gw_calls.json`:sta (`logged_at`
+    # 17:13:07Z, `deadline_utc` 17:30:00Z -> 16 min 53 s, ei 16 min) ja
+    # huomaa eron sivun ja datan valilla. `round()` poistaa harhan.
+    h, m = divmod(round(secs / 60), 60)
     span = f"{h} h {m} min" if h else f"{m} min"
     when = logged.strftime("%d %b %H:%M UTC").lstrip("0")
     return (f"{when}, {span} before the deadline" if delta.total_seconds() > 0

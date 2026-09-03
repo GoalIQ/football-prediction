@@ -39,6 +39,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+from src.models import fpl_gameweek as fplgw
 
 XP_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_why.json"
