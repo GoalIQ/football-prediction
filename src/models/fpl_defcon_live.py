@@ -343,8 +343,13 @@ def load_defcon_live(entry_id: int | None = None,
                 "Defensive contribution so far this gameweek, straight from "
                 "the FPL match feed. A defender scores 2 points at 10 combined "
                 "clearances, blocks, interceptions and tackles; a midfielder "
-                "or forward at 12 including ball recoveries. Goalkeepers do "
-                "not score defensive contribution."
+                # "in a single match" on julkaisuportin 4.9 vaatimus: kynnys
+                # nollautuu otteluiden valilla, ja ilman tata lukija ei voi
+                # tarkistaa miten tuplakierros kayttaytyy. Sama sanamuoto kuin
+                # fpl_leaders.rule_notessa — kaksi eri muotoilua samasta
+                # saannosta kahdella pinnalla oli itsessaan vika.
+                "or forward at 12 including ball recoveries, in a single "
+                "match. Goalkeepers do not score defensive contribution."
             ),
         },
         "players": players,

@@ -221,12 +221,6 @@
 						{#if p.is_captain}<span class="c" title="Captain">C</span>{/if}
 						<span class="meta">{p.team_short} · {p.pos} · {p.minutes}'</span>
 					</span>
-					{#if p.story?.line}
-						<!-- Lause vain kun se lisaa jotain: SHORT ja tuntematon tila
-						     saavat kategorian mutta ei lausetta, koska lause
-						     toistaisi viereisen sarakkeen luvun (portti 4.9). -->
-						<span class="story">{p.story.line}</span>
-					{/if}
 					<span class="track" aria-hidden="true">
 						<span
 							class="fill"
@@ -237,6 +231,16 @@
 						{p.defcon}/{p.threshold}
 						{#if p.hit}<span class="ok">✓ 2 pts</span>{/if}
 					</span>
+					<!-- Lause VIIMEISENA gridissa: nimi, palkki ja luku pysyvat
+					     samalla rivilla ja lause tulee niiden alle omalle
+					     rivilleen. Aiemmin lause oli DOM:issa ennen lukua, jolloin
+					     luku valui kolmannelle riville oikeaan reunaan.
+					     Lause vain kun se lisaa jotain: SHORT ja tuntematon tila
+					     saavat kategorian mutta eivat lausetta, koska lause
+					     toistaisi viereisen sarakkeen luvun (portti 4.9). -->
+					{#if p.story?.line}
+						<span class="story">{p.story.line}</span>
+					{/if}
 				</li>
 			{/each}
 		</ul>
@@ -297,6 +301,7 @@
 	}
 	.story {
 		grid-column: 1 / -1;
+		grid-row: 2;
 		font-size: var(--step--1);
 		color: var(--text-muted);
 	}
