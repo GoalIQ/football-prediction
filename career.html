@@ -543,8 +543,13 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
          mid word. Hence short strings, and fitText as a backstop because the
          character count moves with the data. */
       var benchWin = t.horizon_gw ? ', ' + t.horizon_gw + ' GW' : '';
-      var benchRef = (t.optimal_proven === false)
-        ? 'our best found XI' : 'the best possible XI';
+      /* FAIL-CLOSED. The first version tested `=== false`, so a missing
+         field fell through to the STRONGER claim. Measured live on 4 Sep:
+         the API had not been redeployed, `optimal_proven` was undefined, and
+         the card printed "100% of the best possible XI" from a benchmark its
+         own data shows beaten. Only a proven flag may make the strong claim. */
+      var benchRef = (t.optimal_proven === true)
+        ? 'the best possible XI' : 'our best found XI';
       var benchPct;
       if (t.beats_benchmark === true && typeof t.xp_vs_benchmark === 'number') {
         /* A number, not a compliment. The percentage is clamped to 100 in

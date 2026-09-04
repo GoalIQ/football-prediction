@@ -161,3 +161,49 @@ def test_negatiivinen_kontrolli_kapteenillinen_antaisi_eri_luvun():
                                "optimal_team_xp": 310.77})
     vaarin = round(356.7 - 310.77, 1)
     assert oikein != vaarin
+
+
+# --- fail-closed puuttuvalle datalle ---------------------------------------
+
+def test_kortti_on_fail_closed_puuttuvalle_lipulle():
+    """🔴 MITATTU LIVENA 4.9. Ensimmainen versio testasi `=== false`, joten
+    PUUTTUVA kentta putosi VAHVEMPAAN vaitteeseen. API ei ollut viela
+    uudelleendeployattu, `optimal_proven` oli undefined, ja kortti tulosti
+    tuotannossa "100% of the best possible XI" vertailukohdasta jonka sen oma
+    data osoittaa voitetuksi. Jaettu kuva ei saa nojata siihen etta deploy on
+    ehtinyt perille.
+
+    Vain `=== true` saa tehda vahvan vaitteen."""
+    kortti = CARD.read_text(encoding="utf-8")
+    i = kortti.index("var benchRef")
+    lohko = kortti[i:i + 200]
+    assert "t.optimal_proven === true" in lohko, lohko
+    assert "=== false" not in lohko, (
+        "fail-open: puuttuva lippu putoaisi vahvaan vaitteeseen")
+    # ...ja vahva vaite on `true`-haarassa, ei fallbackina
+    tosi = lohko.index("true")
+    assert lohko.index("the best possible XI") > tosi, lohko
+
+
+def test_beats_benchmark_haara_on_myos_fail_closed():
+    """Sama saanto ylijaamahaaralle: undefined ei saa laukaista sita."""
+    kortti = CARD.read_text(encoding="utf-8")
+    i = kortti.index("t.beats_benchmark")
+    assert "t.beats_benchmark === true" in kortti[i - 40:i + 60],         kortti[i - 40:i + 60]
+
+
+def test_mobiilikortti_on_fail_closed():
+    """Sama vika olisi ollut mobiilissa. Siella se kirjoitettiin oikein
+    ensimmalla kerralla, ja tama pitaa sen niin."""
+    app = ROOT.parent / "goaliq-app" / "components" / "FantasyShareCard.tsx"
+    if not app.exists():
+        import pytest as _p
+        _p.skip("goaliq-app ei ole checkoutattu")
+    src = app.read_text(encoding="utf-8")
+    assert "optimalProven === true" in src, (
+        "fail-open: puuttuva lippu putoaisi vahvaan vaitteeseen")
+    i = src.index("optimalProven === true")
+    lohko = src[i:i + 220]
+    assert lohko.index("the best squad the rules allow") < lohko.index(
+        "the strongest squad our search found"), lohko
+
