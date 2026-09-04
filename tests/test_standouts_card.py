@@ -8,8 +8,14 @@ from __future__ import annotations
 from scripts.render_standouts_card import pick_standouts, build_html
 
 
-def _p(name, xp, p_start, haul, blank, p90, status="a", pos="MID"):
-    return {"web_name": name, "pos": pos, "team_short": "TST", "price": 7.5,
+def _p(name, xp, p_start, haul, blank, p90, status="a", pos="MID", club=None):
+    # 4.9: seura on oletuksena pelaajakohtainen. Kortin pooli soveltaa nyt
+    # ilmaispinnan `MAX_PER_CLUB`ia (Villen huomio: neljas saman seuran
+    # pelaaja ei ole millaan muulla pinnallamme), joten yhteinen "TST" olisi
+    # pudottanut naiden fikstuurien nelijannen ja viidennen pelaajan.
+    # Seurakatolla on oma porttinsa: tests/test_standouts_pool_matches_free_list.py
+    return {"web_name": name, "pos": pos, "team_short": club or name,
+            "team": club or name, "price": 7.5,
             "status": status, "p_start": p_start, "xp_per_gw": xp * 0.5,
             "gameweeks": [{"gw": 2, "xp": xp}],
             "xp_dist": {"gw": 2, "n": 2000, "mean": xp, "p_haul": haul,
@@ -66,7 +72,7 @@ def test_promoted_side_gets_star_and_footnote():
     a = _p("Keeper", 4.6, 0.95, 0.01, 0.2, 8, pos="GKP"); a["team_flag"] = "promoted"
     html, _ = build_html({"meta": {"next_gameweek": 2},
                           "players": [a, _p("B", 4.0, 0.9, 0.2, 0.3, 10)]})
-    assert "TST*" in html and "promoted side" in html
+    assert "Keeper*" in html and "promoted side" in html
     html2, _ = build_html({"meta": {"next_gameweek": 2},
                            "players": [_p("B", 4.0, 0.9, 0.2, 0.3, 10)]})
     assert "promoted side" not in html2

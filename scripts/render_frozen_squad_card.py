@@ -49,11 +49,13 @@ padding:34px 44px 26px;display:flex;flex-direction:column;}
 padding:6px 4px;margin:16px 0 10px;flex:1;display:flex;
 flex-direction:column;justify-content:space-evenly;}
 .xirow{display:flex;justify-content:space-evenly;}
-.xip{width:104px;text-align:center;position:relative;}
+.xip{width:124px;text-align:center;position:relative;}
 .xip b{display:block;font-size:15px;font-weight:600;margin-top:2px;
 white-space:nowrap;}
 .xip span{display:block;font-size:13px;color:var(--muted);
 font-variant-numeric:tabular-nums;}
+.xip span.sim{color:var(--amber);font-size:11px;margin-top:1px;
+white-space:nowrap;letter-spacing:-.1px;}
 .badge{position:absolute;top:-4px;right:14px;background:var(--amber);
 color:var(--ink);font-size:13px;font-weight:700;width:22px;height:22px;
 border-radius:50%;line-height:22px;}
@@ -70,7 +72,28 @@ svg.kit{display:block;margin:0 auto;}
 """
 
 
-def cell(p: dict, cap: int, vice: int, size: int = 54) -> str:
+def sim_line(p: dict, dist: dict | None) -> str:
+    """Pelaajan jakaumarivi kortille, tai tyhja jos jakaumaa ei ole.
+
+    Luvut tulevat samasta artefaktista kuin ilmaissivun 10+- ja
+    Blank-sarakkeet (`data/fpl_xp_projections.json`, `xp_dist`), jotta
+    kortin ja tarkistusreitin luku on sama. Puuttuva jakauma jattaa rivin
+    pois - se ei ole nolla (muisti: nolla-ei-ole-sama-kuin-ei-tietoa).
+    """
+    if not dist:
+        return ""
+    blank = f'blank {round(dist["p_blank"] * 100)}%'
+    # Maalivahdin "10+ 0%" lukee rikkinaiselta, vaikka se on tosi: kymmenen
+    # pistetta vaatii maalivahdilta nollapelin JA kolme torjuntaa JA bonusta.
+    # Nayta hanelta vain blank, alaka nollaa.
+    if str(dist.get("pos") or "") == "GKP" or dist.get("_gkp"):
+        return f'<span class="sim">{blank}</span>'
+    return (f'<span class="sim">10+ {round(dist["p_haul"] * 100)}% '
+            f'· {blank}</span>')
+
+
+def cell(p: dict, cap: int, vice: int, size: int = 54,
+         dist: dict | None = None) -> str:
     badge = ""
     if p["id"] == cap:
         badge = '<span class="badge">C</span>'
@@ -78,7 +101,9 @@ def cell(p: dict, cap: int, vice: int, size: int = 54) -> str:
         badge = '<span class="badge v">V</span>'
     return ('<div class="xip">' + badge + _kit_svg(p["team_short"], size=size)
             + f'<b>{p["web_name"]}</b>'
-            + f'<span>{p["team_short"]} · {p["price"] / 10:.1f}m</span></div>')
+            + f'<span>{p["team_short"]} · {p["price"] / 10:.1f}m</span>'
+            + sim_line(p, dict(dist, _gkp=(p.get("pos") == 1))
+                       if dist else None) + '</div>')
 
 
 def main() -> int:
@@ -89,6 +114,9 @@ def main() -> int:
                     help="lue runko tasta JSONista freeze-hakemiston sijaan")
     ap.add_argument("--subtitle", default=None,
                     help="korvaa alaotsikko (esim. deadline-paivan uudelleenrakennus)")
+    ap.add_argument("--sims", action="store_true",
+                    help="nayta jokaisen aloittajan 10+- ja blank-%% "
+                         "(sama xp_dist kuin ilmaissivun sarakkeet)")
     ap.add_argument("--hide-bench", action="store_true",
                     help="jata penkkirivi pois (promopinnan nimiesto, esim. Thiaw)")
     args = ap.parse_args()
@@ -104,8 +132,28 @@ def main() -> int:
 
     rows = {t: [p for p in xi if p["pos"] == t] for t in (1, 2, 3, 4)}
     shape = "-".join(str(len(rows[t])) for t in (2, 3, 4))
+    dists: dict = {}
+    if args.sims:
+        xp = json.loads((config.DATA_DIR / "fpl_xp_projections.json")
+                        .read_text(encoding="utf-8"))
+        gws = {(pp.get("xp_dist") or {}).get("gw") for pp in xp.get("players") or []
+               if pp.get("xp_dist")}
+        gws.discard(None)
+        # 🔴 Kortin otsikko sanoo GW:n, luvut tulevat `xp_dist`:sta. Jos ne
+        # ovat eri kierrokselta, kortti julkaisisi vaaran kierroksen luvut
+        # oikean kierroksen nimella (sama vika mitattiin standouts-kortista
+        # 30.8). Fail-closed.
+        if gws != {args.gw}:
+            raise SystemExit(
+                f"SIMULAATIOT ERI KIERROKSELTA: kortti on GW{args.gw} mutta "
+                f"xp_dist on kierrokselta {sorted(gws)}. Aja projektio "
+                "uudelleen ennen kuin julkaiset kortin.")
+        dists = {int(pp["id"]): pp["xp_dist"] for pp in xp["players"]
+                 if pp.get("xp_dist") and pp.get("id") is not None}
     pitch = "".join(
-        '<div class="xirow">' + "".join(cell(p, cap, vice) for p in rows[t])
+        '<div class="xirow">'
+        + "".join(cell(p, cap, vice, dist=dists.get(int(p["id"])))
+                  for p in rows[t])
         + "</div>" for t in (1, 2, 3, 4))
     bench_html = "".join(cell(p, cap=-1, vice=-1, size=42) for p in bench)
     shorts = [p["team_short"] for p in xi + bench]
@@ -120,7 +168,9 @@ def main() -> int:
         '<div class="hdr"><div><span class="brand">'
         # 30.8: merkki src/brand.py:sta (Villen 1.8 paatos).
         + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
-        f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})</div>'
+        f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})'
+        + ('' if not args.sims else ', 2,000 simulated gameweeks each')
+        + '</div>'
         f'<div class="sub">{args.subtitle or f"Picked by the optimiser, frozen {frozen_at}, entered as-is"}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'{bench_block}'
@@ -128,8 +178,9 @@ def main() -> int:
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
         "<span>entry 116920 · public on fantasy.premierleague.com</span>"
-        "<span>goaliq.app</span></div>"
-        "</div>")
+        + ('<span>goaliq.app/fpl/expected-points#top-100</span></div>'
+           if args.sims else '<span>goaliq.app</span></div>')
+        + "</div>")
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -56,17 +56,6 @@ CALLS_LOG_PATH = config.DATA_DIR / "gw_calls.json"
 LOG_KEYS = (("captain", "captain_pick"), ("ceiling", "ceiling"),
             ("safest", "safest"), ("gamble", "gamble"))
 MIN_P_START = 0.6
-# Kova saanto: ei Thiaw-juttuja markkinointiin (muisti thiaw-ei-markkinointiin).
-# Esto kuuluu generaattoriin, koska yksi refresh riittaa nostamaan hanet
-# "safest"-tiileen (nailed DEF, korkea CS%).
-EXCLUDED_NAMES = {"thiaw"}
-
-
-def _excluded(name: str) -> bool:
-    """Vertailu sukunimiosalla ja pienin kirjaimin: 'M.Thiaw' ja 'Thiaw' ovat
-    sama pelaaja, eika esto saa lakata jos FPL lisaa etukirjaimen."""
-    tail = str(name or "").split(".")[-1].strip().lower()
-    return tail in EXCLUDED_NAMES
 SAFE_MIN_XP = 4.0
 GAMBLE_MIN_BLANK = 0.35
 
@@ -105,11 +94,40 @@ font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
 """
 
 
+def _dist_gw(players: list[dict]) -> int | None:
+    gws = {(p.get("xp_dist") or {}).get("gw") for p in players if p.get("xp_dist")}
+    gws.discard(None)
+    return next(iter(gws)) if len(gws) == 1 else None
+
+
 def _pool(players: list[dict]) -> list[dict]:
-    return [p for p in players
-            if p.get("xp_dist") and p.get("status", "a") == "a"
+    """Sama rajaus kuin ilmaispinnan GW-xP-listalla, plus kortin p_start-raja.
+
+    🔴 VILLEN HUOMIO 4.9.2026. Kortti nimesi Andersonin "safest pickiksi",
+    mutta hanta ei ole ilmaissivun GW3-listalla eika projected-XI-kortilla.
+    Syy: `src/models/fpl_gw_xp.top_projected()` soveltaa `MAX_PER_CLUB`ia
+    (Villen paatos 30.8: ilman kattoa GW3:n top 20 oli 10/20 Man City), ja
+    Cityn kolme parasta olivat jo Haaland, Guehi ja Foden - Anderson on
+    nelijas. Tama kortti rakensi oman poolinsa omalla silmukallaan ilman
+    kattoa, joten se saattoi nostaa nelijannen saman seuran pelaajan jota
+    lukija ei loyda mistaan muualta meidan pinnoiltamme. Kaksi listaa, kaksi
+    saantoa (muisti: kuratoitu-lista-jaettuun-moduuliin).
+
+    Nyt pooli tulee samasta lukijasta kuin sivun lista, joten kortin pooli on
+    aina sivun kattaman joukon OSAJOUKKO. `p_start` suodatetaan vasta katon
+    jalkeen, jotta katto lasketaan samoista pelaajista kuin sivulla.
+    Estolista ja Thiaw-esto tulevat samalta lukijalta (`eligible`), eivat
+    taman tiedoston omasta kopiosta.
+    """
+    from scripts.publish_gate import load_blocklist
+    from src.models.fpl_gw_xp import top_projected
+    gw = _dist_gw(players)
+    if gw is None:
+        return []
+    capped = top_projected(players, gw, len(players), load_blocklist())
+    return [p for p in capped
+            if p.get("xp_dist")
             and float(p.get("p_start") or 0) >= MIN_P_START
-            and not _excluded(p.get("web_name"))
             and gw_xp(p) is not None]
 
 
