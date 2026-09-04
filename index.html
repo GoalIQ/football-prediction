@@ -670,6 +670,14 @@
   h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.record-chip,.ticker,
   table,th,td,.num,.mono,.tag,.chip,code,kbd{ font-family:var(--mono); }
   p,.lede,.hint,.note,.fineprint{ max-width:68ch; }
+  /* The type scale needs matching specificity, not just a body rule.
+     Measured after the first attempt: body was set to 16px but only five
+     elements reached it, because the dominant body text is `li` inside the
+     panels at 13.5px and those rules win. Data cells stay small and mono on
+     purpose: a table is scanned, not read. */
+  .panel li,.panel p,.step p,.step li,.duo li,.duo p,
+  .toolkit p,.toolkit li,section > .wrap > p{ font-size:15px; line-height:1.6; }
+  .lede,.hero .sub{ font-size:17px; line-height:1.6; }
   td p,th p,table p{ max-width:none; }
   @media (hover:none){
     nav a,footer a,.link-row a,.share a{ display:inline-flex;
