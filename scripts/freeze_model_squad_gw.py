@@ -59,11 +59,47 @@ def gw_xp(player: dict, gw: int) -> float:
     return 0.0
 
 
-def validate_squad(xi: list[dict], bench: list[dict]) -> list[str]:
+def inherited_club_excess(squad: list[dict], prev: dict | None) -> dict[int, int]:
+    """Seurat joissa katto ylittyy VAIN peritysta rungosta, ei ostoista.
+
+    🔴 MITATTU 4.9.2026 (Villen paatos a). GW3:n freeze kieltaytyi: peritty
+    GW2-runko oli 4 pelaajaa Man Citysta. Yksikaan siirto ei aiheuttanut
+    sita — Guehi, Ndiaye ja Anderson SIIRTYIVAT Cityyn deadline-paivana.
+    Sama toistuu jokaisessa siirtoikkunassa.
+
+    FPL:n oma saanto koskee ostohetkea: seuranvaihdon takia syntynytta
+    ylitysta ei pureta takautuvasti, mutta samasta seurasta ei saa ostaa
+    lisaa ennen kuin luku on taas <= 3. Malli kayttaytyy nyt samoin, ja
+    ylitys kirjataan nakyviin freezen metaan.
+
+    Palauttaa {club_id: maara} niille seuroille joissa ylitys on peritty.
+    Tyhja dict = ei perittya ylitysta (jokainen ylitys on siis oma vika).
+    """
+    if not prev:
+        return {}
+    prev_ids = {p["id"] for p in (prev.get("xi") or []) + (prev.get("bench") or [])}
+    per_club: dict[int, int] = {}
+    inherited: dict[int, int] = {}
+    for p in squad:
+        club = p.get("club")
+        per_club[club] = per_club.get(club, 0) + 1
+        if p.get("id") in prev_ids:
+            inherited[club] = inherited.get(club, 0) + 1
+    # Ylitys on peritty vain jos KAIKKI yli katon menevat ovat vanhoja.
+    return {c: n for c, n in per_club.items()
+            if n > MAX_PER_CLUB and inherited.get(c, 0) >= n}
+
+
+def validate_squad(xi: list[dict], bench: list[dict],
+                   prev: dict | None = None) -> list[str]:
     """Palauta rikkeet listana; tyhjä lista = laillinen runko.
 
     Tarkistetaan koko 15:n runko, ei pelkkää XI:tä — kattorike voi olla
     kokonaan penkillä ja se on silti laiton FPL-joukkue.
+
+    `prev` = edellisen kierroksen jäädytetty runko. Sen kanssa seurakatto
+    sallii PERITYN ylityksen (ks. `inherited_club_excess`); ilman sitä
+    käytös on entinen eli katto on ehdoton.
     """
     problems: list[str] = []
     squad = list(xi) + list(bench)
@@ -85,8 +121,10 @@ def validate_squad(xi: list[dict], bench: list[dict]) -> list[str]:
     for p in squad:
         per_club[p.get("club")] = per_club.get(p.get("club"), 0) + 1
     over = {c: n for c, n in per_club.items() if n > MAX_PER_CLUB}
-    if over:
-        problems.append(f"yli {MAX_PER_CLUB}/seura: {over}")
+    perityt = inherited_club_excess(squad, prev)
+    ostetut = {c: n for c, n in over.items() if c not in perityt}
+    if ostetut:
+        problems.append(f"yli {MAX_PER_CLUB}/seura: {ostetut}")
 
     cost = sum(int(p.get("price") or 0) for p in squad)
     if cost > BUDGET_TENTHS:
@@ -380,7 +418,7 @@ def main() -> int:
         print(f"VIRHE: runko vajaa (XI {len(xi)}, penkki {len(bench)}).")
         return 1
 
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, prev=(edellinen[1] if edellinen else None))
     if problems:
         print("VIRHE: optimoija palautti LAITTOMAN rungon — ei jäädytetä:")
         for p in problems:
@@ -409,6 +447,14 @@ def main() -> int:
             # ei olisi. Ensimmainen kierros: `from_gw` null = vapaa valinta
             # (kauden aloitus, kuten ihmisellakin).
             "budget": 100.0,
+            # Peritty seurakaton ylitys nakyviin: se on tosiasia rungosta,
+            # ei virhe, ja ilman tata lukija laskisi rivit ja luulisi
+            # rungon laittomaksi (Villen paatos a, 4.9).
+            "inherited_club_excess": {
+                str(c): n for c, n in
+                inherited_club_excess(xi + bench,
+                                      (edellinen[1] if edellinen else None)).items()
+            },
             "from_gw": (edellinen[0] if edellinen and siirtotiedot else None),
             "transfers": (siirtotiedot or {}).get("transfers") or [],
             "hits": (siirtotiedot or {}).get("hits", 0),

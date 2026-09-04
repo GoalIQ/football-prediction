@@ -2,7 +2,7 @@
  "meta": {
   "product": "GoalIQ gameweek calls log",
   "version": 1,
-  "rules": "Every public call for a gameweek (the model squad captain and the four standouts card picks) is written here before the FPL deadline and scored with official FPL points after the gameweek. A gameweek row can be updated until its deadline and never after it. Scores are provisional until FPL confirms bonus points."
+  "rules": "Every public call for a gameweek (the model squad captain, the four standouts card picks and the projected XI card) is written here before the FPL deadline and scored with official FPL points after the gameweek. A gameweek row can be updated until its deadline and never after it. In each row, logged_at is the first write and updated_at the last write before the deadline. A row without updated_at was written before the log kept both timestamps, and there logged_at is the last write. Scores are provisional until FPL confirms bonus points."
  },
  "gameweeks": [
   {
@@ -180,11 +180,107 @@
    "gw": 3,
    "deadline_utc": "2026-09-04T17:30:00Z",
    "logged_at": "2026-09-03T07:03:08Z",
-   "updated_at": "2026-09-03T07:03:08Z",
+   "updated_at": "2026-09-04T09:11:44Z",
    "source": {
-    "projection_generated_at": "2026-09-03T06:12:52+00:00"
+    "projection_generated_at": "2026-09-03T07:33:35+00:00",
+    "freeze_frozen_at": "2026-09-04T09:11:27Z"
    },
    "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "gw_xp",
+     "value": 7.92,
+     "frozen_value": 7.92,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.31,
+     "criterion": "10+ pts",
+     "gw_xp": 7.92,
+     "xp_dist": {
+      "p_haul": 0.31,
+      "p_blank": 0.049,
+      "p10": 3,
+      "median": 7,
+      "p90": 14,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 379,
+     "web_name": "Isak",
+     "team_short": "LIV",
+     "pos": "FWD",
+     "metric": "p90",
+     "value": 11,
+     "criterion": "reached p90",
+     "gw_xp": 6.27,
+     "xp_dist": {
+      "p_haul": 0.213,
+      "p_blank": 0.146,
+      "p10": 2,
+      "median": 6,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 481,
+     "web_name": "Anderson",
+     "team_short": "MCI",
+     "pos": "MID",
+     "metric": "p_3plus",
+     "value": 0.83,
+     "criterion": "3+ pts",
+     "gw_xp": 4.74,
+     "xp_dist": {
+      "p_haul": 0.052,
+      "p_blank": 0.17,
+      "p10": 2,
+      "median": 4,
+      "p90": 8,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 464,
+     "web_name": "Wissa",
+     "team_short": "NEW",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.112,
+     "criterion": "10+ pts",
+     "gw_xp": 4.72,
+     "xp_dist": {
+      "p_haul": 0.112,
+      "p_blank": 0.353,
+      "p10": 2,
+      "median": 3,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
     {
      "call": "projected_xi",
      "player_id": 411,
@@ -321,6 +417,7 @@
     }
    ],
    "model_transfers": [],
+   "entry_actual": null,
    "graded": null
   }
  ]
