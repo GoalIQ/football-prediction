@@ -277,11 +277,28 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
                if s["captain"] else "")),
         # "Ceiling", ei "Highest": p90 on kokonaisluku ja sama katto voi olla
         # usealla (27.8: 10 kolmella, kaikki kortilla). Why sanoo tasapelisaannon.
+        # 🔴 JULKAISUPORTTI 4.9, kaksi vaaraa vaitetta samassa lauseessa:
+        #
+        # (1) "top ceiling in the pool" oli EPATOSI. `pick_standouts()` valitsee
+        #     ceilingin `rest()`-joukosta josta kapteenivalinta on jo pudotettu,
+        #     joten pooin korkein katto voi olla kapteenilla — ja oli: Haaland 14
+        #     vs Isak 11, ja Haalandin luku on VIEREISESSA tiilessa samalla
+        #     kortilla. Kortti olisi kumonnut itsensa.
+        # (2) "he reaches it most often" ei perustunut mihinkaan kenttaan. p90
+        #     saavutetaan rakenteellisesti noin kerran kymmenesta KAIKILLA, ja
+        #     sivun oma tooltip sanoo sen. Tasapelisaanto on p_haul, ja silla
+        #     kapteeni voittaa.
+        #
+        # Vaite johdetaan nyt datasta eika kirjoiteta proosana (saanto 6a):
+        # jos kapteenin katto on vahintaan yhta korkea, sanotaan rajaus aaneen.
         _tile("Ceiling", s["ceiling"],
               str(s["ceiling"]["xp_dist"]["p90"]) if s["ceiling"] else "-",
               "pts",
-              (f"top ceiling in the pool, and he reaches it most often: 10+ in "
-               f"{pct(s['ceiling']['xp_dist']['p_haul'])}"
+              ((("top ceiling outside our captain pick"
+                 if (s["captain"] and s["captain"]["xp_dist"]["p90"]
+                     >= s["ceiling"]["xp_dist"]["p90"])
+                 else "top ceiling in the pool")
+                + f", 10+ in {pct(s['ceiling']['xp_dist']['p_haul'])}")
                if s["ceiling"] else "")),
         _tile("Safest pick", s["safest"],
               pct(1.0 - s["safest"]["xp_dist"]["p_blank"]) if s["safest"] else "-",
