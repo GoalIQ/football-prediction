@@ -39,20 +39,17 @@ SANITY_MIN_PLAYERS = 200
 SANITY_MAX_XG_PG = 2.5    # kukaan ei tuota >2.5 xG/game kestävästi
 
 
+from src.models.fpl_status import left_league as _left_league
+
+
 def season_label(key: str) -> str:
     """"2526" → "2025/26"."""
     return f"20{key[:2]}/{key[2:]}"
 
 
-def left_league(e: dict) -> bool:
-    """FPL-status `u` = pelaaja ei ole enaa valittavissa (siirtynyt pois
-    liigasta / lainalle ulkomaille). FPL PITAA hanet bootstrapissa kauden
-    loppuun (Watkins 'Has joined Al Hilal permanently' oli edelleen id 55,
-    seura AVL), joten "ei bootstrapissa" -pudotus ei koskaan laukea ja
-    viime kauden xG-rivit jaivat listalle. Mitattu 3.9.2026: 52/499
-    leaders-rivia ja 45 DefCon-matriisin rivia oli status u.
-    Loukkaantuneet (i/d/s) PYSYVAT: he ovat valittavissa ja palaavat."""
-    return (e.get("status") or "a") == "u"
+# 4.9: sama suodatus tarvittiin kolmannella pinnalla (team news), joten se
+# siirtyi jaettuun moduuliin. Nimi sailyy taalla taaksepain-yhteensopivana.
+left_league = _left_league
 
 
 def _player_rows(boot: dict, summaries: dict, season: str,

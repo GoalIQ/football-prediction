@@ -1869,6 +1869,9 @@ text-transform:uppercase}
 """
 
 
+from src.models.fpl_status import left_league
+
+
 def team_news_block(xp: dict | None) -> str:
     """Tiivis team news -nosto fpl.html:aan (15.8.2026, Villen pyynto).
 
@@ -1889,6 +1892,14 @@ def team_news_block(xp: dict | None) -> str:
         return ""
     rows = []
     for r in list(xp.get("players") or []) + list(xp.get("excluded") or []):
+        # 🔴 MITATTU 4.9.2026: ilman tata suodatusta luku oli 146, josta 89
+        # oli LIIGASTA LAHTENEITA (status u, esim. Watkins "Has joined Al
+        # Hilal permanently"). Etusivu vaitti heidan olevan "ruled out for
+        # the next deadline" ja NIMESI Watkinsin eniten omistetuksi
+        # poissaolijaksi. Lahtenyt ei ole poissaolija vaan poissa pelista.
+        # Oikea luku samalla datalla on 57. Ks. src/models/fpl_status.py.
+        if left_league(r):
+            continue
         if (r.get("news") or "").strip() and r.get("chance_next") is not None:
             rows.append(r)
     if not rows:
@@ -3307,6 +3318,26 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
         if n_xp != 1:
             raise RuntimeError(
                 f"index.html GEN:XP-TABLE: odotettiin 1 markerilohko, löytyi {n_xp}")
+        # 🔴 Villen havainto 4.9: otsikko luki "GW1-6" kun data oli GW3-8.
+        # Rivit generoitiin artefaktista, mutta OTSIKKO oli kovakoodattu
+        # markerien ULKOPUOLELLA — eli se ei voinut vanhentua nakyvasti,
+        # koska mikaan ei paivittanyt sita. Ikkuna johdetaan nyt samasta
+        # datasta kuin rivit (todellisista kierroksista, ei kaavasta
+        # first+n-1; ks. src/models/fpl_gameweek.window_label).
+        from src.models.fpl_gameweek import window_label
+        _meta = xp.get("meta") or {}
+        _gws = ((xp.get("players") or [{}])[0] or {}).get("gameweeks") or []
+        _window = window_label(_meta, _gws, _meta.get("horizon_gw") or 6)
+        _season = escape(str(_meta.get("season") or ""))
+        _label = f"Live model projections · {_window}"
+        if _season:
+            _label += f" · {_season}"
+        new, n_w = re.subn(
+            r"(<!-- GEN:XP-WINDOW-START -->).*?(<!-- GEN:XP-WINDOW-END -->)",
+            lambda m: m.group(1) + _label + m.group(2), new, flags=re.S)
+        if n_w != 1:
+            raise RuntimeError(
+                f"index.html GEN:XP-WINDOW: odotettiin 1 markerilohko, löytyi {n_w}")
     # #85 GEO: track-record-Dataset-schema pysyy tuoreena samalla botilla
     # kuin chipit (luvut + dateModified accuracy-lähteestä, ei kovakoodausta).
     ds = accuracy_dataset_ld(c, BASE + "/")

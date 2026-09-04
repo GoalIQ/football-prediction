@@ -2830,6 +2830,9 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
 
 
 
+from src.models.fpl_status import left_league
+
+
 def render_team_news(xp: dict, now: datetime) -> str | None:
     """Team news, mutta KAANTEISENA: mita poissaolo maksaa pisteina (15.8.2026).
 
@@ -2881,6 +2884,12 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
     # newsia ja ne rajautuvat pois uutistekstin olemassaololla.
     out_rows, doubt_rows = [], []
     for r in list(players) + list(excluded):
+        # 🔴 4.9.2026: liigasta lahtenyt (status u) ei ole team newsia. FPL
+        # pitaa hanet bootstrapissa kauden loppuun, joten han valui tanne
+        # samalla tavalla kuin leaders-listalle 3.9. Mitattu: 89/146 "ruled
+        # out" -rivia oli lahteneita. Ks. src/models/fpl_status.py.
+        if left_league(r):
+            continue
         news = (r.get("news") or "").strip()
         chance = r.get("chance_next")
         if not news or chance is None:
