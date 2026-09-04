@@ -168,7 +168,7 @@
 <p class="muted">
 	When to play Wildcard, Bench Boost, Triple Captain and Free Hit: each remaining gameweek
 	gets a rough expected-value estimate per chip, and the best window is highlighted.
-	{#if data?.meta?.mode === 'model_xi'}Based on the model's optimal squad{#if entryFallback},
+	{#if data?.meta?.mode === 'model_xi'}Based on the strongest squad our search found{#if entryFallback},
 			because {fallbackPicks
 				? "your entry's picks are not public yet (it will be used once they are)"
 				: 'your entry could not be loaded just now'}{/if}.{:else if data?.meta?.entry != null}Based on your squad (entry

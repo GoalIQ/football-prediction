@@ -105,6 +105,20 @@ def _latest_season(current: list[dict], past: list[dict]) -> dict:
     }
 
 
+def _xp_vs_benchmark(rating: dict) -> float | None:
+    """Joukkueen XI-summa miinus vertailukohta, kapteeniton molemmilta.
+
+    None jos kumpikaan puuttuu — kortti putoaa silloin prosenttiin eika
+    keksi lukua.
+    """
+    oma = rating.get("team_xp_horizon_no_captain")
+    vertailu = rating.get("optimal_team_xp")
+    if not isinstance(oma, (int, float)) or not isinstance(
+            vertailu, (int, float)):
+        return None
+    return round(float(oma) - float(vertailu), 1)
+
+
 def _model_teaser(entry: int) -> dict | None:
     """GoalIQ-kääre-kiila: nykyisen squadin projektio #34-rate-teamilla
     (#50: percentile = % of the best possible budget team, EI satunnaisotos).
@@ -121,6 +135,27 @@ def _model_teaser(entry: int) -> dict | None:
         "team_xp_gw": rating.get("team_xp_gw"),
         "team_xp_horizon": rating.get("team_xp_horizon"),
         "percentile": rating.get("percentile"),
+        # 🔴 4.9.2026, julkaisuportin loydos. Jakokortti (career.html) kirjoitti
+        # "% of the best possible budget squad" LUKEMATTA `optimal_proven`ia,
+        # koska tama teaser ei valittanyt lippua eteenpain. SPA lukee sen
+        # oikein (RateTeam.svelte: `optimal_proven === false`), joten sama
+        # vaite kulki kahta polkua ja vain toinen oli portin takana.
+        #
+        # Mitattu samalla entrylla 116920: `team_xp_horizon_no_captain` 322,42
+        # vs `optimal_team_xp` 310,77 -> oma joukkue VOITTAA vertailukohdan
+        # 11,65 xP:lla, `beats_benchmark` True, ja `percentile` leikataan
+        # sataan. Kortti olisi siis tulostanut "100% of the best possible
+        # budget squad" vertailukohdasta joka ei ole paras mahdollinen.
+        # Tasan se ontto imartelu jota fpl_rate_team.py:666 varoittaa.
+        "optimal_proven": rating.get("optimal_proven"),
+        "beats_benchmark": rating.get("beats_benchmark"),
+        # Ylijaama vertailukohtaan. `gap_to_optimal_xp` on `max(0, ...)` eli
+        # NOLLA juuri voittajille, joten se ei kelpaa: kortti tarvitsee luvun
+        # eika taputusta selkaan. Vertailu tehdaan ILMAN kapteenia, koska
+        # `optimal_team_xp` on kapteeniton XI-summa — kapteenillinen 356,7
+        # vastaan kapteeniton 310,77 olisi luku vaarasta sarakkeesta.
+        "xp_vs_benchmark": _xp_vs_benchmark(rating),
+        "horizon_gw": rated["meta"].get("horizon_gw"),
         "rating_method": rated["meta"].get("rating_method"),
         "note": ("Projected with the same match model behind GoalIQ's "
                  "public pre-match-logged track record."),

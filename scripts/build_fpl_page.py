@@ -2161,8 +2161,10 @@ one refreshes on the same schedule. No login, no paywall.</p>
   <li><a href="/fpl/expected-points">Every player ranked by expected
   points</a>: the top 100 of the full projection, with scoring rate and
   expected minutes in separate columns.</li>
-  <li><a href="/fpl/model-xi">The model's own XI</a>: the squad our numbers
-  would pick inside the budget, published before every deadline.</li>
+  <li><a href="/fpl/model-xi">The budget XI</a>: the best 15 our numbers fit
+  inside the 100.0m budget, ranked on the total over the next six gameweeks,
+  rebuilt daily. This is not the squad the model plays: that is entry 116920
+  on the official FPL site.</li>
   <li><a href="/fpl/predicted-lineups">Model Predicted XI for every club</a>:
   who the minutes model expects to start at all 20 clubs, with each
   player's chance of starting. A projection, not a lineup leak.</li>
@@ -3336,6 +3338,41 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
         if n_w != 1:
             raise RuntimeError(
                 f"index.html GEN:XP-WINDOW: odotettiin 1 markerilohko, löytyi {n_w}")
+    # 🔴 MALLIN ENTRYN LINKKI (Villen loydos 4.9). Laskeutumissivun paneeli
+    # puhuu joukkueesta jota malli PELAA, mutta sen CTA vei /fpl/model-xi:hin
+    # eli budjettioptimiin. Kolme eri joukkuetta oli liikkeella samaan aikaan
+    # (budjettioptimi, yhden kierroksen paras XI kortilla, entryn oikea runko)
+    # eika laskeutumissivu erottanut niita.
+    #
+    # Kierrosnumero on PAKOLLINEN: mitattu 4.9, `/entry/116920/` on 404 eika
+    # "viimeisin" -muotoa ole. `/history` taas nayttaa pisteet ja chipit muttei
+    # rivistoa. Ainoa URL joka nayttaa rungon on `/event/{gw}`, joten numero on
+    # johdettava datasta - kovakoodattuna se vanhenee hiljaa, kuten
+    # "Live model projections · GW1-6" teki samana paivana.
+    #
+    # Kierros tulee YHDESTA lukijasta: `fpl_model_entry.public_picks_gw`.
+    # Ensimmainen versio luki sen `completed_gameweeks`in maksimista, ja
+    # julkaisuportti mittasi siita 46,0 tunnin pimean ikkunan joka kierros
+    # (GW3: deadline pe 17:30Z, viimeinen aloituspotku su 15:30Z). Pickit
+    # aukeavat deadline-hetkella, joten oikea lahde on `deadline_gameweek - 1`.
+    if xp:
+        from src.models.fpl_model_entry import public_picks_gw
+        _entry_gw = public_picks_gw(xp.get("meta") or {})
+        if _entry_gw:
+            _entry_link = (
+                '<a class="mag" href="https://fantasy.premierleague.com/entry/'
+                f'116920/event/{_entry_gw}" rel="noopener" '
+                'data-cta="index-model-entry">See the squad it plays '
+                "&#9656;</a>")
+            new, n_me = re.subn(
+                r"(<!-- GEN:MODEL-ENTRY-START -->).*?(<!-- GEN:MODEL-ENTRY-END -->)",
+                lambda m: m.group(1) + _entry_link + m.group(2), new,
+                flags=re.S)
+            if n_me != 1:
+                raise RuntimeError(
+                    f"index.html GEN:MODEL-ENTRY: odotettiin 1 markerilohko, "
+                    f"löytyi {n_me}")
+
     # #85 GEO: track-record-Dataset-schema pysyy tuoreena samalla botilla
     # kuin chipit (luvut + dateModified accuracy-lähteestä, ei kovakoodausta).
     ds = accuracy_dataset_ld(c, BASE + "/")

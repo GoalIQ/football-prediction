@@ -96,6 +96,39 @@ def latest_played_gw(events: list[dict]) -> int | None:
     return max(pelatut) if pelatut else None
 
 
+def public_picks_gw(meta: dict) -> int | None:
+    """Viimeisin kierros jonka pickit FPL nayttaa julkisesti, tai None.
+
+    🔴 MITATTU 4.9.2026 (julkaisuportin loydos). Ensimmainen versio luki taman
+    `completed_gameweeks`in maksimista, ja se on VAARA lahde:
+
+        completed_gameweeks = kierrokset joiden JOKAINEN ottelu on alkanut
+        pickit muuttuvat julkisiksi jo DEADLINE-hetkella
+
+    GW3:lla mitattuna ero on **46,0 tuntia**: deadline pe 4.9 17:30Z, viimeinen
+    aloituspotku su 6.9 15:30Z. Nuo 46 tuntia ovat tasan se deadline-viikonloppu
+    jolloin "mita malli omistaa talla viikolla" on elava kysymys, ja linkki
+    olisi osoittanut edelliseen kierrokseen.
+
+    `deadline_gameweek` on pienin kierros jonka deadline on VIELA edessa
+    (build_fpl_phase0: ehto `d > now`), joten se kaantyy tasmalleen
+    deadline-hetkella ja `deadline_gameweek - 1` on viimeisin julkinen.
+
+    Kauden lopussa tulevia deadlineja ei ole -> `deadline_gameweek` puuttuu,
+    jolloin viimeisin pelattu kierros on oikea vastaus. Ennen kauden
+    ensimmaista deadlinea kumpikin on tyhja -> None, ja kutsujan on jatettava
+    linkki tekematta eika arvattava numeroa.
+    """
+    dl = meta.get("deadline_gameweek")
+    if isinstance(dl, int) and dl > 1:
+        return dl - 1
+    done = [g for g in (meta.get("completed_gameweeks") or [])
+            if isinstance(g, int)]
+    if done:
+        return max(done)
+    return None
+
+
 class EntryHakuVirhe(RuntimeError):
     """Entryn rivia EI saatu. Ei sama asia kuin "ei eroa"."""
 

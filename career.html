@@ -351,7 +351,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <button class="btn secondary" id="downloadBtn" type="button">Download PNG</button>
       <button class="btn secondary" id="copyLinkBtn" type="button">Copy link</button>
     </div>
-    <p class="fineprint">The squad projection uses GoalIQ model expected points against the best squad the rules allow inside the 100.0m budget - not FPL official numbers. For fun, not betting advice.</p>
+    <p class="fineprint">The squad projection uses GoalIQ model expected points against the strongest squad our search finds inside the 100.0m budget, which is a best effort and not a proven optimum - not FPL official numbers. For fun, not betting advice.</p>
   </div>
 
   <div class="get-app" id="get">
@@ -525,7 +525,38 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       ctx.font = font(58, 700);
       ctx.fillText('Projected GW' + t.gw + ' xP ' + Number(t.team_xp_gw).toFixed(1), PAD + 28, boxTop + 138);
       ctx.font = font(40, 500);
-      ctx.fillText(Number(t.percentile).toFixed(0) + '% of the best possible budget squad', PAD + 28, boxTop + 196);
+      /* 4 Sep: two fixes on one line. (1) "best possible" is only allowed
+         when the search proved it, and the API sends optimal_proven for
+         exactly that reason. This card never read it, while the web app did,
+         so the same claim ran down two paths and only one was gated.
+         Measured on one entry the same day: the squad scored 322.42 over the
+         horizon against a benchmark of 310.77, so it beat the "best possible"
+         and the percentage was still clamped to 100.
+         (2) The line above is a single gameweek and this one is a horizon
+         total. Two windows stacked with neither one labelled is the same
+         defect this page's sibling had. */
+      /* The card is 1080 px and this line starts at x=100, so the box edge
+         leaves 916 px. IBM Plex Mono is monospace at 0.6 em, so 40 px gives
+         24 px per character, or 37 characters. The old line was 38 characters
+         and 912 px: four pixels of room, and nobody knew it. The first fix
+         written on 4 Sep was 55 characters and would have cut the claim off
+         mid word. Hence short strings, and fitText as a backstop because the
+         character count moves with the data. */
+      var benchWin = t.horizon_gw ? ', ' + t.horizon_gw + ' GW' : '';
+      var benchRef = (t.optimal_proven === false)
+        ? 'our best found XI' : 'the best possible XI';
+      var benchPct;
+      if (t.beats_benchmark === true && typeof t.xp_vs_benchmark === 'number') {
+        /* A number, not a compliment. The percentage is clamped to 100 in
+           this branch, so it would say less than the surplus does. */
+        var d = t.xp_vs_benchmark;
+        benchPct = (d >= 0 ? '+' : '') + d.toFixed(1) + ' xP vs ' + benchRef + benchWin;
+      } else {
+        benchPct = Number(t.percentile).toFixed(0) + '% of ' + benchRef + benchWin;
+      }
+      fitText(benchPct, W - 2 * PAD - 56, 40, 500);   // sets ctx.font
+      ctx.fillText(benchPct, PAD + 28, boxTop + 196);
+      ctx.font = font(40, 500);
       ctx.fillStyle = MUTED;
       ctx.font = font(25, 400);
       var trust = accuracyLine

@@ -265,6 +265,11 @@ margin:10px 0;}
 overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .xip span{display:block;font-size:10px;color:var(--muted);
 font-variant-numeric:tabular-nums;}
+/* 4 Sep: the window sits on the number, not at the other end of the page.
+   A qualifier far from the figure is not a qualifier: the page read
+   "39.2 xP" and nothing on it said that is a six gameweek total. */
+.xip span i{display:block;font-style:normal;font-size:9px;opacity:.72;
+letter-spacing:.03em;}
 @media (max-width:520px){.xip{width:64px;}.xirow{gap:6px;}}
 @media (max-width:520px){.cta-row{flex-direction:column;align-items:stretch;}
 .btn{text-align:center;}}
@@ -1000,9 +1005,16 @@ def _xi_start_risk(xi) -> str:
     Numero jokaiseen paitaan sotkisi kentan, joten nostetaan vain poikkeamat.
     Kynnys 0,75: sen ylapuolella pelaaja on kaytannossa naulattu.
     """
-    risky = [p for p in xi
-             if isinstance(p.get("p_start"), (int, float))
-             and p["p_start"] < XI_NAILED_FLOOR]
+    # 🔴 FAIL-CLOSED (4.9, julkaisuportin toinen mutaatio). Suodatin kohteli
+    # PUUTTUVAA `p_start`ia naulattuna, joten kentan katoaminen palauttaisi
+    # sivun hiljaa ehdottomaan lupaukseen — tasan se vika joka korjattiin
+    # samana paivana. Nyt: jos yhdeltakin puuttuu, vaitetta ei esiteta
+    # lainkaan. Sama saanto kuin ikkunalla (ei ikkunaa -> ei sivua).
+    puuttuu = [p for p in xi
+               if not isinstance(p.get("p_start"), (int, float))]
+    if puuttuu:
+        return ""
+    risky = [p for p in xi if p["p_start"] < XI_NAILED_FLOOR]
     if not risky:
         # Prosentti johdetaan vakiosta: kovakoodattuna se valehtelisi heti kun
         # XI_NAILED_FLOOR muuttuu (havaittu negatiivisessa kontrollissa 9.8).
@@ -1045,6 +1057,16 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
             # (duplikaattisuoja + pelattavuusvaatimus).
             "id": p.get("id"),
             "xmins": p.get("xmins"),
+            # 🔴 4.9, julkaisuportin loydos: `p_start` PUUTTUI tasta poolista,
+            # joten `_xi_start_risk`in suodatin
+            # (`isinstance(p.get("p_start"), (int, float))`) ei loytanyt
+            # koskaan yhtaan riskipelaajaa. Sivu tulosti siis AINA "Every
+            # player in this XI projects as a nailed starter" riippumatta
+            # datasta, ja haara "Not everyone here is nailed" oli inertti
+            # kirjoitushetkesta asti. Vaite sattui olemaan tosi (matalin
+            # p_start 0,883), mutta se oli ehdoton lupaus ilman mittausta.
+            # Muisti: syyn-haara-joka-ei-laukea-on-copyn-lupaus.
+            "p_start": p.get("p_start"),
             "element_type": t,
             "price": int(round(float(p["price"]) * 10)),   # tenths
             "club": p.get("team_short") or p.get("team"),
@@ -1056,6 +1078,30 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     xi = optimal_budget_xi(pool)
     if not xi:
         return None
+
+    # 🔴 IKKUNA (Villen loydos 4.9.2026). Sivu naytti "310.8 Projected points,
+    # XI" ja "39.2 xP" kertomatta etta luvut ovat KUUDEN kierroksen summia.
+    # Sana "horizon" esiintyi sivulla nelja kertaa ja kaikki nelja olivat
+    # meta-, og-, twitter- ja JSON-LD-kuvauksissa eli vain hakukoneelle.
+    # Samaan aikaan 3.9 postattu kortti sanoi "Best XI for GW3 alone" (67,6
+    # yhdelta kierrokselta) ja kolmas joukkue, entry 116920, on se jota
+    # oikeasti pelataan. Mitattu paallekkaisyys 15:sta: sivu-kortti 8,
+    # sivu-entry 7, kortti-entry 6. Kolme eri joukkuetta, kolme eri
+    # kysymysta, ja vain kortti kertoi omansa.
+    #
+    # Ikkuna JOHDETAAN artefaktista eika kovakoodata: kauden lopussa horisontti
+    # kutistuu ja kovakoodattu teksti nayttaisi hoidetulta
+    # (muisti: ehto-ei-vanhene-teksti-vanhenee). Ilman ikkunaa sivua EI
+    # renderoida lainkaan - xP-luku ilman ikkunaa on juuri se vaara
+    # vaihtoehto joka pitaa tehda mahdottomaksi.
+    gws = sorted({g.get("gw") for p in players
+                  for g in (p.get("gameweeks") or [])
+                  if isinstance(g.get("gw"), int)})
+    if not gws:
+        return None
+    window = (f"GW{gws[0]}" if len(gws) == 1
+              else f"GW{gws[0]}-GW{gws[-1]}")
+    window_n = f"{len(gws)} gameweek" + ("" if len(gws) == 1 else "s")
 
     rows = {t: [p for p in xi if p["element_type"] == t] for t in (1, 2, 3, 4)}
     for t in rows:
@@ -1069,7 +1115,7 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
             '<div class="xip">'
             f'{_kit_svg(p["team_short"], size=44)}'
             f'<b>{escape(p["web_name"])}</b>'
-            f'<span>{p["xp_horizon_total"]:.1f} xP</span>'
+            f'<span>{p["xp_horizon_total"]:.1f} xP<i>{window}</i></span>'
             "</div>"
             for p in ps
         )
@@ -1086,6 +1132,7 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
         bench_block = (
             '<h2 class="bench-h">Bench</h2>'
             f'<p class="muted">The other four in the 15, {bench_cost:.1f}m. '
+            f"Same {window} total on each name. "
             "Outfield bench players must project at least 45 expected minutes "
             "a game, so the squad can cover a blank without a transfer. The "
             "backup keeper is the cheapest available: he only plays if the "
@@ -1098,14 +1145,32 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
              + "</div>" + bench_block)
 
     url = f"{BASE}/fpl/model-xi"
-    title = "The GoalIQ Model XI: best 100.0m FPL squad on xP | GoalIQ"
-    desc = (f"The highest-scoring XI inside the 100.0m budget: {shape}, "
-            f"{total_xp:.1f} projected points over the horizon, with a bench "
-            f"that actually plays. Free, no sign-in, rebuilt daily.")
     # 28.7: vaite optimaalisuudesta VAIN kun ratkaisija on sen todistanut.
     # Ennen tata paivaa sivu vaitti "strongest" ahneesta heuristiikasta joka
     # jai tuotantodatalla 15.2 xP optimista.
     from src.models.fpl_rate_team import optimal_xi_proven
+
+    # 🔴 4.9, julkaisuportin loydos: `title` ja `desc` rakennettiin ENNEN tata
+    # haaraa, joten hedge oli vain nakyvassa copyssa ja `<head>` sanoi
+    # hedgaamatta "The highest-scoring XI" / "best 100.0m FPL squad" KUUDESSA
+    # kohdassa (title, description, og:title, og:description, twitter:*,
+    # JSON-LD). Se on Villen saman paivan loydos peilikuvana: silloin ikkuna
+    # oli vain metassa eika sivulla, nyt hedge oli vain sivulla eika metassa.
+    # Meta on se jonka linkkiesikatselut ja hakukoneet lainaavat, eli se on
+    # julkisempi kuin runko.
+    _proven = optimal_xi_proven()
+    title = ("The GoalIQ Model XI: best 100.0m FPL squad on xP | GoalIQ"
+             if _proven else
+             "The GoalIQ Model XI: the strongest 100.0m FPL squad our search "
+             "found | GoalIQ")
+    _desc_claim = ("The highest-scoring XI inside the 100.0m budget"
+                   if _proven else
+                   "The strongest XI our search found inside the 100.0m "
+                   "budget")
+    desc = (f"{_desc_claim}: {shape}, "
+            f"{total_xp:.1f} projected points over {window} ({window_n}), "
+            f"with a bench that actually plays. Free, no sign-in, rebuilt "
+            f"daily.")
     claim = ("The highest-scoring XI that fits inside the standard 100.0m "
              "budget, proven optimal by exhaustive search"
              if optimal_xi_proven() else
@@ -1116,22 +1181,65 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     # epärealistista: siirtoja on rajallisesti, joten penkkiläinen on joskus
     # pakko pelauttaa. Sivun tekstin on kerrottava se, muuten luku nayttaa
     # paremmalta kuin mika on pelattavissa.
+    # 🔴 4.9, julkaisuportin loydos: ensimmainen versio tasta kappaleesta sanoi
+    # suoraan "This is a budget optimum". Se on VAHVEMPI vaite kuin mihin
+    # hakumme pystyy, ja portti todisti sen vaaraksi: entryn omasta rungosta
+    # johdettu laillinen 15 (99,3 m, 3/seura, positiot oikein) antaa XI:lle
+    # 322,42 xP kun tama sivu nayttaa 310,77 — 11,65 xP enemman ja 0,7 m
+    # halvemmalla XI:lla. Sama luokka kuin 14.8 (277,49 -> 298,05).
+    # Optimaalisuusvaite kulkee siis SAMAN portin lapi kuin lede.
+    optimum_word = ("the proven optimum XI inside the 100.0m budget"
+                    if optimal_xi_proven() else
+                    "the best XI our search found inside the 100.0m budget")
+
+    # Vaite tarvitsee reitin: lihavoitu "entry 116920" ilman linkkia ei ole
+    # tarkistettavissa. Kierros tulee samasta yhdesta lukijasta kuin
+    # laskeutumissivun linkki (`public_picks_gw`), joten pinnat eivat voi
+    # osoittaa eri kierrokseen. Ilman kierrosta nimi jaa lihavoinniksi eika
+    # rikkinaiseksi linkiksi.
+    from src.models.fpl_model_entry import public_picks_gw
+    _entry_gw = public_picks_gw(xp.get("meta") or {})
+    entry_link = "<b>entry 116920</b>"
+    if _entry_gw:
+        entry_link = (
+            '<a href="https://fantasy.premierleague.com/entry/116920/event/'
+            f'{_entry_gw}" rel="noopener">entry 116920</a>')
+    # Sama linkki virkkeen ALUSSA: (n)-korjaus poisti edelta klausuulin
+    # "The model plays too:", jolloin kaksoispisteen jalkeinen pieni kirjain
+    # jai lauseen alkuun. Hylattyjen rekisteri vaatii etta entry NIMETAAN,
+    # ei etta se on pienella.
+    entry_link_capitalised = entry_link.replace(">entry 116920<", ">Entry 116920<")
+
     hero = ("<h1>The Model XI</h1>"
-            f'<p class="lede">{claim}, ranked on projected points. '
+            f'<p class="lede">{claim}, ranked on projected points for '
+            f"{window} ({window_n}). Every projected points figure here is a "
+            f"total over those {len(gws)}, not one round. Prices, minutes and "
+            "start probabilities are not: they are per player and per game. "
             "The budget has to cover a full 15, so the four on the bench are "
             "the cheapest players who still project real minutes: the squad "
             "can cover a blank without spending a transfer. "
-            "This is the same squad logic the rate-my-team benchmark uses, so "
-            "the page and the product cannot drift apart.</p>")
+            "This is the same optimiser the rate-my-team benchmark uses, "
+            "rebuilt from the same projection file.</p>")
     body = (
         f'<div class="stat-row">'
         f'<div class="stat"><b>{shape}</b><span>Shape</span></div>'
-        f'<div class="stat"><b>{total_xp:.1f}</b><span>Projected points, XI</span></div>'
+        f'<div class="stat"><b>{total_xp:.1f}</b>'
+        f'<span>Projected points, XI, {window}</span></div>'
         f'<div class="stat"><b>{cost:.1f}m</b><span>XI cost, {bench_cost:.1f}m on the bench</span></div>'
         f"</div>"
         f"{_kit_defs(p['team_short'] for p in list(xi) + list(bench))}"
         f"{pitch}"
         f"{_xi_start_risk(xi)}"
+        # 🔴 4.9 (Villen loydos): sivulla ei ollut sanaakaan siita etta tama EI
+        # ole se joukkue jota malli pelaa. Kortti sanoo sen alaviitteessaan;
+        # sivu ei sanonut, ja lukija naki kolme eri "mallin XI:ta" ilman mitaan
+        # mika kertoisi etta ne vastaavat eri kysymykseen. Sama sanamuoto kuin
+        # render_projected_xi_card.py:ssa ja render_standouts_card.py:ssa.
+        f'<p class="note">This is {optimum_word}, not the team the model '
+        f"plays. {entry_link_capitalised} is the squad it actually fields, and it "
+        f"is "
+        "built under the transfer rules from what it already owns, so it is a "
+        "different 15.</p>"
         '<p class="note">Shirts show club colours only. GoalIQ is not '
         "affiliated with the Premier League and uses no club badges or player "
         "images. Projected points are model estimates, not betting advice.</p>"

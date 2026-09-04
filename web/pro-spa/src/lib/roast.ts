@@ -50,7 +50,7 @@ export function buildRoast(data: RateTeamResponse): string[] {
 		);
 	} else if (score >= 50) {
 		lines.push(
-			`${score}/100. Half the projected points the rules allow. The other half is presumably a lifestyle choice.`
+			`${score}/100. Half the projected points of the strongest squad we found. The other half is presumably a lifestyle choice.`
 		);
 	} else {
 		lines.push(
