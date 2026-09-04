@@ -128,8 +128,38 @@ CSS = """
 --paper:#1F1D1A;--muted:#A8A29A;--hero-muted:#A8A29A;--faint:#8A847A;
 --line:rgba(243,242,242,0.24);--line-strong:rgba(243,242,242,0.40);--radius:0;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--ink);color:var(--cream);font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.6;}
-h1,h2,h3,.brand{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:-0.01em;}
+/* 4 Sep: two typefaces with one job each. Mono is right for numbers, because
+   it keeps columns straight and digits comparable, and it is what the brand
+   is recognised by. It is wrong for prose: it was designed for code, so words
+   do not form recognisable shapes and reading slows down. Measured before
+   this change: one typeface across 2,559 words of body copy on the landing
+   page and 4,845 on /fpl. Sans is the sibling of the same family, so the
+   pairing does not fight the brand and adds no new loading origin. */
+:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+/* One type scale, four steps. Measured before: nine different body sizes,
+   including 13.6px, which is not a choice but the residue of an em product. */
+--fs-small:13px;--fs-body:16px;--fs-lead:18px;--fs-sub:20px;}
+body{background:var(--ink);color:var(--cream);font-family:var(--sans);
+font-size:var(--fs-body);line-height:1.65;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.brand{font-family:var(--mono);text-transform:uppercase;letter-spacing:-0.01em;}
+/* Numbers, tables and controls stay mono: that is the half of the split that
+   earns its keep. */
+table,.lb,.num,.stat b,.stat span,.pick,.tflag,.xip span,code,kbd,
+.toolnav,.clubnav,.share,.lbctl,.tt-chip,.tt-price,.tt-count,
+.mrow .meta,.note-date{font-family:var(--mono);}
+/* Reading measure. Measured before: 125 characters per line at the widest,
+   where 45-75 is the readable range. Applies to prose only, never to a
+   table, so no column can be squeezed by it. */
+.lede,.note,p{max-width:68ch;}
+/* Touch targets. Apple asks for 44px, Google for 48dp. Measured on the
+   landing page at 390px wide before this change: 34 links and buttons under
+   32px tall, on the device FPL is actually played on. Nav and list links get
+   the height through padding, so nothing moves on a dark background. */
+@media (hover:none){
+.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,footer a,nav a{
+display:inline-flex;align-items:center;min-height:44px;}
+}
 .wrap{max-width:820px;margin:0 auto;padding:0 20px;}
 .bar{height:1px;background:var(--line);}
 /* Bug 26 Jul: color was var(--cream) = cream on a cream background -> every
@@ -486,9 +516,9 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         # 26.7 PERF: preload+onload, ei render-blocking stylesheetiä — FCP ei
         # odota kolmannen osapuolen CSS:ää. noscript = varmistus.
         '<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family='
-        'IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel=\'stylesheet\'">\n'
+        'IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" onload="this.rel=\'stylesheet\'">\n'
         '<noscript><link href="https://fonts.googleapis.com/css2?family='
-        'IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>\n'
+        'IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>\n'
         '<meta name="theme-color" content="#0B0A09">\n'
         f"{ld}"
         f"<style>{_strip_css_comments(CSS)}</style>\n"

@@ -17,8 +17,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <meta name="theme-color" content="#0B0A09">
   <script type="application/ld+json">
 {
@@ -286,6 +286,33 @@
   .lb th,.lb td{padding:6px 3px;}
 }
 /* /GEN:MOBILE-CSS */
+
+/* --- 4 Sep 2026: two typefaces, one job each ------------------------------
+   Mono is right for numbers: it keeps columns straight and digits
+   comparable, and it is what the brand is recognised by. It is wrong for
+   prose, because it was designed for code, so words do not form
+   recognisable shapes and reading slows down. Measured before this change:
+   a single typeface across 2,559 words of body copy on the landing page,
+   nine different body sizes including 13.6px, and lines up to 125
+   characters where 45-75 is the readable range. Sans is the sibling of the
+   same family, so the pairing does not fight the brand and adds no new
+   loading origin. */
+:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;}
+h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.bar,.ticker,.record-chip,.stat b,
+table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
+.toolnav,.clubnav,.share,.lbctl,.lb{font-family:var(--mono);}
+/* Reading measure: prose only, never a table, so no column is squeezed. */
+p,.lede,.hint,.note,.fineprint,li{max-width:68ch;}
+td p,th p,table p,td li,table li{max-width:none;}
+/* Touch targets. Apple asks 44px, Google 48dp. Measured at 390px wide
+   before this change: 34 links and buttons under 32px tall, on the device
+   FPL is actually played on. Height comes from padding, so nothing moves. */
+@media (hover:none){
+  nav a,footer a,.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,.link-row a{
+    display:inline-flex;align-items:center;min-height:44px;}
+}
 </style>
 <!-- PostHog (#38): cookieless site analytics - persistence=memory, no cookies, no PII -->
 <script>

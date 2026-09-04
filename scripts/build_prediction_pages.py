@@ -239,6 +239,19 @@ CSS = """
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--cream);color:var(--ink);font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.6;}
 h1,h2,h3,.brand{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+/* --- 4 Sep 2026: two typefaces, one job each ------------------------------
+   Mono is right for numbers and wrong for prose: it was designed for code, so
+   words do not form recognisable shapes and reading slows down. Measured
+   before this change: one typeface across the whole site, nine different body
+   sizes, and lines up to 125 characters where 45-75 is readable. Sans is the
+   sibling of the same family, so it adds no new loading origin. */
+:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;}
+h1,h2,h3,h4,.brand,.btn,table,th,td,.num,code,kbd,.mono,.tag{font-family:var(--mono);}
+p,.lede,.hint,.note,.fineprint{max-width:68ch;}
+td p,th p,table p{max-width:none;}
+@media (hover:none){nav a,footer a,.share a{display:inline-flex;align-items:center;min-height:44px;}}
 /* Base link rule: without this the "public track record" link in the .rec
    box stayed browser-default blue #0000EE. An element selector loses to
    every class rule, so it only hits unstyled links. */
@@ -306,9 +319,9 @@ HEAD_BRAND = (
     # 26.7 PERF: preload+onload, ei render-blocking stylesheetiä — FCP ei
     # odota kolmannen osapuolen CSS:ää. noscript = varmistus.
     '<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family='
-    'IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel=\'stylesheet\'">\n'
+    'IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" onload="this.rel=\'stylesheet\'">\n'
     '<noscript><link href="https://fonts.googleapis.com/css2?family='
-    'IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>\n'
+    'IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>\n'
 )
 
 # Header avautuu tässä; _page sulkee </header>-tagin hero-lohkon jälkeen.

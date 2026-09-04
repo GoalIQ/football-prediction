@@ -18,8 +18,8 @@
 <link rel="preconnect" href="https://api.goaliq.app" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <meta name="theme-color" content="#0B0A09">
 
 <!-- Open Graph / social preview -->
@@ -653,6 +653,56 @@
   .lb th,.lb td{padding:6px 3px;}
 }
 /* /GEN:MOBILE-CSS */
+  /* --- 4 Sep 2026: two typefaces, one job each ----------------------------
+     Mono is right for numbers: it keeps columns straight and digits
+     comparable, and it is what the brand is recognised by. It is wrong for
+     prose, because it was designed for code, so words do not form
+     recognisable shapes and reading slows down. Measured before this change:
+     2,559 words of body copy in one typeface on this page, nine different
+     body sizes including 13.6px, and lines up to 125 characters where 45-75
+     is the readable range. Sans is the sibling of the same family, so the
+     pairing does not fight the brand and adds no new loading origin.
+     NOTE: this block belongs in the FIRST style element. The last one on
+     this page sits inside a GEN marker and the builder overwrites it. */
+  :root{ --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+         --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
+  body{ font-family:var(--sans); font-size:16px; line-height:1.65; }
+  h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.record-chip,.ticker,
+  table,th,td,.num,.mono,.tag,.chip,code,kbd{ font-family:var(--mono); }
+  p,.lede,.hint,.note,.fineprint{ max-width:68ch; }
+  td p,th p,table p{ max-width:none; }
+  @media (hover:none){
+    nav a,footer a,.link-row a,.share a{ display:inline-flex;
+      align-items:center; min-height:44px; }
+  }
+  /* 4 Sep: the phone first screen was 41% banner. Measured at 390x844: the
+     h1 did not start until 349px, so a visitor saw the word "premium" four
+     times before seeing what the product is, and the free surface, which is
+     our best argument, was below the fold. The promo keeps its place and
+     its message; it just stops taking three lines to say it. */
+  @media (max-width:560px){
+    .free-band-in{ display:flex; flex-wrap:wrap; align-items:center;
+      gap:8px 12px; padding-top:10px; padding-bottom:10px; }
+    .free-band-txt{ margin:0; font-size:14px; }
+    .free-band-txt strong{ display:inline; }
+    .free-band-txt span{ display:none; }
+    .btn-band{ padding:8px 14px; font-size:14px; }
+    /* The ticker is decoration and it is aria-hidden already. On a phone it
+       costs a fifth of the first screen and says what the track record panel
+       says better. */
+    .ticker{ display:none; }
+  }
+  /* 4 Sep: the page sold visual tools without showing one. Measured before
+     this change: zero images on the landing page and 2,559 words asking the
+     visitor to imagine them. These two are the cards the model already
+     publishes every gameweek, so they are proof rather than decoration.
+     Stable filenames, refreshed by the card builder, so the section cannot
+     go stale the way a hardcoded gameweek number would. */
+  .cards{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(16px,2.5vw,28px); }
+  .cards figure{ margin:0; }
+  .cards img{ width:100%; height:auto; display:block; border:1px solid var(--line); }
+  .cards figcaption{ margin-top:10px; font-size:14px; color:var(--muted); max-width:46ch; }
+  @media (max-width:760px){ .cards{ grid-template-columns:1fr; } }
 </style>
 <!-- PostHog (#38): cookieless site analytics - persistence=memory, no cookies, no PII -->
 <script>
@@ -816,11 +866,31 @@ vertical-align:top}
 .nm-call b{color:var(--amber)}
 .nm-sc{white-space:nowrap;color:var(--muted)}
 .nm-lg{white-space:nowrap;color:var(--faint);font-size:12px}
-</style><div class="nm-wrap"><table class="nm"><thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th><th>Logged</th></tr></thead><tbody><tr><td class="nm-ko">Fri 04 Sep, 17:00</td><td class="nm-tm"><a href="/predictions/ligue-1/lyon-vs-auxerre">Lyon v Auxerre</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Lyon <b>57%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 18:00</td><td class="nm-tm"><a href="/predictions/eredivisie/sparta-rotterdam-vs-pec-zwolle">Sparta Rotterdam v PEC Zwolle</a><span class="nm-comp">Eredivisie</span></td><td class="nm-call">Sparta Rotterdam <b>43%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 18:30</td><td class="nm-tm"><a href="/predictions/bundesliga/stuttgart-vs-fc-koln">Stuttgart v FC Koln</a><span class="nm-comp">Bundesliga</span></td><td class="nm-call">Stuttgart <b>64%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/serie-a/genoa-vs-como">Genoa v Como</a><span class="nm-comp">Serie A</span></td><td class="nm-call">Como <b>58%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/premier-league/ipswich-vs-liverpool">Ipswich v Liverpool</a><span class="nm-comp">Premier League</span></td><td class="nm-call">Liverpool <b>58%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/la-liga/real-betis-vs-real-madrid">Real Betis v Real Madrid</a><span class="nm-comp">La Liga</span></td><td class="nm-call">Real Madrid <b>42%</b></td><td class="nm-lg">2026-09-04</td></tr></tbody></table></div><!-- GEN:NEXT-MATCHES-END -->
+</style><div class="nm-wrap"><table class="nm"><thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th><th>Logged</th></tr></thead><tbody><tr><td class="nm-ko">Fri 04 Sep, 18:30</td><td class="nm-tm"><a href="/predictions/bundesliga/stuttgart-vs-fc-koln">Stuttgart v FC Koln</a><span class="nm-comp">Bundesliga</span></td><td class="nm-call">Stuttgart <b>64%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/serie-a/genoa-vs-como">Genoa v Como</a><span class="nm-comp">Serie A</span></td><td class="nm-call">Como <b>58%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/premier-league/ipswich-vs-liverpool">Ipswich v Liverpool</a><span class="nm-comp">Premier League</span></td><td class="nm-call">Liverpool <b>58%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/la-liga/real-betis-vs-real-madrid">Real Betis v Real Madrid</a><span class="nm-comp">La Liga</span></td><td class="nm-call">Real Madrid <b>42%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 19:05</td><td class="nm-tm"><a href="/predictions/ligue-1/paris-saint-germain-vs-monaco">Paris Saint-Germain v Monaco</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Paris Saint-Germain <b>65%</b></td><td class="nm-lg">2026-09-04</td></tr><tr><td class="nm-ko">Fri 04 Sep, 19:15</td><td class="nm-tm"><a href="/predictions/primeira-liga/porto-vs-moreirense">Porto v Moreirense</a><span class="nm-comp">Primeira Liga</span></td><td class="nm-call">Porto <b>76%</b></td><td class="nm-lg">2026-09-04</td></tr></tbody></table></div><!-- GEN:NEXT-MATCHES-END -->
     <p class="nm-note">GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</p>
     <p class="nm-more"><a href="/predictions">All predictions &#9656;</a> &middot; <a href="/fpl/expected-points">How this feeds the FPL numbers &#9656;</a></p>
   </div>
 </section>
+
+<section>
+  <div class="wrap">
+    <div class="bar"><span>&#9612; What the model publishes</span><span>P105</span></div>
+    <div class="cards">
+      <figure>
+        <img src="/assets/cards/gameweek-card.webp" width="900" height="506" loading="lazy" decoding="async"
+             alt="GoalIQ gameweek card: the model's standout picks with projected points, haul and blank probability for each.">
+        <figcaption>Every gameweek the model posts its picks with the numbers behind them, before the deadline.</figcaption>
+      </figure>
+      <figure>
+        <img src="/assets/cards/projected-xi-card.webp" width="900" height="506" loading="lazy" decoding="async"
+             alt="GoalIQ projected points card: top 15 by expected points and the model's best XI for one gameweek.">
+        <figcaption>Projected points and the best XI for the round, from the same model that logs the match predictions.</figcaption>
+      </figure>
+    </div>
+    <p class="nm-more"><a href="/fpl/expected-points">See the numbers behind them &#9656;</a></p>
+  </div>
+</section>
+
 
 <section>
   <div class="wrap">

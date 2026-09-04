@@ -1543,6 +1543,40 @@ CSS = """
   *{ box-sizing:border-box; }
   body{ margin:0; font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:var(--ink); color:var(--cream); line-height:1.6; font-size:17px; }
   h1,h2,h3,.brand{ font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; text-transform:uppercase; letter-spacing:-0.01em; }
+
+  /* --- 4 Sep 2026: two typefaces, one job each ----------------------------
+     Mono is right for numbers: it keeps columns straight and digits
+     comparable, and it is what the brand is recognised by. It is wrong for
+     prose, because it was designed for code, so words do not form
+     recognisable shapes and reading slows down. Measured before this change:
+     one typeface across 2,559 words of body copy on the landing page, nine
+     different body sizes including 13.6px, and lines up to 125 characters
+     where 45-75 is the readable range. Sans is the sibling of the same
+     family, so the pairing does not fight the brand and adds no new loading
+     origin. */
+  :root{ --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+         --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
+  body{ font-family:var(--sans); font-size:16px; line-height:1.65; }
+  h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.record-chip,.stat b,
+  table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
+  .toolnav,.clubnav,.share,.lbctl,.lb,.ticker{ font-family:var(--mono); }
+  /* Reading measure: prose only, never a table, so no column is squeezed. */
+  p,.lede,.hint,.note,.fineprint{ max-width:68ch; }
+  .tooldir{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:10px; margin:22px 0 26px; }
+  .tooldir a{ display:block; padding:12px 14px; border:1px solid var(--line);
+    text-decoration:none; color:var(--cream); }
+  .tooldir a:hover{ border-color:var(--amber); }
+  .tooldir b{ display:block; font-family:var(--mono); font-size:15px; }
+  .tooldir span{ display:block; font-size:13px; color:var(--muted); margin-top:2px; }
+  td p,th p,table p{ max-width:none; }
+  /* Touch targets. Apple asks 44px, Google 48dp. Measured at 390px wide
+     before this change: 34 links and buttons under 32px tall, on the device
+     FPL is actually played on. Height comes from padding, so nothing moves. */
+  @media (hover:none){
+    nav a,footer a,.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,
+    .link-row a{ display:inline-flex; align-items:center; min-height:44px; }
+  }
   /* Base link rule: without this, links OUTSIDE the .content block (e.g.
      the mini league link in the .note paragraph) stay browser-default
      blue #0000EE. An element selector (0,0,1) loses to every class rule,
@@ -1997,8 +2031,8 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <link rel="preconnect" href="https://api.goaliq.app" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
 
 <meta property="og:type" content="website">
@@ -2034,6 +2068,21 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <section class="hero dark">
 <div class="wrap">
 <h1>Free FPL Tools: Clean Sheet Probability, Fixture Difficulty and More</h1>
+<!-- 4 Sep: the page opened with a 110-word paragraph and the first tool link
+     was three screens down. Measured on a phone before this change: no data
+     and no tool link on the first screen at all, on the page that is the free
+     surface. This is the same fix the premium side got the same morning: a
+     directory first, prose after it. -->
+<nav class="tooldir" aria-label="Free FPL tools">
+  <a href="/fpl/expected-points"><b>Expected points</b><span>Who scores most next</span></a>
+  <a href="/fpl/best-captain"><b>Captain picks</b><span>Who to give the armband</span></a>
+  <a href="/fpl/differentials"><b>Differentials</b><span>Low owned, still rated</span></a>
+  <a href="/fpl/model-xi"><b>Budget XI</b><span>Best 15 for 100.0m</span></a>
+  <a href="/fpl/predicted-lineups"><b>Predicted XI</b><span>Who starts at each club</span></a>
+  <a href="/fpl/price-changes"><b>Price changes</b><span>Who rises tonight</span></a>
+  <a href="/fpl/team-news"><b>Team news</b><span>Who is out right now</span></a>
+  <a href="/fpl/points"><b>Points vs projection</b><span>How the model did</span></a>
+</nav>
 <p class="lede">GoalIQ is a free FPL assistant built on a match model with a
 published, pre-match-logged track record.
 This page gives clean sheet probability and fixture difficulty for every

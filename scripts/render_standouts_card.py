@@ -458,6 +458,15 @@ def main() -> int:
                             html_path.as_uri()],
                            check=True, capture_output=True, timeout=60)
             print(f"PNG: {png}")
+            # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
+            # laskeutumissivun kortti jaisi siihen kierrokseen jona se
+            # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
+            # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
+            try:
+                from scripts.publish_cards_to_site import main as _julkaise
+                _julkaise()
+            except Exception as _e:  # ei saa kaataa kortin generointia
+                print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
             break
     else:
         print("Chromea ei loytynyt - kaappaa HTML kasin.")

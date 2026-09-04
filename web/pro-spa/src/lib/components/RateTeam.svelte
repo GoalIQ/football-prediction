@@ -790,13 +790,28 @@
 	{:else if data == null}
 		<!-- Tyhjätila: viikkosilmukka tarvitsee joukkueen — ohjaa My teamiin,
 		     ei duplikoitua syöttölomaketta. -->
+		<!-- 4 Sep: this used to say "Set up your team first" whenever `data` was
+		     null, including for a user who HAS a saved entry and is simply
+		     waiting on it. Measured on the live page: "Your saved FPL team is
+		     116920" and "Set up your team first" were both on screen at once,
+		     so the product read as if it did not recognise a paying user.
+		     Two different empty states, two different sentences. -->
 		<div class="week-setup">
-			<p><strong>Set up your team first.</strong></p>
-			<p class="muted">
-				The weekly loop needs your squad. Add your FPL entry ID or build a draft in My team,
-				and this view fills in with your captain call and the decisions to log.
-			</p>
-			<button class="primary" type="button" onclick={() => onGoToTeam?.()}>Go to My team</button>
+			{#if fplEntry.savedEntry != null}
+				<p><strong>Team {fplEntry.savedEntry} is saved, but its data has not loaded.</strong></p>
+				<p class="muted">
+					Nothing is wrong with your squad. Open My team to reload it, and this view
+					fills in with your captain call and the decisions to log.
+				</p>
+				<button class="primary" type="button" onclick={() => onGoToTeam?.()}>Reload in My team</button>
+			{:else}
+				<p><strong>Set up your team first.</strong></p>
+				<p class="muted">
+					The weekly loop needs your squad. Add your FPL entry ID or build a draft in My team,
+					and this view fills in with your captain call and the decisions to log.
+				</p>
+				<button class="primary" type="button" onclick={() => onGoToTeam?.()}>Go to My team</button>
+			{/if}
 		</div>
 	{:else}
 		<!-- 14.8 LAYOUT (Villen palaute: "ne ovat tossa allekain ns listana"):
