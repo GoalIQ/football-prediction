@@ -164,6 +164,27 @@ def test_sivun_osio_sanoo_before_vain_kun_aikaleimat_todistavat():
     assert "—" not in html
 
 
+def test_logged_minutes_round_instead_of_floor():
+    """LOGGED-SARAKE-KATKAISEE (4.9): `secs // 60` lattioi aina alaspain,
+    joten 16 min 53 s luki "16 min" - suunta joka aina suosii meita, koska
+    skeptikko joka laskee itse gw_calls.json:sta (logged_at 17:13:07Z,
+    deadline_utc 17:30:00Z) huomaa eron. round() pyoristaa oikein."""
+    from scripts.build_fpl_page import _fmt_logged
+    row = {"gw": 2, "logged_at": "2026-08-28T17:13:07Z",
+           "deadline_utc": DL, "calls": [], "graded": None}
+    assert "17 min before the deadline" in _fmt_logged(row)
+    assert "16 min" not in _fmt_logged(row)
+
+
+def test_negative_control_exact_minute_does_not_round_up():
+    """Kontrolli: tasan 16 min 00 s ei saa kasvaa 17:aan - muuten korjaus
+    itse loisi sen saman virheen toiseen suuntaan."""
+    from scripts.build_fpl_page import _fmt_logged
+    row = {"gw": 2, "logged_at": "2026-08-28T17:14:00Z",
+           "deadline_utc": DL, "calls": [], "graded": None}
+    assert "16 min before the deadline" in _fmt_logged(row)
+
+
 # ---------------------------------------------------------------- poikkeusnootti (29.8)
 # Portti k2 (M70): sivu ei kertonut etta GW2-rivi (Guehi C) ja entry (wildcard,
 # B.Fernandes C) eroavat; lukija loysi sen vasta entry-linkista. Nootti tulee

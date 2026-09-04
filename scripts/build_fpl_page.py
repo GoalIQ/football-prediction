@@ -2367,7 +2367,12 @@ def _fmt_logged(row: dict) -> str:
     deadline = parse_utc(row["deadline_utc"])
     delta = deadline - logged
     secs = int(abs(delta.total_seconds()))
-    h, m = divmod(secs // 60, 60)
+    # 4.9 (LOGGED-SARAKE-KATKAISEE): `secs // 60` LATTIOI aina alaspain, joten
+    # 16 min 53 s luki "16 min" - sarake nayttaa kirjauksen aina MYOHEMPANA
+    # kuin se on, samaan suuntaan kuin skeptikko laskisi itse gw_calls.json:sta
+    # (logged_at vs deadline_utc). round() pyoristaa lahimpaan minuuttiin.
+    total_min = round(secs / 60)
+    h, m = divmod(total_min, 60)
     span = f"{h} h {m} min" if h else f"{m} min"
     when = logged.strftime("%d %b %H:%M UTC").lstrip("0")
     return (f"{when}, {span} before the deadline" if delta.total_seconds() > 0
