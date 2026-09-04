@@ -18,6 +18,7 @@
 	import { auth, refreshSubscription, freePremiumWindowActive } from '$lib/auth.svelte';
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
+	import { fplEntry } from '$lib/fplEntry.svelte';
 	import DefConLive from './DefConLive.svelte';
 	import Provenance from './Provenance.svelte';
 	import LeagueBanner from './LeagueBanner.svelte';
@@ -25,7 +26,13 @@
 	import ToolRow from './ToolRow.svelte';
 	import ToolDirectory from './ToolDirectory.svelte';
 	import { goto } from '$app/navigation';
-	import { GROUPS, LEGACY_HASH_TO_PATH, findTool, toolsInGroup } from '$lib/tools';
+	import {
+		GROUPS,
+		LEGACY_HASH_TO_PATH,
+		findTool,
+		primaryTool,
+		toolsInGroup
+	} from '$lib/tools';
 	import LoginBox from './LoginBox.svelte';
 	import Paywall from './Paywall.svelte';
 	import PremiumPreview from './PremiumPreview.svelte';
@@ -97,7 +104,9 @@
 	// olla eri kuin osoiterivi (ja paluunappi ei liikuttanut kumpaakaan).
 	const segment = $derived(group);
 	const groupTools = $derived(toolsInGroup(group));
-	const activeTool = $derived(findTool(group, tool) ?? null);
+	// Ryhman paatyokalu avautuu suoraan: /team = oma joukkue, ei korttilista.
+	const groupPrimary = $derived(primaryTool(group) ?? null);
+	const activeTool = $derived(findTool(group, tool) ?? (all ? null : groupPrimary));
 	/**
 	 * Ryhman etusivu on hakemisto kun ryhmassa on enemman kuin yksi tyokalu.
 	 * 🔴 Mitattu 4.9: `/players` oli pinottuna 21 173 px pitka. Pinottu
@@ -393,6 +402,22 @@
 		/>
 	{/if}
 
+	{#if segment === 'week'}
+		<!-- 🔴 Villen havainto 4.9: "this week kadotti ton fpl entry ID:n vaikka
+		     se on my teamissa". Sivu KAYTTI tallennettua joukkuetta, mutta ei
+		     kertonut sita missaan, joten lukija ei voinut tietaa kenen luvuista
+		     on kyse. Rivi kertoo sen ja vie suoraan joukkueeseen. -->
+		<p class="team-context">
+			{#if fplEntry.savedEntry}
+				Your saved FPL team is {fplEntry.savedEntry}.
+				<a href="/team/rate-my-team">Open Rate my team</a>
+			{:else}
+				<a href="/team/rate-my-team">Add your FPL entry ID</a> and this page follows your own
+				squad.
+			{/if}
+		</p>
+	{/if}
+
 	{#if showDirectory && segment !== 'tools'}
 		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
 	{:else if segment === 'week' || segment === 'team'}
@@ -630,6 +655,11 @@
 		.team-grid > :global(.span-all) {
 			grid-column: 1 / -1;
 		}
+	}
+	.team-context {
+		font-size: var(--step--1);
+		color: var(--text-muted);
+		margin: 0 0 var(--s-3);
 	}
 	.segnav-sticky {
 		position: sticky;

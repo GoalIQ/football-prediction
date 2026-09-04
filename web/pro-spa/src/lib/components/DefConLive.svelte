@@ -70,6 +70,17 @@
 			})
 	);
 	const hits = $derived(rows.filter((p) => p.hit).length);
+	/**
+	 * 🔴 "live" oli sanana vaara aina kun kierros oli jo pelattu: lohko luki
+	 * "DefCon live · GW2" vaikka mikaan ottelu ei ollut kaynnissa (nakyi
+	 * tuotannossa 4.9). Nyt otsikko seuraa otteluiden tilaa. Tuntematon tila
+	 * (feed ei vastannut) EI ole "paattynyt" — silloin kaytetaan neutraalia
+	 * muotoa.
+	 */
+	const anyLive = $derived(rows.some((p) => p.match_state === 'live'));
+	const allFinished = $derived(
+		rows.length > 0 && rows.every((p) => p.match_state === 'finished')
+	);
 
 	let sharing = $state(false);
 
@@ -176,7 +187,13 @@
 				onclick={toggle}
 			>
 				<span class="caret" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
-				DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
+				{#if anyLive}
+					DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
+				{:else if allFinished}
+					DefCon · GW{data?.meta.gw} final · {hits}/{rows.length} reached the threshold
+				{:else}
+					DefCon · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
+				{/if}
 			</button>
 			{#if expanded}
 				<button type="button" class="window-chip" onclick={share} disabled={sharing}>
@@ -187,12 +204,24 @@
 		{#if expanded}
 		<ul id="dcl-list">
 			{#each rows as p (p.id)}
+				<!-- 4.9: rivi on kategoria + lause + luku, ei pelkka luku.
+				     Sama luku tarkoittaa eri asiaa kesken ottelun ja sen
+				     jalkeen; lause tulee backendista (`defcon_story`) jotta
+				     tulkinta on yhdessa paikassa ja testattavissa. -->
 				<li class:hit={p.hit}>
 					<span class="who">
+						{#if p.story?.tag}
+							<span class="tag tag-{p.story.tag.toLowerCase().replace(' ', '-')}"
+								>{p.story.tag}</span
+							>
+						{/if}
 						<span class="name">{p.web_name}</span>
 						{#if p.is_captain}<span class="c" title="Captain">C</span>{/if}
 						<span class="meta">{p.team_short} · {p.pos} · {p.minutes}'</span>
 					</span>
+					{#if p.story}
+						<span class="story">{p.story.line}</span>
+					{/if}
 					<span class="track" aria-hidden="true">
 						<span
 							class="fill"
@@ -239,6 +268,31 @@
 		text-decoration: underline;
 	}
 	.caret {
+		color: var(--text-muted);
+	}
+	.tag {
+		font-size: 0.68rem;
+		letter-spacing: 0.06em;
+		font-weight: 700;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 0 0.5em;
+		color: var(--text-muted);
+		white-space: nowrap;
+	}
+	/* Vari kertoo vain kiireellisyyden, ei uutta merkitysta: kynnyksella
+	   oleva on meripihka, osunut turkoosi, muut hiljaisia. */
+	.tag-close {
+		color: var(--accent-strong);
+		border-color: var(--accent);
+	}
+	.tag-scored {
+		color: var(--giq-teal, var(--text-muted));
+		border-color: currentColor;
+	}
+	.story {
+		grid-column: 1 / -1;
+		font-size: var(--step--1);
 		color: var(--text-muted);
 	}
 	.window-chip {

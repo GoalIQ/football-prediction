@@ -668,6 +668,12 @@ export interface DefconLivePlayer {
 	hit: boolean;
 	remaining: number | null;
 	eligible: boolean;
+	/** 'upcoming' | 'live' | 'finished'; null = fixture-feed ei vastannut.
+	 *  null EI ole 'finished' — tuntematon on oma tilansa. */
+	match_state?: 'upcoming' | 'live' | 'finished' | null;
+	/** Rivin tarina (kategoria + lause) backendista. Puuttuu vanhalta
+	 *  backendilta -> kayttoliittyma nayttaa pelkan luvun kuten ennen. */
+	story?: { tag: string | null; line: string } | null;
 }
 
 export interface DefconLiveResponse {

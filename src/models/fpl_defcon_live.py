@@ -64,6 +64,57 @@ def _live_stats(gw: int) -> dict[int, dict]:
     return out
 
 
+_fx_cache: dict[int, tuple[float, dict[int, str]]] = {}
+
+
+def _match_state_by_team(gw: int) -> dict[int, str]:
+    """team_id -> 'upcoming' | 'live' | 'finished' talle kierrokselle.
+
+    🔴 MIKSI TAMA ON PAKKO OLLA (4.9.2026): ilman ottelun tilaa rivi ei voi
+    kertoa tarinaa vaan pelkan luvun. "Kaksi puuttuu" on eri asia kesken
+    ottelun (viela ehtii) ja ottelun jalkeen (jai vajaaksi) — sama luku,
+    vastakkainen merkitys. Aiempi payload ei erottanut naita lainkaan, joten
+    kayttoliittyman oli pakko jattaa tulkinta lukijalle.
+
+    Tuplakierros: joukkueella voi olla kaksi ottelua. Tila on 'live' jos yksi
+    on kaynnissa, 'finished' vasta kun kaikki alkaneet ovat ohi ja alkamatta
+    olevia ei ole, muuten 'upcoming'.
+    """
+    now = time.time()
+    with _lock:
+        hit = _fx_cache.get(gw)
+        if hit and (now - hit[0]) < _LIVE_TTL_S:
+            return hit[1]
+    try:
+        fixtures = _get(f"{FPL_BASE}/fixtures/?event={gw}")
+    except Exception:
+        # Fixture-feedin katko ei saa kaataa DefCon-nakymaa. Tuntematon tila
+        # on eri asia kuin "paattynyt": kayttoliittyma nayttaa silloin pelkan
+        # luvun ilman tarinaa (nolla ei ole sama kuin ei tietoa).
+        return {}
+    by_team: dict[int, list[dict]] = {}
+    for fx in fixtures if isinstance(fixtures, list) else []:
+        for key in ("team_h", "team_a"):
+            tid = fx.get(key)
+            if isinstance(tid, int):
+                by_team.setdefault(tid, []).append(fx)
+    out: dict[int, str] = {}
+    for tid, fxs in by_team.items():
+        started = [f for f in fxs if f.get("started")]
+        if not started:
+            out[tid] = "upcoming"
+            continue
+        all_done = all(
+            bool(f.get("finished") or f.get("finished_provisional"))
+            for f in started
+        )
+        pending = len(fxs) > len(started)
+        out[tid] = "finished" if (all_done and not pending) else "live"
+    with _lock:
+        _fx_cache[gw] = (time.time(), out)
+    return out
+
+
 def _entry_picks(entry_id: int, gw: int) -> list[dict]:
     data = _get(f"{FPL_BASE}/entry/{entry_id}/event/{gw}/picks/")
     picks = data.get("picks")
@@ -83,6 +134,60 @@ def _unavailable(note: str) -> dict:
         },
         "players": [],
     }
+
+
+def defcon_story(dc: int, threshold: int | None, hit: bool,
+                 match_state: str | None) -> dict | None:
+    """Rivin tarina: kategoria + lause. None = ei sanottavaa.
+
+    EI TOIMINTOVERBIA (tietoinen valinta 4.9): Shatteredin indeksissa
+    jokaisella rivilla on "WATCH ->" tai "VIEW ->". Meilla ei ole paikkaa
+    johon "watch" veisi — live-ottelusivua ei ole, ja pelaajakortti avautuisi
+    tyhjana hakuna. Toimintoverbi joka vie umpikujaan on huonompi kuin ei
+    verbia lainkaan, joten kentta jatetaan pois kunnes kohde on olemassa.
+
+    🔴 MIKSI RIVI EI SAA OLLA PELKKA LUKU (auditointi 4.9.2026): lista oli
+    13 rivia muodossa `Tavernier BOU · MID · 90'  11/12`. Sama luku tarkoittaa
+    kahta vastakkaista asiaa sen mukaan onko ottelu kesken vai ohi, ja lukijan
+    piti paatella se itse. FPL Shatteredin "intelligence index" tekee saman
+    datan luettavaksi: kategoria + yksi lause + toiminto.
+
+    MITATTU ENNEN KIRJOITTAMISTA (`scripts/measure_defcon_rows.py`, 8 077
+    pelaaja-GW-rivia kaudelta 2025/26) — jokainen haara laukeaa oikeasti:
+      lopputila:  osui 13,9 %  ·  jai <= 2 vajaaksi 9,6 %  ·  jai kauemmas 76,5 %
+      kesken (75', lineaarinen arvio): <= 2 puuttuu 15,3 %  ·  osunut 12,8 %
+    Haaraa jota ei laukea ei kirjoiteta (muisti:
+    syyn-haara-joka-ei-laukea-on-copyn-lupaus).
+
+    Lause ja luku tulevat SAMASTA rivista: jokainen lause sisaltaa saman
+    `dc`/`threshold`-parin joka rivilla nakyy, eika mitaan johdeta muualta.
+
+    `match_state=None` (fixture-feed ei vastannut) EI ole "paattynyt": silloin
+    palautetaan neutraali lause ilman aikamuotoa. Tuntematon on oma tilansa.
+    """
+    if threshold is None:
+        return None
+    if hit:
+        return {"tag": "SCORED", "line": f"Has the two points at {dc} of {threshold}."}
+    remaining = max(0, threshold - dc)
+    if match_state == "finished":
+        if remaining <= 2:
+            return {"tag": "JUST SHORT",
+                    "line": f"Finished {remaining} short of {threshold}."}
+        return {"tag": "SHORT", "line": f"Finished on {dc} of {threshold}."}
+    if match_state == "live":
+        if remaining <= 2:
+            return {
+                "tag": "CLOSE",
+                "line": (f"{remaining} away from {threshold} with the match "
+                         "still on."),
+            }
+        return {"tag": "BUILDING",
+                "line": f"{dc} of {threshold} with the match still on."}
+    if match_state == "upcoming":
+        return {"tag": "NOT STARTED", "line": "Has not kicked off yet."}
+    # Tuntematon tila: ei aikamuotoa, pelkka luku lauseena.
+    return {"tag": None, "line": f"{dc} of {threshold}."}
 
 
 def load_defcon_live(entry_id: int | None = None,
@@ -130,6 +235,7 @@ def load_defcon_live(entry_id: int | None = None,
         wanted = [(int(i), 0, False) for i in (ids or [])]
 
     stats = _live_stats(gw)
+    match_state = _match_state_by_team(gw)
 
     players: list[dict] = []
     for element_id, squad_pos, is_captain in wanted:
@@ -156,7 +262,13 @@ def load_defcon_live(entry_id: int | None = None,
             "hit": thr is not None and dc >= thr,
             "remaining": None if thr is None else max(0, thr - dc),
             "eligible": thr is not None,
+            # 'upcoming' | 'live' | 'finished' | None (feed ei vastannut).
+            # None EI ole 'finished': tuntematon tila on oma tilansa.
+            "match_state": match_state.get(int(el.get("team") or 0)),
         })
+        players[-1]["story"] = defcon_story(
+            dc, thr, players[-1]["hit"], players[-1]["match_state"]
+        )
 
     return {
         "meta": {

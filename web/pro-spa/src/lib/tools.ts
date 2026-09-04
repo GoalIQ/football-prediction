@@ -41,6 +41,16 @@ export type Tool = {
 	question: string;
 	tier: Tier;
 	/**
+	 * Ryhman paatyokalu: `/<group>` avaa taman suoraan hakemiston sijaan.
+	 *
+	 * 🔴 Villen havainto 4.9 heti reittien jalkeen: "my team ei muista sita".
+	 * Ryhman etusivu oli korttihakemisto myos silloin kun ryhmalla on selva
+	 * paatyokalu — My teamissa se on oma joukkue, ja hakemisto naytti
+	 * kortteja vaikka tallennettu joukkue oli tiedossa. Hakemisto on oikea
+	 * vastaus vain kun ryhmassa ei ole yhta ilmeista aloitusta.
+	 */
+	primary?: boolean;
+	/**
 	 * Elementin id ryhmasivulla. Ryhmasivu renderoi kaikki tyokalunsa
 	 * pinossa; tyokalun oma URL renderoi vain taman. Sama id kelpaa myos
 	 * ankkuriksi.
@@ -72,6 +82,7 @@ export const TOOLS: Tool[] = [
 		title: 'Rate my team',
 		question: 'Is my squad good, and what is the one move that improves it most?',
 		tier: 'free',
+		primary: true,
 		anchor: 'tc-rate'
 	},
 	{
@@ -299,6 +310,11 @@ export function toolsInGroup(group: string): Tool[] {
 export function findTool(group: string, slug: string | null): Tool | undefined {
 	if (!slug) return undefined;
 	return TOOLS.find((t) => t.group === group && t.slug === slug);
+}
+
+/** Ryhman paatyokalu, jos sellainen on maaritelty. */
+export function primaryTool(group: string): Tool | undefined {
+	return TOOLS.find((t) => t.group === group && t.primary);
 }
 
 export function toolPath(t: Tool): string {

@@ -27,7 +27,13 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-TOOLS = ROOT / "web" / "pro-spa" / "src" / "lib" / "components" / "ToolsHome.svelte"
+COMPONENTS = ROOT / "web" / "pro-spa" / "src" / "lib" / "components"
+TOOLS = COMPONENTS / "ToolsHome.svelte"
+# 4.9.2026: lukitun tyokalukortin gate siirtyi omaan komponenttiinsa, kun
+# tyokalut saivat oikeat reitit ja jaetun hakemiston. Testi seuraa LOGIIKKAA
+# eika tiedostoa: se etsii gaten kaikista komponenteista. Jos se etsisi vain
+# ToolsHomesta, se olisi mennyt lapi hiljaa vaikka gate olisi kadonnut.
+DIRECTORY = COMPONENTS / "ToolDirectory.svelte"
 FREE_PLAN = "gw1-3-free"
 
 
@@ -78,14 +84,29 @@ def test_upgrade_view_is_not_gated_by_the_bare_premium_flag():
         f"\"Keep it after that\" sulkisi itsensa heti.")
 
 
+def _tool_gates() -> list[tuple[str, str]]:
+    """(tiedosto, lippu) jokaiselle lukitun tyokalun gatelle."""
+    out = []
+    for path in sorted(COMPONENTS.glob("*.svelte")):
+        src = path.read_text(encoding="utf-8")
+        for m in re.finditer(r"t\.(?:premium|tier === 'premium') && !(\w+)", src):
+            out.append((path.name, m.group(1)))
+    return out
+
+
 def test_tools_stay_open_during_the_window():
     """Negatiivinen kontrolli toiseen suuntaan: korjaus ei saa sulkea
     tyokaluja ikkunan kayttajalta. Tyokalugate katsoo YHA `premium`ia."""
-    src = _src()
-    assert re.search(r"if \(t\.premium && !premium\)", src), (
-        "tyokalugate ei enaa katso `premium`-lippua. Jos se vaihdettiin "
-        "paidPremiumiin, ilmaisikkunan kayttaja menetti juuri ne tyokalut "
-        "jotka ikkunan oli tarkoitus avata.")
+    gates = _tool_gates()
+    assert gates, (
+        "lukitun tyokalun gatea ei loydy MISTAAN komponentista. Joko se "
+        "poistettiin tai sen muoto muuttui — kumpikin on syy katsoa diffia, "
+        "eika testi saa mennä lapi tyhjana.")
+    for name, flag in gates:
+        assert flag == "premium", (
+            f"{name}: tyokalugate katsoo lippua '{flag}', ei premiumia. "
+            "Ilmaisikkunan kayttaja menettaisi juuri ne tyokalut jotka "
+            "ikkunan oli tarkoitus avata.")
 
 
 def test_negative_control_mutation_is_caught():
