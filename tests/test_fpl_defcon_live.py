@@ -39,10 +39,20 @@ LIVE = {
     14: {"minutes": 20, "defensive_contribution": 12},   # FWD 12/12, vain 20 min
 }
 
+# Kesken kierroksen: vahintaan yksi ottelu kaynnissa, ei kaikki gradattu.
+# Tama on oletusfixture jota useimmat testit eivat kysy - ne testaavat muuta
+# kuin gw-vaihetta, joten fixture-listan pitaa kuvata "live" oletuksena.
+MID_GW_FIXTURES = [
+    {"event": 2, "started": True, "finished_provisional": False},
+    {"event": 2, "started": True, "finished_provisional": True},
+]
+
 
 @pytest.fixture(autouse=True)
 def _patch(monkeypatch):
     monkeypatch.setattr("src.data.fpl_api.fetch_bootstrap", lambda *a, **k: BOOT)
+    monkeypatch.setattr(
+        "src.data.fpl_api.fetch_fixtures", lambda *a, **k: MID_GW_FIXTURES)
     monkeypatch.setattr(dcl, "_live_stats", lambda gw: LIVE)
     monkeypatch.setattr(
         dcl, "_entry_picks",
@@ -123,6 +133,63 @@ def test_kierrosten_valissa_available_false(monkeypatch):
     assert out["players"] == []
     # kynnykset kulkevat mukana myos suljetussa tilassa (frontend voi selittaa)
     assert out["meta"]["thresholds"]["DEF"] == 10
+
+
+# ---------------------------------------------------------------------------
+# DEFCON-LIVE-PAATTYNYT-GW (4.9): kolme vaihetta, invariantti jokaiselle.
+# `is_current` on True kaikissa kolmessa (FPL ei vaihda sita heti), joten
+# vain fixture-tason `started`/`finished_provisional` erottaa ne.
+# ---------------------------------------------------------------------------
+def test_ennen_deadlinea_ei_ole_viela_live(monkeypatch):
+    """Ei yhtaan ottelua alkanut viela -> available=False."""
+    monkeypatch.setattr(
+        "src.data.fpl_api.fetch_fixtures",
+        lambda *a, **k: [
+            {"event": 2, "started": False, "finished_provisional": False},
+            {"event": 2, "started": False, "finished_provisional": False},
+        ])
+    out = dcl.load_defcon_live(entry_id=123)
+    assert out["meta"]["available"] is False
+    assert out["players"] == []
+
+
+def test_kesken_kierroksen_on_live(monkeypatch):
+    """Vahintaan yksi ottelu kaynnissa, ei kaikki gradattu -> available=True."""
+    monkeypatch.setattr(
+        "src.data.fpl_api.fetch_fixtures",
+        lambda *a, **k: [
+            {"event": 2, "started": True, "finished_provisional": False},
+            {"event": 2, "started": False, "finished_provisional": False},
+        ])
+    out = dcl.load_defcon_live(entry_id=123)
+    assert out["meta"]["available"] is True
+    assert out["meta"]["gw"] == 2
+
+
+def test_gradauksen_jalkeen_ei_ole_enaa_live(monkeypatch):
+    """4.9-vika: kaikki kierroksen ottelut gradattu, mutta `is_current` on
+    yha True (FPL vaihtaa sen vasta tuntien paasta) -> paneelin PITAA silti
+    sanoa ettei se ole enaa live."""
+    monkeypatch.setattr(
+        "src.data.fpl_api.fetch_fixtures",
+        lambda *a, **k: [
+            {"event": 2, "started": True, "finished_provisional": True},
+            {"event": 2, "started": True, "finished_provisional": True},
+        ])
+    out = dcl.load_defcon_live(entry_id=123)
+    assert out["meta"]["available"] is False
+    assert out["players"] == []
+
+
+def test_negative_control_gradattu_toinen_kierros_ei_vaikuta():
+    """Kontrolli: gradattu ottelu JOLTAKIN MUULTA kierrokselta ei saa
+    kaataa nykyisen kierroksen live-tilaa - vahti lukee vain `event == gw`."""
+    from src.models.fpl_defcon_live import _gw_fixtures, _gw_is_live
+    fixtures = [
+        {"event": 1, "started": True, "finished_provisional": True},
+        {"event": 2, "started": True, "finished_provisional": False},
+    ]
+    assert _gw_is_live(_gw_fixtures(fixtures, 2)) is True
 
 
 def test_pelaaja_ilman_live_riveja_on_nolla_ei_none():

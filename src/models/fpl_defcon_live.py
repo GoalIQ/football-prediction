@@ -72,6 +72,27 @@ def _entry_picks(entry_id: int, gw: int) -> list[dict]:
     return picks
 
 
+def _gw_fixtures(fixtures: list[dict], gw: int) -> list[dict]:
+    return [f for f in fixtures if int(f.get("event") or 0) == gw]
+
+
+def _gw_is_live(gw_fixtures: list[dict]) -> bool:
+    """KESKEN kierroksen: vahintaan yksi ottelu on alkanut eika kaikki ole
+    viela gradattu (finished_provisional).
+
+    4.9 (DEFCON-LIVE-PAATTYNYT-GW): EI luoteta `event.is_current`/
+    `event.finished`-lippuihin - ne laahaavat TUNTIEN paasta viimeisen
+    ottelun jalkeen (sama vika jonka src/models/fpl_gameweek.py dokumentoi
+    nelja kertaa). Ottelukohtainen `started`/`finished_provisional` on
+    tuoreempi, sama lahde jota grade_model_squad ja gw_calls.gw_status
+    kayttavat gradattavuuden mittarina."""
+    if not gw_fixtures:
+        return False
+    if not any(f.get("started") for f in gw_fixtures):
+        return False
+    return not all(f.get("finished_provisional") for f in gw_fixtures)
+
+
 def _unavailable(note: str) -> dict:
     return {
         "meta": {
@@ -92,7 +113,7 @@ def load_defcon_live(entry_id: int | None = None,
     Nostaa RateTeamErrorin vain kayttajan syotteen tai ylavirran vian takia;
     puuttuva kierros ei ole virhe vaan available=False.
     """
-    from src.data.fpl_api import fetch_bootstrap
+    from src.data.fpl_api import fetch_bootstrap, fetch_fixtures
 
     if entry_id is None and not ids:
         raise RateTeamError(400, "Give either entry or ids.")
@@ -105,6 +126,14 @@ def load_defcon_live(entry_id: int | None = None,
             "DefCon live goes live when a gameweek is in play."
         )
     gw = int(current["id"])
+
+    # 4.9 (DEFCON-LIVE-PAATTYNYT-GW): `is_current` yksinaan ei riita - se
+    # pysyy True kauan sen jalkeen kun kierros on kokonaan gradattu. Ilman
+    # tata tarkistusta paneeli sanoisi "DefCon live" jo pelatulle kierrokselle.
+    if not _gw_is_live(_gw_fixtures(fetch_fixtures(), gw)):
+        return _unavailable(
+            "DefCon live goes live when a gameweek is in play."
+        )
 
     pos_by_type = {
         int(t["id"]): t.get("singular_name_short")
