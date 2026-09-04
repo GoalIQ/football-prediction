@@ -712,14 +712,17 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     top = players[0]
     url = f"{BASE}/fpl/differentials"
     title = f"Best FPL Differentials {gw_txt}: Low-Owned Model Picks | GoalIQ"
-    # 3.8.2026 PREMIUM-VUOTO KIINNI (sama silmays kuin best-captain):
-    # DifferentialsSection on appissa premium (FantasyTools.tsx:3424) eika
-    # siina ole free-teaseria, joten xP-luku ei saa nakya julkisella sivulla.
-    # Omistus-% JAA: se on FPL:n omaa julkista dataa, ei mallin tuotos.
+    # 3.8.2026 kirjattu rajoite (xP ei saa nakya, koska DifferentialsSection
+    # oli appissa premium) RAUKESI 4.9.2026: Villen paatos teki differentialsin
+    # ilmaiseksi kaikilla pinnoilla, ja appin gate poistettiin samassa
+    # muutoksessa. Nyt sivu nayttaa koko listan xP-lukuineen — ja se on myos
+    # ainoa tapa tehda ilmaislupauksesta tosi tallä sivulla (julkaisuportti
+    # 4.9 N1/N3: "the full list" oli vaite jota sivu ei kattanut).
     desc = (
-        f"GoalIQ's model differential for {gw_txt}: {top['web_name']} "
-        f"({top['team_short']}), owned by just {top['owned_pct']}% of managers. "
-        f"GW expected points and {len(players)} more low-owned picks in GoalIQ Premium."
+        f"GoalIQ's model differentials for {gw_txt}: {len(players)} low-owned "
+        f"players (under {int(meta.get('max_ownership') or 10)}% ownership) the "
+        f"model still rates, led by {top['web_name']} ({top['team_short']}) on "
+        f"{top['owned_pct']}% ownership. Free, no sign-in."
     )
     hero = (
         f"<h1>Best FPL differentials, {escape(gw_txt)}</h1>"
@@ -727,17 +730,37 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         f"ownership) the model rates far higher than the crowd does. Today's "
         f"top model differential:</p>"
     )
+    # 🔴 JULKAISUPORTTI 4.9 (N1): sivu lupasi "+19 more in the free list below"
+    # eika listaa ollut (0 <tr>). Vanha versio lupasi "full differential list
+    # in Premium". Molemmat olivat vaaria, vain eri suuntaan. Data on jo
+    # haettu (20 rivia), joten lista renderoidaan — se on ainoa muoto jossa
+    # sivu, landing ja SPA sanovat saman asian.
+    rows = "".join(
+        f"<tr><td class=\"n\">{i + 1}</td>"
+        f"<td>{escape(str(pl.get('web_name') or ''))}</td>"
+        f"<td>{escape(str(pl.get('team_short') or ''))}</td>"
+        f"<td class=\"m-hide\">{escape(str(pl.get('pos') or ''))}</td>"
+        f"<td class=\"n\">{float(pl.get('price') or 0):.1f}</td>"
+        f"<td class=\"n\">{float(pl.get('owned_pct') or 0):.1f}%</td>"
+        f"<td class=\"n\">{float(pl.get('xp_per_gw') or 0):.2f}</td>"
+        f"<td class=\"n m-hide\">{float(pl.get('xp_horizon_total') or 0):.1f}</td>"
+        "</tr>"
+        for i, pl in enumerate(players)
+    )
+    horizon = int(meta.get("horizon_gw") or 6)
     body = (
-        f'<div class="stat-row">'
-        f'<div class="stat"><b>{escape(top["web_name"])}</b>'
-        f'<span>{escape(top["team_short"])} · owned {top["owned_pct"]}%'
-        f"</span></div>"
-        # 4.9 (Villen paatos): differentials on ilmainen. Aiempi teksti
-        # ("full differential list in Premium") myi asiaa joka on nyt
-        # ilmaispinnalla — ja sama sivu ON se ilmaispinta.
-        f'<div class="stat"><b>+{len(players) - 1} more</b>'
-        f"<span>in the free list below</span></div>"
-        f"</div>"
+        f'<div class="lb-wrap"><table class="lb">'
+        "<thead><tr>"
+        '<th class="n">#</th><th>Player</th><th>Team</th>'
+        '<th class="m-hide">Pos</th><th class="n">Price</th>'
+        '<th class="n">Owned</th><th class="n">xP next GW</th>'
+        f'<th class="n m-hide">xP next {horizon} GWs</th>'
+        "</tr></thead>"
+        f"<tbody>{rows}</tbody></table></div>"
+        f'<p class="note">All {len(players)} shown, free and without an '
+        f"account. Ownership is FPL's own number; xP is the GoalIQ model's "
+        f"projection. Give the web tools your entry ID and the players you "
+        f"already own drop off this list.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )

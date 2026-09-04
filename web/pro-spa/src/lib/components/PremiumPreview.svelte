@@ -27,6 +27,7 @@
 
 	const BULLETS = [
 		'Which players actually close the gap on your mini-league rival, and whether they already have them',
+		'Decision journal: what each call you made differently from the model cost or gained, gameweek by gameweek',
 		'Per-player xP projections for every gameweek',
 		// WHY-THIS-PICK (14.8): heti xP:n jalkeen, koska se selittaa juuri sen
 		// luvun. Kattavuus (150) on copyssa: premium nakee ~505 pelaajaa, joten
