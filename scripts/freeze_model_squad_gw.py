@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import requests
 
 import config
+from src.models import fpl_model_entry as entry_mod
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
 FPL_BASE = "https://fantasy.premierleague.com/api"
@@ -335,6 +336,71 @@ def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
     }
 
 
+def entry_mismatch(prev_gw: int, prev: dict, events: list[dict],
+                   hae=None) -> str | None:
+    """None jos peritty runko ON entryn runko; muuten valmis virheteksti.
+
+    FREEZE-VS-ENTRY-PORTTI (4.9.2026, Villen loydos). `_prev_freeze` lukee
+    rungon edellisesta freezesta eika koskaan FPL:sta, joten ketju ajautuu
+    entrysta erilleen hiljaa: GW1:n optimoijan runko + entryn GW2-wildcard =
+    7/15 yhteista, ja kaikki nelja porttia antoivat LAPI-verdiktin koska ne
+    verifioivat luvut samasta vaarasta artefaktista. Yksi kausi rakennettuna
+    vaaran rungon paalle ei ole korjattavissa jalkikateen (immutable).
+
+    Vertailukohta on ensisijaisesti PERITYN kierroksen omat pickit; jos niita
+    ei ole (404), viimeisin pelattu kierros. Kumpaakaan ei saada -> virhe,
+    ei "ei eroa" (FAIL-CLOSED).
+
+    EI LUE POIKKEUSLISTAA, toisin kuin `verify_model_entry_matches_freeze`.
+    Se poikkeus vastaa kysymykseen "saako CI olla vihrea" (GW2: Ville pelasi
+    wildcardin korjatulla mallilla ja jatti gw2.json:n arkistoksi). Tama
+    vastaa eri kysymykseen: "saako uusi kausisitoumus rakentua tamaan
+    rungon paalle". Siihen poikkeus ei ole vastaus - juuri se GW2:n poikkeus
+    on syy miksi ketju erosi entrysta.
+    """
+    hae = hae or entry_mod.fetch_picks
+    pelattu = entry_mod.latest_played_gw(events)
+    if pelattu is None:
+        print("::notice::Yhtaan kierrosta ei ole pelattu — entrylla ei ole "
+              "julkisia pickseja, joten runkoa ei voi verrata. Ketju ei ole "
+              "viela voinut erota.")
+        return None
+
+    virheet = []
+    picks = None
+    for kohde in dict.fromkeys([prev_gw, pelattu]):
+        try:
+            picks = hae(entry_mod.ENTRY_ID, kohde)
+            vertailu_gw = kohde
+            break
+        except entry_mod.EntryHakuVirhe as e:
+            virheet.append(str(e))
+    if picks is None:
+        return ("VIRHE: entryn %d rivia ei saatu luettua, joten perittya "
+                "runkoa EI voi vahvistaa entryn rungoksi — ei jaadyteta "
+                "(fail-closed). Yritykset: %s"
+                % (entry_mod.ENTRY_ID, "; ".join(virheet)))
+
+    ero = entry_mod.vertaa(entry_mod.squad_ids(prev),
+                           entry_mod.picks_ids(picks))
+    if ero.sama:
+        return None
+    nimet = entry_mod.squad_names(prev)
+    rivit = [
+        "VIRHE: PERITTY RUNKO EI OLE ENTRYN RUNKO — ei jaadyteta.",
+        "  GW%d:n freeze vs entry %d GW%d: %d/15 yhteista."
+        % (prev_gw, entry_mod.ENTRY_ID, vertailu_gw, ero.yhteisia),
+        "  " + ero.kuvaus(nimet),
+        "  Julkinen vaite 'malli pelaa omaa FPL-joukkuettaan' osoittaisi "
+        "joukkueeseen jota entry ei pelaa, ja jaadytys on immutable.",
+        "  Korjaus: syota mallin rivi FPL-tilille TAI aloita ketju uudelleen "
+        "entryn pickeista (poista virheellinen gw%d.json)." % prev_gw,
+        "  Poikkeuslista ei paateta tata: data/model_squad_exceptions koskee "
+        "CI:n varia, ei sita mille rungolle kausi rakennetaan.",
+    ]
+    return "\n".join(rivit)
+
+
 def next_freeze_gw(events: list[dict], now: _dt.datetime):
     """Seuraava deadline freeze-ikkunassa → (gw, deadline) tai None."""
     for ev in events:
@@ -380,6 +446,11 @@ def main() -> int:
 
     # 🔴 PERITTY RUNKO, EI ALUSTA RAKENNETTU. Ks. FT_PER_GW:n kommentti yllä.
     edellinen = _prev_freeze(gw)
+    if edellinen is not None:
+        _esto = entry_mismatch(edellinen[0], edellinen[1], events)
+        if _esto:
+            print(_esto)
+            return 1
     siirtotiedot = None
     free = None
     chip_eval = None
