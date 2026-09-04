@@ -227,7 +227,9 @@ jobs:
       # SKIPATTIIN ja artefakti jai 26.8 16:13:een. Korjattu 273db0042
       # (fpl_api-fetcherit). Vahti: tests/test_no_raw_disk_reads.py.
       - name: Build team confidence flags
+        id: build_confidence
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python scripts/build_team_confidence.py
 
       # 14.8: tama ei ollut MISSAAN cronissa. Tiedosto on 25/26-kauden
@@ -236,7 +238,9 @@ jobs:
       # DefCon-historia kokonaan. Mitattu 14.8: ajo nosti 373 -> 374 pelaajaa.
       # Kesto 2 s, joten se mahtuu 3 h sykliin ilman ehtoja.
       - name: Build per-GW DefCon matrix
+        id: build_defcon_gw
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python scripts/build_fpl_defcon_gw.py
 
       # SPL (7.8): samat refresh-hyödyt (saatavuusliput, hinnat) RSL-projektioille.
@@ -290,13 +294,17 @@ jobs:
       # 30.7 tarkkuusloki: gradaa EDELLISEN yön price-ennuste ENNEN kuin
       # builderi ylikirjoittaa sen (järjestys on koko lokin pointti).
       - name: Grade previous price watch predictions
+        id: grade_price_watch
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.grade_price_watch
 
       # #43: hinnanmuutosennuste samasta bootstrapista — hinnat liikkuvat öisin,
       # päivittäinen cron riittää (ei omaa workflowta).
       - name: Build price watch
+        id: build_price_watch
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.build_fpl_price_watch
 
       # 30.7 xP vs toteuma: gradaa ratkenneet jäädytetyt GW:t + jäädytä
@@ -340,17 +348,30 @@ jobs:
         run: python -m scripts.build_gw_recap
 
       - name: Freeze next gameweek xP at deadline window
+        id: freeze_xp
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.freeze_fpl_xp_gw
 
       # Beat the Model V2 vaihe a (13.8): mallin joukkue lukitaan SAMASSA
       # ajossa ja samasta ikkunasta kuin xP yllä — eri hetki tarkoittaisi että
       # "sinä vs malli" vertaa kahta eri maailmantilaa. Askel on tarkoituksella
       # xP-freezen JÄLKEEN: free_optimum lukee juuri kirjoitetun projektion.
-      # EI fail-safea: laiton tai puuttuva mallirivi on kauden mittainen virhe
-      # (immutable), joten ajon KUULUU kaatua ennen kuin se jäätyy.
+      # 🔴 4.9: TAMA ASKEL PADOTTI KOKO REFRESHIN KOLME YOTA (3.9 22:53 →
+      # 4.9 07:32). Freeze kieltaytyi peritysta seurakaton ylityksesta
+      # ({15: 4}) ja koska askel oli fail-fast, sen jalkeiset YHDEKSAN
+      # askelta + commit skipattiin: gw-calls, entry-vahti, leaders, stats,
+      # player-gw, BTM-gradaus ja pushit. Mitaan ei committoitu.
+      # Skripti EI kirjoita laitonta runkoa (se palauttaa 1 kirjoittamatta),
+      # joten kaatuminen suojasi vain itsensa — pato oli puhdasta haittaa.
+      # continue-on-error + Step health: mallirivin puuttuminen nakyy yha
+      # punaisena, mutta muu data paivittyy. Vahti
+      # tests/test_fpl_refresh_no_single_point_of_freeze.py estaa
+      # toistumisen: uusi fail-fast-askel ennen committia kaataa testin.
       - name: Freeze model squad at deadline window
+        id: freeze_squad
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.freeze_model_squad_gw
 
       # GW-CALLS-LOKI (28.8): mallin rivin kapteeni + standouts-kortin nelja
@@ -363,7 +384,9 @@ jobs:
       # tuoreella projektiolla. logged_at = ensimmainen kirjaus, updated_at =
       # viimeisin; kortin projected_xi-kutsu sailyy rivilla.
       - name: Log gameweek calls before the deadline
+        id: log_calls
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.log_gw_calls
 
       # 14.8: FREEZE EI KOSKETA FPL-TILIA. Rivi syotetaan FPL:aan kasin, joten
@@ -397,12 +420,15 @@ jobs:
       # etusivulle). Fail-safe: jos FPL-API on nurin, askel ei kaada ajoa ja
       # build_fpl_page jattaa markerin koskematta.
       - name: Build founder entry stats
+        id: build_founder
         if: steps.guard.outputs.proceed == 'true'
         continue-on-error: true
         run: python -m scripts.build_founder_stats
 
       - name: Build player leaders (xG + DefCon)
+        id: build_leaders
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.build_fpl_player_leaders
 
       # 8.8 STATS-ZONE: /fpl/stats -sivun raakataulukko. Sanity-gate FAIL →
@@ -440,7 +466,9 @@ jobs:
       # ole asetettu, askel EI kaadu vaan kirjaa ohituksen näkyvästi — hiljaa
       # kuoleva grader olisi sama vikaluokka kuin ajokelvoton ship-gate (28.7).
       - name: Grade Beat-the-model decisions
+        id: grade_btm
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         env:
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         run: |
@@ -574,10 +602,20 @@ jobs:
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
-          [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa — builderi ajoi mutta ei tuottanut mitaan (PLAYER-GW-STALE-GUARD)"; fail=1; }
+          [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa (PLAYER-GW-STALE-GUARD). build_fpl_player_gw -askelen tulos tassa ajossa: ${{ steps.bake_player_gw.outcome }} — skipped tarkoittaa etta jokin ylavirran askel kaatui, ei etta builderi olisi ajanut tyhjaa"; fail=1; }
           [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus data/model_squad_exceptions/gw{N}.json tai korjaa entry"; fail=1; }
           [ "${{ steps.grade_xp.outcome }}" = "failure" ] && { echo "::error::grade_fpl_xp_gw FAILAA (xP-gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_squad.outcome }}" = "failure" ] && { echo "::error::grade_model_squad_gw FAILAA (mallirivin gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_calls.outcome }}" = "failure" ] && { echo "::error::grade_gw_calls FAILAA (kutsujen gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.build_recap.outcome }}" = "failure" ] && { echo "::error::build_gw_recap FAILAA (viikkorecapin luvut jaavat vanhoiksi)"; fail=1; }
+          [ "${{ steps.build_confidence.outcome }}" = "failure" ] && { echo "::error::build_team_confidence FAILAA (nousijaliput ja vaihtuvuusluvut jaavat vanhoiksi)"; fail=1; }
+          [ "${{ steps.build_defcon_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_defcon_gw FAILAA (DefCon-arkiston pelaajalista vanhenee)"; fail=1; }
+          [ "${{ steps.grade_price_watch.outcome }}" = "failure" ] && { echo "::error::grade_price_watch FAILAA (edellisen yon hintaennuste jaa gradaamatta)"; fail=1; }
+          [ "${{ steps.build_price_watch.outcome }}" = "failure" ] && { echo "::error::build_fpl_price_watch FAILAA (hinnanmuutosennuste jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.freeze_xp.outcome }}" = "failure" ] && { echo "::error::freeze_fpl_xp_gw FAILAA (seuraavan GW:n xP jaa jaadyttamatta)"; fail=1; }
+          [ "${{ steps.freeze_squad.outcome }}" = "failure" ] && { echo "::error::freeze_model_squad_gw FAILAA (mallirivi jaa lukitsematta — Beat the Model ja Season race nojaavat siihen)"; fail=1; }
+          [ "${{ steps.log_calls.outcome }}" = "failure" ] && { echo "::error::log_gw_calls FAILAA (kierroksen kutsut jaavat kirjaamatta ennen deadlinea)"; fail=1; }
+          [ "${{ steps.build_founder.outcome }}" = "failure" ] && { echo "::error::build_founder_stats FAILAA (etusivun perustajalohko jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.build_leaders.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_leaders FAILAA (xG- ja DefCon-leaderit jaavat vanhoiksi)"; fail=1; }
+          [ "${{ steps.grade_btm.outcome }}" = "failure" ] && { echo "::error::grade-decisions FAILAA (Beat-the-model -paatokset jaavat gradaamatta)"; fail=1; }
           exit $fail
