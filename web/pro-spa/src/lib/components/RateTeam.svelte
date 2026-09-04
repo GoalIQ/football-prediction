@@ -175,6 +175,7 @@
 			const id = Number(fplEntry.entry.trim());
 			data = await fetchRateTeam(id);
 			picksNotPublished = false;
+			setupOpenManual = false; // tulos nakyviin, lomake pois tielta
 			void persistEntry(id); // #66: talteen vasta onnistuneesta hausta
 			// 2.8 aktivaatiomittari (mobiilipariteetti): lahtee vasta onnistuneesta
 			// hausta. mode kattaa entryn JA draftin, koska entry-ID ei voi onnistua
@@ -230,6 +231,16 @@
 	const DRAFT_CAPS: Record<string, number> = { GKP: 2, DEF: 5, MID: 5, FWD: 3 };
 	const DRAFT_ORDER = ['GKP', 'DEF', 'MID', 'FWD'];
 	let draftOpen = $state(false);
+	/**
+	 * 🔴 Villen tilaus 4.9: "my team nakyma pitaa saada selkeammaksi ja
+	 * reilusti". Mitattu ennen: tuomio (Team xP, kapteeni, siirrot) alkoi
+	 * ~900 px:n paasta, koska sita ennen olivat tuontilomake, ohjeteksti,
+	 * draft-polku, muistamisvalinta ja niiden selitykset — kaikki asioita
+	 * joita tarvitaan KERRAN. Kun joukkue on jo ladattu, ne menevat "Change
+	 * team" -napin taakse ja sivu alkaa vastauksesta.
+	 */
+	let setupOpenManual = $state(false);
+	const setupOpen = $derived(!data || setupOpenManual);
 	let pool = $state<XpPoolPlayer[]>([]);
 	let poolError = $state(false);
 	let picks = $state<XpPoolPlayer[]>([]);
@@ -434,6 +445,7 @@
 			data = await fetchRateTeamManual(picks.map((p) => p.id));
 			// Kohta 4: tulos näkyy → valitsin collapse-tilaan (Edit draft avaa).
 			pickerCollapsed = true;
+			setupOpenManual = false;
 			capture('rate_team_succeeded', { mode: 'draft', slot: 'a', auto });
 		} catch (err) {
 			data = null;
@@ -797,9 +809,18 @@
 	{/if}
 {:else}
 <h2>Rate my FPL team</h2>
-<p class="muted">
-	Import your squad with your public FPL entry ID, no login or password needed.
-</p>
+{#if setupOpen}
+	<p class="muted">
+		Import your squad with your public FPL entry ID, no login or password needed.
+	</p>
+{:else}
+	<p class="muted team-line">
+		{#if fplEntry.savedEntry}Team {fplEntry.savedEntry}{:else}Your squad{/if}, rated below.
+		<button type="button" class="linklike" onclick={() => (setupOpenManual = true)}>
+			Change team
+		</button>
+	</p>
+{/if}
 
 <!-- 1.8: vertailurivi — näkyy heti kun molemmilla joukkueilla on tulos,
      valitusta slotista riippumatta (se on koko featuren pointti). -->
@@ -826,6 +847,7 @@
 
 <!-- 1.8: joukkuevalitsin (Villen speksi: valinta nappien alle, ei sekavuutta —
      sisältö vaihtuu chipeistä, oletusnäkymä ennallaan). -->
+{#if setupOpen}
 <div class="slot-chips">
 	<button type="button" class="slot-chip" class:active={slot === 'a'} onclick={() => (slot = 'a')}>
 		Team 1
@@ -842,6 +864,7 @@
 		Team 2
 	</button>
 </div>
+{/if}
 
 {#if slot === 'a'}
 <!-- 14.8 LAYOUT + TUOTEKORJAUS (Villen palaute kortin sisaisesta tyhjasta
@@ -852,6 +875,7 @@
      TOIMII. Sen hautaaminen linkiksi lomakkeen alle piilotti ainoan
      toimivan reitin juuri vuoden korkeimman ostoaikeen ikkunassa.
      Sivutuote: lomake kaytti ~kolmanneksen kortin leveydesta. -->
+{#if setupOpen}
 <div class="start-grid">
 	<div class="start-col">
 		<p class="start-title">I have an FPL team</p>
@@ -896,6 +920,7 @@
 		</button>
 	</div>
 </div>
+{/if}
 
 {#if picksNotPublished}
 	<!-- 28.7 (PI-16): tämä on koko esikauden normaalitila, ei virhe. Vanha
@@ -980,8 +1005,9 @@
 	</div>
 {/if}
 
-{#if auth.user}
-	<!-- #66: tili-taso persistointi vain kirjautuneena (cross-device) -->
+{#if auth.user && setupOpen}
+	<!-- #66: tili-taso persistointi vain kirjautuneena (cross-device).
+	     4.9: muistamisvalinta kuuluu joukkueen VAIHTAMISEEN, ei tulokseen. -->
 	<div class="remember-row">
 		<label class="remember-toggle">
 			<input type="checkbox" checked={fplEntry.remember} onchange={() => void toggleRemember()} />
@@ -1346,23 +1372,13 @@
 	/>
 	</div>
 
-	<div class="result-side">
-		<!-- FM-silmukan etuovi. Sama sijoitus kuin mobiilissa: rate-team on
-		     ainoa paikka jossa kapteeni JA siirtoehdotus ovat samassa datassa,
-		     ja silmukka alkaa siitä hetkestä kun käyttäjä on juuri nähnyt
-		     mitä malli suosittelee. -->
-		<WeeklyActions
-			gw={data.meta.gw}
-			{deadlineUtc}
-			actions={weeklyActions}
-			onFollowTransfer={followTransferFromLoop}
-			refreshToken={decisionsVersion}
-		/>
-		<!-- Silmukan askel 5: kauden "sinä vs malli" -tuloskortti (V1).
-		     Etuoven alle: tulos on kirjaamisen palkinto. -->
-		<BeatTheModel />
-		<SeasonRace />
-	</div>
+	<!-- 🔴 4.9: viikkosilmukka (WeeklyActions + BeatTheModel + SeasonRace) oli
+	     tassa sivusarakkeena JA kokonaisuudessaan This week -sivulla. Kun
+	     ryhmat saivat omat reittinsa, sama kolme lohkoa renderoityi kahdella
+	     sivulla, eika kumpikaan kertonut kumpi on se oikea paikka. Villen
+	     tilaus: "my team nakyma pitaa saada selkeammaksi ja reilusti".
+	     My team vastaa yhteen kysymykseen: onko joukkueeni hyva ja mika sita
+	     parantaa. Viikon tekeminen on This weekin kysymys. -->
 	</div>
 
 	{#if premium}
@@ -1799,6 +1815,12 @@
 		font-size: var(--step--1);
 	}
 	/* #66: Remember my team -rivi (vain kirjautuneena) */
+	.team-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.6ch;
+	}
 	.remember-row {
 		display: flex;
 		flex-wrap: wrap;
@@ -1950,15 +1972,11 @@
 	.result-main {
 		min-width: 0;
 	}
-	.result-side {
-		min-width: 0;
-		display: grid;
-		gap: var(--s-4);
-		align-content: start;
-	}
 	@media (min-width: 1280px) {
 		.result-grid {
-			grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+			/* 4.9: sivusarake poistui (viikkosilmukka on This weekissa), joten
+			   tulos saa koko leveyden. `.rating` pitaa yha oman lukumittansa
+			   (680 px), eli tekstipalsta ei leviä liian leveaksi. */
 			gap: var(--s-6);
 			align-items: start;
 		}
