@@ -290,19 +290,31 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     kohtaa. Testi oli vihrea samalla kun oikea rakennuspolku pudotti
     double gameweekin toisen ottelun (muisti: portti-voi-mitata-eri-koodipolkua).
 
-    🔴 TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): `by_gw` on dict jonka avain on
-    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTAA
-    edellisen ja katoaa ruudukosta - samalla kun `next_n` laskee sen ja
-    `next_avg_cs_pct` sisaltaa sen keskiarvossa. Sivun copy EI saa luvata
-    etta double nakyy ruudukossa ennen kuin tama on korjattu.
+    4.9 (QUEUE: FDR-GRID-DGW, korjattu): `by_gw` oli dict jonka avain oli
+    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTI
+    edellisen ja katosi ruudukosta - samalla kun `next_n` laski sen ja
+    `next_avg_cs_pct` sisalsi sen keskiarvossa. `by_gw` on nyt lista per GW
+    (ei yksi ottelu), joten `cells` voi sisaltaa useamman ottelun samasta
+    GW:sta. `fdr_grid_html` ryhmittelee solut takaisin `gws`-sarakkeisiin
+    kunkin ottelun oman `gw`-kentan mukaan, ei listan indeksin mukaan -
+    muuten kahden ottelun rivi siirtaisi loput sarakkeet vaarille kohdille.
     """
     rows = []
     for t in teams:
-        by_gw = {f["gw"]: f for f in t["fixtures"]}
+        by_gw: dict[int, list[dict]] = {}
+        for f in t["fixtures"]:
+            by_gw.setdefault(f["gw"], []).append(f)
+        cells: list[dict] = []
+        for g in gws:
+            fxs = by_gw.get(g)
+            if not fxs:
+                cells.append(None)
+            else:
+                cells.extend(fxs)
         rows.append(
             {
                 "team": t["name"],
-                "cells": [by_gw.get(g) for g in gws],
+                "cells": cells,
                 "avg_fdr": t["next_avg_fdr"],
                 "avg_cs": t["next_avg_cs_pct"],
                 # next_n on otteluiden maara lahihorisontissa. Ilman sita
@@ -1312,12 +1324,23 @@ def fdr_grid_html(c: dict) -> str:
     )
     rows = []
     for r in c["fdr_rows"]:
+        # 4.9 (FDR-GRID-DGW): ryhmittele solut niiden OMAN gw-kentan
+        # mukaan, ei listan indeksin mukaan. Double gameweekissa
+        # `r["cells"]` sisaltaa kaksi otteluta samalla gw-arvolla, jolloin
+        # positio ei enaa vastaa sarakenumeroa - jos loput sarakkeet
+        # kohdistettaisiin indeksilla, ne siirtyisivat yhden verran vaarin.
+        by_gw: dict[int, list[dict]] = {}
+        for fx in r["cells"]:
+            if fx is not None:
+                by_gw.setdefault(fx["gw"], []).append(fx)
         cells = []
-        for i, fx in enumerate(r["cells"]):
+        for i, g in enumerate(c["gws"]):
             m = " m-hide" if i >= MOBILE_GW_COLS else ""
-            if fx is None:
+            fxs = by_gw.get(g) or []
+            if not fxs:
                 cells.append(f'<td class="num{m}">-</td>')
-            else:
+            elif len(fxs) == 1:
+                fx = fxs[0]
                 # #148: solussa vastustaja + venue + per-fixture CS% (pariteetti
                 # mobiilin #144:n kanssa); FDR-luokka siirtyi tooltippiin.
                 # #152: solu on linkki predict-pinnalle (mobiilin solu-tap-pariteetti).
@@ -1339,6 +1362,24 @@ def fdr_grid_html(c: dict) -> str:
                     f'{shown}%'
                     f"</a></td>"
                 )
+            else:
+                # Double gameweek: molemmat ottelut samaan soluun, kukin
+                # omalla linkillaan ja vareillaan - ei yksi hallitseva luokka
+                # solutasolla, koska kahdella ottelulla voi olla eri FDR.
+                links = []
+                for fx in fxs:
+                    shown = format(float(fx["cs_pct"]), ".0f")
+                    cls = cs_cell_class(float(shown))
+                    href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
+                    links.append(
+                        f'<a class="fdr {cls}" href="{href}" '
+                        f'title="{escape(fx["opponent"])} ({fx["venue"]}) '
+                        f'&middot; FDR {fx["fdr"]} &middot; view model prediction">'
+                        f'{escape(fx["opponent_short"])} ({fx["venue"]}) '
+                        f'{shown}%'
+                        f"</a>"
+                    )
+                cells.append(f'<td class="num{m}">' + "<br>".join(links) + "</td>")
         rows.append(
             "<tr>"
             f'<td class="team">{escape(r["team"])}</td>'
