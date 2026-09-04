@@ -6,8 +6,12 @@ Kolme evergreen-URLia, per-GW päivittyvä sisältö:
                            2-3 niminä, EI xP-lukuja (3.8. korjaus: alkuperäinen
                            "captain suggestion on ilmainen appissa" oli VÄÄRÄ
                            premissi, CaptainRanker on kokonaan premium).
-  fpl/differentials.html   "Best FPL differentials GW{n}" — top-1 nimi + EO
-                           (FPL:n omaa julkista dataa), EI xP:tä → Premium.
+  fpl/differentials.html   "Best FPL differentials GW{n}" — KOKO lista (20)
+                           xP-lukuineen. 4.9.2026: Villen päätös teki
+                           differentialsin ilmaiseksi kaikilla pinnoilla, ja
+                           vanha sääntö ("EI xP:tä → Premium") raukesi. Sarake
+                           on xP/GW = horisontti/6, EI seuraavan kierroksen
+                           luku — otsikko ja note sanovat sen.
   fpl/price-changes.html   "FPL price changes" — koko risers/fallers-lista
                            (price watch on ilmainen appissa). Esikausi →
                            rehellinen tyhjätila meta.notesta.
@@ -753,14 +757,25 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         "<thead><tr>"
         '<th class="n">#</th><th>Player</th><th>Team</th>'
         '<th class="m-hide">Pos</th><th class="n">Price</th>'
-        '<th class="n">Owned</th><th class="n">xP next GW</th>'
-        f'<th class="n m-hide">xP next {horizon} GWs</th>'
+        # 🔴 JULKAISUPORTTI 4.9 (N4): otsikko oli "xP next GW", mutta kentta
+        # on `xp_per_gw` = horisontin summa jaettuna kuudella. Mitattu:
+        # sarake oli tasan xp_horizon_total/6 joka rivilla, ja
+        # /fpl/expected-points sanoi samasta pelaajasta eri luvun (Foden
+        # 4.87 vs 5.7). Kaksi ilmaista sivua olisi julkaissut eri luvun
+        # samasta pelaajasta samalta kierrokselta. Oikeaa GW-kenttaa ei ole
+        # payloadissa, joten otsikko korjataan — ei keksita lukua.
+        # Sama sanamuoto kuin expected-points-sivulla (portti B3, 21.8).
+        '<th class="n">Owned</th><th class="n">xP/GW</th>'
+        f'<th class="n m-hide">xP, {horizon} GWs</th>'
         "</tr></thead>"
         f"<tbody>{rows}</tbody></table></div>"
         f'<p class="note">All {len(players)} shown, free and without an '
-        f"account. Ownership is FPL's own number; xP is the GoalIQ model's "
-        f"projection. Give the web tools your entry ID and the players you "
-        f"already own drop off this list.</p>"
+        f"account. Ownership is FPL's own number. <em>xP/GW</em> is the "
+        f"{horizon}-gameweek projection divided by {horizon}, not a "
+        f'single-gameweek number: for one gameweek alone see '
+        f'<a href="{BASE}/fpl/expected-points#gw-xp">expected points</a>. '
+        f"Give the web tools your entry ID and the players you already own "
+        f"drop off this list.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )

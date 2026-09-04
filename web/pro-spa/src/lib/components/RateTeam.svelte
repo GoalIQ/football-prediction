@@ -17,6 +17,7 @@
 		fplEntry,
 		forgetEntry,
 		loadProfileEntry,
+		resultKey,
 		persistEntry,
 		toggleRemember
 	} from '$lib/fplEntry.svelte';
@@ -176,6 +177,12 @@
 			data = await fetchRateTeam(id);
 			picksNotPublished = false;
 			setupOpenManual = false; // tulos nakyviin, lomake pois tielta
+			// 4.9: tulos storeen, jotta paluu valilehdelta ei menetä sitä.
+			fplEntry.lastResult = {
+				key: resultKey(String(id), 'a'),
+				slot: 'a',
+				data
+			};
 			void persistEntry(id); // #66: talteen vasta onnistuneesta hausta
 			// 2.8 aktivaatiomittari (mobiilipariteetti): lahtee vasta onnistuneesta
 			// hausta. mode kattaa entryn JA draftin, koska entry-ID ei voi onnistua
@@ -210,6 +217,21 @@
 	// -> esitäyttö + kertaluontoinen automaattinen rate-ajo (kuten mobiili-#64).
 	$effect(() => {
 		if (auth.sessionResolved && auth.user) void loadProfileEntry();
+	});
+	// 🔴 Villen havainto 4.9 (toistettu tuotannosta): "my team katkeaa kun
+	// siirtyy valilehdelta toiselle". Reitin vaihto purkaa taman komponentin,
+	// ja `data` on komponentin omaa tilaa -> arvio katosi ja lomake palasi,
+	// vaikka entry-ID oli yha kentassa. Automaattiajo ei pelastanut, koska
+	// `autoRunPending` kulutetaan kerran eika `loadProfileEntry` aseta sita
+	// uudelleen (`loadedForUser`-vahti).
+	// Palautus tapahtuu storesta ILMAN uutta hakua, ja vain jos avain tasmaa
+	// nykyiseen entryyn — toisen joukkueen tulos ei voi nayttaa taalla.
+	$effect(() => {
+		if (data || loading) return;
+		const cached = fplEntry.lastResult;
+		if (!cached || cached.slot !== 'a') return;
+		const want = resultKey(fplEntry.entry.trim() || 'draft', 'a');
+		if (cached.key === want) data = cached.data;
 	});
 	$effect(() => {
 		if (fplEntry.autoRunPending && entryValid && !data && !loading) {
@@ -446,6 +468,11 @@
 			// Kohta 4: tulos näkyy → valitsin collapse-tilaan (Edit draft avaa).
 			pickerCollapsed = true;
 			setupOpenManual = false;
+			fplEntry.lastResult = {
+				key: resultKey('draft', 'a'),
+				slot: 'a',
+				data
+			};
 			capture('rate_team_succeeded', { mode: 'draft', slot: 'a', auto });
 		} catch (err) {
 			data = null;
@@ -797,12 +824,16 @@
 						<span class="muted">({data.captain.alternative.team_short})</span>,
 						{data.captain.alternative.gw_xp.toFixed(2)} xP{/if}.
 				</p>
+				<!-- 🔴 Villen havainto 4.9: vasen sarake loppui kapteenilauseeseen
+				     ja jatti ison tyhjan alueen, kun oikeassa sarakkeessa oli
+				     kolme lohkoa. Gameweek review siirtyi tanne: se on
+				     KIERROKSEN katsaus (mita tapahtui), eli lahempana vasemman
+				     sarakkeen "mita teet ja mita siita seurasi" -luentaa kuin
+				     oikean sarakkeen kausikirjanpitoa. -->
+				<GwReview />
 			</div>
 			<div class="week-col">
 				<BeatTheModel />
-				<!-- V2 (13.8): mallin joukkue pysyvana rivaalina. V1 vertaa
-				     PAATOKSIA, tama JOUKKUEITA - eri kysymys, sama silmukka. -->
-				<GwReview />
 				<SeasonRace />
 			</div>
 		</div>

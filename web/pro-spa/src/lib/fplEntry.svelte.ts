@@ -16,6 +16,7 @@
  * Kenttä on JAETTU RateTeamin ja TransferPlannerin kesken (yksi entry-ID
  * koko työkalusetille, kuten mobiilissa).
  */
+import type { RateTeamResponse } from './fantasyTools';
 import { supabase } from './supabase';
 import { auth } from './auth.svelte';
 import { fetchOwnProfileRow, invalidateProfileRow } from './profileRow';
@@ -40,8 +41,31 @@ export const fplEntry = $state({
 	/** Minkä user-id:n profiili on jo luettu (kerran per kirjautuminen). */
 	loadedForUser: null as string | null,
 	/** true = tallennettu ID luettu → RateTeam ajaa itsensä kerran. */
-	autoRunPending: false
+	autoRunPending: false,
+	/**
+	 * 🔴 Villen havainto 4.9: "my team katkeaa kun siirtyy valilehdelta
+	 * toiselle eli ei muista fpl entry id:ta".
+	 *
+	 * Toistettu tuotannosta: kentassa OLI yha 116920 (tama store sailyy),
+	 * mutta arvio oli poissa ja lomake palasi nakyviin. Syy: `data` oli
+	 * komponentin omaa tilaa, ja reitin vaihto purkaa komponentin. Aiemmin
+	 * automaattiajo pelasti tilanteen kerran (`autoRunPending`), mutta se
+	 * kulutetaan ensimmaisella kerralla eika `loadProfileEntry` aseta sita
+	 * uudelleen (`loadedForUser`-vahti).
+	 *
+	 * Tulos talletetaan siis tanne: paluu valilehdelle palauttaa sen ILMAN
+	 * uutta hakua. Avaimena entry + slot, jotta toisen joukkueen tulos ei
+	 * voi nayttaa ensimmaisen kohdalla.
+	 */
+	lastResult: null as
+		| { key: string; slot: 'a' | 'b'; data: RateTeamResponse }
+		| null
 });
+
+/** Avain jolla tallennettu tulos tunnistetaan (entry-ID tai draft-leima). */
+export function resultKey(entry: string, slot: 'a' | 'b'): string {
+	return `${slot}:${entry.trim()}`;
+}
 
 /** Lataa kirjautuneen käyttäjän tallennettu entry-ID (kerran per user). */
 export async function loadProfileEntry(): Promise<void> {
