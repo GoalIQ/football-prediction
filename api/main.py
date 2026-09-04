@@ -5098,6 +5098,15 @@ def fantasy_differentials(
     response.headers["Cache-Control"] = "no-store"
     try:
         squad = _squad_ctx(entry)
+        # 🔴 EI MASKIA, JA SYY ON MITATTU (4.9.2026). Tama endpoint on
+        # julkisen `/fpl/differentials`-sivun DATALAHDE: sivugeneraattori
+        # (`scripts/build_fpl_longtail.py`) hakee sen CI:sta ANONYYMINA, ja
+        # se nielee virheen varoituksella. Maski olisi siis pudottanut sivun
+        # 20 rivista kahteen HILJAA, ja sivu olisi nayttanyt toimivalta.
+        # Sivun oma copy myy loput premiumina ("+19 more in Premium"), eli
+        # ilmainen listaus on tuotepaatos eika vuoto. Jos tama halutaan
+        # portittaa, generaattorille on ensin annettava toinen reitti dataan
+        # (paikallinen artefakti) — jonorivi DIFFERENTIALS-MYYNTIRAJA.
         return differential_finder(max_ownership=max_ownership, pos=pos,
                                    squad=squad)
     except RateTeamError as e:
@@ -5153,6 +5162,7 @@ def fantasy_replacements(
 @app.get("/api/fantasy/value",
          description="Expected points per million, fixture swing, and the best pair of goalkeepers to rotate.")
 def fantasy_value(
+    request: Request,
     response: Response,
     top_n: int = Query(default=20, ge=1, le=100),
     pairs_n: int = Query(default=10, ge=1, le=50),
@@ -5172,8 +5182,14 @@ def fantasy_value(
     response.headers["Cache-Control"] = "no-store"
     player_ids = _parse_id_csv(players, "players") if players else None
     try:
-        return value_and_gk(top_n_value=top_n, top_n_pairs=pairs_n,
-                            entry=entry, players=player_ids)
+        payload = value_and_gk(top_n_value=top_n, top_n_pairs=pairs_n,
+                               entry=entry, players=player_ids)
+        # 4.9: Value.svelte leikkasi listan kolmeen ja piilotti GK-parit
+        # SELAIMESSA; API palautti kaikki 20 + koko GK-lohkon anonyymille.
+        if not is_premium_request(request):
+            from api.premium import mask_value_payload
+            payload = mask_value_payload(payload)
+        return payload
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 

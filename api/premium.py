@@ -55,6 +55,17 @@ FREE_CAPTAIN_PICKS = 1
 # API-kutsu sai koko listan mitattuna 2.9. Free = kohde + paras rivi.
 FREE_REPLACEMENTS_ROWS = 1
 FREE_EDGE_TEMPLATE_RISKS = 1
+# FANTASY-TOOLS-ENDPOINT-AUTH, toinen era (4.9.2026). Julkaisuportti epaili
+# etta edge/chip-ev/plan-chains vuotavat; MITATTU tuotannosta ne olivat
+# maskattuja (2 kapteenia, 2 differentiaalia, 3 chip-ikkunaa). Sama mittaus
+# loysi kaksi joita EI oltu maskattu:
+#   /api/fantasy/value          20 riviä + koko GK-lohko anonyymille, vaikka
+#     Value.svelte leikkaa listan kolmeen ja GK-osio on `{#if premium}`
+# Molemmissa portti oli VAIN selaimessa, eli suora API-kutsu sai premium-
+# sisallon. Sama vikaluokka kuin captain (15.8) ja replacements (2.9).
+# HUOM: differentials EI ole maskattu, ja syy on koodissa (api/main.py):
+# julkisen /fpl/differentials-sivun generaattori hakee sen anonyymina.
+FREE_VALUE_ROWS = 3           # sama luku kuin Value.svelte:n FREE_ROWS
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +361,26 @@ def mask_replacements_payload(payload: dict) -> dict:
     meta["masked"] = True
     meta["mask"] = (f"top {FREE_REPLACEMENTS_ROWS} of {len(rows)} replacements "
                     "(free preview - GoalIQ Premium unlocks the list)")
+    out["meta"] = meta
+    return out
+
+
+def mask_value_payload(payload: dict) -> dict:
+    """/api/fantasy/value freelle: kolme riviä, ei GK-pareja.
+
+    Kolme = sama luku jonka Value.svelte leikkaa ilmaiskayttajalle, eli
+    nakyva sisalto ei muutu kenellakaan. GK-parit ovat myyntilistan
+    premium-rivi ("goalkeeper rotation pairs, with your own pair ranked"),
+    joten ne poistetaan kokonaan eika typisteta.
+    """
+    out = dict(payload)
+    rows = list(out.get("players") or [])
+    out["players"] = rows[:FREE_VALUE_ROWS]
+    out["gk"] = None
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["mask"] = (f"top {FREE_VALUE_ROWS} of {len(rows)} value rows, no "
+                    "goalkeeper pairs (free preview)")
     out["meta"] = meta
     return out
 

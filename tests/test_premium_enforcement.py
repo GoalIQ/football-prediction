@@ -48,6 +48,11 @@ GATED_EXPECTED = {
     # 2.9 FANTASY-TOOLS-ENDPOINT-AUTH: myyty premium-riville, mitattu
     # anonyymina taysi lista -> gate + mask (free = kohde + 1 rivi).
     "/api/fantasy/replacements",
+    # 4.9: VALUE oli maskattu vain SELAIMESSA (Value.svelte leikkaa listan
+    # kolmeen ja GK-osio on `{#if premium}`), mutta API palautti 20 rivia +
+    # koko GK-lohkon anonyymille. GK-parit ovat myyntilistan premium-rivi.
+    # Free = sama 3 rivia jonka klientti nayttaa -> nakyva sisalto ei muutu.
+    "/api/fantasy/value",
 }
 
 # Nama ovat tarkoituksella ilmaisia (rate my team, kapteenipoiminta,
@@ -70,8 +75,11 @@ FREE_EXPECTED = {
     "/api/fantasy/rate-team",
     "/api/fantasy/fit",
     "/api/fantasy/model-squad",
+    # 4.9: DIFFERENTIALS pysyy ilmaisena, ja syy on mitattu: julkisen
+    # /fpl/differentials-sivun generaattori hakee taman CI:sta ANONYYMINA
+    # ja nielee virheen varoituksella, joten maski olisi pudottanut sivun
+    # kahteen riviin hiljaa. Sivun copy myy loput premiumina.
     "/api/fantasy/differentials",
-    "/api/fantasy/value",
     "/api/fantasy/xg-leaders",
     "/api/fantasy/defcon-leaders",
     "/api/fantasy/defcon-gw",
