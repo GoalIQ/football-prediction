@@ -73,6 +73,41 @@
 
 	let sharing = $state(false);
 
+	/** YLAPINON BUDJETTI (4.9.2026, kilpailija-auditointi).
+	 *
+	 * 🔴 MITATTU: tama lista vei 13 riville ~450 px, ja se oli tyokalunavin
+	 * YLAPUOLELLA. Mittaus 4.9: navi 938 px, ensimmainen tyokalupaneeli
+	 * 1 006 px sivun ylalaidasta -> 1366x768-lapparilla maksava kayttaja ei
+	 * nahnyt ilman vieritysta etta tuotteessa on tyokaluja lainkaan.
+	 *
+	 * Lista menee kokoontaitettavaksi, MUTTA yhteenvetorivi ("GW3 · 1/13 at
+	 * the threshold") jaa nakyviin aina. Se on se aikakriittinen signaali,
+	 * jonka takia lohko on 2.8 alkaen valilehtien ulkopuolella: kayttaja
+	 * nakee joka valilehdella etta kierros on kesken ja montako on
+	 * kynnyksella. Rivien yksityiskohdat ovat yhden klikkauksen paassa.
+	 * (Varaus EI mene suljetun disclosuren taakse: luku on rivilla.)
+	 */
+	let expanded = $state(false);
+	const OPEN_KEY = 'defcon_live_open';
+
+	onMount(() => {
+		try {
+			expanded = sessionStorage.getItem(OPEN_KEY) === '1';
+		} catch {
+			// Privaatti-ikkuna tai estetty tallennus: oletus (kiinni) kelpaa.
+		}
+	});
+
+	function toggle() {
+		expanded = !expanded;
+		try {
+			sessionStorage.setItem(OPEN_KEY, expanded ? '1' : '0');
+		} catch {
+			// sama kuin yllä: tila ei saa kaataa nakymaa
+		}
+		capture('defcon_live_toggled', { open: expanded });
+	}
+
 	// 🔴 KORTTI ON KESKEN KIERROKSEN OTETTU TILANNEKUVA, JA SE SANOTAAN.
 	// Ilman kellonaikaa lukija ei tieda onko luku lopullinen, ja DefCon-luvut
 	// liikkuvat viela. Sama syy kuin gw-outlook-kortin "as of" -leimalla.
@@ -133,12 +168,24 @@
 {#if rows.length > 0}
 	<section class="dcl" aria-label="Defensive contribution, live">
 		<div class="bar">
-			<span>DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold</span>
-			<button type="button" class="window-chip" onclick={share} disabled={sharing}>
-				{sharing ? 'Rendering…' : canShareToApps() ? 'Share' : 'Download'}
+			<button
+				type="button"
+				class="summary"
+				aria-expanded={expanded}
+				aria-controls="dcl-list"
+				onclick={toggle}
+			>
+				<span class="caret" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
+				DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
 			</button>
+			{#if expanded}
+				<button type="button" class="window-chip" onclick={share} disabled={sharing}>
+					{sharing ? 'Rendering…' : canShareToApps() ? 'Share' : 'Download'}
+				</button>
+			{/if}
 		</div>
-		<ul>
+		{#if expanded}
+		<ul id="dcl-list">
 			{#each rows as p (p.id)}
 				<li class:hit={p.hit}>
 					<span class="who">
@@ -160,6 +207,7 @@
 			{/each}
 		</ul>
 		<p class="note">{data?.meta.note}</p>
+		{/if}
 	</section>
 {/if}
 
@@ -170,6 +218,28 @@
 		justify-content: space-between;
 		gap: var(--s-2);
 		flex-wrap: wrap;
+	}
+	/* Yhteenvetorivi on nappi, mutta nayttaa rivilta: sama teksti kuin ennen,
+	   ei uutta varia eika uutta korostusta. Vain kolmio kertoo etta se avautuu. */
+	.summary {
+		flex: 1 1 auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5ch;
+		background: none;
+		border: none;
+		padding: 0;
+		margin: 0;
+		font: inherit;
+		color: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+	.summary:hover {
+		text-decoration: underline;
+	}
+	.caret {
+		color: var(--text-muted);
 	}
 	.window-chip {
 		flex: 0 0 auto;

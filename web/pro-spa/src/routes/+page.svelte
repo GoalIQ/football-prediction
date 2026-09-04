@@ -13,16 +13,19 @@
 <div class="shell">
 	<Hero onUpgrade={() => upgradeSignal++} />
 
-	<!-- SPL-nosto (7.8): footer-linkki ei riitä löydettävyyteen (sama oppi
-	     kuin career-kortissa: haudattu linkki = ei käyttäjiä). Yksi hillitty
-	     rivi heron alla — SPL-sisältö itse pysyy omalla reitillään. -->
-	<p class="spl-note">
-		New: <a href="/spl">Saudi Pro League fantasy tools</a>, completely free.
-	</p>
-
 	<main>
 		<ToolsHome {upgradeSignal} />
 	</main>
+
+	<!-- SPL-nosto (7.8): footer-linkki ei riitä löydettävyyteen (sama oppi
+	     kuin career-kortissa: haudattu linkki = ei käyttäjiä). Yksi hillitty
+	     rivi — SPL-sisältö itse pysyy omalla reitillään.
+	     4.9 (ylapinon budjetti): rivi siirtyi heron alta tyokalujen alle. Se
+	     on yha oma laatikkonsa eika footerin tekstilinkki, eli 7.8:n oppi
+	     patee; se ei vain enaa ole FPL-tyokalujen EDESSA. -->
+	<p class="spl-note">
+		New: <a href="/spl">Saudi Pro League fantasy tools</a>, completely free.
+	</p>
 
 	<footer>
 		<hr />

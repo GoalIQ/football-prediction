@@ -93,6 +93,20 @@
 		standings: 'matches'
 	};
 
+	/** 4.9: app-tilaajan tervetulobanneri kerran per sessio (ks. markup). */
+	let showAppWelcome = $state(false);
+	onMount(() => {
+		try {
+			if (sessionStorage.getItem('app_welcome_seen') !== '1') {
+				showAppWelcome = true;
+				sessionStorage.setItem('app_welcome_seen', '1');
+			}
+		} catch {
+			// Estetty tallennus: nayta banneri, alkuperainen kayttaytyminen.
+			showAppWelcome = true;
+		}
+	});
+
 	let segment = $state('week');
 	/** 6.8: sticky-segmenttirivin mitattu korkeus → onpage-rivin top-offset. */
 	let segNavH = $state(0);
@@ -356,18 +370,26 @@
 				>
 			</p>
 		{:else if auth.sub.plan === 'app'}
-			<p class="banner success">Your GoalIQ app subscription is active here too. Welcome.</p>
+			<!-- 4.9 YLAPINON BUDJETTI: tervetulotoivotus on kertaluontoinen tieto,
+			     mutta se renderoityi joka latauksella tyokalunavin ylapuolelle.
+			     Nyt kerran per sessio; itse tieto ei muutu eika katoa (tili nakyy
+			     Account-valikossa). -->
+			{#if showAppWelcome}
+				<p class="banner success">Your GoalIQ app subscription is active here too. Welcome.</p>
+			{/if}
 		{:else}
 			<p class="muted">GoalIQ Premium active ({auth.sub.plan}) · thank you for the support!</p>
 			<SetPassword />
 		{/if}
 	{/if}
 
-	<Provenance />
-	<LeagueBanner />
 	<!-- 2.8: DefCon-live ylimpänä ja segmenttien ULKOPUOLELLA — se on
 	     aikakriittinen eikä saa olla välilehden takana. Renderöi tyhjää aina
-	     kun kierros ei ole käynnissä, joten esikaudella tämä ei näy. -->
+	     kun kierros ei ole käynnissä, joten esikaudella tämä ei näy.
+	     4.9 (ylapinon budjetti): lohko pysyy tassa, mutta lista on
+	     kokoontaitettu — yhteenvetorivi (GW + montako kynnyksella) jaa
+	     nakyviin joka valilehdelle, 13 rivin lista ei. Perustelu ja mittaus
+	     `DefConLive.svelte`:n kommentissa. -->
 	<DefConLive />
 	<!-- 6.8 (Villen palaute): segmenttirivi kulkee scrollissa mukana —
 	     Players → My team ilman paluuta ylös. Korkeus mitataan, jotta
@@ -536,6 +558,15 @@
 			{/if}
 		</div>
 	{/if}
+
+	<!-- 4.9 YLAPINON BUDJETTI (kilpailija-auditointi): alkupera-rivi ja
+	     mini-liigabanneri olivat tyokalunavin YLAPUOLELLA, eli jokainen
+	     kayttaja luki myyntipuheen ennen kuin nakiv etta tyokaluja on.
+	     Kumpikaan ei ole aikakriittinen: alkupera on luottamusrivi ja liiga
+	     on kausipitka kutsu. Molemmat lukevat nyt tyokalujen JALKEEN, jossa
+	     ne yha nakyvat samalla sivulla ilman hakua. -->
+	<Provenance />
+	<LeagueBanner />
 {/if}
 
 <style>

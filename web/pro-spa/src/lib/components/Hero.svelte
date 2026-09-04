@@ -154,7 +154,11 @@
 		border-bottom: 1px solid var(--border);
 		border-radius: var(--radius);
 		box-shadow: none;
-		padding: var(--s-4) 0 var(--s-5);
+		/* 4.9 (ylapinon budjetti): oli `var(--s-4) 0 var(--s-5)`. Ylatunniste
+		   ei ole sisaltoa, ja sen padding maksoi ~24 px siita etusta, jonka
+		   tyokalunavi tarvitsee mahtuakseen 1366x768-lapparin ruudulle.
+		   Hiusviiva alla erottaa sen yha, eli 26.7 perustelu sailyy. */
+		padding: var(--s-3) 0 var(--s-3);
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--s-4);
