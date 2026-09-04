@@ -78,9 +78,11 @@
 	 * muotoa.
 	 */
 	const anyLive = $derived(rows.some((p) => p.match_state === 'live'));
-	const allFinished = $derived(
-		rows.length > 0 && rows.every((p) => p.match_state === 'finished')
-	);
+	// 🔴 Portin loydos 4.9 (blokkaava): tama laskettiin ennen RENDEROIDYISTA
+	// riveista, jotka on suodatettu `minutes > 0`. Perjantain ottelun jalkeen
+	// otsikko olisi sanonut "GW3 final" vaikka 18 joukkuetta ei ole pelannut.
+	// Kierroksen tila tulee nyt backendin metasta, joka katsoo KAIKKI ottelut.
+	const gwFinished = $derived(data?.meta.gw_state === 'finished');
 
 	let sharing = $state(false);
 
@@ -189,7 +191,7 @@
 				<span class="caret" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
 				{#if anyLive}
 					DefCon live · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
-				{:else if allFinished}
+				{:else if gwFinished}
 					DefCon · GW{data?.meta.gw} final · {hits}/{rows.length} reached the threshold
 				{:else}
 					DefCon · GW{data?.meta.gw} · {hits}/{rows.length} at the threshold
@@ -219,7 +221,10 @@
 						{#if p.is_captain}<span class="c" title="Captain">C</span>{/if}
 						<span class="meta">{p.team_short} · {p.pos} · {p.minutes}'</span>
 					</span>
-					{#if p.story}
+					{#if p.story?.line}
+						<!-- Lause vain kun se lisaa jotain: SHORT ja tuntematon tila
+						     saavat kategorian mutta ei lausetta, koska lause
+						     toistaisi viereisen sarakkeen luvun (portti 4.9). -->
 						<span class="story">{p.story.line}</span>
 					{/if}
 					<span class="track" aria-hidden="true">

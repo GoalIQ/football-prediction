@@ -39,7 +39,11 @@ PHASES = [
 ]
 
 # Sanat jotka VAATIVAT etta ottelu on kesken / ohi.
-_LIVE_WORDS = ("still on", "away with")
+# 🔴 Portin loydos 4.9: listalla oli "away with", jota ei esiinny yhdessakaan
+# tuotetussa lauseessa — inertti tarkistin (gate-substring-osuma-on-sokea).
+# Nyt jokaiselle sanalle on osoitettu haara joka sen tuottaa, ja
+# `test_tarkistin_ei_ole_inertti` kaataa jos jokin niista lakkaa esiintymasta.
+_LIVE_WORDS = ("still on",)
 _FINISHED_WORDS = ("finished",)
 
 
@@ -55,6 +59,8 @@ def _story(dc: int, hit: bool, state: str | None) -> dict:
 
 
 def _tense_problem(story: dict, state: str | None) -> str | None:
+    if story["line"] is None:
+        return None
     line = story["line"].lower()
     if state == "finished" and any(w in line for w in _LIVE_WORDS):
         return f"paattynyt ottelu vaittaa olevansa kesken: {story['line']!r}"
@@ -68,17 +74,24 @@ def _tense_problem(story: dict, state: str | None) -> str | None:
 
 
 def _shape_problem(story: dict) -> str | None:
-    """Rivin on oltava kategoria + lause. Pelkka lause on taas numeroseina."""
+    """Rivilla on oltava kategoria. Lause on VAPAAEHTOINEN, ja sen puuttuminen
+    on tietoinen valinta: julkaisuportti mittasi 4.9 etta 9/13 riville lause
+    olisi toistanut viereisen sarakkeen luvun. `line=None` on siis oikea
+    vastaus, `line=""` ei ole (tyhja merkkijono on unohdus, ei valinta)."""
     if "tag" not in story:
         return "kategoria puuttuu kokonaan"
-    if not story.get("line"):
-        return "lause puuttuu"
+    if "line" not in story:
+        return "line-kentta puuttuu (None on eri asia kuin puuttuva)"
+    if story["line"] is not None and not story["line"].strip():
+        return "tyhja lause: kirjoita None jos lause jatetaan pois"
     return None
 
 
 def _number_problem(story: dict, dc: int, threshold: int) -> str | None:
     """Lause ja luku samasta lahteesta: rivin oma luku on lauseessa."""
     line = story["line"]
+    if line is None:
+        return None  # kategoria ilman lausetta: ei numeroa, ei vaitetta
     if "kicked off" in line:
         return None  # ei numeroa, eika saa ollakaan
     remaining = str(max(0, threshold - dc))
@@ -120,8 +133,13 @@ def test_lause_ja_luku_samasta_rivista(
     assert ongelma is None, f"{nimi}: {ongelma}"
 
 
-def test_kaikki_kategoriat_ovat_saavutettavissa() -> None:
-    """Haara jota ei voi saavuttaa on copya jota kukaan ei nae."""
+def test_kaikki_kategoriat_ovat_saavutettavissa_funktiotasolla() -> None:
+    """Haara jota ei voi saavuttaa on copya jota kukaan ei nae.
+
+    HUOM (portin tarkennus 4.9): tama mittaa FUNKTIOTA, ei pintaa. DefConLive
+    suodattaa `minutes > 0`, joten NOT STARTED ei nay siella koskaan — se on
+    olemassa suodattamattomia lukijoita varten ja perusteltu docstringissa.
+    """
     tags = set()
     for state in ("upcoming", "live", "finished", None):
         for dc in range(0, THR + 3):
@@ -160,6 +178,33 @@ def test_rivilla_on_kategoria_ja_lause(
     assert ongelma is None, f"{nimi}: {ongelma}"
 
 
+def test_tarkistin_ei_ole_inertti() -> None:
+    """Jokaisen aikamuotosanan on oikeasti esiinnyttava jossain haarassa.
+    Muuten tarkistin nayttaa vahtivan jotain jota ei ole."""
+    lines = []
+    for state in ("upcoming", "live", "finished", None):
+        for dc in range(0, THR + 3):
+            s = defcon_story(dc, THR, dc >= THR, state)
+            assert s is not None
+            if s["line"]:
+                lines.append(s["line"].lower())
+    for word in _LIVE_WORDS + _FINISHED_WORDS:
+        assert any(word in ln for ln in lines), (
+            f"tarkistin vahtii sanaa {word!r} jota mikaan haara ei tuota"
+        )
+
+
+def test_tuplakierroksessa_ei_vaiteta_osumaa() -> None:
+    """FPL myontaa DefCon-pisteen per ottelu ja kynnys nollautuu valissa,
+    mutta live-payloadin `stats` on kierroksen summa. 6+6 EI ole osuma.
+    Portin loydos 4.9: ilman tata "Has the two points" olisi ollut vaara
+    heti ensimmaisessa tuplakierroksessa."""
+    for state in ("live", "finished", "upcoming", None):
+        for dc in (0, 6, 12, 20):
+            s = defcon_story(dc, THR, dc >= THR, state, 2)
+            assert s == {"tag": None, "line": None}, (state, dc, s)
+
+
 def test_maalivahdilla_ei_ole_tarinaa() -> None:
     assert defcon_story(0, None, False, "live") is None
 
@@ -184,3 +229,44 @@ def test_negatiivinen_kontrolli_kategoria_katoaa() -> None:
     numeroseina. Tarkistin ajetaan rikottuun arvoon."""
     rikottu = {"line": "10 of 12."}
     assert _shape_problem(rikottu) is not None
+
+
+# --------------------------------------------------------------------------
+# Kierroksen tila (yhteenvetorivi) — synteettiset vaiheet
+# --------------------------------------------------------------------------
+
+
+GW_PHASES = [
+    ("kaikki alkamatta", [{"started": False}, {"started": False}], "upcoming"),
+    ("perjantai pelattu, muut alkamatta",
+     [{"started": True, "finished": True}, {"started": False}], "live"),
+    ("ottelu kaynnissa",
+     [{"started": True, "finished": False}, {"started": False}], "live"),
+    ("kaikki pelattu",
+     [{"started": True, "finished": True},
+      {"started": True, "finished_provisional": True}], "finished"),
+    ("feed nurin", [], None),
+]
+
+
+@pytest.mark.parametrize("nimi,fixtures,odotettu", GW_PHASES)
+def test_kierroksen_tila_joka_vaiheessa(nimi, fixtures, odotettu) -> None:
+    """🔴 BLOKKAAVA PORTIN LOYDOS 4.9: yhteenvetorivi laski tilan
+    RENDEROIDYISTA riveista, jotka on suodatettu `minutes > 0`. Perjantain
+    ottelun jalkeen se olisi sanonut "GW3 final" vaikka 18 joukkuetta ei ole
+    pelannut. Toinen rivi tassa taulukossa on tasan se tilanne."""
+    from src.models.fpl_defcon_live import gameweek_state
+
+    assert gameweek_state(fixtures) == odotettu, nimi
+
+
+def test_negatiivinen_kontrolli_kierroksen_tila_osajoukosta() -> None:
+    """Vanha logiikka: tila laskettuna vain PELATUISTA otteluista sanoisi
+    'finished' kesken kierroksen. Kontrolli varmistaa etta ero on todellinen
+    eika testi mittaa samaa asiaa kahdesti."""
+    from src.models.fpl_defcon_live import gameweek_state
+
+    fixtures = [{"started": True, "finished": True}, {"started": False}]
+    vain_pelatut = [f for f in fixtures if f.get("started")]
+    assert gameweek_state(vain_pelatut) == "finished"
+    assert gameweek_state(fixtures) == "live"

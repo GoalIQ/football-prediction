@@ -111,11 +111,19 @@ def _objects(body: str) -> list[str]:
 
 
 def _field(obj: str, key: str) -> str | None:
-    m = re.search(rf"\b{key}:\s*'([^']*)'", obj)
-    if m:
-        return m.group(1)
-    m = re.search(rf"\b{key}:\s*\n?\s*'([^']*)'", obj)
-    return m.group(1) if m else None
+    """Kentan arvo joko yksin- tai kaksinkertaisilla lainausmerkeilla.
+
+    🔴 4.9: alkuperainen versio tunsi vain heittomerkit. Kun julkaisuportti
+    vaati lyhenteen ("What's coming up..."), kentta piti kirjoittaa
+    kaksinkertaisilla — ja portti raportoi sen PUUTTUVANA kenttana. Portti
+    olisi siis kaatunut vaarasta syysta, ja pahemmassa suunnassa mikä tahansa
+    lainausmerkkityylin vaihto olisi voinut piilottaa oikean puutteen.
+    """
+    for quote in ("'", '"'):
+        m = re.search(rf"\b{key}:\s*\n?\s*{quote}(.*?){quote}", obj, re.S)
+        if m:
+            return m.group(1)
+    return None
 
 
 def parse_tools(text: str) -> list[dict[str, str | None]]:

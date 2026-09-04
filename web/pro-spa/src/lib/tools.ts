@@ -89,7 +89,7 @@ export const TOOLS: Tool[] = [
 		slug: 'fit-checker',
 		group: 'team',
 		title: 'Fit checker',
-		question: 'Which legal 15 fits around the players I have already locked in?',
+		question: 'Which 15 does the model build around the players I lock in?',
 		tier: 'free',
 		anchor: 'tc-fit'
 	},
@@ -105,7 +105,7 @@ export const TOOLS: Tool[] = [
 		slug: 'watchlist',
 		group: 'team',
 		title: 'Watchlist',
-		question: 'What are the players I am deciding on doing right now?',
+		question: 'Which players am I still deciding on?',
 		tier: 'free',
 		anchor: 'tc-watchlist'
 	},
@@ -122,7 +122,7 @@ export const TOOLS: Tool[] = [
 		slug: 'captain-ranker',
 		group: 'players',
 		title: 'Captain ranker',
-		question: 'Who should wear the armband this gameweek, and who is the differential?',
+		question: 'Who should wear the armband this gameweek?',
 		tier: 'premium',
 		anchor: 'pc-captain'
 	},
@@ -130,7 +130,7 @@ export const TOOLS: Tool[] = [
 		slug: 'fixture-swing',
 		group: 'players',
 		title: 'Fixture swing',
-		question: 'Whose fixtures turn from hard to easy over the planning horizon?',
+		question: 'Whose fixtures turn from hard to easy over the next six gameweeks?',
 		tier: 'premium',
 		anchor: 'pc-swing'
 	},
@@ -138,7 +138,7 @@ export const TOOLS: Tool[] = [
 		slug: 'player-xp',
 		group: 'players',
 		title: 'Player xP',
-		question: 'What does every player project per gameweek, with minutes and ownership?',
+		question: 'What does each projected player score per gameweek, with minutes and ownership?',
 		tier: 'premium',
 		anchor: 'pc-xp'
 	},
@@ -204,7 +204,7 @@ export const TOOLS: Tool[] = [
 		slug: 'transfer-chains',
 		group: 'tools',
 		title: 'Transfer chains',
-		question: 'What do one and two-move transfer plans look like with hits priced in?',
+		question: 'What do one and two-move transfer plans look like with the hits counted?',
 		tier: 'premium',
 		anchor: 'tl-chains'
 	},
@@ -246,7 +246,7 @@ export const TOOLS: Tool[] = [
 		slug: 'fixtures',
 		group: 'matches',
 		title: 'Fixtures',
-		question: 'What is coming up, and what does the model make of it?',
+		question: "What's coming up, and what does the model make of it?",
 		tier: 'free',
 		anchor: 'mt-fixtures'
 	},
@@ -254,7 +254,7 @@ export const TOOLS: Tool[] = [
 		slug: 'table',
 		group: 'matches',
 		title: 'Table',
-		question: 'Where does the league stand right now?',
+		question: 'What does the table look like right now?',
 		tier: 'free',
 		anchor: 'mt-standings'
 	}

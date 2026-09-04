@@ -673,7 +673,7 @@ export interface DefconLivePlayer {
 	match_state?: 'upcoming' | 'live' | 'finished' | null;
 	/** Rivin tarina (kategoria + lause) backendista. Puuttuu vanhalta
 	 *  backendilta -> kayttoliittyma nayttaa pelkan luvun kuten ennen. */
-	story?: { tag: string | null; line: string } | null;
+	story?: { tag: string | null; line: string | null } | null;
 }
 
 export interface DefconLiveResponse {
@@ -683,6 +683,8 @@ export interface DefconLiveResponse {
 		gw: number | null;
 		generated_at: string | null;
 		thresholds: Record<string, number>;
+		/** Koko kierroksen tila; null = fixture-feed ei vastannut. */
+		gw_state?: 'upcoming' | 'live' | 'finished' | null;
 		note: string;
 	};
 	players: DefconLivePlayer[];
