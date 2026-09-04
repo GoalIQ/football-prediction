@@ -26,7 +26,6 @@
 	});
 
 	const BULLETS = [
-		'Where the gap to the model came from: captaincy, bench points and autosubs, round by round',
 		'Which players actually close the gap on your mini-league rival, and whether they already have them',
 		'Per-player xP projections for every gameweek',
 		// WHY-THIS-PICK (14.8): heti xP:n jalkeen, koska se selittaa juuri sen
@@ -40,7 +39,6 @@
 		// jaettavana. Aiempi kommentti tassa tiedostossa vaitti 1:1-vastaavuutta
 		// ja se oli vaara; copy-sync-auditointi 25.8 loysi sen.
 		'Share as image: post-ready cards from your XI, the captain ranker, the value ranking and leaderboards',
-		'Differential finder: low ownership, high xP. With your team ID the players you own drop off the list',
 		'Replacements: who replaces a player, same position, ranked by xP over the coming gameweeks. With your team ID the price ceiling is your bank plus his current price',
 		'Multi-gameweek transfer planner and plan chains',
 		'Chip timing: best window for Wildcard, Bench Boost, Triple Captain and Free Hit',

@@ -80,8 +80,8 @@ API = "https://api.goaliq.app"  # 27.7: pois estetysta onrender.com-vyohykkeesta
 
 UPSELL = (
     '<div class="rec">Powered by the GoalIQ match model with a published, '
-    'pre-match-logged track record. The full toolkit (captain ranker, all '
-    'differentials, transfer planner) is <a '
+    'pre-match-logged track record. The full toolkit (captain ranker, '
+    'transfer planner, chip timing) is <a '
     'href="https://pro.goaliq.app/?tab=premium">GoalIQ Premium</a>: '
     '3.99 €/month or 25 €/season. '
     'One subscription on web, iOS and Android.</div>'
@@ -732,8 +732,11 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         f'<div class="stat"><b>{escape(top["web_name"])}</b>'
         f'<span>{escape(top["team_short"])} · owned {top["owned_pct"]}%'
         f"</span></div>"
+        # 4.9 (Villen paatos): differentials on ilmainen. Aiempi teksti
+        # ("full differential list in Premium") myi asiaa joka on nyt
+        # ilmaispinnalla — ja sama sivu ON se ilmaispinta.
         f'<div class="stat"><b>+{len(players) - 1} more</b>'
-        f"<span>full differential list in Premium</span></div>"
+        f"<span>in the free list below</span></div>"
         f"</div>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
