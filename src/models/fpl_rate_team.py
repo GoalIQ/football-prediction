@@ -368,6 +368,12 @@ BENCH_MIN_XMINS = 45.0
 # Montako kertaa muodostelman XI-budjettia kiristetään todellisella
 # penkkihinnalla ennen kuin muodostelma hylätään (14.8, ks. build_optimal_squad).
 _BENCH_FIXPOINT_ROUNDS = 6
+# Klubikaton korjaus (4.9.2026). Kierrosmaara johdetaan YLITYKSESTA eika ole
+# vakio: rajoitteeton DP voi keskittaa useampaan seuraan, ja kiinteä 3 palautti
+# silloin None:n eli jatti korjauksen tekematta hiljaa. Katto on olemassa vain
+# patologista tapausta varten (11 pelaajaa yhdesta seurasta = 8 pudotusta).
+_REPAIR_ROUNDS_MAX = 8
+_REPAIR_WIDTH = 24
 _LAST_BENCH: dict[str, list[dict]] = {"v": []}
 
 
@@ -599,6 +605,85 @@ def _improve_legal(xi: list[dict], pool: list[dict], xi_budget: int,
             if improved:
                 break
     return cur
+
+
+def _repair_club_cap(xi: list[dict], pool: list[dict], xi_budget: int,
+                     keep_ids: set[int] | None = None) -> list[dict] | None:
+    """Korjaa klubikaton rikkova XI vaihtamalla ylimenevat pelaajat pois.
+
+    🔴 MIKSI (4.9.2026, Villen loydos). Eksakti DP ratkaisee XI:n ILMAN
+    3/klubi-rajaa. Jos tulos rikkoo katon, koko ratkaisu heitettiin pois ja
+    pudottiin ahneeseen tayttoon + 1-swap-paikallishakuun, joka jaa kauas.
+    Mitattu tuotannosta:
+
+        eksakti ylaraja (laiton, 4x klubi 1)   327.38
+        ahne varapolku (palautettiin)          310.77
+        kayttajan OMA runko, taysin laillinen  322.42   <- voitti benchmarkin
+
+    Eli `beats_benchmark` oli True ja `percentile` leikattiin sataan, mika on
+    tasan se ontto imartelu jota talla moduulilla on jo kertaalleen korjattu
+    (Hub 2,0★ oppi 4). Sama ahne korjaus eksaktista ratkaisusta antaa
+    **324.95** ilman yhtaan lisa-DP-kutsua.
+
+    Korjaus on halpa koska se ei ratkaise ongelmaa uudelleen: se ottaa
+    ylarajan ratkaisun ja siirtaa vain rikkovat pelaajat. Kokeillaan JOKAINEN
+    pudotusvalinta ja pidetaan paras — heikoimman pudottaminen ei ole aina
+    paras, koska korvaajan hinta riippuu positiosta.
+
+    Palauttaa laillisen XI:n tai None. `keep_ids` = lukitut, joita ei vaihdeta.
+    """
+    keep_ids = keep_ids or set()
+    paras: list[dict] | None = None
+    paras_xp = _NEG
+    # Leveyshaku: jokaisella kierroksella laajennetaan kaikki tavat pudottaa
+    # yksi ylimenevan seuran pelaaja. Ylityksia on kaytannossa 1-2, joten
+    # haara pysyy pienena; katto estaa patologisen tapauksen.
+    # Kierroksia tarvitaan yhta monta kuin ylimenevia pelaajia, ei kiinteaa
+    # maaraa: rajoitteeton DP voi keskittaa useampaankin seuraan (mitattu
+    # fikstuurilla jossa 11 pelaajaa kahdesta seurasta -> 5 pudotusta).
+    # +1: laillinen ehdokas kirjataan vasta SEURAAVAN kierroksen alussa, joten
+    # pelkka ylitysten maara katkaisisi silmukan ennen kuin tulos on luettu.
+    ylitys = sum(max(0, n - MAX_PER_CLUB)
+                 for n in _club_counts(xi).values())
+    tila = [list(xi)]
+    for _ in range(min(ylitys, _REPAIR_ROUNDS_MAX) + 1):
+        seuraava: list[list[dict]] = []
+        for ehdokas in tila:
+            yli = {c: n for c, n in _club_counts(ehdokas).items()
+                   if n > MAX_PER_CLUB}
+            if not yli:
+                xp = sum(p["xp_horizon_total"] for p in ehdokas)
+                if xp > paras_xp:
+                    paras, paras_xp = ehdokas, xp
+                continue
+            club = max(yli, key=lambda c: yli[c])
+            for out in [p for p in ehdokas
+                        if p["club"] == club and p["id"] not in keep_ids]:
+                jaljella = [p for p in ehdokas if p["id"] is not out["id"]
+                            and p["id"] != out["id"]]
+                raha = xi_budget - sum(p["price"] for p in jaljella)
+                kaytossa = {p["id"] for p in jaljella}
+                kk = _club_counts(jaljella)
+                korvaajat = [q for q in pool
+                             if q["element_type"] == out["element_type"]
+                             and q["id"] not in kaytossa
+                             and q["price"] <= raha
+                             and kk.get(q["club"], 0) < MAX_PER_CLUB]
+                if not korvaajat:
+                    continue
+                # Paras korvaaja riittaa: kaikki muut slotit ovat kiinnitetyt,
+                # joten valinta on riippumaton muista pudotuksista.
+                tilalle = max(korvaajat, key=lambda q: q["xp_horizon_total"])
+                seuraava.append(jaljella + [tilalle])
+            if len(seuraava) > _REPAIR_WIDTH:
+                seuraava = sorted(
+                    seuraava,
+                    key=lambda s: sum(p["xp_horizon_total"] for p in s),
+                    reverse=True)[:_REPAIR_WIDTH]
+        if not seuraava:
+            break
+        tila = seuraava
+    return paras
 
 
 def build_optimal_squad(pool: list[dict],
@@ -839,9 +924,24 @@ def _build_optimal_squad(pool: list[dict],
         # ei ole rahoitettavissa. Pudotaan varapolulle, joka tarkistaa
         # rungon kokonaisuutena.
 
-    # --- 2. Varapolku: klubikatto sitoo → ahne + paikallishaku.
+    # --- 1b. KORJATTU YLARAJA (4.9): eksakti ratkaisu on laiton vain
+    # klubikaton takia, joten siirretaan rikkovat pelaajat sen sijaan etta
+    # koko ratkaisu heitettaisiin pois. Mitattu tuotannossa: ahne varapolku
+    # 310.77, tama 324.95, ylaraja 327.38 — ja kayttajan oma laillinen runko
+    # oli 322.42 eli VOITTI vanhan benchmarkin. Nolla lisa-DP-kutsua.
     best_res: dict = empty
     best_total = -1.0
+    if exact and not _squad_clubs_ok(exact):
+        korjattu = _repair_club_cap(exact, xi_pool, xi_budget, locked_ids)
+        if korjattu:
+            korjattu = _improve_legal(korjattu, xi_pool, xi_budget, locked_ids)
+            res = _result(korjattu, False)
+            if res["xi"] and res["xi_xp"] > best_total:
+                best_total, best_res = res["xi_xp"], res
+
+    # --- 2. Varapolku: klubikatto sitoo → ahne + paikallishaku.
+    # Kilpailee 1b:n kanssa, ei korvaa sita: kumpikaan ei ole todistetusti
+    # parempi kaikilla syotteilla, ja parhaan valinta on ilmainen.
     for n_def in range(XI_MIN[2], XI_MAX[2] + 1):
         for n_mid in range(XI_MIN[3], XI_MAX[3] + 1):
             n_fwd = 10 - n_def - n_mid
