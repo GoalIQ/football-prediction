@@ -1,7 +1,12 @@
 {
  "last_price_push": {},
  "price_alerted": {},
- "receipts": [],
+ "receipts": [
+  {
+   "id": "01a06ca5-33b8-73ee-a4fe-f8fd21b73071",
+   "token": "ExponentPushToken[2nU-IDG0ooUgYHJCsHoNX_]"
+  }
+ ],
  "sent": {
   "deadline_24h:gw1": {
    "at": "2026-08-20T15:30:48Z",
@@ -28,6 +33,11 @@
    "n_targets": 0,
    "remaining_h": 2.63
   },
+  "deadline_2h:gw3": {
+   "at": "2026-09-04T13:39:20Z",
+   "n_targets": 1,
+   "remaining_h": 3.84
+  },
   "picks:gw1": {
    "at": "2026-08-20T15:30:48Z",
    "n_targets": 0,
@@ -44,6 +54,6 @@
    "player": "Foden"
   }
  },
- "updated_at": "2026-09-04T13:08:59Z",
+ "updated_at": "2026-09-04T13:39:21Z",
  "v": 1
 }
