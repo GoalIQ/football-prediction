@@ -75,22 +75,20 @@ FREE_ENDPOINTS = {
     "/api/fantasy/h2h": "mini-league head-to-head win probability on free",
     "/api/fantasy/defcon": "FPL:n omaa julkista otteludataa (koodin oma "
                            "perustelu: ei mallin tuotoksia -> ei maskia)",
-    # 🔴 RISTIRIITA, EI RATKAISU (4.9): nama kaksi renderoityvat omassa
-    # UI:ssamme ILMAN premium-vahtia (RateTeam weekMode), mutta landingin
-    # premium-lista lupaa ne premiumina ("Where the gap came from:
-    # captaincy, bench points and autosubs round by round"). Maskaaminen
-    # POISTAISI ne omalta ilmaispinnalta, joten oikea korjaus on paattaa
-    # kumpi puoli on totta — se on Villen paatos, ei portin. Jonorivi
-    # GW-REVIEW-MYYNTIRAJA. Merkitaan freeksi koska niin ne KAYTTAYTYVAT.
-    "/api/fantasy/gw-review": "renderoityy vapaasti omassa UI:ssa; "
-                              "myyntilista on eri mielta -> GW-REVIEW-MYYNTIRAJA",
-    "/api/fantasy/my-team-ledger": "sama ristiriita kuin gw-review",
-    # 🔴 MITATTU SYY, EI UNOHDUS (4.9): julkisen /fpl/differentials-sivun
-    # generaattori hakee taman CI:sta ANONYYMINA ja nielee virheen
-    # varoituksella. Maski olisi pudottanut sivun 20 rivista kahteen HILJAA.
-    # Sivun oma copy myy loput premiumina ("+19 more in Premium").
-    "/api/fantasy/differentials": "julkisen sivun datalahde, anonyymi "
-                                  "CI-haku -> DIFFERENTIALS-MYYNTIRAJA",
+    # VILLEN PAATOS 4.9: gameweek review ja ledger ovat ILMAISIA, ja
+    # landingin premium-listalta poistettiin rivi joka lupasi ne
+    # premiumina. Alkuperainen peruste (25.8) patee: "huti maksumuurin
+    # takana on sama asia kuin ei hutia" — rehellisyyspinta ei saa olla
+    # maksumuurin takana.
+    "/api/fantasy/gw-review": "Villen paatos 4.9 + 25.8 rehellisyysperuste",
+    "/api/fantasy/my-team-ledger": "sama kuin gw-review",
+    # VILLEN PAATOS 4.9: differentials on ILMAINEN. Se oli jo kaytannossa
+    # ilmainen (julkisen /fpl/differentials-sivun generaattori hakee sen
+    # CI:sta anonyymina ja nielee virheen varoituksella, joten maski olisi
+    # pudottanut sivun kahteen riviin hiljaa). Nyt myos myyntilupaus,
+    # rekisterin tier ja SPA:n gate sanovat saman.
+    "/api/fantasy/differentials": "Villen paatos 4.9: ilmainen; julkinen "
+                                  "/fpl/differentials-sivu rakentuu siita",
 }
 
 

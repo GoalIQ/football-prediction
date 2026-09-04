@@ -75,10 +75,11 @@ FREE_EXPECTED = {
     "/api/fantasy/rate-team",
     "/api/fantasy/fit",
     "/api/fantasy/model-squad",
-    # 4.9: DIFFERENTIALS pysyy ilmaisena, ja syy on mitattu: julkisen
-    # /fpl/differentials-sivun generaattori hakee taman CI:sta ANONYYMINA
-    # ja nielee virheen varoituksella, joten maski olisi pudottanut sivun
-    # kahteen riviin hiljaa. Sivun copy myy loput premiumina.
+    # 4.9 VILLEN PAATOS: differentials on ilmainen kaikilla pinnoilla
+    # (landing, rekisterin tier, SPA:n gate, API). Mitattu syy paatoksen
+    # taustalla: julkisen /fpl/differentials-sivun generaattori hakee taman
+    # CI:sta ANONYYMINA ja nielee virheen varoituksella, joten maski olisi
+    # pudottanut sivun kahteen riviin hiljaa.
     "/api/fantasy/differentials",
     "/api/fantasy/xg-leaders",
     "/api/fantasy/defcon-leaders",

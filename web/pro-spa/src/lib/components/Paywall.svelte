@@ -57,7 +57,7 @@
 	lib/i18n/*.ts (vrt. em-dash-ja-pinta-pariteetti).
 -->
 <p class="muted">
-	<strong>FPL:</strong> per-gameweek expected points (xP), captain ranker, differential finder and replacements that leave out the players you already own,
+	<strong>FPL:</strong> per-gameweek expected points (xP), captain ranker and replacements that leave out the players you already own,
 	chip timing, transfer plan chains, edge mode, a live DefCon panel for your own squad
 	during a gameweek, shareable image cards and per-gameweek breakdowns.
 </p>

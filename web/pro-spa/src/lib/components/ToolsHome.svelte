@@ -509,10 +509,13 @@
 			{#if show('leaders')}
 				<div class="tool-card" id="pc-leaders"><Leaders {premium} onUpgrade={goUpgrade} /></div>
 			{/if}
+			<!-- 4.9 (Villen paatos): differentials on ilmainen. Se oli jo
+			     kaytannossa ilmainen — julkinen /fpl/differentials-sivu
+			     rakennetaan samasta endpointista ilman kirjautumista. -->
+			{#if show('differentials')}
+				<div class="tool-card" id="pc-diff"><Differentials /></div>
+			{/if}
 			{#if premium}
-				{#if show('differentials')}
-					<div class="tool-card" id="pc-diff"><Differentials /></div>
-				{/if}
 				{#if xp}
 					<!-- ROWAN-REPLACEMENTS (2.9): "who replaces X", luojan tilaama muoto. -->
 					{#if show('replacements')}

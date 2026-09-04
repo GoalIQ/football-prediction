@@ -171,7 +171,10 @@ export const TOOLS: Tool[] = [
 		group: 'players',
 		title: 'Differentials',
 		question: 'Which low-owned players have the projection to justify the risk?',
-		tier: 'premium',
+		// Villen paatos 4.9: ilmainen. Se oli jo kaytannossa ilmainen (julkisen
+		// /fpl/differentials-sivun datalahde), joten premium-merkki lupasi
+		// lukon jota ei ollut.
+		tier: 'free',
 		anchor: 'pc-diff'
 	},
 	{
