@@ -1,0 +1,25 @@
+{
+  "_miksi": "Portin hylkaamat sanamuodot yhdessa paikassa. 4.9.2026: 3.9 hylatty 'every gameweek scored in public' korjattiin YHTEEN korttigeneraattoriin ja lukittiin sen omaan testiin, ja se eli toisessa generaattorissa julkaisuun asti. Hylkays joka asuu yhden tiedoston kommentissa ei ole portti. Lisaa rivi tanne kun portti hylkaa sanamuodon; tests/test_rejected_phrases.py ajaa taman jokaista copya tuottavaa skriptia vasten.",
+  "phrases": [
+    {
+      "phrase": "scored in public",
+      "rejected": "2026-09-03",
+      "why": "epatosi: data/gw_calls.json sisaltaa vain GW2:n pisteytettyna, GW1 puuttuu kokonaan ja GW3 on graded: null",
+      "replacement": "entry 116920 is the squad it actually fields"
+    },
+    {
+      "phrase": "reaches it most often",
+      "rejected": "2026-09-04",
+      "why": "ei perustu mihinkaan kenttaan; p90 saavutetaan rakenteellisesti noin kerran kymmenesta kaikilla, ja sivun oma tooltip sanoo sen",
+      "replacement": "tasapeli sanotaan aaneen: 'joint top ceiling' (scripts/render_standouts_card.py: scope_phrase)"
+    },
+    {
+      "phrase": "top ceiling in the pool",
+      "rejected": "2026-09-04",
+      "why": "kovakoodattuna epatosi: ceiling valitaan joukosta josta kapteeni on pudotettu, joten poolin korkein katto voi olla viereisessa tiilessa",
+      "replacement": "johda claim_scope():lla, joka nimeaa edella olevat tiilet"
+    }
+  ],
+  "poikkeukset": {},
+  "_poikkeus_ohje": "Portti lukee VAIN merkkijonoliteraaleja scripts/-hakemistosta: kommentti tai docstring joka selittaa hylkayksen ei laukaise sita, mutta kovakoodattu proosa laukaisee. Johdettu teksti (esim. scope_phrase() joka rakentaa 'top ceiling in the pool' vasta kun data sanoo sen olevan tosi) ei ole literaali eika osu. Jos jokin skripti tarvitsee silti literaalin, lisaa se tanne muodossa \"scripts/x.py\": \"perustelu miksi tama on tosi juuri tassa\" - testi kaatuu kunnes perustelu on kirjoitettu."
+}

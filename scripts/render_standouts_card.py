@@ -96,7 +96,8 @@ overflow:hidden;text-overflow:ellipsis;}
 .tile .big{font-size:54px;font-weight:700;color:var(--amber);margin-top:auto;
 line-height:1;font-variant-numeric:tabular-nums;}
 .tile .big small{font-size:18px;white-space:nowrap;color:var(--muted);font-weight:500;margin-left:6px;}
-.tile .why{color:var(--muted);font-size:14px;margin-top:8px;min-height:36px;}
+/* Kiintea korkeus, ei min-height: why-teksti on nyt johdettu ja sen pituus vaihtelee tiilittain (rajaus + tasapeli). Vaihteleva korkeus siirtaa .big-lukua (margin-top:auto), jolloin nelja isoa lukua eivat ole samalla viivalla. */
+.tile .why{color:var(--muted);font-size:14px;margin-top:8px;height:54px;}
 .fn{color:var(--muted);font-size:13px;margin:-8px 0 8px;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
@@ -179,6 +180,61 @@ def pick_standouts(players: list[dict]) -> dict:
               if gamble_pool else None)
     return {"captain": captain, "ceiling": ceiling, "safest": safest,
             "gamble": gamble}
+
+
+def _key(p: dict):
+    return p.get("id", p.get("web_name"))
+
+
+def claim_scope(pool: list[dict], pick: dict | None, val,
+                higher_is_better: bool, earlier: dict) -> dict:
+    """YKSI LUKIJA tiilien superlatiiveille (saanto 6a kohta 1).
+
+    🔴 SAMA VIKA KAHDESTI SAMALLA KORTILLA (4.9.2026, julkaisuportti k1 ja k2).
+    Jokainen tiili valitaan `rest()`-joukosta josta aiemmat tiilet on jo
+    pudotettu, mutta why-teksti oli kovakoodattua proosaa joka vaitti
+    superlatiivia KOKO poolista:
+
+      k1  Ceiling sanoi "top ceiling in the pool", kun kapteeni Haalandin
+          katto (14) oli korkeampi kuin Isakin (11) - viereisessa tiilessa.
+      k2  Sama korjaus jatti Safest-tiilen koskematta: Anderson (blank 17 %)
+          nimettiin "safest", vaikka Haaland (5 %) ja Isak (15 %) ovat samalla
+          kortilla. Ja ceiling-korjaus itse ohitti TASAPELIN: p90 on
+          kokonaisluku, ja GW3:ssa kolme pelaajaa oli 11:ssa (Guehi, Foden,
+          Isak), joten "top" ei ollut yksikasitteinen edes rajattuna.
+
+    Siksi why-tekstia ei enaa kirjoiteta tiilikohtaisesti. Tama funktio lukee
+    kaikki kolme asiaa samasta datasta:
+      ahead   ketka poolissa ovat pickia paremmat (nama on nimettava)
+      tied    ketka ovat tasan yhta hyvat ("joint", ei "top")
+      on_card kuuluvatko kaikki paremmat aiempiin tiiliin
+    Jos joku parempi EI ole kortilla, superlatiivia ei sanota lainkaan
+    (fail-closed): silloin vaitteelle ei ole naytettavaa perustelua.
+
+    `earlier` on {label: pelaaja}, esim. {"captain": ..., "ceiling": ...}.
+    """
+    if pick is None:
+        return {"ahead": [], "tied": [], "on_card": True, "labels": []}
+    v = val(pick)
+    others = [p for p in pool if _key(p) != _key(pick)]
+    ahead = [p for p in others
+             if (val(p) > v if higher_is_better else val(p) < v)]
+    tied = [p for p in others if val(p) == v]
+    labels = {_key(p): lbl for lbl, p in earlier.items() if p}
+    return {"ahead": ahead, "tied": tied,
+            "on_card": all(_key(p) in labels for p in ahead),
+            "labels": [labels[_key(p)] for p in ahead if _key(p) in labels]}
+
+
+def scope_phrase(superlative: str, sc: dict) -> str:
+    """Superlatiivi siina laajuudessa kuin se on tosi, tai tyhja."""
+    if sc["ahead"] and not sc["on_card"]:
+        return ""
+    head = f"joint {superlative}" if sc["tied"] else superlative
+    if not sc["ahead"]:
+        return f"{head} in the pool"
+    which = " and ".join(f"our {lbl} pick" for lbl in sc["labels"])
+    return f"{head} after {which}"
 
 
 def _promoted(p: dict) -> bool:
@@ -269,6 +325,18 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     assert_dist_gameweek(players, gw)
     s = reconcile_with_log(pick_standouts(players), gw, log, now, players)
     pct = lambda x: f"{round(x * 100)}%"
+    # Vertailujoukko on sama kuin valinnassa: koko pooli katolle, ja
+    # safestille sama xP-rajattu joukko josta safest valitaan.
+    pool = _pool(players)
+    safe_pool = [p for p in pool if (gw_xp(p) or 0) >= SAFE_MIN_XP]
+    scopes = {
+        "ceiling": claim_scope(pool, s["ceiling"],
+                               lambda p: p["xp_dist"]["p90"], True,
+                               {"captain": s["captain"]}),
+        "safest": claim_scope(safe_pool, s["safest"],
+                              lambda p: p["xp_dist"]["p_blank"], False,
+                              {"captain": s["captain"], "ceiling": s["ceiling"]}),
+    }
     tiles = "".join([
         _tile("Captain pick", s["captain"],
               pct(s["captain"]["xp_dist"]["p_haul"]) if s["captain"] else "-",
@@ -276,35 +344,21 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
               (f"top GW{gw} projection in the pool, blanks {pct(s['captain']['xp_dist']['p_blank'])}"
                if s["captain"] else "")),
         # "Ceiling", ei "Highest": p90 on kokonaisluku ja sama katto voi olla
-        # usealla (27.8: 10 kolmella, kaikki kortilla). Why sanoo tasapelisaannon.
-        # 🔴 JULKAISUPORTTI 4.9, kaksi vaaraa vaitetta samassa lauseessa:
-        #
-        # (1) "top ceiling in the pool" oli EPATOSI. `pick_standouts()` valitsee
-        #     ceilingin `rest()`-joukosta josta kapteenivalinta on jo pudotettu,
-        #     joten pooin korkein katto voi olla kapteenilla — ja oli: Haaland 14
-        #     vs Isak 11, ja Haalandin luku on VIEREISESSA tiilessa samalla
-        #     kortilla. Kortti olisi kumonnut itsensa.
-        # (2) "he reaches it most often" ei perustunut mihinkaan kenttaan. p90
-        #     saavutetaan rakenteellisesti noin kerran kymmenesta KAIKILLA, ja
-        #     sivun oma tooltip sanoo sen. Tasapelisaanto on p_haul, ja silla
-        #     kapteeni voittaa.
-        #
-        # Vaite johdetaan nyt datasta eika kirjoiteta proosana (saanto 6a):
-        # jos kapteenin katto on vahintaan yhta korkea, sanotaan rajaus aaneen.
+        # usealla (27.8: 10 kolmella, kaikki kortilla). Rajaus ja tasapeli
+        # tulevat `claim_scope`ista, ei proosasta (ks. sen docstring).
         _tile("Ceiling", s["ceiling"],
               str(s["ceiling"]["xp_dist"]["p90"]) if s["ceiling"] else "-",
               "pts",
-              ((("top ceiling outside our captain pick"
-                 if (s["captain"] and s["captain"]["xp_dist"]["p90"]
-                     >= s["ceiling"]["xp_dist"]["p90"])
-                 else "top ceiling in the pool")
-                + f", 10+ in {pct(s['ceiling']['xp_dist']['p_haul'])}")
+              (", ".join(x for x in [
+                  scope_phrase("top ceiling", scopes["ceiling"]),
+                  f"10+ in {pct(s['ceiling']['xp_dist']['p_haul'])}"] if x)
                if s["ceiling"] else "")),
         _tile("Safest pick", s["safest"],
               pct(1.0 - s["safest"]["xp_dist"]["p_blank"]) if s["safest"] else "-",
               "3+ pts",
-              (f"median {s['safest']['xp_dist']['median']} pts, under "
-               f"{s['safest']['xp_dist']['p10']} in fewer than 1 week in 10"
+              (", ".join(x for x in [
+                  scope_phrase("lowest blank chance", scopes["safest"]),
+                  f"median {s['safest']['xp_dist']['median']} pts"] if x)
                if s["safest"] else "")),
         _tile("The gamble", s["gamble"],
               pct(s["gamble"]["xp_dist"]["p_haul"]) if s["gamble"] else "-",
@@ -338,10 +392,18 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
         '<div class="sub">Same numbers as our xP, run that many times. Only players with '
         'at least a 60% chance of starting.</div></div></div>'
         f'<div class="tiles">{tiles}</div>{footnote}'
-        '<div class="ftr"><span>The model plays too: <b>entry 116920</b>, '
-        'every gameweek scored in public</span>'
+        # 🔴 4.9 PORTTI: "every gameweek scored in public" hylattiin 3.9
+        # sisarkortista (render_projected_xi_card) EPATOTENA - gw_calls.json
+        # sisaltaa vain GW2:n pisteytettyna - mutta hylkays jai siihen yhteen
+        # generaattoriin ja eli tassa toisessa 4.9 asti. Korvaus on
+        # sisarkortin jo portin lapaissyt sanamuoto.
+        '<div class="ftr"><span>The model plays too: <b>entry 116920</b> is '
+        'the squad it actually fields</span>'
         '<span>model projections, not betting advice</span>'
-        '<span>goaliq.app/fpl/expected-points</span></div>'
+        # TARKISTUSREITTI (4.9 portti): paljas URL laskeutuu GW-top-20-tauluun,
+        # jossa EI ole Blank- eika 10+-saraketta. Kortin prosentit ovat
+        # top-100-taulussa, joten linkki osoittaa sinne.
+        '<span>goaliq.app/fpl/expected-points#top-100</span></div>'
         "</div>")
     return html, s
 

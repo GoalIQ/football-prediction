@@ -4345,7 +4345,11 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # rivin alla, tarkistusreitti vaatisi vierityksen jonka jalkeen
         # lukija on jo ohittanut sen luvun jota han tuli tarkistamaan.
         + _gw_xp_section(xp) +
-        f"<h2>Top 100 by expected points (of {len(rows)} players)</h2>"
+        # ANKKURI (4.9 portti): standouts-kortin ja postausten tarkistusreitti
+        # osoittaa TAHAN tauluun, koska Blank- ja 10+-sarakkeet ovat vain
+        # tassa. Paljas URL laskeutuu GW-top-20-tauluun jossa niita ei ole.
+        f'<h2 id="top-100">Top 100 by expected points '
+        f"(of {len(rows)} players)</h2>"
         # Selitys taulukon ALLE, ei ylle (9.8): ensimmainen versio tyonsi 237
         # sanaa datan eteen, eli X:sta tulija joutui vierittamaan kaksi
         # ruudullista mobiilissa paastakseen siihen lukuun joka hanelle

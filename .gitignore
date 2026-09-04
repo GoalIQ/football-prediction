@@ -33,6 +33,10 @@ raw_data/
 !/data/wc_model.json
 # Vendoroitu World Football Elo -snapshot (#79 konfederaatio-kalibrointi).
 !/data/elo_ratings.csv
+# Portin hylkaamat sanamuodot (4.9): tests/test_rejected_phrases.py lukee
+# taman, joten gitignore-aukko olisi hiljainen regressio - testi kaatuisi
+# CI:ssa tiedostoon jota ei ole repossa (muisti: gitignored-fix-silent-regression).
+!/data/rejected_phrases.json
 # Tarkkuus-track-record (#100): ajastettu putki ylläpitää, Render lukee gitistä.
 !/data/prediction_log.json
 !/data/accuracy.json
