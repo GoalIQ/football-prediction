@@ -46,7 +46,7 @@ padding:34px 44px 26px;display:flex;flex-direction:column;}
 .title{font-size:21px;font-weight:600;}
 .sub{color:var(--muted);font-size:15px;margin-top:4px;text-align:right;}
 .pitch{background:rgba(46,214,194,0.13);border:1px solid var(--line);
-padding:6px 4px;margin:16px 0 10px;flex:1;display:flex;
+padding:4px;margin:10px 0 6px;flex:1;display:flex;
 flex-direction:column;justify-content:space-evenly;}
 .xirow{display:flex;justify-content:space-evenly;}
 .xip{width:124px;text-align:center;position:relative;}
@@ -54,22 +54,37 @@ flex-direction:column;justify-content:space-evenly;}
 white-space:nowrap;}
 .xip span{display:block;font-size:13px;color:var(--muted);
 font-variant-numeric:tabular-nums;}
+.xip span.xp{color:var(--cream);font-size:14px;margin-top:3px;font-weight:600;}
+.xip span.xp i{font-style:normal;color:var(--muted);font-weight:400;font-size:12px;}
 .xip span.sim{color:var(--amber);font-size:11px;margin-top:1px;
 white-space:nowrap;letter-spacing:-.1px;}
 .badge{position:absolute;top:-4px;right:14px;background:var(--amber);
 color:var(--ink);font-size:13px;font-weight:700;width:22px;height:22px;
 border-radius:50%;line-height:22px;}
 .badge.v{background:var(--cream);}
+.badge.tc{width:32px;border-radius:11px;font-size:14px;font-weight:800;right:8px;}
 .bench{display:flex;align-items:center;gap:18px;border-top:1px solid var(--line);
 padding-top:10px;}
 .bench .lbl{color:var(--muted);font-size:14px;width:60px;}
 .bench .xip{width:96px;}
 .bench .xip b{font-size:13px;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
-font-size:14px;margin-top:10px;}
+font-size:14px;margin-top:6px;}
 .ftr b{color:var(--cream);font-weight:600;}
 svg.kit{display:block;margin:0 auto;}
 """
+
+
+def xp_line(xp: float | None) -> str:
+    """Kierroksen xP samasta artefaktista kuin jakauma.
+
+    Tama on kortin ainoa piste-ennuste: `gameweeks[].xp` TALLE kierrokselle,
+    ei `xp_per_gw` joka on horisontin summa jaettuna kierrosmaaralla (muisti:
+    xp-per-gw-ei-ole-gw-xp). Sama luku kuin ilmaissivun GW-taulun xP-sarake.
+    """
+    if xp is None:
+        return ""
+    return f'<span class="xp">{xp:.1f} <i>xP</i></span>'
 
 
 def sim_line(p: dict, dist: dict | None) -> str:
@@ -92,16 +107,22 @@ def sim_line(p: dict, dist: dict | None) -> str:
             f'· {blank}</span>')
 
 
-def cell(p: dict, cap: int, vice: int, size: int = 54,
-         dist: dict | None = None) -> str:
+def cell(p: dict, cap: int, vice: int, size: int = 46,
+         dist: dict | None = None, chip: str | None = None,
+         xp: float | None = None) -> str:
     badge = ""
     if p["id"] == cap:
-        badge = '<span class="badge">C</span>'
+        # Triple captain nakyy kortilla: kolminkertainen kapteeni on eri
+        # veto kuin kaksinkertainen, eika lukija voi paatella sita mistaan
+        # muualta ennen kuin pickit avautuvat deadlinella.
+        badge = ('<span class="badge tc">TC</span>' if chip == "3xc"
+                 else '<span class="badge">C</span>')
     elif p["id"] == vice:
         badge = '<span class="badge v">V</span>'
     return ('<div class="xip">' + badge + _kit_svg(p["team_short"], size=size)
             + f'<b>{p["web_name"]}</b>'
             + f'<span>{p["team_short"]} · {p["price"] / 10:.1f}m</span>'
+            + xp_line(xp)
             + sim_line(p, dict(dist, _gkp=(p.get("pos") == 1))
                        if dist else None) + '</div>')
 
@@ -126,6 +147,7 @@ def main() -> int:
     xi, bench = frozen["xi"], frozen["bench"]
     cap, vice = frozen["captain"], frozen["vice_captain"]
     total = sum(p["price"] for p in xi + bench) / 10.0
+    meta_val = frozen.get("meta") or {}
     import datetime as _dt
     raw = str(frozen.get("meta", {}).get("frozen_at", ""))[:10]
     frozen_at = _dt.date.fromisoformat(raw).strftime("%d %b").lstrip("0") if raw else ""
@@ -133,6 +155,7 @@ def main() -> int:
     rows = {t: [p for p in xi if p["pos"] == t] for t in (1, 2, 3, 4)}
     shape = "-".join(str(len(rows[t])) for t in (2, 3, 4))
     dists: dict = {}
+    xps: dict = {}
     if args.sims:
         xp = json.loads((config.DATA_DIR / "fpl_xp_projections.json")
                         .read_text(encoding="utf-8"))
@@ -150,9 +173,15 @@ def main() -> int:
                 "uudelleen ennen kuin julkaiset kortin.")
         dists = {int(pp["id"]): pp["xp_dist"] for pp in xp["players"]
                  if pp.get("xp_dist") and pp.get("id") is not None}
+        for pp in xp["players"]:
+            for g in pp.get("gameweeks") or []:
+                if g.get("gw") == args.gw and pp.get("id") is not None:
+                    xps[int(pp["id"])] = float(g.get("xp") or 0.0)
     pitch = "".join(
         '<div class="xirow">'
-        + "".join(cell(p, cap, vice, dist=dists.get(int(p["id"])))
+        + "".join(cell(p, cap, vice, dist=dists.get(int(p["id"])),
+                       chip=(frozen.get("meta") or {}).get("chip"),
+                       xp=xps.get(int(p["id"])))
                   for p in rows[t])
         + "</div>" for t in (1, 2, 3, 4))
     bench_html = "".join(cell(p, cap=-1, vice=-1, size=42) for p in bench)
@@ -174,10 +203,18 @@ def main() -> int:
         f'<div class="sub">{args.subtitle or f"Picked by the optimiser, frozen {frozen_at}, entered as-is"}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'{bench_block}'
-        f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>'
+        # 🔴 4.9 PORTTI: "spent" laskettiin NYKYHINNOISTA, mutta se ei ole
+        # kumpikaan oikea luku: ostohinnat eivat ole julkisia, ja FPL:n oma
+        # sivu nayttaa rungon myyntiarvon + pankin. Kun runko tulee entrysta,
+        # kaytetaan FPL:n omia lukuja ja oikeaa sanaa.
+        + (f'<div class="ftr"><span><b>{meta_val["squad_value_m"]:.1f}m</b> squad'
+           + (f' · {meta_val["bank_m"]:.1f}m in the bank' if meta_val.get("bank_m") is not None else '')
+           + '</span>'
+           if meta_val.get("squad_value_m") is not None
+           else f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>')
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
-        "<span>entry 116920 · public on fantasy.premierleague.com</span>"
+        + "<span>entry 116920 · public on fantasy.premierleague.com</span>"
         + ('<span>goaliq.app/fpl/expected-points#top-100</span></div>'
            if args.sims else '<span>goaliq.app</span></div>')
         + "</div>")
