@@ -156,27 +156,18 @@ PINNAT = _pinnat()
 # ---------------------------------------------------------------------------
 SALLITUT: dict[str, str] = {
     "store.config.json":
-        "🔒 Store-listaukset eivat ole hotfixattavissa (arvostelusykli). Kolme "
+        "🔒 Store-listaukset eivat ole hotfixattavissa (arvostelusykli). Kaksi "
         "kohtaa sanoo 'the strongest squad the rules allow'. Korjataan "
         "seuraavan submitin yhteydessa; Villen GO tarvitaan siihen joka "
         "tapauksessa. Jonossa OPTIMAL-VAITE-MOBIILISSA-JA-STORESSA.",
     "en.ts":
-        "🔒 Mobiilin chip-copy (`the model's optimal squad`), ei "
-        "`_unproven`-sisarta. Nakyy vain tyokalun sisalla olevalle "
-        "kayttajalle ja korjaus on merkkijonovaihto seuraavaan OTA:aan. "
-        "Sama jonorivi.",
-    "es.ts":
-        "🔒 Sama chip-copy espanjaksi (`la plantilla optima del modelo`). "
-        "Huom: saman tiedoston `mejor equipo posible` on jo oikein "
-        "portitettu (`gap_text_unproven`), osuma tulee chip-riveista.",
-    "pt.ts":
-        "🔒 Sama chip-copy portugaliksi (`o elenco otimo do modelo`). Sama "
-        "huomio `melhor time possivel`ista kuin espanjassa.",
+        "Nappiteksti 'Optimal lineup' jarjestaa KAYTTAJAN OMAN 15:n parhaaksi "
+        "XI:ksi. Se on 11-of-15 -valinta eli lahtokohtaisesti eksakti, toisin "
+        "kuin 100.0m budjettihaku joka on paikallinen. Sama perustelu kuin "
+        "TeamPitchManager.sveltella. VARAUS: eksaktius on oletettu koodin "
+        "muodosta, EI mitattu.",
     "TeamPitchManager.svelte":
-        "Nappi 'Optimal lineup' jarjestaa KAYTTAJAN OMAN 15:n parhaaksi "
-        "XI:ksi. Se on 11-of-15 -valinta eli lahtokohtaisesti eksakti, "
-        "toisin kuin 100.0m budjettihaku joka on paikallinen. "
-        "VARAUS: eksaktius on oletettu koodin muodosta, EI mitattu.",
+        "Sama 'Optimal lineup' -nappi webissa. Ks. en.ts.",
 }
 
 
