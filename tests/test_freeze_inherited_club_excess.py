@@ -5,10 +5,16 @@
     VIRHE: optimoija palautti LAITTOMAN rungon - ei jaadyteta:
       - yli 3/seura: {15: 4}
 
-Syy ei ollut optimoijassa. GW2:n jaadytetyssa rungossa olivat Guehi, Ndiaye,
-Anderson ja Haaland, ja **kolme heista siirtyi Man Cityyn deadline-paivana**.
-Peritty runko oli siis nelja pelaajaa samasta seurasta ilman etta yhtaan
-siirtoa tehtiin (`changes: null`).
+Syy ei ollut optimoijassa. GW2:n jaadytetyssa rungossa oli **kolme Cityn
+pelaajaa** (Guehi, Haaland, Anderson, kaikki `club: 15` jo freezen hetkella)
+ja lisaksi Ndiaye Evertonissa (`club: 9`). **Ndiaye siirtyi Cityyn** GW2:n ja
+GW3:n valilla, jolloin peritty runko oli nelja pelaajaa samasta seurasta ilman
+etta yhtaan siirtoa tehtiin (`changes: null`).
+
+KORJATTU 4.9 (mitattu bootstrapista gw1- ja gw2-freezen `club`-kenttia
+vasten): vain YKSI pelaaja vaihtoi seuraa, ei kolme. Ensimmainen kirjaus
+sanoi "kolme heista siirtyi" — se oli paattely, ei mittaus, ja se paatyi
+seka taman testin etta `inherited_club_excess`in perusteluun.
 
 Villen paatos 4.9 (vaihtoehto a): peritty ylitys sallitaan, kuten FPL:ssa —
 seuranvaihdon takia syntynytta ylitysta ei pureta takautuvasti, mutta samasta

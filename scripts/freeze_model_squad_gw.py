@@ -266,8 +266,12 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
     from src.models.fpl_transfers import MAX_TRANSFERS_PER_GW, plan_gw
 
     by_id = {p["id"]: p for p in pool}
+    # Rungossa mutta ei poolissa (liigasta lahtenyt): mukaan runkoon xP 0:lla,
+    # EI pooliin. Ks. `_departed_player`.
+    by_id_runko = dict(by_id)
+    by_id_runko.update(prev.get("_off_pool") or {})
     edellinen = (prev.get("xi") or []) + (prev.get("bench") or [])
-    squad = [by_id[p["id"]] for p in edellinen if p["id"] in by_id]
+    squad = [by_id_runko[p["id"]] for p in edellinen if p["id"] in by_id_runko]
     if len(squad) != 15:
         # Pelaaja poistunut poolista (siirto ulos liigasta tms.) -> emme voi
         # peria runkoa rehellisesti. Kutsuja putoaa vapaaseen optimiin ja se
@@ -401,6 +405,146 @@ def entry_mismatch(prev_gw: int, prev: dict, events: list[dict],
     return "\n".join(rivit)
 
 
+RESEED_DIR = config.PROJECT_ROOT / "data" / "model_squad_reseed"
+RESEED_KEYS = ("gw", "source_gw", "reason", "decided_by", "decided_at")
+
+
+def load_reseed(gw: int) -> tuple[dict | None, str | None]:
+    """(reseed, virhe). Ketjun uudelleenaloitus entryn omista pickeista.
+
+    MIKSI TAMA ON OLEMASSA (4.9.2026). `entry_mismatch` kaataa freezen kun
+    peritty runko ei ole entryn runko, mutta pelkka esto on umpikuja: ketju
+    on jo eronnut eika `_prev_freeze` osaa palata takaisin. Villen paatos
+    4.9 oli aloittaa ketju uudelleen entryn oikeista pickeista, joten reitti
+    ulos on oltava — mutta EKSPLISIITTISENA ja perusteltuna, ei hiljaisena
+    fallbackina. Hiljainen fallback olisi sama vikaluokka kuin se jota
+    portti estaa.
+
+    Vaatii kaikki kentat epatyhjina ja oikean gw:n. Vajaa tai vaaralle
+    kierrokselle kirjattu reseed on VIRHE, ei ohitus.
+    """
+    path = RESEED_DIR / f"gw{gw}.json"
+    if not path.exists():
+        return None, None
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return None, f"{path.name}: ei kelvollista JSONia ({e!r})"
+    puuttuu = [k for k in RESEED_KEYS if not str(d.get(k) or "").strip()]
+    if puuttuu:
+        return None, f"{path.name}: kentat puuttuvat tai tyhjia: {', '.join(puuttuu)}"
+    if int(d.get("gw") or 0) != gw:
+        return None, f"{path.name}: gw={d.get('gw')} mutta tiedosto on GW{gw}:n"
+    if int(d.get("source_gw") or 0) >= gw:
+        return None, (f"{path.name}: source_gw={d.get('source_gw')} ei ole "
+                      f"aiempi kierros kuin GW{gw}")
+    return d, None
+
+
+def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
+               hae=None, hae_historia=None) -> tuple[dict | None, str | None]:
+    """(prev-muotoinen runko entryn pickeista, virhe).
+
+    Budjetti luetaan entryn omasta historiasta (`value` + `bank`), ei
+    oletuksesta: wildcardin jalkeen tilin arvo ei ole 100.0m, ja vaara
+    budjetti muuttaisi siirtomoottorin vastausta hiljaa.
+    """
+    hae = hae or entry_mod.fetch_picks
+    try:
+        picks = hae(entry_mod.ENTRY_ID, source_gw)
+    except entry_mod.EntryHakuVirhe as e:
+        return None, f"entryn GW{source_gw}-rivia ei saatu: {e}"
+
+    by_id = {p["id"]: p for p in pool}
+    ids = [int(p["element"]) for p in picks]
+    if len(ids) != 15:
+        return None, f"entryn GW{source_gw}-rivissa {len(ids)} pelaajaa, ei 15"
+
+    # 🔴 LIIGASTA LAHTENYT PELAAJA ON YHA ENTRYN RIVILLA. Mitattu 4.9:
+    # entryn GW2-rungossa on Dovin (id 171, status u, "joined Leyton Orient
+    # on loan"), joka on OIKEIN suodatettu poolista pois. Jos siemen kaatuu
+    # siihen, ketjua ei voi aloittaa uudelleen lainkaan — ja jos hanet
+    # lisataan pooliin, hanesta tulee ostettava, mika on tasan se vika jota
+    # muisti `fpl-lahtenyt-pelaaja-pysyy-bootstrapissa` varoittaa.
+    # Ratkaisu: han on rungossa xP 0:lla (han ei voi pelata), muttei
+    # poolissa. Siirtomoottori saa myyda hanet, kukaan ei voi ostaa.
+    lahteneet = {i: _departed_player(i, bootstrap)
+                 for i in ids if i not in by_id}
+    rikki = [i for i, p in lahteneet.items() if p is None]
+    if rikki:
+        return None, (f"entryn GW{source_gw}-rivissa on pelaajia joita ei "
+                      f"loydy poolista eika bootstrapista: {rikki}")
+
+    hae_historia = hae_historia or _entry_history
+    historia, virhe = hae_historia(entry_mod.ENTRY_ID, source_gw)
+    if virhe:
+        return None, virhe
+
+    budjetti = (int(historia["value"]) + int(historia["bank"])) / 10.0
+    return {
+        "xi": [{"id": i} for i in ids[:11]],
+        "bench": [{"id": i} for i in ids[11:]],
+        "meta": {"budget": budjetti,
+                 # Wildcard-kierroksen jalkeen rullausta ei ole: seuraava
+                 # kierros alkaa yhdesta ilmaisesta siirrosta.
+                 "ft_left": 0},
+        # Vain rungossa, EI poolissa (ks. yllä).
+        "_off_pool": lahteneet,
+    }, None
+
+
+def _departed_player(pid: int, bootstrap: dict) -> dict | None:
+    """Pool-muotoinen rivi pelaajalle joka on entryssa muttei poolissa.
+
+    xP on nolla joka kierrokselle, koska han ei voi pelata. Rivi on
+    tarkoituksella minimaalinen: se riittaa siirtomoottorille (hinta,
+    positio, seura) muttei nayta hanta missaan valintalistassa.
+    """
+    for e in (bootstrap.get("elements") or []):
+        if int(e.get("id") or 0) != pid:
+            continue
+        joukkueet = {int(t["id"]): t for t in (bootstrap.get("teams") or [])}
+        t = joukkueet.get(int(e.get("team") or 0)) or {}
+        return {
+            "id": pid,
+            "web_name": e.get("web_name"),
+            "element_type": int(e.get("element_type") or 0),
+            "club": int(e.get("team") or 0),
+            "team": t.get("name"),
+            "team_short": t.get("short_name"),
+            "price": int(e.get("now_cost") or 0),
+            "status": e.get("status"),
+            "news": e.get("news") or "",
+            "owned_pct": float(e.get("selected_by_percent") or 0.0),
+            "xp_per_gw": 0.0,
+            "xp_horizon_total": 0.0,
+            "xp_per_90": 0.0,
+            "xmins": 0.0,
+            "predicted_starts": 0.0,
+            "p_start": 0.0,
+            "chance_next": 0,
+            "minutes_confidence": "none",
+            "minutes_source": "left_league",
+            "gameweeks": [],
+            "off_pool": True,
+        }
+    return None
+
+
+def _entry_history(entry: int, gw: int) -> tuple[dict | None, str | None]:
+    url = f"{FPL_BASE}/entry/{entry}/history/"
+    try:
+        r = requests.get(url, headers=FPL_HEADERS, timeout=30)
+        r.raise_for_status()
+        rivit = r.json().get("current") or []
+    except Exception as e:
+        return None, f"entryn historiaa ei saatu ({e!r})"
+    for rivi in rivit:
+        if int(rivi.get("event") or 0) == gw:
+            return {"value": rivi.get("value"), "bank": rivi.get("bank")}, None
+    return None, f"entryn historiasta puuttuu GW{gw}"
+
+
 def next_freeze_gw(events: list[dict], now: _dt.datetime):
     """Seuraava deadline freeze-ikkunassa → (gw, deadline) tai None."""
     for ev in events:
@@ -445,12 +589,34 @@ def main() -> int:
         return 1
 
     # 🔴 PERITTY RUNKO, EI ALUSTA RAKENNETTU. Ks. FT_PER_GW:n kommentti yllä.
-    edellinen = _prev_freeze(gw)
-    if edellinen is not None:
-        _esto = entry_mismatch(edellinen[0], edellinen[1], events)
-        if _esto:
-            print(_esto)
+    # Reseed ohittaa ketjun ja aloittaa entryn omista pickeista. Se on
+    # eksplisiittinen tiedosto perusteluineen, ei hiljainen fallback.
+    reseed, reseed_virhe = load_reseed(gw)
+    if reseed_virhe:
+        print(f"VIRHE: reseed-tiedosto on rikki: {reseed_virhe}. Reseed ei ole "
+              f"vapaakortti — korjaa tiedosto tai poista se.")
+        return 1
+
+    reseed_meta = None
+    if reseed is not None:
+        siemen, virhe = entry_seed(int(reseed["source_gw"]), pool,
+                                   _bootstrap)
+        if virhe:
+            print(f"VIRHE: reseed GW{gw} ei onnistunut: {virhe}")
             return 1
+        edellinen = (int(reseed["source_gw"]), siemen)
+        reseed_meta = {k: reseed[k] for k in RESEED_KEYS}
+        print(f"RESEED: runko peritaan entryn {entry_mod.ENTRY_ID} "
+              f"GW{reseed['source_gw']}-pickeista, ei gw*.json-ketjusta. "
+              f"Syy: {reseed['reason']} ({reseed['decided_by']} "
+              f"{reseed['decided_at']})")
+    else:
+        edellinen = _prev_freeze(gw)
+        if edellinen is not None:
+            _esto = entry_mismatch(edellinen[0], edellinen[1], events)
+            if _esto:
+                print(_esto)
+                return 1
     siirtotiedot = None
     free = None
     chip_eval = None
@@ -460,6 +626,7 @@ def main() -> int:
         # Chip-arvio PERITYLLE rungolle ennen siirtoja: samalla moottorilla
         # kuin wildcard-sivu, jotta rivi ja sivu eivat ole eri mielta.
         _by_id = {p["id"]: p for p in pool}
+        _by_id.update(prev.get("_off_pool") or {})
         _peritty = [_by_id[p["id"]] for p in (prev.get("xi") or []) + (prev.get("bench") or [])
                     if p["id"] in _by_id]
         if len(_peritty) == 15:
@@ -517,7 +684,20 @@ def main() -> int:
             # ei kerro maksoiko se siita, ja kisa nayttaisi reilulta vaikka se
             # ei olisi. Ensimmainen kierros: `from_gw` null = vapaa valinta
             # (kauden aloitus, kuten ihmisellakin).
-            "budget": 100.0,
+            # 4.9: budjetti EI ole vakio 100.0. Ketjussa se sattui olemaan,
+            # koska jokainen freeze kirjoitti saman vakion ja seuraava luki
+            # sen. Reseedissa budjetti tulee entryn omasta historiasta
+            # (value + bank), ja vaara luku muuttaisi siirtomoottorin
+            # vastausta hiljaa.
+            "budget": round(float((edellinen[1].get("meta") or {}).get(
+                "budget", 100.0)) if edellinen else 100.0, 1),
+            # Mista runko peritaan. `chain` = edellinen freeze, `entry_picks`
+            # = entryn omat pickit (reseed). Ilman tata kentta lukija ei voi
+            # tietaa kumpaa artefaktia rivi seuraa - juuri se tieto puuttui
+            # 4.9 kun kortti lupasi entryn rungon ja naytti ketjun rungon.
+            "squad_source": ("entry_picks" if reseed_meta else
+                             ("chain" if edellinen else "free_optimum")),
+            "reseed": reseed_meta,
             # Peritty seurakaton ylitys nakyviin: se on tosiasia rungosta,
             # ei virhe, ja ilman tata lukija laskisi rivit ja luulisi
             # rungon laittomaksi (Villen paatos a, 4.9).

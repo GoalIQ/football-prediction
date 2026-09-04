@@ -154,6 +154,12 @@ raw_data/
 !/data/model_squad_exceptions/
 !/data/model_squad_exceptions/*.json
 !/data/model_squad_exceptions/README.md
+# 4.9: ketjun uudelleenaloitus entryn pickeista (freeze_model_squad_gw.load_reseed).
+# Ilman !-poikkeusta tiedosto jaa vain tahan koneeseen, CI ei nae sita ja
+# runnerin freeze ottaisi ketjun tien vaikka paatos oli toinen — sama
+# hiljainen regressio kuin muistin `gitignored-fix-silent-regression`.
+!/data/model_squad_reseed/
+!/data/model_squad_reseed/*.json
 # Vaihe b: gradatut pisteet (append-only). Sama peruste kuin freezella —
 # Season race -paneeli lukee taman, ja ilman !-poikkeusta luku eläisi vain
 # runnerilla eika koskaan paatyisi sivulle.
