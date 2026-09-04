@@ -35,7 +35,9 @@ import pytest
 
 SPA = Path(__file__).resolve().parents[1] / "web" / "pro-spa" / "src"
 TOOLS_HOME = SPA / "lib" / "components" / "ToolsHome.svelte"
-PAGE = SPA / "routes" / "+page.svelte"
+# Sivurunko (Hero + ToolsHome + SPL-nosto + footer) siirtyi 4.9 omaksi
+# komponentikseen kun tyokalut saivat omat reittinsa.
+PAGE = SPA / "lib" / "components" / "AppShell.svelte"
 DEFCON = SPA / "lib" / "components" / "DefConLive.svelte"
 
 # Komponentit jotka SAAVAT renderoitya tyokalunavin ylapuolella, ja miksi.

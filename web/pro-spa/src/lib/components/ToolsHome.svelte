@@ -22,6 +22,10 @@
 	import Provenance from './Provenance.svelte';
 	import LeagueBanner from './LeagueBanner.svelte';
 	import SegmentNav, { type Segment } from './SegmentNav.svelte';
+	import ToolRow from './ToolRow.svelte';
+	import ToolDirectory from './ToolDirectory.svelte';
+	import { goto } from '$app/navigation';
+	import { GROUPS, LEGACY_HASH_TO_PATH, findTool, toolsInGroup } from '$lib/tools';
 	import LoginBox from './LoginBox.svelte';
 	import Paywall from './Paywall.svelte';
 	import PremiumPreview from './PremiumPreview.svelte';
@@ -52,46 +56,27 @@
 
 	let {
 		forcePremium = false,
-		upgradeSignal = 0
+		upgradeSignal = 0,
+		group = 'week',
+		tool = null,
+		all = false
 	}: {
 		/** DEV-esikatselu (/dev-premium): premium-lohkot auki ilman gatea. */
 		forcePremium?: boolean;
 		/** Heron Upgrade-badge nostaa tätä → upgrade-näkymä auki. */
 		upgradeSignal?: number;
+		/** Reitin ryhma (/week, /players, ...). Reitti on totuus, ei tila. */
+		group?: string;
+		/** Reitin tyokalu (/players/leaders) tai null = ryhman hakemisto. */
+		tool?: string | null;
+		/** ?all=1 — ryhman kaikki tyokalut yhdella sivulla (vanha kayttaytyminen). */
+		all?: boolean;
 	} = $props();
 
-	const GROUPS: Segment[] = [
-		{ id: 'week', label: 'This week' },
-		{ id: 'team', label: 'My team' },
-		{ id: 'players', label: 'Players' },
-		{ id: 'tools', label: 'Tools' },
-		{ id: 'prices', label: 'Prices' },
-		{ id: 'matches', label: 'Matches' }
-	];
-
-	// Vanhat #tools=-deep-linkit (24 segmentti-id:tä) mappautuvat uusiin
-	// ryhmiin — linkki ei saa hajota IA-muutokseen.
-	const LEGACY_HASH: Record<string, string> = {
-		cleansheets: 'players',
-		playercard: 'players',
-		lookup: 'players',
-		rateteam: 'team',
-		myteam: 'team',
-		fitchecker: 'team',
-		value: 'players',
-		leaders: 'players',
-		differentials: 'players',
-		replacements: 'players',
-		compare: 'players',
-		pricewatch: 'prices',
-		league: 'tools',
-		chips: 'tools',
-		chains: 'tools',
-		edge: 'tools',
-		predict: 'matches',
-		fixtures: 'matches',
-		standings: 'matches'
-	};
+	// 4.9: ryhmat, tyokalut ja vanhojen hashien ohjaus tulevat rekisterista
+	// (`$lib/tools`) — yksi lukija. Ennen tama komponentti maaritteli GROUPSin
+	// ja LEGACY_HASHin itse, ja jalkimmainen osoitti RYHMAAN eika tyokaluun.
+	const NAV: Segment[] = GROUPS.map((g) => ({ id: g.id, label: g.label, href: `/${g.id}` }));
 
 	/** 4.9: app-tilaajan tervetulobanneri kerran per sessio (ks. markup). */
 	let showAppWelcome = $state(false);
@@ -107,7 +92,24 @@
 		}
 	});
 
-	let segment = $state('week');
+	// Reitti on totuus: segmentti ja avattu tyokalu johdetaan propseista.
+	// Ennen 4.9 nama olivat komponentin omaa tilaa, jolloin sama tila saattoi
+	// olla eri kuin osoiterivi (ja paluunappi ei liikuttanut kumpaakaan).
+	const segment = $derived(group);
+	const groupTools = $derived(toolsInGroup(group));
+	const activeTool = $derived(findTool(group, tool) ?? null);
+	/**
+	 * Ryhman etusivu on hakemisto kun ryhmassa on enemman kuin yksi tyokalu.
+	 * 🔴 Mitattu 4.9: `/players` oli pinottuna 21 173 px pitka. Pinottu
+	 * nakyma on yha olemassa (?all=1), mutta se on valinta eika oletus.
+	 * `week` ei ole tyokalulista vaan yksi koostettu nakyma, joten sille ei
+	 * synny hakemistoa (rekisterin GROUPS_WITHOUT_TOOLS).
+	 */
+	const showDirectory = $derived(activeTool === null && !all && groupTools.length > 1);
+	/** Nayttaako ryhmasivu taman tyokalun? Ilman valintaa: kaikki. */
+	function show(slug: string): boolean {
+		return activeTool === null || activeTool.slug === slug;
+	}
 	/** 6.8: sticky-segmenttirivin mitattu korkeus → onpage-rivin top-offset. */
 	let segNavH = $state(0);
 	let upgradeOpen = $state(false);
@@ -115,43 +117,24 @@
 	let guestCheckout = $state(false);
 
 	// Tools-hakemiston avattu työkalu (sama grid-kaava kuin mobiilin P1).
-	type ToolKey = 'chips' | 'chains' | 'edge' | 'league';
-	const TOOL_CARDS: { key: ToolKey; title: string; desc: string; premium: boolean }[] = [
-		{
-			key: 'chips',
-			title: 'Chip timing',
-			desc: 'The best windows for Wildcard, Bench Boost, Triple Captain and Free Hit, scored by expected points.',
-			premium: true
-		},
-		{
-			key: 'chains',
-			title: 'Transfer chains',
-			desc: 'One and two-move transfer plans with hits priced in, chained over the coming gameweeks.',
-			premium: true
-		},
-		{
-			key: 'edge',
-			title: 'Edge mode',
-			desc: 'Rank-aware picks: ownership-weighted captains, differentials you do not own and template risks.',
-			premium: true
-		},
-		{
-			key: 'league',
-			title: 'Beat the Model league',
-			// 22.8 (portin sivuhuomio): jakokortin footer tuo lukijoita tänne
-			// hakemaan "Catch your rival" -työkalua — nimen on löydyttävä.
-			desc: 'Join the public mini-league, track the standings with head-to-head win probabilities and catch your rival: how likely you are to close the gap.',
-			premium: false
-		}
-	];
-	let openTool = $state<ToolKey | null>(null);
+	// Tools-ryhman hakemistokortit tulevat rekisterista (nimi + kysymys + taso),
+	// eika tasta tiedostosta. Avattu tyokalu on reitti, ei tila.
+	type ToolKey = 'chip-timing' | 'transfer-chains' | 'edge-mode' | 'league';
+	const openTool = $derived((activeTool?.group === 'tools' ? activeTool.slug : null) as ToolKey | null);
 
 	// Matches-ryhmän sisäinen valinta (Villen valinta: oma ryhmä, ei gridiä).
-	let matchesView = $state<'predict' | 'fixtures' | 'standings'>('predict');
+	const matchesView = $derived(
+		activeTool?.group === 'matches'
+			? ((activeTool.slug === 'table' ? 'standings' : activeTool.slug) as
+					| 'predict'
+					| 'fixtures'
+					| 'standings')
+			: 'predict'
+	);
 	let predictPrefill = $state<{ league: string; home: string; away: string } | null>(null);
 	function goPredict(lg: string, h: string, a: string) {
 		predictPrefill = { league: lg, home: h, away: a };
-		matchesView = 'predict';
+		void goto('/matches/predict');
 	}
 
 	const premium = $derived(forcePremium || !!auth.sub);
@@ -247,13 +230,13 @@
 		const tab = params.get('tab');
 		if (tab === 'premium' || tab === 'pro') upgradeOpen = true;
 		// Vanhat deep-linkit uusiin ryhmiin (SegmentNav hoitaa uudet id:t).
+		// Vanha deep-linkki (#tools=leaders) ohjautuu TYOKALUUN eika ryhmaan.
+		// Ennen 4.9 se osoitti ryhmaan, eli linkki "avaa clean sheets" pudotti
+		// kayttajan kymmenen tyokalun pinon ylalaitaan. Kartta on rekisterissa
+		// ja jokainen 19:sta on testattu yksitellen.
 		const m = window.location.hash.match(/^#tools=([\w-]+)$/);
-		if (m && LEGACY_HASH[m[1]]) {
-			segment = LEGACY_HASH[m[1]];
-			if (m[1] === 'fixtures') matchesView = 'fixtures';
-			if (m[1] === 'standings') matchesView = 'standings';
-			if (m[1] === 'chips' || m[1] === 'chains' || m[1] === 'edge' || m[1] === 'league')
-				openTool = m[1] as ToolKey;
+		if (m && LEGACY_HASH_TO_PATH[m[1]]) {
+			void goto(LEGACY_HASH_TO_PATH[m[1]], { replaceState: true });
 		}
 	});
 
@@ -271,21 +254,11 @@
 		}
 	});
 
-	/** "On this page" -ankkurihyppy (Villen palaute 30.7: työkalut hukkuvat
-	 *  pitkään scrolliin — sisällys näkyviin ryhmän kärkeen). */
-	function jumpTo(id: string) {
-		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	}
-
-	function openToolCard(t: (typeof TOOL_CARDS)[number]) {
-		if (t.premium && !premium) {
-			capture('upgrade_tapped', { source: `fantasy_${t.key}` });
-			goUpgrade();
-			return;
-		}
-		openTool = t.key;
-		capture('fantasy_tool_opened', { tool: t.key });
-	}
+	// 4.9: `jumpTo` ja `openToolCard` poistuivat. Kumpikin oli kiertotie
+	// samaan puutteeseen: tyokalulla ei ollut osoitetta, joten siihen
+	// paastiin vain vierittamalla tai vaihtamalla komponentin tilaa. Nyt
+	// molemmat ovat linkkeja (`ToolRow`, hakemistokortit), ja lukitun kortin
+	// klikkaus kirjaa upgraden markupissa.
 </script>
 
 {#if checkoutSuccess}
@@ -395,32 +368,50 @@
 	     Players → My team ilman paluuta ylös. Korkeus mitataan, jotta
 	     onpage-rivi osaa asettua sen ALLE myös kun pillit rivittyvät. -->
 	<div class="segnav-sticky" bind:clientHeight={segNavH}>
-		<SegmentNav segments={GROUPS} bind:active={segment} label="GoalIQ FPL tools" />
+		<SegmentNav segments={NAV} active={segment} label="GoalIQ FPL tools" />
 	</div>
 
-	{#if segment === 'week' || segment === 'team'}
+	<!-- 4.9: ryhman tyokalurivi. Korvaa "On this page:" -ankkuririvin, joka
+	     vieritti pitkaa sivua; nama ovat linkkeja omiin URLeihin. -->
+	<ToolRow
+		tools={groupTools}
+		{group}
+		active={activeTool?.slug ?? null}
+		{all}
+		{premium}
+	/>
+
+	{#if showDirectory}
+		<!-- Ryhman hakemisto: nimi + kysymys + taso, jokainen oma URL. -->
+		<ToolDirectory
+			tools={groupTools}
+			{premium}
+			onLocked={(slug) => {
+				capture('upgrade_tapped', { source: `fantasy_${slug}` });
+				goUpgrade();
+			}}
+		/>
+	{/if}
+
+	{#if showDirectory && segment !== 'tools'}
+		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
+	{:else if segment === 'week' || segment === 'team'}
 		<!-- week + team jakavat SAMAN RateTeam-elementin (sama puupositio →
 		     Svelte ei tuhoa instanssia vaihdossa → data/entry-tila säilyy). -->
 		<div id="panel-{segment}" role="tabpanel" aria-labelledby="seg-{segment}">
-			{#if segment === 'team'}
-				<!-- 30.7 (Villen palaute: "fit checker yms hukkuu"): ryhmän
-				     sisällys ankkuririvinä heti nauhan alle — pitkä scroll ei
-				     saa piilottaa työkalun olemassaoloa. -->
-				<div class="onpage" style="top: {segNavH}px">
-					<span class="muted">On this page:</span>
-					{#each [['tc-rate', 'Rate my team'], ['tc-fit', 'Fit checker'], ...(premium ? [['tc-planner', 'Transfer planner']] : []), ['tc-watchlist', 'Watchlist']] as [id, label] (id)}
-						<button type="button" onclick={() => jumpTo(id)}>{label}</button>
-					{/each}
-				</div>
-			{/if}
+			<!-- 30.7:n ankkuririvi ("fit checker yms hukkuu") korvattiin 4.9
+			     ToolRow'lla: sama ongelma, mutta ratkaisuna oma URL eika
+			     vieritys. -->
+			{#if segment === 'week' || show('rate-my-team')}
 			<div class="tool-card" id="tc-rate">
 				<RateTeam
 					{premium}
 					onUpgrade={goUpgrade}
 					weekMode={segment === 'week'}
-					onGoToTeam={() => (segment = 'team')}
+					onGoToTeam={() => goto('/team')}
 				/>
 			</div>
+			{/if}
 			{#if segment === 'team'}
 				<!-- Järjestys 30.7: fit checker HETI raten alle (esikauden
 				     sankarityökalu), watchlist viimeiseksi (pisin lista).
@@ -433,11 +424,15 @@
 				     Planner saa koko leveyden: se sisältää taulukoita joita
 				     puolikas sarake ei kanna. -->
 				<div class="team-grid">
-					<div class="tool-card" id="tc-fit">
-						<FitChecker onOpenRateTeam={() => (segment = 'team')} />
-					</div>
-					<div class="tool-card" id="tc-watchlist"><Watchlist {premium} /></div>
-					{#if premium}
+					{#if show('fit-checker')}
+						<div class="tool-card" id="tc-fit">
+							<FitChecker onOpenRateTeam={() => goto('/team/rate-my-team')} />
+						</div>
+					{/if}
+					{#if show('watchlist')}
+						<div class="tool-card" id="tc-watchlist"><Watchlist {premium} /></div>
+					{/if}
+					{#if premium && show('transfer-planner')}
 						<div class="tool-card span-all" id="tc-planner"><TransferPlanner /></div>
 					{/if}
 				</div>
@@ -445,14 +440,10 @@
 		</div>
 	{:else if segment === 'players'}
 		<div id="panel-players" role="tabpanel" aria-labelledby="seg-players">
-			<div class="onpage" style="top: {segNavH}px">
-				<span class="muted">On this page:</span>
-				{#each [['pc-card', 'Player card'], ...(premium ? [['pc-captain', 'Captain ranker'], ['pc-swing', 'Fixture swing'], ['pc-xp', 'Player xP']] : []), ['pc-cs', 'Clean sheets'], ['pc-value', 'Value'], ['pc-leaders', 'Leaders'], ...(premium ? [['pc-diff', 'Differentials'], ['pc-repl', 'Replacements'], ['pc-compare', 'Compare']] : [])] as [id, label] (id)}
-					<button type="button" onclick={() => jumpTo(id)}>{label}</button>
-				{/each}
-			</div>
-			<div class="tool-card" id="pc-card"><PlayerCard {premium} /></div>
-			{#if premium}
+			{#if show('player-card')}
+				<div class="tool-card" id="pc-card"><PlayerCard {premium} /></div>
+			{/if}
+			{#if premium && (show('captain-ranker') || show('fixture-swing') || show('player-xp'))}
 				{#if xpError}
 					<p class="banner error">
 						Could not load xP projections right now. Please try again shortly.
@@ -464,11 +455,17 @@
 					     laukeaa aina kun available=false, ei vain esikaudella. -->
 					<p class="banner success">xP projections are not available for this gameweek yet.</p>
 				{:else}
-					<div class="tool-card" id="pc-captain"><CaptainRanker data={xp} /></div>
-					<div class="tool-card" id="pc-swing"><FixtureSwing data={xp} /></div>
-					<div class="tool-card" id="pc-xp"><XpTable data={xp} /></div>
+					{#if show('captain-ranker')}
+						<div class="tool-card" id="pc-captain"><CaptainRanker data={xp} /></div>
+					{/if}
+					{#if show('fixture-swing')}
+						<div class="tool-card" id="pc-swing"><FixtureSwing data={xp} /></div>
+					{/if}
+					{#if show('player-xp')}
+						<div class="tool-card" id="pc-xp"><XpTable data={xp} /></div>
+					{/if}
 				{/if}
-			{:else}
+			{:else if show('captain-ranker') || show('fixture-swing') || show('player-xp')}
 				<!-- Sama .locked-kaava kuin Predict/Fixtures-lohkoissa. -->
 				<div class="locked">
 					<p>
@@ -478,83 +475,70 @@
 					<button type="button" class="primary" onclick={goUpgrade}>See Premium</button>
 				</div>
 			{/if}
-			<div id="pc-cs"><CleanSheets /></div>
-			<div class="tool-card" id="pc-value"><Value {premium} onUpgrade={goUpgrade} /></div>
-			<div class="tool-card" id="pc-leaders"><Leaders {premium} onUpgrade={goUpgrade} /></div>
+			{#if show('clean-sheets')}
+				<div id="pc-cs"><CleanSheets /></div>
+			{/if}
+			{#if show('value')}
+				<div class="tool-card" id="pc-value"><Value {premium} onUpgrade={goUpgrade} /></div>
+			{/if}
+			{#if show('leaders')}
+				<div class="tool-card" id="pc-leaders"><Leaders {premium} onUpgrade={goUpgrade} /></div>
+			{/if}
 			{#if premium}
-				<div class="tool-card" id="pc-diff"><Differentials /></div>
+				{#if show('differentials')}
+					<div class="tool-card" id="pc-diff"><Differentials /></div>
+				{/if}
 				{#if xp}
 					<!-- ROWAN-REPLACEMENTS (2.9): "who replaces X", luojan tilaama muoto. -->
-					<div class="tool-card" id="pc-repl"><Replacements {xp} /></div>
-					<div class="tool-card" id="pc-compare"><ComparePlayers {xp} /></div>
+					{#if show('replacements')}
+						<div class="tool-card" id="pc-repl"><Replacements {xp} /></div>
+					{/if}
+					{#if show('compare')}
+						<div class="tool-card" id="pc-compare"><ComparePlayers {xp} /></div>
+					{/if}
 				{/if}
 			{/if}
 		</div>
 	{:else if segment === 'tools'}
 		<div id="panel-tools" role="tabpanel" aria-labelledby="seg-tools">
 			{#if openTool === null}
-				<!-- Hakemisto-grid: nimi + rivin kuvaus + premium-badge. Sama
-				     kaava kuin mobiilin P1 Tools-segmentissä. -->
-				<div class="tools-grid">
-					{#each TOOL_CARDS as t (t.key)}
-						<button type="button" class="tool-card-btn" onclick={() => openToolCard(t)}>
-							<span class="tool-card-head">
-								<span class="tool-card-title">{t.title}</span>
-								{#if t.premium && !premium}<span class="tool-lock">Premium</span>{/if}
-							</span>
-							<span class="tool-card-desc muted">{t.desc}</span>
-						</button>
-					{/each}
-				</div>
+				<!-- Hakemisto renderoitiin jo navin alla (ToolDirectory). -->
 			{:else}
-				<button type="button" class="back-link" onclick={() => (openTool = null)}>
-					‹ All tools
-				</button>
-				{#if openTool === 'chips'}
-					<div class="tool-card"><ChipEv /></div>
+				<a class="back-link" href="/tools">‹ All tools</a>
+				{#if openTool === 'chip-timing'}
+					<div class="tool-card" id="tl-chips"><ChipEv /></div>
 					<div class="tool-card"><WildcardPlan /></div>
-				{:else if openTool === 'chains'}
-					<div class="tool-card"><PlanChains /></div>
-				{:else if openTool === 'edge'}
-					<div class="tool-card"><EdgeMode /></div>
+				{:else if openTool === 'transfer-chains'}
+					<div class="tool-card" id="tl-chains"><PlanChains /></div>
+				{:else if openTool === 'edge-mode'}
+					<div class="tool-card" id="tl-edge"><EdgeMode /></div>
 				{:else}
-					<div class="tool-card">
-						<MiniLeague onUseTeam={() => (segment = 'team')} />
+					<div class="tool-card" id="tl-league">
+						<MiniLeague onUseTeam={() => goto('/team')} />
 					</div>
 				{/if}
 			{/if}
 		</div>
 	{:else if segment === 'prices'}
 		<div id="panel-prices" role="tabpanel" aria-labelledby="seg-prices">
-			<div class="tool-card"><PriceWatch /></div>
+			<div class="tool-card" id="pr-watch"><PriceWatch /></div>
 		</div>
 	{:else}
 		<div id="panel-matches" role="tabpanel" aria-labelledby="seg-matches">
 			<!-- Matches-alavalinta: kolme ottelutyökalua yhdessä ryhmässä
 			     (Villen valinta: oma ryhmä). -->
-			<div class="matches-nav" role="tablist" aria-label="Match tools">
-				{#each [['predict', 'Predict a match'], ['fixtures', 'Fixtures'], ['standings', 'Table']] as [id, label] (id)}
-					<button
-						type="button"
-						role="tab"
-						aria-selected={matchesView === id}
-						class:active={matchesView === id}
-						onclick={() => (matchesView = id as typeof matchesView)}
-					>
-						{label}
-					</button>
-				{/each}
-			</div>
+			<!-- 4.9: alavalinta on ToolRow'ssa navin alla (linkit omiin URLeihin),
+			     joten oma nappirivi poistui. Nakyma tulee reitista. -->
 			{#if matchesView === 'predict'}
-				<div class="tool-card">
+				<div class="tool-card" id="mt-predict">
 					<Predict {premium} onUpgrade={goUpgrade} prefill={predictPrefill} />
 				</div>
 			{:else if matchesView === 'fixtures'}
-				<div class="tool-card">
+				<div class="tool-card" id="mt-fixtures">
 					<Fixtures {premium} onUpgrade={goUpgrade} onPredict={(l, h, a) => goPredict(l, h, a)} />
 				</div>
 			{:else}
-				<div class="tool-card"><Standings /></div>
+				<div class="tool-card" id="mt-standings"><Standings /></div>
 			{/if}
 		</div>
 	{/if}
@@ -602,6 +586,8 @@
 		color: var(--accent);
 	}
 	.back-link {
+		display: inline-block;
+		text-decoration: none;
 		background: none;
 		border: none;
 		color: var(--text-muted);
@@ -612,67 +598,6 @@
 	}
 	.back-link:hover {
 		color: var(--text);
-	}
-	.tools-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-		gap: var(--s-3);
-	}
-	.tool-card-btn {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: var(--s-1);
-		text-align: left;
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: var(--s-4);
-		font: inherit;
-		color: var(--text);
-		cursor: pointer;
-	}
-	.tool-card-btn:hover {
-		border-color: var(--accent);
-	}
-	.tool-card-head {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2);
-	}
-	.tool-card-title {
-		font-weight: 700;
-	}
-	.tool-lock {
-		font-size: var(--step--1);
-		color: var(--text-muted);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 0 0.6em;
-	}
-	.tool-card-desc {
-		font-size: var(--step--1);
-	}
-	.matches-nav {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-2);
-		margin: 0 0 var(--s-4);
-	}
-	.matches-nav button {
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		color: var(--text-muted);
-		font-size: var(--step--1);
-		font-weight: 700;
-		padding: 0.4em 1em;
-		min-height: 40px;
-	}
-	.matches-nav button.active {
-		background: transparent;
-		border-color: var(--accent);
-		color: var(--accent-strong);
 	}
 	.locked {
 		border: 1px solid var(--border);
@@ -686,22 +611,6 @@
 	}
 	/* 30.7: ryhmän sisällysrivi — kevyet tekstilinkit, ei kilpaile
 	   segmenttinauhan pillien kanssa */
-	.onpage {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--s-1) var(--s-3);
-		font-size: var(--step--1);
-		margin: 0 0 var(--s-3);
-		/* 6.8 (Villen palaute, sama kuin mobiilissa): rivi pysyy näkyvissä
-		   scrollatessa — työkalusta toiseen ilman paluuta ylös. top tulee
-		   inline-tyylistä (mitattu segnav-korkeus → asettuu sen alle). */
-		position: sticky;
-		z-index: 10;
-		background: var(--bg);
-		padding: var(--s-2) 0;
-		border-bottom: 1px solid var(--border);
-	}
 	/* 6.8: ylätabit mukaan scrolliin — Players → My team ilman paluuta ylös */
 	/* 14.8: My teamin työkalut kahteen sarakkeeseen leveillä ruuduilla.
 	   `minmax(0, 1fr)` on pakollinen — ilman sitä kortin sisällä oleva
@@ -727,19 +636,5 @@
 		top: 0;
 		z-index: 20;
 		background: var(--bg);
-	}
-	.onpage button {
-		background: none;
-		border: none;
-		padding: 0;
-		font: inherit;
-		font-size: var(--step--1);
-		color: var(--accent-strong);
-		text-decoration: underline;
-		text-underline-offset: 3px;
-		cursor: pointer;
-	}
-	.onpage button:hover {
-		color: var(--text);
 	}
 </style>

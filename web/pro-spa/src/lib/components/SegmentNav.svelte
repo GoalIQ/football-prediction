@@ -1,36 +1,19 @@
 <script lang="ts" module>
 	// #48: jaettu segmenttinavigaatio FPL-työkaluille (free + pro pinnat).
-	export type Segment = { id: string; label: string };
+	// 4.9.2026: segmentit ovat nyt REITTEJA eivat hash-tilaa, joten napit ovat
+	// linkkeja. Kaytannon ero kayttajalle: paluunappi toimii, segmentin voi
+	// avata uuteen valilehteen ja jokaisella on oma otsikko. Ks. `$lib/tools`.
+	export type Segment = { id: string; label: string; href: string };
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { replaceState } from '$app/navigation';
-
 	let {
 		segments,
-		active = $bindable(),
+		active,
 		label = 'FPL tools'
 	}: { segments: Segment[]; active: string; label?: string } = $props();
 
-	// Halpa deep-link: #tools=<segmentti>. Luetaan kerran mountissa; kirjoitus
-	// replaceState:lla ($app/navigation) → ei taistele SvelteKit-routerin
-	// kanssa eikä kasvata selaimen historiaa.
-	onMount(() => {
-		const m = window.location.hash.match(/^#tools=([\w-]+)$/);
-		if (m && segments.some((s) => s.id === m[1])) active = m[1];
-	});
-
-	let tabEls: HTMLButtonElement[] = [];
-
-	function select(id: string) {
-		active = id;
-		try {
-			replaceState(`#tools=${id}`, {});
-		} catch {
-			// Router ei vielä valmis (esim. testiympäristö): segmentti vaihtuu silti.
-		}
-	}
+	let tabEls: HTMLAnchorElement[] = [];
 
 	function onKeydown(e: KeyboardEvent, i: number) {
 		const last = segments.length - 1;
@@ -41,27 +24,27 @@
 		else if (e.key === 'End') next = last;
 		if (next == null) return;
 		e.preventDefault();
-		select(segments[next].id);
+		// Fokus siirtyy, valinta tapahtuu Enterilla/valilyonnilla kuten
+		// linkeilla yleensa — nuolinaviagointi ei enaa vaihda sivua vahingossa.
 		tabEls[next]?.focus();
 	}
 </script>
 
 <div class="seg-nav" role="tablist" aria-label={label}>
 	{#each segments as s, i (s.id)}
-		<button
+		<a
 			bind:this={tabEls[i]}
 			id="seg-{s.id}"
-			type="button"
+			href={s.href}
 			role="tab"
 			aria-selected={active === s.id}
 			aria-controls="panel-{s.id}"
 			tabindex={active === s.id ? 0 : -1}
 			class:active={active === s.id}
-			onclick={() => select(s.id)}
 			onkeydown={(e) => onKeydown(e, i)}
 		>
 			{s.label}
-		</button>
+		</a>
 	{/each}
 </div>
 
@@ -70,9 +53,11 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--s-2);
-		margin: var(--s-4) 0 var(--s-6);
+		margin: var(--s-4) 0 var(--s-4);
 	}
-	.seg-nav button {
+	.seg-nav a {
+		display: inline-flex;
+		align-items: center;
 		background: var(--surface);
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
@@ -81,18 +66,19 @@
 		font-weight: 700;
 		padding: 0.5em 1.2em;
 		min-height: 44px;
+		text-decoration: none;
 	}
-	.seg-nav button:hover {
+	.seg-nav a:hover {
 		color: var(--text);
 		border-color: var(--text-muted);
 	}
 	/* 26.7 classic: aktiivinen segmentti = kulta-outline, ei täyttöä */
-	.seg-nav button.active {
+	.seg-nav a.active {
 		background: transparent;
 		border-color: var(--accent);
 		color: var(--accent-strong);
 	}
-	.seg-nav button.active:hover {
+	.seg-nav a.active:hover {
 		background: rgba(245, 197, 66, 0.08);
 		border-color: var(--accent-strong);
 	}
