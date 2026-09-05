@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.mobile_css import (  # noqa: E402
     BEGIN_MARKER,
+    REF_BRIDGE_TAG,
     COLS_JS_BEGIN,
     COLS_JS_END,
     END_MARKER,
@@ -83,6 +84,15 @@ def _apply_cols_js(html: str) -> str:
     muuttamattomana -- kutsuja raportoi sen.
     """
     html = _strip_block(html, COLS_JS_BEGIN, COLS_JS_END)
+    # KERTALUONTOINEN SIIVOUS + PYSYVA VARMISTUS (5.9): ennen taman paivan
+    # korjausta ref-silta liitettiin markkerien ULKOPUOLELLE, joten levylla
+    # olevilla sivuilla on 1-3 irrallista tagia joita `_strip_block` ei
+    # koske. Poistetaan ne tassa ennen uuden lohkon liittamista.
+    #
+    # Tama jaa pysyvasti paikalleen eika ole vain migraatio: jos joku lisaa
+    # tagin kasin johonkin sivuun, se ei saa jaada kahdentumaan. Sillan
+    # ainoa oikea sijainti on generoidun lohkon sisalla.
+    html = html.replace(REF_BRIDGE_TAG, "")
     if "</body>" not in html:
         return html
     cut = html.rindex("</body>")

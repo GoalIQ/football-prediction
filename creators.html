@@ -136,10 +136,57 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 28px 20px; text-align: center; margin-top: 60px; }
   footer a { color: var(--muted); }
   footer a:hover { color: var(--amber); }
+</style>
+<style>
+  .block { margin: 0 0 40px; }
+  .block h2 { margin: 0 0 12px; }
+  ul.plain { margin: 0 0 12px; padding-left: 18px; }
+  ul.plain li { margin: 0 0 10px; line-height: 1.55; }
+  table.rates { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  table.rates th, table.rates td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.14); }
+  table.rates th { font-weight: 600; }
+  .note { font-size: .92rem; opacity: .8; }
+  a.cta { display: inline-block; margin-top: 8px; padding: 12px 18px; border-radius: 2px;
+          background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; }
+
+/* --- 4 Sep 2026: two typefaces, one job each ------------------------------
+   Mono is right for numbers: it keeps columns straight and digits
+   comparable, and it is what the brand is recognised by. It is wrong for
+   prose, because it was designed for code, so words do not form
+   recognisable shapes and reading slows down. Measured before this change:
+   a single typeface across 2,559 words of body copy on the landing page,
+   nine different body sizes including 13.6px, and lines up to 125
+   characters where 45-75 is the readable range. Sans is the sibling of the
+   same family, so the pairing does not fight the brand and adds no new
+   loading origin. */
+:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;}
+h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.bar,.ticker,.record-chip,.stat b,
+table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
+.toolnav,.clubnav,.share,.lbctl,.lb{font-family:var(--mono);}
+/* Reading measure: prose only, never a table, so no column is squeezed. */
+p,.lede,.hint,.note,.fineprint,li{max-width:68ch;}
+td p,th p,table p,td li,table li{max-width:none;}
+/* Touch targets. Apple asks 44px, Google 48dp. Measured at 390px wide
+   before this change: 34 links and buttons under 32px tall, on the device
+   FPL is actually played on. Height comes from padding, so nothing moves. */
+@media (hover:none){
+  nav a,footer a,.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,.link-row a{
+    display:inline-flex;align-items:center;min-height:44px;}
+}
 /* GEN:MOBILE-CSS */
 /* Note shown only on narrow screens. Hidden by default so that pages on
    wide screens do not change at all. */
 .m-only{display:none;}
+
+/* A CAVEAT IS NOT A STATISTIC (26 Aug). A trimmed column's number may live
+   behind "Show all columns"; a reason not to trust the number may not. This
+   subline renders at every width, so the promoted-side caveat is on the page
+   for a desktop reader too -- it used to be .m-only, which left the desktop
+   reader with the word in a tooltip inside a column headed "Squad turnover". */
+td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
+  padding-top:2px;}
 
 @media (max-width:560px){
   .m-only{display:block;}
@@ -294,45 +341,6 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 }
 /* /GEN:MOBILE-CSS */
 </style>
-<style>
-  .block { margin: 0 0 40px; }
-  .block h2 { margin: 0 0 12px; }
-  ul.plain { margin: 0 0 12px; padding-left: 18px; }
-  ul.plain li { margin: 0 0 10px; line-height: 1.55; }
-  table.rates { width: 100%; border-collapse: collapse; margin: 12px 0; }
-  table.rates th, table.rates td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.14); }
-  table.rates th { font-weight: 600; }
-  .note { font-size: .92rem; opacity: .8; }
-  a.cta { display: inline-block; margin-top: 8px; padding: 12px 18px; border-radius: 2px;
-          background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; }
-
-/* --- 4 Sep 2026: two typefaces, one job each ------------------------------
-   Mono is right for numbers: it keeps columns straight and digits
-   comparable, and it is what the brand is recognised by. It is wrong for
-   prose, because it was designed for code, so words do not form
-   recognisable shapes and reading slows down. Measured before this change:
-   a single typeface across 2,559 words of body copy on the landing page,
-   nine different body sizes including 13.6px, and lines up to 125
-   characters where 45-75 is the readable range. Sans is the sibling of the
-   same family, so the pairing does not fight the brand and adds no new
-   loading origin. */
-:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
-body{font-family:var(--sans);font-size:16px;line-height:1.65;}
-h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.bar,.ticker,.record-chip,.stat b,
-table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
-.toolnav,.clubnav,.share,.lbctl,.lb{font-family:var(--mono);}
-/* Reading measure: prose only, never a table, so no column is squeezed. */
-p,.lede,.hint,.note,.fineprint,li{max-width:68ch;}
-td p,th p,table p,td li,table li{max-width:none;}
-/* Touch targets. Apple asks 44px, Google 48dp. Measured at 390px wide
-   before this change: 34 links and buttons under 32px tall, on the device
-   FPL is actually played on. Height comes from padding, so nothing moves. */
-@media (hover:none){
-  nav a,footer a,.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,.link-row a{
-    display:inline-flex;align-items:center;min-height:44px;}
-}
-</style>
 </head>
 <body>
 <div class="hero-shell">
@@ -438,6 +446,61 @@ td p,th p,table p,td li,table li{max-width:none;}
 <footer>
   © 2026 GoalIQ &middot; <a href="/predictions">Match predictions</a> &middot; <a href="/fpl.html">FPL clean sheets &amp; FDR</a> &middot; <a href="https://pro.goaliq.app">GoalIQ Premium (web)</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/faq.html">FAQ</a>
 </footer>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
 <script defer src="/ref-bridge.js"></script>
 </body>
 </html>

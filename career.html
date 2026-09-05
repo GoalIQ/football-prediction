@@ -16,12 +16,12 @@
 <meta property="og:description" content="Your FPL career on one card: best season, all-time points and rank history. Free, no login." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://goaliq.app/career" />
-<meta property="og:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+<meta property="og:image" content="https://goaliq.app/assets/brand/og/career-1200x630.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@goaliqapp" />
-<meta name="twitter:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png" />
+<meta name="twitter:image" content="https://goaliq.app/assets/brand/og/career-1200x630.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,6 +98,12 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   h1 span { color: var(--gold-deep,#F5C542); }
   .lede { font-size: 18px; color: var(--muted); max-width: 56ch; line-height: 1.7; }
   .entry-form { margin: 28px 0 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+  /* Hand-off box. Same language as the other call-outs: an amber rule on
+     the left, no fill, no shadow. */
+  .next-step { border:1px solid var(--line); border-left:3px solid var(--amber);
+    padding:16px 18px; margin-top:22px; }
+  .next-step h3 { margin:0 0 6px; font-size:17px; }
+  .next-step p { margin:0 0 12px; color:var(--muted); max-width:60ch; }
   .entry-form input {
     flex: 1 1 220px; font: inherit; font-size: 17px; padding: 12px 16px;
     border: 1px solid var(--line); border-radius: 0; background: var(--card); color: var(--text);
@@ -130,10 +136,45 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 28px 20px; text-align: center; margin-top: 60px; }
   footer a { color: var(--muted); }
   footer a:hover { color: var(--amber); }
+
+/* --- 4 Sep 2026: two typefaces, one job each ------------------------------
+   Mono is right for numbers: it keeps columns straight and digits
+   comparable, and it is what the brand is recognised by. It is wrong for
+   prose, because it was designed for code, so words do not form
+   recognisable shapes and reading slows down. Measured before this change:
+   a single typeface across 2,559 words of body copy on the landing page,
+   nine different body sizes including 13.6px, and lines up to 125
+   characters where 45-75 is the readable range. Sans is the sibling of the
+   same family, so the pairing does not fight the brand and adds no new
+   loading origin. */
+:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+body{font-family:var(--sans);font-size:16px;line-height:1.65;}
+h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.bar,.ticker,.record-chip,.stat b,
+table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
+.toolnav,.clubnav,.share,.lbctl,.lb{font-family:var(--mono);}
+/* Reading measure: prose only, never a table, so no column is squeezed. */
+p,.lede,.hint,.note,.fineprint,li{max-width:68ch;}
+td p,th p,table p,td li,table li{max-width:none;}
+/* Touch targets. Apple asks 44px, Google 48dp. Measured at 390px wide
+   before this change: 34 links and buttons under 32px tall, on the device
+   FPL is actually played on. Height comes from padding, so nothing moves. */
+@media (hover:none){
+  nav a,footer a,.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,.link-row a{
+    display:inline-flex;align-items:center;min-height:44px;}
+}
 /* GEN:MOBILE-CSS */
 /* Note shown only on narrow screens. Hidden by default so that pages on
    wide screens do not change at all. */
 .m-only{display:none;}
+
+/* A CAVEAT IS NOT A STATISTIC (26 Aug). A trimmed column's number may live
+   behind "Show all columns"; a reason not to trust the number may not. This
+   subline renders at every width, so the promoted-side caveat is on the page
+   for a desktop reader too -- it used to be .m-only, which left the desktop
+   reader with the word in a tooltip inside a column headed "Squad turnover". */
+td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
+  padding-top:2px;}
 
 @media (max-width:560px){
   .m-only{display:block;}
@@ -287,33 +328,6 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   .lb th,.lb td{padding:6px 3px;}
 }
 /* /GEN:MOBILE-CSS */
-
-/* --- 4 Sep 2026: two typefaces, one job each ------------------------------
-   Mono is right for numbers: it keeps columns straight and digits
-   comparable, and it is what the brand is recognised by. It is wrong for
-   prose, because it was designed for code, so words do not form
-   recognisable shapes and reading slows down. Measured before this change:
-   a single typeface across 2,559 words of body copy on the landing page,
-   nine different body sizes including 13.6px, and lines up to 125
-   characters where 45-75 is the readable range. Sans is the sibling of the
-   same family, so the pairing does not fight the brand and adds no new
-   loading origin. */
-:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
-body{font-family:var(--sans);font-size:16px;line-height:1.65;}
-h1,h2,h3,h4,.brand,.logo,.btn,.nav-cta,.bar,.ticker,.record-chip,.stat b,
-table,th,td,.num,.pick,.tflag,code,kbd,.mono,.tag,.chip,
-.toolnav,.clubnav,.share,.lbctl,.lb{font-family:var(--mono);}
-/* Reading measure: prose only, never a table, so no column is squeezed. */
-p,.lede,.hint,.note,.fineprint,li{max-width:68ch;}
-td p,th p,table p,td li,table li{max-width:none;}
-/* Touch targets. Apple asks 44px, Google 48dp. Measured at 390px wide
-   before this change: 34 links and buttons under 32px tall, on the device
-   FPL is actually played on. Height comes from padding, so nothing moves. */
-@media (hover:none){
-  nav a,footer a,.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,.link-row a{
-    display:inline-flex;align-items:center;min-height:44px;}
-}
 </style>
 
 <!-- #85 GEO: page-level structured data (the page had no JSON-LD at all).
@@ -379,6 +393,17 @@ td p,th p,table p,td li,table li{max-width:none;}
       <button class="btn secondary" id="copyLinkBtn" type="button">Copy link</button>
     </div>
     <p class="fineprint">The squad projection uses GoalIQ model expected points against the strongest squad our search finds inside the 100.0m budget, which is a best effort and not a proven optimum - not FPL official numbers. For fun, not betting advice.</p>
+
+    <!-- Hand-off. This is the highest intent on the site: the visitor has
+         just given us their own squad. The next step used to be an app store
+         link, which threw that away. The SPA reads ?entry= and runs the
+         rating on arrival, so this lands on the answer, not on a form. -->
+    <div class="next-step" id="nextStep" hidden>
+      <h3>Same team, what does the model make of it?</h3>
+      <p>Your squad rated out of 100, the captain pick for this gameweek and the line that
+        is costing you most. Free, no account needed.</p>
+      <a class="btn" id="rateLink" href="https://pro.goaliq.app/team" data-cta="career-rate">Rate this team &#9656;</a>
+    </div>
   </div>
 
   <div class="get-app" id="get">
@@ -653,6 +678,8 @@ td p,th p,table p,td li,table li{max-width:none;}
     currentEntry = entry;
     setStatus('Fetching your FPL history…');
     stage.classList.remove('visible');
+    var prevNext = document.getElementById('nextStep');
+    if (prevNext) prevNext.hidden = true;
     var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
     Promise.all([
       fetch(API + '/api/fantasy/career?entry=' + encodeURIComponent(entry)),
@@ -670,6 +697,17 @@ td p,th p,table p,td li,table li{max-width:none;}
       drawCard(d);
       stage.classList.add('visible');
       setStatus('');
+      // Build the hand-off link only after the card succeeded: before that
+      // the entry ID is unverified and the link would land on an error.
+      try {
+        var next = document.getElementById('nextStep');
+        var rate = document.getElementById('rateLink');
+        if (next && rate) {
+          rate.href = 'https://pro.goaliq.app/team?entry=' + encodeURIComponent(entry) +
+            '&src=career&srcp=career';
+          next.hidden = false;
+        }
+      } catch (e) { /* a missing link must never break the card */ }
       if (window.posthog) posthog.capture('career_card_generated', { source: 'career_page' });
       try {
         var url = new URL(location.href);

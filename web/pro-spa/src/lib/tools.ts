@@ -63,7 +63,13 @@ export const GROUPS: Group[] = [
 	{ id: 'team', label: 'My team', title: 'My team' },
 	{ id: 'players', label: 'Players', title: 'Players' },
 	{ id: 'tools', label: 'Tools', title: 'Tools' },
-	{ id: 'prices', label: 'Prices', title: 'Prices' },
+	/* 5.9 (auditointi C1): label oli "Prices". Se on FPL:n PELAAJIEN
+	   hintamuutosvahti, mutta kavija joka etsii "paljonko tama maksaa"
+	   klikkaa tasan sita — ja paatyy vaaraan nakymaan. Reitti-id `prices`
+	   sailyy (vanhat linkit ja jaetut URLit eivat saa rikkoutua), vain
+	   nakyva nimi tarkentuu. Tilauksen hinta on nyt omalla reitillaan
+	   /pricing, ks. routes/pricing. */
+	{ id: 'prices', label: 'Price watch', title: 'Price watch' },
 	{ id: 'matches', label: 'Matches', title: 'Matches' }
 ];
 

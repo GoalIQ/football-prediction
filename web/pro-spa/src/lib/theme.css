@@ -632,3 +632,188 @@ tbody tr:hover td {
 		overflow-x: hidden;
 	}
 }
+
+/* ==========================================================================
+   5.9.2026 — ILME: kaksi kirjasinta, yksi aani per nakyma
+   --------------------------------------------------------------------------
+   Villen havainto 5.9: "pro.goaliq.app on ilmeeltaan tosi heikko, ja sen
+   pitaa olla tuote edella". Auditointi samana paivana mittasi kolme syyta,
+   ja ne ovat kaikki tassa lohkossa:
+
+   1. YKSI KIRJASIN KAIKKEEN. 28.7 teletext-paatos antoi monospacen myos
+      proosalle. Se on oikea luvuille (sarakkeet pysyvat suorassa, numerot
+      ovat vertailukelpoisia) ja vaara sanoille: mono on suunniteltu koodille,
+      joten sanahahmot eivat muodostu ja lukeminen hidastuu. Hub korjasi taman
+      4.9 (index.html, "two typefaces, one job each"); tama on sen pari.
+      Sans on saman perheen sisar, joten brandi ei muutu eika uutta
+      latausoriginia tule.
+   2. JOKAINEN NAPPI OLI OUTLINE. 26.7:n saanto "primary stays an outline"
+      teki jokaisesta nakymasta tasapainoisen mutta aanettomat: mikaan ei
+      kerro mita tehdaan seuraavaksi. Tama on maksutuote, jonka pitaa myyda,
+      joten primary on nyt tayttonappi tasan kuten hubissa (amber-tausta,
+      ink-teksti, 12.20:1). Sivulla saa olla YKSI. Muut jaavat outlineksi,
+      eli luvut pysyvat yha sivun aanekkaimpana asiana.
+   3. OTSIKOT HUUSIVAT KAIKILLA TASOILLA. h1-h3 olivat versaaleja tiukalla
+      valistyksella. Kortin sisainen h3 versaalina lukee otsikkopalkkina eika
+      korttina. h1/h2 pysyvat versaalina (ne ovat sivun rakenne), h3 laskee
+      normaaliksi.
+
+   EI MUUTU: paletti, litteys (--radius 0), varjottomuus, hiusviivat. Ne ovat
+   brandi. Muuttuu vain se, mika teki niista vaikeasti luettavia. */
+
+:root {
+	/* --font-sans on 28.7 alkaen osoittanut monospaceen. Nimi jaa (200+
+	   viittausta komponenteissa) mutta arvo palaa groteskiksi; datalle on nyt
+	   oma token. Ala kayta --font-sansia numeroille. */
+	--font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		'Helvetica Neue', Arial, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	/* --font-display = brandi ja otsikot = mono. Se on se, josta GoalIQ
+	   tunnistetaan, eika se ole proosaa. */
+	--font-display: var(--font-mono);
+	/* proosan mitta: 45-75 merkkia on luettava alue, 68ch osuu sen sisaan
+	   myos suurimmalla askelmalla. */
+	--measure: 68ch;
+}
+
+body {
+	font-family: var(--font-sans);
+	/* 1.5 oli koodirivivali. Proosa tarvitsee ilmaa. */
+	line-height: 1.65;
+}
+
+/* Data pysyy monona: taulukko luetaan silmailemalla, ei lukemalla.
+   .num/.mono/.tag/.chip ovat samat luokkanimet kuin hubissa, jotta sama
+   saanto siirtyy pinnalta toiselle ilman kaannosta. */
+table,
+th,
+td,
+.num,
+.mono,
+.tag,
+.chip,
+.pill,
+.badge,
+.brand,
+.logo,
+code,
+kbd,
+time,
+[data-mono] {
+	font-family: var(--font-mono);
+}
+
+/* Numerot samaan leveyteen kaikkialla: ilman tata sarake nykii kun luku
+   vaihtuu 9:sta 10:een live-paivityksessa. */
+table,
+.num,
+.mono {
+	font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2 {
+	font-family: var(--font-display);
+}
+
+/* h3 on kortin otsikko, ei sivun rakenne: sans, normaali kirjainkoko,
+   luettava koko. Versaali jai 1.8:n otsikkokielesta ja skaalautui tasolle,
+   jolle sita ei tarkoitettu. */
+h3 {
+	font-family: var(--font-sans);
+	text-transform: none;
+	letter-spacing: -0.01em;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+h4,
+h5 {
+	font-family: var(--font-sans);
+	text-transform: none;
+	letter-spacing: 0;
+	font-weight: 600;
+	line-height: 1.35;
+	margin: 0 0 var(--s-2);
+}
+
+/* Proosan mitta. Taulukon sisalla ei rajata: solu ei ole kappale. */
+p,
+.muted,
+li,
+.lede,
+.note,
+.hint {
+	max-width: var(--measure);
+}
+
+td p,
+th p,
+table p,
+td .muted,
+th .muted,
+.row p {
+	max-width: none;
+}
+
+/* PRIMARY = tayttonappi. Sama hex ja sama kontrastisuunta kuin hubin
+   .btn-primaryssa ja mobiilin theme.textOnAccentissa: ink amberin paalla,
+   12.20:1. Valkoinen amberilla olisi 1.45:1. */
+button.primary,
+a.btn-primary {
+	background: var(--accent);
+	color: var(--accent-contrast);
+	border-color: var(--accent);
+	font-weight: 700;
+	letter-spacing: 0.01em;
+}
+button.primary:hover,
+a.btn-primary:hover {
+	background: #ffd45e;
+	border-color: #ffd45e;
+	color: var(--accent-contrast);
+	text-decoration: none;
+}
+
+/* Linkkinappi: samat mitat kuin <button>, jotta <a href> ja <button> eivat
+   ole eri kokoisia vierekkain. Reitinvaihdon PITAA olla <a>, koska
+   keskiklikkaus ja "avaa uuteen valilehteen" katoavat napista. */
+a.btn-primary,
+a.btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5em;
+	min-height: 44px;
+	padding: 0.6em 1.3em;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	font-family: var(--font-sans);
+	font-size: var(--step-0);
+	font-weight: 600;
+	cursor: pointer;
+}
+a.btn-secondary {
+	color: var(--text);
+}
+a.btn-secondary:hover {
+	border-color: var(--accent);
+	color: var(--accent-strong);
+	text-decoration: none;
+}
+
+/* Kortin pinta erottui pohjasta 1.07:1, mika on kaytannossa ei lainkaan:
+   koko rakenne lepasi yhden hiusviivan varassa. Nostetaan pintaa sen verran
+   etta kortti on kortti, ilman etta paletti muuttuu (#141311 -> #17montaa
+   ei ole uusi vari, se on sama savy askelta ylempaa). */
+:root {
+	--giq-ink-2: #171512;
+	--giq-paper: #201d19;
+}
+
+/* Osioiden valiin ilmaa: mitattu ennen, ~24px kortin ja seuraavan otsikon
+   valissa, mika sitoo ne yhteen vaikka ne ovat eri asioita. */
+.tool-card + .tool-card,
+section + section {
+	margin-top: var(--s-8);
+}

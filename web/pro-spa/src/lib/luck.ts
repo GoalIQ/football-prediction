@@ -52,9 +52,14 @@ export function luckVerdict(
 	return null;
 }
 
+/* 5.9.2026: merkit olivat nopan ja paakallon emojit. Kolme syyta vaihtaa:
+   ne renderoityvat varillisina kuvina paletissa jossa on tasan nelja varia,
+   ne menevat myos jakokorttiin (kuva, jota emme voi tyylitella), ja ne
+   lukevat pelilta eivatka mallilta. Nuolet kantavat saman merkityksen ja
+   noudattavat samaa suuntalogiikkaa kuin sivuston muut deltat. */
 export const LUCK_MARK: Record<Exclude<LuckVerdict, null>, string> = {
-	lucky: '🎲',
-	robbed: '💀'
+	lucky: '▲',
+	robbed: '▼'
 };
 
 export interface SquadLuck {

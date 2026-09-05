@@ -36,3 +36,10 @@ export const POSTHOG_HOST =
 export const DISCLAIMER =
 	'GoalIQ model expected points: a model prediction, not betting advice, ' +
 	'and not a gambling service.';
+
+/** 5.9: Google-kirjautumisen nappi. POIS oletuksena — ks. `signInWithGoogle`
+ *  auth.svelte.ts:ssa. Kytketaan `VITE_GOOGLE_AUTH=1` vasta kun provider on
+ *  paalla Supabasessa. Vertailu '1':een eika truthy-testi: tyhja merkkijono
+ *  on eri asia kuin puuttuva arvo, ja `VITE_GOOGLE_AUTH=` (tyhja) ei saa
+ *  kytkea nappia paalle. */
+export const GOOGLE_AUTH_ENABLED = import.meta.env.VITE_GOOGLE_AUTH === '1';

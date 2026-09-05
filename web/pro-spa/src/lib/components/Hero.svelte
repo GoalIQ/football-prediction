@@ -8,6 +8,19 @@
 	// entitlement ei vielä ratkennut → ei badgea (ei väläytetä väärää tasoa).
 	let { onUpgrade }: { onUpgrade?: () => void } = $props();
 
+	/* Molemmat avaavat saman upgrade-nakyman: siella ovat seka hinnat etta
+	   LoginBox. Erillinen tapahtumanimi kertoo kumpaa nappia painettiin,
+	   koska "etsin hintaa" ja "olen jo asiakas" ovat eri aikomuksia ja
+	   niiden erottelu on koko syy nayttaa kaksi nappia yhden sijaan. */
+	function pricing() {
+		capture('pricing_tapped', { source: 'pro_header' });
+		onUpgrade?.();
+	}
+	function signIn() {
+		capture('sign_in_tapped', { source: 'pro_header' });
+		onUpgrade?.();
+	}
+
 	// #150: email pois persistentistä headerista → account-valikko (email +
 	// plan + salasanan vaihto/reset + sign out).
 	let menuOpen = $state(false);
@@ -82,7 +95,21 @@
 			</div>
 		</div>
 	</div>
-	{#if auth.user}
+	{#if auth.sessionResolved && !auth.user}
+		<!-- 5.9 (auditointi C1 + C3): kirjautumattomalle ylatunniste oli tyhja.
+		     Kaksi seurausta mitattiin samana paivana: palaavalle maksajalle ei
+		     ollut nakyvaa "Sign in" -polkua lainkaan, ja hintaa etsiva klikkasi
+		     "Prices"-valilehtea joka on FPL:n hintamuutosvahti.
+
+		     Hinta EI saa uutta omaa sivua: upgrade-nakyma (PremiumPreview) on jo
+		     hinnan ja sisallon lahde, ja toinen hintacopy olisi toinen paikka
+		     joka vanhenee eri tahtiin. Tassa annetaan silla nakyva nimi, ei
+		     kopiota. -->
+		<div class="session out">
+			<button class="ghost" onclick={pricing}>Pricing</button>
+			<button class="primary" onclick={signIn}>Sign in</button>
+		</div>
+	{:else if auth.user}
 		<div class="session" bind:this={sessionEl}>
 			{#if auth.sub?.plan === 'gw1-3-free'}
 				<!-- 16.8: ikkunan aikana badge ei saa vaittaa ostettua tilausta,
@@ -193,6 +220,17 @@
 		/* landingin linkkivari */
 		color: var(--giq-teal);
 	}
+	.session.out {
+		display: flex;
+		gap: var(--s-2);
+		align-items: center;
+	}
+	.session.out button {
+		min-height: 38px;
+		padding: 0.4em 1em;
+		font-size: 0.9rem;
+	}
+
 	.session {
 		display: flex;
 		align-items: center;

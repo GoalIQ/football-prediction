@@ -121,7 +121,18 @@ export async function initAuth(): Promise<void> {
 	});
 }
 
-function applySession(u: { id: string; email?: string | null } | null): void {
+function applySession(
+	u:
+		| {
+				id: string;
+				email?: string | null;
+				created_at?: string;
+				last_sign_in_at?: string | null;
+				app_metadata?: { provider?: string };
+				user_metadata?: Record<string, unknown>;
+		  }
+		| null
+): void {
 	const prevId = auth.user?.id;
 	auth.user = u ? { id: u.id, email: u.email ?? '' } : null;
 	// Uloskirjautuminen pudottaa jaetun profiilirivin heti (hygienia jaetulla
@@ -134,6 +145,10 @@ function applySession(u: { id: string; email?: string | null } | null): void {
 	}
 	if (u && u.id !== prevId) {
 		identifyUser(u.id, u.email);
+		// OAuth-paluun jalkihoito (ref + draft). Fire-and-forget: se ei saa
+		// hidastaa entitlementin ratkeamista, ja epaonnistuessaan se jattaa
+		// tilin attribuoimattomaksi eika riko kirjautumista.
+		void adoptOAuthAccount(u as Parameters<typeof adoptOAuthAccount>[0]);
 		// P1-UX 6.8: cache-osuma renderöi entitlementin heti (premium-lohkot
 		// auki / paywall ilman "Checking subscription…" -odotusta); verkkohaku
 		// ajaa silti aina ja korjaa taustalla jos tila muuttui.
@@ -180,6 +195,75 @@ export async function signUp(email: string, password: string): Promise<string | 
 	clearDraft();
 	if (data.user) capture('signup_completed', ref ? { ref } : undefined, 'signup');
 	return null;
+}
+
+/**
+ * Google-kirjautuminen (5.9.2026, auditointi C2).
+ *
+ * Rekisteroityminen oli sahkoposti + salasana, ja toissijaisena
+ * `sendMagicLink`. Uuden salasanan keksiminen on suurin yksittainen pudotus
+ * juuri talla yleisolla: FPL-pelaaja tulee puhelimella, deadline mielessa,
+ * eika ole tullut perustamaan tilia.
+ *
+ * 🔴 KAKSI ASIAA JOTKA SALASANAPOLKU HOITAA JA TAMA EI HOIDA ITSESTAAN, ks.
+ *    `adoptOAuthAccount` alla: luojan ref ja tyhja draft. `signUp` liittaa
+ *    refin `options.data`an ja tyhjentaa draftin; OAuth-paluu ei kulje sen
+ *    lapi lainkaan, joten ilman adoptointia jokainen Googlella luotu tili
+ *    olisi (a) attribuoimaton luojalle ja (b) perinyt selaimen kokeiludraftin.
+ *    Molemmat viat loydettiin kerran jo salasanapolussa (16.8); ne eivat saa
+ *    palata uutta ovea pitkin.
+ *
+ * 🔴 KYTKIN: `VITE_GOOGLE_AUTH=1`. Nappi ei saa nakya ennen kuin provider on
+ *    kytketty paalle Supabasen dashboardissa (Authentication -> Providers ->
+ *    Google) ja redirect-URL `https://pro.goaliq.app` on sallittu. Ilman sita
+ *    kavija saa "Unsupported provider" -virheen, mika on huonompi kuin ei
+ *    nappia lainkaan. Oletus on POIS, eli deployaaminen on turvallista
+ *    ennen kuin kytkenta on tehty.
+ */
+export async function signInWithGoogle(): Promise<string | null> {
+	const { error } = await supabase.auth.signInWithOAuth({
+		provider: 'google',
+		options: { redirectTo: window.location.origin }
+	});
+	// Onnistuessa selain on jo matkalla Googlelle, joten tata riviä ei
+	// kaytannossa nahda; virhe palautetaan lomakkeelle kuten muutkin.
+	return error ? error.message : null;
+}
+
+/**
+ * OAuth-paluun jalkihoito. Ajetaan kerran per tunnistettu kayttaja.
+ *
+ * `created_at` vs `last_sign_in_at`: uusi tili luodaan ja kirjataan sisaan
+ * samalla sekunnilla, joten alle kahden minuutin ero tarkoittaa "tama tili
+ * syntyi juuri nyt". Palaavalle kayttajalle ero on paivia. Kynnys on
+ * tarkoituksella valja: vaara positiivinen tyhjentaisi draftin jota kayttaja
+ * ei ole viela tallentanut tilille, vaara negatiivinen jattaisi kokeiludraftin
+ * tuoreelle tilille — jalkimmainen on se vika joka mitattiin 16.8, joten
+ * epavarmassa tapauksessa tyhjennetaan.
+ */
+async function adoptOAuthAccount(u: {
+	id: string;
+	created_at?: string;
+	last_sign_in_at?: string | null;
+	app_metadata?: { provider?: string };
+	user_metadata?: Record<string, unknown>;
+}): Promise<void> {
+	if (u.app_metadata?.provider === 'email') return;
+	const ref = storedRef();
+	// Refia EI ylikirjoiteta: ensimmainen luoja pitaa attribuution (sama
+	// saanto kuin captureRefissa).
+	if (ref && !u.user_metadata?.ref) {
+		await supabase.auth.updateUser({ data: { ref } });
+	}
+	const created = u.created_at ? Date.parse(u.created_at) : NaN;
+	const signedIn = u.last_sign_in_at ? Date.parse(u.last_sign_in_at) : NaN;
+	const fresh =
+		Number.isFinite(created) &&
+		(!Number.isFinite(signedIn) || Math.abs(signedIn - created) < 120_000);
+	if (fresh) {
+		clearDraft();
+		capture('signup_completed', ref ? { ref, method: 'google' } : { method: 'google' }, 'signup');
+	}
 }
 
 /** #101: kirjautumislinkki mailiin — guest-checkout-ostajan (ei salasanaa)

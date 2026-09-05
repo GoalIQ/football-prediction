@@ -14,7 +14,6 @@
 	rel="noopener"
 	onclick={() => capture('league_join_tapped', { source: 'pro_spa_banner' })}
 >
-	<span class="trophy" aria-hidden="true">🏆</span>
 	<span class="body">
 		<strong>Beat the Model | GoalIQ</strong>
 		<span class="text">
@@ -46,9 +45,6 @@
 	}
 	.league-banner:hover .cta {
 		text-decoration: underline;
-	}
-	.trophy {
-		font-size: 1.3rem;
 	}
 	.body strong {
 		font-family: var(--font-display);

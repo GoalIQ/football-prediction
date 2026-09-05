@@ -36,6 +36,7 @@
 	import LoginBox from './LoginBox.svelte';
 	import Paywall from './Paywall.svelte';
 	import PremiumPreview from './PremiumPreview.svelte';
+	import { showsProductIntro } from '$lib/introGate';
 	import SetPassword from './SetPassword.svelte';
 	import RateTeam from './RateTeam.svelte';
 	import FitChecker from './FitChecker.svelte';
@@ -293,7 +294,12 @@
      jonka annoimme luojille heidan ref-linkkiinsa. Heidan liikenteensa
      olisi laskeutunut sivulle joka ei kerro tarjouksesta.
      🔴 POISTA 12.9.2026 12:30 UTC jalkeen. -->
-{#if freePremiumWindowActive() && !auth.user}
+<!-- 5.9: `&& !showsProductIntro(...)`. Juuressa kirjautumattomalle
+     ProductIntro kertoo saman tarjouksen ja tarjoaa saman napin, joten
+     ilman tata ehtoa sivulla oli kaksi "Create a free account" -nappia ja
+     sama teksti kahdesti. Kortti jaa muille reiteille (/players, /tools,
+     ...), joissa esittelya ei ole. -->
+{#if freePremiumWindowActive() && !auth.user && !showsProductIntro(group, auth.sessionResolved, !!auth.user)}
 	<!-- 🔴 Villen havainto 16.8: "missa ohjeistus". Tama oli kappale jonka
 	     sisassa sisaankaynti oli tekstilinkkina, eli sivun tarkein teko nakyi
 	     samankokoisena kuin sen ymparilla oleva selitys. -->

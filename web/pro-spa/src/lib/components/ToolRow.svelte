@@ -36,7 +36,7 @@
 		{#each tools as t (t.slug)}
 			<a href="/{group}/{t.slug}" class:active={active === t.slug && !all}>
 				{t.title}
-				{#if t.tier === 'premium' && !premium}<span class="lock" aria-label="Premium">🔒</span
+				{#if t.tier === 'premium' && !premium}<span class="lock" aria-label="Premium">PRO</span
 					>{/if}
 			</a>
 		{/each}
@@ -71,8 +71,18 @@
 		color: var(--accent-strong);
 		border-color: var(--accent);
 	}
+	/* 5.9: oli varillinen emoji-lukko. Tekstitunniste lukee samana
+	   paletissa, monolla ja ruudunlukijalla (aria-label sailyi). opacity
+	   0.8 pudotti kontrastin AA:n alle pienessa koossa -> vari suoraan. */
 	.lock {
-		font-size: 0.85em;
-		opacity: 0.8;
+		font-family: var(--font-mono);
+		font-size: 0.7em;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: var(--accent);
+		border: 1px solid var(--accent);
+		padding: 0.1em 0.35em;
+		margin-left: 0.4em;
+		vertical-align: 0.08em;
 	}
 </style>

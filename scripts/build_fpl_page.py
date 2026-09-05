@@ -850,6 +850,17 @@ def _pick_pct(e: dict) -> str:
     return f" &middot; {p * 100:.0f}%"
 
 
+#: Montako gradattua rivia jaa suoraan DOM:iin; loput <template>-elementtiin.
+#: 300 riittaa kattamaan koko kuluvan kauden kotimaiset kierrokset, eli
+#: lukija nakee ilman klikkausta sen mita han tuli katsomaan.
+_RECORD_INLINE_ROWS = 300
+
+#: Pending-lohkon inline-rivit. Pienempi kuin gradatuilla: nama ovat
+#: pelaamattomia otteluita, ja lahin kickoff ensin -jarjestyksessa 60
+#: riittaa kattamaan seuraavan viikon kaikissa liigoissa.
+_PENDING_INLINE_ROWS = 60
+
+
 def record_table_html(preds: list[dict], c: dict) -> str:
     """#117: koko per-ottelu-record näkyväksi tauluksi. Vain gradatut rivit
     (result != null) — pending-ennusteet ovat lukittuja mutta pelaamattomia,
@@ -972,7 +983,48 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             '<th scope="col">Match</th><th scope="col">Pick</th>'
             '<th scope="col" class="m-hide">Logged</th>'
             '<th scope="col" class="m-hide">Status</th></tr></thead>'
-            "<tbody>" + "".join(pending_rows) + "</tbody></table></div>"
+            # 5.9 (auditointi E1, korjattu mittaus): SUURIN taulu ei ollut
+            # gradattu record vaan TAMA. Mitattu: 362 gradattua ottelua mutta
+            # 3 199 logattua ennustetta, eli pending-lohkossa on ~2 800 rivia
+            # ja se yksin on ~17 000 <td>:ta koko sivun 19 158:sta.
+            #
+            # Ensimmainen yritys templatoi gradatun taulun ja siirsi 62 rivia.
+            # Se on hyva muistutus siita, etta "suurin lohko" pitaa mitata
+            # eika paatella siita mika nayttaa tarkeimmalta.
+            #
+            # Pending-rivit ovat lisaksi turvallisin puolisko piilotettavaksi:
+            # ne ovat pelaamattomia otteluita, eli niilla ei ole
+            # hakukonearvoa eika lukija selaa niita lapi — lohkon otsikko
+            # kertoo lukumaaran, joka on se mika todistaa "logattu ennen
+            # kickoffia".
+            "<tbody>" + "".join(pending_rows[:_PENDING_INLINE_ROWS]) + "</tbody></table></div>"
+            + (
+                ""
+                if len(pending_rows) <= _PENDING_INLINE_ROWS
+                else (
+                    '<button class="rec-more" type="button" id="pendMore">'
+                    f"Show all {len(pending_rows)} logged, unplayed predictions</button>"
+                    '<template id="pendRest">'
+                    + "".join(pending_rows[_PENDING_INLINE_ROWS:])
+                    + "</template>"
+                    "<script>(function(){"
+                    "var b=document.getElementById('pendMore');"
+                    "var tpl=document.getElementById('pendRest');"
+                    "if(!b||!tpl)return;"
+                    "b.addEventListener('click',function(){"
+                    "var bodies=document.querySelectorAll('.rec-scroll tbody');"
+                    "var body=bodies[bodies.length-1];"
+                    "if(!body)return;"
+                    "body.appendChild(tpl.content.cloneNode(true));"
+                    "b.remove();"
+                    "var on=document.querySelector('.rec-filter.on');"
+                    "var v=on?on.getAttribute('data-comp'):'all';"
+                    "if(v&&v!=='all'){"
+                    "body.querySelectorAll('tr').forEach(function(tr){"
+                    "tr.style.display=(tr.getAttribute('data-comp')===v)?'':'none';});}"
+                    "});})();</script>"
+                )
+            )
         )
         if pending_rows
         else ""
@@ -1022,6 +1074,7 @@ def record_table_html(preds: list[dict], c: dict) -> str:
         ".rec-pending{color:var(--rec-pending,#8C6428);font-weight:700;font-size:12px;"
         "white-space:nowrap;}"
         ".rec-pct{color:var(--rec-pct,#54506B);font-variant-numeric:tabular-nums;}"
+        ".rec-more{margin:14px 0 0;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;background:none;border:1px solid currentColor;border-radius:2px;}"
         "</style>"
         + by_comp_html(c)
         + f'<div class="rec-filters" role="group" aria-label="Filter by competition">{filter_btns}</div>'
@@ -1034,8 +1087,59 @@ def record_table_html(preds: list[dict], c: dict) -> str:
         + '<th scope="col">Match</th><th scope="col">Pick</th>'
         + '<th scope="col">Result</th><th scope="col">1X2</th></tr></thead>'
         + "<tbody>"
-        + "".join(rows)
+        # 5.9 (auditointi E1): TAULUN LOPPUOSA <template>-elementtiin.
+        #
+        # Mitattu ennen tata: /predictions oli 32 237 DOM-solmua ja 1,1 MB
+        # purettuna, ja 96 % siita oli tama yksi taulu (19 158 <td>:ta,
+        # 3 195 riviä). Tyopoydalla se ei nay; keskitason Androidilla se on
+        # sekunteja tyyli- ja layout-laskentaa ja nykiva vieritys — sivulla
+        # joka on toiseksi suurin orgaaninen sisaantulomme.
+        #
+        # <template> valittiin siksi, etta sen sisalto EI ole
+        # renderointipuussa (ei layoutia, ei tyylilaskentaa) mutta se on yha
+        # samassa tiedostossa: ei uutta hakua, ei uutta tiedostoa joka voi
+        # jaada vanhentuneeksi, ja rivit ovat yha yhden klikkauksen paassa
+        # myos ilman verkkoa. Siirtokoko ei muutu (71 kB pakattuna), koska
+        # ongelma ei ollut siirto vaan renderointi.
+        #
+        # NAKYVIIN JAA UUSIN _RECORD_INLINE_ROWS, koska (a) uusin on se mita
+        # lukija tulee katsomaan ja (b) tyhja taulu olisi hakukoneelle eri
+        # sivu kuin ennen. Rehellisyyslupaus ei muutu: kaikki rivit ovat
+        # sivulla, ja nappi kertoo tasmalleen montako.
+        + "".join(rows[:_RECORD_INLINE_ROWS])
         + "</tbody></table></div>"
+        + (
+            ""
+            if len(rows) <= _RECORD_INLINE_ROWS
+            else (
+                '<button class="rec-more" type="button" id="recMore">'
+                f"Show all {len(rows)} graded matches</button>"
+                '<template id="recRest">'
+                + "".join(rows[_RECORD_INLINE_ROWS:])
+                + "</template>"
+                "<script>(function(){"
+                "var b=document.getElementById('recMore');"
+                "var tpl=document.getElementById('recRest');"
+                "if(!b||!tpl)return;"
+                "b.addEventListener('click',function(){"
+                "var body=document.querySelector('.rec-scroll tbody');"
+                "if(!body)return;"
+                "body.appendChild(tpl.content.cloneNode(true));"
+                "b.remove();"
+                # Aktiivinen kilpailusuodatin on sovellettava juuri
+                # liitettyihin riveihin: muuten "La Liga" + "nayta kaikki"
+                # olisi tuonut nakyviin koko listan ja suodatinnappi olisi
+                # yha nayttanyt valitulta. Luetaan tila napista, ei
+                # muuttujasta, jotta lahde on yksi.
+                "var on=document.querySelector('.rec-filter.on');"
+                "var v=on?on.getAttribute('data-comp'):'all';"
+                "if(v&&v!=='all'){"
+                "document.querySelectorAll('.rec-scroll tbody tr').forEach("
+                "function(tr){tr.style.display="
+                "(tr.getAttribute('data-comp')===v)?'':'none';});}"
+                "});})();</script>"
+            )
+        )
         + star_note
         + pending_note
         + pending_block
@@ -1646,6 +1750,29 @@ CSS = """
   .toollist a{ font-weight:700; }
   .disclaimer{ border:1px solid var(--line); background:var(--paper); border-radius:var(--radius); padding:12px 16px; color:var(--ink-muted); font-size:14px; margin:26px 0 60px; }
   .upsell{ border:1px solid var(--line); background:var(--paper); border-radius:var(--radius); padding:24px 26px; margin:48px 0 6px; }
+  /* Upgrade paths in context. Measured before this: the CTAs sat at y=737
+     and then nothing until y=11862 on a 16680px page, so 8.6 screens of
+     free data carried no way to buy. Two additions, both restrained: one
+     line under the table it belongs to, and a bar that only appears after
+     the first screen. */
+  .inline-up{ border-left:3px solid var(--amber); padding:10px 0 10px 14px;
+    margin:14px 0 26px; color:var(--muted); font-size:14px; line-height:1.6; max-width:74ch; }
+  .inline-up a{ color:var(--amber); font-weight:600; }
+  .sticky-cta{ position:fixed; left:0; right:0; bottom:0; z-index:40;
+    display:none; gap:14px; align-items:center; justify-content:space-between;
+    padding:10px 16px; background:var(--paper); border-top:1px solid var(--amber);
+    font-size:14px; }
+  .sticky-cta.on{ display:flex; }
+  .sticky-cta p{ margin:0; color:var(--muted); }
+  .sticky-cta .btn{ white-space:nowrap; }
+  .sticky-cta .close{ background:none; border:0; color:var(--muted); font-size:20px;
+    line-height:1; padding:4px 8px; cursor:pointer; }
+  @media (max-width:560px){
+    /* On a phone the sentence takes the space the button needs. */
+    .sticky-cta p{ display:none; }
+    .sticky-cta{ justify-content:space-between; }
+  }
+  @media print{ .sticky-cta{ display:none !important; } }
   .upsell h2{ margin:0 0 10px; }
   .upsell p{ margin:0 0 6px; }
   .upsell .cta-row{ margin:18px 0 4px; }
@@ -2039,14 +2166,15 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <meta property="og:title" content="Free FPL Tools: Rate My Team, Captain Pick & Clean Sheet Probability | GoalIQ">
 <meta property="og:description" content="{meta_desc}">
 <meta property="og:url" content="{CANONICAL}">
-<meta property="og:image" content="{BASE}/assets/brand/goaliq-social-1200x630.png">
+<!-- Page-specific share card; see the comment in index.html. -->
+<meta property="og:image" content="{BASE}/assets/brand/og/fpl-1200x630.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@goaliqapp">
 <meta name="twitter:title" content="Free FPL Tools: Rate My Team, Captain Pick & Clean Sheet Probability | GoalIQ">
 <meta name="twitter:description" content="{meta_desc}">
-<meta name="twitter:image" content="{BASE}/assets/brand/goaliq-social-1200x630.png">
+<meta name="twitter:image" content="{BASE}/assets/brand/og/fpl-1200x630.png">
 
 {jsonld}
 <meta name="theme-color" content="#0B0A09">
@@ -2130,6 +2258,11 @@ same probability over the run in the grid below, so one good fixture and a good
 run are not the same column.</p>
 {cs_table}
 <p class="note">{_strength_basis_note(c)}</p>
+<p class="inline-up">This is Gameweek {c["next_gw"]} alone.
+<a href="https://pro.goaliq.app/players/clean-sheets?src=fpl-cs&amp;srcp=fpl" data-cta="inline-cs">GoalIQ
+Premium</a> projects clean sheets and expected points for every gameweek in the
+window, so you can see whether a defender is worth buying for one weekend or for
+the run.</p>
 
 <h2 id="fixture-difficulty">Fixture difficulty for the next six gameweeks</h2>
 <p>Clean sheet probability per team and gameweek. Each cell shows the opponent,
@@ -2142,6 +2275,10 @@ tooltip. Model-derived, not the official FPL difficulty.</p>
 {far_grid}
 <p class="legend">Clean sheet scale: {cs_legend}
 (low CS% = hard fixture, high CS% = easy). H home, A away.</p>
+<p class="inline-up">The grid says which fixtures turn. Premium says
+<a href="https://pro.goaliq.app/team?src=fpl-fdr&amp;srcp=fpl" data-cta="inline-fdr">what to
+do about it</a>: your squad rated out of 100, the captain pick for this gameweek and the one
+transfer that gains most over the run, with the hit priced in.</p>
 {eo_by_tier}
 <aside class="upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
@@ -2273,6 +2410,39 @@ predictions and analytics. Not betting advice.</p>
 </div>
 </article>
 </main>
+
+<!-- Appears only after the first screen: a bar shown straight away would
+     be an ad before the page has been useful. Dismissible, and the dismissal
+     is remembered for the session, so a no is not asked again on every
+     scroll. sessionStorage rather than localStorage: the choice covers this
+     visit, not the next gameweek. Every access is wrapped because private
+     mode can throw on read, and a promo bar must never break the page. -->
+<div class="sticky-cta" id="stickyCta" hidden>
+  <p>Free here: this gameweek. Premium: every gameweek, your squad rated, the captain call.</p>
+  <a class="cta" href="{PRO_TAB_URL}&amp;src=fpl-sticky&amp;srcp=fpl" data-cta="fpl-sticky">See what to do &#9656;</a>
+  <button class="close" type="button" id="stickyClose" aria-label="Hide this bar">&times;</button>
+</div>
+<script>
+(function () {{
+  var bar = document.getElementById('stickyCta');
+  if (!bar) return;
+  var hidden = false;
+  try {{ hidden = sessionStorage.getItem('giq:sticky') === 'off'; }} catch (e) {{}}
+  if (hidden) return;
+  bar.hidden = false;
+  var onBtn = document.getElementById('stickyClose');
+  if (onBtn) onBtn.addEventListener('click', function () {{
+    bar.classList.remove('on');
+    try {{ sessionStorage.setItem('giq:sticky', 'off'); }} catch (e) {{}}
+  }});
+  function tick() {{
+    if (window.scrollY > window.innerHeight) bar.classList.add('on');
+    else bar.classList.remove('on');
+  }}
+  window.addEventListener('scroll', tick, {{ passive: true }});
+  tick();
+}})();
+</script>
 
 <footer class="dark">
   <div class="wrap">

@@ -6,7 +6,10 @@
 	 * hiljaa esim. footerin tai SPL-noston. */
 	import { DISCLAIMER } from '$lib/config';
 	import { pageTitle } from '$lib/tools';
+	import { auth } from '$lib/auth.svelte';
+	import { showsProductIntro } from '$lib/introGate';
 	import Hero from './Hero.svelte';
+	import ProductIntro from './ProductIntro.svelte';
 	import ToolsHome from './ToolsHome.svelte';
 
 	let {
@@ -29,6 +32,21 @@
 	<Hero onUpgrade={() => upgradeSignal++} />
 
 	<main>
+		<!-- TUOTE EDELLA (Ville 5.9): kirjautumaton kavija nakee juuressa
+		     tuotteen, ei tyhjaa kuorta. Ehdot ovat tarkoituksella tiukat:
+
+		     `sessionResolved` — ilman sita esittely valahtaisi hetkeksi myos
+		     kirjautuneelle maksajalle joka avaa sivun. Sama vika on jo
+		     olemassa ikkunabannerissa (auditointi 5.9, C3) eika sita saa
+		     monistaa uuteen komponenttiin.
+
+		     `group === 'week'` — vain juuri. Jos kavija on menossa suoraan
+		     tyokaluun, han tietaa jo mita etsii, ja myyntipuhe sen edessa
+		     olisi este eika esittely. -->
+		{#if showsProductIntro(group, auth.sessionResolved, !!auth.user)}
+			<ProductIntro onUpgrade={() => upgradeSignal++} />
+		{/if}
+
 		<ToolsHome {upgradeSignal} {group} {tool} {all} />
 	</main>
 

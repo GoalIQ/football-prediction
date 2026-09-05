@@ -1164,7 +1164,29 @@
 							}-GW horizon.`
 						: 'The model found a move worth making.')}
 			>
-				Transfers <strong>{stripHold ? 'Hold' : 'Move'}</strong>
+				<!-- 5.9 (Villen kysymys: "mika my teamissa on se ykkosasia mika
+				     tulee kayttajan nahda"). Tassa luki ennen vain "Move", eli
+				     nauha kertoi ETTA jotain kannattaa tehda muttei mita. Se
+				     mita kayttaja tulee hakemaan on itse siirto, ja se oli
+				     koko rating-kortin JALKEEN. Nimi ja tuotto tulevat samasta
+				     `suggestions[0]`-rivista jota alempi lista kayttaa, joten
+				     tassa ei ole uutta vaitetta eivatka luvut voi erota. -->
+				{#if stripHold || data.transfers.suggestions.length === 0}
+					Before the deadline <strong>Hold your transfer</strong>
+				{:else}
+					{@const top = data.transfers.suggestions[0]}
+					Before the deadline
+					<strong>{top.out.web_name} → {top.in.web_name}</strong>
+					<span class="strip-gain">+{top.delta_xp_horizon.toFixed(2)} xP</span>
+				{/if}
+			</span>
+		{:else}
+			<!-- Ilmaiselle heikoin linja on aito vastaus kysymykseen "mista
+			     aloitan", ja se on ilmaista tietoa. Konkreettinen siirtopari
+			     on se mika on maksullista, ja tunniste sanoo sen suoraan. -->
+			<span class="strip-item">
+				Weakest line <strong>{data.rating.weakest_line}</strong>
+				<span class="strip-tag">PRO for the move</span>
 			</span>
 		{/if}
 	</div>
@@ -1327,7 +1349,7 @@
 				onclick={() => {
 					roastOpen = !roastOpen;
 					if (roastOpen) capture('roast_viewed');
-				}}>{roastOpen ? 'Hide the roast' : 'Roast my team 🔥'}</button
+				}}>{roastOpen ? 'Hide the roast' : 'Roast my team'}</button
 			>
 		</div>
 		{#if roastOpen}
@@ -2042,11 +2064,37 @@
 		gap: var(--s-2) var(--s-4);
 		margin-bottom: var(--s-4);
 	}
+	/* 5.9: siirron tuotto ja PRO-tunniste verdict-stripissa. Positiivinen
+	   delta kayttaa --positivea kuten muutkin tuotot; tunniste on amber
+	   outline kuten tyokalunavissa, jotta lukko lukee samana kaikkialla. */
+	.strip-gain {
+		color: var(--positive);
+		font-family: var(--font-mono);
+		font-weight: 700;
+		margin-left: 0.35em;
+	}
+	.strip-tag {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: var(--accent);
+		border: 1px solid var(--accent);
+		padding: 0.1em 0.35em;
+		margin-left: 0.4em;
+		vertical-align: 0.12em;
+	}
+
 	.hero-xp {
 		margin: 0;
 		line-height: 1;
 		white-space: nowrap;
-		color: var(--giq-rust);
+		/* 5.9 (Villen kysymys "onko varitykset kunnossa"): tama oli
+		   --giq-rust. Theme.css:n oma varidisipliini sanoo: amber = luvut,
+		   rust = hitit, pudotukset ja saatavuusliput. Sivun suurin luku oli
+		   siis maalattu "huono"-varilla, ja se on My teamin ensimmainen asia
+		   jonka kayttaja nakee. */
+		color: var(--accent);
 		font-weight: 700;
 	}
 	.hero-num {

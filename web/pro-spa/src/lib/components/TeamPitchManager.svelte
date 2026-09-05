@@ -785,7 +785,12 @@
 				{/if}
 				<!-- Portti 2.9: selite vain kun merkki on olemassa. -->
 				{#if lastFinished.players.some((r) => luckVerdict(r.xp_frozen, r.points) != null)}
-					<p class="score-legend">🎲 got lucky · 💀 got robbed</p>
+					<!-- Sama selite kuin jakokortilla (rivi ~583) tulee nyt samasta
+					     vakiosta. Se oli kovakoodattuna tassa ja rakennettuna
+					     LUCK_MARKista kortille, eli sama vaite kahdella
+					     renderointipolulla: merkin vaihto olisi muuttanut vain
+					     toisen niista. -->
+					<p class="score-legend">{LUCK_MARK.lucky} got lucky · {LUCK_MARK.robbed} got robbed</p>
 				{/if}
 				<p class="score-note">Projection frozen before the deadline.</p>
 			</div>
@@ -1044,7 +1049,7 @@
 			</p>
 		{:else}
 			<button type="button" class="lockrow" onclick={unlock}>
-				<span aria-hidden="true">🔒</span>
+				<span class="lock-tag" aria-hidden="true">PRO</span>
 				Lineup editing (formations, swaps, captain) is Premium
 				<span class="cta">Unlock with Premium</span>
 			</button>
@@ -1550,6 +1555,16 @@
 		padding: 8px 14px;
 		cursor: pointer;
 	}
+	.lock-tag {
+		font-family: var(--font-mono);
+		font-size: 0.7em;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: var(--accent);
+		border: 1px solid var(--accent);
+		padding: 0.1em 0.35em;
+	}
+
 	.lockrow {
 		display: flex;
 		flex-wrap: wrap;
