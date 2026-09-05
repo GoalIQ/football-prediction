@@ -34,6 +34,11 @@ SCANNED = [
     Path("web/pro-spa/src/lib/components/PlanChains.svelte"),
     Path("web/pro-spa/src/lib/components/RateTeam.svelte"),
     Path("web/pro-spa/src/lib/components/FitChecker.svelte"),
+    # 5.9: SquadNews ei renderoi verdiktia, mutta sen lahderivi sisaltaa
+    # sanan "transfers." (myohaiset siirrot liikuttavat hintapaivaa) ja
+    # loytotesti osuu siihen. Skannataan, jotta portti kattaa sen jos
+    # komponentti joskus alkaa puhua siirtoverdiktista.
+    Path("web/pro-spa/src/lib/components/SquadNews.svelte"),
     Path("src/models/fpl_fit.py"),
     Path("src/models/fpl_gameweek.py"),
 ]
