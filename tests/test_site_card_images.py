@@ -118,7 +118,12 @@ def test_kuvilla_on_mitat_ja_alt():
         for tagi in re.findall(r"<img[^>]*/assets/cards/[^>]*>", teksti):
             if 'width="' not in tagi or 'height="' not in tagi:
                 puutteet.append(("mitat", nimi, tagi[:70]))
-            if not re.search(r'alt="[^"]{15,}"', tagi):
+            # 5.9 portti: tooldir-kuva toistaa kortin oman tekstin -> alt=""
+            # (koristeellinen) on oikein; muilla korteilla alt kuvaa sisallon.
+            if "/assets/cards/tools/" in tagi:
+                if 'alt=""' not in tagi:
+                    puutteet.append(("alt-tools", nimi, tagi[:70]))
+            elif not re.search(r'alt="[^"]{15,}"', tagi):
                 puutteet.append(("alt", nimi, tagi[:70]))
     assert not puutteet, puutteet
 

@@ -19,8 +19,7 @@
 		loadProfileEntry,
 		resultKey,
 		persistEntry,
-		toggleRemember
-	} from '$lib/fplEntry.svelte';
+		toggleRemember, currentEntryId } from '$lib/fplEntry.svelte';
 	import {
 		loadDraftIds,
 		saveDraftIds,
@@ -36,6 +35,7 @@
 	import { isOpenForLogging, loadDecisions, logDecision } from '$lib/fplDecisions';
 	import BeatTheModel from './BeatTheModel.svelte';
 	import GwReview from './GwReview.svelte';
+	import SquadNews from './SquadNews.svelte';
 	import SeasonRace from './SeasonRace.svelte';
 	import { fetchFantasy } from '$lib/api';
 	import ModelWorking from './ModelWorking.svelte';
@@ -1240,9 +1240,10 @@
 	</div>
 
 	<!-- 5.9 (Villen pyynto): oman rungon uutiset heti kentan alle - kuka on
-	     poissa, kenen hinta liikkuu tanaan. Sama data kuin This week -sivun
-	     "Before the next deadline", ei uutta laskentaa. -->
-	<GwReview flagsOnly />
+	     poissa, kenen hinta liikkuu tanaan. Portti k4: lahde on RUUDUN runko
+	     (plannedPlayers) + price watchin omat rivit, ei gw-review'n viimeisen
+	     paattyneen kierroksen pickit. -->
+	<SquadNews players={plannedPlayers} entry={currentEntryId()} />
 
 	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
 	     sen alla = "% of the best possible budget team" (uusi semantiikka,

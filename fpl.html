@@ -563,16 +563,16 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
      directory first, prose after it. -->
 <!-- 5 Sep (Ville GO): a thumbnail per tool, cut from the same share-card
      images the pages already use for og:image, 450px webp, lazy, sized.
-     Alt repeats the card's own two lines, nothing the card does not say. -->
+     Alt is empty: the image repeats the card's own two lines (portti 5.9). -->
 <nav class="tooldir" aria-label="Free FPL tools">
-  <a href="/fpl/expected-points"><img src="/assets/cards/tools/expected-points.webp" width="450" height="236" loading="lazy" decoding="async" alt="Expected points: projected points, next gameweek"><b>Expected points</b><span>Projected points, next gameweek</span></a>
-  <a href="/fpl/best-captain"><img src="/assets/cards/tools/best-captain.webp" width="450" height="236" loading="lazy" decoding="async" alt="Captain picks: who to give the armband"><b>Captain picks</b><span>Who to give the armband</span></a>
-  <a href="/fpl/differentials"><img src="/assets/cards/tools/differentials.webp" width="450" height="236" loading="lazy" decoding="async" alt="Differentials: low owned, still rated"><b>Differentials</b><span>Low owned, still rated</span></a>
-  <a href="/fpl/model-xi"><img src="/assets/cards/tools/model-xi.webp" width="450" height="236" loading="lazy" decoding="async" alt="Budget XI: best 15 for 100.0m"><b>Budget XI</b><span>Best 15 for 100.0m</span></a>
-  <a href="/fpl/predicted-lineups"><img src="/assets/cards/tools/predicted-lineups.webp" width="450" height="236" loading="lazy" decoding="async" alt="Predicted XI: who starts at each club"><b>Predicted XI</b><span>Who starts at each club</span></a>
-  <a href="/fpl/price-changes"><img src="/assets/cards/tools/price-changes.webp" width="450" height="236" loading="lazy" decoding="async" alt="Price changes: who rises tonight"><b>Price changes</b><span>Who rises tonight</span></a>
-  <a href="/fpl/team-news"><img src="/assets/cards/tools/team-news.webp" width="450" height="236" loading="lazy" decoding="async" alt="Team news: who is out right now"><b>Team news</b><span>Who is out right now</span></a>
-  <a href="/fpl/points"><img src="/assets/cards/tools/points.webp" width="450" height="236" loading="lazy" decoding="async" alt="Points vs projection: how the model did"><b>Points vs projection</b><span>How the model did</span></a>
+  <a href="/fpl/expected-points"><img src="/assets/cards/tools/expected-points.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Expected points</b><span>Projected points, next gameweek</span></a>
+  <a href="/fpl/best-captain"><img src="/assets/cards/tools/best-captain.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Captain picks</b><span>Who to give the armband</span></a>
+  <a href="/fpl/differentials"><img src="/assets/cards/tools/differentials.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Differentials</b><span>Low owned, still rated</span></a>
+  <a href="/fpl/model-xi"><img src="/assets/cards/tools/model-xi.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Model XI</b><span>Best 15 for 100.0m</span></a>
+  <a href="/fpl/predicted-lineups"><img src="/assets/cards/tools/predicted-lineups.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Predicted XI</b><span>Who starts at each club</span></a>
+  <a href="/fpl/price-changes"><img src="/assets/cards/tools/price-changes.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Price changes</b><span>Who rises tonight</span></a>
+  <a href="/fpl/team-news"><img src="/assets/cards/tools/team-news.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Team news</b><span>Who is out right now</span></a>
+  <a href="/fpl/points"><img src="/assets/cards/tools/points.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Points vs projection</b><span>How the model did</span></a>
 </nav>
 <!-- 5 Sep (LANDING-LYHENNYS): the 110-word lede repeated the directory
      above it. Measured before: 31 screens on a phone, 4,688 words. -->
@@ -684,7 +684,7 @@ API.</p>
 <ul class="toollist">
   <li><a href="/fpl/best-captain">Captain picks</a>: the pick and the contenders for the next deadline.</li>
   <li><a href="/fpl/expected-points">Expected points</a>: the top 100 of the projection, scoring rate and minutes apart.</li>
-  <li><a href="/fpl/model-xi">Budget XI</a>: the best 15 our numbers fit in 100.0m. Not the squad the model plays (entry 116920).</li>
+  <li><a href="/fpl/model-xi">Model XI</a>: the best 15 our numbers fit in 100.0m. Not the squad the model plays (entry 116920).</li>
   <li><a href="/fpl/predicted-lineups">Predicted XI for every club</a>: a projection, not a lineup leak.</li>
   <li><a href="/fpl/differentials">Differentials under 10% ownership</a>.</li>
   <li><a href="/fpl/price-changes">Price change watch</a>: who moves tonight.</li>

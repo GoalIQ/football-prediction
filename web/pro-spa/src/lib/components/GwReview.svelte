@@ -22,11 +22,6 @@
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 
-	/** 5.9: My team nayttaa vain "Before the next deadline" -lohkon kentan
-	 *  alla (Villen pyynto: oman tiimin essentials nopeasti). Sama haku, sama
-	 *  data, eri leikkaus. */
-	let { flagsOnly = false }: { flagsOnly?: boolean } = $props();
-
 	let data = $state<GwReviewResponse | null>(null);
 	let failed = $state(false);
 	let loadedKey = $state<string | null>(null);
@@ -55,31 +50,6 @@
 	const sign = (n: number) => (n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1));
 </script>
 
-{#if flagsOnly}
-	{#if data?.meta.available && (data.flags.availability.length || data.flags.price.length)}
-		<section class="wrap squad-news">
-			<h3>Your squad before the deadline</h3>
-			<div class="flags">
-				<ul>
-					{#each data.flags.availability as f (f.id)}
-						<li>
-							<strong>{f.web_name}</strong>
-							{#if f.chance_next != null}{f.chance_next}% to play{/if}
-							{#if f.news}<span class="muted">{f.news}</span>{/if}
-						</li>
-					{/each}
-					{#each data.flags.price as f (f.id)}
-						<li>
-							<strong>{f.web_name}</strong>
-							{f.progress_pct != null ? `${Math.round(f.progress_pct)}%` : ''} of the way
-							to a price {f.direction}
-						</li>
-					{/each}
-				</ul>
-			</div>
-		</section>
-	{/if}
-{:else}
 <section class="wrap">
 	<h3>Gameweek review</h3>
 
@@ -168,7 +138,6 @@
 		<p class="muted small basis">{data.meta.basis}</p>
 	{/if}
 </section>
-{/if}
 
 <style>
 	.wrap {
