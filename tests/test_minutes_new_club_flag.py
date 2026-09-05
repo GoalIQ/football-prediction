@@ -148,6 +148,11 @@ def test_prev_baselines_carry_the_club():
 
 # --- mita lukija nakee ------------------------------------------------------
 
+def _teksti(html):
+    import html as _h
+    return _h.unescape(re.sub(r"<[^>]+>", "", html))
+
+
 def _no_direction(html):
     for kielletty in ("will start", "nailed", "rotation risk", "priced",
                       "until he has played"):
@@ -169,8 +174,8 @@ def test_omissions_note_names_first_and_reads_as_sentences():
                               "team_name": "Manchester City"}, price=5.0)
     uusi = _row(minutes_basis_flag="new_club")
     html = lt._xi_omissions([lyhyt, uusi], [])
-    text = re.sub(r"<[^>]+>", "", html)
-    assert text.startswith("Missing from that eleven: Khusanov (")
+    text = _teksti(html)
+    assert text.startswith("Missing from that eleven, with our start chance and last season's minutes: Khusanov (")
     assert "Anderson (" in text and "for Nottingham Forest" in text
     assert re.search(r"\. [a-z]", text) is None, text
     assert "same in each case" not in text
@@ -182,8 +187,8 @@ def test_omissions_note_joins_names_with_and():
     b = _row(web_name="Senesi", team_short="TOT", minutes_basis_flag="new_club",
              last_season={"minutes": 3288, "team_code": 91,
                           "team_name": "Bournemouth"})
-    text = re.sub(r"<[^>]+>", "", lt._xi_omissions([a, b], []))
-    assert "Anderson (77%, 3332 min) for Nottingham Forest and Senesi (77%, 3288 min) for Bournemouth played last season" in text
+    text = _teksti(lt._xi_omissions([a, b], []))
+    assert "Anderson (77%, 3332 min) played last season for Nottingham Forest and Senesi (77%, 3288 min) for Bournemouth, so those minutes were not for this squad." in text
 
 
 def test_expected_points_page_renders_the_flag():
@@ -224,3 +229,73 @@ def test_spa_and_mobile_render_the_new_flag():
     mob = Path(r"C:/Users/vvsaa/Documents/goaliq-app/screens/FantasyScreen.tsx")
     if mob.exists():  # vain Villen koneella; CI:ssa mobiilirepoa ei ole
         assert "minutes_basis_flag === 'new_club'" in mob.read_text(encoding="utf-8")
+
+
+# --- portti k2 (5.9): selite ja legenda ---------------------------------------
+
+def test_club_page_explanation_covers_the_club_change():
+    """k2 B1: seurasivun selite sanoi "!" = katkennut kausi, vaikka merkki on
+    nyt myos Rogersilla (3 280 min) ja Andersonilla (3 332 min)."""
+    import inspect
+    src = inspect.getsource(lt)
+    i = src.index("Two things this table gets wrong")
+    kappale = src[i:i + 900]
+    assert "changed clubs" in kappale
+    assert "Both carry a !" in kappale
+    assert "Those names carry a !" not in kappale
+
+
+def test_omissions_note_word_order_and_label():
+    """k2 B2/B3: "played last season for X", ei "for X played"; etiketti
+    kerran alussa koska 77 % on taman kauden luku ja minuutit viime kauden."""
+    a = _row(minutes_basis_flag="new_club")
+    b = _row(web_name="Senesi", team_short="TOT", minutes_basis_flag="new_club",
+             last_season={"minutes": 3288, "team_code": 91,
+                          "team_name": "Bournemouth"})
+    text = _teksti(lt._xi_omissions([a, b], []))
+    assert text.startswith("Missing from that eleven, with our start chance and last season's minutes: ")
+    assert "Anderson (77%, 3332 min) played last season for Nottingham Forest and Senesi (77%, 3288 min) for Bournemouth, so those minutes were not for this squad." in text
+    assert re.search(r"for [A-Z][^,]* played", text) is None, text
+
+
+def test_omissions_note_says_when_it_truncates():
+    rows = [_row(web_name=f"P{i}", minutes_basis_flag="new_club", price=9 - i)
+            for i in range(6)]
+    text = _teksti(lt._xi_omissions(rows, []))
+    assert "and 2 more" in text
+    assert "P4" not in text and "P5" not in text
+
+
+def test_ranked_tables_carry_a_legend_only_when_flagged():
+    """k2 B4: "!" ilman legendaa on merkki jolle ei ole lukutapaa puhelimessa."""
+    def page(flagged):
+        players = []
+        for i in range(1, 12):
+            p = {"id": i, "web_name": f"P{i}", "team_short": "ARS",
+                 "pos": "MID", "price": 60, "xp_horizon_total": 30.0 - i,
+                 "xp_per_gw": 5.0, "xp_per_90": 5.0, "xmins": 85.0,
+                 "p_start": 0.9, "gameweeks": [{"gw": 2, "xp": 5.0}]}
+            if flagged and i == 1:
+                p["minutes_basis_flag"] = "new_club"
+                p["last_season"] = {"minutes": 3332, "team_code": NFO,
+                                    "team_name": "Nottingham Forest"}
+            players.append(p)
+        xp = {"meta": {"available": True, "next_gameweek": 2,
+                       "deadline_gameweek": 2, "season": "2026/27"},
+              "players": players}
+        return lt.render_expected_points(
+            xp, datetime(2026, 8, 22, tzinfo=timezone.utc)) or ""
+    assert "! = last season" in page(True)
+    assert "! = last season" not in page(False)
+    # legenda on kytketty kaikkiin kolmeen tauluun, ei vain yhteen
+    import inspect
+    assert inspect.getsource(lt).count("{_flag_legend(rows") == 3
+
+
+def test_flag_legend_mentions_only_what_is_present():
+    assert lt._flag_legend([]) == ""
+    only_prior = lt._flag_legend([{"data_basis": "no_history"}])
+    assert "? =" in only_prior and "! =" not in only_prior
+    both = lt._flag_legend([{"data_basis": "no_history"},
+                            {"minutes_basis_flag": "short_season"}])
+    assert "? =" in both and "! =" in both

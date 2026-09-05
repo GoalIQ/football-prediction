@@ -1786,7 +1786,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         '<th class="n m-hide">Mins</th><th class="n m-hide">Games</th>'
         '<th class="n">Season</th>'
         "</tr></thead>"
-        f'<tbody id="xgb">{trows}</tbody></table></div>'
+        f'<tbody id="xgb">{trows}</tbody></table></div>{_flag_legend(rows[:100])}'
         '<button type="button" class="chip" id="xgmore" '
         'style="margin:4px 0 8px;">Show all players</button>'
     )
@@ -3735,6 +3735,29 @@ def _club_switcher(current: str, saatavilla: set[str]) -> str:
     )
 
 
+def _flag_legend(rows: list[dict]) -> str:
+    """Legenda rankatulle taululle: renderoidaan VAIN kun taulussa on merkki.
+
+    5.9 portti k2 (B4): lippu lisattiin kolmeen tauluun ilman selitetta.
+    Puhelimessa title-attribuutti ei aukea, joten "!" ilman legendaa on merkki
+    jolle ei ole lukutapaa - ja juuri nama sivut ovat ilmaisia ja postausten
+    linkkikohteita. Sama konventio kuin club-best-sivun "?"-rivilla.
+    """
+    n_flag = sum(1 for r in rows if r.get("minutes_basis_flag") in ("short_season", "new_club"))
+    n_prior = sum(1 for r in rows if r.get("data_basis") == "no_history")
+    osat = []
+    if n_flag:
+        osat.append("! = last season&#x27;s minutes do not describe this "
+                    "player&#x27;s role here, either a short season or a move "
+                    "to this club")
+    if n_prior:
+        osat.append("? = no Premier League games yet, so the role comes from "
+                    "price")
+    if not osat:
+        return ""
+    return '<p class="note">' + ". ".join(osat) + ".</p>"
+
+
 def _no_history_flag(p: dict) -> str:
     """Merkinta pelaajalle jolla ei ole Valioliiga-historiaa.
 
@@ -3902,25 +3925,35 @@ def _xi_omissions(players: list[dict], valitut: list[dict]) -> str:
     def _ja(osat):
         return osat[0] if len(osat) == 1 else ", ".join(osat[:-1]) + " and " + osat[-1]
 
-    lyhyt = [p for p in ulkona if p.get("minutes_basis_flag") == "short_season"][:4]
-    uudet = [p for p in ulkona if p.get("minutes_basis_flag") == "new_club"][:4]
+    KATTO = 4
+    lyhyt = [p for p in ulkona if p.get("minutes_basis_flag") == "short_season"]
+    uudet = [p for p in ulkona if p.get("minutes_basis_flag") == "new_club"]
     lauseet = []
-    # Portti 5.9: nimet lauseen ALKUUN (pronomini ennen viitattua ei ole
-    # luettava), iso alkukirjain, ja seuranvaihto omana lauseenaan eika
-    # "the reason is the same in each case".
+    # Portti 5.9 (k1 B4, k2 B2/B3): nimet lauseen ALKUUN, etiketti kerran
+    # kappaleen alkuun (77 % on TAMAN kauden aloitus-tn, minuutit VIIME
+    # kauden), ja seuranvaihdossa luonnollinen sanajarjestys "played last
+    # season for X and B (...) for Y" - "for X played" luki koneen
+    # kasaamalta. Katkaisu sanotaan aaneen: Man Utd 5.9 pudotti Heavenin
+    # listalta hiljaa.
     if lyhyt:
-        lauseet.append(_ja([_nimi(p) for p in lyhyt])
+        loput = len(lyhyt) - KATTO
+        lauseet.append(_ja([_nimi(p) for p in lyhyt[:KATTO]])
+                       + (f" and {loput} more" if loput > 0 else "")
                        + " played a short season, so the estimate reads that "
                        "as rotation.")
     if uudet:
         osat = []
-        for p in uudet:
-            prev = (p.get("last_season") or {}).get("team_name") or "another club"
-            osat.append(f"{_nimi(p)} for {escape(str(prev))}")
-        lauseet.append(_ja(osat) + " played last season, so those minutes "
-                       "were not for this squad.")
-    return ('<p class="note">Missing from that eleven: '
-            + " ".join(lauseet) + "</p>")
+        for i, p in enumerate(uudet[:KATTO]):
+            prev = escape(str((p.get("last_season") or {}).get("team_name")
+                              or "another club"))
+            osat.append(f"{_nimi(p)} played last season for {prev}" if i == 0
+                        else f"{_nimi(p)} for {prev}")
+        loput = len(uudet) - KATTO
+        lauseet.append(_ja(osat)
+                       + (f" and {loput} more" if loput > 0 else "")
+                       + ", so those minutes were not for this squad.")
+    return ('<p class="note">Missing from that eleven, with our start chance '
+            "and last season&#x27;s minutes: " + " ".join(lauseet) + "</p>")
 
 
 def render_club_page(short: str, players: list[dict], meta: dict,
@@ -4016,13 +4049,17 @@ def render_club_page(short: str, players: list[dict], meta: dict,
             # 🔴 16.8: kaksi rajoitetta jotka lukija nakee ITSE sivulta, joten
             # ne on parempi sanoa kuin antaa hanen loytaa. Kumpikaan ei
             # kerro suuntaa: emme tieda kumpaan suuntaan luku on vaarassa.
+            # 5.9 portti k2 (B1): "!" merkitsee nyt myos seuranvaihdon, joten
+            # selite joka puhui vain katkenneesta kaudesta vaitti Rogersista
+            # (3 280 min) ja Andersonista (3 332 min) vaaran asian.
             '<p class="note">Two things this table gets wrong in a way worth '
             "knowing. A player who missed most of last season is read as a "
             "rotation player, because the estimate leans on the minutes he "
             "actually played and it cannot tell an injury from a benching. "
-            "Those names carry a ! here. And the shape is fixed, so a club "
-            "that plays five in midfield will always have one real starter "
-            "pushed out of this eleven.</p>"
+            "A player who changed clubs is read from minutes he played for "
+            "someone else. Both carry a ! here. And the shape is fixed, so a "
+            "club that plays five in midfield will always have one real "
+            "starter pushed out of this eleven.</p>"
             + _xi_omissions(players, xi_valitut))
 
     conf = ((meta or {}).get("team_confidence") or {}).get("teams", {}).get(nimi)
@@ -4307,7 +4344,7 @@ def _gw_xp_section(xp: dict) -> str:
         '<th>Pos</th><th class="n">Price</th>'
         f'<th class="n">GW{gw} xP</th>'
         '<th class="m-hide">Opponent</th><th class="n">Start%</th>'
-        f"</tr></thead><tbody>{trows}</tbody></table></div>"
+        f"</tr></thead><tbody>{trows}</tbody></table></div>{_flag_legend(rows)}"
         # 🔴 YKSI PERUSTELU, EI KOLMEA (julkaisutarkistaja 30.8). Ensimmainen
         # versio perusteli itsestaanselvan saannon kolmesti perakkain
         # (AI-TELL-CHECKLIST A4), ja yksi perusteluista oli KOVAKOODATTU
@@ -4488,7 +4525,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
         "</tr></thead>"
-        f"<tbody>{trows}</tbody></table></div>"
+        f"<tbody>{trows}</tbody></table></div>{_flag_legend(rows[:100])}"
     )
     hero = (
         "<h1>FPL expected points, top 100 players ranked</h1>"
