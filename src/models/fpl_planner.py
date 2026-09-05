@@ -175,15 +175,23 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     fts = ft
     bank_now = bank_tenths
     total_hits = 0.0
+    # SIIRTOSUUNNITELMA-CHURN (5.9.2026): pelaaja_id -> paatosluku sille GW:lle
+    # jossa hanet ostettiin TASSA suunnitelmassa. Elaa koko horisontin ylitse
+    # (ei nollata per GW), koska mitattu churn-pari oli neljan kierroksen
+    # paassa toisistaan (GW4 osto, GW8 myynti). `_engine.plan_gw` kayttaa
+    # tata estaakseen "osta nyt, myy myohemmin ilman selvaa etua" -parit.
+    acquired: dict[int, float] = {}
     for idx, g in enumerate(gws):
         gws_left = gws[idx:]
         step = _engine.plan_gw(squad, pool, bank_now, gws_left, fts,
                                max_moves=MAX_TRANSFERS_PER_GW,
-                               entry_known=entry is not None)
+                               entry_known=entry is not None,
+                               acquired=acquired)
         moves = []
         for m in step["moves"]:
             if m["hit"] > 0:
                 total_hits += HIT_COST
+            acquired[m["in"]["id"]] = m.get("decide", 0.0)
             moves.append({
                 "out": {"id": m["out"]["id"],
                         "web_name": m["out"]["web_name"],

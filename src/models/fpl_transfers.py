@@ -611,18 +611,35 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             gws: list[int] | None, ft: int, *,
             max_moves: int = MAX_TRANSFERS_PER_GW,
             top_per_pos: int = TOP_CANDIDATES_PER_POS,
-            entry_known: bool = True) -> dict:
+            entry_known: bool = True,
+            acquired: dict[int, float] | None = None) -> dict:
     """Yhden kierroksen siirrot samoilla saannoilla kaikille pinnoille.
 
     Palauttaa {"moves": [...], "squad", "bank_tenths", "ft_left", "hits"}.
     Jokainen move: out, in, gain (painottamaton XI-hyoty), gain_weighted,
     gain_near (lahi-ikkuna, paatosluku), hit, net, confidence_weight, pos,
-    pair (bool), bar (kynnys josta paatos tehtiin).
+    pair (bool), bar (kynnys josta paatos tehtiin), decide (paatokseen
+    kaytetty luku — talteen `acquired`-sanakirjaa varten, ei julkiseen
+    payloadiin).
 
     3.9: paatos tehdaan LAHI-IKKUNASTA (`near_gws`) ja kynnys tulee
     `transfer_bar`ista, joka on entry-kohtainen (ft + rungon tila).
     `entry_known=False` = manual/draft-moodi -> moduulivakio, kayttaytyminen
     tasmalleen entinen.
+
+    SIIRTOSUUNNITELMA-CHURN (5.9.2026): `acquired` on {pelaaja_id: paatosluku}
+    saman MONEN GW:n suunnitelman AIEMMIN tekemista ostoista (fpl_planner
+    yllapitaa tata koko horisontin ylitse, ei vain taman kutsun sisalla).
+    Mitattu tuotannosta 3.9: sama suunnitelma osti Wissan GW5:ssa (+0.66) ja
+    myi hanet GW8:ssa (+0.77) — kaksi siirtoa paatyakseen sinne minne olisi
+    paassyt suoraan. Ahne kierros-kerrallaan-haku ei nae etta se peruu oman
+    aiemman paatoksensa, koska jokainen GW arvioidaan itsenaisesti.
+    Vartija: askettain ostettua ei myyda ellei uuden siirron paatosluku
+    ylita alkuperaisen oston paatoslukua SELVASTI (vahintaan yhden taman
+    kierroksen kynnyksen verran) — sama "selvasti" jota kaytetaan muuallakin
+    tassa moduulissa (esim. yhdistelmahaun floor). `needs_repair`-lahtija
+    (loukkaantunut/poissa) EI kuulu vartijan piiriin: se on korjaus, ei
+    optimointi (sama rajaus kuin `transfer_bar`in repair-haara).
     """
     squad = list(squad)
     bank = bank_tenths
@@ -661,8 +678,19 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             # lahi-ikkunan osuusehto hoidetaan hakuvaiheessa.
             decide = m["net"] if bar["hit"] else (
                 m["net_near"] if m["net_near"] is not None else m["net"])
+            # CHURN-VARTIJA (SIIRTOSUUNNITELMA-CHURN): tama lahtija ostettiin
+            # AIEMMIN samassa suunnitelmassa. Myynti kelpaa vain jos uusi
+            # paatosluku ylittaa alkuperaisen oston paatosluvun selvasti
+            # (vahintaan taman kierroksen oman kynnyksen verran) — muuten
+            # kandidaatti ohitetaan, ei vain hylata koko hakua.
+            out_id = cand["out"]["id"]
+            if (acquired and out_id in acquired
+                    and not needs_repair(cand["out"])
+                    and decide < acquired[out_id] + bar["min_net"]):
+                continue
             if decide >= bar["min_net"]:
                 m["bar"] = bar
+                m["decide"] = decide
                 best_single = m
                 break
 
@@ -681,6 +709,16 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                     fts, entry_known=entry_known,
                     repair=needs_repair(_o1) or needs_repair(_o2),
                     near_len=len(near) if near else 1)
+                # CHURN-VARTIJA parille: sama saanto kuin yksittaisella
+                # siirrolla, molemmille lahtijoille erikseen. Ei osa-arvoa
+                # per jalka (pari arvioidaan yhtena paatoksena), joten koko
+                # pari hylataan jos kumpi tahansa lahtija on askettain
+                # ostettu ilman selvaa etua.
+                pair_blocked = any(
+                    acquired and leg["id"] in acquired
+                    and not needs_repair(leg)
+                    and net_pair < acquired[leg["id"]] + pair_bar["min_net"]
+                    for leg in (_o1, _o2))
                 _bs = None
                 if best_single is not None:
                     _bs = (best_single["net"] if pair_bar["hit"]
@@ -689,7 +727,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                                  else best_single["net"]))
                 floor = (_bs + pair_bar["min_net"] if _bs is not None
                          else 2 * pair_bar["min_net"])
-                if net_pair >= floor:
+                if not pair_blocked and net_pair >= floor:
                     (o1, i1), (o2, i2) = pr["moves"]
                     # Parin hyoty jaetaan nayttoon siirroittain: ensimmainen
                     # saa oman yksittaisen XI-hyotynsa, toinen loput.
@@ -707,6 +745,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                     m1["bar"] = m2["bar"] = pair_bar
                     m1["gain_near_weighted"] = m2["gain_near_weighted"] = (
                         pr.get("gain_near_weighted"))
+                    m1["decide"] = m2["decide"] = net_pair
                     chosen = [m1, m2]
         if not chosen and best_single is not None:
             best_single["pair"] = False

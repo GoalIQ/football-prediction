@@ -11,6 +11,8 @@ tosi.
 """
 from __future__ import annotations
 
+import pytest
+
 import src.models.fpl_rate_team as rt
 from src.models import fpl_transfers as e
 
@@ -299,3 +301,99 @@ def test_per_kierros_luku_tasmaa_naytettyyn_kokonaislukuun():
     total, per_gw = float(m.group(1)), float(m.group(2))
     assert round(total / len(GWS), 2) == per_gw
     assert "spread across" in msg   # 5 siirtoa EI ole taman kierroksen siirtoja
+
+
+# ---------------------------------------------------------------------------
+# SIIRTOSUUNNITELMA-CHURN (5.9.2026): ala myy askettain ostettua ilman selvaa
+# etua. Mitattu tuotannosta 3.9: sama suunnitelma osti Wissan GW5:ssa (+0.66)
+# ja myi hanet GW8:ssa (+0.77) - kaksi siirtoa paatyakseen sinne minne olisi
+# paassyt suoraan. `plan_gw` ei nae talaista itsessaan (yksi GW kerrallaan),
+# joten fpl_planner.plan_transfers valittaa `acquired`-sanakirjan GW:sta
+# toiseen ja `plan_gw` kayttaa sita vartijana. Testataan tassa suoraan
+# `plan_gw`-tasolla kahdella perakkaisella kutsulla, samalla tavalla kuin
+# fpl_planner ne oikeasti ketjuttaa.
+# ---------------------------------------------------------------------------
+
+def _squad_with_strong_mids() -> list[dict]:
+    """base_squad(), mutta MID 21-24 nostettu 8.0 flatiksi.
+
+    Ilman tata korotusta engine myisi jonkun NAISTA (raaka etu isompi kuin
+    90:n myynnista), koska ne ovat base_squad():n oletuksena 90:aa (5.0)
+    heikompia — silloin churn-vartijan testi ei koskettaisi 90:aa lainkaan.
+    Nyt ainoa MID jota kannattaa myyda on 90, mika on juuri se tapaus jota
+    vartija koskee.
+    """
+    squad = base_squad()
+    for p in squad:
+        if p["id"] in (21, 22, 23, 24):
+            p["gameweeks"] = [{"gw": g, "opponents": [], "xp": 8.0} for g in GWS]
+            p["xp_per_gw"] = 8.0
+            p["xp_horizon_total"] = 8.0 * len(GWS)
+    return squad
+
+
+def _step1_buys_90(squad=None):
+    """GW3: ostetaan 90 (5.0/GW) id 20:n (4.0/GW) tilalle. Palauttaa (step1,
+    acquired). `_squad_with_strong_mids`: MID-formaatio on epalineaarinen
+    (`_best_split` valitsee muodostelman kokonaisarvon mukaan), joten paatosluku
+    EI ole suoraan (5.0-4.0)*lahi-ikkuna - se mitataan tassa, ei johdeta."""
+    squad = squad if squad is not None else _squad_with_strong_mids()
+    bought = mk(90, 3, 20, 60, 5.0)
+    step1 = e.plan_gw(squad, [bought], 0, GWS, ft=1)
+    assert [m["in"]["id"] for m in step1["moves"]] == [90]
+    return step1, {90: step1["moves"][0]["decide"]}
+
+
+def test_churn_vartija_estaa_myynnin_ilman_selvaa_etua():
+    """Mutaatiotesti: sama tapaus ILMAN vartijaa ehdottaisi myyntia.
+
+    Mitattu (ei johdettu): acquired[90] == 1.0 tassa muodostelmassa.
+    Haastaja jonka paatosluku on TASAN sama (1.0) ylittaa normaalin riman
+    (1.0) muttei alkuperaista etua SELVASTI (vaatisi >= 1.0+1.0=2.0) -> juuri
+    talainen "vaihda hieman parempaan" on mitattu tuotanto-oire (Wissa-pari).
+    """
+    step1, acquired = _step1_buys_90()
+    assert acquired[90] == pytest.approx(1.0)
+
+    later = GWS[-2:]  # [7, 8] - sama pituus kuin viimeisen GW:n gws_left
+    modest = mk(91, 3, 21, 60, 5.5)
+    with_guard = e.plan_gw(step1["squad"], [modest], step1["bank_tenths"],
+                          later, ft=1, acquired=acquired)
+    assert with_guard["moves"] == [], (
+        "vartijan pitaisi estaa askettain ostetun 90:n myynti")
+
+    without_guard = e.plan_gw(step1["squad"], [modest], step1["bank_tenths"],
+                              later, ft=1)
+    assert [(m["out"]["id"], m["in"]["id"]) for m in without_guard["moves"]] \
+        == [(90, 91)], (
+        "ilman vartijaa sama tapaus OLISI myynyt 90:n - "
+        "muuten testi ei mittaa mitaan (tyhja kontrolli)"
+    )
+
+
+def test_NEG_churn_vartija_sallii_aidon_kaanteen():
+    """Negatiivinen kontrolli: selvasti parempi tulija ohittaa vartijan."""
+    step1, acquired = _step1_buys_90()
+
+    later = GWS[-2:]
+    big = mk(92, 3, 22, 60, 8.0)   # paatosluku 6.0 >> acquired(1.0)+rima(1.0)
+    out = e.plan_gw(step1["squad"], [big], step1["bank_tenths"], later,
+                    ft=1, acquired=acquired)
+    assert [(m["out"]["id"], m["in"]["id"]) for m in out["moves"]] == [(90, 92)]
+    assert out["moves"][0]["decide"] > acquired[90] + out["moves"][0]["bar"]["min_net"]
+
+
+def test_NEG_churn_vartija_ei_estä_korjausta():
+    """Negatiivinen kontrolli: loukkaantunut askettain ostettu on korjaus,
+    ei churn - sama modesti tulija joka test_churn_vartija_estaa_... -testissa
+    torjuttiin, kelpaa nyt koska lahtija ei voi pelata."""
+    step1, acquired = _step1_buys_90()
+
+    squad2 = [dict(p) if p["id"] != 90 else {**p, "status": "u"}
+             for p in step1["squad"]]
+    later = GWS[-2:]
+    modest = mk(91, 3, 21, 60, 5.5)   # sama tulija joka torjuttiin ilman repair
+    out = e.plan_gw(squad2, [modest], step1["bank_tenths"], later,
+                    ft=1, acquired=acquired)
+    assert [(m["out"]["id"], m["in"]["id"]) for m in out["moves"]] == [(90, 91)]
+    assert out["moves"][0]["bar"]["reason"] == "repair"
