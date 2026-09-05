@@ -3163,6 +3163,8 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
         "<p>What the top of the table holds, not the whole game: managers "
         f"sampled from three rank ranges after Gameweek {escape(str(rank_gw))}, "
         f"squads read from their Gameweek {escape(str(picks_gw))} picks. "
+        f"Chip points count towards rank, so the {escape(tiers[0][1])} column is "
+        f"who led after Gameweek {escape(str(rank_gw))}, not who is best. "
         f"{escape(metric)} Sorted by the {escape(tiers[0][1])} column.</p>\n"
         '<div class="scroll"><table>'
         f"<caption>Effective ownership by rank tier, Gameweek {escape(str(picks_gw))} squads.</caption>"
