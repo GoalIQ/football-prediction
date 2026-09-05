@@ -156,6 +156,10 @@ function boot(): void {
 				// $pageviewta: posthog capturoi sen initissa.
 				capture_pageview: true,
 				autocapture: false,
+				// 5.9 auditointi: surveys.js (34 kB) latautui joka sivulle vaikka
+				// kyselyita ei kayteta missaan. Mitattu Lighthouse mobile: posthog
+				// 385-590 ms paasaietta hubissa. Sama lippu hubin snippetissa.
+				disable_surveys: true,
 				persistence: 'localStorage+cookie'
 			});
 			posthog.register({

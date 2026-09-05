@@ -30,12 +30,20 @@
 	let { onUpgrade }: { onUpgrade: () => void } = $props();
 
 	let xp = $state<XpResponse | null>(null);
+	// Luuranko nakyy VAIN latauksen ajan. Epaonnistunut haku ei saa jattaa
+	// sita paalle (silloin sivu nayttaisi ikuisesti "loading").
+	let loading = $state(true);
 
 	onMount(() => {
 		capture('product_intro_shown', { source: 'pro_web_root' }, 'product_intro_shown');
 		fetchXp().then(
-			(d) => (xp = d),
-			() => {}
+			(d) => {
+				xp = d;
+				loading = false;
+			},
+			() => {
+				loading = false;
+			}
 		);
 	});
 
@@ -97,7 +105,27 @@
 		before kick-off and we publish how those went.
 	</p>
 
-	{#if top.length > 0}
+	{#if loading}
+		<!-- 5.9 auditointi: CLS 0.229 mitattu (Lighthouse mobile). Taulukko
+		     ilmestyi haun jalkeen ja tyonsi "What you get" -lohkon 400 px alas.
+		     Luuranko varaa saman tilan (otsikko + 10 rivia) ennen kuin data on
+		     tullut, joten mikaan ei liiku. Jos haku epaonnistuu, lohko katoaa
+		     kuten ennenkin (xp jaa nulliksi vain latauksen ajan). -->
+		<div class="demo demo-skeleton" aria-hidden="true">
+			<div class="demo-head">
+				<span class="demo-title">Projected points</span>
+				<span class="demo-tag">loading</span>
+			</div>
+			<table>
+				<thead><tr><th scope="col">Player</th><th scope="col" class="ta-r">xP</th><th scope="col" class="ta-r">Total</th></tr></thead>
+				<tbody>
+					{#each Array(10) as _, i (i)}
+						<tr><td><span class="bar"></span></td><td class="num ta-r"><span class="bar bar-s"></span></td><td class="num ta-r"><span class="bar bar-s"></span></td></tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{:else if top.length > 0}
 		<!-- ELAVA TUOTE, EI KUVA. Tama on tasan se lista jota tyokalu nayttaa;
 		     top 20 samasta projektiosta on ilmaista tasoa myos goaliq.app/fpl:ssa. -->
 		<div class="demo">
@@ -257,6 +285,17 @@
 	}
 	.demo tbody tr:last-child td {
 		border-bottom: 0;
+	}
+	.demo-skeleton .bar {
+		display: inline-block;
+		width: 9em;
+		height: 1em;
+		vertical-align: middle;
+		background: var(--border);
+		opacity: 0.7;
+	}
+	.demo-skeleton .bar-s {
+		width: 2.5em;
 	}
 	.ta-r {
 		text-align: right;

@@ -144,6 +144,12 @@ def main() -> int:
 
     frozen = json.loads(
         (Path(args.squad_file) if args.squad_file else FROZEN_DIR / f"gw{args.gw}.json").read_text(encoding="utf-8"))
+    # 5.9 KORTTI-PROVENIENSSI-PORTTI: otsikko lupaa entryn rungon, joten
+    # generaattori vaatii todisteen (verifioitu / entryn pickeista / ketju
+    # verifioidusta). Fail-closed: 4.9 kortti olisi kaatunut tassa.
+    from src.models.fpl_model_entry import require_entry_provenance
+    peruste = require_entry_provenance(frozen, FROZEN_DIR)
+    print(f"provenienssi: {peruste}")
     xi, bench = frozen["xi"], frozen["bench"]
     cap, vice = frozen["captain"], frozen["vice_captain"]
     total = sum(p["price"] for p in xi + bench) / 10.0

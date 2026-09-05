@@ -144,6 +144,30 @@ def fetch_picks(entry: int, gw: int):
         return None, f"JSON-virhe: {e!r}"
 
 
+def record_verification(path: Path, frozen: dict, gw: int, *, squad_match: bool,
+                        captain_match: bool, common: int, now) -> None:
+    """Kirjoittaa `meta.entry_verified` samaan artefaktiin. Ei erillista
+    tiedostoa freeze-hakemistoon: vieras tiedosto glob-kansiossa luettiin
+    runkona 29.8. Kirjoitetaan vain kun tosiasia muuttuu (aikaleima ei ole
+    tosiasia), jotta CI:n commit ei kasva joka yo."""
+    from src.models.fpl_model_entry import verified_record
+    rec = verified_record(gw, ENTRY_ID, squad_match=squad_match,
+                          captain_match=captain_match,
+                          at=now.strftime("%Y-%m-%dT%H:%M:%SZ"), common=common)
+    meta = frozen.setdefault("meta", {})
+    vanha = dict(meta.get("entry_verified") or {})
+    vanha.pop("at", None)
+    uusi = dict(rec)
+    uusi.pop("at", None)
+    if vanha == uusi:
+        return
+    meta["entry_verified"] = rec
+    path.write_text(json.dumps(frozen, ensure_ascii=False), encoding="utf-8")
+    print(f"meta.entry_verified kirjoitettu: match={rec['match']} "
+          f"(15: {rec['squad_match']}, C: {rec['captain_match']}, "
+          f"yhteisia {rec['common']})")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gw", type=int, default=None)
@@ -187,6 +211,16 @@ def main() -> int:
     entry_ids = {int(p["element"]) for p in picks}
     missing = frozen_ids - entry_ids     # mallilla on, tilillä ei
     extra = entry_ids - frozen_ids       # tilillä on, mallilla ei
+
+    # 5.9 KORTTI-PROVENIENSSI-PORTTI: tulos kirjoitetaan freezen metaan, jotta
+    # kortin generaattori (ja seuraavan kierroksen ketju) lukee "onko tama
+    # entryn runko" yhdesta paikasta eika oleta. Kirjoitetaan MYOS ero: se on
+    # eksplisiittinen kielto, ei vain puuttuva lupa.
+    cap_entry_all = next((int(p["element"]) for p in picks
+                          if p.get("is_captain")), None)
+    record_verification(path, frozen, gw, squad_match=not missing and not extra,
+                        captain_match=(cap_entry_all == frozen.get("captain")),
+                        common=len(frozen_ids & entry_ids), now=now)
 
     if args.always_print:
         print(enterable(frozen))

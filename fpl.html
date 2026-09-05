@@ -566,7 +566,7 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
    cookieless setup and names it as the reason the page has no cookie
    banner. This therefore counts PAGE LOADS, not unique visitors, since
    uniques would need a persistent identifier and thus a banner. */
-posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true});
+posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true,disable_surveys:true});
 posthog.register({platform:'web',source_app:'goaliq-static'});
 posthog.capture('web_landing_viewed',{page:location.pathname});
 </script>
