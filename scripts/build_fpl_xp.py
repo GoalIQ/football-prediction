@@ -283,7 +283,29 @@ def price_blend_allowed(element: dict) -> bool:
 
 
 def attach_minutes_basis_flag(players: list[dict]) -> int:
-    """Merkitsee rivit joiden minuuttipriori nojaa katkenneeseen kauteen."""
+    """Merkitsee rivit joiden minuuttipriori nojaa viime kauteen joka ei ole
+    tama kausi tassa seurassa: katkennut kausi (`short_season`) tai
+    seuranvaihto (`new_club`).
+
+    🔴 MITATTU 4.9 (MINUUTTILIPPU-SEURANVAIHDOS): Anderson siirtyi Cityyn
+    deadline-paivana, sai `minutes_source: price_blend` ja perustelun "thin
+    Premier League sample", mutta EI lippua, koska lippu katsoi viime kauden
+    minuutteja (3 332) jotka kertyivat EDELLISESSA seurassa. Khusanov sai
+    lipun 1 427 minuutista.
+
+    Kolme ehtoa, ja jokainen on portin loydos (5.9, kaksi kierrosta):
+    (1) Seuranvaihto luetaan `last_season.team_code`ista (arkistoitu 25/26-
+        bootstrap), EI FPL:n `team_join_date`sta: lainalta vakinaistettu
+        pelaaja saa uuden join-paivan vaikka minuutit kertyivat taalla
+        (Rohl, Guessand, Hincapie, Grealish = 4 vaaraa lippua 42:sta).
+    (2) Lippu vaatii `minutes_source in (price_prior, price_blend)`, jotta
+        se RAUKEAA kun pelaajan omat minuutit tassa seurassa ylittavat
+        sekoituskynnyksen. Ilman tata lippu olisi pysynyt kauden loppuun
+        ja copy olisi muuttunut vaarammaksi joka kierros (saanto 6a).
+    (3) Pelkka `minutes_source` ei kelpaa lipuksi: kauden 3. kierroksella
+        `price_blend` on 288 rivilla 494:sta, Van Dijk mukaan lukien.
+    `new_club` voittaa `short_season`in: se on tarkempi syy.
+    """
     n = 0
     for row in players:
         # Ohitettu rivi on ihmisen paatos eika priorin tuotos -> lippu
@@ -294,8 +316,17 @@ def attach_minutes_basis_flag(players: list[dict]) -> int:
         # niilla ole viime kauden minuutteja joihin viitata.
         if row.get("data_basis") != "pl_history":
             continue
-        mins = (row.get("last_season") or {}).get("minutes")
-        if mins is None or mins >= SHORT_SEASON_MINUTES:
+        ls = row.get("last_season") or {}
+        mins = ls.get("minutes")
+        if mins is None:
+            continue
+        prev_code, cur_code = ls.get("team_code"), row.get("team_code")
+        if (prev_code and cur_code and prev_code != cur_code
+                and row.get("minutes_source") in ("price_prior", "price_blend")):
+            row["minutes_basis_flag"] = "new_club"
+            n += 1
+            continue
+        if mins >= SHORT_SEASON_MINUTES:
             continue
         row["minutes_basis_flag"] = "short_season"
         n += 1
@@ -1289,6 +1320,9 @@ def main(argv: list[str] | None = None) -> int:
             # player card + pickerit tarvitsevat sen (CSV-endpoint lukee jo
             # saman now_costin bootstrapista). now_cost on kymmenesosia.
             "price": (e.get("now_cost") or 0) / 10.0,
+            # 5.9: FPL:n seurakoodi (kausien yli vakaa). last_season.team_code
+            # vs tama = seuranvaihto (ks. attach_minutes_basis_flag).
+            "team_code": e.get("team_code"),
             # Addendum 2 (player card): viime kauden PL-kausisummat
             # jäädytetystä 25/26-artefaktista. null = ei PL-kautta 25/26
             # (nousijapelaaja / ulkomailta tullut) — sarjatasoa EI sekoiteta.
@@ -1390,8 +1424,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     tc_meta = attach_team_confidence(players)
     n_short = attach_minutes_basis_flag(players)
+    n_new = sum(1 for p in players if p.get("minutes_basis_flag") == "new_club")
     print(f"      minuuttipriorin lippu: {n_short}/{len(players)} rivia nojaa "
-          f"alle {SHORT_SEASON_MINUTES} minuutin kauteen")
+          f"viime kauteen joka ei ole tama seura ({n_new} seuranvaihtoa, "
+          f"{n_short - n_new} alle {SHORT_SEASON_MINUTES} minuutin kautta)")
     out = {
         "meta": {
             "product": "GoalIQ Fantasy Phase 1: expected points (xP)",

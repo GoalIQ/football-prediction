@@ -118,9 +118,16 @@ def main() -> int:
           f"BPS-oikaisu 26/27-sääntöihin (#151)...")
     summaries = xp.adjust_summaries_bps_2627(summaries)
 
+    # 5.9 (MINUUTTILIPPU-SEURANVAIHDOS): viime kauden seura talteen, jotta
+    # seuranvaihto luetaan tasta eika FPL:n team_join_datesta. Portti mittasi
+    # 5.9: lainalta vakinaistettu pelaaja (Rohl, Guessand, Hincapie, Grealish)
+    # saa uuden join-paivan vaikka minuutit kertyivat samassa seurassa.
+    # team_code on kausien yli vakaa; team-id ja lyhenne eivat ole.
+    teams_by_id = {t["id"]: t for t in boot.get("teams", [])}
     players: dict[str, dict] = {}
     for e in elements:
         pid, code, pos = e["id"], e["code"], e["element_type"]
+        prev_team = teams_by_id.get(e.get("team")) or {}
         hist = summaries.get(pid, [])
         acc = xp.accumulate_history(hist)
         acc["dc_hits"] = xp.count_dc_hits(hist, pos)
@@ -148,6 +155,8 @@ def main() -> int:
             "last_season": {
                 "season": "2025/26",
                 "league": "Premier League",
+                "team_code": e.get("team_code"),
+                "team_name": prev_team.get("name"),
                 "minutes": mins,
                 "starts": st["starts"],
                 "goals": st["goals"],

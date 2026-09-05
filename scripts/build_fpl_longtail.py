@@ -1671,7 +1671,10 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     trows = "".join(
         "<tr>"
         f'<td class="n">{i + 1}</td>'
-        f'<td>{escape(r["web_name"])}</td>'
+        # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
+        # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
+        # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
+        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span></td>'
         f'<td>{escape(r["pos"])}</td>'
@@ -3766,6 +3769,20 @@ def _no_history_flag(p: dict) -> str:
                 f'{mins} minutes last season, so this player&#x27;s minutes '
                 'estimate rests on a short spell rather than a full one. It '
                 'does not say which way the number is off">!</span>')
+    # 5.9 KOLMAS LIPPU (MINUUTTILIPPU-SEURANVAIHDOS): viime kauden minuutit
+    # kertyivat toisessa seurassa. Anderson (3 332 min Forestissa, Cityyn
+    # deadline-paivana) ei saanut lippua, Khusanov sai 1 427 minuutista.
+    if p.get("minutes_basis_flag") == "new_club":
+        ls = p.get("last_season") or {}
+        mins, prev = ls.get("minutes"), ls.get("team_name") or "another club"
+        # Portti 5.9: EI "until he has played here" (35/42 oli jo pelannut
+        # taalla) eika "leans on where he is priced" (paino 0,25, ja 4:lla
+        # ei hintaa lainkaan). Seura nimetaan, jotta vaite on tarkistettava
+        # yhdella silmayksella FPL:n pelaajakortista.
+        return (' <span class="flag" title="Joined this club this season. '
+                f'Last season&#x27;s {mins} minutes were for {escape(str(prev))}, '
+                'so the projection here is working with weaker information. '
+                'It does not say which way the number is off">!</span>')
     return ""
 
 
@@ -3872,20 +3889,38 @@ def _xi_omissions(players: list[dict], valitut: list[dict]) -> str:
     otetut = {id(p) for p in valitut}
     ulkona = [p for p in players
               if id(p) not in otetut
-              and p.get("minutes_basis_flag") == "short_season"
+              and p.get("minutes_basis_flag") in ("short_season", "new_club")
               and isinstance(p.get("predicted_starts"), (int, float))]
     if not ulkona:
         return ""
     ulkona.sort(key=lambda p: -(p.get("price") or 0))
-    osat = []
-    for p in ulkona[:4]:
+
+    def _nimi(p):
         mins = (p.get("last_season") or {}).get("minutes")
-        osat.append(f'{escape(str(p["web_name"]))} '
-                    f'({start_pct(p)}%, {mins} min)')
-    return ('<p class="note">Missing from that eleven, and the reason is the '
-            "same in each case: they played a short season, so the estimate "
-            "reads them as rotation. "
-            + ", ".join(osat) + ".</p>")
+        return f'{escape(str(p["web_name"]))} ({start_pct(p)}%, {mins} min)'
+
+    def _ja(osat):
+        return osat[0] if len(osat) == 1 else ", ".join(osat[:-1]) + " and " + osat[-1]
+
+    lyhyt = [p for p in ulkona if p.get("minutes_basis_flag") == "short_season"][:4]
+    uudet = [p for p in ulkona if p.get("minutes_basis_flag") == "new_club"][:4]
+    lauseet = []
+    # Portti 5.9: nimet lauseen ALKUUN (pronomini ennen viitattua ei ole
+    # luettava), iso alkukirjain, ja seuranvaihto omana lauseenaan eika
+    # "the reason is the same in each case".
+    if lyhyt:
+        lauseet.append(_ja([_nimi(p) for p in lyhyt])
+                       + " played a short season, so the estimate reads that "
+                       "as rotation.")
+    if uudet:
+        osat = []
+        for p in uudet:
+            prev = (p.get("last_season") or {}).get("team_name") or "another club"
+            osat.append(f"{_nimi(p)} for {escape(str(prev))}")
+        lauseet.append(_ja(osat) + " played last season, so those minutes "
+                       "were not for this squad.")
+    return ('<p class="note">Missing from that eleven: '
+            + " ".join(lauseet) + "</p>")
 
 
 def render_club_page(short: str, players: list[dict], meta: dict,
@@ -4245,7 +4280,10 @@ def _gw_xp_section(xp: dict) -> str:
     trows = "".join(
         "<tr>"
         f'<td class="n">{i + 1}</td>'
-        f'<td>{escape(r["web_name"])}</td>'
+        # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
+        # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
+        # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
+        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span></td>'
         f'<td>{escape(r.get("pos") or "")}</td>'
@@ -4347,7 +4385,10 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     trows = "".join(
         "<tr>"
         f'<td class="n">{i + 1}</td>'
-        f'<td>{escape(r["web_name"])}</td>'
+        # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
+        # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
+        # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
+        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span>{_tflag_html(r)}</td>'
         # 15.8: pos ja price ilman m-hidea, kuten otsikotkin. Suodatin lukee

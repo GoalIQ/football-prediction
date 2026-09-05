@@ -84,6 +84,9 @@ export interface LastSeasonPer90 {
  * points, per90}. Tyyppi hyväksyy molemmat: UI lukee kenttä kerrallaan
  * aliaksineen ja jättää puuttuvat renderöimättä. */
 export interface LastSeason {
+	/** 5.9: viime kauden seura arkistoidusta bootstrapista (team_code on kausien yli vakaa). */
+	team_code?: number;
+	team_name?: string;
 	/** Kausileima jos payload tuo sen (esim. '2025/26'). */
 	season?: string;
 	/** Valmiit per-90-vauhdit. Puuttuessa UI laskee ne minuuteista. */
@@ -150,7 +153,7 @@ export interface XpPlayer {
 	 *  kaudella). KUVAILEVA: kertoo että arvio nojaa lyhyeen otokseen, EI
 	 *  kumpaan suuntaan luku on väärässä. Kenttä on rivillä VAIN kun lippu on
 	 *  päällä; defensiivinen, vanha payload ei tuo. */
-	minutes_basis_flag?: 'short_season';
+	minutes_basis_flag?: 'short_season' | 'new_club';
 	/** 10.8: joukkueen luottamuslippu. Kenttä on rivillä VAIN kun joukkue on
 	 *  liputettu (nousija tai poikkeuksellinen kausivaihtuvuus) — pelkkä
 	 *  vaihtuvuusluku kuuluu työkalutaulukoihin, ei jokaisen rivin viereen.

@@ -649,6 +649,17 @@
 								estimate rests on a short spell rather than a full one. That does not
 								say which way it is off.
 							</p>
+						{:else if player.minutes_basis_flag === 'new_club'}
+							<!-- 5.9 MINUUTTILIPPU-SEURANVAIHDOS: viime kauden minuutit
+							     kertyivät toisessa seurassa (FPL:n team_join_date). Sama
+							     lippu webin /fpl-sivuilla ja mobiilissa. -->
+							<p class="muted">
+								He joined {player.team} this season. Last season's
+								{player.last_season?.minutes} minutes were for
+								{player.last_season?.team_name ?? 'another club'}, so this estimate is
+								working with weaker information. It does not say which way the number is
+								off.
+							</p>
 						{/if}
 						{#if premium}
 							{@const tot = player.xp_horizon_total}
