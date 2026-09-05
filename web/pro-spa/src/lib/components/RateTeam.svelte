@@ -1219,6 +1219,31 @@
 	     alle samaan sarakkeeseen — silloin vasen sarake tayttyy sisallolla
 	     eika tyhjalla. -->
 	<div class="result-main">
+	<!-- 5.9 (Villen pyynto): "haluaisin ensimmaisena nahda joukkueeni pitchin
+	     kun avaan My team -valilehden". Kentta ensin, rating ja luvut sen
+	     alla. Sama komponentti, vain jarjestys vaihtui. -->
+	<!-- #113: pitch + kitit + what-if-manager (pariteetti mobiilin #106+#112:lle;
+	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
+	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW.
+	     22.8: siirretty result-gridin vasempaan sarakkeeseen (ks. yllä). -->
+	<TeamPitchManager
+		players={plannedPlayers}
+		{premium}
+		defaultGw={data.meta.gw}
+		gwInProgress={data.meta.gw_in_progress === true}
+		lastFinished={data.last_finished ?? null}
+		picksGw={data.meta.picks_gw ?? null}
+		{onUpgrade}
+		initialCaptaincy={captaincy}
+		onCaptaincyChange={handleCaptaincyChange}
+	/>
+	</div>
+
+	<!-- 5.9 (Villen pyynto): oman rungon uutiset heti kentan alle - kuka on
+	     poissa, kenen hinta liikkuu tanaan. Sama data kuin This week -sivun
+	     "Before the next deadline", ei uutta laskentaa. -->
+	<GwReview flagsOnly />
+
 	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
 	     sen alla = "% of the best possible budget team" (uusi semantiikka,
 	     gap_to_optimal_xp defensiivisesti jos backend jo tarjoaa sen) -->
@@ -1434,23 +1459,6 @@
 		{#if typeof data.meta.note === 'string'}
 			<p class="muted">{data.meta.note}</p>
 		{/if}
-	</div>
-
-	<!-- #113: pitch + kitit + what-if-manager (pariteetti mobiilin #106+#112:lle;
-	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
-	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW.
-	     22.8: siirretty result-gridin vasempaan sarakkeeseen (ks. yllä). -->
-	<TeamPitchManager
-		players={plannedPlayers}
-		{premium}
-		defaultGw={data.meta.gw}
-		gwInProgress={data.meta.gw_in_progress === true}
-		lastFinished={data.last_finished ?? null}
-		picksGw={data.meta.picks_gw ?? null}
-		{onUpgrade}
-		initialCaptaincy={captaincy}
-		onCaptaincyChange={handleCaptaincyChange}
-	/>
 	</div>
 
 	<!-- 🔴 4.9: viikkosilmukka (WeeklyActions + BeatTheModel + SeasonRace) oli

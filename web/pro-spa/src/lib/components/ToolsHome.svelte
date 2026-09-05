@@ -18,7 +18,7 @@
 	import { auth, refreshSubscription, freePremiumWindowActive } from '$lib/auth.svelte';
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { fplEntry } from '$lib/fplEntry.svelte';
+	import { fplEntry, loadProfileEntry } from '$lib/fplEntry.svelte';
 	import DefConLive from './DefConLive.svelte';
 	import Provenance from './Provenance.svelte';
 	import LeagueBanner from './LeagueBanner.svelte';
@@ -200,6 +200,14 @@
 
 	// Hero-badge → upgrade-näkymä (signaali +page.sveltestä).
 	let lastSignal = 0;
+	// 5.9 (selainaudit, Ville kirjautuneena): tallennettu entry luettiin
+	// profiilista VAIN RateTeam.sveltessa (#66), joten suoraan avattu
+	// /prices, /players/value tai /players/differentials sanoi "This list
+	// does not know your squad yet" vaikka This week -sivu tiesi tiimin
+	// 116920. Yksi lukija tassa kuoressa, jonka jokainen reitti renderoi.
+	$effect(() => {
+		if (auth.sessionResolved && auth.user) void loadProfileEntry();
+	});
 	$effect(() => {
 		if (upgradeSignal > lastSignal) {
 			lastSignal = upgradeSignal;

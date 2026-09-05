@@ -30,8 +30,10 @@ def _row(**kw):
         "web_name": "Anderson", "team_short": "MCI", "team_code": MCI,
         "pos": "MID", "price": 6.0, "data_basis": "pl_history",
         "predicted_starts": 77.0, "minutes_source": "price_blend",
+        # FPL:n oma nimi heittomerkkeineen: escape() kulkee lapi ja
+        # unescape palauttaa sen (k3: fikstuuri ei kavellyt tata tapausta).
         "last_season": {"minutes": 3332, "starts": 37, "team_code": NFO,
-                        "team_name": "Nottingham Forest"},
+                        "team_name": "Nott'm Forest"},
     }
     base.update(kw)
     return base
@@ -90,7 +92,7 @@ def test_new_club_beats_short_season():
     tarkempi syy. Lippu ei saa vaihdella sen mukaan kumpi ehto luetaan
     ensin."""
     rows = [_row(last_season={"minutes": 900, "starts": 9, "team_code": NFO,
-                              "team_name": "Nottingham Forest"})]
+                              "team_name": "Nott'm Forest"})]
     xpb.attach_minutes_basis_flag(rows)
     assert rows[0]["minutes_basis_flag"] == "new_club"
 
@@ -162,7 +164,9 @@ def _no_direction(html):
 def test_tooltip_names_the_club_and_makes_no_direction_claim():
     html = lt._no_history_flag(_row(minutes_basis_flag="new_club"))
     assert 'class="flag"' in html
-    assert "3332 minutes were for Nottingham Forest" in html
+    import html as _h
+    assert "3332 minutes were for Nott'm Forest" in _h.unescape(html)
+    assert "&#x27;m Forest" in html  # escape() kulki lapi, ei raakaa heittomerkkia
     assert "does not say which way" in html
     _no_direction(html)
 
@@ -176,7 +180,7 @@ def test_omissions_note_names_first_and_reads_as_sentences():
     html = lt._xi_omissions([lyhyt, uusi], [])
     text = _teksti(html)
     assert text.startswith("Missing from that eleven, with our start chance and last season's minutes: Khusanov (")
-    assert "Anderson (" in text and "for Nottingham Forest" in text
+    assert "Anderson (" in text and "for Nott'm Forest" in text
     assert re.search(r"\. [a-z]", text) is None, text
     assert "same in each case" not in text
     _no_direction(text)
@@ -188,7 +192,7 @@ def test_omissions_note_joins_names_with_and():
              last_season={"minutes": 3288, "team_code": 91,
                           "team_name": "Bournemouth"})
     text = _teksti(lt._xi_omissions([a, b], []))
-    assert "Anderson (77%, 3332 min) played last season for Nottingham Forest and Senesi (77%, 3288 min) for Bournemouth, so those minutes were not for this squad." in text
+    assert "Anderson (77%, 3332 min) played last season for Nott'm Forest and Senesi (77%, 3288 min) for Bournemouth, so those minutes were not for this squad." in text
 
 
 def test_expected_points_page_renders_the_flag():
@@ -204,7 +208,7 @@ def test_expected_points_page_renders_the_flag():
             if flagged and i == 1:
                 p["minutes_basis_flag"] = "new_club"
                 p["last_season"] = {"minutes": 3332, "team_code": NFO,
-                                    "team_name": "Nottingham Forest"}
+                                    "team_name": "Nott'm Forest"}
             players.append(p)
         xp = {"meta": {"available": True, "next_gameweek": 2,
                        "deadline_gameweek": 2, "season": "2026/27"},
@@ -213,7 +217,8 @@ def test_expected_points_page_renders_the_flag():
             xp, datetime(2026, 8, 22, tzinfo=timezone.utc)) or ""
     with_flag = page(True)
     without = page(False)
-    assert "3332 minutes were for Nottingham Forest" in with_flag
+    import html as _h
+    assert "3332 minutes were for Nott'm Forest" in _h.unescape(with_flag)
     assert 'class="flag"' in with_flag
     assert 'class="flag"' not in without
 
@@ -238,7 +243,7 @@ def test_club_page_explanation_covers_the_club_change():
     nyt myos Rogersilla (3 280 min) ja Andersonilla (3 332 min)."""
     import inspect
     src = inspect.getsource(lt)
-    i = src.index("Two things this table gets wrong")
+    i = src.index("Three things this table gets wrong")
     kappale = src[i:i + 900]
     assert "changed clubs" in kappale
     assert "Both carry a !" in kappale
@@ -254,7 +259,7 @@ def test_omissions_note_word_order_and_label():
                           "team_name": "Bournemouth"})
     text = _teksti(lt._xi_omissions([a, b], []))
     assert text.startswith("Missing from that eleven, with our start chance and last season's minutes: ")
-    assert "Anderson (77%, 3332 min) played last season for Nottingham Forest and Senesi (77%, 3288 min) for Bournemouth, so those minutes were not for this squad." in text
+    assert "Anderson (77%, 3332 min) played last season for Nott'm Forest and Senesi (77%, 3288 min) for Bournemouth, so those minutes were not for this squad." in text
     assert re.search(r"for [A-Z][^,]* played", text) is None, text
 
 
@@ -264,6 +269,14 @@ def test_omissions_note_says_when_it_truncates():
     text = _teksti(lt._xi_omissions(rows, []))
     assert "and 2 more" in text
     assert "P4" not in text and "P5" not in text
+    # k3: katkaisu on listan jasen, ei "A and B and 2 more"
+    runko = text.split(": ", 1)[1]  # etiketissa on oma "and"
+    assert runko.count(" and ") == 1, text
+    lyhyet = [_row(web_name=f"S{i}", minutes_basis_flag="short_season", price=9 - i,
+                   last_season={"minutes": 900, "team_code": MCI, "team_name": "X"})
+              for i in range(5)]
+    text = _teksti(lt._xi_omissions(lyhyet, [])).split(": ", 1)[1]
+    assert text.count(" and ") == 1 and "and 1 more" in text, text
 
 
 def test_ranked_tables_carry_a_legend_only_when_flagged():
@@ -278,7 +291,7 @@ def test_ranked_tables_carry_a_legend_only_when_flagged():
             if flagged and i == 1:
                 p["minutes_basis_flag"] = "new_club"
                 p["last_season"] = {"minutes": 3332, "team_code": NFO,
-                                    "team_name": "Nottingham Forest"}
+                                    "team_name": "Nott'm Forest"}
             players.append(p)
         xp = {"meta": {"available": True, "next_gameweek": 2,
                        "deadline_gameweek": 2, "season": "2026/27"},
@@ -287,9 +300,16 @@ def test_ranked_tables_carry_a_legend_only_when_flagged():
             xp, datetime(2026, 8, 22, tzinfo=timezone.utc)) or ""
     assert "! = last season" in page(True)
     assert "! = last season" not in page(False)
-    # legenda on kytketty kaikkiin kolmeen tauluun, ei vain yhteen
+    # k3: xG-leaders EI kanna lippua (artefaktissa ei kenttia, draw() korvaa
+    # tbodyn). Legenda on expected-points-sivun kahdella taululla ja
+    # seurasivun best-players-taululla.
     import inspect
-    assert inspect.getsource(lt).count("{_flag_legend(rows") == 3
+    src = inspect.getsource(lt)
+    assert src.count("{_flag_legend(rows") == 2
+    assert "_flag_legend(karki)" in src
+    xg_i = src.index("def render_xg_leaders")
+    xg_src = src[xg_i:src.index("\ndef ", xg_i + 10)]
+    assert "_no_history_flag" not in xg_src and "_flag_legend" not in xg_src
 
 
 def test_flag_legend_mentions_only_what_is_present():

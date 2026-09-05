@@ -33,7 +33,11 @@ SIVUT = ["index.html", "fpl.html", "career.html", "faq.html", "creators.html"]
 
 # Vakionimet joita sivut kayttavat. Uusi kortti lisataan tanne KASIN, jotta
 # rikkinainen viittaus loytyy ennen julkaisua.
-ODOTETUT = {"gameweek-card.webp", "projected-xi-card.webp"}
+# 5.9: /fpl-tyokaluhakemiston 8 pikkukuvaa (og-kuvista, assets/cards/tools/).
+TOOLS = ["expected-points", "best-captain", "differentials", "model-xi",
+         "predicted-lineups", "price-changes", "team-news", "points"]
+ODOTETUT = {"gameweek-card.webp", "projected-xi-card.webp"} | {
+    f"tools/{t}.webp" for t in TOOLS}
 
 # Kuinka vanha julkaistu kortti saa olla. Kierros kestaa viikon; kaksi
 # viikkoa antaa tilaa maaotteluetauolle ilman etta vanhentunut kortti jaa
@@ -58,7 +62,7 @@ def test_sivut_viittaavat_kortteihin():
     mittaa tyhjaa ja kuvat ovat kadonneet huomaamatta."""
     v = _viittaukset()
     assert v, "yksikaan sivu ei viittaa /assets/cards/-kuvaan"
-    nimet = {Path(x).name for x in v}
+    nimet = {x.replace("/assets/cards/", "", 1) for x in v}
     assert nimet == ODOTETUT, (nimet, ODOTETUT)
 
 

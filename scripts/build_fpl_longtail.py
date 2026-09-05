@@ -1671,10 +1671,11 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
     trows = "".join(
         "<tr>"
         f'<td class="n">{i + 1}</td>'
-        # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
-        # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
-        # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
-        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}</td>'
+        # k3 5.9: EI minuuttilippua tassa taulussa. Leaders-artefaktissa ei
+        # ole kenttia (lippu olisi kuollutta koodia), draw() korvaa tbodyn
+        # ilman sita, ja taulu nayttaa TOTEUTUNEEN xG:n jolle minuuttipriori
+        # ei merkitse mitaan.
+        f'<td>{escape(r["web_name"])}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span></td>'
         f'<td>{escape(r["pos"])}</td>'
@@ -1786,7 +1787,7 @@ def render_xg_leaders(leaders: dict, now: datetime) -> str | None:
         '<th class="n m-hide">Mins</th><th class="n m-hide">Games</th>'
         '<th class="n">Season</th>'
         "</tr></thead>"
-        f'<tbody id="xgb">{trows}</tbody></table></div>{_flag_legend(rows[:100])}'
+        f'<tbody id="xgb">{trows}</tbody></table></div>'
         '<button type="button" class="chip" id="xgmore" '
         'style="margin:4px 0 8px;">Show all players</button>'
     )
@@ -3800,8 +3801,9 @@ def _no_history_flag(p: dict) -> str:
         mins, prev = ls.get("minutes"), ls.get("team_name") or "another club"
         # Portti 5.9: EI "until he has played here" (35/42 oli jo pelannut
         # taalla) eika "leans on where he is priced" (paino 0,25, ja 4:lla
-        # ei hintaa lainkaan). Seura nimetaan, jotta vaite on tarkistettava
-        # yhdella silmayksella FPL:n pelaajakortista.
+        # ei hintaa lainkaan). Seura nimetaan, jotta vaite on tarkistettava:
+        # FPL:n pelaajakortti EI nayta viime kauden seuraa, mutta pelaajan
+        # siirtohistoria on julkista ja nimi on tasmalleen FPL:n oma.
         return (' <span class="flag" title="Joined this club this season. '
                 f'Last season&#x27;s {mins} minutes were for {escape(str(prev))}, '
                 'so the projection here is working with weaker information. '
@@ -3936,11 +3938,13 @@ def _xi_omissions(players: list[dict], valitut: list[dict]) -> str:
     # kasaamalta. Katkaisu sanotaan aaneen: Man Utd 5.9 pudotti Heavenin
     # listalta hiljaa.
     if lyhyt:
-        loput = len(lyhyt) - KATTO
-        lauseet.append(_ja([_nimi(p) for p in lyhyt[:KATTO]])
-                       + (f" and {loput} more" if loput > 0 else "")
-                       + " played a short season, so the estimate reads that "
-                       "as rotation.")
+        # k3: katkaisu on listan JASEN, ei perake - muuten "A, B and C and 1
+        # more" (Man Utd 5.9 livena).
+        nimet = [_nimi(p) for p in lyhyt[:KATTO]]
+        if len(lyhyt) > KATTO:
+            nimet.append(f"{len(lyhyt) - KATTO} more")
+        lauseet.append(_ja(nimet) + " played a short season, so the estimate "
+                       "reads that as rotation.")
     if uudet:
         osat = []
         for i, p in enumerate(uudet[:KATTO]):
@@ -3948,10 +3952,9 @@ def _xi_omissions(players: list[dict], valitut: list[dict]) -> str:
                               or "another club"))
             osat.append(f"{_nimi(p)} played last season for {prev}" if i == 0
                         else f"{_nimi(p)} for {prev}")
-        loput = len(uudet) - KATTO
-        lauseet.append(_ja(osat)
-                       + (f" and {loput} more" if loput > 0 else "")
-                       + ", so those minutes were not for this squad.")
+        if len(uudet) > KATTO:
+            osat.append(f"{len(uudet) - KATTO} more")
+        lauseet.append(_ja(osat) + ", so those minutes were not for this squad.")
     return ('<p class="note">Missing from that eleven, with our start chance '
             "and last season&#x27;s minutes: " + " ".join(lauseet) + "</p>")
 
@@ -4007,6 +4010,9 @@ def render_club_page(short: str, players: list[dict], meta: dict,
         '<th class="n m-hide">Owned</th>'
         f'<th class="n">{n_gw}GW xP</th></tr></thead>'
         f"<tbody>{best_rows}</tbody></table></div>"
+        # k3 5.9: sama "!" tassa taulussa kuin XI:ssa, ja ainoa selite oli
+        # XI:n alla taulua alempana. Puhelimessa title ei aukea.
+        + _flag_legend(karki)
     ]
 
     sp = _set_piece_rows(players)
@@ -4052,7 +4058,7 @@ def render_club_page(short: str, players: list[dict], meta: dict,
             # 5.9 portti k2 (B1): "!" merkitsee nyt myos seuranvaihdon, joten
             # selite joka puhui vain katkenneesta kaudesta vaitti Rogersista
             # (3 280 min) ja Andersonista (3 332 min) vaaran asian.
-            '<p class="note">Two things this table gets wrong in a way worth '
+            '<p class="note">Three things this table gets wrong in a way worth '
             "knowing. A player who missed most of last season is read as a "
             "rotation player, because the estimate leans on the minutes he "
             "actually played and it cannot tell an injury from a benching. "

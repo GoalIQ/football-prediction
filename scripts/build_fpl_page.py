@@ -1670,6 +1670,9 @@ CSS = """
     gap:10px; margin:22px 0 26px; }
   .tooldir a{ display:block; padding:12px 14px; border:1px solid var(--line);
     text-decoration:none; color:var(--cream); }
+  .tooldir img{ display:block; width:100%; height:auto; aspect-ratio:450/236;
+    margin:-12px -14px 10px; width:calc(100% + 28px); max-width:none;
+    border-bottom:1px solid var(--line); }
   .tooldir a:hover{ border-color:var(--amber); }
   .tooldir b{ display:block; font-family:var(--mono); font-size:15px; }
   .tooldir span{ display:block; font-size:13px; color:var(--muted); margin-top:2px; }
@@ -2110,15 +2113,12 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         for p in (10, 22, 34, 46, 58)
     )
 
-    title = "Free FPL Tools: Rate My Team, Captain Pick & Clean Sheet Probability | GoalIQ"
+    title = "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ"
+    # 5.9 SEO: 358 merkkia katkesi hakutuloksessa; nyt alle 160.
     meta_desc = (
-        "Free FPL tools: clean sheet probability & FDR, a filterable player "
-        "stats table with shots and key passes, xG/xA/xGI leaders for "
-        "every player, rate my team with a captain pick, "
-        "fit checker, draft rater "
-        "and price watch. Premium adds a team manager with gameweek planner, "
-        "per-gameweek xP, value ranking and a DefCon tracker. "
-        "Published track record. Not betting."
+        "Free FPL tools, no sign-in: clean sheet probability, fixture "
+        "difficulty, player stats, xG leaders, rate my team and price watch. "
+        "Premium adds per-gameweek xP and a planner."
     )
 
     faq_html = "".join(
@@ -2163,7 +2163,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Free FPL Tools: Rate My Team, Captain Pick & Clean Sheet Probability | GoalIQ">
+<meta property="og:title" content="Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ">
 <meta property="og:description" content="{meta_desc}">
 <meta property="og:url" content="{CANONICAL}">
 <!-- Page-specific share card; see the comment in index.html. -->
@@ -2172,7 +2172,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@goaliqapp">
-<meta name="twitter:title" content="Free FPL Tools: Rate My Team, Captain Pick & Clean Sheet Probability | GoalIQ">
+<meta name="twitter:title" content="Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ">
 <meta name="twitter:description" content="{meta_desc}">
 <meta name="twitter:image" content="{BASE}/assets/brand/og/fpl-1200x630.png">
 
@@ -2201,15 +2201,18 @@ def render_page(c: dict, xp: dict | None = None) -> str:
      and no tool link on the first screen at all, on the page that is the free
      surface. This is the same fix the premium side got the same morning: a
      directory first, prose after it. -->
+<!-- 5 Sep (Ville GO): a thumbnail per tool, cut from the same share-card
+     images the pages already use for og:image, 450px webp, lazy, sized.
+     Alt repeats the card's own two lines, nothing the card does not say. -->
 <nav class="tooldir" aria-label="Free FPL tools">
-  <a href="/fpl/expected-points"><b>Expected points</b><span>Projected points, next gameweek</span></a>
-  <a href="/fpl/best-captain"><b>Captain picks</b><span>Who to give the armband</span></a>
-  <a href="/fpl/differentials"><b>Differentials</b><span>Low owned, still rated</span></a>
-  <a href="/fpl/model-xi"><b>Budget XI</b><span>Best 15 for 100.0m</span></a>
-  <a href="/fpl/predicted-lineups"><b>Predicted XI</b><span>Who starts at each club</span></a>
-  <a href="/fpl/price-changes"><b>Price changes</b><span>Who rises tonight</span></a>
-  <a href="/fpl/team-news"><b>Team news</b><span>Who is out right now</span></a>
-  <a href="/fpl/points"><b>Points vs projection</b><span>How the model did</span></a>
+  <a href="/fpl/expected-points"><img src="/assets/cards/tools/expected-points.webp" width="450" height="236" loading="lazy" decoding="async" alt="Expected points: projected points, next gameweek"><b>Expected points</b><span>Projected points, next gameweek</span></a>
+  <a href="/fpl/best-captain"><img src="/assets/cards/tools/best-captain.webp" width="450" height="236" loading="lazy" decoding="async" alt="Captain picks: who to give the armband"><b>Captain picks</b><span>Who to give the armband</span></a>
+  <a href="/fpl/differentials"><img src="/assets/cards/tools/differentials.webp" width="450" height="236" loading="lazy" decoding="async" alt="Differentials: low owned, still rated"><b>Differentials</b><span>Low owned, still rated</span></a>
+  <a href="/fpl/model-xi"><img src="/assets/cards/tools/model-xi.webp" width="450" height="236" loading="lazy" decoding="async" alt="Budget XI: best 15 for 100.0m"><b>Budget XI</b><span>Best 15 for 100.0m</span></a>
+  <a href="/fpl/predicted-lineups"><img src="/assets/cards/tools/predicted-lineups.webp" width="450" height="236" loading="lazy" decoding="async" alt="Predicted XI: who starts at each club"><b>Predicted XI</b><span>Who starts at each club</span></a>
+  <a href="/fpl/price-changes"><img src="/assets/cards/tools/price-changes.webp" width="450" height="236" loading="lazy" decoding="async" alt="Price changes: who rises tonight"><b>Price changes</b><span>Who rises tonight</span></a>
+  <a href="/fpl/team-news"><img src="/assets/cards/tools/team-news.webp" width="450" height="236" loading="lazy" decoding="async" alt="Team news: who is out right now"><b>Team news</b><span>Who is out right now</span></a>
+  <a href="/fpl/points"><img src="/assets/cards/tools/points.webp" width="450" height="236" loading="lazy" decoding="async" alt="Points vs projection: how the model did"><b>Points vs projection</b><span>How the model did</span></a>
 </nav>
 <p class="lede">GoalIQ is a free FPL assistant built on a match model with a
 published, pre-match-logged track record.
