@@ -45,11 +45,15 @@
 	 * 🔴 LAJITTELUAVAIN ON SAMA KUIN MASKISSA. Ensimmainen versio lajitteli
 	 * GW-xP:lla, mutta `mask_xp_payload` (api/premium.py) valitsee anonyymin
 	 * kymmenikon `xp_horizon_total`-jarjestyksessa ENNEN kuin tama koodi
-	 * nakee sen. Uudelleenlajittelu GW:lla tuotti listan (Isak, Szoboszlai,
-	 * B.Fernandes, Gakpo, Wirtz) jota ei ollut millaan ilmaispinnalla;
-	 * goaliq.app/fpl/expected-points naytti Virgil, Isak, Szoboszlai, Joao
-	 * Pedro, Palmer. Portti loysi sen 5.9. Nyt lista on sama rivi rivilta kuin
-	 * ilmaissivun "ranked by total xP over GW{gw}-{gw+4}" -taulukko.
+	 * nakee sen. Uudelleenlajittelu GW:lla tuotti listan jota ei ollut
+	 * millaan ilmaispinnalla. Portti loysi sen 5.9. Nyt lista on sama rivi
+	 * rivilta kuin ilmaissivun TOP 100 -taulukko (ranked by total xP over the
+	 * window). HUOM: ilmaissivun top 20 on eri taulukko (lajiteltu seuraavan
+	 * GW:n xP:lla), ala vertaa siihen.
+	 *
+	 * IKKUNA: xp_horizon_total kattaa meta.next_gameweek .. +horizon_gw-1
+	 * (mitattu 5.9: Haaland 31.21 = GW3..GW8, vaikka deadline-GW on 4).
+	 * Otsikko luetaan samasta metasta kuin summa, ei deadline-GW:sta +4.
 	 */
 	const top = $derived.by(() => {
 		if (!xp?.meta?.available) return [];
@@ -57,7 +61,8 @@
 			.sort((a, b) => (b.xp_horizon_total ?? 0) - (a.xp_horizon_total ?? 0))
 			.slice(0, 5);
 	});
-	const gwTo = $derived((gw ?? 0) + 4);
+	const winFrom = $derived(xp?.meta?.next_gameweek ?? gw ?? 0);
+	const winTo = $derived(winFrom + (xp?.meta?.horizon_gw ?? 6) - 1);
 
 	/**
 	 * Ikkunan aikana kutsu on "luo tili", koska maksaminen nyt ostaisi viikkoja
@@ -86,7 +91,7 @@
 		Get a squad you can defend<br />before the deadline
 	</h1>
 	<p class="lede">
-		GoalIQ projects every player's points for the gameweeks ahead and ranks your captain
+		GoalIQ projects every player in its projection for the gameweeks ahead and ranks your captain
 		options against each other. On transfers it'll often tell you to hold, because the best
 		move it checked isn't worth the free transfer. The same model logs a call on every match
 		before kick-off and we publish how those went.
@@ -97,7 +102,7 @@
 		     top 20 samasta projektiosta on ilmaista tasoa myos goaliq.app/fpl:ssa. -->
 		<div class="demo">
 			<div class="demo-head">
-				<span class="demo-title">Projected points, GW{gw}-{gwTo} total</span>
+				<span class="demo-title">Projected points, GW{winFrom}-{winTo} total</span>
 				<span class="demo-tag">live from the model</span>
 			</div>
 			<table>
@@ -105,7 +110,7 @@
 					<tr>
 						<th scope="col">Player</th>
 						<th scope="col" class="ta-r">GW{gw} xP</th>
-						<th scope="col" class="ta-r">GW{gw}-{gwTo}</th>
+						<th scope="col" class="ta-r">GW{winFrom}-{winTo}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -124,8 +129,8 @@
 			<p class="demo-foot muted">
 				The same table is free at
 				<a href="https://goaliq.app/fpl/expected-points">goaliq.app/fpl/expected-points</a>,
-				top twenty. Premium is the whole list, every gameweek in the window, ownership
-				beside it, and the captain ranker built on it.
+				the top 100 of the projection. Premium is every player in it, gameweek by
+				gameweek, with CSV export, and the captain ranker built on it.
 			</p>
 		</div>
 	{/if}
@@ -141,8 +146,9 @@
 			<li>A rolling planner over the gameweeks in the window.</li>
 			<li>Chip windows, scored against your own squad.</li>
 			<li>
-				<strong>The whole list.</strong> Free shows twenty players for the next gameweek;
-				Premium shows all of them, every gameweek, with CSV export.
+				<strong>The whole list.</strong> Free shows the top 100 over the window and twenty
+				for the next gameweek; Premium is every player in the projection, gameweek by
+				gameweek, with CSV export.
 			</li>
 			<li>Who actually closes the gap on your mini-league rival, and whether they own them already.</li>
 		</ul>

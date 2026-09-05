@@ -269,6 +269,9 @@ export interface RateTeamResponse {
 		hold: boolean;
 		note?: string;
 		hold_verdict?: HoldVerdict;
+		/** Toimivat kierrokset joilta delta_xp_horizon on laskettu
+		 *  (fpl_rate_team.py:1160). Ikkunan otsikko luetaan tasta, ei metasta. */
+		window_gws?: number[] | null;
 	};
 }
 

@@ -1180,10 +1180,16 @@
 					<!-- Ikkuna mukana: luku on delta_xp_horizon eli koko jaljella oleva
 					     horisontti, ja "Before the deadline" -kehys saisi sen lukemaan
 					     taman kierroksen tuottona (portti 5.9). -->
+					{@const win = data.transfers.window_gws ?? []}
+					{@const wFrom = data.transfers.hold_verdict?.gw_from ?? win[0]}
+					{@const wTo = data.transfers.hold_verdict?.gw_to ?? win[win.length - 1]}
+					<!-- Ikkuna luetaan transfers-lohkosta (window_gws / hold_verdict),
+					     EI metasta: portti 5.9 mittasi ettei metassa ole gw_from/gw_to
+					     -avaimia, joten edellinen versio renderoi "GW-". Jos ikkunaa ei
+					     ole, se jatetaan pois kokonaan. -->
 					<span class="strip-gain"
-						>+{top.delta_xp_horizon.toFixed(2)} xP GW{data.meta.gw_from ??
-							data.meta.horizon_from ??
-							''}-{data.meta.gw_to ?? data.meta.horizon_to ?? ''}</span
+						>+{top.delta_xp_horizon.toFixed(2)} xP{#if wFrom != null && wTo != null}
+							GW{wFrom}-{wTo}{/if}</span
 					>
 				{/if}
 			</span>
