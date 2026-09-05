@@ -205,10 +205,22 @@ def test_built_artifact_carries_the_flag():
             f"{len(kelpoisia)} riviä on pl_history-pohjalla mutta yhtaan ei "
             f"ole liputettu - katosiko attach_minutes_basis_flag builderista?")
     for r in flagged:
-        mins = (r.get("last_season") or {}).get("minutes")
-        assert mins is not None and mins < xpb.SHORT_SEASON_MINUTES
+        ls = r.get("last_season") or {}
+        mins = ls.get("minutes")
         assert r.get("data_basis") == "pl_history"
         assert r.get("minutes_source") != "override"
+        # 5.9: kaksi lippulajia. short_season = alle kynnyksen; new_club =
+        # viime kauden seura eri kuin nykyinen JA hintasekoitus paalla
+        # (tests/test_minutes_new_club_flag.py kattaa ehdot fikstuureilla,
+        # tama mittaa etta artefakti noudattaa niita).
+        if r["minutes_basis_flag"] == "new_club":
+            assert mins is not None
+            assert ls.get("team_code") and r.get("team_code")
+            assert ls["team_code"] != r["team_code"]
+            assert r.get("minutes_source") in ("price_prior", "price_blend")
+        else:
+            assert r["minutes_basis_flag"] == "short_season"
+            assert mins is not None and mins < xpb.SHORT_SEASON_MINUTES
 
 
 def test_builder_kutsuu_liputusta():
