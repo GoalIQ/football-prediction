@@ -825,7 +825,7 @@
 		<div class="week-grid">
 			<div class="week-col">
 				<WeeklyActions
-					gw={data.meta.captain_gw ?? data.meta.gw}
+					gw={data.meta.captain_gw ?? (data.meta.gw_in_progress === true ? null : data.meta.gw)}
 					{deadlineUtc}
 					actions={weeklyActions}
 					onFollowTransfer={followTransferFromLoop}
@@ -834,7 +834,7 @@
 				<p class="captain">
 					Captain suggestion: <strong>{data.captain.pick.web_name}</strong>
 					<span class="muted">({data.captain.pick.team_short})</span>,
-					{data.captain.pick.gw_xp.toFixed(2)} xP in GW{data.meta.captain_gw ?? data.meta.gw}{#if data.captain.alternative}.
+					{data.captain.pick.gw_xp.toFixed(2)} xP{#if data.meta.captain_gw != null} in GW{data.meta.captain_gw}{:else if data.meta.gw_in_progress !== true} in GW{data.meta.gw}{/if}{#if data.captain.alternative}.
 						Alternative: {data.captain.alternative.web_name}
 						<span class="muted">({data.captain.alternative.team_short})</span>,
 						{data.captain.alternative.gw_xp.toFixed(2)} xP{/if}.
@@ -1445,7 +1445,7 @@
 		<p class="captain">
 			Captain suggestion: <strong>{data.captain.pick.web_name}</strong>
 			<span class="muted">({data.captain.pick.team_short})</span>,
-			{data.captain.pick.gw_xp.toFixed(2)} xP in GW{data.meta.captain_gw ?? data.meta.gw}{#if data.captain.alternative}.
+			{data.captain.pick.gw_xp.toFixed(2)} xP{#if data.meta.captain_gw != null} in GW{data.meta.captain_gw}{:else if data.meta.gw_in_progress !== true} in GW{data.meta.gw}{/if}{#if data.captain.alternative}.
 				Alternative: {data.captain.alternative.web_name}
 				<span class="muted">({data.captain.alternative.team_short})</span>,
 				{data.captain.alternative.gw_xp.toFixed(2)} xP{/if}.
@@ -1740,7 +1740,7 @@
 			<p class="captain">
 				Captain suggestion: <strong>{dataB.captain.pick.web_name}</strong>
 				<span class="muted">({dataB.captain.pick.team_short})</span>,
-				{dataB.captain.pick.gw_xp.toFixed(2)} xP in GW{dataB.meta.captain_gw ?? dataB.meta.gw}{#if dataB.captain.alternative}.
+				{dataB.captain.pick.gw_xp.toFixed(2)} xP{#if dataB.meta.captain_gw != null} in GW{dataB.meta.captain_gw}{:else if dataB.meta.gw_in_progress !== true} in GW{dataB.meta.gw}{/if}{#if dataB.captain.alternative}.
 					Alternative: {dataB.captain.alternative.web_name}
 					<span class="muted">({dataB.captain.alternative.team_short})</span>,
 					{dataB.captain.alternative.gw_xp.toFixed(2)} xP{/if}.

@@ -59,6 +59,8 @@ export interface RatedPlayerGw {
 export interface RatedPlayer {
 	id: number;
 	web_name: string;
+	/** 5.9: FPL:n saatavuusstatus a/d/i/s/u (squad news). */
+	status?: string | null;
 	team_short: string;
 	pos: Pos;
 	price: number;

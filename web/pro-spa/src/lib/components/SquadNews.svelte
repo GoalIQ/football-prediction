@@ -42,19 +42,25 @@
 	});
 
 	const ids = $derived(new Set(players.map((p) => p.id)));
+	// Portti k5: saatavuusrivi myos pelkan FPL-uutisen perusteella (lahtenyt
+	// tai pelikieltoinen pelaaja: news taynna, chance_next null).
 	const avail = $derived(
 		players.filter(
 			(p) =>
 				(typeof p.status === 'string' && p.status !== 'a') ||
+				(typeof p.news === 'string' && p.news.trim() !== '') ||
 				(typeof p.chance_next === 'number' && p.chance_next < 100)
 		)
 	);
-	const rising = $derived((moves?.rising ?? []).filter((m) => ids.has(m.id)));
-	const falling = $derived((moves?.falling ?? []).filter((m) => ids.has(m.id)));
+	// Portti k5: vain "soon"-rivit joilla on paiva. "rising_watch" ja
+	// eta_days null olisivat vaite ilman perustetta ("price rise no date yet").
+	const sure = (m: PriceWatchOwnedMove) =>
+		ids.has(m.id) && /_soon$/.test(m.status) && m.eta_days != null;
+	const rising = $derived((moves?.rising ?? []).filter(sure));
+	const falling = $derived((moves?.falling ?? []).filter(sure));
 
 	function eta(m: PriceWatchOwnedMove): string {
-		if (m.eta_days == null) return 'no date yet';
-		if (m.eta_days <= 0) return 'tonight';
+		if (m.eta_days == null || m.eta_days <= 0) return 'tonight';
 		if (m.eta_days === 1) return 'tomorrow';
 		return `in ${m.eta_days} days`;
 	}
@@ -78,9 +84,12 @@
 				<li><strong>{m.web_name}</strong> price fall {eta(m)}</li>
 			{/each}
 		</ul>
-		{#if entry == null}
-			<p class="muted small">Availability from FPL. Price moves need an entry ID.</p>
-		{/if}
+		<!-- Portti k5: lahde nakyy aina, ei vain manual-moodissa. Hintaliike on
+		     FPL:n oma projektio ja paiva liikkuu myohaisten siirtojen mukana. -->
+		<p class="muted small">
+			Availability from FPL. Price moves are FPL's own projection, and the day moves with
+			late transfers.{#if entry == null} Price moves need an entry ID.{/if}
+		</p>
 	</section>
 {/if}
 

@@ -1298,6 +1298,9 @@ def _projection_pool(xp_data: dict, price_by_id: dict[int, dict]) -> list[dict]:
             # kentta joka ei ole TASSA listassa katoaa aanettomasti. Luin
             # varoituksen ja tein sen silti.
             "chance_next": p.get("chance_next"),
+            # 5.9 portti k5: FPL:n status (a/d/i/s/u) riville, jotta squad news
+            # voi nostaa lahteneen tai pelikieltoisen pelaajan.
+            "status": p.get("status"),
             "news": p.get("news"),
             "components": p.get("components"),
             "components_gw": p.get("components_gw"),
@@ -2048,6 +2051,9 @@ def rate_team(entry: int | None = None, gw: int | None = None,
                 # jonka takia kayttaja avaa naytön deadlinen alla.
                 # None = FPL ei ole liputtanut, ei "100 % varma".
                 "chance_next": p.get("chance_next"),
+                # 5.9 portti k5: FPL:n status (a/d/i/s/u) riville, jotta squad news
+                # voi nostaa lahteneen tai pelikieltoisen pelaajan.
+                "status": p.get("status"),
                 "news": (p.get("news") or "").strip()[:120] or None,
                 # 22.8 (Villen tilaus): mita pelaaja SAI oikeasti, mallin
                 # odotuksen vierella. None = kierrosta ei ole pelattu tai

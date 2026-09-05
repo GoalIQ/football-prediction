@@ -2279,7 +2279,7 @@ the run.</p>
 
 <h2 id="fixture-difficulty">Fixture difficulty for the next six gameweeks</h2>
 <p>Each cell is the opponent, venue and the model's clean sheet probability
-for that match. Model FDR (1 easiest, 5 hardest) is in the cell tooltip.
+for that match. Model FDR (1 easiest, 5 hardest) is in the cell tooltip on desktop.
 Model-derived, not the official FPL difficulty.</p>
 {fdr_grid}
 {far_grid}
