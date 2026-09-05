@@ -65,6 +65,7 @@ from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
 SITEMAP_FPL_PATH = _FP_ROOT / "sitemap-fpl.xml"
 from scripts.build_prediction_pages import DISCLAIMER
 from src.models.fpl_club_best import POSITIONS, club_best_rows, gap_text
+from src.models.fpl_xp import load_xp_actionable
 
 BASE = "https://goaliq.app"
 OUT_DIR = ROOT / "fpl"
@@ -547,6 +548,26 @@ def _load(path: Path) -> dict | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
+
+
+def _load_xp_page_source(path: Path) -> dict | None:
+    """XP-READER-DISCIPLINE-AUKKO (5.9.2026): `main()` syöttää tämän
+    kymmenelle render_*-funktiolle jotka päätyvät PUBLIC-sivuille, joten
+    tässä on sama kierrosvaihdon riski jota `load_xp_actionable` on olemassa
+    estämään (STATE.md: xG-leaders näytti liigasta lähteneitä, My teamin
+    kenttä jumissa GW2:ssa — molemmat samaa "joku unohti suodattaa
+    menneisyyden" -luokkaa). `_gw_still_running` (tässä tiedostossa) lukee
+    RAA'AN `_load`in yhä tarkoituksella — se ei koske kuin `meta.next_gameweek`,
+    ei yhtään pelaajan `gameweeks`-riviä, joten trimmauksella ei olisi
+    vaikutusta sen tulokseen.
+
+    Sama nakyva sopimus kuin `_load`illa: None jos tiedostoa ei ole tai se on
+    rikki (ei `load_xp`in `empty_xp()`-runkoa, jota `if xp:` ei tunnistaisi
+    puuttuvaksi dataksi koska tyhjakin runko on totuusarvoltaan tosi).
+    """
+    if _load(path) is None:
+        return None
+    return load_xp_actionable(path)
 
 
 def _fetch_differentials() -> dict | None:
@@ -4870,7 +4891,7 @@ def main() -> int:
     OUT_DIR.mkdir(exist_ok=True)
     built = []
 
-    xp = _load(XP_PATH)
+    xp = _load_xp_page_source(XP_PATH)
     now = _data_now(xp)
     if xp:
         page = render_captain(xp, now)

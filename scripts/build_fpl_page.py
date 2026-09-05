@@ -42,6 +42,7 @@ if str(Path(__file__).resolve().parent.parent) not in sys.path:
 
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
+from src.models.fpl_xp import load_xp_actionable  # noqa: E402
 
 from scripts.mobile_css import (  # noqa: E402
     MOBILE_BLOCK_COLS,
@@ -3082,6 +3083,19 @@ def _load_json(path) -> dict | None:
         return None
 
 
+def _load_xp_page_source(path) -> dict | None:
+    """XP-READER-DISCIPLINE-AUKKO (5.9.2026): `main()` syöttää tämän
+    `render_page`:lle, joka iteroi `xp["players"][].gameweeks[]` suoraan
+    lippulaivan `/fpl.html`-sivulle — sama kierrosvaihdon riski jota
+    `load_xp_actionable` on olemassa estämään (menneen kierroksen rivi ei saa
+    näyttäytyä ajankohtaisena). Sama nakyva sopimus kuin `_load_json`illa:
+    None jos tiedostoa ei ole tai se on rikki.
+    """
+    if _load_json(path) is None:
+        return None
+    return load_xp_actionable(path)
+
+
 def xp_table_rows(xp: dict, n: int = 4) -> str:
     """Etusivun "Live model projections" -taulukon rivit LIVE-datasta (1.8.2026).
 
@@ -3646,7 +3660,7 @@ def main() -> None:
     fpl, acc = load_data()
     c = build_context(fpl, acc)
     preds = load_log()
-    xp = _load_json(XP_PATH)
+    xp = _load_xp_page_source(XP_PATH)
     html_out = render_page(c, xp)
     OUT_PATH.write_text(html_out, encoding="utf-8")
     sitemap_changed = update_sitemap(c["iso_date"])
