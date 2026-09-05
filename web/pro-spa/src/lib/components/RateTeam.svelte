@@ -1177,7 +1177,14 @@
 					{@const top = data.transfers.suggestions[0]}
 					Before the deadline
 					<strong>{top.out.web_name} → {top.in.web_name}</strong>
-					<span class="strip-gain">+{top.delta_xp_horizon.toFixed(2)} xP</span>
+					<!-- Ikkuna mukana: luku on delta_xp_horizon eli koko jaljella oleva
+					     horisontti, ja "Before the deadline" -kehys saisi sen lukemaan
+					     taman kierroksen tuottona (portti 5.9). -->
+					<span class="strip-gain"
+						>+{top.delta_xp_horizon.toFixed(2)} xP GW{data.meta.gw_from ??
+							data.meta.horizon_from ??
+							''}-{data.meta.gw_to ?? data.meta.horizon_to ?? ''}</span
+					>
 				{/if}
 			</span>
 		{:else}
@@ -1186,7 +1193,7 @@
 			     on se mika on maksullista, ja tunniste sanoo sen suoraan. -->
 			<span class="strip-item">
 				Weakest line <strong>{data.rating.weakest_line}</strong>
-				<span class="strip-tag">PRO for the move</span>
+				<span class="strip-tag">Premium for the move</span>
 			</span>
 		{/if}
 	</div>

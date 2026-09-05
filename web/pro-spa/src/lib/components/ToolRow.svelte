@@ -36,7 +36,7 @@
 		{#each tools as t (t.slug)}
 			<a href="/{group}/{t.slug}" class:active={active === t.slug && !all}>
 				{t.title}
-				{#if t.tier === 'premium' && !premium}<span class="lock" aria-label="Premium">PRO</span
+				{#if t.tier === 'premium' && !premium}<span class="lock" aria-label="Premium">Premium</span
 					>{/if}
 			</a>
 		{/each}

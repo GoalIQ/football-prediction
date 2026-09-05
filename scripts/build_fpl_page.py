@@ -2202,7 +2202,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
      surface. This is the same fix the premium side got the same morning: a
      directory first, prose after it. -->
 <nav class="tooldir" aria-label="Free FPL tools">
-  <a href="/fpl/expected-points"><b>Expected points</b><span>Who scores most next</span></a>
+  <a href="/fpl/expected-points"><b>Expected points</b><span>Projected points, next gameweek</span></a>
   <a href="/fpl/best-captain"><b>Captain picks</b><span>Who to give the armband</span></a>
   <a href="/fpl/differentials"><b>Differentials</b><span>Low owned, still rated</span></a>
   <a href="/fpl/model-xi"><b>Budget XI</b><span>Best 15 for 100.0m</span></a>
@@ -2275,10 +2275,11 @@ tooltip. Model-derived, not the official FPL difficulty.</p>
 {far_grid}
 <p class="legend">Clean sheet scale: {cs_legend}
 (low CS% = hard fixture, high CS% = easy). H home, A away.</p>
-<p class="inline-up">The grid says which fixtures turn. Premium says
-<a href="https://pro.goaliq.app/team?src=fpl-fdr&amp;srcp=fpl" data-cta="inline-fdr">what to
-do about it</a>: your squad rated out of 100, the captain pick for this gameweek and the one
-transfer that gains most over the run, with the hit priced in.</p>
+<p class="inline-up">The grid says which fixtures turn.
+<a href="https://pro.goaliq.app/team?src=fpl-fdr&amp;srcp=fpl" data-cta="inline-fdr">Rate my
+team</a> is free and needs no account: it names the line that is costing you and gives you a
+captain. Premium is what comes after that, the transfer chains over the run with the hit
+priced in.</p>
 {eo_by_tier}
 <aside class="upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
@@ -2418,7 +2419,7 @@ predictions and analytics. Not betting advice.</p>
      visit, not the next gameweek. Every access is wrapped because private
      mode can throw on read, and a promo bar must never break the page. -->
 <div class="sticky-cta" id="stickyCta" hidden>
-  <p>Free here: this gameweek. Premium: every gameweek, your squad rated, the captain call.</p>
+  <p>Free here: clean sheets and the six-gameweek grid. Premium: all players, every gameweek, plus the captain ranker.</p>
   <a class="cta" href="{PRO_TAB_URL}&amp;src=fpl-sticky&amp;srcp=fpl" data-cta="fpl-sticky">See what to do &#9656;</a>
   <button class="close" type="button" id="stickyClose" aria-label="Hide this bar">&times;</button>
 </div>

@@ -349,6 +349,35 @@ def mask_captain_payload(payload: dict) -> dict:
     return out
 
 
+def mask_rate_team_payload(payload: dict) -> dict:
+    """/api/fantasy/rate-team freelle: siirtosuositukset pois, kaikki muu jaa.
+
+    LOYDETTY 5.9.2026 julkaisuportissa: anonyymi kutsu palautti
+    `transfers.suggestions` (5 rivia nimineen ja delta_xp_horizon-lukuineen)
+    ja `meta.masked = null`. Portti oli VAIN selaimessa (`{#if premium}`),
+    eli ainoa asia jonka myyntisivu merkitsee Premiumiksi oli tuotannossa
+    ilmainen curlilla. Sama vikaluokka kuin captain 15.8, replacements 2.9,
+    value + chip-ev 4.9 — viides kerta. Maski on nyt endpointissa, ei
+    klientissa.
+
+    Mika JAA ilmaiseksi, koska myyntisivu sanoo niin ("Rate my team, with a
+    captain pick"): rating, weakest/strongest line, captain.pick +
+    captain.alternative, hold_verdict (sen viesti ei nimea pelaajia).
+    Typistys eika null: mobiili ja SPA iteroivat listaa, tyhja lista ei kaada.
+    """
+    out = dict(payload)
+    tr = dict(out.get("transfers") or {})
+    n = len(tr.get("suggestions") or [])
+    tr["suggestions"] = []
+    out["transfers"] = tr
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["mask"] = (f"0 of {n} transfer suggestions "
+                    "(free preview - GoalIQ Premium unlocks the transfer list)")
+    out["meta"] = meta
+    return out
+
+
 def mask_replacements_payload(payload: dict) -> dict:
     """/api/fantasy/replacements freelle: kohde ja paras korvaaja, ei listaa.
 

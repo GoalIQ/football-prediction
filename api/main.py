@@ -48,7 +48,8 @@ import requests
 # flagi on pois, is_premium_request palauttaa aina True eika mikaan muutu).
 from api.premium import (
     FREE_PREMIUM_UNTIL_DEFAULT, free_premium_window_active,
-    is_premium_request, mask_plan_payload, mask_xp_payload, xp_pool_rows,
+    is_premium_request, mask_plan_payload, mask_rate_team_payload,
+    mask_xp_payload, xp_pool_rows,
     premium_enforce_on, require_admin,
 )
 
@@ -4821,6 +4822,7 @@ def fantasy_price_watch(
 @app.get("/api/fantasy/rate-team",
          description="Rate an FPL squad from its public entry ID and suggest transfers.")
 def fantasy_rate_team(
+    request: Request,
     response: Response,
     entry: int | None = Query(default=None, description="Julkinen FPL entry-ID"),
     gw: int | None = Query(default=None, ge=1, le=38),
@@ -4856,10 +4858,15 @@ def fantasy_rate_team(
         raise HTTPException(status_code=400,
                             detail="Provide either entry or players.")
     try:
-        return rate_team(entry=entry, gw=gw, players=player_ids,
-                         captain=captain, bank=bank, ft=ft)
+        payload = rate_team(entry=entry, gw=gw, players=player_ids,
+                            captain=captain, bank=bank, ft=ft)
     except RateTeamError as e:
         raise _http_from_rate_team_error(e)
+    # 5.9: siirtosuositukset ovat Premium-rivi myyntisivulla, mutta endpoint
+    # palautti ne anonyymille. Maski endpointissa, ei klientissa.
+    if not is_premium_request(request):
+        return mask_rate_team_payload(payload)
+    return payload
 
 
 def _http_from_rate_team_error(e) -> HTTPException:

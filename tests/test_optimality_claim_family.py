@@ -81,6 +81,12 @@ KUVIOT = [
     r"the perfect (?:XI|squad|team)",
     r"cannot do better",
     r"no squad scores more",
+    # 5.9 (julkaisuportti): kuudes sanamuoto. "the one transfer that gains
+    # most" on maaraine artikkeli + superlatiivi ilman hakuavaruutta, eli
+    # kayvan joukon maksimi. Backend itse kirjoittaa "the best move the model
+    # checked" joka kerta; julkinen teksti ei saa pudottaa varausta.
+    r"(?:gains?|scores?) (?:you )?(?:the )?most\b",
+    r"the one (?:transfer|move|player) that",
     # es/pt
     r"plantilla óptima",
     r"equipo óptimo",

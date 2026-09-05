@@ -86,7 +86,9 @@ export const TOOLS: Tool[] = [
 		slug: 'rate-my-team',
 		group: 'team',
 		title: 'Rate my team',
-		question: 'Is my squad good, and what is the one move that improves it most?',
+		// 5.9 portti: "the one move that improves it most" oli kayvan joukon
+		// maksimi; backend itse kirjoittaa "the best move the model checked".
+		question: 'Is my squad good, and what is the best move the model checked?',
 		tier: 'free',
 		primary: true,
 		anchor: 'tc-rate'

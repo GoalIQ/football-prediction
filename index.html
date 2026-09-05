@@ -809,8 +809,8 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <!-- Was 75 words with seven commas in the first sentence: a list of
            tools, not a reason to use them. Same content, a third shorter. -->
       <p class="sub">Clean sheet probability, fixture difficulty and rate my team are free,
-        no sign-in. Premium answers the three questions before every deadline: who to captain,
-        which transfer gains most, and when to play a chip. Every number comes from the model
+        no sign-in. Premium is for the deadline itself: who to captain, whether a transfer
+        is worth making, and which chip week to spend. Every number comes from the model
         behind our public, pre-match-logged prediction record. <a href="/predictions">Football
         predictions for the top leagues too</a>.</p>
       <div class="cta-row" id="get">
@@ -975,8 +975,8 @@ vertical-align:top}
             <li>Beat the model: log your calls before the deadline and get them
               graded against the model's, every gameweek, with the season race
               and a gameweek review for any public entry ID</li>
-            <li>Mini-league view with head-to-head win probability, catch-your-rival
-              odds, differentials and a three-player watchlist</li>
+            <li>Mini-league view with head-to-head win probability, how likely you are to
+              catch your rival, differentials and a three-player watchlist</li>
             <li>Predict any match on the web: win probability, most likely
               scorelines, fixtures and league tables</li>
           </ul>
@@ -1000,25 +1000,23 @@ vertical-align:top}
                strongest argument against paying. Premium now says what you
                do with it; the full feature list still lives in the FAQ and
                in the /fpl upsell. -->
-            <li><strong>Who to captain.</strong> The armband ranked: top three,
-              a differential pick and the bonus expectation behind each.</li>
-            <li><strong>Which transfer to make.</strong> The best 1-2 move chains
-              with hits priced in, one-tap apply, and who replaces a player
-              inside your bank.</li>
-            <li><strong>When to play a chip.</strong> Wildcard, Bench Boost,
-              Triple Captain and Free Hit windows, scored against your own squad.</li>
-            <li><strong>Six gameweeks ahead.</strong> A rolling planner and
-              per-gameweek xP for every player in the projection, with ownership,
-              the per 90 rate shown apart from expected minutes, and CSV export.</li>
-            <li><strong>Where your season went.</strong> The gap to the model
-              round by round, captaincy, bench and autosubs, plus a decision
-              journal of what each different call cost or gained.</li>
-            <li><strong>How to catch your rival.</strong> Rank-aware edge mode,
-              and which players actually close the gap on the manager above you.</li>
-            <li><strong>The rest of the bench.</strong> Player value and GK
-              rotation pairs, the DefCon tracker, a 50-player watchlist, compare
-              up to four players, shareable cards, and full match analysis with
-              expected goals and the scoreline table.</li>
+            <li><strong>Captain ranker:</strong> the top three, a differential pick and
+              the bonus expectation behind each.</li>
+            <li>The best 1-2 move chains the model checked, hits priced in. Apply one to
+              your planner in one tap. With your team ID, replacements are capped at
+              your bank plus the outgoing player's price.</li>
+            <li>Chip windows, scored against your own squad.</li>
+            <li><strong>Every player, every gameweek in the window.</strong> Free stops at
+              twenty for the next gameweek. Premium has the whole projection with
+              ownership beside it and a CSV export, plus the rolling planner.</li>
+            <li>Where your season went: the gap to the model round by round, captaincy,
+              bench and autosubs, and a decision journal of what each call you made
+              differently cost or gained.</li>
+            <li><strong>Edge mode</strong> for your mini-league rank, and which players
+              actually close the gap on the manager above you.</li>
+            <li>Player value, GK rotation pairs, the DefCon tracker, a 50-player
+              watchlist, compare up to four players, shareable cards, and full match
+              analysis with expected goals and the scoreline table.</li>
           </ul>
           <p class="panel-cta"><a class="btn btn-primary" href="https://pro.goaliq.app/checkout?plan=season" data-cta="pricing-season">Get the season pass &#9656;</a>
             <a class="btn btn-quiet" href="https://pro.goaliq.app/checkout?plan=monthly" data-cta="pricing-monthly">Start Monthly</a></p>

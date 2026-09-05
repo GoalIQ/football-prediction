@@ -1049,7 +1049,7 @@
 			</p>
 		{:else}
 			<button type="button" class="lockrow" onclick={unlock}>
-				<span class="lock-tag" aria-hidden="true">PRO</span>
+				<span class="lock-tag" aria-hidden="true">Premium</span>
 				Lineup editing (formations, swaps, captain) is Premium
 				<span class="cta">Unlock with Premium</span>
 			</button>

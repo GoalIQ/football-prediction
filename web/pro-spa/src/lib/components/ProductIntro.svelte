@@ -41,10 +41,23 @@
 
 	const gw = $derived(actionableGameweek(xp?.meta));
 
+	/**
+	 * 🔴 LAJITTELUAVAIN ON SAMA KUIN MASKISSA. Ensimmainen versio lajitteli
+	 * GW-xP:lla, mutta `mask_xp_payload` (api/premium.py) valitsee anonyymin
+	 * kymmenikon `xp_horizon_total`-jarjestyksessa ENNEN kuin tama koodi
+	 * nakee sen. Uudelleenlajittelu GW:lla tuotti listan (Isak, Szoboszlai,
+	 * B.Fernandes, Gakpo, Wirtz) jota ei ollut millaan ilmaispinnalla;
+	 * goaliq.app/fpl/expected-points naytti Virgil, Isak, Szoboszlai, Joao
+	 * Pedro, Palmer. Portti loysi sen 5.9. Nyt lista on sama rivi rivilta kuin
+	 * ilmaissivun "ranked by total xP over GW{gw}-{gw+4}" -taulukko.
+	 */
 	const top = $derived.by(() => {
 		if (!xp?.meta?.available) return [];
-		return [...xp.players].sort((a, b) => gwXp(b, gw) - gwXp(a, gw)).slice(0, 5);
+		return [...xp.players]
+			.sort((a, b) => (b.xp_horizon_total ?? 0) - (a.xp_horizon_total ?? 0))
+			.slice(0, 5);
 	});
+	const gwTo = $derived((gw ?? 0) + 4);
 
 	/**
 	 * Ikkunan aikana kutsu on "luo tili", koska maksaminen nyt ostaisi viikkoja
@@ -73,9 +86,10 @@
 		Get a squad you can defend<br />before the deadline
 	</h1>
 	<p class="lede">
-		GoalIQ projects every player's points for the coming gameweeks, ranks your captain
-		options, and shows the one transfer that gains you the most. The same model logs a
-		prediction on every match before kick-off, and we publish how those went.
+		GoalIQ projects every player's points for the gameweeks ahead and ranks your captain
+		options against each other. On transfers it'll often tell you to hold, because the best
+		move it checked isn't worth the free transfer. The same model logs a call on every match
+		before kick-off and we publish how those went.
 	</p>
 
 	{#if top.length > 0}
@@ -83,14 +97,15 @@
 		     top 20 samasta projektiosta on ilmaista tasoa myos goaliq.app/fpl:ssa. -->
 		<div class="demo">
 			<div class="demo-head">
-				<span class="demo-title">Projected points, Gameweek {gw}</span>
+				<span class="demo-title">Projected points, GW{gw}-{gwTo} total</span>
 				<span class="demo-tag">live from the model</span>
 			</div>
 			<table>
 				<thead>
 					<tr>
 						<th scope="col">Player</th>
-						<th scope="col" class="ta-r">xP</th>
+						<th scope="col" class="ta-r">GW{gw} xP</th>
+						<th scope="col" class="ta-r">GW{gw}-{gwTo}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -101,13 +116,16 @@
 								<span class="muted">{p.team_short} · {p.pos}</span></td
 							>
 							<td class="num ta-r">{gwXp(p, gw).toFixed(1)}</td>
+							<td class="num ta-r">{(p.xp_horizon_total ?? 0).toFixed(1)}</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 			<p class="demo-foot muted">
-				Premium adds the same projection for every gameweek in the window, minutes and
-				ownership beside it, and the captain ranker built on it.
+				The same table is free at
+				<a href="https://goaliq.app/fpl/expected-points">goaliq.app/fpl/expected-points</a>,
+				top twenty. Premium is the whole list, every gameweek in the window, ownership
+				beside it, and the captain ranker built on it.
 			</p>
 		</div>
 	{/if}
@@ -115,27 +133,18 @@
 	<div class="what">
 		<h2>What you get</h2>
 		<ul>
-			<li><strong>The one move.</strong> Which transfer gains most, with the hit priced in.</li>
 			<li>
-				<strong>The armband.</strong> Captain options ranked, with the differential and the
-				bonus expectation.
+				The best move the model checked, with the hit priced in. Often that's a hold, and
+				it says so.
 			</li>
+			<li><strong>Captain ranker:</strong> the top three, a differential and the bonus expectation.</li>
+			<li>A rolling planner over the gameweeks in the window.</li>
+			<li>Chip windows, scored against your own squad.</li>
 			<li>
-				<strong>Six gameweeks ahead.</strong> A rolling planner, so this week's move is not
-				next week's problem.
+				<strong>The whole list.</strong> Free shows twenty players for the next gameweek;
+				Premium shows all of them, every gameweek, with CSV export.
 			</li>
-			<li>
-				<strong>Chip windows.</strong> When Wildcard, Bench Boost, Triple Captain and Free
-				Hit are worth playing.
-			</li>
-			<li>
-				<strong>Minutes, separately.</strong> Scoring rate and expected minutes are shown
-				apart, so a high rate on low minutes reads as a bench risk and not a bargain.
-			</li>
-			<li>
-				<strong>Your mini-league.</strong> Who actually closes the gap on your rival, and
-				whether they already own them.
-			</li>
+			<li>Who actually closes the gap on your mini-league rival, and whether they own them already.</li>
 		</ul>
 	</div>
 
@@ -157,7 +166,7 @@
 		{/if}
 		<p class="act-proof muted">
 			Every match prediction is logged before kick-off and graded after, hits and misses
-			included. <a href="https://goaliq.app/fpl.html#track-record">See the record</a>.
+			included. <a href="https://goaliq.app/fpl#track-record">See the record</a>.
 		</p>
 	</div>
 </section>

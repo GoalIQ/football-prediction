@@ -72,7 +72,6 @@ FREE_EXPECTED = {
     # ei hutia.
     "/api/fantasy/gw-review",
     "/api/fantasy/price-watch",
-    "/api/fantasy/rate-team",
     "/api/fantasy/fit",
     "/api/fantasy/model-squad",
     # 4.9 VILLEN PAATOS: differentials on ilmainen kaikilla pinnoilla
@@ -116,6 +115,15 @@ PARTIAL_EXPECTED = {
     # ilmainen ydin + premium-erittely, mika on tasan tama kolmas luokka.
     # Koodi siirtyi vastaamaan copya, ei toisin pain.
     "/api/fantasy/captain",
+    # 5.9: rate-team siirtyi FREEsta tanne, samasta syysta kuin captain 15.8.
+    # Julkaisutarkistaja mittasi anonyymilla curlilla: `transfers.suggestions`
+    # palautui 5 rivina nimineen ja delta_xp_horizon-lukuineen, `meta.masked`
+    # null. Portti oli vain selaimessa ({#if premium}). Myyntisivu lupaa
+    # ILMAISEKSI "Rate my team, with a captain pick" ja PREMIUMIKSI
+    # siirtosuositukset, joten vastaus on ilmainen ydin (rating, linjat,
+    # kapteeni, hold-verdikti) + premium-erittely (suositukset). Viides
+    # kerta tata vikaluokkaa; maski on nyt endpointissa.
+    "/api/fantasy/rate-team",
 }
 
 # Erittelykentat jotka EIVAT saa nakya ilman premiumia.
@@ -125,6 +133,7 @@ PARTIAL_PREMIUM_KEYS = {
     "/api/fantasy/rival": ("differentials",),
     # Differential-kapteeni on nimenomaan myyty premium-riville.
     "/api/fantasy/captain": ("differential",),
+    "/api/fantasy/rate-team": ("suggestions",),
 }
 
 
