@@ -37,9 +37,15 @@ export const DISCLAIMER =
 	'GoalIQ model expected points: a model prediction, not betting advice, ' +
 	'and not a gambling service.';
 
-/** 5.9: Google-kirjautumisen nappi. POIS oletuksena — ks. `signInWithGoogle`
- *  auth.svelte.ts:ssa. Kytketaan `VITE_GOOGLE_AUTH=1` vasta kun provider on
- *  paalla Supabasessa. Vertailu '1':een eika truthy-testi: tyhja merkkijono
- *  on eri asia kuin puuttuva arvo, ja `VITE_GOOGLE_AUTH=` (tyhja) ei saa
- *  kytkea nappia paalle. */
-export const GOOGLE_AUTH_ENABLED = import.meta.env.VITE_GOOGLE_AUTH === '1';
+/** 5.9: Google-kirjautumisen nappi, ks. `signInWithGoogle` auth.svelte.ts:ssa.
+ *
+ *  OLETUS ON PAALLA 5.9.2026 alkaen: Ville kytki providerin Supabaseen samana
+ *  iltana, mitattu julkisesta `/auth/v1/settings`-endpointista
+ *  (`external.google: true`). Aiempi versio oli pois oletuksena ja vaati
+ *  `VITE_GOOGLE_AUTH=1`:n — mutta `.env.*` on gitignoressa, joten lippu olisi
+ *  elanyt vain talla koneella ja kadonnut seuraavasta puhtaasta buildista
+ *  (vrt. muisti "gitignoroitu korjaus = hiljainen regressio").
+ *
+ *  Pois paalta: `VITE_GOOGLE_AUTH=0`. Vertailu '0':aan eika truthy-testi:
+ *  tyhja merkkijono ei saa kytkea mitaan kumpaankaan suuntaan. */
+export const GOOGLE_AUTH_ENABLED = import.meta.env.VITE_GOOGLE_AUTH !== '0';
