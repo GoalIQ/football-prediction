@@ -195,6 +195,8 @@ export interface RateTeamResponse {
 	 *  vanha backend. */
 	last_finished?: LastFinishedGw | null;
 	meta: {
+		/** 5.9: kierros jolle captain on laskettu; kesken kierroksen seuraava deadline-GW. */
+		captain_gw?: number;
 		mode: string;
 		gw: number;
 		picks_gw?: number | null;

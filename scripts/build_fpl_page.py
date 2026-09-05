@@ -1366,13 +1366,15 @@ def far_grid_html(c: dict) -> str:
         "as the season plays."
     )
     return (
-        '<h2 id="long-range">Long-range fixture difficulty</h2>\n'
+        # 5.9 LANDING-LYHENNYS: taitettuna. Data pysyy sivulla ja hakukoneelle,
+        # mutta puhelimen 31 ruudusta tama oli kolme.
+        '<details class="fold" id="long-range"><summary><h2>Long-range fixture difficulty</h2></summary>\n'
         f'<p class="muted">{label} Lower is easier. Each column averages the '
-        'model\'s difficulty over six gameweeks, so what you are reading here '
-        'is where the swings are, not a precise number for any single match.</p>\n'
+        'model\'s difficulty over six gameweeks, so this shows where the '
+        'swings are, not a number for any single match.</p>\n'
         '<div class="table-wrap"><table class="fdr-grid">\n'
         f'<thead><tr><th scope="col">Team</th>{head}</tr></thead>\n'
-        f'<tbody>{"".join(rows)}</tbody></table></div>\n'
+        f'<tbody>{"".join(rows)}</tbody></table></div></details>\n'
     )
 
 
@@ -1666,6 +1668,12 @@ CSS = """
   .toolnav,.clubnav,.share,.lbctl,.lb,.ticker{ font-family:var(--mono); }
   /* Reading measure: prose only, never a table, so no column is squeezed. */
   p,.lede,.hint,.note,.fineprint{ max-width:68ch; }
+  details.fold summary{ cursor:pointer; list-style:none; }
+  details.fold summary h2{ display:inline; }
+  details.fold summary::before{ content:"\25B8  "; color:var(--muted); }
+  details.fold[open] summary::before{ content:"\25BE  "; }
+  .signin{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; margin-right:14px; }
+  .signin:hover{ color:var(--cream); }
   .tooldir{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
     gap:10px; margin:22px 0 26px; }
   .tooldir a{ display:block; padding:12px 14px; border:1px solid var(--line);
@@ -2097,6 +2105,14 @@ def team_news_block(xp: dict | None) -> str:
 
 def render_page(c: dict, xp: dict | None = None) -> str:
     faq = build_faq(c)
+    # 5.9 LANDING-LYHENNYS: sivulla neljä kysymystä (kierroksen clean sheet,
+    # onko hyvä FPL:ään, onko ilmainen, kuinka tarkka). FDR-, DefCon- ja
+    # työkalulista-kysymykset ovat /faq-sivulla ja työkaluhakemistossa.
+    # Sama lista näkyvään FAQ:hun ja JSON-LD:hen, jotta ne eivät eriydy.
+    _keep = ("Which teams are most likely", "Is GoalIQ good for FPL",
+             "Is GoalIQ free", "How accurate is the GoalIQ model")
+    faq = [qa for qa in faq if qa[0].startswith(_keep)]
+    assert len(faq) == 4, [q for q, _ in faq]
     team_news = team_news_block(xp)
     tr = track_record_sentences(c)
     jsonld = jsonld_blocks(c, faq)
@@ -2186,6 +2202,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
   <div class="bar"></div>
   <div class="nav">
     <div class="brand"><a href="./"><svg class="brand-icon" width="26" height="26" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a></div>
+    <a class="signin" href="https://pro.goaliq.app/" data-cta="nav-signin">Sign in</a>
     <a class="cta" href="{PRO_TAB_URL}" data-cta="nav">Open GoalIQ Premium</a>
   </div>
 </header>
@@ -2214,14 +2231,8 @@ def render_page(c: dict, xp: dict | None = None) -> str:
   <a href="/fpl/team-news"><img src="/assets/cards/tools/team-news.webp" width="450" height="236" loading="lazy" decoding="async" alt="Team news: who is out right now"><b>Team news</b><span>Who is out right now</span></a>
   <a href="/fpl/points"><img src="/assets/cards/tools/points.webp" width="450" height="236" loading="lazy" decoding="async" alt="Points vs projection: how the model did"><b>Points vs projection</b><span>How the model did</span></a>
 </nav>
-<p class="lede">GoalIQ is a free FPL assistant built on a match model with a
-published, pre-match-logged track record.
-This page gives clean sheet probability and fixture difficulty for every
-Premier League team, free and updated every gameweek. Rate my team, a captain
-pick and price watch are free too; GoalIQ Premium adds an interactive team
-manager with a gameweek planner, per-gameweek expected points (xP) for every player in the projection, the captain
-ranker, player value, a DefCon tracker and transfer suggestions
-you can apply to your planned squad.</p>
+<!-- 5 Sep (LANDING-LYHENNYS): the 110-word lede repeated the directory
+     above it. Measured before: 31 screens on a phone, 4,688 words. -->
 <p class="meta">Season {c["season"]}. Data updated {c["data_date"]}.
 {f'Gameweek {c["next_gw"]} is being played, first kick-off was {c["gw_label"]}.' if c.get("gw_started") else f'Gameweek {c["next_gw"]} starts {c["gw_label"]}.'}</p>
 
@@ -2231,7 +2242,6 @@ you can apply to your planned squad.</p>
   <a class="cta secondary" href="{APPSTORE_URL}">App Store</a>
 </div>
 <p class="meta">One account, premium on web, iOS and Android.</p>
-<p class="note">Free download. Predict any fixture yourself in the app.</p>
 <p class="note">The model plays FPL this season with its own public team.
 Think you can outdraft it? Join the
 <a href="https://fantasy.premierleague.com/leagues/auto-join/jgi6j9" data-cta="league">Beat
@@ -2243,12 +2253,12 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 <div class="wrap content">
 
 <h2 id="track-record">The model publishes its prediction record</h2>
+<!-- 5 Sep (LANDING-LYHENNYS): the per-competition table and stat tiles
+     (1,049 words, 25 rows) live on /predictions#record. This page keeps the
+     three sentences and the link. -->
 <p>{escape(tr[0])} {escape(tr[1])} {escape(tr[2])}</p>
-{stats}
-<style>{BYCOMP_CSS}</style>
-{by_comp_html(c)}
 <p class="note">Source: GoalIQ prediction log, updated {c["acc_date"]}. The full
-log, match by match with every miss included, is published on the
+log, match by match with every miss included, is on the
 <a href="/predictions#record">prediction record page</a>.</p>
 {gw_calls}
 {xp_accuracy}
@@ -2268,12 +2278,9 @@ window, so you can see whether a defender is worth buying for one weekend or for
 the run.</p>
 
 <h2 id="fixture-difficulty">Fixture difficulty for the next six gameweeks</h2>
-<p>Clean sheet probability per team and gameweek. Each cell shows the opponent,
-venue and the model's clean sheet probability for that match, so two fixtures in
-the same FDR class no longer look identical. Easy runs stand out in gold and
-hard ones in coral; there is no colour wash behind the numbers, because the
-numbers are the point. Model FDR (1 easiest, 5 hardest) stays in the cell
-tooltip. Model-derived, not the official FPL difficulty.</p>
+<p>Each cell is the opponent, venue and the model's clean sheet probability
+for that match. Model FDR (1 easiest, 5 hardest) is in the cell tooltip.
+Model-derived, not the official FPL difficulty.</p>
 {fdr_grid}
 {far_grid}
 <p class="legend">Clean sheet scale: {cs_legend}
@@ -2286,51 +2293,20 @@ priced in.</p>
 {eo_by_tier}
 <aside class="upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
-<p>GoalIQ Premium adds an interactive team manager (formations, bench swaps,
-captaincy and a GW1 to GW6 gameweek planner showing each player's opponent
-per week), per-gameweek expected points (xP) for every player in the projection, a captain ranker, transfer suggestions
-you can apply straight to your planned squad, a player value ranking (xP per
-million), the full DefCon leaderboard with a gameweek-by-gameweek
-breakdown, goalkeeper rotation pairs,
-who replaces a player at a similar price, player compare for up to four players and predicted
-  starting minutes, from the
-same match model as this page. Rate my team, a captain pick, price watch and
-the top three of every leaderboard are free.</p>
+<p>Premium adds per-gameweek expected points (xP) for every player in the
+projection, a captain ranker, transfer suggestions you can apply to your
+planned squad, a six-gameweek planner and the full DefCon leaderboard, from
+the same match model as this page. 3.99 EUR a month or 25 EUR a year, one
+subscription on web, iOS and Android. Rate my team, a captain pick and price
+watch stay free.</p>
 {free_window_block()}
 </aside>
 
-<!-- Career card discoverability. This is a free distribution tool, so the teal
-     border separates it from the Premium upsell. Click tracking is delegated. -->
-<aside class="upsell" style="border-color:var(--teal-ink);">
-<h2 id="career-card">Your FPL Career Card - free, on one shareable image</h2>
-<p>Best season, all-time points and your rank history on one card, built from
-your public FPL entry ID. No login. Made for sharing with your mini-league.</p>
-<div class="cta-row">
-  <a class="cta" href="/career" data-cta="fpl-career">Build your career card</a>
-</div>
-</aside>
-
-<!-- SPL keeps its own section. This page carries one restrained aside only, no
-     SPL content mixed in with the FPL tools. Free by design, and the disclaimer
-     line is part of the ethics framing set out on the SPL page. -->
-<aside class="upsell" style="border-color:var(--teal-ink);">
-<h2 id="spl-tools">Play RSL Fantasy too? Saudi Pro League tools, free</h2>
-<p>Clean sheet probability, model fixture difficulty and expected points for the
-official Saudi Pro League fantasy game, from the same match model. Goals-based
-model (no xG feed exists for the SPL), labeled honestly. Independent data
-tool; not affiliated with or paid by the SPL.</p>
-<div class="cta-row">
-  <a class="cta" href="https://pro.goaliq.app/spl" data-cta="spl-tools">Open the free SPL tools</a>
-</div>
-</aside>
-
-<h2 id="creators">Using these numbers in your content?</h2>
-<p>There's a creator program. Your code takes 30 percent off your audience's
-first payment at the web checkout, and you keep earning on the renewals after
-it. Everything on this page stays free to quote with or without it.</p>
-<div class="cta-row">
-  <a class="cta" href="/creators" data-cta="creators">Read the terms and apply</a>
-</div>
+<!-- 5 Sep (LANDING-LYHENNYS): three asides (career card, SPL, creator
+     program) became one line. Each keeps its own page. -->
+<p class="note">Also free: your <a href="/career" data-cta="fpl-career">FPL career card</a>
+on one shareable image, <a href="https://pro.goaliq.app/spl" data-cta="spl-tools">Saudi Pro League fantasy tools</a>,
+and a <a href="/creators" data-cta="creators">creator program</a> if you quote these numbers in your content.</p>
 
 <h2 id="methodology">Methodology</h2>
 <p>A Dixon-Coles style match model, tau corrected, fitted on recent results
@@ -2342,60 +2318,24 @@ into five tiers. Fixture data comes from the official Premier League fantasy
 API.</p>
 
 <h2 id="tools">More free FPL tools</h2>
-<p>Every page below is built from the same model that powers this one, and each
-one refreshes on the same schedule. No login, no paywall.</p>
+<p>Same model, same refresh schedule, no login.</p>
 <ul class="toollist">
-  <li><a href="/fpl/best-captain">Captain picks for the next deadline</a>:
-  the model's top pick and the contenders, with how likely each is to
-  start.</li>
-  <li><a href="/fpl/expected-points">Every player ranked by expected
-  points</a>: the top 100 of the full projection, with scoring rate and
-  expected minutes in separate columns.</li>
-  <li><a href="/fpl/model-xi">The budget XI</a>: the best 15 our numbers fit
-  inside the 100.0m budget, ranked on the total over the next six gameweeks,
-  rebuilt daily. This is not the squad the model plays: that is entry 116920
-  on the official FPL site.</li>
-  <li><a href="/fpl/predicted-lineups">Model Predicted XI for every club</a>:
-  who the minutes model expects to start at all 20 clubs, with each
-  player's chance of starting. A projection, not a lineup leak.</li>
-  <li><a href="/fpl/differentials">Differentials under 10% ownership</a>:
-  where the model disagrees with the crowd.</li>
-  <li><a href="/fpl/price-changes">Price change watch</a>: who is close to
-  rising or falling tonight.</li>
-  <li><a href="/fpl/xg-leaders">xG, xA and xGI leaders</a>: the underlying
-  numbers behind the point returns.</li>
-  <li><a href="/fpl/defcon">DefCon leaders</a>: defensive contribution ranked
-  under the current scoring rules.</li>
-  <li><a href="/fpl/points">Points: projected vs actual</a>: every player's
-  actual gameweek points next to the expected points the model published
-  before that deadline, with goals, assists, DefCon, bonus, BPS, xG and xA
-  broken out.</li>
-  <li><a href="/fpl/stats">Player stats</a>: shots, shots in the box, key
-  passes, tackles and the rest of the raw numbers in one filterable table,
-  per 90 or per start, with CSV export.</li>
-  <li><a href="/fpl/defence">Defence profiles</a>: what each defence actually
-  concedes, by pitch zone, plus headers faced and set-piece xG.</li>
-  <li><a href="/fpl/club-best">Best player at every club</a>: each club's
-  leading goalkeeper, defender, midfielder and forward by projected points,
-  with the gap to that club's second option.</li>
-  <li><a href="/fpl/team-news">Team news</a>: every player ruled out or
-  doubtful, sorted by ownership, with what the model still projects a
-  doubtful player to score over the horizon.</li>
-  <li><a href="/fpl/notes">Notes from the model</a>: a short note each
-  gameweek, only when the numbers say something worth saying, with every
-  figure on a free page you can open.</li>
-  <li>A page for every club, with its best players, who takes its penalties
-  and corners, and a predicted XI: <a href="/fpl/club/arsenal">Arsenal</a>,
-  <a href="/fpl/club/liverpool">Liverpool</a>,
-  <a href="/fpl/club/bournemouth">Bournemouth</a> and the rest, linked from
-  <a href="/fpl/club-best">best player at every club</a>.</li>
+  <li><a href="/fpl/best-captain">Captain picks</a>: the pick and the contenders for the next deadline.</li>
+  <li><a href="/fpl/expected-points">Expected points</a>: the top 100 of the projection, scoring rate and minutes apart.</li>
+  <li><a href="/fpl/model-xi">Budget XI</a>: the best 15 our numbers fit in 100.0m. Not the squad the model plays (entry 116920).</li>
+  <li><a href="/fpl/predicted-lineups">Predicted XI for every club</a>: a projection, not a lineup leak.</li>
+  <li><a href="/fpl/differentials">Differentials under 10% ownership</a>.</li>
+  <li><a href="/fpl/price-changes">Price change watch</a>: who moves tonight.</li>
+  <li><a href="/fpl/xg-leaders">xG, xA and xGI leaders</a>.</li>
+  <li><a href="/fpl/defcon">DefCon leaders</a> under the current scoring rules.</li>
+  <li><a href="/fpl/points">Points: projected vs actual</a>, every player, every gameweek.</li>
+  <li><a href="/fpl/stats">Player stats</a>: shots, key passes, tackles, filterable, CSV.</li>
+  <li><a href="/fpl/defence">Defence profiles</a> by pitch zone.</li>
+  <li><a href="/fpl/club-best">Best player at every club</a>, with the gap to the second option.</li>
+  <li><a href="/fpl/team-news">Team news</a>: everyone out or doubtful, by ownership.</li>
+  <li><a href="/fpl/notes">Notes from the model</a>, only when the numbers say something.</li>
+  <li>A page for every club: <a href="/fpl/club/arsenal">Arsenal</a>, <a href="/fpl/club/liverpool">Liverpool</a>, <a href="/fpl/club/bournemouth">Bournemouth</a> and the rest.</li>
 </ul>
-
-<h2 id="about">About GoalIQ</h2>
-<p>GoalIQ is a free football prediction app built by an independent developer
-in Finland. The same model powers the app and this page. The methodology is
-public, and every published prediction is logged before kickoff so the record
-cannot be edited after the fact. If the model has a bad week, the log shows it.</p>
 
 <h2 id="faq">FAQ</h2>
 <dl class="faq">
@@ -3218,32 +3158,24 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
     metric = assert_public_copy(meta.get("metric"), "eo meta.metric")
     generated = str(meta.get("generated_at") or "")[:10]
     return (
-        '\n<h2 id="eo-by-tier">What the top ranks own: effective ownership by rank tier</h2>\n'
-        "<p>The ownership figure on the FPL site counts every team in the "
-        "game. A manager chasing rank wants a different number: what the "
-        "top of the table holds. This table samples managers from three "
-        f"rank ranges as they stood after Gameweek {escape(str(rank_gw))} "
-        f"and reads their Gameweek {escape(str(picks_gw))} squads from the "
-        "official FPL picks feed. Chip points count towards rank, so the "
-        f"{escape(tiers[0][1])} column is who led after "
-        f"Gameweek {escape(str(rank_gw))}, not who is best.</p>\n"
-        f"<p>{escape(metric)} That is why a figure can go "
-        f"above 100%. Sorted by the {escape(tiers[0][1])} column.</p>\n"
+        # 5.9 LANDING-LYHENNYS: taitettuna (508 sanaa, 22 rivia), niche-tilasto.
+        '\n<details class="fold" id="eo-by-tier"><summary><h2>What the top ranks own: effective ownership by rank tier</h2></summary>\n'
+        "<p>What the top of the table holds, not the whole game: managers "
+        f"sampled from three rank ranges after Gameweek {escape(str(rank_gw))}, "
+        f"squads read from their Gameweek {escape(str(picks_gw))} picks. "
+        f"{escape(metric)} Sorted by the {escape(tiers[0][1])} column.</p>\n"
         '<div class="scroll"><table>'
         f"<caption>Effective ownership by rank tier, Gameweek {escape(str(picks_gw))} squads.</caption>"
         "<thead><tr>" + "".join(ths) + "</tr></thead>"
         "<tbody>" + "".join(trs) + "</tbody></table></div>\n"
         + cap_html
-        + f"<p class=\"note\">Each tier is a sample ({n_txt}), not the whole "
-        f"tier, so one manager in the {escape(tiers[0][1])} sample is "
-        f"{100.0 / tiers[0][2]:.1f} percentage points. The ranks "
-        f"were taken after Gameweek {escape(str(rank_gw))} and the squads "
-        f"come from Gameweek {escape(str(picks_gw))}, because taking both "
-        "from the same gameweek would be circular: a rank after a gameweek "
-        "is partly the result of who the manager owned in it. Source: "
-        f'<a href="{EO_REPO_DATA}fpl_elite_ownership.json">data/fpl_elite_ownership.json</a> '
-        f"in the public repository, generated {escape(generated)}.</p>\n"
-        + _eo_managers_html(mgr, tiers))
+        + f"<p class=\"note\">Each tier is a sample ({n_txt}), so one manager in "
+        f"the {escape(tiers[0][1])} sample is {100.0 / tiers[0][2]:.1f} points. "
+        f"Ranks after Gameweek {escape(str(rank_gw))}, squads from Gameweek "
+        f"{escape(str(picks_gw))}, so the two are not circular. Source: "
+        f'<a href="{EO_REPO_DATA}fpl_elite_ownership.json">data/fpl_elite_ownership.json</a>, '
+        f"generated {escape(generated)}.</p>\n"
+        + _eo_managers_html(mgr, tiers) + "</details>\n")
 
 
 def _load_json(path) -> dict | None:

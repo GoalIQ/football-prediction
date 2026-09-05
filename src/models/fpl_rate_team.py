@@ -1079,6 +1079,22 @@ def _player_gameweeks(p: dict, min_gw: int | None = None) -> list[dict]:
     ]
 
 
+def actionable_captain_gw(target_gw: int, pool: list[dict], xp_data: dict) -> int:
+    """Kierros jolle kapteenikutsu tehdaan: kuluva, paitsi kun sen deadline
+    on mennyt ja projektio kattaa seuraavan deadline-kierroksen.
+
+    Ajetaan synteettisilla vaiheilla (saanto 6a): ennen deadlinea -> sama
+    kierros; kesken kierroksen -> deadline_gameweek jos katettu; jos
+    projektio ei kata sita (kauden loppu, vanha payload) -> kuluva."""
+    if not gw_in_progress(target_gw, xp_data):
+        return target_gw
+    dl_gw = (xp_data.get("meta") or {}).get("deadline_gameweek")
+    if not isinstance(dl_gw, int) or isinstance(dl_gw, bool) or dl_gw <= target_gw:
+        return target_gw
+    covered = {g.get("gw") for p in pool for g in (p.get("gameweeks") or [])}
+    return dl_gw if dl_gw in covered else target_gw
+
+
 def captain_suggestion(xi: list[dict], gw: int) -> dict:
     ranked = sorted(xi, key=lambda p: _gw_xp(p, gw), reverse=True)
     pick = ranked[0]
@@ -1907,8 +1923,14 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     xi = optimal_xi(squad) if len(squad) >= 11 else squad
     xi_ids = {p["id"] for p in xi}
 
-    # Kapteeni: annettu/picksistä jos XI:ssä, muuten paras GW-xP
-    cap_sugg = captain_suggestion(xi, target_gw)
+    # Kapteeni: annettu/picksistä jos XI:ssä, muuten paras GW-xP.
+    # 5.9 THIS-WEEK-KAPTEENI-KESKEN-KIERROKSEN (selainaudit, Ville
+    # kirjautuneena): kesken kierroksen This week sanoi "Captain Haaland 6.07
+    # xP in GW3" vaikka GW3 oli lukittu ja deadline-nauha sanoi GW4.
+    # Kapteenikutsu on toimenpide, joten sen kierros on se johon voi viela
+    # vaikuttaa. Team xP -otsikko pysyy kuluvassa (22.8 paatos).
+    cap_gw = actionable_captain_gw(target_gw, pool, xp_data)
+    cap_sugg = captain_suggestion(xi, cap_gw)
     effective_captain = (captain_id if captain_id in xi_ids
                          else cap_sugg["pick"]["id"])
     cap_player = pool_by_id[effective_captain]
@@ -1974,6 +1996,9 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # 22.8: kertoo klientille etta naytettava kierros on kesken ja
             # luvut siis liikkuvat. Ks. gw_in_progress-docstring.
             "gw_in_progress": gw_in_progress(target_gw, xp_data),
+            # Kierros jolle `captain` on laskettu (voi olla > gw kesken
+            # kierroksen). Klientit nimeavat kapteenin taman mukaan.
+            "captain_gw": cap_gw,
             # Milloin kierroksen ennuste pinnattiin. UI sanoo taman aaneen:
             # "projected" tarkoittaa TATA hetkea eika nykyhetkea.
             "xp_frozen_at": (frozen_info or {}).get("frozen_at"),

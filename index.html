@@ -491,7 +491,8 @@
   @media (max-width: 900px) {
     .hero, .toolkit, .duo, .steps { grid-template-columns: 1fr; }
     .faq-item { grid-template-columns: 1fr; }
-    .nav-links a:not(.nav-cta) { display: none; }
+    .nav-links a:not(.nav-cta):not([data-cta="nav-signin"]) { display: none; }
+    .nav-links a[data-cta="nav-signin"] { padding: 7px 6px; }
     .page-no { display: none; }
   }
   @media (max-width: 560px) {
@@ -755,6 +756,10 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         <!-- SPL keeps its own section, but discoverability comes from the top
              nav. Same lesson as the career card: a buried link gets no users. -->
         <a href="/spl">SPL tools</a>
+        <!-- 5 Sep: existing customers had no sign-in on the hub, only "Try
+             Premium". pro.goaliq.app shows Sign in for a visitor and the
+             tools for a signed-in one. -->
+        <a href="https://pro.goaliq.app/" data-cta="nav-signin">Sign in</a>
         <a class="nav-cta" href="https://pro.goaliq.app/?tab=premium" data-cta="nav">Try Premium</a>
       </div>
     </nav>
@@ -888,7 +893,7 @@ vertical-align:top}
 .nm-call b{color:var(--amber)}
 .nm-sc{white-space:nowrap;color:var(--muted)}
 .nm-lg{white-space:nowrap;color:var(--faint);font-size:12px}
-</style><div class="nm-wrap"><table class="nm"><thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th><th>Logged</th></tr></thead><tbody><tr><td class="nm-ko">Sat 05 Sep, 18:00</td><td class="nm-tm"><a href="/predictions/eredivisie/ajax-vs-psv">Ajax v PSV</a><span class="nm-comp">Eredivisie</span></td><td class="nm-call">PSV <b>38%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/serie-a/roma-vs-atalanta">Roma v Atalanta</a><span class="nm-comp">Serie A</span></td><td class="nm-call">Roma <b>53%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/ligue-1/le-havre-vs-brest">Le Havre v Brest</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Le Havre <b>42%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/ligue-1/nice-vs-le-mans">Nice v Le Mans</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Le Mans <b>39%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/brasileirao/bragantino-vs-bahia">Bragantino v Bahia</a><span class="nm-comp">Brasileirão Série A</span></td><td class="nm-call">Bragantino <b>42%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/la-liga/villarreal-vs-deportivo-la-coruna">Villarreal v Deportivo La Coruna</a><span class="nm-comp">La Liga</span></td><td class="nm-call">Villarreal <b>72%</b></td><td class="nm-lg">2026-09-05</td></tr></tbody></table></div><!-- GEN:NEXT-MATCHES-END -->
+</style><div class="nm-wrap"><table class="nm"><thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th><th>Logged</th></tr></thead><tbody><tr><td class="nm-ko">Sat 05 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/serie-a/roma-vs-atalanta">Roma v Atalanta</a><span class="nm-comp">Serie A</span></td><td class="nm-call">Roma <b>53%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/ligue-1/le-havre-vs-brest">Le Havre v Brest</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Le Havre <b>42%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/ligue-1/nice-vs-le-mans">Nice v Le Mans</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Le Mans <b>39%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/brasileirao/bragantino-vs-bahia">Bragantino v Bahia</a><span class="nm-comp">Brasileirão Série A</span></td><td class="nm-call">Bragantino <b>42%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/la-liga/villarreal-vs-deportivo-la-coruna">Villarreal v Deportivo La Coruna</a><span class="nm-comp">La Liga</span></td><td class="nm-call">Villarreal <b>72%</b></td><td class="nm-lg">2026-09-05</td></tr><tr><td class="nm-ko">Sat 05 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/championship/swansea-vs-wrexham">Swansea v Wrexham</a><span class="nm-comp">Championship</span></td><td class="nm-call">Swansea <b>44%</b></td><td class="nm-lg">2026-09-05</td></tr></tbody></table></div><!-- GEN:NEXT-MATCHES-END -->
     <p class="nm-note">GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</p>
     <p class="nm-more"><a href="/predictions">All predictions &#9656;</a> &middot; <a href="/fpl/expected-points">How this feeds the FPL numbers &#9656;</a></p>
   </div>
