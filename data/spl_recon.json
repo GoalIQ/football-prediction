@@ -1,140 +1,129 @@
 {
-  "gameweek": 4,
+  "gameweek": 5,
   "snapshot": {
-    "commit": "ed252c639e25df74e1dd65577f8b299e3efa6892",
-    "generated_at": "2026-08-28T14:47:04",
-    "kickoff_utc": "2026-08-28T15:50:00Z",
-    "note": "Last build committed before the round kicked off (57 min before the first GW4 kickoff).",
-    "inseason_matches_in_fit": 26
+    "commit": "f860c3ff1cb14e2472252b492b2f544d9f385b06",
+    "generated_at": "2026-09-03T17:18:51",
+    "kickoff_utc": "2026-09-03T15:55:00Z",
+    "note": "Last build committed before the round kicked off (94 min before the first GW5 kickoff).",
+    "inseason_matches_in_fit": 36
   },
   "naive_p": 0.2394,
   "naive_note": "Constant probability equal to the clean sheet share in the two completed seasons before this one. The model is fitted on those plus the matches played so far this season.",
   "top3": [
     {
-      "team": "Al Ahli (at KLD)",
-      "cs_pct": 49.0,
-      "kept": false
+      "team": "Al Qadsiah (at DIR)",
+      "cs_pct": 46.6,
+      "kept": true
     },
     {
-      "team": "Al Qadsiah (vs FSL)",
-      "cs_pct": 48.1,
-      "kept": false
+      "team": "Al Ahli (vs RIY)",
+      "cs_pct": 44.9,
+      "kept": true
     },
     {
-      "team": "Al Hilal (at KLJ)",
-      "cs_pct": 41.7,
-      "kept": false
+      "team": "Al Taawoun (vs FAT)",
+      "cs_pct": 42.6,
+      "kept": true
     }
   ],
   "fixtures": [
     {
-      "home": "Al Riyadh",
-      "away": "Neom SC",
-      "home_short": "RIY",
-      "away_short": "NEO",
-      "score": "1-0",
-      "cs_home_pct": 21.4,
-      "cs_away_pct": 39.7,
-      "cs_home_kept": true,
-      "cs_away_kept": false
-    },
-    {
       "home": "Al Fayha",
-      "away": "Abha",
+      "away": "Al Kholood",
       "home_short": "FYH",
-      "away_short": "ABH",
-      "score": "3-2",
-      "cs_home_pct": 37.6,
-      "cs_away_pct": 26.0,
+      "away_short": "KLD",
+      "score": "2-2",
+      "cs_home_pct": 27.9,
+      "cs_away_pct": 23.2,
       "cs_home_kept": false,
       "cs_away_kept": false
     },
     {
-      "home": "Al Khaleej",
-      "away": "Al Hilal",
-      "home_short": "KLJ",
-      "away_short": "HIL",
-      "score": "1-5",
-      "cs_home_pct": 7.7,
-      "cs_away_pct": 41.7,
-      "cs_home_kept": false,
-      "cs_away_kept": false
-    },
-    {
-      "home": "Al Nassr",
-      "away": "Al Taawoun",
-      "home_short": "NAS",
-      "away_short": "TWN",
-      "score": "2-1",
-      "cs_home_pct": 39.5,
-      "cs_away_pct": 9.9,
-      "cs_home_kept": false,
-      "cs_away_kept": false
-    },
-    {
-      "home": "Al Kholood",
-      "away": "Al Ahli",
-      "home_short": "KLD",
-      "away_short": "AHL",
-      "score": "3-1",
-      "cs_home_pct": 16.0,
-      "cs_away_pct": 49.0,
-      "cs_home_kept": false,
-      "cs_away_kept": false
-    },
-    {
-      "home": "Al Ettifaq",
-      "away": "Al Diriyah",
-      "home_short": "ETT",
-      "away_short": "DIR",
-      "score": "0-3",
-      "cs_home_pct": 37.9,
-      "cs_away_pct": 23.0,
-      "cs_home_kept": false,
-      "cs_away_kept": true
-    },
-    {
-      "home": "Al Fateh",
-      "away": "Al Ittihad",
-      "home_short": "FAT",
-      "away_short": "ITT",
-      "score": "0-0",
-      "cs_home_pct": 18.0,
-      "cs_away_pct": 30.6,
-      "cs_home_kept": true,
-      "cs_away_kept": true
-    },
-    {
-      "home": "Al Hazem",
-      "away": "Al Shabab",
-      "home_short": "HAZ",
-      "away_short": "SHB",
-      "score": "1-1",
-      "cs_home_pct": 28.0,
-      "cs_away_pct": 23.3,
-      "cs_home_kept": false,
-      "cs_away_kept": false
-    },
-    {
-      "home": "Al Qadsiah",
-      "away": "Al Faisaly",
-      "home_short": "QAD",
-      "away_short": "FSL",
-      "score": "3-1",
-      "cs_home_pct": 48.1,
-      "cs_away_pct": 8.9,
-      "cs_home_kept": false,
-      "cs_away_kept": false
-    },
-    {
-      "home": "Al Hilal",
-      "away": "Al Ahli",
-      "home_short": "HIL",
-      "away_short": "AHL",
+      "home": "Neom SC",
+      "away": "Al Khaleej",
+      "home_short": "NEO",
+      "away_short": "KLJ",
       "score": "3-0",
-      "cs_home_pct": 35.6,
-      "cs_away_pct": 20.7,
+      "cs_home_pct": 35.0,
+      "cs_away_pct": 23.0,
       "cs_home_kept": true,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Diriyah",
+      "away": "Al Qadsiah",
+      "home_short": "DIR",
+      "away_short": "QAD",
+      "score": "0-2",
+      "cs_home_pct": 21.9,
+      "cs_away_pct": 46.6,
+      "cs_home_kept": false,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Abha",
+      "away": "Al Ettifaq",
+      "home_short": "ABH",
+      "away_short": "ETT",
+      "score": "0-1",
+      "cs_home_pct": 17.8,
+      "cs_away_pct": 31.6,
+      "cs_home_kept": false,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Ahli",
+      "away": "Al Riyadh",
+      "home_short": "AHL",
+      "away_short": "RIY",
+      "score": "5-0",
+      "cs_home_pct": 44.9,
+      "cs_away_pct": 4.3,
+      "cs_home_kept": true,
+      "cs_away_kept": false
+    },
+    {
+      "home": "Al Shabab",
+      "away": "Al Hilal",
+      "home_short": "SHB",
+      "away_short": "HIL",
+      "score": "0-2",
+      "cs_home_pct": 7.4,
+      "cs_away_pct": 31.4,
+      "cs_home_kept": false,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Faisaly",
+      "away": "Al Hazem",
+      "home_short": "FSL",
+      "away_short": "HAZ",
+      "score": "0-0",
+      "cs_home_pct": 27.9,
+      "cs_away_pct": 30.0,
+      "cs_home_kept": true,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Taawoun",
+      "away": "Al Fateh",
+      "home_short": "TWN",
+      "away_short": "FAT",
+      "score": "0-0",
+      "cs_home_pct": 42.6,
+      "cs_away_pct": 26.4,
+      "cs_home_kept": true,
+      "cs_away_kept": true
+    },
+    {
+      "home": "Al Ittihad",
+      "away": "Al Nassr",
+      "home_short": "ITT",
+      "away_short": "NAS",
+      "score": "2-1",
+      "cs_home_pct": 12.9,
+      "cs_away_pct": 33.8,
+      "cs_home_kept": false,
       "cs_away_kept": false
     }
   ],
@@ -198,6 +187,21 @@
       "actual_cs": 5,
       "brier": 0.2158,
       "naive_brier": 0.1876
+    },
+    {
+      "gameweek": 5,
+      "snapshot": {
+        "commit": "f860c3ff1cb14e2472252b492b2f544d9f385b06",
+        "generated_at": "2026-09-03T17:18:51",
+        "kickoff_utc": "2026-09-03T15:55:00Z",
+        "note": "Last build committed before the round kicked off (94 min before the first GW5 kickoff).",
+        "inseason_matches_in_fit": 36
+      },
+      "sides": 18,
+      "expected_cs": 4.89,
+      "actual_cs": 9,
+      "brier": 0.2352,
+      "naive_brier": 0.3179
     }
   ],
   "season_to_date": {
@@ -205,20 +209,21 @@
       1,
       2,
       3,
-      4
+      4,
+      5
     ],
-    "matches": 36,
+    "matches": 45,
     "naive_p": 0.2394,
-    "sides": 72,
-    "expected_cs": 19.63,
-    "actual_cs": 21,
-    "brier": 0.2014,
-    "naive_brier": 0.2093
+    "sides": 90,
+    "expected_cs": 24.52,
+    "actual_cs": 30,
+    "brier": 0.2081,
+    "naive_brier": 0.231
   },
-  "sides": 20,
-  "expected_cs": 5.63,
-  "actual_cs": 5,
-  "brier": 0.2158,
-  "naive_brier": 0.1876,
-  "generated_at": "2026-09-05T18:12:52+00:00"
+  "sides": 18,
+  "expected_cs": 4.89,
+  "actual_cs": 9,
+  "brier": 0.2352,
+  "naive_brier": 0.3179,
+  "generated_at": "2026-09-06T10:18:06+00:00"
 }
