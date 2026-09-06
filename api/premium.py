@@ -186,6 +186,26 @@ def _verify_token_user_id(token: str) -> str | None:
     return (resp.json() or {}).get("id") or None
 
 
+def verify_token_identity(token: str) -> tuple[str | None, str | None]:
+    """Supabase /auth/v1/user -> (user_id, email). (None, None) jos token ei
+    kelpaa. 6.9: customer-portal tarvitsee VERIFIOIDUN sahkopostin, koska
+    aiempi versio otti sahkopostin pyynnon rungosta ja loi portaalisession
+    kenelle tahansa Stripe-asiakkaalle ilman tunnistautumista."""
+    url = _env("SUPABASE_URL")
+    if not url or not _env("SUPABASE_SERVICE_ROLE_KEY") or not token:
+        return None, None
+    try:
+        resp = requests.get(f"{url}/auth/v1/user",
+                            headers=_supabase_headers(token),
+                            timeout=_SUPABASE_TIMEOUT)
+    except requests.RequestException:
+        return None, None
+    if resp.status_code != 200:
+        return None, None
+    body = resp.json() or {}
+    return (body.get("id") or None), (body.get("email") or None)
+
+
 def _profile_is_premium(user_id: str) -> bool:
     url = _env("SUPABASE_URL")
     key = _env("SUPABASE_SERVICE_ROLE_KEY")

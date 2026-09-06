@@ -47,6 +47,7 @@ import requests
 # Edge-sprint P0: admin-portti + PREMIUM_ENFORCE-maskit (default off — kun
 # flagi on pois, is_premium_request palauttaa aina True eika mikaan muutu).
 from api.premium import (
+    verify_token_identity,
     FREE_PREMIUM_UNTIL_DEFAULT, free_premium_window_active,
     is_premium_request, mask_plan_payload, mask_rate_team_payload,
     mask_xp_payload, xp_pool_rows,
@@ -3829,7 +3830,23 @@ def create_checkout_session(req: CheckoutRequest):
 
 
 class PortalRequest(BaseModel):
-    email: str = Field(..., description="User email, used to find the Stripe customer.")
+    # 6.9: sahkoposti ei enaa tule rungosta vaan verifioidusta tokenista.
+    # Kentta sailyy valinnaisena taaksepain-yhteensopivuuden vuoksi, mutta
+    # sita ei lueta.
+    email: str | None = Field(None, description="Ignored since 6.9.2026: the customer is resolved from the Bearer token.")
+    return_url: str | None = Field(None, description="Where the portal returns to. Only pro.goaliq.app pages or the goaliq:// app scheme are accepted.")
+
+
+PORTAL_RETURN_DEFAULT = "https://pro.goaliq.app/"
+PORTAL_RETURN_ALLOWED = ("https://pro.goaliq.app/", "https://pro.goaliq.app?", "goaliq://")
+
+
+def _portal_return_url(requested: str | None) -> str:
+    """Palautusosoite allowlistista: avoin redirect Stripen portaalin kautta
+    olisi phishing-reitti. Muu kuin oma domain tai oma app-scheme -> oletus."""
+    if requested and requested.startswith(PORTAL_RETURN_ALLOWED):
+        return requested
+    return PORTAL_RETURN_DEFAULT
 
 
 class PortalResponse(BaseModel):
@@ -3838,31 +3855,38 @@ class PortalResponse(BaseModel):
 
 @app.post("/api/customer-portal", response_model=PortalResponse,
           description="Create a Stripe Customer Portal session where a subscriber can cancel, update a card or read invoices.")
-def create_portal_session(req: PortalRequest):
+def create_portal_session(req: PortalRequest, request: Request):
     """
     Luo Stripe Customer Portal -session jossa kayttaja voi peruuttaa
     tilauksen, paivittaa kortin tai nahda laskut.
 
-    Customer haetaan emailin perusteella (yksinkertaisin lahestymistapa MVP:lle —
-    myohemmin voi tallentaa stripe_customer_id Supabaseen).
+    6.9 (STRIPE-PORTAL-LINKKI-SPA): asiakas haetaan Bearer-tokenin
+    VERIFIOIDULLA sahkopostilla. Aiempi versio otti sahkopostin rungosta,
+    jolloin kuka tahansa sai portaalisession kenen tahansa Stripe-asiakkaan
+    tiliin (peruutus, kortti, laskut) pelkalla osoitteella. Ei tokenia -> 401.
+    return_url allowlistista (avoin redirect Stripen kautta olisi phishing).
     """
     if not stripe.api_key:
         raise HTTPException(status_code=500, detail="Stripe not configured")
-
+    auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
+    token = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+    if not token:
+        raise HTTPException(status_code=401, detail="Sign in to manage your subscription.")
+    user_id, email = verify_token_identity(token)
+    if not user_id or not email:
+        raise HTTPException(status_code=401, detail="Sign in to manage your subscription.")
     try:
-        # Etsi Stripe-customer emailin perusteella
-        customers = stripe.Customer.list(email=req.email, limit=1)
+        customers = stripe.Customer.list(email=email, limit=1)
         if not customers.data:
             raise HTTPException(
                 status_code=404,
-                detail=f"No Stripe customer found for {req.email}",
+                detail="No web subscription is linked to this account. "
+                       "App Store and Google Play subscriptions are managed in the store.",
             )
         customer_id = customers.data[0].id
-
-        # Luo portal-session
         session = stripe.billing_portal.Session.create(
             customer=customer_id,
-            return_url="goaliq://subscription-managed",
+            return_url=_portal_return_url(req.return_url),
         )
         return PortalResponse(portal_url=session.url)
     except stripe.error.StripeError as e:

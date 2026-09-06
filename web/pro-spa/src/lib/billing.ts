@@ -24,7 +24,7 @@ import { capture, captureBeforeUnload } from './analytics';
  *  `price` on ja pysyy LISTAhinta: se menee analytiikkaan (upgrade_tapped,
  *  checkout_opened) ja sen vaihtaminen katkaisisi vertailun vanhaan dataan. */
 export const PLANS = {
-	season: { label: 'Season pass: 25 € a year', price: 25.0, hint: 'One subscription covers web, iOS and Android. Cancel anytime.' },
+	season: { label: 'Season pass: 25 € a year', price: 25.0, hint: 'One subscription covers web, iOS and Android. Cancel anytime from the Account menu.' },
 	monthly: { label: 'Monthly: 3.99 €/mo', price: 3.99, hint: 'Flexible, try it for a month' }
 } as const;
 

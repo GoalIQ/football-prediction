@@ -599,6 +599,21 @@ export function fetchFit(lockedIds: number[]): Promise<FitResponse> {
 }
 
 // Defensiivinen: projektiosta poissuljetulla rivillä gameweeks voi puuttua.
+/** 6.9 (STRIPE-PORTAL-LINKKI-SPA): Stripe Customer Portal kirjautuneelle
+ *  web-tilaajalle. Backend paattaa asiakkaan Bearer-tokenista, ei rungosta.
+ *  Palauttaa portaalin URL:n; 404 = tilaus on kaupasta (App Store / Play). */
+export async function openCustomerPortal(returnUrl: string): Promise<string> {
+	const headers = { ...(await authHeaders()), 'Content-Type': 'application/json' };
+	const r = await fetch(`${API_BASE}/api/customer-portal`, {
+		method: 'POST',
+		headers,
+		body: JSON.stringify({ return_url: returnUrl })
+	});
+	const body = (await r.json().catch(() => ({}))) as { portal_url?: string; detail?: string };
+	if (!r.ok || !body.portal_url) throw new Error(body.detail || `HTTP ${r.status}`);
+	return body.portal_url;
+}
+
 export function gwXp(p: CardPlayer, gw: number | undefined): number {
 	if (gw == null) return 0;
 	return p.gameweeks?.find((g) => g.gw === gw)?.xp ?? 0;

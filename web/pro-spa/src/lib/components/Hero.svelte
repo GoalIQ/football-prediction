@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { auth, sendPasswordReset, signOut } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
+	import { openCustomerPortal } from '$lib/api';
 	import SetPassword from './SetPassword.svelte';
 
 	// #149: tilaustaso-badge lukee SAMAN auth.sub-tilan jota ProView gateaa →
@@ -24,6 +25,26 @@
 	// #150: email pois persistentistä headerista → account-valikko (email +
 	// plan + salasanan vaihto/reset + sign out).
 	let menuOpen = $state(false);
+	// 6.9 (STRIPE-PORTAL-LINKKI-SPA): web-tilaajan peruutus/kortti/laskut Stripen
+	// portaalissa. Asiakas 6.9 pyysi peruutusta sahkopostilla, koska nappia ei
+	// ollut vaikka endpoint oli. plan 'app' = kaupan tilaus, hoidetaan kaupassa.
+	let portalBusy = $state(false);
+	let portalNotice = $state<string | null>(null);
+	const webSub = $derived(!!auth.sub && auth.sub.plan !== 'gw1-3-free' && auth.sub.plan !== 'app');
+	async function manageSubscription() {
+		if (portalBusy) return;
+		portalBusy = true;
+		portalNotice = null;
+		try {
+			capture('manage_subscription_opened');
+			const url = await openCustomerPortal(`https://pro.goaliq.app${location.pathname}`);
+			location.assign(url);
+		} catch (e) {
+			portalNotice = e instanceof Error ? e.message : 'Could not open the subscription page.';
+		} finally {
+			portalBusy = false;
+		}
+	}
 	let resetNotice = $state<string | null>(null);
 	let resetBusy = $state(false);
 	// 19.8 (Villen havainto): valikko sulkeutui VAIN samasta napista.
@@ -145,6 +166,16 @@
 							· <button type="button" class="linklike" onclick={upgrade}>Upgrade</button>
 						{/if}
 					</div>
+					{#if webSub}
+						<button type="button" class="linklike" disabled={portalBusy} onclick={() => void manageSubscription()}>
+							{portalBusy ? 'Opening…' : 'Manage subscription: cancel, change card, invoices'}
+						</button>
+					{:else if auth.sub?.plan === 'app'}
+						<p class="menu-notice">Your subscription is billed by the App Store or Google Play. Cancel it in your phone's subscription settings.</p>
+					{/if}
+					{#if portalNotice}
+						<p class="menu-notice">{portalNotice}</p>
+					{/if}
 					{#if auth.passwordRecovery}
 						<p class="banner success">
 							Password reset link accepted. Set your new password below.

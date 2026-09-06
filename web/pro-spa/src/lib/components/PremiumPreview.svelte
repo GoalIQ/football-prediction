@@ -213,12 +213,12 @@
 		     se jonka haluamme: tili ON se polku. 🔴 POISTA 12.9.2026 12:30 UTC. -->
 		<p class="muted no-account">
 			After 12 September it is {PLANS.monthly.label} or {PLANS.season.label}. One subscription
-			covers web, iOS and Android, and you can cancel anytime.
+			covers web, iOS and Android, and you can cancel anytime from the Account menu.
 		</p>
 	{:else}
 		<p class="muted no-account">
 			Skip the signup: pay with Stripe and we'll set up your account and email you a sign-in
-			link. Cancel anytime. One subscription covers web, iOS and Android.
+			link. Cancel anytime from the Account menu. One subscription covers web, iOS and Android.
 		</p>
 	{/if}
 	{#if buyError}

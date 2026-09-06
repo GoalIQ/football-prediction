@@ -43,8 +43,8 @@
 	{/if}
 	<Provenance />
 	<p class="muted">
-		<a href="/">Back to GoalIQ Premium on the web</a> · Cancel anytime. One subscription covers
-		web, iOS and Android.
+		<a href="/">Back to GoalIQ Premium on the web</a> · Cancel anytime from the Account menu. One
+		subscription covers web, iOS and Android.
 	</p>
 </div>
 
