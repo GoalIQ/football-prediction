@@ -322,13 +322,21 @@ export async function refreshSubscription(): Promise<void> {
 				.order('current_period_end', { ascending: false })
 				.limit(1),
 			// Cross-platform (#7): mobiilitilaajan profiles.is_premium honoroituu
-			supabase.from('profiles').select('is_premium').eq('id', user.id).limit(1)
+			supabase.from('profiles').select('is_premium, premium_source').eq('id', user.id).limit(1)
 		]);
 		const realSub: GiqSub | null =
 			rows && rows.length > 0
 				? (rows[0] as GiqSub)
 				: prof && prof.length > 0 && prof[0].is_premium
-					? { status: 'active', plan: 'app', current_period_end: null }
+					? // 6.9 (portti): profiles.is_premium kattaa seka kaupan tilauksen
+						// (premium_source 'revenuecat') etta suoraan annetun comp-Premiumin
+						// ('comp', 12 tilia 6.9). Yksi 'app'-plan kaski comp-kayttajaa
+						// perumaan puhelimen asetuksista, joissa ei ole mitaan.
+						{
+							status: 'active',
+							plan: (prof[0] as { premium_source?: string | null }).premium_source === 'comp' ? 'comp' : 'app',
+							current_period_end: null
+						}
 					: null;
 		// Vain onnistunut haku päivittää cachen — virhepolku ei saa jäädyttää
 		// väärää tilaa levylle (#51-F2-periaate ulottuu cacheen).

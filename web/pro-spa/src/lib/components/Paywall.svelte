@@ -68,8 +68,8 @@
 	value estimates.
 </p>
 <p class="muted">
-	Season pass renews yearly, monthly renews monthly, cancel anytime from the Account menu. One
-	subscription covers web, iOS and Android.
+	Both plans renew until you cancel, and you can cancel from the Account menu. One subscription
+	covers web, iOS and Android.
 </p>
 <p class="muted">
 	Already subscribed in the GoalIQ app? Sign in with the same account and Premium is already

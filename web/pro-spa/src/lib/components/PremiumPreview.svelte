@@ -213,7 +213,7 @@
 		     se jonka haluamme: tili ON se polku. 🔴 POISTA 12.9.2026 12:30 UTC. -->
 		<p class="muted no-account">
 			After 12 September it is {PLANS.monthly.label} or {PLANS.season.label}. One subscription
-			covers web, iOS and Android, and you can cancel anytime from the Account menu.
+			covers web, iOS and Android, and you can cancel from the Account menu once you are signed in.
 		</p>
 	{:else}
 		<p class="muted no-account">

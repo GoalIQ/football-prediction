@@ -194,7 +194,7 @@
 			<button type="button" class="primary" onclick={onUpgrade}>See plans</button>
 			<p class="act-note muted">
 				€3.99 a month or €25 for the season{#if approxMonthly}
-					({approxMonthly}, {approxSeason}){/if}. Cancel anytime. One subscription covers
+					({approxMonthly}, {approxSeason}){/if}. Cancel anytime from the Account menu. One subscription covers
 				web, iOS and Android.
 			</p>
 		{/if}

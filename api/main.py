@@ -3881,7 +3881,8 @@ def create_portal_session(req: PortalRequest, request: Request):
             raise HTTPException(
                 status_code=404,
                 detail="No web subscription is linked to this account. "
-                       "App Store and Google Play subscriptions are managed in the store.",
+                       "If you subscribed in the App Store or Google Play, cancel it in your phone's subscription settings. "
+                       "If you subscribed at pro.goaliq.app, email hello@goaliq.app and we'll do it for you.",
             )
         customer_id = customers.data[0].id
         session = stripe.billing_portal.Session.create(

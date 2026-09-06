@@ -30,7 +30,9 @@
 	// ollut vaikka endpoint oli. plan 'app' = kaupan tilaus, hoidetaan kaupassa.
 	let portalBusy = $state(false);
 	let portalNotice = $state<string | null>(null);
-	const webSub = $derived(!!auth.sub && auth.sub.plan !== 'gw1-3-free' && auth.sub.plan !== 'app');
+	const webSub = $derived(
+		!!auth.sub && auth.sub.plan !== 'gw1-3-free' && auth.sub.plan !== 'app' && auth.sub.plan !== 'comp'
+	);
 	async function manageSubscription() {
 		if (portalBusy) return;
 		portalBusy = true;
@@ -167,11 +169,16 @@
 						{/if}
 					</div>
 					{#if webSub}
+						<!-- Portaalin ominaisuudet mitattu Stripesta 6.9 (bpc_1TUnuo...):
+						     peruutus kauden loppuun, kortin vaihto ja laskut paalla. -->
 						<button type="button" class="linklike" disabled={portalBusy} onclick={() => void manageSubscription()}>
-							{portalBusy ? 'Opening…' : 'Manage subscription: cancel, change card, invoices'}
+							{portalBusy ? 'Opening…' : 'Manage subscription'}
 						</button>
+						<p class="menu-notice">Opens the Stripe billing page for this account: cancel, change card, invoices.</p>
 					{:else if auth.sub?.plan === 'app'}
 						<p class="menu-notice">Your subscription is billed by the App Store or Google Play. Cancel it in your phone's subscription settings.</p>
+					{:else if auth.sub?.plan === 'comp'}
+						<p class="menu-notice">Premium on this account was granted directly, so there is no subscription to cancel.</p>
 					{/if}
 					{#if portalNotice}
 						<p class="menu-notice">{portalNotice}</p>
