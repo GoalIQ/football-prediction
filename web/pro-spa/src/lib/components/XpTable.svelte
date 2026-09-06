@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { XpResponse, XpPlayer } from '$lib/api';
-	import { gwXp } from '$lib/api';
+	import { gwXp, windowXp } from '$lib/api';
 	import { downloadXpCsv } from '$lib/fantasyTools';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
@@ -82,6 +82,16 @@
 		const m = /^gw(\d+)$/.exec(key);
 		return m ? Number(m[1]) : null;
 	}
+	/** 6.9 (Villen tilaus): kierrosikkuna `gw4-6` = kierrosten 4..6 summa.
+	 *  Horisontin summa ja yksi kierros vastaavat molemmat vaarin kysymykseen
+	 *  "seuraavat 3". Kaanteinen vali ei ole ikkuna -> null -> total. */
+	function windowOfSort(key: string): { from: number; to: number } | null {
+		const m = /^gw(\d+)-(\d+)$/.exec(key);
+		if (!m) return null;
+		const from = Number(m[1]);
+		const to = Number(m[2]);
+		return from <= to ? { from, to } : null;
+	}
 	/** 🔴 YKSI LUKIJA kierroksen xP:lle: jaettu `gwXp` ($lib/api), sama jota
 	 *  taulukon solu ja jakokortti kayttavat. Ensimmainen versio kirjoitti
 	 *  sortille oman funktion joka palautti puuttuvalle kierrokselle -1 kun
@@ -96,13 +106,21 @@
 			return (a, b) =>
 				gwXp(b, gw) - gwXp(a, gw) || b.xp_horizon_total - a.xp_horizon_total;
 		}
+		const w = windowOfSort(key);
+		if (w) {
+			// Sama lukija (windowXp) jota ikkunasarake ja jakokortti kayttavat.
+			return (a, b) =>
+				windowXp(b, w.from, w.to) - windowXp(a, w.from, w.to) ||
+				b.xp_horizon_total - a.xp_horizon_total;
+		}
 		return (SORTS[key as keyof typeof SORTS] ?? SORTS.total).cmp;
 	}
 	function labelFor(key: string): string {
 		const gw = gwOfSort(key);
-		return gw != null
-			? `GW${gw} xP (high to low)`
-			: (SORTS[key as keyof typeof SORTS] ?? SORTS.total).label;
+		if (gw != null) return `GW${gw} xP (high to low)`;
+		const w = windowOfSort(key);
+		if (w) return `GW${w.from}-${w.to} xP (high to low)`;
+		return (SORTS[key as keyof typeof SORTS] ?? SORTS.total).label;
 	}
 
 	// xP per miljoona. Ilman hintaa arvo on -1, jolloin rivi valuu listan
@@ -158,6 +176,24 @@
 		return `background-color: rgba(245,197,66,${(t * 0.26).toFixed(3)})`;
 	}
 	let sortGw = $derived(gwOfSort(sortBy));
+	let sortWin = $derived(windowOfSort(sortBy));
+	/** Ikkunasortin nimi otsikoihin ja korttiin: "GW4" / "GW4-6" / null. */
+	let sortWindowLabel = $derived(
+		sortGw != null ? `GW${sortGw}` : sortWin ? `GW${sortWin.from}-${sortWin.to}` : null
+	);
+	/** Ikkuna-avaimet datasta: seuraavat 2..(n-1) kierrosta. Koko horisontti on
+	 *  jo Total xP ja yksi kierros oma valintansa, joten kumpaakaan ei toisteta. */
+	let windowKeys = $derived.by(() => {
+		const out: string[] = [];
+		for (let n = 2; n < gwCols.length; n += 1) out.push(`gw${gwCols[0]}-${gwCols[n - 1]}`);
+		return out;
+	});
+	/** Kuuluuko GW-sarake aktiiviseen kierrokseen tai ikkunaan (korostus, ei
+	 *  piiloteta kapealla naytolla). */
+	function inSortWindow(gw: number): boolean {
+		if (sortGw != null) return sortGw === gw;
+		return !!sortWin && gw >= sortWin.from && gw <= sortWin.to;
+	}
 	let horizonN = $derived(data.meta.horizon_gw ?? gwCols.length ?? 6);
 	let horizonLabel = $derived(
 		gwCols.length > 0 ? `GW${gwCols[0]}–GW${gwCols[gwCols.length - 1]}` : `next ${horizonN} GWs`
@@ -296,8 +332,9 @@
 			// nimet ja jarjestys olivat oikein mutta luku oli kuuden kierroksen
 			// summa — eli kortti vastasi eri kysymykseen kuin otsikko lupasi.
 			// Sama koskee ikkunalabelia: "GW3-GW8" on valhe GW3-kortilla.
+			// 6.9: ikkuna ("GW4-6") kulkee saman lukijan kautta kuin kierros.
 			const cardGw = sortGw;
-			const windowLabel = cardGw != null ? `GW${cardGw}` : horizonLabel;
+			const windowLabel = sortWindowLabel ?? horizonLabel;
 			const sub = [
 				windowLabel,
 				`by ${sortLabel.charAt(0).toLowerCase()}${sortLabel.slice(1)}`,
@@ -310,7 +347,7 @@
 				subtitle: `${sub}, GoalIQ model`,
 				...(hasPrice ? { midLabel: 'PRICE' } : {}),
 				valueLabel:
-					sortBy === 'value' ? 'xP/£m' : cardGw != null ? `GW${cardGw} xP` : 'xP',
+					sortBy === 'value' ? 'xP/£m' : sortWindowLabel != null ? `${sortWindowLabel} xP` : 'xP',
 				fileName: 'goaliq_xp_list.png',
 				// 3.9 (audit): PRICE-sarake on FPL:n omaa dataa.
 				footNote: 'xP from the GoalIQ model, price from FPL',
@@ -325,7 +362,9 @@
 							? xpPerMillion(p).toFixed(2)
 							: cardGw != null
 								? gwXp(p, cardGw).toFixed(2)
-								: p.xp_horizon_total.toFixed(1)
+								: sortWin
+									? windowXp(p, sortWin.from, sortWin.to).toFixed(2)
+									: p.xp_horizon_total.toFixed(1)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'xp', method });
@@ -434,6 +473,15 @@
 					{/each}
 				</optgroup>
 			{/if}
+			<!-- 6.9 (Villen tilaus): ikkuna "seuraavat N", summa naytetaan omassa
+			     sarakkeessa ja ikkunan kierrokset korostetaan. -->
+			{#if windowKeys.length > 0}
+				<optgroup label="Gameweek window">
+					{#each windowKeys as key (key)}
+						<option value={key}>{labelFor(key)}</option>
+					{/each}
+				</optgroup>
+			{/if}
 		</select>
 	</div>
 	<label class="toggle">
@@ -531,10 +579,17 @@
 					></th
 				>
 				<th class="num"><abbr title="Sum of expected points, {horizonLabel}">Total xP</abbr></th>
+				{#if sortWin}
+					<th class="num sortcol"
+						><abbr title="Sum of expected points over GW{sortWin.from} to GW{sortWin.to}"
+							>GW{sortWin.from}-{sortWin.to}</abbr
+						></th
+					>
+				{/if}
 				{#each gwCols as gw (gw)}
 					<!-- Sortattu kierros ei saa olla piilossa kapealla naytolla:
 					     jarjestys ilman saraketta on lukijalle satunnainen. -->
-					<th class="num" class:m-hide={sortGw !== gw} class:sortcol={sortGw === gw}
+					<th class="num" class:m-hide={!inSortWindow(gw)} class:sortcol={inSortWindow(gw)}
 						>GW{gw}</th
 					>
 				{/each}
@@ -624,11 +679,14 @@
 							{/if}
 						</td>
 						<td class="num total-col">{p.xp_horizon_total.toFixed(2)}</td>
+						{#if sortWin}
+							<td class="num sortcol">{windowXp(p, sortWin.from, sortWin.to).toFixed(2)}</td>
+						{/if}
 						{#each gwCols as gw (gw)}
 							<td
 								class="num"
-								class:m-hide={sortGw !== gw}
-								class:sortcol={sortGw === gw}
+								class:m-hide={!inSortWindow(gw)}
+								class:sortcol={inSortWindow(gw)}
 								style={heat(gwXp(p, gw))}>{gwXp(p, gw).toFixed(2)}</td
 							>
 						{/each}

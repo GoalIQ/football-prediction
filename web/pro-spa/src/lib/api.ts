@@ -604,6 +604,15 @@ export function gwXp(p: CardPlayer, gw: number | undefined): number {
 	return p.gameweeks?.find((g) => g.gw === gw)?.xp ?? 0;
 }
 
+/** Kierrosikkunan xP-summa (6.9, Villen tilaus "seuraavat 3"). Sama
+ *  tyhja-kierros-on-nolla-saanto kuin gwXp:ssa; mobiilin
+ *  lib/fantasyXpSort.windowXp on pariteettikopio. */
+export function windowXp(p: CardPlayer, from: number, to: number): number {
+	let sum = 0;
+	for (const g of p.gameweeks ?? []) if (g.gw >= from && g.gw <= to) sum += g.xp;
+	return sum;
+}
+
 export function gwOpponents(p: XpPlayer, gw: number | undefined): string {
 	if (gw == null) return '';
 	const g = p.gameweeks?.find((x) => x.gw === gw);
