@@ -1,0 +1,43 @@
+# UCL-FANTASY-LAAJENNUS (6.9.2026): mittaus, ei tuotantoa.
+# Villen kysymys: voiko UEFA Champions League Fantasyn pelaajasyotteen hakea
+# koneellisesti. Lokaalisti curl jumittuu (bot-suoja katkaisee yhteyden),
+# selaimessa sama URL palauttaa 1126 pelaajaa. Tama ajo mittaa saman
+# GitHub-runnerilta ennen kuin yhtaan riviä rakennetaan sen varaan.
+name: ucl-feed-probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe UCL fantasy player feed
+        run: |
+          set +e
+          URL="https://gaming.uefa.com/en/uclfantasy/services/feeds/players/players_70_en_1.json"
+          for ua in "curl" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"; do
+            echo "== UA: $ua"
+            curl -sS -m 40 -o body.json -w "http=%{http_code} bytes=%{size_download} time=%{time_total}\n" \
+              -A "$ua" -H "Accept: application/json, text/plain, */*" \
+              -H "Accept-Language: en-GB,en;q=0.9" \
+              -H "Referer: https://gaming.uefa.com/en/uclfantasy/create-team" "$URL"
+            echo "exit=$?"
+            head -c 300 body.json; echo
+          done
+          echo "== python requests"
+          python3 - <<'PY'
+          import json, urllib.request
+          req = urllib.request.Request(
+              "https://gaming.uefa.com/en/uclfantasy/services/feeds/players/players_70_en_1.json",
+              headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                       "Accept": "application/json", "Referer": "https://gaming.uefa.com/en/uclfantasy/create-team"})
+          try:
+              with urllib.request.urlopen(req, timeout=40) as r:
+                  b = r.read()
+                  print("status", r.status, "bytes", len(b))
+                  d = json.loads(b)
+                  players = d.get("data", {}).get("value", {}).get("playerList") or d
+                  print("players", len(players) if hasattr(players, "__len__") else type(players))
+          except Exception as e:
+              print("FAILED", type(e).__name__, e)
+          PY
