@@ -55,6 +55,17 @@ def basis_season() -> str | None:
     return ((doc or {}).get("meta") or {}).get("basis_season")
 
 
+def player_gw_doc() -> dict | None:
+    """Koko `fpl/player-gw.json` samasta mtime-cachesta kuin `points_for`.
+
+    6.9: /api/fantasy/player-stats aggregoi ikkunat riveista itse, joten se
+    tarvitsee dokumentin eika yhden kierroksen karttaa. Yksi lukija ja yksi
+    cache: toinen lukija samalle tiedostolle olisi toinen paikka jossa
+    mtime-avain voi unohtua.
+    """
+    return _load()
+
+
 def max_gw() -> int | None:
     doc = _load()
     gw = ((doc or {}).get("meta") or {}).get("max_gw")

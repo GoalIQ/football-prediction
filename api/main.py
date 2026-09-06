@@ -5226,6 +5226,33 @@ def fantasy_xg_leaders(
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
+@app.get("/api/fantasy/player-stats",
+         description="FPL official per-player points and stats over a gameweek window, with GoalIQ deadline-freeze xP beside the actual points. Next-gameweek and horizon xP need premium.")
+def fantasy_player_stats(
+    request: Request,
+    response: Response,
+    window: str = Query(default="season", pattern="^(season|last3|last5|last10)$"),
+    pos: str = Query(default="ALL", pattern="^(ALL|GKP|DEF|MID|FWD)$"),
+    top_n: int = Query(default=0, ge=0, le=1000),
+):
+    """6.9 (Villen tilaus): FPL:n omat pisteet ja mallin xP samalla rivilla.
+
+    Lukee kolme levytiedostoa (src/models/fpl_player_stats.py, ei verkkoa).
+    Ilmaista: FPL:n raakaluvut + menneiden kierrosten freeze-vertailu
+    (julkinen track record). Premium: next_gw_xp + xp_horizon_total
+    (eteenpain katsova malli). Ei-premium saa niihin nullin ja
+    meta.masked=true. Cache-Control kuten xg-leaders: no-store.
+    """
+    from src.models.fpl_player_stats import build_response
+    from src.models.fpl_rate_team import RateTeamError
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return build_response(window=window, pos=pos, top_n=top_n,
+                              premium=is_premium_request(request))
+    except RateTeamError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+
 @app.get("/api/fantasy/defcon-leaders",
          description="Defensive contribution leaders: actions per game, hit rate and points over a rolling window.")
 def fantasy_defcon_leaders(
