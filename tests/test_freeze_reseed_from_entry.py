@@ -131,9 +131,22 @@ def test_budjetti_luetaan_entryn_historiasta_ei_vakiosta():
     ja vaara budjetti muuttaisi siirtomoottorin vastausta hiljaa."""
     ids = list(range(1, 16))
     siemen, _ = entry_seed_apu(ids, ids, value=999, bank=8)
-    assert siemen["meta"]["budget"] == 100.7
+    assert siemen["meta"]["budget"] == 99.9
     siemen2, _ = entry_seed_apu(ids, ids, value=1012, bank=3)
-    assert siemen2["meta"]["budget"] == 101.5
+    assert siemen2["meta"]["budget"] == 101.2
+
+
+def test_fpl_value_sisaltaa_pankin_eika_sita_lasketa_kahdesti():
+    """6.9.2026: `value + bank` antoi 0.8m liikaa ja moottori ehdotti
+    siirtoparin jota ei voinut tehda. Pankin muuttaminen ei saa muuttaa
+    budjettia, koska se on jo `value`:ssa."""
+    ids = list(range(1, 16))
+    a, _ = entry_seed_apu(ids, ids, value=1001, bank=8)
+    b, _ = entry_seed_apu(ids, ids, value=1001, bank=0)
+    assert a["meta"]["budget"] == b["meta"]["budget"] == 100.1
+    # Mitattu tapaus: runko 99.3 + pankki 0.8 = 100.1. Moottorin pankki
+    # (budjetti - rungon hinta) on 0.8, ei 1.6.
+    assert round(freeze.budget_from_history({"value": 1001, "bank": 8}) - 99.3, 1) == 0.8
 
 
 def test_wildcardin_jalkeen_ei_rullausta():

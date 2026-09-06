@@ -445,7 +445,7 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
                hae=None, hae_historia=None) -> tuple[dict | None, str | None]:
     """(prev-muotoinen runko entryn pickeista, virhe).
 
-    Budjetti luetaan entryn omasta historiasta (`value` + `bank`), ei
+    Budjetti luetaan entryn omasta historiasta (`budget_from_history`), ei
     oletuksesta: wildcardin jalkeen tilin arvo ei ole 100.0m, ja vaara
     budjetti muuttaisi siirtomoottorin vastausta hiljaa.
     """
@@ -480,7 +480,7 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
     if virhe:
         return None, virhe
 
-    budjetti = (int(historia["value"]) + int(historia["bank"])) / 10.0
+    budjetti = budget_from_history(historia)
     return {
         "xi": [{"id": i} for i in ids[:11]],
         "bench": [{"id": i} for i in ids[11:]],
@@ -529,6 +529,23 @@ def _departed_player(pid: int, bootstrap: dict) -> dict | None:
             "off_pool": True,
         }
     return None
+
+
+def budget_from_history(historia: dict) -> float:
+    """Entryn kokonaisbudjetti (miljoonina) FPL:n historiarivista.
+
+    🔴 FPL:n `value` SISALTAA JO PANKIN. Mitattu 6.9.2026 entrylla 116920:
+    GW3 `value` 1001, `bank` 8, ja rungon 15 pelaajan nykyhinnat summautuvat
+    99.2:een. Myyntihinta ei voi ylittaa nykyhintaa, joten 100.1 ei voi olla
+    pelkka runko: se on runko + pankki. Vanha kaava `value + bank` antoi
+    100.9 ja moottorille 0.8m ylimaaraista - julkaisutarkistaja laski 6.9
+    etta ehdotettu pari (Hemmings + Mbeumo -> Stach + Gibbs-White) oli 0.7m
+    vajaa FPL:n omilla luvuilla. gw3.json:n `budget` 100.7 on saman virheen
+    jaljilta (99.9 + 0.8); se on immutable, joten ketjupolku lukee budjetin
+    tasta funktiosta eika perityn freezen metasta (ks. main).
+    Yksi lukija: seka reseed etta ketju kulkevat taman kautta.
+    """
+    return int(historia["value"]) / 10.0
 
 
 def _entry_history(entry: int, gw: int) -> tuple[dict | None, str | None]:
@@ -617,6 +634,18 @@ def main() -> int:
             if _esto:
                 print(_esto)
                 return 1
+            # Portti yllä takaa etta peritty runko ON entryn runko, joten
+            # budjetti luetaan FPL:sta eika perityn freezen metasta:
+            # gw3.json kantaa vanhan `value + bank` -tuplalaskun (100.7 vs
+            # 100.1) eika immutable-tiedostoa korjata. FAIL-CLOSED: ilman
+            # historiaa ei jaadyteta, koska vaara pankki lukitsisi siirron
+            # jota ei voi tehda (6.9).
+            _hist, _hvirhe = _entry_history(entry_mod.ENTRY_ID, edellinen[0])
+            if _hvirhe:
+                print(f"VIRHE: budjettia ei saatu FPL:sta: {_hvirhe}")
+                return 1
+            edellinen[1].setdefault("meta", {})["budget"] = budget_from_history(_hist)
+            edellinen[1]["meta"]["budget_source"] = "fpl_entry_history"
     siirtotiedot = None
     free = None
     chip_eval = None
@@ -686,8 +715,9 @@ def main() -> int:
             # (kauden aloitus, kuten ihmisellakin).
             # 4.9: budjetti EI ole vakio 100.0. Ketjussa se sattui olemaan,
             # koska jokainen freeze kirjoitti saman vakion ja seuraava luki
-            # sen. Reseedissa budjetti tulee entryn omasta historiasta
-            # (value + bank), ja vaara luku muuttaisi siirtomoottorin
+            # sen. 6.9: budjetti tulee AINA FPL:n historiasta
+            # (`budget_from_history`, `value` sisaltaa pankin), seka
+            # reseedissa etta ketjussa; vaara luku muuttaisi siirtomoottorin
             # vastausta hiljaa.
             "budget": round(float((edellinen[1].get("meta") or {}).get(
                 "budget", 100.0)) if edellinen else 100.0, 1),
