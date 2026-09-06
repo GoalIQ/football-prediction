@@ -337,8 +337,23 @@ def sanity_and_sample(rows: list[dict], teams_agg: dict, promoted: list[str],
     if promoted:
         print(f"  nousijat (vain lokiin): {promoted}")
     strength = model_strength(dc) if dc is not None else {}
+    # 6.9 (PHASE0-SANITY-GATE-RHO): suunta mitataan kierroksittain. Kierrosrivit
+    # kootaan portille `rows`-listasta eika artefaktiin (teams_next6 kirjoitetaan
+    # sellaisenaan, eika sinne haluta kopiota fixture-listasta).
+    gate_view = {t: dict(v) for t, v in teams_agg.items()}
+    for r in rows:
+        if not r.get("gameweek"):
+            continue
+        for side in ("home", "away"):
+            team = r["home"] if side == "home" else r["away"]
+            if team not in gate_view:
+                continue
+            gate_view[team].setdefault("fixtures", []).append(
+                {"gw": int(r["gameweek"]), "fdr": r.get(f"fdr_{side}"),
+                 "cs_pct": r.get(f"cs_{side}_pct")})
     ok = print_checks(structural_checks(
-        teams_agg, strength, fdr_key="next6_avg_fdr", cs_key="next6_avg_cs_pct"))
+        gate_view, strength, fdr_key="next6_avg_fdr", cs_key="next6_avg_cs_pct",
+        fixtures_key="fixtures"))
 
     # GW1 CS%-taulukko (koti+vieras perspektiivit erikseen)
     min_gw = min(r["gameweek"] for r in rows if r["gameweek"])
