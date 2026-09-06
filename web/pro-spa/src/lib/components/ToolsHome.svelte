@@ -49,6 +49,7 @@
 	import CleanSheets from './CleanSheets.svelte';
 	import Value from './Value.svelte';
 	import Leaders from './Leaders.svelte';
+	import Stats from './Stats.svelte';
 	import Differentials from './Differentials.svelte';
 	import Replacements from './Replacements.svelte';
 	import ComparePlayers from './ComparePlayers.svelte';
@@ -522,6 +523,10 @@
 			{/if}
 			{#if show('leaders')}
 				<div class="tool-card" id="pc-leaders"><Leaders {premium} onUpgrade={goUpgrade} /></div>
+			{/if}
+			<!-- 6.9 (Villen tilaus): FPL:n tilastot ja freeze-xP samalla rivilla. -->
+			{#if show('stats')}
+				<div class="tool-card" id="pc-stats"><Stats {premium} onUpgrade={goUpgrade} /></div>
 			{/if}
 			<!-- 4.9 (Villen paatos): differentials on ilmainen. Se oli jo
 			     kaytannossa ilmainen — julkinen /fpl/differentials-sivu

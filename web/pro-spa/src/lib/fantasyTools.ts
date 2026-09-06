@@ -32,7 +32,8 @@ export type FantasyTool =
 	| 'league'
 	| 'h2h'
 	| 'edge'
-	| 'xp_csv';
+	| 'xp_csv'
+	| 'player_stats';
 
 export type Pos = 'GKP' | 'DEF' | 'MID' | 'FWD';
 
@@ -876,6 +877,97 @@ export interface DefconLeadersResponse {
 }
 
 /** #137: window = pelien lukumäärä (3-10). Vanha backend ignoroi → oletusikkuna. */
+// ---------------------------------------------------------------------------
+// Player stats (6.9, Villen tilaus): FPL:n pisteet ja GoalIQ:n freeze-xP
+// samalla rivilla. Pariteetti: goaliq-app/lib/api.ts FantasyPlayerStats*.
+// ---------------------------------------------------------------------------
+export type PlayerStatsWindow = 'season' | 'last3' | 'last5' | 'last10';
+
+export interface PlayerStatsFpl {
+	pts: number | null;
+	mins: number | null;
+	starts: number | null;
+	g: number | null;
+	a: number | null;
+	xg: number | null;
+	xa: number | null;
+	xgi: number | null;
+	cs: number | null;
+	gc: number | null;
+	xgc: number | null;
+	saves: number | null;
+	bonus: number | null;
+	bps: number | null;
+	ict: number | null;
+	yc: number | null;
+	rc: number | null;
+	dc: number | null;
+	tkl: number | null;
+	cbi: number | null;
+	rec: number | null;
+	games: number | null;
+	ppg: number | null;
+}
+
+export interface PlayerStatsGw {
+	gw: number;
+	pts: number | null;
+	xp_frozen: number | null;
+}
+
+export interface PlayerStatsGoaliq {
+	xp_frozen: number | null;
+	pts_compared: number | null;
+	n_compared: number;
+	diff: number | null;
+	gws: PlayerStatsGw[];
+	next_gw: number | null;
+	/** PREMIUM: null + meta.masked=true ilman oikeutta. */
+	next_gw_xp: number | null;
+	xp_horizon_total: number | null;
+}
+
+export interface PlayerStatsRow {
+	id: number;
+	code: number | null;
+	web_name: string;
+	team_short: string;
+	pos: Pos;
+	price: number | null;
+	owned_pct: number | null;
+	status: string | null;
+	news: string | null;
+	fpl: PlayerStatsFpl;
+	goaliq: PlayerStatsGoaliq;
+}
+
+export interface PlayerStatsMeta {
+	available: boolean;
+	reason?: string | null;
+	generated_at: string | null;
+	basis_season: string | null;
+	max_gw: number | null;
+	finished_gw?: number | null;
+	window: { kind: 'season' | 'last_n'; n: number | null; from: number; to: number } | null;
+	frozen_gws: number[];
+	compared_gws: number[];
+	masked: boolean;
+	mask: string | null;
+	source?: string;
+	compare_note?: string;
+	n_players: number;
+}
+
+export interface PlayerStatsResponse {
+	meta: PlayerStatsMeta;
+	players: PlayerStatsRow[];
+}
+
+/** Koko aineisto (top_n=0); suodattimet ovat klientissa kuten xG-listassa. */
+export function fetchPlayerStats(window: PlayerStatsWindow = 'season'): Promise<PlayerStatsResponse> {
+	return getTool(`/api/fantasy/player-stats?window=${window}&top_n=0`, 'player_stats');
+}
+
 export function fetchXgLeaders(window = 5): Promise<XgLeadersResponse> {
 	// 26.7: xG vapautettu ilmaiseksi ja klientilla on joukkue-/sijaintisuodattimet
 	// → haetaan koko aineisto, muuten suodattimet toimisivat vain top-100:aan.

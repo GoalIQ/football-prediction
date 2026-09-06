@@ -175,6 +175,16 @@ export const TOOLS: Tool[] = [
 		anchor: 'pc-leaders'
 	},
 	{
+		slug: 'stats',
+		group: 'players',
+		title: 'Stats',
+		question: 'What did each player actually score, and what did the model expect before the deadline?',
+		// 6.9 (Villen tilaus). Raakaluvut ja menneiden kierrosten freeze-vertailu
+		// ovat ilmaisia; vain eteenpain katsova xP on premiumia (8.8-linjaus).
+		tier: 'free',
+		anchor: 'pc-stats'
+	},
+	{
 		slug: 'differentials',
 		group: 'players',
 		title: 'Differentials',
