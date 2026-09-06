@@ -178,6 +178,18 @@
 			sortKey = key;
 			sortDesc = true;
 		}
+		pickGroupForSort(key);
+	}
+	/** Ryhman vaihto: jos sortti ei ole ryhmassa, sortti ryhman 1. sarakkeeseen,
+	 *  jotta jarjestys on aina nakyvissa. (Ensimmainen versio teki taman
+	 *  efektina joka luki myos `group`in ja palautti ryhman heti takaisin.) */
+	function setGroup(id: string) {
+		group = id;
+		const g = GROUPS.find((gr) => gr.id === id);
+		if (g && !g.cols.some((c) => c.key === sortKey)) {
+			sortKey = g.cols[0].key;
+			sortDesc = true;
+		}
 	}
 	function fmt(c: Col, v: number | null): string {
 		if (v == null) return '-';
@@ -190,9 +202,6 @@
 		const g = GROUPS.find((gr) => gr.cols.some((c) => c.key === key));
 		if (g && g.id !== group) group = g.id;
 	}
-	$effect(() => {
-		pickGroupForSort(sortKey);
-	});
 
 	const windowText = $derived.by(() => {
 		const w = data?.meta?.window;
@@ -264,7 +273,7 @@
 	{/each}
 	<span class="muted">Columns:</span>
 	{#each GROUPS as g (g.id)}
-		<button type="button" class="window-chip" class:on={group === g.id} onclick={() => (group = g.id)}
+		<button type="button" class="window-chip" class:on={group === g.id} onclick={() => setGroup(g.id)}
 			>{g.label}</button
 		>
 	{/each}
