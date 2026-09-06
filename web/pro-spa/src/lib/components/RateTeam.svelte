@@ -41,6 +41,8 @@
 	import ModelWorking from './ModelWorking.svelte';
 	import PlayerSearch from './PlayerSearch.svelte';
 	import TeamPitchManager from './TeamPitchManager.svelte';
+	import ProjectionsPanel from './ProjectionsPanel.svelte';
+	import type { XpResponse } from '$lib/api';
 
 	// #73: lataustilan askeleet = putken oikeat vaiheet (rehellinen checklist)
 	const WORKING_STEPS = [
@@ -57,7 +59,8 @@
 		premium = false,
 		onUpgrade,
 		weekMode = false,
-		onGoToTeam
+		onGoToTeam,
+		xp = null
 	}: {
 		premium?: boolean;
 		onUpgrade?: () => void;
@@ -68,6 +71,8 @@
 		weekMode?: boolean;
 		/** week-tyhjätilan CTA — vie My team -ryhmään. */
 		onGoToTeam?: () => void;
+		/** 6.9: xP-pooli projektiopaneelille kentan viereen (ToolsHome hakee). */
+		xp?: XpResponse | null;
 	} = $props();
 
 	// #66: entry-kenttä on jaettu (fplEntry.entry) RateTeamin + Plannerin kesken
@@ -775,6 +780,8 @@
 	const compareDiff = $derived(
 		data && dataB ? data.rating.team_xp_horizon - dataB.rating.team_xp_horizon : null
 	);
+	/** 6.9: oman rungon id:t projektiopaneelin korostukseen. */
+	const ownIds = $derived(new Set(plannedPlayers.map((p) => p.id)));
 </script>
 
 {#if weekMode}
@@ -1213,6 +1220,14 @@
 	     nakyvissa samalla hetkella kun kayttaja nakee mita malli suosittaa —
 	     nyt vierella eika alla, eli itse asiassa varmemmin. -->
 	<div class="result-grid">
+	<!-- 6.9 (Villen tilaus, Solio-kuva): projektiotaulukko kentan viereen
+	     leveilla ruuduilla, sen alle kapeilla. Sama xP-pooli jonka ToolsHome
+	     jo haki, ei uutta kutsua. -->
+	{#if xp && xp.players.length > 0}
+	<aside class="result-side">
+		<ProjectionsPanel data={xp} {ownIds} {onUpgrade} defaultGw={data.meta.gw} />
+	</aside>
+	{/if}
 	<!-- 22.8 (Villen kuvahavainto): sivupalkin kolme korttia ovat selvasti
 	     rating-korttia korkeammat, joten vasen sarake jatti ison tyhjan
 	     alueen ja pitch alkoi vasta gridin jalkeen. Kentta kuuluu ratingin
@@ -1229,6 +1244,7 @@
 	<TeamPitchManager
 		players={plannedPlayers}
 		{premium}
+		bank={data.team.bank}
 		defaultGw={data.meta.gw}
 		gwInProgress={data.meta.gw_in_progress === true}
 		lastFinished={data.last_finished ?? null}
@@ -1759,6 +1775,7 @@
 		<TeamPitchManager
 			players={dataB.team.players}
 			{premium}
+			bank={dataB.team.bank}
 			defaultGw={dataB.meta.gw}
 			gwInProgress={dataB.meta.gw_in_progress === true}
 			lastFinished={dataB.last_finished ?? null}
@@ -2058,9 +2075,15 @@
 	.result-grid {
 		display: grid;
 		gap: var(--s-4);
+		grid-template-areas: 'main' 'side';
 	}
 	.result-main {
 		min-width: 0;
+		grid-area: main;
+	}
+	.result-side {
+		min-width: 0;
+		grid-area: side;
 	}
 	@media (min-width: 1280px) {
 		.result-grid {
@@ -2069,6 +2092,13 @@
 			   (680 px), eli tekstipalsta ei leviä liian leveaksi. */
 			gap: var(--s-6);
 			align-items: start;
+			/* 6.9: kentta vasemmalle, projektiot oikealle (Solio-kaava). */
+			grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+			grid-template-areas: 'main side';
+		}
+		.result-side {
+			position: sticky;
+			top: var(--s-3);
 		}
 	}
 	.rating {

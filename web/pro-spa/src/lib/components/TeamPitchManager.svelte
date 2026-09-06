@@ -24,7 +24,8 @@
 		initialCaptaincy,
 		onCaptaincyChange,
 		lastFinished = null,
-		picksGw = null
+		picksGw = null,
+		bank = null
 	}: {
 		players: RatedPlayer[];
 		premium?: boolean;
@@ -44,6 +45,8 @@
 		/** Milta kierrokselta ladatut picksit ovat. Pelaajakohtaiset luvut vain
 		 *  kun tama on sama kuin `lastFinished.gw`. */
 		picksGw?: number | null;
+		/** 6.9: pankki (ITB) kentan otsikkonauhaan. null = ei tiedossa (draft). */
+		bank?: number | null;
 	} = $props();
 
 	/** Validit FPL-muodostelmat [DEF, MID, FWD] (GK aina 1, yht. 11). */
@@ -69,7 +72,10 @@
 	   kentän alle omaksi nauhakseen, joten kenttä saa koko sarakkeen
 	   leveyden — paidat kasvavat samassa suhteessa. */
 	let winW = $state(0);
-	const kitSize = $derived(winW >= 1040 ? 64 : 44);
+	// 6.9 (Villen tilaus, Solio-vertailu): kentta on paasisalto, paidat isot.
+	// Kolme porrasta ikkunan leveydesta; muut mitat seuraavat --kit-muuttujaa CSS:ssa.
+	const kitSize = $derived(winW >= 1040 ? 92 : winW >= 700 ? 72 : 54);
+	const benchKit = $derived(Math.round(kitSize * 0.8));
 	let xiIds = $state<number[]>([]);
 	let captainId = $state<number | null>(null);
 	let viceId = $state<number | null>(null);
@@ -620,11 +626,18 @@
 	null = FPL ei ole liputtanut. Se EI ole sama kuin "100 % varma", ja siksi
 	lippu naytetaan vain kun luku on olemassa ja alle 100.
 -->
-<div class="pitch-block">
+<div class="pitch-block" style="--kit: {kitSize}px">
 		{#if premium}
+			<!-- 6.9: otsikkonauha kentan paalla (Solio-kaava): pankki ja kierros
+			     vasemmalla, projisoitu xP isona oikealla. Muodostelmat siirtyivat
+			     kentan ALLE, jotta kentta alkaa heti. -->
+			<div class="pitch-head">
+			<div class="ph-left">
+			{#if bank != null}
+				<span class="ph-stat"><span class="ph-k">ITB</span><span class="ph-v">£{bank.toFixed(1)}</span></span>
+			{/if}
 			{#if gwChips.length > 1}
-				<p class="label">Gameweek</p>
-				<div class="chips">
+				<div class="chips ph-gws">
 					{#each gwChips as gw (gw)}
 						<button
 							type="button"
@@ -638,21 +651,8 @@
 				</div>
 			{/if}
 
-			<p class="label">Formation</p>
-			<div class="chips">
-				{#each FORMATIONS as f (f.join('-'))}
-					<button
-						type="button"
-						class="chip"
-						class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
-						onclick={() => applyFormation(f)}
-					>
-						{f.join('-')}
-					</button>
-				{/each}
-				<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
 			</div>
-			<div class="xp-row">
+			<div class="xp-row ph-xp">
 				{#if resultMode}
 					<!-- 3.9: tulosmoodissa otsikkoluku on TOTEUMA. Ennusteen kaava
 					     (`gwXp`) lukee `gameweeks`-rivit, joita paattyneella
@@ -684,115 +684,6 @@
 					</span>
 				{/if}
 			</div>
-		{/if}
-
-		<!-- 22.8 (Villen havainto): xP liikkui kesken kierroksen eika sivu
-		     sanonut miksi. Rivi nakyy VAIN kun naytettava kierros on kesken
-		     (backendin gw_in_progress), ei aina — muuten se olisi kohinaa joka
-		     viikko. Ja vain payloadin omalle GW:lle: muuta kierrosta
-		     katsottaessa mikaan ei ole kesken. -->
-		{#if gwInProgress && (selGw == null || selGw === defaultGw)}
-			<!-- "not finished" eika "is being played": GW1:ssa on 19 h ja 27 h
-			     tauot ottelupaivien valissa, joina jalkimmainen olisi valhe.
-			     Ja tahti sanotaan aaneen — rakennamme luvut muutaman tunnin
-			     valein, joten "live" yksin lupaisi sekuntitarkkuutta. -->
-			<p class="live-note">
-				Gameweek {defaultGw} isn't finished, so these numbers will still change. We rebuild
-				them from FPL's feed every few hours, and a player who has already kicked off gains
-				expected minutes. That's why your team xP can look different from this morning.
-			</p>
-		{/if}
-
-		{#if lastFinished && lastFinished.points != null}
-			<!-- OTTELUTULOSTAULU (1.9). Jaettava luku on se jossa on vastustaja:
-			     "voitit oman odotusarvosi 57:lla" on meidan mittarimme eika
-			     kayttajan saavutus. Poikkeama on twisti, ei otsikko. -->
-			<div class="score-card">
-				<div class="score-head">
-					<span class="score-gw">Gameweek {lastFinished.gw}</span>
-					{#if lastFinished.manager_name || lastFinished.team_name}
-						<span class="score-who">
-							{lastFinished.manager_name ?? ''}{#if lastFinished.manager_name && lastFinished.team_name}<span
-									class="dot">·</span
-								>{/if}{lastFinished.team_name ?? ''}
-						</span>
-					{/if}
-				</div>
-
-				<div class="score-row">
-					<div class="score-side">
-						<span class="score-key">You</span>
-						<span class="score-val">{lastFinished.points}</span>
-					</div>
-					<!-- Portti 2.9 k4: mallin luku VAIN reitin kanssa, sama saanto
-					     kuin kortilla. -->
-					{#if lastFinished.model_points != null && lastFinished.model_entry_id != null}
-						<div class="score-side">
-							<span class="score-key">Model · entry {lastFinished.model_entry_id}</span>
-							<span class="score-val model">{lastFinished.model_points}</span>
-						</div>
-					{/if}
-				</div>
-
-				{#if lastFinished.vs_model != null && lastFinished.model_entry_id != null}
-					<p class="score-verdict" class:lost={lastFinished.vs_model < 0}>
-						{#if lastFinished.vs_model > 0}
-							You beat the model by {lastFinished.vs_model}
-						{:else if lastFinished.vs_model < 0}
-							The model beat you by {-lastFinished.vs_model}
-						{:else}
-							Level with the model
-						{/if}
-					</p>
-				{/if}
-
-				<p class="score-meta">
-					{#if lastFinished.average_entry_score != null}
-						FPL average {lastFinished.average_entry_score}
-					{/if}
-					{#if lastFinished.overall_rank != null}
-						<span class="dot">·</span> Overall rank
-						{lastFinished.overall_rank.toLocaleString('en-GB')}
-						{#if lastFinished.rank_change != null && lastFinished.rank_change !== 0}
-							<span class="rank-move" class:down={lastFinished.rank_change < 0}
-								>{lastFinished.rank_change > 0 ? '▲' : '▼'}
-								{Math.abs(lastFinished.rank_change).toLocaleString('en-GB')}</span
-							>
-						{/if}
-					{/if}
-				</p>
-
-				{#if lastFinished.xp != null}
-					<!-- Poikkeama PIENEMPANA: se synnyttaa kommentit, se ei myy
-					     postausta. -->
-					<p class="score-xp">
-						Your XI was worth {lastFinished.xp.toFixed(1)} xP
-						{#if lastFinished.diff != null}
-							<span class="xp-diff" class:under={lastFinished.diff < 0}
-								>({lastFinished.diff >= 0 ? '+' : ''}{lastFinished.diff.toFixed(1)})</span
-							>
-						{/if}
-					</p>
-				{/if}
-				{#if lastFinished.biggest_swing}
-					<!-- Kapteeninauha tuplaa poikkeaman, joten otsikkoluku on
-					     rakenteellisesti yhden valinnan varassa. Portti 2.9 k2: sama
-					     lause kuin kortilla — luku ilman kerrointa, kerroin aaneen. -->
-					{@const sw = swingInfo(lastFinished)}
-					{#if sw}
-						<p class="score-swing">{swingLineEn(sw)}</p>
-					{/if}
-				{/if}
-				<!-- Portti 2.9: selite vain kun merkki on olemassa. -->
-				{#if lastFinished.players.some((r) => luckVerdict(r.xp_frozen, r.points) != null)}
-					<!-- Sama selite kuin jakokortilla (rivi ~583) tulee nyt samasta
-					     vakiosta. Se oli kovakoodattuna tassa ja rakennettuna
-					     LUCK_MARKista kortille, eli sama vaite kahdella
-					     renderointipolulla: merkin vaihto olisi muuttanut vain
-					     toisen niista. -->
-					<p class="score-legend">{LUCK_MARK.lucky} got lucky · {LUCK_MARK.robbed} got robbed</p>
-				{/if}
-				<p class="score-note">Projection frozen before the deadline.</p>
 			</div>
 		{/if}
 
@@ -922,7 +813,7 @@
 						onclick={() => onPlayerClick(p.id)}
 					>
 						<span class="kitwrap">
-							<TeamKit {...teamColorByShort(p.team_short)} label={p.team_short} size={44} />
+							<TeamKit {...teamColorByShort(p.team_short)} label={p.team_short} size={benchKit} />
 						</span>
 						<span class="plabel">
 							<span class="pname">{p.web_name}</span>
@@ -955,6 +846,136 @@
 						</span>
 					</button>
 				{/each}
+			</div>
+			</div>
+		{/if}
+
+		<!-- 22.8 (Villen havainto): xP liikkui kesken kierroksen eika sivu
+		     sanonut miksi. Rivi nakyy VAIN kun naytettava kierros on kesken
+		     (backendin gw_in_progress), ei aina — muuten se olisi kohinaa joka
+		     viikko. Ja vain payloadin omalle GW:lle: muuta kierrosta
+		     katsottaessa mikaan ei ole kesken. -->
+		{#if gwInProgress && (selGw == null || selGw === defaultGw)}
+			<!-- "not finished" eika "is being played": GW1:ssa on 19 h ja 27 h
+			     tauot ottelupaivien valissa, joina jalkimmainen olisi valhe.
+			     Ja tahti sanotaan aaneen — rakennamme luvut muutaman tunnin
+			     valein, joten "live" yksin lupaisi sekuntitarkkuutta. -->
+			<p class="live-note">
+				Gameweek {defaultGw} isn't finished, so these numbers will still change. We rebuild
+				them from FPL's feed every few hours, and a player who has already kicked off gains
+				expected minutes. That's why your team xP can look different from this morning.
+			</p>
+		{/if}
+
+		{#if lastFinished && lastFinished.points != null}
+			<!-- OTTELUTULOSTAULU (1.9). Jaettava luku on se jossa on vastustaja:
+			     "voitit oman odotusarvosi 57:lla" on meidan mittarimme eika
+			     kayttajan saavutus. Poikkeama on twisti, ei otsikko. -->
+			<div class="score-card">
+				<div class="score-head">
+					<span class="score-gw">Gameweek {lastFinished.gw}</span>
+					{#if lastFinished.manager_name || lastFinished.team_name}
+						<span class="score-who">
+							{lastFinished.manager_name ?? ''}{#if lastFinished.manager_name && lastFinished.team_name}<span
+									class="dot">·</span
+								>{/if}{lastFinished.team_name ?? ''}
+						</span>
+					{/if}
+				</div>
+
+				<div class="score-row">
+					<div class="score-side">
+						<span class="score-key">You</span>
+						<span class="score-val">{lastFinished.points}</span>
+					</div>
+					<!-- Portti 2.9 k4: mallin luku VAIN reitin kanssa, sama saanto
+					     kuin kortilla. -->
+					{#if lastFinished.model_points != null && lastFinished.model_entry_id != null}
+						<div class="score-side">
+							<span class="score-key">Model · entry {lastFinished.model_entry_id}</span>
+							<span class="score-val model">{lastFinished.model_points}</span>
+						</div>
+					{/if}
+				</div>
+
+				{#if lastFinished.vs_model != null && lastFinished.model_entry_id != null}
+					<p class="score-verdict" class:lost={lastFinished.vs_model < 0}>
+						{#if lastFinished.vs_model > 0}
+							You beat the model by {lastFinished.vs_model}
+						{:else if lastFinished.vs_model < 0}
+							The model beat you by {-lastFinished.vs_model}
+						{:else}
+							Level with the model
+						{/if}
+					</p>
+				{/if}
+
+				<p class="score-meta">
+					{#if lastFinished.average_entry_score != null}
+						FPL average {lastFinished.average_entry_score}
+					{/if}
+					{#if lastFinished.overall_rank != null}
+						<span class="dot">·</span> Overall rank
+						{lastFinished.overall_rank.toLocaleString('en-GB')}
+						{#if lastFinished.rank_change != null && lastFinished.rank_change !== 0}
+							<span class="rank-move" class:down={lastFinished.rank_change < 0}
+								>{lastFinished.rank_change > 0 ? '▲' : '▼'}
+								{Math.abs(lastFinished.rank_change).toLocaleString('en-GB')}</span
+							>
+						{/if}
+					{/if}
+				</p>
+
+				{#if lastFinished.xp != null}
+					<!-- Poikkeama PIENEMPANA: se synnyttaa kommentit, se ei myy
+					     postausta. -->
+					<p class="score-xp">
+						Your XI was worth {lastFinished.xp.toFixed(1)} xP
+						{#if lastFinished.diff != null}
+							<span class="xp-diff" class:under={lastFinished.diff < 0}
+								>({lastFinished.diff >= 0 ? '+' : ''}{lastFinished.diff.toFixed(1)})</span
+							>
+						{/if}
+					</p>
+				{/if}
+				{#if lastFinished.biggest_swing}
+					<!-- Kapteeninauha tuplaa poikkeaman, joten otsikkoluku on
+					     rakenteellisesti yhden valinnan varassa. Portti 2.9 k2: sama
+					     lause kuin kortilla — luku ilman kerrointa, kerroin aaneen. -->
+					{@const sw = swingInfo(lastFinished)}
+					{#if sw}
+						<p class="score-swing">{swingLineEn(sw)}</p>
+					{/if}
+				{/if}
+				<!-- Portti 2.9: selite vain kun merkki on olemassa. -->
+				{#if lastFinished.players.some((r) => luckVerdict(r.xp_frozen, r.points) != null)}
+					<!-- Sama selite kuin jakokortilla (rivi ~583) tulee nyt samasta
+					     vakiosta. Se oli kovakoodattuna tassa ja rakennettuna
+					     LUCK_MARKista kortille, eli sama vaite kahdella
+					     renderointipolulla: merkin vaihto olisi muuttanut vain
+					     toisen niista. -->
+					<p class="score-legend">{LUCK_MARK.lucky} got lucky · {LUCK_MARK.robbed} got robbed</p>
+				{/if}
+				<p class="score-note">Projection frozen before the deadline.</p>
+			</div>
+		{/if}
+
+
+		{#if premium}
+			<div class="lineup-tools">
+			<p class="label">Formation</p>
+			<div class="chips">
+				{#each FORMATIONS as f (f.join('-'))}
+					<button
+						type="button"
+						class="chip"
+						class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
+						onclick={() => applyFormation(f)}
+					>
+						{f.join('-')}
+					</button>
+				{/each}
+				<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
 			</div>
 			</div>
 		{/if}
@@ -1059,8 +1080,56 @@
 
 <style>
 	.pitch-block {
-		max-width: 680px;
-		margin-top: var(--s-4);
+		--kit: 64px;
+		margin-top: var(--s-2);
+	}
+	/* 6.9: otsikkonauha kentan paalla. */
+	.pitch-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-2) var(--s-3);
+		flex-wrap: wrap;
+		margin-bottom: var(--s-2);
+	}
+	.ph-left {
+		display: flex;
+		align-items: center;
+		gap: var(--s-2) var(--s-3);
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+	.ph-gws {
+		margin-bottom: 0;
+	}
+	.ph-stat {
+		display: inline-grid;
+		justify-items: center;
+		padding: 4px 12px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+	}
+	.ph-k {
+		font-size: 10px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.ph-v {
+		font-size: var(--step-1);
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+	}
+	.xp-row.ph-xp {
+		margin-bottom: 0;
+		flex: 0 1 auto;
+	}
+	.xp-row.ph-xp .xp-val {
+		font-size: var(--step-3);
+	}
+	.lineup-tools {
+		margin-top: var(--s-3);
 	}
 	/* 14.8: koko kentta suuremmaksi leveilla ruuduilla. Skaalataan kaikki
 	   mitat samassa suhteessa (leveys, paikan leveys, nimikentat,
@@ -1145,9 +1214,9 @@
 	}
 	/* #123: GW:n vastustaja kitin alla */
 	.popp {
-		font-size: 9px;
+		font-size: clamp(9px, calc(var(--kit) * 0.12), 12px);
 		color: var(--text-muted);
-		max-width: 66px;
+		max-width: calc(var(--kit) + 30px);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -1202,7 +1271,7 @@
 			rgba(46, 214, 194, 0.14) 0 50%,
 			rgba(46, 214, 194, 0.22) 50% 100%
 		);
-		background-size: 100% 96px;
+		background-size: 100% calc(var(--kit) * 1.5);
 		pointer-events: none;
 	}
 	.pitch-lines {
@@ -1226,7 +1295,7 @@
 		display: grid;
 		justify-items: center;
 		gap: 1px;
-		width: 68px;
+		width: calc(var(--kit) + 36px);
 		background: none;
 		border: 2px solid transparent;
 		border-radius: var(--radius);
@@ -1276,14 +1345,16 @@
 		display: grid;
 		justify-items: center;
 		gap: 0;
-		max-width: 74px;
+		max-width: calc(var(--kit) + 30px);
 		padding: 1px 6px 2px;
 		border-radius: 3px;
 		background: rgba(8, 10, 10, 0.62);
 	}
 	.pname {
-		font-size: 10px;
-		font-weight: 600;
+		font-size: clamp(10px, calc(var(--kit) * 0.13), 13px);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 		color: #f3f2f2;
 		max-width: 100%;
 		overflow: hidden;
@@ -1297,16 +1368,18 @@
 		gap: 5px;
 		white-space: nowrap;
 	}
+	/* 6.9: xP on kentan paaluku (Solio-kaava): iso, ei alaviite. */
 	.pxp {
-		font-size: 10px;
+		font-size: clamp(14px, calc(var(--kit) * 0.28), 26px);
+		line-height: 1.1;
 		color: #f5c542;
-		font-weight: 700;
+		font-weight: 800;
 		font-variant-numeric: tabular-nums;
 	}
 	/* Toteuma erottuu projektiosta VARILLA eika vain sijainnilla: kaksi
 	   samannakoista lukua vierekkain luettaisiin vaarin. */
 	.ppts {
-		font-size: 10px;
+		font-size: clamp(10px, calc(var(--kit) * 0.14), 13px);
 		color: #7de2d1;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
@@ -1317,7 +1390,7 @@
 	   sen alla pienempina. Kokoero kertoo kumpi luku on tulos ja kumpi
 	   mittari; samankokoisina ne luettiin saman suureen osiksi. */
 	.pbig {
-		font-size: 15px;
+		font-size: clamp(15px, calc(var(--kit) * 0.28), 26px);
 		font-weight: 800;
 		color: #7de2d1;
 		font-variant-numeric: tabular-nums;
@@ -1592,31 +1665,11 @@
 	   hävisi myöhemmille base-säännöille (nimet katkesivat 74px:iin vaikka
 	   tilaa oli; sama järjestysvika oli jo vanhassa 11.5px-fonttisäännössä
 	   joka ei koskaan aktivoitunut). */
+	/* 6.9: mitat seuraavat --kit-muuttujaa (kitSize), joten leveilla ruuduilla
+	   ei tarvita omia pikselilukuja; vain valjyys kasvaa. */
 	@media (min-width: 1040px) {
-		.pitch-block {
-			max-width: 1040px;
-		}
-		.player {
-			width: 104px;
-		}
-		.plabel,
-		.popp {
-			max-width: 100px;
-		}
-		.pname {
-			font-size: 12px;
-		}
-		.pxp {
-			font-size: 11px;
-		}
-		.popp {
-			font-size: 10px;
-		}
 		.pitch {
 			padding: var(--s-4) var(--s-2) var(--s-3);
-		}
-		.pitch::before {
-			background-size: 100% 128px;
 		}
 		.row {
 			margin: var(--s-3) 0;

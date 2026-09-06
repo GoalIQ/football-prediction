@@ -446,6 +446,7 @@
 			<div class="tool-card" id="tc-rate">
 				<RateTeam
 					{premium}
+					{xp}
 					onUpgrade={goUpgrade}
 					weekMode={segment === 'week'}
 					onGoToTeam={() => goto('/team')}
