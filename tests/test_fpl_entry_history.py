@@ -39,12 +39,21 @@ def test_ft_consumed_by_transfers_and_hits_do_not_go_negative():
         {"current": [_row(1, 0), _row(2, 0)], "chips": []}) == 2
 
 
-def test_wildcard_gw_preserves_and_accrues():
-    # entry 116920 3.9: GW1 0 siirtoa, GW2 wildcard (FPL raportoi
-    # event_transfers 0) -> GW3 saldo 2
+def test_wildcard_gw_preserves_without_accruing():
+    # 6.9 (FPL:n saanto): chip-kierros sailyttaa saldon sellaisenaan.
+    # entry 116920: GW1 0 siirtoa -> 1 FT; GW2 wildcard -> GW3 yha 1 FT;
+    # GW3 0 siirtoa -> GW4 2 FT (sama luku kuin FPL:n oma Transfers-sivu
+    # ja Solio 6.9). Vanha versio antoi 2 ja 3.
     h = {"current": [_row(1, 0), _row(2, 0)],
          "chips": [{"name": "wildcard", "event": 2}]}
-    assert infer_free_transfers(h) == 2
+    assert infer_free_transfers(h) == 1
+    h3 = {"current": [_row(1, 0), _row(2, 0), _row(3, 0)],
+          "chips": [{"name": "wildcard", "event": 2}]}
+    assert infer_free_transfers(h3) == 2
+    # 2 saastettya + free hit -> yha 2 seuraavalla kierroksella
+    h4 = {"current": [_row(1, 0), _row(2, 0), _row(3, 0)],
+          "chips": [{"name": "freehit", "event": 3}]}
+    assert infer_free_transfers(h4) == 2
     # negatiivinen kontrolli: sama historia ilman chippia mutta 5 siirtoa
     # GW2:ssa -> saldo 1
     h2 = {"current": [_row(1, 0), _row(2, 5)], "chips": []}

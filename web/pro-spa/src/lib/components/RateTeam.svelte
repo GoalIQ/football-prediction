@@ -1360,6 +1360,7 @@
 		players={plannedPlayers}
 		{premium}
 		bank={data.team.bank}
+		freeTransfers={data.meta.free_transfers ?? null}
 		belowPitch={ratingTiles}
 		defaultGw={data.meta.gw}
 		gwInProgress={data.meta.gw_in_progress === true}

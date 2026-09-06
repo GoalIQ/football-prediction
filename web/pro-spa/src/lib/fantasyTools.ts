@@ -224,6 +224,8 @@ export interface RateTeamResponse {
 		xp_frozen_deadline?: string | null;
 		/** #50: backendin uusi semantiikka ('optimal_team'), defensiivinen */
 		rating_method?: string;
+		/** 6.9: vapaat siirrot julkisesta historiasta (entry-moodi), muuten null. */
+		free_transfers?: number | null;
 		/** 26.7: walk-forward-backtestin tiiviste, jotta rating on falsifioituva. */
 		projection_accuracy?: {
 			meta?: { season?: string; gate_passed?: boolean; method?: string };

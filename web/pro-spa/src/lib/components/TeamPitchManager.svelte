@@ -27,6 +27,7 @@
 		lastFinished = null,
 		picksGw = null,
 		bank = null,
+		freeTransfers = null,
 		belowPitch
 	}: {
 		players: RatedPlayer[];
@@ -49,6 +50,8 @@
 		picksGw?: number | null;
 		/** 6.9: pankki (ITB) kentan otsikkonauhaan. null = ei tiedossa (draft). */
 		bank?: number | null;
+		/** 6.9: vapaat siirrot seuraavalle kierrokselle (julkisesta historiasta). */
+		freeTransfers?: number | null;
 		/** 6.9: vanhemman lohko heti kentan + penkin alle (Team xP -laatat). */
 		belowPitch?: Snippet;
 	} = $props();
@@ -640,6 +643,11 @@
 			     kentan ALLE, jotta kentta alkaa heti. -->
 			<div class="pitch-head">
 			<div class="ph-left">
+			{#if freeTransfers != null}
+				<span class="ph-stat" title="Free transfers for the next gameweek, worked out from your public transfer history"
+					><span class="ph-k">FT</span><span class="ph-v">{freeTransfers}</span></span
+				>
+			{/if}
 			{#if bank != null}
 				<span class="ph-stat"><span class="ph-k">ITB</span><span class="ph-v">£{bank.toFixed(1)}</span></span>
 			{/if}

@@ -49,10 +49,14 @@ def infer_free_transfers(history: dict | None) -> int | None:
     ft = FT_START
     for r in rows:
         made = int(r.get("event_transfers") or 0)
-        # Chip-haara on puolustus, ei mekanismi: FPL raportoi wildcard- ja
-        # free hit -kierroksen `event_transfers = 0` (portti mittasi 7/7),
-        # joten tama ei kaytannossa laukea. Sita EI mainita copyssa.
-        if r["event"] not in chip_gws:
-            ft = max(ft - made, 0)
+        # 6.9 (FPL:n saanto, tarkistettu premierleague.com + FFScout 13.3.2025):
+        # wildcard- tai free hit -kierros SAILYTTAA saastetyt siirrot
+        # sellaisenaan eika kerryta uutta: "if you had 2 saved free transfers,
+        # you will still have 2 the Gameweek after playing the chip".
+        # Vanha versio kerrytti +1 myos chip-kierroksella ja antoi entrylle
+        # 116920 GW4:lle 3, kun FPL (ja Solio) nayttaa 2.
+        if r["event"] in chip_gws:
+            continue
+        ft = max(ft - made, 0)
         ft = min(FT_MAX, ft + 1)
     return ft

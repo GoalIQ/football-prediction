@@ -27,6 +27,7 @@ import requests
 
 from src.models.fpl_xp import load_xp
 from src.models import fpl_actuals
+from src.models.fpl_entry_history import infer_free_transfers
 
 # 26.7: projektioiden osuvuus rating-vastaukseen. Committoitu tiiviste
 # (logs/ on gitignored -> Render ei nakisi sita). Puuttuva tiedosto EI kaada
@@ -1991,9 +1992,22 @@ def rate_team(entry: int | None = None, gw: int | None = None,
 
     _dl_gw = xp_data["meta"].get("deadline_gameweek")
 
+    # 6.9 (Villen tilaus): vapaat siirrot kentan otsikkonauhaan. FPL ei
+    # julkaise lukua julkisesti; se johdetaan julkisesta historiasta samalla
+    # lukijalla kuin chip-EV (infer_free_transfers). None = ei entrya tai
+    # historiaa ei saatu; klientti ei silloin nayta lukua.
+    free_transfers = None
+    if mode == "entry" and entry is not None:
+        try:
+            free_transfers = infer_free_transfers(
+                _fetch_fpl(f"/entry/{int(entry)}/history/"))
+        except RateTeamError:
+            free_transfers = None
+
     return {
         "meta": {
             "mode": mode,
+            "free_transfers": free_transfers,
             "entry": entry,
             "gw": target_gw,
             # 22.8: kertoo klientille etta naytettava kierros on kesken ja
