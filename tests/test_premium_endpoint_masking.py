@@ -56,6 +56,9 @@ PREMIUM_ENDPOINTS = {
     "/api/fantasy/wildcard-plan": ("wildcard draft is part of the planner", "truncate"),
     "/api/fantasy/xp.csv": ("CSV export on premium-listan rivi", "truncate"),
     "/api/fantasy/model-race": ("mallin rivi vs oma kausi, premium-erittelyt", "builder"),
+    # 6.9: player stats - FPL:n luvut ja freeze-vertailu ilmaisia, eteenpain
+    # katsova xP (next_gw_xp, xp_horizon_total) premium; rakentaja maskaa.
+    "/api/fantasy/player-stats": ("next-gameweek and horizon xP need premium", "builder"),
 }
 
 # endpoint -> miksi se on tarkoituksella ilmainen

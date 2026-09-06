@@ -1264,12 +1264,17 @@
 				<span class="tile-s">
 					{#if d.meta.rating_method == null && d.rating.optimal_team_xp == null}
 						percentile of rated teams
-					{:else if typeof d.rating.gap_to_optimal_xp === 'number'}
-						{d.rating.gap_to_optimal_xp > 0.05
-							? `${d.rating.gap_to_optimal_xp.toFixed(1)} xP off the best squad the rules allow`
-							: 'level with the best squad the rules allow'}
 					{:else}
-						vs the best squad the rules allow
+						{@const benchmark = d.rating.optimal_proven === false
+							? 'the strongest squad the model found'
+							: 'the best squad the rules allow'}
+						{#if typeof d.rating.gap_to_optimal_xp === 'number'}
+							{d.rating.gap_to_optimal_xp > 0.05
+								? `${d.rating.gap_to_optimal_xp.toFixed(1)} xP off ${benchmark}`
+								: `level with ${benchmark}`}
+						{:else}
+							vs {benchmark}
+						{/if}
 					{/if}
 				</span>
 			</div>
