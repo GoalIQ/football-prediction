@@ -468,6 +468,33 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_fpl_player_gw
 
+      # 6.9 (SIVU-JA-DATA-ERI-AJOSSA-2): sivut rakennetaan SAMASSA ajossa kuin
+      # artefakti ja committoidaan samassa committissa. Aiemmin projektio
+      # paivittyi taalla ~3 h valein mutta /fpl-sivut vain fpl-page-refreshissa,
+      # joten kortti ja sivu lukivat eri dataa (tests.yml punainen: "17 rivia,
+      # odotettu 20", kortin rivit joita ei loydy sivulta). Sama bake-kaava
+      # kuin fpl-page-refresh.yml:ssa; exit 2 = build_fpl_page:n fail-safe.
+      - name: Bake fpl.html from the same data
+        id: bake_fpl_page
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: |
+          set +e
+          python scripts/build_fpl_page.py
+          rc=$?
+          set -e
+          if [ "$rc" = "0" ]; then echo "Bake OK."
+          elif [ "$rc" = "2" ]; then echo "::notice::build_fpl_page.py exit 2 = fail-safe. Ohitetaan."
+          else echo "::error::build_fpl_page.py kaatui exit $rc"; exit "$rc"; fi
+      - name: Bake FPL long-tail pages from the same data
+        id: bake_longtail
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: |
+          out=$(python -m scripts.build_fpl_longtail) || { echo "::error::build_fpl_longtail kaatui"; exit 1; }
+          echo "$out"
+          case "$out" in *"ei sivuja"*) echo "::error::build_fpl_longtail ei rakentanut yhtaan sivua"; exit 1 ;; esac
+
       # Beat the model V1: gradaa lukitut päätökset valmiilta kierroksilta.
       # Idempotentti (gradatut ohitetaan, trigger estää uudelleengradauksen),
       # joten päivittäinen kutsu on turvallinen myös GW:iden välissä.
@@ -524,6 +551,8 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/fpl_projections_phase0.json data/fpl_xp_projections.json data/fpl_price_watch.json data/fpl_player_leaders.json data/fpl_player_stats.json data/fpl_cs_fdr.json data/team_confidence.json data/fpl_defcon_gw.json
+          # 6.9: sivut samaan committiin artefaktin kanssa (SIVU-JA-DATA-ERI-AJOSSA-2)
+          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml predictions.html world-cup-2026-predictions.html 2>/dev/null || echo "::warning::sivujen git add epaonnistui osittain"
           # 30.7 tarkkuuslokit: olemassa vain kun gradattavaa/jäädytettävää on ollut
           # 2.8: yhden valinnaisen tiedoston add EI saa kaataa koko pushia.
           # Tausta: founder_entry.json puuttui .gitignoren !-poikkeuksista →
@@ -611,6 +640,8 @@ jobs:
           [ "${{ steps.build_cs_fdr.outcome }}" = "failure" ] && { echo "::error::build_fpl_cs_fdr FAILAA (sanity-gate tai kaatuminen; fpl_cs_fdr.json jaa vanhaksi, wildcard lukee sita)"; fail=1; }
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.bake_fpl_page.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA (fpl.html jaa eri ajosta kuin artefakti)"; fail=1; }
+          [ "${{ steps.bake_longtail.outcome }}" = "failure" ] && { echo "::error::build_fpl_longtail FAILAA (long-tail-sivut jaavat eri ajosta kuin artefakti)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
           [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa (PLAYER-GW-STALE-GUARD). build_fpl_player_gw -askelen tulos tassa ajossa: ${{ steps.bake_player_gw.outcome }} — skipped tarkoittaa etta jokin ylavirran askel kaatui, ei etta builderi olisi ajanut tyhjaa"; fail=1; }
           [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus data/model_squad_exceptions/gw{N}.json tai korjaa entry"; fail=1; }

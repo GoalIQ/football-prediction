@@ -56,6 +56,7 @@ import threading
 from pathlib import Path
 
 import config
+from src.models.fpl_gameweek import actionable_gameweek
 from src.models import fpl_actuals
 from src.models.fpl_rate_team import RateTeamError
 
@@ -212,11 +213,9 @@ def _live_index(live_xp: dict | None) -> tuple[dict[int, dict], int | None]:
     if not live_xp:
         return {}, None
     meta = live_xp.get("meta") or {}
-    nxt = meta.get("trimmed_from")
-    if not isinstance(nxt, int):
-        nxt = meta.get("deadline_gameweek")
-    if not isinstance(nxt, int):
-        nxt = meta.get("next_gameweek")
+    # Kierrosvalinta asuu fpl_gameweek.py:ssa (yksi lukija): next_gw_xp on
+    # ennustepinta, joten "mihin voi viela vaikuttaa" on oikea kierros.
+    nxt = actionable_gameweek(meta)
     idx: dict[int, dict] = {}
     for p in live_xp.get("players") or []:
         try:

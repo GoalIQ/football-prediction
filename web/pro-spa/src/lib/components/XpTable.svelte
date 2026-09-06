@@ -347,7 +347,13 @@
 				subtitle: `${sub}, GoalIQ model`,
 				...(hasPrice ? { midLabel: 'PRICE' } : {}),
 				valueLabel:
-					sortBy === 'value' ? 'xP/£m' : sortWindowLabel != null ? `${sortWindowLabel} xP` : 'xP',
+					sortBy === 'value'
+						? 'xP/£m'
+						: cardGw != null
+							? `GW${cardGw} xP`
+							: sortWin
+								? `${sortWindowLabel} xP`
+								: 'xP',
 				fileName: 'goaliq_xp_list.png',
 				// 3.9 (audit): PRICE-sarake on FPL:n omaa dataa.
 				footNote: 'xP from the GoalIQ model, price from FPL',

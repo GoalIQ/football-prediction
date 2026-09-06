@@ -125,6 +125,11 @@ def _taulukon_rivit(h: str, maara: int = 10) -> list[list[str]]:
             # team_confidence liputti Brightonin (BHA -> "BHAturnover").
             # Poistetaan VAIN tama yksi luokka, ei mitaan muuta.
             c = re.sub(r'<span class="tflag">[^<]*</span>', "", c)
+            # 6.9: minuuttipohjan lippu (`<span class="flag" title=...>!</span>`,
+            # 5.9 provenienssityo) renderoityy NIMISOLUN sisaan samalla
+            # perusteella kuin tflag joukkuesoluun: sivun oma varaus, ei osa
+            # nimea. Kortti kantaa nimen. Ilman tata portti kaatui "Isak !".
+            c = re.sub(r'\s*<span class="flag"[^>]*>[^<]*</span>', "", c)
             # 29.8: entiteetit puretaan, koska kortin spec on JSONia
             # (`json.loads(html.unescape(...))`) ja taulukko on HTML:aa.
             # GW2:n O'Reilly paljasti eron: kortti kantaa "O'Reilly", solu

@@ -245,10 +245,15 @@ def test_kortin_luvut_loytyvat_RENDEROIDULTA_sivulta():
     i = h.find('<h2 id="gw-xp">')
     assert i > 0, "sivulta puuttuu #gw-xp -osio"
     sec = h[i:h.find("<h2", i + 5)]
+    # 6.9: nimisolussa voi olla minuuttipohjan lippu (`<span class="flag">!`),
+    # sivun oma varaus joka ei ole osa nimea (sama kasittely kuin
+    # test_share_card_server_rows). Ilman tata 3 liputettua rivia putosi ja
+    # portti sanoi "17 rivia, odotettu 20".
     solut = re.findall(
-        r'<td>([^<]+)</td><td class="tm">.*?<td class="n">[\d.]+</td>'
+        r'<td>([^<]+?)(?:\s*<span class="flag"[^>]*>[^<]*</span>)?</td>'
+        r'<td class="tm">.*?<td class="n">[\d.]+</td>'
         r'<td class="n hi">([\d.]+)</td>', sec)
-    ren = {_html.unescape(n): v for n, v in solut}
+    ren = {_html.unescape(n).strip(): v for n, v in solut}
     assert len(ren) == FREE_TOP_N, f"sivulla {len(ren)} rivia, odotettu {FREE_TOP_N}"
 
     puuttuu = [r["web_name"] for r in kortti if r["web_name"] not in ren]
