@@ -694,6 +694,25 @@
 			</div>
 		{/if}
 
+		<!-- 6.9 (Villen tarkennus): muodostelmat kentan YLAPUOLELLE, otsikkonauhan alle. -->
+		{#if premium}
+			<div class="lineup-tools">
+			<p class="label">Formation</p>
+			<div class="chips">
+				{#each FORMATIONS as f (f.join('-'))}
+					<button
+						type="button"
+						class="chip"
+						class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
+						onclick={() => applyFormation(f)}
+					>
+						{f.join('-')}
+					</button>
+				{/each}
+				<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
+			</div>
+			</div>
+		{/if}
 		<div class="xi-head">
 			<p class="label" style="margin:0">Starting XI</p>
 			{#if premium}
@@ -971,24 +990,6 @@
 		{/if}
 
 
-		{#if premium}
-			<div class="lineup-tools">
-			<p class="label">Formation</p>
-			<div class="chips">
-				{#each FORMATIONS as f (f.join('-'))}
-					<button
-						type="button"
-						class="chip"
-						class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
-						onclick={() => applyFormation(f)}
-					>
-						{f.join('-')}
-					</button>
-				{/each}
-				<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
-			</div>
-			</div>
-		{/if}
 
 		<!-- 22.8 (Villen tilaus): erillinen lista jossa malli ja toteuma ovat
 		     rinnakkain, suurin ero ensin. Tama on ainoa nakyma jossa mallin
@@ -1139,7 +1140,10 @@
 		font-size: var(--step-3);
 	}
 	.lineup-tools {
-		margin-top: var(--s-3);
+		margin: 0 0 var(--s-2);
+	}
+	.lineup-tools .chips {
+		margin-bottom: 0;
 	}
 	/* 14.8: koko kentta suuremmaksi leveilla ruuduilla. Skaalataan kaikki
 	   mitat samassa suhteessa (leveys, paikan leveys, nimikentat,
