@@ -183,8 +183,17 @@ jobs:
 
       # Sanity-gatet fail-safena: exit 2 → step fail → ei committia,
       # vanha data jää voimaan, workflow punainen (näkyvä signaali).
+      # 6.9 (PATO, muisti "yksi fail-fast-askel patoaa koko putken"): phase0:n
+      # sanity-gate kaatui rho -0.51:een 5.9 19:43Z alkaen ja KAIKKI sen
+      # jalkeiset askeleet jaivat ajamatta (player-gw, price watch, leaders,
+      # stats, freezet). Kentan pisteet ja hintaseuranta jaivat lauantaihin.
+      # Gate saa edelleen kieltaytya kirjoittamasta phase0-artefaktia
+      # (fail-closed sille), mutta se ei ole muiden rakentajien riippuvuus.
+      # Kaatuminen raportoidaan step healthissa, ei hiljaa.
       - name: Build Phase 0 projections (CS% + FDR)
+        id: build_phase0
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         run: python -m scripts.build_fpl_phase0
 
       - name: Build Phase 1 xP projections
@@ -598,6 +607,7 @@ jobs:
         if: always() && steps.guard.outputs.proceed == 'true'
         run: |
           fail=0
+          [ "${{ steps.build_phase0.outcome }}" = "failure" ] && { echo "::error::build_fpl_phase0 FAILAA (sanity-gate; fpl_projections_phase0.json jaa vanhaksi, /fpl CS/FDR ei paivity) - PHASE0-SANITY-GATE-RHO"; fail=1; }
           [ "${{ steps.build_cs_fdr.outcome }}" = "failure" ] && { echo "::error::build_fpl_cs_fdr FAILAA (sanity-gate tai kaatuminen; fpl_cs_fdr.json jaa vanhaksi, wildcard lukee sita)"; fail=1; }
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
