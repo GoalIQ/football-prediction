@@ -290,19 +290,22 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     kohtaa. Testi oli vihrea samalla kun oikea rakennuspolku pudotti
     double gameweekin toisen ottelun (muisti: portti-voi-mitata-eri-koodipolkua).
 
-    🔴 TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): `by_gw` on dict jonka avain on
-    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTAA
-    edellisen ja katoaa ruudukosta - samalla kun `next_n` laskee sen ja
-    `next_avg_cs_pct` sisaltaa sen keskiarvossa. Sivun copy EI saa luvata
-    etta double nakyy ruudukossa ennen kuin tama on korjattu.
+    KORJATTU (QUEUE: FDR-GRID-DGW, 6.9): `by_gw` oli dict jonka avain oli
+    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTI
+    edellisen ja katosi ruudukosta - samalla kun `next_n` laski sen ja
+    `next_avg_cs_pct` sisalsi sen keskiarvossa. `cells` on nyt LITTEA lista
+    ikkunan sisalla olevista otteluista, kukin oman `gw`-avaimensa kanssa;
+    `fdr_grid_html` ryhmittaa ne sarakkeeseen avaimen mukaan, ei asemansa
+    mukaan, joten sama gw voi kantaa 0, 1 tai 2+ ottelua ilman etta mikaan
+    ylikirjoittaa mitaan.
     """
     rows = []
+    gw_set = set(gws)
     for t in teams:
-        by_gw = {f["gw"]: f for f in t["fixtures"]}
         rows.append(
             {
                 "team": t["name"],
-                "cells": [by_gw.get(g) for g in gws],
+                "cells": [f for f in t["fixtures"] if f["gw"] in gw_set],
                 "avg_fdr": t["next_avg_fdr"],
                 "avg_cs": t["next_avg_cs_pct"],
                 # next_n on otteluiden maara lahihorisontissa. Ilman sita
@@ -312,23 +315,18 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
         )
     rows.sort(key=lambda r: r["avg_fdr"])
     # 30.8 (portti k2): fail-closed double gameweekille. Jos rivilla on
-    # enemman otteluita kuin soluja, ruudukko PIILOTTAA ottelun samalla kun
-    # Games-sarake ja Avg CS% laskevat sen mukaan. Sivun luvut olisivat silloin
-    # keskenaan ristiriidassa ilman etta mikaan huutaisi
-    # (muisti: ehto-ei-vanhene-teksti-vanhenee).
-    #
-    # Fail-closed kuten fpl_cs_fdr:n sanity-gate: vanha fpl.html jaa voimaan ja
-    # askel menee punaiseksi. Se on parempi kuin sivu joka valehtelee itselleen.
-    # Korjaus on QUEUE: FDR-GRID-DGW.
+    # enemman otteluita kuin nakyvia soluja, ruudukko PIILOTTAISI ottelun
+    # samalla kun Games-sarake ja Avg CS% laskevat sen mukaan. Sivun luvut
+    # olisivat silloin keskenaan ristiriidassa ilman etta mikaan huutaisi
+    # (muisti: ehto-ei-vanhene-teksti-vanhenee). Pidetty korjauksen jalkeenkin:
+    # jos `t["fixtures"]` jostain syysta puuttuu ottelun, tama viela nappaa sen.
     for r in rows:
-        nakyvia = len([c for c in r["cells"] if c is not None])
+        nakyvia = len(r["cells"])
         if r["n"] > nakyvia:
             raise SystemExit(
                 f"FDR-GRID-DGW: {r['team']} - rivilla {r['n']} ottelua mutta "
-                f"{nakyvia} solua. Double gameweek piilottaisi ottelun "
-                f"ruudukosta samalla kun Games ja Avg CS% laskevat sen. "
-                f"Korjaa fdr_rows_from_teams (by_gw -> lista per GW) ennen "
-                f"kuin sivu regeneroidaan.")
+                f"{nakyvia} solua. Ottelu puuttuisi ruudukosta samalla kun "
+                f"Games ja Avg CS% laskevat sen mukaan.")
     return rows
 
 
@@ -1414,35 +1412,58 @@ def fdr_grid_html(c: dict) -> str:
         f"GW{g}</th>"
         for i, g in enumerate(c["gws"])
     )
+    def _fdr_link(team: str, fx: dict, inline_class: bool) -> tuple[str, str]:
+        # #148: solussa vastustaja + venue + per-fixture CS% (pariteetti
+        # mobiilin #144:n kanssa); FDR-luokka siirtyi tooltippiin.
+        # #152: solu on linkki predict-pinnalle (mobiilin solu-tap-pariteetti).
+        # 26.7 CLASSIC: ei taustatäyttöä — luokka värittää LUVUN.
+        # 30.8 (portti k2, B3): vari JA luku samasta arvosta.
+        # Aiemmin luokka laskettiin raakaarvosta ja solu naytettiin
+        # :.0f:lla, joten 20.1 luki "20%" muttei saanut coralia -
+        # captionin lupaus "20% or less in coral" oli livena
+        # kumottavissa kolmella nakyvalla solulla (MCI GW4, MUN GW4,
+        # EVE GW6). Sama pyoristysjuuri kuin Avg CS% -korjauksessa.
+        shown = format(float(fx["cs_pct"]), ".0f")
+        cls = cs_cell_class(float(shown))
+        href = predict_cell_href(team, fx["opponent"], fx["venue"])
+        a_class = f"fdr {cls}" if inline_class and cls else "fdr"
+        link = (
+            f'<a class="{a_class}" href="{href}" '
+            f'title="{escape(fx["opponent"])} ({fx["venue"]}) '
+            f'&middot; FDR {fx["fdr"]} &middot; view model prediction">'
+            f'{escape(fx["opponent_short"])} ({fx["venue"]}) '
+            f'{shown}%'
+            f"</a>"
+        )
+        return cls, link
+
     rows = []
     for r in c["fdr_rows"]:
+        # FDR-GRID-DGW (korjattu 6.9): sarake haetaan gw-AVAIMELLA, ei
+        # `cells`-listan asemalla, koska `r["cells"]` on nyt littea lista
+        # jossa sama gw voi esiintya 0, 1 tai 2+ kertaa (double gameweek).
+        by_gw: dict[int, list[dict]] = {}
+        for fx in r["cells"]:
+            if fx is not None:
+                by_gw.setdefault(fx["gw"], []).append(fx)
         cells = []
-        for i, fx in enumerate(r["cells"]):
+        for i, g in enumerate(c["gws"]):
             m = " m-hide" if i >= MOBILE_GW_COLS else ""
-            if fx is None:
+            fixtures = by_gw.get(g, [])
+            if not fixtures:
                 cells.append(f'<td class="num{m}">-</td>')
+            elif len(fixtures) == 1:
+                cls, link = _fdr_link(r["team"], fixtures[0], inline_class=False)
+                cells.append(f'<td class="num {cls}{m}">{link}</td>')
             else:
-                # #148: solussa vastustaja + venue + per-fixture CS% (pariteetti
-                # mobiilin #144:n kanssa); FDR-luokka siirtyi tooltippiin.
-                # #152: solu on linkki predict-pinnalle (mobiilin solu-tap-pariteetti).
-                # 26.7 CLASSIC: ei taustatäyttöä — luokka värittää LUVUN.
-                # 30.8 (portti k2, B3): vari JA luku samasta arvosta.
-                # Aiemmin luokka laskettiin raakaarvosta ja solu naytettiin
-                # :.0f:lla, joten 20.1 luki "20%" muttei saanut coralia -
-                # captionin lupaus "20% or less in coral" oli livena
-                # kumottavissa kolmella nakyvalla solulla (MCI GW4, MUN GW4,
-                # EVE GW6). Sama pyoristysjuuri kuin Avg CS% -korjauksessa.
-                shown = format(float(fx["cs_pct"]), ".0f")
-                cls = cs_cell_class(float(shown))
-                href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
-                cells.append(
-                    f'<td class="num {cls}{m}"><a class="fdr" href="{href}" '
-                    f'title="{escape(fx["opponent"])} ({fx["venue"]}) '
-                    f'&middot; FDR {fx["fdr"]} &middot; view model prediction">'
-                    f'{escape(fx["opponent_short"])} ({fx["venue"]}) '
-                    f'{shown}%'
-                    f"</a></td>"
-                )
+                # Double gameweek: molemmat ottelut samassa solussa, kukin
+                # omalla varillaan - yhdella td-luokalla ei voi varittaa
+                # kahta eri vaikeutta oikein.
+                links = [
+                    _fdr_link(r["team"], fx, inline_class=True)[1]
+                    for fx in fixtures
+                ]
+                cells.append(f'<td class="num{m}">' + "<br>".join(links) + "</td>")
         rows.append(
             "<tr>"
             f'<td class="team">{escape(r["team"])}</td>'
@@ -1747,8 +1768,8 @@ CSS = """
      Only ever found in a browser; the gates cannot see the cascade. */
   .content a.fdr{ color:inherit; }
   a.fdr:hover{ text-decoration:underline; }
-  td.is-easy,td.is-easy .fdr,span.fdr.is-easy{ color:var(--amber); font-weight:600; }
-  td.is-hard,td.is-hard .fdr,span.fdr.is-hard{ color:var(--negative); }
+  td.is-easy,td.is-easy .fdr,span.fdr.is-easy,a.fdr.is-easy{ color:var(--amber); font-weight:600; }
+  td.is-hard,td.is-hard .fdr,span.fdr.is-hard,a.fdr.is-hard{ color:var(--negative); }
   .legend{ color:var(--ink-muted); font-size:14px; margin:8px 0 0; }
   .stat-row{ display:flex; flex-wrap:wrap; gap:14px; margin:18px 0; }
   .stat{ background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:16px 20px; flex:1 1 180px; }

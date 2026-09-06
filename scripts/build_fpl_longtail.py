@@ -4711,8 +4711,14 @@ def _gw_still_running(gw: int) -> bool:
 
     Tuntematon tila palautetaan keskeneraisena: liikaa varausta on halvempaa
     kuin liian vahan.
+
+    XP-READER-DISCIPLINE-AUKKO (6.9): lukee nyt `load_xp_actionable`:n kautta
+    `_load(XP_PATH)`:n sijaan. Tama funktio katsoo vain `meta.next_gameweek`ia
+    eika koskaan `players[].gameweeks`ia, joten trimmaus ei muuta tulosta —
+    mutta yksi lukija ilman perusteltua poikkeusta on parempi kuin kaksi.
     """
-    xp = _load(XP_PATH) or {}
+    from src.models.fpl_xp import load_xp_actionable
+    xp = load_xp_actionable(XP_PATH)
     nxt = ((xp.get("meta") or {}).get("next_gameweek"))
     if nxt is None:
         return True
@@ -4954,9 +4960,17 @@ def main() -> int:
     OUT_DIR.mkdir(exist_ok=True)
     built = []
 
-    xp = _load(XP_PATH)
+    # XP-READER-DISCIPLINE-AUKKO (6.9): `_load(XP_PATH)` ohitti
+    # `load_xp_actionable()`-lukijan (portin sivuloydos 4.9), joten
+    # gameweeks[]-lista tanne asti oli RAAKA - juuri se rakenne joka aiheutti
+    # useita kierrosvaihdon kapteenivikoja tassa samassa tiedostossa (ks.
+    # render_captain-docstring 25.8/30.8). `load_xp_actionable` palauttaa
+    # AINA dictin (ei koskaan Nonea), joten "onko dataa" tarkistetaan nyt
+    # meta.available-lipulla, ei totuusarvolla.
+    from src.models.fpl_xp import load_xp_actionable
+    xp = load_xp_actionable(XP_PATH)
     now = _data_now(xp)
-    if xp:
+    if xp.get("meta", {}).get("available"):
         page = render_captain(xp, now)
         if page:
             (OUT_DIR / "best-captain.html").write_text(page, encoding="utf-8")
@@ -4983,7 +4997,7 @@ def main() -> int:
             (OUT_DIR / "team-news.html").write_text(page, encoding="utf-8")
             built.append("team-news")
 
-    if xp:
+    if xp.get("meta", {}).get("available"):
         clubs = render_club_pages(xp, now)
         if clubs:
             built.append(f"club x{len(clubs)}")
