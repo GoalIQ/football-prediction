@@ -81,6 +81,55 @@ def _club_counts(squad: list[dict]) -> dict[int, int]:
     return counts
 
 
+def _move_names(best: dict | None) -> str:
+    """", Calvert-Lewin to Wissa" tai tyhja. Vain kun molemmat nimet ovat
+    `best`-lohkossa: puolikas nimi olisi vaite jota ei voi tarkistaa."""
+    if not best:
+        return ""
+    out_name = (best.get("out") or {}).get("web_name")
+    in_name = (best.get("in") or {}).get("web_name")
+    if out_name and in_name:
+        return f", {out_name} to {in_name}"
+    return ""
+
+
+def best_checked_move(best: dict | None, n_moves: int) -> dict | None:
+    """Payload-kentta hold-lauseen siirrolle. PURE.
+
+    HOLD-SYY-EI-VAIN-LUKU (6.9): `best_move_summary` palautti jo out/in-
+    pelaajat mutta ne eivat menneet payloadiin, joten lukija naki luvun
+    (+0,06 xP/kierros vs 0,50) muttei mita siirtoa malli edes harkitsi.
+
+    Kentta on olemassa VAIN silloin kun lause nimeaa siirron: hold-verdikti
+    (n_moves == 0) ja case `below_bar` tai `later`. `over_bar` tarkoittaa
+    etta suunnitelma ottaa siirron eika hold-lausetta ole; None-case
+    tarkoittaa ettei mikaan siirto paranna joukkuetta. Kummassakaan ei ole
+    "parasta tarkistettua siirtoa" josta kertoa, ja kentta joka olisi
+    olemassa ilman lausetta antaisi klientille kaksi eri mielta.
+    """
+    if n_moves != 0 or not best:
+        return None
+    if best.get("case") not in ("below_bar", "later"):
+        return None
+    out_p = best.get("out") or {}
+    in_p = best.get("in") or {}
+    if not (out_p.get("web_name") and in_p.get("web_name")):
+        return None
+
+    def _mini(p: dict) -> dict:
+        return {"id": p.get("id"), "web_name": p.get("web_name"),
+                "team_short": p.get("team_short")}
+
+    return {
+        "out": _mini(out_p),
+        "in": _mini(in_p),
+        "case": best.get("case"),
+        # Sama luku ja sama ikkuna kuin lauseessa; `later`-haarassa None.
+        "gain_xp_per_gw": best.get("value_xp_per_gw"),
+        "window_gws": best.get("window_gws"),
+    }
+
+
 def hold_message(n_moves: int, net_gain: float, gws: list[int],
                  best: dict | None) -> str:
     """Hero-verdiktin lause. PURE — testattavissa ilman verkkoa.
@@ -107,13 +156,20 @@ def hold_message(n_moves: int, net_gain: float, gws: list[int],
         return (f"GW{rows[0]}-GW{rows[-1]}" if len(rows) > 1
                 else f"GW{rows[0]}")
 
+    # HOLD-SYY-EI-VAIN-LUKU (6.9): lause nimeaa siirron jonka malli
+    # tarkisti, ei vain lukua. Nimet tulevat SAMASTA `best`-lohkosta kuin
+    # luku ja rima (best_move_summary.out/in), ei erillisesta hausta
+    # (muisti: lause-ja-luku-eri-lahteesta). Ilman nimia vanha muoto
+    # sailyy bittitarkasti: vanha testi ja mobiili eivat lahetta niita.
+    who = _move_names(best)
     if n_moves == 0 and best and best.get("case") == "below_bar":
-        return (f"Best move the model checked: {best['value_xp_per_gw']:+.2f} "
+        return (f"Best move the model checked{who}: "
+                f"{best['value_xp_per_gw']:+.2f} "
                 f"xP per gameweek over {_win(best.get('window_gws'))}, under "
                 f"your {best['bar_xp_per_gw']:.2f} threshold. "
                 f"Hold and bank the transfer.")
     if n_moves == 0 and best and best.get("case") == "later":
-        return (f"Best move the model checked pays off later than "
+        return (f"Best move the model checked{who} pays off later than "
                 f"{_win(best.get('window_gws'))}. Hold and bank the transfer, "
                 f"you can still buy him then.")
     if n_moves == 0:
@@ -300,6 +356,9 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
         "applied_bar_xp_per_gw": (best or {}).get("bar_xp_per_gw"),
         "best_move_case": (best or {}).get("case"),
         "best_move_window_gws": (best or {}).get("window_gws"),
+        # HOLD-SYY-EI-VAIN-LUKU (6.9): siirto jonka lause nimeaa, samasta
+        # lohkosta kuin luku. None kun lause ei nimea siirtoa.
+        "best_checked_move": best_checked_move(best, n_moves),
         "horizon_gws": len(gws),
         "gw_from": gws[0],
         "gw_to": gws[-1],

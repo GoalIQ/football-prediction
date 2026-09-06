@@ -144,7 +144,19 @@ export interface HoldVerdict {
 	applied_bar_xp_per_gw?: number | null;
 	best_move_case?: 'below_bar' | 'over_bar' | 'later' | null;
 	best_move_window_gws?: number[] | null;
+	/** HOLD-SYY-EI-VAIN-LUKU (6.9): siirto jonka hold-lause nimeaa. Vain kun
+	 *  case on below_bar tai later; samasta lohkosta kuin luku ja rima. */
+	best_checked_move?: BestCheckedMove | null;
 	message: string;
+}
+
+export interface BestCheckedMove {
+	out: { id: number; web_name: string; team_short: string | null };
+	in: { id: number; web_name: string; team_short: string | null };
+	case: 'below_bar' | 'later';
+	/** null `later`-haarassa (lahi-ikkunassa ei lukua). */
+	gain_xp_per_gw: number | null;
+	window_gws: number[] | null;
 }
 
 export interface LastFinishedGw {

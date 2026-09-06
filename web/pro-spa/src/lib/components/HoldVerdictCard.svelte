@@ -65,6 +65,14 @@
 				: `GW${verdict.best_move_window_gws[0]}`
 			: gwSpan
 	);
+	// HOLD-SYY-EI-VAIN-LUKU (6.9): lause nimeaa siirron jonka malli tarkisti.
+	// Nimet tulevat samasta lohkosta kuin luku (backend best_checked_move),
+	// ei erillisesta hausta. Ilman kenttaa (vanha payload) lause on entinen.
+	const who = $derived(
+		verdict.best_checked_move
+			? `, ${verdict.best_checked_move.out.web_name} to ${verdict.best_checked_move.in.web_name}`
+			: ''
+	);
 	const planLabel = $derived(
 		nMoves > 1
 			? `Best plan the model checked (${nMoves} moves across ${gwSpan})`
@@ -87,11 +95,11 @@
 		<p class="title">Hold - nothing the model checked gains enough</p>
 		<p class="math">
 			{#if bestCase === 'below_bar' && perGw != null && perGwBar != null}
-				Best move the model checked: {perGw >= 0 ? '+' : ''}{perGw.toFixed(2)} xP per gameweek over
-				{bestWindow}, under your {perGwBar.toFixed(2)} threshold. Hold and bank the transfer.
+				Best move the model checked{who}: {perGw >= 0 ? '+' : ''}{perGw.toFixed(2)} xP per gameweek
+				over {bestWindow}, under your {perGwBar.toFixed(2)} threshold. Hold and bank the transfer.
 			{:else if bestCase === 'later'}
-				Best move the model checked pays off later than {bestWindow}. Hold and bank the transfer,
-				you can still buy him then.
+				Best move the model checked{who} pays off later than {bestWindow}. Hold and bank the
+				transfer, you can still buy him then.
 			{:else if gainText === null}
 				Nothing the model checked improves your projected xP over {gwSpan}.
 			{:else}

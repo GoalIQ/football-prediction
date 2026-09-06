@@ -299,3 +299,77 @@ def test_per_kierros_luku_tasmaa_naytettyyn_kokonaislukuun():
     total, per_gw = float(m.group(1)), float(m.group(2))
     assert round(total / len(GWS), 2) == per_gw
     assert "spread across" in msg   # 5 siirtoa EI ole taman kierroksen siirtoja
+
+
+# ---------------------------------------------------------------------------
+# (5) HOLD-SYY-EI-VAIN-LUKU (6.9): lause nimeaa siirron, ja nimi tulee
+# samasta lohkosta kuin luku
+# ---------------------------------------------------------------------------
+from src.models.fpl_planner import best_checked_move
+
+
+def _named(msg: str) -> tuple[str, str] | None:
+    m = re.search("Best move the model checked, (.+?) to (.+?)[:,]? ", msg)
+    return (m.group(1), m.group(2)) if m else None
+
+
+def test_hold_lause_nimeaa_siirron_samasta_lohkosta_kuin_luku():
+    """Nimi ja luku samasta `best`-lohkosta (muisti: lause-ja-luku-eri-
+    lahteesta). Ajetaan samoilla pooleilla ja ft-arvoilla kuin (4)."""
+    squad = base_squad()
+    pools = {
+        "hyvin pieni": [mk(99, 3, 20, 60, 4.05)],
+        "pieni": [mk(98, 3, 21, 60, 4.3)],
+        "hantapainoinen": [mk(96, 3, 23, 60, [4.0, 4.0, 4.0, 4.0, 12.0, 12.0])],
+    }
+    seen = 0
+    for name, pool in pools.items():
+        for ft in (0, 1, 3, 5):
+            best = e.best_move_summary(squad, pool, 0, GWS, ft)
+            step = e.plan_gw(squad, pool, 0, GWS, ft)
+            n = len(step["moves"])
+            msg = hold_message(n, 0.0, GWS, best)
+            field = best_checked_move(best, n)
+            nm = _named(msg)
+            if nm is None:
+                assert field is None, f"{name} ft={ft}: kentta ilman lausetta"
+                continue
+            seen += 1
+            assert field is not None, f"{name} ft={ft}: lause ilman kenttaa"
+            assert nm == (field["out"]["web_name"], field["in"]["web_name"])
+            assert field["in"]["id"] == pool[0]["id"]
+            pr = _printed(msg)
+            if pr is not None:
+                assert pr[0] == field["gain_xp_per_gw"]
+    assert seen >= 4, f"vain {seen} nimettya lausetta - testi ei mittaa"
+
+
+def test_best_checked_move_vain_hold_haarassa():
+    """NEGATIIVINEN KONTROLLI: over_bar, siirrot suunnitelmassa, tyhja best
+    ja puolikas nimi -> ei kenttaa. Kentta ilman lausetta olisi toinen
+    mielipide samalla kortilla."""
+    named = {"case": "below_bar", "value_xp_per_gw": 0.06,
+             "bar_xp_per_gw": 0.5, "window_gws": [3, 4],
+             "out": {"id": 1, "web_name": "A", "team_short": "AAA"},
+             "in": {"id": 2, "web_name": "B", "team_short": "BBB"}}
+    assert best_checked_move(named, 0) is not None
+    assert best_checked_move({**named, "case": "over_bar"}, 0) is None
+    assert best_checked_move(named, 2) is None
+    assert best_checked_move(None, 0) is None
+    assert best_checked_move({**named, "in": {"id": 2}}, 0) is None
+    # over_bar-lause ei nimea ketaan vaikka nimet olisivat lohkossa
+    assert "A to B" not in hold_message(0, 0.0, GWS, {**named, "case": "over_bar"})
+
+
+def test_hold_lause_ilman_nimia_on_bittitarkasti_entinen():
+    """Vanha payload ilman out/in (mobiili, vanhat testit) -> entinen muoto."""
+    old = {"case": "below_bar", "value_xp_per_gw": 0.06, "bar_xp_per_gw": 0.5,
+           "window_gws": [3, 4]}
+    assert hold_message(0, 0.0, GWS, old) == (
+        "Best move the model checked: +0.06 xP per gameweek over GW3-GW4, "
+        "under your 0.50 threshold. Hold and bank the transfer.")
+    later = {"case": "later", "window_gws": [3, 4],
+             "out": {"id": 1, "web_name": "A"}, "in": {"id": 2, "web_name": "B"}}
+    msg = hold_message(0, 0.0, GWS, later)
+    assert msg.startswith("Best move the model checked, A to B pays off later than GW3-GW4.")
+    assert best_checked_move(later, 0)["gain_xp_per_gw"] is None
