@@ -234,14 +234,14 @@ def test_optimaalisuusvaite_kulkee_saman_portin_lapi_kuin_lede():
     vaikka `optimal_xi_proven()` on False. Mitattu samana paivana: entryn
     rungosta johdettu laillinen 15 antoi XI:lle 322,42 xP kun sivu naytti
     310,77 — eli hakumme ei loyda optimia."""
+    # 6.9: hedgattu muoto JOKA prosessissa, lipusta riippumatta. CI:n bake
+    # sanoi "proven" (lippu True omassa prosessissaan) ja tests.yml luki saman
+    # sivun lipulla False: sama sivu, kaksi totuutta. Nyt yksi.
     nakyva = _nakyva(_render([3, 4, 5, 6, 7, 8]))
-    from src.models.fpl_rate_team import optimal_xi_proven
-    if optimal_xi_proven():
-        assert "the proven optimum XI inside the 100.0m budget" in nakyva
-    else:
-        assert "the best XI our search found" in nakyva
-        assert "This is a budget optimum" not in nakyva
-        assert "proven optimum" not in nakyva
+    assert "the best XI our search found" in nakyva
+    assert "This is a budget optimum" not in nakyva
+    assert "proven optimum" not in nakyva
+    assert "proven optimal" not in nakyva
 
 
 def test_entry_nimella_on_reitti():
@@ -296,14 +296,16 @@ def test_hedgaamaton_vaite_ei_paase_nakyvaan_copyyn():
 
 
 def test_kontrolli_sanalista_ei_ole_tyhja():
-    """Portin sanalista vanhenee: varmista etta se osuu johonkin kun vaite
-    ON sallittu (fikstuurilla haku on todistettu)."""
-    html = _render([3, 4, 5, 6, 7, 8])
-    from src.models.fpl_rate_team import optimal_xi_proven
-    if optimal_xi_proven():
-        yhdessa = (html.split("<body", 1)[0] + _nakyva(html)).lower()
-        assert any(k in yhdessa for k in OPTIMISMI), (
-            "todistetulla optimilla sivun PITAA sanoa se")
+    """Portin sanalista vanhenee: varmista etta se osuu siihen muotoon jonka
+    sivu SANOI ennen 6.9 (proven optimal by exhaustive search). 6.9: sivu ei
+    enaa vaita todistettua optimia missaan prosessissa (lippu on prosessin
+    tila ja 4.9 portti mittasi laillisen 15:n joka voittaa XI:n), joten
+    kontrolli mitataan vanhasta sanamuodosta, ei renderoinnista."""
+    vanha = ("The highest-scoring XI that fits inside the standard 100.0m "
+             "budget, proven optimal by exhaustive search. "
+             "the proven optimum XI inside the 100.0m budget").lower()
+    assert any(k in vanha for k in OPTIMISMI), (
+        "sanalista ei osu edes vanhaan hedgaamattomaan muotoon")
 
 
 def test_llms_txt_ei_kanna_hedgaamatonta_vaitetta():
