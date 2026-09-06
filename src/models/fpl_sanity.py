@@ -13,7 +13,8 @@ Tämä portti ei nimeä yhtään joukkuetta. Se mittaa:
   1. joukkueiden määrä (20),
   2. CS%:n ja FDR:n arvoalueet ja hajonnan (ei litteä, ei roskaa),
   3. suunnan: FDR ja CS% ovat vastakkaissuuntaiset yli joukkueiden
-     (Spearman <= -0.6),
+     JOKA KIERROKSELLA erikseen (Spearman <= -0.6; 6.9: horisontin
+     keskiarvoista laskettu rho jai lokiin tiedoksi, ks. per_gw_direction),
   4. mallin OMAT tasot: fitin vahvin kolmikko (attack - defence) saa
      pienemmän FDR:n ja suuremman CS%:n kuin heikoin kolmikko.
 Kohta 4 korvaa "nousijat": heikoin kolmikko tulee samasta fitistä josta
@@ -73,9 +74,40 @@ def _finite(v) -> bool:
         return False
 
 
+def per_gw_direction(teams: dict[str, dict], fixtures_key: str,
+                     max_gws: int = 6, min_points: int = MIN_TEAMS // 2
+                     ) -> list[tuple[int, float]]:
+    """Spearman(FDR, CS%) yli joukkueiden ERIKSEEN jokaiselle horisontin
+    kierrokselle: [(gw, rho)]. Kierros jolla on alle `min_points` ottelua
+    ohitetaan (blank/tuplakierrokset), NaN sailyy jotta kutsuja kaatuu siihen.
+
+    6.9.2026 (PHASE0-SANITY-GATE-RHO): portti mittasi rhon horisontin
+    KESKIARVOISTA (next_avg_fdr vs next_avg_cs_pct). Mitattu git-historiasta
+    23.8-5.9: keskiarvo-rho liukui -0.88 -> -0.65 ja kaatuneessa ajossa -0.51,
+    vaikka kierroskohtainen rho oli koko ajan -0.84...-0.96. Keskiarvo sekoittaa
+    joukkueen oman puolustuksen tason ja eri otteluohjelmat, joten sen
+    korrelaatio heikkenee vaikka invariantti ("kovempi vastustaja -> pienempi
+    CS%") pitaa joka kierroksella. Invariantti mitataan siella missa se on tosi.
+    """
+    gws: dict[int, list[tuple[float, float]]] = {}
+    for t in teams.values():
+        for f in (t.get(fixtures_key) or []):
+            gw, fdr, cs = f.get("gw"), f.get("fdr"), f.get("cs_pct")
+            if isinstance(gw, int) and _finite(fdr) and _finite(cs):
+                gws.setdefault(gw, []).append((float(fdr), float(cs)))
+    out: list[tuple[int, float]] = []
+    for gw in sorted(gws)[:max_gws]:
+        pts = gws[gw]
+        if len(pts) < min_points:
+            continue
+        out.append((gw, spearman([a for a, _ in pts], [b for _, b in pts])))
+    return out
+
+
 def structural_checks(teams: dict[str, dict], strength: dict[str, float],
                       fdr_key: str, cs_key: str,
-                      n_expected: int = MIN_TEAMS) -> list[tuple[str, bool, str]]:
+                      n_expected: int = MIN_TEAMS,
+                      fixtures_key: str | None = None) -> list[tuple[str, bool, str]]:
     """Palauttaa [(label, passed, detail)]. Kaikki tarkistukset ajetaan aina,
     jotta loki kertoo koko kuvan eikä vain ensimmäistä kaatumista."""
     out: list[tuple[str, bool, str]] = []
@@ -112,9 +144,23 @@ def structural_checks(teams: dict[str, dict], strength: dict[str, float],
                 all(flo <= v <= fhi for v in fdr) and spread >= FDR_MIN_SPREAD,
                 f"min {min(fdr):.2f} max {max(fdr):.2f}"))
     rho = spearman(fdr, cs)
-    out.append((f"FDR ja CS% vastakkaissuuntaiset (Spearman <= {SPEARMAN_MAX})",
-                _finite(rho) and rho <= SPEARMAN_MAX,
-                f"rho {rho:.2f}" if _finite(rho) else "rho NaN"))
+    if fixtures_key is None:
+        out.append((f"FDR ja CS% vastakkaissuuntaiset (Spearman <= {SPEARMAN_MAX})",
+                    _finite(rho) and rho <= SPEARMAN_MAX,
+                    f"rho {rho:.2f}" if _finite(rho) else "rho NaN"))
+    else:
+        # 6.9: suunta mitataan JOKA kierroksella erikseen (ks. per_gw_direction).
+        # Keskiarvojen rho jaa lokiin tiedoksi, se ei kaada eika paasta.
+        per = per_gw_direction(teams, fixtures_key)
+        avg_txt = f"horisontin keskiarvojen rho {rho:.2f} (vain tiedoksi)" if _finite(rho) else ""
+        if not per:
+            out.append((f"FDR ja CS% vastakkaissuuntaiset joka kierroksella (Spearman <= {SPEARMAN_MAX})",
+                        False, "ei kierrosdataa: yksikaan kierros ei yltanyt mittaan"))
+        else:
+            passed = all(_finite(r) and r <= SPEARMAN_MAX for _, r in per)
+            detail = "; ".join(f"GW{g} {r:.2f}" if _finite(r) else f"GW{g} NaN" for g, r in per)
+            out.append((f"FDR ja CS% vastakkaissuuntaiset joka kierroksella (Spearman <= {SPEARMAN_MAX})",
+                        passed, detail + (" | " + avg_txt if avg_txt else "")))
 
     rated = [t for t in names if _finite(strength.get(t))]
     if len(rated) < 2 * TIER_N:

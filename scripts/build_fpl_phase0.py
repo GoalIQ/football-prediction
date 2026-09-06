@@ -547,8 +547,11 @@ def sanity_gate(team_view: list[dict], promoted: list[str], dc=None) -> bool:
         print(f"  nousijat (vain lokiin): {promoted}")
     agg = {t["name"]: t for t in team_view}
     strength = model_strength(dc) if dc is not None else {}
+    # 6.9 (PHASE0-SANITY-GATE-RHO): suunta mitataan kierroksittain fixtures-
+    # listasta, ei horisontin keskiarvoista (ks. fpl_sanity.per_gw_direction).
     ok = print_checks(structural_checks(
-        agg, strength, fdr_key="next_avg_fdr", cs_key="next_avg_cs_pct"))
+        agg, strength, fdr_key="next_avg_fdr", cs_key="next_avg_cs_pct",
+        fixtures_key="fixtures"))
     print(f"\nGATE: {'PASS' if ok else 'FAIL'}")
     return ok
 
