@@ -1178,7 +1178,6 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     # 28.7: vaite optimaalisuudesta VAIN kun ratkaisija on sen todistanut.
     # Ennen tata paivaa sivu vaitti "strongest" ahneesta heuristiikasta joka
     # jai tuotantodatalla 15.2 xP optimista.
-    from src.models.fpl_rate_team import optimal_xi_proven
 
     # 🔴 4.9, julkaisuportin loydos: `title` ja `desc` rakennettiin ENNEN tata
     # haaraa, joten hedge oli vain nakyvassa copyssa ja `<head>` sanoi
@@ -1188,7 +1187,14 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     # oli vain metassa eika sivulla, nyt hedge oli vain sivulla eika metassa.
     # Meta on se jonka linkkiesikatselut ja hakukoneet lainaavat, eli se on
     # julkisempi kuin runko.
-    _proven = optimal_xi_proven()
+    # 6.9: EI "proven optimal" -vaitetta julkiselle sivulle enaa lainkaan.
+    # Optimoijan oma lippu sanoo "todistettu" vain OMASSA hakuavaruudessaan,
+    # mutta 4.9 portti mittasi laillisen 15:n joka voittaa taman XI:n 11,65
+    # xP:lla (muisti: benchmark-jonka-kayttaja-voittaa). Lippu on siis
+    # heikompi kuin sana, ja lisaksi se on prosessin tila: CI:n bake sanoi
+    # "proven" ja tests.yml (uusi prosessi, lippu False) kaatui sivuun.
+    # Hedgattu muoto on ainoa joka on tosi jokaisessa prosessissa.
+    _proven = False
     title = ("The GoalIQ Model XI: best 100.0m FPL squad on xP | GoalIQ"
              if _proven else
              "The GoalIQ Model XI: the strongest 100.0m FPL squad our search "
@@ -1201,10 +1207,7 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
             f"{total_xp:.1f} projected points over {window} ({window_n}), "
             f"with a bench that actually plays. Free, no sign-in, rebuilt "
             f"daily.")
-    claim = ("The highest-scoring XI that fits inside the standard 100.0m "
-             "budget, proven optimal by exhaustive search"
-             if optimal_xi_proven() else
-             "The strongest XI the GoalIQ model found inside the standard "
+    claim = ("The strongest XI the GoalIQ model found inside the standard "
              "100.0m budget")
     # 28.7 (Villen havainto): budjetti kattaa 15 pelaajaa, ei 11. Aiempi
     # vertailukohta varasi penkkiin halvimmat mahdolliset, mika on
@@ -1218,9 +1221,7 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     # 322,42 xP kun tama sivu nayttaa 310,77 — 11,65 xP enemman ja 0,7 m
     # halvemmalla XI:lla. Sama luokka kuin 14.8 (277,49 -> 298,05).
     # Optimaalisuusvaite kulkee siis SAMAN portin lapi kuin lede.
-    optimum_word = ("the proven optimum XI inside the 100.0m budget"
-                    if optimal_xi_proven() else
-                    "the best XI our search found inside the 100.0m budget")
+    optimum_word = "the best XI our search found inside the 100.0m budget"
 
     # Vaite tarvitsee reitin: lihavoitu "entry 116920" ilman linkkia ei ole
     # tarkistettavissa. Kierros tulee samasta yhdesta lukijasta kuin

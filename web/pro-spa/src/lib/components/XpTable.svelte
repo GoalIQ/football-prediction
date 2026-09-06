@@ -334,9 +334,11 @@
 			// Sama koskee ikkunalabelia: "GW3-GW8" on valhe GW3-kortilla.
 			// 6.9: ikkuna ("GW4-6") kulkee saman lukijan kautta kuin kierros.
 			const cardGw = sortGw;
-			const windowLabel = sortWindowLabel ?? horizonLabel;
+			const windowLabel = cardGw != null ? `GW${cardGw}` : horizonLabel;
+			// 6.9: ikkunasortti ("GW4-6") saman lukijan kautta; kierros sailyttaa literaalin ylla.
+			const cardWindowLabel = sortWin ? sortWindowLabel : windowLabel;
 			const sub = [
-				windowLabel,
+				cardWindowLabel,
 				`by ${sortLabel.charAt(0).toLowerCase()}${sortLabel.slice(1)}`,
 				...(pos !== 'All' ? [pos] : []),
 				...(maxPrice != null ? [`max £${maxPrice.toFixed(1)}m`] : []),

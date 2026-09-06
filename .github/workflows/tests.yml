@@ -5,6 +5,9 @@
 name: tests
 
 on:
+  # 6.9: manuaalinen ajo, jotta [skip ci] -bake-commitin jalkeen sivuriippuvat
+  # portit voi mitata ilman keinotekoista pushia.
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
