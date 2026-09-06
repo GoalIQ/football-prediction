@@ -178,7 +178,7 @@ export const TOOLS: Tool[] = [
 		slug: 'stats',
 		group: 'players',
 		title: 'Stats',
-		question: 'What did each player actually score, and what did the model expect before the deadline?',
+		question: 'What did each player actually score, and what did the model expect before each deadline?',
 		// 6.9 (Villen tilaus). Raakaluvut ja menneiden kierrosten freeze-vertailu
 		// ovat ilmaisia; vain eteenpain katsova xP on premiumia (8.8-linjaus).
 		tier: 'free',

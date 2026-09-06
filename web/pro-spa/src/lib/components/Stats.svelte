@@ -139,6 +139,11 @@
 	const rows = $derived(data?.players ?? []);
 	const teams = $derived([...new Set(rows.map((p) => p.team_short))].sort());
 	const masked = $derived(!!data?.meta?.masked);
+	/** Vertaillut kierrokset joukkona: nauhan "beat"-vari vain naille, ei
+	 *  kesken olevalle kierrokselle (portti 6.9: Mukiele GW3 korostui). */
+	const comparedSet = $derived(new Set(data?.meta?.compared_gws ?? []));
+	const MODEL_KEYS = new Set(['pts_compared', 'xp_frozen', 'diff', 'n_compared', 'next_gw_xp', 'xp_horizon_total']);
+	const CARD_LABEL: Record<string, string> = { pts_compared: 'PTS CMP', xp_frozen: 'XP FROZEN', diff: 'DIFF', n_compared: 'GWS CMP' };
 
 	function normSearch(s: string): string {
 		return s
@@ -206,21 +211,26 @@
 	const windowText = $derived.by(() => {
 		const w = data?.meta?.window;
 		if (!w) return '';
-		return w.kind === 'season' ? `GW${w.from}–GW${w.to}, season to date` : `GW${w.from}–GW${w.to}, last ${w.n}`;
+		return w.kind === 'season' ? `GW${w.from}-GW${w.to}, season to date` : `GW${w.from}-GW${w.to}, last ${w.n}`;
 	});
 	const comparedText = $derived.by(() => {
 		const c = data?.meta?.compared_gws ?? [];
 		if (c.length === 0) return 'No finished gameweek with a deadline freeze yet, so the model columns are empty.';
-		return `Model columns compare GW${c[0]}–GW${c[c.length - 1]}: finished gameweeks with a deadline freeze.`;
+		return `Model columns compare GW${c[0]}-GW${c[c.length - 1]}: finished gameweeks with a deadline freeze. Per player only the gameweeks with both a freeze and an FPL row count, so GWs can be lower than that span.`;
 	});
 
 	async function share() {
 		if (sharing || visible.length === 0) return;
 		sharing = true;
 		try {
+			// Portti 6.9: mallisorteilla ikkuna on VERTAILLUT kierrokset, ei
+			// tilastoikkuna, ja PTS-sarake ei saa toistua kahdella nimella.
+			const c = data?.meta?.compared_gws ?? [];
+			const modelSort = MODEL_KEYS.has(sortCol.key);
+			const cmpSpan = c.length ? `GW${c[0]}-GW${c[c.length - 1]} compared` : 'no gameweek compared yet';
 			const sub = [
-				windowText,
-				`by ${sortCol.label}`,
+				modelSort ? cmpSpan : windowText,
+				`by ${CARD_LABEL[sortCol.key] ?? sortCol.label}`,
 				...(posFilter ? [posFilter] : []),
 				...(teamFilter ? [teamFilter] : [])
 			].join(', ');
@@ -228,12 +238,11 @@
 				title: 'PLAYER STATS TOP 10',
 				subtitle: `${sub}, FPL data`,
 				midLabel: 'PTS',
-				valueLabel: sortCol.label.toUpperCase(),
+				valueLabel: CARD_LABEL[sortCol.key] ?? sortCol.label.toUpperCase(),
 				fileName: 'goaliq_player_stats.png',
-				footNote:
-					sortCol.key.startsWith('xp') || sortCol.key === 'diff' || sortCol.key === 'pts_compared' || sortCol.key === 'n_compared'
-						? 'FPL points from the official FPL API, xP from GoalIQ deadline freezes'
-						: 'From the official FPL API',
+				footNote: modelSort
+					? 'PTS = window points from the official FPL API, model columns on compared gameweeks only'
+					: 'From the official FPL API',
 				rows: visible.slice(0, 10).map((p, i) => ({
 					rank: i + 1,
 					name: p.web_name,
@@ -259,9 +268,10 @@
 	{/if}
 </div>
 <p class="muted lede">
-	What every player actually scored, next to what the GoalIQ model expected before each deadline.
-	FPL numbers come from the official FPL API (xG and xA are FPL's Opta figures). Pick a window,
-	a column group, and sort by any column.
+	What each player actually scored, next to what the GoalIQ model expected before each deadline.
+	FPL numbers come from the official FPL API (xG, xA, xGI and xGC are FPL's Opta figures). A
+	player with no gameweek row yet is not in the table. xP is the deadline freeze, never the live
+	projection.
 </p>
 
 <div class="window-row">
@@ -358,7 +368,7 @@
 							<td colspan={4 + activeGroup.cols.length}>
 								<div class="gw-strip">
 									{#each p.goaliq.gws as g (g.gw)}
-										<span class="gw-chip" class:beat={g.pts != null && g.xp_frozen != null && g.pts > g.xp_frozen}>
+										<span class="gw-chip" class:beat={comparedSet.has(g.gw) && g.pts != null && g.xp_frozen != null && g.pts > g.xp_frozen}>
 											<span class="gw-n">GW{g.gw}</span>
 											<span>{g.pts ?? '-'} pts</span>
 											<span class="muted">xP {g.xp_frozen != null ? g.xp_frozen.toFixed(1) : '-'}</span>
@@ -370,7 +380,9 @@
 								</div>
 								<p class="gw-note muted">
 									pts = official FPL points for the gameweek. xP = GoalIQ projection frozen before that
-									deadline. "-" means no row: the player was not in the freeze or did not have a gameweek entry.
+									deadline. "-" means no row: the player was not in the freeze or did not have a gameweek
+									entry, and that gameweek is not counted in the model columns above. An unfinished gameweek
+									shows here but is not compared.
 								</p>
 							</td>
 						</tr>
