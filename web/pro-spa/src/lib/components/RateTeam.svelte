@@ -2091,14 +2091,16 @@
 			   tulos saa koko leveyden. `.rating` pitaa yha oman lukumittansa
 			   (680 px), eli tekstipalsta ei leviä liian leveaksi. */
 			gap: var(--s-6);
-			align-items: start;
-			/* 6.9: kentta vasemmalle, projektiot oikealle (Solio-kaava). */
-			grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+			/* 6.9: kentta vasemmalle, projektiot oikealle (Solio-kaava). Sivu-
+			   sarake venyy vasemman sarakkeen korkuiseksi ja taulukko rullaa
+			   sen sisalla (Villen tarkennus: "pitempi, asettuu taydellisesti"). */
+			align-items: stretch;
+			grid-template-columns: minmax(0, 1.15fr) minmax(400px, 0.85fr);
 			grid-template-areas: 'main side';
 		}
 		.result-side {
-			position: sticky;
-			top: var(--s-3);
+			display: flex;
+			flex-direction: column;
 		}
 	}
 	.rating {

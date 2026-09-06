@@ -37,7 +37,8 @@
 	let sortDesc = $state(true);
 	let showAll = $state(false);
 	let ownOnly = $state(false);
-	const COLLAPSED = 40;
+	// Koko lista rullaa paneelin sisalla (6.9): ei katkaisua.
+	const COLLAPSED = 1000;
 
 	const gwCols = $derived(data.players[0]?.gameweeks?.map((g) => g.gw) ?? []);
 	const masked = $derived(!!data.meta?.masked);
@@ -97,7 +98,7 @@
 	const hasPrice = $derived(data.players.some((p) => typeof p.price === 'number'));
 </script>
 
-<div class="panel">
+<div class="panel" class:short={masked}>
 	<div class="head">
 		<p class="label">Projections</p>
 		<span class="muted small">xP per gameweek, GoalIQ model</span>
@@ -118,7 +119,6 @@
 			<thead>
 				<tr>
 					<th>Player</th>
-					<th class="m-hide">Team</th>
 					{#if hasPrice}
 						<th class="num m-hide">
 							<button type="button" class="sortbtn" onclick={() => sortBy('price')}>Price</button>
@@ -145,9 +145,9 @@
 					<tr class:own={ownIds.has(p.id)}>
 						<td class="name">
 							{p.web_name}
+							<span class="team muted">{p.team_short}</span>
 							{#if ownIds.has(p.id)}<span class="own-dot" title="In your squad">●</span>{/if}
 						</td>
-						<td class="m-hide muted">{p.team_short}</td>
 						{#if hasPrice}
 							<td class="num m-hide">{typeof p.price === 'number' ? p.price.toFixed(1) : '-'}</td>
 						{/if}
@@ -178,12 +178,23 @@
 </div>
 
 <style>
+	/* 6.9 (Villen tarkennus): paneeli on sarakkeen korkuinen ja taulukko
+	   rullaa sen sisalla, jotta se asettuu kentan viereen Solion tapaan. */
 	.panel {
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
 		background: var(--surface);
 		padding: var(--s-3);
 		min-width: 0;
+		height: 100%;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+	}
+	/* Maskattu 10 rivin esikatselu ei venytetä paneelia sarakkeen korkuiseksi:
+	   tyhja laatikko lukisi rikkinaiselta. */
+	.panel.short {
+		height: auto;
 	}
 	.head {
 		display: flex;
@@ -241,11 +252,19 @@
 		margin-top: var(--s-2);
 	}
 	.table-wrap {
-		max-height: 72vh;
+		flex: 1 1 auto;
+		min-height: 0;
+		max-height: 70vh;
 		overflow: auto;
+	}
+	@media (min-width: 1280px) {
+		.table-wrap {
+			max-height: none;
+		}
 	}
 	table {
 		font-size: var(--step--1);
+		width: 100%;
 	}
 	thead th {
 		position: sticky;
@@ -255,11 +274,19 @@
 	}
 	td,
 	th {
-		padding: 5px 7px;
+		padding: 5px 4px;
 		white-space: nowrap;
 	}
 	td.name {
 		font-weight: 700;
+		max-width: 142px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.team {
+		font-size: 0.8em;
+		font-weight: 400;
+		margin-left: 4px;
 	}
 	.own td {
 		background: rgba(46, 214, 194, 0.08);
