@@ -9,8 +9,6 @@
 		type TransferSuggestion
 	} from '$lib/fantasyTools';
 	import { draftPool, fetchXp, type XpPoolPlayer } from '$lib/api';
-	import { buildRoast, roastTier, roastHeadline } from '$lib/roast';
-	import { shareRoastCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 	import { auth } from '$lib/auth.svelte';
 	import {
@@ -78,10 +76,6 @@
 	// #66: entry-kenttä on jaettu (fplEntry.entry) RateTeamin + Plannerin kesken
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	// Roast my team (7.8): toggle + kopiointikuittaus.
-	let roastOpen = $state(false);
-	let roastCopied = $state(false);
-	let roastSharing = $state(false);
 	let data = $state<RateTeamResponse | null>(null);
 
 	// --- FM-silmukka: mallin suositukset kirjattaviksi päätöksiksi ----------
@@ -780,6 +774,36 @@
 	const compareDiff = $derived(
 		data && dataB ? data.rating.team_xp_horizon - dataB.rating.team_xp_horizon : null
 	);
+	/** 6.9: kentta + penkki -lohkon korkeus TeamPitchManagerista; sivupaneeli
+	 *  on tasan sen korkuinen ja lista rullaa sisalla (Villen tarkennus 2). */
+	let pitchCore = $state(0);
+	let mainEl = $state<HTMLDivElement | null>(null);
+	$effect(() => {
+		const root = mainEl;
+		if (!root) return;
+		// Lapsi (TeamPitchManager) ei tarvitse tietaa paneelista: mitataan sen
+		// .pitch-core-lohko taalta. Tarkkaillaan JUURTA eika lohkoa: lohko voi
+		// syntya tai vaihtua uudelleenrenderoinnissa, juuri ei. Juuren koko
+		// muuttuu aina kun lohkon koko muuttuu, koska lohko on sen sisalla.
+		let observedCore: HTMLElement | null = null;
+		const measure = () => {
+			const el = root.querySelector<HTMLElement>('.pitch-core');
+			pitchCore = el ? el.offsetHeight : 0;
+			// Mitattu 6.9: juuren RO ei laukea aina kun lohko kasvaa (1009 ->
+			// 1120 px fonttien latauduttua), joten lohkoa tarkkaillaan myos
+			// suoraan, ja uudelleen jos elementti vaihtuu.
+			if (el && el !== observedCore) {
+				if (observedCore) ro.unobserve(observedCore);
+				ro.observe(el);
+				observedCore = el;
+			}
+		};
+		const ro = new ResizeObserver(measure);
+		ro.observe(root);
+		measure();
+		void document.fonts?.ready.then(measure);
+		return () => ro.disconnect();
+	});
 	/** 6.9: oman rungon id:t projektiopaneelin korostukseen. */
 	const ownIds = $derived(new Set(plannedPlayers.map((p) => p.id)));
 </script>
@@ -1219,12 +1243,103 @@
 	     WeeklyActionsin alkuperainen sijoitusperuste sailyy: se on yha
 	     nakyvissa samalla hetkella kun kayttaja nakee mita malli suosittaa —
 	     nyt vierella eika alla, eli itse asiassa varmemmin. -->
+	{#snippet ratingTiles()}
+		<!-- Snippet ei peri {#if data}-tarkennusta: data on tassa aina olemassa
+		     (renderoidaan vain tuloslohkossa), ja d kiinnittaa sen tyypin. -->
+		{@const d = data!}
+		<!-- 6.9 (Villen tilaus, Solio-vertailu): Team xP -kortin tilalla neljan
+		     laatan rivi heti kentan alla. Sama data, ei oranssia laatikkoa,
+		     ei roastia. Numerot amberilla (theme.css: amber = luvut). -->
+		<div class="tiles">
+			<div class="tile">
+				<span class="tile-k">Team xP, next {d.meta.horizon_gw ?? 6} GWs</span>
+				<span class="tile-v">{d.rating.team_xp_horizon.toFixed(1)}</span>
+				<span class="tile-s">captain doubled</span>
+			</div>
+			<div class="tile">
+				<span class="tile-k">Team rating</span>
+				<span class="tile-v"
+					>{d.rating.rating ?? Math.round(d.rating.percentile)}<span class="tile-unit">/100</span></span
+				>
+				<span class="tile-s">
+					{#if d.meta.rating_method == null && d.rating.optimal_team_xp == null}
+						percentile of rated teams
+					{:else if typeof d.rating.gap_to_optimal_xp === 'number'}
+						{d.rating.gap_to_optimal_xp > 0.05
+							? `${d.rating.gap_to_optimal_xp.toFixed(1)} xP off the best squad the rules allow`
+							: 'level with the best squad the rules allow'}
+					{:else}
+						vs the best squad the rules allow
+					{/if}
+				</span>
+			</div>
+			<div class="tile">
+				<span class="tile-k">Team xP, GW{d.meta.gw}</span>
+				<span class="tile-v">{d.rating.team_xp_gw.toFixed(1)}</span>
+				<span class="tile-s"
+					>strongest <strong class="line-strong">{d.rating.strongest_line}</strong>, weakest
+					<strong class="line-weak">{d.rating.weakest_line}</strong></span
+				>
+			</div>
+			<div class="tile">
+				<span class="tile-k">Captain pick{#if d.meta.captain_gw != null}, GW{d.meta.captain_gw}{/if}</span>
+				<span class="tile-v tile-name">{d.captain.pick.web_name}</span>
+				<span class="tile-s"
+					>{d.captain.pick.gw_xp.toFixed(2)} xP{#if d.captain.alternative}, then
+						{d.captain.alternative.web_name} {d.captain.alternative.gw_xp.toFixed(2)}{/if}</span
+				>
+			</div>
+		</div>
+		<div class="tiles-notes">
+			<details class="method">
+					<summary>How this rating is calculated</summary>
+					<p>
+						We compare your XI's projected points over a {d.meta.horizon_gw ?? 6}-gameweek horizon
+						to the best XI our model can build under the same squad rules: a 100.0m budget and
+						no more than three players from one club. 100 means you captured every projected
+						point those rules allow.
+					</p>
+					<p>
+						Other FPL sites run their own projections and their own scale, so their number and
+						ours are not comparable and neither is wrong. Two ratings can disagree simply
+						because they measure against different reference points, not because one is broken.
+					</p>
+					<p>
+						Ours answers one narrow question: how much of the available projected points did
+						your squad capture? It says nothing about your rank, and projections are estimates,
+						not outcomes.
+					</p>
+					<!-- 26.7: rating on vain niin hyva kuin projektiot sen alla, joten
+					     ne on graded ja luku naytetaan. Tekee ratingista falsifioituvan
+					     eika vain sisaisesti johdonmukaisen. -->
+					{#if d.meta.projection_accuracy}
+						{@const acc = d.meta.projection_accuracy}
+						<p>
+							<strong>How good are the projections?</strong> Graded on the whole
+							{acc.meta?.season ?? 'previous'} season, walk-forward, so the model only ever saw
+							gameweeks before the one it predicted. Average error
+							<strong>{acc.played.mae_xp}</strong> points per player per gameweek against
+							{acc.played.mae_baseline} for a form-based baseline, over {acc.played.n_gws}
+							gameweeks. Rank correlation {acc.played.rho_xp} against {acc.played.rho_baseline}.
+						</p>
+						{#if acc.known_bias?.signed_bias_xp != null}
+							<p>
+								One known flaw, stated rather than hidden: the model under-predicts by about
+								{Math.abs(acc.known_bias.signed_bias_xp).toFixed(2)} points per player per gameweek.
+								That shifts every projection the same way, so the ranking holds, but absolute
+								xP runs low.
+							</p>
+						{/if}
+					{/if}
+				</details>
+		</div>
+	{/snippet}
 	<div class="result-grid">
 	<!-- 6.9 (Villen tilaus, Solio-kuva): projektiotaulukko kentan viereen
 	     leveilla ruuduilla, sen alle kapeilla. Sama xP-pooli jonka ToolsHome
 	     jo haki, ei uutta kutsua. -->
 	{#if xp && xp.players.length > 0}
-	<aside class="result-side">
+	<aside class="result-side" style={pitchCore > 0 ? `--core: ${pitchCore}px` : ''}>
 		<ProjectionsPanel data={xp} {ownIds} {onUpgrade} defaultGw={data.meta.gw} />
 	</aside>
 	{/if}
@@ -1233,7 +1348,7 @@
 	     alueen ja pitch alkoi vasta gridin jalkeen. Kentta kuuluu ratingin
 	     alle samaan sarakkeeseen — silloin vasen sarake tayttyy sisallolla
 	     eika tyhjalla. -->
-	<div class="result-main">
+	<div class="result-main" bind:this={mainEl}>
 	<!-- 5.9 (Villen pyynto): "haluaisin ensimmaisena nahda joukkueeni pitchin
 	     kun avaan My team -valilehden". Kentta ensin, rating ja luvut sen
 	     alla. Sama komponentti, vain jarjestys vaihtui. -->
@@ -1245,6 +1360,7 @@
 		players={plannedPlayers}
 		{premium}
 		bank={data.team.bank}
+		belowPitch={ratingTiles}
 		defaultGw={data.meta.gw}
 		gwInProgress={data.meta.gw_in_progress === true}
 		lastFinished={data.last_finished ?? null}
@@ -1264,219 +1380,8 @@
 	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
 	     sen alla = "% of the best possible budget team" (uusi semantiikka,
 	     gap_to_optimal_xp defensiivisesti jos backend jo tarjoaa sen) -->
-	<div class="rating card">
-		<div class="hero-top">
-			<p class="hero-xp" aria-hidden="true">
-				<span class="hero-num">{Math.round(data.rating.team_xp_horizon)}</span><span
-					class="hero-unit">xP</span
-				>
-			</p>
-			<div class="hero-copy">
-				<p class="headline">
-					<abbr
-						title="Expected points: our match model's projection per player per gameweek, summed over your squad"
-						>Team xP</abbr
-					>,
-					<abbr title="The horizon: how many upcoming gameweeks the projection covers"
-						>next {data.meta.horizon_gw ?? 6} GWs</abbr
-					>: <strong>{data.rating.team_xp_horizon.toFixed(1)}</strong>
-					<!-- 28.7 (Villen havainto): ilman tata merkintaa lukija vertaa
-					     315.3:a model-xi-sivun 303.4:aan ja paattelee voittaneensa
-					     mallin. Perusteet ovat eri: hero tuplaa kapteenin, benchmark
-					     ei. Sama virhe tehtiin kahdesti samana paivana. -->
-					<span class="basis-note">captain doubled</span>
-				</p>
-				<!-- 26.7: beats_benchmark eksplisiittisesti. Aiemmin ylitys leikattiin
-				     hiljaa 100 %:iin, jolloin tieto katosi ja luku luki ontolta
-				     imartelulta. -->
-				<p class="subline">
-					{#if data.meta.rating_method == null && data.rating.optimal_team_xp == null}
-						<!-- 28.7: mobiilin GUARD webiin. Ilman tata sivu vaitti "best
-						     possible budget team" -mittaperustaa myos silloin kun payload
-						     ei kanna sita. -->
-						GoalIQ model rating:
-						<strong>{data.rating.rating ?? Math.round(data.rating.percentile)}/100</strong>
-					{:else if data.rating.beats_benchmark}
-						Your XI <strong>beats</strong> the best team the model can build inside the
-						budget. The model would pick your squad over its own.
-					{:else}
-						<!-- 28.7 (Villen havainto): otsikkoluku takaisin /100-muotoon.
-						     26.7. backend lisasi `rating`-kokonaisluvun juuri siksi etta
-						     se on luettavampi, mutta saman paivan pariteettikorjaus vei
-						     molemmat pinnat prosenttiin. Prosentin ainoa aito etu oli
-						     etta se kertoi mita mitataan - se sanotaan nyt suoraan
-						     seuraavalla rivilla, joten kumpikaan ei haviaa. -->
-						Team rating
-						<strong>{data.rating.rating ?? Math.round(data.rating.percentile)}/100</strong
-						>{#if typeof data.rating.gap_to_optimal_xp === 'number'}
-							({data.rating.gap_to_optimal_xp > 0.05
-								? `-${data.rating.gap_to_optimal_xp.toFixed(1)} xP`
-								: 'level with it'}){/if}.
-						<!-- 28.7: "best" vain kun backend on TODISTANUT sen. Vanha
-						     vertailukohta oli ahne heuristiikka joka jai 15.2 xP
-						     optimista, ja copy vaitti silti parasta mahdollista. -->
-						<span class="rating-basis"
-							>{data.rating.optimal_proven === false
-								? '100 = the strongest squad the model found inside the 100.0m budget.'
-								: '100 = the best squad the rules allow inside the 100.0m budget.'}
-							{#if typeof data.rating.team_xp_horizon_no_captain === 'number' && typeof data.rating.optimal_team_xp === 'number'}
-								Like for like, without the captain bonus on either side:
-								{data.rating.team_xp_horizon_no_captain.toFixed(1)} vs
-								{data.rating.optimal_team_xp.toFixed(1)}.
-							{/if}</span
-						>
-					{/if}
-				</p>
-				<!-- 26.7: metodologia auki. Villen havainto: FFS antoi samasta
-				     joukkueesta 83, me 97 -> ilman selitysta nayttaa silta etta
-				     joku on vaarassa. Kumpikaan ei ole: mittarit ovat eri.
-				     19.8 (portin loydos): sama 28.7-vartija kuin subline-rivilla —
-				     vanha payload ilman rating_method/optimal_team_xp -kenttia ei
-				     saa vaittaa "best XI our model can build" -mittaperustaa
-				     taallakaan, ja verdict-nauhan tooltip ohjaa lukijan nyt
-				     aktiivisesti tahan lohkoon. -->
-				{#if !(data.meta.rating_method == null && data.rating.optimal_team_xp == null)}
-				<details class="method">
-					<summary>How this rating is calculated</summary>
-					<p>
-						We compare your XI's projected points over a {data.meta.horizon_gw ?? 6}-gameweek horizon
-						to the best XI our model can build under the same squad rules: a 100.0m budget and
-						no more than three players from one club. 100 means you captured every projected
-						point those rules allow.
-					</p>
-					<p>
-						Other FPL sites run their own projections and their own scale, so their number and
-						ours are not comparable and neither is wrong. Two ratings can disagree simply
-						because they measure against different reference points, not because one is broken.
-					</p>
-					<p>
-						Ours answers one narrow question: how much of the available projected points did
-						your squad capture? It says nothing about your rank, and projections are estimates,
-						not outcomes.
-					</p>
-					<!-- 26.7: rating on vain niin hyva kuin projektiot sen alla, joten
-					     ne on graded ja luku naytetaan. Tekee ratingista falsifioituvan
-					     eika vain sisaisesti johdonmukaisen. -->
-					{#if data.meta.projection_accuracy}
-						{@const acc = data.meta.projection_accuracy}
-						<p>
-							<strong>How good are the projections?</strong> Graded on the whole
-							{acc.meta?.season ?? 'previous'} season, walk-forward, so the model only ever saw
-							gameweeks before the one it predicted. Average error
-							<strong>{acc.played.mae_xp}</strong> points per player per gameweek against
-							{acc.played.mae_baseline} for a form-based baseline, over {acc.played.n_gws}
-							gameweeks. Rank correlation {acc.played.rho_xp} against {acc.played.rho_baseline}.
-						</p>
-						{#if acc.known_bias?.signed_bias_xp != null}
-							<p>
-								One known flaw, stated rather than hidden: the model under-predicts by about
-								{Math.abs(acc.known_bias.signed_bias_xp).toFixed(2)} points per player per gameweek.
-								That shifts every projection the same way, so the ranking holds, but absolute
-								xP runs low.
-							</p>
-						{/if}
-					{/if}
-				</details>
-				{/if}
-			</div>
-		</div>
-		<div class="facts">
-			<div class="fact">
-				<span class="muted">Team xP, GW{data.meta.gw}</span>
-				<span class="val">{data.rating.team_xp_gw.toFixed(1)}</span>
-			</div>
-			<div class="fact">
-				<span class="muted">Strongest line</span>
-				<span class="val line-strong">{data.rating.strongest_line}</span>
-			</div>
-			<div class="fact">
-				<span class="muted">Weakest line</span>
-				<span class="val line-weak">{data.rating.weakest_line}</span>
-			</div>
-		</div>
-		<!-- Roast my team (7.8, kasvutemppu 2): sama data, piikikäs sävy —
-		     UGC-jakoyksikkö. Logiikka lib/roast.ts (deterministinen, numerot
-		     payloadista). Copy-nappi X-liittämistä varten; kuvakortti =
-		     jatkotyö. -->
-		<div class="roast-row">
-			<button
-				class="roast-toggle"
-				onclick={() => {
-					roastOpen = !roastOpen;
-					if (roastOpen) capture('roast_viewed');
-				}}>{roastOpen ? 'Hide the roast' : 'Roast my team'}</button
-			>
-		</div>
-		{#if roastOpen}
-			{@const roastLines = buildRoast(data)}
-			<div class="roast card">
-				{#each roastLines as line, i (i)}
-					<p>{line}</p>
-				{/each}
-				<div class="roast-actions">
-					<button
-						class="roast-copy"
-						onclick={() => {
-							navigator.clipboard?.writeText(
-								roastLines.join('\n\n') + '\n\nGet roasted: goaliq.app/fpl'
-							);
-							roastCopied = true;
-							capture('roast_copied');
-							setTimeout(() => (roastCopied = false), 2000);
-						}}>{roastCopied ? 'Copied' : 'Copy roast for sharing'}</button
-					>
-				<!-- 16.8 (Villen tilaus): kuvakortti. Tiedostossa luki 7.8 asti
-				     "kuvakortti = jatkotyo"; teksti yksin ei jaa yhta hyvin kuin
-				     kuva, ja korttipostaus mitattiin 11.8 nelinkertaiseksi tekstiin
-				     nahden (4100 vs 210 nayttoa). Taso tulee samasta roastTier-
-				     funktiosta kuin teksti, jottei kortti sano eri asiaa kuin
-				     rivit sen yllä. -->
-				<button
-					class="roast-copy"
-					disabled={roastSharing}
-					onclick={async () => {
-						// Narrowing katoaa async-nuolifunktioon: `data` on nullable
-						// komponentin tasolla vaikka lohko renderoityy vain kun se on.
-						if (!data) return;
-						roastSharing = true;
-						try {
-							const { tier, score } = roastTier(data);
-							capture('roast_card_shared', { tier, score });
-							await shareRoastCard({
-								tier,
-								score,
-								headline: roastHeadline(tier),
-								lines: roastLines,
-								fileName: `goaliq-roast-${tier}.png`
-							});
-						} finally {
-							roastSharing = false;
-						}
-					}}>{roastSharing ? 'Building...' : shareButtonLabel()}</button
-				>
-				</div>
-			</div>
-		{/if}
-
-		<p class="captain">
-			Captain suggestion: <strong>{data.captain.pick.web_name}</strong>
-			<span class="muted">({data.captain.pick.team_short})</span>,
-			{data.captain.pick.gw_xp.toFixed(2)} xP{#if data.meta.captain_gw != null} in GW{data.meta.captain_gw}{:else if data.meta.gw_in_progress !== true} in GW{data.meta.gw}{/if}{#if data.captain.alternative}.
-				Alternative: {data.captain.alternative.web_name}
-				<span class="muted">({data.captain.alternative.team_short})</span>,
-				{data.captain.alternative.gw_xp.toFixed(2)} xP{/if}.
-		</p>
-		{#if data.team.missing_ids.length > 0}
-			<p class="muted">
-				{data.team.missing_ids.length}
-				{data.team.missing_ids.length === 1 ? 'player has' : 'players have'} no projection yet
-				and {data.team.missing_ids.length === 1 ? 'is' : 'are'} excluded from the rating.
-			</p>
-		{/if}
-		{#if typeof data.meta.note === 'string'}
-			<p class="muted">{data.meta.note}</p>
-		{/if}
-	</div>
+	<!-- 6.9 (Villen tilaus): Team xP -kortti korvattiin laatoilla jotka
+	     renderoituvat kentan alle (ratingTiles-snippet TeamPitchManagerille). -->
 
 	<!-- 🔴 4.9: viikkosilmukka (WeeklyActions + BeatTheModel + SeasonRace) oli
 	     tassa sivusarakkeena JA kokonaisuudessaan This week -sivulla. Kun
@@ -2094,29 +1999,19 @@
 			/* 6.9: kentta vasemmalle, projektiot oikealle (Solio-kaava). Sivu-
 			   sarake venyy vasemman sarakkeen korkuiseksi ja taulukko rullaa
 			   sen sisalla (Villen tarkennus: "pitempi, asettuu taydellisesti"). */
-			align-items: stretch;
+			align-items: start;
 			grid-template-columns: minmax(0, 1.15fr) minmax(400px, 0.85fr);
 			grid-template-areas: 'main side';
 		}
 		.result-side {
 			display: flex;
 			flex-direction: column;
+			/* Tasan kentta + penkki -lohkon korkuinen (bind TPM:sta); lista
+			   rullaa paneelin sisalla ja Starting XI pysyy vieressa. Ilman
+			   mittaa (ensimmainen renderointi) korkeus on sisallon mukaan. */
+			height: var(--core, auto);
+			max-height: var(--core, none);
 		}
-	}
-	.rating {
-		max-width: 680px;
-		margin-bottom: var(--s-4);
-		border-color: rgba(255, 138, 92, 0.35);
-		background:
-			linear-gradient(160deg, rgba(255, 138, 92, 0.09), transparent 55%),
-			var(--surface);
-	}
-	.hero-top {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--s-2) var(--s-4);
-		margin-bottom: var(--s-4);
 	}
 	/* 5.9: siirron tuotto ja PRO-tunniste verdict-stripissa. Positiivinen
 	   delta kayttaa --positivea kuten muutkin tuotot; tunniste on amber
@@ -2139,50 +2034,8 @@
 		vertical-align: 0.12em;
 	}
 
-	.hero-xp {
-		margin: 0;
-		line-height: 1;
-		white-space: nowrap;
-		/* 5.9 (Villen kysymys "onko varitykset kunnossa"): tama oli
-		   --giq-rust. Theme.css:n oma varidisipliini sanoo: amber = luvut,
-		   rust = hitit, pudotukset ja saatavuusliput. Sivun suurin luku oli
-		   siis maalattu "huono"-varilla, ja se on My teamin ensimmainen asia
-		   jonka kayttaja nakee. */
-		color: var(--accent);
-		font-weight: 700;
-	}
-	.hero-num {
-		font-size: clamp(2.8rem, 2.2rem + 3vw, 4.2rem);
-		letter-spacing: -2px;
-		font-variant-numeric: tabular-nums;
-	}
-	.hero-unit {
-		font-size: var(--step-2);
-		margin-left: 2px;
-	}
-	.hero-copy {
-		flex: 1 1 220px;
-	}
-	.headline {
-		font-size: var(--step-1);
-		margin: 0 0 var(--s-1);
-	}
-	.subline {
-		margin: 0;
-		color: var(--text-muted);
-		font-size: var(--step--1);
-	}
 	/* 28.7: mittaperusta omalle rivilleen, jotta /100-luku ei jaa selittamatta */
-	.rating-basis {
-		display: block;
-		font-size: var(--step--2);
-	}
 	/* Hero-luvun peruste samalla rivilla, pienempana */
-	.basis-note {
-		font-size: var(--step--2);
-		color: var(--text-muted);
-		white-space: nowrap;
-	}
 	/* 26.7: metodologia auki, oletuksena kiinni (ei vie tilaa herolta) */
 	.method {
 		margin: var(--s-2) 0 0;
@@ -2223,23 +2076,6 @@
 		color: var(--positive);
 		font-weight: 700;
 	}
-	.facts {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-		gap: var(--s-3);
-		margin-bottom: var(--s-4);
-	}
-	.fact {
-		display: grid;
-		gap: 2px;
-	}
-	.fact .val {
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-	}
-	.captain {
-		margin-bottom: var(--s-2);
-	}
 	td.gain {
 		color: var(--positive);
 		font-weight: 700;
@@ -2273,41 +2109,6 @@
 	.cta {
 		color: var(--positive);
 		font-weight: 700;
-	}
-	/* Roast my team (7.8) */
-	.roast-row {
-		margin-top: var(--s-2);
-	}
-	.roast-toggle,
-	.roast-actions {
-		display: flex;
-		gap: var(--s-2);
-		flex-wrap: wrap;
-	}
-	.roast-copy {
-		background: none;
-		border: 1px solid var(--border);
-		border-radius: 3px;
-		padding: var(--s-1) var(--s-2);
-		cursor: pointer;
-		color: inherit;
-		font: inherit;
-	}
-	.roast-copy:disabled {
-		opacity: 0.6;
-		cursor: default;
-	}
-	.roast-toggle:hover,
-	.roast-copy:hover {
-		border-color: var(--accent);
-	}
-	.roast {
-		margin-top: var(--s-2);
-		padding: var(--s-3);
-		border-left: 3px solid var(--accent);
-	}
-	.roast p {
-		margin: 0 0 var(--s-2);
 	}
 
 	/* SOLIO-OPPI (19.8): yhteenvetonauha. Sama pintakieli kuin muissa
@@ -2353,5 +2154,64 @@
 		color: var(--accent, #f5c542);
 		border: 1px solid rgba(245, 197, 66, 0.4);
 		padding: 1px 5px;
+	}
+
+	/* 6.9: Team xP -laatat kentan alla (korvasi .rating-kortin). */
+	.tiles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: var(--s-2);
+		margin: var(--s-3) 0 var(--s-2);
+	}
+	.tile {
+		display: grid;
+		gap: 2px;
+		padding: var(--s-2) var(--s-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		min-width: 0;
+	}
+	.tile-k {
+		font-size: 10px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tile-v {
+		font-size: var(--step-3);
+		font-weight: 800;
+		line-height: 1.05;
+		color: var(--accent);
+		font-variant-numeric: tabular-nums;
+	}
+	.tile-v.tile-name {
+		font-size: var(--step-1);
+		color: var(--text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.tile-unit {
+		font-size: var(--step-0);
+		font-weight: 700;
+		color: var(--text-muted);
+		margin-left: 2px;
+	}
+	.tile-s {
+		font-size: var(--step--2);
+		color: var(--text-muted);
+		line-height: 1.3;
+	}
+	.tiles-notes {
+		font-size: var(--step--1);
+		color: var(--text-muted);
+		margin-bottom: var(--s-2);
+	}
+	.tiles-notes :global(p) {
+		margin: var(--s-1) 0 0;
 	}
 </style>

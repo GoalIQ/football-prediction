@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	/**
 	 * TeamPitchManager (#113) — web-pariteetti mobiilin #106-pitchille +
 	 * #112-managerille: XI tintattuina kitteinä positiorivein + penkki,
@@ -25,7 +26,8 @@
 		onCaptaincyChange,
 		lastFinished = null,
 		picksGw = null,
-		bank = null
+		bank = null,
+		belowPitch
 	}: {
 		players: RatedPlayer[];
 		premium?: boolean;
@@ -47,6 +49,8 @@
 		picksGw?: number | null;
 		/** 6.9: pankki (ITB) kentan otsikkonauhaan. null = ei tiedossa (draft). */
 		bank?: number | null;
+		/** 6.9: vanhemman lohko heti kentan + penkin alle (Team xP -laatat). */
+		belowPitch?: Snippet;
 	} = $props();
 
 	/** Validit FPL-muodostelmat [DEF, MID, FWD] (GK aina 1, yht. 11). */
@@ -627,6 +631,9 @@
 	lippu naytetaan vain kun luku on olemassa ja alle 100.
 -->
 <div class="pitch-block" style="--kit: {kitSize}px">
+		<!-- 6.9: kentta + penkki -lohko; RateTeam mittaa taman korkeuden
+		     sivupaneelille (ResizeObserver, luokka .pitch-core). -->
+		<div class="pitch-core">
 		{#if premium}
 			<!-- 6.9: otsikkonauha kentan paalla (Solio-kaava): pankki ja kierros
 			     vasemmalla, projisoitu xP isona oikealla. Muodostelmat siirtyivat
@@ -849,6 +856,9 @@
 			</div>
 			</div>
 		{/if}
+		</div>
+
+		{@render belowPitch?.()}
 
 		<!-- 22.8 (Villen havainto): xP liikkui kesken kierroksen eika sivu
 		     sanonut miksi. Rivi nakyy VAIN kun naytettava kierros on kesken
