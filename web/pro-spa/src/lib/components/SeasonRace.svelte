@@ -91,8 +91,20 @@
 	 * eri vaite eri hetkina.
 	 * Kortti lukee `data`-staten, ei DOMia.
 	 */
+	// 🔴 PORTIN 25. KIERROS (B1): ehto mitattiin SUODATTAMATTOMASTA listasta,
+	// mutta kortti suodattaa vertailun ulkopuoliset rivit pois (24. kierros).
+	// `shareCard` palauttaa silloin 'too_few_rows' ja funktio palaa hiljaa -
+	// mutta `capture` kirjasi silti jakotapahtuman. Mittari valehteli
+	// onnistumisesta. Yksi joukko, josta johdetaan seka nappi etta kortti.
+	let korttiRivit = $derived(
+		data?.totals.you != null ? rows.filter((r) => r.diff != null) : rows
+	);
+	let voiJakaa = $derived(Boolean(data?.meta.available) && korttiRivit.length >= 3);
+
 	async function share() {
-		if (sharing || !data?.meta.available || rows.length === 0) return;
+		// `!data` kaventaa tyypin lopulle funktiolle; vanha vartija teki sen
+		// `data?.meta.available` -ehdon sivutuotteena.
+		if (sharing || !voiJakaa || !data) return;
 		sharing = true;
 		try {
 			const d = data.totals.diff;
@@ -119,7 +131,7 @@
 				// ole alaotsikon summassa, joten sarakkeen yhteenlasku ei
 				// tasmannyt otsikkoon. Kortilla on vain vertailtavat rivit
 				// silloin kun vertailu on olemassa.
-				rows: (data.totals.you != null ? rows.filter((r) => r.diff != null) : rows)
+				rows: korttiRivit
 					.slice(0, 10)
 					.map((r, i) => ({
 					rank: i + 1,
@@ -138,7 +150,16 @@
 					value: r.your_points != null ? String(r.your_points) : '-'
 				}))
 			});
-			if (method !== 'aborted') capture('xp_card_shared', { list: 'season_race', method });
+			// 🔴 25. kierros: 'too_few_rows' kirjautui JAETUKSI kortiksi.
+			// Kirjataan vain todelliset jaot; muut tilat omalla nimellaan,
+			// jotta ne nakyvat mutta eivat sekoitu jakomittariin.
+			if (method === 'aborted') {
+				// kayttajan peruutus, ei mittaria
+			} else if (method === 'too_few_rows') {
+				capture('xp_card_blocked', { list: 'season_race', reason: method });
+			} else {
+				capture('xp_card_shared', { list: 'season_race', method });
+			}
 		} finally {
 			sharing = false;
 		}
@@ -206,7 +227,9 @@
 				</p>
 			{/each}
 
-			{#if rows.length > 0}
+			<!-- 🔴 25. kierros: nappi nakyi kun rivit riittivat ENNEN suodatusta,
+			     jolloin painallus ei tehnyt mitaan. Sama ehto kuin kortilla. -->
+			{#if voiJakaa}
 				<button type="button" class="window-chip" onclick={share} disabled={sharing}>
 					{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>

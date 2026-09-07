@@ -1,6 +1,6 @@
 /**
  * lib/gwReviewCard.ts — Gameweek review -jakokortin sisalto (yksi lukija,
- * web + mobiili; mobiilin goaliq-app/lib/gwReviewCard.ts on sama tiedosto).
+ * web + mobiili; webin web/pro-spa/src/lib/gwReviewCard.ts on sama tiedosto).
  *
  * 6.9.2026 (Villen tilaus): "saisko tohon this week gameweek reviewii
  * jako-ominaisuuden. toi vois olla aina hyva gw review postaus."
@@ -345,9 +345,15 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     midLabel: 'XP',
     valueLabel: 'PTS',
     rows,
-    // A6: rivi 1 on huonoin ero, ei karki - korostus pois. (Perustelu
-    // paivitetty 10. kierroksella: rivi 1 ei enaa vaita olevansa mallin
-    // pahin kutsu, mutta se ei ole karki silloinkaan.)
+    // A6: rivi 1 ei ole karki, joten korostus pois.
+    //
+    // 🔴 25. kierros: tassa luki "rivi 1 on huonoin ero", ja se lakkasi
+    // olemasta totta kun jarjestys vaihtui itseisarvoon (Villen paatos 7.9).
+    // Mitattu 200 000 synteettisella kortilla: rivi 1 on YLITYS 70,1 %:ssa,
+    // ja se on kapteenin rivi 49,2 %:ssa - kerroin kaksinkertaistaa eron,
+    // joten kapteeninauha nousee karkeen systemaattisesti. Etumerkki ja
+    // C-badge ovat rivilla, joten lukija nakee kumman kyse on, mutta kortti
+    // EI vaita mitaan rivin 1 suunnasta.
     heroFirstRow: false,
     // B2: lahde on alaotsikossa, joten alatunniste ei toista sita.
     footNote: `${frozenNote}${multNote}`,
