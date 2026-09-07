@@ -74,6 +74,33 @@ def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
         if not fx:
             continue
         all_played = all(f.get("finished_provisional") for f in fx)
+        # 🔴 PORTIN 22. KIERROS (C): SIIRRETTY OTTELU EI OLE "KESKEN".
+        # Jos ottelu siirretaan mutta jaa samaan kierrokseen myohemmalla
+        # kickoffilla - tai ilman kickoffia lainkaan - `all_played` on False
+        # VIIKKOJA, ja pinta sanoisi "GW N: still being played" kierroksesta
+        # jonka muut ottelut on pelattu. Se on sama vaarin nimetty mekanismi
+        # kuin 21. kierroksen `event.finished`, vain toisinpain.
+        #
+        # Emme keksi uutta julkista lausetta: kun kierros nayttaa siirretylta,
+        # `all_fixtures_played` on None, `row_state` palauttaa `unknown`, ja
+        # teksti sanoo vain ettei kierrosta ole vahvistettu. Se on tosi
+        # molemmissa tapauksissa.
+        siirretty = False
+        for f in fx:
+            if f.get("finished_provisional"):
+                continue
+            ko = f.get("kickoff_time")
+            if not ko:
+                siirretty = True   # ei kickoffia = ei aikataulua
+                break
+            try:
+                t = _dt.datetime.fromisoformat(str(ko).replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            # Ottelu olisi pitanyt olla ohi kolmessa tunnissa.
+            if (_dt.datetime.now(_dt.timezone.utc) - t).total_seconds() > 3 * 3600:
+                siirretty = True
+                break
         out[gw] = {
             "gradable": all_played,
             # data_checked = FPL on vahvistanut bonukset ja dubious goalsit
@@ -88,7 +115,7 @@ def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
             #
             # Oikea kentta on sama `all_played` jolla gradattavuus jo
             # ratkaistaan: kaikki ottelut pelattu.
-            "all_fixtures_played": all_played,
+            "all_fixtures_played": None if siirretty else all_played,
             "fpl_average": ev.get("average_entry_score"),
             "n_fixtures": len(fx),
         }

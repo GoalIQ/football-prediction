@@ -62,7 +62,8 @@ def _tsn_vastaukset() -> list[str]:
     r = subprocess.run(
         ["node", "--experimental-strip-types", "--no-warnings",
          str(PARITY), json.dumps(syotteet)],
-        capture_output=True, text=True, timeout=60, cwd=str(FP))
+        capture_output=True, text=True, timeout=60,
+                           encoding="utf-8", cwd=str(FP))
     assert r.returncode == 0, f"parity-harness kaatui:\n{r.stderr}"
     return json.loads(r.stdout)
 
@@ -85,7 +86,8 @@ def _kortin_vastaus(summary: dict) -> str:
         polku = fh.name
     try:
         r = subprocess.run(["node", str(HARNESS), str(PAGE), polku],
-                           capture_output=True, text=True, timeout=60)
+                           capture_output=True, text=True, timeout=60,
+                           encoding="utf-8")
     finally:
         Path(polku).unlink(missing_ok=True)
     assert r.returncode == 0, f"harness kaatui:\n{r.stderr}"

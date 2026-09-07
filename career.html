@@ -471,10 +471,12 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
 
   function font(px, weight) { return (weight || 400) + ' ' + px + 'px "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; }
 
-  // minSize: labels may shrink further than values. The 24px floor is right
-  // for a 64px headline number, but it is a hard stop, not a guarantee: above
-  // it the text still overflows silently. Labels are small already, so they
-  // can go to 18 and actually fit.
+  // minSize: labels may shrink further than values. But shrinking alone is
+  // not a guarantee - fitText stops at its floor and whatever is still too
+  // wide overflows silently from there. So the floor is the size we actually
+  // need today (22 for labels), and anything that still does not fit gets
+  // ellipsised by fitLabel below. Overflow then cannot happen regardless of
+  // what string a future payload produces.
   function fitText(text, maxPx, startSize, weight, minSize) {
     var floor = minSize || 24;
     var size = startSize;
@@ -486,6 +488,18 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
     return size;
   }
 
+  // Returns [text, size] that is guaranteed to fit maxPx.
+  function fitLabel(text, maxPx) {
+    var size = fitText(text, maxPx, 26, 500, 22);
+    ctx.font = font(size, 500);
+    if (ctx.measureText(text).width <= maxPx) return [text, size];
+    var cut = text;
+    while (cut.length > 1 && ctx.measureText(cut + '…').width > maxPx) {
+      cut = cut.slice(0, -1);
+    }
+    return [cut + '…', size];
+  }
+
   function statBlock(x, y, label, value, valueSize, maxW) {
     ctx.fillStyle = MUTED;
     // The label was drawn at a fixed 26px while only the VALUE was fitted, so
@@ -495,7 +509,12 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
     // quietly - so the label floor is 18px, and the test measures the width
     // that actually gets drawn rather than trusting the mechanism.
     var up = label.toUpperCase();
-    var ls = maxW ? fitText(up, maxW, 26, 500, 18) : 26;
+    var ls = 26;
+    if (maxW) {
+      var fitted = fitLabel(up, maxW);
+      up = fitted[0];
+      ls = fitted[1];
+    }
     ctx.font = font(ls, 500);
     if (typeof __LABEL_FIT === 'function') __LABEL_FIT(up, ls, maxW);
     ctx.fillText(up, x, y);
@@ -574,9 +593,10 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       else if (s.all_time_through_season) atLabel += ' through ' + s.all_time_through_season;
       else atLabel = null;  // no window we can name: do not show a bare total
     }
-    // Label is drawn at a fixed 26px; statBlock's fitText only shrinks the
-    // VALUE. 'ALL-TIME POINTS THROUGH GW38' is 28 chars * ~15.6px = 437px,
-    // inside the 488px column. A longer label would overflow silently.
+    // Width is handled in statBlock, which fits the label and ellipsises it
+    // at the floor. (This comment used to claim a fixed 26px label and a
+    // 488px column; both were wrong by the time it was written - the column
+    // is colW = 428px.)
     if (atLabel) statBlock(colX[0], 432, atLabel, fmtPts(s.all_time_points), 84, colW);
     statBlock(colX[1], 432, 'Best overall rank', fmtRank(s.best_rank), 84, colW);
     // A '-' placeholder reads as a zero. The card drops what it does not

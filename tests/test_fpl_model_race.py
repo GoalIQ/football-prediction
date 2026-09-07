@@ -205,13 +205,41 @@ def test_tila_seuraa_otteluita_ei_fpln_tapahtumalippua():
 def test_gradaaja_kirjoittaa_kentan_jota_lukija_lukee():
     """Lukija ja kirjoittaja eri tiedostoissa: jos gradaaja lakkaa
     kirjoittamasta kenttaa, `row_state` palauttaa hiljaa `unknown` kaikelle.
-    Portti lukee kirjoittajan lahteen."""
+
+    🔴 Portin 22. kierros: edellinen versio tasta etsi LAHTEESTA
+    merkkijonoa `'"all_fixtures_played": all_played'`, ja se hajosi heti kun
+    lauseke muuttui (`None if siirretty else all_played`) - vaikka
+    kirjoittaja teki edelleen tasan oikein. Merkkijonoportti mittaa
+    kirjoitusasua, ei kayttaytymista (muisti:
+    portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa).
+
+    Nyt: (1) `_gw_status` AJETAAN ja kentan arvo mitataan, ja (2) rivia
+    rakentava dict luetaan AST:lla, joten avaimen uudelleennimeaminen
+    kaataa muttei lausekkeen muuttaminen.
+    """
+    import ast
+    import sys
     from pathlib import Path
-    src = (Path(__file__).resolve().parents[1]
-           / "scripts" / "grade_model_squad.py").read_text(encoding="utf-8")
-    assert '"all_fixtures_played": all_played' in src, (
-        "gradaaja ei enaa laske kenttaa otteluista")
-    assert '"all_fixtures_played": status["all_fixtures_played"]' in src, (
+    juuri = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(juuri))
+    from scripts.grade_model_squad import _gw_status
+
+    # (1) kayttaytyminen
+    boot = {"events": [{"id": 5, "data_checked": False}]}
+    fx = [{"event": 5, "finished_provisional": True,
+           "kickoff_time": "2026-09-01T14:00:00Z"}]
+    assert _gw_status(boot, fx)[5]["all_fixtures_played"] is True
+
+    # (2) rivi kantaa avaimen
+    lahde = (juuri / "scripts" / "grade_model_squad.py").read_text(
+        encoding="utf-8")
+    avaimet = set()
+    for n in ast.walk(ast.parse(lahde)):
+        if isinstance(n, ast.Dict):
+            for k in n.keys:
+                if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                    avaimet.add(k.value)
+    assert "all_fixtures_played" in avaimet, (
         "gradaaja ei enaa kirjoita kenttaa riville")
 
 
@@ -289,3 +317,52 @@ def test_lopullinen_kierros_lukee_yha_lokista():
     loki = {"gameweeks": _LOKI_GW3_PROV["gameweeks"][:2]}
     out = build_race(loki, kayttaja, model_history=malli)
     assert [r["model_points"] for r in out["gameweeks"]] == [41, 108]
+
+
+def test_siirretty_ottelu_ei_ole_kesken_oleva_kierros():
+    """🔴 PORTIN 22. KIERROS (C). Jos ottelu siirretaan mutta jaa samaan
+    kierrokseen myohemmalla kickoffilla - tai ilman kickoffia - `all_played`
+    on False VIIKKOJA, ja pinta sanoisi *"GW N: still being played"*
+    kierroksesta jonka muut ottelut on pelattu.
+
+    Emme keksi uutta julkista lausetta: `all_fixtures_played` on silloin
+    None, tila on `unknown`, ja teksti sanoo vain ettei kierrosta ole
+    vahvistettu. Se on tosi molemmissa tapauksissa.
+    """
+    import datetime as dt
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts.grade_model_squad import _gw_status
+
+    nyt = dt.datetime.now(dt.timezone.utc)
+    boot = {"events": [{"id": 5, "data_checked": False}]}
+
+    def _fx(**yli):
+        return {"event": 5, "finished_provisional": True,
+                "kickoff_time": (nyt - dt.timedelta(days=1)).isoformat(), **yli}
+
+    # (a) Kaikki pelattu -> awaiting_check.
+    st = _gw_status(boot, [_fx(), _fx()])
+    assert st[5]["all_fixtures_played"] is True
+
+    # (b) Yksi ottelu alkaa parin tunnin paasta -> kierros on aidosti kesken.
+    kesken = _fx(finished_provisional=False,
+                 kickoff_time=(nyt + dt.timedelta(hours=2)).isoformat())
+    st = _gw_status(boot, [_fx(), kesken])
+    assert st[5]["all_fixtures_played"] is False
+
+    # (c) Ottelu jonka olisi pitanyt olla ohi eilen -> siirretty, EI kesken.
+    myohassa = _fx(finished_provisional=False,
+                   kickoff_time=(nyt - dt.timedelta(days=2)).isoformat())
+    st = _gw_status(boot, [_fx(), myohassa])
+    assert st[5]["all_fixtures_played"] is None, "siirretty luettiin keskeksi"
+
+    # (d) Ottelu ilman kickoffia -> ei aikataulua, sama tila.
+    ilman = _fx(finished_provisional=False, kickoff_time=None)
+    st = _gw_status(boot, [_fx(), ilman])
+    assert st[5]["all_fixtures_played"] is None
+
+    # Ja tila-lukija kaantaa nama oikeiksi teksteiksi.
+    from src.models.fpl_model_race import row_state
+    assert row_state({"provisional": True, "all_fixtures_played": None}) == "unknown"

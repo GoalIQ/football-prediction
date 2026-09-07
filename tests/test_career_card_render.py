@@ -38,7 +38,8 @@ def _render(payload: dict) -> dict:
         polku = fh.name
     try:
         r = subprocess.run(["node", str(HARNESS), str(PAGE), polku],
-                           capture_output=True, text=True, timeout=60)
+                           capture_output=True, text=True, timeout=60,
+                           encoding="utf-8")
     finally:
         Path(polku).unlink(missing_ok=True)
     assert r.returncode == 0, f"harness kaatui:\n{r.stderr}"
@@ -254,3 +255,34 @@ def test_kaikki_poisjatetyt_kierrokset_nimetaan():
     yksi = _arvo(_render(_payload(summary={"provisional_gws_excluded": [3]})),
                  "This season")
     assert "GW3 still being scored" in yksi and "GW3," not in yksi, yksi
+
+
+def test_kohtuuttoman_pitka_label_katkaistaan_eika_vuoda():
+    """🔴 Portin 22. kierros (D). `fitText` pysahtyy lattiaansa ja vuotaa sen
+    jalkeen HILJAA yli - vaite "fittaus tekee ylivuodosta mahdottoman" ei siis
+    pitanyt. 18 px oli lisaksi kuollut lattia (mikaan nykyinen label ei
+    paatynyt siihen) ja silti liian pieni luettavaksi kortilla.
+
+    Nyt lattia on 22 px (se mita tanaan tarvitaan) ja `fitLabel` ELLIPSOI
+    lopun. Ylivuoto ei riipu siita muistiko joku lisata payload-tapauksen
+    tahan testiin.
+    """
+    pitka = _render(_payload(summary={
+        "all_time_provisional": True,
+        "all_time_through_gw": None,
+        "all_time_through_season": "2024/25 and the one before that too"}))
+    fits = [f for f in pitka["labelFits"]
+            if f["text"].startswith("ALL-TIME POINTS")]
+    assert fits, pitka["labelFits"]
+    f = fits[0]
+    assert f["width"] <= f["maxW"] + 0.5, f
+    assert f["size"] >= 22, f"label kutistui lukukelvottomaksi: {f['size']}px"
+    assert f["text"].endswith("…"), f"labelia ei katkaistu: {f['text']!r}"
+
+    # Kontrolli: normaali label EI katkea eika kutistu turhaan.
+    tavallinen = _render(_payload(summary={"all_time_provisional": True,
+                                           "all_time_through_gw": 38}))
+    tf = next(f for f in tavallinen["labelFits"]
+              if f["text"].startswith("ALL-TIME POINTS"))
+    assert not tf["text"].endswith("…"), tf
+    assert tf["size"] >= 22, tf
