@@ -104,6 +104,45 @@ def _hae(polku: str) -> dict | None:
         return None
 
 
+def hae_pelaajat(kausi: int, md: int) -> tuple[dict | None, int]:
+    """Pelaajasyote kierrokselle `md`, tai lahin aiempi joka vastaa.
+
+    🔴 MITATTU 7.9.2026, JA VIKA OLISI LAUENNUT SEURAAVANA PAIVANA.
+    UEFA julkaisee kierroskohtaisen pelaajatiedoston vasta kun kierros
+    aktivoituu. Samalla hetkella mitattuna:
+
+        players_90_en_1.json -> 200, 3 654 799 tavua
+        players_90_en_2.json -> 403
+        players_90_en_3.json -> 403
+
+    `build()` valitsee `md`:ksi sen kierroksen jonka deadline on seuraavana.
+    MD1:n deadline on 8.9.2026 18:45 UTC, joten klo 18:46 valinta olisi
+    kaantynyt MD2:een, `_hae` olisi palauttanut Nonen ja koko ajo olisi
+    kuollut `SystemExit`iin. Osio olisi jaatynyt tasan silla hetkella kun
+    MD1:n liikenne saapuu, ja jaatyminen olisi nakynyt sivulla vanhana
+    leimana - ei virheena.
+
+    Vika ei ollut uusi eika se olisi nakynyt yhdessakaan testissa: koko
+    invariantti oli mitattu vain siina kauden vaiheessa jossa se sattui
+    pitamaan (CLAUDE.md 6a kohta 3). `test_ucl_matchday_phase_invariants.py`
+    ajaa saman funktion synteettisilla vaiheilla.
+
+    Palauttaa `(doc, md_tarjoiltu)`. Fail-closed: jos yksikaan kierros ei
+    vastaa, `(None, md)` ja kutsuja kaataa ajon. Alaspain kavely on turvallinen
+    suunta - vanhempi kierros on OLEMASSA OLEVAA dataa samasta kaudesta, ei
+    arvaus - mutta `md_tarjoiltu` kannetaan metaan, jottei pinta voi vaittaa
+    lukuja vaaralta kierrokselta (muisti: honest-data-labels).
+    """
+    for ehdokas in range(int(md), 0, -1):
+        doc = _hae(f"players/players_{kausi}_en_{ehdokas}.json")
+        if doc:
+            if ehdokas != md:
+                print(f"::warning::ucl: MD{md} pelaajasyotetta ei ole viela "
+                      f"julkaistu, tarjoillaan MD{ehdokas}")
+            return doc, ehdokas
+    return None, int(md)
+
+
 def _feed_aika(pelaajat_doc: dict) -> str | None:
     """Syotteen oma aikaleima UTC-ISOna, tai None.
 
@@ -252,15 +291,18 @@ def build(nyt: dt.datetime | None = None) -> dict:
                     None)
     md = (seuraava or kierrokset[0])["md"] if kierrokset else 1
 
-    pelaajat_doc = _hae(f"players/players_{kausi}_en_{md}.json")
+    pelaajat_doc, md_tarjoiltu = hae_pelaajat(kausi, md)
     if not pelaajat_doc:
-        raise SystemExit(f"ucl: pelaajasyote {kausi}/{md} ei vastannut")
+        raise SystemExit(
+            f"ucl: yhtaan pelaajasyotetta ei saatu kaudelle {kausi} "
+            f"(kokeiltu MD{md} alaspain MD1:een)")
+    fallback = md_tarjoiltu != md
     joukkueet_doc = _hae(f"teams/teams_{kausi}_en.json") or {}
 
     feed_aika = _feed_aika(pelaajat_doc)
     if feed_aika:
         ika = (nyt - dt.datetime.fromisoformat(feed_aika)).total_seconds() / 3600
-        if ika > FEED_PUNAINEN_H:
+        if ika > FEED_PUNAINEN_H and not fallback:
             raise SystemExit(
                 f"ucl: syotteen oma aikaleima on {ika:.0f} h vanha "
                 f"({feed_aika}). Yli {FEED_PUNAINEN_H} h tarkoittaa etta "
@@ -280,6 +322,14 @@ def build(nyt: dt.datetime | None = None) -> dict:
             "source": "UEFA UCL Fantasy public feed (no key, no login)",
             "season_id": kausi,
             "matchday": md,
+            # MISTA TIEDOSTOSTA LUVUT OIKEASTI TULEVAT. `matchday` on se
+            # kierros jonka deadline on seuraavana; `players_matchday` on se
+            # jonka pelaajatiedosto meille tarjoiltiin. Ne eroavat aina
+            # kierroksen lukkiutumisen ja seuraavan tiedoston julkaisun
+            # valissa, ja pinnan on voitava sanoa se aaneen sen sijaan etta
+            # lukija paattelisi luvut vaaralta kierrokselta.
+            "players_matchday": md_tarjoiltu,
+            "players_matchday_is_fallback": fallback,
             # 🔴 EI RAKENNUSAIKAA. Ks. `_feed_aika`: `now()` teki
             # artefaktista erilaisen joka ajossa, jolloin workflow olisi
             # committanut ja deployannut 4 kertaa vuorokaudessa ilman

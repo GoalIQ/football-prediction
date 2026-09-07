@@ -2153,6 +2153,17 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         "</div>"
     )
 
+    # 🔴 ALATUNNISTEEN /ucl-LINKKI (7.9.2026). `/ucl`-osio oli livena mutta
+    # `grep -oi ucl fpl.html` antoi 0 osumaa koko 108 kB sivulta: korkeimman
+    # intentin fantasy-yleisomme ei paassyt uuteen osioon mitaan reittia
+    # (muisti: uusi-sivu-ei-nay-hubissa). Linkin teksti sanoo mita osio on -
+    # hinnat ja omistus - koska siella EI ole mallia eika xP:ta, ja
+    # "UCL Fantasy" yksin lupaisi saman kuin /fpl.
+    #
+    # Perustelu on tassa eika HTML-kommenttina: emitoitu suomenkielinen
+    # kommentti nakyy view-sourcessa, ja `test_viewsource_comments.py` +
+    # `test_no_finnish_in_public_js.py` kaatavat siita (kumpikin kaatui
+    # kerran tasta samasta rivista).
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2407,6 +2418,7 @@ predictions and analytics. Not betting advice.</p>
   <a href="/fpl/team-news">Team news</a> &middot;
   <a href="/fpl/notes">Notes</a> &middot;
   <a href="/fpl/club-best">Club pages</a> &middot;
+  <a href="/ucl/">UCL Fantasy prices</a> &middot;
   <a href="world-cup-2026-predictions.html">World Cup 2026 predictions</a> &middot;
   <a href="faq.html">App FAQ</a> &middot;
   <a href="privacy.html">Privacy</a></p>

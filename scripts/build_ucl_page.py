@@ -246,11 +246,31 @@ def _taulukko(otsikot: list[str], rivit: list[list[str]]) -> str:
 
 
 def _feed_leima(doc: dict) -> str:
-    """Milloin luvut ovat UEFAlta. Ei rakennusaika (ks. ingest_ucl)."""
-    iso = (doc.get("meta") or {}).get("feed_updated_utc")
+    """Milloin luvut ovat UEFAlta. Ei rakennusaika (ks. ingest_ucl).
+
+    🔴 VARAUS KULKEE LEIMAN MUKANA, EI SIVUN MUKANA (7.9.2026).
+    UEFA julkaisee kierroskohtaisen pelaajatiedoston vasta kun kierros
+    aktivoituu, joten kierroksen lukkiutumisen ja seuraavan tiedoston
+    julkaisun valissa `ingest_ucl` tarjoilee AIEMMAN kierroksen tiedoston
+    (`players_matchday_is_fallback`). Silloin leima on tosi mutta
+    harhaanjohtava yksin: se nayttaa tuoreelta luvulta kierrokselle jonka
+    lukuja siina ei ole.
+
+    Varaus on tassa funktiossa eika sivujen copyssa, koska sivuja on kolme
+    ja neljas tulee myohemmin. Jokainen pinta joutuisi muistamaan saman
+    lisayksen, ja joku unohtaisi (CLAUDE.md 6a, mekanismi 1). Nyt leimaa ei
+    voi nayttaa ilman varausta.
+    """
+    meta = doc.get("meta") or {}
+    iso = meta.get("feed_updated_utc")
     if not iso:
         return "an unknown time"
-    return dt.datetime.fromisoformat(iso).strftime("%d %b %Y, %H:%M UTC")
+    leima = dt.datetime.fromisoformat(iso).strftime("%d %b %Y, %H:%M UTC")
+    if meta.get("players_matchday_is_fallback"):
+        md = meta.get("players_matchday")
+        return (f"{leima}, for matchday {md}, which is the most recent "
+                "player file UEFA has published")
+    return leima
 
 
 def _tyhja_selite(doc: dict, kentta: str) -> str:

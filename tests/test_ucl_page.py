@@ -464,3 +464,98 @@ def test_kontrolli_hylattyjen_havaitsin_toimii():
     assert [f for f in HYLATYT if f.lower() in vale.lower()] == [
         "unavailable to pick"]
     assert not [f for f in HYLATYT if f.lower() in "<p>flagged in feed</p>"]
+
+
+# ---------------------------------------------------------------------------
+# FALLBACK-KIERROKSEN VARAUS (7.9.2026)
+#
+# UEFA julkaisee kierroskohtaisen pelaajatiedoston vasta kun kierros
+# aktivoituu (mitattu: players_90_en_1 -> 200, _2 ja _3 -> 403). Kierroksen
+# lukkiutumisen ja seuraavan tiedoston julkaisun valissa `ingest_ucl`
+# tarjoilee aiemman kierroksen tiedoston, ja silloin tuoreusleima on tosi
+# mutta yksin harhaanjohtava: se nayttaa tuoreelta luvulta kierrokselle
+# jonka lukuja siina ei ole.
+#
+# Varaus asuu `_feed_leima`ssa, joten sita ei voi unohtaa uudelta sivulta.
+# Nama testit mittaavat sen KAIKILTA renderoidyilta pinnoilta, ei
+# funktiolta yksin (muisti: renderoimaton-kentta-todistetaan-vain-
+# kaikilta-pinnoilta).
+# ---------------------------------------------------------------------------
+
+import datetime as _dt                                          # noqa: E402
+import sys as _sys                                              # noqa: E402
+
+_sys.path.insert(0, str(ROOT))
+from scripts import build_ucl_page as bp                        # noqa: E402
+
+_NYT_FB = _dt.datetime(2026, 9, 25, 12, 0, tzinfo=_dt.timezone.utc)
+_RENDEROIJAT = (bp.sivu_hub, bp.sivu_hinnat, bp.sivu_team_news)
+
+
+def _doc_fallback(fallback: bool) -> dict:
+    """Artefakti jossa MD2 on seuraava mutta luvut ovat MD1:n tiedostosta."""
+    return {
+        "meta": {
+            "season_id": 90, "matchday": 2,
+            "players_matchday": 1 if fallback else 2,
+            "players_matchday_is_fallback": fallback,
+            "feed_updated_utc": "2026-09-08T18:40:00+00:00",
+            "players": 3, "teams": 2,
+        },
+        "matchdays": [
+            {"md": 1, "deadline_utc": "2026-09-08T18:45:00+00:00",
+             "is_locked": True, "gamedays": 1},
+            {"md": 2, "deadline_utc": "2026-10-13T18:45:00+00:00",
+             "is_locked": False, "gamedays": 1},
+        ],
+        "teams": [{"id": 1, "name": "Club A", "code": "AAA"},
+                  {"id": 2, "name": "Club B", "code": "BBB"}],
+        "players": [
+            {"id": 1, "name": "A", "team": "Club A", "team_id": 1,
+             "team_code": "AAA", "pos": "MID", "price": 7.5,
+             "owned_pct": 12.0, "status": "available", "matchdays_played": 1,
+             "points": 6, "prev_season_points": 40,
+             "prev_season_minutes": 900},
+            {"id": 2, "name": "B", "team": "Club B", "team_id": 2,
+             "team_code": "BBB", "pos": "DEF", "price": 5.0,
+             "owned_pct": 3.0, "status": "injured", "matchdays_played": 1,
+             "points": 2, "prev_season_points": 0,
+             "prev_season_minutes": 0},
+            {"id": 3, "name": "C", "team": "Club A", "team_id": 1,
+             "team_code": "AAA", "pos": "FWD", "price": 9.0,
+             "owned_pct": 30.0, "status": "not_in_squad",
+             "matchdays_played": 1, "points": 0, "prev_season_points": 12,
+             "prev_season_minutes": 300},
+            # Jokainen positio on edustettuna: `sivu_hub` laskee kalleimman
+            # per positio `max()`illa, joka kaatuu tyhjaan positioon.
+            {"id": 4, "name": "D", "team": "Club B", "team_id": 2,
+             "team_code": "BBB", "pos": "GK", "price": 4.5,
+             "owned_pct": 8.0, "status": "available", "matchdays_played": 1,
+             "points": 3, "prev_season_points": 20,
+             "prev_season_minutes": 720},
+        ],
+    }
+
+
+@pytest.mark.parametrize("render", _RENDEROIJAT,
+                         ids=[f.__name__ for f in _RENDEROIJAT])
+def test_fallback_kierros_sanotaan_jokaisella_pinnalla(render):
+    h = render(_doc_fallback(True), _NYT_FB)
+    assert "most recent player file UEFA has published" in h, \
+        f"{render.__name__}: fallback-varaus puuttuu"
+    assert "for matchday 1" in h, \
+        f"{render.__name__}: varaus ei nimea kierrosta josta luvut ovat"
+
+
+@pytest.mark.parametrize("render", _RENDEROIJAT,
+                         ids=[f.__name__ for f in _RENDEROIJAT])
+def test_kontrolli_varausta_ei_lisata_kun_kierros_on_oma(render):
+    """NEGATIIVINEN KONTROLLI: varaus ei saa olla vakiona sivulla.
+
+    Ilman tata testi ylla lapaisisi myos jos lause olisi kovakoodattu
+    jokaiseen ledeen - ja silloin se olisi epatosi 99 % ajasta
+    (muisti: hedge-vain-nakyvassa-copyssa, kaanteisena)."""
+    h = render(_doc_fallback(False), _NYT_FB)
+    assert "most recent player file UEFA has published" not in h, \
+        f"{render.__name__}: varaus nakyy vaikka kierros on oma"
+    assert "last update" in h.lower() or "Last update" in h
