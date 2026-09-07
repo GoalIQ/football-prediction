@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-08-31T16:33:08+00:00",
+  "generated_at": "2026-09-07T10:46:38+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -9,20 +9,31 @@
   "complete": true
  },
  "running": {
-  "gameweeks": 1,
+  "gameweeks": 2,
   "gw_list": [
-   1
+   1,
+   2
   ],
-  "total_diff": -9,
-  "avg_diff": -9.0,
-  "beat_average": 0,
+  "total_diff": 18,
+  "avg_diff": 9.0,
+  "beat_average": 1,
   "below_average": 1,
   "per_gw": [
    {
     "gw": 1,
     "points": 41,
+    "points_net": 41,
+    "transfer_cost": 0,
     "average": 50,
     "diff": -9
+   },
+   {
+    "gw": 2,
+    "points": 108,
+    "points_net": 108,
+    "transfer_cost": 0,
+    "average": 81,
+    "diff": 27
    }
   ]
  },
@@ -32,6 +43,7 @@
    "provisional": false,
    "squad": {
     "points": 41,
+    "points_net": 41,
     "average": 50,
     "diff": -9,
     "bench_points": 12,
@@ -55,6 +67,180 @@
     "x_mae": 5.4,
     "direction": "aliarvio"
    }
+  },
+  {
+   "gw": 2,
+   "provisional": false,
+   "squad": {
+    "points": 108,
+    "points_net": 108,
+    "average": 81,
+    "diff": 27,
+    "bench_points": 5,
+    "transfer_cost": 0,
+    "chip": "wildcard",
+    "captain_id": 426,
+    "captain_points_added": 23,
+    "graded_at": "2026-09-01T16:41:19+00:00"
+   },
+   "calls": {
+    "logged_at": "2026-08-28T17:13:07Z",
+    "deadline_utc": "2026-08-28T17:30:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": false,
+    "hits": 3,
+    "misses": 1,
+    "ungraded": 1,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "Guéhi",
+      "team_short": "MCI",
+      "criterion": "captain return, points doubled",
+      "predicted": 4.76,
+      "points": 2,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "10+ pts",
+      "predicted": 0.146,
+      "points": 23,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "reached p90",
+      "predicted": 10,
+      "points": 13,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "safest",
+      "web_name": "Stach",
+      "team_short": "LEE",
+      "criterion": "3+ pts",
+      "predicted": 0.806,
+      "points": 4,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "gamble",
+      "web_name": "Guéhi",
+      "team_short": "MCI",
+      "criterion": "10+ pts",
+      "predicted": 0.084,
+      "points": 2,
+      "started": true,
+      "met": false
+     }
+    ]
+   },
+   "accuracy": {
+    "mae": 1.594,
+    "n": 511,
+    "bias": -0.314
+   },
+   "headline_miss": null
+  },
+  {
+   "gw": 3,
+   "provisional": true,
+   "squad": {
+    "points": 58,
+    "points_net": 58,
+    "average": 36,
+    "diff": 22,
+    "bench_points": 14,
+    "transfer_cost": 0,
+    "chip": "3xc",
+    "captain_id": 411,
+    "captain_points_added": 18,
+    "graded_at": "2026-09-06T20:25:22+00:00"
+   },
+   "calls": {
+    "logged_at": "2026-09-03T07:03:08Z",
+    "deadline_utc": "2026-09-04T17:30:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": true,
+    "hits": 1,
+    "misses": 3,
+    "ungraded": 2,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "captain return, points doubled",
+      "predicted": 7.92,
+      "points": 9,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "10+ pts",
+      "predicted": 0.31,
+      "points": 9,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Isak",
+      "team_short": "LIV",
+      "criterion": "reached p90",
+      "predicted": 11,
+      "points": 13,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "safest",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "3+ pts",
+      "predicted": 0.822,
+      "points": 2,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "gamble",
+      "web_name": "Calafiori",
+      "team_short": "ARS",
+      "criterion": "10+ pts",
+      "predicted": 0.071,
+      "points": 2,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "projected_xi",
+      "web_name": "5-2-3 XI, captain Haaland",
+      "team_short": "MCI",
+      "criterion": "XI points with the captain doubled, FPL automatic substitutions applied from the bench in order",
+      "predicted": 67.67,
+      "points": 56,
+      "started": null,
+      "met": null
+     }
+    ]
+   },
+   "accuracy": null,
+   "headline_miss": null
   }
  ]
 }
