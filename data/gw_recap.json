@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-07T12:14:55+00:00",
+  "generated_at": "2026-09-07T13:28:52+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -157,23 +157,23 @@
    "gw": 3,
    "provisional": true,
    "squad": {
-    "points": 58,
-    "points_net": 58,
-    "average": 36,
-    "diff": 22,
+    "points": 72,
+    "points_net": 72,
+    "average": 51,
+    "diff": 21,
     "bench_points": 14,
     "transfer_cost": 0,
     "chip": "3xc",
     "captain_id": 411,
     "captain_points_added": 18,
-    "graded_at": "2026-09-06T20:25:22+00:00"
+    "graded_at": "2026-09-07T12:35:04+00:00"
    },
    "calls": {
     "logged_at": "2026-09-03T07:03:08Z",
     "deadline_utc": "2026-09-04T17:30:00Z",
     "logged_before_deadline": true,
     "graded": true,
-    "provisional": true,
+    "provisional": false,
     "hits": 1,
     "misses": 3,
     "ungraded": 2,
@@ -240,7 +240,11 @@
      }
     ]
    },
-   "accuracy": null,
+   "accuracy": {
+    "mae": 1.536,
+    "n": 501,
+    "bias": -0.179
+   },
    "headline_miss": null
   }
  ]

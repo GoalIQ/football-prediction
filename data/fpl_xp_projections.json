@@ -49,7 +49,7 @@
         },
         "Coventry": {
           "flag": "promoted",
-          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 2 matches of Premier League football, so it moves a lot with each result.",
+          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 3 matches of Premier League football, so it moves a lot with each result.",
           "is_promoted": true,
           "minutes_churn_pct": null
         },
@@ -73,13 +73,13 @@
         },
         "Hull": {
           "flag": "promoted",
-          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 2 matches of Premier League football, so it moves a lot with each result.",
+          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 3 matches of Premier League football, so it moves a lot with each result.",
           "is_promoted": true,
           "minutes_churn_pct": null
         },
         "Ipswich": {
           "flag": "promoted",
-          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 2 matches of Premier League football, so it moves a lot with each result.",
+          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 3 matches of Premier League football, so it moves a lot with each result.",
           "is_promoted": true,
           "minutes_churn_pct": null
         },
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-07T10:41:07+00:00",
+    "generated_at": "2026-09-07T13:23:16+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -252,7 +252,7 @@
       },
       "form": {
         "value": 8.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -367,7 +367,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 47.3,
+      "owned_pct": 47.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -395,7 +395,7 @@
       },
       "form": {
         "value": 9.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -538,7 +538,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -681,7 +681,7 @@
       },
       "form": {
         "value": 7.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -824,7 +824,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -939,7 +939,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 72.0,
+      "owned_pct": 72.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -967,7 +967,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1083,7 +1083,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 21.1,
+      "owned_pct": 21.2,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -1111,7 +1111,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1255,7 +1255,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1370,7 +1370,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 47.0,
+      "owned_pct": 47.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1398,7 +1398,7 @@
       },
       "form": {
         "value": 7.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1541,7 +1541,7 @@
       },
       "form": {
         "value": 6.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1684,7 +1684,7 @@
       },
       "form": {
         "value": 6.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1828,7 +1828,7 @@
       },
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -1943,7 +1943,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 2.9,
+      "owned_pct": 3.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1971,7 +1971,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2086,7 +2086,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 18.5,
+      "owned_pct": 18.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2114,7 +2114,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2257,7 +2257,7 @@
       },
       "form": {
         "value": 6.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2370,7 +2370,7 @@
       "predicted_starts": 89.6,
       "minutes_confidence": "med",
       "data_basis": "limited_history",
-      "owned_pct": 8.6,
+      "owned_pct": 8.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2380,7 +2380,7 @@
       "last_season": null,
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2524,7 +2524,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2639,7 +2639,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.1,
+      "owned_pct": 4.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2667,7 +2667,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2782,7 +2782,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 24.7,
+      "owned_pct": 24.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2810,7 +2810,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -2953,7 +2953,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3068,7 +3068,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 4.4,
+      "owned_pct": 4.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3078,7 +3078,7 @@
       "last_season": null,
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3193,7 +3193,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 19.1,
+      "owned_pct": 19.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3221,7 +3221,7 @@
       },
       "form": {
         "value": 7.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3365,7 +3365,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3509,7 +3509,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3652,7 +3652,7 @@
       },
       "form": {
         "value": 7.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3796,7 +3796,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -3911,7 +3911,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 39.3,
+      "owned_pct": 39.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3939,7 +3939,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4054,7 +4054,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 12.4,
+      "owned_pct": 12.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4082,7 +4082,7 @@
       },
       "form": {
         "value": 8.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4198,7 +4198,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 10.6,
+      "owned_pct": 10.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4226,7 +4226,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4342,7 +4342,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.3,
+      "owned_pct": 5.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4370,7 +4370,7 @@
       },
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4485,7 +4485,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.6,
+      "owned_pct": 3.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4513,7 +4513,7 @@
       },
       "form": {
         "value": 8.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4628,7 +4628,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 8.8,
+      "owned_pct": 8.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4638,7 +4638,7 @@
       "last_season": null,
       "form": {
         "value": 8.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4782,7 +4782,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -4899,7 +4899,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 12.8,
+      "owned_pct": 13.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4927,7 +4927,7 @@
       },
       "form": {
         "value": 9.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5040,7 +5040,7 @@
       "predicted_starts": 100.0,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 1.2,
+      "owned_pct": 1.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5068,7 +5068,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5212,7 +5212,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5356,7 +5356,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5471,7 +5471,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.6,
+      "owned_pct": 16.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5499,7 +5499,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5626,7 +5626,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5769,7 +5769,7 @@
       },
       "form": {
         "value": 5.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -5913,7 +5913,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6057,7 +6057,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6173,7 +6173,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 27.2,
+      "owned_pct": 27.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6201,7 +6201,7 @@
       },
       "form": {
         "value": 6.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6346,7 +6346,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6461,7 +6461,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 18.9,
+      "owned_pct": 19.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6489,7 +6489,7 @@
       },
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6634,7 +6634,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6778,7 +6778,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -6921,7 +6921,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7065,7 +7065,7 @@
       },
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7180,7 +7180,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 30.5,
+      "owned_pct": 30.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7208,7 +7208,7 @@
       },
       "form": {
         "value": 8.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7351,7 +7351,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7495,7 +7495,7 @@
       },
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7638,7 +7638,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7780,7 +7780,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -7924,7 +7924,7 @@
       },
       "form": {
         "value": 4.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8067,7 +8067,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8192,7 +8192,7 @@
       "last_season": null,
       "form": {
         "value": 4.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8317,7 +8317,7 @@
       "last_season": null,
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8459,7 +8459,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8584,7 +8584,7 @@
       "last_season": null,
       "form": {
         "value": 8.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8728,7 +8728,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8843,7 +8843,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 11.1,
+      "owned_pct": 11.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -8871,7 +8871,7 @@
       },
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -8995,7 +8995,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9139,7 +9139,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9282,7 +9282,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9426,7 +9426,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9566,7 +9566,7 @@
       },
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9690,7 +9690,7 @@
       "last_season": null,
       "form": {
         "value": 7.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9816,7 +9816,7 @@
       "last_season": null,
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -9959,7 +9959,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10103,7 +10103,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10246,7 +10246,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10369,7 +10369,7 @@
       "last_season": null,
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10513,7 +10513,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10656,7 +10656,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10799,7 +10799,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -10914,7 +10914,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 0.3,
+      "owned_pct": 0.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10942,7 +10942,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11081,7 +11081,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11207,7 +11207,7 @@
       "last_season": null,
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11351,7 +11351,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11494,7 +11494,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11617,7 +11617,7 @@
       "last_season": null,
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11733,7 +11733,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.0,
+      "owned_pct": 16.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -11761,7 +11761,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -11885,7 +11885,7 @@
       "last_season": null,
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12001,7 +12001,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 12.8,
+      "owned_pct": 12.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -12029,7 +12029,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12172,7 +12172,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12315,7 +12315,7 @@
       },
       "form": {
         "value": 6.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12459,7 +12459,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12602,7 +12602,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12745,7 +12745,7 @@
       },
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -12888,7 +12888,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13012,7 +13012,7 @@
       "last_season": null,
       "form": {
         "value": 6.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13154,7 +13154,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13279,7 +13279,7 @@
       "last_season": null,
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13394,7 +13394,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 13.1,
+      "owned_pct": 13.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -13422,7 +13422,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13565,7 +13565,7 @@
       },
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13704,7 +13704,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13848,7 +13848,7 @@
       },
       "form": {
         "value": 5.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -13987,7 +13987,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14131,7 +14131,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14275,7 +14275,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14391,7 +14391,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 14.6,
+      "owned_pct": 14.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -14401,7 +14401,7 @@
       "last_season": null,
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14544,7 +14544,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14687,7 +14687,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14824,7 +14824,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -14940,7 +14940,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 2.4,
+      "owned_pct": 2.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -14968,7 +14968,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15112,7 +15112,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15256,7 +15256,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15400,7 +15400,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15544,7 +15544,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15687,7 +15687,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15832,7 +15832,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -15975,7 +15975,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16118,7 +16118,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16262,7 +16262,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16401,7 +16401,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16543,7 +16543,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16688,7 +16688,7 @@
       },
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16831,7 +16831,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -16974,7 +16974,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17118,7 +17118,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17232,7 +17232,7 @@
       "predicted_starts": 90.4,
       "minutes_confidence": "med",
       "data_basis": "limited_history",
-      "owned_pct": 6.5,
+      "owned_pct": 6.6,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -17242,7 +17242,7 @@
       "last_season": null,
       "form": {
         "value": 8.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17358,7 +17358,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 10.8,
+      "owned_pct": 10.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -17386,7 +17386,7 @@
       },
       "form": {
         "value": 6.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17531,7 +17531,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17674,7 +17674,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17817,7 +17817,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -17961,7 +17961,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18086,7 +18086,7 @@
       "last_season": null,
       "form": {
         "value": 4.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18202,7 +18202,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.1,
+      "owned_pct": 1.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -18230,7 +18230,7 @@
       },
       "form": {
         "value": 7.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18373,7 +18373,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18498,7 +18498,7 @@
       "last_season": null,
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18624,7 +18624,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18768,7 +18768,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -18912,7 +18912,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19036,7 +19036,7 @@
       "last_season": null,
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19180,7 +19180,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19323,7 +19323,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19448,7 +19448,7 @@
       "last_season": null,
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19564,7 +19564,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 8.3,
+      "owned_pct": 8.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -19592,7 +19592,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19717,7 +19717,7 @@
       "last_season": null,
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19737,7 +19737,7 @@
       "p_bench": 0.1561,
       "set_pieces": {
         "pens": null,
-        "corners": 6,
+        "corners": 5,
         "fk": null
       },
       "e_bonus": 0.21,
@@ -19841,7 +19841,7 @@
       "last_season": null,
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -19861,7 +19861,7 @@
       "p_bench": 0.0763,
       "set_pieces": {
         "pens": null,
-        "corners": 2,
+        "corners": 6,
         "fk": 2
       },
       "e_bonus": 0.17,
@@ -19985,7 +19985,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20100,7 +20100,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 2.6,
+      "owned_pct": 2.7,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -20110,7 +20110,7 @@
       "last_season": null,
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20253,7 +20253,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20392,7 +20392,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20536,7 +20536,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20676,7 +20676,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20819,7 +20819,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -20962,7 +20962,7 @@
       },
       "form": {
         "value": 4.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21105,7 +21105,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21248,7 +21248,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21392,7 +21392,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21518,7 +21518,7 @@
       "last_season": null,
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21644,7 +21644,7 @@
       "last_season": null,
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21787,7 +21787,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -21930,7 +21930,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22046,7 +22046,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 18.0,
+      "owned_pct": 17.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -22056,7 +22056,7 @@
       "last_season": null,
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22199,7 +22199,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22324,7 +22324,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22468,7 +22468,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22609,7 +22609,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22754,7 +22754,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -22898,7 +22898,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23024,7 +23024,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23149,7 +23149,7 @@
       "last_season": null,
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23292,7 +23292,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23417,7 +23417,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23561,7 +23561,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23688,7 +23688,7 @@
       "last_season": null,
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23831,7 +23831,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -23975,7 +23975,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24118,7 +24118,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24261,7 +24261,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24406,7 +24406,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24549,7 +24549,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24691,7 +24691,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24815,7 +24815,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -24959,7 +24959,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25102,7 +25102,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25245,7 +25245,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25265,7 +25265,7 @@
       "p_bench": 0.2384,
       "set_pieces": {
         "pens": null,
-        "corners": 4,
+        "corners": 2,
         "fk": null
       },
       "e_bonus": 0.19,
@@ -25388,7 +25388,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25514,7 +25514,7 @@
       "last_season": null,
       "form": {
         "value": 2.5,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25658,7 +25658,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25774,7 +25774,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.8,
+      "owned_pct": 0.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -25802,7 +25802,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -25945,7 +25945,7 @@
       },
       "form": {
         "value": 3.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26070,7 +26070,7 @@
       "last_season": null,
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26214,7 +26214,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26338,7 +26338,7 @@
       "last_season": null,
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26482,7 +26482,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26625,7 +26625,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26768,7 +26768,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -26911,7 +26911,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27027,7 +27027,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.5,
+      "owned_pct": 14.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -27055,7 +27055,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27198,7 +27198,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27342,7 +27342,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27486,7 +27486,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27630,7 +27630,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27755,7 +27755,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -27899,7 +27899,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28043,7 +28043,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28187,7 +28187,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28332,7 +28332,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28448,7 +28448,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 9.3,
+      "owned_pct": 9.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -28476,7 +28476,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28601,7 +28601,7 @@
       "last_season": null,
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28738,7 +28738,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -28882,7 +28882,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29027,7 +29027,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29152,7 +29152,7 @@
       "last_season": null,
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29295,7 +29295,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29439,7 +29439,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29582,7 +29582,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29707,7 +29707,7 @@
       "last_season": null,
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29830,7 +29830,7 @@
       "last_season": null,
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -29974,7 +29974,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30118,7 +30118,7 @@
       },
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30244,7 +30244,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30388,7 +30388,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30529,7 +30529,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30673,7 +30673,7 @@
       },
       "form": {
         "value": 4.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30817,7 +30817,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -30958,7 +30958,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31083,7 +31083,7 @@
       "last_season": null,
       "form": {
         "value": 3.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31208,7 +31208,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31352,7 +31352,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31495,7 +31495,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31622,7 +31622,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31767,7 +31767,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -31912,7 +31912,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32038,7 +32038,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32182,7 +32182,7 @@
       },
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32325,7 +32325,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32469,7 +32469,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32613,7 +32613,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32757,7 +32757,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -32901,7 +32901,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33027,7 +33027,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33153,7 +33153,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33297,7 +33297,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33412,7 +33412,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.1,
+      "owned_pct": 16.0,
       "status": "d",
       "news": "Back injury - 75% chance of playing",
       "chance_next": 75,
@@ -33440,7 +33440,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33583,7 +33583,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33727,7 +33727,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33872,7 +33872,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -33988,7 +33988,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "limited_history",
-      "owned_pct": 0.5,
+      "owned_pct": 0.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -34016,7 +34016,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -34132,7 +34132,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.8,
+      "owned_pct": 3.7,
       "status": "d",
       "news": "Unspecified injury - 75% chance of playing",
       "chance_next": 75,
@@ -34160,7 +34160,7 @@
       },
       "form": {
         "value": 4.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -34304,7 +34304,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -34449,7 +34449,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -34593,7 +34593,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -34737,7 +34737,7 @@
       },
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -34882,7 +34882,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35026,7 +35026,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35152,7 +35152,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35277,7 +35277,7 @@
       "last_season": null,
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35400,7 +35400,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35544,7 +35544,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35688,7 +35688,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35832,7 +35832,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -35948,7 +35948,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 1.6,
+      "owned_pct": 1.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -35958,7 +35958,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36083,7 +36083,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36210,7 +36210,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36355,7 +36355,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36497,7 +36497,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36623,7 +36623,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36766,7 +36766,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -36909,7 +36909,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37035,7 +37035,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37161,7 +37161,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37304,7 +37304,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37418,7 +37418,7 @@
       "predicted_starts": 25.9,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 12.4,
+      "owned_pct": 12.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -37446,7 +37446,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37589,7 +37589,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37715,7 +37715,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37859,7 +37859,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -37984,7 +37984,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38127,7 +38127,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38271,7 +38271,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38415,7 +38415,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38558,7 +38558,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38684,7 +38684,7 @@
       "last_season": null,
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38809,7 +38809,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -38953,7 +38953,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39079,7 +39079,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39206,7 +39206,7 @@
       "last_season": null,
       "form": {
         "value": 7.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39321,7 +39321,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 0.7,
+      "owned_pct": 0.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -39349,7 +39349,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39492,7 +39492,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39617,7 +39617,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39762,7 +39762,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -39906,7 +39906,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40032,7 +40032,7 @@
       "last_season": null,
       "form": {
         "value": 2.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40176,7 +40176,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40321,7 +40321,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40445,7 +40445,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40589,7 +40589,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40716,7 +40716,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40839,7 +40839,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -40983,7 +40983,7 @@
       },
       "form": {
         "value": 3.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41126,7 +41126,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41252,7 +41252,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41379,7 +41379,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41523,7 +41523,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41666,7 +41666,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41808,7 +41808,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -41935,7 +41935,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42061,7 +42061,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42202,7 +42202,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42346,7 +42346,7 @@
       },
       "form": {
         "value": 5.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42490,7 +42490,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42615,7 +42615,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42754,7 +42754,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -42878,7 +42878,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43018,7 +43018,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43162,7 +43162,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43305,7 +43305,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43449,7 +43449,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43574,7 +43574,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43714,7 +43714,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43856,7 +43856,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -43995,7 +43995,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44121,7 +44121,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44247,7 +44247,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44372,7 +44372,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44511,7 +44511,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44636,7 +44636,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44763,7 +44763,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -44907,7 +44907,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45052,7 +45052,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45178,7 +45178,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45321,7 +45321,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45444,7 +45444,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45584,7 +45584,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45728,7 +45728,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -45873,7 +45873,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46017,7 +46017,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46141,7 +46141,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46267,7 +46267,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46411,7 +46411,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46555,7 +46555,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46699,7 +46699,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46824,7 +46824,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -46969,7 +46969,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47096,7 +47096,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47237,7 +47237,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47363,7 +47363,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47503,7 +47503,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47648,7 +47648,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47772,7 +47772,7 @@
       "last_season": null,
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -47916,7 +47916,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48057,7 +48057,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48197,7 +48197,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48323,7 +48323,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48466,7 +48466,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48606,7 +48606,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48746,7 +48746,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -48890,7 +48890,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49030,7 +49030,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49170,7 +49170,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49314,7 +49314,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49455,7 +49455,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49599,7 +49599,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49739,7 +49739,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -49880,7 +49880,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50006,7 +50006,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50132,7 +50132,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50276,7 +50276,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50420,7 +50420,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50564,7 +50564,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50708,7 +50708,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50852,7 +50852,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -50997,7 +50997,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51136,7 +51136,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51279,7 +51279,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51423,7 +51423,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51564,7 +51564,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51707,7 +51707,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51852,7 +51852,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -51989,7 +51989,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52114,7 +52114,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52253,7 +52253,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52378,7 +52378,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52521,7 +52521,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52647,7 +52647,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52790,7 +52790,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -52933,7 +52933,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53077,7 +53077,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53202,7 +53202,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53346,7 +53346,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53487,7 +53487,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53611,7 +53611,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53755,7 +53755,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -53898,7 +53898,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54021,7 +54021,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54164,7 +54164,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54305,7 +54305,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54430,7 +54430,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54573,7 +54573,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54712,7 +54712,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54855,7 +54855,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -54980,7 +54980,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55124,7 +55124,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55268,7 +55268,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55394,7 +55394,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55521,7 +55521,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55662,7 +55662,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55789,7 +55789,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -55930,7 +55930,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56070,7 +56070,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56210,7 +56210,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56350,7 +56350,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56490,7 +56490,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56634,7 +56634,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56761,7 +56761,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -56887,7 +56887,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57013,7 +57013,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57140,7 +57140,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57281,7 +57281,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57421,7 +57421,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57565,7 +57565,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57706,7 +57706,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57847,7 +57847,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -57972,7 +57972,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58112,7 +58112,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58238,7 +58238,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58364,7 +58364,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58490,7 +58490,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58631,7 +58631,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58757,7 +58757,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -58901,7 +58901,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59042,7 +59042,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59182,7 +59182,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59322,7 +59322,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59466,7 +59466,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59610,7 +59610,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59736,7 +59736,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -59876,7 +59876,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60015,7 +60015,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60156,7 +60156,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60300,7 +60300,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60444,7 +60444,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60588,7 +60588,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60731,7 +60731,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -60876,7 +60876,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61002,7 +61002,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61147,7 +61147,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61273,7 +61273,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61400,7 +61400,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61545,7 +61545,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61689,7 +61689,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61833,7 +61833,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -61973,7 +61973,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62100,7 +62100,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62240,7 +62240,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62367,7 +62367,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62494,7 +62494,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62639,7 +62639,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62781,7 +62781,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -62922,7 +62922,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63049,7 +63049,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63189,7 +63189,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63315,7 +63315,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63455,7 +63455,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63594,7 +63594,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63734,7 +63734,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63860,7 +63860,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -63987,7 +63987,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64128,7 +64128,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64254,7 +64254,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64378,7 +64378,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64504,7 +64504,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64644,7 +64644,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64784,7 +64784,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -64924,7 +64924,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65065,7 +65065,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65191,7 +65191,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65335,7 +65335,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65479,7 +65479,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65605,7 +65605,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65731,7 +65731,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -65872,7 +65872,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66016,7 +66016,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66159,7 +66159,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66302,7 +66302,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66426,7 +66426,7 @@
       "last_season": null,
       "form": {
         "value": 0.5,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66549,7 +66549,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66693,7 +66693,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66834,7 +66834,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -66977,7 +66977,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67105,7 +67105,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67229,7 +67229,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67371,7 +67371,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67512,7 +67512,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67654,7 +67654,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67777,7 +67777,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -67901,7 +67901,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68025,7 +68025,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68167,7 +68167,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68310,7 +68310,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68434,7 +68434,7 @@
       "last_season": null,
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68572,7 +68572,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68716,7 +68716,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "xp_dist": {
@@ -68859,7 +68859,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -68904,7 +68904,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -68949,7 +68949,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -68990,7 +68990,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69017,52 +69017,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable"
-    },
-    {
-      "id": 527,
-      "web_name": "Richarlison",
-      "full_name": "Richarlison de Andrade",
-      "team": "Tottenham",
-      "team_short": "TOT",
-      "pos": "FWD",
-      "price": 5.9,
-      "owned_pct": 1.3,
-      "status": "u",
-      "news": "not included in squad.",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 6,
-        "team_name": "Spurs",
-        "minutes": 1954,
-        "starts": 20,
-        "goals": 11,
-        "assists": 4,
-        "xg": 8.64,
-        "xa": 1.46,
-        "cs": 7,
-        "points": 119,
-        "per90": {
-          "goals": 0.51,
-          "assists": 0.18,
-          "xgi": 0.47
-        }
-      },
-      "form": {
-        "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69107,7 +69062,52 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable"
+    },
+    {
+      "id": 527,
+      "web_name": "Richarlison",
+      "full_name": "Richarlison de Andrade",
+      "team": "Tottenham",
+      "team_short": "TOT",
+      "pos": "FWD",
+      "price": 5.9,
+      "owned_pct": 1.2,
+      "status": "u",
+      "news": "not included in squad.",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 6,
+        "team_name": "Spurs",
+        "minutes": 1954,
+        "starts": 20,
+        "goals": 11,
+        "assists": 4,
+        "xg": 8.64,
+        "xa": 1.46,
+        "cs": 7,
+        "points": 119,
+        "per90": {
+          "goals": 0.51,
+          "assists": 0.18,
+          "xgi": 0.47
+        }
+      },
+      "form": {
+        "value": 0.7,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69152,7 +69152,7 @@
       },
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69197,7 +69197,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69242,7 +69242,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69287,7 +69287,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69332,7 +69332,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69373,7 +69373,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69400,7 +69400,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69445,7 +69445,7 @@
       },
       "form": {
         "value": 1.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69490,7 +69490,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69517,7 +69517,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69562,7 +69562,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69589,7 +69589,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69634,7 +69634,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69679,7 +69679,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69724,7 +69724,7 @@
       },
       "form": {
         "value": 2.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69769,7 +69769,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69796,7 +69796,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69841,7 +69841,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69886,7 +69886,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69931,7 +69931,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -69958,7 +69958,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70003,7 +70003,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70048,7 +70048,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70093,7 +70093,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70134,7 +70134,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70161,7 +70161,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70202,7 +70202,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70247,7 +70247,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70292,7 +70292,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70319,7 +70319,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70346,7 +70346,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70373,7 +70373,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70418,7 +70418,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70463,7 +70463,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70504,7 +70504,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70545,7 +70545,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70590,7 +70590,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70617,7 +70617,7 @@
       "last_season": null,
       "form": {
         "value": 0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70662,7 +70662,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70703,7 +70703,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70730,7 +70730,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70757,7 +70757,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70802,7 +70802,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70847,7 +70847,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70892,7 +70892,7 @@
       },
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70919,7 +70919,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70946,7 +70946,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -70973,7 +70973,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71018,7 +71018,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71059,7 +71059,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71100,7 +71100,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71127,7 +71127,7 @@
       "last_season": null,
       "form": {
         "value": 2.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71168,7 +71168,7 @@
       },
       "form": {
         "value": 1.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71209,7 +71209,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71254,7 +71254,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71299,7 +71299,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71340,7 +71340,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71361,13 +71361,13 @@
       "yellows": 0,
       "set_pieces": {
         "pens": 3,
-        "corners": 5,
+        "corners": 4,
         "fk": null
       },
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71412,7 +71412,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71453,7 +71453,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71498,7 +71498,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71543,7 +71543,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71570,7 +71570,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71597,7 +71597,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71624,7 +71624,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71669,7 +71669,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71714,7 +71714,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71759,7 +71759,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71786,7 +71786,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71831,7 +71831,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71872,7 +71872,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71917,7 +71917,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71944,7 +71944,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -71989,7 +71989,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72034,7 +72034,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72079,7 +72079,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72106,7 +72106,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72147,7 +72147,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72174,7 +72174,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72201,7 +72201,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72246,7 +72246,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72291,7 +72291,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72336,7 +72336,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72363,7 +72363,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72408,7 +72408,7 @@
       },
       "form": {
         "value": 0.3,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72449,7 +72449,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72476,7 +72476,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72517,7 +72517,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72562,7 +72562,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72607,7 +72607,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72652,7 +72652,7 @@
       },
       "form": {
         "value": 1.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72693,7 +72693,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72738,7 +72738,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72783,7 +72783,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72824,7 +72824,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72865,7 +72865,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72906,7 +72906,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72947,7 +72947,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -72992,7 +72992,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73037,7 +73037,7 @@
       },
       "form": {
         "value": -0.7,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73082,7 +73082,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73127,7 +73127,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73168,7 +73168,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73213,7 +73213,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73254,7 +73254,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73299,7 +73299,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73326,7 +73326,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73367,7 +73367,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73408,7 +73408,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73435,7 +73435,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73462,7 +73462,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73507,7 +73507,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73552,7 +73552,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73579,7 +73579,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73606,7 +73606,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73647,7 +73647,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73688,7 +73688,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73715,7 +73715,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73760,7 +73760,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73787,7 +73787,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73814,7 +73814,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73841,7 +73841,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73882,7 +73882,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73927,7 +73927,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -73972,7 +73972,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74017,7 +74017,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74044,7 +74044,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74089,7 +74089,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74134,7 +74134,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74179,7 +74179,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74224,7 +74224,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74251,7 +74251,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74296,7 +74296,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74341,7 +74341,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74382,7 +74382,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74423,7 +74423,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74464,7 +74464,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74509,7 +74509,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74554,7 +74554,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74599,7 +74599,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74644,7 +74644,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74689,7 +74689,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74716,7 +74716,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74743,7 +74743,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74788,7 +74788,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74833,7 +74833,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74878,7 +74878,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74905,7 +74905,7 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74946,7 +74946,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
@@ -74991,7 +74991,7 @@
       },
       "form": {
         "value": 0.0,
-        "gws": 2,
+        "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
       "in_projection": false,
