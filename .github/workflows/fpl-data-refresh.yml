@@ -51,6 +51,15 @@ concurrency:
 
 permissions:
   contents: write
+  # 🔴 7.9.2026: TAMA PUUTTUI, ja `verify_live_pages.sh`:n itsekorjaus oli
+  # siksi hampaaton. Kun 17. kierroksella kytkin saman skriptin kolmeen
+  # workflow'hun, kaksi niista oli jo saanut `actions: write` 19.8 - tama ei.
+  # Dispatch palautti `HTTP 403: Resource not accessible by integration`,
+  # skripti jatkoi pollausta 8 min ja kaatui virheella joka nimesi VAARAN
+  # MEKANISMIN ("goaliq.app ei servaa repon sivuja"). Workflow oli punainen
+  # kahdesti perakkain, ja pysyvasti punainen putki nielee seuraavan
+  # oikean regression.
+  actions: write
 
 jobs:
   build-and-commit:

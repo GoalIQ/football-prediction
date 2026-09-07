@@ -71,12 +71,19 @@ for i in $(seq 1 "$TRIES"); do
         echo "live != repo -> hub-deploy dispatchattu (kuka tahansa kirjoitti sivun)."
         dispatched=1
       else
-        echo "::warning::hub-deployn dispatch epaonnistui - jatketaan pollausta."
-        dispatched=1   # ei yriteta joka kierroksella
+        # 🔴 7.9: TAMA OLI VAIN WARNING, ja askel kaatui 8 min myohemmin
+        # virheella joka nimesi vaaran mekanismin ("goaliq.app ei servaa
+        # repon sivuja"). Todellinen syy oli `HTTP 403: Resource not
+        # accessible by integration` - workflow'lta puuttui `actions: write`,
+        # eli ITSEKORJAUS EI VOINUT KORJATA MITAAN. Epaonnistunut korjaus on
+        # oma vikansa ja se on nimettava heti.
+        echo "::error::hub-deployn dispatch EPAONNISTUI. Itsekorjaus ei toimi:"
+        echo "::error::tarkista etta workflow'lla on 'permissions: actions: write'."
+        exit 2
       fi
     else
-      echo "::warning::GH_TOKEN tai gh puuttuu - ei voi dispatchata hub-deployta."
-      dispatched=1
+      echo "::error::GH_TOKEN tai gh puuttuu - itsekorjaus ei voi dispatchata."
+      exit 2
     fi
   fi
 
