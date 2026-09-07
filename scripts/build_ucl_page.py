@@ -321,14 +321,11 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         # `prev_season_minutes` on 0 - he eivat pelanneet kilpailussa.
         # Nolla solussa luetaan huonoksi kaudeksi, ei puuttumiseksi, joten
         # solu jatetaan tyhjaksi ja syy kerrotaan tassa.
-        tyhjia = sum(1 for p in P if not p.get("prev_season_minutes"))
         perusta = (
             "<p>No matchday of this season has been played, so nothing on "
             "this page is a figure from it. The points column is last "
             "season's UCL total, which is what the feed carries at this "
-            f"point. It's blank for the {tyhjia} players who logged no UCL "
-            "minutes last season, most of them at clubs that were not in "
-            "the competition. Everything else on this page is current.</p>")
+            "point. Everything else on this page is current.</p>")
     else:
         perusta = (
             "<p>Points and minutes on this page are from the current UCL "
@@ -371,6 +368,7 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         f"full list</a> has all {toimittava_n + nis}.</p>"
         f"{kaavio_saatavuus(P, doc['teams'])}"
         "<h2>Most owned</h2>"
+        + _tyhja_selite(doc, kentta)
         + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
                      "Status"], _pelaajarivit(kartoitus, kentta))
         + '<p><a href="/ucl/prices">Full list of all '
@@ -431,8 +429,8 @@ def sivu_hinnat(doc: dict, nyt: dt.datetime) -> str:
     kentta, sarake = vaiheet.pistekentta(doc, nyt)
     mukana = sum(1 for p in doc["players"] if p["owned_pct"] > 1.0)
     body = (
-        f"<p>All {len(P)} players in the UCL Fantasy game, sorted by "
-        "ownership. Click a column heading to sort.</p>"
+        "<p>Sorted by ownership. Click a column heading to sort by "
+        "anything else.</p>"
         # 🔴 RAJAUS ON SANOTTAVA NAKYVASSA TEKSTISSA. `svg_charts.otsikko`
         # menee vain `aria-label`iin, joten kaavion oma otsikko EI ole
         # nakevalle lukijalle olemassa. Ilman tata sivun nakyva copy lupasi
@@ -471,11 +469,10 @@ def sivu_team_news(doc: dict, nyt: dt.datetime) -> str:
         # epavarma ovat fantasypeleissa normaalisti valittavissa, ne ovat
         # lippuja. Emme voineet verifioida UEFAn omaa saantoa, joten
         # sanotaan se mita syote KANTAA.
-        f"<p>{len(poissa)} of {len(P)} players carry a flag in the "
-        f"official feed. The chart counts the {toimittava_n} flagged "
+        f"<p>The chart counts the {toimittava_n} flagged "
         "injured, suspended or doubtful. The table adds everyone left out "
         "of a registered squad, which is a club decision and not a "
-        "fitness one.</p>"
+        f"fitness one, for {len(poissa)} rows in total.</p>"
         f"{kaavio_saatavuus(P, doc['teams'])}"
         + _tyhja_selite(doc, kentta)
         + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
@@ -489,8 +486,14 @@ def sivu_team_news(doc: dict, nyt: dt.datetime) -> str:
         "Which UCL Fantasy players are injured, suspended, doubtful or out "
         "of the registered squad, by club. Free, no login.",
         f"{BASE}/ucl/team-news", hero, body,
+        # 🔴 JSON-LD ON JULKISEMPI KUIN RUNKO. Korjasin "cannot be picked"
+        # -yliväitteen nakyvasta tekstista mutta jatin sen tahan: Google ja
+        # LLM-crawlerit lainaavat strukturoitua dataa sanatarkasti (muisti:
+        # hedge-vain-nakyvassa-copyssa).
         _jsonld("UCL Fantasy squad availability",
-                "UCL Fantasy players unavailable to pick, by club.",
+                "UCL Fantasy players carrying an injury, suspension or "
+                "doubt flag in the official feed, or left out of a "
+                "registered squad, by club.",
                 f"{BASE}/ucl/team-news"))
 
 

@@ -378,3 +378,80 @@ def test_deadline_valitaan_lukuhetkella():
     assert [d["md"] for d in D] == sorted(odotetut), (
         "sivulla ei ole kaikkia kierroksia, joten se ei voi vaihtaa "
         "seuraavaan ilman uutta buildia")
+
+
+def test_tyhjan_selite_kulkee_taulukon_mukana():
+    """🔴 MUTAATIO 7.9: `_tyhja_selite` -> "" lapaisi 36 testia.
+
+    Tyhja solu on oikein nollan sijaan, mutta selittamaton tyhja
+    sarakkeessa "Pts (last season)" on arvoitus. Selite oli aiemmin vain
+    hubilla, ja /ucl/prices jai 762 selittamattomaan soluun.
+
+    Assertio sitoo selitteen SIIHEN sivuun jolla tyhjia soluja on, ei
+    kasin yllapidettyyn sivulistaan: uusi sivu ei voi karata portilta.
+    """
+    import json
+    if not DATA_JSON.exists():
+        pytest.skip("artefaktia ei ole")
+    doc = json.loads(DATA_JSON.read_text(encoding="utf-8"))
+    odotettu = sum(1 for p in doc["players"]
+                   if not p.get("prev_season_minutes"))
+    tarkistettu = 0
+    for f in sorted(UCL.glob("*.html")):
+        h = f.read_text(encoding="utf-8")
+        rivit = re.findall(r"<tr><td>(?:(?!</tr>)[\s\S])*?</tr>", h)
+        tyhjia = sum(1 for r in rivit
+                     if re.match(r"^<tr>(<td>[^<]*</td>){5}<td></td>", r))
+        if tyhjia == 0:
+            continue
+        tarkistettu += 1
+        assert "points column is blank" in h, (
+            f"{f.name}: {tyhjia} tyhjaa solua ilman selitetta")
+        assert str(odotettu) in h, f"{f.name}: selitteessa vaara luku"
+    assert tarkistettu >= 2, (
+        f"vain {tarkistettu} sivulla oli tyhjia soluja - onko portti "
+        "vihrea siksi ettei se loytanyt mitaan?")
+
+
+# 🔴 HYLATYT SANAMUODOT. Julkaisuportti loysi KOLMESTI saman kuvion:
+# korjasin vaitteen nakyvasta tekstista ja se jai elamaan toiselle
+# renderointipolulle. Viimeisin oli JSON-LD:n `description`, jonka Google
+# ja LLM-crawlerit lainaavat sanatarkasti - eli JULKISEMPI pinta kuin
+# runko (muisti: hedge-vain-nakyvassa-copyssa,
+# sama-vaite-monessa-renderointipolulla).
+#
+# Yksi lista koko osiolle, ja se skannaa KOKO HTML:n: head, JSON-LD,
+# aria-labelit, meta-kuvaukset. Grep nakyvasta tekstista ei riita, koska
+# juuri se paasti taman lapi.
+HYLATYT = {
+    "unavailable to pick":
+        "syote kantaa vain pStatus-lipun, ei kenttaa valittavuudesta; "
+        "vain NIS tarkoittaa varmasti ettei pelaajaa voi valita",
+    "cannot be picked": "sama yliväite toisin sanoin",
+    "owned by more than 1%":
+        "kaikki owned_pct-arvot ovat kokonaislukuja, joten raja on 2 %",
+    "every six hours":
+        "kadenssilupaus ajastimesta jota emme hallitse (5-12 h myohassa)",
+    "a dozen": "suurin todellinen not_in_squad-ryhma on 9",
+    "a forward decision":
+        "MID nousee 10 m:aan ja kalliita MID-pelaajia on enemman kuin FWD",
+}
+
+
+@pytest.mark.parametrize("nimi", SIVUT)
+def test_hylatty_sanamuoto_ei_palaa_millekaan_pinnalle(nimi):
+    h = _html(nimi).lower()
+    osumat = [(f, syy) for f, syy in HYLATYT.items() if f.lower() in h]
+    assert not osumat, (
+        f"{nimi}: hylatty sanamuoto palasi:\n  " + "\n  ".join(
+            f"{f!r} - {syy}" for f, syy in osumat))
+
+
+def test_kontrolli_hylattyjen_havaitsin_toimii():
+    """NEGATIIVINEN KONTROLLI: lista voisi olla vihrea siksi etta
+    vertailu on rikki (muisti: kontrolli-lapaisi-tyhjana)."""
+    vale = '<script type="application/ld+json">{"description": ' \
+           '"UCL Fantasy players unavailable to pick, by club."}</script>'
+    assert [f for f in HYLATYT if f.lower() in vale.lower()] == [
+        "unavailable to pick"]
+    assert not [f for f in HYLATYT if f.lower() in "<p>flagged in feed</p>"]

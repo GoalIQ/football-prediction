@@ -220,3 +220,49 @@ def test_workflow_julistaa_oikeudet_joita_se_kayttaa():
     lohko = "\n".join(r for r in m.group(1).splitlines()
                       if not r.lstrip().startswith("#"))
     assert re.search(r"\bcontents:\s*write\b", lohko), lohko
+
+
+def test_jaatynyt_syote_kaataa_ajon(monkeypatch):
+    """🔴 JAATYMINEN OLI HILJAINEN. Kun tuoreuskentta tulee syotteesta,
+    UEFAn jaatyminen tarkoittaa etta artefakti lakkaa muuttumasta ja
+    workflow poistuu NOLLALLA "ei muutoksia" -haaraan. Mikaan ei ole
+    punainen (muisti: vihrea-putki-nielee-jaatymisen).
+    """
+    vanha = (NYT - dt.timedelta(hours=100)).strftime("%m/%d/%Y %I:%M:%S %p")
+    monkeypatch.setattr(iu, "loyda_kausi",
+                        lambda nyt=None: (90, _fx("10/13/26 06:45:00 PM")))
+    monkeypatch.setattr(iu, "_hae", lambda p: {
+        "meta": {"timestamp": {"utcTime": vanha}},
+        "data": {"value": {"playerList": [
+            {"id": i, "pDName": f"P{i}", "tName": "T", "cCode": "T",
+             "tId": 9, "skill": 3, "value": 5.0, "selPer": 1.0,
+             "pStatus": "", "teamPlayed": 0, "totPts": 0, "minsPlyd": 0}
+            for i in range(600)]}}})
+    with pytest.raises(SystemExit, match="vanha"):
+        iu.build(NYT)
+
+
+def test_kontrolli_tuore_syote_ei_kaada(monkeypatch):
+    """NEGATIIVINEN KONTROLLI: ilman tata edellinen lapaisisi myos jos
+    `build` kaatuisi aina."""
+    tuore = (NYT - dt.timedelta(hours=1)).strftime("%m/%d/%Y %I:%M:%S %p")
+    monkeypatch.setattr(iu, "loyda_kausi",
+                        lambda nyt=None: (90, _fx("10/13/26 06:45:00 PM")))
+    monkeypatch.setattr(iu, "_hae", lambda p: {} if p.startswith("teams/") else {
+        "meta": {"timestamp": {"utcTime": tuore}},
+        "data": {"value": {"playerList": [
+            {"id": i, "pDName": f"P{i}", "tName": "T", "cCode": "T",
+             "tId": 9, "skill": 3, "value": 5.0, "selPer": 1.0,
+             "pStatus": "", "teamPlayed": 0, "totPts": 0, "minsPlyd": 0}
+            for i in range(600)]}}})
+    doc = iu.build(NYT)
+    assert doc["meta"]["feed_updated_utc"]
+
+
+def test_feed_aika_sietaa_kapeaa_valilyontia():
+    """UEFA kayttaa U+202F:aa ennen AM/PM:aa. Jos merkki vaihtuu
+    tavalliseksi valilyonniksi, jasennys ei saa rikkoutua."""
+    for vali in (" ", " ", " "):
+        doc = {"meta": {"timestamp": {"utcTime": f"9/7/2026 4:04:12{vali}PM"}}}
+        assert iu._feed_aika(doc) == "2026-09-07T16:04:12+00:00", vali
+    assert iu._feed_aika({"meta": {}}) is None

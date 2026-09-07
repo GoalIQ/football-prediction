@@ -63,6 +63,18 @@ ID_MAX = 140
 ID_MIN = 60
 TIMEOUT = 40
 
+# 🔴 JAATYNYT SYOTE ON MUUTEN HILJAINEN. Kun tuoreuskentta tulee
+# SYOTTEESTA eika rakennusajasta (ks. `_feed_aika`), UEFAn jaatyminen
+# tarkoittaa etta artefakti lakkaa muuttumasta, workflow sanoo "ei
+# muutoksia" ja poistuu NOLLALLA. Mikaan ei ole punainen, ja sivu naytti
+# oikealta viimeiseen tuoreeseen lukuun asti (muisti:
+# vihrea-putki-nielee-jaatymisen).
+#
+# Kynnykset: syote paivittyi 7.9 mitattuna 7 min valein, joten
+# vuorokausi on jo poikkeuksellista ja kolme vuorokautta on rikki.
+FEED_VAROITUS_H = 24
+FEED_PUNAINEN_H = 72
+
 # Positiokoodit syotteen `skill`-kentasta. Mitattu jakauma 7.9:
 # 1=138, 2=385, 3=481, 4=158 -> GK/DEF/MID/FWD.
 SKILL = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
@@ -244,6 +256,18 @@ def build(nyt: dt.datetime | None = None) -> dict:
     if not pelaajat_doc:
         raise SystemExit(f"ucl: pelaajasyote {kausi}/{md} ei vastannut")
     joukkueet_doc = _hae(f"teams/teams_{kausi}_en.json") or {}
+
+    feed_aika = _feed_aika(pelaajat_doc)
+    if feed_aika:
+        ika = (nyt - dt.datetime.fromisoformat(feed_aika)).total_seconds() / 3600
+        if ika > FEED_PUNAINEN_H:
+            raise SystemExit(
+                f"ucl: syotteen oma aikaleima on {ika:.0f} h vanha "
+                f"({feed_aika}). Yli {FEED_PUNAINEN_H} h tarkoittaa etta "
+                "UEFA on lakannut paivittamasta tai luemme vaaraa "
+                "resurssia. ALA kirjoita artefaktia jaatyneen paalle.")
+        if ika > FEED_VAROITUS_H:
+            print(f"::warning::ucl-syote on {ika:.0f} h vanha ({feed_aika})")
 
     pelaajat = normalisoi_pelaajat(pelaajat_doc, kausi)
     if len(pelaajat) < 500:
