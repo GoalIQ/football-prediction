@@ -614,6 +614,27 @@ jobs:
           echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
           exit 1
 
+      # 🔴 7.9: TAMA WORKFLOW COMMITTOI SIVUT MUTTA EI DEPLOYANNUT NIITA.
+      # `git add fpl.html ... index.html` on ylla ja commit-viestissa on
+      # `[skip ci]`, joten mikaan ei kaynnistynyt pushista - eika CF Pages
+      # deployaa pushista itsestaan (direct upload, cutover 15.8). Sivu jai
+      # siis repoon menematta ulos, ja vika nakyi VASTA toisen workflow'n
+      # (fpl-page-refresh) punaisena, jonka oma virheteksti syytti
+      # "Pages-deploy failasi". Mitattu 7.9: live servasi tasmalleen commitin
+      # 5d217815b sivut kun mainissa oli 7a81f8c29.
+      #
+      # Skripti dispatchaa hub-deployn MITTAUKSEN perusteella (live != repo),
+      # ei sen perusteella kuka kirjoitti sivun. Ajetaan aina kun ajo eteni,
+      # myos ilman omaa committia: vanha live on korjattava vaikka tama ajo
+      # ei olisi muuttanut mitaan.
+      - name: Deploy-verify — live servaa repon sivut (+ itsekorjaus)
+        id: deploy_verify
+        if: always() && steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/verify_live_pages.sh fpl.html index.html
+
       # 13.8: sama fail loud -malli kuin accuracy-login Page-build health.
       # continue-on-error piilottaisi GW-buildin kaatumisen vihreän runin
       # taakse — tasan se vikaluokka joka piti accuracy-login punaisena
@@ -643,6 +664,7 @@ jobs:
           [ "${{ steps.bake_fpl_page.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA (fpl.html jaa eri ajosta kuin artefakti)"; fail=1; }
           [ "${{ steps.bake_longtail.outcome }}" = "failure" ] && { echo "::error::build_fpl_longtail FAILAA (long-tail-sivut jaavat eri ajosta kuin artefakti)"; fail=1; }
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
+          [ "${{ steps.deploy_verify.outcome }}" = "failure" ] && { echo "::error::goaliq.app EI servaa repon sivuja (deploy-verify). Sivut on committoitu mutta hub-deploy ei ole vienyt niita ulos - tarkista hub-deploy.yml"; fail=1; }
           [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa (PLAYER-GW-STALE-GUARD). build_fpl_player_gw -askelen tulos tassa ajossa: ${{ steps.bake_player_gw.outcome }} — skipped tarkoittaa etta jokin ylavirran askel kaatui, ei etta builderi olisi ajanut tyhjaa"; fail=1; }
           [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus data/model_squad_exceptions/gw{N}.json tai korjaa entry"; fail=1; }
           [ "${{ steps.grade_xp.outcome }}" = "failure" ] && { echo "::error::grade_fpl_xp_gw FAILAA (xP-gradaus jaa tekematta; projektiot pushattu)"; fail=1; }

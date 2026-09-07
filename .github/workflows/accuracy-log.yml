@@ -261,20 +261,18 @@ jobs:
       # fail-open piilotti dispatch-ongelman epailyn kokonaan). Siksi id +
       # eksplisiittinen virhehaara, ja Page-build health -steppi alla punaa
       # runin jos dispatch failasi — data on siina vaiheessa jo committoitu.
-      - name: Deploy hub (CF Pages) when pages changed
+      # 7.9: EHTO VAIHTUI "pushasinko mina" -> "servaako live repon sivut".
+      # Vanha muoto oli sokea sille tapaukselle etta TOINEN workflow oli jo
+      # committoinut saman sivun `[skip ci]`-viestilla: silloin tama sanoi
+      # "ei muutoksia", ohitti dispatchin, ja live jai vanhaksi. Skripti
+      # dispatchaa mittauksen perusteella ja vahvistaa lopputilan.
+      - name: Deploy-verify — live servaa repon sivut (+ itsekorjaus)
         id: hubdispatch
-        if: steps.push.outputs.pushed == 'true'
+        if: always()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if gh workflow run hub-deploy.yml --ref main; then
-            echo "hub-deploy dispatched."
-          else
-            echo "::warning::hub-deploy-dispatch EPAONNISTUI — goaliq.app jaa staleksi kunnes jokin muu deploy ajaa (CF Pages on direct upload, push ei deployaa itsestaan)"
-            echo "🔴 hub-deploy-dispatch epaonnistui — goaliq.app voi servata stalea" >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+        run: bash scripts/verify_live_pages.sh fpl.html index.html
 
       # #TRACK-STALE-vahti: punaa runin jos JOKIN sivubuilderi failasi — AJETAAN
       # commitin JÄLKEEN, joten data-logaus/commit ei esty (continue-on-error
@@ -288,5 +286,5 @@ jobs:
           [ "${{ steps.bake_fpl.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA — sivut eivät päivity (katso stepin loki)"; fail=1; }
           [ "${{ steps.bake_predictions.outcome }}" = "failure" ] && { echo "::error::build_prediction_pages FAILAA"; fail=1; }
           [ "${{ steps.bake_longtail.outcome }}" = "failure" ] && { echo "::error::build_fpl_longtail FAILAA"; fail=1; }
-          [ "${{ steps.hubdispatch.outcome }}" = "failure" ] && { echo "::error::hub-deploy-dispatch FAILAA — goaliq.app servaa stalea kunnes dispatch korjataan (data on committoitu, vain sivudeploy jai valiin)"; fail=1; }
+          [ "${{ steps.hubdispatch.outcome }}" = "failure" ] && { echo "::error::deploy-verify FAILAA — goaliq.app EI servaa repon sivuja (data on committoitu, vain sivudeploy jai valiin); tarkista hub-deploy.yml"; fail=1; }
           exit $fail
