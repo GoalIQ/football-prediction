@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-07T14:46:02+00:00",
+  "generated_at": "2026-09-07T15:00:16+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -9,15 +9,16 @@
   "complete": true
  },
  "running": {
-  "gameweeks": 2,
+  "gameweeks": 3,
   "basis": "model points before its own transfer hits, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
   "gw_list": [
    1,
-   2
+   2,
+   3
   ],
-  "total_diff": 18,
-  "avg_diff": 9.0,
-  "beat_average": 1,
+  "total_diff": 39,
+  "avg_diff": 13.0,
+  "beat_average": 2,
   "below_average": 1,
   "per_gw": [
    {
@@ -35,6 +36,14 @@
     "transfer_cost": 0,
     "average": 81,
     "diff": 27
+   },
+   {
+    "gw": 3,
+    "points": 72,
+    "points_net": 72,
+    "transfer_cost": 0,
+    "average": 51,
+    "diff": 21
    }
   ]
  },
@@ -148,7 +157,7 @@
   },
   {
    "gw": 3,
-   "provisional": true,
+   "provisional": false,
    "squad": {
     "points": 72,
     "points_net": 72,
@@ -159,7 +168,7 @@
     "chip": "3xc",
     "captain_id": 411,
     "captain_points_added": 18,
-    "graded_at": "2026-09-07T12:35:04+00:00"
+    "graded_at": "2026-09-07T15:00:07+00:00"
    },
    "calls": {
     "logged_at": "2026-09-03T07:03:08Z",
