@@ -174,8 +174,15 @@ export interface LastFinishedGw {
 		points: number | null;
 		xp_frozen: number | null;
 	}[];
-	/** FPL:n oma pistemaara (entry_history.points), ei meidan summamme. */
+	/** FPL:n oma pistemaara (entry_history.points), ei meidan summamme.
+	 *  🔴 BRUTTO: siirtorangaistus EI ole siina (verifioitu FPL:n API:sta
+	 *  7.9: entry 12345 GW3 points 70, cost 8, kausisumma +62). */
 	points: number | null;
+	/** `points` MIINUS siirtorangaistus = se luku jonka lukija nakee omalta
+	 *  FPL-sivultaan. **Vertailut mallia vastaan kayttavat TATA**, koska
+	 *  `vs_model` lasketaan backendissa netosta. Ilman tata sama ruutu
+	 *  nayttaisi "You 70 / Model 66" ja "The model beat you by 4". */
+	points_net?: number | null;
 	transfer_cost: number | null;
 	points_on_bench: number | null;
 	chip: string | null;

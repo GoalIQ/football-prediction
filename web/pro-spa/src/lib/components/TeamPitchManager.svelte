@@ -677,7 +677,10 @@
 						<span class="muted">(FPL's own total)</span></span
 					>
 					<span class="xp-col">
-						<span class="xp-val">{lastFinished?.points ?? '–'}</span>
+						<!-- F2 (12. kierros): NETTO. `points` on brutto, ja `vs_model`
+						     lasketaan backendissa netosta - brutto tassa tekisi ruudusta
+						     itsensa kanssa ristiriitaisen. -->
+						<span class="xp-val">{lastFinished?.points_net ?? lastFinished?.points ?? '–'}</span>
 						{#if luckFrozenTotal != null}
 							<span class="xp-delta"
 								>{luckFrozenTotal.toFixed(1)} projected before the deadline</span
@@ -923,7 +926,7 @@
 				<div class="score-row">
 					<div class="score-side">
 						<span class="score-key">You</span>
-						<span class="score-val">{lastFinished.points}</span>
+						<span class="score-val">{lastFinished.points_net ?? lastFinished.points}</span>
 					</div>
 					<!-- Portti 2.9 k4: mallin luku VAIN reitin kanssa, sama saanto
 					     kuin kortilla. -->

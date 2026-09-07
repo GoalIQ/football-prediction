@@ -306,9 +306,10 @@ def plan_lines(plans: list[dict] | None,
         })
         return out
 
-    hitteja = ("" if not hits else
-               f" after a hit of {hits * 4} points" if hits > 1
-               else " after a 4 point hit")
+    # 🔴 Portin 12. kierros: haarat olivat identtiset korjauksen jalkeen.
+    # Alahaara (hits == 1, yleisin tapaus) sanoi "a 4 point hit" - tasan se
+    # rakenne joka poistettiin muualta. Yksi muoto kaikille luvuille.
+    hitteja = "" if not hits else f" after a hit of {hits * 4} points"
     out.append({
         "code": "plans.best",
         "text": (f"The best plan is worth {_pts(ev)} points over holding"

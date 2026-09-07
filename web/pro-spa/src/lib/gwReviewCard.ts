@@ -221,8 +221,8 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   //  C2  Selittava lause nimesi mekanismin joka EI TASMAA: mitattu 7.9
   //      XI-summa 72, kerroinpainotettu bonus 15, siis ilman bonusta 57,
   //      mutta `entry_history.points` = 58. Lukija joka laskee 58 + 15 ei
-  //      paase 72:een. Ja `entry_history` on NETTO siirtorangaistuksista,
-  //      joten -4:n viikolla syy ei olisi bonus lainkaan. Emme siis nimea
+  //      paase 72:een. Ja `entry_history.points` on BRUTTO (verifioitu
+  //      FPL:n API:sta 7.9), joten -4:n viikolla ero ei selity bonuksella. Emme siis nimea
   //      syyta - sanomme vain kumpi luku on kumpi ja mista se on.
   //  C7  Nimittaja oli fail-open: ilman `total_picks`ia kortti vaitti
   //      "bench boost", ja `rows > odotettu` tuotti "15 of 11". Molemmat
@@ -234,12 +234,12 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   const autoSubs = data.meta.auto_subs ?? 0;
   const label =
     odotettu == null || rows.length > odotettu || autoSubs > 0
-      ? `${rows.length} rows counted`
+      ? `${rows.length} rows`
       : rows.length === odotettu
         ? chip === 'bboost'
           ? 'bench boost'
           : 'starting XI'
-        : `${rows.length} of ${odotettu} counted`;
+        : `${rows.length}/${odotettu} rows`;
 
   const kesken = !!data.meta.provisional;
   // B1 (10. kierros): NETTO, koska se on lukijan oma luku.
@@ -256,10 +256,34 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
       `${projectedText} xP (${sign(diff)})`,
   ];
   if (fpl != null && fpl !== actual) {
-    pakolliset.push(`FPL ${fpl}${kesken ? ' so far' : ''}`);
+    // `so far` oli redundantti: liveys on jo sanottu omassa luvussa
+    // ("live pts"), ja se maksoi 7 merkkia joka live-tilassa - eli tasan
+    // sen tilan jossa kattavuus putosi budjettiin.
+    pakolliset.push(`FPL ${fpl}`);
   }
+  // 🔴 B5 (10. kierros): `includes('counted')` yhdisti kaksi eri
+  // nimittajaa. Label puhuu RIVEISTA (11 vs odotettu XI), kattavuus
+  // PICKEISTA (14/15) - "11 rows counted" ei kerro kattavuudesta mitaan, ja
+  // silti se vaiensi sen. Paneeli sanoi "14 of 15 picks compared" ja kortti
+  // vaikeni: C4:n regressio.
+  const labelKertooKattavuuden =
+    picks != null && label === `${rows.length}/${picks} rows`;
+
   // C4: kattavuus takaisin kortille. Paneeli sanoi "14 of 15" ja kortti
   // vaikeni - sama vaite kahdella pinnalla, toinen hiljaa.
+  // F4 (12. kierros): kattavuus on VARAUS eika koriste, joten se ei saa
+  // pudota budjettiin. Vain jarjestysselite on valinnainen, ja se on
+  // viimeisena pudotettava - mutta mitattuna se ei putoa yhdessakaan
+  // realistisessa tilassa.
+  if (
+    !labelKertooKattavuuden &&
+    compared != null &&
+    picks != null &&
+    compared < picks
+  ) {
+    pakolliset.push(`${compared}/${picks} picks`);
+  }
+
   const valinnaiset: string[] = [];
   // 🔴 B3 (7. kierros): jarjestysselite PUTOSI budjettiin elavalla datalla
   // (73 + 18 = 91 > 88), jolloin julkinen kuva jai 11 rivin listaksi jossa
@@ -271,28 +295,6 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // "mallin pahin kutsu" olisi vaite jota tama jarjestys ei mittaa. Se
   // vaite tehdaan paneelissa, kertoimettomista luvuista.
   valinnaiset.push('worst gap first');
-  // R3 (5. kierros): kaksi kattavuusmurtolukua samalla rivilla
-  // ("10 of 11 players compared" + "14/15 compared") on hairio, ei tietoa.
-  // Label kertoo jo rivien kattavuuden, joten pickkien kattavuus sanotaan
-  // vain kun label ei sano mitaan kattavuudesta.
-  // 🔴 B5 (10. kierros): `includes('counted')` yhdisti kaksi eri
-  // nimittajaa. Label puhuu RIVEISTA (11 vs odotettu XI), kattavuus
-  // PICKEISTA (14/15) - "11 rows counted" ei kerro kattavuudesta mitaan, ja
-  // silti se vaiensi sen. Paneeli sanoi "14 of 15 picks compared" ja kortti
-  // vaikeni: C4:n regressio.
-  const labelKertooKattavuuden =
-    picks != null && label === `${rows.length} of ${picks} counted`;
-  if (
-    !labelKertooKattavuuden &&
-    compared != null &&
-    picks != null &&
-    compared < picks
-  ) {
-    // Lyhyt muoto: live-tilassa `compared` vei rivin 90 merkkiin (> 88)
-    // ja budjettisilmukka pudotti kattavuuden juuri siina tilassa jossa
-    // kortti jaetaan. Paneeli sanoo saman pidemmin.
-    valinnaiset.push(`${compared}/${picks} picks`);
-  }
 
 
   // R2 (5. kierros): FPL:n luku on pakollisten VIIMEINEN, eli jos pakolliset

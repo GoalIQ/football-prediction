@@ -99,7 +99,7 @@
 			     sanoo saman lauseen samoista luvuista. -->
 			{#if data.meta.players_compared != null && data.meta.total_picks != null && data.meta.players_compared < data.meta.total_picks}
 				<span class="muted small"
-					>{data.meta.players_compared} of {data.meta.total_picks} picks compared</span
+					>{data.meta.players_compared} of {data.meta.total_picks} squad picks compared</span
 				>
 			{/if}
 			{#if cardSpec}
@@ -123,7 +123,7 @@
 				     eron johtuvan vahvistamattomasta bonuksesta, mutta mitattu 7.9:
 				     XI-summa 72, kerroinpainotettu bonus 15, siis ilman bonusta 57 -
 				     ja FPL sanoo 58. Lukija joka laskee 58 + 15 ei paase 72:een. Ja
-				     `entry_history.points` on NETTO siirtorangaistuksista, joten -4:n
+				     `entry_history.points` on BRUTTO (verifioitu 7.9), joten -4:n
 				     viikolla syy ei olisi bonus lainkaan. Sanomme kumpi luku on kumpi. -->
 				{#if fplNet != null && totals && fplNet !== totals.actual}
 					<!-- D3: mutabiliteettilause VAIN kesken olevalle kierrokselle.
@@ -131,12 +131,12 @@
 					     olla (siirtorangaistus, autosub, pudonnut rivi). -->
 					{#if data.meta.provisional}
 						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the live
-						scores for the {totals.rows} picks that counted, and it can move until FPL
+						scores for the {totals.rows} that scored, and it can move until FPL
 						finishes scoring.{#if (data.meta.transfer_cost ?? 0) > 0} That is
 							{data.meta.fpl_points} minus a transfer hit of {data.meta.transfer_cost} points.{/if}
 					{:else}
 						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the
-						{totals.rows} picks that counted.{#if (data.meta.transfer_cost ?? 0) > 0} That is
+						{totals.rows} that scored.{#if (data.meta.transfer_cost ?? 0) > 0} That is
 							{data.meta.fpl_points} minus a transfer hit of {data.meta.transfer_cost} points.{/if}
 					{/if}
 				{:else}
