@@ -302,6 +302,19 @@ def url_class(path: str) -> str:
         return "/fpl/club/<x>"
     if osat[:2] == ["fpl", "note"] and len(osat) == 3:
         return "/fpl/note/<x>"
+    # 🔴 KIERROSARKISTO ON YKSI LUOKKA, EI YKSI LUOKKA PER KIERROS (7.9.2026).
+    # Ilman tata sarjaa `/fpl/points/gw1`, `/gw2`, `/gw3` luettiin kolmeksi
+    # eri sivuluokaksi, ja portti vaati jokaiselle oman maininnan llms.txt:ssa.
+    # Seuraus olisi ollut portti joka punastuu JOKA KIERROS: uusi arkistosivu
+    # syntyy automaattisesti gradauksen jalkeen, eika kukaan olisi muistanut
+    # lisata rivia kasin. Viikoittain punainen portti tulee ohitetuksi
+    # (muisti: pysyvasti-punainen-putki-nielee-regression).
+    #
+    # Luokka kuvataan llms.txt:ssa KERRAN kuviona, tasan kuten ottelusivut ja
+    # seurasivut - se on portin oma suunnittelu, ei poikkeus siita.
+    if (osat[:2] == ["fpl", "points"] and len(osat) == 3
+            and osat[2].startswith("gw") and osat[2][2:].isdigit()):
+        return "/fpl/points/gw<n>"
     return "/" + "/".join(osat)
 
 

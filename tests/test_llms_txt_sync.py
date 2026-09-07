@@ -13,6 +13,7 @@ Siksi alla mitataan myos ETTA oikealta sivulta loytyy ankkureita.
 
 from __future__ import annotations
 
+import pathlib
 import pytest
 
 from scripts.check_llms_txt_sync import (
@@ -165,3 +166,52 @@ def test_tuotannon_llms_ja_alasivut_ovat_synkassa():
     """Elava mittaus: sama tarkistus jonka CI ajaa, mutta testina."""
     llms = g.LLMS.read_text(encoding="utf-8")
     assert g.unsupported_numbers_subpages(llms) == []
+
+
+# ---------------------------------------------------------------------------
+# KIERROSARKISTO ON YKSI SIVULUOKKA (7.9.2026)
+#
+# `/fpl/points/gw{n}` syntyy automaattisesti joka kerta kun kierros
+# gradataan. Ennen tata sarjaa portti luki jokaisen kierroksen omaksi
+# sivuluokakseen ja vaati jokaiselle oman maininnan llms.txt:ssa - eli se
+# olisi punastunut JOKA KIERROS, ja kukaan ei olisi muistanut lisata rivia
+# kasin. Viikoittain punainen portti tulee ohitetuksi
+# (muisti: pysyvasti-punainen-putki-nielee-regression).
+# ---------------------------------------------------------------------------
+
+def test_kierrosarkisto_on_yksi_luokka():
+    import scripts.check_llms_txt_sync as g
+    for polku in ("/fpl/points/gw1", "/fpl/points/gw2", "/fpl/points/gw38"):
+        assert g.url_class(polku) == "/fpl/points/gw<n>", polku
+
+
+def test_paasivu_ei_ole_sama_luokka_kuin_arkisto():
+    """NEGATIIVINEN KONTROLLI: `/fpl/points` on eri sivu eri sisallolla
+    (uusin kierros), ja sen on pysyttava omana luokkanaan."""
+    import scripts.check_llms_txt_sync as g
+    assert g.url_class("/fpl/points") == "/fpl/points"
+
+
+def test_kuvio_ei_niela_muita_points_alasivuja():
+    """Sarja saa osua VAIN gw+numero-muotoon. Jos joskus syntyy esimerkiksi
+    `/fpl/points/season`, se on uusi luokka ja sen ON tultava nakyviin."""
+    import scripts.check_llms_txt_sync as g
+    for polku in ("/fpl/points/season", "/fpl/points/gw", "/fpl/points/gwx",
+                  "/fpl/points/2026"):
+        assert g.url_class(polku) != "/fpl/points/gw<n>", polku
+
+
+def test_uusi_kierros_ei_kaada_porttia():
+    """Portin ydinvaite: GW4:n arkistosivu ei vaadi uutta riviä llms.txt:aan.
+
+    Simuloidaan tuleva kierros lisaamalla sen URL sitemap-listaan ja
+    vaatimalla etta portti pysyy tyhjana - nykyinen llms.txt kuvaa luokan jo.
+    """
+    import scripts.check_llms_txt_sync as g
+    juuri = pathlib.Path(__file__).resolve().parents[1]
+    llms = (juuri / "llms.txt").read_text(encoding="utf-8")
+    urlit = ["https://goaliq.app/fpl/points",
+             "https://goaliq.app/fpl/points/gw1",
+             "https://goaliq.app/fpl/points/gw4",
+             "https://goaliq.app/fpl/points/gw17"]
+    assert g.undescribed_classes(llms, urlit) == []
