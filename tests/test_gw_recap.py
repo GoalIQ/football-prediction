@@ -66,7 +66,7 @@ def test_negatiivinen_kontrolli_lopullinen_kierros_ON_rivissa():
 
 def test_ei_gradattuja_kierroksia_sanotaan_ei_nollata():
     r = running_record([])
-    assert r["gameweeks"] == 0 and "ei lopullisesti" in r["note"]
+    assert r["gameweeks"] == 0 and "no finally graded" in r["note"]
     assert "total_diff" not in r
 
 
@@ -227,10 +227,13 @@ def test_running_record_vertaa_bruttoa_bruttoon():
     assert r["per_gw"][0]["transfer_cost"] == 8
     # Ja peruste sanotaan artefaktissa, ei paatella.
     # Peruste sanotaan artefaktissa - ja se EI saa vaittaa mita FPL:n luku on.
-    assert "gross vs gross" in r["basis"], r.get("basis")
+    # 🔴 Portin 20. kierros: myos etuliite "gross vs gross" oli vaite, koska
+    # se sanoo MOLEMPIEN puolten olevan bruttoja. Nimeamme vain oman.
+    assert "before its own transfer hits" in r["basis"], r.get("basis")
     assert "not established" in r["basis"], r.get("basis")
-    assert "average_entry_score is gross" not in r["basis"], (
-        "todentamaton vaite FPL:n perustasta palasi artefaktiin")
+    for kielletty in ("average_entry_score is gross", "gross vs gross"):
+        assert kielletty not in r["basis"], (
+            f"todentamaton vaite FPL:n perustasta palasi artefaktiin: {kielletty}")
 
 
 def test_running_record_kontrolli_ilman_hittia_sama_luku():

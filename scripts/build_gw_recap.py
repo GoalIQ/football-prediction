@@ -75,7 +75,8 @@ def running_record(rows: list[dict]) -> dict:
                   if not r.get("provisional") and r.get("fpl_average") is not None
                   and r.get("points") is not None]
     if not lopulliset:
-        return {"gameweeks": 0, "note": "ei lopullisesti gradattuja kierroksia"}
+        # Artefakti on julkisessa repossa: kentat englanniksi.
+        return {"gameweeks": 0, "note": "no finally graded gameweeks yet"}
     # 🔴 PORTIN 19. KIERROS: EN PYSTY TODENTAMAAN KUMPI FPL:N KESKIARVO ON.
     #
     # 17. kierroksella vaihdoin taman nettoon olettaen etta
@@ -110,9 +111,12 @@ def running_record(rows: list[dict]) -> dict:
         "gameweeks": len(lopulliset),
         # Kumpaa lukua verrataan. EI vaitetta siita mita FPL:n luku on -
         # sita ei ole todennettu (ks. kommentti `running_record`issa).
-        "basis": "gross vs gross: model points before its own transfer hits, "
-                 "against FPL's published average_entry_score "
-                 "(basis of FPL's figure not established)",
+        # 🔴 Portin 20. kierros: "gross vs gross" VAITTAA etta molemmat puolet
+        # ovat bruttoja, ja sulkulause kumosi saman lauseen sisalla puolet
+        # siita. Nimetaan vain oma puoli.
+        "basis": "model points before its own transfer hits, against FPL's "
+                 "published average_entry_score as-is (we have not "
+                 "established whether FPL's figure is before or after hits)",
         "gw_list": [int(r["gw"]) for r in lopulliset],
         "total_diff": sum(diffs),
         "avg_diff": round(sum(diffs) / len(diffs), 1),

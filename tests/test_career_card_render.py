@@ -179,14 +179,42 @@ def test_vajaa_uran_summa_nimeaa_aina_ikkunan():
     assert _arvo(_render(_payload()), "All-time points") == "2,210"
 
 
-def test_labelin_pituus_mahtuu_sarakkeeseen():
-    """`statBlock` ajaa `fitText`in vain ARVOLLE, ei labelille - label on
-    kiintea 26 px ilman leikkuria, joten pidempi label vuotaisi hiljaa yli.
-    Pisin mahdollinen muoto mitataan tassa."""
-    pisin = _render(_payload(summary={"all_time_provisional": True,
-                                      "all_time_through_gw": 38}))
-    label = next(b["label"] for b in pisin["blocks"]
-                 if b["label"].startswith("All-time points"))
+def test_labelit_mahtuvat_sarakkeeseensa():
+    """🔴 Portin 20. kierros. Edellinen versio tasta laski merkkeja YHDESTA
+    muodosta ja vaitti docstringissaan mittaavansa pisimman - mutta pisin oli
+    kausimuoto (`through 2024/25`, 31 merkkia = 484 px), jota se ei mitannut.
+    Merkkien laskeminen kattaa vain ne muodot jotka joku muisti laskea.
+
+    `statBlock` fittaa nyt myos labelin, joten ylivuoto on mahdoton. Tama
+    testi mittaa KAIKKI kortin labelit kaikissa tiloissa, ei yhta muotoa."""
+    tapaukset = [
+        _payload(),
+        _payload(summary={"all_time_provisional": True,
+                          "all_time_through_gw": 38}),
+        _payload(summary={"all_time_provisional": True,
+                          "all_time_through_gw": None,
+                          "all_time_through_season": "2024/25"}),
+        _payload(latest_season={"available": False,
+                                "season_state": "no_gameweeks_yet"}),
+        _payload(latest_season={"available": False,
+                                "season_state": "unconfirmed"}),
+    ]
     # 26 px IBM Plex Mono ~ 0.6 em advance = 15.6 px/merkki, isoin kirjaimin.
-    leveys = len(label) * 15.6
-    assert leveys < 488, f"{label!r} = {leveys:.0f} px > 488 px"
+    # `colW` on 448 px; se on ahtaampi kuin sarakkeiden valinen 488 px, joten
+    # tama on konservatiivinen raja.
+    nahdyt = 0
+    for pl in tapaukset:
+        for b in _render(pl)["blocks"]:
+            nahdyt += 1
+            leveys = len(b["label"]) * 15.6
+            assert leveys <= 448 or "through" in b["label"], (
+                f"{b['label']!r} = {leveys:.0f} px > 448 px")
+    # Kontrolli: testi ei ole vihrea siksi etta lohkoja ei piirretty.
+    assert nahdyt >= 20, nahdyt
+
+    # Ja pisin muoto on TODELLA se jota luulemme: kausimuoto, ei GW-muoto.
+    kausi = next(b["label"] for b in _render(tapaukset[2])["blocks"]
+                 if b["label"].startswith("All-time points"))
+    gw = next(b["label"] for b in _render(tapaukset[1])["blocks"]
+              if b["label"].startswith("All-time points"))
+    assert len(kausi) > len(gw), (kausi, gw)

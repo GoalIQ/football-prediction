@@ -58,7 +58,15 @@
 	// Provisionaaliset kierrokset ryhmiteltyna TILAN mukaan. `provisional` yksin
 	// on tosi kolmessa eri tilanteessa; ks. backendin `row_state`.
 	let provisionalGroups = $derived.by(() => {
-		const gws = data?.meta?.provisional_gws ?? [];
+		// 🔴 Portin 20. kierros: tasta puuttui mobiilin rivipohjainen
+		// varapolku. Jos payloadista puuttuu `meta.provisional_gws` (vanha
+		// vastaus, cache, rollback), SPA piirsi rivikohtaisen merkin muttei
+		// YHTAAN selittavaa lausetta - varaus jonka lukija nakee merkkina
+		// muttei sanoina. Kaksi kopiota samasta saannosta oli ehtinyt
+		// erkaantua yhdessa kierroksessa.
+		const gws =
+			data?.meta?.provisional_gws ??
+			rows.filter((r) => r.provisional).map((r) => r.gw);
 		const tilat = data?.meta?.provisional_states ?? {};
 		const ryhmat = new Map();
 		for (const gw of gws) {
@@ -171,12 +179,17 @@
 			     kierrokset ryhmitellaan tilan mukaan (yksi lause ei saa
 			     koota eri tiloissa olevia kierroksia yhteen). -->
 			{#each provisionalGroups as [tila, gws] (tila)}
+				<!-- 🔴 Portin 20. kierros: `is` rikkoi numeruksen heti kun tila
+				     kantoi kaksi kierrosta ("GW3, GW4 is still being played").
+				     Kaksoispiste valttaa verbin taivutuksen kokonaan ja lukee
+				     oikein myos yhdella kierroksella. -->
 				<p class="prov-note">
+					GW{gws.join(', GW')}:
 					{tila === 'in_progress'
-						? `GW${gws.join(', GW')} is still being played, so these totals will move.`
+						? 'still being played, so these totals will move.'
 						: tila === 'awaiting_check'
-							? `GW${gws.join(', GW')} is played but not confirmed. Bonus points can still change these totals.`
-							: `GW${gws.join(', GW')} is not confirmed yet, so these totals can still move.`}
+							? 'played but not confirmed, so bonus points can still change these totals.'
+							: 'not confirmed yet, so these totals can still move.'}
 				</p>
 			{/each}
 

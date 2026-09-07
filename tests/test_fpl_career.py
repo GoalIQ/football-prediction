@@ -561,9 +561,48 @@ def test_vajaa_summa_kantaa_aina_ikkunan(monkeypatch):
         assert any(x is not None for x in ikkuna), (
             f"{nimi}: luku on vajaa mutta ikkunaa ei ole -> pinta nayttaa "
             f"paljaan labelin taydelliselta")
+        assert sm["all_time_points"] > 0, nimi
         nahty_gw |= ikkuna[0] is not None
         nahty_kausi |= ikkuna[1] is not None
 
     # Kontrolli: molemmat ikkunamuodot esiintyivat, eli testi ei ole vihrea
     # siksi etta vain toinen haara ajettiin.
     assert nahty_gw and nahty_kausi, (nahty_gw, nahty_kausi)
+
+
+def test_ensimmaisen_kauden_manageri_ei_saa_nayttaa_nollaa(monkeypatch):
+    """🔴 PORTIN 20. KIERROS. Invariantti "ikkuna on aina olemassa kun lippu
+    on tosi" on VAARA yhdessa tilassa: ensimmaisen kauden manageri, jolla ei
+    ole yhtaan `past`-kautta eika yhtaan vahvistettua kierrosta. Silloin
+    `all_time_points` on 0 ja MOLEMMAT ikkunat None.
+
+    Edellinen invarianttitesti oli vihrea vain koska sen fikstuurilla oli
+    past-kausia - se ei mitannut ainoaa tilaa jossa invariantti hajoaa
+    (muisti: portin-fikstuuri-kirjoitetaan-korjatusta-tapauksesta).
+
+    Oikea invariantti EI ole "ikkuna on aina olemassa" vaan: **jos ikkunaa ei
+    ole, lukua ei nayteta**. Pintojen puoli on omissa testeissaan
+    (`test_career_card_render.py`, `lib/careerNoteKeys.test.ts`); tama
+    lukitsee sen etta backend kertoo tilan erottuvasti.
+    """
+    cur = [dict(CURRENT_FULL[i], event=i + 1, total_points=(i + 1) * 60)
+           for i in range(2)]
+    boot = {"events": [{"id": 1, "finished": True, "data_checked": False},
+                       {"id": 2, "finished": False, "data_checked": False}]}
+    _mock_fpl(monkeypatch, past=[], current=cur, bootstrap=boot)
+    sm = fc.career(424242)["summary"]
+
+    assert sm["all_time_points"] == 0
+    assert sm["all_time_provisional"] is True
+    assert sm["all_time_through_gw"] is None
+    assert sm["all_time_through_season"] is None
+    # Kausi on silti PELATTU - laskuri ei saa kadota vaikka pisteet ovat 0.
+    assert sm["seasons_played"] == 1
+
+    # NEGATIIVINEN KONTROLLI: sama manageri kun GW1 vahvistetaan. Luku ja
+    # ikkuna ilmestyvat, eli 0 oli tilan seuraus eika vakio.
+    boot["events"][0]["data_checked"] = True
+    _mock_fpl(monkeypatch, past=[], current=cur, bootstrap=boot)
+    ok = fc.career(424242)["summary"]
+    assert ok["all_time_points"] == 60
+    assert ok["all_time_through_gw"] == 1

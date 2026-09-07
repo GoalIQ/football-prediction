@@ -207,7 +207,10 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     # gradaaja kirjoittaa rivin heti kun kaikki ottelut on pelattu. Luku nakyy
     # siis heti, mutta 🔴 se ei saa esiintya lopullisena: klientin on
     # merkittava nama kierrokset. Tyhja lista = kaikki luvut ovat lopullisia.
-    provisional_gws = [int(r.get("gw") or 0) for r in rows if r.get("provisional")]
+    # 🔴 Portin 20. kierros: `int(r.get("gw") or 0)` teki puuttuvasta
+    # kierroksesta nollan, ja pinta olisi piirtanyt "GW0".
+    provisional_gws = [int(r["gw"]) for r in rows
+                       if r.get("provisional") and r.get("gw")]
 
     return {
         "meta": {
