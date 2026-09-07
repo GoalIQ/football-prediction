@@ -61,14 +61,28 @@ def _tiedostot():
         yield f
 
 
-def _osumat(data: bytes) -> list[tuple[int, int]]:
-    """[(rivi, tavu)] kontrollimerkeista."""
+def _osumat(data) -> list[tuple[int, int]]:
+    """[(rivi, koodipiste)] kontrollimerkeista.
+
+    🔴 PORTIN 25. KIERROS (B3): tama luki TAVUJA, ja C1-alue (U+0080-U+009F)
+    koodautuu UTF-8:ssa `0xC2 0x8x` - kumpikaan tavu ei ole alle 32, joten
+    portti oli sokea juuri sille muodolle jonka todennakoisimmin
+    kirjoittaisimme:
+
+        content:"\\2014"   ->  U+0081 + "4"     (em dashin CSS-escape)
+        _osumat(...)      ->  []  eli VIHREA
+
+    `\\25B8` jai kiinni vain koska 0o25 = 0x15 sattui olemaan alle 32.
+    Mitataan siis MERKKEJA, ei tavuja, ja C1 lasketaan mukaan.
+    """
+    teksti = data.decode("utf-8", errors="replace") if isinstance(data, bytes) else data
     ulos, rivi = [], 1
-    for b in data:
-        if b == 10:
+    for ch in teksti:
+        k = ord(ch)
+        if k == 10:
             rivi += 1
-        elif (b < 32 or b == 127) and b not in SALLITUT:
-            ulos.append((rivi, b))
+        elif (k < 32 or 127 <= k <= 159) and k not in SALLITUT:
+            ulos.append((rivi, k))
     return ulos
 
 
@@ -149,42 +163,65 @@ def test_kontrolli_istutettu_tavu_loytyy_jokaisesta_patteesta(tmp_path):
 def test_sivugeneraattorien_css_ei_sisalla_kontrollimerkkeja():
     """🔴 PORTIN 24. KIERROS: LAHDESKANNAUS EI RIITA GENEROIDULLE SIVULLE.
 
-    23. kierroksella loysin `fpl.html:228-229`:sta 0x15-merkkeja ja paattelin
-    etta generaattori on oikein ja artefakti on ajautunut. **Paattely oli
-    vaara**, ja CI todisti sen: seuraava refresh-ajo regeneroi sivun ja toi
-    merkit takaisin.
+    23. kierroksella loysin `fpl.html`:sta 0x15-merkkeja ja paattelin etta
+    generaattori on oikein ja artefakti on ajautunut. **Paattely oli vaara**,
+    ja CI todisti sen: seuraava refresh-ajo regeneroi sivun ja toi merkit
+    takaisin. Syy oli `CSS`-vakiossa: ei-raaka merkkijono, joten CSS-escape
+    luetaan OKTAALINA.
 
-    Syy oli generaattorin Python-lahteessa. `CSS`-vakio ei ole raakamerkkijono,
-    joten `content:"\25B8"` on OKTAALIESCAPE: `\25` = 0o25 = 0x15, ja
-    tuloksena on kontrollimerkki + "B8". CSS tarvitsee yhden kenoviivan, eli
-    Python-lahteessa niita on oltava kaksi.
-
-    Artefaktin korjaaminen ei siis korjaa mitaan; se palaa joka ajossa.
-    Tama portti mittaa GENERAATTORIN TULOSTA, ei tiedostoa levylla.
+    🔴 PORTIN 25. KIERROS (B3): ensimmainen versio tasta portista ohitti
+    kolme asiaa. Kaikki kolme korjattu tassa:
+      1. `len(arvo) < 40` ohitti juuri sen tapauksen - `'content:"\\25B8"'`
+         on 13 merkkia, eli alkuperainen bugi omana vakionaan olisi mennyt
+         lapi.
+      2. Vain moduulitason `str` skannattiin; dict/list/tuple-vakiot olivat
+         sokeita.
+      3. `MODUULIT` oli kasin yllapidetty kahden mittainen lista, vaikka
+         `scripts/`issa on 27 `build_*.py`:ta.
     """
     import importlib
 
-    MODUULIT = ("scripts.build_fpl_page", "scripts.build_fpl_longtail")
-    tarkistettu = 0
-    for nimi in MODUULIT:
+    # Moduulilista JOHDETAAN globista, ei yllapideta kasin.
+    tiedostot = sorted((ROOT / "scripts").glob("build_*.py"))
+    assert len(tiedostot) >= 20, f"vain {len(tiedostot)} builderia loytyi"
+
+    def kavele(arvo, polku, ulos):
+        if isinstance(arvo, str):
+            for rivi, k in _osumat(arvo):
+                ulos.append((polku, rivi, k))
+        elif isinstance(arvo, dict):
+            for k2, v in arvo.items():
+                kavele(k2, f"{polku}.<key>", ulos)
+                kavele(v, f"{polku}[{k2!r}]", ulos)
+        elif isinstance(arvo, (list, tuple, set, frozenset)):
+            for n, v in enumerate(arvo):
+                kavele(v, f"{polku}[{n}]", ulos)
+
+    ongelmat, tarkistettu, ohitettu = [], 0, []
+    for f in tiedostot:
+        nimi = f"scripts.{f.stem}"
         try:
             m = importlib.import_module(nimi)
-        except Exception as e:  # pragma: no cover - importvirhe on oma vikansa
-            raise AssertionError(f"{nimi} ei importattavissa: {e!r}")
+        except Exception as e:
+            # Importvirhe ei ole kontrollimerkkivika; kirjataan ja jatketaan,
+            # mutta maara mitataan alla jottei lista voi tyhjentya hiljaa.
+            ohitettu.append((nimi, repr(e)[:60]))
+            continue
         for attr in dir(m):
             if attr.startswith("_"):
                 continue
             arvo = getattr(m, attr, None)
-            if not isinstance(arvo, str) or len(arvo) < 40:
-                continue
-            tarkistettu += 1
-            osumat = _osumat(arvo.encode("utf-8"))
-            assert not osumat, (
-                f"{nimi}.{attr} sisaltaa kontrollimerkkeja {osumat[:3]} - "
-                "yleisin syy on CSS-escape ei-raa'assa merkkijonossa "
-                "(esim. content:\"\25B8\" -> oktaali 0o25 = 0x15). "
-                "Kirjoita kaksi kenoviivaa.")
-    assert tarkistettu >= 2, f"vain {tarkistettu} vakiota tarkistettu"
+            if isinstance(arvo, (str, dict, list, tuple, set, frozenset)):
+                tarkistettu += 1
+                kavele(arvo, f"{nimi}.{attr}", ongelmat)
+
+    assert not ongelmat, (
+        "generaattorin vakiossa on kontrollimerkkeja - yleisin syy on "
+        "CSS-escape ei-raa'assa merkkijonossa (oktaali). Kirjoita kaksi "
+        f"kenoviivaa: {ongelmat[:5]}")
+    assert tarkistettu >= 100, f"vain {tarkistettu} vakiota tarkistettu"
+    assert len(ohitettu) <= len(tiedostot) // 2, (
+        f"yli puolet buildereista ei importtaudu: {ohitettu[:5]}")
 
 
 def test_kontrolli_oktaaliescape_havaitaan():

@@ -518,19 +518,69 @@ def test_toteumalohko_on_lohko_ei_nimilista():
 
 def test_julkaistu_artefakti_ei_kanna_toteumasegmenttia():
     """Ja LEVYLLA oleva committattu tiedosto on generaattorin kanssa samaa
-    mielta - se oli tasan tama vika (artefakti oli livena vaarin)."""
+    mielta - se oli tasan tama vika (artefakti oli livena vaarin).
+
+    🔴 PORTIN 25. KIERROS (B4): edellinen versio LAPAISI TYHJANA.
+    Regeneroinnin jalkeen kaikki `headline_miss` ovat `None`, joten silmukka
+    osui `continue`en eika yhtaakaan assertia ajettu - testi oli vihrea siksi
+    ettei se mitannut mitaan (muisti: kontrolli-lapaisi-tyhjana).
+    Ja muuttuja oli nimetty `kielletyt`, vaikka joukko sisalsi SALLITUT
+    etuliitteet; logiikka oli oikein, nimi kumosi sen.
+    """
     import json
-    from pathlib import Path
+    from pathlib import Path as _P
+
     from src.models.xp_accuracy_segments import LOHKOT, TOTEUMALOHKOT
-    kielletyt = {e for lohko, e in LOHKOT if lohko not in TOTEUMALOHKOT}
+
+    sallitut_etuliitteet = {e for lohko, e in LOHKOT
+                            if lohko not in TOTEUMALOHKOT}
     levy = json.loads(
-        (Path(__file__).resolve().parents[1] / "data" / "gw_recap.json")
+        (_P(__file__).resolve().parents[1] / "data" / "gw_recap.json")
         .read_text(encoding="utf-8"))
-    for g in levy.get("gameweeks") or []:
+    tarkistettu = _tarkista_artefaktin_segmentit(levy, sallitut_etuliitteet)
+
+    # Tyhja on SALLITTU lopputulos (kaikki `headline_miss` voi olla None),
+    # mutta se ei saa jaada huomaamatta: kontrollitesti alla ajaa saman
+    # tarkistimen keinotekoisella artefaktilla ja vaatii kaatumisen.
+    assert tarkistettu >= 0
+
+
+def _tarkista_artefaktin_segmentit(doc: dict, sallitut: set) -> int:
+    """Palauttaa montako `headline_miss`-lohkoa tarkistettiin. Nostaa
+    AssertionErrorin toteumasegmentista."""
+    n = 0
+    for g in doc.get("gameweeks") or []:
         hm = g.get("headline_miss")
         if not isinstance(hm, dict):
             continue
+        n += 1
         seg = str(hm.get("segment") or "")
-        assert any(seg.startswith(e) for e in kielletyt if e), (
+        assert any(seg.startswith(e) for e in sallitut if e), (
             f"julkaistu artefakti kantaa toteumasegmentin: {seg!r} "
             f"(GW{g.get('gw')})")
+    return n
+
+
+def test_kontrolli_artefaktitarkistin_kaataa_toteumasegmentista():
+    """🔴 PORTIN 25. KIERROS (B4). Ilman tata ylla oleva testi on vihrea
+    siksi ettei artefaktissa ole yhtaan `headline_miss`-lohkoa. Syotetaan
+    SAMALLE tarkistimelle keinotekoinen artefakti ja vaaditaan kaatuminen -
+    tasan se muoto joka oli livena 24. kierrokselle asti.
+    """
+    import pytest
+
+    from src.models.xp_accuracy_segments import LOHKOT, TOTEUMALOHKOT
+    sallitut = {e for lohko, e in LOHKOT if lohko not in TOTEUMALOHKOT}
+
+    paha = {"gameweeks": [{"gw": 1, "headline_miss": {
+        "segment": "haul", "n": 19, "bias": 9.41, "mae": 9.41}}]}
+    with pytest.raises(AssertionError, match="toteumasegmentin"):
+        _tarkista_artefaktin_segmentit(paha, sallitut)
+
+    # Ja positiosegmentti MENEE lapi, eli tarkistin ei kaadu kaikesta.
+    hyva = {"gameweeks": [{"gw": 1, "headline_miss": {
+        "segment": "pos:FWD", "n": 60, "bias": 4.2, "mae": 4.2}}]}
+    assert _tarkista_artefaktin_segmentit(hyva, sallitut) == 1
+    # Tyhja artefakti tarkistaa nolla lohkoa - se on se tila jossa edellinen
+    # versio oli vihrea tyhjyyden takia.
+    assert _tarkista_artefaktin_segmentit({"gameweeks": []}, sallitut) == 0
