@@ -265,7 +265,7 @@ def test_ilman_bootstrapia_ei_julkaista_yhtaan_kierrosta(monkeypatch):
     assert lat["season_state"] == "unconfirmed", lat.get("season_state")
     assert "has not started" not in (lat.get("note") or ""), lat["note"]
     assert "under way" not in (lat.get("note") or ""), lat["note"]
-    assert "could not confirm" in (lat.get("note") or ""), lat["note"]
+    assert "not answering" in (lat.get("note") or ""), lat["note"]
 
     # Kausi on silti PELATTU: laskuri ei saa pudottaa sita.
     _mock_fpl(monkeypatch, bootstrap=BOOTSTRAP_KAIKKI_VALMIIT)
@@ -315,11 +315,34 @@ def test_esikausi_ja_kesken_oleva_kausi_ovat_eri_lauseet(monkeypatch):
     """`available=False` tarkoitti kahta eri asiaa: "kausi ei ole alkanut"
     ja "kausi on alkanut mutta mitaan ei ole viela gradattu". Kortti sanoi
     molemmissa *"New season · Starts GW1"*."""
-    # Aito esikausi: ei yhtaan kierrosta.
-    _mock_fpl(monkeypatch, current=[], bootstrap=BOOTSTRAP_KAIKKI_VALMIIT)
+    # 🔴 PORTIN 18. KIERROS (B2): aito esikausi vaatii etta KAUSI ei ole
+    # alkanut - ei vain etta kayttajan lista on tyhja. Tama fikstuuri kaytti
+    # ennen bootstrapia jossa kaikki kierrokset olivat valmiita, eli se
+    # vaitti esikautta keskella kautta.
+    esikausi_boot = {"events": [
+        {"id": 1, "finished": False, "data_checked": False, "is_next": True,
+         "deadline_time": "2026-08-14T17:30:00Z"}]}
+    _mock_fpl(monkeypatch, current=[], bootstrap=esikausi_boot)
     esikausi = fc.career(424242)["latest_season"]
     assert esikausi["season_state"] == "not_started"
     assert "has not started" in esikausi["note"]
+    assert "GW1 deadline is 2026-08-14" in esikausi["note"], esikausi["note"]
+
+    # Kesken kautta liittynyt manageri: `current` on tyhja, mutta KAUSI on
+    # alkanut. Mitattu tuotannosta 7.9 (entryt 10462380 ja 10542666): kortti
+    # sanoi naille *"The new FPL season has not started yet"* kun GW3 oli
+    # pelattavana. Vaite on kaudesta, ja se oli vaara.
+    kesken_boot = {"events": [
+        {"id": 1, "finished": True, "data_checked": True},
+        {"id": 2, "finished": True, "data_checked": True},
+        {"id": 3, "finished": False, "data_checked": False, "is_current": True},
+        {"id": 4, "finished": False, "data_checked": False, "is_next": True,
+         "deadline_time": "2026-09-12T17:30:00Z"}]}
+    _mock_fpl(monkeypatch, current=[], bootstrap=kesken_boot)
+    liittyja = fc.career(424242)["latest_season"]
+    assert liittyja["season_state"] == "no_gameweeks_yet", liittyja
+    assert "has not started" not in liittyja["note"], liittyja["note"]
+    assert "No scored gameweeks yet" in liittyja["note"], liittyja["note"]
 
     # Kausi kaynnissa, GW1 kesken.
     gw1_kesken = {"events": [{"id": 1, "finished": False, "data_checked": False}]}
@@ -385,3 +408,80 @@ def test_chipit_pysahtyvat_samaan_kierrokseen_kuin_luvut(monkeypatch):
     _mock_fpl(monkeypatch, current=current, chips=chips, bootstrap=kaikki)
     lat2 = fc.career(424242)["latest_season"]
     assert [c["gw"] for c in lat2["chips_used"]] == [2, 3]
+
+
+def test_osittain_vahvistettu_kausi_merkitaan_myos_vajaaksi(monkeypatch):
+    """🔴 PORTIN 18. KIERROS (B1). Lippu oli `not available`, eli se laukesi
+    vain siina harvinaisessa tilassa jossa yhtaan kierrosta ei ole
+    vahvistettu. Tavallinen tila on "osa pudotettu", ja siina summa oli vajaa
+    mutta label paljas.
+
+    Mitattu tuotannosta 7.9 (entry 116920): kortti nayttti 149 pisteella
+    labelilla *"All-time points"* kun lukijan oma FPL-sivu sanoi 221.
+    """
+    current = [dict(CURRENT_FULL[i], event=i + 1, total_points=(i + 1) * 60)
+               for i in range(3)]
+    boot = {"events": [
+        {"id": 1, "finished": True, "data_checked": True},
+        {"id": 2, "finished": True, "data_checked": True},
+        {"id": 3, "finished": True, "data_checked": False}]}  # kesken
+    _mock_fpl(monkeypatch, current=current, bootstrap=boot)
+    out = fc.career(424242)
+    lat, sm = out["latest_season"], out["summary"]
+    assert lat["available"] is True, "GW1-2 on vahvistettu, kauden pitaa nakya"
+    assert sm["provisional_gws_excluded"] == [3]
+    assert sm["all_time_provisional"] is True, (
+        "vajaa summa merkittiin taydelliseksi")
+    assert sm["all_time_through_gw"] == 2
+    assert sm["all_time_points"] == sum(x["total_points"] for x in PAST) + 120
+
+    # NEGATIIVINEN KONTROLLI: kun kaikki kolme on vahvistettu, lippu on False
+    # ja luku on suurempi. Ilman tata testi voisi olla vihrea siksi etta
+    # lippu on aina True.
+    kaikki = {"events": [dict(e, data_checked=True) for e in boot["events"]]}
+    _mock_fpl(monkeypatch, current=current, bootstrap=kaikki)
+    ok = fc.career(424242)["summary"]
+    assert ok["all_time_provisional"] is False
+    assert ok["all_time_through_gw"] == 3
+    assert ok["all_time_points"] == sum(x["total_points"] for x in PAST) + 180
+
+
+def test_jokainen_saatavuustila_kantaa_kaannosavaimen():
+    """🔴 Portin 18. kierros (lisaloydos): `latest_season.note` renderoitiin
+    mobiilissa RAAKANA, ja se on vain englanniksi - es/pt-lukija sai
+    englanninkielisen lauseen keskelle kaannettya nakymaa.
+
+    Invariantti mitataan JOKAISESTA haarasta, ei siita jonka satun ajamaan
+    (saanto 6a kohta 3). Uusi haara ilman avainta kaataa taman.
+    """
+    tapaukset = [
+        ([], [], [3], False, None),                       # unconfirmed
+        # Bootstrap alhaalla JA kayttajalla ei yhtaan kierrosta: emme tieda
+        # onko kausi alkanut, joten emme saa sanoa etta se ei ole.
+        ([], [], None, False, None),                      # unconfirmed
+        ([], [], [3], True, None),                        # no_final_gw_yet
+        ([], [], None, True,                              # not_started
+         [{"id": 1, "finished": False, "is_next": True,
+           "deadline_time": "2026-08-14T17:30:00Z"}]),
+        ([], [], None, True,                              # no_gameweeks_yet
+         [{"id": 1, "finished": True, "data_checked": True}]),
+    ]
+    nahdyt = set()
+    for current, past, pudotettu, vahv, events in tapaukset:
+        out = fc._latest_season(current, past, pudotettu, vahv, events)
+        tila = out["season_state"]
+        nahdyt.add(tila)
+        assert out.get("note_key"), f"{tila}: note_key puuttuu"
+        assert out["note_key"].startswith("fantasy.career.note."), out["note_key"]
+        assert out.get("note"), f"{tila}: englanninkielinen varapolku puuttuu"
+        assert isinstance(out.get("note_params"), dict), tila
+        # Parametrit tayttavat avaimen: jos avain sanoo gw, se on mukana.
+        if "gw" in out["note_key"] or "GW" in out["note"]:
+            pass  # deadline-muodot kantavat gw:n, tarkistetaan alla
+    assert nahdyt == {"unconfirmed", "no_final_gw_yet", "not_started",
+                      "no_gameweeks_yet"}, nahdyt
+
+    # Ja parametrit ovat oikeat siella missa lause nimeaa kierroksen.
+    kesken = fc._latest_season([], [], [3], True, None)
+    assert kesken["note_params"] == {"gw": 3}
+    assert "GW3" in kesken["note"]

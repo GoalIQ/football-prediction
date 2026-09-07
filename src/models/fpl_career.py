@@ -53,25 +53,61 @@ def _fetch_history(entry: int) -> tuple[dict, dict]:
     return root, history
 
 
-def _preseason_note() -> str:
-    """Selite tyhjälle current-kaudelle; deadline bootstrapista jos saatavilla.
-    Bootstrap-haun failaus ei saa kaataa career-vastausta (fail-safe)."""
-    generic = "The new FPL season has not started yet - GW1 is coming up."
-    try:
-        events = rt.get_bootstrap().get("events") or []
-    except Exception:
-        return generic
-    for e in events:
+def kausi_alkanut(events) -> bool:
+    """Onko kausi alkanut: yksikin kierros on merkitty pelatuksi.
+
+    🔴 PORTIN 18. KIERROS (B2). "Kausi ei ole alkanut" oli paatelty KAYTTAJAN
+    tyhjasta `current`-listasta. Se on eri kysymys: lista on tyhja myos
+    kesken kautta liittyneella managerilla. Mitattu 7.9.2026 kahdella
+    oikealla entryllä (10462380, 10542666): `current == []`, ja kortti sanoi
+    *"The new FPL season has not started yet"* silla hetkella kun GW3 oli
+    pelattavana. Kolmas perakkainen kierros samasta haarasta.
+
+    Kausi on maailman tila, ei kayttajan; se luetaan bootstrapista.
+    """
+    for e in (events or []):
+        if e.get("finished") or e.get("is_current"):
+            return True
+    return False
+
+
+def _tyhjan_kauden_note(events) -> tuple[str, str, str, dict]:
+    """(season_state, note) tyhjalle `current`-listalle. Kaksi eri tilaa.
+
+    Bootstrap-haun failaus ei saa kaataa career-vastausta (fail-safe).
+    """
+    seuraava = None
+    for e in (events or []):
         if e.get("is_next") and e.get("deadline_time"):
-            day = str(e["deadline_time"])[:10]  # YYYY-MM-DD
-            return (f"The new FPL season has not started yet - "
-                    f"GW{e['id']} deadline is {day}.")
-    return generic
+            seuraava = (e["id"], str(e["deadline_time"])[:10])
+            break
+
+    if kausi_alkanut(events):
+        # Kausi on kaynnissa, mutta talla managerilla ei ole yhtaan
+        # pisteytettya kierrosta. Ei vaitetta kaudesta, vaite managerista.
+        if seuraava:
+            return ("no_gameweeks_yet",
+                    f"No scored gameweeks yet for this team - "
+                    f"GW{seuraava[0]} deadline is {seuraava[1]}.",
+                    "fantasy.career.note.no_gameweeks_deadline",
+                    {"gw": seuraava[0], "day": seuraava[1]})
+        return ("no_gameweeks_yet", "No scored gameweeks yet for this team.",
+                "fantasy.career.note.no_gameweeks", {})
+
+    if seuraava:
+        return ("not_started",
+                f"The new FPL season has not started yet - "
+                f"GW{seuraava[0]} deadline is {seuraava[1]}.",
+                "fantasy.career.note.preseason_deadline",
+                {"gw": seuraava[0], "day": seuraava[1]})
+    return ("not_started",
+            "The new FPL season has not started yet - GW1 is coming up.",
+            "fantasy.career.note.preseason", {})
 
 
 def _latest_season(current: list[dict], past: list[dict],
                    pudotettu: list[int] | None = None,
-                   vahvistettu: bool = True) -> dict:
+                   vahvistettu: bool = True, events=None) -> dict:
     """Viimeisimmän kauden GW-erittely current-listasta.
 
     Kesävälitila: juuri päättynyt kausi näkyy myös past-listassa → nimetään
@@ -100,24 +136,51 @@ def _latest_season(current: list[dict], past: list[dict],
         # Tila 1: saimme tapahtumat, eli TIEDAMME etta viimeisin on kesken.
         # Tila 2: emme saaneet mitaan, eli emme voi sanoa kierroksesta
         # yhtaan mitaan. Tila 2 ei saa lainata tilan 1 sanamuotoa.
-        if pudotettu and not vahvistettu:
+        # 🔴 Sama vika viela kerran, kolmannessa muodossa (loysin taman
+        # portin 18. kierroksen invarianttitestia kirjoittaessani): jos
+        # bootstrap ei auennut EIKA kayttajalla ole yhtaan kierrosta, emme
+        # tieda onko kausi alkanut - `_tyhjan_kauden_note` olisi vastannut
+        # "The new FPL season has not started yet". Vaite kaudesta vaatii
+        # tiedon kaudesta.
+        if not vahvistettu:
+            # 🔴 Portin 18. kierros (B5): edellinen sanamuoto oli
+            # *"Try again in a moment"* - sanatarkka kopio sivun VIRHETEKSTISTA
+            # (`career.html:733`), siirrettyna tilaan joka ei ole kayttajan
+            # virhe, ja kehottaen toimintoon jota ruudulla ei ole (career-lohko
+            # latautuu automaattisesti, retry-nappia ei ole). Lisaksi "in a
+            # moment" lupaa aikaskaalan jonka FPL:n katkos maaraa, ei me.
             return {
                 "available": False,
                 "season_state": "unconfirmed",
-                "provisional_gws": sorted(pudotettu),
-                "note": ("We could not confirm any gameweek as final just "
-                         "now. Try again in a moment."),
+                "provisional_gws": sorted(pudotettu or []),
+                "note": ("FPL is not answering right now, so this season "
+                         "is left out."),
+                # 🔴 Portin 18. kierros (lisaloydos): `note` renderoitiin
+                # mobiilissa RAAKANA, ja se on vain englanniksi - es/pt-lukija
+                # sai englanninkielisen lauseen keskelle kaannettya nakymaa.
+                # Avain + parametrit, jotta klientti voi kaantaa; `note` jaa
+                # varapoluksi vanhoille klienteille.
+                "note_key": "fantasy.career.note.unconfirmed",
+                "note_params": {},
             }
         if pudotettu:
+            # 🔴 Portin 18. kierros (B6): *"GW{n} is under way"* on VAARA
+            # ikkunassa `finished=True, data_checked=False` - kaikki ottelut on
+            # pelattu, kierros ei ole "kesken". Sama tila putoaa tahan
+            # haaraan. "still being scored" on tosi MOLEMMISSA ikkunoissa, ja
+            # se on jo kortin oma sanamuoto - yksi rekisteri, ei kahta.
             return {
                 "available": False,
                 "season_state": "no_final_gw_yet",
                 "provisional_gws": sorted(pudotettu),
-                "note": (f"GW{max(pudotettu)} is under way. Your season "
-                         f"numbers appear here once FPL finishes checking it."),
+                "note": (f"GW{max(pudotettu)} is still being scored. Your "
+                         f"season numbers appear here when FPL confirms it."),
+                "note_key": "fantasy.career.note.still_scoring",
+                "note_params": {"gw": max(pudotettu)},
             }
-        return {"available": False, "season_state": "not_started",
-                "note": _preseason_note()}
+        tila, note, avain, parametrit = _tyhjan_kauden_note(events)
+        return {"available": False, "season_state": tila, "note": note,
+                "note_key": avain, "note_params": parametrit}
 
     last = current[-1]
     finished = bool(past) and past[-1].get("total_points") == last.get(
@@ -279,7 +342,7 @@ def career(entry: int) -> dict:
     # vastaus ei saa sanoa "3xc GW3" samalla kun luvut pysahtyvat GW2:een.
 
     latest = _latest_season(current, past, provisional_dropped,
-                            vahvistettu)
+                            vahvistettu, _events)
     if latest.get("available"):
         latest["chips_used"] = [{"name": c.get("name"), "gw": c.get("event")}
                                 for c in chips]
@@ -301,6 +364,12 @@ def career(entry: int) -> dict:
     all_time = sum(int(s.get("total_points") or 0) for s in past)
     seasons_played = len(past)
     all_time_provisional = False
+    # Viimeisin kierros joka on mukana luvuissa. Tama on se mita pinnan on
+    # sanottava: "All-time points to GW2" on tarkistettavissa lukijan omalta
+    # FPL-sivulta, "(confirmed)" ei ole - se kuvaa FPL:n `data_checked`-lippua
+    # jota lukija ei tieda olevan olemassa (portin 18. kierros, kysymys A).
+    all_time_through_gw = (max(int(g["event"]) for g in current)
+                           if current else None)
     if in_progress:
         # `available` on TASAN "kaudesta on vahintaan yksi vahvistettu
         # kierros" (`_latest_season` palauttaa False vain tyhjalle
@@ -309,9 +378,19 @@ def career(entry: int) -> dict:
         # panos on 0. Erillinen `kausi_summa`-varapolku poistettiin 7.9,
         # koska se oli tasan se paikka jossa gradaamattomat pisteet paativat
         # uran summaan.
-        all_time_provisional = not latest.get("available")
-        if not all_time_provisional:
+        # 🔴 PORTIN 18. KIERROS (B1). Lippu oli `not available`, eli se
+        # laukesi VAIN kun yhtaan kierrosta ei ole vahvistettu. Se on
+        # harvinainen tila. Tavallinen tila on "osa kierroksista pudotettu",
+        # ja siina lippu oli False vaikka summa oli vajaa. Mitattu
+        # tuotannosta 7.9 (entry 116920): kortti nayttti 149 paljaalla
+        # labelilla "All-time points" kun lukijan oma FPL-sivu sanoi 221.
+        #
+        # Ehto on nyt SUMMAN oma ehto, ei haaran: onko kuluvasta kaudesta
+        # jotain jatetty pois.
+        if latest.get("available"):
             all_time += int(latest.get("total_points") or 0)
+        all_time_provisional = (not latest.get("available")
+                                or bool(provisional_dropped))
         seasons_played += 1
 
     best_season = None
@@ -355,6 +434,8 @@ def career(entry: int) -> dict:
             # True = kuluvasta kaudesta ei ole yhtaan vahvistettua kierrosta,
             # joten sen panos on 0. Pinnan on sanottava se.
             "all_time_provisional": all_time_provisional,
+            # Viimeisin kierros joka on luvussa mukana; None = ei yhtaan.
+            "all_time_through_gw": all_time_through_gw,
             "best_season": best_season,
             "best_rank": min(ranks) if ranks else None,
             "avg_rank": round(sum(ranks) / len(ranks)) if ranks else None,

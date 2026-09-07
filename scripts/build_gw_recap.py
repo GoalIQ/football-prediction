@@ -76,13 +76,30 @@ def running_record(rows: list[dict]) -> dict:
                   and r.get("points") is not None]
     if not lopulliset:
         return {"gameweeks": 0, "note": "ei lopullisesti gradattuja kierroksia"}
-    # 🔴 Portin 17. kierros: `points` on BRUTTO ja FPL:n `average_entry_score`
-    # on NETTO. Bruttovertailu antaa mallille sen oman hittinsa verran
-    # etumatkaa - ja tama on mallin JULKINEN track record, eli viikkopostauksen
-    # luku. Netto johdetaan lukuhetkella samalla lukijalla kuin muualla.
-    diffs = [model_points_net(r) - int(r["fpl_average"]) for r in lopulliset]
+    # 🔴 PORTIN 18. KIERROS KUMOSI 17. KIERROKSEN KORJAUKSEN, JA OLI OIKEASSA.
+    # 17. kierroksella vaihdoin taman nettoon olettaen etta FPL:n
+    # `average_entry_score` on netto siirtorangaistuksista. **Se on brutto.**
+    #
+    # Mitattu kahdesti riippumattomasti 7.9.2026, eri siemenilla ja eri
+    # otoskoolla. Oma otos (700 entrya, seed 20260907) kalibroituna GW1:lla,
+    # jossa hitit eivat voi vaikuttaa (brutto == netto):
+    #     GW1 otosharha = +1.26 p (otos 51.26 vs julkaistu 50)
+    #     GW2 brutto 82.37 - 1.26 = 81.11  vs julkaistu 81  OSUU
+    #     GW2 netto  81.15 - 1.26 = 79.89  vs julkaistu 81  EI OSU
+    # Julkaisutarkistajan otos (2 400 entrya, eri siemen) paatyi samaan.
+    #
+    # Siksi VERTAILU ON BRUTTO VS BRUTTO. Se ei rankaise mallia sen omista
+    # hiteista vertailukohtaa vastaan joka ei rankaise kenenkaan omistaan -
+    # ja nettokeskiarvoa ei ole olemassa, koska FPL ei julkaise sellaista.
+    # Peruste kirjoitetaan artefaktiin (`basis`), jotta postauksen kirjoittaja
+    # nakee sen eika joudu paattelemaan.
+    diffs = [int(r["points"]) - int(r["fpl_average"]) for r in lopulliset]
     return {
         "gameweeks": len(lopulliset),
+        # Kumpaa lukua verrataan. FPL:n `average_entry_score` on BRUTTO
+        # (mitattu 7.9.2026), joten mallin puoli on myos brutto.
+        "basis": "gross: both sides before transfer hits "
+                 "(FPL's average_entry_score is gross)",
         "gw_list": [int(r["gw"]) for r in lopulliset],
         "total_diff": sum(diffs),
         "avg_diff": round(sum(diffs) / len(diffs), 1),
@@ -203,8 +220,8 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
                 "points": pts,
                 "points_net": model_points_net(r),
                 "average": avg,
-                # Netto vs netto, ks. `running_record`.
-                "diff": (model_points_net(r) - int(avg)
+                # Brutto vs brutto, ks. `running_record`.
+                "diff": (int(pts) - int(avg)
                          if pts is not None and avg is not None else None),
                 "bench_points": r.get("bench_points"),
                 "transfer_cost": r.get("transfer_cost"),

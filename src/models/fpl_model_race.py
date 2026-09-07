@@ -96,6 +96,36 @@ def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
     return out
 
 
+# Kolme tilaa, yksi lukija. `provisional` yksin on tosi kahdessa taysin eri
+# tilanteessa, ja `fantasy.race.provisional_note` nimesi molemmissa syyksi
+# bonuksen. Mitattu 7.9.2026: GW3 oli `is_current` ja `finished` False - eli
+# otteluita oli KESKEN - ja teksti sanoi lukijalle "FPL hasn't confirmed bonus
+# points yet". Lukija joka laskee omat bonuksensa ei paase lukuun.
+#
+# `unknown` on tarkoituksellinen kolmas haara eika virhe: kun rivilla ei ole
+# `finished`-kenttaa (vanhat rivit, toinen kirjoittaja), emme voi sanoa
+# KUMMASTA tilasta on kyse. Silloin teksti ei nimea mekanismia lainkaan.
+# Vrt. muisti `mekanismin-nimeaminen-on-vaite`.
+ROW_FINAL = "final"
+ROW_IN_PROGRESS = "in_progress"      # otteluita kesken
+ROW_AWAITING_CHECK = "awaiting_check"  # pelattu, FPL ei ole vahvistanut
+ROW_UNKNOWN = "unknown"
+
+
+def row_state(row: dict) -> str:
+    """Kierroksen tila rivin omista kentista. Ei kutsu mitaan ulkoista."""
+    if not isinstance(row, dict):
+        return ROW_UNKNOWN
+    if not row.get("provisional"):
+        return ROW_FINAL
+    fin = row.get("finished")
+    if fin is True:
+        return ROW_AWAITING_CHECK
+    if fin is False:
+        return ROW_IN_PROGRESS
+    return ROW_UNKNOWN
+
+
 def build_race(scores_log: dict | None, entry_history: dict | None,
                premium: bool = True) -> dict:
     """Puhdas ydin: mallin loki + käyttäjän historia → race-payload."""
@@ -133,6 +163,8 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # Rivikohtainen lippu, jotta klientti voi merkita YHDEN kierroksen
             # ilman etta sen tarvitsee ristiinlukea meta.provisional_gws.
             "provisional": bool(r.get("provisional")),
+            # Pinta ei saa paatella syyta `provisional`ista: ks. `row_state`.
+            "state": row_state(r),
             "your_points": None,
             "diff": None,
             "cumulative_diff": None,
@@ -185,6 +217,8 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "masked": not premium,
             "model_plays_chips": False,
             "provisional_gws": provisional_gws,
+            "provisional_states": {str(x["gw"]): x["state"] for x in out_rows
+                                   if x["state"] != ROW_FINAL},
             "note": note,
             "note_code": note_code,
         },

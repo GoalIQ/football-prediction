@@ -103,26 +103,51 @@ def test_kesken_oleva_kierros_sanotaan_kortilla():
     assert "still being scored" not in _arvo(puhdas, "This season")
 
 
-def test_kolme_saatavuustilaa_ovat_kolme_eri_lausetta():
-    """M12b + portin 17. kierros B3. `available=False` tarkoitti kolmea eri
-    asiaa, ja kortti sanoi kaikissa "New season - Starts GW1"."""
+def test_viisi_saatavuustilaa_ovat_viisi_eri_lausetta():
+    """M12b + portin 17. kierros B3 + portin 18. kierros B2 ja F.
+
+    `available=False` tarkoitti alun perin YHTA asiaa ja kortti sanoi
+    kaikissa *"New season - Starts GW1"*. Tiloja on viisi, ja viides on
+    nimeamaton `else` joka EI saa tulostaa vahvinta vaitetta."""
     kesken = _render(_payload(latest_season={
         "available": False, "season_state": "no_final_gw_yet"}))
     assert _arvo(kesken, "This season") == "Not final yet"
 
     tuntematon = _render(_payload(latest_season={
         "available": False, "season_state": "unconfirmed"}))
-    assert _arvo(tuntematon, "This season") == "Not confirmed"
+    assert _arvo(tuntematon, "This season") == "FPL not reachable"
+
+    liittyja = _render(_payload(latest_season={
+        "available": False, "season_state": "no_gameweeks_yet"}))
+    assert _arvo(liittyja, "This season") == "No gameweeks yet"
 
     esikausi = _render(_payload(latest_season={
         "available": False, "season_state": "not_started"}))
     assert _arvo(esikausi, "New season") == "Starts GW1"
 
 
-def test_vajaa_uran_summa_merkitaan_labeliin():
-    """Portin 17. kierros B4: uran summa ei saa nayttaa taydelliselta kun
-    kuluvan kauden panos on 0."""
-    out = _render(_payload(summary={"all_time_provisional": True}))
-    assert _arvo(out, "All-time points (confirmed)") == "2,210"
+def test_tuntematon_tila_ei_tulosta_vahvinta_vaitetta():
+    """🔴 Portin 18. kierros (F). Nimeamaton `else` tulosti *"New season -
+    Starts GW1"* mille tahansa vastaukselle jossa `season_state` puuttuu:
+    vanha API-build, kentan uudelleennimeaminen, tai deploy jossa sivu menee
+    ulos ennen API:a. Tasan sama fail-open kuin `optimal_proven === false`."""
+    puuttuu = _render(_payload(latest_season={"available": False}))
+    assert _arvo(puuttuu, "This season") == "-"
+    outo = _render(_payload(latest_season={
+        "available": False, "season_state": "jokin_uusi_tila_2027"}))
+    assert _arvo(outo, "This season") == "-"
+
+
+def test_vajaa_uran_summa_nimeaa_kierroksen():
+    """🔴 Portin 18. kierros (A + B1). *"(confirmed)"* kuvasi FPL:n sisaista
+    `data_checked`-lippua, jota lukija ei tieda olevan olemassa. Kierroksen
+    numero on tarkistettavissa lukijan omalta FPL-sivulta."""
+    out = _render(_payload(summary={"all_time_provisional": True,
+                                    "all_time_through_gw": 2}))
+    assert _arvo(out, "All-time points to GW2") == "2,210"
     # Kontrolli: ilman lippua label on tavallinen.
     assert _arvo(_render(_payload()), "All-time points") == "2,210"
+    # Ja jos kierrosta ei tiedeta, EI keksita numeroa.
+    ilman = _render(_payload(summary={"all_time_provisional": True,
+                                      "all_time_through_gw": None}))
+    assert _arvo(ilman, "All-time points") == "2,210"

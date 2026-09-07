@@ -78,6 +78,16 @@ def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
             "gradable": all_played,
             # data_checked = FPL on vahvistanut bonukset ja dubious goalsit
             "provisional": not bool(ev.get("data_checked")),
+            # 🔴 7.9: `provisional` YKSIN ei riita pinnalle, koska se on tosi
+            # kahdessa taysin eri tilanteessa: kierros on VIELA PELATTAVANA
+            # (ottelut kesken, kaikki voi muuttua) ja kierros on PELATTU mutta
+            # FPL ei ole vahvistanut bonuksia. `fantasy.race.provisional_note`
+            # nimesi molemmissa syyksi bonuksen - mitattu 7.9: GW3 oli
+            # `is_current`, `finished` False, eli otteluita oli kesken, ja
+            # teksti sanoi lukijalle "FPL hasn't confirmed bonus points yet".
+            # Vaarin nimetty mekanismi on pahempi kuin nimeamaton (muisti:
+            # mekanismin-nimeaminen-on-vaite).
+            "finished": bool(ev.get("finished")),
             "fpl_average": ev.get("average_entry_score"),
             "n_fixtures": len(fx),
         }
@@ -143,6 +153,7 @@ def _grade_gw(gw: int, history_by_gw: dict[int, dict], status: dict) -> dict:
             for a in (picks.get("automatic_subs") or [])
         ],
         "provisional": status["provisional"],
+        "finished": status["finished"],
         "graded_at": _dt.datetime.now(_dt.timezone.utc)
         .replace(microsecond=0).isoformat(),
     }
