@@ -36,36 +36,29 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# (juuri, rekursiivinen). Juuritason tiedostot skannataan ilman rekursiota,
-# jotta emme kavele `node_modules`iin tai `.venv`iin.
-JUURET: tuple[tuple[str, bool], ...] = (
-    ("src", True),
-    ("scripts", True),
-    ("tests", True),
-    ("api", True),
-    ("web/pro-spa/src", True),
-    (".github/workflows", True),
-    (".", False),          # repojuuren *.html, *.js, *.yml
-)
+# 🔴 PORTIN 24. KIERROS (B5): TASSA OLI KASIN YLLAPIDETTY JUURILISTA, ja
+# sen validoiva kontrolli enumeroi SAMAN listan - puuttuva juuri oli sokea
+# piste maaritelman nojalla. Mitattu: 2 820 tiedostoa listan ulkopuolella,
+# mukaan lukien kaikki `fpl/*.html` ja `fpl/club/*.html` eli julkisia
+# sivuja, samaa tiedostoluokkaa kuin `fpl.html` jonka vika juuri loytyi.
+#
+# Nyt kavellaan koko repo ja ohitetaan nimetyt hakemistot. Puuttuva
+# hakemisto ei voi enaa olla sokea piste, ja kontrolli vertaa
+# EHDOKASJOUKKOON eika omaan listaansa.
 PAATTEET = (".py", ".js", ".mjs", ".cjs", ".ts", ".svelte", ".html", ".yml",
             ".yaml")
 OHITA = {"node_modules", ".venv", "__pycache__", ".git", "build", "dist",
-         ".svelte-kit"}
+         ".svelte-kit", ".pytest_cache", ".mypy_cache", "htmlcov"}
 SALLITUT = {9, 10, 13}
 
 
 def _tiedostot():
-    for juuri, rekursiivinen in JUURET:
-        base = ROOT / juuri
-        if not base.exists():
+    for f in ROOT.rglob("*"):
+        if not f.is_file() or f.suffix not in PAATTEET:
             continue
-        polut = base.rglob("*") if rekursiivinen else base.glob("*")
-        for f in polut:
-            if not f.is_file() or f.suffix not in PAATTEET:
-                continue
-            if OHITA & set(f.parts):
-                continue
-            yield f
+        if OHITA & set(f.parts):
+            continue
+        yield f
 
 
 def _osumat(data: bytes) -> list[tuple[int, int]]:
@@ -107,37 +100,48 @@ def test_kontrolli_havaitsin_loytaa_backspacen():
     assert _osumat(b"\trivi\r\n") == []           # tab, CR, LF sallittuja
 
 
-def test_kontrolli_jokainen_pate_ja_juuri_todella_skannataan(tmp_path):
-    """🔴 PORTIN 23. KIERROS (B5). Paatelistalla oli kaksi patetta joita
-    hakemistolista ei voinut osua. Portti NAYTTI kattavammalta kuin oli.
+def test_kontrolli_skannaus_kattaa_kaikki_ehdokkaat():
+    """🔴 PORTIN 24. KIERROS (B5). Edellinen versio istutti tavun jokaiseen
+    (juuri x pate) -yhdistelmaan - mutta enumeroi SEN SAMAN kasin
+    yllapidetyn listan jota sen piti validoida. Puuttuva juuri oli siis
+    sokea piste maaritelman nojalla, ja mittaus paljasti 2 820 tiedostoa
+    listan ulkopuolella.
 
-    Istutetaan tavu jokaiseen (juuri x pate) -yhdistelmaan ja vaaditaan
-    etta jokainen raportoidaan. Uusi pate tai juuri ei voi jaada kuolleeksi
-    ilman etta tama kaatuu.
+    Nyt kontrolli laskee EHDOKASJOUKON (koko repo, ohituslista poislukien)
+    ja vaatii etta skannaus kattaa sen taysin.
     """
+    ehdokkaat = set()
+    for f in ROOT.rglob("*"):
+        if not f.is_file() or f.suffix not in PAATTEET:
+            continue
+        if OHITA & set(f.parts):
+            continue
+        ehdokkaat.add(f.resolve())
+    skannatut = {f.resolve() for f in _tiedostot()}
+    puuttuu = sorted(str(x.relative_to(ROOT)) for x in ehdokkaat - skannatut)
+    assert not puuttuu, (
+        f"{len(puuttuu)} ehdokastiedostoa jaa ulkopuolelle: {puuttuu[:15]}")
+    assert len(skannatut) > 1000, (
+        f"skanneri loysi vain {len(skannatut)} tiedostoa - ohituslista "
+        "on liian laaja tai kavely ei toimi")
+
+
+def test_kontrolli_istutettu_tavu_loytyy_jokaisesta_patteesta(tmp_path):
+    """Istutetaan tavu jokaiseen PAATTEET-arvoon repojuureen ja vaaditaan
+    etta jokainen raportoidaan. Uusi pate ei voi jaada kuolleeksi."""
     istutetut = []
     try:
-        for juuri, _ in JUURET:
-            base = ROOT / juuri
-            if not base.exists():
-                continue
-            for pate in PAATTEET:
-                f = base / f"_kontrollimerkki_koe{pate}"
-                f.write_bytes(b"x = 1  " + bytes([8]) + b"\n")
-                istutetut.append(f)
-        assert istutetut, "yhtaan koetiedostoa ei voitu kirjoittaa"
+        for pate in PAATTEET:
+            f = ROOT / f"_kontrollimerkki_koe{pate}"
+            f.write_bytes(b"x = 1  " + bytes([8]) + bytes([10]))
+            istutetut.append(f)
         ongelmat, _ = _skannaa()
         loytyi = {o.split(":")[0] for o in ongelmat}
-        puuttuu = [f.relative_to(ROOT).as_posix() for f in istutetut
-                   if f.relative_to(ROOT).as_posix() not in loytyi]
-        assert not puuttuu, (
-            "nama (juuri x pate) -yhdistelmat EIVAT ole skannauksessa:\n  "
-            + "\n  ".join(puuttuu))
+        puuttuu = [f.name for f in istutetut if f.name not in loytyi]
+        assert not puuttuu, f"naita patteita ei skannata: {puuttuu}"
     finally:
         for f in istutetut:
             f.unlink(missing_ok=True)
-
-    # Ja siivous onnistui: portti on taas vihrea.
     ongelmat, _ = _skannaa()
     assert not ongelmat, ongelmat
 

@@ -115,14 +115,24 @@
 				// 3.9 (audit): toteutuneita FPL-pisteita, ei projektioita.
 				footNote: 'model squad locked before each deadline, scored with official FPL points',
 				footNote2: 'not betting advice',
-				rows: rows.slice(0, 10).map((r, i) => ({
+				// 🔴 Portin 24. kierros (B3): kortti nayttti rivit jotka EIVAT
+				// ole alaotsikon summassa, joten sarakkeen yhteenlasku ei
+				// tasmannyt otsikkoon. Kortilla on vain vertailtavat rivit
+				// silloin kun vertailu on olemassa.
+				rows: (data.totals.you != null ? rows.filter((r) => r.diff != null) : rows)
+					.slice(0, 10)
+					.map((r, i) => ({
 					rank: i + 1,
 					name: `GW${r.gw}`,
 					tag: '',
 					team: '',
 					// Vahvistamaton kierros merkitaan, ei piiloteta.
 					badges: r.provisional ? ['PROV'] : [],
-					mid: String(r.model_points),
+					// 🔴 Portin 24. kierros (B2): `String(null)` on "null", ja
+					// `shareCard.ts`:n `if (r.mid)` pitaa sita totuusarvoisena -
+					// eli kortti piirsi merkkijonon "null" mallin sarakkeeseen.
+					// Viereinen `value` sai vartijan, tama ei.
+					mid: r.model_points != null ? String(r.model_points) : '-',
 					// 3.9 (audit): tyhja renderoityi tyhjana sarakkeena; "-" kertoo
 					// etta lukua ei ole. Sama merkki kuin mobiilissa.
 					value: r.your_points != null ? String(r.your_points) : '-'
@@ -216,9 +226,9 @@
 						<span class="pts">
 							{#if r.model_points == null}
 								{#if r.your_points != null}
-									you {r.your_points} · model not confirmed yet
+									you {r.your_points} · model score not read yet
 								{:else}
-									model not confirmed yet
+									model score not read yet
 								{/if}
 							{:else if r.your_points != null}
 								you {r.your_points} · model {r.model_points}

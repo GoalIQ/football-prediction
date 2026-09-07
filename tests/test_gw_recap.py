@@ -302,7 +302,13 @@ ULKOINEN_TEKSTI = {
 # alkaa pienella ASCII-kirjaimella ja koostuu ASCII-merkeista. Suomi ei
 # kaadu tahan aina, mutta yhdessa heuristiikan kanssa pinta on katettu, ja
 # ennen kaikkea: uusi proosakentta ei paase tanne vahingossa.
-PROOSA = {"basis"}
+PROOSA = {"basis", "note"}
+# 🔴 PORTIN 24. KIERROS (B6): `note` on olemassa VAIN toisessa haarassa
+# (`running_record` kun gradattuja kierroksia ei ole), joten luokittelutesti
+# ei nahnyt sita tamanpaivaisella datalla ja kentta putosi heuristiikkaan
+# joka sai 0/19 uskottavasta suomenkielisesta arvosta. Haara on elava:
+# kauden alku ja kausivaihdos. Luokittelu ajetaan siksi myos SYNTEETTISILLA
+# VAIHEILLA (CLAUDE.md 6a kohta 3), ei vain nykyhetkella.
 
 # Suomen sijapaatteet joita englanti ei tuota sanan lopussa. Heuristiikka on
 # tarkoituksella loysa: se kattaa enumeroimattomat kentat, ja vaarat
@@ -371,6 +377,21 @@ def test_julkinen_artefakti_ei_sisalla_suomea():
                 ongelmat.append(f"{polku} = {x!r}")
 
     kavele(doc)
+
+    # 🔴 Sama kavely SYNTEETTISILLA VAIHEILLA. `running.note` elaa vain
+    # silloin kun gradattuja kierroksia ei ole, eika se nakyisi
+    # tamanpaivaisella datalla lainkaan.
+    from scripts.build_gw_recap import running_record
+    vaiheet = {
+        "ei gradattuja": [],
+        "yksi gradattu": [{"gw": 1, "points": 41, "fpl_average": 50,
+                           "provisional": False}],
+        "vain provisionaalinen": [{"gw": 1, "points": 41, "fpl_average": 50,
+                                   "provisional": True}],
+    }
+    for nimi, rivit in vaiheet.items():
+        kavele(running_record(rivit), f"running[{nimi}]")
+
     assert not ongelmat, (
         "julkiseen artefaktiin paatyy suomea tai enumeroimaton arvo:\n  "
         + "\n  ".join(ongelmat))
