@@ -5218,8 +5218,13 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
     toinen_mae = ""
     if gradaus:
         g_n = gradaus.get("n")
-        g_mae = round(sum(abs(r["diff"]) for r in rivit)
-                      / max(len(rivit), 1), 2)
+        # 🔴 LUETAAN, EI LASKETA. Sama luku on jo `/fpl`:n tarkkuustaulukossa
+        # (`fpl_xp_gw_accuracy.json`). Jos tama sivu laskisi sen itse, kaksi
+        # julkista lukua samasta asiasta voisi eriytya hiljaa - ja tama sivu
+        # laskisi sen VERRATUISTA riveista, kun toinen luku on maaritelmansa
+        # mukaan kaikkien jaadytettyjen yli. Portti vaihtaa lahteen arvoa ja
+        # vaatii etta sivun luku seuraa; laskettu luku ei voisi seurata.
+        g_mae = gradaus.get("mae")
         g_dnp = ((gradaus.get("by_class") or {}).get("dnp") or {}).get("n")
         if g_n and g_mae is not None:
             toinen_mae = (
