@@ -252,6 +252,63 @@ def _review(proj_raw: float, act: int) -> dict:
             "actual": act, "players": []}
 
 
+def test_d1_pyoristys_on_sama_saanto_kuin_js_tofixed():
+    """🔴 C5:n korjaus EI riittanyt: `f"{x:.1f}"` pyoristaa tasatilanteessa
+    PARILLISEEN (half-even), JS `toFixed(1)` SUUREMPAAN (half-up). Portin
+    brute force 200 000 kierroksella loysi 2 021 eroavaa tapausta (1,0 %),
+    ja summausjarjestys ei aiheuttanut yhtaan - vika oli tasan saannossa.
+
+    Fikstuuri on VIKALUOKASTA eika naytteesta: tasatilanne syntyy aina kun
+    raaka summa on tasan x.25 tai x.75, ja se on tavallista koska rivien xp
+    on pyoristetty kahteen desimaaliin.
+    """
+    from src.models.fpl_model_says import _shown_1dp
+    # Portin mittaama tapaus: raaka 39.25 -> kortti "39.3", vanha lause "39.2".
+    assert _shown_1dp(39.25) == 39.3
+    assert _shown_1dp(39.35) == 39.4
+    # Half-even olisi antanut naissa parillisen; half-up antaa suuremman.
+    for x, odotettu in ((0.25, 0.3), (0.75, 0.8), (1.25, 1.3), (2.75, 2.8),
+                        (39.25, 39.3), (54.45, 54.5), (71.15, 71.2)):
+        assert _shown_1dp(x) == odotettu, (x, _shown_1dp(x), odotettu)
+    # Ja lause kayttaa sita.
+    t = MS.review_lines(_review(39.25, 55), rows=11)[0]["text"]
+    assert "39.3" in t, t
+    assert "15.7" in t and "15.8" not in t, t
+
+
+def test_d4_lause_ei_vaita_avaavaa_yhdettatoista_bench_boostilla():
+    """`kuka = "Your eleven" if rows in (None, 11)` oli fail-open chipin
+    suhteen: bench boostilla jossa nelja pickkia putoaa `rows == 11` ja lause
+    vaittaa avaavaa XI:ta. Sama vika kuin U4 kortilla."""
+    bb = MS.review_lines(_review(60.0, 66), rows=11, chip="bboost")[0]["text"]
+    assert "eleven" not in bb, bb
+    assert "Your 11 counted picks" in bb, bb
+    # Ilman chippia 11 riviä on yha avaava XI.
+    assert MS.review_lines(_review(60.0, 66), rows=11)[0]["text"].startswith("Your eleven")
+    # Muut chipit eivat muuta joukkoa.
+    for chip in ("3xc", "freehit", "wildcard", None):
+        t = MS.review_lines(_review(60.0, 66), rows=11, chip=chip)[0]["text"]
+        assert t.startswith("Your eleven"), (chip, t)
+
+
+def test_d2_lause_ei_kayta_samaa_sanamuotoa_kuin_kattavuus():
+    """`players_compared` (pickit joilla molemmat luvut) ja `rows` (rivit
+    joilla multiplier > 0) ovat ERI joukkoja, mutta molemmat renderoityivat
+    sanoilla "both numbers" - 14 ja 10 samalla sanamuodolla samalla ruudulla."""
+    t = MS.review_lines(_review(50.0, 50), rows=10)[0]["text"]
+    assert "both numbers" not in t, t
+    assert "Your 10 counted picks" in t, t
+
+
+def test_r1_so_far_merkitsee_liikkuvan_luvun_ei_jaadytettya():
+    """`so far` kiinnittyi PROJEKTIOON, mutta jaadytetty xP on ainoa luku joka
+    EI liiku. Kortti merkitsee liikkuvaksi toteuman (`55 live pts`), joten
+    kaksi pintaa merkitsi eri luvun kesken olevaksi."""
+    t = MS.review_lines(_review(39.25, 55), rows=11, provisional=True)[0]["text"]
+    assert "55 so far" in t, t
+    assert "39.3 so far" not in t, t
+
+
 def test_c5_lause_laskee_erotuksen_raaasta_summasta_kuten_klientti():
     """🔴 KAKSOISPYORISTYS. `projected` pyoristettiin kahteen desimaaliin ja
     lause muotoili siita yhteen, samalla kun klientti laskee saman summan
@@ -281,7 +338,10 @@ def test_c6_lause_ei_vaita_pelaamista_vaan_vertailtavuutta():
     boostilla FPL antaa multiplier 1 myos 0 minuutin penkkilaiselle."""
     t10 = MS.review_lines(_review(60.0, 66), rows=10)[0]["text"]
     assert "who played" not in t10, t10
-    assert "The 10 picks with both numbers" in t10, t10
+    # D2 (5. kierros): sanamuoto ei saa olla sama kuin kattavuuslauseella,
+    # koska joukot ovat eri (rivit vs pickit joilla molemmat luvut).
+    assert "Your 10 counted picks" in t10, t10
+    assert "both numbers" not in t10, t10
     # 11 riviä on yha luettava muoto.
     t11 = MS.review_lines(_review(60.0, 66), rows=11)[0]["text"]
     assert t11.startswith("Your eleven"), t11

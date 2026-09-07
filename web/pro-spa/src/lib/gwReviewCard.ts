@@ -127,7 +127,9 @@ export function reviewTotals(rows: { projected: number; actual: number }[]) {
   const projectedText = rows.reduce((n, p) => n + p.projected, 0).toFixed(1);
   // Erotus NAYTETYISTA luvuista: pyoristamaton 0.85 nayttaisi "+0.9" vaikka
   // kortilla lukee 71.2 ja 72.
-  return { actual, projectedText, diff: actual - Number(projectedText) };
+  // `rows` mukana, jotta paneelin lause ja kortti puhuvat samasta joukosta
+  // (D2: kaksi eri mittaria oli saanut saman sanamuodon).
+  return { actual, projectedText, diff: actual - Number(projectedText), rows: rows.length };
 }
 
 export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
@@ -202,11 +204,24 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // C4: kattavuus takaisin kortille. Paneeli sanoi "14 of 15" ja kortti
   // vaikeni - sama vaite kahdella pinnalla, toinen hiljaa.
   const valinnaiset: string[] = [];
-  if (compared != null && picks != null && compared < picks) {
+  // R3 (5. kierros): kaksi kattavuusmurtolukua samalla rivilla
+  // ("10 of 11 players compared" + "14/15 compared") on hairio, ei tietoa.
+  // Label kertoo jo rivien kattavuuden, joten pickkien kattavuus sanotaan
+  // vain kun label ei sano mitaan kattavuudesta.
+  const labelKertooKattavuuden = label.includes('compared');
+  if (
+    !labelKertooKattavuuden &&
+    compared != null &&
+    picks != null &&
+    compared < picks
+  ) {
     valinnaiset.push(`${compared}/${picks} compared`);
   }
   valinnaiset.push('worst call first');
 
+  // R2 (5. kierros): FPL:n luku on pakollisten VIIMEINEN, eli jos pakolliset
+  // ylittavat budjetin, renderoija katkaisee tasan tarkistettavan luvun.
+  // Testi mittaa pakolliset erikseen; tama on sen ajonaikainen pari.
   let osat = [...pakolliset, ...valinnaiset];
   while (osat.join(', ').length > SUBTITLE_BUDGET && osat.length > pakolliset.length) {
     osat = osat.slice(0, -1);

@@ -97,7 +97,7 @@
 			     sanoo saman lauseen samoista luvuista. -->
 			{#if data.meta.players_compared != null && data.meta.total_picks != null && data.meta.players_compared < data.meta.total_picks}
 				<span class="muted small"
-					>{data.meta.players_compared} of {data.meta.total_picks} picks had both numbers</span
+					>{data.meta.players_compared} of {data.meta.total_picks} picks had a frozen projection</span
 				>
 			{/if}
 			{#if cardSpec}
@@ -124,9 +124,12 @@
 				     `entry_history.points` on NETTO siirtorangaistuksista, joten -4:n
 				     viikolla syy ei olisi bonus lainkaan. Sanomme kumpi luku on kumpi. -->
 				{#if data.meta.fpl_points != null && totals && data.meta.fpl_points !== totals.actual}
-					Two totals, two sources: FPL's own total for GW{data.meta.reviewed_gw} is
-					{data.meta.fpl_points}. Ours is the live feed added up across your counted
-					picks, and it can move until FPL finishes scoring.
+					<!-- D3: mutabiliteettilause VAIN kesken olevalle kierrokselle.
+					     Lopullisella FPL on lopettanut pisteytyksen, mutta ero voi silti
+					     olla (siirtorangaistus, autosub, pudonnut rivi). -->
+					FPL's own total for GW{data.meta.reviewed_gw} is {data.meta.fpl_points}. Ours
+					adds up the {totals.rows} picks we could compare{#if data.meta.provisional}, and
+						it can move until FPL finishes scoring{/if}.
 				{:else}
 					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.
 				{/if}

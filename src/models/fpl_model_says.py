@@ -33,8 +33,30 @@ def _nimi(rivi: dict | None) -> str | None:
     return (rivi or {}).get("web_name")
 
 
+def _shown_1dp(x: float) -> float:
+    """Sama pyoristys kuin klientin `Number.toFixed(1)`.
+
+    🔴 D1 (portin 5. kierros). Python `f"{x:.1f}"` pyoristaa tasatilanteessa
+    PARILLISEEN (half-even), JS `toFixed(1)` SUUREMPAAN (half-up). Tasatilanne
+    syntyy aina kun raaka summa on tasan x.25 tai x.75 - ja se on tavallista,
+    koska rivien `xp` on pyoristetty kahteen desimaaliin. Portin brute force
+    200 000 kierroksella: **2 021 eroavaa tapausta (1,0 %)**, ja summausjarjestys
+    ei aiheuttanut yhtaan (vika on tasan saannossa).
+
+    Mitattu tapaus: raaka summa 39.25 -> kortti "39.3", lause "39.2", ja
+    erotukset 15.7 vs 15.8 allekkain samassa nakymassa.
+
+    `Decimal(float)` ottaa doublen TARKAN binaariarvon, joten quantize
+    ROUND_HALF_UP vastaa toFixedia myos silloin kun desimaaliesitys on
+    harhaanjohtava.
+    """
+    from decimal import Decimal, ROUND_HALF_UP
+    return float(Decimal(float(x)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+
+
 def review_lines(review: dict | None, rows: int | None = None,
-                 provisional: bool = False) -> list[dict]:
+                 provisional: bool = False,
+                 chip: str | None = None) -> list[dict]:
     """Katsauslohkon lauseet. Palauttaa [{code, text}] jarjestyksessa.
 
     `code` on vakaa tunniste jota klientti voi kayttaa lokalisointiin ja
@@ -70,33 +92,44 @@ def review_lines(review: dict | None, rows: int | None = None,
         # tapausta 200 000:sta joissa lause ja viereinen rivi nayttivat eri
         # luvun.
         raw = review.get("projected_raw")
-        proj_shown = float(f"{(raw if raw is not None else proj):.1f}")
+        proj_shown = _shown_1dp(raw if raw is not None else proj)
         d = round(act - proj_shown, 1)
         # C6 (7.9): "who played" oli vaite jota payload ei mittaa. Rivi
         # putoaa kun JAADYTETTY xP puuttuu (esim. freezen jalkeen ostettu
         # pelaaja), ei siksi etta pelaaja ei pelannut - ja bench boostilla
         # FPL antaa multiplier 1 myos 0 minuutin penkkilaiselle. Sanotaan
         # se mita joukko oikeasti on.
-        kuka = ("Your eleven" if rows in (None, 11)
-                else f"The {rows} picks with both numbers")
+        # 🔴 D4 (5. kierros): "Your eleven" oli fail-open chipin suhteen.
+        # Bench boostilla jossa nelja pickkia putoaa `rows == 11` ja lause
+        # vaittaa avaavaa yhdettatoista. Sama vika kuin U4 kortilla, joka
+        # korjattiin antamalla `chip` - lause ei saanut sita lainkaan.
+        #
+        # 🔴 D2 (5. kierros): "picks with both numbers" oli SAMA SANAMUOTO
+        # kuin paneelin kattavuuslauseella, mutta ERI JOUKKO:
+        # `players_compared` = pickit joilla on molemmat luvut (14), `rows` =
+        # rivit joilla multiplier > 0 (10). Kaksi lukua samalla sanamuodolla
+        # samalla ruudulla. Nyt eri sanat eri mittareille.
+        bboost = (chip or "").lower() == "bboost"
+        kuka = ("Your eleven" if rows in (None, 11) and not bboost
+                else f"Your {rows} counted picks")
         if abs(d) < 1.0:
             out.append({
                 "code": "review.total.level",
-                "text": (f"{kuka} scored {_pts(act)} against a projected "
-                         f"{_pts(proj_shown)}{_so_far}. About where the model had you."),
+                "text": (f"{kuka} scored {_pts(act)}{_so_far} against a projected "
+                         f"{_pts(proj_shown)}. About where the model had you."),
             })
         elif d > 0:
             out.append({
                 "code": "review.total.over",
-                "text": (f"{kuka} scored {_pts(act)} against a projected "
-                         f"{_pts(proj_shown)}{_so_far}. You beat the model by {_pts(d)}."),
+                "text": (f"{kuka} scored {_pts(act)}{_so_far} against a projected "
+                         f"{_pts(proj_shown)}. You beat the model by {_pts(d)}."),
             })
         else:
             # 🔴 Alisuoritus sanotaan yhta suoraan kuin ylisuoritus.
             out.append({
                 "code": "review.total.under",
-                "text": (f"{kuka} scored {_pts(act)} against a projected "
-                         f"{_pts(proj_shown)}{_so_far}, so {_pts(abs(d))} short."),
+                "text": (f"{kuka} scored {_pts(act)}{_so_far} against a projected "
+                         f"{_pts(proj_shown)}, so {_pts(abs(d))} short."),
             })
 
     cap = review.get("captain")

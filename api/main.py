@@ -2750,8 +2750,10 @@ def fantasy_gw_review(
     # B4 (7.9): rivimaara lauseeseen, jotta bench boost ei ole "your eleven".
     _rivit = len([p for p in ((out.get("review") or {}).get("players") or [])
                   if p.get("in_xi") and (p.get("multiplier") or 0) > 0]) or None
+    _meta = out.get("meta") or {}
     out["model_says"] = (review_lines(out.get("review"), _rivit,
-                                      bool((out.get("meta") or {}).get("provisional")))
+                                      bool(_meta.get("provisional")),
+                                      _meta.get("chip"))
                          + flag_lines(out.get("flags"), _seur))
     return out
 
