@@ -45,6 +45,71 @@ CLAIM_RE = re.compile(
     r"free until the GW4 deadline|nothing to pay for GW1)", re.I)
 
 
+#: LUPAUKSEN LAAJUUS. Ilmaisikkuna koskee VAIN webia: mobiilissa Premium on
+#: kaupan tilaus koko ajan. Lupaus ilman "on the web" -rajausta on siis
+#: eri vaite kuin lupaus sen kanssa, ja se on epatosi puhelimessa lukevalle.
+#:
+#: 🔴 MITATTU 7.9.2026: `index.html`in ilmaisikkunabandi - sivun ENSIMMAINEN
+#: elementti navin alla - luki *"Premium is free until the 12 September
+#: deadline"* ilman rajausta, kun seitseman muuta pintaa (faq x3,
+#: creators, fpl, predictions, api) sanoivat "on the web". Landing on niista
+#: se jolla on eniten liikennetta.
+#:
+#: Vanha portti ei voinut nahda tata: se kysyy "elaako lupaus viela ikkunan
+#: sulkeuduttua", ei "onko lupaus oikein rajattu". Sama vaite, kaksi eri
+#: kysymysta (muisti: portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa).
+SCOPE_RE = re.compile(r"(on the web|web only|pro\.goaliq\.app)", re.I)
+
+#: Rajaus saa asua enintaan taman verran merkkeja lupauksen ymparilla. Sama
+#: kappale kylla, mutta ei "jossain samalla sivulla" - varaus kaukana
+#: luvusta ei tavoita lukijaa (muisti: varoitus-kaukana-luvusta).
+SCOPE_IKKUNA = 200
+
+
+def nakyva_teksti(pala: str) -> str:
+    """Poista linkkien kohteet: rajaus on luettava, ei koodissa.
+
+    🔴 TAMA REIKA MITATTIIN MUTAATIOTESTILLA 7.9.2026, ja ilman sita koko
+    rajausportti oli inertti juuri silla sivulla jota varten se kirjoitettiin.
+    `index.html`in ilmaisikkunabandissa lupauksen 120 merkin paassa on
+    `href="https://pro.goaliq.app/"`, joten `SCOPE_RE` osui URLiin ATTRIBUUTIN
+    SISALLA ja portti oli vihrea vaikka nakyva teksti ei rajannut mitaan.
+    Lukija ei lue hrefia (muisti: kaavion rajaus on NAKYVASSA tekstissa).
+
+    Mutta tageja EI poisteta kokonaan: `faq.html`in oma rajaus asuu
+    `<meta name="description" content="... free on the web until ...">`
+    -attribuutissa, joka nakyy hakutuloksessa. Tagien pyyhkiminen olisi
+    vaihtanut yhden vaaran positiivisen toiseen - portti olisi kaatunut
+    rivilta joka on oikein. Poistetaan siis tasan se mika ei ole luettavaa:
+    linkkien kohteet ja paljaat URLit.
+    """
+    ilman_linkkeja = re.sub(
+        r"""\s(?:href|src|action|data-href)\s*=\s*(["'])[^"']*\1""",
+        " ", pala, flags=re.I)
+    ilman_urleja = re.sub(r"https?://\S+", " ", ilman_linkkeja)
+    return re.sub(r"\s+", " ", ilman_urleja)
+
+
+def scope_misses(paths=None) -> list[tuple[str, int, str]]:
+    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta."""
+    ulos = []
+    for p in (paths if paths is not None else surfaces()):
+        try:
+            txt = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if is_guarded_source(p, txt):
+            continue
+        for m in CLAIM_RE.finditer(txt):
+            a = max(0, m.start() - SCOPE_IKKUNA)
+            b = min(len(txt), m.end() + SCOPE_IKKUNA)
+            if not SCOPE_RE.search(nakyva_teksti(txt[a:b])):
+                rivi = txt.count("\n", 0, m.start()) + 1
+                ulos.append((str(p.relative_to(ROOT)), rivi,
+                             txt[m.start():m.end()]))
+    return ulos
+
+
 def surfaces() -> list[Path]:
     out: list[Path] = []
     for g in SURFACE_GLOBS:
@@ -152,6 +217,15 @@ def main(argv=None) -> int:
               "todentaa (fail-closed).")
         return 1
     found = hits(paths)
+    # RAJAUSTARKISTUS AJETAAN AINA, myos ikkunan ollessa auki. Vaarin rajattu
+    # lupaus on epatosi juuri silloin kun ikkuna on auki, ei sen jalkeen.
+    puuttuva_rajaus = scope_misses(paths)
+    if puuttuva_rajaus:
+        print("FAIL: ilmaisikkunan lupaus ilman 'on the web' -rajausta. "
+              "Ikkuna koskee vain webia; mobiilissa Premium on kaupan tilaus.")
+        for f, ln, teksti in puuttuva_rajaus:
+            print(f"     {f}:{ln}  {teksti!r}")
+        return 1
     if is_open():
         print(f"OK: ilmaisikkuna on auki {day_label()} asti. "
               f"Lupaus elaa {len(found)} kohdassa {len({f[0] for f in found})} "

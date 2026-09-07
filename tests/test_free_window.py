@@ -235,3 +235,105 @@ def test_fix_does_not_touch_guarded_spa_files(tmp_path, monkeypatch):
     monkeypatch.setattr(g, "ROOT", tmp_path)
     assert g.fix([f]) == []
     assert f.read_text(encoding="utf-8") == alku
+
+
+# ---------------------------------------------------------------------------
+# 4. RAJAUSPORTTI: lupaus koskee vain webia (7.9.2026)
+#
+# Ilmaisikkuna koskee VAIN webia; mobiilissa Premium on kaupan tilaus koko
+# ajan. Lupaus ilman "on the web" -rajausta on siis eri vaite kuin lupaus sen
+# kanssa, ja se on epatosi puhelimessa lukevalle.
+#
+# 🔴 Mitattu 7.9: `index.html`in ilmaisikkunabandi - sivun ensimmainen
+# elementti navin alla, eli suurimman liikenteen pinta - luki "Premium is
+# free until the 12 September deadline" ilman rajausta, kun seitseman muuta
+# pintaa sanoivat "on the web".
+#
+# Vanha portti ei voinut nahda tata: se kysyy "elaako lupaus viela ikkunan
+# sulkeuduttua", ei "onko lupaus oikein rajattu". Kaksi eri kysymysta samasta
+# vaitteesta (muisti: portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa).
+# ---------------------------------------------------------------------------
+
+def test_rajausportti_kaataa_rajaamattoman_lupauksen(tmp_path, monkeypatch):
+    import scripts.check_free_window as g
+    f = tmp_path / "index.html"
+    f.write_text("<strong>Premium is free until the 12 September deadline"
+                 "</strong>", encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    monkeypatch.setattr(g, "surfaces", lambda: [f])
+    assert g.scope_misses([f])
+    assert g.main() == 1
+
+
+def test_negatiivinen_kontrolli_rajattu_lupaus_lapaisee(tmp_path, monkeypatch):
+    """Ilman tata portti voisi kaataa KAIKEN ja nayttaa silti toimivalta."""
+    import scripts.check_free_window as g
+    f = tmp_path / "index.html"
+    f.write_text("<strong>Premium is free on the web until the 12 September "
+                 "deadline</strong>", encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    monkeypatch.setattr(g, "surfaces", lambda: [f])
+    assert not g.scope_misses([f])
+
+
+def test_rajaus_hrefissa_ei_kelpaa_rajaukseksi(tmp_path, monkeypatch):
+    """🔴 TAMA REIKA OLI PORTIN ENSIMMAISESSA VERSIOSSA, ja se teki siita
+    inertin juuri silla sivulla jota varten se kirjoitettiin.
+
+    Bandin CTA on `href="https://pro.goaliq.app/"` 120 merkin paassa
+    lupauksesta, joten rajausregex osui URLiin attribuutin sisalla ja portti
+    oli vihrea vaikka nakyva teksti ei rajannut mitaan. Mutaatiotesti
+    paljasti sen; ilman tata testia se palaisi.
+    """
+    import scripts.check_free_window as g
+    f = tmp_path / "index.html"
+    f.write_text(
+        '<p><strong>Premium is free until the 12 September deadline</strong>'
+        '</p><a href="https://pro.goaliq.app/">Get Premium free</a>',
+        encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    monkeypatch.setattr(g, "surfaces", lambda: [f])
+    assert g.scope_misses([f]), "href-URL kelpasi rajaukseksi"
+
+
+def test_meta_descriptionin_rajaus_KELPAA(tmp_path, monkeypatch):
+    """Vastapari edelliselle: tagien pyyhkiminen olisi vaihtanut yhden
+    vaaran positiivisen toiseen.
+
+    `faq.html`in oma rajaus asuu `<meta name="description" content="...">`
+    -attribuutissa, joka NAKYY hakutuloksessa. Jos portti pyyhkisi tagit
+    kokonaan, se kaatuisi rivilta joka on oikein - ja paivittain punainen
+    portti tulee ohitetuksi (muisti: pysyvasti-punainen-putki-nielee-
+    regression).
+    """
+    import scripts.check_free_window as g
+    f = tmp_path / "faq.html"
+    f.write_text(
+        '<meta name="description" content="Pricing (free on the web until '
+        '12 September, then 3.99 EUR/month), cancelling.">', encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    monkeypatch.setattr(g, "surfaces", lambda: [f])
+    assert not g.scope_misses([f]), "meta-descriptionin rajaus hylattiin"
+
+
+def test_rajaus_liian_kaukana_ei_kelpaa(tmp_path, monkeypatch):
+    """Varaus kaukana luvusta ei tavoita lukijaa."""
+    import scripts.check_free_window as g
+    f = tmp_path / "index.html"
+    f.write_text("<p>Premium is free until the GW4 deadline.</p>"
+                 + "<p>filler.</p>" * 60
+                 + "<p>Everything above is on the web.</p>", encoding="utf-8")
+    monkeypatch.setattr(g, "ROOT", tmp_path)
+    monkeypatch.setattr(g, "surfaces", lambda: [f])
+    assert g.scope_misses([f])
+
+
+def test_repon_omat_pinnat_ovat_rajattuja():
+    """Portti oikeaa korpusta vasten, ei vain fikstuureja.
+
+    Tama on se testi joka olisi kaatanut 7.9:n vian.
+    """
+    import scripts.check_free_window as g
+    puuttuu = g.scope_misses()
+    assert not puuttuu, "rajaamaton ilmaisikkunalupaus:\n  " + "\n  ".join(
+        f"{f}:{ln} {t!r}" for f, ln, t in puuttuu)
