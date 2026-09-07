@@ -141,6 +141,13 @@
 			</p>
 		{/if}
 
+		<!-- B3 (9. kierros): FPL:n `points` on netto siirtorangaistuksista. -->
+		{#if data.meta.transfer_cost}
+			<p class="muted small prov-note">
+				FPL's total is after a {data.meta.transfer_cost} point transfer hit.
+			</p>
+		{/if}
+
 		{#if totals}
 			<p class="total">
 				<strong>{totals.actual}</strong> scored against

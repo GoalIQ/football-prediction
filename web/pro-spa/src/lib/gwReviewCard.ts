@@ -164,9 +164,11 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // kerroinpainotettu, joten kapteeninauha paatti mika oli mallin pahin
   // kutsu - ja repon oma saanto (`fpl_rate_team.last_finished_block`) sanoo
   // painvastoin. Mitattu GW3: Haalandin raakaero +1.08, x3 = +3.24.
-  const virhe = (p: ReviewCardPlayer) => p.diff_raw ?? p.diff;
+  // Jarjestys ja luvut SAMASTA suureesta (portin 9. kierros): kortin oma
+  // summa on kerroinpainotettu, joten myos rivit ja niiden jarjestys ovat.
+  // Silloin lukija voi laskea sarakkeen ja paatya alaotsikon lukuun.
   const ordered = [...xi].sort(
-    (a, b) => virhe(a) - virhe(b) || a.web_name.localeCompare(b.web_name)
+    (a, b) => a.diff - b.diff || a.web_name.localeCompare(b.web_name)
   );
   const maxMult = ordered.reduce((m, p) => Math.max(m, p.multiplier), 1);
   const rows: ReviewCardRow[] = ordered.map((p, i) => ({
@@ -177,13 +179,10 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     // U5: merkinta sille jolla kerroin OIKEASTI on, ei lipulle.
     badges:
       p.multiplier >= 3 ? ['TC'] : p.multiplier >= 2 ? ['C'] : undefined,
-    // 🔴 Portin 8. kierros: rivit KERTOIMETTOMISTA luvuista. Jarjestys tuli
-    // jo raakaerosta, mutta luvut olivat kerroinpainotettuja, jolloin
-    // "worst first" oli kumottavissa kortin OMILLA luvuilla (rivi 1 -4.0,
-    // rivi 2 -9.0). Kuva irtoaa sovelluksesta, joten selitysta ei ole
-    // missaan. Kerroin luetaan C/TC-badgesta ja alatunnisteesta.
-    mid: (p.projected_raw ?? p.projected).toFixed(1),
-    value: String(p.actual_raw ?? p.actual),
+    // Kerroinpainotetut luvut: sarake summautuu alaotsikon lukuun.
+    // C/TC-badge kertoo miksi kapteenin rivi on muita suurempi.
+    mid: p.projected.toFixed(1),
+    value: String(p.actual),
   }));
 
   const { actual, projectedText, diff } = reviewTotals(ordered);
@@ -210,7 +209,7 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   const autoSubs = data.meta.auto_subs ?? 0;
   const label =
     odotettu == null || rows.length > odotettu || autoSubs > 0
-      ? `${rows.length} picks counted`
+      ? `${rows.length} rows counted`
       : rows.length === odotettu
         ? chip === 'bboost'
           ? 'bench boost'
@@ -236,12 +235,16 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // C4: kattavuus takaisin kortille. Paneeli sanoi "14 of 15" ja kortti
   // vaikeni - sama vaite kahdella pinnalla, toinen hiljaa.
   const valinnaiset: string[] = [];
-  // 🔴 B3 (7. kierros): 'worst call first' PUTOSI budjettiin elavalla
-  // datalla (73 + 18 = 91 > 88), jolloin julkinen kuva jai 11 rivin
-  // listaksi jossa on rank-sarake 1-11 eika mikaan sano miksi. Rank on
-  // jarjestysvaite, ja sen selite on tarkeampi kuin kattavuus - siis
-  // ensin, ja lyhyempana.
-  valinnaiset.push('worst first');
+  // 🔴 B3 (7. kierros): jarjestysselite PUTOSI budjettiin elavalla datalla
+  // (73 + 18 = 91 > 88), jolloin julkinen kuva jai 11 rivin listaksi jossa
+  // on rank-sarake 1-11 eika mikaan sano miksi. Rank on jarjestysvaite ja
+  // sen selite on tarkeampi kuin kattavuus - siis ensin, ja lyhyena.
+  //
+  // 🔴 9. kierros: sanamuoto on 'biggest gap first', ei 'worst call first'.
+  // Jarjestys on kerroinpainotettu, ja kapteeninauha on KAYTTAJAN valinta -
+  // "mallin pahin kutsu" olisi vaite jota tama jarjestys ei mittaa. Se
+  // vaite tehdaan paneelissa, kertoimettomista luvuista.
+  valinnaiset.push('biggest gap first');
   // R3 (5. kierros): kaksi kattavuusmurtolukua samalla rivilla
   // ("10 of 11 players compared" + "14/15 compared") on hairio, ei tietoa.
   // Label kertoo jo rivien kattavuuden, joten pickkien kattavuus sanotaan

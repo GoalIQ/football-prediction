@@ -187,7 +187,8 @@ def review_lines(review: dict | None, rows: int | None = None,
     # 🔴 MALLIN HUTI ENNEN MALLIN OSUMAA. Jarjestys on tarkoituksellinen:
     # paneeli joka avaa omalla onnistumisellaan on mainos.
     worst = review.get("worst_call")
-    if worst and worst.get("diff") is not None and worst["diff"] < 0:
+    # Vartija SAMASTA kentasta kuin teksti (portin 9. kierros).
+    if worst and _raw(worst, "diff") is not None and _raw(worst, "diff") < 0:
         out.append({
             "code": "review.worst",
             # B2: kertoimettomat luvut - vaite koskee MALLIN virhetta
@@ -197,7 +198,7 @@ def review_lines(review: dict | None, rows: int | None = None,
                      f"{_pts(_raw(worst, 'actual'))} scored."),
         })
     best = review.get("best_call")
-    if best and best.get("diff") is not None and best["diff"] > 0:
+    if best and _raw(best, "diff") is not None and _raw(best, "diff") > 0:
         out.append({
             "code": "review.best",
             # "It" jatti epaselvaksi kuka - subjekti nimetaan.

@@ -873,6 +873,8 @@ export interface GwReviewResponse {
 		/** FPL:n OMA kierrospistemaara. Eri luku kuin live-XI:n summa
 		 *  niin kauan kuin bonus on vahvistamatta (B1, 7.9). */
 		fpl_points?: number | null;
+		/** FPL:n points on netto siirtorangaistuksista (B3, 7.9). */
+		transfer_cost?: number | null;
 		basis?: string;
 		note: string | null;
 		note_code?: string | null;

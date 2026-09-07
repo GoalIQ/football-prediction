@@ -553,3 +553,31 @@ def test_payloadin_players_jarjestys_on_sama_saanto_kuin_kortilla():
     assert raa == sorted(raa, reverse=True), raa
     # Kapteeni ei nouse karkeen kerroinpainotuksen ansiosta: raaka +1.08.
     assert rivit[0]["web_name"] == "P1", "raakaero +1.08 on suurin, mutta"
+
+
+def test_9_kierros_vartija_lukee_samaa_kenttaa_kuin_teksti():
+    """🔴 Vartija luki KERROINPAINOTETTUA (`diff`) kun teksti luki raakaa
+    (`_raw`), ja paneeli kaytti `diff_raw`ia - kaksi saantoa samasta
+    vaitteesta. Mitattu: mult 3, xp 7.9967, pts 8 -> diff +0.01 mutta
+    diff_raw 0.0, eli malli julkaisi superlatiivin jonka molemmat luvut ovat
+    samat samalla kun paneeli oli vaiti."""
+    from src.models.fpl_gw_review import build_review
+    picks = {"entry_history": {"points": 40, "event_transfers_cost": 4},
+             "active_chip": "3xc", "picks": [
+        {"element": 1, "multiplier": 3, "is_captain": True, "is_vice_captain": False},
+    ] + [{"element": i, "multiplier": 1, "is_captain": False,
+          "is_vice_captain": False} for i in range(2, 16)]}
+    frozen = {1: 7.9967, **{i: 5.0 for i in range(2, 16)}}
+    points = {1: 8, **{i: 5 for i in range(2, 16)}}
+    info = {i: {"web_name": f"P{i}", "team_short": "A", "pos": "MID"}
+            for i in range(1, 16)}
+    out = build_review(3, picks, frozen, points, info)
+
+    bc = out["review"]["best_call"]
+    assert bc["diff"] > 0 and bc["diff_raw"] == 0.0, (bc["diff"], bc["diff_raw"])
+    koodit = [r["code"] for r in MS.review_lines(out["review"], rows=15)]
+    assert "review.best" not in koodit, (
+        "superlatiivi julkaistiin vaikka raakaero on 0")
+
+    # B3: siirtorangaistus on payloadissa, jotta FPL:n luku on selitettavissa.
+    assert out["meta"]["transfer_cost"] == 4

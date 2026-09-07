@@ -224,6 +224,12 @@ def build_review(gw: int | None, picks: dict | None,
             # LUKU, ja se on sanottava nimeltaan eika pehmennettava lauseella.
             "fpl_points": (_hist.get("points")
                            if isinstance(_hist.get("points"), int) else None),
+            # 🔴 Portin 9. kierros: FPL:n `points` on NETTO siirtorangaistuksista,
+            # ja kustannus on samassa dictissa. Ilman sita hittiviikon ero
+            # meidan summaamme on selittamaton vaikka luku on kadessa.
+            "transfer_cost": (_hist.get("event_transfers_cost")
+                              if isinstance(_hist.get("event_transfers_cost"), int)
+                              else None),
             # B7 (7.9): `basis` oli EHDOTON lause ("frozen before the
             # deadline") vaikka mikaan ei mitannut sita. Sama vaite kuin
             # kortin `freezeNote()`, joten sama saanto: vaite tehdaan vain
