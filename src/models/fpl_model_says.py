@@ -204,9 +204,14 @@ def review_lines(review: dict | None, rows: int | None = None,
             # "furthest under" jatti auki KUMPI oli alle: pelaaja vai malli.
             # Ja viereinen rivi on "worst call" (substantiivi), joten lukija
             # lukee ne parina - rinnakkaisuus rikkoutui.
+            # 🔴 Portin 8. kierros: tama rivi luki yha kerroinpainotettuja
+            # lukuja samalla kun `review.worst` luki `_raw`:ta - eli B2 oli
+            # korjattu yhta rivia myohemmin. Kapteenin ollessa paras kutsu
+            # kaksi perakkaista lausetta antoi saman pelaajan kahdella
+            # lukuparilla, ja "23.8 projected" ei ole missaan FPL:ssa.
             "text": (f"The model's biggest underestimate was {_nimi(best)}: "
-                     f"{_pts(best['projected'])} projected, "
-                     f"{_pts(best['actual'])} scored."),
+                     f"{_pts(_raw(best, 'projected'))} projected, "
+                     f"{_pts(_raw(best, 'actual'))} scored."),
         })
     return out
 

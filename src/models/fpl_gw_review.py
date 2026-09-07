@@ -247,7 +247,10 @@ def build_review(gw: int | None, picks: dict | None,
             "best_call": paras,
             "worst_call": huonoin,
             "captain": kapteeni,
-            "players": sorted(vertailtavat, key=lambda r: -r["diff"]),
+            # Portin 8. kierros: sama jarjestyssaanto kuin kortilla ja
+            # best/worst-valinnalla. Kerroinpainotettu jarjestys teki
+            # payloadista KOLMANNEN saannon samasta kysymyksesta.
+            "players": sorted(vertailtavat, key=lambda r: -r["diff_raw"]),
         },
         "flags": {
             "availability": sorted(

@@ -97,7 +97,7 @@
 			     sanoo saman lauseen samoista luvuista. -->
 			{#if data.meta.players_compared != null && data.meta.total_picks != null && data.meta.players_compared < data.meta.total_picks}
 				<span class="muted small"
-					>{data.meta.players_compared} of {data.meta.total_picks} picks had a frozen projection</span
+					>{data.meta.players_compared} of {data.meta.total_picks} picks compared</span
 				>
 			{/if}
 			{#if cardSpec}
@@ -152,21 +152,43 @@
 		{/if}
 
 		<!-- 🔴 HUTI ENNEN OSUMAA. Järjestys on tarkoituksellinen. -->
-		{#if rv.worst_call}
+		<!-- 🔴 Portin 8. kierros, kaksi vikaa samassa lohkossa:
+		     (1) rivit nayttivat KERROINPAINOTETUT luvut vaikka valinta tulee
+		         raakaerosta ja proosa raakaluvuista - kolme lukuparia samasta
+		         pelaajasta samassa lohkossa.
+		     (2) `best_call` on aina `max(...)`, joten viikolla jossa jokainen
+		         aloittaja alisuoriutui otsikko sanoi "Biggest underestimate"
+		         pelaajasta joka JAI projektiosta. Proosalla oli
+		         etumerkkivartija, rivilla ei. -->
+		{#if rv.worst_call && (rv.worst_call.diff_raw ?? rv.worst_call.diff) < 0}
 			<div class="call worst">
 				<span class="lbl">Model's worst call</span>
-				<span class="who">{rv.worst_call.web_name}</span>
+				<span class="who"
+					>{rv.worst_call.web_name}{rv.worst_call.multiplier >= 3
+						? ' TC'
+						: rv.worst_call.multiplier >= 2
+							? ' C'
+							: ''}</span
+				>
 				<span class="num"
-					>{rv.worst_call.projected.toFixed(1)} → {rv.worst_call.actual}</span
+					>{(rv.worst_call.projected_raw ?? rv.worst_call.projected).toFixed(1)} → {rv
+						.worst_call.actual_raw ?? rv.worst_call.actual}</span
 				>
 			</div>
 		{/if}
-		{#if rv.best_call}
+		{#if rv.best_call && (rv.best_call.diff_raw ?? rv.best_call.diff) > 0}
 			<div class="call best">
 				<span class="lbl">Biggest underestimate</span>
-				<span class="who">{rv.best_call.web_name}</span>
+				<span class="who"
+					>{rv.best_call.web_name}{rv.best_call.multiplier >= 3
+						? ' TC'
+						: rv.best_call.multiplier >= 2
+							? ' C'
+							: ''}</span
+				>
 				<span class="num"
-					>{rv.best_call.projected.toFixed(1)} → {rv.best_call.actual}</span
+					>{(rv.best_call.projected_raw ?? rv.best_call.projected).toFixed(1)} → {rv
+						.best_call.actual_raw ?? rv.best_call.actual}</span
 				>
 			</div>
 		{/if}

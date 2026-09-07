@@ -33,6 +33,10 @@ export interface ReviewCardPlayer {
   /** Kertoimeton ero (B2): mallin virhe on pelaajan oma, ei
    *  kapteeninauhan. Vanha payload ilman tata kaytaa `diff`ia. */
   diff_raw?: number;
+  /** Kertoimettomat luvut riville. Rivi nayttaa mallin virheen pelaajasta;
+   *  kerroin on C/TC-badgessa ja alatunnisteessa. */
+  projected_raw?: number;
+  actual_raw?: number;
 }
 
 export interface ReviewCardInput {
@@ -173,8 +177,13 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     // U5: merkinta sille jolla kerroin OIKEASTI on, ei lipulle.
     badges:
       p.multiplier >= 3 ? ['TC'] : p.multiplier >= 2 ? ['C'] : undefined,
-    mid: p.projected.toFixed(1),
-    value: String(p.actual),
+    // 🔴 Portin 8. kierros: rivit KERTOIMETTOMISTA luvuista. Jarjestys tuli
+    // jo raakaerosta, mutta luvut olivat kerroinpainotettuja, jolloin
+    // "worst first" oli kumottavissa kortin OMILLA luvuilla (rivi 1 -4.0,
+    // rivi 2 -9.0). Kuva irtoaa sovelluksesta, joten selitysta ei ole
+    // missaan. Kerroin luetaan C/TC-badgesta ja alatunnisteesta.
+    mid: (p.projected_raw ?? p.projected).toFixed(1),
+    value: String(p.actual_raw ?? p.actual),
   }));
 
   const { actual, projectedText, diff } = reviewTotals(ordered);

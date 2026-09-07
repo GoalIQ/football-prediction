@@ -506,3 +506,50 @@ def test_f5_projektio_nayttaa_aina_desimaalin():
     assert _pts(0) == "0"
     t = MS.review_lines(_review(71.0, 72), rows=11)[0]["text"]
     assert "71.0" in t and "by 1.0" in t, t
+
+
+def _kapteeni_paras():
+    """Payload jossa PARAS kutsu on kapteeni. Tasan se fikstuuri jota
+    `test_b2_...` ei kayttanyt: siella parhaalla oli multiplier 1, joten
+    raaka ja kerroinpainotettu olivat sama luku eika testi voinut nahda
+    eroa. Muisti: portin-fikstuuri-kirjoitetaan-korjatusta-tapauksesta."""
+    from src.models.fpl_gw_review import build_review
+    picks = {"entry_history": {"points": 40}, "active_chip": "3xc", "picks": [
+        {"element": 1, "multiplier": 3, "is_captain": True, "is_vice_captain": False},
+    ] + [{"element": i, "multiplier": 1, "is_captain": False,
+          "is_vice_captain": False} for i in range(2, 16)]}
+    frozen = {1: 7.92, **{i: 5.0 for i in range(2, 16)}}
+    points = {1: 9, **{i: 5 for i in range(2, 16)}}
+    info = {i: {"web_name": f"P{i}", "team_short": "ARS", "pos": "MID"}
+            for i in range(1, 16)}
+    return build_review(3, picks, frozen, points, info)
+
+
+def test_review_best_nayttaa_kertoimettomat_luvut_myos_kun_paras_on_kapteeni():
+    """🔴 Portin 8. kierros: `review.best` luki yha kerroinpainotettuja
+    lukuja samalla kun `review.worst` luki raakoja - B2 oli korjattu yhta
+    riviä myohemmin. Kapteenin ollessa paras kutsu kaksi perakkaista
+    lausetta antoi saman pelaajan kahdella lukuparilla, eika "23.8
+    projected" ole missaan FPL:ssa."""
+    out = _kapteeni_paras()
+    assert out["review"]["best_call"]["web_name"] == "P1"
+    rivit = {r["code"]: r["text"] for r in MS.review_lines(out["review"], rows=15)}
+    best = rivit["review.best"]
+    assert "7.9 projected" in best, best
+    assert "9 scored" in best, best
+    # Kerroinpainotetut luvut EIVAT saa esiintya lauseessa.
+    assert "23.8" not in best and "27" not in best, best
+    # Ja kapteenilause kertoo kertoimen erikseen.
+    assert "tripled to 27" in rivit["review.captain"], rivit["review.captain"]
+
+
+def test_payloadin_players_jarjestys_on_sama_saanto_kuin_kortilla():
+    """Payloadin `players` oli KOLMAS jarjestyssaanto (kerroinpainotettu)
+    samalla kun kortti ja best/worst-valinta kayttavat raakaeroa. Julkinen
+    API-jarjestys luetaan jarjestysvaitteena."""
+    out = _kapteeni_paras()
+    rivit = out["review"]["players"]
+    raa = [r["diff_raw"] for r in rivit]
+    assert raa == sorted(raa, reverse=True), raa
+    # Kapteeni ei nouse karkeen kerroinpainotuksen ansiosta: raaka +1.08.
+    assert rivit[0]["web_name"] == "P1", "raakaero +1.08 on suurin, mutta"

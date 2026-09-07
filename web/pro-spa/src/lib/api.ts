@@ -825,6 +825,11 @@ export interface ReviewPlayer {
 	multiplier: number;
 	in_xi: boolean;
 	is_captain: boolean;
+	/** Kertoimettomat luvut (portin 8. kierros): rivi nayttaa MALLIN
+	 *  virheen pelaajasta, kapteeninauha merkitaan erikseen. */
+	projected_raw?: number;
+	actual_raw?: number;
+	diff_raw?: number;
 }
 
 export interface ReviewFlagAvailability {
