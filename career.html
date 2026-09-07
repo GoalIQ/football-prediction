@@ -555,7 +555,7 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       var latLabel = lat.finished ? ('Last season' + (lat.season ? ' (' + lat.season + ')' : '')) : 'This season';
       var latVal = fmtPts(lat.total_points) + ' pts';
       // The 'pts' unit separates a points total from a gameweek number (GWs are 1-38).
-      if (lat.best_gw) latVal += '  ·  best GW: ' + lat.best_gw.points + ' pts';
+      if (lat.best_gw) latVal += '  ·  best GW: ' + (lat.best_gw.points_net != null ? lat.best_gw.points_net : lat.best_gw.points) + ' pts';
       statBlock(colX[1], 640, latLabel, latVal, 52, colW);
     } else {
       statBlock(colX[1], 640, 'New season', 'Starts GW1', 52, colW);

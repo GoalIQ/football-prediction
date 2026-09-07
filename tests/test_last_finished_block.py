@@ -93,7 +93,12 @@ def test_pistemaara_on_fpln_oma_luku(wired, monkeypatch):
     FPL:n 61:ta, ja kayttajan oma FPL-tili nayttaisi eri lukua kuin me."""
     b = rt.last_finished_block(1, BS, {}, "2026/27")
     assert b["points"] == 61
-    assert b["diff"] == round(61 - 11.0, 2)
+    # 🔴 Portin 14. kierros: erotus NETOSTA. "You" on netto, joten
+    # bruttoerotus renderoitiin saman kortin nauhassa netton viereen ja
+    # ero oli aina tasan `transfer_cost` (fikstuurilla 4).
+    assert b["diff"] == round(61 - 4 - 11.0, 2)
+    assert b["diff"] == round(b["points_net"] - b["xp"], 2), (
+        "erotus on laskettava samasta luvusta joka kortilla nakyy")
 
 
 def test_vaillinainen_freeze_pudottaa_erotuksen(wired, monkeypatch):

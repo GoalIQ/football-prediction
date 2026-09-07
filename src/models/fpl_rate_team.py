@@ -1852,7 +1852,9 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
                  and r["multiplier"] > 0]
         if cands:
             top = max(cands, key=lambda c: abs(c[1]))
-            total = abs(points - xp_round)
+            # Sama netto-peruste kuin `diff`illa: 25 %:n kynnys liikkui
+            # hittiviikolla, koska nimittaja oli brutto.
+            total = abs(points - (hist.get("event_transfers_cost") or 0) - xp_round)
             if total > 0 and abs(top[1]) / total >= 0.25:
                 swing = {"web_name": top[0], "contribution": top[1]}
     fmeta = fpl_actuals.frozen_meta(gw) or {}
@@ -1911,7 +1913,13 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         "xp": xp_round if complete else None,
         # Erotus vain kun MOLEMMAT luvut ovat kokonaisia. Puolikas erotus
         # nayttaisi mallin systemaattisesti paremmalta.
-        "diff": (round(points - xp_round, 2)
+        # 🔴 PORTIN 14. KIERROS: erotus NETOSTA. "You" on netto (13. kierros)
+        # mutta `diff` jai bruttoon, ja ne renderoidaan SAMALLE kortille:
+        # hittiviikolla "You 62 · Projected 61.0 · You beat the projection by
+        # 9.0" - ero on aina tasan `transfer_cost` eika lukija voi tarkistaa
+        # sita mistaan. Korjasin 13. kierroksella ARVON mutta en sen
+        # EROTUSTA samassa nauhassa.
+        "diff": (round(points - (hist.get("event_transfers_cost") or 0) - xp_round, 2)
                  if complete and points is not None else None),
         "complete": complete,
         "frozen_at": fmeta.get("frozen_at"),

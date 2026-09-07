@@ -87,7 +87,17 @@ def test_summer_dedup_and_summary(monkeypatch):
     assert lat["total_points"] == 1381
     assert lat["total_hits"] == 8
     assert lat["bench_points"] == 76
-    assert lat["best_gw"]["points"] == 36 and lat["worst_gw"]["points"] == 30
+    # 🔴 Portin 14. kierros: valinta ja luku NETOSTA. `career.html` renderoi
+    # `best_gw`n samalle riville `total_points`in kanssa, ja jalkimmainen on
+    # netto - sama rivi naytti kaksi eri yksikkoa ilmaisella julkisella
+    # jakokortilla. Fikstuurissa GW10 ja GW20 maksavat 4: GW10:n brutto on
+    # 33 mutta netto 29, joten se on huonoin kierros vasta netolla
+    # (brutolla huonoin olisi 30).
+    assert lat["best_gw"]["points_net"] == 36
+    assert lat["worst_gw"]["points_net"] == 29
+    assert lat["worst_gw"]["gw"] == 10, "valinta tehdaan netosta"
+    # Brutto kulkee yha mukana, jotta hitti on selitettavissa.
+    assert lat["worst_gw"]["points"] == 33
     assert [c["gw"] for c in lat["chips_used"]] == [12, 30]
     assert len(lat["gws"]) == 38
 

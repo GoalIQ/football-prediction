@@ -205,3 +205,45 @@ def test_points_kentta_tarkoittaa_samaa_kaikissa_moduuleissa():
 
     review = (SRC / "fpl_gw_review.py").read_text(encoding="utf-8")
     assert '"fpl_points_net":' in review
+
+
+# ---------------------------------------------------------------------------
+# 🔴 PORTIN 14. KIERROS (B3): EDELLINEN TESTINI MITTASI MERKKIJONOA, EI ARVOA.
+#
+# Kirjoitin 13. kierroksella `test_points_kentta_tarkoittaa_samaa_kaikissa_
+# moduuleissa`in lukitsemaan konvention - mutta se etsi lahdekoodista
+# merkkijonoja (`'u["points_net"] - mp'`). Portti mutatoi `your_points`- ja
+# `you_total`-sijoitukset takaisin bruttoon, ja **koko 3208 testin sarja meni
+# lapi**. Se on tasan sama diagnoosi jonka tein itse 13. kierroksella
+# ("portti mittasi ehdot, ei arvoa"), toistettuna siina testissa jonka piti
+# estaa se.
+#
+# Nama testit ajavat funktiot ja mittaavat LUVUN.
+# ---------------------------------------------------------------------------
+
+def test_race_your_points_on_netto_arvona_ei_merkkijonona():
+    from src.models.fpl_model_race import build_race
+
+    # Hittikierros: brutto 70, hitti 8, netto 62. Malli 62 -> tasapeli.
+    historia = {"current": [
+        {"event": 3, "points": 70, "event_transfers_cost": 8,
+         "points_on_bench": 5, "total_points": 149, "overall_rank": 1000},
+    ]}
+    loki = {"gameweeks": [{"gw": 3, "points": 62, "provisional": False,
+                           "fpl_average": 50, "entry_id": 116920}]}
+    race = build_race(loki, historia)
+    rivit = race.get("gameweeks") or []
+    assert rivit, race
+    r = rivit[0]
+    assert r["your_points"] == 62, (
+        f"your_points {r['your_points']} on brutto - malli ei ota hitteja, "
+        "joten brutto antaisi kayttajalle hitin verran etumatkaa")
+    assert r["diff"] == 0, r["diff"]
+    assert (race.get("totals") or {}).get("you") == 62
+
+    # NEGATIIVINEN KONTROLLI: ilman hittia netto == brutto, eli testi ei ole
+    # vihrea pelkastaan siksi etta se laskee saman luvun kahdesti.
+    historia0 = {"current": [dict(historia["current"][0], event_transfers_cost=0)]}
+    loki0 = {"gameweeks": [dict(loki["gameweeks"][0], points=70)]}
+    race0 = build_race(loki0, historia0)
+    assert race0["gameweeks"][0]["your_points"] == 70

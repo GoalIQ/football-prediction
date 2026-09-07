@@ -83,24 +83,36 @@ def _latest_season(current: list[dict], past: list[dict]) -> dict:
         "total_points") and len(current) >= 38
     season = past[-1].get("season_name") if finished else None
 
+    # 🔴 PORTIN 14. KIERROS: `points` on BRUTTO (verifioitu FPL:n API:sta
+    # 7.9). `total_points` sen sijaan on NETTO, ja `career.html:558`
+    # renderoi ne SAMALLE RIVILLE ilmaisella julkisella jakokortilla:
+    # "This season 149 pts, best GW: 70 pts" kun lukijan oma FPL-sivu
+    # sanoo siita kierroksesta 62. Sama rivi, kaksi eri yksikkoa.
+    #
+    # Ja VALINTA tehtiin bruttolla, joten `best_gw` saattoi nimeta eri
+    # kierroksen kuin lukijan oma paras.
+    def _netto(g: dict) -> int:
+        return int(g.get("points") or 0) - int(g.get("event_transfers_cost") or 0)
+
     played = [g for g in current if g.get("points") is not None]
-    best = max(played, key=lambda g: g["points"]) if played else None
-    worst = min(played, key=lambda g: g["points"]) if played else None
+    best = max(played, key=_netto) if played else None
+    worst = min(played, key=_netto) if played else None
     return {
         "available": True,
         "season": season,
         "finished": finished,
         "total_points": last.get("total_points"),
         "overall_rank": last.get("overall_rank"),
-        "best_gw": ({"gw": best["event"], "points": best["points"]}
-                    if best else None),
-        "worst_gw": ({"gw": worst["event"], "points": worst["points"]}
-                     if worst else None),
+        "best_gw": ({"gw": best["event"], "points": best["points"],
+                     "points_net": _netto(best)} if best else None),
+        "worst_gw": ({"gw": worst["event"], "points": worst["points"],
+                      "points_net": _netto(worst)} if worst else None),
         "total_hits": sum(int(g.get("event_transfers_cost") or 0)
                           for g in current),
         "bench_points": sum(int(g.get("points_on_bench") or 0)
                             for g in current),
         "gws": [{"gw": g.get("event"), "points": g.get("points"),
+                 "points_net": _netto(g),
                  "overall_rank": g.get("overall_rank")} for g in current],
     }
 
