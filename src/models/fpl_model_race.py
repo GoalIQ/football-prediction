@@ -37,10 +37,20 @@ CODE_NO_OVERLAP = "model_race.note.no_overlap"
 def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
     """FPL entry/{id}/history/ → {gw: {"points": int, "bench": int}}.
 
-    `points` on FPL:n oma kierrospistemäärä siirtokustannusten JÄLKEEN
-    (event_transfers_cost sisältyy `points`-kenttään FPL:n omassa
-    esityksessä), joten emme korjaa sitä — käyttäjän näkemä luku on se
-    jonka hän näkee omalla sivullaan.
+    🔴 PREMISSI OLI VÄÄRIN (mitattu 7.9.2026, portin 10. kierros).
+    `points` on FPL:n oma kierrospistemäärä **ENNEN** siirtokustannusta, ei
+    sen jälkeen. Verifioitu FPL:n omasta API:sta: entry 12345 GW3
+    `points: 70`, `event_transfers_cost: 8`, ja kausisumma kasvoi
+    87 -> 149 eli **62 = 70 - 8**. Käyttäjän oma FPL-sivu näyttää netto.
+
+    Tämä lohko ei siis vertaa sitä lukua jonka käyttäjä näkee, vaan
+    hittiä edeltävää lukua — eli hittiviikolla käyttäjä näyttää meillä
+    4 tai 8 pistettä paremmalta kuin omalla sivullaan.
+
+    EI KORJATTU TÄSSÄ: muutos siirtäisi julkaistua vertailulukua
+    (Beat the model / Season race), joten se vaatii oman mittauksen siitä
+    kuinka moni seurattu entry on ottanut hittejä ja kuinka paljon rivi
+    liikkuu. Jonorivi `MODEL-RACE-HITTI-PREMISSI`.
     """
     out: dict[int, dict] = {}
     for row in (entry_history or {}).get("current") or []:

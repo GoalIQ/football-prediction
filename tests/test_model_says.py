@@ -403,8 +403,9 @@ def test_e1_summa_ei_riipu_jarjestyksesta_eika_eroa_klientista():
         rivi = MS.review_lines(out["review"], rows=len(arvot))[0]["text"]
         tekstit.add(rivi)
     assert len(tekstit) == 1, f"summausjarjestys muuttaa lausetta: {tekstit}"
-    # Ja se on sadasosasumman luku, ei liukulukusumman 71.1.
-    assert "71.2" in tekstit.pop()
+    # 10. kierros: luku on NAYTETTYJEN rivien summa (sama saanto kuin
+    # klientilla), joten sarake ja lause ovat sama luku.
+    assert "71.1" in tekstit.pop()
 
 
 def test_e3_kapteenilause_luetaan_kertoimesta_ei_lipusta():
@@ -581,3 +582,58 @@ def test_9_kierros_vartija_lukee_samaa_kenttaa_kuin_teksti():
 
     # B3: siirtorangaistus on payloadissa, jotta FPL:n luku on selitettavissa.
     assert out["meta"]["transfer_cost"] == 4
+
+
+def test_10_kierros_fpl_points_on_brutto_ja_netto_lasketaan_meilla():
+    """🔴 9. KIERROKSELLA KIRJOITIN PAINVASTOIN VIITEEN PAIKKAAN.
+    `entry_history.points` on **ENNEN** siirtorangaistusta, ei sen jalkeen.
+
+    Verifioitu FPL:n omasta API:sta 7.9.2026: entry 12345 GW3 `points 70`,
+    `event_transfers_cost 8`, ja kausisumma kasvoi 87 -> 149 eli 62 = 70 - 8.
+    Lukijan oma FPL-sivu nayttaa neton, joten se on se luku jonka saa nimeta
+    "FPL:n omaksi totaaliksi".
+    """
+    from src.models.fpl_gw_review import build_review
+    picks = {"entry_history": {"points": 70, "event_transfers_cost": 8},
+             "active_chip": None, "picks": [
+        {"element": i, "multiplier": 1 if i <= 11 else 0,
+         "is_captain": False, "is_vice_captain": False} for i in range(1, 16)]}
+    frozen = {i: 6.0 for i in range(1, 16)}
+    points = {i: 7 for i in range(1, 16)}
+    info = {i: {"web_name": f"P{i}", "team_short": "A", "pos": "MID"}
+            for i in range(1, 16)}
+    out = build_review(3, picks, frozen, points, info)
+    assert out["meta"]["fpl_points"] == 70, "brutto sellaisenaan API:sta"
+    assert out["meta"]["transfer_cost"] == 8
+    assert out["meta"]["fpl_points_net"] == 62, "lukijan oma luku"
+
+    # Ilman hittia netto == brutto, eika lauseessa ole mitaan selitettavaa.
+    picks0 = dict(picks, entry_history={"points": 58, "event_transfers_cost": 0})
+    out0 = build_review(3, picks0, frozen, points, info)
+    assert out0["meta"]["fpl_points_net"] == 58
+    assert out0["meta"]["transfer_cost"] == 0
+
+
+def test_10_kierros_projektiosumma_on_naytettyjen_rivien_summa():
+    """Sadasosasumma teki summasta jarjestysriippumattoman (E1) mutta jatti
+    xP-sarakkeen ja alaotsikon eri luvuiksi - portti mittasi ETUMERKIN
+    KAANTYMISEN. Nyt summataan se mita rivi nayttaa, samalla saannolla kuin
+    klientti (`_shown_1dp` = `toFixed(1)`)."""
+    from src.models.fpl_gw_review import build_review
+    from src.models.fpl_model_says import _shown_1dp
+    # 6.55 on tasatilanne: half-even antaisi 6.5, toFixed 6.6.
+    arvot = [6.55, 5.24, 7.92, 3.38, 4.16]
+    picks = {"entry_history": {"points": 30}, "active_chip": None, "picks": [
+        {"element": i + 1, "multiplier": 1, "is_captain": False,
+         "is_vice_captain": False} for i in range(len(arvot))]}
+    frozen = {i + 1: arvot[i] for i in range(len(arvot))}
+    points = {i + 1: 6 for i in range(len(arvot))}
+    info = {i + 1: {"web_name": f"P{i}", "team_short": "A", "pos": "MID"}
+            for i in range(len(arvot))}
+    out = build_review(3, picks, frozen, points, info)
+    odotettu = round(sum(_shown_1dp(a) for a in arvot), 1)
+    assert out["review"]["projected_raw"] == odotettu, (
+        out["review"]["projected_raw"], odotettu)
+    # Ja lause kayttaa samaa lukua.
+    rivi = MS.review_lines(out["review"], rows=5)[0]["text"]
+    assert f"{odotettu:.1f}" in rivi, rivi

@@ -875,6 +875,8 @@ export interface GwReviewResponse {
 		fpl_points?: number | null;
 		/** FPL:n points on netto siirtorangaistuksista (B3, 7.9). */
 		transfer_cost?: number | null;
+		/** `fpl_points` miinus hitti = lukijan oma luku. */
+		fpl_points_net?: number | null;
 		basis?: string;
 		note: string | null;
 		note_code?: string | null;

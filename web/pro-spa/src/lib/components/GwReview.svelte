@@ -54,6 +54,8 @@
 	// 6.9 (Villen tilaus): katsaus kuvana. Sisalto tulee gwReviewCard.ts:sta
 	// (sama lukija mobiilissa); tama vain valittaa sen listakortille.
 	// Sama joukko kuin kortilla: pelanneet rivit (multiplier > 0).
+	// FPL:n oma luku NETTONA: `points` on brutto (verifioitu 7.9).
+	let fplNet = $derived(data?.meta.fpl_points_net ?? data?.meta.fpl_points ?? null);
 	let totals = $derived(
 		(() => {
 			const xi = (data?.review?.players ?? []).filter((p) => p.in_xi && p.multiplier > 0);
@@ -115,7 +117,7 @@
 		<!-- B6 (7.9, portti): paneeli naytti saman luvun ja vain sanan
 		     "provisional" samalla kun kortti selittaa eron. Sama luku, sama
 		     lukija, toinen pinta selittaa ja toinen ei. -->
-		{#if data.meta.provisional || (data.meta.fpl_points != null && totals && data.meta.fpl_points !== totals.actual)}
+		{#if data.meta.provisional || (fplNet != null && totals && fplNet !== totals.actual)}
 			<p class="muted small prov-note">
 				<!-- 🔴 C2 (portin 4. kierros): EMME NIMEA SYYTA. Aiempi lause sanoi
 				     eron johtuvan vahvistamattomasta bonuksesta, mutta mitattu 7.9:
@@ -123,17 +125,19 @@
 				     ja FPL sanoo 58. Lukija joka laskee 58 + 15 ei paase 72:een. Ja
 				     `entry_history.points` on NETTO siirtorangaistuksista, joten -4:n
 				     viikolla syy ei olisi bonus lainkaan. Sanomme kumpi luku on kumpi. -->
-				{#if data.meta.fpl_points != null && totals && data.meta.fpl_points !== totals.actual}
+				{#if fplNet != null && totals && fplNet !== totals.actual}
 					<!-- D3: mutabiliteettilause VAIN kesken olevalle kierrokselle.
 					     Lopullisella FPL on lopettanut pisteytyksen, mutta ero voi silti
 					     olla (siirtorangaistus, autosub, pudonnut rivi). -->
 					{#if data.meta.provisional}
-						FPL's own total for GW{data.meta.reviewed_gw} is {data.meta.fpl_points}. Ours
-						adds up the live scores for those same {totals.rows} picks that had a multiplier,
-						and it can move until FPL finishes scoring.
+						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the live
+						scores for the {totals.rows} picks we could compare, and it can move until FPL
+						finishes scoring.{#if (data.meta.transfer_cost ?? 0) > 0} That is
+							{data.meta.fpl_points} minus a {data.meta.transfer_cost} point transfer hit.{/if}
 					{:else}
-						FPL's own total for GW{data.meta.reviewed_gw} is {data.meta.fpl_points}. Ours
-						adds up the {totals.rows} picks that had a multiplier.
+						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the
+						{totals.rows} picks we could compare.{#if (data.meta.transfer_cost ?? 0) > 0} That is
+							{data.meta.fpl_points} minus a {data.meta.transfer_cost} point transfer hit.{/if}
 					{/if}
 				{:else}
 					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.
@@ -141,12 +145,6 @@
 			</p>
 		{/if}
 
-		<!-- B3 (9. kierros): FPL:n `points` on netto siirtorangaistuksista. -->
-		{#if data.meta.transfer_cost}
-			<p class="muted small prov-note">
-				FPL's total is after a {data.meta.transfer_cost} point transfer hit.
-			</p>
-		{/if}
 
 		{#if totals}
 			<p class="total">

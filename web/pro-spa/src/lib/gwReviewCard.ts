@@ -11,8 +11,10 @@
  * (vahintaan 3 rivia, alatunniste lahteineen).
  *
  * REHELLISYYS, sama kuin paneelissa (GwReview.svelte / GwReview.tsx):
- *  - rivit jarjestetaan HUONOIMMASTA kutsusta parhaaseen: mallin huti on
- *    ylimpana, ei piilossa listan hannassa.
+ *  - rivit jarjestetaan HUONOIMMASTA erosta parhaaseen NAYTETYILLA luvuilla,
+ *    ja luvut ovat kerroinpainotettuja kuten kortin summa. Kortti on
+ *    JOUKKUEEN kierros; mallin virhe pelaajasta sanotaan paneelissa,
+ *    jossa luvut ovat kertoimettomia (portin 9.-10. kierros).
  *  - `provisional` ja kattavuus ("12 of 15 compared") menevat alaotsikkoon,
  *    eivat tooltippiin: kuva irtoaa sovelluksesta.
  *  - luvut tulevat endpointilta sellaisinaan. Kapteenin rivi on jo
@@ -55,9 +57,15 @@ export interface ReviewCardInput {
      *  ajoituksesta tehdaan naista, ei rakenteesta. */
     frozen_at?: string | null;
     deadline?: string | null;
-    /** FPL:n OMA kierrospistemaara (`entry_history.points`). Eri luku kuin
-     *  meidan live-XI:n summa niin kauan kuin bonus on vahvistamatta. */
+    /** FPL:n OMA kierrospistemaara (`entry_history.points`). 🔴 BRUTTO:
+     *  siirtorangaistus EI ole siina (verifioitu FPL:n API:sta 7.9). */
     fpl_points?: number | null;
+    /** `fpl_points` miinus siirtorangaistus = se luku jonka lukija nakee
+     *  omalta FPL-sivultaan. Kortti nayttaa TAMAN. */
+    fpl_points_net?: number | null;
+    /** Siirtorangaistus. Kortti ei sano sita (tila on tiukka), mutta se
+     *  kuuluu rajapintaan koska `fpl_points_net` johdetaan siita. */
+    transfer_cost?: number | null;
   };
   review: {
     projected: number | null;
@@ -143,8 +151,20 @@ export function reviewTotals(rows: { projected: number; actual: number }[]) {
   //
   // Rivien projektio on kahden desimaalin tarkkuudella, joten summataan
   // SADASOSINA kokonaislukuina: silloin jarjestys ei voi muuttaa tulosta.
-  const cents = rows.reduce((n, p) => n + Math.round(p.projected * 100), 0);
-  const projectedText = (cents / 100).toFixed(1);
+  // 🔴 Portin 10. kierros: summataan se MITA NAKYY. Sadasosasumma teki
+  // summasta jarjestysriippumattoman (E1) mutta jatti xP-sarakkeen ja
+  // alaotsikon eri luvuiksi: mitattu drift 0,6 ja **etumerkin kaantyminen**
+  // (`62 pts vs 61.9 xP (+0.1)` kun sarakkeet antavat -0,2). Rivit
+  // renderoidaan yhdella desimaalilla, joten summa lasketaan siita.
+  // Kymmenesosina kokonaislukuina, jotta jarjestysriippumattomuus sailyy.
+  // Ja summataan TASAN se merkkijono jonka rivi renderoi. `toFixed(1)` ja
+  // `Math.round(x*10)/10` eroavat tasatilanteessa (6.55 -> "6.5" vs 6.6),
+  // eli sarake ja summa olisivat taas eri lukijaa - sama vikaluokka kuin
+  // D1, nyt JS:n sisalla. Kymmenesosina kokonaislukuina, jotta
+  // jarjestysriippumattomuus sailyy.
+  const tenths = rows.reduce(
+    (n, p) => n + Math.round(Number(p.projected.toFixed(1)) * 10), 0);
+  const projectedText = (tenths / 10).toFixed(1);
   // Erotus NAYTETYISTA luvuista: pyoristamaton 0.85 nayttaisi "+0.9" vaikka
   // kortilla lukee 71.2 ja 72.
   // `rows` mukana, jotta paneelin lause ja kortti puhuvat samasta joukosta
@@ -167,8 +187,13 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // Jarjestys ja luvut SAMASTA suureesta (portin 9. kierros): kortin oma
   // summa on kerroinpainotettu, joten myos rivit ja niiden jarjestys ovat.
   // Silloin lukija voi laskea sarakkeen ja paatya alaotsikon lukuun.
+  // Lajitteluavain NAYTETYISTA luvuista: 2 desimaalin `diff` tuotti 96
+  // tapausta 200 000:sta joissa rivin i+1 naytetty ero oli pienempi kuin
+  // rivin i. Jarjestysvaite on tarkistettava sarakkeista.
+  const naytettyEro = (p: ReviewCardPlayer) =>
+    p.actual - Number(p.projected.toFixed(1));
   const ordered = [...xi].sort(
-    (a, b) => a.diff - b.diff || a.web_name.localeCompare(b.web_name)
+    (a, b) => naytettyEro(a) - naytettyEro(b) || a.web_name.localeCompare(b.web_name)
   );
   const maxMult = ordered.reduce((m, p) => Math.max(m, p.multiplier), 1);
   const rows: ReviewCardRow[] = ordered.map((p, i) => ({
@@ -217,7 +242,8 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
         : `${rows.length} of ${odotettu} counted`;
 
   const kesken = !!data.meta.provisional;
-  const fpl = data.meta.fpl_points;
+  // B1 (10. kierros): NETTO, koska se on lukijan oma luku.
+  const fpl = data.meta.fpl_points_net ?? data.meta.fpl_points;
   const compared = data.meta.players_compared;
 
   // C3: BUDJETTI. `FantasyListShareCard` kutistaa alaotsikon yhdelle riville
@@ -244,12 +270,18 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // Jarjestys on kerroinpainotettu, ja kapteeninauha on KAYTTAJAN valinta -
   // "mallin pahin kutsu" olisi vaite jota tama jarjestys ei mittaa. Se
   // vaite tehdaan paneelissa, kertoimettomista luvuista.
-  valinnaiset.push('biggest gap first');
+  valinnaiset.push('worst gap first');
   // R3 (5. kierros): kaksi kattavuusmurtolukua samalla rivilla
   // ("10 of 11 players compared" + "14/15 compared") on hairio, ei tietoa.
   // Label kertoo jo rivien kattavuuden, joten pickkien kattavuus sanotaan
   // vain kun label ei sano mitaan kattavuudesta.
-  const labelKertooKattavuuden = label.includes('counted');
+  // 🔴 B5 (10. kierros): `includes('counted')` yhdisti kaksi eri
+  // nimittajaa. Label puhuu RIVEISTA (11 vs odotettu XI), kattavuus
+  // PICKEISTA (14/15) - "11 rows counted" ei kerro kattavuudesta mitaan, ja
+  // silti se vaiensi sen. Paneeli sanoi "14 of 15 picks compared" ja kortti
+  // vaikeni: C4:n regressio.
+  const labelKertooKattavuuden =
+    picks != null && label === `${rows.length} of ${picks} counted`;
   if (
     !labelKertooKattavuuden &&
     compared != null &&
@@ -283,7 +315,9 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     midLabel: 'XP',
     valueLabel: 'PTS',
     rows,
-    // A6: rivi 1 on mallin PAHIN kutsu, joten karkikorostus on pois.
+    // A6: rivi 1 on huonoin ero, ei karki - korostus pois. (Perustelu
+    // paivitetty 10. kierroksella: rivi 1 ei enaa vaita olevansa mallin
+    // pahin kutsu, mutta se ei ole karki silloinkaan.)
     heroFirstRow: false,
     // B2: lahde on alaotsikossa, joten alatunniste ei toista sita.
     footNote: `${frozenNote}${multNote}`,

@@ -32,6 +32,7 @@ erota: `tests/test_luck_review_agreement.py` kaatuu jos ne erkanevat.
 from __future__ import annotations
 
 from src.models import fpl_actuals
+from src.models.fpl_model_says import _shown_1dp
 
 NOTE_NOT_PLAYED = (
     "The review opens once a gameweek has been played with a projection "
@@ -152,7 +153,15 @@ def build_review(gw: int | None, picks: dict | None,
     # kolme pintaa summasi samat rivit eri jarjestyksessa - mitattu
     # tuotannon GW3:sta 7.9: 71.15 vs 71.14999999999999, eli "71.2" ja
     # "71.1" samassa nakymassa. Rivien `projected` on 2 desimaalia.
-    proj_xi_raw = (sum(round(r["projected"] * 100) for r in xi) / 100
+    # 🔴 Portin 10. kierros: summa NAYTETYISTA riveista. Sadasosasumma teki
+    # summasta jarjestysriippumattoman (E1) mutta jatti xP-sarakkeen ja
+    # alaotsikon eri luvuiksi: mitattu drift 0,6 ja **etumerkin kaantyminen**
+    # (`62 pts vs 61.9 xP (+0.1)` kun sarakkeet antavat -0,2). Rivit
+    # renderoidaan yhdella desimaalilla, joten summataan se mita nakyy.
+    # Sama saanto kuin klientilla: `_shown_1dp` on `toFixed(1)`:n vastine
+    # (ROUND_HALF_UP doublen tarkasta arvosta), verifioitu 204 000 arvolla.
+    # Pythonin `round(x, 1)` on half-even ja erkanisi tasatilanteessa.
+    proj_xi_raw = (round(sum(_shown_1dp(r["projected"]) for r in xi), 1)
                    if xi else None)
     proj_xi = round(proj_xi_raw, 2) if proj_xi_raw is not None else None
     act_xi = sum(r["actual"] for r in xi) if xi else None
@@ -224,12 +233,22 @@ def build_review(gw: int | None, picks: dict | None,
             # LUKU, ja se on sanottava nimeltaan eika pehmennettava lauseella.
             "fpl_points": (_hist.get("points")
                            if isinstance(_hist.get("points"), int) else None),
-            # 🔴 Portin 9. kierros: FPL:n `points` on NETTO siirtorangaistuksista,
-            # ja kustannus on samassa dictissa. Ilman sita hittiviikon ero
-            # meidan summaamme on selittamaton vaikka luku on kadessa.
+            # 🔴 Portin 10. kierros korjasi 9. kierroksen VAARAN PREMISSIN.
+            # `entry_history.points` on **BRUTTO**, ei netto. Verifioitu
+            # FPL:n omasta API:sta 7.9 (entry 12345 GW3: points 70,
+            # event_transfers_cost 8, ja kausisumma kasvoi 87 -> 149 eli
+            # 62 = 70 - 8). Kirjoitin 9. kierroksella painvastoin viiteen
+            # paikkaan kolmella kielella.
+            #
+            # Lukijan oma FPL-nakyma nayttaa NETON, joten se on se luku jonka
+            # saa nimeta "FPL:n omaksi totaaliksi". Molemmat kentat
+            # payloadiin, jotta pinta ei laske sita itse.
             "transfer_cost": (_hist.get("event_transfers_cost")
                               if isinstance(_hist.get("event_transfers_cost"), int)
                               else None),
+            "fpl_points_net": (
+                _hist["points"] - (_hist.get("event_transfers_cost") or 0)
+                if isinstance(_hist.get("points"), int) else None),
             # B7 (7.9): `basis` oli EHDOTON lause ("frozen before the
             # deadline") vaikka mikaan ei mitannut sita. Sama vaite kuin
             # kortin `freezeNote()`, joten sama saanto: vaite tehdaan vain
