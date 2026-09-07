@@ -33,7 +33,8 @@ def _nimi(rivi: dict | None) -> str | None:
     return (rivi or {}).get("web_name")
 
 
-def review_lines(review: dict | None, rows: int | None = None) -> list[dict]:
+def review_lines(review: dict | None, rows: int | None = None,
+                 provisional: bool = False) -> list[dict]:
     """Katsauslohkon lauseet. Palauttaa [{code, text}] jarjestyksessa.
 
     `code` on vakaa tunniste jota klientti voi kayttaa lokalisointiin ja
@@ -58,29 +59,44 @@ def review_lines(review: dict | None, rows: int | None = None) -> list[dict]:
 
     proj, act = review.get("projected"), review.get("actual")
     if proj is not None and act is not None:
-        # Sama pyoristys kuin naytetylla luvulla: `_pts` muotoilee proj:n
-        # yhteen desimaaliin, joten erotus on laskettava siita.
-        proj_shown = float(f"{proj:.1f}")
+        # C10 (7.9): lause kulkee payloadissa itsenaisena ja renderoityy
+        # missa tahansa `model_says` renderoidaan - myos ilman viereista
+        # provisional-varausta. Arviota ("about where the model had you") ei
+        # saa tehda kesken olevasta luvusta ilman merkintaa.
+        _so_far = " so far" if provisional else ""
+        # C5 (7.9): erotus lasketaan RAAASTA summasta samalla tavalla kuin
+        # klientti sen laskee (`sum(rows).toFixed(1)`), ei jo kertaalleen
+        # pyoristetusta `projected`ista. Kaksoispyoristys tuotti 1102
+        # tapausta 200 000:sta joissa lause ja viereinen rivi nayttivat eri
+        # luvun.
+        raw = review.get("projected_raw")
+        proj_shown = float(f"{(raw if raw is not None else proj):.1f}")
         d = round(act - proj_shown, 1)
-        kuka = "Your eleven" if rows in (None, 11) else f"Your {rows} who played"
+        # C6 (7.9): "who played" oli vaite jota payload ei mittaa. Rivi
+        # putoaa kun JAADYTETTY xP puuttuu (esim. freezen jalkeen ostettu
+        # pelaaja), ei siksi etta pelaaja ei pelannut - ja bench boostilla
+        # FPL antaa multiplier 1 myos 0 minuutin penkkilaiselle. Sanotaan
+        # se mita joukko oikeasti on.
+        kuka = ("Your eleven" if rows in (None, 11)
+                else f"The {rows} picks with both numbers")
         if abs(d) < 1.0:
             out.append({
                 "code": "review.total.level",
                 "text": (f"{kuka} scored {_pts(act)} against a projected "
-                         f"{_pts(proj)}. About where the model had you."),
+                         f"{_pts(proj_shown)}{_so_far}. About where the model had you."),
             })
         elif d > 0:
             out.append({
                 "code": "review.total.over",
                 "text": (f"{kuka} scored {_pts(act)} against a projected "
-                         f"{_pts(proj)}. You beat the model by {_pts(d)}."),
+                         f"{_pts(proj_shown)}{_so_far}. You beat the model by {_pts(d)}."),
             })
         else:
             # 🔴 Alisuoritus sanotaan yhta suoraan kuin ylisuoritus.
             out.append({
                 "code": "review.total.under",
                 "text": (f"{kuka} scored {_pts(act)} against a projected "
-                         f"{_pts(proj)}, so {_pts(abs(d))} short."),
+                         f"{_pts(proj_shown)}{_so_far}, so {_pts(abs(d))} short."),
             })
 
     cap = review.get("captain")

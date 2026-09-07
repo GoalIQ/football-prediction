@@ -82,6 +82,12 @@ export interface ReviewCardSpec {
 
 export const REVIEW_CARD_MIN_ROWS = 3;
 
+/** Alaotsikon merkkibudjetti. Mitattu `FantasyListShareCard.tsx`:n omasta
+ *  kommentista: pisin alaotsikko (~88 merkkia) ei mahdu 10 px:lla, ja
+ *  renderoija kutistaa yhdelle riville ja katkaisee HANNAN. Ylipitka rivi
+ *  ei siis nayta huonolta vaan PUDOTTAA tarkistettavan luvun. */
+export const SUBTITLE_BUDGET = 88;
+
 const sign = (n: number) => (n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1));
 
 /**
@@ -150,39 +156,62 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
 
   const { actual, projectedText, diff } = reviewTotals(ordered);
 
-  // U4 + B5: otsikko johdetaan riveista, chipista ja PICKEISTA.
+  // 🔴 PORTIN 4. KIERROS (C1-C7). Kolme sitkeaa vikaluokkaa:
   //
-  // 🔴 B5 oli oman korjaukseni tuoma vika: `bench boost (all ${rows.length})`
-  // laski VERTAILTUJA rivejä, ja tuotantopayload todistaa etta rivi voi
-  // pudota (14/15). Bench boost -kierroksella alaotsikko olisi sanonut
-  // "bench boost (all 14)" ja 60 merkkia myohemmin "14 of 15 picks had both
-  // numbers" - "all" olisi kumoutunut samalla rivilla. Nimittaja on
-  // `total_picks`, ja kattavuus sanotaan LABELISSA eika omana lauseenaan
-  // (B2: alaotsikko oli 124 merkkia, budjetti ~88).
+  //  C1  FPL:n luku sanottiin vain KESKEN olevalla kierroksella. Lopullisella
+  //      kierroksella ero vaikeni kokonaan - eli tasan siina tilassa jossa
+  //      lukija luottaa lukuun eniten. Luku sanotaan nyt aina kun se eroaa;
+  //      `so far` on ainoa asia jonka `provisional` vaihtaa.
+  //  C2  Selittava lause nimesi mekanismin joka EI TASMAA: mitattu 7.9
+  //      XI-summa 72, kerroinpainotettu bonus 15, siis ilman bonusta 57,
+  //      mutta `entry_history.points` = 58. Lukija joka laskee 58 + 15 ei
+  //      paase 72:een. Ja `entry_history` on NETTO siirtorangaistuksista,
+  //      joten -4:n viikolla syy ei olisi bonus lainkaan. Emme siis nimea
+  //      syyta - sanomme vain kumpi luku on kumpi ja mista se on.
+  //  C7  Nimittaja oli fail-open: ilman `total_picks`ia kortti vaitti
+  //      "bench boost", ja `rows > odotettu` tuotti "15 of 11". Molemmat
+  //      fail-closed nyt.
   const chip = (data.meta.chip || '').toLowerCase();
   const picks = data.meta.total_picks;
-  const odotettu = chip === 'bboost' ? (picks ?? rows.length) : 11;
+  const odotettu = chip === 'bboost' ? picks : 11;
   const label =
-    rows.length === odotettu
-      ? chip === 'bboost'
-        ? 'bench boost'
-        : 'starting XI'
-      : `${rows.length} of ${odotettu} players compared`;
+    odotettu == null || rows.length > odotettu
+      ? `${rows.length} picks compared`
+      : rows.length === odotettu
+        ? chip === 'bboost'
+          ? 'bench boost'
+          : 'starting XI'
+        : `${rows.length} of ${odotettu} players compared`;
 
-  const parts: string[] = [];
-  // B1: kesken olevalla kierroksella luku on live-syotteesta JA FPL:n oma
-  // luku sanotaan nimeltaan. "bonus not final" nimesi mekanismin jota kortti
-  // ei mittaa; talla lukija loytaa molemmat luvut ja tietaa kumpi on kumpi.
-  const fpl = data.meta.fpl_points;
   const kesken = !!data.meta.provisional;
-  const yksikko = kesken && fpl != null && fpl !== actual ? 'live pts' : 'pts';
-  parts.push(`${label}: ${actual} ${yksikko} vs ${projectedText} xP (${sign(diff)})`);
-  if (kesken && fpl != null && fpl !== actual) {
-    parts.push(`FPL shows ${fpl} so far`);
-  } else if (kesken) {
-    parts.push('gameweek still being scored');
+  const fpl = data.meta.fpl_points;
+  const compared = data.meta.players_compared;
+
+  // C3: BUDJETTI. `FantasyListShareCard` kutistaa alaotsikon yhdelle riville
+  // (`numberOfLines 1`, `minimumFontScale 0.64`) ja katkaisee HANNAN - eli
+  // juuri tarkistettavan luvun. Osat ovat siksi PRIORITEETTIJARJESTYKSESSA
+  // ja vahiten tarkeat pudotetaan kunnes rivi mahtuu. Budjetti mitattu
+  // renderoijan omasta kommentista.
+  const pakolliset = [
+    `${label}: ${actual}${kesken ? ' live pts' : ' pts'} vs ` +
+      `${projectedText} xP (${sign(diff)})`,
+  ];
+  if (fpl != null && fpl !== actual) {
+    pakolliset.push(`FPL ${fpl}${kesken ? ' so far' : ''}`);
   }
-  parts.push('worst call first');
+  // C4: kattavuus takaisin kortille. Paneeli sanoi "14 of 15" ja kortti
+  // vaikeni - sama vaite kahdella pinnalla, toinen hiljaa.
+  const valinnaiset: string[] = [];
+  if (compared != null && picks != null && compared < picks) {
+    valinnaiset.push(`${compared}/${picks} compared`);
+  }
+  valinnaiset.push('worst call first');
+
+  let osat = [...pakolliset, ...valinnaiset];
+  while (osat.join(', ').length > SUBTITLE_BUDGET && osat.length > pakolliset.length) {
+    osat = osat.slice(0, -1);
+  }
+  const parts = osat;
 
   // U5: kerroinlause suurimmasta kertoimesta riveilla.
   const multNote =

@@ -121,7 +121,14 @@ def build_review(gw: int | None, picks: dict | None,
     huonoin = min(pohja, key=lambda r: r["diff"])
     kapteeni = next((r for r in vertailtavat if r["is_captain"]), None)
 
-    proj_xi = round(sum(r["projected"] for r in xi), 2) if xi else None
+    # 🔴 C5 (portin 4. kierros): KAKSOISPYORISTYS. `projected` pyoristettiin
+    # kahteen desimaaliin, ja `fpl_model_says` muotoili siita yhteen - samalla
+    # kun klientti laskee saman summan RAAKANA ja tekee `toFixed(1)`. Brute
+    # force 200 000 summalla: 1102 tapausta joissa lause ja viereinen rivi
+    # nayttavat eri luvun (raaka 54,4499... -> lause "54.5", rivi "54.4").
+    # Raaka summa kulkee nyt erikseen, ja lause laskee siita.
+    proj_xi_raw = sum(r["projected"] for r in xi) if xi else None
+    proj_xi = round(proj_xi_raw, 2) if proj_xi_raw is not None else None
     act_xi = sum(r["actual"] for r in xi) if xi else None
 
     # --- liput seuraavaan kierrokseen (nykytila, ei kierroksen aikainen)
@@ -199,6 +206,9 @@ def build_review(gw: int | None, picks: dict | None,
         },
         "review": {
             "projected": proj_xi,
+            # C5: pyoristamaton summa lauseen laskentaa varten. Klientti
+            # laskee saman rivien summasta, joten lukija on sama.
+            "projected_raw": proj_xi_raw,
             "actual": act_xi,
             "diff": (round(act_xi - proj_xi, 2)
                      if proj_xi is not None and act_xi is not None else None),

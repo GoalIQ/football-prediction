@@ -240,3 +240,65 @@ def test_paneeli_ei_selita_omaa_designperiaatettaan():
     for r in kaikki:
         assert "argue with the model" not in r["text"], r["text"]
         assert "top line" not in r["text"], r["text"]
+
+
+# ---------------------------------------------------------------------------
+# PORTIN 4. KIERROS 7.9.2026 (C5, C6, C9, C10). Kolme korjausta elivat vain
+# koodissa ilman fikstuuria, ja portti huomautti siita erikseen.
+# ---------------------------------------------------------------------------
+
+def _review(proj_raw: float, act: int) -> dict:
+    return {"projected": round(proj_raw, 2), "projected_raw": proj_raw,
+            "actual": act, "players": []}
+
+
+def test_c5_lause_laskee_erotuksen_raaasta_summasta_kuten_klientti():
+    """🔴 KAKSOISPYORISTYS. `projected` pyoristettiin kahteen desimaaliin ja
+    lause muotoili siita yhteen, samalla kun klientti laskee saman summan
+    RAAKANA ja tekee `toFixed(1)`. Brute force 200 000 summalla loysi 1102
+    tapausta joissa lause ja viereinen rivi nayttivat eri luvun.
+
+    Tama on yksi niista: raaka 54.4499 -> klientti nayttaa 54.4, joten
+    erotuksen on oltava 72 - 54.4 = 17.6, ei 17.5.
+    """
+    rivit = MS.review_lines(_review(54.4499, 72))
+    teksti = rivit[0]["text"]
+    assert "54.4" in teksti, teksti
+    assert "17.6" in teksti, teksti
+    assert "17.5" not in teksti, teksti
+
+
+def test_c5_negatiivinen_kontrolli_ilman_raakaa_summaa():
+    """Vanhat payloadit ilman `projected_raw`ia eivat saa kaataa lausetta."""
+    r = {"projected": 71.15, "actual": 72, "players": []}
+    rivit = MS.review_lines(r)
+    assert rivit and "71.2" in rivit[0]["text"]
+
+
+def test_c6_lause_ei_vaita_pelaamista_vaan_vertailtavuutta():
+    """"Your N who played" oli vaite jota payload ei mittaa: rivi putoaa kun
+    JAADYTETTY xP puuttuu, ei siksi etta pelaaja ei pelannut. Ja bench
+    boostilla FPL antaa multiplier 1 myos 0 minuutin penkkilaiselle."""
+    t10 = MS.review_lines(_review(60.0, 66), rows=10)[0]["text"]
+    assert "who played" not in t10, t10
+    assert "The 10 picks with both numbers" in t10, t10
+    # 11 riviä on yha luettava muoto.
+    t11 = MS.review_lines(_review(60.0, 66), rows=11)[0]["text"]
+    assert t11.startswith("Your eleven"), t11
+    # Bench boost: 15 riviä ei ole "eleven".
+    t15 = MS.review_lines(_review(60.0, 66), rows=15)[0]["text"]
+    assert "eleven" not in t15, t15
+
+
+def test_c10_kesken_oleva_kierros_merkitaan_lauseeseen():
+    """Lause kulkee payloadissa itsenaisena ja renderoityy missa tahansa
+    `model_says` renderoidaan - myos ilman viereista provisional-varausta.
+    Arviota ei saa tehda kesken olevasta luvusta ilman merkintaa."""
+    kesken = MS.review_lines(_review(71.15, 72), rows=11, provisional=True)[0]["text"]
+    assert "so far" in kesken, kesken
+    valmis = MS.review_lines(_review(71.15, 72), rows=11, provisional=False)[0]["text"]
+    assert "so far" not in valmis, valmis
+    # Merkinta kuuluu kaikkiin kolmeen haaraan, ei vain tasapeliin.
+    for proj, act in ((60.0, 80), (80.0, 60)):
+        t = MS.review_lines(_review(proj, act), rows=11, provisional=True)[0]["text"]
+        assert "so far" in t, t

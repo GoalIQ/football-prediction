@@ -115,11 +115,18 @@
 		<!-- B6 (7.9, portti): paneeli naytti saman luvun ja vain sanan
 		     "provisional" samalla kun kortti selittaa eron. Sama luku, sama
 		     lukija, toinen pinta selittaa ja toinen ei. -->
-		{#if data.meta.provisional}
+		{#if data.meta.provisional || (data.meta.fpl_points != null && totals && data.meta.fpl_points !== totals.actual)}
 			<p class="muted small prov-note">
+				<!-- 🔴 C2 (portin 4. kierros): EMME NIMEA SYYTA. Aiempi lause sanoi
+				     eron johtuvan vahvistamattomasta bonuksesta, mutta mitattu 7.9:
+				     XI-summa 72, kerroinpainotettu bonus 15, siis ilman bonusta 57 -
+				     ja FPL sanoo 58. Lukija joka laskee 58 + 15 ei paase 72:een. Ja
+				     `entry_history.points` on NETTO siirtorangaistuksista, joten -4:n
+				     viikolla syy ei olisi bonus lainkaan. Sanomme kumpi luku on kumpi. -->
 				{#if data.meta.fpl_points != null && totals && data.meta.fpl_points !== totals.actual}
-					GW{data.meta.reviewed_gw} is still being scored. FPL shows
-					{data.meta.fpl_points} so far; our total includes bonus FPL has not confirmed yet.
+					Two totals, two sources: FPL's own total for GW{data.meta.reviewed_gw} is
+					{data.meta.fpl_points}. Ours is the live feed added up across your counted
+					picks, and it can move until FPL finishes scoring.
 				{:else}
 					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.
 				{/if}

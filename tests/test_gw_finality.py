@@ -91,3 +91,59 @@ def test_api_ei_lue_provisionaalia_pelkasta_artefaktista():
     assert lukijat >= luvut, (
         f"{luvut} artefaktilukua mutta vain {lukijat} fail-closed-lukijaa - "
         "jokin pinta asettaa lipun suoraan johdetusta listasta")
+
+
+# ---------------------------------------------------------------------------
+# PORTIN 4. KIERROS (C9): `_ennen_deadlinea` ja `meta.fpl_points` elivat vain
+# koodissa. Fikstuuri kirjoitetaan korjatusta tapauksesta.
+# ---------------------------------------------------------------------------
+
+def test_basis_vaite_on_johdettu_eika_ehdoton():
+    """`meta.basis` sanoi EHDOTTOMASTI "frozen before the deadline" vaikka
+    mikaan ei mitannut sita. Sama vaite kuin kortin `freezeNote()`, joten
+    sama saanto: fail-closed, puuttuva aikaleima -> vaitetta ei tehda."""
+    from src.models.fpl_gw_review import _ennen_deadlinea
+
+    # Mitattu gw3-freeze: 12:16:41Z vs deadline 17:30:00Z.
+    assert _ennen_deadlinea({"frozen_at": "2026-09-04T12:16:41Z",
+                             "deadline": "2026-09-04T17:30:00Z"}) is True
+    # Freeze deadlinen JALKEEN -> ei vaitetta.
+    assert _ennen_deadlinea({"frozen_at": "2026-09-04T18:00:00Z",
+                             "deadline": "2026-09-04T17:30:00Z"}) is False
+    # Puuttuva, tyhja tai rikkinainen -> ei vaitetta (fail-closed).
+    for fmeta in ({}, {"frozen_at": None, "deadline": None},
+                  {"frozen_at": "roska", "deadline": "2026-09-04T17:30:00Z"},
+                  {"frozen_at": "2026-09-04T12:16:41Z"}):
+        assert _ennen_deadlinea(fmeta) is False, fmeta
+    # Tasan sama hetki ei ole "ennen".
+    assert _ennen_deadlinea({"frozen_at": "2026-09-04T17:30:00Z",
+                             "deadline": "2026-09-04T17:30:00Z"}) is False
+
+
+def test_review_meta_kantaa_fpl_oman_luvun():
+    """C1/C2: FPL:n oma kierrospistemaara on payloadissa, jotta kortti voi
+    sanoa sen sen sijaan etta se pehmentaisi omaa lukuaan."""
+    from src.models.fpl_gw_review import build_review
+
+    picks = {
+        "entry_history": {"points": 58, "event_transfers_cost": 0},
+        "active_chip": "3xc",
+        "picks": [{"element": i, "multiplier": 1 if i <= 11 else 0,
+                   "is_captain": False, "is_vice_captain": False}
+                  for i in range(1, 16)],
+    }
+    frozen = {i: 6.0 for i in range(1, 16)}
+    points = {i: 7 for i in range(1, 16)}
+    info = {i: {"web_name": f"P{i}", "team_short": "ARS", "pos": "MID"}
+            for i in range(1, 16)}
+    out = build_review(3, picks, frozen, points, info)
+    assert out["meta"]["fpl_points"] == 58
+    assert out["meta"]["total_picks"] == 15
+    assert out["meta"]["chip"] == "3xc"
+    # C5: raaka summa kulkee erikseen, jotta lause ja rivi pyoristavat kerran.
+    assert out["review"]["projected_raw"] == 66.0
+
+    # Puuttuva luku ei saa muuttua nollaksi (nolla olisi vaite).
+    picks_ilman = dict(picks, entry_history={})
+    out2 = build_review(3, picks_ilman, frozen, points, info)
+    assert out2["meta"]["fpl_points"] is None
