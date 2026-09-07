@@ -59,12 +59,16 @@ def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
         if gw is None:
             continue
         kustannus = int(row.get("event_transfers_cost") or 0)
+        # 🔴 KONVENTIO (portin 13. kierros): `points` on FPL:n oma kentta
+        # SELLAISENAAN eli brutto, ja `points_net` on se luku jonka lukija
+        # nakee. Sama nimeaminen kuin `fpl_rate_team` ja `fpl_gw_review`.
+        #
+        # Aiemmin tama moduuli teki painvastoin (`points` = netto), ja se oli
+        # RAKENTEELLINEN SYY sille etta jakokortti jai bruttoon 13. kierrokseen
+        # asti: kirjoittajan piti muistaa kummassa moduulissa han on.
         out[int(gw)] = {
-            # NETTO: se luku jonka kayttaja nakee omalta FPL-sivultaan, ja
-            # ainoa joka on vertailukelpoinen mallin riviin (malli ei ota
-            # hitteja, joten brutto antoi kayttajalle hitin verran etumatkaa).
-            "points": int(row.get("points") or 0) - kustannus,
-            "points_gross": int(row.get("points") or 0),
+            "points": int(row.get("points") or 0),
+            "points_net": int(row.get("points") or 0) - kustannus,
             "bench": int(row.get("points_on_bench") or 0),
             "transfer_cost": kustannus,
         }
@@ -111,11 +115,11 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
         }
         u = user.get(gw)
         if u is not None:
-            you_total += u["points"]
-            cum += u["points"] - mp
+            you_total += u["points_net"]
+            cum += u["points_net"] - mp
             compared += 1
-            row["your_points"] = u["points"]
-            row["diff"] = u["points"] - mp
+            row["your_points"] = u["points_net"]
+            row["diff"] = u["points_net"] - mp
             row["cumulative_diff"] = cum
         if premium:
             # "Missä ero syntyi" — nämä ovat premiumin erittely, eivät

@@ -536,7 +536,13 @@
 		);
 		if (cardRows.length === 0) return null;
 		const headline: { key: string; value: string; under?: boolean }[] = [
-			{ key: 'You', value: String(lf.points) }
+			/* 🔴 Portin 13. kierros: JAKOKORTTI jai 12. kierroksen migraatiosta.
+			   Ruutu (rivi 929) korjattiin nettoon mutta kortti ei, jolloin sama
+			   nakyma naytti "You 66" ruudulla ja "You 70" kortilla - ja kortin
+			   oma laskutoimitus ei mennyt tasan (70 - 62 = 8, kortti sanoo
+			   "You win by 4" koska `vs_model` on netosta). Kortti irtoaa
+			   sovelluksesta, joten se on nailla kahdesta julkisempi. */
+			{ key: 'You', value: String(lf.points_net ?? lf.points) }
 		];
 		/* Portti 2.9 k3: mallin luku kortille VAIN reitin kanssa (entry-id
 		   solun avaimessa). Ilman id:ta kortti palaa You/Projected-muotoon. */

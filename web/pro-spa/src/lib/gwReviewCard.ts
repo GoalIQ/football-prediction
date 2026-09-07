@@ -193,7 +193,9 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   const naytettyEro = (p: ReviewCardPlayer) =>
     p.actual - Number(p.projected.toFixed(1));
   const ordered = [...xi].sort(
-    (a, b) => naytettyEro(a) - naytettyEro(b) || a.web_name.localeCompare(b.web_name)
+    (a, b) => naytettyEro(a) - naytettyEro(b) || a.web_name.localeCompare(b.web_name, 'en')  // kiintea lokaali: kortti on
+      // jaettava kuva, ja diakriittiset nimet (Odegaard, Nunez) jarjestyivat
+      // eri tavalla es- ja en-laitteella
   );
   const maxMult = ordered.reduce((m, p) => Math.max(m, p.multiplier), 1);
   const rows: ReviewCardRow[] = ordered.map((p, i) => ({

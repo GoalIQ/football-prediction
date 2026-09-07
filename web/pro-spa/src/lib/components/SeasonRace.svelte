@@ -200,7 +200,8 @@
 										.length > 1
 										? 's'
 										: ''}{/if}
-								{#if r.your_transfer_cost}· your hits −{r.your_transfer_cost}{/if}
+								{#if r.your_transfer_cost}· your {r.your_transfer_cost} point hit already
+									deducted{/if}
 							</span>
 						</li>
 					{/if}

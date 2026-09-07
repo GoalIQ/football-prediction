@@ -133,11 +133,11 @@
 						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the live
 						scores for the {totals.rows} that scored, and it can move until FPL
 						finishes scoring.{#if (data.meta.transfer_cost ?? 0) > 0} That is
-							{data.meta.fpl_points} minus a transfer hit of {data.meta.transfer_cost} points.{/if}
+							{data.meta.fpl_points} minus {data.meta.transfer_cost} points of transfer hits.{/if}
 					{:else}
 						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the
 						{totals.rows} that scored.{#if (data.meta.transfer_cost ?? 0) > 0} That is
-							{data.meta.fpl_points} minus a transfer hit of {data.meta.transfer_cost} points.{/if}
+							{data.meta.fpl_points} minus {data.meta.transfer_cost} points of transfer hits.{/if}
 					{/if}
 				{:else}
 					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.

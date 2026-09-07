@@ -137,3 +137,71 @@ def test_hylatyt_sanamuodot_eivat_palaa():
         src = re.sub(r"<!--.*?-->", "", src, flags=re.DOTALL)
         for bad in ("alone was", "of that", "of it.", "logged before kickoff, graded in public"):
             assert bad not in src, f"{path.name}: hylatty sanamuoto '{bad}' on yha koodissa"
+
+
+@pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
+def test_kortin_oma_pistemaara_on_netto_molemmilla():
+    """🔴 Portin 13. kierros: RUUTU MIGRATOITIIN, KORTTI EI.
+
+    12. kierroksella siirsin `vs_model`in laskettavaksi netosta ja korjasin
+    Svelten ruudun (rivi 929) - mutta saman tiedoston JAKOKORTTI (rivi 539)
+    jai bruttoon. Hittiviikolla (gross 70, cost 4, malli 62) kortti sanoi
+    "You 70 ... Model 62 ... You win by 4": kortin oma laskutoimitus antaa
+    8, eika lukija voi tarkistaa sita mistaan. Samaan aikaan ruutu saman
+    komponentin sisalla naytti 66.
+
+    **Miksi tama ei jaanyt kiinni:** viereiset testit vartioivat `vs_model`-
+    ja `model_entry_id`-EHTOJA molemmilta pinnoilta, mutta eivat yhtaan
+    NAYTETTYA LUKUA. Portti mittasi ehdot, ei arvoa.
+    """
+    web = _strip_comments(WEB.read_text(encoding="utf-8"))
+    mob = _strip_comments(MOBILE_SPEC.read_text(encoding="utf-8"))
+    assert "lf.points_net ?? lf.points" in web, "webin kortti nayttaa bruttoa"
+    assert "lastFinished.points_net ?? lastFinished.points" in mob, (
+        "mobiilin kortti nayttaa bruttoa")
+    # NEGATIIVINEN KONTROLLI: paljas brutto ei saa jaada kummallekaan.
+    assert "String(lf.points)" not in web
+    assert "String(lastFinished.points)" not in mob
+
+
+@pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
+def test_ruutu_ja_kortti_lukevat_samaa_kenttaa():
+    """Sama invariantti toiseen suuntaan: jos jompikumpi pinta lisaa uuden
+    `points`-luvun, se on luettava samasta kentasta kuin toinen. Lasketaan
+    esiintymat, ei etsita yhta merkkijonoa (muisti:
+    yksi-renderointipolku-kahdesta)."""
+    web = _strip_comments(WEB.read_text(encoding="utf-8"))
+    netot = web.count("points_net ?? ")
+    assert netot >= 3, (
+        f"webissa on {netot} netto-lukua; ruutu, kortti ja otsikkoluku "
+        "lukevat kaikki samaa kenttaa")
+
+
+def test_points_kentta_tarkoittaa_samaa_kaikissa_moduuleissa():
+    """🔴 N1 (portin 13. kierros): RAKENTEELLINEN SYY B1:lle.
+
+    `fpl_model_race` kaytti `points`ia NETTONA samalla kun `fpl_rate_team` ja
+    `fpl_gw_review` kayttavat sita BRUTTONA. Sama sana, kaanteinen merkitys,
+    ja kirjoittajan piti muistaa kummassa moduulissa han on - juuri siksi
+    jakokortti jai bruttoon kahden kierroksen ajaksi.
+
+    Konventio: `points` / `fpl_points` = FPL:n oma kentta sellaisenaan
+    (brutto). `points_net` / `fpl_points_net` = se luku jonka lukija nakee.
+    Tama testi kaatuu jos joku moduuli palaa toiseen suuntaan.
+    """
+    SRC = HERE.parents[1] / "src" / "models"
+    race = (SRC / "fpl_model_race.py").read_text(encoding="utf-8")
+    # model_racessa `points` on raaka kentta, netto omalla nimellaan
+    assert '"points": int(row.get("points") or 0),' in race
+    assert '"points_net": int(row.get("points") or 0) - kustannus,' in race
+    # ja vertailut lukevat NETTOA
+    assert 'u["points_net"] - mp' in race
+    assert 'u["points"] - mp' not in race, (
+        "vertailu lukee bruttoa - malli ei ota hitteja, joten se antaisi "
+        "kayttajalle hitin verran etumatkaa")
+
+    rate = (SRC / "fpl_rate_team.py").read_text(encoding="utf-8")
+    assert '"points_net":' in rate and '"points": points,' in rate
+
+    review = (SRC / "fpl_gw_review.py").read_text(encoding="utf-8")
+    assert '"fpl_points_net":' in review
