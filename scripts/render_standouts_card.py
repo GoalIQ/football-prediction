@@ -255,8 +255,16 @@ def scope_phrase(superlative: str, sc: dict) -> str:
     return f"{head} after {which}"
 
 
-def _promoted(p: dict) -> bool:
-    return (p.get("team_flag") or "") == "promoted"
+# 🔴 4.9 PORTIN HUOMIO, korjattu 7.9: tassa luki
+#     `(p.get("team_flag") or "") == "promoted"`
+# eli kortti tunsi VAIN yhden lipun kolmesta. `high_turnover` ei tuottanut
+# mitaan merkkia, vaikka long-tail-sivut ovat tunteneet molemmat. Mitattu
+# 7.9: poolissa 99 `high_turnover` ja 80 `promoted` - lahes puolet
+# liputetuista pelaajista oli kortilla merkitsematta, mukaan lukien Wissa
+# (Newcastle, 25,2 % viime kauden minuuteista lahtenyt).
+#
+# Yksi lukija molemmille pinnoille, ks. `src/models/team_flag.py`.
+from src.models.team_flag import flags_present, marker  # noqa: E402
 
 
 def _tile(lbl: str, p: dict | None, big: str, small: str, why: str) -> str:
@@ -264,7 +272,7 @@ def _tile(lbl: str, p: dict | None, big: str, small: str, why: str) -> str:
         return (f'<div class="tile"><div class="lbl">{escape(lbl)}</div>'
                 '<div class="name">-</div><div class="meta">no pick this week</div>'
                 '<div class="big">-</div></div>')
-    star = "*" if _promoted(p) else ""
+    star = marker(p)
     return (f'<div class="tile"><div class="lbl">{escape(lbl)}</div>'
             f'<div class="name">{escape(p["web_name"])}</div>'
             f'<div class="meta">{escape(p["pos"])} · {escape(p["team_short"])}{star}'
@@ -389,11 +397,17 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
                else (f"but blanks {pct(s['gamble']['xp_dist']['p_blank'])} of the time"
                      if s["gamble"] else ""))),
     ])
-    promoted_on_card = any(_promoted(s[k]) for k in s if s[k])
-    from scripts.gen_share_card import promoted_footnote
-    # 30.8 (portti): sama kovakoodaus kuin projected-XI-kortissa.
-    footnote = (f'<div class="fn">{promoted_footnote()}</div>'
-                if promoted_on_card else "")
+    # Alaviite selittaa VAIN ne merkit jotka kortilla nakyy.
+    kortin_liput = flags_present([s[k] for k in s if s[k]])
+    from scripts.gen_share_card import promoted_footnote, turnover_footnote
+    rivit = []
+    if "promoted" in kortin_liput:
+        # 30.8 (portti): sama kovakoodaus kuin projected-XI-kortissa.
+        rivit.append(promoted_footnote())
+    if "high_turnover" in kortin_liput:
+        rivit.append(turnover_footnote())
+    footnote = ('<div class="fn">' + "<br>".join(rivit) + "</div>"
+                if rivit else "")
     n = (s["captain"] or {}).get("xp_dist", {}).get("n", 2000) if s["captain"] else 2000
     html = (
         "<!doctype html><meta charset='utf-8'>"

@@ -923,7 +923,28 @@ def _promoted_footnote() -> str:
 #: Julkinen nimi samalle apurille. Kortteja on kolme generaattoria ja
 #: kovakoodattu "one PL match" on shipannut jo kerran (25.8), joten
 #: alaviite luetaan YHDESTA paikasta (muisti: kuratoitu-lista-jaettuun-moduuliin).
+def _turnover_footnote() -> str:
+    """Alaviite `high_turnover`-merkille, SAMASTA lahteesta kuin sivu.
+
+    Kynnys luetaan artefaktista eika kovakoodata: `build_team_confidence`
+    mittaa sen 51 joukkue-kausivaihdoksesta, ja jos se muuttuu, alaviite
+    muuttuu mukana. Fail-closed kuten nousija-alaviite.
+    """
+    p = DATA / "team_confidence.json"
+    if not p.exists():
+        raise SystemExit("kortti: team_confidence.json puuttuu - "
+                         "vaihtuvuus-alaviitetta ei voi johtaa")
+    doc = json.loads(p.read_text(encoding="utf-8"))
+    kynnys = doc.get("high_turnover_threshold_pct")
+    if kynnys is None:
+        return ("† squad turnover above our threshold: a large share of "
+                "last season's minutes left the club")
+    return (f"† over {float(kynnys):.0f}% of last season's minutes left "
+            f"the club")
+
+
 promoted_footnote = _promoted_footnote
+turnover_footnote = _turnover_footnote
 
 
 def render_gw_outlook(spec: dict, out_path: Path) -> Path:
