@@ -857,6 +857,14 @@ export interface GwReviewResponse {
 		reviewed_gw: number | null;
 		provisional?: boolean;
 		players_compared?: number;
+		/** Kattavuuden NIMITTAJA payloadista (U3, 7.9): kortti ja paneeli
+		 *  sanoivat "of 15" kovakoodattuna. */
+		total_picks?: number;
+		/** FPL:n active_chip: bench boostilla rivit eivat ole avaava XI. */
+		chip?: string | null;
+		/** Freeze-hetki ja deadline, jotta ajoitusvaite on johdettu. */
+		frozen_at?: string | null;
+		deadline?: string | null;
 		basis?: string;
 		note: string | null;
 		note_code?: string | null;

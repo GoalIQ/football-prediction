@@ -111,7 +111,13 @@ export function objectiveLine(s: ObjectiveStatus, locale: string = 'en-GB'): str
   }
   const num = (n: number) => n.toLocaleString(locale);
   if (s.kind === 'rank_unavailable') {
-    return `Your overall rank after GW${s.gw} was not available from FPL just now.`;
+    // 🔴 U8 (7.9, portti): edellinen muoto sanoi "not available from FPL",
+    // eli nimesi syyllisen. `_entry_identity` nielee `RateTeamError`in
+    // KAIKISTA syista: FPL alhaalla, MEIDAN verkko tai 10 min cache, entry ei
+    // ole julkinen, vaara entry-ID, tai entryllä ei ole rivia sille
+    // kierrokselle. Ainoa syy jota emme voi sulkea pois on etta vika on
+    // meissa, joten emme voi vierittaa sita FPL:lle.
+    return `We could not read your overall rank for GW${s.gw} just now.`;
   }
   const rank = num(s.rank as number);
   const move =

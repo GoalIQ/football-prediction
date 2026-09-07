@@ -21,7 +21,7 @@
 	import { fetchGwReview, type GwReviewResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
-	import { gwReviewCardSpec } from '$lib/gwReviewCard';
+	import { gwReviewCardSpec, reviewTotals } from '$lib/gwReviewCard';
 	import { shareCard, shareButtonLabel } from '$lib/shareCard';
 
 	let data = $state<GwReviewResponse | null>(null);
@@ -53,6 +53,13 @@
 
 	// 6.9 (Villen tilaus): katsaus kuvana. Sisalto tulee gwReviewCard.ts:sta
 	// (sama lukija mobiilissa); tama vain valittaa sen listakortille.
+	// Sama joukko kuin kortilla: pelanneet rivit (multiplier > 0).
+	let totals = $derived(
+		(() => {
+			const xi = (data?.review?.players ?? []).filter((p) => p.in_xi && p.multiplier > 0);
+			return xi.length ? reviewTotals(xi) : null;
+		})()
+	);
 	let cardSpec = $derived(data && data.meta.available ? gwReviewCardSpec(data) : null);
 	let sharing = $state(false);
 	async function shareReview() {
@@ -86,9 +93,12 @@
 				<!-- Näkyvä merkki, ei tooltip: kosketuslaitteella hoveria ei ole. -->
 				<span class="prov">provisional</span>
 			{/if}
-			{#if data.meta.players_compared != null && data.meta.players_compared < 15}
-				<!-- Kattavuus kerrotaan. Vajaa otos täytenä on valhe. -->
-				<span class="muted small">{data.meta.players_compared} of 15 compared</span>
+			<!-- U3 (7.9): nimittaja tulee payloadista, ei kovakoodattuna. Kortti
+			     sanoo saman lauseen samoista luvuista. -->
+			{#if data.meta.players_compared != null && data.meta.total_picks != null && data.meta.players_compared < data.meta.total_picks}
+				<span class="muted small"
+					>{data.meta.players_compared} of {data.meta.total_picks} picks had both numbers</span
+				>
 			{/if}
 			{#if cardSpec}
 				<button type="button" class="share-chip" onclick={shareReview} disabled={sharing}>
@@ -97,15 +107,18 @@
 			{/if}
 		</div>
 
-		{#if rv.projected != null && rv.actual != null}
+		<!-- 🔴 U2 (7.9): PANEELI JA KORTTI SAMASTA LUKIJASTA. Paneeli renderoi
+		     ennen payloadin `diff`in (0.85 -> "+0.9") ja kortti laski naytetyista
+		     luvuista (71.2 ja 72 -> "+0.8"). Jakonappi on SAMASSA otsikkorivissa,
+		     joten lukija naki molemmat yhta aikaa. Nyt molemmat lukevat
+		     `reviewTotals`in eika kahta lukua voi olla. -->
+		{#if totals}
 			<p class="total">
-				<strong>{rv.actual}</strong> scored against
-				<strong>{rv.projected.toFixed(1)}</strong> projected
-				{#if rv.diff != null}<span
-						class="d"
-						class:ahead={rv.diff > 0}
-						class:behind={rv.diff < 0}>{sign(rv.diff)}</span
-					>{/if}
+				<strong>{totals.actual}</strong> scored against
+				<strong>{totals.projectedText}</strong> projected
+				<span class="d" class:ahead={totals.diff > 0} class:behind={totals.diff < 0}
+					>{sign(totals.diff)}</span
+				>
 			</p>
 		{/if}
 

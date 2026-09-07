@@ -31,6 +31,8 @@ erota: `tests/test_luck_review_agreement.py` kaatuu jos ne erkanevat.
 """
 from __future__ import annotations
 
+from src.models import fpl_actuals
+
 NOTE_NOT_PLAYED = (
     "The review opens once a gameweek has been played with a projection "
     "frozen before its deadline."
@@ -143,6 +145,19 @@ def build_review(gw: int | None, picks: dict | None,
             "reviewed_gw": gw,
             "provisional": gw in set(provisional_gws or []),
             "players_compared": len(vertailtavat),
+            # 🔴 7.9 (portti U3): kattavuus tarvitsee NIMITTAJAN. Kortti sanoi
+            # "12 of 15 compared" jossa 15 oli kovakoodattu, ja rivit olivat
+            # eri joukkoa (XI). Nyt molemmat luvut tulevat samasta paikasta.
+            "total_picks": len(picks.get("picks") or []),
+            # U4/U5: chip muuttaa sen MITA rivit ovat. Bench boostilla
+            # jokaisella 15:sta on multiplier > 0, eli "starting XI" olisi
+            # vaara otsikko. Kortti ei saa paatella tata itse.
+            "chip": picks.get("active_chip"),
+            # A3: freeze-vaite on JOHDETTAVA, ei rakenteellinen. Ilman naita
+            # kortti sanoi "frozen before the deadline" myos silloin kun
+            # freeze olisi myohassa - vaite jota se ei voi mitata.
+            "frozen_at": (fpl_actuals.frozen_meta(gw) or {}).get("frozen_at"),
+            "deadline": (fpl_actuals.frozen_meta(gw) or {}).get("deadline"),
             "basis": ("projection frozen before the deadline, never the live "
                       "one"),
             "note": None,

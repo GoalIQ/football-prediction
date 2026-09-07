@@ -37,6 +37,14 @@ export interface ReviewCardInput {
     reviewed_gw: number | null;
     provisional?: boolean;
     players_compared?: number;
+    /** Kaikki pickit (yleensa 15). Kattavuuden NIMITTAJA, ei kovakoodattu. */
+    total_picks?: number;
+    /** FPL:n `active_chip`. Bench boostilla rivit EIVAT ole avaava XI. */
+    chip?: string | null;
+    /** Freeze-hetki ja kierroksen deadline ISO-muodossa. Vaite freezen
+     *  ajoituksesta tehdaan naista, ei rakenteesta. */
+    frozen_at?: string | null;
+    deadline?: string | null;
   };
   review: {
     projected: number | null;
@@ -74,29 +82,45 @@ export const REVIEW_CARD_MIN_ROWS = 3;
 const sign = (n: number) => (n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1));
 
 /**
- * 🔴 JULKAISUTARKISTAJAN LOYDOKSET 7.9 (A2-A7) — miksi tama funktio
- * nayttaa talta:
+ * 🔴 PORTIN KAKSI KIERROSTA (6.9 loydokset A2-A7, 7.9 loydokset U1-U5).
+ * Yhteinen nimittaja molemmissa: kortti irtoaa sovelluksesta, joten jokainen
+ * sen vaite on JOHDETTAVA payloadista - rakenteellinen oletus on vaite jota
+ * kortti ei voi mitata.
  *
- *  A2  Alatunniste sanoi vakiona "captain doubled". Entry pelasi GW3:n
- *      `3xc`-chipilla ja Haaland oli `multiplier=3`. Kapteenin kerroin
- *      johdetaan nyt kapteenin RIVILTA, ja jos kapteeni ei ole naytetyissa
- *      riveissa (ei pelannut), lausetta ei ole.
- *  A3  "xP locked at the deadline" ei pitanyt paikkaansa: gw3-freeze
- *      `frozen_at 12:16:41Z`, deadline `17:30:00Z` = 5 h 14 min ennen.
- *      Muoto on nyt "frozen before the GW{n} deadline".
- *  A4  "12 of 15 compared" laski `players_compared`ia (kaikki vertailtavat
- *      pickit) samalla kun kortin rivit ovat avaava XI. Kattavuus
- *      lasketaan nyt NAYTETYISTA riveista.
- *  A5  Kortin oma laskutoimitus ei mennyt tasan ("+0.9" kun naytetyt luvut
- *      antavat 0.8), koska erotus tuli pyoristamattomasta luvusta.
- *      Erotus lasketaan nyt NAYTETYISTA luvuista.
- *  A7  "72 scored" ei ole FPL:n kierrospistemaara: siina ei ole autosubeja
- *      eika siirtokuluja. Luku on avaavan XI:n summa, ja niin se myos
- *      sanotaan.
- *
- * Yhteinen nimittaja: kortti irtoaa sovelluksesta, joten sen on vastattava
- * omista luvuistaan ilman viereista nakymaa.
+ *  U1  "72 pts ... points from FPL" oli tarkistamaton: lukijan oma FPL-sovellus
+ *      sanoi GW3:sta 58. Mitattu 7.9: kaikki 10 ottelua olivat
+ *      `finished_provisional` mutta EIVAT `finished`, ja live-syotteessa oli 15
+ *      kerroinpainotettua bonuspistetta joita `entry_history` ei ollut viela
+ *      kirjoittanut (72 - 15 = 57, FPL 58). Ero ei ole virhe vaan ikkuna, ja
+ *      kortti sanoo sen nyt itse: kesken olevalla kierroksella luku on
+ *      live-syotteesta ja bonus on vahvistamatta.
+ *  U2  Paneeli ja kortti antoivat eri erotuksen samasta kierroksesta (+0.9 vs
+ *      +0.8) samassa otsikkorivissa. Molemmat lukevat nyt taman funktion.
+ *  U3  Kattavuuslause oli KUOLLUT HAARA: backend maarittelee
+ *      `in_xi := multiplier > 0`, joten rivit ja "aloittajat" olivat aina sama
+ *      joukko. Oikea aukko (`players_compared` 14, pickkeja 15) oli pudonnut
+ *      kortilta kokonaan. Nyt kattavuus lasketaan pickeista, ja nimittaja
+ *      tulee payloadista.
+ *  U4  Bench boostilla jokaisella 15:sta on multiplier > 0 -> "starting XI"
+ *      olisi 15 rivin otsikkona vaara. Otsikko johdetaan riveista ja chipista.
+ *  U5  Kapteenin kerroin luettiin `is_captain`-lipusta. Jos kapteeni ei
+ *      pelannut, FPL siirtaa kertoimen varakapteenille MUTTA lippu jaa
+ *      pelaamattomalle -> tuplattu rivi ilman merkintaa ja ilman lausetta.
+ *      Kerroin luetaan nyt riveilta (suurin multiplier), eli silta jolla se
+ *      oikeasti on.
  */
+
+/** Alaotsikon ja alatunnisteen palaset. Vietu ulos jotta PANEELI voi kayttaa
+ *  samaa erotusta kuin kortti (U2): kaksi pintaa samasta kierroksesta ei saa
+ *  antaa eri lukua. */
+export function reviewTotals(rows: { projected: number; actual: number }[]) {
+  const actual = rows.reduce((n, p) => n + p.actual, 0);
+  const projectedText = rows.reduce((n, p) => n + p.projected, 0).toFixed(1);
+  // Erotus NAYTETYISTA luvuista: pyoristamaton 0.85 nayttaisi "+0.9" vaikka
+  // kortilla lukee 71.2 ja 72.
+  return { actual, projectedText, diff: actual - Number(projectedText) };
+}
+
 export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   const rv = data.review;
   const gw = data.meta.reviewed_gw;
@@ -108,48 +132,50 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   const ordered = [...xi].sort(
     (a, b) => a.diff - b.diff || a.web_name.localeCompare(b.web_name)
   );
+  const maxMult = ordered.reduce((m, p) => Math.max(m, p.multiplier), 1);
   const rows: ReviewCardRow[] = ordered.map((p, i) => ({
     rank: i + 1,
     name: p.web_name,
     tag: p.pos,
     team: p.team_short,
-    badges: p.is_captain ? [p.multiplier >= 3 ? 'TC' : 'C'] : undefined,
+    // U5: merkinta sille jolla kerroin OIKEASTI on, ei lipulle.
+    badges:
+      p.multiplier >= 3 ? ['TC'] : p.multiplier >= 2 ? ['C'] : undefined,
     mid: p.projected.toFixed(1),
     value: String(p.actual),
   }));
 
-  // A5 + A7: summat NAYTETYISTA riveista, ja erotus naytetyista luvuista.
-  // Nain kortin oma laskutoimitus menee tasan silla tarkkuudella jolla se
-  // on kortilla, eika luku voi olla eri joukosta kuin rivit.
-  const actualShown = ordered.reduce((n, p) => n + p.actual, 0);
-  const projShownText = ordered
-    .reduce((n, p) => n + p.projected, 0)
-    .toFixed(1);
-  const diffShown = actualShown - Number(projShownText);
+  const { actual, projectedText, diff } = reviewTotals(ordered);
+
+  // U4: otsikko johdetaan riveista ja chipista, ei oleteta yhdeksitoista.
+  const chip = (data.meta.chip || '').toLowerCase();
+  const label =
+    chip === 'bboost'
+      ? `bench boost (all ${rows.length})`
+      : rows.length === 11
+        ? 'starting XI'
+        : `${rows.length} players`;
 
   const parts: string[] = [];
-  parts.push(
-    `starting XI ${actualShown} pts against ${projShownText} xP ` +
-      `(${sign(diffShown)})`
-  );
-  // A4: kattavuus koskee sita joukkoa jonka rivit nayttavat.
-  const starters = rv.players.filter((p) => p.in_xi).length;
-  if (starters > rows.length) {
-    parts.push(`${rows.length} of ${starters} starters shown`);
+  parts.push(`${label}: ${actual} pts vs ${projectedText} xP (${sign(diff)})`);
+
+  // U3: kattavuus koskee PICKKEJA ja nimittaja tulee payloadista.
+  const compared = data.meta.players_compared;
+  const picks = data.meta.total_picks;
+  if (compared != null && picks != null && compared < picks) {
+    parts.push(`${compared} of ${picks} picks had both numbers`);
   }
-  if (data.meta.provisional) parts.push('provisional, gameweek still open');
+  // U1: kesken oleva kierros -> luku on live-syotteesta ja bonus vahvistamatta.
+  // Tama on se lause joka selittaa miksi FPL-sovellus voi nayttaa pienempaa.
+  if (data.meta.provisional) parts.push('bonus not final, FPL may show less');
   parts.push('worst call first');
 
-  // A2: kapteenin kerroin luetaan kapteenin omalta rivilta.
-  const captain = ordered.find((p) => p.is_captain);
-  const captainNote =
-    captain == null
-      ? ''
-      : captain.multiplier >= 3
-        ? ', captain tripled'
-        : captain.multiplier >= 2
-          ? ', captain doubled'
-          : '';
+  // U5: kerroinlause suurimmasta kertoimesta riveilla.
+  const multNote =
+    maxMult >= 3 ? ', captain tripled' : maxMult >= 2 ? ', captain doubled' : '';
+
+  // A3 + U-seuranta: freeze-vaite vain kun payload todistaa sen.
+  const frozenNote = freezeNote(gw, data.meta.frozen_at, data.meta.deadline);
 
   return {
     title: `GW${gw} REVIEW`,
@@ -160,9 +186,23 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     rows,
     // A6: rivi 1 on mallin PAHIN kutsu, joten karkikorostus on pois.
     heroFirstRow: false,
-    // A3: freeze on ennen deadlinea, ei deadlinella.
-    footNote: `xP frozen before the GW${gw} deadline, points from FPL${captainNote}`,
+    footNote: `${frozenNote}, points from the FPL live feed${multNote}`,
     footNote2: 'not betting advice',
     fileName: `goaliq_gw${gw}_review.png`,
   };
+}
+
+/** Freeze-vaite payloadista. Ilman kumpaakin aikaleimaa kortti sanoo vain
+ *  MISTA luku on, ei milloin se lukittiin. */
+export function freezeNote(
+  gw: number,
+  frozenAt: string | null | undefined,
+  deadline: string | null | undefined
+): string {
+  const f = frozenAt ? Date.parse(frozenAt) : NaN;
+  const d = deadline ? Date.parse(deadline) : NaN;
+  if (Number.isFinite(f) && Number.isFinite(d) && f < d) {
+    return `xP frozen before the GW${gw} deadline`;
+  }
+  return `xP frozen for GW${gw}`;
 }
