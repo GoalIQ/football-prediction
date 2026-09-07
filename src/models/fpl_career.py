@@ -69,14 +69,35 @@ def _preseason_note() -> str:
     return generic
 
 
-def _latest_season(current: list[dict], past: list[dict]) -> dict:
+def _latest_season(current: list[dict], past: list[dict],
+                   pudotettu: list[int] | None = None) -> dict:
     """Viimeisimmän kauden GW-erittely current-listasta.
 
     Kesävälitila: juuri päättynyt kausi näkyy myös past-listassa → nimetään
     sieltä ja merkitään finished (ei tuplalaskentaa summaryssä; ks. career()).
     """
     if not current:
-        return {"available": False, "note": _preseason_note()}
+        # 🔴 PORTIN 16. KIERROS: FAIL-CLOSED TUOTTI VAARAN LAUSEEN.
+        # 15. kierroksella suodatin kesken olevat kierrokset pois, ja tyhja
+        # `current` osui tahan haaraan - jonka teksti on kirjoitettu ERI
+        # kysymykseen ("kausi ei ole alkanut"). Mitattu: GW1-viikolla
+        # kortti sanoi *"The new FPL season has not started yet"* ja
+        # deadlinen MENNEISYYDESSA tulevana, vaikka lukijalla oli pisteet
+        # taulussa. Bootstrap alhaalla kesken kauden sama teksti nakyi
+        # managerille jolla oli 20 kierrosta pelattuna.
+        #
+        # Kolmas tila: kausi on alkanut mutta yhtaan kierrosta ei ole
+        # todistetusti gradattu.
+        if pudotettu:
+            return {
+                "available": False,
+                "season_state": "no_final_gw_yet",
+                "provisional_gws": sorted(pudotettu),
+                "note": (f"GW{max(pudotettu)} is under way. Your season "
+                         f"numbers appear here once FPL finishes checking it."),
+            }
+        return {"available": False, "season_state": "not_started",
+                "note": _preseason_note()}
 
     last = current[-1]
     finished = bool(past) and past[-1].get("total_points") == last.get(
@@ -99,6 +120,7 @@ def _latest_season(current: list[dict], past: list[dict]) -> dict:
     worst = min(played, key=_netto) if played else None
     return {
         "available": True,
+        "season_state": "available",
         "season": season,
         "finished": finished,
         "total_points": last.get("total_points"),
@@ -204,12 +226,28 @@ def career(entry: int) -> dict:
     provisional_dropped = sorted(
         int(g["event"]) for g in current
         if isinstance(g.get("event"), int) and g["event"] not in _lopulliset)
+    # 🔴 Portin 16. kierros: kausi ON alkanut vaikka yhtaan kierrosta ei
+    # olisi gradattu. Kausilaskurit lukevat siksi SUODATTAMATONTA listaa.
+    kausi_alkanut = bool(current)
+    kausi_summa = None
+    if current and isinstance(current[-1].get('total_points'), int):
+        kausi_summa = int(current[-1]['total_points'])
+    # Kesan dedup: juuri paattynyt kausi on JO past-listassa, eika sita saa
+    # laskea kahdesti. Tama paatos on tehtava suodattamattomasta datasta -
+    # muuten se muuttuisi sen mukaan saimmeko bootstrapin.
+    kausi_paattynyt = bool(
+        past and current
+        and past[-1].get("total_points") == current[-1].get("total_points")
+        and len(current) >= 38)
     current = [g for g in current
                if isinstance(g.get("event"), int)
                and g["event"] in _lopulliset]
-    chips = list(history.get("chips") or [])
+    chips = [c for c in (history.get("chips") or [])
+             if not isinstance(c.get("event"), int)
+             or c["event"] in _lopulliset]  # sama suodatin kuin luvuilla:
+    # vastaus ei saa sanoa "3xc GW3" samalla kun luvut pysahtyvat GW2:een.
 
-    latest = _latest_season(current, past)
+    latest = _latest_season(current, past, provisional_dropped)
     if latest.get("available"):
         latest["chips_used"] = [{"name": c.get("name"), "gw": c.get("event")}
                                 for c in chips]
@@ -222,11 +260,17 @@ def career(entry: int) -> dict:
 
     # Summary koko uralta. Kesävälitila: finished current on JO past-listassa
     # → ei lisätä toiseen kertaan. Keskeneräinen current lasketaan mukaan.
-    in_progress = latest.get("available") and not latest.get("finished")
+    # 🔴 Portin 16. kierros: kausi lasketaan mukaan kun se on ALKANUT, ei kun
+    # se on gradattu. Aiemmin `available` oli ehtona, ja 15. kierroksen
+    # suodatin teki siita False:n aina kun yhtaan kierrosta ei ollut
+    # todistetusti valmis - jolloin `all_time_points` menetti koko kuluvan
+    # kauden hiljaa (mitattu bootstrap alhaalla: 3300 -> 2100, 2 -> 1 kautta).
+    in_progress = kausi_alkanut and not kausi_paattynyt
     all_time = sum(int(s.get("total_points") or 0) for s in past)
     seasons_played = len(past)
     if in_progress:
-        all_time += int(latest.get("total_points") or 0)
+        all_time += int(latest["total_points"] if latest.get("available")
+                        else (kausi_summa or 0))
         seasons_played += 1
 
     best_season = None

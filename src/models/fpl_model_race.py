@@ -34,6 +34,27 @@ CODE_NO_ENTRY = "model_race.note.no_entry"
 CODE_NO_OVERLAP = "model_race.note.no_overlap"
 
 
+def model_points_net(row: dict) -> int:
+    """Mallin kierrospistemaara NETTONA rivin omista kentista.
+
+    🔴 Portin 16. kierros: `points_net`iin nojaaminen oli fail-open. Samaan
+    artefaktiin kirjoittaa kaksi eri skriptia eri skeemalla, ja jo
+    julkaistut rivit eivat saa kentta koskaan (`build()` ohittaa lopulliset).
+    Netto johdetaan siksi lukuhetkella: `points - transfer_cost`, ja
+    puuttuva kustannus on 0 (FPL:n oma oletus).
+
+    Miksi netto: malli ei tavallisesti ota hitteja, joten brutto antaisi
+    sille oman hittinsa verran etumatkaa kayttajaa vastaan - ja mallin
+    entry on julkinen, joten lukija voi tarkistaa.
+    """
+    if not isinstance(row, dict):
+        return 0
+    pisteet = row.get("points_net")
+    if isinstance(pisteet, int):
+        return pisteet
+    return int(row.get("points") or 0) - int(row.get("transfer_cost") or 0)
+
+
 def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
     """FPL entry/{id}/history/ → {gw: {"points": int, "bench": int}}.
 
@@ -103,7 +124,7 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
         # Portin 15. kierros: MALLIN puoli myos netosta. Kayttajan puoli
         # korjattiin 11. kierroksella, mallin jai bruttoon - eli malli
         # olisi voittanut oman hittinsa verran.
-        mp = int(r.get("points_net", r.get("points")) or 0)
+        mp = model_points_net(r)
         model_total += mp
         row = {
             "gw": gw,

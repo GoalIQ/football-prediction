@@ -200,9 +200,10 @@ def test_points_kentta_tarkoittaa_samaa_kaikissa_moduuleissa():
         "vertailu lukee bruttoa - malli ei ota hitteja, joten se antaisi "
         "kayttajalle hitin verran etumatkaa")
 
-    rate = (SRC / "fpl_rate_team.py").read_text(encoding="utf-8")
-    assert '"points_net":' in rate and '"points": points,' in rate
-
+    # 🔴 Portin 16. kierros: tasta poistettiin SOKEA substring-assertio.
+    # `'"points_net":' in rate` tayttyi rivilta 1882 (`last_finished_block`)
+    # vaikka mutaatio oli rivilla 1653 (`model_squad_gw`) - eri funktio,
+    # sama merkkijono. Arvopohjaiset testit ovat alla.
     review = (SRC / "fpl_gw_review.py").read_text(encoding="utf-8")
     assert '"fpl_points_net":' in review
 
@@ -283,3 +284,40 @@ def test_mallin_puoli_on_myos_netto_arvona():
                                 transfer_cost=0)]}
     del vanha["gameweeks"][0]["points_net"]
     assert (build_race(vanha, historia).get("totals") or {}).get("model") == 62
+
+
+def test_mallin_rivin_lukija_palauttaa_netton_arvona():
+    """🔴 Portin 16. kierros: `fpl_rate_team.model_squad_gw` (rivi 1653) oli
+    VARTIOIMATON. Ainoa "vartija" oli substring joka tayttyi eri funktion
+    rivilta, ja mutaatio (`points_net` -> `points`) lapaisi 3 213 testia.
+    Se rivi syottaa tulostaulukortin `model_points`in.
+    """
+    import src.models.fpl_rate_team as rt
+    from src.models.fpl_model_race import model_points_net
+
+    # Lukija johtaa neton rivin omista kentista, ei odota kirjoittajalta.
+    assert model_points_net({"points": 70, "transfer_cost": 8}) == 62
+    assert model_points_net({"points": 70}) == 70, "puuttuva kustannus = 0"
+    assert model_points_net({"points": 70, "points_net": 61}) == 61, (
+        "eksplisiittinen kentta voittaa")
+    assert model_points_net(None) == 0
+
+    # Ja `model_squad_gw` kayttaa sita: fikstuuri jossa brutto ja netto eroavat.
+    import json, pathlib as _pl, tempfile
+    doc = {"meta": {"entry_id": 116920},
+           "gameweeks": [{"gw": 3, "points": 70, "transfer_cost": 8,
+                          "fpl_average": 50, "provisional": False,
+                          "active_chip": None}]}
+    polku = _pl.Path(tempfile.mkdtemp()) / "model_squad_gw_scores.json"
+    polku.write_text(json.dumps(doc), encoding="utf-8")
+    vanha_polku = rt._MODEL_SQUAD_PATH
+    try:
+        rt._MODEL_SQUAD_PATH = polku
+        out = rt.model_squad_gw(3)
+    finally:
+        rt._MODEL_SQUAD_PATH = vanha_polku
+    assert out is not None
+    assert out["points"] == 62, (
+        f"mallin luku {out['points']} on brutto - kortti julistaisi voiton "
+        "jota ei ole")
+    assert out["points_gross"] == 70

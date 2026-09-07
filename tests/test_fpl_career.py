@@ -5,6 +5,8 @@ Hermeettinen: FPL-API (rt._fetch_fpl) ja rate_team mockataan — ei verkkoa.
 """
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
 import src.models.fpl_career as fc
@@ -242,8 +244,77 @@ def test_kesken_oleva_kierros_ei_paady_kortille_lopullisena(monkeypatch):
 
 def test_ilman_bootstrapia_ei_julkaista_yhtaan_kierrosta(monkeypatch):
     """FAIL-CLOSED: jos emme saa bootstrapia, emme voi todistaa yhtaan
-    kierrosta lopulliseksi. Mieluummin puuttuva luku kuin vaara kuvassa."""
+    kierrosta lopulliseksi. Mieluummin puuttuva luku kuin vaara kuvassa.
+
+    🔴 Portin 16. kierros: TAMA TESTI MITTASI VAIN DIAGNOSTIIKKAKENTTAA.
+    Se assertoi `provisional_gws_excluded`in eika katsonut mita LUKIJA nakee
+    - ja lukija sai lauseen *"The new FPL season has not started yet"*
+    vaikka hanella oli 38 kierrosta pelattuna, seka `all_time_points`in
+    josta koko kuluva kausi oli pudonnut hiljaa.
+    """
     _mock_fpl(monkeypatch, bootstrap=None)
     out = fc.career(424242)
+    lat = out["latest_season"]
     assert out["summary"]["provisional_gws_excluded"], (
         "ilman finality-tietoa kierrokset on merkittava pois")
+
+    # Ja se mita lukija NAKEE: kausi on alkanut, ei "ei ole alkanut".
+    assert lat["season_state"] == "no_final_gw_yet", lat.get("season_state")
+    assert "has not started" not in (lat.get("note") or ""), lat["note"]
+    assert "under way" in (lat.get("note") or ""), lat["note"]
+
+    # Kausilaskurit EIVAT saa pudottaa kuluvaa kautta finality-tiedon
+    # puuttumisen takia.
+    valmis = None
+    _mock_fpl(monkeypatch, bootstrap=BOOTSTRAP_KAIKKI_VALMIIT)
+    valmis = fc.career(424242)
+    assert out["summary"]["seasons_played"] == valmis["summary"]["seasons_played"], (
+        "kausi katosi laskurista kun bootstrap puuttui")
+    assert out["summary"]["all_time_points"] == valmis["summary"]["all_time_points"], (
+        "all_time_points menetti kuluvan kauden kun bootstrap puuttui")
+
+
+def test_esikausi_ja_kesken_oleva_kausi_ovat_eri_lauseet(monkeypatch):
+    """`available=False` tarkoitti kahta eri asiaa: "kausi ei ole alkanut"
+    ja "kausi on alkanut mutta mitaan ei ole viela gradattu". Kortti sanoi
+    molemmissa *"New season · Starts GW1"*."""
+    # Aito esikausi: ei yhtaan kierrosta.
+    _mock_fpl(monkeypatch, current=[], bootstrap=BOOTSTRAP_KAIKKI_VALMIIT)
+    esikausi = fc.career(424242)["latest_season"]
+    assert esikausi["season_state"] == "not_started"
+    assert "has not started" in esikausi["note"]
+
+    # Kausi kaynnissa, GW1 kesken.
+    gw1_kesken = {"events": [{"id": 1, "finished": False, "data_checked": False}]}
+    _mock_fpl(monkeypatch, current=[CURRENT_FULL[0]], bootstrap=gw1_kesken)
+    kesken = fc.career(424242)["latest_season"]
+    assert kesken["season_state"] == "no_final_gw_yet"
+    assert "has not started" not in kesken["note"], kesken["note"]
+    assert kesken["provisional_gws"] == [1]
+
+
+def test_career_kortti_renderoi_neton():
+    """🔴 Portin 16. kierros: `career.html:558` oli VARTIOIMATON, ja mutaatio
+    (`points_net` -> `points`) lapaisi 3 213 testia.
+
+    RAJOITE, sanottuna auki: tama on merkkijonotesti, koska `career.html` on
+    selainpuolen JS jota pytest ei aja. Arvopuoli on katettu erikseen
+    (`test_summer_dedup_and_summary` mittaa etta `best_gw.points_net` on
+    oikein ja etta VALINTA tehdaan netosta). Tama testi vartioi vain sita
+    etta kortti lukee oikeaa kenttaa - ja negatiivinen kontrolli antaa sille
+    hampaat.
+    """
+    html = (pathlib.Path(__file__).resolve().parents[1] / "career.html").read_text(
+        encoding="utf-8")
+    assert "lat.best_gw.points_net" in html, (
+        "kortti lukee bruttoa; `total_points` sen vieressa on netto")
+    # Negatiivinen kontrolli: paljas brutto ilman netto-haaraa ei kelpaa.
+    import re
+    for m in re.finditer(r"best GW: ' \+ ([^;]+?) \+ ' pts'", html):
+        assert "points_net" in m.group(1), m.group(1)
+
+    # Ja se mita kortti sanoo kun kierros on jatetty pois.
+    assert "still being scored" in html, (
+        "kortti ei kerro miksi luku eroaa lukijan omasta FPL-sivusta")
+    assert "Not final yet" in html, (
+        "kausi kaynnissa ilman gradattua kierrosta nayttaisi 'Starts GW1'")
