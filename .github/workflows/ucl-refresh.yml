@@ -1,0 +1,72 @@
+# UCL Fantasy -syotteen ingestio (Villen paatos 7.9.2026: "laajin
+# mahdollinen, anna menna vaan").
+#
+# 0 EUROA: julkinen syote, ei avaimia, ei krediitteja. Eraajo, ei
+# serve-ajan fan-outia.
+#
+# 🔴 KADENSSI ON SIDOTTU DEADLINEEN, EI KELLONAIKAAN. UCL:n liigavaihe on
+# 8 kierrosta kolmen kuukauden aikana (MD1 8.9.2026, MD8 27.1.2027), eli
+# valissa on 5 viikon taukoja. Tunneittain ajaminen olisi kuormaa ilman
+# hyotya; kerran 6 h riittaa hintamuutoksiin ja kokoonpanotietoihin, ja
+# deadline-paivina se on tarpeeksi tihea.
+name: ucl-refresh
+on:
+  schedule:
+    - cron: "20 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  # Sivut deployataan hub-deploylla; sama oikeus kuin muilla
+  # itsekorjaavilla ajoilla (7.9: tama puuttui `fpl-data-refresh`ilta ja
+  # itsekorjaus ei voinut korjata mitaan kertaakaan).
+  actions: write
+
+concurrency:
+  group: ucl-refresh
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Ingest UCL Fantasy feed
+        run: |
+          python -m scripts.ingest_ucl || {
+            echo "::error::ucl-ingestio kaatui - artefaktia EI paivitetty"
+            exit 1
+          }
+
+      - name: Gate — artefakti on kuluvalta kaudelta
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest tests/test_ingest_ucl.py -q || {
+            echo "::error::UCL-portti punainen - artefaktia ei committoida"
+            exit 1
+          }
+
+      - name: Commit + push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 🔴 Jokainen kirjoitettu artefakti on oltava tassa listassa.
+          # `data/gw_recap.json` oli JAASSA 7 vrk siksi etta builderi ajoi
+          # joka kerta mutta `git add` ei sisaltanyt sen ulostuloa, eika
+          # askel kaatunut kertaakaan.
+          [ -f data/ucl_fantasy.json ] && git add data/ucl_fantasy.json
+          if git diff --cached --quiet; then
+            echo "Ei muutoksia."
+            exit 0
+          fi
+          git commit -m "chore(ucl): fantasy feed refresh [skip ci]"
+          git pull --rebase --autostash -q origin main || true
+          git push origin main
