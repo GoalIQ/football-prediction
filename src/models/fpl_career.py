@@ -65,10 +65,27 @@ def kausi_alkanut(events) -> bool:
 
     Kausi on maailman tila, ei kayttajan; se luetaan bootstrapista.
     """
-    for e in (events or []):
-        if e.get("finished") or e.get("is_current"):
-            return True
-    return False
+    ev = list(events or [])
+    if not ev:
+        return False
+    valmiit = sum(1 for e in ev if e.get("finished"))
+    kesken = sum(1 for e in ev if not e.get("finished"))
+    # 🔴 PORTIN 19. KIERROS (F): "jokin on finished" oli liian loysa.
+    # Kesalla bootstrap kantaa PAATTYNEEN kauden eventit (kaikki finished,
+    # `is_current` yha GW38:lla) sen jalkeen kun entryn `current` on jo
+    # nollattu. Siina ikkunassa vanha ehto sanoi "kausi on kaynnissa" ja
+    # kortti vastasi *"No scored gameweeks yet for this team"*, kun oikea
+    # vastaus on etta uusi kausi ei ole alkanut. Se on B2 vaarinpain.
+    #
+    # Erotin ilman paivamaaralaskentaa: kausi on KESKEN vain jos joukossa on
+    # seka valmiita etta valmistumattomia kierroksia. Kaikki valmiina =
+    # kausi on ohi. Yksikaan ei valmiina = ei ole alkanut (paitsi jos GW1 on
+    # juuri nyt kaynnissa, jonka `is_current` kertoo).
+    if valmiit and not kesken:
+        return False
+    if valmiit and kesken:
+        return True
+    return any(e.get("is_current") for e in ev)
 
 
 def _tyhjan_kauden_note(events) -> tuple[str, str, str, dict]:
@@ -370,6 +387,17 @@ def career(entry: int) -> dict:
     # jota lukija ei tieda olevan olemassa (portin 18. kierros, kysymys A).
     all_time_through_gw = (max(int(g["event"]) for g in current)
                            if current else None)
+    # 🔴 PORTIN 19. KIERROS (B1 elaa yha, ja isompana). Kun kuluvasta
+    # kaudesta ei ole yhtaan vahvistettua kierrosta, `all_time_through_gw` on
+    # None - ja KAIKKI KOLME pintaa gateasivat labelin ehdolla
+    # `provisional && through_gw`, eli ne putosivat takaisin PALJAASEEN
+    # "All-time points" -labeliin. Mitattu: koko kuluva kausi (132 p)
+    # puuttui luvusta, ei osa, ja jakokortti sanoi "2,100 pts all-time"
+    # ilman varausta. Tila on live joka kierros deadlinesta `data_checked`iin.
+    #
+    # Ikkuna on siksi AINA olemassa kun lippu on tosi: joko kierros tai
+    # viimeisin paattynyt kausi.
+    all_time_through_season = (past[-1].get("season_name") if past else None)
     if in_progress:
         # `available` on TASAN "kaudesta on vahintaan yksi vahvistettu
         # kierros" (`_latest_season` palauttaa False vain tyhjalle
@@ -436,6 +464,11 @@ def career(entry: int) -> dict:
             "all_time_provisional": all_time_provisional,
             # Viimeisin kierros joka on luvussa mukana; None = ei yhtaan.
             "all_time_through_gw": all_time_through_gw,
+            # Varaikkuna kun yhtaan kierrosta ei ole vahvistettu.
+            "all_time_through_season": (all_time_through_season
+                                        if all_time_provisional
+                                        and all_time_through_gw is None
+                                        else None),
             "best_season": best_season,
             "best_rank": min(ranks) if ranks else None,
             "avg_rank": round(sum(ranks) / len(ranks)) if ranks else None,

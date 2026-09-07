@@ -55,6 +55,20 @@
 	});
 
 	let rows = $derived(data ? [...data.gameweeks].reverse() : []);
+	// Provisionaaliset kierrokset ryhmiteltyna TILAN mukaan. `provisional` yksin
+	// on tosi kolmessa eri tilanteessa; ks. backendin `row_state`.
+	let provisionalGroups = $derived.by(() => {
+		const gws = data?.meta?.provisional_gws ?? [];
+		const tilat = data?.meta?.provisional_states ?? {};
+		const ryhmat = new Map();
+		for (const gw of gws) {
+			const raaka =
+				tilat[String(gw)] ?? rows.find((r) => r.gw === gw)?.state ?? 'unknown';
+			const avain = ['in_progress', 'awaiting_check'].includes(raaka) ? raaka : 'unknown';
+			ryhmat.set(avain, [...(ryhmat.get(avain) ?? []), gw]);
+		}
+		return [...ryhmat.entries()];
+	});
 
 	let sharing = $state(false);
 
@@ -149,13 +163,22 @@
 			     kosketuslaitteella, ja pro.goaliq.app puhelimessa olisi
 			     nayttanyt kehystetyn merkin ilman mitaan selitysta.
 			     Varaus jota lukija ei nae on sama kuin ei varausta. -->
-			{#if data.meta.provisional_gws?.length}
+			<!-- 🔴 7.9: yksi lause nimesi syyksi BONUKSEN molemmissa tiloissa.
+			     Mitattu samana paivana: GW3 oli `is_current` ja `finished`
+			     False, eli ottelut olivat kesken - bonus ei ollut syy.
+			     Vaarin nimetty mekanismi on pahempi kuin nimeamaton, koska
+			     lukija voi tarkistaa sen. Kolme tilaa, kolme lausetta, ja
+			     kierrokset ryhmitellaan tilan mukaan (yksi lause ei saa
+			     koota eri tiloissa olevia kierroksia yhteen). -->
+			{#each provisionalGroups as [tila, gws] (tila)}
 				<p class="prov-note">
-					GW{data.meta.provisional_gws.join(', GW')}
-					{data.meta.provisional_gws.length === 1 ? 'is' : 'are'} provisional.
-					FPL hasn't confirmed bonus points yet, so these totals can still move.
+					{tila === 'in_progress'
+						? `GW${gws.join(', GW')} is still being played, so these totals will move.`
+						: tila === 'awaiting_check'
+							? `GW${gws.join(', GW')} is played but not confirmed. Bonus points can still change these totals.`
+							: `GW${gws.join(', GW')} is not confirmed yet, so these totals can still move.`}
 				</p>
-			{/if}
+			{/each}
 
 			{#if rows.length > 0}
 				<button type="button" class="window-chip" onclick={share} disabled={sharing}>

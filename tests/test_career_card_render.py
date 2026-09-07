@@ -115,39 +115,78 @@ def test_viisi_saatavuustilaa_ovat_viisi_eri_lausetta():
 
     tuntematon = _render(_payload(latest_season={
         "available": False, "season_state": "unconfirmed"}))
-    assert _arvo(tuntematon, "This season") == "FPL not reachable"
+    # Sama sanasto kuin sen alla olevassa notessa ("FPL is not answering").
+    assert _arvo(tuntematon, "This season") == "FPL not answering"
 
     liittyja = _render(_payload(latest_season={
         "available": False, "season_state": "no_gameweeks_yet"}))
-    assert _arvo(liittyja, "This season") == "No gameweeks yet"
+    # Vaite on JOUKKUEESTA, joten label sanoo joukkue. "This season / No
+    # gameweeks yet" luettiin "kaudella ei ole viela kierroksia" - eli tasan
+    # se lause jonka 18. kierros poisti.
+    assert _arvo(liittyja, "This team") == "No points yet"
 
     esikausi = _render(_payload(latest_season={
         "available": False, "season_state": "not_started"}))
     assert _arvo(esikausi, "New season") == "Starts GW1"
 
 
-def test_tuntematon_tila_ei_tulosta_vahvinta_vaitetta():
-    """🔴 Portin 18. kierros (F). Nimeamaton `else` tulosti *"New season -
-    Starts GW1"* mille tahansa vastaukselle jossa `season_state` puuttuu:
-    vanha API-build, kentan uudelleennimeaminen, tai deploy jossa sivu menee
-    ulos ennen API:a. Tasan sama fail-open kuin `optimal_proven === false`."""
-    puuttuu = _render(_payload(latest_season={"available": False}))
-    assert _arvo(puuttuu, "This season") == "-"
-    outo = _render(_payload(latest_season={
-        "available": False, "season_state": "jokin_uusi_tila_2027"}))
-    assert _arvo(outo, "This season") == "-"
+def test_tuntematon_tila_ei_piirra_solua_lainkaan():
+    """🔴 Portin 18. kierros (F) + 19. kierros (C). Nimeamaton `else` tulosti
+    *"New season - Starts GW1"* mille tahansa vastaukselle jossa
+    `season_state` puuttuu. 18. kierros vaihtoi sen paikanpitajaan "-", ja
+    19. kierros huomautti etta "-" luetaan NOLLANA. Kortilla on jo oma
+    saantonsa puuttuvalle: tyhja joukkuenimi pudottaa rivin, puuttuva
+    `model_teaser` pudottaa laatikon."""
+    for lat in ({"available": False},
+                {"available": False, "season_state": "jokin_uusi_tila_2027"}):
+        out = _render(_payload(latest_season=lat))
+        labelit = [b["label"] for b in out["blocks"]]
+        assert "This season" not in labelit, labelit
+        assert "New season" not in labelit, labelit
+        assert "-" not in [b["value"] for b in out["blocks"]], out["blocks"]
 
 
-def test_vajaa_uran_summa_nimeaa_kierroksen():
-    """🔴 Portin 18. kierros (A + B1). *"(confirmed)"* kuvasi FPL:n sisaista
-    `data_checked`-lippua, jota lukija ei tieda olevan olemassa. Kierroksen
-    numero on tarkistettavissa lukijan omalta FPL-sivulta."""
+def test_vajaa_uran_summa_nimeaa_aina_ikkunan():
+    """🔴 Portin 18. kierros (A + B1) ja 19. kierros (B1 elaa yha).
+
+    *"(confirmed)"* kuvasi FPL:n sisaista `data_checked`-lippua jota lukija
+    ei tieda olevan olemassa. 18. kierros vaihtoi sen kierrosnumeroon, mutta
+    gateasi labelin ehdolla `provisional && through_gw` - joten kun YHTAAN
+    kierrosta ei ollut vahvistettu, se putosi takaisin paljaaseen labeliin.
+    Juuri silloin luku on eniten vaarin: koko kausi puuttuu, ei osa.
+
+    Sanamuoto on `through` molemmilla pinnoilla (mobiili sanoi `to`), koska
+    "to GW2" on kaksitulkintainen luvun vieressa: "GW2:n pisteet".
+    """
     out = _render(_payload(summary={"all_time_provisional": True,
                                     "all_time_through_gw": 2}))
-    assert _arvo(out, "All-time points to GW2") == "2,210"
-    # Kontrolli: ilman lippua label on tavallinen.
+    assert _arvo(out, "All-time points through GW2") == "2,210"
+
+    # Yhtaan kierrosta ei vahvistettu -> ikkuna on viimeisin paattynyt kausi.
+    kausi = _render(_payload(summary={"all_time_provisional": True,
+                                      "all_time_through_gw": None,
+                                      "all_time_through_season": "2024/25"}))
+    assert _arvo(kausi, "All-time points through 2024/25") == "2,210"
+
+    # Ei ikkunaa lainkaan -> paljasta lukua EI nayteta.
+    tyhja = _render(_payload(summary={"all_time_provisional": True,
+                                      "all_time_through_gw": None,
+                                      "all_time_through_season": None}))
+    labelit = [b["label"] for b in tyhja["blocks"]]
+    assert not any(l.startswith("All-time points") for l in labelit), labelit
+
+    # Kontrolli: ilman lippua label on tavallinen ja luku nakyy.
     assert _arvo(_render(_payload()), "All-time points") == "2,210"
-    # Ja jos kierrosta ei tiedeta, EI keksita numeroa.
-    ilman = _render(_payload(summary={"all_time_provisional": True,
-                                      "all_time_through_gw": None}))
-    assert _arvo(ilman, "All-time points") == "2,210"
+
+
+def test_labelin_pituus_mahtuu_sarakkeeseen():
+    """`statBlock` ajaa `fitText`in vain ARVOLLE, ei labelille - label on
+    kiintea 26 px ilman leikkuria, joten pidempi label vuotaisi hiljaa yli.
+    Pisin mahdollinen muoto mitataan tassa."""
+    pisin = _render(_payload(summary={"all_time_provisional": True,
+                                      "all_time_through_gw": 38}))
+    label = next(b["label"] for b in pisin["blocks"]
+                 if b["label"].startswith("All-time points"))
+    # 26 px IBM Plex Mono ~ 0.6 em advance = 15.6 px/merkki, isoin kirjaimin.
+    leveys = len(label) * 15.6
+    assert leveys < 488, f"{label!r} = {leveys:.0f} px > 488 px"

@@ -463,8 +463,11 @@ def test_jokainen_saatavuustila_kantaa_kaannosavaimen():
         ([], [], None, True,                              # not_started
          [{"id": 1, "finished": False, "is_next": True,
            "deadline_time": "2026-08-14T17:30:00Z"}]),
+        # Kesken kausi = seka valmiita etta valmistumattomia kierroksia.
+        # (Pelkka "kaikki valmiina" on KESAN tila, ei kesken oleva kausi.)
         ([], [], None, True,                              # no_gameweeks_yet
-         [{"id": 1, "finished": True, "data_checked": True}]),
+         [{"id": 1, "finished": True, "data_checked": True},
+          {"id": 2, "finished": False, "data_checked": False}]),
     ]
     nahdyt = set()
     for current, past, pudotettu, vahv, events in tapaukset:
@@ -485,3 +488,82 @@ def test_jokainen_saatavuustila_kantaa_kaannosavaimen():
     kesken = fc._latest_season([], [], [3], True, None)
     assert kesken["note_params"] == {"gw": 3}
     assert "GW3" in kesken["note"]
+
+
+def test_kesan_kausienvalinen_tila_ei_ole_kesken_oleva_kausi(monkeypatch):
+    """🔴 PORTIN 19. KIERROS (F). `kausi_alkanut` palautti True heti kun
+    JOKIN event oli `finished`. Kesalla bootstrap kantaa PAATTYNEEN kauden
+    eventit (kaikki finished, `is_current` yha GW38:lla) sen jalkeen kun
+    entryn `current` on nollattu - ja kortti sanoi silloin *"No scored
+    gameweeks yet for this team"*, kun oikea vastaus on etta uusi kausi ei
+    ole alkanut. B2 vaarinpain.
+
+    Saanto 6a kohta 3: sama funktio KAIKISSA kauden vaiheissa, ei siina
+    jossa vika sattui loytymaan.
+    """
+    kesa = {"events": [{"id": i, "finished": True, "data_checked": True,
+                        "is_current": i == 38} for i in range(1, 39)]}
+    esikausi = {"events": [{"id": i, "finished": False, "data_checked": False,
+                            "is_next": i == 1,
+                            "deadline_time": "2027-08-13T17:30:00Z"}
+                           for i in range(1, 39)]}
+    kesken = {"events": [{"id": i, "finished": i <= 3, "data_checked": i <= 3,
+                          "is_current": i == 4} for i in range(1, 39)]}
+    gw1_kaynnissa = {"events": [{"id": i, "finished": False,
+                                 "data_checked": False, "is_current": i == 1}
+                                for i in range(1, 39)]}
+
+    assert fc.kausi_alkanut(kesa["events"]) is False, "kesa luettiin kaudeksi"
+    assert fc.kausi_alkanut(esikausi["events"]) is False
+    assert fc.kausi_alkanut(kesken["events"]) is True
+    assert fc.kausi_alkanut(gw1_kaynnissa["events"]) is True
+    assert fc.kausi_alkanut([]) is False
+
+    # Ja se mita LUKIJA nakee kesalla: ei "tama joukkue ei ole pelannut".
+    _mock_fpl(monkeypatch, current=[], bootstrap=kesa)
+    lat = fc.career(424242)["latest_season"]
+    assert lat["season_state"] == "not_started", lat
+    assert "No scored gameweeks yet" not in lat["note"], lat["note"]
+
+
+def test_vajaa_summa_kantaa_aina_ikkunan(monkeypatch):
+    """🔴 PORTIN 19. KIERROS (B1 elaa yha). Kolme pintaa gateasi labelin
+    ehdolla `provisional && through_gw`, joten kun yhtaan kierrosta ei ollut
+    vahvistettu (`through_gw` None) ne putosivat takaisin PALJAASEEN
+    "All-time points" -labeliin - ja silloin puuttui KOKO kausi, ei osa.
+
+    INVARIANTTI: jos lippu on tosi, ikkuna on olemassa (kierros tai kausi).
+    Mitataan kaikissa neljassa bootstrap-vaiheessa.
+    """
+    cur = [dict(CURRENT_FULL[i], event=i + 1, total_points=(i + 1) * 60)
+           for i in range(2)]
+    vaiheet = {
+        "bootstrap alhaalla": None,
+        "0 vahvistettua": {"events": [
+            {"id": 1, "finished": True, "data_checked": False},
+            {"id": 2, "finished": False, "data_checked": False}]},
+        "1/2 vahvistettu": {"events": [
+            {"id": 1, "finished": True, "data_checked": True},
+            {"id": 2, "finished": True, "data_checked": False}]},
+        "kaikki vahvistettu": {"events": [
+            {"id": 1, "finished": True, "data_checked": True},
+            {"id": 2, "finished": True, "data_checked": True},
+            {"id": 3, "finished": False, "data_checked": False}]},
+    }
+    nahty_gw = nahty_kausi = False
+    for nimi, boot in vaiheet.items():
+        _mock_fpl(monkeypatch, current=cur, bootstrap=boot)
+        sm = fc.career(424242)["summary"]
+        if not sm["all_time_provisional"]:
+            continue
+        ikkuna = (sm.get("all_time_through_gw"),
+                  sm.get("all_time_through_season"))
+        assert any(x is not None for x in ikkuna), (
+            f"{nimi}: luku on vajaa mutta ikkunaa ei ole -> pinta nayttaa "
+            f"paljaan labelin taydelliselta")
+        nahty_gw |= ikkuna[0] is not None
+        nahty_kausi |= ikkuna[1] is not None
+
+    # Kontrolli: molemmat ikkunamuodot esiintyivat, eli testi ei ole vihrea
+    # siksi etta vain toinen haara ajettiin.
+    assert nahty_gw and nahty_kausi, (nahty_gw, nahty_kausi)

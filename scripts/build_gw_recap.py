@@ -76,30 +76,43 @@ def running_record(rows: list[dict]) -> dict:
                   and r.get("points") is not None]
     if not lopulliset:
         return {"gameweeks": 0, "note": "ei lopullisesti gradattuja kierroksia"}
-    # 🔴 PORTIN 18. KIERROS KUMOSI 17. KIERROKSEN KORJAUKSEN, JA OLI OIKEASSA.
-    # 17. kierroksella vaihdoin taman nettoon olettaen etta FPL:n
-    # `average_entry_score` on netto siirtorangaistuksista. **Se on brutto.**
+    # 🔴 PORTIN 19. KIERROS: EN PYSTY TODENTAMAAN KUMPI FPL:N KESKIARVO ON.
     #
-    # Mitattu kahdesti riippumattomasti 7.9.2026, eri siemenilla ja eri
-    # otoskoolla. Oma otos (700 entrya, seed 20260907) kalibroituna GW1:lla,
-    # jossa hitit eivat voi vaikuttaa (brutto == netto):
-    #     GW1 otosharha = +1.26 p (otos 51.26 vs julkaistu 50)
-    #     GW2 brutto 82.37 - 1.26 = 81.11  vs julkaistu 81  OSUU
-    #     GW2 netto  81.15 - 1.26 = 79.89  vs julkaistu 81  EI OSU
-    # Julkaisutarkistajan otos (2 400 entrya, eri siemen) paatyi samaan.
+    # 17. kierroksella vaihdoin taman nettoon olettaen etta
+    # `average_entry_score` on netto. 18. kierroksella vaihdoin takaisin
+    # bruttoon "mitattuani" sen otoksella. 19. kierros replikoi mittauksen
+    # kolmannella siemenella eika se toistunut - ja osoitti miksi:
     #
-    # Siksi VERTAILU ON BRUTTO VS BRUTTO. Se ei rankaise mallia sen omista
-    # hiteista vertailukohtaa vastaan joka ei rankaise kenenkaan omistaan -
-    # ja nettokeskiarvoa ei ole olemassa, koska FPL ei julkaise sellaista.
-    # Peruste kirjoitetaan artefaktiin (`basis`), jotta postauksen kirjoittaja
-    # nakee sen eika joudu paattelemaan.
+    #   mitattava efekti (brutto - netto)  = 1.2 - 1.6 p
+    #   otosharha (aktiiviset entryt)      = 1.3 - 1.4 p
+    #
+    # Hairiosuure on yhta suuri kuin efekti, eika se ole additiivinen vakio
+    # (harha oli +1.39 GW1:lla ja +0.43 GW2:lla bruttopohjalla), joten
+    # kalibrointi GW1:lla ei tunnista mitaan. Kolme otosta antoi GW2:n
+    # bruttokeskiarvoksi 82.37 / 81.43 / 81.07, ja julkaistu luku 81 on itse
+    # pyoristetty +-0.5. Mittaus ei erota bruttoa netosta.
+    #
+    # VALINTA ON SILTI BRUTTO VS BRUTTO, ja se puolustetaan SYMMETRIALLA
+    # eika tiedolla FPL:n perustasta: mallin puoli ennen sen omia hitteja,
+    # FPL:n julkaisema luku sellaisenaan. Artefaktin `basis` sanoo tasan sen,
+    # eika vaita mita FPL:n luku on. Vaite jota ei voi toistaa ei kuulu
+    # julkiseen repoon.
+    #
+    # Tunnistava koeasetelma jos tama pitaa joskus ratkaista: KIINTEA
+    # entry-joukko koko menneelta kaudelta (38 kierrosta), regressoi
+    # (otoksen brutto-ka - julkaistu) muuttujalla (otoksen keskimaarainen
+    # hitti). Kulmakerroin 0 = brutto, 1 = netto. Kiintea otos vie harhan
+    # vakiotermiin ja meanhit vaihtelee 0..5, eli signaali on kohinaa
+    # suurempi. FPL:n API ei anna menneen kauden GW-erittelya, joten se
+    # vaatii oman keruun kauden mittaan. -> QUEUE FPL-KESKIARVON-PERUSTA
     diffs = [int(r["points"]) - int(r["fpl_average"]) for r in lopulliset]
     return {
         "gameweeks": len(lopulliset),
-        # Kumpaa lukua verrataan. FPL:n `average_entry_score` on BRUTTO
-        # (mitattu 7.9.2026), joten mallin puoli on myos brutto.
-        "basis": "gross: both sides before transfer hits "
-                 "(FPL's average_entry_score is gross)",
+        # Kumpaa lukua verrataan. EI vaitetta siita mita FPL:n luku on -
+        # sita ei ole todennettu (ks. kommentti `running_record`issa).
+        "basis": "gross vs gross: model points before its own transfer hits, "
+                 "against FPL's published average_entry_score "
+                 "(basis of FPL's figure not established)",
         "gw_list": [int(r["gw"]) for r in lopulliset],
         "total_diff": sum(diffs),
         "avg_diff": round(sum(diffs) / len(diffs), 1),

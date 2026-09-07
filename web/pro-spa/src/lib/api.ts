@@ -741,6 +741,9 @@ export interface ModelRaceGameweek {
 	 *  (`data_checked` false). Luku nakyy heti, mutta se EI saa esiintya
 	 *  lopullisena. Optionaalinen: vanha backend ei tuo kenttaa -> lopullinen. */
 	provisional?: boolean;
+	/** Kolme tilaa yhden lipun sijaan: 'in_progress' | 'awaiting_check' |
+	 *  'unknown'. `provisional` yksin on tosi kaikissa kolmessa. */
+	state?: string;
 	/** null = kierrosta ei ole omassa historiassa (EI nolla — ks. backend). */
 	your_points: number | null;
 	diff: number | null;
@@ -766,6 +769,8 @@ export interface ModelRaceResponse {
 		/** Kierrokset joiden luku on viela provisionaalinen. Tyhja = kaikki
 		 *  lopullisia. Rivikohtainen `provisional` on sama tieto per rivi. */
 		provisional_gws?: number[];
+		/** gw -> tila, ks. `ModelRaceGameweek.state`. */
+		provisional_states?: Record<string, string>;
 		note: string | null;
 	};
 	totals: { model: number; you: number | null; diff: number | null };

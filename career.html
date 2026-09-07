@@ -546,14 +546,24 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
     var colX = [PAD, W / 2 + 20];
     var colW = W / 2 - PAD - 40;
     // When part of the current season is not confirmed final, this total is
-    // short. Name the gameweek it runs to: the reader can check that against
-    // their own FPL page. '(confirmed)' described FPL's internal data_checked
-    // flag, which the reader has no way to know about.
-    statBlock(colX[0], 432,
-      (s.all_time_provisional && s.all_time_through_gw)
-        ? ('All-time points to GW' + s.all_time_through_gw)
-        : 'All-time points',
-      fmtPts(s.all_time_points), 84, colW);
+    // short. Name the window it runs through, so the reader can check it
+    // against their own FPL page. '(confirmed)' described FPL's internal
+    // data_checked flag, which the reader has no way to know about.
+    //
+    // Both windows are needed. When NO gameweek of this season is confirmed,
+    // all_time_through_gw is null, and gating the label on it alone fell back
+    // to the bare 'All-time points' - on the reading where the total is most
+    // wrong, because the whole season is missing rather than part of it.
+    var atLabel = 'All-time points';
+    if (s.all_time_provisional) {
+      if (s.all_time_through_gw) atLabel += ' through GW' + s.all_time_through_gw;
+      else if (s.all_time_through_season) atLabel += ' through ' + s.all_time_through_season;
+      else atLabel = null;  // no window we can name: do not show a bare total
+    }
+    // Label is drawn at a fixed 26px; statBlock's fitText only shrinks the
+    // VALUE. 'ALL-TIME POINTS THROUGH GW38' is 28 chars * ~15.6px = 437px,
+    // inside the 488px column. A longer label would overflow silently.
+    if (atLabel) statBlock(colX[0], 432, atLabel, fmtPts(s.all_time_points), 84, colW);
     statBlock(colX[1], 432, 'Best overall rank', fmtRank(s.best_rank), 84, colW);
     var bs = s.best_season;
     statBlock(colX[0], 640, 'Best season',
@@ -575,18 +585,23 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       // We got no answer from FPL. That is our connection, not the reader's
       // season, so the cell says which one failed. 'Not confirmed' read as a
       // second phrasing of 'Not final yet'.
-      statBlock(colX[1], 640, 'This season', 'FPL not reachable', 52, colW);
+      // Matches the note below it, which says 'FPL is not answering right
+      // now'. One state must not carry two vocabularies in one image.
+      statBlock(colX[1], 640, 'This season', 'FPL not answering', 52, colW);
     } else if (lat.season_state === 'no_gameweeks_yet') {
       // Season is running, this team has no scored gameweek (joined mid-season).
-      statBlock(colX[1], 640, 'This season', 'No gameweeks yet', 52, colW);
+      // The claim is about the TEAM, so the label says team - 'This season /
+      // No gameweeks yet' reads as 'the season has no gameweeks yet'.
+      statBlock(colX[1], 640, 'This team', 'No points yet', 52, colW);
     } else if (lat.season_state === 'not_started') {
       statBlock(colX[1], 640, 'New season', 'Starts GW1', 52, colW);
     } else {
-      // Named branches only. An unnamed else printed the STRONGEST claim
-      // ('New season - Starts GW1') for any response without season_state:
-      // an older API build, a renamed field, or a deploy where the page ships
-      // before the API. Same fail-open as `optimal_proven === false` on 4 Sep.
-      statBlock(colX[1], 640, 'This season', '-', 52, colW);
+      // Named branches only, and this one draws NOTHING. An unnamed else
+      // printed the STRONGEST claim ('New season - Starts GW1') for any
+      // response without season_state: an older API build, a renamed field,
+      // or a deploy where the page ships before the API. A '-' placeholder
+      // reads as a zero; the card already drops what it does not know
+      // (empty team name, missing model teaser).
     }
 
     // Model teaser box (only if the backend returned it - no placeholder)

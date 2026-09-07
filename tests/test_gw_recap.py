@@ -226,7 +226,11 @@ def test_running_record_vertaa_bruttoa_bruttoon():
     assert r["per_gw"][0]["points_net"] == 62
     assert r["per_gw"][0]["transfer_cost"] == 8
     # Ja peruste sanotaan artefaktissa, ei paatella.
-    assert "gross" in r["basis"], r.get("basis")
+    # Peruste sanotaan artefaktissa - ja se EI saa vaittaa mita FPL:n luku on.
+    assert "gross vs gross" in r["basis"], r.get("basis")
+    assert "not established" in r["basis"], r.get("basis")
+    assert "average_entry_score is gross" not in r["basis"], (
+        "todentamaton vaite FPL:n perustasta palasi artefaktiin")
 
 
 def test_running_record_kontrolli_ilman_hittia_sama_luku():
