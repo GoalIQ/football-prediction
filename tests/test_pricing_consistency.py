@@ -254,7 +254,17 @@ def test_takuu_ei_lupaa_mobiiliostojen_palautusta():
 
 def test_faq_kertoo_myos_web_tilauksen_peruutuksen():
     """Peruutusohje puhui vain sovelluskaupasta, vaikka pro.goaliq.app/checkout
-    myy Stripen kautta. Web-ostaja ei loytanyt ohjeestaan mitaan."""
+    myy Stripen kautta. Web-ostaja ei loytanyt ohjeestaan mitaan.
+
+    HUOM (7.9.2026): tama testi kaatui 6.9:n customer-portal-korjauksen
+    jalkeen, koska se etsi kirjainta tarkkaa lausetta "web checkout" joka
+    korvattiin portin lapaisseella, TARKEMMALLA sanamuodolla ("GoalIQ
+    Premium (web): if you subscribed at pro.goaliq.app ..."). Sisalto ei
+    regressoinut - web-ostajan polku (pro.goaliq.app, Account-valikko,
+    Manage subscription, hello@) on yha nakyvassa vastauksessa, vain
+    tarkka lause vaihtui. Ankkuri pysyy `pro.goaliq.app`:ssa, koska se on
+    sama tunniste jota web-tilaaja etsii omasta ostokuitistaan eika
+    yhdesta muotoilusta joka voi taas sanamuotoutua uusiksi."""
     t = _teksti("faq.html")
     # Ankkuri on NAKYVA <summary>, ei pelkka otsikkoteksti: sama otsikko
     # esiintyy myos JSON-LD-lohkossa aiemmin sivulla, ja osajonohaku osui
@@ -264,7 +274,11 @@ def test_faq_kertoo_myos_web_tilauksen_peruutuksen():
     i = t.find("<summary>How do I cancel my Premium subscription?</summary>")
     assert i > 0, "nakyvaa peruutuslohkoa ei loydy"
     lohko = t[i:i + 2000]
-    assert "web checkout" in lohko, "nakyva peruutusohje ei mainitse web-tilausta"
+    assert "pro.goaliq.app" in lohko, (
+        "nakyva peruutusohje ei mainitse web-tilaajan omaa osoitetta "
+        "(pro.goaliq.app)")
+    assert "hello@goaliq.app" in lohko, (
+        "nakyva peruutusohje ei tarjoa email-lunastusreittia web-tilaajalle")
 
 
 def test_rakenteinen_data_kertoo_saman():

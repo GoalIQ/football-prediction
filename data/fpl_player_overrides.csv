@@ -76,6 +76,17 @@
 # varamiesvahti voi ponnahtaa YLOS tasan kun suoja poistuu.
 player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #
+# POISTETTU 2026-09-07 — Dubravka (id 497), review_by 2026-09-06 MENNYT.
+# Villen 25.8-paatos oli "ei rakenneta, ohitusten annetaan vanheta" (rivi
+# KEEPER-PRICE-PRIOR, cos-reports/QUEUE.md). Portti (test_shipped_rows_are_
+# all_live_not_expired) laukesi juuri niin kuin piti: `load_player_overrides`
+# jattaa vanhentuneen rivin AINA pois (fpl_player_overrides.py "due < today"),
+# joten tuotannon artefakti oli jo ennen tata poistoa hypannyt hintapriorin
+# 0.096:aan (data/fpl_xp_projections.json 2026-09-07: minutes_source
+# "price_prior", ei "override"). Poisto ei siis muuta yhtaan lukua — se
+# vain siivoaa CSV:n vastaamaan sita mita ajo jo teki. Ei GO-tarvetta:
+# tama EI ole mallimuutos vaan jo-voimassaolevan tilan kirjaus.
+#
 # HARKITTU JA HYLÄTTY — Havertz (ARS, 7.5M, p_start 0.25, xmins 15.5), 27.7:
 #   Sama juurisyy kuin Isakilla (rikkonainen 25/26), mutta EI ohiteta.
 #   Villen arvio roolista: "rotaatio hyökkäyksessä, ei varmaankaan 90 min
@@ -88,5 +99,4 @@ player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #   Ohitus vaatisi keksityn luvun jolle ei ole mitattua perustetta, ja jokainen
 #   ohitus syö todennettavuuslupausta. Kapea ero ei ole sen arvoinen.
 #   Hintapriori korjaa tämän aikanaan oikeaa kautta.
-497,Dubravka,0.08,"Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",2026-09-06
 351,Mamardashvili,0.15,"Successor in waiting, not the incumbent. Paired with the Alisson row: without it the club's keeper p_start sums to 1.22, i.e. more than one starting keeper. Same reasoning and sources as id 350",2026-09-30
