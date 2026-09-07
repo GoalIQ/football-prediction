@@ -46,11 +46,23 @@ jobs:
             exit 1
           }
 
-      - name: Gate — artefakti on kuluvalta kaudelta
+      - name: Build /ucl pages
+        run: |
+          # 🔴 SIVU JA DATA SAMASSA AJOSSA. Erillinen sivu-workflow ajautuu
+          # datan alle ja sivu jaatyy tuoreen artefaktin paalle, ilman etta
+          # kumpikaan ajo on punainen (muisti: sivu-ja-data-eri-workflowssa).
+          python -m scripts.build_ucl_page || {
+            echo "::error::ucl-sivugeneraattori kaatui"
+            exit 1
+          }
+
+      - name: Gate — artefakti on kuluvalta kaudelta, sivut sopimuksen mukaisia
         run: |
           python -m pip install --quiet pytest
-          python -m pytest tests/test_ingest_ucl.py -q || {
-            echo "::error::UCL-portti punainen - artefaktia ei committoida"
+          python -m pytest tests/test_ingest_ucl.py tests/test_ucl_phase.py \
+                           tests/test_ucl_page.py tests/test_svg_charts.py \
+                           tests/test_page_contract.py -q || {
+            echo "::error::UCL-portti punainen - mitaan ei committoida"
             exit 1
           }
 
@@ -63,6 +75,9 @@ jobs:
           # joka kerta mutta `git add` ei sisaltanyt sen ulostuloa, eika
           # askel kaatunut kertaakaan.
           [ -f data/ucl_fantasy.json ] && git add data/ucl_fantasy.json
+          [ -f ucl/index.html ] && git add ucl/index.html
+          [ -f ucl/prices.html ] && git add ucl/prices.html
+          [ -f ucl/team-news.html ] && git add ucl/team-news.html
           if git diff --cached --quiet; then
             echo "Ei muutoksia."
             exit 0

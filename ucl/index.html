@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UCL Fantasy prices, ownership and squad availability | GoalIQ</title>
+<meta name="description" content="Free UCL Fantasy data: every player&#x27;s price and ownership, squad availability by club, and the next matchday deadline. No login." />
+<link rel="canonical" href="https://goaliq.app/ucl" />
+<meta property="og:type" content="article">
+<meta property="og:title" content="UCL Fantasy prices, ownership and squad availability | GoalIQ">
+<meta property="og:description" content="Free UCL Fantasy data: every player&#x27;s price and ownership, squad availability by club, and the next matchday deadline. No login.">
+<meta property="og:url" content="https://goaliq.app/ucl">
+<meta property="og:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="GoalIQ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@goaliqapp">
+<meta name="twitter:title" content="UCL Fantasy prices, ownership and squad availability | GoalIQ">
+<meta name="twitter:description" content="Free UCL Fantasy data: every player&#x27;s price and ownership, squad availability by club, and the next matchday deadline. No login.">
+<meta name="twitter:image" content="https://goaliq.app/assets/brand/goaliq-social-1200x630.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/brand/goaliq-favicon-48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
+<!-- PostHog (#38): cookieless site analytics - persistence=memory, no cookies, no PII -->
+<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+/* 1 Aug 2026: capture_pageview added, persistence NOT changed.
+   $pageview was missing entirely, so PostHog Web Analytics showed
+   goaliq.app near zero despite real traffic (the same bug was fixed for
+   pro.goaliq.app on 25 Jul but the fix never spread here).
+   persistence:'memory' + identified_only STAYS: privacy.html promises a
+   cookieless setup and names it as the reason the page has no cookie
+   banner. This therefore counts PAGE LOADS, not unique visitors, since
+   uniques would need a persistent identifier and thus a banner. */
+posthog.init('phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7',{api_host:'https://us.i.posthog.com',persistence:'memory',autocapture:false,person_profiles:'identified_only',capture_pageview:true,disable_surveys:true});
+posthog.register({platform:'web',source_app:'goaliq-static'});
+posthog.capture('web_landing_viewed',{page:location.pathname});
+</script>
+<!-- GEN:TABLE-TOOLS -->
+<style>
+.tt-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 6px;}
+.tt-chip{font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;
+  border:1px solid rgba(243,242,242,.28);background:transparent;color:inherit;
+  cursor:pointer;line-height:1.2;}
+.tt-chip[aria-pressed="true"]{background:#f5c542;color:#0b0a09;
+  border-color:#f5c542;font-weight:600;}
+.tt-price{font:inherit;font-size:13px;padding:5px 8px;border-radius:8px;
+  border:1px solid rgba(243,242,242,.28);background:transparent;color:inherit;
+  width:5.5em;}
+.tt-count{font-size:12px;opacity:.7;}
+.tt-clear{font-size:12px;text-decoration:underline;cursor:pointer;
+  background:none;border:0;color:inherit;padding:0;}
+table.lb thead th[data-sortable]{cursor:pointer;user-select:none;
+  white-space:nowrap;}
+table.lb thead th[data-sortable]:after{content:" \2195";opacity:.35;}
+table.lb thead th[data-dir="asc"]:after{content:" \2191";opacity:1;}
+table.lb thead th[data-dir="desc"]:after{content:" \2193";opacity:1;}
+</style>
+<script>
+(function(){
+ function num(s){
+  // Parse a cell into a number. Both "6.0" and "6,0" appear on generated
+  // pages, so the comma decimal is accepted too.
+  if(s==null)return NaN;
+  var t=String(s).replace(/[^0-9.,\-]/g,'').replace(',','.');
+  if(t===''||t==='-')return NaN;
+  var v=parseFloat(t);
+  return isNaN(v)?NaN:v;
+ }
+ function txt(td){return (td.textContent||'').trim();}
+
+ function colIndex(tb,names){
+  var th=tb.querySelectorAll('thead th'),i,n;
+  for(i=0;i<th.length;i++){
+   n=(th[i].textContent||'').trim().toLowerCase();
+   for(var j=0;j<names.length;j++){if(n===names[j])return i;}
+  }
+  return -1;
+ }
+
+ function initSort(tb){
+  var th=tb.querySelectorAll('thead th');
+  if(!th.length)return;
+  var tbody=tb.querySelector('tbody');
+  if(!tbody)return;
+  Array.prototype.forEach.call(th,function(h,idx){
+   if(idx===0)return;                    // rank column, not a sort key
+   h.setAttribute('data-sortable','1');
+   h.setAttribute('tabindex','0');
+   h.setAttribute('role','button');
+   function go(){
+    var rows=Array.prototype.slice.call(tbody.rows);
+    var dir=h.getAttribute('data-dir')==='desc'?'asc':'desc';
+    Array.prototype.forEach.call(th,function(x){x.removeAttribute('data-dir');});
+    h.setAttribute('data-dir',dir);
+    var mul=dir==='asc'?1:-1;
+    rows.sort(function(a,b){
+     var av=txt(a.cells[idx]),bv=txt(b.cells[idx]);
+     var an=num(av),bn=num(bv);
+     if(!isNaN(an)&&!isNaN(bn))return (an-bn)*mul;
+     // Missing values sink to the bottom in both directions, so a blank
+     // never reads as the best row when sorting ascending.
+     if(isNaN(an)&&!isNaN(bn))return 1;
+     if(!isNaN(an)&&isNaN(bn))return -1;
+     return av.localeCompare(bv)*mul;
+    });
+    rows.forEach(function(r){tbody.appendChild(r);});
+   }
+   h.addEventListener('click',go);
+   h.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}
+   });
+  });
+ }
+
+ function initFilter(tb){
+  var tbody=tb.querySelector('tbody');
+  if(!tbody||tbody.rows.length<8)return;   // short table needs no filter
+  var pos=colIndex(tb,['pos','position']);
+  var price=colIndex(tb,['price','cost','£']);
+  if(pos<0&&price<0)return;
+
+  var bar=document.createElement('div');
+  bar.className='tt-bar';
+  var state={pos:null,max:null};
+  var count=document.createElement('span');
+  count.className='tt-count';
+
+  function apply(){
+   var shown=0,rows=tbody.rows,i,r,ok;
+   for(i=0;i<rows.length;i++){
+    r=rows[i];ok=true;
+    if(state.pos&&pos>=0)
+     ok=ok&&txt(r.cells[pos]).toUpperCase()===state.pos;
+    if(state.max!=null&&price>=0){
+     var v=num(txt(r.cells[price]));
+     ok=ok&&!isNaN(v)&&v<=state.max;
+    }
+    r.style.display=ok?'':'none';
+    if(ok)shown++;
+   }
+   count.textContent=shown+' of '+rows.length+' shown';
+  }
+
+  if(pos>=0){
+   ['GKP','DEF','MID','FWD'].forEach(function(p){
+    var b=document.createElement('button');
+    b.type='button';b.className='tt-chip';b.textContent=p;
+    b.setAttribute('aria-pressed','false');
+    b.addEventListener('click',function(){
+     state.pos=state.pos===p?null:p;
+     Array.prototype.forEach.call(bar.querySelectorAll('.tt-chip'),function(x){
+      x.setAttribute('aria-pressed',String(x.textContent===state.pos));
+     });
+     apply();
+    });
+    bar.appendChild(b);
+   });
+  }
+  if(price>=0){
+   var lab=document.createElement('label');
+   lab.style.fontSize='13px';lab.style.opacity='.85';
+   lab.textContent='Max price ';
+   var inp=document.createElement('input');
+   inp.type='number';inp.step='0.5';inp.min='0';inp.className='tt-price';
+   inp.placeholder='any';
+   inp.setAttribute('aria-label','Maximum price in millions');
+   inp.addEventListener('input',function(){
+    var v=parseFloat(inp.value);
+    state.max=isNaN(v)?null:v;
+    apply();
+   });
+   lab.appendChild(inp);
+   bar.appendChild(lab);
+  }
+  var clr=document.createElement('button');
+  clr.type='button';clr.className='tt-clear';clr.textContent='clear';
+  clr.addEventListener('click',function(){
+   state.pos=null;state.max=null;
+   Array.prototype.forEach.call(bar.querySelectorAll('.tt-chip'),function(x){
+    x.setAttribute('aria-pressed','false');});
+   var i=bar.querySelector('.tt-price');if(i)i.value='';
+   apply();
+  });
+  bar.appendChild(clr);
+  bar.appendChild(count);
+
+  var host=tb.closest('.lb-wrap')||tb;
+  host.parentNode.insertBefore(bar,host);
+  apply();
+ }
+
+ function init(){
+  var tables=document.querySelectorAll('table.lb');
+  Array.prototype.forEach.call(tables,function(tb){
+   try{initSort(tb);initFilter(tb);}catch(e){/* leave the table as it was */}
+  });
+ }
+ if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',init);
+ else init();
+})();
+</script>
+<!-- /GEN:TABLE-TOOLS -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<meta name="theme-color" content="#0B0A09">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebPage",
+ "name": "UCL Fantasy tools",
+ "description": "Free UCL Fantasy prices, ownership and squad availability.",
+ "url": "https://goaliq.app/ucl",
+ "isPartOf": {
+  "@type": "WebSite",
+  "name": "GoalIQ",
+  "url": "https://goaliq.app"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "GoalIQ"
+ }
+}
+</script>
+<style>.brand-icon{width:22px;height:22px;display:inline-block;vertical-align:-4px;margin-right:8px;flex:none;}
+:root{--teal:#2ED6C2;
+--teal-ink:#2ED6C2;--amber:#F5C542;--amber-deep:#F5C542;
+--gold:#F5C542;--gold-deep:#F5C542;--coral:#FF8A5C;
+--ink:#0B0A09;--ink2:#141311;--cream:#F3F2F2;
+--paper:#1F1D1A;--muted:#A8A29A;--hero-muted:#A8A29A;--faint:#8A847A;
+--line:rgba(243,242,242,0.24);--line-strong:rgba(243,242,242,0.40);--radius:0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--fs-small:13px;--fs-body:16px;--fs-lead:18px;--fs-sub:20px;}
+body{background:var(--ink);color:var(--cream);font-family:var(--sans);
+font-size:var(--fs-body);line-height:1.65;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.brand{font-family:var(--mono);text-transform:uppercase;letter-spacing:-0.01em;}
+table,.lb,.num,.stat b,.stat span,.pick,.tflag,.xip span,code,kbd,
+.toolnav,.clubnav,.share,.lbctl,.tt-chip,.tt-price,.tt-count,
+.mrow .meta,.note-date{font-family:var(--mono);}
+.lede,.note,p{max-width:68ch;}
+@media (hover:none){
+.toolnav a,.clubnav a,.share a,.navgrp a,.rec a,footer a,nav a{
+display:inline-flex;align-items:center;min-height:44px;}
+}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px;}
+.bar{height:1px;background:var(--line);}
+.dark{background:var(--ink);
+color:var(--cream);}
+nav{display:flex;align-items:center;justify-content:space-between;
+padding:18px 0;font-size:14px;}
+nav a{text-decoration:none;color:var(--cream);font-weight:600;}
+.brand{font-size:20px;font-weight:700;letter-spacing:.5px;}
+.brand span{color:var(--amber);}
+.nav-cta{background:transparent;color:var(--amber);border:1px solid var(--amber);padding:8px 16px;
+border-radius:var(--radius);font-weight:700;}
+.nav-cta:hover{background:var(--amber);color:var(--ink);}
+.hero{padding-top:26px;padding-bottom:44px;}
+.hero h1{color:var(--cream);font-size:31px;line-height:1.15;margin:0 0 12px;
+letter-spacing:-0.01em;}
+.hero .lede{color:var(--hero-muted);max-width:640px;}
+h2{font-size:22px;margin:30px 0 10px;}
+.content{padding-top:26px;}
+.card{background:var(--paper);border:1px solid var(--line);
+border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
+.lede{color:var(--muted);margin-bottom:22px;}
+.stat-row{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0;}
+.stat{background:var(--paper);border:1px solid var(--line);
+border-radius:var(--radius);padding:14px 18px;flex:1 1 140px;}
+.stat b{display:block;font-size:22px;color:var(--amber);
+font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+.stat span{color:var(--muted);font-size:12px;}
+.rec{border:1px solid var(--line);background:var(--paper);
+border-radius:var(--radius);padding:16px 20px;font-size:14px;color:var(--muted);
+margin:24px 0 16px;}
+.rec a{color:var(--teal);font-weight:700;}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0;}
+.btn{background:transparent;color:var(--amber);border:1px solid var(--amber);font-weight:700;padding:12px 22px;
+border-radius:var(--radius);text-decoration:none;font-size:14px;}
+.btn:hover{background:var(--amber);color:var(--ink);}
+.btn.ghost{background:transparent;color:var(--cream);
+border:1px solid var(--line);}
+.btn.ghost:hover{background:transparent;color:var(--amber);}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;
+padding:12px 0;border-bottom:1px solid var(--line);}
+.mrow:last-child{border-bottom:none;}
+.mrow a{color:var(--teal);font-weight:700;text-decoration:none;}
+.mrow .meta{color:var(--muted);font-size:12px;}
+.pick{color:var(--teal-ink);font-weight:700;font-size:13px;white-space:nowrap;}
+footer{border-top:1px solid var(--line);margin-top:36px;padding:22px 0 34px;
+color:var(--muted);font-size:13px;}
+footer a{color:var(--teal);}
+.note{color:var(--muted);font-size:12px;margin:18px 0;}
+.note-body p{margin:0 0 15px;}
+.note-body h3{margin:26px 0 10px;font-size:1.05rem;letter-spacing:.01em;}
+.note-body h3:first-child{margin-top:0;}
+.tblwrap{overflow-x:auto;margin:14px 0;}
+.note-tbl{border-collapse:collapse;font-size:.95rem;min-width:22rem;}
+.note-tbl th,.note-tbl td{padding:5px 14px 5px 0;text-align:left;
+white-space:nowrap;}
+.note-tbl th{border-bottom:1px solid var(--line-strong);font-weight:600;}
+.note-tbl td:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums;}
+.note-tbl tbody tr+tr td{border-top:1px solid var(--line);}
+.lb-wrap{overflow-x:auto;margin:14px 0;
+width:min(96vw,1560px);margin-left:50%;transform:translateX(-50%);}
+.lb-wrap>.lb{width:auto;min-width:min(100%,780px);margin:0 auto;}
+html,body{overflow-x:clip;}
+.lb{width:100%;border-collapse:collapse;font-size:14px;}
+.lb th,.lb td{padding:8px 10px;text-align:left;
+border-bottom:1px solid var(--line);white-space:nowrap;}
+.lb th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+color:var(--muted);font-weight:700;}
+.lb td.n,.lb th.n{text-align:right;font-variant-numeric:tabular-nums;}
+.lb td.hi{color:var(--amber);font-weight:700;}
+.lb tr.noclear td{color:var(--muted);}.lb tr.noclear td.hi{color:var(--muted);font-weight:400;}
+.lb .muted{color:var(--muted);font-weight:400;}
+.lb tbody tr:last-child td{border-bottom:none;}
+.lb thead th:hover{color:var(--amber);}
+.lbctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 6px;}
+.lbctl .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+color:var(--muted);font-weight:700;margin-left:6px;}
+.lbctl .lbl:first-child{margin-left:0;}
+.chips{display:inline-flex;gap:6px;}
+.chip{min-width:34px;border:1px solid var(--line-strong);background:var(--paper);
+color:var(--cream);border-radius:var(--radius);padding:6px 12px;font-size:13px;
+font-weight:600;cursor:pointer;}
+.chip.on{background:var(--amber);border-color:var(--amber);color:var(--ink);}
+.lbctl select{border:1px solid var(--line-strong);background:var(--paper);
+color:var(--cream);border-radius:var(--radius);padding:6px 12px;font-size:13px;
+font-weight:600;}
+.lb td.tm{display:flex;align-items:center;gap:7px;}
+.tflag{flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.04em;
+text-transform:uppercase;padding:1px 5px;border:1px solid var(--line-strong);
+border-radius:var(--radius);opacity:.72;white-space:nowrap;}
+.kit{flex:0 0 auto;display:block;}
+.pitch{background:rgba(46,214,194,0.22);border:1px solid var(--line);
+border-radius:var(--radius);padding:10px 6px;margin:18px 0;}
+.xirow{display:flex;justify-content:space-evenly;flex-wrap:wrap;gap:8px;
+margin:10px 0;}
+.xip{width:76px;text-align:center;color:var(--cream);}
+.xip b{display:block;font-size:11px;font-weight:600;margin-top:2px;
+overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.xip span{display:block;font-size:10px;color:var(--muted);
+font-variant-numeric:tabular-nums;}
+.xip span i{display:block;font-style:normal;font-size:9px;opacity:.72;
+letter-spacing:.03em;}
+@media (max-width:520px){.xip{width:64px;}.xirow{gap:6px;}}
+@media (max-width:520px){.cta-row{flex-direction:column;align-items:stretch;}
+.btn{text-align:center;}}
+.toolnav{margin:34px 0 6px;padding-top:18px;border-top:1px solid var(--line);
+display:flex;flex-direction:column;gap:10px;justify-content:flex-start;
+align-items:stretch;}
+.navgrp{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;}
+.clubnav{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;
+justify-content:flex-start;
+margin:0 0 26px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+.clubnav b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+color:var(--muted);font-weight:600;margin-right:4px;}
+.clubnav a{font-size:14px;color:var(--cream);text-decoration:none;
+border:1px solid var(--line);padding:3px 7px;}
+.clubnav a:hover{border-color:var(--amber);}
+.share{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;
+justify-content:flex-start;margin:26px 0 6px;}
+.share span{font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+color:var(--muted);}
+.share a{font-size:14px;color:var(--cream);text-decoration:none;
+border:1px solid var(--line);padding:3px 10px;}
+.share a:hover{border-color:var(--amber);}
+.clubnav b.here{color:var(--amber);border:1px solid var(--amber);
+padding:3px 7px;font-size:14px;letter-spacing:0;text-transform:none;}
+.navgrp b{min-width:88px;}
+.toolnav b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+color:var(--muted);font-weight:600;margin-right:2px;}
+.toolnav a{font-size:15px;color:var(--cream);text-decoration:none;
+border-bottom:1px solid var(--line);padding-bottom:1px;}
+.toolnav a:hover{border-bottom-color:currentColor;}
+.m-only{display:none;}
+td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
+  padding-top:2px;}
+@media (max-width:560px){
+  .m-only{display:block;}
+  
+  nav,.nav{flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px;}
+  .brand{font-size:18px;white-space:nowrap;flex:0 0 auto;}
+  .brand-icon{width:20px;height:20px;margin-right:6px;}
+  nav>span,.nav>span{flex:1 1 100%;font-size:13px;}
+  .nav-cta{display:inline-block;white-space:nowrap;padding:8px 14px;}
+  
+  .mrow{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;}
+  .mrow>div{width:100%;}
+  
+  .mrow a{display:block;width:100%;padding:7px 0;}
+  .pick{font-size:14px;}
+  
+  th.m-hide,td.m-hide{display:none;}
+  
+  body.cols-all th.m-hide,body.cols-all td.m-hide{display:table-cell;}
+  body.cols-all .m-only{display:none;}
+  
+  td .m-sub{font-size:11px;font-weight:400;opacity:.72;padding-top:2px;}
+  .colstoggle{display:inline-block;margin:10px 0 4px;padding:9px 14px;
+    min-height:40px;border:1px solid var(--line-strong,rgba(128,128,128,.5));
+    background:transparent;color:inherit;font:inherit;font-size:13px;
+    font-weight:600;cursor:pointer;border-radius:0;}
+  .colstoggle[aria-pressed="true"]{border-color:var(--amber,#F5C542);
+    color:var(--amber,#F5C542);}
+  
+  .lb th,.lb td,.scroll table th,.scroll table td{white-space:normal;}
+  .lb th.n,.lb td.n,.scroll table th.num,.scroll table td.num{
+    white-space:nowrap;}
+  .lb{font-size:13px;}
+  
+  .lb th,.lb td{padding:7px 5px;}
+  
+  .lb-wrap>.lb,.scroll>table,.table-wrap>table,.rec-scroll>table{
+    min-width:0;}
+  table{min-width:0;}
+  
+  .lb-wrap>.lb{width:max-content;max-width:none;}
+  
+  div.rec-scroll table{min-width:0;}
+  
+  div.rec-scroll td.team,.scroll td.team{white-space:normal;}
+  div.rec-scroll th,div.rec-scroll td{padding:7px 6px;font-size:13px;}
+  
+  div.rec-scroll td.num,div.rec-scroll th.num{white-space:normal;}
+  
+  .fdr-grid td.num,.scroll td.num .fdr,.fdr{white-space:normal;}
+  .fdr{min-width:0;}
+  
+  .scrollhint{display:block;color:var(--muted,#A8A29A);font-size:12px;
+    margin:6px 0 0;}
+  
+  .lbctl{gap:6px 8px;}
+  .lbctl .lbl{flex:1 1 100%;margin:10px 0 0;}
+  .lbctl .lbl:first-child{margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;}
+  .chip{min-height:36px;}
+  .lbctl select,.lbctl input{min-height:36px;max-width:100%;}
+  
+  .meta,.note,.stat span,.legend,.mrow .meta,footer{font-size:13px;}
+  .hero .lede,.lede{font-size:16px;}
+  .stat b{font-size:24px;}
+  
+  .btn,.cta,.nav-cta{min-height:44px;display:inline-flex;align-items:center;
+    justify-content:center;}
+  .toolnav a{display:inline-block;padding:4px 0;}
+}
+@media (max-width:400px){
+  .wrap{padding-left:14px;padding-right:14px;}
+  .hero h1,h1{font-size:26px;overflow-wrap:break-word;}
+  .brand{font-size:17px;}
+  
+  .lb th,.lb td{padding:6px 3px;}
+}
+.chart{margin:18px 0 6px;}
+.chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.chart-scroll>svg{min-width:var(--chart-min,720px);display:block;}
+.chart-legend{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0 20px;
+font-family:var(--mono);font-size:12px;color:var(--muted);}
+.chart-legend .lg{display:inline-flex;align-items:center;gap:6px;}
+.chart-legend i{width:10px;height:10px;display:inline-block;border-radius:50%;}
+</style>
+</head>
+<body>
+<header class="dark">
+<div class="bar"></div>
+<div class="wrap"><nav><a class="brand" href="/"><svg class="brand-icon" width="22" height="22" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a><span><a href="/fpl">FPL tools</a> · <a class="nav-cta" href="https://pro.goaliq.app/">Try it live</a></span></nav></div>
+<div class="wrap hero">
+<h1>UCL Fantasy: prices, ownership and squad news</h1><p class="lede">Matchday 1 deadline is Tue 08 Sep 2026, 18:45 UTC. Free, no login. Updated from the official UEFA feed every six hours.</p>
+</div>
+</header>
+<main class="wrap content">
+<p>No matchday of this season has been played yet, so there are no points, minutes or form figures for it anywhere on this page. The points column shows last season's UCL total, carried in the official feed, and it is labelled that way. Prices, ownership and squad status are current.</p><h2>Where the money is</h2><p>Every player owned by more than 1% of managers, plotted by price against ownership. Players below that line are left out on purpose: 990 of the 1162 players sit near zero and would be one dark block.</p><figure class="chart" role="group" aria-label="Ownership by price, players owned by more than 1%"><div class="chart-scroll" style="--chart-min:720px"><svg viewBox="0 0 720 360" width="720" height="360" role="img" aria-label="Ownership by price, players owned by more than 1%" style="max-width:100%;height:auto"><rect width="720" height="360" fill="#1F1D1A"/><line x1="52" y1="316" x2="704" y2="316" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="44" y="320" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">0%</text><line x1="52" y1="224.9" x2="704" y2="224.9" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="44" y="228.9" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">20%</text><line x1="52" y1="133.9" x2="704" y2="133.9" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="44" y="137.9" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">40%</text><line x1="52" y1="42.8" x2="704" y2="42.8" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="44" y="46.8" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">60%</text><text x="86.9" y="334" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">4m</text><text x="253.3" y="334" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">6m</text><text x="419.6" y="334" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">8m</text><text x="585.9" y="334" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">10m</text><circle cx="253.3" cy="279.6" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>G. Donnarumma (MCI) 6m, 8% owned</title></circle><circle cx="253.3" cy="297.8" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Alisson Becker (LIV) 6m, 4% owned</title></circle><circle cx="253.3" cy="147.5" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Raya (ARS) 6m, 37% owned</title></circle><circle cx="253.3" cy="234" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>T. Courtois (RMA) 6m, 18% owned</title></circle><circle cx="211.7" cy="279.6" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Neuer (BAY) 5.5m, 8% owned</title></circle><circle cx="211.7" cy="279.6" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Safonov (PSG) 5.5m, 8% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Oblak (ATM) 5.5m, 2% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Diogo Costa (POR) 5m, 3% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Uğurcan Çakır (GAL) 5m, 3% owned</title></circle><circle cx="170.1" cy="238.6" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Joan García (BAR) 5m, 17% owned</title></circle><circle cx="170.1" cy="284.1" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>G. Kobel (BVB) 5m, 7% owned</title></circle><circle cx="128.5" cy="270.5" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Y. Sommer (BRU) 4.5m, 10% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Martínez (INT) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="270.5" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>S. Lammens (MUN) 4.5m, 10% owned</title></circle><circle cx="86.9" cy="252.2" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>V. Milinković-Savić (NAP) 4m, 14% owned</title></circle><circle cx="86.9" cy="297.8" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Musso (ATM) 4m, 4% owned</title></circle><circle cx="86.9" cy="306.9" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Bettinelli (MCI) 4m, 2% owned</title></circle><circle cx="86.9" cy="302.3" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Luiz Júnior (VIL) 4m, 3% owned</title></circle><circle cx="86.9" cy="306.9" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>F. Bredlow (STU) 4m, 2% owned</title></circle><circle cx="86.9" cy="284.1" r="4" fill="#F5C542" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Z. Suzuki (AVL) 4m, 7% owned</title></circle><circle cx="253.3" cy="270.5" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>W. Pacho (PSG) 6m, 10% owned</title></circle><circle cx="253.3" cy="256.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>V. van Dijk (LIV) 6m, 13% owned</title></circle><circle cx="253.3" cy="193" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Gabriel (ARS) 6m, 27% owned</title></circle><circle cx="253.3" cy="252.2" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Cucurella (RMA) 6m, 14% owned</title></circle><circle cx="253.3" cy="183.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Hakimi (PSG) 6m, 29% owned</title></circle><circle cx="253.3" cy="165.7" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Nuno Mendes (PSG) 6m, 33% owned</title></circle><circle cx="211.7" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Rúben Dias (MCI) 5.5m, 3% owned</title></circle><circle cx="211.7" cy="297.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Dumfries (RMA) 5.5m, 4% owned</title></circle><circle cx="211.7" cy="256.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Upamecano (BAY) 5.5m, 13% owned</title></circle><circle cx="211.7" cy="279.6" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Grimaldo (ATM) 5.5m, 8% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Ryerson (BVB) 5.5m, 2% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>T. Alexander-Arnold (RMA) 5.5m, 2% owned</title></circle><circle cx="211.7" cy="279.6" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>W. Saliba (ARS) 5.5m, 8% owned</title></circle><circle cx="211.7" cy="220.4" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>P. Cubarsí (BAR) 5.5m, 21% owned</title></circle><circle cx="211.7" cy="293.2" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Koundé (BAR) 5.5m, 5% owned</title></circle><circle cx="211.7" cy="275" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Gvardiol (MCI) 5.5m, 9% owned</title></circle><circle cx="170.1" cy="293.2" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>I. Konaté (RMA) 5m, 5% owned</title></circle><circle cx="170.1" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>João Cancelo (BAR) 5m, 2% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Spence (INT) 5m, 3% owned</title></circle><circle cx="170.1" cy="297.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>C. Romero (ATM) 5m, 4% owned</title></circle><circle cx="170.1" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Akanji (INT) 5m, 2% owned</title></circle><circle cx="170.1" cy="288.7" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Bastoni (INT) 5m, 6% owned</title></circle><circle cx="170.1" cy="261.4" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>F. Dimarco (INT) 5m, 12% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>B. White (ARS) 5m, 3% owned</title></circle><circle cx="170.1" cy="288.7" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Guéhi (MCI) 5m, 6% owned</title></circle><circle cx="170.1" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Frimpong (LIV) 5m, 2% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Davies (BAY) 5m, 3% owned</title></circle><circle cx="170.1" cy="275" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>N. O’Reilly (MCI) 5m, 9% owned</title></circle><circle cx="170.1" cy="297.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>K. Laimer (BAY) 5m, 4% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>H. Maguire (MUN) 5m, 3% owned</title></circle><circle cx="170.1" cy="288.7" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Tah (BAY) 5m, 6% owned</title></circle><circle cx="170.1" cy="243.1" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Marquinhos (PSG) 5m, 16% owned</title></circle><circle cx="170.1" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>S. Dest (PSV) 5m, 2% owned</title></circle><circle cx="170.1" cy="293.2" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>N. Schlotterbeck (BVB) 5m, 5% owned</title></circle><circle cx="128.5" cy="197.6" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Calafiori (ARS) 4.5m, 26% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>P. Hincapié (ARS) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="293.2" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Lewis-Skelly (ARS) 4.5m, 5% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Cash (AVL) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Hancko (ATM) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Le Normand (ATM) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Balde (BAR) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Eric García (BAR) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Ruggeri (AVL) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Stanišić (BAY) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Bensebaini (BVB) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Svensson (BVB) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Sánchez (GAL) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="297.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Khusanov (MCI) 4.5m, 4% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Lisandro Martínez (MUN) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>L. Shaw (MUN) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="284.1" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Huijsen (RMA) 4.5m, 7% owned</title></circle><circle cx="128.5" cy="297.8" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Gonçalo Inácio (SPO) 4.5m, 4% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Mittelstädt (STU) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Ronald Araújo (LIV) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>E. Konsa (ARS) 4.5m, 3% owned</title></circle><circle cx="86.9" cy="284.1" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Gerard Martín (BAR) 4m, 7% owned</title></circle><circle cx="86.9" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Mauro Júnior (PSV) 4m, 2% owned</title></circle><circle cx="86.9" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Yan Couto (COM) 4m, 3% owned</title></circle><circle cx="86.9" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Pubill (ATM) 4m, 3% owned</title></circle><circle cx="86.9" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Carlos Augusto (INT) 4m, 2% owned</title></circle><circle cx="86.9" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>O. Bjørtuft (BOD) 4m, 3% owned</title></circle><circle cx="86.9" cy="306.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Vagnoman (STU) 4m, 2% owned</title></circle><circle cx="86.9" cy="302.3" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>W. Singo (GAL) 4m, 3% owned</title></circle><circle cx="86.9" cy="293.2" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>I. Fresneda (SPO) 4m, 5% owned</title></circle><circle cx="86.9" cy="265.9" r="4" fill="#2ED6C2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>N. Brown (BAY) 4m, 11% owned</title></circle><circle cx="585.9" cy="183.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>L. Yamal (BAR) 10m, 29% owned</title></circle><circle cx="585.9" cy="183.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>K. Kvaratskhelia (PSG) 10m, 29% owned</title></circle><circle cx="544.3" cy="165.7" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Raphinha (BAR) 9.5m, 33% owned</title></circle><circle cx="544.3" cy="279.6" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Vinícius Júnior (RMA) 9.5m, 8% owned</title></circle><circle cx="502.7" cy="120.2" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Olise (BAY) 9m, 43% owned</title></circle><circle cx="502.7" cy="243.1" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Bruno Fernandes (MUN) 9m, 16% owned</title></circle><circle cx="461.2" cy="211.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Jude Bellingham (RMA) 8.5m, 23% owned</title></circle><circle cx="461.2" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>B. Saka (ARS) 8.5m, 3% owned</title></circle><circle cx="461.2" cy="293.2" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Doué (PSG) 8.5m, 5% owned</title></circle><circle cx="419.6" cy="279.6" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Gordon (BAR) 8m, 8% owned</title></circle><circle cx="419.6" cy="261.4" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Luis Díaz (BAY) 8m, 12% owned</title></circle><circle cx="419.6" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Musiala (BAY) 8m, 2% owned</title></circle><circle cx="419.6" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Olmo (BAR) 8m, 2% owned</title></circle><circle cx="378" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Greenwood (FEN) 7.5m, 2% owned</title></circle><circle cx="378" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Doku (MCI) 7.5m, 3% owned</title></circle><circle cx="378" cy="275" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Pedri (BAR) 7.5m, 9% owned</title></circle><circle cx="378" cy="279.6" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Rice (ARS) 7.5m, 8% owned</title></circle><circle cx="378" cy="229.5" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Vitinha (PSG) 7.5m, 19% owned</title></circle><circle cx="378" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>S. McTominay (NAP) 7.5m, 2% owned</title></circle><circle cx="378" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Y. Diomande (RMA) 7.5m, 2% owned</title></circle><circle cx="378" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>E. Eze (ARS) 7.5m, 2% owned</title></circle><circle cx="378" cy="297.8" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>C. Tzolis (ARS) 7.5m, 4% owned</title></circle><circle cx="378" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>E. Fernández (MCI) 7.5m, 2% owned</title></circle><circle cx="336.4" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Ødegaard (ARS) 7m, 3% owned</title></circle><circle cx="336.4" cy="243.1" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Szoboszlai (LIV) 7m, 16% owned</title></circle><circle cx="336.4" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Lookman (ATM) 7m, 3% owned</title></circle><circle cx="336.4" cy="243.1" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Cherki (MCI) 7m, 16% owned</title></circle><circle cx="336.4" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Semenyo (MCI) 7m, 2% owned</title></circle><circle cx="336.4" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Matheus Cunha (MUN) 7m, 2% owned</title></circle><circle cx="336.4" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Rashford (MUN) 7m, 3% owned</title></circle><circle cx="336.4" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>K. De Bruyne (NAP) 7m, 2% owned</title></circle><circle cx="336.4" cy="288.7" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Rodri (BAR) 7m, 6% owned</title></circle><circle cx="336.4" cy="293.2" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>F. Valverde (RMA) 7m, 5% owned</title></circle><circle cx="336.4" cy="288.7" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>N. Paz (COM) 7m, 6% owned</title></circle><circle cx="336.4" cy="293.2" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>B. Barcola (LIV) 7m, 5% owned</title></circle><circle cx="336.4" cy="243.1" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Fermín López (BAR) 7m, 16% owned</title></circle><circle cx="294.8" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>F. Nmecha (BVB) 6.5m, 2% owned</title></circle><circle cx="294.8" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Mac Allister (LIV) 6.5m, 2% owned</title></circle><circle cx="294.8" cy="297.8" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Kimmich (BAY) 6.5m, 4% owned</title></circle><circle cx="294.8" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Llorente (ATM) 6.5m, 2% owned</title></circle><circle cx="294.8" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Fabián Ruiz (PSG) 6.5m, 2% owned</title></circle><circle cx="294.8" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>I. Saibari (BAY) 6.5m, 3% owned</title></circle><circle cx="294.8" cy="284.1" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Arda Güler (RMA) 6.5m, 7% owned</title></circle><circle cx="253.3" cy="265.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>João Neves (PSG) 6m, 11% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Baturina (COM) 5.5m, 2% owned</title></circle><circle cx="211.7" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Álex Baena (ATM) 5.5m, 3% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Kang-in Lee (ATM) 5.5m, 2% owned</title></circle><circle cx="211.7" cy="297.8" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Araújo (SPO) 5.5m, 4% owned</title></circle><circle cx="170.1" cy="293.2" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Gravenberch (LIV) 5m, 5% owned</title></circle><circle cx="170.1" cy="297.8" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Pavlović (BAY) 5m, 4% owned</title></circle><circle cx="170.1" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>W. Zaïre-Emery (PSG) 5m, 3% owned</title></circle><circle cx="128.5" cy="302.3" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Cardoso (ATM) 4.5m, 3% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Bernal (BAR) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>João Simões (SPO) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Zalazar (SPO) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>T. Buchanan (VIL) 4.5m, 2% owned</title></circle><circle cx="128.5" cy="306.9" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>H. Evjen (BOD) 4.5m, 2% owned</title></circle><circle cx="86.9" cy="261.4" r="4" fill="#F3F2F2" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>L. Jovanović (STU) 4m, 12% owned</title></circle><circle cx="669.1" cy="220.4" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>E. Haaland (MCI) 11m, 21% owned</title></circle><circle cx="669.1" cy="88.3" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>H. Kane (BAY) 11m, 50% owned</title></circle><circle cx="669.1" cy="38.2" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>K. Mbappé (RMA) 11m, 61% owned</title></circle><circle cx="585.9" cy="297.8" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>J. Alvarez (ATM) 10m, 4% owned</title></circle><circle cx="585.9" cy="252.2" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>O. Dembélé (PSG) 10m, 14% owned</title></circle><circle cx="544.3" cy="302.3" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Lautaro Martínez (INT) 9.5m, 3% owned</title></circle><circle cx="461.2" cy="284.1" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>S. Guirassy (BVB) 8.5m, 7% owned</title></circle><circle cx="461.2" cy="302.3" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>V. Gyökeres (ARS) 8.5m, 3% owned</title></circle><circle cx="419.6" cy="243.1" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>V. Osimhen (GAL) 8m, 16% owned</title></circle><circle cx="419.6" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>H. Ekitiké (LIV) 8m, 2% owned</title></circle><circle cx="419.6" cy="293.2" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>K. Havertz (ARS) 8m, 5% owned</title></circle><circle cx="378" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Thuram (INT) 7.5m, 2% owned</title></circle><circle cx="378" cy="297.8" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>C. Gakpo (LIV) 7.5m, 4% owned</title></circle><circle cx="378" cy="275" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Isak (LIV) 7.5m, 9% owned</title></circle><circle cx="336.4" cy="284.1" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>L. Suárez (SPO) 7m, 7% owned</title></circle><circle cx="336.4" cy="302.3" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Undav (STU) 7m, 3% owned</title></circle><circle cx="336.4" cy="275" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>B. Mbeumo (MUN) 7m, 9% owned</title></circle><circle cx="336.4" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>A. Sørloth (ATM) 7m, 2% owned</title></circle><circle cx="336.4" cy="288.7" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>K. Adeyemi (BAR) 7m, 6% owned</title></circle><circle cx="336.4" cy="275" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Ferran Torres (PSG) 7m, 9% owned</title></circle><circle cx="294.8" cy="302.3" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>B. Šeško (MUN) 6.5m, 3% owned</title></circle><circle cx="294.8" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>G. Jesus (BAR) 6.5m, 2% owned</title></circle><circle cx="294.8" cy="288.7" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Malen (ROM) 6.5m, 6% owned</title></circle><circle cx="253.3" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>R. Pepi (PSV) 6m, 2% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Fábio Silva (BVB) 5.5m, 2% owned</title></circle><circle cx="211.7" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>M. Diakhon (BRU) 5.5m, 2% owned</title></circle><circle cx="170.1" cy="306.9" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>Carlos Espí (RMA) 5m, 2% owned</title></circle><circle cx="170.1" cy="275" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>P. Esposito (INT) 5m, 9% owned</title></circle><circle cx="170.1" cy="293.2" r="4" fill="#FF8A5C" fill-opacity="0.78" stroke="#0B0A09" stroke-width="0.5"><title>D. Man (PSV) 5m, 5% owned</title></circle><text x="378" y="354" fill="#8A847A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="400" text-anchor="middle">Price (m)</text><text x="12" y="166" fill="#8A847A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" text-anchor="middle" transform="rotate(-90 12 166)">Owned by</text></svg></div></figure><p class="chart-legend"><span class="lg"><i style="background:#F5C542"></i>GK</span><span class="lg"><i style="background:#2ED6C2"></i>DEF</span><span class="lg"><i style="background:#F3F2F2"></i>MID</span><span class="lg"><i style="background:#FF8A5C"></i>FWD</span></p><h2>What each position costs</h2><p>Goalkeepers and defenders are capped well below midfielders and forwards, which is what makes the budget decision a forward decision.</p><figure class="chart" role="group" aria-label="Price range by position"><div class="chart-scroll" style="--chart-min:720px"><svg viewBox="0 0 720 168" width="720" height="168" role="img" aria-label="Price range by position" style="max-width:100%;height:auto"><rect width="720" height="168" fill="#1F1D1A"/><line x1="56" y1="14" x2="56" y2="138" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="56" y="152" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">4m</text><line x1="239.4" y1="14" x2="239.4" y2="138" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="239.4" y="152" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">6m</text><line x1="422.9" y1="14" x2="422.9" y2="138" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="422.9" y="152" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">8m</text><line x1="606.3" y1="14" x2="606.3" y2="138" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="606.3" y="152" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">10m</text><text x="48" y="33" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="600" text-anchor="end">GK</text><line x1="56" y1="29" x2="239.4" y2="29" stroke="#F5C542" stroke-width="6" stroke-linecap="round"><title>GK: 4m - 6m</title></line><text x="249.4" y="33" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="start">6</text><text x="48" y="63" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="600" text-anchor="end">DEF</text><line x1="56" y1="59" x2="239.4" y2="59" stroke="#2ED6C2" stroke-width="6" stroke-linecap="round"><title>DEF: 4m - 6m</title></line><text x="249.4" y="63" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="start">6</text><text x="48" y="93" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="600" text-anchor="end">MID</text><line x1="56" y1="89" x2="606.3" y2="89" stroke="#F3F2F2" stroke-width="6" stroke-linecap="round"><title>MID: 4m - 10m</title></line><text x="616.3" y="93" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="start">10</text><text x="48" y="123" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="600" text-anchor="end">FWD</text><line x1="147.7" y1="119" x2="698" y2="119" stroke="#FF8A5C" stroke-width="6" stroke-linecap="round"><title>FWD: 5m - 11m</title></line><text x="708" y="123" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="start">11</text><text x="377" y="164" fill="#8A847A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="400" text-anchor="middle">Price (m)</text></svg></div></figure><h2>Who cannot be picked</h2><p>171 of 1162 players are not available: injured, suspended, doubtful, or left out of the registered squad. Clubs are ordered by injuries, suspensions and doubts, not by the total: a club can leave a dozen players out of its registered squad and still have everyone fit.</p><figure class="chart" role="group" aria-label="Players unavailable by club"><div class="chart-scroll" style="--chart-min:720px"><svg viewBox="0 0 720 382" width="720" height="382" role="img" aria-label="Players unavailable by club" style="max-width:100%;height:auto"><rect width="720" height="382" fill="#1F1D1A"/><line x1="74" y1="12" x2="74" y2="352" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="74" y="366" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">0</text><line x1="336.5" y1="12" x2="336.5" y2="352" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="336.5" y="366" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">5</text><line x1="599" y1="12" x2="599" y2="352" stroke="rgba(243,242,242,0.24)" stroke-width="1"/><text x="599" y="366" fill="#A8A29A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="middle">10</text><text x="66" y="24" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">RMA</text><rect x="74" y="12" width="262.5" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>RMA: 5 Injured</title></rect><rect x="336.5" y="12" width="157.5" height="16" fill="#F5C542" fill-opacity="0.85"><title>RMA: 3 Suspended</title></rect><rect x="494" y="12" width="52.5" height="16" fill="#F3F2F2" fill-opacity="0.85"><title>RMA: 1 Doubtful</title></rect><rect x="546.5" y="12" width="157.5" height="16" fill="#8A847A" fill-opacity="0.85"><title>RMA: 3 Not in squad</title></rect><text x="66" y="45" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">BET</text><rect x="74" y="33" width="262.5" height="16" fill="#F3F2F2" fill-opacity="0.85"><title>BET: 5 Doubtful</title></rect><rect x="336.5" y="33" width="105" height="16" fill="#8A847A" fill-opacity="0.85"><title>BET: 2 Not in squad</title></rect><text x="66" y="66" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">MUN</text><rect x="74" y="54" width="210" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>MUN: 4 Injured</title></rect><rect x="284" y="54" width="52.5" height="16" fill="#F3F2F2" fill-opacity="0.85"><title>MUN: 1 Doubtful</title></rect><rect x="336.5" y="54" width="105" height="16" fill="#8A847A" fill-opacity="0.85"><title>MUN: 2 Not in squad</title></rect><text x="66" y="87" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">STU</text><rect x="74" y="75" width="157.5" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>STU: 3 Injured</title></rect><rect x="231.5" y="75" width="52.5" height="16" fill="#F3F2F2" fill-opacity="0.85"><title>STU: 1 Doubtful</title></rect><rect x="284" y="75" width="315" height="16" fill="#8A847A" fill-opacity="0.85"><title>STU: 6 Not in squad</title></rect><text x="66" y="108" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">RBL</text><rect x="74" y="96" width="210" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>RBL: 4 Injured</title></rect><rect x="284" y="96" width="262.5" height="16" fill="#8A847A" fill-opacity="0.85"><title>RBL: 5 Not in squad</title></rect><text x="66" y="129" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">LIV</text><rect x="74" y="117" width="210" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>LIV: 4 Injured</title></rect><rect x="284" y="117" width="210" height="16" fill="#8A847A" fill-opacity="0.85"><title>LIV: 4 Not in squad</title></rect><text x="66" y="150" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">ARS</text><rect x="74" y="138" width="105" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>ARS: 2 Injured</title></rect><rect x="179" y="138" width="52.5" height="16" fill="#F3F2F2" fill-opacity="0.85"><title>ARS: 1 Doubtful</title></rect><rect x="231.5" y="138" width="210" height="16" fill="#8A847A" fill-opacity="0.85"><title>ARS: 4 Not in squad</title></rect><text x="66" y="171" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">ATM</text><rect x="74" y="159" width="105" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>ATM: 2 Injured</title></rect><rect x="179" y="159" width="52.5" height="16" fill="#F5C542" fill-opacity="0.85"><title>ATM: 1 Suspended</title></rect><rect x="231.5" y="159" width="105" height="16" fill="#8A847A" fill-opacity="0.85"><title>ATM: 2 Not in squad</title></rect><text x="66" y="192" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">LEN</text><rect x="74" y="180" width="105" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>LEN: 2 Injured</title></rect><rect x="179" y="180" width="315" height="16" fill="#8A847A" fill-opacity="0.85"><title>LEN: 6 Not in squad</title></rect><text x="66" y="213" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">BVB</text><rect x="74" y="201" width="105" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>BVB: 2 Injured</title></rect><rect x="179" y="201" width="210" height="16" fill="#8A847A" fill-opacity="0.85"><title>BVB: 4 Not in squad</title></rect><text x="66" y="234" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">MCI</text><rect x="74" y="222" width="52.5" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>MCI: 1 Injured</title></rect><rect x="126.5" y="222" width="472.5" height="16" fill="#8A847A" fill-opacity="0.85"><title>MCI: 9 Not in squad</title></rect><text x="66" y="255" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">AVL</text><rect x="74" y="243" width="52.5" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>AVL: 1 Injured</title></rect><rect x="126.5" y="243" width="472.5" height="16" fill="#8A847A" fill-opacity="0.85"><title>AVL: 9 Not in squad</title></rect><text x="66" y="276" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">BAR</text><rect x="74" y="264" width="52.5" height="16" fill="#F5C542" fill-opacity="0.85"><title>BAR: 1 Suspended</title></rect><rect x="126.5" y="264" width="157.5" height="16" fill="#8A847A" fill-opacity="0.85"><title>BAR: 3 Not in squad</title></rect><text x="66" y="297" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">BAY</text><rect x="74" y="285" width="52.5" height="16" fill="#FF8A5C" fill-opacity="0.85"><title>BAY: 1 Injured</title></rect><rect x="126.5" y="285" width="105" height="16" fill="#8A847A" fill-opacity="0.85"><title>BAY: 2 Not in squad</title></rect><text x="66" y="318" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">POR</text><rect x="74" y="306" width="52.5" height="16" fill="#F5C542" fill-opacity="0.85"><title>POR: 1 Suspended</title></rect><rect x="126.5" y="306" width="105" height="16" fill="#8A847A" fill-opacity="0.85"><title>POR: 2 Not in squad</title></rect><text x="66" y="339" fill="#F3F2F2" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" font-weight="400" text-anchor="end">PSV</text><rect x="74" y="327" width="52.5" height="16" fill="#F5C542" fill-opacity="0.85"><title>PSV: 1 Suspended</title></rect><rect x="126.5" y="327" width="52.5" height="16" fill="#8A847A" fill-opacity="0.85"><title>PSV: 1 Not in squad</title></rect><text x="389" y="378" fill="#8A847A" font-family="IBM Plex Mono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" font-weight="400" text-anchor="middle">Players not available to pick</text></svg></div></figure><p class="chart-legend"><span class="lg"><i style="background:#FF8A5C"></i>Injured</span><span class="lg"><i style="background:#F5C542"></i>Suspended</span><span class="lg"><i style="background:#F3F2F2"></i>Doubtful</span><span class="lg"><i style="background:#8A847A"></i>Not in squad</span></p><h2>Most owned</h2><div class="tblwrap"><table class="lb"><thead><tr><th>Player</th><th>Club</th><th>Pos</th><th>Price</th><th>Owned</th><th>Pts (last season)</th><th>Status</th></tr></thead><tbody><tr><td>K. Mbappé</td><td>RMA</td><td>FWD</td><td>11</td><td>61%</td><td>94</td><td></td></tr><tr><td>H. Kane</td><td>BAY</td><td>FWD</td><td>11</td><td>50%</td><td>103</td><td></td></tr><tr><td>M. Olise</td><td>BAY</td><td>MID</td><td>9</td><td>43%</td><td>83</td><td></td></tr><tr><td>D. Raya</td><td>ARS</td><td>GK</td><td>6</td><td>37%</td><td>74</td><td></td></tr><tr><td>Raphinha</td><td>BAR</td><td>MID</td><td>9.5</td><td>33%</td><td>40</td><td></td></tr><tr><td>Nuno Mendes</td><td>PSG</td><td>DEF</td><td>6</td><td>33%</td><td>87</td><td></td></tr><tr><td>L. Yamal</td><td>BAR</td><td>MID</td><td>10</td><td>29%</td><td>67</td><td></td></tr><tr><td>K. Kvaratskhelia</td><td>PSG</td><td>MID</td><td>10</td><td>29%</td><td>121</td><td></td></tr><tr><td>A. Hakimi</td><td>PSG</td><td>DEF</td><td>6</td><td>29%</td><td>65</td><td></td></tr><tr><td>Gabriel</td><td>ARS</td><td>DEF</td><td>6</td><td>27%</td><td>79</td><td></td></tr><tr><td>R. Calafiori</td><td>ARS</td><td>DEF</td><td>4.5</td><td>26%</td><td>22</td><td></td></tr><tr><td>Jude Bellingham</td><td>RMA</td><td>MID</td><td>8.5</td><td>23%</td><td>33</td><td></td></tr><tr><td>E. Haaland</td><td>MCI</td><td>FWD</td><td>11</td><td>21%</td><td>55</td><td></td></tr><tr><td>P. Cubarsí</td><td>BAR</td><td>DEF</td><td>5.5</td><td>21%</td><td>23</td><td></td></tr><tr><td>Vitinha</td><td>PSG</td><td>MID</td><td>7.5</td><td>19%</td><td>100</td><td></td></tr><tr><td>T. Courtois</td><td>RMA</td><td>GK</td><td>6</td><td>18%</td><td>55</td><td></td></tr><tr><td>Joan García</td><td>BAR</td><td>GK</td><td>5</td><td>17%</td><td>19</td><td></td></tr><tr><td>Bruno Fernandes</td><td>MUN</td><td>MID</td><td>9</td><td>16%</td><td>0</td><td></td></tr><tr><td>V. Osimhen</td><td>GAL</td><td>FWD</td><td>8</td><td>16%</td><td>68</td><td></td></tr><tr><td>D. Szoboszlai</td><td>LIV</td><td>MID</td><td>7</td><td>16%</td><td>89</td><td></td></tr></tbody></table></div><p><a href="/ucl/prices">Full list of all 1162 players</a> · <a href="/ucl/team-news">Squad availability by club</a></p>
+<nav class="toolnav"><h2>UCL Fantasy</h2><div><a href="/ucl/prices">Prices &amp; ownership</a><a href="/ucl/team-news">Squad availability</a></div></nav>
+<footer>© 2026 GoalIQ · <a href="/predictions">Football predictions</a> · <a href="/fpl">Free FPL tools</a> · <a href="/privacy.html">Privacy</a><br>GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</footer>
+</main>
+<!-- GEN:MOBILE-COLS -->
+<script>
+(function(){
+ function init(){
+  if(!document.querySelector('.m-hide'))return;
+  var WRAPS='.lb-wrap,.scroll,.table-wrap,.rec-scroll',
+      seen=[],btns=[],i;
+  var wraps=document.querySelectorAll(WRAPS);
+  for(i=0;i<wraps.length;i++){
+   if(!wraps[i].querySelector('.m-hide'))continue;
+   seen.push(wraps[i]);
+  }
+  // Table without a known wrapper (e.g. a hand-written page): put the
+  // button directly before the table itself, so no hidden column is ever
+  // left without a way out.
+  var tables=document.querySelectorAll('table');
+  for(i=0;i<tables.length;i++){
+   if(!tables[i].querySelector('.m-hide'))continue;
+   var w=tables[i].closest(WRAPS);
+   if(!w&&seen.indexOf(tables[i])<0)seen.push(tables[i]);
+  }
+  if(!seen.length)return;
+
+  function label(on){return on?'Show key columns':'Show all columns';}
+  function sync(on){
+   for(var j=0;j<btns.length;j++){
+    btns[j].textContent=label(on);
+    btns[j].setAttribute('aria-pressed',on?'true':'false');
+   }
+  }
+  function toggle(){
+   var on=document.body.classList.toggle('cols-all');
+   sync(on);
+  }
+  for(i=0;i<seen.length;i++){
+   var host=document.createElement('p');
+   host.className='m-only';
+   host.style.margin='0';
+   var b=document.createElement('button');
+   b.type='button';
+   b.className='colstoggle';
+   b.setAttribute('aria-pressed','false');
+   b.textContent=label(false);
+   b.addEventListener('click',toggle);
+   host.appendChild(b);
+   seen[i].parentNode.insertBefore(host,seen[i]);
+   btns.push(b);
+  }
+ }
+ if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+ }else{init();}
+})();
+</script>
+<!-- /GEN:MOBILE-COLS -->
+<script defer src="/ref-bridge.js"></script>
+</body>
+</html>

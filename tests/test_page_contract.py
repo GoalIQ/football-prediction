@@ -35,17 +35,32 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 FPL = ROOT / "fpl"
+UCL = ROOT / "ucl"
 SITEMAP = ROOT / "sitemap-fpl.xml"
 LLMS = ROOT / "llms.txt"
 
 
 def _pages() -> list[tuple[str, Path]]:
-    """[(url-polku, tiedosto)] kaikille generoiduille FPL-sivuille."""
+    """[(url-polku, tiedosto)] kaikille generoiduille sivuille.
+
+    🔴 7.9.2026: TAMA HAKU OLI SOPIMUKSEN OMA SOKEA PISTE. Se enumeroi vain
+    `fpl/`-alipuun, joten mika tahansa MUUALLE generoitu sivu jai koko
+    sopimuksen ulkopuolelle - ei canonical-, ei sitemap-, ei
+    sisaantuleva linkki -porttia, eika mikaan huutanut. Olin juuri
+    kirjoittamassa UCL-sivua juureen (`ucl.html`), ja se olisi karannut
+    kaikilta viidelta kohdalta hiljaa.
+
+    Sama vikaluokka kuin `club/*` 15.8: sopimus nayttaa kattavalta ja on
+    kapea, koska kattavuus on sidottu hakemistoon eika sivuihin.
+    """
     if not FPL.exists():  # pragma: no cover
         pytest.skip("fpl/-hakemistoa ei ole talla koneella")
     out = [(f"/fpl/{f.stem}", f) for f in sorted(FPL.glob("*.html"))]
     out += [(f"/fpl/club/{f.stem}", f)
             for f in sorted((FPL / "club").glob("*.html"))]
+    if UCL.exists():
+        out += [("/ucl" if f.stem == "index" else f"/ucl/{f.stem}", f)
+                for f in sorted(UCL.glob("*.html"))]
     return out
 
 
@@ -123,9 +138,13 @@ def test_sivulla_on_jsonld(url):
 
 @pytest.mark.parametrize("url", _ids())
 def test_sivu_on_sitemapissa(url):
-    sm = SITEMAP.read_text(encoding="utf-8")
-    assert url in sm, (
-        f"{url} puuttuu sitemap-fpl.xml:sta. Alihakemistot eivat nay "
+    # Osioilla on eri sitemap-tiedosto (`/ucl` on coressa, `/fpl/*` omassaan),
+    # joten haku on kaikkien yli - muuten uusi osio kaataisi testin vaarasta
+    # syysta tai menisi lapi vaarasta syysta.
+    sm = "\n".join(f.read_text(encoding="utf-8")
+                   for f in sorted(ROOT.glob("sitemap*.xml")))
+    assert f"{url}</loc>" in sm, (
+        f"{url} puuttuu sitemapeista. Alihakemistot eivat nay "
         f"glob('*.html')-haussa — se pudotti 20 seurasivua 15.8.")
 
 
@@ -318,3 +337,42 @@ def test_jaon_esitaytto_on_VAIN_otsikko_ja_linkki():
         "esitaytossa on muuta kuin otsikko ja URL")
     assert "xP" not in loppu and "%" not in loppu, (
         "esitaytto sisaltaa lukuja -> se olisi portitettava joka regeneroinnilla")
+
+
+def test_osioon_on_linkki_OSION_ULKOPUOLELTA(sivut):
+    """🔴 REIKA JONKA MITTASIN 7.9: sisaruslinkki riittaa yllaolevalle
+    portille, joten kokonainen osio voi olla SAARI.
+
+    `/ucl`-sivut linkittavat toisiinsa, joten jokainen niista lapaisi
+    `test_sivulle_on_SISAANTULEVA_LINKKI` - ja silti yksikaan sivu
+    sivustolla ei johtanut osioon. Lukija ei paase sinne mistaan, ja
+    Googlelle osio nayttaa irralliselta klusterilta.
+
+    Sopimus mittaa siis myos osiotason: jonkun osion ULKOPUOLELTA on
+    linkitettava sisaan.
+    """
+    osiot = {}
+    for url, f in sivut:
+        osio = "/" + url.strip("/").split("/")[0]
+        osiot.setdefault(osio, []).append((url, f))
+
+    ulkoiset_hubit = []
+    for nimi in ("index.html", "fpl.html", "predictions.html", "spl.html"):
+        g = ROOT / nimi
+        if g.exists():
+            ulkoiset_hubit.append(g.read_text(encoding="utf-8"))
+
+    puuttuu = []
+    for osio, sivulista in sorted(osiot.items()):
+        omat = {str(f.resolve()) for _, f in sivulista}
+        muualta = list(ulkoiset_hubit)
+        for url2, f2 in sivut:
+            if str(f2.resolve()) not in omat:
+                muualta.append(f2.read_text(encoding="utf-8"))
+        koko = "\n".join(muualta)
+        if not any(f'href="{url}"' in koko for url, _ in sivulista):
+            puuttuu.append(osio)
+
+    assert not puuttuu, (
+        f"osio(t) {puuttuu} ovat saaria: yksikaan sivu niiden ULKOPUOLELLA "
+        "ei linkita sisaan. Sisaruslinkit eivat tee osiosta loydettavaa.")
