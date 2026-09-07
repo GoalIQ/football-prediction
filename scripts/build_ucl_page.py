@@ -52,7 +52,7 @@ OUT_DIR = ROOT / "ucl"
 # Osion oma navigointi. Sivusopimus vaatii sisaantulevan linkin joka
 # sivulle; nama ristiinlinkit ovat se paikka josta se tulee.
 UCL_LINKS = [
-    ("/ucl", "UCL Fantasy"),
+    ("/ucl/", "UCL Fantasy"),
     ("/ucl/prices", "Prices & ownership"),
     ("/ucl/team-news", "Squad availability"),
 ]
@@ -99,9 +99,14 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         '<script type="application/ld+json">\n'
         + json.dumps(b, ensure_ascii=False, indent=1)
         + "\n</script>\n" for b in jsonld)
+    # 🔴 VERTAILU ILMAN rstrip("/"): hakemistoindeksin canonical on
+    # `/ucl/` ja alasivujen `/ucl/prices`. `rstrip` teki `/ucl/`:sta
+    # `/ucl`:n eika osunut listaan, jolloin sivu olisi linkittanyt
+    # itseensa.
+    tama = canonical.replace(BASE, "")
     linkit = "".join(
         f'<a href="{h}">{escape(t)}</a>'
-        for h, t in UCL_LINKS if h != canonical.replace(BASE, "").rstrip("/"))
+        for h, t in UCL_LINKS if h != tama)
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
         '<meta charset="UTF-8" />\n'
@@ -418,10 +423,10 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         "UCL Fantasy prices, ownership and squad availability | GoalIQ",
         "Free UCL Fantasy data: what every player costs, how many managers "
         "own them, and which players carry a flag. No login.",
-        f"{BASE}/ucl", hero, body,
+        f"{BASE}/ucl/", hero, body,
         _jsonld("UCL Fantasy tools",
                 "Free UCL Fantasy prices, ownership and squad availability.",
-                f"{BASE}/ucl"))
+                f"{BASE}/ucl/"))
 
 
 def sivu_hinnat(doc: dict, nyt: dt.datetime) -> str:

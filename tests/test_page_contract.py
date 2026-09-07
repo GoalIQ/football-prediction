@@ -59,7 +59,7 @@ def _pages() -> list[tuple[str, Path]]:
     out += [(f"/fpl/club/{f.stem}", f)
             for f in sorted((FPL / "club").glob("*.html"))]
     if UCL.exists():
-        out += [("/ucl" if f.stem == "index" else f"/ucl/{f.stem}", f)
+        out += [("/ucl/" if f.stem == "index" else f"/ucl/{f.stem}", f)
                 for f in sorted(UCL.glob("*.html"))]
     return out
 
@@ -376,3 +376,40 @@ def test_osioon_on_linkki_OSION_ULKOPUOLELTA(sivut):
     assert not puuttuu, (
         f"osio(t) {puuttuu} ovat saaria: yksikaan sivu niiden ULKOPUOLELLA "
         "ei linkita sisaan. Sisaruslinkit eivat tee osiosta loydettavaa.")
+
+
+def test_hakemistoindeksin_canonical_paattyy_kauttaviivaan(sivut):
+    """🔴 MITATTU LIVENA 7.9.2026, EI PAIKALLISESTI.
+
+    `/ucl` palautti **308** ja ohjasi `/ucl/`:aan, mutta sivun canonical
+    sanoi `https://goaliq.app/ucl`. Kanoninen osoite joka itse
+    uudelleenohjaa on heikko signaali: Google voi valita
+    ohjauskohteen ja jattaa ilmoitetun canonicalin huomiotta.
+
+    Paikallisesti tata EI voi nahda - tiedosto on `ucl/index.html` ja
+    kaikki portit olivat vihreita. Ero syntyy vasta siita miten
+    Cloudflare Pages tarjoilee hakemiston (muisti:
+    hub-cloudflare-pages-cutover).
+
+    Saanto: jos sivu on alihakemiston `index.html`, sen canonicalin ON
+    paatyttava kauttaviivaan, koska juuri silla osoitteella se
+    tarjoillaan.
+    """
+    puuttuu = []
+    for url, f in sivut:
+        if f.name != "index.html" or f.parent == ROOT:
+            continue
+        h = f.read_text(encoding="utf-8")
+        m = re.search(r'<link rel="canonical" href="([^"]+)"', h)
+        if m and not m.group(1).endswith("/"):
+            puuttuu.append(f"{url}: {m.group(1)}")
+    assert not puuttuu, (
+        "hakemistoindeksin canonical ei paaty kauttaviivaan, joten se "
+        "osoittaa osoitteeseen joka 308-ohjaa: " + ", ".join(puuttuu))
+
+
+def test_kontrolli_indeksisivuja_loytyi(sivut):
+    """Vahti vahdille: edellinen portti on vihrea myos silloin kun
+    yhtaan indeksisivua ei loydy (muisti: kontrolli-lapaisi-tyhjana)."""
+    n = sum(1 for _, f in sivut if f.name == "index.html" and f.parent != ROOT)
+    assert n >= 1, "yhtaan alihakemiston index.html:aa ei loytynyt"
