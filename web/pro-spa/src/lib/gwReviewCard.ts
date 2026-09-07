@@ -288,7 +288,10 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     picks != null &&
     compared < picks
   ) {
-    valinnaiset.push(`${compared}/${picks} compared`);
+    // Lyhyt muoto: live-tilassa `compared` vei rivin 90 merkkiin (> 88)
+    // ja budjettisilmukka pudotti kattavuuden juuri siina tilassa jossa
+    // kortti jaetaan. Paneeli sanoo saman pidemmin.
+    valinnaiset.push(`${compared}/${picks} picks`);
   }
 
 

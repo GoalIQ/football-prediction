@@ -131,13 +131,13 @@
 					     olla (siirtorangaistus, autosub, pudonnut rivi). -->
 					{#if data.meta.provisional}
 						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the live
-						scores for the {totals.rows} picks we could compare, and it can move until FPL
+						scores for the {totals.rows} picks that counted, and it can move until FPL
 						finishes scoring.{#if (data.meta.transfer_cost ?? 0) > 0} That is
-							{data.meta.fpl_points} minus a {data.meta.transfer_cost} point transfer hit.{/if}
+							{data.meta.fpl_points} minus a transfer hit of {data.meta.transfer_cost} points.{/if}
 					{:else}
 						FPL's own total for GW{data.meta.reviewed_gw} is {fplNet}. Ours adds up the
-						{totals.rows} picks we could compare.{#if (data.meta.transfer_cost ?? 0) > 0} That is
-							{data.meta.fpl_points} minus a {data.meta.transfer_cost} point transfer hit.{/if}
+						{totals.rows} picks that counted.{#if (data.meta.transfer_cost ?? 0) > 0} That is
+							{data.meta.fpl_points} minus a transfer hit of {data.meta.transfer_cost} points.{/if}
 					{/if}
 				{:else}
 					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.

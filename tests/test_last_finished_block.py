@@ -152,7 +152,15 @@ def test_vs_model_lasketaan_molemmista(wired, monkeypatch):
         "overall_rank": 1000, "rank_change": 250})
     b = rt.last_finished_block(1, BS, {}, "2026/27")
     assert b["model_points"] == 50
-    assert b["vs_model"] == 61 - 50
+    # 🔴 Portin 11. kierros: NETTO vs netto. Fikstuurilla on
+    # `event_transfers_cost: 4`, ja `entry_history.points` on BRUTTO
+    # (verifioitu FPL:n API:sta: entry 12345 GW3 points 70, cost 8,
+    # kausisumma +62). Malli ei ota hitteja, joten brutto-vertailu antoi
+    # kayttajalle hitin verran etumatkaa - tasan tama fikstuuri olisi
+    # julistanut 11 pisteen voiton kun oikea luku on 7.
+    assert b["points"] == 61, "FPL:n oma kentta sellaisenaan"
+    assert b["points_net"] == 61 - 4
+    assert b["vs_model"] == 61 - 4 - 50
     assert b["manager_name"] == "Testi Nimi"
     assert b["overall_rank"] == 1000
     assert b["rank_change"] == 250

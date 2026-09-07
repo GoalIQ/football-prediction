@@ -101,7 +101,12 @@ def build_ledger(entry_history: dict | None,
             continue
 
         projected, hits = _projected_for(picks, frozen)
-        actual = int(h.get("points") or 0)
+        # 🔴 Portin 11. kierros: NETTO. `entry_history.points` on brutto, ja
+        # sen vertaaminen jaadytettyyn projektioon antoi kayttajalle hitin
+        # verran etumatkaa kumulatiivisessa "sina vs malli" -rivissa.
+        # Mitattu 7.9: seuratuilla entryilla 0 hittikierrosta talla
+        # kaudella, joten julkaistu luku ei liiku.
+        actual = int(h.get("points") or 0) - int(h.get("event_transfers_cost") or 0)
         diff = round(actual - projected, 2)
         proj_sum += projected
         act_sum += actual

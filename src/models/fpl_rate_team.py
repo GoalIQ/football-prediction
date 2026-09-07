@@ -1860,9 +1860,21 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     return {
         "gw": gw,
         "players": rows,
-        # FPL:n oma pistemaara, ei meidan summamme — kayttaja voi verrata sen
-        # omaan tiliinsa suoraan.
+        # 🔴 PORTIN 11. KIERROS: `entry_history.points` on BRUTTO, ei netto.
+        # Verifioitu FPL:n API:sta 7.9 (entry 12345 GW3: points 70, cost 8,
+        # kausisumma 87 -> 149 eli 62 = 70 - 8). Kommentti "kayttaja voi
+        # verrata sen omaan tiliinsa suoraan" oli siis VAARIN hittiviikolla:
+        # kayttajan oma FPL-sivu nayttaa neton.
+        #
+        # `points` sailyy bruttona (se on FPL:n oma kentta sellaisenaan),
+        # mutta VERTAILU ja "FPL:n oma totaali" -pinnat kayttavat nettoa.
+        # Mitattu 7.9: kaikilla seuratuilla entryilla (116920, 4089628,
+        # 895045) on 0 hittikierrosta talla kaudella, joten muutos ei
+        # liikuta yhtaan julkaistua lukua - se estaa vaaran vaitteen
+        # kayttajille jotka ottavat hitin.
         "points": points,
+        "points_net": (points - (hist.get("event_transfers_cost") or 0)
+                       if points is not None else None),
         "points_source": "FPL entry history",
         "transfer_cost": (hist.get("event_transfers_cost")
                           if isinstance(hist.get("event_transfers_cost"), int) else None),
@@ -1888,7 +1900,10 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
                        if model_points is not None else None),
         # Positiivinen = kayttaja voitti mallin. None kun jompikumpi puuttuu:
         # puolikas ottelu ei ole ottelu.
-        "vs_model": ((points - model_points)
+        # Netto vs netto: mallin rivi ei ota hitteja, joten brutto-vertailu
+        # antoi kayttajalle hitin verran etumatkaa ("You win by 8" viikolla
+        # jolla han hävisi).
+        "vs_model": ((points - (hist.get("event_transfers_cost") or 0) - model_points)
                      if points is not None and model_points is not None
                      else None),
         "average_entry_score": (ev.get("average_entry_score")

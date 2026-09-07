@@ -176,7 +176,11 @@ def test_hold_on_tulos_eika_puuttuva_suositus():
 
 def test_hit_mainitaan_pisteina():
     r = MS.plan_lines([{"net_ev_vs_hold": 6.0, "hits_taken": 2}])[0]
-    assert "8 point hit" in r["text"], r["text"]
+    # 🔴 Portin 11. kierros: "after a 8 point hit" on kieliopillisesti
+    # vaarin (hitti on aina 4/8/12/16, eli "a" osuu vokaaliin). Muoto on
+    # nyt "after a hit of 8 points", joka toimii kaikilla luvuilla.
+    assert "hit of 8 points" in r["text"], r["text"]
+    assert "a 8 point" not in r["text"], r["text"]
 
 
 def test_tyhja_syote_ei_kaada():

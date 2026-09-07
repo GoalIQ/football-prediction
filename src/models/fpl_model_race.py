@@ -47,20 +47,26 @@ def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
     hittiä edeltävää lukua — eli hittiviikolla käyttäjä näyttää meillä
     4 tai 8 pistettä paremmalta kuin omalla sivullaan.
 
-    EI KORJATTU TÄSSÄ: muutos siirtäisi julkaistua vertailulukua
-    (Beat the model / Season race), joten se vaatii oman mittauksen siitä
-    kuinka moni seurattu entry on ottanut hittejä ja kuinka paljon rivi
-    liikkuu. Jonorivi `MODEL-RACE-HITTI-PREMISSI`.
+    KORJATTU 7.9 (portin 11. kierros) mittauksen jälkeen: kaikilla
+    seuratuilla entryillä (116920, 4089628, 895045) on **0 hittikierrosta**
+    tällä kaudella, joten netto-vertailuun siirtyminen ei liikuta yhtäkään
+    julkaistua lukua. Se estää väärän väitteen vasta silloin kun joku ottaa
+    hitin — eli ennen kuin vika ehtii syntyä.
     """
     out: dict[int, dict] = {}
     for row in (entry_history or {}).get("current") or []:
         gw = row.get("event")
         if gw is None:
             continue
+        kustannus = int(row.get("event_transfers_cost") or 0)
         out[int(gw)] = {
-            "points": int(row.get("points") or 0),
+            # NETTO: se luku jonka kayttaja nakee omalta FPL-sivultaan, ja
+            # ainoa joka on vertailukelpoinen mallin riviin (malli ei ota
+            # hitteja, joten brutto antoi kayttajalle hitin verran etumatkaa).
+            "points": int(row.get("points") or 0) - kustannus,
+            "points_gross": int(row.get("points") or 0),
             "bench": int(row.get("points_on_bench") or 0),
-            "transfer_cost": int(row.get("event_transfers_cost") or 0),
+            "transfer_cost": kustannus,
         }
     return out
 

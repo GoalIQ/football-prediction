@@ -307,7 +307,7 @@ def plan_lines(plans: list[dict] | None,
         return out
 
     hitteja = ("" if not hits else
-               f" after a {hits * 4} point hit" if hits > 1
+               f" after a hit of {hits * 4} points" if hits > 1
                else " after a 4 point hit")
     out.append({
         "code": "plans.best",
