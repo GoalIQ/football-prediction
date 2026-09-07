@@ -1725,6 +1725,39 @@ def _event_meta(bootstrap: dict, gw: int) -> dict:
     return {}
 
 
+def season_rank_block(entry_id: int | None, bootstrap: dict) -> dict | None:
+    """Kayttajan OMA kausisijoitus, irrallaan xP-vertailusta.
+
+    🔴 B5 (7.9, julkaisutarkistaja). Sijoitus asui `last_finished_block`in
+    sisalla, ja se lohko palauttaa `None` heti kun MEIDAN xP-freezemme
+    puuttuu kierrokselta (`if not actuals or not frozen`). Kayttajan
+    FPL-sijoituksella ei ole mitaan tekemista meidan freezemme kanssa:
+    yhden puuttuvan artefaktin takia "Season target" putosi takaisin
+    esikausitekstiin vaikka sijoitus oli FPL:ssa tiedossa.
+
+    Tama lohko lukee vain FPL:n omaa entry-historiaa. Se voi palauttaa
+    rivin silloinkin kun xP-vertailua ei ole - ja `rank: None` on eri asia
+    kuin `None`-lohko: edellinen on "kausi on kaynnissa mutta lukua ei
+    saatu" (kutsu kaatui), jalkimmainen "ei paattynytta kierrosta".
+    """
+    if entry_id is None:
+        return None
+    gw = last_finished_gameweek(bootstrap)
+    if gw is None:
+        return None
+    ident = _entry_identity(entry_id, gw)
+    return {
+        "gw": gw,
+        "manager_name": ident["manager_name"],
+        "team_name": ident["team_name"],
+        # None = kutsu ei antanut lukua. Kutsuja EI saa lukea sita
+        # esikaudeksi: kierros on nimetty ylla.
+        "overall_rank": ident["overall_rank"],
+        # Positiivinen = nousi.
+        "rank_change": ident["rank_change"],
+    }
+
+
 def last_finished_block(entry_id: int | None, bootstrap: dict,
                         pool_by_id: dict[int, dict],
                         season: str | None) -> dict | None:
@@ -2089,6 +2122,11 @@ def rate_team(entry: int | None = None, gw: int | None = None,
         "last_finished": (last_finished_block(
             entry, bootstrap, pool_by_id, xp_data["meta"].get("season"))
             if mode == "entry" else None),
+        # B5 (7.9): sijoitus omana lohkonaan, koska se ei riipu meidan
+        # xP-freezestamme. `last_finished` katoaa kun freeze puuttuu; tama
+        # ei. Kausitavoitteen lukija lukee TAMAN.
+        "season_rank": (season_rank_block(entry, bootstrap)
+                        if mode == "entry" else None),
         "rating": {
             "team_xp_gw": round(team_xp_gw_c, 2),
             "team_xp_horizon": round(team_xp_horizon_c, 2),

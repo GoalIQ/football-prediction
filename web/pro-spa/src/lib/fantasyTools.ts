@@ -197,6 +197,18 @@ export interface RateTeamResponse {
 	 *  johdettavissa siita listasta. null = ei kierrosta / entry ei julkinen /
 	 *  vanha backend. */
 	last_finished?: LastFinishedGw | null;
+	/** KAUSISIJOITUS irrallaan xP-vertailusta (B5, 7.9). `last_finished`
+	 *  palauttaa null heti kun MEIDAN xP-freezemme puuttuu kierrokselta, ja
+	 *  sijoitus asui sen sisalla -> "Season target" putosi esikausitekstiin
+	 *  vaikka sijoitus oli FPL:ssa tiedossa. `overall_rank: null` TASSA on
+	 *  "kausi kaynnissa, lukua ei saatu", ei "ei kierrosta". */
+	season_rank?: {
+		gw: number;
+		manager_name: string | null;
+		team_name: string | null;
+		overall_rank: number | null;
+		rank_change: number | null;
+	} | null;
 	meta: {
 		/** 5.9: kierros jolle captain on laskettu; kesken kierroksen seuraava deadline-GW. */
 		captain_gw?: number;

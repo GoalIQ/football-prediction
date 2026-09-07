@@ -54,6 +54,12 @@ export interface CardSpec {
 	 *  pelatut pisteet, live-syote) se on kaksi valhetta perakkain. Mobiilissa
 	 *  tama on ollut olemassa 27.8 alkaen; web jai ilman. */
 	footNote2?: string;
+	/** Korostetaanko rivi 1 amber-kehyksella. Oletus true.
+	 *
+	 *  🔴 7.9 (julkaisutarkistaja A6): GW review -kortti jarjestaa rivit
+	 *  HUONOIMMASTA kutsusta, jolloin sama korostus nostaa mallin pahimman
+	 *  hudin karjeksi. Korostus on jarjestyksen ominaisuus, ei kortin. */
+	heroFirstRow?: boolean;
 }
 
 /** Alle taman rivimaaran kortti ei ole lista vaan ilmoitus. Sama luku kuin
@@ -190,7 +196,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		const y = ROW_TOP + i * rowH;
 		// sub-rivilla paarivi nousee ylos ja syy piirretaan sen alle
 		const cy = hasSub ? y + 40 : y + rowH / 2;
-		const first = i === 0;
+		const first = i === 0 && spec.heroFirstRow !== false;
 
 		// Rivikehys: karkirivi amber-kehyksella, muut ohuella viivalla
 		ctx.strokeStyle = first ? AMBER : LINE;

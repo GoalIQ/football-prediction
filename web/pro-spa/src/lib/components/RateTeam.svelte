@@ -879,10 +879,15 @@
 				<GwReview />
 			</div>
 			<div class="week-col">
+				<!-- B5 (7.9): sijoitus luetaan `season_rank`ista, ei
+				     `last_finished`ista. Jalkimmainen katoaa kokonaan kun MEIDAN
+				     xP-freeze puuttuu kierrokselta, ja kayttajan FPL-sijoituksella
+				     ei ole sen kanssa mitaan tekemista. Fallback vanhaan lohkoon
+				     pitaa vanhat vastaukset toimivina. -->
 				<BeatTheModel
-					rank={data.last_finished?.overall_rank ?? null}
-					rankChange={data.last_finished?.rank_change ?? null}
-					rankGw={data.last_finished?.gw ?? null}
+					rank={data.season_rank?.overall_rank ?? data.last_finished?.overall_rank ?? null}
+					rankChange={data.season_rank?.rank_change ?? data.last_finished?.rank_change ?? null}
+					rankGw={data.season_rank?.gw ?? data.last_finished?.gw ?? null}
 				/>
 				<SeasonRace />
 			</div>

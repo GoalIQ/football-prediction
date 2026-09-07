@@ -31,8 +31,10 @@
 	} from '$lib/prefs';
 
 	// 6.9: kauden tavoitteen seuranta. Sijoitus tulee rate-teamin
-	// last_finished-lohkosta (FPL:n entry-historia, viimeisin PAATTYNYT
+	// `season_rank`-lohkosta (FPL:n entry-historia, viimeisin PAATTYNYT
 	// kierros). Ilman propseja lohko sanoo edelleen ettei rank-dataa ole.
+	// 7.9 (B5): lahde vaihtui `last_finished`ista, koska se lohko katoaa kun
+	// meidan xP-freezemme puuttuu - kayttajan sijoitus ei riipu siita.
 	let {
 		rank = null,
 		rankChange = null,
@@ -261,7 +263,10 @@
 				</div>
 			{/if}
 			{#if objective}
-				<p class="small objective-status" class:muted={objective.kind === 'pre_season'} class:ahead={objective.kind === 'inside'} class:behind={objective.kind === 'outside'}>
+				<!-- B4 (7.9): `rank_unavailable` on oma tila. Se ei ole esikausi
+				     (kierros on tiedossa) eika saavutus, joten se on vaimennettu
+				     samoin kuin esikausirivi. -->
+				<p class="small objective-status" class:muted={objective.kind === 'pre_season' || objective.kind === 'rank_unavailable'} class:ahead={objective.kind === 'inside'} class:behind={objective.kind === 'outside'}>
 					{objectiveLine(objective)}
 				</p>
 			{:else}

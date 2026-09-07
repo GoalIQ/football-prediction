@@ -2723,14 +2723,22 @@ def fantasy_gw_review(
     except (OSError, ValueError):
         pw = None
 
-    prov: list[int] = []
+    # 🔴 A1 (7.9): LOPULLISUUS LUETAAN FPL:STA, EI JOHDETUSTA ARTEFAKTISTA.
+    # `meta.provisional_gws` on positiivinen lista, joten sen puuttuminen
+    # kaantyi vaitteeksi "lopullinen": artefakti oli 1.9:lta ja kattoi
+    # GW1-2, ja GW3 (finished=False, data_checked=False) sai payloadiin
+    # provisional=false. Artefakti kelpaa yha LISAAMAAN epavarmuutta,
+    # ei poistamaan sita. Ks. src/models/fpl_gw_finality.py.
+    from src.models.fpl_gw_finality import provisional_gws as _prov_gws
+    _artefakti: list[int] = []
     _p = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
     if _p.exists():
         try:
-            prov = list((_json.loads(_p.read_text(encoding="utf-8"))
-                         .get("meta") or {}).get("provisional_gws") or [])
+            _artefakti = list((_json.loads(_p.read_text(encoding="utf-8"))
+                               .get("meta") or {}).get("provisional_gws") or [])
         except (OSError, ValueError):
-            prov = []
+            _artefakti = []
+    prov = _prov_gws(boot.get("events"), [int(katsottava)], _artefakti)
 
     out = build_review(int(katsottava), picks, frozen, points, info, pw, prov)
 
@@ -2773,17 +2781,26 @@ def fantasy_my_team_ledger(
         raise HTTPException(status_code=404,
                             detail="FPL entry not found or FPL is unavailable.")
 
-    # Provisionaaliset kierrokset samasta lahteesta kuin model-race, jotta
+    # Provisionaaliset kierrokset samasta lahteesta kuin gw-review, jotta
     # kaksi pintaa eivat voi olla eri mielta samasta kierroksesta.
+    # 🔴 A1 (7.9): lahde on FPL:n oma `events` (finished AND data_checked),
+    # ei johdettu artefakti. Ks. src/models/fpl_gw_finality.py.
     import json as _json
-    prov: list[int] = []
+    from src.models.fpl_gw_finality import provisional_gws as _prov_gws
+    _artefakti: list[int] = []
     _p = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
     if _p.exists():
         try:
-            prov = list((_json.loads(_p.read_text(encoding="utf-8"))
-                         .get("meta") or {}).get("provisional_gws") or [])
+            _artefakti = list((_json.loads(_p.read_text(encoding="utf-8"))
+                               .get("meta") or {}).get("provisional_gws") or [])
         except (OSError, ValueError):
-            prov = []
+            _artefakti = []
+    try:
+        _events = _fapi.fetch_bootstrap().get("events")
+    except Exception:
+        _events = None          # fail-closed: kaikki provisionaalista
+    _kaikki_gw = [h.get("event") for h in (history.get("current") or [])]
+    prov: list[int] = _prov_gws(_events, _kaikki_gw, _artefakti)
 
     picks_by_gw: dict[int, dict] = {}
     for h in (history.get("current") or []):
