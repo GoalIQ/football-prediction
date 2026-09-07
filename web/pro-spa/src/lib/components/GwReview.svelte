@@ -112,6 +112,20 @@
 		     luvuista (71.2 ja 72 -> "+0.8"). Jakonappi on SAMASSA otsikkorivissa,
 		     joten lukija naki molemmat yhta aikaa. Nyt molemmat lukevat
 		     `reviewTotals`in eika kahta lukua voi olla. -->
+		<!-- B6 (7.9, portti): paneeli naytti saman luvun ja vain sanan
+		     "provisional" samalla kun kortti selittaa eron. Sama luku, sama
+		     lukija, toinen pinta selittaa ja toinen ei. -->
+		{#if data.meta.provisional}
+			<p class="muted small prov-note">
+				{#if data.meta.fpl_points != null && totals && data.meta.fpl_points !== totals.actual}
+					GW{data.meta.reviewed_gw} is still being scored. FPL shows
+					{data.meta.fpl_points} so far; our total includes bonus FPL has not confirmed yet.
+				{:else}
+					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.
+				{/if}
+			</p>
+		{/if}
+
 		{#if totals}
 			<p class="total">
 				<strong>{totals.actual}</strong> scored against
@@ -218,6 +232,9 @@
 		border-radius: 0;
 		padding: 0 4px;
 		white-space: nowrap;
+	}
+	.prov-note {
+		margin: 4px 0 2px;
 	}
 	.total {
 		margin: 4px 0 12px;

@@ -74,6 +74,21 @@ def _rivi(pick: dict, frozen: dict[int, float], points: dict[int, int],
     }
 
 
+def _ennen_deadlinea(fmeta: dict) -> bool:
+    """Onko freeze TODISTETTAVASTI ennen deadlinea (B7, 7.9).
+
+    Puuttuva tai rikkinainen aikaleima -> False, eli vaitetta ei tehda.
+    Fail-closed samoin kuin `fpl_gw_finality`.
+    """
+    import datetime as _dt
+    try:
+        f = _dt.datetime.fromisoformat(str(fmeta.get("frozen_at")).replace("Z", "+00:00"))
+        d = _dt.datetime.fromisoformat(str(fmeta.get("deadline")).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+    return f < d
+
+
 def build_review(gw: int | None, picks: dict | None,
                  frozen: dict[int, float] | None,
                  points: dict[int, int] | None,
@@ -139,6 +154,9 @@ def build_review(gw: int | None, picks: dict | None,
                     "confidence": r.get("confidence"),
                 })
 
+    _fmeta = fpl_actuals.frozen_meta(gw) or {}
+    _hist = picks.get("entry_history") or {}
+
     return {
         "meta": {
             "available": True,
@@ -156,10 +174,26 @@ def build_review(gw: int | None, picks: dict | None,
             # A3: freeze-vaite on JOHDETTAVA, ei rakenteellinen. Ilman naita
             # kortti sanoi "frozen before the deadline" myos silloin kun
             # freeze olisi myohassa - vaite jota se ei voi mitata.
-            "frozen_at": (fpl_actuals.frozen_meta(gw) or {}).get("frozen_at"),
-            "deadline": (fpl_actuals.frozen_meta(gw) or {}).get("deadline"),
-            "basis": ("projection frozen before the deadline, never the live "
-                      "one"),
+            "frozen_at": _fmeta.get("frozen_at"),
+            "deadline": _fmeta.get("deadline"),
+            # 🔴 B1 (7.9, portti): FPL:N OMA KIERROSPISTEMAARA payloadiin.
+            # Kortti ja paneeli nayttivat MEIDAN live-XI:n summan (72) ja
+            # attribuoivat sen FPL:lle, samalla kun lukijan oma FPL-sovellus
+            # sanoi 58. Mitattu 7.9: GW3:n 10 ottelua olivat
+            # `finished_provisional` muttei `finished`, ja live-syotteessa oli
+            # 15 kerroinpainotettua bonuspistetta joita `entry_history` ei
+            # ollut viela kirjoittanut. Luku ei ole vaara, mutta se on ERI
+            # LUKU, ja se on sanottava nimeltaan eika pehmennettava lauseella.
+            "fpl_points": (_hist.get("points")
+                           if isinstance(_hist.get("points"), int) else None),
+            # B7 (7.9): `basis` oli EHDOTON lause ("frozen before the
+            # deadline") vaikka mikaan ei mitannut sita. Sama vaite kuin
+            # kortin `freezeNote()`, joten sama saanto: vaite tehdaan vain
+            # kun aikaleimat todistavat sen.
+            "basis": (
+                "projection frozen before the deadline, never the live one"
+                if _ennen_deadlinea(_fmeta)
+                else "projection frozen for this gameweek, never the live one"),
             "note": None,
             "note_code": None,
         },

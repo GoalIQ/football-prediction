@@ -33,11 +33,24 @@ def _nimi(rivi: dict | None) -> str | None:
     return (rivi or {}).get("web_name")
 
 
-def review_lines(review: dict | None) -> list[dict]:
+def review_lines(review: dict | None, rows: int | None = None) -> list[dict]:
     """Katsauslohkon lauseet. Palauttaa [{code, text}] jarjestyksessa.
 
     `code` on vakaa tunniste jota klientti voi kayttaa lokalisointiin ja
     testi ankkurina; `text` on englanninkielinen oletus.
+
+    `rows` = montako riviä pinta oikeasti nayttaa (multiplier > 0).
+
+    🔴 KAKSI PORTIN LOYDOSTA 7.9.2026, molemmat TASSA lauseessa:
+
+    B3  Erotus laskettiin PYORISTAMATTOMASTA projektiosta samalla kun
+        viereinen totaalirivi renderoi pyoristetyn. Brute force 2000
+        projektiolla: 20 tapausta eroaa, esim. projected 69.25, actual 72 ->
+        rivi sanoo "72 vs 69.3 (+2.7)" ja tama lause sen ALLA "You beat the
+        model by 2.8". Erotus lasketaan nyt NAYTETYSTA luvusta, samoin kuin
+        kortissa (`reviewTotals`).
+    B4  "Your eleven" oli kovakoodattu. Bench boostilla sama summa kattaa
+        15 pelaajaa. Rivimaara tulee nyt kutsujalta.
     """
     out: list[dict] = []
     if not review:
@@ -45,24 +58,28 @@ def review_lines(review: dict | None) -> list[dict]:
 
     proj, act = review.get("projected"), review.get("actual")
     if proj is not None and act is not None:
-        d = round(act - proj, 1)
+        # Sama pyoristys kuin naytetylla luvulla: `_pts` muotoilee proj:n
+        # yhteen desimaaliin, joten erotus on laskettava siita.
+        proj_shown = float(f"{proj:.1f}")
+        d = round(act - proj_shown, 1)
+        kuka = "Your eleven" if rows in (None, 11) else f"Your {rows} who played"
         if abs(d) < 1.0:
             out.append({
                 "code": "review.total.level",
-                "text": (f"Your eleven scored {_pts(act)} against a projected "
+                "text": (f"{kuka} scored {_pts(act)} against a projected "
                          f"{_pts(proj)}. About where the model had you."),
             })
         elif d > 0:
             out.append({
                 "code": "review.total.over",
-                "text": (f"Your eleven scored {_pts(act)} against a projected "
+                "text": (f"{kuka} scored {_pts(act)} against a projected "
                          f"{_pts(proj)}. You beat the model by {_pts(d)}."),
             })
         else:
             # 🔴 Alisuoritus sanotaan yhta suoraan kuin ylisuoritus.
             out.append({
                 "code": "review.total.under",
-                "text": (f"Your eleven scored {_pts(act)} against a projected "
+                "text": (f"{kuka} scored {_pts(act)} against a projected "
                          f"{_pts(proj)}, so {_pts(abs(d))} short."),
             })
 

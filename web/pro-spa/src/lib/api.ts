@@ -865,6 +865,9 @@ export interface GwReviewResponse {
 		/** Freeze-hetki ja deadline, jotta ajoitusvaite on johdettu. */
 		frozen_at?: string | null;
 		deadline?: string | null;
+		/** FPL:n OMA kierrospistemaara. Eri luku kuin live-XI:n summa
+		 *  niin kauan kuin bonus on vahvistamatta (B1, 7.9). */
+		fpl_points?: number | null;
 		basis?: string;
 		note: string | null;
 		note_code?: string | null;

@@ -45,6 +45,9 @@ export interface ReviewCardInput {
      *  ajoituksesta tehdaan naista, ei rakenteesta. */
     frozen_at?: string | null;
     deadline?: string | null;
+    /** FPL:n OMA kierrospistemaara (`entry_history.points`). Eri luku kuin
+     *  meidan live-XI:n summa niin kauan kuin bonus on vahvistamatta. */
+    fpl_points?: number | null;
   };
   review: {
     projected: number | null;
@@ -147,27 +150,38 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
 
   const { actual, projectedText, diff } = reviewTotals(ordered);
 
-  // U4: otsikko johdetaan riveista ja chipista, ei oleteta yhdeksitoista.
+  // U4 + B5: otsikko johdetaan riveista, chipista ja PICKEISTA.
+  //
+  // 🔴 B5 oli oman korjaukseni tuoma vika: `bench boost (all ${rows.length})`
+  // laski VERTAILTUJA rivejä, ja tuotantopayload todistaa etta rivi voi
+  // pudota (14/15). Bench boost -kierroksella alaotsikko olisi sanonut
+  // "bench boost (all 14)" ja 60 merkkia myohemmin "14 of 15 picks had both
+  // numbers" - "all" olisi kumoutunut samalla rivilla. Nimittaja on
+  // `total_picks`, ja kattavuus sanotaan LABELISSA eika omana lauseenaan
+  // (B2: alaotsikko oli 124 merkkia, budjetti ~88).
   const chip = (data.meta.chip || '').toLowerCase();
+  const picks = data.meta.total_picks;
+  const odotettu = chip === 'bboost' ? (picks ?? rows.length) : 11;
   const label =
-    chip === 'bboost'
-      ? `bench boost (all ${rows.length})`
-      : rows.length === 11
-        ? 'starting XI'
-        : `${rows.length} players`;
+    rows.length === odotettu
+      ? chip === 'bboost'
+        ? 'bench boost'
+        : 'starting XI'
+      : `${rows.length} of ${odotettu} players compared`;
 
   const parts: string[] = [];
-  parts.push(`${label}: ${actual} pts vs ${projectedText} xP (${sign(diff)})`);
-
-  // U3: kattavuus koskee PICKKEJA ja nimittaja tulee payloadista.
-  const compared = data.meta.players_compared;
-  const picks = data.meta.total_picks;
-  if (compared != null && picks != null && compared < picks) {
-    parts.push(`${compared} of ${picks} picks had both numbers`);
+  // B1: kesken olevalla kierroksella luku on live-syotteesta JA FPL:n oma
+  // luku sanotaan nimeltaan. "bonus not final" nimesi mekanismin jota kortti
+  // ei mittaa; talla lukija loytaa molemmat luvut ja tietaa kumpi on kumpi.
+  const fpl = data.meta.fpl_points;
+  const kesken = !!data.meta.provisional;
+  const yksikko = kesken && fpl != null && fpl !== actual ? 'live pts' : 'pts';
+  parts.push(`${label}: ${actual} ${yksikko} vs ${projectedText} xP (${sign(diff)})`);
+  if (kesken && fpl != null && fpl !== actual) {
+    parts.push(`FPL shows ${fpl} so far`);
+  } else if (kesken) {
+    parts.push('gameweek still being scored');
   }
-  // U1: kesken oleva kierros -> luku on live-syotteesta ja bonus vahvistamatta.
-  // Tama on se lause joka selittaa miksi FPL-sovellus voi nayttaa pienempaa.
-  if (data.meta.provisional) parts.push('bonus not final, FPL may show less');
   parts.push('worst call first');
 
   // U5: kerroinlause suurimmasta kertoimesta riveilla.
@@ -186,7 +200,8 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
     rows,
     // A6: rivi 1 on mallin PAHIN kutsu, joten karkikorostus on pois.
     heroFirstRow: false,
-    footNote: `${frozenNote}, points from the FPL live feed${multNote}`,
+    // B2: lahde on alaotsikossa, joten alatunniste ei toista sita.
+    footNote: `${frozenNote}${multNote}`,
     footNote2: 'not betting advice',
     fileName: `goaliq_gw${gw}_review.png`,
   };
