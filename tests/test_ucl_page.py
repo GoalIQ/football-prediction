@@ -234,6 +234,15 @@ def test_saatavuuskaavio_kattaa_kaiken_minka_otsikko_lupaa():
     assert not puuttuu, (
         f"kaaviosta puuttuu {len(puuttuu)} klubia joilla on tapauksia: "
         f"{puuttuu}. Otsikko lupaa ne.")
+    # 🔴 MOLEMPIIN SUUNTIIN. Yksisuuntainen portti sanoo "kaikki luvattu on
+    # mukana" muttei "vain luvattu on mukana": ylijoukko lapaisee. Mitattu
+    # 7.9 mutaatiolla - kun kaavioon lisattiin 122 rekisteroimatonta
+    # pelaajaa, TAMA portti pysyi vihreana ja vian nappasi vain
+    # jarjestysportti.
+    ylimaaraiset = sorted(set(koodit) - set(odotetut))
+    assert not ylimaaraiset, (
+        f"kaaviossa on {len(ylimaaraiset)} klubia joilla EI ole yhtaan "
+        f"tapausta: {ylimaaraiset}. Otsikko ei lupaa niita.")
 
     # Ja pylvaiden summa on koko joukko, ei osa siita.
     palkit = re.findall(r'<rect x="[0-9.]+" y="\d+" width="[0-9.]+"',
@@ -266,3 +275,106 @@ def test_kaavion_jarjestys_ja_pituus_mittaavat_samaa():
         "pylvaiden pituudet eivat ole laskevassa jarjestyksessa - "
         f"jarjestys ja pituus mittaavat eri asiaa: "
         f"{[round(x) for x in pituudet]}")
+
+
+DATA_JSON = ROOT / "data" / "ucl_fantasy.json"
+
+
+def test_pistesarake_on_tyhja_eika_nolla():
+    """🔴 MUTAATIO 7.9 PALJASTI ETTA TALLE EI OLLUT PORTTIA: solun
+    palautus nollaksi lapaisi 26 testia.
+
+    Blankin ja nollan ero ON koko korjaus. 762 pelaajalla 1 162:sta
+    `prev_season_points` on 0 ja kaikilla myos minuutit, eli he eivat
+    olleet kilpailussa. "0" luetaan huonoksi kaudeksi, ei puuttumiseksi.
+
+    Assertio on YHTASUURUUS eika "ei nollia": liian moni tyhja on yhta
+    lailla vaarin, ja se olisi eri vika samassa sarakkeessa.
+    """
+    import json
+    if not DATA_JSON.exists():
+        pytest.skip("artefaktia ei ole")
+    P = json.loads(DATA_JSON.read_text(encoding="utf-8"))["players"]
+    if any("points" in p for p in P):
+        pytest.skip("kausi on alkanut, sarake on taman kauden")
+    odotettu = sum(1 for p in P if not p.get("prev_season_minutes"))
+
+    h = _html("prices.html")
+    rivit = re.findall(r"<tr><td>(?:(?!</tr>)[\s\S])*?</tr>", h)
+    assert len(rivit) > 1000, f"vain {len(rivit)} rivia"
+    tyhjia = sum(1 for r in rivit
+                 if re.match(r"^<tr>(<td>[^<]*</td>){5}<td></td>", r))
+    nollia = sum(1 for r in rivit
+                 if re.match(r"^<tr>(<td>[^<]*</td>){5}<td>0</td>", r))
+    assert nollia == 0, f"{nollia} riville jai 0 tyhjan tilalle"
+    assert tyhjia == odotettu, f"{tyhjia} tyhjaa, datassa {odotettu}"
+
+
+KADENSSI = re.compile(r"\bupdated\b[^.]{0,40}\bevery\b[^.]{0,25}"
+                      r"\b(hour|hours|day|days|minute|minutes)\b", re.I)
+
+
+@pytest.mark.parametrize("nimi", SIVUT)
+def test_ei_kadenssilupausta(nimi):
+    """🔴 MUTAATIO 7.9: "every six hours" heroon lapaisi 26 testia.
+
+    Kadenssi on lupaus ajastimesta jota emme hallitse: mitattu 27.8
+    alkaen GitHubin ajastin on ollut 5-12 h myohassa. Sivu saa kertoa
+    MILLOIN syote luettiin, ei kuinka usein se luetaan.
+    """
+    teksti = re.sub(r"<[^>]+>", " ", _html(nimi))
+    osuma = KADENSSI.search(teksti)
+    assert not osuma, f"{nimi}: kadenssilupaus '{osuma.group(0)}'"
+
+
+def test_kontrolli_kadenssihavaitsin_loytaa_lupauksen():
+    """NEGATIIVINEN KONTROLLI: ilman tata portti voisi olla vihrea siksi
+    ettei regex osu mihinkaan (muisti: kontrolli-lapaisi-tyhjana)."""
+    assert KADENSSI.search("Updated from the official feed every six hours.")
+    assert KADENSSI.search("updated every day")
+    assert not KADENSSI.search("last update 07 Sep 2026, 15:12 UTC")
+
+
+@pytest.mark.parametrize("nimi", SIVUT)
+def test_tuoreusleima_on_nakyvissa(nimi):
+    """Kadenssin tilalla on oltava jotain tarkistettavaa, ei tyhjaa."""
+    assert "last update" in _html(nimi).lower(), f"{nimi}: ei aikaleimaa"
+
+
+def test_kaavion_rajaus_on_NAKYVASSA_tekstissa():
+    """🔴 `svg_charts.otsikko` menee VAIN aria-labeliin.
+
+    Julkaisuportti mittasi: `/ucl/prices`-sivun koko nakyva leipateksti
+    lupasi 1 162 pelaajaa ja kaavio piirsi 172. Rajaus oli olemassa,
+    mutta vain ruudunlukijalle. Kattavuusportti vertasi aria-labeliin,
+    eli se ei suojannut sita vaitetta jonka nakeva lukija lukee.
+    """
+    for nimi in ("index.html", "prices.html"):
+        h = _html(nimi)
+        nakyva = re.sub(r"<svg[\s\S]*?</svg>", " ", h)
+        nakyva = re.sub(r"<[^>]+>", " ", nakyva)
+        assert "2% or more" in nakyva, (
+            f"{nimi}: kaavion rajausta ei lue nakyvassa tekstissa")
+    # Ja aria-label kayttaa SAMAA sanamuotoa, ei toista (muisti:
+    # sama-vaite-monessa-sanamuodossa).
+    h = _html("index.html")
+    assert "owned by more than 1%" not in h, (
+        "aria-label ja runkoteksti sanovat saman rajauksen eri tavalla")
+
+
+def test_deadline_valitaan_lukuhetkella():
+    """🔴 Deadline on sivun ainoa luku joka vanhenee ilman etta data
+    muuttuu. Se laskettiin buildhetkella; nyt kaikki kierrokset ovat
+    sivulla ja oikea valitaan lukijan kellosta."""
+    h = _html("index.html")
+    assert 'id="ucl-dl"' in h, "deadline-lauseella ei ole tunnistetta"
+    assert "Date.parse" in h, "deadlinea ei valita lukuhetkella"
+    m = re.search(r"<script>\(function\(\)\{var D=(\[.*?\]),", h, re.S)
+    assert m, "deadline-taulukkoa ei loytynyt sivulta"
+    import json
+    D = json.loads(m.group(1))
+    doc = json.loads(DATA_JSON.read_text(encoding="utf-8"))
+    odotetut = [k["md"] for k in doc["matchdays"] if k.get("deadline_utc")]
+    assert [d["md"] for d in D] == sorted(odotetut), (
+        "sivulla ei ole kaikkia kierroksia, joten se ei voi vaihtaa "
+        "seuraavaan ilman uutta buildia")

@@ -40,6 +40,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import sys
+import unicodedata
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -89,6 +90,38 @@ def _hae(polku: str) -> dict | None:
     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError,
             json.JSONDecodeError, OSError):
         return None
+
+
+def _feed_aika(pelaajat_doc: dict) -> str | None:
+    """Syotteen oma aikaleima UTC-ISOna, tai None.
+
+    🔴 TAMA KORVAA RAKENNUSAJAN ARTEFAKTIN TUOREUSKENTTANA. `generated_at`
+    oli `now()`, joten artefakti muuttui JOKA ajossa vaikka UEFA ei olisi
+    paivittanyt mitaan: workflow'n "ei muutoksia" -pikapoistuma ei
+    lauennut kertaakaan, ja jokainen 6 h ajo olisi tuottanut commitin,
+    hub-deployn ja testiajon ilman yhtaan uutta lukua.
+
+    Rakennusaika ei myoskaan ole tieto DATASTA. Lukijaa kiinnostaa milloin
+    luvut ovat UEFAlta, ei milloin me ajoimme skriptin.
+
+    Muoto syotteessa: `9/7/2026 3:02:01 PM`, jossa valilyonti ennen
+    AM/PM:aa on U+202F (narrow no-break space). Normalisoidaan kaikki
+    unicode-valilyonnit ennen jasennysta, jottei portti kaadu siihen etta
+    UEFA vaihtaa merkin takaisin tavalliseen.
+    """
+    raw = ((pelaajat_doc.get("meta") or {}).get("timestamp", {})
+           .get("utcTime"))
+    if not raw:
+        return None
+    siisti = "".join(" " if unicodedata.category(c) == "Zs" else c
+                     for c in str(raw)).strip()
+    for fmt in ("%m/%d/%Y %I:%M:%S %p", "%m/%d/%y %I:%M:%S %p"):
+        try:
+            return (dt.datetime.strptime(siisti, fmt)
+                    .replace(tzinfo=dt.timezone.utc).isoformat())
+        except ValueError:
+            continue
+    return None
 
 
 def _deadlinet(fixtures_doc: dict) -> list[dt.datetime]:
@@ -223,9 +256,13 @@ def build(nyt: dt.datetime | None = None) -> dict:
             "source": "UEFA UCL Fantasy public feed (no key, no login)",
             "season_id": kausi,
             "matchday": md,
-            "generated_at": nyt.replace(microsecond=0).isoformat(),
-            "feed_timestamp": ((pelaajat_doc.get("meta") or {})
-                               .get("timestamp", {}).get("utcTime")),
+            # 🔴 EI RAKENNUSAIKAA. Ks. `_feed_aika`: `now()` teki
+            # artefaktista erilaisen joka ajossa, jolloin workflow olisi
+            # committanut ja deployannut 4 kertaa vuorokaudessa ilman
+            # yhtaan muuttunutta lukua.
+            "feed_updated_utc": _feed_aika(pelaajat_doc),
+            "feed_timestamp_raw": ((pelaajat_doc.get("meta") or {})
+                                   .get("timestamp", {}).get("utcTime")),
             # Sanotaan aaneen mita luvut EIVAT ole. Pinta lukee taman.
             "points_basis": (
                 "prev_season_points and prev_season_minutes are last "
