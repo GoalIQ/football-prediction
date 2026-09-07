@@ -1647,7 +1647,11 @@ def model_squad_gw(gw: int) -> dict | None:
         if r.get("gw") == gw:
             return {
                 "entry_id": (doc.get("meta") or {}).get("entry_id"),
-                "points": r.get("points"),
+                # Portin 15. kierros: NETTO myos mallilla. Kortti painaa
+                # mallin julkisen entry-ID:n kuvaan, joten lukija voi
+                # katsoa - ja naki bruttoa.
+                "points": r.get("points_net", r.get("points")),
+                "points_gross": r.get("points"),
                 "fpl_average": r.get("fpl_average"),
                 "provisional": bool(r.get("provisional")),
                 # Portti 2.9 k4: mallin chip kortille kayttajan chipin rinnalle.

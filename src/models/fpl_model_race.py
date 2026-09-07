@@ -100,7 +100,10 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     compared = 0
     for r in rows:
         gw = int(r.get("gw") or 0)
-        mp = int(r.get("points") or 0)
+        # Portin 15. kierros: MALLIN puoli myos netosta. Kayttajan puoli
+        # korjattiin 11. kierroksella, mallin jai bruttoon - eli malli
+        # olisi voittanut oman hittinsa verran.
+        mp = int(r.get("points_net", r.get("points")) or 0)
         model_total += mp
         row = {
             "gw": gw,

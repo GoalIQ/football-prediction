@@ -41,8 +41,18 @@ FAKE_TEASER_RATING = {
 }
 
 
+# 🔴 Portin 15. kierros: `career` suodattaa kesken olevat kierrokset
+# (fail-closed). Ilman bootstrapia yksikaan kierros ei ole todistetusti
+# lopullinen, joten oletusfikstuuri sanoo ne valmiiksi - muuten jokainen
+# vanha testi mittaisi tyhjaa kautta.
+BOOTSTRAP_KAIKKI_VALMIIT = {
+    "events": [{"id": g, "finished": True, "data_checked": True}
+               for g in range(1, 39)]
+}
+
+
 def _mock_fpl(monkeypatch, root=ENTRY_ROOT, past=PAST, current=CURRENT_FULL,
-              chips=CHIPS, bootstrap=None, teaser="ok"):
+              chips=CHIPS, bootstrap=BOOTSTRAP_KAIKKI_VALMIIT, teaser="ok"):
     def fake_fetch(path):
         if path == "/entry/424242/":
             return root
@@ -196,3 +206,44 @@ def test_endpoint_career_unknown_entry(client, monkeypatch):
     _mock_fpl(monkeypatch)
     r = client.get("/api/fantasy/career?entry=999999")
     assert r.status_code == 404
+
+
+def test_kesken_oleva_kierros_ei_paady_kortille_lopullisena(monkeypatch):
+    """🔴 Portin 15. kierros: JULKINEN JAKOKORTTI JULKAISI PROVISIONAALISEN
+    KIERROKSEN LOPULLISENA.
+
+    `_latest_season`in `finished` koskee KAUTTA, ei kierrosta, eika tama
+    moduuli tuonut `fpl_gw_finality`a lainkaan. Mitattu tuotannosta 7.9
+    (entry 116920, GW3 finished=False, data_checked=False): kortti sanoi
+    "Best overall rank 659,556" ja "This season 207 pts" GW3:n
+    provisionaalisesta rivista, samalla kun SAMAN TUOTTEEN Season target
+    -rivi sanoi "After GW2: 2,090,418 overall". Kerroin 3,2, ja `207`
+    liikkuu kun bonukset laskeutuvat.
+    """
+    kesken = {"events": [{"id": g, "finished": True, "data_checked": True}
+                         for g in range(1, 38)]
+              + [{"id": 38, "finished": False, "data_checked": False}]}
+    _mock_fpl(monkeypatch, bootstrap=kesken)
+    out = fc.career(424242)
+
+    assert out["summary"]["provisional_gws_excluded"] == [38]
+    # GW38:n pisteet eivat ole kausisummassa.
+    lat = out["latest_season"]
+    assert all(g["gw"] != 38 for g in lat["gws"])
+    # Eika sen sijoitus best/avg-luvuissa.
+    assert lat["best_gw"]["gw"] != 38 and lat["worst_gw"]["gw"] != 38
+
+    # NEGATIIVINEN KONTROLLI: kun kierros on valmis, se on mukana.
+    _mock_fpl(monkeypatch, bootstrap=BOOTSTRAP_KAIKKI_VALMIIT)
+    valmis = fc.career(424242)
+    assert valmis["summary"]["provisional_gws_excluded"] == []
+    assert any(g["gw"] == 38 for g in valmis["latest_season"]["gws"])
+
+
+def test_ilman_bootstrapia_ei_julkaista_yhtaan_kierrosta(monkeypatch):
+    """FAIL-CLOSED: jos emme saa bootstrapia, emme voi todistaa yhtaan
+    kierrosta lopulliseksi. Mieluummin puuttuva luku kuin vaara kuvassa."""
+    _mock_fpl(monkeypatch, bootstrap=None)
+    out = fc.career(424242)
+    assert out["summary"]["provisional_gws_excluded"], (
+        "ilman finality-tietoa kierrokset on merkittava pois")

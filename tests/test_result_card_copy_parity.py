@@ -247,3 +247,39 @@ def test_race_your_points_on_netto_arvona_ei_merkkijonona():
     loki0 = {"gameweeks": [dict(loki["gameweeks"][0], points=70)]}
     race0 = build_race(loki0, historia0)
     assert race0["gameweeks"][0]["your_points"] == 70
+
+
+def test_mallin_puoli_on_myos_netto_arvona():
+    """🔴 Portin 15. kierros: KORJASIN KAYTTAJAN PUOLEN JA JATIN MALLIN.
+
+    11.-14. kierroksella siirsin kayttajan kierrospistemaaran nettoon
+    kaikilla pinnoilla. `grade_model_squad.py` kirjoittaa mallin oman rivin,
+    ja sen kommentti sanoi "siirtokustannukset jo mukana" - sama vaara
+    premissi jonka 10. kierros kumosi. Mallin entry on JULKINEN
+    (`fpl.html:606`, ja kortti painaa entry-ID:n kuvaan), joten lukija voi
+    avata sen ja nahda eri luvun.
+    """
+    from src.models.fpl_model_race import build_race
+
+    # Malli otti hitin: brutto 70, hitti 8, netto 62. Kayttaja 62 ilman
+    # hittia -> tasapeli. Brutolla malli "voittaisi" 8:lla.
+    loki = {"gameweeks": [{"gw": 3, "points": 70, "points_net": 62,
+                           "transfer_cost": 8, "provisional": False,
+                           "fpl_average": 50, "entry_id": 116920}]}
+    historia = {"current": [{"event": 3, "points": 62,
+                             "event_transfers_cost": 0, "points_on_bench": 2,
+                             "total_points": 62, "overall_rank": 1000}]}
+    race = build_race(loki, historia)
+    t = race.get("totals") or {}
+    assert t.get("model") == 62, (
+        f"mallin totaali {t.get('model')} on brutto - malli voittaisi oman "
+        "hittinsa verran")
+    assert t.get("you") == 62
+    assert t.get("diff") == 0
+
+    # NEGATIIVINEN KONTROLLI: ilman `points_net`ia (vanha loki) palataan
+    # bruttoon, mutta silloin myos hitti on 0 eika eroa ole.
+    vanha = {"gameweeks": [dict(loki["gameweeks"][0], points=62,
+                                transfer_cost=0)]}
+    del vanha["gameweeks"][0]["points_net"]
+    assert (build_race(vanha, historia).get("totals") or {}).get("model") == 62

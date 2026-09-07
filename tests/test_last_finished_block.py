@@ -246,6 +246,34 @@ def test_isoin_heilahdus_nimetaan_kun_yksi_selittaa_neljasosan(wired):
     assert b["biggest_swing"] == {"web_name": "Kapteeni", "contribution": 38.0}
 
 
+def test_heilahduksen_kynnys_lasketaan_netosta(wired, monkeypatch):
+    """🔴 Portin 15. kierros: OMA KORJAUKSENI OLI TESTAAMATON.
+
+    Korjasin 14. kierroksella `biggest_swing`in 25 %:n kynnyksen nimittajan
+    nettoon, mutta en kirjoittanut sille testia. Portti mutatoi sen takaisin
+    bruttoon ja **3 209 testia oli vihreana**. Kirjoitin edellisella
+    kierroksella testin joka mittaa arvon eika merkkijonoa - ja jatin oman
+    korjaukseni sen ulkopuolelle. Ensimmainen yritys tasta testista oli
+    lisaksi TAUTOLOGIA (`osuus >= 0.25` kun swing on olemassa), eli se
+    lapaisi mutaation myos.
+
+    Fikstuuri EROTTAA saannot: xp 11.0, points 61, hitti 4.
+      netto-nimittaja  |61 - 4 - 11| = 46  -> 12/46 = 26 %  YLI kynnyksen
+      brutto-nimittaja |61 - 11|     = 50  -> 12/50 = 24 %  ALLE kynnyksen
+    Swing on siis olemassa VAIN oikealla nimittajalla.
+    """
+    # Kapteeni (mult 2, xp 4.0): (10 - 4.0) * 2 = 12.0
+    monkeypatch.setattr(rt.fpl_actuals, "points_for", lambda g, s=None: {1: 10, 2: 4, 3: 9})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+
+    assert b["points_net"] == 57, b["points_net"]
+    assert b["xp"] == 11.0, b["xp"]
+    assert b["diff"] == 46.0, b["diff"]
+    assert b["biggest_swing"] == {"web_name": "Kapteeni", "contribution": 12.0}, (
+        "swing katosi - kynnys laskettiin bruttoerotuksesta (50), jolloin "
+        "12/50 = 24 % jaa alle 25 %:n")
+
+
 def test_penkkipelaaja_ei_voi_olla_heilahdus(wired, monkeypatch):
     """Kerroin 0 = ei vaikuta summaan, joten se ei voi selittaa eroa vaikka
     olisi tehnyt eniten pisteita."""

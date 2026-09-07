@@ -119,8 +119,19 @@ def _grade_gw(gw: int, history_by_gw: dict[int, dict], status: dict) -> dict:
 
     return {
         "gw": gw,
-        # FPL:n oma kierrospistemäärä, siirtokustannukset jo mukana.
+        # 🔴 PORTIN 15. KIERROS: kommentti oli VÄÄRÄ ja se levisi lukuun asti.
+        # `entry_history.points` on BRUTTO, ei "siirtokustannukset jo mukana"
+        # (verifioitu FPL:n API:sta 7.9: entry 12345 GW3 points 70, cost 8,
+        # kausisumma 87 -> 149 eli 62 = 70 - 8).
+        #
+        # Korjasin 11.-14. kierroksella KAYTTAJAN puolen kaikilla pinnoilla ja
+        # jatin MALLIN puolen bruttoon. Mitattu: hittikierroksella malli
+        # nayttaisi 70 kun sen oma FPL-sivu sanoo 62, eli malli voittaisi
+        # oman hittinsa verran. Ja mallin entry on JULKINEN (fpl.html:606
+        # nimeaa sen, TeamPitchManager painaa entry-ID:n korttiin), joten
+        # lukija voi katsoa.
         "points": h["points"],
+        "points_net": h["points"] - (h["transfer_cost"] or 0),
         "bench_points": h["bench"],
         "transfer_cost": h["transfer_cost"],
         "fpl_average": status["fpl_average"],

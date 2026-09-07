@@ -179,6 +179,34 @@ def career(entry: int) -> dict:
     root, history = _fetch_history(entry)
     past = list(history.get("past") or [])
     current = list(history.get("current") or [])
+    # 🔴 PORTIN 15. KIERROS: KESKEN OLEVA KIERROS EI SAA PAATYA KORTILLE
+    # LOPULLISENA. `_latest_season`in `finished` koskee KAUTTA, ei kierrosta,
+    # eika tama moduuli tuonut `fpl_gw_finality`a lainkaan.
+    #
+    # Mitattu tuotannosta 7.9 (entry 116920, GW3 finished=False,
+    # data_checked=False): kortti sanoi "Best overall rank 659,556" ja
+    # "This season 207 pts" GW3:n provisionaalisesta rivista, samalla kun
+    # SAMAN TUOTTEEN Season target -rivi sanoi "After GW2: 2,090,418
+    # overall" - koska `season_rank_block` vaatii `finished AND
+    # data_checked`. Sama kayttaja, sama hetki, kerroin 3,2. Ja `207`
+    # liikkuu kun GW3:n bonukset laskeutuvat.
+    #
+    # Sama yksi lukija kuin muualla: kesken oleva kierros pudotetaan.
+    # FAIL-CLOSED kuten `fpl_gw_finality`: jos emme saa bootstrapia, emme voi
+    # todistaa yhtaan kierrosta lopulliseksi, joten kesken oleva ei paady
+    # kortille. Mieluummin yksi kierros pois kuin vaara luku kuvaan.
+    from src.models.fpl_gw_finality import final_gws
+    try:
+        _events = (rt.get_bootstrap() or {}).get("events")
+    except Exception:
+        _events = None
+    _lopulliset = final_gws(_events)
+    provisional_dropped = sorted(
+        int(g["event"]) for g in current
+        if isinstance(g.get("event"), int) and g["event"] not in _lopulliset)
+    current = [g for g in current
+               if isinstance(g.get("event"), int)
+               and g["event"] in _lopulliset]
     chips = list(history.get("chips") or [])
 
     latest = _latest_season(current, past)
@@ -233,6 +261,10 @@ def career(entry: int) -> dict:
         },
         "past_seasons": past_seasons,
         "summary": {
+            # Kesken olevat kierrokset jotka jatettiin POIS luvuista, jotta
+            # pinta voi sanoa sen eika lukija ihmettele miksi luku eroaa
+            # hanen omasta FPL-sivustaan.
+            "provisional_gws_excluded": provisional_dropped,
             "seasons_played": seasons_played,
             "all_time_points": all_time,
             "best_season": best_season,
