@@ -422,6 +422,75 @@ def gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
     return out
 
 
+# Kapteenin kerroin FPL:n saantojen mukaan. Vain Triple Captain muuttaa sen;
+# muut chipit (Wildcard, Bench Boost, Free Hit, Assistant Manager) eivat koske
+# kapteeniin. Tuntematon chip -> 2, koska keksitty kerroin olisi pahempi kuin
+# oletus jonka lukija voi tarkistaa omalta FPL-sivultaan.
+CHIP_CAPTAIN_MULTIPLIER = {"3xc": 3}
+DEFAULT_CAPTAIN_MULTIPLIER = 2
+
+
+def captain_multiplier(gw_row: dict, call: dict) -> tuple[int, bool]:
+    """(kerroin, oliko kutsuttu pelaaja TILIN oikea kapteeni).
+
+    🔴 MITATTU LIVENA 7.9.2026, JA SIVU OLI ITSENSA KANSSA RISTIRIIDASSA.
+    `goaliq.app/fpl#gw-calls` tulosti GW3:sta kaksi riviä peräkkäin:
+
+        "The squad played a Triple Captain in GW3."
+        "Model squad captain | Haaland | captain, points doubled | 9 |
+         18 as captain"
+
+    Kerroin oli kovakoodattu `int(pts) * 2`, joten kolminkertainen kapteeni
+    nayttyi kaksinkertaisena: 18 kun oikea luku on 27. Sama vikaluokka kuin
+    A2 6.9:n porttikierroksella - se korjattiin silloin `lib/gwReviewCard.ts`
+    -lukijaan mobiiliin ja SPA:han, mutta WEB-generaattori ja GRADAAJA jaivat
+    jalkeen (muisti: sama-vaite-monella-renderointipolulla).
+
+    Kerroin johdetaan nyt TILIN omasta datasta (`entry_actual.chip` +
+    `entry_actual.captain`), ei kirjoiteta kasin mihinkaan pintaan.
+
+    **Toinen puoli on tunnistus.** Kerroin koskee vain sita tapausta jossa
+    kutsuttu pelaaja oli myos tilin oikea kapteeni. GW2:ssa `model_captain`
+    oli Guehi mutta tili kapteenoi B.Fernandesin, joten "N as captain" olisi
+    vaite tapahtumasta jota ei tapahtunut. Silloin rivi on kutsun oma
+    hypoteesi, ja `oma=False` kertoo pinnalle etta sen on sanottava se
+    aaneen.
+    """
+    ea = gw_row.get("entry_actual") or {}
+    pid = call.get("player_id")
+    entry_c = ea.get("captain")
+    oma = (pid is not None and entry_c is not None
+           and int(entry_c) == int(pid))
+    if not oma:
+        return DEFAULT_CAPTAIN_MULTIPLIER, False
+    chip = str(ea.get("chip") or "")
+    return CHIP_CAPTAIN_MULTIPLIER.get(chip, DEFAULT_CAPTAIN_MULTIPLIER), True
+
+
+def _korjaa_kapteenin_kerroin(entry: dict) -> dict:
+    """Taydenna kerroin lopulliselle riville jolta se puuttuu. Ks. `grade`.
+
+    Idempotentti: kun `captain_multiplier` on kirjoitettu, funktio ei koske
+    riviin enaa. Palauttaa saman objektin, jotta kutsupaikka ei muutu.
+    """
+    by_call = ((entry.get("graded") or {}).get("by_call") or {})
+    row = by_call.get("model_captain")
+    if not row or row.get("captain_multiplier") is not None:
+        return entry
+    pts = row.get("points")
+    if pts is None:
+        return entry
+    call = next((c for c in entry.get("calls") or []
+                 if c.get("call") == "model_captain"), None)
+    if call is None:
+        return entry
+    kerroin, oma = captain_multiplier(entry, call)
+    row["captain_total"] = int(pts) * kerroin
+    row["captain_multiplier"] = kerroin
+    row["captain_is_entry_captain"] = oma
+    return entry
+
+
 def _met(call: dict, pts: int):
     d = call.get("xp_dist") or {}
     k = call["call"]
@@ -445,7 +514,14 @@ def grade_entry(entry: dict, points: dict[int, int], minutes: dict[int, int],
     kirjaa `started` per kutsu, jotta minuuttivirhe (ei aloittanut) erottuu
     mallivirheesta (aloitti, ei tuottanut). Ilman dataa `started` = None."""
     if entry.get("graded") and not entry["graded"].get("provisional"):
-        return entry  # lopullinen, ei kirjoiteta yli
+        # Lopullista rivia ei kirjoiteta yli - PAITSI korjataan kentta jota
+        # vanha gradaaja ei osannut laskea. 7.9.2026: `captain_total` oli
+        # kirjoitettu kovakoodatulla kertoimella 2, ja GW3:n rivi oli jo
+        # lopullinen, joten vaara luku (18 kun oikea on 27) olisi jaanyt
+        # lokiin pysyvasti. Migraatio on kapea: se koskee VAIN
+        # model_captain-riveja joilta `captain_multiplier` puuttuu, eika se
+        # voi muuttaa pisteita, `met`-tulosta tai aikaleimoja.
+        return _korjaa_kapteenin_kerroin(entry)
     by_call = {}
 
     def _started(pid: int):
@@ -470,7 +546,10 @@ def grade_entry(entry: dict, points: dict[int, int], minutes: dict[int, int],
         if pts is not None:
             row["met"] = _met(c, int(pts))
             if c["call"] == "model_captain":
-                row["captain_total"] = int(pts) * 2
+                kerroin, oma = captain_multiplier(entry, c)
+                row["captain_total"] = int(pts) * kerroin
+                row["captain_multiplier"] = kerroin
+                row["captain_is_entry_captain"] = oma
         by_call[c["call"]] = row
     entry["graded"] = {
         "graded_at": _iso(now),

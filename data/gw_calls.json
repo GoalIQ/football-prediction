@@ -141,7 +141,9 @@
       "minutes": 90,
       "met": null,
       "started": true,
-      "captain_total": 4
+      "captain_total": 4,
+      "captain_multiplier": 2,
+      "captain_is_entry_captain": false
      },
      "captain_pick": {
       "points": 23,
@@ -432,7 +434,9 @@
       "minutes": 90,
       "met": null,
       "started": true,
-      "captain_total": 18
+      "captain_total": 27,
+      "captain_multiplier": 3,
+      "captain_is_entry_captain": true
      },
      "captain_pick": {
       "points": 9,

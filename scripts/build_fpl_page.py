@@ -42,6 +42,7 @@ if str(Path(__file__).resolve().parent.parent) not in sys.path:
 
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
+from src.models import gw_calls as gwc  # kapteenin kerroin, yksi lukija
 
 from scripts.mobile_css import (  # noqa: E402
     MOBILE_BLOCK_COLS,
@@ -2519,7 +2520,12 @@ def _fmt_logged(row: dict) -> str:
             else f"{when}, {span} after the deadline")
 
 
-def _call_said(call: dict) -> str:
+# Kerroin sanoiksi. Sama sanakirja palvelee "What it said"- ja
+# "Result"-soluja, jottei kerroin voi olla kahdessa muodossa samalla rivilla.
+KERROIN_SANA = {2: "doubled", 3: "tripled"}
+
+
+def _call_said(call: dict, gw_row: dict | None = None) -> str:
     v = call.get("value")
     m = call.get("metric")
     if v is None:
@@ -2537,6 +2543,17 @@ def _call_said(call: dict) -> str:
         # ei lokissa -> sivu ei vaita vertailua jota Source-linkki ei nayta.
         # Portti 28.8: ilmaissivu nayttaa Guehille xP/GW 5.19 (6 GW:n keskiarvo),
         # loki 4.76 (GW-xP); "highest projection" olisi lukenut vaarin.
+        # 🔴 EI VAKIOTA (7.9.2026). Tama luki "captain, points doubled"
+        # kovakoodattuna, ja GW3:ssa sen ylapuolella oli sivun oma nootti
+        # "The squad played a Triple Captain in GW3." Sama rivi sanoi siis
+        # kahta eri asiaa. Kerroin tulee nyt tilin omasta chipista.
+        if gw_row is not None:
+            kerroin, oma = gwc.captain_multiplier(gw_row, call)
+            if oma:
+                return f"captain, points {KERROIN_SANA.get(kerroin, 'doubled')}"
+            # Kutsuttu pelaaja ei ollut tilin kapteeni: rivi on kutsun oma
+            # hypoteesi eika tapahtuma, ja se sanotaan aaneen.
+            return "captain call, points doubled if captained"
         return "captain, points doubled"
     if m == "xi_gw_xp":
         # PROJECTED-XI-KORTTI (29.8): XI:n GW-xP-summa on Premium-luku, sivu
@@ -2545,7 +2562,8 @@ def _call_said(call: dict) -> str:
     return str(v)
 
 
-def _call_result(call: dict, graded: dict | None) -> tuple[str, str]:
+def _call_result(call: dict, graded: dict | None,
+                 gw_row: dict | None = None) -> tuple[str, str]:
     """(points-solu, result-solu). Pending kunnes gradattu. Provisionaalinen
     merkitaan, koska bonus voi viela muuttaa luvun."""
     if not graded:
@@ -2556,7 +2574,29 @@ def _call_result(call: dict, graded: dict | None) -> tuple[str, str]:
         return "no data", "no data"
     prov = " (provisional)" if graded.get("provisional") else ""
     if call["call"] == "model_captain":
-        return f"{pts}{prov}", f"{r.get('captain_total', pts * 2)} as captain"
+        # 🔴 KERROIN JOHDETAAN RENDEROINTIHETKELLA, EI LUETA ARTEFAKTISTA.
+        # `captain_total` on JOHDETTU kentta, ja 7.9.2026 se oli GW3:ssa 18
+        # kun oikea luku on 27: gradaus oli kirjoittanut sen kovakoodatulla
+        # kertoimella ja rivi oli jo lopullinen, joten gradaaja ei kirjoita
+        # sita uudelleen. Jos sivu lukee johdetun kentan, se perii virheen
+        # ikuisesti. Kerroin tulee chipista, joka on muuttumaton kun kierros
+        # on pelattu (muisti: jonorivi-ei-ole-todiste-tilasta, sama kuvio).
+        if gw_row is not None:
+            kerroin, oma = gwc.captain_multiplier(gw_row, call)
+            yht = int(pts) * kerroin
+        else:
+            kerroin = int(r.get("captain_multiplier") or 2)
+            oma = r.get("captain_is_entry_captain")
+            yht = r.get("captain_total", int(pts) * kerroin)
+        if oma is False:
+            # Ks. `gw_calls.captain_multiplier`: kutsuttu pelaaja ei ollut
+            # tilin kapteeni, joten "N as captain" vaittaisi tapahtumaa jota
+            # ei tapahtunut.
+            return f"{pts}{prov}", f"{yht} if captained"
+        # Kerroin sanotaan VIEREISESSA solussa ("captain, points tripled").
+        # Toistaminen tassa olisi sama vaite kahdessa muodossa vierekkain
+        # (muisti: sama-vaite-monessa-sanamuodossa).
+        return f"{pts}{prov}", f"{yht} as captain"
     if call["call"] == "projected_xi":
         n_sub = len(r.get("autosubs") or [])
         return f"{pts}{prov}", (f"XI total, {n_sub} auto sub" + ("s" if n_sub != 1 else "")
@@ -2714,7 +2754,7 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
                 f'GW{gw_row["gw"]}</td><td colspan="6">{escape(actual)}'
                 f'<a href="{entry_href}">FPL entry {FPL_ENTRY_ID}</a>.</td></tr>')
         for call in gw_row.get("calls") or []:
-            pts, res = _call_result(call, graded)
+            pts, res = _call_result(call, graded, gw_row)
             name = f"{call.get('web_name') or '?'} ({call.get('team_short') or '?'})"
             trs.append(
                 "<tr>"
@@ -2722,7 +2762,7 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
                 f"<td>{escape(CALL_LABELS.get(call['call'], call['call']))}</td>"
                 f"<td>{escape(name)}</td>"
                 f'<td class="m-hide">{escape(logged)}</td>'
-                f"<td>{escape(_call_said(call))}</td>"
+                f"<td>{escape(_call_said(call, gw_row))}</td>"
                 f'<td class="num">{escape(pts)}</td>'
                 f"<td>{escape(res)}</td>"
                 "</tr>")
