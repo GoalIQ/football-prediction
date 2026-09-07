@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-06T22:54:55+00:00",
+  "updated_at": "2026-09-07T04:20:47+00:00",
   "logged_total": 3199,
-  "pending": 2752,
+  "pending": 2750,
   "voided": 7,
   "all_time": {
-    "n": 440,
+    "n": 442,
     "correct_1x2": 224,
-    "pct_1x2": 0.5091,
-    "draw_n": 119,
-    "pct_draw": 0.2705,
-    "decisive_n": 321,
+    "pct_1x2": 0.5068,
+    "draw_n": 120,
+    "pct_draw": 0.2715,
+    "decisive_n": 322,
     "decisive_correct": 224,
-    "pct_decisive": 0.6978,
-    "exact_n": 392,
+    "pct_decisive": 0.6957,
+    "exact_n": 394,
     "exact_correct": 52,
-    "pct_exact": 0.1327,
-    "brier": 0.5881,
-    "brier_n": 392
+    "pct_exact": 0.132,
+    "brier": 0.5902,
+    "brier_n": 394
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 46,
-    "pct_1x2": 0.46,
-    "draw_n": 26,
-    "pct_draw": 0.26,
-    "decisive_n": 74,
-    "decisive_correct": 46,
-    "pct_decisive": 0.6216,
+    "correct_1x2": 44,
+    "pct_1x2": 0.44,
+    "draw_n": 27,
+    "pct_draw": 0.27,
+    "decisive_n": 73,
+    "decisive_correct": 44,
+    "pct_decisive": 0.6027,
     "exact_n": 100,
-    "exact_correct": 13,
-    "pct_exact": 0.13,
-    "brier": 0.6097,
+    "exact_correct": 12,
+    "pct_exact": 0.12,
+    "brier": 0.6223,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 18
     },
     "BSA": {
-      "n": 74,
+      "n": 76,
       "correct_1x2": 30,
-      "pct_1x2": 0.4054,
-      "draw_n": 24,
-      "pct_draw": 0.3243,
-      "decisive_n": 50,
+      "pct_1x2": 0.3947,
+      "draw_n": 25,
+      "pct_draw": 0.3289,
+      "decisive_n": 51,
       "decisive_correct": 30,
-      "pct_decisive": 0.6,
-      "exact_n": 74,
+      "pct_decisive": 0.5882,
+      "exact_n": 76,
       "exact_correct": 11,
-      "pct_exact": 0.1486,
-      "brier": 0.6275,
-      "brier_n": 74
+      "pct_exact": 0.1447,
+      "brier": 0.6377,
+      "brier_n": 76
     },
     "DED": {
       "n": 31,
@@ -188,19 +188,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 256,
+      "n": 258,
       "correct_1x2": 136,
-      "pct_1x2": 0.5312,
-      "draw_n": 56,
-      "pct_draw": 0.2188,
-      "decisive_n": 200,
+      "pct_1x2": 0.5271,
+      "draw_n": 57,
+      "pct_draw": 0.2209,
+      "decisive_n": 201,
       "decisive_correct": 136,
-      "pct_decisive": 0.68,
-      "exact_n": 256,
+      "pct_decisive": 0.6766,
+      "exact_n": 258,
       "exact_correct": 31,
-      "pct_exact": 0.1211,
-      "brier": 0.5755,
-      "brier_n": 256
+      "pct_exact": 0.1202,
+      "brier": 0.579,
+      "brier_n": 258
     },
     "stale": {
       "n": 136,
@@ -242,16 +242,16 @@
       "n": 32
     },
     {
-      "bin_mid": 0.1617,
-      "predicted": 0.1617,
-      "actual": 0.1467,
-      "n": 150
+      "bin_mid": 0.1615,
+      "predicted": 0.1615,
+      "actual": 0.1523,
+      "n": 151
     },
     {
       "bin_mid": 0.2559,
       "predicted": 0.2559,
-      "actual": 0.2851,
-      "n": 449
+      "actual": 0.2854,
+      "n": 452
     },
     {
       "bin_mid": 0.3405,
@@ -260,10 +260,10 @@
       "n": 222
     },
     {
-      "bin_mid": 0.4486,
-      "predicted": 0.4486,
-      "actual": 0.3691,
-      "n": 149
+      "bin_mid": 0.4487,
+      "predicted": 0.4487,
+      "actual": 0.3667,
+      "n": 150
     },
     {
       "bin_mid": 0.544,
@@ -272,10 +272,10 @@
       "n": 82
     },
     {
-      "bin_mid": 0.6454,
-      "predicted": 0.6454,
-      "actual": 0.7333,
-      "n": 60
+      "bin_mid": 0.6449,
+      "predicted": 0.6449,
+      "actual": 0.7213,
+      "n": 61
     },
     {
       "bin_mid": 0.7403,
@@ -533,6 +533,36 @@
     },
     {
       "date": "2026-09-06",
+      "home_team": "Corinthians",
+      "away_team": "Chapecoense-SC",
+      "predicted_winner": "home",
+      "p_winner": 0.6162,
+      "lead_h": 31.5,
+      "most_likely_score": "1-0",
+      "actual_score": "1-2",
+      "actual_outcome": "away",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-06",
+      "home_team": "Botafogo RJ",
+      "away_team": "Palmeiras",
+      "predicted_winner": "away",
+      "p_winner": 0.4568,
+      "lead_h": 30.5,
+      "most_likely_score": "1-1",
+      "actual_score": "0-0",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-06",
       "home_team": "Remo",
       "away_team": "Flamengo RJ",
       "predicted_winner": "away",
@@ -556,36 +586,6 @@
       "most_likely_score": "1-1",
       "actual_score": "2-3",
       "actual_outcome": "away",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-06",
-      "home_team": "Cruzeiro",
-      "away_team": "Athletico-PR",
-      "predicted_winner": "home",
-      "p_winner": 0.4149,
-      "lead_h": 28.0,
-      "most_likely_score": "1-1",
-      "actual_score": "3-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-06",
-      "home_team": "Guimaraes",
-      "away_team": "Casa Pia",
-      "predicted_winner": "home",
-      "p_winner": 0.6002,
-      "lead_h": 26.0,
-      "most_likely_score": "1-0",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
       "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
