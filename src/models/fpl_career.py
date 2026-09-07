@@ -200,9 +200,18 @@ def _latest_season(current: list[dict], past: list[dict],
                 # VIIMEISEN poisjatetyn kierroksen. Kahdella pudotetulla
                 # luku on kahden kierroksen verran vajaa ja lause myontaa
                 # yhden.
-                "note": (f"GW{_gw_lista(pudotettu)} is still being scored. "
-                         f"Your season numbers appear here when FPL "
-                         f"confirms it."),
+                # 🔴 PORTIN 22. KIERROS: 21. kierroksen `_gw_lista` syotti
+                # MONIKON lauseeseen joka on yksikossa kaikilla kolmella
+                # kielella ("GW3, GW4 is still being scored"). Se on
+                # sanatarkasti se vika jonka 20. kierros korjasi race-notesta
+                # - korjaus siirsi sen viereiseen avaimeen. Perhe on
+                # `{gw}`-parametri, ei yksi avain.
+                #
+                # Subjekti on nyt FPL, ei kierros, joten numerus ei koske
+                # verbia millaan kielella.
+                "note": (f"FPL is still scoring GW{_gw_lista(pudotettu)}. "
+                         f"Your season numbers appear here once it "
+                         f"confirms."),
                 "note_key": "fantasy.career.note.still_scoring",
                 "note_params": {"gw": _gw_lista(pudotettu)},
             }

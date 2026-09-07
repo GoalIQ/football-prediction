@@ -13,6 +13,7 @@ track recordin voi julkaista:
 """
 from __future__ import annotations
 
+import re as _re
 import datetime as _dt
 import pathlib
 
@@ -257,74 +258,117 @@ def test_kierroslohkon_diff_on_sama_brutto():
     assert doc["running"]["total_diff"] == doc["gameweeks"][0]["squad"]["diff"]
 
 
+# --- Portin 22. kierros: julkisen artefaktin kieliportti --------------------
+# Kentat joiden arvo on ENUMEROITU. Uusi arvo ei paase lapi vahingossa: testi
+# kaatuu ja kirjoittajan on lisattava se tanne (sama mekanismi kuin
+# `test_xp_reader_discipline.py`:n perusteltu poikkeuslista).
+ENUMEROIDUT = {
+    "direction": {"under", "over"},
+}
+
+# Kentat joiden arvo on ulkoista dataa tai vapaata tekstia: pelaajien ja
+# joukkueiden nimet, aikaleimat, tunnisteet. Naita ei voi enumeroida eika
+# heuristiikka saa huutaa niista (esim. "Jarvenpaa" tai "Nystrom").
+ULKOINEN_TEKSTI = {
+    "segment", "web_name", "team", "team_short", "name", "season",
+    "graded_at", "generated_at", "frozen_at", "deadline", "chip", "source",
+}
+
+# Suomen sijapaatteet joita englanti ei tuota sanan lopussa. Heuristiikka on
+# tarkoituksella loysa: se kattaa enumeroimattomat kentat, ja vaarat
+# positiivit korjataan lisaamalla kentta jompaankumpaan listaan ylla.
+_SIJAPAATE = _re.compile(
+    r"\w+(ssa|ssä|sta|stä|lle|lta|ltä|jen|ksi|ttu|tty|van|neet|isuus|"
+    r"ista|istä|ille|illa|illä|uksia|uksen|oja|ojen|uja|ujä|ksia|"
+    r"ksen|sti|ien|ita|itä)(\b|$)", _re.I)
+
+
+def suomelta_nayttava(x: str) -> bool:
+    """Umlaut TAI suomen sijapaate. Ks. `test_kontrolli_...` alla."""
+    return bool(_re.search(r"[äöÄÖ]", x) or _SIJAPAATE.search(x))
+
+
 def test_julkinen_artefakti_ei_sisalla_suomea():
-    """🔴 Portin 20. kierros korjasi YHDEN suomenkielisen merkkijonon tassa
-    tiedostossa ja jatti kaksi. `data/gw_recap.json` on julkisessa repossa.
+    """🔴 PORTIN 22. KIERROS: EDELLINEN VERSIO SKANNASI VAARAA TIEDOSTOA.
 
-    Portti skannaa generaattorin merkkijonoliteraalit, ei yhta tunnettua
-    sanaa: uusi suomenkielinen kentta kaatuu ilman etta kukaan muistaa
-    lisata sita listalle.
+    20. kierros korjasi yhden suomenkielisen merkkijonon generaattorissa.
+    21. kierros korjasi toisen JA kirjoitti portin - joka skannasi
+    **generaattorin lahdekoodin**. Portti oli vihrea, ja `data/gw_recap.json`
+    sisalsi HEADissa yha `"direction": "aliarvio"`. Julkinen pinta on
+    ARTEFAKTI, ei generaattori (muisti:
+    generoitu-sivu-verifioi-regeneroimalla).
+
+    Ja kieltolista vaihdettiin SALLITTUUN listaan. Sanalista vanhenee:
+    `"tila": "kesken"`, `"syy": "kapteeni vaihtui"`, `"suunta": "vaara"` ja
+    kymmenen muuta olisivat menneet lapi. Enumeroitu kentta ei voi saada
+    uutta arvoa vahingossa, ja enumeroimattomille jaa heuristiikka.
     """
-    import ast
+    import datetime as _dt
+    import json
     from pathlib import Path
-    src = (Path(__file__).resolve().parents[1]
-           / "scripts" / "build_gw_recap.py")
-    tree = ast.parse(src.read_text(encoding="utf-8"))
-    docs = set()
-    for n in ast.walk(tree):
-        if isinstance(n, (ast.Module, ast.FunctionDef, ast.ClassDef)):
-            if (n.body and isinstance(n.body[0], ast.Expr)
-                    and isinstance(getattr(n.body[0], "value", None), ast.Constant)
-                    and isinstance(n.body[0].value.value, str)):
-                docs.add(id(n.body[0].value))
-    # `print`-kutsujen sisalto on CI-lokia eika artefaktia; suomi on siella
-    # oikein. Suodatetaan ne pois, jotta portti mittaa sita mika PAATYY
-    # tiedostoon eika sita mita ajo tulostaa.
-    lokistringit = set()
-    for n in ast.walk(tree):
-        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-                and n.func.id == "print"):
-            for sub in ast.walk(n):
-                if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
-                    lokistringit.add(id(sub))
 
-    # Suomen tunnusmerkit joita englannissa ei esiinny sanan sisalla.
-    VIHJEET = ("aliarvi", "yliarvi", "kierrok", "ei ole", "vaara", "puuttuu",
-               "lopullis", "gradat", "kaytto", "vahvistett", "jaljell")
-    osumat = []
-    for n in ast.walk(tree):
-        if (isinstance(n, ast.Constant) and isinstance(n.value, str)
-                and id(n) not in docs and id(n) not in lokistringit
-                and len(n.value) > 3):
-            ala = n.value.lower()
-            if any(v in ala for v in VIHJEET):
-                osumat.append((n.lineno, n.value[:70]))
-    assert not osumat, (
-        "suomenkielinen merkkijono paatyy julkiseen artefaktiin:\n  "
-        + "\n  ".join(f"rivi {ln}: {v!r}" for ln, v in osumat))
+    from scripts.build_gw_recap import (ACC_PATH, CALLS_PATH, SQUAD_PATH,
+                                        _load, build)
+
+    # Artefakti REGENEROIDAAN testissa: levylla oleva tiedosto voi olla
+    # vanha, ja juuri se oli vika.
+    doc = build(_load(CALLS_PATH), _load(SQUAD_PATH), _load(ACC_PATH),
+                _dt.datetime.now(_dt.timezone.utc))
+
+    ongelmat = []
+
+    def kavele(x, polku=""):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if k in ENUMEROIDUT:
+                    if isinstance(v, str) and v not in ENUMEROIDUT[k]:
+                        ongelmat.append(
+                            f"{polku}.{k} = {v!r}, sallitut {ENUMEROIDUT[k]}")
+                    continue
+                if k in ULKOINEN_TEKSTI:
+                    continue
+                kavele(v, f"{polku}.{k}")
+        elif isinstance(x, list):
+            for n, v in enumerate(x):
+                kavele(v, f"{polku}[{n}]")
+        elif isinstance(x, str) and len(x) > 3:
+            if suomelta_nayttava(x):
+                ongelmat.append(f"{polku} = {x!r}")
+
+    kavele(doc)
+    assert not ongelmat, (
+        "julkiseen artefaktiin paatyy suomea tai enumeroimaton arvo:\n  "
+        + "\n  ".join(ongelmat))
+
+    # Ja LEVYLLA oleva committattu tiedosto on generaattorin kanssa samaa
+    # mielta. Tama kaataa jos artefakti on jaanyt jalkeen - se oli tasan
+    # tama vika.
+    levy = json.loads(
+        (Path(__file__).resolve().parents[1] / "data" / "gw_recap.json")
+        .read_text(encoding="utf-8"))
+    for lohko in (levy.get("gameweeks") or []):
+        hm = (lohko.get("headline_miss") or {})
+        if isinstance(hm, dict) and "direction" in hm:
+            assert hm["direction"] in ENUMEROIDUT["direction"], (
+                "committattu artefakti on generaattorin jaljessa: "
+                f"direction={hm['direction']!r}")
 
 
-def test_kontrolli_suomiportti_havaitsee_artefaktikentan(tmp_path):
-    """NEGATIIVINEN KONTROLLI: portin on kaaduttava suomenkieliseen
-    ARTEFAKTIKENTTAAN mutta EI `print`-lokiin. Ilman tata portti olisi
-    vihrea siksi etta se suodattaa liikaa."""
-    import ast
-    koe = tmp_path / "koe.py"
-    koe.write_text(
-        'def f():\n'
-        '    print("::warning::ei gradattuja kierroksia")\n'
-        '    return {"direction": "aliarvio"}\n', encoding="utf-8")
-    tree = ast.parse(koe.read_text(encoding="utf-8"))
-    loki = set()
-    for n in ast.walk(tree):
-        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-                and n.func.id == "print"):
-            for sub in ast.walk(n):
-                if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
-                    loki.add(id(sub))
-    VIHJEET = ("aliarvi", "kierrok")
-    osumat = [n.value for n in ast.walk(tree)
-              if isinstance(n, ast.Constant) and isinstance(n.value, str)
-              and id(n) not in loki
-              and any(v in n.value.lower() for v in VIHJEET)]
-    assert osumat == ["aliarvio"], osumat
+def test_kontrolli_suomiportti_havaitsee_arvon():
+    """NEGATIIVINEN KONTROLLI havaitsimelle: sen on loydettava suomi seka
+    umlautista etta sijapaatteesta, ja jatettava englanti rauhaan. Ilman
+    tata portti voisi olla vihrea siksi ettei se havaitse mitaan."""
+    assert suomelta_nayttava("aliarvio kierroksessa")
+    assert suomelta_nayttava("kapteeni vaihtui joukkueelle")
+    assert suomelta_nayttava("ei lopullisesti gradattuja kierroksia")
+    assert not suomelta_nayttava("the model underestimated")
+    assert not suomelta_nayttava("under")
+    assert not suomelta_nayttava("no finally graded gameweeks yet")
+    assert not suomelta_nayttava("model points before its own transfer hits")
+
+
+def test_kontrolli_enumeroitu_kentta_ei_paase_uudella_arvolla():
+    """Sallittu lista on portin ydin: uusi arvo ei paase lapi vahingossa
+    vaan kirjoittajan on lisattava se tanne."""
+    assert "aliarvio" not in ENUMEROIDUT["direction"]
+    assert ENUMEROIDUT["direction"] == {"under", "over"}

@@ -213,3 +213,79 @@ def test_gradaaja_kirjoittaa_kentan_jota_lukija_lukee():
         "gradaaja ei enaa laske kenttaa otteluista")
     assert '"all_fixtures_played": status["all_fixtures_played"]' in src, (
         "gradaaja ei enaa kirjoita kenttaa riville")
+
+
+# --- Portin 22. kierros: kaksi eri hetkea ei ole vertailu -------------------
+
+_LOKI_GW3_PROV = {"gameweeks": [
+    {"gw": 1, "points": 41, "fpl_average": 50, "provisional": False,
+     "all_fixtures_played": True},
+    {"gw": 2, "points": 108, "fpl_average": 81, "provisional": False,
+     "all_fixtures_played": True},
+    # Jaadytetty luku: bonukset eivat olleet viela tulleet kun tama
+    # kirjoitettiin.
+    {"gw": 3, "points": 58, "fpl_average": 51, "provisional": True,
+     "all_fixtures_played": True},
+]}
+
+
+def _hist22(pisteet: dict[int, int]) -> dict:
+    return {"current": [{"event": gw, "points": p, "event_transfers_cost": 0,
+                         "points_on_bench": 0}
+                        for gw, p in sorted(pisteet.items())]}
+
+
+def test_vanhentunut_mallipuoli_ei_tuota_eroa():
+    """🔴 MITATTU TUOTANNOSTA 7.9.2026 12:08 UTC.
+
+        /api/fantasy/model-race?entry=116920 -> GW3 malli 58, sina 72, ero 14
+        /entry/116920/history/               -> GW3 points 72
+
+    Sama entry, sama kierros, kaksi eri lukua: mallin puoli jaadytetysta
+    artefaktista (15 h 43 min vanha), kayttajan puoli pyyntohetkelta.
+    Ilmaispinta sanoi *"olet mallia edella 14 pisteella"* kun tosiasiallinen
+    ero oli **0**. Koko ero oli vanhentumista.
+    """
+    from src.models.fpl_model_race import build_race
+    kayttaja = _hist22({1: 41, 2: 108, 3: 72})
+    out = build_race(_LOKI_GW3_PROV, kayttaja)   # ei mallin elavaa historiaa
+
+    gw3 = out["gameweeks"][2]
+    assert gw3["stale_model_points"] is True
+    assert gw3["diff"] is None, "kahden eri hetken ero julkaistiin"
+    assert gw3["cumulative_diff"] is None
+    # Ja summat kattavat SAMAT kierrokset molemmilla puolilla.
+    assert out["totals"]["model"] == 41 + 108
+    assert out["totals"]["you"] == 41 + 108
+    assert out["totals"]["diff"] == 0
+    assert out["totals"]["stale_gws"] == [3]
+
+
+def test_elava_mallipuoli_palauttaa_vertailun():
+    """NEGATIIVINEN KONTROLLI: kun mallin puoli luetaan samalta hetkelta,
+    rivi vertaa taas - eli `None` yllä on tilan seuraus eika vakio."""
+    from src.models.fpl_model_race import build_race
+    kayttaja = _hist22({1: 41, 2: 108, 3: 72})
+    malli = _hist22({1: 41, 2: 108, 3: 72})   # sama entry, sama hetki
+    out = build_race(_LOKI_GW3_PROV, kayttaja, model_history=malli)
+
+    gw3 = out["gameweeks"][2]
+    assert gw3["stale_model_points"] is False
+    assert gw3["model_points"] == 72, "elava luku ei syrjayttanyt jaadytettya"
+    assert gw3["diff"] == 0, "ero oli kokonaan vanhentumista"
+    assert out["totals"]["stale_gws"] == []
+    assert out["totals"]["model"] == 41 + 108 + 72
+
+
+def test_lopullinen_kierros_lukee_yha_lokista():
+    """Lopullista kierrosta ei haeta uudelleen: se ei liiku, ja jokainen
+    ylimaarainen FPL-kutsu on kuormaa. Vain provisionaalinen rivi tarvitsee
+    elavan lukeman."""
+    from src.models.fpl_model_race import build_race
+    kayttaja = _hist22({1: 41, 2: 108})
+    # Mallin "elava" historia valehtelee lopullisista kierroksista; lokin
+    # pitaa voittaa, muuten `provisional`-ehto ei tee mitaan.
+    malli = _hist22({1: 999, 2: 999})
+    loki = {"gameweeks": _LOKI_GW3_PROV["gameweeks"][:2]}
+    out = build_race(loki, kayttaja, model_history=malli)
+    assert [r["model_points"] for r in out["gameweeks"]] == [41, 108]

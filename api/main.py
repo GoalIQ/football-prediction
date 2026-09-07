@@ -5051,7 +5051,23 @@ def fantasy_model_race(
                            "(it is the number in your FPL points-page URL).")
             raise HTTPException(status_code=e.status_code, detail=e.detail)
 
-    return build_race(log, history, premium=is_premium_request(request))
+    # 🔴 Portin 22. kierros: provisionaalisen kierroksen mallipuoli EI saa
+    # tulla jaadytetysta artefaktista kun kayttajan puoli haetaan elavana -
+    # se julkaisi 7.9 eron 14 p joka oli kokonaan vanhentumista. Haetaan
+    # mallin oma historia samalta hetkelta, kun lokissa on provisionaalinen
+    # rivi. Epaonnistuminen ei kaada vastausta: `build_race` jattaa silloin
+    # eron pois (fail-closed).
+    model_history = None
+    if any(g.get("provisional") for g in ((log or {}).get("gameweeks") or [])):
+        import src.models.fpl_rate_team as _rt2
+        from src.models.fpl_model_entry import ENTRY_ID as _MODEL_ENTRY
+        try:
+            model_history = _rt2._fetch_fpl(f"/entry/{_MODEL_ENTRY}/history/")
+        except Exception:
+            model_history = None
+
+    return build_race(log, history, premium=is_premium_request(request),
+                      model_history=model_history)
 
 
 @app.get("/api/fantasy/plan",

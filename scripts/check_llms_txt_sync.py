@@ -116,7 +116,11 @@ def block_text(html: str, anchor: str) -> str:
         nxt = H2_ANY_RE.search(html, pos + 1)
         end = nxt.start() if nxt else len(html)
         chunk = html[pos:end]
-        chunk = re.sub(r"(?is)<(script|style)[^>]*>.*?</>", " ", chunk)
+        # 🔴 7.9.2026: takaisinviittaus r"</\1>" oli muuttunut
+        # merkiksi 0x01, joten script/style-lohkoja EI poistettu
+        # koskaan - eli tama rivi oli tehnyt tyhjaa.
+        chunk = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>",
+                       " ", chunk)
         return re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", chunk))
     return ""
 

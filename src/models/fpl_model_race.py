@@ -133,9 +133,31 @@ def row_state(row: dict) -> str:
     return ROW_UNKNOWN
 
 
+# 🔴 PORTIN 22. KIERROS: JULKAISTU LUKU OLI VAARIN TUOTANNOSSA.
+#
+# Mitattu 7.9.2026 12:08 UTC ilmaispinnalta:
+#   /api/fantasy/model-race?entry=116920 -> GW3 malli 58, sina 72, ero 14
+#   /entry/116920/history/               -> GW3 points 72
+# Sama entry, sama kierros, kaksi eri lukua. Mallin puoli luettiin
+# **jaadytetysta artefaktista** (`generated_at` 6.9 20:25, 15 h 43 min
+# vanha; edellinen vali oli 5 vrk) ja kayttajan puoli **pyyntohetkella**
+# FPL:sta. GW3 oli provisionaalinen, bonukset olivat sittemmin tulleet, ja
+# lukija nakemassa "olet mallia edella 14 pisteella" kun tosiasiallinen ero
+# oli 0. Koko ero oli vanhentumista.
+#
+# SAANTO (6a kohta 1): provisionaalisen kierroksen KUMPIKIN puoli on
+# luettava samasta hetkesta. Jos mallin puolta ei saada elavana, riviltä
+# EI TUOTETA EROA lainkaan - vertailu kahden eri hetken valilla ei ole
+# vertailu. Mieluummin puuttuva luku kuin vaara luku.
 def build_race(scores_log: dict | None, entry_history: dict | None,
-               premium: bool = True) -> dict:
-    """Puhdas ydin: mallin loki + käyttäjän historia → race-payload."""
+               premium: bool = True,
+               model_history: dict | None = None) -> dict:
+    """Puhdas ydin: mallin loki + käyttäjän historia → race-payload.
+
+    `model_history` = mallin oma `entry/{id}/history/` PYYNTOHETKELTA.
+    Provisionaaliset kierrokset luetaan siita; ilman sita ne eivat tuota
+    eroa (ks. lohkokommentti yllä).
+    """
     rows = list((scores_log or {}).get("gameweeks") or [])
     rows.sort(key=lambda r: int(r.get("gw") or 0))
 
@@ -150,6 +172,8 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
 
     user = _user_points_by_gw(entry_history)
     has_entry = entry_history is not None
+    # Mallin elavat luvut samalta hetkelta kuin kayttajan.
+    model_live = _user_points_by_gw(model_history)
 
     out_rows = []
     model_total = 0
@@ -162,7 +186,17 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
         # korjattiin 11. kierroksella, mallin jai bruttoon - eli malli
         # olisi voittanut oman hittinsa verran.
         mp = model_points_net(r)
-        model_total += mp
+        # Provisionaalinen rivi: mallin luku elavasta lahteesta, tai rivi ei
+        # vertaa mihinkaan. `stale` kertoo pinnalle kumpi tapaus on kyseessa.
+        stale = False
+        if r.get("provisional"):
+            elava = model_live.get(gw)
+            if elava is not None:
+                mp = elava["points_net"]
+            else:
+                stale = True
+        if not stale:
+            model_total += mp
         row = {
             "gw": gw,
             "model_points": mp,
@@ -172,18 +206,26 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "provisional": bool(r.get("provisional")),
             # Pinta ei saa paatella syyta `provisional`ista: ks. `row_state`.
             "state": row_state(r),
+            # True = mallin luku on jaadytetysta artefaktista ja kayttajan
+            # elavasta lahteesta, eli eri hetkesta. Rivi ei tuota eroa.
+            "stale_model_points": stale,
             "your_points": None,
             "diff": None,
             "cumulative_diff": None,
         }
         u = user.get(gw)
         if u is not None:
-            you_total += u["points_net"]
-            cum += u["points_net"] - mp
-            compared += 1
             row["your_points"] = u["points_net"]
-            row["diff"] = u["points_net"] - mp
-            row["cumulative_diff"] = cum
+            if stale:
+                # Kaksi eri hetkea ei ole vertailu. Luku nakyy, ero ei.
+                row["diff"] = None
+                row["cumulative_diff"] = None
+            else:
+                you_total += u["points_net"]
+                cum += u["points_net"] - mp
+                compared += 1
+                row["diff"] = u["points_net"] - mp
+                row["cumulative_diff"] = cum
         if premium:
             # "Missä ero syntyi" — nämä ovat premiumin erittely, eivät
             # kilpailun tulos (free näkee eron, premium sen syyn).
@@ -242,10 +284,18 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "note": note,
             "note_code": note_code,
         },
+        # Molemmat summat kattavat TASAN samat kierrokset. Jos jonkin rivin
+        # mallipuoli on vanhentunut, rivi jaa pois molemmilta puolilta - ei
+        # vain erosta. Muuten paneeli nayttaisi "malli 207 / sina 221 /
+        # ero 0", eli kaksi lukua ja niiden kanssa ristiriitaisen eron
+        # (muisti: varoitus-kaukana-luvusta).
         "totals": {
             "model": model_total,
             "you": you_total if compared else None,
             "diff": cum if compared else None,
+            # Kierrokset jotka jaivat pois koska puolet olivat eri hetkesta.
+            "stale_gws": [x["gw"] for x in out_rows
+                          if x.get("stale_model_points")],
         },
         "gameweeks": out_rows,
     }

@@ -417,7 +417,10 @@ def test_xg_kirjoitetaan_pienella_x(sivu):
     spec = _kortin_spec(sivu)
     for kentta in ("title", "subtitle", "valueLabel", "midLabel"):
         arvo = str(spec.get(kentta) or "")
-        assert not re.search(r"XG", arvo), (
+        # 🔴 7.9.2026: tassa luki r"\bXG\b" jonka heredoc oli
+        # muuttanut BACKSPACEIKSI (0x08), joten regex ei osunut koskaan ja
+        # portti oli INERTTI. Ks. `scripts/check_control_chars.py`.
+        assert not re.search(r"\bXG\b", arvo), (
             f"{sivu}.{kentta}: 'XG' pitaa olla 'xG' — {arvo!r}")
 
 
