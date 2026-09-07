@@ -24,9 +24,24 @@ from __future__ import annotations
 
 
 def _pts(n: float | int) -> str:
-    """Pistemuotoilu: kokonaisluku ilman desimaaleja, muuten yksi."""
-    f = float(n)
-    return str(int(f)) if abs(f - round(f)) < 0.05 else f"{f:.1f}"
+    """Pistemuotoilu: aina yksi desimaali projektioille.
+
+    🔴 F5 (portin 7. kierros): muoto pudotti desimaalin kun luku oli lahella
+    kokonaista, ja viereinen rivi ei. Mitattu: **10,0 % kaikista
+    kierrostotaaleista**. Silloin paneeli renderoi "72 scored against 71.0
+    projected +1.0" ja SAMAN nakyman alla "scored 72 against a projected 71.
+    You beat the model by 1." Sama luku, kaksi esitysta, sama silmayksella -
+    sama vikaluokka kuin U2/B3/C5/D1, mutta luku ei ole vaara.
+
+    Toteutuneet pisteet ovat kokonaislukuja ja renderoityvat sellaisina;
+    projektiot saavat aina desimaalin.
+    """
+    # Vain KOKONAISLUKUTYYPPI renderoityy ilman desimaalia. Float 71.0 on
+    # projektio joka sattuu osumaan tasan, ja viereinen rivi nayttaa siita
+    # "71.0" - juuri se ero oli F5.
+    if isinstance(n, int) and not isinstance(n, bool):
+        return str(n)
+    return f"{float(n):.1f}"
 
 
 def _nimi(rivi: dict | None) -> str | None:
@@ -52,6 +67,30 @@ def _shown_1dp(x: float) -> float:
     """
     from decimal import Decimal, ROUND_HALF_UP
     return float(Decimal(float(x)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+
+
+def _raw(rivi: dict, kentta: str):
+    """Kertoimeton arvo. Vanha payload ilman `_raw`-kenttia palauttaa
+    kerroinpainotetun, jotta lause ei kaadu."""
+    return rivi.get(f"{kentta}_raw", rivi.get(kentta))
+
+
+def _kapteenilause(cap: dict) -> str:
+    """Kapteenin rivi niin etta MOLEMMAT luvut loytyvat.
+
+    Raakaluku on se jonka lukija nakee FPL:sta; kerroinpainotettu on se joka
+    on kortilla ja summassa. Ilman siltaa lause julkaisi vain jalkimmaisen.
+    """
+    mult = int(cap.get("multiplier") or 1)
+    raw_act = _raw(cap, "actual")
+    raw_proj = _raw(cap, "projected")
+    nimi = _nimi(cap)
+    if mult >= 2:
+        sana = "tripled" if mult >= 3 else "doubled"
+        return (f"Your captain {nimi} scored {_pts(raw_act)}, {sana} to "
+                f"{_pts(cap['actual'])} against a projected {_pts(raw_proj)}.")
+    return (f"Your captain {nimi} scored {_pts(raw_act)} against a projected "
+            f"{_pts(raw_proj)}.")
 
 
 def review_lines(review: dict | None, rows: int | None = None,
@@ -136,9 +175,13 @@ def review_lines(review: dict | None, rows: int | None = None,
     if cap and cap.get("projected") is not None and cap.get("actual") is not None:
         out.append({
             "code": "review.captain",
-            "text": (f"Your captain {_nimi(cap)} returned "
-                     f"{_pts(cap['actual'])} against a projected "
-                     f"{_pts(cap['projected'])}."),
+            # 🔴 B1 (7. kierros): lause julkaisi KERROINPAINOTETUT luvut
+            # ilman kerroinmerkintaa. Mitattu GW3: teksti sanoi "returned 27"
+            # kun FPL:n oma live-syote sanoo Haalandista 9. Lukija ei loyda
+            # 27:aa mistaan. Kortti sanoo kertoimen (TC-badge +
+            # "captain tripled"), paneeli ei - ja tama on paneelin ainoa
+            # tekstipinta. Nyt molemmat luvut ja silta niiden valilla.
+            "text": _kapteenilause(cap),
         })
 
     # 🔴 MALLIN HUTI ENNEN MALLIN OSUMAA. Jarjestys on tarkoituksellinen:
@@ -147,9 +190,11 @@ def review_lines(review: dict | None, rows: int | None = None,
     if worst and worst.get("diff") is not None and worst["diff"] < 0:
         out.append({
             "code": "review.worst",
+            # B2: kertoimettomat luvut - vaite koskee MALLIN virhetta
+            # pelaajasta, ei kayttajan kapteenivalintaa.
             "text": (f"The model's worst call was {_nimi(worst)}: "
-                     f"{_pts(worst['projected'])} projected, "
-                     f"{_pts(worst['actual'])} scored."),
+                     f"{_pts(_raw(worst, 'projected'))} projected, "
+                     f"{_pts(_raw(worst, 'actual'))} scored."),
         })
     best = review.get("best_call")
     if best and best.get("diff") is not None and best["diff"] > 0:

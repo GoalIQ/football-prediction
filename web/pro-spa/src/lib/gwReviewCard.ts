@@ -30,6 +30,9 @@ export interface ReviewCardPlayer {
   multiplier: number;
   in_xi: boolean;
   is_captain: boolean;
+  /** Kertoimeton ero (B2): mallin virhe on pelaajan oma, ei
+   *  kapteeninauhan. Vanha payload ilman tata kaytaa `diff`ia. */
+  diff_raw?: number;
 }
 
 export interface ReviewCardInput {
@@ -41,6 +44,9 @@ export interface ReviewCardInput {
     total_picks?: number;
     /** FPL:n `active_chip`. Bench boostilla rivit EIVAT ole avaava XI. */
     chip?: string | null;
+    /** Montako autosubia FPL teki. Autosubin jalkeen `multiplier > 0`
+     *  -joukko sisaltaa penkilta nousseen, jolloin "starting XI" on vaara. */
+    auto_subs?: number;
     /** Freeze-hetki ja kierroksen deadline ISO-muodossa. Vaite freezen
      *  ajoituksesta tehdaan naista, ei rakenteesta. */
     frozen_at?: string | null;
@@ -150,8 +156,13 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // lukisi "malli ennusti nollan ja osui".
   const xi = rv.players.filter((p) => p.in_xi && p.multiplier > 0);
   if (xi.length < REVIEW_CARD_MIN_ROWS) return null;
+  // 🔴 B2 (7. kierros): jarjestys KERTOIMETTOMASTA erosta. `diff` on
+  // kerroinpainotettu, joten kapteeninauha paatti mika oli mallin pahin
+  // kutsu - ja repon oma saanto (`fpl_rate_team.last_finished_block`) sanoo
+  // painvastoin. Mitattu GW3: Haalandin raakaero +1.08, x3 = +3.24.
+  const virhe = (p: ReviewCardPlayer) => p.diff_raw ?? p.diff;
   const ordered = [...xi].sort(
-    (a, b) => a.diff - b.diff || a.web_name.localeCompare(b.web_name)
+    (a, b) => virhe(a) - virhe(b) || a.web_name.localeCompare(b.web_name)
   );
   const maxMult = ordered.reduce((m, p) => Math.max(m, p.multiplier), 1);
   const rows: ReviewCardRow[] = ordered.map((p, i) => ({
@@ -186,14 +197,16 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   const chip = (data.meta.chip || '').toLowerCase();
   const picks = data.meta.total_picks;
   const odotettu = chip === 'bboost' ? picks : 11;
+  // B4: autosubin jalkeen rivit sisaltavat penkilta nousseen -> ei "XI".
+  const autoSubs = data.meta.auto_subs ?? 0;
   const label =
-    odotettu == null || rows.length > odotettu
-      ? `${rows.length} picks compared`
+    odotettu == null || rows.length > odotettu || autoSubs > 0
+      ? `${rows.length} picks counted`
       : rows.length === odotettu
         ? chip === 'bboost'
           ? 'bench boost'
           : 'starting XI'
-        : `${rows.length} of ${odotettu} players compared`;
+        : `${rows.length} of ${odotettu} counted`;
 
   const kesken = !!data.meta.provisional;
   const fpl = data.meta.fpl_points;
@@ -214,11 +227,17 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // C4: kattavuus takaisin kortille. Paneeli sanoi "14 of 15" ja kortti
   // vaikeni - sama vaite kahdella pinnalla, toinen hiljaa.
   const valinnaiset: string[] = [];
+  // 🔴 B3 (7. kierros): 'worst call first' PUTOSI budjettiin elavalla
+  // datalla (73 + 18 = 91 > 88), jolloin julkinen kuva jai 11 rivin
+  // listaksi jossa on rank-sarake 1-11 eika mikaan sano miksi. Rank on
+  // jarjestysvaite, ja sen selite on tarkeampi kuin kattavuus - siis
+  // ensin, ja lyhyempana.
+  valinnaiset.push('worst first');
   // R3 (5. kierros): kaksi kattavuusmurtolukua samalla rivilla
   // ("10 of 11 players compared" + "14/15 compared") on hairio, ei tietoa.
   // Label kertoo jo rivien kattavuuden, joten pickkien kattavuus sanotaan
   // vain kun label ei sano mitaan kattavuudesta.
-  const labelKertooKattavuuden = label.includes('compared');
+  const labelKertooKattavuuden = label.includes('counted');
   if (
     !labelKertooKattavuuden &&
     compared != null &&
@@ -227,7 +246,7 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   ) {
     valinnaiset.push(`${compared}/${picks} compared`);
   }
-  valinnaiset.push('worst call first');
+
 
   // R2 (5. kierros): FPL:n luku on pakollisten VIIMEINEN, eli jos pakolliset
   // ylittavat budjetin, renderoija katkaisee tasan tarkistettavan luvun.

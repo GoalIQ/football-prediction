@@ -217,7 +217,10 @@ def test_kahdella_suunnitelmalla_ei_vaiteta_kolmea():
     assert "three" not in worst["text"].lower(), worst["text"]
     # `_pts` pudottaa turhat desimaalit: 3.0 -> "3". Testi oletti "3.0" ja oli
     # itse vaarassa, ei koodi.
-    assert "3 points" in worst["text"], worst["text"]
+    # F5 (7.9): luku nayttaa desimaalin, koska PlanChains-paneeli renderoi
+    # saman luvun `toFixed(1)`:lla (`PlanChains.svelte:335`). Vanha odotus
+    # ("3 points") oli tasan se puoli erosta joka ei tasmannyt paneeliin.
+    assert "3.0 points" in worst["text"], worst["text"]
 
 
 def test_puuttuva_hintasuunta_ohitetaan_ei_arvata():
@@ -437,3 +440,69 @@ def test_e3_kapteenilause_luetaan_kertoimesta_ei_lipusta():
     assert out2["review"]["captain"] is None
     assert not [r for r in MS.review_lines(out2["review"], rows=15)
                 if r["code"] == "review.captain"]
+
+
+def test_b1_kapteenilause_nayttaa_raakaluvun_ja_kertoimen():
+    """🔴 B1 (7. kierros): lause julkaisi KERROINPAINOTETUT luvut ilman
+    kerroinmerkintaa. Mitattu GW3: teksti sanoi "returned 27" kun FPL:n oma
+    live-syote sanoo Haalandista 9 - lukija ei loyda 27:aa mistaan. Kortti
+    sanoo kertoimen (TC-badge), paneeli ei, ja se on paneelin ainoa
+    tekstipinta."""
+    from src.models.fpl_model_says import _kapteenilause
+    tc = {"web_name": "Haaland", "multiplier": 3, "actual": 27,
+          "projected": 23.76, "actual_raw": 9, "projected_raw": 7.92}
+    t = _kapteenilause(tc)
+    assert "scored 9" in t, t
+    assert "tripled to 27" in t, t
+    assert "7.9" in t, t
+
+    kaksi = dict(tc, multiplier=2, actual=18, projected=15.84)
+    assert "doubled to 18" in _kapteenilause(kaksi)
+
+    # Ilman kerrointa ei kerroinlausetta.
+    yksi = dict(tc, multiplier=1, actual=9, projected=7.92)
+    t1 = _kapteenilause(yksi)
+    assert "tripled" not in t1 and "doubled" not in t1, t1
+    assert "scored 9 against a projected 7.9" in t1, t1
+
+
+def test_b2_pahin_kutsu_valitaan_raakaerolla_ei_kapteeninauhalla():
+    """`best_call`/`worst_call` valittiin kerroinpainotetusta erosta, eli
+    KAPTEENINAUHA paatti mika oli mallin pahin kutsu. Repon oma saanto
+    (`fpl_rate_team.last_finished_block`) sanoo painvastoin."""
+    from src.models.fpl_gw_review import build_review
+
+    # Kapteeni: raakaero +1.0 mutta x3 = +3.0. Toinen pelaaja: raaka +2.0.
+    picks = {"entry_history": {"points": 40}, "active_chip": "3xc", "picks": [
+        {"element": 1, "multiplier": 3, "is_captain": True, "is_vice_captain": False},
+        {"element": 2, "multiplier": 1, "is_captain": False, "is_vice_captain": False},
+    ] + [{"element": i, "multiplier": 1, "is_captain": False,
+          "is_vice_captain": False} for i in range(3, 16)]}
+    frozen = {1: 8.0, 2: 4.0, **{i: 5.0 for i in range(3, 16)}}
+    points = {1: 9, 2: 6, **{i: 5 for i in range(3, 16)}}
+    info = {i: {"web_name": f"P{i}", "team_short": "ARS", "pos": "MID"}
+            for i in range(1, 16)}
+    out = build_review(3, picks, frozen, points, info)
+
+    paras = out["review"]["best_call"]
+    assert paras["web_name"] == "P2", (
+        f"kapteeninauha valitsi parhaan: {paras['web_name']} "
+        f"(raaka +1.0 x3 = +3.0 vs P2 raaka +2.0)")
+    # Ja lause nayttaa kertoimettomat luvut.
+    rivi = [r for r in MS.review_lines(out["review"], rows=15)
+            if r["code"] == "review.best"][0]["text"]
+    assert "4.0" in rivi and "6" in rivi, rivi
+
+
+def test_f5_projektio_nayttaa_aina_desimaalin():
+    """`_pts` pudotti desimaalin kun luku oli lahella kokonaista, ja
+    viereinen rivi ei: "71.0 projected +1.0" ja alla "projected 71 ... by 1".
+    Mitattu 10,0 % kaikista kierrostotaaleista."""
+    from src.models.fpl_model_says import _pts
+    assert _pts(71.0) == "71.0"
+    assert _pts(1.0) == "1.0"
+    # Toteutuneet pisteet ovat kokonaislukuja ja pysyvat sellaisina.
+    assert _pts(72) == "72"
+    assert _pts(0) == "0"
+    t = MS.review_lines(_review(71.0, 72), rows=11)[0]["text"]
+    assert "71.0" in t and "by 1.0" in t, t

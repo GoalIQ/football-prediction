@@ -68,6 +68,17 @@ def _rivi(pick: dict, frozen: dict[int, float], points: dict[int, int],
         "projected": proj,
         "actual": act,
         "diff": round(act - proj, 2),
+        # 🔴 B2 (portin 7. kierros): KERTOIMETTOMAT LUVUT ERIKSEEN.
+        # `diff` on kerroinpainotettu, ja `best_call`/`worst_call` valittiin
+        # siita - eli KAPTEENINAUHA paatti mika oli "mallin pahin kutsu".
+        # Repon oma saanto sanoo painvastoin (`fpl_rate_team.
+        # last_finished_block`: rivit ovat kertoimettomia "jotta tuomiomerkki
+        # lasketaan pelaajan omasta suorituksesta eika kapteeninauhasta"),
+        # joten kaksi pintaa vastasi samaan kysymykseen eri saannolla.
+        # Mitattu GW3: Haalandin raakaero +1.08, kolminkertaistettuna +3.24.
+        "projected_raw": round(float(xp), 2),
+        "actual_raw": int(pts),
+        "diff_raw": round(int(pts) - float(xp), 2),
         "multiplier": mult,
         "in_xi": mult > 0,
         "is_captain": bool(pick.get("is_captain")),
@@ -117,8 +128,10 @@ def build_review(gw: int | None, picks: dict | None,
 
     xi = [r for r in vertailtavat if r["in_xi"]]
     pohja = xi or vertailtavat
-    paras = max(pohja, key=lambda r: r["diff"])
-    huonoin = min(pohja, key=lambda r: r["diff"])
+    # B2: valinta RAAKAEROLLA - vaite koskee mallin virhetta pelaajasta, ei
+    # kayttajan kapteenivalintaa.
+    paras = max(pohja, key=lambda r: r["diff_raw"])
+    huonoin = min(pohja, key=lambda r: r["diff_raw"])
     # 🔴 E3 (6. kierros): KAPTEENIRIVI LUETTIIN LIPUSTA. FPL jattaa
     # `is_captain: true` PELAAMATTOMALLE ja siirtaa kertoimen
     # varakapteenille, jolloin `_rivi` laskee proj = xp * 0 = 0.0 ja act = 0
@@ -191,6 +204,11 @@ def build_review(gw: int | None, picks: dict | None,
             # jokaisella 15:sta on multiplier > 0, eli "starting XI" olisi
             # vaara otsikko. Kortti ei saa paatella tata itse.
             "chip": picks.get("active_chip"),
+            # 🔴 B4 (7. kierros): autosubin jalkeen `multiplier > 0` -joukko
+            # sisaltaa penkilta nousseen, jolloin "starting XI" on vaara.
+            # Kentta on FPL:n omassa picks-vastauksessa, eli vaite oli
+            # fail-open yhden rivin paassa olevasta mittauksesta.
+            "auto_subs": len(picks.get("automatic_subs") or []),
             # A3: freeze-vaite on JOHDETTAVA, ei rakenteellinen. Ilman naita
             # kortti sanoi "frozen before the deadline" myos silloin kun
             # freeze olisi myohassa - vaite jota se ei voi mitata.
