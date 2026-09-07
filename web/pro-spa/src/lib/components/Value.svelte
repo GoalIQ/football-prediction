@@ -36,13 +36,31 @@
 
 	// MY-TEAM-CONTEXT (3.9): jaettu entry (Rate my team -kenttä / tallennettu)
 	// kulkee mukaan. Efekti lukee sen, joten kentän muutos hakee uudelleen.
+	//
+	// SPA-VALUE-EVENT-TUPLAKIRJAUS (7.9): entry-kentta on JAETTU tila jota
+	// RateTeam/TransferPlanner bindaavat suoraan inputtiin, ja `VALID` on
+	// loyha (1-10 numeroa) - jokainen naista tyokaluista kirjoitettu numero
+	// lapaisee sen KESKEN KIRJOITTAMISEN. Ilman debounssia efekti haki ja
+	// capturasi 'fantasy_tools_used' KERRAN PER NAPPAINPAINALLUS (esim.
+	// "116920" = 6 hakua/eventtia yhdesta oikeasta kaytosta), joten Value
+	// nayttaisi mittareissa suositummalta kuin se on. Sama debounssikaava
+	// kuin `pushRemoteDraftSoon` (draft.ts): timer nollataan aina, joten
+	// vain viimeisin (asettunut) arvo hakee ja kirjaa eventin.
+	let fetchTimer: ReturnType<typeof setTimeout> | null = null;
 	$effect(() => {
 		const entry = currentEntryId();
 		loading = true;
-		fetchValue(entry)
-			.then((d) => (data = d))
-			.catch((e) => (error = e instanceof Error ? e.message : String(e)))
-			.finally(() => (loading = false));
+		if (fetchTimer) clearTimeout(fetchTimer);
+		fetchTimer = setTimeout(() => {
+			fetchTimer = null;
+			fetchValue(entry)
+				.then((d) => (data = d))
+				.catch((e) => (error = e instanceof Error ? e.message : String(e)))
+				.finally(() => (loading = false));
+		}, 500);
+		return () => {
+			if (fetchTimer) clearTimeout(fetchTimer);
+		};
 	});
 
 	$effect(() => {
