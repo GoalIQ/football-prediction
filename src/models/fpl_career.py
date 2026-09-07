@@ -70,7 +70,8 @@ def _preseason_note() -> str:
 
 
 def _latest_season(current: list[dict], past: list[dict],
-                   pudotettu: list[int] | None = None) -> dict:
+                   pudotettu: list[int] | None = None,
+                   vahvistettu: bool = True) -> dict:
     """Viimeisimmän kauden GW-erittely current-listasta.
 
     Kesävälitila: juuri päättynyt kausi näkyy myös past-listassa → nimetään
@@ -88,6 +89,25 @@ def _latest_season(current: list[dict], past: list[dict],
         #
         # Kolmas tila: kausi on alkanut mutta yhtaan kierrosta ei ole
         # todistetusti gradattu.
+        # 🔴 PORTIN 17. KIERROS: KAKSI TILAA OLI YHDISTETTY YHDEKSI LAUSEEKSI.
+        # "GW20 is under way" on VAITE kierroksen tilasta, ja se vaatii
+        # todisteen. Kun bootstrap ei aukea, `final_gws` on fail-closed ja
+        # palauttaa tyhjan - jolloin JOKAINEN kierros putoaa "kesken
+        # olevana", myos ne jotka gradattiin viikkoja sitten. Kortti
+        # ilmoitti silloin lukijalle etta hanen jo pisteytetty kierroksensa
+        # on kesken. Emme tienneet sita; emme saaneet vastausta.
+        #
+        # Tila 1: saimme tapahtumat, eli TIEDAMME etta viimeisin on kesken.
+        # Tila 2: emme saaneet mitaan, eli emme voi sanoa kierroksesta
+        # yhtaan mitaan. Tila 2 ei saa lainata tilan 1 sanamuotoa.
+        if pudotettu and not vahvistettu:
+            return {
+                "available": False,
+                "season_state": "unconfirmed",
+                "provisional_gws": sorted(pudotettu),
+                "note": ("We could not confirm any gameweek as final just "
+                         "now. Try again in a moment."),
+            }
         if pudotettu:
             return {
                 "available": False,
@@ -222,6 +242,10 @@ def career(entry: int) -> dict:
         _events = (rt.get_bootstrap() or {}).get("events")
     except Exception:
         _events = None
+    # Saimmeko tapahtumat lainkaan. Tama EI ole sama kuin "onko lopullisia
+    # kierroksia": tyhja `_lopulliset` syntyy molemmista, ja vain toisessa
+    # meilla on oikeus sanoa kierroksesta jotain.
+    vahvistettu = isinstance(_events, list) and bool(_events)
     _lopulliset = final_gws(_events)
     provisional_dropped = sorted(
         int(g["event"]) for g in current
@@ -229,9 +253,18 @@ def career(entry: int) -> dict:
     # 🔴 Portin 16. kierros: kausi ON alkanut vaikka yhtaan kierrosta ei
     # olisi gradattu. Kausilaskurit lukevat siksi SUODATTAMATONTA listaa.
     kausi_alkanut = bool(current)
-    kausi_summa = None
-    if current and isinstance(current[-1].get('total_points'), int):
-        kausi_summa = int(current[-1]['total_points'])
+    # 🔴 PORTIN 17. KIERROS: `all_time_points` LASKI GRADAAMATTOMIA PISTEITA.
+    # `kausi_summa` luettiin SUODATTAMATTOMASTA listasta, joten kun yhtaan
+    # kierrosta ei ollut vahvistettu, kortti nayttti silti kuluvan kauden
+    # pisteet uran summassa - samalla kun viereinen solu sanoi "Not final
+    # yet". Sama luku, kaksi vastausta samassa kuvassa.
+    #
+    # Kauden panos uran summaan lasketaan VAHVISTETUISTA kierroksista.
+    # Jos mikaan ei ole lopullinen, panos on 0 - mutta kausi on silti
+    # pelattu, joten `seasons_played` +1 (ks. `in_progress` alla).
+    _vahvistetut = [g for g in current
+                    if isinstance(g.get("event"), int)
+                    and g["event"] in _lopulliset]
     # Kesan dedup: juuri paattynyt kausi on JO past-listassa, eika sita saa
     # laskea kahdesti. Tama paatos on tehtava suodattamattomasta datasta -
     # muuten se muuttuisi sen mukaan saimmeko bootstrapin.
@@ -239,15 +272,14 @@ def career(entry: int) -> dict:
         past and current
         and past[-1].get("total_points") == current[-1].get("total_points")
         and len(current) >= 38)
-    current = [g for g in current
-               if isinstance(g.get("event"), int)
-               and g["event"] in _lopulliset]
+    current = _vahvistetut
     chips = [c for c in (history.get("chips") or [])
              if not isinstance(c.get("event"), int)
              or c["event"] in _lopulliset]  # sama suodatin kuin luvuilla:
     # vastaus ei saa sanoa "3xc GW3" samalla kun luvut pysahtyvat GW2:een.
 
-    latest = _latest_season(current, past, provisional_dropped)
+    latest = _latest_season(current, past, provisional_dropped,
+                            vahvistettu)
     if latest.get("available"):
         latest["chips_used"] = [{"name": c.get("name"), "gw": c.get("event")}
                                 for c in chips]
@@ -268,9 +300,18 @@ def career(entry: int) -> dict:
     in_progress = kausi_alkanut and not kausi_paattynyt
     all_time = sum(int(s.get("total_points") or 0) for s in past)
     seasons_played = len(past)
+    all_time_provisional = False
     if in_progress:
-        all_time += int(latest["total_points"] if latest.get("available")
-                        else (kausi_summa or 0))
+        # `available` on TASAN "kaudesta on vahintaan yksi vahvistettu
+        # kierros" (`_latest_season` palauttaa False vain tyhjalle
+        # suodatetulle listalle). Siksi tassa ei ole toista, vaihtoehtoista
+        # summaa jota voisi vahingossa muuttaa: joko luku on vahvistettu tai
+        # panos on 0. Erillinen `kausi_summa`-varapolku poistettiin 7.9,
+        # koska se oli tasan se paikka jossa gradaamattomat pisteet paativat
+        # uran summaan.
+        all_time_provisional = not latest.get("available")
+        if not all_time_provisional:
+            all_time += int(latest.get("total_points") or 0)
         seasons_played += 1
 
     best_season = None
@@ -311,6 +352,9 @@ def career(entry: int) -> dict:
             "provisional_gws_excluded": provisional_dropped,
             "seasons_played": seasons_played,
             "all_time_points": all_time,
+            # True = kuluvasta kaudesta ei ole yhtaan vahvistettua kierrosta,
+            # joten sen panos on 0. Pinnan on sanottava se.
+            "all_time_provisional": all_time_provisional,
             "best_season": best_season,
             "best_rank": min(ranks) if ranks else None,
             "avg_rank": round(sum(ranks) / len(ranks)) if ranks else None,

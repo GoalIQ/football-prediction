@@ -545,7 +545,12 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
     // Stats 2x2 (colW prevents column overflow, fitText shrinks the value)
     var colX = [PAD, W / 2 + 20];
     var colW = W / 2 - PAD - 40;
-    statBlock(colX[0], 432, 'All-time points', fmtPts(s.all_time_points), 84, colW);
+    // When no gameweek of the current season is confirmed final, the season
+    // contributes 0 to this total. Say so in the label rather than showing a
+    // number that looks complete next to a cell reading 'Not final yet'.
+    statBlock(colX[0], 432,
+      s.all_time_provisional ? 'All-time points (confirmed)' : 'All-time points',
+      fmtPts(s.all_time_points), 84, colW);
     statBlock(colX[1], 432, 'Best overall rank', fmtRank(s.best_rank), 84, colW);
     var bs = s.best_season;
     statBlock(colX[0], 640, 'Best season',
@@ -563,6 +568,10 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       statBlock(colX[1], 640, latLabel, latVal, 52, colW);
     } else if (lat.season_state === 'no_final_gw_yet') {
       statBlock(colX[1], 640, 'This season', 'Not final yet', 52, colW);
+    } else if (lat.season_state === 'unconfirmed') {
+      // We got no answer from FPL, so we cannot claim a gameweek is under way
+      // and we cannot claim the season has not started either.
+      statBlock(colX[1], 640, 'This season', 'Not confirmed', 52, colW);
     } else {
       statBlock(colX[1], 640, 'New season', 'Starts GW1', 52, colW);
     }

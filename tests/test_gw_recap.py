@@ -199,3 +199,45 @@ def test_gw_recap_ei_ole_gitignoressa():
     # Negatiivinen kontrolli: testi ei saa lapaista pelkalla merkkijonolla
     # kommentissa - poikkeuksen on oltava OMALLA rivillaan.
     assert "/data/*" in rivit
+
+
+# --- Portin 17. kierros: track record on NETTO vs FPL:n netto ---------------
+# Tausta: `running_record` vertasi mallin BRUTTOA (ennen siirtorangaistusta)
+# FPL:n `average_entry_score`een, joka on NETTO. Se on mallin julkinen track
+# record, eli viikkopostauksen luku. Fikstuurissa hitti on 8 pistetta, jolloin
+# brutto ja netto antavat ERI etumerkin - testi ei voi olla vihrea vahingossa.
+
+def _rivi(gw, points, average, cost=0, provisional=False):
+    return {"gw": gw, "points": points, "fpl_average": average,
+            "transfer_cost": cost, "provisional": provisional}
+
+
+def test_running_record_vahentaa_siirtorangaistuksen():
+    from scripts.build_gw_recap import running_record
+    # Brutto 70 vs 66 = +4 (yli keskiarvon). Netto 70-8=62 vs 66 = -4 (alle).
+    r = running_record([_rivi(3, 70, 66, cost=8)])
+    assert r["total_diff"] == -4, r
+    assert r["beat_average"] == 0 and r["below_average"] == 1, r
+    assert r["per_gw"][0]["points_net"] == 62
+    assert r["per_gw"][0]["transfer_cost"] == 8
+
+
+def test_running_record_kontrolli_ilman_hittia_ei_muutu():
+    """NEGATIIVINEN KONTROLLI: ilman hittia netto == brutto, jotta testi ei
+    ole vihrea siksi etta se vahentaa jotain kaikkialta."""
+    from scripts.build_gw_recap import running_record
+    r = running_record([_rivi(3, 70, 66, cost=0)])
+    assert r["total_diff"] == 4 and r["beat_average"] == 1, r
+    assert r["per_gw"][0]["points_net"] == 70
+
+
+def test_kierroslohkon_diff_on_sama_netto():
+    """Sama vertailu kahdessa paikassa: juokseva rivi ja kierroslohko eivat
+    saa vastata eri yksikossa (muisti: yksi-renderointipolku-kahdesta)."""
+    import datetime as _dt
+    from scripts.build_gw_recap import build
+    doc = build(None, {"gameweeks": [_rivi(3, 70, 66, cost=8)]}, None,
+                _dt.datetime(2026, 9, 7, tzinfo=_dt.timezone.utc))
+    assert doc["gameweeks"][0]["squad"]["diff"] == -4
+    assert doc["gameweeks"][0]["squad"]["points_net"] == 62
+    assert doc["running"]["total_diff"] == doc["gameweeks"][0]["squad"]["diff"]

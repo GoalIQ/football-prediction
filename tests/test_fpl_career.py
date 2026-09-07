@@ -258,20 +258,57 @@ def test_ilman_bootstrapia_ei_julkaista_yhtaan_kierrosta(monkeypatch):
     assert out["summary"]["provisional_gws_excluded"], (
         "ilman finality-tietoa kierrokset on merkittava pois")
 
-    # Ja se mita lukija NAKEE: kausi on alkanut, ei "ei ole alkanut".
-    assert lat["season_state"] == "no_final_gw_yet", lat.get("season_state")
+    # Ja se mita lukija NAKEE. 🔴 Portin 17. kierros: 16. kierros antoi tahan
+    # lauseen *"GW38 is under way"*, joka on VAITE kierroksen tilasta. Emme
+    # saaneet bootstrapia, joten emme tiedä sitä - kierros saattoi olla
+    # gradattu viikkoja sitten. Nyt: emme sano kierroksesta mitaan.
+    assert lat["season_state"] == "unconfirmed", lat.get("season_state")
     assert "has not started" not in (lat.get("note") or ""), lat["note"]
-    assert "under way" in (lat.get("note") or ""), lat["note"]
+    assert "under way" not in (lat.get("note") or ""), lat["note"]
+    assert "could not confirm" in (lat.get("note") or ""), lat["note"]
 
-    # Kausilaskurit EIVAT saa pudottaa kuluvaa kautta finality-tiedon
-    # puuttumisen takia.
-    valmis = None
+    # Kausi on silti PELATTU: laskuri ei saa pudottaa sita.
     _mock_fpl(monkeypatch, bootstrap=BOOTSTRAP_KAIKKI_VALMIIT)
     valmis = fc.career(424242)
     assert out["summary"]["seasons_played"] == valmis["summary"]["seasons_played"], (
         "kausi katosi laskurista kun bootstrap puuttui")
-    assert out["summary"]["all_time_points"] == valmis["summary"]["all_time_points"], (
-        "all_time_points menetti kuluvan kauden kun bootstrap puuttui")
+
+    # Tama fikstuuri on kesavalitila (38 GW:ta, jo past-listassa), joten
+    # uran summa on sama kummin pain. Kesken oleva kausi: ks. alla.
+    assert out["summary"]["all_time_points"] == valmis["summary"]["all_time_points"]
+
+
+def test_vahvistamaton_kausi_ei_kartuta_uran_summaa(monkeypatch):
+    """🔴 Portin 17. kierros: `all_time_points` LASKI GRADAAMATTOMIA PISTEITA.
+
+    16. kierros luki `kausi_summa`n SUODATTAMATTOMASTA listasta, jotta kausi
+    ei katoaisi laskurista. Sivuvaikutus: kun yhtaan kierrosta ei ollut
+    vahvistettu, uran summa sisalsi gradaamattomat pisteet samalla kun
+    kortin viereinen solu sanoi *"Not final yet"*. Sama kuva, kaksi
+    vastausta.
+
+    Nyt: kausi lasketaan pelatuksi (`seasons_played` +1) mutta sen panos
+    pisteisiin on 0, ja `all_time_provisional` kertoo sen pinnalle.
+    """
+    kesken = [dict(CURRENT_FULL[0], event=1, total_points=60)]
+    gw1_kesken = {"events": [{"id": 1, "finished": False, "data_checked": False}]}
+    gw1_valmis = {"events": [{"id": 1, "finished": True, "data_checked": True}]}
+    vain_menneet = sum(x["total_points"] for x in PAST)
+
+    _mock_fpl(monkeypatch, current=kesken, bootstrap=gw1_kesken)
+    out = fc.career(424242)
+    assert out["summary"]["all_time_points"] == vain_menneet, (
+        "gradaamattomat pisteet paatyivat uran summaan")
+    assert out["summary"]["all_time_provisional"] is True
+    assert out["summary"]["seasons_played"] == len(PAST) + 1, (
+        "kausi katosi laskurista - se on pelattu vaikka pisteet ovat kesken")
+
+    # NEGATIIVINEN KONTROLLI: sama kausi gradattuna. Jos tama ei eroa, testi
+    # olisi vihrea siksi etta panos on aina 0.
+    _mock_fpl(monkeypatch, current=kesken, bootstrap=gw1_valmis)
+    ok = fc.career(424242)
+    assert ok["summary"]["all_time_points"] == vain_menneet + 60
+    assert ok["summary"]["all_time_provisional"] is False
 
 
 def test_esikausi_ja_kesken_oleva_kausi_ovat_eri_lauseet(monkeypatch):
@@ -318,3 +355,33 @@ def test_career_kortti_renderoi_neton():
         "kortti ei kerro miksi luku eroaa lukijan omasta FPL-sivusta")
     assert "Not final yet" in html, (
         "kausi kaynnissa ilman gradattua kierrosta nayttaisi 'Starts GW1'")
+
+
+def test_chipit_pysahtyvat_samaan_kierrokseen_kuin_luvut(monkeypatch):
+    """M7: chip-suodatin oli vartioimaton ja mutaatio lapaisi koko sarjan.
+
+    Vastaus ei saa sanoa "wildcard GW3" samalla kun luvut pysahtyvat
+    GW2:een: silloin sama nakyma vastaa kahdesta eri kierroksesta ja lukija
+    paattelee etta GW3 on mukana pisteissa. Sama yksi lukija (`final_gws`)
+    molemmille.
+    """
+    current = [dict(CURRENT_FULL[i], event=i + 1, total_points=(i + 1) * 60)
+               for i in range(3)]
+    chips = [{"name": "wildcard", "time": "x", "event": 2},
+             {"name": "3xc", "time": "x", "event": 3}]
+    events = {"events": [
+        {"id": 1, "finished": True, "data_checked": True},
+        {"id": 2, "finished": True, "data_checked": True},
+        {"id": 3, "finished": True, "data_checked": False},  # kesken
+    ]}
+    _mock_fpl(monkeypatch, current=current, chips=chips, bootstrap=events)
+    lat = fc.career(424242)["latest_season"]
+    gws = [c["gw"] for c in lat["chips_used"]]
+    assert gws == [2], f"kesken olevan kierroksen chip paatyi vastaukseen: {gws}"
+
+    # NEGATIIVINEN KONTROLLI: kun GW3 on gradattu, chip ON mukana - muuten
+    # testi olisi vihrea siksi etta chip-lista on aina lyhyt.
+    kaikki = {"events": [dict(e, data_checked=True) for e in events["events"]]}
+    _mock_fpl(monkeypatch, current=current, chips=chips, bootstrap=kaikki)
+    lat2 = fc.career(424242)["latest_season"]
+    assert [c["gw"] for c in lat2["chips_used"]] == [2, 3]

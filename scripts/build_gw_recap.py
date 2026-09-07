@@ -34,6 +34,8 @@ import json
 import sys
 from pathlib import Path
 
+from src.models.fpl_model_race import model_points_net
+
 ROOT = Path(__file__).resolve().parents[1]
 CALLS_PATH = ROOT / "data" / "gw_calls.json"
 SQUAD_PATH = ROOT / "data" / "model_squad_gw_scores.json"
@@ -74,7 +76,11 @@ def running_record(rows: list[dict]) -> dict:
                   and r.get("points") is not None]
     if not lopulliset:
         return {"gameweeks": 0, "note": "ei lopullisesti gradattuja kierroksia"}
-    diffs = [int(r["points"]) - int(r["fpl_average"]) for r in lopulliset]
+    # 🔴 Portin 17. kierros: `points` on BRUTTO ja FPL:n `average_entry_score`
+    # on NETTO. Bruttovertailu antaa mallille sen oman hittinsa verran
+    # etumatkaa - ja tama on mallin JULKINEN track record, eli viikkopostauksen
+    # luku. Netto johdetaan lukuhetkella samalla lukijalla kuin muualla.
+    diffs = [model_points_net(r) - int(r["fpl_average"]) for r in lopulliset]
     return {
         "gameweeks": len(lopulliset),
         "gw_list": [int(r["gw"]) for r in lopulliset],
@@ -83,6 +89,8 @@ def running_record(rows: list[dict]) -> dict:
         "beat_average": sum(1 for d in diffs if d > 0),
         "below_average": sum(1 for d in diffs if d < 0),
         "per_gw": [{"gw": int(r["gw"]), "points": int(r["points"]),
+                    "points_net": model_points_net(r),
+                    "transfer_cost": int(r.get("transfer_cost") or 0),
                     "average": int(r["fpl_average"]), "diff": d}
                    for r, d in zip(lopulliset, diffs)],
     }
@@ -193,8 +201,10 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
             "provisional": bool(r.get("provisional")),
             "squad": {
                 "points": pts,
+                "points_net": model_points_net(r),
                 "average": avg,
-                "diff": (int(pts) - int(avg)
+                # Netto vs netto, ks. `running_record`.
+                "diff": (model_points_net(r) - int(avg)
                          if pts is not None and avg is not None else None),
                 "bench_points": r.get("bench_points"),
                 "transfer_cost": r.get("transfer_cost"),

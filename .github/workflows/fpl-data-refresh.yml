@@ -578,6 +578,14 @@ jobs:
           [ -f data/model_squad_gw_scores.json ] && git add data/model_squad_gw_scores.json
           # 28.8 (GW-CALLS-LOKI): kutsut + gradaus, git-historia todistaa ajan.
           [ -f data/gw_calls.json ] && git add data/gw_calls.json
+          # 🔴 7.9 (portin 17. kierros): TAMA PUUTTUI, ja tiedosto oli JAASSA
+          # 7 vrk. `build_gw_recap` ajaa rivilla 357 ja kirjoittaa oikeat luvut
+          # runnerin levylle joka ajossa - mutta ilman `git add`ia ne heitetaan
+          # pois. Mitattu: artefakti sanoi "1 kierros, -9 vs keskiarvo,
+          # 0x yli", kun todellisuus on 2 kierrosta ja +18. Se on MALLIN
+          # JULKINEN TRACK RECORD, eli viikkopostauksen luku.
+          # Askel ei kaadu, joten Step healthin ::error:: ei laukea koskaan.
+          [ -f data/gw_recap.json ] && git add data/gw_recap.json
           # 13.8: GW-rivit stats-sivulle (siirretty accuracy-logista, ks. yllä)
           [ -f fpl/player-gw.json ] && git add fpl/player-gw.json
           # 14.8 (PUSH-NOTIF b): idempotenssimarkkeri + toimituksen auditointi.
