@@ -438,7 +438,16 @@ HYLATYT = {
 }
 
 
-@pytest.mark.parametrize("nimi", SIVUT)
+# 🔴 SIVULISTA JOHDETAAN GLOBISTA, EI VAKIOSTA. Julkaisuportti mittasi:
+# istutti `ucl/fixtures.html`:n jossa oli KOLME hylattya sanamuotoa, ja
+# tama portti lapaisi - se iteroi `SIVUT`-vakiota. Uusi pinta on juuri se
+# paikka jossa hylatty vaite todennakoisimmin palaa, koska osio on
+# vuorokauden ikainen ja paatos oli "laajin mahdollinen".
+#
+# Sama vikaluokka kuin sivusopimuksen `_pages()`, joka enumeroi vain
+# `fpl/`-alipuun ja paastäisi juuritason sivun jokaiselta portilta.
+@pytest.mark.parametrize(
+    "nimi", [f.name for f in sorted(UCL.glob("*.html"))] or list(SIVUT))
 def test_hylatty_sanamuoto_ei_palaa_millekaan_pinnalle(nimi):
     h = _html(nimi).lower()
     osumat = [(f, syy) for f, syy in HYLATYT.items() if f.lower() in h]
