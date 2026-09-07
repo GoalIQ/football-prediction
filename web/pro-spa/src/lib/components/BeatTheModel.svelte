@@ -14,6 +14,7 @@
 	import { auth } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
+	import { objectiveLine, objectiveStatus } from '$lib/seasonObjective';
 	import {
 		latestDebrief,
 		loadDecisions,
@@ -28,6 +29,15 @@
 		pushRemotePrefsSoon,
 		type FplPrefs
 	} from '$lib/prefs';
+
+	// 6.9: kauden tavoitteen seuranta. Sijoitus tulee rate-teamin
+	// last_finished-lohkosta (FPL:n entry-historia, viimeisin PAATTYNYT
+	// kierros). Ilman propseja lohko sanoo edelleen ettei rank-dataa ole.
+	let {
+		rank = null,
+		rankChange = null,
+		rankGw = null
+	}: { rank?: number | null; rankChange?: number | null; rankGw?: number | null } = $props();
 
 	let rows = $state<StoredDecision[] | null>(null);
 	// V4 kauden tavoite (FM: johtokunnan odotukset). Sama prefs-objekti kuin
@@ -68,6 +78,7 @@
 	}
 
 	let score = $derived(rows ? seasonScore(rows) : null);
+	let objective = $derived(objectiveStatus(prefs.objective?.value ?? null, rank, rankChange, rankGw));
 	let gradedRows = $derived(
 		(rows ?? []).filter(
 			(r) =>
@@ -218,8 +229,9 @@
 			</p>
 		{/if}
 
-		<!-- V4 kauden tavoite. Rank-trendi tavoitetta vasten tulee kun kaudella
-		     on rank-dataa — siihen asti sanotaan se suoraan. -->
+		<!-- V4 kauden tavoite. 6.9: sijoitus tavoitetta vasten viimeisimmalta
+		     paattyneelta kierrokselta (seasonObjective.ts, yksi lukija). Ennen
+		     ensimmaista paattynytta kierrosta sanotaan se suoraan. -->
 		<div class="objective">
 			<span class="debrief-title">Season target</span>
 			{#if prefs.objective != null}
@@ -248,7 +260,13 @@
 					>
 				</div>
 			{/if}
-			<p class="muted small">Rank tracking against your target starts once the season is under way.</p>
+			{#if objective}
+				<p class="small objective-status" class:muted={objective.kind === 'pre_season'} class:ahead={objective.kind === 'inside'} class:behind={objective.kind === 'outside'}>
+					{objectiveLine(objective)}
+				</p>
+			{:else}
+				<p class="muted small">Set an overall rank target and this line tracks your rank against it after each gameweek.</p>
+			{/if}
 		</div>
 	</section>
 {/if}
@@ -393,6 +411,16 @@
 	}
 	.objective button.quiet {
 		color: var(--text-muted);
+	}
+	.objective-status {
+		margin: 0.4rem 0 0;
+		font-weight: 600;
+	}
+	.objective-status.ahead {
+		color: var(--positive);
+	}
+	.objective-status.behind {
+		color: var(--text);
 	}
 
 	/* SHARE-CARD-SPA 27.8: sama chip kuin muissa jaettavissa listoissa */

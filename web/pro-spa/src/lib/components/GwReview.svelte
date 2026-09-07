@@ -21,6 +21,8 @@
 	import { fetchGwReview, type GwReviewResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
+	import { gwReviewCardSpec } from '$lib/gwReviewCard';
+	import { shareCard, shareButtonLabel } from '$lib/shareCard';
 
 	let data = $state<GwReviewResponse | null>(null);
 	let failed = $state(false);
@@ -48,6 +50,23 @@
 	});
 
 	const sign = (n: number) => (n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1));
+
+	// 6.9 (Villen tilaus): katsaus kuvana. Sisalto tulee gwReviewCard.ts:sta
+	// (sama lukija mobiilissa); tama vain valittaa sen listakortille.
+	let cardSpec = $derived(data && data.meta.available ? gwReviewCardSpec(data) : null);
+	let sharing = $state(false);
+	async function shareReview() {
+		if (!cardSpec || sharing) return;
+		sharing = true;
+		try {
+			const method = await shareCard(cardSpec);
+			if (method !== 'aborted' && method !== 'too_few_rows') {
+				capture('gw_review_shared', { gw: data?.meta.reviewed_gw ?? null, method });
+			}
+		} finally {
+			sharing = false;
+		}
+	}
 </script>
 
 <section class="wrap">
@@ -70,6 +89,11 @@
 			{#if data.meta.players_compared != null && data.meta.players_compared < 15}
 				<!-- Kattavuus kerrotaan. Vajaa otos täytenä on valhe. -->
 				<span class="muted small">{data.meta.players_compared} of 15 compared</span>
+			{/if}
+			{#if cardSpec}
+				<button type="button" class="share-chip" onclick={shareReview} disabled={sharing}>
+					{sharing ? 'Preparing…' : shareButtonLabel()}
+				</button>
 			{/if}
 		</div>
 
@@ -155,6 +179,22 @@
 	}
 	.gw {
 		font-weight: 700;
+	}
+	.share-chip {
+		margin-left: auto;
+		font: inherit;
+		font-size: 0.75rem;
+		font-weight: 700;
+		padding: 0.2em 0.6em;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: transparent;
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.share-chip:disabled {
+		opacity: 0.6;
+		cursor: default;
 	}
 	.prov {
 		font-size: 0.72rem;

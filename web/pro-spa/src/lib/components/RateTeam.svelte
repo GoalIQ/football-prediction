@@ -879,7 +879,11 @@
 				<GwReview />
 			</div>
 			<div class="week-col">
-				<BeatTheModel />
+				<BeatTheModel
+					rank={data.last_finished?.overall_rank ?? null}
+					rankChange={data.last_finished?.rank_change ?? null}
+					rankGw={data.last_finished?.gw ?? null}
+				/>
 				<SeasonRace />
 			</div>
 		</div>
