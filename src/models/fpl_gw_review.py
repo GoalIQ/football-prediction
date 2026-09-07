@@ -119,7 +119,14 @@ def build_review(gw: int | None, picks: dict | None,
     pohja = xi or vertailtavat
     paras = max(pohja, key=lambda r: r["diff"])
     huonoin = min(pohja, key=lambda r: r["diff"])
-    kapteeni = next((r for r in vertailtavat if r["is_captain"]), None)
+    # 🔴 E3 (6. kierros): KAPTEENIRIVI LUETTIIN LIPUSTA. FPL jattaa
+    # `is_captain: true` PELAAMATTOMALLE ja siirtaa kertoimen
+    # varakapteenille, jolloin `_rivi` laskee proj = xp * 0 = 0.0 ja act = 0
+    # -> `model_says` julkaisi "Your captain X returned 0 against a
+    # projected 0." Sama korjaus kuin kortilla (U5): luetaan silta rivilta
+    # jolla kerroin OIKEASTI on. Ilman kerrointa lausetta ei ole.
+    kapteeni = max((r for r in vertailtavat if r["multiplier"] >= 2),
+                   key=lambda r: r["multiplier"], default=None)
 
     # 🔴 C5 (portin 4. kierros): KAKSOISPYORISTYS. `projected` pyoristettiin
     # kahteen desimaaliin, ja `fpl_model_says` muotoili siita yhteen - samalla
@@ -127,7 +134,13 @@ def build_review(gw: int | None, picks: dict | None,
     # force 200 000 summalla: 1102 tapausta joissa lause ja viereinen rivi
     # nayttavat eri luvun (raaka 54,4499... -> lause "54.5", rivi "54.4").
     # Raaka summa kulkee nyt erikseen, ja lause laskee siita.
-    proj_xi_raw = sum(r["projected"] for r in xi) if xi else None
+    # 🔴 E1 (6. kierros): summa SADASOSINA, jotta jarjestys ei voi muuttaa
+    # naytettya lukua. Liukuluvun yhteenlasku ei ole assosiatiivinen, ja
+    # kolme pintaa summasi samat rivit eri jarjestyksessa - mitattu
+    # tuotannon GW3:sta 7.9: 71.15 vs 71.14999999999999, eli "71.2" ja
+    # "71.1" samassa nakymassa. Rivien `projected` on 2 desimaalia.
+    proj_xi_raw = (sum(round(r["projected"] * 100) for r in xi) / 100
+                   if xi else None)
     proj_xi = round(proj_xi_raw, 2) if proj_xi_raw is not None else None
     act_xi = sum(r["actual"] for r in xi) if xi else None
 

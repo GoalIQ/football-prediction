@@ -362,3 +362,78 @@ def test_c10_kesken_oleva_kierros_merkitaan_lauseeseen():
     for proj, act in ((60.0, 80), (80.0, 60)):
         t = MS.review_lines(_review(proj, act), rows=11, provisional=True)[0]["text"]
         assert "so far" in t, t
+
+
+def test_e1_summa_ei_riipu_jarjestyksesta_eika_eroa_klientista():
+    """🔴 E1 (6. kierros): PYORISTYSSAANNON KORJAUS EI RIITTANYT.
+
+    Liukuluvun yhteenlasku ei ole assosiatiivinen, ja kolme pintaa summasi
+    samat rivit eri jarjestyksessa. Mitattu tuotannon GW3:sta 7.9: sama
+    joukko antoi 71.15 (picks-jarjestys) ja 71.14999999999999
+    (diff-jarjestys), eli "71.2" ja "71.1" SAMASSA nakymassa.
+
+    Edellinen testi mittasi vain SAANNON, ei syotetta - ja saanto oli tosi.
+    Muisti: portti-voi-mitata-eri-koodipolkua.
+    """
+    from src.models.fpl_gw_review import build_review
+
+    arvot = [6.11, 4.87, 2.34, 8.05, 3.19, 7.42, 5.68, 9.01, 4.44, 10.02, 10.02]
+
+    def _rakenna(jarjestys):
+        picks = {"entry_history": {"points": 58}, "active_chip": None,
+                 "picks": [{"element": i + 1, "multiplier": 1,
+                            "is_captain": False, "is_vice_captain": False}
+                           for i in jarjestys]}
+        frozen = {i + 1: arvot[i] for i in range(len(arvot))}
+        points = {i + 1: 7 for i in range(len(arvot))}
+        info = {i + 1: {"web_name": f"P{i}", "team_short": "ARS", "pos": "MID"}
+                for i in range(len(arvot))}
+        return build_review(3, picks, frozen, points, info)
+
+    perus = list(range(len(arvot)))
+    nouseva = sorted(perus, key=lambda i: arvot[i])
+    laskeva = sorted(perus, key=lambda i: -arvot[i])
+
+    tekstit = set()
+    for j in (perus, nouseva, laskeva):
+        out = _rakenna(j)
+        rivi = MS.review_lines(out["review"], rows=len(arvot))[0]["text"]
+        tekstit.add(rivi)
+    assert len(tekstit) == 1, f"summausjarjestys muuttaa lausetta: {tekstit}"
+    # Ja se on sadasosasumman luku, ei liukulukusumman 71.1.
+    assert "71.2" in tekstit.pop()
+
+
+def test_e3_kapteenilause_luetaan_kertoimesta_ei_lipusta():
+    """FPL jattaa `is_captain: true` PELAAMATTOMALLE ja siirtaa kertoimen
+    varakapteenille. Silloin `_rivi` laski proj = xp * 0 = 0.0 ja act = 0, ja
+    lause kuului: "Your captain X returned 0 against a projected 0." """
+    from src.models.fpl_gw_review import build_review
+
+    picks = {"entry_history": {"points": 50}, "active_chip": None, "picks": [
+        {"element": 1, "multiplier": 0, "is_captain": True, "is_vice_captain": False},
+        {"element": 2, "multiplier": 2, "is_captain": False, "is_vice_captain": True},
+    ] + [{"element": i, "multiplier": 1, "is_captain": False,
+          "is_vice_captain": False} for i in range(3, 16)]}
+    frozen = {i: 6.0 for i in range(1, 16)}
+    points = {i: 5 for i in range(1, 16)}
+    info = {i: {"web_name": f"P{i}", "team_short": "ARS", "pos": "MID"}
+            for i in range(1, 16)}
+    out = build_review(3, picks, frozen, points, info)
+
+    cap = out["review"]["captain"]
+    assert cap is not None and cap["web_name"] == "P2", cap
+    assert cap["multiplier"] == 2
+    rivi = [r for r in MS.review_lines(out["review"], rows=14)
+            if r["code"] == "review.captain"][0]["text"]
+    assert "returned 0 against a projected 0" not in rivi, rivi
+    assert "P2" in rivi, rivi
+
+    # Kukaan ei saanut kerrointa -> ei kapteenilausetta lainkaan.
+    picks2 = dict(picks, picks=[{"element": i, "multiplier": 1,
+                                 "is_captain": i == 1, "is_vice_captain": False}
+                                for i in range(1, 16)])
+    out2 = build_review(3, picks2, frozen, points, info)
+    assert out2["review"]["captain"] is None
+    assert not [r for r in MS.review_lines(out2["review"], rows=15)
+                if r["code"] == "review.captain"]

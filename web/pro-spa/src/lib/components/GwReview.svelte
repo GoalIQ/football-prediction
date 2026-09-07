@@ -127,9 +127,14 @@
 					<!-- D3: mutabiliteettilause VAIN kesken olevalle kierrokselle.
 					     Lopullisella FPL on lopettanut pisteytyksen, mutta ero voi silti
 					     olla (siirtorangaistus, autosub, pudonnut rivi). -->
-					FPL's own total for GW{data.meta.reviewed_gw} is {data.meta.fpl_points}. Ours
-					adds up the {totals.rows} picks we could compare{#if data.meta.provisional}, and
-						it can move until FPL finishes scoring{/if}.
+					{#if data.meta.provisional}
+						FPL's own total for GW{data.meta.reviewed_gw} is {data.meta.fpl_points}. Ours
+						adds up the live scores for those same {totals.rows} picks that had a multiplier,
+						and it can move until FPL finishes scoring.
+					{:else}
+						FPL's own total for GW{data.meta.reviewed_gw} is {data.meta.fpl_points}. Ours
+						adds up the {totals.rows} picks that had a multiplier.
+					{/if}
 				{:else}
 					GW{data.meta.reviewed_gw} is still being scored, so these totals can move.
 				{/if}

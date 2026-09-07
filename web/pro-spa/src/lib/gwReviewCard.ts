@@ -124,7 +124,17 @@ const sign = (n: number) => (n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1));
  *  antaa eri lukua. */
 export function reviewTotals(rows: { projected: number; actual: number }[]) {
   const actual = rows.reduce((n, p) => n + p.actual, 0);
-  const projectedText = rows.reduce((n, p) => n + p.projected, 0).toFixed(1);
+  // 🔴 E1 (portin 6. kierros): PYORISTYSSAANTO EI RIITTANYT, KOSKA SYOTE OLI
+  // ERI. Liukuluvun yhteenlasku ei ole assosiatiivinen, ja kolme pintaa
+  // summasi samat 11 lukua kolmessa eri jarjestyksessa (backend picks-,
+  // paneeli payload-, kortti diff-jarjestyksessa). Mitattu tuotannon GW3:sta
+  // 7.9: sama joukko antoi 71.15 ja 71.14999999999999, eli "71.2" ja "71.1"
+  // SAMASSA nakymassa. Esiintymistaajuus 11 rivilla: 3,7 %.
+  //
+  // Rivien projektio on kahden desimaalin tarkkuudella, joten summataan
+  // SADASOSINA kokonaislukuina: silloin jarjestys ei voi muuttaa tulosta.
+  const cents = rows.reduce((n, p) => n + Math.round(p.projected * 100), 0);
+  const projectedText = (cents / 100).toFixed(1);
   // Erotus NAYTETYISTA luvuista: pyoristamaton 0.85 nayttaisi "+0.9" vaikka
   // kortilla lukee 71.2 ja 72.
   // `rows` mukana, jotta paneelin lause ja kortti puhuvat samasta joukosta
