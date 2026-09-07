@@ -614,6 +614,53 @@ export async function openCustomerPortal(returnUrl: string): Promise<string> {
 	return body.portal_url;
 }
 
+/**
+ * Kapteeniehdokkaiden seurakatto. SAMA LUKU kuin backendin
+ * `src/models/fpl_gw_xp.py:MAX_CAPTAIN_PER_CLUB`, ja
+ * `tests/test_captain_shortlist_parity.py` vaatii ne yhtasuuriksi.
+ *
+ * 🔴 MIKSI (7.9.2026, GW-TOP20-SUODATIN). `CaptainRanker` otti top 10:n
+ * ILMAN kattoa, kun taas ilmaispinnan kapteenisivu rajaa 2/seura. Mitattu
+ * GW4:sta: listat EROSIVAT - SPA nosti Calafiorin (Arsenalin kolmas)
+ * sijalle 9, ja meidan oma kapteenisivumme ei listannut hanta lainkaan.
+ * Kaksi pintaa, kaksi saantoa, eika kumpikaan kertonut omaansa
+ * (muisti: kaksi-listaa-kaksi-saantoa).
+ *
+ * Katto ei ole FPL:n saanto vaan HAJAUTUSTA: kolme kapteeniehdokasta
+ * samasta joukkueesta on yksi veto, ei kolme.
+ */
+export const MAX_CAPTAIN_PER_CLUB = 2;
+
+/** Seura-avain, sama kuin backendin `club_of`. */
+export function clubOf(p: { team?: string; team_short?: string }): string {
+	return p.team || p.team_short || '';
+}
+
+/**
+ * Top `n` GW-xP:n mukaan, korkeintaan `MAX_CAPTAIN_PER_CLUB` per seura.
+ * Tasapeli ratkaistaan `id`:lla eika nimella (nimi ei ole avain).
+ */
+export function captainShortlist<T extends { id?: number; team?: string; team_short?: string }>(
+	players: T[],
+	gw: number | undefined,
+	n: number,
+	maxPerClub: number = MAX_CAPTAIN_PER_CLUB
+): T[] {
+	const pool = [...players].sort(
+		(a, b) => gwXp(b as never, gw) - gwXp(a as never, gw) || (a.id ?? 0) - (b.id ?? 0)
+	);
+	const out: T[] = [];
+	const clubs = new Map<string, number>();
+	for (const p of pool) {
+		const c = clubOf(p);
+		if ((clubs.get(c) ?? 0) >= maxPerClub) continue;
+		clubs.set(c, (clubs.get(c) ?? 0) + 1);
+		out.push(p);
+		if (out.length >= n) break;
+	}
+	return out;
+}
+
 export function gwXp(p: CardPlayer, gw: number | undefined): number {
 	if (gw == null) return 0;
 	return p.gameweeks?.find((g) => g.gw === gw)?.xp ?? 0;

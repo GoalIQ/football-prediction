@@ -2,7 +2,7 @@
 	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
 	import type { XpResponse } from '$lib/api';
-	import { gwXp, gwOpponents } from '$lib/api';
+	import { gwXp, gwOpponents, captainShortlist, MAX_CAPTAIN_PER_CLUB } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import SetPieceBadges from './SetPieceBadges.svelte';
@@ -10,9 +10,11 @@
 	let { data }: { data: XpResponse } = $props();
 
 	let nextGw = $derived(actionableGameweek(data.meta));
-	let top = $derived(
-		[...data.players].sort((a, b) => gwXp(b, nextGw) - gwXp(a, nextGw)).slice(0, 10)
-	);
+	// 🔴 7.9 (GW-TOP20-SUODATIN): tassa oli paljas `sort().slice(0, 10)` ilman
+	// seurakattoa, kun ilmaispinnan kapteenisivu rajaa 2/seura. Mitattu GW4:
+	// listat EROSIVAT (SPA nosti Calafiorin sijalle 9, kapteenisivu ei
+	// listannut hanta). Sama lukija molemmille.
+	let top = $derived(captainShortlist(data.players, nextGw, 10));
 	// Edge-sprint kohta 3: e_bonus-sarake vain jos backend tuo kentän
 	// (defensiivinen — vanha payload ei tuo). Karkea proxy, EI BPS-simulaatio.
 	let hasEBonus = $derived(top.some((p) => typeof p.e_bonus === 'number'));
@@ -63,7 +65,8 @@
 	</button>
 </div>
 <p class="muted">
-	The ten highest projected scores for the next gameweek only, a captaincy shortlist.
+	The ten highest projected scores for the next gameweek only, a captaincy shortlist,
+	at most {MAX_CAPTAIN_PER_CLUB} per club: three candidates from one team is one bet, not three.
 	{#if hasEBonus}<abbr
 			title="Expected bonus points per match: a rough estimate from the player's historical bonus rate scaled by expected minutes, not a simulated bonus"
 			>eBonus</abbr
