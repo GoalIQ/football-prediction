@@ -75,7 +75,7 @@ def test_sivulla_on_kaavio(nimi):
 def test_hub_kaaviot_ovat_kaikki_kolme():
     h = _html("index.html")
     for otsikko in ("Ownership by price", "Price range by position",
-                    "Players unavailable by club"):
+                    "Injuries, suspensions and doubts by club"):
         assert f'aria-label="{otsikko}' in h, f"puuttuu kaavio: {otsikko}"
 
 
@@ -110,7 +110,7 @@ def test_hub_ei_lupaa_taman_kauden_lukuja_esikaudella():
     if up.vaihe(doc) != up.ESIKAUSI:
         pytest.skip("kausi on alkanut")
     h = _html("index.html")
-    assert "No matchday of this season has been played yet" in h, (
+    assert "No matchday of this season has been played" in h, (
         "hub ei sano etta kautta ei ole pelattu")
 
 
@@ -140,7 +140,7 @@ def test_saatavuuskaavion_jarjestys_vastaa_copyn_lupausta():
     # HUOM: aria-label esiintyy KAHDESTI (figure-kaarija + svg), joten
     # `split(...)[1]` osui 117 merkin valifragmenttiin ja loysi 0 klubia.
     # Luetaan svg-elementti eksplisiittisesti.
-    m = re.search(r'<svg [^>]*aria-label="Players unavailable by club"'
+    m = re.search(r'<svg [^>]*aria-label="Injuries, suspensions and doubts by club"'
                   r'[^>]*>(.*?)</svg>', h, re.S)
     assert m, "saatavuuskaaviota ei loytynyt sivulta"
     lohko = m.group(1)
@@ -159,8 +159,8 @@ def test_saatavuuskaavion_jarjestys_vastaa_copyn_lupausta():
         "kaaviossa on klubi jolla ei ole yhtaan loukkaantunutta, "
         "pelikieltoa tai kyseenalaista - se on rekisterointikirjanpitoa")
 
-    assert "ordered by injuries, suspensions and doubts" in h, (
-        "copy ei kerro mika jarjestys on")
+    assert "injured, suspended or doubtful" in h, (
+        "copy ei kerro mita kaavio laskee")
 
 
 @pytest.mark.parametrize("nimi", SIVUT)
@@ -177,3 +177,92 @@ def test_sivu_sanoo_ettei_ole_uefan(nimi):
     h = _html(nimi)
     assert "not affiliated" in h or "GoalIQ is an independent" in h or \
         "statistical estimates" in h, f"{nimi}: ei erottautumislausetta"
+
+
+@pytest.mark.parametrize("nimi", SIVUT)
+def test_og_kortti_ei_ole_toisen_osion_kortti(nimi):
+    """🔴 JULKAISUPORTTI LOYSI TAMAN 7.9, JA SE ON JULKISIN MAHDOLLINEN VIKA.
+
+    `_og_image` johti tiedostonimen canonicalin VIIMEISESTA palasta, joten
+    `/ucl/team-news` ja `/fpl/team-news` osuivat samaan korttiin. UCL-sivun
+    jakaminen antoi kortin jossa lukee isolla "goaliq.app/fpl/team-news":
+    vaarasta kilpailusta kertova kortti, jota kukaan meista ei nae ennen
+    kuin joku jakaa linkin (muisti: kortin-teksti-on-julkista-tekstia).
+
+    Vaara kortti on huonompi kuin ei korttia lainkaan.
+    """
+    h = _html(nimi)
+    m = re.search(r'<meta property="og:image" content="([^"]+)"', h)
+    assert m, f"{nimi}: og:image puuttuu"
+    kuva = m.group(1)
+    assert "/fpl/" not in kuva and "/fpl-" not in kuva, (
+        f"{nimi}: og-kortti tulee FPL-osiosta: {kuva}")
+    # Kortin nimi ei saa olla paljas slug jonka jokin toinen osio omistaa.
+    tiedosto = kuva.rsplit("/", 1)[-1].split("?")[0]
+    kielletyt = {f"{p.stem}.png" for p in (ROOT / "fpl").glob("*.html")}
+    assert tiedosto.replace("-1200x630", "") not in kielletyt, (
+        f"{nimi}: og-kortti {tiedosto} on FPL-sivun kortti")
+
+
+def test_saatavuuskaavio_kattaa_kaiken_minka_otsikko_lupaa():
+    """🔴 JULKAISUPORTIN LOYDOS: otsikko lupasi enemman kuin kaavio naytti.
+
+    Otsikko oli "Players unavailable by club" ja sen ylla luki "171 of
+    1162", mutta kaavio piirsi 111 pelaajaa ja 16 klubia 32:sta - loput
+    putosivat suodattimeen ja `[:16]`-katkaisuun. 35 % puuttui kaaviosta
+    jonka otsikko lupasi ne (muisti: honest-data-labels).
+
+    Nyt otsikko ja sisalto ovat sama joukko, ja tama portti mittaa sen.
+    """
+    import json
+    from collections import Counter
+    d = ROOT / "data" / "ucl_fantasy.json"
+    if not d.exists():
+        pytest.skip("artefaktia ei ole")
+    doc = json.loads(d.read_text(encoding="utf-8"))
+    TOIM = ("injured", "suspended", "doubtful")
+    odotetut = Counter(p["team_code"] for p in doc["players"]
+                       if p["status"] in TOIM)
+
+    h = _html("index.html")
+    m = re.search(r'<svg [^>]*aria-label="Injuries, suspensions and doubts '
+                  r'by club"[^>]*>(.*?)</svg>', h, re.S)
+    assert m, "kaaviota ei loytynyt"
+    koodit = re.findall(r'text-anchor="end">([A-Z]{2,4})</text>', m.group(1))
+
+    puuttuu = sorted(set(odotetut) - set(koodit))
+    assert not puuttuu, (
+        f"kaaviosta puuttuu {len(puuttuu)} klubia joilla on tapauksia: "
+        f"{puuttuu}. Otsikko lupaa ne.")
+
+    # Ja pylvaiden summa on koko joukko, ei osa siita.
+    palkit = re.findall(r'<rect x="[0-9.]+" y="\d+" width="[0-9.]+"',
+                        m.group(1))
+    assert len(palkit) >= len(odotetut), (
+        f"pylvaita {len(palkit)}, klubeja {len(odotetut)}")
+
+
+def test_kaavion_jarjestys_ja_pituus_mittaavat_samaa():
+    """🔴 v2:N VIKA: jarjestys oli I+S+D mutta PITUUS sisalsi myos
+    `not_in_squad`in. MCI ja AVL olivat 10 pelaajan pylvailla sijoilla
+    11-12 ja BAR 4 pelaajan pylvaalla sijalla 13, eli kaavio nayttti
+    jarjestamattomalta. Lukija lukee pituuden.
+
+    Mitataan pylvaiden PITUUDET sivulta ja vaaditaan laskeva jarjestys.
+    """
+    h = _html("index.html")
+    m = re.search(r'<svg [^>]*aria-label="Injuries, suspensions and doubts '
+                  r'by club"[^>]*>(.*?)</svg>', h, re.S)
+    assert m, "kaaviota ei loytynyt"
+
+    # Rivi = y-koordinaatti; pituus = saman y:n rect-leveyksien summa.
+    per_y = {}
+    for y, w in re.findall(r'<rect x="[0-9.]+" y="(\d+)" width="([0-9.]+)"',
+                           m.group(1)):
+        per_y[int(y)] = per_y.get(int(y), 0.0) + float(w)
+    pituudet = [per_y[y] for y in sorted(per_y)]
+    assert len(pituudet) >= 8, f"vain {len(pituudet)} pylvasta"
+    assert pituudet == sorted(pituudet, reverse=True), (
+        "pylvaiden pituudet eivat ole laskevassa jarjestyksessa - "
+        f"jarjestys ja pituus mittaavat eri asiaa: "
+        f"{[round(x) for x in pituudet]}")

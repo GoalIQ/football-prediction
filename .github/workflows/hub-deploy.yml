@@ -30,6 +30,10 @@ on:
       # laukaisisi deployta, ja korjaus jaisi elamaan vain repoon.
       - '*.js'
       - 'fpl/**'
+      # 🔴 7.9: ilman tata /ucl committoituu joka 6 h eika deployaudu
+      # KERTAAKAAN. Tasan sama vika oli fpl-data-refreshissa samana
+      # paivana, ja se toistettiin uudessa workflow'ssa.
+      - 'ucl/**'
       - 'predictions/**'
       - 'assets/**'
       - '*.xml'

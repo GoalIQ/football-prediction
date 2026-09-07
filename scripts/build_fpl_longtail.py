@@ -464,10 +464,26 @@ def _og_image(canonical: str) -> str:
     muutosta. Puuttuva tiedosto putoaa yhteiseen korttiin, ei rikkinaiseen
     URLiin (jaettu linkki ilman kuvaa on parempi kuin 404-kuva).
     """
-    slug = canonical.rstrip("/").rsplit("/", 1)[-1]
-    rel = f"assets/brand/og/{slug}-1200x630.png"
-    polku = _FP_ROOT / rel
-    if not polku.exists():
+    # 🔴 AVAIN EI SAA OLLA PELKKA VIIMEINEN PALA (7.9.2026). `/ucl/team-news`
+    # ja `/fpl/team-news` tuottivat saman sluginin, joten UCL-sivu jakoi
+    # kortin jossa lukee isolla "goaliq.app/fpl/team-news". Vaara kortti on
+    # huonompi kuin ei korttia: se on julkinen vaite vaarasta kilpailusta
+    # (muisti: kortin-teksti-on-julkista-tekstia).
+    #
+    # Olemassa olevat kortit on generoitu paljaalla sluginilla ja ne ovat
+    # KAIKKI /fpl-osiosta, joten paljas avain sailyy vain siella. Muut
+    # osiot vaativat koko polusta johdetun nimen, eivatka voi periä toisen
+    # osion korttia.
+    polkuosa = canonical.replace(BASE, "").strip("/")
+    ehdokkaat = [polkuosa.replace("/", "-")]
+    if polkuosa.startswith("fpl/"):
+        ehdokkaat.append(polkuosa.rsplit("/", 1)[-1])
+    for slug in ehdokkaat:
+        rel = f"assets/brand/og/{slug}-1200x630.png"
+        polku = _FP_ROOT / rel
+        if polku.exists():
+            break
+    else:
         return SOCIAL_IMAGE
     # 🔴 SISALTOTIIVISTE URLIIN (15.8). Villen havainto: "Linkkikuva edelleen
     # toi sama?" Palvelimen tiedosto oli jo uusi (live ja lokaali tavulleen

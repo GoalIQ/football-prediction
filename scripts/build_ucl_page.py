@@ -67,6 +67,12 @@ STATUS_SANA = {
 }
 # Jarjestys on vakavuus, ei aakkoset: pinottu pylvas luetaan vasemmalta.
 POISSA = ["injured", "suspended", "doubtful", "not_in_squad"]
+# 🔴 KAKSI ERI KYSYMYSTA, EIKA NIITA SAA PINOTA SAMAAN PYLVAASEEN.
+# `not_in_squad` on seuran rekisterointipaatos, ei kuntoasia: klubi voi
+# jattaa yhdeksan pelaajaa listalta ja olla taysin terve. Kun molemmat
+# olivat samassa kaaviossa, pylvaan pituus ja rivin sija mittasivat eri
+# asiaa.
+TOIMITTAVA = ["injured", "suspended", "doubtful"]
 # 🔴 VARIT MITATTIIN RENDEROIDYSTA KUVASTA, EI LUETTELOSTA. Ensimmainen
 # versio antoi `doubtful`ille MUTEDin (#A8A29A) ja `not_in_squad`ille
 # FAINTin (#8A847A). Legendassa ne ovat eri riveilla, mutta pinotussa
@@ -131,7 +137,14 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         '<footer>© 2026 GoalIQ · '
         '<a href="/predictions">Football predictions</a> · '
         '<a href="/fpl">Free FPL tools</a> · '
-        f'<a href="/privacy.html">Privacy</a><br>{DISCLAIMER}</footer>\n'
+        f'<a href="/privacy.html">Privacy</a><br>'
+        # 🔴 EROTTAUTUMINEN ON OLTAVA SIELLA MISSA LUKIJA ON. `spl.html`
+        # kantaa vastaavan rivin sivulla itsellaan; /ucl-sivuilla se oli
+        # vain etusivun kaistalla ja llms.txt:ssa, eli ei silla sivulla
+        # joka nimeaa UEFAn ja UCL Fantasyn.
+        "GoalIQ is an independent data tool and is not affiliated with, "
+        "endorsed by, or paid by UEFA, the UCL Fantasy game, or any club."
+        f"<br>{DISCLAIMER}</footer>\n"
         "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n")
 
 
@@ -140,10 +153,11 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
 def kaavio_omistus(pelaajat: list[dict]) -> str:
     """Omistus x hinta, vari = positio.
 
-    Rajaus >1 % on tahallinen ja sanotaan sivulla aaneen: 990 pelaajaa
-    nollan tuntumassa olisi musta massa jonka lapi ei nae mitaan. Rajattu
-    joukko on 172 pelaajaa, ja se on juuri se joukko josta joukkueet
-    kootaan.
+    Rajaus on tahallinen ja sanotaan sivulla aaneen. Mitattu: kaikki
+    `owned_pct`-arvot ovat kokonaislukuja, joten "yli 1 %" on kaytannossa
+    "2 % tai enemman" - copy sanoo sen niin, koska muuten lukija odottaa
+    naissa myos 1,5 %:n omistuksia. Rajauksen ulkopuolelle jaa 990
+    pelaajaa jotka olisivat yksi musta palkki alalaidassa.
     """
     valitut = [p for p in pelaajat if p["owned_pct"] > 1.0]
     sarjat = []
@@ -162,30 +176,39 @@ def kaavio_omistus(pelaajat: list[dict]) -> str:
 
 
 def kaavio_saatavuus(pelaajat: list[dict], teams: list[dict]) -> str:
-    """Poissaolot klubeittain. Vain klubit joilla on poissaoloja."""
+    """Loukkaantumiset, pelikiellot ja epavarmat klubeittain.
+
+    🔴 KAHDESTI KORJATTU, JA ENSIMMAINEN KORJAUS TEKI TOISEN VIAN.
+
+    v1 lajitteli poissaolojen SUMMALLA. Mitattu renderoidysta kuvasta:
+    karjessa oli Real Madrid siksi etta se jattaa eniten pelaajia
+    rekisteroimatta, ei siksi etta silla olisi eniten loukkaantumisia.
+
+    v2 lajitteli loukkaantumisilla mutta piirsi silti `not_in_squad`in
+    pylvaaseen. Julkaisuportti mittasi lopputuloksen: MCI ja AVL olivat
+    10 pelaajan pylvailla sijoilla 11-12 ja BAR 4 pelaajan pylvaalla
+    sijalla 13. Jarjestys oli oikein, mutta PITUUS mittasi eri asiaa, ja
+    lukija lukee pituuden. Kaavio nayttaa jarjestamattomalta.
+
+    v3 (tama): kaavio vastaa yhteen kysymykseen. Pituus, jarjestys ja
+    otsikko ovat kaikki I+S+D. Rekisteroimatta jattaminen on eri kysymys
+    ja se saa oman lauseensa runkotekstissa.
+
+    Suodatinta EI ole: kaikki 18 klubia joilla on yksikin tapaus
+    mahtuvat, joten otsikko kattaa 49/49 pelaajaa. Edellinen versio
+    sanoi "Players unavailable by club" ja naytti 111 pelaajaa 171:sta
+    ja 16 klubia 32:sta (muisti: honest-data-labels).
+    """
     per_klubi: dict[str, Counter] = defaultdict(Counter)
     for p in pelaajat:
-        if p["status"] in POISSA:
+        if p["status"] in TOIMITTAVA:
             per_klubi[p["team_code"]][p["status"]] += 1
-    # 🔴 JARJESTYS JA NAYTETTY LUKU VASTAAVAT SAMAAN KYSYMYKSEEN.
-    # Ensimmainen versio lajitteli POISSAOLOJEN SUMMALLA, ja mitattu
-    # kuvasta: karjessa oli Real Madrid siksi etta sen rekisteroity
-    # kokoonpano jattaa eniten pelaajia ulos - ei siksi etta silla olisi
-    # eniten loukkaantumisia. Lukija tulee sivulle kysymyksella "kuka on
-    # poissa pelista", ja sai vastauksen kysymykseen "kuka on jattanyt
-    # eniten pelaajia rekisteroimatta" (muisti:
-    # uusi-sorttiulottuvuus-muuttaa-sarakkeen).
-    def toimittava(c: Counter) -> int:
-        return c["injured"] + c["suspended"] + c["doubtful"]
-
-    rivit = sorted(per_klubi.items(),
-                   key=lambda kv: (-toimittava(kv[1]), -sum(kv[1].values())))
-    rivit = [kv for kv in rivit if toimittava(kv[1]) > 0][:16]
+    rivit = sorted(per_klubi.items(), key=lambda kv: -sum(kv[1].values()))
     return sc.stacked_bars(
         rivit=[(k, dict(v)) for k, v in rivit],
-        sarjat=[(s, POISSA_VARI[s], STATUS_SANA[s]) for s in POISSA],
-        otsikko="Players unavailable by club",
-        x_label="Players not available to pick")
+        sarjat=[(s, POISSA_VARI[s], STATUS_SANA[s]) for s in TOIMITTAVA],
+        otsikko="Injuries, suspensions and doubts by club",
+        x_label="Players injured, suspended or doubtful")
 
 
 def kaavio_hinnat(pelaajat: list[dict]) -> str:
@@ -224,7 +247,12 @@ def _pelaajarivit(pelaajat: list[dict], kentta: str) -> list[list[str]]:
         ulos.append([
             escape(p["name"] or ""), escape(p["team_code"] or ""), p["pos"],
             f'{p["price"]:g}', f'{p["owned_pct"]:g}%',
-            str(vaiheet.arvo(p, kentta)),
+            # 🔴 TYHJA, EI NOLLA, kun pelaaja ei ollut kilpailussa viime
+            # kaudella. Mitattu: 762 pelaajaa 1 162:sta, ja kymmenella
+            # klubilla se koskee jokaista pelaajaa. "0" luetaan huonoksi
+            # kaudeksi (muisti: nolla-ei-ole-sama-kuin-ei-tietoa).
+            (str(vaiheet.arvo(p, kentta))
+             if kentta == "points" or p.get("prev_season_minutes") else ""),
             # Tyhja solu, ei viivaa: em dash on kielletty julkisessa
             # tekstissa (muisti: em-dash-ja-pinta-pariteetti), ja
             # "Available" 20 rivilla on kohinaa.
@@ -263,12 +291,20 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
     # yhtaan taman kauden suoritusnumeroa, ja lukijan on tiedettava se
     # ilman etta han paattelee sen puuttuvista sarakkeista.
     if vaihe == vaiheet.ESIKAUSI:
+        # 🔴 NOLLA EI OLE SAMA KUIN EI TIETOA. Mitattu: 762 pelaajalla
+        # 1 162:sta `prev_season_points` on 0, ja KAIKILLA niista myos
+        # `prev_season_minutes` on 0 - he eivat pelanneet kilpailussa.
+        # Nolla solussa luetaan huonoksi kaudeksi, ei puuttumiseksi, joten
+        # solu jatetaan tyhjaksi ja syy kerrotaan tassa.
+        tyhjia = sum(1 for p in P if not p.get("prev_season_minutes"))
         perusta = (
-            "<p>No matchday of this season has been played yet, so there are "
-            "no points, minutes or form figures for it anywhere on this page. "
-            "The points column shows last season's UCL total, carried in the "
-            "official feed, and it is labelled that way. Prices, ownership "
-            "and squad status are current.</p>")
+            "<p>No matchday of this season has been played, so nothing on "
+            "this page is a figure from it. The points column is last "
+            "season's UCL total, which is what the feed carries at this "
+            f"point. It is blank for the {tyhjia} players who logged no UCL "
+            "minutes last season, most of them at clubs that were not in "
+            "the competition. Prices, ownership and squad status are "
+            "current.</p>")
     else:
         perusta = (
             "<p>Points and minutes on this page are from the current UCL "
@@ -276,25 +312,38 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
 
     kartoitus = sorted(P, key=lambda p: -p["owned_pct"])[:20]
 
+    # Jokainen luku johdetaan datasta. Kasin kirjoitettu luku vanhenee
+    # hiljaa, ja "a dozen" oli jo vaarin: suurin todellinen oli 9.
+    kalleimmat = {pos: max(p["price"] for p in P if p["pos"] == pos)
+                  for pos in ("GK", "DEF", "MID", "FWD")}
+    nis = sum(1 for p in P if p["status"] == "not_in_squad")
+    nis_max = max(Counter(p["team_code"] for p in P
+                          if p["status"] == "not_in_squad").values())
+    toimittava_n = sum(1 for p in P if p["status"] in TOIMITTAVA)
+    # Mitattu: kaikki `owned_pct`-arvot ovat kokonaislukuja, joten
+    # "yli 1 %" tarkoittaa kaytannossa 2 % tai enemman. Sanotaan se niin.
+    mukana = sum(1 for p in P if p["owned_pct"] > 1.0)
+
     body = (
         f"{perusta}"
         "<h2>Where the money is</h2>"
-        "<p>Every player owned by more than 1% of managers, plotted by price "
-        "against ownership. Players below that line are left out on purpose: "
-        f"{sum(1 for p in P if p['owned_pct'] <= 1.0)} of the "
-        f"{len(P)} players sit near zero and would be one dark block.</p>"
+        f"<p>The {mukana} players owned by 2% or more, plotted by price "
+        f"against ownership. The other {len(P) - mukana} sit at 1% or "
+        "below and would be one dark block along the bottom.</p>"
         f"{kaavio_omistus(P)}"
         "<h2>What each position costs</h2>"
-        "<p>Goalkeepers and defenders are capped well below midfielders and "
-        "forwards, which is what makes the budget decision a forward "
-        "decision.</p>"
+        f"<p>Goalkeepers and defenders stop at {kalleimmat['DEF']:g}m. "
+        f"Midfielders run to {kalleimmat['MID']:g}m and forwards to "
+        f"{kalleimmat['FWD']:g}m, so every expensive slot in a squad is a "
+        "midfielder or a forward.</p>"
         f"{kaavio_hinnat(P)}"
         "<h2>Who cannot be picked</h2>"
-        f"<p>{poissa} of {len(P)} players are not available: injured, "
-        "suspended, doubtful, or left out of the registered squad. Clubs "
-        "are ordered by injuries, suspensions and doubts, not by the total: "
-        "a club can leave a dozen players out of its registered squad and "
-        "still have everyone fit.</p>"
+        f"<p>{toimittava_n} players are injured, suspended or doubtful, and "
+        f"the chart counts those three. A further {nis} are not in their "
+        "club's registered squad, which is a squad decision rather than a "
+        f"fitness one: the largest group at any one club is {nis_max}, and "
+        'those clubs can still be fully fit. The <a href="/ucl/team-news">'
+        f"full list</a> has all {toimittava_n + nis}.</p>"
         f"{kaavio_saatavuus(P, doc['teams'])}"
         "<h2>Most owned</h2>"
         + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
@@ -303,14 +352,20 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         f'{len(P)} players</a> · '
         '<a href="/ucl/team-news">Squad availability by club</a></p>')
 
+    # 🔴 EI KADENSSILUPAUSTA, VAAN AIKALEIMA. "Updated every six hours" on
+    # vaite jota lukija ei voi tarkistaa mistaan, ja oma mittauksemme
+    # (27.8 alkaen) sanoo GitHubin ajastimen olleen 5-12 h myohassa.
+    # Aikaleima on tarkistettava, kadenssi ei.
+    leima = dt.datetime.fromisoformat(
+        doc["meta"]["generated_at"]).strftime("%d %b %Y, %H:%M UTC")
     hero = ("<h1>UCL Fantasy: prices, ownership and squad news</h1>"
-            f"<p class=\"lede\">{escape(dl)} Free, no login. Updated from "
-            "the official UEFA feed every six hours.</p>")
+            f'<p class="lede">{escape(dl)} Free, no login. Read from the '
+            f"official UEFA feed, last update {leima}.</p>")
 
     return _page(
         "UCL Fantasy prices, ownership and squad availability | GoalIQ",
-        "Free UCL Fantasy data: every player's price and ownership, squad "
-        "availability by club, and the next matchday deadline. No login.",
+        "Free UCL Fantasy data: what every player costs, how many managers "
+        "own them, and who is unavailable for the next matchday. No login.",
         f"{BASE}/ucl", hero, body,
         _jsonld("UCL Fantasy tools",
                 "Free UCL Fantasy prices, ownership and squad availability.",
@@ -327,8 +382,8 @@ def sivu_hinnat(doc: dict, nyt: dt.datetime) -> str:
         + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
                      "Status"], _pelaajarivit(P, kentta)))
     hero = ("<h1>UCL Fantasy prices and ownership</h1>"
-            f'<p class="lede">Every player, every price, every ownership '
-            "percentage. Straight from the official feed.</p>")
+            f'<p class="lede">All {len(P)} players in the game, with what '
+            "the feed says they cost and how many managers own them.</p>")
     return _page(
         "UCL Fantasy prices and ownership, all players | GoalIQ",
         f"All {len(P)} UCL Fantasy players with price, ownership percentage, "
@@ -344,16 +399,19 @@ def sivu_team_news(doc: dict, nyt: dt.datetime) -> str:
     kentta, sarake = vaiheet.pistekentta(doc, nyt)
     poissa = [p for p in P if p["status"] in POISSA]
     poissa.sort(key=lambda p: (POISSA.index(p["status"]), -p["owned_pct"]))
+    toimittava_n = sum(1 for p in P if p["status"] in TOIMITTAVA)
     body = (
         f"<p>{len(poissa)} of {len(P)} players cannot be picked right now. "
-        "Injured, suspended and doubtful players are listed first, then "
-        "players left out of the registered squad.</p>"
+        f"The chart below counts the {toimittava_n} who are injured, "
+        "suspended or doubtful. The table adds everyone left out of a "
+        "registered squad, which is a club decision and not a fitness "
+        "one.</p>"
         f"{kaavio_saatavuus(P, doc['teams'])}"
         + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
                      "Status"], _pelaajarivit(poissa, kentta)))
     hero = ("<h1>UCL Fantasy squad availability</h1>"
-            '<p class="lede">Who is injured, suspended, doubtful or left '
-            "out of the registered squad, by club.</p>")
+            f'<p class="lede">{len(poissa)} players cannot be picked for '
+            "the next matchday. Here is who, and at which club.</p>")
     return _page(
         "UCL Fantasy squad availability and team news | GoalIQ",
         "Which UCL Fantasy players are injured, suspended, doubtful or out "

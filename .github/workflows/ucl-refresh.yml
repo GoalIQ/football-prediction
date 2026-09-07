@@ -82,6 +82,9 @@ jobs:
             echo "Ei muutoksia."
             exit 0
           fi
-          git commit -m "chore(ucl): fantasy feed refresh [skip ci]"
+          # 🔴 EI [skip ci]: se sammuttaa KAIKKI workflow't tasta pushista,
+          # myos hub-deployn, jolloin tuore data jaa repoon eika paady
+          # sivulle (muisti: skip-ci-proosassa-sammuttaa-koko-pushin).
+          git commit -m "chore(ucl): fantasy feed refresh"
           git pull --rebase --autostash -q origin main || true
           git push origin main
