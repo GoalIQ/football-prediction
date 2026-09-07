@@ -64,10 +64,26 @@
   },
   {
    "@type": "Question",
+   "name": "Does GoalIQ cover the Champions League?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Two different things carry that name. Match predictions: yes, the Champions League is one of the ten competitions the match model covers, so you can run any Champions League fixture and get win probability, expected goals and the most likely scorelines. UCL Fantasy: we publish prices, ownership and squad availability from UEFA's own public feed for free at goaliq.app/ucl. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does GoalIQ cover UCL Fantasy?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, as a free data section at goaliq.app/ucl. It lists every player in the official UEFA Champions League Fantasy game with price, ownership percentage, position and squad status, read from UEFA's own public feed, plus the next matchday deadline and who is injured, suspended, doubtful or left out of a registered squad. It is separate from the FPL tools and separate from the match model. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one. Free, no login."
+   }
+  },
+  {
+   "@type": "Question",
    "name": "Which leagues does GoalIQ support?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "Premier League, La Liga, Bundesliga, Serie A, Ligue 1 and the Champions League (new seasons kick off in August), Brasileirão Série A (live right now), plus the Championship, Eredivisie and Primeira Liga. The FIFA World Cup 2026 was covered live during the tournament as part of the public track record."
+    "text": "Premier League, La Liga, Bundesliga, Serie A and Ligue 1 (seasons under way), the Champions League (matchday 1 of the league phase is 8 September 2026), Brasileirão Série A (live right now), plus the Championship, Eredivisie and Primeira Liga. The FIFA World Cup 2026 was covered live during the tournament as part of the public track record."
    }
   },
   {
@@ -438,7 +454,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
          window. data-copy-hash below is the hash of this page's visible
          copy; tests/test_faq_freshness.py fails if the copy changes and
          this stamp does not. -->
-    <p class="updated" data-copy-hash="39972eaa0280">Last updated: 6 September 2026</p>
+    <p class="updated" data-copy-hash="834e4eca8357">Last updated: 7 September 2026</p>
 
     <p>
       Quick answers to the most common questions about GoalIQ. If you can't
@@ -484,12 +500,37 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     </details>
 
     <details>
+      <summary>Does GoalIQ cover the Champions League?</summary>
+      <div>
+        <p>Two different things carry that name. Match predictions: yes, the Champions League is one of the ten competitions the match model covers, so you can run any Champions League fixture and get win probability, expected goals and the most likely scorelines. UCL Fantasy: we publish prices, ownership and squad availability from UEFA's own public feed for free at goaliq.app/ucl. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Does GoalIQ cover UCL Fantasy?</summary>
+      <div>
+        <p>
+          Yes, as a free data section at <a href="/ucl/">goaliq.app/ucl</a>. It lists every
+          player in the official UEFA Champions League Fantasy game with
+          <a href="/ucl/prices">price, ownership percentage, position and squad status</a>,
+          read from UEFA's own public feed, plus the next matchday deadline and
+          <a href="/ucl/team-news">who is injured, suspended, doubtful or left out of a
+          registered squad</a>.
+        </p>
+        <p>
+          It is separate from the FPL tools and separate from the match model.
+          There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one. Free, no login.
+        </p>
+      </div>
+    </details>
+
+    <details>
       <summary>Which leagues are supported?</summary>
       <div>
         <ul>
-          <li><strong>Premier League, La Liga, Bundesliga, Serie A, Ligue 1</strong> and the <strong>Champions League</strong>: supported now, with the new European seasons kicking off in August.</li>
+          <li><strong>Premier League, La Liga, Bundesliga, Serie A, Ligue 1</strong>: supported now, seasons under way. <strong>Champions League</strong>: supported now, matchday 1 of the league phase is 8 September 2026.</li>
           <li><strong>Brasileirão Série A</strong>: live right now, playing through the European summer.</li>
-          <li><strong>Championship, Eredivisie and Primeira Liga</strong>: supported now, seasons resume in August.</li>
+          <li><strong>Championship, Eredivisie and Primeira Liga</strong>: supported now, seasons under way.</li>
         </ul>
         <p>
           The FIFA World Cup 2026 was covered live during the tournament, and every
@@ -652,7 +693,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         </p>
         <p>
           For the full breakdown, see our
-          <a href="privacy.html">Privacy Policy</a>.
+          <a href="/privacy">Privacy Policy</a>.
         </p>
       </div>
     </details>
@@ -662,7 +703,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <div>
         <p>
           See the
-          <a href="delete-account.html">Delete Account</a>
+          <a href="/delete-account">Delete Account</a>
           page for the full process. In short: email us from your account
           email address and we will delete your data within 30 days.
         </p>
@@ -730,11 +771,12 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   <footer class="site-footer">
     <div class="foot">
       <p><a href="./">GoalIQ home</a> &middot;
-      <a href="fpl.html">FPL clean sheets &amp; FDR</a> &middot;
+      <a href="/fpl">FPL clean sheets &amp; FDR</a> &middot;
+      <a href="/ucl/">UCL Fantasy prices</a> &middot;
       <a href="/predictions">Football predictions</a> &middot;
-      <a href="faq.html">FAQ</a> &middot;
+      <a href="/faq">FAQ</a> &middot;
       <a href="/creators">Creator program</a> &middot;
-      <a href="privacy.html">Privacy</a></p>
+      <a href="/privacy">Privacy</a></p>
     </div>
   </footer>
 <!-- GEN:MOBILE-COLS -->

@@ -47,7 +47,13 @@ EN = "–"
 DASHES = (EM, EN)
 ENTITIES = ("&mdash;", "&ndash;")
 
-HTML_GLOBS = ["*.html", "fpl/*.html", "predictions/*.html", "predictions/**/*.html"]
+# 7.9: `ucl/*.html` PUUTTUI. Osio syntyi omaan alihakemistoonsa eika
+# yksikaan glob nahnyt sita, joten kolme julkaistua sivua oli seka em
+# dash- etta mallilupausportin katvealueessa. Sama vikaluokka kuin
+# sivusopimuksen `_pages()`ssa samana paivana (muisti:
+# uusi-sivu-ei-nay-hubissa).
+HTML_GLOBS = ["*.html", "fpl/*.html", "fpl/**/*.html", "ucl/*.html",
+              "predictions/*.html", "predictions/**/*.html"]
 SPA_DIR = ROOT / "web" / "pro-spa" / "src"
 # 28.7: versioidut CSV-inputit joiden tekstikentat paatyvat API-payloadiin ja
 # sielta UI:hin (esim. fpl_player_overrides.csv:n `reason` nakyy pelaajakortilla).

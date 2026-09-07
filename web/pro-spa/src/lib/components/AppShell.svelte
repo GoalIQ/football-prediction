@@ -67,6 +67,9 @@
 			<!-- SPL = oma osio (etiikkakehys 7.8): löydettävissä muttei FPL-feedin
 			     seassa — SPL:stä kiinnostumaton ei törmää siihen työkaluissa. -->
 			<a href="/spl">Saudi Pro League tools (free)</a> ·
+			<!-- UCL = web-only datapinta, ei SPA-tyokalu: linkki footeriin,
+			     EI tools.ts-rekisteriin (se lupaisi tyokalun jota ei ole). -->
+			<a href="https://goaliq.app/ucl/">UCL Fantasy data (free)</a> ·
 			<a href="https://goaliq.app/privacy.html">Privacy</a> ·
 			<a href="https://goaliq.app/faq.html">FAQ</a> ·
 			<!-- Kohde on Google Form eika hello@: poistaa riippuvuuden DMARC-portista

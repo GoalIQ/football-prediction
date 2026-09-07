@@ -341,7 +341,7 @@ DISCLAIMER = (
 FOOTER = (
     '<footer>© 2026 GoalIQ · <a href="/predictions">Football predictions</a> · '
     '<a href="/fpl.html">Free FPL tools</a> · '
-    '<a href="/privacy.html">Privacy</a><br>'
+    '<a href="/privacy">Privacy</a><br>'
     'GoalIQ: FPL Assistant is free on '
     '<a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">'
     "Google Play</a> and the "

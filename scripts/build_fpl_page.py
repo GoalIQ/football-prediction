@@ -1323,7 +1323,13 @@ def predict_cell_href(team: str, opponent: str, venue: str,
     home, away = (team, opponent) if venue == "H" else (opponent, team)
     rel = f"predictions/premier-league/{_pred_slug(home)}-vs-{_pred_slug(away)}.html"
     if (root / rel).exists():
-        return "/" + rel
+        # 🔴 LINKKI ILMAN .html-PAATETTA (7.9.2026). Cloudflare Pages ohjaa
+        # `.html`-URLit 308:lla paatteettomaan muotoon, joka on myos sivun oma
+        # canonical. Mitattu: 66 ottelulinkkia `/fpl`-sivulla sai kukin
+        # yhden ylimaaraisen hypyn, ja kohde oli tasan sama sivu. Levy-polku
+        # tarkistetaan yha `.html`:lla koska tiedosto on levylla siina
+        # muodossa; vain LINKKI on paatteeton.
+        return "/" + rel[:-len(".html")]
     return "/predictions"
 
 
@@ -2315,9 +2321,14 @@ watch stay free.</p>
 </aside>
 
 <!-- 5 Sep (LANDING-LYHENNYS): three asides (career card, SPL, creator
-     program) became one line. Each keeps its own page. -->
+     program) became one line. Each keeps its own page.
+     7 Sep: UCL Fantasy joined this row and NOT the upsell block above it.
+     The section is free and carries no model, so naming it in a Premium
+     sales block would promise a paid feature that does not exist. The
+     scope clause travels with the link for the same reason. -->
 <p class="note">Also free: your <a href="/career" data-cta="fpl-career">FPL career card</a>
 on one shareable image, <a href="https://pro.goaliq.app/spl" data-cta="spl-tools">Saudi Pro League fantasy tools</a>,
+<a href="/ucl/" data-cta="fpl-ucl">UCL Fantasy prices and squad news</a> (UEFA feed data, no points projection),
 and a <a href="/creators" data-cta="creators">creator program</a> if you quote these numbers in your content.</p>
 
 <h2 id="methodology">Methodology</h2>
@@ -2340,7 +2351,7 @@ API.</p>
   <li><a href="/fpl/price-changes">Price change watch</a>: who moves tonight.</li>
   <li><a href="/fpl/xg-leaders">xG, xA and xGI leaders</a>.</li>
   <li><a href="/fpl/defcon">DefCon leaders</a> under the current scoring rules.</li>
-  <li><a href="/fpl/points">Points: projected vs actual</a>, every player, every gameweek.</li>
+  <li><a href="/fpl/points">Points: projected vs actual</a>, every player, every gameweek, with a permanent page per gameweek from <a href="/fpl/points/gw1">gameweek 1</a> onwards.</li>
   <li><a href="/fpl/stats">Player stats</a>: shots, key passes, tackles, filterable, CSV.</li>
   <li><a href="/fpl/defence">Defence profiles</a> by pitch zone.</li>
   <li><a href="/fpl/club-best">Best player at every club</a>, with the gap to the second option.</li>
@@ -2420,9 +2431,9 @@ predictions and analytics. Not betting advice.</p>
   <a href="/fpl/notes">Notes</a> &middot;
   <a href="/fpl/club-best">Club pages</a> &middot;
   <a href="/ucl/">UCL Fantasy prices</a> &middot;
-  <a href="world-cup-2026-predictions.html">World Cup 2026 predictions</a> &middot;
-  <a href="faq.html">App FAQ</a> &middot;
-  <a href="privacy.html">Privacy</a></p>
+  <a href="/world-cup-2026-predictions">World Cup 2026 predictions</a> &middot;
+  <a href="/faq">App FAQ</a> &middot;
+  <a href="/privacy">Privacy</a></p>
   <p>&copy; 2026 GoalIQ. Premier League is a trademark of the Football
   Association Premier League Limited. GoalIQ is not affiliated with or endorsed
   by the Premier League. Data on this page is a statistical model output for
@@ -2836,7 +2847,8 @@ def _first_cmp_gw(rows: list[dict]) -> int | None:
     return min(gws) if gws else None
 
 
-def xp_accuracy_html(log: dict | None) -> str:
+def xp_accuracy_html(log: dict | None,
+                     arkisto: set[int] | None = None) -> str:
     """Track-record-osio: jaadytetty per-pelaaja-xP gradattuna GW:n jalkeen,
     valinnaisesti verrattuna FPL:n ep_next-kenttaan ja form-lukuun samalla
     pelaajajoukolla. Tyhja loki -> ei osiota. EI 'parempi kuin FPL'
@@ -2873,6 +2885,9 @@ def xp_accuracy_html(log: dict | None) -> str:
             return m.get(PRED_GOALIQ), m.get(PRED_EP_NEXT), m.get(PRED_FORM)
         return m, None, None
 
+    if arkisto is None:
+        arkisto = {int(f.stem[2:]) for f in (ROOT / "fpl" / "points").glob("gw*.html")
+                   if f.stem[2:].isdigit()} if (ROOT / "fpl" / "points").exists()             else set()
     trs = []
     for r in rows:
         cmp_ = r.get("comparison")
@@ -2881,9 +2896,19 @@ def xp_accuracy_html(log: dict | None) -> str:
             g, e, f = _triple(cmp_["mae"])
         else:
             n, g, e, f = r.get("n"), r.get("mae"), None, None
+        # COPY-SYNC 7.9: kierrosnumero on LINKKI sen kierroksen omalle
+        # sivulle, jossa sama luku on auki pelaaja pelaajalta. Ilman tata
+        # taulukko on kolme lukua joita lukija ei paase tarkistamaan, ja
+        # /fpl/points nayttaisi eri kierrosta kuin rivi jota han klikkasi.
+        # Fail-closed: linkki vain jos sivu on olemassa. `arkisto` annetaan
+        # eksplisiittisesti testeista, jotta assertio ei riipu siita mita
+        # talla koneella sattuu olemaan levylla.
+        gw_solu = f'GW{r["gw"]}'
+        if r["gw"] in arkisto:
+            gw_solu = f'<a href="/fpl/points/gw{r["gw"]}">{gw_solu}</a>'
         trs.append(
             "<tr>"
-            f'<td class="num">GW{r["gw"]}</td>'
+            f'<td class="num">{gw_solu}</td>'
             f'<td class="num">{n}</td>'
             + _cells(g, e, f) + "</tr>")
     by_class, by_pos, has_cmp = _xp_acc_pooled(rows)
@@ -2980,7 +3005,13 @@ def xp_accuracy_html(log: dict | None) -> str:
         "there, and all of them are graded against the points FPL gave them, "
         "the ones who never got on the pitch included. The figure is the mean "
         "absolute error, MAE: the average gap in points between the "
-        "projection and what the player scored."
+        "projection and what the player scored. Each gameweek number "
+        "below links to that gameweek's own page, where the same "
+        "comparison is open player by player. That page also states a "
+        "second, higher figure for the players who actually took the "
+        "pitch: the number in this table is lower because it includes "
+        "the players who did not play, whose score was 0 and whose "
+        "projection was already low."
         + fpl_sentence + "</p>"
         '<div class="scroll"><table>'
         f"<caption>MAE per gameweek, {n_gws} graded"

@@ -129,3 +129,67 @@ jobs:
             echo "$i: live=$LIVE, odotetaan 15 s"; sleep 15
           done
           echo "::error::goaliq.app ei tarjoile uutta sisaltoa 5 min jalkeen"; exit 1
+
+      # Portti 4: KORTIN LUPAAMA TARKISTUSREITTI VASTAA TUOTANNOSSA.
+      #
+      # Tuloskortti on pysyva kuva jonka alatunniste lupaa
+      # `goaliq.app/fpl/points/gw{n}`. Ennen 7.9.2026 se lupasi paljaan
+      # `/fpl/points`in, joka nayttaa vain kuluvan kierroksen: GW2:n kortti
+      # lahetti lukijan sivulle jolla oli GW3:n luvut. Offline-portti
+      # (tests/test_card_route_resolves.py) mittaa etta TIEDOSTO on olemassa,
+      # tama mittaa etta DOMAIN tarjoilee sen.
+      #
+      # 🔴 STATUSKOODI EI RIITA. goaliq.app ei palauta 404:aa kaikilla
+      # poluilla (muisti: goaliq-app-ei-palauta-404), joten 200 voi olla
+      # fallback-sivu. Siksi vaaditaan lisaksi etta sivun canonical osoittaa
+      # TAHAN URLiin - sita mikaan muu sivu ei voi vaittaa.
+      #
+      # 🔴 NEGATIIVINEN KONTROLLI: /fpl/points/gw99 ei ole pelattu kierros.
+      # Ilman sita portti lapaisisi myos silloin kun palvelin tarjoilee minka
+      # tahansa polun samana sivuna, eli mittaisi tyhjaa.
+      - name: Portti - kortin reitti vastaa tuotannossa
+        run: |
+          python3 - <<'PY'
+          import glob, os, subprocess, sys, time
+
+          def hae(url):
+              body = subprocess.run(
+                  ["curl", "-sS", "-L", "--max-time", "20", url],
+                  capture_output=True).stdout.decode("utf-8", "replace")
+              koodi = subprocess.run(
+                  ["curl", "-sS", "-L", "-o", os.devnull, "-w", "%{http_code}",
+                   "--max-time", "20", url],
+                  capture_output=True).stdout.decode().strip()
+              return koodi, body
+
+          def oma_canonical(body, url):
+              return '<link rel="canonical" href="' + url + '"' in body
+
+          gws = sorted(os.path.basename(f)[:-5]
+                       for f in glob.glob("fpl/points/gw*.html"))
+          if not gws:
+              print("::error::arkistosivuja ei ole - kortin reitti ei vastaa")
+              sys.exit(1)
+          print("tarkistetaan:", " ".join(gws))
+          for gw in gws:
+              url = "https://goaliq.app/fpl/points/" + gw
+              for i in range(1, 13):
+                  koodi, body = hae(url)
+                  if koodi == "200" and oma_canonical(body, url):
+                      print("OK", url)
+                      break
+                  print(gw + ": " + str(i) + ". yritys (code=" + koodi
+                        + "), odotetaan 15 s")
+                  time.sleep(15)
+              else:
+                  print("::error::" + url + " ei vastaa omalla canonicalillaan")
+                  sys.exit(1)
+
+          neg = "https://goaliq.app/fpl/points/gw99"
+          _, body = hae(neg)
+          if oma_canonical(body, neg):
+              print("::error::" + neg + " nayttaa arkistosivulta - portti "
+                    "lapaisi tyhjana")
+              sys.exit(1)
+          print("OK negatiivinen kontrolli: gw99 ei ole sivu")
+          PY

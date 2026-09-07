@@ -557,7 +557,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   <nav>
     <div class="logo"><a href="/"><svg class="logo-mark-img" width="32" height="32" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg> GoalIQ</a></div>
     <div style="display:flex; gap:20px; align-items:center;">
-      <a class="nav-link" href="fpl.html">Free FPL tools</a>
+      <a class="nav-link" href="/fpl">Free FPL tools</a>
       <a class="nav-link" href="/career">Career card</a>
       <a class="nav-cta" href="https://pro.goaliq.app/?tab=premium" data-cta="predictions-nav">Try Premium</a>
     </div>
@@ -589,7 +589,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     <div>
       <h2>What you get for <span class="accent">every match</span></h2>
       <p>Win probability for home, draw and away. Expected goals for both sides. The most likely scorelines ranked by probability, plus head-to-head history and form.</p>
-      <p>The same model powers GoalIQ's <a href="fpl.html" style="color:var(--teal-ink);font-weight:700;">free FPL tools</a>: clean sheet probability, fixture difficulty, rate my team and price watch.</p>
+      <p>The same model powers GoalIQ's <a href="/fpl" style="color:var(--teal-ink);font-weight:700;">free FPL tools</a>: clean sheet probability, fixture difficulty, rate my team and price watch.</p>
       <div class="cta-row" style="margin-top:22px; justify-content:flex-start;">
         <a class="btn-primary" href="https://pro.goaliq.app/" data-cta="predictions-demo">Try it on any fixture</a>
       </div>
@@ -622,7 +622,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <div class="step">
         <div class="n">1</div>
         <h3>Pick the match</h3>
-        <p>Choose any two teams from a covered league, the Champions League or an international tournament.</p>
+        <p>Choose any two teams from a covered league, the Champions League or an international tournament. This is the match model: one fixture, one result.</p>
       </div>
       <div class="step">
         <div class="n">2</div>
@@ -649,6 +649,12 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <!-- GEN:PRED-CHIPS-START --><div class="league-chip live">Premier League &middot; live now</div><div class="league-chip live">La Liga &middot; live now</div><div class="league-chip live">Bundesliga &middot; live now</div><div class="league-chip live">Serie A &middot; live now</div><div class="league-chip live">Ligue 1 &middot; live now</div><div class="league-chip">Champions League</div><div class="league-chip live">Brasileirão Série A &middot; live now</div><div class="league-chip live">Championship &middot; live now</div><div class="league-chip live">Eredivisie &middot; live now</div><div class="league-chip live">Primeira Liga &middot; live now</div><!-- GEN:PRED-CHIPS-END -->
     </div>
     <p style="text-align:center; color:var(--muted); font-size:14px; max-width:640px; margin:22px auto 0;"><!-- GEN:PRED-NOTE-START -->A league gets pages here once its next fixtures are logged, and each page comes down when that match kicks off. The prediction itself stays in the record either way.<!-- GEN:PRED-NOTE-END --></p>
+    <!-- 7 Sep: a Champions League search lands here and reads
+         "Covers the Champions League" as fantasy. Two products,
+         one name. The paragraph sits OUTSIDE the GEN markers so
+         build_prediction_pages.update_predictions_hub_links does
+         not overwrite it. -->
+    <p class="cta-note" style="text-align:center; max-width:640px; margin:10px auto 0;">Playing UCL Fantasy? Free prices, ownership and squad news at <a href="/ucl/">goaliq.app/ucl</a>. Match predictions and fantasy are separate things. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one.</p>
     <!-- #119: league hubs, filled by build_prediction_pages.py -->
     <div style="text-align:center; margin-top:18px;">
       <!-- GEN:PRED-LEAGUES-START --><a class="btn-ghost" href="/predictions/brasileirao/" style="margin:4px;">Brasileirão Série A predictions</a> <a class="btn-ghost" href="/predictions/premier-league/" style="margin:4px;">Premier League predictions</a> <a class="btn-ghost" href="/predictions/la-liga/" style="margin:4px;">La Liga predictions</a> <a class="btn-ghost" href="/predictions/bundesliga/" style="margin:4px;">Bundesliga predictions</a> <a class="btn-ghost" href="/predictions/serie-a/" style="margin:4px;">Serie A predictions</a> <a class="btn-ghost" href="/predictions/ligue-1/" style="margin:4px;">Ligue 1 predictions</a> <a class="btn-ghost" href="/predictions/championship/" style="margin:4px;">Championship predictions</a> <a class="btn-ghost" href="/predictions/eredivisie/" style="margin:4px;">Eredivisie predictions</a> <a class="btn-ghost" href="/predictions/primeira-liga/" style="margin:4px;">Primeira Liga predictions</a><!-- GEN:PRED-LEAGUES-END -->
@@ -738,15 +744,17 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     <div>
       <a href="/">GoalIQ home</a>
       &nbsp;·&nbsp;
-      <a href="fpl.html">FPL clean sheets &amp; FDR</a>
+      <a href="/fpl">FPL clean sheets &amp; FDR</a>
       &nbsp;·&nbsp;
       <a href="/career">FPL Career Card</a>
       &nbsp;·&nbsp;
+      <a href="/ucl/">UCL Fantasy prices</a> (no points projection)
+      &nbsp;·&nbsp;
       <a href="https://pro.goaliq.app">GoalIQ Premium (web)</a>
       &nbsp;·&nbsp;
-      <a href="privacy.html">Privacy</a>
+      <a href="/privacy">Privacy</a>
       &nbsp;·&nbsp;
-      <a href="faq.html">FAQ</a>
+      <a href="/faq">FAQ</a>
       &nbsp;·&nbsp;
       <a href="/creators">Creator program</a>
       &nbsp;·&nbsp;

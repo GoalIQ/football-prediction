@@ -95,8 +95,6 @@ def test_pistesarake_kertoo_kaudesta_jos_luvut_ovat_viime_kaudelta(nimi):
     if kentta == "prev_season_points":
         assert "Pts (last season)" in h, (
             f"{nimi}: luvut ovat viime kaudelta mutta sarake ei sano sita")
-        assert "xP" not in h, (
-            f"{nimi}: sivulla on xP-sarake vaikka kautta ei ole pelattu")
 
 
 def test_hub_ei_lupaa_taman_kauden_lukuja_esikaudella():
@@ -161,6 +159,23 @@ def test_saatavuuskaavion_jarjestys_vastaa_copyn_lupausta():
 
     assert "injured, suspended or doubtful" in h, (
         "copy ei kerro mita kaavio laskee")
+
+
+@pytest.mark.parametrize("nimi", SIVUT)
+def test_ei_xp_sarakketta_riippumatta_kauden_vaiheesta(nimi):
+    """🔴 KIELTO NOSTETTIIN POIS VAIHEHAARASTA 7.9.2026 (audit, rivi 4).
+
+    Se oli `if kentta == "prev_season_points"` -haaran sisalla, ja se haara
+    laukeaa VAIN esikaudella. MD1 on 8.9.2026, joten 9.9. alkaen mikaan ei
+    olisi estanyt xP-saraketta. Invariantti ei riipu kauden vaiheesta: UCL
+    Fantasylle ei ole mallia missaan vaiheessa.
+
+    Tama portti mittaa levylla olevat sivut. Vaihekohtainen mittaus tehdaan
+    synteettisella datalla `tests/test_ucl_no_projection.py`:ssa, koska
+    levylla oleva artefakti on aina vain YKSI vaihe kerrallaan.
+    """
+    assert "xP" not in _html(nimi), (
+        f"{nimi}: sivulla on xP, mutta UCL Fantasylle ei ole mallia")
 
 
 @pytest.mark.parametrize("nimi", SIVUT)

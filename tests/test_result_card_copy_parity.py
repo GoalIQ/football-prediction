@@ -45,7 +45,11 @@ SPEC_LITERALS = (
     "model on ${",
     "got lucky",
     "got robbed",
-    "frozen before the deadline · goaliq.app/fpl/points",
+    # 7.9: reitti kantaa KIERROKSEN. Molemmat haarat pinnataan erikseen -
+    # pelkka yhteinen alkuosa "…/fpl/points" olisi mennyt lapi myos silloin
+    # kun toinen pinta oli jaanyt vanhaan kierroksettomaan muotoon.
+    "frozen before the deadline · goaliq.app/fpl/points/gw${",
+    "frozen before the deadline · goaliq.app/fpl/points'",
     "n/a",
 )
 

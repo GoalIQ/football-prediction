@@ -341,7 +341,11 @@ def test_osio_vertailulla_nayttaa_kolme_saraketta_samalla_n():
         _gw_row(1, 490, 1.757),
         _gw_row(3, 500, 1.9, _cmp(480, 1.85, 1.95, 2.3)),
     ]}
-    html = xp_accuracy_html(log)
+    # 🔴 ARKISTO ANNETAAN EKSPLISIITTISESTI. Ilman tata assertio riippuisi
+    # siita mita `fpl/points/`-hakemistossa sattuu olemaan talla koneella:
+    # sama testi olisi vihrea kehityskoneella ja punainen tuoreessa checkoutissa
+    # (muisti: testin-assertio-riippui-ajokoneen-lokaalista).
+    html = xp_accuracy_html(log, arkisto=set())
     # GW3-rivi: vertailun n (480) ja kolme lukua, ei kokonais-n:aa (500)
     assert '<td class="num">GW3</td><td class="num">480</td>' in html
     assert "1.85" in html and "1.95" in html and "2.30" in html
@@ -360,3 +364,17 @@ def test_osio_ei_em_dashia():
     from scripts.build_fpl_page import xp_accuracy_html
     html = xp_accuracy_html({"gameweeks": [_gw_row(2, 500, 2.0, _cmp(10, 1, 2, 3))]})
     assert "—" not in html
+
+
+def test_kierrosnumero_linkittaa_arkistosivuun_vain_kun_se_on_olemassa():
+    """COPY-SYNC 7.9: taulukon luku on tarkistettavissa vain jos rivilta
+    paasee sen kierroksen omalle sivulle. Kuollut linkki olisi pahempi kuin
+    puuttuva, joten linkki syntyy vain olemassa olevalle sivulle."""
+    from scripts.build_fpl_page import xp_accuracy_html
+    log = {"gameweeks": [_gw_row(1, 490, 1.757), _gw_row(2, 511, 1.594)]}
+    with_arc = xp_accuracy_html(log, arkisto={2})
+    assert '<a href="/fpl/points/gw2">GW2</a>' in with_arc
+    assert '<a href="/fpl/points/gw1">' not in with_arc
+    assert '<td class="num">GW1</td>' in with_arc
+    ilman = xp_accuracy_html(log, arkisto=set())
+    assert "/fpl/points/gw" not in ilman

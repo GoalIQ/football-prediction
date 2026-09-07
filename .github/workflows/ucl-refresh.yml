@@ -78,6 +78,12 @@ jobs:
           [ -f ucl/index.html ] && git add ucl/index.html
           [ -f ucl/prices.html ] && git add ucl/prices.html
           [ -f ucl/team-news.html ] && git add ucl/team-news.html
+          # 7.9: builderi kirjoittaa myos naihin (sitemapin UCL-lastmod ja
+          # llms.txt:n GEN:UCL-lohko). Ilman naita rivia upsert ajaisi joka
+          # kerta levylle eika paatyisi koskaan committiin: sivu vaihtuisi,
+          # `lastmod` jaisi 7.9.2026:een ja llms.txt lupaisi vanhoja lukuja.
+          [ -f sitemap-core.xml ] && git add sitemap-core.xml
+          [ -f llms.txt ] && git add llms.txt
           if git diff --cached --quiet; then
             echo "Ei muutoksia."
             exit 0

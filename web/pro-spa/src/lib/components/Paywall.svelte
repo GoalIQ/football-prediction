@@ -65,7 +65,8 @@
 	<strong>Match model:</strong> full analysis for any fixture across the ten competitions we
 	cover, from the Premier League to the Champions League: top-10 most likely scorelines,
 	total goals, both teams to score, form and momentum trends, head-to-head record and fair
-	value estimates.
+	value estimates. Match analysis only. UCL Fantasy prices and squad news are free at
+	goaliq.app/ucl. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one.
 </p>
 <p class="muted">
 	Both plans renew until you cancel, and you can cancel from the Account menu. One subscription

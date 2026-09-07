@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.build_fpl_longtail import (  # noqa: E402
-    BASE, CSS, DISCLAIMER, MOBILE_COLS_JS, POSTHOG_SNIPPET, TABLE_TOOLS_JS,
+    BASE, CSS, MOBILE_COLS_JS, POSTHOG_SNIPPET, TABLE_TOOLS_JS,
     _og_image, _social_meta, _strip_css_comments,
 )
 from src.models import ucl_phase as vaiheet  # noqa: E402
@@ -48,6 +48,54 @@ from src.viz import svg_charts as sc  # noqa: E402
 
 DATA = ROOT / "data" / "ucl_fantasy.json"
 OUT_DIR = ROOT / "ucl"
+
+# ---------------------------------------------------------------------------
+# 🔴 RAJAUS ON YHDESSA PAIKASSA JA SE MENEE JOKAISELLE SIVULLE ITSESTAAN
+# (COPY-SYNC-AUDIT 7.9.2026, blokkaavat loydokset 1 ja 2, saanto 6a mek. 1).
+#
+# Mitattu 7.9: sivustolla on KAKSI eri "UCL"-tuotetta.
+#   (a) ottelumalli, joka kattaa Champions Leaguen aidosti
+#       (api.goaliq.app/api/fixtures?league=INT-Champions League -> 200,
+#        MD1 8.9.2026), ja
+#   (b) tama osio, joka on UEFAn UCL Fantasy -syotetta ILMAN mallia.
+# Ero oli kirjattu TASMALLEEN yhdelle pinnalle, `llms.txt`:aan, joka on
+# koneluettava. Yksikaan ihminen ei nahnyt sita. Samaan aikaan naiden
+# sivujen footer ajoi jaettua `DISCLAIMER`ia, joka VAITTAA sivun luvut
+# malliennusteiksi ("GoalIQ model predictions are statistical estimates").
+#
+# Rajaus ei siksi ole sivukohtaista copya vaan `_page()`n tuottama pakko:
+# uusi UCL-sivu ei voi syntya ilman sita, koska se ei kulje sivun kirjoittajan
+# muistin kautta. Sanamuoto on EHDOTON eika kausisidottu ("in any phase of the
+# season") - kausisidottu perustelu vanhenee itsestaan, ja tasan niin kavi
+# llms.txt:n alkuperaiselle lauseelle MD1:ssa (muisti: ehto-ei-vanhene-teksti-
+# vanhenee).
+# ---------------------------------------------------------------------------
+# Kanoninen kielto. Tama merkkijono esiintyy sanatarkasti myos llms.txt:ssa,
+# faq.html:ssa, index.html:ssa, predictions.html:ssa ja SPA:n Paywallissa.
+EI_MALLIA = (
+    "There is no expected points model for UCL Fantasy, in any phase of the "
+    "season, and we do not publish one."
+)
+
+UCL_SCOPE = (
+    "This section is prices, ownership and squad availability read from "
+    "UEFA's own public UCL Fantasy feed. "
+    # 🔴 SANATARKKA JA SAMA JOKA PINNALLA. Sama kielto viitena eri
+    # sanamuotona on viisi eri vaitetta lukijalle ja viisi eri
+    # korjauskohdetta meille (muisti: sama-vaite-monessa-sanamuodossa).
+    # `tests/test_ucl_no_projection.py` pitaa tata literaalia sallittujen
+    # listalla; uusi parafraasi ei paase listalle vahingossa.
+    + EI_MALLIA
+)
+
+# 🔴 EI JAETTUA `DISCLAIMER`IA. Sen sanamuoto on "GoalIQ model predictions
+# are statistical estimates", ja talla sivulla ei ole yhtaan mallin tuottamaa
+# lukua. Vaara varauma on huonompi kuin ei varaumaa: se kertoo lukijalle etta
+# nama luvut ovat meidan arvioitamme, kun ne ovat UEFAn syotetta.
+UCL_DISCLAIMER = (
+    "Every number on this page is read from UEFA's official UCL Fantasy "
+    "feed. GoalIQ does not model or project UCL Fantasy points."
+)
 
 # Osion oma navigointi. Sivusopimus vaatii sisaantulevan linkin joka
 # sivulle; nama ristiinlinkit ovat se paikka josta se tulee.
@@ -136,20 +184,21 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         '<span><a href="/fpl">FPL tools</a> · '
         '<a class="nav-cta" href="https://pro.goaliq.app/">Try it live</a></span>'
         "</nav></div>\n"
-        f'<div class="wrap hero">\n{hero}\n</div>\n</header>\n'
+        f'<div class="wrap hero">\n{hero}\n'
+        f'<p class="note">{UCL_SCOPE}</p>\n</div>\n</header>\n'
         f'<main class="wrap content">\n{body}\n'
         f'<nav class="toolnav"><h2>UCL Fantasy</h2><div>{linkit}</div></nav>\n'
         '<footer>© 2026 GoalIQ · '
         '<a href="/predictions">Football predictions</a> · '
         '<a href="/fpl">Free FPL tools</a> · '
-        f'<a href="/privacy.html">Privacy</a><br>'
+        f'<a href="/privacy">Privacy</a><br>'
         # 🔴 EROTTAUTUMINEN ON OLTAVA SIELLA MISSA LUKIJA ON. `spl.html`
         # kantaa vastaavan rivin sivulla itsellaan; /ucl-sivuilla se oli
         # vain etusivun kaistalla ja llms.txt:ssa, eli ei silla sivulla
         # joka nimeaa UEFAn ja UCL Fantasyn.
         "GoalIQ is an independent data tool and is not affiliated with, "
         "endorsed by, or paid by UEFA, the UCL Fantasy game, or any club."
-        f"<br>{DISCLAIMER}</footer>\n"
+        f"<br>{UCL_DISCLAIMER}</footer>\n"
         "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n")
 
 
@@ -245,6 +294,33 @@ def _taulukko(otsikot: list[str], rivit: list[list[str]]) -> str:
             f"<thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table></div>")
 
 
+def _feed_dt(doc: dict) -> dt.datetime | None:
+    """Syotteen aikaleima datetimena. YKSI LUKIJA neljalle pinnalle.
+
+    Nakyva leima, JSON-LD:n `dateModified`, sitemapin `lastmod` ja llms.txt
+    kertovat kaikki saman asian: milloin luvut ovat UEFAlta. Jos jokainen
+    laskisi sen itse, jokin niista lukisi ajohetkea (CLAUDE.md 6a,
+    mekanismi 1; muisti: rakennusaika-artefaktissa).
+    """
+    iso = (doc.get("meta") or {}).get("feed_updated_utc")
+    if not iso:
+        return None
+    try:
+        return dt.datetime.fromisoformat(iso)
+    except (TypeError, ValueError):
+        return None
+
+
+def _feed_iso(doc: dict) -> str | None:
+    d = _feed_dt(doc)
+    return d.isoformat() if d else None
+
+
+def _feed_pvm(doc: dict) -> str | None:
+    d = _feed_dt(doc)
+    return d.date().isoformat() if d else None
+
+
 def _feed_leima(doc: dict) -> str:
     """Milloin luvut ovat UEFAlta. Ei rakennusaika (ks. ingest_ucl).
 
@@ -262,10 +338,10 @@ def _feed_leima(doc: dict) -> str:
     voi nayttaa ilman varausta.
     """
     meta = doc.get("meta") or {}
-    iso = meta.get("feed_updated_utc")
-    if not iso:
+    d = _feed_dt(doc)
+    if not d:
         return "an unknown time"
-    leima = dt.datetime.fromisoformat(iso).strftime("%d %b %Y, %H:%M UTC")
+    leima = d.strftime("%d %b %Y, %H:%M UTC")
     if meta.get("players_matchday_is_fallback"):
         md = meta.get("players_matchday")
         return (f"{leima}, for matchday {md}, which is the most recent "
@@ -290,13 +366,33 @@ def _tyhja_selite(doc: dict, kentta: str) -> str:
             "at clubs that were not in the competition.</p>")
 
 
+def _otsikot(sarake: str) -> list[str]:
+    """Taulukon sarakeotsikot. YKSI LUKIJA kolmelle sivulle JA Datasetille.
+
+    🔴 OTSIKKO "Price" ON SOPIMUS JS:N KANSSA, EI VAPAA TEKSTI.
+    `scripts/table_tools.py:116` etsii hintasarakkeen otsikon TASMALLEEN
+    (`n===names[j]`, listalla 'price'/'cost'/'£'). Otsikon muuttaminen
+    muotoon "Price (m)" olisi vienyt Max price -suodattimen aanettomasti,
+    eli sama vikaluokka kuin keksitty CSS-luokka: validia HTML:aa, nolla
+    toiminnallisuutta. Yksikko kuuluu siksi SOLUUN, ei otsikkoon.
+    """
+    return ["Player", "Club", "Pos", "Price", "Owned", sarake, "Status"]
+
+
 def _pelaajarivit(pelaajat: list[dict], kentta: str) -> list[list[str]]:
     ulos = []
     for p in pelaajat:
         tila = STATUS_SANA.get(p["status"], p["status"])
         ulos.append([
             escape(p["name"] or ""), escape(p["team_code"] or ""), p["pos"],
-            f'{p["price"]:g}', f'{p["owned_pct"]:g}%',
+            # 🔴 YKSIKKO SOLUUN (7.9.2026, GEO-auditointi). Solu oli paljas
+            # "11" ja otsikko "Price", kun kaavion aria-label samalla
+            # sivulla sanoi "11m". Sama luku kahdessa muodossa, ja poimija
+            # lukee taulukon: kysymys "what does X cost in UCL Fantasy" sai
+            # vastauksen "11". `table_tools.num()` riisuu ei-numeeriset
+            # merkit ennen lajittelua ja suodatusta, joten "11m" lajittuu ja
+            # suodattuu edelleen numerona.
+            f'{p["price"]:g}m', f'{p["owned_pct"]:g}%',
             # 🔴 TYHJA, EI NOLLA, kun pelaaja ei ollut kilpailussa viime
             # kaudella. Mitattu: 762 pelaajaa 1 162:sta, ja kymmenella
             # klubilla se koskee jokaista pelaajaa. "0" luetaan huonoksi
@@ -313,13 +409,224 @@ def _pelaajarivit(pelaajat: list[dict], kentta: str) -> list[list[str]]:
 
 # --- sivut -----------------------------------------------------------------
 
-def _jsonld(nimi: str, kuvaus: str, url: str) -> list[dict]:
-    return [{
+#: Sivuston entiteettigraafin solmu. Se on MAARITELTY `index.html`:ssa
+#: (Organization, @id .../#organization) ja kaikki muut osiot viittaavat
+#: siihen. UCL-sivut kantoivat inline-objektin ilman @id:ta, eli ne olivat
+#: graafin ulkopuolella: sama julkaisija esiintyi crawlerille eri
+#: entiteettina kuin muualla sivustolla.
+ORG_ID = f"{BASE}/#organization"
+
+#: Sarakkeen yksikko `Dataset.variableMeasured`iin. Otsikko itse ei voi
+#: kantaa yksikkoa (ks. `_otsikot`), joten koneluettava puoli kantaa sen.
+SARAKE_YKSIKKO = {"Price": "million", "Owned": "percent"}
+
+
+def _kausi(doc: dict) -> str:
+    """`Dataset.temporalCoverage` artefaktin kierroksista, ei kovakoodattuna.
+
+    Kausiluku joka kirjoitetaan kasin ("2026-27") on tosi tasan yhden
+    kauden ajan eika mikaan huuda kun se lakkaa olemasta. Vali johdetaan
+    niista deadlineista jotka artefaktissa OIKEASTI ovat, joten se kattaa
+    tasan sen mita data kattaa.
+    """
+    pvm = sorted(
+        d for d in (
+            _iso_dt(k.get("deadline_utc"))
+            for k in (doc.get("matchdays") or []))
+        if d)
+    return f"{pvm[0]:%Y-%m}/{pvm[-1]:%Y-%m}" if pvm else ""
+
+
+def _iso_dt(raw: str | None) -> dt.datetime | None:
+    if not raw:
+        return None
+    try:
+        return dt.datetime.fromisoformat(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _muru(url: str, nimi: str | None) -> dict:
+    """BreadcrumbList canonicalista. Hierarkia on olemassa, ei keksitty."""
+    kohteet = [
+        {"@type": "ListItem", "position": 1, "name": "GoalIQ", "item": BASE},
+        {"@type": "ListItem", "position": 2, "name": "UCL Fantasy",
+         "item": f"{BASE}/ucl/"},
+    ]
+    if nimi and url.rstrip("/") != f"{BASE}/ucl":
+        kohteet.append({"@type": "ListItem", "position": 3, "name": nimi,
+                        "item": url})
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList",
+            "itemListElement": kohteet}
+
+
+def _dataset(doc: dict, nimi: str, kuvaus: str, url: str,
+             sarake: str) -> dict:
+    """Taulukon koneluettava puoli.
+
+    🔴 SARAKKEET TULEVAT `_otsikot`ista, EIVAT OMASTA LISTASTA. Kaksi
+    listaa samasta asiasta ajautuu erilleen: sarake vaihtuu kauden
+    alkaessa (`ucl_phase.pistekentta`), ja kasin kirjoitettu
+    `variableMeasured` jaisi lupaamaan viime kauden otsikkoa.
+    """
+    ld = {
+        "@context": "https://schema.org", "@type": "Dataset",
+        "name": nimi, "description": kuvaus, "url": url,
+        "isAccessibleForFree": True,
+        "creator": {"@id": ORG_ID},
+        "publisher": {"@id": ORG_ID},
+        "variableMeasured": [
+            dict({"@type": "PropertyValue", "name": o},
+                 **({"unitText": SARAKE_YKSIKKO[o]}
+                    if o in SARAKE_YKSIKKO else {}))
+            for o in _otsikot(sarake)
+        ],
+        "keywords": ["UCL Fantasy", "Champions League fantasy",
+                     "UCL Fantasy prices", "UCL Fantasy ownership",
+                     "UCL Fantasy team news"],
+    }
+    # Tyhjaa kenttaa ei kirjoiteta: puuttuva arvo on rehellisempi kuin
+    # tyhja merkkijono, jonka lukija lukee mittaustuloksena.
+    if _kausi(doc):
+        ld["temporalCoverage"] = _kausi(doc)
+    if _feed_iso(doc):
+        ld["dateModified"] = _feed_iso(doc)
+    return ld
+
+
+def _faq_ld(parit: list[tuple[str, str]]) -> dict:
+    """FAQPage SAMASTA listasta josta nakyva FAQ renderoidaan.
+
+    🔴 EI ERILLISTA VASTAUSTEKSTIA. JSON-LD on julkisempi pinta kuin runko
+    (crawlerit lainaavat sen sanatarkasti), ja tassa osiossa on jo kerran
+    kaynyt niin etta korjattu vaite jai elamaan JSON-LD:hen. Kun molemmat
+    pinnat lukevat saman listan, ne eivat voi olla eri mielta.
+    """
+    return {
+        "@context": "https://schema.org", "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": q,
+             "acceptedAnswer": {"@type": "Answer", "text": v}}
+            for q, v in parit
+        ],
+    }
+
+
+def _faq_html(parit: list[tuple[str, str]]) -> str:
+    """Nakyva FAQ.
+
+    🔴 `quote=False` EI OLE KOSMETIIKKAA. Oletusarvoinen `escape()` muuttaa
+    heittomerkin muotoon `&#x27;`, ja `UCL_DISCLAIMER` sisaltaa sellaisen
+    ("UEFA's official ... feed"). Escapattuna kanoninen literaali ei enaa
+    tasmaa itseensa, joten `tests/test_ucl_no_projection.py` luki sen
+    projektiovaitteeksi: sivu kantoi kiellon, mutta portti ei nahnyt sita
+    kieltona. Teksti menee elementin sisalle eika attribuuttiin, joten
+    lainausmerkkeja ei tarvitse escapata.
+    """
+    return ("<h2>Common questions</h2>" + "".join(
+        f"<h3>{escape(q, quote=False)}</h3>"
+        f"<p>{escape(v, quote=False)}</p>" for q, v in parit))
+
+
+def _jsonld(nimi: str, kuvaus: str, url: str, doc: dict,
+            murunimi: str | None = None, dataset: dict | None = None,
+            faq: list[tuple[str, str]] | None = None) -> list[dict]:
+    lohkot: list[dict] = [{
         "@context": "https://schema.org", "@type": "WebPage",
         "name": nimi, "description": kuvaus, "url": url,
-        "isPartOf": {"@type": "WebSite", "name": "GoalIQ", "url": BASE},
-        "publisher": {"@type": "Organization", "name": "GoalIQ"},
+        "isPartOf": {"@type": "WebSite", "name": "GoalIQ", "url": BASE,
+                     "publisher": {"@id": ORG_ID}},
+        "publisher": {"@id": ORG_ID},
     }]
+    if _feed_iso(doc):
+        # Datan iasta, ei ajohetkesta: cron-katkossa ajohetki vaittaisi
+        # tuoreutta jota luvuilla ei ole (muisti: rakennusaika-artefaktissa).
+        lohkot[0]["dateModified"] = _feed_iso(doc)
+    lohkot.append(_muru(url, murunimi))
+    if dataset:
+        lohkot.append(dataset)
+    if faq:
+        lohkot.append(_faq_ld(faq))
+    return lohkot
+
+
+def _karki_lause(kartoitus: list[dict]) -> str:
+    """Lainattava kärkilause omistustaulukon ylle.
+
+    🔴 TAULUKON RIVI EI OLE LAUSE. Kysymykseen "most owned UCL Fantasy
+    players" sivulla oli vastaus vain soluina: otsikko `Most owned` ja
+    taulukko. Poimija joutuu paattelemaan sen taulukon rakenteesta, ja
+    kielimalli lainaa lauseen. Luvut tulevat SAMASTA lajitellusta
+    listasta kuin taulukko, joten ne eivat voi olla eri mielta.
+    """
+    if len(kartoitus) < 2:
+        return ""
+    a, b = kartoitus[0], kartoitus[1]
+    # Tasapeli on mahdollinen: omistusluvut ovat kokonaislukuja, joten
+    # "ahead of" olisi vaara vaite yhtasuurilla luvuilla.
+    suhde = "level with" if a["owned_pct"] == b["owned_pct"] else "ahead of"
+    return (f'<p>The most owned player in UCL Fantasy is '
+            f'{escape(a["name"] or "")} ({escape(a["team"] or "")}, '
+            f'{a["price"]:g}m) at {a["owned_pct"]:g}% ownership, {suhde} '
+            f'{escape(b["name"] or "")} ({escape(b["team"] or "")}) at '
+            f'{b["owned_pct"]:g}%.</p>')
+
+
+def _faq(doc: dict, nyt: dt.datetime) -> list[tuple[str, str]]:
+    """Hubin kysymysvastaavuus. Jokainen luku johdetaan artefaktista.
+
+    🔴 VAIHESIDOTTU VASTAUS ON KIRJOITETTAVA VAIHEEN FUNKTIONA. Vastaus
+    pistesarakkeesta on tosi vain esikaudella; kovakoodattuna se olisi
+    vihrea siihen asti kun se lakkaa olemasta tosi (CLAUDE.md 6a,
+    mekanismi 3). Sama lukija (`ucl_phase.vaihe`) paattaa sen kuin
+    sarakeotsikon.
+    """
+    P = doc["players"]
+    klubit = len(doc.get("teams") or [])
+    kartoitus = sorted(P, key=lambda p: (-p["owned_pct"], -p["price"],
+                                         p["name"] or ""))
+    toimittava_n = sum(1 for p in P if p["status"] in TOIMITTAVA)
+    nis = sum(1 for p in P if p["status"] == "not_in_squad")
+    a, b = kartoitus[0], kartoitus[1]
+    suhde = "level with" if a["owned_pct"] == b["owned_pct"] else "ahead of"
+    pistelause = (
+        "The points column shows last season's UCL total, which is what "
+        "the feed carries before a matchday of this season is played, and "
+        "the column heading says so."
+        if vaiheet.vaihe(doc, nyt) == vaiheet.ESIKAUSI else
+        "The points column shows this season's UCL total from the feed.")
+    return [
+        ("How many players are in UCL Fantasy?",
+         f"The official UCL Fantasy game has {len(P)} players from "
+         f"{klubit} clubs. GoalIQ lists every one of them with price, "
+         "ownership, position and squad status at "
+         "https://goaliq.app/ucl/prices. Free, no login."),
+        ("Who is the most owned UCL Fantasy player?",
+         f'{a["name"]} ({a["team"]}, {a["price"]:g}m) is owned by '
+         f'{a["owned_pct"]:g}% of managers, {suhde} {b["name"]} '
+         f'({b["team"]}) at {b["owned_pct"]:g}%. The figures come from '
+         f"UEFA's own public feed, last update {_feed_leima(doc)}."),
+        ("Which UCL Fantasy players are injured or suspended?",
+         f"{toimittava_n} players carry an injury, suspension or doubt "
+         f"flag in the official feed. A further {nis} are left out of "
+         "their club's registered squad, which is a club decision and not "
+         f"a fitness one, for {toimittava_n + nis} rows in total at "
+         "https://goaliq.app/ucl/team-news."),
+        # 🔴 KANONISET LITERAALIT, EI OMAA SANAMUOTOA. Ensimmainen versio
+        # kysyi "Does GoalIQ project points for UCL Fantasy?" ja vastasi
+        # omin sanoin. `tests/test_ucl_no_projection.py` kaatoi sen: kysymys
+        # itse on projektiovaite kunnes se on luettu loppuun, ja kuudes
+        # parafraasi samasta kiellosta on kuudes eri vaite lukijalle.
+        # `UCL_DISCLAIMER` ja `EI_MALLIA` ovat ne merkkijonot jotka koko
+        # sivusto kayttaa, ja vain vaihesidottu osa on oma.
+        ("Are the UCL Fantasy numbers on this page GoalIQ estimates?",
+         f"No. {UCL_DISCLAIMER} {EI_MALLIA} {pistelause}"),
+        ("Is GoalIQ affiliated with UEFA?",
+         "No. GoalIQ is an independent data tool and is not affiliated "
+         "with, endorsed by, or paid by UEFA, the UCL Fantasy game, or "
+         "any club. These pages read UEFA's own public UCL Fantasy feed "
+         "and normalise it."),
+    ]
 
 
 def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
@@ -356,7 +663,12 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
             "<p>Points and minutes on this page are from the current UCL "
             "season.</p>")
 
-    kartoitus = sorted(P, key=lambda p: -p["owned_pct"])[:20]
+    # 🔴 YKSI LAJITTELU KAHDELLE PINNALLE. Taulukon karki ja sen ylla
+    # oleva lainattava lause vastaavat samaan kysymykseen; kaksi erillista
+    # `sorted`-kutsua olisivat voineet nimeta eri pelaajan tasapelissa.
+    # Tasapeli katkaistaan deterministisesti, ei syotteen jarjestyksella.
+    kartoitus = sorted(P, key=lambda p: (-p["owned_pct"], -p["price"],
+                                         p["name"] or ""))
 
     # Jokainen luku johdetaan datasta. Kasin kirjoitettu luku vanhenee
     # hiljaa, ja "a dozen" oli jo vaarin: suurin todellinen oli 9.
@@ -369,9 +681,25 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
     # Mitattu: kaikki `owned_pct`-arvot ovat kokonaislukuja, joten
     # "yli 1 %" tarkoittaa kaytannossa 2 % tai enemman. Sanotaan se niin.
     mukana = sum(1 for p in P if p["owned_pct"] > 1.0)
+    faq = _faq(doc, nyt)
 
     body = (
         f"{perusta}"
+        # 🔴 KAKSI ERI "UCL"-TUOTETTA, SANOTTUNA AANEEN (audit-rivi 2).
+        # Ottelumalli kattaa Champions Leaguen aidosti: mitattu 7.9,
+        # api.goaliq.app/api/fixtures?league=INT-Champions League -> 200, MD1
+        # 8.9.2026, ja kilpailu on valittavissa seka SPA:ssa
+        # (web/pro-spa/src/lib/leagues.ts:43) etta mobiilissa
+        # (goaliq-app/lib/leagues.ts:158). Fantasypisteita se EI ennusta.
+        # Linkki menee SPA:han eika /predictions-hubiin, koska hubilla ei ole
+        # yhtaan CL-ottelusivua (mitattu: prediction-lokissa 0 CL-rivia), ja
+        # linkki joka lupaa reitin jota ei ole on sama vika toisin pain.
+        '<p class="note">GoalIQ also has a match model, and it does cover '
+        "Champions League fixtures: win probability, expected goals and the "
+        "most likely scorelines for one match, at "
+        '<a href="https://pro.goaliq.app/">pro.goaliq.app</a>. That is a '
+        "different product from this section. It reads a football match, not "
+        "a fantasy squad, and it produces no UCL Fantasy points.</p>"
         "<h2>Where the money is</h2>"
         f"<p>The {mukana} players owned by 2% or more, plotted by price "
         f"against ownership. The other {len(P) - mukana} sit at 1% or "
@@ -393,12 +721,14 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         f"full list</a> has all {toimittava_n + nis}.</p>"
         f"{kaavio_saatavuus(P, doc['teams'])}"
         "<h2>Most owned</h2>"
+        + _karki_lause(kartoitus)
         + _tyhja_selite(doc, kentta)
-        + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
-                     "Status"], _pelaajarivit(kartoitus, kentta))
+        + _taulukko(_otsikot(sarake),
+                    _pelaajarivit(kartoitus[:20], kentta))
         + '<p><a href="/ucl/prices">Full list of all '
         f'{len(P)} players</a> · '
-        '<a href="/ucl/team-news">Squad availability by club</a></p>')
+        '<a href="/ucl/team-news">Squad availability by club</a></p>'
+        + _faq_html(faq))
 
     # 🔴 EI KADENSSILUPAUSTA, VAAN AIKALEIMA. "Updated every six hours" on
     # vaite jota lukija ei voi tarkistaa mistaan, ja oma mittauksemme
@@ -439,23 +769,47 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
             f"{leima}.</p>")
     body += dl_js
 
+    # 🔴 HUBIN OTSIKKO OLI LASTENSA OTSIKOT YHTEEN LIIMATTUNA (audit 7.9):
+    # "prices, ownership and squad availability" = "prices and ownership" +
+    # "squad availability". Kolme sivua kilpaili samoista hauista. Hubin
+    # otsikko nimeaa nyt TEHTAVAN (mita taalta saa) kuten `/fpl`:n
+    # "Free FPL Tools", ja alasivut pitavat sisaltohakunsa.
+    otsikko = "Free UCL Fantasy Tools: Player Prices, Ownership, Team News"
+    kuvaus = (
+        f"Free UCL Fantasy data on all {len(P)} players from "
+        f"{len(doc.get('teams') or [])} clubs: price, ownership percentage "
+        f"and squad status, with {toimittava_n + nis} players flagged or "
+        "left out of a registered squad. No login.")
     return _page(
-        "UCL Fantasy prices, ownership and squad availability | GoalIQ",
-        "Free UCL Fantasy data: what every player costs, how many managers "
-        "own them, and which players carry a flag. No login.",
-        f"{BASE}/ucl/", hero, body,
-        _jsonld("UCL Fantasy tools",
-                "Free UCL Fantasy prices, ownership and squad availability.",
-                f"{BASE}/ucl/"))
+        f"{otsikko} | GoalIQ", kuvaus, f"{BASE}/ucl/", hero, body,
+        _jsonld(
+            "UCL Fantasy tools", kuvaus, f"{BASE}/ucl/", doc,
+            dataset=_dataset(
+                doc,
+                "GoalIQ UCL Fantasy player prices, ownership and squad "
+                "availability",
+                f"Every player in the official UEFA Champions League "
+                f"Fantasy game, {len(P)} of them across "
+                f"{len(doc.get('teams') or [])} clubs, with price in "
+                "millions, the share of managers who own them, position, "
+                f"and the squad status the official feed reports. "
+                f"{sarake} is the points column. Read from UEFA's own "
+                "public feed and normalised. No projection is included.",
+                f"{BASE}/ucl/", sarake),
+            faq=faq))
 
 
 def sivu_hinnat(doc: dict, nyt: dt.datetime) -> str:
     P = sorted(doc["players"], key=lambda p: (-p["owned_pct"], -p["price"]))
     kentta, sarake = vaiheet.pistekentta(doc, nyt)
     mukana = sum(1 for p in doc["players"] if p["owned_pct"] > 1.0)
+    klubit = len(doc.get("teams") or [])
+    kallein = max(doc["players"], key=lambda p: (p["price"], p["owned_pct"]))
+    # 🔴 SISALTO-H2:T PUUTTUIVAT KOKONAAN (audit 7.9). Sivun ainoa H2 oli
+    # alatunnisteen navigointi, eli kahden eri asian (kaavio, koko lista)
+    # valilla ei ollut rakennetta jonka poimija tai ruudunlukija nakisi.
     body = (
-        "<p>Sorted by ownership. Click a column heading to sort by "
-        "anything else.</p>"
+        "<h2>Ownership against price</h2>"
         # 🔴 RAJAUS ON SANOTTAVA NAKYVASSA TEKSTISSA. `svg_charts.otsikko`
         # menee vain `aria-label`iin, joten kaavion oma otsikko EI ole
         # nakevalle lukijalle olemassa. Ilman tata sivun nakyva copy lupasi
@@ -464,21 +818,37 @@ def sivu_hinnat(doc: dict, nyt: dt.datetime) -> str:
         "The feed reports ownership in whole percent, so everyone else "
         "sits at 1% or 0%. The table below has all of them.</p>"
         f"{kaavio_omistus(doc['players'])}"
+        f"<h2>All {len(P)} players</h2>"
+        f'<p>The most expensive player in UCL Fantasy is '
+        f'{escape(kallein["name"] or "")} ({escape(kallein["team"] or "")}) '
+        f'at {kallein["price"]:g}m. Every price on this page is in the '
+        "millions the game budgets in. Sorted by ownership. Click a column "
+        "heading to sort by anything else.</p>"
         + _tyhja_selite(doc, kentta)
-        + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
-                     "Status"], _pelaajarivit(P, kentta)))
+        + _taulukko(_otsikot(sarake), _pelaajarivit(P, kentta)))
     hero = ("<h1>UCL Fantasy prices and ownership</h1>"
             f'<p class="lede">All {len(P)} players in the game, with what '
             "the feed says they cost and how many managers own them. "
             f"Last update {_feed_leima(doc)}.</p>")
+    kuvaus = (
+        f"All {len(P)} UCL Fantasy players from {klubit} clubs with price "
+        "in millions, ownership percentage, position and squad status. "
+        "Sortable, free, no login.")
     return _page(
         "UCL Fantasy prices and ownership, all players | GoalIQ",
-        f"All {len(P)} UCL Fantasy players with price, ownership percentage, "
-        "position and squad status. Free, no login.",
-        f"{BASE}/ucl/prices", hero, body,
-        _jsonld("UCL Fantasy prices and ownership",
-                "Every UCL Fantasy player with price and ownership.",
-                f"{BASE}/ucl/prices"))
+        kuvaus, f"{BASE}/ucl/prices", hero, body,
+        _jsonld(
+            "UCL Fantasy prices and ownership", kuvaus,
+            f"{BASE}/ucl/prices", doc, murunimi="Prices and ownership",
+            dataset=_dataset(
+                doc, "GoalIQ UCL Fantasy price and ownership table",
+                f"Price in millions and ownership percentage for all "
+                f"{len(P)} players in the official UEFA Champions League "
+                f"Fantasy game, across {klubit} clubs, with position, "
+                f"squad status and {sarake}. One row per player, sortable "
+                "and filterable by position and maximum price. Read from "
+                "UEFA's own public feed and normalised.",
+                f"{BASE}/ucl/prices", sarake)))
 
 
 def sivu_team_news(doc: dict, nyt: dt.datetime) -> str:
@@ -487,7 +857,16 @@ def sivu_team_news(doc: dict, nyt: dt.datetime) -> str:
     poissa = [p for p in P if p["status"] in POISSA]
     poissa.sort(key=lambda p: (POISSA.index(p["status"]), -p["owned_pct"]))
     toimittava_n = sum(1 for p in P if p["status"] in TOIMITTAVA)
+    # Erittely lauseeksi, ei pelkiksi taulukkoriveiksi: kysymys "who is
+    # injured in UCL Fantasy" sai vastaukseksi vain kokonaisluvun, ja
+    # jokainen tilaluku oli olemassa vain soluina. Luvut lasketaan
+    # `POISSA`-listasta, joten uusi tila ei voi jaada lauseesta pois.
+    per_tila = Counter(p["status"] for p in poissa)
+    erittely = ", ".join(
+        f"{per_tila[s]} {STATUS_SANA[s].lower()}" for s in POISSA
+        if per_tila[s])
     body = (
+        "<h2>Flagged by club</h2>"
         # 🔴 "CANNOT BE PICKED" ON YLIVAITE. Syotteessa on vain `pStatus`
         # -lippu (I/D/S/NIS), ei kenttaa valittavuudesta. Vain NIS
         # tarkoittaa varmasti ettei pelaajaa voi valita; loukkaantunut ja
@@ -499,27 +878,154 @@ def sivu_team_news(doc: dict, nyt: dt.datetime) -> str:
         "of a registered squad, which is a club decision and not a "
         f"fitness one, for {len(poissa)} rows in total.</p>"
         f"{kaavio_saatavuus(P, doc['teams'])}"
+        f"<h2>Every flagged player</h2>"
+        f"<p>The official feed flags {erittely}. The table lists all "
+        f"{len(poissa)} in that order, most owned first inside each group. "
+        "Click a column heading to sort by anything else.</p>"
         + _tyhja_selite(doc, kentta)
-        + _taulukko(["Player", "Club", "Pos", "Price", "Owned", sarake,
-                     "Status"], _pelaajarivit(poissa, kentta)))
+        + _taulukko(_otsikot(sarake), _pelaajarivit(poissa, kentta)))
     hero = ("<h1>UCL Fantasy squad availability</h1>"
             f'<p class="lede">{len(poissa)} players are flagged in the '
             "official feed. Here is who, and at which club. Last update "
             f"{_feed_leima(doc)}.</p>")
+    kuvaus = (
+        f"UCL Fantasy team news: {erittely}. Which players carry a flag in "
+        "the official feed or are left out of a registered squad, by club. "
+        "Free, no login.")
     return _page(
         "UCL Fantasy squad availability and team news | GoalIQ",
-        "Which UCL Fantasy players are injured, suspended, doubtful or out "
-        "of the registered squad, by club. Free, no login.",
-        f"{BASE}/ucl/team-news", hero, body,
+        kuvaus, f"{BASE}/ucl/team-news", hero, body,
         # 🔴 JSON-LD ON JULKISEMPI KUIN RUNKO. Korjasin "cannot be picked"
         # -yliväitteen nakyvasta tekstista mutta jatin sen tahan: Google ja
         # LLM-crawlerit lainaavat strukturoitua dataa sanatarkasti (muisti:
         # hedge-vain-nakyvassa-copyssa).
-        _jsonld("UCL Fantasy squad availability",
-                "UCL Fantasy players carrying an injury, suspension or "
-                "doubt flag in the official feed, or left out of a "
-                "registered squad, by club.",
-                f"{BASE}/ucl/team-news"))
+        _jsonld(
+            "UCL Fantasy squad availability",
+            "UCL Fantasy players carrying an injury, suspension or "
+            "doubt flag in the official feed, or left out of a "
+            "registered squad, by club.",
+            f"{BASE}/ucl/team-news", doc, murunimi="Squad availability",
+            dataset=_dataset(
+                doc, "GoalIQ UCL Fantasy squad availability table",
+                f"The {len(poissa)} players in the official UEFA Champions "
+                f"League Fantasy game who carry a status flag in the feed "
+                f"or are left out of a registered squad: {erittely}. Each "
+                "row carries the club, position, price in millions, "
+                f"ownership percentage, {sarake} and the status the feed "
+                "reports. Read from UEFA's own public feed and normalised.",
+                f"{BASE}/ucl/team-news", sarake)))
+
+
+# --- sivun ulkopuoliset pinnat ---------------------------------------------
+#
+# 🔴 SIVU EI OLE OSION AINOA PINTA. Kolme UCL-riviä sitemapissa ja neljä
+# llms.txt:ssä lisättiin 7.9 KASIN, eikä mikään päivittänyt niitä. Sivut
+# vaihtuvat joka ajolla, joten `changefreq: daily` + jäätynyt `lastmod` on
+# ristiriita joka opettaa crawlerin olemaan palaamatta, ja llms.txt:n
+# UCL-osiossa ei ollut yhtään lukua jonka kielimalli voisi lainata.
+#
+# Molemmat kirjoitetaan nyt samasta artefaktista kuin sivut. Kirjoitus
+# levylle ei kuitenkaan riita: `ucl-refresh.yml`:n `git add` -listalla on
+# oltava molemmat tiedostot, muuten upsert ajaa joka kerta eika paady
+# committiin (muisti: refresh-kirjoittaa-levylle-commit-lista-ratkaisee).
+
+LLMS = ROOT / "llms.txt"
+
+#: Sivukohtaiset sitemap-painot. Loc on sama kuin canonical, muuten
+#: upsert lisaisi rinnakkaisen rivin eika paivittaisi olemassaolevaa.
+SITEMAP_RIVIT = [
+    (f"{BASE}/ucl/", "daily", "0.8"),
+    (f"{BASE}/ucl/prices", "daily", "0.7"),
+    (f"{BASE}/ucl/team-news", "daily", "0.7"),
+]
+
+
+def paivita_sitemap(doc: dict) -> bool:
+    """UCL-rivien `lastmod` DATAN iasta, ei ajohetkesta.
+
+    Ajohetki vaittaisi tuoreutta myos silloin kun ingest ei saanut UEFAlta
+    uutta tiedostoa. `_upsert_sitemap_entry` on jo olemassa ja idempotentti
+    (`build_fpl_page`), joten tassa ei kirjoiteta toista toteutusta samasta
+    asiasta. Import on funktion sisalla: `build_ucl_page` on osion oma
+    moduuli eika sen tuonti saa vetaa mukanaan koko FPL-builderia.
+    """
+    from scripts.build_fpl_page import (  # noqa: PLC0415
+        SITEMAP_PATH, _upsert_sitemap_entry)
+
+    pvm = _feed_pvm(doc)
+    if not pvm or not SITEMAP_PATH.exists():
+        return False
+    xml = SITEMAP_PATH.read_text(encoding="utf-8")
+    uusi = xml
+    for loc, cf, pri in SITEMAP_RIVIT:
+        uusi = _upsert_sitemap_entry(uusi, loc, pvm, cf, pri)
+    if uusi != xml:
+        SITEMAP_PATH.write_text(uusi, encoding="utf-8")
+        return True
+    return False
+
+
+def llms_lohko(doc: dict) -> str:
+    """llms.txt:n UCL-rivit artefaktin luvuista.
+
+    Kasin kirjoitettu rivi lupasi "the full sortable list of all players"
+    ilman yhtaan lukua: kysymykseen "how many players are in UCL Fantasy"
+    lahdeluettelo ei vastannut, vaikka lahde oli kadessa. Sama ratkaisu
+    kuin kasvumoottorilla (`build_prediction_pages.update_llms_txt`):
+    generoidaan VAIN markkeriparin sisus, arvostelukyky jaa kasin.
+    """
+    P = doc["players"]
+    klubit = len(doc.get("teams") or [])
+    kierroksia = len([k for k in (doc.get("matchdays") or [])
+                      if k.get("deadline_utc")])
+    poissa = [p for p in P if p["status"] in POISSA]
+    per_tila = Counter(p["status"] for p in poissa)
+    erittely = ", ".join(f"{per_tila[s]} {STATUS_SANA[s].lower()}"
+                         for s in POISSA if per_tila[s])
+    return "\n".join([
+        "",
+        f"- [UCL Fantasy prices, ownership and squad news]({BASE}/ucl/): "
+        f"all {len(P)} players in the official UCL Fantasy game across "
+        f"{klubit} clubs, with price in millions, ownership percentage, "
+        "position and squad status, plus the next of the "
+        f"{kierroksia} league phase matchday deadlines in the feed. Charts "
+        "show ownership against price, "
+        "the price range per position, and injuries, suspensions and "
+        "doubts by club. Completely free, no login.",
+        f"- [UCL Fantasy prices and ownership]({BASE}/ucl/prices): the full "
+        f"sortable list of all {len(P)} players with price in millions and "
+        "ownership percentage, filterable by position and maximum price.",
+        f"- [UCL Fantasy squad availability]({BASE}/ucl/team-news): the "
+        f"{len(poissa)} players who are injured, suspended, doubtful or "
+        f"left out of the registered squad, listed by club: {erittely}.",
+        f"- Read from UEFA's own public feed, last update "
+        f"{_feed_leima(doc)}.",
+        "",
+    ])
+
+
+def paivita_llms_txt(doc: dict) -> bool:
+    """Kirjoita markkeriparin sisus. Puuttuva markkeri -> False, ei kaato.
+
+    Sama sopimus kuin kasvumoottorilla: datan refresh ei saa kuolla siihen
+    etta joku on siirtanyt markkerit. Fail-closed puoli on testissa
+    (`test_ucl_page.test_llms_txt_ucl_lohko_on_generoitu`), joka kaatuu jos
+    markkeria ei ole tai jos lohko on jaanyt jalkeen artefaktista.
+    """
+    if not LLMS.exists():
+        return False
+    s = LLMS.read_text(encoding="utf-8")
+    if "GEN:UCL-START" not in s:
+        print("  VAROITUS: llms.txt:sta puuttuu GEN:UCL-markkeri")
+        return False
+    import re  # noqa: PLC0415
+    uusi = re.sub(r"(<!-- GEN:UCL-START -->).*?(<!-- GEN:UCL-END -->)",
+                  lambda m: m.group(1) + llms_lohko(doc) + m.group(2),
+                  s, flags=re.S)
+    if uusi != s:
+        LLMS.write_text(uusi, encoding="utf-8")
+        return True
+    return False
 
 
 def main() -> int:
@@ -538,6 +1044,8 @@ def main() -> int:
     for polku, html in sivut.items():
         polku.write_text(html, encoding="utf-8")
         print(f"  {polku.relative_to(ROOT).as_posix()}  {len(html):,} merkkia")
+    print(f"  sitemap-core.xml  {'paivitetty' if paivita_sitemap(doc) else 'ennallaan'}")
+    print(f"  llms.txt          {'paivitetty' if paivita_llms_txt(doc) else 'ennallaan'}")
     print(f"ucl: {len(sivut)} sivua, vaihe={vaiheet.vaihe(doc, nyt)}")
     return 0
 

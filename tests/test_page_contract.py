@@ -40,6 +40,12 @@ SITEMAP = ROOT / "sitemap-fpl.xml"
 LLMS = ROOT / "llms.txt"
 
 
+# Hakemistot/tiedostot jotka EIVAT ole sivusopimuksen alaisia. Lista on
+# tahallaan tyhja: jos jokin generoitu HTML ei kuulu sopimukseen, syy
+# kirjoitetaan tahan nakyviin eika hakua kavenneta hiljaa.
+_EI_SOPIMUKSESSA: tuple[str, ...] = ()
+
+
 def _pages() -> list[tuple[str, Path]]:
     """[(url-polku, tiedosto)] kaikille generoiduille sivuille.
 
@@ -52,15 +58,38 @@ def _pages() -> list[tuple[str, Path]]:
 
     Sama vikaluokka kuin `club/*` 15.8: sopimus nayttaa kattavalta ja on
     kapea, koska kattavuus on sidottu hakemistoon eika sivuihin.
+
+    🔴 7.9.2026 ILTA, KOLMAS KERTA: haku listasi `fpl/`:n JUUREN ja kaksi
+    KOVAKOODATTUA alihakemistoa (`club/`, `note/`), joten `fpl/points/gw{n}`
+    olisi karannut sopimukselta tasmalleen samalla tavalla. Kolmas
+    kovakoodattu alihakemisto olisi ollut nelja kertaa sama korjaus, joten
+    haku on nyt REKURSIIVINEN ja poikkeukset ovat NIMETTY LISTA
+    perusteluineen: uusi hakemisto on mukana oletuksena, ja sen jattaminen
+    pois vaatii rivin jonka kirjoittaja joutuu perustelemaan
+    (CLAUDE.md 6a(2)).
+
+    URL-polku johdetaan tiedoston sijainnista, ei nimesta: `fpl/points/gw2.html`
+    -> `/fpl/points/gw2`. `index.html` on hakemistoindeksi -> polku paattyy
+    kauttaviivaan (ks. test_hakemistoindeksin_canonical_paattyy_kauttaviivaan).
     """
     if not FPL.exists():  # pragma: no cover
         pytest.skip("fpl/-hakemistoa ei ole talla koneella")
-    out = [(f"/fpl/{f.stem}", f) for f in sorted(FPL.glob("*.html"))]
-    out += [(f"/fpl/club/{f.stem}", f)
-            for f in sorted((FPL / "club").glob("*.html"))]
+
+    def kerro(juuri: Path, etuliite: str) -> list[tuple[str, Path]]:
+        rivit = []
+        for f in sorted(juuri.rglob("*.html")):
+            rel = f.relative_to(juuri).as_posix()
+            if any(rel.startswith(x) for x in _EI_SOPIMUKSESSA):
+                continue
+            polku = f"{etuliite}/{rel[:-len('.html')]}"
+            if polku.endswith("/index"):
+                polku = polku[:-len("index")]
+            rivit.append((polku, f))
+        return rivit
+
+    out = kerro(FPL, "/fpl")
     if UCL.exists():
-        out += [("/ucl/" if f.stem == "index" else f"/ucl/{f.stem}", f)
-                for f in sorted(UCL.glob("*.html"))]
+        out += kerro(UCL, "/ucl")
     return out
 
 
@@ -174,9 +203,15 @@ def test_jokainen_sivu_on_kuvattu_llms_txt_ssa(sivut):
     riittaa etta polku `/fpl/club/` esiintyy."""
     llms = LLMS.read_text(encoding="utf-8")
     puuttuvat = []
+    # Ryhmapoikkeukset: sivujoukko joka kuvataan YHTENA rivina. 20 seuraa ja
+    # 38 kierrosta erillisina riveina tekisi llms.txt:sta luettelon, ei
+    # kuvausta. Ryhma on poikkeus vain jos sen POLKU on tiedostossa, eli
+    # kuvaus on kirjoitettu - puuttuva ryhma kaataa testin kuten yksittainen.
+    RYHMAT = ("/fpl/club/", "/fpl/note/", "/fpl/points/")
     for url, _ in sivut:
-        if url.startswith("/fpl/club/"):
-            if "/fpl/club/" not in llms:
+        ryhma = next((r for r in RYHMAT if url.startswith(r)), None)
+        if ryhma:
+            if ryhma not in llms:
                 puuttuvat.append(url)
         elif url not in llms:
             puuttuvat.append(url)

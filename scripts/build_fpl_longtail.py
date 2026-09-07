@@ -78,6 +78,11 @@ STATS_PATH = ROOT / "data" / "fpl_player_stats.json"
 # kierroksittain + kierroksen alla JAADYTETTY xP samalla rivilla.
 PLAYER_GW_PATH = ROOT / "fpl" / "player-gw.json"
 XP_FROZEN_DIR = ROOT / "data" / "fpl_xp_frozen"
+# FPL-POINTS-GW-ARKISTO (7.9.2026): per-kierros-arkisto `/fpl/points/gw{n}`.
+# `fpl_xp_gw_accuracy.json` on gradaustilan YKSI LUKIJA (scripts/grade_fpl_xp_gw.py,
+# append-only, committoitu) - ks. `_gradatut_kierrokset`.
+GW_ACCURACY_PATH = ROOT / "data" / "fpl_xp_gw_accuracy.json"
+POINTS_DIR = OUT_DIR / "points"
 # 8.8: joukkuetason puolustusprofiili (scripts/build_understat_team_defence.py)
 DEFENCE_PATH = ROOT / "data" / "understat_team_defence_2526.json"
 API = "https://api.goaliq.app"  # 27.7: pois estetysta onrender.com-vyohykkeesta
@@ -259,6 +264,16 @@ color:var(--muted);font-weight:700;}
 .lb td.hi{color:var(--amber);font-weight:700;}
 .lb tr.noclear td{color:var(--muted);}.lb tr.noclear td.hi{color:var(--muted);font-weight:400;}
 .lb .muted{color:var(--muted);font-weight:400;}
+/* A player who did not play: visible, but muted. */
+.lb tr.nodata td{color:var(--muted);}
+.lb .dnp{font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+color:var(--muted);font-weight:700;}
+/* Gameweek strip. Reasoning in _gw_nauha(); kept out of the
+   served CSS because view source is a public surface. */
+.gwstrip{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;
+font-size:13px;margin:14px 0 4px;color:var(--muted);}
+.gwstrip a{color:var(--cream);}
+.gwstrip strong{color:var(--amber);}
 .lb tbody tr:last-child td{border-bottom:none;}
 .lb thead th:hover{color:var(--amber);}
 .lbctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 6px;}
@@ -455,6 +470,11 @@ def _social_meta(title: str, desc: str, canonical: str,
 
 
 
+# Hakemistot joissa OG-kortin avaimeksi kelpaa polun VIIMEINEN pala.
+# Ks. `_og_image`: tama on poikkeuslista perusteluineen, ei oletus.
+_OG_PALJAS_AVAIN_HAKEMISTOT = ("fpl/", "fpl/note/")
+
+
 def _og_image(canonical: str) -> str:
     """Sivukohtainen og:image jos sellainen on generoitu, muuten yhteinen.
 
@@ -474,9 +494,23 @@ def _og_image(canonical: str) -> str:
     # KAIKKI /fpl-osiosta, joten paljas avain sailyy vain siella. Muut
     # osiot vaativat koko polusta johdetun nimen, eivatka voi periä toisen
     # osion korttia.
+    #
+    # 🔴 PALJAS AVAIN ON POIKKEUSLISTA, EI SAANTO (7.9.2026 ilta). Ylla oleva
+    # rajaus "kaikki fpl/-polut" oli yha liian leveä: `/fpl/points/gw2` tuottaa
+    # paljaan avaimen `gw2`, ja mika tahansa myohemmin generoitu
+    # `assets/brand/og/gw2-1200x630.png` perisi sen sivulle hiljaa - sama
+    # vikaluokka kuin `/ucl/team-news`, vain kapeammalla ovella. Lista on
+    # nimetty ja perusteltu, joten uusi alihakemisto ei paase sille vahingossa:
+    # se joutuu lisaamaan rivin ja kirjoittamaan miksi (tests/test_og_card_key.py).
+    #
+    #   fpl/       - kaikki nykyiset kortit on generoitu talla nimella
+    #   fpl/note/  - artikkelikortit (esim. set-piece-xg-is-not-open-play-xg)
+    #
+    # Kaikki muut polut vaativat koko polusta johdetun nimen.
     polkuosa = canonical.replace(BASE, "").strip("/")
     ehdokkaat = [polkuosa.replace("/", "-")]
-    if polkuosa.startswith("fpl/"):
+    hakemisto = polkuosa.rsplit("/", 1)[0] + "/" if "/" in polkuosa else ""
+    if hakemisto in _OG_PALJAS_AVAIN_HAKEMISTOT:
         ehdokkaat.append(polkuosa.rsplit("/", 1)[-1])
     for slug in ehdokkaat:
         rel = f"assets/brand/og/{slug}-1200x630.png"
@@ -553,7 +587,19 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         f'<footer>© 2026 GoalIQ · '
         f'<a href="/predictions">Football predictions</a> · '
         f'<a href="/fpl">Free FPL tools</a> · '
-        f'<a href="/privacy.html">Privacy</a><br>{DISCLAIMER}</footer>\n'
+        # 🔴 SISAANTULO OSIOON, EI VAIN SISARLINKKEJA (audit 7.9.2026).
+        # `/ucl`-sivut linkittavat toisiinsa ja `/fpl`:aan, mutta mitattuna
+        # koko longtail (~16 sivua) sisalsi NOLLA osumaa sanalle "ucl": osio
+        # sai auktoriteettia vain etusivulta. Yksi rivi jaetussa rungossa
+        # antaa linkin jokaiselle longtail-sivulle kerralla.
+        #
+        # 🔴 RAJAUS KULKEE LINKIN MUKANA. `tests/test_ucl_no_projection.py`
+        # vaatii, etta jokainen UCL Fantasyn NIMEAVA pinta kertoo myos ettei
+        # sille ole mallia - ja tama linkki nimeaa sen ~40 sivulla kerralla.
+        # Tiivis muoto ("no points projection") on sen portin sallittu
+        # literaali, joten linkkirivi ei ole poikkeus vaan kantaa saannon.
+        f'<a href="/ucl/">UCL Fantasy prices</a> (no points projection) · '
+        f'<a href="/privacy">Privacy</a><br>{DISCLAIMER}</footer>\n'
         "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
     )
 
@@ -4705,40 +4751,6 @@ POINTS_COLS = [
 ]
 
 
-def _gw_still_running(gw: int) -> bool:
-    """Onko kierros gw yha kesken? Luetaan komittoidusta xp-artefaktista.
-
-    🔴 EI BOOTSTRAPISTA. Tama builderi ajetaan MYOS accuracy-log.yml:ssa jossa
-    `data/raw/fpl` ei ole olemassa, joten FPL:n oma `event.finished` ei ole
-    kaytettavissa. `fpl_xp_projections.json`:n `next_gameweek` kertoo saman:
-    se on kesken olevan kierroksen numero ja kasvaa vasta kun kierros on ohi.
-    Mitattu 24.8: `next_gameweek 1`, `deadline_gameweek 2` = GW1 kesken.
-
-    🔴 MITTAA OTTELUT, EI BONUSVAHVISTUSTA. `next_gameweek` on
-    `min(gw | not fixture.finished)` (build_fpl_xp.py:634), joten se kaantyy
-    VIIMEISEN OTTELUN VIHELLYKSEEN - tunteja ennen kuin FPL vahvistaa
-    bonukset (`data_checked`). Talle varaukselle on siis ikkuna jossa se on
-    jo pudonnut vaikka pisteet voivat yha liikkua.
-
-    Siksi kortin footNote2 kantaa AINA paivamaaran ("as of 24 Aug") eika vain
-    "not final" -lippua: paivamaara on tosi molemmissa tiloissa ja rajaa
-    lukijan odotuksen ilman etta se nojaa tahan mittariin. Alkuperainen
-    perustelu nojasi `data_checked`iin jota tama funktio ei lue, ja portti
-    kiinnitti sen 24.8 - sama luokka kuin "selitys nimeaa vaaran mekanismin".
-
-    Tuntematon tila palautetaan keskeneraisena: liikaa varausta on halvempaa
-    kuin liian vahan.
-    """
-    xp = _load(XP_PATH) or {}
-    nxt = ((xp.get("meta") or {}).get("next_gameweek"))
-    if nxt is None:
-        return True
-    try:
-        return int(nxt) <= int(gw)
-    except (TypeError, ValueError):
-        return True
-
-
 def _ennen(a: str, b: str) -> bool:
     """Onko aikaleima a aidosti ennen b:ta? False jos kumpaakaan ei jasennы.
 
@@ -4779,14 +4791,201 @@ def _latest_frozen_gw(gw: int) -> dict | None:
     return _load(XP_FROZEN_DIR / f"gw{gw}.json")
 
 
-def render_points(player_gw: dict, now: datetime) -> str | None:
+def _gradatut_kierrokset() -> dict[int, dict]:
+    """{gw: gradausrivi} niille kierroksille jotka on GRADATTU.
+
+    🔴 YKSI LUKIJA GRADAUSTILALLE (CLAUDE.md 6a(1)). Tama KORVAA aiemman
+    `_gw_still_running`-lukijan, joka luki `fpl_xp_projections.json`:n
+    `next_gameweek`-kentan ja mittasi siten NYKYHETKEA: se osasi vastata vain
+    kysymykseen "onko tama kierros yha kesken", ei kysymykseen "oliko GW1
+    gradattu". Arkistosivu tarvitsee jalkimmaisen. Vanha lukija POISTETTIIN
+    eika jatetty rinnalle: kaksi melkein samaa lukijaa on se mekanismi jolla
+    seuraava kirjoittaja valitsee vaaran (`kaksi-listaa-kaksi-saantoa`).
+
+    Vanhan lukijan mittaus jaa tahan muistiin: `next_gameweek` on
+    `min(gw | not fixture.finished)` (build_fpl_xp.py:634), joten se kaantyy
+    VIIMEISEN OTTELUN VIHELLYKSEEN - tunteja ennen kuin FPL vahvistaa
+    bonukset. `graded_at` sen sijaan kirjoitetaan vasta kun kierros on
+    pisteytetty, eli se on aidosti myohempi ja varmempi hetki. Siksi kortin
+    footNote2 kantaa AINA paivamaaran ("as of 24 Aug") eika vain
+    "not final" -lippua: paivamaara on tosi molemmissa tiloissa.
+
+    Lahde `data/fpl_xp_gw_accuracy.json` (scripts/grade_fpl_xp_gw.py) on
+    append-only ja committoitu, joten tama rakentuu MYOS accuracy-log.yml:ssa
+    jossa `data/raw/fpl` ei ole olemassa - sama ehto kuin sivun kahdella
+    muulla lahteella.
+
+    FAIL-CLOSED: rivi ilman `graded_at`-leimaa ei ole gradattu. Tuntematon
+    tila = kesken, koska kesken olevalta kierrokselta EI saa vaittaa "ei
+    pelannut" (silloin tosi lause on "ei ole VIELA pelannut").
+    """
+    doc = _load(GW_ACCURACY_PATH) or {}
+    out: dict[int, dict] = {}
+    for rivi in doc.get("gameweeks") or []:
+        if not isinstance(rivi, dict) or not rivi.get("graded_at"):
+            continue
+        try:
+            out[int(rivi["gw"])] = rivi
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
+
+
+def _gradattu(gw: int | None) -> dict | None:
+    """Kierroksen gradausrivi, tai None jos kierros on kesken/tuntematon."""
+    if gw is None:
+        return None
+    try:
+        return _gradatut_kierrokset().get(int(gw))
+    except (TypeError, ValueError):
+        return None
+
+
+def _arkistoitavat_kierrokset(player_gw: dict | None = None) -> list[int]:
+    """Kierrokset joille arkistosivu `/fpl/points/gw{n}` SYNTYY.
+
+    🔴 YKSI LUKIJA NELJALLE PINNALLE: kierrosnauha (lukijan linkki), kortin
+    luvattu tarkistusreitti, sitemap ja kirjoitussilmukka. Jos nama laskisivat
+    listan erikseen, nauha voisi linkittaa sivuun jota ei kirjoitettu (404
+    lukijalle) tai kortti luvata reitin joka ei vastaa - ja portti mittaisi
+    silti "kaikki hyvin", koska se lukisi toista listaa kuin kirjoittaja.
+
+    🔴 EHTO EI OLE GRADAUS. Ensimmainen versio vaati gradauksen, ja se olisi
+    ollut UUSI fail-open tasan samasta luokasta kuin korjattava vika: kierros
+    on FPL:ssa `finished` (ja sovellus nayttaa sen tuloskortin) tunteja ennen
+    kuin gradaus ajetaan. Mitattu talta kaudelta: GW1 gradattiin 25.8, GW2
+    1.9, GW3 7.9 - noin vuorokausi ottelujen jalkeen. Siina ikkunassa jaettu
+    kortti olisi luvannut reitin joka palauttaa 404.
+
+    Ehto on siksi: kierroksella on deadline-freeze (ilman sita xP-saraketta ei
+    ole eika sivulla ole kulmaa) JA vahintaan yksi PELATTU rivi. Molemmat ovat
+    tosia heti ensimmaisen ottelun jalkeen, eli ennen kuin sovellus voi
+    nayttaa kierroksen tuloskorttia. Gradaus ohjaa sivun SISALTOA
+    (dnp-rivit, toinen MAE, Graded-leima), ei sen olemassaoloa.
+    """
+    doc = player_gw if player_gw is not None else (_load(PLAYER_GW_PATH) or {})
+    cols = ((doc or {}).get("meta") or {}).get("cols") or []
+    if "gw" not in cols:
+        return []
+    i = cols.index("gw")
+    gws: set[int] = set()
+    for rivit in ((doc or {}).get("players") or {}).values():
+        for r in rivit or []:
+            if r and len(r) > i and isinstance(r[i], int)                     and not isinstance(r[i], bool):
+                gws.add(r[i])
+    return sorted(g for g in gws if (XP_FROZEN_DIR / f"gw{g}.json").exists())
+
+
+def _gw_summa(gws: list, ci: dict, gw: int) -> dict | None:
+    """Pelaajan KAIKKI kierroksen gw rivit yhdeksi riviksi, tai None.
+
+    🔴 TUPLAKIERROS (7.9.2026). Aiempi lukija otti `next(...)`illa kierroksen
+    ENSIMMAISEN rivin. `build_fpl_player_gw.py` ei aggregoi otteluita, joten
+    tuplakierroksella pelaajalla on kaksi rivia samalla `round`-arvolla ja
+    toisen ottelun pisteet olisivat kadonneet hiljaa: diff-sarake olisi
+    nayttanyt mallin alilyoneen ja se olisi ollut julkinen vaite. GW1-3 ovat
+    yksinkertaisia, eli vika EI ole viela lauennut - ja juuri siksi se
+    korjataan nyt: arkistosivu on immutable, joten tuplakierroksen vaara rivi
+    jaisi pysyvaksi.
+    """
+    i_gw = ci.get("gw")
+    if i_gw is None:
+        return None
+    osat = [r for r in (gws or []) if r and len(r) > i_gw and r[i_gw] == gw]
+    if not osat:
+        return None
+    out: dict = {}
+    for k, i in ci.items():
+        if k == "gw":
+            continue
+        summa: float | int = 0
+        for r in osat:
+            if len(r) > i and isinstance(r[i], (int, float)) \
+                    and not isinstance(r[i], bool):
+                summa += r[i]
+        out[k] = round(summa, 2) if isinstance(summa, float) else summa
+    return out
+
+
+def _gw_nauha(nyt_gw: int | None, *, archive: bool,
+              player_gw: dict | None = None) -> str:
+    """Kierrosnauha: linkki jokaiseen arkistoituun kierrokseen + uusimpaan.
+
+    🔴 TAMA ON AINOA KORJAUS JO JAETUILLE KORTEILLE (7.9.2026). Ennen tata
+    tuloskortin alatunniste lupasi tarkistusreitiksi `goaliq.app/fpl/points`,
+    ja se sivu nayttaa vain KULUVAN kierroksen: GW2:n kortti osoitti sivulle
+    jolla ei ole sen kortin lukuja. Kortin teksti korjataan kantamaan kierros,
+    mutta jo jaetut kuvat ovat pysyvia eika niita voi korjata jalkikateen -
+    ainoa reitti niiden lukijalle on etta LASKEUTUMISSIVU kantaa nakyvan
+    nauhan josta oma kierros loytyy yhdella klikkauksella.
+
+    Sivuvaikutus joka on paavaikutus: nauha antaa jokaiselle arkistosivulle
+    sisaantulevan linkin useammasta kuin yhdesta lahteesta
+    (tests/test_page_contract.py: test_sivulle_on_SISAANTULEVA_LINKKI).
+    """
+    kierrokset = _arkistoitavat_kierrokset(player_gw)
+    if not kierrokset:
+        return ""
+    osat = []
+    for g in kierrokset:
+        if archive and g == nyt_gw:
+            osat.append(f'<strong aria-current="page">GW{g}</strong>')
+        else:
+            osat.append(f'<a href="/fpl/points/gw{g}">GW{g}</a>')
+    if archive:
+        osat.append('<a href="/fpl/points">Latest gameweek</a>')
+    else:
+        osat.append('<strong aria-current="page">Latest gameweek</strong>')
+    return ('<nav class="gwstrip" aria-label="Gameweek archive">'
+            '<span>Gameweek by gameweek:</span> '
+            + ' <span aria-hidden="true">&middot;</span> '.join(osat)
+            + '</nav>')
+
+
+def render_points(player_gw: dict, now: datetime, gw: int | None = None,
+                  *, archive: bool = False) -> str | None:
+    """Kierroksen toteutuneet pisteet vs deadlinella JAADYTETTY xP.
+
+    `gw=None`             -> uusin kierros (`meta.max_gw`), canonical /fpl/points
+    `gw=n, archive=True`  -> kierroksen n pysyva sivu, canonical /fpl/points/gwn
+
+    🔴 KIERROS TULEE PARAMETRISTA, EI `max_gw`:STA. Aiemmin funktio luki
+    kierroksen datan metasta, joten sivuja saattoi olla tasan yksi ja se
+    vaihtui alta joka kierros. Jo jaetut tuloskortit lupasivat
+    tarkistusreitiksi `goaliq.app/fpl/points`, eli GW2:n kortti osoitti
+    sivulle jolla on GW3:n luvut. Lahteet (player-gw.json + gw{n}.json)
+    kantavat kaikki kierrokset, joten takautuvuus ei vaatinut uutta dataa -
+    vain etta lukija saa kysya kierrosta.
+
+    KOLME TILAA, EI KAHTA (CLAUDE.md 6a(3)). Docstringin periaate "puuttuva
+    rivi on totuus" ei ole "ala koskaan nayta nollaa" vaan "ala vaita
+    enempaa kuin kierroksen VAIHE kantaa". Sana *viela* on sen ydin:
+    "ei ole viela pelannut" on tosi kesken olevalla kierroksella ja lakkaa
+    olemasta tosi kun kierros on gradattu. Gradatulla kierroksella FPL on
+    antanut pelaamattomalle 0 pistetta (`by_class.dnp.bias == -mae` kaikilla
+    gradatuilla kierroksilla todistaa toteuman nollaksi), joten silloin sen
+    faktan PIILOTTAMINEN on se joka valehtelee.
+
+      kesken               -> ei rivia lainkaan (nolla olisi vaite)
+      gradattu, oli ottelu -> rivi, Pts 0, merkinta "dnp", MAE:n ULKOPUOLELLA
+      gradattu, ei ottelua -> rivi, Pts "n/a" (nolla olisi vaite ottelusta
+                              jota ei ollut)
+    """
     meta = (player_gw or {}).get("meta") or {}
     players = (player_gw or {}).get("players") or {}
-    gw = meta.get("max_gw")
+    try:
+        gw = int(gw if gw is not None else (meta.get("max_gw") or 0)) or None
+    except (TypeError, ValueError):
+        return None
     cols = meta.get("cols") or []
-    if not players or not gw or "pts" not in cols:
+    if not players or not gw or "pts" not in cols or "gw" not in cols:
         return None
     ci = {c: i for i, c in enumerate(cols)}
+
+    # Gradaustila luetaan KIERROSKOHTAISESTI, ei nykyhetkesta. Arkistosivu ei
+    # synny lainkaan ilman gradausta: se on maaritelmalta gradattu tila.
+    gradaus = _gradattu(gw)
+    kesken = gradaus is None
 
     frozen = _latest_frozen_gw(int(gw)) or {}
     fmeta = frozen.get("meta") or {}
@@ -4794,14 +4993,16 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
 
     rivit = []
     ilman_ennustetta = 0
+    pelanneet = set()
     for pid, gws in players.items():
         try:
             key = int(pid)
         except (TypeError, ValueError):
             continue
-        rivi = next((r for r in gws if r and r[ci["gw"]] == gw), None)
-        if rivi is None:
+        agg = _gw_summa(gws, ci, gw)
+        if agg is None:
             continue
+        pelanneet.add(key)
         f = fro.get(key)
         if not f:
             # Pelasi, mutta deadline-lumikuvassa ei ole hanta (esim. siirto
@@ -4810,7 +5011,7 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
             # Hiljainen pudotus tekisi taulusta vajaan ilman etta kukaan nakee.
             ilman_ennustetta += 1
             continue
-        pts = rivi[ci["pts"]]
+        pts = agg["pts"]
         xp = float(f.get("xp") or 0.0)
         rivit.append({
             "id": key,
@@ -4821,8 +5022,8 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
             "xp": round(xp, 2),
             "pts": pts,
             "diff": round(pts - xp, 2),
-            "mins": rivi[ci["mins"]] if "mins" in ci else 0,
-            **{k: rivi[ci[k]] for k, _, _ in POINTS_COLS if k in ci},
+            "mins": agg.get("mins", 0),
+            **{k: agg.get(k, "") for k, _, _ in POINTS_COLS if k in ci},
         })
     if not rivit:
         return None
@@ -4830,9 +5031,46 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
 
     # Mallin oma tarkkuus tassa kierroksessa. Lasketaan riveista, EI
     # kovakoodata: luku vanhenisi hiljaa seuraavassa kierroksessa.
+    #
+    # 🔴 VAIN VERRATUT. Alla lisattavat dnp-rivit EIVAT ole tassa luvussa, ja
+    # se on tahallista: `foot`-teksti sanoo "compared players", ja kaikkien
+    # jaadytettyjen yli laskettu virhe on ERI luku, joka luetaan
+    # gradaustiedostosta eika lasketa tassa uudelleen.
     n = len(rivit)
     mae = round(sum(abs(r["diff"]) for r in rivit) / n, 2)
     yli = sum(1 for r in rivit if r["diff"] > 0)
+
+    # Pelaamattomat: vain gradatulla kierroksella, ja vain kun kierroksen
+    # otteluista voi paatella kumman kahdesta syysta rivi puuttuu.
+    #
+    # 🔴 FAIL-CLOSED VAHTI. "Pelasiko joukkue" johdetaan committoiduista
+    # artefakteista: joukkue jolla on edes yksi pelannut pelaaja pelasi.
+    # Ottelussa on kaksi joukkuetta, joten pelanneiden joukkueiden maaran on
+    # oltava PARILLINEN, ja normaalikierroksella vahintaan 16. Jos ehto ei
+    # pade, sivu ei vaita dnp:ta kenestakaan vaan merkitsee kaikki puuttuvat
+    # n/a:ksi - vaara "ei pelannut" olisi julkinen vaite pelaajasta.
+    joukkueet = {str((fro.get(i) or {}).get("team_short") or "")
+                 for i in pelanneet if i in fro}
+    joukkueet.discard("")
+    kattava = len(joukkueet) >= 16 and len(joukkueet) % 2 == 0
+    dnp_rivit = []
+    if not kesken:
+        for pid, f in sorted(fro.items()):
+            if pid in pelanneet:
+                continue
+            joukkue = str(f.get("team_short") or "")
+            dnp_rivit.append({
+                "id": pid,
+                "name": str(f.get("web_name") or ""),
+                "team": joukkue,
+                "pos": str(f.get("pos") or ""),
+                "price": float(f.get("price") or 0.0),
+                "xp": round(float(f.get("xp") or 0.0), 2),
+                "dnp": bool(kattava and joukkue in joukkueet),
+            })
+        dnp_rivit.sort(key=lambda r: (not r["dnp"], -r["xp"], r["name"]))
+    n_dnp = sum(1 for r in dnp_rivit if r["dnp"])
+    n_na = len(dnp_rivit) - n_dnp
 
     def solu(r: dict) -> str:
         merkki = "pos" if r["diff"] > 0 else ("neg" if r["diff"] < 0 else "")
@@ -4848,6 +5086,33 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
             f'<td class="n m-hide">{r["mins"]}</td>'
             + "".join(f'<td class="n m-hide">{r.get(k, "")}</td>'
                       for k, _, _ in POINTS_COLS)
+            + "</tr>"
+        )
+
+    def solu_dnp(r: dict) -> str:
+        # 🔴 MERKINTA EI SAA OLLA m-hide-SARAKKEESSA. `check_claim_route`
+        # poistaa mobiilissa piilotetut solut ennen etsintaa, eli piilotettu
+        # merkinta ei ole tarkistusreitti puhelinkayttajalle. Siksi seka nimi
+        # etta "dnp"/"n/a" ovat nakyvissa sarakkeissa.
+        if r["dnp"]:
+            pts = '<strong>0</strong> <span class="dnp">dnp</span>'
+            diff = f'{-r["xp"]:+.2f}'
+            mins = "0"
+        else:
+            pts = '<span class="dnp">n/a</span>'
+            diff = '<span class="dnp">n/a</span>'
+            mins = ""
+        return (
+            '<tr class="nodata">'
+            f'<td>{escape(r["name"])}</td>'
+            f'<td>{escape(r["team"])}</td>'
+            f'<td class="m-hide">{escape(r["pos"])}</td>'
+            f'<td class="n m-hide">{r["price"]:.1f}</td>'
+            f'<td class="n">{r["xp"]:.2f}</td>'
+            f'<td class="n">{pts}</td>'
+            f'<td class="n muted">{diff}</td>'
+            f'<td class="n m-hide">{mins}</td>'
+            + "".join('<td class="n m-hide"></td>' for _ in POINTS_COLS)
             + "</tr>"
         )
 
@@ -4870,10 +5135,16 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
         + "</tr>"
     )
     # Jakokortin varaukset samasta datasta kuin sivun omat luvut.
-    kesken = _gw_still_running(int(gw))
     jaadytetty = _pvm_lyhyt(str(fmeta.get("frozen_at") or ""))
     ennen_dl = _ennen(str(fmeta.get("frozen_at") or ""),
                       str(fmeta.get("deadline") or ""))
+    # 🔴 KORTTI LUPAA VAIN REITIN JOKA ON OLEMASSA. Sama lukija kuin nauhalla
+    # ja sitemapilla: kortti ei voi luvata `/fpl/points/gw{n}`-sivua jota
+    # kirjoitussilmukka ei kirjoita. Gradaamaton kierros putoaa
+    # `/fpl/points`iin, joka on silloin tasan se kierros jonka kortti nayttaa.
+    reitti = (f"goaliq.app/fpl/points/gw{gw}"
+              if gw in _arkistoitavat_kierrokset(player_gw)
+              else "goaliq.app/fpl/points")
     kortti = _card_spec_attr(
         # 🔴 KAIKKI PORTIN LOYDOKSET SISALLA (4 kierrosta):
         # "SO FAR" koska kierros voi olla kesken · relaatio "before the
@@ -4896,7 +5167,7 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
         foot=f"model MAE {mae} pts across {n} compared players",
         foot2=((f"GW{gw} not final. " if kesken else "")
                + f"As of {now.strftime('%d %b').lstrip('0')}. "
-               + "goaliq.app/fpl/points, not betting advice"),
+               + f"{reitti}, not betting advice"),
         # Muotoilu tehdaan tassa, ei JS:ssa: luvut ja niiden esitys kuuluvat
         # samaan paikkaan. (Sisakkaiset samat lainausmerkit f-stringissa ovat
         # syntaksivirhe alle 3.12:ssa, siksi erillinen muuttuja.)
@@ -4907,15 +5178,21 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
         file_name=f"goaliq-points-gw{gw}.png")
     table = (f'<div class="lb-wrap"><table class="lb"{kortti}>'
              f"<thead>{thead}</thead><tbody>"
-             + "".join(solu(r) for r in rivit) + "</tbody></table></div>")
+             + "".join(solu(r) for r in rivit)
+             + "".join(solu_dnp(r) for r in dnp_rivit)
+             + "</tbody></table></div>")
 
-    url = f"{BASE}/fpl/points"
-    title = f"FPL Points GW{gw}: Projected vs Actual, Every Player | GoalIQ"
+    url = f"{BASE}/fpl/points/gw{gw}" if archive else f"{BASE}/fpl/points"
+    title = (f"FPL Gameweek {gw} Points: Projected vs Actual, Every Player | GoalIQ"
+             if archive else
+             f"FPL Points GW{gw}: Projected vs Actual, Every Player | GoalIQ")
     desc = (
         f"Every player's actual Gameweek {gw} FPL points next to the expected "
         f"points GoalIQ's model published before the deadline, with goals, "
         f"assists, defensive contribution (DefCon), bonus, BPS, xG and xA "
-        f"broken out. {n} players. Free, no sign-in."
+        f"broken out. {n} players compared"
+        + (f", plus {n_dnp} who did not play at all. " if n_dnp else ". ")
+        + "Free, no sign-in."
     )
     frozen_at = fmeta.get("frozen_at") or ""
     deadline = fmeta.get("deadline") or ""
@@ -4925,10 +5202,60 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
         "<strong>before the deadline</strong>, not a number recalculated "
         "afterwards. Actual points come from the official FPL API. Both are "
         "on the same row so you can check the model instead of taking its "
-        "word for it.</p>"
+        "word for it."
+        + (f" This page is the permanent record for Gameweek {gw}: it does "
+           "not change when the next gameweek is played." if archive else "")
+        + "</p>"
     )
+
+    # Toinen MAE-luku: KAIKKI jaadytetyt, pelaamattomat mukaan lukien.
+    #
+    # 🔴 LUETAAN, EI LASKETA. Sama luku on jo ilmaispinnalla /fpl:n
+    # tarkkuustaulukossa. Jos tama sivu laskisi sen itse, kaksi julkista lukua
+    # samasta asiasta voisi eriytya hiljaa - ja nyt ne ovat samalla sivulla,
+    # joten ero on PAKKO sanoa aaneen. Lahde sanotaan jotta lukija paasee
+    # tarkistamaan molemmat.
+    toinen_mae = ""
+    if gradaus:
+        g_n = gradaus.get("n")
+        g_mae = round(sum(abs(r["diff"]) for r in rivit)
+                      / max(len(rivit), 1), 2)
+        g_dnp = ((gradaus.get("by_class") or {}).get("dnp") or {}).get("n")
+        if g_n and g_mae is not None:
+            toinen_mae = (
+                f" That number covers the players who took the pitch. "
+                f"Counting all {g_n} frozen players"
+                + (f", including the {g_dnp} who never got on the pitch and "
+                   f"were scored 0" if g_dnp else "")
+                + f", the error is <strong>{float(g_mae):.2f} points</strong>. "
+                  "The second figure is read from "
+                  '<a href="https://github.com/GoalIQ/football-prediction/blob/'
+                  'main/data/fpl_xp_gw_accuracy.json">data/fpl_xp_gw_accuracy'
+                  ".json</a>, the same file behind the accuracy table on the "
+                  "FPL page, and is not recalculated here."
+            )
+
+    if kesken:
+        rivinote = ("A player with no row has not played yet, so the table "
+                    "grows as each match finishes. A missing row is not a "
+                    "zero.")
+    else:
+        rivinote = (
+            "Every player in the frozen projection is on this page. "
+            + (f"{n_dnp} of them did not play a minute; FPL scored them 0, so "
+               "their row reads 0 and is marked dnp. Those rows are not in "
+               "the mean absolute error above, which compares only the "
+               f"{n} players who took the pitch. " if n_dnp else "")
+            + (f"{n_na} had no fixture in this gameweek, so their row reads "
+               "n/a and no score is claimed for them. " if n_na else "")
+            + ("The gameweek's fixtures could not be derived from the frozen "
+               "projection, so nobody is marked as having missed a match he "
+               "could have played. " if dnp_rivit and not kattava else "")
+        ).strip()
+
     body = (
-        f'<div class="card"><p class="lede" style="margin:0">'
+        _gw_nauha(gw, archive=archive, player_gw=player_gw)
+        + f'<div class="card"><p class="lede" style="margin:0">'
         # 24.8: luki "the {n} players who have played". n on VERRATTUJEN maara,
         # ei pelanneiden - ja sama sivu kumoaa sen kolme kappaletta alempana
         # ("N players who did play are also left out"). Sama kvanttori
@@ -4937,12 +5264,12 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
         f"the model's mean absolute "
         f"error is <strong>{mae} points</strong>. It was too low on "
         f"{yli} of them and too high on {n - yli}."
+        f"{toinen_mae}"
         f"</p></div>"
         + _share_button()
         + f"{table}"
         + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
-        + '<p class="note">A player with no row has not played yet, so the '
-        + "table grows as each match finishes. A missing row is not a zero."
+        + '<p class="note">' + rivinote
         + (f" {ilman_ennustetta} player"
            + ("s" if ilman_ennustetta != 1 else "")
            + " who did play "
@@ -4954,15 +5281,24 @@ def render_points(player_gw: dict, now: datetime) -> str | None:
            if ilman_ennustetta else "")
         + "</p>"
         f"{UPSELL}{_cta()}"
-        f'<p class="note">Projection frozen {escape(str(frozen_at)[:16])} UTC '
-        f"for the GW{gw} deadline {escape(str(deadline)[:16])} UTC. "
-        f'Updated {now.strftime("%d %b %Y")}. {DISCLAIMER}</p>'
+        + f'<p class="note">Projection frozen {escape(str(frozen_at)[:16])} UTC '
+        + f"for the GW{gw} deadline {escape(str(deadline)[:16])} UTC. "
+        # 🔴 ARKISTOSIVU EI KANNA AJOHETKEA. Immutable sivu jonka alalaidassa
+        # lukee "Updated <tanaan>" on (a) harhaanjohtava - mikaan sivulla ei
+        # ole paivittynyt - ja (b) tuottaisi tyhjan diffin joka ajolta x 38
+        # sivua kauden lopussa. Leima on GRADAUSHETKI, joka on se hetki
+        # jolloin sivun sisalto syntyi.
+        + (f"Graded {escape(str(gradaus.get('graded_at') or '')[:10])}. "
+           if archive and gradaus
+           else f'Updated {now.strftime("%d %b %Y")}. ')
+        + f"{DISCLAIMER}</p>"
     )
     jsonld = [{
         "@context": "https://schema.org", "@type": "WebPage",
         "name": title, "url": url, "description": desc,
         "isPartOf": {"@id": f"{BASE}/#organization"},
-        "dateModified": now.strftime("%Y-%m-%d"),
+        "dateModified": (str(gradaus.get("graded_at") or "")[:10]
+                         if archive and gradaus else now.strftime("%Y-%m-%d")),
     }]
     return _page(title, desc, url, hero, body, jsonld)
 
@@ -5017,6 +5353,25 @@ def main() -> int:
         if page:
             (OUT_DIR / "points.html").write_text(page, encoding="utf-8")
             built.append("points")
+        # FPL-POINTS-GW-ARKISTO: pysyva sivu jokaiselle GRADATULLE kierrokselle
+        # jolla on deadline-freeze. Molemmat lahteet kantavat kaikki kierrokset,
+        # joten tama rakentuu TAKAUTUVASTI (GW1 alkaen), ei vain eteenpain.
+        #
+        # Tarjoilu: `fpl/points/gw2.html` -> `/fpl/points/gw2`. Sisarhakemiston
+        # olemassaolo EI riko `/fpl/points`ia - mitattu tuotannossa 7.9:
+        # `/predictions` ja `/fpl` palauttavat 200 vaikka `predictions/` ja
+        # `fpl/` ovat hakemistoja. Siksi ei `_redirects`-rivia eika
+        # `points/index.html`:aa (jalkimmainen pakottaisi canonicaliksi
+        # `/fpl/points/` ja loisi duplikaatin).
+        POINTS_DIR.mkdir(parents=True, exist_ok=True)
+        n_arc = 0
+        for g in _arkistoitavat_kierrokset(pgw):
+            sivu = render_points(pgw, now, g, archive=True)
+            if sivu:
+                (POINTS_DIR / f"gw{g}.html").write_text(sivu, encoding="utf-8")
+                n_arc += 1
+        if n_arc:
+            built.append(f"points-gw x{n_arc}")
 
     mv = _load(MINUTES_VALIDATION_PATH)
     if mv:
@@ -5097,6 +5452,14 @@ def main() -> int:
     # seurasivuilla, ja juuri niihin ulkoiset linkit osoittavat.
     urlit += [(f"{BASE}/fpl/note/{f.stem}", today, "weekly", "0.7")
               for f in sorted(NOTE_DIR.glob("*.html"))]
+    # Arkistosivut: `lastmod` on GRADAUSHETKI, ei `today`. Sivu on immutable
+    # gradauksen jalkeen, joten paivittyva lastmod olisi vaara signaali
+    # crawlerille ja tuottaisi kauden lopussa 38 turhaa diffia joka ajolta.
+    _gradatut = _gradatut_kierrokset()
+    urlit += [(f"{BASE}/fpl/points/gw{g}",
+               str((_gradatut.get(g) or {}).get("graded_at") or today)[:10],
+               "yearly", "0.5")
+              for g in _arkistoitavat_kierrokset(pgw)]
     write_urlset(SITEMAP_FPL_PATH, urlit)
     print(f"LONGTAIL: {', '.join(built) or 'ei sivuja (data puuttuu)'} "
           f"(sitemap-fpl.xml: {len(urlit)} URL:ia)")

@@ -600,9 +600,18 @@
 			headline,
 			notes,
 			legend: hasMark ? `${LUCK_MARK.lucky} got lucky \u00b7 ${LUCK_MARK.robbed} got robbed` : undefined,
-			// Portti 2.9: vaite tarvitsee reitin. Per-GW-arkisto jonossa
-			// FPL-POINTS-GW-ARKISTO (sivu nayttaa vain kuluvan kierroksen).
-			footNote: 'frozen before the deadline \u00b7 goaliq.app/fpl/points'
+			// Portti 2.9: vaite tarvitsee reitin. 7.9: reitti on nyt KIERROKSEN OMA
+			// sivu. `/fpl/points` nayttaa vain kuluvan kierroksen, joten GW2:n
+			// kortti lupasi sivun jolla ei ole sen kortin lukuja - ja kortti on
+			// pysyva kuva, eli vaara reitti ei vanhene vaan jaa kiertoon.
+			// `/fpl/points/gw{n}` on olemassa heti kun kierroksella on deadline-
+			// freeze ja yksi pelattu ottelu (build_fpl_longtail.
+			// _arkistoitavat_kierrokset), eli ennen kuin tama kortti voi syntya:
+			// kortti syntyy vain PAATTYNEELLE kierrokselle. Varahaara on siksi ettei
+			// "gwnull"-URL voi paasta kuvaan jos gw puuttuu.
+			footNote: Number.isFinite(lf.gw)
+				? `frozen before the deadline \u00b7 goaliq.app/fpl/points/gw${lf.gw}`
+				: 'frozen before the deadline \u00b7 goaliq.app/fpl/points'
 		};
 	}
 	async function shareImage() {
