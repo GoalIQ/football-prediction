@@ -192,8 +192,27 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // rivin i. Jarjestysvaite on tarkistettava sarakkeista.
   const naytettyEro = (p: ReviewCardPlayer) =>
     p.actual - Number(p.projected.toFixed(1));
+  // 🔴 VILLEN PAATOS 7.9.2026: "pida biggest gap".
+  //
+  // 9. kierroksella alaotsikko sanoi 'biggest gap first', ja 10. kierros
+  // totesi sen EPATODEKSI: jarjestys oli nouseva (negatiivisin ensin), joten
+  // suurin ero oli rivilla 11 jokaisella ylisuoritusviikolla ja kortin oma
+  // sarake kumosi alaotsikon. Silloin heikensin SANAT ('worst gap first')
+  // jotta ne vastaisivat jarjestysta.
+  //
+  // Ville pitaa sanat. Silloin JARJESTYKSEN on vastattava niita, ei toisin
+  // pain: lajitellaan itseisarvoltaan suurimmasta erosta. Nyt rivi 1 on se
+  // jossa malli osui huonoimmin - kumpaan suuntaan tahansa - ja lukija voi
+  // tarkistaa sen kortin omista sarakkeista (|PTS - XP| laskee alaspain).
+  //
+  // Lajitteluavain on yha NAYTETYISTA luvuista: 2 desimaalin `diff` tuotti
+  // 96 tapausta 200 000:sta joissa rivin i+1 naytetty ero oli pienempi kuin
+  // rivin i.
   const ordered = [...xi].sort(
-    (a, b) => naytettyEro(a) - naytettyEro(b) || a.web_name.localeCompare(b.web_name, 'en')  // kiintea lokaali: kortti on
+    (a, b) =>
+      Math.abs(naytettyEro(b)) - Math.abs(naytettyEro(a)) ||
+      naytettyEro(a) - naytettyEro(b) ||
+      a.web_name.localeCompare(b.web_name, 'en')  // kiintea lokaali: kortti on
       // jaettava kuva, ja diakriittiset nimet (Odegaard, Nunez) jarjestyivat
       // eri tavalla es- ja en-laitteella
   );
@@ -292,11 +311,15 @@ export function gwReviewCardSpec(data: ReviewCardInput): ReviewCardSpec | null {
   // on rank-sarake 1-11 eika mikaan sano miksi. Rank on jarjestysvaite ja
   // sen selite on tarkeampi kuin kattavuus - siis ensin, ja lyhyena.
   //
-  // 🔴 9. kierros: sanamuoto on 'biggest gap first', ei 'worst call first'.
-  // Jarjestys on kerroinpainotettu, ja kapteeninauha on KAYTTAJAN valinta -
-  // "mallin pahin kutsu" olisi vaite jota tama jarjestys ei mittaa. Se
-  // vaite tehdaan paneelissa, kertoimettomista luvuista.
-  valinnaiset.push('worst gap first');
+  // 🔴 9. kierros: sanamuoto ei ole 'worst call first'. Jarjestys on
+  // kerroinpainotettu, ja kapteeninauha on KAYTTAJAN valinta - "mallin
+  // pahin kutsu" olisi vaite jota tama jarjestys ei mittaa. Se vaite
+  // tehdaan paneelissa, kertoimettomista luvuista.
+  //
+  // 🔴 Villen paatos 7.9: 'biggest gap first', ja jarjestys lajitellaan
+  // vastaamaan sita (ks. `ordered` ylla). Vaite on tarkistettavissa kortin
+  // omista sarakkeista: |PTS - XP| laskee alaspain.
+  valinnaiset.push('biggest gap first');
 
 
   // R2 (5. kierros): FPL:n luku on pakollisten VIIMEINEN, eli jos pakolliset
