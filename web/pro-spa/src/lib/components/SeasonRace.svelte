@@ -210,8 +210,17 @@
 						{#if r.provisional}
 							<span class="prov">provisional</span>
 						{/if}
+						<!-- 🔴 Mallin luku voi puuttua (vanhentunut lahde). Silloin
+						     sita EI julkaista: lukija vahentaisi sen itse ja saisi
+						     eron joka on pelkkaa vanhentumista. -->
 						<span class="pts">
-							{#if r.your_points != null}
+							{#if r.model_points == null}
+								{#if r.your_points != null}
+									you {r.your_points} · model not confirmed yet
+								{:else}
+									model not confirmed yet
+								{/if}
+							{:else if r.your_points != null}
 								you {r.your_points} · model {r.model_points}
 							{:else}
 								model {r.model_points}

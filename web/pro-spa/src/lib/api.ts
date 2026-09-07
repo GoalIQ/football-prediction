@@ -735,7 +735,9 @@ export interface ModelRaceAutosub {
 
 export interface ModelRaceGameweek {
 	gw: number;
-	model_points: number;
+	/** null = mallin luku olisi eri hetkesta kuin sinun, joten sita ei
+	 *  julkaista. Ks. `stale_model_points`. */
+	model_points: number | null;
 	fpl_average: number | null;
 	/** 25.8: kierros on pelattu mutta FPL ei ole vahvistanut bonuksia
 	 *  (`data_checked` false). Luku nakyy heti, mutta se EI saa esiintya
@@ -744,6 +746,7 @@ export interface ModelRaceGameweek {
 	/** Kolme tilaa yhden lipun sijaan: 'in_progress' | 'awaiting_check' |
 	 *  'unknown'. `provisional` yksin on tosi kaikissa kolmessa. */
 	state?: string;
+	stale_model_points?: boolean;
 	/** null = kierrosta ei ole omassa historiassa (EI nolla — ks. backend). */
 	your_points: number | null;
 	diff: number | null;

@@ -264,6 +264,20 @@ def test_kierroslohkon_diff_on_sama_brutto():
 # `test_xp_reader_discipline.py`:n perusteltu poikkeuslista).
 ENUMEROIDUT = {
     "direction": {"under", "over"},
+    # 🔴 PORTIN 23. KIERROS (B6): enumerointi kattoi VAIN `direction`in, ja
+    # heuristiikka ei loytanyt yhtaan realistista suomenkielista arvoa -
+    # portti ajoi 19 uskottavalla arvolla ("kesken", "vaara", "voitto",
+    # "ennuste", ...) ja sai NOLLA osumaa. Myos `aliarvio`, se sanatarkka
+    # arvo joka aiheutti 22. kierroksen loydoksen, meni heuristiikasta lapi;
+    # se jai kiinni vain koska `direction` oli enumeroitu.
+    #
+    # Suljetut joukot kuuluvat siis listalle, ei heuristiikan varaan.
+    "call": {"captain_pick", "ceiling", "gamble", "model_captain",
+             "projected_xi", "safest"},
+    "criterion": {"10+ pts", "3+ pts", "reached p90",
+                  "captain return, points doubled",
+                  "XI points with the captain doubled, FPL automatic "
+                  "substitutions applied from the bench in order"},
 }
 
 # Kentat joiden arvo on ulkoista dataa tai vapaata tekstia: pelaajien ja
@@ -272,7 +286,15 @@ ENUMEROIDUT = {
 ULKOINEN_TEKSTI = {
     "segment", "web_name", "team", "team_short", "name", "season",
     "graded_at", "generated_at", "frozen_at", "deadline", "chip", "source",
+    "deadline_utc", "logged_at",
 }
+
+# Vapaata proosaa: ei enumeroitavissa, mutta EI myoskaan heuristiikan
+# varassa. Naille vaaditaan eksplisiittinen englanti-invariantti: teksti
+# alkaa pienella ASCII-kirjaimella ja koostuu ASCII-merkeista. Suomi ei
+# kaadu tahan aina, mutta yhdessa heuristiikan kanssa pinta on katettu, ja
+# ennen kaikkea: uusi proosakentta ei paase tanne vahingossa.
+PROOSA = {"basis"}
 
 # Suomen sijapaatteet joita englanti ei tuota sanan lopussa. Heuristiikka on
 # tarkoituksella loysa: se kattaa enumeroimattomat kentat, ja vaarat
@@ -325,6 +347,11 @@ def test_julkinen_artefakti_ei_sisalla_suomea():
                         ongelmat.append(
                             f"{polku}.{k} = {v!r}, sallitut {ENUMEROIDUT[k]}")
                     continue
+                if k in PROOSA:
+                    if isinstance(v, str):
+                        assert v.isascii(), f"{polku}.{k}: ei-ASCII proosassa"
+                        assert not suomelta_nayttava(v), f"{polku}.{k}: {v!r}"
+                    continue
                 if k in ULKOINEN_TEKSTI:
                     continue
                 kavele(v, f"{polku}.{k}")
@@ -372,3 +399,47 @@ def test_kontrolli_enumeroitu_kentta_ei_paase_uudella_arvolla():
     vaan kirjoittajan on lisattava se tanne."""
     assert "aliarvio" not in ENUMEROIDUT["direction"]
     assert ENUMEROIDUT["direction"] == {"under", "over"}
+
+def test_kaikki_artefaktin_merkkijonokentat_on_luokiteltu():
+    """🔴 PORTIN 23. KIERROS (B6). Enumerointi kattoi yhden kentan, ja
+    heuristiikka ei loytanyt yhtaan realistista suomenkielista arvoa.
+    Kolme kenttaa (`call`, `criterion`, `basis`) oli enumeroimatta ja siis
+    kaytannossa vartioimatta.
+
+    Tama kaataa jos artefaktiin ilmestyy UUSI merkkijonokentta jota ei ole
+    luokiteltu johonkin kolmesta: enumeroitu, ulkoinen teksti tai proosa.
+    Uusi kentta ei voi jaada nakymattomaksi.
+    """
+    import datetime as _dt
+
+    from scripts.build_gw_recap import (ACC_PATH, CALLS_PATH, SQUAD_PATH,
+                                        _load, build)
+    doc = build(_load(CALLS_PATH), _load(SQUAD_PATH), _load(ACC_PATH),
+                _dt.datetime.now(_dt.timezone.utc))
+
+    tunnetut = set(ENUMEROIDUT) | ULKOINEN_TEKSTI | PROOSA
+    tuntemattomat = set()
+
+    def kavele(x):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if isinstance(v, str) and len(v) > 3 and k not in tunnetut:
+                    tuntemattomat.add(k)
+                kavele(v)
+        elif isinstance(x, list):
+            for v in x:
+                kavele(v)
+
+    kavele(doc)
+    assert not tuntemattomat, (
+        "artefaktissa on luokittelemattomia merkkijonokenttia. Lisaa jokainen "
+        "ENUMEROIDUT-, ULKOINEN_TEKSTI- tai PROOSA-listaan:\n  "
+        + "\n  ".join(sorted(tuntemattomat)))
+
+
+def test_kontrolli_enumerointi_kaataa_uudesta_arvosta():
+    """Sallittu lista on portin ydin: uusi arvo ei paase lapi vahingossa."""
+    for kentta, sallitut in ENUMEROIDUT.items():
+        assert sallitut, kentta
+        assert "aliarvio" not in sallitut
+        assert "kesken" not in sallitut

@@ -98,7 +98,19 @@ def test_puuttuvaa_kierrosta_ei_tulkita_nollaksi():
     assert g2["diff"] == 5
     assert r["totals"]["diff"] == 5
     assert r["meta"]["compared_gws"] == 1
-    assert r["totals"]["model"] == 106      # mallin summa on silti koko kausi
+    # 🔴 PORTIN 23. KIERROS: tassa luki ennen `== 106` ("mallin summa on silti
+    # koko kausi"). Se teki paneelista epajohdonmukaisen: lukija naki
+    # *"Model 106 - You 50"* ja sen alle *"the model is 5 points ahead after
+    # 1 gameweeks"*. 56 pisteen kuilu ja lause joka sanoo 5.
+    #
+    # `totals.model` kattaa nyt TASAN vertailujoukon. Mallin koko kausi ei
+    # katoa vaan saa oman nimensa, jotta pinta ei voi nayttaa sita
+    # "sinua" vastaan.
+    assert r["totals"]["model"] == 45, "summa ei kata vertailujoukkoa"
+    assert r["totals"]["you"] == 50
+    assert r["totals"]["model_season"] == 106
+    # Ja lause tasmaa lukuihin: 50 - 45 = 5.
+    assert r["totals"]["you"] - r["totals"]["model"] == r["totals"]["diff"]
 
 
 def test_ei_yhteisia_kierroksia_kerrotaan():
@@ -363,6 +375,113 @@ def test_siirretty_ottelu_ei_ole_kesken_oleva_kierros():
     st = _gw_status(boot, [_fx(), ilman])
     assert st[5]["all_fixtures_played"] is None
 
+    # (e) 🔴 PORTIN 23. KIERROS: uudelleenaikataulutettu ottelu saa TULEVAN
+    # kickoffin. Ensimmainen versio tunnisti vain menneen, joten pinta sanoi
+    # paivakausia "still being played" kierroksesta jonka muut ottelut oli
+    # pelattu. Fikstuuri on tasan se tapaus jota commit-viesti vaitti
+    # kattavansa.
+    siirretty_eteen = _fx(finished_provisional=False,
+                          kickoff_time=(nyt + dt.timedelta(days=17)).isoformat())
+    st = _gw_status(boot, [_fx(), siirretty_eteen])
+    assert st[5]["all_fixtures_played"] is None, (
+        "eteenpain siirretty ottelu luettiin kesken olevaksi kierrokseksi")
+
+    # KONTROLLI: raja ei saa niella tavallista kierrosta. Sunnuntain ottelu
+    # perjantaina on yha "kesken", ei siirretty.
+    normaali = _fx(finished_provisional=False,
+                   kickoff_time=(nyt + dt.timedelta(days=2)).isoformat())
+    st = _gw_status(boot, [_fx(), normaali])
+    assert st[5]["all_fixtures_played"] is False, (
+        "tavallinen kesken oleva kierros luettiin siirretyksi")
+
     # Ja tila-lukija kaantaa nama oikeiksi teksteiksi.
     from src.models.fpl_model_race import row_state
     assert row_state({"provisional": True, "all_fixtures_played": None}) == "unknown"
+
+
+def test_summa_ja_lause_ovat_aina_samasta_joukosta():
+    """🔴 PORTIN 23. KIERROS (B1). Rivi ja summa tulivat kahdesta eri
+    ehdosta: `model_total` kasvoi joka ei-stale-rivilla, `you_total` vain
+    kun kayttajalla oli rivi. Invariantti mitataan nyt KAIKISSA
+    kombinaatioissa, ei siina jossa vika loytyi.
+    """
+    from src.models.fpl_model_race import build_race
+    loki = {"gameweeks": [
+        {"gw": 1, "points": 61, "provisional": False, "all_fixtures_played": True},
+        {"gw": 2, "points": 45, "provisional": False, "all_fixtures_played": True},
+        {"gw": 3, "points": 58, "provisional": True, "all_fixtures_played": True},
+    ]}
+    tapaukset = {
+        "kaikki yhteiset, ei stalea": (_hist22({1: 60, 2: 50, 3: 72}),
+                                       _hist22({1: 61, 2: 45, 3: 72})),
+        "liittyi GW2:ssa": (_hist22({2: 50, 3: 72}),
+                            _hist22({1: 61, 2: 45, 3: 72})),
+        "GW3 stale": (_hist22({1: 60, 2: 50, 3: 72}), None),
+        "liittyi GW2:ssa JA GW3 stale": (_hist22({2: 50, 3: 72}), None),
+    }
+    for nimi, (kayttaja, malli) in tapaukset.items():
+        out = build_race(loki, kayttaja, model_history=malli)
+        t = out["totals"]
+        # Lause ("olet N pistetta edella") lasketaan naista kahdesta, joten
+        # niiden on tasmattava eroon.
+        assert t["you"] - t["model"] == t["diff"], f"{nimi}: {t}"
+        # Ja summat kattavat tasan ne rivit joilla on ero.
+        rivit = [r for r in out["gameweeks"] if r["diff"] is not None]
+        assert sum(r["model_points"] for r in rivit) == t["model"], nimi
+        assert sum(r["your_points"] for r in rivit) == t["you"], nimi
+        assert out["meta"]["compared_gws"] == len(rivit), nimi
+
+
+def test_vanhentunutta_mallilukua_ei_julkaista_rivilla():
+    """🔴 PORTIN 23. KIERROS (B2). 22. kierros jatti eron pois mutta jatti
+    VANHENTUNEEN LUVUN ruudulle kayttajan luvun viereen - lukija vahentaa
+    itse, ja vaara vaite on yha naytolla."""
+    from src.models.fpl_model_race import build_race
+    loki = {"gameweeks": [{"gw": 3, "points": 58, "provisional": True,
+                           "all_fixtures_played": True}]}
+    out = build_race(loki, _hist22({3: 72}))          # ei mallin historiaa
+    rivi = out["gameweeks"][0]
+    assert rivi["stale_model_points"] is True
+    assert rivi["model_points"] is None, "jaadytetty luku jai ruudulle"
+    assert rivi["your_points"] == 72
+    assert rivi["diff"] is None
+
+    # KONTROLLI: elavalla lahteella luku julkaistaan.
+    ok = build_race(loki, _hist22({3: 72}), model_history=_hist22({3: 72}))
+    assert ok["gameweeks"][0]["model_points"] == 72
+
+
+def test_hittivahti_premissi_jonka_varassa_lykkays_lepaa():
+    """🔴 PORTIN 23. KIERROS (A). `model_points_basis` on payloadissa muttei
+    renderoidu millaan pinnalla, ja lykkasin renderoinnin perustelulla
+    *"hittikierroksia ei ole ollut"*.
+
+    Se on EHTO, ei ominaisuus, ja se vanhenee hiljaa - tasan muistin
+    `ehto-ei-vanhene-teksti-vanhenee` kuvio. Portti huomautti ratkaisevasti:
+    premissia jonka varaan lykkays nojaa ei mitannut MIKAAN (greppi
+    `transfer_cost` tasta tiedostosta: 0 osumaa).
+
+    Tama testi on se mittaus. Se kaatuu ensimmaisesta nollasta poikkeavasta
+    siirtorangaistuksesta seuratuilla riveilla, ja kaatumisviesti sanoo mita
+    silloin on tehtava. Lykkays on nyt kirjattu paatos jolla on
+    eraantymispaiva, ei unohdus.
+    """
+    import json
+    from pathlib import Path
+    polku = Path(__file__).resolve().parents[1] / "data" / "model_squad_gw_scores.json"
+    if not polku.exists():
+        import pytest
+        pytest.skip("mallin gradauslokia ei ole")
+    d = json.loads(polku.read_text(encoding="utf-8"))
+    rivit = d if isinstance(d, list) else (d.get("gameweeks") or [])
+    hitit = [(r.get("gw"), r.get("transfer_cost")) for r in rivit
+             if int(r.get("transfer_cost") or 0) != 0]
+    assert not hitit, (
+        "MALLI OTTI HITIN: " + str(hitit) + "\n"
+        "Nyt `totals.model` (netto, race) ja `gw_recap.running_record` "
+        "(brutto, FPL:n keskiarvoa vastaan) EROAVAT, ja kaksi julkista "
+        "pintaa nayttaa samalle kierrokselle kaksi eri mallipistemaaraa "
+        "ilman etta kumpikaan sanoo perustettaan.\n"
+        "TEE NYT: renderoi `model_points_basis` luvun viereen molemmilla "
+        "pinnoilla, tai yhtenaista peruste. Ks. QUEUE "
+        "MODEL-POINTS-BASIS-RENDEROINTI.")

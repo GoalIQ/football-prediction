@@ -85,6 +85,21 @@ def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
         # `all_fixtures_played` on None, `row_state` palauttaa `unknown`, ja
         # teksti sanoo vain ettei kierrosta ole vahvistettu. Se on tosi
         # molemmissa tapauksissa.
+        # 🔴 PORTIN 23. KIERROS (B4): ensimmainen versio tunnisti vain
+        # MENNEEN kickoffin. FPL antaa uudelleenaikataulutetulle ottelulle
+        # TULEVAN kickoffin, jolloin `now - t` on negatiivinen, `siirretty`
+        # jai Falseksi, ja pinta sanoi paivakausia *"GW N: still being
+        # played"* kierroksesta jonka muut ottelut oli pelattu. Commit-viesti
+        # lupasi kattavansa juuri sen tapauksen; koodi ei kattanut.
+        #
+        # Erotin: kierros on KESKEN vain jos pelaamaton ottelu alkaa pian
+        # (tai on juuri alkanut). Jos yksikin pelaamaton ottelu on selvasti
+        # muiden ULKOPUOLELLA - kaukana tulevaisuudessa, kaukana
+        # menneisyydessa tai ilman kickoffia - kierros on siirretty, emmeka
+        # sano siita mitaan.
+        nyt = _dt.datetime.now(_dt.timezone.utc)
+        ALKU = 3 * 3600          # olisi pitanyt olla ohi
+        TULEVA = 3 * 24 * 3600   # alkaa vasta yli 3 vrk paasta
         siirretty = False
         for f in fx:
             if f.get("finished_provisional"):
@@ -97,8 +112,8 @@ def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
                 t = _dt.datetime.fromisoformat(str(ko).replace("Z", "+00:00"))
             except ValueError:
                 continue
-            # Ottelu olisi pitanyt olla ohi kolmessa tunnissa.
-            if (_dt.datetime.now(_dt.timezone.utc) - t).total_seconds() > 3 * 3600:
+            ero = (nyt - t).total_seconds()
+            if ero > ALKU or ero < -TULEVA:
                 siirretty = True
                 break
         out[gw] = {

@@ -177,6 +177,7 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
 
     out_rows = []
     model_total = 0
+    model_season = 0
     you_total = 0
     cum = 0
     compared = 0
@@ -195,11 +196,40 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
                 mp = elava["points_net"]
             else:
                 stale = True
+
+        u = user.get(gw)
+        # 🔴 PORTIN 23. KIERROS (B1+B2): YKSI PAATOS, EI KAHTA EHTOA.
+        # 22. kierros lisasi stale-haaran mutta jatti alkuperaisen
+        # epasymmetrian: `model_total` kasvoi joka ei-stale-rivilla ja
+        # `you_total` vain kun kayttajalla oli rivi. Kesken kautta liittynyt
+        # manageri sai *"Model 149 - You 100"* ja sen alle lauseen *"the
+        # model is 8 points ahead"*. Lukija nakee 49 pisteen kuilun ja
+        # lauseen joka sanoo 8. Ja kommentti summien vieressa VAITTI etta
+        # ne kattavat samat kierrokset.
+        #
+        # Rivi ja summa tulevat nyt SAMASTA paatoksesta: rivi lasketaan
+        # mukaan tasan silloin kun se vertaa.
+        vertaa = (u is not None) and not stale
         if not stale:
+            # Mallin OMA kausisumma, riippumatta vertailujoukosta. Tama on
+            # eri luku kuin `totals.model`, ja siksi eri nimella: paneeli saa
+            # nayttaa mallin kauden, muttei sita "sinua" vastaan.
+            model_season += mp
+        if vertaa:
             model_total += mp
+            you_total += u["points_net"]
+            cum += u["points_net"] - mp
+            compared += 1
+
         row = {
             "gw": gw,
-            "model_points": mp,
+            # 🔴 Stale-rivilta EI julkaista mallin lukua lainkaan. 22. kierros
+            # jatti eron pois mutta jatti VANHENTUNEEN LUVUN ruudulle
+            # kayttajan luvun viereen ("you 72 - model 58"): lukija vahentaa
+            # itse, ja 14 pisteen vaara vaite on yha naytolla - vain ilman
+            # etta me kirjoitamme sen. Fail-closed ei ole fail-closed jos
+            # vaara luku jaa ruudulle.
+            "model_points": None if stale else mp,
             "fpl_average": r.get("fpl_average"),
             # Rivikohtainen lippu, jotta klientti voi merkita YHDEN kierroksen
             # ilman etta sen tarvitsee ristiinlukea meta.provisional_gws.
@@ -213,19 +243,11 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "diff": None,
             "cumulative_diff": None,
         }
-        u = user.get(gw)
         if u is not None:
             row["your_points"] = u["points_net"]
-            if stale:
-                # Kaksi eri hetkea ei ole vertailu. Luku nakyy, ero ei.
-                row["diff"] = None
-                row["cumulative_diff"] = None
-            else:
-                you_total += u["points_net"]
-                cum += u["points_net"] - mp
-                compared += 1
-                row["diff"] = u["points_net"] - mp
-                row["cumulative_diff"] = cum
+        if vertaa:
+            row["diff"] = u["points_net"] - mp
+            row["cumulative_diff"] = cum
         if premium:
             # "Missä ero syntyi" — nämä ovat premiumin erittely, eivät
             # kilpailun tulos (free näkee eron, premium sen syyn).
@@ -284,13 +306,17 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "note": note,
             "note_code": note_code,
         },
-        # Molemmat summat kattavat TASAN samat kierrokset. Jos jonkin rivin
-        # mallipuoli on vanhentunut, rivi jaa pois molemmilta puolilta - ei
-        # vain erosta. Muuten paneeli nayttaisi "malli 207 / sina 221 /
-        # ero 0", eli kaksi lukua ja niiden kanssa ristiriitaisen eron
-        # (muisti: varoitus-kaukana-luvusta).
+        # Summat kattavat TASAN vertailujoukon (`compared_gws`) kun
+        # kayttajalla on entry. Ilman entrya vertailujoukkoa ei ole, ja
+        # `model` on mallin oma kausisumma - `you` ja `diff` ovat silloin
+        # None, joten epasymmetriaa ei paase syntymaan.
         "totals": {
-            "model": model_total,
+            # Vertailujoukon summa: sama kierrosjoukko kuin `you` ja `diff`.
+            "model": model_total if (has_entry and compared) else model_season,
+            # Mallin koko kausi. ERI LUKU kuin `model` heti kun kayttajan
+            # historia ei kata kaikkia kierroksia - siksi omalla nimellaan,
+            # jotta pinta ei voi nayttaa sita "sinua" vastaan.
+            "model_season": model_season,
             "you": you_total if compared else None,
             "diff": cum if compared else None,
             # Kierrokset jotka jaivat pois koska puolet olivat eri hetkesta.
