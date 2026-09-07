@@ -252,19 +252,60 @@ def test_takuu_ei_lupaa_mobiiliostojen_palautusta():
     assert "App Store" not in huono
 
 
-def test_faq_kertoo_myos_web_tilauksen_peruutuksen():
-    """Peruutusohje puhui vain sovelluskaupasta, vaikka pro.goaliq.app/checkout
-    myy Stripen kautta. Web-ostaja ei loytanyt ohjeestaan mitaan."""
+def _peruutuslohko() -> str:
+    """Nakyva peruutuslohko, rajattuna sen omaan </details>-tagiin.
+
+    Ankkuri on NAKYVA <summary>, ei pelkka otsikkoteksti: sama otsikko
+    esiintyy myos JSON-LD-lohkossa aiemmin sivulla, ja osajonohaku osui
+    siihen. Rakenteinen data oli jo oikein, nakyva ohje ei — eli testi
+    mittasi vaaraa esiintymaa. Sama ansa kuin luvun 1.4 osuminen lukuun
+    1.45 samana paivana.
+
+    🔴 Ja raja on </details>, ei merkkimaara. Aiempi versio otti 2000
+    merkkia ankkurista ja valui SEURAAVAAN kysymykseen, eli portti olisi
+    mennyt lapi naapurilohkon sanoista.
+    """
     t = _teksti("faq.html")
-    # Ankkuri on NAKYVA <summary>, ei pelkka otsikkoteksti: sama otsikko
-    # esiintyy myos JSON-LD-lohkossa aiemmin sivulla, ja osajonohaku osui
-    # siihen. Rakenteinen data oli jo oikein, nakyva ohje ei — eli testi
-    # mittasi vaaraa esiintymaa. Sama ansa kuin luvun 1.4 osuminen lukuun
-    # 1.45 samana paivana.
     i = t.find("<summary>How do I cancel my Premium subscription?</summary>")
     assert i > 0, "nakyvaa peruutuslohkoa ei loydy"
-    lohko = t[i:i + 2000]
-    assert "web checkout" in lohko, "nakyva peruutusohje ei mainitse web-tilausta"
+    loppu = t.find("</details>", i)
+    assert loppu > i, "peruutuslohko ei paaty </details>-tagiin"
+    return t[i:loppu]
+
+
+def test_faq_kertoo_myos_web_tilauksen_peruutuksen():
+    """Peruutusohje puhui vain sovelluskaupasta, vaikka pro.goaliq.app
+    myy Stripen kautta. Web-ostaja ei loytanyt ohjeestaan mitaan.
+
+    🔴 MIKSI EI SANATARKKAA FRAASIA (7.9.2026): testi vaati literaalin
+    "web checkout". Julkaisuportti kirjoitti 6.9 saman ohjeen muotoon
+    "if you subscribed at pro.goaliq.app ... Manage subscription", eli
+    OHJE PARANI ja portti muuttui punaiseksi. Testi mittasi sanamuotoa,
+    ei sita mita se valittaa: web-ostajalle on nimettava (a) mista han
+    osti ja (b) miten han peruu. Nyt mitataan ne.
+    """
+    lohko = _peruutuslohko()
+    assert "pro.goaliq.app" in lohko, (
+        "nakyva peruutusohje ei nimea web-ostopaikkaa")
+    peruutusreitit = ("Manage subscription", "hello@goaliq.app")
+    puuttuu = [r for r in peruutusreitit if r not in lohko]
+    assert not puuttuu, f"nakyvasta ohjeesta puuttuu web-peruutusreitti: {puuttuu}"
+
+
+def test_peruutuslohko_ei_lupaa_pelkkaa_kauppaa():
+    """NEGATIIVINEN KONTROLLI: portti ei saa mennä lapi ohjeesta joka
+    puhuu vain sovelluskaupasta. Juuri se oli vika 6.9: web-ostaja luki
+    ohjeen jossa ei ollut hanen reittiaan lainkaan."""
+    vain_kauppa = ("If you subscribed in the app, cancel in your device's "
+                   "subscription settings (iOS: Settings; Android: Google Play).")
+    assert "pro.goaliq.app" not in vain_kauppa
+    assert "Manage subscription" not in vain_kauppa
+
+
+def test_peruutuslohko_ei_valu_naapurikysymykseen():
+    """NEGATIIVINEN KONTROLLI rajaukselle: lohko paattyy ennen seuraavaa
+    <summary>-otsikkoa. Ilman tata portti lukisi naapurin sanoja omikseen."""
+    assert "<summary>" not in _peruutuslohko()[len("<summary>"):]
 
 
 def test_rakenteinen_data_kertoo_saman():

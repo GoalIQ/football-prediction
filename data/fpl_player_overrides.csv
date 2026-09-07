@@ -74,6 +74,12 @@
 # hintapriori-ansan: `mins <= 0` putoaa hintapriorin ulkopuolelle
 # (build_fpl_xp.py:547) ja paatyy historiattomien positioprioriin, jolloin
 # varamiesvahti voi ponnahtaa YLOS tasan kun suoja poistuu.
+#
+# 🔴 UUSINTAMITTAUS 2026-09-07 (Dubravka 497, review_by 2026-09-06 oli mennyt).
+# FPL element-summary 497, GW1-GW3: minuutteja 0 / 0 / 0, starts 0, status "a".
+# Kinsky on yha ykkonen, eli rivin peruste pitaa yha ja se palautetaan
+# voimaan. Mitattu myos mihin pudotus johti: artefaktissa luki 0.096 eli
+# hintapriorin taso, ei CSV:n 0.08. Uusi paiva 2026-10-04 (GW7:n jalkeen).
 player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #
 # HARKITTU JA HYLÄTTY — Havertz (ARS, 7.5M, p_start 0.25, xmins 15.5), 27.7:
@@ -88,5 +94,5 @@ player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #   Ohitus vaatisi keksityn luvun jolle ei ole mitattua perustetta, ja jokainen
 #   ohitus syö todennettavuuslupausta. Kapea ero ei ole sen arvoinen.
 #   Hintapriori korjaa tämän aikanaan oikeaa kautta.
-497,Dubravka,0.08,"Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",2026-09-06
+497,Dubravka,0.08,"Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",2026-10-04
 351,Mamardashvili,0.15,"Successor in waiting, not the incumbent. Paired with the Alisson row: without it the club's keeper p_start sums to 1.22, i.e. more than one starting keeper. Same reasoning and sources as id 350",2026-09-30

@@ -24,6 +24,7 @@ from pathlib import Path
 import pytest
 
 from src.models import fpl_xp as xp
+from src.models import fpl_player_overrides as ovr
 from src.models.fpl_player_overrides import load_player_overrides
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +82,60 @@ def test_shipped_rows_are_all_live_not_expired():
     _out, warn = load_player_overrides()
     expired = [w for w in warn if "MENNYT" in w]
     assert not expired, "vanhentuneita rivejä:\n  " + "\n  ".join(expired)
+
+
+def test_no_shipped_row_expires_within_the_lead_time():
+    """Sama portti AJOISSA: rivi ei saa olla vanhenemassa.
+
+    Edellinen testi kaataa vasta kun ohitus on JO pudonnut tuotannosta.
+    Mitattu 7.9.2026: Dubravkan review_by oli edellisena paivana mennyt ja
+    artefaktissa luki 0.096 (hintapriorin taso) eika CSV:n 0.08 — punainen
+    tuli vasta kun vaara luku oli servattu. Tama testi kaataa kun rivi on
+    yha voimassa, jolloin mittaus ehditaan tehda ennen pudotusta.
+    """
+    _out, warn = load_player_overrides()
+    vanhenee = [w for w in warn if "VANHENEE" in w]
+    assert not vanhenee, (
+        "review_by vanhenee alle "
+        f"{ovr.REVIEW_LEAD_DAYS} vrk:ssa:\n  " + "\n  ".join(vanhenee))
+
+
+def test_lead_time_warning_does_not_drop_the_row(tmp_path):
+    """NEGATIIVINEN KONTROLLI: ennakkovaroitus ei saa olla pudotus.
+
+    Jos varoitus ohittaisi rivin, portti "korjaisi" vanhenemisen tekemalla
+    siita kolme paivaa aikaisemman — eli tasan sen vian jota se estaa.
+    """
+    huomenna = TODAY + _dt.timedelta(days=1)
+    kaukana = TODAY + _dt.timedelta(days=ovr.REVIEW_LEAD_DAYS + 30)
+    csv_p = _write(
+        tmp_path,
+        f'1,Lahella,0.30,syy,{huomenna.isoformat()},,\n'
+        f'2,Kaukana,0.40,syy,{kaukana.isoformat()},,\n')
+    out, warn = load_player_overrides(csv_p, today=TODAY)
+
+    # Molemmat rivit ovat voimassa, myos se joka vanhenee huomenna.
+    assert out[1]["p_start"] == 0.30
+    assert out[2]["p_start"] == 0.40
+
+    varoitukset = [w for w in warn if "VANHENEE" in w]
+    assert len(varoitukset) == 1, f"odotettiin tasan yksi varoitus: {warn}"
+    assert varoitukset[0].startswith("1:"), varoitukset
+    assert not [w for w in warn if "MENNYT" in w], warn
+
+
+def test_expired_row_is_dropped_not_merely_warned(tmp_path):
+    """KONTROLLI TOISEEN SUUNTAAN: mennyt paiva on yha pudotus, ei varoitus.
+
+    Ilman tata kaksi haaraa voisi valua yhteen ja vanhentunut rivi jaisi
+    vaikuttamaan lukuun jota kukaan ei ole tarkistanut.
+    """
+    eilen = TODAY - _dt.timedelta(days=1)
+    csv_p = _write(tmp_path, f'3,Mennyt,0.30,syy,{eilen.isoformat()},,\n')
+    out, warn = load_player_overrides(csv_p, today=TODAY)
+    assert 3 not in out
+    assert [w for w in warn if "MENNYT" in w]
+    assert not [w for w in warn if "VANHENEE" in w]
 
 
 def test_overridden_players_are_not_all_price_prior_tiers():

@@ -52,6 +52,19 @@ OVERRIDES_PATH = ROOT / "data" / "fpl_player_overrides.csv"
 # mutta ne sulkevat pois suuruusluokkavirheen.
 XG_MULT_MIN, XG_MULT_MAX = 0.25, 2.0
 
+# 🔴 VAROITUSAIKA (7.9.2026). `review_by` kaatoi CI:n vasta kun paiva oli JO
+# mennyt, eli sen jalkeen kun ohitus oli pudonnut tuotannosta. Mitattu 7.9:
+# Dubravkan (497) review_by oli 2026-09-06 ja artefaktissa luki 0.096 eli
+# tasmalleen hintapriorin taso — rivin luku 0.08 ei ollut enaa voimassa
+# yhdessakaan servatussa vastauksessa, ja punainen kertoi siita vasta
+# jalkikateen.
+#
+# Vanhentumista ei voi estaa (se on rivin tarkoitus), mutta sen SILENTIN
+# pudotuksen voi: rivi joka vanhenee alle LEAD_DAYSin paassa varoittaa
+# ERIKSEEN ja on yha voimassa. Portti kaataa siihen, joten mittaus tehdaan
+# silla aikaa kun tuotannossa on viela oikea luku.
+REVIEW_LEAD_DAYS = 3
+
 
 def load_player_overrides(path: Path | None = None,
                           today: _dt.date | None = None) -> tuple[dict, list[str]]:
@@ -129,6 +142,13 @@ def load_player_overrides(path: Path | None = None,
                     f"{pid}: review_by {review} on MENNYT -> ohitusta EI "
                     f"sovelleta. Poista rivi tai paivita paiva.")
                 continue
+            jaljella = (due - today).days
+            if jaljella <= REVIEW_LEAD_DAYS:
+                # Rivi on YHA VOIMASSA — tama ei ole pudotus vaan ennakko.
+                warnings.append(
+                    f"{pid}: review_by {review} VANHENEE {jaljella} vrk "
+                    f"kuluttua -> mittaa rooli uudelleen ja paivita paiva "
+                    f"tai poista rivi ENNEN kuin ohitus putoaa hiljaa.")
 
             # 🔴 `until_available` (16.8, Villen kysymys "kun pelaaja palaa
             # pelikuntoon niin xmins yms ymmartaa sen?").
