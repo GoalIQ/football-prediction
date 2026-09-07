@@ -113,15 +113,22 @@ ROW_UNKNOWN = "unknown"
 
 
 def row_state(row: dict) -> str:
-    """Kierroksen tila rivin omista kentista. Ei kutsu mitaan ulkoista."""
+    """Kierroksen tila rivin omista kentista. Ei kutsu mitaan ulkoista.
+
+    🔴 PORTIN 21. KIERROS: ehto luki `finished`ia, joka on FPL:n
+    TAPAHTUMALIPPU ja kaantyy vasta bonusten jalkeen. Mitattu 7.9: GW3:n
+    `events[3].finished` oli False kun kaikki 10 ottelua oli pelattu, eli
+    teksti olisi sanonut "still being played" pelatusta kierroksesta.
+    Kentta on nyt `all_fixtures_played`, jonka gradaaja laskee otteluista.
+    """
     if not isinstance(row, dict):
         return ROW_UNKNOWN
     if not row.get("provisional"):
         return ROW_FINAL
-    fin = row.get("finished")
-    if fin is True:
+    pelattu = row.get("all_fixtures_played")
+    if pelattu is True:
         return ROW_AWAITING_CHECK
-    if fin is False:
+    if pelattu is False:
         return ROW_IN_PROGRESS
     return ROW_UNKNOWN
 
@@ -219,6 +226,16 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "compared_gws": compared,
             "masked": not premium,
             "model_plays_chips": False,
+            # 🔴 Portin 21. kierros: mallin oma puoli on eri perusteella
+            # kahdella julkisella pinnalla. TASSA vertailu on malli vs
+            # KAYTTAJA, ja molemmat ovat nettoja (symmetria). `gw_recap`in
+            # track record vertaa mallia FPL:n julkaisemaan keskiarvoon,
+            # jonka perustaa emme tieda, ja kayttaa siella bruttoa. Tanaan
+            # sama luku (hitit 0), mutta ensimmaisella hittikierroksella ne
+            # eroavat - joten kumpikin pinta sanoo perusteensa.
+            "model_points_basis": "net: model points after its own transfer "
+                                  "hits, compared with your points on the "
+                                  "same basis",
             "provisional_gws": provisional_gws,
             "provisional_states": {str(x["gw"]): x["state"] for x in out_rows
                                    if x["state"] != ROW_FINAL},

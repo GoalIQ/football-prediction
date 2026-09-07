@@ -140,16 +140,20 @@ def test_fpl_keskiarvo_kulkee_mukana_molemmissa():
 # --- 7.9: kolme tilaa, ei yksi "provisional" -------------------------------
 
 def test_row_state_erottaa_kesken_olevan_ja_vahvistamattoman():
-    """🔴 Mitattu tuotannosta 7.9: GW3 oli `is_current`, `finished` False -
-    otteluita oli KESKEN - ja `fantasy.race.provisional_note` sanoi lukijalle
-    *"FPL hasn't confirmed bonus points yet"*. Vaarin nimetty mekanismi on
-    pahempi kuin nimeamaton: lukija voi tarkistaa aritmetiikan ja todeta
-    meidat vaaraksi (muisti: mekanismin-nimeaminen-on-vaite)."""
+    """🔴 Kaksi kierrosta samaa vikaa. 20. kierros haaroitti tekstin FPL:n
+    `event.finished`ista, ja 21. kierros mittasi ettei se kelpaa: 7.9 GW3:n
+    `events[3].finished` oli False samalla kun `fixtures/?event=3` sanoi
+    10/10 pelattua. Teksti olisi kertonut lukijalle etta otteluita on
+    kesken, kun ne oli kaikki pelattu - eli sama vaarin nimetty mekanismi
+    jonka korjaamiseksi tilakone rakennettiin.
+
+    Kentta on nyt `all_fixtures_played`, jonka gradaaja laskee otteluista
+    (sama luku jolla se ratkaisee gradattavuuden)."""
     from src.models.fpl_model_race import row_state
     assert row_state({"provisional": False}) == "final"
-    assert row_state({"provisional": False, "finished": False}) == "final"
-    assert row_state({"provisional": True, "finished": False}) == "in_progress"
-    assert row_state({"provisional": True, "finished": True}) == "awaiting_check"
+    assert row_state({"provisional": False, "all_fixtures_played": False}) == "final"
+    assert row_state({"provisional": True, "all_fixtures_played": False}) == "in_progress"
+    assert row_state({"provisional": True, "all_fixtures_played": True}) == "awaiting_check"
     # Kolmas haara: kentta puuttuu -> emme voi sanoa kummasta on kyse.
     assert row_state({"provisional": True}) == "unknown"
     assert row_state(None) == "unknown"
@@ -159,11 +163,11 @@ def test_race_payload_kantaa_tilan_jokaiselle_riville():
     from src.models.fpl_model_race import build_race
     loki = {"gameweeks": [
         {"gw": 1, "points": 41, "fpl_average": 50, "provisional": False,
-         "finished": True},
+         "all_fixtures_played": True},
         {"gw": 2, "points": 108, "fpl_average": 81, "provisional": True,
-         "finished": True},
+         "all_fixtures_played": True},
         {"gw": 3, "points": 30, "fpl_average": 51, "provisional": True,
-         "finished": False},
+         "all_fixtures_played": False},
     ]}
     out = build_race(loki, None)
     tilat = [r["state"] for r in out["gameweeks"]]
@@ -172,3 +176,40 @@ def test_race_payload_kantaa_tilan_jokaiselle_riville():
                                                  "3": "in_progress"}
     # Kontrolli: lopullinen kierros EI ole listalla.
     assert "1" not in out["meta"]["provisional_states"]
+
+
+def test_tila_seuraa_otteluita_ei_fpln_tapahtumalippua():
+    """MITATTU TAPAUS 7.9.2026, jossa kaksi lippua ovat eri mielta.
+
+    FPL:n `events[3].finished` oli **False** samalla kun
+    `fixtures/?event=3` sanoi **10/10 finished**. `event.finished` kaantyy
+    vasta bonusten jalkeen; sen sanoo gradaajan oma docstring.
+
+    Fikstuuri kantaa MOLEMMAT kentat ristiriitaisina, joten testi kaatuu jos
+    joku palauttaa ehdon `finished`iin - eika vain siina tapauksessa jossa
+    kentat sattuvat olemaan samaa mielta.
+    """
+    from src.models.fpl_model_race import row_state
+    riita = {"gw": 3, "provisional": True,
+             "all_fixtures_played": True,   # ottelut: kaikki pelattu
+             "finished": False}             # FPL:n tapahtumalippu: ei viela
+    assert row_state(riita) == "awaiting_check", (
+        "tila luettiin FPL:n tapahtumalipusta, ei otteluista")
+
+    # Ja toisin pain: ottelut kesken, tapahtumalippu jo kaantynyt.
+    riita2 = {"gw": 4, "provisional": True,
+              "all_fixtures_played": False, "finished": True}
+    assert row_state(riita2) == "in_progress"
+
+
+def test_gradaaja_kirjoittaa_kentan_jota_lukija_lukee():
+    """Lukija ja kirjoittaja eri tiedostoissa: jos gradaaja lakkaa
+    kirjoittamasta kenttaa, `row_state` palauttaa hiljaa `unknown` kaikelle.
+    Portti lukee kirjoittajan lahteen."""
+    from pathlib import Path
+    src = (Path(__file__).resolve().parents[1]
+           / "scripts" / "grade_model_squad.py").read_text(encoding="utf-8")
+    assert '"all_fixtures_played": all_played' in src, (
+        "gradaaja ei enaa laske kenttaa otteluista")
+    assert '"all_fixtures_played": status["all_fixtures_played"]' in src, (
+        "gradaaja ei enaa kirjoita kenttaa riville")

@@ -21,14 +21,26 @@ const src = blocks.find(b => b.includes('function drawCard('));
 if (!src) { console.error('drawCard-lohkoa ei loytynyt career.html:sta'); process.exit(2); }
 
 const calls = [], texts = [];
+// 🔴 Portin 21. kierros: `measureText` oli VAKIO (length * 12) fonttikoosta
+// riippumatta, joten `fitText` ei tehnyt harnessissa mitaan - portti "mittasi"
+// mekanismia jota se ei ajanut. Leveys lasketaan nyt asetetusta fontista:
+// IBM Plex Mono, advance ~0.6 em.
+let fontPx = 26;
 const ctx = new Proxy({}, {
   get: (_t, k) => {
-    if (k === 'measureText') return (s) => ({ width: String(s).length * 12 });
+    if (k === 'font') return `${fontPx}px mono`;
+    if (k === 'measureText') return (s) => ({ width: String(s).length * fontPx * 0.6 });
     if (k === 'fillText') return (s) => { texts.push(String(s)); };
     if (k === 'createLinearGradient') return () => ({ addColorStop() {} });
     return () => {};
   },
-  set: () => true,
+  set: (_t, k, v) => {
+    if (k === 'font') {
+      const m = /(\d+(?:\.\d+)?)px/.exec(String(v));
+      if (m) fontPx = parseFloat(m[1]);
+    }
+    return true;
+  },
 });
 const el = new Proxy({ style: {}, classList: { add() {}, remove() {} } }, {
   get: (t, k) => (k in t ? t[k] : (k === 'getContext' ? () => ctx : () => {})),
@@ -56,6 +68,12 @@ let js = src.replace(/\}\)\(\);\s*$/, `
 `);
 if (js === src) { console.error('IIFE:n loppua ei tunnistettu'); process.exit(2); }
 
+// Kortti raportoi labelin VALITUN koon, jotta testi voi mitata piirretyn
+// leveyden eika luottaa siihen etta fittaus riittaa.
+const labelFits = [];
+global.__LABEL_FIT = (text, size, maxW) => {
+  labelFits.push({ text, size, maxW, width: text.length * size * 0.6 });
+};
 global.__CALLS = calls;
 global.__EXPORT = {};
 new Function(js)();
@@ -63,4 +81,4 @@ if (typeof global.__EXPORT.drawCard !== 'function') {
   console.error('drawCard ei paatynyt exportiin'); process.exit(2);
 }
 global.__EXPORT.drawCard(payload);
-console.log(JSON.stringify({ blocks: calls, text: texts }));
+console.log(JSON.stringify({ blocks: calls, text: texts, labelFits }));

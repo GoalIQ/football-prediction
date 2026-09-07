@@ -137,7 +137,7 @@ def test_nostaa_segmentin_joka_on_iso_suhteessa_maehen():
     assert m["segment"] == "haul"
     assert m["n"] == 19 and m["bias"] == 9.41
     assert m["x_mae"] == round(9.41 / 1.76, 1)
-    assert m["direction"] == "aliarvio"
+    assert m["direction"] == "under"
 
 
 def test_negatiivinen_kontrolli_pieni_harha_ei_nouse():
@@ -150,7 +150,7 @@ def test_negatiivinen_kontrolli_liian_pieni_segmentti_on_kohinaa():
 
 def test_yliarvio_tunnistetaan_suunnaltaan():
     m = headline_miss(_acc(1.0, {"y": {"n": 50, "mae": 5.0, "bias": -5.0}}))
-    assert m["direction"] == "yliarvio"
+    assert m["direction"] == "over"
 
 
 def test_puuttuva_tarkkuusartefakti_ei_kaada():
@@ -255,3 +255,76 @@ def test_kierroslohkon_diff_on_sama_brutto():
     assert doc["gameweeks"][0]["squad"]["diff"] == 4
     assert doc["gameweeks"][0]["squad"]["points_net"] == 62
     assert doc["running"]["total_diff"] == doc["gameweeks"][0]["squad"]["diff"]
+
+
+def test_julkinen_artefakti_ei_sisalla_suomea():
+    """🔴 Portin 20. kierros korjasi YHDEN suomenkielisen merkkijonon tassa
+    tiedostossa ja jatti kaksi. `data/gw_recap.json` on julkisessa repossa.
+
+    Portti skannaa generaattorin merkkijonoliteraalit, ei yhta tunnettua
+    sanaa: uusi suomenkielinen kentta kaatuu ilman etta kukaan muistaa
+    lisata sita listalle.
+    """
+    import ast
+    from pathlib import Path
+    src = (Path(__file__).resolve().parents[1]
+           / "scripts" / "build_gw_recap.py")
+    tree = ast.parse(src.read_text(encoding="utf-8"))
+    docs = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Module, ast.FunctionDef, ast.ClassDef)):
+            if (n.body and isinstance(n.body[0], ast.Expr)
+                    and isinstance(getattr(n.body[0], "value", None), ast.Constant)
+                    and isinstance(n.body[0].value.value, str)):
+                docs.add(id(n.body[0].value))
+    # `print`-kutsujen sisalto on CI-lokia eika artefaktia; suomi on siella
+    # oikein. Suodatetaan ne pois, jotta portti mittaa sita mika PAATYY
+    # tiedostoon eika sita mita ajo tulostaa.
+    lokistringit = set()
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id == "print"):
+            for sub in ast.walk(n):
+                if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+                    lokistringit.add(id(sub))
+
+    # Suomen tunnusmerkit joita englannissa ei esiinny sanan sisalla.
+    VIHJEET = ("aliarvi", "yliarvi", "kierrok", "ei ole", "vaara", "puuttuu",
+               "lopullis", "gradat", "kaytto", "vahvistett", "jaljell")
+    osumat = []
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Constant) and isinstance(n.value, str)
+                and id(n) not in docs and id(n) not in lokistringit
+                and len(n.value) > 3):
+            ala = n.value.lower()
+            if any(v in ala for v in VIHJEET):
+                osumat.append((n.lineno, n.value[:70]))
+    assert not osumat, (
+        "suomenkielinen merkkijono paatyy julkiseen artefaktiin:\n  "
+        + "\n  ".join(f"rivi {ln}: {v!r}" for ln, v in osumat))
+
+
+def test_kontrolli_suomiportti_havaitsee_artefaktikentan(tmp_path):
+    """NEGATIIVINEN KONTROLLI: portin on kaaduttava suomenkieliseen
+    ARTEFAKTIKENTTAAN mutta EI `print`-lokiin. Ilman tata portti olisi
+    vihrea siksi etta se suodattaa liikaa."""
+    import ast
+    koe = tmp_path / "koe.py"
+    koe.write_text(
+        'def f():\n'
+        '    print("::warning::ei gradattuja kierroksia")\n'
+        '    return {"direction": "aliarvio"}\n', encoding="utf-8")
+    tree = ast.parse(koe.read_text(encoding="utf-8"))
+    loki = set()
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id == "print"):
+            for sub in ast.walk(n):
+                if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+                    loki.add(id(sub))
+    VIHJEET = ("aliarvi", "kierrok")
+    osumat = [n.value for n in ast.walk(tree)
+              if isinstance(n, ast.Constant) and isinstance(n.value, str)
+              and id(n) not in loki
+              and any(v in n.value.lower() for v in VIHJEET)]
+    assert osumat == ["aliarvio"], osumat

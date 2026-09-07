@@ -471,10 +471,15 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
 
   function font(px, weight) { return (weight || 400) + ' ' + px + 'px "IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; }
 
-  function fitText(text, maxPx, startSize, weight) {
+  // minSize: labels may shrink further than values. The 24px floor is right
+  // for a 64px headline number, but it is a hard stop, not a guarantee: above
+  // it the text still overflows silently. Labels are small already, so they
+  // can go to 18 and actually fit.
+  function fitText(text, maxPx, startSize, weight, minSize) {
+    var floor = minSize || 24;
     var size = startSize;
     ctx.font = font(size, weight);
-    while (size > 24 && ctx.measureText(text).width > maxPx) {
+    while (size > floor && ctx.measureText(text).width > maxPx) {
       size -= 2;
       ctx.font = font(size, weight);
     }
@@ -484,11 +489,15 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
   function statBlock(x, y, label, value, valueSize, maxW) {
     ctx.fillStyle = MUTED;
     // The label was drawn at a fixed 26px while only the VALUE was fitted, so
-    // a longer label overflowed silently into the next column. Counting
-    // characters in a test only catches the forms someone thought to count;
-    // fitting makes the overflow impossible instead.
+    // a longer label overflowed silently. Counting characters in a test only
+    // catches the forms someone thought to count. Fitting is not a guarantee
+    // on its own either - fitText stops at its floor and then overflows
+    // quietly - so the label floor is 18px, and the test measures the width
+    // that actually gets drawn rather than trusting the mechanism.
     var up = label.toUpperCase();
-    ctx.font = font(maxW ? fitText(up, maxW, 26, 500) : 26, 500);
+    var ls = maxW ? fitText(up, maxW, 26, 500, 18) : 26;
+    ctx.font = font(ls, 500);
+    if (typeof __LABEL_FIT === 'function') __LABEL_FIT(up, ls, maxW);
     ctx.fillText(up, x, y);
     ctx.fillStyle = INK;
     var vs = valueSize || 64;
@@ -570,9 +579,15 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
     // inside the 488px column. A longer label would overflow silently.
     if (atLabel) statBlock(colX[0], 432, atLabel, fmtPts(s.all_time_points), 84, colW);
     statBlock(colX[1], 432, 'Best overall rank', fmtRank(s.best_rank), 84, colW);
+    // A '-' placeholder reads as a zero. The card drops what it does not
+    // know elsewhere (empty team name, missing model teaser, unknown season
+    // state), and the mobile screen drops this block too - so this was the
+    // one surface still printing a dash for a first-season manager.
     var bs = s.best_season;
-    statBlock(colX[0], 640, 'Best season',
-      bs ? (bs.season + '  ·  ' + fmtPts(bs.points) + ' pts') : '-', 52, colW);
+    if (bs) {
+      statBlock(colX[0], 640, 'Best season',
+        bs.season + '  ·  ' + fmtPts(bs.points) + ' pts', 52, colW);
+    }
     var lat = d.latest_season || {};
     if (lat.available) {
       var latLabel = lat.finished ? ('Last season' + (lat.season ? ' (' + lat.season + ')' : '')) : 'This season';
@@ -582,7 +597,9 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       // A gameweek that FPL is still scoring is left out, so the reader can
       // see why these numbers differ from their own FPL page.
       var skipped = (d.summary && d.summary.provisional_gws_excluded) || [];
-      if (skipped.length) latVal += '  ·  GW' + skipped[skipped.length - 1] + ' still being scored';
+      // Naming only the last dropped gameweek understates the gap: with two
+      // dropped rounds the total is short by two and the note admits one.
+      if (skipped.length) latVal += '  ·  GW' + skipped.join(', GW') + ' still being scored';
       statBlock(colX[1], 640, latLabel, latVal, 52, colW);
     } else if (lat.season_state === 'no_final_gw_yet') {
       statBlock(colX[1], 640, 'This season', 'Not final yet', 52, colW);

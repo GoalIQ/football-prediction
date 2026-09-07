@@ -486,8 +486,15 @@ def test_jokainen_saatavuustila_kantaa_kaannosavaimen():
 
     # Ja parametrit ovat oikeat siella missa lause nimeaa kierroksen.
     kesken = fc._latest_season([], [], [3], True, None)
-    assert kesken["note_params"] == {"gw": 3}
+    assert kesken["note_params"] == {"gw": "3"}
     assert "GW3" in kesken["note"]
+
+    # 🔴 Portin 21. kierros: kaksi poisjatettya kierrosta nimettiin YHTENA
+    # (`max(pudotettu)`), eli lause myonsi yhden kun luku oli kahden verran
+    # vajaa. Fikstuuri kantaa nyt kaksi, jotta yhden nimeaminen kaatuu.
+    kaksi = fc._latest_season([], [], [3, 4], True, None)
+    assert kaksi["note_params"] == {"gw": "3, GW4"}
+    assert "GW3, GW4" in kaksi["note"], kaksi["note"]
 
 
 def test_kesan_kausienvalinen_tila_ei_ole_kesken_oleva_kausi(monkeypatch):

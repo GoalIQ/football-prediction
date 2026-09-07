@@ -78,16 +78,17 @@ def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
             "gradable": all_played,
             # data_checked = FPL on vahvistanut bonukset ja dubious goalsit
             "provisional": not bool(ev.get("data_checked")),
-            # 🔴 7.9: `provisional` YKSIN ei riita pinnalle, koska se on tosi
-            # kahdessa taysin eri tilanteessa: kierros on VIELA PELATTAVANA
-            # (ottelut kesken, kaikki voi muuttua) ja kierros on PELATTU mutta
-            # FPL ei ole vahvistanut bonuksia. `fantasy.race.provisional_note`
-            # nimesi molemmissa syyksi bonuksen - mitattu 7.9: GW3 oli
-            # `is_current`, `finished` False, eli otteluita oli kesken, ja
-            # teksti sanoi lukijalle "FPL hasn't confirmed bonus points yet".
-            # Vaarin nimetty mekanismi on pahempi kuin nimeamaton (muisti:
-            # mekanismin-nimeaminen-on-vaite).
-            "finished": bool(ev.get("finished")),
+            # 🔴 PORTIN 21. KIERROS: `event.finished` EI KELPAA TAHAN.
+            # 20. kierroksella haaroitin pinnan tekstin siita - ja se on
+            # tasan se kentta jonka TAMAN funktion oma docstring sanoo
+            # kaantyvan vasta bonusten jalkeen. Mitattu 7.9: GW3:n
+            # `events[3].finished` oli False samalla kun `fixtures/?event=3`
+            # sanoi 10/10 `finished`. Teksti olisi kertonut lukijalle etta
+            # otteluita on kesken, kun ne oli kaikki pelattu.
+            #
+            # Oikea kentta on sama `all_played` jolla gradattavuus jo
+            # ratkaistaan: kaikki ottelut pelattu.
+            "all_fixtures_played": all_played,
             "fpl_average": ev.get("average_entry_score"),
             "n_fixtures": len(fx),
         }
@@ -153,7 +154,7 @@ def _grade_gw(gw: int, history_by_gw: dict[int, dict], status: dict) -> dict:
             for a in (picks.get("automatic_subs") or [])
         ],
         "provisional": status["provisional"],
-        "finished": status["finished"],
+        "all_fixtures_played": status["all_fixtures_played"],
         "graded_at": _dt.datetime.now(_dt.timezone.utc)
         .replace(microsecond=0).isoformat(),
     }

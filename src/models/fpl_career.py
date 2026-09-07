@@ -122,6 +122,12 @@ def _tyhjan_kauden_note(events) -> tuple[str, str, str, dict]:
             "fantasy.career.note.preseason", {})
 
 
+def _gw_lista(gws) -> str:
+    """`[3]` -> "3", `[3, 4]` -> "3, GW4". Lause alkaa aina "GW"-etuliitteella,
+    joten vain valit tarvitsevat sen."""
+    return ", GW".join(str(g) for g in sorted(gws or []))
+
+
 def _latest_season(current: list[dict], past: list[dict],
                    pudotettu: list[int] | None = None,
                    vahvistettu: bool = True, events=None) -> dict:
@@ -190,10 +196,15 @@ def _latest_season(current: list[dict], past: list[dict],
                 "available": False,
                 "season_state": "no_final_gw_yet",
                 "provisional_gws": sorted(pudotettu),
-                "note": (f"GW{max(pudotettu)} is still being scored. Your "
-                         f"season numbers appear here when FPL confirms it."),
+                # 🔴 Portin 21. kierros: `max(pudotettu)` nimesi vain
+                # VIIMEISEN poisjatetyn kierroksen. Kahdella pudotetulla
+                # luku on kahden kierroksen verran vajaa ja lause myontaa
+                # yhden.
+                "note": (f"GW{_gw_lista(pudotettu)} is still being scored. "
+                         f"Your season numbers appear here when FPL "
+                         f"confirms it."),
                 "note_key": "fantasy.career.note.still_scoring",
-                "note_params": {"gw": max(pudotettu)},
+                "note_params": {"gw": _gw_lista(pudotettu)},
             }
         tila, note, avain, parametrit = _tyhjan_kauden_note(events)
         return {"available": False, "season_state": tila, "note": note,

@@ -181,8 +181,11 @@
 			{#each provisionalGroups as [tila, gws] (tila)}
 				<!-- 🔴 Portin 20. kierros: `is` rikkoi numeruksen heti kun tila
 				     kantoi kaksi kierrosta ("GW3, GW4 is still being played").
-				     Kaksoispiste valttaa verbin taivutuksen kokonaan ja lukee
-				     oikein myos yhdella kierroksella. -->
+				     Kaksoispiste valttaa verbin taivutuksen ENGLANNISSA ja
+				     lukee oikein myos yhdella kierroksella. Huom (21. kierros):
+				     es/pt taivuttavat verbin kaksoispisteen jalkeenkin, joten
+				     mobiilin kaannokset kayttavat numerus-invariantteja
+				     muotoja. Tama pinta on englanniksi. -->
 				<p class="prov-note">
 					GW{gws.join(', GW')}:
 					{tila === 'in_progress'

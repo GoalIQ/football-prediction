@@ -180,13 +180,15 @@ def test_vajaa_uran_summa_nimeaa_aina_ikkunan():
 
 
 def test_labelit_mahtuvat_sarakkeeseensa():
-    """🔴 Portin 20. kierros. Edellinen versio tasta laski merkkeja YHDESTA
+    """🔴 Portin 20. ja 21. kierros. Edellinen versio tasta laski merkkeja YHDESTA
     muodosta ja vaitti docstringissaan mittaavansa pisimman - mutta pisin oli
     kausimuoto (`through 2024/25`, 31 merkkia = 484 px), jota se ei mitannut.
     Merkkien laskeminen kattaa vain ne muodot jotka joku muisti laskea.
 
-    `statBlock` fittaa nyt myos labelin, joten ylivuoto on mahdoton. Tama
-    testi mittaa KAIKKI kortin labelit kaikissa tiloissa, ei yhta muotoa."""
+    `statBlock` fittaa nyt myos labelin - mutta fittaus EI YKSIN riita, koska
+    `fitText` pysahtyy lattiaansa ja vuotaa sen jalkeen hiljaa yli. Siksi
+    tama testi mittaa piirretyn leveyden kaikista labeleista kaikissa
+    tiloissa, ei merkkimaaraa eika mekanismin olemassaoloa."""
     tapaukset = [
         _payload(),
         _payload(summary={"all_time_provisional": True,
@@ -199,16 +201,24 @@ def test_labelit_mahtuvat_sarakkeeseensa():
         _payload(latest_season={"available": False,
                                 "season_state": "unconfirmed"}),
     ]
-    # 26 px IBM Plex Mono ~ 0.6 em advance = 15.6 px/merkki, isoin kirjaimin.
-    # `colW` on 448 px; se on ahtaampi kuin sarakkeiden valinen 488 px, joten
-    # tama on konservatiivinen raja.
+    # 🔴 Portin 21. kierros loysi tasta kolme vikaa kerralla:
+    #   (1) `colW` on 428 px (`W/2 - PAD - 40`), ei 448 eika 488
+    #   (2) ehto `or "through" in b["label"]` jatti ulos TASAN ne labelit
+    #       joiden takia testi kirjoitettiin
+    #   (3) harnessin `measureText` oli vakio, joten `fitText`ia ei ajettu -
+    #       testi "mittasi" mekanismia jota se ei ajanut
+    #
+    # Nyt harness laskee leveyden asetetusta fontista ja kortti raportoi
+    # labelin VALITUN koon. Mitataan piirretty leveys, ei merkkimaaraa.
     nahdyt = 0
     for pl in tapaukset:
-        for b in _render(pl)["blocks"]:
-            nahdyt += 1
-            leveys = len(b["label"]) * 15.6
-            assert leveys <= 448 or "through" in b["label"], (
-                f"{b['label']!r} = {leveys:.0f} px > 448 px")
+        out = _render(pl)
+        nahdyt += len(out["blocks"])
+        assert out["labelFits"], "kortti ei raportoinut yhtaan labelia"
+        for f in out["labelFits"]:
+            assert f["width"] <= f["maxW"] + 0.5, (
+                f"{f['text']!r} @{f['size']}px = {f['width']:.0f} px > "
+                f"{f['maxW']} px")
     # Kontrolli: testi ei ole vihrea siksi etta lohkoja ei piirretty.
     assert nahdyt >= 20, nahdyt
 
@@ -218,3 +228,29 @@ def test_labelit_mahtuvat_sarakkeeseensa():
     gw = next(b["label"] for b in _render(tapaukset[1])["blocks"]
               if b["label"].startswith("All-time points"))
     assert len(kausi) > len(gw), (kausi, gw)
+
+
+def test_kortti_ei_piirra_paikanpitajaa_puuttuvalle_parhaalle_kaudelle():
+    """🔴 Portin 21. kierros. `best_season` on `null` ensimmaisen kauden
+    managerilla (mitattu tuotannosta, entry 116920), ja kortti piirsi
+    `BEST SEASON  -`. Viiva luetaan nollaksi. Mobiili pudottaa lohkon, ja
+    kortti pudottaa muualla sen mita se ei tieda."""
+    ilman = _render(_payload(summary={"best_season": None}))
+    labelit = [b["label"] for b in ilman["blocks"]]
+    assert "Best season" not in labelit, labelit
+    assert "-" not in [b["value"] for b in ilman["blocks"]], ilman["blocks"]
+    # Kontrolli: kun kausi on, lohko piirretaan.
+    assert "2024/25" in _arvo(_render(_payload()), "Best season")
+
+
+def test_kaikki_poisjatetyt_kierrokset_nimetaan():
+    """🔴 Portin 21. kierros: kortti nimesi vain VIIMEISEN poisjatetyn
+    kierroksen, joten kahdella pudotetulla luku oli kahden verran vajaa ja
+    teksti myonsi yhden."""
+    out = _render(_payload(summary={"provisional_gws_excluded": [3, 4]}))
+    tama = _arvo(out, "This season")
+    assert "GW3, GW4 still being scored" in tama, tama
+    # Kontrolli: yhdella pudotetulla lause on yha yksikossa eika listaa.
+    yksi = _arvo(_render(_payload(summary={"provisional_gws_excluded": [3]})),
+                 "This season")
+    assert "GW3 still being scored" in yksi and "GW3," not in yksi, yksi

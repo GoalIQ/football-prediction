@@ -207,8 +207,11 @@ def headline_miss(acc_row):
                          "bias": round(float(bias), 2),
                          "mae": round(float(t.get("mae") or 0), 2),
                          "x_mae": round(suhde, 1),
-                         "direction": ("aliarvio" if float(bias) > 0
-                                       else "yliarvio")}
+                         # Artefakti on julkisessa repossa: kentat
+                         # englanniksi. 20. kierros korjasi yhden
+                         # merkkijonon TASSA tiedostossa ja jatti taman.
+                         "direction": ("under" if float(bias) > 0
+                                       else "over")}
     return paras
 
 
