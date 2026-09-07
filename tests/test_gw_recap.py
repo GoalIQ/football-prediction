@@ -129,13 +129,20 @@ def test_rikkinainen_aikaleima_on_none():
 
 # --- kiinnostavin vaara ----------------------------------------------------
 
-def _acc(mae, by_class):
-    return {"gw": 1, "mae": mae, "n": 490, "by_class": by_class}
+def _acc(mae, by_class, pos=None):
+    r = {"gw": 1, "mae": mae, "n": 490, "by_class": by_class}
+    if pos:
+        r["by_pos_stats"] = pos
+    return r
 
 
 def test_nostaa_segmentin_joka_on_iso_suhteessa_maehen():
-    m = headline_miss(_acc(1.76, {"haul": {"n": 19, "mae": 9.41, "bias": 9.41}}))
-    assert m["segment"] == "haul"
+    """🔴 Portin 24. kierros: fikstuuri kaytti `haul`ia, joka on
+    TOTEUMASEGMENTTI eika saa nousta lainkaan. Positio tiedetaan ennen
+    kierrosta, joten sen harha on aito loydos."""
+    m = headline_miss(_acc(1.76, {}, pos={"FWD": {"n": 19, "mae": 9.41,
+                                                  "bias": 9.41}}))
+    assert m["segment"] == "pos:FWD"
     assert m["n"] == 19 and m["bias"] == 9.41
     assert m["x_mae"] == round(9.41 / 1.76, 1)
     assert m["direction"] == "under"
@@ -150,7 +157,8 @@ def test_negatiivinen_kontrolli_liian_pieni_segmentti_on_kohinaa():
 
 
 def test_yliarvio_tunnistetaan_suunnaltaan():
-    m = headline_miss(_acc(1.0, {"y": {"n": 50, "mae": 5.0, "bias": -5.0}}))
+    m = headline_miss(_acc(1.0, {}, pos={"DEF": {"n": 50, "mae": 5.0,
+                                                 "bias": -5.0}}))
     assert m["direction"] == "over"
 
 
@@ -443,3 +451,65 @@ def test_kontrolli_enumerointi_kaataa_uudesta_arvosta():
         assert sallitut, kentta
         assert "aliarvio" not in sallitut
         assert "kesken" not in sallitut
+
+
+def test_headline_miss_ei_raportoi_toteumasegmenttia():
+    """🔴 PORTIN 24. KIERROS (B1). 23. kierroksella suljin toteumasegmentit
+    tautologisina - mutta VAIN toisesta lukijasta (`autopilot/edge.py`).
+    `headline_miss` ajoi saman silmukan ilman suodatusta, ja
+    `data/gw_recap.json` on JULKISESSA repossa. Mitattu 7.9:
+
+        GW1 headline_miss = {"segment": "haul", "bias": 9.41, "mae": 9.41}
+
+    Kentta on nimensa mukaan tarkoitettu postauksen otsikoksi, ja siina luki
+    tasmalleen se sormenjalki (`|bias| == mae`) jolla tautologia
+    todistettiin. Kaksi lukijaa, kaksi saantoa.
+    """
+    from scripts.build_gw_recap import headline_miss
+
+    # Sama luku kummassakin lohkossa: vain positio saa nousta.
+    rivi = {
+        "mae": 1.68,
+        "by_class": {"haul": {"n": 33, "mae": 9.22, "bias": 9.22},
+                     "dnp": {"n": 190, "mae": 1.09, "bias": -1.09}},
+    }
+    assert headline_miss(rivi) is None, "toteumasegmentti paatyi otsikoksi"
+
+    # KONTROLLI: positiosegmentti samoilla luvuilla NOUSEE. Ilman tata
+    # testi olisi vihrea siksi ettei mikaan nouse.
+    rivi["by_pos_stats"] = {"FWD": {"n": 33, "mae": 9.22, "bias": 9.22}}
+    hm = headline_miss(rivi)
+    assert hm and hm["segment"] == "pos:FWD", hm
+
+
+def test_toteumalohko_on_lohko_ei_nimilista():
+    """Ensimmainen korjaus oli kieltolista arvonimista, jolloin UUSI luokka
+    (esim. `cameo`) olisi mennyt lapi aitona loydoksena. `by_class` on
+    maaritelmaltaan toteumasegmentointi (muisti: portin-sanalista-vanhenee).
+    """
+    from scripts.build_gw_recap import headline_miss
+    from src.models.xp_accuracy_segments import TOTEUMALOHKOT
+    assert TOTEUMALOHKOT == {"by_class"}
+    keksitty = {"mae": 1.0,
+                "by_class": {"cameo": {"n": 50, "mae": 9.0, "bias": 9.0}}}
+    assert headline_miss(keksitty) is None, "uusi luokkanimi meni lapi"
+
+
+def test_julkaistu_artefakti_ei_kanna_toteumasegmenttia():
+    """Ja LEVYLLA oleva committattu tiedosto on generaattorin kanssa samaa
+    mielta - se oli tasan tama vika (artefakti oli livena vaarin)."""
+    import json
+    from pathlib import Path
+    from src.models.xp_accuracy_segments import LOHKOT, TOTEUMALOHKOT
+    kielletyt = {e for lohko, e in LOHKOT if lohko not in TOTEUMALOHKOT}
+    levy = json.loads(
+        (Path(__file__).resolve().parents[1] / "data" / "gw_recap.json")
+        .read_text(encoding="utf-8"))
+    for g in levy.get("gameweeks") or []:
+        hm = g.get("headline_miss")
+        if not isinstance(hm, dict):
+            continue
+        seg = str(hm.get("segment") or "")
+        assert any(seg.startswith(e) for e in kielletyt if e), (
+            f"julkaistu artefakti kantaa toteumasegmentin: {seg!r} "
+            f"(GW{g.get('gw')})")

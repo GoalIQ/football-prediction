@@ -140,3 +140,54 @@ def test_kontrolli_jokainen_pate_ja_juuri_todella_skannataan(tmp_path):
     # Ja siivous onnistui: portti on taas vihrea.
     ongelmat, _ = _skannaa()
     assert not ongelmat, ongelmat
+
+
+def test_sivugeneraattorien_css_ei_sisalla_kontrollimerkkeja():
+    """🔴 PORTIN 24. KIERROS: LAHDESKANNAUS EI RIITA GENEROIDULLE SIVULLE.
+
+    23. kierroksella loysin `fpl.html:228-229`:sta 0x15-merkkeja ja paattelin
+    etta generaattori on oikein ja artefakti on ajautunut. **Paattely oli
+    vaara**, ja CI todisti sen: seuraava refresh-ajo regeneroi sivun ja toi
+    merkit takaisin.
+
+    Syy oli generaattorin Python-lahteessa. `CSS`-vakio ei ole raakamerkkijono,
+    joten `content:"\25B8"` on OKTAALIESCAPE: `\25` = 0o25 = 0x15, ja
+    tuloksena on kontrollimerkki + "B8". CSS tarvitsee yhden kenoviivan, eli
+    Python-lahteessa niita on oltava kaksi.
+
+    Artefaktin korjaaminen ei siis korjaa mitaan; se palaa joka ajossa.
+    Tama portti mittaa GENERAATTORIN TULOSTA, ei tiedostoa levylla.
+    """
+    import importlib
+
+    MODUULIT = ("scripts.build_fpl_page", "scripts.build_fpl_longtail")
+    tarkistettu = 0
+    for nimi in MODUULIT:
+        try:
+            m = importlib.import_module(nimi)
+        except Exception as e:  # pragma: no cover - importvirhe on oma vikansa
+            raise AssertionError(f"{nimi} ei importattavissa: {e!r}")
+        for attr in dir(m):
+            if attr.startswith("_"):
+                continue
+            arvo = getattr(m, attr, None)
+            if not isinstance(arvo, str) or len(arvo) < 40:
+                continue
+            tarkistettu += 1
+            osumat = _osumat(arvo.encode("utf-8"))
+            assert not osumat, (
+                f"{nimi}.{attr} sisaltaa kontrollimerkkeja {osumat[:3]} - "
+                "yleisin syy on CSS-escape ei-raa'assa merkkijonossa "
+                "(esim. content:\"\25B8\" -> oktaali 0o25 = 0x15). "
+                "Kirjoita kaksi kenoviivaa.")
+    assert tarkistettu >= 2, f"vain {tarkistettu} vakiota tarkistettu"
+
+
+def test_kontrolli_oktaaliescape_havaitaan():
+    """NEGATIIVINEN KONTROLLI: juuri se muoto joka paasi lapi kahdesti."""
+    # Ei-raaka merkkijono: Python tulkitsee \25 oktaaliksi.
+    paha = 'content:"\25B8  "'
+    assert _osumat(paha.encode("utf-8")) == [(1, 0x15)]
+    # Oikea muoto: kaksi kenoviivaa lahteessa -> yksi tuloksessa.
+    hyva = 'content:"\\25B8  "'
+    assert _osumat(hyva.encode("utf-8")) == []

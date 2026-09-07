@@ -35,6 +35,7 @@ import sys
 from pathlib import Path
 
 from src.models.fpl_model_race import model_points_net
+from src.models.xp_accuracy_segments import bias_segments
 
 ROOT = Path(__file__).resolve().parents[1]
 CALLS_PATH = ROOT / "data" / "gw_calls.json"
@@ -191,27 +192,32 @@ def headline_miss(acc_row):
     mae = acc_row.get("mae")
     if not mae:
         return None
+    # 🔴 PORTIN 24. KIERROS: TAMA SILMUKKA AJOI `by_class`in, ja artefakti
+    # on JULKISESSA repossa. 23. kierroksella suljin toteumasegmentit vain
+    # `autopilot/edge.py`:sta - tama toinen lukija jai, ja `headline_miss`
+    # on nimenomaan postauksen otsikoksi tarkoitettu kentta. Mitattu 7.9:
+    # GW1 headline_miss = {"segment": "haul", "bias": 9.41, "mae": 9.41} eli
+    # tasmalleen se sormenjalki jolla tautologia todistettiin.
+    #
+    # Yksi lukija molemmille, ks. `src/models/xp_accuracy_segments.py`.
     paras = None
-    for lohko, etuliite in (("by_class", ""), ("by_pos_stats", "pos:")):
-        for nimi, t in (acc_row.get(lohko) or {}).items():
-            if not isinstance(t, dict):
-                continue
-            n, bias = t.get("n"), t.get("bias")
-            if not isinstance(n, int) or n < MIN_SEGMENT_N or bias is None:
-                continue
-            suhde = abs(float(bias)) / float(mae)
-            if suhde < BIAS_X_MAE:
-                continue
-            if paras is None or suhde > paras["x_mae"]:
-                paras = {"segment": etuliite + str(nimi), "n": n,
-                         "bias": round(float(bias), 2),
-                         "mae": round(float(t.get("mae") or 0), 2),
-                         "x_mae": round(suhde, 1),
-                         # Artefakti on julkisessa repossa: kentat
-                         # englanniksi. 20. kierros korjasi yhden
-                         # merkkijonon TASSA tiedostossa ja jatti taman.
-                         "direction": ("under" if float(bias) > 0
-                                       else "over")}
+    for nimi, t in bias_segments(acc_row):
+        n, bias = t.get("n"), t.get("bias")
+        if not isinstance(n, int) or n < MIN_SEGMENT_N or bias is None:
+            continue
+        suhde = abs(float(bias)) / float(mae)
+        if suhde < BIAS_X_MAE:
+            continue
+        if paras is None or suhde > paras["x_mae"]:
+            paras = {"segment": nimi, "n": n,
+                     "bias": round(float(bias), 2),
+                     "mae": round(float(t.get("mae") or 0), 2),
+                     "x_mae": round(suhde, 1),
+                     # Artefakti on julkisessa repossa: kentat
+                     # englanniksi. 20. kierros korjasi yhden
+                     # merkkijonon TASSA tiedostossa ja jatti taman.
+                     "direction": ("under" if float(bias) > 0
+                                   else "over")}
     return paras
 
 

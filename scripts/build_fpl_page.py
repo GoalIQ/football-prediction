@@ -1670,8 +1670,8 @@ CSS = """
   p,.lede,.hint,.note,.fineprint{ max-width:68ch; }
   details.fold summary{ cursor:pointer; list-style:none; }
   details.fold summary h2{ display:inline; }
-  details.fold summary::before{ content:"\25B8  "; color:var(--muted); }
-  details.fold[open] summary::before{ content:"\25BE  "; }
+  details.fold summary::before{ content:"\\25B8  "; color:var(--muted); }
+  details.fold[open] summary::before{ content:"\\25BE  "; }
   .signin{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; margin-right:14px; }
   .signin:hover{ color:var(--cream); }
   .tooldir{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
