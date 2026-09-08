@@ -1045,6 +1045,36 @@ def _malli_vanhentunut(key: tuple, liigat: tuple[str, ...]) -> bool:
     return (time.time() - fitted_at) >= TOURNAMENT_TTL_SEC
 
 
+def normalisoi_kaudet(
+    liigat: tuple[str, ...] | list[str], kaudet: tuple[str, ...] | list[str]
+) -> tuple[str, ...]:
+    """UEFA-turnaus + domestic-OLETUSikkuna -> turnausikkuna.
+
+    🔴 MIKSI TAMA ON PALVELIMELLA EIKA KLIENTISSA (8.9.2026). Mestarien liigan
+    treeni-ikkuna oli domestic-pari, ja kentasta vaihtuu PUOLET joka vuosi:
+    18 seuraa 36:sta puuttui mallista MD1:n aamuna. Klientit korjattiin, mutta
+    **klienttikorjaus ei tavoita jo asennettuja buildeja**. Villen kaverin
+    bugiraportti tuli laitteesta jonka buildi oli yli kaksi kuukautta vanha ja
+    jonka runtimeVersion ei saa OTA:aakaan: hanelle vain kauppapaivitys auttaisi.
+    Sama koskee pro-SPA:ta, joka ei laheta `seasons`ia lainkaan.
+
+    Palvelinpuolen normalisointi korjaa KAIKKI pinnat kerralla, myos ne joita
+    emme voi paivittaa.
+
+    EHTO ON TIUKKA JA HARKITTU: laajennus tehdaan vain kun pyydetty ikkuna on
+    TASMALLEEN nykyinen domestic-oletus, eli kutsuja ei ole valinnut mitaan
+    vaan kayttaa oletustaan. Mika tahansa muu eksplisiittinen kausijoukko
+    kunnioitetaan sellaisenaan — muuten backtest joka pinnaa kauden saisi
+    hiljaa eri datan kuin se pyysi, ja se olisi pahempi vika kuin korjattava.
+    """
+    kaudet_t = tuple(kaudet)
+    if not any(str(l).startswith("INT-") for l in liigat):
+        return kaudet_t
+    if kaudet_t != tuple(config.current_season_pair()):
+        return kaudet_t
+    return tuple(config.uefa_season_window())
+
+
 def _fit_malli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
                decay: float, bayes_shrinkage: float,
                per_team_home_adv: bool,
@@ -1204,6 +1234,9 @@ def _saa_malli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
         True = shrinkkaa puolustuksen joukkue-eroja, ei maalitasoa (#61).
         Estää bayes_shrinkagea deflatoimasta ennustettuja maaleja.
     """
+    # 8.9: normalisointi ENNEN cache-avainta, jotta sama malli ei paady
+    # kahdelle avaimelle (ja jotta warmupin lammittama malli osuu).
+    kaudet = normalisoi_kaudet(liigat, kaudet)
     key = (liigat, kaudet, round(decay, 4), round(bayes_shrinkage, 2),
            per_team_home_adv, shrink_defence_to_mean)
 
@@ -1483,6 +1516,11 @@ def list_teams(
             leagues=leagues, seasons=seasons,
             teams=sorted(WC2026_TEAMS), n_matches=len(WC2026_TEAMS),
         )
+    # 8.9: normalisoidaan MYOS tassa, jotta vastauksen `seasons` kertoo saman
+    # ikkunan josta joukkuelista tosiasiassa tulee. Ilman tata vastaus
+    # vaittaisi kahta kautta ja lista tulisi neljasta — pieni epatotuus, mutta
+    # tasan sita lajia jonka varaan joku myohemmin rakentaa.
+    seasons = list(normalisoi_kaudet(tuple(leagues), tuple(seasons)))
     dc = _saa_malli(tuple(leagues), tuple(seasons))
     n = 0
     try:

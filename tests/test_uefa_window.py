@@ -94,3 +94,62 @@ def test_vain_uefa_sai_levean_ikkunan():
         if any(l.startswith("INT-") for l in liigat):
             continue
         assert tuple(kaudet) == pari, f"{liigat} sai muun kuin domestic-parin: {kaudet}"
+
+
+# ---------------------------------------------------------------------------
+# Palvelinpuolen normalisointi. TAMA on se osa joka korjaa myos ne pinnat
+# joita emme voi paivittaa: jo asennetut mobiilibuildit ja pro-SPA.
+# ---------------------------------------------------------------------------
+
+
+def test_uefa_oletusikkuna_laajenee_palvelimella():
+    """Villen kaverin buildi oli yli 2 kk vanha eika sen runtimeVersion saa
+    OTA:aakaan. Klienttikorjaus ei siis tavoita hanta — palvelin tavoittaa."""
+    import api.main as main
+
+    pyydetty = tuple(config.current_season_pair())
+    saatu = main.normalisoi_kaudet(("INT-Champions League",), pyydetty)
+    assert list(saatu) == config.uefa_season_window()
+
+
+def test_eksplisiittista_kausivalintaa_EI_ylikirjoiteta():
+    """🔴 NEGATIIVINEN KONTROLLI, ja tama on tarkeampi kuin laajennus itse.
+    Jos mika tahansa kausipyynto laajenisi, backtest joka pinnaa kauden saisi
+    hiljaa eri datan kuin pyysi — pahempi vika kuin korjattava."""
+    import api.main as main
+
+    for pyydetty in (("2526",), ("2425", "2526"), ("2223", "2324")):
+        assert main.normalisoi_kaudet(("INT-Champions League",), pyydetty) == pyydetty
+
+
+def test_domestic_liiga_ei_laajene_koskaan():
+    import api.main as main
+
+    pari = tuple(config.current_season_pair())
+    for liiga in ("ENG-Premier League", "ENG-Championship", "BRA-Serie A"):
+        assert main.normalisoi_kaudet((liiga,), pari) == pari
+
+
+def test_maailmancup_ei_hairiinny():
+    """WC:lla on omat legacy-avaimensa ('18','22','26') ja esirakennettu malli.
+    Ne eivat ole domestic-pari, joten normalisointi ei koske niihin — mutta
+    varmistetaan se, koska WC alkaa myos 'INT-'-etuliitteella."""
+    import api.main as main
+
+    wc = ("18", "22", "26")
+    assert main.normalisoi_kaudet(("INT-World Cup",), wc) == wc
+
+
+def test_teams_vastaus_kertoo_ikkunan_jota_kaytettiin():
+    """Vastauksen `seasons` ei saa vaittaa kahta kautta kun lista tulee
+    neljasta. Luetaan lahteesta: endpointin ajaminen vaatisi fitin."""
+    import inspect
+
+    import api.main as main
+
+    src = inspect.getsource(main.teams) if hasattr(main, "teams") else ""
+    if not src:
+        import pathlib
+
+        src = pathlib.Path(main.__file__).read_text(encoding="utf-8")
+    assert "seasons = list(normalisoi_kaudet(" in src
