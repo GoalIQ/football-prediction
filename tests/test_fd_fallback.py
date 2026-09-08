@@ -147,3 +147,74 @@ def test_liiga_ilman_snapshotia_kayttaytyy_ennallaan(monkeypatch):
 def test_puuttuva_snapshottiedosto_ei_kaada(monkeypatch):
     monkeypatch.setattr(fd_fallback, "polku", lambda liiga: fd_fallback.FALLBACK_DIR / "EI_OLE.csv")
     assert fd_fallback.lataa_varasnapshot("ENG-Championship").empty
+
+
+# ---------------------------------------------------------------------------
+# UEFA: vara ENNEN osittaisuusvahtia. Tama on se korjaus joka teki Aston
+# Villan ennustettavaksi.
+# ---------------------------------------------------------------------------
+
+
+def test_cl_vara_estaa_osittaisuusvahdin_ja_lahteenvaihdon(monkeypatch):
+    """🔴 8.9 ilta, Villen havainto "nyt ei pysty ollenkaan ennustamaan Aston
+    Villan pelia".
+
+    Ilmainen tier + Renderin efemeeri levy tekivat VANHEMMAN kauden hausta
+    kolikonheiton. Epaonnistuminen laukaisi `OsittainenKausijoukko`n, loader
+    pudotti KOKO liigan openfootballiin ja CL:n rosteri kutistui 54:sta
+    36:een - Aston Villa katosi. Ikkunan levennys siis huononsi tuotetta, ja
+    se jouduttiin perumaan kerran.
+
+    Repoon vendoroitu kausi tekee ikkunasta deterministisen: kausi joka on
+    snapshotissa ei ole epaonnistunut, joten vahti ei laukea eika lahde vaihdu.
+    """
+    import config
+    from src.data import football_data_org as fdo
+
+    orig = fdo._hae_kausi
+    monkeypatch.setattr(
+        fdo,
+        "_hae_kausi",
+        lambda code, year, key: (
+            {"_error": "simuloitu: ilmainen tier ei kata"}
+            if str(year) < "2025"
+            else orig(code, year, key)
+        ),
+    )
+    df = fdo.lataa("INT-Champions League", config.uefa_season_window())
+    assert not df.empty
+    teams = set(df["home_team"]) | set(df["away_team"])
+    assert "Aston Villa FC" in teams, (
+        "Aston Villa puuttuu vaikka se PELASI UCL:n 24/25 ja kausi on "
+        "vendoroitu. Varasnapshot ei ilmeisesti aja ennen osittaisuusvahtia."
+    )
+    assert "Club Brugge KV" in teams
+    assert len(teams) >= 50, f"rosteri kutistui {len(teams)}:een - lahde vaihtui?"
+
+
+def test_cl_vara_ei_aja_kun_lahde_vastaa(monkeypatch):
+    """NEGATIIVINEN KONTROLLI: vara ei saa korvata onnistunutta hakua."""
+    from src.data import fd_fallback
+    from src.data import football_data_org as fdo
+
+    kutsuttu = []
+    monkeypatch.setattr(
+        fd_fallback, "lataa_varasnapshot",
+        lambda liiga, kaudet=None: kutsuttu.append(liiga) or __import__("pandas").DataFrame(),
+    )
+    fdo.lataa("INT-Champions League", ["2526"])
+    assert not kutsuttu, "varasnapshot luettiin vaikka lahde vastasi"
+
+
+def test_snapshot_ei_saa_rakentua_itsestaan():
+    """🔴 Mitattu 8.9 illalla: rakennusskripti kutsuu `lataa`a, ja kun vara oli
+    paalla, Championshipin snapshot kutistui 1103 -> 551 otteluun YHDELLA
+    ajolla. Kausi jota ei ollut snapshotissa ei olisi enaa koskaan palannut.
+    Rakennuspolku lukee siksi vain primaarilahdetta."""
+    import pathlib
+
+    src = pathlib.Path("scripts/build_fd_fallback.py").read_text(encoding="utf-8")
+    assert "salli_vara=False" in src
+    assert src.count("salli_vara=False") >= 2, (
+        "molempien haarojen (co.uk ja football-data.org) on ohitettava vara"
+    )

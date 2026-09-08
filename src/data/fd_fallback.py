@@ -48,7 +48,25 @@ VENDORED_LEAGUES: tuple[str, ...] = (
     "NED-Eredivisie",
     "POR-Primeira Liga",
     "BRA-Serie A",
+    # 8.9 ILTA (Villen havainto "nyt ei pysty ollenkaan ennustamaan Aston
+    # Villan pelia"): Mestarien liiga tarvitsee saman suojan, mutta ERI
+    # SYYSTA. Sen lahde (football-data.org) ei ollut alhaalla — ongelma on
+    # ETTA VANHEMPI KAUSI EI LATAUDU LUOTETTAVASTI. Ilmainen tier + Renderin
+    # efemeeri levy tarkoittavat etta 24/25 onnistuu joskus ja joskus ei, ja
+    # `football_data_org.lataa` heittaa silloin `OsittainenKausijoukko`n ->
+    # koko liiga putoaa openfootballiin -> rosteri KUTISTUU 54:sta 36:een.
+    #
+    # Aston Villa PELASI UCL:n 24/25 (36 joukkuetta, 189 ottelua, QF asti),
+    # joten sen voimataso on oikeaa dataa eika priori. Kun kausi on repossa,
+    # ikkuna on deterministinen eika kolikonheitto.
+    "INT-Champions League",
 )
+
+# Kaudet per vendoroitu liiga. UEFA-turnauksille kausi on eksplisiittinen,
+# koska ne EIVAT seuraa domestic-ikkunaa.
+VENDORED_SEASONS: dict[str, tuple[str, ...]] = {
+    "INT-Champions League": ("2425", "2526"),
+}
 
 # Sarakkeet jotka snapshot kantaa. Tama on `_normalisoi`n tuloksen osajoukko;
 # lukija taydentaa puuttuvat NA:lla jotta skeema on sama kuin live-polulla.

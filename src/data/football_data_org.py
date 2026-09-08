@@ -303,7 +303,7 @@ class OsittainenKausijoukko(RuntimeError):
     """
 
 
-def lataa(liiga: str, kaudet: list[str]) -> pd.DataFrame:
+def lataa(liiga: str, kaudet: list[str], salli_vara: bool = True) -> pd.DataFrame:
     api_key = _api_key()
     if not api_key:
         return pd.DataFrame()
@@ -319,6 +319,31 @@ def lataa(liiga: str, kaudet: list[str]) -> pd.DataFrame:
         data = _hae_kausi(code, year, api_key)
         if not data or "_error" in data:
             syy = (data or {}).get("_error", "ei vastausta")
+            # 🔴 VARASNAPSHOT ENNEN OSITTAISUUSVAHTIA (8.9.2026 ilta, Villen
+            # havainto "nyt ei pysty ollenkaan ennustamaan Aston Villan
+            # pelia"). Ilmainen tier + Renderin efemeeri levy tarkoittavat
+            # etta VANHEMPI kausi onnistuu joskus ja joskus ei. Kun se ei
+            # onnistu, alla oleva `OsittainenKausijoukko` laukeaa ja loader
+            # pudottaa KOKO liigan openfootballiin -> CL:n rosteri kutistuu
+            # 54:sta 36:een ja Aston Villa katoaa. Ikkunan levennys siis
+            # HUONONSI tuotetta, ja jouduin perumaan sen kerran jo.
+            #
+            # Repoon vendoroitu kausi tekee siita deterministisen: kausi joka
+            # on snapshotissa EI OLE epaonnistunut, joten vahti ei laukea eika
+            # lahde vaihdu. Vahti jaa voimaan kausille joita ei ole
+            # vendoroitu - se on oikea vahti vaarassa paikassa, ei turha.
+            if salli_vara:
+                from src.data.fd_fallback import lataa_varasnapshot, on_saatavilla
+
+                if on_saatavilla(liiga):
+                    vara = lataa_varasnapshot(liiga, [k])
+                    if not vara.empty:
+                        print(
+                            f"football-data.org {liiga} kausi {k}: {syy} -> "
+                            f"varasnapshot, {len(vara)} ottelua"
+                        )
+                        palaset.append(vara)
+                        continue
             print(f"VAROITUS: football-data.org {liiga} kausi {k}: {syy}")
             epaonnistuneet.append(f"{k} ({syy})")
             continue

@@ -29,12 +29,19 @@ import pytest
 import config
 
 
-def test_ikkuna_on_kaksi_kautta_levennys_peruttu():
-    """🔴 Levennys perutttiin mittauksen perusteella, ei periaatteesta.
-    Nelja ja kolme kautta nayttivat mittaushetkella paremmilta (63/54
-    joukkuetta) mutta ROMAHTIVAT deployn jalkeen 36:een ja 0/18 otteluun -
-    huonompaan kuin lahtotilanne 6/18. Ks. config.py:n perustelu."""
-    assert config.UEFA_WINDOW_SEASONS == 2
+def test_ikkuna_on_kolme_kautta_datan_vendoroinnin_jalkeen():
+    """🔴 Kaksi peruutusta ja yksi oikea korjaus, kaikki 8.9.2026.
+
+    Levensin ikkunan neljaan ja kolmeen kauteen; molemmat romahtivat deployn
+    jalkeen (36 joukkuetta, 0/18 ottelua) ja peruin ne. Villen havainto
+    perumisen jalkeen: "nyt ei pysty ollenkaan ennustamaan Aston Villan
+    pelia" - oikein, nappi piilossa ei ole ennuste.
+
+    Juurisyy ei ollut ikkunan leveys vaan DATAN SAATAVUUS: vanhemman kauden
+    haku oli kolikonheitto ja epaonnistuminen pudotti koko liigan
+    varalahteelle. Kun kausi on vendoroitu repoon, ikkuna on deterministinen.
+    """
+    assert config.UEFA_WINDOW_SEASONS == 3
 
 
 def test_levennys_ei_saa_palata_ilman_mekanismikorjausta():
@@ -57,9 +64,24 @@ def test_levennys_ei_saa_palata_ilman_mekanismikorjausta():
     varalahteelle (OsittainenKausijoukko -> openfootball). Kun se on korjattu,
     tama testi paivitetaan samassa committissa kuin mekanismi.
     """
-    assert config.UEFA_WINDOW_SEASONS == 2, (
-        "Ikkunaa on levennetty. Onko puuttuvan kauden aiheuttama pudotus "
-        "varalahteelle korjattu? Jos ei, levennys palauttaa 0/18-tilan."
+    # Ehto ei ole luku vaan MEKANISMI: jokaisen ikkunan kauden (paitsi
+    # aktiivisen, jossa ei viela ole pelattuja otteluita) on oltava joko
+    # luotettavasti haettavissa TAI vendoroitu. Muuten yksi saamaton kausi
+    # pudottaa koko liigan varalahteelle ja rosteri kutistuu.
+    from src.data.fd_fallback import VENDORED_SEASONS
+
+    ikkuna = config.uefa_season_window(datetime.date(2026, 9, 8))
+    vendoroidut = set(VENDORED_SEASONS.get("INT-Champions League", ()))
+    aktiivinen = ikkuna[-1]
+    for kausi in ikkuna[:-1]:
+        assert kausi in vendoroidut, (
+            f"Ikkunassa on kausi {kausi} jota ei ole vendoroitu. Jos sen haku "
+            "epaonnistuu, OsittainenKausijoukko pudottaa KOKO liigan "
+            "openfootballiin ja rosteri kutistuu 54 -> 36 (Aston Villa katoaa). "
+            "Vendoroi kausi tai kavenna ikkunaa."
+        )
+    assert aktiivinen not in vendoroidut, (
+        "Aktiivista kautta ei pida vendoroida: se elaa, ja snapshot jaadyttaisi sen."
     )
     m = config.FDORG_FREE_TIER_MEASURED
     assert m["ensimmainen_puuttuva"] not in config.uefa_season_window(
@@ -70,12 +92,12 @@ def test_levennys_ei_saa_palata_ilman_mekanismikorjausta():
 @pytest.mark.parametrize(
     "paiva,odotettu",
     [
-        (datetime.date(2026, 9, 8), ["2526", "2627"]),
-        (datetime.date(2026, 3, 8), ["2425", "2526"]),
-        (datetime.date(2027, 9, 8), ["2627", "2728"]),
+        (datetime.date(2026, 9, 8), ["2425", "2526", "2627"]),
+        (datetime.date(2026, 3, 8), ["2324", "2425", "2526"]),
+        (datetime.date(2027, 9, 8), ["2526", "2627", "2728"]),
         # Kausiraja: 31.7. kuuluu viela edelliseen kauteen, 1.8. uuteen.
-        (datetime.date(2026, 7, 31), ["2425", "2526"]),
-        (datetime.date(2026, 8, 1), ["2526", "2627"]),
+        (datetime.date(2026, 7, 31), ["2324", "2425", "2526"]),
+        (datetime.date(2026, 8, 1), ["2425", "2526", "2627"]),
     ],
 )
 def test_vaiheinvariantti_ikkuna_seuraa_kautta(paiva, odotettu):

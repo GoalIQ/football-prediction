@@ -29,19 +29,36 @@ from src.data.fd_fallback import (  # noqa: E402
     FALLBACK_DIR,
     SNAPSHOT_COLS,
     VENDORED_LEAGUES,
+    VENDORED_SEASONS,
     polku,
 )
 from src.data.footballdata import lataa  # noqa: E402
+from src.data.loader import lataa_otteludata  # noqa: E402
+
+
+def _neljan_kauden_ikkuna() -> list[str]:
+    """Nelja kautta taaksepain aktiivisesta. Snapshotin oma ikkuna, EI mallin."""
+    cur = config.current_season()
+    start = int(cur[:2])
+    return [f"{(start - i) % 100:02d}{(start - i + 1) % 100:02d}" for i in range(3, -1, -1)]
 
 
 def kaudet_liigalle(liiga: str) -> list[str]:
     """Snapshotiin otettavat kaudet.
 
-    UEFA-ikkunan levyinen (4 kautta) myos domestic-liigoille: snapshot on
-    varapolku, ja liian kapea vara olisi sama vika pienempana — kauden alussa
-    aktiivisessa kaudessa on nolla ottelua.
+    🔴 VARA ON AINA LEVEAMPI KUIN MALLIN IKKUNA (mitattu 8.9 illalla).
+    Tama oli sidottu `config.uefa_season_window()`iin, ja kun se ikkuna
+    kavennettiin kahteen kauteen, SNAPSHOT KUTISTUI mukana: Championship
+    1103 -> 551 ottelua yhdella ajolla. Vara joka seuraa ikkunaa ei ole vara:
+    se katoaa juuri silloin kun ikkunaa halutaan levittaa.
+
+    Leveampi snapshot ei voi haitata: `lataa_varasnapshot` suodattaa
+    pyydetyille kausille, joten ylimaaraiset kaudet ovat levylla mutta eivat
+    fitissa.
     """
-    kaudet = config.uefa_season_window()
+    if liiga in VENDORED_SEASONS:
+        return list(VENDORED_SEASONS[liiga])
+    kaudet = _neljan_kauden_ikkuna()
     if liiga in ("BRA-Serie A",):
         # Kalenterivuosiliiga: 'new'-tiedosto kantaa kaikki kaudet, ja
         # `lataa_new` suodattaa itse. Annetaan kalenterivuodet.
@@ -60,7 +77,16 @@ def main() -> int:
     rc = 0
     for liiga in VENDORED_LEAGUES:
         kaudet = kaudet_liigalle(liiga)
-        df = lataa(liiga, kaudet, force=args.force)
+        # UEFA-turnaukset tulevat football-data.orgista, eivat .co.uk:sta:
+        # kaytetaan yleista loaderia jotta sama skripti kattaa molemmat.
+        if liiga in VENDORED_SEASONS:
+            # salli_vara EI kulje lataa_otteludatan lapi, joten CL:n
+            # snapshot rakennetaan suoraan primaarilahteesta.
+            from src.data.football_data_org import lataa as lataa_fdorg
+            df = lataa_fdorg(liiga, kaudet, salli_vara=False)
+        else:
+            # salli_vara=False: snapshot ei saa rakentua itsestaan.
+            df = lataa(liiga, kaudet, force=args.force, salli_vara=False)
         if df.empty:
             print(f"!! {liiga}: EI DATAA kausille {kaudet} — snapshot ENNALLAAN")
             rc = 1

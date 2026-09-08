@@ -123,8 +123,27 @@ FDORG_FREE_TIER_MEASURED = {
     "ensimmainen_puuttuva": "2324",  # CL 2324 -> ilmainen tier ei kata
 }
 
-# 🔴 LOPPUTULOS: LEVENNYS PERUTTU. UEFA_WINDOW_SEASONS = 2 eli sama kuin
-# domestic-pari. Perustelu on mittaus tuotannosta, ei periaate.
+# 🔴 KAKSI PERUUTUSTA JA YKSI OIKEA KORJAUS, kaikki 8.9.2026.
+#
+# Levensin ikkunan ensin neljaan ja sitten kolmeen kauteen. Molemmat
+# nayttivat mittaushetkella paremmilta ja MOLEMMAT ROMAHTIVAT deployn
+# jalkeen (36 joukkuetta, 0/18 ottelua) - huonompaan kuin lahtotila 6/18.
+# Peruin ikkunan kahteen.
+#
+# Villen havainto perumisen jalkeen: "nyt ei pysty ollenkaan ennustamaan
+# Aston Villan pelia". Se oli oikein: nappi piilossa ei ole ennuste.
+#
+# JUURISYY EI OLLUT IKKUNAN LEVEYS VAAN DATAN SAATAVUUS. Aston Villa PELASI
+# UCL:n 24/25 (36 joukkuetta, 189 ottelua), joten data on olemassa - mutta
+# ilmainen tier + Renderin efemeeri levy tekivat vanhemman kauden hausta
+# kolikonheiton, ja epaonnistuminen laukaisi `OsittainenKausijoukko`n joka
+# pudotti KOKO liigan openfootballiin.
+#
+# KORJAUS: kaudet 2425+2526 on vendoroitu repoon
+# (`data/fd_fallback/INT_Champions_League.csv`, 378 ottelua, 54 joukkuetta,
+# Aston Villa mukana) ja varasnapshot luetaan ENNEN osittaisuusvahtia. Kausi
+# joka on repossa ei voi epaonnistua, joten ikkuna on deterministinen eika
+# kolikonheitto. Vasta sen jalkeen levennys on turvallinen.
 #
 # Levensin ikkunan ensin neljaan ja sitten kolmeen kauteen, ja molemmat
 # nayttivat mittaushetkella paremmilta (63 ja 54 joukkuetta, 12/18 ja 10/18
@@ -153,7 +172,7 @@ FDORG_FREE_TIER_MEASURED = {
 #
 # Rakenne (uefa_season_window + normalisoi_kaudet + portit) jaa paikalleen,
 # koska se on nyt mitattu ja dokumentoitu. Vain LUKU on 2.
-UEFA_WINDOW_SEASONS = 2
+UEFA_WINDOW_SEASONS = 3
 
 
 def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:

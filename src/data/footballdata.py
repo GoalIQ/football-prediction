@@ -164,7 +164,8 @@ def lataa_new(liiga: str, kaudet: list[str] | None = None, force: bool = False) 
         return pd.DataFrame()
 
 
-def lataa(liiga: str, kaudet: list[str], force: bool = False) -> pd.DataFrame:
+def lataa(liiga: str, kaudet: list[str], force: bool = False,
+          salli_vara: bool = True) -> pd.DataFrame:
     """Otteludata. Tyhja live-tulos -> vendoroitu varasnapshot.
 
     🔴 MITATTU KATKOS (8.9.2026): football-data.co.uk oli KOKONAAN alhaalla
@@ -180,7 +181,13 @@ def lataa(liiga: str, kaudet: list[str], force: bool = False) -> pd.DataFrame:
     from src.data.fd_fallback import lataa_varasnapshot, on_saatavilla
 
     def _vara(puuttuvat: list[str]) -> pd.DataFrame:
-        if not puuttuvat or not on_saatavilla(liiga):
+        # 🔴 `salli_vara=False` ON PAKOLLINEN SNAPSHOTIN RAKENNUKSESSA (mitattu
+        # 8.9 illalla). Rakennusskripti kutsuu tata funktiota, ja kun vara oli
+        # paalla, snapshot rakentui ITSESTAAN: Championship kutistui 1103 ->
+        # 551 otteluun yhdella ajolla, ja kausi jota ei ollut snapshotissa ei
+        # olisi voinut enaa koskaan palata. Artefaktiketju joka seedaa itsensa
+        # rappeutuu hiljaa jokaisella ajolla.
+        if not salli_vara or not puuttuvat or not on_saatavilla(liiga):
             return pd.DataFrame()
         v = lataa_varasnapshot(liiga, puuttuvat)
         if not v.empty:
