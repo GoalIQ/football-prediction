@@ -190,7 +190,7 @@ FDORG_FREE_TIER_MEASURED = {
 #
 # Rakenne (uefa_season_window + normalisoi_kaudet + portit) jaa paikalleen,
 # koska se on nyt mitattu ja dokumentoitu. Vain LUKU on 2.
-UEFA_WINDOW_SEASONS = 3
+UEFA_WINDOW_SEASONS = 2
 
 
 def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:
