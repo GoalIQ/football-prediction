@@ -1047,9 +1047,37 @@ def _fit_malli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     """Sovita DixonColesModel annetuilla parametreilla. Heittaa HTTPException."""
     df = _lataa_otteludata_cached(list(liigat), list(kaudet))
     if df.empty:
+        # 🔴 8.9.2026: tama palautti AINA 404:n "No match data found".
+        # Mitattu samana paivana: football-data.co.uk oli kokonaan alhaalla
+        # (503 myos sivun juuresta), ja neljan liigan koko Predict-pinta
+        # (Championship, Eredivisie, Primeira Liga, Brasileirao) naytti
+        # kayttajalle vastauksen joka vaitti ettei liigalle ole otteludataa.
+        # Se ei ollut totta, ja alavirrassa se on eri vika: 404 kertoo
+        # "tata ei ole", 503 kertoo "yrita uudelleen".
+        #
+        # Syyta EI paatella virhetekstia nuuskimalla vaan luetaan siita
+        # kohdasta jossa se tiedetaan (loaderin poikkeuskasittelija).
+        from src.data.loader import viimeisin_diagnoosi
+
+        virheet, katkokset = viimeisin_diagnoosi(list(liigat), list(kaudet))
+        if katkokset:
+            syyt = "; ".join(f"{k}: {v}" for k, v in sorted(katkokset.items()))
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Upstream match data source is not responding for "
+                    f"leagues={liigat}, seasons={kaudet}. This is a temporary "
+                    f"outage, not missing coverage. Cause: {syyt}"
+                ),
+            )
+        lisa = ""
+        if virheet:
+            lisa = " Detail: " + "; ".join(
+                f"{k}: {v}" for k, v in sorted(virheet.items())
+            )
         raise HTTPException(
             status_code=404,
-            detail=f"No match data found for leagues={liigat}, seasons={kaudet}",
+            detail=f"No match data found for leagues={liigat}, seasons={kaudet}.{lisa}",
         )
     # #79: kansainvälinen WC-data tuo "tournament"-sarakkeen → kilpailu-paino.
     # Domestic-datassa saraketta ei ole → fit_kwargs tyhjä → bittitarkasti ennallaan.

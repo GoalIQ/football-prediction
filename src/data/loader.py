@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 from typing import Iterable
+import threading
+
 import pandas as pd
 import config
 
@@ -44,6 +46,15 @@ class LoaderTulokset:
         self.data = pd.DataFrame()
         self.virheet: dict[str, str] = {}
         self.onnistui: dict[str, int] = {}
+        # 🔴 8.9.2026: "lahde ei vastannut" ja "lahteella ei ole tata dataa"
+        # olivat molemmat pelkka rivi `virheet`-dictissa, ja API kaansi
+        # kummankin samaksi 404:ksi "No match data found". Mitattu samana
+        # paivana: football-data.co.uk oli KOKONAAN alhaalla (503 myos sivun
+        # juuresta), ja neljan liigan Predict kuoli virheilmoitukseen joka
+        # syytti API-avainta ja ilmaista tieria. Ero kirjataan nyt siella
+        # missa se TIEDETAAN - poikkeuskasittelijassa - eika paatella
+        # jalkikateen virheteksteja nuuskimalla.
+        self.katkokset: dict[str, str] = {}
 
 
 def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable[str]) -> LoaderTulokset:
@@ -125,6 +136,7 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
                     continue
             except Exception as e:
                 tulos.virheet[liiga] = f"football-data.org: {type(e).__name__}: {e}"
+                tulos.katkokset[liiga] = f"football-data.org: {type(e).__name__}"
         # 2b. openfootball — UEFA-turnaukset
         if liiga in OPENFOOTBALL_LEAGUES:
             try:
@@ -142,6 +154,7 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
                 tulos.onnistui[liiga] = len(res.data)
             except Exception as e:
                 tulos.virheet[liiga] = f"openfootball: {type(e).__name__}: {e}"
+                tulos.katkokset[liiga] = f"openfootball: {type(e).__name__}"
             continue
 
         # 3. football-data.co.uk
@@ -164,6 +177,7 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
                 tulos.onnistui[liiga] = len(fd)
             except Exception as e:
                 tulos.virheet[liiga] = f"football-data.co.uk: {type(e).__name__}: {e}"
+                tulos.katkokset[liiga] = f"football-data.co.uk: {type(e).__name__}"
             continue
 
         # 4. Fallback: soccerdata-FBref
@@ -249,5 +263,35 @@ def _taydenna_xg_fpl_datasta(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_DIAG_LOCK = threading.Lock()
+_VIIMEISIN_DIAGNOOSI: dict[tuple, tuple[dict[str, str], dict[str, str]]] = {}
+
+
 def lataa_otteludata(liigat: Iterable[str], kaudet: Iterable[str]) -> pd.DataFrame:
-    return lataa_otteludata_yksityiskohtaisesti(liigat, kaudet).data
+    """Otteludata. TYHJA PALUUARVO EI KERRO SYYTA, joten syy talletetaan.
+
+    `lataa_otteludata_yksityiskohtaisesti` tietaa miksi haku epaonnistui, mutta
+    tama ohuen kaaren paluuarvo (pelkka DataFrame) heitti sen pois - ja API
+    joutui arvaamaan. Diagnoosi sailytetaan vain tyhjalle tulokselle, eli
+    onnistuneen haun polulla ei tehda mitaan ylimaaraista.
+    """
+    tulos = lataa_otteludata_yksityiskohtaisesti(liigat, kaudet)
+    avain = (tuple(liigat), tuple(kaudet))
+    with _DIAG_LOCK:
+        if tulos.data.empty:
+            _VIIMEISIN_DIAGNOOSI[avain] = (dict(tulos.virheet), dict(tulos.katkokset))
+        else:
+            _VIIMEISIN_DIAGNOOSI.pop(avain, None)
+    return tulos.data
+
+
+def viimeisin_diagnoosi(
+    liigat: Iterable[str], kaudet: Iterable[str]
+) -> tuple[dict[str, str], dict[str, str]]:
+    """(virheet, katkokset) viimeisimmasta TYHJASTA hausta tallä avaimella.
+
+    Tyhja pari tarkoittaa etta hakua ei ole tehty tai se onnistui - kutsujan
+    on kohdeltava sita "en tieda syyta" -tilana, ei "ei katkosta" -tilana.
+    """
+    with _DIAG_LOCK:
+        return _VIIMEISIN_DIAGNOOSI.get((tuple(liigat), tuple(kaudet)), ({}, {}))
