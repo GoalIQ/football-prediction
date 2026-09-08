@@ -168,7 +168,6 @@ def test_cl_vara_estaa_osittaisuusvahdin_ja_lahteenvaihdon(monkeypatch):
     Repoon vendoroitu kausi tekee ikkunasta deterministisen: kausi joka on
     snapshotissa ei ole epaonnistunut, joten vahti ei laukea eika lahde vaihdu.
     """
-    import config
     from src.data import football_data_org as fdo
 
     orig = fdo._hae_kausi
@@ -181,7 +180,13 @@ def test_cl_vara_estaa_osittaisuusvahdin_ja_lahteenvaihdon(monkeypatch):
             else orig(code, year, key)
         ),
     )
-    df = fdo.lataa("INT-Champions League", config.uefa_season_window())
+    # 🔴 Kaudet EKSPLISIITTISESTI eika `config.uefa_season_window()`:sta.
+    # Tama testi mittaa MEKANISMIA (vara ajaa ennen osittaisuusvahtia), ei
+    # sita mika ikkuna on kulloinkin kaytossa. Ensimmainen versio luki
+    # ikkunan configista ja hajosi heti kun ikkuna kavennettiin - se olisi
+    # ollut vihrea vaarasta syysta ja punainen vaarasta syysta.
+    kaudet = ["2425", "2526", "2627"]
+    df = fdo.lataa("INT-Champions League", kaudet)
     assert not df.empty
     teams = set(df["home_team"]) | set(df["away_team"])
     assert "Aston Villa FC" in teams, (
