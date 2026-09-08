@@ -1075,11 +1075,94 @@ def normalisoi_kaudet(
     return tuple(config.uefa_season_window())
 
 
+_UEFA_JOINT_LEAGUES = ("INT-Champions League",)
+
+
+def _on_uefa_yhteisfitti(liigat: tuple[str, ...] | list[str]) -> bool:
+    """Vain yksinaan pyydetty UEFA-turnaus kulkee yhteisfittipolkua.
+
+    Monen liigan yhdistelmapyynto (esim. H2H useasta liigasta) jatetaan
+    entiselle polulle: yhteisfitti muuttaisi silloin muidenkin liigojen
+    lukuja, ja tama muutos saa koskea VAIN turnausta.
+    """
+    return tuple(liigat) in (_UEFA_JOINT_LEAGUES,)
+
+
+def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
+                          decay: float) -> DixonColesModel:
+    from src.models.uefa_joint import (
+        SUPPORT_LEAGUES,
+        _fold_shifts,
+        fit_uefa_joint,
+    )
+
+    turnaus = liigat[0]
+    kaikki = [turnaus, *SUPPORT_LEAGUES]
+    df = _lataa_otteludata_cached(kaikki, list(config.current_season_pair()))
+    oma = df[df["league"] == turnaus] if not df.empty else df
+    if df.empty or oma.empty:
+        # Ei turnausdataa -> ei siltaotteluita -> ei kalibrointia. Palataan
+        # entiseen polkuun, joka antaa oman rehellisen 404/503-vastauksensa.
+        raise HTTPException(
+            status_code=404,
+            detail=f"No match data found for leagues={liigat}, seasons={kaudet}",
+        )
+    malli = fit_uefa_joint(df, tournament_league=turnaus, decay=decay)
+
+    # 🔴 NAYTTONIMET FD-MUODOSSA. Klientin CTA-portti vertaa
+    # `/api/fixtures`-nimia `/api/teams`-nimiin, joten rosterin on puhuttava
+    # samaa nimiavaruutta - muuten nappi katoaa vaikka malli osaisi vastata.
+    #
+    # Mitattu 8.9: ilman tata Aston Villan nayttonimeksi tuli PL-datan
+    # `Aston Villa` (Understatin lyhytnimi), kun fixtures sanoo
+    # `Aston Villa FC`, ja ottelu putosi listalta vaikka joukkue oli mallissa.
+    #
+    # Nimet luetaan VENDOROIDUSTA turnaussnapshotista (fd_fallback), jossa ne
+    # ovat football-data.orgin taysnimina useammalta kaudelta kuin fitin
+    # ikkuna. Snapshot vaikuttaa VAIN nimiin - se ei tuo yhtaan ottelua
+    # fittiin, joten se ei voi palauttaa vanhentuneita joukkueita malliin.
+    try:
+        from src.data.fd_fallback import lataa_varasnapshot
+        from src.models.uefa_joint import canonical_name as _kanon
+
+        snap = lataa_varasnapshot(turnaus)
+        for _sarake in ("home_team", "away_team"):
+            for _nimi in snap.get(_sarake, []):
+                malli.display_names[_kanon(_nimi)] = str(_nimi)
+    except Exception as _e:  # pragma: no cover - nimet ovat parannus, ei ehto
+        print(f"[UEFA] nayttonimien luku varasnapshotista epaonnistui: {_e}")
+
+    taitettu = _fold_shifts(malli)
+    if not taitettu.attack:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No calibratable teams for leagues={liigat}",
+        )
+    print(
+        f"[UEFA] {turnaus}: {len(taitettu.attack)} kelpoista seuraa, "
+        f"kalibroituvat liigat {sorted(malli.calibrated_leagues())}"
+    )
+    return taitettu
+
+
 def _fit_malli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
                decay: float, bayes_shrinkage: float,
                per_team_home_adv: bool,
                shrink_defence_to_mean: bool) -> DixonColesModel:
     """Sovita DixonColesModel annetuilla parametreilla. Heittaa HTTPException."""
+    # 8.9: UEFA-turnaus fitataan YHTEISMALLINA kotiliigojen kanssa. Se on
+    # ainoa tapa saada kauden alussa mukaan seurat joilla ei ole viela yhtaan
+    # turnausottelua (Aston Villalla on 38 Valioliiga-ottelua). Liigasiirtyma
+    # taitetaan ratingeihin, joten tama palauttaa TAVALLISEN DC-mallin ja
+    # kaikki alavirran luvut (xG, tulokset, kertoimet, over/under, BTTS)
+    # syntyvat entista koodia pitkin.
+    #
+    # Kalibrointiportti (>=25 siltaottelua) pitaa mallissa vain ne seurat
+    # joiden sarjatason ero turnaukseen on mitattavissa. Ks. src/models/
+    # uefa_joint.py - ja erityisesti miksi FC Porto EI ole mukana.
+    if _on_uefa_yhteisfitti(liigat):
+        return _fit_uefa_yhteismalli(liigat, kaudet, decay)
+
     df = _lataa_otteludata_cached(list(liigat), list(kaudet))
     if df.empty:
         # 🔴 8.9.2026: tama palautti AINA 404:n "No match data found".

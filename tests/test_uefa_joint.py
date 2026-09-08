@@ -190,3 +190,76 @@ def test_kotietu_on_yhteinen_ei_joukkuekohtainen(malli):
     samaan suuntaan. Sama suunta myos oikeilla tuloksilla (log-loss 0,8965 ->
     0,8957). Ala palauta joukkuekohtaista ilman uutta mittausta."""
     assert malli.dc.per_team_home_adv is False
+
+
+# ---------------------------------------------------------------------------
+# Taitos: liigasiirtyma ratingeihin. Talla /api/predict toimii muuttumattomana.
+# ---------------------------------------------------------------------------
+
+
+def test_taitettu_malli_antaa_TASMALLEEN_saman_maaliodotuksen(malli):
+    """🔴 EKVIVALENSSITODISTUS. Jos taitos on vaarin edes etumerkin verran,
+    jokainen turnausennuste on hiljaa vaara - eika mikaan alavirrassa huomaa,
+    koska luvut nayttavat normaaleilta. Siksi tama vertaa lukuja, ei koodia."""
+    from src.models.uefa_joint import _fold_shifts
+
+    folded = _fold_shifts(malli)
+    parit = [(h, a) for h in malli.eligible_clubs()[:6]
+             for a in malli.eligible_clubs()[:6] if h != a]
+    assert parit
+    for h, a in parit:
+        hn = malli.display_names.get(h, h)
+        an = malli.display_names.get(a, a)
+        odotettu = malli.expected_goals(h, a)
+        saatu = folded.expected_goals(hn, an)
+        assert abs(saatu[0] - odotettu[0]) < 1e-9, (h, a, saatu, odotettu)
+        assert abs(saatu[1] - odotettu[1]) < 1e-9, (h, a, saatu, odotettu)
+
+
+def test_taitettu_malli_sisaltaa_VAIN_kelpoiset(malli):
+    """Epakelpo seura ei saa vuotaa ennusteeseen edes vahingossa: sita ei ole
+    avaimissa lainkaan, joten /api/predict palauttaa sille 404:n kuten ennen."""
+    from src.models.uefa_joint import _fold_shifts
+
+    folded = _fold_shifts(malli)
+    assert not malli.is_eligible("Weak 0 FC")
+    assert "Weak 0 FC" not in folded.attack
+    assert canonical_name("Weak 0 FC") not in folded.attack
+    for club in folded.attack:
+        assert malli.is_eligible(club)
+
+
+def test_taitettu_malli_ei_kayta_joukkuekohtaista_kotietua(malli):
+    from src.models.uefa_joint import _fold_shifts
+
+    folded = _fold_shifts(malli)
+    assert folded.per_team_home_adv is False
+    assert set(folded.home_advantage_per_team.values()) <= {0.0}
+
+
+# ---------------------------------------------------------------------------
+# API-kytkenta: turnaus kulkee yhteisfittia, domestic EI.
+# ---------------------------------------------------------------------------
+
+
+def test_vain_yksinaan_pyydetty_turnaus_kulkee_yhteisfittia():
+    """🔴 Rajaus on koko muutoksen turvaraja. Jos monen liigan yhdistelma
+    ajautuisi yhteisfittiin, muidenkin liigojen julkaistut luvut muuttuisivat
+    - ja tama muutos saa koskea VAIN turnausta."""
+    import api.main as main
+
+    assert main._on_uefa_yhteisfitti(("INT-Champions League",))
+    assert not main._on_uefa_yhteisfitti(("ENG-Premier League",))
+    assert not main._on_uefa_yhteisfitti(("INT-World Cup",))
+    assert not main._on_uefa_yhteisfitti(("INT-Champions League", "ENG-Premier League"))
+    assert not main._on_uefa_yhteisfitti(())
+
+
+def test_domestic_ei_kayta_yhteisfittia():
+    """NEGATIIVINEN KONTROLLI: jokaisen domestic-liigan on kuljettava entista
+    polkua, jotta niiden luvut pysyvat bittitarkasti ennallaan."""
+    import api.main as main
+
+    for liiga in ("ENG-Premier League", "ESP-La Liga-FD", "ENG-Championship",
+                  "BRA-Serie A", "NED-Eredivisie", "POR-Primeira Liga"):
+        assert not main._on_uefa_yhteisfitti((liiga,))

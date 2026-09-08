@@ -110,6 +110,24 @@ Katto on mitattu: todelliset siirtymat 8.9 olivat -0,254 (Eredivisie) ...
 +0,205 (Valioliiga), eli 0,60 on yli kaksinkertainen suurimpaan havaittuun.
 Se ei siis rajoita mitaan realistista, mutta estaa karkaamisen."""
 
+SUPPORT_LEAGUES: tuple[str, ...] = (
+    "ENG-Premier League",
+    "ESP-La Liga-FD",
+    "GER-Bundesliga-FD",
+    "ITA-Serie A-FD",
+    "FRA-Ligue 1-FD",
+    "POR-Primeira Liga",
+    "NED-Eredivisie",
+    "ENG-Championship",
+)
+"""Kotiliigat jotka ladataan turnausmallin tueksi.
+
+Mukana on MYOS liigoja joita ei voi kalibroida (Primeira, Championship,
+Eredivisie). Se on tarkoituksellista: ne tuovat siltaotteluita joista muiden
+liigojen siirtymat tarkentuvat, ja kalibrointiportti hoitaa sen ettei niiden
+omia seuroja tarjota. Liigan poistaminen taalta EI ole tapa piilottaa seuraa -
+se tehdaan portilla."""
+
 MIN_BRIDGE_MATCHES = 25
 """Kuinka monta CL-siltaottelua liiga tarvitsee ennen kuin sen seurat
 kelpaavat. Mitattu, ei valittu: 8.9 siltamaarat olivat PL 59, La Liga 58,
@@ -145,6 +163,7 @@ class UefaJointModel:
     league_defence: dict[str, float]
     bridge_counts: dict[str, int] = field(default_factory=dict)
     tournament_clubs: frozenset[str] = frozenset()
+    display_names: dict[str, str] = field(default_factory=dict)
 
     def calibrated_leagues(self) -> set[str]:
         return {L for L, n in self.bridge_counts.items() if n >= MIN_BRIDGE_MATCHES}
@@ -216,6 +235,46 @@ class UefaJointModel:
         )
 
 
+def _fold_shifts(model: "UefaJointModel") -> DixonColesModel:
+    """Taita liigasiirtymat suoraan ratingeihin ja palauta tavallinen DC-malli.
+
+    🔴 MIKSI NAIN EIKA OMANA ENNUSTEPOLKUNAAN: `/api/predict` ei palauta vain
+    1X2:ta vaan xG:n, todennakoisimmat tulokset, reilut kertoimet, over/under-
+    ja BTTS-luvut. Jos turnausmalli olisi oma polkunsa, jokainen niista pitaisi
+    kirjoittaa uudelleen - ja jokainen olisi uusi paikka olla eri mielta
+    domestic-polun kanssa.
+
+    Siirtyma on multiplikatiivinen lambdaan, eli additiivinen log-skaalassa:
+
+        lh = exp(attack[h] + defence[a] + home_adv + gamma) * exp(la[Lh] - ld[La])
+           = exp( (attack[h] + la[Lh]) + (defence[a] - ld[La]) + home_adv + gamma )
+
+    joten sama tulos syntyy tavallisesta DC-mallista jonka kertoimiin siirtyma
+    on taitettu. Alavirta ei siis tieda mitaan turnausmallista, ja kaikki
+    johdetut luvut pysyvat keskenaan johdonmukaisina.
+
+    Mallissa on VAIN kelpoiset seurat: epakelpo ei voi vuotaa ennusteeseen
+    edes vahingossa, koska sita ei ole avaimissa.
+    """
+    out = DixonColesModel(per_team_home_adv=False)
+    out.attack, out.defence, out.home_advantage_per_team = {}, {}, {}
+    for canon in model.dc.attack:
+        if not model.is_eligible(canon):
+            continue
+        L = model.club_league.get(canon, "")
+        nimi = model.display_names.get(canon, canon)
+        out.attack[nimi] = model.dc.attack[canon] + model.league_attack.get(L, 0.0)
+        out.defence[nimi] = model.dc.defence[canon] - model.league_defence.get(L, 0.0)
+        out.home_advantage_per_team[nimi] = 0.0
+    out.home_advantage = model.dc.home_advantage
+    # rho:n kelpoisuusehto: hajotelma vaatii rho > -1, muuten lam1 painuu
+    # nollaan ja koko tulosmatriisi alivuotaa. Sama raja kuin
+    # `outcome_probabilities`issa.
+    out.rho = max(getattr(model.dc, "rho", 0.0) or 0.0, -0.9)
+    out.teams_ = sorted(out.attack)
+    return out
+
+
 def fit_uefa_joint(
     df: pd.DataFrame,
     tournament_league: str = "INT-Champions League",
@@ -281,7 +340,26 @@ def fit_uefa_joint(
             if L:
                 ld[L] = _clamp(ld[L] + 0.5 * float(np.mean(vals)))
 
+    # Nayttonimi: ensisijaisesti se muoto jossa seura esiintyy TURNAUS-
+    # datassa (football-data.orgin taysnimi), koska /api/fixtures kayttaa
+    # sita ja klientti sovittaa ottelut sen mukaan. Muuten seuran oman
+    # liigan nimi.
+    display: dict[str, str] = {}
+    for row in d[d.league != tournament_league].itertuples(index=False):
+        display.setdefault(row.home_team, row.home_team)
+        display.setdefault(row.away_team, row.away_team)
+    alkup: dict[str, str] = {}
+    for row in df.itertuples(index=False):
+        if getattr(row, "league", None) == tournament_league:
+            alkup.setdefault(canonical_name(row.home_team), str(row.home_team))
+            alkup.setdefault(canonical_name(row.away_team), str(row.away_team))
+    for row in df.itertuples(index=False):
+        alkup.setdefault(canonical_name(row.home_team), str(row.home_team))
+        alkup.setdefault(canonical_name(row.away_team), str(row.away_team))
+    display.update(alkup)
+
     return UefaJointModel(
+        display_names=display,
         dc=dc,
         club_league=club_league,
         league_attack=dict(la),
