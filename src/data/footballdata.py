@@ -165,15 +165,51 @@ def lataa_new(liiga: str, kaudet: list[str] | None = None, force: bool = False) 
 
 
 def lataa(liiga: str, kaudet: list[str], force: bool = False) -> pd.DataFrame:
+    """Otteludata. Tyhja live-tulos -> vendoroitu varasnapshot.
+
+    🔴 MITATTU KATKOS (8.9.2026): football-data.co.uk oli KOKONAAN alhaalla
+    (503 myos sivun juuresta), ja nelja liigaa oli kuollut tuotannossa —
+    Championship, Eredivisie, Primeira Liga, Brasileirao. Renderin levy on
+    efemeeri, joten `_hae_csv`:n levycache ei auta kylmakaynnistyksessa.
+
+    VARASNAPSHOT LUETAAN VAIN TYHJALLE TULOKSELLE. Kun lahde on pystyssa, tama
+    haara ei aja lainkaan ja kayttaytyminen on bittitarkasti entinen. Snapshot
+    ei siis voi hiljaa korvata tuoretta dataa; se voi vain estaa nollan.
+    Ks. `src/data/fd_fallback.py`.
+    """
+    from src.data.fd_fallback import lataa_varasnapshot, on_saatavilla
+
+    def _vara(puuttuvat: list[str]) -> pd.DataFrame:
+        if not puuttuvat or not on_saatavilla(liiga):
+            return pd.DataFrame()
+        v = lataa_varasnapshot(liiga, puuttuvat)
+        if not v.empty:
+            print(
+                f"football-data ({liiga}): live tyhja kausille {puuttuvat} -> "
+                f"varasnapshot, {len(v)} ottelua"
+            )
+        return v
+
     if liiga in MAIN_CODES:
         palaset = []
+        puuttuvat: list[str] = []
         for k in kaudet:
             d = lataa_mainstream(liiga, k, force=force)
             if not d.empty:
                 palaset.append(d)
+            else:
+                puuttuvat.append(k)
+        # Vara haetaan VAIN niille kausille jotka jaivat tyhjiksi, jotta
+        # onnistunut kausi ei koskaan korvaudu snapshotilla.
+        v = _vara(puuttuvat)
+        if not v.empty:
+            palaset.append(v)
         return pd.concat(palaset, ignore_index=True) if palaset else pd.DataFrame()
     if liiga in NEW_FILES:
-        return lataa_new(liiga, kaudet, force=force)
+        df = lataa_new(liiga, kaudet, force=force)
+        if df.empty:
+            return _vara(list(kaudet))
+        return df
     return pd.DataFrame()
 
 

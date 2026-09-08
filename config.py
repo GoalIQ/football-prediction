@@ -84,6 +84,38 @@ def current_season_pair(today: "datetime.date | None" = None) -> list[str]:
     return [f"{prev_start:02d}{cur[:2]}", cur]
 
 
+# UEFA-turnausten treeni-ikkuna. EI domestic-pari.
+#
+# 🔴 MITATTU VIKA (8.9.2026): Mestarien liiga kaytti `current_season_pair()`ia
+# eli domestic-oletusta kilpailussa jossa KENTASTA VAIHTUU PUOLET JOKA VUOSI.
+# 26/27:n sarjavaiheeseen tuli 18 uutta seuraa 36:sta, eika yhdellakaan ollut
+# riveja mallissa MD1:n aamuna -> 12 ottelua 18:sta ei ollut ennustettavissa.
+#
+# Mitattu tuotannosta, kaksi ajoa per ikkuna (luvut toistuivat):
+#   2526+2627            36 joukkuetta   18 puuttuu    6/18 ottelua
+#   2425+2526+2627       54 joukkuetta   11 puuttuu   10/18
+#   2324+2425+2526+2627  63 joukkuetta    8 puuttuu   12/18   <- valittu
+#   2223+...+2627        36 joukkuetta   36 puuttuu    0/18   <- RIKKI
+#
+# NELJA ON MITATTU YLARAJA EIKA MAKUASIA: viides kausi ei heikenna vaan
+# ROMAHDUTTAA rosterin (2223 myrkyttaa fitin). tests/test_uefa_window.py
+# kaataa CI:n jos ikkunaa levennetaan ilman uutta mittausta.
+#
+# Sama ikkuna frontendissa: goaliq-app lib/season.ts uefaSeasonWindow().
+UEFA_WINDOW_SEASONS = 4
+
+
+def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:
+    """UEFA-turnausten treeni-ikkuna: 4 kautta, paattyen aktiiviseen."""
+    cur = current_season(today)
+    start = int(cur[:2])
+    out = []
+    for i in range(UEFA_WINDOW_SEASONS - 1, -1, -1):
+        a = (start - i) % 100
+        out.append(f"{a:02d}{(a + 1) % 100:02d}")
+    return out
+
+
 def seasons_since(first: str = "2122", today: "datetime.date | None" = None) -> list[str]:
     """Kaudet first..aktiivinen nousevassa järjestyksessä (/api/leagues)."""
     out = [first]

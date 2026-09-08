@@ -46,4 +46,16 @@ def test_api_defaults_use_dynamic_pair():
     pair = config.current_season_pair()
     assert PredictionRequest(home_team="a", away_team="b").seasons == pair
     assert ParlayLeg(home_team="a", away_team="b", pick="1").seasons == pair
-    assert all(list(seasons) == pair for _, seasons in WARMUP_LEAGUES)
+    # 8.9.2026: UEFA-turnaukset EIVAT enaa kayta domestic-paria. Kentasta
+    # vaihtuu puolet joka vuosi, joten kahden kauden ikkuna jatti 18 seuraa
+    # 36:sta mallin ulkopuolelle MD1:n aamuna (ks. tests/test_uefa_window.py).
+    # Ehto pysyy TIUKKANA domestic-liigoille — se on se joukko jonka
+    # bittitarkkuus tama testi vartioi — ja UEFA-liigoille vaaditaan
+    # eksplisiittisesti turnausikkuna, ei "mika tahansa muu".
+    uefa = config.uefa_season_window()
+    for liigat, seasons in WARMUP_LEAGUES:
+        on_uefa = any(l.startswith("INT-") for l in liigat)
+        odotettu = uefa if on_uefa else pair
+        assert list(seasons) == odotettu, (
+            f"{liigat}: ikkuna {list(seasons)} != odotettu {odotettu}"
+        )

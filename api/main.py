@@ -910,6 +910,8 @@ def _lataa_otteludata_cached(liigat, kaudet) -> pd.DataFrame:
 # kauteen ilman koodimuutosta. Prosessin käynnistyshetki määrää warmup-avaimet
 # (Render restarttaa deployssa); per-pyyntö-defaultit resolvoidaan pyynnössä.
 _DOMESTIC_SEASONS: tuple[str, ...] = tuple(config.current_season_pair())
+# 8.9: UEFA-turnaukset EIVAT kayta domestic-paria — ks. config.uefa_season_window
+_UEFA_SEASONS: tuple[str, ...] = tuple(config.uefa_season_window())
 
 WARMUP_LEAGUES: list[tuple[tuple[str, ...], tuple[str, ...]]] = [
     (("ENG-Premier League",),    _DOMESTIC_SEASONS),
@@ -917,7 +919,10 @@ WARMUP_LEAGUES: list[tuple[tuple[str, ...], tuple[str, ...]]] = [
     (("GER-Bundesliga-FD",),     _DOMESTIC_SEASONS),
     (("ITA-Serie A-FD",),        _DOMESTIC_SEASONS),
     (("FRA-Ligue 1-FD",),        _DOMESTIC_SEASONS),
-    (("INT-Champions League",),  _DOMESTIC_SEASONS),
+    # 8.9: oli _DOMESTIC_SEASONS. Kentasta vaihtuu puolet joka vuosi, joten
+    # kahden kauden ikkuna jatti 18 seuraa 36:sta mallin ulkopuolelle MD1:n
+    # aamuna. Warmupin on lammitettava SAMA ikkuna jota klientti pyytaa.
+    (("INT-Champions League",),  _UEFA_SEASONS),
     # 28.7: neljä puuttuvaa. Villen havainto: "hitaus ei oo korjaantunu kun
     # vaihtaa leaguee predict any matchissa". Syy oli tämä lista, ei klientti.
     # Webin valitsin tarjoaa 10 liigaa (sama kuratoitu lista kuin mobiililla),

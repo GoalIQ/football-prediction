@@ -33,6 +33,13 @@ raw_data/
 !/data/wc_model.json
 # Vendoroitu World Football Elo -snapshot (#79 konfederaatio-kalibrointi).
 !/data/elo_ratings.csv
+# 8.9.2026: vendoroitu varasnapshot football-data.co.uk -liigoille. Lahde oli
+# sina paivana KOKONAAN alhaalla (503) ja nelja liigaa oli kuollut
+# tuotannossa; Renderin levy on efemeeri, joten vain repoon vendoroitu
+# tiedosto selviaa kylmakaynnistyksesta. Normalisoitua tulosdataa (~200 kB),
+# ei upstreamin CSV:aa. Rakennus: scripts/build_fd_fallback.py
+!/data/fd_fallback/
+!/data/fd_fallback/*.csv
 # Portin hylkaamat sanamuodot (4.9): tests/test_rejected_phrases.py lukee
 # taman, joten gitignore-aukko olisi hiljainen regressio - testi kaatuisi
 # CI:ssa tiedostoon jota ei ole repossa (muisti: gitignored-fix-silent-regression).
