@@ -145,11 +145,34 @@
 		untrack(() => {
 			const h = matchTeam(p.home, pool);
 			const a = matchTeam(p.away, pool);
-			if (h) home = h;
-			if (a) away = a;
-			// Jos molemmat ratkesivat, ajetaan ennuste heti; jos toinen jai
-			// auki, kayttaja valitsee sen itse eika arvata.
-			if (h && a && h !== a) void doPredict();
+			if (h && a && h !== a) {
+				home = h;
+				away = a;
+				error = null;
+				void doPredict();
+				pending = null;
+				return;
+			}
+			/* 🔴 8.9.2026 (Villen kaverin bugiraportti mobiilissa, sama vika
+			 * loytyi taalta). Tassa oli `if (h) home = h; if (a) away = a;`
+			 * eli OSITTAINEN taytto ilman mitaan viestia. Kaksi seurausta:
+			 *
+			 *  1. Jos vain toinen ratkesi, toinen kentta jai EDELLISEN ottelun
+			 *     joukkueeseen -> ruudulle syntyi ottelu jota kukaan ei
+			 *     pyytanyt (uusi koti + vanha vieras). Mobiilissa sama oire
+			 *     oli se josta bugiraportti tuli: "painan predict ja se vie
+			 *     vaaraa kohtaa".
+			 *  2. Mobiili nayttaa talle tilanteelle rehellisen viestin, web ei
+			 *     nayttanyt mitaan — pinta-pariteetti oli rikki hiljaisesti.
+			 *
+			 * Kieltaytyminen tyhjentaa nyt MOLEMMAT ja kertoo syyn. Kayttaja
+			 * pyysi tietyn ottelun; jonkin muun nayttaminen sen tilalla on
+			 * vaara vastaus eika varasuunnitelma. */
+			home = '';
+			away = '';
+			data = null;
+			const puuttuva = h ? p.away : p.home;
+			error = `${puuttuva} is not in the ${league} model yet, so this match cannot be predicted. A club appears once the model has matches for it in this competition.`;
 			pending = null;
 		});
 	});
