@@ -81,6 +81,35 @@ CLEAN = [
     _player(6, "Risk", p90=10, p_haul=0.11, p_blank=0.35, price=61, gw_xp=4.5),
 ]
 
+# Kapteenin gw_xp-tasapeli: sama vikaluokka kuin ceilingin p90-tasapeli
+# ennen 4.9 korjausta - kapteeni valitaan max(gw_xp):lla KOKO poolista,
+# joten kaksi samalla gw_xp:lla tekee "top"-vaitteesta epatarkan.
+CAPTAIN_TIE = [
+    _player(1, "Cap", p90=9, p_haul=0.31, p_blank=0.20, gw_xp=7.9),
+    _player(2, "CapTwin", p90=9, p_haul=0.25, p_blank=0.22, gw_xp=7.9),
+    _player(5, "Ceil", p90=15, p_haul=0.21, p_blank=0.25, gw_xp=6.0),
+    _player(6, "Safe", p90=8, p_haul=0.05, p_blank=0.06, price=64, et=3,
+            gw_xp=4.7),
+]
+
+
+def test_kapteeni_sanoo_tasapelin_gw_xp_ssa() -> None:
+    """Kapteeni valitaan max(gw_xp):lla koko poolista (ei rest()), joten
+    'ahead' on aina tyhja - mutta tasapeli ei ole. Sama portti kuin
+    ceilingille ja safestille (KORTIN-KAPTEENITIILI-CLAIM-SCOPE)."""
+    html, _ = build_html(_data(CAPTAIN_TIE), log=None)
+    assert "joint top GW3 projection" in _why(html, "Captain pick")
+
+
+def test_kapteeni_ilman_tasapelia_saa_sanoa_poolin() -> None:
+    """Negatiivinen kontrolli: ilman tasapelia teksti pysyy ennallaan.
+    CLEAN (ei GW3): GW3:ssa ceiling-tiili sanoo itse 'joint', ja se
+    tekstirivi mahtuu Captain-tiilen 900 merkin ikkunaan."""
+    html, _ = build_html(_data(CLEAN), log=None)
+    why = _why(html, "Captain pick")
+    assert "top GW3 projection in the pool" in why, why[:200]
+    assert "joint" not in why, why[:200]
+
 
 def test_ceiling_sanoo_rajauksen_kun_kapteenilla_on_korkeampi_katto() -> None:
     html, s = build_html(_data(GW3), log=None)

@@ -1,5 +1,11 @@
 """Portti: portin kerran hylkaama sanamuoto ei saa palata toiseen skriptiin.
 
+🔴 8.9.2026: skanneri kavi vain `scripts/**.py` lapi. Copya syntyy myos
+`src/`-puolella (esim. `src/brand.py`), eika siella hylatty sanamuoto
+laukaissut porttia - sama vikaluokka kuin talla tiedostolla jo kerran
+korjattu vika (yksi generaattori vs sisarkortti), mutta nyt hakemiston
+tasolla: yksi HAKEMISTO ei riita, jos copya kirjoitetaan kahdessa.
+
 MITATTU VIKA (4.9.2026, julkaisuportti k2):
 
     scripts/render_projected_xi_card.py:373  # 3.9 PORTTI: "every gameweek
@@ -28,6 +34,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "data" / "rejected_phrases.json"
 SCRIPTS = ROOT / "scripts"
+SRC = ROOT / "src"
+SCAN_ROOTS = (SCRIPTS, SRC)
 
 
 def _registry() -> dict:
@@ -62,12 +70,13 @@ def _literals(path: Path) -> list[str]:
 def _hits(phrase: str) -> list[str]:
     reg = _registry()
     out = []
-    for path in sorted(SCRIPTS.rglob("*.py")):
-        rel = path.relative_to(ROOT).as_posix()
-        if reg.get("poikkeukset", {}).get(rel):
-            continue
-        if any(phrase.lower() in lit.lower() for lit in _literals(path)):
-            out.append(rel)
+    for root in SCAN_ROOTS:
+        for path in sorted(root.rglob("*.py")):
+            rel = path.relative_to(ROOT).as_posix()
+            if reg.get("poikkeukset", {}).get(rel):
+                continue
+            if any(phrase.lower() in lit.lower() for lit in _literals(path)):
+                out.append(rel)
     return out
 
 
@@ -101,6 +110,29 @@ def test_hylatty_sanamuoto_ei_ole_missaan_skriptissa(phrase: str) -> None:
         "Jos se on tosi juuri tassa, lisaa tiedosto rekisterin "
         "poikkeuslistalle PERUSTELUN kanssa."
     )
+
+
+def test_src_on_oletus_scan_rootsissa() -> None:
+    """8.9: skanneri kavi vain `scripts/**.py` lapi. Tama testi kaataisi
+    JOS SRC poistuisi oletus-SCAN_ROOTS-listalta uudelleen - toisin kuin
+    seuraava testi, tama ei patchaa SCAN_ROOTSia itse, joten mutaatio
+    (SRC:n poisto listalta) nakyy tassa."""
+    assert SRC in SCAN_ROOTS
+
+
+def test_skanneri_kavelee_minka_tahansa_scan_rootin_lapi(tmp_path,
+                                                          monkeypatch) -> None:
+    """`_hits` ei ole kovakoodattu `scripts/`-hakemistoon: se kavelee
+    SCAN_ROOTS-listan jokaisen juuren lapi. Todiste: keksitty juuri jonka
+    nimi ei ole 'scripts' tai 'src' loytyy silti."""
+    import tests.test_rejected_phrases as mod
+    fake_root = tmp_path / "jokin_muu_hakemisto"
+    fake_root.mkdir()
+    (fake_root / "x.py").write_text(
+        'X = "every gameweek scored in public"\n', encoding="utf-8")
+    monkeypatch.setattr(mod, "ROOT", tmp_path)
+    monkeypatch.setattr(mod, "SCAN_ROOTS", (fake_root,))
+    assert "jokin_muu_hakemisto/x.py" in mod._hits("scored in public")
 
 
 def test_negatiivinen_kontrolli_skanneri_loytaa_literaalin(tmp_path) -> None:

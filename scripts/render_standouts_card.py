@@ -356,6 +356,12 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     pool = _pool(players)
     safe_pool = [p for p in pool if (gw_xp(p) or 0) >= SAFE_MIN_XP]
     scopes = {
+        # Kapteeni valitaan max(gw_xp) KOKO poolista (ei rest()), joten
+        # "ahead" on aina tyhja - mutta tasapeli (kaksi samalla gw_xp:lla)
+        # on sama riski kuin ceilingin p90 ennen 4.9 korjausta (portin
+        # huomio: `test_standouts_claim_scope.py`). Sama lukija tanne asti.
+        "captain": claim_scope(pool, s["captain"], lambda p: gw_xp(p), True,
+                               {}),
         "ceiling": claim_scope(pool, s["ceiling"],
                                lambda p: p["xp_dist"]["p90"], True,
                                {"captain": s["captain"]}),
@@ -367,7 +373,9 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
         _tile("Captain pick", s["captain"],
               pct(s["captain"]["xp_dist"]["p_haul"]) if s["captain"] else "-",
               "10+ pts",
-              (f"top GW{gw} projection in the pool, blanks {pct(s['captain']['xp_dist']['p_blank'])}"
+              (", ".join(x for x in [
+                  scope_phrase(f"top GW{gw} projection", scopes["captain"]),
+                  f"blanks {pct(s['captain']['xp_dist']['p_blank'])}"] if x)
                if s["captain"] else "")),
         # "Ceiling", ei "Highest": p90 on kokonaisluku ja sama katto voi olla
         # usealla (27.8: 10 kolmella, kaikki kortilla). Rajaus ja tasapeli
