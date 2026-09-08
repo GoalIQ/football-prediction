@@ -65,7 +65,14 @@ VENDORED_LEAGUES: tuple[str, ...] = (
 # Kaudet per vendoroitu liiga. UEFA-turnauksille kausi on eksplisiittinen,
 # koska ne EIVAT seuraa domestic-ikkunaa.
 VENDORED_SEASONS: dict[str, tuple[str, ...]] = {
-    "INT-Champions League": ("2425", "2526"),
+    # 8.9 ilta, mitattu: kumulatiivinen kattavuus tamanviikon 18 ottelulle
+    #   +2526 -> 36 joukkuetta,  6/18 ennustettavaa
+    #   +2425 -> 54 joukkuetta, 10/18   (Aston Villa mukaan)
+    #   +2324 -> 63 joukkuetta, 12/18   (FC Porto mukaan)
+    #   +2223 -> 104 joukkuetta, 12/18  <- EI lisaa yhtaan ottelua
+    # 2223 jatetaan siis pois: se toisi 41 joukkuetta joista yksikaan ei pelaa
+    # tata kautta, eli pelkkaa painolastia malliin ja valitsimeen.
+    "INT-Champions League": ("2324", "2425", "2526"),
 }
 
 # Sarakkeet jotka snapshot kantaa. Tama on `_normalisoi`n tuloksen osajoukko;

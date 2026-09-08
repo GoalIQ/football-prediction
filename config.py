@@ -139,7 +139,7 @@ FDORG_FREE_TIER_MEASURED = {
 # kolikonheiton, ja epaonnistuminen laukaisi `OsittainenKausijoukko`n joka
 # pudotti KOKO liigan openfootballiin.
 #
-# KORJAUS: kaudet 2425+2526 on vendoroitu repoon
+# KORJAUS: kaudet 2324+2425+2526 on vendoroitu repoon
 # (`data/fd_fallback/INT_Champions_League.csv`, 378 ottelua, 54 joukkuetta,
 # Aston Villa mukana) ja varasnapshot luetaan ENNEN osittaisuusvahtia. Kausi
 # joka on repossa ei voi epaonnistua, joten ikkuna on deterministinen eika
@@ -172,7 +172,7 @@ FDORG_FREE_TIER_MEASURED = {
 #
 # Rakenne (uefa_season_window + normalisoi_kaudet + portit) jaa paikalleen,
 # koska se on nyt mitattu ja dokumentoitu. Vain LUKU on 2.
-UEFA_WINDOW_SEASONS = 3
+UEFA_WINDOW_SEASONS = 4
 
 
 def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:

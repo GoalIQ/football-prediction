@@ -29,7 +29,7 @@ import pytest
 import config
 
 
-def test_ikkuna_on_kolme_kautta_datan_vendoroinnin_jalkeen():
+def test_ikkuna_on_nelja_kautta_datan_vendoroinnin_jalkeen():
     """🔴 Kaksi peruutusta ja yksi oikea korjaus, kaikki 8.9.2026.
 
     Levensin ikkunan neljaan ja kolmeen kauteen; molemmat romahtivat deployn
@@ -41,7 +41,7 @@ def test_ikkuna_on_kolme_kautta_datan_vendoroinnin_jalkeen():
     haku oli kolikonheitto ja epaonnistuminen pudotti koko liigan
     varalahteelle. Kun kausi on vendoroitu repoon, ikkuna on deterministinen.
     """
-    assert config.UEFA_WINDOW_SEASONS == 3
+    assert config.UEFA_WINDOW_SEASONS == 4
 
 
 def test_levennys_ei_saa_palata_ilman_mekanismikorjausta():
@@ -83,21 +83,28 @@ def test_levennys_ei_saa_palata_ilman_mekanismikorjausta():
     assert aktiivinen not in vendoroidut, (
         "Aktiivista kautta ei pida vendoroida: se elaa, ja snapshot jaadyttaisi sen."
     )
-    m = config.FDORG_FREE_TIER_MEASURED
-    assert m["ensimmainen_puuttuva"] not in config.uefa_season_window(
-        datetime.date(2026, 9, 8)
+    # 🔴 Ehto EI ole enaa "ala ota kautta jota tier ei kata". Se oli oikea ehto
+    # ennen vendorointia; nyt oikea ehto on "ota vain kausia jotka ovat
+    # repossa". `FDORG_FREE_TIER_MEASURED` jaa mittauksen kirjaukseksi: se
+    # kertoo MIKSI vendorointi tarvitaan, ei mita ikkunaan saa ottaa.
+    m2 = config.FDORG_FREE_TIER_MEASURED
+    assert m2["ensimmainen_puuttuva"] in vendoroidut, (
+        "Kausi joka mitattiin puuttuvaksi upstreamista on ikkunassa muttei "
+        "vendoroituna - se romahduttaa rosterin ensimmaisella kylmalla ajolla."
     )
+    m = config.FDORG_FREE_TIER_MEASURED
+    # (Vendoroinnin jalkeen tama kausi SAA olla ikkunassa; ks. ylla.)
 
 
 @pytest.mark.parametrize(
     "paiva,odotettu",
     [
-        (datetime.date(2026, 9, 8), ["2425", "2526", "2627"]),
-        (datetime.date(2026, 3, 8), ["2324", "2425", "2526"]),
-        (datetime.date(2027, 9, 8), ["2526", "2627", "2728"]),
+        (datetime.date(2026, 9, 8), ["2324", "2425", "2526", "2627"]),
+        (datetime.date(2026, 3, 8), ["2223", "2324", "2425", "2526"]),
+        (datetime.date(2027, 9, 8), ["2425", "2526", "2627", "2728"]),
         # Kausiraja: 31.7. kuuluu viela edelliseen kauteen, 1.8. uuteen.
-        (datetime.date(2026, 7, 31), ["2324", "2425", "2526"]),
-        (datetime.date(2026, 8, 1), ["2425", "2526", "2627"]),
+        (datetime.date(2026, 7, 31), ["2223", "2324", "2425", "2526"]),
+        (datetime.date(2026, 8, 1), ["2324", "2425", "2526", "2627"]),
     ],
 )
 def test_vaiheinvariantti_ikkuna_seuraa_kautta(paiva, odotettu):
