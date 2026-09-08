@@ -29,16 +29,41 @@ import pytest
 import config
 
 
-def test_ikkuna_on_nelja_kautta():
-    assert config.UEFA_WINDOW_SEASONS == 4
+def test_ikkuna_on_kolme_kautta():
+    assert config.UEFA_WINDOW_SEASONS == 3
 
 
-def test_ikkuna_ei_ole_viisi_se_on_mitattu_rikkinaiseksi():
-    assert config.UEFA_WINDOW_SEASONS < 5, (
-        "Viiden kauden ikkuna palautti 36 joukkuetta joista yksikaan ei ollut "
-        "taman kauden osallistuja. Ala levenna ilman UUTTA mittausta, ja aja "
-        "se kahdesti."
+def test_ikkuna_ei_ulotu_tierin_ulkopuolelle():
+    """🔴 TAMA ON TAMAN TIEDOSTON TARKEIN TESTI.
+
+    Valitsin ensin NELJAN kauden ikkunan, koska mittasin sille 63 joukkuetta
+    ja 12/18 ottelua — kahdesti, ja luvut toistuivat. Deployn jalkeen sama
+    ikkuna antoi toistuvasti 36 ja Aston Villa puuttui. Luku oli tosi sina
+    hetkena eika tosi mekanismina.
+
+    Mekanismi: football-data.orgin ilmainen tier ei kata kautta 2324. Kun
+    yksi kausi epaonnistuu ja muut onnistuvat, `football_data_org.lataa`
+    heittaa `OsittainenKausijoukko`n (tahallaan), loader putoaa
+    openfootballiin ja rosteri KUTISTUU 54 -> 36. Ikkunan levennys siis
+    huonontaa tulosta, ei paranna.
+
+    Ehto on siksi sidottu TIERIN RAJAAN eika lukuun: seuraava levennys osuu
+    tahan eika makuun."""
+    m = config.FDORG_FREE_TIER_MEASURED
+    w = config.uefa_season_window(datetime.date(2026, 9, 8))
+    assert w[0] == m["vanhin_saatavilla"], (
+        f"Ikkuna alkaa kaudesta {w[0]}, mutta 8.9.2026 mitattiin vanhimmaksi "
+        f"saatavilla olevaksi {m['vanhin_saatavilla']} "
+        f"({m['ensimmainen_puuttuva']} ei kattunut). Yksi saamaton kausi "
+        "pudottaa KOKO liigan openfootballiin ja rosteri kutistuu 54 -> 36."
     )
+    assert m["ensimmainen_puuttuva"] not in w, (
+        "Ikkunassa on kausi joka mitattiin puuttuvaksi — se laukaisee "
+        "OsittainenKausijoukko-vahdin ja pudottaa liigan varalahteelle."
+    )
+    # Ikkuna on SUHTEELLINEN, ei naulattu vuoteen: absoluuttinen raja olisi
+    # vaarin heti ensi kaudella, koska tier rullaa mukana.
+    assert config.uefa_season_window(datetime.date(2027, 9, 8))[0] != w[0]
 
 
 def test_ikkuna_ei_ole_domestic_pari():
@@ -49,12 +74,12 @@ def test_ikkuna_ei_ole_domestic_pari():
 @pytest.mark.parametrize(
     "paiva,odotettu",
     [
-        (datetime.date(2026, 9, 8), ["2324", "2425", "2526", "2627"]),
-        (datetime.date(2026, 3, 8), ["2223", "2324", "2425", "2526"]),
-        (datetime.date(2027, 9, 8), ["2425", "2526", "2627", "2728"]),
+        (datetime.date(2026, 9, 8), ["2425", "2526", "2627"]),
+        (datetime.date(2026, 3, 8), ["2324", "2425", "2526"]),
+        (datetime.date(2027, 9, 8), ["2526", "2627", "2728"]),
         # Kausiraja: 31.7. kuuluu viela edelliseen kauteen, 1.8. uuteen.
-        (datetime.date(2026, 7, 31), ["2223", "2324", "2425", "2526"]),
-        (datetime.date(2026, 8, 1), ["2324", "2425", "2526", "2627"]),
+        (datetime.date(2026, 7, 31), ["2324", "2425", "2526"]),
+        (datetime.date(2026, 8, 1), ["2425", "2526", "2627"]),
     ],
 )
 def test_vaiheinvariantti_ikkuna_seuraa_kautta(paiva, odotettu):

@@ -84,25 +84,52 @@ def current_season_pair(today: "datetime.date | None" = None) -> list[str]:
     return [f"{prev_start:02d}{cur[:2]}", cur]
 
 
-# UEFA-turnausten treeni-ikkuna. EI domestic-pari.
+# UEFA-turnausten treeni-ikkuna. EI domestic-pari, MUTTA ei myoskaan
+# mielivaltaisen leveä: raja tulee datalahteesta.
 #
 # 🔴 MITATTU VIKA (8.9.2026): Mestarien liiga kaytti `current_season_pair()`ia
 # eli domestic-oletusta kilpailussa jossa KENTASTA VAIHTUU PUOLET JOKA VUOSI.
-# 26/27:n sarjavaiheeseen tuli 18 uutta seuraa 36:sta, eika yhdellakaan ollut
-# riveja mallissa MD1:n aamuna -> 12 ottelua 18:sta ei ollut ennustettavissa.
+# 26/27:n sarjavaiheeseen tuli 18 uutta seuraa 36:sta -> 12 ottelua 18:sta ei
+# ollut ennustettavissa. Villen kaverin havainto: "nayttaa viime kauden
+# champparijoukkueet vaan".
 #
-# Mitattu tuotannosta, kaksi ajoa per ikkuna (luvut toistuivat):
+# 🔴 JA TOINEN, OMA VIKANI SAMANA PAIVANA: valitsin ensin NELJAN kauden
+# ikkunan, koska mittasin sille 63 joukkuetta ja 12/18 ottelua — kahdesti,
+# ja luvut toistuivat. Deployn jalkeen sama ikkuna antoi toistuvasti 36 ja
+# Aston Villa puuttui. Luku oli tosi sina hetkena eika tosi mekanismina.
+#
+# OIKEA MEKANISMI, mitattu lahteesta kausi kerrallaan:
+#   CL 2627 -> 0 riviä  (kausi kesken, ei FINISHED-otteluita — EI virhe)
+#   CL 2526 -> 189 riviä, 36 joukkuetta
+#   CL 2425 -> 189 riviä, 36 joukkuetta
+#   CL 2324 -> football-data.org ILMAINEN TIER EI KATA
+#
+# Kun yksi kausi epaonnistuu ja muut onnistuvat, `football_data_org.lataa`
+# heittaa `OsittainenKausijoukko`n — tahallaan, koska osittainen otos on
+# vaarallisempi kuin ei dataa. Loader nappaa sen ja putoaa openfootballiin,
+# joka palauttaa PIENEMMAN joukon. Siksi ikkunan LEVENNYS KUTISTAA rosterin:
+# 54 -> 36. Vahti toimi oikein; minun ikkunani oli vaara.
+#
+# Raja ei siis ole makuasia vaan datalahteen kattavuus. Se on RULLAAVA, ei
+# absoluuttinen: ilmainen tier nayttaa kattavan kolme tuoreinta kautta, joten
+# ikkuna pidetaan SUHTEELLISENA (3 kautta taaksepain) eika naulata vuoteen —
+# absoluuttinen luku olisi vaarin heti ensi kaudella.
+#
+# Alla on MITTAUS eika saanto: mita nahtiin ja milloin. Testi vertaa taman
+# paivan ikkunaa tahan, joten jos tier muuttuu, portti kertoo sen.
+FDORG_FREE_TIER_MEASURED = {
+    "mitattu": "2026-09-08",
+    "vanhin_saatavilla": "2425",   # CL 2425 -> 189 riviä, 36 joukkuetta
+    "ensimmainen_puuttuva": "2324",  # CL 2324 -> ilmainen tier ei kata
+}
+
+# Mitattu tuotannosta korjauksen jalkeen, kaksi ajoa per ikkuna:
 #   2526+2627            36 joukkuetta   18 puuttuu    6/18 ottelua
-#   2425+2526+2627       54 joukkuetta   11 puuttuu   10/18
-#   2324+2425+2526+2627  63 joukkuetta    8 puuttuu   12/18   <- valittu
-#   2223+...+2627        36 joukkuetta   36 puuttuu    0/18   <- RIKKI
-#
-# NELJA ON MITATTU YLARAJA EIKA MAKUASIA: viides kausi ei heikenna vaan
-# ROMAHDUTTAA rosterin (2223 myrkyttaa fitin). tests/test_uefa_window.py
-# kaataa CI:n jos ikkunaa levennetaan ilman uutta mittausta.
+#   2425+2526+2627       54 joukkuetta   11 puuttuu   10/18   <- valittu
+#   2324+2425+2526+2627  36 joukkuetta   36 puuttuu    0/18   <- tier ei kata
 #
 # Sama ikkuna frontendissa: goaliq-app lib/season.ts uefaSeasonWindow().
-UEFA_WINDOW_SEASONS = 4
+UEFA_WINDOW_SEASONS = 3
 
 
 def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:
