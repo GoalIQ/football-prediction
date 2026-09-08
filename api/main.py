@@ -1097,9 +1097,29 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     )
 
     turnaus = liigat[0]
-    kaikki = [turnaus, *SUPPORT_LEAGUES]
-    df = _lataa_otteludata_cached(kaikki, list(config.current_season_pair()))
-    oma = df[df["league"] == turnaus] if not df.empty else df
+    pari = list(config.current_season_pair())
+    # 🔴 TURNAUKSELLE LEVEAMPI IKKUNA KUIN KOTILIIGOILLE. Turnauskaudet ovat
+    # vendoroituina repossa, joten ne EIVAT voi epaonnistua eivatka pudottaa
+    # liigaa varalahteelle - se oli syy jonka takia levennys jouduttiin
+    # aiemmin perumaan kahdesti. Hyoty on mitattu: siltaotteluita tulee
+    # kolminkertaisesti (La Liga 58 -> 151, Valioliiga 59 -> 137) ja
+    # ennustettavia otteluita 10/18 -> 13/18.
+    #
+    # Vanhimmat kaudet ovat SILTA MUTTEI KELPOISUUS (`stale`): ne opettavat
+    # liigojen tasoeroa muttei tee omista seuroistaan ennustettavia. Ilman
+    # tata FC Porto palaisi mukaan 23/24-datallaan - se on tasan se ottelu
+    # jossa malli antoi Porto 48 % / Man City 27 %.
+    from src.data.fd_fallback import VENDORED_SEASONS
+
+    vendoroidut = list(VENDORED_SEASONS.get(turnaus, ()))
+    turnauskaudet = sorted({*vendoroidut, *pari})
+    stale = frozenset(k for k in turnauskaudet if k not in pari and k not in vendoroidut[-2:])
+    dom = _lataa_otteludata_cached(list(SUPPORT_LEAGUES), pari)
+    tour = _lataa_otteludata_cached([turnaus], turnauskaudet)
+    import pandas as _pd
+
+    df = _pd.concat([x for x in (dom, tour) if not x.empty], ignore_index=True)         if (not dom.empty or not tour.empty) else dom
+    oma = tour
     if df.empty or oma.empty:
         # Ei turnausdataa -> ei siltaotteluita -> ei kalibrointia. Palataan
         # entiseen polkuun, joka antaa oman rehellisen 404/503-vastauksensa.
@@ -1107,7 +1127,8 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
             status_code=404,
             detail=f"No match data found for leagues={liigat}, seasons={kaudet}",
         )
-    malli = fit_uefa_joint(df, tournament_league=turnaus, decay=decay)
+    malli = fit_uefa_joint(df, tournament_league=turnaus, decay=decay,
+                           stale_seasons=stale)
 
     # 🔴 NAYTTONIMET FD-MUODOSSA. Klientin CTA-portti vertaa
     # `/api/fixtures`-nimia `/api/teams`-nimiin, joten rosterin on puhuttava

@@ -280,8 +280,24 @@ def fit_uefa_joint(
     tournament_league: str = "INT-Champions League",
     decay: float = 0.0035,
     iterations: int = 2,
+    stale_seasons: frozenset[str] = frozenset(),
 ) -> UefaJointModel:
-    """Sovita yhteismalli ja estimoi liigasiirtymat turnausotteluista."""
+    """Sovita yhteismalli ja estimoi liigasiirtymat turnausotteluista.
+
+    `stale_seasons`: turnauskaudet jotka kelpaavat SILLAKSI (liigasiirtyman
+    estimointiin) mutta EIVAT tee seurasta ennustettavaa.
+
+    🔴 MIKSI TAMA ERO ON OLEMASSA. Leveampi turnausikkuna on hyodyllinen:
+    siltaotteluita tulee kolminkertaisesti ja liigasiirtymat tarkentuvat
+    (mitattu: La Liga 58 -> 151, Valioliiga 59 -> 137). Mutta se toisi myos
+    seuroja joiden AINOA turnausdata on vuosia vanhaa, ja ne nayttaisivat
+    keskiverroilta kotietuineen. Tasan niin kavi FC Portolle: ainoa CL-data
+    kaudelta 23/24, viimeisin ottelu 2024-03-12, ja malli antoi Porto 48 % /
+    Manchester City 27 % - markkina vahvasti painvastoin.
+
+    Vanha kausi siis OPETTAA liigojen tasoeroa muttei tee sen omista
+    seuroista ennustettavia.
+    """
     d = df.dropna(subset=["home_score", "away_score"]).copy()
     d["home_team"] = d["home_team"].map(canonical_name)
     d["away_team"] = d["away_team"].map(canonical_name)
@@ -292,6 +308,7 @@ def fit_uefa_joint(
         club_league.setdefault(row.away_team, row.league)
 
     tour = d[d.league == tournament_league]
+    tuore = tour[~tour["season"].astype(str).isin(stale_seasons)] if "season" in tour.columns else tour
     bridge: collections.Counter = collections.Counter()
     for row in tour.itertuples(index=False):
         for club in (row.home_team, row.away_team):
@@ -365,5 +382,7 @@ def fit_uefa_joint(
         league_attack=dict(la),
         league_defence=dict(ld),
         bridge_counts=dict(bridge),
-        tournament_clubs=frozenset(set(tour.home_team) | set(tour.away_team)),
+        # Kelpoisuus tulee VAIN tuoreista turnauskausista; koko `tour` on
+        # yha sillan estimoinnissa mukana.
+        tournament_clubs=frozenset(set(tuore.home_team) | set(tuore.away_team)),
     )

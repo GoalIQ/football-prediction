@@ -263,3 +263,34 @@ def test_domestic_ei_kayta_yhteisfittia():
     for liiga in ("ENG-Premier League", "ESP-La Liga-FD", "ENG-Championship",
                   "BRA-Serie A", "NED-Eredivisie", "POR-Primeira Liga"):
         assert not main._on_uefa_yhteisfitti((liiga,))
+
+
+def test_vanha_turnauskausi_on_silta_muttei_kelpoisuus():
+    """🔴 Villen "Porto 48% city 27%" -loydoksen pysyva este.
+
+    Leveampi turnausikkuna on hyodyllinen: siltaotteluita tulee
+    kolminkertaisesti ja liigasiirtymat tarkentuvat (mitattu: La Liga 58 ->
+    151). Mutta se toisi myos seuroja joiden AINOA turnausdata on vuosia
+    vanhaa - ne nayttavat keskiverroilta ja kotietu nostaa ne suosikiksi.
+
+    Vanha kausi siis OPETTAA liigojen tasoeroa muttei tee omista seuroistaan
+    ennustettavia. Tama testi lukitsee tasan sen eron."""
+    d = _synteettinen()
+    vanhat = []
+    paiva = pd.Timestamp("2020-01-01")
+    for k in range(40):
+        paiva = paiva + pd.Timedelta(days=1)
+        vanhat.append(dict(date=paiva, home_team="Ancient FC", away_team=f"Euro {k%4} FC",
+                           home_score=1, away_score=1, league=CL, season="1920"))
+    d["season"] = "2526"
+    kaikki = pd.concat([d, pd.DataFrame(vanhat)], ignore_index=True)
+
+    ilman = fit_uefa_joint(kaikki)
+    assert ilman.is_eligible("Ancient FC"), "kontrolli: ilman rajausta seura kelpaa"
+
+    rajattu = fit_uefa_joint(kaikki, stale_seasons=frozenset({"1920"}))
+    assert not rajattu.is_eligible("Ancient FC"), (
+        "vanhan kauden seura paasi kelpoiseksi - tama on Porto-vika"
+    )
+    # ...mutta sen ottelut ovat YHA sillassa: siltamaara ei saa pudota.
+    assert sum(rajattu.bridge_counts.values()) == sum(ilman.bridge_counts.values())
