@@ -123,13 +123,37 @@ FDORG_FREE_TIER_MEASURED = {
     "ensimmainen_puuttuva": "2324",  # CL 2324 -> ilmainen tier ei kata
 }
 
-# Mitattu tuotannosta korjauksen jalkeen, kaksi ajoa per ikkuna:
-#   2526+2627            36 joukkuetta   18 puuttuu    6/18 ottelua
-#   2425+2526+2627       54 joukkuetta   11 puuttuu   10/18   <- valittu
-#   2324+2425+2526+2627  36 joukkuetta   36 puuttuu    0/18   <- tier ei kata
+# 🔴 LOPPUTULOS: LEVENNYS PERUTTU. UEFA_WINDOW_SEASONS = 2 eli sama kuin
+# domestic-pari. Perustelu on mittaus tuotannosta, ei periaate.
 #
-# Sama ikkuna frontendissa: goaliq-app lib/season.ts uefaSeasonWindow().
-UEFA_WINDOW_SEASONS = 3
+# Levensin ikkunan ensin neljaan ja sitten kolmeen kauteen, ja molemmat
+# nayttivat mittaushetkella paremmilta (63 ja 54 joukkuetta, 12/18 ja 10/18
+# ottelua). Kumpikaan EI PITANYT deployn jalkeen:
+#
+#   ikkuna              mittaus A      mittaus B (deployn jalkeen)
+#   2526+2627           36 / 6-18      36 / 6-18      <- vakaa
+#   2425+2526+2627      54 / 10-18     36 / 0-18      <- ROMAHTI
+#   2324+2425+2526+2627 63 / 12-18     36 / 0-18      <- ROMAHTI
+#
+# Romahdustilassa mallista puuttui myos Club Brugge, joka oli KAPEALLA
+# ikkunalla mukana. Levennys teki tuotteesta siis mitattavasti HUONOMMAN
+# (0/18 < 6/18), ei vain vahemman hyodyllisen.
+#
+# MEKANISMI: football-data.orgin ilmainen tier ei kata vanhempia kausia
+# luotettavasti. Kun yksi kausi epaonnistuu ja muut onnistuvat,
+# `football_data_org.lataa` heittaa `OsittainenKausijoukko`n - TAHALLINEN
+# vahti, "osittainen data on vaarallisempi kuin ei dataa" - ja loader putoaa
+# openfootballiin, joka palauttaa PIENEMMAN ja ERI joukon. Onnistuuko vanhempi
+# kausi riippuu hetkesta (rate limit, cachen tila), joten mika tahansa
+# domestic-paria leveampi ikkuna on kolikonheitto jonka huono puoli on 0/18.
+#
+# OPPI: kaksi toistuvaa mittausta EI riita jos ne on tehty samasta
+# prosessitilasta. Levennys vaatii ensin sen etta puuttuva kausi ei pudota
+# koko liigaa varalahteelle - se on oma tyonsa, jonorivi UCL-IKKUNAN-LEVENNYS.
+#
+# Rakenne (uefa_season_window + normalisoi_kaudet + portit) jaa paikalleen,
+# koska se on nyt mitattu ja dokumentoitu. Vain LUKU on 2.
+UEFA_WINDOW_SEASONS = 2
 
 
 def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:

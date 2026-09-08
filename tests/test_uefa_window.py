@@ -29,57 +29,53 @@ import pytest
 import config
 
 
-def test_ikkuna_on_kolme_kautta():
-    assert config.UEFA_WINDOW_SEASONS == 3
+def test_ikkuna_on_kaksi_kautta_levennys_peruttu():
+    """🔴 Levennys perutttiin mittauksen perusteella, ei periaatteesta.
+    Nelja ja kolme kautta nayttivat mittaushetkella paremmilta (63/54
+    joukkuetta) mutta ROMAHTIVAT deployn jalkeen 36:een ja 0/18 otteluun -
+    huonompaan kuin lahtotilanne 6/18. Ks. config.py:n perustelu."""
+    assert config.UEFA_WINDOW_SEASONS == 2
 
 
-def test_ikkuna_ei_ulotu_tierin_ulkopuolelle():
-    """🔴 TAMA ON TAMAN TIEDOSTON TARKEIN TESTI.
+def test_levennys_ei_saa_palata_ilman_mekanismikorjausta():
+    """🔴 TAMAN TIEDOSTON TARKEIN TESTI.
 
-    Valitsin ensin NELJAN kauden ikkunan, koska mittasin sille 63 joukkuetta
-    ja 12/18 ottelua — kahdesti, ja luvut toistuivat. Deployn jalkeen sama
-    ikkuna antoi toistuvasti 36 ja Aston Villa puuttui. Luku oli tosi sina
-    hetkena eika tosi mekanismina.
+    Levensin ikkunan kahdesti ja perruin sen kahdesti samana paivana. Molemmat
+    levennykset nayttivat mittaushetkella paremmilta ja molemmat romahtivat
+    deployn jalkeen:
 
-    Mekanismi: football-data.orgin ilmainen tier ei kata kautta 2324. Kun
-    yksi kausi epaonnistuu ja muut onnistuvat, `football_data_org.lataa`
-    heittaa `OsittainenKausijoukko`n (tahallaan), loader putoaa
-    openfootballiin ja rosteri KUTISTUU 54 -> 36. Ikkunan levennys siis
-    huonontaa tulosta, ei paranna.
+        ikkuna              mittaus A     deployn jalkeen
+        2526+2627           36 /  6-18    36 / 6-18   <- vakaa
+        2425+2526+2627      54 / 10-18    36 / 0-18   <- ROMAHTI
+        2324+2425+2526+2627 63 / 12-18    36 / 0-18   <- ROMAHTI
 
-    Ehto on siksi sidottu TIERIN RAJAAN eika lukuun: seuraava levennys osuu
-    tahan eika makuun."""
+    Romahdustilassa puuttui myos Club Brugge, joka on KAPEALLA ikkunalla
+    mukana: levennys teki tuotteesta mitattavasti huonomman.
+
+    Ehto levennykselle EI ole "mittaa uudelleen" - se on jo tehty kahdesti ja
+    petti kahdesti. Ehto on ETTA PUUTTUVA KAUSI EI PUDOTA KOKO LIIGAA
+    varalahteelle (OsittainenKausijoukko -> openfootball). Kun se on korjattu,
+    tama testi paivitetaan samassa committissa kuin mekanismi.
+    """
+    assert config.UEFA_WINDOW_SEASONS == 2, (
+        "Ikkunaa on levennetty. Onko puuttuvan kauden aiheuttama pudotus "
+        "varalahteelle korjattu? Jos ei, levennys palauttaa 0/18-tilan."
+    )
     m = config.FDORG_FREE_TIER_MEASURED
-    w = config.uefa_season_window(datetime.date(2026, 9, 8))
-    assert w[0] == m["vanhin_saatavilla"], (
-        f"Ikkuna alkaa kaudesta {w[0]}, mutta 8.9.2026 mitattiin vanhimmaksi "
-        f"saatavilla olevaksi {m['vanhin_saatavilla']} "
-        f"({m['ensimmainen_puuttuva']} ei kattunut). Yksi saamaton kausi "
-        "pudottaa KOKO liigan openfootballiin ja rosteri kutistuu 54 -> 36."
+    assert m["ensimmainen_puuttuva"] not in config.uefa_season_window(
+        datetime.date(2026, 9, 8)
     )
-    assert m["ensimmainen_puuttuva"] not in w, (
-        "Ikkunassa on kausi joka mitattiin puuttuvaksi — se laukaisee "
-        "OsittainenKausijoukko-vahdin ja pudottaa liigan varalahteelle."
-    )
-    # Ikkuna on SUHTEELLINEN, ei naulattu vuoteen: absoluuttinen raja olisi
-    # vaarin heti ensi kaudella, koska tier rullaa mukana.
-    assert config.uefa_season_window(datetime.date(2027, 9, 8))[0] != w[0]
-
-
-def test_ikkuna_ei_ole_domestic_pari():
-    tanaan = datetime.date(2026, 9, 8)
-    assert config.uefa_season_window(tanaan) != config.current_season_pair(tanaan)
 
 
 @pytest.mark.parametrize(
     "paiva,odotettu",
     [
-        (datetime.date(2026, 9, 8), ["2425", "2526", "2627"]),
-        (datetime.date(2026, 3, 8), ["2324", "2425", "2526"]),
-        (datetime.date(2027, 9, 8), ["2526", "2627", "2728"]),
+        (datetime.date(2026, 9, 8), ["2526", "2627"]),
+        (datetime.date(2026, 3, 8), ["2425", "2526"]),
+        (datetime.date(2027, 9, 8), ["2627", "2728"]),
         # Kausiraja: 31.7. kuuluu viela edelliseen kauteen, 1.8. uuteen.
-        (datetime.date(2026, 7, 31), ["2324", "2425", "2526"]),
-        (datetime.date(2026, 8, 1), ["2425", "2526", "2627"]),
+        (datetime.date(2026, 7, 31), ["2425", "2526"]),
+        (datetime.date(2026, 8, 1), ["2526", "2627"]),
     ],
 )
 def test_vaiheinvariantti_ikkuna_seuraa_kautta(paiva, odotettu):
@@ -127,7 +123,7 @@ def test_vain_uefa_sai_levean_ikkunan():
 # ---------------------------------------------------------------------------
 
 
-def test_uefa_oletusikkuna_laajenee_palvelimella():
+def test_uefa_oletusikkuna_normalisoituu_palvelimella():
     """Villen kaverin buildi oli yli 2 kk vanha eika sen runtimeVersion saa
     OTA:aakaan. Klienttikorjaus ei siis tavoita hanta — palvelin tavoittaa."""
     import api.main as main
