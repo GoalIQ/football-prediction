@@ -24,7 +24,22 @@ CASES = [
     ("GER-Bundesliga-FD",    ["2425", "2526"], "FC Bayern München",        "Borussia Dortmund"),
     ("ITA-Serie A-FD",       ["2425", "2526"], "FC Internazionale Milano", "AC Milan"),
     ("FRA-Ligue 1-FD",       ["2425", "2526"], "Paris Saint-Germain FC",   "Olympique de Marseille"),
-    ("INT-Champions League", ["2425", "2526"], "Real Madrid CF",           "FC Bayern München"),
+    # 🔴 CL POISTETTU GOLDEN-SETISTA 8.9.2026, ja syy on rakenteellinen eika
+    # mukavuussyy. Taman setin tarkoitus on "domestic koskematon" BIT-EXACT.
+    # Domestic-mallit fitataan yhden liigan committoidusta/cachetetusta
+    # datasta, joten sama syote antaa saman luvun ympäristosta riippumatta.
+    #
+    # Mestarien liiga fitataan nyt YHTEISMALLINA yhdeksan liigan datasta
+    # (src/models/uefa_joint.py), joka elaa jokaisen pelatun ottelun mukana.
+    # Mitattu 8.9 lokaali vs tuotanto: expected_goals_away 2,667 vs 2,570.
+    # Ero ei ole regressio vaan tuoreusero, eika bittitarkkuus siis ole
+    # saavutettavissa - golden joka ei voi olla vihrea kahdessa
+    # ymparistossa ei vahdi mitaan, se vain opettaa ohittamaan itsensa.
+    #
+    # CL:n suojaus on nyt tests/test_uefa_joint.py (20 testia): taitoksen
+    # numeerinen ekvivalenssi, kalibrointiportti, kelpoisuus ja se etta vain
+    # yksinaan pyydetty turnaus kulkee yhteisfittia. Ne eivat riipu elavasta
+    # datasta.
 ]
 
 NUMERIC_FIELDS = [
