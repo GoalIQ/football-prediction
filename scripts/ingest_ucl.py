@@ -81,13 +81,40 @@ SKILL = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
 
 # `pStatus`-koodit. Tyhja = kaytettavissa. Mitattu 7.9: '' 991, NIS 122,
 # I 31, D 10, S 8.
+#
+# 🔴 9.9: KAKSI KOODIA JOTKA NAKYVAT VAIN OTTELUPAIVAN IKKUNASSA.
+# Mitattu 8.9 klo 16:23Z (MD1-paiva, kokoonpanot julkaistu):
+#     '' 848 · NIS 122 · I 65 · P 43 · B 42 · D 33 · S 10
+# Mitattu samana iltana uudelleen otteluiden jalkeen:
+#     '' 935 · NIS 122 · I 63 · D 32 · S 11   -> P ja B POISSA.
+# P ja B ovat siis ohimenevia: ne ilmestyvat kun UEFA julkaisee kokoonpanot
+# ja katoavat ottelun jalkeen. Koot vastaavat avausta ja penkkia (43 ja 42
+# neljalle joukkueelle). MERKITYSTA EI OLE VARMISTETTU UEFAn dokumentista,
+# joten tassa EI vaiteta mita kirjaimet tarkoittavat - kartta koodaa
+# konservatiivisen tulkinnan: kumpikaan ei ole SAATAVUUSVAROITUS, joten
+# kumpikaan ei saa nayttaa varoitukselta eika kadota nakymasta.
+#
+# ILMAN TATA: `STATUS.get(..., "unknown")` teki 85 pelaajasta (7,3 %)
+# tilan "unknown", joka ei ole `build_ucl_page`in POISSA- eika
+# TOIMITTAVA-listalla -> he katosivat team-news-sivulta ja nakyivat
+# hintataulukossa sanalla "Unknown". Vika oli nakymaton talta koodilta:
+# se elaa vain kokoonpanoikkunassa, ja kaikki muut ajot mittaavat hetkea
+# jolloin invariantti sattuu pitamaan (CLAUDE.md 6a, mekanismi 3).
 STATUS = {
     "": "available",
     "NIS": "not_in_squad",
     "I": "injured",
     "D": "doubtful",
     "S": "suspended",
+    "P": "available",
+    "B": "available",
 }
+
+# Osuus tuntemattomia koodeja jonka ylittyessa ingestio KAATUU eika
+# artefaktia paivenneta. Tuntemattoman koodin pitaa olla nakyva paatos, ei
+# hiljainen "unknown"-kaatopaikka: jaassa oleva sivu nakyy `updated`-leimasta
+# ja punaisesta workflow'sta, vaara tila ei nay mistaan.
+UNKNOWN_STATUS_MAX_SHARE = 0.01
 
 
 def _hae(polku: str) -> dict | None:
@@ -211,10 +238,23 @@ def loyda_kausi(nyt: dt.datetime | None = None) -> tuple[int, dict] | None:
     return None
 
 
+class TuntematonStatus(RuntimeError):
+    """Syote kayttaa saatavuuskoodia jota STATUS-kartta ei tunne.
+
+    Nostetaan vasta kun osuus ylittaa `UNKNOWN_STATUS_MAX_SHARE`n: yksittainen
+    eksynyt koodi ei saa pysayttaa paivitysta, mutta 7 %:n erä (MD1 8.9) on
+    syotteen muutos johon on vastattava, ei rivi jonka saa vaientaa.
+    """
+
+
 def normalisoi_pelaajat(doc: dict, kausi: int) -> list[dict]:
     ulos = []
+    tuntemattomat: dict[str, int] = {}
     for p in (doc.get("data") or {}).get("value", {}).get("playerList") or []:
         pelattu = int(p.get("teamPlayed") or 0)
+        koodi = str(p.get("pStatus") or "")
+        if koodi not in STATUS:
+            tuntemattomat[koodi] = tuntemattomat.get(koodi, 0) + 1
         rivi = {
             "id": str(p.get("id")),
             "name": p.get("pDName") or p.get("latinName"),
@@ -237,6 +277,17 @@ def normalisoi_pelaajat(doc: dict, kausi: int) -> list[dict]:
             rivi["points"] = int(p.get("totPts") or 0)
             rivi["minutes"] = int(p.get("minsPlyd") or 0)
         ulos.append(rivi)
+
+    n = sum(tuntemattomat.values())
+    if ulos and n / len(ulos) > UNKNOWN_STATUS_MAX_SHARE:
+        raise TuntematonStatus(
+            f"UEFA:n syote kayttaa {n} pelaajalla ({n / len(ulos):.1%}) "
+            f"pStatus-koodia jota STATUS ei tunne: "
+            f"{dict(sorted(tuntemattomat.items()))}. Artefaktia EI paiviteta. "
+            "Selvita koodin merkitys ja lisaa se STATUS-karttaan — "
+            "'unknown' putoaa team-news-sivulta ja nakyy hintataulukossa "
+            "sanana 'Unknown', eli vaara tila julkaistaan tuoreena."
+        )
     return ulos
 
 

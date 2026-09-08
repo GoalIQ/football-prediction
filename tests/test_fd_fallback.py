@@ -167,19 +167,53 @@ def test_cl_vara_estaa_osittaisuusvahdin_ja_lahteenvaihdon(monkeypatch):
 
     Repoon vendoroitu kausi tekee ikkunasta deterministisen: kausi joka on
     snapshotissa ei ole epaonnistunut, joten vahti ei laukea eika lahde vaihdu.
+
+    🔴 9.9: TAMA TESTI OLI VIHREA VAIN VILLEN KONEELLA JA PUNAINEN CI:SSA 9
+    perakkaista ajoa. Kaksi ymparistoriippuvuutta, molemmat nyt kiinnitetty:
+
+    (1) `lataa()` palauttaa TYHJAN framen heti jos API-avainta ei ole
+        (`football_data_org.py`, `if not api_key: return pd.DataFrame()`) -
+        kolme rivia ENNEN varasnapshot-haaraa. Lokaalisti avain tulee
+        gitignoratusta `.env`:sta, CI:ssa sita ei ole, joten testi ei paassyt
+        edes kausisilmukkaan.
+    (2) Kaudet 2526/2627 tulivat lokaalisti gitignoratusta levycachesta
+        (`data/raw/football-data-org/CL_2025.json`). CI:ssa cachea ei ole,
+        joten pelkka avaimen kiinnitys olisi vienyt testin oikeaan API:in:
+        hidas, 6,5 s rate-limit-sleep, ja `len(teams)` heiluisi kierroksittain.
+
+    Molemmat stubataan nyt testin sisalla, joten testi mittaa MEKANISMIA -
+    ajaako vara ennen osittaisuusvahtia - eika sita onko ajokoneella avain.
+    Mutaatiokontrolli: kun `on_saatavilla` pakotetaan False:ksi, tama testi
+    nostaa yha `OsittainenKausijoukko`n.
     """
     from src.data import football_data_org as fdo
 
-    orig = fdo._hae_kausi
-    monkeypatch.setattr(
-        fdo,
-        "_hae_kausi",
-        lambda code, year, key: (
-            {"_error": "simuloitu: ilmainen tier ei kata"}
-            if str(year) < "2025"
-            else orig(code, year, key)
-        ),
-    )
+    # (1) Avain: mika tahansa ei-tyhja arvo riittaa, koska (2) korvaa haun.
+    monkeypatch.setattr(fdo, "_api_key", lambda: "TESTIAVAIN")
+
+    # (2) Haku: EI verkkoa, ei levycachea. Vendoroidut kaudet (2425 ja 2526)
+    # "epaonnistuvat" niin kuin ilmaisella tierilla oikeastikin -> vain
+    # varasnapshot voi pelastaa ne, ja juuri sita tama testi mittaa.
+    # Kuluva kausi 2627 EI ole snapshotissa ja onnistuu inline-fikstuurilla:
+    # ilman yhtaan onnistunutta kautta osittaisuusvahti ei voisi laueta, eli
+    # testi lapaisisi ilman etta mekanismia on koeteltu.
+    def _stub_hae_kausi(code, year, key):
+        if str(year) < "2026":
+            return {"_error": "simuloitu: ilmainen tier ei kata"}
+        return {
+            "matches": [
+                {
+                    "utcDate": "2026-09-16T19:00:00Z",
+                    "status": "FINISHED",
+                    "homeTeam": {"name": "STUB-KOTI"},
+                    "awayTeam": {"name": "STUB-VIERAS"},
+                    "score": {"fullTime": {"home": 1, "away": 0}},
+                }
+            ]
+        }
+
+    monkeypatch.setattr(fdo, "_hae_kausi", _stub_hae_kausi)
+
     # 🔴 Kaudet EKSPLISIITTISESTI eika `config.uefa_season_window()`:sta.
     # Tama testi mittaa MEKANISMIA (vara ajaa ennen osittaisuusvahtia), ei
     # sita mika ikkuna on kulloinkin kaytossa. Ensimmainen versio luki
@@ -198,17 +232,49 @@ def test_cl_vara_estaa_osittaisuusvahdin_ja_lahteenvaihdon(monkeypatch):
 
 
 def test_cl_vara_ei_aja_kun_lahde_vastaa(monkeypatch):
-    """NEGATIIVINEN KONTROLLI: vara ei saa korvata onnistunutta hakua."""
+    """NEGATIIVINEN KONTROLLI: vara ei saa korvata onnistunutta hakua.
+
+    🔴 9.9: TAMA KONTROLLI LAPAISI CI:SSA TYHJANA. Se ei kiinnittanyt
+    API-avainta, joten CI:ssa `lataa()` palasi ensimmaiselta riviltaan eika
+    kausisilmukkaan menty koskaan - `kutsuttu` oli tyhja siksi ETTEI MITAAN
+    AJETTU, ei siksi etta vara pysyi poissa. Tiedoston oma docstring sanoo
+    taman olevan sen tarkein testi (muisti: kontrolli-lapaisi-tyhjana).
+
+    Nyt haku stubataan onnistuvaksi, joten kontrolli mittaa oikeasti: lahde
+    vastasi, siis varaan ei saa koskea. Lisaksi vaaditaan etta haku TAPAHTUI -
+    ilman sita sama tyhja lapaisy palaisi ensimmaisesta ymparistomuutoksesta.
+    """
     from src.data import fd_fallback
     from src.data import football_data_org as fdo
+
+    haettu = []
+
+    def _stub_hae_kausi(code, year, key):
+        haettu.append((code, year))
+        return {
+            "matches": [
+                {
+                    "utcDate": "2026-09-16T19:00:00Z",
+                    "status": "FINISHED",
+                    "homeTeam": {"name": "LIVE-KOTI"},
+                    "awayTeam": {"name": "LIVE-VIERAS"},
+                    "score": {"fullTime": {"home": 2, "away": 1}},
+                }
+            ]
+        }
+
+    monkeypatch.setattr(fdo, "_api_key", lambda: "TESTIAVAIN")
+    monkeypatch.setattr(fdo, "_hae_kausi", _stub_hae_kausi)
 
     kutsuttu = []
     monkeypatch.setattr(
         fd_fallback, "lataa_varasnapshot",
         lambda liiga, kaudet=None: kutsuttu.append(liiga) or __import__("pandas").DataFrame(),
     )
-    fdo.lataa("INT-Champions League", ["2526"])
+    df = fdo.lataa("INT-Champions League", ["2526"])
+    assert haettu, "hakua ei ajettu - kontrolli olisi lapaissyt tyhjana"
     assert not kutsuttu, "varasnapshot luettiin vaikka lahde vastasi"
+    assert set(df["home_team"]) == {"LIVE-KOTI"}, "tulos ei tullut live-polulta"
 
 
 def test_snapshot_ei_saa_rakentua_itsestaan():

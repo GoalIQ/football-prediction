@@ -39,6 +39,30 @@ jobs:
         with:
           python-version: "3.11"
 
+      # 🔴 9.9: TAMA ASKEL PUUTTUI, JA WORKFLOW EPAONNISTUI 3/3 AJOSSA
+      # luomisestaan (7.9 21:32) lahtien: `build_ucl_page` -> `build_fpl_longtail`
+      # -> `build_fpl_page` -> `build_fpl_phase0` -> `import numpy`.
+      # `ingest_ucl` on stdlib-only ja ONNISTUI joka kerta, eli tuore syote
+      # kirjoitettiin levylle kolmesti ja committiin nolla kertaa.
+      #
+      # Tama on KOLMAS kerta samalle vialle: 9.8 (`f6418b8e`) sama importti
+      # tuli `build_fpl_page`iin ja kaatoi `fpl-page-refresh`in 8 vuorokaudeksi;
+      # korjaus 17.8 kirjoitettiin YHTEEN tiedostoon kasin kopioituna listana,
+      # eika mikaan estanyt uutta workflow'ta unohtamasta sita. Portti on nyt
+      # `tests/test_workflow_deps.py`, joka johtaa riippuvuudet entry pointin
+      # AST:sta - unohdus kaataa testin, ei vasta cronin.
+      #
+      # Asennus on tests.yml:n resepti (`-r requirements.txt`) eika
+      # fpl-page-refreshin minimisetti: gate-askel ajaa pytestin, ja
+      # `tests/conftest.py` importtaa `api.main`in JOKAISESSA testissa ->
+      # minimisetti kaatuisi `fastapi`an ennen kuin ehtii numpyyn.
+      # Yksi asennus ennen kaikkea muuta: build ja gate jakavat saman
+      # ympariston eivatka voi ajautua erilleen.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+
       - name: Ingest UCL Fantasy feed
         run: |
           python -m scripts.ingest_ucl || {
@@ -58,7 +82,6 @@ jobs:
 
       - name: Gate — artefakti on kuluvalta kaudelta, sivut sopimuksen mukaisia
         run: |
-          python -m pip install --quiet pytest
           python -m pytest tests/test_ingest_ucl.py tests/test_ucl_phase.py \
                            tests/test_ucl_page.py tests/test_svg_charts.py \
                            tests/test_page_contract.py -q || {

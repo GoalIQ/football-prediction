@@ -40,8 +40,20 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      # 🔴 9.9: TAMA RIVI OLI `pip install "requests>=2.31"` JA VAHTI OLI
+      # KUOLLUT 20 VUOROKAUTTA - vihreana. `check_fpl_transfers.py` importtaa
+      # `scripts.build_fpl_phase0`in (`map_name`), joka vetaa numpyn, joten
+      # skripti kaatui `ModuleNotFoundError`iin joka ajossa 20.8 lahtien.
+      # Mitattu: `gh run list --limit 200` = 200/200 success, ja sama traceback
+      # ajoissa 34239486302 (8.9), 34061105647 (6.9), 33970214791 (5.9),
+      # 33814040333 (3.9), 32388689491 (20.8). Sama numpy-aukko kuin
+      # ucl-refreshissa, mutta pahempi: siella putki oli edes punainen.
       - name: Install deps
-        run: pip install "requests>=2.31"
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pandas>=2.1" "numpy>=1.26" "scipy>=1.11" \
+            "statsmodels>=0.14" "requests>=2.31" "soccerdata>=1.8" \
+            "python-dotenv>=1.0" "tqdm>=4.66"
 
       - name: Vertaa tuotannon artefakti FPL:n nykytilaan
         id: check
@@ -51,12 +63,28 @@ jobs:
           code=${PIPESTATUS[0]}
           set -e
           echo "code=$code" >> "$GITHUB_OUTPUT"
-          # 0 = tasmaa · 3 = siirto loytyi · 2 = ei voitu mitata (ei
-          # hiljaista PASSia: nostetaan workflow punaiseksi)
-          if [ "$code" = "2" ]; then
-            echo "::error::Siirtovahti ei voinut mitata — ks. loki"
-            exit 1
-          fi
+          # 🔴 9.9: TASSA LUKI `if [ "$code" = "2" ]`, ja se on syy siihen
+          # miksi kuollut vahti nakyi vihreana 200 ajoa. Sopimus oli
+          # "2 on virhe", joten traceback (exit 1) ei ollut virhe eika
+          # tunnettu verdikti - se lapaisi. Kommentti lupasi "ei hiljaista
+          # PASSia" ja tasan se toteutui.
+          #
+          # Sopimus on nyt kaannetty ympari: VAIN 0 ja 3 ovat tunnettuja
+          # verdikteja, kaikki muu on punainen. Uusi kaatumistapa (traceback,
+          # timeout, OOM, tuleva exit-koodi) nakyy nyt ilman etta kukaan
+          # muistaa lisata sita listalle.
+          #   0 = tasmaa · 3 = siirto loytyi · muu = ei mitattu
+          case "$code" in
+            0|3) ;;
+            2)
+              echo "::error::Siirtovahti ei voinut mitata — ks. loki"
+              exit 1
+              ;;
+            *)
+              echo "::error::Siirtovahti palautti tuntemattoman koodin $code — ks. loki"
+              exit 1
+              ;;
+          esac
 
       # Ketju on ajettava loppuun asti: refresh korjaa vain REPON datan.
       # API (Render) lukee committatun tiedoston LEVYLTA, joten ilman deployta

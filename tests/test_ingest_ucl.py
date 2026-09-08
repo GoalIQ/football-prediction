@@ -123,13 +123,52 @@ def test_positio_ja_status_kaannetaan_luettavaksi():
     assert [r["pos"] for r in rivit] == ["GK", "DEF", "MID", "FWD"]
     assert [r["status"] for r in rivit] == [
         "available", "injured", "not_in_squad", "suspended"]
-    # Tuntematon koodi EI saa nayttaa kaytettavissa olevalta.
-    outo = iu.normalisoi_pelaajat(
-        {"data": {"value": {"playerList": [{
-            "id": 9, "pDName": "Q", "tName": "T", "cCode": "T", "tId": 9,
-            "skill": 3, "value": 5.0, "selPer": 1.0, "pStatus": "ZZZ",
-            "teamPlayed": 0, "totPts": 0, "minsPlyd": 0}]}}}, 90)[0]
-    assert outo["status"] == "unknown"
+
+def _pelaaja(i, status, skill=3):
+    return {"id": i, "pDName": f"P{i}", "tName": "T", "cCode": "T", "tId": 9,
+            "skill": skill, "value": 5.0, "selPer": 1.0, "pStatus": status,
+            "teamPlayed": 0, "totPts": 0, "minsPlyd": 0}
+
+
+def _doc(pelaajat):
+    return {"data": {"value": {"playerList": pelaajat}}}
+
+
+def test_ottelupaivan_kokoonpanokoodit_eivat_pudota_pelaajaa_nakymasta():
+    """🔴 INVARIANTTI MITATAAN OTTELUPAIVAN IKKUNASSA, EI NYKYHETKESSA.
+
+    Mitattu 8.9 (MD1) klo 16:23Z: syotteessa oli koodit P (43) ja B (42),
+    yhteensa 7,3 % pelaajista. Samana iltana otteluiden jalkeen molemmat
+    olivat POISSA. Koodit elavat siis vain siina ikkunassa jossa UEFA on
+    julkaissut kokoonpanot - ja tasan silloin kukaan ei aja tata testia.
+
+    Ilman tata rivia 85 pelajaa olisi saanut tilan "unknown", joka ei ole
+    `build_ucl_page`in POISSA- eika TOIMITTAVA-listalla: he olisivat
+    kadonneet team-news-sivulta ja nakyneet hinnoissa sanana "Unknown".
+    Sama luokka kuin CLAUDE.md 6a mekanismi 3.
+    """
+    rivit = iu.normalisoi_pelaajat(
+        _doc([_pelaaja(1, "P"), _pelaaja(2, "B"), _pelaaja(3, "")]), 90)
+    assert [r["status"] for r in rivit] == ["available"] * 3, (
+        "kokoonpanokoodi luetaan yha tuntemattomaksi - pelaaja katoaa "
+        "team-news-sivulta juuri sina paivana kun han on kiinnostavin")
+
+
+def test_tuntematon_statuskoodi_kaataa_ingestion_eika_paivita_artefaktia():
+    """Tuntemattoman koodin pitaa olla NAKYVA PAATOS, ei hiljainen
+    'unknown'-kaatopaikka. Jaassa oleva sivu nakyy `updated`-leimasta ja
+    punaisesta workflow'sta; vaara tila ei nay mistaan."""
+    with pytest.raises(iu.TuntematonStatus, match="ZZZ"):
+        iu.normalisoi_pelaajat(_doc([_pelaaja(9, "ZZZ")]), 90)
+
+
+def test_yksittainen_eksynyt_koodi_ei_pysayta_paivitysta():
+    """NEGATIIVINEN KONTROLLI: kynnys on osuus, ei nolla. Portti joka kaatuu
+    yhdesta rivista opetetaan ohittamaan."""
+    pelaajat = [_pelaaja(i, "") for i in range(200)] + [_pelaaja(999, "ZZZ")]
+    rivit = iu.normalisoi_pelaajat(_doc(pelaajat), 90)
+    assert rivit[-1]["status"] == "unknown"
+    assert len(rivit) == 201
 
 
 def test_vajaa_syote_ei_kirjoita_artefaktia(monkeypatch):
