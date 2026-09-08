@@ -139,6 +139,24 @@ FDORG_FREE_TIER_MEASURED = {
 # kolikonheiton, ja epaonnistuminen laukaisi `OsittainenKausijoukko`n joka
 # pudotti KOKO liigan openfootballiin.
 #
+# 🔴 JA VIELA YKSI PERUUTUS (Villen havainto: "Porto 48% city 27%?? Markkina
+# antaa reilusti toistepain"). Nelja kautta teki Portosta ennustettavan, mutta
+# sen AINOA data oli kaudelta 23/24: n=8 ottelua, viimeisin 2024-03-12 eli
+# 2,5 vuotta vanha. Decay painaa sen lahes nollaan, joten rating on
+# kaytannossa "keskiverto CL-joukkue" - ja kotiedulla se ohitti Manchester
+# Cityn. Malli antoi Porto 47,7 % / City 27,4 %; markkina on vahvasti
+# painvastoin.
+#
+# OPPI: verifioin etta ennuste ON OLEMASSA, en etta se on JARKEVA. Napin
+# puuttuminen on parempi kuin vaarinpain oleva luku - se on projektin oma
+# saanto (resolveByDateLeague), ja tama on sen kalliimpi puoli.
+#
+# EHTO ON NYT TUOREUS EIKA PELKKA OLEMASSAOLO: ikkuna kattaa kaksi viimeisinta
+# PAATTYNYTTA kautta plus aktiivisen. Joukkue paasee valitsimeen vain jos silla
+# on otteluita siina ikkunassa. Aston Villa (24/25, QF) paasee; FC Porto
+# (vain 23/24) ei. 2324 jaa VENDOROIDUKSI mutta ikkunan ULKOPUOLELLE - se on
+# valmiina jos joskus rakennetaan tuoreuspainotettu rosteri.
+#
 # KORJAUS: kaudet 2324+2425+2526 on vendoroitu repoon
 # (`data/fd_fallback/INT_Champions_League.csv`, 378 ottelua, 54 joukkuetta,
 # Aston Villa mukana) ja varasnapshot luetaan ENNEN osittaisuusvahtia. Kausi
@@ -172,7 +190,7 @@ FDORG_FREE_TIER_MEASURED = {
 #
 # Rakenne (uefa_season_window + normalisoi_kaudet + portit) jaa paikalleen,
 # koska se on nyt mitattu ja dokumentoitu. Vain LUKU on 2.
-UEFA_WINDOW_SEASONS = 4
+UEFA_WINDOW_SEASONS = 3
 
 
 def uefa_season_window(today: "datetime.date | None" = None) -> list[str]:
