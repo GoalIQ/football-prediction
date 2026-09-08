@@ -51,10 +51,22 @@ La Liga 58, Bundesliga 44, Serie A 40, Ligue 1 35, Eredivisie 8,
 Primeira Liga 0. Kynnys 25 hyvaksyy viisi ensimmaista ja hylkaa Portugalin -
 eli tasan sen ottelun jonka Ville nappasi.
 
-TARKKUUS EI HEIKKENE. Parittainen takatesti 72 CL-ottelulla (60 % aikarajaus):
-yhteisfitti+siirtyma miinus CL-only = +0,0017 log-lossia, keskivirhe 0,0299,
-95 % LV [-0,057, +0,060]. Ero ei ole tilastollisesti merkitseva. Kattavuus
-sen sijaan nousee 6/18 -> 10/18.
+MITATTU LOPPUTULOS (8.9, kolme mittaria):
+
+                              kattavuus  Opta-poikkeama  log-loss (72 ott.)
+    Tuotanto (vain CL)          6/18        11,5 pp          0,8883
+    Yhteisfitti, jkl-kotietu   10/18        10,6 pp          0,8965
+    Yhteisfitti, yht. kotietu  10/18         8,6 pp          0,8957
+
+Opta-vertailu on theanalyst.comin supertietokoneen julkaisemat prosentit
+MD1:lle, 13 vertailulukua, verrattuna kuin kuhunkin (kotiluku kotilukuun,
+vierasluku vieraslukuun). Log-loss-ero CL-malliin ei ole tilastollisesti
+merkitseva: parittainen keskivirhe 0,0299, 95 % LV [-0,057, +0,060].
+
+🔴 KUMPIKAAN MALLI EI OLE TARKKUUSINSTRUMENTTI. Keskimaarin 9-11 pp Optasta
+on paljon, ja Club Brugge vs Aston Villa menee meilla eri suuntaan kuin
+Optalla (me 45/33, Opta 35,5/38,9). Talla mallilla saa nayttaa suuntaa, ei
+vahvoja vaitteita yksittaisen ottelun todennakoisyyksista.
 
 TAMA MODUULI EI KOSKE DOMESTIC-ENNUSTEISIIN. Se rakentaa oman mallinsa
 UEFA-turnauksille; jokaisen liigan oma `/api/predict` kulkee entista polkua
@@ -228,7 +240,17 @@ def fit_uefa_joint(
             if L:
                 bridge[L] += 1
 
-    dc = DixonColesModel()
+    # 🔴 YHTEINEN KOTIETU, EI JOUKKUEKOHTAINEN (mitattu 8.9 Optan
+    # supertietokonetta vasten, 13 vertailulukua). Joukkuekohtainen kotietu
+    # fitataan ohuesta turnausdatasta ja tuottaa systemaattista
+    # kotiylivarmuutta:
+    #
+    #   joukkuekohtainen  keskipoikkeama +4,4 pp  itseisarvo 10,6  suurin 23,2
+    #   yhteinen          keskipoikkeama +2,7 pp  itseisarvo  8,6  suurin 22,6
+    #
+    # Sama suunta myos oikeilla tuloksilla (72 CL-ottelua, log-loss 0,8965 ->
+    # 0,8957). Kotiylivarmuus oli viisi kuudesta suurimmasta virheesta.
+    dc = DixonColesModel(per_team_home_adv=False)
     dc.fit(d, decay=decay, date_col="date")
 
     la: dict[str, float] = collections.defaultdict(float)

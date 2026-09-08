@@ -177,3 +177,16 @@ def test_kelpoisuus_on_pakko_tarkistaa_ennen_ennustetta(malli):
     Porto-luvun."""
     with pytest.raises(ValueError, match="ei kelpaa"):
         malli.outcome_probabilities("Strong 0 FC", "Weak 0 FC")
+
+
+def test_kotietu_on_yhteinen_ei_joukkuekohtainen(malli):
+    """🔴 Mitattu Optan supertietokonetta vasten 8.9 (13 vertailulukua):
+
+        joukkuekohtainen kotietu  keskipoikkeama +4,4 pp  itseisarvo 10,6
+        yhteinen kotietu          keskipoikkeama +2,7 pp  itseisarvo  8,6
+
+    Joukkuekohtainen kotietu fitataan ohuesta turnausdatasta ja tuottaa
+    systemaattista kotiylivarmuutta - viisi kuudesta suurimmasta virheesta oli
+    samaan suuntaan. Sama suunta myos oikeilla tuloksilla (log-loss 0,8965 ->
+    0,8957). Ala palauta joukkuekohtaista ilman uutta mittausta."""
+    assert malli.dc.per_team_home_adv is False
