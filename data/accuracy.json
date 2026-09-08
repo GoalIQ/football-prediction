@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-09-07T23:29:11+00:00",
+  "updated_at": "2026-09-08T04:21:59+00:00",
   "logged_total": 3199,
-  "pending": 2745,
+  "pending": 2744,
   "voided": 7,
   "all_time": {
-    "n": 447,
-    "correct_1x2": 225,
-    "pct_1x2": 0.5034,
+    "n": 448,
+    "correct_1x2": 226,
+    "pct_1x2": 0.5045,
     "draw_n": 122,
-    "pct_draw": 0.2729,
-    "decisive_n": 325,
-    "decisive_correct": 225,
-    "pct_decisive": 0.6923,
-    "exact_n": 399,
+    "pct_draw": 0.2723,
+    "decisive_n": 326,
+    "decisive_correct": 226,
+    "pct_decisive": 0.6933,
+    "exact_n": 400,
     "exact_correct": 53,
-    "pct_exact": 0.1328,
-    "brier": 0.5916,
-    "brier_n": 399
+    "pct_exact": 0.1325,
+    "brier": 0.5914,
+    "brier_n": 400
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 11,
     "pct_exact": 0.11,
-    "brier": 0.6425,
+    "brier": 0.6417,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 18
     },
     "BSA": {
-      "n": 76,
-      "correct_1x2": 30,
-      "pct_1x2": 0.3947,
+      "n": 77,
+      "correct_1x2": 31,
+      "pct_1x2": 0.4026,
       "draw_n": 25,
-      "pct_draw": 0.3289,
-      "decisive_n": 51,
-      "decisive_correct": 30,
-      "pct_decisive": 0.5882,
-      "exact_n": 76,
+      "pct_draw": 0.3247,
+      "decisive_n": 52,
+      "decisive_correct": 31,
+      "pct_decisive": 0.5962,
+      "exact_n": 77,
       "exact_correct": 11,
-      "pct_exact": 0.1447,
-      "brier": 0.6377,
-      "brier_n": 76
+      "pct_exact": 0.1429,
+      "brier": 0.6362,
+      "brier_n": 77
     },
     "DED": {
       "n": 31,
@@ -203,19 +203,19 @@
       "brier_n": 262
     },
     "stale": {
-      "n": 137,
-      "correct_1x2": 60,
-      "pct_1x2": 0.438,
+      "n": 138,
+      "correct_1x2": 61,
+      "pct_1x2": 0.442,
       "draw_n": 50,
-      "pct_draw": 0.365,
-      "decisive_n": 87,
-      "decisive_correct": 60,
-      "pct_decisive": 0.6897,
-      "exact_n": 137,
+      "pct_draw": 0.3623,
+      "decisive_n": 88,
+      "decisive_correct": 61,
+      "pct_decisive": 0.6932,
+      "exact_n": 138,
       "exact_correct": 21,
-      "pct_exact": 0.1533,
-      "brier": 0.614,
-      "brier_n": 137
+      "pct_exact": 0.1522,
+      "brier": 0.6133,
+      "brier_n": 138
     },
     "unknown": {
       "n": 48,
@@ -250,20 +250,20 @@
     {
       "bin_mid": 0.2561,
       "predicted": 0.2561,
-      "actual": 0.286,
-      "n": 458
+      "actual": 0.2854,
+      "n": 459
     },
     {
-      "bin_mid": 0.3405,
-      "predicted": 0.3405,
-      "actual": 0.3114,
-      "n": 228
+      "bin_mid": 0.3404,
+      "predicted": 0.3404,
+      "actual": 0.31,
+      "n": 229
     },
     {
-      "bin_mid": 0.4486,
-      "predicted": 0.4486,
-      "actual": 0.366,
-      "n": 153
+      "bin_mid": 0.4484,
+      "predicted": 0.4484,
+      "actual": 0.3701,
+      "n": 154
     },
     {
       "bin_mid": 0.544,
@@ -347,6 +347,21 @@
       "actual_score": "1-1",
       "actual_outcome": "draw",
       "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-07",
+      "home_team": "Vitoria",
+      "away_team": "Gremio",
+      "predicted_winner": "home",
+      "p_winner": 0.4089,
+      "lead_h": 74.3,
+      "most_likely_score": "1-1",
+      "actual_score": "1-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
@@ -570,21 +585,6 @@
       "lead_h": 2.2,
       "most_likely_score": "1-0",
       "actual_score": "1-1",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-06",
-      "home_team": "Everton",
-      "away_team": "Manchester United",
-      "predicted_winner": "away",
-      "p_winner": 0.4063,
-      "lead_h": 2.2,
-      "most_likely_score": "1-1",
-      "actual_score": "2-2",
       "actual_outcome": "draw",
       "hit_1x2": false,
       "exact_hit": false,
