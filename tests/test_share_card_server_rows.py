@@ -41,11 +41,17 @@ EI_TAULUKKO = ["price-changes", "best-captain"]
 # soluun jonka arvo sattui olemaan sama. Oikea rivi, VAARA SARAKE - ja
 # kortti nayttaisi projektiona luvun joka on jotain muuta. Sarakeotsikko
 # luetaan renderoidusta theadista, joten sopimus ei voi ajautua erilleen.
+# Sarake -> yksikko jonka kortti saa liittaa paljaaseen soluun. Ei substring,
+# vaan tasan yksi sallittu liite per sarake (muisti: gate-substring-osuma-on-sokea).
+YKSIKKOLIITE = {"xmins": " xMins"}
+
 SARAKKEET = {
     "points": {"name": "player", "team": "team", "tag": "pos",
                "mid": "xp", "value": "pts"},
+    # 9.9: `tag2` = xMins (Villen pyynto: minuutit korttiin). Solu on paljas
+    # luku, kortti kantaa yksikon; YKSIKKOLIITE alla sallii tasan sen.
     "expected-points": {"name": "player", "team": "team", "tag": "pos",
-                        "mid": "price", "value": "6gw xp"},
+                        "tag2": "xmins", "mid": "price", "value": "6gw xp"},
     # 25.8: siirretty palvelinriveille. Molemmilla sivuilla on klikkilajittelu
     # ja xg-leadersilla lisaksi viisi suodatinta, joten DOM-lukija olisi
     # kantanut sen nakyman johon jakaja sattui suodattamaan.
@@ -199,7 +205,8 @@ def test_card_rows_match_the_server_rendered_table(sivu):
             # katkaistun arvon: value '1' osuu soluun '17' ja team 'BH'
             # soluun 'BHA'. Kortti nayttaisi silloin eri luvun kuin
             # taulukko, ja portti sanoisi ne samaksi.
-            assert arvo == rivi[j], (
+            liite = YKSIKKOLIITE.get(otsikko)
+            assert arvo == rivi[j] or (liite and arvo == rivi[j] + liite), (
                 f"rivi {i}: kortin {kentta}={arvo!r} ei vastaa saraketta "
                 f"{otsikko!r} (={rivi[j]!r}) - oikea rivi mutta vaara "
                 f"sarake tai eri lahde")

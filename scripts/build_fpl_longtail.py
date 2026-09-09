@@ -4544,6 +4544,8 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         subtitle=(f"{window}, pre-season baselines from last season, "
                   f"GoalIQ match model" if esikausi
                   else f"{window}, GoalIQ match model"),
+        # 9.9 (Villen pyynto): xMins riville. Sama luku on taulukon
+        # xMins-sarakkeessa, joten kortti ei vaita mitaan mita sivu ei nayta.
         mid_label="PRICE", value_label=f"{n_gw}GW xP",
         foot="the full top 100 is free on goaliq.app/fpl/expected-points",
         # 🔴 PAIVAMAARA. Portti (24.8): sivu sanoo omin sanoin "These pages
@@ -4565,7 +4567,11 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         foot2=(f"As of {now.strftime('%d %b').lstrip('0')}. "
                "Rows move on every rebuild, not betting advice"),
         rows=[{"rank": i + 1, "name": r["web_name"], "team": r["team_short"],
-               "tag": r.get("pos") or "", "mid": ("%.1f" % (r.get("price") or 0)),
+               "tag": r.get("pos") or "",
+               "mid": ("%.1f" % (r.get("price") or 0)),
+               # xMins omana merkkina: portti vaatii tag2:n identtiseksi
+               # taulukon xMins-solun kanssa (+ yksikko), ks. SARAKKEET.
+               "tag2": ("%.0f xMins" % (r.get("xmins") or 0)),
                "value": ("%.1f" % (r.get("xp_horizon_total") or 0))}
               for i, r in enumerate(rows[:CARD_ROWS])],
         file_name="goaliq-expected-points.png")
