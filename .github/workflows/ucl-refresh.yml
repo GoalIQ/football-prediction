@@ -80,6 +80,15 @@ jobs:
             exit 1
           }
 
+      - name: Bake UEFA joint model (kylmafitin 211 s pois APIsta)
+        run: |
+          # 9.9: API lataa data/uefa_joint_model.json:n millisekunneissa ja
+          # fittaa livena vain jos artefakti puuttuu tai on yli 26 h vanha.
+          # Epaonnistuminen EI kaada ajoa: silloin API fittaa itse (hidas
+          # mutta oikea), ja varoitus nakyy ajolokissa.
+          python -m scripts.build_uefa_model || \
+            echo "::warning::UEFA-mallin bake epaonnistui - API fittaa livena kunnes seuraava ajo onnistuu"
+
       - name: Gate — artefakti on kuluvalta kaudelta, sivut sopimuksen mukaisia
         run: |
           python -m pytest tests/test_ingest_ucl.py tests/test_ucl_phase.py \
@@ -107,6 +116,7 @@ jobs:
           # `lastmod` jaisi 7.9.2026:een ja llms.txt lupaisi vanhoja lukuja.
           [ -f sitemap-core.xml ] && git add sitemap-core.xml
           [ -f llms.txt ] && git add llms.txt
+          [ -f data/uefa_joint_model.json ] && git add data/uefa_joint_model.json
           if git diff --cached --quiet; then
             echo "Ei muutoksia."
             exit 0

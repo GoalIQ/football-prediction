@@ -278,3 +278,7 @@ outputs/gw_digest/
 
 # wrangler-valimuisti (tilitunnus, ei salaisuus, mutta ei kuulu repoon)
 .wrangler/
+
+# 9.9.2026: esirakennettu UEFA-yhteismalli (ks. src/models/uefa_prebuilt.py) -
+# committoidaan kuten wc_model.json, muuten ucl-refreshin git add kaatuu hiljaa.
+!/data/uefa_joint_model.json

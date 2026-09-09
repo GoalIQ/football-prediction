@@ -1088,8 +1088,16 @@ def _on_uefa_yhteisfitti(liigat: tuple[str, ...] | list[str]) -> bool:
     return tuple(liigat) in (_UEFA_JOINT_LEAGUES,)
 
 
+def uefa_prebuilt_decay() -> float:
+    """Decay jolla /api/predict ja /api/teams fittaavat (= _saa_mallin
+    oletus). Bake-skripti lukee saman luvun tasta, jotta artefaktin avain
+    ei voi ajautua erilleen live-polusta."""
+    import inspect
+    return float(inspect.signature(_saa_malli).parameters["decay"].default)
+
+
 def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
-                          decay: float) -> DixonColesModel:
+                          decay: float, allow_prebuilt: bool = True) -> DixonColesModel:
     from src.models.uefa_joint import (
         SUPPORT_LEAGUES,
         _fold_shifts,
@@ -1098,6 +1106,24 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
 
     turnaus = liigat[0]
     pari = list(config.current_season_pair())
+
+    # 9.9: ESIRAKENNETTU MALLI ENSIN. Kylma yhteisfitti kesti Renderilla
+    # 161-211 s ja katkaisi accuracy-login kahdesti; CI fittaa saman mallin
+    # 6 h valein (scripts/build_uefa_model.py) ja tama lukee sen
+    # millisekunneissa. Tuoreusehto on lukijassa: vanha, vaaran kauden tai
+    # vaaran decayn artefakti EI kelpaa vaan fitataan livena (hidas mutta
+    # oikea). Syy lokitetaan aina - hiljainen fallback jaisi nakymatta.
+    if allow_prebuilt:
+        from src.models import uefa_prebuilt
+
+        valmis, syy = uefa_prebuilt.load(tournament=turnaus, season_pair=pari,
+                                         decay=decay)
+        if valmis is not None:
+            print(f"[UEFA] {turnaus}: esirakennettu malli ({syy}), "
+                  f"{len(valmis.attack)} seuraa")
+            return valmis
+        print(f"[UEFA] {turnaus}: esirakennettu malli ei kelpaa ({syy}) "
+              f"-> live-fitti")
     # 🔴 TURNAUKSELLE LEVEAMPI IKKUNA KUIN KOTILIIGOILLE. Turnauskaudet ovat
     # vendoroituina repossa, joten ne EIVAT voi epaonnistua eivatka pudottaa
     # liigaa varalahteelle - se oli syy jonka takia levennys jouduttiin
