@@ -272,7 +272,12 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash scripts/verify_live_pages.sh fpl.html index.html
+        # 9.9: longtail-sentineli mukaan. Page-refresh regeneroi xg-leaders-sivun
+        # (Schar-korjaus) mutta fpl.html/index.html eivat muuttuneet -> "live =
+        # repo" oli tosi sentineleille ja hub-deploy jai laukaisematta; live
+        # servasi vanhaa xg-leaders-sivua. Sentinelin on katettava se mika
+        # muuttuu useimmin.
+        run: bash scripts/verify_live_pages.sh fpl.html index.html fpl/xg-leaders.html
 
       # #TRACK-STALE-vahti: punaa runin jos JOKIN sivubuilderi failasi — AJETAAN
       # commitin JÄLKEEN, joten data-logaus/commit ei esty (continue-on-error
