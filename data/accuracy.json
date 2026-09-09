@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-08T21:04:41+00:00",
+  "updated_at": "2026-09-09T04:25:05+00:00",
   "logged_total": 3199,
-  "pending": 2738,
+  "pending": 2737,
   "voided": 7,
   "all_time": {
-    "n": 454,
+    "n": 455,
     "correct_1x2": 229,
-    "pct_1x2": 0.5044,
-    "draw_n": 124,
-    "pct_draw": 0.2731,
+    "pct_1x2": 0.5033,
+    "draw_n": 125,
+    "pct_draw": 0.2747,
     "decisive_n": 330,
     "decisive_correct": 229,
     "pct_decisive": 0.6939,
-    "exact_n": 406,
-    "exact_correct": 54,
-    "pct_exact": 0.133,
-    "brier": 0.5922,
-    "brier_n": 406
+    "exact_n": 407,
+    "exact_correct": 55,
+    "pct_exact": 0.1351,
+    "brier": 0.5928,
+    "brier_n": 407
   },
   "rolling": {
     "n": 100,
     "correct_1x2": 41,
     "pct_1x2": 0.41,
-    "draw_n": 29,
-    "pct_draw": 0.29,
-    "decisive_n": 71,
+    "draw_n": 30,
+    "pct_draw": 0.3,
+    "decisive_n": 70,
     "decisive_correct": 41,
-    "pct_decisive": 0.5775,
+    "pct_decisive": 0.5857,
     "exact_n": 100,
-    "exact_correct": 11,
-    "pct_exact": 0.11,
-    "brier": 0.6458,
+    "exact_correct": 12,
+    "pct_exact": 0.12,
+    "brier": 0.6474,
     "brier_n": 100,
     "window": 100
   },
@@ -81,19 +81,19 @@
       "brier_n": 32
     },
     "ELC": {
-      "n": 63,
+      "n": 64,
       "correct_1x2": 24,
-      "pct_1x2": 0.381,
-      "draw_n": 18,
-      "pct_draw": 0.2857,
+      "pct_1x2": 0.375,
+      "draw_n": 19,
+      "pct_draw": 0.2969,
       "decisive_n": 45,
       "decisive_correct": 24,
       "pct_decisive": 0.5333,
-      "exact_n": 63,
-      "exact_correct": 8,
-      "pct_exact": 0.127,
-      "brier": 0.6814,
-      "brier_n": 63
+      "exact_n": 64,
+      "exact_correct": 9,
+      "pct_exact": 0.1406,
+      "brier": 0.6835,
+      "brier_n": 64
     },
     "FL1": {
       "n": 27,
@@ -188,19 +188,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 268,
+      "n": 269,
       "correct_1x2": 140,
-      "pct_1x2": 0.5224,
-      "draw_n": 60,
-      "pct_draw": 0.2239,
+      "pct_1x2": 0.5204,
+      "draw_n": 61,
+      "pct_draw": 0.2268,
       "decisive_n": 208,
       "decisive_correct": 140,
       "pct_decisive": 0.6731,
-      "exact_n": 268,
-      "exact_correct": 33,
-      "pct_exact": 0.1231,
-      "brier": 0.5814,
-      "brier_n": 268
+      "exact_n": 269,
+      "exact_correct": 34,
+      "pct_exact": 0.1264,
+      "brier": 0.5823,
+      "brier_n": 269
     },
     "stale": {
       "n": 138,
@@ -250,20 +250,20 @@
     {
       "bin_mid": 0.256,
       "predicted": 0.256,
-      "actual": 0.2833,
-      "n": 466
+      "actual": 0.2848,
+      "n": 467
     },
     {
-      "bin_mid": 0.3401,
-      "predicted": 0.3401,
-      "actual": 0.3136,
-      "n": 236
+      "bin_mid": 0.34,
+      "predicted": 0.34,
+      "actual": 0.3122,
+      "n": 237
     },
     {
-      "bin_mid": 0.4483,
-      "predicted": 0.4483,
-      "actual": 0.3718,
-      "n": 156
+      "bin_mid": 0.4482,
+      "predicted": 0.4482,
+      "actual": 0.3694,
+      "n": 157
     },
     {
       "bin_mid": 0.5435,
@@ -303,6 +303,21 @@
       "actual_outcome": "away",
       "hit_1x2": false,
       "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-08",
+      "home_team": "Wrexham",
+      "away_team": "Burnley",
+      "predicted_winner": "home",
+      "p_winner": 0.4245,
+      "lead_h": 2.2,
+      "most_likely_score": "1-1",
+      "actual_score": "1-1",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": true,
       "duration": null,
       "regular_score": null
     },
@@ -570,21 +585,6 @@
       "lead_h": 1.1,
       "most_likely_score": "1-0",
       "actual_score": "5-2",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-06",
-      "home_team": "Arsenal",
-      "away_team": "Chelsea",
-      "predicted_winner": "home",
-      "p_winner": 0.6301,
-      "lead_h": 0.1,
-      "most_likely_score": "1-1",
-      "actual_score": "2-1",
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
