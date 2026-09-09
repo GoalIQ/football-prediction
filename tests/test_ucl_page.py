@@ -404,8 +404,22 @@ def test_tyhjan_selite_kulkee_taulukon_mukana():
 
     Assertio sitoo selitteen SIIHEN sivuun jolla tyhjia soluja on, ei
     kasin yllapidettyyn sivulistaan: uusi sivu ei voi karata portilta.
+
+    🔴 9.9: TYHJYYSVAHTI OLI VAIHESIDOTTU JA KAATOI PUTKEN KUN VAIHE VAIHTUI.
+    Rivi oli `assert tarkistettu >= 2` mitattuna ELAVASTA sivusta. Tyhja
+    solu syntyy VAIN esikaudella: `build_ucl_page` vaihtaa sarakkeen
+    `prev_season_points` -> `points` heti kun kierroksia on pelattu, jolloin
+    yksikaan solu ei ole tyhja ja vahti luki sen omaksi rikkoutumisekseen.
+    MD1 pelattiin 8.9, ja seuraava ucl-refresh kaatui tahan.
+
+    Vahti on OIKEA (mutaatio 7.9 lapaisi 36 testia), mutta se oli mitattu
+    nykyhetkesta. Nyt se on mitattu MOLEMMISTA VAIHEISTA: elava sivu
+    tarkistetaan vain siina vaiheessa jossa tyhjia voi olla, ja invariantti
+    itse mitataan synteettisella esikausidokumentilla joka on tosi
+    ympari vuoden (CLAUDE.md 6a, mekanismi 3).
     """
     import json
+    from src.models import ucl_phase as vaiheet
     if not DATA_JSON.exists():
         pytest.skip("artefaktia ei ole")
     doc = json.loads(DATA_JSON.read_text(encoding="utf-8"))
@@ -423,9 +437,49 @@ def test_tyhjan_selite_kulkee_taulukon_mukana():
         assert "points column is blank" in h, (
             f"{f.name}: {tyhjia} tyhjaa solua ilman selitetta")
         assert str(odotettu) in h, f"{f.name}: selitteessa vaara luku"
-    assert tarkistettu >= 2, (
-        f"vain {tarkistettu} sivulla oli tyhjia soluja - onko portti "
-        "vihrea siksi ettei se loytanyt mitaan?")
+
+    kentta, _ = vaiheet.pistekentta(doc)
+    if kentta == "prev_season_points":
+        assert tarkistettu >= 2, (
+            f"vaihe on esikausi ja silti vain {tarkistettu} sivulla oli "
+            "tyhjia soluja - onko portti vihrea siksi ettei se loytanyt "
+            "mitaan?")
+    else:
+        # Kilpailu on kaynnissa: sarake on `points` eika yksikaan solu ole
+        # tyhja. Tyhjyysvahti ei voi olla ei-vakuutti tassa vaiheessa, ja
+        # sen vaatiminen olisi punainen putki vaarasta syysta.
+        assert tarkistettu == 0, (
+            f"sarake on '{kentta}' mutta {tarkistettu} sivulla oli silti "
+            "tyhjia soluja - kumpi lukija on vaarassa?")
+
+
+def test_tyhjan_selite_syntyy_esikaudella_vaiheesta_riippumatta():
+    """🔴 INVARIANTTI MITATAAN SYNTEETTISESTA ESIKAUDESTA, EI ELAVASTA
+    ARTEFAKTISTA. Ylla oleva testi voi tarkistaa elavan sivun vain siina
+    vaiheessa jossa tyhjia soluja syntyy - eli 8 kierroksen kaudesta noin
+    viikon. Tama mittaa saman invariantin joka paiva.
+
+    Mutaatiokontrolli on sama kuin 7.9: jos `_tyhja_selite` palauttaa "",
+    tama kaatuu.
+    """
+    from scripts import build_ucl_page as bp
+    doc = {"players": [
+        {"id": "1", "name": "A", "team": "T", "prev_season_minutes": 0,
+         "prev_season_points": 0},
+        {"id": "2", "name": "B", "team": "T", "prev_season_minutes": 0,
+         "prev_season_points": 0},
+        {"id": "3", "name": "C", "team": "T", "prev_season_minutes": 900,
+         "prev_season_points": 40},
+    ]}
+    selite = bp._tyhja_selite(doc, "prev_season_points")
+    assert "points column is blank" in selite, (
+        "esikauden tyhjilta soluilta puuttuu selite - sarakkeessa "
+        "'Pts (last season)' selittamaton tyhja on arvoitus")
+    assert "2" in selite, f"selitteessa vaara luku: {selite}"
+
+    # NEGATIIVINEN KONTROLLI: kun sarake on `points`, tyhjia ei ole eika
+    # selitetta saa lisata - se vaittaisi tyhjia joita ei ole.
+    assert bp._tyhja_selite(doc, "points") == ""
 
 
 # 🔴 HYLATYT SANAMUODOT. Julkaisuportti loysi KOLMESTI saman kuvion:
