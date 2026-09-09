@@ -80,7 +80,10 @@ def _shrink(d, text, px, max_w, min_px, font_path):
 
 def render(spec: dict, out_path: Path) -> Path:
     rows = spec["rows"]
-    h = ROW_TOP + len(rows) * ROW_H + FOOT_H
+    # 9.9 (Villen pyynto): xP-kortin rivi saa alarivin (xMins + mista pisteet
+    # tulevat). Rivikorkeus tulee spekista, jotta muut kortit eivat muutu.
+    row_h = int(spec.get("row_h") or ROW_H)
+    h = ROW_TOP + len(rows) * row_h + FOOT_H
 
     grad = Image.new("RGB", (1, h))
     for y in range(h):
@@ -134,11 +137,16 @@ def render(spec: dict, out_path: Path) -> Path:
     f_val = _font(FONT_BOLD, 36)
 
     for i, r in enumerate(rows):
-        y = ROW_TOP + i * ROW_H
-        cy = y + ROW_H / 2
+        y = ROW_TOP + i * row_h
+        # Alarivillinen rivi: paarivi nousee ylos ja sub piirretaan sen alle.
+        sub = r.get("sub")
+        cy = y + (row_h / 2 - 12 if sub else row_h / 2)
         first = i == 0
-        d.rectangle([MX - 12, y + 4, W - (MX - 12), y + ROW_H - 4],
+        d.rectangle([MX - 12, y + 4, W - (MX - 12), y + row_h - 4],
                     outline=AMBER if first else LINE, width=2 if first else 1)
+        if sub:
+            f_sub_row = _shrink(d, sub, 19, W - 2 * MX - 76 - 120, 13, FONT_MED)
+            d.text((MX + 76, y + row_h - 34), sub, font=f_sub_row, fill=MUTED)
 
         rk = str(r["rank"])
         d.text((MX + 34 - d.textlength(rk, font=f_rank), cy - 16), rk,
@@ -406,6 +414,21 @@ def card_xp(args) -> dict:
     """
     data = _xp_payload()
     gw = data["meta"]["next_gameweek"]
+    # 9.9: "mista pisteet tulevat" luetaan samasta why-artefaktista jota
+    # /fpl/why ja SPA:n pelaajakortti kayttavat (data/fpl_why.json, drivers).
+    # Ei omaa tulkintaa kortissa: sama lahde, sama sanasto.
+    why = {}
+    try:
+        _w = json.loads((DATA / "fpl_why.json").read_text(encoding="utf-8"))
+        _src = next((_w[k] for k in ("entries", "players") if isinstance(_w.get(k), dict)), _w)
+        why = {str(k): v for k, v in _src.items()
+               if isinstance(v, dict) and v.get("gw") == gw}
+    except (OSError, ValueError):
+        why = {}
+    DRIVER_LABEL = {"minutes": "minutes", "attacking_output": "goals & assists",
+                    "clean_sheets": "clean sheets", "set_pieces": "set pieces",
+                    "bonus": "bonus", "fixtures": "fixtures",
+                    "defensive_contribution": "defcon"}
     rows = []
     for p in data.get("players", []):
         g = next((g for g in (p.get("gameweeks") or []) if g.get("gw") == gw),
@@ -420,9 +443,21 @@ def card_xp(args) -> dict:
             badges.append("P")
         if isinstance(sp.get("fk"), (int, float)) and sp["fk"] <= 2:
             badges.append("FK")
+        xm = p.get("xmins")
+        # "minutes" on jokaisen ensimmainen ajuri ja xMins on jo rivilla:
+        # nayta ne kaksi ajuria jotka erottavat pelaajat toisistaan.
+        drv = [DRIVER_LABEL.get(x, x) for x in
+               ((why.get(str(p.get("id"))) or {}).get("drivers") or [])
+               if x != "minutes"][:2]
+        osat = []
+        if isinstance(xm, (int, float)):
+            osat.append(f"{xm:.0f} xMins")
+        if drv:
+            osat.append("from " + " + ".join(drv))
         rows.append({"name": p["web_name"], "tag": p["pos"],
                      "team": p["team_short"], "mid": fx,
-                     "_xp": float(g.get("xp") or 0.0), "badges": badges})
+                     "_xp": float(g.get("xp") or 0.0), "badges": badges,
+                     "sub": "  ·  ".join(osat) if osat else None})
     if not rows:
         raise SystemExit(f"Ei xP-rivejä GW{gw}:lle.")
     rows.sort(key=lambda r: r["_xp"], reverse=True)
@@ -433,8 +468,9 @@ def card_xp(args) -> dict:
         "nameLabel": "PLAYER",
         "midLabel": "FIXTURE",
         "valueLabel": "xP",
-        "footNote": "logged before kickoff, graded in public",
-        "footNote2": "model projections, not betting advice",
+        "footNote": "xMins = expected minutes; xP is scaled by them, not by 90",
+        "footNote2": "full list free at goaliq.app/fpl/expected-points  ·  model projections, not betting advice",
+        "row_h": 104 if any(r.get("sub") for r in rows) else ROW_H,
         "rows": [dict(r, rank=i + 1, value=f"{r['_xp']:.2f}")
                  for i, r in enumerate(rows)],
         "file": f"goaliq_xp_gw{gw}_top{len(rows)}.png",
