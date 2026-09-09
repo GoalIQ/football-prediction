@@ -1189,6 +1189,8 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
         f"[UEFA] {turnaus}: {len(taitettu.attack)} kelpoista seuraa, "
         f"kalibroituvat liigat {sorted(malli.calibrated_leagues())}"
     )
+    # Bake lukee taman metaan; lukija hylkaa artefaktin jolla liigoja ei ole.
+    taitettu.uefa_calibrated_leagues_ = sorted(malli.calibrated_leagues())
     return taitettu
 
 

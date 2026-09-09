@@ -22,26 +22,28 @@ from src.models.dixon_coles import DixonColesModel
 ROOT = Path(__file__).resolve().parents[1]
 CL = "INT-Champions League"
 PARI = ["2526", "2627"]
+LIIGAT = ["ENG-Premier League", "ESP-La Liga-FD"]
 NYT = dt.datetime(2026, 9, 9, 12, 0, tzinfo=dt.timezone.utc)
 
 
 def _dc() -> DixonColesModel:
+    """Kaksi nimettya seuraa + tayte, jotta MIN_CLUBS-ehto (80) tayttyy."""
+    att = {"Arsenal FC": 0.31, "SSC Napoli": 0.12}
+    dfn = {"Arsenal FC": -0.22, "SSC Napoli": -0.05}
+    for i in range(100):
+        att[f"Filler {i}"] = 0.01 * (i % 7)
+        dfn[f"Filler {i}"] = -0.01 * (i % 5)
     return DixonColesModel(
-        attack={"Arsenal FC": 0.31, "SSC Napoli": 0.12},
-        defence={"Arsenal FC": -0.22, "SSC Napoli": -0.05},
-        home_advantage=0.21,
-        home_advantage_per_team={"Arsenal FC": 0.0, "SSC Napoli": 0.0},
-        rho=-0.05,
-        teams_=["Arsenal FC", "SSC Napoli"],
-        per_team_home_adv=False,
-        model_type_="dc",
+        attack=att, defence=dfn, home_advantage=0.21,
+        home_advantage_per_team={k: 0.0 for k in att},
+        rho=-0.05, teams_=sorted(att), per_team_home_adv=False, model_type_="dc",
     )
 
 
 def test_kierros_sailyttaa_ennusteen_bittitarkasti(tmp_path):
     p = tmp_path / "m.json"
     alk = _dc()
-    up.save(alk, tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
+    up.save(alk, tournament=CL, season_pair=PARI, decay=0.0035, calibrated_leagues=LIIGAT, path=p, now=NYT)
     dc, syy = up.load(tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
     assert dc is not None, syy
     assert dc.expected_goals("Arsenal FC", "SSC Napoli") == \
@@ -57,7 +59,7 @@ def test_kierros_sailyttaa_ennusteen_bittitarkasti(tmp_path):
 def test_tuoreus_mitataan_ikana(tmp_path, tunteja, kelpaa):
     """26 h = yksi epaonnistunut vuorokausi sallittu; sen yli fitataan livena."""
     p = tmp_path / "m.json"
-    up.save(_dc(), tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
+    up.save(_dc(), tournament=CL, season_pair=PARI, decay=0.0035, calibrated_leagues=LIIGAT, path=p, now=NYT)
     dc, syy = up.load(tournament=CL, season_pair=PARI, decay=0.0035, path=p,
                       now=NYT + dt.timedelta(hours=tunteja))
     assert (dc is not None) is kelpaa, syy
@@ -71,7 +73,7 @@ def test_tuoreus_mitataan_ikana(tmp_path, tunteja, kelpaa):
 def test_vaara_avain_ei_kelpaa(tmp_path, kwargs, osa):
     """Kausivaihto tai decayn muutos ei saa palauttaa vanhaa mallia."""
     p = tmp_path / "m.json"
-    up.save(_dc(), tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
+    up.save(_dc(), tournament=CL, season_pair=PARI, decay=0.0035, calibrated_leagues=LIIGAT, path=p, now=NYT)
     args = {"tournament": CL, "season_pair": PARI, "decay": 0.0035, **kwargs}
     dc, syy = up.load(path=p, now=NYT, **args)
     assert dc is None and osa in syy, syy
@@ -145,3 +147,66 @@ def test_artefakti_ei_ole_gitignoressa():
     r = subprocess.run(["git", "check-ignore", "-q", "data/uefa_joint_model.json"],
                        cwd=ROOT, capture_output=True)
     assert r.returncode == 1, "data/uefa_joint_model.json on gitignoressa"
+
+
+
+# ---------------------------------------------------------------------------
+# 9.9 ilta: ensimmainen CI-bake kirjoitti 36 seuraa (0 kalibroitunutta
+# liigaa) koska runnerilla ei ollut football-data-avainta - ja se
+# committoitiin. Tuore + oikea kausi ei riita: sisalto mitataan.
+# ---------------------------------------------------------------------------
+
+def _iso_dc(n: int) -> DixonColesModel:
+    nimet = [f"Club {i}" for i in range(n)]
+    return DixonColesModel(
+        attack={k: 0.1 for k in nimet}, defence={k: -0.1 for k in nimet},
+        home_advantage=0.2, home_advantage_per_team={k: 0.0 for k in nimet},
+        rho=-0.05, teams_=nimet, per_team_home_adv=False, model_type_="dc")
+
+
+def test_ohut_malli_ei_mene_levylle(tmp_path):
+    """36 seuraa ilman liigoja = pelkka turnausjoukko: save kieltaytyy."""
+    p = tmp_path / "m.json"
+    with pytest.raises(ValueError, match="kalibroitunutta"):
+        up.save(_iso_dc(36), tournament=CL, season_pair=PARI, decay=0.0035,
+                calibrated_leagues=[], path=p, now=NYT)
+    assert not p.exists()
+    with pytest.raises(ValueError, match="seuraa"):
+        up.save(_iso_dc(36), tournament=CL, season_pair=PARI, decay=0.0035,
+                calibrated_leagues=["ENG-Premier League"], path=p, now=NYT)
+    assert not p.exists()
+
+
+def test_lukija_hylkaa_artefaktin_ilman_siltaa(tmp_path):
+    """Vanha tai kasin kirjoitettu artefakti ilman calibrated_leagues-kenttaa
+    ei kelpaa, vaikka se olisi tuore ja oikealle kaudelle."""
+    import json
+    p = tmp_path / "m.json"
+    up.save(_iso_dc(121), tournament=CL, season_pair=PARI, decay=0.0035,
+            calibrated_leagues=["ENG-Premier League"], path=p, now=NYT)
+    d = json.loads(p.read_text(encoding="utf-8"))
+    d["meta"]["calibrated_leagues"] = []
+    p.write_text(json.dumps(d), encoding="utf-8")
+    dc, syy = up.load(tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
+    assert dc is None and "kalibroitunutta" in syy
+    d["meta"]["calibrated_leagues"] = ["ENG-Premier League"]
+    d["attack"] = {k: v for k, v in list(d["attack"].items())[:36]}
+    p.write_text(json.dumps(d), encoding="utf-8")
+    dc, syy = up.load(tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
+    assert dc is None and "36 seuraa" in syy
+
+
+def test_committattu_artefakti_lapaisee_sisaltoehdon():
+    """Repon oma artefakti: jos tama kaatuu, tuotanto fittaa livena (hidas
+    mutta oikea) - ja joku on committoinut ohuen mallin."""
+    import json
+    d = json.loads(up.PATH.read_text(encoding="utf-8"))
+    ok, syy = up.validate(type("K", (), {"attack": d["attack"]})(),
+                          d["meta"].get("calibrated_leagues") or [])
+    assert ok, syy
+
+
+def test_bake_askel_saa_football_data_avaimen():
+    wf = (ROOT / ".github" / "workflows" / "ucl-refresh.yml").read_text(encoding="utf-8")
+    bake = wf[wf.find("Bake UEFA joint model"):wf.find("name: Gate")]
+    assert "FOOTBALL_DATA_API_KEY" in bake, "bake ilman avainta tuottaa 36 seuran mallin"

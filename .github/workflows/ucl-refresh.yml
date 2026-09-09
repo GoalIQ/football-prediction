@@ -81,6 +81,12 @@ jobs:
           }
 
       - name: Bake UEFA joint model (kylmafitin 211 s pois APIsta)
+        env:
+          # 9.9: ilman avainta kotiliigat latautuvat tyhjina ja malli on
+          # pelkka turnausjoukko (36 seuraa, 0 kalibroitunutta liigaa).
+          # Bake kieltaytyy kirjoittamasta sellaista, mutta avain on se
+          # jolla ajo ONNISTUU eika vain epaonnistu oikein.
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
         run: |
           # 9.9: API lataa data/uefa_joint_model.json:n millisekunneissa ja
           # fittaa livena vain jos artefakti puuttuu tai on yli 26 h vanha.

@@ -36,16 +36,44 @@ PATH = config.DATA_DIR / "uefa_joint_model.json"
 MAX_AGE_H = 26.0
 FORMAT_VERSION = 1
 
+# 🔴 9.9.2026, ensimmainen CI-bake: 36 seuraa, paikallisesti 121. Runnerilla
+# ei ollut football-data.orgin avainta, kotiliigat latautuivat tyhjina, eika
+# yksikaan liiga kalibroitunut -> artefakti oli pelkka turnausjoukko ILMAN
+# siltaa, ja se committoitiin. Tuore ja oikean kauden artefakti voi silti
+# olla vaara. Siksi kelpoisuus mitataan SISALLOSTA: vahintaan yksi
+# kalibroitunut liiga (silta on koko mallin idea) ja seuramaara jota pelkka
+# turnausjoukko (36) ei voi saavuttaa. 8.9 mitattu: 121 seuraa, 5 liigaa.
+MIN_CLUBS = 80
+
+
+def validate(dc: DixonColesModel, calibrated_leagues: list[str]) -> tuple[bool, str]:
+    """(kelpaa, syy) - sama saanto bakelle (ei kirjoiteta) ja lukijalle (ei ladata)."""
+    if not calibrated_leagues:
+        return False, "ei yhtaan kalibroitunutta liigaa - pelkka turnausjoukko ilman siltaa"
+    n = len(getattr(dc, "attack", {}) or {})
+    if n < MIN_CLUBS:
+        return False, f"vain {n} seuraa (< {MIN_CLUBS}) - kotiliigat puuttuvat"
+    return True, f"{n} seuraa, {len(calibrated_leagues)} kalibroitunutta liigaa"
+
 
 def _now() -> _dt.datetime:
     return _dt.datetime.now(_dt.timezone.utc)
 
 
 def save(dc: DixonColesModel, *, tournament: str, season_pair: list[str],
-         decay: float, extra: dict | None = None, path: Path | None = None,
+         decay: float, calibrated_leagues: list[str],
+         extra: dict | None = None, path: Path | None = None,
          now: _dt.datetime | None = None) -> dict:
-    """Sarjallista taitettu malli. Palauttaa metan (testeille ja lokille)."""
+    """Sarjallista taitettu malli. Palauttaa metan (testeille ja lokille).
+
+    Kieltaytyy (ValueError) jos malli ei lapaise `validate`a: ohutta
+    artefaktia ei kirjoiteta levylle edes valiaikaisesti.
+    """
+    ok, syy = validate(dc, calibrated_leagues)
+    if not ok:
+        raise ValueError(f"artefaktia ei kirjoiteta: {syy}")
     meta = {
+        "calibrated_leagues": sorted(calibrated_leagues),
         "format_version": FORMAT_VERSION,
         "built_at": (now or _now()).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "tournament": tournament,
@@ -112,6 +140,11 @@ def load(*, tournament: str, season_pair: list[str], decay: float,
         return None, syy
     if not d.get("attack"):
         return None, "artefaktissa ei ole yhtaan seuraa"
+    class _Kuori:  # validate lukee vain .attack
+        attack = d.get("attack") or {}
+    ok, syy2 = validate(_Kuori(), list(meta.get("calibrated_leagues") or []))
+    if not ok:
+        return None, syy2
     dc = DixonColesModel(
         attack=d["attack"],
         defence=d["defence"],

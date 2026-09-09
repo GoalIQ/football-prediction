@@ -32,9 +32,16 @@ def main() -> int:
     except Exception as e:  # HTTPException tai datavirhe
         print(f"VIRHE: yhteisfitti epaonnistui: {type(e).__name__}: {e}")
         return 1
-    meta = uefa_prebuilt.save(dc, tournament=TOURNAMENT, season_pair=pari,
-                              decay=decay,
-                              extra={"fit_seconds": round(time.time() - t0, 1)})
+    liigat = list(getattr(dc, "uefa_calibrated_leagues_", []) or [])
+    try:
+        meta = uefa_prebuilt.save(dc, tournament=TOURNAMENT, season_pair=pari,
+                                  decay=decay, calibrated_leagues=liigat,
+                                  extra={"fit_seconds": round(time.time() - t0, 1)})
+    except ValueError as e:
+        # 9.9: CI ilman football-data-avainta tuotti 36 seuran mallin ilman
+        # siltaa. Ohut malli ei mene levylle; edellinen artefakti jaa.
+        print(f"VIRHE: {e}")
+        return 1
     print(f"UEFA-malli kirjoitettu: {meta['n_clubs']} seuraa, {meta['built_at']}, "
           f"fitti {meta['fit_seconds']} s -> {uefa_prebuilt.PATH}")
     return 0
