@@ -5,8 +5,8 @@
   "matchday": 1,
   "players_matchday": 1,
   "players_matchday_is_fallback": false,
-  "feed_updated_utc": "2026-09-09T16:15:14+00:00",
-  "feed_timestamp_raw": "9/9/2026 4:15:14 PM",
+  "feed_updated_utc": "2026-09-09T20:24:38+00:00",
+  "feed_timestamp_raw": "9/9/2026 8:24:38 PM",
   "points_basis": "prev_season_points and prev_season_minutes are last season's UCL totals, carried in the feed before any matchday of this season is played (teamPlayed = 0)",
   "players": 1163,
   "teams": 36
@@ -14,9 +14,9 @@
  "matchdays": [
   {
    "md": 1,
-   "deadline_utc": "2026-09-09T18:45:00+00:00",
+   "deadline_utc": "2026-09-10T18:45:00+00:00",
    "is_current": true,
-   "is_locked": false,
+   "is_locked": true,
    "subs_allowed": 2
   },
   {
@@ -364,7 +364,7 @@
    "team_id": "50037",
    "pos": "FWD",
    "price": 11.0,
-   "owned_pct": 55.0,
+   "owned_pct": 54.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -380,9 +380,11 @@
    "price": 10.0,
    "owned_pct": 32.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101808",
@@ -394,9 +396,11 @@
    "price": 10.0,
    "owned_pct": 27.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250172668",
@@ -408,9 +412,11 @@
    "price": 10.0,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250066886",
@@ -422,9 +428,11 @@
    "price": 10.0,
    "owned_pct": 14.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250112880",
@@ -434,11 +442,13 @@
    "team_id": "50080",
    "pos": "MID",
    "price": 9.5,
-   "owned_pct": 39.0,
+   "owned_pct": 40.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250121533",
@@ -510,9 +520,11 @@
    "price": 8.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250080553",
@@ -556,9 +568,11 @@
    "price": 8.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250106939",
@@ -570,9 +584,11 @@
    "price": 8.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250162177",
@@ -584,9 +600,11 @@
    "price": 8.5,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117036",
@@ -598,9 +616,11 @@
    "price": 8.0,
    "owned_pct": 8.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250081720",
@@ -612,9 +632,11 @@
    "price": 8.0,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250132987",
@@ -626,9 +648,11 @@
    "price": 8.0,
    "owned_pct": 6.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250124430",
@@ -638,7 +662,7 @@
    "team_id": "50037",
    "pos": "MID",
    "price": 8.0,
-   "owned_pct": 1.0,
+   "owned_pct": 2.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -654,9 +678,11 @@
    "price": 8.0,
    "owned_pct": 1.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250132811",
@@ -682,9 +708,11 @@
    "price": 8.0,
    "owned_pct": 7.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250130221",
@@ -696,9 +724,11 @@
    "price": 8.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250134304",
@@ -710,9 +740,11 @@
    "price": 7.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250096849",
@@ -724,9 +756,11 @@
    "price": 7.5,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250150887",
@@ -754,9 +788,11 @@
    "price": 7.5,
    "owned_pct": 1.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250220373",
@@ -844,9 +880,11 @@
    "price": 7.5,
    "owned_pct": 7.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250102035",
@@ -856,11 +894,13 @@
    "team_id": "50124",
    "pos": "FWD",
    "price": 7.5,
-   "owned_pct": 0.0,
+   "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101444",
@@ -872,9 +912,11 @@
    "price": 7.5,
    "owned_pct": 18.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250124460",
@@ -886,9 +928,11 @@
    "price": 7.5,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250143693",
@@ -898,11 +942,13 @@
    "team_id": "50080",
    "pos": "MID",
    "price": 7.5,
-   "owned_pct": 7.0,
+   "owned_pct": 8.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250139217",
@@ -930,9 +976,11 @@
    "price": 7.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250174838",
@@ -960,9 +1008,11 @@
    "price": 7.5,
    "owned_pct": 13.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223201",
@@ -988,11 +1038,13 @@
    "team_id": "50080",
    "pos": "MID",
    "price": 7.0,
-   "owned_pct": 5.0,
+   "owned_pct": 6.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250132829",
@@ -1094,9 +1146,11 @@
    "price": 7.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250160436",
@@ -1108,9 +1162,11 @@
    "price": 7.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250086333",
@@ -1136,9 +1192,11 @@
    "price": 7.0,
    "owned_pct": 14.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250163689",
@@ -1166,9 +1224,11 @@
    "price": 7.0,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250099258",
@@ -1180,9 +1240,11 @@
    "price": 7.0,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250059115",
@@ -1210,9 +1272,11 @@
    "price": 7.0,
    "owned_pct": 20.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250089228",
@@ -1224,9 +1288,11 @@
    "price": 7.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250076654",
@@ -1268,9 +1334,11 @@
    "price": 7.0,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117617",
@@ -1314,9 +1382,11 @@
    "price": 7.0,
    "owned_pct": 8.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101534",
@@ -1376,9 +1446,11 @@
    "price": 7.0,
    "owned_pct": 8.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250127347",
@@ -1390,9 +1462,11 @@
    "price": 7.0,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250181849",
@@ -1448,9 +1522,11 @@
    "price": 7.0,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250088246",
@@ -1476,9 +1552,11 @@
    "price": 7.0,
    "owned_pct": 1.0,
    "status": "doubtful",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250008901",
@@ -1490,9 +1568,11 @@
    "price": 7.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250194573",
@@ -1534,9 +1614,11 @@
    "price": 6.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135496",
@@ -1596,9 +1678,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250079670",
@@ -1610,9 +1694,11 @@
    "price": 6.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250198119",
@@ -1623,10 +1709,12 @@
    "pos": "MID",
    "price": 6.5,
    "owned_pct": 0.0,
-   "status": "available",
-   "matchdays_played": 0,
+   "status": "doubtful",
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "98023",
@@ -1744,9 +1832,11 @@
    "price": 6.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250116683",
@@ -1772,9 +1862,11 @@
    "price": 6.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250058958",
@@ -1802,9 +1894,11 @@
    "price": 6.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250064482",
@@ -1816,9 +1910,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250087919",
@@ -1906,9 +2002,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250134320",
@@ -1934,9 +2032,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250153634",
@@ -1948,9 +2048,11 @@
    "price": 6.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250081555",
@@ -2052,9 +2154,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250064188",
@@ -2082,9 +2186,11 @@
    "price": 6.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250064006",
@@ -2110,9 +2216,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250105890",
@@ -2156,9 +2264,11 @@
    "price": 6.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250174874",
@@ -2200,9 +2310,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250059699",
@@ -2242,9 +2354,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250122927",
@@ -2270,9 +2384,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250139255",
@@ -2284,9 +2400,11 @@
    "price": 6.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250099867",
@@ -2298,9 +2416,11 @@
    "price": 6.0,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250100013",
@@ -2328,9 +2448,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "50327420",
@@ -2342,9 +2464,11 @@
    "price": 6.0,
    "owned_pct": 13.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250159919",
@@ -2370,7 +2494,7 @@
    "team_id": "50051",
    "pos": "GK",
    "price": 6.0,
-   "owned_pct": 15.0,
+   "owned_pct": 16.0,
    "status": "available",
    "matchdays_played": 1,
    "prev_season_points": 0,
@@ -2388,9 +2512,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250129159",
@@ -2494,9 +2620,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250182090",
@@ -2568,9 +2696,11 @@
    "price": 6.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250106762",
@@ -2628,9 +2758,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250042406",
@@ -2656,9 +2788,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250124222",
@@ -2702,9 +2836,11 @@
    "price": 6.0,
    "owned_pct": 30.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250167832",
@@ -2732,9 +2868,11 @@
    "price": 6.0,
    "owned_pct": 11.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250100997",
@@ -2776,9 +2914,11 @@
    "price": 6.0,
    "owned_pct": 32.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250174126",
@@ -2788,11 +2928,13 @@
    "team_id": "52747",
    "pos": "DEF",
    "price": 6.0,
-   "owned_pct": 10.0,
+   "owned_pct": 9.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250221011",
@@ -2804,9 +2946,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250174644",
@@ -2936,9 +3080,11 @@
    "price": 6.0,
    "owned_pct": 35.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250080569",
@@ -3014,9 +3160,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "50327423",
@@ -3028,9 +3176,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250024456",
@@ -3056,9 +3206,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250145630",
@@ -3070,9 +3222,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250042521",
@@ -3100,9 +3254,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250127400",
@@ -3114,9 +3270,11 @@
    "price": 6.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250131901",
@@ -3128,9 +3286,11 @@
    "price": 6.0,
    "owned_pct": 26.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250140929",
@@ -3186,9 +3346,11 @@
    "price": 5.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250099671",
@@ -3242,9 +3404,11 @@
    "price": 5.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250130406",
@@ -3286,9 +3450,11 @@
    "price": 5.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250042329",
@@ -3332,9 +3498,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224147",
@@ -3388,9 +3556,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250075767",
@@ -3416,9 +3586,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250205755",
@@ -3446,9 +3618,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "suspended",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250211008",
@@ -3460,9 +3634,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250143322",
@@ -3490,9 +3666,11 @@
    "price": 5.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250077450",
@@ -3504,9 +3682,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "97923",
@@ -3532,9 +3712,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250076240",
@@ -3592,9 +3774,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250221031",
@@ -3606,9 +3790,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250182174",
@@ -3664,9 +3850,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187671",
@@ -3832,9 +4020,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250076357",
@@ -3922,9 +4112,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250127439",
@@ -3936,9 +4128,11 @@
    "price": 5.5,
    "owned_pct": 4.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250126369",
@@ -3950,9 +4144,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250164215",
@@ -3964,9 +4160,11 @@
    "price": 5.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250176453",
@@ -3978,9 +4176,11 @@
    "price": 5.5,
    "owned_pct": 22.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250128270",
@@ -4008,9 +4208,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250097248",
@@ -4082,9 +4284,11 @@
    "price": 5.5,
    "owned_pct": 1.0,
    "status": "doubtful",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250070130",
@@ -4156,9 +4360,11 @@
    "price": 5.5,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187759",
@@ -4184,9 +4390,11 @@
    "price": 5.5,
    "owned_pct": 8.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250164226",
@@ -4230,9 +4438,11 @@
    "price": 5.5,
    "owned_pct": 6.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250169763",
@@ -4274,9 +4484,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250081185",
@@ -4332,9 +4544,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250113350",
@@ -4378,9 +4592,11 @@
    "price": 5.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250079003",
@@ -4422,9 +4638,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250096309",
@@ -4436,9 +4654,11 @@
    "price": 5.5,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250128222",
@@ -4480,9 +4700,11 @@
    "price": 5.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250165376",
@@ -4586,9 +4808,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250153945",
@@ -4632,9 +4856,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250091013",
@@ -4662,9 +4888,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135064",
@@ -4676,9 +4904,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250132062",
@@ -4764,9 +4994,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250177501",
@@ -4778,9 +5010,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250198116",
@@ -4792,9 +5026,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187059",
@@ -4820,9 +5056,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101874",
@@ -4834,9 +5072,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250212206",
@@ -4876,9 +5116,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "doubtful",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250098470",
@@ -5196,9 +5438,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250055894",
@@ -5256,9 +5500,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216956",
@@ -5270,9 +5516,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250062141",
@@ -5284,9 +5532,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250086090",
@@ -5296,7 +5546,7 @@
    "team_id": "52692",
    "pos": "DEF",
    "price": 5.0,
-   "owned_pct": 0.0,
+   "owned_pct": 1.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -5312,9 +5562,11 @@
    "price": 5.0,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250218678",
@@ -5326,9 +5578,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250153874",
@@ -5356,9 +5610,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250139044",
@@ -5370,9 +5626,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250073809",
@@ -5472,9 +5730,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250172343",
@@ -5486,9 +5746,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117917",
@@ -5620,9 +5882,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250168991",
@@ -5698,9 +5962,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250197453",
@@ -5726,9 +5992,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250192004",
@@ -5740,9 +6008,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200314",
@@ -5770,9 +6040,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135101",
@@ -5846,9 +6118,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250113342",
@@ -5860,9 +6134,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250064233",
@@ -5906,9 +6182,11 @@
    "price": 5.0,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250076233",
@@ -5918,7 +6196,7 @@
    "team_id": "79946",
    "pos": "DEF",
    "price": 5.0,
-   "owned_pct": 1.0,
+   "owned_pct": 2.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -5980,9 +6258,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216944",
@@ -5994,9 +6274,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250163878",
@@ -6008,9 +6290,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250164450",
@@ -6022,9 +6306,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250208803",
@@ -6036,9 +6322,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250199220",
@@ -6050,9 +6338,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223247",
@@ -6064,9 +6354,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250106148",
@@ -6092,9 +6384,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223245",
@@ -6106,9 +6400,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250065179",
@@ -6120,9 +6416,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250210009",
@@ -6134,9 +6432,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250136342",
@@ -6148,9 +6448,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250078452",
@@ -6162,9 +6464,11 @@
    "price": 5.0,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250103764",
@@ -6176,9 +6480,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250085369",
@@ -6222,9 +6528,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250022815",
@@ -6236,9 +6544,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250138504",
@@ -6250,9 +6560,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250056189",
@@ -6342,9 +6654,11 @@
    "price": 5.0,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135339",
@@ -6404,9 +6718,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117864",
@@ -6418,9 +6734,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250026721",
@@ -6534,9 +6852,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250198298",
@@ -6576,9 +6896,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250027008",
@@ -6632,9 +6954,11 @@
    "price": 5.0,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250110583",
@@ -6660,9 +6984,11 @@
    "price": 5.0,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250177928",
@@ -6674,9 +7000,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250163153",
@@ -6688,9 +7016,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250118131",
@@ -6702,9 +7032,11 @@
    "price": 5.0,
    "owned_pct": 17.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250210296",
@@ -6716,9 +7048,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250042209",
@@ -6838,9 +7172,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250168211",
@@ -6974,9 +7310,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250145803",
@@ -7016,7 +7354,7 @@
    "team_id": "52919",
    "pos": "DEF",
    "price": 5.0,
-   "owned_pct": 8.0,
+   "owned_pct": 7.0,
    "status": "injured",
    "matchdays_played": 1,
    "prev_season_points": 0,
@@ -7034,9 +7372,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250151632",
@@ -7048,9 +7388,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187184",
@@ -7090,9 +7432,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250099054",
@@ -7148,9 +7492,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216080",
@@ -7162,9 +7508,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250075007",
@@ -7174,7 +7522,7 @@
    "team_id": "52682",
    "pos": "DEF",
    "price": 5.0,
-   "owned_pct": 3.0,
+   "owned_pct": 4.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -7204,9 +7552,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250213748",
@@ -7246,9 +7596,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250163777",
@@ -7290,9 +7642,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250110724",
@@ -7304,9 +7658,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250164476",
@@ -7318,9 +7674,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250189858",
@@ -7362,9 +7720,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250225251",
@@ -7408,9 +7768,11 @@
    "price": 5.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250192609",
@@ -7422,9 +7784,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250118957",
@@ -7464,9 +7828,11 @@
    "price": 5.0,
    "owned_pct": 17.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250177597",
@@ -7478,9 +7844,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250177602",
@@ -7492,9 +7860,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224184",
@@ -7520,9 +7890,11 @@
    "price": 5.0,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200525",
@@ -7638,9 +8010,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224881",
@@ -7668,9 +8042,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250192702",
@@ -7682,9 +8058,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250026751",
@@ -7814,9 +8192,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250183342",
@@ -7858,9 +8238,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250091841",
@@ -7914,9 +8296,11 @@
    "price": 5.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250134856",
@@ -8062,11 +8446,13 @@
    "team_id": "52280",
    "pos": "DEF",
    "price": 4.5,
-   "owned_pct": 32.0,
+   "owned_pct": 31.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250163454",
@@ -8078,9 +8464,11 @@
    "price": 4.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250181082",
@@ -8092,9 +8480,11 @@
    "price": 4.5,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224146",
@@ -8214,9 +8604,11 @@
    "price": 4.5,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250092668",
@@ -8228,9 +8620,11 @@
    "price": 4.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250112513",
@@ -8242,9 +8636,11 @@
    "price": 4.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135416",
@@ -8256,9 +8652,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250190383",
@@ -8270,9 +8668,11 @@
    "price": 4.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250176861",
@@ -8298,9 +8698,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250103561",
@@ -8312,9 +8714,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "suspended",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250014002",
@@ -8326,9 +8730,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250127239",
@@ -8556,7 +8962,7 @@
    "team_id": "59333",
    "pos": "DEF",
    "price": 4.5,
-   "owned_pct": 0.0,
+   "owned_pct": 1.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -8658,7 +9064,7 @@
    "team_id": "50043",
    "pos": "GK",
    "price": 4.5,
-   "owned_pct": 10.0,
+   "owned_pct": 9.0,
    "status": "available",
    "matchdays_played": 1,
    "prev_season_points": 0,
@@ -8862,9 +9268,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250182482",
@@ -8876,9 +9284,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250092129",
@@ -8890,9 +9300,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250183808",
@@ -8904,9 +9316,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250180110",
@@ -8918,9 +9332,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250087967",
@@ -8932,9 +9348,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187845",
@@ -8946,9 +9364,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187148",
@@ -8960,9 +9380,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250043129",
@@ -8974,9 +9396,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250203435",
@@ -8988,9 +9412,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117015",
@@ -9002,9 +9428,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250076489",
@@ -9016,9 +9444,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250102736",
@@ -9046,9 +9476,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216977",
@@ -9060,9 +9492,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250099374",
@@ -9074,9 +9508,11 @@
    "price": 4.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250116951",
@@ -9278,7 +9714,7 @@
    "team_id": "52277",
    "pos": "GK",
    "price": 4.5,
-   "owned_pct": 0.0,
+   "owned_pct": 1.0,
    "status": "available",
    "matchdays_played": 0,
    "prev_season_points": 0,
@@ -9322,9 +9758,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250203207",
@@ -9336,9 +9774,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101805",
@@ -9350,9 +9790,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250188247",
@@ -9412,9 +9854,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250154416",
@@ -9426,9 +9870,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250198114",
@@ -9678,9 +10124,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250143242",
@@ -9724,9 +10172,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250066753",
@@ -9738,9 +10188,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250129412",
@@ -9752,9 +10204,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250059233",
@@ -9766,9 +10220,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250020885",
@@ -9780,9 +10236,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135068",
@@ -9794,9 +10252,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250063803",
@@ -9808,9 +10268,11 @@
    "price": 4.5,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250192037",
@@ -10806,9 +11268,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250137390",
@@ -10820,9 +11284,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250208842",
@@ -10834,9 +11300,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117415",
@@ -10848,9 +11316,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250136464",
@@ -10862,9 +11332,11 @@
    "price": 4.5,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250180059",
@@ -10876,9 +11348,11 @@
    "price": 4.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187284",
@@ -10890,9 +11364,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187727",
@@ -10904,9 +11380,11 @@
    "price": 4.5,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250196709",
@@ -10918,9 +11396,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250107477",
@@ -10932,9 +11412,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250077643",
@@ -10946,9 +11428,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250176533",
@@ -10960,9 +11444,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250170132",
@@ -10974,9 +11460,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250090766",
@@ -10988,9 +11476,11 @@
    "price": 4.5,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101564",
@@ -11002,9 +11492,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "suspended",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250201752",
@@ -11016,9 +11508,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250101240",
@@ -11030,9 +11524,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250170952",
@@ -11044,9 +11540,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250184508",
@@ -11058,9 +11556,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250173127",
@@ -11168,9 +11668,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250134170",
@@ -11182,9 +11684,11 @@
    "price": 4.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250128385",
@@ -11290,9 +11794,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250197123",
@@ -11320,9 +11826,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250131541",
@@ -11334,9 +11842,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250139101",
@@ -11348,9 +11858,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250210294",
@@ -11362,9 +11874,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250121132",
@@ -11376,9 +11890,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250105502",
@@ -11390,9 +11906,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250222222",
@@ -11404,9 +11922,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250116759",
@@ -11418,9 +11938,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250116653",
@@ -11432,9 +11954,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250157134",
@@ -11446,9 +11970,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "108567",
@@ -11742,9 +12268,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250186054",
@@ -11972,9 +12500,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250126069",
@@ -12030,9 +12560,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224345",
@@ -12044,9 +12576,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250205688",
@@ -12272,9 +12806,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250225046",
@@ -12436,9 +12972,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200556",
@@ -12450,9 +12988,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250199588",
@@ -12464,9 +13004,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250218024",
@@ -12478,9 +13020,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250193618",
@@ -12492,9 +13036,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250190226",
@@ -12506,9 +13052,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250185405",
@@ -12568,9 +13116,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223128",
@@ -12680,9 +13230,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250139481",
@@ -12693,10 +13245,12 @@
    "pos": "DEF",
    "price": 4.5,
    "owned_pct": 0.0,
-   "status": "available",
-   "matchdays_played": 0,
+   "status": "doubtful",
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250210010",
@@ -12707,10 +13261,12 @@
    "pos": "DEF",
    "price": 4.5,
    "owned_pct": 0.0,
-   "status": "available",
-   "matchdays_played": 0,
+   "status": "doubtful",
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250144866",
@@ -12722,9 +13278,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "1905505",
@@ -12736,9 +13294,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250174059",
@@ -12750,9 +13310,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250160883",
@@ -12792,9 +13354,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250159556",
@@ -12822,9 +13386,11 @@
    "price": 4.5,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223167",
@@ -12850,9 +13416,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250129343",
@@ -12908,9 +13476,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250170005",
@@ -12936,9 +13506,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250212934",
@@ -12950,9 +13522,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250189922",
@@ -12964,9 +13538,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250206687",
@@ -12978,9 +13554,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224253",
@@ -12992,9 +13570,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200716",
@@ -13038,9 +13618,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223290",
@@ -13052,9 +13634,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250210217",
@@ -13066,9 +13650,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250169944",
@@ -13080,9 +13666,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250190377",
@@ -13094,9 +13682,11 @@
    "price": 4.5,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250097935",
@@ -13108,9 +13698,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250112803",
@@ -13166,9 +13758,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216955",
@@ -13180,9 +13774,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250117946",
@@ -13194,9 +13790,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250220317",
@@ -13240,9 +13838,11 @@
    "price": 4.5,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250173424",
@@ -13268,9 +13868,11 @@
    "price": 4.5,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250024301",
@@ -13340,9 +13942,11 @@
    "price": 4.0,
    "owned_pct": 9.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250118383",
@@ -13484,9 +14088,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250058260",
@@ -13922,9 +14528,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223275",
@@ -13936,9 +14544,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "doubtful",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250119185",
@@ -13950,9 +14560,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250193442",
@@ -13964,9 +14576,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250193777",
@@ -13978,9 +14592,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250225269",
@@ -14070,9 +14686,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250065792",
@@ -14084,9 +14702,11 @@
    "price": 4.0,
    "owned_pct": 12.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250212172",
@@ -14098,9 +14718,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250218212",
@@ -14112,9 +14734,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224503",
@@ -14126,9 +14750,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250084903",
@@ -14154,9 +14780,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223129",
@@ -14168,9 +14796,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250170133",
@@ -14278,9 +14908,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250139356",
@@ -14292,9 +14924,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250206683",
@@ -14306,9 +14940,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "102420",
@@ -14336,9 +14972,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250182524",
@@ -14406,9 +15044,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250191764",
@@ -14464,9 +15104,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223139",
@@ -14506,9 +15148,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250188465",
@@ -14550,9 +15194,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200894",
@@ -14564,9 +15210,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250135429",
@@ -14578,9 +15226,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250176826",
@@ -14592,9 +15242,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250161248",
@@ -14606,9 +15258,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250225049",
@@ -14620,9 +15274,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250178085",
@@ -14634,9 +15290,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250126914",
@@ -14648,9 +15306,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250123956",
@@ -14662,9 +15322,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250165232",
@@ -14704,9 +15366,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250183766",
@@ -14718,9 +15382,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250199595",
@@ -14732,9 +15398,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250199589",
@@ -14746,9 +15414,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250199597",
@@ -14760,9 +15430,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250189848",
@@ -14774,9 +15446,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200576",
@@ -14788,9 +15462,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216077",
@@ -14802,9 +15478,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250190228",
@@ -14816,9 +15494,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250153677",
@@ -15140,9 +15820,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250154425",
@@ -15154,9 +15836,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250201718",
@@ -15246,9 +15930,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250043066",
@@ -15260,9 +15946,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250076631",
@@ -15274,9 +15962,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250216846",
@@ -15318,9 +16008,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250058215",
@@ -15332,9 +16024,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "101529",
@@ -15450,9 +16144,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "107754",
@@ -15494,9 +16190,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250171976",
@@ -15538,9 +16236,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250164008",
@@ -15612,9 +16312,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250177929",
@@ -15642,9 +16344,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250110137",
@@ -15656,9 +16360,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250124826",
@@ -15670,9 +16376,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250188006",
@@ -15748,9 +16456,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250144186",
@@ -15762,9 +16472,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250179564",
@@ -15776,9 +16488,11 @@
    "price": 4.0,
    "owned_pct": 5.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250181167",
@@ -15804,9 +16518,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250209023",
@@ -15834,9 +16550,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250132323",
@@ -15848,9 +16566,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250210289",
@@ -15892,9 +16612,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250127538",
@@ -15906,9 +16628,11 @@
    "price": 4.0,
    "owned_pct": 4.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250119144",
@@ -15920,9 +16644,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250103750",
@@ -15934,9 +16660,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250085663",
@@ -15992,9 +16720,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250186841",
@@ -16006,9 +16736,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250199540",
@@ -16020,9 +16752,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250123894",
@@ -16034,9 +16768,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250138384",
@@ -16062,9 +16798,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250194472",
@@ -16076,9 +16814,11 @@
    "price": 4.0,
    "owned_pct": 2.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250027039",
@@ -16089,10 +16829,12 @@
    "pos": "DEF",
    "price": 4.0,
    "owned_pct": 0.0,
-   "status": "available",
-   "matchdays_played": 0,
+   "status": "doubtful",
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250006714",
@@ -16120,9 +16862,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250125340",
@@ -16134,9 +16878,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250089238",
@@ -16148,9 +16894,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "not_in_squad",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250189793",
@@ -16176,9 +16924,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250070418",
@@ -16190,9 +16940,11 @@
    "price": 4.0,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250136347",
@@ -16204,9 +16956,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "doubtful",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250190378",
@@ -16260,9 +17014,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250130006",
@@ -16274,9 +17030,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250114145",
@@ -16362,9 +17120,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223379",
@@ -16392,9 +17152,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "doubtful",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250184503",
@@ -16422,9 +17184,11 @@
    "price": 4.0,
    "owned_pct": 3.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250223204",
@@ -16452,9 +17216,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250177594",
@@ -16498,9 +17264,11 @@
    "price": 4.0,
    "owned_pct": 5.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250217987",
@@ -16634,9 +17402,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250115749",
@@ -16678,9 +17448,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250115748",
@@ -16706,9 +17478,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250052788",
@@ -16778,9 +17552,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "injured",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250200313",
@@ -16792,9 +17568,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250168437",
@@ -16850,9 +17628,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250176491",
@@ -16906,9 +17686,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250004740",
@@ -16962,9 +17744,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250160990",
@@ -16976,9 +17760,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250224837",
@@ -16990,9 +17776,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250194557",
@@ -17018,9 +17806,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250187221",
@@ -17032,9 +17822,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250218467",
@@ -17282,9 +18074,11 @@
    "price": 4.0,
    "owned_pct": 0.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250042625",
@@ -17296,9 +18090,11 @@
    "price": 4.0,
    "owned_pct": 1.0,
    "status": "available",
-   "matchdays_played": 0,
+   "matchdays_played": 1,
    "prev_season_points": 0,
-   "prev_season_minutes": 0
+   "prev_season_minutes": 0,
+   "points": 0,
+   "minutes": 0
   },
   {
    "id": "250112138",
@@ -17356,7 +18152,7 @@
    "team_id": "52277",
    "pos": "DEF",
    "price": 4.0,
-   "owned_pct": 0.0,
+   "owned_pct": 1.0,
    "status": "doubtful",
    "matchdays_played": 0,
    "prev_season_points": 0,
