@@ -404,6 +404,18 @@ def card_stats(args) -> dict:
     }
 
 
+def _as_of(data: dict) -> str:
+    """'9 Sep' artefaktin generated_at-leimasta. Projektio kirjoitetaan uusiksi
+    3 h valein, joten kortti ilman paivaysta ei kerro onko se vanha vai vaara."""
+    g = str((data.get("meta") or {}).get("generated_at") or "")[:10]
+    kk = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    try:
+        return f"{int(g[8:10])} {kk[int(g[5:7]) - 1]}"
+    except (ValueError, IndexError):
+        return "today"
+
+
 def card_xp(args) -> dict:
     """Seuraavan gameweekin xP-top: viikkopostauksen kortti.
 
@@ -414,62 +426,44 @@ def card_xp(args) -> dict:
     """
     data = _xp_payload()
     gw = data["meta"]["next_gameweek"]
-    # 9.9: "mista pisteet tulevat" luetaan samasta why-artefaktista jota
-    # /fpl/why ja SPA:n pelaajakortti kayttavat (data/fpl_why.json, drivers).
-    # Ei omaa tulkintaa kortissa: sama lahde, sama sanasto.
-    why = {}
-    try:
-        _w = json.loads((DATA / "fpl_why.json").read_text(encoding="utf-8"))
-        _src = next((_w[k] for k in ("entries", "players") if isinstance(_w.get(k), dict)), _w)
-        why = {str(k): v for k, v in _src.items()
-               if isinstance(v, dict) and v.get("gw") == gw}
-    except (OSError, ValueError):
-        why = {}
-    DRIVER_LABEL = {"minutes": "minutes", "attacking_output": "goals & assists",
-                    "clean_sheets": "clean sheets", "set_pieces": "set pieces",
-                    "bonus": "bonus", "fixtures": "fixtures",
-                    "defensive_contribution": "defcon"}
+    # 9.9 PORTTI: pisteiden ajurit ("from goals & assists + set pieces")
+    # EIVAT tule korttiin. Ne ovat premium-selite (api/main.py: why liitetaan
+    # vain maskaamattomaan vastaukseen), /fpl/why-sivua ei ole, eika
+    # ilmaissivulla ole set piece- tai driver-tietoa. Kortti saa nayttaa vain
+    # sen mika on tarkistettavissa ilman tilia: xP, fixture ja xMins.
+    # 9.9 PORTTI: sivu (#gw-xp) jarjestaa top_projected-lukijalla (tasapeli
+    # id:lla, korkeintaan MAX_PER_CLUB per seura). Kortti lajitteli itse ja
+    # nayttti Joao Pedron ennen Palmeria (molemmat 5.11) kun sivu naytti
+    # painvastoin. Yksi lukija molemmille, ei kahta lajittelua.
+    from src.models.fpl_gw_xp import top_projected
     rows = []
-    for p in data.get("players", []):
+    for p in top_projected(data.get("players", []), gw, args.top):
         g = next((g for g in (p.get("gameweeks") or []) if g.get("gw") == gw),
                  None)
         if not g:
             continue
         opps = g.get("opponents") or []
         fx = ", ".join(f"{o['opp']} ({o['venue']})" for o in opps) if opps             else "Blank"
-        sp = p.get("set_pieces") or {}
+        # 9.9 PORTTI: P/FK-badget pois - set piece -tietoa ei ole
+        # ilmaissivulla, joten merkki olisi vaite ilman reittia.
         badges = []
-        if isinstance(sp.get("pens"), (int, float)) and sp["pens"] <= 2:
-            badges.append("P")
-        if isinstance(sp.get("fk"), (int, float)) and sp["fk"] <= 2:
-            badges.append("FK")
         xm = p.get("xmins")
-        # "minutes" on jokaisen ensimmainen ajuri ja xMins on jo rivilla:
-        # nayta ne kaksi ajuria jotka erottavat pelaajat toisistaan.
-        drv = [DRIVER_LABEL.get(x, x) for x in
-               ((why.get(str(p.get("id"))) or {}).get("drivers") or [])
-               if x != "minutes"][:2]
-        osat = []
-        if isinstance(xm, (int, float)):
-            osat.append(f"{xm:.0f} xMins")
-        if drv:
-            osat.append("from " + " + ".join(drv))
         rows.append({"name": p["web_name"], "tag": p["pos"],
                      "team": p["team_short"], "mid": fx,
                      "_xp": float(g.get("xp") or 0.0), "badges": badges,
-                     "sub": "  ·  ".join(osat) if osat else None})
+                     "sub": (f"{xm:.0f} xMins" if isinstance(xm, (int, float))
+                             else None)})
     if not rows:
         raise SystemExit(f"Ei xP-rivejä GW{gw}:lle.")
-    rows.sort(key=lambda r: r["_xp"], reverse=True)
-    rows = rows[:args.top]
     return {
         "title": f"GAMEWEEK {gw} TOP {len(rows)}",
         "subtitle": "expected points, GoalIQ match model",
         "nameLabel": "PLAYER",
         "midLabel": "FIXTURE",
         "valueLabel": "xP",
-        "footNote": "xMins = expected minutes; xP is scaled by them, not by 90",
-        "footNote2": "full list free at goaliq.app/fpl/expected-points  ·  model projections, not betting advice",
+        "footNote": "xMins = the minutes the model expects him to play",
+        "footNote2": (f"GW{gw} top 20 free, no account: goaliq.app/fpl/expected-points#gw-xp"
+                      f"  ·  as of {_as_of(data)}  ·  model projections, not betting advice"),
         "row_h": 104 if any(r.get("sub") for r in rows) else ROW_H,
         "rows": [dict(r, rank=i + 1, value=f"{r['_xp']:.2f}")
                  for i, r in enumerate(rows)],
