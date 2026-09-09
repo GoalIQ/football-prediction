@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import sys as _sys_early
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 UCL = ROOT / "ucl"
 SIVUT = ("index.html", "prices.html", "team-news.html")
+
+_sys_early.path.insert(0, str(ROOT))
+from src.models import ucl_phase  # noqa: E402
 
 
 def _html(nimi: str) -> str:
@@ -404,11 +408,29 @@ def test_tyhjan_selite_kulkee_taulukon_mukana():
 
     Assertio sitoo selitteen SIIHEN sivuun jolla tyhjia soluja on, ei
     kasin yllapidettyyn sivulistaan: uusi sivu ei voi karata portilta.
+
+    🔴 SKIP KUN KAUSI ON ALKANUT (9.9, ks. CLAUDE.md 6a-3). Selite ja tyhjat
+    solut koskevat VAIN esikautta: `prev_season_points`-sarake nayttaa
+    viime kauden lukua kunnes ensimmainen kierros on pelattu, ja sen
+    jalkeen sarake vaihtuu `points`-kenttaan jonka puuttuva arvo on 0, ei
+    tyhja (ks. `_pelaajarivit`). MD1:n deadline meni 8.9 18:45 UTC ja
+    seuraavassa ingestiossa (21:12 UTC) osalla pelaajista
+    `matchdays_played` oli jo >0 - `vaihe()` palautti KESKEN ja tama testi
+    kaatui 0 loydetylla tyhjalla solulla, vaikka mekanismi toimi tasan
+    dokumentoidusti. Testi vaitti pysyvaa faktaa hetkesta joka lakkasi
+    olemasta tosi. Ehto on nyt sama lukija jota tuotantokoodikin kayttaa
+    (`ucl_phase.vaihe`), ei paattelya datan muodosta.
+    Mekanismi on lukittu kaikissa kolmessa vaiheessa synteettisella datalla:
+    ks. `test_tyhjan_selite_jokaisessa_kauden_vaiheessa` alempana.
     """
     import json
     if not DATA_JSON.exists():
         pytest.skip("artefaktia ei ole")
     doc = json.loads(DATA_JSON.read_text(encoding="utf-8"))
+    if ucl_phase.vaihe(doc) != ucl_phase.ESIKAUSI:
+        pytest.skip("kausi on alkanut (vaihe != esikausi) - "
+                     "prev_season_points-selite ei koske enaa taman "
+                     "artefaktin vaihetta")
     odotettu = sum(1 for p in doc["players"]
                    if not p.get("prev_season_minutes"))
     tarkistettu = 0
@@ -574,3 +596,104 @@ def test_kontrolli_varausta_ei_lisata_kun_kierros_on_oma(render):
     assert "most recent player file UEFA has published" not in h, \
         f"{render.__name__}: varaus nakyy vaikka kierros on oma"
     assert "last update" in h.lower() or "Last update" in h
+
+
+# ---------------------------------------------------------------------------
+# 🔴 KAUDEN VAIHE MUUTTUU ALTA (CLAUDE.md 6a-3, mitattu 9.9.2026).
+#
+# `test_tyhjan_selite_kulkee_taulukon_mukana` kaatui CI:ssa 8.9 21:12 UTC -
+# EI koodivikana vaan koska kausi siirtyi esikaudesta kesken-vaiheeseen MD1:n
+# deadlinen (18:45 UTC) jalkeen: osalla pelaajista `matchdays_played` nousi
+# 0:sta 1:een, `ucl_phase.vaihe()` palautti KESKEN, ja `pistekentta()`
+# vaihtoi sarakkeen `prev_season_points`:sta `points`:iin - jolloin
+# puuttuva arvo on 0 (`vaiheet.arvo` palauttaa oletuksena 0), EI enaa tyhja
+# solu. Testi oletti implisiittisesti etta esikausi pysyy, koska se
+# kirjoitettiin esikaudella (7.9) eika sen jalkeen ajettu missaan muussa
+# vaiheessa ennen tuotantoa.
+#
+# Sama vikaluokka joka johti sriaantoon `tests/test_gameweek_phase_
+# invariants.py`:hen fpl-puolella: testi joka ajetaan vain nykyhetkessa on
+# vihrea siihen asti kun se lakkaa olemasta tosi. Korjaus tassa on sama
+# resepti: aja SAMA funktio (`sivu_hinnat`) synteettisilla dokumenteilla
+# jokaisessa `ucl_phase`-vaiheessa, jotta invariantti mitataan vaiheesta
+# eika kalenterista tai siita mika artefaktin sattuu olevan juuri nyt.
+# ---------------------------------------------------------------------------
+
+def _doc_vaihe(pelattu: int, dl2: str) -> dict:
+    """Synteettinen 2 pelaajan artefakti. B ei pelannut viime kaudella
+    (prev_season_minutes=0) - han on se pelaaja jonka sarake on tyhja
+    esikaudella ja "0" (ei tyhja) kesken/ohi-vaiheessa."""
+    return {
+        "meta": {"season_id": 90, "matchday": 1, "players_matchday": 1,
+                 "players_matchday_is_fallback": False,
+                 "feed_updated_utc": "2026-09-07T17:27:18+00:00",
+                 "players": 2, "teams": 2},
+        "matchdays": [
+            {"md": 1, "deadline_utc": "2026-09-08T18:45:00+00:00",
+             "is_locked": True, "gamedays": 1},
+            {"md": 2, "deadline_utc": dl2, "is_locked": False, "gamedays": 1},
+        ],
+        "teams": [{"id": 1, "name": "Club A", "code": "AAA"},
+                  {"id": 2, "name": "Club B", "code": "BBB"}],
+        "players": [
+            {"id": 1, "name": "A", "team": "Club A", "team_id": 1,
+             "team_code": "AAA", "pos": "MID", "price": 7.5,
+             "owned_pct": 12.0, "status": "available",
+             "matchdays_played": pelattu, "points": 3,
+             "prev_season_points": 40, "prev_season_minutes": 900},
+            {"id": 2, "name": "B", "team": "Club B", "team_id": 2,
+             "team_code": "BBB", "pos": "DEF", "price": 5.0,
+             "owned_pct": 3.0, "status": "available",
+             "matchdays_played": pelattu, "points": 0,
+             "prev_season_points": 0, "prev_season_minutes": 0},
+        ],
+    }
+
+
+_VAIHEET_KOE = (
+    pytest.param(
+        _doc_vaihe(0, "2026-10-13T18:45:00+00:00"),
+        _dt.datetime(2026, 9, 1, 12, 0, tzinfo=_dt.timezone.utc),
+        ucl_phase.ESIKAUSI, True, id="esikausi"),
+    pytest.param(
+        _doc_vaihe(1, "2026-10-13T18:45:00+00:00"),
+        _dt.datetime(2026, 9, 25, 12, 0, tzinfo=_dt.timezone.utc),
+        ucl_phase.KESKEN, False, id="kesken"),
+    pytest.param(
+        _doc_vaihe(1, "2026-10-13T18:45:00+00:00"),
+        _dt.datetime(2027, 6, 1, 12, 0, tzinfo=_dt.timezone.utc),
+        ucl_phase.OHI, False, id="ohi"),
+)
+
+
+@pytest.mark.parametrize("doc,nyt,odotettu_vaihe,selite_odotettu",
+                          _VAIHEET_KOE)
+def test_tyhjan_selite_jokaisessa_kauden_vaiheessa(
+        doc, nyt, odotettu_vaihe, selite_odotettu):
+    """Sama invariantti (tyhja solu <-> selite) mitattuna esikaudella,
+    kesken-vaiheessa JA kauden paatyttya - ei vain siina vaiheessa jossa
+    testi sattui olemaan kirjoitettu."""
+    # Mutaatiokontrolli fixturelle itselleen: jos synteettinen data ei
+    # todistettavasti edusta vaihetta jota vaitamme testaavamme, koko
+    # testi mittaisi vaaraa asiaa aanettomasti.
+    assert ucl_phase.vaihe(doc, nyt) == odotettu_vaihe, (
+        f"fixture ei edusta vaihetta {odotettu_vaihe!r} "
+        f"(oikea: {ucl_phase.vaihe(doc, nyt)!r})")
+
+    h = bp.sivu_hinnat(doc, nyt)
+    if selite_odotettu:
+        assert "points column is blank" in h, (
+            "esikaudella selitteen pitaa nakya kun sarakkeessa on tyhjia")
+        assert "Pts (last season)" in h
+        assert re.search(r"<tr><td>B</td>.*?<td></td><td></td></tr>", h), (
+            "pelaaja B:n prev_season_points-solun pitaa olla tyhja "
+            "esikaudella")
+    else:
+        assert "points column is blank" not in h, (
+            "selite nakyy vaikka Pts-sarake ei voi enaa olla tyhja - "
+            "points-kentan puuttuva arvo on 0, ei tyhja (ks. vaiheet.arvo)")
+        assert "Pts (last season)" not in h, (
+            "otsikko vaittaa viime kauden lukua vaikka vaihe ei ole esikausi")
+        assert re.search(r"<tr><td>B</td>.*?<td>0</td><td></td></tr>", h), (
+            "pelaaja B:n Pts-solun pitaa nayttaa 0, ei tyhjaa, "
+            "kesken/ohi-vaiheessa")
