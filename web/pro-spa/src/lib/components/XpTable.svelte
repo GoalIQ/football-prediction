@@ -358,12 +358,15 @@
 								: 'xP',
 				fileName: 'goaliq_xp_list.png',
 				// 3.9 (audit): PRICE-sarake on FPL:n omaa dataa.
-				footNote: 'xP from the GoalIQ model, price from FPL',
+				footNote: 'xP from the GoalIQ model, xMins = expected minutes, price from FPL',
 				rows: pool.slice(0, 10).map((p, i) => ({
 					rank: i + 1,
 					name: p.web_name,
 					tag: p.pos,
 					team: p.team_short,
+					// 9.9 (Villen pyynto): xMins korttiin omana merkkina. Sama luku
+					// kuin taulukon xMins-sarake (pyoristettyna), ei uusi vaite.
+					...(typeof p.xmins === 'number' ? { tag2: `${Math.round(p.xmins)} xMins` } : {}),
 					...(hasPrice && typeof p.price === 'number' ? { mid: p.price.toFixed(1) } : {}),
 					value:
 						sortBy === 'value'
