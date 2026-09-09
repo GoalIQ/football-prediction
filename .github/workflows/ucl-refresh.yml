@@ -111,9 +111,36 @@ jobs:
             echo "Ei muutoksia."
             exit 0
           fi
-          # 🔴 EI [skip ci]: se sammuttaa KAIKKI workflow't tasta pushista,
-          # myos hub-deployn, jolloin tuore data jaa repoon eika paady
-          # sivulle (muisti: skip-ci-proosassa-sammuttaa-koko-pushin).
-          git commit -m "chore(ucl): fantasy feed refresh"
+          # 9.9: [skip ci] ON tassa, ja se ei ole se joka esti deployn.
+          # GITHUB_TOKENilla tehty push EI KOSKAAN kaynnista workflow'ta,
+          # lipusta riippumatta - se on GitHubin rekursiosuoja. Ensimmainen
+          # onnistunut ajo (9.9 04:47, commit 91c0382d2) todisti sen: kolme
+          # UCL-sivua committiin, nolla check-runia, goaliq.app/ucl servasi
+          # edellista committia (md5 mitattu). Ainoa polku sivulle on
+          # hub-deployn dispatch alla, ja [skip ci] kertoo S10-signaalille
+          # etta rakentamattomuus on tarkoitettu (muisti:
+          # skip-ci-proosassa-sammuttaa-koko-pushin koskee IHMISEN pushia).
+          git commit -m "chore(ucl): fantasy feed refresh [skip ci]"
           git pull --rebase --autostash -q origin main || true
           git push origin main
+
+      # 9.9: DEPLOY EI RIIPU SIITA KUKA PUSHASI VAAN SIITA MITA LIVE SERVAA.
+      # Sama askel kuin accuracy-log/fpl-data-refresh/fpl-page-refresh:
+      # mittaa goaliq.app/ucl/* vs repo, dispatchaa hub-deployn jos eroaa,
+      # ja vahvistaa lopputilan. tests/test_workflow_deploy_verify.py vaatii
+      # taman jokaiselta workflow'lta joka lisaa servattavan sivun.
+      - name: Deploy-verify — live servaa repon UCL-sivut (+ itsekorjaus)
+        id: hubdispatch
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/verify_live_pages.sh ucl/index.html ucl/prices.html ucl/team-news.html
+
+      - name: Deploy health (fail loud, data jo committoitu)
+        if: always()
+        run: |
+          if [ "${{ steps.hubdispatch.outcome }}" = "failure" ]; then
+            echo "::error::deploy-verify FAILAA — goaliq.app/ucl EI servaa repon sivuja (data on committoitu, vain sivudeploy jai valiin)"
+            exit 1
+          fi
