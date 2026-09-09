@@ -465,7 +465,9 @@ def card_xp(args) -> dict:
         "footNote2": (f"GW{gw} top 20 free, no account: goaliq.app/fpl/expected-points#gw-xp"
                       f"  ·  as of {_as_of(data)}  ·  model projections, not betting advice"),
         "row_h": 104 if any(r.get("sub") for r in rows) else ROW_H,
-        "rows": [dict(r, rank=i + 1, value=f"{r['_xp']:.2f}")
+        # 9.9: sivun GW-osio nayttaa yhden desimaalin (5.5, 5.4). Kortti samalla
+        # tarkkuudella, muuten lukija nakee 5.47 vs 5.5 ja pitaa toista vaarana.
+        "rows": [dict(r, rank=i + 1, value=f"{r['_xp']:.1f}")
                  for i, r in enumerate(rows)],
         "file": f"goaliq_xp_gw{gw}_top{len(rows)}.png",
     }
