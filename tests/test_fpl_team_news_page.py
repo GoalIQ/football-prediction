@@ -305,3 +305,19 @@ def test_paasivulla_on_team_news_markerit():
     assert idx.count("<!-- GEN:TEAM-NEWS-START -->") == 1
     assert idx.count("<!-- GEN:TEAM-NEWS-END -->") == 1
     assert '/fpl/team-news' in idx, "paasivu ei linkita team news -sivulle"
+
+
+def test_epavarman_xp_sarakkeeseen_ei_vuoda_viime_kauden_pisteita():
+    """9.9.2026 (Gruev LEE): Doubtful-taulukon sarake on "6GW xP", ja siina
+    nakyi "56 last yr" - mobiilissa pelkka 56, koska " last yr" on m-hide.
+    Fallback viime kauden pisteisiin kuuluu vain Ruled out -taulukkoon, jonka
+    sarake on otsikoitu "Last season"."""
+    html = render_team_news(_xp(
+        [_p("Terve"),
+         _p("Epavarma", chance_next=25, news="Knee injury - 25% chance",
+            xp_horizon_total=None, owned_pct=2.1, last_season={"points": 56})],
+    ), NOW)
+    rivit = _rows(html, "doubtful")
+    assert len(rivit) == 1, rivit
+    assert rivit[0][-1] == "-", f"xP-sarakkeessa on jotain muuta: {rivit[0]}"
+    assert "56" not in " ".join(rivit[0])

@@ -142,17 +142,36 @@ def _season_block(e: dict) -> dict:
     }
 
 
+def finished_gws(boot: dict) -> int:
+    """Kuluvan kauden LOPULLISESTI pelatut kierrokset (finished + data_checked).
+
+    🔴 9.9.2026: tama puuttui, ja siksi DefCon-leaderboardin "last 3" nosti
+    karkeen Scharin (0 min talla kaudella) viime kauden riveilla. Fallback
+    viime kauteen on perusteltu vain niin kauan kuin kausi ei ole viela
+    voinut tuottaa MIN_CURRENT_GAMES pelia; sen jalkeen alle 3 pelia
+    tarkoittaa "ei pelaa", ei "ei viela dataa".
+    """
+    return sum(1 for ev in boot.get("events", [])
+               if ev.get("finished") and ev.get("data_checked"))
+
+
 def build() -> dict:
     boot = fetch_bootstrap()
     season = season_label(season_key_from_bootstrap(boot))
     players = _player_rows(boot, fetch_all_summaries(boot), season,
                            keep_empty=(season == TARGET_SEASON))
+    pelattu = finished_gws(boot)
 
     # Kausivaihto-merge: jos basis on jo target-kausi mutta pelaajalla on alle
     # MIN_CURRENT_GAMES pelattua ottelua → käytä edellisen snapshotin
     # edelliskauden riviä (basis-kenttä säilyy 2025/26 → rehellinen label).
     # Mappaus element CODElla (pysyvä kausien yli) — EI id:llä (nollautuu).
-    if season == TARGET_SEASON and LEADERS_PATH.exists():
+    # 9.9: fallback vain kun kausi EI OLE VOINUT tuottaa MIN_CURRENT_GAMES
+    # pelia. Kun 3 kierrosta on lopullisia, jokainen rivi on kuluvaa kautta:
+    # 0 pelin pelaaja putoaa stubina, 1-2 pelin pelaaja nakyy oikealla
+    # otoskoolla. Vaihe mitataan bootstrapista, ei artefaktista.
+    if (season == TARGET_SEASON and LEADERS_PATH.exists()
+            and pelattu < MIN_CURRENT_GAMES):
         try:
             prev = json.loads(LEADERS_PATH.read_text(encoding="utf-8"))
             prev_by_code = {p["code"]: p for p in prev.get("players", [])
@@ -182,7 +201,9 @@ def build() -> dict:
         players = merged
     # Stubit joille ei löytynyt edelliskauden riviä → pois (No data yet).
     players = [p for p in players if p["recent_games"]]
-    return _package(season, players)
+    out = _package(season, players)
+    out["meta"]["season_finished_gws"] = pelattu
+    return out
 
 
 def build_from_cache_2526() -> dict:

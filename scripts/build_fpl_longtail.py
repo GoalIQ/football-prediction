@@ -1363,8 +1363,17 @@ def _xg_payload(leaders: dict) -> str:
     slice(-w), jolloin luvut tasmaavat bitilleen server-renderoidyn
     oletustaulukon kanssa.
     """
+    # 9.9.2026: sama basis-saanto kuin palvelimella (fpl_leaders
+    # stale_basis_excluded). Ilman tata selaimen "last 3" nayttaisi viime
+    # kauden riveja pelaajille jotka eivat ole pelanneet talla kaudella
+    # (Schar-tapaus DefCon-listalla), vaikka API olisi jo korjattu.
+    from src.models.fpl_leaders import _current_season, stale_basis_excluded
+    pois_vanha = stale_basis_excluded(leaders)
+    basis = _current_season(leaders)
     out = []
     for p in leaders.get("players") or []:
+        if pois_vanha and p.get("basis") != basis:
+            continue
         games = p.get("recent_games") or []
         if not games:
             continue
@@ -3172,14 +3181,19 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         return (f'<td>{escape(str(c["name"]))} '
                 f'<span class="hi">{c["xp"]:.1f}</span></td>')
 
-    def _xp_cell(r):
+    def _xp_cell(r, last_season_fallback=True):
         v = r.get("xp_horizon_total")
         if isinstance(v, (int, float)):
             return f'<td class="n hi">{v:.1f}</td>'
         # Poissaolevalla ei ole projektiota. Viime kauden pisteet kertovat mika
         # on poissa, ilman etta keksitaan xP:ta jota ei laskettu.
+        #
+        # 9.9: fallback VAIN Ruled out -taulukkoon, jonka sarake on otsikoitu
+        # "Last season". Doubtful-taulukon sarake on "6GW xP", ja siina
+        # "56 last yr" luettiin xP:na (mobiilissa " last yr" on m-hide, eli
+        # nakyi pelkka 56; Gruev LEE). Sarakkeen otsikko on lupaus.
         ls = (r.get("last_season") or {}).get("points")
-        if isinstance(ls, (int, float)):
+        if last_season_fallback and isinstance(ls, (int, float)):
             return f'<td class="n">{ls:.0f}<span class="m-hide"> last yr</span></td>'
         return '<td class="n">-</td>'
 
@@ -3243,7 +3257,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             f'<td>{escape((r.get("news") or "").strip())}</td>'
             f'<td class="n">{int(r.get("chance_next") or 0)}%</td>'
             f'<td class="n">{_owned(r):.1f}%</td>'
-            + _xp_cell(r)
+            + _xp_cell(r, last_season_fallback=False)
             + "</tr>"
             for r in doubt_rows
         )

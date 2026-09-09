@@ -169,3 +169,40 @@ def test_refresh_current_attrs_drops_status_u(tmp_path, monkeypatch):
     assert [p["web_name"] for p in out["players"]] == ["Emersonn"]
     assert out["players"][0]["status"] == "i"
     assert out["meta"]["n_players"] == 1
+
+
+def test_merge_ei_lue_viime_kautta_kun_kolme_kierrosta_on_lopullisia(monkeypatch, tmp_path):
+    """9.9.2026 (Schar): kun kausi on tuottanut MIN_CURRENT_GAMES lopullista
+    kierrosta, alle 3 pelin pelaaja EI saa viime kauden riveja. Vaihe
+    luetaan bootstrapin events-lohkosta, ei artefaktista."""
+    import json
+    import scripts.build_fpl_player_leaders as b
+
+    prev = {"meta": {"available": True}, "players": [{
+        "id": 1, "code": 219168, "web_name": "Isak", "team_short": "LIV",
+        "pos": "FWD", "price": 8.5, "owned_pct": 1.0, "games_total": 14,
+        "basis": "2025/26",
+        "recent_games": [{"round": 36, "opp": "X", "venue": "H", "minutes": 70,
+                          "xg": 0.0, "xa": 0.0, "xgi": 0.0, "dc": 0,
+                          "cbi": 0, "tkl": 0, "rec": 0}],
+    }]}
+    path = tmp_path / "leaders.json"
+    path.write_text(json.dumps(prev), encoding="utf-8")
+    monkeypatch.setattr(b, "LEADERS_PATH", path)
+
+    def boot_3_finished():
+        d = _boot()
+        d["events"] = [{"id": i, "finished": True, "data_checked": True}
+                       for i in (1, 2, 3)] + [{"id": 4, "finished": False}]
+        return d
+    monkeypatch.setattr(b, "fetch_bootstrap", boot_3_finished)
+    monkeypatch.setattr(b, "fetch_all_summaries", lambda boot: _summaries())
+    monkeypatch.setattr(b, "season_key_from_bootstrap", lambda boot: "2627")
+
+    out = b.build()
+    assert out["meta"]["season_finished_gws"] == 3
+    isak = next(p for p in out["players"] if p["web_name"] == "Isak")
+    assert isak["basis"] == "2026/27"                 # ei fallbackia
+    assert all(g["round"] != 36 for g in isak["recent_games"])
+    # data_checked vaaditaan: pelkka finished ei riita
+    assert b.finished_gws({"events": [{"finished": True}]}) == 0

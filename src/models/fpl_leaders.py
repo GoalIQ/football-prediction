@@ -73,6 +73,75 @@ def _window_rows(player: dict, window: int) -> list[dict]:
     return (player.get("recent_games") or [])[-window:]
 
 
+def season_finished_gws(data: dict) -> int:
+    """Montako kuluvan kauden kierrosta on lopullisia.
+
+    Ensisijaisesti builderin kirjoittama `meta.season_finished_gws`. Vanha
+    artefakti (ennen 9.9.2026) ei kanna sita: silloin proxy on suurin
+    kuluvan kauden pelimaara, koska joku on pelannut jokaisen kierroksen.
+    """
+    m = data.get("meta") or {}
+    if m.get("season_finished_gws") is not None:
+        return int(m["season_finished_gws"])
+    kausi = _current_season(data)
+    return max((int(p.get("games_total") or 0) for p in data.get("players", [])
+                if p.get("basis") == kausi), default=0)
+
+
+def _current_season(data: dict) -> str | None:
+    """Kausi jota rullaava ikkuna edustaa: target_season jos builderi sen
+    kirjoitti (kausivaihdon jalkeen basis_season == target_season; ennen
+    sita meta voi sanoa 25/26 vaikka rivit ovat jo 26/27, kuten
+    jakokorttitesti mittaa), muuten basis_season."""
+    m = data.get("meta") or {}
+    return m.get("target_season") or m.get("basis_season")
+
+
+def stale_basis_excluded(data: dict) -> bool:
+    """🔴 LUKIJA JOKA EI VOI PALAUTTAA VIIME KAUDEN RIVIA KESKEN KAUDEN.
+
+    9.9.2026: DefCon "last 3" nosti karkeen Scharin (0 min talla kaudella)
+    25/26-riveilla. Builderi ei enaa kirjoita niita kun 3 kierrosta on
+    lopullisia, mutta artefakti voi olla vanha (nightly, Renderin levy).
+    Siksi sama saanto on myos taalla: kun kausi on tuottanut
+    MIN_CURRENT_GAMES kierrosta, muun kuin basis-kauden rivi ei ole
+    rullaavan ikkunan data vaan "ei pelaa".
+    """
+    return season_finished_gws(data) >= MIN_CURRENT_GAMES
+
+
+def _min_games(window: int, data: dict) -> int:
+    """Nimittajalattia rullaavan ikkunan rate-luvuille.
+
+    9.9.2026: ikkunassa 5 karjessa oli Schuster 1 pelilla (hit-rate 100 %).
+    Rate yhdesta pelista ei ole johtaja. Rivi EI putoa (todellinen otoskoko
+    nakyy `games`-kentassa, #124-paatos), mutta rate lasketaan vahintaan
+    talla nimittajalla: 1 osuma / 1 peli ikkunassa 5 on 1/3, ei 100 %.
+    Lattia on puolet ikkunasta ylospain pyoristettuna, mutta ei koskaan
+    enemman kuin kausi on voinut tuottaa (muuten ikkuna 10 GW3:ssa
+    rankaisisi kaikkia) eika koskaan alle 1.
+    """
+    raja = -(-window // 2)
+    if stale_basis_excluded(data):
+        raja = min(raja, season_finished_gws(data))
+    return max(1, raja)
+
+
+def _window_players(data: dict, window: int):
+    """Yksi lukija molemmille rankkereille: basis-suodatus + otoskoko."""
+    basis = _current_season(data)
+    pois_vanha = stale_basis_excluded(data)
+    for p in data.get("players", []):
+        if p.get("status") == "u":
+            continue  # liigasta lahtenyt (builderi pudottaa; tama on vyo)
+        if pois_vanha and p.get("basis") != basis:
+            continue
+        recent = _window_rows(p, window)
+        if not recent:
+            continue
+        yield p, recent
+
+
 def _base_row(p: dict, games: int) -> dict:
     return {
         "id": p["id"],
@@ -92,27 +161,24 @@ def rank_xg_leaders(data: dict, window: int = WINDOW_DEFAULT,
     window-total). GKP jätetään pois oletuksena (xG-lista, ei torjuntalista)."""
     window = max(WINDOW_MIN, min(WINDOW_MAX, window))
     rows = []
-    for p in data.get("players", []):
-        if p.get("status") == "u":
-            continue  # liigasta lahtenyt (builderi pudottaa; tama on vyo)
+    lattia = _min_games(window, data)
+    for p, recent in _window_players(data, window):
         if p["pos"] == "GKP" and pos != "GKP":
             continue
         if pos and p["pos"] != pos:
             continue
-        recent = _window_rows(p, window)
         games = len(recent)
-        if games == 0:
-            continue
+        d = max(games, lattia)   # rate-nimittaja, ks. _min_games
         xg = sum(g["xg"] for g in recent)
         xa = sum(g["xa"] for g in recent)
         xgi = sum(g["xgi"] for g in recent)
         row = _base_row(p, games)
         row.update({
             "xg_total": round(xg, 2),
-            "xg_per_game": round(xg / games, 2),
+            "xg_per_game": round(xg / d, 2),
             "xa_total": round(xa, 2),
-            "xa_per_game": round(xa / games, 2),
-            "xgi_per_game": round(xgi / games, 2),
+            "xa_per_game": round(xa / d, 2),
+            "xgi_per_game": round(xgi / d, 2),
             # 26.7: minuutit ikkunassa + kausitotaalit, jotta klientti voi
             # tarjota samat valinnat kuin staattinen /fpl/xg-leaders-sivu:
             # per 90 (tarvitsee minuutit), minuuttikynnys ja koko kausi.
@@ -135,24 +201,21 @@ def rank_defcon_leaders(data: dict, window: int = WINDOW_DEFAULT,
     GKP ei voi saada DefCon-pisteitä → aina pois."""
     window = max(WINDOW_MIN, min(WINDOW_MAX, window))
     rows = []
-    for p in data.get("players", []):
-        if p.get("status") == "u":
-            continue
+    lattia = _min_games(window, data)
+    for p, recent in _window_players(data, window):
         if p["pos"] == "GKP":
             continue
         if pos and p["pos"] != pos:
             continue
-        recent = _window_rows(p, window)
         games = len(recent)
-        if games == 0:
-            continue
+        d = max(games, lattia)   # rate-nimittaja, ks. _min_games
         hits = sum(1 for g in recent if defcon_hit(p["pos"], g["dc"]))
         actions = sum(g["dc"] for g in recent)
         row = _base_row(p, games)
         row.update({
             "threshold": DEFCON_THRESHOLD[p["pos"]],
-            "dc_per_game": round(actions / games, 1),
-            "hit_rate_pct": round(100.0 * hits / games, 0),
+            "dc_per_game": round(actions / d, 1),
+            "hit_rate_pct": round(100.0 * hits / d, 0),
             "defcon_points_window": hits * DEFCON_POINTS,
             "hits": hits,
         })
@@ -277,6 +340,8 @@ def _out_meta(data: dict, window: int) -> dict:
         "is_prev_season_basis": m.get("is_prev_season_basis"),
         "basis_label": m.get("basis_label"),
         "generated_at": m.get("generated_at"),
+        "season_finished_gws": season_finished_gws(data),
+        "min_games": _min_games(window, data),
         "note": ("GoalIQ analytics from official FPL match data. "
                  "Not betting advice."),
     }

@@ -211,3 +211,98 @@ def test_rank_skips_status_u_rows():
     gone["status"] = "a"
     assert {r["id"] for r in rank_xg_leaders(_data([gone, here]), window=5,
                                             top_n=10)["players"]} == {1, 2}
+
+
+# ---------------------------------------------------------------------------
+# 9.9.2026: DefCon "last 3" nosti karkeen Scharin (NEW, 0 min talla kaudella)
+# 25/26-riveilla, ja ikkunan 5 karkeen Schusterin yhdella pelilla. Invariantti
+# mitataan KAIKISSA vaiheissa (CLAUDE.md 6a mek. 3), ei nykyhetkessa.
+# ---------------------------------------------------------------------------
+from src.models.fpl_leaders import (  # noqa: E402
+    MIN_CURRENT_GAMES, season_finished_gws, stale_basis_excluded,
+)
+
+
+def _mixed(finished_gws, *, meta_field=True):
+    """Artefakti jossa on seka kuluvan etta viime kauden rivia."""
+    schar = _player(90, "DEF", 3, dc=11, name="Schar")      # 25/26-rivit
+    schar["basis"] = "2025/26"
+    egan = _player(1, "DEF", 3, dc=10, name="Egan")
+    egan["basis"] = "2026/27"
+    schuster = _player(2, "DEF", 1, dc=10, name="Schuster")
+    schuster["basis"] = "2026/27"
+    danso = _player(3, "DEF", 3, dc=9, name="Danso")         # 2/3 osumaa
+    danso["basis"] = "2026/27"
+    danso["recent_games"][0]["dc"] = 10
+    danso["recent_games"][1]["dc"] = 10
+    data = _data([schar, egan, schuster, danso])
+    data["meta"]["basis_season"] = "2026/27"
+    data["meta"]["is_prev_season_basis"] = False
+    if meta_field:
+        data["meta"]["season_finished_gws"] = finished_gws
+    else:
+        for p in data["players"]:
+            if p["basis"] == "2026/27":
+                p["games_total"] = min(p["games_total"], finished_gws)
+    return data
+
+
+def test_esikaudella_viime_kauden_rivi_saa_olla_ikkunassa():
+    for gw in range(0, MIN_CURRENT_GAMES):
+        data = _mixed(gw)
+        assert not stale_basis_excluded(data)
+        ids = [p["id"] for p in rank_defcon_leaders(data, window=3)["players"]]
+        assert 90 in ids, f"finished={gw}: fallback-rivi puuttuu"
+
+
+def test_kolmen_kierroksen_jalkeen_viime_kauden_rivi_ei_voi_johtaa():
+    """Schar-tapaus: artefakti kantaa 25/26-rivin, lukija ei palauta sita."""
+    for gw in (MIN_CURRENT_GAMES, 5, 20, 38):
+        data = _mixed(gw)
+        assert stale_basis_excluded(data)
+        for fn in (rank_defcon_leaders, rank_xg_leaders):
+            for w in (3, 5, 10):
+                ids = [p["id"] for p in fn(data, window=w)["players"]]
+                assert 90 not in ids, f"{fn.__name__} w={w} finished={gw}"
+
+
+def test_vanha_artefakti_ilman_meta_kenttaa_paatellaan_pelimaarasta():
+    """Renderin levy voi kantaa artefaktia ajalta ennen 9.9: proxy toimii."""
+    assert season_finished_gws(_mixed(2, meta_field=False)) == 2
+    assert not stale_basis_excluded(_mixed(2, meta_field=False))
+    assert season_finished_gws(_mixed(3, meta_field=False)) == 3
+    assert stale_basis_excluded(_mixed(3, meta_field=False))
+
+
+def test_yksi_peli_ei_johda_ikkunaa_mutta_rivi_nakyy():
+    """Schuster-tapaus: 1/1 osuma ikkunassa 5 ei ole 100 %."""
+    data = _mixed(3)
+    out = rank_defcon_leaders(data, window=5)
+    assert out["meta"]["min_games"] == 3          # min(ceil(5/2), 3 pelattua)
+    rows = {p["id"]: p for p in out["players"]}
+    assert rows[2]["games"] == 1                  # todellinen otoskoko nakyy
+    assert rows[2]["hit_rate_pct"] == 33.0        # 1 / max(1, 3)
+    assert out["players"][0]["id"] == 1           # Egan 3/3 johtaa
+    assert rows[3]["hit_rate_pct"] == 67.0        # Danso 2/3 ennen Schusteria
+    order = [p["id"] for p in out["players"]]
+    assert order.index(3) < order.index(2)
+
+
+def test_lattia_ei_ylita_kauden_pelimaaraa():
+    """Ikkuna 10 GW3:ssa: lattia 3, ei 5 - muuten kaikkia rangaistaisiin."""
+    data = _mixed(3)
+    assert rank_xg_leaders(data, window=10)["meta"]["min_games"] == 3
+    data = _mixed(1)   # kauden alku: lattia ceil(w/2) 25/26-riveille
+    assert rank_xg_leaders(data, window=10)["meta"]["min_games"] == 5
+
+
+def test_staattisen_sivun_payload_ei_kanna_viime_kauden_rivia_kesken_kauden():
+    """Selaimen JS laskee ikkunat upotetusta payloadista: sama saanto siella."""
+    import json
+    from scripts.build_fpl_longtail import _xg_payload
+    for gw, odotus in ((2, True), (3, False)):
+        data = _mixed(gw)
+        for p in data["players"]:
+            p.setdefault("season", {})
+        nimet = [r[0] for r in json.loads(_xg_payload(data))]
+        assert ("Schar" in nimet) is odotus, f"finished={gw}: {nimet}"
