@@ -1132,6 +1132,184 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     return out_path
 
 
+def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
+    """Hero-versio (9.9.2026, Villen pyynto: "grafiikoiltaan paremmaksi,
+    sellaiseksi mika houkuttaisi ja myisi").
+
+    Sama spec ja sama sivupariteettitesti kuin `render_gw_outlook`, eri
+    hierarkia: YKSI iso luku (paras nollapelisauma), sen alla top 5 nollapeli
+    ja top 5 maalit isommalla rivilla, ottelut tiiviina ruudukkona, ja
+    alarivi joka sanoo mista loput 20 loytyvat. Mitattu syy: M76-kortti
+    (30 lukua) 1 456 nayttoa vs tekstipostaus 13 - kuva kantaa, mutta 30
+    samanarvoista lukua ei anna silmalle paikkaa aloittaa.
+    """
+    from PIL import Image, ImageDraw
+    from src.models.team_colors import _team_color
+
+    h = 1400  # rajataan lopussa sisallon mukaan (crop), ei arvata
+    grad = Image.new("RGB", (1, h))
+    for y in range(h):
+        t = y / max(h - 1, 1)
+        grad.putpixel((0, y),
+                      tuple(int(a + (b - a) * t) for a, b in zip(INK, INK2)))
+    canvas = grad.resize((W, h)).convert("RGBA")
+    d = ImageDraw.Draw(canvas)
+    PANEL_BG = (24, 23, 21)
+    LINE = (48, 46, 42)
+
+    def sh(r: dict) -> str:
+        code = r.get("short") or (r.get("team") or "?")[:3].upper()
+        return code + ("*" if r.get("promoted") else "")
+
+    # --- otsikko ---
+    if WORDMARK.exists():
+        wm = Image.open(WORDMARK).convert("RGBA")
+        wm_h = 56
+        wm = wm.resize((int(wm.width * wm_h / wm.height), wm_h), Image.LANCZOS)
+        canvas.alpha_composite(wm, (W - MX - wm.width, 48))
+    f_t = _font(FONT_BOLD, 44)
+    d.text((MX, 48), "CLEAN SHEETS & GOALS", font=f_t, fill=CREAM)
+    gw_x = MX + d.textlength("CLEAN SHEETS & GOALS ", font=f_t)
+    d.text((gw_x, 48), f"GW{spec['gw']}", font=f_t, fill=AMBER)
+    _gen = (spec.get("generated_at") or "")[:10]
+    _stamp = ""
+    if len(_gen) == 10:
+        _kk = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        try:
+            _stamp = f"  ·  as of {int(_gen[8:10])} {_kk[int(_gen[5:7]) - 1]}"
+        except (ValueError, IndexError):
+            _stamp = ""
+    d.text((MX, 104), "Dixon-Coles match model" + _stamp,
+           font=_font(FONT_MED, 19), fill=MUTED)
+
+    # --- hero: paras nollapelisauma ---
+    cs = spec["cs"]
+    top1 = cs[0]
+    vastustaja, venue = "", ""
+    for f in spec["fixtures"]:
+        if f["home"] == top1["team"]:
+            vastustaja, venue = f.get("away_short") or f["away"][:3].upper(), "(H)"
+        elif f["away"] == top1["team"]:
+            vastustaja, venue = f.get("home_short") or f["home"][:3].upper(), "(A)"
+    if vastustaja and (vastustaja.rstrip("*") in (spec.get("promoted") or [])
+                       or any(x in vastustaja for x in ())):
+        pass
+    # nousijatahti vastustajalle samalla saannolla kuin riveilla
+    for f in spec["fixtures"]:
+        for side, oma in (("home", "away"), ("away", "home")):
+            if f[side] == top1["team"] and f[oma] in (spec.get("promoted") or []):
+                vastustaja = vastustaja + "*"
+
+    hero_top = 150
+    d.rounded_rectangle([MX, hero_top, W - MX, hero_top + 214], radius=18,
+                        fill=PANEL_BG)
+    d.text((MX + 24, hero_top + 18), "BEST CLEAN SHEET CHANCE", font=_font(FONT_BOLD, 22),
+           fill=AMBER)
+    code1 = sh(top1)
+    _draw_kit_pil(canvas, MX + 24, hero_top + 62, 96, code1.rstrip("*"))
+    f_big = _font(FONT_BOLD, 112)
+    val = f"{top1['cs']:.0f}%"
+    d.text((MX + 140, hero_top + 44), val, font=f_big, fill=AMBER)
+    vx = MX + 140 + d.textlength(val, font=f_big) + 28
+    d.text((vx, hero_top + 66), code1, font=_font(FONT_BOLD, 46), fill=CREAM)
+    if vastustaja:
+        d.text((vx, hero_top + 122), f"v {vastustaja} {venue}",
+               font=_font(FONT_MED, 26), fill=MUTED)
+    # toiseksi paras oikeaan laitaan: gappi on koko pointti
+    if len(cs) > 1:
+        nxt = cs[1]
+        txt2 = f"next best {sh(nxt)} {nxt['cs']:.0f}%"
+        f2 = _font(FONT_MED, 22)
+        d.text((W - MX - 24 - d.textlength(txt2, font=f2), hero_top + 176),
+               txt2, font=f2, fill=MUTED)
+
+    # --- kaksi saraketta, top 5 ---
+    top = hero_top + 240
+    col_w, gap = 388, 24
+    n = 5
+    row_h = 66
+    f_hdr = _font(FONT_BOLD, 22)
+    f_rank = _font(FONT_MED, 18)
+    f_team = _font(FONT_BOLD, 32)
+    f_val = _font(FONT_BOLD, 34)
+
+    def column(x: int, title: str, rows: list, fmt) -> None:
+        d.rounded_rectangle([x, top, x + col_w, top + 58 + n * row_h],
+                            radius=14, fill=PANEL_BG)
+        d.text((x + 18, top + 14), title, font=f_hdr, fill=AMBER)
+        for i, r in enumerate(rows[:n]):
+            y = top + 54 + i * row_h
+            if i:
+                d.line([(x + 18, y), (x + col_w - 18, y)], fill=LINE, width=1)
+            d.text((x + 18, y + 20), f"{i + 1}", font=f_rank, fill=MUTED)
+            code = sh(r)
+            _draw_kit_pil(canvas, x + 46, y + 10, 42, code.rstrip("*"))
+            d.text((x + 100, y + 12), code, font=f_team, fill=CREAM)
+            v = fmt(r)
+            d.text((x + col_w - 18 - d.textlength(v, font=f_val), y + 10),
+                   v, font=f_val, fill=AMBER)
+
+    _gd = 3 if spec.get("goals_tie") else 2
+    column(MX, "CLEAN SHEET %", cs, lambda r: f"{r['cs']:.0f}%")
+    column(MX + col_w + gap, "PROJECTED GOALS", spec["goals"],
+           lambda r: f"{r['xg']:.{_gd}f}")
+
+    # --- ottelut tiiviina kahdessa sarakkeessa ---
+    fx_top = top + 58 + n * row_h + 22
+    fxs = spec["fixtures"]
+    per_col = (len(fxs) + 1) // 2
+    fx_row = 40
+    d.rounded_rectangle([MX, fx_top, W - MX, fx_top + 50 + per_col * fx_row],
+                        radius=14, fill=PANEL_BG)
+    d.text((MX + 18, fx_top + 12), "FIXTURES · projected goals",
+           font=f_hdr, fill=AMBER)
+    f_fx = _font(FONT_BOLD, 21)
+    f_fxn = _font(FONT_BOLD, 20)
+    f_fxs = _font(FONT_MED, 15)
+    half = (W - 2 * MX) // 2
+    for i, f in enumerate(fxs):
+        cx = MX + (i // per_col) * half
+        y = fx_top + 48 + (i % per_col) * fx_row
+        hs = (f.get("home_short") or f["home"][:3].upper()) + \
+            ("*" if f["home"] in (spec.get("promoted") or []) else "")
+        as_ = (f.get("away_short") or f["away"][:3].upper()) + \
+            ("*" if f["away"] in (spec.get("promoted") or []) else "")
+        _draw_kit_pil(canvas, cx + 18, y + 2, 26, hs.rstrip("*"))
+        d.text((cx + 50, y + 3), hs, font=f_fx, fill=CREAM)
+        v1 = f"{f['xg_home']:.2f}"
+        d.text((cx + 138, y + 4), v1, font=f_fxn, fill=AMBER)
+        d.text((cx + 198, y + 4), "-", font=f_fxn, fill=MUTED)
+        v2 = f"{f['xg_away']:.2f}"
+        d.text((cx + 220, y + 4), v2, font=f_fxn, fill=AMBER)
+        _draw_kit_pil(canvas, cx + 288, y + 2, 26, as_.rstrip("*"))
+        d.text((cx + 320, y + 3), as_, font=f_fx, fill=CREAM)
+        # Vain viikonpaiva: koko paivays tormasi vieraspaitaan (mitattu 9.9)
+        # ja kierroksen paivat ovat kortin otsikossa jo GW-numerona.
+        ko = (f.get("kickoff") or "").split(" ")[0]
+        d.text((cx + half - 18 - d.textlength(ko, font=f_fxs), y + 7),
+               ko, font=f_fxs, fill=MUTED)
+
+    # --- alarivit: nousijaviite + myyva reitti ---
+    y0 = fx_top + 50 + per_col * fx_row + 18
+    if spec.get("promoted"):
+        foot = _promoted_footnote()
+        f_note = _font(FONT_MED, 16)
+        if d.textlength(foot, font=f_note) > W - 2 * MX:
+            raise SystemExit(f"kortti: nousija-alaviite ei mahdu ({foot!r})")
+        d.text((MX, y0), foot, font=f_note, fill=MUTED)
+        y0 += 26
+    d.text((MX, y0 + 2), "All 20 teams, every gameweek: goaliq.app/fpl  ·  free, no account",
+           font=_font(FONT_BOLD, 21), fill=CREAM)
+    d.text((MX, y0 + 34), "The match predictions behind these numbers are logged before kick-off and graded in public.  ·  not betting advice",
+           font=_font(FONT_MED, 15), fill=MUTED)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas = canvas.crop((0, 0, W, y0 + 72))
+    canvas.convert("RGB").save(out_path, "PNG", optimize=True)
+    return out_path
+
+
 BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
             "xp": card_xp, "value": card_value, "club-best": card_club_best,
             "price-tier": card_price_tier,
@@ -1161,6 +1339,8 @@ def main() -> int:
     ap.add_argument("--gw", type=int, default=None,
                     help="gw-outlook: kierros (oletus: pienin datassa)")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--style", choices=("classic", "hero"), default="classic",
+                    help="gw-outlook: hero = yksi iso karkiluku + top 5 (9.9)")
     a = ap.parse_args()
 
     gw_given = any(x.startswith("--from-gw") or x.startswith("--to-gw")
@@ -1176,7 +1356,12 @@ def main() -> int:
     spec = BUILDERS[a.card](a)
     out = Path(a.out) if a.out else OUT_DIR / spec["file"]
     if spec.get("kind") == "gw_outlook":
-        pth = render_gw_outlook(spec, out)
+        if a.style == "hero":
+            if not a.out:
+                out = OUT_DIR / spec["file"].replace(".png", "_hero.png")
+            pth = render_gw_outlook_hero(spec, out)
+        else:
+            pth = render_gw_outlook(spec, out)
         print("GW%s outlook (%d ottelua) -> %s"
               % (spec["gw"], len(spec["fixtures"]), pth))
         return 0
