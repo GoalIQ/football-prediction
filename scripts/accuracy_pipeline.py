@@ -414,13 +414,20 @@ def _fetch_model_teams(league: str, yrityksia: int = 3) -> list[str] | None:
     import time
 
     import requests
+    # 9.9.2026: UEFA-yhteisfitti kestaa kylmana 211 s (mitattu 8.9 ja 9.9:
+    # 161 s -> 502, 171 s -> 200, sen jalkeen 0,1 s). 120 s timeout katkaisi
+    # kolme yritysta perakkain ja CL ohitettiin "joukkuelista ei saatavilla"
+    # -viestilla kahdessa ajossa heti deployn jalkeen. Turnausliigalle
+    # annetaan aikaa fitata; kotiliigat pysyvat 120 s:ssa. Varsinainen
+    # korjaus on kylmalatenssin poisto (QUEUE UCL-KYLMAFITTI-LATENSSI).
+    timeout_s = 300 if league.startswith("INT-") else 120
     for yritys in range(1, yrityksia + 1):
         syy = None
         try:
             r = requests.get(
                 f"{PREDICT_API_BASE}/api/teams",
                 params={"leagues": league},
-                timeout=120,  # kylmä Render voi fitata mallin tässä
+                timeout=timeout_s,  # kylmä Render voi fitata mallin tässä
             )
             if r.status_code == 200:
                 teams = r.json().get("teams") or []
