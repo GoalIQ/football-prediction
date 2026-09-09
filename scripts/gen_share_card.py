@@ -1132,7 +1132,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     return out_path
 
 
-def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
+def render_gw_outlook_hero(spec: dict, out_path: Path, cs_only: bool = False) -> Path:
     """Hero-versio (9.9.2026, Villen pyynto: "grafiikoiltaan paremmaksi,
     sellaiseksi mika houkuttaisi ja myisi").
 
@@ -1168,8 +1168,9 @@ def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
         wm = wm.resize((int(wm.width * wm_h / wm.height), wm_h), Image.LANCZOS)
         canvas.alpha_composite(wm, (W - MX - wm.width, 48))
     f_t = _font(FONT_BOLD, 44)
-    d.text((MX, 48), "CLEAN SHEETS & GOALS", font=f_t, fill=CREAM)
-    gw_x = MX + d.textlength("CLEAN SHEETS & GOALS ", font=f_t)
+    otsikko = "CLEAN SHEET CHANCES" if cs_only else "CLEAN SHEETS & GOALS"
+    d.text((MX, 48), otsikko, font=f_t, fill=CREAM)
+    gw_x = MX + d.textlength(otsikko + " ", font=f_t)
     d.text((gw_x, 48), f"GW{spec['gw']}", font=f_t, fill=AMBER)
     _gen = (spec.get("generated_at") or "")[:10]
     _stamp = ""
@@ -1209,7 +1210,7 @@ def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
     code1 = sh(top1)
     _draw_kit_pil(canvas, MX + 24, hero_top + 62, 96, code1.rstrip("*"))
     f_big = _font(FONT_BOLD, 112)
-    val = f"{top1['cs']:.0f}%"
+    val = f"{top1['cs']:g}%"
     d.text((MX + 140, hero_top + 44), val, font=f_big, fill=AMBER)
     vx = MX + 140 + d.textlength(val, font=f_big) + 28
     d.text((vx, hero_top + 66), code1, font=_font(FONT_BOLD, 46), fill=CREAM)
@@ -1219,7 +1220,7 @@ def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
     # toiseksi paras oikeaan laitaan: gappi on koko pointti
     if len(cs) > 1:
         nxt = cs[1]
-        txt2 = f"next best {sh(nxt)} {nxt['cs']:.0f}%"
+        txt2 = f"next best {sh(nxt)} {nxt['cs']:g}%"
         f2 = _font(FONT_MED, 22)
         d.text((W - MX - 24 - d.textlength(txt2, font=f2), hero_top + 176),
                txt2, font=f2, fill=MUTED)
@@ -1251,19 +1252,43 @@ def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
                    v, font=f_val, fill=AMBER)
 
     _gd = 3 if spec.get("goals_tie") else 2
-    column(MX, "CLEAN SHEET %", cs, lambda r: f"{r['cs']:.0f}%")
-    column(MX + col_w + gap, "PROJECTED GOALS", spec["goals"],
-           lambda r: f"{r['xg']:.{_gd}f}")
+    if cs_only:
+        # 9.9 portti: projisoidut maalit eivat ole millaan ilmaissivulla,
+        # joten kortti joka lahettaa lukijan goaliq.app/fpl:aan ei saa
+        # nayttaa niita (QUEUE FPL-SIVU-OTTELUIDEN-XG). Nollapeli-% on
+        # sivulla rivi rivilta: kaksi saraketta, sijat 1-5 ja 6-10.
+        column(MX, "CLEAN SHEET %  ·  1-5", cs[:5], lambda r: f"{r['cs']:g}%")
+        rows6 = cs[5:10]
+        x2 = MX + col_w + gap
+        d.rounded_rectangle([x2, top, x2 + col_w, top + 58 + n * row_h],
+                            radius=14, fill=PANEL_BG)
+        d.text((x2 + 18, top + 14), "CLEAN SHEET %  ·  6-10", font=f_hdr, fill=AMBER)
+        for i, r in enumerate(rows6):
+            y = top + 54 + i * row_h
+            if i:
+                d.line([(x2 + 18, y), (x2 + col_w - 18, y)], fill=LINE, width=1)
+            d.text((x2 + 18, y + 20), f"{i + 6}", font=f_rank, fill=MUTED)
+            code = sh(r)
+            _draw_kit_pil(canvas, x2 + 46, y + 10, 42, code.rstrip("*"))
+            d.text((x2 + 100, y + 12), code, font=f_team, fill=CREAM)
+            v = f"{r['cs']:g}%"
+            d.text((x2 + col_w - 18 - d.textlength(v, font=f_val), y + 10),
+                   v, font=f_val, fill=AMBER)
+    else:
+        column(MX, "CLEAN SHEET %", cs, lambda r: f"{r['cs']:g}%")
+        column(MX + col_w + gap, "PROJECTED GOALS", spec["goals"],
+               lambda r: f"{r['xg']:.{_gd}f}")
 
     # --- ottelut tiiviina kahdessa sarakkeessa ---
     fx_top = top + 58 + n * row_h + 22
-    fxs = spec["fixtures"]
+    fxs = [] if cs_only else spec["fixtures"]
     per_col = (len(fxs) + 1) // 2
     fx_row = 40
-    d.rounded_rectangle([MX, fx_top, W - MX, fx_top + 50 + per_col * fx_row],
-                        radius=14, fill=PANEL_BG)
-    d.text((MX + 18, fx_top + 12), "FIXTURES · projected goals",
-           font=f_hdr, fill=AMBER)
+    if fxs:
+        d.rounded_rectangle([MX, fx_top, W - MX, fx_top + 50 + per_col * fx_row],
+                            radius=14, fill=PANEL_BG)
+        d.text((MX + 18, fx_top + 12), "FIXTURES · projected goals",
+               font=f_hdr, fill=AMBER)
     f_fx = _font(FONT_BOLD, 21)
     f_fxn = _font(FONT_BOLD, 20)
     f_fxs = _font(FONT_MED, 15)
@@ -1291,18 +1316,25 @@ def render_gw_outlook_hero(spec: dict, out_path: Path) -> Path:
                ko, font=f_fxs, fill=MUTED)
 
     # --- alarivit: nousijaviite + myyva reitti ---
-    y0 = fx_top + 50 + per_col * fx_row + 18
-    if spec.get("promoted"):
-        foot = _promoted_footnote()
-        f_note = _font(FONT_MED, 16)
-        if d.textlength(foot, font=f_note) > W - 2 * MX:
-            raise SystemExit(f"kortti: nousija-alaviite ei mahdu ({foot!r})")
-        d.text((MX, y0), foot, font=f_note, fill=MUTED)
+    y0 = (fx_top + 50 + per_col * fx_row + 18) if fxs else fx_top
+    # 9.9 portti: alarivi leikkautui kanvaasin reunaan ("advice" katkesi) koska
+    # vain nousija-alaviitteella oli leveysvahti. Jokainen alarivi mitataan;
+    # ylivuoto kaataa ajon, ei julkaise katkennutta vastuuvapautta.
+    def _rivi(y: int, teksti: str, font, fill) -> None:
+        if d.textlength(teksti, font=font) > W - 2 * MX:
+            raise SystemExit(
+                f"kortti: alarivi ei mahdu ({teksti!r}, "
+                f"{d.textlength(teksti, font=font):.0f}px > {W - 2 * MX}px)")
+        d.text((MX, y), teksti, font=font, fill=fill)
+    if spec.get("promoted") and any(r.get("promoted") for r in
+                                    (cs[:10] + ([] if cs_only else spec["goals"]))
+                                    ) or (fxs and spec.get("promoted")):
+        _rivi(y0, _promoted_footnote(), _font(FONT_MED, 16), MUTED)
         y0 += 26
-    d.text((MX, y0 + 2), "All 20 teams, every gameweek: goaliq.app/fpl  ·  free, no account",
-           font=_font(FONT_BOLD, 21), fill=CREAM)
-    d.text((MX, y0 + 34), "The match predictions behind these numbers are logged before kick-off and graded in public.  ·  not betting advice",
-           font=_font(FONT_MED, 15), fill=MUTED)
+    _rivi(y0 + 2, "All 20 teams, every gameweek: goaliq.app/fpl  ·  free, no account",
+          _font(FONT_BOLD, 21), CREAM)
+    _rivi(y0 + 34, "Match predictions logged before kick-off and graded in public.  ·  not betting advice",
+          _font(FONT_MED, 15), MUTED)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas = canvas.crop((0, 0, W, y0 + 72))
@@ -1341,6 +1373,9 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     ap.add_argument("--style", choices=("classic", "hero"), default="classic",
                     help="gw-outlook: hero = yksi iso karkiluku + top 5 (9.9)")
+    ap.add_argument("--cs-only", action="store_true",
+                    help="gw-outlook hero: vain nollapeli-%% (maalit eivat ole "
+                         "ilmaissivulla, portti 9.9)")
     a = ap.parse_args()
 
     gw_given = any(x.startswith("--from-gw") or x.startswith("--to-gw")
@@ -1358,8 +1393,9 @@ def main() -> int:
     if spec.get("kind") == "gw_outlook":
         if a.style == "hero":
             if not a.out:
-                out = OUT_DIR / spec["file"].replace(".png", "_hero.png")
-            pth = render_gw_outlook_hero(spec, out)
+                out = OUT_DIR / spec["file"].replace(
+                    ".png", "_hero_cs.png" if a.cs_only else "_hero.png")
+            pth = render_gw_outlook_hero(spec, out, cs_only=a.cs_only)
         else:
             pth = render_gw_outlook(spec, out)
         print("GW%s outlook (%d ottelua) -> %s"
