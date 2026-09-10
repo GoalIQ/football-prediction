@@ -2673,7 +2673,11 @@ def _fmt_logged(row: dict) -> str:
     deadline = parse_utc(row["deadline_utc"])
     delta = deadline - logged
     secs = int(abs(delta.total_seconds()))
-    h, m = divmod(secs // 60, 60)
+    # 10.9 (QUEUE LOGGED-SARAKE-KATKAISEE): `secs // 60` katkaisi sekunnit ja
+    # katkaisu suosi aina meita (16 min 53 s -> "16 min" = kirjattu muka
+    # myohemmin, tuoreemmalla datalla). Pyoristys lahimpaan minuuttiin:
+    # skeptikko joka laskee gw_calls.json:sta saa saman luvun.
+    h, m = divmod(round(secs / 60), 60)
     span = f"{h} h {m} min" if h else f"{m} min"
     when = logged.strftime("%d %b %H:%M UTC").lstrip("0")
     return (f"{when}, {span} before the deadline" if delta.total_seconds() > 0

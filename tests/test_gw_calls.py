@@ -158,6 +158,12 @@ def test_sivun_osio_sanoo_before_vain_kun_aikaleimat_todistavat():
            "calls": [], "graded": None}
     assert "1 h 30 min before the deadline" in _fmt_logged(row)
     assert "28 Aug 16:00" in _fmt_logged(row)
+    # LOGGED-SARAKE-KATKAISEE (10.9): 16 min 53 s -> "17 min", ei "16 min";
+    # negatiivinen kontrolli 16 min 00 s -> "16 min".
+    row["updated_at"] = "2026-08-28T17:13:07Z"
+    assert "17 min before the deadline" in _fmt_logged(row), _fmt_logged(row)
+    row["updated_at"] = "2026-08-28T17:14:00Z"
+    assert "16 min before the deadline" in _fmt_logged(row), _fmt_logged(row)
     e = build_entry(_frozen(), _standouts(), {}, BEFORE)
     html = gw_calls_html({"gameweeks": [e]})
     assert "pending" in html and "Guehi (MCI)" in html
