@@ -249,8 +249,10 @@ def test_kortin_luvut_loytyvat_RENDEROIDULTA_sivulta():
     # sivun oma varaus joka ei ole osa nimea (sama kasittely kuin
     # test_share_card_server_rows). Ilman tata 3 liputettua rivia putosi ja
     # portti sanoi "17 rivia, odotettu 20".
+    # 10.9: nimen alla voi olla myos todiste-alarivi (<span class="m-sub drv">),
+    # ks. XP-AJURIT-ILMAISPINNALLE. Kumpikin span on sivun lisatieto, ei nimea.
     solut = re.findall(
-        r'<td>([^<]+?)(?:\s*<span class="flag"[^>]*>[^<]*</span>)?</td>'
+        r'<td>([^<]+?)(?:\s*<span class="(?:flag|m-sub[^"]*)"[^>]*>[^<]*</span>)*</td>'
         r'<td class="tm">.*?<td class="n">[\d.]+</td>'
         r'<td class="n hi">([\d.]+)</td>', sec)
     ren = {_html.unescape(n).strip(): v for n, v in solut}

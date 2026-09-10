@@ -136,6 +136,10 @@ def _taulukon_rivit(h: str, maara: int = 10) -> list[list[str]]:
             # perusteella kuin tflag joukkuesoluun: sivun oma varaus, ei osa
             # nimea. Kortti kantaa nimen. Ilman tata portti kaatui "Isak !".
             c = re.sub(r'\s*<span class="flag"[^>]*>[^<]*</span>', "", c)
+            # 10.9 XP-AJURIT-ILMAISPINNALLE: nimen alla on todiste-alarivi
+            # (<span class="m-sub drv">on penalties</span>). Se on sivun oma
+            # lisatieto, ei osa nimea - sama kasittely kuin flag-lipulla.
+            c = re.sub(r'\s*<span class="m-sub[^"]*">[^<]*</span>', "", c)
             # 29.8: entiteetit puretaan, koska kortin spec on JSONia
             # (`json.loads(html.unescape(...))`) ja taulukko on HTML:aa.
             # GW2:n O'Reilly paljasti eron: kortti kantaa "O'Reilly", solu
