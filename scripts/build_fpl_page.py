@@ -1380,7 +1380,8 @@ def cs_table_html(c: dict) -> str:
         # Lause vain jos jokaisella rivilla ON alarivi: tyhjakierroksessa tai
         # nimien osumattomuudessa caption ei saa luvata sellaista mita ei ole.
         + (" Projected goals are the model's expected goals for each team in "
-           "that match, the same numbers the clean sheet chance is built from."
+           "that match. The clean sheet chance is the chance the opponent's "
+           "figure comes out as zero; the team's own figure does not enter it."
            if c["cs_rows"] and all(r.get("xg_for") is not None for r in c["cs_rows"])
            else "")
         + "</caption>"
