@@ -66,7 +66,9 @@
 		// erkaantua yhdessa kierroksessa.
 		// PAYLOAD-KENTAT-ILMAN-PINTAA (portti B1): stale-kierros ei ole summissa,
 		// joten se ei saa provisional-lausetta ("these totals will move").
-		const stale: number[] = data?.totals?.stale_gws ?? [];
+		// Portti k2: vanha payload ilman totals.stale_gws -> johdetaan riveista.
+		const stale: number[] =
+			data?.totals?.stale_gws ?? rows.filter((r) => r.stale_model_points).map((r) => r.gw);
 		const gws = (
 			data?.meta?.provisional_gws ??
 			rows.filter((r) => r.provisional).map((r) => r.gw)
