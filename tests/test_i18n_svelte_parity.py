@@ -42,6 +42,9 @@ PAIRS = [
     ("fantasy.review.transfer_cost", "components/GwReview.svelte"),
     ("fantasy.review.worst", "components/GwReview.svelte"),
     ("fantasy.review.best", "components/GwReview.svelte"),
+    # PAYLOAD-KENTAT-ILMAN-PINTAA (10.9): kaksi uutta lausetta molemmilla pinnoilla
+    ("fantasy.race.stale", "components/SeasonRace.svelte"),
+    ("fantasy.race.basis", "components/SeasonRace.svelte"),
 ]
 
 TOKEN = "§"

@@ -227,6 +227,22 @@
 				</p>
 			{/each}
 
+			<!-- PAYLOAD-KENTAT-ILMAN-PINTAA (10.9): `totals.stale_gws` on tila jossa
+			     summa ei tasmaa nakyviin riveihin, ja se on live heti kun FPL
+			     aikakatkaisee deadlinen jalkeisessa ruuhkassa. Selite on nakyva,
+			     ei tooltip. Sama lause mobiilissa (fantasy.race.stale). -->
+			{#if data.totals.stale_gws?.length}
+				<p class="prov-note">
+					GW{data.totals.stale_gws.join(', GW')}: left out of the totals because the model's score
+					and yours were read at different times.
+				</p>
+			{/if}
+			{#if data.totals.you != null}
+				<!-- meta.model_points_basis renderoituna: peruste sanotaan, ei vain
+				     kanneta payloadissa. Sama lause mobiilissa (fantasy.race.basis). -->
+				<p class="prov-note">Model points are net of its own transfer hits, compared with yours on the same basis.</p>
+			{/if}
+
 			<!-- 🔴 25. kierros: nappi nakyi kun rivit riittivat ENNEN suodatusta,
 			     jolloin painallus ei tehnyt mitaan. Sama ehto kuin kortilla. -->
 			{#if voiJakaa}
