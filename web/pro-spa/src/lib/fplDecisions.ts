@@ -40,6 +40,10 @@ export interface StoredDecision {
 	model_points?: number | null;
 	user_points?: number | null;
 	grade_note?: string | null;
+	/** DECISION-USER-ACTUAL (10.9): graderin PISTEYTTAMA kayttajan valinta
+	 *  (FPL picks). Kayttajan nimi paivakirjan lauseessa tulee VAIN tasta,
+	 *  ei user_choice-luonnoksesta. NULL/puuttuu = ei nimea. */
+	user_actual?: { id: number; web_name: string | null; source: string } | null;
 }
 
 /** Tuloskortin kausisumma gradatuista päätöksistä. delta > 0 = käyttäjä
@@ -175,7 +179,7 @@ async function fetchAllDecisions(): Promise<StoredDecision[]> {
 		.from('fpl_decisions')
 		.select(
 			'gw,kind,model_choice,user_choice,followed,deadline_utc,locked_at,' +
-				'graded_at,model_points,user_points,grade_note'
+				'graded_at,model_points,user_points,grade_note,user_actual'
 		)
 		.order('gw', { ascending: false });
 	if (error || !data) return [];
@@ -251,15 +255,17 @@ export function whatIfRows(rows: StoredDecision[], limit = 5): WhatIfRow[] {
 		const delta = Math.round((r.user_points - r.model_points) * 10) / 10;
 		let text: string;
 		if (r.kind === 'captain') {
-			// 2.9.2026: "captained X over Y" poistettu. Grader pisteyttaa FPL-tilin
-			// TOTEUTUNEEN kapteenin (picks), mutta user_choice.name on kentalla
-			// kirjattu luonnos: GW2 rivi vaitti "captained Senesi over Tavernier
-			// +44.0" kun FPL-kapteeni oli B.Fernandes (46 p). Sama saanto kuin
-			// mobiilin lib/fplWhatIf.ts. Palaa kun grader kirjaa toteutuneen
-			// kapteenin riville (QUEUE: DECISION-USER-ACTUAL).
-			text = modelName
-				? `picked a different captain to ${modelName}`
-				: 'picked a different captain';
+			// 2.9.2026: "captained X over Y" poistettiin, koska user_choice.name on
+			// kentalla kirjattu luonnos ja grader pisteytti FPL-tilin kapteenin
+			// (GW2: "Senesi over Tavernier" kun FPL-kapteeni oli B.Fernandes).
+			// 10.9 DECISION-USER-ACTUAL: nimi palaa VAIN graderin kirjaamasta
+			// user_actual-kentasta (sama lahde kuin pisteet). Ilman sita lause
+			// pysyy nimettomana. Sama saanto kuin mobiilin lib/fplWhatIf.ts.
+			const actualName = r.user_actual?.web_name || null;
+			if (actualName && modelName) text = `captained ${actualName} over ${modelName}`;
+			else if (actualName) text = `captained ${actualName}`;
+			else if (modelName) text = `picked a different captain to ${modelName}`;
+			else text = 'picked a different captain';
 		} else {
 			text = modelName ? `skipped ${modelName}` : 'made a different move';
 		}

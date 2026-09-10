@@ -251,3 +251,43 @@ def finished_gws() -> set[int]:
         e["id"] for e in r.json().get("events", [])
         if e.get("finished") and e.get("data_checked") and isinstance(e.get("id"), int)
     }
+
+
+# ---------------------------------------------------------------------------
+# DECISION-USER-ACTUAL (10.9.2026): se valinta jonka grader PISTEYTTI
+# ---------------------------------------------------------------------------
+USER_ACTUAL_SOURCE = "fpl_picks"
+
+
+def element_names() -> dict[int, str]:
+    """element_id -> web_name bootstrapista. Tyhja dict jos haku epaonnistuu:
+    silloin user_actual jaa ilman nimea (id sailyy), ei arvausta."""
+    try:
+        r = requests.get(f"{FPL_BASE}/bootstrap-static/", timeout=30,
+                         headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            return {}
+        return {int(e["id"]): str(e.get("web_name") or "")
+                for e in r.json().get("elements", []) if isinstance(e.get("id"), int)}
+    except Exception:
+        return {}
+
+
+def user_actual(kind: str, followed: bool, entry_id: int | None,
+                fetch_captain: Callable[[int], int | None],
+                names: dict[int, str]) -> dict | None:
+    """Kayttajan TOTEUTUNUT valinta samasta lahteesta josta grader pisteytti.
+
+    Paivakirjan lause "you captained X over Y" nimesi 2.9 kentalla kirjatun
+    luonnoksen (user_choice.name), ei FPL-tilin kapteenia jota grader
+    pisteytti. Tama palauttaa vain sen mita picks sanoo; None kun picksia
+    ei saatu tai kind ei ole kapteeni. Pinnat nimeavat kayttajan valinnan
+    VAIN tasta kentasta.
+    """
+    if kind != "captain" or followed or entry_id is None:
+        return None
+    actual_id = fetch_captain(entry_id)
+    if not isinstance(actual_id, int):
+        return None
+    name = names.get(actual_id)
+    return {"id": actual_id, "web_name": name or None, "source": USER_ACTUAL_SOURCE}

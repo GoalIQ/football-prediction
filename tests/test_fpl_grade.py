@@ -100,3 +100,28 @@ def test_negatiivinen_kontrolli_kaava_erottaa_tuplauksen():
         "captain", {"id": 1}, {"id": 1}, True, LIVE, None,
         _no_captain, _no_transfers)
     assert m != LIVE[1], "tupla puuttuu: model_points == raa'at pisteet"
+
+
+# ---------------------------------------------------------------------------
+# DECISION-USER-ACTUAL (10.9): rivi kantaa graderin pisteyttaman kapteenin
+# ---------------------------------------------------------------------------
+def test_user_actual_names_the_picks_captain_not_the_draft():
+    from src.models.fpl_grade import user_actual
+    names = {12: "B.Fernandes", 7: "Senesi"}
+    # kentalla kirjattu luonnos oli Senesi (7), FPL-tilin kapteeni B.Fernandes (12)
+    ua = user_actual("captain", False, 116920, lambda e: 12, names)
+    assert ua == {"id": 12, "web_name": "B.Fernandes", "source": "fpl_picks"}
+
+
+def test_user_actual_is_none_when_followed_no_entry_or_no_picks():
+    from src.models.fpl_grade import user_actual
+    assert user_actual("captain", True, 1, lambda e: 12, {12: "X"}) is None
+    assert user_actual("captain", False, None, lambda e: 12, {12: "X"}) is None
+    assert user_actual("captain", False, 1, lambda e: None, {12: "X"}) is None
+    assert user_actual("transfer", False, 1, lambda e: 12, {12: "X"}) is None
+
+
+def test_user_actual_keeps_id_when_name_unknown():
+    from src.models.fpl_grade import user_actual
+    ua = user_actual("captain", False, 1, lambda e: 99, {})
+    assert ua == {"id": 99, "web_name": None, "source": "fpl_picks"}
