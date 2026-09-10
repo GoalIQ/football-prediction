@@ -1,0 +1,91 @@
+# TEMPLATE: site-repon (GoalIQ/goaliq-site) oma deploy-workflow.
+#
+# Tama tiedosto EI aja tassa repossa (.github/site-repo/ ei ole workflow-
+# hakemisto). Se kopioidaan kerran site-repoon polkuun
+# .github/workflows/deploy.yml (SITE-REPO-SPLIT vaihe 2, GO-REQUIRED).
+# Lahde pysyy taalla, jotta muutos site-repon deployyn nakyy tassa
+# diffissa eika elä vain toisessa repossa.
+#
+# MIKSI SITE-REPO DEPLOYAA ITSE EIKA CF PAGES GIT-SIDONNALLA (mitattu 10.9):
+# hub-deploy ajaa 18,7 kertaa/vrk = ~560 buildia/kk; CF Pagesin
+# git-sidotun projektin ilmainen kiintio on 500 buildia/kk. Direct upload
+# (wrangler) ei kuluta build-kiintiota, ja projekti `goaliq-hub` on jo
+# direct upload -tyyppia, joten custom domainia ei tarvitse siirtaa eika
+# CF-dashboardissa tehda mitaan. Rollback = fp:n hub-deploy jatkaa samaan
+# projektiin (vars.SITE_PUBLISH tyhjaksi).
+#
+# LAUKEAMINEN: push tulee football-predictionin hub-deploysta PAT:lla tai
+# deploy keylla, EI GITHUB_TOKENilla, joten se kaynnistaa taman workflow'n
+# (muisti: botin-push-ei-kaynnista-workflowta koskee vain GITHUB_TOKENia).
+# Lahdecommitin skip-ci-merkinta riisutaan push_site_repo.sh:ssa.
+#
+# SECRETIT (site-repoon, Villen klikki): CLOUDFLARE_API_TOKEN,
+# CLOUDFLARE_ACCOUNT_ID - samat arvot kuin football-predictionissa.
+
+name: site-deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Kaikki seuratut tiedostot paitsi repon oma metadata. Tama repo
+      # sisaltaa VAIN outputia (football-prediction suodattaa lahdekoodin
+      # scripts/site_output.py:lla ennen pushia), joten lista on lyhyt.
+      - name: Kokoa staging
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          git ls-files -z | while IFS= read -r -d '' f; do
+            case "$f" in .github/*|README.md) continue;; esac
+            mkdir -p "_site/$(dirname "$f")"
+            cp "$f" "_site/$f"
+          done
+          N=$(find _site -type f | wc -l)
+          echo "staging: $N tiedostoa"
+          [ "$N" -gt 100 ] || { echo "::error::staging on vajaa ($N) - ei deployata"; exit 1; }
+
+      # Sama negatiivinen kontrolli kuin football-predictionin hub-deployssa:
+      # jos lahdekoodia on paassyt tanne asti, suodatin on rikki eika sita
+      # saa julkaista.
+      - name: Portti - ei lahdekoodia
+        run: |
+          set -euo pipefail
+          FOUND=$(find _site -type f \( -name '*.py' -o -name '*.sql' -o -name '*.ts' \
+            -o -name '*.yml' -o -name '*.yaml' -o -name '*.env*' -o -name '*.toml' \) | head -20)
+          if [ -n "$FOUND" ]; then
+            echo "::error::Lahdekoodia site-repossa:"; echo "$FOUND"; exit 1
+          fi
+          echo "OK: ei lahdekoodia"
+
+      - name: Deploy Cloudflare Pagesiin
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=goaliq-hub --branch=main --commit-dirty=true
+
+      # Verifioi DOMAINILTA, ei deployn statuksesta. Cloudflare injektoi
+      # challenge-skriptin ennen </body> per-pyynto vaihtuvalla tunnisteella,
+      # joten se riisutaan ennen vertailua (sama kuin verify_live_pages.sh).
+      - name: Verifioi domainilta
+        run: |
+          set -uo pipefail
+          STRIP='s|<script>(function(){function c(){var b=a\.contentDocument.*</script>||'
+          WANT=$(md5sum index.html | cut -d' ' -f1)
+          for i in $(seq 1 24); do
+            GOT=$(curl -sfL --max-time 20 https://goaliq.app/ | sed "$STRIP" | md5sum | cut -d' ' -f1 || echo fetch-fail)
+            if [ "$GOT" = "$WANT" ]; then echo "OK ($i. yritys): live index.html = repo"; exit 0; fi
+            echo "$i: live=$GOT repo=$WANT, odotetaan 15 s"; sleep 15
+          done
+          echo "::error::goaliq.app ei tarjoile taman commitin index.html:aa 6 min jalkeen"; exit 1

@@ -40,6 +40,20 @@ on:
       - 'llms.txt'
       - 'robots.txt'
       - 'favicon.ico'
+      # 10.9 (SITE-REPO-SPLIT vaihe 1): _redirects ja 404.html olivat
+      # stagingissa mutta EIVAT triggerissa: build_seo_redirects.py:n
+      # muutos ei deployannut koskaan itsestaan. 404.html osuu '*.html'.
+      - '_redirects'
+      # Sivujen "Source:"-linkkien data-artefaktit (scripts/site_output.py
+      # PUBLIC_DATA). Portti test_site_output_single_source.py vaatii etta
+      # jokainen PUBLIC_DATA-polku on tassa.
+      - 'data/gw_calls.json'
+      - 'data/model_squad_frozen/**'
+      - 'data/fpl_xp_gw_accuracy.json'
+      - 'data/fpl_xp_frozen/**'
+      - 'data/fpl_elite_managers.json'
+      - 'data/fpl_elite_ownership.json'
+      - 'data/spl_deadline_snapshots/**'
   workflow_dispatch: {}
 
 concurrency:
@@ -49,6 +63,18 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # SITE-REPO-SPLIT vaihe 1 (10.9.2026). Kaksi kytkinta, molemmat
+    # fail-safe: kun kumpaakaan ei ole asetettu, ajo on tasan sama kuin
+    # ennen (staging -> wrangler direct upload -> verifiointi domainilta).
+    #   secrets.SITE_DEPLOY_TOKEN  asetettu -> staging pushataan myos
+    #                              site-repoon GoalIQ/goaliq-site.
+    #   vars.SITE_PUBLISH = 'site' -> direct upload ohitetaan; sivun vie
+    #                              ulos site-repon oma deploy. Ilman tokenia
+    #                              tama on VIRHE (deploy-workflow joka ei
+    #                              voi deployata on punainen, ei skipattu).
+    env:
+      SITE_DEPLOY_TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
+      SITE_PUBLISH: ${{ vars.SITE_PUBLISH }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,20 +82,27 @@ jobs:
       # tyopuussa on venv, node_modules ja data/, ja niiden poissulkeminen
       # negatiivisella listalla on virhealtista. Positiivinen lista on se
       # mika sivustolle kuuluu.
+      #
+      # 10.9: lista on YHDESSA paikassa, scripts/site_output.py. Sama lukija
+      # kokoaa stagingin CF Pagesiin ja site-repoon; tassa tiedostossa ei
+      # ole omaa suodatinta (portti test_site_output_single_source.py).
       - name: Kokoa staging
         run: |
           set -euo pipefail
-          git ls-files -z | tr '\0' '\n' \
-            | grep -vE '^(src/|tests/|scripts/|notebooks/|web/|data/|outputs/|logs/|docs/|api/|supabase/|pages/|\.github/|\.devcontainer/)' \
-            | grep -vE '(\.py|\.sql|\.yml|\.yaml|\.toml|\.cfg|\.ini|\.lock)$' \
-            | grep -vE '^(\.gitignore|\.gitattributes|CNAME|render\.yaml|requirements.*|README.*|DEPLOY\.md|CLAUDE\.md|app\.py|config\.py|bt\.log)$' \
-            > hubfiles.txt
-          mkdir -p _hub
-          while IFS= read -r f; do
-            mkdir -p "_hub/$(dirname "$f")"
-            cp "$f" "_hub/$f"
-          done < hubfiles.txt
-          echo "staging: $(find _hub -type f | wc -l) tiedostoa"
+          python3 scripts/site_output.py stage _hub
+          [ "$(find _hub -type f | wc -l)" -gt 100 ] || { echo "::error::staging on vajaa"; exit 1; }
+
+      - name: Portti - julkaisumoodi on ehja
+        run: |
+          set -euo pipefail
+          if [ "${SITE_PUBLISH:-}" = "site" ] && [ -z "${SITE_DEPLOY_TOKEN:-}" ]; then
+            echo "::error::vars.SITE_PUBLISH=site mutta secrets.SITE_DEPLOY_TOKEN puuttuu - mikaan ei veisi sivua ulos"
+            exit 1
+          fi
+          case "${SITE_PUBLISH:-}" in
+            ""|mirror|site) echo "moodi: '${SITE_PUBLISH:-}' (tyhja = vanha polku), site-token: $([ -n "${SITE_DEPLOY_TOKEN:-}" ] && echo asetettu || echo puuttuu)";;
+            *) echo "::error::tuntematon vars.SITE_PUBLISH='${SITE_PUBLISH}' (sallitut: tyhja, mirror, site)"; exit 1;;
+          esac
 
       # Portti 1: julkiselle sivustolle ei saa paatya lahdekoodia.
       - name: Portti - ei lahdekoodia stagingissa
@@ -107,7 +140,21 @@ jobs:
               sys.exit(1)
           PY
 
+      # SITE-REPO-SPLIT: sama staging site-repoon. Ajetaan vain kun secret
+      # on asetettu; ilman sita askel skipataan ja vanha polku alla toimii
+      # ennallaan. Skripti committaa lahdecommitin aikaleimalla ja riisuu
+      # skip-ci-merkinnan, jotta site-repon oma deploy kaynnistyy.
+      - name: Push output site-repoon
+        id: site
+        if: env.SITE_DEPLOY_TOKEN != ''
+        run: bash scripts/push_site_repo.sh _hub
+
+      # Vanha polku: direct upload projektiin goaliq-hub. Ohitetaan VAIN kun
+      # vars.SITE_PUBLISH on 'site' (ja token on todistetusti asetettu,
+      # portti yllä). Portti 3 alla verifioi domainilta kummassakin moodissa,
+      # joten "site-repo pushattu mutta sivu ei ulkona" on punainen ajo.
       - name: Deploy Cloudflare Pagesiin
+        if: env.SITE_PUBLISH != 'site'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
