@@ -26,6 +26,18 @@ TOURNAMENT_CODES = {
 }
 
 
+# 10.9 (UCL-KATTAVUUS-ILMAISELLA-DATALLA): kotiliigat jotka luetaan
+# football.jsonista eika football-data.co.uk:sta. Kreikka ja Turkki ovat CL-
+# yhteismallin TUKILIIGOJA (uefa_joint.SUPPORT_LEAGUES): niiden seurat saavat
+# ratingin kotiliigasta ja liigan tasoero estimoidaan EL/ECL/CL-silloista.
+# co.uk:n G1/T1 olisi vaihtoehto, mutta se oli 8.9 kokonaan alhaalla, ja
+# football.json on sama avaimeton lahde josta EL/ECL-sillat tulevat.
+DOMESTIC_CODES = {
+    "GRE-Super League": "gr.1",
+    "TUR-Super Lig": "tr.1",
+}
+
+
 def _kausi_to_url(kausi: str) -> str:
     if len(kausi) == 4:
         return f"20{kausi[:2]}-{kausi[2:]}"
@@ -145,6 +157,36 @@ def lataa_diag(liiga: str, kaudet: list[str]) -> LataaResult:
 
 def lataa(liiga: str, kaudet: list[str]) -> pd.DataFrame:
     return lataa_diag(liiga, kaudet).data
+
+
+def lataa_domestic(liiga: str, kaudet: list[str], salli_vara: bool = True) -> pd.DataFrame:
+    """Kotiliiga football.jsonista (DOMESTIC_CODES). Kausi joka ei tule
+    livena luetaan vendoroidusta snapshotista (fd_fallback) - sama saanto kuin
+    football-data.co.uk:lla: vara VAIN tyhjalle kaudelle, ei koskaan
+    onnistuneen paalle. `salli_vara=False` on snapshotin rakennusta varten."""
+    code = DOMESTIC_CODES.get(liiga)
+    if not code:
+        return pd.DataFrame()
+    palaset = []
+    puuttuvat: list[str] = []
+    for k in kaudet:
+        kausi_url = _kausi_to_url(k)
+        url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{kausi_url}/{code}.json"
+        data = _hae_json(url, CACHE_DIR / f"{code}_{kausi_url}.json")
+        d = _parse_data(data, liiga, k) if data else pd.DataFrame()
+        if d.empty:
+            puuttuvat.append(k)
+        else:
+            palaset.append(d)
+    if salli_vara and puuttuvat:
+        from src.data.fd_fallback import lataa_varasnapshot, on_saatavilla
+        if on_saatavilla(liiga):
+            v = lataa_varasnapshot(liiga, puuttuvat)
+            if not v.empty:
+                print(f"openfootball ({liiga}): live tyhja kausille {puuttuvat} -> "
+                      f"varasnapshot, {len(v)} ottelua")
+                palaset.append(v)
+    return pd.concat(palaset, ignore_index=True) if palaset else pd.DataFrame()
 
 
 def tuetut_liigat() -> list[str]:

@@ -1100,6 +1100,7 @@ def uefa_prebuilt_decay() -> float:
 def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
                           decay: float, allow_prebuilt: bool = True) -> DixonColesModel:
     from src.models.uefa_joint import (
+        BRIDGE_LEAGUES,
         SUPPORT_LEAGUES,
         _fold_shifts,
         fit_uefa_joint,
@@ -1143,9 +1144,20 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     stale = frozenset(k for k in turnauskaudet if k not in pari and k not in vendoroidut[-2:])
     dom = _lataa_otteludata_cached(list(SUPPORT_LEAGUES), pari)
     tour = _lataa_otteludata_cached([turnaus], turnauskaudet)
+    # 10.9 (UCL-KATTAVUUS-ILMAISELLA-DATALLA): EL/ECL samalla turnausikkunalla
+    # SILLAKSI. Ne eivat tee seurasta kelpoista (fit_uefa_joint lukee
+    # kelpoisuuden vain CL:n tuoreista kausista) mutta nostavat Eredivisien,
+    # Kreikan ja Turkin siltamaaran kynnyksen yli. Lahde on avaimeton
+    # (openfootball txt) ja vendoroitu, joten tama ei voi pudota tyhjaksi
+    # kylmakaynnistyksessa; tyhja tulos lokitetaan silti nakyvasti.
+    silta = _lataa_otteludata_cached(list(BRIDGE_LEAGUES), turnauskaudet)
+    if silta.empty:
+        print(f"[UEFA] {turnaus}: siltaliigat {BRIDGE_LEAGUES} tyhjia -> "
+              f"silta vain CL:sta (kalibroituvia liigoja vahemman)")
     import pandas as _pd
 
-    df = _pd.concat([x for x in (dom, tour) if not x.empty], ignore_index=True)         if (not dom.empty or not tour.empty) else dom
+    df = _pd.concat([x for x in (dom, tour, silta) if not x.empty], ignore_index=True) \
+        if (not dom.empty or not tour.empty) else dom
     oma = tour
     if df.empty or oma.empty:
         # Ei turnausdataa -> ei siltaotteluita -> ei kalibrointia. Palataan
@@ -1171,12 +1183,25 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     # fittiin, joten se ei voi palauttaa vanhentuneita joukkueita malliin.
     try:
         from src.data.fd_fallback import lataa_varasnapshot
+        from src.data.football_data_org import (
+            turnauksen_joukkuenimet as _turnauksen_joukkuenimet,
+        )
         from src.models.uefa_joint import canonical_name as _kanon
 
         snap = lataa_varasnapshot(turnaus)
         for _sarake in ("home_team", "away_team"):
             for _nimi in snap.get(_sarake, []):
                 malli.display_names[_kanon(_nimi)] = str(_nimi)
+        # 10.9 (UCL-KATTAVUUS-ILMAISELLA-DATALLA): kuluvan kauden KAIKKI
+        # nimet, myos pelaamattomien otteluiden. Snapshot kattaa vain seurat
+        # joilla on CL-tuloksia; seura joka kelpaa kotiliigansa kautta
+        # (Fenerbahce TUR, PAE AEK GRE, Manchester United PL) ei ole siina,
+        # ja sen nayttonimi olisi kotiliigan muoto ('Fenerbahce', 'AEK Athen')
+        # kun /api/fixtures sanoo 'Fenerbahce SK' / 'PAE AEK'. Klientin
+        # CTA-portti vertaa merkkijonoja, joten nappi katoaisi vaikka malli
+        # osaa vastata. Luetaan viimeisena: kuluvan kauden nimi voittaa.
+        for _nimi in _turnauksen_joukkuenimet(turnaus, [k for k in turnauskaudet if k in pari]):
+            malli.display_names[_kanon(_nimi)] = _nimi
     except Exception as _e:  # pragma: no cover - nimet ovat parannus, ei ehto
         print(f"[UEFA] nayttonimien luku varasnapshotista epaonnistui: {_e}")
 

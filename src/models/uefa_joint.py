@@ -119,20 +119,67 @@ SUPPORT_LEAGUES: tuple[str, ...] = (
     "POR-Primeira Liga",
     "NED-Eredivisie",
     "ENG-Championship",
+    # 10.9 (UCL-KATTAVUUS-ILMAISELLA-DATALLA, Villen GO): Kreikka ja Turkki
+    # football.jsonista (src/data/openfootball.DOMESTIC_CODES). Ilman
+    # EL/ECL-siltaa niilla olisi 0 siltaottelua eivatka ne kalibroituisi;
+    # sillan kanssa mitattu 10.9: Kreikka 95, Turkki 82-100 -> yli kynnyksen.
+    "GRE-Super League",
+    "TUR-Super Lig",
 )
 """Kotiliigat jotka ladataan turnausmallin tueksi.
 
-Mukana on MYOS liigoja joita ei voi kalibroida (Primeira, Championship,
-Eredivisie). Se on tarkoituksellista: ne tuovat siltaotteluita joista muiden
+Mukana on MYOS liigoja joita ei voi kalibroida (Primeira, Championship).
+Se on tarkoituksellista: ne tuovat siltaotteluita joista muiden
 liigojen siirtymat tarkentuvat, ja kalibrointiportti hoitaa sen ettei niiden
 omia seuroja tarjota. Liigan poistaminen taalta EI ole tapa piilottaa seuraa -
 se tehdaan portilla."""
 
+BRIDGE_LEAGUES: tuple[str, ...] = (
+    "INT-Europa League",
+    "INT-Conference League",
+)
+"""Turnaukset joiden ottelut ovat SILTA liigojen valilla CL:n lisaksi.
+
+🔴 MIKSI (10.9.2026, UCL-KATTAVUUS-ILMAISELLA-DATALLA). Pelkasta CL:sta
+Eredivisie sai 8 siltaottelua, Kreikka ja Turkki 0 - eli niiden seurat
+(PSV, Feyenoord, PAE AEK, Fenerbahce, Galatasaray) jaivat ilman nappia
+vaikka kotiliigan data oli olemassa. Liigan tasoero on sama parametri
+riippumatta siita pelataanko ristiliigaottelu CL:ssa vai EL:ssa: seura
+kotiliigasta X kohtaa seuran kotiliigasta Y, ja residuaali kertoo liigojen
+erosta. Mitattu 10.9 (openfootball txt 2324-2526 + karsinnat):
+Eredivisie 8 -> 72-80, Kreikka 0 -> 95, Turkki 0 -> 82-100, Primeira 8 -> 16-24
+(jaa alle kynnyksen), PL/La Liga/Bundesliga/Serie A/Ligue 1 jo yli.
+
+Siltaliiga EI tee seurasta kelpoista: `tournament_clubs` luetaan vain
+CL:n tuoreista kausista. EL-seura jonka kotiliigaa ei mallinneta jaa
+ilman nappia kuten ennenkin. Lahde: openfootball/champions-league (txt,
+avaimeton) + vendoroitu snapshot data/fd_fallback/ (Renderin levy on
+efemeeri). Portti: tests/test_uefa_bridge_discipline.py kaatuu jos
+siltaliiga katoaa tasta, api/main.py:n latauksesta tai snapshotista."""
+
+CLUB_ALIASES: dict[str, str] = {
+    # kanoninen muoto -> kanoninen muoto. Vain tapaukset joissa
+    # `canonical_name` EI yhdista samaa seuraa eri lahteista, ja jotka on
+    # mitattu 10.9 CL 26/27:n 36 osallistujasta vs kotiliigan data:
+    #   football-data.org 'PAE AEK'            vs football.json 'AEK Athen'
+    #   football-data.org 'PSV'                vs co.uk 'PSV Eindhoven'
+    #   football-data.org 'Feyenoord Rotterdam' vs co.uk 'Feyenoord'
+    # Ilman naita seuralla on kaksi entiteettia: CL-nimi ilman kotiliigan
+    # otteluita ja kotiliigan nimi ilman CL-otteluita - eli tasan se vika
+    # jonka kanonisointi on tarkoitettu poistamaan.
+    "aek athen": "pae aek",
+    "aek athens": "pae aek",
+    "psv eindhoven": "psv",
+    "feyenoord rotterdam": "feyenoord",
+}
+
 MIN_BRIDGE_MATCHES = 25
-"""Kuinka monta CL-siltaottelua liiga tarvitsee ennen kuin sen seurat
-kelpaavat. Mitattu, ei valittu: 8.9 siltamaarat olivat PL 59, La Liga 58,
-Bundesliga 44, Serie A 40, Ligue 1 35, Eredivisie 8, Primeira Liga 0.
-Kynnys 25 erottaa viisi kalibroituvaa kolmesta joita ei voi kalibroida."""
+"""Kuinka monta siltaottelua (CL + BRIDGE_LEAGUES) liiga tarvitsee ennen
+kuin sen seurat kelpaavat. Mitattu, ei valittu: 8.9 CL-siltamaarat olivat
+PL 59, La Liga 58, Bundesliga 44, Serie A 40, Ligue 1 35, Eredivisie 8,
+Primeira Liga 0. Kynnys 25 erottaa kalibroituvat niista joita ei voi
+kalibroida; 10.9 EL/ECL-sillan kanssa Eredivisie, Kreikka ja Turkki
+ylittavat sen, Primeira ei."""
 
 
 def canonical_name(name: str) -> str:
@@ -146,7 +193,8 @@ def canonical_name(name: str) -> str:
     s = unicodedata.normalize("NFKD", str(name))
     s = "".join(ch for ch in s if not unicodedata.combining(ch)).lower()
     tokens = [t for t in re.split(r"[^a-z0-9]+", s) if t and t not in _CLUB_TOKENS]
-    return " ".join(tokens)
+    canon = " ".join(tokens)
+    return CLUB_ALIASES.get(canon, canon)
 
 
 def _clamp(x: float) -> float:
@@ -281,11 +329,17 @@ def fit_uefa_joint(
     decay: float = 0.0035,
     iterations: int = 2,
     stale_seasons: frozenset[str] = frozenset(),
+    bridge_leagues: tuple[str, ...] = BRIDGE_LEAGUES,
 ) -> UefaJointModel:
     """Sovita yhteismalli ja estimoi liigasiirtymat turnausotteluista.
 
     `stale_seasons`: turnauskaudet jotka kelpaavat SILLAKSI (liigasiirtyman
     estimointiin) mutta EIVAT tee seurasta ennustettavaa.
+
+    `bridge_leagues`: muut turnaukset (EL, ECL) joiden ottelut ovat siltaa
+    liigasiirtyman estimointiin ja siltalaskuriin, mutta EIVAT tee seurasta
+    ennustettavaa `tournament_league`ssa. Oletus on moduulin BRIDGE_LEAGUES;
+    tyhja tuple palauttaa 8.9:n kayttaytymisen (vain CL) - mittausta varten.
 
     🔴 MIKSI TAMA ERO ON OLEMASSA. Leveampi turnausikkuna on hyodyllinen:
     siltaotteluita tulee kolminkertaisesti ja liigasiirtymat tarkentuvat
@@ -302,15 +356,20 @@ def fit_uefa_joint(
     d["home_team"] = d["home_team"].map(canonical_name)
     d["away_team"] = d["away_team"].map(canonical_name)
 
+    # Silta = CL + BRIDGE_LEAGUES. Kotiliiga luetaan VAIN riveista jotka
+    # eivat ole turnausta: EL-rivi ei saa tehda seurasta "EL-liigan" seuraa.
+    silta_liigat = {tournament_league, *bridge_leagues}
+    kotiliiga_rivit = d[~d.league.isin(silta_liigat)]
     club_league: dict[str, str] = {}
-    for row in d[d.league != tournament_league].itertuples(index=False):
+    for row in kotiliiga_rivit.itertuples(index=False):
         club_league.setdefault(row.home_team, row.league)
         club_league.setdefault(row.away_team, row.league)
 
     tour = d[d.league == tournament_league]
+    silta = d[d.league.isin(silta_liigat)]
     tuore = tour[~tour["season"].astype(str).isin(stale_seasons)] if "season" in tour.columns else tour
     bridge: collections.Counter = collections.Counter()
-    for row in tour.itertuples(index=False):
+    for row in silta.itertuples(index=False):
         for club in (row.home_team, row.away_team):
             L = club_league.get(club)
             if L:
@@ -334,7 +393,7 @@ def fit_uefa_joint(
     for _ in range(iterations):
         sa: dict[str, list[float]] = collections.defaultdict(list)
         sd: dict[str, list[float]] = collections.defaultdict(list)
-        for row in tour.itertuples(index=False):
+        for row in silta.itertuples(index=False):
             h, a = row.home_team, row.away_team
             if h not in dc.attack or a not in dc.attack:
                 continue
@@ -362,7 +421,7 @@ def fit_uefa_joint(
     # sita ja klientti sovittaa ottelut sen mukaan. Muuten seuran oman
     # liigan nimi.
     display: dict[str, str] = {}
-    for row in d[d.league != tournament_league].itertuples(index=False):
+    for row in kotiliiga_rivit.itertuples(index=False):
         display.setdefault(row.home_team, row.home_team)
         display.setdefault(row.away_team, row.away_team)
     alkup: dict[str, str] = {}

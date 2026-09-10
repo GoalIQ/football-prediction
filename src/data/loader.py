@@ -15,7 +15,16 @@ UNDERSTAT_LEAGUES = {
 from src.data.footballdata import MAIN_CODES, NEW_FILES, lataa as lataa_fd
 FOOTBALLDATA_LEAGUES = set(MAIN_CODES.keys()) | set(NEW_FILES.keys())
 
-from src.data.openfootball import TOURNAMENT_CODES, lataa as lataa_of
+from src.data.openfootball import (
+    DOMESTIC_CODES as OPENFOOTBALL_DOMESTIC,
+    TOURNAMENT_CODES,
+    lataa as lataa_of,
+)
+from src.data.openfootball_txt import FILES as OPENFOOTBALL_TXT_FILES
+# 10.9: EL/ECL luetaan openfootball/champions-league-txt:sta (avaimeton;
+# football-data.orgin ilmainen tier ei kata niita). CL EI kulje tata kautta:
+# sen lahde on football-data.org + vendoroitu snapshot kuten ennen.
+OPENFOOTBALL_TXT_LEAGUES = {L for L in OPENFOOTBALL_TXT_FILES if L != "INT-Champions League"}
 from src.data.football_data_org import (
     COMPETITION_CODES as FDORG_CODES,
     lataa as lataa_fdorg,
@@ -109,6 +118,31 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
                     f"Yritetaan football-data.co.uk:ta ilman xG."
                 )
         if understat_onnistui:
+            continue
+
+        # 1b. openfootball (UCL-KATTAVUUS-ILMAISELLA-DATALLA, 10.9): EL/ECL
+        #     txt-repo ja Kreikan/Turkin football.json. ENNEN football-data.org-
+        #     haaraa, koska se hylkaisi EL/ECL:n ("ei ilmaisessa tierissa")
+        #     ja `continue`aisi ilman dataa; ja ennen football-data.co.uk:ta,
+        #     koska GRE/TUR eivat saa riippua lahteesta joka oli 8.9 alhaalla.
+        if liiga in OPENFOOTBALL_TXT_LEAGUES or liiga in OPENFOOTBALL_DOMESTIC:
+            try:
+                if liiga in OPENFOOTBALL_TXT_LEAGUES:
+                    from src.data.openfootball_txt import lataa as lataa_txt
+                    of = lataa_txt(liiga, kaudet, qualifiers=True)
+                else:
+                    from src.data.openfootball import lataa_domestic
+                    of = lataa_domestic(liiga, kaudet)
+                if of.empty:
+                    tulos.virheet[liiga] = (
+                        f"openfootball: ei dataa kausille {kaudet} (live eika snapshot)."
+                    )
+                    continue
+                palaset.append(of)
+                tulos.onnistui[liiga] = len(of)
+            except Exception as e:
+                tulos.virheet[liiga] = f"openfootball: {type(e).__name__}: {e}"
+                tulos.katkokset[liiga] = f"openfootball: {type(e).__name__}"
             continue
 
         # 2a. football-data.org (jos API-avain) — UEFA-turnaukset

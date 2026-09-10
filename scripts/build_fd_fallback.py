@@ -25,8 +25,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pandas as pd  # noqa: E402
 
 import config  # noqa: E402
+from src.data import openfootball, openfootball_txt  # noqa: E402
 from src.data.fd_fallback import (  # noqa: E402
     FALLBACK_DIR,
+    OPENFOOTBALL_VENDORED,
     SNAPSHOT_COLS,
     VENDORED_LEAGUES,
     VENDORED_SEASONS,
@@ -71,15 +73,35 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--force", action="store_true",
                     help="hae upstreamista vaikka levycache olisi olemassa")
+    ap.add_argument("--only", nargs="*", default=None,
+                    help="rakenna vain nama liigat (oletus: kaikki VENDORED_LEAGUES). "
+                         "10.9: uuden siltaliigan snapshot ilman etta co.uk-liigat "
+                         "rakentuvat uudelleen mahdollisesti alhaalla olevasta lahteesta.")
     args = ap.parse_args()
 
     FALLBACK_DIR.mkdir(parents=True, exist_ok=True)
     rc = 0
-    for liiga in VENDORED_LEAGUES:
+    liigat = list(VENDORED_LEAGUES)
+    if args.only:
+        tuntemattomat = [x for x in args.only if x not in VENDORED_LEAGUES]
+        if tuntemattomat:
+            print(f"!! --only: ei VENDORED_LEAGUES-listalla: {tuntemattomat}")
+            return 2
+        liigat = [x for x in liigat if x in args.only]
+    for liiga in liigat:
         kaudet = kaudet_liigalle(liiga)
         # UEFA-turnaukset tulevat football-data.orgista, eivat .co.uk:sta:
         # kaytetaan yleista loaderia jotta sama skripti kattaa molemmat.
-        if liiga in VENDORED_SEASONS:
+        if liiga in OPENFOOTBALL_VENDORED:
+            # 10.9: EL/ECL openfootball-txt:sta (karsinnat mukaan, ne ovat
+            # siltaa siina missa liigavaihekin) ja GRE/TUR football.jsonista.
+            # salli_vara=False: snapshot ei saa rakentua itsestaan.
+            if liiga in openfootball_txt.FILES:
+                df = openfootball_txt.lataa(liiga, kaudet, qualifiers=True,
+                                            salli_vara=False)
+            else:
+                df = openfootball.lataa_domestic(liiga, kaudet, salli_vara=False)
+        elif liiga in VENDORED_SEASONS:
             # salli_vara EI kulje lataa_otteludatan lapi, joten CL:n
             # snapshot rakennetaan suoraan primaarilahteesta.
             from src.data.football_data_org import lataa as lataa_fdorg

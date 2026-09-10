@@ -112,21 +112,44 @@ def _fetch(kausi: str, code: str) -> str | None:
     return r.text
 
 
-def lataa(liiga: str, kaudet: list[str], qualifiers: bool = False) -> pd.DataFrame:
-    """Turnauksen ottelut (tulokselliset) annetuilta kausilta."""
+def lataa(liiga: str, kaudet: list[str], qualifiers: bool = False,
+          salli_vara: bool = True) -> pd.DataFrame:
+    """Turnauksen ottelut (tulokselliset) annetuilta kausilta.
+
+    Kausi joka ei tule livena (GitHub alhaalla, tiedosto siirtynyt, Renderin
+    tyhja levy) luetaan vendoroidusta snapshotista (fd_fallback). Vara VAIN
+    tyhjalle kaudelle: onnistunut live-kausi ei koskaan korvaudu. 10.9: EL ja
+    ECL ovat CL-mallin siltaliigoja, ja siltamaaran on oltava sama jokaisessa
+    kylmakaynnistyksessa - muuten kalibroituvien liigojen joukko vaihtelisi.
+    `salli_vara=False` on snapshotin rakennusta varten (ei seedaa itseaan).
+    """
     codes = FILES.get(liiga)
     if not codes:
         return pd.DataFrame(columns=COLUMNS)
     if not qualifiers:
         codes = codes[:1]
     parts = []
+    puuttuvat: list[str] = []
     for k in kaudet:
+        kausi_parts = []
         for code in codes:
             txt = _fetch(k, code)
             if txt:
                 d = parse_txt(txt, liiga, k)
                 if not d.empty:
-                    parts.append(d)
+                    kausi_parts.append(d)
+        if kausi_parts:
+            parts.extend(kausi_parts)
+        else:
+            puuttuvat.append(k)
+    if salli_vara and puuttuvat:
+        from src.data.fd_fallback import lataa_varasnapshot, on_saatavilla
+        if on_saatavilla(liiga):
+            v = lataa_varasnapshot(liiga, puuttuvat)
+            if not v.empty:
+                print(f"openfootball_txt ({liiga}): live tyhja kausille {puuttuvat} -> "
+                      f"varasnapshot, {len(v)} ottelua")
+                parts.append(v)
     if not parts:
         return pd.DataFrame(columns=COLUMNS)
     return pd.concat(parts, ignore_index=True)
