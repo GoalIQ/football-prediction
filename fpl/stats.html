@@ -678,7 +678,8 @@ td .m-sub.drv{display:block;font-size:11px;font-weight:400;opacity:.72;
   var rs=rows(),n=all?rs.length:Math.min(100,rs.length),s='';
   for(j=0;j<n;j++){
    var r=rs[j];
-   s+='<tr><td class="n">'+(j+1)+'</td><td>'+r[C.name]+'</td>'
+   s+='<tr><td class="n">'+(j+1)+'</td><td>'+r[C.name]
+    +(r[C.status]==='u'?' <span class="m-sub is-caveat">not selectable</span>':'')+'</td>'
     +'<td>'+r[C.team]+'</td><td class="m-hide">'+r[C.pos]+'</td>'
     +'<td class="n m-hide">'+r[C.price].toFixed(1)+'</td>'
     // Mins and Starts are windowable: without raw() they showed season
