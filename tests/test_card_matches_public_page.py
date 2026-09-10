@@ -299,3 +299,223 @@ def test_blank_gameweek_row_has_no_goals_and_caption_does_not_promise_them(monke
     # ja kun kaikilla on alarivi, caption saa luvata sen
     rows[1].update({"xg_for": 1.1, "xg_against": 1.2, "short_for": "EVE", "short_against": "FUL"})
     assert "Projected goals are" in bfp.cs_table_html(c)
+
+
+# ---------------------------------------------------------------------------
+# 10.9 XP-AJURIT-ILMAISPINNALLE: xP-kortin todiste == sivun alarivi
+# ---------------------------------------------------------------------------
+def _xp_card_spec():
+    from scripts.gen_share_card import card_xp
+
+    class _A:
+        gw = None
+        top = 20
+    try:
+        return card_xp(_A())
+    except SystemExit as e:
+        pytest.skip(f"card_xp: {e}")
+
+
+def _rows_by_name_team(html: str) -> dict[tuple[str, str], str]:
+    """(web_name, team_short) -> sen <tr>:n sisalto. Rivisidottu, koska
+    "on penalties" esiintyy 15 kertaa ja koko osion substring-osuma olisi
+    sokea vaaralle parille (muisti: gate-substring-osuma-on-sokea)."""
+    import re as _re
+    out = {}
+    for tr in _re.findall(r"<tr>(.*?)</tr>", html, flags=_re.S):
+        m = _re.search(r"<td>([^<]+)", tr)
+        t = _re.search(r'<span>([A-Z]{3})</span>', tr)
+        if m and t:
+            out[(m.group(1).strip(), t.group(1))] = tr
+    return out
+
+
+def test_xp_card_fact_is_on_the_players_own_row():
+    """Kortin "on penalties" / "ARS 51% clean sheet chance" on SAMAN pelaajan
+    rivilla sivulla, sanatarkasti. Molemmat lukevat fpl_why_drivers.fact_text."""
+    import config as _cfg
+    from html import escape as _esc
+    from scripts import build_fpl_longtail as lt
+    spec = _xp_card_spec()
+    xp = json.loads((_cfg.DATA_DIR / "fpl_xp_projections.json").read_text(encoding="utf-8"))
+    html = lt._gw_xp_section(xp)
+    rows = _rows_by_name_team(html)
+    assert len(rows) >= len(spec["rows"]) - 2, "rivien poiminta epaonnistui"
+    puuttuu = []
+    for r in spec["rows"]:
+        t = r.get("fact_text")
+        tr = rows.get((r["name"], r["team"]))
+        if t and (tr is None or f'<span class="m-sub drv">{_esc(t)}</span>' not in tr):
+            puuttuu.append(f'{r["name"]} ({r["team"]}): "{t}"')
+        if t:
+            assert r["sub"].endswith(t), r
+    assert not puuttuu, "kortin todiste ei ole pelaajan rivilla:\n  " + "\n  ".join(puuttuu)
+    assert any(r.get("fact_text") for r in spec["rows"])
+    assert "Under each name: the one number the projection leans on." in html
+
+
+def test_clean_sheet_fact_equals_the_fpl_page_team_number():
+    """Portti k2 C1: pelaajan nollapeli on SEURAN GW-luku samasta kentasta
+    jota /fpl renderoi, ei pistekomponentista johdettu."""
+    import config as _cfg
+    from src.models.fpl_why_drivers import load_team_cs, fact_text
+    doc = _page_doc()
+    xp = json.loads((_cfg.DATA_DIR / "fpl_xp_projections.json").read_text(encoding="utf-8"))
+    gw = xp["meta"]["next_gameweek"]
+    team_cs = load_team_cs(gw)
+    if not team_cs:
+        pytest.skip("phase0 ei kanna tata kierrosta")
+    # Vertailukohta on SIVUN RENDEROITY SOLU, ei oma pyoristyskonventio:
+    # build_context + cs_table_html on sama polku jonka /fpl#clean-sheets ajaa.
+    from scripts import build_fpl_page as bfp
+    import re as _re
+    acc = json.loads((_cfg.DATA_DIR / "accuracy.json").read_text(encoding="utf-8"))
+    page_html = bfp.cs_table_html(bfp.build_context(doc, acc))
+    cells = {}
+    for tr in _re.findall(r"<tr>(.*?)</tr>", page_html, flags=_re.S):
+        m = _re.search(r'<td class="team">([^<]+)', tr)
+        pct = _re.search(r'<td class="num">([0-9.]+%)</td>', tr)
+        if m and pct:
+            cells[m.group(1)] = pct.group(1)
+    assert len(cells) >= 18, cells
+    by_short = {t["short"]: t["name"] for t in doc["teams"]}
+    n = 0
+    for p in xp["players"]:
+        if p.get("pos") not in ("GKP", "DEF"):
+            continue
+        t = fact_text(p, team_cs, "2025/26")
+        if "clean sheet chance" not in t:
+            continue
+        n += 1
+        short = p["team_short"]
+        sivu = cells[by_short[short]]
+        assert t == f"{short} {sivu} clean sheet chance", (p["web_name"], t, sivu)
+    assert n > 0
+    # negatiivinen kontrolli: round()-versio EI tasmaa sivuun jollain seuralla
+    mismatch = [s_ for s_, v in team_cs.items()
+                if f"{round(v)}%" != cells.get(by_short.get(s_), "")]
+    assert mismatch, "kontrolli tyhja: round() tasmaisi kaikkiin soluihin"
+
+
+def _player(pos, xmins=90.0, pens=None, corners=None, fk=None, xgi=None, team="ARS"):
+    return {"web_name": "X", "pos": pos, "xmins": xmins, "team_short": team,
+            "set_pieces": {"pens": pens, "corners": corners, "fk": fk},
+            "last_season": {"per90": {"xgi": xgi}} if xgi is not None else {},
+            "components": {"clean_sheet": 1.0},
+            "owned_pct": 0.8, "price": 4.5, "gameweeks": []}
+
+
+CS = {"ARS": 51.0, "CRY": 25.7}
+PS = "2025/26"
+
+
+def test_fact_text_never_publishes_ownership_price_fixtures_minutes_or_component_cs():
+    from src.models.fpl_why_drivers import fact_text, NEVER
+    from src.models.fpl_xp import driver_facts
+    p = _player("MID")
+    facts = driver_facts(p)
+    assert "differential" in facts and "minutes" in facts and "clean_sheets" in facts, facts
+    assert fact_text(p, CS, PS) == ""            # MID ilman set piece/xGI: tyhja, ei nollapeli
+    for banned in ("owned", "mins a game", "(H)", "(A)", "bonus", "last season"):
+        assert banned not in fact_text(_player("MID", xgi=0.3, pens=1), CS, PS)
+    assert set(NEVER) == {"minutes", "fixtures", "bonus", "price", "differential"}
+
+
+def test_fact_text_set_piece_needs_first_or_second_taker():
+    """Odegaard-tapaus: kolmas nimi listalla ei ole vastuu."""
+    from src.models.fpl_why_drivers import fact_text
+    assert fact_text(_player("MID", pens=3, corners=3, xgi=0.32), CS, PS) == "0.32 xGI/90 in 2025/26"
+    assert fact_text(_player("MID", pens=1, xgi=0.32), CS, PS) == "on penalties"
+    assert fact_text(_player("MID", pens=2, corners=1, fk=1, xgi=0.68), CS, PS) \
+        == "on penalties, corners, free kicks"
+
+
+def test_fact_text_by_position_with_route():
+    from src.models.fpl_why_drivers import fact_text, XGI_MIN
+    from scripts.build_fpl_why import XGI_MIN as WHY_MIN
+    assert WHY_MIN == XGI_MIN == 0.15                     # yksi kynnys
+    # DEF: seuran luku, ei komponentti, ei xGI (Gabriel 0,15)
+    assert fact_text(_player("DEF", xgi=0.15), CS, PS) == "ARS 51% clean sheet chance"
+    assert fact_text(_player("DEF", xgi=0.15, team="CRY"), CS, PS) == "CRY 25.7% clean sheet chance"
+    assert fact_text(_player("DEF", team="BHA"), CS, PS) == ""      # ei GW-lukua -> tyhja
+    assert fact_text(_player("GKP"), CS, PS).endswith("clean sheet chance")
+    # MID/FWD: xGI lattialla, kausi nimettyna, ei nollapelia fallbackina
+    assert fact_text(_player("MID", xgi=0.13), CS, PS) == ""        # Ampadu: alle lattian
+    assert fact_text(_player("FWD", xgi=0.57), CS, PS) == "0.57 xGI/90 in 2025/26"
+    assert fact_text(_player("FWD", xgi=0.57), CS, None) == ""     # kautta ei voi johtaa
+    t = fact_text(_player("FWD", xgi=0.57), CS, PS)
+    assert "+" not in t and " and " not in t
+
+
+def test_previous_season_and_team_cs_readers(tmp_path):
+    from src.models.fpl_why_drivers import previous_season_label, load_team_cs
+    assert previous_season_label({"season": "2026/27"}) == "2025/26"
+    assert previous_season_label({"season": "26/27"}) is None
+    assert previous_season_label({}) is None
+    p = tmp_path / "p0.json"
+    p.write_text(json.dumps({"teams": [
+        {"short": "ARS", "fixtures": [{"gw": 4, "cs_pct": 51.0}, {"gw": 5, "cs_pct": 30.0}]},
+        {"short": "MCI", "fixtures": [{"gw": 4, "cs_pct": 40.0}, {"gw": 4, "cs_pct": 35.0}]},  # DGW
+        {"short": "BHA", "fixtures": [{"gw": 5, "cs_pct": 20.0}]},                             # BGW
+    ]}), encoding="utf-8")
+    assert load_team_cs(4, p) == {"ARS": 51.0}
+    assert load_team_cs(None, p) == {} and load_team_cs(4, tmp_path / "x.json") == {}
+
+
+def test_card_sub_is_xmins_plus_fact():
+    from src.models.fpl_why_drivers import card_sub
+    ctx = {"team_cs": CS, "prev_season": PS}
+    assert card_sub(_player("FWD", xmins=88.4, pens=1), ctx) == "88 xMins  ·  on penalties"
+    assert card_sub(_player("DEF", xmins=70.0, team="BHA"), ctx) == "70 xMins"
+    assert card_sub({"pos": "DEF"}, ctx) is None
+
+
+def _phase_payload(next_gw: int, deadline_gw: int) -> dict:
+    """Synteettinen xP-artefakti jossa raaka kierroskentta ja vaikutettava
+    kierros EROAVAT (30.8: next=2, vaikutettava=3)."""
+    def pl(i, name, team, pos, xp2, xp3, pens=None):
+        return {"id": i, "web_name": name, "team_short": team, "team": team, "pos": pos,
+                "xmins": 90.0, "price": 8.0, "owned_pct": 30.0,
+                "set_pieces": {"pens": pens, "corners": None, "fk": None},
+                "last_season": {"per90": {"xgi": 0.5}}, "components": {"clean_sheet": 1.0},
+                "gameweeks": ([{"gw": next_gw, "xp": xp2, "opponents": [{"opp": "AAA", "venue": "H"}]}]
+                              if next_gw != deadline_gw else [])
+                + [{"gw": deadline_gw, "xp": xp3, "opponents": [{"opp": "BBB", "venue": "A"}]}]}
+    players = [pl(1, "Alpha", "ARS", "FWD", 9.0, 2.0, pens=1),
+               pl(2, "Beta", "MCI", "DEF", 1.0, 8.0),
+               pl(3, "Gamma", "LIV", "MID", 5.0, 5.0)]
+    return {"meta": {"available": True, "season": "2026/27",
+                     "next_gameweek": next_gw, "deadline_gameweek": deadline_gw,
+                     "generated_at": "2026-09-10T00:00:00"},
+            "players": players}
+
+
+@pytest.mark.parametrize("next_gw,deadline_gw", [(2, 3), (4, 4), (3, 5)])
+def test_card_gameweek_equals_page_and_fact_gameweek_in_every_phase(monkeypatch, next_gw, deadline_gw):
+    """Portti k4: kortin otsikon kierros, alarivin nollapelikierros ja sivun
+    #gw-xp-kierros ovat SAMA luku myos kun raaka meta-kentta eroaa
+    vaikutettavasta kierroksesta. Mitataan synteettisilla vaiheilla, ei
+    taman hetken metalla (CLAUDE.md 6a mek. 3)."""
+    from scripts import gen_share_card as gsc
+    from scripts import build_fpl_longtail as lt
+    from src.models import fpl_why_drivers as fwd
+    data = _phase_payload(next_gw, deadline_gw)
+    monkeypatch.setattr(gsc, "_xp_payload", lambda: data)
+    seen = []
+    monkeypatch.setattr(fwd, "load_team_cs", lambda gw, path=None: (seen.append(gw) or {"MCI": 40.0}))
+    monkeypatch.setattr(gsc, "_as_of", lambda d: "10 Sep", raising=False)
+
+    class _A:
+        gw = None
+        top = 20
+    spec = gsc.card_xp(_A())
+    assert spec["title"].startswith(f"GAMEWEEK {deadline_gw} ")
+    assert seen and set(seen) == {deadline_gw}, seen
+    # rivit ovat vaikutettavan kierroksen xP:n mukaan: Beta (8.0) ennen Alphaa (2.0)
+    names = [r["name"] for r in spec["rows"]]
+    assert names.index("Beta") < names.index("Alpha")
+    beta = next(r for r in spec["rows"] if r["name"] == "Beta")
+    assert beta["sub"] == "90 xMins  ·  MCI 40% clean sheet chance"
+    html = lt._gw_xp_section(data)
+    assert f"Gameweek {deadline_gw} expected points" in html
+    assert f'<span class="m-sub drv">MCI 40% clean sheet chance</span>' in html

@@ -56,6 +56,7 @@ from scripts.build_fpl_page import (  # noqa: E402
     write_urlset,
 )
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
+from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text  # todiste: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
 from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
 
@@ -4344,6 +4345,27 @@ def _dist_cell(r: dict, key: str) -> str:
     return str(int(v))
 
 
+def _driver_sub(r: dict, ctx: dict) -> str:
+    """Alarivi pelaajan nimen alle: yksi todiste jolla on reitti, esim.
+    "on penalties" / "ARS 51% clean sheet chance" / "0.57 xGI/90 in 2025/26".
+
+    10.9 XP-AJURIT-ILMAISPINNALLE. Portti blokkasi kategoriat ("set pieces",
+    "low ownership") vaitteina ilman reittia, ja pelaajakohtaisen nollapeli-
+    luvun joka poikkesi /fpl-sivun joukkueluvusta. Nyt: seuran GW-luku
+    samasta kentasta kuin /fpl, xGI kausi nimettyna. Nakyy joka leveydella
+    (ei m-hide), koska jakokortti lainaa saman tekstin.
+    """
+    txt = fact_text(r, ctx.get("team_cs"), ctx.get("prev_season"))
+    return f'<span class="m-sub drv">{escape(txt)}</span>' if txt else ""
+
+
+def _driver_legend(rows: list[dict], ctx: dict) -> str:
+    """Selite alariville, vain kun taulussa on ainakin yksi todiste."""
+    if any(fact_text(r, ctx.get("team_cs"), ctx.get("prev_season")) for r in rows):
+        return f'<p class="note">{escape(PAGE_LEGEND)}</p>'
+    return ""
+
+
 def _gw_xp_section(xp: dict) -> str:
     """FREE-GW-XP (Villen GO 30.8): YHDEN kierroksen xP top 20 ilmaiseksi.
 
@@ -4397,13 +4419,14 @@ def _gw_xp_section(xp: dict) -> str:
                          f"{t.strftime('%a')} {t.day} {t.strftime('%b %H:%M')} UTC.")
         except ValueError:
             dl_teksti = ""
+    ctx = fact_context(xp)
     trows = "".join(
         "<tr>"
         f'<td class="n">{i + 1}</td>'
         # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
         # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
         # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
-        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}</td>'
+        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}{_driver_sub(r, ctx)}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span></td>'
         f'<td>{escape(r.get("pos") or "")}</td>'
@@ -4427,7 +4450,7 @@ def _gw_xp_section(xp: dict) -> str:
         '<th>Pos</th><th class="n">Price</th>'
         f'<th class="n">GW{gw} xP</th>'
         '<th class="m-hide">Opponent</th><th class="n">Start%</th>'
-        f"</tr></thead><tbody>{trows}</tbody></table></div>{_flag_legend(rows)}"
+        f"</tr></thead><tbody>{trows}</tbody></table></div>{_flag_legend(rows)}{_driver_legend(rows, ctx)}"
         # 🔴 YKSI PERUSTELU, EI KOLMEA (julkaisutarkistaja 30.8). Ensimmainen
         # versio perusteli itsestaanselvan saannon kolmesti perakkain
         # (AI-TELL-CHECKLIST A4), ja yksi perusteluista oli KOVAKOODATTU
@@ -4502,13 +4525,14 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         for i, r in enumerate(rows[:3])
     )
 
+    ctx_top = fact_context(xp)
     trows = "".join(
         "<tr>"
         f'<td class="n">{i + 1}</td>'
         # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
         # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
         # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
-        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}</td>'
+        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}{_driver_sub(r, ctx_top)}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span>{_tflag_html(r)}</td>'
         # 15.8: pos ja price ilman m-hidea, kuten otsikotkin. Suodatin lukee
@@ -4614,7 +4638,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
         "</tr></thead>"
-        f"<tbody>{trows}</tbody></table></div>{_flag_legend(rows[:100])}"
+        f"<tbody>{trows}</tbody></table></div>{_flag_legend(rows[:100])}{_driver_legend(rows[:100], ctx_top)}"
     )
     hero = (
         "<h1>FPL expected points, top 100 players ranked</h1>"

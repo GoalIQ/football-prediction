@@ -245,8 +245,10 @@ def load_data() -> tuple[dict, dict]:
     return fpl, acc
 
 
-def fmt_pct(x: float, decimals: int = 1) -> str:
-    return f"{x:.{decimals}f}".rstrip("0").rstrip(".") + "%"
+# 10.9: fmt_pct asuu src/models/fmt.py:ssa, koska ilmaissivun todiste
+# (fpl_why_drivers) renderoi saman nollapeliluvun ja sen on oltava
+# merkkijonona sama kuin tassa taulukossa. Nimi sailyy tassa moduulissa.
+from src.models.fmt import fmt_pct  # noqa: E402
 
 
 def gw_date_label(fixtures: list[dict], gw: int) -> str:

@@ -425,19 +425,29 @@ def card_xp(args) -> dict:
     samat luvut.
     """
     data = _xp_payload()
-    gw = data["meta"]["next_gameweek"]
-    # 9.9 PORTTI: pisteiden ajurit ("from goals & assists + set pieces")
-    # EIVAT tule korttiin. Ne ovat premium-selite (api/main.py: why liitetaan
-    # vain maskaamattomaan vastaukseen), /fpl/why-sivua ei ole, eika
-    # ilmaissivulla ole set piece- tai driver-tietoa. Kortti saa nayttaa vain
-    # sen mika on tarkistettavissa ilman tilia: xP, fixture ja xMins.
+    # 10.9 PORTTI k4: kierros ja rivit SAMALTA lukijalta kuin sivun #gw-xp
+    # (fpl_gw_xp.free_rows: actionable_gameweek + top_projected + blocklist).
+    # Raaka meta-kentta ja alarivin nollapeli olisivat kesken kierroksen
+    # eri kierrosta samalla PNG-rivilla (30.8: next=2, vaikutettava=3).
+    from scripts.publish_gate import load_blocklist
+    from src.models.fpl_gw_xp import free_rows
+    gw, free = free_rows(data, load_blocklist())
+    if gw is None:
+        raise SystemExit("card_xp: kierrosta ei voi paatella metasta.")
+    # 9.9 PORTTI blokkasi ajurikategoriat (premium-selite ilman
+    # ilmaisreittia). 10.9 XP-AJURIT-ILMAISPINNALLE: sivun rivi kantaa nyt
+    # YHDEN todisteen ("on penalties", "51% clean sheet chance", "0.57
+    # xGI/90 last season") ja kortti lukee SAMAN funktion
+    # (src/models/fpl_why_drivers.card_sub) -> sama teksti. P/FK-badget
+    # pysyvat poissa: sama tieto on nyt tekstina, ei kahdesti.
+    from src.models.fpl_why_drivers import card_sub, fact_context, fact_text
+    ctx = fact_context(data)
     # 9.9 PORTTI: sivu (#gw-xp) jarjestaa top_projected-lukijalla (tasapeli
     # id:lla, korkeintaan MAX_PER_CLUB per seura). Kortti lajitteli itse ja
     # nayttti Joao Pedron ennen Palmeria (molemmat 5.11) kun sivu naytti
     # painvastoin. Yksi lukija molemmille, ei kahta lajittelua.
-    from src.models.fpl_gw_xp import top_projected
     rows = []
-    for p in top_projected(data.get("players", []), gw, args.top):
+    for p in free[:args.top]:
         g = next((g for g in (p.get("gameweeks") or []) if g.get("gw") == gw),
                  None)
         if not g:
@@ -447,12 +457,19 @@ def card_xp(args) -> dict:
         # 9.9 PORTTI: P/FK-badget pois - set piece -tietoa ei ole
         # ilmaissivulla, joten merkki olisi vaite ilman reittia.
         badges = []
-        xm = p.get("xmins")
         rows.append({"name": p["web_name"], "tag": p["pos"],
                      "team": p["team_short"], "mid": fx,
                      "_xp": float(g.get("xp") or 0.0), "badges": badges,
-                     "sub": (f"{xm:.0f} xMins" if isinstance(xm, (int, float))
-                             else None)})
+                     "fact_text": fact_text(p, ctx["team_cs"], ctx["prev_season"]) or None,
+                     "sub": card_sub(p, ctx)})
+    # Thiaw ei markkinointiin (Villen ohje 10.8, koskee generoituja kortteja).
+    # Kortin sisalto on datavetoinen, joten esto on generaattorissa eika
+    # postaajan muistissa: fail-closed, Ville paattaa.
+    # Nimen varassa (web_name ei ole avain, muisti): riittaa tahan, koska
+    # vaara positiivinen kaataa vain kortin eika mitaan julkaista.
+    if any(r["name"] == "Thiaw" for r in rows):
+        raise SystemExit("card_xp: Thiaw on top-listalla; kortti ei mene ulos "
+                         "(Villen ohje 10.8). Kayta --top pienempaa tai odota.")
     if not rows:
         raise SystemExit(f"Ei xP-rivejä GW{gw}:lle.")
     return {
@@ -461,7 +478,7 @@ def card_xp(args) -> dict:
         "nameLabel": "PLAYER",
         "midLabel": "FIXTURE",
         "valueLabel": "xP",
-        "footNote": "xMins = the minutes the model expects him to play",
+        "footNote": "xMins = the minutes the model expects him to play. Same row on the page.",
         "footNote2": (f"GW{gw} top 20 free, no account: goaliq.app/fpl/expected-points#gw-xp"
                       f"  ·  as of {_as_of(data)}  ·  model projections, not betting advice"),
         "row_h": 104 if any(r.get("sub") for r in rows) else ROW_H,

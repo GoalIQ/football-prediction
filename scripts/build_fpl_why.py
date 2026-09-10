@@ -52,7 +52,7 @@ TOP_N = 150
 
 # Alle taman xGI/90 jatetaan pois lauseesta: se ei kanna painoa jonka
 # "leans on" sille antaisi (ks. template_sentence).
-XGI_MIN = 0.15
+from src.models.fpl_why_drivers import XGI_MIN  # noqa: E402  yksi kynnys, sama kuin ilmaissivun todiste
 
 # Nosta AINA kun `template_sentence` muuttuu: se on osa valimuistin avainta
 # mallipohjaisille lauseille. v2 (14.8): xGI-kynnys + kolme runkoa.
