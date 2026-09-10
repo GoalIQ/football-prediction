@@ -37,6 +37,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 VERIFY = "verify_live_pages.sh"
+DYNAAMINEN = "$(python scripts/verify_targets.py)"
+from scripts.verify_targets import CORE  # noqa: E402
 
 # Sama joukko kuin autopilotin S10_PUBLISHABLE_RE (goaliq-app
 # scripts/autopilot/signals.py), ilman scripts/ ja workflows/ jotka eivat
@@ -79,8 +81,16 @@ def analysoi(runit: list[str]) -> dict:
     lisatyt = _polut(runit, _GIT_ADD_RE)
     servattavat = [p for p in lisatyt if SERVATTAVA_RE.match(p)]
     pushaa = any("git push" in r for r in runit)
-    verifioidut = _polut(runit, _VERIFY_RE) if any(VERIFY in r for r in runit) else None
-    return {"servattavat": servattavat, "pushaa": pushaa, "verifioidut": verifioidut}
+    dynaaminen = any(VERIFY in r and DYNAAMINEN in r for r in runit)
+    if dynaaminen:
+        # DEPLOY-VERIFY-MUUTTUNEET-SIVUT (10.9): lista tulee ajon diffista
+        # (scripts/verify_targets.py), ydin aina mukana. Staattinen lista
+        # mitattiin vihreaksi sivuilla jotka eivat muuttuneet.
+        verifioidut = list(CORE)
+    else:
+        verifioidut = _polut(runit, _VERIFY_RE) if any(VERIFY in r for r in runit) else None
+    return {"servattavat": servattavat, "pushaa": pushaa, "verifioidut": verifioidut,
+            "dynaaminen": dynaaminen}
 
 
 def _kattaa(tiedosto: str, lisatyt: list[str]) -> bool:
@@ -108,7 +118,7 @@ def puutteet(nimi: str, runit: list[str], juuri: Path = ROOT) -> list[str]:
     for f in a["verifioidut"]:
         if not (juuri / f).exists():
             viat.append(f"{nimi}: {VERIFY} {f} - tiedostoa ei ole repossa")
-        if not _kattaa(f, a["servattavat"]):
+        if not a["dynaaminen"] and not _kattaa(f, a["servattavat"]):
             viat.append(f"{nimi}: {VERIFY} {f} - workflow ei lisaa sita, "
                         "joten verifiointi mittaa vaaraa sivua")
     return viat
@@ -172,3 +182,24 @@ def test_portti_ei_valita_datasta_ilman_sivua():
 
 def test_portti_ei_valita_workflowsta_joka_ei_pushaa():
     assert not puutteet("synt.yml", ["git add ucl/index.html\n"])
+
+
+def test_dynaaminen_lista_kattaa_workflown_lisaamat_sivut():
+    """Dynaaminen muoto: verify_targets lukee git diffin, joten sen tulos
+    sisaltaa juuri ne sivut jotka workflow committoi (+ ydin). Mitataan
+    funktiolla, ei nykyhetken diffilla."""
+    from scripts.verify_targets import targets
+    diff = ["fpl/defence.html", "fpl/stats.html", "data/fpl_stats.json"]
+    got = targets(diff)
+    assert "fpl/defence.html" in got and "fpl/stats.html" in got
+    assert "data/fpl_stats.json" not in got
+    for c in CORE:
+        assert c in got and (ROOT / c).exists(), c
+
+
+def test_dynaaminen_muoto_tunnistetaan_eika_tokenisoida():
+    runit = ["git add fpl/defence.html", "git push",
+             "bash scripts/verify_live_pages.sh $(python scripts/verify_targets.py)"]
+    a = analysoi(runit)
+    assert a["dynaaminen"] and a["verifioidut"] == list(CORE)
+    assert puutteet("x.yml", runit) == []
