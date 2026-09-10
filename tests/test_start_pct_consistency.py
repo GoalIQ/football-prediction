@@ -28,6 +28,10 @@ def _sivu(rel: str) -> str:
 
 
 def _teksti(solu: str) -> str:
+    # 10.9 XP-AJURIT-ILMAISPINNALLE: nimisolussa on todiste-alarivi
+    # (<span class="m-sub drv">on penalties</span>), joka ei ole osa nimea.
+    # Ilman tata "Haaland" luki "Haalandon penalties" ja yhteisia nimia jai 4.
+    solu = re.sub(r'<span class="m-sub[^"]*">.*?</span>', "", solu, flags=re.S)
     return html.unescape(re.sub(r"<[^>]+>", "", solu)).strip()
 
 
