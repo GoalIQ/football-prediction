@@ -129,6 +129,8 @@ def main():
     ap.add_argument("--seasons", default="2425,2526")
     ap.add_argument("--test-season", default="2526")
     ap.add_argument("--decays", default=str(PROD_DECAY))
+    # 10.9 E1-KALIBROINTI-BACKTEST: shrinkage-vaihtoehto samalla walk-forwardilla
+    ap.add_argument("--l2", type=float, default=PROD_L2)
     ap.add_argument("--no-per-team-home-adv", action="store_true")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
@@ -142,9 +144,9 @@ def main():
     results = {}
     for decay in [float(d) for d in args.decays.split(",")]:
         half_life = np.log(2) / decay if decay > 0 else float("inf")
-        label = f"decay={decay:.4f}"
+        label = f"decay={decay:.4f} l2={args.l2:g}"
         print(f"\n=== {label} (puoliintumisaika {half_life:.0f} pv) ===")
-        bt = walk_forward(df, args.test_season, decay, PROD_L2,
+        bt = walk_forward(df, args.test_season, decay, args.l2,
                           not args.no_per_team_home_adv, liigat, kaudet)
         m = metrics(bt)
         results[label] = m
