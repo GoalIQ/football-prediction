@@ -267,6 +267,12 @@ ARGMAX = re.compile(
     r'|p_home(?:_win)?\s*>=?\s*p_away'
     r'|p_away(?:_win)?\s*>=?\s*p_draw'
     r'|>=\s*Math\.max\(\s*data\.p_draw'
+    # 10.9: etusivun next_matches_block kaytti max((p_home, ..), (p_draw, ..))
+    # -kuviota eika vertailua, ja livahti ohi. Kaikki max()-kutsut joissa
+    # p_home/p_away/p_draw ovat KAHDESTI argumenttina ovat suosikin johtamista.
+    # Kaksi eri p_-todennakoisyytta samassa max()-kutsussa; yksi (esim.
+    # max(p_home, 0.001) -kerroinclamp) ei ole suosikin valinta.
+    r'|\bmax\([^\n]*\bp_(?:home|away|draw)[^\n]*\bp_(?:home|away|draw)'
 )
 ALLOWED = {
     # track recordin kirjaus: julkaistu metodologia "always names the more
@@ -331,6 +337,26 @@ def test_lede_link_is_fail_closed_without_anchor(monkeypatch, tmp_path):
     missing.write_text('<div id="margin">x</div>', encoding="utf-8")
     html = bpp.render_match_page("CL", _entry(0.405, 0.24, 0.355))
     assert 'href="/predictions#margin"' in html
+
+
+def test_next_matches_block_uses_call_state(monkeypatch):
+    import datetime as dt
+    from scripts import build_fpl_page as bfp
+    monkeypatch.setattr(bfp, "call_state",
+                        lambda ph, pd_, pa: cm.call_state(ph, pd_, pa, margin=M16))
+    now = dt.datetime(2026, 9, 10, tzinfo=dt.timezone.utc)
+    ko = now + dt.timedelta(days=1)
+    rows = [
+        {"home": "Club Brugge", "away": "Aston Villa", "p_home": 0.405, "p_draw": 0.24,
+         "p_away": 0.355, "kickoff": ko, "comp": "Champions League", "url": "", "logged": "x"},
+        {"home": "Liverpool", "away": "Burnley", "p_home": 0.70, "p_draw": 0.19,
+         "p_away": 0.11, "kickoff": ko, "comp": "Premier League", "url": "", "logged": "x"},
+    ]
+    monkeypatch.setattr(bfp, "next_matches_rows", lambda log, now, limit: rows)
+    html = bfp.next_matches_block({}, now)
+    assert "Too close to call" in html and "41% · 24% · 36%" in html
+    assert "Club Brugge <b>" not in html
+    assert "Liverpool <b>70%</b>" in html
 
 
 def test_allowed_files_exist():

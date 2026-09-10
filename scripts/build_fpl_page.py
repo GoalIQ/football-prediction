@@ -43,6 +43,7 @@ if str(Path(__file__).resolve().parent.parent) not in sys.path:
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
 from src.models import gw_calls as gwc  # kapteenin kerroin, yksi lukija
+from src.models.call_margin import call_state, pct_int  # suosikki: yksi lukija
 
 from scripts.mobile_css import (  # noqa: E402
     MOBILE_BLOCK_COLS,
@@ -1978,15 +1979,26 @@ def next_matches_block(log: dict | None, now: _dt.datetime, limit: int = 6) -> s
         return ""
     tr = []
     for r in rows:
-        call = max((r["p_home"], f"{r['home']}"), (r["p_draw"], "Draw"),
-                   (r["p_away"], f"{r['away']}"))
+        # 10.9 SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN: sama lukija kuin
+        # ottelusivuilla ja API:ssa. Aiempi kolmisuuntainen argmax nimesi
+        # suosikin myos 5 pp:n erolla (Brugge-Villa) ja ohitti
+        # poikkeuslistatestin, koska kuvio oli max((p_home,..)) eika vertailu.
+        cs = call_state(r["p_home"], r["p_draw"], r["p_away"])
+        if cs["favourite"] == "home":
+            call_html = f'{escape(r["home"])} <b>{pct_int(r["p_home"])}%</b>'
+        elif cs["favourite"] == "away":
+            call_html = f'{escape(r["away"])} <b>{pct_int(r["p_away"])}%</b>'
+        else:
+            call_html = ('<span class="nm-close">Too close to call</span>'
+                         f'<span class="nm-comp">{pct_int(r["p_home"])}% · '
+                         f'{pct_int(r["p_draw"])}% · {pct_int(r["p_away"])}%</span>')
         name = (f'<a href="{r["url"]}">{escape(r["home"])} v {escape(r["away"])}</a>'
                 if r["url"] else f'{escape(r["home"])} v {escape(r["away"])}')
         tr.append(
             "<tr>"
             f'<td class="nm-ko">{r["kickoff"].strftime("%a %d %b, %H:%M")}</td>'
             f'<td class="nm-tm">{name}<span class="nm-comp">{escape(r["comp"])}</span></td>'
-            f'<td class="nm-call">{escape(call[1])} <b>{call[0] * 100:.0f}%</b></td>'
+            f'<td class="nm-call">{call_html}</td>'
             f'<td class="nm-lg">{escape(r["logged"])}</td>'
             "</tr>")
     return (
@@ -2010,6 +2022,7 @@ vertical-align:top}
 .nm-comp{display:block;font-size:11px;color:var(--faint);margin-top:2px}
 .nm-call{white-space:nowrap}
 .nm-call b{color:var(--amber)}
+.nm-close{color:var(--muted)}
 .nm-sc{white-space:nowrap;color:var(--muted)}
 .nm-lg{white-space:nowrap;color:var(--faint);font-size:12px}
 """
