@@ -43,6 +43,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.models import accuracy as acc
+from src.models.favourite_gate import calibration_error_pp, is_close_call
 from scripts.build_fpl_page import ROOT as _FP_ROOT, write_urlset
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 from scripts.slugs import fold_ascii, slug
@@ -576,7 +577,34 @@ def _confidence_block(e: dict) -> str:
     )
 
 
-def render_match_page(comp: str, e: dict) -> str:
+class _Unset:
+    """Sentinelli: 'error_pp ei annettu, lataa mitattu arvo levylta'.
+
+    Erotettava `None`:sta, jolla on oma merkitys (`is_close_call`:
+    mittausta ei ole, ala vaimenna pintaa). Jos default olisi None,
+    kutsuja ei voisi erottaa 'lataa levylta' ja 'mittaus puuttuu' -tapauksia.
+    """
+
+
+_UNSET = _Unset()
+
+
+def _favourite_error_pp() -> float | None:
+    """Mallin oma mitattu virhe pp:na (`data/accuracy.json`).
+    QUEUE: SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN.
+
+    Palauttaa None (ei vaimenna mitaan pintaa) jos tiedostoa ei ole tai
+    kalibrointidataa ei ole viela kertynyt - puuttuva mittaus ei saa
+    nayttaytya nollana (ks. src.models.favourite_gate).
+    """
+    try:
+        data = json.loads(acc.AGGREGATE_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return calibration_error_pp(data.get("calibration"))
+
+
+def render_match_page(comp: str, e: dict, error_pp: float | None | _Unset = _UNSET) -> str:
     cfg = LEAGUES[comp]
     home, away = e["home_team"], e["away_team"]
     ph, pd_, pa = e["p_home"], e["p_draw"], e["p_away"]
@@ -584,6 +612,15 @@ def render_match_page(comp: str, e: dict) -> str:
     fav_pct = _fmt_pct(ph if e["predicted_winner"] == "home" else pa)
     url = f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}"
     title = f"{home} vs {away} Prediction: {cfg['name']} | GoalIQ"
+    # 10.9 (QUEUE: SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN): Villen havainto
+    # 8.9 - Club Brugge nimettiin suosikiksi 5,0 pp:n erolla kun mallin oma
+    # mitattu virhe on suurempi kuin tuo ero. Kolme lopputulosta nakyvat
+    # aina _prob_block()issa; hero/desc EIVAT saa vaittaa suosikkia kun ero
+    # on pienempi kuin mitattu virhe. `error_pp` on parametrina jotta testi
+    # voi antaa mitatun arvon suoraan sen sijaan etta lukisi levylta.
+    if error_pp is _UNSET:
+        error_pp = _favourite_error_pp()
+    close_call = is_close_call(ph, pd_, pa, error_pp)
     # 2.8.2026 PREMIUM-VUOTO KIINNI: raaka xG on premium-dataa (PredictScreen
     # #92: "siita johtaa total goals + BTTS + scoreline", XgStat locked=
     # !isPremium), mutta se julkaistiin 1 930 indeksoidulla sivulla ilmaiseksi.
@@ -591,17 +628,32 @@ def render_match_page(comp: str, e: dict) -> str:
     # track recordia (pct_1x2 + pct_exact gradataan), eli ilman niita koko
     # "logged before kickoff" -vaite ei olisi todennettavissa. xG ei ole
     # gradattu mittari eika sita siksi tarvita vaitteen tueksi.
-    desc = (
-        f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ model "
-        f"gives {fav} a {fav_pct} chance to win. Logged before kick-off in our "
-        f"public track record and graded after the match."
-    )
-    hero = (
-        f"<h1>{escape(home)} vs {escape(away)} prediction</h1>"
-        f'<p class="lede">{escape(cfg["name"])} · kickoff {_fmt_kickoff(e.get("kickoff") or "")}. '
-        f"The GoalIQ match model makes <strong>{escape(fav)}</strong> the favourite "
-        f"at <strong>{fav_pct}</strong> to win.</p>"
-    )
+    if close_call:
+        desc = (
+            f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ "
+            f"model has this one too close to call ({_fmt_pct(ph)} / "
+            f"{_fmt_pct(pd_)} / {_fmt_pct(pa)} home/draw/away), closer "
+            f"together than the model's own measured error. Logged before "
+            f"kick-off in our public track record and graded after the match."
+        )
+        hero = (
+            f"<h1>{escape(home)} vs {escape(away)} prediction</h1>"
+            f'<p class="lede">{escape(cfg["name"])} · kickoff {_fmt_kickoff(e.get("kickoff") or "")}. '
+            f"The three outcomes are close enough that the GoalIQ match model "
+            f"isn't calling a favourite here.</p>"
+        )
+    else:
+        desc = (
+            f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ model "
+            f"gives {fav} a {fav_pct} chance to win. Logged before kick-off in our "
+            f"public track record and graded after the match."
+        )
+        hero = (
+            f"<h1>{escape(home)} vs {escape(away)} prediction</h1>"
+            f'<p class="lede">{escape(cfg["name"])} · kickoff {_fmt_kickoff(e.get("kickoff") or "")}. '
+            f"The GoalIQ match model makes <strong>{escape(fav)}</strong> the favourite "
+            f"at <strong>{fav_pct}</strong> to win.</p>"
+        )
     body = (
         f'<div class="card big">{_prob_block(e)}</div>'
         f'<div class="stat-row">'
@@ -642,7 +694,8 @@ def render_match_page(comp: str, e: dict) -> str:
     return _page(title, desc, url, hero, body, jsonld)
 
 
-def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
+def render_league_hub(comp: str, rows: list[dict], now: datetime,
+                       error_pp: float | None | _Unset = _UNSET) -> str:
     cfg = LEAGUES[comp]
     url = f"{BASE}/predictions/{cfg['slug']}/"
     title = f"{cfg['name']} Predictions This Week: Win Probability | GoalIQ"
@@ -651,6 +704,10 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
         f"prediction is logged before kickoff in GoalIQ's public track record "
         f"and graded after the match, hits and misses included."
     )
+    # QUEUE: SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN. Ladataan kerran koko
+    # listalle, ei per rivi.
+    if error_pp is _UNSET:
+        error_pp = _favourite_error_pp()
     items = []
     for e in rows:
         fname = _match_filename(e)
@@ -658,12 +715,16 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
         fav_pct = _fmt_pct(
             e["p_home"] if e["predicted_winner"] == "home" else e["p_away"]
         )
+        if is_close_call(e["p_home"], e["p_draw"], e["p_away"], error_pp):
+            pick_html = '<span class="pick close-call">Too close to call</span>'
+        else:
+            pick_html = f'<span class="pick">{escape(fav)} {fav_pct}</span>'
         items.append(
             f'<div class="mrow"><div>'
             f'<a href="/predictions/{cfg["slug"]}/{fname[:-5]}">'
             f'{escape(e["home_team"])} vs {escape(e["away_team"])}</a>'
             f'<div class="meta">{_fmt_kickoff(e.get("kickoff") or "")}</div></div>'
-            f'<span class="pick">{escape(fav)} {fav_pct}</span></div>'
+            f"{pick_html}</div>"
         )
     hero = (
         f"<h1>{escape(cfg['name'])} predictions</h1>"
