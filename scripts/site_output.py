@@ -82,6 +82,45 @@ PUBLIC_DATA: dict[str, str] = {
         "round: data/spl_deadline_snapshots'.",
 }
 
+# Julkinen selite jokaiselle PUBLIC_DATA-riville (englanti): kirjoitetaan
+# stagingiin `data/MANIFEST.md`:ksi. Site-repon README ohjaa lukijan sinne,
+# koska tama tiedosto (perusteluineen) jaa privaattiin repoon eika
+# julkinen lukija paase siihen (julkaisutarkistaja 10.9). Avaimet ovat
+# tasan PUBLIC_DATA:n avaimet (testi).
+PUBLIC_DATA_CITED_BY: dict[str, str] = {
+    "data/gw_calls.json":
+        "goaliq.app/fpl, 'Gameweek calls, logged and scored'. One row per "
+        "call the model made before the deadline, with the points it scored.",
+    "data/model_squad_frozen/":
+        "goaliq.app/fpl, the squad each captain call came from. One file per "
+        "gameweek, written before that gameweek's deadline.",
+    "data/fpl_xp_gw_accuracy.json":
+        "goaliq.app/fpl accuracy table and goaliq.app/fpl/points. Error of "
+        "the frozen projection against what each player scored.",
+    "data/fpl_xp_frozen/":
+        "goaliq.app/fpl, the frozen expected-points projection. One file per "
+        "gameweek; the commit that added it is dated before the deadline.",
+    "data/fpl_elite_managers.json":
+        "goaliq.app/fpl, what the top-ranked managers own and moved.",
+    "data/fpl_elite_ownership.json":
+        "goaliq.app/fpl, effective ownership by rank tier.",
+    "data/spl_deadline_snapshots/":
+        "pro.goaliq.app/spl, the Swiss Pro League projection pinned at the "
+        "first kickoff of each round. Gameweeks 1 to 4 were added to git in "
+        "one backfill on 3 September 2026; the provenance block inside each "
+        "file names the build commit and the time it was generated.",
+}
+
+
+def manifest_text() -> str:
+    rivit = ["# Data files cited by the site", "",
+             "Each file below is named as a source on a goaliq.app page. "
+             "Nothing else from the model repository's data/ is published.", ""]
+    for avain in PUBLIC_DATA:
+        rivit.append(f"- `{avain}`: {PUBLIC_DATA_CITED_BY[avain]}")
+    return "\n".join(rivit) + "\n"
+
+
 # Isanta johon builderien "Source:"-linkit osoittavat. VAIHE 4 (cutover)
 # vaihtaa taman `GoalIQ/goaliq-site`ksi yhdella rivilla; siihen asti se on
 # nykyinen julkinen repo, koska site-repoa ei viela ole.
@@ -145,7 +184,11 @@ def stage(dest: Path, root: Path = ROOT) -> int:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
         n += 1
-    return n
+    # Julkinen selite data/-tiedostoille (ks. PUBLIC_DATA_CITED_BY).
+    man = dest / "data" / "MANIFEST.md"
+    man.parent.mkdir(parents=True, exist_ok=True)
+    man.write_text(manifest_text(), encoding="utf-8")
+    return n + 1
 
 
 def main(argv: list[str]) -> int:

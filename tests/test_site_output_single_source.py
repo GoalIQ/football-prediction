@@ -125,6 +125,22 @@ def test_public_data_rivilla_on_perustelu_ja_polku(avain, syy):
         assert kohde.is_file(), f"{avain}: tiedostoa ei ole repossa"
 
 
+def test_public_data_selite_kattaa_jokaisen_rivin(tmp_path):
+    """Julkinen MANIFEST.md syntyy stagingiin ja nimeaa jokaisen
+    PUBLIC_DATA-polun; avaimet ovat tasan samat (rivi ilman selitetta tai
+    selite ilman rivia kaataa)."""
+    assert set(so.PUBLIC_DATA_CITED_BY) == set(so.PUBLIC_DATA)
+    for avain, selite in so.PUBLIC_DATA_CITED_BY.items():
+        assert "goaliq.app" in selite and len(selite) >= 40, avain
+    teksti = so.manifest_text()
+    for avain in so.PUBLIC_DATA:
+        assert f"`{avain}`" in teksti
+    n = so.stage(tmp_path)
+    man = tmp_path / "data" / "MANIFEST.md"
+    assert man.is_file() and man.read_text(encoding="utf-8") == teksti
+    assert n == sum(1 for _ in tmp_path.rglob("*") if _.is_file()), "stage() palauttaa eri maaran kuin kirjoitti"
+
+
 # --- 4. linkit ----------------------------------------------------------------
 
 _LINK_RE = re.compile(
