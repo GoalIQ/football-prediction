@@ -7,6 +7,7 @@
  * Moduulitason promise-cache: data päivittyy viikkotasolla → yksi haku per
  * sivulataus riittää (Streamlitin ttl=900 vastine).
  */
+import type { ProjectionGapThreshold } from './projectionGap';
 import { API_BASE } from './config';
 import { accessToken } from './auth.svelte';
 
@@ -127,6 +128,11 @@ export interface XpPlayer {
 	xp_per_90?: number | null;
 	xp_horizon_total: number;
 	gameweeks: XpGameweek[];
+	/** MODEL-VS-CONSENSUS (10.9): FPL:n oma projektio (bootstrap ep_next)
+	 *  kierrokselle `meta.fpl_ep_next_gw`. null = FPL ei anna lukua (ei 0).
+	 *  Defensiivinen: vanha payload ei tuo. Nimessa on lahde, jotta luku ei
+	 *  sekoitu mallin xP:hen. */
+	fpl_ep_next?: number | null;
 	components?: XpComponents;
 	components_gw?: number;
 	/** WHY-THIS-PICK (14.8): yhden lauseen selitys projektiolle.
@@ -235,6 +241,14 @@ export interface XpMeta {
 	/** #143-katvealueraportti; baseline_mode === 'prev_season_archive'
 	 * = pre-season (mm. yellows on vielä edellisen kauden lukema). */
 	data_coverage?: { baseline_mode?: string; [key: string]: unknown };
+	/** MODEL-VS-CONSENSUS (10.9): kierros johon players[].fpl_ep_next viittaa
+	 *  (FPL:n events[].is_next). Jos se ei ole meidan horisontissamme,
+	 *  vertailua ei tehda. */
+	fpl_ep_next_gw?: number | null;
+	/** Kynnys jonka ylittyessa kortti nayttaa "FPL's own projection".
+	 *  Builderi johtaa sen gradatusta tarkkuuslokista; null = ei kynnysta,
+	 *  ei rivia. Ks. $lib/projectionGap. */
+	projection_gap?: ProjectionGapThreshold | null;
 	[key: string]: unknown;
 }
 

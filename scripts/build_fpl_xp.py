@@ -48,6 +48,7 @@ from scripts.build_fpl_phase0 import (
 from src.data import fpl_api
 from src.data.loader import lataa_otteludata
 from src.models import fpl_gameweek as fplgw
+from src.models import fpl_projection_gap as pgap
 from src.models import fpl_xp as xp
 from src.models.fpl_context import (
     build_context,
@@ -61,6 +62,18 @@ from src.models.fpl_context import (
 from src.models.fpl_player_overrides import load_player_overrides
 
 OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
+# MODEL-VS-CONSENSUS (10.9): gradattu tarkkuusloki, josta kynnys johdetaan
+# (src/models/fpl_projection_gap.derive_threshold). Puuttuva -> ei kynnysta.
+XP_GW_ACC_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_gw_accuracy.json"
+
+
+def _load_optional_json(path):
+    """None kun tiedosto puuttuu tai ei ole JSONia: kynnyksen johtaminen
+    palauttaa silloin None eika rivia nayteta. Ei oletusarvoa."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
 
 # Pre-season-baselinet (26/27-flippi 23.7.2026): FPL:n element-summary
 # tarjoilee vain kuluvan kauden historian → flipin jälkeen historiat ovat
@@ -1133,6 +1146,7 @@ def main(argv: list[str] | None = None) -> int:
 
     players = []
     excluded = []
+    fpl_ep_next = pgap.ep_next_by_id(boot)
     for e in boot["elements"]:
         pid = e["id"]
         fid = fplteam_to_fid.get(e["team"])
@@ -1250,6 +1264,11 @@ def main(argv: list[str] | None = None) -> int:
         player_row = {
             "id": pid,
             "web_name": e["web_name"],
+            # MODEL-VS-CONSENSUS (10.9): FPL:n oma projektio samasta
+            # bootstrapista kuin kaikki muu. None kun FPL ei anna lukua (ei
+            # 0). Kierros johon luku viittaa on meta.fpl_ep_next_gw; kynnys
+            # on meta.projection_gap. Lukija: src/models/fpl_projection_gap.
+            pgap.PLAYER_FIELD: fpl_ep_next.get(pid),
             # #147: koko nimi VAIN hakua varten (näyttönimi pysyy web_namena;
             # "van dijk" ei löytynyt koska web_name = "Virgil").
             "full_name": f"{e.get('first_name', '')} {e.get('second_name', '')}".strip(),
@@ -1464,9 +1483,16 @@ def main(argv: list[str] | None = None) -> int:
             # 18,93 -> 6,34 eika yksikaan portti huutanut. Joukkueohitus
             # liikuttaa koko seuran kerralla, joten se on nakyva tai se on
             # nakymaton virhe.
+            # MODEL-OVERRIDES-JULKISUUS (10.9, Villen GO): tama lohko
+            # renderoidaan goaliq.app/fpl-sivun metodologiaan
+            # (build_fpl_page.manual_adjustments_html). Jokainen avain tassa
+            # on pinnalla; tests/test_fpl_page_manual_adjustments.py kaataa
+            # jos avain lisataan ilman renderointia. attack_mult mukaan
+            # 10.9: se liikuttaa pelaajavauhteja eika ollut payloadissa.
             "team_overrides": [
-                {k: r[k] for k in ("team", "found", "attack_delta",
-                                   "defence_delta", "review_by", "reason")}
+                {k: r.get(k) for k in ("team", "found", "attack_delta",
+                                       "defence_delta", "attack_mult",
+                                       "review_by", "reason")}
                 for r in team_overrides_applied
             ],
             "method": (
@@ -1555,6 +1581,12 @@ def main(argv: list[str] | None = None) -> int:
             },
             "sanity_gate": "PASS",
             "next_gameweek": next_gw,
+            # MODEL-VS-CONSENSUS (10.9): kierros johon players[].fpl_ep_next
+            # viittaa (FPL:n events[].is_next) ja kynnys jonka ylittyessa
+            # pinta nayttaa "FPL's own projection: x. Ours: y." None =
+            # ei kynnysta -> rivia ei nayteta (fail-closed).
+            pgap.META_GW_FIELD: pgap.fpl_next_event_id(boot),
+            pgap.META_FIELD: pgap.derive_threshold(_load_optional_json(XP_GW_ACC_PATH)),
             "deadline_utc": src["deadline_utc"],
             # 22.8: GW jonka deadline deadline_utc on. Kesken kierroksen ERI
             # kuin next_gameweek, ja siirtosuunnittelun on lahdettava tasta:

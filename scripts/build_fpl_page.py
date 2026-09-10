@@ -2260,6 +2260,76 @@ def team_news_block(xp: dict | None) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# MODEL-OVERRIDES-JULKISUUS (10.9.2026, Villen GO). Kasin tehdyt joukkuetason
+# saadot (data/fpl_team_overrides.csv -> fpl_xp_projections.meta.team_overrides)
+# nakyviin ilmaispinnalle metodologian alle. Saanto: kentta ilman pintaa on
+# vika. Jokainen override-rivin avain renderoidaan, ja
+# tests/test_fpl_page_manual_adjustments.py kaataa ajon jos payloadiin
+# ilmestyy avain jota tama funktio ei tulosta. Tyhja lista -> osio sanoo
+# "none" (fail-closed: hiljainen poisjatto lukisi "ei saatoja" myos silloin
+# kun lohko puuttuu vanhasta payloadista, siksi puuttuva lohko sanotaan
+# erikseen).
+# ---------------------------------------------------------------------------
+# Avaimet jotka tama pinta osaa. Uusi avain payloadissa -> testi kaatuu ->
+# kirjoittaja lisaa sarakkeen (tai perustelun testin poikkeuslistaan).
+MANUAL_ADJUSTMENT_KEYS = ("team", "found", "attack_delta", "defence_delta",
+                          "attack_mult", "review_by", "reason")
+
+
+def _fmt_delta(v) -> str:
+    if not isinstance(v, (int, float)):
+        return "0"
+    return f"{v:+.2f}" if v else "0"
+
+
+def _fmt_mult(v) -> str:
+    # Puuttuva avain EI ole 1.00: vanha payload (ennen 10.9) ei kanna
+    # attack_multia, ja "x1.00" vaittaisi ettei kerrointa ole vaikka CSV:ssa
+    # on 0.90. Sanotaan etta luku puuttuu tiedostosta.
+    if not isinstance(v, (int, float)):
+        return "not recorded in this file"
+    return f"x{v:.2f}"
+
+
+def manual_adjustments_html(xp: dict | None) -> str:
+    meta = (xp or {}).get("meta") if isinstance(xp, dict) else None
+    rows = meta.get("team_overrides") if isinstance(meta, dict) else None
+    head = '<h3 id="manual-adjustments">Manual adjustments in the current projection</h3>\n'
+    if rows is None:
+        return (head + "<p>This projection file does not carry the adjustment list, "
+                "so we cannot say here whether any hand adjustment is in it.</p>")
+    if not rows:
+        return head + "<p>None. Every team rating in the current projection is fitted, not set by hand.</p>"
+    out = [head,
+           "<p>These team ratings are moved by hand on top of the fitted model. "
+           "Each one carries a review date. After that date it is no longer applied.</p>",
+           '<div class="table-wrap"><table class="nm adjust">',
+           "<thead><tr><th>Team</th><th>Attack</th><th>Defence</th>"
+           "<th>Player goal rate</th><th>Applied</th><th>Review by</th><th>Why</th></tr></thead><tbody>"]
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        found = r.get("found")
+        out.append(
+            "<tr><td>{team}</td><td>{att}</td><td>{dfn}</td><td>{mult}</td>"
+            "<td>{applied}</td><td>{review}</td><td>{reason}</td></tr>".format(
+                team=escape(str(r.get("team") or "")),
+                att=_fmt_delta(r.get("attack_delta")),
+                dfn=_fmt_delta(r.get("defence_delta")),
+                mult=_fmt_mult(r.get("attack_mult")),
+                applied=("yes" if found else "no, team name not matched"),
+                review=escape(str(r.get("review_by") or "")),
+                reason=escape(str(r.get("reason") or ""))))
+    out.append("</tbody></table></div>")
+    out.append("<p class=\"note\">Attack and defence are shifts in the match model's log rates: "
+               "a negative attack number means fewer goals expected for that team, a positive "
+               "defence number means more goals conceded. Player goal rate multiplies every "
+               "player's goal and assist rate at that club. The graded match predictions in the "
+               "<a href=\"/predictions#record\">track record</a> do not use these adjustments.</p>")
+    return "\n".join(out)
+
+
 def render_page(c: dict, xp: dict | None = None) -> str:
     faq = build_faq(c)
     # 5.9 LANDING-LYHENNYS: sivulla neljä kysymystä (kierroksen clean sheet,
@@ -2489,6 +2559,7 @@ scores zero. Fixture difficulty is derived from win and clean sheet
 probabilities, ranked across every team fixture of the season and bucketed
 into five tiers. Fixture data comes from the official Premier League fantasy
 API.</p>
+{manual_adjustments_html(xp)}
 
 <h2 id="tools">More free FPL tools</h2>
 <p>Same model, same refresh schedule, no login.</p>

@@ -34,15 +34,10 @@ FROZEN_DIR = config.PROJECT_ROOT / "data" / "fpl_xp_frozen"
 FREEZE_WINDOW_H = 30   # päivittäinen cron ehtii aina väliin
 
 
-def _num(v) -> float | None:
-    """FPL antaa ep_next/form merkkijonoina ("4.5"). Puuttuva -> None, ei 0:
-    gradaus ohittaa rivin vertailusta eikä väitä FPL:n ennustaneen nollaa."""
-    if v is None or v == "":
-        return None
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
+# 10.9 MODEL-VS-CONSENSUS: sama parseri kuin projektion payloadissa
+# (src/models/fpl_projection_gap), jotta jäädytetty ja serveroitu ep_next
+# eivät voi erota parsinnan takia.
+from src.models.fpl_projection_gap import parse_fpl_num as _num
 
 
 def fpl_reference_by_id(boot: dict) -> dict[int, dict]:

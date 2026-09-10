@@ -24,6 +24,7 @@
 	import ComponentSplit from './ComponentSplit.svelte';
 	import { canShareToApps, sharePlayerCard, type PlayerCardCell, shareButtonLabel} from '$lib/shareCard';
 	import { whyDriverRows } from '$lib/whyDrivers';
+	import { projectionGap } from '$lib/projectionGap';
 
 	let pool = $state<CardPlayer[]>([]);
 	let meta = $state<XpMeta | null>(null);
@@ -169,6 +170,25 @@
 		// P(vahintaan 1 maali) Poissonista. Tama on se muoto joka on
 		// tarkistettavissa jalkikateen; 0.68 maalia ei ole.
 		return { eg, pct: Math.round((1 - Math.exp(-eg)) * 100), gw: p.components_gw };
+	});
+
+	// --- MODEL-VS-CONSENSUS (10.9, Villen GO): FPL:n oma projektio rinnalla ---
+	// Rowanin pyynto 19.8 ("missa malli on selvasti eri mielta kuin muut").
+	// Vertailukohta on FPL:n oma ep_next, nimettyna tasmalleen "FPL's own
+	// projection", ei "consensus", ei "others say": lukija voi tarkistaa
+	// luvun FPL:n sovelluksesta. Rivi nakyy VAIN kun ero ylittaa payloadin
+	// kynnyksen (meta.projection_gap, johdettu gradatusta MAE:sta; saanto ja
+	// jakauma src/models/fpl_projection_gap.py). Vertailu tehdaan sille
+	// kierrokselle johon FPL:n luku viittaa (meta.fpl_ep_next_gw), ei
+	// horisontin summalle. EI selitysta miksi luvut eroavat: se olisi vaite
+	// ilman reittia. Premium-haarassa kuten muutkin xP-luvut.
+	const fplGap = $derived.by(() => {
+		const p = player;
+		if (!p || excluded) return null;
+		const gw = meta?.fpl_ep_next_gw;
+		if (typeof gw !== 'number') return null;
+		const ours = (p.gameweeks ?? []).find((g) => g.gw === gw)?.xp;
+		return projectionGap(ours, p.fpl_ep_next, gw, meta?.projection_gap);
 	});
 
 	function fixtureLabel(opps: { opp: string; venue: string }[]): string {
@@ -672,6 +692,16 @@
 									{(player.gameweeks ?? []).length} gameweeks ({per.toFixed(1)} per GW).
 								</p>
 							{/if}
+							{#if fplGap}
+								<!-- Lause on sama kuin mobiilin en.ts-avain
+								     fantasy.playercard.fpl_projection (tests/test_i18n_svelte_parity.py
+								     mittaa arvon). Kaksi lukua, ei selitysta. -->
+								<p class="gap-line">
+									GW{fplGap.gw}. FPL's own projection: {fplGap.fpl.toFixed(1)}. Ours: {fplGap.ours.toFixed(
+										1
+									)}.
+								</p>
+							{/if}
 							{#if goalOutlook}
 								<p>
 									<strong>{goalOutlook.eg.toFixed(2)} goals</strong> expected in
@@ -997,6 +1027,12 @@
 		letter-spacing: 0;
 		font-weight: 500;
 		color: var(--text-muted);
+	}
+	/* MODEL-VS-CONSENSUS (10.9): kaksi lukua rinnakkain, ei korostusta
+	   kummallekaan puolelle. */
+	.gap-line {
+		font-weight: 600;
+		margin: 0 0 var(--s-2);
 	}
 	.excluded-note {
 		font-weight: 700;
