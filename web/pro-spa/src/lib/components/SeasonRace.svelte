@@ -64,9 +64,15 @@
 		// YHTAAN selittavaa lausetta - varaus jonka lukija nakee merkkina
 		// muttei sanoina. Kaksi kopiota samasta saannosta oli ehtinyt
 		// erkaantua yhdessa kierroksessa.
-		const gws =
+		// PAYLOAD-KENTAT-ILMAN-PINTAA (portti B1): stale-kierros ei ole summissa,
+		// joten se ei saa provisional-lausetta ("these totals will move").
+		// Portti k2: vanha payload ilman totals.stale_gws -> johdetaan riveista.
+		const stale: number[] =
+			data?.totals?.stale_gws ?? rows.filter((r) => r.stale_model_points).map((r) => r.gw);
+		const gws = (
 			data?.meta?.provisional_gws ??
-			rows.filter((r) => r.provisional).map((r) => r.gw);
+			rows.filter((r) => r.provisional).map((r) => r.gw)
+		).filter((gw) => !stale.includes(gw));
 		const tilat = data?.meta?.provisional_states ?? {};
 		const ryhmat = new Map();
 		for (const gw of gws) {
@@ -183,6 +189,11 @@
 					<div><span class="lbl">You</span><span class="num">{data.totals.you}</span></div>
 				{/if}
 			</div>
+			{#if data.totals.you != null && (data.meta.model_points_basis ?? '').startsWith('net:')}
+				<!-- Pisteperuste luvun viereen, vain kun payload sanoo "net:".
+				     Sama lause mobiilissa (fantasy.race.basis). -->
+				<p class="prov-note">The model's points are net of its own hits, and yours are counted the same way.</p>
+			{/if}
 
 			{#if diff != null}
 				<p class="delta" class:ahead={diff > 0} class:behind={diff < 0}>
@@ -226,6 +237,17 @@
 							: 'not confirmed yet, so these totals can still move.'}
 				</p>
 			{/each}
+
+			<!-- PAYLOAD-KENTAT-ILMAN-PINTAA (10.9): `totals.stale_gws` on tila jossa
+			     summa ei tasmaa nakyviin riveihin, ja se on live heti kun FPL
+			     aikakatkaisee deadlinen jalkeisessa ruuhkassa. Selite on nakyva,
+			     ei tooltip. Sama lause mobiilissa (fantasy.race.stale). -->
+			{#if data.totals.stale_gws?.length}
+				<p class="prov-note">
+					GW{data.totals.stale_gws.join(', GW')}: not in the totals, because the model's score there
+					hasn't been read yet and the old one is from a different moment.
+				</p>
+			{/if}
 
 			<!-- 🔴 25. kierros: nappi nakyi kun rivit riittivat ENNEN suodatusta,
 			     jolloin painallus ei tehnyt mitaan. Sama ehto kuin kortilla. -->

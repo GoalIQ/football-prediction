@@ -837,9 +837,21 @@ export interface ModelRaceResponse {
 		provisional_gws?: number[];
 		/** gw -> tila, ks. `ModelRaceGameweek.state`. */
 		provisional_states?: Record<string, string>;
+		/** "net: ..." = molemmat puolet nettoja; renderoidaan vain kun alkaa "net:". */
+		model_points_basis?: string;
 		note: string | null;
 	};
-	totals: { model: number; you: number | null; diff: number | null };
+	totals: {
+		model: number;
+		you: number | null;
+		diff: number | null;
+		/** PAYLOAD-KENTAT-ILMAN-PINTAA (10.9): kierrokset jotka jaivat pois
+		 *  summista koska puolet luettiin eri hetkesta. Renderoidaan nakyvana
+		 *  selitteena, muuten summa ei tasmaisi riveihin ilman merkintaa. */
+		stale_gws?: number[];
+		/** Mallin koko kausi; sama kuin `model` kun entrya ei ole. */
+		model_season?: number;
+	};
 	gameweeks: ModelRaceGameweek[];
 }
 
