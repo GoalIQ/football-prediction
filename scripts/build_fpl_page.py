@@ -374,6 +374,35 @@ def free_window_block() -> str:
         + hinta_loppu)
 
 
+def match_goals_index(fixtures: list[dict], gw: int) -> dict[tuple, tuple]:
+    """(joukkue, vastustaja, kickoff_ms) -> (xg_oma, xg_vastustaja, lyh_oma, lyh_vast).
+
+    Avain on OTTELU, ei joukkueen nimi: tuplakierroksessa nimiavain olisi
+    ylikirjoittunut jalkimmaisella ottelulla ja solussa olisi lukenut ottelun 1
+    vastustaja ja ottelun 2 maalit (portti 10.9). Tyhjakierroksessa tai
+    epasynkassa osumaa ei ole -> `match_goals_for` palauttaa Nonet ja rivi
+    jaa ilman alarivia (caption ei silloin lupaa sita).
+    """
+    out: dict[tuple, tuple] = {}
+    for f in fixtures:
+        if f.get("gameweek") != gw:
+            continue
+        if f.get("xg_home") is None or f.get("xg_away") is None:
+            continue
+        hs = f.get("home_short") or f["home"][:3].upper()
+        as_ = f.get("away_short") or f["away"][:3].upper()
+        ko = f.get("kickoff_ms")
+        out[(f["home"], f["away"], ko)] = (float(f["xg_home"]), float(f["xg_away"]), hs, as_)
+        out[(f["away"], f["home"], ko)] = (float(f["xg_away"]), float(f["xg_home"]), as_, hs)
+    return out
+
+
+def match_goals_for(index: dict[tuple, tuple], team: str, team_fixture: dict) -> tuple:
+    """Joukkuelohkon fixture-rivi -> (xg_oma, xg_vast, lyh_oma, lyh_vast) tai Nonet."""
+    return index.get((team, team_fixture.get("opponent"), team_fixture.get("kickoff_ms")),
+                     (None, None, None, None))
+
+
 def build_context(fpl: dict, acc: dict) -> dict:
     meta = fpl["meta"]
     # 27.7 HORISONTTILAAJENNUS: teams[].fixtures sisältää nyt KOKO KAUDEN, ja
@@ -408,12 +437,20 @@ def build_context(fpl: dict, acc: dict) -> dict:
     fixtures = fpl["fixtures"]
     next_gw = display_gw(meta, fixtures)
 
+    # 10.9 FPL-SIVU-OTTELUIDEN-XG: projisoidut maalit per ottelu SAMASTA
+    # fixtures-lohkosta jota CS-% kayttaa. Kortti (gen_share_card gw_outlook)
+    # on nayttanyt niita M60:sta asti, mutta millaan ihmisluettavalla
+    # ilmaissivulla niita ei ollut -> lukija ei voinut tarkistaa.
+    xg_by_match = match_goals_index(fixtures, next_gw)
+
     # CS-taulun rivit: per joukkue, next_gw:n fixture
     cs_rows = []
     for t in teams:
         fx = next((f for f in t["fixtures"] if f["gw"] == next_gw), None)
         if not fx:
             continue
+        xg_for, xg_against, short_for, short_against = match_goals_for(
+            xg_by_match, t["name"], fx)
         # 3.9: kuuden kierroksen keskiarvo SAMOISTA riveista joista alla
         # oleva ruudukko piirretaan. Luku on artefaktissa (`teams_next6`)
         # valmiina, mutta se ajaa eri nousijasaannon kuin tama sivu
@@ -429,6 +466,10 @@ def build_context(fpl: dict, acc: dict) -> dict:
                 "fdr": fx["fdr"],
                 "run_cs_pct": (sum(_run) / len(_run)) if _run else None,
                 "run_n": len(_run),
+                "xg_for": xg_for,
+                "xg_against": xg_against,
+                "short_for": short_for,
+                "short_against": short_against,
             }
         )
     cs_rows.sort(key=lambda r: r["cs_pct"], reverse=True)
@@ -1293,11 +1334,28 @@ def cs_table_html(c: dict) -> str:
         sub_cls = "m-sub is-caveat" if promoted_row else "m-only m-sub"
         sub_html = (f'<span class="{sub_cls}">{escape(sub)}</span>'
                     if sub else "")
+        # Projisoidut maalit alarivina vastustajasolussa: nakyy joka
+        # leveydella (ei m-hide, ei m-only), koska kortin luku on
+        # tarkistettava puhelimella (MARKETING_AGENT saanto 0). Kaksi
+        # desimaalia = sama muoto kuin kortin ottelurivilla.
+        # Lyhenteet lukujen viereen: solussa on vain vastustajan nimi, ja
+        # "1.64 v 0.67" luettaisiin sille (portti 10.9). Sama muoto kuin
+        # kortin ottelurivilla (ARS 1.64 - 0.67 SUN), oma joukkue ensin.
+        if r.get("xg_for") is not None and r.get("xg_against") is not None:
+            # Mitattu 390 px:ssa 10.9: yhdella rivilla alarivi levensi taulukkoa
+            # 481 -> 613 px (vaakascroll kasvoi), vapaa rivitys teki rivista
+            # 127 px korkean. Kaksi nowrap-rivia (label / luvut) pitaa solun
+            # leveyden ennallaan.
+            goals_html = (f'<span class="m-sub goals">projected goals<br>'
+                          f'{escape(r["short_for"])} {r["xg_for"]:.2f} v '
+                          f'{escape(r["short_against"])} {r["xg_against"]:.2f}</span>')
+        else:
+            goals_html = ""
         rows.append(
             "<tr>"
             f'<td class="team">{escape(r["team"])}{sub_html}</td>'
             f'<td class="num">{fmt_pct(r["cs_pct"])}</td>'
-            f'<td>{escape(r["opponent"])} ({r["venue"]})</td>'
+            f'<td>{escape(r["opponent"])} ({r["venue"]}){goals_html}</td>'
             f'<td class="num fdr {fdr_cell_class(fdr)}">{fdr}</td>'
             f'<td class="num">{_run_cell(r)}</td>'
             f'<td class="num m-hide">{churn}</td>'
@@ -1314,7 +1372,14 @@ def cs_table_html(c: dict) -> str:
         f"Gameweek {c['next_gw']}, {c['season']} season. Sorted by clean sheet chance. "
         f"Squad turnover is the share of last season's minutes played by players "
         f"who have since left; the model is fitted on results, so it prices a "
-        f"squad by what it did rather than by who is in it now.</caption>"
+        f"squad by what it did rather than by who is in it now."
+        # Lause vain jos jokaisella rivilla ON alarivi: tyhjakierroksessa tai
+        # nimien osumattomuudessa caption ei saa luvata sellaista mita ei ole.
+        + (" Projected goals are the model's expected goals for each team in "
+           "that match, the same numbers the clean sheet chance is built from."
+           if c["cs_rows"] and all(r.get("xg_for") is not None for r in c["cs_rows"])
+           else "")
+        + "</caption>"
         "<thead><tr>"
         '<th scope="col">Team</th><th scope="col" class="num">Clean sheet %</th>'
         '<th scope="col">Next opponent</th><th scope="col" class="num">FDR</th>'

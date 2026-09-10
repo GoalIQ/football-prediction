@@ -189,3 +189,113 @@ def test_negative_control_wrong_source_is_caught():
         "fixture_adjustments, tama kontrolli on paivitettava, mutta ala poista "
         "sita: se on ainoa todiste etta yla olevat portit mittaavat jotain."
     )
+
+# ---------------------------------------------------------------------------
+# 10.9 FPL-SIVU-OTTELUIDEN-XG: kortin ottelurivin maalit on loydyttava sivun
+# HTML:sta, ei JSONista. Portti 9.9 mittasi ettei projisoituja maaleja ollut
+# millaan ihmisluettavalla ilmaissivulla vaikka kortti nayttaa niita.
+# ---------------------------------------------------------------------------
+def _page_html() -> str:
+    """Sama polku kuin CI:n bake: build_context + cs_table_html artefaktista."""
+    import config as _cfg
+    from scripts import build_fpl_page as bfp
+    acc_path = _cfg.DATA_DIR / "accuracy.json"
+    if not acc_path.exists():
+        pytest.skip("accuracy.json puuttuu")
+    acc = json.loads(acc_path.read_text(encoding="utf-8"))
+    c = bfp.build_context(_page_doc(), acc)
+    return bfp.cs_table_html(c)
+
+
+def test_card_fixture_goals_are_readable_on_the_page():
+    spec = _card_spec()
+    html = _page_html()
+    puuttuu = []
+    for f in spec["fixtures"]:
+        # Kortti: "AVL 1.61 - 1.41 NFO". Sivu: kotijoukkueen rivilla
+        # "projected goals AVL 1.61 v NFO 1.41" ja vierasjoukkueen rivilla
+        # "projected goals NFO 1.41 v AVL 1.61" - luvut JA lyhenteet.
+        hs, as_ = f["home_short"], f["away_short"]
+        koti = f'projected goals<br>{hs} {f["xg_home"]:.2f} v {as_} {f["xg_away"]:.2f}'
+        vieras = f'projected goals<br>{as_} {f["xg_away"]:.2f} v {hs} {f["xg_home"]:.2f}'
+        if koti not in html:
+            puuttuu.append(f'{f["home"]}: "{koti}"')
+        if vieras not in html:
+            puuttuu.append(f'{f["away"]}: "{vieras}"')
+    assert not puuttuu, "kortin maaliluvut eivat ole sivulla:\n  " + "\n  ".join(puuttuu)
+
+
+def test_card_goals_column_matches_the_page_values():
+    """Kortin PROJECTED GOALS -sarake (top 10 xg) on sama luku kuin sivun rivi."""
+    spec = _card_spec()
+    html = _page_html()
+    for r in spec["goals"]:
+        assert f'{r["short"]} {r["xg"]:.2f} v ' in html, (
+            f'{r["team"]} {r["xg"]:.2f} ei ole sivulla')
+
+
+def test_negative_control_goals_mismatch_is_caught(monkeypatch):
+    """Portin on kaaduttava jos sivu ja kortti lukisivat eri lukua."""
+    from scripts import build_fpl_page as bfp
+    orig = bfp.cs_table_html
+
+    def tampered(c):
+        for row in c["cs_rows"]:
+            if row.get("xg_for") is not None:
+                row["xg_for"] = round(row["xg_for"] + 0.5, 3)
+        return orig(c)
+
+    monkeypatch.setattr(bfp, "cs_table_html", tampered)
+    with pytest.raises(AssertionError):
+        test_card_fixture_goals_are_readable_on_the_page()
+
+
+def _fx(ko, home, away, xh, xa):
+    return {"gameweek": 4, "kickoff_ms": ko, "home": home, "away": away,
+            "home_short": home[:3].upper(), "away_short": away[:3].upper(),
+            "xg_home": xh, "xg_away": xa}
+
+
+def test_double_gameweek_pairs_goals_with_the_first_fixture():
+    """DGW: joukkueen rivi nayttaa ottelun 1 vastustajan JA ottelun 1 maalit.
+    Nimiavain olisi antanut ottelun 2 maalit (portti 10.9). Testataan
+    lukijaa suoraan: build_context kaataa DGW:n tarkoituksella (FDR-GRID-DGW)."""
+    from scripts import build_fpl_page as bfp
+    idx = bfp.match_goals_index(
+        [_fx(100, "Arsenal", "Sunderland", 1.64, 0.67),
+         _fx(200, "Everton", "Arsenal", 0.90, 1.80)], 4)
+    first = {"gw": 4, "opponent": "Sunderland", "kickoff_ms": 100}
+    second = {"gw": 4, "opponent": "Everton", "kickoff_ms": 200}
+    assert bfp.match_goals_for(idx, "Arsenal", first) == (1.64, 0.67, "ARS", "SUN")
+    assert bfp.match_goals_for(idx, "Arsenal", second) == (1.80, 0.90, "ARS", "EVE")
+    assert bfp.match_goals_for(idx, "Everton", {"gw": 4, "opponent": "Arsenal",
+                                                "kickoff_ms": 200}) == (0.90, 1.80, "EVE", "ARS")
+    # vaara kierros ei indeksoidu
+    assert bfp.match_goals_index([{**_fx(100, "A", "B", 1, 1), "gameweek": 5}], 4) == {}
+
+
+def test_blank_gameweek_row_has_no_goals_and_caption_does_not_promise_them(monkeypatch):
+    """BGW / epasynkka: joukkuelohko sanoo ottelu, fixtures-lohko ei ->
+    ei alarivia, eika caption lupaa alarivia."""
+    from scripts import build_fpl_page as bfp
+    idx = bfp.match_goals_index([_fx(100, "Arsenal", "Sunderland", 1.64, 0.67)], 4)
+    assert bfp.match_goals_for(idx, "Everton", {"opponent": "Fulham", "kickoff_ms": 300}) \
+        == (None, None, None, None)
+
+    def row(team, opp, venue, goals):
+        xf, xa, sf, sa = goals
+        return {"team": team, "cs_pct": 30.0, "opponent": opp, "venue": venue, "fdr": 3,
+                "run_cs_pct": 30.0, "run_n": 6, "xg_for": xf, "xg_against": xa,
+                "short_for": sf, "short_against": sa}
+    rows = [row("Arsenal", "Sunderland", "H", (1.64, 0.67, "ARS", "SUN")),
+            row("Everton", "Fulham", "H", (None, None, None, None))]
+    monkeypatch.setattr(bfp, "_turnover_by_model_team",
+                        lambda: {bfp.map_name("Arsenal"): {"minutes_churn_pct": 5.0}})
+    c = {"cs_rows": rows, "next_gw": 4, "season": "2026/27"}
+    html = bfp.cs_table_html(c)
+    assert "projected goals<br>ARS 1.64 v SUN 0.67" in html
+    assert html.count("projected goals") == 1
+    assert "Projected goals are" not in html, "caption lupaa alarivia jota Evertonilla ei ole"
+    # ja kun kaikilla on alarivi, caption saa luvata sen
+    rows[1].update({"xg_for": 1.1, "xg_against": 1.2, "short_for": "EVE", "short_against": "FUL"})
+    assert "Projected goals are" in bfp.cs_table_html(c)
