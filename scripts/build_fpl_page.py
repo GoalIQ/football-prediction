@@ -55,6 +55,7 @@ from scripts.public_text import assert_public_copy  # artefaktikentat sivulle
 from scripts.ranking import ranked  # deterministinen tasapelin katkaisu
 from scripts.slugs import slug as _slug  # noqa: E402
 from scripts.build_fpl_phase0 import map_name  # noqa: E402
+from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 
 # #38: PostHog cookieless site-analytiikka (persistence=memory -> ei evasteita,
 # ei consent-banneria; ei PII:ta). Sama projekti kuin appi + pro-web (427890);
@@ -2950,9 +2951,9 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
         '<th scope="col">What it said</th><th scope="col" class="num">Points</th>'
         '<th scope="col">Result</th></tr></thead><tbody>'
         + "".join(trs) + "</tbody></table></div>"
-        '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/gw_calls.json">data/gw_calls.json</a> '
+        f'<p class="note">Source: <a href="{public_data_url("data/gw_calls.json")}">data/gw_calls.json</a> '
         "in the public repository, with the squad the captain came from in "
-        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen">data/model_squad_frozen</a>. '
+        f'<a href="{public_data_url("data/model_squad_frozen/")}">data/model_squad_frozen</a>. '
         "The commit history has the earlier versions of each row. The percentages "
         "are the same simulations as the 10+, Blank and Ceiling columns on the "
         '<a href="/fpl/expected-points">free expected points page</a>, where a '
@@ -3175,9 +3176,9 @@ def xp_accuracy_html(log: dict | None,
         '<div class="scroll"><table>'
         "<caption>MAE by what the player actually did, and by position.</caption>"
         + grp_head + "<tbody>" + "".join(grp) + "</tbody></table></div>"
-        '<p class="note">Source: <a href="https://github.com/GoalIQ/football-prediction/blob/main/data/fpl_xp_gw_accuracy.json">data/fpl_xp_gw_accuracy.json</a> '
+        f'<p class="note">Source: <a href="{public_data_url("data/fpl_xp_gw_accuracy.json")}">data/fpl_xp_gw_accuracy.json</a> '
         "in the public repository, with the frozen projections in "
-        '<a href="https://github.com/GoalIQ/football-prediction/tree/main/data/fpl_xp_frozen">data/fpl_xp_frozen</a>, '
+        f'<a href="{public_data_url("data/fpl_xp_frozen/")}">data/fpl_xp_frozen</a>, '
         "each written in a single commit dated before the deadline it "
         "was frozen for. Players outside "
         "the projection are not in these counts: FPL flagged them out (status "
@@ -3188,7 +3189,8 @@ def xp_accuracy_html(log: dict | None,
 EO_TIER_LABELS = {"top1k": "top 1k", "top10k": "top 10k", "top100k": "top 100k"}
 EO_TABLE_ROWS = 15
 EO_MGR_ROWS = 5
-EO_REPO_DATA = "https://github.com/GoalIQ/football-prediction/blob/main/data/"
+# "Source:"-linkkien isanta luetaan scripts/site_output.py:sta (public_data_url);
+# builder ei kirjoita GitHub-osoitetta itse (SITE-REPO-SPLIT).
 
 
 def _eo_tiers(meta: dict) -> list[tuple[str, str, int]]:
@@ -3307,7 +3309,7 @@ def _eo_managers_html(mgr: dict | None, tiers: list[tuple[str, str, int]]) -> st
            if kaikki_taydet else "")
         + "</p>"
         + "".join(blocks)
-        + f'<p class="note">Source: <a href="{EO_REPO_DATA}fpl_elite_managers.json">'
+        + f'<p class="note">Source: <a href="{public_data_url("data/fpl_elite_managers.json")}">'
         "data/fpl_elite_managers.json</a> in the public repository"
         # Oma ajopaiva: siirtolohko on eri ajo kuin EO-taulukko (29.8
         # 07:19Z vs 11:11Z), joten sisartekstin paivays ei kelpaa tanne.
@@ -3412,7 +3414,7 @@ def eo_by_tier_html(eo: dict | None, mgr: dict | None = None) -> str:
         f"the {escape(tiers[0][1])} sample is {100.0 / tiers[0][2]:.1f} points. "
         f"Ranks after Gameweek {escape(str(rank_gw))}, squads from Gameweek "
         f"{escape(str(picks_gw))}, so the two are not circular. Source: "
-        f'<a href="{EO_REPO_DATA}fpl_elite_ownership.json">data/fpl_elite_ownership.json</a>, '
+        f'<a href="{public_data_url("data/fpl_elite_ownership.json")}">data/fpl_elite_ownership.json</a>, '
         f"generated {escape(generated)}.</p>\n"
         + _eo_managers_html(mgr, tiers) + "</details>\n")
 

@@ -56,6 +56,7 @@ from scripts.build_fpl_page import (  # noqa: E402
     write_urlset,
 )
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
+from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text  # todiste: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
 from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
@@ -5282,8 +5283,7 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
                    f"were scored 0" if g_dnp else "")
                 + f", the error is <strong>{float(g_mae):.2f} points</strong>. "
                   "The second figure is read from "
-                  '<a href="https://github.com/GoalIQ/football-prediction/blob/'
-                  'main/data/fpl_xp_gw_accuracy.json">data/fpl_xp_gw_accuracy'
+                  f'<a href="{public_data_url("data/fpl_xp_gw_accuracy.json")}">data/fpl_xp_gw_accuracy'
                   ".json</a>, the same file behind the accuracy table on the "
                   "FPL page, and is not recalculated here."
             )
