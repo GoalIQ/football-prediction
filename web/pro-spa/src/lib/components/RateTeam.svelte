@@ -388,6 +388,19 @@
 		return c;
 	});
 	const draftReady = $derived(picks.length === 15 && !loading);
+	/** FPL:n status-lippu: sivussa (loukkaantunut/pelikielto/lainalla/ei
+	 *  saatavilla). Sama joukko kuin backendin LIVE_OUT_STATUSES. */
+	function isOut(p: { status?: string | null }): boolean {
+		return p.status === 'i' || p.status === 's' || p.status === 'u' || p.status === 'n';
+	}
+	function draftShortfallText(c: Record<string, number>): string {
+		const parts: string[] = [];
+		for (const pos of DRAFT_ORDER) {
+			const need = DRAFT_CAPS[pos] - (c[pos] ?? 0);
+			if (need > 0) parts.push(`${need} ${pos}`);
+		}
+		return parts.length ? `Add ${parts.join(', ')} to rate the draft.` : '';
+	}
 	// Sama normalisointi kuin FitChecker/XpTable-haussa (#145/#147-pariteetti).
 	function normDraft(s: string): string {
 		return s
@@ -1049,7 +1062,7 @@
 					{#each picks.filter((p) => p.pos === pos) as p (p.id)}
 						<button type="button" class="draft-chip" onclick={() => removePick(p.id)}>
 							{p.web_name}
-							<span class="muted">{p.team_short} · {p.pos}</span>
+							<span class="muted">{p.team_short} · {p.pos}{#if isOut(p)} · out{/if}</span>
 							<span aria-hidden="true">×</span>
 						</button>
 					{/each}
@@ -1087,6 +1100,11 @@
 			>
 				{loading ? 'Rating…' : 'Rate my draft'}
 			</button>
+			{#if picks.length < 15 && picks.length > 0}
+				<!-- RATE-MY-DRAFT-14-15 (10.9): nappi oli disabloitu ilman sanaa
+				     syysta. Vajaa slotti sanotaan aaneen. -->
+				<p class="muted hint">{draftShortfallText(posCount)}</p>
+			{/if}
 		{/if}
 	</div>
 {/if}
@@ -1591,7 +1609,7 @@
 						{#each picksB.filter((p) => p.pos === pos) as p (p.id)}
 							<button type="button" class="draft-chip" onclick={() => removePickB(p.id)}>
 								{p.web_name}
-								<span class="muted">{p.team_short} · {p.pos}</span>
+								<span class="muted">{p.team_short} · {p.pos}{#if isOut(p)} · out{/if}</span>
 								<span aria-hidden="true">×</span>
 							</button>
 						{/each}

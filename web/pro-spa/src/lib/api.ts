@@ -248,6 +248,11 @@ export interface XpPoolPlayer {
 	price?: number;
 	/** Vain täysillä riveillä (haku koko nimellä). Kevyt rivi ei tuo. */
 	full_name?: string;
+	/** FPL:n status (a/d/i/s/u/n). Pooli kantaa 10.9 alkaen myos sivussa
+	 *  olevat (projektion `excluded`), jotta oikean rungon varamaalivahti
+	 *  loytyy valitsimesta; chippi merkitsee heidat. */
+	status?: string;
+	news?: string;
 }
 
 export interface XpResponse {

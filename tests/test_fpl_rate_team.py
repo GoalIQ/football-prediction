@@ -680,3 +680,64 @@ def test_hold_message_ei_saa_olla_skooppaamaton():
             and "no plan" not in bad.lower()
             and "available" not in bad.lower()
         ), f"vahti paastaisi lapi skooppaamattoman lauseen: {bad}"
+
+
+# ---------------------------------------------------------------------------
+# RATE-MY-DRAFT-14-15 (10.9.2026): rungon pelaaja joka on projektion
+# `excluded`-listalla (sivussa: status u/i/s/n) EI putoa vastauksesta.
+# Mitattu tuotannosta: entry 116920, varamaalivahti Dovin (lainalla, 0 min)
+# -> API palautti 14/15, SPA:n draft hydratoitui 14:aan ja "Rate my draft"
+# jai hiljaa disabloiduksi. Nolla-xP rivi + lippu on totuus; pudotus ei.
+# ---------------------------------------------------------------------------
+
+def test_excluded_squad_player_is_returned_with_zero_projection(monkeypatch):
+    out_id = 99
+    xp = {"meta": dict(FAKE_XP["meta"]), "players": POOL_PLAYERS,
+          "excluded": [{"id": out_id, "web_name": "Loanee", "team": "Club1",
+                        "team_short": "C01", "pos": "GKP", "price": 4.0,
+                        "status": "u", "news": "On loan", "chance_next": 0,
+                        "in_projection": False,
+                        "excluded_reason": "unavailable"}]}
+    boot = dict(FAKE_BOOTSTRAP)
+    boot["elements"] = POOL_BOOT + [{"id": out_id, "now_cost": 40, "team": 1,
+                                    "element_type": 1, "web_name": "Loanee",
+                                    "status": "u", "selected_by_percent": "1.0"}]
+    squad = [out_id if e == 2 else e for e in SQUAD_IDS]
+    picks = {"picks": [{"element": e, "is_captain": e == 15,
+                        "is_vice_captain": False} for e in squad],
+             "entry_history": {"bank": 15}}
+
+    def fake_fetch(path):
+        if path.startswith("/bootstrap-static"):
+            return boot
+        if path == "/entry/424242/":
+            return {"id": 424242}
+        if "/picks/" in path:
+            return picks
+        raise rt.RateTeamError(404, "Not found on the FPL API.")
+
+    monkeypatch.setattr(rt, "_fetch_fpl", fake_fetch)
+    monkeypatch.setattr(rt, "load_xp", lambda: xp)
+    rt._OPTIMAL_XP_CACHE.clear()
+    rt._FPL_CACHE.clear()
+    out = rt.rate_team(entry=424242)
+    players = out["team"]["players"]
+    assert len(players) == 15, "sivussa oleva runkopelaaja ei saa pudota"
+    assert out["team"]["missing_ids"] == []
+    row = next(p for p in players if p["id"] == out_id)
+    assert row["no_projection"] is True
+    assert row["no_projection_reason"] == "unavailable"
+    assert row["xp_per_gw"] == 0.0 and row["in_xi"] is False
+    assert row["status"] == "u"
+    # Aidosti tuntematon ID (ei projektiossa, ei excluded-listalla, ei
+    # bootstrapissa) menee yha missing_ids:iin - kaksi eri asiaa, kaksi kenttaa.
+    assert all(p["no_projection"] is False for p in players if p["id"] != out_id)
+
+
+def test_xp_pool_rows_include_excluded_players():
+    from api.premium import xp_pool_rows
+    rows = xp_pool_rows(POOL_PLAYERS + [{"id": 99, "web_name": "Loanee",
+                                         "pos": "GKP", "team_short": "C01",
+                                         "price": 4.0, "status": "u",
+                                         "news": "On loan"}])
+    assert any(r["id"] == 99 and r["status"] == "u" for r in rows)

@@ -774,6 +774,17 @@ a.btn-primary:hover {
 	color: var(--accent-contrast);
 	text-decoration: none;
 }
+/* RATE-MY-DRAFT-14-15 (10.9): tama lohko on tiedostossa MYOHEMMIN kuin
+   yllaoleva button:disabled (#98) ja samalla spesifisyydella, joten amber
+   voitti disabled-tilan: 14/15 pelaajan draftin "Rate my draft" nayttti
+   taysin aktiiviselta eika tehnyt mitaan. Disabled voittaa nyt nimeltaan. */
+button.primary:disabled,
+button.primary:disabled:hover {
+	background: #141311;
+	border-color: var(--border);
+	color: #8A847A;
+	cursor: default;
+}
 
 /* Linkkinappi: samat mitat kuin <button>, jotta <a href> ja <button> eivat
    ole eri kokoisia vierekkain. Reitinvaihdon PITAA olla <a>, koska

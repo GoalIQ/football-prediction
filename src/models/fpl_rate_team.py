@@ -1934,6 +1934,31 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     }
 
 
+def zero_projection_row(excluded: dict | None, xp_data: dict,
+                        price_by_id: dict[int, dict]) -> dict | None:
+    """Runkorivi pelaajalle joka on projektion `excluded`-listalla.
+
+    Sama rivimuoto kuin `_projection_pool` (yksi muotoilija, ei toista
+    kasin kirjoitettua kenttalistaa), xP nolla joka kierrokselle, ja
+    `no_projection` + syy mukana. None jos pelaajaa ei ole excluded-listalla
+    tai bootstrap ei tunne hanta (silloin han on aidosti tuntematon).
+    """
+    if not excluded or excluded.get("id") not in price_by_id:
+        return None
+    stub = dict(excluded)
+    stub.update({"xp_per_gw": 0.0, "xp_horizon_total": 0.0, "xp_per_90": 0.0,
+                 "gameweeks": [], "xmins": 0.0, "p_start": 0.0,
+                 "predicted_starts": 0.0})
+    rows = _projection_pool({"players": [stub], "meta": xp_data.get("meta") or {}},
+                            price_by_id)
+    if not rows:
+        return None
+    row = rows[0]
+    row["no_projection"] = True
+    row["no_projection_reason"] = excluded.get("excluded_reason") or "unavailable"
+    return row
+
+
 def rate_team(entry: int | None = None, gw: int | None = None,
               players: list[int] | None = None, captain: int | None = None,
               bank: float | None = None, ft: int = 1) -> dict:
@@ -1976,10 +2001,27 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     target_gw = clamp_gw_to_projections(_base, pool, xp_data)
 
     squad: list[dict] = []
+    # RATE-MY-DRAFT-14-15 (10.9, Villen havainto "rate my draft ei toimi"):
+    # projektio jattaa sivussa olevat (status u/i/s/n) pois `players`ista ja
+    # kirjaa ne `excluded`-listaan. Kayttajan oikea runko voi silti sisaltaa
+    # heidat (mitattu: entry 116920, varamaalivahti Dovin lainalla ->
+    # API palautti 14/15, SPA:n draft-valitsin hydratoitui 14:aan ja
+    # "Rate my draft" jai hiljaa disabloiduksi). Pudotus ei ole totuus:
+    # pelaaja ON rungossa, hanen xP:nsa on nolla. Siksi excluded-rivi
+    # nostetaan runkoon nollaprojektiolla ja lipulla `no_projection`;
+    # `missing_ids` jaa vain aidosti tuntemattomille ID:ille.
+    excl_by_id = {e["id"]: e for e in (xp_data.get("excluded") or [])
+                  if isinstance(e, dict) and e.get("id") is not None}
+    _price_by_id = {e["id"]: e for e in (bootstrap.get("elements") or [])}
     for pid in squad_ids:
         p = pool_by_id.get(pid)
         if p:
             squad.append(p)
+            continue
+        stub = zero_projection_row(excl_by_id.get(pid), xp_data, _price_by_id)
+        if stub is not None:
+            pool_by_id[pid] = stub
+            squad.append(stub)
         else:
             missing.append(pid)
     if len(squad) < 11:
@@ -2132,6 +2174,11 @@ def rate_team(entry: int | None = None, gw: int | None = None,
                 # voi nostaa lahteneen tai pelikieltoisen pelaajan.
                 "status": p.get("status"),
                 "news": (p.get("news") or "").strip()[:120] or None,
+                # RATE-MY-DRAFT-14-15 (10.9): True = pelaaja on rungossa mutta
+                # projektio jatti hanet pois (sivussa); xP-luvut ovat nollia
+                # eivatka arvio. Pinta nayttaa syyn, ei nollaa lukuna.
+                "no_projection": bool(p.get("no_projection")),
+                "no_projection_reason": p.get("no_projection_reason"),
                 # 22.8 (Villen tilaus): mita pelaaja SAI oikeasti, mallin
                 # odotuksen vierella. None = kierrosta ei ole pelattu tai
                 # pelaaja ei ollut mukana; nolla olisi vaite eika totuus.

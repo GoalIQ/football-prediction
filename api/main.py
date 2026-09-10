@@ -4932,6 +4932,12 @@ def fantasy_xp(
     payload = load_xp(XP_PATHS[lg])
     # Talteen ENNEN maskausta: kevyt valitsinpooli rakennetaan koko listasta.
     full_players = list(payload.get("players") or [])
+    # RATE-MY-DRAFT-14-15 (10.9): valitsinpooliin myos `excluded` (sivussa
+    # olevat), jotta kayttaja voi poimia OIKEAN runkonsa varamaalivahteineen.
+    # Ilman tata SPA:n ja mobiilin draft hydratoitui 14/15:een eika nappi
+    # koskaan aktivoitunut. Status kulkee rivilla -> valitsin voi merkita.
+    full_excluded = [e for e in (payload.get("excluded") or [])
+                     if isinstance(e, dict) and e.get("id") is not None]
     # Edge-sprint P0c: PREMIUM_ENFORCE=on + ei-premium -> typistetty teaser
     # (top-10 taysia riveja, meta.masked=true). Flagi off (default) -> tama
     # haara ei koskaan aja ja vastaus on bittitarkasti ennallaan.
@@ -4964,7 +4970,7 @@ def fantasy_xp(
     # molemmilla pinnoilla. Pooli menee mukaan aina, jotta klientilla on yksi
     # koodipolku eivatka pinnat voi eriytya; se ei sisalla yhtaan xP-arvoa.
     payload = dict(payload)
-    payload["pool"] = xp_pool_rows(full_players)
+    payload["pool"] = xp_pool_rows(full_players + full_excluded)
     # ETag erottaa maskatun ja täyden vastauksen: ilman mask-bittiä free-
     # käyttäjän 304 voisi validoida premium-rivit selaimen välimuistista.
     generated = str(payload.get("meta", {}).get("generated_at") or "0")
