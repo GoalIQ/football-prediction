@@ -217,3 +217,23 @@ def test_orders_and_ratios_are_not_scaled():
     nayttaa arvon 0.05."""
     for k in ("pen", "cor", "fk", "ppg"):
         assert k not in STATS_RATEABLE
+
+
+def test_stats_page_marks_players_who_left_the_league():
+    """STATS-LEFT-MERKINTA (10.9): status 'u' -rivi ei saa nayttaa samalta kuin
+    muut. Sivu renderoi rivit selaimessa (STATS_JS), joten portti mittaa
+    mallia: nimisoluun tulee merkinta kun r[C.status]==='u', ja 'status' on
+    payloadin sarakkeissa, jotta C.status resolvoituu."""
+    from scripts.build_fpl_longtail import STATS_JS
+    from scripts.build_fpl_stats import COLS
+    assert "status" in COLS
+    assert "r[C.status]==='u'" in STATS_JS
+    # Portti 10.9: u = FPL:n can_select=false, EI "left the league" - Richarlison
+    # (TOT) on status u ja news "not included in squad." eli yha liigassa.
+    assert "not selectable" in STATS_JS
+    for vaite in ("left the league", "joined", "transfer"):
+        assert vaite not in STATS_JS[STATS_JS.index("r[C.status]==='u'"):][:200]
+    # negatiivinen kontrolli: merkinta on nimisolun sisalla, ei omana sarakkeena
+    i = STATS_JS.index("r[C.status]==='u'")
+    assert "r[C.name]" in STATS_JS[i - 200:i], "merkinnan on oltava nimisolussa"
+

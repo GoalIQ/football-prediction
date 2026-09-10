@@ -2170,7 +2170,8 @@ STATS_JS = """
   var rs=rows(),n=all?rs.length:Math.min(100,rs.length),s='';
   for(j=0;j<n;j++){
    var r=rs[j];
-   s+='<tr><td class="n">'+(j+1)+'</td><td>'+r[C.name]+'</td>'
+   s+='<tr><td class="n">'+(j+1)+'</td><td>'+r[C.name]
+    +(r[C.status]==='u'?' <span class="m-sub is-caveat">not selectable</span>':'')+'</td>'
     +'<td>'+r[C.team]+'</td><td class="m-hide">'+r[C.pos]+'</td>'
     +'<td class="n m-hide">'+r[C.price].toFixed(1)+'</td>'
     // Mins and Starts are windowable: without raw() they showed season
@@ -2794,9 +2795,12 @@ def render_defence(defence: dict, now: datetime) -> str | None:
     )
     if promoted:
         scope += (
+            # 10.9 (QUEUE DEFENCE-SIVU-25-26-LAUSE): "no Premier League shot
+            # data for them yet" oli epatosi heti kun 26/27 alkoi (3 ottelua
+            # pelattu). Taulukko on VIIME kauden data, ja se sanotaan.
             " " + _join_names(promoted) + " came up from the Championship, so "
-            "there is no Premier League shot data for them yet and they are "
-            "not in the table."
+            "last season's Premier League shot data does not cover them. This "
+            "season's matches are not in this table for anyone yet."
         )
     if relegated:
         scope += (

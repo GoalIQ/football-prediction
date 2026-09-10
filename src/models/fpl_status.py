@@ -18,6 +18,13 @@ muistin varaan (CLAUDE.md saanto 6a kohta 1).
 
 Loukkaantuneet ja pelikiellossa olevat (`i`, `d`, `s`) EIVAT ole lahteneita:
 he ovat valittavissa ja palaavat. Heidat naytetaan.
+
+🔴 TARKENNUS (portti 10.9, STATS-LEFT-MERKINTA): `u` tarkoittaa FPL:ssa
+`can_select=false` (mitattu bootstrapista: u <=> can_select False, 100/100),
+ja siihen kuuluu MYOS squadista jatetty pelaaja joka on yha liigassa
+(Richarlison, TOT, news "not included in squad."). Suodatus on silti oikea
+(kumpaakaan ei voi valita), mutta NAKYVA SANA ei saa olla "left the league":
+pinnat sanovat "not selectable". Funktion nimi `left_league` on historiallinen.
 """
 from __future__ import annotations
 
