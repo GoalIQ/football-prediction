@@ -813,8 +813,6 @@ export interface ModelRaceGameweek {
 	/** null = kierrosta ei ole omassa historiassa (EI nolla — ks. backend). */
 	your_points: number | null;
 	diff: number | null;
-	/** true = mallin luku jaadytetty eri hetkesta kuin kayttajan; ei summissa. */
-	stale_model_points?: boolean;
 	cumulative_diff: number | null;
 	/** Premium-erittely; puuttuu kokonaan ilman premiumia. */
 	model_captain_id?: number | null;
