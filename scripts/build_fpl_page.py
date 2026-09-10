@@ -2300,13 +2300,13 @@ def manual_adjustments_html(xp: dict | None) -> str:
         return (head + "<p>This projection file does not carry the adjustment list, "
                 "so we cannot say here whether any hand adjustment is in it.</p>")
     if not rows:
-        return head + "<p>None. Every team rating in the current projection is fitted, not set by hand.</p>"
+        return head + "<p>None. Every team rating in the current projection comes from the fit.</p>"
     out = [head,
            "<p>These team ratings are moved by hand on top of the fitted model. "
            "Each one carries a review date. After that date it is no longer applied.</p>",
            '<div class="table-wrap"><table class="nm adjust">',
            "<thead><tr><th>Team</th><th>Attack</th><th>Defence</th>"
-           "<th>Player goal rate</th><th>Applied</th><th>Review by</th><th>Why</th></tr></thead><tbody>"]
+           "<th>Player goal and assist rate</th><th>Applied</th><th>Review by</th><th>Why</th></tr></thead><tbody>"]
     for r in rows:
         if not isinstance(r, dict):
             continue

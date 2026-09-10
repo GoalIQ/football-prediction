@@ -693,9 +693,10 @@
 								</p>
 							{/if}
 							{#if fplGap}
-								<!-- Lause on sama kuin mobiilin en.ts-avain
-								     fantasy.playercard.fpl_projection (tests/test_i18n_svelte_parity.py
-								     mittaa arvon). Kaksi lukua, ei selitysta. -->
+								<!-- Lause = src/models/fpl_projection_gap.SURFACE_SENTENCE
+								     (tests/test_fpl_projection_gap.py mittaa arvon). Mobiilin
+								     en.ts-avain fantasy.playercard.fpl_projection puuttuu viela
+								     (mobiilihaara); sama testi vertaa sen kun se on. -->
 								<p class="gap-line">
 									GW{fplGap.gw}. FPL's own projection: {fplGap.fpl.toFixed(1)}. Ours: {fplGap.ours.toFixed(
 										1
