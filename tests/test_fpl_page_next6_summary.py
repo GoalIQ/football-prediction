@@ -29,6 +29,10 @@ def _fx(gw, cs, fdr=2):
 
 
 def _row(name, cells, avg_cs, avg_fdr, n):
+    # 10.9 FDR-GRID-DGW: solu on LISTA otteluita (tyhja = blank, kaksi =
+    # double). Vanha kasin rakennettu muoto (dict / None) normalisoidaan,
+    # jotta testit mittaavat samaa kontraktia kuin fdr_rows_from_teams.
+    cells = [[] if c is None else (c if isinstance(c, list) else [c]) for c in cells]
     return {"team": name, "cells": cells, "avg_cs": avg_cs,
             "avg_fdr": avg_fdr, "n": n}
 
@@ -148,23 +152,29 @@ def test_games_column_comes_from_the_real_row_builder():
     assert (cs, fdr, games) == ("35.0", "2.00", "2")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): fdr_rows_from_teams kayttaa "
-    "dictia jonka avain on gameweek, joten doublen jalkimmainen ottelu "
-    "ylikirjoittaa edellisen ja katoaa ruudukosta. Kun tama korjataan, "
-    "testi XPASSaa ja pytest huutaa -> poista xfail-merkinta."))
 def test_double_gameweek_keeps_both_fixtures_in_the_grid():
-    """Se mita ruudukon PITAISI tehda doublessa.
-
-    Nyt: rivilla on yksi solu ja toinen ottelu on olemassa vain
-    keskiarvossa ja Games-luvussa. Sivun copy ei siksi saa luvata etta
-    double nakyy ruudukossa.
-    """
-    from scripts.build_fpl_page import fdr_rows_from_teams
+    """10.9 KORJATTU (FDR-GRID-DGW): doublen molemmat ottelut ovat samassa
+    solussa, kumpikin omalla luvullaan ja linkillaan, ja Games-sarake
+    tasmaa ruudukkoon. Aiemmin xfail: dict-avain pudotti toisen."""
+    from scripts.build_fpl_page import fdr_grid_html, fdr_rows_from_teams
     teams = [_team("Doublers", [_fx(2, 30.0), _fx(2, 40.0)], 35.0, 2.0, 2)]
     rows = fdr_rows_from_teams(teams, [2])
-    kept = [c for c in rows[0]["cells"] if c is not None]
-    assert len(kept) == 2, "doublen molempien otteluiden pitaisi sailya"
+    assert len(rows[0]["cells"][0]) == 2, "doublen molempien otteluiden pitaisi sailya"
+    html = fdr_grid_html({"gws": [2], "fdr_rows": rows})
+    cell = html.split('<td class="team">Doublers</td>', 1)[1].split("</td>", 1)[0]
+    assert cell.count('<a class="fdr') == 2 and "<br>" in cell
+    assert "30%" in cell and "40%" in cell
+    cs, fdr, games = _summary_nums(html, "Doublers")
+    assert games == "2"
+
+
+def test_blank_cell_is_empty_list_and_renders_dash():
+    from scripts.build_fpl_page import fdr_grid_html, fdr_rows_from_teams
+    teams = [_team("Blankers", [_fx(3, 30.0)], 30.0, 2.0, 1)]
+    rows = fdr_rows_from_teams(teams, [2, 3])
+    assert rows[0]["cells"][0] == [] and len(rows[0]["cells"][1]) == 1
+    html = fdr_grid_html({"gws": [2, 3], "fdr_rows": rows})
+    assert '<td class="num">-</td>' in html
 
 
 # (Poistettu 30.8: testi kuvasi tilaa jossa DGW renderoityy vajaana mutta
@@ -183,7 +193,7 @@ import re as _re  # noqa: E402
 
 def _cells_with_class(html):
     return _re.findall(
-        r'<td class="num([^"]*)"><a class="fdr"[^>]*>[^<]*?(\d+)%</a></td>', html)
+        r'<td class="num([^"]*)"><a class="fdr[^"]*"[^>]*>[^<]*?(\d+)%</a></td>', html)
 
 
 def test_cell_colour_matches_the_number_the_reader_sees():
@@ -223,17 +233,18 @@ def test_negative_control_raw_value_below_the_line_is_not_promoted():
     assert "is-hard" not in by_num["21"], by_num["21"]
 
 
-def test_build_fails_closed_when_a_double_gameweek_would_hide_a_fixture():
-    """Vahti: rivilla enemman otteluita kuin soluja -> buildi kaatuu.
-
-    Ilman tata sivu nayttaisi 6 solua, Games-sarake 7, ja se seitsemas
-    ottelu olisi olemassa vain keskiarvossa. Mikaan ei huutaisi.
+def test_build_fails_closed_when_games_column_exceeds_grid_fixtures():
+    """Vahti: Games-sarake sanoo enemman otteluita kuin ruudukossa on ->
+    buildi kaatuu. Double gameweek EI enaa laukaise tata (molemmat ottelut
+    ovat ruudukossa); epasynkka teams[].fixtures vs next_n laukaisee.
     """
     import pytest as _pt
     from scripts.build_fpl_page import fdr_rows_from_teams
-    teams = [_team("Doublers", [_fx(2, 30.0), _fx(2, 40.0)], 35.0, 2.0, 2)]
+    ok = [_team("Doublers", [_fx(2, 30.0), _fx(2, 40.0)], 35.0, 2.0, 2)]
+    fdr_rows_from_teams(ok, [2])   # double: ei kaadu
+    bad = [_team("Ghost", [_fx(2, 30.0)], 35.0, 2.0, 2)]   # next_n 2, ruudukossa 1
     with _pt.raises(SystemExit, match="FDR-GRID-DGW"):
-        fdr_rows_from_teams(teams, [2])
+        fdr_rows_from_teams(bad, [2])
 
 
 def test_negative_control_normal_row_does_not_trip_the_dgw_guard():

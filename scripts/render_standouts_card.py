@@ -356,6 +356,14 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     pool = _pool(players)
     safe_pool = [p for p in pool if (gw_xp(p) or 0) >= SAFE_MIN_XP]
     scopes = {
+        # 10.9 (QUEUE KORTIN-KAPTEENITIILI-CLAIM-SCOPE): kapteenin "top GW
+        # projection in the pool" oli ainoa superlatiivi joka ei kulkenut
+        # taman lukijan lapi. Tanaan tosi valinnan rakenteen takia - mutta
+        # niin olivat ceiling ja safest ennen kuin julkaisivat itsensa
+        # kumoavan lauseen. Tasapeli -> "joint top", parempi poolissa -> ei
+        # superlatiivia.
+        "captain": claim_scope(pool, s["captain"],
+                               lambda p: gw_xp(p) or 0.0, True, {}),
         "ceiling": claim_scope(pool, s["ceiling"],
                                lambda p: p["xp_dist"]["p90"], True,
                                {"captain": s["captain"]}),
@@ -367,7 +375,9 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
         _tile("Captain pick", s["captain"],
               pct(s["captain"]["xp_dist"]["p_haul"]) if s["captain"] else "-",
               "10+ pts",
-              (f"top GW{gw} projection in the pool, blanks {pct(s['captain']['xp_dist']['p_blank'])}"
+              (", ".join(x for x in [
+                  scope_phrase(f"top GW{gw} projection", scopes["captain"]),
+                  f"blanks {pct(s['captain']['xp_dist']['p_blank'])}"] if x)
                if s["captain"] else "")),
         # "Ceiling", ei "Highest": p90 on kokonaisluku ja sama katto voi olla
         # usealla (27.8: 10 kolmella, kaikki kortilla). Rajaus ja tasapeli

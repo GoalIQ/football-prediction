@@ -28,6 +28,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "data" / "rejected_phrases.json"
 SCRIPTS = ROOT / "scripts"
+# 10.9 (QUEUE HYLATYT-SANAMUODOT-SRC): copya syntyy myos src/-puolella
+# (esim. src/brand.py, src/models/fpl_why_drivers.py PAGE_LEGEND), eika
+# hylatty sanamuoto laukaissut porttia siella. Molemmat puut skannataan;
+# poikkeus kirjataan rekisteriin polulla ja perustelulla kuten ennenkin.
+SCAN_ROOTS = (SCRIPTS, ROOT / "src")
 
 
 def _registry() -> dict:
@@ -62,7 +67,7 @@ def _literals(path: Path) -> list[str]:
 def _hits(phrase: str) -> list[str]:
     reg = _registry()
     out = []
-    for path in sorted(SCRIPTS.rglob("*.py")):
+    for path in sorted(p for root in SCAN_ROOTS for p in root.rglob("*.py")):
         rel = path.relative_to(ROOT).as_posix()
         if reg.get("poikkeukset", {}).get(rel):
             continue

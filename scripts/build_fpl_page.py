@@ -294,19 +294,22 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     kohtaa. Testi oli vihrea samalla kun oikea rakennuspolku pudotti
     double gameweekin toisen ottelun (muisti: portti-voi-mitata-eri-koodipolkua).
 
-    🔴 TUNNETTU VIKA (QUEUE: FDR-GRID-DGW): `by_gw` on dict jonka avain on
-    gameweek, joten double gameweekissa jalkimmainen ottelu YLIKIRJOITTAA
-    edellisen ja katoaa ruudukosta - samalla kun `next_n` laskee sen ja
-    `next_avg_cs_pct` sisaltaa sen keskiarvossa. Sivun copy EI saa luvata
-    etta double nakyy ruudukossa ennen kuin tama on korjattu.
+    10.9 KORJATTU (QUEUE FDR-GRID-DGW): `by_gw` oli dict jonka avain on
+    gameweek, joten double gameweekissa jalkimmainen ottelu ylikirjoitti
+    edellisen ja katosi ruudukosta samalla kun `next_n` ja `next_avg_cs_pct`
+    laskivat sen. Nyt solu on LISTA otteluita: tyhja lista = blank,
+    kaksi = double, ja renderoija pinoaa ne samaan soluun. Vahti alla
+    vertaa Games-lukua ruudukon otteluiden kokonaismaaraan.
     """
     rows = []
     for t in teams:
-        by_gw = {f["gw"]: f for f in t["fixtures"]}
+        by_gw: dict[int, list[dict]] = {}
+        for f in t["fixtures"]:
+            by_gw.setdefault(f["gw"], []).append(f)
         rows.append(
             {
                 "team": t["name"],
-                "cells": [by_gw.get(g) for g in gws],
+                "cells": [by_gw.get(g, []) for g in gws],
                 "avg_fdr": t["next_avg_fdr"],
                 "avg_cs": t["next_avg_cs_pct"],
                 # next_n on otteluiden maara lahihorisontissa. Ilman sita
@@ -325,13 +328,12 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     # askel menee punaiseksi. Se on parempi kuin sivu joka valehtelee itselleen.
     # Korjaus on QUEUE: FDR-GRID-DGW.
     for r in rows:
-        nakyvia = len([c for c in r["cells"] if c is not None])
+        nakyvia = sum(len(c) for c in r["cells"])
         if r["n"] > nakyvia:
             raise SystemExit(
-                f"FDR-GRID-DGW: {r['team']} - rivilla {r['n']} ottelua mutta "
-                f"{nakyvia} solua. Double gameweek piilottaisi ottelun "
-                f"ruudukosta samalla kun Games ja Avg CS% laskevat sen. "
-                f"Korjaa fdr_rows_from_teams (by_gw -> lista per GW) ennen "
+                f"FDR-GRID-DGW: {r['team']} - Games-sarake sanoo {r['n']} ottelua "
+                f"mutta ruudukossa on {nakyvia}. Ottelu olisi olemassa vain "
+                f"keskiarvossa. Tarkista teams[].fixtures vs next_n ennen "
                 f"kuin sivu regeneroidaan.")
     return rows
 
@@ -1548,11 +1550,17 @@ def fdr_grid_html(c: dict) -> str:
     rows = []
     for r in c["fdr_rows"]:
         cells = []
-        for i, fx in enumerate(r["cells"]):
+        for i, fxs in enumerate(r["cells"]):
             m = " m-hide" if i >= MOBILE_GW_COLS else ""
-            if fx is None:
+            if not fxs:
                 cells.append(f'<td class="num{m}">-</td>')
-            else:
+                continue
+            # 10.9 FDR-GRID-DGW: double gameweek = kaksi ottelua samassa
+            # solussa allekkain, kumpikin omalla luvullaan ja linkillaan.
+            # Solun luokka tulee ENSIMMAISESTA ottelusta; toinen kantaa
+            # oman luokkansa linkissa, jotta vari ja luku ovat samasta arvosta.
+            links = []
+            for fx in fxs:
                 # #148: solussa vastustaja + venue + per-fixture CS% (pariteetti
                 # mobiilin #144:n kanssa); FDR-luokka siirtyi tooltippiin.
                 # #152: solu on linkki predict-pinnalle (mobiilin solu-tap-pariteetti).
@@ -1566,14 +1574,19 @@ def fdr_grid_html(c: dict) -> str:
                 shown = format(float(fx["cs_pct"]), ".0f")
                 cls = cs_cell_class(float(shown))
                 href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
-                cells.append(
-                    f'<td class="num {cls}{m}"><a class="fdr" href="{href}" '
+                links.append(
+                    f'<a class="fdr {cls}" href="{href}" '
                     f'title="{escape(fx["opponent"])} ({fx["venue"]}) '
                     f'&middot; FDR {fx["fdr"]} &middot; view model prediction">'
                     f'{escape(fx["opponent_short"])} ({fx["venue"]}) '
                     f'{shown}%'
-                    f"</a></td>"
+                    f"</a>"
                 )
+            # Yhden ottelun solu kantaa luokan kuten ennen; doublessa solu
+            # ei saa luokkaa (se varjaisi molemmat) vaan kumpikin linkki oman.
+            td_cls = (" " + cs_cell_class(float(format(float(fxs[0]["cs_pct"]), ".0f")))
+                      if len(fxs) == 1 else "")
+            cells.append(f'<td class="num{td_cls}{m}">' + "<br>".join(links) + "</td>")
         rows.append(
             "<tr>"
             f'<td class="team">{escape(r["team"])}</td>'
@@ -1878,8 +1891,8 @@ CSS = """
      Only ever found in a browser; the gates cannot see the cascade. */
   .content a.fdr{ color:inherit; }
   a.fdr:hover{ text-decoration:underline; }
-  td.is-easy,td.is-easy .fdr,span.fdr.is-easy{ color:var(--amber); font-weight:600; }
-  td.is-hard,td.is-hard .fdr,span.fdr.is-hard{ color:var(--negative); }
+  td.is-easy,td.is-easy .fdr,span.fdr.is-easy,a.fdr.is-easy{ color:var(--amber); font-weight:600; }
+  td.is-hard,td.is-hard .fdr,span.fdr.is-hard,a.fdr.is-hard{ color:var(--negative); }
   .legend{ color:var(--ink-muted); font-size:14px; margin:8px 0 0; }
   .stat-row{ display:flex; flex-wrap:wrap; gap:14px; margin:18px 0; }
   .stat{ background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:16px 20px; flex:1 1 180px; }

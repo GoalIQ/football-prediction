@@ -162,3 +162,19 @@ def test_scope_negatiivinen_kontrolli_tasapeli_katoaa() -> None:
             _player(2, "B", p90=11, p_haul=0.2, p_blank=0.2)]
     sc = claim_scope(pool, pool[0], lambda p: p["xp_dist"]["p90"], True, {})
     assert scope_phrase("top ceiling", sc) == "top ceiling in the pool"
+
+
+def test_captain_superlative_goes_through_claim_scope():
+    """10.9 (KORTIN-KAPTEENITIILI-CLAIM-SCOPE): kapteenin "top GW projection
+    in the pool" ei ollut lukijan lapi. Tasapeli -> "joint top", parempi
+    poolissa joka ei ole kortilla -> ei superlatiivia."""
+    from scripts.render_standouts_card import claim_scope, scope_phrase
+    a = {"id": 1, "web_name": "A", "gameweeks": [{"gw": 4, "xp": 5.5}]}
+    b = {"id": 2, "web_name": "B", "gameweeks": [{"gw": 4, "xp": 5.5}]}
+    c = {"id": 3, "web_name": "C", "gameweeks": [{"gw": 4, "xp": 6.0}]}
+    val = lambda p: p["gameweeks"][0]["xp"]
+    assert scope_phrase("top GW4 projection", claim_scope([a, b], a, val, True, {})) \
+        == "joint top GW4 projection in the pool"
+    assert scope_phrase("top GW4 projection", claim_scope([a, c], a, val, True, {})) == ""
+    assert scope_phrase("top GW4 projection", claim_scope([a], a, val, True, {})) \
+        == "top GW4 projection in the pool"
