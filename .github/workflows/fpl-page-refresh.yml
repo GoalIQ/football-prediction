@@ -145,6 +145,15 @@ jobs:
               exit 1 ;;
           esac
 
+      # 10.9: ILMAISIKKUNAN LUPAUS SIIVOUTUU ITSE. `check_free_window.py` (tests.yml)
+      # menee punaiseksi 12.9 12:30 UTC jos kasin yllapidetyt pinnat (faq, index,
+      # creators, fpl.html:n price-note, llms.txt) yha lupaavat ilmaista Premiumia.
+      # `--fix` poistaa lupauslauseet VASTA kun ikkuna on kiinni (ennen sita se on
+      # no-op), joten askel on turvallinen joka ajolla eika siivous jaa kenenkaan
+      # muistin varaan. Sama sivu-ajo committaa ja hub-deploy julkaisee.
+      - name: Free-window promise self-clean (no-op while the window is open)
+        run: python scripts/check_free_window.py --fix
+
       - name: Commit + push to main (Pages serves fresh page)
         id: push
         run: |
@@ -157,7 +166,7 @@ jobs:
           # -> rebase kieltaytyi -> sivu jaatyi (26.8, 28.8, 30.8 kaikki heti
           # UTC-keskiyon jalkeen). `test_workflow_stage_paths.py` pitaa taman
           # listan ja builderin synkassa - ala muokkaa vain toista.
-          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml predictions.html world-cup-2026-predictions.html
+          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml predictions.html world-cup-2026-predictions.html faq.html creators.html llms.txt
           if git diff --cached --quiet; then
             echo "Ei muutoksia (data ennallaan tai bake fail-safe) — ohitetaan commit."
             exit 0
