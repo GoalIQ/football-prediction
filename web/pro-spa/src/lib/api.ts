@@ -837,6 +837,8 @@ export interface ModelRaceResponse {
 		provisional_gws?: number[];
 		/** gw -> tila, ks. `ModelRaceGameweek.state`. */
 		provisional_states?: Record<string, string>;
+		/** "net: ..." = molemmat puolet nettoja; renderoidaan vain kun alkaa "net:". */
+		model_points_basis?: string;
 		note: string | null;
 	};
 	totals: {
