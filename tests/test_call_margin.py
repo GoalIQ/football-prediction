@@ -199,6 +199,9 @@ def test_match_page_too_close_has_no_favourite(monkeypatch):
     # ero on naytettyjen prosenttien erotus: 41 - 36 = 5
     assert "at <strong>41%</strong>" in html and "at <strong>36%</strong>" in html
     assert "5 percentage points apart" in html
+    # yksikko: "1 percentage point apart", ei "points" (livena 10.9 TOT-EVE 34/35)
+    html1 = bpp.render_match_page("CL", _entry(0.34, 0.31, 0.35))
+    assert "1 percentage point apart" in html1 and "1 percentage points" not in html1
     assert "has won 46% of the matches that had a winner" in html
     assert "too close for the GoalIQ model to name a favourite" in html  # meta, alussa
 

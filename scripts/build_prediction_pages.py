@@ -630,7 +630,8 @@ def _too_close_sentence(home: str, away: str, ph: float, pa: float, call: dict) 
         f"<strong>{TOO_CLOSE_LABEL}.</strong> The model has "
         f"<strong>{escape(home)}</strong> at <strong>{_fmt_pct(ph)}</strong> and "
         f"<strong>{escape(away)}</strong> at <strong>{_fmt_pct(pa)}</strong>, "
-        f"{call.get('gap_pp')} percentage points apart. Under {margin} points the "
+        f"{call.get('gap_pp')} percentage point{'' if call.get('gap_pp') == 1 else 's'} apart. "
+        f"Under {margin} points the "
         f"model's named side has won {below}% of the matches that had a winner, so it "
         f"does not call this one."
         + (' <a href="/predictions#margin">How that line is set</a>.'
