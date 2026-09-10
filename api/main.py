@@ -40,6 +40,7 @@ from pydantic import BaseModel, Field, field_validator
 
 import config
 from src.data.loader import lataa_otteludata
+from src.models.call_margin import call_state
 from src.models.dixon_coles import DixonColesModel, apply_match_adjustments
 
 import requests
@@ -1510,6 +1511,12 @@ class PredictionResponse(BaseModel):
     # ei saadeta — sen sijaan kerrotaan milloin luku nojaa vanhentuneeseen
     # tietoon. {"home": {...}, "away": {...}} tai tyhja jos dataa ei ole.
     data_confidence: dict = Field(default_factory=dict)
+    # 10.9.2026 SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN: ainoa lukija joka saa
+    # sanoa "suosikki" pinnalle. {favourite: home|away|None, too_close,
+    # gap_pp, margin_pp, reason}. Marginaali on mitattu omasta track
+    # recordista (data/call_margin.json); ilman artefaktia favourite=None.
+    # Pinnat EIVAT laske argmaxia itse (src/models/call_margin.py).
+    call: dict = Field(default_factory=dict)
 
 
 _TEAM_CONFIDENCE_UNSET = object()
@@ -2484,6 +2491,7 @@ def predict(req: PredictionRequest):
         p_home_win=round(p_1x2["home"], 4),
         p_draw=round(p_1x2["draw"], 4),
         p_away_win=round(p_1x2["away"], 4),
+        call=call_state(p_1x2["home"], p_1x2["draw"], p_1x2["away"]),
         fair_odds_home=round(1.0 / max(p_1x2["home"], 0.001), 2),
         fair_odds_draw=round(1.0 / max(p_1x2["draw"], 0.001), 2),
         fair_odds_away=round(1.0 / max(p_1x2["away"], 0.001), 2),
@@ -2655,6 +2663,7 @@ def predict_wc(req: PredictWCRequest):
         p_home_win=round(p_1x2["home"], 4),
         p_draw=round(p_1x2["draw"], 4),
         p_away_win=round(p_1x2["away"], 4),
+        call=call_state(p_1x2["home"], p_1x2["draw"], p_1x2["away"]),
         fair_odds_home=round(1.0 / max(p_1x2["home"], 0.001), 2),
         fair_odds_draw=round(1.0 / max(p_1x2["draw"], 0.001), 2),
         fair_odds_away=round(1.0 / max(p_1x2["away"], 0.001), 2),

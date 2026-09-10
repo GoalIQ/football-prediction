@@ -431,7 +431,23 @@ export interface PredictResponse {
 	 *  säädetä — kerromme milloin luku nojaa vanhentuneeseen tietoon.
 	 *  Kuvaileva, EI ennustava: älä esitä tätä vaikutusarviona. */
 	data_confidence?: Record<string, TeamConfidence>;
+	/** 10.9.2026 SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN: palvelimen ainoa
+	 *  lukija suosikille. favourite=null kun |p_home - p_away| < margin_pp
+	 *  (mitattu mallin omasta track recordista). Pinta ei laske argmaxia. */
+	call?: PredictCall;
 	[key: string]: unknown;
+}
+
+export interface PredictCall {
+	favourite: 'home' | 'away' | null;
+	too_close: boolean | null;
+	/** |round(p_home*100) - round(p_away*100)|: sama kokonaisluku kuin näytetyt prosentit */
+	gap_pp: number;
+	margin_pp: number | null;
+	/** nimetyn puolen voitto-% ratkenneissa otteluissa kun ero < marginaali (artefaktista) */
+	below_hit_pct: number | null;
+	measured_at: string | null;
+	reason: 'gap_above_margin' | 'gap_below_margin' | 'margin_unavailable';
 }
 
 export interface TeamConfidence {

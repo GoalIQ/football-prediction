@@ -43,6 +43,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.models import accuracy as acc
+from src.models.call_margin import call_state, pct_int
 from scripts.build_fpl_page import ROOT as _FP_ROOT, write_urlset
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 from scripts.slugs import fold_ascii, slug
@@ -302,6 +303,7 @@ padding:12px 0;border-bottom:1px solid var(--line);}
 .mrow a{color:var(--teal);font-weight:700;text-decoration:none;}
 .mrow .meta{color:var(--muted);font-size:12px;}
 .pick{color:var(--teal-ink);font-weight:700;font-size:13px;white-space:nowrap;}
+.pick.close{color:var(--muted);font-weight:600;}
 footer{border-top:1px solid var(--line);margin-top:36px;padding:22px 0 34px;
 color:var(--muted);font-size:13px;}
 footer a{color:var(--muted);}
@@ -359,7 +361,9 @@ _slug = slug
 
 
 def _fmt_pct(x: float) -> str:
-    return f"{round(x * 100)}%"
+    # Sama pyoristys kuin call_state():n ero (puoli ylos = JS Math.round), jotta
+    # lukijan vahennyslasku sivun prosenteista antaa saman eron kuin lause.
+    return f"{pct_int(x)}%"
 
 
 def _fmt_kickoff(iso: str) -> str:
@@ -576,12 +580,74 @@ def _confidence_block(e: dict) -> str:
     )
 
 
+TOO_CLOSE_LABEL = "Too close to call"
+
+
+def _favourite_label(e: dict, call: dict) -> tuple[str | None, str]:
+    """(suosikin nimi, prosentti) tai (None, "") kun ero on marginaalin alla.
+
+    Lukee VAIN call_state():n tulosta. `predicted_winner` on track recordin
+    kirjauskentta (aina nimetty), ei pinnan suosikki.
+    """
+    fav_side = call.get("favourite")
+    if fav_side == "home":
+        return e["home_team"], _fmt_pct(e["p_home"])
+    if fav_side == "away":
+        return e["away_team"], _fmt_pct(e["p_away"])
+    return None, ""
+
+
+_MARGIN_ANCHOR_PATH = ROOT / "predictions.html"
+
+
+def _margin_anchor_exists() -> bool:
+    """Linkki /predictions#margin renderoidaan vain jos ankkuri on levylla.
+
+    Portti 10.9: build_fpl_page (#118, kirjoittaa ankkurin) ja tama skripti
+    (#119) ovat molemmat continue-on-error samassa ajossa; jos #118 kaatuu ja
+    #119 onnistuu, sadat ledet linkkaisivat tyhjaan. Fail-closed, ei vahtia.
+    """
+    try:
+        return 'id="margin"' in _MARGIN_ANCHOR_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+
+def _too_close_sentence(home: str, away: str, ph: float, pa: float, call: dict) -> str:
+    """Lede kun suosikkia ei nimeta. Marginaali sanotaan lukuna jotta lukija
+    voi tarkistaa sen /predictions#margin-lohkosta."""
+    margin = call.get("margin_pp")
+    below = call.get("below_hit_pct")
+    if margin is None or below is None:
+        return (
+            f"The model has <strong>{escape(home)}</strong> at <strong>{_fmt_pct(ph)}</strong> "
+            f"and <strong>{escape(away)}</strong> at <strong>{_fmt_pct(pa)}</strong>. "
+            f"It does not name a favourite here."
+        )
+    # Prosentti tulee artefaktista (decisive_below_pct), ei proosasta; ero on
+    # sama kokonaisluku jonka lukija saa vahentamalla sivun prosentit.
+    return (
+        f"<strong>{TOO_CLOSE_LABEL}.</strong> The model has "
+        f"<strong>{escape(home)}</strong> at <strong>{_fmt_pct(ph)}</strong> and "
+        f"<strong>{escape(away)}</strong> at <strong>{_fmt_pct(pa)}</strong>, "
+        f"{call.get('gap_pp')} percentage points apart. Under {margin} points the "
+        f"model's named side has won {below}% of the matches that had a winner, so it "
+        f"does not call this one."
+        + (' <a href="/predictions#margin">How that line is set</a>.'
+           if _margin_anchor_exists() else "")
+    )
+
+
 def render_match_page(comp: str, e: dict) -> str:
     cfg = LEAGUES[comp]
     home, away = e["home_team"], e["away_team"]
     ph, pd_, pa = e["p_home"], e["p_draw"], e["p_away"]
-    fav = home if e["predicted_winner"] == "home" else away
-    fav_pct = _fmt_pct(ph if e["predicted_winner"] == "home" else pa)
+    # 10.9.2026: suosikki vain kun ero ylittaa mitatun marginaalin.
+    # `call_state` on ainoa lukija; argmaxia ei lasketa tassa. Ennen tata
+    # `else away` -haara olisi renderoinut minka tahansa muun arvon kuin
+    # "home" vierasjoukkueeksi.
+    call = call_state(ph, pd_, pa)
+    fav, fav_pct = _favourite_label(e, call)
     url = f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}"
     title = f"{home} vs {away} Prediction: {cfg['name']} | GoalIQ"
     # 2.8.2026 PREMIUM-VUOTO KIINNI: raaka xG on premium-dataa (PredictScreen
@@ -591,16 +657,28 @@ def render_match_page(comp: str, e: dict) -> str:
     # track recordia (pct_1x2 + pct_exact gradataan), eli ilman niita koko
     # "logged before kickoff" -vaite ei olisi todennettavissa. xG ei ole
     # gradattu mittari eika sita siksi tarvita vaitteen tueksi.
-    desc = (
-        f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ model "
-        f"gives {fav} a {fav_pct} chance to win. Logged before kick-off in our "
-        f"public track record and graded after the match."
-    )
+    if fav:
+        desc = (
+            f"{home} vs {away} ({cfg['name']}, {e.get('date')}): the GoalIQ model "
+            f"gives {fav} a {fav_pct} chance to win. Logged before kick-off in our "
+            f"public track record and graded after the match."
+        )
+        lede_claim = (
+            f"The GoalIQ match model makes <strong>{escape(fav)}</strong> the favourite "
+            f"at <strong>{fav_pct}</strong> to win."
+        )
+    else:
+        # Portti 10.9: "too close" ensin, SERP katkaisee ~155 merkkiin.
+        desc = (
+            f"{home} vs {away}: too close for the GoalIQ model to name a favourite. "
+            f"{_fmt_pct(ph)} home, {_fmt_pct(pd_)} draw, {_fmt_pct(pa)} away, "
+            f"logged before kick-off and graded after."
+        )
+        lede_claim = _too_close_sentence(home, away, ph, pa, call)
     hero = (
         f"<h1>{escape(home)} vs {escape(away)} prediction</h1>"
         f'<p class="lede">{escape(cfg["name"])} · kickoff {_fmt_kickoff(e.get("kickoff") or "")}. '
-        f"The GoalIQ match model makes <strong>{escape(fav)}</strong> the favourite "
-        f"at <strong>{fav_pct}</strong> to win.</p>"
+        f"{lede_claim}</p>"
     )
     body = (
         f'<div class="card big">{_prob_block(e)}</div>'
@@ -654,16 +732,18 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
     items = []
     for e in rows:
         fname = _match_filename(e)
-        fav = e["home_team"] if e["predicted_winner"] == "home" else e["away_team"]
-        fav_pct = _fmt_pct(
-            e["p_home"] if e["predicted_winner"] == "home" else e["p_away"]
+        fav, fav_pct = _favourite_label(
+            e, call_state(e["p_home"], e["p_draw"], e["p_away"]))
+        pick_html = (
+            f'<span class="pick">{escape(fav)} {fav_pct}</span>' if fav
+            else f'<span class="pick close">{TOO_CLOSE_LABEL}</span>'
         )
         items.append(
             f'<div class="mrow"><div>'
             f'<a href="/predictions/{cfg["slug"]}/{fname[:-5]}">'
             f'{escape(e["home_team"])} vs {escape(e["away_team"])}</a>'
             f'<div class="meta">{_fmt_kickoff(e.get("kickoff") or "")}</div></div>'
-            f'<span class="pick">{escape(fav)} {fav_pct}</span></div>'
+            f'{pick_html}</div>'
         )
     hero = (
         f"<h1>{escape(cfg['name'])} predictions</h1>"

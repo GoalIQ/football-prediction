@@ -47,6 +47,9 @@ raw_data/
 # Tarkkuus-track-record (#100): ajastettu putki ylläpitää, Render lukee gitistä.
 !/data/prediction_log.json
 !/data/accuracy.json
+# 10.9.2026: suosikin marginaali (SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN);
+# API lukee levylta Renderissa, joten artefakti kulkee repon mukana.
+!/data/call_margin.json
 # FPL Phase 0 -projektio: ajastettu refresh ylläpitää, Render lukee gitistä (/api/fantasy).
 !/data/fpl_projections_phase0.json
 # Ilmaisikkunan ja luojakohortin seurantasarjat (16.8): free-window-watch

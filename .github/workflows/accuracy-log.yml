@@ -143,6 +143,15 @@ jobs:
       # Fail-safe: builder exit 2 jos FPL-data ei available → continue-on-error.
       # #TRACK-STALE: id:t + häntävahti alla — continue-on-error piilotti
       # SyntaxErrorin 2 vrk (sivut jäätyivät 61.8/102:een vaikka run oli vihreä).
+      # 10.9: suosikin marginaali mitataan samasta lokista jonka run juuri
+      # gradasi, ENNEN molempia sivuaskelia (#118 rebake
+      # kirjoittaa /predictions#margin-lohkon, #119 ottelusivun ledet linkkaavat
+      # siihen): sivut ja API lukevat saman data/call_margin.json.
+      # Ei continue-on-error: ilman artefaktia call_state on fail-closed
+      # (kukaan ei saa suosikkia), ja se olisi hiljainen regressio sivuilla.
+      - name: Measure favourite margin (SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN)
+        run: python -m scripts.measure_call_margin
+
       - name: Rebake accuracy numbers into web pages (#118)
         id: bake_fpl
         continue-on-error: true
@@ -205,6 +214,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/prediction_log.json data/accuracy.json data/international_results.csv
+          git add data/call_margin.json
           git add data/api_error_counts.json 2>/dev/null || true
           # llms.txt (#231-GEO 5.8): build_prediction_pages kirjoittaa nyt sen
           # GEN:LLMS-lohkon. Ilman tata riviä ajo kirjoittaisi tiedoston ja

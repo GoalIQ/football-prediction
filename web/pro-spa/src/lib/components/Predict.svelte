@@ -319,6 +319,21 @@
 			<span class="seg seg-away" style="width:{data.p_away_win * 100}%"></span>
 		</div>
 
+		<!-- 10.9.2026 SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN: kun koti-vieras-ero
+		     on alle mallin omasta track recordista mitatun marginaalin, sanotaan
+		     ettei suosikkia ole. Lukija on palvelimen call-kenttä; sama lause
+		     mobiilissa ja goaliq.app/predictions-ottelusivuilla. -->
+		{#if data.call?.too_close === true && data.call.below_hit_pct != null}
+			<div class="conf">
+				<strong>Too close to call.</strong>
+				The gap between {data.home_team} and {data.away_team} is {data.call.gap_pp} percentage
+				points. Under {data.call.margin_pp} points the model's named side has won
+				{data.call.below_hit_pct}% of the matches that had a winner, so it does not name a
+				favourite here. How the line is measured:
+				<a href="https://goaliq.app/predictions#margin">goaliq.app/predictions</a>
+			</div>
+		{/if}
+
 		<!-- Luottamuslippu on VAPAAN puolella tarkoituksella: se kertoo milloin
 		     luku on epävarmempi, eikä sellaista saa myydä erikseen. Sama
 		     rajaus kuin ottelusivuilla goaliq.app:ssa. -->

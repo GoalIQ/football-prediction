@@ -1,0 +1,84 @@
+{
+  "margin_pp": 16,
+  "decisive_below_n": 92,
+  "decisive_below_won": 43,
+  "decisive_below_pct": 47,
+  "decisive_above_n": 204,
+  "decisive_above_won": 158,
+  "decisive_above_pct": 77,
+  "method": "|p_home - p_away| in 8 pp buckets over graded rows; margin = lowest bucket edge above which every bucket with n >= 25 has named-winner hit rate >= 60 % among decisive (non-draw) matches. Floor 4 pp, cap 40 pp.",
+  "n_graded": 407,
+  "n_below_margin": 137,
+  "hit_pct_below_margin": 31.4,
+  "measured_at": "2026-09-10T04:00:28+00:00",
+  "buckets": [
+    {
+      "gap_from_pp": 0,
+      "gap_to_pp": 8,
+      "open_ended": false,
+      "n": 67,
+      "hit_pct": 34.3,
+      "draw_pct": 28.4,
+      "decisive_n": 48,
+      "decisive_won": 23,
+      "decisive_hit_pct": 47.9
+    },
+    {
+      "gap_from_pp": 8,
+      "gap_to_pp": 16,
+      "open_ended": false,
+      "n": 70,
+      "hit_pct": 28.6,
+      "draw_pct": 37.1,
+      "decisive_n": 44,
+      "decisive_won": 20,
+      "decisive_hit_pct": 45.5
+    },
+    {
+      "gap_from_pp": 16,
+      "gap_to_pp": 24,
+      "open_ended": false,
+      "n": 65,
+      "hit_pct": 46.2,
+      "draw_pct": 29.2,
+      "decisive_n": 46,
+      "decisive_won": 30,
+      "decisive_hit_pct": 65.2
+    },
+    {
+      "gap_from_pp": 24,
+      "gap_to_pp": 32,
+      "open_ended": false,
+      "n": 64,
+      "hit_pct": 46.9,
+      "draw_pct": 35.9,
+      "decisive_n": 41,
+      "decisive_won": 30,
+      "decisive_hit_pct": 73.2
+    },
+    {
+      "gap_from_pp": 32,
+      "gap_to_pp": 40,
+      "open_ended": false,
+      "n": 36,
+      "hit_pct": 52.8,
+      "draw_pct": 22.2,
+      "decisive_n": 28,
+      "decisive_won": 19,
+      "decisive_hit_pct": 67.9
+    },
+    {
+      "gap_from_pp": 40,
+      "gap_to_pp": null,
+      "open_ended": true,
+      "n": 105,
+      "hit_pct": 75.2,
+      "draw_pct": 15.2,
+      "decisive_n": 89,
+      "decisive_won": 79,
+      "decisive_hit_pct": 88.8
+    }
+  ],
+  "source": "data/prediction_log.json",
+  "_comment": "Luetaan src/models/call_margin.call_state():lla. Kun |p_home - p_away| < margin_pp, mikaan pinta ei nimea suosikkia. Alla olevat luokat ovat se mittaus josta luku johdetaan."
+}

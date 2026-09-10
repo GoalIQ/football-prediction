@@ -862,6 +862,59 @@ _RECORD_INLINE_ROWS = 300
 _PENDING_INLINE_ROWS = 60
 
 
+CALL_MARGIN_PATH = ROOT / "data" / "call_margin.json"
+
+
+def call_margin_html(doc: dict | None) -> str:
+    """10.9.2026 SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN: julkaise marginaalin
+    mittaus ilmaispinnalle, jotta ottelusivun lause "below N points the model's
+    named side has won about half" on tarkistettavissa taalta (#margin).
+    Luvut tulevat artefaktista, ei tekstista; puuttuva artefakti -> tyhja."""
+    if not doc or not isinstance(doc.get("margin_pp"), int):
+        return ""
+    m = doc["margin_pp"]
+    needed = ("decisive_below_n", "decisive_below_won", "decisive_below_pct",
+              "decisive_above_n", "decisive_above_won", "decisive_above_pct",
+              "n_below_margin", "n_graded")
+    if any(doc.get(k) is None for k in needed):
+        return ""
+    rows = []
+    for b in doc.get("buckets") or []:
+        dec = b.get("decisive_hit_pct")
+        # Viimeinen luokka on avoin (cap): "40+" eika "40-48".
+        label = (f'{b["gap_from_pp"]}+' if b.get("open_ended")
+                 else f'{b["gap_from_pp"]}-{b["gap_to_pp"]}')
+        rows.append(
+            f'<tr><td>{label}</td><td>{b["n"]}</td>'
+            f'<td>{b.get("decisive_n", "")}</td>'
+            f'<td>{"" if dec is None else f"{dec:.0f}%"}</td></tr>')
+    measured = (doc.get("measured_at") or "")[:10]
+    try:
+        measured_txt = _dt.date.fromisoformat(measured).strftime("%d %b %Y").lstrip("0")
+    except ValueError:
+        measured_txt = measured
+    # Kaikki luvut artefaktista (portti 10.9: ei "about half", ei "clearly
+    # more", ei "re-measured on every refresh" vaan paivamaara).
+    return (
+        '<div class="bycomp" id="margin" aria-label="When the model does not name a favourite">'
+        '<div class="bycomp-title">When the model does not name a favourite</div>'
+        f'<p class="bycomp-note">The track record above always names the more likely '
+        f'side. The match pages and the apps do not: when the gap between the home and '
+        f'away win chances is under <strong>{m} percentage points</strong>, they say '
+        f'"too close to call". The line comes from this log, no bookmaker is involved. '
+        f'Under {m} points there have been {doc["n_below_margin"]} graded matches, '
+        f'{doc["decisive_below_n"]} of them had a winner, and the named side won '
+        f'{doc["decisive_below_won"]} of those ({doc["decisive_below_pct"]}%). At {m} '
+        f'points and above the named side won {doc["decisive_above_won"]} of '
+        f'{doc["decisive_above_n"]} ({doc["decisive_above_pct"]}%). Measured '
+        f'{measured_txt} from {doc["n_graded"]} graded matches.</p>'
+        '<table class="margin-tbl"><thead><tr><th>Gap (points)</th><th>Matches</th>'
+        '<th>With a winner</th><th>Named side won, when there was a winner</th>'
+        '</tr></thead><tbody>'
+        + "".join(rows) + "</tbody></table></div>"
+    )
+
+
 def record_table_html(preds: list[dict], c: dict) -> str:
     """#117: koko per-ottelu-record näkyväksi tauluksi. Vain gradatut rivit
     (result != null) — pending-ennusteet ovat lukittuja mutta pelaamattomia,
@@ -1052,6 +1105,9 @@ def record_table_html(preds: list[dict], c: dict) -> str:
         ".rec-scroll table{width:100%;border-collapse:collapse;min-width:640px;}"
         ".rec-scroll th,.rec-scroll td{text-align:left;padding:8px 10px;"
         "border-bottom:1px solid rgba(128,128,128,.2);font-size:14px;}"
+        ".margin-tbl{border-collapse:collapse;font-size:13px;margin-top:8px;}"
+        ".margin-tbl th,.margin-tbl td{text-align:left;padding:4px 10px 4px 0;"
+        "border-bottom:1px solid rgba(128,128,128,.2);}"
         # 28.7 TELETEXT: tama lohko injektoidaan KAHTEEN sivuun joilla on eri
         # paletti (fpl.html tumma, predictions.html classic-vaalea), joten
         # yksikaan kovakoodattu vari ei kelpaa molempiin: amber on vaalealla
@@ -3717,7 +3773,8 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
         r"(<!-- GEN:ACC-DATASET-START -->).*?(<!-- GEN:ACC-DATASET-END -->)",
         lambda m: m.group(1) + ds_block + m.group(2), new, flags=re.S)
     # #117: koko record-taulu (sisältää #111-by-comp-lohkon taulun päällä).
-    record_block = record_table_html(preds, c)
+    record_block = record_table_html(preds, c) + call_margin_html(
+        _load_json(CALL_MARGIN_PATH))
     new = re.sub(
         r"(<!-- GEN:ACC-RECORD-START -->).*?(<!-- GEN:ACC-RECORD-END -->)",
         lambda m: m.group(1) + record_block + m.group(2), new, flags=re.S)
