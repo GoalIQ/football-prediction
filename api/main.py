@@ -3777,9 +3777,9 @@ def grade_decisions(request: Request):
     """
     require_admin(request)
     from src.models.fpl_grade import (
-        NOTE_LOGGED_AFTER_DEADLINE, NOTE_NO_ENTRY, fetch_live_points,
+        NOTE_LOGGED_AFTER_DEADLINE, NOTE_NO_ENTRY, element_names, fetch_live_points,
         finished_gws, grade_one, logged_after_deadline, make_picks_fetchers,
-        true_deadlines,
+        true_deadlines, user_actual,
     )
 
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
@@ -3833,6 +3833,9 @@ def grade_decisions(request: Request):
     live_by_gw: dict[int, dict] = {}
     fetchers_by_gw: dict[int, tuple] = {}
     now_iso = datetime.now(timezone.utc).isoformat()
+    # DECISION-USER-ACTUAL: nimet kerran per ajo, jotta rivi kantaa sen
+    # kapteenin jonka grader pisteytti (ei kentan luonnosta).
+    names = element_names()
     for r in rows:
         gw = r["gw"]
         if gw not in live_by_gw:
@@ -3843,6 +3846,7 @@ def grade_decisions(request: Request):
             # Ei ennuste vaan jalkiviisaus. Merkitaan gradatuksi ilman
             # pisteita, jotta rivi ei jaa jonoon eika laske track recordiin.
             model_pts, user_pts, note = None, None, NOTE_LOGGED_AFTER_DEADLINE
+            actual = None
         else:
             model_pts, user_pts, note = grade_one(
                 r["kind"], r.get("model_choice") or {},
@@ -3850,11 +3854,14 @@ def grade_decisions(request: Request):
                 live_by_gw[gw], entry_by_user.get(r["user_id"]),
                 fetch_captain, fetch_transfers,
             )
+            actual = user_actual(r["kind"], bool(r["followed"]),
+                                 entry_by_user.get(r["user_id"]), fetch_captain, names)
         patch = requests.patch(
             f"{SUPABASE_URL}/rest/v1/fpl_decisions?id=eq.{r['id']}",
             headers=sb_headers, timeout=15,
             json={"graded_at": now_iso, "model_points": model_pts,
-                  "user_points": user_pts, "grade_note": note},
+                  "user_points": user_pts, "grade_note": note,
+                  "user_actual": actual},
         )
         if patch.status_code in (200, 204):
             graded += 1
