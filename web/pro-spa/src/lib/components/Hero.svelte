@@ -435,6 +435,11 @@
 	@media (max-width: 820px) {
 		.bar {
 			height: auto;
+			/* 🔴 Kapealla ruudulla palkki on kaksirivinen (~92 px). Sticky se
+			   soisi 11 % 844 px:n ruudusta pysyvasti JA peittaisi taulukoiden
+			   sticky-otsikkorivin, joka tarttuu --bar-h:hon. Navi on sivun
+			   ylalaidassa, joten se loytyy vierittamalla ylos. */
+			position: static;
 		}
 		.bar-in {
 			flex-wrap: wrap;
