@@ -1,18 +1,78 @@
 <script lang="ts">
+	/**
+	 * Hero = sovelluksen YLAPALKKI (11.9.2026, PRO-SPA-PALETTI vaihe 1).
+	 *
+	 * Ennen 11.9 sivun ylalaidassa oli seitseman rivia ennen sisaltoa:
+	 * GW-palkki (WorkspaceBar), logo + tagline, comp-kiitos, Set password,
+	 * DefCon-rivi, kuusi valilehtea ja alatabit. My teamissa kentta alkoi
+	 * ~1000 px:n kohdalla; FPL Demonilla 125 px:ssa. Mitattu PostHogista:
+	 * 207 kavijaa / 30 vrk, 13 avasi toisen reitin.
+	 *
+	 * Nyt yksi 52 px:n palkki kantaa kaiken: merkki, navi (rekisterin
+	 * GROUPS), kierros + deadline + tuoreusleima, tili. Tagline, kiitos ja
+	 * salasana ovat Account-valikossa, DefCon This week -sivulla.
+	 *
+	 * Tiedoston nimi sailyy (Hero), jotta AppShell ja portit
+	 * (`tests/test_spa_top_stack_budget.py`) eivat muutu turhaan.
+	 */
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import { auth, sendPasswordReset, signOut } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
-	import { openCustomerPortal } from '$lib/api';
+	import { fetchFantasy, openCustomerPortal } from '$lib/api';
+	import { actionableGameweek } from '$lib/gameweek';
+	import { GROUPS } from '$lib/tools';
 	import SetPassword from './SetPassword.svelte';
 
-	// #149: tilaustaso-badge lukee SAMAN auth.sub-tilan jota ProView gateaa →
-	// header ja feature-lukot eivät voi olla ristiriidassa. undefined =
-	// entitlement ei vielä ratkennut → ei badgea (ei väläytetä väärää tasoa).
 	let { onUpgrade }: { onUpgrade?: () => void } = $props();
 
-	/* Molemmat avaavat saman upgrade-nakyman: siella ovat seka hinnat etta
-	   LoginBox. Erillinen tapahtumanimi kertoo kumpaa nappia painettiin,
-	   koska "etsin hintaa" ja "olen jo asiakas" ovat eri aikomuksia ja
-	   niiden erottelu on koko syy nayttaa kaksi nappia yhden sijaan. */
+	/* ---------------- navi ---------------- */
+	const activeGroup = $derived(page.params.group ?? 'week');
+
+	/* ---------------- kierros + deadline (ent. WorkspaceBar) ----------------
+	   🔴 AIKA RENDEROIDAAN SELAIMEN VYOHYKKEELLA, EI PALVELIMEN. Deadline tulee
+	   UTC:na; `toLocaleString` ilman timeZone-parametria kayttaa kayttajan omaa
+	   vyohyketta. Kieli on lukittu en-GB (suomalaisella koneella rivi
+	   renderoitui muuten "pe 21.8. klo 20.30" englanninkielisessa tuotteessa). */
+	let gw = $state<number | null>(null);
+	let deadline = $state<Date | null>(null);
+	let checked = $state<Date | null>(null);
+	onMount(async () => {
+		try {
+			const d = await fetchFantasy();
+			const m = d?.meta ?? {};
+			gw = actionableGameweek(m) ?? null;
+			if (m.deadline_utc) {
+				const t = new Date(m.deadline_utc);
+				if (!isNaN(t.getTime())) deadline = t;
+			}
+			if (m.generated_at) {
+				// generated_at tulee ilman vyohyketta: se on UTC.
+				const raw = /[Z+]|-\d\d:\d\d$/.test(m.generated_at) ? m.generated_at : `${m.generated_at}Z`;
+				const t = new Date(raw);
+				if (!isNaN(t.getTime())) checked = t;
+			}
+		} catch {
+			// Palkin kierrosrivi on lisatietoa, ei nakyma.
+		}
+	});
+	const LOC = 'en-GB';
+	const dl = $derived(
+		deadline
+			? deadline.toLocaleString(LOC, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+			: null
+	);
+	const tz = $derived(
+		deadline
+			? (new Intl.DateTimeFormat(LOC, { timeZoneName: 'short' })
+					.formatToParts(deadline)
+					.find((p) => p.type === 'timeZoneName')?.value ?? '')
+			: ''
+	);
+	const chk = $derived(checked ? checked.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' }) : null);
+	const mennyt = $derived(!!deadline && deadline.getTime() < Date.now());
+
+	/* ---------------- tili ---------------- */
 	function pricing() {
 		capture('pricing_tapped', { source: 'pro_header' });
 		onUpgrade?.();
@@ -21,13 +81,7 @@
 		capture('sign_in_tapped', { source: 'pro_header' });
 		onUpgrade?.();
 	}
-
-	// #150: email pois persistentistä headerista → account-valikko (email +
-	// plan + salasanan vaihto/reset + sign out).
 	let menuOpen = $state(false);
-	// 6.9 (STRIPE-PORTAL-LINKKI-SPA): web-tilaajan peruutus/kortti/laskut Stripen
-	// portaalissa. Asiakas 6.9 pyysi peruutusta sahkopostilla, koska nappia ei
-	// ollut vaikka endpoint oli. plan 'app' = kaupan tilaus, hoidetaan kaupassa.
 	let portalBusy = $state(false);
 	let portalNotice = $state<string | null>(null);
 	const webSub = $derived(
@@ -49,40 +103,26 @@
 	}
 	let resetNotice = $state<string | null>(null);
 	let resetBusy = $state(false);
-	// 19.8 (Villen havainto): valikko sulkeutui VAIN samasta napista.
-	// Klikkaus muualle ja Escape sulkevat nyt — dropdownin vakiokäytös.
-	// pointerdown eikä click: click laukeaa vasta upissa, jolloin valikon
-	// sisältä alkanut mutta ulos päättynyt veto sulkisi valikon turhaan.
 	let sessionEl = $state<HTMLElement | null>(null);
 	function closeOnOutside(e: PointerEvent) {
-		if (menuOpen && sessionEl && !sessionEl.contains(e.target as Node)) {
-			menuOpen = false;
-		}
+		if (menuOpen && sessionEl && !sessionEl.contains(e.target as Node)) menuOpen = false;
 	}
 	function closeOnEscape(e: KeyboardEvent) {
 		if (menuOpen && e.key === 'Escape') menuOpen = false;
 	}
-
-	// #150b: valikkotila EI saa elää sign-outin yli (Hero ei unmounttaudu →
-	// auki jäänyt valikko pomppasi esiin seuraavassa kirjautumisessa).
 	$effect(() => {
 		if (!auth.user) {
 			menuOpen = false;
 			resetNotice = null;
 		}
 	});
-
-	// #150b: reset-linkistä saapuneelle avataan valikko + lomake valmiiksi —
-	// SPA-landing oli mykkä eikä ohjannut uuden salasanan asetukseen.
 	$effect(() => {
 		if (auth.passwordRecovery && auth.user) menuOpen = true;
 	});
-
 	function upgrade() {
 		capture('upgrade_tapped', { source: 'header_badge' });
 		onUpgrade?.();
 	}
-
 	async function resetLink() {
 		const email = auth.user?.email;
 		if (!email || resetBusy) return;
@@ -93,215 +133,268 @@
 			: 'Password reset link sent. Check your email (and spam).';
 		resetBusy = false;
 	}
+	const planLabel = $derived(
+		auth.sub?.plan === 'gw1-3-free'
+			? 'Premium, free until 12 September'
+			: auth.sub
+				? 'Premium'
+				: auth.sub === null
+					? 'Free'
+					: 'checking…'
+	);
 </script>
 
-<header class="hero">
-	<div class="brand">
-		<!-- 26.7 classic: merkki outlineksi. App-ikoni (magentatäytteinen PNG)
-		     oli sivun ainoa magentaläikkä ja rikkoi ilmeen omaa sääntöä
-		     (magenta = mark/captain/live, ei koskaan täyttö). Muoto säilyy —
-		     pyöristetty neliö + IQ-aksentti, sama kaava kuin wordmarkissa.
-		     HUOM: app-ikonia/faviconia EI muuteta; ne tarvitsevat täytön
-		     erottuakseen kotinäytöllä ja kauppalistauksella. -->
-		<!-- 1.8.2026: kanoninen merkki = amber-laatikko + ink IQ, sama joka
-		     sivulla ja mobiilissa. Aiempi outline-merkki magentalla Q:lla oli
-		     kolmas eri versio samasta logosta. -->
-		<svg class="mark" width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="GoalIQ">
-			<rect x="0" y="0" width="44" height="44" fill="#F5C542" />
-			<text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text>
-		</svg>
-		<div>
-			<div class="word">Goal<span>IQ</span> Premium</div>
-			<div class="tag">
-				Draft, rate and plan your squad with a real match model. Numbers, not vibes. ·
-				<a href="https://goaliq.app">goaliq.app</a>
-			</div>
-		</div>
-	</div>
-	{#if auth.sessionResolved && !auth.user}
-		<!-- 5.9 (auditointi C1 + C3): kirjautumattomalle ylatunniste oli tyhja.
-		     Kaksi seurausta mitattiin samana paivana: palaavalle maksajalle ei
-		     ollut nakyvaa "Sign in" -polkua lainkaan, ja hintaa etsiva klikkasi
-		     "Prices"-valilehtea joka on FPL:n hintamuutosvahti.
+<header class="bar">
+	<div class="bar-in">
+		<a class="brand" href="/" aria-label="GoalIQ Premium, home">
+			<svg class="mark" width="28" height="28" viewBox="0 0 44 44" role="img" aria-hidden="true">
+				<rect x="0" y="0" width="44" height="44" fill="#F5C542" />
+				<text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text>
+			</svg>
+			<span class="word">Goal<span>IQ</span></span>
+		</a>
 
-		     Hinta EI saa uutta omaa sivua: upgrade-nakyma (PremiumPreview) on jo
-		     hinnan ja sisallon lahde, ja toinen hintacopy olisi toinen paikka
-		     joka vanhenee eri tahtiin. Tassa annetaan silla nakyva nimi, ei
-		     kopiota. -->
-		<div class="session out">
-			<button class="ghost" onclick={pricing}>Pricing</button>
-			<button class="primary" onclick={signIn}>Sign in</button>
-		</div>
-	{:else if auth.user}
-		<div class="session" bind:this={sessionEl}>
-			{#if auth.sub?.plan === 'gw1-3-free'}
-				<!-- 16.8: ikkunan aikana badge ei saa vaittaa ostettua tilausta,
-				     ja sen on pysyttava ostopolkuna: ikkuna piilottaa paywallit,
-				     joten tama on kirjautuneen ainoa nakyva reitti ostaa. -->
-				<button class="plan premium" onclick={upgrade}>Premium · free</button>
-			{:else if auth.sub}
-				<span class="plan premium">Premium</span>
-			{:else if auth.sub === null}
-				<button class="plan free" onclick={upgrade}>Free · Upgrade</button>
-			{/if}
-			<button
-				class="ghost"
-				aria-expanded={menuOpen}
-				aria-haspopup="true"
-				onclick={() => (menuOpen = !menuOpen)}
-			>
-				Account
-			</button>
-			<button class="ghost" onclick={() => void signOut()}>Sign out</button>
-			{#if menuOpen}
-				<div class="menu" role="dialog" aria-label="Account">
-					<div class="menu-email">{auth.user.email}</div>
-					<div class="menu-plan">
-						Plan: {auth.sub?.plan === 'gw1-3-free'
-							? 'Premium, free until 12 September'
-							: auth.sub
-								? 'Premium'
-								: auth.sub === null
-									? 'Free'
-									: 'checking…'}
-						{#if auth.sub === null || auth.sub?.plan === 'gw1-3-free'}
-							· <button type="button" class="linklike" onclick={upgrade}>Upgrade</button>
+		<nav class="nav" aria-label="GoalIQ FPL tools">
+			{#each GROUPS as g (g.id)}
+				<a href="/{g.id}" class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
+			{/each}
+		</nav>
+
+		{#if gw !== null || dl}
+			<div class="gw" title={chk ? `FPL data checked ${chk}` : undefined}>
+				{#if gw !== null}<b>GW{gw}</b>{/if}
+				{#if dl}
+					<span class="gw-lbl">{mennyt ? 'passed' : 'deadline'}</span>
+					<span class="gw-val">{dl}{tz ? ` ${tz}` : ''}</span>
+				{/if}
+			</div>
+		{/if}
+
+		{#if auth.sessionResolved && !auth.user}
+			<div class="session">
+				<button class="ghost sm" onclick={pricing}>Pricing</button>
+				<button class="primary sm" onclick={signIn}>Sign in</button>
+			</div>
+		{:else if auth.user}
+			<div class="session" bind:this={sessionEl}>
+				{#if auth.sub?.plan === 'gw1-3-free'}
+					<button class="plan premium" onclick={upgrade}>Premium · free</button>
+				{:else if auth.sub}
+					<span class="plan premium">Premium</span>
+				{:else if auth.sub === null}
+					<button class="plan free" onclick={upgrade}>Free · Upgrade</button>
+				{/if}
+				<button
+					class="ghost sm"
+					aria-expanded={menuOpen}
+					aria-haspopup="true"
+					onclick={() => (menuOpen = !menuOpen)}
+				>
+					Account
+				</button>
+				{#if menuOpen}
+					<div class="menu" role="dialog" aria-label="Account">
+						<div class="menu-email">{auth.user.email}</div>
+						<div class="menu-plan">
+							Plan: {planLabel}
+							{#if auth.sub === null || auth.sub?.plan === 'gw1-3-free'}
+								· <button type="button" class="linklike" onclick={upgrade}>Upgrade</button>
+							{/if}
+						</div>
+						{#if auth.sub?.plan === 'comp'}
+							<p class="menu-notice">Premium on this account was granted directly, so there is no subscription to cancel. Thank you for the support.</p>
 						{/if}
-					</div>
-					{#if webSub}
-						<!-- Portaalin ominaisuudet mitattu Stripesta 6.9 (bpc_1TUnuo...):
-						     peruutus kauden loppuun, kortin vaihto ja laskut paalla. -->
-						<button type="button" class="linklike" disabled={portalBusy} onclick={() => void manageSubscription()}>
-							{portalBusy ? 'Opening…' : 'Manage subscription'}
+						{#if webSub}
+							<button type="button" class="linklike" disabled={portalBusy} onclick={() => void manageSubscription()}>
+								{portalBusy ? 'Opening…' : 'Manage subscription'}
+							</button>
+							<p class="menu-notice">Opens the Stripe billing page for this account: cancel, change card, invoices.</p>
+						{:else if auth.sub?.plan === 'app'}
+							<p class="menu-notice">Your subscription is billed by the App Store or Google Play. Cancel it in your phone's subscription settings.</p>
+						{/if}
+						{#if portalNotice}
+							<p class="menu-notice">{portalNotice}</p>
+						{/if}
+						{#if auth.passwordRecovery}
+							<p class="banner success">Password reset link accepted. Set your new password below.</p>
+						{/if}
+						<SetPassword
+							summary="Set or change password (for the GoalIQ iOS and Android app too)"
+							open={auth.passwordRecovery}
+						/>
+						<button type="button" class="linklike" disabled={resetBusy} onclick={() => void resetLink()}>
+							Forgot it? Email me a password reset link
 						</button>
-						<p class="menu-notice">Opens the Stripe billing page for this account: cancel, change card, invoices.</p>
-					{:else if auth.sub?.plan === 'app'}
-						<p class="menu-notice">Your subscription is billed by the App Store or Google Play. Cancel it in your phone's subscription settings.</p>
-					{:else if auth.sub?.plan === 'comp'}
-						<p class="menu-notice">Premium on this account was granted directly, so there is no subscription to cancel.</p>
-					{/if}
-					{#if portalNotice}
-						<p class="menu-notice">{portalNotice}</p>
-					{/if}
-					{#if auth.passwordRecovery}
-						<p class="banner success">
-							Password reset link accepted. Set your new password below.
-						</p>
-					{/if}
-					<SetPassword
-						summary="Change password (works in the GoalIQ app too)"
-						open={auth.passwordRecovery}
-					/>
-					<button type="button" class="linklike" disabled={resetBusy} onclick={() => void resetLink()}>
-						Forgot it? Email me a password reset link
-					</button>
-					{#if resetNotice}
-						<p class="menu-notice">{resetNotice}</p>
-					{/if}
-					<button class="ghost menu-signout" onclick={() => void signOut()}>Sign out</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
+						{#if resetNotice}
+							<p class="menu-notice">{resetNotice}</p>
+						{/if}
+						{#if chk}
+							<p class="menu-notice">FPL data checked {chk}.</p>
+						{/if}
+						<p class="menu-notice"><a href="https://goaliq.app">goaliq.app</a> · Draft, rate and plan your squad with a real match model.</p>
+						<button class="ghost menu-signout" onclick={() => void signOut()}>Sign out</button>
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</div>
 </header>
 
 <svelte:window onpointerdown={closeOnOutside} onkeydown={closeOnEscape} />
 
 <style>
-	.hero {
-		/* 26.7 classic: tumma bändi pois. Ohjelmalehden ylätunniste on samaa
-		   paperia kuin sivu, ja sen erottaa VAIN hiusviiva alla — ei täyttöä,
-		   ei gradienttia, ei varjoa. Aiemmat token-overridet (vaalea teksti
-		   tummalla) poistettiin, koska pohja on nyt paperi. */
-		color: var(--text);
-		background: transparent;
-		border: none;
+	.bar {
+		position: sticky;
+		top: 0;
+		z-index: 30;
+		height: var(--bar-h);
+		background: var(--bg);
 		border-bottom: 1px solid var(--border);
-		border-radius: var(--radius);
-		box-shadow: none;
-		/* 4.9 (ylapinon budjetti): oli `var(--s-4) 0 var(--s-5)`. Ylatunniste
-		   ei ole sisaltoa, ja sen padding maksoi ~24 px siita etusta, jonka
-		   tyokalunavi tarvitsee mahtuakseen 1366x768-lapparin ruudulle.
-		   Hiusviiva alla erottaa sen yha, eli 26.7 perustelu sailyy. */
-		padding: var(--s-3) 0 var(--s-3);
+	}
+	.bar-in {
+		max-width: var(--shell);
+		margin: 0 auto;
+		height: 100%;
+		padding: 0 var(--s-4);
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--s-4);
 		align-items: center;
-		justify-content: space-between;
+		gap: var(--s-4);
 	}
 	.brand {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
-		gap: var(--s-3);
+		gap: var(--s-2);
+		color: var(--text);
+		text-decoration: none;
+		flex: 0 0 auto;
+	}
+	.brand:hover {
+		text-decoration: none;
 	}
 	.mark {
 		display: block;
-		color: var(--text);
-		flex: 0 0 auto;
 	}
 	.word {
-		font-size: 26px;
+		font-family: var(--font-display);
+		font-size: 18px;
 		font-weight: 700;
-		line-height: 1.1;
+		letter-spacing: -0.02em;
+		line-height: 1;
 	}
 	.word span {
-		/* sanamerkin IQ seuraa merkkia: amber, ei enaa magenta */
 		color: var(--accent);
 	}
-	.tag {
-		color: var(--text-muted);
-		font-size: var(--step--1);
-		margin-top: 2px;
-	}
-	.tag a {
-		/* landingin linkkivari */
-		color: var(--giq-teal);
-	}
-	.session.out {
+
+	.nav {
 		display: flex;
-		gap: var(--s-2);
-		align-items: center;
+		align-items: stretch;
+		gap: 2px;
+		height: 100%;
+		min-width: 0;
+		overflow-x: auto;
+		scrollbar-width: none;
 	}
-	.session.out button {
-		min-height: 38px;
-		padding: 0.4em 1em;
-		font-size: 0.9rem;
+	.nav::-webkit-scrollbar {
+		display: none;
+	}
+	.nav a {
+		display: inline-flex;
+		align-items: center;
+		padding: 0 var(--s-3);
+		color: var(--text-muted);
+		font-size: 14px;
+		font-weight: 600;
+		white-space: nowrap;
+		text-decoration: none;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+	}
+	.nav a:hover {
+		color: var(--text);
+		text-decoration: none;
+	}
+	.nav a.active {
+		color: var(--text);
+		border-bottom-color: var(--accent);
+	}
+
+	.gw {
+		margin-left: auto;
+		display: inline-flex;
+		align-items: baseline;
+		gap: 6px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+		color: var(--text-muted);
+	}
+	.gw b {
+		color: var(--text);
+	}
+	.gw-lbl {
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 10.5px;
+	}
+	.gw-val {
+		color: var(--accent);
+		font-weight: 600;
 	}
 
 	.session {
 		display: flex;
 		align-items: center;
-		gap: var(--s-3);
+		gap: var(--s-2);
 		position: relative;
+		flex: 0 0 auto;
 	}
-	/* #150: account-valikko on vaalea kortti tummalla bändillä → palautetaan
-	   sivun roolivärit hero-bändin overridejen alta lapsille (SetPassword,
-	   .muted, inputit perivät nämä). */
+	button.sm {
+		min-height: 34px;
+		padding: 0.3em 0.9em;
+		font-size: 13px;
+	}
+	.plan {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		line-height: 1.6;
+		padding: 2px 9px;
+		white-space: nowrap;
+		min-height: 0;
+	}
+	.plan.premium {
+		background: transparent;
+		border: 1px solid var(--accent);
+		color: var(--accent-strong);
+	}
+	.plan.free {
+		background: none;
+		border: 1px solid var(--border-strong);
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+	.plan.free:hover {
+		color: var(--text);
+		border-color: var(--accent);
+	}
+
 	.menu {
-		/* 28.7 TELETEXT: tama oli `var(--giq-ink)`. Kun --giq-paper kaantyi
-		   tummaksi, ink-teksti olisi ollut mustaa mustalla eli valikko olisi
-		   kadonnut kokonaan. Sama ansa kuin 26.7. kovakoodattu #5c566b, vain
-		   yhta astetta pahempi: se ei nakynyt haaleana vaan ei lainkaan. */
 		--text: var(--giq-cream);
-		/* oli kovakoodattu vanha sinertava #5c566b, joka jai elamaan classic-
-		   vaihdon yli. Viittaa nyt samaan lahteeseen kuin :root. */
 		--text-muted: var(--giq-muted);
 		--border: rgba(243, 242, 242, 0.24);
 		position: absolute;
 		top: calc(100% + 10px);
 		right: 0;
-		z-index: 20;
+		z-index: 40;
 		min-width: 300px;
 		max-width: min(92vw, 380px);
 		background: var(--giq-paper);
 		color: var(--text);
 		border: 1px solid var(--border);
-		/* teletext: ei pyoristysta, ei varjoa. Varjo ei erota tummaa tummasta,
-		   joten kelluvan valikon rajaa reuna. */
-		border-radius: var(--radius);
 		padding: var(--s-4);
-		box-shadow: none;
 		display: grid;
 		gap: var(--s-2);
 		text-align: left;
@@ -310,14 +403,11 @@
 		font-weight: 700;
 		overflow-wrap: anywhere;
 	}
-	.menu-plan {
-		color: var(--text-muted);
-		font-size: var(--step--1);
-	}
+	.menu-plan,
 	.menu-notice {
 		margin: 0;
-		font-size: var(--step--1);
 		color: var(--text-muted);
+		font-size: var(--step--1);
 	}
 	.linklike {
 		background: none;
@@ -338,31 +428,39 @@
 		color: var(--text-muted);
 		border-color: var(--border);
 	}
-	.plan {
-		font-size: 12px;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		line-height: 1.6;
-		padding: 1px 10px;
-		border-radius: var(--radius);
-		white-space: nowrap;
-	}
-	/* 26.7 classic: premium-merkki on outline, ei magentaläikkä */
-	.plan.premium {
-		background: transparent;
-		border: 1px solid var(--accent);
-		color: var(--accent-strong);
-	}
-	.plan.free {
-		background: none;
-		border: 1px solid var(--border);
-		color: var(--text-muted);
-		cursor: pointer;
-		min-height: 0;
-	}
-	.plan.free:hover {
-		color: var(--text);
-		border-color: var(--accent);
+
+	/* Kapea ruutu: navi omalle riville palkin alle, jotta viisi kohtaa
+	   pysyvat sormen kokoisina. Kierrosrivi jaa pois (se on Account-
+	   valikossa ja This week -sivulla). */
+	@media (max-width: 820px) {
+		.bar {
+			height: auto;
+		}
+		.bar-in {
+			flex-wrap: wrap;
+			gap: var(--s-2) var(--s-3);
+			padding: 8px var(--s-3) 0;
+		}
+		.brand {
+			order: 0;
+		}
+		.session {
+			order: 1;
+			margin-left: auto;
+		}
+		.gw {
+			display: none;
+		}
+		.nav {
+			order: 2;
+			flex-basis: 100%;
+			height: 40px;
+			margin: 0 calc(-1 * var(--s-3));
+			padding: 0 var(--s-2);
+		}
+		.nav a {
+			padding: 0 var(--s-3);
+			font-size: 14px;
+		}
 	}
 </style>

@@ -55,8 +55,10 @@ _ALLOWED_ABOVE_NAV: dict[str, str] = {
     # lista on kokoontaitettu: navin ylapuolelle jaa yksi yhteenvetorivi.
     # Ks. vaite 3 alla - se pitaa taman poikkeuksen rehellisena.
     "DefConLive": "aikakriittinen, ja lista on kokoontaitettu (ks. test_defcon_lista_on_kokoontaitettu)",
-    # Navi itse.
-    "SegmentNav": "tama on navi",
+    # 11.9: paanavi siirtyi ylapalkkiin (Hero, AppShellissa ennen
+    # ToolsHomea). ToolsHomen sisalla ensimmainen tyokalutason elementti on
+    # ryhman tyokalurivi, ja sen ylapuolinen pino on se jota tama mittaa.
+    "ToolRow": "tama on ryhman tyokalurivi, mittauksen ankkuri",
 }
 
 _COMPONENT_RE = re.compile(r"<([A-Z][A-Za-z0-9_]*)\b")
@@ -76,8 +78,8 @@ def _markup(text: str) -> str:
 
 def _components_above_nav(text: str) -> list[str]:
     markup = _markup(text)
-    idx = markup.find("<SegmentNav")
-    assert idx != -1, "SegmentNav puuttuu ToolsHomesta - portti mittaisi tyhjaa"
+    idx = markup.find("<ToolRow")
+    assert idx != -1, "ToolRow puuttuu ToolsHomesta - portti mittaisi tyhjaa"
     return _COMPONENT_RE.findall(markup[:idx])
 
 
@@ -89,7 +91,7 @@ def _check_above_nav(text: str) -> list[str]:
 def _check_after_nav(text: str, component: str) -> bool:
     """True jos komponentti renderoityy VAIN navin jalkeen."""
     markup = _markup(text)
-    nav = markup.find("<SegmentNav")
+    nav = markup.find("<ToolRow")
     first = markup.find(f"<{component}")
     return first > nav >= 0
 
@@ -157,7 +159,7 @@ def test_spl_nosto_on_tyokalujen_jalkeen() -> None:
 
 def test_negatiivinen_kontrolli_uusi_komponentti_navin_ylle() -> None:
     text = _read(TOOLS_HOME)
-    rikottu = text.replace("<SegmentNav", "<UusiBanneri />\n<SegmentNav", 1)
+    rikottu = text.replace("<ToolRow", "<UusiBanneri />\n<ToolRow", 1)
     assert "UusiBanneri" in _check_above_nav(rikottu), (
         "Portti ei huomannut navin ylapuolelle lisattya komponenttia."
     )
@@ -165,7 +167,7 @@ def test_negatiivinen_kontrolli_uusi_komponentti_navin_ylle() -> None:
 
 def test_negatiivinen_kontrolli_provenance_takaisin_ylos() -> None:
     text = _read(TOOLS_HOME)
-    rikottu = text.replace("<SegmentNav", "<Provenance />\n<SegmentNav", 1)
+    rikottu = text.replace("<ToolRow", "<Provenance />\n<ToolRow", 1)
     assert not _check_after_nav(rikottu, "Provenance"), (
         "Portti ei huomannut Provenancen paluuta navin ylapuolelle."
     )

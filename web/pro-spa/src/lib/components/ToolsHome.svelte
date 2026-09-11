@@ -22,7 +22,6 @@
 	import DefConLive from './DefConLive.svelte';
 	import Provenance from './Provenance.svelte';
 	import LeagueBanner from './LeagueBanner.svelte';
-	import SegmentNav, { type Segment } from './SegmentNav.svelte';
 	import ToolRow from './ToolRow.svelte';
 	import ToolDirectory from './ToolDirectory.svelte';
 	import { goto } from '$app/navigation';
@@ -37,7 +36,6 @@
 	import Paywall from './Paywall.svelte';
 	import PremiumPreview from './PremiumPreview.svelte';
 	import { showsProductIntro } from '$lib/introGate';
-	import SetPassword from './SetPassword.svelte';
 	import RateTeam from './RateTeam.svelte';
 	import FitChecker from './FitChecker.svelte';
 	import Watchlist from './Watchlist.svelte';
@@ -82,10 +80,10 @@
 		all?: boolean;
 	} = $props();
 
-	// 4.9: ryhmat, tyokalut ja vanhojen hashien ohjaus tulevat rekisterista
-	// (`$lib/tools`) — yksi lukija. Ennen tama komponentti maaritteli GROUPSin
-	// ja LEGACY_HASHin itse, ja jalkimmainen osoitti RYHMAAN eika tyokaluun.
-	const NAV: Segment[] = GROUPS.map((g) => ({ id: g.id, label: g.label, href: `/${g.id}` }));
+	// 11.9: paanavi on Herossa (ylapalkki); rekisteri (`$lib/tools`) on yha
+	// ainoa lukija. GROUPS-importti pidetaan, jotta rekisteriportti nakee
+	// ettei tama komponentti maarittele omaa naviaan.
+	void GROUPS;
 
 	/** 4.9: app-tilaajan tervetulobanneri kerran per sessio (ks. markup). */
 	let showAppWelcome = $state(false);
@@ -121,17 +119,9 @@
 	function show(slug: string): boolean {
 		return activeTool === null || activeTool.slug === slug;
 	}
-	/** 6.8: sticky-segmenttirivin mitattu korkeus → onpage-rivin top-offset. */
-	let segNavH = $state(0);
 	let upgradeOpen = $state(false);
 	let checkoutSuccess = $state(false);
 	let guestCheckout = $state(false);
-
-	// Tools-hakemiston avattu työkalu (sama grid-kaava kuin mobiilin P1).
-	// Tools-ryhman hakemistokortit tulevat rekisterista (nimi + kysymys + taso),
-	// eika tasta tiedostosta. Avattu tyokalu on reitti, ei tila.
-	type ToolKey = 'chip-timing' | 'transfer-chains' | 'edge-mode' | 'league';
-	const openTool = $derived((activeTool?.group === 'tools' ? activeTool.slug : null) as ToolKey | null);
 
 	// Matches-ryhmän sisäinen valinta (Villen valinta: oma ryhmä, ei gridiä).
 	const matchesView = $derived(
@@ -374,9 +364,6 @@
 			{#if showAppWelcome}
 				<p class="banner success">Your GoalIQ app subscription is active here too. Welcome.</p>
 			{/if}
-		{:else}
-			<p class="muted">GoalIQ Premium active ({auth.sub.plan}) · thank you for the support!</p>
-			<SetPassword />
 		{/if}
 	{/if}
 
@@ -387,13 +374,11 @@
 	     kokoontaitettu — yhteenvetorivi (GW + montako kynnyksella) jaa
 	     nakyviin joka valilehdelle, 13 rivin lista ei. Perustelu ja mittaus
 	     `DefConLive.svelte`:n kommentissa. -->
-	<DefConLive />
-	<!-- 6.8 (Villen palaute): segmenttirivi kulkee scrollissa mukana —
-	     Players → My team ilman paluuta ylös. Korkeus mitataan, jotta
-	     onpage-rivi osaa asettua sen ALLE myös kun pillit rivittyvät. -->
-	<div class="segnav-sticky" bind:clientHeight={segNavH}>
-		<SegmentNav segments={NAV} active={segment} label="GoalIQ FPL tools" />
-	</div>
+	<!-- 11.9: DefCon vain This week -sivulla. Tyokalusivulla se oli yksi
+	     seitsemasta rivista ennen sisaltoa. -->
+	{#if segment === 'week'}
+		<DefConLive />
+	{/if}
 
 	<!-- 4.9: ryhman tyokalurivi. Korvaa "On this page:" -ankkuririvin, joka
 	     vieritti pitkaa sivua; nama ovat linkkeja omiin URLeihin. -->
@@ -433,7 +418,7 @@
 		</p>
 	{/if}
 
-	{#if showDirectory && segment !== 'tools'}
+	{#if showDirectory}
 		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
 	{:else if segment === 'week' || segment === 'team'}
 		<!-- week + team jakavat SAMAN RateTeam-elementin (sama puupositio →
@@ -475,6 +460,20 @@
 					{/if}
 					{#if premium && show('transfer-planner')}
 						<div class="tool-card span-all" id="tc-planner"><TransferPlanner /></div>
+					{/if}
+					<!-- 11.9 (PRO-SPA-PALETTI): Tools-ryhma purettiin tehtavien luo.
+					     Chipit ja siirtoketjut ovat oman joukkueen suunnittelua. -->
+					{#if premium && show('chip-timing')}
+						<div class="tool-card" id="tl-chips"><ChipEv /></div>
+						<div class="tool-card"><WildcardPlan /></div>
+					{/if}
+					{#if premium && show('transfer-chains')}
+						<div class="tool-card span-all" id="tl-chains"><PlanChains /></div>
+					{/if}
+					{#if show('league')}
+						<div class="tool-card span-all" id="tl-league">
+							<MiniLeague onUseTeam={() => goto('/team')} />
+						</div>
 					{/if}
 				</div>
 			{/if}
@@ -535,6 +534,9 @@
 			{#if show('differentials')}
 				<div class="tool-card" id="pc-diff"><Differentials /></div>
 			{/if}
+			{#if premium && show('edge-mode')}
+				<div class="tool-card" id="tl-edge"><EdgeMode /></div>
+			{/if}
 			{#if premium}
 				{#if xp}
 					<!-- ROWAN-REPLACEMENTS (2.9): "who replaces X", luojan tilaama muoto. -->
@@ -544,26 +546,6 @@
 					{#if show('compare')}
 						<div class="tool-card" id="pc-compare"><ComparePlayers {xp} /></div>
 					{/if}
-				{/if}
-			{/if}
-		</div>
-	{:else if segment === 'tools'}
-		<div id="panel-tools" role="tabpanel" aria-labelledby="seg-tools">
-			{#if openTool === null}
-				<!-- Hakemisto renderoitiin jo navin alla (ToolDirectory). -->
-			{:else}
-				<a class="back-link" href="/tools">‹ All tools</a>
-				{#if openTool === 'chip-timing'}
-					<div class="tool-card" id="tl-chips"><ChipEv /></div>
-					<div class="tool-card"><WildcardPlan /></div>
-				{:else if openTool === 'transfer-chains'}
-					<div class="tool-card" id="tl-chains"><PlanChains /></div>
-				{:else if openTool === 'edge-mode'}
-					<div class="tool-card" id="tl-edge"><EdgeMode /></div>
-				{:else}
-					<div class="tool-card" id="tl-league">
-						<MiniLeague onUseTeam={() => goto('/team')} />
-					</div>
 				{/if}
 			{/if}
 		</div>
@@ -683,11 +665,5 @@
 		font-size: var(--step--1);
 		color: var(--text-muted);
 		margin: 0 0 var(--s-3);
-	}
-	.segnav-sticky {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		background: var(--bg);
 	}
 </style>

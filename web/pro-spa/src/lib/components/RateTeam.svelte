@@ -1865,6 +1865,7 @@
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 0.6ch;
+		margin: 0 0 var(--s-2);
 	}
 	.remember-row {
 		display: flex;
@@ -2023,7 +2024,9 @@
 		min-width: 0;
 		grid-area: side;
 	}
-	@media (min-width: 1280px) {
+	/* 11.9: raja 1280 -> 1100, jotta 1366 px:n lappari saa kentan ja
+	   projektiot rinnakkain (ennen ne pinoutuivat ja kentta alkoi ~1000 px:sta). */
+	@media (min-width: 1100px) {
 		.result-grid {
 			/* 4.9: sivusarake poistui (viikkosilmukka on This weekissa), joten
 			   tulos saa koko leveyden. `.rating` pitaa yha oman lukumittansa
@@ -2033,7 +2036,7 @@
 			   sarake venyy vasemman sarakkeen korkuiseksi ja taulukko rullaa
 			   sen sisalla (Villen tarkennus: "pitempi, asettuu taydellisesti"). */
 			align-items: start;
-			grid-template-columns: minmax(0, 1.15fr) minmax(400px, 0.85fr);
+			grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
 			grid-template-areas: 'main side';
 		}
 		.result-side {
@@ -2150,8 +2153,8 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--s-2) var(--s-4);
-		margin: var(--s-3) 0;
-		padding: var(--s-2) var(--s-3);
+		margin: 0 0 var(--s-3);
+		padding: 6px var(--s-3);
 		background: var(--surface-alt, #1f1d1a);
 		border: 1px solid var(--line, rgba(243, 242, 242, 0.13));
 		font-size: 13px;
