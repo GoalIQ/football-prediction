@@ -72,6 +72,7 @@
 			<!-- UCL = web-only datapinta, ei SPA-tyokalu: linkki footeriin,
 			     EI tools.ts-rekisteriin (se lupaisi tyokalun jota ei ole). -->
 			<a href="https://goaliq.app/ucl/">UCL Fantasy data (free)</a> ·
+			<a href="https://goaliq.app">goaliq.app, the free tools</a> ·
 			<a href="https://goaliq.app/privacy.html">Privacy</a> ·
 			<a href="https://goaliq.app/faq.html">FAQ</a> ·
 			<!-- Kohde on Google Form eika hello@: poistaa riippuvuuden DMARC-portista

@@ -177,10 +177,17 @@
 			<span class="word">Goal<span>IQ</span></span>
 		</a>
 
-		<nav class="nav" aria-label="GoalIQ FPL tools">
+		<nav class="nav" aria-label="GoalIQ">
 			{#each GROUPS as g (g.id)}
 				<a href="/{g.id}" class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
 			{/each}
+			<!-- 🔴 Villen havainto 11.9: prolta puuttui paluu goaliq.appiin. Se oli
+			     ennen ylapalkin taglinessa, ja kun tagline siirtyi Account-valikkoon,
+			     linkki katosi kirjautumattomalta kokonaan - eli juuri silta jolla se
+			     on ainoa reitti takaisin ilmaispinnalle. Se on navin viimeisena, ei
+			     brandin vieressa: kapealla ruudulla navirivi rullaa vaakaan eika
+			     tungeta merkkia ja tilinappeja ahtaammalle. -->
+			<a class="home" href="https://goaliq.app" data-cta="pro-home">goaliq.app</a>
 		</nav>
 
 		{#if gw !== null || dl}
@@ -342,6 +349,19 @@
 	.nav a.active {
 		color: var(--text);
 		border-bottom-color: var(--accent);
+	}
+	/* Paluu ilmaispinnalle: samassa rivissa mutta ei tyokaluryhma. Mono ja
+	   hiusviiva erottavat sen ryhmista ilman omaa varia. */
+	.nav a.home {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--faint);
+		border-left: 1px solid var(--border);
+		margin-left: var(--s-2);
+		padding-left: var(--s-3);
+	}
+	.nav a.home:hover {
+		color: var(--giq-teal);
 	}
 
 	.gw {
