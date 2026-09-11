@@ -24,6 +24,27 @@
 	import ComponentSplit from './ComponentSplit.svelte';
 	import { canShareToApps, sharePlayerCard, type PlayerCardCell, shareButtonLabel} from '$lib/shareCard';
 	import { whyDriverRows } from '$lib/whyDrivers';
+	// PLAYER-PERCENTILES-VS-POSITION (11.9, NextXI-vertailu 10.9): raakaluvut
+	// prosenttiilina omaa positiota vasten. Ilmaista tietoa (Villen linja:
+	// raakaluvut ilmaiseksi, malli maksaa), joten ei gatea eika teaseria.
+	import { fetchPlayerStatsShared, type PlayerStatsResponse } from '$lib/fantasyTools';
+	import {
+		percentileOf,
+		ordinal,
+		positionWord,
+		statsFor,
+		num as pnum
+	} from '$lib/percentiles';
+
+	let statsDoc = $state<PlayerStatsResponse | null>(null);
+	let statsFailed = $state(false);
+	$effect(() => {
+		if (statsDoc || statsFailed) return;
+		fetchPlayerStatsShared('season').then(
+			(d) => (statsDoc = d),
+			() => (statsFailed = true)
+		);
+	});
 
 	let pool = $state<CardPlayer[]>([]);
 	let meta = $state<XpMeta | null>(null);
@@ -294,6 +315,52 @@
 		].filter((c): c is Cell => c != null);
 	});
 	const showLastSeason = $derived(lsTotals.length > 0 || lsPer90.length > 0);
+
+	/* ---- Season so far, against his position (11.9) ------------------- */
+	const statsRow = $derived.by(() => {
+		const pl = player;
+		if (!pl || !statsDoc?.meta.available) return null;
+		return statsDoc.players.find((r) => r.id === pl.id) ?? null;
+	});
+	type Bar = { key: string; label: string; pct: number; n: number; shown: string };
+	const bars = $derived.by((): Bar[] => {
+		const rows = statsDoc?.players ?? [];
+		if (!statsRow || rows.length === 0) return [];
+		const out: Bar[] = [];
+		for (const spec of statsFor(statsRow.pos)) {
+			const p = percentileOf(rows, statsRow, spec.key);
+			if (!p) continue;
+			const raw = pnum(statsRow.fpl[spec.key as keyof typeof statsRow.fpl]);
+			if (raw === null) continue;
+			out.push({
+				key: spec.key,
+				label: spec.label,
+				pct: p.pct,
+				n: p.n,
+				shown: spec.digits ? raw.toFixed(spec.digits) : String(Math.round(raw))
+			});
+		}
+		return out;
+	});
+	/** Otoskoko tulee SAMASTA kutsusta kuin prosenttiili (ks. percentiles.ts),
+	 *  joten label ei voi kertoa eri joukosta kuin palkit. */
+	const barsN = $derived(bars.length > 0 ? bars[0].n : 0);
+	/** Ikkunan valmiit kierrokset. Pieni otos sanotaan aaneen, ei paatella
+	 *  kalenterista: `compared_gws` on se joukko jolta luvut ovat. */
+	const windowGws = $derived(statsDoc?.meta.compared_gws ?? []);
+	const windowLabel = $derived(
+		windowGws.length === 0
+			? ''
+			: windowGws.length === 1
+				? `GW${windowGws[0]}`
+				: `GW${windowGws[0]}-${windowGws[windowGws.length - 1]}`
+	);
+	const smallSample = $derived(windowGws.length > 0 && windowGws.length <= 5);
+	/** Pisteet ja jaadytetty xP kierroksittain. Vain kierrokset joilta on
+	 *  jompikumpi luku; tyhja rivi ei kerro mitaan. */
+	const gwCompare = $derived(
+		(statsRow?.goaliq.gws ?? []).filter((g) => g.pts != null || g.xp_frozen != null)
+	);
 
 	// --- 4.8: jaettava pelaajakortti (Villen pyynto) ----------------------
 	// Kortti jakaa TASAN sen mita katsoja itse nakee: free saa julkiset faktat
@@ -745,6 +812,70 @@
 				</section>
 			{/if}
 
+			{#if bars.length > 0}
+				<!-- 11.9: raakaluvut prosenttiilina omaa positiota vasten. FREE.
+				     Jokainen palkki on FPL:n oma luku, ei mallin estimaatti, ja
+				     otoskoko lukee palkkien ylapuolella samasta lahteesta. -->
+				<section class="pcent">
+					<h4 class="gw-title">
+						Season so far, against his position
+						<!-- Erottimet samalla rivilla: rivinvaihto lahdekoodissa soi
+						     valilyonnin ja label luki "played· GW1-3" (mitattu 11.9). -->
+						<span class="src"
+							>vs {barsN} {positionWord(statsRow?.pos)} who have played{#if windowLabel} · {windowLabel}{/if}{#if smallSample}, small sample{/if}</span
+						>
+					</h4>
+					<ul class="bars">
+						{#each bars as b (b.key)}
+							<li>
+								<span class="bl">{b.label}</span>
+								<span class="bt" aria-hidden="true">
+									<span class="bf" style="width:{b.pct}%"></span>
+								</span>
+								<span class="bv"
+									><b>{b.shown}</b><span class="bp">{ordinal(b.pct)}</span></span
+								>
+							</li>
+						{/each}
+					</ul>
+					<p class="muted hintline">
+						Percentile is the share of {positionWord(statsRow?.pos)} in this window
+						this player is ahead of. FPL's own numbers, not a projection.
+					</p>
+					{#if gwCompare.length > 0}
+						<div class="table-wrap">
+							<table>
+								<thead>
+									<tr>
+										<th>GW</th>
+										<th class="num">Points</th>
+										<th class="num">Expected</th>
+										<th class="num">Diff</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each gwCompare as g (g.gw)}
+										<tr>
+											<td>GW{g.gw}</td>
+											<td class="num">{g.pts ?? ''}</td>
+											<td class="num">{g.xp_frozen != null ? g.xp_frozen.toFixed(1) : ''}</td>
+											<td class="num"
+												>{g.pts != null && g.xp_frozen != null
+													? (g.pts - g.xp_frozen).toFixed(1)
+													: ''}</td
+											>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+						<p class="muted hintline">
+							Expected is the model's projection frozen before that deadline.
+						</p>
+					{/if}
+				</section>
+			{/if}
+
 			{#if premium && !excluded}
 			{@const gws = player.gameweeks ?? []}
 			<h4 class="gw-title">Projected points by gameweek</h4>
@@ -833,6 +964,71 @@
 {/if}
 
 <style>
+	/* 11.9: prosenttiilipalkit. Vain olemassa olevat tokenit; palkki on
+	   amber-tintti hiusviivalla, ei uusi vari eika varjo. */
+	.pcent .bars {
+		list-style: none;
+		margin: 0 0 var(--s-3);
+		padding: 0;
+		display: grid;
+		gap: 6px;
+	}
+	.pcent .bars li {
+		display: grid;
+		grid-template-columns: minmax(0, 11rem) 1fr auto;
+		align-items: center;
+		gap: var(--s-3);
+	}
+	.pcent .bl {
+		font-size: var(--step--1);
+		color: var(--text-muted);
+		min-width: 0;
+	}
+	.pcent .bt {
+		display: block;
+		height: 10px;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+	}
+	.pcent .bf {
+		display: block;
+		height: 100%;
+		background: rgba(245, 197, 66, 0.55);
+	}
+	.pcent .bv {
+		font-family: var(--font-mono);
+		font-size: var(--step--1);
+		white-space: nowrap;
+	}
+	.pcent .bv b {
+		color: var(--text);
+	}
+	.pcent .bp {
+		color: var(--accent);
+		margin-left: 0.6ch;
+	}
+	.pcent .hintline {
+		font-size: var(--step--1);
+		color: var(--text-muted);
+		margin: 0 0 var(--s-3);
+	}
+	@media (max-width: 560px) {
+		.pcent .bars li {
+			grid-template-columns: 1fr auto;
+			grid-template-areas: 'label value' 'bar bar';
+			gap: 2px var(--s-2);
+		}
+		.pcent .bl {
+			grid-area: label;
+		}
+		.pcent .bv {
+			grid-area: value;
+		}
+		.pcent .bt {
+			grid-area: bar;
+		}
+	}
+
 	.pc {
 		max-width: 760px;
 		margin-top: var(--s-4);

@@ -26,8 +26,6 @@
 		onCaptaincyChange,
 		lastFinished = null,
 		picksGw = null,
-		bank = null,
-		freeTransfers = null,
 		belowPitch
 	}: {
 		players: RatedPlayer[];
@@ -48,11 +46,11 @@
 		/** Milta kierrokselta ladatut picksit ovat. Pelaajakohtaiset luvut vain
 		 *  kun tama on sama kuin `lastFinished.gw`. */
 		picksGw?: number | null;
-		/** 6.9: pankki (ITB) kentan otsikkonauhaan. null = ei tiedossa (draft). */
-		bank?: number | null;
-		/** 6.9: vapaat siirrot seuraavalle kierrokselle (julkisesta historiasta). */
-		freeTransfers?: number | null;
-		/** 6.9: vanhemman lohko heti kentan + penkin alle (Team xP -laatat). */
+		/* 11.9 DRAFT-COMPARE-OTSIKKORIVI: `bank` ja `freeTransfers` poistuivat.
+		   ITB ja FT ovat nyt SquadHeaderRow'lla kentan YLLA, samassa muodossa
+		   kaikilla kolmella pinnalla (slot A, slot B, vertailu). Ne olivat
+		   tassa vain nauhan koristeena; pitch ei laske niilla mitaan. */
+		/** 6.9: vanhemman lohko heti kentan + penkin alle (metodologialohko). */
 		belowPitch?: Snippet;
 	} = $props();
 
@@ -79,9 +77,20 @@
 	   kentän alle omaksi nauhakseen, joten kenttä saa koko sarakkeen
 	   leveyden — paidat kasvavat samassa suhteessa. */
 	let winW = $state(0);
+	let winH = $state(0);
 	// 6.9 (Villen tilaus, Solio-vertailu): kentta on paasisalto, paidat isot.
 	// Kolme porrasta ikkunan leveydesta; muut mitat seuraavat --kit-muuttujaa CSS:ssa.
-	const kitSize = $derived(winW >= 1040 ? 92 : winW >= 700 ? 72 : 54);
+	// 11.9 (PRO-SPA-PALETTI, Villen tilaus "koko sivu ilman skrollailua"):
+	// KORKEUS rajoittaa myos. 1366x768-lapparilla 92 px:n paidat tekivat
+	// kentasta + penkista ~900 px, eli penkki oli aina ruudun alla. Neljalle
+	// riville + penkille on kaytettavissa viewport miinus palkki, nauha ja
+	// toolbar (~230 px); paita saa siita noin 1/8.6.
+	const kitSize = $derived.by(() => {
+		const byW = winW >= 1040 ? 92 : winW >= 700 ? 72 : 54;
+		if (winW < 1040 || winH <= 0) return byW;
+		const byH = Math.floor((winH - 230) / 8.6);
+		return Math.max(60, Math.min(byW, byH));
+	});
 	const benchKit = $derived(Math.round(kitSize * 0.8));
 	let xiIds = $state<number[]>([]);
 	let captainId = $state<number | null>(null);
@@ -636,7 +645,7 @@
 	}
 </script>
 
-<svelte:window bind:innerWidth={winW} />
+<svelte:window bind:innerWidth={winW} bind:innerHeight={winH} />
 
 {#if players.length > 0}
 	<!--
@@ -657,31 +666,6 @@
 			     vasemmalla, projisoitu xP isona oikealla. Muodostelmat siirtyivat
 			     kentan ALLE, jotta kentta alkaa heti. -->
 			<div class="pitch-head">
-			<div class="ph-left">
-			{#if freeTransfers != null}
-				<span class="ph-stat" title="Free transfers for the next gameweek, worked out from your public transfer history"
-					><span class="ph-k">FT</span><span class="ph-v">{freeTransfers}</span></span
-				>
-			{/if}
-			{#if bank != null}
-				<span class="ph-stat"><span class="ph-k">ITB</span><span class="ph-v">£{bank.toFixed(1)}</span></span>
-			{/if}
-			{#if gwChips.length > 1}
-				<div class="chips ph-gws">
-					{#each gwChips as gw (gw)}
-						<button
-							type="button"
-							class="chip"
-							class:on={selGw === gw}
-							onclick={() => (selGw = gw)}
-						>
-							GW{gw}{#if gw === luckGw}&nbsp;result{/if}
-						</button>
-					{/each}
-				</div>
-			{/if}
-
-			</div>
 			<div class="xp-row ph-xp">
 				{#if resultMode}
 					<!-- 3.9: tulosmoodissa otsikkoluku on TOTEUMA. Ennusteen kaava
@@ -703,9 +687,8 @@
 						{/if}
 					</span>
 				{:else}
-					<span class="label" style="margin:0"
-						>Projected {selGw != null ? `GW${selGw}` : 'GW'} xP
-						<span class="muted">(captain doubled)</span></span
+					<span class="label" style="margin:0" title="Projected points for the selected gameweek, captain doubled"
+						>{selGw != null ? `GW${selGw}` : 'GW'} xP</span
 					>
 					<span class="xp-col">
 						<span class="xp-val">{gwXp.toFixed(1)}</span>
@@ -720,34 +703,50 @@
 			</div>
 		{/if}
 
-		<!-- 6.9 (Villen tarkennus): muodostelmat kentan YLAPUOLELLE, otsikkonauhan alle. -->
-		{#if premium}
-			<div class="lineup-tools">
-			<p class="label">Formation</p>
-			<div class="chips">
-				{#each FORMATIONS as f (f.join('-'))}
+		<!-- 6.9 (Villen tarkennus): muodostelmat kentan YLAPUOLELLE, otsikkonauhan alle.
+		     11.9: muodostelmat ja jako SAMALLA rivilla (yksi toolbar), "Formation"-
+		     ja "Starting XI" -nimiot pois: chipit ja kentta selittavat itsensa.
+		     Ruudunlukijalle nimi on aria-labelissa. Kierrosvalinta on oma
+		     rivinsa nauhan alla (se vaihtaa koko kentan sisallon). -->
+		{#if premium && gwChips.length > 1}
+			<div class="chips ph-gws" role="group" aria-label="Gameweek">
+				{#each gwChips as gw (gw)}
 					<button
 						type="button"
 						class="chip"
-						class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
-						onclick={() => applyFormation(f)}
+						class:on={selGw === gw}
+						onclick={() => (selGw = gw)}
 					>
-						{f.join('-')}
+						GW{gw}{#if gw === luckGw}&nbsp;result{/if}
 					</button>
 				{/each}
-				<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
-			</div>
 			</div>
 		{/if}
-		<div class="xi-head">
-			<p class="label" style="margin:0">Starting XI</p>
-			{#if premium}
+		{#if premium}
+			<div class="lineup-tools" role="group" aria-label="Formation">
+				<div class="chips">
+					{#each FORMATIONS as f (f.join('-'))}
+						<button
+							type="button"
+							class="chip"
+							class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
+							onclick={() => applyFormation(f)}
+						>
+							{f.join('-')}
+						</button>
+					{/each}
+					<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
+				</div>
 				<!-- #9a: pitch-kortti (XI + penkki) — sama kortti draftille ja ID-ratelle -->
-				<button type="button" class="chip" onclick={shareImage} disabled={sharing}>
+				<button type="button" class="chip share" onclick={shareImage} disabled={sharing}>
 					{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>
-			{/if}
-		</div>
+			</div>
+		{:else}
+			<div class="xi-head">
+				<p class="label" style="margin:0">Starting XI</p>
+			</div>
+		{/if}
 		<!-- 22.8 (Villen palaute "pitäiskö pitch olla isompi"): penkki EI ole
 		     enää kentän vieressä vaan sen alla omana nauhanaan (kuten FPL:n
 		     oma pinta) — 210px:n sivusarake söi kentältä neljänneksen
@@ -1124,52 +1123,40 @@
 	.pitch-head {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		/* 11.9: ITB/FT siirtyivat SquadHeaderRow'hun, joten nauhassa on enaa
+		   yksi lapsi. `space-between` jattaisi xP-luvun leijumaan oikeaan
+		   reunaan ilman mitaan vasemmalla. */
+		justify-content: flex-start;
 		gap: var(--s-2) var(--s-3);
 		flex-wrap: wrap;
 		margin-bottom: var(--s-2);
 	}
-	.ph-left {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2) var(--s-3);
-		flex-wrap: wrap;
-		min-width: 0;
-	}
 	.ph-gws {
-		margin-bottom: 0;
-	}
-	.ph-stat {
-		display: inline-grid;
-		justify-items: center;
-		padding: 4px 12px;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-	.ph-k {
-		font-size: 10px;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-	.ph-v {
-		font-size: var(--step-1);
-		font-weight: 800;
-		font-variant-numeric: tabular-nums;
+		margin-bottom: var(--s-2);
 	}
 	.xp-row.ph-xp {
 		margin-bottom: 0;
 		flex: 0 1 auto;
+		padding: 4px var(--s-3);
+		align-items: center;
 	}
 	.xp-row.ph-xp .xp-val {
-		font-size: var(--step-3);
+		font-size: var(--step-2);
+		line-height: 1.1;
 	}
 	.lineup-tools {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--s-2) var(--s-3);
+		flex-wrap: wrap;
 		margin: 0 0 var(--s-2);
 	}
 	.lineup-tools .chips {
 		margin-bottom: 0;
+	}
+	.chip.share {
+		margin-left: auto;
 	}
 	/* 14.8: koko kentta suuremmaksi leveilla ruuduilla. Skaalataan kaikki
 	   mitat samassa suhteessa (leveys, paikan leveys, nimikentat,
@@ -1217,8 +1204,9 @@
 		background: var(--surface);
 		color: var(--text-muted);
 		font-weight: 700;
-		font-size: var(--step--1);
-		padding: 6px 12px;
+		font-size: 12px;
+		padding: 4px 10px;
+		min-height: 30px;
 		cursor: pointer;
 	}
 	.chip.on {

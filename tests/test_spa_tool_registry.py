@@ -209,7 +209,8 @@ def test_rekisteri_ei_ole_tyhja() -> None:
     kontrolli-lapaisi-tyhjana). Luvut ovat alarajoja, eivat tarkkoja."""
     text = _read(REGISTRY)
     assert len(parse_tools(text)) >= 20
-    assert len(parse_groups(text)) == 6
+    # 11.9: 'tools'-kaatoluokka purettiin (PRO-SPA-PALETTI), ryhmia on viisi.
+    assert len(parse_groups(text)) == 5
     assert len(parse_map(text, "LEGACY_HASH_TO_PATH")) == len(_LEGACY_IDS)
 
 

@@ -29,6 +29,7 @@ from src.models.fpl_xp import load_xp
 from src.models import fpl_actuals
 from src.models.fpl_model_race import model_points_net as _model_points_net
 from src.models.fpl_entry_history import infer_free_transfers
+from src.models import fpl_chips
 
 # 26.7: projektioiden osuvuus rating-vastaukseen. Committoitu tiiviste
 # (logs/ on gitignored -> Render ei nakisi sita). Puuttuva tiedosto EI kaada
@@ -2101,18 +2102,35 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     # julkaise lukua julkisesti; se johdetaan julkisesta historiasta samalla
     # lukijalla kuin chip-EV (infer_free_transfers). None = ei entrya tai
     # historiaa ei saatu; klientti ei silloin nayta lukua.
+    #
+    # DRAFT-COMPARE-OTSIKKORIVI (11.9): chipit samaan otsikkoriviin. Historia
+    # haetaan KERRAN ja molemmat luvut luetaan samasta vastauksesta. Kaksi
+    # erillista hakua olisi kaksi kutsua FPL:aan per rate, ja pahempaa: ne
+    # voisivat osua eri hetkeen, jolloin sama ruutu kertoisi siirroista ja
+    # chipeista kaksi eri totuutta.
     free_transfers = None
+    chips_meta = None
     if mode == "entry" and entry is not None:
         try:
-            free_transfers = infer_free_transfers(
-                _fetch_fpl(f"/entry/{int(entry)}/history/"))
+            _history = _fetch_fpl(f"/entry/{int(entry)}/history/")
         except RateTeamError:
-            free_transfers = None
+            _history = None
+        if _history is not None:
+            free_transfers = infer_free_transfers(_history)
+            # Chipin "nyt" on ensimmainen kierros johon voi viela vaikuttaa,
+            # sama lahde kuin siirtohorisontilla. Kuluva (lukittu) kierros
+            # antaisi `available`-lipun chipille jota ei enaa ehdi pelata.
+            _chip_gw = (_t_gws[0] if _t_gws
+                        else int(_dl_gw or target_gw))
+            chips_meta = fpl_chips.chips_payload(bootstrap, _history, _chip_gw)
 
     return {
         "meta": {
             "mode": mode,
             "free_transfers": free_transfers,
+            # None = ei entrya (draft) tai historiaa ei saatu. Pinta sanoo
+            # sen aaneen; tyhja chip-lista olisi vaite ettei chippeja ole.
+            "chips": chips_meta,
             "entry": entry,
             "gw": target_gw,
             # 22.8: kertoo klientille etta naytettava kierros on kesken ja

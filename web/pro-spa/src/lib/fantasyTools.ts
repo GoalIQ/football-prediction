@@ -210,6 +210,20 @@ export interface LastFinishedGw {
 	deadline: string | null;
 }
 
+/** DRAFT-COMPARE-OTSIKKORIVI (11.9): entryn chip-tila otsikkoriville.
+ *  Nimet ovat FPL:n omia (`wildcard` | `bboost` | `3xc` | `freehit`), jotta
+ *  web ja mobiili eivat kaanna niita kahdella eri kartalla. `played` on
+ *  kierroksineen, `remaining` sisaltaa nimen kerran jos silla on viela
+ *  pelattava ikkuna - kaudella 2026/27 chipilla on kaksi ikkunaa, joten sama
+ *  nimi voi olla molemmissa listoissa. */
+export interface RateTeamChips {
+	played: { name: string; gw: number }[];
+	/** `available_now` = pelattavissa taman kierroksen ikkunassa. `from_gw` =
+	 *  ikkunan ensimmainen kierros. Pelkka nimi olisi vaite "kaytettavissa",
+	 *  ja kaudella on kaksi ikkunaa per chip (julkaisuportti 11.9). */
+	remaining: { name: string; from_gw: number; available_now: boolean }[];
+}
+
 export interface RateTeamResponse {
 	/** LUCK-PITCH (1.9): paattynyt kierros. `team.players[].in_xi` on MALLIN
 	 *  optimi-XI eika sita mita kayttaja pelasi, joten kierroksen tulos EI ole
@@ -257,6 +271,9 @@ export interface RateTeamResponse {
 		rating_method?: string;
 		/** 6.9: vapaat siirrot julkisesta historiasta (entry-moodi), muuten null. */
 		free_transfers?: number | null;
+		/** 11.9: chipit julkisesta historiasta (entry-moodi). null = draft tai
+		 *  historiaa ei saatu; tyhja lista olisi vaite "ei chippeja pelattu". */
+		chips?: RateTeamChips | null;
 		/** 26.7: walk-forward-backtestin tiiviste, jotta rating on falsifioituva. */
 		projection_accuracy?: {
 			meta?: { season?: string; gate_passed?: boolean; method?: string };
@@ -999,6 +1016,27 @@ export interface PlayerStatsResponse {
 /** Koko aineisto (top_n=0); suodattimet ovat klientissa kuten xG-listassa. */
 export function fetchPlayerStats(window: PlayerStatsWindow = 'season'): Promise<PlayerStatsResponse> {
 	return getTool(`/api/fantasy/player-stats?window=${window}&top_n=0`, 'player_stats');
+}
+
+/** 11.9 (PLAYER-PERCENTILES-VS-POSITION): sama vastaus jaetaan pinnoilta.
+ *
+ *  Vastaus on koko pelaajajoukko, ja prosenttiilipalkit tarvitsevat sen
+ *  JOKAISELLA avatulla pelaajakortilla. Ilman jaettua lupausta kymmenen
+ *  korttia olisi kymmenen hakua samaan aineistoon; se on sama fan-out-vika
+ *  jota vastaan eraajot rakennettiin. Virhe ei jaa cacheen: epaonnistunut
+ *  lupaus poistetaan, jotta seuraava avaus yrittaa uudelleen. */
+const _statsCache = new Map<PlayerStatsWindow, Promise<PlayerStatsResponse>>();
+export function fetchPlayerStatsShared(
+	window: PlayerStatsWindow = 'season'
+): Promise<PlayerStatsResponse> {
+	const hit = _statsCache.get(window);
+	if (hit) return hit;
+	const p = fetchPlayerStats(window).catch((e) => {
+		_statsCache.delete(window);
+		throw e;
+	});
+	_statsCache.set(window, p);
+	return p;
 }
 
 export function fetchXgLeaders(window = 5): Promise<XgLeadersResponse> {

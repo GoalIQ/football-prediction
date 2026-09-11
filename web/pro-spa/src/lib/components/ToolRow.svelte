@@ -32,7 +32,6 @@
 	<nav class="tool-row" aria-label="Tools in this group">
 		<!-- Pinottu nakyma on yha saatavilla, mutta se on valinta eika oletus:
 		     `/players` oli pinottuna 21 173 px pitka (mitattu 4.9). -->
-		<a href="/{group}?all=1" class:active={all}>All on one page</a>
 		{#each tools as t (t.slug)}
 			<a href="/{group}/{t.slug}" class:active={active === t.slug && !all}>
 				{t.title}
@@ -40,6 +39,9 @@
 					>{/if}
 			</a>
 		{/each}
+		<!-- 11.9: pinottu nakyma viimeiseksi ja lyhyella nimella; se on
+		     poikkeus, ei ensimmainen vaihtoehto. -->
+		<a href="/{group}?all=1" class="all" class:active={all} title="Every tool in this group on one long page">All</a>
 	</nav>
 {/if}
 
@@ -70,6 +72,13 @@
 	.tool-row a.active {
 		color: var(--accent-strong);
 		border-color: var(--accent);
+	}
+	.tool-row a.all {
+		margin-left: auto;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 	}
 	/* 5.9: oli varillinen emoji-lukko. Tekstitunniste lukee samana
 	   paletissa, monolla ja ruudunlukijalla (aria-label sailyi). opacity

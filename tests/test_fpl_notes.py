@@ -206,7 +206,11 @@ def test_lohko_on_HERON_SISALLA_eika_sen_alla():
     marker = idx.index("GEN:LATEST-ARTICLES-START")
     assert hero_alku < marker < hero_loppu, (
         "featured-lohko ei ole heron sisalla -> se putoaa fold-rajan alle")
-    assert marker < idx.index("GEN:XP-TABLE-START")
+    # 11.9 (PRO-SPA-PALETTI): live-xP-taulukko siirtyi heron oikeaan palstaan
+    # muistion YLAPUOLELLE. Molemmat ovat heron sisalla; vaatimus on etta
+    # kumpikaan ei putoa fold-rajan alle, ei niiden keskinainen jarjestys.
+    xp = idx.index("GEN:XP-TABLE-START")
+    assert hero_alku < xp < hero_loppu, "xP-taulukko ei ole heron sisalla"
 
 
 # ---------------------------------------------------------------------------

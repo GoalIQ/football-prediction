@@ -62,7 +62,11 @@ export const GROUPS: Group[] = [
 	{ id: 'week', label: 'This week', title: 'This week' },
 	{ id: 'team', label: 'My team', title: 'My team' },
 	{ id: 'players', label: 'Players', title: 'Players' },
-	{ id: 'tools', label: 'Tools', title: 'Tools' },
+	/* 11.9 (PRO-SPA-PALETTI): 'tools'-kaatoluokka purettiin. Mitattu 30 vrk:
+	   17/23 tyokalua alle 9 henkilon kaytossa ja 194/207 kavijaa ei avannut
+	   toista reittia. Chip timing, transfer chains ja league ovat oman
+	   joukkueen tyokaluja (team), edge mode pelaajavalinnan (players).
+	   Vanhat /tools/<slug>-linkit ohjataan uuteen paikkaan reitissa. */
 	/* 5.9 (auditointi C1): label oli "Prices". Se on FPL:n PELAAJIEN
 	   hintamuutosvahti, mutta kavija joka etsii "paljonko tama maksaa"
 	   klikkaa tasan sita — ja paatyy vaaraan nakymaan. Reitti-id `prices`
@@ -214,7 +218,7 @@ export const TOOLS: Tool[] = [
 	// --- Tools -------------------------------------------------------------
 	{
 		slug: 'chip-timing',
-		group: 'tools',
+		group: 'team',
 		title: 'Chip timing',
 		question:
 			'When are the best windows for Wildcard, Bench Boost, Triple Captain and Free Hit?',
@@ -223,7 +227,7 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		slug: 'transfer-chains',
-		group: 'tools',
+		group: 'team',
 		title: 'Transfer chains',
 		question: 'What do one and two-move transfer plans look like with the hits counted?',
 		tier: 'premium',
@@ -231,7 +235,7 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		slug: 'edge-mode',
-		group: 'tools',
+		group: 'players',
 		title: 'Edge mode',
 		question: 'Which picks protect or climb my rank against the template?',
 		tier: 'premium',
@@ -239,7 +243,7 @@ export const TOOLS: Tool[] = [
 	},
 	{
 		slug: 'league',
-		group: 'tools',
+		group: 'team',
 		title: 'Beat the Model league',
 		question: 'How am I doing against the model and my rivals in the mini-league?',
 		tier: 'free',
@@ -305,10 +309,10 @@ export const LEGACY_HASH_TO_PATH: Record<string, string> = {
 	replacements: '/players/replacements',
 	compare: '/players/compare',
 	pricewatch: '/prices',
-	league: '/tools/league',
-	chips: '/tools/chip-timing',
-	chains: '/tools/transfer-chains',
-	edge: '/tools/edge-mode',
+	league: '/team/league',
+	chips: '/team/chip-timing',
+	chains: '/team/transfer-chains',
+	edge: '/players/edge-mode',
 	predict: '/matches/predict',
 	fixtures: '/matches/fixtures',
 	standings: '/matches/table'
@@ -331,6 +335,13 @@ export function toolsInGroup(group: string): Tool[] {
 export function findTool(group: string, slug: string | null): Tool | undefined {
 	if (!slug) return undefined;
 	return TOOLS.find((t) => t.group === group && t.slug === slug);
+}
+
+/** 11.9: tyokalu pelkalla slugilla, ryhmasta riippumatta. Vanhat
+ *  /tools/<slug>-linkit (ja jaetut URLit) loytavat nain uuden kotinsa. */
+export function findToolAnywhere(slug: string | null): Tool | undefined {
+	if (!slug) return undefined;
+	return TOOLS.find((t) => t.slug === slug);
 }
 
 /** Ryhman paatyokalu, jos sellainen on maaritelty. */

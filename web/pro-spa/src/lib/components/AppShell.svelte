@@ -28,9 +28,11 @@
 	<title>{pageTitle(group, tool)}</title>
 </svelte:head>
 
-<div class="shell">
-	<Hero onUpgrade={() => upgradeSignal++} />
+<!-- 11.9: Hero on sovelluksen ylapalkki (navi + kierros + tili) ja
+     kulkee koko leveydella .shellin ULKOPUOLELLA; sisalto pysyy palstassa. -->
+<Hero onUpgrade={() => upgradeSignal++} />
 
+<div class="shell">
 	<main>
 		<!-- TUOTE EDELLA (Ville 5.9): kirjautumaton kavija nakee juuressa
 		     tuotteen, ei tyhjaa kuorta. Ehdot ovat tarkoituksella tiukat:
@@ -85,7 +87,7 @@
 	.shell {
 		max-width: var(--shell);
 		margin: 0 auto;
-		padding: var(--s-4);
+		padding: var(--s-3) var(--s-4) var(--s-4);
 	}
 	footer {
 		margin-top: var(--s-12);

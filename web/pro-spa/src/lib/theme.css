@@ -123,6 +123,15 @@
 	--radius-sm: 0;
 	--shadow-1: none;
 	--shell: 1180px;
+	/* 11.9: sovelluksen ylapalkki. Sticky-elementit (taulukon thead,
+	   sivupaneelit) lukevat taman, jotta ne asettuvat palkin ALLE. */
+	--bar-h: 52px;
+}
+
+@media (max-width: 820px) {
+	thead th {
+		top: 0;
+	}
 }
 
 /* 8.8 (Villen havainto): leveilla naytoilla taulukoiden sarakkeet jaivat
@@ -353,7 +362,12 @@ th.num {
 
 thead th {
 	position: sticky;
-	top: 0;
+	top: var(--bar-h, 0px);
+	/* --bar-h on TYOPOYDAN palkin korkeus. Kapealla ruudulla palkki karttuu
+	   kahdelle riville (~92 px), joten 52 px:aan tarttuva otsikkorivi jaisi
+	   palkin ALLE (z-index 30 vs 1) eli nakymattomiin. Alle 820 px palkki ei
+	   ole sticky (ks. Hero.svelte), joten otsikko tarttuu ruudun ylareunaan.
+	   Alle 560 px thead ei ole sticky lainkaan (mobiilikerros alempana). */
 	background: var(--surface-2);
 	color: var(--text-muted);
 	font-weight: 500;
@@ -403,13 +417,17 @@ tbody tr:hover td {
    Nostettu RateTeamin scoped-tyylistä tänne kun planner ja siirtoketjut saivat
    saman tilan: kolme kopiota olisi ajautunut eroon. */
 .notice-preseason {
-	max-width: 640px;
-	border: 1px solid var(--border);
+	max-width: none;
+	border: 0;
 	border-left: 3px solid var(--accent, var(--border));
 	border-radius: var(--radius);
-	padding: var(--s-3) var(--s-4);
-	margin: 0 0 var(--s-3);
+	padding: 2px var(--s-3);
+	margin: 0 0 var(--s-2);
 	font-size: var(--step--1);
+	color: var(--text-muted);
+}
+.notice-preseason strong {
+	color: var(--text);
 }
 
 /* #48: FPL-työkalupaneeli (dashboard-kortti segmenttinavin alla).
@@ -451,17 +469,22 @@ tbody tr:hover td {
 .tool-card {
 	--card-pad: var(--s-6);
 }
+/* 11.9 (PRO-SPA-PALETTI): cream-palkki pois. Se toisti ilmeen tunnusmerkkia
+   jokaisen kortin paalla, ja 23 tyokalun sivustolla se luki ruudukkona
+   vaaleita laatikoita eika otsikoina. Otsikko on nyt hiljainen mono-nimio
+   hiusviivalla: rakenne nakyy, mutta luvut ja kentta ovat aanekkaimmat. */
 :is(.tool-card, section) > :is(h2, h3):first-child {
-	background: var(--giq-cream) !important;
-	color: var(--giq-ink) !important;
+	font-family: var(--font-mono) !important;
+	background: transparent !important;
+	color: var(--text-muted) !important;
 	font-size: 11.5px !important;
 	font-weight: 700 !important;
 	letter-spacing: 0.16em !important;
 	text-transform: uppercase !important;
 	line-height: 1.4 !important;
-	padding: 7px 12px !important;
-	margin: calc(-1 * var(--card-pad, var(--s-4))) calc(-1 * var(--card-pad, var(--s-4)))
-		var(--s-4) !important;
+	padding: 0 0 8px !important;
+	margin: 0 0 var(--s-4) !important;
+	border-bottom: 1px solid var(--border) !important;
 	border-radius: 0 !important;
 }
 
