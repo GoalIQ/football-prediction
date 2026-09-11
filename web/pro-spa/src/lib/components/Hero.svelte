@@ -363,6 +363,21 @@
 	.nav a.home:hover {
 		color: var(--giq-teal);
 	}
+	/* 🔴 Mitattu 390 px: navirivi rullaa vaakaan, joten viimeisena oleva
+	   paluulinkki jai ruudun ulkopuolelle - eli se oli olemassa muttei
+	   loydettavissa juuri silla pinnalla jolla 60 % kavijoista on. Kapealla
+	   ruudulla se on rivin ENSIMMAINEN, kuten paluulinkki yleensa. */
+	@media (max-width: 820px) {
+		.nav a.home {
+			order: -1;
+			margin-left: 0;
+			padding-left: var(--s-3);
+			border-left: 0;
+			border-right: 1px solid var(--border);
+			margin-right: var(--s-1);
+			padding-right: var(--s-3);
+		}
+	}
 
 	.gw {
 		margin-left: auto;
