@@ -26,8 +26,6 @@
 		onCaptaincyChange,
 		lastFinished = null,
 		picksGw = null,
-		bank = null,
-		freeTransfers = null,
 		belowPitch
 	}: {
 		players: RatedPlayer[];
@@ -48,11 +46,11 @@
 		/** Milta kierrokselta ladatut picksit ovat. Pelaajakohtaiset luvut vain
 		 *  kun tama on sama kuin `lastFinished.gw`. */
 		picksGw?: number | null;
-		/** 6.9: pankki (ITB) kentan otsikkonauhaan. null = ei tiedossa (draft). */
-		bank?: number | null;
-		/** 6.9: vapaat siirrot seuraavalle kierrokselle (julkisesta historiasta). */
-		freeTransfers?: number | null;
-		/** 6.9: vanhemman lohko heti kentan + penkin alle (Team xP -laatat). */
+		/* 11.9 DRAFT-COMPARE-OTSIKKORIVI: `bank` ja `freeTransfers` poistuivat.
+		   ITB ja FT ovat nyt SquadHeaderRow'lla kentan YLLA, samassa muodossa
+		   kaikilla kolmella pinnalla (slot A, slot B, vertailu). Ne olivat
+		   tassa vain nauhan koristeena; pitch ei laske niilla mitaan. */
+		/** 6.9: vanhemman lohko heti kentan + penkin alle (metodologialohko). */
 		belowPitch?: Snippet;
 	} = $props();
 
@@ -668,16 +666,6 @@
 			     vasemmalla, projisoitu xP isona oikealla. Muodostelmat siirtyivat
 			     kentan ALLE, jotta kentta alkaa heti. -->
 			<div class="pitch-head">
-			<div class="ph-left">
-			{#if freeTransfers != null}
-				<span class="ph-stat" title="Free transfers for the next gameweek, worked out from your public transfer history"
-					><span class="ph-k">FT</span><span class="ph-v">{freeTransfers}</span></span
-				>
-			{/if}
-			{#if bank != null}
-				<span class="ph-stat"><span class="ph-k">ITB</span><span class="ph-v">£{bank.toFixed(1)}</span></span>
-			{/if}
-			</div>
 			<div class="xp-row ph-xp">
 				{#if resultMode}
 					<!-- 3.9: tulosmoodissa otsikkoluku on TOTEUMA. Ennusteen kaava
@@ -1135,39 +1123,16 @@
 	.pitch-head {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		/* 11.9: ITB/FT siirtyivat SquadHeaderRow'hun, joten nauhassa on enaa
+		   yksi lapsi. `space-between` jattaisi xP-luvun leijumaan oikeaan
+		   reunaan ilman mitaan vasemmalla. */
+		justify-content: flex-start;
 		gap: var(--s-2) var(--s-3);
 		flex-wrap: wrap;
 		margin-bottom: var(--s-2);
-	}
-	.ph-left {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2) var(--s-3);
-		flex-wrap: wrap;
-		min-width: 0;
 	}
 	.ph-gws {
 		margin-bottom: var(--s-2);
-	}
-	.ph-stat {
-		display: inline-grid;
-		justify-items: center;
-		padding: 2px 10px;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-	.ph-k {
-		font-size: 10px;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-	.ph-v {
-		font-size: var(--step-0);
-		font-weight: 800;
-		font-variant-numeric: tabular-nums;
 	}
 	.xp-row.ph-xp {
 		margin-bottom: 0;

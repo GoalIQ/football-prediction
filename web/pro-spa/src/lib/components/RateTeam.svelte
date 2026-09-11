@@ -39,8 +39,21 @@
 	import ModelWorking from './ModelWorking.svelte';
 	import PlayerSearch from './PlayerSearch.svelte';
 	import TeamPitchManager from './TeamPitchManager.svelte';
+	import SquadHeaderRow from './SquadHeaderRow.svelte';
 	import ProjectionsPanel from './ProjectionsPanel.svelte';
 	import type { XpResponse } from '$lib/api';
+
+	/** 11.9: mita rivin "100" tarkoittaa. Sama portitettu ternaari kuin
+	 *  poistetuissa `.tiles`- ja `.facts`-lohkoissa, eli ei uutta vaitetta;
+	 *  se vain kulkee nyt sen luvun mukana jota se selittaa. */
+	function ratingBasisOf(d: RateTeamResponse): string | null {
+		if (d.meta.rating_method == null && d.rating.optimal_team_xp == null) {
+			return 'Rating is the percentile of rated teams.';
+		}
+		return d.rating.optimal_proven === false
+			? '100 = the strongest squad the model found inside the 100.0m budget.'
+			: '100 = the best squad the rules allow inside the 100.0m budget.';
+	}
 
 	// #73: lataustilan askeleet = putken oikeat vaiheet (rehellinen checklist)
 	const WORKING_STEPS = [
@@ -926,10 +939,45 @@
 {#if data && dataB}
 	<div class="compare-box">
 		<p class="compare-title">Team 1 vs Team 2</p>
-		<p class="compare-line">
-			Team 1 <strong>{Math.round(data.rating.team_xp_horizon)} xP</strong> · Team 2
-			<strong>{Math.round(dataB.rating.team_xp_horizon)} xP</strong>
-		</p>
+		<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: sama rivi kuin slot A:lla ja B:lla,
+		     kahdesti. Erillinen "Team 1 X xP · Team 2 Y xP" -rivi poistui: se
+		     pyoristi saman luvun eri tavalla kuin rivi (Math.round vs 1
+		     desimaali), eli kaksi pintaa vastasi samaan kysymykseen eri
+		     numerolla. Vertailussa GW-xP naytetaan aina - tassa ei ole pitchin
+		     otsikkonauhaa viemassa sita. `aligned` panee solut yhteiseen
+		     gridiin, ks. `.compare-rows`. -->
+		<div class="compare-rows">
+			<SquadHeaderRow
+				aligned
+				label="Team 1"
+				rating={data.rating.rating ?? Math.round(data.rating.percentile)}
+				teamXpGw={data.rating.team_xp_gw}
+				teamXpHorizon={data.rating.team_xp_horizon}
+				horizonGw={data.meta.horizon_gw ?? 6}
+				gw={data.meta.gw}
+				bank={data.team.bank}
+				freeTransfers={data.meta.free_transfers ?? null}
+				chips={data.meta.chips ?? null}
+				weakestLine={data.rating.weakest_line}
+				ratingBasis={ratingBasisOf(data)}
+				showGwXp={true}
+			/>
+			<SquadHeaderRow
+				aligned
+				label="Team 2"
+				rating={dataB.rating.rating ?? Math.round(dataB.rating.percentile)}
+				teamXpGw={dataB.rating.team_xp_gw}
+				teamXpHorizon={dataB.rating.team_xp_horizon}
+				horizonGw={dataB.meta.horizon_gw ?? 6}
+				gw={dataB.meta.gw}
+				bank={dataB.team.bank}
+				freeTransfers={dataB.meta.free_transfers ?? null}
+				chips={dataB.meta.chips ?? null}
+				weakestLine={dataB.rating.weakest_line}
+				ratingBasis={ratingBasisOf(dataB)}
+				showGwXp={true}
+			/>
+		</div>
 		<p class="muted compare-verdict">
 			{#if Math.abs(compareDiff ?? 0) < 0.5}
 				Dead level over the {data.meta.horizon_gw ?? 6}-GW horizon.
@@ -1176,25 +1224,16 @@
 			> instead: pick the new 15 by hand and the model rates them now.
 		</p>
 	{/if}
-	{@const stripRating = data.rating.rating ?? Math.round(data.rating.percentile)}
 	{@const capGap =
 		data.captain.alternative != null
 			? data.captain.pick.gw_xp - data.captain.alternative.gw_xp
 			: null}
 	{@const capClose = capGap != null && capGap < 0.15}
+	<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: rating-luku siirtyi SquadHeaderRow'hun
+	     (kentan ylle). Nauha pitaa sen mita se yksin osaa sanoa: kapteeni ja
+	     siirtoverdikti. Sama luku kahdessa lohkossa allekkain olisi kaksi
+	     vaitetta yhdesta, ja vain toinen olisi portin nakyvissa. -->
 	<div class="verdict-strip">
-		<span
-			class="strip-item"
-			title="GoalIQ model rating out of 100. Green from 90, amber from 75. The rating card below says what the 100 is measured against."
-		>
-			<span
-				class="strip-dot"
-				class:good={stripRating >= 90}
-				class:mid={stripRating >= 75 && stripRating < 90}
-				class:bad={stripRating < 75}
-			></span>
-			Squad <strong>{stripRating}/100</strong>
-		</span>
 		<span
 			class="strip-item"
 			title={capClose && capGap != null
@@ -1255,9 +1294,11 @@
 			<!-- Ilmaiselle heikoin linja on aito vastaus kysymykseen "mista
 			     aloitan", ja se on ilmaista tietoa. Konkreettinen siirtopari
 			     on se mika on maksullista, ja tunniste sanoo sen suoraan. -->
+			<!-- 11.9: heikoin linja on nyt SquadHeaderRow'n oma solu, jonka
+			     jokainen pinta nakee. Nauha pitaa vain sen mita se lisaa:
+			     konkreettinen siirtopari on maksullinen. -->
 			<span class="strip-item">
-				Weakest line <strong>{data.rating.weakest_line}</strong>
-				<span class="strip-tag">Premium for the move</span>
+				The move that fixes it <span class="strip-tag">Premium</span>
 			</span>
 		{/if}
 	</div>
@@ -1274,54 +1315,11 @@
 		<!-- Snippet ei peri {#if data}-tarkennusta: data on tassa aina olemassa
 		     (renderoidaan vain tuloslohkossa), ja d kiinnittaa sen tyypin. -->
 		{@const d = data!}
-		<!-- 6.9 (Villen tilaus, Solio-vertailu): Team xP -kortin tilalla neljan
-		     laatan rivi heti kentan alla. Sama data, ei oranssia laatikkoa,
-		     ei roastia. Numerot amberilla (theme.css: amber = luvut). -->
-		<div class="tiles">
-			<div class="tile">
-				<span class="tile-k">Team xP, next {d.meta.horizon_gw ?? 6} GWs</span>
-				<span class="tile-v">{d.rating.team_xp_horizon.toFixed(1)}</span>
-				<span class="tile-s">captain doubled</span>
-			</div>
-			<div class="tile">
-				<span class="tile-k">Team rating</span>
-				<span class="tile-v"
-					>{d.rating.rating ?? Math.round(d.rating.percentile)}<span class="tile-unit">/100</span></span
-				>
-				<span class="tile-s">
-					{#if d.meta.rating_method == null && d.rating.optimal_team_xp == null}
-						percentile of rated teams
-					{:else}
-						{@const benchmark = d.rating.optimal_proven === false
-							? 'the strongest squad the model found'
-							: 'the best squad the rules allow'}
-						{#if typeof d.rating.gap_to_optimal_xp === 'number'}
-							{d.rating.gap_to_optimal_xp > 0.05
-								? `${d.rating.gap_to_optimal_xp.toFixed(1)} xP off ${benchmark}`
-								: `level with ${benchmark}`}
-						{:else}
-							vs {benchmark}
-						{/if}
-					{/if}
-				</span>
-			</div>
-			<div class="tile">
-				<span class="tile-k">Team xP, GW{d.meta.gw}</span>
-				<span class="tile-v">{d.rating.team_xp_gw.toFixed(1)}</span>
-				<span class="tile-s"
-					>strongest <strong class="line-strong">{d.rating.strongest_line}</strong>, weakest
-					<strong class="line-weak">{d.rating.weakest_line}</strong></span
-				>
-			</div>
-			<div class="tile">
-				<span class="tile-k">Captain pick{#if d.meta.captain_gw != null}, GW{d.meta.captain_gw}{/if}</span>
-				<span class="tile-v tile-name">{d.captain.pick.web_name}</span>
-				<span class="tile-s"
-					>{d.captain.pick.gw_xp.toFixed(2)} xP{#if d.captain.alternative}, then
-						{d.captain.alternative.web_name} {d.captain.alternative.gw_xp.toFixed(2)}{/if}</span
-				>
-			</div>
-		</div>
+		<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: neljan laatan `.tiles`-lohko poistui.
+		     Sen luvut (Team xP horisontilla, rating, GW-xP) ovat nyt kentan
+		     YLAPUOLELLA olevalla SquadHeaderRow'lla, samassa muodossa kuin slot
+		     B:lla ja vertailussa. Kentan alle jaa vain se mita rivi ei voi
+		     sanoa: mita vasten 100 mitataan. -->
 		<div class="tiles-notes">
 			<details class="method">
 					<summary>How this rating is calculated</summary>
@@ -1388,11 +1386,26 @@
 	     free = staattinen pitch + lukko, premium = editointi). #121: manageri
 	     saa PLANNED-rosterin (sovelletut siirrot mukana); #123: default-GW.
 	     22.8: siirretty result-gridin vasempaan sarakkeeseen (ks. yllä). -->
+	<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: yksi rivi kentan ylle. GW-xP VAIN kun
+	     pitchin oma otsikkonauha ei nayta sita alapuolella (premium renderoi
+	     elavan GW-xP:n): sama luku kahdesti parinsadan pikselin sisalla
+	     lukisi kahtena eri lukuna. ITB ja FT siirtyivat tanne nauhasta. -->
+	<SquadHeaderRow
+		rating={data.rating.rating ?? Math.round(data.rating.percentile)}
+		teamXpGw={data.rating.team_xp_gw}
+		teamXpHorizon={data.rating.team_xp_horizon}
+		horizonGw={data.meta.horizon_gw ?? 6}
+		gw={data.meta.gw}
+		bank={data.team.bank}
+		freeTransfers={data.meta.free_transfers ?? null}
+		chips={data.meta.chips ?? null}
+		weakestLine={data.rating.weakest_line}
+		ratingBasis={ratingBasisOf(data)}
+		showGwXp={!premium}
+	/>
 	<TeamPitchManager
 		players={plannedPlayers}
 		{premium}
-		bank={data.team.bank}
-		freeTransfers={data.meta.free_transfers ?? null}
 		belowPitch={ratingTiles}
 		defaultGw={data.meta.gw}
 		gwInProgress={data.meta.gw_in_progress === true}
@@ -1646,51 +1659,23 @@
 		<p class="banner error">{errorB}</p>
 	{:else if dataB}
 		<div class="rating card">
-			<div class="hero-top">
-				<p class="hero-xp" aria-hidden="true">
-					<span class="hero-num">{Math.round(dataB.rating.team_xp_horizon)}</span><span
-						class="hero-unit">xP</span
-					>
-				</p>
-				<div class="hero-copy">
-					<p class="headline">
-						Team xP, next {dataB.meta.horizon_gw ?? 6} GWs:
-						<strong>{dataB.rating.team_xp_horizon.toFixed(1)}</strong>
-						<span class="basis-note">captain doubled</span>
-					</p>
-					<p class="subline">
-						{#if dataB.meta.rating_method == null && dataB.rating.optimal_team_xp == null}
-							GoalIQ model rating:
-							<strong>{dataB.rating.rating ?? Math.round(dataB.rating.percentile)}/100</strong>
-						{:else if dataB.rating.beats_benchmark}
-							This XI <strong>beats</strong> the best team the model can build inside the
-							budget.
-						{:else}
-							Team rating
-							<strong>{dataB.rating.rating ?? Math.round(dataB.rating.percentile)}/100</strong>.
-							<span class="rating-basis"
-								>{dataB.rating.optimal_proven === false
-									? '100 = the strongest squad the model found inside the 100.0m budget.'
-									: '100 = the best squad the rules allow inside the 100.0m budget.'}</span
-							>
-						{/if}
-					</p>
-				</div>
-			</div>
-			<div class="facts">
-				<div class="fact">
-					<span class="muted">Team xP, GW{dataB.meta.gw}</span>
-					<span class="val">{dataB.rating.team_xp_gw.toFixed(1)}</span>
-				</div>
-				<div class="fact">
-					<span class="muted">Strongest line</span>
-					<span class="val line-strong">{dataB.rating.strongest_line}</span>
-				</div>
-				<div class="fact">
-					<span class="muted">Weakest line</span>
-					<span class="val line-weak">{dataB.rating.weakest_line}</span>
-				</div>
-			</div>
+			<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: hero-luku ja `.facts` korvattiin
+			     samalla rivilla jota slot A ja vertailu kayttavat. Slot B:lla ei ole
+			     pitchin otsikkonauhaa ennen kenttaa, joten GW-xP on rivilla aina kun
+			     kentta ei sita nayta. -->
+			<SquadHeaderRow
+				rating={dataB.rating.rating ?? Math.round(dataB.rating.percentile)}
+				teamXpGw={dataB.rating.team_xp_gw}
+				teamXpHorizon={dataB.rating.team_xp_horizon}
+				horizonGw={dataB.meta.horizon_gw ?? 6}
+				gw={dataB.meta.gw}
+				bank={dataB.team.bank}
+				freeTransfers={dataB.meta.free_transfers ?? null}
+				chips={dataB.meta.chips ?? null}
+				weakestLine={dataB.rating.weakest_line}
+				ratingBasis={ratingBasisOf(dataB)}
+				showGwXp={!premium}
+			/>
 			<p class="captain">
 				Captain suggestion: <strong>{dataB.captain.pick.web_name}</strong>
 				<span class="muted">({dataB.captain.pick.team_short})</span>,
@@ -1713,7 +1698,6 @@
 		<TeamPitchManager
 			players={dataB.team.players}
 			{premium}
-			bank={dataB.team.bank}
 			defaultGw={dataB.meta.gw}
 			gwInProgress={dataB.meta.gw_in_progress === true}
 			lastFinished={dataB.last_finished ?? null}
@@ -1749,7 +1733,10 @@
 		color: var(--giq-rust);
 	}
 	.compare-box {
-		max-width: 640px;
+		/* 11.9: 640px riitti yhdelle xP-riville. Kahdessa otsikkorivissa on
+		   kuusi saraketta, ja kapeampi laatikko pakottaisi ne rivittymaan
+		   leveallakin ruudulla, jolloin sarakkeet eivat enaa osuisi. */
+		max-width: 940px;
 		border: 1px solid var(--border);
 		border-left: 4px solid var(--giq-rust);
 		border-radius: var(--radius);
@@ -1763,9 +1750,21 @@
 		font-size: var(--step--1);
 		color: var(--text-muted);
 	}
-	.compare-line {
-		margin: 2px 0 0;
-		font-variant-numeric: tabular-nums;
+	/* 11.9 VERTAILUN SARAKKEET. Rivit ovat `display: contents` (ks.
+	   SquadHeaderRow), joten molempien solut ovat TAMAN gridin soluja ja
+	   asettuvat samoihin sarakkeisiin. Raja 640px on sama kuin komponentin
+	   omassa media-kyselyssa: sen alla rivit ovat omia flex-rivejaan, koska
+	   kuusi saraketta ei mahdu puhelimen leveyteen. */
+	.compare-rows {
+		margin: var(--s-2) 0 var(--s-2);
+	}
+	@media (min-width: 640px) {
+		.compare-rows {
+			display: grid;
+			grid-template-columns: max-content repeat(5, max-content) 1fr;
+			align-items: baseline;
+			gap: var(--s-1) var(--s-3);
+		}
 	}
 	.compare-verdict {
 		margin: 2px 0 0;
@@ -2087,12 +2086,6 @@
 		margin: var(--s-2) 0 0;
 		max-width: 60ch;
 	}
-	.line-strong {
-		color: var(--positive);
-	}
-	.line-weak {
-		color: var(--negative);
-	}
 	/* #50: verdict + action -rivi taulukon yllä; hold-variantti kulta-aksentilla */
 	.verdict-line {
 		max-width: 640px;
@@ -2169,21 +2162,6 @@
 	.strip-item strong {
 		color: var(--text, #f3f2f2);
 	}
-	.strip-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: var(--muted, #a8a29a);
-	}
-	.strip-dot.good {
-		background: var(--teal, #2ed6c2);
-	}
-	.strip-dot.mid {
-		background: var(--accent, #f5c542);
-	}
-	.strip-dot.bad {
-		background: #ff8a5c;
-	}
 	.strip-note {
 		margin-left: 6px;
 		font-size: 11px;
@@ -2192,56 +2170,8 @@
 		padding: 1px 5px;
 	}
 
-	/* 6.9: Team xP -laatat kentan alla (korvasi .rating-kortin). */
-	.tiles {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: var(--s-2);
-		margin: var(--s-3) 0 var(--s-2);
-	}
-	.tile {
-		display: grid;
-		gap: 2px;
-		padding: var(--s-2) var(--s-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-		min-width: 0;
-	}
-	.tile-k {
-		font-size: 10px;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.tile-v {
-		font-size: var(--step-3);
-		font-weight: 800;
-		line-height: 1.05;
-		color: var(--accent);
-		font-variant-numeric: tabular-nums;
-	}
-	.tile-v.tile-name {
-		font-size: var(--step-1);
-		color: var(--text);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.tile-unit {
-		font-size: var(--step-0);
-		font-weight: 700;
-		color: var(--text-muted);
-		margin-left: 2px;
-	}
-	.tile-s {
-		font-size: var(--step--2);
-		color: var(--text-muted);
-		line-height: 1.3;
-	}
+	/* 11.9: `.tiles`-laatat poistettiin (luvut ovat SquadHeaderRow'lla).
+	   `.tiles-notes` jaa: se kantaa "How this rating is calculated" -lohkon. */
 	.tiles-notes {
 		font-size: var(--step--1);
 		color: var(--text-muted);

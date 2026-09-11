@@ -98,3 +98,39 @@ def next_available_window(state: dict[str, dict], key: str,
         if r["available"] and r["stop_gw"] >= current_gw:
             return r
     return None
+
+
+# DRAFT-COMPARE-OTSIKKORIVI (11.9.2026): sama chip-tila API-vastauksen
+# muodossa. Nimikartta (FPL <-> lyhenne) asuu tassa moduulissa, joten
+# kaannos takaisin FPL:n omiin nimiin kuuluu myos tanne: jos se tehtaisiin
+# kutsujassa, jokainen uusi pinta joutuisi muistamaan saman kartan ja
+# yksikin unohdus tuottaisi eri nimet eri pinnalle (CLAUDE.md 6a).
+CHIP_NAME = {v: k for k, v in CHIP_KEY.items()}
+# Vakaa esitysjarjestys: `remaining` ei saa heilua dictin jarjestyksen mukaan,
+# koska pinnat renderoivat listan sellaisenaan.
+_PAYLOAD_ORDER = ("wc", "bb", "tc", "fh")
+
+
+def chips_payload(bootstrap: dict | None, history: dict | None,
+                  current_gw: int) -> dict:
+    """{"played": [{"name", "gw"}], "remaining": [name, ...]} FPL:n nimilla.
+
+    Sama lukija kuin chip timingilla (`chip_state`), eli pelatut chipit
+    entryn historiasta ja puolikkaiden ikkunat bootstrapista. Chip on
+    `remaining`issa KERRAN jos silla on viela pelattava ikkuna, vaikka
+    toinen kauden puolikas olisi jo kaytetty; silloin sama nimi esiintyy
+    seka `played`issa (kierroksineen) etta `remaining`issa. Ikkuna joka on
+    kokonaan menneisyydessa ei ole `remaining`issa vaikka chippia ei
+    pelattu - sita ei voi enaa pelata.
+    """
+    state = chip_state(bootstrap, history, current_gw)
+    played: list[dict] = []
+    remaining: list[str] = []
+    for key in _PAYLOAD_ORDER:
+        row = state.get(key) or {}
+        for gw in row.get("played_gws") or []:
+            played.append({"name": CHIP_NAME[key], "gw": gw})
+        if any(w.get("available") for w in (row.get("windows") or [])):
+            remaining.append(CHIP_NAME[key])
+    played.sort(key=lambda r: r["gw"])
+    return {"played": played, "remaining": remaining}
