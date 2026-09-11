@@ -819,10 +819,10 @@
 				<section class="pcent">
 					<h4 class="gw-title">
 						Season so far, against his position
+						<!-- Erottimet samalla rivilla: rivinvaihto lahdekoodissa soi
+						     valilyonnin ja label luki "played· GW1-3" (mitattu 11.9). -->
 						<span class="src"
-							>vs {barsN}
-							{positionWord(statsRow?.pos)} who have played{#if windowLabel}
-								· {windowLabel}{/if}{#if smallSample}, small sample{/if}</span
+							>vs {barsN} {positionWord(statsRow?.pos)} who have played{#if windowLabel} · {windowLabel}{/if}{#if smallSample}, small sample{/if}</span
 						>
 					</h4>
 					<ul class="bars">

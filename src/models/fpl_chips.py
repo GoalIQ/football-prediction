@@ -122,15 +122,29 @@ def chips_payload(bootstrap: dict | None, history: dict | None,
     seka `played`issa (kierroksineen) etta `remaining`issa. Ikkuna joka on
     kokonaan menneisyydessa ei ole `remaining`issa vaikka chippia ei
     pelattu - sita ei voi enaa pelata.
+
+    🔴 `remaining`-rivi kantaa `available_now`-lipun JA `from_gw`:n
+    (julkaisuportin loydos 11.9). Ensimmainen versio palautti pelkan nimen,
+    ja kaudella 2026/27 jokaisella chipilla on toinen ikkuna: GW4:ssa jo
+    pelattu wildcard palasi listalle "Still available" -tekstilla, vaikka
+    sen ikkuna aukeaa vasta GW20. Lippu ilman kierrosta on vaite jota
+    lukija ei voi tarkistaa, ja tassa se oli vaara.
     """
     state = chip_state(bootstrap, history, current_gw)
     played: list[dict] = []
-    remaining: list[str] = []
+    remaining: list[dict] = []
     for key in _PAYLOAD_ORDER:
         row = state.get(key) or {}
         for gw in row.get("played_gws") or []:
             played.append({"name": CHIP_NAME[key], "gw": gw})
-        if any(w.get("available") for w in (row.get("windows") or [])):
-            remaining.append(CHIP_NAME[key])
+        win = next_available_window(state, key, current_gw)
+        if win is not None:
+            remaining.append({
+                "name": CHIP_NAME[key],
+                # Ensimmainen kierros jolla taman ikkunan voi pelata. Pinta
+                # sanoo sen aaneen kun se on tulevaisuudessa.
+                "from_gw": int(win["start_gw"]),
+                "available_now": bool(row.get("available_now")),
+            })
     played.sort(key=lambda r: r["gw"])
     return {"played": played, "remaining": remaining}

@@ -23,9 +23,10 @@
 		gw,
 		bank = null,
 		freeTransfers = null,
-		chips = null,
+		chips = undefined,
 		weakestLine = null,
 		ratingBasis = null,
+		ratingGap = null,
 		showGwXp = false,
 		label = null,
 		aligned = false
@@ -41,14 +42,24 @@
 		/** null = ei tiedossa. Nolla olisi vaite tyhjasta pankista. */
 		bank?: number | null;
 		freeTransfers?: number | null;
+		/** `undefined` = API ei kanna kenttaa viela (vanha deploy) -> solu jaa
+		 *  kokonaan pois. `null` = draft tai historiaa ei saatu -> solu sanoo
+		 *  sen aaneen. Nama ovat eri asioita eivatka saa nayttaa samalta. */
 		chips?: RateTeamChips | null;
 		/** `rating.weakest_line`. Ilmaista tietoa, ja /fpl-sivun copy lupaa
 		 *  sen sanatarkasti ("names the line that is costing you"), joten se
 		 *  kuuluu jokaiselle pinnalle eika vain ilmaiskayttajan nauhaan. */
 		weakestLine?: string | null;
 		/** Mita 100 tarkoittaa. Kutsuja muodostaa lauseen, koska vain se nakee
-		 *  `optimal_proven`-lipun; rivi ei saa keksia perustaa itse. */
+		 *  `optimal_proven`-lipun; rivi ei saa keksia perustaa itse.
+		 *  🔴 Portti 11.9: tama renderoidaan NAKYVANA rivina, ei title-
+		 *  attribuuttina. Hover ei ole olemassa kosketuslaitteella, ja luku
+		 *  ilman asteikkoaan on vaite ilman reittia. */
 		ratingBasis?: string | null;
+		/** Etaisyys vertailukohtaan sanoina ("You are 3.4 xP off it."). Tama
+		 *  luku katosi kayttoliittymasta kun `.tiles`-lohko poistui, ja se on
+		 *  ainoa asia joka tekee ratingista falsifioituvan yhdella silmayksella. */
+		ratingGap?: string | null;
 		/** GW-xP naytetaan rivilla VAIN kun kentan otsikkonauha ei nayta sita
 		 *  alapuolella. Premium-pitch renderoi elavan GW-xP:n, ja sama luku
 		 *  kahdesti 200 pikselin sisalla lukisi kahtena eri asiana. */
@@ -78,10 +89,15 @@
 			used: true,
 			title: `Played in GW${c.gw}`
 		}));
+		// 🔴 Portti 11.9: "Still available" ilman kierrosta oli vaara vaite.
+		// Kaudella on kaksi ikkunaa per chip, joten GW4:ssa jo pelattu
+		// wildcard palasi listalle kaytettavissa olevana, vaikka sen toinen
+		// ikkuna aukeaa GW20. Kierros luetaan nyt payloadista ja nakyy
+		// tekstissa aina kun ikkuna on edessa.
 		const left = (chips.remaining ?? []).map((c) => ({
-			text: SHORT[c] ?? c,
+			text: c.available_now ? (SHORT[c.name] ?? c.name) : `${SHORT[c.name] ?? c.name} GW${c.from_gw}+`,
 			used: false,
-			title: 'Still available'
+			title: c.available_now ? 'Available now' : `Available from GW${c.from_gw}`
 		}));
 		return [...played, ...left];
 	});
@@ -91,12 +107,7 @@
 
 <div class="hrow" class:aligned>
 	{#if label}<span class="hlabel">{label}</span>{/if}
-	<span
-		class="cell"
-		title="GoalIQ model rating out of 100. Green from 90, amber from 75.{ratingBasis
-			? ` ${ratingBasis}`
-			: ''}"
-	>
+	<span class="cell" title="GoalIQ model rating out of 100. Green from 90, amber from 75.">
 		<span class="k">Rating</span>
 		<span class="v">
 			<span
@@ -123,9 +134,9 @@
 	     joten peruste kulkee mukana eika jaa poistetun lohkon mukana pois. -->
 	<span
 		class="cell"
-		title="Projected points over the next {horizon} gameweeks, captain doubled"
+		title="Projected points over GW{gw} to GW{gw + horizon - 1}, captain doubled"
 	>
-		<span class="k">Next {horizon} GW</span>
+		<span class="k">Next {horizon} GW <span class="u">(GW{gw}-{gw + horizon - 1})</span></span>
 		<span class="v">{teamXpHorizon.toFixed(1)}<span class="u">xP</span></span>
 	</span>
 	<span class="cell" title="Money in the bank, from your FPL squad">
@@ -140,6 +151,7 @@
 		<span class="k">FT</span>
 		<span class="v">{freeTransfers != null ? freeTransfers : '–'}</span>
 	</span>
+	{#if chips !== undefined}
 	<span class="cell chips" title="Chips you have played this season, then the ones still available">
 		<!-- Kaksoispiste vain tassa: arvo on LISTA eika yksi luku, ja ilman
 		     sita "Chips no entry" luki yhtena sanaparina. -->
@@ -158,9 +170,27 @@
 			{/if}
 		</span>
 	</span>
+	{/if}
 </div>
+{#if ratingBasis}
+	<p class="hrow-basis">{ratingBasis}{ratingGap ? ` ${ratingGap}` : ''}</p>
+{/if}
 
 <style>
+	/* 🔴 Portti 11.9: `.line-weak` tuli mukana RateTeamista, mutta Svelten
+	   scoped-CSS ei ylla toisen komponentin luokkaan. Heikoin linja
+	   renderoityi samalla amberilla kuin jokainen muu luku, eli varoitus
+	   katosi hiljaa. */
+	.line-weak {
+		color: var(--negative);
+	}
+	.hrow-basis {
+		margin: 4px 0 0;
+		font-size: var(--step--1);
+		color: var(--text-muted);
+		max-width: none;
+	}
+
 	.hrow {
 		display: flex;
 		flex-wrap: wrap;

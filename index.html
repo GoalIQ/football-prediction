@@ -305,8 +305,8 @@
   .bar + .panel, .bar + .table-wrap { border-top: 0; }
 
   /* ---- Hero ---- */
-  /* 11.9: nelja aluetta kahdessa palstassa. row-gap 0, koska otsikon ja
-     leipatekstin vali tulee h1:n omasta marginaalista kuten ennenkin. */
+  /* 11 Sep: four areas in two columns. row-gap 0, because the space between the
+     headline and the body copy comes from the h1's own margin, as before. */
   .hero-lead { grid-area: lead; }
   .hero-pitch { grid-area: pitch; }
   .hero-side { grid-area: side; }
@@ -359,8 +359,8 @@
 
   /* Track record -chip herossa: GEN:ACC-CHIP writes here (.num/.lbl) */
   .hero-side { display: flex; flex-direction: column; gap: clamp(14px, 1.8vw, 20px); }
-  /* 11.9: live-xP-taulukko herossa. Kapea palsta: neljä saraketta (Owned pois),
-     ei min-width-pakotetta. */
+  /* 11 Sep: the live xP table in the hero. Narrow column: four columns (Owned
+     dropped), no min-width forcing a sideways scroll. */
   .hero-table .table-inner { min-width: 0; }
   .hero-table .mock-row { grid-template-columns: 52px 1fr 76px 92px; padding: 10px 12px; font-size: 13px; }
   .hero-table .mock-row > span:nth-child(4) { display: none; }
@@ -370,11 +370,11 @@
   .record-chip.compact .num { font-size: clamp(30px, 3.4vw, 40px); }
   .record-chip.compact .lbl { margin-top: 0; }
   .record-chip.compact .tr-links { grid-column: 1 / -1; margin-top: 8px; padding-top: 8px; }
-  /* 🔴 11.9 (CDP-mittaus 390 px): yleinen mobiilisaanto piilottaa Price- ja
-     Owned-solut, mutta .hero-table .mock-row on spesifisempi ja julisti yha
-     NELJA raitaa. Kolme nakyvaa solua asettui neljaan raitaan -> Total xP
-     putosi 76 px:n sarakkeeseen ja oikea reuna jai tyhjaksi. Raidat seuraavat
-     nyt nakyvien solujen maaraa. */
+  /* Measured at 390px, 11 Sep: the general mobile rule hides the Price and
+     Owned cells, but .hero-table .mock-row is more specific and still declared
+     FOUR tracks. Three visible cells landed in four tracks, so Total xP fell
+     into the 76px column and the right edge was empty. The tracks now follow
+     the number of visible cells. */
   @media (max-width: 560px) {
     .hero-table .mock-row { grid-template-columns: 46px 1fr 72px; }
   }
@@ -524,19 +524,19 @@
 
   @media (max-width: 900px) {
     .hero, .toolkit, .duo, .steps { grid-template-columns: 1fr; }
-    /* 🔴 11.9 (CDP-mittaus 390 px): live-taulukko oli 998 px sivun ylalaidasta
-       eli mobiilissa taysin ensimmaisen ruudun alla, vaikka koko muutoksen
-       tarkoitus oli nostaa tuote sinne. 60 % kavijoista on puhelimella.
-       Jarjestys: otsikko, mallin omat luvut, myyntipuhe ja napit, track
-       record, muistio. `display: contents` nostaa oikean palstan lapset
-       samaan pinoon, jolloin napit pysyvat muistion YLAPUOLELLA. */
+    /* Measured at 390px, 11 Sep: the live table sat 998px from the top of the
+       page, entirely below the first screen on a phone, even though the whole
+       point of the change was to lift the product into it. 60% of visitors are
+       on a phone. Order: headline, the model's own numbers, the pitch and the
+       buttons, track record, note. `display: contents` lifts the right column's
+       children into the same stack, which keeps the buttons ABOVE the note. */
     .hero { display: flex; flex-direction: column; gap: clamp(14px, 1.8vw, 20px); }
     .hero-side, .hero-pitch { display: contents; }
     .hero-lead { order: 1; }
     .hero-table { order: 2; }
-    /* Napit heti lukujen alle: taulukko on 390 px:n ruudulla noin 570 px
-       korkea, joten .hero-pitch kokonaisena olisi tyontanyt CTA:n 950 px:n
-       kohdalle. Selitys lukee nappien jalkeen, kuten kaupan hyllyssa. */
+    /* Buttons straight under the numbers: on a 390px screen the table block is
+       about 570px tall, so .hero-pitch as one piece would have pushed the call
+       to action down to 950px. The explanation reads after the buttons. */
     .cta-row { order: 3; }
     .hero .sub { order: 4; }
     .cta-note { order: 5; }
@@ -862,10 +862,10 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 
 <div class="wrap" id="top">
   <header class="hero">
-    <!-- 11.9: vasen palsta on KAKSI lohkoa (otsikko, myyntipuhe). Syy on
-         mobiili: yhtena lohkona live-taulukko ei voi nousta otsikon ja
-         leipatekstin valiin, ja 60 % kavijoista on puhelimella. Tyopoydalla
-         grid-template-areas pitaa asettelun ennallaan. -->
+    <!-- 11 Sep: the left column is TWO blocks (headline, pitch). The reason is
+         mobile: as one block the live table cannot sit between the headline and
+         the body copy, and 60% of visitors are on a phone. On desktop
+         grid-template-areas keeps the layout exactly as it was. -->
     <div class="hero-lead">
       <a class="eyebrow" href="/fpl">Free FPL tools on the web · no sign-in needed <span class="cursor">&#9608;</span></a>
       <!-- The keyword "Free FPL tools" stays word for word; it is what this
@@ -907,9 +907,9 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     </div>
 
     <div class="hero-side">
-    <!-- 11.9 (PRO-SPA-PALETTI): tuote ensimmaiseen ruutuun. Live-xP-taulukko
-         oli neljas osio; nyt se on heron oikea palsta. Rivit generoidaan
-         yha GEN:XP-TABLE-markereiden valiin (build_fpl_page.update_index). -->
+    <!-- 11 Sep: the product goes in the first screen. The live xP table was the
+         fourth section; it is now the right column of the hero. Rows are still
+         generated between the GEN:XP-TABLE markers (build_fpl_page.update_index). -->
     <div class="hero-table">
       <div class="bar"><span>&#9612; <!-- GEN:XP-WINDOW-START -->Live model projections · GW4-9 · 2026/27<!-- GEN:XP-WINDOW-END --></span><span>P101</span></div>
     <div class="table-wrap" aria-hidden="true">
@@ -977,7 +977,7 @@ vertical-align:top}
 .nm-close{color:var(--muted)}
 .nm-sc{white-space:nowrap;color:var(--muted)}
 .nm-lg{white-space:nowrap;color:var(--faint);font-size:12px}
-</style><div class="nm-wrap"><table class="nm"><thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th><th>Logged</th></tr></thead><tbody><tr><td class="nm-ko">Fri 11 Sep, 18:00</td><td class="nm-tm"><a href="/predictions/eredivisie/az-alkmaar-vs-willem-ii">AZ Alkmaar v Willem II</a><span class="nm-comp">Eredivisie</span></td><td class="nm-call">AZ Alkmaar <b>72%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 18:30</td><td class="nm-tm"><a href="/predictions/bundesliga/union-berlin-vs-schalke">Union Berlin v Schalke</a><span class="nm-comp">Bundesliga</span></td><td class="nm-call">Union Berlin <b>50%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/ligue-1/rennes-vs-marseille">Rennes v Marseille</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Rennes <b>52%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/serie-a/venezia-vs-fiorentina">Venezia v Fiorentina</a><span class="nm-comp">Serie A</span></td><td class="nm-call">Fiorentina <b>46%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/la-liga/sevilla-vs-valencia">Sevilla v Valencia</a><span class="nm-comp">La Liga</span></td><td class="nm-call"><span class="nm-close">Too close to call</span><span class="nm-comp">44% · 27% · 29%</span></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/championship/west-ham-vs-wrexham">West Ham v Wrexham</a><span class="nm-comp">Championship</span></td><td class="nm-call">West Ham <b>49%</b></td><td class="nm-lg">2026-09-11</td></tr></tbody></table></div><!-- GEN:NEXT-MATCHES-END -->
+</style><div class="nm-wrap"><table class="nm"><thead><tr><th>Kick-off UTC</th><th>Match</th><th>Model call</th><th>Logged</th></tr></thead><tbody><tr><td class="nm-ko">Fri 11 Sep, 18:30</td><td class="nm-tm"><a href="/predictions/bundesliga/union-berlin-vs-schalke">Union Berlin v Schalke</a><span class="nm-comp">Bundesliga</span></td><td class="nm-call">Union Berlin <b>50%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/ligue-1/rennes-vs-marseille">Rennes v Marseille</a><span class="nm-comp">Ligue 1</span></td><td class="nm-call">Rennes <b>52%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 18:45</td><td class="nm-tm"><a href="/predictions/serie-a/venezia-vs-fiorentina">Venezia v Fiorentina</a><span class="nm-comp">Serie A</span></td><td class="nm-call">Fiorentina <b>46%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/la-liga/sevilla-vs-valencia">Sevilla v Valencia</a><span class="nm-comp">La Liga</span></td><td class="nm-call"><span class="nm-close">Too close to call</span><span class="nm-comp">44% · 27% · 29%</span></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Fri 11 Sep, 19:00</td><td class="nm-tm"><a href="/predictions/championship/west-ham-vs-wrexham">West Ham v Wrexham</a><span class="nm-comp">Championship</span></td><td class="nm-call">West Ham <b>49%</b></td><td class="nm-lg">2026-09-11</td></tr><tr><td class="nm-ko">Sat 12 Sep, 00:00</td><td class="nm-tm"><a href="/predictions/brasileirao/coritiba-vs-athletico-pr">Coritiba v Athletico-PR</a><span class="nm-comp">Brasileirão Série A</span></td><td class="nm-call"><span class="nm-close">Too close to call</span><span class="nm-comp">40% · 29% · 31%</span></td><td class="nm-lg">2026-09-11</td></tr></tbody></table></div><!-- GEN:NEXT-MATCHES-END -->
     <p class="nm-note">GoalIQ model predictions are statistical estimates for fun and analysis, not betting advice, and not a gambling service.</p>
     <p class="nm-more"><a href="/predictions">All predictions &#9656;</a> &middot; <a href="/fpl/expected-points">How this feeds the FPL numbers &#9656;</a></p>
   </div>

@@ -46,6 +46,11 @@
 	/** 11.9: mita rivin "100" tarkoittaa. Sama portitettu ternaari kuin
 	 *  poistetuissa `.tiles`- ja `.facts`-lohkoissa, eli ei uutta vaitetta;
 	 *  se vain kulkee nyt sen luvun mukana jota se selittaa. */
+	function ratingGapOf(d: RateTeamResponse): string | null {
+		const g = d.rating.gap_to_optimal_xp;
+		if (typeof g !== 'number') return null;
+		return g > 0.05 ? `You are ${g.toFixed(1)} xP off it.` : 'You are level with it.';
+	}
 	function ratingBasisOf(d: RateTeamResponse): string | null {
 		if (d.meta.rating_method == null && d.rating.optimal_team_xp == null) {
 			return 'Rating is the percentile of rated teams.';
@@ -957,9 +962,10 @@
 				gw={data.meta.gw}
 				bank={data.team.bank}
 				freeTransfers={data.meta.free_transfers ?? null}
-				chips={data.meta.chips ?? null}
+				chips={data.meta.chips}
 				weakestLine={data.rating.weakest_line}
 				ratingBasis={ratingBasisOf(data)}
+		ratingGap={ratingGapOf(data)}
 				showGwXp={true}
 			/>
 			<SquadHeaderRow
@@ -972,9 +978,8 @@
 				gw={dataB.meta.gw}
 				bank={dataB.team.bank}
 				freeTransfers={dataB.meta.free_transfers ?? null}
-				chips={dataB.meta.chips ?? null}
+				chips={dataB.meta.chips}
 				weakestLine={dataB.rating.weakest_line}
-				ratingBasis={ratingBasisOf(dataB)}
 				showGwXp={true}
 			/>
 		</div>
@@ -1297,8 +1302,12 @@
 			<!-- 11.9: heikoin linja on nyt SquadHeaderRow'n oma solu, jonka
 			     jokainen pinta nakee. Nauha pitaa vain sen mita se lisaa:
 			     konkreettinen siirtopari on maksullinen. -->
+			<!-- 🔴 Portti 11.9 BLOKKASI muodon "the move that fixes it": malli ei
+			     suodata siirtoehdokkaita heikoimman linjan mukaan (weakest_line ei
+			     ole syote `transfer_suggestions`issa), ja premium-vastaus voi olla
+			     "hold". Nimetty kausaalisuhde olisi ollut vaite jota koodi ei tee. -->
 			<span class="strip-item">
-				The move that fixes it <span class="strip-tag">Premium</span>
+				The transfer the model would make <span class="strip-tag">Premium</span>
 			</span>
 		{/if}
 	</div>
@@ -1398,7 +1407,7 @@
 		gw={data.meta.gw}
 		bank={data.team.bank}
 		freeTransfers={data.meta.free_transfers ?? null}
-		chips={data.meta.chips ?? null}
+		chips={data.meta.chips}
 		weakestLine={data.rating.weakest_line}
 		ratingBasis={ratingBasisOf(data)}
 		showGwXp={!premium}
@@ -1671,9 +1680,10 @@
 				gw={dataB.meta.gw}
 				bank={dataB.team.bank}
 				freeTransfers={dataB.meta.free_transfers ?? null}
-				chips={dataB.meta.chips ?? null}
+				chips={dataB.meta.chips}
 				weakestLine={dataB.rating.weakest_line}
 				ratingBasis={ratingBasisOf(dataB)}
+				ratingGap={ratingGapOf(dataB)}
 				showGwXp={!premium}
 			/>
 			<p class="captain">

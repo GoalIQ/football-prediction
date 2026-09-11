@@ -645,6 +645,18 @@ def track_record_sentences(c: dict) -> list[str]:
             f"called the result right {fmt_pct(c['acc_pct_dec'])} of the time "
             f"({c['acc_dec_c']} of {c['acc_dec_n']})."
         ),
+        # 🔴 11.9.2026, julkaisuportti. Mitattu `data/prediction_log.json`:sta:
+        # `predicted_winner` on home 2364 tai away 956, EI KERTAAKAAN draw.
+        # Edellinen lause siis pudottaa nimittajasta jokaisen ottelun jota malli
+        # ei rakenteellisesti voi osua, ja osumaluku on sama 240. Ilman tata
+        # rivia luku 70 % luetaan mallin vahvuudeksi eika rajaukseksi. Lause on
+        # samassa lukijassa kuin muut, jotta se kulkee myos FAQ:hun ja
+        # JSON-LD:hen eika jaa vain sivulle (muisti: varoitus-kaukana-luvusta).
+        (
+            f"The model always names a side, so every draw counts as a miss and "
+            f"that {fmt_pct(c['acc_pct_dec'])} is the same "
+            f"{c['acc_dec_c']} hits over a smaller number of matches."
+        ),
     ]
 
 
@@ -755,7 +767,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
         (
             "How accurate is the GoalIQ model?",
             (
-                f"{tr[0]} {tr[1]} {tr[2]} "
+                f"{' '.join(tr)} "
                 "Every prediction is logged, hits and misses."
             ),
         ),
@@ -1814,13 +1826,23 @@ CSS = """
   /* Reading measure: prose only, never a table, so no column is squeezed. */
   p,.lede,.hint,.note,.fineprint{ max-width:68ch; }
   details.fold summary{ cursor:pointer; list-style:none; }
-  details.fold summary h2{ display:inline; }
+  details.fold summary h2,details.fold summary h3{ display:inline; }
+  details.fold summary h3{ font-size:19px; }
   details.fold summary::before{ content:"\\25B8  "; color:var(--muted); }
   details.fold[open] summary::before{ content:"\\25BE  "; }
   .signin{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; margin-right:14px; }
   .signin:hover{ color:var(--cream); }
   .tooldir{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
     gap:10px; margin:22px 0 26px; }
+  /* Measured at 390px, 11 Sep: minmax(210px) left room for a single column on
+     a phone, so eight cards made the hero 2,877px tall and the page's own
+     promise, the clean sheet table, sat 9,062px down. Two columns halve the
+     stack. The thumbnails stay. */
+  @media (max-width:640px){
+    .tooldir{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .tooldir b{ font-size:14px; }
+    .tooldir span{ font-size:12px; }
+  }
   .tooldir a{ display:block; padding:12px 14px; border:1px solid var(--line);
     text-decoration:none; color:var(--cream); }
   .tooldir img{ display:block; width:100%; height:auto; aspect-ratio:450/236;
@@ -2420,18 +2442,8 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 
 <div class="wrap content">
 
-<h2 id="track-record">The model publishes its prediction record</h2>
-<!-- 5 Sep (LANDING-LYHENNYS): the per-competition table and stat tiles
-     (1,049 words, 25 rows) live on /predictions#record. This page keeps the
-     three sentences and the link. -->
-<p>{escape(tr[0])} {escape(tr[1])} {escape(tr[2])}</p>
-<p class="note">Source: GoalIQ prediction log, updated {c["acc_date"]}. The full
-log, match by match with every miss included, is on the
-<a href="/predictions#record">prediction record page</a>.</p>
-{gw_calls}
-{xp_accuracy}
-
-{team_news}<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
+{team_news}
+<h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
 with a fixture in Gameweek {c["next_gw"]} ({c["gw_label"]}). FDR is GoalIQ's model
 fixture difficulty for that match, 1 easiest to 5 hardest. Next 6 CS% averages the
@@ -2458,6 +2470,21 @@ Model-derived, not the official FPL difficulty.</p>
 team</a> is free and needs no account: it names the line that is costing you and gives you a
 captain. Premium is what comes after that, the transfer chains over the run with the hit
 priced in.</p>
+<!-- The proof follows the promise. This section used to sit directly under the
+     hero, which left the page's own promise, the clean sheet table, 8,676px
+     down on a phone: eleven screens away. Nothing is hidden. The block is fully
+     open, gameweek calls and projection error included; it simply reads after
+     the tables a visitor came for. The #track-record anchor is unchanged. -->
+<h2 id="track-record">The model publishes its prediction record</h2>
+<!-- 5 Sep (LANDING-LYHENNYS): the per-competition table and stat tiles
+     (1,049 words, 25 rows) live on /predictions#record. This page keeps the
+     three sentences and the link. -->
+<p>{" ".join(escape(x) for x in tr)}</p>
+<p class="note">Source: GoalIQ prediction log, updated {c["acc_date"]}. The full
+log, match by match with every miss included, is on the
+<a href="/predictions#record">prediction record page</a>.</p>
+{gw_calls}
+{xp_accuracy}
 {eo_by_tier}
 <aside class="upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>

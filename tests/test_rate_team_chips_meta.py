@@ -6,8 +6,8 @@ samalla rivilla kuin ratingin, ITB:n ja FT:n. Testit lukitsevat SOPIMUKSEN,
 koska mobiili lukee samat kentat:
 
   (a) entry jolla on pelattuja chippeja -> {"played": [{"name","gw"}, ...],
-      "remaining": [name, ...]} FPL:n omilla nimilla, pelattu chip EI ole
-      remainingissa samalla kauden puolikkaalla,
+      "remaining": [{name, from_gw, available_now}, ...]} FPL:n omilla
+      nimilla, pelattu chip EI ole remainingissa samalla kauden puolikkaalla,
   (b) draft (manual-moodi, ei entrya) -> `chips` on None, EI tyhja objekti:
       tyhja lista olisi vaite "ei chippeja pelattu", eika sita tiedeta,
   (c) historian puuttuminen (FPL 404) ei kaada ratea eika keksi chippeja,
@@ -81,7 +81,7 @@ def test_entry_with_played_chips(monkeypatch):
     # bboost/freehit koskematta -> tarjolla. wildcard/3xc: ensimmainen
     # puolikas kaytetty mutta TOINEN (GW20-38) on yha pelattavissa, joten
     # ne ovat remainingissa kerran. Sama saanto kuin chip timingilla.
-    assert chips["remaining"] == ["wildcard", "bboost", "3xc", "freehit"]
+    assert _nimet(chips) == ["wildcard", "bboost", "3xc", "freehit"]
 
 
 def test_no_chips_played_is_empty_list_not_null(monkeypatch):
@@ -90,7 +90,32 @@ def test_no_chips_played_is_empty_list_not_null(monkeypatch):
     _patch(monkeypatch, _history([]))
     chips = rt.rate_team(entry=424242)["meta"]["chips"]
     assert chips["played"] == []
-    assert chips["remaining"] == ["wildcard", "bboost", "3xc", "freehit"]
+    assert _nimet(chips) == ["wildcard", "bboost", "3xc", "freehit"]
+
+
+def _nimet(chips: dict) -> list[str]:
+    return [r["name"] for r in chips["remaining"]]
+
+
+def test_pelattu_chip_ei_lue_kaytettavissa_olevana_ilman_kierrosta():
+    """🔴 JULKAISUPORTIN LOYDOS 11.9.2026. Ensimmainen versio palautti
+    `remaining`issa pelkan nimen, ja koska kaudella 2026/27 jokaisella
+    chipilla on kaksi ikkunaa, GW4:ssa jo pelattu wildcard palasi listalle.
+    Rivi renderoitui kahdesti: kerran yliviivattuna ("WC GW2") ja kerran
+    amberilla tekstilla "Still available", vaikka toinen ikkuna aukeaa
+    GW20. Jokainen `remaining`-rivi kantaa nyt kierroksen ja lipun, joten
+    pinta ei voi vaittaa kaytettavyytta jota ei ole."""
+    hist = _history([{"name": "wildcard", "event": 2}, {"name": "3xc", "event": 3}])
+    chips = fpl_chips.chips_payload(BOOT_WITH_CHIPS, hist, 4)
+    rivit = {r["name"]: r for r in chips["remaining"]}
+    assert {"wildcard", "3xc"} <= set(rivit)
+    for nimi in ("wildcard", "3xc"):
+        assert rivit[nimi]["available_now"] is False, nimi
+        assert rivit[nimi]["from_gw"] == 20, nimi
+    # Kontrolli: toisen puolikkaan sisalla sama chip ON kaytettavissa nyt.
+    myohemmin = {r["name"]: r
+                 for r in fpl_chips.chips_payload(BOOT_WITH_CHIPS, hist, 21)["remaining"]}
+    assert myohemmin["wildcard"]["available_now"] is True
 
 
 def test_past_window_unplayed_chip_is_not_remaining():
@@ -106,14 +131,14 @@ def test_past_window_unplayed_chip_is_not_remaining():
     hist = _history([])
     # Muut kolme chippia perivat fallback-ikkunan (1, 38), joten vaite
     # kohdistetaan siihen jonka ikkunat testi maarittelee.
-    assert "bboost" in fpl_chips.chips_payload(boot, hist, 1)["remaining"]
-    assert "bboost" in fpl_chips.chips_payload(boot, hist, 3)["remaining"]
+    assert "bboost" in _nimet(fpl_chips.chips_payload(boot, hist, 1))
+    assert "bboost" in _nimet(fpl_chips.chips_payload(boot, hist, 3))
     # GW5: ensimmainen ikkuna on ohi, toinen ei ole viela auki mutta on
     # tulossa -> chip on yha pelattavissa kaudella.
-    assert "bboost" in fpl_chips.chips_payload(boot, hist, 5)["remaining"]
+    assert "bboost" in _nimet(fpl_chips.chips_payload(boot, hist, 5))
     # GW39: kumpikaan ikkuna ei ole enaa pelattavissa, eika yhdenkaan muun
     # chipin fallback-ikkuna (1, 38) ulotu sinne.
-    assert fpl_chips.chips_payload(boot, hist, 39)["remaining"] == []
+    assert _nimet(fpl_chips.chips_payload(boot, hist, 39)) == []
 
 
 def test_draft_has_null_chips():

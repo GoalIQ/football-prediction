@@ -218,7 +218,10 @@ export interface LastFinishedGw {
  *  nimi voi olla molemmissa listoissa. */
 export interface RateTeamChips {
 	played: { name: string; gw: number }[];
-	remaining: string[];
+	/** `available_now` = pelattavissa taman kierroksen ikkunassa. `from_gw` =
+	 *  ikkunan ensimmainen kierros. Pelkka nimi olisi vaite "kaytettavissa",
+	 *  ja kaudella on kaksi ikkunaa per chip (julkaisuportti 11.9). */
+	remaining: { name: string; from_gw: number; available_now: boolean }[];
 }
 
 export interface RateTeamResponse {

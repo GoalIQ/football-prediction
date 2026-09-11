@@ -37,7 +37,8 @@
 	let gw = $state<number | null>(null);
 	let deadline = $state<Date | null>(null);
 	let checked = $state<Date | null>(null);
-	onMount(async () => {
+	let now = $state(0);
+	async function refresh() {
 		try {
 			const d = await fetchFantasy();
 			const m = d?.meta ?? {};
@@ -55,6 +56,16 @@
 		} catch {
 			// Palkin kierrosrivi on lisatietoa, ei nakyma.
 		}
+	}
+	onMount(() => {
+		void refresh();
+		now = Date.now();
+		const id = setInterval(() => {
+			const prev = now;
+			now = Date.now();
+			if (deadline && prev < deadline.getTime() && now >= deadline.getTime()) void refresh();
+		}, 60000);
+		return () => clearInterval(id);
 	});
 	const LOC = 'en-GB';
 	const dl = $derived(
@@ -69,8 +80,20 @@
 					.find((p) => p.type === 'timeZoneName')?.value ?? '')
 			: ''
 	);
-	const chk = $derived(checked ? checked.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' }) : null);
-	const mennyt = $derived(!!deadline && deadline.getTime() < Date.now());
+	/* 🔴 Portti 11.9: pelkka kellonaika on paivaton tuoreusvaite. Eilinen
+	   artefakti luki "checked 16:07" ja lukija luki sen tamanpaivaisena.
+	   Paiva sanotaan aaneen aina kun se ei ole tama paiva. */
+	const chk = $derived.by(() => {
+		if (!checked || now === 0) return null;
+		const t = checked.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
+		if (checked.toDateString() === new Date(now).toDateString()) return `${t} today`;
+		return `${checked.toLocaleDateString(LOC, { day: 'numeric', month: 'short' })}, ${t}`;
+	});
+	/* 🔴 Portti 11.9: `Date.now()` ei ole reaktiivinen, joten auki jaaneessa
+	   valilehdessa luki "deadline" viela deadlinen jalkeenkin. Kello tikittaa
+	   omana tilanaan, ja deadlinen ylitys hakee kierroksen uudelleen: pelkka
+	   sanan vaihto jattaisi GW-numeron vanhaksi. */
+	const mennyt = $derived(!!deadline && now > 0 && deadline.getTime() < now);
 
 	/* ---------------- tili ---------------- */
 	function pricing() {
@@ -161,12 +184,15 @@
 		</nav>
 
 		{#if gw !== null || dl}
-			<div class="gw" title={chk ? `FPL data checked ${chk}` : undefined}>
+			<div class="gw">
 				{#if gw !== null}<b>GW{gw}</b>{/if}
 				{#if dl}
 					<span class="gw-lbl">{mennyt ? 'passed' : 'deadline'}</span>
 					<span class="gw-val">{dl}{tz ? ` ${tz}` : ''}</span>
 				{/if}
+				<!-- Portti 11.9: tuoreusleima oli vain hover-tekstissa ja kirjautuneen
+				     valikossa. Se on se luku jolla tuote myydaan, joten se lukee nakyvissa. -->
+				{#if chk}<span class="gw-chk">checked {chk}</span>{/if}
 			</div>
 		{/if}
 
@@ -219,7 +245,7 @@
 							<p class="banner success">Password reset link accepted. Set your new password below.</p>
 						{/if}
 						<SetPassword
-							summary="Set or change password (for the GoalIQ iOS and Android app too)"
+							summary="Set or change password (works for the GoalIQ iOS and Android apps too)"
 							open={auth.passwordRecovery}
 						/>
 						<button type="button" class="linklike" disabled={resetBusy} onclick={() => void resetLink()}>
@@ -228,10 +254,10 @@
 						{#if resetNotice}
 							<p class="menu-notice">{resetNotice}</p>
 						{/if}
-						{#if chk}
-							<p class="menu-notice">FPL data checked {chk}.</p>
-						{/if}
-						<p class="menu-notice"><a href="https://goaliq.app">goaliq.app</a> · Draft, rate and plan your squad with a real match model.</p>
+						<!-- Portti 11.9: entinen tagline listasi kolme asiaa joita navi ei vastaa,
+						     ja "a real match model" oli vaite ilman reittia tasta kohdasta. Rivi
+						     osoittaa nyt paikkaan jossa vaitteen voi tarkistaa ilman tilia. -->
+						<p class="menu-notice"><a href="https://goaliq.app">goaliq.app</a> · The same model that logs its predictions in public.</p>
 						<button class="ghost menu-signout" onclick={() => void signOut()}>Sign out</button>
 					</div>
 				{/if}
@@ -340,6 +366,9 @@
 	.gw-val {
 		color: var(--accent);
 		font-weight: 600;
+	}
+	.gw-chk {
+		color: var(--faint);
 	}
 
 	.session {
