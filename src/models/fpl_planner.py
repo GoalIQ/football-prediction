@@ -231,11 +231,18 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     fts = ft
     bank_now = bank_tenths
     total_hits = 0.0
+    # SIIRTOSUUNNITELMA-CHURN (11.9): jaettu tila kierrosten yli. Ilman tata
+    # jokainen plan_gw-kutsu arvioi vain SEN HETKISEN jaljella olevan
+    # ikkunan eika muista keta suunnitelma jo osti — entry 116920:lla se
+    # osti Wissan GW5:lla ja myi hanet GW8:lla samassa suunnitelmassa.
+    # `plan_gw` paivittaa tata dictia paikallaan jokaisen kierroksen jalkeen.
+    recent_buys: dict[int, float] = {}
     for idx, g in enumerate(gws):
         gws_left = gws[idx:]
         step = _engine.plan_gw(squad, pool, bank_now, gws_left, fts,
                                max_moves=MAX_TRANSFERS_PER_GW,
-                               entry_known=entry is not None)
+                               entry_known=entry is not None,
+                               recent_buys=recent_buys)
         moves = []
         for m in step["moves"]:
             if m["hit"] > 0:

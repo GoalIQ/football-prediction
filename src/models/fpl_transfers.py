@@ -115,6 +115,28 @@ LOW_CONFIDENCE_WEIGHT = 1.0
 # kaikki parit, mutta katto pitaa API:n vasteajan ennustettavana.
 MAX_PAIR_EVALS = 2500
 
+# SIIRTOSUUNNITELMA-CHURN (mitattu 3.9, korjattu ~11.9). Moniviikkoinen
+# plan_transfers kutsuu plan_gw:ta kierros kerrallaan eika muista keta se on
+# jo ostanut: entry 116920:lla suunnitelma osti Wissan GW5:lla ja myi hanet
+# GW8:lla, koska jokainen kierros arvioi vain SEN HETKISEN jaljella olevan
+# ikkunan eika tieda etta lahtija ostettiin juuri saman suunnitelman sisalla.
+# `recent_buys` (plan_gw:n ja plan_transfers'in yllapitama {pid: gain_weighted
+# ostohetkella}) estaa taman: rungossa juuri ostettua pelaajaa ei tarjota
+# lahtijaksi ellei uusi hyoty ylita alkuperaista ostohyotya SELVASTI eli
+# taman kertoimen verran. 1.5 = uuden loydon on oltava puolet parempi kuin se
+# minka takia pelaaja alunperin ostettiin, ei vain nipin napin parempi.
+CHURN_CLEAR_FACTOR = 1.5
+
+
+def clears_recent_buy(player_id: int, gain_weighted: float,
+                      recent_buys: dict[int, float] | None) -> bool:
+    """True jos `player_id` saa esiintya lahtijana: se ei ole rungossa
+    saman suunnitelman äskettäin ostama, tai uusi hyoty ylittaa selvasti sen
+    minka takia se ostettiin (CHURN_CLEAR_FACTOR)."""
+    if not recent_buys or player_id not in recent_buys:
+        return True
+    return gain_weighted > recent_buys[player_id] * CHURN_CLEAR_FACTOR
+
 
 def confidence_weight(p: dict) -> float:
     """1.0 todistetulle pelaajalle, LOW_CONFIDENCE_WEIGHT hintapriorille.
@@ -373,7 +395,8 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
                  gws: list[int] | None, *, top_k: int = 5,
                  top_per_pos: int = TOP_CANDIDATES_PER_POS,
                  near: list[int] | None = None,
-                 near_min_share: float = 0.0) -> list[dict]:
+                 near_min_share: float = 0.0,
+                 recent_buys: dict[int, float] | None = None) -> list[dict]:
     """Parhaat yksittaiset siirrot painotetulla XI-hyodylla, laskevasti.
 
     Eksakti kandidaattijoukon sisalla: raakaerotus on XI-hyodyn ylaraja
@@ -389,6 +412,12 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
     rankkaukseen. `near_min_share` vaatii lisaksi ettei hyoty ole horisontin
     hannassa (hitille NEAR_SHARE_FOR_HIT). Ilman `near`ia kaytos on entinen:
     tama funktio on myos rate-teamin LISTA, eika lista ole paatos.
+
+    `recent_buys` (SIIRTOSUUNNITELMA-CHURN, 11.9): {pid: gain_weighted} niille
+    rungon pelaajille jotka SAMA moniviikkoinen suunnitelma osti aiemmin.
+    Naita ei tarjota lahtijaksi ellei uusi hyoty ylita selvasti alkuperaista
+    ostohyotya (ks. `clears_recent_buy`). Ilman tata plan_transfers saattoi
+    ostaa ja myyda saman pelaajan parin kierroksen sisalla.
     """
     squad_ids = {p["id"] for p in squad}
     clubs = _club_counts(squad)
@@ -430,6 +459,8 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
         gain_w = xi_value(new_squad, gws, weighted=True) - base
         if gain_w <= 0:
             continue
+        if not clears_recent_buy(out_p["id"], gain_w, recent_buys):
+            continue
         gain = xi_value(new_squad, gws, weighted=False) - base_plain
         gain_near = gain_near_w = None
         if near:
@@ -452,7 +483,8 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
               gws: list[int] | None, *,
               top_per_pos: int = TOP_CANDIDATES_PER_POS,
               near: list[int] | None = None,
-              near_min_share: float = 0.0) -> dict | None:
+              near_min_share: float = 0.0,
+              recent_buys: dict[int, float] | None = None) -> dict | None:
     """Paras kahden siirron yhdistelma (painotettu XI-hyoty), tai None.
 
     Budjettiehto on YHDISTELMALLE: bank + lahtijoiden hinnat >= tulijoiden
@@ -460,6 +492,10 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
     siirto ei yksin mahtuisi. Ylaraja = raakaerotusten summa; parit
     arvioidaan ylarajan jarjestyksessa ja haku paattyy kun ylaraja alittaa
     parhaan loydetyn hyodyn (tai MAX_PAIR_EVALS tayttyy).
+
+    `recent_buys` (SIIRTOSUUNNITELMA-CHURN, 11.9): ks. `single_moves`. Jos
+    jompikumpi lahtija on saman suunnitelman aiemmin ostama, parin on
+    yhdessa ylitettava naiden ostohyotyjen summa selvasti.
     """
     squad_ids = {p["id"] for p in squad}
     clubs = _club_counts(squad)
@@ -520,6 +556,12 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
         gain_w = xi_value(new_squad, gws, weighted=True) - base
         if gain_w <= 0:
             continue
+        if recent_buys:
+            flagged = [o for o in (o1, o2) if o["id"] in recent_buys]
+            if flagged:
+                needed = sum(recent_buys[o["id"]] for o in flagged) * CHURN_CLEAR_FACTOR
+                if gain_w <= needed:
+                    continue
         # Lahi-ikkunan ehto (3.9): sama saanto kuin yksittaiselle siirrolle.
         # Ilman tata pari olisi ollut portti jonka lapi horisontin hannan
         # liikkeet olisivat palanneet takaisin.
@@ -611,7 +653,8 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             gws: list[int] | None, ft: int, *,
             max_moves: int = MAX_TRANSFERS_PER_GW,
             top_per_pos: int = TOP_CANDIDATES_PER_POS,
-            entry_known: bool = True) -> dict:
+            entry_known: bool = True,
+            recent_buys: dict[int, float] | None = None) -> dict:
     """Yhden kierroksen siirrot samoilla saannoilla kaikille pinnoille.
 
     Palauttaa {"moves": [...], "squad", "bank_tenths", "ft_left", "hits"}.
@@ -623,6 +666,14 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
     `transfer_bar`ista, joka on entry-kohtainen (ft + rungon tila).
     `entry_known=False` = manual/draft-moodi -> moduulivakio, kayttaytyminen
     tasmalleen entinen.
+
+    `recent_buys` (SIIRTOSUUNNITELMA-CHURN, 11.9): kutsujan yllapitama
+    {pid: gain_weighted} moniviikkoisen suunnitelman jo ostamille pelaajille.
+    Talla kierroksella tehdyt kaupat PAIVITTAVAT saman dictin paikallaan
+    (myyty pois -> poistuu, ostettu -> uusi ostohyoty), jotta seuraava
+    plan_gw-kutsu samalle suunnitelmalle nakee ajantasaisen tilan. Yhden
+    kierroksen suorat kutsut (rate-team, freeze) eivat anna tata -> ei
+    muutosta niiden kayttaytymiseen.
     """
     squad = list(squad)
     bank = bank_tenths
@@ -643,7 +694,8 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         # koskaan loytynyt.
         singles = single_moves(squad, pool, bank, gws, top_k=3,
                                top_per_pos=top_per_pos,
-                               near=near, near_min_share=share)
+                               near=near, near_min_share=share,
+                               recent_buys=recent_buys)
         best_single = None
         for cand in singles:
             hit = _hit_for(0)
@@ -669,7 +721,8 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         chosen: list[dict] = []
         if max_moves - len(moves) >= 2:
             pr = best_pair(squad, pool, bank, gws, top_per_pos=top_per_pos,
-                           near=near, near_min_share=share)
+                           near=near, near_min_share=share,
+                           recent_buys=recent_buys)
             if pr is not None:
                 hit_a = _hit_for(0)
                 hit_b = _hit_for(1)
@@ -721,5 +774,8 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             else:
                 hits += 1
             moves.append(m)
+            if recent_buys is not None:
+                recent_buys.pop(m["out"]["id"], None)
+                recent_buys[m["in"]["id"]] = m["gain_weighted"]
     return {"moves": moves, "squad": squad, "bank_tenths": bank,
             "ft_left": fts, "hits": hits}
