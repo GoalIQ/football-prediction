@@ -128,12 +128,6 @@
 	--bar-h: 52px;
 }
 
-@media (max-width: 820px) {
-	thead th {
-		top: 0;
-	}
-}
-
 /* 8.8 (Villen havainto): leveilla naytoilla taulukoiden sarakkeet jaivat
    vaakavierityksen taakse, koska palsta oli lukittu 1180 pikseliin. Kasvatetaan
    KOKO palstaa isoilla naytoilla sen sijaan etta yksittaiset taulukot
@@ -362,12 +356,14 @@ th.num {
 
 thead th {
 	position: sticky;
-	top: var(--bar-h, 0px);
-	/* --bar-h on TYOPOYDAN palkin korkeus. Kapealla ruudulla palkki karttuu
-	   kahdelle riville (~92 px), joten 52 px:aan tarttuva otsikkorivi jaisi
-	   palkin ALLE (z-index 30 vs 1) eli nakymattomiin. Alle 820 px palkki ei
-	   ole sticky (ks. Hero.svelte), joten otsikko tarttuu ruudun ylareunaan.
-	   Alle 560 px thead ei ole sticky lainkaan (mobiilikerros alempana). */
+	/* 🔴 11.9, Villen havainto "listat katkeaa": tassa oli hetken
+	   `top: var(--bar-h)`, jotta otsikkorivi ei jaisi ylapalkin alle. Se oli
+	   vaarin, koska `.table-wrap` on `overflow-x: auto` eli OMA scrollport:
+	   sticky-offset mitataan kaareen eika sivuun, joten 52 px tyonsi otsikon
+	   kaaren SISALLE ja se peitti rivin 1 tasan 52 pikselilla. Mitattu
+	   livena: thBottom 760, row1Top 708. Kaari rullaa itse palkin alle,
+	   joten offsetia ei tarvita lainkaan. */
+	top: 0;
 	background: var(--surface-2);
 	color: var(--text-muted);
 	font-weight: 500;
