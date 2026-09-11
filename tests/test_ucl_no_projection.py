@@ -202,7 +202,11 @@ def _doc(vaihe: str) -> dict:
                  "players_matchday_is_fallback": False,
                  "feed_updated_utc": "2026-10-30T18:40:00+00:00",
                  "players": 6, "teams": 2},
-        "matchdays": [{"md": i + 1, "deadline_utc": d, "is_locked": True,
+        # Esikaudella yhtaan kierrosta ei ole lukittu: lukittu kierros on
+        # 11.9 lahtien kauden alun signaali (`ucl_phase.kausi_alkanut`), ja
+        # UEFA:n syotteessa `gdIsLocked` on False ennen deadlinea.
+        "matchdays": [{"md": i + 1, "deadline_utc": d,
+                       "is_locked": vaihe != up.ESIKAUSI,
                        "gamedays": 1} for i, d in enumerate(dls)],
         "teams": [{"id": 1, "name": "Club AAA", "code": "AAA"},
                   {"id": 2, "name": "Club BBB", "code": "BBB"}],

@@ -107,3 +107,46 @@ def test_tuotantoartefakti_kulkee_saman_lukijan_lapi():
         assert "last season" in otsikko.lower()
         assert all("points" not in pl for pl in doc["players"]), (
             "artefaktissa on `points`-kentta vaikka vaihe on esikausi")
+
+
+# --- 11.9.2026: teamPlayed nollattu kierroksen vaihtuessa ------------------
+
+def _doc_md2_lukittu() -> dict:
+    """Syotteen tila 11.9 klo 13Z: MD1 pelattu ja lukittu, syote MD2:ssa,
+    `teamPlayed == 0` KAIKILLA, mutta luvut ovat jo taman kauden."""
+    return {
+        "matchdays": [
+            {"md": 1, "deadline_utc": MENNYT, "is_locked": True},
+            {"md": 2, "deadline_utc": MYOHEMPI, "is_locked": False},
+        ],
+        "players": [{"name": "E. Haaland", "matchdays_played": 0,
+                     "prev_season_points": 0, "points": 12}],
+    }
+
+
+def test_kesken_kun_kierros_on_lukittu_vaikka_teamPlayed_on_nollattu():
+    """🔴 11.9: pelkka `matchdays_played` palautti ESIKAUDEN kesken kauden,
+    ja sarake olisi sanonut "Pts (last season)" Haalandin 12:lle."""
+    doc = _doc_md2_lukittu()
+    assert up.kausi_alkanut(doc) is True
+    assert up.vaihe(doc, NYT) == up.KESKEN
+    assert up.pistekentta(doc, NYT) == ("points", "Pts")
+
+
+def test_kausi_alkanut_raw_lukee_kumman_tahansa_signaalin():
+    """Kumpikin signaali yksin riittaa, ja kumpikaan ei palaa takaisin."""
+    lukittu = [{"md": 1, "is_locked": True}]
+    avoin = [{"md": 1, "is_locked": False}]
+    assert up.kausi_alkanut_raw(lukittu, [0, 0]) is True
+    assert up.kausi_alkanut_raw(avoin, [0, 1]) is True
+    assert up.kausi_alkanut_raw(avoin, [0, 0]) is False
+    assert up.kausi_alkanut_raw([], []) is False
+    # Ei kaadu puuttuviin/None-arvoihin (syote voi jattaa kentan pois).
+    assert up.kausi_alkanut_raw([{"md": 1}], [None, ""]) is False
+
+
+def test_esikausi_kontrolli_ei_lukittua_eika_pelattua():
+    """KONTROLLI samalle lukijalle: ilman kumpaakaan signaalia esikausi."""
+    doc = _doc(0, [TULEVA, MYOHEMPI])
+    assert up.kausi_alkanut(doc) is False
+    assert up.vaihe(doc, NYT) == up.ESIKAUSI

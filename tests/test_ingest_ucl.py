@@ -113,6 +113,32 @@ def test_kun_kierroksia_on_pelattu_luvut_ovat_taman_kauden():
     assert p["prev_season_points"] == 0
 
 
+def test_lukittu_kierros_tekee_luvuista_taman_kauden_vaikka_teamPlayed_on_nolla():
+    """🔴 11.9.2026, ucl-refresh punainen 5 ajoa: MD1 pelattu, syote MD2:ssa,
+    UEFA nollasi `teamPlayed`in kaikilta, `totPts` oli jo taman kauden
+    (Haaland 12). Rivikohtainen `pelattu` nimesi ne `prev_season_*`iksi.
+    Kauden alku luetaan lukitusta kierroksesta, ja se koskee JOKAISTA rivia,
+    myos pelaajaa jolla on 0 minuuttia."""
+    doc = {"data": {"value": {"playerList": [
+        {"id": 1, "pDName": "E. Haaland", "tName": "T", "cCode": "T", "tId": 9,
+         "skill": 4, "value": 11.0, "selPer": 40.0, "pStatus": "",
+         "teamPlayed": 0, "totPts": 12, "minsPlyd": 90},
+        {"id": 2, "pDName": "Varamies", "tName": "T", "cCode": "T", "tId": 9,
+         "skill": 2, "value": 4.0, "selPer": 0.1, "pStatus": "",
+         "teamPlayed": 0, "totPts": 0, "minsPlyd": 0},
+    ]}}}
+    kierrokset = [{"md": 1, "deadline_utc": None, "is_locked": True},
+                  {"md": 2, "deadline_utc": None, "is_locked": False}]
+    rivit = iu.normalisoi_pelaajat(doc, 90, kierrokset)
+    assert rivit[0]["points"] == 12 and rivit[0]["minutes"] == 90
+    assert rivit[0]["prev_season_points"] == 0
+    assert "points" in rivit[1], "vaihe on koko syotteen, ei rivin"
+    assert rivit[1]["points"] == 0
+    # Kontrolli: sama syote ILMAN lukittua kierrosta on yha esikausi.
+    avoin = [{"md": 1, "deadline_utc": None, "is_locked": False}]
+    assert "points" not in iu.normalisoi_pelaajat(doc, 90, avoin)[0]
+
+
 def test_positio_ja_status_kaannetaan_luettavaksi():
     doc = {"data": {"value": {"playerList": [
         {"id": i, "pDName": f"P{i}", "tName": "T", "cCode": "T", "tId": 9,
@@ -209,11 +235,23 @@ def test_artefakti_on_kuluvalta_kaudelta():
 
 
 def test_artefakti_sanoo_mista_kaudesta_luvut_ovat():
+    """Perusta, `season_started` ja rivien kentat tulevat SAMASTA lukijasta
+    (`ucl_phase.kausi_alkanut`), joten ne eivat voi olla eri mielta."""
+    from src.models import ucl_phase as up
     d = _artefakti()
     perusta = (d["meta"] or {}).get("points_basis") or ""
-    assert "last season" in perusta, perusta
-    # Ja jos yhtaan kierrosta ei ole pelattu, `points`-kenttaa ei ole.
-    if all(p["matchdays_played"] == 0 for p in d["players"]):
+    if "season_started" not in (d["meta"] or {}):
+        # Artefakti on kirjoitettu ennen 11.9 lukijaa. CI ajaa ingestin
+        # aina ennen tata porttia, joten siella tama haara ei koskaan osu.
+        pytest.skip("artefakti ennen season_started-kenttaa; ingest ensin")
+    alkanut = up.kausi_alkanut(d)
+    assert d["meta"]["season_started"] is alkanut
+    if alkanut:
+        assert "this season" in perusta, perusta
+        assert all("points" in p for p in d["players"]), (
+            "kausi on alkanut mutta rivilta puuttuu `points`")
+    else:
+        assert "last season" in perusta, perusta
         assert not any("points" in p for p in d["players"]), (
             "viime kauden luku kantaa taman kauden nimea")
 

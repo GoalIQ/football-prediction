@@ -19,9 +19,21 @@ Siksi `pistekentta()` palauttaa KENTAN JA OTSIKON SAMASTA KUTSUSTA. Pinta
 ei voi ottaa toista ja unohtaa toista, koska niita ei ole erikseen.
 
 Vaihe paatellaan DATASTA, ei kellonajasta eika kovakoodatusta
-paivamaarasta: `matchdays_played` kertoo onko kierroksia pelattu ja
+paivamaarasta: `kausi_alkanut()` kertoo onko kierroksia pelattu ja
 deadlinet kertovat onko kausi ohi. Kalenteriin sidottu vaihe olisi oikein
 siihen asti kun se lakkaa olemasta oikein, eika mikaan huutaisi.
+
+🔴 11.9.2026: `matchdays_played` (syotteen `teamPlayed`) EI OLE kumulatiivinen.
+UEFA nollaa sen kun kierros vaihtuu: MD1 pelattu, syote siirtyi MD2:een ja
+`teamPlayed == 0` kaikilla 1 163 pelaajalla, vaikka `totPts` oli jo taman
+kauden (Haaland 12, ei viime kauden 100+). Lukija joka katsoo vain sita
+palautti ESIKAUDEN kesken kauden, ja ingest olisi nimennyt taman kauden
+pisteet `prev_season_points`iksi. Portti (`test_pistesarake_on_tyhja_eika_nolla`)
+pysaytti julkaisun, mutta putki oli punainen 5 ajoa ja /ucl jaatyi.
+Siksi kauden alku luetaan KAHDESTA syotteen omasta signaalista joista
+kumpikaan ei palaa takaisin: lukittu kierros (`is_locked`) TAI pelattu
+kierros (`matchdays_played > 0`). Sama funktio on ingestin ja pinnan ainoa
+lukija (saanto 6a kohta 1).
 """
 from __future__ import annotations
 
@@ -47,6 +59,30 @@ def _deadlinet(doc: dict) -> list[dt.datetime]:
     return sorted(ulos)
 
 
+def kausi_alkanut_raw(kierrokset, team_played) -> bool:
+    """Onko taman kauden kierroksia pelattu. AINOA LUKIJA, myos ingestille.
+
+    True jos yksikin kierros on syotteessa lukittu (`is_locked`) TAI
+    yhdellakin pelaajalla `teamPlayed`/`matchdays_played` > 0. Kumpikaan ei
+    palaa takaisin epatodeksi kauden aikana, joten tulos on monotoninen:
+    se ei voi vaihtua ESIKAUDEKSI kesken kauden niin kuin pelkka
+    `teamPlayed` teki 11.9 (ks. moduulin docstring).
+
+    `kierrokset` = artefaktin/ingestin `matchdays`-lista (dictit joissa
+    `is_locked`), `team_played` = iteroitava kokonaislukuja.
+    """
+    if any(bool(k.get("is_locked")) for k in (kierrokset or [])):
+        return True
+    return any(int(x or 0) > 0 for x in (team_played or []))
+
+
+def kausi_alkanut(doc: dict) -> bool:
+    """`kausi_alkanut_raw` artefaktille."""
+    pelaajat = doc.get("players") or []
+    return kausi_alkanut_raw(doc.get("matchdays") or [],
+                             (p.get("matchdays_played") for p in pelaajat))
+
+
 def vaihe(doc: dict, nyt: dt.datetime | None = None) -> str:
     """Kauden vaihe artefaktista.
 
@@ -56,12 +92,9 @@ def vaihe(doc: dict, nyt: dt.datetime | None = None) -> str:
     """
     nyt = nyt or dt.datetime.now(dt.timezone.utc)
     dls = _deadlinet(doc)
-    pelaajat = doc.get("players") or []
-    pelattu = max((int(p.get("matchdays_played") or 0) for p in pelaajat),
-                  default=0)
     if dls and dls[-1] <= nyt:
         return OHI
-    return KESKEN if pelattu > 0 else ESIKAUSI
+    return KESKEN if kausi_alkanut(doc) else ESIKAUSI
 
 
 def pistekentta(doc: dict, nyt: dt.datetime | None = None) -> tuple[str, str]:

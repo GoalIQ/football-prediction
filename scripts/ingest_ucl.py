@@ -46,6 +46,8 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from src.models.ucl_phase import kausi_alkanut_raw  # noqa: E402  (stdlib-only moduuli)
 OUT_DIR = ROOT / "data"
 
 BASE = "https://gaming.uefa.com/en/uclfantasy/services/feeds"
@@ -247,11 +249,25 @@ class TuntematonStatus(RuntimeError):
     """
 
 
-def normalisoi_pelaajat(doc: dict, kausi: int) -> list[dict]:
+def normalisoi_pelaajat(doc: dict, kausi: int,
+                        kierrokset: list[dict] | None = None) -> list[dict]:
+    """🔴 KAUDEN ALKU LUETAAN KOKO SYOTTEESTA, EI RIVIN `teamPlayed`ista.
+
+    11.9.2026: MD1 pelattu, syote siirtyi MD2:een ja UEFA nollasi
+    `teamPlayed`in kaikilta 1 163 pelaajalta, mutta `totPts`/`minsPlyd`
+    olivat jo TAMAN kauden kumulatiiviset (Haaland 12 p / 90 min). Rivi
+    riville paatelty `pelattu` nimesi ne `prev_season_*`iksi ja sivu olisi
+    sanonut "Pts (last season)" taman kauden luvuille. Siksi kauden alku
+    tulee `kausi_alkanut_raw`ista (lukittu kierros TAI yksikin
+    teamPlayed > 0) ja sama vastaus koskee jokaista rivia.
+    """
     ulos = []
     tuntemattomat: dict[str, int] = {}
-    for p in (doc.get("data") or {}).get("value", {}).get("playerList") or []:
-        pelattu = int(p.get("teamPlayed") or 0)
+    rivit = (doc.get("data") or {}).get("value", {}).get("playerList") or []
+    alkanut = kausi_alkanut_raw(
+        kierrokset or [], (int(p.get("teamPlayed") or 0) for p in rivit))
+    for p in rivit:
+        pelattu = alkanut
         koodi = str(p.get("pStatus") or "")
         if koodi not in STATUS:
             tuntemattomat[koodi] = tuntemattomat.get(koodi, 0) + 1
@@ -265,10 +281,13 @@ def normalisoi_pelaajat(doc: dict, kausi: int) -> list[dict]:
             "price": float(p.get("value") or 0),
             "owned_pct": float(p.get("selPer") or 0),
             "status": STATUS.get(str(p.get("pStatus") or ""), "unknown"),
-            "matchdays_played": pelattu,
+            # Syotteen oma `teamPlayed`. EI kumulatiivinen: UEFA nollaa sen
+            # kierroksen vaihtuessa (11.9). Kauden vaihe luetaan
+            # `ucl_phase.kausi_alkanut`ista, ei tasta kentasta yksin.
+            "matchdays_played": int(p.get("teamPlayed") or 0),
             # 🔴 NIMI KERTOO MISTA KAUDESTA. Ks. moduulin docstring: nama
-            # ovat VIIME kauden lukuja niin kauan kuin `matchdays_played`
-            # on 0, ja niiden nimeaminen `points`iksi olisi vaite tasta
+            # ovat VIIME kauden lukuja niin kauan kuin kausi ei ole
+            # alkanut, ja niiden nimeaminen `points`iksi olisi vaite tasta
             # kaudesta.
             "prev_season_points": int(p.get("totPts") or 0) if not pelattu else 0,
             "prev_season_minutes": int(p.get("minsPlyd") or 0) if not pelattu else 0,
@@ -350,6 +369,10 @@ def build(nyt: dt.datetime | None = None) -> dict:
     fallback = md_tarjoiltu != md
     joukkueet_doc = _hae(f"teams/teams_{kausi}_en.json") or {}
 
+    alkanut = kausi_alkanut_raw(
+        kierrokset,
+        (int(p.get("teamPlayed") or 0) for p in
+         (pelaajat_doc.get("data") or {}).get("value", {}).get("playerList") or []))
     feed_aika = _feed_aika(pelaajat_doc)
     if feed_aika:
         ika = (nyt - dt.datetime.fromisoformat(feed_aika)).total_seconds() / 3600
@@ -362,7 +385,7 @@ def build(nyt: dt.datetime | None = None) -> dict:
         if ika > FEED_VAROITUS_H:
             print(f"::warning::ucl-syote on {ika:.0f} h vanha ({feed_aika})")
 
-    pelaajat = normalisoi_pelaajat(pelaajat_doc, kausi)
+    pelaajat = normalisoi_pelaajat(pelaajat_doc, kausi, kierrokset)
     if len(pelaajat) < 500:
         raise SystemExit(
             f"ucl: vain {len(pelaajat)} pelaajaa - syote on vajaa, ei "
@@ -388,11 +411,17 @@ def build(nyt: dt.datetime | None = None) -> dict:
             "feed_updated_utc": _feed_aika(pelaajat_doc),
             "feed_timestamp_raw": ((pelaajat_doc.get("meta") or {})
                                    .get("timestamp", {}).get("utcTime")),
-            # Sanotaan aaneen mita luvut EIVAT ole. Pinta lukee taman.
+            # Sanotaan aaneen mita luvut ovat ja mita ne EIVAT ole. Pinta
+            # lukee taman. Sama lukija kuin pelaajariveilla.
+            "season_started": alkanut,
             "points_basis": (
+                "points and minutes are this season's UCL totals; the "
+                "feed carries them once a matchday is locked or played "
+                "(prev_season_points is not carried after that)"
+                if alkanut else
                 "prev_season_points and prev_season_minutes are last "
                 "season's UCL totals, carried in the feed before any "
-                "matchday of this season is played (teamPlayed = 0)"),
+                "matchday of this season is locked or played"),
             "players": len(pelaajat),
             "teams": len(normalisoi_joukkueet(joukkueet_doc)),
         },
