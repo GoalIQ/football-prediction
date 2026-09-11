@@ -105,8 +105,12 @@ def card_cs() -> dict:
     }
 
 
+def _xp_payload() -> dict:
+    return json.loads(XP.read_text(encoding="utf-8"))
+
+
 def card_value() -> dict:
-    doc = json.loads(XP.read_text(encoding="utf-8"))
+    doc = _xp_payload()
     starters = [p for p in doc["players"]
                 if p.get("xmins", 0) >= STARTER_MINS and p.get("price")
                 and p.get("status") == "a"]
@@ -114,10 +118,19 @@ def card_value() -> dict:
         raise SystemExit("VIRHE: liian vahan status 'a' -avaajia.")
     top = sorted(starters,
                  key=lambda p: -(p["xp_horizon_total"] / p["price"]))[:N_ROWS]
+    # REEL-HORISONTTI-IKKUNA (11.9): "First six gameweeks" oli vakioteksti,
+    # mutta xp_horizon_total kattaa MENNEEN kierroksen heti kun pelaajan
+    # gameweeks[] alkaa menneisyydesta - teksti lupaisi kuusi tulevaa kun
+    # summa on esim. yksi pelattu + viisi tulevaa. Sama vikaluokka kuin
+    # gen_share_card.py:n "GW1-6"-otsikko, joka korjattiin johtamalla ikkuna
+    # todellisista kierroksista (`window_label`, ks. fpl_gameweek.py).
+    from src.models.fpl_gameweek import window_label
+    _gws = (top[0].get("gameweeks") if top else None) or []
+    window = window_label(doc.get("meta") or {}, _gws, HORIZON)
     return {
         "hook": "Your fourth defender is the cheapest points on the board.",
         "title": "POINTS PER MILLION",
-        "sub1": "First six gameweeks",
+        "sub1": window,
         "sub2": "Expected starters only",
         "rows": [{"name": p["web_name"],
                   "meta": f"{p['team_short']}   {p['price']:.1f}m",
