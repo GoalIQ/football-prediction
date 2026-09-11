@@ -473,6 +473,116 @@
      }
     }
    }
+  },
+  {
+   "gw": 4,
+   "deadline_utc": "2026-09-12T12:30:00Z",
+   "logged_at": "2026-09-11T07:45:26Z",
+   "updated_at": "2026-09-11T07:45:26Z",
+   "source": {
+    "freeze_frozen_at": "2026-09-11T07:45:25Z",
+    "projection_generated_at": "2026-09-11T07:39:11+00:00"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 426,
+     "web_name": "B.Fernandes",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "gw_xp",
+     "value": 5.5,
+     "frozen_value": 5.5,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 426,
+     "web_name": "B.Fernandes",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "p_haul",
+     "value": 0.114,
+     "criterion": "10+ pts",
+     "gw_xp": 5.5,
+     "xp_dist": {
+      "p_haul": 0.114,
+      "p_blank": 0.17,
+      "p10": 2,
+      "median": 5,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p90",
+     "value": 10,
+     "criterion": "reached p90",
+     "gw_xp": 5.41,
+     "xp_dist": {
+      "p_haul": 0.127,
+      "p_blank": 0.181,
+      "p10": 2,
+      "median": 4,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 335,
+     "web_name": "Stach",
+     "team_short": "LEE",
+     "pos": "MID",
+     "metric": "p_3plus",
+     "value": 0.834,
+     "criterion": "3+ pts",
+     "gw_xp": 4.92,
+     "xp_dist": {
+      "p_haul": 0.072,
+      "p_blank": 0.166,
+      "p10": 2,
+      "median": 4,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 588,
+     "web_name": "Khalaili",
+     "team_short": "CRY",
+     "pos": "DEF",
+     "metric": "p_haul",
+     "value": 0.097,
+     "criterion": "10+ pts",
+     "gw_xp": 4.51,
+     "xp_dist": {
+      "p_haul": 0.097,
+      "p_blank": 0.381,
+      "p10": 1,
+      "median": 4,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [],
+   "entry_actual": null,
+   "graded": null
   }
  ]
 }
