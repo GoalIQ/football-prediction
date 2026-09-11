@@ -690,9 +690,14 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       var benchPct;
       if (t.beats_benchmark === true && typeof t.xp_vs_benchmark === 'number') {
         /* A number, not a compliment. The percentage is clamped to 100 in
-           this branch, so it would say less than the surplus does. */
-        var d = t.xp_vs_benchmark;
-        benchPct = (d >= 0 ? '+' : '') + d.toFixed(1) + ' xP vs ' + benchRef + benchWin;
+           this branch, so it would say less than the surplus does.
+           Named diffXp, not d: `d` is drawCard's own payload parameter, and
+           `var` is function-scoped in this script, so reusing `d` here would
+           shadow it for the rest of the function - harmless today only
+           because the branch that reads d.past_seasons is the mutually
+           exclusive sibling of this one. */
+        var diffXp = t.xp_vs_benchmark;
+        benchPct = (diffXp >= 0 ? '+' : '') + diffXp.toFixed(1) + ' xP vs ' + benchRef + benchWin;
       } else {
         benchPct = Number(t.percentile).toFixed(0) + '% of ' + benchRef + benchWin;
       }

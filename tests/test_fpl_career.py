@@ -97,7 +97,8 @@ def test_summer_dedup_and_summary(monkeypatch):
     assert lat["available"] and lat["finished"]
     assert lat["season"] == "2025/26"
     assert lat["total_points"] == 1381
-    assert lat["total_hits"] == 8
+    assert lat["total_hit_points"] == 8
+    assert "total_hits" not in lat  # KORTTI-MUUTTUJAN-VARJOSTUS: vanha nimi ei saa elaa rinnalla
     assert lat["bench_points"] == 76
     # 🔴 Portin 14. kierros: valinta ja luku NETOSTA. `career.html` renderoi
     # `best_gw`n samalle riville `total_points`in kanssa, ja jalkimmainen on

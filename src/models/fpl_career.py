@@ -249,8 +249,11 @@ def _latest_season(current: list[dict], past: list[dict],
                      "points_net": _netto(best)} if best else None),
         "worst_gw": ({"gw": worst["event"], "points": worst["points"],
                       "points_net": _netto(worst)} if worst else None),
-        "total_hits": sum(int(g.get("event_transfers_cost") or 0)
-                          for g in current),
+        # KORTTI-MUUTTUJAN-VARJOSTUS (11.9): nimi kertoo etta arvo on PISTEITA
+        # (esim. 8), ei hittien lukumaaraa (2) - sama ansaluokka kuin
+        # points/points_net (kierrokset 10-17).
+        "total_hit_points": sum(int(g.get("event_transfers_cost") or 0)
+                                for g in current),
         "bench_points": sum(int(g.get("points_on_bench") or 0)
                             for g in current),
         "gws": [{"gw": g.get("event"), "points": g.get("points"),
