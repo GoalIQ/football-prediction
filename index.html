@@ -305,7 +305,14 @@
   .bar + .panel, .bar + .table-wrap { border-top: 0; }
 
   /* ---- Hero ---- */
-  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(24px, 4vw, 48px);
+  /* 11.9: nelja aluetta kahdessa palstassa. row-gap 0, koska otsikon ja
+     leipatekstin vali tulee h1:n omasta marginaalista kuten ennenkin. */
+  .hero-lead { grid-area: lead; }
+  .hero-pitch { grid-area: pitch; }
+  .hero-side { grid-area: side; }
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr;
+          grid-template-areas: "lead side" "pitch side"; row-gap: 0;
+          column-gap: clamp(24px, 4vw, 48px);
           align-items: start; padding: clamp(30px, 5vw, 60px) 0 clamp(26px, 4vw, 44px); }
   .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--ink);
              font-size: 11.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
@@ -363,6 +370,14 @@
   .record-chip.compact .num { font-size: clamp(30px, 3.4vw, 40px); }
   .record-chip.compact .lbl { margin-top: 0; }
   .record-chip.compact .tr-links { grid-column: 1 / -1; margin-top: 8px; padding-top: 8px; }
+  /* 🔴 11.9 (CDP-mittaus 390 px): yleinen mobiilisaanto piilottaa Price- ja
+     Owned-solut, mutta .hero-table .mock-row on spesifisempi ja julisti yha
+     NELJA raitaa. Kolme nakyvaa solua asettui neljaan raitaan -> Total xP
+     putosi 76 px:n sarakkeeseen ja oikea reuna jai tyhjaksi. Raidat seuraavat
+     nyt nakyvien solujen maaraa. */
+  @media (max-width: 560px) {
+    .hero-table .mock-row { grid-template-columns: 46px 1fr 72px; }
+  }
   .record-chip { border: 2px solid var(--teal); background: var(--panel); margin-top: 0; }
   .record-chip .chip-head { display: flex; justify-content: space-between; background: var(--teal); color: var(--ink);
                             padding: 7px 12px; font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
@@ -509,6 +524,29 @@
 
   @media (max-width: 900px) {
     .hero, .toolkit, .duo, .steps { grid-template-columns: 1fr; }
+    /* 🔴 11.9 (CDP-mittaus 390 px): live-taulukko oli 998 px sivun ylalaidasta
+       eli mobiilissa taysin ensimmaisen ruudun alla, vaikka koko muutoksen
+       tarkoitus oli nostaa tuote sinne. 60 % kavijoista on puhelimella.
+       Jarjestys: otsikko, mallin omat luvut, myyntipuhe ja napit, track
+       record, muistio. `display: contents` nostaa oikean palstan lapset
+       samaan pinoon, jolloin napit pysyvat muistion YLAPUOLELLA. */
+    .hero { display: flex; flex-direction: column; gap: clamp(14px, 1.8vw, 20px); }
+    .hero-side, .hero-pitch { display: contents; }
+    .hero-lead { order: 1; }
+    .hero-table { order: 2; }
+    /* Napit heti lukujen alle: taulukko on 390 px:n ruudulla noin 570 px
+       korkea, joten .hero-pitch kokonaisena olisi tyontanyt CTA:n 950 px:n
+       kohdalle. Selitys lukee nappien jalkeen, kuten kaupan hyllyssa. */
+    .cta-row { order: 3; }
+    .hero .sub { order: 4; }
+    .cta-note { order: 5; }
+    .countdown { order: 6; }
+    .record-chip { order: 7; }
+    .note-list { order: 8; }
+    .note-more { order: 9; }
+    .hero-lead h1 { margin-bottom: 0; }
+    .hero .sub { margin-bottom: 0; }
+    .cta-row { margin-top: 0; }
     .faq-item { grid-template-columns: 1fr; }
     .nav-links a:not(.nav-cta):not([data-cta="nav-signin"]) { display: none; }
     .nav-links a[data-cta="nav-signin"] { padding: 7px 6px; }
@@ -824,12 +862,19 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 
 <div class="wrap" id="top">
   <header class="hero">
-    <div>
+    <!-- 11.9: vasen palsta on KAKSI lohkoa (otsikko, myyntipuhe). Syy on
+         mobiili: yhtena lohkona live-taulukko ei voi nousta otsikon ja
+         leipatekstin valiin, ja 60 % kavijoista on puhelimella. Tyopoydalla
+         grid-template-areas pitaa asettelun ennallaan. -->
+    <div class="hero-lead">
       <a class="eyebrow" href="/fpl">Free FPL tools on the web · no sign-in needed <span class="cursor">&#9608;</span></a>
       <!-- The keyword "Free FPL tools" stays word for word; it is what this
            page ranks for. What changed is the emphasis: the promise is now
            the outcome, not the price. -->
       <h1>Free FPL tools that tell you <span class="accent">what to do before the deadline</span></h1>
+    </div>
+
+    <div class="hero-pitch">
       <!-- Was 75 words with seven commas in the first sentence: a list of
            tools, not a reason to use them. Same content, a third shorter. -->
       <p class="sub">Clean sheet probability, fixture difficulty and rate my team are free,
