@@ -261,7 +261,16 @@ USER_ACTUAL_SOURCE = "fpl_picks"
 
 def element_names() -> dict[int, str]:
     """element_id -> web_name bootstrapista. Tyhja dict jos haku epaonnistuu:
-    silloin user_actual jaa ilman nimea (id sailyy), ei arvausta."""
+    silloin user_actual jaa ilman nimea (id sailyy), ei arvausta.
+
+    🔴 11.9: `import requests` puuttui tasta funktiosta (muut tiedoston
+    funktiot importtaavat sen paikallisesti), NameError putosi `except
+    Exception`iin ja funktio palautti {} JOKA KERTA - user_actual olisi
+    jaanyt ilman nimea hiljaa. Vartija `test_scripts_no_undefined_globals`
+    loysi sen (tests.yml punainen a7bbb05f5:sta), ja alla on testi joka
+    mittaa etta nimet oikeasti tulevat."""
+    import requests
+
     try:
         r = requests.get(f"{FPL_BASE}/bootstrap-static/", timeout=30,
                          headers={"User-Agent": "Mozilla/5.0"})
