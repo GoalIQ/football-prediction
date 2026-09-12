@@ -11,7 +11,7 @@
 	 */
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { formatSwing } from '$lib/fixtureSwing';
+	import { formatSwing, swingOf } from '$lib/fixtureSwing';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
@@ -25,6 +25,8 @@
 		min: { xp: number; label: string };
 		max: { xp: number; label: string };
 		swing: number;
+		/** Pyoristamaton ero: vain tasatilanteen jarjestykseen, ei koskaan nakyviin. */
+		exact: number;
 	};
 
 	function gwLabel(g: { opponents: { opp: string; venue: string }[] }): string {
@@ -89,10 +91,11 @@
 				p,
 				min: { xp: lo.xp, label: `GW${lo.gw} ${gwLabel(lo)}` },
 				max: { xp: hi.xp, label: `GW${hi.gw} ${gwLabel(hi)}` },
-				swing: hi.xp - lo.xp
+				swing: swingOf(lo.xp, hi.xp),
+				exact: hi.xp - lo.xp
 			});
 		}
-		out.sort((a, b) => b.swing - a.swing);
+		out.sort((a, b) => b.swing - a.swing || b.exact - a.exact);
 		return out.slice(0, TOP_N);
 	});
 

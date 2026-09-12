@@ -12,3 +12,14 @@ export function formatSwing(swing: number): string {
 	const s = swing.toFixed(1);
 	return Number(s) > 0 ? `+${s}` : s;
 }
+
+/** Swing NAKYVISTA luvuista (12.9.2026 render-tarkistus). Taulukko nayttaa Low- ja
+ * High-arvot yhdella desimaalilla, ja lukija laskee rivin paassaan: Gibbs-White
+ * 3.4 -> 5.8 nakyi "+2.3", koska ero laskettiin pyoristamattomista arvoista
+ * (5.76 - 3.44 = 2.32). Nyt swing = pyoristetty High miinus pyoristetty Low, ja
+ * pyoristys on sama `toFixed(1)` jota solut kayttavat. Tuloskin pyoristetaan,
+ * ettei 5.8 - 3.4 = 2.3999999999999995 jarjesty eri paikkaan kuin 2.4.
+ * Portti: tests/test_fixture_swing_column.py */
+export function swingOf(loXp: number, hiXp: number): number {
+	return Number((Number(hiXp.toFixed(1)) - Number(loXp.toFixed(1))).toFixed(1));
+}

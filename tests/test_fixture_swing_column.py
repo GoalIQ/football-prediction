@@ -58,11 +58,15 @@ def _data_row_cells(markup: str) -> list[str]:
 
 def test_list_is_sorted_by_swing_difference() -> None:
     src = _src()
-    assert re.search(r"swing:\s*hi\.xp\s*-\s*lo\.xp", src), (
-        "swing-kentan pitaa olla high xP miinus low xP"
+    assert re.search(r"swing:\s*swingOf\(lo\.xp,\s*hi\.xp\)", src), (
+        "swing-kentan pitaa tulla swingOf(lo.xp, hi.xp):sta eli NAKYVIEN (pyoristettyjen) "
+        "Low- ja High-arvojen erotuksesta, muuten rivi ei laske yhteen ruudulla"
     )
-    assert re.search(r"\.sort\(\(a,\s*b\)\s*=>\s*b\.swing\s*-\s*a\.swing\)", src), (
+    assert re.search(r"\.sort\(\(a,\s*b\)\s*=>\s*b\.swing\s*-\s*a\.swing", src), (
         "lista pitaa jarjestaa swing-kentan mukaan laskevasti"
+    )
+    assert not re.search(r"formatSwing\(\s*r\.exact", src), (
+        "pyoristamaton exact on vain tasatilanteen jarjestykseen, ei nakyviin"
     )
 
 
@@ -134,3 +138,30 @@ def test_format_swing_behaviour() -> None:
     # Yksi desimaali ja etumerkki: ero on aina >= 0, joten positiivinen saa '+'.
     # 0.049 pyoristyy nollaan, eika nollalle anneta etumerkkia.
     assert got == ["+2.0", "+1.0", "0.0", "0.0", "+12.3"], got
+
+
+@pytest.mark.skipif(not _node_supports_strip_types(),
+                    reason="node >= 22.6 (type stripping) puuttuu tasta ymparistosta")
+def test_swing_adds_up_from_the_displayed_low_and_high() -> None:
+    """Render-tarkistus 12.9: Low 3.4 ja High 5.8 nakyi Swing "+2.3".
+
+    NEG: pyoristamaton ero (5.76 - 3.44 = 2.32) antaa "+2.3". Nakyvien lukujen
+    ero on 2.4, ja sen pitaa nakya.
+    """
+    cases = [[3.44, 5.76], [4.6, 6.9], [3.25, 5.15], [0.04, 0.06], [1.05, 1.05]]
+    script = (
+        f"import({json.dumps(MODULE.as_uri())})"
+        f".then(m => console.log(JSON.stringify({json.dumps(cases)}.map(([lo, hi]) => "
+        "[m.formatSwing(m.swingOf(lo, hi)), (Number(hi.toFixed(1)) - Number(lo.toFixed(1))).toFixed(1)]))))"
+    )
+    r = subprocess.run(
+        ["node", "--experimental-strip-types", "--no-warnings", "-e", script],
+        capture_output=True, text=True, encoding="utf-8", timeout=60,
+    )
+    assert r.returncode == 0, f"swingOf-ajo kaatui: {r.stderr}"
+    got = json.loads(r.stdout)
+    assert got[0][0] == "+2.4", f"3.44 -> 5.76 pitaa nakya +2.4 (5.8 - 3.4), nyt {got[0][0]}"
+    for (shown, displayed_diff), (lo, hi) in zip(got, cases):
+        assert shown.lstrip("+") == displayed_diff, (
+            f"Low {lo:.1f} / High {hi:.1f}: Swing {shown} ei ole nakyvien lukujen erotus {displayed_diff}"
+        )
