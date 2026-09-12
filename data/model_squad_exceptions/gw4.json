@@ -1,0 +1,9 @@
+{
+ "gw": 4,
+ "reason": "Jaadytetty gw4.json on runko jota malli EI VOI SAAVUTTAA: 8/15 vaihtui edellisesta samalla kun sen oma meta sanoo transfers:[] ja hits:0. Syy oli hiljainen ketjukatko (Dovin 171 pudonnut xP-artefaktista -> _constrained_from_prev palautti None -> main() pudotti vapaaseen optimiin paljaalla printilla continue-on-error -askelella, ajo 34575124438 oli success). Entry 116920 teki GW4:ssa 0 siirtoa, joten sen rivi on gw3.json 15/15 ja entry on OIKEASSA - poikkeus on freezen puolella, ei tilin. Villen paatos 12.9: GW4 gradataan ENTRYSTA (grade_model_squad.py), kuten GW1-GW3 tosiasiassa on gradattu, eika jaadytetysta rivista. Paatos on toteutettu rakenteena eika sopimuksena: grade_model_squad_gw.py lukee nyt require_entry_provenance ja kieltaytyy gradaamasta runkoa jonka provenienssi puuttuu. Syy on korjattu eteenpain (ketju rakentaa poissa olevan jasenen bootstrapista, fallback vapaaseen optimiin on exit 1, jatkuvuusinvariantti mitataan joka kierroksesta joka ajossa). GW5 jatkuu reseedilla entryn GW4-pickeista. Raportti: cos-reports/cc-reports/2026-09-12-freeze-ketju-katkesi-hiljaa.md",
+ "decided_by": "Ville",
+ "decided_at": "2026-09-12",
+ "recorded_by": "CC 2026-09-12 ilta. Ilman tata fpl-data-refresh on punainen joka 3 h: verify_model_entry_matches_freeze nakee aidon 7/15 eron eika reittia ulos ole. Poikkeus koskee VAIN GW4:aa.",
+ "applies_until": "GW5-freeze (gw5.json) korvaa taman latest_frozen()-valinnassa",
+ "public_note_missing": "TIETOINEN PUUTE. gw2.json:lla on public_note joka renderoidaan /fpl:lle; GW4:lle sita EI ole viela kirjoitettu, koska se on julkista tekstia ja vaatii julkaisutarkistajan + Villen GO:n. Ilman kenttaa sivu ei nayta selitysta - sama tilanne kuin ennen tata poikkeusta, ei regressio. -> QUEUE FREEZE-KETJU-GW4-PUBLIC-NOTE"
+}
