@@ -62,7 +62,7 @@ def test_list_is_sorted_by_swing_difference() -> None:
         "swing-kentan pitaa tulla swingOf(lo.xp, hi.xp):sta eli NAKYVIEN (pyoristettyjen) "
         "Low- ja High-arvojen erotuksesta, muuten rivi ei laske yhteen ruudulla"
     )
-    assert re.search(r"\.sort\(\(a,\s*b\)\s*=>\s*b\.swing\s*-\s*a\.swing", src), (
+    assert re.search(r"\.sort\(\(a,\s*b\)\s*=>\s*b\.swing\s*-\s*a\.swing\b", src), (
         "lista pitaa jarjestaa swing-kentan mukaan laskevasti"
     )
     assert not re.search(r"formatSwing\(\s*r\.exact", src), (
