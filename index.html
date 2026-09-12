@@ -882,8 +882,9 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 <!-- GEN:FREE-CTA-END -->
         <a class="btn btn-ghost" href="/fpl" data-cta="hero-free">Try the free tools</a>
       </div>
-      <p class="cta-note">After 12 September it is &euro;3.99 a month or
-        <a href="https://pro.goaliq.app/checkout?plan=season" data-cta="hero">&euro;25 a year</a>.</p>
+      <!-- GEN:FREE-HERO-PRICE-START  check_free_window.py --fix renderoi taman; ala muokkaa kasin -->
+<p class="cta-note">&euro;3.99 a month, or <a href="https://pro.goaliq.app/checkout?plan=season" data-cta="hero">&euro;25 a year</a>.</p>
+<!-- GEN:FREE-HERO-PRICE-END -->
       <p class="cta-note">Free download on <a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Google Play</a> and the <a href="https://apps.apple.com/app/id6780047163">App Store</a>. One subscription covers web, iOS and Android.</p>
       <!-- #72: GW deadline countdown. Fallback = GW1 opening Fri 21 Aug 2026; JS
            swaps in the official GW deadline from the /api/fantasy meta. -->

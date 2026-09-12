@@ -337,3 +337,60 @@ def test_repon_omat_pinnat_ovat_rajattuja():
     puuttuu = g.scope_misses()
     assert not puuttuu, "rajaamaton ilmaisikkunalupaus:\n  " + "\n  ".join(
         f"{f}:{ln} {t!r}" for f, ln, t in puuttuu)
+
+
+# --- 12.9.2026: osittainen GEN-kate paasti hintavaitteen livena lapi -------
+
+def test_heron_hintanootti_on_gen_lohkossa():
+    """Villen loydos 12.9 livena, sen JALKEEN kun portti sanoi 0 kohtaa.
+
+    `hero_cta_html` vaihtoi napin oikein 12:30, mutta hintanootti heti sen
+    ALLA oli GEN-markkerien ULKOPUOLELLA ja kovakoodattu ("After 12
+    September it is EUR3.99..."). Osittainen kate on pahempi kuin ei
+    katetta: pinta nayttaa hoidetulta.
+    """
+    from src.free_window import SURFACE_BLOCKS
+
+    assert ("index.html", "FREE-HERO-PRICE") in SURFACE_BLOCKS
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert "GEN:FREE-HERO-PRICE-START" in html
+    assert "GEN:FREE-HERO-PRICE-END" in html
+
+
+def test_hintanootti_molemmissa_tiloissa():
+    import datetime as _d
+
+    from src.free_window import hero_price_note_html
+
+    auki = hero_price_note_html(_d.datetime(2026, 9, 10, tzinfo=_d.timezone.utc))
+    kiinni = hero_price_note_html(_d.datetime(2026, 9, 13, tzinfo=_d.timezone.utc))
+    assert "After" in auki, "auki: paivamaaravaite kuuluu sivulle"
+    assert "After" not in kiinni, "kiinni: menneessa muodossa oleva lause pois"
+    for tila in (auki, kiinni):
+        assert "3.99" in tila and "25" in tila, "hinnat nakyvat molemmissa"
+
+
+def test_paivamaarahintavaite_on_oma_perheensa():
+    """CLAIM_RE ei nae tata: se ei lupaa ilmaista Premiumia. Silti se
+    vanhenee samalla hetkella."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "cfw", ROOT / "scripts" / "check_free_window.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+
+    vanhentuvat = [
+        "After 12 September it is &euro;3.99 a month",
+        "After 12 Sept it is EUR25 a year",
+        "After the GW4 deadline it is €3.99",
+        "Free until 12 Sept</span> then &euro;25 / year",
+    ]
+    for t in vanhentuvat:
+        assert m.DATED_PRICE_RE.search(t), t
+        assert not m.CLAIM_RE.search(t) or "Free until 12 Sept" in t, (
+            f"kontrolli: {t!r} ei saa loytya PELKASTAAN CLAIM_RE:lla")
+    for viaton in ("&euro;3.99 a month, or &euro;25 a year.",
+                   "&euro;3.99 / month or &euro;25 / year",
+                   "After the match we publish the result"):
+        assert not m.DATED_PRICE_RE.search(viaton), viaton

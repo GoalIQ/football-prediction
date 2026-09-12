@@ -116,6 +116,29 @@ def hero_cta_html(now: _dt.datetime | None = None) -> str:
             'data-cta="hero-premium">Get Premium &#9656;</a>')
 
 
+def hero_price_note_html(now: _dt.datetime | None = None) -> str:
+    """index.html: heron hintanootti heti CTA-napin alla.
+
+    12.9.2026: TAMA JAI. `hero_cta_html` vaihtoi napin oikein 12:30, mutta
+    sen ALLA oleva rivi oli GEN-markkerien ULKOPUOLELLA ja kovakoodattu:
+    "After 12 September it is EUR3.99 a month or EUR25 a year." Ville huomasi
+    sen livena. Lause ei ole ilmaislupaus, joten `check_free_window.py`:n
+    vaiteperhe ei nahnyt sita — se on **paivamaaraan sidottu hintavaite**,
+    joka muuttuu oudoksi sina hetkena kun paiva menee. Sama luokka kuin
+    `build_fpl_page.free_window_block`:n hoitama lause, eri pinnalla.
+
+    Osittainen GEN-kate on pahempi kuin ei katetta: se saa nakyttamaan silta
+    etta pinta on hoidettu.
+    """
+    if is_open(now):
+        return (f'<p class="cta-note">After {day_label()} it is &euro;3.99 '
+                f'a month or <a href="{PRO_URL}checkout?plan=season" '
+                'data-cta="hero">&euro;25 a year</a>.</p>')
+    return (f'<p class="cta-note">&euro;3.99 a month, or '
+            f'<a href="{PRO_URL}checkout?plan=season" data-cta="hero">'
+            '&euro;25 a year</a>.</p>')
+
+
 def price_tag_html(now: _dt.datetime | None = None) -> str:
     """index.html: Premium-sarakkeen hintalappu.
 
@@ -157,6 +180,7 @@ def predictions_price_html(now: _dt.datetime | None = None) -> str:
 SURFACE_BLOCKS = {
     ("index.html", "FREE-BAND"): band_html,
     ("index.html", "FREE-CTA"): hero_cta_html,
+    ("index.html", "FREE-HERO-PRICE"): hero_price_note_html,
     ("index.html", "FREE-PRICE"): price_tag_html,
     ("predictions.html", "FREE-PRICE"): predictions_price_html,
 }

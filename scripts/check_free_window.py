@@ -62,6 +62,26 @@ CLAIM_RE = re.compile(
     r"free until the GW4 deadline|nothing to pay for GW1|"
     r"Free until 12 Sept|Get Premium free|That is GW1 to GW3)", re.I)
 
+#: TOINEN PERHE: paivamaaraan sidottu HINTAVAITE. Se ei lupaa ilmaista
+#: Premiumia, joten CLAIM_RE ei nae sita - mutta se vanhenee tasan samalla
+#: hetkella, ja menneessa se lukee oudosti ("After 12 September it is EUR3.99"
+#: kun 12. syyskuuta on eilen).
+#:
+#: MITATTU 12.9.2026: Ville loysi tasan taman LIVENA sen jalkeen kun
+#: `--live` oli sanonut 0 kohtaa. `index.html`in heron CTA-nappi oli
+#: GEN-lohkossa ja vaihtui oikein 12:30, mutta hintanootti heti sen ALLA oli
+#: markkerien ULKOPUOLELLA ja kovakoodattu. Osittainen GEN-kate on pahempi
+#: kuin ei katetta: se saa pinnan nayttamaan hoidetulta.
+#:
+#: Perhe on kirjoitettu VAITTEEN MUODOSTA eika sanalistasta: "after/from/then
+#: <ikkunan paivamaara>" + hinta, sekä "then EUR..." -muoto ilman paivaa.
+DATED_PRICE_RE = re.compile(
+    r"(?:after|from|starting)\s+(?:the\s+)?"
+    r"(?:1?2(?:th)?\s+Sept(?:ember)?|Sept(?:ember)?\s+1?2(?:th)?|"
+    r"the\s+GW4\s+deadline)"
+    r"[^.]{0,60}?(?:&euro;|€|EUR)\s?\d"
+    r"|then\s{0,3}(?:&euro;|€|EUR)\s?\d", re.I)
+
 #: RAJAUSTARKISTUKSEN perhe on SUPPEAMPI kuin selviytymistarkistuksen, ja se
 #: on tietoinen valinta eika unohdus. Rajaus ("on the web") on LAUSEEN
 #: ominaisuus: nelisanaiselta napilta ei voi vaatia sivulausetta, ja jos
@@ -239,6 +259,12 @@ def hits(paths=None) -> list[tuple[str, int, str]]:
             continue
         for rivi, osuma, _a, _b in _osumat(txt, CLAIM_RE):
             found.append((str(p.relative_to(ROOT)), rivi, osuma))
+        # Paivamaaraan sidottu hintavaite on vanhentunut VAIN kun ikkuna on
+        # kiinni; auki se on tosi ja kuuluu sivulle. 12.9: tama perhe puuttui,
+        # ja Ville loysi lauseen livena sen jalkeen kun portti sanoi 0.
+        if not is_open():
+            for rivi, osuma, _a, _b in _osumat(txt, DATED_PRICE_RE):
+                found.append((str(p.relative_to(ROOT)), rivi, osuma))
     return found
 
 
