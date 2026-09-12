@@ -40,6 +40,8 @@ from pathlib import Path
 if str(Path(__file__).resolve().parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.doubt_copy import lauseena as doubt_lauseena
+
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
 from src.models import gw_calls as gwc  # kapteenin kerroin, yksi lukija
@@ -2293,8 +2295,8 @@ def team_news_block(xp: dict | None) -> str:
         "status feed. Most owned among them: "
         f"{names}.</p>\n"
         '<p>The full list is free and sorted by ownership, and every doubtful '
-        "player carries the model's projected points with the reduced chance of "
-        "playing already priced in, so you can see what the doubt actually costs: "
+        "player carries the model's projected points. "
+        f"{doubt_lauseena()}: "
         '<a href="/fpl/team-news">FPL team news</a>.</p>\n'
     )
 

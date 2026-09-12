@@ -50,6 +50,7 @@ if str(ROOT) not in sys.path:
 # /fpl/predicted-lineups eivat sisaltaneet sita LAINKAAN -> koko generoitu
 # sisaltopinta oli mittaamaton. Sama vakio kuin paasivuilla eika kopio:
 # kaksi rinnakkaista snippettia eriytyisivat hiljaa.
+from src.doubt_copy import XP_SISALTAA_EPAVARMUUDEN
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
     ROOT as _FP_ROOT,
@@ -3291,9 +3292,8 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             "</tr></thead>"
             f"<tbody>{trows}</tbody></table></div>"
             '<p class="note">The xP column already carries the flag: a '
-            "reduced chance of playing lowers projected minutes, so the "
-            "number you see is what the model expects including the doubt, "
-            "not what the player would score if fully fit.</p>"
+            "reduced chance of playing lowers projected minutes, so "
+            f"{XP_SISALTAA_EPAVARMUUDEN}.</p>"
         )
 
     n_out, n_doubt = len(out_rows), len(doubt_rows)
