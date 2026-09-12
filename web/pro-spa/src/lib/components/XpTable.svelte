@@ -280,6 +280,21 @@
 	// Hinta-sarake ja hintasortit vain jos backend tuo kentän (defensiivinen,
 	// sama kaava kuin hasStarts/hasOwned). SPL-syöte kantaa priceä myös.
 	let hasPrice = $derived(data.players.some((p) => typeof p.price === 'number'));
+
+	// Otsikkorivin sarakemaara yhdesta paikasta (12.9.2026). Ryhmarivin colspan oli
+	// `7 + ...`, vaikka kiinteita sarakkeita on 11 ja sortWin-sarake puuttui
+	// laskusta, joten joukkueen nimirivi loppui 4-5 saraketta ennen reunaa.
+	// Uusi <th> vaatii taman lausekkeen paivityksen: tests/test_xptable_group_colspan.py
+	// johtaa saman luvun <thead>:n rakenteesta ja kaatuu jos ne eroavat.
+	const FIXED_COLUMNS = 11;
+	let columnCount = $derived(
+		FIXED_COLUMNS +
+			(hasPrice ? 1 : 0) +
+			(hasStarts ? 1 : 0) +
+			(hasOwned ? 1 : 0) +
+			(sortWin ? 1 : 0) +
+			gwCols.length
+	);
 	// Hintaportaat aineistosta, ei kovakoodattuna: FPL:n 0,1 M granulariteetti
 	// muuttuu kauden aikana, ja kovakoodattu tikapuu vanhenisi hiljaa.
 	let priceLadder = $derived(
@@ -617,7 +632,7 @@
 			{#each groups as g (g.team ?? '_all')}
 				{#if g.team}
 					<tr class="group-row">
-						<td colspan={7 + (hasPrice ? 1 : 0) + (hasStarts ? 1 : 0) + (hasOwned ? 1 : 0) + gwCols.length}
+						<td colspan={columnCount}
 							>{g.team}</td
 						>
 					</tr>
