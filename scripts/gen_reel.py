@@ -42,6 +42,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.gen_share_card import (  # noqa: E402
     AMBER, CREAM, FONT_BOLD, FONT_MED, INK, MUTED, WORDMARK,
 )
+from src.models.fpl_gameweek import actionable_gameweeks  # noqa: E402
 
 W, H = 1080, 1920
 FPS = 30
@@ -57,19 +58,39 @@ HORIZON = 6
 SAFE_TOP, SAFE_BOTTOM = 250, 1520
 
 
+def _window_phrase(meta: dict, gws) -> str:
+    """'Gameweek 4' / 'Gameweeks 4-9', derived from the real actionable
+    gameweeks (REEL-HORISONTTI-IKKUNA, 12.9) — never a hardcoded gameweek
+    count. A fixed "First six gameweeks"/"Gameweek 1" string is only true
+    while the season's own GW1 is still ahead; it goes wrong the moment the
+    horizon slides past an already-played gameweek, same bug class as the
+    share-card window fix (`fpl_gameweek.window_label`). Reuses the same
+    `actionable_gameweeks` reader those pages trust, instead of re-deriving
+    which gameweeks are still live.
+    """
+    act = sorted(set(actionable_gameweeks(meta, gws)))
+    if not act:
+        return "the next gameweeks"
+    if len(act) == 1:
+        return f"Gameweek {act[0]}"
+    return f"Gameweeks {act[0]}-{act[-1]}"
+
+
 # ---------------------------------------------------------------- kortit
 def card_cs() -> dict:
     doc = json.loads(PHASE0.read_text(encoding="utf-8"))
+    meta = doc.get("meta") or {}
     teams = doc.get("teams") or []
     if not teams:
         raise SystemExit("VIRHE: phase0-artefaktissa 0 joukkuetta.")
-    rows, avgs = [], {}
+    rows, avgs, six_gws = [], {}, {}
     for t in teams:
         fx = t.get("fixtures") or []
         if not fx:
             continue
         six = fx[:HORIZON]
         avgs[t["name"]] = sum(f["cs_pct"] for f in six) / len(six)
+        six_gws[t["name"]] = [f["gw"] for f in six]
         g1 = fx[0]
         rows.append({
             "name": t["name"],
@@ -77,6 +98,7 @@ def card_cs() -> dict:
                     f"{g1['opponent']}",
             "sort": g1["cs_pct"],
             "val": f"{round(g1['cs_pct'])}%",
+            "gw": g1["gw"],
         })
     rows.sort(key=lambda r: -r["sort"])
     top = rows[:N_ROWS]
@@ -94,10 +116,11 @@ def card_cs() -> dict:
         "hook": "FPL tells you a fixture is easy. It doesn’t tell you who "
                 "keeps the clean sheet.",
         "title": "CLEAN SHEET CHANCE",
-        "sub1": "Gameweek 1",
+        "sub1": _window_phrase(meta, [top[0]["gw"]]),
         "sub2": "Our match model, not a difficulty rating",
         "rows": top,
-        "point": f"{best_six[0]} stay top across the first six as well.",
+        "point": f"{best_six[0]} stay top across "
+                 f"{_window_phrase(meta, six_gws[best_six[0]])} as well.",
         "point2": f"{round(best_six[1])}% a game.",
         "cta1": "The full table is free",
         "cta2": "Every team, every gameweek",
@@ -107,6 +130,7 @@ def card_cs() -> dict:
 
 def card_value() -> dict:
     doc = json.loads(XP.read_text(encoding="utf-8"))
+    meta = doc.get("meta") or {}
     starters = [p for p in doc["players"]
                 if p.get("xmins", 0) >= STARTER_MINS and p.get("price")
                 and p.get("status") == "a"]
@@ -114,10 +138,11 @@ def card_value() -> dict:
         raise SystemExit("VIRHE: liian vahan status 'a' -avaajia.")
     top = sorted(starters,
                  key=lambda p: -(p["xp_horizon_total"] / p["price"]))[:N_ROWS]
+    window_gws = [g.get("gw") for p in top for g in (p.get("gameweeks") or [])]
     return {
         "hook": "Your fourth defender is the cheapest points on the board.",
         "title": "POINTS PER MILLION",
-        "sub1": "First six gameweeks",
+        "sub1": _window_phrase(meta, window_gws),
         "sub2": "Expected starters only",
         "rows": [{"name": p["web_name"],
                   "meta": f"{p['team_short']}   {p['price']:.1f}m",
