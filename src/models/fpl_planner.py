@@ -529,6 +529,13 @@ TEMPLATE_MISSING_MIN_EO = 20.0
 TEMPLATE_MISSING_TOP_N = 3
 
 
+def _actionable_gw(meta: dict) -> int | None:
+    """Vaikutettava kierros samasta lukijasta kuin ilmaispinnan xP-osio."""
+    from src.models.fpl_gw_xp import actionable_gameweek
+    gw = actionable_gameweek(meta)
+    return gw if isinstance(gw, int) else None
+
+
 def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
                         pos: str | None = None,
                         squad: dict | None = None) -> dict:
@@ -599,6 +606,13 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
         "meta": {"max_ownership": max_ownership, "pos": pos,
                  "generated_at": xp_data["meta"].get("generated_at"),
                  "horizon_gw": xp_data["meta"].get("horizon_gw"),
+                 # 12.9: `gw` PUUTTUI, ja sivugeneraattori fallbackasi siksi
+                 # merkkijonoon "this gameweek" - otsikko, title-tagi ja
+                 # meta-description sanoivat siis YHTA kierrosta, kun taulukko
+                 # on KUUDEN kierroksen projektio. Lukija ei voinut tarkistaa
+                 # sanaa "next six" mistaan, koska sivu ei nimennyt ikkunaa
+                 # kertaakaan. Sama lukija kuin ilmaispinnan xP-osiolla.
+                 "gw": _actionable_gw(xp_data.get("meta") or {}),
                  "availability_gate": {"checked": True, "dropped": dropped,
                                        "note": AVAILABILITY_GATE_NOTE}},
         "players": [_row(p) for p in cands[:DIFFERENTIAL_TOP_N]],
