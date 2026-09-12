@@ -4370,6 +4370,28 @@ def _driver_sub(r: dict, ctx: dict) -> str:
     return f'<span class="m-sub drv">{escape(txt)}</span>' if txt else ""
 
 
+def _opponent_sub(r: dict, gw: int) -> str:
+    """Vastustaja alarivina, VAIN kapealla naytolla.
+
+    🔴 MITATTU 12.9.2026 `check_claim_route`illa: `#gw-xp`-taulun
+    Opponent-sarake on `.m-hide` eli vain tyopoydalla, mutta jakokortin
+    (`gen_share_card.py xp`) NAKYVIN sarake on FIXTURE - ja saman aamun
+    postaus lahettaa lukijan tasan tahan ankkuriin. FPL-liikenne on
+    enimmakseen puhelimella, joten kortin naytettavin luku oli juuri se jota
+    lukija ei nahnyt perilla. Sama vikaluokka kuin `FPL-SIVU-OTTELUIDEN-XG`:
+    kortti vaittaa, sivu ei nayta.
+
+    `m-only` = alarivi katoaa kun "Show all columns" tuo sarakkeen takaisin,
+    joten vastustajaa ei nayteta kahdesti kummassakaan tilassa. Sama kuvio
+    kuin vaihtuvuus-alarivilla (`build_fpl_page.py`, 10.8).
+    """
+    from src.models.fpl_gw_xp import opponent_text
+    txt = opponent_text(r, gw)
+    if not txt:
+        return ""
+    return f'<span class="m-only m-sub opp">{escape(txt)}</span>'
+
+
 def _driver_legend(rows: list[dict], ctx: dict) -> str:
     """Selite alariville, vain kun taulussa on ainakin yksi todiste."""
     if any(fact_text(r, ctx.get("team_cs"), ctx.get("prev_season")) for r in rows):
@@ -4437,7 +4459,8 @@ def _gw_xp_section(xp: dict) -> str:
         # 5.9 portti B5: expected-points EI renderoinyt minuuttilippua
         # lainkaan (0 osumaa livena). Sama lippu kuin predicted-lineups- ja
         # seurasivuilla, kaikissa kolmessa rankatussa taulukossa.
-        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}{_driver_sub(r, ctx)}</td>'
+        f'<td>{escape(r["web_name"])}{_no_history_flag(r)}{_driver_sub(r, ctx)}'
+        f'{_opponent_sub(r, gw)}</td>'
         f'<td class="tm">{_kit_svg(r["team_short"])}'
         f'<span>{escape(r["team_short"])}</span></td>'
         f'<td>{escape(r.get("pos") or "")}</td>'
