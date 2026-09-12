@@ -193,3 +193,36 @@ def test_xp_kortin_molemmat_alatunnisterivit_mahtuvat():
     handle_w = d.textlength("@goaliqapp", font=G._font(G.FONT_BOLD, 20))
     G._shrink(d, spec["footNote"], 20, G.W - G.MX - handle_w - 24 - G.MX, 13, G.FONT_MED)
     G._shrink(d, spec["footNote2"], 17, G.W - 2 * G.MX, 11, G.FONT_MED)
+
+
+# ---------------------------------------------------------------------------
+# 4. Prosentti pyoristyy YLOSPAIN tasan puolikkaasta
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("arvo,odotus", [
+    (24.5, "25%"),   # 🔴 mitattu 12.9: Aston Villa renderoityi "24%":ksi
+    (24.4, "24%"),
+    (24.6, "25%"),
+    (0.5, "1%"),
+    (1.5, "2%"),     # pankkiiripyoristys antaisi "2%" - sattuu osumaan
+    (2.5, "3%"),     # ...mutta tama antaisi "2%". Tassa ne eroavat.
+    (51.0, "51%"),
+    (38.6, "39%"),
+])
+def test_prosentti_pyoristyy_ylospain(arvo, odotus):
+    """MUTAATIO: `f"{v:.0f}%"` on pankkiiripyoristys (round-half-to-even).
+
+    Mitattu 12.9 GW4-outlook-kortilta: Aston Villan 24.5 % renderoityi "24%",
+    kun ilmaissivu sanoo 24,5 %. Lukija joka vertaa korttia sivuun nakee
+    24 vs 24,5 ja paattelee etta jompikumpi on vaarin.
+    Muisti: pyoristyssaanto-eroaa-pythonin-ja-jsn-valilla.
+    """
+    import scripts.gen_share_card as G
+    assert G._pros(arvo) == odotus
+
+
+def test_kontrolli_vanha_muotoilu_olisi_eri_mielta():
+    """Ilman tata testi olisi vihrea myos silla etta mitaan ei muuttunut."""
+    import scripts.gen_share_card as G
+    eroavat = [v for v in (2.5, 24.5, 0.5) if f"{v:.0f}%" != G._pros(v)]
+    assert eroavat, "uusi pyoristys ei eroa vanhasta - korjaus on inertti"

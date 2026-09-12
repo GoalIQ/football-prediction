@@ -70,6 +70,20 @@ def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(str(path), size)
 
 
+def _pros(arvo: float) -> str:
+    """Prosentti kokonaislukuna, TASAN PUOLIKAS YLOSPAIN.
+
+    🔴 MITATTU 12.9.2026: `f"{v:.0f}%"` kayttaa Pythonin pankkiiripyoristysta
+    (round-half-to-even), joten **Aston Villan 24.5 % renderoityi kortille
+    "24%"** kun ilmaissivu sanoo 24,5 %. Lukija joka vertaa korttia sivuun
+    nakee 24 vs 24,5 ja paattelee etta jompikumpi on vaarin - ja kortti oli se
+    joka oli vaarassa suuntaan.
+    Muisti: `pyoristyssaanto-eroaa-pythonin-ja-jsn-valilla`.
+    """
+    from decimal import ROUND_HALF_UP, Decimal
+    return f"{Decimal(str(arvo)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)}%"
+
+
 def _shrink(d, text, px, max_w, min_px, font_path):
     """Kutista teksti mahtumaan - tai KAADA ajo jos se ei mahdu.
 
@@ -1146,8 +1160,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     _gd = 3 if spec.get("goals_tie") else 2
     column(MX, "PROJECTED GOALS", spec["goals"],
            lambda r: f"{r['xg']:.{_gd}f}")
-    column(MX + col_w + gap, "CLEAN SHEET %", spec["cs"],
-           lambda r: f"{r['cs']:.0f}%")
+    column(MX + col_w + gap, "CLEAN SHEET %", spec["cs"], lambda r: _pros(r["cs"]))
 
     # Kolmas sarake: ottelut. Wolfyn ehdotus 17.8 - ottelut ovat dataa,
     # "top takeaways" olisi mielipidetta.
@@ -1208,7 +1221,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
                 f"kortti: nousija-alaviite ei mahdu ({foot!r}, "
                 f"{d.textlength(foot, font=f_note):.0f}px > {avail}px)")
         d.text((MX, h - 116), foot, font=f_note, fill=MUTED)
-    d.text((MX, h - 84), "clean sheet % for every club on goaliq.app/fpl, free",
+    d.text((MX, h - 84), "every club, both columns, on goaliq.app/fpl, free",
            font=f_foot, fill=MUTED)
     d.text((MX, h - 52), "model projections, not betting advice",
            font=_font(FONT_MED, 16), fill=MUTED)
