@@ -517,7 +517,19 @@
 		return `${s.name} was ${s.raw} ${dir}.`;
 	}
 	function luckCardSpec() {
-		if (!luckSameSquad || !lastFinished || lastFinished.points == null) return null;
+		/* 🔴 VILLEN HAVAINTO 12.9: "my teamista kun haluaa copy image gw4
+		   joukkueen nii antaa ton gw3 resultin". Tama funktio tarkisti vain
+		   ETTA paattynyt kierros on olemassa, ei sita MITA KIERROSTA naytto
+		   katsoo — ja `shareImage` otti sen aina ensisijaisena. Kentalla luki
+		   GW4, kortissa GW3 RESULT.
+
+		   Sama lukija kuin pitchin toteumakartalla (`luckById`), eika oma
+		   ehto: kaksi ehtoa samasta kysymyksesta ajautuu erilleen, ja tama
+		   vika oli tasan se. `premium ? selGw : null` koska ilmaispinnalla ei
+		   ole GW-valitsinta, jolloin "mita kierrosta katsotaan" ei ole
+		   kysymys. */
+		if (!settledGwReadable(premium ? selGw : null, luckGw, luckSameSquad)) return null;
+		if (!lastFinished || lastFinished.points == null) return null;
 		const lf = lastFinished;
 		const toCard = (r: LastFinishedGw['players'][number]): PitchCardPlayer => {
 			const tc = teamColorByShort(r.team_short ?? '');
