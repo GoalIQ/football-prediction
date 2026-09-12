@@ -163,8 +163,12 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
 
     if not rows:
         return {
+            # Ei gradattuja kierroksia: lippu on False koska chippeja EI OLE
+            # pelattu, ei koska niita ei pelata. `chips_played` tyhjana
+            # kertoo saman ilman oletusta.
             "meta": {"available": False, "graded_gws": 0, "masked": False,
-                     "model_plays_chips": False, "note": NOTE_NOT_STARTED,
+                     "model_plays_chips": False, "chips_played": [],
+                     "note": NOTE_NOT_STARTED,
                      "note_code": CODE_NOT_STARTED},
             "totals": {"model": 0, "you": None, "diff": None},
             "gameweeks": [],
@@ -283,13 +287,30 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     provisional_gws = [int(r["gw"]) for r in rows
                        if r.get("provisional") and r.get("gw")]
 
+    # 🔴 LIPPU MITATAAN RIVEISTA, EI KOVAKOODATA (12.9.2026).
+    # Tama oli `False` vakiona kahdessa kohdassa, ja SPA renderoi sen varassa
+    # lauseen "The model's squad is locked before every deadline and plays no
+    # chips." Mitattu `data/model_squad_gw_scores.json`:sta:
+    #   GW1 41 p  active_chip None
+    #   GW2 108 p active_chip 'wildcard'
+    #   GW3 72 p  active_chip '3xc'
+    # Eli **kauden kaksi isointa lukua ovat chip-lukuja**, ja lause niiden
+    # alla sanoi ettei chippeja pelata. Moduulin oma docstring perusteli
+    # kentan sanomalla "jotta paneelin ei tarvitse paatella sita copysta" —
+    # mutta kentta ei lukenut mitaan, joten se oli nimi eika mittaus
+    # (muisti: `portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa`).
+    # `chips_played` on mukana jotta pinta voi kertoa TOTUUDEN eika pelkkaa
+    # vaikenemista.
+    chips_played = sorted({str(r["active_chip"]) for r in rows
+                           if r.get("active_chip")})
     return {
         "meta": {
             "available": True,
             "graded_gws": len(rows),
             "compared_gws": compared,
             "masked": not premium,
-            "model_plays_chips": False,
+            "model_plays_chips": bool(chips_played),
+            "chips_played": chips_played,
             # 🔴 Portin 21. kierros: mallin oma puoli on eri perusteella
             # kahdella julkisella pinnalla. TASSA vertailu on malli vs
             # KAYTTAJA, ja molemmat ovat nettoja (symmetria). `gw_recap`in
