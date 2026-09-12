@@ -251,8 +251,15 @@ def test_kortin_luvut_loytyvat_RENDEROIDULTA_sivulta():
     # portti sanoi "17 rivia, odotettu 20".
     # 10.9: nimen alla voi olla myos todiste-alarivi (<span class="m-sub drv">),
     # ks. XP-AJURIT-ILMAISPINNALLE. Kumpikin span on sivun lisatieto, ei nimea.
+    # 12.9: KOLMAS kerta kun tama lista vanheni. GW-XP-VASTUSTAJA-PUHELIMESSA
+    # lisasi <span class="m-only m-sub opp">, ja luokkalista oli ankkuroitu
+    # heti class="-jalkeen, joten "m-only" edella pudotti KAIKKI 20 rivia
+    # ("sivulla 0 rivia"). Se ei nakynyt mergessa vaan vasta kun sivu
+    # paistettiin uudelleen, eli olisi punastunut vasta deployn jalkeen
+    # (muisti: portti-punastuu-vasta-kun-vika-on-jo-servattu).
+    # Nyt: nimi on teksti ENNEN ensimmaista spania, eika luokkia luetella.
     solut = re.findall(
-        r'<td>([^<]+?)(?:\s*<span class="(?:flag|m-sub[^"]*)"[^>]*>[^<]*</span>)*</td>'
+        r'<td>([^<]+?)(?:\s*<span [^>]*>[^<]*</span>)*</td>'
         r'<td class="tm">.*?<td class="n">[\d.]+</td>'
         r'<td class="n hi">([\d.]+)</td>', sec)
     ren = {_html.unescape(n).strip(): v for n, v in solut}
