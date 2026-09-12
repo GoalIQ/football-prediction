@@ -11,6 +11,7 @@
 	 */
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
+	import { formatSwing } from '$lib/fixtureSwing';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
@@ -24,7 +25,6 @@
 		min: { xp: number; label: string };
 		max: { xp: number; label: string };
 		swing: number;
-		ratio: number;
 	};
 
 	function gwLabel(g: { opponents: { opp: string; venue: string }[] }): string {
@@ -56,7 +56,7 @@
 					tag: r.p.pos,
 					team: r.p.team_short,
 					mid: `${r.min.xp.toFixed(1)} → ${r.max.xp.toFixed(1)}`,
-					value: r.swing.toFixed(1)
+					value: formatSwing(r.swing)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'fixture_swing', method });
@@ -89,8 +89,7 @@
 				p,
 				min: { xp: lo.xp, label: `GW${lo.gw} ${gwLabel(lo)}` },
 				max: { xp: hi.xp, label: `GW${hi.gw} ${gwLabel(hi)}` },
-				swing: hi.xp - lo.xp,
-				ratio: lo.xp > 0 ? hi.xp / lo.xp : Infinity
+				swing: hi.xp - lo.xp
 			});
 		}
 		out.sort((a, b) => b.swing - a.swing);
@@ -144,7 +143,7 @@
 						<th>Player</th>
 						<th class="num">Low</th>
 						<th class="num">High</th>
-						<th class="num"><abbr title="High xP divided by low xP">Swing</abbr></th>
+						<th class="num"><abbr title="High xP minus low xP">Swing</abbr></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -173,7 +172,7 @@
 								<span class="muted meta">{r.max.label}</span>
 							</td>
 							<td class="num strong">
-								{r.ratio === Infinity ? '∞' : `${r.ratio.toFixed(1)}x`}
+								{formatSwing(r.swing)}
 							</td>
 						</tr>
 						{#if expandedId === r.p.id}
