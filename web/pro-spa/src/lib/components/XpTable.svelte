@@ -432,13 +432,20 @@
 	<!-- 10.8: mitattu harha julki. Neljä korjausyritystä hävisi (viimeisin
 	     ristiinvalidoitu kalibrointi, kaikki variantit huonompia), joten lukua
 	     EI säädetä. Kuvaileva kerronta on sama vaste kuin siirtosokeudessa.
-	     Luvut: scripts/calibrate_preseason_minutes.py, 3 kesätaukoa. -->
+	     Luvut: scripts/calibrate_preseason_minutes.py, 3 kesätaukoa.
+	     12.9: luku 14 oli oikein mutta LAUSE oli väärä. Keskiarvo +13.8 min,
+	     MEDIAANI +0.0 min (n=132): tyypillinen 80+ osuu kohdalleen, keskiarvon
+	     tekee häntä (21 % yli 30 min pielessä). Teksti luki keskiarvon
+	     tyypillisenä tapauksena. Luvut: data/preseason_minutes_bias.json,
+	     sidottu porttiin tests/test_minutes_claim_matches_source.py. -->
 	<p>
-		<strong>Our pre-season minutes run high at the top.</strong> We tested our own prior
-		across the last three summers. Players we projected at 80+ minutes came in about 14
-		minutes lower than we said, and players we projected at the bottom came in a little
-		higher. The order of this list is unchanged by that, and the gap closes as 2026/27
-		results arrive.
+		<strong>Our pre-season minutes run high for some at the top.</strong> We tested our
+		own prior across the last three summers. Players we projected at 80+ minutes who
+		then played came in about 10 minutes lower than we said. About four in ten landed
+		within five minutes of the number we gave, and one in six missed by more than 30.
+		Players we projected at the bottom came in higher, and by more than a little. The
+		order of this list is unchanged by that, and the gap closes as 2026/27 results
+		arrive.
 	</p>
 	<p>
 		Honesty notes: these are GoalIQ model projections, not FPL's official expected points.
