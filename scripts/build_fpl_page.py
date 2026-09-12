@@ -923,6 +923,23 @@ _PENDING_INLINE_ROWS = 60
 CALL_MARGIN_PATH = ROOT / "data" / "call_margin.json"
 
 
+def _margin_scope(doc: dict) -> str:
+    """Selita ero heron kokonaislukuun, jos sellainen on.
+
+    🔴 12.9: sivu naytti kaksi eri kokonaislukua (hero 477, tama lohko 429)
+    eika kertonut mista ero tulee. Ero on todellinen ja oikea - 48 MM-rivilla
+    ei ole voittotodennakoisyytta lainkaan, joten ne eivat voi olla
+    marginaalimittauksessa mukana - mutta nimeamaton ero lukee virheelta.
+    """
+    kaikki = doc.get("n_graded_all")
+    kaytetty = doc.get("n_graded")
+    if not kaikki or not kaytetty or kaikki == kaytetty:
+        return ""
+    ero = kaikki - kaytetty
+    return (f" of the {kaikki} in the record above; the other {ero} are "
+            f"World Cup fixtures logged without a win probability")
+
+
 def call_margin_html(doc: dict | None) -> str:
     """10.9.2026 SUOSIKKI-VAIN-KUN-ERO-YLITTAA-VIRHEEN: julkaise marginaalin
     mittaus ilmaispinnalle, jotta ottelusivun lause "below N points the model's
@@ -965,7 +982,7 @@ def call_margin_html(doc: dict | None) -> str:
         f'{doc["decisive_below_won"]} of those ({doc["decisive_below_pct"]}%). At {m} '
         f'points and above the named side won {doc["decisive_above_won"]} of '
         f'{doc["decisive_above_n"]} ({doc["decisive_above_pct"]}%). Measured '
-        f'{measured_txt} from {doc["n_graded"]} graded matches.</p>'
+        f'{measured_txt} from {doc["n_graded"]} graded matches{_margin_scope(doc)}.</p>'
         '<table class="margin-tbl"><thead><tr><th>Gap (points)</th><th>Matches</th>'
         '<th>With a winner</th><th>Named side won, when there was a winner</th>'
         '</tr></thead><tbody>'
