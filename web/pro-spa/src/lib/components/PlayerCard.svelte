@@ -314,7 +314,23 @@
 			cell('cs', 'Clean sheets', given ? pickNum(given, ['cs', 'clean_sheets']) : null, 2)
 		].filter((c): c is Cell => c != null);
 	});
-	const showLastSeason = $derived(lsTotals.length > 0 || lsPer90.length > 0);
+	/* Villen havainto 11.9: kortti nayttaa turhaan edelliskauden tilastoja.
+	   Ehto EI ole enaa "onko riveja" - se nakyi 475 kortilla riippumatta siita
+	   kertooko lohko mitaan. Vastaus lasketaan palvelimella
+	   (src/models/fpl_last_season_basis.py) ja kulkee payloadissa, koska sama
+	   kysymys kysytaan kolmelta pinnalta kahdessa repossa. Kentan puuttuminen
+	   = EI nayteta: vanha artefakti ei saa palauttaa vanhaa kayttaytymista
+	   hiljaa (fail-closed). Kentta ilmestyy seuraavassa projektioajossa. */
+	const showLastSeason = $derived(
+		(lsTotals.length > 0 || lsPer90.length > 0) && player?.last_season_show === true
+	);
+	const LS_REASON: Record<string, string> = {
+		no_projection: 'shown because there is no projection for him this season',
+		new_club: 'shown because those minutes were at another club',
+		short_season: 'shown because last season was a short spell',
+		thin_sample: 'shown because his Premier League sample is still thin'
+	};
+	const lastSeasonReason = $derived(LS_REASON[player?.last_season_reason ?? ''] ?? '');
 
 	/* ---- Season so far, against his position (11.9) ------------------- */
 	const statsRow = $derived.by(() => {
@@ -510,7 +526,7 @@
 						? whyDriverRows(p.why)
 						: undefined,
 				production:
-					cells.length > 0
+					showLastSeason && cells.length > 0
 						? {
 								title: `Last season ${lastSeasonLabel}${
 									lastSeasonLeague ? `, ${lastSeasonLeague}` : ''
@@ -785,6 +801,9 @@
 							>{#if lastSeasonLeague}{lastSeasonLeague}, {/if}public history, not a projection</span
 						>
 					</h4>
+					{#if lastSeasonReason}
+						<p class="ls-reason">{lastSeasonReason}.</p>
+					{/if}
 					{#if lsTotals.length > 0}
 						<dl class="stat-row">
 							{#each lsTotals as c (c.key)}
@@ -1198,6 +1217,14 @@
 		font-weight: 700;
 		color: var(--negative);
 		margin: 0 0 var(--s-2);
+	}
+	/* Miksi viime kausi nakyy taman kauden kortilla. Lohko ilman perustelua on
+	   lohko jolle ei ole lukutapaa (sama portin loydos kuin lipun legendalla
+	   5.9). Sama vaimennus kuin `.gw-title .src`illa, omalla rivillaan. */
+	.ls-reason {
+		margin: calc(-1 * var(--s-2)) 0 var(--s-3);
+		font-size: var(--step--1);
+		color: var(--text-muted);
 	}
 	/* Viime kausi: sama laatikkokieli kuin pc-blockissa, mutta koko leveydeltä. */
 	.last-season {
