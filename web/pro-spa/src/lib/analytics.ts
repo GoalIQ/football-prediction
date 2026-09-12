@@ -154,7 +154,23 @@ function boot(): void {
 				// (havaittu 25.7 kampanjamittausta valmistellessa). pro_page_viewed
 				// jaa funnelin omaksi eventiksi. Myohainen init ei menetä
 				// $pageviewta: posthog capturoi sen initissa.
-				capture_pageview: true,
+				//
+				// 12.9.2026: `true` kirjasi VAIN ensilatauksen. SvelteKit navigoi
+				// history.pushStatella eika lataa sivua uudelleen, joten reitinvaihdot
+				// eivat nakyneet: mitattu 1.16 eri reittia per henkilo $pageview-
+				// tapahtumista vs 22 reittia samojen kayttajien tyokalutapahtumissa.
+				// 'history_change' kirjaa ensilatauksen JA pushState/replaceState/
+				// popstate-vaihdot (posthog-js 1.396.6: @posthog/types/dist/
+				// posthog-config.d.ts capture_pageview, toteutus
+				// lib/src/extensions/history-autocapture.js). Rajaus jonka sanon
+				// aaneen: posthog paikkaa historyn vasta initissa (idle, 3 s katto),
+				// joten sita ennen tehty reitinvaihto ei kirjaudu erikseen; init
+				// kirjaa silloin nykyisen reitin. Portti: tests/test_spa_pageview_history.py
+				capture_pageview: 'history_change',
+				// Oletusarvo, kirjattu nakyviin koska se riippuu ylla olevasta:
+				// posthog-core.js _shouldCapturePageleave hyvaksyy 'history_change':n,
+				// joten $pageleave pysyy paalla kuten ennen.
+				capture_pageleave: 'if_capture_pageview',
 				autocapture: false,
 				// 5.9 auditointi: surveys.js (34 kB) latautui joka sivulle vaikka
 				// kyselyita ei kayteta missaan. Mitattu Lighthouse mobile: posthog
