@@ -845,6 +845,10 @@ export interface ModelRaceResponse {
 		compared_gws?: number;
 		masked: boolean;
 		model_plays_chips: boolean;
+		// 🔴 Kronologinen ja kantaa kierroksen (12.9.2026). Ilman kierrosta
+		// pinta ei voi sanoa mita chippia MISSA kierroksessa ilman etta joku
+		// kirjoittaa sen kasin - ja silloin lause vanhenee seuraavalla chipilla.
+		chips_played?: { gw: number; chip: string }[];
 		/** Kierrokset joiden luku on viela provisionaalinen. Tyhja = kaikki
 		 *  lopullisia. Rivikohtainen `provisional` on sama tieto per rivi. */
 		provisional_gws?: number[];

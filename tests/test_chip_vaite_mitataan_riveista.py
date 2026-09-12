@@ -53,7 +53,7 @@ def test_chip_rivi_kaantaa_lipun():
     d = build_race(_loki([_rivi(1, 41), _rivi(2, 108, "wildcard")]),
                    None, premium=True)
     assert d["meta"]["model_plays_chips"] is True
-    assert d["meta"]["chips_played"] == ["wildcard"]
+    assert d["meta"]["chips_played"] == [{"gw": 2, "chip": "wildcard"}]
 
 
 def test_ilman_chippeja_lippu_on_false():
@@ -63,10 +63,28 @@ def test_ilman_chippeja_lippu_on_false():
     assert d["meta"]["chips_played"] == []
 
 
-def test_useampi_chip_luetellaan_kertaalleen():
-    d = build_race(_loki([_rivi(1, 41, "3xc"), _rivi(2, 108, "wildcard"),
-                          _rivi(3, 72, "3xc")]), None, premium=True)
-    assert d["meta"]["chips_played"] == ["3xc", "wildcard"]
+def test_chips_played_on_kronologinen_eika_aakkostettu():
+    """🔴 Julkaisutarkistajan loydos: aakkosjarjestys on KAANTEINEN
+    kronologiaan (`3xc` < `wildcard`, mutta wildcard pelattiin ensin).
+    Pinta joka renderoi listan jarjestyksessa vaittaisi vaaraa jarjestysta."""
+    d = build_race(_loki([_rivi(2, 108, "wildcard"), _rivi(3, 72, "3xc")]),
+                   None, premium=True)
+    assert d["meta"]["chips_played"] == [{"gw": 2, "chip": "wildcard"},
+                                         {"gw": 3, "chip": "3xc"}]
+    # Ja vaikka rivit tulisivat vaarassa jarjestyksessa.
+    d2 = build_race(_loki([_rivi(3, 72, "3xc"), _rivi(2, 108, "wildcard")]),
+                    None, premium=True)
+    assert [c["chip"] for c in d2["meta"]["chips_played"]] == ["wildcard", "3xc"]
+
+
+def test_chips_played_kantaa_kierroksen():
+    """Ilman kierrosta pinta ei voi sanoa "wildcard GW2:ssa" ilman etta joku
+    kirjoittaa kierroksen kasin — ja silloin lause vanhenee seuraavalla
+    chipilla. Tasan se vika jota tama korjaa."""
+    d = build_race(_loki([_rivi(2, 108, "wildcard"), _rivi(3, 72, "3xc")]),
+                   None, premium=True)
+    for c in d["meta"]["chips_played"]:
+        assert set(c) == {"gw", "chip"} and isinstance(c["gw"], int)
 
 
 def test_tyhja_loki_ei_vaita_ettei_chippeja_pelata():
@@ -84,9 +102,10 @@ def test_repon_oma_loki_kertoo_totuuden():
     d = build_race(json.loads(LOG.read_text(encoding="utf-8")), None,
                    premium=True)
     pelatut = d["meta"]["chips_played"]
-    lokista = sorted({r["active_chip"] for r in
-                      json.loads(LOG.read_text(encoding="utf-8"))["gameweeks"]
-                      if r.get("active_chip")})
+    rivit = json.loads(LOG.read_text(encoding="utf-8"))["gameweeks"]
+    lokista = sorted(({"gw": int(r["gw"]), "chip": r["active_chip"]}
+                      for r in rivit if r.get("active_chip")),
+                     key=lambda c: c["gw"])
     assert pelatut == lokista
     assert d["meta"]["model_plays_chips"] is bool(lokista)
 

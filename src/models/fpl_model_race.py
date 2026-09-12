@@ -301,8 +301,24 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     # (muisti: `portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa`).
     # `chips_played` on mukana jotta pinta voi kertoa TOTUUDEN eika pelkkaa
     # vaikenemista.
-    chips_played = sorted({str(r["active_chip"]) for r in rows
-                           if r.get("active_chip")})
+    #
+    # 🔴 KANTAA KIERROKSEN JA ON KRONOLOGINEN (julkaisutarkistajan loydos,
+    # sama paiva). Ensimmainen versio oli `sorted({nimet})` eli aakkostettu
+    # nimijoukko: `["3xc", "wildcard"]`. Kaksi vikaa:
+    #   1. Ilman kierrosta pinta ei voi sanoa "wildcard GW2:ssa" ILMAN etta
+    #      joku kirjoittaa kierroksen kasin — eli lause vanhenisi seuraavalla
+    #      chipilla, mika on tasan se vika jota tama korjaa.
+    #   2. Aakkosjarjestys on KAANTEINEN kronologiaan (`3xc` < `wildcard`
+    #      mutta wildcard pelattiin GW2:ssa ja 3xc GW3:ssa). Pinta joka
+    #      renderoi listan jarjestyksessa implikoisi etta TC oli ensin
+    #      (muisti: `kilpailijan-luku-oikein-tasossa-vaarin-jarjestyksessa`).
+    #
+    # `chip` on FPL:n oma koodi (`wildcard`/`3xc`/`bboost`/`freehit`); pinta
+    # kaantaa sen nayttonimeksi omasta kanonistaan (`fantasy.chips.chip_*`),
+    # jottei kaannos elaisi kahdessa paikassa.
+    chips_played = [{"gw": int(r["gw"]), "chip": str(r["active_chip"])}
+                    for r in rows if r.get("active_chip") and r.get("gw")]
+    chips_played.sort(key=lambda c: c["gw"])
     return {
         "meta": {
             "available": True,

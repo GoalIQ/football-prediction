@@ -36,11 +36,25 @@ FPL_HEADERS = {"User-Agent": "Mozilla/5.0 (GoalIQ grade job)"}
 _NEW_LOG = {
     "meta": {
         "product": "GoalIQ Beat the Model — model squad per-GW scores",
+        # 🔴 CHIP-KIELTOLAUSE POISTETTU TASTA METASTA (12.9.2026,
+        # julkaisutarkistajan loydos). Se oli kovakoodattu vaite JULKISEEN
+        # artefaktiin: `_NEW_LOG` kirjoitetaan kun `LOG_PATH` ei ole
+        # olemassa, eli kausivaihdoksessa tai jos tiedosto poistetaan — ja
+        # sitten vaite pushataan julkiseen repoon. Nykyinen artefakti on
+        # puhdas vain siksi etta tiedosto on olemassa. Tasan saanto 6a kohta
+        # 3: invariantti mitattu hetkella jolloin se sattuu pitamaan.
+        #
+        # Vaite oli myos epatosi: entry 116920 pelasi wildcardin GW2:ssa ja
+        # triple captainin GW3:ssa, ja ne ovat kauden kaksi isointa lukua.
+        # Chip-tieto elaa nyt rivin omassa `active_chip`-kentassa ja
+        # `model-race`-payloadin `chips_played`issa, eika sita vaiteta
+        # metassa lainkaan.
         "rules": ("The model's squad is frozen before the deadline "
                   "(immutable, provable from git history) and scored with "
                   "official FPL points once the gameweek finishes. "
                   "Autosubs and the captain/vice rule are applied exactly as "
-                  "FPL applies them. The model plays no chips. Append-only."),
+                  "FPL applies them. Any chip the squad played is recorded "
+                  "per gameweek in active_chip. Append-only."),
     },
     "gameweeks": [],
 }

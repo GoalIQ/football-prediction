@@ -171,6 +171,42 @@
 		}
 	}
 	let diff = $derived(data?.totals.diff ?? null);
+
+	//: Chipin nayttonimi FPL:n koodista. Kanoni on isolla kirjaimella ja
+	//: kaantamattomana kaikissa kielissa (`fantasy.chips.chip_*`, sama
+	//: faq/llms/fpl.html), joten sita EI kaanneta.
+	const CHIP_NAMES: Record<string, string> = {
+		wildcard: 'Wildcard',
+		bboost: 'Bench Boost',
+		'3xc': 'Triple Captain',
+		freehit: 'Free Hit'
+	};
+
+	function chipPhrase(c: { gw: number; chip: string }): string {
+		const name = CHIP_NAMES[c.chip] ?? c.chip;
+		const article = /^[AEIOU]/.test(name) ? 'an' : 'a';
+		return `${article} ${name} in GW${c.gw}`;
+	}
+
+	//: Kaksi haaraa, molemmat mitattuja. Tyhja lista = "ei ole pelannut",
+	//: ei "ei pelaa": ero on habituaalisen preesensin ja perfektin valinen,
+	//: ja se on koko korjauksen ydin.
+	//: `$derived.by` eika `$:` — SPA on runes-tilassa (svelte-check nappasi).
+	//: EI `$effect`: se kirjoittaisi tilaa ja muisti
+	//: `svelte-effect-cycle-kills-bindings` varoittaa siita.
+	const chipsSentence = $derived.by(() => {
+		const played = data?.meta?.chips_played;
+		if (played === undefined) return '';
+		if (!played.length) {
+			return "The model's squad is locked before every deadline and has played no chips so far.";
+		}
+		const parts = played.map(chipPhrase);
+		const list =
+			parts.length === 1
+				? parts[0]
+				: parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+		return `The model's squad is locked before every deadline. So far it has played ${list}.`;
+	});
 </script>
 
 {#if data && !failed}
@@ -319,10 +355,17 @@
 			{/if}
 		{/if}
 
-		{#if !data.meta.model_plays_chips}
-			<p class="muted small">
-				The model's squad is locked before every deadline and plays no chips.
-			</p>
+		<!-- 🔴 VAITE MITATAAN, EI VAITETA (12.9.2026). Tassa luki
+		     chip-kieltolauseen ehdolla `!model_plays_chips`, ja se lippu
+		     oli KOVAKOODATTU False. Kauden kaksi isointa lukua ovat chip-lukuja
+		     (GW2 108 wildcard, GW3 72 triple captain), joten lause oli epatosi
+		     joka kerta kun se renderoitiin. Nyt molemmat haarat tulevat
+		     `chips_played`ista, joka on kronologinen ja kantaa kierroksen.
+		     Chipin nayttonimi kaannetaan koodista taalla, jottei kaannos
+		     elaisi kahdessa paikassa. Tarkistusreitti lukijalle:
+		     goaliq.app/fpl#gw-calls sanoo saman ihmisluettavana. -->
+		{#if chipsSentence}
+			<p class="muted small">{chipsSentence}</p>
 		{/if}
 	</section>
 {/if}
