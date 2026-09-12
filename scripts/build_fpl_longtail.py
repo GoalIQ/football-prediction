@@ -810,7 +810,22 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     if not players:
         return None
     meta = diff.get("meta") or {}
-    gw_txt = f"GW{meta['gw']}" if meta.get("gw") else "this gameweek"
+    # 🔴 12.9: IKKUNA NIMETAAN, EIKA SANOTA "this gameweek".
+    # Sivun taulukko on KUUDEN kierroksen projektio (sarake "xP, 6 GWs"),
+    # mutta otsikko, title-tagi ja meta-description sanoivat yhta kierrosta.
+    # Syy oli mekaaninen: payloadista puuttui `meta.gw`, joten tama rivi
+    # fallbackasi aina. Sanoja "six" tai "next 6" ei esiintynyt sivulla
+    # kertaakaan, joten postaus joka sanoo "over the next six gameweeks"
+    # lahetti lukijan sivulle joka ei sano sita (sama vikaluokka kuin
+    # FPL-SIVU-OTTELUIDEN-XG). Fallback on nyt TOSI molemmissa tapauksissa.
+    _gw = meta.get("gw")
+    _horizon = int(meta.get("horizon_gw") or 6)
+    if _gw and _horizon > 1:
+        gw_txt = f"GW{_gw}-GW{_gw + _horizon - 1}"
+    elif _gw:
+        gw_txt = f"GW{_gw}"
+    else:
+        gw_txt = "the coming gameweeks"
     top = players[0]
     url = f"{BASE}/fpl/differentials"
     title = f"Best FPL Differentials {gw_txt}: Low-Owned Model Picks | GoalIQ"
