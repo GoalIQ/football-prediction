@@ -1,10 +1,10 @@
 {
  "meta": {
-  "gameweek": 2,
-  "rank_after_gw": 1,
+  "gameweek": 4,
+  "rank_after_gw": 3,
   "circular": false,
   "circular_note": null,
-  "generated_at": "2026-08-29T11:11:00+00:00",
+  "generated_at": "2026-09-12T13:37:44+00:00",
   "source": "FPL entry transfers + picks, sampled by rank tier",
   "caveat": "Each tier is a sample of that rank range, not the full tier. Always show n next to the percentage."
  },
@@ -12,442 +12,107 @@
   "top1k": {
    "n_sampled": 200,
    "n_missing": 0,
-   "hold": 122,
-   "hold_pct": 61.0,
-   "took_hit": 14,
-   "took_hit_pct": 7.0,
-   "transfers_per_manager": 1.77,
+   "hold": 17,
+   "hold_pct": 8.5,
+   "took_hit": 6,
+   "took_hit_pct": 3.0,
+   "transfers_per_manager": 9.13,
    "chips": {
-    "none": 176,
-    "3xc": 15,
-    "wildcard": 5,
-    "freehit": 3,
-    "bboost": 1
+    "wildcard": 57,
+    "none": 111,
+    "3xc": 24,
+    "freehit": 8
    },
    "transfers_in": [
     {
-     "id": 427,
-     "web_name": "Mbeumo",
-     "team": "MUN",
+     "id": 40,
+     "web_name": "Rogers",
+     "team": "CHE",
      "pos": "MID",
-     "price": 8.0,
-     "count": 13,
-     "pct": 6.5,
-     "overall_pct": 34.6
+     "price": 7.6,
+     "count": 120,
+     "pct": 60.0,
+     "overall_pct": 35.8
     },
     {
-     "id": 387,
-     "web_name": "O'Reilly",
-     "team": "MCI",
-     "pos": "DEF",
-     "price": 6.5,
-     "count": 13,
-     "pct": 6.5,
-     "overall_pct": 20.6
-    },
-    {
-     "id": 391,
-     "web_name": "Gvardiol",
-     "team": "MCI",
-     "pos": "DEF",
-     "price": 5.5,
-     "count": 13,
-     "pct": 6.5,
-     "overall_pct": 14.6
-    },
-    {
-     "id": 496,
-     "web_name": "Kinsky",
-     "team": "TOT",
-     "pos": "GKP",
-     "price": 4.5,
-     "count": 12,
-     "pct": 6.0,
-     "overall_pct": 22.5
-    },
-    {
-     "id": 356,
-     "web_name": "Virgil",
-     "team": "LIV",
-     "pos": "DEF",
-     "price": 6.5,
-     "count": 12,
-     "pct": 6.0,
-     "overall_pct": 19.6
-    },
-    {
-     "id": 8,
-     "web_name": "Calafiori",
+     "id": 31,
+     "web_name": "Konsa",
      "team": "ARS",
      "pos": "DEF",
-     "price": 5.6,
-     "count": 11,
-     "pct": 5.5,
-     "overall_pct": 41.7
+     "price": 4.5,
+     "count": 75,
+     "pct": 37.5,
+     "overall_pct": 17.5
+    },
+    {
+     "id": 449,
+     "web_name": "Hall",
+     "team": "NEW",
+     "pos": "DEF",
+     "price": 5.2,
+     "count": 68,
+     "pct": 34.0,
+     "overall_pct": 14.1
+    },
+    {
+     "id": 154,
+     "web_name": "Palmer",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 9.7,
+     "count": 66,
+     "pct": 33.0,
+     "overall_pct": 28.8
     },
     {
      "id": 115,
      "web_name": "De Cuyper",
      "team": "BHA",
      "pos": "DEF",
-     "price": 4.6,
-     "count": 10,
-     "pct": 5.0,
-     "overall_pct": 9.2
-    },
-    {
-     "id": 379,
-     "web_name": "Isak",
-     "team": "LIV",
-     "pos": "FWD",
-     "price": 9.0,
-     "count": 10,
-     "pct": 5.0,
-     "overall_pct": 16.2
+     "price": 4.8,
+     "count": 56,
+     "pct": 28.0,
+     "overall_pct": 23.3
     },
     {
      "id": 464,
      "web_name": "Wissa",
      "team": "NEW",
      "pos": "FWD",
-     "price": 6.0,
-     "count": 9,
-     "pct": 4.5,
-     "overall_pct": 3.8
-    },
-    {
-     "id": 31,
-     "web_name": "Konsa",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 4.5,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 10.7
-    },
-    {
-     "id": 565,
-     "web_name": "M.Sangaré",
-     "team": "BRE",
-     "pos": "MID",
-     "price": 5.6,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 9.4
-    },
-    {
-     "id": 385,
-     "web_name": "Trafford",
-     "team": "LEE",
-     "pos": "GKP",
-     "price": 5.0,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 4.5
-    },
-    {
-     "id": 569,
-     "web_name": "Gonzalo",
-     "team": "FUL",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 4.2
-    },
-    {
-     "id": 236,
-     "web_name": "Dewsbury-Hall",
-     "team": "EVE",
-     "pos": "MID",
-     "price": 6.5,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 4.7
-    },
-    {
-     "id": 112,
-     "web_name": "Van Hecke",
-     "team": "TOT",
-     "pos": "DEF",
-     "price": 5.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 9.5
-    }
-   ],
-   "transfers_out": [
-    {
-     "id": 387,
-     "web_name": "O'Reilly",
-     "team": "MCI",
-     "pos": "DEF",
-     "price": 6.5,
-     "count": 12,
-     "pct": 6.0,
-     "overall_pct": 20.6
-    },
-    {
-     "id": 8,
-     "web_name": "Calafiori",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 5.6,
-     "count": 11,
-     "pct": 5.5,
-     "overall_pct": 41.7
-    },
-    {
-     "id": 496,
-     "web_name": "Kinsky",
-     "team": "TOT",
-     "pos": "GKP",
-     "price": 4.5,
-     "count": 11,
-     "pct": 5.5,
-     "overall_pct": 22.5
-    },
-    {
-     "id": 391,
-     "web_name": "Gvardiol",
-     "team": "MCI",
-     "pos": "DEF",
-     "price": 5.5,
-     "count": 11,
-     "pct": 5.5,
-     "overall_pct": 14.6
-    },
-    {
-     "id": 385,
-     "web_name": "Trafford",
-     "team": "LEE",
-     "pos": "GKP",
-     "price": 5.0,
-     "count": 10,
-     "pct": 5.0,
-     "overall_pct": 4.5
-    },
-    {
-     "id": 356,
-     "web_name": "Virgil",
-     "team": "LIV",
-     "pos": "DEF",
-     "price": 6.5,
-     "count": 10,
-     "pct": 5.0,
-     "overall_pct": 19.6
-    },
-    {
-     "id": 379,
-     "web_name": "Isak",
-     "team": "LIV",
-     "pos": "FWD",
-     "price": 9.0,
-     "count": 9,
-     "pct": 4.5,
-     "overall_pct": 16.2
-    },
-    {
-     "id": 427,
-     "web_name": "Mbeumo",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 9,
-     "pct": 4.5,
-     "overall_pct": 34.6
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 16.9
-    },
-    {
-     "id": 112,
-     "web_name": "Van Hecke",
-     "team": "TOT",
-     "pos": "DEF",
-     "price": 5.0,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 9.5
+     "price": 6.2,
+     "count": 55,
+     "pct": 27.5,
+     "overall_pct": 18.0
     },
     {
      "id": 15,
      "web_name": "Ødegaard",
      "team": "ARS",
      "pos": "MID",
-     "price": 6.6,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 11.8
+     "price": 6.7,
+     "count": 50,
+     "pct": 25.0,
+     "overall_pct": 19.0
     },
     {
-     "id": 31,
-     "web_name": "Konsa",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 4.5,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 10.7
-    },
-    {
-     "id": 106,
-     "web_name": "Thiago",
-     "team": "BRE",
-     "pos": "FWD",
-     "price": 8.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 16.4
-    },
-    {
-     "id": 237,
-     "web_name": "Ndiaye",
-     "team": "EVE",
+     "id": 124,
+     "web_name": "Groß",
+     "team": "BHA",
      "pos": "MID",
-     "price": 6.0,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 15.9
-    },
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 47.3
-    }
-   ],
-   "captains": [
-    {
-     "id": 411,
-     "web_name": "Haaland",
-     "team": "MCI",
-     "pos": "FWD",
-     "price": 15.5,
-     "count": 60,
-     "pct": 30.0,
-     "overall_pct": 68.3
-    },
-    {
-     "id": 165,
-     "web_name": "João Pedro",
-     "team": "CHE",
-     "pos": "FWD",
-     "price": 7.6,
-     "count": 38,
-     "pct": 19.0,
-     "overall_pct": 68.5
-    },
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 34,
-     "pct": 17.0,
-     "overall_pct": 47.3
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 30,
-     "pct": 15.0,
-     "overall_pct": 16.9
+     "price": 5.6,
+     "count": 48,
+     "pct": 24.0,
+     "overall_pct": 16.3
     },
     {
      "id": 379,
      "web_name": "Isak",
      "team": "LIV",
      "pos": "FWD",
-     "price": 9.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 16.2
-    },
-    {
-     "id": 427,
-     "web_name": "Mbeumo",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 34.6
-    },
-    {
-     "id": 26,
-     "web_name": "Havertz",
-     "team": "ARS",
-     "pos": "FWD",
-     "price": 7.5,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 7.5
-    },
-    {
-     "id": 4,
-     "web_name": "Gabriel",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 8.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 28.8
-    },
-    {
-     "id": 12,
-     "web_name": "Saka",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 9.5,
-     "count": 2,
-     "pct": 1.0,
-     "overall_pct": 10.4
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 2,
-     "pct": 1.0,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 397,
-     "web_name": "Semenyo",
-     "team": "MCI",
-     "pos": "MID",
-     "price": 8.5,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 23.5
-    },
-    {
-     "id": 295,
-     "web_name": "McBurnie",
-     "team": "HUL",
-     "pos": "FWD",
-     "price": 5.5,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 2.2
+     "price": 9.1,
+     "count": 45,
+     "pct": 22.5,
+     "overall_pct": 24.5
     },
     {
      "id": 368,
@@ -455,691 +120,91 @@
      "team": "LIV",
      "pos": "MID",
      "price": 7.0,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 43.4
-    },
-    {
-     "id": 526,
-     "web_name": "Solanke",
-     "team": "TOT",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 1.3
-    },
-    {
-     "id": 428,
-     "web_name": "Cunha",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 9.2
-    }
-   ]
-  },
-  "top10k": {
-   "n_sampled": 200,
-   "n_missing": 0,
-   "hold": 134,
-   "hold_pct": 67.0,
-   "took_hit": 11,
-   "took_hit_pct": 5.5,
-   "transfers_per_manager": 0.85,
-   "chips": {
-    "none": 183,
-    "3xc": 7,
-    "freehit": 2,
-    "bboost": 5,
-    "wildcard": 3
-   },
-   "transfers_in": [
-    {
-     "id": 88,
-     "web_name": "Kayode",
-     "team": "BRE",
-     "pos": "DEF",
-     "price": 4.6,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 8.0
-    },
-    {
-     "id": 40,
-     "web_name": "Rogers",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 7.5,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 26.1
-    },
-    {
-     "id": 115,
-     "web_name": "De Cuyper",
-     "team": "BHA",
-     "pos": "DEF",
-     "price": 4.6,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 9.2
-    },
-    {
-     "id": 464,
-     "web_name": "Wissa",
-     "team": "NEW",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 3.8
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 16.9
-    },
-    {
-     "id": 557,
-     "web_name": "Tzolis",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.5,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 26.1
-    },
-    {
-     "id": 565,
-     "web_name": "M.Sangaré",
-     "team": "BRE",
-     "pos": "MID",
-     "price": 5.6,
-     "count": 5,
-     "pct": 2.5,
-     "overall_pct": 9.4
+     "count": 43,
+     "pct": 21.5,
+     "overall_pct": 38.6
     },
     {
      "id": 249,
      "web_name": "Barry",
      "team": "EVE",
      "pos": "FWD",
-     "price": 5.5,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 3.6
-    },
-    {
-     "id": 569,
-     "web_name": "Gonzalo",
-     "team": "FUL",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 4.2
-    },
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 47.3
-    },
-    {
-     "id": 106,
-     "web_name": "Thiago",
-     "team": "BRE",
-     "pos": "FWD",
-     "price": 8.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 16.4
-    },
-    {
-     "id": 439,
-     "web_name": "Šeško",
-     "team": "MUN",
-     "pos": "FWD",
-     "price": 7.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 1.8
-    },
-    {
-     "id": 4,
-     "web_name": "Gabriel",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 8.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 28.8
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 499,
-     "web_name": "Pedro Porro",
-     "team": "TOT",
-     "pos": "DEF",
-     "price": 5.5,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 13.5
-    }
-   ],
-   "transfers_out": [
-    {
-     "id": 346,
-     "web_name": "Calvert-Lewin",
-     "team": "LEE",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 28.2
-    },
-    {
-     "id": 397,
-     "web_name": "Semenyo",
-     "team": "MCI",
-     "pos": "MID",
-     "price": 8.5,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 23.5
-    },
-    {
-     "id": 237,
-     "web_name": "Ndiaye",
-     "team": "EVE",
-     "pos": "MID",
-     "price": 6.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 15.9
-    },
-    {
-     "id": 40,
-     "web_name": "Rogers",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 7.5,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 26.1
-    },
-    {
-     "id": 527,
-     "web_name": "Richarlison",
-     "team": "TOT",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 2.7
-    },
-    {
-     "id": 469,
-     "web_name": "N.Williams",
-     "team": "NFO",
-     "pos": "DEF",
-     "price": 5.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 8.8
-    },
-    {
-     "id": 11,
-     "web_name": "Mosquera",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 5.5,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 5.6
-    },
-    {
-     "id": 229,
-     "web_name": "Tarkowski",
-     "team": "EVE",
-     "pos": "DEF",
-     "price": 6.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 8.6
-    },
-    {
-     "id": 428,
-     "web_name": "Cunha",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 9.2
-    },
-    {
-     "id": 552,
-     "web_name": "Brobbey",
-     "team": "SUN",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 12.6
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 47.3
-    },
-    {
-     "id": 12,
-     "web_name": "Saka",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 9.5,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 10.4
-    },
-    {
-     "id": 4,
-     "web_name": "Gabriel",
-     "team": "ARS",
-     "pos": "DEF",
-     "price": 8.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 28.8
-    },
-    {
-     "id": 463,
-     "web_name": "Woltemade",
-     "team": "NEW",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 1.5
-    }
-   ],
-   "captains": [
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 53,
-     "pct": 26.5,
-     "overall_pct": 47.3
-    },
-    {
-     "id": 411,
-     "web_name": "Haaland",
-     "team": "MCI",
-     "pos": "FWD",
-     "price": 15.5,
-     "count": 50,
-     "pct": 25.0,
-     "overall_pct": 68.3
-    },
-    {
-     "id": 165,
-     "web_name": "João Pedro",
-     "team": "CHE",
-     "pos": "FWD",
-     "price": 7.6,
-     "count": 38,
-     "pct": 19.0,
-     "overall_pct": 68.5
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 17,
-     "pct": 8.5,
-     "overall_pct": 16.9
-    },
-    {
-     "id": 427,
-     "web_name": "Mbeumo",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 11,
-     "pct": 5.5,
-     "overall_pct": 34.6
-    },
-    {
-     "id": 379,
-     "web_name": "Isak",
-     "team": "LIV",
-     "pos": "FWD",
-     "price": 9.0,
-     "count": 5,
-     "pct": 2.5,
-     "overall_pct": 16.2
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 5,
-     "pct": 2.5,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 12,
-     "web_name": "Saka",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 9.5,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 10.4
-    },
-    {
-     "id": 397,
-     "web_name": "Semenyo",
-     "team": "MCI",
-     "pos": "MID",
-     "price": 8.5,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 23.5
-    },
-    {
-     "id": 557,
-     "web_name": "Tzolis",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.5,
-     "count": 3,
-     "pct": 1.5,
-     "overall_pct": 26.1
-    },
-    {
-     "id": 26,
-     "web_name": "Havertz",
-     "team": "ARS",
-     "pos": "FWD",
-     "price": 7.5,
-     "count": 2,
-     "pct": 1.0,
-     "overall_pct": 7.5
-    },
-    {
-     "id": 295,
-     "web_name": "McBurnie",
-     "team": "HUL",
-     "pos": "FWD",
-     "price": 5.5,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 2.2
-    },
-    {
-     "id": 388,
-     "web_name": "Guéhi",
-     "team": "MCI",
-     "pos": "DEF",
-     "price": 6.0,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 19.5
-    },
-    {
-     "id": 346,
-     "web_name": "Calvert-Lewin",
-     "team": "LEE",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 28.2
-    },
-    {
-     "id": 569,
-     "web_name": "Gonzalo",
-     "team": "FUL",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 4.2
-    }
-   ]
-  },
-  "top100k": {
-   "n_sampled": 200,
-   "n_missing": 0,
-   "hold": 118,
-   "hold_pct": 59.0,
-   "took_hit": 14,
-   "took_hit_pct": 7.0,
-   "transfers_per_manager": 1.8,
-   "chips": {
-    "none": 184,
-    "wildcard": 7,
-    "3xc": 4,
-    "freehit": 2,
-    "bboost": 3
-   },
-   "transfers_in": [
-    {
-     "id": 115,
-     "web_name": "De Cuyper",
-     "team": "BHA",
-     "pos": "DEF",
-     "price": 4.6,
-     "count": 17,
-     "pct": 8.5,
-     "overall_pct": 9.2
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 13,
-     "pct": 6.5,
-     "overall_pct": 16.9
-    },
-    {
-     "id": 565,
-     "web_name": "M.Sangaré",
-     "team": "BRE",
-     "pos": "MID",
      "price": 5.6,
-     "count": 12,
-     "pct": 6.0,
-     "overall_pct": 9.4
+     "count": 36,
+     "pct": 18.0,
+     "overall_pct": 6.2
     },
     {
-     "id": 368,
-     "web_name": "Szoboszlai",
-     "team": "LIV",
-     "pos": "MID",
-     "price": 7.0,
-     "count": 10,
-     "pct": 5.0,
-     "overall_pct": 43.4
+     "id": 1,
+     "web_name": "Raya",
+     "team": "ARS",
+     "pos": "GKP",
+     "price": 6.0,
+     "count": 36,
+     "pct": 18.0,
+     "overall_pct": 39.2
     },
     {
-     "id": 88,
-     "web_name": "Kayode",
-     "team": "BRE",
-     "pos": "DEF",
-     "price": 4.6,
-     "count": 10,
-     "pct": 5.0,
-     "overall_pct": 8.0
-    },
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 9,
-     "pct": 4.5,
-     "overall_pct": 47.3
+     "id": 497,
+     "web_name": "Dubravka",
+     "team": "TOT",
+     "pos": "GKP",
+     "price": 4.0,
+     "count": 35,
+     "pct": 17.5,
+     "overall_pct": 18.0
     },
     {
      "id": 367,
      "web_name": "Gakpo",
      "team": "LIV",
      "pos": "MID",
-     "price": 7.0,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 6.7
+     "price": 7.2,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 12.4
     },
     {
-     "id": 385,
-     "web_name": "Trafford",
-     "team": "LEE",
-     "pos": "GKP",
-     "price": 5.0,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 4.5
-    },
-    {
-     "id": 391,
-     "web_name": "Gvardiol",
-     "team": "MCI",
-     "pos": "DEF",
-     "price": 5.5,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 14.6
-    },
-    {
-     "id": 40,
-     "web_name": "Rogers",
-     "team": "CHE",
+     "id": 453,
+     "web_name": "Barnes",
+     "team": "NEW",
      "pos": "MID",
-     "price": 7.5,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 26.1
-    },
-    {
-     "id": 82,
-     "web_name": "Kelleher",
-     "team": "BRE",
-     "pos": "GKP",
-     "price": 5.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 6.6
-    },
-    {
-     "id": 165,
-     "web_name": "João Pedro",
-     "team": "CHE",
-     "pos": "FWD",
-     "price": 7.6,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 68.5
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 569,
-     "web_name": "Gonzalo",
-     "team": "FUL",
-     "pos": "FWD",
      "price": 6.0,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 4.2
-    },
-    {
-     "id": 249,
-     "web_name": "Barry",
-     "team": "EVE",
-     "pos": "FWD",
-     "price": 5.5,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 3.6
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 2.7
     }
    ],
    "transfers_out": [
+    {
+     "id": 427,
+     "web_name": "Mbeumo",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 7.9,
+     "count": 91,
+     "pct": 45.5,
+     "overall_pct": 22.9
+    },
     {
      "id": 426,
      "web_name": "B.Fernandes",
      "team": "MUN",
      "pos": "MID",
      "price": 12.0,
-     "count": 12,
-     "pct": 6.0,
-     "overall_pct": 47.3
+     "count": 64,
+     "pct": 32.0,
+     "overall_pct": 41.6
     },
     {
-     "id": 427,
-     "web_name": "Mbeumo",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 11,
-     "pct": 5.5,
-     "overall_pct": 34.6
+     "id": 346,
+     "web_name": "Calvert-Lewin",
+     "team": "LEE",
+     "pos": "FWD",
+     "price": 6.0,
+     "count": 48,
+     "pct": 24.0,
+     "overall_pct": 21.4
     },
     {
      "id": 109,
@@ -1147,251 +212,19 @@
      "team": "BHA",
      "pos": "GKP",
      "price": 4.5,
-     "count": 9,
-     "pct": 4.5,
-     "overall_pct": 21.5
-    },
-    {
-     "id": 379,
-     "web_name": "Isak",
-     "team": "LIV",
-     "pos": "FWD",
-     "price": 9.0,
-     "count": 8,
-     "pct": 4.0,
-     "overall_pct": 16.2
+     "count": 46,
+     "pct": 23.0,
+     "overall_pct": 22.3
     },
     {
      "id": 237,
      "web_name": "Ndiaye",
-     "team": "EVE",
-     "pos": "MID",
-     "price": 6.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 15.9
-    },
-    {
-     "id": 40,
-     "web_name": "Rogers",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 7.5,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 26.1
-    },
-    {
-     "id": 346,
-     "web_name": "Calvert-Lewin",
-     "team": "LEE",
-     "pos": "FWD",
-     "price": 6.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 28.2
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 16.9
-    },
-    {
-     "id": 165,
-     "web_name": "João Pedro",
-     "team": "CHE",
-     "pos": "FWD",
-     "price": 7.6,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 68.5
-    },
-    {
-     "id": 397,
-     "web_name": "Semenyo",
      "team": "MCI",
      "pos": "MID",
-     "price": 8.5,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 23.5
-    },
-    {
-     "id": 368,
-     "web_name": "Szoboszlai",
-     "team": "LIV",
-     "pos": "MID",
-     "price": 7.0,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 43.4
-    },
-    {
-     "id": 123,
-     "web_name": "Hinshelwood",
-     "team": "BHA",
-     "pos": "MID",
-     "price": 6.0,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 2.1
-    },
-    {
-     "id": 82,
-     "web_name": "Kelleher",
-     "team": "BRE",
-     "pos": "GKP",
-     "price": 5.0,
-     "count": 6,
-     "pct": 3.0,
-     "overall_pct": 6.6
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 5,
-     "pct": 2.5,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 418,
-     "web_name": "Maguire",
-     "team": "MUN",
-     "pos": "DEF",
-     "price": 5.0,
-     "count": 5,
-     "pct": 2.5,
-     "overall_pct": 16.7
-    }
-   ],
-   "captains": [
-    {
-     "id": 426,
-     "web_name": "B.Fernandes",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 12.0,
-     "count": 62,
-     "pct": 31.0,
-     "overall_pct": 47.3
-    },
-    {
-     "id": 411,
-     "web_name": "Haaland",
-     "team": "MCI",
-     "pos": "FWD",
-     "price": 15.5,
-     "count": 50,
-     "pct": 25.0,
-     "overall_pct": 68.3
-    },
-    {
-     "id": 165,
-     "web_name": "João Pedro",
-     "team": "CHE",
-     "pos": "FWD",
-     "price": 7.6,
-     "count": 41,
-     "pct": 20.5,
-     "overall_pct": 68.5
-    },
-    {
-     "id": 154,
-     "web_name": "Palmer",
-     "team": "CHE",
-     "pos": "MID",
-     "price": 9.6,
-     "count": 18,
-     "pct": 9.0,
-     "overall_pct": 16.9
-    },
-    {
-     "id": 427,
-     "web_name": "Mbeumo",
-     "team": "MUN",
-     "pos": "MID",
-     "price": 8.0,
-     "count": 7,
-     "pct": 3.5,
-     "overall_pct": 34.6
-    },
-    {
-     "id": 379,
-     "web_name": "Isak",
-     "team": "LIV",
-     "pos": "FWD",
-     "price": 9.0,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 16.2
-    },
-    {
-     "id": 15,
-     "web_name": "Ødegaard",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 6.6,
-     "count": 4,
-     "pct": 2.0,
-     "overall_pct": 11.8
-    },
-    {
-     "id": 26,
-     "web_name": "Havertz",
-     "team": "ARS",
-     "pos": "FWD",
-     "price": 7.5,
-     "count": 2,
-     "pct": 1.0,
-     "overall_pct": 7.5
-    },
-    {
-     "id": 106,
-     "web_name": "Thiago",
-     "team": "BRE",
-     "pos": "FWD",
-     "price": 8.0,
-     "count": 2,
-     "pct": 1.0,
-     "overall_pct": 16.4
-    },
-    {
-     "id": 12,
-     "web_name": "Saka",
-     "team": "ARS",
-     "pos": "MID",
-     "price": 9.5,
-     "count": 2,
-     "pct": 1.0,
-     "overall_pct": 10.4
-    },
-    {
-     "id": 397,
-     "web_name": "Semenyo",
-     "team": "MCI",
-     "pos": "MID",
-     "price": 8.5,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 23.5
-    },
-    {
-     "id": 295,
-     "web_name": "McBurnie",
-     "team": "HUL",
-     "pos": "FWD",
-     "price": 5.5,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 2.2
+     "price": 5.9,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 8.4
     },
     {
      "id": 10,
@@ -1399,19 +232,191 @@
      "team": "ARS",
      "pos": "DEF",
      "price": 5.5,
-     "count": 1,
-     "pct": 0.5,
-     "overall_pct": 6.9
+     "count": 40,
+     "pct": 20.0,
+     "overall_pct": 7.6
     },
     {
-     "id": 57,
-     "web_name": "Petrović",
-     "team": "BOU",
+     "id": 418,
+     "web_name": "Maguire",
+     "team": "MUN",
+     "pos": "DEF",
+     "price": 4.9,
+     "count": 39,
+     "pct": 19.5,
+     "overall_pct": 10.2
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 38,
+     "pct": 19.0,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 15,
+     "web_name": "Ødegaard",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 6.7,
+     "count": 36,
+     "pct": 18.0,
+     "overall_pct": 19.0
+    },
+    {
+     "id": 124,
+     "web_name": "Groß",
+     "team": "BHA",
+     "pos": "MID",
+     "price": 5.6,
+     "count": 35,
+     "pct": 17.5,
+     "overall_pct": 16.3
+    },
+    {
+     "id": 1,
+     "web_name": "Raya",
+     "team": "ARS",
      "pos": "GKP",
-     "price": 4.5,
+     "price": 6.0,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 39.2
+    },
+    {
+     "id": 449,
+     "web_name": "Hall",
+     "team": "NEW",
+     "pos": "DEF",
+     "price": 5.2,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 14.1
+    },
+    {
+     "id": 4,
+     "web_name": "Gabriel",
+     "team": "ARS",
+     "pos": "DEF",
+     "price": 8.0,
+     "count": 30,
+     "pct": 15.0,
+     "overall_pct": 23.8
+    },
+    {
+     "id": 557,
+     "web_name": "Tzolis",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 6.4,
+     "count": 30,
+     "pct": 15.0,
+     "overall_pct": 15.5
+    },
+    {
+     "id": 368,
+     "web_name": "Szoboszlai",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.0,
+     "count": 29,
+     "pct": 14.5,
+     "overall_pct": 38.6
+    }
+   ],
+   "captains": [
+    {
+     "id": 154,
+     "web_name": "Palmer",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 9.7,
+     "count": 124,
+     "pct": 62.0,
+     "overall_pct": 28.8
+    },
+    {
+     "id": 165,
+     "web_name": "João Pedro",
+     "team": "CHE",
+     "pos": "FWD",
+     "price": 7.7,
+     "count": 37,
+     "pct": 18.5,
+     "overall_pct": 74.1
+    },
+    {
+     "id": 411,
+     "web_name": "Haaland",
+     "team": "MCI",
+     "pos": "FWD",
+     "price": 15.5,
+     "count": 15,
+     "pct": 7.5,
+     "overall_pct": 71.1
+    },
+    {
+     "id": 379,
+     "web_name": "Isak",
+     "team": "LIV",
+     "pos": "FWD",
+     "price": 9.1,
+     "count": 9,
+     "pct": 4.5,
+     "overall_pct": 24.5
+    },
+    {
+     "id": 40,
+     "web_name": "Rogers",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 7.6,
+     "count": 6,
+     "pct": 3.0,
+     "overall_pct": 35.8
+    },
+    {
+     "id": 12,
+     "web_name": "Saka",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 9.5,
+     "count": 3,
+     "pct": 1.5,
+     "overall_pct": 11.8
+    },
+    {
+     "id": 426,
+     "web_name": "B.Fernandes",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 12.0,
+     "count": 3,
+     "pct": 1.5,
+     "overall_pct": 41.6
+    },
+    {
+     "id": 356,
+     "web_name": "Virgil",
+     "team": "LIV",
+     "pos": "DEF",
+     "price": 6.5,
      "count": 1,
      "pct": 0.5,
-     "overall_pct": 3.3
+     "overall_pct": 17.1
+    },
+    {
+     "id": 15,
+     "web_name": "Ødegaard",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 6.7,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 19.0
     },
     {
      "id": 368,
@@ -1421,7 +426,829 @@
      "price": 7.0,
      "count": 1,
      "pct": 0.5,
-     "overall_pct": 43.4
+     "overall_pct": 38.6
+    }
+   ]
+  },
+  "top10k": {
+   "n_sampled": 200,
+   "n_missing": 0,
+   "hold": 21,
+   "hold_pct": 10.5,
+   "took_hit": 8,
+   "took_hit_pct": 4.0,
+   "transfers_per_manager": 10.22,
+   "chips": {
+    "wildcard": 77,
+    "none": 101,
+    "3xc": 11,
+    "freehit": 11
+   },
+   "transfers_in": [
+    {
+     "id": 40,
+     "web_name": "Rogers",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 7.6,
+     "count": 132,
+     "pct": 66.0,
+     "overall_pct": 35.8
+    },
+    {
+     "id": 31,
+     "web_name": "Konsa",
+     "team": "ARS",
+     "pos": "DEF",
+     "price": 4.5,
+     "count": 105,
+     "pct": 52.5,
+     "overall_pct": 17.5
+    },
+    {
+     "id": 154,
+     "web_name": "Palmer",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 9.7,
+     "count": 102,
+     "pct": 51.0,
+     "overall_pct": 28.8
+    },
+    {
+     "id": 449,
+     "web_name": "Hall",
+     "team": "NEW",
+     "pos": "DEF",
+     "price": 5.2,
+     "count": 89,
+     "pct": 44.5,
+     "overall_pct": 14.1
+    },
+    {
+     "id": 115,
+     "web_name": "De Cuyper",
+     "team": "BHA",
+     "pos": "DEF",
+     "price": 4.8,
+     "count": 61,
+     "pct": 30.5,
+     "overall_pct": 23.3
+    },
+    {
+     "id": 379,
+     "web_name": "Isak",
+     "team": "LIV",
+     "pos": "FWD",
+     "price": 9.1,
+     "count": 55,
+     "pct": 27.5,
+     "overall_pct": 24.5
+    },
+    {
+     "id": 464,
+     "web_name": "Wissa",
+     "team": "NEW",
+     "pos": "FWD",
+     "price": 6.2,
+     "count": 51,
+     "pct": 25.5,
+     "overall_pct": 18.0
+    },
+    {
+     "id": 15,
+     "web_name": "Ødegaard",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 6.7,
+     "count": 51,
+     "pct": 25.5,
+     "overall_pct": 19.0
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 49,
+     "pct": 24.5,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 124,
+     "web_name": "Groß",
+     "team": "BHA",
+     "pos": "MID",
+     "price": 5.6,
+     "count": 49,
+     "pct": 24.5,
+     "overall_pct": 16.3
+    },
+    {
+     "id": 12,
+     "web_name": "Saka",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 9.5,
+     "count": 48,
+     "pct": 24.0,
+     "overall_pct": 11.8
+    },
+    {
+     "id": 368,
+     "web_name": "Szoboszlai",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.0,
+     "count": 47,
+     "pct": 23.5,
+     "overall_pct": 38.6
+    },
+    {
+     "id": 249,
+     "web_name": "Barry",
+     "team": "EVE",
+     "pos": "FWD",
+     "price": 5.6,
+     "count": 43,
+     "pct": 21.5,
+     "overall_pct": 6.2
+    },
+    {
+     "id": 480,
+     "web_name": "Gibbs-White",
+     "team": "NFO",
+     "pos": "MID",
+     "price": 7.9,
+     "count": 41,
+     "pct": 20.5,
+     "overall_pct": 9.4
+    },
+    {
+     "id": 497,
+     "web_name": "Dubravka",
+     "team": "TOT",
+     "pos": "GKP",
+     "price": 4.0,
+     "count": 38,
+     "pct": 19.0,
+     "overall_pct": 18.0
+    }
+   ],
+   "transfers_out": [
+    {
+     "id": 426,
+     "web_name": "B.Fernandes",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 12.0,
+     "count": 104,
+     "pct": 52.0,
+     "overall_pct": 41.6
+    },
+    {
+     "id": 427,
+     "web_name": "Mbeumo",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 7.9,
+     "count": 85,
+     "pct": 42.5,
+     "overall_pct": 22.9
+    },
+    {
+     "id": 346,
+     "web_name": "Calvert-Lewin",
+     "team": "LEE",
+     "pos": "FWD",
+     "price": 6.0,
+     "count": 68,
+     "pct": 34.0,
+     "overall_pct": 21.4
+    },
+    {
+     "id": 109,
+     "web_name": "Verbruggen",
+     "team": "BHA",
+     "pos": "GKP",
+     "price": 4.5,
+     "count": 54,
+     "pct": 27.0,
+     "overall_pct": 22.3
+    },
+    {
+     "id": 418,
+     "web_name": "Maguire",
+     "team": "MUN",
+     "pos": "DEF",
+     "price": 4.9,
+     "count": 52,
+     "pct": 26.0,
+     "overall_pct": 10.2
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 43,
+     "pct": 21.5,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 237,
+     "web_name": "Ndiaye",
+     "team": "MCI",
+     "pos": "MID",
+     "price": 5.9,
+     "count": 43,
+     "pct": 21.5,
+     "overall_pct": 8.4
+    },
+    {
+     "id": 10,
+     "web_name": "White",
+     "team": "ARS",
+     "pos": "DEF",
+     "price": 5.5,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 7.6
+    },
+    {
+     "id": 124,
+     "web_name": "Groß",
+     "team": "BHA",
+     "pos": "MID",
+     "price": 5.6,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 16.3
+    },
+    {
+     "id": 449,
+     "web_name": "Hall",
+     "team": "NEW",
+     "pos": "DEF",
+     "price": 5.2,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 14.1
+    },
+    {
+     "id": 1,
+     "web_name": "Raya",
+     "team": "ARS",
+     "pos": "GKP",
+     "price": 6.0,
+     "count": 38,
+     "pct": 19.0,
+     "overall_pct": 39.2
+    },
+    {
+     "id": 464,
+     "web_name": "Wissa",
+     "team": "NEW",
+     "pos": "FWD",
+     "price": 6.2,
+     "count": 37,
+     "pct": 18.5,
+     "overall_pct": 18.0
+    },
+    {
+     "id": 496,
+     "web_name": "Kinsky",
+     "team": "TOT",
+     "pos": "GKP",
+     "price": 4.5,
+     "count": 35,
+     "pct": 17.5,
+     "overall_pct": 18.0
+    },
+    {
+     "id": 368,
+     "web_name": "Szoboszlai",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.0,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 38.6
+    },
+    {
+     "id": 399,
+     "web_name": "Cherki",
+     "team": "MCI",
+     "pos": "MID",
+     "price": 7.8,
+     "count": 33,
+     "pct": 16.5,
+     "overall_pct": 28.7
+    }
+   ],
+   "captains": [
+    {
+     "id": 154,
+     "web_name": "Palmer",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 9.7,
+     "count": 121,
+     "pct": 60.5,
+     "overall_pct": 28.8
+    },
+    {
+     "id": 165,
+     "web_name": "João Pedro",
+     "team": "CHE",
+     "pos": "FWD",
+     "price": 7.7,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 74.1
+    },
+    {
+     "id": 411,
+     "web_name": "Haaland",
+     "team": "MCI",
+     "pos": "FWD",
+     "price": 15.5,
+     "count": 18,
+     "pct": 9.0,
+     "overall_pct": 71.1
+    },
+    {
+     "id": 379,
+     "web_name": "Isak",
+     "team": "LIV",
+     "pos": "FWD",
+     "price": 9.1,
+     "count": 16,
+     "pct": 8.0,
+     "overall_pct": 24.5
+    },
+    {
+     "id": 40,
+     "web_name": "Rogers",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 7.6,
+     "count": 4,
+     "pct": 2.0,
+     "overall_pct": 35.8
+    },
+    {
+     "id": 426,
+     "web_name": "B.Fernandes",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 12.0,
+     "count": 3,
+     "pct": 1.5,
+     "overall_pct": 41.6
+    },
+    {
+     "id": 12,
+     "web_name": "Saka",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 9.5,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 11.8
+    },
+    {
+     "id": 115,
+     "web_name": "De Cuyper",
+     "team": "BHA",
+     "pos": "DEF",
+     "price": 4.8,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 23.3
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 368,
+     "web_name": "Szoboszlai",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.0,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 38.6
+    }
+   ]
+  },
+  "top100k": {
+   "n_sampled": 200,
+   "n_missing": 0,
+   "hold": 17,
+   "hold_pct": 8.5,
+   "took_hit": 15,
+   "took_hit_pct": 7.5,
+   "transfers_per_manager": 10.16,
+   "chips": {
+    "wildcard": 63,
+    "none": 108,
+    "3xc": 11,
+    "freehit": 18
+   },
+   "transfers_in": [
+    {
+     "id": 40,
+     "web_name": "Rogers",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 7.6,
+     "count": 122,
+     "pct": 61.0,
+     "overall_pct": 35.8
+    },
+    {
+     "id": 154,
+     "web_name": "Palmer",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 9.7,
+     "count": 108,
+     "pct": 54.0,
+     "overall_pct": 28.8
+    },
+    {
+     "id": 31,
+     "web_name": "Konsa",
+     "team": "ARS",
+     "pos": "DEF",
+     "price": 4.5,
+     "count": 106,
+     "pct": 53.0,
+     "overall_pct": 17.5
+    },
+    {
+     "id": 115,
+     "web_name": "De Cuyper",
+     "team": "BHA",
+     "pos": "DEF",
+     "price": 4.8,
+     "count": 77,
+     "pct": 38.5,
+     "overall_pct": 23.3
+    },
+    {
+     "id": 449,
+     "web_name": "Hall",
+     "team": "NEW",
+     "pos": "DEF",
+     "price": 5.2,
+     "count": 64,
+     "pct": 32.0,
+     "overall_pct": 14.1
+    },
+    {
+     "id": 12,
+     "web_name": "Saka",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 9.5,
+     "count": 57,
+     "pct": 28.5,
+     "overall_pct": 11.8
+    },
+    {
+     "id": 379,
+     "web_name": "Isak",
+     "team": "LIV",
+     "pos": "FWD",
+     "price": 9.1,
+     "count": 55,
+     "pct": 27.5,
+     "overall_pct": 24.5
+    },
+    {
+     "id": 368,
+     "web_name": "Szoboszlai",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.0,
+     "count": 48,
+     "pct": 24.0,
+     "overall_pct": 38.6
+    },
+    {
+     "id": 15,
+     "web_name": "Ødegaard",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 6.7,
+     "count": 48,
+     "pct": 24.0,
+     "overall_pct": 19.0
+    },
+    {
+     "id": 124,
+     "web_name": "Groß",
+     "team": "BHA",
+     "pos": "MID",
+     "price": 5.6,
+     "count": 47,
+     "pct": 23.5,
+     "overall_pct": 16.3
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 44,
+     "pct": 22.0,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 464,
+     "web_name": "Wissa",
+     "team": "NEW",
+     "pos": "FWD",
+     "price": 6.2,
+     "count": 41,
+     "pct": 20.5,
+     "overall_pct": 18.0
+    },
+    {
+     "id": 480,
+     "web_name": "Gibbs-White",
+     "team": "NFO",
+     "pos": "MID",
+     "price": 7.9,
+     "count": 37,
+     "pct": 18.5,
+     "overall_pct": 9.4
+    },
+    {
+     "id": 497,
+     "web_name": "Dubravka",
+     "team": "TOT",
+     "pos": "GKP",
+     "price": 4.0,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 18.0
+    },
+    {
+     "id": 277,
+     "web_name": "Egan",
+     "team": "HUL",
+     "pos": "DEF",
+     "price": 4.1,
+     "count": 34,
+     "pct": 17.0,
+     "overall_pct": 6.4
+    }
+   ],
+   "transfers_out": [
+    {
+     "id": 426,
+     "web_name": "B.Fernandes",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 12.0,
+     "count": 100,
+     "pct": 50.0,
+     "overall_pct": 41.6
+    },
+    {
+     "id": 427,
+     "web_name": "Mbeumo",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 7.9,
+     "count": 74,
+     "pct": 37.0,
+     "overall_pct": 22.9
+    },
+    {
+     "id": 346,
+     "web_name": "Calvert-Lewin",
+     "team": "LEE",
+     "pos": "FWD",
+     "price": 6.0,
+     "count": 57,
+     "pct": 28.5,
+     "overall_pct": 21.4
+    },
+    {
+     "id": 109,
+     "web_name": "Verbruggen",
+     "team": "BHA",
+     "pos": "GKP",
+     "price": 4.5,
+     "count": 50,
+     "pct": 25.0,
+     "overall_pct": 22.3
+    },
+    {
+     "id": 418,
+     "web_name": "Maguire",
+     "team": "MUN",
+     "pos": "DEF",
+     "price": 4.9,
+     "count": 49,
+     "pct": 24.5,
+     "overall_pct": 10.2
+    },
+    {
+     "id": 496,
+     "web_name": "Kinsky",
+     "team": "TOT",
+     "pos": "GKP",
+     "price": 4.5,
+     "count": 46,
+     "pct": 23.0,
+     "overall_pct": 18.0
+    },
+    {
+     "id": 124,
+     "web_name": "Groß",
+     "team": "BHA",
+     "pos": "MID",
+     "price": 5.6,
+     "count": 45,
+     "pct": 22.5,
+     "overall_pct": 16.3
+    },
+    {
+     "id": 557,
+     "web_name": "Tzolis",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 6.4,
+     "count": 43,
+     "pct": 21.5,
+     "overall_pct": 15.5
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 399,
+     "web_name": "Cherki",
+     "team": "MCI",
+     "pos": "MID",
+     "price": 7.8,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 28.7
+    },
+    {
+     "id": 237,
+     "web_name": "Ndiaye",
+     "team": "MCI",
+     "pos": "MID",
+     "price": 5.9,
+     "count": 42,
+     "pct": 21.0,
+     "overall_pct": 8.4
+    },
+    {
+     "id": 12,
+     "web_name": "Saka",
+     "team": "ARS",
+     "pos": "MID",
+     "price": 9.5,
+     "count": 38,
+     "pct": 19.0,
+     "overall_pct": 11.8
+    },
+    {
+     "id": 10,
+     "web_name": "White",
+     "team": "ARS",
+     "pos": "DEF",
+     "price": 5.5,
+     "count": 37,
+     "pct": 18.5,
+     "overall_pct": 7.6
+    },
+    {
+     "id": 423,
+     "web_name": "Shaw",
+     "team": "MUN",
+     "pos": "DEF",
+     "price": 4.4,
+     "count": 36,
+     "pct": 18.0,
+     "overall_pct": 11.3
+    },
+    {
+     "id": 368,
+     "web_name": "Szoboszlai",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.0,
+     "count": 35,
+     "pct": 17.5,
+     "overall_pct": 38.6
+    }
+   ],
+   "captains": [
+    {
+     "id": 154,
+     "web_name": "Palmer",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 9.7,
+     "count": 117,
+     "pct": 58.5,
+     "overall_pct": 28.8
+    },
+    {
+     "id": 165,
+     "web_name": "João Pedro",
+     "team": "CHE",
+     "pos": "FWD",
+     "price": 7.7,
+     "count": 36,
+     "pct": 18.0,
+     "overall_pct": 74.1
+    },
+    {
+     "id": 411,
+     "web_name": "Haaland",
+     "team": "MCI",
+     "pos": "FWD",
+     "price": 15.5,
+     "count": 21,
+     "pct": 10.5,
+     "overall_pct": 71.1
+    },
+    {
+     "id": 379,
+     "web_name": "Isak",
+     "team": "LIV",
+     "pos": "FWD",
+     "price": 9.1,
+     "count": 18,
+     "pct": 9.0,
+     "overall_pct": 24.5
+    },
+    {
+     "id": 40,
+     "web_name": "Rogers",
+     "team": "CHE",
+     "pos": "MID",
+     "price": 7.6,
+     "count": 5,
+     "pct": 2.5,
+     "overall_pct": 35.8
+    },
+    {
+     "id": 426,
+     "web_name": "B.Fernandes",
+     "team": "MUN",
+     "pos": "MID",
+     "price": 12.0,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 41.6
+    },
+    {
+     "id": 367,
+     "web_name": "Gakpo",
+     "team": "LIV",
+     "pos": "MID",
+     "price": 7.2,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 12.4
+    },
+    {
+     "id": 346,
+     "web_name": "Calvert-Lewin",
+     "team": "LEE",
+     "pos": "FWD",
+     "price": 6.0,
+     "count": 1,
+     "pct": 0.5,
+     "overall_pct": 21.4
     }
    ]
   }
