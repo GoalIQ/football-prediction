@@ -3826,8 +3826,12 @@ def _flag_legend(rows: list[dict]) -> str:
     jolle ei ole lukutapaa - ja juuri nama sivut ovat ilmaisia ja postausten
     linkkikohteita. Sama konventio kuin club-best-sivun "?"-rivilla.
     """
-    n_flag = sum(1 for r in rows if r.get("minutes_basis_flag") in ("short_season", "new_club"))
-    n_prior = sum(1 for r in rows if r.get("data_basis") == "no_history")
+    # 12.9: EHTO tulee jaetusta lukijasta (src/models/fpl_minutes_flags), jotta
+    # sivu ja jakokortti eivat voi olla eri mielta siita milloin lippu on.
+    from src.models.fpl_minutes_flags import NO_HISTORY, SHORT_BASIS, flag_symbol
+    symbolit = [flag_symbol(r) for r in rows]
+    n_flag = symbolit.count(SHORT_BASIS)
+    n_prior = symbolit.count(NO_HISTORY)
     osat = []
     if n_flag:
         osat.append("! = last season&#x27;s minutes do not describe this "
@@ -3866,6 +3870,9 @@ def _no_history_flag(p: dict) -> str:
     Lippu ei korjaa lukua eika kerro suuntaa. Se kertoo etta arvio nojaa
     lyhyeen otokseen.
     """
+    from src.models.fpl_minutes_flags import flag_symbol
+    if not flag_symbol(p):
+        return ""
     if p.get("data_basis") == "no_history":
         return (' <span class="flag" title="No Premier League games yet, role '
                 'and minutes estimated">?</span>')

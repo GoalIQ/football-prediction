@@ -827,6 +827,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 <!-- FREE WINDOW. Sits directly under the nav, above the ticker and the hero,
      so it is the first thing on the page rather than a line inside the copy.
      REMOVE THIS BLOCK AFTER 2026-09-12 12:30 UTC. -->
+<!-- GEN:FREE-BAND-START  check_free_window.py --fix renderoi taman; ala muokkaa kasin -->
 <div class="free-band">
   <div class="wrap free-band-in">
     <p class="free-band-txt">
@@ -836,6 +837,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     <a class="btn-band" href="https://pro.goaliq.app/" data-cta="band-freewindow">Get Premium free &#9656;</a>
   </div>
 </div>
+<!-- GEN:FREE-BAND-END -->
 
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
@@ -883,7 +885,9 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         behind our public, pre-match-logged prediction record. <a href="/predictions">Football
         predictions for the top leagues too</a>.</p>
       <div class="cta-row" id="get">
-        <a class="btn btn-primary" href="https://pro.goaliq.app/" data-cta="hero-freewindow">Get Premium free &#9656;</a>
+        <!-- GEN:FREE-CTA-START  check_free_window.py --fix renderoi taman; ala muokkaa kasin -->
+<a class="btn btn-primary" href="https://pro.goaliq.app/" data-cta="hero-freewindow">Get Premium free &#9656;</a>
+<!-- GEN:FREE-CTA-END -->
         <a class="btn btn-ghost" href="/fpl" data-cta="hero-free">Try the free tools</a>
       </div>
       <p class="cta-note">After 12 September it is &euro;3.99 a month or
@@ -1071,7 +1075,9 @@ vertical-align:top}
                page, so the numbers have to remain readable here without an
                account. An earlier draft of this change replaced them outright,
                which would have broken exactly that. -->
-          <h3><span class="price-tag">Free<span> until 12 Sept</span></span> <span class="price-alt">then &euro;25 / year or &euro;3.99 / month</span></h3>
+          <!-- GEN:FREE-PRICE-START  check_free_window.py --fix renderoi taman; ala muokkaa kasin -->
+<h3><span class="price-tag">Free<span> until 12 Sept</span></span> <span class="price-alt">then &euro;25 / year or &euro;3.99 / month</span></h3>
+<!-- GEN:FREE-PRICE-END -->
           <ul class="tool-list">
             <!-- The free column used to be longer than this one (18 items, 311
                words against 13 and 214), so the page's own free list was the

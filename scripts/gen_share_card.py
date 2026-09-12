@@ -71,10 +71,25 @@ def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:
 
 
 def _shrink(d, text, px, max_w, min_px, font_path):
+    """Kutista teksti mahtumaan - tai KAADA ajo jos se ei mahdu.
+
+    🔴 12.9: aiemmin tama palautti min_px-fontin ja piirsi tekstin kortin
+    reunan yli, hiljaa. Mitattu samana aamuna: minuuttilipun selite venytti
+    alatunnisteen 1 176 px:iin 960 px:n tilassa ja URL leikkautui kesken
+    ("goaliq.app/fpl/expec"), eli KORTIN AINOA TARKISTUSREITTI katosi.
+    Koodissa oli jo varoitus tasta ("teksti ei saa hukkua siihen etta joku
+    pidentaa sita myohemmin") - mutta varoitus ei ole portti.
+    Nyt liian pitka teksti on mahdoton julkaista: ajo kaatuu.
+    """
     f = _font(font_path, px)
     while d.textlength(text, font=f) > max_w and px > min_px:
         px -= 2
         f = _font(font_path, px)
+    leveys = d.textlength(text, font=f)
+    if leveys > max_w:
+        raise SystemExit(
+            f"gen_share_card: teksti ei mahdu korttiin edes {px}px:lla "
+            f"({leveys:.0f} px / {max_w:.0f} px). Lyhenna se: {text}")
     return f
 
 
@@ -440,6 +455,7 @@ def card_xp(args) -> dict:
     # xGI/90 last season") ja kortti lukee SAMAN funktion
     # (src/models/fpl_why_drivers.card_sub) -> sama teksti. P/FK-badget
     # pysyvat poissa: sama tieto on nyt tekstina, ei kahdesti.
+    from src.models.fpl_minutes_flags import flag_symbol, legend_parts
     from src.models.fpl_why_drivers import card_sub, fact_context, fact_text
     ctx = fact_context(data)
     # 9.9 PORTTI: sivu (#gw-xp) jarjestaa top_projected-lukijalla (tasapeli
@@ -456,7 +472,14 @@ def card_xp(args) -> dict:
         fx = ", ".join(f"{o['opp']} ({o['venue']})" for o in opps) if opps             else "Blank"
         # 9.9 PORTTI: P/FK-badget pois - set piece -tietoa ei ole
         # ilmaissivulla, joten merkki olisi vaite ilman reittia.
-        badges = []
+        #
+        # 🔴 12.9: MINUUTTIPERUSTAN LIPPU TAKAISIN. Sivun #gw-xp merkitsee
+        # Isakin rivin `!`:lla (694 min viime kaudella), kortti ei merkinnyt -
+        # sama pelaaja, sama sija, kaksi eri lupausta varmuudesta, ja kortti on
+        # se joka leviaa ilman sivua ymparillaan. Ehto tulee jaetusta lukijasta
+        # eika kortin omasta tulkinnasta (src/models/fpl_minutes_flags).
+        sym = flag_symbol(p)
+        badges = [sym] if sym else []
         rows.append({"name": p["web_name"], "tag": p["pos"],
                      "team": p["team_short"], "mid": fx,
                      "_xp": float(g.get("xp") or 0.0), "badges": badges,
@@ -472,13 +495,27 @@ def card_xp(args) -> dict:
                          "(Villen ohje 10.8). Kayta --top pienempaa tai odota.")
     if not rows:
         raise SystemExit(f"Ei xP-rivejä GW{gw}:lle.")
+    # Selite samasta lukijasta kuin merkki: lippu ilman lukutapaa on merkki
+    # jolle ei ole selitysta (sama portin loydos kuin sivulla 5.9).
+    # Selite samasta lukijasta kuin merkki: lippu ilman lukutapaa on merkki
+    # jolle ei ole selitysta (sama portin loydos kuin sivulla 5.9). Sivun
+    # sanamuoto lyhennettyna kortin leveyteen: sama MERKITYS, ei sama pituus -
+    # pitka versio kutistuisi 11 px:iin ja jaisi lukematta.
+    LYHYT = {"!": "! = short spell or new club last season",
+             "?": "? = no Premier League games yet, role comes from price"}
+    selite = [LYHYT[s[0]] for s in legend_parts(free[:len(rows)])]
+    foot = "xMins = minutes the model expects him to play."
+    if selite:
+        foot = foot + " " + ". ".join(selite) + "."
+    else:
+        foot = "xMins = the minutes the model expects him to play. Same row on the page."
     return {
         "title": f"GAMEWEEK {gw} TOP {len(rows)}",
         "subtitle": "expected points, GoalIQ match model",
         "nameLabel": "PLAYER",
         "midLabel": "FIXTURE",
         "valueLabel": "xP",
-        "footNote": "xMins = the minutes the model expects him to play. Same row on the page.",
+        "footNote": foot,
         "footNote2": (f"GW{gw} top 20 free, no account: goaliq.app/fpl/expected-points#gw-xp"
                       f"  ·  as of {_as_of(data)}  ·  model projections, not betting advice"),
         "row_h": 104 if any(r.get("sub") for r in rows) else ROW_H,
