@@ -1,0 +1,8 @@
+{
+ "gw": 5,
+ "source_gw": 4,
+ "source": "entry_picks",
+ "reason": "Ketju katkesi HILJAA GW4:ssa: gw3.json:n rungossa oli Dovin (171, status u, 'joined Leyton Orient on loan'), jonka saatavuussuodatin oli oikein pudottanut xP-artefaktista. `_constrained_from_prev` palautti None ja `main()` pudotti vapaaseen optimiin, joten gw4.json on runko jossa 8/15 vaihtui samalla kun sen meta sanoo transfers:[] ja hits:0 - runko jota malli ei voi saavuttaa yhdellakaan sallitulla siirtomaaralla. Entry 116920 teki GW4:ssa 0 siirtoa, joten sen rivi on sama kuin gw3.json (15/15). gw4.json on immutable eika sita korjata takautuvasti; `entry_mismatch` estaisi GW5:n freezen 7/15:lla, jolloin GW5:lla ei olisi mallin rivia lainkaan. Ketju aloitetaan uudelleen entryn omista GW4-pickeista, ja malli tekee niihin omat FPL-lailliset siirtonsa. Syy on korjattu eteenpain (ketju rakentaa poissa olevan jasenen bootstrapista, ja fallback vapaaseen optimiin on exit 1). HUOM: reseed tuo Dovinin takaisin penkille, ja mitattu 12.9 etta siirtomoottori ei myy hanta koskaan (xi_value-hyoty 0.0000 vs korjausrima 0.01) -> jonorivi SIIRTOMOOTTORI-EI-MYY-PENKIN-PELAAMATONTA. Raportti: cos-reports/cc-reports/2026-09-12-freeze-ketju-katkesi-hiljaa.md",
+ "decided_by": "Ville",
+ "decided_at": "2026-09-12"
+}
