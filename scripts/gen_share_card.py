@@ -950,7 +950,18 @@ def card_gw_outlook(args) -> dict:
     kaatanut mitaan vaan tuotti hiljaa vaarat luvut).
     """
     doc = _load("fpl_projections_phase0.json")
-    gw = args.gw or min((f["gameweek"] for f in doc["fixtures"]), default=1)
+    # 🔴 SAMA KIERROSLUKIJA KUIN SIVULLA (12.9.2026). Tassa oli
+    # `min(fixtures gameweeks)`, joka on NELJAS saanto samaan kysymykseen
+    # (sivu: display_gameweek, siirtosuunnittelu: actionable, chip-EV: oma).
+    # Se osuu oikeaan vain niin kauan kuin builderi pudottaa alkaneen
+    # kierroksen heti — eli se on riippuvainen toisen komponentin
+    # sivuvaikutuksesta, ei saannosta. Kortti on jakopinta ja sivu on sen
+    # tarkistusreitti: jos ne eivat lue samaa funktiota, lukija joka klikkaa
+    # linkkia nakee eri kierroksen kuin kuvassa.
+    from src.models.fpl_gameweek import display_gameweek
+    gw = args.gw or display_gameweek(doc.get("meta") or {},
+                                     doc.get("fixtures") or []) \
+        or min((f["gameweek"] for f in doc["fixtures"]), default=1)
     fx = [f for f in doc["fixtures"] if f["gameweek"] == gw]
     if not fx:
         raise SystemExit(f"GW{gw}: ei otteluita fpl_projections_phase0.json:ssa.")

@@ -36,23 +36,36 @@ def _page_doc() -> dict:
 
 
 def _ajankohtainen_gw() -> int:
-    """Kierros jota data tosiasiassa kantaa - EI kovakoodattua GW1:ta.
+    """Kierros jonka SIVU nayttaa — sama lukija kuin sivulla.
 
     🔴 Testi kaatui 25.8 kun FPL vihdoin merkitsi GW1:n ottelut finishediksi
     ja builderi pudotti pelatun kierroksen projektioista: `gw=1` ei enaa
     loytynyt tiedostosta. Kovakoodattu kierrosnumero vanhenee joka viikko, ja
     portti joka vanhenee itsestaan on huonompi kuin ei porttia - se punaisee
     ilman etta mikaan on rikki, ja opettaa ohittamaan sen.
+
+    🔴 JA SITTEN SE KAATUI UUDELLEEN 12.9 klo 12:30, ERI SYYSTA (mitattu).
+    Tama funktio luki `actionable_gameweek`ia (= GW5 heti deadlinen jalkeen)
+    kun sivu lukee `display_gameweek`ia (= GW4 niin kauan kuin GW4:n ottelut
+    ovat kesken). Portti vertasi siis GW5:n korttia GW4:n sivuun ja ilmoitti
+    kaikki 20 ottelua "puuttuvina". Sivu oli oikeassa koko ajan: FPL:n GW4 on
+    SUN-ARS, LEE-NEW, LIV-FUL, COV-BHA... ja juuri ne olivat sivulla.
+
+    Ironia on kirjattava: tama on TASAN se vika jota tama tiedosto vartioi —
+    sama kysymys vastattu eri saannolla kahdessa paikassa. `fpl_gameweek`in
+    docstring sanoo etta vastaus on "nyt yhdessa paikassa", mutta siina
+    moduulissa on kolme funktiota, ja portti valitsi niista eri kuin pinta.
+    Yksi lukija tarkoittaa saman FUNKTION, ei saman moduulin.
     """
     import json as _j
     from pathlib import Path as _P
     doc = _j.loads((_P(__file__).resolve().parents[1] / "data"
                     / "fpl_projections_phase0.json").read_text(encoding="utf-8"))
-    from src.models.fpl_gameweek import actionable_gameweek
+    from src.models.fpl_gameweek import display_gameweek
     gws = sorted({f["gameweek"] for f in doc["fixtures"] if f.get("gameweek")})
-    act = actionable_gameweek(doc.get("meta") or {})
-    if act in gws:
-        return act
+    gw = display_gameweek(doc.get("meta") or {}, doc.get("fixtures") or [])
+    if gw in gws:
+        return gw
     return gws[0] if gws else 1
 
 
@@ -519,3 +532,44 @@ def test_card_gameweek_equals_page_and_fact_gameweek_in_every_phase(monkeypatch,
     html = lt._gw_xp_section(data)
     assert f"Gameweek {deadline_gw} expected points" in html
     assert f'<span class="m-sub drv">MCI 40% clean sheet chance</span>' in html
+
+
+def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
+    """🔴 Neljas saanto ei saa palata (12.9.2026).
+
+    Portti vertaa kortin ja sivun LUKUJA, mutta jos ne valitsevat kierroksen
+    eri saannolla, vertailu on kahden eri maailmantilan valilla ja portti
+    kertoo vaarasta asiasta. 12.9 kaikki 20 ottelua ilmoitettiin puuttuvina
+    vaikka sivu oli oikeassa.
+
+    Tama mittaa lahteesta etta kumpikin polku paatyy `display_gameweek`iin.
+    """
+    from pathlib import Path as _P
+    root = _P(__file__).resolve().parents[1]
+    kortti = (root / "scripts" / "gen_share_card.py").read_text(encoding="utf-8")
+    sivu = (root / "scripts" / "build_fpl_page.py").read_text(encoding="utf-8")
+    i = kortti.find("def card_gw_outlook")
+    assert i > 0
+    runko = kortti[i:i + 3000]
+    assert "display_gameweek" in runko, (
+        "card_gw_outlook ei lue display_gameweekia — kortti voi olla eri "
+        "kierroksessa kuin sivu jolle se linkittaa")
+    assert "display_gameweek" in sivu, "sivu ei lue display_gameweekia"
+
+
+def test_kortin_oletuskierros_on_sivun_kierros():
+    """Ja sama toiminnallisesti, ei vain merkkijonona (muisti:
+    portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa)."""
+    from scripts.gen_share_card import card_gw_outlook
+    from src.models.fpl_gameweek import display_gameweek
+
+    doc = _page_doc()
+    odotettu = display_gameweek(doc.get("meta") or {}, doc.get("fixtures") or [])
+
+    class _A:
+        gw = None
+
+    spec = card_gw_outlook(_A())
+    saadut = {f["gameweek"] for f in spec["fixtures"] if f.get("gameweek")}
+    assert saadut == {odotettu}, (
+        f"kortin ottelut ovat kierroksilta {saadut}, sivu nayttaa {odotettu}")

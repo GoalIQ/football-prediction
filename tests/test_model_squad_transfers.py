@@ -105,14 +105,84 @@ def test_myohempi_freeze_ei_kelpaa_lahteeksi(tmp_path, monkeypatch):
 # mockatut versiot poistettiin koska ne mittasivat vanhaa polkua.
 
 
-def test_pelaaja_poissa_poolista_estaa_perimisen():
-    """🔴 Runkoa ei voi peria rehellisesti jos pelaaja on poistunut liigasta.
-    Palautetaan None, jolloin kutsuja putoaa vapaaseen optimiin JA kertoo sen
-    metassa - ei vaieta."""
+#: Laillinen 15: 2 GKP, 5 DEF, 5 MID, 3 FWD, enintaan 3 per seura.
+_POS = {1: 1, 2: 1, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2,
+        8: 3, 9: 3, 10: 3, 11: 3, 12: 3, 13: 4, 14: 4, 15: 4}
+
+
+def _laillinen_pool(ids):
+    return [_p(i, pos=_POS[i], club=((i - 1) % 5) + 1) for i in ids]
+
+
+def _laillinen_freeze(ids, meta=None):
+    rivit = [{"id": i, "web_name": f"P{i}", "pos": _POS[i], "price": 50,
+              "club": ((i - 1) % 5) + 1} for i in ids]
+    return {"meta": meta or {}, "xi": rivit[:11], "bench": rivit[11:]}
+
+
+def _bootstrap(ids, *, status="u", news="left the league"):
+    return {
+        "elements": [{"id": i, "web_name": f"P{i}",
+                      "element_type": _POS.get(i, 3),
+                      "team": ((i - 1) % 5) + 1, "now_cost": 50,
+                      "status": status, "news": news,
+                      "selected_by_percent": "0.1",
+                      "chance_of_playing_next_round": 0} for i in ids],
+        "teams": [{"id": c, "name": f"Team{c}", "short_name": f"T{c}"}
+                  for c in range(1, 6)],
+    }
+
+
+def test_pelaaja_poissa_poolista_periytyy_bootstrapista():
+    """🔴 12.9.2026: TAMA TESTI OLI ENNEN VIAN SPESIFIKAATIO.
+
+    Vanha versio (`test_pelaaja_poissa_poolista_estaa_perimisen`) vaati etta
+    funktio palauttaa `None`, ja dokumentoi kutsujan putoamisen vapaaseen
+    optimiin oikeaksi kaytokseksi. Se oli VIHREA 11.9 kun freeze jaadytti
+    GW4:n rungon jossa 8/15 vaihtui yhdella ilmaisella siirrolla.
+
+    Oikea invariantti: rungon jasen joka on pudonnut xP-artefaktista mutta on
+    yha FPL:n bootstrapissa rakennetaan bootstrapista, ja ketju jatkuu.
+    """
     m = _load()
-    prev = _freeze(list(range(1, 16)), {"budget": 100.0})
-    pool = [_p(i) for i in range(1, 15)]        # yksi puuttuu
-    assert m._constrained_from_prev(prev, pool, 2, ft=1) is None
+    prev = _laillinen_freeze(list(range(1, 16)), {"budget": 100.0})
+    pool = _laillinen_pool(range(1, 15))        # id 15 puuttuu poolista
+    out = m._constrained_from_prev(prev, pool, 2, ft=1,
+                                   bootstrap=_bootstrap([15]))
+    assert out is not None, "ketju ei saa katketa poolista pudonneeseen"
+    assert len(out["squad"]) == 15
+    assert len(out["transfers"]) <= 2, "peritysta rungosta enintaan katto"
+
+
+def test_pelaajaa_ei_bootstrapissakaan_on_kieltaytyminen():
+    """None tarkoittaa nyt tasan yhta asiaa: jasenta ei ole missaan lahteessa.
+    Se EI ole signaali pudota vapaaseen optimiin (ks. main())."""
+    m = _load()
+    prev = _laillinen_freeze(list(range(1, 16)), {"budget": 100.0})
+    pool = _laillinen_pool(range(1, 15))
+    assert m._constrained_from_prev(prev, pool, 2, ft=1,
+                                    bootstrap=_bootstrap([])) is None
+
+
+def test_poolista_pudonnut_saa_korjausrimalle_kelpaavan_lipun():
+    """🔴 Sama lippu kuin moottorin omalla placeholderilla.
+
+    `needs_repair` lukee ENSIN `no_projection`-kentan, nimenomaan siksi ettei
+    korjaustarve jaisi `status`in varaan. Mitattu 12.9: `fpl_xp_projections`
+    pudottaa 2 pelaajaa syylla `below_min_xp` — heilla status on "a" eika
+    `chance_next` ole 0. Ilman `no_projection`ia moottori mittaisi heidan
+    korvaamistaan taydella rimalla eika korjausrimalla.
+    """
+    from src.models.fpl_transfers import needs_repair
+
+    m = _load()
+    boot = _bootstrap([15], status="a", news="")
+    boot["elements"][0]["chance_of_playing_next_round"] = None
+    rivi = m._departed_player(15, boot)
+    assert rivi["no_projection"] is True
+    assert rivi["off_pool"] is True
+    assert needs_repair(rivi) is True, (
+        "status 'a' + chance_next None: pelkat status-ehdot eivat riita")
 
 
 def test_ft_left_kertoo_kayttamattomat():

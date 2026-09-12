@@ -127,21 +127,56 @@ def load_exception(gw: int) -> tuple[dict | None, str | None]:
     return d, None
 
 
-def fetch_picks(entry: int, gw: int):
-    """(picks, status). picks=None kun ei saatavilla."""
+#: Kuinka kauan deadlinen jalkeen "en saanut luettua" saa olla pelkka varoitus.
+#: Sen jalkeen se on oma vikansa: FPL ei ole ollut poissa vuorokautta.
+UNREACHABLE_ESCALATE_H = 24
+#: Uudelleenyritykset transientille vastaukselle (5xx/429/verkkovirhe).
+RETRIES = 3
+RETRY_SLEEP_S = (2, 5, 12)
+
+
+def fetch_picks(entry: int, gw: int, *, sleep=None):
+    """(picks, status, kind). picks=None kun ei saatavilla.
+
+    🔴 KOLME TILAA, EI KAHTA (12.9.2026). Ennen tama palautti vain
+    `(None, syy)` ja kutsuja tulkitsi JOKAISEN Nonen samaksi asiaksi.
+    Mitattu 12.9: GH-runnerilla FPL vastasi **503**, ja skripti tulosti
+    *"Joko tilia ei ole pelattu tassa kierroksessa tai entry-id on vaara"* —
+    kumpikaan ei ollut totta. Step health kaansi sen viela muotoon
+    *"FPL-entry EI VASTAA jaadytettya runkoa ... kirjaa poikkeus"*, eli
+    operaattoria kehotettiin **valkolistaamaan ero jota ei ollut mitattu**.
+    Poikkeus olisi jaanyt voimaan sille kierrokselle pysyvasti.
+
+    `kind` on nyt eksplisiittinen:
+      "ok"          200, picks luettu
+      "not_played"  404 — tilia ei ole pelattu talla kierroksella (aito tieto)
+      "unreachable" 5xx / 429 / verkkovirhe / rikkinainen JSON — EI TIETOA
+
+    "ei tietoa" ei ole "ei vastaa" (muisti: `nolla-ei-ole-sama-kuin-ei-tietoa`).
+    """
+    import time
+
+    sleep = sleep if sleep is not None else time.sleep
     url = f"{FPL_BASE}/entry/{entry}/event/{gw}/picks/"
-    try:
-        r = requests.get(url, headers=FPL_HEADERS, timeout=30)
-    except Exception as e:
-        return None, f"verkkovirhe: {e!r}"
-    if r.status_code == 404:
-        return None, "404"
-    if r.status_code != 200:
-        return None, f"HTTP {r.status_code}"
-    try:
-        return r.json().get("picks") or [], "200"
-    except Exception as e:
-        return None, f"JSON-virhe: {e!r}"
+    viimeisin = "?"
+    for yritys in range(RETRIES):
+        try:
+            r = requests.get(url, headers=FPL_HEADERS, timeout=30)
+        except Exception as e:
+            viimeisin = f"verkkovirhe: {e!r}"
+        else:
+            if r.status_code == 404:
+                return None, "404", "not_played"
+            if r.status_code == 200:
+                try:
+                    return r.json().get("picks") or [], "200", "ok"
+                except Exception as e:
+                    viimeisin = f"JSON-virhe: {e!r}"
+            else:
+                viimeisin = f"HTTP {r.status_code}"
+        if yritys < RETRIES - 1:
+            sleep(RETRY_SLEEP_S[min(yritys, len(RETRY_SLEEP_S) - 1)])
+    return None, viimeisin, "unreachable"
 
 
 def record_verification(path: Path, frozen: dict, gw: int, *, squad_match: bool,
@@ -162,7 +197,18 @@ def record_verification(path: Path, frozen: dict, gw: int, *, squad_match: bool,
     if vanha == uusi:
         return
     meta["entry_verified"] = rec
-    path.write_text(json.dumps(frozen, ensure_ascii=False), encoding="utf-8")
+    # 🔴 SAMA SARJALLISTUS KUIN FREEZELLA (12.9.2026). Ilman `separators`ia
+    # json.dumps kirjoittaa valilyonnit joka erottimen jalkeen ja jattaa
+    # rivinvaihdon pois: yhden metakentan lisays nayttaa gitissa KOKO rungon
+    # uudelleenkirjoitukselta. Koko V2:n vaite on "todistettavissa
+    # git-historiasta", ja se lepaa sen varassa etta diffista nakee yhdella
+    # silmayksella ettei riviin ole koskettu.
+    # `newline="\n"`: Windowsilla oletus kirjoittaisi CRLF:n ja koko tiedosto
+    # nayttaisi muuttuneelta (.gitattributes normalisoi commitissa, mutta
+    # tyopuun diffi ja jokainen lokaali tarkistus valehtelisi silti).
+    path.write_text(
+        json.dumps(frozen, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8", newline="\n")
     print(f"meta.entry_verified kirjoitettu: match={rec['match']} "
           f"(15: {rec['squad_match']}, C: {rec['captain_match']}, "
           f"yhteisia {rec['common']})")
@@ -201,11 +247,32 @@ def main() -> int:
         print(enterable(frozen))
         return 0
 
-    picks, status = fetch_picks(ENTRY_ID, gw)
+    picks, status, kind = fetch_picks(ENTRY_ID, gw)
+    if kind == "unreachable":
+        # EI TIETOA. Ei saa nayttaa erolta eika saa kehottaa poikkeukseen.
+        ika_h = (now - deadline).total_seconds() / 3600.0
+        jo_verifioitu = bool((meta.get("entry_verified") or {}).get("at"))
+        if ika_h >= UNREACHABLE_ESCALATE_H and not jo_verifioitu:
+            print(f"::error::Entryn {ENTRY_ID} GW{gw}-rivia ei ole saatu "
+                  f"luettua {ika_h:.0f} h deadlinen jalkeen ({status}, "
+                  f"{RETRIES} yritysta). Tama ei ole enaa transientti: "
+                  f"vahti ei ole ajanut kertaakaan talle kierrokselle, joten "
+                  f"'malli pelaa omaa joukkuettaan' on tarkistamatta. ALA "
+                  f"kirjaa poikkeusta — poikkeus koskee mitattua EROA, ei "
+                  f"mittaamatta jaanytta kierrosta.")
+            return 1
+        print(f"::warning::Entryn {ENTRY_ID} GW{gw}-rivi ei ollut luettavissa "
+              f"({status}, {RETRIES} yritysta, {ika_h:.1f} h deadlinesta). "
+              f"Tama on upstream-tila, EI ero jaadytettyyn runkoon: mitaan "
+              f"ei ole verrattu. Vahti yrittaa uudelleen seuraavassa ajossa "
+              f"ja kaantyy virheeksi {UNREACHABLE_ESCALATE_H} h kohdalla jos "
+              f"lukemista ei saada kertaakaan lapi.")
+        return 0
     if picks is None:
         print(f"::error::Entryn {ENTRY_ID} GW{gw}-rivi ei ole luettavissa "
-              f"({status}) vaikka deadline on mennyt. Joko tilia ei ole "
-              f"pelattu tassa kierroksessa tai entry-id on vaara.")
+              f"({status}) vaikka deadline on mennyt: FPL vastasi 404. "
+              f"Joko tilia ei ole pelattu tassa kierroksessa tai entry-id "
+              f"on vaara.")
         return 1
 
     entry_ids = {int(p["element"]) for p in picks}

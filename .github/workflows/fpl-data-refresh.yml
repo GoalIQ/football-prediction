@@ -691,7 +691,7 @@ jobs:
           [ "${{ steps.push_dispatch.outcome }}" = "failure" ] && { echo "::error::push_dispatch FAILAA (deadline-/price-pushit jaavat lahettamatta)"; fail=1; }
           [ "${{ steps.deploy_verify.outcome }}" = "failure" ] && { echo "::error::goaliq.app EI servaa repon sivuja (deploy-verify). Sivut on committoitu mutta hub-deploy ei ole vienyt niita ulos - tarkista hub-deploy.yml"; fail=1; }
           [ "${{ steps.gw_freshness.outcome }}" = "failure" ] && { echo "::error::player-gw on JAASSA tai vajaa (PLAYER-GW-STALE-GUARD). build_fpl_player_gw -askelen tulos tassa ajossa: ${{ steps.bake_player_gw.outcome }} — skipped tarkoittaa etta jokin ylavirran askel kaatui, ei etta builderi olisi ajanut tyhjaa"; fail=1; }
-          [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::FPL-entry EI VASTAA jaadytettya runkoa (verify_model_entry_matches_freeze) — data pushattu, mutta julkinen 'malli pelaa omaa joukkuettaan' osoittaa vaaraan runkoon; kirjaa poikkeus data/model_squad_exceptions/gw{N}.json tai korjaa entry"; fail=1; }
+          [ "${{ steps.verify_entry.outcome }}" = "failure" ] && { echo "::error::verify_model_entry_matches_freeze FAILAA — data pushattu. LUE ASKELEN OMA VIESTI: se nimeaa kumpi tapaus on kyseessa (mitattu ERO jaadytettyyn runkoon / 404 = tilia ei pelattu / rivia ei ole saatu luettua yli 24 h). ALA kirjaa poikkeusta ennen kuin viesti sanoo eron olevan mitattu: poikkeus valkolistaa eron pysyvasti, ja 12.9 sama askel oli punainen pelkan 503:n takia"; fail=1; }
           [ "${{ steps.grade_xp.outcome }}" = "failure" ] && { echo "::error::grade_fpl_xp_gw FAILAA (xP-gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_squad.outcome }}" = "failure" ] && { echo "::error::grade_model_squad_gw FAILAA (mallirivin gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_calls.outcome }}" = "failure" ] && { echo "::error::grade_gw_calls FAILAA (kutsujen gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
@@ -703,7 +703,7 @@ jobs:
           [ "${{ steps.freeze_xp.outcome }}" = "failure" ] && { echo "::error::freeze_fpl_xp_gw FAILAA (seuraavan GW:n xP jaa jaadyttamatta)"; fail=1; }
           [ "${{ steps.freeze_squad.outcome }}" = "failure" ] && { echo "::error::freeze_model_squad_gw FAILAA (mallirivi jaa lukitsematta — Beat the Model ja Season race nojaavat siihen)"; fail=1; }
           [ "${{ steps.log_calls.outcome }}" = "failure" ] && { echo "::error::log_gw_calls FAILAA (kierroksen kutsut jaavat kirjaamatta ennen deadlinea)"; fail=1; }
-          [ "${{ steps.build_founder.outcome }}" = "failure" ] && { echo "::error::build_founder_stats FAILAA (etusivun perustajalohko jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.build_founder.outcome }}" = "failure" ] && { echo "::error::build_founder_stats FAILAA. Transientti upstream-virhe EI enaa punasta tata (skripti yrittaa uudelleen ja jattaa vanhan artefaktin voimaan alle 36 h ajaksi), joten punainen tarkoittaa joko sanity-virhetta TAI etta luku on ollut saamatta yli 36 h — etusivun perustajalohko nayttaa silloin vanhentunutta lukua"; fail=1; }
           [ "${{ steps.build_leaders.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_leaders FAILAA (xG- ja DefCon-leaderit jaavat vanhoiksi)"; fail=1; }
           [ "${{ steps.grade_btm.outcome }}" = "failure" ] && { echo "::error::grade-decisions FAILAA (Beat-the-model -paatokset jaavat gradaamatta)"; fail=1; }
           exit $fail

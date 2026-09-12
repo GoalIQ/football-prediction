@@ -81,9 +81,28 @@ def _enforce_on(monkeypatch):
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "svc")
 
 
+def _ikkuna_auki(monkeypatch, auki: bool):
+    """🔴 SYNTEETTINEN VAIHE, EI SEINAKELLO (12.9.2026).
+
+    Tama testi luki oikeaa kelloa ja oli siksi vihrea vain niin kauan kuin
+    ikkuna oli auki. Se kaatui itsestaan 12.9 klo 12:30 — ei koodimuutoksesta
+    vaan siita etta se lakkasi olemasta tosi. Sama vikaluokka kuin CLAUDE.md
+    saanto 6a kohta 3 (ja muisti `pariteettivaite-mitattu-alustuksesta`):
+    testi joka mittaa nykyhetkea vartioi vain yhta kauden vaihetta.
+
+    Envilla ei voi siirtaa paivaa (tietoinen rajaus, ks.
+    `test_env_cannot_move_the_date_only_switch_it_off`), joten vaihe
+    injektoidaan ikkunapredikaattiin. Ikkunan oma kellologiikka testataan
+    erikseen `test_window_closes_on_the_clock`issa.
+    """
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda now=None: auki)
+
+
 def test_signed_in_user_is_premium_during_window(monkeypatch):
     _enforce_on(monkeypatch)
     monkeypatch.delenv("FREE_PREMIUM_UNTIL", raising=False)
+    _ikkuna_auki(monkeypatch, True)
     monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-1")
 
     # 🔴 Stubit palauttavat False, EIVAT heita. Ensimmainen versio nostti
@@ -108,13 +127,27 @@ def test_anonymous_caller_is_not_premium_during_window(monkeypatch):
     edes ikkunan aikana — muuten payload vuotaisi ilman yhtaan kontaktia."""
     _enforce_on(monkeypatch)
     monkeypatch.delenv("FREE_PREMIUM_UNTIL", raising=False)
+    _ikkuna_auki(monkeypatch, True)
     assert prem.is_premium_request(_Req(token=None)) is False
 
 
 def test_invalid_token_is_not_premium_during_window(monkeypatch):
     _enforce_on(monkeypatch)
     monkeypatch.delenv("FREE_PREMIUM_UNTIL", raising=False)
+    _ikkuna_auki(monkeypatch, True)
     monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: None)
+    assert prem.is_premium_request(_Req()) is False
+
+
+def test_ikkunan_sulkeuduttua_kirjautunut_ei_saa_premiumia_ilmaiseksi(monkeypatch):
+    """Kolmas vaihe: sama portti, ikkuna kiinni. Ilman tata haaraa ylla
+    olevat kolme testia mittaisivat vain yhta maailmantilaa."""
+    _enforce_on(monkeypatch)
+    monkeypatch.delenv("FREE_PREMIUM_UNTIL", raising=False)
+    _ikkuna_auki(monkeypatch, False)
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-1")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: False)
+    monkeypatch.setattr(prem, "_web_subscription_active", lambda uid: False)
     assert prem.is_premium_request(_Req()) is False
 
 

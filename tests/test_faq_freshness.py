@@ -28,31 +28,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FAQ = ROOT / "faq.html"
 
-LEIMA_RE = re.compile(
-    r'<p class="updated"(?P<attrs>[^>]*)>\s*Last updated:\s*(?P<pvm>[^<]+?)\s*</p>'
-)
-HASH_RE = re.compile(r'data-copy-hash="([0-9a-f]{12})"')
+# 🔴 YKSI LUKIJA (12.9.2026). Leiman logiikka siirrettiin `src/copy_stamp.py`:hyn
+# koska copyn voi muuttaa myos GENERAATTORI, ei vain ihminen: ilmaisikkunan
+# sulkeutuminen 12:30 UTC poisti lupauslauseen faq.html:sta
+# `check_free_window.fix()`illa, eika mikaan paivittanyt leimaa -> tama portti
+# punastui ilman etta kukaan oli koskenut sivuun. Nyt sama funktio paivittaa
+# leiman siella missa copy kirjoitetaan.
+from src.copy_stamp import (  # noqa: E402
+    HASH_RE, LEIMA_RE, copy_tiiviste, nakyva_copy)
 
-
-def nakyva_copy(teksti: str) -> str:
-    """Sivun nakyva teksti ilman leimaa itseaan.
-
-    Kommentit, skriptit ja tyylit pois: ne eivat ole lukijalle nakyvaa
-    sisaltoa, eika perustelukommentin muokkaus saa pakottaa uutta
-    julkaisupaivaa. Leima itse rajataan pois, muuten tiiviste riippuisi
-    omasta arvostaan.
-    """
-    runko = teksti.split("<body", 1)[1] if "<body" in teksti else teksti
-    runko = re.sub(r"<!--.*?-->", " ", runko, flags=re.S)
-    runko = re.sub(r"<(script|style)\b.*?</\1>", " ", runko, flags=re.S | re.I)
-    runko = re.sub(r'<p class="updated">.*?</p>', " ", runko, flags=re.S)
-    runko = re.sub(r'<p class="updated"[^>]*>.*?</p>', " ", runko, flags=re.S)
-    runko = re.sub(r"<[^>]+>", " ", runko)
-    return re.sub(r"\s+", " ", runko).strip()
-
-
-def copy_tiiviste(teksti: str) -> str:
-    return hashlib.sha256(nakyva_copy(teksti).encode("utf-8")).hexdigest()[:12]
+__all__ = ["HASH_RE", "LEIMA_RE", "copy_tiiviste", "nakyva_copy"]
 
 
 def test_leima_vastaa_nykyista_copya() -> None:

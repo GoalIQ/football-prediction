@@ -248,7 +248,7 @@ def _ft_available(prev_meta: dict) -> int:
 
 
 def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
-                           ft: int) -> dict | None:
+                           ft: int, bootstrap: dict | None = None) -> dict | None:
     """Peri edellinen runko ja tee siihen FPL:n saannoilla sallitut siirrot.
 
     28.8 (PLANNER-FREEZE-DIVERGENCE): kayttaa `fpl_transfers.plan_gw`:ta eli
@@ -262,6 +262,25 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
     Siirtoja per kierros enintaan max(MAX_TRANSFERS_PER_GW, ft): vapaita
     siirtoja ei jateta kayttamatta, hitteja enintaan moottorin saannon
     verran.
+
+    🔴 RUNGON JASEN JOTA EI OLE POOLISSA RAKENNETAAN BOOTSTRAPISTA (12.9.2026).
+    Aiemmin tama palautti `None` ja kutsuja pudotti VAPAASEEN OPTIMIIN. Mitattu
+    GW4: gw3.json:n rungossa oli Dovin (171, "joined Leyton Orient on loan"),
+    jonka saatavuussuodatin oli oikein pudottanut xP-artefaktista. Ketju
+    katkesi, freeze rakensi rungon alusta ja **8 pelaajaa 15:sta vaihtui
+    yhdella ilmaisella siirrolla**. Vastaehto mitattu samalla poolilla: kun
+    poissaoleva jasen rakennetaan bootstrapista, ketju tuottaa **yhden**
+    ilmaisen siirron.
+
+    Epasymmetria joka taman aiheutti: reseed-polku (`entry_seed`) osasi taman
+    tapauksen ja liitti pelaajan avaimeen `_off_pool`, mutta freeze kirjoittaa
+    levylle vain `meta/captain/vice_captain/xi/bench` — `_off_pool` ei
+    sarjallistu, joten ketjupolulla se on AINA tyhja. Nyt ketju ei nojaa
+    perittyyn avaimeen vaan rakentaa rivin itse samalla lukijalla.
+
+    `None` tarkoittaa nyt vain yhta asiaa: jasenta ei ole poolissa,
+    perityssa `_off_pool`issa EIKA bootstrapissa. Se ei ole fallback-signaali
+    vaan kieltaytyminen — kutsuja EI saa pudota vapaaseen optimiin.
     """
     from src.models.fpl_transfers import MAX_TRANSFERS_PER_GW, plan_gw
 
@@ -271,11 +290,14 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
     by_id_runko = dict(by_id)
     by_id_runko.update(prev.get("_off_pool") or {})
     edellinen = (prev.get("xi") or []) + (prev.get("bench") or [])
+    for p in edellinen:
+        if p["id"] in by_id_runko:
+            continue
+        rivi = _departed_player(p["id"], bootstrap or {})
+        if rivi is not None:
+            by_id_runko[p["id"]] = rivi
     squad = [by_id_runko[p["id"]] for p in edellinen if p["id"] in by_id_runko]
     if len(squad) != 15:
-        # Pelaaja poistunut poolista (siirto ulos liigasta tms.) -> emme voi
-        # peria runkoa rehellisesti. Kutsuja putoaa vapaaseen optimiin ja se
-        # KERROTAAN metassa, ei vaieta.
         return None
 
     budjetti = int(round(float(prev.get("meta", {}).get("budget", 100.0)) * 10))
@@ -494,41 +516,51 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
 
 
 def _departed_player(pid: int, bootstrap: dict) -> dict | None:
-    """Pool-muotoinen rivi pelaajalle joka on entryssa muttei poolissa.
+    """Pool-muotoinen rivi pelaajalle joka on rungossa muttei poolissa.
 
     xP on nolla joka kierrokselle, koska han ei voi pelata. Rivi on
     tarkoituksella minimaalinen: se riittaa siirtomoottorille (hinta,
     positio, seura) muttei nayta hanta missaan valintalistassa.
+
+    🔴 YKSI LUKIJA (12.9.2026). Tama oli aiemmin oma kopionsa
+    `fpl_transfers.placeholder_player`ista, ja kopiot erosivat yhdessa
+    kentassa: placeholder asettaa `no_projection: True`, tama ei. Juuri
+    sita kenttaa `needs_repair` lukee ENSIMMAISENA, nimenomaan siksi ettei
+    korjaustarve jaisi `status`in varaan. Mitattu: `fpl_xp_projections.json`
+    pudottaa 171 pelaajaa, joista **2 syylla `below_min_xp`** — heilla
+    status on "a" ja `chance_next` ei ole 0, joten pelkkien status-ehtojen
+    varassa `needs_repair` olisi palauttanut heille False ja moottori olisi
+    mitannut heidan korvaamistaan taydella rimalla. Nyt runko rakennetaan
+    samasta funktiosta kuin moottorin oma placeholder, ja tama lisaa vain
+    freezen tarvitsemat lisakentat.
     """
-    for e in (bootstrap.get("elements") or []):
-        if int(e.get("id") or 0) != pid:
-            continue
-        joukkueet = {int(t["id"]): t for t in (bootstrap.get("teams") or [])}
-        t = joukkueet.get(int(e.get("team") or 0)) or {}
-        return {
-            "id": pid,
-            "web_name": e.get("web_name"),
-            "element_type": int(e.get("element_type") or 0),
-            "club": int(e.get("team") or 0),
-            "team": t.get("name"),
-            "team_short": t.get("short_name"),
-            "price": int(e.get("now_cost") or 0),
-            "status": e.get("status"),
-            "news": e.get("news") or "",
-            "owned_pct": float(e.get("selected_by_percent") or 0.0),
-            "xp_per_gw": 0.0,
-            "xp_horizon_total": 0.0,
-            "xp_per_90": 0.0,
-            "xmins": 0.0,
-            "predicted_starts": 0.0,
-            "p_start": 0.0,
-            "chance_next": 0,
-            "minutes_confidence": "none",
-            "minutes_source": "left_league",
-            "gameweeks": [],
-            "off_pool": True,
-        }
-    return None
+    from src.models.fpl_transfers import placeholder_player
+
+    base = placeholder_player(pid, bootstrap)
+    if base is None:
+        return None
+    el = {int(e.get("id") or 0): e
+          for e in (bootstrap.get("elements") or [])}.get(pid) or {}
+    joukkueet = {int(t["id"]): t for t in (bootstrap.get("teams") or [])}
+    t = joukkueet.get(int(el.get("team") or 0)) or {}
+    base.update({
+        "element_type": int(el.get("element_type") or 0),
+        "club": int(el.get("team") or 0),
+        "team": t.get("name"),
+        "team_short": t.get("short_name"),
+        "price": int(el.get("now_cost") or 0),
+        "news": el.get("news") or "",
+        "owned_pct": float(el.get("selected_by_percent") or 0.0),
+        "xp_per_90": 0.0,
+        "xmins": 0.0,
+        "predicted_starts": 0.0,
+        "p_start": 0.0,
+        "chance_next": 0,
+        "minutes_confidence": "none",
+        "minutes_source": "left_league",
+        "off_pool": True,
+    })
+    return base
 
 
 def budget_from_history(historia: dict) -> float:
@@ -656,17 +688,41 @@ def main() -> int:
         # kuin wildcard-sivu, jotta rivi ja sivu eivat ole eri mielta.
         _by_id = {p["id"]: p for p in pool}
         _by_id.update(prev.get("_off_pool") or {})
+        # Sama rekonstruktio kuin `_constrained_from_prev`illa: ilman tata
+        # chip-arvio jai hiljaa `null`iksi tasmalleen niina kierroksina
+        # jolloin ketju oli vaarassa katketa (mitattu GW4: chip_evaluation null).
+        for _p in (prev.get("xi") or []) + (prev.get("bench") or []):
+            if _p["id"] not in _by_id:
+                _r = _departed_player(_p["id"], _bootstrap or {})
+                if _r is not None:
+                    _by_id[_p["id"]] = _r
         _peritty = [_by_id[p["id"]] for p in (prev.get("xi") or []) + (prev.get("bench") or [])
                     if p["id"] in _by_id]
         if len(_peritty) == 15:
             chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data)
         rajoitettu = _constrained_from_prev(
-            prev, pool, gw, _ft_available(prev_meta))
+            prev, pool, gw, _ft_available(prev_meta), _bootstrap)
         if rajoitettu is None:
-            # Pelaaja poistunut poolista -> runkoa ei voi peria rehellisesti.
-            # Pudotaan vapaaseen optimiin ja KERROTAAN se metassa.
-            print(f"VAROITUS: GW{prev_gw}:n runkoa ei voitu peria "
-                  f"(pelaaja poistunut poolista) — vapaa optimi.")
+            # 🔴 EI FALLBACKIA VAPAASEEN OPTIMIIN (12.9.2026). Tama haara oli
+            # ennen paljas `print` + jatko vapaalla optimilla: askel on
+            # `continue-on-error`, joten ajo 34575124438 oli VIHREA samalla kun
+            # se jaadytti rungon jossa 8/15 vaihtui yhdella ilmaisella
+            # siirrolla. Jaadytys on immutable ja julkinen vaite on "malli
+            # pelaa omaa FPL-joukkuettaan", joten hiljainen uudelleenrakennus
+            # on peruuttamaton. Nyt: kieltaydytaan, kuten laittoman rungon
+            # kohdalla. Kierros jaa ilman rivia kunnes syy on korjattu — se on
+            # nakyva puute, ei vaara rivi.
+            puuttuvat = [p["id"] for p in
+                         (prev.get("xi") or []) + (prev.get("bench") or [])
+                         if p["id"] not in {q["id"] for q in pool}
+                         and _departed_player(p["id"], _bootstrap or {}) is None]
+            print(f"::error::GW{prev_gw}:n runkoa ei voitu peria: "
+                  f"jasenta ei loydy poolista, perityista eika bootstrapista "
+                  f"(id {puuttuvat}). EI jaadyteta vapaata optimia — se olisi "
+                  f"runko jota malli ei voi saavuttaa yhdellakaan sallitulla "
+                  f"siirtomaaralla. Korjaa lahde tai kirjaa reseed "
+                  f"data/model_squad_reseed/gw{gw}.json.")
+            return 1
         else:
             siirtotiedot = rajoitettu
             squad = rajoitettu["squad"]
@@ -675,6 +731,13 @@ def main() -> int:
             bench = [p for p in squad if p["id"] not in xi_ids]
 
     if siirtotiedot is None:
+        # Tanne paastaan enaa VAIN kun edellista runkoa ei ole (kauden
+        # ensimmainen jaadytys). Ketjun katkeaminen palaa yllaolevasta
+        # haarasta exit 1:lla, joten vapaa optimi ei voi enaa korvata
+        # perittya runkoa hiljaa.
+        if edellinen is not None:
+            print("::error::sisainen: vapaa optimi ketjupolulla — ei jaadyteta.")
+            return 1
         try:
             free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
         except RateTeamError as e:
@@ -725,8 +788,13 @@ def main() -> int:
             # = entryn omat pickit (reseed). Ilman tata kentta lukija ei voi
             # tietaa kumpaa artefaktia rivi seuraa - juuri se tieto puuttui
             # 4.9 kun kortti lupasi entryn rungon ja naytti ketjun rungon.
+            # 🔴 KENTTA KERTOO MITA TAPAHTUI, EI MITA OLI TARJOLLA (12.9.2026).
+            # Vanha ehto luki pelkkaa `edellinen is not None`, joten gw4.json
+            # sanoo `squad_source: "chain"` samalla kun `squad_rebuilt: true`
+            # ja `from_gw: null` — artefakti oli ristiriidassa itsensa kanssa
+            # ja lukija joutui paattelemaan totuuden kolmesta kentasta.
             "squad_source": ("entry_picks" if reseed_meta else
-                             ("chain" if edellinen else "free_optimum")),
+                             ("chain" if siirtotiedot else "free_optimum")),
             "reseed": reseed_meta,
             # Peritty seurakaton ylitys nakyviin: se on tosiasia rungosta,
             # ei virhe, ja ilman tata lukija laskisi rivit ja luulisi

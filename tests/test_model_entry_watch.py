@@ -76,8 +76,8 @@ def test_before_deadline_prints_squad_and_passes(frozen_dir, monkeypatch, capsys
 
 def test_after_deadline_match_passes(frozen_dir, monkeypatch):
     _write(frozen_dir, 1, PAST, IDS)
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
-        [{"element": i, "is_captain": i == 101} for i in IDS], "200"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        [{"element": i, "is_captain": i == 101} for i in IDS], "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 0
 
@@ -88,8 +88,8 @@ def test_after_deadline_mismatch_fails(frozen_dir, monkeypatch, capsys):
     ei valinnut."""
     _write(frozen_dir, 1, PAST, IDS)
     wrong = IDS[:-1] + [999]
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
-        [{"element": i, "is_captain": i == 101} for i in wrong], "200"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        [{"element": i, "is_captain": i == 101} for i in wrong], "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 1
     out = capsys.readouterr().out
@@ -102,8 +102,8 @@ def test_captain_difference_alone_fails(frozen_dir, monkeypatch, capsys):
     """15/15 voi tasmata ja rivi olla silti vaara: kapteeni on
     kaksinkertainen pistevaikutus."""
     _write(frozen_dir, 1, PAST, IDS, captain=101)
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
-        [{"element": i, "is_captain": i == 102} for i in IDS], "200"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        [{"element": i, "is_captain": i == 102} for i in IDS], "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 1
     assert "KAPTEENI eroaa" in capsys.readouterr().out
@@ -113,7 +113,7 @@ def test_missing_picks_after_deadline_fails(frozen_dir, monkeypatch):
     """404 ENNEN deadlinea on normaali; deadlinen JALKEEN se tarkoittaa
     ettei tilia ole pelattu — ja silloin koko kausikisa on tyhja."""
     _write(frozen_dir, 1, PAST, IDS)
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (None, "404"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (None, "404", "not_played"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 1
 
@@ -142,8 +142,8 @@ def _write_exception(d, gw, reason="Ville pelasi wildcardin korjatulla mallilla"
 
 def _mismatch(monkeypatch):
     wrong = IDS[:-1] + [999]
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
-        [{"element": i, "is_captain": i == 101} for i in wrong], "200"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        [{"element": i, "is_captain": i == 101} for i in wrong], "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
 
 
@@ -185,8 +185,8 @@ def test_broken_exception_is_an_error_not_a_free_pass(frozen_dir, monkeypatch, c
 def test_exception_covers_captain_only_difference(frozen_dir, monkeypatch, capsys):
     _write(frozen_dir, 1, PAST, IDS, captain=101)
     _write_exception(frozen_dir, 1)
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
-        [{"element": i, "is_captain": i == 102} for i in IDS], "200"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        [{"element": i, "is_captain": i == 102} for i in IDS], "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 0
     assert "KAPTEENI eroaa" in capsys.readouterr().out
@@ -195,8 +195,8 @@ def test_exception_covers_captain_only_difference(frozen_dir, monkeypatch, capsy
 def test_stale_exception_is_flagged_when_squads_match(frozen_dir, monkeypatch, capsys):
     _write(frozen_dir, 1, PAST, IDS)
     _write_exception(frozen_dir, 1)
-    monkeypatch.setattr(w, "fetch_picks", lambda e, g: (
-        [{"element": i, "is_captain": i == 101} for i in IDS], "200"))
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        [{"element": i, "is_captain": i == 101} for i in IDS], "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 0
     assert "vanhentunut" in capsys.readouterr().out

@@ -187,7 +187,7 @@ def test_verify_main_records_on_real_flow(tmp_path, monkeypatch):
     monkeypatch.setattr(v, "FROZEN_DIR", fdir)
     monkeypatch.setattr(v, "EXCEPTIONS_DIR", tmp_path / "exc")
     picks = [{"element": i, "is_captain": i == 1} for i in range(1, 16)]
-    monkeypatch.setattr(v, "fetch_picks", lambda entry, gw: (picks, 200))
+    monkeypatch.setattr(v, "fetch_picks", lambda entry, gw, **kw: (picks, "200", "ok"))
     monkeypatch.setattr(sys, "argv", ["x", "--gw", "3"])
     assert v.main() == 0
     saved = json.loads((fdir / "gw3.json").read_text(encoding="utf-8"))

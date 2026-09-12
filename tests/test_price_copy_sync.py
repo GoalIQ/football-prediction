@@ -80,21 +80,92 @@ def test_hintapinta_kertoo_ilmaisikkunasta_kun_se_on_auki():
     )
 
 
+def _lupausperhe():
+    """Sama lukija kuin `check_free_window.py`illa — ei toista kuviota.
+
+    🔴 MITATTU 12.9.2026 12:30. Tama testi kaytti omaa kuviotaan
+    `IKKUNA = "12 September|September 12|GW4 deadline"`, joka on PALJAS
+    PAIVAMAARA eika lupaus. Sekunnilla jolloin ikkuna sulkeutui testi
+    aktivoitui ja ilmoitti kaksi pintaa rikkinaisina. Kaikki kuusi osumaa
+    olivat vaaria halytyksia:
+
+      index.html  CSS-kommentti "The window closes on 12 September and this
+                  line goes with it" — ei lupaus, ja se ei vanhene koskaan,
+                  joten portti olisi ollut pysyvasti punainen
+      fpl.html    "Data updated 12 September 2026", "Gameweek 4 starts
+                  Saturday 12 September 2026", "updated 12 September 2026"
+                  — paivamaaraleimoja, kolme kappaletta
+
+    Kaksi vikaa yhdessa: (1) portti etsi merkkijonoa eika mitannut vaitetta
+    (muisti `portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa`), ja (2) samaan
+    kysymykseen oli KAKSI sääntöä — `check_free_window.py`illa on perhe joka
+    on kirjoitettu vaitteen muodosta, ja se mittasi saman hetken oikein
+    (0 osumaa). Vaarin punainen portti on huonompi kuin puuttuva portti:
+    se opettaa ohittamaan.
+
+    Ja kolmas: testi oli inertti ikkunan ollessa auki (`return`), joten sita
+    ei ollut koskaan ajettu vihreana siina haarassa jota se vartioi.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "check_free_window", ROOT / "scripts" / "check_free_window.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def _lupaukset(s: str) -> list[str]:
+    """Lupaukset lukijan nakymasta, ei raa'asta lahteesta."""
+    m = _lupausperhe()
+    nakyma, _ = m.luettava_teksti(s)
+    return ([o.group(0) for o in m.CLAIM_RE.finditer(nakyma)] +
+            [o.group(0) for o in m.DATED_PRICE_RE.finditer(nakyma)])
+
+
 def test_ikkunateksti_on_poistettu_kun_ikkuna_on_kiinni():
     """🔴 Toinen suunta, ja se on se joka unohtuu. Poisto oli 25.8 vain
     HTML-kommenttina ("REMOVE the free window after 2026-09-12 12:30 UTC"),
     eli yhden ihmisen muistin varassa."""
     if _ikkuna_auki():
         return
-    jaljella = []
+    jaljella = {}
     for nimi in HINTAPINNAT:
         s = _lue(nimi)
-        if s is not None and IKKUNA.search(s):
-            jaljella.append(nimi)
+        if s is None:
+            continue
+        osumat = _lupaukset(s)
+        if osumat:
+            jaljella[nimi] = osumat[:4]
     assert not jaljella, (
         f"Ilmaisikkuna sulkeutui {_window_end().date()} mutta nama pinnat "
         f"lupaavat sita yha: {jaljella}. Poista teksti."
     )
+
+
+def test_paivamaaraleima_ei_ole_ikkunalupaus():
+    """Negatiivinen kontrolli, kirjoitettu 12.9:n vaarista halytyksista.
+
+    Ilman tata kuvio saisi hiljaa liukua takaisin paljaaksi paivamaaraksi.
+    """
+    for viaton in (
+        '<p class="meta">Season 2026/27. Data updated 12 September 2026.</p>',
+        "<p>Gameweek 4 starts Saturday 12 September 2026.</p>",
+        "/* The window closes on 12 September and this line goes with it. */",
+        "<p>Source: GoalIQ prediction log, updated 12 September 2026.</p>",
+    ):
+        assert _lupaukset(viaton) == [], viaton
+
+
+def test_aito_lupaus_loytyy_yha():
+    """Ja portti ei saa olla aina vihrea: aidot muodot on nahtava, myos
+    riville taitettuna ja tagin lapi."""
+    for aito in (
+        "<p>Premium is free until the GW4 deadline.</p>",
+        '<a class="cta">Get Premium\n   free</a>',
+        "<span>Free until 12 Sept</span>",
+        "<p>After 12 September it is &euro;3.99 a month.</p>",
+    ):
+        assert _lupaukset(aito), aito
 
 
 def test_store_listaus_ei_kovakoodaa_tarkkuuslukua():

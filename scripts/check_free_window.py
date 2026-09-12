@@ -396,6 +396,16 @@ def fix(paths=None, now=None) -> list[tuple[str, int]]:
             continue
         uusi, n = strip_claim(txt)
         if n:
+            # 🔴 LEIMA SAMASSA KIRJOITUKSESSA (12.9.2026). Ilman tata rivia
+            # tama funktio muuttaa sivun nakyvaa copyta ja jattaa sen
+            # tuoreusleiman jalkeen: `faq.html`in `data-copy-hash` oli
+            # `834e4eca8357` kun sisalto sanoi `6a25db3a1dbb`, ja
+            # `tests/test_faq_freshness.py` punastui vaikka kukaan ei ollut
+            # koskenut sivuun. Portti oli oikeassa — se vain oletti
+            # tekijaksi ihmisen. Leima on osa copya, joten sen paivittaminen
+            # kuuluu samaan kirjoitukseen kuin copyn muutos.
+            from src.copy_stamp import paivita_leima
+            uusi, _leima = paivita_leima(uusi, now=now)
             p.write_text(uusi, encoding="utf-8")
             muutetut.append((rel, n))
     return muutetut
