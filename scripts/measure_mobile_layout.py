@@ -17,10 +17,13 @@ silloin oikein.
 KAYTTO:
     python -m scripts.measure_mobile_layout <url> [--width 390] [--shot polku.png]
                                             [--anchor gw-xp] [--sel ".lb"]
+                                            [--wait ".row"] [--click "button.name"]
+                                            [--wait-after "dialog[open]"]
 
 Tulostaa JSONia: viewport, dpr, ankkurin etaisyys sivun ylalaidasta,
 valitsimien leveydet, vaakavieritys ja media query -tila. Exit 1 jos sivu
-vierittyy vaakasuunnassa (se on lahes aina vika, ei valinta).
+vierittyy vaakasuunnassa (se on lahes aina vika, ei valinta). Exit 2 jos jokin
+klikattu elementti oli toisen kerroksen peitossa (napautus ei osuisi laitteella).
 """
 from __future__ import annotations
 
@@ -64,15 +67,50 @@ return out;
 """
 
 
-def mittaa(url: str, leveys: int, korkeus: int, dpr: int,
-           sels: list[str], anchor: str | None, shot: str | None) -> dict:
+# Klikattavuus mitataan ennen klikkausta: JS-klikkaus onnistuu myos peitetyn
+# elementin kohdalla, joten ilman osumatestia rikkinainen napautus (sticky-palkki
+# tai toinen kerros paalla) nayttaisi toimivalta. Mittaus kertoo sen aaneen.
+OSUMA_JS = r"""
+const n = document.querySelector(arguments[0]);
+if (!n) return {loytyi: false, klikattava: false};
+n.scrollIntoView({block: 'center'});
+const r = n.getBoundingClientRect();
+const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+return {loytyi: true, klikattava: !!top && (top === n || n.contains(top))};
+"""
+
+
+def _odota(d, sel: str, aikaraja_s: float, uni=None) -> bool:
+    """Kyselysilmukka selaimen puolella: ei selenium.support-riippuvuutta."""
+    import time
+    uni = uni or time.sleep
+    kierroksia = max(1, int(aikaraja_s / 0.25))
+    for _ in range(kierroksia):
+        if d.execute_script("return !!document.querySelector(arguments[0]);", sel):
+            return True
+        uni(0.25)
+    return False
+
+
+def _chrome():
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
 
     o = Options()
     o.add_argument("--headless=new")
     o.add_argument("--hide-scrollbars")
-    d = webdriver.Chrome(options=o)
+    return webdriver.Chrome(options=o)
+
+
+def mittaa(url: str, leveys: int, korkeus: int, dpr: int,
+           sels: list[str], anchor: str | None, shot: str | None,
+           wait: str | None = None, clicks: list[str] | None = None,
+           wait_after: str | None = None, aikaraja_s: float = 20.0,
+           ajuri=None, uni=None) -> dict:
+    """Jarjestys on osa mittausta: lataus -> odota dataa -> klikkaa -> odota
+    tulosta -> mittaa. Jos mittaus ajettaisiin ennen klikkausta, avautuvan
+    dialogin ensimmainen ruutu mitattaisiin suljettuna."""
+    d = (ajuri or _chrome)()
     try:
         # 🔴 TAMA rivi on koko skriptin syy. Ilman sita layout-viewport on
         # ajokoneen ikkuna, ei `leveys`.
@@ -80,7 +118,30 @@ def mittaa(url: str, leveys: int, korkeus: int, dpr: int,
             "width": leveys, "height": korkeus,
             "deviceScaleFactor": dpr, "mobile": True})
         d.get(url)
+        odotukset = {}
+        if wait:
+            odotukset[wait] = _odota(d, wait, aikaraja_s, uni)
+            if not odotukset[wait]:
+                raise SystemExit(
+                    f"measure_mobile_layout: --wait {wait!r} ei ilmestynyt "
+                    f"{aikaraja_s:.0f} s:ssa. Mittaus olisi tyhjasta sivusta.")
+        klikkaukset = []
+        for sel in clicks or []:
+            if not _odota(d, sel, aikaraja_s, uni):
+                raise SystemExit(
+                    f"measure_mobile_layout: --click {sel!r} ei loytynyt.")
+            osuma = d.execute_script(OSUMA_JS, sel)
+            d.execute_script("document.querySelector(arguments[0]).click();", sel)
+            klikkaukset.append({"sel": sel, **osuma})
+        if wait_after:
+            odotukset[wait_after] = _odota(d, wait_after, aikaraja_s, uni)
+            if not odotukset[wait_after]:
+                raise SystemExit(
+                    f"measure_mobile_layout: --wait-after {wait_after!r} ei "
+                    "ilmestynyt klikkauksen jalkeen.")
         tulos = d.execute_script(MITTA_JS, sels, anchor)
+        tulos["odotukset"] = odotukset
+        tulos["klikkaukset"] = klikkaukset
         # Kontrolli: jos emulaatio ei purrut, viewport ei ole pyydetty leveys
         # ja kaikki muut luvut ovat tyopoydan lukuja vaarassa nimessa.
         if tulos["viewport"].split("x")[0] != str(leveys):
@@ -113,9 +174,20 @@ def main(argv=None) -> int:
     ap.add_argument("--anchor", default=None,
                     help="elementin id jonka etaisyys mitataan")
     ap.add_argument("--shot", default=None)
+    ap.add_argument("--wait", default=None,
+                    help="CSS-valitsin jota odotetaan ennen klikkauksia (SPA hakee datan mountin jalkeen)")
+    ap.add_argument("--click", action="append", default=[],
+                    help="CSS-valitsin joka klikataan, jarjestyksessa, voi toistaa")
+    ap.add_argument("--wait-after", default=None,
+                    help="CSS-valitsin jota odotetaan klikkausten jalkeen, esim. 'dialog[open]'")
+    ap.add_argument("--timeout", type=float, default=20.0)
     a = ap.parse_args(argv)
-    tulos = mittaa(a.url, a.width, a.height, a.dpr, a.sel, a.anchor, a.shot)
+    tulos = mittaa(a.url, a.width, a.height, a.dpr, a.sel, a.anchor, a.shot,
+                   wait=a.wait, clicks=a.click, wait_after=a.wait_after,
+                   aikaraja_s=a.timeout)
     print(json.dumps(tulos, indent=1, ensure_ascii=False))
+    if any(not k["klikattava"] for k in tulos["klikkaukset"]):
+        return 2
     return 1 if tulos["sivu_vaakascroll"] else 0
 
 
