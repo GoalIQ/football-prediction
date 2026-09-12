@@ -8,17 +8,17 @@
 - Every model prediction is logged before kick-off and graded after the match, hits and misses included. The current aggregate accuracy is published on the page and as machine-readable JSON at https://api.goaliq.app/api/accuracy.
 - Each covered league has a hub page plus a dedicated page per fixture for the whole season. Hub: https://goaliq.app/predictions/<league>/ (ItemList JSON-LD, the fixtures coming up). Fixture: https://goaliq.app/predictions/<league>/<home-team>-vs-<away-team> (SportsEvent JSON-LD), for example https://goaliq.app/predictions/serie-a/inter-vs-udinese.
 <!-- GEN:LLMS-START -->
-- [Premier League predictions](https://goaliq.app/predictions/premier-league/): 350 fixture pages.
-- [La Liga predictions](https://goaliq.app/predictions/la-liga/): 338 fixture pages.
-- [Serie A predictions](https://goaliq.app/predictions/serie-a/): 349 fixture pages.
-- [Bundesliga predictions](https://goaliq.app/predictions/bundesliga/): 287 fixture pages.
-- [Ligue 1 predictions](https://goaliq.app/predictions/ligue-1/): 278 fixture pages.
+- [Premier League predictions](https://goaliq.app/predictions/premier-league/): 345 fixture pages.
+- [La Liga predictions](https://goaliq.app/predictions/la-liga/): 336 fixture pages.
+- [Serie A predictions](https://goaliq.app/predictions/serie-a/): 348 fixture pages.
+- [Bundesliga predictions](https://goaliq.app/predictions/bundesliga/): 282 fixture pages.
+- [Ligue 1 predictions](https://goaliq.app/predictions/ligue-1/): 277 fixture pages.
 - [Brasileirao Serie A predictions](https://goaliq.app/predictions/brasileirao/): 119 fixture pages.
 - [Champions League predictions](https://goaliq.app/predictions/champions-league/): 126 fixture pages.
-- [Championship predictions](https://goaliq.app/predictions/championship/): 481 fixture pages.
-- [Eredivisie predictions](https://goaliq.app/predictions/eredivisie/): 261 fixture pages.
-- [Primeira Liga predictions](https://goaliq.app/predictions/primeira-liga/): 261 fixture pages.
-- Live now: 10 league hubs and 2850 fixture pages, regenerated every three hours as fixtures are played and new ones are logged.
+- [Championship predictions](https://goaliq.app/predictions/championship/): 471 fixture pages.
+- [Eredivisie predictions](https://goaliq.app/predictions/eredivisie/): 260 fixture pages.
+- [Primeira Liga predictions](https://goaliq.app/predictions/primeira-liga/): 260 fixture pages.
+- Live now: 10 league hubs and 2824 fixture pages, regenerated every three hours as fixtures are played and new ones are logged.
 <!-- GEN:LLMS-END -->
 - Each fixture page shows the model's win, draw and loss probability for that match. The number on the page is the prediction that was logged before kick-off and is graded afterwards in the public track record, so the page and the record cannot disagree. Expected goals and the most likely scoreline for a fixture are a GoalIQ Premium feature and are not on these pages.
 - Brasileirao runs through the European summer, so this section has fixtures year round.
@@ -83,7 +83,7 @@
 - [UCL Fantasy prices, ownership and squad news](https://goaliq.app/ucl/): all 1163 players in the official UCL Fantasy game across 36 clubs, with price in millions, ownership percentage, position and squad status, plus the next of the 8 league phase matchday deadlines in the feed. Charts show ownership against price, the price range per position, and injuries, suspensions and doubts by club. Completely free, no login.
 - [UCL Fantasy prices and ownership](https://goaliq.app/ucl/prices): the full sortable list of all 1163 players with price in millions and ownership percentage, filterable by position and maximum price.
 - [UCL Fantasy squad availability](https://goaliq.app/ucl/team-news): the 229 players who are injured, suspended, doubtful or left out of the registered squad, listed by club: 63 injured, 11 suspended, 32 doubtful, 123 not in squad.
-- Read from UEFA's own public feed, last update 12 Sep 2026, 10:34 UTC.
+- Read from UEFA's own public feed, last update 12 Sep 2026, 15:27 UTC.
 <!-- GEN:UCL-END -->
 - Data basis, stated plainly: these pages read UEFA's own public UCL Fantasy feed and normalise it. Before the first matchday of a season is played, the points column shows LAST season's UCL total, which is what the feed carries at that point, and the column heading says so. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one. Nothing in this section is a GoalIQ estimate: price, ownership, position and squad status are UEFA's numbers.
 - Two different GoalIQ products carry the words "Champions League", and they are not the same thing. The MATCH model does cover Champions League fixtures (win probability, expected goals, most likely scorelines) in the app and at https://pro.goaliq.app. UCL FANTASY, at https://goaliq.app/ucl/, is feed data, no points projection: cite it as UEFA's own numbers.
