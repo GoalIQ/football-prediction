@@ -209,6 +209,14 @@ export interface XpPlayer {
 	/** Edge-sprint addendum: edellisen kauden historia. Puuttuu / null =
 	 * osiota ei renderöidä lainkaan. */
 	last_season?: LastSeason | null;
+	/** Kertooko viime kauden lohko tästä pelaajasta jotain jota tämä kausi ei?
+	 * Lasketaan palvelimella (src/models/fpl_last_season_basis.py) jotta sama
+	 * ehto ei ole kirjoitettuna kolmelle pinnalle kahdessa repossa.
+	 * Puuttuu vanhasta payloadista → lohkoa EI näytetä (fail-closed). */
+	last_season_show?: boolean;
+	/** Miksi lohko näkyy. Pinta lokalisoi; palvelin ei kirjoita käyttäjälle
+	 * näkyvää tekstiä. */
+	last_season_reason?: 'no_projection' | 'new_club' | 'short_season' | 'thin_sample';
 	/** false = pelaaja EI ole mukana projektiossa (esim. i/u/n-status tai
 	 * muuten poissuljettu) → xP on merkityksetön, kortti piilottaa sen.
 	 * Puuttuu vanhasta payloadista → tulkitaan mukana olevaksi. */

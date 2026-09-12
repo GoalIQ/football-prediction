@@ -231,11 +231,21 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     fts = ft
     bank_now = bank_tenths
     total_hits = 0.0
+    # 🔴 SUUNNITELMA EI SAA MYYDA SITA JONKA SE ITSE OSTI (12.9).
+    # Mitattu 7.9 ja uudelleen 12.9: entry 4089628, ft=5 ->
+    # GW7 Enciso -> Ndiaye (gain 1.38), GW8 Ndiaye -> Gibbs-White (gain 1.83).
+    # Kaksi siirtoa paatyakseen Gibbs-Whiteen, jonka suora osto GW7:ssa olisi
+    # ollut vahintaan yhta hyva. Ahne silmukka ei muistanut keta se osti.
+    # Tila kulkee moottorille asti (`protected_ids`) eika suodata jalkikateen:
+    # jalkisuodatus jattaisi squad-tilan ja moottorin palauttaman squadin eri
+    # linjaan.
+    protected: set[int] = set()
     for idx, g in enumerate(gws):
         gws_left = gws[idx:]
         step = _engine.plan_gw(squad, pool, bank_now, gws_left, fts,
                                max_moves=MAX_TRANSFERS_PER_GW,
-                               entry_known=entry is not None)
+                               entry_known=entry is not None,
+                               protected_ids=protected)
         moves = []
         for m in step["moves"]:
             if m["hit"] > 0:
@@ -269,6 +279,7 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
         squad = step["squad"]
         bank_now = step["bank_tenths"]
         fts = step["ft_left"]
+        protected = step.get("protected_ids") or protected
         xi = optimal_xi(squad)
         cap = max(xi, key=lambda p: _gw_xp(p, g))
         gw_xp_val = sum(_gw_xp(p, g) for p in xi) + _gw_xp(cap, g)

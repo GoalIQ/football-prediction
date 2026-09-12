@@ -202,6 +202,43 @@ def needs_repair(p: dict) -> bool:
     return False
 
 
+#: Oman ostoksen myyminen maksaa kaksinkertaisen riman.
+#:
+#: 🔴 MITATTU 7.9 ja uudelleen 12.9: `plan_transfers(entry=4089628, ft=5)`
+#: antoi `GW7: Enciso -> Ndiaye (gain 1.38)` ja heti perassa
+#: `GW8: Ndiaye -> Gibbs-White (gain 1.83)`. Suunnitelma poltti KAKSI siirtoa
+#: paatyakseen Gibbs-Whiteen, vaikka suora osto GW7:ssa olisi ollut vahintaan
+#: yhta hyva. Juurisyy: `plan_transfers` kutsuu `plan_gw`:ta kierros
+#: kerrallaan eika moottori muista keta sama suunnitelma on jo ostanut.
+#:
+#: Miksi KERROIN eika tallennettu ostohyoty: ostohetken hyoty on mitattu
+#: silloisesta horisontista tai lahi-ikkunasta, ja molemmat kutistuvat joka
+#: kierros. Kahden eri hetken lukujen vertailu olisi tasan se yksikkovirhe
+#: josta `plan_gw`:n oma kommentti varoittaa ("ikkuna ja kynnys samasta
+#: yksikosta"). Kerroin kertoo saman asian ilman yksikkoansaa: purku vaatii
+#: kaksi kertaa sen mita tavallinen siirto.
+CHURN_BAR_MULTIPLIER = 2.0
+
+
+def churn_bar(min_net: float, out: dict, protected: dict | set | None) -> float:
+    """Kynnys TALLE lahtijalle: korotettu jos sama suunnitelma osti hanet.
+
+    Poikkeus: `needs_repair` ohittaa korotuksen. Jos pelaaja on ostettu ja
+    han menettaa pelikelpoisuutensa, myynti EI ole churnia vaan korjaus, ja
+    korotettu rima jattaisi suunnitelmaan pelaajan jota ei voi pelata.
+
+    HUOM mita tama EI salli: ottelusarjan kaantymista. Se on tietoinen valinta.
+    "Ostin hanet koska ottelut olivat hyvat, myyn koska ne eivat enaa ole" on
+    tasan se kahden siirron polttaminen jota tama rivi korjaa - ja kuuden
+    kierroksen horisontissa ottelut olivat tiedossa jo ostohetkella.
+    """
+    if not protected or out.get("id") not in protected:
+        return min_net
+    if needs_repair(out):
+        return min_net
+    return min_net * CHURN_BAR_MULTIPLIER
+
+
 def transfer_bar(ft_left: int, *, entry_known: bool = True,
                  repair: bool = False,
                  near_len: int = NEAR_WINDOW_GWS) -> dict:
@@ -611,7 +648,8 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             gws: list[int] | None, ft: int, *,
             max_moves: int = MAX_TRANSFERS_PER_GW,
             top_per_pos: int = TOP_CANDIDATES_PER_POS,
-            entry_known: bool = True) -> dict:
+            entry_known: bool = True,
+            protected_ids: set[int] | None = None) -> dict:
     """Yhden kierroksen siirrot samoilla saannoilla kaikille pinnoille.
 
     Palauttaa {"moves": [...], "squad", "bank_tenths", "ft_left", "hits"}.
@@ -629,6 +667,10 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
     fts = max(0, ft)
     moves: list[dict] = []
     hits = 0
+    # Saman suunnitelman aiemmin ostamat. Kutsuja (plan_transfers) antaa
+    # edellisten kierrosten ostot; tahan lisataan myos TAMAN kutsun ostot,
+    # jotta osta->myy ei mahdu kahden siirron sisaan samalla kierroksella.
+    protected: set[int] = set(protected_ids or ())
 
     def _hit_for(n_free_used: int) -> float:
         return 0.0 if fts - n_free_used > 0 else HIT_COST_XP
@@ -661,7 +703,11 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             # lahi-ikkunan osuusehto hoidetaan hakuvaiheessa.
             decide = m["net"] if bar["hit"] else (
                 m["net_near"] if m["net_near"] is not None else m["net"])
-            if decide >= bar["min_net"]:
+            # Oman ostoksen purku maksaa kaksinkertaisen riman (churn_bar).
+            rima = churn_bar(bar["min_net"], cand["out"], protected)
+            if decide >= rima:
+                if rima != bar["min_net"]:
+                    bar = dict(bar, min_net=rima, churn_guard=True)
                 m["bar"] = bar
                 best_single = m
                 break
@@ -687,8 +733,12 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                            else (best_single["net_near"]
                                  if best_single["net_near"] is not None
                                  else best_single["net"]))
-                floor = (_bs + pair_bar["min_net"] if _bs is not None
-                         else 2 * pair_bar["min_net"])
+                pari_min = max(churn_bar(pair_bar["min_net"], _o1, protected),
+                               churn_bar(pair_bar["min_net"], _o2, protected))
+                if pari_min != pair_bar["min_net"]:
+                    pair_bar = dict(pair_bar, min_net=pari_min,
+                                    churn_guard=True)
+                floor = (_bs + pari_min if _bs is not None else 2 * pari_min)
                 if net_pair >= floor:
                     (o1, i1), (o2, i2) = pr["moves"]
                     # Parin hyoty jaetaan nayttoon siirroittain: ensimmainen
@@ -716,10 +766,13 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         for m in chosen:
             bank += m["out"]["price"] - m["in"]["price"]
             squad = _apply(squad, [m["out"]], [m["in"]])
+            # Tulija on heti suojattu: sama kierros ei saa ostaa ja myyda.
+            protected.add(m["in"]["id"])
+            protected.discard(m["out"]["id"])
             if fts > 0:
                 fts -= 1
             else:
                 hits += 1
             moves.append(m)
     return {"moves": moves, "squad": squad, "bank_tenths": bank,
-            "ft_left": fts, "hits": hits}
+            "ft_left": fts, "hits": hits, "protected_ids": protected}

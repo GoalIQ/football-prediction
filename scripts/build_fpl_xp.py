@@ -1424,6 +1424,15 @@ def main(argv: list[str] | None = None) -> int:
         )
     tc_meta = attach_team_confidence(players)
     n_short = attach_minutes_basis_flag(players)
+    # Villen havainto 11.9: kortti nayttaa turhaan edelliskauden tilastoja.
+    # Ehto lasketaan TASSA eika kolmella pinnalla kahdessa repossa
+    # (src/models/fpl_last_season_basis.py, CLAUDE.md 6a mek. 1).
+    # HUOM: kutsu on attach_minutes_basis_flag'in JALKEEN - ehto lukee sen
+    # kirjoittaman `minutes_basis_flag`-kentan.
+    from src.models.fpl_last_season_basis import attach as attach_last_season
+    ls_counts = attach_last_season(players, excluded)
+    print(f"      viime kauden lohko: {sum(v for k, v in ls_counts.items() if k != 'hidden')}"
+          f"/{len(players) + len(excluded)} rivia nayttaa sen ({ls_counts})")
     n_new = sum(1 for p in players if p.get("minutes_basis_flag") == "new_club")
     print(f"      minuuttipriorin lippu: {n_short}/{len(players)} rivia nojaa "
           f"viime kauteen joka ei ole tama seura ({n_new} seuranvaihtoa, "
@@ -1569,6 +1578,9 @@ def main(argv: list[str] | None = None) -> int:
             "min_xp_total": MIN_XP_TOTAL,
             "n_players": len(players),
             "n_excluded": len(excluded),
+            # Villen havainto 11.9 -> yksi lukija (fpl_last_season_basis).
+            # Jakauma metaan, jotta muutos nakyy artefaktin kirjanpidossa.
+            "last_season_block": ls_counts,
             # Addendum 2: excluded[] on HAKUA/player cardia varten, ei
             # rankkauslista. Rivit kantavat vain FPL:n virallisen tiedon
             # (status/news/hinta/EO/erikoistilanteet) — EI mallilukuja.
