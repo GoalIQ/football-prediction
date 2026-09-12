@@ -440,11 +440,12 @@
 	     sidottu porttiin tests/test_minutes_claim_matches_source.py. -->
 	<p>
 		<strong>Our pre-season minutes run high for some at the top.</strong> We tested our
-		own prior across the last three summers. The typical player we projected at 80+
-		minutes landed on the number we gave, but the average came in 14 minutes lower,
-		because a fifth of them fell more than 30 minutes short. Players we projected at the
-		bottom came in a little higher. The order of this list is unchanged by that, and the
-		gap closes as 2026/27 results arrive.
+		own prior across the last three summers. Players we projected at 80+ minutes who
+		then played came in about 10 minutes lower than we said. About four in ten landed
+		within five minutes of the number we gave, and one in six missed by more than 30.
+		Players we projected at the bottom came in higher, and by more than a little. The
+		order of this list is unchanged by that, and the gap closes as 2026/27 results
+		arrive.
 	</p>
 	<p>
 		Honesty notes: these are GoalIQ model projections, not FPL's official expected points.
