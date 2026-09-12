@@ -219,3 +219,72 @@ def test_fix_ei_koske_lahdekoodiin(tmp_path, monkeypatch):
     C.fix(now=KIINNI)
     # ...mutta ei muokkaa sita.
     assert koodi.read_text(encoding="utf-8") == alkuperainen
+
+
+# ---------------------------------------------------------------------------
+# 6. LIVE-tarkistus: mita oikeasti servataan, ei mita aiomme servata
+# ---------------------------------------------------------------------------
+
+class _FakeResp:
+    def __init__(self, body: str):
+        self._b = body.encode("utf-8")
+
+    def read(self):
+        return self._b
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def test_live_hits_lukee_lukijan_nakymaa(monkeypatch):
+    """Sama lukija kuin repotarkistuksella: taittunut lupaus loytyy."""
+    sivut = {
+        "https://goaliq.app/": "<p>Premium is free on the web\n  until the GW4 deadline</p>",
+        "https://goaliq.app/fpl": "<p>Nothing to see here.</p>",
+    }
+    monkeypatch.setattr(C, "LIVE_URLS", tuple(sivut))
+
+    import urllib.request
+
+    def _fake(req, timeout=None):
+        return _FakeResp(sivut[req.full_url])
+
+    monkeypatch.setattr(urllib.request, "urlopen", _fake)
+    osumat, virheet = C.live_hits()
+    assert not virheet
+    assert len(osumat) == 1, osumat
+    assert osumat[0][0] == "https://goaliq.app/"
+
+
+def test_live_hakuvirhe_on_fail_closed(monkeypatch):
+    """MUTAATIO: hakuvirhe EI saa nayttaa tyhjalta tulokselta.
+
+    Tyhja lista tarkoittaisi "yksikaan pinta ei lupaa ilmaista" - eli portti
+    olisi vihrea juuri silloin kun se ei tieda mitaan
+    (muisti: nolla-ei-ole-sama-kuin-ei-tietoa)."""
+    monkeypatch.setattr(C, "LIVE_URLS", ("https://goaliq.app/",))
+    import urllib.error
+    import urllib.request
+
+    def _kaada(req, timeout=None):
+        raise urllib.error.URLError("verkko poikki")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _kaada)
+    osumat, virheet = C.live_hits()
+    assert osumat == []
+    assert virheet and "verkko poikki" in virheet[0][1]
+    assert C.main_live() == 1, "hakuvirheen pitaa kaataa portti"
+
+
+def test_live_urlit_kattavat_samat_pinnat_kuin_repotarkistus():
+    """Jos uusi kasin yllapidetty pinta lisataan repoon, live-lista vanhenee
+    hiljaa. Tama ei voi tarkistaa kaikkea, mutta se vaatii etta jokainen
+    live-URL on tunnistettavissa repon pinnasta."""
+    tiedostot = {p.name for p in C.surfaces()}
+    odotetut = {"index.html", "fpl.html", "predictions.html", "faq.html",
+                "creators.html", "llms.txt"}
+    assert odotetut <= tiedostot, odotetut - tiedostot
+    assert len(C.LIVE_URLS) == len(odotetut), (C.LIVE_URLS, odotetut)

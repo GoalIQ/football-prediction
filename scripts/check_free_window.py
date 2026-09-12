@@ -375,8 +375,81 @@ def fix(paths=None, now=None) -> list[tuple[str, int]]:
     return muutetut
 
 
+#: LIVE-PINNAT. Repotarkistus kertoo mita AIOMME servata; tama kertoo mita
+#: oikeasti servataan. Ne eivat ole sama asia: bottikommitti ei kaynnista
+#: hub-deployta, ja CF Pages on direct upload (muisti:
+#: botin-push-ei-kaynnista-workflowta, deployn-ehto-on-mittaus).
+#:
+#: Sivut ovat tasan ne joilla lupaus elaa kasin yllapidettyna.
+LIVE_URLS = (
+    "https://goaliq.app/",
+    "https://goaliq.app/fpl",
+    "https://goaliq.app/predictions",
+    "https://goaliq.app/faq.html",
+    "https://goaliq.app/creators",
+    "https://goaliq.app/llms.txt",
+)
+
+
+def live_hits(urls=None, timeout: int = 20) -> tuple[list, list]:
+    """(osumat, virheet). Osuma = (url, rivinumero, teksti) lukijan nakymasta.
+
+    Hakuvirhe EI ole tyhja tulos: se palautetaan erikseen, jotta portti voi
+    olla fail-closed (muisti: nolla-ei-ole-sama-kuin-ei-tietoa).
+    """
+    import urllib.error
+    import urllib.request
+    # Oletus luetaan KUTSUHETKELLA eika maarittelyhetkella, jotta lista on
+    # yhdessa paikassa ja testi voi vaihtaa sen.
+    urls = LIVE_URLS if urls is None else urls
+    osumat, virheet = [], []
+    for url in urls:
+        try:
+            pyynto = urllib.request.Request(
+                url, headers={"User-Agent": "GoalIQ-FreeWindowCheck/1.0"})
+            with urllib.request.urlopen(pyynto, timeout=timeout) as r:
+                txt = r.read().decode("utf-8", errors="replace")
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            virheet.append((url, str(e)[:120]))
+            continue
+        for rivi, teksti, _a, _b in _osumat(txt, CLAIM_RE):
+            osumat.append((url, rivi, teksti))
+    return osumat, virheet
+
+
+def main_live(timeout: int = 20) -> int:
+    """`--live`: elaako lupaus julkisilla sivuilla JUURI NYT."""
+    osumat, virheet = live_hits(timeout=timeout)
+    if virheet:
+        print("FAIL: sivua ei saatu haettua - porttia ei voi todentaa "
+              "(fail-closed):")
+        for url, err in virheet:
+            print(f"     {url}  {err}")
+        return 1
+    if is_open():
+        print(f"OK: ilmaisikkuna on auki {day_label()} asti. Lupaus elaa "
+              f"livena {len(osumat)} kohdassa "
+              f"{len({u for u, _, _ in osumat})} sivulla:")
+        for url, rivi, teksti in osumat:
+            print(f"     {url}:{rivi}  {teksti!r}")
+        return 0
+    if not osumat:
+        print(f"OK: ilmaisikkuna on kiinni ({day_label()} mennyt) eika "
+              f"yksikaan LIVE-sivu lupaa ilmaista Premiumia.")
+        return 0
+    print(f"FAIL: ikkuna sulkeutui {day_label()}, mutta lupaus elaa yha "
+          f"livena {len(osumat)} kohdassa:")
+    for url, rivi, teksti in osumat:
+        print(f"     {url}:{rivi}  {teksti!r}")
+    print("     Repo voi olla jo kunnossa: aja `--fix`, committaa ja "
+          "dispatchaa fpl-page-refresh (12:30-15:00 UTC ei ole ajastettua ajoa).")
+    return 1
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--live" in argv:
+        return main_live()
     if "--fix" in argv:
         muutetut = fix()
         if not muutetut:
