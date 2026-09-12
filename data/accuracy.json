@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-09-12T21:45:35+00:00",
+  "updated_at": "2026-09-12T23:00:21+00:00",
   "logged_total": 3334,
-  "pending": 2806,
+  "pending": 2805,
   "voided": 7,
   "all_time": {
-    "n": 521,
-    "correct_1x2": 259,
-    "pct_1x2": 0.4971,
+    "n": 522,
+    "correct_1x2": 260,
+    "pct_1x2": 0.4981,
     "draw_n": 145,
-    "pct_draw": 0.2783,
-    "decisive_n": 376,
-    "decisive_correct": 259,
-    "pct_decisive": 0.6888,
-    "exact_n": 473,
+    "pct_draw": 0.2778,
+    "decisive_n": 377,
+    "decisive_correct": 260,
+    "pct_decisive": 0.6897,
+    "exact_n": 474,
     "exact_correct": 64,
-    "pct_exact": 0.1353,
+    "pct_exact": 0.135,
     "brier": 0.5939,
-    "brier_n": 473
+    "brier_n": 474
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.6235,
+    "brier": 0.6242,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 25
     },
     "BSA": {
-      "n": 80,
-      "correct_1x2": 32,
-      "pct_1x2": 0.4,
+      "n": 81,
+      "correct_1x2": 33,
+      "pct_1x2": 0.4074,
       "draw_n": 26,
-      "pct_draw": 0.325,
-      "decisive_n": 54,
-      "decisive_correct": 32,
-      "pct_decisive": 0.5926,
-      "exact_n": 80,
+      "pct_draw": 0.321,
+      "decisive_n": 55,
+      "decisive_correct": 33,
+      "pct_decisive": 0.6,
+      "exact_n": 81,
       "exact_correct": 11,
-      "pct_exact": 0.1375,
-      "brier": 0.6385,
-      "brier_n": 80
+      "pct_exact": 0.1358,
+      "brier": 0.6379,
+      "brier_n": 81
     },
     "CL": {
       "n": 9,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 335,
-      "correct_1x2": 170,
-      "pct_1x2": 0.5075,
+      "n": 336,
+      "correct_1x2": 171,
+      "pct_1x2": 0.5089,
       "draw_n": 81,
-      "pct_draw": 0.2418,
-      "decisive_n": 254,
-      "decisive_correct": 170,
-      "pct_decisive": 0.6693,
-      "exact_n": 335,
+      "pct_draw": 0.2411,
+      "decisive_n": 255,
+      "decisive_correct": 171,
+      "pct_decisive": 0.6706,
+      "exact_n": 336,
       "exact_correct": 43,
-      "pct_exact": 0.1284,
+      "pct_exact": 0.128,
       "brier": 0.586,
-      "brier_n": 335
+      "brier_n": 336
     },
     "stale": {
       "n": 138,
@@ -265,14 +265,14 @@
     {
       "bin_mid": 0.2553,
       "predicted": 0.2553,
-      "actual": 0.2901,
-      "n": 548
+      "actual": 0.2896,
+      "n": 549
     },
     {
-      "bin_mid": 0.3406,
-      "predicted": 0.3406,
-      "actual": 0.3074,
-      "n": 270
+      "bin_mid": 0.3408,
+      "predicted": 0.3408,
+      "actual": 0.3088,
+      "n": 272
     },
     {
       "bin_mid": 0.4484,
@@ -346,6 +346,21 @@
       "most_likely_score": "2-0",
       "actual_score": "4-1",
       "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-12",
+      "home_team": "Chapecoense-SC",
+      "away_team": "Internacional",
+      "predicted_winner": "away",
+      "p_winner": 0.3795,
+      "lead_h": 4.5,
+      "most_likely_score": "1-1",
+      "actual_score": "1-2",
+      "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
@@ -587,21 +602,6 @@
       "actual_score": "3-1",
       "actual_outcome": "home",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-12",
-      "home_team": "Preston",
-      "away_team": "Lincoln",
-      "predicted_winner": "home",
-      "p_winner": 0.3604,
-      "lead_h": 3.4,
-      "most_likely_score": "1-1",
-      "actual_score": "0-1",
-      "actual_outcome": "away",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
