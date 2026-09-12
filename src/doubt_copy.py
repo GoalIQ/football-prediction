@@ -39,11 +39,24 @@ _HINTAVAITE_RE = re.compile(
     r"(?:\w+\s+){0,3}?(?:actually\s+)?(?:costs?\b|is\s+costing\b)"
     r"|(?:the\s+)?(?:cost|price)\s+of\s+(?:the\s+|a\s+|his\s+)?"
     r"(?:doubt|injury|knock|flag)"
-    r"|(?:doubt|injury|knock|flag)\s+costs?\s+(?:you|him|them|the\s+owner)",
+    r"|(?:doubt|injury|knock|flag)\s+costs?\s+(?:you|him|them|the\s+owner)"
+    # 12.9: portti mittasi etta seitseman sanamuotoa lapaisi tarkistuksen,
+    # vahvimpana sivun OMA H1 "Team news, with the points cost attached".
+    r"|points?\s+(?:cost|price)\s+attached"
+    r"|(?:cost|price|worth|damage|discount)\s+(?:of\s+)?(?:the\s+)?(?:doubt|flag|knock)"
+    r"|how\s+(?:much|many\s+points)\s+(?:the\s+)?(?:doubt|injury|knock|flag)"
+    r"|(?:doubt|injury|knock|flag)\s+(?:takes?\s+(?:off|away)|discount)",
     re.I,
 )
 
 _TAGIT = re.compile(r"<[^>]+>")
+
+
+# Kohdesivun H1. 12.9 se lupasi "Team news, with the points cost attached" eli
+# TASAN sen vaitteen joka /fpl:lta poistettiin: lukija klikkasi linkkia ja
+# laskeutui hintalupaukseen. Yksi lukija tarkoittaa kaikkia vaitteita samasta
+# sarakkeesta, ei yhta virkketta kolmesta.
+TEAM_NEWS_H1 = "Team news, with our projected points attached"
 
 
 def lauseena() -> str:
@@ -60,3 +73,23 @@ def hintavaitteet(html: str) -> list[str]:
     """
     teksti = " ".join(_TAGIT.sub(" ", html).split())
     return [m.group(0) for m in _HINTAVAITE_RE.finditer(teksti)]
+
+
+# Sarakeotsikko joka olisi projektioluku. Jos naita on Doubtful-taulukossa
+# enemman kuin yksi, sivulla on kaksi lukua samasta pelaajasta ja hintavaite
+# muuttuu mahdolliseksi lukea. Silloin copy on arvioitava uudelleen.
+_PROJEKTIO_TH_RE = re.compile(r"\b\d*\s*GW\s*xP\b|\bxP\b|expected\s+points", re.I)
+
+# Vastafaktuaalinen sarake: luku "jos pelaisi taysin terveena". Tata ei ole,
+# ja juuri siksi hintaa ei voi nayttaa.
+_VASTAFAKTUAALI_TH_RE = re.compile(
+    r"fully\s*fit|if\s*fit|healthy|uninjured|potential\s*xP", re.I
+)
+
+
+def projektiosarakkeet(thead_otsikot: list[str]) -> list[str]:
+    return [o for o in thead_otsikot if _PROJEKTIO_TH_RE.search(o)]
+
+
+def vastafaktuaalisarakkeet(thead_otsikot: list[str]) -> list[str]:
+    return [o for o in thead_otsikot if _VASTAFAKTUAALI_TH_RE.search(o)]

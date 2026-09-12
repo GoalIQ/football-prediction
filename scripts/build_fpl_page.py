@@ -2294,8 +2294,8 @@ def team_news_block(xp: dict | None) -> str:
         "for the next deadline, taken from the official Fantasy Premier League "
         "status feed. Most owned among them: "
         f"{names}.</p>\n"
-        '<p>The full list is free and sorted by ownership, and every doubtful '
-        "player carries the model's projected points. "
+        '<p>The full list is free and sorted by ownership, and it carries '
+        "the model's projected points where we have them. "
         f"{doubt_lauseena()}: "
         '<a href="/fpl/team-news">FPL team news</a>.</p>\n'
     )

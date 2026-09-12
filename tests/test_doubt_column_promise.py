@@ -137,3 +137,59 @@ def test_vaite_loytyy_myos_kun_tagi_katkaisee_lauseen():
     ei saa piilottaa vaitetta portilta."""
     katkaistu = "<p>so you can see what the <strong>doubt</strong> actually costs</p>"
     assert hintavaitteet(katkaistu)
+
+
+# --- Rakenteellinen ehto -------------------------------------------------
+# Portti mittasi 12.9 etta SEITSEMAN vaihtoehtoista sanamuotoa lapaisi
+# hintavaiteperheen, vahvimpana sivun OMA H1 joka oli silloin tuotannossa.
+# Juurisyy: perhe mittaa SANAMUOTOA, mutta epatosi asia on VAITE RUUDUN
+# SISALLOSTA, ja sanamuotoja on aareton maara. Alla oleva ehto ei ole
+# kierrettavissa sanoilla: hinta vaatii kaksi lukua, ja taulukossa on yksi.
+
+def _thead_otsikot(html: str, section: str) -> list[str]:
+    import re as _re
+    blk = _re.search(rf'<h2 id="{section}">.*?</thead>', html, _re.S)
+    assert blk, f"sektiota {section} ei loytynyt renderoidysta sivusta"
+    return [
+        _re.sub(r"<[^>]+>", "", c).strip()
+        for c in _re.findall(r"<th[^>]*>(.*?)</th>", blk.group(0), _re.S)
+    ]
+
+
+def test_doubtful_taulukossa_on_yksi_projektioluku_eika_vastafaktuaalia():
+    """TAMA on portin ydin, ei sanalista.
+
+    Hintaa ei voi nayttaa ilman kahta lukua: mita malli odottaa nyt, ja mita
+    se odottaisi terveena. Taulukossa on tasan yksi projektiosarake eika
+    yhtaan vastafaktuaalista. Jos tama joskus muuttuu, hintavaite muuttuu
+    LUETTAVAKSI ja copy on arvioitava uudelleen -- silloin tama testi kaatuu
+    ja pakottaa sen paatoksen nakyviin.
+    """
+    from src.doubt_copy import projektiosarakkeet, vastafaktuaalisarakkeet
+
+    otsikot = _thead_otsikot(render_team_news(_xp(), NOW), "doubtful")
+    proj = projektiosarakkeet(otsikot)
+    assert len(proj) == 1, (
+        f"Doubtful-taulukossa on {len(proj)} projektiosaraketta ({proj}). "
+        "Kahdella luvulla lukija voi lukea EROTUKSEN, eli hintavaite muuttuu "
+        "todeksi. Paivita src/doubt_copy.py ja molempien pintojen copy."
+    )
+    vasta = vastafaktuaalisarakkeet(otsikot)
+    assert not vasta, (
+        f"Doubtful-taulukossa on vastafaktuaalinen sarake ({vasta}). "
+        "Sama seuraus kuin yllä."
+    )
+
+
+def test_otsikko_tulee_jaetusta_lukijasta():
+    """12.9: hintavaite oli poistettu /fpl:lta mutta jai kohdesivun H1:een,
+    eli lukija klikkasi linkkia ja laskeutui juuri siihen vaitteeseen."""
+    from src.doubt_copy import TEAM_NEWS_H1
+
+    html = render_team_news(_xp(), NOW)
+    assert f"<h1>{TEAM_NEWS_H1}</h1>" in html
+    assert not hintavaitteet(TEAM_NEWS_H1)
+
+
+def test_kontrolli_perhe_loytaa_vanhan_otsikon():
+    assert hintavaitteet("<h1>Team news, with the points cost attached</h1>")

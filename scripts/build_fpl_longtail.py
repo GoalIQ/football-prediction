@@ -50,7 +50,7 @@ if str(ROOT) not in sys.path:
 # /fpl/predicted-lineups eivat sisaltaneet sita LAINKAAN -> koko generoitu
 # sisaltopinta oli mittaamaton. Sama vakio kuin paasivuilla eika kopio:
 # kaksi rinnakkaista snippettia eriytyisivat hiljaa.
-from src.doubt_copy import XP_SISALTAA_EPAVARMUUDEN
+from src.doubt_copy import TEAM_NEWS_H1, XP_SISALTAA_EPAVARMUUDEN
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
     ROOT as _FP_ROOT,
@@ -3304,7 +3304,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         f"{n_out} out, {n_doubt} doubtful. Free, no sign-in."
     )
     hero = (
-        "<h1>Team news, with the points cost attached</h1>"
+        f"<h1>{TEAM_NEWS_H1}</h1>"
         '<p class="lede">Official FPL status for every ruled-out and doubtful '
         "player, sorted by how many managers own them. The difference from a "
         "team news list is the last column: our match model projects what each "
