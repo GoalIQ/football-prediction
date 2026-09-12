@@ -71,10 +71,19 @@ def paivita_leima(teksti: str, *, now: _dt.datetime | None = None) -> tuple[str,
     if not leima:
         return teksti, False
     nyt = copy_tiiviste(teksti)
-    vanha = HASH_RE.search(leima.group("attrs"))
+    attrs = leima.group("attrs") or ""
+    vanha = HASH_RE.search(attrs)
     if vanha and vanha.group(1) == nyt:
         return teksti, False
-    uusi_leima = (f'<p class="updated" data-copy-hash="{nyt}">Last updated: '
+    # 🔴 MUUT ATTRIBUUTIT SAILYVAT (12.9.2026, tarkistuksen loydos).
+    # Ensimmainen versio rakensi tagin uudelleen kiintealla merkkijonolla ja
+    # pudotti kaiken paitsi uuden hashin. Nykyisilla kolmella leimatulla
+    # sivulla ei ole muita attribuutteja, joten se oli ansa eika vika — mutta
+    # tasan sellainen ansa jonka joku laukaisee lisaamalla `id`:n tai
+    # `lang`in leimaan eika huomaa sen katoavan.
+    muut = HASH_RE.sub("", attrs).strip()
+    uusi_attrs = f' data-copy-hash="{nyt}"' + (f" {muut}" if muut else "")
+    uusi_leima = (f'<p class="updated"{uusi_attrs}>Last updated: '
                   f'{_pvm(now)}</p>')
     return teksti[:leima.start()] + uusi_leima + teksti[leima.end():], True
 

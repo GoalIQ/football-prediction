@@ -120,3 +120,39 @@ def test_pvm_muoto_on_sama_kuin_sivuilla():
     uusi, _ = paivita_leima(SIVU, now=NOW)
     pvm = LEIMA_RE.search(uusi).group("pvm")
     assert re.fullmatch(r"\d{1,2} [A-Z][a-z]+ \d{4}", pvm), pvm
+
+
+def test_leima_sailyttaa_muut_attribuutit():
+    """🔴 Tarkistuksen loydos 12.9: ensimmainen versio rakensi tagin uudelleen
+    kiintealla merkkijonolla ja pudotti kaiken paitsi hashin."""
+    sivu = SIVU.replace('<p class="updated" data-copy-hash="000000000000">',
+                        '<p class="updated" id="stamp" lang="en" '
+                        'data-copy-hash="000000000000">')
+    uusi, muuttui = paivita_leima(sivu, now=NOW)
+    assert muuttui
+    attrs = LEIMA_RE.search(uusi).group("attrs")
+    assert 'id="stamp"' in attrs and 'lang="en"' in attrs
+    assert HASH_RE.search(attrs).group(1) == copy_tiiviste(uusi)
+
+
+def test_leimatut_sivut_ovat_tiedossa():
+    """Kate nakyviin: mitka sivut kantavat leimaa ja mitka niista on
+    vartioitu hashilla. Ilman tata uusi leimattu sivu jaa hiljaa katteen
+    ulkopuolelle (muisti: `uusi-sivu-ei-nay-hubissa`)."""
+    leimatut, hashilla = [], []
+    for p in sorted(ROOT.glob("*.html")):
+        t = p.read_text(encoding="utf-8", errors="ignore")
+        m = LEIMA_RE.search(t)
+        if not m:
+            continue
+        leimatut.append(p.name)
+        if HASH_RE.search(m.group("attrs") or ""):
+            hashilla.append(p.name)
+    assert "faq.html" in hashilla, "faq.html:n leima on menettanyt hashinsa"
+    # Tiedostetut ilman hashia. Lista on katteen mittari, ei hyvaksynta:
+    # kun sivu lisataan tanne, se on nakyva valinta eika unohdus.
+    ILMAN_HASHIA_TIEDOSSA = {"privacy.html", "delete-account.html"}
+    yllattavat = set(leimatut) - set(hashilla) - ILMAN_HASHIA_TIEDOSSA
+    assert not yllattavat, (
+        f"uusi leimattu sivu ilman copy-hashia: {sorted(yllattavat)}. "
+        f"Lisaa hash tai kirjaa sivu listalle perusteluineen.")

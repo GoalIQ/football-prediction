@@ -265,3 +265,64 @@ def test_ika_luetaan_generated_atista_ei_mtimesta(monkeypatch, tmp_path):
     f, out = _founder(monkeypatch, tmp_path, ika_h=40)
     out.touch()                       # mtime = nyt, sisalto 40 h vanha
     assert f.artefaktin_ika_h(out) >= 39
+
+
+# ---------------------------------------------------------------------------
+# 🔴 PAATOSLOGIIKKA, EI VAIN SEN PALASET (lisatty 12.9 illalla)
+#
+# Tarkistus mittasi: `fetch_retry` ja `artefaktin_ika_h` olivat katettuja
+# erikseen, mutta PAATOS niiden valilla asui `__main__`-lohkossa jota mikaan
+# testi ei aja. Kun `raise SystemExit(0)` vaihdettiin `SystemExit(1)`:ksi —
+# tasan sama vika joka punasti refreshin kolme kertaa 12.9 — koko 4207
+# testin suite pysyi vihreana. Logiikka on nyt `ratkaise_upstream`issa.
+# ---------------------------------------------------------------------------
+def test_transientti_tuoreella_artefaktilla_ei_punasta():
+    f = _mod("build_founder_stats")
+    koodi, viesti = f.ratkaise_upstream("HTTP 503", 2.0, nimi="founder.json")
+    assert koodi == 0, "transientti 503 tuoreella artefaktilla ei saa punastaa"
+    assert "::warning::" in viesti and "::error::" not in viesti
+
+
+def test_jaatynyt_artefakti_punastaa():
+    f = _mod("build_founder_stats")
+    koodi, viesti = f.ratkaise_upstream("HTTP 503", f.STALE_ESCALATE_H + 1,
+                                        nimi="founder.json")
+    assert koodi == 1, "yli ikarajan vanha luku etusivulla on oma vikansa"
+    assert "::error::" in viesti
+
+
+def test_raja_on_inklusiivinen():
+    """Tasan rajalla eskaloidaan. Ilman tata `>=` voisi liukua `>`:ksi
+    huomaamatta, ja raja ei tarkoittaisi mitaan."""
+    f = _mod("build_founder_stats")
+    assert f.ratkaise_upstream("x", f.STALE_ESCALATE_H)[0] == 1
+    assert f.ratkaise_upstream("x", f.STALE_ESCALATE_H - 0.01)[0] == 0
+
+
+def test_puuttuva_artefakti_punastaa():
+    f = _mod("build_founder_stats")
+    koodi, viesti = f.ratkaise_upstream("HTTP 503", None, nimi="founder.json")
+    assert koodi == 1 and "ole olemassa" in viesti
+
+
+def test_retries_on_kolme_eika_vakion_arvo():
+    """Tautologinen assertti (`== RETRIES`) ei mittaa mitaan: se on tosi
+    vaikka vakio olisi 1. Literaali kaatuu jos retry poistetaan."""
+    v = _mod("verify_model_entry_matches_freeze")
+    f = _mod("build_founder_stats")
+    assert v.RETRIES == 3 and f.RETRIES == 3
+    assert len(v.RETRY_SLEEP_S) >= 1 and len(f.RETRY_SLEEP_S) >= 1
+
+
+def test_verifiointimerkinta_kirjoittaa_lf_eika_crlf(tmp_path):
+    """Windowsilla oletuskirjoitus tekisi CRLF:n ja koko tiedosto nayttaisi
+    muuttuneelta. Tata puolta ei mitattu ensimmaisessa versiossa."""
+    v = _mod("verify_model_entry_matches_freeze")
+    p = _freeze_tiedosto(tmp_path, 4, "2026-09-12T12:30:00Z")
+    v.record_verification(p, json.loads(p.read_text(encoding="utf-8")), 4,
+                          squad_match=False, captain_match=True, common=7,
+                          now=_dt.datetime(2026, 9, 12, 13, 18,
+                                           tzinfo=_dt.timezone.utc))
+    tavut = p.read_bytes()
+    assert b"\r\n" not in tavut, "CRLF immutable-artefaktissa"
+    assert tavut.endswith(b"\n")

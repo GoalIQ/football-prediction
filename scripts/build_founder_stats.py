@@ -126,25 +126,39 @@ def sanity(d: dict) -> list[str]:
     return fails
 
 
+def ratkaise_upstream(syy: str, ika: float | None,
+                      *, nimi: str = None) -> tuple[int, str]:
+    """(exit-koodi, viesti) kun upstream ei vastannut.
+
+    🔴 OMA FUNKTIO EIKA `__main__`-LOHKO (12.9.2026, tarkistuksen loydos).
+    Ensimmainen versio kirjoitti taman paatoslogiikan suoraan
+    `if __name__ == "__main__"` -lohkoon, jota **yksikaan testi ei voi ajaa**.
+    Mitattu: kun `raise SystemExit(0)` vaihdettiin `SystemExit(1)`:ksi — eli
+    tasan sama vika joka 12.9 punasti refreshin kolme kertaa — **koko 4207
+    testin suite pysyi vihreana**. `fetch_retry` ja `artefaktin_ika_h` olivat
+    katettuja erikseen, mutta paatos niiden valilla ei.
+    """
+    nimi = nimi or OUT_PATH.name
+    if ika is None:
+        return 1, (f"::error::FPL-API ei vastannut ({syy}, {RETRIES} yritysta) "
+                   f"eika {nimi} ole olemassa — etusivun perustajalohkolle ei "
+                   f"ole lukua lainkaan.")
+    if ika >= STALE_ESCALATE_H:
+        return 1, (f"::error::FPL-API ei ole vastannut ({syy}, {RETRIES} "
+                   f"yritysta) ja {nimi} on {ika:.0f} h vanha (raja "
+                   f"{STALE_ESCALATE_H} h). Etusivun perustajalohko nayttaa "
+                   f"vanhentunutta lukua eika se ole enaa ohimenevaa.")
+    return 0, (f"::warning::FPL-API ei vastannut ({syy}, {RETRIES} yritysta). "
+               f"{nimi} on {ika:.1f} h vanha (raja {STALE_ESCALATE_H} h) — "
+               f"vanha luku jaa voimaan, ajo jatkuu.")
+
+
 if __name__ == "__main__":
     payload, syy = fetch_retry()
     if payload is None:
-        ika = artefaktin_ika_h(OUT_PATH)
-        if ika is None:
-            print(f"::error::FPL-API ei vastannut ({syy}, {RETRIES} yritysta) "
-                  f"eika {OUT_PATH.name} ole olemassa — etusivun "
-                  f"perustajalohkolle ei ole lukua lainkaan.")
-            raise SystemExit(1)
-        if ika >= STALE_ESCALATE_H:
-            print(f"::error::FPL-API ei ole vastannut ({syy}, {RETRIES} "
-                  f"yritysta) ja {OUT_PATH.name} on {ika:.0f} h vanha "
-                  f"(raja {STALE_ESCALATE_H} h). Etusivun perustajalohko "
-                  f"nayttaa vanhentunutta lukua eika se ole enaa ohimenevaa.")
-            raise SystemExit(1)
-        print(f"::warning::FPL-API ei vastannut ({syy}, {RETRIES} yritysta). "
-              f"{OUT_PATH.name} on {ika:.1f} h vanha (raja "
-              f"{STALE_ESCALATE_H} h) — vanha luku jaa voimaan, ajo jatkuu.")
-        raise SystemExit(0)
+        koodi, viesti = ratkaise_upstream(syy, artefaktin_ika_h(OUT_PATH))
+        print(viesti)
+        raise SystemExit(koodi)
     data = summarise(payload)
     fails = sanity(data)
     if fails:

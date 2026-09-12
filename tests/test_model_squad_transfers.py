@@ -164,25 +164,42 @@ def test_pelaajaa_ei_bootstrapissakaan_on_kieltaytyminen():
                                     bootstrap=_bootstrap([])) is None
 
 
-def test_poolista_pudonnut_saa_korjausrimalle_kelpaavan_lipun():
-    """🔴 Sama lippu kuin moottorin omalla placeholderilla.
+def test_poolista_pudonnut_saa_saman_lipun_kuin_moottorin_placeholder():
+    """Sama lippu kuin moottorin omalla placeholderilla — yksi lukija.
 
-    `needs_repair` lukee ENSIN `no_projection`-kentan, nimenomaan siksi ettei
-    korjaustarve jaisi `status`in varaan. Mitattu 12.9: `fpl_xp_projections`
-    pudottaa 2 pelaajaa syylla `below_min_xp` — heilla status on "a" eika
-    `chance_next` ole 0. Ilman `no_projection`ia moottori mittaisi heidan
-    korvaamistaan taydella rimalla eika korjausrimalla.
+    🔴 KORJAUS OMAAN AIEMPAAN PERUSTELUUNI (12.9 ilta, tarkistuksen loydos).
+    Kirjoitin ensin etta ilman `no_projection`ia `needs_repair` palauttaisi
+    False ja moottori mittaisi korvaamista taydella rimalla. **Se ei pida
+    paikkaansa:** vanha `_departed_player` kovakoodasi `"chance_next": 0`,
+    ja `needs_repair` palauttaa True myos siita. Mitattu:
+
+        needs_repair(vanha)                      = True
+        needs_repair(uusi)                       = True
+        needs_repair(uusi ilman no_projectionia) = True
+
+    Delegointi on silti oikea: kaksi kopiota samasta kasitteesta erosivat
+    yhdessa kentassa, ja `needs_repair`in ENSIMMAINEN ehto luki juuri sita
+    kenttaa. Yksi lukija poistaa mahdollisuuden etta ne erkanevat lisaa —
+    mutta se ei ollut GW4:n vian syy. Syy oli `_constrained_from_prev`in
+    `None` ja `main()`:n fallback, ja ne vartioi
+    `tests/test_freeze_chain_continuity.py`.
+
+    Siksi tama testi vaittaa vain sen mika on tosi: kentat ovat identtiset
+    moottorin placeholderin kanssa, ja freezen omat lisakentat ovat mukana.
     """
-    from src.models.fpl_transfers import needs_repair
+    from src.models.fpl_transfers import needs_repair, placeholder_player
 
     m = _load()
     boot = _bootstrap([15], status="a", news="")
     boot["elements"][0]["chance_of_playing_next_round"] = None
     rivi = m._departed_player(15, boot)
-    assert rivi["no_projection"] is True
-    assert rivi["off_pool"] is True
-    assert needs_repair(rivi) is True, (
-        "status 'a' + chance_next None: pelkat status-ehdot eivat riita")
+    kanta = placeholder_player(15, boot)
+
+    puuttuu = [k for k in kanta if k not in rivi]
+    assert not puuttuu, f"placeholderin kentat katosivat: {puuttuu}"
+    assert rivi["no_projection"] is True, "sama lippu kuin placeholderilla"
+    assert rivi["off_pool"] is True, "freezen oma lisakentta"
+    assert needs_repair(rivi) is True
 
 
 def test_ft_left_kertoo_kayttamattomat():

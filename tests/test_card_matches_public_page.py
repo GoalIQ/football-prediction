@@ -535,6 +535,112 @@ def test_card_gameweek_equals_page_and_fact_gameweek_in_every_phase(monkeypatch,
 
 
 def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
+    """Lahdekoodiportti — mutta kommentit poistetaan ennen etsintaa.
+
+    🔴 Ensimmainen versio greppasi raakaa lahdetta ja osui `card_gw_outlook`in
+    OMAAN perustelukommenttiin, jossa lukee sana `display_gameweek`. Mitattu
+    12.9 illalla: kun korjaus perutaan takaisin `min(fixtures)`-saantoon
+    kommentit ennallaan, tama testi on **vihrea**. Portti ei voinut erottaa
+    kommenttia koodista (muisti: `portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa`).
+
+    Varsinainen vahti on alla oleva vaihe-injektoitu kaytostesti; tama on
+    halpa lisavarmistus siita etta kutsu on olemassa lahdekoodissa asti.
+    """
+    import re as _re
+    from pathlib import Path as _P
+    root = _P(__file__).resolve().parents[1]
+
+    def _ilman_kommentteja(t: str) -> str:
+        rivit = []
+        for r in t.split(chr(10)):
+            k = r.split("#", 1)[0] if "#" in r else r
+            rivit.append(k)
+        return chr(10).join(rivit)
+
+    kortti = _ilman_kommentteja(
+        (root / "scripts" / "gen_share_card.py").read_text(encoding="utf-8"))
+    sivu = _ilman_kommentteja(
+        (root / "scripts" / "build_fpl_page.py").read_text(encoding="utf-8"))
+    i = kortti.find("def card_gw_outlook")
+    assert i > 0
+    runko = kortti[i:i + 3000]
+    assert "display_gameweek" in runko, (
+        "card_gw_outlook ei KUTSU display_gameweekia (kommentit poistettu "
+        "ennen etsintaa) — kortti voi olla eri kierroksessa kuin sivu")
+    assert "display_gameweek" in sivu, "sivu ei lue display_gameweekia"
+
+
+def test_kortin_kierros_on_sivun_kierros_JOKA_VAIHEESSA():
+    """🔴 Vaihe-injektoitu kaytostesti. Tama on se joka erottelee.
+
+    Mitattu 12.9 illalla: `min(fixtures)` ja `display_gameweek` antavat saman
+    vastauksen kaikissa kauden vaiheissa PAITSI yhdessa — siina ikkunassa
+    jossa kierroksen kaikki ottelut on potkaistu mutta FPL:n `finished`-lippu
+    laahaa (dokumentoitu 14 h, `fpl_gameweek.py`). Toiminnallinen testi joka
+    lukee levylla olevaa artefaktia on siis diskriminoiva ~14 h kierroksessa
+    ja vihrea muun ajan — tasan saannon 6a kohta 3.
+
+    Tassa vaihe annetaan synteettisesti, joten ero on aina mitattavissa.
+    """
+    from scripts import gen_share_card as g
+    from src.models.fpl_gameweek import display_gameweek
+
+    # Vaihe: GW4:n kaikki ottelut potkaistu, FPL:n finished laahaa ->
+    # display_gameweek sanoo 5, min(fixtures) sanoisi 4.
+    meta = {"deadline_gameweek": 5, "completed_gameweeks": [1, 2, 3, 4],
+            "generated_at": "2026-09-14T20:00:00+00:00"}
+    fixtures = []
+    for gw, ko in ((4, 1789000000000), (5, 1789600000000)):
+        for n, (h, a) in enumerate((("Alpha", "Beta"), ("Gamma", "Delta"))):
+            fixtures.append({
+                "gameweek": gw, "kickoff_ms": ko + n,
+                "home": h, "away": a,
+                "home_short": h[:3].upper(), "away_short": a[:3].upper(),
+                "xg_home": 1.5, "xg_away": 1.1,
+                "cs_home_pct": 30.0, "cs_away_pct": 20.0,
+            })
+    doc = {"meta": meta, "fixtures": fixtures, "teams": []}
+
+    odotettu = display_gameweek(meta, fixtures)
+    assert odotettu == 5, (
+        f"fikstuuri ei enaa erottele: display_gameweek={odotettu}, "
+        f"min(fixtures)=4. Rakenna vaihe uudelleen.")
+
+    alkuperainen = g._load
+    try:
+        g._load = lambda nimi: doc if "phase0" in nimi else alkuperainen(nimi)
+
+        class _A:
+            gw = None
+
+        spec = g.card_gw_outlook(_A())
+    finally:
+        g._load = alkuperainen
+
+    saadut = {f["gameweek"] for f in spec["fixtures"] if f.get("gameweek")}
+    assert saadut == {5}, (
+        f"kortti valitsi kierroksen {saadut}, sivu nayttaa {odotettu}. "
+        f"Lukija on eri kuin sivulla — kortin tarkistusreitti vie vaaraan "
+        f"kierrokseen.")
+
+
+def test_vanha_card_gw_outlook_saanto_EI_riita():
+    """Negatiivinen kontrolli portin erottelukyvylle.
+
+    Osoittaa etta ylla oleva fikstuuri todella erottelee: vanha saanto
+    (`min(fixtures)`) antaa 4 samalla datalla jolla oikea vastaus on 5.
+    Ilman tata ei voi tietaa etta testi olisi punainen regressiosta.
+    """
+    from src.models.fpl_gameweek import display_gameweek
+    meta = {"deadline_gameweek": 5, "completed_gameweeks": [1, 2, 3, 4],
+            "generated_at": "2026-09-14T20:00:00+00:00"}
+    fixtures = [{"gameweek": gw, "kickoff_ms": 1789000000000 + gw}
+                for gw in (4, 5)]
+    assert min(f["gameweek"] for f in fixtures) == 4
+    assert display_gameweek(meta, fixtures) == 5
+
+
+def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
     """🔴 Neljas saanto ei saa palata (12.9.2026).
 
     Portti vertaa kortin ja sivun LUKUJA, mutta jos ne valitsevat kierroksen
@@ -557,19 +663,3 @@ def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
     assert "display_gameweek" in sivu, "sivu ei lue display_gameweekia"
 
 
-def test_kortin_oletuskierros_on_sivun_kierros():
-    """Ja sama toiminnallisesti, ei vain merkkijonona (muisti:
-    portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa)."""
-    from scripts.gen_share_card import card_gw_outlook
-    from src.models.fpl_gameweek import display_gameweek
-
-    doc = _page_doc()
-    odotettu = display_gameweek(doc.get("meta") or {}, doc.get("fixtures") or [])
-
-    class _A:
-        gw = None
-
-    spec = card_gw_outlook(_A())
-    saadut = {f["gameweek"] for f in spec["fixtures"] if f.get("gameweek")}
-    assert saadut == {odotettu}, (
-        f"kortin ottelut ovat kierroksilta {saadut}, sivu nayttaa {odotettu}")
