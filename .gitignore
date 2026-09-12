@@ -285,3 +285,10 @@ outputs/gw_digest/
 # 9.9.2026: esirakennettu UEFA-yhteismalli (ks. src/models/uefa_prebuilt.py) -
 # committoidaan kuten wc_model.json, muuten ucl-refreshin git add kaatuu hiljaa.
 !/data/uefa_joint_model.json
+# Kauden alun minuuttiharhan mittaus (12.9): copy sanoo "14 minutes lower"
+# kolmella pinnalla, ja tests/test_minutes_claim_matches_source.py sitoo luvun
+# TAHAN artefaktiin eika toiseen pintaan. Gitignore-aukko olisi hiljainen
+# regressio - testi ohittaisi itsensa CI:ssa (muisti:
+# gitignored-fix-silent-regression). Rakennus:
+# scripts/measure_preseason_minutes_bias.py
+!/data/preseason_minutes_bias.json
