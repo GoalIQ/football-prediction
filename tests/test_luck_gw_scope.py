@@ -69,3 +69,81 @@ def test_forecast_column_is_the_default():
         "ennustelistalta — silloin naytto voi avautua tulokseen")
     # Paattynyt kierros on oma chippinsa, eli kayttaja EI menetä nakymaa.
     assert "gwChips" in src and "result" in src
+
+
+# ---------------------------------------------------------------------------
+# JAKOKORTTI: sama vika yhta pintaa myohemmin (12.9.2026, Villen havainto)
+#
+# "my teamista kun haluaa copy image gw4 joukkueen nii antaa ton gw3 resultin"
+#
+# `luckCardSpec()` tarkisti vain ETTA paattynyt kierros on olemassa, ei sita
+# MITA KIERROSTA naytto katsoo, ja `shareImage()` otti sen aina ensisijaisena
+# (`luckSpec ?? {...}`). Kentalla luki GW4, kortissa GW3 RESULT — ja kortti on
+# pysyva kuva, eli vaara kierros jaa kiertoon.
+#
+# Sama vikaluokka kuin `luckById` 3.9: ehto kirjoitettiin uudelleen sen sijaan
+# etta luettaisiin `settledGwReadable`. Kaksi ehtoa samasta kysymyksesta
+# ajautuu erilleen.
+# ---------------------------------------------------------------------------
+
+CARD_SPEC_RE = re.compile(
+    r"function luckCardSpec\(\) \{(.*?)\n\t\}\n", re.S)
+SHARE_RE = re.compile(r"async function shareImage\(\) \{(.*?)\n\t\}\n", re.S)
+
+
+def _card_spec_body() -> str:
+    m = CARD_SPEC_RE.search(PITCH.read_text(encoding="utf-8"))
+    assert m, "TeamPitchManager: luckCardSpec-lohkoa ei loytynyt (nimi vaihtui?)"
+    return m.group(1)
+
+
+def test_jakokortti_lukee_saman_lukijan():
+    """Kortin ehto tulee `settledGwReadable`ista, ei omasta vertailusta."""
+    body = _card_spec_body()
+    assert "settledGwReadable(" in body, (
+        "luckCardSpec ei lue jaettua lukijaa - kortti voi nayttaa eri "
+        "kierrosta kuin kentta")
+
+
+def test_jakokortti_ottaa_valitun_kierroksen_huomioon():
+    """MUTAATIO: pelkka `luckSameSquad`-ehto ei riita.
+
+    Jos joku palauttaa vanhan muodon (`if (!luckSameSquad || !lastFinished`
+    ... `) return null;` ilman lukijaa), tama kaatuu."""
+    body = _card_spec_body()
+    i_lukija = body.find("settledGwReadable(")
+    i_lf = body.find("const lf = lastFinished")
+    assert i_lukija != -1 and i_lf != -1
+    assert i_lukija < i_lf, (
+        "lukijan on portitettava ENNEN kuin spekki rakennetaan")
+    assert "selGw" in body[i_lukija:i_lukija + 120], (
+        "lukijalle ei anneta valittua kierrosta - ehto on sokea silla, mita "
+        "naytto katsoo")
+
+
+def test_jakokortti_ja_toteumakartta_antavat_lukijalle_saman_argumentin():
+    """Molemmat pinnat kysyvat SAMAA kysymysta samoilla argumenteilla.
+
+    Jos toinen antaa `selGw` ja toinen `premium ? selGw : null`, ne voivat
+    erota tasan ilmaispinnalla - ja silloin kortti ja kentta ovat eri mielta
+    siella missa kukaan meista ei katso."""
+    kutsu = re.compile(r"settledGwReadable\(([^)]*)\)")
+    kartta = kutsu.search(_luck_map_body())
+    kortti = kutsu.search(_card_spec_body())
+    assert kartta and kortti, (kartta, kortti)
+    siivoa = lambda s: " ".join(s.split())
+    assert siivoa(kartta.group(1)) == siivoa(kortti.group(1)), (
+        f"kartta: {kartta.group(1)!r}\nkortti: {kortti.group(1)!r}")
+
+
+def test_share_ottaa_tuloskortin_vain_kun_spekki_on_olemassa():
+    """`shareImage` saa suosia tuloskorttia, mutta vain kun spekki on ei-null.
+
+    Tama on kontrolli: jos joku poistaa `??`-varahaaran, GW4:n jakaminen
+    kaatuisi kokonaan sen sijaan etta antaisi XI-kortin."""
+    body = SHARE_RE.search(PITCH.read_text(encoding="utf-8"))
+    assert body, "shareImage-lohkoa ei loytynyt"
+    s = body.group(1)
+    assert "luckSpec ??" in s, "XI-varahaara puuttuu"
+    assert "GAMEWEEK ${selGw} XI" in s, (
+        "varahaara ei nimea valittua kierrosta")
