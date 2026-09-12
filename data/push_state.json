@@ -1,7 +1,12 @@
 {
  "last_price_push": {},
  "price_alerted": {},
- "receipts": [],
+ "receipts": [
+  {
+   "id": "01a09574-9011-755e-bd52-3d894b0cfdbf",
+   "token": "ExponentPushToken[r2uGEOLSkAr-n_WwSYVfH2]"
+  }
+ ],
  "sent": {
   "deadline_24h:gw1": {
    "at": "2026-08-20T15:30:48Z",
@@ -38,6 +43,11 @@
    "n_targets": 1,
    "remaining_h": 3.84
   },
+  "deadline_2h:gw4": {
+   "at": "2026-09-12T11:50:38Z",
+   "n_targets": 1,
+   "remaining_h": 0.66
+  },
   "picks:gw1": {
    "at": "2026-08-20T15:30:48Z",
    "n_targets": 0,
@@ -59,6 +69,6 @@
    "player": "Stach"
   }
  },
- "updated_at": "2026-09-12T07:36:27Z",
+ "updated_at": "2026-09-12T11:50:39Z",
  "v": 1
 }
