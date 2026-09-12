@@ -76,10 +76,23 @@ def measure_margin(graded: list[dict]) -> dict:
     """
     buckets: dict[int, list[int]] = {}
     n_used = 0
+    # 🔴 12.9: LUKIJA SAI KAKSI ERI KOKONAISLUKUA SAMALTA SIVULTA.
+    # `/predictions` sanoo herossa "51.1% result accuracy across 477 completed
+    # matches" ja marginaalilohkossa "from 429 graded matches" - eika kerro
+    # mista 48 rivin ero tulee. Mitattu: ne ovat MM-kisarivit joilla ei ole
+    # `p_home`/`p_away`-lukua lainkaan (Counter -> {'WC': 48}), eli ne EIVAT
+    # voi olla marginaalimittauksessa mukana. Ero on siis oikea, mutta sivu
+    # ei nimennyt sita ja lukija paattelee etta jokin luvuista on vaarin.
+    # Molemmat luvut kulkevat nyt artefaktissa, jotta sivu voi sanoa sen
+    # aaneen ilman toista laskentaa (muisti: lause-ja-luku-eri-lahteesta).
+    n_graded_all = 0
     for e in graded:
         res = e.get("result") or {}
         ph, pa = e.get("p_home"), e.get("p_away")
-        if ph is None or pa is None or res.get("voided"):
+        if res.get("voided"):
+            continue
+        n_graded_all += 1
+        if ph is None or pa is None:
             continue
         actual = res.get("actual_outcome")
         if actual not in ("home", "away", "draw"):
@@ -155,6 +168,9 @@ def measure_margin(graded: list[dict]) -> dict:
             f"decisive (non-draw) matches. Floor {MARGIN_FLOOR_PP} pp, cap {MARGIN_CAP_PP} pp."
         ),
         "n_graded": n_used,
+        # Kaikki gradatut (myos ne joilla ei ole voittotodennakoisyytta):
+        # sama luku jonka hero nayttaa. Sivu kertoo eron aaneen.
+        "n_graded_all": n_graded_all,
         "n_below_margin": n_below,
         "hit_pct_below_margin": round(100.0 * hit_below / n_below, 1) if n_below else None,
         "measured_at": None,
