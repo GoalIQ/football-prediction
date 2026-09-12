@@ -62,3 +62,101 @@ def note(now: _dt.datetime | None = None) -> str:
     return (f"Premium is free on the web until the GW4 deadline on "
             f"{day_label()}, so GW1 to GW3. Create a free account and "
             f"it's on. No card, nothing to cancel.")
+
+
+# ---------------------------------------------------------------------------
+# PINTAKOHTAISET LOHKOT (12.9.2026)
+#
+# TAUSTA. `note()` riitti niille pinnoille joilla lupaus on LAUSE: kun ikkuna
+# sulkeutuu, lause katoaa ja sivu on oikein. Mutta kolmella pinnalla lupaus ei
+# ole lause vaan RAKENNE - bandi, ostonappi ja hintalappu - ja niista ei saa
+# tulla tyhjaa: napista pitaa jaada nappi ja hintalapusta hinta.
+#
+# Mitattu 12.9 klo 08:30 UTC, 4 h ennen sulkeutumista: `index.html` olisi
+# jaanyt nayttamaan napin "Get Premium free" ja hintalapun "Free until
+# 12 Sept", ja `predictions.html` koko lupauslauseen, koska niita ei poista
+# mikaan. Molemmat ovat tulopuolen vaitteita ja molemmat kytkeytyvat paalle
+# itsestaan (muisti: ehto-ei-vanhene-teksti-vanhenee).
+#
+# Ratkaisu on sama kuin `fpl.html`illa jo on: lohkolla on KAKSI tilaa, ja
+# `is_open()` valitsee. Sivulla lohko elaa GEN-markkereiden valissa kuten muu
+# generoitu sisalto tassa repossa, ja `check_free_window.py --fix` renderoi
+# sen joka page-refresh-ajossa - myos ikkunan ollessa auki, jolloin se on
+# no-op. Ikkunan sulkeutuminen ei siis vaadi ketaan muistamaan mitaan.
+# ---------------------------------------------------------------------------
+
+PRO_URL = "https://pro.goaliq.app/"
+
+
+def band_html(now: _dt.datetime | None = None) -> str:
+    """index.html: navin alla oleva ilmaisikkunabandi. Kiinni = ei bandia."""
+    if not is_open(now):
+        return ""
+    return (
+        '<div class="free-band">\n'
+        '  <div class="wrap free-band-in">\n'
+        '    <p class="free-band-txt">\n'
+        f'      <strong>Premium is free on the web until the {day_label()} '
+        'deadline</strong>\n'
+        '      <span>That is GW1 to GW3. Create a free account and it is on. '
+        'No card, nothing to cancel.</span>\n'
+        '    </p>\n'
+        f'    <a class="btn-band" href="{PRO_URL}" data-cta="band-freewindow">'
+        'Get Premium free &#9656;</a>\n'
+        '  </div>\n'
+        '</div>')
+
+
+def hero_cta_html(now: _dt.datetime | None = None) -> str:
+    """index.html: heron ensimmainen nappi. Kiinni = nappi jaa, lupaus lahtee."""
+    if is_open(now):
+        return (f'<a class="btn btn-primary" href="{PRO_URL}" '
+                'data-cta="hero-freewindow">Get Premium free &#9656;</a>')
+    return (f'<a class="btn btn-primary" href="{PRO_URL}" '
+            'data-cta="hero-premium">Get Premium &#9656;</a>')
+
+
+def price_tag_html(now: _dt.datetime | None = None) -> str:
+    """index.html: Premium-sarakkeen hintalappu.
+
+    Hinnat pysyvat NAKYVISSA molemmissa tiloissa: kumppaneita on ohjeistettu
+    tarkistamaan oma provisionsa talta sivulta ilman tilia (sivun oma
+    kommentti). Vain ilmaisuuslupaus vaihtuu.
+    """
+    if is_open(now):
+        return ('<h3><span class="price-tag">Free<span> until 12 Sept</span>'
+                '</span> <span class="price-alt">then &euro;25 / year or '
+                '&euro;3.99 / month</span></h3>')
+    return ('<h3><span class="price-tag">&euro;3.99 / month</span> '
+            '<span class="price-alt">or &euro;25 / year</span></h3>')
+
+
+def predictions_price_html(now: _dt.datetime | None = None) -> str:
+    """predictions.html: Premium-kortin hinta ja sen alla oleva lupaus.
+
+    Auki: ilmaisilmoitus on hinnan YLAPUOLELLA tarkoituksella (sivun oma
+    kommentti) - toisin pain sivu naytti hintalapun suoraan sen lauseen
+    ylapuolella joka sanoo ettei tarvitse maksaa.
+    """
+    if is_open(now):
+        return (
+            '<div class="price">Free<span> until 12 Sept</span></div>\n'
+            '      <p style="border-left:3px solid var(--amber);'
+            'padding-left:10px;">' + note(now) + '</p>\n'
+            '      <p style="color:var(--muted);">After that it is '
+            '\u20ac25 a year or \u20ac3.99 a month.\n'
+            '        Go deeper on every prediction.</p>')
+    return (
+        '<div class="price">\u20ac3.99 / month</div>\n'
+        '      <p style="color:var(--muted);">Or \u20ac25 a year.\n'
+        '        Go deeper on every prediction.</p>')
+
+
+#: (tiedosto, GEN-avain) -> renderoija. Yksi taulukko, jotta uusi pinta
+#: lisataan tasan yhteen paikkaan eika kahteen.
+SURFACE_BLOCKS = {
+    ("index.html", "FREE-BAND"): band_html,
+    ("index.html", "FREE-CTA"): hero_cta_html,
+    ("index.html", "FREE-PRICE"): price_tag_html,
+    ("predictions.html", "FREE-PRICE"): predictions_price_html,
+}

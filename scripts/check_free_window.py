@@ -40,7 +40,34 @@ SURFACE_GLOBS = ("*.html", "fpl/**/*.html", "llms.txt",
 
 #: Lupaus tunnistetaan MERKITYKSESTA, ei yhdesta merkkijonosta: sama vaite on
 #: kirjoitettu useassa sanamuodossa (muisti: sama-vaite-monessa-sanamuodossa).
+#:
+#: 🔴 MITATTU 12.9.2026 AAMULLA, 4 h ennen ikkunan sulkeutumista. Portti oli
+#: SOKEA kolmelle lupaukselle viidesta, ja olisi tulostanut ikkunan
+#: sulkeuduttua "OK: ... eika yksikaan pinta lupaa ilmaista Premiumia" samalla
+#: kun goaliq.app naytti yha napin "Get Premium free" ja hintalapun
+#: "Free until 12 Sept", ja goaliq.app/predictions koko lupauslauseen. Vihrea
+#: portti olisi ollut todiste vaarasta asiasta.
+#:
+#: Kaksi eri syyta, molemmat tunnettuja vikaluokkia:
+#:   (1) RIVI EI OLE SKANNAUSYKSIKKO. `predictions.html` kirjoittaa lupauksen
+#:       kahdelle riville (rivi 1 "Premium is free on the web", rivi 2 "until the GW4 deadline"), joten yhtenainen kuvio ei osu. Sama katkaisu syntyy
+#:       TAGISTA: `Free<span> until 12 Sept</span>`.
+#:   (2) PERHE OLI VAJAA. Nappitekstit ja hintalaput ovat lupauksia siina
+#:       missa lauseetkin (muisti: vaiteperhe-ei-tyhjene-greppaamalla).
+#:
+#: Korjaus: kuviot ajetaan LUKIJAN NAKYMAAN (tagit ja rivinvaihdot yhdeksi
+#: valilyonniksi, `luettava_teksti`), eika raakaan lahteeseen.
 CLAIM_RE = re.compile(
+    r"(free on the web until|Premium is free until|"
+    r"free until the GW4 deadline|nothing to pay for GW1|"
+    r"Free until 12 Sept|Get Premium free|That is GW1 to GW3)", re.I)
+
+#: RAJAUSTARKISTUKSEN perhe on SUPPEAMPI kuin selviytymistarkistuksen, ja se
+#: on tietoinen valinta eika unohdus. Rajaus ("on the web") on LAUSEEN
+#: ominaisuus: nelisanaiselta napilta ei voi vaatia sivulausetta, ja jos
+#: vaatisi, portti olisi punainen tanaan asiasta joka on tanaan tosi -
+#: ja paivittain punainen portti tulee ohitetuksi.
+SCOPED_CLAIM_RE = re.compile(
     r"(free on the web until|Premium is free until|"
     r"free until the GW4 deadline|nothing to pay for GW1)", re.I)
 
@@ -90,8 +117,79 @@ def nakyva_teksti(pala: str) -> str:
     return re.sub(r"\s+", " ", ilman_urleja)
 
 
+#: Attribuutit joiden sisalto ON lukijalle nakyvaa tekstia vaikka se asuu
+#: tagin sisalla: hakutuloksen kuvaus ja jakokortin otsikko.
+_ATTR_TEXT_RE = re.compile(
+    r"""<[^>]*?\b(?:content|alt|aria-label|title)\s*=\s*("|')(.*?)\1[^>]*>""",
+    re.I | re.S)
+
+
+def luettava_teksti(txt: str) -> tuple[str, list[int]]:
+    """(lukijan nakyma, indeksikartta alkuperaiseen tekstiin).
+
+    Tagit ja rivinvaihdot romahtavat YHDEKSI valilyonniksi, jolloin sama
+    lupaus loytyy riippumatta siita miten se on taitettu lahteessa.
+    Indeksikartta sailyttaa rivinumeron: nakymasta loytynyt osuma osataan
+    raportoida siina kohdassa jossa se oikeasti on.
+
+    Mita EI heiteta pois: `content=`, `alt=`, `aria-label=` ja `title=`
+    -attribuuttien sisalto, koska se on lukijalle nakyvaa (hakutulos,
+    ruudunlukija). `faq.html`in oma lupaus asuu juuri `<meta description>`issa,
+    ja tagien pyyhkiminen olisi tehnyt portista sokean silla sivulla.
+    """
+    # 1) Attribuuttiteksti ulos tagista, sen omalle paikalleen.
+    def _attr(m):
+        sisalto = m.group(2)
+        # Sama pituus kuin alkuperainen, jotta indeksikartta pysyy suorana:
+        # taytetaan valilyonnilla.
+        return (" " + sisalto + " ").ljust(len(m.group(0)))[:len(m.group(0))]
+    esikasitelty = _ATTR_TEXT_RE.sub(_attr, txt)
+    # 2) Linkkien kohteet ja paljaat URLit pois (sama syy kuin nakyva_teksti).
+    esikasitelty = re.sub(
+        r"""\s(?:href|src|action|data-href)\s*=\s*("|')[^"']*\1""",
+        lambda m: " " * len(m.group(0)), esikasitelty, flags=re.I)
+
+    ulos: list[str] = []
+    kartta: list[int] = []
+    i, n = 0, len(esikasitelty)
+    while i < n:
+        c = esikasitelty[i]
+        if c == "<":
+            j = esikasitelty.find(">", i)
+            j = n - 1 if j == -1 else j
+            if ulos and ulos[-1] != " ":
+                ulos.append(" ")
+                kartta.append(i)
+            i = j + 1
+            continue
+        if c.isspace():
+            if ulos and ulos[-1] != " ":
+                ulos.append(" ")
+                kartta.append(i)
+            i += 1
+            continue
+        ulos.append(c)
+        kartta.append(i)
+        i += 1
+    return "".join(ulos), kartta
+
+
+def _osumat(txt: str, kuvio: re.Pattern) -> list[tuple[int, str, int, int]]:
+    """(rivinumero, osuman teksti, nakyman alku, nakyman loppu) lukijan nakymasta."""
+    nakyma, kartta = luettava_teksti(txt)
+    ulos = []
+    for m in kuvio.finditer(nakyma):
+        alku = kartta[m.start()] if m.start() < len(kartta) else 0
+        ulos.append((txt.count(chr(10), 0, alku) + 1, m.group(0), m.start(), m.end()))
+    return ulos
+
+
 def scope_misses(paths=None) -> list[tuple[str, int, str]]:
-    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta."""
+    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta.
+
+    Ajetaan LUKIJAN NAKYMAAN, jotta rivinvaihto tai tagi lupauksen keskella ei
+    tee portista sokeaa (12.9.2026).
+    """
     ulos = []
     for p in (paths if paths is not None else surfaces()):
         try:
@@ -100,13 +198,12 @@ def scope_misses(paths=None) -> list[tuple[str, int, str]]:
             continue
         if is_guarded_source(p, txt):
             continue
-        for m in CLAIM_RE.finditer(txt):
-            a = max(0, m.start() - SCOPE_IKKUNA)
-            b = min(len(txt), m.end() + SCOPE_IKKUNA)
-            if not SCOPE_RE.search(nakyva_teksti(txt[a:b])):
-                rivi = txt.count("\n", 0, m.start()) + 1
-                ulos.append((str(p.relative_to(ROOT)), rivi,
-                             txt[m.start():m.end()]))
+        nakyma, _ = luettava_teksti(txt)
+        for rivi, osuma, a0, b0 in _osumat(txt, SCOPED_CLAIM_RE):
+            a = max(0, a0 - SCOPE_IKKUNA)
+            b = min(len(nakyma), b0 + SCOPE_IKKUNA)
+            if not SCOPE_RE.search(nakyma[a:b]):
+                ulos.append((str(p.relative_to(ROOT)), rivi, osuma))
     return ulos
 
 
@@ -131,6 +228,7 @@ def is_guarded_source(path: Path, txt: str) -> bool:
 
 
 def hits(paths=None) -> list[tuple[str, int, str]]:
+    """Elossa olevat lupaukset LUKIJAN NAKYMASTA (ei raa'asta lahteesta)."""
     found = []
     for p in (paths if paths is not None else surfaces()):
         try:
@@ -139,9 +237,8 @@ def hits(paths=None) -> list[tuple[str, int, str]]:
             continue
         if is_guarded_source(p, txt):
             continue
-        for m in CLAIM_RE.finditer(txt):
-            line = txt[:m.start()].count("\n") + 1
-            found.append((str(p.relative_to(ROOT)), line, m.group(0)))
+        for rivi, osuma, _a, _b in _osumat(txt, CLAIM_RE):
+            found.append((str(p.relative_to(ROOT)), rivi, osuma))
     return found
 
 
@@ -178,16 +275,93 @@ def strip_claim(text: str) -> tuple[str, int]:
     return "\n".join(out), poistettu
 
 
-def fix(paths=None) -> list[tuple[str, int]]:
-    """Siivoa lupaus kasin yllapidetyilta pinnoilta. Vain ikkunan sulkeuduttua.
+#: GEN-lohkot renderoidaan JOKA ajossa, myos ikkunan ollessa auki. Silloin se
+#: on no-op - ja juuri se on pointti: sivu on oikein molemmissa tiloissa eika
+#: sulkeutuminen vaadi ketaan muistamaan mitaan. Yksi lukija (src.free_window)
+#: paattaa sisallon, sivu vain kantaa sen.
+_GEN_RE_TMPL = (r"(<!-- GEN:{key}-START[^>]*-->\n)(.*?)(\n<!-- GEN:{key}-END -->)")
 
-    Kutsutaan sivubuildista, joten ensimmainen ajo 12.9 jalkeen siivoaa
-    tiedostot itse eika siivous jaa kenenkaan muistin varaan.
+
+def render_blocks(now=None) -> list[tuple[str, str]]:
+    """Kirjoita pintakohtaiset GEN-lohkot. Palauttaa muuttuneet (tiedosto, avain).
+
+    Kaataa ajon jos markkeria ei loydy: hiljainen ohitus tarkoittaisi etta
+    lupaus jaa sivulle eika kukaan huomaa (fail-closed).
     """
-    if is_open():
-        return []
-    muutetut = []
+    from src.free_window import SURFACE_BLOCKS
+    muuttuneet = []
+    for (tiedosto, avain), renderoija in SURFACE_BLOCKS.items():
+        p = ROOT / tiedosto
+        txt = p.read_text(encoding="utf-8")
+        pat = re.compile(_GEN_RE_TMPL.format(key=re.escape(avain)), re.S)
+        m = pat.search(txt)
+        if not m:
+            raise SystemExit(
+                f"check_free_window: {tiedosto} ei sisalla GEN:{avain}-lohkoa. "
+                "Ilmaisikkunan lupaus jaisi sivulle eika mikaan poistaisi sita.")
+        uusi_sisalto = renderoija(now)
+        if m.group(2) == uusi_sisalto:
+            continue
+        txt = txt[:m.start()] + m.group(1) + uusi_sisalto + m.group(3) + txt[m.end():]
+        p.write_text(txt, encoding="utf-8")
+        muuttuneet.append((tiedosto, avain))
+    return muuttuneet
+
+
+#: Generoidut pinnat joita `--fix` EI saa koskea: niiden lupaus katoaa
+#: seuraavassa bakessa oikein muotoiltuna, ja lausepoisto jattaisi niihin
+#: orvon tagin. Poikkeuslistassa on perustelu, ja testi kaatuu jos uusi
+#: tiedosto lisataan tanne ilman sellaista (CLAUDE.md 6a, mekanismi 2).
+FIX_OHITETAAN = {
+    "fpl.html": "build_fpl_page.upsell_block() renderoi molemmat tilat itse "
+                "(auki: nootti + 'Get Premium free'; kiinni: 'Get Premium' + "
+                "hinta preesensissa). Lausepoisto jattaisi <b></b>-orvon.",
+}
+
+
+#: `--fix` EI SAA KOSKEA LAHDEKOODIIN. Lausepoisto on tekstiprimitiivi: se
+#: osaa poistaa lauseen kappaleesta, mutta koodissa lause on merkkijonoliteraali
+#: jonka poisto jattaa syntaksivirheen.
+#:
+#: 🔴 MITATTU 12.9.2026 synteettisella kellolla ennen kuin tama paasi CI:hin:
+#: laajennettu CLAIM_RE osui `Hero.svelte`in riviin
+#: `? 'Premium, free until 12 September'`, ja `--fix` jatti tilalle `?` ilman
+#: haaraa - SPA:n kaannos olisi kaatunut ensimmaisessa page-refresh-ajossa
+#: ikkunan sulkeuduttua. Vanha, suppeampi kuvio ei osunut siihen, joten riski
+#: syntyi tasan tassa muutoksessa.
+#:
+#: Lahdekoodi RAPORTOIDAAN silti (`hits`), koska vanhentunut lupaus koodissa on
+#: yha vanhentunut lupaus - se vain korjataan kasin.
+FIX_EI_LAHDEKOODIA = (".svelte", ".ts", ".js", ".py")
+
+
+def fix(paths=None, now=None) -> list[tuple[str, int]]:
+    """Siivoa lupaus kasin yllapidetyilta pinnoilta.
+
+    Kaksi vaihetta:
+      1. GEN-lohkot renderoidaan AINA (myos ikkunan ollessa auki, jolloin
+         no-op). Nain rakenteelliset lupaukset - bandi, nappi, hintalappu -
+         vaihtuvat oikeaan sisaltoon eivatka katoa tyhjaan.
+      2. Lausepoisto muilta kasin yllapidetyilta TEKSTIPINNOILTA vain ikkunan
+         sulkeuduttua. Generoidut sivut (`FIX_OHITETAAN`) ja lahdekoodi
+         (`FIX_EI_LAHDEKOODIA`) ohitetaan.
+
+    Kutsutaan sivubuildista, joten ensimmainen ajo 12.9 12:30 UTC jalkeen
+    siivoaa tiedostot itse eika siivous jaa kenenkaan muistin varaan.
+    """
+    muutetut: list[tuple[str, int]] = []
+    # GEN-lohkot vain TUOTANTOPOLULLA (paths is None). Kun kutsuja antaa
+    # eksplisiittisen listan, se tarkoittaa "tasan nama" - yksikkotesti antaa
+    # yhden tmp-tiedoston, eika silla ole index.htmlia ymparillaan.
+    if paths is None:
+        for tiedosto, avain in render_blocks(now):
+            muutetut.append((f"{tiedosto} (GEN:{avain})", 1))
+    if is_open(now):
+        return muutetut
     for p in (paths if paths is not None else surfaces()):
+        rel = str(p.relative_to(ROOT)).replace("\\", "/")
+        if rel in FIX_OHITETAAN or p.suffix in FIX_EI_LAHDEKOODIA:
+            continue
         try:
             txt = p.read_text(encoding="utf-8", errors="ignore")
         except OSError:
@@ -197,7 +371,7 @@ def fix(paths=None) -> list[tuple[str, int]]:
         uusi, n = strip_claim(txt)
         if n:
             p.write_text(uusi, encoding="utf-8")
-            muutetut.append((str(p.relative_to(ROOT)), n))
+            muutetut.append((rel, n))
     return muutetut
 
 
