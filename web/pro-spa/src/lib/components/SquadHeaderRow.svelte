@@ -119,7 +119,13 @@
 		</span>
 	</span>
 	{#if weakestLine}
-		<span class="cell" title="The line the model would strengthen first.">
+		<!-- 13.9 (portti WG5): vanha "The line the model would strengthen first"
+		     nimesi mekanismin jota _line_strength ei laske. Se vertaa XI:n rivin
+		     keski-xP/GW:ta saman pelipaikan poolikeskiarvoon ja palauttaa pienimman. -->
+		<span
+			class="cell"
+			title="The line in your starting XI with the lowest average xP per gameweek, compared with the average for that position."
+		>
 			<span class="k">Weak spot</span>
 			<span class="v line-weak">{weakestLine}</span>
 		</span>
@@ -160,7 +166,7 @@
 			{#if !chips}
 				<!-- Draft tai historiaa ei saatu. Tyhja lista olisi vaite
 				     "chippeja ei ole pelattu", eika sita tiedeta. -->
-				<span class="none">no entry</span>
+				<span class="none">unknown</span>
 			{:else if chipParts.length === 0}
 				<span class="none">none left</span>
 			{:else}

@@ -12,6 +12,7 @@
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { formatSwing, swingOf } from '$lib/fixtureSwing';
+	import { actionableGameweek } from '$lib/gameweek';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
@@ -70,15 +71,21 @@
 	/** Horisontti DATASTA: `meta.horizon_gw`, fallback pisimpaan riviin.
 	 *  Kovakoodattu "six" oli sivulla kahdessa paikassa (kortti + selite) ja
 	 *  molemmat olisivat vanhentuneet hiljaa horisontin muuttuessa. */
+	// 13.9 (portti WG7): lista ja alaotsikko vain kierroksista joihin lukija voi
+	// viela vaikuttaa. Kesken olevan GW4:n Low oli listalla, vaikka GW4:n
+	// siirrot ja kapteeni oli jo lukittu. Sama lukija kuin muualla SPA:ssa.
+	const fromGw = $derived(actionableGameweek(data?.meta));
+	const playable = (gws: XpPlayer['gameweeks'] | undefined) =>
+		(gws ?? []).filter((g) => fromGw == null || g.gw >= fromGw);
+
 	const swingGws = $derived(
-		(data?.meta?.horizon_gw as number | undefined) ??
-			Math.max(0, ...(data?.players ?? []).map((p) => (p.gameweeks ?? []).length))
+		Math.max(0, ...(data?.players ?? []).map((p) => playable(p.gameweeks).length))
 	);
 
 	const rows = $derived.by<SwingRow[]>(() => {
 		const out: SwingRow[] = [];
 		for (const p of data?.players ?? []) {
-			const gws = (p.gameweeks ?? []).filter((g) => g.opponents.length > 0);
+			const gws = playable(p.gameweeks).filter((g) => g.opponents.length > 0);
 			if (gws.length < 2 || (p.xmins ?? 0) < MIN_XMINS) continue;
 			let lo = gws[0];
 			let hi = gws[0];
