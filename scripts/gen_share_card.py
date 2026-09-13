@@ -27,6 +27,8 @@ AJO:
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
+import hashlib
 import json
 import os
 import sys
@@ -1459,6 +1461,69 @@ BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
 GW_CAPABLE = {"cs"}
 
 
+# ---------------------------------------------------------------------------
+# POSTATTU-KORTTI-EI-OLE-TALLESSA (12.9.2026)
+# ---------------------------------------------------------------------------
+# `outputs/` on .gitignoressa ja jokainen ajo kirjoittaa saman tiedostonimen
+# yli, joten postatun kortin sisaltoa ei voinut myohemmin todistaa: 9.9
+# postattu GW4-kortti (M82) ei ollut enaa olemassa missaan, ja MARKETING_QUEUE
+# viittasi commitiin jossa sita ei ollut. Sidecar tallentaa PNG:n vieressa
+# sen mita postaus vaitti postanneensa (rivit + sha256), jotta vaite on
+# jalkikateen tarkistettavissa riippumatta siita kirjoittaako seuraava ajo
+# saman tiedostonimen paalle.
+def sidecar_path(png_path: Path) -> Path:
+    return png_path.with_suffix(png_path.suffix + ".json")
+
+
+def write_sidecar(spec: dict, card: str, png_path: Path) -> Path:
+    """Kirjoita PNG:n vierelle JSON: rivit + artefaktin generated_at + sha256.
+
+    sha256 lasketaan JUURI KIRJOITETUSTA tiedostosta (ei muistin canvasista),
+    jotta sidecar todistaa mita levylla oikeasti on eika mita render() luuli
+    kirjoittavansa.
+    """
+    png_bytes = png_path.read_bytes()
+    payload = {
+        "card": card,
+        # Milloin TAMA sidecar (ja siis kortti) generoitiin.
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(
+            timespec="seconds"),
+        # Lahdeartefaktin oma generated_at JOS builder sen tunsi (esim.
+        # gw-outlook). Tyhja merkkijono != puuttuva kentta: puuttuva kentta
+        # nayttaisi vanhalta sidecarilta, tyhja sanoo etta lahde ei kanna sita.
+        "source_generated_at": spec.get("generated_at") or "",
+        "rows": spec.get("rows", []),
+        "sha256": hashlib.sha256(png_bytes).hexdigest(),
+    }
+    out = sidecar_path(png_path)
+    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8")
+    return out
+
+
+def verify_sidecar(png_path: Path) -> None:
+    """Kaada kutsuja jos kortista ei voi todistaa mita se vaitti olevansa.
+
+    Kolme tapaa epaonnistua, jokainen oma virheensa: PNG puuttuu, sidecar
+    puuttuu, tai sha256 ei tasmaa (tiedosto vaihtui/korruptoitui sidecarin
+    kirjoittamisen jalkeen). Tarkoitettu kaytettavaksi POSTATTU-rivin
+    portista: rivi jolla on kortti ilman tallennettua kuvaa TAI shaa ei saa
+    lapaista hiljaa.
+    """
+    if not png_path.exists():
+        raise FileNotFoundError(f"kortin PNG puuttuu: {png_path}")
+    sc = sidecar_path(png_path)
+    if not sc.exists():
+        raise FileNotFoundError(
+            f"kortilla ei ole sidecaria (rivit/sha todistamatta): {sc}")
+    payload = json.loads(sc.read_text(encoding="utf-8"))
+    actual = hashlib.sha256(png_path.read_bytes()).hexdigest()
+    if payload.get("sha256") != actual:
+        raise ValueError(
+            f"kortin sha256 ei tasmaa sidecariin (tiedosto vaihtunut "
+            f"sidecarin kirjoittamisen jalkeen?): {png_path}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="GoalIQ share card generator")
     ap.add_argument("card", choices=sorted(BUILDERS))
@@ -1508,11 +1573,13 @@ def main() -> int:
             pth = render_gw_outlook_hero(spec, out, cs_only=a.cs_only)
         else:
             pth = render_gw_outlook(spec, out)
-        print("GW%s outlook (%d ottelua) -> %s"
-              % (spec["gw"], len(spec["fixtures"]), pth))
+        sc = write_sidecar(spec, a.card, pth)
+        print("GW%s outlook (%d ottelua) -> %s (sidecar %s)"
+              % (spec["gw"], len(spec["fixtures"]), pth, sc))
         return 0
     p = render(spec, out)
-    print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
+    sc = write_sidecar(spec, a.card, p)
+    print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p} (sidecar {sc})")
     return 0
 
 
