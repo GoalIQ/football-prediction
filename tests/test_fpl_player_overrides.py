@@ -323,6 +323,49 @@ def test_until_available_flag_is_parsed(tmp_path):
     assert out[2]["until_available"] is False
 
 
+# --- XP-OVERRIDE-OHITTAA-SAATAVUUDEN (12.9): override ei saa syödä
+# --- saatavuusskaalausta
+
+def test_set_p_start_reapplies_availability_for_doubtful_status():
+    """🔴 TÄMÄ ON KOKO KORJAUKSEN OLEMASSAOLON SYY.
+
+    `set_p_start` korvaa p_startin SUORAAN. Ennen korjausta epävarmalle
+    pelaajalle (status 'd') syntyi override-arvo SELLAISENAAN, vaikka
+    `apply_availability` olisi kaikille muille pelaajille skaalannut sen
+    `chance`-%:lla — ja `/fpl` + `/fpl/team-news` väittävät kovakoodatusti
+    (`src/doubt_copy.py`) että pelaamistodennäköisyys on JOKAISEN xP:n
+    sisällä. Chance 50 %:lla override-arvon 0.90 pitää päätyä 0.45:een,
+    ei 0.90:een.
+    """
+    mm = xp.minutes_model({1: 90, 2: 90}, {1: 1, 2: 1}, [1, 2])
+    out = xp.set_p_start(mm, 0.90, status="d", chance=50)
+    assert out["p_start"] == pytest.approx(0.45)
+    assert out["p_start_raw"] == pytest.approx(0.45)
+
+
+def test_set_p_start_zeroes_out_for_unavailable_status():
+    """i/s/u/n -tilat nollaavat pelaajan riippumatta override-arvosta —
+    sama sääntö kuin `apply_availability`lle muuallakin, ei poikkeus."""
+    mm = xp.minutes_model({1: 90, 2: 90}, {1: 1, 2: 1}, [1, 2])
+    out = xp.set_p_start(mm, 0.90, status="i", chance=0)
+    assert out["p_start"] == 0.0
+    assert out["p_start_raw"] == 0.0
+    assert out["xmins"] == 0.0
+
+
+def test_set_p_start_is_unscaled_when_status_is_available():
+    """NEGATIIVINEN KONTROLLI: kun pelaaja on saatavilla (status 'a', kuten
+    molemmat 12.9 tuotannossa olevat overridet), korjaus ei saa muuttaa
+    lukua — muuten korjaus itse loisi regression jokaiselle nykyiselle
+    ohitusriville."""
+    mm = xp.minutes_model({1: 90, 2: 90}, {1: 1, 2: 1}, [1, 2])
+    out = xp.set_p_start(mm, 0.90, status="a", chance=None)
+    assert out["p_start"] == pytest.approx(0.90)
+    # Oletusarvo (ei status/chance -argumentteja) on sama kuin ennen
+    # korjausta, joten kaikki muut mahdolliset kutsupaikat pysyvät ennallaan.
+    assert xp.set_p_start(mm, 0.90)["p_start"] == pytest.approx(0.90)
+
+
 def test_builder_releases_conditional_override_when_player_is_back():
     """🔴 Peilikuvavika. Ilman tata loukkaantumisen takia laskettu rivi jaisi
     voimaan paluun jalkeenkin ja ALIARVIOISI pelaajan.

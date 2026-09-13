@@ -1003,11 +1003,16 @@ def main(argv: list[str] | None = None) -> int:
     if not player_overrides:
         print("[Overrides] 0 riviä ladattu "
               "(data/fpl_player_overrides.csv puuttuu tai on tyhjä)")
+    # Yksi lukija boot-elementille per pelaaja: sama status/chance ajaa sekä
+    # until_available-purun että p_start-ohituksen saatavuusskaalauksen alla,
+    # jotta ne eivät voi nähdä eri totuutta samasta pelaajasta.
+    el_by_id = {e["id"]: e for e in boot["elements"]}
     override_applied: dict[int, dict] = {}
     for pid, ov in player_overrides.items():
         if pid not in mm_by_player:
             print(f"[Overrides] pelaaja {pid} ei ole bootstrapissa — rivi ohitettu")
             continue
+        el = el_by_id.get(pid, {})
         # 🔴 Ehdollinen rivi purkautuu ITSESTAAN kun pelaaja on taas
         # saatavilla (Villen kysymys 16.8: "kun pelaaja palaa pelikuntoon
         # niin xmins yms ymmärtää sen?"). Ilman tätä loukkaantumisen takia
@@ -1016,7 +1021,6 @@ def main(argv: list[str] | None = None) -> int:
         # Saatavuus luetaan FPL:n omasta syötteestä joka pyörii joka
         # tapauksessa, joten mitään uutta lähdettä ei tarvita.
         if ov.get("until_available"):
-            el = next((e for e in boot["elements"] if e["id"] == pid), {})
             chance = el.get("chance_of_playing_next_round")
             back = (el.get("status") == "a"
                     and (chance is None or chance >= 75))
@@ -1030,13 +1034,25 @@ def main(argv: list[str] | None = None) -> int:
         # (xg_mult) koskematta minuutteihin.
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
-            mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            # XP-OVERRIDE-OHITTAA-SAATAVUUDEN (12.9): `set_p_start` korvaa
+            # p_start SUORAAN, joten ilman tätä ohitus söisi hiljaa
+            # `apply_availability`n jo tekemän skaalauksen — epävarmalle
+            # pelaajalle (status d/i/s/u) syntyisi xP jossa pelaamis-
+            # todennäköisyys EI ole enää mukana, vaikka jokainen muu pinta
+            # (`src/doubt_copy.py`) väittää sen olevan. `set_p_start` ajaa
+            # saman `apply_availability`-portin uudelleen override-arvon
+            # PÄÄLLE, samalla status/chance-parilla kuin muillekin pelaajille.
+            status = el.get("status", "a")
+            chance = el.get("chance_of_playing_next_round")
+            mm_by_player[pid] = xp.set_p_start(
+                mm_by_player[pid], ov["p_start"], status=status, chance=chance)
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""
+            scaled = " (saatavuus skaalasi)" if status != "a" else ""
             print(f"[Overrides] {pid}: p_start {before:.2f} -> "
-                  f"{ov['p_start']:.2f} "
-                  f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag} — "
+                  f"{mm_by_player[pid]['p_start']:.2f} "
+                  f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag}{scaled} — "
                   f"{ov['reason'][:60]}")
         if ov["xg_mult"] != 1.0:
             print(f"[Overrides] {pid}: xg_mult x{ov['xg_mult']:.2f} "
