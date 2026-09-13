@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-12T23:00:21+00:00",
+  "updated_at": "2026-09-13T04:34:11+00:00",
   "logged_total": 3334,
-  "pending": 2805,
+  "pending": 2802,
   "voided": 7,
   "all_time": {
-    "n": 522,
-    "correct_1x2": 260,
-    "pct_1x2": 0.4981,
-    "draw_n": 145,
-    "pct_draw": 0.2778,
-    "decisive_n": 377,
-    "decisive_correct": 260,
-    "pct_decisive": 0.6897,
-    "exact_n": 474,
+    "n": 525,
+    "correct_1x2": 262,
+    "pct_1x2": 0.499,
+    "draw_n": 146,
+    "pct_draw": 0.2781,
+    "decisive_n": 379,
+    "decisive_correct": 262,
+    "pct_decisive": 0.6913,
+    "exact_n": 477,
     "exact_correct": 64,
-    "pct_exact": 0.135,
+    "pct_exact": 0.1342,
     "brier": 0.5939,
-    "brier_n": 474
+    "brier_n": 477
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 42,
-    "pct_1x2": 0.42,
+    "correct_1x2": 43,
+    "pct_1x2": 0.43,
     "draw_n": 32,
     "pct_draw": 0.32,
     "decisive_n": 68,
-    "decisive_correct": 42,
-    "pct_decisive": 0.6176,
+    "decisive_correct": 43,
+    "pct_decisive": 0.6324,
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.6242,
+    "brier": 0.6251,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 25
     },
     "BSA": {
-      "n": 81,
-      "correct_1x2": 33,
-      "pct_1x2": 0.4074,
-      "draw_n": 26,
-      "pct_draw": 0.321,
-      "decisive_n": 55,
-      "decisive_correct": 33,
-      "pct_decisive": 0.6,
-      "exact_n": 81,
+      "n": 84,
+      "correct_1x2": 35,
+      "pct_1x2": 0.4167,
+      "draw_n": 27,
+      "pct_draw": 0.3214,
+      "decisive_n": 57,
+      "decisive_correct": 35,
+      "pct_decisive": 0.614,
+      "exact_n": 84,
       "exact_correct": 11,
-      "pct_exact": 0.1358,
-      "brier": 0.6379,
-      "brier_n": 81
+      "pct_exact": 0.131,
+      "brier": 0.6362,
+      "brier_n": 84
     },
     "CL": {
       "n": 9,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 336,
-      "correct_1x2": 171,
-      "pct_1x2": 0.5089,
-      "draw_n": 81,
-      "pct_draw": 0.2411,
-      "decisive_n": 255,
-      "decisive_correct": 171,
-      "pct_decisive": 0.6706,
-      "exact_n": 336,
+      "n": 339,
+      "correct_1x2": 173,
+      "pct_1x2": 0.5103,
+      "draw_n": 82,
+      "pct_draw": 0.2419,
+      "decisive_n": 257,
+      "decisive_correct": 173,
+      "pct_decisive": 0.6732,
+      "exact_n": 339,
       "exact_correct": 43,
-      "pct_exact": 0.128,
+      "pct_exact": 0.1268,
       "brier": 0.586,
-      "brier_n": 336
+      "brier_n": 339
     },
     "stale": {
       "n": 138,
@@ -257,28 +257,28 @@
       "n": 37
     },
     {
-      "bin_mid": 0.1604,
-      "predicted": 0.1604,
-      "actual": 0.1437,
-      "n": 174
+      "bin_mid": 0.1603,
+      "predicted": 0.1603,
+      "actual": 0.142,
+      "n": 176
     },
     {
-      "bin_mid": 0.2553,
-      "predicted": 0.2553,
-      "actual": 0.2896,
-      "n": 549
+      "bin_mid": 0.2552,
+      "predicted": 0.2552,
+      "actual": 0.2899,
+      "n": 552
     },
     {
       "bin_mid": 0.3408,
       "predicted": 0.3408,
-      "actual": 0.3088,
-      "n": 272
+      "actual": 0.3077,
+      "n": 273
     },
     {
-      "bin_mid": 0.4484,
-      "predicted": 0.4484,
-      "actual": 0.3736,
-      "n": 182
+      "bin_mid": 0.4481,
+      "predicted": 0.4481,
+      "actual": 0.377,
+      "n": 183
     },
     {
       "bin_mid": 0.5444,
@@ -287,10 +287,10 @@
       "n": 101
     },
     {
-      "bin_mid": 0.6442,
-      "predicted": 0.6442,
-      "actual": 0.75,
-      "n": 68
+      "bin_mid": 0.6438,
+      "predicted": 0.6438,
+      "actual": 0.7429,
+      "n": 70
     },
     {
       "bin_mid": 0.739,
@@ -306,6 +306,51 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-13",
+      "home_team": "Santos",
+      "away_team": "Cruzeiro",
+      "predicted_winner": "home",
+      "p_winner": 0.4076,
+      "lead_h": 1.0,
+      "most_likely_score": "1-1",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-12",
+      "home_team": "Botafogo RJ",
+      "away_team": "Bragantino",
+      "predicted_winner": "home",
+      "p_winner": 0.6145,
+      "lead_h": 0.5,
+      "most_likely_score": "2-1",
+      "actual_score": "1-1",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-12",
+      "home_team": "Palmeiras",
+      "away_team": "Sao Paulo",
+      "predicted_winner": "home",
+      "p_winner": 0.6422,
+      "lead_h": 1.0,
+      "most_likely_score": "1-0",
+      "actual_score": "2-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-12",
       "home_team": "Cambuur",
@@ -558,51 +603,6 @@
       "actual_outcome": "draw",
       "hit_1x2": false,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-12",
-      "home_team": "SS Lazio",
-      "away_team": "AC Milan",
-      "predicted_winner": "away",
-      "p_winner": 0.3833,
-      "lead_h": 0.5,
-      "most_likely_score": "0-1",
-      "actual_score": "2-2",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-12",
-      "home_team": "Tottenham",
-      "away_team": "Everton",
-      "predicted_winner": "away",
-      "p_winner": 0.3467,
-      "lead_h": 1.0,
-      "most_likely_score": "1-1",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-12",
-      "home_team": "Swansea",
-      "away_team": "Burnley",
-      "predicted_winner": "home",
-      "p_winner": 0.3758,
-      "lead_h": 3.4,
-      "most_likely_score": "1-1",
-      "actual_score": "3-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
