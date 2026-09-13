@@ -124,7 +124,7 @@
 		     keski-xP/GW:ta saman pelipaikan poolikeskiarvoon ja palauttaa pienimman. -->
 		<span
 			class="cell"
-			title="The line in your starting XI with the lowest average xP per gameweek, compared with the average for that position."
+			title="The line in your best XI whose average xP per gameweek is lowest relative to the average of all projected players in that position."
 		>
 			<span class="k">Weak spot</span>
 			<span class="v line-weak">{weakestLine}</span>

@@ -39,13 +39,16 @@ def test_wg5_weak_spot_tooltip_describes_line_strength():
     assert "strengthen first" not in s
     m = re.search(r'title="([^"]*)"\s*>\s*<span class="k">Weak spot', s)
     assert m, "Weak spot -solun title-attribuuttia ei loydy"
-    assert "lowest average xP per gameweek" in m.group(1)
-    assert "average for that position" in m.group(1)
+    # Portti 13.9: XI on optimal_xi (paras XI, ei FPL-kokoonpano), pool on kaikki
+    # projisoidut pelaajat ilman minuuttirajaa, ja valinta on pienin SUHDE.
+    assert "best XI" in m.group(1) and "starting XI" not in m.group(1)
+    assert "relative to the average of all projected players" in m.group(1)
     # Tooltip kuvaa taman funktion; jos laskenta muuttuu, teksti on tarkistettava.
     src = RATE_TEAM.read_text(encoding="utf-8")
     body = src[src.index("def _line_strength"):]
     body = body[: body.index("\ndef ", 1)]
     assert 'p["element_type"] == t' in body and "min(ratios" in body
+    assert "xi = optimal_xi(" in src
 
 
 def test_wg7_fixture_swing_skips_started_gameweek():
