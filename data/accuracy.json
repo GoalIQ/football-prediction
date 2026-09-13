@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-09-13T21:48:34+00:00",
+  "updated_at": "2026-09-13T23:07:52+00:00",
   "logged_total": 3334,
-  "pending": 2779,
+  "pending": 2778,
   "voided": 7,
   "all_time": {
-    "n": 548,
-    "correct_1x2": 273,
-    "pct_1x2": 0.4982,
+    "n": 549,
+    "correct_1x2": 274,
+    "pct_1x2": 0.4991,
     "draw_n": 152,
-    "pct_draw": 0.2774,
-    "decisive_n": 396,
-    "decisive_correct": 273,
-    "pct_decisive": 0.6894,
-    "exact_n": 500,
+    "pct_draw": 0.2769,
+    "decisive_n": 397,
+    "decisive_correct": 274,
+    "pct_decisive": 0.6902,
+    "exact_n": 501,
     "exact_correct": 66,
-    "pct_exact": 0.132,
-    "brier": 0.5915,
-    "brier_n": 500
+    "pct_exact": 0.1317,
+    "brier": 0.5906,
+    "brier_n": 501
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.5919,
+    "brier": 0.587,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 27
     },
     "BSA": {
-      "n": 85,
-      "correct_1x2": 35,
-      "pct_1x2": 0.4118,
+      "n": 86,
+      "correct_1x2": 36,
+      "pct_1x2": 0.4186,
       "draw_n": 28,
-      "pct_draw": 0.3294,
-      "decisive_n": 57,
-      "decisive_correct": 35,
-      "pct_decisive": 0.614,
-      "exact_n": 85,
+      "pct_draw": 0.3256,
+      "decisive_n": 58,
+      "decisive_correct": 36,
+      "pct_decisive": 0.6207,
+      "exact_n": 86,
       "exact_correct": 11,
-      "pct_exact": 0.1294,
-      "brier": 0.6403,
-      "brier_n": 85
+      "pct_exact": 0.1279,
+      "brier": 0.6347,
+      "brier_n": 86
     },
     "CL": {
       "n": 9,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 362,
-      "correct_1x2": 184,
-      "pct_1x2": 0.5083,
+      "n": 363,
+      "correct_1x2": 185,
+      "pct_1x2": 0.5096,
       "draw_n": 88,
-      "pct_draw": 0.2431,
-      "decisive_n": 274,
-      "decisive_correct": 184,
-      "pct_decisive": 0.6715,
-      "exact_n": 362,
+      "pct_draw": 0.2424,
+      "decisive_n": 275,
+      "decisive_correct": 185,
+      "pct_decisive": 0.6727,
+      "exact_n": 363,
       "exact_correct": 45,
-      "pct_exact": 0.1243,
-      "brier": 0.5832,
-      "brier_n": 362
+      "pct_exact": 0.124,
+      "brier": 0.582,
+      "brier_n": 363
     },
     "stale": {
       "n": 138,
@@ -257,16 +257,16 @@
       "n": 39
     },
     {
-      "bin_mid": 0.1606,
-      "predicted": 0.1606,
-      "actual": 0.133,
-      "n": 188
+      "bin_mid": 0.1604,
+      "predicted": 0.1604,
+      "actual": 0.1323,
+      "n": 189
     },
     {
-      "bin_mid": 0.2551,
-      "predicted": 0.2551,
-      "actual": 0.2909,
-      "n": 574
+      "bin_mid": 0.255,
+      "predicted": 0.255,
+      "actual": 0.2904,
+      "n": 575
     },
     {
       "bin_mid": 0.3407,
@@ -287,10 +287,10 @@
       "n": 108
     },
     {
-      "bin_mid": 0.6439,
-      "predicted": 0.6439,
-      "actual": 0.75,
-      "n": 72
+      "bin_mid": 0.6444,
+      "predicted": 0.6444,
+      "actual": 0.7534,
+      "n": 73
     },
     {
       "bin_mid": 0.737,
@@ -317,6 +317,21 @@
       "actual_score": "1-1",
       "actual_outcome": "draw",
       "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-13",
+      "home_team": "Flamengo RJ",
+      "away_team": "Corinthians",
+      "predicted_winner": "home",
+      "p_winner": 0.6801,
+      "lead_h": 1.4,
+      "most_likely_score": "1-0",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
@@ -586,21 +601,6 @@
       "most_likely_score": "2-0",
       "actual_score": "5-0",
       "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-13",
-      "home_team": "Coventry",
-      "away_team": "Brighton",
-      "predicted_winner": "away",
-      "p_winner": 0.4383,
-      "lead_h": 0.6,
-      "most_likely_score": "1-1",
-      "actual_score": "0-5",
-      "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
