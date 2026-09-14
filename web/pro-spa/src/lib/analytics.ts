@@ -9,6 +9,7 @@
  */
 import type PostHogJs from 'posthog-js';
 import { POSTHOG_KEY, POSTHOG_HOST } from './config';
+import { scrubSecrets } from './scrubSecrets';
 
 /* 2.8.2026 PERF: posthog-js EI ole enaa staattinen import.
  *
@@ -176,7 +177,13 @@ function boot(): void {
 				// kyselyita ei kayteta missaan. Mitattu Lighthouse mobile: posthog
 				// 385-590 ms paasaietta hubissa. Sama lippu hubin snippetissa.
 				disable_surveys: true,
-				persistence: 'localStorage+cookie'
+				persistence: 'localStorage+cookie',
+				// 14.9: OAuth/magic link -paluun osoite sisaltaa access-, refresh-
+				// ja Google provider -tokenit. Ilman tata ne tallentuivat
+				// PostHogiin viiteen eri kenttaan. Koko tapahtuma siivotaan, ei
+				// kenttalistaa (ks. scrubSecrets.ts). Portti:
+				// tests/test_posthog_no_auth_secrets.py
+				before_send: (ev) => (ev ? scrubSecrets(ev) : ev)
 			});
 			posthog.register({
 				platform: 'web',
