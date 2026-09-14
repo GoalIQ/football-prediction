@@ -91,6 +91,45 @@ def test_scale_p_start_caps_at_one():
     assert out["xmins"] <= 90.0 + 1e-9
 
 
+def test_set_p_start_defaults_to_no_availability_change():
+    """POSITIIVINEN KONTROLLI: status="a" (oletus) ei skaalaa ohitusta.
+    Tama on nykyinen sopimus (test_shipped_overrides_land_in_the_projection_
+    artifact vaatii CSV:n p_start == artefaktin p_start ± 0.01), eika 12.9-
+    korjaus saa rikkoa sita rivilla jolla FPL sanoo pelaajan olevan saatavilla.
+    """
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 0.0 for r in rounds}, {}, rounds)
+    out = xp.set_p_start(mm, 0.85)
+    assert out["p_start_raw"] == pytest.approx(0.85)
+    assert out["p_start"] == pytest.approx(0.85)
+
+
+def test_set_p_start_applies_availability_after_override():
+    """🔴 XP-OVERRIDE-OHITTAA-SAATAVUUDEN: ohitus epavarmalle pelaajalle EI saa
+    ohittaa saatavuusporttia kokonaan. Ilman apply_availability-kutsua
+    set_p_startin jalkeen tama palauttaisi tasan 0.85."""
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 0.0 for r in rounds}, {}, rounds)
+    doubtful = xp.set_p_start(mm, 0.85, "d", 50)
+    assert doubtful["p_start"] == pytest.approx(0.5 * 0.85)
+    assert doubtful["p_start_raw"] == pytest.approx(0.5 * 0.85)
+
+    injured = xp.set_p_start(mm, 0.85, "i", None)
+    assert injured["p_start"] == 0.0 and injured["p_start_raw"] == 0.0
+    assert injured["xmins"] == pytest.approx(0.0)
+
+
+def test_set_p_start_availability_scaling_is_not_a_no_op_mutation():
+    """MUTAATIOKONTROLLI: jos joku poistaa apply_availability-kutsun
+    set_p_startista (palauttaa suoraan `out`), tama testi kaatuu koska
+    epavarman pelaajan p_start jaisi 0.85:aan eika skaalautuisi."""
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 0.0 for r in rounds}, {}, rounds)
+    out = xp.set_p_start(mm, 0.85, "d", 50)
+    assert out["p_start"] != pytest.approx(0.85), (
+        "saatavuusgatea ei ajettu ohituksen jalkeen — regressio")
+
+
 def test_congestion_multiplier_bounds():
     # tupla-GW + kärkiminuutit → CONGESTION_MULT, ei koskaan negatiivinen/nolla
     assert xp.congestion_multiplier(2, 85.0) == xp.CONGESTION_MULT

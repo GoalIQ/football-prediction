@@ -1003,6 +1003,7 @@ def main(argv: list[str] | None = None) -> int:
     if not player_overrides:
         print("[Overrides] 0 riviä ladattu "
               "(data/fpl_player_overrides.csv puuttuu tai on tyhjä)")
+    elements_by_id = {e["id"]: e for e in boot["elements"]}
     override_applied: dict[int, dict] = {}
     for pid, ov in player_overrides.items():
         if pid not in mm_by_player:
@@ -1015,8 +1016,8 @@ def main(argv: list[str] | None = None) -> int:
         # pelaajan, eli tekisi peilikuvan siitä viasta jonka se korjasi.
         # Saatavuus luetaan FPL:n omasta syötteestä joka pyörii joka
         # tapauksessa, joten mitään uutta lähdettä ei tarvita.
+        el = elements_by_id.get(pid, {})
         if ov.get("until_available"):
-            el = next((e for e in boot["elements"] if e["id"] == pid), {})
             chance = el.get("chance_of_playing_next_round")
             back = (el.get("status") == "a"
                     and (chance is None or chance >= 75))
@@ -1030,10 +1031,19 @@ def main(argv: list[str] | None = None) -> int:
         # (xg_mult) koskematta minuutteihin.
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
-            mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            # 12.9: saatavuus ajetaan ohituksen JALKEEN (xp.set_p_start), jotta
+            # epavarmalle pelaajalle annettu p_start ei ohita status/chance-
+            # lippua kokonaan — ks. XP-OVERRIDE-OHITTAA-SAATAVUUDEN.
+            mm_by_player[pid] = xp.set_p_start(
+                mm_by_player[pid], ov["p_start"],
+                el.get("status", "a"), el.get("chance_of_playing_next_round"))
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""
+            if el.get("status", "a") != "a":
+                print(f"[Overrides] {pid}: status {el.get('status')} — "
+                      f"saatavuus skaalasi ohitetun p_startin "
+                      f"{mm_by_player[pid]['p_start']:.2f}:aan")
             print(f"[Overrides] {pid}: p_start {before:.2f} -> "
                   f"{ov['p_start']:.2f} "
                   f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag} — "

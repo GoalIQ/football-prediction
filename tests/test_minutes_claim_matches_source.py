@@ -24,14 +24,20 @@ MEKANISMI. Kaksi ehtoa, molemmat LUKUUN sidottuja eivatka sanalistaan
       julkaista yksin: pinnan on kannettava myos hannan luku. Tama on
       rakenteellinen ehto, ei sanamuoto -- se pitaa millä tahansa kielella.
 
-TIEDOSSA OLEVA REIKA (portin mittaama 12.9, EI viela tukittu). Ehto (2)
-vaatii etta hannan luku on LASNA. Se ei vaadi etta tyypillinen tapaus
-sanotaan. Teksti voi kantaa seka 10:n etta 30:n kertomatta koskaan etta
-mediaani on nolla, ja lapaista. Esim. "came in about 10 minutes lower,
-and a few were 30 minutes out" menisi lapi. Haluttu invariantti on "jos
-keskiarvo ja mediaani eroavat, pinnan on kerrottava tyypillinen tapaus",
-ja lukua etsiva testi ei nae sita (muisti:
-portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa). -> QUEUE MINUUTTIPORTTI-TYYPILLINEN
+REIKA TUKITTU (14.9.2026, MINUUTTIPORTTI-TYYPILLINEN). Ehto (2) vaati vain
+etta hannan LUKU on lasna (`\b30\b`), ei etta tyypillinen tapaus sanotaan.
+Teksti saattoi kantaa seka 10:n etta 30:n kertomatta koskaan etta nelja
+kymmenesta osuu kohdalleen, ja lapaista: "came in about 10 minutes lower,
+and a few were 30 minutes out" (muisti: portti-joka-etsii-merkkijonoa-ei-
+mittaa-arvoa). Kolmas ehto alla (`test_typical_case_fraction_is_bound_to_
+measured_share`) ei enaa etsi lukua vaan LUKUSUHDETTA: se poimii jokaisesta
+pinnasta kaikki "<luku> in/of <luku>" (+ es "de cada" / pt "em cada")
+-murteet, muuntaa ne osuuksiksi ja vaatii etta yksi osuu lahelle
+`share_within_5`:tta (tyypillinen tapaus) ja toinen lahelle `share_over_30`:tta
+(hanta) — MOLEMMAT artefaktista, ei sanalistasta. Murre ei ole sidottu
+tiettyihin sanoihin ("four"/"ten"): jos mittaus muuttuu 0,4:sta 0,3:aan,
+teksti jonka pitaa lukea "three in ten" mutta lukee yha "four in ten" ei
+enaa osu toleranssiin ja portti kaatuu — sama rakenne kuin ehdolla (1).
 """
 from __future__ import annotations
 
@@ -141,6 +147,90 @@ def test_jokainen_pinta_sanoo_saman_luvun_kuin_mittaus():
         "Mittaus: data/preseason_minutes_bias.json "
         "(scripts/measure_preseason_minutes_bias.py)."
     )
+
+
+# --------------------------------------------------------------------------
+# MINUUTTIPORTTI-TYYPILLINEN: luku EI riita, murteen on ilmaistava OSUUS.
+# --------------------------------------------------------------------------
+
+# Lukusanat 1-10 kolmella kielella. SPA on aina englantia; mobiilin kolme
+# kielta kayttavat omaa sanamuotoaan ("X in Y" / "X de cada Y" / "X em cada Y").
+_LUKUSANAT = {
+    "en": {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+           "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10},
+    "es": {"uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5,
+           "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10},
+    "pt": {"um": 1, "dois": 2, "tres": 3, "três": 3, "quatro": 4, "cinco": 5,
+           "seis": 6, "sete": 7, "oito": 8, "nove": 9, "dez": 10},
+}
+_LIITOS = {"en": r"in", "es": r"de\s+cada", "pt": r"em\s+cada"}
+
+
+def _fractions_in_text(teksti: str) -> list[float]:
+    """Poimii kaikki '<luku> in/de cada/em cada <luku>' -murteet ja palauttaa
+    niiden numeeriset osuudet (esim. "four in ten" -> 0.4).
+
+    EI sido tiettyihin sanoihin: mika tahansa kahden lukusanan pari samalla
+    liitoksella kelpaa, joten testi joka kayttaa tata mittaa OSUUTTA eika
+    hae kiinteaa sanajonoa. Kaikki kolme kielta tarkistetaan aina, koska
+    SPA ja i18n-tiedostot voivat molemmat paatya samaan tekstiin.
+    """
+    t = teksti.lower()
+    out: list[float] = []
+    for kieli, sanat in _LUKUSANAT.items():
+        sana_regex = "|".join(sorted(sanat, key=len, reverse=True))
+        pattern = re.compile(
+            rf"\b({sana_regex})\b\s+{_LIITOS[kieli]}\s+\b({sana_regex})\b")
+        for m in pattern.finditer(t):
+            a, b = sanat[m.group(1)], sanat[m.group(2)]
+            if b:
+                out.append(a / b)
+    return out
+
+
+def test_typical_case_fraction_is_bound_to_measured_share():
+    """MINUUTTIPORTTI-TYYPILLINEN: 30 (hannan luku) LASNA ei riita — pinnan
+    on kannettava lukusuhde joka on LAHELLA mitattua share_within_5:tta
+    (tyypillinen tapaus) JA lukusuhde lahella share_over_30:tta (hanta).
+    Kumpikaan raja ei ole sanalista: molemmat tulevat artefaktista, joten
+    jos mittaus muuttuu eika teksti seuraa, tama kaatuu."""
+    _vaadi_molemmat_repot()
+    pinnat = _pinnat()
+    m = _mittaus()
+    ero = abs(m["mean"] - m["median"])
+    if ero < ERO_KYNNYS_MIN:
+        pytest.skip(f"keskiarvo ja mediaani eroavat vain {ero:.1f} min")
+    within5, over30 = m["share_within_5"], m["share_over_30"]
+    TOL = 0.05
+    viat = []
+    for nimi, teksti in pinnat.items():
+        osat = _fractions_in_text(_vaiteosa(teksti))
+        if not any(abs(f - within5) <= TOL for f in osat):
+            viat.append(f"{nimi}: ei lukusuhdetta lahella tyypillista "
+                        f"osumaa ({within5:.0%}), loydetyt: {osat}")
+        if not any(abs(f - over30) <= TOL for f in osat):
+            viat.append(f"{nimi}: ei lukusuhdetta lahella hantaa "
+                        f"({over30:.0%}), loydetyt: {osat}")
+    assert not viat, (
+        f"share_within_5={within5:.0%}, share_over_30={over30:.0%} "
+        "(data/preseason_minutes_bias.json). Nama pinnat eivat kanna "
+        "kumpaakin lukusuhdetta:\n  " + "\n  ".join(viat))
+
+
+def test_kontrolli_luku_ilman_lukusuhdetta_ei_riita():
+    """NEGATIIVINEN KONTROLLI: moduulin docstringin oma esimerkkilause
+    ("came in about 10 minutes lower, and a few were 30 minutes out")
+    kantaa hannan LUVUN (30) muttei yhtaan lukusuhdetta. VANHA portti
+    (pelkkaa lukua etsiva `\\b30\\b`) olisi paastanyt taman lapi; uusi
+    `_fractions_in_text` nakee etta murre puuttuu kokonaan."""
+    huono = ("Across the last three summers, players we projected at 80+ "
+             "minutes came in about 10 minutes lower, and a few were 30 "
+             "minutes out. The gap closes as 2026/27 results arrive.")
+    osa = _vaiteosa(huono)
+    assert re.search(r"\b30\b", osa), "kontrolli: hannan luku loytyy tekstista"
+    assert _fractions_in_text(osa) == [], (
+        "kontrolli: taman lauseen PITAA olla ilman lukusuhdetta — jos tama "
+        "loytaa jotain, tunnistin on liian salliva")
 
 
 def test_keskiarvoa_ei_julkaista_yksin_kun_tyypillinen_eroaa():
