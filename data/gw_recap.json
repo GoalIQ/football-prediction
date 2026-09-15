@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-14T15:36:00+00:00",
+  "generated_at": "2026-09-15T01:06:27+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -247,6 +247,86 @@
     "n": 501,
     "bias": -0.179
    },
+   "headline_miss": null
+  },
+  {
+   "gw": 4,
+   "provisional": true,
+   "squad": {
+    "points": 53,
+    "points_net": 53,
+    "average": 63,
+    "diff": -10,
+    "bench_points": 4,
+    "transfer_cost": 0,
+    "chip": null,
+    "captain_id": 426,
+    "captain_points_added": 2,
+    "graded_at": "2026-09-14T21:50:37+00:00"
+   },
+   "calls": {
+    "logged_at": "2026-09-11T07:45:26Z",
+    "deadline_utc": "2026-09-12T12:30:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": true,
+    "hits": 1,
+    "misses": 3,
+    "ungraded": 1,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "captain return, points doubled",
+      "predicted": 5.5,
+      "points": 2,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "10+ pts",
+      "predicted": 0.114,
+      "points": 2,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "reached p90",
+      "predicted": 10,
+      "points": 9,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "safest",
+      "web_name": "Stach",
+      "team_short": "LEE",
+      "criterion": "3+ pts",
+      "predicted": 0.834,
+      "points": 3,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "gamble",
+      "web_name": "Khalaili",
+      "team_short": "CRY",
+      "criterion": "10+ pts",
+      "predicted": 0.096,
+      "points": 7,
+      "started": true,
+      "met": false
+     }
+    ]
+   },
+   "accuracy": null,
    "headline_miss": null
   }
  ]
