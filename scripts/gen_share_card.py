@@ -27,9 +27,11 @@ AJO:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -105,6 +107,39 @@ def _shrink(d, text, px, max_w, min_px, font_path):
             f"gen_share_card: teksti ei mahdu korttiin edes {px}px:lla "
             f"({leveys:.0f} px / {max_w:.0f} px). Lyhenna se: {text}")
     return f
+
+
+def _write_sidecar(spec: dict, out_path: Path) -> Path:
+    """POSTATTU-KORTTI-EI-OLE-TALLESSA (12.9): `outputs/` on gitignoroitu ja
+    jokainen ajo kirjoittaa saman tiedostonimen yli, joten postattu kortti
+    (esim. 9.9:n GW4-kortti, M82) katoaa jäljettömiin heti kun ajo toistetaan
+    — MARKETING_QUEUE.md:n commit-viittaus jää osoittamaan tyhjää, koska
+    `outputs/` ei ole koskaan gitissä. Emme siis voineet todistaa mitä
+    postasimme emmekä verrata seuraavaa korttia edelliseen.
+
+    Sidecar on PYSYVÄ TODISTE riippumatta siitä katoaako itse PNG: se
+    kirjoitetaan JOKAISESTA renderöinnistä (ei vain postatuista), sisältää
+    juuri kirjoitetun kuvan sha256:n (POSTATTU-rivi voi viitata tähän ilman
+    että kuvatiedosto on tallessa) ja kortin sisällön (`rows`/`fixtures`),
+    jotta seuraavaa korttia voi verrata edelliseen ilman datan
+    rekonstruointia gitistä. `spec["generated_at"]` on vain gw-outlook-
+    korteilla (lähdeartefaktin oma leima) — muut kortit kantavat päivän
+    tekstinä subtitle/footnotessa (`_as_of`), joten kenttä on tässä
+    parhaan mukaan eikä pakollinen.
+    """
+    payload = {
+        "file": out_path.name,
+        "sha256": hashlib.sha256(out_path.read_bytes()).hexdigest(),
+        "rendered_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source_generated_at": spec.get("generated_at"),
+        "title": spec.get("title"),
+        "rows": spec.get("rows") or spec.get("fixtures") or [],
+    }
+    side_path = out_path.with_name(out_path.name + ".json")
+    side_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, default=str) + "\n",
+        encoding="utf-8")
+    return side_path
 
 
 def render(spec: dict, out_path: Path) -> Path:
@@ -230,6 +265,7 @@ def render(spec: dict, out_path: Path) -> Path:
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(out_path, "PNG")
+    _write_sidecar(spec, out_path)
     return out_path
 
 
@@ -1239,6 +1275,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(out_path, "PNG", optimize=True)
+    _write_sidecar(spec, out_path)
     return out_path
 
 
@@ -1449,6 +1486,7 @@ def render_gw_outlook_hero(spec: dict, out_path: Path, cs_only: bool = False) ->
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas = canvas.crop((0, 0, W, y0 + 72))
     canvas.convert("RGB").save(out_path, "PNG", optimize=True)
+    _write_sidecar(spec, out_path)
     return out_path
 
 
