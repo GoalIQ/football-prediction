@@ -66,6 +66,14 @@ FREE_EDGE_TEMPLATE_RISKS = 1
 # HUOM: differentials EI ole maskattu, ja syy on koodissa (api/main.py):
 # julkisen /fpl/differentials-sivun generaattori hakee sen anonyymina.
 FREE_VALUE_ROWS = 3           # sama luku kuin Value.svelte:n FREE_ROWS
+# DEFCON-LEADERS-PALVELINRAJA (12.9, mitattu): "Full DefCon leaderboard" on
+# myyty premiuksi vähintään viidellä pinnalla, mutta
+# /api/fantasy/defcon-leaders palautti anonyymisti koko listan (182 riviä,
+# meta.masked=None). Molemmat klientit näyttävät ilmaiskäyttäjälle jo top 3:n
+# (web Leaders.svelte FREE_ROWS, mobiili LEADERS_FREE_ROWS) — sama luku tässä
+# eli näkyvä sisältö ei muutu kummallakaan pinnalla, vain suora API-kutsu
+# lakkaa vuotamasta loput.
+FREE_DEFCON_LEADERS_ROWS = 3
 
 
 # ---------------------------------------------------------------------------
@@ -430,6 +438,27 @@ def mask_value_payload(payload: dict) -> dict:
     meta["masked"] = True
     meta["mask"] = (f"top {FREE_VALUE_ROWS} of {len(rows)} value rows, no "
                     "goalkeeper pairs (free preview)")
+    out["meta"] = meta
+    return out
+
+
+def mask_defcon_leaders_payload(payload: dict) -> dict:
+    """/api/fantasy/defcon-leaders freelle: top 3 riviä, ei koko listaa.
+
+    Kolme = sama luku jonka molemmat klientit jo näyttävät ilmaiskäyttäjälle
+    (web Leaders.svelte FREE_ROWS, mobiili LEADERS_FREE_ROWS), joten näkyvä
+    sisältö ei muutu — vain suora API-kutsu lakkaa antamasta loppua listaa
+    (mitattu 12.9: anonyymi kutsu palautti 182 riviä täysinä).
+    Rivit ovat täysiä (typistys, ei null), lista koskee vain riveja.
+    """
+    out = dict(payload)
+    rows = list(out.get("players") or [])
+    out["players"] = rows[:FREE_DEFCON_LEADERS_ROWS]
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["mask"] = (f"top {FREE_DEFCON_LEADERS_ROWS} of {len(rows)} DefCon "
+                    "leaders (free preview - GoalIQ Premium unlocks the "
+                    "full leaderboard)")
     out["meta"] = meta
     return out
 

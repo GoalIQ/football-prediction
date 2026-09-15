@@ -59,6 +59,11 @@ PREMIUM_ENDPOINTS = {
     # 6.9: player stats - FPL:n luvut ja freeze-vertailu ilmaisia, eteenpain
     # katsova xP (next_gw_xp, xp_horizon_total) premium; rakentaja maskaa.
     "/api/fantasy/player-stats": ("next-gameweek and horizon xP need premium", "builder"),
+    # DEFCON-LEADERS-PALVELINRAJA (12.9, mitattu): "Full DefCon leaderboard"
+    # myyty premiumina, mutta anonyymi kutsu palautti tuotannosta koko listan
+    # (182 riviä, meta.masked=None). Free = top 3, sama kuin molemmat
+    # klientit jo näyttävät (web Leaders.svelte, mobiili LEADERS_FREE_ROWS).
+    "/api/fantasy/defcon-leaders": ("full DefCon leaderboard is a premium row", "mask"),
 }
 
 # endpoint -> miksi se on tarkoituksella ilmainen
@@ -68,7 +73,6 @@ FREE_ENDPOINTS = {
     "/api/fantasy/price-watch": "price watch on free",
     "/api/fantasy/defcon-live": "FPL:n omaa julkista otteludataa",
     "/api/fantasy/defcon-gw": "sama julkinen data",
-    "/api/fantasy/defcon-leaders": "sama julkinen data",
     "/api/fantasy/xg-leaders": "xG-leaders on free (landing lupaa sen)",
     "/api/fantasy/league": "mini-league standings on free",
     "/api/fantasy/career": "career card on free",
@@ -200,6 +204,22 @@ def test_negatiivinen_kontrolli_vaara_mekanismi() -> None:
 
 def test_negatiivinen_kontrolli_premium_check_katoaa() -> None:
     body = _find_handler("/api/fantasy/value")
+    assert body
+    rikottu = body.replace("is_premium_request", "True")
+    assert "is_premium_request" not in rikottu
+
+
+def test_negatiivinen_kontrolli_defcon_leaders_maski_katoaa() -> None:
+    body = _find_handler("/api/fantasy/defcon-leaders")
+    assert body
+    rikottu = body.replace("mask_defcon_leaders_payload", "identity")
+    assert re.search(MECHANISMS["mask"], rikottu) is None, (
+        "tarkistin ei huomaisi defcon-leaders-maskin katoamista"
+    )
+
+
+def test_negatiivinen_kontrolli_defcon_leaders_premium_check_katoaa() -> None:
+    body = _find_handler("/api/fantasy/defcon-leaders")
     assert body
     rikottu = body.replace("is_premium_request", "True")
     assert "is_premium_request" not in rikottu

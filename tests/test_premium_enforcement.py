@@ -53,6 +53,14 @@ GATED_EXPECTED = {
     # koko GK-lohkon anonyymille. GK-parit ovat myyntilistan premium-rivi.
     # Free = sama 3 rivia jonka klientti nayttaa -> nakyva sisalto ei muutu.
     "/api/fantasy/value",
+    # DEFCON-LEADERS-PALVELINRAJA (12.9, mitattu): "Full DefCon leaderboard"
+    # on myyty premiumina vahintaan viidella pinnalla, mutta anonyymi kutsu
+    # palautti tuotannosta 182 riviä taysina, meta.masked=None. Raja oli vain
+    # selaimessa (web Leaders.svelte FREE_ROWS, mobiili LEADERS_FREE_ROWS).
+    # Free = sama top 3 jonka molemmat klientit jo nayttavat -> nakyva
+    # sisalto ei muutu. `defcon-gw` ja `defcon/{player_id}` pysyvat
+    # ilmaisina (FPL:n oma julkinen ottelusarja, ei mallin tuotos).
+    "/api/fantasy/defcon-leaders",
 }
 
 # Nama ovat tarkoituksella ilmaisia (rate my team, kapteenipoiminta,
@@ -81,7 +89,6 @@ FREE_EXPECTED = {
     # pudottanut sivun kahteen riviin hiljaa.
     "/api/fantasy/differentials",
     "/api/fantasy/xg-leaders",
-    "/api/fantasy/defcon-leaders",
     "/api/fantasy/defcon-gw",
     "/api/fantasy/defcon-live",
     "/api/fantasy/compare",
@@ -477,3 +484,105 @@ def test_pool_lisays_nosti_etag_skeemaversiota():
     assert len(XP_POOL_FIELDS) == 7, (
         "XP_POOL_FIELDS muuttui — tarkista ETagin skeemaversio ja paivita "
         "tama luku samassa committissa")
+
+
+@pytest.fixture()
+def defcon_client(tmp_path, monkeypatch):
+    """TestClient jolla on synteettinen DefCon-leaderboard levylla.
+
+    DEFCON-LEADERS-PALVELINRAJA (12.9): esikaudella oikea artefakti voi olla
+    tyhjä tai puuttua, jolloin maskaustesti mittaisi 503:a eikä maskausta
+    (sama ansa kuin race_client-fixturen kommentti sanoo model-racelle).
+    """
+    import json as _json
+
+    import src.models.fpl_leaders as leaders_mod
+
+    def _player(pid: int, hits: int) -> dict:
+        return {
+            "id": pid,
+            "web_name": f"Player{pid}",
+            "team_short": "AAA",
+            "pos": "DEF",
+            "price": 4.5,
+            "owned_pct": 5.0,
+            "status": "a",
+            "recent_games": [{"dc": 10 if n < hits else 0} for n in range(5)],
+        }
+
+    data = {
+        "meta": {"available": True, "season_finished_gws": 0},
+        # 5 pelaajaa laskevalla hit-ratella -> jarjestys on deterministinen
+        # ja "top 3 of 5" on mitattavissa yksikasitteisesti.
+        "players": [_player(i, hits)
+                    for i, hits in enumerate([5, 4, 3, 2, 1], start=1)],
+    }
+    path = tmp_path / "fpl_player_leaders.json"
+    path.write_text(_json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(leaders_mod, "LEADERS_PATH", path)
+
+    import api.main as m
+    return TestClient(m.app)
+
+
+def test_defcon_leaders_masks_for_free_users(defcon_client, monkeypatch):
+    """Flagi paalla + ei tokenia -> top 3, ei koko 5 rivin listaa.
+
+    Ilman tata "gate on paikallaan" -tarkistus (test_premium_endpoint_maskaa)
+    on pelkka koodinluku: se ei todista etta payload oikeasti kutistuu
+    ajettaessa (muisti `portti-voi-mitata-eri-koodipolkua`).
+    """
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    from api.premium import FREE_DEFCON_LEADERS_ROWS
+
+    r = defcon_client.get("/api/fantasy/defcon-leaders")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"].get("masked") is True
+    assert len(d["players"]) == FREE_DEFCON_LEADERS_ROWS == 3
+
+
+def test_defcon_leaders_full_when_enforcement_off(defcon_client, monkeypatch):
+    """NEGATIIVINEN KONTROLLI: flagi pois -> koko 5 rivin lista nakyy.
+
+    Ilman tata edellinen testi lapaisisi myos silloin jos maskaus olisi
+    paalla aina — eli emme mittaisi flagia vaan maskifunktiota.
+    """
+    monkeypatch.setenv("PREMIUM_ENFORCE", "off")
+    r = defcon_client.get("/api/fantasy/defcon-leaders")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"].get("masked") is not True
+    assert len(d["players"]) == 5, (
+        "Flagi pois eika lista ole taysi — maskaus vuotaa flagin ohi."
+    )
+
+
+def test_defcon_leaders_season_basis_also_masks(tmp_path, monkeypatch):
+    """basis=season kayttaa eri rankkerifunktiota (rank_defcon_season) —
+    maskin on kutistettava senkin tulos, ei vain basis=recentin."""
+    import json as _json
+
+    import src.models.fpl_leaders as leaders_mod
+
+    gw_data = {
+        "meta": {"available": True},
+        "players": [
+            {"id": i, "web_name": f"Player{i}", "team_short": "AAA",
+             "pos": "DEF", "price": 4.5, "owned_pct": 5.0,
+             "games": 5, "starts": 5, "hits": h, "start_hits": h,
+             "per_gw": [[1, 0, 0, 0, 2] for _ in range(5)]}
+            for i, h in enumerate([5, 4, 3, 2, 1], start=1)
+        ],
+    }
+    gw_path = tmp_path / "fpl_defcon_gw.json"
+    gw_path.write_text(_json.dumps(gw_data), encoding="utf-8")
+    monkeypatch.setattr(leaders_mod, "DEFCON_GW_PATH", gw_path)
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+
+    import api.main as m
+    r = TestClient(m.app).get("/api/fantasy/defcon-leaders?basis=season")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"].get("masked") is True
+    assert len(d["players"]) == 3

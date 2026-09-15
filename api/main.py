@@ -5545,6 +5545,7 @@ def fantasy_player_stats(
 @app.get("/api/fantasy/defcon-leaders",
          description="Defensive contribution leaders: actions per game, hit rate and points over a rolling window.")
 def fantasy_defcon_leaders(
+    request: Request,
     response: Response,
     window: int = Query(default=5, ge=3, le=10),
     pos: str | None = Query(default=None, pattern="^(DEF|MID|FWD)$"),
@@ -5559,7 +5560,14 @@ def fantasy_defcon_leaders(
     matriisin kausisummista — window ohitetaan. Esikaudella tämä on
     vakain basis (38 pelin hit-rate vs mielivaltainen viimeiset-N-häntä).
     top_n-katto nostettu 400:aan samalla (lista oli kova 20 → "vain 20
-    pelaajaa" -havainto; matriisissa on 373 pelaajaa)."""
+    pelaajaa" -havainto; matriisissa on 373 pelaajaa).
+
+    DEFCON-LEADERS-PALVELINRAJA (12.9, mitattu): "Full DefCon leaderboard"
+    on myyty premiuksi vähintään viidellä pinnalla, mutta tämä endpoint
+    palautti anonyymisti koko listan (182 riviä, meta.masked=None). Raja
+    oli vain selaimessa. Ei-premium saa nyt saman top 3:n jonka molemmat
+    klientit jo näyttävät ilmaiseksi (`defcon/{player_id}` ja `defcon-gw`
+    pysyvät kokonaan ilmaisina, tämä koskee vain leaderboard-listaa)."""
     from src.models.fpl_leaders import (load_defcon_gw, load_leaders,
                                         rank_defcon_leaders,
                                         rank_defcon_season)
@@ -5567,11 +5575,16 @@ def fantasy_defcon_leaders(
     response.headers["Cache-Control"] = "no-store"
     try:
         if basis == "season":
-            return rank_defcon_season(load_defcon_gw(), pos=pos, top_n=top_n)
-        return rank_defcon_leaders(load_leaders(), window=window, pos=pos,
-                                   top_n=top_n)
+            payload = rank_defcon_season(load_defcon_gw(), pos=pos, top_n=top_n)
+        else:
+            payload = rank_defcon_leaders(load_leaders(), window=window,
+                                          pos=pos, top_n=top_n)
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    if not is_premium_request(request):
+        from api.premium import mask_defcon_leaders_payload
+        payload = mask_defcon_leaders_payload(payload)
+    return payload
 
 
 @app.get("/api/fantasy/defcon-gw",
