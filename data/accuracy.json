@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-09-15T01:01:27+00:00",
+  "updated_at": "2026-09-15T04:40:17+00:00",
   "logged_total": 3334,
-  "pending": 2770,
+  "pending": 2769,
   "voided": 7,
   "all_time": {
-    "n": 557,
-    "correct_1x2": 279,
-    "pct_1x2": 0.5009,
+    "n": 558,
+    "correct_1x2": 280,
+    "pct_1x2": 0.5018,
     "draw_n": 153,
-    "pct_draw": 0.2747,
-    "decisive_n": 404,
-    "decisive_correct": 279,
-    "pct_decisive": 0.6906,
-    "exact_n": 509,
+    "pct_draw": 0.2742,
+    "decisive_n": 405,
+    "decisive_correct": 280,
+    "pct_decisive": 0.6914,
+    "exact_n": 510,
     "exact_correct": 66,
-    "pct_exact": 0.1297,
-    "brier": 0.5885,
-    "brier_n": 509
+    "pct_exact": 0.1294,
+    "brier": 0.5879,
+    "brier_n": 510
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 11,
     "pct_exact": 0.11,
-    "brier": 0.5713,
+    "brier": 0.5736,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 27
     },
     "BSA": {
-      "n": 86,
-      "correct_1x2": 36,
-      "pct_1x2": 0.4186,
+      "n": 87,
+      "correct_1x2": 37,
+      "pct_1x2": 0.4253,
       "draw_n": 28,
-      "pct_draw": 0.3256,
-      "decisive_n": 58,
-      "decisive_correct": 36,
-      "pct_decisive": 0.6207,
-      "exact_n": 86,
+      "pct_draw": 0.3218,
+      "decisive_n": 59,
+      "decisive_correct": 37,
+      "pct_decisive": 0.6271,
+      "exact_n": 87,
       "exact_correct": 11,
-      "pct_exact": 0.1279,
-      "brier": 0.6347,
-      "brier_n": 86
+      "pct_exact": 0.1264,
+      "brier": 0.6305,
+      "brier_n": 87
     },
     "CL": {
       "n": 9,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 371,
-      "correct_1x2": 190,
-      "pct_1x2": 0.5121,
+      "n": 372,
+      "correct_1x2": 191,
+      "pct_1x2": 0.5134,
       "draw_n": 89,
-      "pct_draw": 0.2399,
-      "decisive_n": 282,
-      "decisive_correct": 190,
-      "pct_decisive": 0.6738,
-      "exact_n": 371,
+      "pct_draw": 0.2392,
+      "decisive_n": 283,
+      "decisive_correct": 191,
+      "pct_decisive": 0.6749,
+      "exact_n": 372,
       "exact_correct": 45,
-      "pct_exact": 0.1213,
-      "brier": 0.5793,
-      "brier_n": 371
+      "pct_exact": 0.121,
+      "brier": 0.5784,
+      "brier_n": 372
     },
     "stale": {
       "n": 138,
@@ -263,10 +263,10 @@
       "n": 197
     },
     {
-      "bin_mid": 0.2549,
-      "predicted": 0.2549,
-      "actual": 0.2892,
-      "n": 581
+      "bin_mid": 0.2547,
+      "predicted": 0.2547,
+      "actual": 0.2882,
+      "n": 583
     },
     {
       "bin_mid": 0.341,
@@ -281,10 +281,10 @@
       "n": 189
     },
     {
-      "bin_mid": 0.5446,
-      "predicted": 0.5446,
-      "actual": 0.5413,
-      "n": 109
+      "bin_mid": 0.5448,
+      "predicted": 0.5448,
+      "actual": 0.5455,
+      "n": 110
     },
     {
       "bin_mid": 0.6448,
@@ -306,6 +306,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-14",
+      "home_team": "Bahia",
+      "away_team": "Remo",
+      "predicted_winner": "home",
+      "p_winner": 0.5728,
+      "lead_h": 3.2,
+      "most_likely_score": "1-1",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-14",
       "home_team": "Sp Braga",
@@ -588,21 +603,6 @@
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-13",
-      "home_team": "Zwolle",
-      "away_team": "Feyenoord",
-      "predicted_winner": "away",
-      "p_winner": 0.5508,
-      "lead_h": 2.4,
-      "most_likely_score": "1-1",
-      "actual_score": "0-7",
-      "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
