@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -343,3 +344,102 @@ def test_builder_releases_conditional_override_when_player_is_back():
     assert released("a", None, True) is True
     # ehdoton rivi ei purkaudu koskaan saatavuuden perusteella
     assert released("a", 100, False) is False
+
+
+# --------------------------------------------------------------------------
+# XP-OVERRIDE-OHITTAA-SAATAVUUDEN (12.9): `set_p_start` ei aja
+# `apply_availability`a uudelleen, joten ohitus epavarmalle pelaajalle
+# (status != a, EI until_available-rivi) tuotti xP:n josta pelaamis-
+# todennakoisyys puuttui — samalla kun /fpl ja /fpl/team-news vaittavat
+# kovakoodatusti etta jokaisella epavarmalla rivilla se on mukana
+# (src/doubt_copy.py). scripts/build_fpl_xp.py:n ohituslooppi elaa main()in
+# sisalla eika ole kutsuttavissa erikseen, joten kaksi tasoa:
+#   (1) primitiivien koostumus (set_p_start + apply_availability) — todistaa
+#       etta MEKANISMI toimii oikein yhdessa;
+#   (2) lahdekoodiluku — todistaa etta builder OIKEASTI kutsuu koostumusta.
+# --------------------------------------------------------------------------
+
+def _mm(mins: dict[int, float], starts: dict[int, int], rounds: list[int]):
+    return xp.minutes_model(mins, starts, rounds, n_last=xp.START_WINDOW)
+
+
+def test_set_p_start_alone_ignores_availability():
+    """NEGATIIVINEN KONTROLLI: dokumentoi buginen tila ennen korjausta.
+
+    Ilman `apply_availability`a uudelleenajoa `set_p_start` asettaa xmins:n
+    tasan overriden p_startin mukaisesti riippumatta FPL:n statuksesta —
+    tama on se vika jonka builder-korjaus estaa.
+    """
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    overridden = xp.set_p_start(mm, 0.90)
+    assert overridden["xmins"] == pytest.approx(0.90 * mm["e_min_start"])
+    # status "d" 50 % EI nay lukemassa — juuri tama on korjattava epakohta.
+
+
+def test_override_then_availability_scales_doubtful_player():
+    """Builderin uusi jarjestys: set_p_start JA SITTEN apply_availability
+    status != a -pelaajalle. Sama saatavuusportti kuin kaikki muut rivit."""
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    overridden = xp.set_p_start(mm, 0.90)
+    scaled = xp.apply_availability(overridden, "d", 50)
+    assert scaled["xmins"] == pytest.approx(0.5 * overridden["xmins"])
+    assert scaled["p_start"] == pytest.approx(0.5 * 0.90)
+    assert scaled["p_start_raw"] == pytest.approx(0.5 * 0.90)
+
+
+def test_override_then_availability_is_a_noop_for_available_status():
+    """POSITIIVINEN KONTROLLI: status "a" ei muuta mitaan — nykyisilla
+    kahdella shipatulla ohituksella (molemmat status a) korjaus ei liiku
+    lukua, joten olemassa oleva artefaktiportti pysyy vihreana."""
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    overridden = xp.set_p_start(mm, 0.90)
+    same = xp.apply_availability(overridden, "a", None)
+    assert same["xmins"] == pytest.approx(overridden["xmins"])
+    assert same["p_start"] == pytest.approx(overridden["p_start"])
+
+
+def test_builder_reapplies_availability_after_override():
+    """Lahdekoodiluku: builder EI saa unohtaa kutsua `apply_availability`a
+    ohituksen jalkeen. Ilman tata riviluku voisi kadota koodista huomaamatta
+    ja edellinen testi mittaisi vain primitiivia, ei builderin oikeaa polkua.
+    """
+    src = (ROOT / "scripts" / "build_fpl_xp.py").read_text(encoding="utf-8")
+    m = re.search(
+        r"mm_by_player\[pid\] = xp\.set_p_start\([^\n]*\n"
+        r"(?:.*\n){0,12}?"
+        r"\s*if status != \"a\":\n"
+        r"\s*mm_by_player\[pid\] = xp\.apply_availability\(\s*\n"
+        r"\s*mm_by_player\[pid\], status,",
+        src,
+    )
+    assert m, (
+        "build_fpl_xp.py:n ohituslooppi ei enaa kutsu apply_availabilitya "
+        "set_p_startin jalkeen — epavarman pelaajan ohitus ohittaisi "
+        "saatavuusportin taas hiljaa."
+    )
+
+
+def test_negative_control_missing_reapply_is_caught():
+    """MUTAATIO: jos koodinluvun kaava lokeroituu vain kommenttiin eika
+    oikeaan kutsuun, testin on kaadeuttava. Tassa simuloidaan poisto ja
+    tarkistetaan etta sama regex EI enaa osu."""
+    src = (ROOT / "scripts" / "build_fpl_xp.py").read_text(encoding="utf-8")
+    mutated = src.replace(
+        "if status != \"a\":\n"
+        "                mm_by_player[pid] = xp.apply_availability(\n"
+        "                    mm_by_player[pid], status,\n"
+        "                    el.get(\"chance_of_playing_next_round\"))",
+        "pass",
+    )
+    assert mutated != src, "mutaatio ei osunut — testi ei mittaisi mitaan"
+    m = re.search(
+        r"mm_by_player\[pid\] = xp\.set_p_start\([^\n]*\n"
+        r"(?:.*\n){0,12}?"
+        r"\s*if status != \"a\":\n"
+        r"\s*mm_by_player\[pid\] = xp\.apply_availability\(",
+        mutated,
+    )
+    assert m is None, "mutatoitu koodi lapaisisi silti — portti on hampaaton"

@@ -1015,8 +1015,8 @@ def main(argv: list[str] | None = None) -> int:
         # pelaajan, eli tekisi peilikuvan siitä viasta jonka se korjasi.
         # Saatavuus luetaan FPL:n omasta syötteestä joka pyörii joka
         # tapauksessa, joten mitään uutta lähdettä ei tarvita.
+        el = next((e for e in boot["elements"] if e["id"] == pid), {})
         if ov.get("until_available"):
-            el = next((e for e in boot["elements"] if e["id"] == pid), {})
             chance = el.get("chance_of_playing_next_round")
             back = (el.get("status") == "a"
                     and (chance is None or chance >= 75))
@@ -1031,6 +1031,23 @@ def main(argv: list[str] | None = None) -> int:
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
             mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            # XP-OVERRIDE-OHITTAA-SAATAVUUDEN (12.9, julkaisutarkistajan löydös):
+            # `set_p_start` EI aja `apply_availability`a uudelleen, eli ohitus
+            # epävarmalle pelaajalle (status != a) tuotti xP:n jossa
+            # pelaamistodennäköisyys EI ole sisällä — samalla kun `/fpl` ja
+            # `/fpl/team-news` väittävät kovakoodatusti että se on
+            # (src/doubt_copy.py). Sama saatavuusportti joka ajetaan kaikille
+            # muille pelaajille (rivi 605) on ajettava ohituksenkin jälkeen,
+            # muuten yksi rivi kiertää sen mekanismin jota koko muu putki
+            # noudattaa.
+            status = el.get("status", "a")
+            if status != "a":
+                mm_by_player[pid] = xp.apply_availability(
+                    mm_by_player[pid], status,
+                    el.get("chance_of_playing_next_round"))
+                print(f"[Overrides] {pid}: status {status} — saatavuus "
+                      f"ajettu uudelleen ohituksen jälkeen "
+                      f"(xmins {mm_by_player[pid]['xmins']:.1f})")
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""
