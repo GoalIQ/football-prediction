@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-09-15T01:06:25",
+  "generated_at": "2026-09-15T02:38:23",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -25,7 +25,7 @@
     "Neom SC"
    ],
    "source": "measured",
-   "baseline_attack": -0.1371,
+   "baseline_attack": -0.1372,
    "baseline_defence": 0.2505
   },
   "sanity_gate": "PASS",
@@ -35,7 +35,7 @@
  },
  "model_squad": {
   "budget": 100.0,
-  "cost": 99.9,
+  "cost": 99.6,
   "xi_xp_horizon": 312.4,
   "optimal_proven": false,
   "note": "Strongest squad the model found (greedy search with local swaps), not a proven optimum. RSL rules: 100.0 budget, 2 GK / 5 DEF / 5 MID / 3 FWD, max 3 per club.",
@@ -101,13 +101,13 @@
     "in_xi": true
    },
    {
-    "id": 333,
-    "web_name": "Inigo Martinez",
-    "team_short": "NAS",
+    "id": 191,
+    "web_name": "Mahzari",
+    "team_short": "HIL",
     "pos": "DEF",
-    "price": 5.5,
-    "xp_per_gw": 3.95,
-    "xp_horizon_total": 23.72,
+    "price": 5.2,
+    "xp_per_gw": 3.88,
+    "xp_horizon_total": 23.29,
     "in_xi": false
    },
    {
@@ -157,7 +157,7 @@
     "pos": "MID",
     "price": 5.4,
     "xp_per_gw": 4.52,
-    "xp_horizon_total": 27.12,
+    "xp_horizon_total": 27.13,
     "in_xi": true
    },
    {
@@ -1119,7 +1119,7 @@
    },
    "xp_per_gw": 4.52,
    "xp_per_90": 5.04,
-   "xp_horizon_total": 27.12,
+   "xp_horizon_total": 27.13,
    "gameweeks": [
     {
      "gw": 8,
@@ -8089,7 +8089,7 @@
        "venue": "H"
       }
      ],
-     "xp": 2.35
+     "xp": 2.36
     },
     {
      "gw": 9,
@@ -18773,7 +18773,7 @@
    "team": "Al Hazem",
    "team_short": "HAZ",
    "pos": "FWD",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",
@@ -19355,7 +19355,7 @@
    "team": "Al Nassr",
    "team_short": "NAS",
    "pos": "MID",
-   "price": 4.4,
+   "price": 4.3,
    "owned_pct": 0.0,
    "status": "a",
    "news": "",
@@ -37058,7 +37058,7 @@
    "team": "Al Hilal",
    "team_short": "HIL",
    "pos": "MID",
-   "price": 5.0,
+   "price": 4.9,
    "owned_pct": 0.3,
    "status": "a",
    "news": "",
@@ -46937,7 +46937,7 @@
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "MID",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",
@@ -50778,7 +50778,7 @@
        "venue": "A"
       }
      ],
-     "xp": 0.41
+     "xp": 0.4
     }
    ]
   },
@@ -55830,7 +55830,7 @@
    "team_short": "HIL",
    "pos": "DEF",
    "price": 3.8,
-   "owned_pct": 0.1,
+   "owned_pct": 0.2,
    "status": "a",
    "news": "",
    "chance_next": null,
