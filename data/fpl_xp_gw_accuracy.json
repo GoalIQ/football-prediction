@@ -269,6 +269,145 @@
      }
     }
    }
+  },
+  {
+   "gw": 4,
+   "graded_at": "2026-09-15T14:09:01Z",
+   "frozen_at": "2026-09-11T07:45:24Z",
+   "n": 493,
+   "mae": 1.68,
+   "bias": -0.152,
+   "mae_by_pos": {
+    "DEF": 1.985,
+    "FWD": 1.945,
+    "GKP": 1.565,
+    "MID": 1.411
+   },
+   "by_class": {
+    "dnp": {
+     "n": 188,
+     "mae": 0.998,
+     "bias": -0.998
+    },
+    "blank": {
+     "n": 190,
+     "mae": 1.38,
+     "bias": -1.259
+    },
+    "ticker": {
+     "n": 101,
+     "mae": 2.529,
+     "bias": 2.267
+    },
+    "haul": {
+     "n": 14,
+     "mae": 8.789,
+     "bias": 8.789
+    }
+   },
+   "by_pos_stats": {
+    "DEF": {
+     "n": 168,
+     "mae": 1.985,
+     "bias": -0.06
+    },
+    "FWD": {
+     "n": 52,
+     "mae": 1.945,
+     "bias": -0.062
+    },
+    "GKP": {
+     "n": 55,
+     "mae": 1.565,
+     "bias": -0.282
+    },
+    "MID": {
+     "n": 218,
+     "mae": 1.411,
+     "bias": -0.211
+    }
+   },
+   "comparison": {
+    "n": 493,
+    "predictors": [
+     "goaliq",
+     "fpl_ep_next",
+     "form_baseline"
+    ],
+    "mae": {
+     "goaliq": 1.68,
+     "fpl_ep_next": 1.648,
+     "form_baseline": 1.65
+    },
+    "by_class": {
+     "dnp": {
+      "n": 188,
+      "mae": {
+       "goaliq": 0.998,
+       "fpl_ep_next": 0.586,
+       "form_baseline": 0.537
+      }
+     },
+     "blank": {
+      "n": 190,
+      "mae": {
+       "goaliq": 1.38,
+       "fpl_ep_next": 1.567,
+       "form_baseline": 1.598
+      }
+     },
+     "ticker": {
+      "n": 101,
+      "mae": {
+       "goaliq": 2.529,
+       "fpl_ep_next": 2.935,
+       "form_baseline": 2.976
+      }
+     },
+     "haul": {
+      "n": 14,
+      "mae": {
+       "goaliq": 8.789,
+       "fpl_ep_next": 7.743,
+       "form_baseline": 7.743
+      }
+     }
+    },
+    "by_pos": {
+     "DEF": {
+      "n": 168,
+      "mae": {
+       "goaliq": 1.985,
+       "fpl_ep_next": 1.897,
+       "form_baseline": 1.954
+      }
+     },
+     "FWD": {
+      "n": 52,
+      "mae": {
+       "goaliq": 1.945,
+       "fpl_ep_next": 1.84,
+       "form_baseline": 1.835
+      }
+     },
+     "GKP": {
+      "n": 55,
+      "mae": {
+       "goaliq": 1.565,
+       "fpl_ep_next": 1.104,
+       "form_baseline": 1.085
+      }
+     },
+     "MID": {
+      "n": 218,
+      "mae": {
+       "goaliq": 1.411,
+       "fpl_ep_next": 1.549,
+       "form_baseline": 1.515
+      }
+     }
+    }
+   }
   }
  ]
 }

@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-15T12:21:29+00:00",
+  "generated_at": "2026-09-15T14:09:01+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -269,7 +269,7 @@
     "deadline_utc": "2026-09-12T12:30:00Z",
     "logged_before_deadline": true,
     "graded": true,
-    "provisional": true,
+    "provisional": false,
     "hits": 1,
     "misses": 3,
     "ungraded": 1,
@@ -326,7 +326,11 @@
      }
     ]
    },
-   "accuracy": null,
+   "accuracy": {
+    "mae": 1.68,
+    "n": 493,
+    "bias": -0.152
+   },
    "headline_miss": null
   }
  ]
