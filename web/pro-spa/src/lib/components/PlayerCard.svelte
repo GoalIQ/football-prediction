@@ -19,6 +19,7 @@
 	let { premium = false }: { premium?: boolean } = $props();
 	import { capture } from '$lib/analytics';
 	import PlayerSearch from './PlayerSearch.svelte';
+	import { noXpReason } from '$lib/availabilityFlag';
 	import SetPieceBadges from './SetPieceBadges.svelte';
 	import WhyThisPick from './WhyThisPick.svelte';
 	import ComponentSplit from './ComponentSplit.svelte';
@@ -211,20 +212,20 @@
 			typeof player.xp_per_gw === 'number'
 	);
 	const excluded = $derived(!!player && (player.in_projection === false || !hasXp));
-	const OUT_STATUS: Record<string, string> = {
-		i: 'injured',
-		s: 'suspended',
-		u: 'unavailable',
-		n: 'not available'
-	};
-	const exclusionReason = $derived.by(() => {
-		if (!player) return null;
-		if (player.excluded_reason === 'below_min_xp')
-			return 'the model expects too few minutes to project points';
-		if (OUT_STATUS[st]) return `FPL lists this player as ${OUT_STATUS[st]}`;
-		if (player.excluded_reason === 'unavailable') return 'FPL lists this player as unavailable';
-		return null;
-	});
+	/* 16.9: syy tulee jaetusta lukijasta (sama kuin hakurivin merkki).
+	   Aiempi versio sanoi `below_min_xp`:sta "the model expects too few
+	   minutes to project points" — mutta kynnys on xP-SUMMA, ei minuutit
+	   (build_fpl_xp.py: `total < MIN_XP_TOTAL`). Pelaaja voi jaada kynnyksen
+	   alle myos siksi etta tuotto per minuutti on matala. Teksti sanoo nyt
+	   tasan sen mita mitattiin, ja kynnysluku luetaan artefaktista. */
+	const exclusionReason = $derived(
+		player
+			? noXpReason(player, {
+					horizon: meta?.horizon_gw ?? null,
+					minXp: (meta as { min_xp_total?: number } | null)?.min_xp_total ?? null
+				})
+			: null
+	);
 
 	// --- Viime kauden historia (FREE: julkista dataa, ei premium-gatea) ----
 	type Cell = { key: string; label: string; value: string };

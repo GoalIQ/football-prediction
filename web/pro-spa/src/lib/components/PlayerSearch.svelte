@@ -21,6 +21,7 @@
 </script>
 
 <script lang="ts" generics="T extends SearchItem">
+	import { availabilityFlag } from '$lib/availabilityFlag';
 	let {
 		id,
 		label,
@@ -63,15 +64,16 @@
 		}
 	}
 
-	// Saatavuusmerkki riville: pelaaja löytyy hausta vaikka hän olisi ulkona,
-	// mutta rivi kertoo sen heti. null = ei merkkiä (pelattavissa / ei tietoa).
-	function flag(p: SearchItem): { text: string; tone: string } | null {
-		const s = p.status;
-		if (p.in_projection === false) return { text: 'out', tone: 'out' };
-		if (s === 'i' || s === 's' || s === 'u' || s === 'n') return { text: 'out', tone: 'out' };
-		if (s === 'd') return { text: 'doubt', tone: 'warn' };
-		return null;
-	}
+	/* Saatavuusmerkki riville: pelaaja loytyy hausta vaikka han olisi ulkona,
+	   mutta rivi kertoo sen heti.
+
+	   16.9: merkki tuli ennen tasta funktiosta ja palautti `out` KAHDESTA eri
+	   syysta (FPL:n lippu / ei projektiota). Ne eivat ole sama asia — mitattu
+	   samana paivana: Lewis (MCI) ei ole projektiossa mutta FPL sanoo `a`, ja
+	   rivi vaitti hanesta "out". Lisaksi `out` on kierrokseton, ja
+	   julkaisuportti hylkasi juuri sen muodon korttisaatteelta. Nyt merkki
+	   tulee jaetusta lukijasta joka erottaa nelja tapausta. */
+	const flag = availabilityFlag;
 
 	function stats(p: SearchItem): string {
 		const parts: string[] = [];
@@ -151,6 +153,12 @@
 	.flag.out {
 		background: rgba(255, 138, 92, 0.12);
 		color: var(--negative);
+	}
+	/* 16.9: "no xP" ei ole saatavuusvaite vaan tieto MEIDAN luvustamme, joten
+	   se ei saa kantaa punaista/keltaista. Neutraali sävy erottaa sen. */
+	.flag.muted {
+		background: var(--surface-2);
+		color: var(--text-muted);
 	}
 	.flag.warn {
 		background: rgba(255, 201, 60, 0.2);
