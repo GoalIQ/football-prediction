@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { XpResponse, XpPlayer } from '$lib/api';
 	import { gwXp, windowXp } from '$lib/api';
-	import { downloadXpCsv } from '$lib/fantasyTools';
+	import { downloadXpCsv, fetchComparePlayers } from '$lib/fantasyTools';
+	import { shareCompare } from '$lib/compareCard';
+	import { currentEntryId } from '$lib/fplEntry.svelte';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import ComponentSplit from './ComponentSplit.svelte';
@@ -137,11 +139,92 @@
 	 *  GW-sarakkeet tulevat datasta eivatka ole tiedossa kaannosaikana, joten
 	 *  avain on merkkijono ja `cmpFor` ratkaisee sen. */
 	let sortBy = $state<string>('total');
-	// Hintakatto, ei kaistoja: kayttajan kysymys on "parhaat 5,5 miljoonan
-	// keskarit", ja kaista 4.6-6.0 vastaisi siihen vaarin. Katto = "talla
-	// budjetilla tai halvemmalla", joka on se mita joukkuetta rakentaessa kysytaan.
+	// Hintakatto on oletus: "parhaat 5,5 miljoonan keskarit" on se kysymys jota
+	// joukkuetta rakentaessa esitetaan, ja katto vastaa siihen oikein.
 	let maxPrice = $state<number | null>(null);
+	/* 16.9 (Villen tilaus): ALARAJA katon rinnalle. Luoja-vetoinen kysymys on
+	 * eri muotoinen kuin joukkueenrakentajan: Vice Captain kysyi 16.9
+	 * "who is the best BUDGET forward for GW5-10" ja rajasi neljaan nimeen
+	 * kaistalta, ei katolta. Alaraja on `null` oletuksena, joten entinen
+	 * kayttaytyminen sailyy tasan ennallaan kunnes kayttaja valitsee sen. */
+	let minPrice = $state<number | null>(null);
+	/* Omistus: differentiaali vs template. Tama on se rajaus jota FPL-luojat
+	 * kysyvat useimmin ("best differential for GW5-9"), ja `owned_pct` on jo
+	 * rivilla — kyse on suodattimesta, ei uudesta datasta. Rajat ovat FPL-
+	 * yhteison vakiintuneet: alle 5 % = differentiaali, yli 30 % = template. */
+	const OWNERSHIP_BANDS = {
+		diff5: { label: 'Under 5% owned', test: (v: number) => v < 5 },
+		diff10: { label: 'Under 10% owned', test: (v: number) => v < 10 },
+		template: { label: 'Template (30%+)', test: (v: number) => v >= 30 }
+	} as const;
+	let ownedBand = $state<keyof typeof OWNERSHIP_BANDS | null>(null);
+	/* Aloitusvarmuus: `p_start` on mallin oma luku (0..1) ja sama lahde jota
+	 * Start %-sarake nayttaa. Rajaus poistaa rotaatioriskit yhdella napilla. */
+	const START_BANDS = { 75: '75%+ starts', 90: '90%+ starts' } as const;
+	let minStart = $state<number | null>(null);
+	/* Erikoistilanteet: `set_pieces` on jo rivilla ja badget renderoityvat jo
+	 * (SetPieceBadges). Suodatin niiden paalle ei maksa uutta dataa. `order`
+	 * <= 2 on sama kynnys jolla badge nakyy — kolmas ottaja ei ole ottaja. */
+	const SET_PIECES = { pens: 'Penalties', corners: 'Corners', fk: 'Free kicks' } as const;
+	let setPiece = $state<keyof typeof SET_PIECES | null>(null);
+	/* Joukkuerajaus: monivalinta. "Kaikki ARS-pelaajat GW5-9" on oma
+	 * kysymyksensa eika sama kuin haku, koska haku on yksi merkkijono. */
+	let teamFilter = $state<Set<string>>(new Set());
+	/* 16.9 (Villen tilaus): valitse 2-4 rivia listalta -> vertailukortti.
+	 * Muoto on luojien oma: Vice Captain rakensi 16.9 postauksensa neljasta
+	 * nimesta rinnakkain. Ennen tata kayttajan piti TIETAA nimet etukateen ja
+	 * siirtya toiseen tyokaluun; nyt kysymys ja vastaus ovat samalla sivulla.
+	 * Kortin rakentaa jaettu `$lib/compareCard` — sama kortti kuin Comparessa. */
+	const COMPARE_MAX = 4;
+	let compareIds = $state<number[]>([]);
+	let comparing = $state(false);
+	let compareError = $state<string | null>(null);
+	function toggleCompare(id: number) {
+		if (compareIds.includes(id)) {
+			compareIds = compareIds.filter((x) => x !== id);
+		} else if (compareIds.length < COMPARE_MAX) {
+			compareIds = [...compareIds, id];
+		}
+	}
+	async function shareComparison() {
+		if (comparing || compareIds.length < 2) return;
+		comparing = true;
+		compareError = null;
+		try {
+			const res = await fetchComparePlayers(compareIds, currentEntryId());
+			const method = await shareCompare(res);
+			if (method !== 'aborted') capture('xp_card_shared', { list: 'xp_table_compare', method });
+		} catch (err) {
+			compareError = err instanceof Error ? err.message : String(err);
+		} finally {
+			comparing = false;
+		}
+	}
 	let groupByTeam = $state(false);
+	/** Aktiiviset rajaukset luettavana listana. Sama lahde kuin suodatus itse,
+	 *  jotta selite ei voi kertoa eri asiaa kuin mita lista tekee. */
+	let activeFilters = $derived.by(() => {
+		const out: string[] = [];
+		if (pos !== 'All') out.push(pos);
+		if (minPrice != null) out.push(`£${minPrice.toFixed(1)}m or more`);
+		if (maxPrice != null) out.push(`£${maxPrice.toFixed(1)}m or less`);
+		if (ownedBand) out.push(OWNERSHIP_BANDS[ownedBand].label.toLowerCase());
+		if (minStart != null) out.push(START_BANDS[minStart as keyof typeof START_BANDS]);
+		if (setPiece) out.push(SET_PIECES[setPiece].toLowerCase());
+		if (teamFilter.size > 0) out.push([...teamFilter].sort().join('/'));
+		if (search.trim()) out.push(`"${search.trim()}"`);
+		return out;
+	});
+	function clearFilters() {
+		pos = 'All';
+		minPrice = null;
+		maxPrice = null;
+		ownedBand = null;
+		minStart = null;
+		setPiece = null;
+		teamFilter = new Set();
+		search = '';
+	}
 	/* WHY-THIS-PICK (14.8): ajurinimikkeet. Sama sanasto kuin
 	   scripts/build_fpl_why.py:n DRIVERS-listassa ja mobiilin
 	   fantasy.xp.why_driver.* -avaimissa. Tuntematon arvo renderoityy
@@ -233,6 +316,25 @@
 		return data.players
 			.filter((p) => pos === 'All' || p.pos === pos)
 			.filter((p) => maxPrice == null || (typeof p.price === 'number' && p.price <= maxPrice))
+			.filter((p) => minPrice == null || (typeof p.price === 'number' && p.price >= minPrice))
+			.filter((p) => {
+				if (ownedBand == null) return true;
+				// Puuttuva omistus EI ole nolla: rivi jaa pois rajauksesta sen
+				// sijaan etta se laskettaisiin differentiaaliksi jota emme mitanneet.
+				return (
+					typeof p.owned_pct === 'number' && OWNERSHIP_BANDS[ownedBand].test(p.owned_pct)
+				);
+			})
+			.filter((p) => {
+				if (minStart == null) return true;
+				return typeof p.p_start === 'number' && p.p_start * 100 >= minStart;
+			})
+			.filter((p) => {
+				if (setPiece == null) return true;
+				const o = p.set_pieces?.[setPiece];
+				return typeof o === 'number' && o <= 2;
+			})
+			.filter((p) => teamFilter.size === 0 || teamFilter.has(p.team_short))
 			.filter(
 				(p) =>
 					!q ||
@@ -286,7 +388,7 @@
 	// laskusta, joten joukkueen nimirivi loppui 4-5 saraketta ennen reunaa.
 	// Uusi <th> vaatii taman lausekkeen paivityksen: tests/test_xptable_group_colspan.py
 	// johtaa saman luvun <thead>:n rakenteesta ja kaatuu jos ne eroavat.
-	const FIXED_COLUMNS = 11;
+	const FIXED_COLUMNS = 12;
 	let columnCount = $derived(
 		FIXED_COLUMNS +
 			(hasPrice ? 1 : 0) +
@@ -297,6 +399,11 @@
 	);
 	// Hintaportaat aineistosta, ei kovakoodattuna: FPL:n 0,1 M granulariteetti
 	// muuttuu kauden aikana, ja kovakoodattu tikapuu vanhenisi hiljaa.
+	/** Joukkuelyhenteet AINEISTOSTA, ei kovakoodattuna listana: nousijat ja
+	 *  putoajat vaihtuvat kausittain, ja kovakoodattu lista vanhenisi hiljaa. */
+	let teamOptions = $derived(
+		[...new Set(data.players.map((p) => p.team_short))].sort((a, b) => a.localeCompare(b))
+	);
 	let priceLadder = $derived(
 		[...new Set(data.players.map((p) => p.price).filter((v): v is number => typeof v === 'number'))]
 			.sort((a, b) => a - b)
@@ -480,11 +587,51 @@
 	</div>
 	{#if hasPrice}
 		<div>
+			<label for="minprice">Min price</label>
+			<select id="minprice" bind:value={minPrice}>
+				<option value={null}>Any</option>
+				{#each priceLadder as v (v)}
+					<option value={v}>&pound;{v.toFixed(1)}m or more</option>
+				{/each}
+			</select>
+		</div>
+		<div>
 			<label for="maxprice">Max price</label>
 			<select id="maxprice" bind:value={maxPrice}>
 				<option value={null}>Any</option>
 				{#each priceLadder as v (v)}
 					<option value={v}>&pound;{v.toFixed(1)}m or less</option>
+				{/each}
+			</select>
+		</div>
+	{/if}
+	{#if hasOwned}
+		<div>
+			<label for="owned-band">Ownership</label>
+			<select id="owned-band" bind:value={ownedBand}>
+				<option value={null}>Any</option>
+				{#each Object.entries(OWNERSHIP_BANDS) as [key, b] (key)}
+					<option value={key}>{b.label}</option>
+				{/each}
+			</select>
+		</div>
+	{/if}
+	<div>
+		<label for="min-start">Minutes</label>
+		<select id="min-start" bind:value={minStart}>
+			<option value={null}>Any</option>
+			{#each Object.entries(START_BANDS) as [v, label] (v)}
+				<option value={Number(v)}>{label}</option>
+			{/each}
+		</select>
+	</div>
+	{#if hasSetPieces}
+		<div>
+			<label for="set-piece">Set pieces</label>
+			<select id="set-piece" bind:value={setPiece}>
+				<option value={null}>Any</option>
+				{#each Object.entries(SET_PIECES) as [key, label] (key)}
+					<option value={key}>{label}</option>
 				{/each}
 			</select>
 		</div>
@@ -515,6 +662,23 @@
 					{/each}
 				</optgroup>
 			{/if}
+		</select>
+	</div>
+	<div>
+		<label for="team-filter">Team</label>
+		<select
+			id="team-filter"
+			multiple
+			size="4"
+			value={[...teamFilter]}
+			onchange={(e) => {
+				const sel = e.currentTarget as HTMLSelectElement;
+				teamFilter = new Set([...sel.selectedOptions].map((o) => o.value));
+			}}
+		>
+			{#each teamOptions as t (t)}
+				<option value={t}>{t}</option>
+			{/each}
 		</select>
 	</div>
 	<label class="toggle">
@@ -558,13 +722,51 @@
 {/if}
 
 {#if pool.length === 0}
-	<p class="muted">No players match.</p>
+	<!-- 16.9: suodattimia on nyt seitseman, ja paljas "No players match" jattaa
+	     lukijan arvaamaan kumpi niista tyhjensi listan. Tyhja tulos on VASTAUS,
+	     ja vastauksen pitaa kertoa mita kysyttiin. -->
+	<p class="muted">
+		No players match{#if activeFilters.length > 0}: {activeFilters.join(', ')}{/if}.
+		{#if activeFilters.length > 0}
+			<button type="button" class="linky" onclick={clearFilters}>Clear filters</button>
+		{/if}
+	</p>
+{/if}
+
+{#if compareIds.length > 0}
+	<div class="cmp-bar">
+		<span>{compareIds.length} of {COMPARE_MAX} selected</span>
+		<button type="button" class="secondary" onclick={() => (compareIds = [])}>Clear</button>
+		<button
+			type="button"
+			class="secondary"
+			disabled={compareIds.length < 2 || comparing}
+			onclick={shareComparison}
+		>
+			{comparing ? 'Rendering…' : `Compare ${compareIds.length}`}
+		</button>
+		{#if compareIds.length < 2}
+			<span class="muted">Pick one more to compare.</span>
+		{/if}
+		{#if compareError}<span class="muted">{compareError}</span>{/if}
+	</div>
+{/if}
+
+{#if activeFilters.length > 0 && pool.length > 0}
+	<p class="muted filter-line">
+		Showing {pool.length}
+		{pool.length === 1 ? 'player' : 'players'}: {activeFilters.join(', ')}.
+		<button type="button" class="linky" onclick={clearFilters}>Clear filters</button>
+	</p>
 {/if}
 
 <div class="table-wrap tall">
 	<table>
 		<thead>
 			<tr>
+				<th class="cmp-col"
+					><abbr title="Tick 2 to 4 players, then share the comparison card">vs</abbr></th
+				>
 				<th class="num"><abbr title="Overall rank by total xP">#</abbr></th>
 				<th>Player</th>
 				<th>Team</th>
@@ -642,6 +844,16 @@
 						class:selected={selected?.id === p.id}
 						onclick={() => (selectedId = p.id)}
 					>
+						<td class="cmp-col">
+							<input
+								type="checkbox"
+								aria-label={`Add ${p.web_name} to the comparison`}
+								checked={compareIds.includes(p.id)}
+								disabled={!compareIds.includes(p.id) && compareIds.length >= COMPARE_MAX}
+								onclick={(e) => e.stopPropagation()}
+								onchange={() => toggleCompare(p.id)}
+							/>
+						</td>
 						<td class="num muted">{rankById.get(p.id)}</td>
 						<td
 							>{p.web_name}{#if p.data_basis === 'limited_history' || p.data_basis === 'no_history'}
@@ -790,6 +1002,34 @@
 {/if}
 
 <style>
+	.linky {
+		background: none;
+		border: 0;
+		padding: 0;
+		color: var(--accent, #f5c542);
+		font: inherit;
+		cursor: pointer;
+		text-decoration: underline;
+	}
+	.filter-line {
+		margin: 0 0 var(--s-3);
+	}
+	.cmp-col {
+		width: 28px;
+		text-align: center;
+	}
+	.cmp-bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--s-3);
+		margin-bottom: var(--s-3);
+		padding: 8px 10px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface-2);
+		font-size: var(--step--1);
+	}
 	/* 26.7 PERF: rivirajauksen purku (sama chip-kieli kuin Leadersissa) */
 	.show-all {
 		margin-top: var(--s-3);
