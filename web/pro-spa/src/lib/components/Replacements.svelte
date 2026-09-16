@@ -120,7 +120,13 @@
 		if (d.target.xp_window != null) return `${d.target.xp_window.toFixed(1)} xP`;
 		if (d.target.chance_next != null && d.meta.gws.length > 0)
 			return `${d.target.chance_next}% to play GW${d.meta.gws[0]} in FPL, no projection`;
-		return 'unavailable in FPL, no projection';
+		/* PORTTI 16.9 (toinen kierros): fallback oli 'unavailable in FPL'. Se on
+		 * epatosi rivilla joka on `excluded` KYNNYKSEN takia eika lipun: mitattu
+		 * samana paivana Lewis (MCI), FPL-status `a`, ei uutisia, mutta ei
+		 * projektiota. 'no xP' vaittaa tasan yhden asian — meilla ei ole tata
+		 * lukua — ja se on tosi molemmissa tapauksissa eika vanhene kierroksen
+		 * vaihtuessa. */
+		return 'no xP';
 	}
 
 	let windowLabel = $derived(

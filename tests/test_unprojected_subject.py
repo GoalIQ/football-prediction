@@ -173,7 +173,9 @@ def test_compare_verdict_ei_ranki_ilman_kahta_projektoitua(_with_excluded):
     v = out["verdict"]
     assert v["pick"] is None
     assert v["margin_xp_horizon"] is None
-    assert "Sidelined" in v["text"] and "no expected-points number" in v["text"]
+    # 16.9 toinen kierros: teksti nimeaa SYYN (johdettu rivista) eika sano
+    # kiinteaa "no expected-points number to rank".
+    assert "Sidelined" in v["text"] and "No xP to rank" in v["text"]
 
 
 def test_compare_verdict_lasketaan_projektoiduista_kun_niita_on_kaksi(_with_excluded):
@@ -209,3 +211,127 @@ def test_compare_tuntematon_id_on_yha_404(_with_excluded):
     with pytest.raises(rt.RateTeamError) as e:
         pl.compare_players([99999, MID_A])
     assert e.value.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# SYY JOHDETAAN RIVISTA, EI KOVAKOODATA
+# ---------------------------------------------------------------------------
+#
+# PORTTI 16.9 (toinen kierros) blokkasi ensimmaisen korjaukseni: kirjoitin
+# syyksi kiinteasti "FPL lists him as unavailable". Mitattu tuotannon
+# artefaktista samana paivana: 178 `excluded`-rivista 176 on `unavailable`
+# mutta KAKSI on `below_min_xp`, ja niilla FPL:n status on `a` (Lewis, MCI,
+# tyhja news) ja `d` (Gruev, 25 %). Heista olisimme sanoneet jaettavassa
+# kuvassa etta FPL listaa heidat unavailableksi. FPL:n oma bootstrap sanoo
+# muuta, ja lukija kumoaa sen yhdella ilmaisella kutsulla.
+#
+# Fikstuuri on kirjoitettu KORJATUSTA TAPAUKSESTA: molemmat oikeat muodot
+# ovat mukana, ja testi vaatii ettei kumpikaan tuota toisen sanamuotoa.
+
+def _excluded(pid: int, nimi: str, status: str, chance, reason: str,
+              news: str = "") -> dict:
+    return {"id": pid, "web_name": nimi, "team_short": "TST", "pos": "MID",
+            "price": 7.0, "owned_pct": 3.0, "status": status, "news": news,
+            "chance_next": chance, "in_projection": False,
+            "excluded_reason": reason}
+
+
+SYYT = {
+    # (status, chance, excluded_reason) -> mita tekstissa PITAA lukea / EI saa
+    "lipun_takia_sivussa": (
+        _excluded(OUT_ID, "Flagged", "i", 0, "unavailable",
+                  "Unspecified injury - Unknown return date"),
+        "FPL lists him as unavailable", "under"),
+    "kynnyksen_alla_mutta_pelikelpoinen": (
+        _excluded(OUT_ID, "Fit", "a", None, "below_min_xp", ""),
+        "under", "unavailable"),
+    "kynnyksen_alla_ja_kyseenalainen": (
+        _excluded(OUT_ID, "Doubt", "d", 25, "below_min_xp",
+                  "Knee injury - 25% chance of playing"),
+        "under", "unavailable"),
+    "lippu_ilman_reason_kenttaa": (
+        _excluded(OUT_ID, "Gone", "u", 0, "unavailable",
+                  "Has joined Al Hilal permanently"),
+        "FPL lists him as unavailable", "under"),
+}
+
+
+@pytest.fixture
+def _with_row(monkeypatch):
+    """Kuten `_with_excluded`, mutta rivi annetaan sellaisenaan."""
+    def _apply(rivi: dict):
+        boot = copy.deepcopy(FAKE_BOOTSTRAP)
+        boot["elements"] = list(POOL_BOOT) + [dict(OUT_BOOT,
+                                                   status=rivi["status"])]
+        xp = dict(FAKE_XP)
+        xp["excluded"] = [rivi]
+        xp["meta"] = dict(FAKE_XP["meta"], min_xp_total=1.0)
+
+        def fake_fetch(path):
+            if path == "/bootstrap-static/":
+                return boot
+            raise rt.RateTeamError(404, "Not found on the FPL API.")
+
+        monkeypatch.setattr(rt, "_fetch_fpl", fake_fetch)
+        monkeypatch.setattr(rt, "load_xp", lambda: xp)
+        rt._FPL_CACHE.clear()
+        rt._OPTIMAL_XP_CACHE.clear()
+    return _apply
+
+
+@pytest.mark.parametrize("nimi", sorted(SYYT))
+def test_syy_vastaa_rivia_kaikilla_pinnoilla(_with_row, nimi):
+    rivi, pitaa_lukea, ei_saa_lukea = SYYT[nimi]
+    _with_row(rivi)
+
+    verdict = pl.compare_players([OUT_ID, MID_A])["verdict"]["text"]
+    note = pl.compare_players([OUT_ID, MID_A])["meta"]["unprojected_note"]
+    target = pl.replacements(OUT_ID, gws=5)["meta"]["target_note"]
+
+    for pinta, teksti in (("compare verdict", verdict),
+                          ("compare note", note),
+                          ("replacements note", target)):
+        assert pitaa_lukea in teksti, f"{pinta}: {teksti!r}"
+        assert ei_saa_lukea not in teksti, (
+            f"{pinta} sanoo enemman kuin lahde: {teksti!r}")
+
+
+def test_kynnys_luetaan_artefaktista_ei_kovakoodata(_with_row):
+    """Jos `build_fpl_xp.MIN_XP_TOTAL` muuttuu, copy seuraa. Kovakoodattu
+    luku jaisi vaittamaan vanhaa rajaa eika mikaan kaataisi."""
+    rivi, _, _ = SYYT["kynnyksen_alla_mutta_pelikelpoinen"]
+    _with_row(rivi)
+    t1 = pl.compare_players([OUT_ID, MID_A])["verdict"]["text"]
+    assert "1 xP" in t1 and "6-gameweek horizon" in t1, t1
+
+    import src.models.fpl_rate_team as rt2
+    vanha = rt2.load_xp()
+    muokattu = dict(vanha)
+    muokattu["meta"] = dict(vanha["meta"], min_xp_total=2.5)
+    rt2.load_xp = lambda: muokattu  # type: ignore[assignment]
+    try:
+        rt._FPL_CACHE.clear()
+        t2 = pl.compare_players([OUT_ID, MID_A])["verdict"]["text"]
+    finally:
+        rt2.load_xp = vanha and rt2.load_xp  # palautus tapahtuu fixturessa
+    assert "2.5 xP" in t2, t2
+
+
+def test_verdict_ei_viittaa_paikkaan_koska_se_menee_kuvaan(_with_row):
+    """Kortilla verdict renderoityy tilastorivien ALLE, joten 'below' osoittaa
+    footeriin. Sama merkkijono kahdella pinnalla ei saa kantaa paikkaviitetta."""
+    rivi, _, _ = SYYT["lipun_takia_sivussa"]
+    _with_row(rivi)
+    teksti = pl.compare_players([OUT_ID, MID_A])["verdict"]["text"]
+    for sana in ("below", "above", "on the left", "on the right"):
+        assert sana not in teksti.lower(), f"paikkaviite {sana!r}: {teksti!r}"
+
+
+def test_mitattua_hantaa_ei_luvata_ilman_lukua(_with_row):
+    """Note lupasi 'last season's measured stats' kaikille, mutta compare
+    nollaa ne alle 450 minuutin kaudelta. Lupaus vain kun luku on rivilla."""
+    rivi, _, _ = SYYT["kynnyksen_alla_mutta_pelikelpoinen"]
+    _with_row(rivi)  # ei last_season-lohkoa -> ei xg90_prev
+    note = pl.compare_players([OUT_ID, MID_A])["meta"]["unprojected_note"]
+    assert "last season" not in note.lower(), note
+    assert "price and ownership" in note, note

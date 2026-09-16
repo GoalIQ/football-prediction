@@ -24,6 +24,12 @@
       "rejected": "2026-09-16",
       "why": "kierrokseton ja vahvempi kuin lahde: FPL:n chance_of_playing_next_round koskee VAIN seuraavaa kierrosta, joten viiden kierroksen ikkunan vieressa paljas 'out' vaittaa enemman kuin FPL sanoo. Jakokortti on pysyva kuva, joka vaittaisi sita viela senkin jalkeen kun lippu nousee. Backendin oma sanamuoto on 'unavailable in FPL' eika ota kantaa syyhyn.",
       "replacement": "'{chance_next}% to play GW{first} in FPL, no projection', tai ilman lukua 'unavailable in FPL, no projection' (Replacements.svelte targetCardValue / FantasyTools.tsx targetCardValue)"
+    },
+    {
+      "phrase": "unavailable in FPL",
+      "rejected": "2026-09-16",
+      "why": "kovakoodattu syy joka on EPATOSI osalla riveista. Mitattu 16.9 artefaktista: 178 excluded-rivista 2 on `below_min_xp`, ja niilla FPL-status on `a` (Lewis, MCI, ei uutisia) tai `d` (Gruev, 25 %). Heista sanoisimme kuvassa etta FPL listaa heidat unavailableksi, kun FPL:n oma bootstrap sanoo muuta — lukija kumoaa sen yhdella ilmaisella kutsulla. Syy on rivilla valmiina (excluded_reason/status/chance_next).",
+      "replacement": "kortilla 'no xP' (tosi aina, ei vanhene kierroksen vaihtuessa); teksteissa johdettu syy `_no_xp_reason()` (src/models/fpl_planner.py)"
     }
   ],
   "poikkeukset": {},

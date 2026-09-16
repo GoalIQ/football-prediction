@@ -660,6 +660,61 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
     return out
 
 
+def _no_xp_reason(row: dict, horizon: int | None = None,
+                  min_xp: float | None = None) -> str:
+    """Miksi rivilla ei ole xP:ta — JOHDETTU rivista, ei kovakoodattu.
+
+    PORTTI 16.9 (blokkasi ensimmaisen versioni): kirjoitin syyksi kiinteasti
+    "FPL lists him as unavailable". Mitattu samana paivana artefaktista: 178
+    `excluded`-rivista 176 on `unavailable` mutta KAKSI on `below_min_xp`, ja
+    niilla FPL:n status on `a` (Lewis, MCI — ei uutisia, taysin pelikelpoinen)
+    ja `d` (Gruev, 25 % mahdollisuus pelata). Lewisista olisimme sanoneet
+    kuvassa etta FPL listaa hanet unavailableksi; FPL:n oma bootstrap sanoo
+    `status: "a"` ja tyhjan news-kentan. Sanoimme siis eri asian kuin lahde,
+    ja lukija olisi kumonnut sen yhdella ilmaisella kutsulla.
+
+    Syy on rivilla valmiina (`excluded_reason`, `status`, `chance_next`) —
+    kovakoodaus oli valinta olla lukematta sita.
+    """
+    if row.get("excluded_reason") == "below_min_xp":
+        # Kynnys luetaan ARTEFAKTISTA (meta.min_xp_total), ei kirjoiteta
+        # kasin: jos build_fpl_xp.py:n MIN_XP_TOTAL muuttuu, copy seuraa
+        # eika jaa vaittamaan vanhaa lukua.
+        raja = "{:g} xP".format(min_xp) if min_xp is not None else "the cutoff"
+        # Muoto "{n}-gameweek horizon" on talon sisainen saanto
+        # (tests/test_hold_copy_scope.py); se nappasi ensimmaisen sanamuotoni.
+        return ("the model projects him under {} on the {}-gameweek horizon"
+                .format(raja, horizon) if horizon else
+                "the model projects him under {} over the horizon".format(raja))
+    status = row.get("status") or "a"
+    chance = row.get("chance_next")
+    if status == "d" and chance is not None:
+        return "FPL gives him a {}% chance of playing the next round".format(chance)
+    if status in ("i", "u", "s", "n") or chance == 0:
+        return "FPL lists him as unavailable"
+    return "he is outside this projection"
+
+
+def _unprojected_note(rows: list[dict], horizon: int | None,
+                      min_xp: float | None = None) -> str:
+    """Selitys nakymalle. Mitattu hanta VAIN kun luku on oikeasti rivilla:
+    `xg90_prev` puuttuu alle 450 minuutin kaudelta, ja lupaus siita etta
+    "viime kauden mitatut luvut ovat tallella" olisi silloin epatosi."""
+    osat = []
+    for r in rows:
+        if r["projected"]:
+            continue
+        teksti = "{} has no xP because {}.".format(
+            r["web_name"], _no_xp_reason(r, horizon, min_xp))
+        if r.get("xg90_prev") is not None:
+            teksti += (" His price, ownership and last season's numbers are "
+                       "in the rows below.")
+        else:
+            teksti += " His price and ownership are still current."
+        osat.append(teksti)
+    return " ".join(osat)
+
+
 def compare_players(player_ids: list[int],
                     squad: dict | None = None) -> dict:
     """2–4 pelaajan rinnakkaisvertailu + suora kanta xP-erolla.
@@ -707,6 +762,11 @@ def compare_players(player_ids: list[int],
             unprojected.append(p["web_name"])
         row = {
             "projected": projected,
+            # Syy kulkee rivilla: ilman tata `_no_xp_reason` ei nae eroa
+            # "FPL merkitsi sivuun" ja "malli ei yllä kynnykseen" valilla ja
+            # tuottaa kehapaatelman ("outside the projection because he is
+            # outside this projection"). Mitattu 16.9.
+            "excluded_reason": p.get("excluded_reason"),
             "status": p.get("status") or "a",
             "chance_next": p.get("chance_next"),
             "news": (p.get("news") or "")[:140],
@@ -747,6 +807,8 @@ def compare_players(player_ids: list[int],
     # Kanta lasketaan VAIN projektoiduista: xP-eroa ei ole olemassa riville
     # jolla ei ole xP:ta, ja nollan kayttaminen tekisi sivussa olevasta
     # automaattisesti huonoimman — se olisi mallin vaite, ei mittaus.
+    horizon = xp_data["meta"].get("horizon_gw")
+    min_xp = xp_data["meta"].get("min_xp_total")
     ranked = sorted((r for r in rows if r["projected"]),
                     key=lambda r: r["xp_horizon_total"], reverse=True)
     if len(ranked) >= 2:
@@ -764,15 +826,16 @@ def compare_players(player_ids: list[int],
     else:
         # Yksi tai nolla projektoitua riviä: ei kantaa. Teksti nimeaa syyn
         # eika jata tyhjaa kohtaa jonka lukija tulkitsee viaksi.
-        nimet = ", ".join(unprojected)
+        # Teksti menee myos jaettavaan kuvaan, joten se ei saa sisaltaa
+        # paikkaviitetta ("below"): kortilla se renderoityy tilastorivien ALLE.
+        osat = ["{} is outside the projection because {}".format(
+            r["web_name"], _no_xp_reason(r, horizon, min_xp))
+            for r in rows if not r["projected"]]
         verdict = {
             "pick": None,
             "margin_xp_horizon": None,
-            "text": ("No projected comparison: FPL lists {} as unavailable, "
-                     "so there is no expected-points number to rank. The "
-                     "measured columns below still compare."
-                     .format(nimet) if nimet else
-                     "No projected comparison is available."),
+            "text": ("No xP to rank: " + "; ".join(osat) + "."
+                     if osat else "No projected comparison is available."),
         }
     meta = {"generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
@@ -783,14 +846,11 @@ def compare_players(player_ids: list[int],
             # Puuttuvat projektiot nimeltä: klientti voi merkitä sarakkeen
             # eikä lukija lue tyhjää lukua renderöintivirheeksi.
             "unprojected": unprojected,
-            "unprojected_note": (
-                "{} has no projection because FPL lists {} as unavailable. "
-                "Expected-points rows are empty for {}; price, ownership and "
-                "last season's measured stats are not."
-                .format(", ".join(unprojected),
-                        "them" if len(unprojected) > 1 else "him",
-                        "them" if len(unprojected) > 1 else "him")
-                if unprojected else None)}
+            # PORTTI 16.9: aiempi versio lupasi "last season's measured stats"
+            # kaikille, mutta compare nollaa ne alle 450 minuutin kaudelta
+            # (Lewis: 401 min) — lupaus oli epatosi tasan samalla rivilla joka
+            # muutenkin oli vaarin. Hanta lisataan vain kun luku on olemassa.
+            "unprojected_note": _unprojected_note(rows, horizon, min_xp) or None}
     if squad is not None:
         meta["squad"] = squad_meta(squad)
     return {
@@ -1013,16 +1073,20 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             # ei virhe: ilman tata lippua klientti lukisi tyhjan xP-luvun
             # renderointivirheeksi ja "vs"-sarakkeen nollaksi.
             "target_projected": target_projected,
-            # Sanamuoto: "unavailable in FPL" on tarkistettavissa ilmaiselta
-            # pinnalta (FPL:n oma lippu) eika ota kantaa syyhyn. `news` on
-            # FPL:n oma teksti sellaisenaan, ei meidan tulkintamme.
+            # PORTTI 16.9: syy oli kovakoodattu "FPL lists him as unavailable".
+            # Kahdella rivilla 178:sta se on epatosi (`below_min_xp`, FPL-status
+            # `a`), joten syy JOHDETAAN rivista samalla lukijalla kuin
+            # Comparessa. `news` on FPL:n oma teksti sellaisenaan.
             "target_note": (None if target_projected else
-                            "{} has no projection right now because FPL lists "
-                            "him as unavailable{}. The rows below are ranked on "
-                            "their own expected points over the window, and the "
-                            "gap column is empty because there is no projection "
-                            "to compare against.".format(
+                            "{} has no projection right now because {}{}. The "
+                            "rows below are ranked on their own expected points "
+                            "over the window, and the gap column is empty "
+                            "because there is no projection to compare "
+                            "against.".format(
                                 target["web_name"],
+                                _no_xp_reason(target,
+                                              xp_data["meta"].get("horizon_gw"),
+                                              xp_data["meta"].get("min_xp_total")),
                                 " ({})".format((target.get("news") or "").strip()[:80])
                                 if (target.get("news") or "").strip() else "")),
             **meta_squad,
