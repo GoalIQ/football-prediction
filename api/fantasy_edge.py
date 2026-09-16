@@ -179,6 +179,15 @@ def _greedy_budget_xi(pool: list[dict], key,
     # bank mukana) kun se tiedetaan; 100,0 m vain mallin omalle rungolle.
     xi_budget = budget_tenths - bench_reserve
     min_price = min(p["price"] for p in pool)
+    # 16.9 MITATTU VIKA: varaus oli `slots_left * min_price`, jossa min_price on
+    # KOKO poolin halvin. Se on aliarvio aina kun jokin pakollinen positio on
+    # kalliimpi kuin halvin pelaaja. Tuotannossa 16.9: halvin pelaaja 3,9 m
+    # (DEF), halvin maalivahti 4,0 m -> ahne kaytti 76,3 m kymmeneen
+    # kenttapelaajaan ja maalivahdille jai 3,9 m. Yhden kymmenyksen vaje, ja
+    # koko `/api/fantasy/chip-ev` vastasi 503 ilman entrya.
+    # Varaus lasketaan nyt POSITIOKOHTAISESTI: jokainen viela tayttamatta oleva
+    # XI_MIN-vaje maksaa vahintaan oman positionsa halvimman.
+    cheapest_by_pos = {t: min(p["price"] for p in by_pos[t]) for t in by_pos}
 
     ranked = sorted(pool, key=key, reverse=True)
     xi: list[dict] = []
@@ -193,12 +202,18 @@ def _greedy_budget_xi(pool: list[dict], key,
             continue
         if clubs.get(p["club"], 0) >= MAX_PER_CLUB:
             continue
-        need_min = sum(max(0, XI_MIN[q] - counts[q] - (1 if q == t else 0))
-                       for q in XI_MIN)
+        deficits = [cheapest_by_pos[q]
+                    for q in XI_MIN
+                    for _ in range(max(0, XI_MIN[q] - counts[q]
+                                       - (1 if q == t else 0)))]
+        need_min = len(deficits)
         slots_left = 11 - len(xi) - 1
         if need_min > slots_left:
             continue
-        if cost + p["price"] + slots_left * min_price > xi_budget:
+        # Alaraja jaljella olevien paikkojen hinnalle: pakolliset positiot
+        # omalla halvimmallaan, loput poolin halvimmalla.
+        reserve = sum(deficits) + (slots_left - need_min) * min_price
+        if cost + p["price"] + reserve > xi_budget:
             continue
         xi.append(p)
         counts[t] += 1

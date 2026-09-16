@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { XpResponse } from '$lib/api';
+	import { draftPool, type XpResponse } from '$lib/api';
 	import {
 		fetchComparePlayers,
 		type CompareResponse,
@@ -37,8 +37,15 @@
 	let error = $state<string | null>(null);
 	let data = $state<CompareResponse | null>(null);
 
+	/* UNPROJECTED-SUBJECT (16.9): valitsin luki `xp.players`, eli VAIN
+	 * projektiossa olevat — sama vika kuin Replacementsissa. Sivussa oleva
+	 * pelaaja katosi vertailusta tasan silloin kun "kumpi naista" on kysymys.
+	 * Lahde on nyt sama yksi lukija kuin draftilla, fit-lukoilla ja
+	 * Replacementsilla (`draftPool`). Rivi merkitaan `out`-sanalla, jotta
+	 * lukija tietaa ennen valintaa ettei xP-sarakkeita tule. */
+	let outIds = $derived(new Set((xp.excluded ?? []).map((e) => e.id)));
 	let options = $derived(
-		[...xp.players].sort(
+		[...draftPool(xp)].sort(
 			(a, b) => a.web_name.localeCompare(b.web_name) || a.team_short.localeCompare(b.team_short)
 		)
 	);
@@ -47,7 +54,7 @@
 	 * Label → id -kartta; törmäys (sama nimi+klubi+pos) on käytännössä
 	 * mahdoton, ja jos tulee, viimeinen voittaa (ei kaadu). */
 	const optionLabel = (p: (typeof options)[number]) =>
-		`${p.web_name} (${p.team_short}, ${p.pos})`;
+		`${p.web_name} (${p.team_short}, ${p.pos})${outIds.has(p.id) ? ' - out' : ''}`;
 	let byLabel = $derived(new Map(options.map((p) => [optionLabel(p), p.id])));
 	let texts = $state<string[]>(['', '', '', '']);
 	function onPickInput(i: number, value: string) {
@@ -109,14 +116,23 @@
 					};
 				}),
 				stats: [
+					/* 16.9: sivussa oleva pelaaja voi olla vertailussa mukana, eika
+					   hanella ole mallin lukua. Kortti sanoo "no xP", ei jata
+					   tyhjaksi eika korvaa nollalla — nolla nayttaisi mitatulta
+					   luvulta juuri siina muodossa joka jaetaan kuvana.
+					   EI sanaa "out": se olisi kierrokseton vaite "xP 6 GWS"
+					   -rivin vieressa, eli tasan se muoto jonka portti hylkasi
+					   16.9 Replacements-kortilta. */
 					{
 						label: 'xP / GW',
-						values: rows.map((p) => p.xp_per_gw.toFixed(2)),
+						values: rows.map((p) => (p.xp_per_gw != null ? p.xp_per_gw.toFixed(2) : 'no xP')),
 						bestIndex: best(rows.map((p) => p.xp_per_gw))
 					},
 					{
 						label: `xP ${data.meta.horizon_gw ?? 6} GWS`,
-						values: rows.map((p) => p.xp_horizon_total.toFixed(1)),
+						values: rows.map((p) =>
+							p.xp_horizon_total != null ? p.xp_horizon_total.toFixed(1) : 'no xP'
+						),
 						bestIndex: best(rows.map((p) => p.xp_horizon_total))
 					},
 					{
@@ -129,10 +145,16 @@
 					{
 						label: 'xP / £m',
 						values: rows.map((p) =>
-							p.price > 0 ? (p.xp_horizon_total / p.price).toFixed(2) : '-'
+							p.price > 0 && p.xp_horizon_total != null
+								? (p.xp_horizon_total / p.price).toFixed(2)
+								: '-'
 						),
 						bestIndex: best(
-							rows.map((p) => (p.price > 0 ? p.xp_horizon_total / p.price : null))
+							rows.map((p) =>
+								p.price > 0 && p.xp_horizon_total != null
+									? p.xp_horizon_total / p.price
+									: null
+							)
 						)
 					},
 					{
@@ -270,6 +292,9 @@
 			{sharing ? 'Rendering…' : shareButtonLabel()}
 		</button>
 	</div>
+	{#if data.meta.unprojected_note}
+		<p class="muted">{data.meta.unprojected_note}</p>
+	{/if}
 	<!-- 🔴 3.9 ilta: tama oli neljasta hiljaisesta aukosta pahin. Kortti nayttaa
 	     "owned"-merkin vain omistamillesi, ja ilman entrya `owned` on null
 	     JOKAISELLA — eli merkin PUUTTUMINEN luetaan vaitteeksi "et omista
@@ -286,14 +311,28 @@
 	{/if}
 	<div class="cmp-grid">
 		{#each data.players as p (p.id)}
-			<div class="card cmp-card" class:winner={p.id === data.verdict.pick.id}>
+			<div class="card cmp-card" class:winner={p.id === data.verdict.pick?.id}>
 				<h3>
 					{p.web_name} <span class="muted">({p.team_short}, {p.pos})</span>{#if p.owned}
 						<span class="own-badge" title="In your squad">owned</span>{/if}
 				</h3>
 				<dl>
-					<div><dt>Total xP, next {data.meta.horizon_gw ?? 6} GWs</dt><dd class="strong">{p.xp_horizon_total.toFixed(2)}</dd></div>
-					<div><dt>xP per GW</dt><dd>{p.xp_per_gw.toFixed(2)}</dd></div>
+					<div>
+						<dt>Total xP, next {data.meta.horizon_gw ?? 6} GWs</dt>
+						<dd class="strong">
+							{#if p.xp_horizon_total != null}{p.xp_horizon_total.toFixed(2)}{:else}<span
+									class="muted">no projection</span
+								>{/if}
+						</dd>
+					</div>
+					<div>
+						<dt>xP per GW</dt>
+						<dd>
+							{#if p.xp_per_gw != null}{p.xp_per_gw.toFixed(2)}{:else}<span class="muted"
+									>no projection</span
+								>{/if}
+						</dd>
+					</div>
 					<div><dt>Price</dt><dd>{p.price.toFixed(1)}</dd></div>
 					<div><dt>Owned %</dt><dd>{p.owned_pct != null ? p.owned_pct.toFixed(1) : 'n/a'}</dd></div>
 					<div>

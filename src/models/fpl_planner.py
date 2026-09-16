@@ -674,6 +674,15 @@ def compare_players(player_ids: list[int],
     if len(set(player_ids)) != len(player_ids):
         raise RateTeamError(400, "compare IDs must be distinct.")
     xp_data, _bootstrap, _pool, pool_by_id = build_context()
+    # UNPROJECTED-COMPARE (16.9): vertailu hyvaksyy pelaajan jolla ei ole
+    # projektiota — sama lukija kuin replacementsilla. Rowanin 15.9 raportin
+    # jatko: kun loukkaantunut loytyy Replacementsista mutta EI Comparesta,
+    # tyokalupari valehtelee siita kenesta voi kysya. Mallin luvut jaavat
+    # NULLiksi (nolla olisi ennuste), mutta hinta, omistus, FPL:n lippu ja
+    # EDELLISKAUDEN MITATUT raakastatit kulkevat normaalisti — ne ovat
+    # historiaa eivatka ennuste, ja juuri ne ovat se mita loukkaantuneesta
+    # pelaajasta voi mielekkaasti verrata.
+    from src.models.fpl_rate_team import resolve_subject_row
 
     # 6.8 compare-V2 (Villen idea): pelipaikkarelevantit RAAKAstatit xP-osuuksien
     # rinnalle — DEF saa SAMAN DefCon hit-raten jota leaders-lista käyttää
@@ -691,11 +700,16 @@ def compare_players(player_ids: list[int],
         pass
 
     rows = []
+    unprojected: list[str] = []
     for pid in player_ids:
-        p = pool_by_id.get(pid)
-        if p is None:
-            raise RateTeamError(404, f"Player {pid} has no xP projection.")
+        p, projected = resolve_subject_row(xp_data, _bootstrap, pool_by_id, pid)
+        if not projected:
+            unprojected.append(p["web_name"])
         row = {
+            "projected": projected,
+            "status": p.get("status") or "a",
+            "chance_next": p.get("chance_next"),
+            "news": (p.get("news") or "")[:140],
             "id": p["id"], "web_name": p["web_name"],
             "team_short": p["team_short"], "pos": POS_NAME[p["element_type"]],
             "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
@@ -707,8 +721,10 @@ def compare_players(player_ids: list[int],
             # Math.round siita antoi 92 kun sivut nayttivat 91.
             "p_start": p.get("p_start"),
             "minutes_confidence": p.get("minutes_confidence"),
-            "xp_per_gw": round(p["xp_per_gw"], 2),
-            "xp_horizon_total": round(p["xp_horizon_total"], 2),
+            # Mallin luvut ovat NULL ilman projektiota: nolla olisi ennuste.
+            "xp_per_gw": round(p["xp_per_gw"], 2) if projected else None,
+            "xp_horizon_total": (round(p["xp_horizon_total"], 2)
+                                 if projected else None),
             "components": p.get("components"),
             "components_gw": p.get("components_gw"),
         }
@@ -728,23 +744,53 @@ def compare_players(player_ids: list[int],
         if squad is not None and squad.get("available"):
             row["owned"] = pid in squad["ids"]
         rows.append(row)
-    ranked = sorted(rows, key=lambda r: r["xp_horizon_total"], reverse=True)
-    margin = round(ranked[0]["xp_horizon_total"] - ranked[1]["xp_horizon_total"], 2)
-    verdict = {
-        "pick": {"id": ranked[0]["id"], "web_name": ranked[0]["web_name"]},
-        "margin_xp_horizon": margin,
-        "text": (f"{ranked[0]['web_name']} projects {margin} xP more than "
-                 f"{ranked[1]['web_name']} over the horizon."
-                 if margin >= 0.5 else
-                 f"Too close to call - {ranked[0]['web_name']} edges it by "
-                 f"{margin} xP over the horizon."),
-    }
+    # Kanta lasketaan VAIN projektoiduista: xP-eroa ei ole olemassa riville
+    # jolla ei ole xP:ta, ja nollan kayttaminen tekisi sivussa olevasta
+    # automaattisesti huonoimman — se olisi mallin vaite, ei mittaus.
+    ranked = sorted((r for r in rows if r["projected"]),
+                    key=lambda r: r["xp_horizon_total"], reverse=True)
+    if len(ranked) >= 2:
+        margin = round(ranked[0]["xp_horizon_total"]
+                       - ranked[1]["xp_horizon_total"], 2)
+        verdict = {
+            "pick": {"id": ranked[0]["id"], "web_name": ranked[0]["web_name"]},
+            "margin_xp_horizon": margin,
+            "text": (f"{ranked[0]['web_name']} projects {margin} xP more than "
+                     f"{ranked[1]['web_name']} over the horizon."
+                     if margin >= 0.5 else
+                     f"Too close to call - {ranked[0]['web_name']} edges it by "
+                     f"{margin} xP over the horizon."),
+        }
+    else:
+        # Yksi tai nolla projektoitua riviä: ei kantaa. Teksti nimeaa syyn
+        # eika jata tyhjaa kohtaa jonka lukija tulkitsee viaksi.
+        nimet = ", ".join(unprojected)
+        verdict = {
+            "pick": None,
+            "margin_xp_horizon": None,
+            "text": ("No projected comparison: FPL lists {} as unavailable, "
+                     "so there is no expected-points number to rank. The "
+                     "measured columns below still compare."
+                     .format(nimet) if nimet else
+                     "No projected comparison is available."),
+        }
     meta = {"generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
             # V2: mistä raakastatit tulevat — frontend näyttää katteen
             # eikä myy edelliskauden lukua nykykauden mittauksena.
             "defcon_basis_season": dc_basis_season,
-            "defcon_available": bool(dc_by_id)}
+            "defcon_available": bool(dc_by_id),
+            # Puuttuvat projektiot nimeltä: klientti voi merkitä sarakkeen
+            # eikä lukija lue tyhjää lukua renderöintivirheeksi.
+            "unprojected": unprojected,
+            "unprojected_note": (
+                "{} has no projection because FPL lists {} as unavailable. "
+                "Expected-points rows are empty for {}; price, ownership and "
+                "last season's measured stats are not."
+                .format(", ".join(unprojected),
+                        "them" if len(unprojected) > 1 else "him",
+                        "them" if len(unprojected) > 1 else "him")
+                if unprojected else None)}
     if squad is not None:
         meta["squad"] = squad_meta(squad)
     return {

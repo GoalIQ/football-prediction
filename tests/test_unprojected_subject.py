@@ -1,5 +1,5 @@
-"""UNAVAILABLE-TARGET (16.9): "kuka korvaa X:n" on vastattava silloinkin kun
-X:lla ei ole projektiota.
+"""UNPROJECTED-SUBJECT (16.9): tyokalu on vastattava myos pelaajasta jolla ei
+ole projektiota — seka Replacements etta Compare.
 
 Rowan (luoja) raportoi 15.9: Elanga ei loytynyt Replacements-hausta. Mitattu
 tuotannosta samana paivana: FPL merkitsi statuksen `i`, projektio siirsi hanet
@@ -14,6 +14,13 @@ tilalla, koska pelaajan saatavuus on juuri se tila joka vaihtuu koodin alla:
   2. kohde on `excluded` (injury)  -> vastaus tulee, luvut NULL, ei koskaan 0
   3. kohde on `excluded` (siirtynyt seurasta) -> sama
 Ja joka vaiheessa: kohde EI saa ilmestya omaan korvaajalistaansa.
+
+COMPARE (16.9, jatko): sama vika oli Comparessa ja se jai 16.9 aamulla
+korjaamatta — `/api/fantasy/compare?players=454,94` vastasi 404 samalla
+viestilla. Tyokalupari valehteli siita kenesta voi kysya: loukkaantunut
+loytyi Replacementsista mutta ei Comparesta. Molemmat lukevat nyt saman
+`resolve_subject_row`-lukijan, joten ne EIVAT VOI eriytya — sita vahtii
+`test_molemmat_tyokalut_hyvaksyvat_saman_pelaajan`.
 """
 from __future__ import annotations
 
@@ -40,7 +47,11 @@ def _excluded_row(status: str, news: str) -> dict:
     return {"id": OUT_ID, "web_name": "Sidelined", "team_short": "TST",
             "pos": "MID", "price": 7.0, "owned_pct": 12.5, "status": status,
             "news": news, "chance_next": 0, "in_projection": False,
-            "excluded_reason": "unavailable"}
+            "excluded_reason": "unavailable",
+            # Edelliskauden MITATUT luvut: nama eivat ole ennuste, joten ne
+            # kulkevat myos projektoimattomalla rivilla (Compare nayttaa ne).
+            "last_season": {"season": "2025/26", "minutes": 2700, "xg": 9.0,
+                            "xa": 4.5, "goals": 10, "assists": 5}}
 
 
 @pytest.fixture
@@ -114,4 +125,87 @@ def test_unknown_player_is_still_404(_with_excluded):
     _with_excluded("i", "Unspecified injury - Unknown return date")
     with pytest.raises(rt.RateTeamError) as e:
         pl.replacements(99999)
+    assert e.value.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# COMPARE: sama lukija, sama invariantti
+# ---------------------------------------------------------------------------
+
+# Kaksi projektoitua MID:ia fikstuurista (POOL: MID 15-24, paras 15).
+MID_A, MID_B = 15, 16
+
+
+@pytest.mark.parametrize("status,news", [
+    ("i", "Unspecified injury - Unknown return date"),
+    ("u", "Has joined Al Hilal permanently"),
+])
+def test_compare_hyvaksyy_pelaajan_ilman_projektiota(_with_excluded, status, news):
+    """Vertailu ei saa kaatua 404:aan siksi etta toinen on sivussa — juuri
+    silloin kysytaan 'kumpi naista'."""
+    _with_excluded(status, news)
+    out = pl.compare_players([OUT_ID, MID_A])
+    nimet = [r["web_name"] for r in out["players"]]
+    assert "Sidelined" in nimet, nimet
+    rivi = next(r for r in out["players"] if r["id"] == OUT_ID)
+    assert rivi["projected"] is False
+    # NULL, ei nolla: nolla tekisi sivussa olevasta automaattisesti
+    # huonoimman, ja se olisi mallin vaite eika mittaus.
+    assert rivi["xp_horizon_total"] is None
+    assert rivi["xp_per_gw"] is None
+    assert rivi["status"] == status
+    # Mitattu historia kulkee: se on se mita sivussa olevasta voi verrata.
+    assert rivi["xg90_prev"] == round(9.0 * 90.0 / 2700, 2)
+    assert rivi["prev_season"] == "2025/26"
+    # Projektoitu rivi sailyy ennallaan.
+    toinen = next(r for r in out["players"] if r["id"] == MID_A)
+    assert toinen["projected"] is True
+    assert isinstance(toinen["xp_horizon_total"], float)
+    assert out["meta"]["unprojected"] == ["Sidelined"]
+    assert "unavailable" in (out["meta"]["unprojected_note"] or "")
+
+
+def test_compare_verdict_ei_ranki_ilman_kahta_projektoitua(_with_excluded):
+    """Yksi projektoitu rivi -> ei kantaa. Ilman tata `ranked[1]` olisi
+    IndexError tai, pahempaa, sivussa oleva nollalla viimeisena."""
+    _with_excluded("i", "Unspecified injury - Unknown return date")
+    out = pl.compare_players([OUT_ID, MID_A])
+    v = out["verdict"]
+    assert v["pick"] is None
+    assert v["margin_xp_horizon"] is None
+    assert "Sidelined" in v["text"] and "no expected-points number" in v["text"]
+
+
+def test_compare_verdict_lasketaan_projektoiduista_kun_niita_on_kaksi(_with_excluded):
+    """Kolme pelaajaa, joista yksi sivussa: kanta lasketaan kahdesta
+    projektoidusta eika sivussa oleva paase mukaan jarjestykseen."""
+    _with_excluded("i", "Unspecified injury - Unknown return date")
+    out = pl.compare_players([OUT_ID, MID_A, MID_B])
+    v = out["verdict"]
+    assert v["pick"] is not None
+    assert v["pick"]["id"] in (MID_A, MID_B)
+    assert v["margin_xp_horizon"] is not None
+    assert "Sidelined" not in v["text"]
+
+
+def test_molemmat_tyokalut_hyvaksyvat_saman_pelaajan(_with_excluded):
+    """VAHTI ERIYTYMISTA VASTAAN: 16.9 Replacements korjattiin ja Compare jai
+    404:aan, eli sama kysymys sai kaksi eri vastausta riippuen siita minka
+    valilehden kayttaja avasi. Molemmat kayttavat nyt samaa lukijaa; tama
+    testi kaatuu jos toinen niista lakkaa."""
+    _with_excluded("i", "Unspecified injury - Unknown return date")
+    r = pl.replacements(OUT_ID, gws=5)
+    c = pl.compare_players([OUT_ID, MID_A])
+    assert r["target"]["web_name"] == "Sidelined"
+    assert any(x["id"] == OUT_ID for x in c["players"])
+    # Sama lippu samasta lahteesta molemmilla pinnoilla.
+    assert r["target"]["projected"] is False
+    assert next(x for x in c["players"] if x["id"] == OUT_ID)["projected"] is False
+
+
+def test_compare_tuntematon_id_on_yha_404(_with_excluded):
+    """Aukko ei saa levita Comparessakaan."""
+    _with_excluded("i", "Unspecified injury - Unknown return date")
+    with pytest.raises(rt.RateTeamError) as e:
+        pl.compare_players([99999, MID_A])
     assert e.value.status_code == 404

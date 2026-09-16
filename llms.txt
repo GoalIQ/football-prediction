@@ -6,7 +6,7 @@
 ## Football match predictions (evergreen)
 - [Football match predictions](https://goaliq.app/predictions): GoalIQ predicts any football match - win probability for each side, expected goals (xG) and the most likely scorelines - from a Dixon-Coles model. Covers the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, the Champions League, Brasileirao (plays through the European summer), the Championship, Eredivisie and Primeira Liga.
 - Every model prediction is logged before kick-off and graded after the match, hits and misses included. The current aggregate accuracy is published on the page and as machine-readable JSON at https://api.goaliq.app/api/accuracy.
-- Each covered league has a hub page plus a dedicated page per fixture for the whole season. Hub: https://goaliq.app/predictions/<league>/ (ItemList JSON-LD, the fixtures coming up). Fixture: https://goaliq.app/predictions/<league>/<home-team>-vs-<away-team> (SportsEvent JSON-LD), for example https://goaliq.app/predictions/serie-a/inter-vs-udinese.
+- Each covered league has a hub page plus a dedicated page per fixture for the whole season. Hub: https://goaliq.app/predictions/<league>/ (ItemList JSON-LD, the fixtures coming up). Fixture: https://goaliq.app/predictions/<league>/<home-team>-vs-<away-team> (SportsEvent JSON-LD).
 <!-- GEN:LLMS-START -->
 - [Premier League predictions](https://goaliq.app/predictions/premier-league/): 340 fixture pages.
 - [La Liga predictions](https://goaliq.app/predictions/la-liga/): 326 fixture pages.
@@ -18,6 +18,7 @@
 - [Championship predictions](https://goaliq.app/predictions/championship/): 468 fixture pages.
 - [Eredivisie predictions](https://goaliq.app/predictions/eredivisie/): 252 fixture pages.
 - [Primeira Liga predictions](https://goaliq.app/predictions/primeira-liga/): 252 fixture pages.
+- Example fixture page live right now: https://goaliq.app/predictions/premier-league/arsenal-vs-aston-villa
 - Live now: 10 league hubs and 2763 fixture pages, regenerated every three hours as fixtures are played and new ones are logged.
 <!-- GEN:LLMS-END -->
 - Each fixture page shows the model's win, draw and loss probability for that match. The number on the page is the prediction that was logged before kick-off and is graded afterwards in the public track record, so the page and the record cannot disagree. Expected goals and the most likely scoreline for a fixture are a GoalIQ Premium feature and are not on these pages.

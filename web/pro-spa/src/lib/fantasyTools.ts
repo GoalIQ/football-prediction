@@ -592,8 +592,16 @@ export interface ComparePlayer {
 	/** 29.8: Start%:n ainoa lahde (0..1); vanha payload ei tuo -> fallback. */
 	p_start?: number | null;
 	minutes_confidence: 'low' | 'med' | 'high' | null;
-	xp_per_gw: number;
-	xp_horizon_total: number;
+	/** UNPROJECTED-SUBJECT (16.9): `null` kun FPL listaa pelaajan sivussa eika
+	 *  hanella ole projektiota. Nolla olisi ennuste, tyhja on tieto ettei
+	 *  ennustetta ole. Vanha backend ei palauta nullia. */
+	xp_per_gw: number | null;
+	xp_horizon_total: number | null;
+	/** Puuttuu vanhasta backendista -> tulkitaan projektoiduksi. */
+	projected?: boolean;
+	status?: string;
+	chance_next?: number | null;
+	news?: string;
 	components: Record<string, number> | null;
 	components_gw: number | null;
 	/* 6.8 compare-V2: pelipaikkarelevantit raakastatit. Optionaaliset —
@@ -608,11 +616,20 @@ export interface ComparePlayer {
 }
 
 export interface CompareResponse {
-	meta: { horizon_gw?: number; squad?: SquadMeta; [key: string]: unknown };
+	meta: {
+		horizon_gw?: number;
+		squad?: SquadMeta;
+		/** UNPROJECTED-SUBJECT (16.9): sivussa olevien nimet + selitys. */
+		unprojected?: string[];
+		unprojected_note?: string | null;
+		[key: string]: unknown;
+	};
 	players: ComparePlayer[];
 	verdict: {
-		pick: { id: number; web_name: string };
-		margin_xp_horizon: number;
+		/** `null` kun projektoituja rivejä on alle kaksi (16.9): kantaa ei voi
+		 *  laskea, ja `text` kertoo syyn. */
+		pick: { id: number; web_name: string } | null;
+		margin_xp_horizon: number | null;
 		text: string;
 	};
 }

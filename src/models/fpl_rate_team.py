@@ -1432,6 +1432,12 @@ def resolve_subject_row(xp_data: dict, bootstrap: dict, by_id: dict[int, dict],
             "news": e.get("news") or boot.get("news"),
             "chance_next": e.get("chance_next"),
             "excluded_reason": e.get("excluded_reason"),
+            # 16.9: edelliskauden raakastatit kulkevat mukana. Ne ovat
+            # mitattua historiaa eivatka mallin ennuste, joten ne ovat
+            # kelvollisia myos pelaajalle jolle ei lasketa xP:ta — ja juuri
+            # ne ovat se mita loukkaantuneesta pelaajasta voi verrata.
+            "last_season": e.get("last_season"),
+            "full_name": e.get("full_name"),
         }, False
     raise RateTeamError(404, "Player {} is not in the FPL player list.".format(player_id))
 

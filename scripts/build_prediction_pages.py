@@ -910,6 +910,24 @@ def update_llms_txt(counts: dict[str, int]) -> bool:
         f"{counts[c]} fixture pages."
         for c in live
     ]
+    # 16.9: esimerkki-URL oli KASIN kirjoitettu GEN-lohkon ulkopuolella ja
+    # osoitti otteluun (serie-a/inter-vs-udinese) joka oli pelattu ja jonka
+    # sivu oli poistettu -> tests/test_llms_txt.py punainen. Staattinen
+    # esimerkki vanhenee aina, koska ottelut ovat ulkoista tilaa joka vaihtuu
+    # tiedoston alla. Esimerkki luetaan nyt LEVYLTA, eli samasta lahteesta
+    # jota portti tarkistaa: silloin se ei voi osoittaa sivuun jota ei ole.
+    esimerkki = None
+    for c in live:
+        hakemisto = ROOT / "predictions" / LEAGUES[c]["slug"]
+        if not hakemisto.exists():
+            continue
+        sivut = sorted(f.stem for f in hakemisto.glob("*.html"))
+        if sivut:
+            esimerkki = ("https://goaliq.app/predictions/"
+                         f"{LEAGUES[c]['slug']}/{sivut[0]}")
+            break
+    if esimerkki:
+        rows.append(f"- Example fixture page live right now: {esimerkki}")
     total = sum(counts[c] for c in live)
     rows.append(
         f"- Live now: {len(live)} league hubs and {total} fixture pages, "
