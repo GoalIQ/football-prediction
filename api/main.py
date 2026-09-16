@@ -4929,7 +4929,8 @@ def fantasy_xp(
     Mobiili (fetchXp) ja SPA hyötyvät molemmat ilman klienttimuutosta.
     """
     from src.models.fpl_xp import (
-        WHY_DEFAULT_LANG, WHY_LANGS, XP_PATHS, attach_why, load_xp, why_stamp,
+        WHY_DEFAULT_LANG, WHY_LANGS, XP_PATHS, attach_minutes_trend, attach_why,
+        load_xp, minutes_trend_stamp, why_stamp,
     )
     # SPL-laajennos (7.8): sama sopimus kuin /api/fantasy — oletus 'fpl' =
     # entinen vastaus, tuntematon avain = 404, ei hiljaista fallbackia.
@@ -4976,6 +4977,16 @@ def fantasy_xp(
     # ei sisaltanyt yhtaan maalivahtia -> ilmainen draft rater oli rikki
     # molemmilla pinnoilla. Pooli menee mukaan aina, jotta klientilla on yksi
     # koodipolku eivatka pinnat voi eriytya; se ei sisalla yhtaan xP-arvoa.
+    # MINUUTTITRENDI (16.9): `xmins_prev` + `xmins_delta` vertailuna
+    # viimeisimpaan JAADYTETTYYN projektioon. Liitetaan vain maskaamattomaan
+    # vastaukseen: maskattu teaser nayttaa 10 rivia, ja laskevien minuuttien
+    # lista on nimenomaan se mita premiumista maksetaan. Vertailukohta on
+    # deadline-freeze, joten luku vastaa kysymykseen "mika on muuttunut sitten
+    # viime kierroksen" eika "mika on muuttunut kolmessa tunnissa".
+    trend_tag = ""
+    if lg == "fpl" and not masked:
+        payload = attach_minutes_trend(payload)
+        trend_tag = minutes_trend_stamp()
     payload = dict(payload)
     payload["pool"] = xp_pool_rows(full_players + full_excluded)
     # ETag erottaa maskatun ja täyden vastauksen: ilman mask-bittiä free-
@@ -5006,17 +5017,32 @@ def fantasy_xp(
     # uutta projektiota -> ilman nostoa ehdollinen pyynto validoisi vanhan
     # vastauksen 304:lla ja luvut jaisivat nakymatta tasan niilta joilla
     # vastaus on jo valimuistissa, eli aktiivisimmilta kayttajilta.
-    schema = "s7"
+    # 16.9 s8: `xmins_prev` + `xmins_delta` ovat serve-time-kenttia joiden
+    # vertailukohta (viimeisin freeze) vaihtuu ILMAN uutta projektiota. Ilman
+    # versionostoa ehdollinen pyynto validoisi vanhan vastauksen 304:lla ja
+    # sarake jaisi tyhjaksi tasan niilta joilla vastaus on jo valimuistissa —
+    # eli aktiivisimmilta kayttajilta. Sama ansa kuin s4-s7:ssa.
+    schema = "s8"
     # Liiga-avain ETagiin: ilman sitä fpl- ja spl-vastaukset voisivat
     # 304-validoitua ristiin samasta selainvälimuistista (sama URL-polku,
     # eri query) — sama vikaluokka kuin mask-bitin puuttuminen olisi.
-    etag = 'W/"xp-{}-{}-{}-{}{}"'.format(
+    # 🔴 16.9: tassa oli VIISI paikanpidinta ja KUUSI argumenttia, ja
+    # `str.format` ei kaadu ylimaarasesta — `trend_tag` katosi aanettomasti ja
+    # ETag olisi validoinut vanhan vastauksen uudella vertailukohdalla.
+    # Loytyi vain koska luin tulostetun ETagin. tests/test_xp_etag_parts.py
+    # vartioi nyt etta jokainen osa on mukana.
+    etag = 'W/"xp-{}-{}-{}-{}{}{}"'.format(
         lg, generated, "m" if masked else "f", schema,
         # KIELI ON OLTAVA ETagissa. Ilman sita es-kayttajan ehdollinen pyynto
         # validoituisi englanninkielisesta valimuistista ja han saisi
         # englantia — eli tasan sen vian jota tama commit korjaa, mutta
         # hiljaa ja vain valimuistin lampoisilla klienteilla.
-        f"-{why_tag}-{wl}" if why_tag else "")
+        f"-{why_tag}-{wl}" if why_tag else "",
+        # 16.9: vertailukohdan kierros ETagiin. `schema` erottaa KENTAN
+        # olemassaolon, mutta ei sen ARVOA: kun uusi freeze ilmestyy
+        # (gw4 -> gw5), `generated_at` voi olla sama ja luvut muuttuvat.
+        # Ilman tata sarake jaisi nayttamaan edellisen kierroksen eroa.
+        f"-{trend_tag}" if trend_tag else "")
     cache_control = "private, max-age=300"
     inm = request.headers.get("if-none-match", "")
     if etag in [t.strip() for t in inm.split(",")]:

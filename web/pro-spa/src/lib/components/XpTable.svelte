@@ -10,6 +10,7 @@
 	import WhyThisPick from './WhyThisPick.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import SetPieceBadges from './SetPieceBadges.svelte';
+	import { startPct } from '$lib/startPct';
 
 	let { data }: { data: XpResponse } = $props();
 
@@ -76,6 +77,33 @@
 		value: {
 			label: 'Value (xP per million, high to low)',
 			cmp: (a: XpPlayer, b: XpPlayer) => xpPerMillion(b) - xpPerMillion(a)
+		},
+		/* 16.9 (Villen tilaus): bonus omana listanaan. Perustelu on mitattu
+		 * eika mielipide — FPL:n oma dokumentaatio sanoo etta kaksi pelaajaa
+		 * voi tehda saman maaran maaleja ja olla 15 pisteen paassa toisistaan
+		 * pelkan bonuksen takia. `e_bonus` on ollut payloadissa 100 %
+		 * kattavuudella, mutta sita ei ole nakynyt yhdessakaan sarakkeessa
+		 * eika listassa — meilla eika kilpailijoilla. */
+		/* 16.9: laskevat minuutit omana listanaan. Hiljainen pistevuoto —
+		 * pelaaja ei katoa listalta, hanen lukunsa vain valuu, ja manageri
+		 * huomaa vasta kun mies on penkilla. Mitattu 16.9: Shaw 68.4 -> 37.3
+		 * xMins 10.2 %:n omistuksella, White 87.6 -> 58.0 (6.5 %). */
+		falling: {
+			label: 'Minutes falling (biggest drop first)',
+			cmp: (a: XpPlayer, b: XpPlayer) =>
+				(a.xmins_delta ?? 1e6) - (b.xmins_delta ?? 1e6) ||
+				b.xp_horizon_total - a.xp_horizon_total
+		},
+		rising: {
+			label: 'Minutes rising (biggest gain first)',
+			cmp: (a: XpPlayer, b: XpPlayer) =>
+				(b.xmins_delta ?? -1e6) - (a.xmins_delta ?? -1e6) ||
+				b.xp_horizon_total - a.xp_horizon_total
+		},
+		bonus: {
+			label: 'Expected bonus per GW (high to low)',
+			cmp: (a: XpPlayer, b: XpPlayer) =>
+				(b.e_bonus ?? -1) - (a.e_bonus ?? -1) || b.xp_horizon_total - a.xp_horizon_total
 		}
 	} as const;
 
@@ -124,6 +152,46 @@
 		if (w) return `GW${w.from}-${w.to} xP (high to low)`;
 		return (SORTS[key as keyof typeof SORTS] ?? SORTS.total).label;
 	}
+
+	/** Kortin arvosarake ja sen nimilappu — YKSI LUKIJA, joka seuraa samaa
+	 *  sorttia kuin jarjestys. Ennen 16.9 kortti tulosti aina `xp_horizon_total`
+	 *  riippumatta siita milla lista oli lajiteltu, eli "10+ %" -lista jaettiin
+	 *  kuvana jossa luki xP. */
+	function cardValue(p: XpPlayer): string {
+		if (sortBy === 'value') return xpPerMillion(p).toFixed(2);
+		if (sortBy === 'bonus') return (p.e_bonus ?? 0).toFixed(2);
+		if (sortBy === 'falling' || sortBy === 'rising') {
+			const d = p.xmins_delta;
+			// Puuttuva vertailukohta ei ole nolla: viiva, ei luku.
+			return d == null ? '-' : `${d > 0 ? '+' : ''}${d.toFixed(0)}`;
+		}
+		if (sortBy === 'haul') return `${Math.round((p.xp_dist?.p_haul ?? 0) * 100)}%`;
+		if (sortBy === 'safe') return `${Math.round((p.xp_dist?.p_blank ?? 0) * 100)}%`;
+		if (sortBy === 'xmins') return `${Math.round(p.xmins ?? 0)}`;
+		if (sortBy === 'starts') {
+			const sp = startPct(p);
+			return sp != null ? `${sp}%` : '-';
+		}
+		if (sortBy === 'owned') return `${(p.owned_pct ?? 0).toFixed(1)}%`;
+		const gw = gwOfSort(sortBy);
+		if (gw != null) return gwXp(p, gw).toFixed(2);
+		const w = windowOfSort(sortBy);
+		if (w) return windowXp(p, w.from, w.to).toFixed(2);
+		return p.xp_horizon_total.toFixed(1);
+	}
+	let cardValueLabel = $derived.by(() => {
+		if (sortBy === 'value') return 'xP/£m';
+		if (sortBy === 'bonus') return 'BONUS/GW';
+		if (sortBy === 'falling' || sortBy === 'rising') return 'xMINS Δ';
+		if (sortBy === 'haul') return '10+ PTS';
+		if (sortBy === 'safe') return 'BLANK';
+		if (sortBy === 'xmins') return 'xMINS';
+		if (sortBy === 'starts') return 'START %';
+		if (sortBy === 'owned') return 'OWNED';
+		if (sortGw != null) return `GW${sortGw} xP`;
+		if (sortWin) return `${sortWindowLabel} xP`;
+		return 'xP';
+	});
 
 	// xP per miljoona. Ilman hintaa arvo on -1, jolloin rivi valuu listan
 	// hantaan sen sijaan etta jakolasku tuottaisi Infinityn ja nostaisi sen karkeen.
@@ -382,6 +450,18 @@
 	// Hinta-sarake ja hintasortit vain jos backend tuo kentän (defensiivinen,
 	// sama kaava kuin hasStarts/hasOwned). SPL-syöte kantaa priceä myös.
 	let hasPrice = $derived(data.players.some((p) => typeof p.price === 'number'));
+	/* Bonus-sarake vain jos backend tuo kentan (sama defensiivinen kaava kuin
+	   hasPrice/hasStarts/hasOwned). Vanha deployattu payload -> sarake pois,
+	   ei tyhjaa saraketta. */
+	let hasBonus = $derived(data.players.some((p) => typeof p.e_bonus === 'number'));
+	let hasTrend = $derived(data.players.some((p) => typeof p.xmins_delta === 'number'));
+	/* Selite tulee BACKENDIN metasta, ei kasin kirjoitettuna: se nimeaa
+	   vertailukierroksen ja alarajan, ja ne muuttuvat kun uusi freeze
+	   ilmestyy. Kovakoodattu teksti vanhenisi hiljaa. */
+	let trendHelp = $derived(
+		(data.meta as { minutes_trend?: { note?: string } }).minutes_trend?.note ??
+			'Change in expected minutes since the last deadline freeze'
+	);
 
 	// Otsikkorivin sarakemaara yhdesta paikasta (12.9.2026). Ryhmarivin colspan oli
 	// `7 + ...`, vaikka kiinteita sarakkeita on 11 ja sortWin-sarake puuttui
@@ -392,6 +472,8 @@
 	let columnCount = $derived(
 		FIXED_COLUMNS +
 			(hasPrice ? 1 : 0) +
+			(hasBonus ? 1 : 0) +
+			(hasTrend ? 1 : 0) +
 			(hasStarts ? 1 : 0) +
 			(hasOwned ? 1 : 0) +
 			(sortWin ? 1 : 0) +
@@ -470,14 +552,12 @@
 				title: 'EXPECTED POINTS',
 				subtitle: `${sub}, GoalIQ model`,
 				...(hasPrice ? { midLabel: 'PRICE' } : {}),
-				valueLabel:
-					sortBy === 'value'
-						? 'xP/£m'
-						: cardGw != null
-							? `GW${cardGw} xP`
-							: sortWin
-								? `${sortWindowLabel} xP`
-								: 'xP',
+				/* 🔴 16.9 MITATTU VIKA: kortti nayttti AINA xP:n, vaikka lista oli
+				   lajiteltu haul-todennakoisyydella tai bonuksella. Jaettu kuva
+				   vaitti siis olevansa xP-lista kun se oli jotain muuta — ja
+				   kuva on se mika elaa ilman sivua. Arvosarake seuraa nyt
+				   sorttia samalla lukijalla kuin jarjestys. */
+				valueLabel: cardValueLabel,
 				fileName: 'goaliq_xp_list.png',
 				// 3.9 (audit): PRICE-sarake on FPL:n omaa dataa.
 				footNote: 'xP from the GoalIQ model, xMins = expected minutes, price from FPL',
@@ -490,14 +570,7 @@
 					// kuin taulukon xMins-sarake (pyoristettyna), ei uusi vaite.
 					...(typeof p.xmins === 'number' ? { tag2: `${Math.round(p.xmins)} xMins` } : {}),
 					...(hasPrice && typeof p.price === 'number' ? { mid: p.price.toFixed(1) } : {}),
-					value:
-						sortBy === 'value'
-							? xpPerMillion(p).toFixed(2)
-							: cardGw != null
-								? gwXp(p, cardGw).toFixed(2)
-								: sortWin
-									? windowXp(p, sortWin.from, sortWin.to).toFixed(2)
-									: p.xp_horizon_total.toFixed(1)
+					value: cardValue(p)
 				}))
 			});
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'xp', method });
@@ -639,7 +712,7 @@
 	<div>
 		<label for="sort">Sort by</label>
 		<select id="sort" bind:value={sortBy}>
-			{#each Object.entries(SORTS).filter(([k]) => (k !== 'starts' || hasStarts) && (!['price', 'value'].includes(k) || hasPrice)) as [key, s] (key)}
+			{#each Object.entries(SORTS).filter(([k]) => (k !== 'starts' || hasStarts) && (k !== 'bonus' || hasBonus) && (!['falling', 'rising'].includes(k) || hasTrend) && (!['price', 'value'].includes(k) || hasPrice)) as [key, s] (key)}
 				<option value={key}>{s.label}</option>
 			{/each}
 			<!-- 3.9 (Villen tilaus): yksittainen kierros sorttiperusteeksi. Horisontin
@@ -808,6 +881,18 @@
 						>Ceiling</abbr
 					></th
 				>
+				{#if hasBonus}
+					<th class="num m-hide"
+						><abbr title="Expected bonus points per gameweek from the model. Two players can match each other for goals and still finish a season points apart on bonus alone."
+							>Bonus</abbr
+						></th
+					>
+				{/if}
+				{#if hasTrend}
+					<th class="num m-hide"
+						><abbr title={trendHelp}>xMins &Delta;</abbr></th
+					>
+				{/if}
 				<th class="num m-hide"
 					><abbr title="Expected points if the player completes a full 90 minutes. This is the rate, so read it next to xMins, which is what he is actually expected to play."
 						>xP/90</abbr
@@ -914,6 +999,24 @@
 						<td class="num m-hide">
 							{#if p.xp_dist}{p.xp_dist.p90}{:else}<span class="muted">-</span>{/if}
 						</td>
+						{#if hasBonus}
+							<td class="num m-hide">
+								{#if typeof p.e_bonus === 'number'}{p.e_bonus.toFixed(2)}{:else}<span
+										class="muted">-</span
+									>{/if}
+							</td>
+						{/if}
+						{#if hasTrend}
+							<td
+								class="num m-hide"
+								class:gap-pos={(p.xmins_delta ?? 0) > 0}
+								class:gap-neg={(p.xmins_delta ?? 0) < 0}
+							>
+								{#if typeof p.xmins_delta === 'number'}{p.xmins_delta > 0
+										? '+'
+										: ''}{p.xmins_delta.toFixed(0)}{:else}<span class="muted">-</span>{/if}
+							</td>
+						{/if}
 						<td class="num m-hide">
 							{#if p.xp_per_90 == null}
 								<span class="muted" title="Too few expected minutes for a rate to mean anything"

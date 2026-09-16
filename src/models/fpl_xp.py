@@ -1314,3 +1314,107 @@ def attach_why(payload: dict, entries: dict | None = None,
     if n:
         payload.setdefault("meta", {})["n_explained"] = n
     return payload
+
+
+# ---------------------------------------------------------------------------
+# MINUUTTITRENDI (16.9, Villen tilaus)
+# ---------------------------------------------------------------------------
+# Kysymys jota kukaan ei julkaise: KENEN peliaika on laskussa. Se on hiljainen
+# pistevuoto — pelaaja ei katoa listalta, hanen lukunsa vain valuu, ja
+# manageri huomaa vasta kun mies on penkilla. Mitattu 16.9 tuotannon datasta:
+# Shaw 68.4 -> 37.3 xMins (10.2 % omistus), White 87.6 -> 58.0 (6.5 %),
+# Pedro Porro 67.0 -> 42.0 (9.1 %).
+#
+# Vertailukohta on VIIMEISIN JAADYTETTY projektio (`data/fpl_xp_frozen/gwN.json`),
+# joka on immutable ja lukittu ennen sen kierroksen deadlinea. Se vastaa
+# kysymykseen "mika on muuttunut sitten viime deadlinen" — ei "mika on
+# muuttunut kolmessa tunnissa", joka olisi kohinaa.
+#
+# SERVE-TIME eika putkessa: sama peruste kuin `attach_why`illa ja
+# `xp_per_90`:lla. Projektio kirjoitetaan uusiksi 3 h valein, ja jaadytetyt
+# tiedostot elavat omassa hakemistossaan.
+#
+# 🔴 ETag: tama on serve-time-kentta, joten `generated_at` EI muutu kun
+# vertailukohta vaihtuu. Kutsujan ON nostettava skeemaversio (api/main.py),
+# muuten ehdollinen pyynto validoi vanhan vastauksen 304:lla ja sarake jaa
+# tyhjaksi TASAN niille joilla vastaus on jo valimuistissa.
+FROZEN_DIR = XP_PATHS["fpl"].parent / "fpl_xp_frozen"
+
+# Alaraja vertailukohdalle: alle taman minuuttiarvio on jo niin matala ettei
+# "lasku" tarkoita mitaan (rivi on ollut penkilla koko ajan).
+MINUTES_TREND_MIN_BASE = 30.0
+
+
+def _latest_frozen() -> tuple[int, dict] | None:
+    """(gw, {id: xmins}) viimeisimmasta jaadytetysta projektiosta, tai None."""
+    if not FROZEN_DIR.is_dir():
+        return None
+    parhaat: tuple[int, dict] | None = None
+    for f in FROZEN_DIR.glob("gw*.json"):
+        try:
+            gw = int(f.stem[2:])
+        except ValueError:
+            continue
+        if parhaat is not None and gw <= parhaat[0]:
+            continue
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        rivit = {
+            p["id"]: p["xmins"]
+            for p in (d.get("players") or [])
+            if isinstance(p.get("id"), int)
+            and isinstance(p.get("xmins"), (int, float))
+        }
+        if rivit:
+            parhaat = (gw, rivit)
+    return parhaat
+
+
+def attach_minutes_trend(payload: dict) -> dict:
+    """Liita `xmins_prev` + `xmins_delta` riveille joilla vertailukohta on.
+
+    Rivi jolle vertailukohtaa EI ole jaa ilman kenttia — puuttuva luku ei ole
+    nolla eika "ei muutosta". Klientti nayttaa silloin viivan, ei lukua.
+    """
+    frozen = _latest_frozen()
+    if not frozen:
+        return payload
+    gw, prev = frozen
+    out = dict(payload)
+    rivit = []
+    muutettu = 0
+    for p in out.get("players") or []:
+        nyt = p.get("xmins")
+        ennen = prev.get(p.get("id"))
+        if (isinstance(nyt, (int, float)) and isinstance(ennen, (int, float))
+                and ennen >= MINUTES_TREND_MIN_BASE):
+            p = dict(p)
+            p["xmins_prev"] = round(float(ennen), 1)
+            p["xmins_delta"] = round(float(nyt) - float(ennen), 1)
+            muutettu += 1
+        rivit.append(p)
+    if not muutettu:
+        return payload
+    out["players"] = rivit
+    meta = dict(out.get("meta") or {})
+    meta["minutes_trend"] = {
+        "basis_gw": gw,
+        "n": muutettu,
+        "min_base": MINUTES_TREND_MIN_BASE,
+        "note": (
+            "Change in expected minutes since the projection frozen before the "
+            "GW{} deadline. Players whose frozen number was under {:g} minutes "
+            "are left out: a fall from an already low number is not news."
+            .format(gw, MINUTES_TREND_MIN_BASE)
+        ),
+    }
+    out["meta"] = meta
+    return out
+
+
+def minutes_trend_stamp() -> str:
+    """ETag-osa: vertailukohdan kierros. Muuttuu kun uusi freeze ilmestyy."""
+    frozen = _latest_frozen()
+    return "mt{}".format(frozen[0]) if frozen else "mt0"

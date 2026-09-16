@@ -138,15 +138,30 @@ def test_defcon_live_kortti_ei_pudota_osuneita():
 
 
 def test_xp_kortti_seuraa_kierrossorttia():
-    """Villen alkuperainen havainto: GW3-sortti, kortissa GW3-GW8:n summa."""
+    """Villen alkuperainen havainto: GW3-sortti, kortissa GW3-GW8:n summa.
+
+    🔴 16.9: tama testi luki ENNEN kutsupaikkaa (`gwXp(p, cardGw).toFixed(2)`
+    share()-funktion sisalta). Kun logiikka siirtyi omaan lukijaansa
+    (`cardValue` / `cardValueLabel`), testi kaatui vaikka kayttaytyminen
+    PARANI — ja jos se olisi vain poistettu, kierrossortti olisi jaanyt
+    vartioimatta. Testi lukee nyt FUNKTIOTA, ei sita missa sita kutsutaan
+    (muisti: `testi-kutsuu-funktiota-ei-kutsupaikkaa`).
+    """
     s = _src(COMPONENTS / "XpTable.svelte")
     kortti = s[s.index("async function share()"):]
     kortti = kortti[:kortti.index("capture('xp_card_shared'")]
+    # Kutsupaikka: yksi lukija molemmille, ei paikan paalla paateltyja ehtoja.
+    assert "value: cardValue(p)" in kortti, "kortin arvo ei tule yhdesta lukijasta"
+    assert "valueLabel: cardValueLabel," in kortti, "nimilappu ei tule yhdesta lukijasta"
     assert "const cardGw = sortGw;" in kortti
-    assert "gwXp(p, cardGw).toFixed(2)" in kortti, (
-        "kortin arvosarake ei lue valittua kierrosta")
-    assert "`GW${cardGw} xP`" in kortti, "arvosarakkeen otsikko ei nimea kierrosta"
     assert "const windowLabel = cardGw != null ? `GW${cardGw}` : horizonLabel;" in kortti
+    # Lukija: kierrossortti lukee valitun kierroksen, ei horisonttia.
+    arvo = s[s.index("function cardValue("):s.index("let cardValueLabel")]
+    lappu = s[s.index("let cardValueLabel"):]
+    lappu = lappu[:lappu.index("});")]
+    assert "gwXp(p, gw)" in arvo, "kortin arvosarake ei lue valittua kierrosta"
+    assert "windowXp(p, w.from, w.to)" in arvo, "ikkunasortti ei lue ikkunaa"
+    assert "`GW${sortGw} xP`" in lappu, "arvosarakkeen otsikko ei nimea kierrosta"
 
 
 def test_spl_value_kortti_ei_myy_kierroslukua_horisonttilukuna():

@@ -172,6 +172,11 @@ export interface XpPlayer {
 	/** Odotettu bonus per ottelu. KARKEA PROXY (per-90-historiavauhti x
 	 * minuuttiosuus), EI BPS-simulaatio — copy ei saa väittää muuta. */
 	e_bonus?: number;
+	/** MINUUTTITRENDI (16.9): xMins viimeisimmassa DEADLINE-FREEZESSA ja ero
+	 *  nykyiseen. Serve-time-kenttia; puuttuvat kun vertailukohtaa ei ole
+	 *  (uusi pelaaja, tai freeze-arvo alle 30 min). Puuttuva EI ole nolla. */
+	xmins_prev?: number;
+	xmins_delta?: number;
 	/** UX-palaute-erä 25.7 (contract-data.md luku 5): FPL:n VIRALLISET
 	 * saatavuus/kurinpitokentät bootstrapista — faktaa, EI mallin estimaattia.
 	 * Kaikki defensiivisiä (vanha payload ei tuo).

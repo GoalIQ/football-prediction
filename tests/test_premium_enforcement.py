@@ -462,7 +462,17 @@ def test_pool_lisays_nosti_etag_skeemaversiota():
     # (SHARE-CARD-WHY-EMPHASIS). Ja taas testi puri: skeemanosto tehtiin
     # patchissa jonka verifiointi ajoi vain why/xp-testit, ja tama vakio
     # jai nostamatta kunnes koko setti ajettiin.
-    NYKYINEN = "s7"
+    # s8 (16.9): `xmins_prev` + `xmins_delta` (MINUUTTITRENDI). Nama ovat
+    # serve-time-kenttia joiden VERTAILUKOHTA vaihtuu ilman uutta projektiota:
+    # kun uusi deadline-freeze ilmestyy (gw4 -> gw5), `generated_at` voi olla
+    # sama ja luvut ovat eri. Testi puri KOLMANNEN kerran perakkain (s6, s7,
+    # s8) — se on ainoa mekanismi joka pakottaa noston kasin.
+    #
+    # HUOM: skeemaversio erottaa kentan OLEMASSAOLON, ei sen ARVOA. Siksi
+    # ETagiin lisattiin myos `mt<gw>` (vertailukohdan kierros); pelkka s8
+    # olisi jattanyt sarakkeen nayttamaan edellisen kierroksen eroa uuden
+    # freezen jalkeen. Ks. tests/test_xp_etag_parts.py.
+    NYKYINEN = "s8"
     src = (API_DIR / "main.py").read_text(encoding="utf-8")
     assert f'schema = "{NYKYINEN}"' in src, (
         f"ETagin skeemaversio ei ole {NYKYINEN}. Jos lisasit pooliin kentan "
