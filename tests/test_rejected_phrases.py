@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,13 @@ SCRIPTS = ROOT / "scripts"
 # hylatty sanamuoto laukaissut porttia siella. Molemmat puut skannataan;
 # poikkeus kirjataan rekisteriin polulla ja perustelulla kuten ennenkin.
 SCAN_ROOTS = (SCRIPTS, ROOT / "src")
+# 16.9: jakokortin saate ei ole Pythonissa. Portti hylkasi sanamuodon "out in
+# FPL", ja se asui `web/pro-spa/src/lib/components/Replacements.svelte`:ssa —
+# eli tasan pinnalla jota tama testi ei skannannut. Sama luokka kuin 4.9:n
+# sisarkortti: hylkays joka ei kata julkaisevaa pintaa ei ole portti.
+WEB_ROOT = ROOT / "web" / "pro-spa" / "src"
+WEB_SUFFIXES = (".svelte", ".ts")
+NEWLINE = chr(10)
 
 
 def _registry() -> dict:
@@ -64,6 +72,24 @@ def _literals(path: Path) -> list[str]:
             and id(n) not in skip]
 
 
+def _strip_web_comments(text: str) -> str:
+    """// ja /* */ pois: hylkayksen SELITTAMINEN ei saa laukaista porttia
+    (sama periaate kuin Pythonin docstring-poikkeus yllä). Karkea mutta
+    konservatiivinen: poistaa vain kommentteja, ei koskaan koodia."""
+    out = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    out = re.sub(r"(?m)^\s*//.*$", " ", out)
+    out = re.sub(r"(?m)^\s*\*.*$", " ", out)
+    out = re.sub(r"(?s)<!--.*?-->", " ", out)
+    return out
+
+
+def _web_files() -> list[Path]:
+    if not WEB_ROOT.exists():
+        return []
+    return sorted(p for p in WEB_ROOT.rglob("*")
+                  if p.suffix in WEB_SUFFIXES and p.is_file())
+
+
 def _hits(phrase: str) -> list[str]:
     reg = _registry()
     out = []
@@ -72,6 +98,13 @@ def _hits(phrase: str) -> list[str]:
         if reg.get("poikkeukset", {}).get(rel):
             continue
         if any(phrase.lower() in lit.lower() for lit in _literals(path)):
+            out.append(rel)
+    for path in _web_files():
+        rel = path.relative_to(ROOT).as_posix()
+        if reg.get("poikkeukset", {}).get(rel):
+            continue
+        body = _strip_web_comments(path.read_text(encoding="utf-8"))
+        if phrase.lower() in body.lower():
             out.append(rel)
     return out
 
@@ -106,6 +139,31 @@ def test_hylatty_sanamuoto_ei_ole_missaan_skriptissa(phrase: str) -> None:
         "Jos se on tosi juuri tassa, lisaa tiedosto rekisterin "
         "poikkeuslistalle PERUSTELUN kanssa."
     )
+
+
+def test_negatiivinen_kontrolli_web_skanneri() -> None:
+    """Jos web-tarkistin ei nae kovakoodattua saatetta, portti on koriste
+    juuri silla pinnalla jolla 16.9:n vika oli."""
+    koodi = NEWLINE.join([
+        "<script>",
+        '  // PORTTI: "out in FPL" oli vaara sanamuoto',
+        "  const a = `x out in FPL, no projection`;",
+        "</script>",
+    ])
+    assert "out in FPL" in _strip_web_comments(koodi), (
+        "literaali katosi kommenttien mukana -> portti ei nakisi mitaan")
+    pelkka_selitys = NEWLINE.join([
+        "<script>",
+        '  // selitys: "out in FPL" hylattiin 16.9',
+        "</script>",
+    ])
+    assert "out in FPL" not in _strip_web_comments(pelkka_selitys), (
+        "pelkka selitys laukaisisi portin -> hylkaysta ei voisi dokumentoida")
+
+
+def test_web_skannattavia_tiedostoja_on() -> None:
+    """Tyhja tiedostolista tekisi web-portista aanettoman."""
+    assert len(_web_files()) >= 50
 
 
 def test_negatiivinen_kontrolli_skanneri_loytaa_literaalin(tmp_path) -> None:

@@ -112,6 +112,17 @@
 	 * lippua -> oletus true, eli kayttaytyminen on entinen. */
 	let targetProjected = $derived(data?.meta.target_projected !== false);
 
+	/* Jakokortin luku lahtijasta. Sama muoto kuin ehdokasriveilla
+	 * (`75% to play`), ja kierros luvun perassa koska FPL:n luku koskee vain
+	 * seuraavaa kierrosta. Ilman lukua (esim. status `u`, seurasta lahtenyt)
+	 * kaytetaan backendin sanamuotoa sellaisenaan — ei omaa tulkintaa. */
+	function targetCardValue(d: ReplacementsResponse): string {
+		if (d.target.xp_window != null) return `${d.target.xp_window.toFixed(1)} xP`;
+		if (d.target.chance_next != null && d.meta.gws.length > 0)
+			return `${d.target.chance_next}% to play GW${d.meta.gws[0]} in FPL, no projection`;
+		return 'unavailable in FPL, no projection';
+	}
+
 	let windowLabel = $derived(
 		data && data.meta.gws.length > 0
 			? data.meta.gws.length === 1
@@ -140,7 +151,14 @@
 				// paalle, koska ilmaispinnan "xP" on 6 GW:n summa eri ikkunasta.
 				// 16.9: lahtijalla ei aina ole projektiota (sivussa FPL:ssa) -> kortti
 				// sanoo sen, ei jata lukua pois hiljaa eika keksi nollaa.
-				subtitle: `${data.target.pos} ${m.price_min.toFixed(1)}-${m.price_max.toFixed(1)}m, ${windowLabel} · ${data.target.web_name} ${data.target.xp_window != null ? `${data.target.xp_window.toFixed(1)} xP` : 'out in FPL, no projection'} · GoalIQ model`,
+				// PORTTI 16.9: ensimmainen versioni luki "out in FPL". Se oli (a)
+				// vahvempi kuin backendin tarkoituksella valittu "unavailable in
+				// FPL" ja (b) kierrokseton: FPL:n `chance_next` koskee VAIN
+				// seuraavaa kierrosta, joten viiden kierroksen ikkunan vieressa
+				// paljas "out" vaitti enemman kuin lahde. Kortti on pysyva kuva,
+				// joten se vaittaisi sita viela senkin jalkeen kun lippu nousee.
+				// Nyt kortilla on FPL:n oma luku ja se kierros jota luku koskee.
+				subtitle: `${data.target.pos} ${m.price_min.toFixed(1)}-${m.price_max.toFixed(1)}m, ${windowLabel} · ${data.target.web_name} ${targetCardValue(data)} · GoalIQ model`,
 				midLabel: 'OWNED',
 				valueLabel: `xP ${windowLabel}`,
 				footNote: 'xP from the GoalIQ model, ownership from FPL',

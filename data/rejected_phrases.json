@@ -18,6 +18,12 @@
       "rejected": "2026-09-04",
       "why": "kovakoodattuna epatosi: ceiling valitaan joukosta josta kapteeni on pudotettu, joten poolin korkein katto voi olla viereisessa tiilessa",
       "replacement": "johda claim_scope():lla, joka nimeaa edella olevat tiilet"
+    },
+    {
+      "phrase": "out in FPL",
+      "rejected": "2026-09-16",
+      "why": "kierrokseton ja vahvempi kuin lahde: FPL:n chance_of_playing_next_round koskee VAIN seuraavaa kierrosta, joten viiden kierroksen ikkunan vieressa paljas 'out' vaittaa enemman kuin FPL sanoo. Jakokortti on pysyva kuva, joka vaittaisi sita viela senkin jalkeen kun lippu nousee. Backendin oma sanamuoto on 'unavailable in FPL' eika ota kantaa syyhyn.",
+      "replacement": "'{chance_next}% to play GW{first} in FPL, no projection', tai ilman lukua 'unavailable in FPL, no projection' (Replacements.svelte targetCardValue / FantasyTools.tsx targetCardValue)"
     }
   ],
   "poikkeukset": {},
