@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-09-15T21:14:33+00:00",
+  "updated_at": "2026-09-16T04:36:28+00:00",
   "logged_total": 3334,
-  "pending": 2764,
+  "pending": 2763,
   "voided": 7,
   "all_time": {
-    "n": 563,
-    "correct_1x2": 282,
-    "pct_1x2": 0.5009,
+    "n": 564,
+    "correct_1x2": 283,
+    "pct_1x2": 0.5018,
     "draw_n": 154,
-    "pct_draw": 0.2735,
-    "decisive_n": 409,
-    "decisive_correct": 282,
-    "pct_decisive": 0.6895,
-    "exact_n": 515,
+    "pct_draw": 0.273,
+    "decisive_n": 410,
+    "decisive_correct": 283,
+    "pct_decisive": 0.6902,
+    "exact_n": 516,
     "exact_correct": 66,
-    "pct_exact": 0.1282,
-    "brier": 0.5881,
-    "brier_n": 515
+    "pct_exact": 0.1279,
+    "brier": 0.5877,
+    "brier_n": 516
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 10,
     "pct_exact": 0.1,
-    "brier": 0.5871,
+    "brier": 0.5891,
     "brier_n": 100,
     "window": 100
   },
@@ -126,19 +126,19 @@
       "brier_n": 36
     },
     "PD": {
-      "n": 53,
-      "correct_1x2": 26,
-      "pct_1x2": 0.4906,
+      "n": 54,
+      "correct_1x2": 27,
+      "pct_1x2": 0.5,
       "draw_n": 14,
-      "pct_draw": 0.2642,
-      "decisive_n": 39,
-      "decisive_correct": 26,
-      "pct_decisive": 0.6667,
-      "exact_n": 53,
+      "pct_draw": 0.2593,
+      "decisive_n": 40,
+      "decisive_correct": 27,
+      "pct_decisive": 0.675,
+      "exact_n": 54,
       "exact_correct": 8,
-      "pct_exact": 0.1509,
-      "brier": 0.6029,
-      "brier_n": 53
+      "pct_exact": 0.1481,
+      "brier": 0.5984,
+      "brier_n": 54
     },
     "PL": {
       "n": 40,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 377,
-      "correct_1x2": 193,
-      "pct_1x2": 0.5119,
+      "n": 378,
+      "correct_1x2": 194,
+      "pct_1x2": 0.5132,
       "draw_n": 90,
-      "pct_draw": 0.2387,
-      "decisive_n": 287,
-      "decisive_correct": 193,
-      "pct_decisive": 0.6725,
-      "exact_n": 377,
+      "pct_draw": 0.2381,
+      "decisive_n": 288,
+      "decisive_correct": 194,
+      "pct_decisive": 0.6736,
+      "exact_n": 378,
       "exact_correct": 45,
-      "pct_exact": 0.1194,
-      "brier": 0.5789,
-      "brier_n": 377
+      "pct_exact": 0.119,
+      "brier": 0.5783,
+      "brier_n": 378
     },
     "stale": {
       "n": 138,
@@ -265,8 +265,8 @@
     {
       "bin_mid": 0.2548,
       "predicted": 0.2548,
-      "actual": 0.2879,
-      "n": 587
+      "actual": 0.2869,
+      "n": 589
     },
     {
       "bin_mid": 0.3409,
@@ -281,10 +281,10 @@
       "n": 190
     },
     {
-      "bin_mid": 0.5451,
-      "predicted": 0.5451,
-      "actual": 0.5405,
-      "n": 111
+      "bin_mid": 0.5448,
+      "predicted": 0.5448,
+      "actual": 0.5446,
+      "n": 112
     },
     {
       "bin_mid": 0.6448,
@@ -317,6 +317,21 @@
       "actual_score": "0-1",
       "actual_outcome": "away",
       "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-15",
+      "home_team": "Elche CF",
+      "away_team": "Real Madrid CF",
+      "predicted_winner": "away",
+      "p_winner": 0.5126,
+      "lead_h": 2.7,
+      "most_likely_score": "1-1",
+      "actual_score": "2-3",
+      "actual_outcome": "away",
+      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
@@ -586,21 +601,6 @@
       "most_likely_score": "0-1",
       "actual_score": "3-2",
       "actual_outcome": "home",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-13",
-      "home_team": "Real Sociedad de Fútbol",
-      "away_team": "Club Atlético de Madrid",
-      "predicted_winner": "home",
-      "p_winner": 0.4643,
-      "lead_h": 2.9,
-      "most_likely_score": "1-1",
-      "actual_score": "0-3",
-      "actual_outcome": "away",
       "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
