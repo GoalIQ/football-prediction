@@ -14,12 +14,25 @@
 3. HORISONTIN ULKOPUOLINEN `wc` OLI KEKSITTY. Skaalaus kertoi wc-sarakkeen
    KESKIARVOLLA (23,97) — eri pituisten ikkunoiden summien keskiarvo, joka ei
    ole mikaan suure. Siita johdettu GW8 24,65 nayttti tarkalta.
+
+NELJAS VIKA, mitattu AUTO-S1:sta (16.9.2026): tama tiedosto kutsui
+`/api/fantasy/chip-ev`:ta MOKKAAMATTA `_fetch_fpl`ia, eli jokainen testi
+teki oikean HTTP-kutsun `fantasy.premierleague.com`iin. `tests.yml` on ollut
+punainen ajoittain 28.8 alkaen (`RateTeamError: FPL API is not responding
+right now`, kerran myos `KeyError: 'meta'` kun 503-vastaus ei kantanut sita)
+- ei koodivika vaan testi joka riippuu FPL:n hetkellisesta saatavuudesta.
+Kaikki muut `build_context`ia kayttavat testitiedostot (esim.
+`test_my_team_context.py`) tuovat jaetun `_mock_fpl`-fixturen
+`test_fpl_rate_team.py`:sta - tama oli ainoa poikkeus ilman perustelua.
+Korjaus: sama fixture tanne, ja `test_ei_ota_yhteytta_oikeaan_fpl_apiin`
+todistaa etta verkkoon ei enaa oteta yhteytta.
 """
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
 import api.main as m
+from tests.test_fpl_rate_team import _mock_fpl  # noqa: F401 — ei verkkoa (AUTO-S1)
 
 client = TestClient(m.app)
 
@@ -123,3 +136,24 @@ def test_notes_kertoo_eron_kumulatiivisen_ja_kierroskohtaisen_valilla():
     taas samalta suureelta."""
     notes = " ".join(_payload()["meta"]["notes"]).lower()
     assert "one gameweek" in notes and "how many rounds" in notes
+
+
+def test_ei_ota_yhteytta_oikeaan_fpl_apiin(monkeypatch):
+    """🔴 AUTO-S1: ilman `_mock_fpl`ia tama testi kutsuisi oikeaa
+    `requests.get`ia ja kaatuisi FPL:n saatavuuteen (mitattu tests.yml:sta
+    28.8 alkaen). `_mock_fpl` korvaa `_fetch_fpl`in kokonaan, joten
+    `requests.get`ia EI PIDA kutsua enaa lainkaan taman moduulin testeissa.
+
+    Mutaatio (todennettu kasin, ei jateta CI:n varaan): jos `_mock_fpl`-tuonti
+    poistetaan tiedoston alusta, tama testi kaatuu heti `AssertionError:
+    testi otti yhteyden oikeaan FPL-APIin`illa eika FPL:n hetkellisesta
+    saatavuudesta riippuvalla satunnaisella verkkovirheella."""
+    import requests
+
+    def _kielletty(*a, **k):
+        raise AssertionError("testi otti yhteyden oikeaan FPL-APIin")
+
+    monkeypatch.setattr(requests, "get", _kielletty)
+    # Jos mokki puuttuisi, _payload() kutsuisi requests.get:ia -> yllaoleva
+    # kaatuisi TASSA eika epamaarisesti FPL:n saatavuuden mukaan.
+    _payload()
