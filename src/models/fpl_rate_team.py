@@ -1385,6 +1385,57 @@ def apply_availability_gate(pool: list[dict], bootstrap: dict | None = None
             sorted(changes.values(), key=lambda r: (r["web_name"] or "")))
 
 
+def resolve_subject_row(xp_data: dict, bootstrap: dict, by_id: dict[int, dict],
+                        player_id: int) -> tuple[dict, bool]:
+    """KYSYMYKSEN KOHDE (16.9), yksi lukija: (rivi, projected).
+
+    Tyokalu joka kysyy "kuka korvaa X:n" saa kohteekseen MYOS pelaajan jolla
+    ei ole projektiota — loukkaantunut on juuri se tapaus jossa kysymys
+    esitetaan. Rowan raportoi 15.9 ettei Elangaa (id 454) loydy hausta:
+    projektio pudotti hanet `excluded`-listaan samana paivana kun FPL merkitsi
+    statuksen `i`, ja /api/fantasy/replacements vastasi 404 "no xP projection".
+
+    Palautettu rivi on TARKOITUKSELLA vajaa: `gameweeks` on tyhja ja
+    `p_start` puuttuu, joten kutsuja ei voi vahingossa laskea silla ikkunan
+    xP:ta ja esittaa nollaa ennusteena. `projected=False` on se lippu jonka
+    varassa vastaus jattaa xP- ja ero-sarakkeet tyhjiksi.
+
+    EI KOSKAAN EHDOKKAAKSI: tama funktio ei kirjoita pooliin eika kutsuja saa
+    lisata palautettua rivia ehdokaslistaan — rivilla ei ole projektiota,
+    joten se sijoittuisi jokaisessa jarjestyksessa 0 xP:n kohdalle. Vahti:
+    tests/test_replacements_unavailable_target.py.
+    """
+    row = by_id.get(player_id)
+    if row is not None:
+        return row, True
+    boot = {e["id"]: e for e in bootstrap.get("elements") or []}.get(player_id)
+    pos_by_name = {v: k for k, v in POS_NAME.items()}
+    for e in xp_data.get("excluded") or []:
+        if not isinstance(e, dict) or e.get("id") != player_id:
+            continue
+        if not boot:
+            break
+        try:
+            owned_pct = float(boot.get("selected_by_percent") or 0.0)
+        except (TypeError, ValueError):
+            owned_pct = 0.0
+        return {
+            "id": player_id,
+            "web_name": e.get("web_name") or boot.get("web_name") or "",
+            "team_short": e.get("team_short") or "",
+            "element_type": pos_by_name.get(e.get("pos"), boot["element_type"]),
+            "club": boot["team"],
+            "price": boot["now_cost"],
+            "owned_pct": owned_pct,
+            "gameweeks": [],
+            "status": e.get("status") or boot.get("status"),
+            "news": e.get("news") or boot.get("news"),
+            "chance_next": e.get("chance_next"),
+            "excluded_reason": e.get("excluded_reason"),
+        }, False
+    raise RateTeamError(404, "Player {} is not in the FPL player list.".format(player_id))
+
+
 def build_context() -> tuple[dict, dict, list[dict], dict[int, dict]]:
     """#35: jaettu konteksti rate-teamille + planner-suitelle:
     (xp_data, bootstrap, pool, pool_by_id). Nostaa 503:n jos projektio puuttuu."""

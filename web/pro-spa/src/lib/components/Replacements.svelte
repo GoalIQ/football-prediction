@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { XpResponse } from '$lib/api';
+	import { draftPool, type XpResponse } from '$lib/api';
 	import {
 		fetchReplacements,
 		type ReplacementsResponse,
@@ -41,10 +41,19 @@
 			.replace(/[-.]/g, ' ')
 			.trim();
 	}
+	/* UNAVAILABLE-TARGET (16.9): haku luki `xp.players`, eli VAIN projektiossa
+	 * olevat. Rowan raportoi 15.9 ettei Elangaa loydy — han oli siirtynyt
+	 * samana paivana `excluded`-listaan kun FPL merkitsi loukkaantumisen, eli
+	 * tyokalu katosi tasan silloin kun sen kysymys syntyi. Lahde on nyt sama
+	 * yksi lukija kuin draftilla ja fit-lukoilla (`draftPool`), joka kantaa
+	 * seka taydet rivit etta kevyet pooli-rivit; jalkimmaisissa ovat sivussa
+	 * olevat. Sivuvaikutus: free-kayttajan maskattu 10 rivin lista ei enaa
+	 * kavenna hakua. */
+	let outIds = $derived(new Set((xp.excluded ?? []).map((e) => e.id)));
 	let items = $derived.by((): SearchItem[] => {
 		const q = norm(query);
 		if (q.length < 2) return [];
-		return xp.players
+		return draftPool(xp)
 			.filter(
 				(p) =>
 					norm(p.web_name).includes(q) ||
@@ -58,8 +67,12 @@
 				team_short: p.team_short,
 				pos: p.pos,
 				price: p.price,
-				owned_pct: p.owned_pct,
-				status: p.status
+				// Kevyt pooli-rivi ei kanna omistusta; taysi rivi kantaa.
+				owned_pct: (p as { owned_pct?: number }).owned_pct,
+				status: p.status,
+				// Rivi kertoo heti ettei pelaajalla ole projektiota (PlayerSearch
+				// piirtaa "out"-merkin) — muuten tyhja xP-luku luettaisiin viaksi.
+				in_projection: !outIds.has(p.id)
 			}));
 	});
 
@@ -91,8 +104,13 @@
 
 	function gap(p: ReplacementRow): string {
 		const v = p.xp_gap_vs_target;
+		if (v == null) return '';
 		return (v > 0 ? '+' : '') + v.toFixed(1);
 	}
+
+	/* Lahtijalla ei ole projektiota (sivussa FPL:ssa). Vanha backend ei tuo
+	 * lippua -> oletus true, eli kayttaytyminen on entinen. */
+	let targetProjected = $derived(data?.meta.target_projected !== false);
 
 	let windowLabel = $derived(
 		data && data.meta.gws.length > 0
@@ -120,7 +138,9 @@
 				// PORTTI 2.9: lahtijan oma luku kortille (ilman sita kahden rivin
 				// Bruno-kortti luki alaspain-siirron suosituksena) ja ikkuna luvun
 				// paalle, koska ilmaispinnan "xP" on 6 GW:n summa eri ikkunasta.
-				subtitle: `${data.target.pos} ${m.price_min.toFixed(1)}-${m.price_max.toFixed(1)}m, ${windowLabel} · ${data.target.web_name} ${data.target.xp_window.toFixed(1)} xP · GoalIQ model`,
+				// 16.9: lahtijalla ei aina ole projektiota (sivussa FPL:ssa) -> kortti
+				// sanoo sen, ei jata lukua pois hiljaa eika keksi nollaa.
+				subtitle: `${data.target.pos} ${m.price_min.toFixed(1)}-${m.price_max.toFixed(1)}m, ${windowLabel} · ${data.target.web_name} ${data.target.xp_window != null ? `${data.target.xp_window.toFixed(1)} xP` : 'out in FPL, no projection'} · GoalIQ model`,
 				midLabel: 'OWNED',
 				valueLabel: `xP ${windowLabel}`,
 				footNote: 'xP from the GoalIQ model, ownership from FPL',
@@ -209,12 +229,16 @@
 {:else}
 	<p class="target-line">
 		<strong>{data.target.web_name}</strong> · {data.target.team_short} · {data.target.pos} ·
-		{data.target.price.toFixed(1)}m · {data.target.owned_pct.toFixed(1)}% owned ·
-		{data.target.xp_window.toFixed(1)} xP next {nextN}
+		{data.target.price.toFixed(1)}m · {data.target.owned_pct.toFixed(1)}% owned
+		{#if data.target.xp_window != null}· {data.target.xp_window.toFixed(1)} xP next {nextN}{:else}·
+			<span class="muted">no projection</span>{/if}
 		{#if data.target.status !== 'a' && data.target.chance_next != null}
 			<span class="muted">· {data.target.chance_next}% chance of playing the next round</span>
 		{/if}
 	</p>
+	{#if data.meta.target_note}
+		<p class="muted">{data.meta.target_note}</p>
+	{/if}
 	{#if hasSquad && data.meta.budget_note}
 		<p class="muted">
 			{#if data.meta.target_owned}<span class="own-badge">in your squad</span> {/if}{data.meta.budget_note}
@@ -262,11 +286,13 @@
 						<th class="num"
 							><abbr title="Sum of expected points over {windowLabel}">xP next {nextN}</abbr></th
 						>
-						<th class="num"
-							><abbr title="Expected points over the window minus {data.target.web_name}'s"
-								>vs {data.target.web_name}</abbr
-							></th
-						>
+						{#if targetProjected}
+							<th class="num"
+								><abbr title="Expected points over the window minus {data.target.web_name}'s"
+									>vs {data.target.web_name}</abbr
+								></th
+							>
+						{/if}
 						<th>Reason</th>
 					</tr>
 				</thead>
@@ -288,11 +314,13 @@
 							<td class="num">{p.price.toFixed(1)}</td>
 							<td class="num">{p.owned_pct.toFixed(1)}</td>
 							<td class="num total-col">{p.xp_window.toFixed(1)}</td>
-							<td
-								class="num"
-								class:gap-pos={p.xp_gap_vs_target > 0}
-								class:gap-neg={p.xp_gap_vs_target < 0}>{gap(p)}</td
-							>
+							{#if targetProjected}
+								<td
+									class="num"
+									class:gap-pos={(p.xp_gap_vs_target ?? 0) > 0}
+									class:gap-neg={(p.xp_gap_vs_target ?? 0) < 0}>{gap(p)}</td
+								>
+							{/if}
 							<td class="reason">{p.reason.text}</td>
 						</tr>
 					{/each}

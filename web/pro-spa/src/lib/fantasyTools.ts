@@ -518,8 +518,10 @@ export interface ReplacementRow {
 	owned_pct: number;
 	/** xP summattuna ikkunan kierroksilta (meta.gws). */
 	xp_window: number;
-	/** xp_window miinus korvattavan xp_window. */
-	xp_gap_vs_target: number;
+	/** xp_window miinus korvattavan xp_window. `null` kun lahtijalla ei ole
+	 *  projektiota (16.9): nolla olisi ennuste, tyhja on tieto ettei ennustetta
+	 *  ole. Vanha backend ei palauta nullia -> tyyppi on taaksepain yhteensopiva. */
+	xp_gap_vs_target: number | null;
 	gameweeks: ReplacementGw[];
 	p_start: number | null;
 	status: string;
@@ -535,7 +537,10 @@ export interface ReplacementTarget {
 	pos: Pos;
 	price: number;
 	owned_pct: number;
-	xp_window: number;
+	/** `null` kun lahtija on FPL:ssa sivussa eika ole projektiossa (16.9). */
+	xp_window: number | null;
+	/** Puuttuu vanhasta backendista -> tulkitaan projektoiduksi. */
+	projected?: boolean;
 	p_start: number | null;
 	status: string;
 	chance_next: number | null;
@@ -558,6 +563,9 @@ export interface ReplacementsResponse {
 			note: string;
 		};
 		reason_note?: string;
+		/** UNAVAILABLE-TARGET (16.9): false kun lahtijalla ei ole projektiota. */
+		target_projected?: boolean;
+		target_note?: string | null;
 		/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
 		squad?: SquadMeta;
 		owned_excluded?: number;

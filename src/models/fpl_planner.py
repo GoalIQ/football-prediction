@@ -869,9 +869,16 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
         raise RateTeamError(400, "top must be between 1 and {}.".format(
             REPLACEMENTS_MAX_TOP_N))
     xp_data, bootstrap, pool, by_id = build_context()
-    target = by_id.get(player_id)
-    if target is None:
-        raise RateTeamError(404, "Player {} has no xP projection.".format(player_id))
+    # UNAVAILABLE-TARGET (16.9): lahtija saa olla pelaaja jolla ei ole
+    # projektiota. Rowan 15.9: Elanga ei loytynyt hausta sina paivana kun han
+    # loukkaantui — eli tasan silloin kun "kuka korvaa Elangan" on kysymys.
+    # Yksi lukija ratkaisee kohteen (ks. resolve_subject_row); ilman
+    # projektiota `target_projected` on False ja xP-luvut jaavat NULLiksi
+    # eivatka nollaksi: nolla olisi ennuste, tyhja on tieto siita ettei
+    # ennustetta ole.
+    from src.models.fpl_rate_team import resolve_subject_row
+    target, target_projected = resolve_subject_row(xp_data, bootstrap, by_id,
+                                                   player_id)
     # Ikkuna = kierrokset joihin siirto voi VIELA vaikuttaa (sama lahde kuin
     # rate-team ja planner 29.8 lahtien). Kesken olevaa kierrosta ei lasketa.
     from src.models.fpl_rate_team import _resolve_gw, transfer_horizon_gws
@@ -913,7 +920,7 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
         lo, hi, cands = _in_bracket(bracket_used)
     scored = sorted(((_remaining_xp(p, window), p) for p in cands),
                     key=lambda t: (-t[0], t[1]["price"], t[1]["web_name"]))
-    target_total = _remaining_xp(target, window)
+    target_total = _remaining_xp(target, window) if target_projected else None
 
     def _row(total: float, p: dict) -> dict:
         return {
@@ -921,7 +928,8 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "team_short": p["team_short"], "pos": POS_NAME[p["element_type"]],
             "price": p["price"] / 10.0, "owned_pct": p["owned_pct"],
             "xp_window": round(total, 2),
-            "xp_gap_vs_target": round(total - target_total, 2),
+            "xp_gap_vs_target": (round(total - target_total, 2)
+                                 if target_total is not None else None),
             "gameweeks": [{"gw": g, "opponents": _gw_opponents_text(p, g),
                            "xp": round(_gw_xp(p, g), 2)} for g in window],
             "p_start": p.get("p_start"),
@@ -955,6 +963,22 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "bracket_widened": bracket_used != bracket,
             "price_min": lo / 10.0, "price_max": hi / 10.0,
             "candidates_in_bracket": len(cands),
+            # Lahtijan projektion puuttuminen on vastauksen kannalta FAKTA,
+            # ei virhe: ilman tata lippua klientti lukisi tyhjan xP-luvun
+            # renderointivirheeksi ja "vs"-sarakkeen nollaksi.
+            "target_projected": target_projected,
+            # Sanamuoto: "unavailable in FPL" on tarkistettavissa ilmaiselta
+            # pinnalta (FPL:n oma lippu) eika ota kantaa syyhyn. `news` on
+            # FPL:n oma teksti sellaisenaan, ei meidan tulkintamme.
+            "target_note": (None if target_projected else
+                            "{} has no projection right now because FPL lists "
+                            "him as unavailable{}. The rows below are ranked on "
+                            "their own expected points over the window, and the "
+                            "gap column is empty because there is no projection "
+                            "to compare against.".format(
+                                target["web_name"],
+                                " ({})".format((target.get("news") or "").strip()[:80])
+                                if (target.get("news") or "").strip() else "")),
             **meta_squad,
             "availability_gate": {"checked": True, "dropped": dropped,
                                   "note": AVAILABILITY_GATE_NOTE},
@@ -970,7 +994,9 @@ def replacements(player_id: int, gws: int = REPLACEMENTS_DEFAULT_GWS,
             "team_short": target["team_short"],
             "pos": POS_NAME[target["element_type"]],
             "price": target["price"] / 10.0, "owned_pct": target["owned_pct"],
-            "xp_window": round(target_total, 2),
+            "xp_window": (round(target_total, 2)
+                          if target_total is not None else None),
+            "projected": target_projected,
             "p_start": target.get("p_start"),
             "status": target.get("status") or "a",
             "chance_next": target.get("chance_next"),
