@@ -879,7 +879,32 @@ def update_predictions_hub_links(live: list[str]) -> bool:
     return False
 
 
-def update_llms_txt(counts: dict[str, int]) -> bool:
+def example_fixture_url(live: list[str], sitemap_urls: list[str]) -> str | None:
+    """Esimerkkiottelusivu llms.txt:hyn: ensimmainen SITEMAPIN ottelusivu
+    liigajarjestyksessa, tai None jos sitemapissa ei ole yhtaan.
+
+    16.9 (kaksi kertaa samana paivana): esimerkki oli ensin kasin kirjoitettu
+    (serie-a/inter-vs-udinese, pelattu -> sivu poistettu), ja klo 12 tehty
+    korjaus luki sen LEVYLTA (`predictions/<slug>/*.html`, aakkosissa
+    ensimmainen). Levylla on koko kauden tulevat ottelut, sitemapissa vain
+    SITEMAP_HORIZON_DAYS:n ikkuna, ja `scripts/check_llms_txt_sync.py` vaatii
+    etta llms.txt mainitsee ottelusivuluokasta jonkin SITEMAPIN polun. Levylta
+    valittu arsenal-vs-aston-villa oli olemassa muttei ikkunassa -> tests.yml
+    pysyi punaisena. Sama sivu, kaksi lukijaa, kaksi eri lahdetta.
+
+    Nyt esimerkki tulee tasan siita listasta joka kirjoitetaan sitemapiin
+    samassa ajossa, joten ne eivat voi erkaantua: ikkunan liukuminen vaihtaa
+    molemmat kerralla. Levya ei lueta lainkaan.
+    """
+    for c in live:
+        prefix = f"{BASE}/predictions/{LEAGUES[c]['slug']}/"
+        for u in sitemap_urls:
+            if u.startswith(prefix) and u[len(prefix):].strip("/"):
+                return u
+    return None
+
+
+def update_llms_txt(counts: dict[str, int], sitemap_urls: list[str]) -> bool:
     """#231-GEO: kasvumoottorin luvut llms.txt:hyn SAMASTA datasta kuin sitemap.
 
     Ongelma ei ollut llms.txt:n sisalto vaan se etta se oli kasin yllapidetty:
@@ -890,6 +915,10 @@ def update_llms_txt(counts: dict[str, int]) -> bool:
     Generoidaan VAIN markkeriparin sisus eli liigarivit ja sivumaarat. Loppu
     tiedostosta (disambiguaatio, tuotekuvaukset, hinnat) pysyy kasin
     kirjoitettuna tarkoituksella - se on arvostelukykya, ei dataa.
+
+    `sitemap_urls` on sama lista joka kirjoitetaan sitemap-predictions.xml:aan
+    tassa ajossa; esimerkkiottelusivu poimitaan siita (ks.
+    example_fixture_url).
 
     Markkerit puuttuvat -> False, ei kaatoa (sama sopimus kuin
     update_predictions_hub_links).
@@ -910,22 +939,7 @@ def update_llms_txt(counts: dict[str, int]) -> bool:
         f"{counts[c]} fixture pages."
         for c in live
     ]
-    # 16.9: esimerkki-URL oli KASIN kirjoitettu GEN-lohkon ulkopuolella ja
-    # osoitti otteluun (serie-a/inter-vs-udinese) joka oli pelattu ja jonka
-    # sivu oli poistettu -> tests/test_llms_txt.py punainen. Staattinen
-    # esimerkki vanhenee aina, koska ottelut ovat ulkoista tilaa joka vaihtuu
-    # tiedoston alla. Esimerkki luetaan nyt LEVYLTA, eli samasta lahteesta
-    # jota portti tarkistaa: silloin se ei voi osoittaa sivuun jota ei ole.
-    esimerkki = None
-    for c in live:
-        hakemisto = ROOT / "predictions" / LEAGUES[c]["slug"]
-        if not hakemisto.exists():
-            continue
-        sivut = sorted(f.stem for f in hakemisto.glob("*.html"))
-        if sivut:
-            esimerkki = ("https://goaliq.app/predictions/"
-                         f"{LEAGUES[c]['slug']}/{sivut[0]}")
-            break
+    esimerkki = example_fixture_url(live, sitemap_urls)
     if esimerkki:
         rows.append(f"- Example fixture page live right now: {esimerkki}")
     total = sum(counts[c] for c in live)
@@ -1036,7 +1050,7 @@ def main() -> int:
           f"{SITEMAP_HORIZON_DAYS} pv paassa — sivut ovat silti olemassa "
           f"ja hubit linkittavat niihin)")
     hub_updated = update_predictions_hub_links(live_hubs)
-    llms_updated = update_llms_txt(match_counts)
+    llms_updated = update_llms_txt(match_counts, [e[0] for e in sitemap_entries])
     print(f"Yhteensä {total_pages} sivua ({len(live_hubs)} liigaa). "
           f"predictions.html-hublinkit: {'päivitetty' if hub_updated else 'ei muutosta'}.")
     print(f"llms.txt GEN:LLMS-lohko: "

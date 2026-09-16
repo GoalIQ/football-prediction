@@ -149,8 +149,15 @@ def test_generated_block_matches_generator_output():
         n = len([p for p in d.glob("*.html") if p.name != "index.html"])
         if n:
             counts[comp] = n
+    # Esimerkkiottelusivu taas SITEMAPISTA, jarjestys sailyttaen: generaattori
+    # poimii liigajarjestyksessa ensimmaisen sitemapin ottelusivun, ja
+    # check_llms_txt_sync vaatii etta se on sitemapissa (16.9: levylta valittu
+    # esimerkki oli olemassa muttei 30 pv ikkunassa -> portti punainen).
+    sitemap_urls = re.findall(
+        r"<loc>(.*?)</loc>",
+        (ROOT / "sitemap-predictions.xml").read_text(encoding="utf-8"))
     try:
-        assert update_llms_txt(counts) is False, (
+        assert update_llms_txt(counts, sitemap_urls) is False, (
             "generaattori kirjoittaisi llms.txt:n toisin kuin se on committoitu "
             "- lohko on kasin editoitu tai luvut ovat vanhentuneet"
         )
