@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-16T16:44:21+00:00",
+  "updated_at": "2026-09-16T21:14:58+00:00",
   "logged_total": 3334,
-  "pending": 2763,
+  "pending": 2761,
   "voided": 7,
   "all_time": {
-    "n": 564,
-    "correct_1x2": 283,
+    "n": 566,
+    "correct_1x2": 284,
     "pct_1x2": 0.5018,
     "draw_n": 154,
-    "pct_draw": 0.273,
-    "decisive_n": 410,
-    "decisive_correct": 283,
-    "pct_decisive": 0.6902,
-    "exact_n": 516,
+    "pct_draw": 0.2721,
+    "decisive_n": 412,
+    "decisive_correct": 284,
+    "pct_decisive": 0.6893,
+    "exact_n": 518,
     "exact_correct": 66,
-    "pct_exact": 0.1279,
-    "brier": 0.5877,
-    "brier_n": 516
+    "pct_exact": 0.1274,
+    "brier": 0.5876,
+    "brier_n": 518
   },
   "rolling": {
     "n": 100,
     "correct_1x2": 47,
     "pct_1x2": 0.47,
-    "draw_n": 28,
-    "pct_draw": 0.28,
-    "decisive_n": 72,
+    "draw_n": 27,
+    "pct_draw": 0.27,
+    "decisive_n": 73,
     "decisive_correct": 47,
-    "pct_decisive": 0.6528,
+    "pct_decisive": 0.6438,
     "exact_n": 100,
-    "exact_correct": 10,
-    "pct_exact": 0.1,
-    "brier": 0.5891,
+    "exact_correct": 9,
+    "pct_exact": 0.09,
+    "brier": 0.5882,
     "brier_n": 100,
     "window": 100
   },
@@ -126,19 +126,19 @@
       "brier_n": 36
     },
     "PD": {
-      "n": 54,
-      "correct_1x2": 27,
+      "n": 56,
+      "correct_1x2": 28,
       "pct_1x2": 0.5,
       "draw_n": 14,
-      "pct_draw": 0.2593,
-      "decisive_n": 40,
-      "decisive_correct": 27,
-      "pct_decisive": 0.675,
-      "exact_n": 54,
+      "pct_draw": 0.25,
+      "decisive_n": 42,
+      "decisive_correct": 28,
+      "pct_decisive": 0.6667,
+      "exact_n": 56,
       "exact_correct": 8,
-      "pct_exact": 0.1481,
-      "brier": 0.5984,
-      "brier_n": 54
+      "pct_exact": 0.1429,
+      "brier": 0.5974,
+      "brier_n": 56
     },
     "PL": {
       "n": 40,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 378,
-      "correct_1x2": 194,
+      "n": 380,
+      "correct_1x2": 195,
       "pct_1x2": 0.5132,
       "draw_n": 90,
-      "pct_draw": 0.2381,
-      "decisive_n": 288,
-      "decisive_correct": 194,
-      "pct_decisive": 0.6736,
-      "exact_n": 378,
+      "pct_draw": 0.2368,
+      "decisive_n": 290,
+      "decisive_correct": 195,
+      "pct_decisive": 0.6724,
+      "exact_n": 380,
       "exact_correct": 45,
-      "pct_exact": 0.119,
+      "pct_exact": 0.1184,
       "brier": 0.5783,
-      "brier_n": 378
+      "brier_n": 380
     },
     "stale": {
       "n": 138,
@@ -257,16 +257,16 @@
       "n": 40
     },
     {
-      "bin_mid": 0.161,
-      "predicted": 0.161,
-      "actual": 0.1357,
-      "n": 199
+      "bin_mid": 0.1609,
+      "predicted": 0.1609,
+      "actual": 0.135,
+      "n": 200
     },
     {
-      "bin_mid": 0.2548,
-      "predicted": 0.2548,
-      "actual": 0.2869,
-      "n": 589
+      "bin_mid": 0.2546,
+      "predicted": 0.2546,
+      "actual": 0.2872,
+      "n": 592
     },
     {
       "bin_mid": 0.3409,
@@ -283,14 +283,14 @@
     {
       "bin_mid": 0.5448,
       "predicted": 0.5448,
-      "actual": 0.5446,
-      "n": 112
+      "actual": 0.5398,
+      "n": 113
     },
     {
-      "bin_mid": 0.6448,
-      "predicted": 0.6448,
-      "actual": 0.7564,
-      "n": 78
+      "bin_mid": 0.6447,
+      "predicted": 0.6447,
+      "actual": 0.7595,
+      "n": 79
     },
     {
       "bin_mid": 0.7364,
@@ -306,6 +306,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-16",
+      "home_team": "RC Deportivo La Coruña",
+      "away_team": "Sevilla FC",
+      "predicted_winner": "home",
+      "p_winner": 0.5406,
+      "lead_h": 0.3,
+      "most_likely_score": "1-1",
+      "actual_score": "0-1",
+      "actual_outcome": "away",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-16",
+      "home_team": "Club Atlético de Madrid",
+      "away_team": "CA Osasuna",
+      "predicted_winner": "home",
+      "p_winner": 0.6382,
+      "lead_h": 0.3,
+      "most_likely_score": "2-0",
+      "actual_score": "4-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-15",
       "home_team": "Bristol City",
@@ -572,36 +602,6 @@
       "actual_score": "4-1",
       "actual_outcome": "home",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-13",
-      "home_team": "Stade Brestois 29",
-      "away_team": "Paris Saint-Germain FC",
-      "predicted_winner": "away",
-      "p_winner": 0.5399,
-      "lead_h": 2.6,
-      "most_likely_score": "1-1",
-      "actual_score": "0-1",
-      "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-13",
-      "home_team": "US Sassuolo Calcio",
-      "away_team": "Juventus FC",
-      "predicted_winner": "away",
-      "p_winner": 0.4828,
-      "lead_h": 2.6,
-      "most_likely_score": "0-1",
-      "actual_score": "3-2",
-      "actual_outcome": "home",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
