@@ -27,6 +27,8 @@ AJO:
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
+import hashlib
 import json
 import os
 import sys
@@ -1459,6 +1461,37 @@ BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
 GW_CAPABLE = {"cs"}
 
 
+def write_sidecar(out_path: Path, spec: dict) -> Path:
+    """POSTATTU-KORTTI-EI-OLE-TALLESSA (12.9.2026 mitattu, korjattu 16.9).
+
+    `outputs/` on .gitignoressa ja jokainen ajo kirjoittaa saman tiedosto-
+    nimen yli, joten postattua korttia ei voinut jalkikateen todistaa: 9.9
+    postattu GW4-kortti (M82) ei ollut enaa olemassa missaan, ja
+    MARKETING_QUEUE-viittaus commit-hashiin oli tyhja (`git log -- outputs/
+    cards/` ei nayta gitignoroitua polkua).
+
+    Sidecar kirjoitetaan JOKAISELLA ajolla, kortin viereen samalla nimella
+    (`<kortti>.json`), ja sisaltaa juuri sen minka postaus vaatii jalkikateen
+    todistettavaksi: rivit jotka kortti nayttaa, lahdeartefaktin generated_at
+    (jos builder sen tuntee), ja PNG:n sha256 — jalkimmainen todistaa etta
+    juuri TAMA tiedosto vastaa sidecaria eika joku myohempi uudelleenajo.
+    """
+    digest = hashlib.sha256(out_path.read_bytes()).hexdigest()
+    sidecar = {
+        "file": out_path.name,
+        "sha256": digest,
+        "card_generated_at": _dt.datetime.now(_dt.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"),
+        "source_generated_at": spec.get("generated_at"),
+        "title": spec.get("title"),
+        "rows": spec.get("rows") or spec.get("fixtures") or [],
+    }
+    sidecar_path = out_path.with_suffix(out_path.suffix + ".json")
+    sidecar_path.write_text(
+        json.dumps(sidecar, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return sidecar_path
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="GoalIQ share card generator")
     ap.add_argument("card", choices=sorted(BUILDERS))
@@ -1508,11 +1541,13 @@ def main() -> int:
             pth = render_gw_outlook_hero(spec, out, cs_only=a.cs_only)
         else:
             pth = render_gw_outlook(spec, out)
-        print("GW%s outlook (%d ottelua) -> %s"
-              % (spec["gw"], len(spec["fixtures"]), pth))
+        sidecar = write_sidecar(pth, spec)
+        print("GW%s outlook (%d ottelua) -> %s (+ %s)"
+              % (spec["gw"], len(spec["fixtures"]), pth, sidecar))
         return 0
     p = render(spec, out)
-    print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
+    sidecar = write_sidecar(p, spec)
+    print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p} (+ {sidecar})")
     return 0
 
 
