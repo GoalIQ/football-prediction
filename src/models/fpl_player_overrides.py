@@ -66,6 +66,34 @@ XG_MULT_MIN, XG_MULT_MAX = 0.25, 2.0
 REVIEW_LEAD_DAYS = 3
 
 
+def apply_p_start_override(mm: dict, p_start: float, status: str,
+                            chance: float | None) -> dict:
+    """`set_p_start` + FPL:n saatavuus UUDELLEEN senhetkisella statuksella.
+
+    XP-OVERRIDE-OHITTAA-SAATAVUUDEN (julkaisutarkistajan loydos 12.9.2026).
+    `fpl_xp.set_p_start` KORVAA p_start:in eika aja `apply_availability`a
+    uudelleen. Ohitus kirjoitetaan yleensa kun pelaaja ON pelikunnossa
+    (esim. minuuttimalli aliarvioi palaavan pelaajan), mutta jos FPL:n
+    status ei ole 'a' juuri NYT build-hetkella (uusi vamma julkaistiin CSV:n
+    kirjoittamisen jalkeen, tai `until_available`-rivi jonka koko tarkoitus
+    on kattaa pelaaja joka on ULKONA), ohitus julkaisisi xP:n jossa
+    pelaamistodennakoisyys EI ole sisalla — samalla kun `/fpl` ja
+    `/fpl/team-news` vaittavat kovakoodatusti etta se on
+    (`src/doubt_copy.py`).
+
+    Ohitus on VIIMEINEN SANA minuuttipassia (depth_factor, hintapriori)
+    vastaan — se ei muutu. FPL:n oma saatavuussignaali on eri, ULKOINEN
+    lahde, ja se saa VIIMEISEN SANAN saatavuudesta: status='a' -> ei
+    muutosta (`apply_availability` on identiteetti silloin), muu status ->
+    p_start skaalataan alas kuten jokaiselle muullekin riville.
+    """
+    from src.models.fpl_xp import apply_availability, set_p_start
+    out = set_p_start(mm, p_start)
+    if status != "a":
+        out = apply_availability(out, status, chance)
+    return out
+
+
 def load_player_overrides(path: Path | None = None,
                           today: _dt.date | None = None) -> tuple[dict, list[str]]:
     """(player_id -> {"p_start", "xg_mult", "reason", "review_by"}, varoitukset).

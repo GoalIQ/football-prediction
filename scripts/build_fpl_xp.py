@@ -58,7 +58,8 @@ from src.models.fpl_context import (
     promoted_teams,
     xmins_multiplier,
 )
-from src.models.fpl_player_overrides import load_player_overrides
+from src.models.fpl_player_overrides import (apply_p_start_override,
+                                              load_player_overrides)
 
 OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 
@@ -1015,8 +1016,8 @@ def main(argv: list[str] | None = None) -> int:
         # pelaajan, eli tekisi peilikuvan siitä viasta jonka se korjasi.
         # Saatavuus luetaan FPL:n omasta syötteestä joka pyörii joka
         # tapauksessa, joten mitään uutta lähdettä ei tarvita.
+        el = next((e for e in boot["elements"] if e["id"] == pid), {})
         if ov.get("until_available"):
-            el = next((e for e in boot["elements"] if e["id"] == pid), {})
             chance = el.get("chance_of_playing_next_round")
             back = (el.get("status") == "a"
                     and (chance is None or chance >= 75))
@@ -1030,13 +1031,21 @@ def main(argv: list[str] | None = None) -> int:
         # (xg_mult) koskematta minuutteihin.
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
-            mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            status = el.get("status", "a")
+            # XP-OVERRIDE-OHITTAA-SAATAVUUDEN: `set_p_start` yksin unohtaisi
+            # etta pelaaja on JUURI NYT epavarma/poissa — apply_p_start_override
+            # ajaa saatavuuden uudelleen senhetkisella statuksella (ks.
+            # fpl_player_overrides.py:n docstring).
+            mm_by_player[pid] = apply_p_start_override(
+                mm_by_player[pid], ov["p_start"], status,
+                el.get("chance_of_playing_next_round"))
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""
+            gate_tag = f" (saatavuus '{status}' sovellettu uudelleen)" if status != "a" else ""
             print(f"[Overrides] {pid}: p_start {before:.2f} -> "
                   f"{ov['p_start']:.2f} "
-                  f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag} — "
+                  f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag}{gate_tag} — "
                   f"{ov['reason'][:60]}")
         if ov["xg_mult"] != 1.0:
             print(f"[Overrides] {pid}: xg_mult x{ov['xg_mult']:.2f} "

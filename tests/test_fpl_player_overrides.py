@@ -25,7 +25,8 @@ import pytest
 
 from src.models import fpl_xp as xp
 from src.models import fpl_player_overrides as ovr
-from src.models.fpl_player_overrides import load_player_overrides
+from src.models.fpl_player_overrides import (apply_p_start_override,
+                                              load_player_overrides)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTIONS = ROOT / "data" / "fpl_xp_projections.json"
@@ -198,6 +199,50 @@ def test_team_attack_delta_cannot_do_this_job():
     # attack[t] += d kertoo seka lam:n etta lam_avg[t]:n -> goal_mult ennallaan
     shifted = xp.xp_components(2, rates, 90.0, 0.9, 0.05, dict(ctx, goal_mult=1.0))
     assert shifted["goals"] == pytest.approx(base["goals"])
+
+
+# --------------------------------------------------------------------------
+# XP-OVERRIDE-OHITTAA-SAATAVUUDEN (julkaisutarkistajan löydös 12.9.2026):
+# p_start-ohitus ei saa julkaista täyttä pelaamistodennäköisyyttä pelaajalle
+# jonka FPL-status EI ole 'a' juuri build-hetkellä.
+# --------------------------------------------------------------------------
+
+def _mm(p_start=0.10):
+    """Minimaalinen minuuttimalli-dict — samat kentät joita
+    `recompute_minutes` lukee/kirjoittaa."""
+    return {"p_start": p_start, "p_start_raw": p_start, "p_sub": 0.10,
+            "e_min_start": 85.0, "e_min_sub": 20.0,
+            "p60_start": 0.90, "p60_sub": 0.10}
+
+
+def test_override_ei_ohita_saatavuutta_kun_status_on_epavarma():
+    """🔴 Ilman apply_availability-uudelleenajoa tama kaatuisi: p_start jäisi
+    overriden raakaan 0.85:een status/chance:sta välittämättä, ja xP
+    väittäisi doubtful-pelaajan pelaavan täydellä todennäköisyydellä samalla
+    kun /fpl ja /fpl/team-news väittävät kovakoodatusti että xP:ssä on
+    epävarmuus mukana (src/doubt_copy.py)."""
+    mm = _mm(p_start=0.10)  # esim. hintapriorin jäljiltä matala
+    out = apply_p_start_override(mm, 0.85, status="d", chance=50.0)
+    assert out["p_start"] == pytest.approx(0.85 * 0.5)
+    assert out["p_start_raw"] == pytest.approx(0.85 * 0.5)
+
+
+def test_override_nollaa_pelaajan_joka_on_ulkona():
+    """i/s/u/n -> 0.0, sama saatavuusportti kuin jokaisella muullakin
+    rivillä (fpl_xp.apply_availability)."""
+    mm = _mm(p_start=0.10)
+    out = apply_p_start_override(mm, 0.85, status="i", chance=None)
+    assert out["p_start"] == 0.0
+    assert out["p_start_raw"] == 0.0
+
+
+def test_override_saa_taydet_oikeudet_kun_pelaaja_on_saatavilla():
+    """NEGATIIVINEN KONTROLLI: status='a' -> apply_availability on
+    identiteetti, override EI kutistu turhaan."""
+    mm = _mm(p_start=0.10)
+    out = apply_p_start_override(mm, 0.85, status="a", chance=None)
+    assert out["p_start"] == pytest.approx(0.85)
+    assert out["p_start_raw"] == pytest.approx(0.85)
 
 
 def test_xg_mult_is_loaded_and_defaults_to_one(tmp_path):
