@@ -926,17 +926,26 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         if not chosen and best_single is not None:
             best_single["pair"] = False
             chosen = [best_single]
-        # 🔴 VAIHE 2 (17.9): KUOLLUT PAIKKA SIIVOTAAN KUN PAREMPAA KAYTTOA
-        # SIIRROLLE EI OLE. `unplayable_members` on lukija; tama on se kohta
-        # jossa plan_gw:n on PAKKO kasitella sen vastaus. Jarjestys on
-        # tietoinen: XI-pisteet ensin (vaihe 1), siivous sitten — penkkivahdin
-        # vaihto ei tuota pisteita, joten se ei saa syrjayttaa siirtoa joka
-        # tuottaa. Sama vertailu `decide >= rima` kuin vaiheessa 1: hitin
-        # rima (ft 0) on hitin, joten kuolleeseen paikkaan ei koskaan makseta
-        # -4:aa; vapaalla siirrolla rima on BAR_DEAD_SLOT (0.0) ja nolla
-        # riittaa. Pelaavaa penkkilaista tama ei koske: `is_unplayable`
-        # vaatii etta FPL sanoo "ei voi pelata" JA xP on nolla koko ikkunalle.
-        if not chosen:
+        # 🔴 VAIHE 2 (17.9): KUOLLUT PAIKKA SIIVOTAAN VAPAALLA SIIRROLLA
+        # KUN PAREMPAA KAYTTOA SIIRROLLE EI OLE. `unplayable_members` on
+        # lukija; tama on se kohta jossa plan_gw:n on PAKKO kasitella sen
+        # vastaus. Jarjestys on tietoinen: XI-pisteet ensin (vaihe 1),
+        # siivous sitten — penkkivahdin vaihto ei tuota pisteita, joten se
+        # ei saa syrjayttaa siirtoa joka tuottaa. Sama vertailu
+        # `decide >= rima` kuin vaiheessa 1; vapaalla siirrolla rima on
+        # BAR_DEAD_SLOT (0.0) ja nolla riittaa.
+        # `fts > 0` ON RAKENTEELLINEN, EI RIMAN VARASSA (mitattu 17.9 ilta
+        # ensimmaisesta versiosta): kuollut XI-paikka, tulijan horisonttihyoty
+        # 8.0 mutta lahi-ikkuna 0.0 -> vaihe 1 hylkasi hitin
+        # NEAR_SHARE_FOR_HIT-saannolla (3.9: -4 vain etupainotteisesta
+        # hyodysta), ja vaihe 2 hyvaksyi SAMAN siirron HITILLA, koska hitin
+        # rima (MIN_GAIN_FOR_HIT - 4) lukee vain horisonttia. Vaihe 2 ei saa
+        # olla takaovi hitin lahi-ikkunasaannon ohi: se siivoaa vain vapaalla
+        # siirrolla, hitti on aina vaiheen 1 paatos. Lahdeportti vaatii etta
+        # tama ehto lukee `fts` (tests/test_transfer_bench_repair.py).
+        # Pelaavaa penkkilaista tama ei koske: `is_unplayable` vaatii etta
+        # FPL sanoo "ei voi pelata" JA xP on nolla koko ikkunalle.
+        if not chosen and fts > 0:
             for cand in repair_moves(squad, pool, bank, gws,
                                      top_per_pos=top_per_pos, near=near):
                 hit = _hit_for(0)

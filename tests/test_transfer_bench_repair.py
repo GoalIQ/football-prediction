@@ -157,6 +157,39 @@ def test_NEG_kuolleeseen_paikkaan_ei_makseta_hittia():
     assert [p["id"] for p in e.unplayable_members(step["squad"], GWS)] == [2]
 
 
+def test_NEG_vaihe_2_ei_ole_takaovi_hitille_lahi_ikkunasaannon_ohi():
+    """🔴 Mitattu 17.9 ilta ensimmaisesta versiosta: kuollut XI-paikka (FWD
+    32, status u, 0 xP), tulijan hyoty 8.0 horisontissa mutta 0.0 lahi-
+    ikkunassa. Vaihe 1 hylkasi hitin NEAR_SHARE_FOR_HIT-saannolla (3.9: -4
+    maksetaan vain etupainotteisesta hyodysta), ja vaihe 2 hyvaksyi SAMAN
+    siirron hitilla, koska hitin rima (MIN_GAIN_FOR_HIT - 4) lukee vain
+    horisonttia: `plan_gw ft=0 -> [(32, 90, hit 4.0, 'hit')]`. Kuolleen paikan
+    siivous on vapaan siirron paatos; hitti on aina vaiheen 1 paatos."""
+    squad = [p for p in base_squad() if p["id"] != 32]
+    dead = mk(32, 4, 15, 70, 0.0, status="u", chance_next=0, no_projection=True)
+    squad.append(dead)
+    repl = mk(90, 4, 20, 70, [0.0, 0.0, 8.0, 8.0, 8.0, 8.0])
+    near = e.near_gws(GWS)
+    gain = e.xi_value(e._apply(squad, [dead], [repl]), GWS) - e.xi_value(squad, GWS)
+    gain_near = (e.xi_value(e._apply(squad, [dead], [repl]), near)
+                 - e.xi_value(squad, near))
+    # KONTROLLIT: hitin horisonttirima ylittyy, lahi-ikkunan osuus ei -> vaihe 1
+    # hylkaa juuri lahi-ikkunasaannolla, ja vaihe 2:n haku LOYTAA siirron.
+    # Ilman naita testi voisi olla vihrea siksi ettei siirtoa ole tarjolla.
+    assert gain >= e.MIN_GAIN_FOR_HIT and gain_near == 0.0, (gain, gain_near)
+    assert e.single_moves(squad, [repl], 0, GWS, top_k=3, near=near,
+                          near_min_share=e.NEAR_SHARE_FOR_HIT) == []
+    assert [m["in"]["id"] for m in
+            e.repair_moves(squad, [repl], 0, GWS, near=near)] == [90]
+    step = e.plan_gw(squad, [repl], 0, GWS, ft=0)
+    assert step["moves"] == [] and step["hits"] == 0, step["moves"]
+    assert step["unplayable_left"] == [32], "paikka jaa ja se sanotaan"
+    # ...ja vapaalla siirrolla sama paikka siivotaan (vaihe 2, ei hittia).
+    vapaa = e.plan_gw(squad, [repl], 0, GWS, ft=1)
+    assert _ids(vapaa) == [(32, 90)] and vapaa["hits"] == 0, vapaa["moves"]
+    assert vapaa["moves"][0]["bar"]["reason"] == "dead_slot"
+
+
 def test_ei_korvaajaa_budjetilla_jaa_nakyviin_eika_jumita():
     squad = squad_with_dead_bench_gk()            # pankki 0, lahtija 4.0
     liian_kallis = mk(90, 1, 20, 45, 1.0)          # 4.5 ei mahdu
@@ -338,7 +371,14 @@ def _fns() -> dict[str, ast.FunctionDef]:
     return {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
 
 
-def _calls(fn: ast.FunctionDef) -> set[str]:
+def _calls_in(nodes: list[ast.stmt]) -> set[str]:
+    out: set[str] = set()
+    for n in nodes:
+        out |= _calls(n)
+    return out
+
+
+def _calls(fn: ast.AST) -> set[str]:
     out: set[str] = set()
     for node in ast.walk(fn):
         if isinstance(node, ast.Call):
@@ -383,6 +423,16 @@ def test_plan_gw_kutsuu_korjaushakua_joka_lukee_yhta_lukijaa():
     assert {"needs_repair", "window_xp"} <= _calls(fns["is_unplayable"])
     # Vaihe 2 lukee saman rimalukijan ja saman vertailun kuin vaihe 1.
     assert "transfer_bar" in _calls(fns["plan_gw"])
+    # Vaihe 2 on VAPAAN SIIRRON haara: repair_moves-kutsun on oltava if-lohkossa
+    # jonka ehto lukee `fts`. 17.9 ilta: ilman ehtoa vaihe 2 maksoi hitin
+    # vaiheen 1 lahi-ikkunasaannon ohi (behavioraalinen pari:
+    # test_NEG_vaihe_2_ei_ole_takaovi_hitille_lahi_ikkunasaannon_ohi).
+    vartijat = [n for n in ast.walk(fns["plan_gw"]) if isinstance(n, ast.If)
+                and "repair_moves" in _calls_in(n.body)]
+    assert vartijat, "repair_moves-kutsu ei ole ehdollinen"
+    for v in vartijat:
+        ehto = {n.id for n in ast.walk(v.test) if isinstance(n, ast.Name)}
+        assert "fts" in ehto, f"vaihe 2:n ehto ei lue ft-pankkia: {ast.dump(v.test)}"
 
 
 def test_siirtoja_tuottava_funktio_lukee_lukijaa_tai_on_poikkeuslistalla():
