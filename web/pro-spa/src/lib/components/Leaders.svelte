@@ -335,13 +335,28 @@
 		});
 		return rows;
 	});
+	// 17.9 DEFCON-LEADERS-PALVELINRAJA: raja tulee palvelimelta
+	// (meta.free_rows = api/premium.py FREE_LEADERS_ROWS, yksi vakio).
+	// FREE_ROWS on vain fallback backendille joka ei viela maskaa.
+	const dcFreeRows = $derived(defcon?.meta?.free_rows ?? FREE_ROWS);
 	const dcVisible = $derived(
 		premium
 			? showAllDc
 				? dcSorted
 				: dcSorted.slice(0, RENDER_LIMIT)
-			: dcAll.slice(0, FREE_ROWS)
+			: dcAll.slice(0, dcFreeRows)
 	);
+	// Teaser: palvelin kertoo maskanneensa (meta.masked) ja premium olisi
+	// saanut enemman riveja (total_rows). Vanhalla backendilla, joka ei viela
+	// maskaa, sama paatos listan pituudesta. Pelkka `dcAll.length > FREE_ROWS`
+	// on epatosi heti kun palvelin antaa tasan kolme rivia, ja teaser katoaisi
+	// tasan silta kayttajalta jolle se on tarkoitettu.
+	const dcTeaser = $derived.by(() => {
+		if (premium) return false;
+		const m = defcon?.meta;
+		if (m?.masked) return (m.total_rows ?? dcAll.length + 1) > dcAll.length;
+		return dcAll.length > FREE_ROWS;
+	});
 	function dcSortBy(k: typeof dcSortKey) {
 		if (dcSortKey === k) {
 			dcSortDesc = !dcSortDesc;
@@ -949,11 +964,12 @@
 		</button>
 	{/if}
 
-	{#if !premium && dcAll.length > FREE_ROWS}
-		<!-- 🔒 DefCon top-3 free → koko lista premium. xG-lista on ilmainen. -->
+	{#if dcTeaser}
+		<!-- 🔒 DefCon top-3 free → koko lista premium. xG-lista on ilmainen.
+		     Luku tulee palvelimen meta.free_rows:sta (fallback FREE_ROWS). -->
 		<button type="button" class="teaser-row" onclick={unlock}>
 			<span>
-				Full DefCon leaderboard <span class="muted">(top 3 shown free)</span>
+				Full DefCon leaderboard <span class="muted">(top {dcFreeRows} shown free)</span>
 			</span>
 			<span class="locked" aria-label="Locked">•.••</span>
 			<span class="cta">Unlock with Premium</span>

@@ -66,6 +66,21 @@ FREE_EDGE_TEMPLATE_RISKS = 1
 # HUOM: differentials EI ole maskattu, ja syy on koodissa (api/main.py):
 # julkisen /fpl/differentials-sivun generaattori hakee sen anonyymina.
 FREE_VALUE_ROWS = 3           # sama luku kuin Value.svelte:n FREE_ROWS
+# DEFCON-LEADERS-PALVELINRAJA (17.9.2026). "Full DefCon leaderboard" on myyty
+# premiumina vahintaan viidella pinnalla (fpl.html, build_fpl_page.py,
+# llms.txt, mobiilin paywall-bulletit, SPA:n Leaders-teaser), mutta
+# `/api/fantasy/defcon-leaders?basis=season&top_n=400` palautti anonyymille
+# 182 rivia ja `window=5` 377 rivia, molemmat `meta.masked=None` (mitattu
+# livena 12.9 ja uudelleen 17.9). Raja oli VAIN selaimessa: Leaders.svelte
+# ja mobiilin FantasyTools.tsx leikkasivat listan kolmeen. Kuudes kerta samaa
+# vikaluokkaa (captain 15.8, replacements 2.9, value + differentials 4.9,
+# rate-team 5.9).
+# Free = sama 3 rivia jonka molemmat klientit jo nayttavat, joten nakyva
+# sisalto ei muutu kenellakaan. Luku menee vastauksen metaan (`free_rows`),
+# jotta klientin ei tarvitse kovakoodata sita: palvelin on ainoa lukija.
+# Sisarreitit `defcon-gw` ja `defcon/{player_id}` pysyvat ilmaisina
+# (pelaajakortin DefCon-loki on FPL:n omaa otteludataa, ei rankingia).
+FREE_LEADERS_ROWS = 3
 
 
 # ---------------------------------------------------------------------------
@@ -430,6 +445,33 @@ def mask_value_payload(payload: dict) -> dict:
     meta["masked"] = True
     meta["mask"] = (f"top {FREE_VALUE_ROWS} of {len(rows)} value rows, no "
                     "goalkeeper pairs (free preview)")
+    out["meta"] = meta
+    return out
+
+
+def mask_defcon_leaders_payload(payload: dict) -> dict:
+    """/api/fantasy/defcon-leaders freelle: top-N rivia palvelinjarjestyksessa.
+
+    Rankkausfunktiot (rank_defcon_leaders, rank_defcon_season) lajittelevat
+    (hit_rate_pct, dc_per_game) desc, joten typistys tuottaa tasan saman
+    top 3:n jonka klientit leikkasivat itse palvelinjarjestyksesta. Rivit
+    ovat taysia (renderointi ei kaadu). Meta kantaa rajan (`free_rows`) ja
+    sen montako rivia sama kysely olisi antanut premiumille (`total_rows`),
+    jotta teaser voi sanoa "top 3 of 182" lukematta lukua kovakoodista, ja
+    jotta klientti nakee maskin `meta.masked`-lipusta eika listan
+    pituudesta: kolmen rivin lista ei ole enaa todiste siita ettei
+    enempaa ole.
+    """
+    out = dict(payload)
+    rows = list(out.get("players") or [])
+    out["players"] = rows[:FREE_LEADERS_ROWS]
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["free_rows"] = FREE_LEADERS_ROWS
+    meta["total_rows"] = len(rows)
+    meta["mask"] = (f"top {FREE_LEADERS_ROWS} of {len(rows)} DefCon leaders "
+                    "(free preview - GoalIQ Premium unlocks the full "
+                    "leaderboard)")
     out["meta"] = meta
     return out
 
