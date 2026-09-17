@@ -1,22 +1,22 @@
 {
-  "updated_at": "2026-09-16T21:14:58+00:00",
+  "updated_at": "2026-09-17T04:40:59+00:00",
   "logged_total": 3334,
-  "pending": 2761,
-  "voided": 7,
+  "pending": 2759,
+  "voided": 8,
   "all_time": {
-    "n": 566,
-    "correct_1x2": 284,
-    "pct_1x2": 0.5018,
+    "n": 567,
+    "correct_1x2": 285,
+    "pct_1x2": 0.5026,
     "draw_n": 154,
-    "pct_draw": 0.2721,
-    "decisive_n": 412,
-    "decisive_correct": 284,
-    "pct_decisive": 0.6893,
-    "exact_n": 518,
+    "pct_draw": 0.2716,
+    "decisive_n": 413,
+    "decisive_correct": 285,
+    "pct_decisive": 0.6901,
+    "exact_n": 519,
     "exact_correct": 66,
-    "pct_exact": 0.1274,
-    "brier": 0.5876,
-    "brier_n": 518
+    "pct_exact": 0.1272,
+    "brier": 0.5865,
+    "brier_n": 519
   },
   "rolling": {
     "n": 100,
@@ -30,7 +30,7 @@
     "exact_n": 100,
     "exact_correct": 9,
     "pct_exact": 0.09,
-    "brier": 0.5882,
+    "brier": 0.5875,
     "brier_n": 100,
     "window": 100
   },
@@ -126,19 +126,19 @@
       "brier_n": 36
     },
     "PD": {
-      "n": 56,
-      "correct_1x2": 28,
-      "pct_1x2": 0.5,
+      "n": 57,
+      "correct_1x2": 29,
+      "pct_1x2": 0.5088,
       "draw_n": 14,
-      "pct_draw": 0.25,
-      "decisive_n": 42,
-      "decisive_correct": 28,
-      "pct_decisive": 0.6667,
-      "exact_n": 56,
+      "pct_draw": 0.2456,
+      "decisive_n": 43,
+      "decisive_correct": 29,
+      "pct_decisive": 0.6744,
+      "exact_n": 57,
       "exact_correct": 8,
-      "pct_exact": 0.1429,
-      "brier": 0.5974,
-      "brier_n": 56
+      "pct_exact": 0.1404,
+      "brier": 0.5873,
+      "brier_n": 57
     },
     "PL": {
       "n": 40,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 380,
-      "correct_1x2": 195,
-      "pct_1x2": 0.5132,
+      "n": 381,
+      "correct_1x2": 196,
+      "pct_1x2": 0.5144,
       "draw_n": 90,
-      "pct_draw": 0.2368,
-      "decisive_n": 290,
-      "decisive_correct": 195,
-      "pct_decisive": 0.6724,
-      "exact_n": 380,
+      "pct_draw": 0.2362,
+      "decisive_n": 291,
+      "decisive_correct": 196,
+      "pct_decisive": 0.6735,
+      "exact_n": 381,
       "exact_correct": 45,
-      "pct_exact": 0.1184,
-      "brier": 0.5783,
-      "brier_n": 380
+      "pct_exact": 0.1181,
+      "brier": 0.5768,
+      "brier_n": 381
     },
     "stale": {
       "n": 138,
@@ -251,10 +251,10 @@
   },
   "calibration": [
     {
-      "bin_mid": 0.0747,
-      "predicted": 0.0747,
-      "actual": 0.025,
-      "n": 40
+      "bin_mid": 0.0738,
+      "predicted": 0.0738,
+      "actual": 0.0238,
+      "n": 42
     },
     {
       "bin_mid": 0.1609,
@@ -299,13 +299,28 @@
       "n": 29
     },
     {
-      "bin_mid": 0.8375,
-      "predicted": 0.8375,
-      "actual": 0.7857,
-      "n": 14
+      "bin_mid": 0.8409,
+      "predicted": 0.8409,
+      "actual": 0.8,
+      "n": 15
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-16",
+      "home_team": "FC Barcelona",
+      "away_team": "Real Racing Club de Santander",
+      "predicted_winner": "home",
+      "p_winner": 0.8885,
+      "lead_h": 2.8,
+      "most_likely_score": "3-0",
+      "actual_score": "7-2",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-16",
       "home_team": "RC Deportivo La Coruña",
@@ -585,21 +600,6 @@
       "lead_h": 1.4,
       "most_likely_score": "1-0",
       "actual_score": "2-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-13",
-      "home_team": "PSV Eindhoven",
-      "away_team": "Sparta Rotterdam",
-      "predicted_winner": "home",
-      "p_winner": 0.8511,
-      "lead_h": 1.9,
-      "most_likely_score": "3-0",
-      "actual_score": "4-1",
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
