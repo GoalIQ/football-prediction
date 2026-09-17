@@ -71,6 +71,64 @@ def test_doubtful_scales_by_chance():
     assert out_none["xmins"] == pytest.approx(0.5 * 90.0)
 
 
+def test_set_p_start_sets_raw_and_calibrated_equally():
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 0.0 for r in rounds}, {}, rounds)
+    out = xp.set_p_start(mm, 0.6)
+    assert out["p_start_raw"] == pytest.approx(0.6)
+    assert out["p_start"] == pytest.approx(0.6)
+    # alkuperäinen ei mutatoidu
+    assert mm["p_start_raw"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# XP-OVERRIDE-OHITTAA-SAATAVUUDEN (12.9.2026). `set_p_start` yksin asettaa
+# aloitus-tn:n suoraan eikä tiedä pelaajan FPL-statuksesta mitään. Julkinen
+# ilmaispinta (src/doubt_copy.py, /fpl + /fpl/team-news) väittää
+# kovakoodatusti että JOKAISEN epävarman pelaajan xP sisältää pelaamis-
+# todennäköisyyden — ilman uudelleensovellusta ohitettu pelaaja olisi ainoa
+# poikkeus. Testit mittaavat `apply_manual_p_start_override`ia, funktiota
+# jota build_fpl_xp.py:n ohituslohko nyt kutsuu suoran `set_p_start`in sijaan.
+# ---------------------------------------------------------------------------
+def test_manual_override_on_available_player_matches_plain_set_p_start():
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    assert xp.apply_manual_p_start_override(mm, 0.9, "a", None) == xp.set_p_start(mm, 0.9)
+
+
+def test_manual_override_on_doubtful_player_is_scaled_by_availability():
+    """Ennen korjausta: 50 % pelimahdollisuus + ohitus 0.9 -> xP täydeltä
+    pelikunnolta. Tämä on juuri se tapaus jota rivi mittasi (12.9: kaksi
+    tuotannon overridea, molemmat statuksella "a" eli vika ei vielä lauennut
+    — mutta seuraava epävarmalle pelaajalle kirjoitettu rivi olisi laukaissut
+    sen äänettömästi)."""
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    naive = xp.set_p_start(mm, 0.9)                    # vanha, korjaamaton polku
+    fixed = xp.apply_manual_p_start_override(mm, 0.9, "d", 50)
+    assert naive["xmins"] == pytest.approx(81.0)
+    assert fixed["p_start_raw"] == pytest.approx(0.45)
+    assert fixed["xmins"] == pytest.approx(0.5 * naive["xmins"])
+    # Negatiivinen kontrolli: jos korjaus poistetaan (palataan pelkkään
+    # set_p_startiin), tämä testi EI eroa naiivista — sen on siis mitattava,
+    # ei vain suoritettava.
+    assert naive["xmins"] != pytest.approx(fixed["xmins"])
+
+
+def test_manual_override_on_ruled_out_player_zeroes_minutes():
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    fixed = xp.apply_manual_p_start_override(mm, 0.9, "i", None)
+    assert fixed["p_start"] == 0.0 and fixed["xmins"] == pytest.approx(0.0)
+
+
+def test_manual_override_does_not_mutate_input():
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 90.0 for r in rounds}, {r: 1 for r in rounds}, rounds)
+    xp.apply_manual_p_start_override(mm, 0.9, "d", 50)
+    assert mm["p_start_raw"] == pytest.approx(1.0)
+
+
 def test_depth_factor_thin_squad_boosts_capped():
     # kilpailija pudonnut (esim. injured nollasi) → Σp_start 2.5 < slots 4
     f = xp.depth_factor([1.0, 1.0, 0.5], 4.0)

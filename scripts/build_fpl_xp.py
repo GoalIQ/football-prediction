@@ -1015,8 +1015,8 @@ def main(argv: list[str] | None = None) -> int:
         # pelaajan, eli tekisi peilikuvan siitä viasta jonka se korjasi.
         # Saatavuus luetaan FPL:n omasta syötteestä joka pyörii joka
         # tapauksessa, joten mitään uutta lähdettä ei tarvita.
+        el = next((e for e in boot["elements"] if e["id"] == pid), {})
         if ov.get("until_available"):
-            el = next((e for e in boot["elements"] if e["id"] == pid), {})
             chance = el.get("chance_of_playing_next_round")
             back = (el.get("status") == "a"
                     and (chance is None or chance >= 75))
@@ -1030,7 +1030,17 @@ def main(argv: list[str] | None = None) -> int:
         # (xg_mult) koskematta minuutteihin.
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
-            mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            status = el.get("status", "a")
+            # XP-OVERRIDE-OHITTAA-SAATAVUUDEN (12.9): ohitus kulkee nyt saman
+            # saatavuusportin läpi kuin jokainen muu pelaaja, vain overriden
+            # JÄLKEEN eikä sen sijaan — ks. apply_manual_p_start_override.
+            mm_by_player[pid] = xp.apply_manual_p_start_override(
+                mm_by_player[pid], ov["p_start"], status,
+                el.get("chance_of_playing_next_round"))
+            if status != "a":
+                print(f"[Overrides] {pid}: status {status} — saatavuus "
+                      f"ajettu uudelleen overriden jälkeen "
+                      f"(xmins {mm_by_player[pid]['xmins']:.1f})")
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""

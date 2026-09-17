@@ -808,6 +808,28 @@ def set_p_start(mm: dict, p_start: float) -> dict:
     return recompute_minutes(out)
 
 
+def apply_manual_p_start_override(mm: dict, p_start: float, status: str,
+                                  chance) -> dict:
+    """Manuaalinen p_start-ohitus, saatavuusportin läpi (12.9.2026).
+
+    🔴 XP-OVERRIDE-OHITTAA-SAATAVUUDEN. `set_p_start` korvaa aloitus-tn:n
+    SUORAAN eikä tiedä pelaajan FPL-statuksesta mitään — se on tehty
+    korjaamaan historiapohjaista minuuttipriorista, ei saatavuutta. Jos
+    ohitus osuisi pelaajaan jonka status ei ole "a" ilman että saatavuus
+    ajetaan sen jälkeen uudelleen, hän olisi ainoa pelaaja koko
+    projektiossa jonka xP EI sisällä pelaamistodennäköisyyttä — samalla
+    kun `/fpl` ja `/fpl/team-news` (src/doubt_copy.py) väittävät
+    kovakoodatusti että se sisältyy AINA jokaisen epävarman pelaajan
+    kohdalla. Tämä on se sama portti jonka kautta jokainen muu pelaaja
+    kulkee (ks. `apply_availability`-kutsu build_fpl_xp.py:ssä), vain
+    ohituksen JÄLKEEN eikä sen sijaan.
+    """
+    out = set_p_start(mm, p_start)
+    if status != "a":
+        out = apply_availability(out, status, chance)
+    return out
+
+
 def congestion_multiplier(n_fixtures_in_gw: int, xmins: float) -> float:
     """Tupla-GW → rotaatioriski-kerroin kärkiminuuttien pelaajille.
     Yksi ottelu tai matalat minuutit → neutraali 1.0. Ei koskaan < CONGESTION_MULT."""
