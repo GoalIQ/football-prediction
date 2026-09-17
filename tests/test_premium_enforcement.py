@@ -699,3 +699,80 @@ def test_defcon_player_stays_free_when_enforcement_on(leaders_client,
     d = r.json()
     assert d.get("meta", {}).get("masked") is not True
     assert len(d["games"]) == 5
+
+
+def test_partial_routes_declare_what_leaks():
+    """Poikkeuslista perusteluineen (6a kohta 2): jokainen PARTIAL-reitti
+    nimeaa PARTIAL_PREMIUM_KEYSissa mika osa vastauksesta on premiumia.
+
+    PARTIAL ilman maaritelmaa on reitti jonka maskia kukaan ei ole paattanyt
+    eika mikaan testi voi todentaa (17.9 asti defcon-leaders olisi voinut
+    siirtya tanne pelkalla joukkorivilla). Maaritelma ilman reittia on
+    vanhentunut rivi joka vartioi tyhjaa.
+    """
+    ilman_maaritelmaa = sorted(PARTIAL_EXPECTED - set(PARTIAL_PREMIUM_KEYS))
+    ilman_reittia = sorted(set(PARTIAL_PREMIUM_KEYS) - PARTIAL_EXPECTED)
+    assert not ilman_maaritelmaa and not ilman_reittia, (
+        f"PARTIAL ilman premium-osan maaritelmaa: {ilman_maaritelmaa}; "
+        f"maaritelma ilman PARTIAL-reittia: {ilman_reittia}")
+
+
+@pytest.mark.parametrize("window_open", [True, False],
+                         ids=["ikkuna-auki", "ikkuna-kiinni"])
+@pytest.mark.parametrize("basis", sorted(_LEADERS_QUERIES))
+def test_defcon_leaders_anonymous_masked_in_every_free_window_phase(
+        leaders_client, monkeypatch, basis, window_open):
+    """6a kohta 3: invariantti mitataan joka vaiheessa, ei nykyhetkessa.
+
+    GW1-GW3 ilmaisikkuna (free_premium_window_active) antaa premiumin
+    KIRJAUTUNEELLE ilman Supabase-hakua. Anonyymin on pysyttava maskattuna
+    ikkunasta riippumatta: muuten "Full DefCon leaderboard" olisi kolme
+    kierrosta kaudesta julkinen curlilla. Vaihe injektoidaan, ei lueta
+    kellosta. Erotteleva kontrolli on seuraava testi.
+    """
+    import api.premium as prem
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda *a, **k: window_open)
+    d = leaders_client.get(_LEADERS_QUERIES[basis]).json()
+    assert d["meta"]["masked"] is True
+    assert d["meta"]["total_rows"] == LEADERS_N
+    assert len(d["players"]) == FREE_LEADERS_ROWS, (
+        f"{basis}, ikkuna {'auki' if window_open else 'kiinni'}: anonyymi "
+        f"sai {len(d['players'])} rivia")
+
+
+@pytest.mark.parametrize("window_open", [True, False],
+                         ids=["ikkuna-auki", "ikkuna-kiinni"])
+def test_defcon_leaders_signed_in_non_premium_follows_free_window(
+        leaders_client, monkeypatch, window_open):
+    """Erotteleva kontrolli edelliselle: vaihe VAIHTAA tuloksen
+    kirjautuneelle ei-premiumille (ikkuna auki -> koko lista, kiinni ->
+    maski). Ilman tata edellinen lapaisisi myos silloin jos monkeypatch
+    osuisi nimeen jota polku ei lue, eli mittaisimme nykyhetkea."""
+    import api.premium as prem
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda *a, **k: window_open)
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-free")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: False)
+    monkeypatch.setattr(prem, "_web_subscription_active", lambda uid: False)
+    with prem._PREMIUM_CACHE_LOCK:
+        prem._PREMIUM_CACHE.clear()
+    try:
+        d = leaders_client.get(
+            _LEADERS_QUERIES["season"],
+            headers={"Authorization": "Bearer free-user"}).json()
+    finally:
+        with prem._PREMIUM_CACHE_LOCK:
+            prem._PREMIUM_CACHE.clear()
+    if window_open:
+        assert d["meta"].get("masked") is not True
+        assert len(d["players"]) == LEADERS_N
+    else:
+        assert d["meta"]["masked"] is True
+        assert len(d["players"]) == FREE_LEADERS_ROWS
