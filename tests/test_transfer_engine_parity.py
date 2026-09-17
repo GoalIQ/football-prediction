@@ -83,9 +83,17 @@ def _load_freeze():
 
 
 def _prev_from(squad):
+    """Peritty runko freezen muodossa. 17.9 (FREEZE-BANK-MYYNTIHINTA):
+    pankki on FPL:n oma luku `meta.bank_tenths`, ei `budget - hinnat`, ja
+    jokaisella rivilla on `selling_price`. Tassa myyntihinta == nykyhinta
+    ja pankki == 100.0m - rungon hinta, jotta moottorin syote on sama kuin
+    ennen ja pariteettitesti mittaa yha samaa asiaa."""
     rivit = [{"id": p["id"], "web_name": p["web_name"], "pos": p["element_type"],
-              "price": p["price"], "club": p["club"]} for p in squad]
-    return {"meta": {"budget": 100.0}, "xi": rivit[:11], "bench": rivit[11:]}
+              "price": p["price"], "club": p["club"],
+              "selling_price": p["price"]} for p in squad]
+    bank = 100 * 10 - sum(int(p["price"]) for p in squad)
+    return {"meta": {"budget": 100.0, "bank_tenths": bank},
+            "xi": rivit[:11], "bench": rivit[11:]}
 
 
 def test_freeze_uses_same_engine_as_planner():

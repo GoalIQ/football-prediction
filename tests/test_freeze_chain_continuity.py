@@ -295,6 +295,19 @@ for _i in range(1, 41):
                                     3 if _i % 3 == 1 else 4)
 
 
+def _tila(gw, ids, price=45):
+    """Synteettinen `entry_state`-tulos: sama syote moottorille kuin vanha
+    `budget: 100.0` antoi (pankki 1000 - 15 x 45 = 325)."""
+    ids = [int(i) for i in ids]
+    return {"gw": gw, "bank_tenths": 1000 - price * len(ids),
+            "value_tenths": 1000,
+            "purchase": {i: price for i in ids},
+            "selling": {i: price for i in ids},
+            "now": {i: price for i in ids},
+            "selling_value_tenths": price * len(ids),
+            "bank_source": "test", "selling_source": "test"}
+
+
 def _pooli(ids, gw=4):
     return [{"id": i, "element_type": _POS40[i], "price": 45,
              "club": ((i - 1) % 14) + 1, "web_name": f"P{i}", "team_short": "AAA",
@@ -339,9 +352,11 @@ def _aja_freeze_main(monkeypatch, tmp_path, *, bootstrap_ids):
     monkeypatch.setattr(m, "next_freeze_gw", lambda events, now: (
         4, _dt.datetime(2026, 9, 12, 12, 30, tzinfo=_dt.timezone.utc)))
     monkeypatch.setattr(m, "entry_mismatch", lambda *a, **k: "")
-    monkeypatch.setattr(m, "_entry_history",
-                        lambda *a, **k: ({"value": 1000, "bank": 0}, None))
-    monkeypatch.setattr(m, "budget_from_history", lambda h: 100.0)
+    # 17.9: pankki ja myyntihinnat tulevat yhdesta lukijasta
+    # (`entry_state_for`), ei `budget - hinnat` -kaavasta. Tassa testissa
+    # rahatila on synteettinen: pankki 100.0m - 15 x 4.5m, myynti = nykyhinta.
+    monkeypatch.setattr(m, "entry_state_for",
+                        lambda gw, ids, boot, **k: (_tila(gw, ids), None))
 
     class _R:
         status_code = 200
@@ -458,9 +473,11 @@ def test_kieltaytyminen_puree_OIKEALLA_poolilla(monkeypatch, tmp_path):
     monkeypatch.setattr(m, "next_freeze_gw", lambda e, n: (
         4, _dt.datetime(2026, 9, 12, 12, 30, tzinfo=_dt.timezone.utc)))
     monkeypatch.setattr(m, "entry_mismatch", lambda *a, **k: "")
-    monkeypatch.setattr(m, "_entry_history",
-                        lambda *a, **k: ({"value": 1000, "bank": 0}, None))
-    monkeypatch.setattr(m, "budget_from_history", lambda h: 100.0)
+    # 17.9: pankki ja myyntihinnat tulevat yhdesta lukijasta
+    # (`entry_state_for`), ei `budget - hinnat` -kaavasta. Tassa testissa
+    # rahatila on synteettinen: pankki 100.0m - 15 x 4.5m, myynti = nykyhinta.
+    monkeypatch.setattr(m, "entry_state_for",
+                        lambda gw, ids, boot, **k: (_tila(gw, ids), None))
 
     class _R:
         status_code = 200

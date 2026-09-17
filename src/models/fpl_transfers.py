@@ -357,6 +357,29 @@ def _clubs_ok_after(clubs: dict[int, int], outs: list[dict], ins: list[dict]) ->
     return all(c.get(i["club"], 0) <= MAX_PER_CLUB for i in ins)
 
 
+def sell_price(p: dict) -> int:
+    """YKSI LUKIJA lahtijan hinnalle (17.9.2026, FREEZE-BANK-MYYNTIHINTA).
+
+    FPL maksaa myydysta pelaajasta MYYNTIHINNAN, ei nykyhintaa: noususta
+    ostaja saa puolet voitosta alaspain pyoristettyna, laskusta nykyhinnan.
+    Ennen tata jokainen budjettiehto luki `out_p["price"]` eli nykyhinnan,
+    joten moottori luuli saavansa lahtijasta enemman kuin FPL antaa (mitattu
+    17.9 entry 116920: Tzolakis 4.6 -> myy 4.5, De Cuyper 4.9 -> 4.7,
+    Mendy 4.1 -> 4.0) ja ehdotti siirtoja joihin raha ei riita.
+
+    `selling_price` on rungon rivilla kun kutsuja tuntee sen (freeze lukee
+    sen `fpl_entry_history.entry_state`ista). Ilman sita palautetaan
+    nykyhinta: julkisesta API:sta myyntihintaa ei saa, ja vasta ostetun
+    pelaajan myyntihinta ON nykyhinta - siksi `_apply`n tuoma tulokas ei
+    tarvitse kenttaa. Kutsuja joka tuntee myyntihinnan on itse vastuussa
+    siita etta kentta on jokaisella rivilla (freeze vaatii sen).
+    """
+    sp = p.get("selling_price")
+    if isinstance(sp, int) and not isinstance(sp, bool):
+        return sp
+    return int(p["price"])
+
+
 def _apply(squad: list[dict], outs: list[dict], ins: list[dict]) -> list[dict]:
     out_ids = {o["id"] for o in outs}
     return [p for p in squad if p["id"] not in out_ids] + list(ins)
@@ -403,6 +426,8 @@ def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float,
         # vaikka painottamaton hyoty on <= 0. Klientti nayttaa silloin syyn.
         "weighting_decided": bool(gain <= 0 < gain_w),
         "pos": POS_NAME[out_p["element_type"]],
+        # Se hinta jolla pankki oikeasti muuttuu: myyntihinta, ei nykyhinta.
+        "selling_price_out": sell_price(out_p),
     }
 
 
@@ -443,7 +468,7 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
 
     cands: list[tuple[float, dict, dict]] = []
     for out_p in squad:
-        budget = bank_tenths + out_p["price"]
+        budget = bank_tenths + sell_price(out_p)
         n = 0
         for in_p in by_pos[out_p["element_type"]]:
             if in_p["price"] > budget:
@@ -506,7 +531,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
     wval = {p["id"]: window_xp(p, gws) * confidence_weight(p) for p in pool}
     for p in squad:
         wval.setdefault(p["id"], window_xp(p, gws) * confidence_weight(p))
-    max_out_price = max(p["price"] for p in squad)
+    max_out_price = max(sell_price(p) for p in squad)
     by_pos: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: []}
     for p in pool:
         if p["id"] not in squad_ids:
@@ -518,7 +543,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
     # lahtija vapauttaa enintaan max_out_price.
     per_out: list[tuple[dict, list[tuple[float, dict]]]] = []
     for out_p in squad:
-        budget = bank_tenths + out_p["price"] + max_out_price
+        budget = bank_tenths + sell_price(out_p) + max_out_price
         lst = []
         for in_p in by_pos[out_p["element_type"]]:
             if in_p["price"] > budget:
@@ -538,7 +563,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
             for r2, i2 in l2:
                 if i1["id"] == i2["id"]:
                     continue
-                if i1["price"] + i2["price"] > bank_tenths + o1["price"] + o2["price"]:
+                if i1["price"] + i2["price"] > bank_tenths + sell_price(o1) + sell_price(o2):
                     continue
                 if not _clubs_ok_after(clubs, [o1, o2], [i1, i2]):
                     continue
@@ -574,7 +599,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
             # Rahaa vapauttava siirto ensin, jotta pankki ei kay miinuksella
             # kun siirrot tehdaan jarjestyksessa.
             first, second = ((o1, i1), (o2, i2))
-            if (o1["price"] - i1["price"]) < (o2["price"] - i2["price"]):
+            if (sell_price(o1) - i1["price"]) < (sell_price(o2) - i2["price"]):
                 first, second = second, first
             best = {"moves": [first, second], "gain": round(gain, 4),
                     "gain_weighted": round(gain_w, 4), "evals": evals,
@@ -764,7 +789,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         if not chosen:
             break
         for m in chosen:
-            bank += m["out"]["price"] - m["in"]["price"]
+            bank += sell_price(m["out"]) - m["in"]["price"]
             squad = _apply(squad, [m["out"]], [m["in"]])
             # Tulija on heti suojattu: sama kierros ei saa ostaa ja myyda.
             protected.add(m["in"]["id"])

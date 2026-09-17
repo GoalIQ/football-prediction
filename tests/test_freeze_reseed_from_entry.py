@@ -92,11 +92,24 @@ def _pool(ids):
             for i in ids]
 
 
-def _bootstrap(pid, tiimi=7):
-    return {"elements": [{"id": pid, "web_name": "Lahtenyt", "team": tiimi,
-                          "element_type": 1, "now_cost": 40, "status": "u",
-                          "news": "joined X on loan",
-                          "selected_by_percent": "0.1"}],
+def _bootstrap(ids, off=(), tiimi=7):
+    """FPL:n bootstrap-static -muoto: jokaisella pelaajalla `now_cost` ja
+    `cost_change_start` (17.9: myyntihinta johdetaan niista). `off` on
+    liigasta lahtenyt (status u), joka on rungossa muttei poolissa."""
+    els = []
+    for i in ids:
+        if i in off:
+            els.append({"id": i, "web_name": "Lahtenyt", "team": tiimi,
+                        "element_type": 1, "now_cost": 40,
+                        "cost_change_start": 0, "status": "u",
+                        "news": "joined X on loan",
+                        "selected_by_percent": "0.1"})
+        else:
+            els.append({"id": i, "web_name": "P%d" % i, "team": (i % 20) + 1,
+                        "element_type": 3, "now_cost": 50,
+                        "cost_change_start": 0, "status": "a",
+                        "selected_by_percent": "1.0"})
+    return {"elements": els,
             "teams": [{"id": tiimi, "name": "Coventry", "short_name": "COV"}]}
 
 
@@ -106,10 +119,24 @@ def _hae(ids):
     return hae
 
 
-def _historia(value=999, bank=8):
-    def h(entry, gw):
-        return {"value": value, "bank": bank}, None
+def _historia(value=999, bank=8, gw=2, chips=None, transfers=None):
+    """FPL:n `entry/{id}/history/` kokonaisena: rivit 1..gw, jokaisella
+    annettu value/bank. `transfers` = {gw: event_transfers}. 17.9: lukija
+    (`entry_state_for`) ottaa koko historian, ei yhta rivia."""
+    transfers = transfers or {}
+    rows = [{"event": g, "event_transfers": int(transfers.get(g, 0)),
+             "event_transfers_cost": 0, "bank": bank, "value": value}
+            for g in range(1, gw + 1)]
+
+    def h(entry):
+        return {"current": rows, "chips": chips or []}, None
     return h
+
+
+def _siirrot(rivit=()):
+    def s(entry):
+        return list(rivit), None
+    return s
 
 
 def test_siemen_tulee_entryn_pickeista():
@@ -119,11 +146,19 @@ def test_siemen_tulee_entryn_pickeista():
     assert [p["id"] for p in siemen["xi"] + siemen["bench"]] == ids
 
 
-def entry_seed_apu(pick_ids, pool_ids, value=999, bank=8, off=None):
+def entry_seed_apu(pick_ids, pool_ids, value=999, bank=8, off=None,
+                   chips=None, source_gw=2, transfers=None):
     off = off or []
+    # Bootstrapissa on koko entryn rivi (myyntihinnan johto vaatii
+    # `now_cost` + `cost_change_start` jokaiselle) - paitsi id jota ei ole
+    # missaan (test_tuntematon_pelaaja_on_virhe antaa 999:n).
+    boot_ids = [i for i in pick_ids if i != 999]
     return freeze.entry_seed(
-        2, _pool(pool_ids), _bootstrap(off[0]) if off else {"elements": [], "teams": []},
-        hae=_hae(pick_ids), hae_historia=_historia(value, bank))
+        source_gw, _pool(pool_ids), _bootstrap(boot_ids, off=off),
+        hae=_hae(pick_ids),
+        hae_historia=_historia(value, bank, gw=source_gw, chips=chips,
+                               transfers=transfers),
+        hae_siirrot=_siirrot())
 
 
 def test_budjetti_luetaan_entryn_historiasta_ei_vakiosta():
@@ -136,17 +171,33 @@ def test_budjetti_luetaan_entryn_historiasta_ei_vakiosta():
     assert siemen2["meta"]["budget"] == 101.2
 
 
-def test_fpl_value_sisaltaa_pankin_eika_sita_lasketa_kahdesti():
-    """6.9.2026: `value + bank` antoi 0.8m liikaa ja moottori ehdotti
-    siirtoparin jota ei voinut tehda. Pankin muuttaminen ei saa muuttaa
-    budjettia, koska se on jo `value`:ssa."""
+def test_pankki_on_fpln_oma_bank_kentta_ei_value_miinus_hinnat():
+    """17.9.2026 (FREEZE-BANK-MYYNTIHINTA). 6.9:n paatelma "value sisaltaa
+    pankin" oli oikea, mutta johdettu pankki `value - sum(nykyhinnat)` on
+    oikein vain deadline-hetkella: mitattu entry 116920 GW4 value 1002,
+    bank 8, nykyhinnat 17.9 = 996 -> kaava antoi 6 (12.9 hinnoilla 2).
+    Nyt pankki on FPL:n `bank` sellaisenaan, ja `budget` on nayttoluku."""
     ids = list(range(1, 16))
-    a, _ = entry_seed_apu(ids, ids, value=1001, bank=8)
-    b, _ = entry_seed_apu(ids, ids, value=1001, bank=0)
-    assert a["meta"]["budget"] == b["meta"]["budget"] == 100.1
-    # Mitattu tapaus: runko 99.3 + pankki 0.8 = 100.1. Moottorin pankki
-    # (budjetti - rungon hinta) on 0.8, ei 1.6.
-    assert round(freeze.budget_from_history({"value": 1001, "bank": 8}) - 99.3, 1) == 0.8
+    # Rungon nykyhinnat 15 x 50 = 750; value 1002 -> vanha kaava antaisi
+    # 1002 - 750 = 252. FPL:n bank on 8, ja sen pitaa voittaa.
+    a, _ = entry_seed_apu(ids, ids, value=1002, bank=8)
+    assert a["meta"]["bank_tenths"] == 8
+    assert a["meta"]["budget"] == 100.2
+    assert a["meta"]["bank_source"] == "fpl_entry_history"
+    # Sama value, eri bank -> eri pankki (bank on oma kentta, ei johdettu)
+    b, _ = entry_seed_apu(ids, ids, value=1002, bank=0)
+    assert b["meta"]["bank_tenths"] == 0 and b["meta"]["budget"] == 100.2
+    # Jokaisella rivilla on myyntihinta, ja ilman hintaliiketta se on nykyhinta
+    for p in a["xi"] + a["bench"]:
+        assert p["selling_price"] == 50
+    assert a["meta"]["selling_value_tenths"] == 750
+
+
+def test_vanhaa_budjettilukijaa_ei_ole():
+    """`budget_from_history` oli se kaava (`value / 10` -> pankki = budjetti -
+    nykyhinnat) joka antoi vaaran pankin. Sita ei saa olla olemassa, jotta
+    kukaan ei voi kutsua sita vahingossa."""
+    assert not hasattr(freeze, "budget_from_history")
 
 
 def test_wildcardin_jalkeen_ei_rullausta():
@@ -190,19 +241,40 @@ def test_entryn_haku_epaonnistuu_fail_closed():
     def hae(entry, gw):
         raise entry_mod.EntryHakuVirhe("verkkovirhe")
     siemen, virhe = freeze.entry_seed(
-        2, _pool(range(1, 16)), {"elements": [], "teams": []},
-        hae=hae, hae_historia=_historia())
+        2, _pool(range(1, 16)), _bootstrap(range(1, 16)),
+        hae=hae, hae_historia=_historia(), hae_siirrot=_siirrot())
     assert siemen is None and "verkkovirhe" in virhe
 
 
 def test_historian_haku_epaonnistuu_fail_closed():
-    def h(entry, gw):
+    def h(entry):
         return None, "entryn historiaa ei saatu"
     ids = list(range(1, 16))
     siemen, virhe = freeze.entry_seed(
-        2, _pool(ids), {"elements": [], "teams": []},
-        hae=_hae(ids), hae_historia=h)
+        2, _pool(ids), _bootstrap(ids),
+        hae=_hae(ids), hae_historia=h, hae_siirrot=_siirrot())
     assert siemen is None and "historiaa" in virhe
+
+
+def test_siirtolistan_haku_epaonnistuu_fail_closed():
+    """Ilman siirtolistaa ostohinnat olisivat arvaus -> ei siementa."""
+    def s(entry):
+        return None, "entryn siirtolistaa ei saatu"
+    ids = list(range(1, 16))
+    siemen, virhe = freeze.entry_seed(
+        2, _pool(ids), _bootstrap(ids),
+        hae=_hae(ids), hae_historia=_historia(), hae_siirrot=s)
+    assert siemen is None and "siirtolistaa" in virhe
+
+
+def test_historiasta_puuttuva_kierros_on_virhe():
+    """Historia jossa ei ole source_gw:n rivia (esim. entry ei pelannut,
+    tai FPL ei ole viela kirjoittanut rivia) -> ei arvata pankkia."""
+    ids = list(range(1, 16))
+    siemen, virhe = freeze.entry_seed(
+        4, _pool(ids), _bootstrap(ids),
+        hae=_hae(ids), hae_historia=_historia(gw=2), hae_siirrot=_siirrot())
+    assert siemen is None and "GW4" in virhe
 
 
 # --- kytkenta ---------------------------------------------------------------
