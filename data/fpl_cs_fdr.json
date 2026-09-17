@@ -1,7 +1,7 @@
 {
   "meta": {
     "product": "GoalIQ FPL Phase 0 — clean sheet % + model FDR",
-    "generated_at": "2026-09-17T12:12:45",
+    "generated_at": "2026-09-17T14:00:46",
     "season": "2026/27",
     "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
     "team_strength_source": "GoalIQ Dixon-Coles, Understat PL ['2526', '2627'] (sama fit-config kuin /api/predict: decay=0.0035, bayes=2.0)",
@@ -79,7 +79,7 @@
     },
     "Hull City": {
       "next6_avg_cs_pct": 13.7,
-      "next6_avg_fdr": 4.17,
+      "next6_avg_fdr": 4.33,
       "next6_fixtures": 6
     },
     "Nottingham Forest": {
@@ -220,7 +220,7 @@
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
-      "att_fdr_away": 3
+      "att_fdr_away": 4
     },
     {
       "gameweek": 1,
@@ -1403,8 +1403,8 @@
       "p_away_win": 0.4054,
       "cs_home_pct": 21.6,
       "cs_away_pct": 26.7,
-      "fdr_home": 3,
-      "def_fdr_home": 3,
+      "fdr_home": 4,
+      "def_fdr_home": 4,
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
@@ -2417,7 +2417,7 @@
       "cs_away_pct": 14.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 1,
+      "att_fdr_home": 2,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 4
@@ -2657,8 +2657,8 @@
       "p_away_win": 0.397,
       "cs_home_pct": 19.1,
       "cs_away_pct": 22.0,
-      "fdr_home": 4,
-      "def_fdr_home": 4,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 3,
       "fdr_away": 3,
       "def_fdr_away": 3,
@@ -5544,7 +5544,7 @@
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
-      "att_fdr_away": 4
+      "att_fdr_away": 3
     },
     {
       "gameweek": 25,
@@ -6876,7 +6876,7 @@
       "away_model": "Newcastle United",
       "xg_home": 1.982,
       "xg_away": 0.949,
-      "p_home_win": 0.5989,
+      "p_home_win": 0.5988,
       "p_draw": 0.2425,
       "p_away_win": 0.1586,
       "cs_home_pct": 38.7,
@@ -7260,7 +7260,7 @@
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
-      "att_fdr_away": 2
+      "att_fdr_away": 1
     },
     {
       "gameweek": 33,
@@ -7722,7 +7722,7 @@
       "att_fdr_home": 1,
       "fdr_away": 4,
       "def_fdr_away": 4,
-      "att_fdr_away": 3
+      "att_fdr_away": 2
     },
     {
       "gameweek": 35,
@@ -8162,7 +8162,7 @@
       "att_fdr_home": 1,
       "fdr_away": 4,
       "def_fdr_away": 4,
-      "att_fdr_away": 2
+      "att_fdr_away": 3
     },
     {
       "gameweek": 37,
