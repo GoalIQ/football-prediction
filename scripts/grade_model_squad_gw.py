@@ -67,11 +67,20 @@ _META_DEFAULTS = {
         # Chip-tieto elaa nyt rivin omassa `active_chip`-kentassa ja
         # `model-race`-payloadin `chips_played`issa, eika sita vaiteta
         # metassa lainkaan.
+        # 🔴 EI CHIPPEJA (17.9.2026). `score_gw` tuplaa kapteenin ja ajaa
+        # autosubit, mutta ei lue chippia: 3xc ei triplaa, bench boost ei
+        # laske penkkia. Mitattu GW3 (entry pelasi 3xc): tama sarja 63 p,
+        # entry 72 p. Meta sanoo sen itse, jottei "exactly as FPL" lupaa
+        # jotain jota tama sarja ei tee (12.9 oppi: kovakoodattu vaite
+        # julkiseen artefaktiin).
         "rules": ("The frozen squad is scored with official FPL points once "
                   "the gameweek finishes. Autosubs and the captain/vice rule "
-                  "are applied exactly as FPL applies them. Only rows whose "
-                  "frozen squad is provably the entry's squad are graded "
-                  "(provenance). Append-only."),
+                  "are applied as FPL applies them; chips are not modelled "
+                  "in this series (no triple captain, no bench boost), so a "
+                  "chip round scores lower here than on the entry. Only rows "
+                  "whose frozen squad is provably the entry's squad are "
+                  "graded (provenance). Diagnostic series, append-only; the "
+                  "public season race reads the entry series."),
 }
 
 
