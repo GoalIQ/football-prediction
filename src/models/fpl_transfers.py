@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import itertools
 
+from src.models.fpl_entry_history import FT_MAX as _FT_RULE_MAX
 from src.models.fpl_rate_team import (
     DECISION_BAR_XP_PER_GW, HIT_COST_XP, MAX_PER_CLUB, POS_NAME, RateTeamError,
     _best_split, _gw_xp, hold_threshold_for,
@@ -75,8 +76,12 @@ NEAR_WINDOW_GWS = 2
 # Hitille ei riita etta lahi-ikkuna on positiivinen: -4 maksetaan nyt, joten
 # valtaosan hyodysta on tultava nyt.
 NEAR_SHARE_FOR_HIT = 0.5
-# FPL:n saanto, ei malliparametri: vapaasiirtopankin katto.
-FT_CARRY_MAX = 5
+# FPL:n saanto, ei malliparametri: vapaasiirtopankin katto. 17.9.2026
+# (RESEED-FT-KOVAKOODATTU): YKSI vakio saannolle - sama jota entry-historian
+# FT-kavely (`fpl_entry_history._ft_walk`) kayttaa. Kolme kopiota samasta
+# luvusta (taalla, plannerissa, historiassa) olisi kolme paikkaa jotka voivat
+# erota kun saanto muuttuu.
+FT_CARRY_MAX = _FT_RULE_MAX
 # Pankki katossa: kayttamatta jattaminen HUKKAA seuraavan kertymän, joten
 # siirron marginaalihinta on nolla -> ota mika tahansa aito parannus.
 BAR_BANK_FULL = 0.01

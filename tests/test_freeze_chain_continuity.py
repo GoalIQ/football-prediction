@@ -305,7 +305,11 @@ def _tila(gw, ids, price=45):
             "selling": {i: price for i in ids},
             "now": {i: price for i in ids},
             "selling_value_tenths": price * len(ids),
-            "bank_source": "test", "selling_source": "test"}
+            "bank_source": "test", "selling_source": "test",
+            # 17.9 (RESEED-FT-KOVAKOODATTU): FT-saldo tulee samasta
+            # lukijasta kuin pankki. 1 = ei rullausta, sama kuin vanha
+            # `ft_left: 0` -> `_ft_available` 1.
+            "ft_available_next": 1, "ft_source": "test"}
 
 
 def _pooli(ids, gw=4):

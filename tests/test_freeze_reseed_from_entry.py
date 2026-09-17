@@ -200,11 +200,27 @@ def test_vanhaa_budjettilukijaa_ei_ole():
     assert not hasattr(freeze, "budget_from_history")
 
 
-def test_wildcardin_jalkeen_ei_rullausta():
+def test_wildcard_sailyttaa_saldon_eika_kerryta():
+    """FPL:n saanto: wildcard-kierroksella siirrot eivat kuluta eika saldo
+    kerry. GW2 wildcard saldolla 1 -> GW3:een 1 (ft_left 0, moottori 1).
+
+    17.9 (RESEED-FT-KOVAKOODATTU): tassa oli vakio `ft_left: 0` perustelulla
+    "wildcardin jalkeen ei rullausta". Perustelu oli wildcard-spesifinen,
+    ehto ei: sama vakio kirjoitettiin myos kun lahde ei ollut wildcard.
+    Nyt sama tulos tulee historiasta, ja ILMAN wildcardia sama historia
+    antaa 2 - se on erotteleva kontrolli jossa vanha koodi antaisi 0.
+    """
     ids = list(range(1, 16))
-    siemen, _ = entry_seed_apu(ids, ids)
+    siemen, _ = entry_seed_apu(ids, ids, chips=[{"name": "wildcard", "event": 2}])
+    assert siemen["meta"]["ft_available_fpl"] == 1
     assert siemen["meta"]["ft_left"] == 0
+    assert siemen["meta"]["ft_source"] == "inferred_from_history"
     assert freeze._ft_available(siemen["meta"]) == 1
+    # Erotteleva: ei wildcardia -> GW2 kerryttaa -> GW3:een 2.
+    siemen2, _ = entry_seed_apu(ids, ids)
+    assert siemen2["meta"]["ft_available_fpl"] == 2
+    assert siemen2["meta"]["ft_left"] == 1, "vanha vakio 0 olisi tassa"
+    assert freeze._ft_available(siemen2["meta"]) == 2
 
 
 def test_liigasta_lahtenyt_on_rungossa_muttei_poolissa():

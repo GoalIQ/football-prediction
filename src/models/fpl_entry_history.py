@@ -100,15 +100,23 @@ def chip_gws(history: dict | None, names=FT_PRESERVING_CHIPS) -> set[int]:
             if str(c.get("name")) in names and isinstance(c.get("event"), int)}
 
 
-def infer_free_transfers(history: dict | None) -> int | None:
-    """FT-saldo seuraavalle pelaamattomalle kierrokselle, tai None jos
-    historiaa ei ole."""
-    rows = sorted((r for r in ((history or {}).get("current") or [])
-                   if isinstance(r.get("event"), int)),
+def _ft_rows(history: dict | None, *, before_gw: int | None = None) -> list[dict]:
+    """Historian rivit event-jarjestyksessa, valinnaisesti vain event < before_gw."""
+    return sorted((r for r in ((history or {}).get("current") or [])
+                   if isinstance(r.get("event"), int)
+                   and (before_gw is None or r["event"] < int(before_gw))),
                   key=lambda r: r["event"])
-    if not rows:
-        return None
-    chip_gws_ = chip_gws(history)
+
+
+def _ft_walk(rows: list[dict], chip_gws_: set[int]) -> int:
+    """FPL:n FT-saanto rivi rivilta - YKSI kavely jota seka
+    `infer_free_transfers` etta `free_transfers_for_gw` kayttavat.
+
+    Kausi alkaa FT_START:sta; jokainen pelattu kierros kuluttaa tehdyt
+    siirrot (ei alle nollan: hitit eivat vie miinukselle) ja kerryttaa +1
+    kattoon FT_MAX asti. Palauttaa saldon viimeisen rivin JALKEISELLE
+    kierrokselle.
+    """
     ft = FT_START
     for r in rows:
         made = int(r.get("event_transfers") or 0)
@@ -123,6 +131,40 @@ def infer_free_transfers(history: dict | None) -> int | None:
         ft = max(ft - made, 0)
         ft = min(FT_MAX, ft + 1)
     return ft
+
+
+def infer_free_transfers(history: dict | None) -> int | None:
+    """FT-saldo seuraavalle pelaamattomalle kierrokselle, tai None jos
+    historiaa ei ole."""
+    rows = _ft_rows(history)
+    if not rows:
+        return None
+    return _ft_walk(rows, chip_gws(history))
+
+
+def free_transfers_for_gw(history: dict | None, gw: int) -> int | None:
+    """FT-saldo kierroksen `gw` deadlinella (17.9.2026, RESEED-FT-KOVAKOODATTU).
+
+    Sama kavely kuin `infer_free_transfers`, mutta rajattuna riveihin
+    event < gw: freeze lukee taman sille kierrokselle jota se jaadyttaa,
+    eika historiassa mahdollisesti jo oleva myohempi rivi saa vuotaa siihen
+    (saanto 6a.3: sama funktio joka vaiheessa, ei nykyhetkessa).
+
+    None, ei arvaus, kun: gw <= 1 (GW1:ssa siirrot ovat rajattomat, saldoa
+    ei ole) tai rivi gw-1 puuttuu (entry ei pelannut / FPL ei ole viela
+    kirjoittanut rivia) - silloin kerryma olisi mittaamaton.
+
+    Entry 116920 (mitattu 17.9): GW1 0 siirtoa -> 1; GW2 wildcard sailyttaa
+    1; GW3 0 siirtoa (3xc ei ole FT-chip) -> 2; GW4 0 siirtoa -> 3 = FT
+    GW5:lle. Reseed kirjoitti tahan vakion 0.
+    """
+    gw = int(gw)
+    if gw <= 1:
+        return None
+    rows = _ft_rows(history, before_gw=gw)
+    if not rows or rows[-1]["event"] != gw - 1:
+        return None
+    return _ft_walk(rows, chip_gws(history))
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +269,9 @@ def entry_state(history: dict | None, gw: int, pick_ids,
       now                  {id: nykyhinta}
       selling_value_tenths myyntihintojen summa (se raha joka on OIKEASTI
                            kaytettavissa jos kaikki myydaan, + pankki)
+      ft_available_next    FT-saldo kierrokselle gw+1 FPL:n saannolla
+                           (`free_transfers_for_gw`; 17.9 RESEED-FT-
+                           KOVAKOODATTU: sama lukija kuin pankille)
 
     Jokainen puuttuva palanen on virhe. `transfers` voi olla tyhja lista
     (entry jolla ei ole siirtoja), mutta ei None: None tarkoittaa ettei
@@ -248,6 +293,11 @@ def entry_state(history: dict | None, gw: int, pick_ids,
     osto = purchase_prices(ids, transfers, bootstrap, upto_gw=gw, freehit_gws=fh)
     nyt = now_prices(ids, bootstrap)
     myynti = {pid: selling_price(osto[pid], nyt[pid]) for pid in ids}
+    ft_next = free_transfers_for_gw(history, int(gw) + 1)
+    if ft_next is None:
+        raise EntryStateError(
+            f"FT-saldoa GW{int(gw) + 1}:lle ei voi johtaa historiasta "
+            f"(rivi GW{gw} puuttuu tai kierros on GW1)")
     return {
         "gw": int(gw),
         "bank_tenths": pankki,
@@ -258,4 +308,6 @@ def entry_state(history: dict | None, gw: int, pick_ids,
         "selling_value_tenths": sum(myynti.values()),
         "bank_source": "fpl_entry_history",
         "selling_source": "fpl_transfers+bootstrap",
+        "ft_available_next": int(ft_next),
+        "ft_source": "inferred_from_history",
     }

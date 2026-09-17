@@ -248,6 +248,13 @@ def _ft_available(prev_meta: dict) -> int:
     Rullaus: kayttamaton FT siirtyy seuraavalle kierrokselle FT_MAX:iin asti.
     Vanha freeze ilman kenttaa -> oletus FT_PER_GW (ei rullausta), eli
     konservatiivinen.
+
+    17.9.2026 (RESEED-FT-KOVAKOODATTU): `ft_left` ei ole enaa freezen oma
+    kirjanpito eika reseedin vakio, vaan `attach_entry_state` kirjoittaa sen
+    FPL:n historiasta (`fpl_entry_history.free_transfers_for_gw`) seka
+    reseed- etta ketjupolulla - samasta lukijasta kuin pankin. Tama funktio
+    on yha se paikka jossa katto (FT_MAX) leikkaa: FPL:n saldo on
+    `meta.ft_available_fpl`, moottorin saama `min(saldo, FT_MAX)`.
     """
     jaljella = prev_meta.get("ft_left")
     if not isinstance(jaljella, int):
@@ -560,9 +567,12 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
     siemen = {
         "xi": [{"id": i} for i in ids[:11]],
         "bench": [{"id": i} for i in ids[11:]],
-        # Wildcard-kierroksen jalkeen rullausta ei ole: seuraava
-        # kierros alkaa yhdesta ilmaisesta siirrosta.
-        "meta": {"ft_left": 0},
+        # Rahatila JA FT-saldo tulevat `attach_entry_state`ista FPL:n
+        # historiasta - tassa ei ole vakioita. 17.9 (RESEED-FT-KOVAKOODATTU):
+        # tassa oli `"ft_left": 0` perustelulla "wildcard-kierroksen jalkeen
+        # rullausta ei ole", mutta ehto ei ollut wildcard-spesifinen: GW5-
+        # reseedin lahde GW4 ei ollut wildcard, ja FPL:n saldo oli 3, ei 1.
+        "meta": {},
         # Vain rungossa, EI poolissa (ks. yllä).
         "_off_pool": lahteneet,
     }
@@ -700,6 +710,18 @@ def attach_entry_state(prev: dict, tila: dict) -> dict:
     meta["value_tenths"] = int(tila["value_tenths"])
     meta["selling_value_tenths"] = int(tila["selling_value_tenths"])
     meta["selling_source"] = tila["selling_source"]
+    # 17.9 (RESEED-FT-KOVAKOODATTU): FT samasta lukijasta kuin pankki.
+    # `_ft_available` lisaa FT_PER_GW:n ja leikkaa FT_MAX:iin, joten
+    # `ft_left` kirjataan niin etta identiteetti
+    #     _ft_available(meta) == min(ft_available_fpl, FT_MAX)
+    # pitaa joka vaiheessa (testattu: rullaus, wildcard-/free hit -lahde,
+    # kulutus, hitit, katto). Ylikirjoittaa myos ketjupolulla perityn
+    # freezen oman `ft_left`-kirjanpidon: entry_mismatch-portti takaa etta
+    # entry ON peritty runko, joten FPL:n historia on saldon totuus.
+    ft_fpl = int(tila["ft_available_next"])
+    meta["ft_available_fpl"] = ft_fpl
+    meta["ft_left"] = max(0, ft_fpl - FT_PER_GW)
+    meta["ft_source"] = tila["ft_source"]
     myynti = tila["selling"]
     for p in (prev.get("xi") or []) + (prev.get("bench") or []):
         p["selling_price"] = int(myynti[int(p["id"])])
@@ -946,6 +968,13 @@ def main() -> int:
             "hits": (siirtotiedot or {}).get("hits", 0),
             "ft_available": (siirtotiedot or {}).get("ft_available"),
             "ft_left": (siirtotiedot or {}).get("ft_left", 0),
+            # 17.9: FPL:n oma saldo ennen kattoa. `ft_available` on se mita
+            # moottori sai (min(saldo, FT_MAX)), `ft_available_fpl` se mita
+            # FPL:n historia sanoo. Ilman tata lukija ei nae leikkausta.
+            "ft_available_fpl": ((edellinen[1].get("meta") or {}).get(
+                "ft_available_fpl") if edellinen else None),
+            "ft_source": ((edellinen[1].get("meta") or {}).get("ft_source")
+                          if edellinen else None),
             "squad_rebuilt": siirtotiedot is None,
             # Malli ei pelaa chippejä v0:ssa — kerrotaan datassa asti, jotta
             # paneeli ei joudu arvaamaan sitä copyn perusteella. 28.8: arvio
