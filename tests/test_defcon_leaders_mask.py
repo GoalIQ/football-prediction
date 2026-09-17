@@ -227,3 +227,21 @@ def test_mobiili_fallback_vakio_on_sama_kuin_palvelimen():
     m = re.search(r"const LEADERS_FREE_ROWS = (\d+);", src)
     assert m, "FantasyTools.tsx: LEADERS_FREE_ROWS-vakio ei loydy"
     assert int(m.group(1)) == FREE_LEADERS_ROWS
+
+
+def test_mobiili_teaser_lukee_palvelimen_maskilippua():
+    """Sama vika kuin SPA:ssa: palvelinmaski antaa ilmaiskayttajalle TASAN
+    free_rows rivia, joten `dcRows.length > LEADERS_FREE_ROWS` on aina epatosi
+    ja mobiilin lukkokortti katoaisi heti kun backend deployataan, vaikka
+    appia ei olisi paivitetty. Kortin ehto lukee meta.masked + total_rows,
+    raja meta.free_rows:sta (fallback vakioon vanhalle backendille)."""
+    if not APP_TOOLS.exists():
+        pytest.skip("goaliq-app ei ole checkoutattuna, pariteettia ei voi ajaa")
+    src = APP_TOOLS.read_text(encoding="utf-8")
+    assert "{!isPremium && dcRows.length > LEADERS_FREE_ROWS && (" not in src, (
+        "mobiilin lukkokortti paattelee maskin listan pituudesta: 3 > 3 on "
+        "epatosi kun palvelin maskaa")
+    assert "{dcTeaser && (" in src
+    teaser = src[src.index("const dcTeaser"):src.index("{dcTeaser && (")]
+    assert "meta?.masked" in teaser and "total_rows" in teaser
+    assert "meta?.free_rows" in src, "mobiili ei lue rajaa palvelimelta"

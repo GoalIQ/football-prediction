@@ -645,6 +645,39 @@ def test_defcon_leaders_masked_for_invalid_token(leaders_client, monkeypatch):
     assert len(r.json()["players"]) == FREE_LEADERS_ROWS
 
 
+@pytest.mark.parametrize("basis", sorted(_LEADERS_QUERIES))
+def test_defcon_leaders_full_for_premium_token_when_enforcement_on(
+        leaders_client, monkeypatch, basis):
+    """DoD 2: enforcement PAALLA + kelvollinen premium-token -> koko lista,
+    ei maskilippua.
+
+    Flagi-pois-kontrolli ei todista tata: siina is_premium_request palauttaa
+    True ennen token-haaraa. Tassa token kulkee koko polun (verify ->
+    profiili) kuten tuotannossa. Vaihe-invariantti: tulos on sama riippumatta
+    siita onko GW1-GW3 ilmaisikkuna auki (ikkuna antaa True aiemmin, profiili
+    myohemmin; kumpikin on premium).
+    """
+    import api.premium as prem
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-1")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: True)
+    with prem._PREMIUM_CACHE_LOCK:
+        prem._PREMIUM_CACHE.clear()
+    try:
+        r = leaders_client.get(_LEADERS_QUERIES[basis],
+                               headers={"Authorization": "Bearer premium-ok"})
+    finally:
+        with prem._PREMIUM_CACHE_LOCK:
+            prem._PREMIUM_CACHE.clear()
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"].get("masked") is not True, "premium sai maskatun listan"
+    assert "free_rows" not in d["meta"]
+    assert len(d["players"]) == LEADERS_N > FREE_LEADERS_ROWS
+
+
 def test_defcon_gw_stays_free_when_enforcement_on(leaders_client, monkeypatch):
     """DoD 5: per-GW-matriisi pysyy ilmaisena (pelaajakortin DefCon-loki).
 
