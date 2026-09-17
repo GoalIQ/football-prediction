@@ -365,6 +365,86 @@ def test_plan_chains_squad_source_is_structured_not_prose(client):
 # 315.31 -> 315.31). Syvyysparannus ei ole pisteparannus.
 # ---------------------------------------------------------------------------
 
+def _xp_ilman(pid: int) -> dict:
+    """FAKE_XP josta pelaaja on pudotettu: planner rakentaa hanet
+    placeholderina (no_projection, 0 xP) = kuollut paikka rungossa."""
+    return dict(FAKE_XP, players=[p for p in FAKE_XP["players"] if p["id"] != pid])
+
+
+def _siirrot(g: dict) -> list[tuple[int, int]]:
+    return [(t["out"]["id"], t["in"]["id"]) for t in g["transfers"]]
+
+
+def test_plan_hold_sitoo_mutta_kuollut_paikka_ei_katoa_hiljaa(monkeypatch):
+    """KUTSUPAIKKA /api/fantasy/plan (17.9, SIIRTOMOOTTORI-EI-MYY-PENKIN-
+    PELAAMATONTA). Runko on poolin paras paitsi kakkosvahti (id 2) on
+    kuollut paikka. Moottori siivoaa sen (plan_gw: 2->4, rima dead_slot,
+    hyoty 0.0), mutta plannerin hold-verdikti (#63, 3.9: verdikti sitoo
+    suunnitelman) pyyhkii nollahyotyisen suunnitelman. Se on tuotesaanto
+    eika sita muuteta tassa (copy + GO). Mutta pyyhinta ei saa olla hiljainen:
+    `unplayable_left` kertoo kuolleen paikan JOKA kierroksella, ja hold-rivi
+    on hold-tilasta (FT-portaat 1,2,3 ja alkuperainen pankki), ei toteutetun
+    ja pyyhityn suunnitelman tilasta (ennen: "roll" + "0 FT jaljella")."""
+    monkeypatch.setattr(rt, "load_xp", lambda: _xp_ilman(2))
+    out = pl.plan_transfers(players=SQUAD_IDS, horizon=3, bank=0.0, ft=1)
+    assert out["hold_verdict"]["verdict"] == "hold"
+    assert all(g["transfers"] == [] and g["roll_transfer"] for g in out["plan"])
+    assert [g["unplayable_left"] for g in out["plan"]] == [[2], [2], [2]]
+    assert [g["free_transfers_left"] for g in out["plan"]] == [1, 2, 3]
+    assert all(g["bank"] == 0.0 for g in out["plan"])
+    assert out["totals"]["hits_taken"] == 0 and out["totals"]["net_gain"] == 0.0
+
+
+def test_plan_siivoaa_kuolleen_paikan_kun_suunnitelma_ylittaa_riman(monkeypatch):
+    """Sama runko, mutta FWD 27 (5.0/GW) ja MID 19 (4.6/GW) on vaihdettu
+    FWD 30:een (3.8) ja MID 24:aan (3.6): XI on 3-4-3 jossa 30 pelaa, joten
+    30->27 nostaa XI:ta +1.2/GW = 3.6/3 GW, yli hold-riman 1.5 (ja lahi-
+    ikkunan 2.4 yli moottorin draft-riman 1.0). 24->19 jaa penkkiparannukseksi
+    (hyoty 0) eika sita tehda. Kaksi aiempaa fikstuuriani (24->19 yksin;
+    30->27 yksin) olivat penkkiparannuksia tai alle riman: verdikti oli
+    oikein hold ja testi olisi mitannut vaaraa asiaa. Kontrolli alla vartioi.
+    ft 2: XI-parannus JA siivous samalla kierroksella (jarjestys: pisteet
+    ensin), siivousrivi kantaa rakenteisen syyn ja hyodyn 0.00.
+    ft 1: XI-parannus GW1:ssa ja kuollut paikka jaa NAKYVASTI (`unplayable_left`
+    [2]); GW2:n vapaa siirto siivoaa sen. Ei hittia kummassakaan."""
+    monkeypatch.setattr(rt, "load_xp", lambda: _xp_ilman(2))
+    runko = [i for i in SQUAD_IDS if i not in (27, 19)] + [30, 24]
+
+    kaksi = pl.plan_transfers(players=runko, horizon=3, bank=0.0, ft=2)
+    assert kaksi["hold_verdict"]["verdict"] == "transfer"
+    # Siivouksen tulija on paras klubirajan sallima vahti (klubi 3 tayttyy
+    # 27:n paluusta -> id 4); lahtija on aina kuollut paikka 2.
+    assert _siirrot(kaksi["plan"][0]) == [(30, 27), (2, 4)], kaksi["plan"][0]
+    xi_siirto, siivous = kaksi["plan"][0]["transfers"]
+    assert xi_siirto["gain_xp_remaining"] >= 3.0, "kontrolli: XI-parannus, ei penkki"
+    assert xi_siirto["repair"] is False and xi_siirto["repair_reason"] is None
+    assert siivous["repair"] is True
+    assert siivous["repair_reason"] == "no_projection:unavailable"
+    assert siivous["gain_xp_remaining"] == 0.0 and siivous["hit"] == 0
+    assert [g["unplayable_left"] for g in kaksi["plan"]] == [[], [], []]
+    assert kaksi["totals"]["hits_taken"] == 0
+
+    yksi = pl.plan_transfers(players=runko, horizon=3, bank=0.0, ft=1)
+    assert _siirrot(yksi["plan"][0]) == [(30, 27)]
+    assert yksi["plan"][0]["unplayable_left"] == [2], "jaanyt paikka kerrotaan"
+    assert _siirrot(yksi["plan"][1]) == [(2, 4)]
+    assert yksi["plan"][1]["transfers"][0]["repair"] is True
+    assert [g["unplayable_left"] for g in yksi["plan"]][1:] == [[], []]
+    assert yksi["totals"]["hits_taken"] == 0
+
+
+def test_plan_terve_runko_kantaa_avaimet_tyhjina():
+    """Tavallinen siirto ei ole korjaus ja `unplayable_left` on aina mukana
+    tyhjana (klientti ei paattele puuttuvasta kentasta)."""
+    terve = pl.plan_transfers(players=WEAK_SQUAD, horizon=3, bank=10.0, ft=1)
+    assert all(g["unplayable_left"] == [] for g in terve["plan"])
+    liikkeet = [t for g in terve["plan"] for t in g["transfers"]]
+    assert liikkeet and all(t["repair"] is False and t["repair_reason"] is None
+                            for t in liikkeet)
+    rullaa = pl.plan_transfers(players=SQUAD_IDS, horizon=3, bank=0.0)
+    assert all(g["unplayable_left"] == [] for g in rullaa["plan"])
+
+
 def test_bench_only_upgrade_reports_no_xi_gain():
     """Kakkosvahdin paivitys ei saa nayttaa hyotya jos ykkosvahti ei vaihdu.
 

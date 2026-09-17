@@ -314,11 +314,20 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
                 "gain_xp_weighted": round(m["gain_weighted"], 2),
                 "confidence_weight": m["confidence_weight"],
                 "pair": bool(m.get("pair")),
-                "hit": m["hit"] > 0}
+                "hit": m["hit"] > 0,
+                # 17.9: lahtija oli pelaaja jota ei voi pelata (rakenteinen
+                # syy, ks. fpl_transfers.repair_reason). Kuolleen paikan
+                # siivouksella gain_xp on 0.0 ja tama kertoo miksi.
+                "repair": bool(m.get("repair")),
+                "repair_reason": m.get("repair_reason")}
                for m in step["moves"]]
     return {"squad": step["squad"], "bank": step["bank_tenths"],
             "transfers": siirrot, "hits": step["hits"], "ft_available": ft,
-            "ft_left": step["ft_left"], "engine": "fpl_transfers.plan_gw"}
+            "ft_left": step["ft_left"], "engine": "fpl_transfers.plan_gw",
+            # 17.9: lukijan vastaus lopulliselle rungolle. Ei-tyhja = moottori
+            # jatti pelaamattoman tietoisesti (vapaa siirto meni XI-parannukseen,
+            # kuten GW5: White->Thomas +5.18 ja Dovin jaa). Metaan, ei hiljaa.
+            "unplayable_left": list(step.get("unplayable_left") or [])}
 
 
 def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
@@ -809,6 +818,9 @@ def main() -> int:
             "hits": (siirtotiedot or {}).get("hits", 0),
             "ft_available": (siirtotiedot or {}).get("ft_available"),
             "ft_left": (siirtotiedot or {}).get("ft_left", 0),
+            # 17.9: rungon pelaamattomat jotka jaivat siirtojen jalkeen
+            # (fpl_transfers.unplayable_members). Tyhja lista = ei yhtaan.
+            "unplayable_left": (siirtotiedot or {}).get("unplayable_left") or [],
             "squad_rebuilt": siirtotiedot is None,
             # Malli ei pelaa chippejä v0:ssa — kerrotaan datassa asti, jotta
             # paneeli ei joudu arvaamaan sitä copyn perusteella. 28.8: arvio

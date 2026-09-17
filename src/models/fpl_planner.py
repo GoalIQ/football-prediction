@@ -184,6 +184,41 @@ def hold_message(n_moves: int, net_gain: float, gws: list[int],
             f"gameweek.")
 
 
+def _hold_plan(gws: list[int], squad: list[dict], ft: int,
+               bank_tenths: int) -> list[dict]:
+    """Suunnitelma ilman siirtoja (hold): sama rakenne kuin siirtoja
+    sisaltavalla, laskettuna ALKUPERAISESTA rungosta.
+
+    17.9 (SIIRTOMOOTTORI-EI-MYY-PENKIN-PELAAMATONTA): molemmat fallback-haarat
+    (baseline-portti ja hold-verdikti) kulkevat tasta. Aiemmin hold-verdikin
+    haara pyyhki vain `transfers`-listan ja jatti `free_transfers_left`,
+    `bank`, `captain` ja `gw_xp` toteutetun (pyyhityn) suunnitelman tilasta:
+    rivi sanoi "roll" ja samalla "0 vapaata siirtoa jaljella". Mitattu
+    fikstuurilla jossa ainoa siirto on kuolleen paikan siivous (hyoty 0.0):
+    hold pyyhki sen ja `unplayable_left` olisi ollut [] vaikka paikka jai.
+    Nyt `unplayable_left` luetaan tassa alkuperaisesta rungosta joka
+    kierrokselle: hold ei poista kuollutta paikkaa, joten sen on nakyttava
+    (ks. fpl_transfers.unplayable_members).
+    """
+    plan = []
+    fts_h = ft
+    for idx, g in enumerate(gws):
+        xi = optimal_xi(squad)
+        cap = max(xi, key=lambda p: _gw_xp(p, g))
+        plan.append({
+            "gw": g, "transfers": [], "roll_transfer": True,
+            "captain": {"id": cap["id"], "web_name": cap["web_name"],
+                        "gw_xp": round(_gw_xp(cap, g), 2)},
+            "gw_xp": round(sum(_gw_xp(p, g) for p in xi) + _gw_xp(cap, g), 2),
+            "free_transfers_left": fts_h,
+            "bank": round(bank_tenths / 10.0, 1),
+            "unplayable_left": [p["id"] for p in
+                                _engine.unplayable_members(squad, gws[idx:])],
+        })
+        fts_h = min(FT_CARRY_MAX, fts_h + 1)
+    return plan
+
+
 def plan_transfers(entry: int | None = None, gw: int | None = None,
                    players: list[int] | None = None, bank: float | None = None,
                    horizon: int = DEFAULT_HORIZON, ft: int = 1) -> dict:
@@ -275,6 +310,12 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
                 "confidence_weight_out": m["confidence_weight_out"],
                 "weighting_decided": m["weighting_decided"],
                 "pair": bool(m.get("pair")),
+                # 17.9: lahtija oli pelaaja jota ei voi pelata. Kuolleen
+                # paikan siivouksella gain on 0.00, ja ilman rakenteista
+                # syyta rivi "+0.00 xP" olisi lukijalle selittamaton.
+                # Pinnan copy on erikseen (copy-sync, GO); tama on data.
+                "repair": bool(m.get("repair")),
+                "repair_reason": m.get("repair_reason"),
             })
         squad = step["squad"]
         bank_now = step["bank_tenths"]
@@ -292,6 +333,10 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
             "gw_xp": round(gw_xp_val, 2),
             "free_transfers_left": fts,
             "bank": round(bank_now / 10.0, 1),
+            # 17.9: lukijan vastaus taman kierroksen jalkeen. Ei-tyhja =
+            # rungossa on yha pelaaja jota ei voi pelata (siirto meni
+            # XI-parannukseen tai korvaajaa ei ollut budjetilla).
+            "unplayable_left": list(step.get("unplayable_left") or []),
         })
         fts = min(FT_CARRY_MAX, fts + 1)  # +1 FT seuraavaan GW:hen
 
@@ -300,21 +345,7 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     # (rakenteellisesti epätodennäköinen koska jokainen siirto vaatii
     # MIN_GAIN-ylityksen hitin jälkeen, mutta vahditaan silti eksplisiittisesti)
     if plan_total < baseline_total:
-        plan = []
-        fts_h = ft
-        for g in gws:
-            xi = optimal_xi(original_squad)
-            cap = max(xi, key=lambda p: _gw_xp(p, g))
-            plan.append({
-                "gw": g, "transfers": [], "roll_transfer": True,
-                "captain": {"id": cap["id"], "web_name": cap["web_name"],
-                            "gw_xp": round(_gw_xp(cap, g), 2)},
-                "gw_xp": round(sum(_gw_xp(p, g) for p in xi)
-                               + _gw_xp(cap, g), 2),
-                "free_transfers_left": fts_h,
-                "bank": round(bank_tenths / 10.0, 1),
-            })
-            fts_h = min(FT_CARRY_MAX, fts_h + 1)
+        plan = _hold_plan(gws, original_squad, ft, bank_tenths)
         plan_total = baseline_total
         total_hits = 0.0
 
@@ -330,9 +361,11 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     # siirtoja joita se ei suosittele.
     hold_bar = hold_threshold_for(len(gws))
     if n_moves and net_gain < hold_bar:
-        for row in plan:
-            row["transfers"] = []
-            row["roll_transfer"] = True
+        # 17.9: koko rivi hold-tilasta (`_hold_plan`), ei pelkka transfers-
+        # listan pyyhinta. Kuollut paikka jaa tassa haarassa runkoon ja
+        # `unplayable_left` kertoo sen joka kierroksella; FT-portaat ja pankki
+        # ovat hold-tilan, eivat pyyhityn suunnitelman.
+        plan = _hold_plan(gws, original_squad, ft, bank_tenths)
         n_moves = 0
         net_gain = 0.0
         total_hits = 0.0

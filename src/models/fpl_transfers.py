@@ -31,6 +31,13 @@ Tama moduuli on se yksi funktio. Saannot, samat kaikille:
      `minutes_confidence` EI kelpaa ehdoksi: 28.8 artefaktissa se on "low"
      kaikilla 516 pelaajalla (kausi on yhden kierroksen vanha), joten se ei
      erottele ketaan.
+  5. Kuollut paikka (17.9, SIIRTOMOOTTORI-EI-MYY-PENKIN-PELAAMATONTA):
+     saanto 1 on sokea penkille. Rungon pelaaja jota ei voi pelata ja jolle
+     malli antaa nollan (`unplayable_members`, yksi lukija) korvataan
+     vapaalla siirrolla kun XI-parannusta ei ole (`plan_gw` vaihe 2), vaikka
+     XI-hyoty on tasan 0.0. Ei koskaan hitilla, ei koskaan XI-pisteiden
+     edelle, eika koskaan pelaavaa penkkilaista. Mitattu: Dovin (171) jai
+     penkille jokaisella max_moves-arvolla koska `xi_value` ei nae penkkia.
 
 🔴 3.9: paino on nyt MITATTU ja arvo on 1.0 (ks. LOW_CONFIDENCE_WEIGHT).
 Alla oleva teksti kuvaa tilannetta ENNEN mittausta ja jaa historiaksi.
@@ -84,6 +91,22 @@ BAR_BANK_FULL = 0.01
 BAR_BANK_DEEP_FACTOR = 0.5
 # Korjaus ei ole optimointi: pelaaja jota ei voi pelata on 0 xP joka kierros.
 BAR_REPAIR = 0.01
+# 🔴 KUOLLUT PAIKKA (17.9.2026, SIIRTOMOOTTORI-EI-MYY-PENKIN-PELAAMATONTA).
+# Mitattu 12.9 ja 17.9 entry 116920:n GW4-rungolla: penkkivahti Dovin (171,
+# status u, lainalla) korvattuna parhaalla saatavilla olevalla vahdilla antaa
+# XI-hyotya TASAN 0.0000, koska `xi_value` summaa vain parhaan XI:n. 0.0 < 0.01
+# ja siirto jai — joka kerta, max_moves 1/2/5. BAR_REPAIR ei ollut vika:
+# `single_moves` pudotti kandidaatin rivilla `gain_w <= 0` ennen kuin rimaa
+# edes luettiin. Korjaus on rakenteellinen (`unplayable_members` +
+# `repair_moves` + `plan_gw`n vaihe 2), ja sen rima on OMA LUOKKANSA:
+# kuolleen paikan siivoukselta vaaditaan ei-negatiivinen XI-muutos (>= 0.0),
+# ei parannusta. Vertailu on sama `decide >= min_net` kuin muilla siirroilla.
+# MIKSI EI BAR_REPAIR = 0.0: se vakio on myos parihaun lattiassa
+# (`_bs + pari_min`), ja nollalla pari "aito siirto + nollahyotyinen d-status-
+# penkkilaisen vaihto" olisi TASANNUT yksittaisen siirron ja voittanut sen —
+# eli moottori olisi myynyt pelaavan penkkilaisen turhaan (churn). Kuollut
+# paikka ei ole d-status: ks. `is_unplayable`.
+BAR_DEAD_SLOT = 0.0
 MAX_TRANSFERS_PER_GW = 2
 TOP_CANDIDATES_PER_POS = 12
 # 🔴 MITATTU 3.9.2026 (Villen GO), oli 0.75 OLETUKSENA.
@@ -202,6 +225,55 @@ def needs_repair(p: dict) -> bool:
     return False
 
 
+def repair_reason(p: dict) -> str | None:
+    """Rakenteinen syy sille miksi `needs_repair` on tosi (None jos ei ole).
+
+    Pinta voi sanoa syyn ilman etta se paattelee sita copysta:
+    `no_projection:<artefaktin syy>` / `status:<d|i|s|u|n>` / `chance_next:0`.
+    Jarjestys on sama kuin `needs_repair`issa, jotta syy on se jonka lukija
+    ensimmaisena nakee.
+    """
+    if p.get("no_projection"):
+        return f"no_projection:{p.get('no_projection_reason') or 'unavailable'}"
+    status = p.get("status") or "a"
+    if status != "a":
+        return f"status:{status}"
+    if p.get("chance_next") == 0:
+        return "chance_next:0"
+    return None
+
+
+def is_unplayable(p: dict, gws: list[int] | None) -> bool:
+    """KUOLLUT PAIKKA: FPL sanoo ettei han voi pelata (`needs_repair`) JA
+    malli antaa hanelle nollan koko ikkunalle. Molempien on oltava tosia.
+
+    Kaksi kysymysta, ei yksi. `needs_repair` vastaa "milla rimalla hanen
+    korvaamisensa mitataan" ja se on tarkoituksella lavea (Villen GO 3.9:
+    myos "d"-status). Tama vastaa "onko paikka kuollut" eli saako sen siivota
+    pois vaikka XI-hyoty on nolla. Mitattu 17.9 entry 116920:n rungolla:
+      - White (10): status d, 75 %, xP 16.9 -> needs_repair True (korjausrima
+        XI-parannukselle), is_unplayable False: hanta EI myyda nollahyodylla.
+      - Dovin (171): no_projection, xP 0 -> molemmat True: kuollut paikka.
+      - 4,0 m "a"-vahti jolla on 0 xP: needs_repair False -> ei kuollut
+        paikka. Pelaamaton halpa varavahti on tietoinen penkkistrategia,
+        ei vika, eika moottori saa polttaa siihen siirtoa.
+    """
+    return needs_repair(p) and window_xp(p, gws) <= 0.0
+
+
+def unplayable_members(squad: list[dict], gws: list[int] | None) -> list[dict]:
+    """🔴 YKSI LUKIJA kysymykselle "onko rungossa kuollut paikka".
+
+    `plan_gw` KYSYY taman joka kierroksella (`repair_moves`) — lahdeportti
+    tests/test_transfer_bench_repair.py lukee lahdetiedoston ja vaatii kutsun.
+    Jos tama palauttaa tyhjan, rungossa ei ole pelaajaa jota ei voi pelata
+    ja jolla ei ole projektiota; jos se palauttaa rivin, moottorin on joko
+    korvattava han tai jatettava se nakyvasti (ei ilmaista siirtoa jaljella
+    tai ei korvaajaa budjetilla) — ei koskaan hiljaa mittarin sokeuden takia.
+    """
+    return [p for p in squad if is_unplayable(p, gws)]
+
+
 #: Oman ostoksen myyminen maksaa kaksinkertaisen riman.
 #:
 #: 🔴 MITATTU 7.9 ja uudelleen 12.9: `plan_transfers(entry=4089628, ft=5)`
@@ -240,7 +312,7 @@ def churn_bar(min_net: float, out: dict, protected: dict | set | None) -> float:
 
 
 def transfer_bar(ft_left: int, *, entry_known: bool = True,
-                 repair: bool = False,
+                 repair: bool = False, dead_slot: bool = False,
                  near_len: int = NEAR_WINDOW_GWS) -> dict:
     """🔴 YKSI LUKIJA paatoskynnykselle. Kaikki siirtopaatokset lukevat taman.
 
@@ -258,10 +330,21 @@ def transfer_bar(ft_left: int, *, entry_known: bool = True,
       ft = 1-2    siirto on ainoa jousto ensi viikkoon -> taysi rima
       korjaus     pelaaja jota ei voi pelata -> matalin rima (ei koske
                   hittia: -4 maksetaan silti nyt)
+      kuollut     `dead_slot` (17.9): rungon jasen jota ei voi pelata JA
+      paikka      jolla on 0 xP koko ikkunalle (`is_unplayable`). Rima on
+                  0.0 eli ei-negatiivinen XI-muutos riittaa — se on siivous
+                  vapaalla siirrolla, ei optimointi. Oma luokka eika
+                  BAR_REPAIR = 0.0, koska BAR_REPAIR on myos parihaun
+                  lattiassa (ks. vakion kommentti).
 
     NEGATIIVINEN KONTROLLI: `entry_known=False` (manual/draft-moodi, ei
     `ft`-tietoa) palauttaa AINA moduulivakion. Kynnys ei saa muuttua siella
-    missa entryn tilaa ei tunneta.
+    missa entryn tilaa ei tunneta. Poikkeus on `dead_slot`, joka luetaan
+    ENNEN `entry_known`ia: kuollut paikka on RUNGON ominaisuus, ei entryn
+    (rate-my-draft 14/15 -korjaus 10.9 nostaa pelaamattoman draft-runkoon
+    `no_projection`-lipulla, ja taysrima 1.0 jattaisi hanet sinne ikuisesti —
+    sama vika kuin penkkivahdilla, eri moodissa). Hitti on silti hitti:
+    kuolleeseen paikkaan ei makseta -4:aa kummassakaan moodissa.
 
     `near_len` on ikkunan pituus kierroksina. Rima on YKSI luku per kierros
     (`DECISION_BAR_XP_PER_GW`), joten se kerrotaan ikkunalla — lyhyella
@@ -274,6 +357,9 @@ def transfer_bar(ft_left: int, *, entry_known: bool = True,
         return {"min_gain": MIN_GAIN_FOR_HIT,
                 "min_net": round(MIN_GAIN_FOR_HIT - HIT_COST_XP, 4),
                 "hit": True, "reason": "hit"}
+    if dead_slot:
+        return {"min_gain": BAR_DEAD_SLOT, "min_net": BAR_DEAD_SLOT,
+                "hit": False, "reason": "dead_slot"}
     if not entry_known:
         return {"min_gain": full, "min_net": full,
                 "hit": False, "reason": "default"}
@@ -403,6 +489,12 @@ def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float,
         # vaikka painottamaton hyoty on <= 0. Klientti nayttaa silloin syyn.
         "weighting_decided": bool(gain <= 0 < gain_w),
         "pos": POS_NAME[out_p["element_type"]],
+        # 17.9: lahtija on pelaaja jota ei voi pelata -> siirto on KORJAUS.
+        # Kuolleen paikan korjauksella `gain` on 0.0 (XI ei muutu), ja ilman
+        # tata kenttaa rivi "+0.00 xP" olisi lukijalle selittamaton. Syy on
+        # rakenteinen (ks. `repair_reason`), ei lause.
+        "repair": needs_repair(out_p),
+        "repair_reason": repair_reason(out_p),
     }
 
 
@@ -483,6 +575,69 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
         scored.sort(key=lambda m: m["gain_weighted"], reverse=True)
         del scored[top_k:]
     return scored
+
+
+def repair_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
+                 gws: list[int] | None, *,
+                 top_per_pos: int = TOP_CANDIDATES_PER_POS,
+                 near: list[int] | None = None) -> list[dict]:
+    """Korjaussiirto jokaiselle rungon KUOLLEELLE PAIKALLE (`unplayable_members`).
+
+    🔴 MIKSI OMA FUNKTIO EIKA `single_moves` (17.9). `single_moves` on
+    optimointihaku: se pudottaa kandidaatin kun XI-hyoty on <= 0 ja pitaa
+    vain top_k parasta. Penkkivahdin korvaus mittautuu XI-hyodylla tasan 0.0,
+    joten se putosi molemmista — rima (0.01) ei koskaan nahnyt siirtoa. Tama
+    haku EI pudota nollaa: se mittaa XI-hyodyn (ja nayttaa sen rehellisesti,
+    0.0 on 0.0) mutta lahtija on jo paatetty lukijalla `unplayable_members`,
+    ei hyodylla. Paatos rimaa vasten tehdaan `plan_gw`:ssa samalla
+    vertailulla kuin muillekin siirroille.
+
+    Per kuollut paikka: saman position kandidaatit joihin budjetti riittaa
+    (bank + lahtijan hinta), max 3/klubi vaihdon jalkeen, painotetun
+    ikkuna-xP:n jarjestyksessa top_per_pos parasta; niista valitaan suurin
+    XI-hyoty, tasapelissa paras xP (parempi penkkikate samalla rahalla).
+    Palautus: yksi `_move` per paikka, jarjestettyna XI-hyoty desc, sitten
+    tulijan xP desc. Tyhja lista = ei kuollutta paikkaa TAI ei korvaajaa
+    budjetilla (jalkimmainen jaa nakyviin: lukija palauttaa rivin yha).
+    """
+    holes = unplayable_members(squad, gws)
+    if not holes:
+        return []
+    squad_ids = {p["id"] for p in squad}
+    clubs = _club_counts(squad)
+    base = xi_value(squad, gws, weighted=True)
+    base_plain = xi_value(squad, gws, weighted=False)
+    base_near = xi_value(squad, near, weighted=True) if near else None
+    base_near_plain = xi_value(squad, near, weighted=False) if near else None
+    wval = {p["id"]: window_xp(p, gws) * confidence_weight(p) for p in pool}
+    out: list[tuple[float, float, dict]] = []
+    for out_p in holes:
+        budget = bank_tenths + out_p["price"]
+        cands = [in_p for in_p in pool
+                 if in_p["id"] not in squad_ids
+                 and in_p["element_type"] == out_p["element_type"]
+                 and in_p["price"] <= budget
+                 and _clubs_ok_after(clubs, [out_p], [in_p])]
+        cands.sort(key=lambda p: wval[p["id"]], reverse=True)
+        best: tuple[float, float, dict] | None = None
+        for in_p in cands[:top_per_pos]:
+            new_squad = _apply(squad, [out_p], [in_p])
+            gain_w = xi_value(new_squad, gws, weighted=True) - base
+            key = (gain_w, wval[in_p["id"]])
+            if best is not None and key <= best[:2]:
+                continue
+            gain = xi_value(new_squad, gws, weighted=False) - base_plain
+            gain_near = gain_near_w = None
+            if near:
+                gain_near_w = xi_value(new_squad, near, weighted=True) - base_near
+                gain_near = (xi_value(new_squad, near, weighted=False)
+                             - base_near_plain)
+            best = (gain_w, wval[in_p["id"]],
+                    _move(out_p, in_p, gain, gain_w, 0.0, gain_near, gain_near_w))
+        if best is not None:
+            out.append(best)
+    out.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    return [t[2] for t in out]
 
 
 def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
@@ -652,10 +807,20 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             protected_ids: set[int] | None = None) -> dict:
     """Yhden kierroksen siirrot samoilla saannoilla kaikille pinnoille.
 
-    Palauttaa {"moves": [...], "squad", "bank_tenths", "ft_left", "hits"}.
+    Palauttaa {"moves": [...], "squad", "bank_tenths", "ft_left", "hits",
+    "unplayable_left"}.
     Jokainen move: out, in, gain (painottamaton XI-hyoty), gain_weighted,
     gain_near (lahi-ikkuna, paatosluku), hit, net, confidence_weight, pos,
-    pair (bool), bar (kynnys josta paatos tehtiin).
+    pair (bool), bar (kynnys josta paatos tehtiin), repair (bool) +
+    repair_reason (lahtija oli pelaaja jota ei voi pelata, ks. `repair_reason`).
+
+    `unplayable_left` (17.9): lukijan `unplayable_members` vastaus LOPULLISELLE
+    rungolle, id-lista. Tyhja = rungossa ei ole kuollutta paikkaa. Ei-tyhja =
+    moottori jatti sen tietoisesti (vapaa siirto meni XI-parannukseen, ft 0,
+    tai ei korvaajaa budjetilla) ja kutsupinnan on kannettava se eteenpain.
+    Mitattu 17.9 GW5: freeze-reitin ainoa vapaa siirto menee White->Thomas
+    (+5.18) ja Dovin (171) jaa penkille; ilman tata kenttaa se olisi
+    nakymaton freeze-metassa, eli sama vika "hiljaa" toisessa muodossa.
 
     3.9: paatos tehdaan LAHI-IKKUNASTA (`near_gws`) ja kynnys tulee
     `transfer_bar`ista, joka on entry-kohtainen (ft + rungon tila).
@@ -761,6 +926,34 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         if not chosen and best_single is not None:
             best_single["pair"] = False
             chosen = [best_single]
+        # 🔴 VAIHE 2 (17.9): KUOLLUT PAIKKA SIIVOTAAN KUN PAREMPAA KAYTTOA
+        # SIIRROLLE EI OLE. `unplayable_members` on lukija; tama on se kohta
+        # jossa plan_gw:n on PAKKO kasitella sen vastaus. Jarjestys on
+        # tietoinen: XI-pisteet ensin (vaihe 1), siivous sitten — penkkivahdin
+        # vaihto ei tuota pisteita, joten se ei saa syrjayttaa siirtoa joka
+        # tuottaa. Sama vertailu `decide >= rima` kuin vaiheessa 1: hitin
+        # rima (ft 0) on hitin, joten kuolleeseen paikkaan ei koskaan makseta
+        # -4:aa; vapaalla siirrolla rima on BAR_DEAD_SLOT (0.0) ja nolla
+        # riittaa. Pelaavaa penkkilaista tama ei koske: `is_unplayable`
+        # vaatii etta FPL sanoo "ei voi pelata" JA xP on nolla koko ikkunalle.
+        if not chosen:
+            for cand in repair_moves(squad, pool, bank, gws,
+                                     top_per_pos=top_per_pos, near=near):
+                hit = _hit_for(0)
+                m = _move(cand["out"], cand["in"], cand["gain"],
+                          cand["gain_weighted"], hit,
+                          cand.get("gain_near"), cand.get("gain_near_weighted"))
+                bar = transfer_bar(fts, entry_known=entry_known,
+                                   dead_slot=True,
+                                   near_len=len(near) if near else 1)
+                decide = m["net"] if bar["hit"] else (
+                    m["net_near"] if m["net_near"] is not None else m["net"])
+                rima = churn_bar(bar["min_net"], cand["out"], protected)
+                if decide >= rima:
+                    m["bar"] = bar
+                    m["pair"] = False
+                    chosen = [m]
+                    break
         if not chosen:
             break
         for m in chosen:
@@ -775,4 +968,6 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                 hits += 1
             moves.append(m)
     return {"moves": moves, "squad": squad, "bank_tenths": bank,
-            "ft_left": fts, "hits": hits, "protected_ids": protected}
+            "ft_left": fts, "hits": hits, "protected_ids": protected,
+            # Lukijan vastaus lopulliselle rungolle: ei koskaan hiljaa.
+            "unplayable_left": [p["id"] for p in unplayable_members(squad, gws)]}
