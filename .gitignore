@@ -177,6 +177,11 @@ raw_data/
 # Season race -paneeli lukee taman, ja ilman !-poikkeusta luku eläisi vain
 # runnerilla eika koskaan paatyisi sivulle.
 !/data/model_squad_gw_scores.json
+# 17.9 KAKSI-GRADERIA-YKSI-TIEDOSTO: freeze-graderin OMA sarja (diagnostiikka,
+# ei julkinen pinta). Eri tiedosto kuin entry-sarja, jotta sekaprovenienssi on
+# rakenteellisesti mahdoton. Ilman !-poikkeusta runnerin kirjoitus katoaisi
+# ajon mukana ja graderi gradaisi samat kierrokset joka ajossa.
+!/data/model_squad_frozen_gw_scores.json
 # 28.8 GW-CALLS-LOKI: kutsut ennen deadlinea + gradaus, git-historia todistaa ajan
 !/data/gw_calls.json
 # EO-by-tier (25.8): sijoitusotos + laskettu tulos. 🔴 MOLEMMAT tarvitaan

@@ -39,6 +39,9 @@ KIRJOITTAJAT = {
     "build_fpl_player_leaders": "data/fpl_player_leaders.json",
     "build_fpl_stats": "data/fpl_player_stats.json",
     "build_fpl_cs_fdr": "data/fpl_cs_fdr.json",
+    # 17.9 KAKSI-GRADERIA-YKSI-TIEDOSTO: freeze-graderi kirjoittaa omaan
+    # sarjaansa, ei enaa entry-sarjaan.
+    "grade_model_squad_gw": "data/model_squad_frozen_gw_scores.json",
 }
 
 # POIKKEUSLISTA: tiedosto jota refresh EI committaa, perusteluineen.
