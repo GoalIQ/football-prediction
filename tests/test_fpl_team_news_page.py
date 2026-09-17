@@ -118,6 +118,57 @@ def test_epavarmalle_nayteta_xp_koska_se_on_koko_kulma():
     assert "75%" in " ".join(rivit[0])
 
 
+# ---------------------------------------------------------------------------
+# TEAM-NEWS-MINUUTTILIPPU (12.9.2026, mitattu uudelleen 17.9). Julkaisu-
+# tarkistajan loydos: /fpl/expected-points merkitsee minuuttiperustan lipun
+# (`!`/`?`, src/models/fpl_minutes_flags) mutta /fpl/team-news ei kutsu sita
+# lainkaan Doubtful-taulukossa. Sama pelaaja voisi siis kantaa kaksi eri
+# lupausta varmuudesta kahdella pinnalla. Mitattu 17.9 committoidusta
+# artefaktista: 8/20 senhetkisesta doubtful-rivista kantoi lipun (Mosquera
+# mukana, sama pelaaja jonka rivi nimesi 12.9).
+# ---------------------------------------------------------------------------
+def test_epavarma_short_season_pelaaja_saa_saman_lipun_kuin_expected_points():
+    html = render_team_news(_xp(
+        [_p("Mosquera", chance_next=50, news="Ankle knock - 50% chance",
+            xp_horizon_total=5.75, owned_pct=3.0,
+            minutes_basis_flag="short_season",
+            last_season={"minutes": 180, "points": 4})],
+    ), NOW)
+    blk = re.search(r'<h2 id="doubtful">.*?</table>', html, re.S).group(0)
+    assert '<span class="flag"' in blk and ">!</span>" in blk, (
+        "doubtful-rivilta puuttuu minuuttiperustan lippu — sama pelaaja "
+        "kantaisi eri varmuuslupauksen kuin expected-points-sivulla")
+    assert "180 minutes last season" in blk
+    # Legenda: puhelimessa title-attribuutti ei aukea, joten lippu ilman
+    # selitetta olisi merkki jolle ei ole lukutapaa (sama sääntö kuin muilla
+    # sivuilla, ks. _flag_legend).
+    assert "do not describe this player" in html
+
+
+def test_epavarma_uusi_seura_pelaaja_saa_new_club_lipun():
+    html = render_team_news(_xp(
+        [_p("Uusitalo", chance_next=75, news="Illness - 75% chance",
+            xp_horizon_total=8.2, owned_pct=1.0,
+            minutes_basis_flag="new_club",
+            last_season={"minutes": 1400, "team_name": "Example FC"})],
+    ), NOW)
+    blk = re.search(r'<h2 id="doubtful">.*?</table>', html, re.S).group(0)
+    assert ">!</span>" in blk
+    assert "Example FC" in blk
+
+
+def test_negatiivinen_kontrolli_ilman_lippua_ei_nayteta_merkkia_eika_legendaa():
+    """Ilman tätä ei voi tietää mittaako testi mitään: pelaaja jolla EI ole
+    minuuttiperustan lippua ei saa lisätä sitä eikä legendaa."""
+    html = render_team_news(_xp(
+        [_p("Tavallinen", chance_next=75, news="Knock - 75% chance",
+            xp_horizon_total=9.0, owned_pct=4.0)],
+    ), NOW)
+    blk = re.search(r'<h2 id="doubtful">.*?</table>', html, re.S).group(0)
+    assert '<span class="flag"' not in blk
+    assert "do not describe this player" not in html
+
+
 def test_jarjestys_on_omistus_laskevasti():
     """Sivun kysymys on 'koskeeko tama minua', ei 'kuka on paras'."""
     html = render_team_news(_xp([

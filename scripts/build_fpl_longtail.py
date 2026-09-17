@@ -3269,9 +3269,16 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         )
 
     if doubt_rows:
+        # TEAM-NEWS-MINUUTTILIPPU (12.9): sama lippu ja sama legenda kuin
+        # /fpl/expected-points (`_no_history_flag` + `_flag_legend`, jaettu
+        # lukija src/models/fpl_minutes_flags). Mitattu 17.9: 8/20 doubtful-
+        # rivista kantaa minuuttiperustan lipun (short_season/new_club), eikä
+        # tämä sivu kertonut siitä lainkaan — sama pelaaja olisi näyttänyt
+        # kaksi eri varmuuslupausta kahdella pinnalla, jos hän joskus nousee
+        # myös expected-points-listalle.
         trows = "".join(
             "<tr>"
-            f'<td>{escape(str(r.get("web_name", "")))}</td>'
+            f'<td>{escape(str(r.get("web_name", "")))}{_no_history_flag(r)}</td>'
             f'<td class="tm">{_kit_svg(r.get("team_short", ""))}'
             f'<span>{escape(str(r.get("team_short", "")))}</span></td>'
             f'<td class="m-hide">{escape(str(r.get("pos", "")))}</td>'
@@ -3294,6 +3301,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             '<p class="note">The xP column already carries the flag: a '
             "reduced chance of playing lowers projected minutes, so "
             f"{XP_SISALTAA_EPAVARMUUDEN}.</p>"
+            + _flag_legend(doubt_rows)
         )
 
     n_out, n_doubt = len(out_rows), len(doubt_rows)
