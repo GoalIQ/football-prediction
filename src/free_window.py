@@ -19,18 +19,76 @@ Käyttö generaattorissa:
     from src.free_window import note
     ...
     {note()}          # tyhjä merkkijono kun ikkuna on kiinni
+
+PAISTETTU SIVU SULKEUTUU ITSE (17.9.2026, ILMAISIKKUNA-SULKEUTUU-ITSE).
+Mitattu 12.9: ikkunan sulkeutuminen paistetuilla hub-sivuilla riippui
+siitä että ihminen dispatchaa `fpl-page-refresh`in. Ajastettua sivuajoa ei
+ollut 12:30–15:00 välillä, joten 19 lupausta 6 sivulla olisi elänyt 2,5 h
+yli lupauksensa ellei joku ole paikalla. SPA ja mobiili sulkeutuivat itse,
+koska ne lukevat aikaleiman AJOSSA. Paistettu sivu luki sen PAISTOSSA.
+
+Korjaus (sääntö 6a): `self_closing_block()`. Lohkon staattinen oletus on
+SULJETTU teksti. Avoin teksti elää inertissä `<template>`-elementissä ja
+inline-skripti näyttää sen vain kun selaimen `Date.now() < data-until`,
+ja palauttaa suljetun tekstin tasan deadlinella jos sivu on silloin auki.
+Ilman JavaScriptiä näkyy suljettu teksti. Lupaus ei voi jäädä roikkumaan:
+sivu ei enää tarvitse ketään sulkeutuakseen.
 """
 from __future__ import annotations
 
 import datetime as _dt
+import json as _json
 
 #: Sama arvo kuin goaliq-app/lib/freePremiumWindow.ts FREE_PREMIUM_UNTIL.
 #: Jos tätä muutetaan, muuta myös se — `check_free_window.py` vertaa niitä.
+#:
+#: 🔴 TÄMÄ ON AINOA PAIKKA JOSSA AIKALEIMA KIRJOITETAAN. Sivun
+#: `data-until`-attribuutti, `is_open()`, `day_label()` ja portin
+#: template-lukija johdetaan kaikki tästä. Toinen kirjoitettu aikaleima
+#: ajautuisi erilleen (`tests/test_free_window_self_closing.py` skannaa).
 FREE_PREMIUM_UNTIL = "2026-09-12T12:30:00Z"
+
+
+def parse_until(iso: str) -> _dt.datetime | None:
+    """ISO-aikaleima -> aware datetime, tai None jos ei jäsenny.
+
+    None on tarkoituksellinen: selaimessa `Date.parse` palauttaa NaN:in ja
+    `Date.now() < NaN` on epätosi, eli lohko jää SULJETUKSI. Pythonin on
+    vastattava samoin, muuten portti ja selain olisivat eri mieltä
+    rikkinäisestä attribuutista.
+    """
+    try:
+        d = _dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except (ValueError, AttributeError, TypeError):
+        return None
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=_dt.timezone.utc)
+    return d
+
+
+def open_at(until_iso: str, now: _dt.datetime | None = None) -> bool:
+    """YKSI LUKIJA: onko ikkuna auki hetkellä `now`, kun se sulkeutuu
+    `until_iso`:na. Sama predikaatti kuin inline-skriptin
+    `Date.now() < Date.parse(until)`: raja on aikaleima, ei päivä, ja tasan
+    rajalla ikkuna on kiinni.
+
+    Sekä `is_open()` (moduulin vakio) että portin template-lukija (sivun
+    `data-until`) kulkevat tästä, jotta kysymykseen "näkyykö lupaus" on
+    yksi vastaus eikä kaksi.
+    """
+    until = parse_until(until_iso)
+    if until is None:
+        return False
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=_dt.timezone.utc)
+    return now < until
+
 
 #: Ihmisluettava päivä lauseeseen. Johdetaan yllä olevasta, ei kirjoiteta
 #: erikseen: kaksi kirjoitettua päivämäärää ajautuisi erilleen.
-_UNTIL = _dt.datetime.fromisoformat(FREE_PREMIUM_UNTIL.replace("Z", "+00:00"))
+_UNTIL = parse_until(FREE_PREMIUM_UNTIL)
+assert _UNTIL is not None, "FREE_PREMIUM_UNTIL ei jäsenny"
 
 
 def until() -> _dt.datetime:
@@ -39,10 +97,7 @@ def until() -> _dt.datetime:
 
 def is_open(now: _dt.datetime | None = None) -> bool:
     """Onko ilmaisikkuna auki juuri nyt."""
-    now = now or _dt.datetime.now(_dt.timezone.utc)
-    if now.tzinfo is None:
-        now = now.replace(tzinfo=_dt.timezone.utc)
-    return now < _UNTIL
+    return open_at(FREE_PREMIUM_UNTIL, now)
 
 
 def day_label() -> str:
@@ -59,13 +114,102 @@ def note(now: _dt.datetime | None = None) -> str:
     """
     if not is_open(now):
         return ""
+    return note_text()
+
+
+def note_text() -> str:
+    """Lupauslause ilman ajan ehtoa. Kutsutaan vain sieltä missä ehto on
+    jo ratkaistu (template-haara); julkinen pinta käyttää `note()`:a."""
     return (f"Premium is free on the web until the GW4 deadline on "
             f"{day_label()}, so GW1 to GW3. Create a free account and "
             f"it's on. No card, nothing to cancel.")
 
 
 # ---------------------------------------------------------------------------
-# PINTAKOHTAISET LOHKOT (12.9.2026)
+# ITSESTÄÄN SULKEUTUVA LOHKO (17.9.2026)
+#
+# Rakenne sivulla, kun ikkuna on auki paistohetkellä:
+#
+#   <template data-free-window-open="KEY" data-until="…Z">AVOIN HTML</template>
+#   SULJETTU HTML                                    <- staattinen oletus
+#   <template data-free-window-end="KEY"></template>
+#   <script>(function(k){…})("KEY");</script>
+#
+# Skripti: jos Date.now() < data-until, se irrottaa solmut kahden templaten
+# välistä (suljettu tila) ja liittää avoimen templaten sisällön tilalle.
+# Se ajastaa itselleen paluun deadlinelle, joten sivu joka on auki 12:29
+# näyttää suljetun tekstin 12:30 ilman latausta. Ilman JavaScriptiä
+# `<template>` on inertti: ei renderöidy, ei saavutettavuuspuussa, ei
+# hakukoneen tekstissä. Suljettu HTML on se mitä kaikki näkevät oletuksena.
+#
+# Kun ikkuna on jo kiinni paistohetkellä, lohko on PELKKÄ suljettu HTML:
+# avointa tekstiä ei voi enää koskaan tarvita, joten vanhentunutta
+# tarjousta ei jätetä lähdekoodiin tekstiksi jonka naiivi raapija lukisi.
+# Kummassakin tapauksessa: lupaus näkyy vain kun se on tosi, ja sulkeutuminen
+# ei tarvitse yhtään ajoa.
+# ---------------------------------------------------------------------------
+
+#: Attribuutit joilla portti (`check_free_window.py`) tunnistaa rakenteen.
+#: Nimet elävät täällä, jotta skripti ja lukija eivät kirjoita niitä erikseen.
+OPEN_ATTR = "data-free-window-open"
+END_ATTR = "data-free-window-end"
+UNTIL_ATTR = "data-until"
+
+#: Inline-skripti, ES5 jotta vanha WebView ei kaadu. `%s` on JSON-koodattu
+#: avain. Predikaatti `Date.now()<u` on sama kuin `open_at()`: tasan rajalla
+#: kiinni. `Math.min(…, 2147483647)`: setTimeout ei kestä yli 24,8 vrk:n
+#: viivettä, joten kaukainen deadline tarkistetaan uudelleen erissä.
+INLINE_SCRIPT_TMPL = (
+    "(function(k){"
+    "var d=document,"
+    "o=d.querySelector('template[" + OPEN_ATTR + "=\"'+k+'\"]'),"
+    "e=d.querySelector('template[" + END_ATTR + "=\"'+k+'\"]');"
+    "if(!o||!e||!o.content)return;"
+    "var u=Date.parse(o.getAttribute('" + UNTIL_ATTR + "'));"
+    "if(!(Date.now()<u))return;"
+    "var p=o.parentNode,c=[],n=o.nextSibling,i;"
+    "while(n&&n!==e){c.push(n);n=n.nextSibling;}"
+    "for(i=0;i<c.length;i++)p.removeChild(c[i]);"
+    "var f=d.importNode(o.content,true),a=[].slice.call(f.childNodes);"
+    "p.insertBefore(f,e);"
+    "function back(){"
+    "if(Date.now()<u){setTimeout(back,Math.min(u-Date.now(),2147483647));return;}"
+    "for(i=0;i<a.length;i++)if(a[i].parentNode)a[i].parentNode.removeChild(a[i]);"
+    "for(i=0;i<c.length;i++)p.insertBefore(c[i],e);"
+    "}"
+    "setTimeout(back,Math.min(u-Date.now(),2147483647));"
+    "})(%s);"
+)
+
+
+def inline_script(key: str) -> str:
+    return INLINE_SCRIPT_TMPL % _json.dumps(key)
+
+
+def self_closing_block(key: str, closed_html: str, open_html: str,
+                       now: _dt.datetime | None = None) -> str:
+    """Lohko jonka staattinen oletus on SULJETTU teksti.
+
+    `key` on lohkon tunniste sivulla (yksi per sivu). `closed_html` näkyy
+    ilman JavaScriptiä ja aina kun `Date.now() >= FREE_PREMIUM_UNTIL`.
+    `open_html` näkyy vain skriptin kautta ja vain sitä ennen.
+
+    Paistohetken `now` ratkaisee vain sen, kirjoitetaanko avoin haara
+    lähdekoodiin lainkaan. Se ei ratkaise mitä lukija näkee: sen ratkaisee
+    lukijan kello. Paistoaika ei siis voi enää jättää lupausta roikkumaan.
+    """
+    if not is_open(now):
+        return closed_html
+    return (
+        f'<template {OPEN_ATTR}="{key}" {UNTIL_ATTR}="{FREE_PREMIUM_UNTIL}">'
+        f'{open_html}</template>\n'
+        f'{closed_html}\n'
+        f'<template {END_ATTR}="{key}"></template>\n'
+        f'<script>{inline_script(key)}</script>')
+
+
+# ---------------------------------------------------------------------------
+# PINTAKOHTAISET LOHKOT (12.9.2026, itsestään sulkeutuviksi 17.9.2026)
 #
 # TAUSTA. `note()` riitti niille pinnoille joilla lupaus on LAUSE: kun ikkuna
 # sulkeutuu, lause katoaa ja sivu on oikein. Mutta kolmella pinnalla lupaus ei
@@ -78,20 +222,17 @@ def note(now: _dt.datetime | None = None) -> str:
 # mikaan. Molemmat ovat tulopuolen vaitteita ja molemmat kytkeytyvat paalle
 # itsestaan (muisti: ehto-ei-vanhene-teksti-vanhenee).
 #
-# Ratkaisu on sama kuin `fpl.html`illa jo on: lohkolla on KAKSI tilaa, ja
-# `is_open()` valitsee. Sivulla lohko elaa GEN-markkereiden valissa kuten muu
-# generoitu sisalto tassa repossa, ja `check_free_window.py --fix` renderoi
-# sen joka page-refresh-ajossa - myos ikkunan ollessa auki, jolloin se on
-# no-op. Ikkunan sulkeutuminen ei siis vaadi ketaan muistamaan mitaan.
+# Jokaisella lohkolla on KAKSI tilaa. Sivulla lohko elaa GEN-markkereiden
+# valissa kuten muu generoitu sisalto tassa repossa, ja
+# `check_free_window.py --fix` renderoi sen joka page-refresh-ajossa.
+# 17.9 alkaen tilan valitsee lukijan selain (`self_closing_block`), ei
+# paistoajo: ajo vain kirjoittaa molemmat tilat sivulle.
 # ---------------------------------------------------------------------------
 
 PRO_URL = "https://pro.goaliq.app/"
 
 
-def band_html(now: _dt.datetime | None = None) -> str:
-    """index.html: navin alla oleva ilmaisikkunabandi. Kiinni = ei bandia."""
-    if not is_open(now):
-        return ""
+def band_open_html() -> str:
     return (
         '<div class="free-band">\n'
         '  <div class="wrap free-band-in">\n'
@@ -107,13 +248,37 @@ def band_html(now: _dt.datetime | None = None) -> str:
         '</div>')
 
 
-def hero_cta_html(now: _dt.datetime | None = None) -> str:
-    """index.html: heron ensimmainen nappi. Kiinni = nappi jaa, lupaus lahtee."""
-    if is_open(now):
-        return (f'<a class="btn btn-primary" href="{PRO_URL}" '
-                'data-cta="hero-freewindow">Get Premium free &#9656;</a>')
+def band_html(now: _dt.datetime | None = None) -> str:
+    """index.html: navin alla oleva ilmaisikkunabandi. Kiinni = ei bandia."""
+    return self_closing_block("FREE-BAND", "", band_open_html(), now)
+
+
+def hero_cta_open_html() -> str:
+    return (f'<a class="btn btn-primary" href="{PRO_URL}" '
+            'data-cta="hero-freewindow">Get Premium free &#9656;</a>')
+
+
+def hero_cta_closed_html() -> str:
     return (f'<a class="btn btn-primary" href="{PRO_URL}" '
             'data-cta="hero-premium">Get Premium &#9656;</a>')
+
+
+def hero_cta_html(now: _dt.datetime | None = None) -> str:
+    """index.html: heron ensimmainen nappi. Kiinni = nappi jaa, lupaus lahtee."""
+    return self_closing_block("FREE-CTA", hero_cta_closed_html(),
+                              hero_cta_open_html(), now)
+
+
+def hero_price_note_open_html() -> str:
+    return (f'<p class="cta-note">After {day_label()} it is &euro;3.99 '
+            f'a month or <a href="{PRO_URL}checkout?plan=season" '
+            'data-cta="hero">&euro;25 a year</a>.</p>')
+
+
+def hero_price_note_closed_html() -> str:
+    return (f'<p class="cta-note">&euro;3.99 a month, or '
+            f'<a href="{PRO_URL}checkout?plan=season" data-cta="hero">'
+            '&euro;25 a year</a>.</p>')
 
 
 def hero_price_note_html(now: _dt.datetime | None = None) -> str:
@@ -130,13 +295,19 @@ def hero_price_note_html(now: _dt.datetime | None = None) -> str:
     Osittainen GEN-kate on pahempi kuin ei katetta: se saa nakyttamaan silta
     etta pinta on hoidettu.
     """
-    if is_open(now):
-        return (f'<p class="cta-note">After {day_label()} it is &euro;3.99 '
-                f'a month or <a href="{PRO_URL}checkout?plan=season" '
-                'data-cta="hero">&euro;25 a year</a>.</p>')
-    return (f'<p class="cta-note">&euro;3.99 a month, or '
-            f'<a href="{PRO_URL}checkout?plan=season" data-cta="hero">'
-            '&euro;25 a year</a>.</p>')
+    return self_closing_block("FREE-HERO-PRICE", hero_price_note_closed_html(),
+                              hero_price_note_open_html(), now)
+
+
+def price_tag_open_html() -> str:
+    return ('<h3><span class="price-tag">Free<span> until 12 Sept</span>'
+            '</span> <span class="price-alt">then &euro;25 / year or '
+            '&euro;3.99 / month</span></h3>')
+
+
+def price_tag_closed_html() -> str:
+    return ('<h3><span class="price-tag">&euro;3.99 / month</span> '
+            '<span class="price-alt">or &euro;25 / year</span></h3>')
 
 
 def price_tag_html(now: _dt.datetime | None = None) -> str:
@@ -146,12 +317,25 @@ def price_tag_html(now: _dt.datetime | None = None) -> str:
     tarkistamaan oma provisionsa talta sivulta ilman tilia (sivun oma
     kommentti). Vain ilmaisuuslupaus vaihtuu.
     """
-    if is_open(now):
-        return ('<h3><span class="price-tag">Free<span> until 12 Sept</span>'
-                '</span> <span class="price-alt">then &euro;25 / year or '
-                '&euro;3.99 / month</span></h3>')
-    return ('<h3><span class="price-tag">&euro;3.99 / month</span> '
-            '<span class="price-alt">or &euro;25 / year</span></h3>')
+    return self_closing_block("FREE-PRICE", price_tag_closed_html(),
+                              price_tag_open_html(), now)
+
+
+def predictions_price_open_html() -> str:
+    return (
+        '<div class="price">Free<span> until 12 Sept</span></div>\n'
+        '      <p style="border-left:3px solid var(--amber);'
+        'padding-left:10px;">' + note_text() + '</p>\n'
+        '      <p style="color:var(--muted);">After that it is '
+        '€25 a year or €3.99 a month.\n'
+        '        Go deeper on every prediction.</p>')
+
+
+def predictions_price_closed_html() -> str:
+    return (
+        '<div class="price">€3.99 / month</div>\n'
+        '      <p style="color:var(--muted);">Or €25 a year.\n'
+        '        Go deeper on every prediction.</p>')
 
 
 def predictions_price_html(now: _dt.datetime | None = None) -> str:
@@ -161,18 +345,8 @@ def predictions_price_html(now: _dt.datetime | None = None) -> str:
     kommentti) - toisin pain sivu naytti hintalapun suoraan sen lauseen
     ylapuolella joka sanoo ettei tarvitse maksaa.
     """
-    if is_open(now):
-        return (
-            '<div class="price">Free<span> until 12 Sept</span></div>\n'
-            '      <p style="border-left:3px solid var(--amber);'
-            'padding-left:10px;">' + note(now) + '</p>\n'
-            '      <p style="color:var(--muted);">After that it is '
-            '\u20ac25 a year or \u20ac3.99 a month.\n'
-            '        Go deeper on every prediction.</p>')
-    return (
-        '<div class="price">\u20ac3.99 / month</div>\n'
-        '      <p style="color:var(--muted);">Or \u20ac25 a year.\n'
-        '        Go deeper on every prediction.</p>')
+    return self_closing_block("FREE-PRICE", predictions_price_closed_html(),
+                              predictions_price_open_html(), now)
 
 
 #: (tiedosto, GEN-avain) -> renderoija. Yksi taulukko, jotta uusi pinta

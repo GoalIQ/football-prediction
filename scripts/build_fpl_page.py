@@ -340,7 +340,7 @@ def fdr_rows_from_teams(teams: list[dict], gws: list[int]) -> list[dict]:
     return rows
 
 
-def free_window_block() -> str:
+def free_window_block(now=None) -> str:
     """Ilmaisikkunan lohko: nootti + CTA + hintanootti, ikkunan tilan mukaan.
 
     30.8: tassa oli kovakoodattu lause ja sen vieressa KOMMENTTI ihmiselle
@@ -351,26 +351,33 @@ def free_window_block() -> str:
     Kaikki kolme johdetaan nyt src.free_window:sta, sama aikaleima kuin
     mobiilin lib/freePremiumWindow.ts:ssa.
 
+    17.9 (ILMAISIKKUNA-SULKEUTUU-ITSE): tila EI ratkea enaa paistohetkella.
+    Mitattu 12.9: tama lohko paistettiin `is_open()`:lla ajon kellosta, ja
+    ajastettua ajoa ei ollut 12:30-15:00 valilla, joten fpl.html olisi
+    luvannut ilmaista 2,5 h yli deadlinen ellei joku dispatchaa. Nyt lohko on
+    `self_closing_block`: suljettu teksti on staattinen oletus, avoin teksti
+    nakyy vain selaimen kellolla ennen deadlinea. `now` on vain testien
+    synteettinen paistohetki.
+
     Nootti on CTA:n YLAPUOLELLA tarkoituksella (alkuperainen kommentti):
     toisin pain sivu tarjosi ostonapin suoraan sen lauseen ylapuolella joka
     sanoo ettei tarvitse maksaa viela.
     """
-    from src.free_window import day_label, is_open, note
+    from src.free_window import day_label, note_text, self_closing_block
     hinta_loppu = (
         f"\u20ac3.99 a month. One subscription covers web, iOS and Android. "
         f"Cancel anytime. 30-day money back on web purchases.</p>")
-    if is_open():
-        return (
-            f'<p class="price-note"><b>{note()}</b></p>\n'
-            f'<div class="cta-row">\n'
-            f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-freewindow">'
-            f'Get Premium free</a>\n'
-            f'</div>\n'
-            f'<p class="price-note">After {day_label()} it is \u20ac25 a year, '
-            f'which is under \u20ac2.10 a month, or '
-            + hinta_loppu)
+    auki = (
+        f'<p class="price-note"><b>{note_text()}</b></p>\n'
+        f'<div class="cta-row">\n'
+        f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-freewindow">'
+        f'Get Premium free</a>\n'
+        f'</div>\n'
+        f'<p class="price-note">After {day_label()} it is \u20ac25 a year, '
+        f'which is under \u20ac2.10 a month, or '
+        + hinta_loppu)
     # Ikkuna kiinni: ei ilmaislupausta, CTA takaisin ostoon, hinta preesensissa.
-    return (
+    kiinni = (
         f'<div class="cta-row">\n'
         f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-premium">'
         f'Get Premium</a>\n'
@@ -378,6 +385,7 @@ def free_window_block() -> str:
         f'<p class="price-note">\u20ac25 a year, which is under '
         f'\u20ac2.10 a month, or '
         + hinta_loppu)
+    return self_closing_block("FREE-UPSELL", kiinni, auki, now)
 
 
 def match_goals_index(fixtures: list[dict], gw: int) -> dict[tuple, tuple]:
