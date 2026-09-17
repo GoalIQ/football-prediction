@@ -626,6 +626,131 @@
      }
     }
    }
+  },
+  {
+   "gw": 5,
+   "deadline_utc": "2026-09-18T17:30:00Z",
+   "logged_at": "2026-09-17T12:18:35Z",
+   "updated_at": "2026-09-17T12:18:35Z",
+   "source": {
+    "freeze_frozen_at": "2026-09-17T12:18:34Z",
+    "projection_generated_at": "2026-09-17T12:12:33+00:00"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "gw_xp",
+     "value": 6.51,
+     "frozen_value": 6.51,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.216,
+     "criterion": "10+ pts",
+     "gw_xp": 6.51,
+     "xp_dist": {
+      "p_haul": 0.216,
+      "p_blank": 0.097,
+      "p10": 3,
+      "median": 6,
+      "p90": 12,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 106,
+     "web_name": "Thiago",
+     "team_short": "BRE",
+     "pos": "FWD",
+     "metric": "p90",
+     "value": 11,
+     "criterion": "reached p90",
+     "gw_xp": 5.63,
+     "xp_dist": {
+      "p_haul": 0.164,
+      "p_blank": 0.244,
+      "p10": 2,
+      "median": 6,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 335,
+     "web_name": "Stach",
+     "team_short": "LEE",
+     "pos": "MID",
+     "metric": "p_3plus",
+     "value": 0.806,
+     "criterion": "3+ pts",
+     "gw_xp": 4.85,
+     "xp_dist": {
+      "p_haul": 0.067,
+      "p_blank": 0.194,
+      "p10": 2,
+      "median": 4,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 154,
+     "web_name": "Palmer",
+     "team_short": "CHE",
+     "pos": "MID",
+     "metric": "p_haul",
+     "value": 0.09,
+     "criterion": "10+ pts",
+     "gw_xp": 4.53,
+     "xp_dist": {
+      "p_haul": 0.09,
+      "p_blank": 0.353,
+      "p10": 2,
+      "median": 3,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [
+    {
+     "out": 586,
+     "out_name": "Mendy",
+     "in": 173,
+     "in_name": "Thomas",
+     "hit": false
+    },
+    {
+     "out": 10,
+     "out_name": "White",
+     "in": 8,
+     "in_name": "Calafiori",
+     "hit": true
+    }
+   ],
+   "entry_actual": null,
+   "graded": null
   }
  ]
 }
