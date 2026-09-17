@@ -497,3 +497,40 @@ def test_kanoninen_paatos_on_kirjattu():
     assert mss.CANONICAL_SOURCE == mss.SOURCE_ENTRY
     assert "12.9.2026" in mss.CANONICAL_DECISION
     assert "GW1-GW4" in mss.CANONICAL_DECISION
+
+
+# ===========================================================================
+# D. RUNNERIN PORTTI TOIMII ILMAN ASENNETTUJA RIIPPUVUUKSIA
+# ===========================================================================
+def test_lukijamoduuli_importtautuu_pelkalla_stdlibilla():
+    """`model-squad-grade.yml` ajaa validoinnin runnerilla jolla EI ole
+    `pip install`ia (vain checkout + `python - <<PY`). Workflow'n kommentti
+    vaittaa ettei lukijamoduuli tarvitse asennettuja riippuvuuksia; tama
+    mittaa sen. Jos joku lisaa `import requests`in moduuliin tai
+    `config.py`:hyn, entry-cron menisi punaiseksi joka 6. tunti ja
+    kanoninen sarja lakkaisi paivittymasta - ja tests.yml (jolla
+    riippuvuudet ON) pysyisi vihreana.
+
+    `python -S -E` jattaa site-packagesin ja PYTHONPATHin pois, joten vain
+    stdlib nakyy. Vartija: jos `requests` silti importtautuu, eristys ei
+    toiminut eika testi mittaa mitaan - silloin kaadutaan eri viestilla."""
+    import subprocess
+    import sys
+    koodi = (
+        "import sys; sys.path.insert(0, '.')\n"
+        "try:\n"
+        "    import requests\n"
+        "except ImportError:\n"
+        "    pass\n"
+        "else:\n"
+        "    raise SystemExit('ERISTYS EPAONNISTUI: site-packages nakyy')\n"
+        "from src.models.model_squad_scores import SOURCE_ENTRY, validate_gw_scores\n"
+        "validate_gw_scores({'meta': {}, 'gameweeks': []}, source=SOURCE_ENTRY)\n"
+    )
+    r = subprocess.run([sys.executable, "-S", "-E", "-c", koodi], cwd=ROOT,
+                       capture_output=True, text=True, timeout=60)
+    assert "ERISTYS EPAONNISTUI" not in (r.stderr + r.stdout), (
+        "python -S -E ei eristanyt site-packagesia; testi ei mittaa mitaan")
+    assert r.returncode == 0, (
+        "lukijamoduuli ei importtaudu pelkalla stdlibilla - runnerin portti "
+        f"model-squad-grade.yml:ssa kaatuisi joka ajolla:\n{r.stderr[-800:]}")
