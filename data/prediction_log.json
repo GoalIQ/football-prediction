@@ -5269,11 +5269,11 @@
       "xg_away": 0.726,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:44:15+00:00",
+      "logged_at": "2026-09-17T21:15:41+00:00",
       "result": null,
       "first_logged_at": "2026-07-17T08:12:00+00:00",
-      "refreshed_at": "2026-09-16T16:44:15+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:41+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-19T00:00:00Z"
     },
     {
@@ -5361,11 +5361,11 @@
       "xg_away": 1.216,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:44:18+00:00",
+      "logged_at": "2026-09-17T21:15:42+00:00",
       "result": null,
       "first_logged_at": "2026-07-17T08:12:01+00:00",
-      "refreshed_at": "2026-09-16T16:44:18+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:42+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-19T00:00:00Z"
     },
     {
@@ -8878,11 +8878,11 @@
       "xg_away": 1.731,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:37+00:00",
+      "logged_at": "2026-09-17T21:15:33+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:09+00:00",
-      "refreshed_at": "2026-09-17T18:53:37+00:00",
-      "refresh_count": 21
+      "refreshed_at": "2026-09-17T21:15:33+00:00",
+      "refresh_count": 22
     },
     {
       "match_id": "fd-560587",
@@ -8900,11 +8900,11 @@
       "xg_away": 1.207,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:38+00:00",
+      "logged_at": "2026-09-17T21:15:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:09+00:00",
-      "refreshed_at": "2026-09-17T18:53:38+00:00",
-      "refresh_count": 18
+      "refreshed_at": "2026-09-17T21:15:34+00:00",
+      "refresh_count": 19
     },
     {
       "match_id": "fd-560584",
@@ -8922,11 +8922,11 @@
       "xg_away": 1.48,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:41+00:00",
+      "logged_at": "2026-09-17T21:15:36+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:09+00:00",
-      "refreshed_at": "2026-09-17T18:53:41+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:36+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-560585",
@@ -8967,11 +8967,11 @@
       "xg_away": 1.658,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:41+00:00",
+      "logged_at": "2026-09-17T21:15:37+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:10+00:00",
-      "refreshed_at": "2026-09-17T18:53:41+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:37+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-560588",
@@ -8989,11 +8989,11 @@
       "xg_away": 1.304,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:41+00:00",
+      "logged_at": "2026-09-17T21:15:37+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:10+00:00",
-      "refreshed_at": "2026-09-17T18:53:41+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:37+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-560590",
@@ -9034,11 +9034,11 @@
       "xg_away": 0.951,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:44+00:00",
+      "logged_at": "2026-09-17T21:15:39+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:43:11+00:00",
-      "refreshed_at": "2026-09-17T18:53:44+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:39+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-560582",
@@ -17854,7 +17854,15 @@
       "most_likely_score": "1-0",
       "predicted_winner": "home",
       "logged_at": "2026-09-17T16:49:43+00:00",
-      "result": null,
+      "result": {
+        "home_score": 1,
+        "away_score": 0,
+        "actual_score": "1-0",
+        "actual_outcome": "home",
+        "hit_1x2": true,
+        "exact_hit": true,
+        "reconciled_at": "2026-09-17T21:16:26+00:00"
+      },
       "first_logged_at": "2026-08-01T09:45:06+00:00",
       "refreshed_at": "2026-09-17T16:49:43+00:00",
       "refresh_count": 26,
@@ -17915,18 +17923,18 @@
       "kickoff": "2026-09-19T19:00:00Z",
       "home_team": "Sevilla FC",
       "away_team": "FC Barcelona",
-      "p_home": 0.1471,
-      "p_draw": 0.1887,
-      "p_away": 0.6643,
-      "xg_home": 0.98,
-      "xg_away": 2.279,
+      "p_home": 0.1475,
+      "p_draw": 0.1878,
+      "p_away": 0.6647,
+      "xg_home": 0.982,
+      "xg_away": 2.281,
       "most_likely_score": "0-2",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T06:45:09+00:00",
+      "logged_at": "2026-09-17T21:15:41+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:07+00:00",
-      "refreshed_at": "2026-09-17T06:45:09+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:41+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-20T15:00:00Z"
     },
     {
@@ -17938,18 +17946,18 @@
       "kickoff": "2026-09-19T14:15:00Z",
       "home_team": "Athletic Club",
       "away_team": "Deportivo Alavés",
-      "p_home": 0.4266,
-      "p_draw": 0.2735,
-      "p_away": 0.2998,
-      "xg_home": 1.364,
-      "xg_away": 1.099,
+      "p_home": 0.4279,
+      "p_draw": 0.2721,
+      "p_away": 0.3,
+      "xg_home": 1.367,
+      "xg_away": 1.1,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:43+00:00",
+      "logged_at": "2026-09-17T21:15:38+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:07+00:00",
-      "refreshed_at": "2026-09-17T18:53:43+00:00",
-      "refresh_count": 16,
+      "refreshed_at": "2026-09-17T21:15:38+00:00",
+      "refresh_count": 17,
       "kickoff_logged": "2026-09-20T15:00:00Z"
     },
     {
@@ -17961,18 +17969,18 @@
       "kickoff": "2026-09-18T19:00:00Z",
       "home_team": "RCD Espanyol de Barcelona",
       "away_team": "Elche CF",
-      "p_home": 0.4873,
-      "p_draw": 0.2565,
-      "p_away": 0.2562,
-      "xg_home": 1.564,
-      "xg_away": 1.063,
+      "p_home": 0.4878,
+      "p_draw": 0.2554,
+      "p_away": 0.2568,
+      "xg_home": 1.565,
+      "xg_away": 1.064,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:37+00:00",
+      "logged_at": "2026-09-17T21:15:33+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:07+00:00",
-      "refreshed_at": "2026-09-17T18:53:37+00:00",
-      "refresh_count": 21,
+      "refreshed_at": "2026-09-17T21:15:33+00:00",
+      "refresh_count": 22,
       "kickoff_logged": "2026-09-20T15:00:00Z"
     },
     {
@@ -17984,18 +17992,18 @@
       "kickoff": "2026-09-19T12:00:00Z",
       "home_team": "CA Osasuna",
       "away_team": "Rayo Vallecano de Madrid",
-      "p_home": 0.3935,
-      "p_draw": 0.275,
-      "p_away": 0.3315,
-      "xg_home": 1.303,
-      "xg_away": 1.173,
+      "p_home": 0.3944,
+      "p_draw": 0.2737,
+      "p_away": 0.332,
+      "xg_home": 1.305,
+      "xg_away": 1.174,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:39+00:00",
+      "logged_at": "2026-09-17T21:15:35+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:45:07+00:00",
-      "refreshed_at": "2026-09-17T18:53:39+00:00",
-      "refresh_count": 17,
+      "refreshed_at": "2026-09-17T21:15:35+00:00",
+      "refresh_count": 18,
       "kickoff_logged": "2026-09-20T15:00:00Z"
     },
     {
@@ -24009,11 +24017,11 @@
       "xg_away": 1.006,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:39+00:00",
+      "logged_at": "2026-09-17T21:15:35+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:46:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:39+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:35+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-558589",
@@ -24031,11 +24039,11 @@
       "xg_away": 1.101,
       "most_likely_score": "0-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:40+00:00",
+      "logged_at": "2026-09-17T21:15:35+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:46:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:40+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:35+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-558593",
@@ -24048,16 +24056,16 @@
       "away_team": "FC Internazionale Milano",
       "p_home": 0.5064,
       "p_draw": 0.2161,
-      "p_away": 0.2774,
+      "p_away": 0.2775,
       "xg_home": 1.804,
       "xg_away": 1.272,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:44+00:00",
+      "logged_at": "2026-09-17T21:15:39+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:46:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:44+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:39+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-558591",
@@ -30472,11 +30480,11 @@
       "xg_away": 1.453,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:44+00:00",
+      "logged_at": "2026-09-17T21:15:39+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:44+00:00",
-      "refresh_count": 16,
+      "refreshed_at": "2026-09-17T21:15:39+00:00",
+      "refresh_count": 17,
       "kickoff_logged": "2026-09-19T15:00:00Z"
     },
     {
@@ -30495,11 +30503,11 @@
       "xg_away": 0.892,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:46+00:00",
+      "logged_at": "2026-09-17T21:15:40+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:46+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:40+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-19T15:00:00Z"
     },
     {
@@ -30518,11 +30526,11 @@
       "xg_away": 1.554,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:36+00:00",
+      "logged_at": "2026-09-17T21:15:32+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:36+00:00",
-      "refresh_count": 21,
+      "refreshed_at": "2026-09-17T21:15:32+00:00",
+      "refresh_count": 22,
       "kickoff_logged": "2026-09-19T15:00:00Z"
     },
     {
@@ -30541,11 +30549,11 @@
       "xg_away": 1.34,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:46+00:00",
+      "logged_at": "2026-09-17T21:15:40+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:02+00:00",
-      "refreshed_at": "2026-09-17T18:53:46+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:40+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-19T15:00:00Z"
     },
     {
@@ -35839,11 +35847,11 @@
       "xg_away": 0.725,
       "most_likely_score": "4-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:36+00:00",
+      "logged_at": "2026-09-17T21:15:32+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:52+00:00",
-      "refreshed_at": "2026-09-17T18:53:36+00:00",
-      "refresh_count": 21
+      "refreshed_at": "2026-09-17T21:15:32+00:00",
+      "refresh_count": 22
     },
     {
       "match_id": "fd-565808",
@@ -35861,11 +35869,11 @@
       "xg_away": 1.282,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:40+00:00",
+      "logged_at": "2026-09-17T21:15:35+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:52+00:00",
-      "refreshed_at": "2026-09-17T18:53:40+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:35+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-565809",
@@ -35883,11 +35891,11 @@
       "xg_away": 1.531,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:40+00:00",
+      "logged_at": "2026-09-17T21:15:36+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:52+00:00",
-      "refreshed_at": "2026-09-17T18:53:40+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:36+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-565810",
@@ -35905,11 +35913,11 @@
       "xg_away": 1.374,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:40+00:00",
+      "logged_at": "2026-09-17T21:15:36+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:52+00:00",
-      "refreshed_at": "2026-09-17T18:53:40+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:36+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-565811",
@@ -35927,11 +35935,11 @@
       "xg_away": 1.43,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:41+00:00",
+      "logged_at": "2026-09-17T21:15:36+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:52+00:00",
-      "refreshed_at": "2026-09-17T18:53:41+00:00",
-      "refresh_count": 16
+      "refreshed_at": "2026-09-17T21:15:36+00:00",
+      "refresh_count": 17
     },
     {
       "match_id": "fd-565806",
@@ -35949,11 +35957,11 @@
       "xg_away": 1.534,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:44+00:00",
+      "logged_at": "2026-09-17T21:15:39+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T09:47:53+00:00",
-      "refreshed_at": "2026-09-17T18:53:44+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:39+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-565807",
@@ -40601,18 +40609,18 @@
       "kickoff": "2026-09-19T16:30:00Z",
       "home_team": "RC Celta de Vigo",
       "away_team": "Real Racing Club de Santander",
-      "p_home": 0.5756,
-      "p_draw": 0.2106,
-      "p_away": 0.2138,
-      "xg_home": 2.104,
-      "xg_away": 1.218,
+      "p_home": 0.5762,
+      "p_draw": 0.2097,
+      "p_away": 0.2141,
+      "xg_home": 2.106,
+      "xg_away": 1.219,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:45+00:00",
+      "logged_at": "2026-09-17T21:15:39+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T10:14:39+00:00",
-      "refreshed_at": "2026-09-17T18:53:45+00:00",
-      "refresh_count": 15,
+      "refreshed_at": "2026-09-17T21:15:39+00:00",
+      "refresh_count": 16,
       "kickoff_logged": "2026-09-20T15:00:00Z"
     },
     {
@@ -43028,11 +43036,11 @@
       "xg_away": 1.633,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:37+00:00",
+      "logged_at": "2026-09-17T21:15:33+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T10:15:05+00:00",
-      "refreshed_at": "2026-09-17T18:53:37+00:00",
-      "refresh_count": 21
+      "refreshed_at": "2026-09-17T21:15:33+00:00",
+      "refresh_count": 22
     },
     {
       "match_id": "fd-558594",
@@ -43050,11 +43058,11 @@
       "xg_away": 1.578,
       "most_likely_score": "0-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:46+00:00",
+      "logged_at": "2026-09-17T21:15:40+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T10:15:05+00:00",
-      "refreshed_at": "2026-09-17T18:53:46+00:00",
-      "refresh_count": 14
+      "refreshed_at": "2026-09-17T21:15:40+00:00",
+      "refresh_count": 15
     },
     {
       "match_id": "fd-558592",
@@ -45492,11 +45500,11 @@
       "xg_away": 1.249,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:46+00:00",
+      "logged_at": "2026-09-17T21:15:41+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T10:15:33+00:00",
-      "refreshed_at": "2026-09-17T18:53:46+00:00",
-      "refresh_count": 14,
+      "refreshed_at": "2026-09-17T21:15:41+00:00",
+      "refresh_count": 15,
       "kickoff_logged": "2026-09-19T15:00:00Z"
     },
     {
@@ -45515,11 +45523,11 @@
       "xg_away": 1.043,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:47+00:00",
+      "logged_at": "2026-09-17T21:15:41+00:00",
       "result": null,
       "first_logged_at": "2026-08-01T10:15:33+00:00",
-      "refreshed_at": "2026-09-17T18:53:47+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:41+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-19T15:00:00Z"
     },
     {
@@ -50403,11 +50411,11 @@
       "xg_away": 1.042,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:37+00:00",
+      "logged_at": "2026-09-17T21:15:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:10:46+00:00",
-      "refreshed_at": "2026-09-17T18:53:37+00:00",
-      "refresh_count": 21
+      "refreshed_at": "2026-09-17T21:15:34+00:00",
+      "refresh_count": 22
     },
     {
       "match_id": "fd-561847",
@@ -50425,11 +50433,11 @@
       "xg_away": 1.183,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:38+00:00",
+      "logged_at": "2026-09-17T21:15:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:10:46+00:00",
-      "refreshed_at": "2026-09-17T18:53:38+00:00",
-      "refresh_count": 17
+      "refreshed_at": "2026-09-17T21:15:34+00:00",
+      "refresh_count": 18
     },
     {
       "match_id": "fd-561846",
@@ -50447,11 +50455,11 @@
       "xg_away": 1.774,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:41+00:00",
+      "logged_at": "2026-09-17T21:15:37+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:10:46+00:00",
-      "refreshed_at": "2026-09-17T18:53:41+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:37+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-561853",
@@ -50469,11 +50477,11 @@
       "xg_away": 1.343,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:42+00:00",
+      "logged_at": "2026-09-17T21:15:37+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:10:47+00:00",
-      "refreshed_at": "2026-09-17T18:53:42+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:37+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-561854",
@@ -50491,11 +50499,11 @@
       "xg_away": 1.119,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:42+00:00",
+      "logged_at": "2026-09-17T21:15:37+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:10:47+00:00",
-      "refreshed_at": "2026-09-17T18:53:42+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:37+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-561855",
@@ -50513,11 +50521,11 @@
       "xg_away": 1.301,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:42+00:00",
+      "logged_at": "2026-09-17T21:15:37+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:10:47+00:00",
-      "refreshed_at": "2026-09-17T18:53:42+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:37+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-561857",
@@ -57510,11 +57518,11 @@
       "xg_away": 0.963,
       "most_likely_score": "0-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:43+00:00",
+      "logged_at": "2026-09-17T21:15:38+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:11:52+00:00",
-      "refreshed_at": "2026-09-17T18:53:43+00:00",
-      "refresh_count": 15,
+      "refreshed_at": "2026-09-17T21:15:38+00:00",
+      "refresh_count": 16,
       "kickoff_logged": "2026-09-20T00:00:00Z"
     },
     {
@@ -57533,11 +57541,11 @@
       "xg_away": 0.878,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:43+00:00",
+      "logged_at": "2026-09-17T21:15:38+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:11:53+00:00",
-      "refreshed_at": "2026-09-17T18:53:43+00:00",
-      "refresh_count": 15,
+      "refreshed_at": "2026-09-17T21:15:38+00:00",
+      "refresh_count": 16,
       "kickoff_logged": "2026-09-20T00:00:00Z"
     },
     {
@@ -57556,11 +57564,11 @@
       "xg_away": 0.845,
       "most_likely_score": "3-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T16:50:23+00:00",
+      "logged_at": "2026-09-17T21:15:42+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:11:53+00:00",
-      "refreshed_at": "2026-09-17T16:50:23+00:00",
-      "refresh_count": 13,
+      "refreshed_at": "2026-09-17T21:15:42+00:00",
+      "refresh_count": 14,
       "kickoff_logged": "2026-09-20T00:00:00Z"
     },
     {
@@ -57671,11 +57679,11 @@
       "xg_away": 0.978,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:45+00:00",
+      "logged_at": "2026-09-17T21:15:40+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T07:11:54+00:00",
-      "refreshed_at": "2026-09-17T18:53:45+00:00",
-      "refresh_count": 14,
+      "refreshed_at": "2026-09-17T21:15:40+00:00",
+      "refresh_count": 15,
       "kickoff_logged": "2026-09-20T00:00:00Z"
     },
     {
@@ -64362,11 +64370,11 @@
       "xg_away": 0.996,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:36+00:00",
+      "logged_at": "2026-09-17T21:15:32+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:04+00:00",
-      "refreshed_at": "2026-09-17T18:53:36+00:00",
-      "refresh_count": 21
+      "refreshed_at": "2026-09-17T21:15:32+00:00",
+      "refresh_count": 22
     },
     {
       "match_id": "fd-558889",
@@ -64384,11 +64392,11 @@
       "xg_away": 0.706,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:43+00:00",
+      "logged_at": "2026-09-17T21:15:39+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:04+00:00",
-      "refreshed_at": "2026-09-17T18:53:43+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:39+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-558890",
@@ -64406,11 +64414,11 @@
       "xg_away": 1.423,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-17T18:53:45+00:00",
+      "logged_at": "2026-09-17T21:15:40+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:05+00:00",
-      "refreshed_at": "2026-09-17T18:53:45+00:00",
-      "refresh_count": 14
+      "refreshed_at": "2026-09-17T21:15:40+00:00",
+      "refresh_count": 15
     },
     {
       "match_id": "fd-558887",
@@ -64428,11 +64436,11 @@
       "xg_away": 1.074,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:46+00:00",
+      "logged_at": "2026-09-17T21:15:40+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:05+00:00",
-      "refreshed_at": "2026-09-17T18:53:46+00:00",
-      "refresh_count": 13
+      "refreshed_at": "2026-09-17T21:15:40+00:00",
+      "refresh_count": 14
     },
     {
       "match_id": "fd-558886",
@@ -64450,11 +64458,11 @@
       "xg_away": 1.46,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:55:02+00:00",
+      "logged_at": "2026-09-17T21:15:41+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:05+00:00",
-      "refreshed_at": "2026-09-17T18:55:02+00:00",
-      "refresh_count": 13
+      "refreshed_at": "2026-09-17T21:15:41+00:00",
+      "refresh_count": 14
     },
     {
       "match_id": "fd-558885",
@@ -67501,11 +67509,11 @@
       "xg_away": 1.31,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:56+00:00",
+      "logged_at": "2026-09-17T21:15:42+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:33+00:00",
-      "refreshed_at": "2026-09-16T12:14:56+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:42+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558752",
@@ -67523,11 +67531,11 @@
       "xg_away": 0.988,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:56+00:00",
+      "logged_at": "2026-09-17T21:15:42+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:33+00:00",
-      "refreshed_at": "2026-09-16T12:14:56+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:42+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558753",
@@ -67545,11 +67553,11 @@
       "xg_away": 1.14,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:56+00:00",
+      "logged_at": "2026-09-17T21:15:42+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:34+00:00",
-      "refreshed_at": "2026-09-16T12:14:56+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:42+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558754",
@@ -67567,11 +67575,11 @@
       "xg_away": 1.466,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:14:57+00:00",
+      "logged_at": "2026-09-17T21:15:43+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:34+00:00",
-      "refreshed_at": "2026-09-16T12:14:57+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:43+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558755",
@@ -67589,11 +67597,11 @@
       "xg_away": 1.214,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:57+00:00",
+      "logged_at": "2026-09-17T21:15:43+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:34+00:00",
-      "refreshed_at": "2026-09-16T12:14:57+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:43+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558738",
@@ -67611,11 +67619,11 @@
       "xg_away": 1.008,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:57+00:00",
+      "logged_at": "2026-09-17T21:15:43+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:34+00:00",
-      "refreshed_at": "2026-09-16T12:14:57+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:43+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558739",
@@ -67633,11 +67641,11 @@
       "xg_away": 0.974,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:57+00:00",
+      "logged_at": "2026-09-17T21:15:43+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:34+00:00",
-      "refreshed_at": "2026-09-16T12:14:57+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:43+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558740",
@@ -67655,11 +67663,11 @@
       "xg_away": 0.685,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:57+00:00",
+      "logged_at": "2026-09-17T21:15:43+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:35+00:00",
-      "refreshed_at": "2026-09-16T12:14:57+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:43+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558741",
@@ -67677,11 +67685,11 @@
       "xg_away": 1.094,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:57+00:00",
+      "logged_at": "2026-09-17T21:15:43+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:35+00:00",
-      "refreshed_at": "2026-09-16T12:14:57+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:43+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558742",
@@ -67699,11 +67707,11 @@
       "xg_away": 0.927,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:58+00:00",
+      "logged_at": "2026-09-17T21:15:44+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:35+00:00",
-      "refreshed_at": "2026-09-16T12:14:58+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:44+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558743",
@@ -67721,11 +67729,11 @@
       "xg_away": 1.558,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:14:58+00:00",
+      "logged_at": "2026-09-17T21:15:44+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:35+00:00",
-      "refreshed_at": "2026-09-16T12:14:58+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:44+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558744",
@@ -67743,11 +67751,11 @@
       "xg_away": 0.885,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:58+00:00",
+      "logged_at": "2026-09-17T21:15:44+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:35+00:00",
-      "refreshed_at": "2026-09-16T12:14:58+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:44+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558745",
@@ -67765,11 +67773,11 @@
       "xg_away": 0.751,
       "most_likely_score": "4-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:59+00:00",
+      "logged_at": "2026-09-17T21:15:44+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:36+00:00",
-      "refreshed_at": "2026-09-16T12:14:59+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:44+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558746",
@@ -67787,11 +67795,11 @@
       "xg_away": 1.087,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:59+00:00",
+      "logged_at": "2026-09-17T21:15:45+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:36+00:00",
-      "refreshed_at": "2026-09-16T12:14:59+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:45+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558729",
@@ -67809,11 +67817,11 @@
       "xg_away": 2.362,
       "most_likely_score": "1-2",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:14:59+00:00",
+      "logged_at": "2026-09-17T21:15:45+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:36+00:00",
-      "refreshed_at": "2026-09-16T12:14:59+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:45+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558730",
@@ -67831,11 +67839,11 @@
       "xg_away": 1.151,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:14:59+00:00",
+      "logged_at": "2026-09-17T21:15:45+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:36+00:00",
-      "refreshed_at": "2026-09-16T12:14:59+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:45+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558731",
@@ -67853,11 +67861,11 @@
       "xg_away": 1.617,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:14:59+00:00",
+      "logged_at": "2026-09-17T21:15:45+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:36+00:00",
-      "refreshed_at": "2026-09-16T12:14:59+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:45+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558732",
@@ -67875,11 +67883,11 @@
       "xg_away": 1.273,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:00+00:00",
+      "logged_at": "2026-09-17T21:15:45+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:00+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:45+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558733",
@@ -67897,11 +67905,11 @@
       "xg_away": 1.23,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:00+00:00",
+      "logged_at": "2026-09-17T21:15:45+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:00+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:45+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558734",
@@ -67919,11 +67927,11 @@
       "xg_away": 1.098,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:00+00:00",
+      "logged_at": "2026-09-17T21:15:46+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:00+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:46+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558735",
@@ -67941,11 +67949,11 @@
       "xg_away": 1.466,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:00+00:00",
+      "logged_at": "2026-09-17T21:15:46+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:00+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:46+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558736",
@@ -67963,11 +67971,11 @@
       "xg_away": 1.462,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:00+00:00",
+      "logged_at": "2026-09-17T21:15:46+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:00+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:46+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558737",
@@ -67985,11 +67993,11 @@
       "xg_away": 1.134,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:01+00:00",
+      "logged_at": "2026-09-17T21:15:46+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:01+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:46+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558720",
@@ -68007,11 +68015,11 @@
       "xg_away": 0.878,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:01+00:00",
+      "logged_at": "2026-09-17T21:15:46+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:01+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:46+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558721",
@@ -68029,11 +68037,11 @@
       "xg_away": 1.03,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:01+00:00",
+      "logged_at": "2026-09-17T21:15:46+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:01+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:46+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558722",
@@ -68051,11 +68059,11 @@
       "xg_away": 1.4,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:01+00:00",
+      "logged_at": "2026-09-17T21:15:47+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:01+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:47+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558723",
@@ -68073,11 +68081,11 @@
       "xg_away": 1.222,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:01+00:00",
+      "logged_at": "2026-09-17T21:15:47+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:01+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:47+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558724",
@@ -68095,11 +68103,11 @@
       "xg_away": 1.298,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:01+00:00",
+      "logged_at": "2026-09-17T21:15:47+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:01+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:47+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558725",
@@ -68117,11 +68125,11 @@
       "xg_away": 1.05,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:02+00:00",
+      "logged_at": "2026-09-17T21:15:47+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:02+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:47+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558726",
@@ -68139,11 +68147,11 @@
       "xg_away": 1.293,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:02+00:00",
+      "logged_at": "2026-09-17T21:15:48+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:02+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:48+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558727",
@@ -68161,11 +68169,11 @@
       "xg_away": 1.958,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:02+00:00",
+      "logged_at": "2026-09-17T21:15:48+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:02+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:48+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558728",
@@ -68183,11 +68191,11 @@
       "xg_away": 0.891,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:02+00:00",
+      "logged_at": "2026-09-17T21:15:48+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:02+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:48+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558711",
@@ -68205,11 +68213,11 @@
       "xg_away": 0.874,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:03+00:00",
+      "logged_at": "2026-09-17T21:15:48+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:03+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:48+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558712",
@@ -68227,11 +68235,11 @@
       "xg_away": 1.165,
       "most_likely_score": "0-0",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:03+00:00",
+      "logged_at": "2026-09-17T21:15:48+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:03+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:48+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558713",
@@ -68249,11 +68257,11 @@
       "xg_away": 1.737,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:03+00:00",
+      "logged_at": "2026-09-17T21:15:48+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:03+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:48+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558714",
@@ -68271,11 +68279,11 @@
       "xg_away": 1.431,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:03+00:00",
+      "logged_at": "2026-09-17T21:15:49+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:03+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:49+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558715",
@@ -68293,11 +68301,11 @@
       "xg_away": 2.074,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:03+00:00",
+      "logged_at": "2026-09-17T21:15:49+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:03+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:49+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558716",
@@ -68315,11 +68323,11 @@
       "xg_away": 0.91,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:04+00:00",
+      "logged_at": "2026-09-17T21:15:49+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:04+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:49+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558717",
@@ -68337,11 +68345,11 @@
       "xg_away": 1.7,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:04+00:00",
+      "logged_at": "2026-09-17T21:15:49+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:04+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:49+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558718",
@@ -68359,11 +68367,11 @@
       "xg_away": 0.998,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:04+00:00",
+      "logged_at": "2026-09-17T21:15:49+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:04+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:49+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558719",
@@ -68381,11 +68389,11 @@
       "xg_away": 1.112,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:04+00:00",
+      "logged_at": "2026-09-17T21:15:50+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:04+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:50+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558702",
@@ -68403,11 +68411,11 @@
       "xg_away": 0.827,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:05+00:00",
+      "logged_at": "2026-09-17T21:15:50+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:05+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:50+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558703",
@@ -68425,11 +68433,11 @@
       "xg_away": 0.645,
       "most_likely_score": "3-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:05+00:00",
+      "logged_at": "2026-09-17T21:15:50+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:05+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:50+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558704",
@@ -68447,11 +68455,11 @@
       "xg_away": 1.285,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:05+00:00",
+      "logged_at": "2026-09-17T21:15:50+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:05+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:50+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558705",
@@ -68469,11 +68477,11 @@
       "xg_away": 1.655,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:05+00:00",
+      "logged_at": "2026-09-17T21:15:50+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:05+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:50+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558706",
@@ -68491,11 +68499,11 @@
       "xg_away": 1.172,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:05+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:05+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558707",
@@ -68513,11 +68521,11 @@
       "xg_away": 1.489,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:06+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:06+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558708",
@@ -68535,11 +68543,11 @@
       "xg_away": 1.844,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:06+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:06+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558709",
@@ -68557,11 +68565,11 @@
       "xg_away": 0.88,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:06+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:06+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558710",
@@ -68579,11 +68587,11 @@
       "xg_away": 0.895,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:06+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:06+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558693",
@@ -68601,11 +68609,11 @@
       "xg_away": 1.067,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:06+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:06+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558694",
@@ -68623,11 +68631,11 @@
       "xg_away": 1.616,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:07+00:00",
+      "logged_at": "2026-09-17T21:15:51+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:07+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:51+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558695",
@@ -68645,11 +68653,11 @@
       "xg_away": 1.117,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:07+00:00",
+      "logged_at": "2026-09-17T21:15:52+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:07+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:52+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558696",
@@ -68667,11 +68675,11 @@
       "xg_away": 1.065,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:07+00:00",
+      "logged_at": "2026-09-17T21:15:52+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:07+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:52+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558697",
@@ -68689,11 +68697,11 @@
       "xg_away": 1.704,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:08+00:00",
+      "logged_at": "2026-09-17T21:15:52+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:08+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:52+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558698",
@@ -68708,14 +68716,14 @@
       "p_draw": 0.2607,
       "p_away": 0.2181,
       "xg_home": 1.842,
-      "xg_away": 1.142,
+      "xg_away": 1.141,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:08+00:00",
+      "logged_at": "2026-09-17T21:15:52+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:08+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:52+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558699",
@@ -68733,11 +68741,11 @@
       "xg_away": 0.92,
       "most_likely_score": "0-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:08+00:00",
+      "logged_at": "2026-09-17T21:15:52+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:08+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:52+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558700",
@@ -68755,11 +68763,11 @@
       "xg_away": 1.734,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:08+00:00",
+      "logged_at": "2026-09-17T21:15:52+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:08+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:52+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558701",
@@ -68777,11 +68785,11 @@
       "xg_away": 1.587,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:08+00:00",
+      "logged_at": "2026-09-17T21:15:53+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:08+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:53+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558684",
@@ -68799,11 +68807,11 @@
       "xg_away": 1.269,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:08+00:00",
+      "logged_at": "2026-09-17T21:15:53+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:08+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:53+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558685",
@@ -68821,11 +68829,11 @@
       "xg_away": 1.69,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:09+00:00",
+      "logged_at": "2026-09-17T21:15:53+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:09+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:53+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558686",
@@ -68843,11 +68851,11 @@
       "xg_away": 1.294,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:10+00:00",
+      "logged_at": "2026-09-17T21:15:53+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:10+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:53+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558687",
@@ -68865,11 +68873,11 @@
       "xg_away": 1.224,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:10+00:00",
+      "logged_at": "2026-09-17T21:15:53+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:10+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:53+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558688",
@@ -68887,11 +68895,11 @@
       "xg_away": 1.385,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:10+00:00",
+      "logged_at": "2026-09-17T21:15:53+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:10+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:53+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558689",
@@ -68909,11 +68917,11 @@
       "xg_away": 1.221,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:10+00:00",
+      "logged_at": "2026-09-17T21:15:54+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:10+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:54+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558690",
@@ -68931,11 +68939,11 @@
       "xg_away": 1.364,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:10+00:00",
+      "logged_at": "2026-09-17T21:15:54+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:10+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:54+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558691",
@@ -68953,11 +68961,11 @@
       "xg_away": 2.746,
       "most_likely_score": "1-2",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:11+00:00",
+      "logged_at": "2026-09-17T21:15:54+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:11+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:54+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558692",
@@ -68975,11 +68983,11 @@
       "xg_away": 1.291,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:12+00:00",
+      "logged_at": "2026-09-17T21:15:54+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:12+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:54+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558675",
@@ -68997,11 +69005,11 @@
       "xg_away": 1.346,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:13+00:00",
+      "logged_at": "2026-09-17T21:15:54+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:13+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:54+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558676",
@@ -69019,11 +69027,11 @@
       "xg_away": 0.767,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:13+00:00",
+      "logged_at": "2026-09-17T21:15:54+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:13+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:54+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558677",
@@ -69041,11 +69049,11 @@
       "xg_away": 0.995,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:13+00:00",
+      "logged_at": "2026-09-17T21:15:55+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:13+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:55+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558678",
@@ -69063,11 +69071,11 @@
       "xg_away": 1.295,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:13+00:00",
+      "logged_at": "2026-09-17T21:15:55+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:13+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:55+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558679",
@@ -69085,11 +69093,11 @@
       "xg_away": 0.731,
       "most_likely_score": "3-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:14+00:00",
+      "logged_at": "2026-09-17T21:15:55+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:14+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:55+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558680",
@@ -69107,11 +69115,11 @@
       "xg_away": 1.564,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:14+00:00",
+      "logged_at": "2026-09-17T21:15:55+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:14+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:55+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558681",
@@ -69129,11 +69137,11 @@
       "xg_away": 1.351,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:14+00:00",
+      "logged_at": "2026-09-17T21:15:55+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:14+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:55+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558682",
@@ -69151,11 +69159,11 @@
       "xg_away": 0.803,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:14+00:00",
+      "logged_at": "2026-09-17T21:15:56+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:14+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:56+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558683",
@@ -69173,11 +69181,11 @@
       "xg_away": 1.381,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:14+00:00",
+      "logged_at": "2026-09-17T21:15:56+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:14+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:56+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558666",
@@ -69195,11 +69203,11 @@
       "xg_away": 2.109,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:14+00:00",
+      "logged_at": "2026-09-17T21:15:56+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:14+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:56+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558667",
@@ -69217,11 +69225,11 @@
       "xg_away": 1.209,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:15+00:00",
+      "logged_at": "2026-09-17T21:15:56+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:15+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:56+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558668",
@@ -69239,11 +69247,11 @@
       "xg_away": 1.554,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:15+00:00",
+      "logged_at": "2026-09-17T21:15:56+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:15+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:56+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558669",
@@ -69261,11 +69269,11 @@
       "xg_away": 0.718,
       "most_likely_score": "1-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:15+00:00",
+      "logged_at": "2026-09-17T21:15:56+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:15+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:56+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558670",
@@ -69283,11 +69291,11 @@
       "xg_away": 1.16,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:15+00:00",
+      "logged_at": "2026-09-17T21:15:57+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:15+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:57+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558671",
@@ -69305,11 +69313,11 @@
       "xg_away": 0.914,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:15+00:00",
+      "logged_at": "2026-09-17T21:15:57+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:15+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:57+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558672",
@@ -69327,11 +69335,11 @@
       "xg_away": 0.797,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:16+00:00",
+      "logged_at": "2026-09-17T21:15:57+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:16+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:57+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558673",
@@ -69349,11 +69357,11 @@
       "xg_away": 1.112,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:16+00:00",
+      "logged_at": "2026-09-17T21:15:57+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:16+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:57+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558674",
@@ -69371,11 +69379,11 @@
       "xg_away": 0.805,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:16+00:00",
+      "logged_at": "2026-09-17T21:15:57+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:16+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:57+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558657",
@@ -69393,11 +69401,11 @@
       "xg_away": 1.321,
       "most_likely_score": "3-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:16+00:00",
+      "logged_at": "2026-09-17T21:15:58+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:16+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:58+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558658",
@@ -69415,11 +69423,11 @@
       "xg_away": 1.194,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:17+00:00",
+      "logged_at": "2026-09-17T21:15:58+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:17+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:58+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558659",
@@ -69437,11 +69445,11 @@
       "xg_away": 0.929,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:17+00:00",
+      "logged_at": "2026-09-17T21:15:58+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:17+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:58+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558660",
@@ -69459,11 +69467,11 @@
       "xg_away": 1.29,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:17+00:00",
+      "logged_at": "2026-09-17T21:15:58+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:17+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:58+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558661",
@@ -69481,11 +69489,11 @@
       "xg_away": 1.302,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:17+00:00",
+      "logged_at": "2026-09-17T21:15:58+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:17+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:58+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558662",
@@ -69503,11 +69511,11 @@
       "xg_away": 1.803,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:17+00:00",
+      "logged_at": "2026-09-17T21:15:58+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:17+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:58+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558663",
@@ -69525,11 +69533,11 @@
       "xg_away": 1.343,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:18+00:00",
+      "logged_at": "2026-09-17T21:15:59+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:18+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:59+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558664",
@@ -69547,11 +69555,11 @@
       "xg_away": 1.537,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:18+00:00",
+      "logged_at": "2026-09-17T21:15:59+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:18+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:59+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558665",
@@ -69569,11 +69577,11 @@
       "xg_away": 1.472,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:18+00:00",
+      "logged_at": "2026-09-17T21:15:59+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:18+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:59+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558648",
@@ -69591,11 +69599,11 @@
       "xg_away": 1.046,
       "most_likely_score": "2-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:18+00:00",
+      "logged_at": "2026-09-17T21:15:59+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:53+00:00",
-      "refreshed_at": "2026-09-16T12:15:18+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:59+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558649",
@@ -69613,11 +69621,11 @@
       "xg_away": 1.271,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:18+00:00",
+      "logged_at": "2026-09-17T21:15:59+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:53+00:00",
-      "refreshed_at": "2026-09-16T12:15:18+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:59+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558650",
@@ -69635,11 +69643,11 @@
       "xg_away": 1.111,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:18+00:00",
+      "logged_at": "2026-09-17T21:15:59+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:53+00:00",
-      "refreshed_at": "2026-09-16T12:15:18+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:15:59+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558651",
@@ -69657,11 +69665,11 @@
       "xg_away": 0.76,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:19+00:00",
+      "logged_at": "2026-09-17T21:16:00+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:53+00:00",
-      "refreshed_at": "2026-09-16T12:15:19+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:00+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558652",
@@ -69679,11 +69687,11 @@
       "xg_away": 0.823,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:19+00:00",
+      "logged_at": "2026-09-17T21:16:00+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:53+00:00",
-      "refreshed_at": "2026-09-16T12:15:19+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:00+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558653",
@@ -69701,11 +69709,11 @@
       "xg_away": 1.636,
       "most_likely_score": "3-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:19+00:00",
+      "logged_at": "2026-09-17T21:16:00+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:54+00:00",
-      "refreshed_at": "2026-09-16T12:15:19+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:00+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558654",
@@ -69723,11 +69731,11 @@
       "xg_away": 1.121,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:19+00:00",
+      "logged_at": "2026-09-17T21:16:00+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:54+00:00",
-      "refreshed_at": "2026-09-16T12:15:19+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:00+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558655",
@@ -69745,11 +69753,11 @@
       "xg_away": 1.002,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:20+00:00",
+      "logged_at": "2026-09-17T21:16:00+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:54+00:00",
-      "refreshed_at": "2026-09-16T12:15:20+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:00+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558656",
@@ -69767,11 +69775,11 @@
       "xg_away": 0.696,
       "most_likely_score": "2-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:20+00:00",
+      "logged_at": "2026-09-17T21:16:00+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:54+00:00",
-      "refreshed_at": "2026-09-16T12:15:20+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:00+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558639",
@@ -69789,11 +69797,11 @@
       "xg_away": 1.318,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:20+00:00",
+      "logged_at": "2026-09-17T21:16:01+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:54+00:00",
-      "refreshed_at": "2026-09-16T12:15:20+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:01+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558640",
@@ -69811,11 +69819,11 @@
       "xg_away": 1.969,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:20+00:00",
+      "logged_at": "2026-09-17T21:16:01+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:55+00:00",
-      "refreshed_at": "2026-09-16T12:15:20+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:01+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558641",
@@ -69833,11 +69841,11 @@
       "xg_away": 1.334,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:20+00:00",
+      "logged_at": "2026-09-17T21:16:01+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:55+00:00",
-      "refreshed_at": "2026-09-16T12:15:20+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:01+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558642",
@@ -69855,11 +69863,11 @@
       "xg_away": 2.076,
       "most_likely_score": "0-2",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:20+00:00",
+      "logged_at": "2026-09-17T21:16:01+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:55+00:00",
-      "refreshed_at": "2026-09-16T12:15:20+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:01+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558643",
@@ -69877,11 +69885,11 @@
       "xg_away": 1.807,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:21+00:00",
+      "logged_at": "2026-09-17T21:16:01+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:55+00:00",
-      "refreshed_at": "2026-09-16T12:15:21+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:01+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558644",
@@ -69899,11 +69907,11 @@
       "xg_away": 0.97,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:21+00:00",
+      "logged_at": "2026-09-17T21:16:02+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:55+00:00",
-      "refreshed_at": "2026-09-16T12:15:21+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:02+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558645",
@@ -69921,11 +69929,11 @@
       "xg_away": 1.002,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:21+00:00",
+      "logged_at": "2026-09-17T21:16:02+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:56+00:00",
-      "refreshed_at": "2026-09-16T12:15:21+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:02+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558646",
@@ -69943,11 +69951,11 @@
       "xg_away": 1.376,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:21+00:00",
+      "logged_at": "2026-09-17T21:16:02+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:56+00:00",
-      "refreshed_at": "2026-09-16T12:15:21+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:02+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-558647",
@@ -69965,11 +69973,11 @@
       "xg_away": 1.412,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:22+00:00",
+      "logged_at": "2026-09-17T21:16:02+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T09:28:56+00:00",
-      "refreshed_at": "2026-09-16T12:15:22+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:02+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-561765",
@@ -70838,11 +70846,11 @@
       "xg_away": 1.055,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:39+00:00",
+      "logged_at": "2026-09-17T21:15:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:23+00:00",
-      "refreshed_at": "2026-09-17T18:53:39+00:00",
-      "refresh_count": 17
+      "refreshed_at": "2026-09-17T21:15:34+00:00",
+      "refresh_count": 18
     },
     {
       "match_id": "fd-561852",
@@ -70860,11 +70868,11 @@
       "xg_away": 0.881,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:39+00:00",
+      "logged_at": "2026-09-17T21:15:34+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:23+00:00",
-      "refreshed_at": "2026-09-17T18:53:39+00:00",
-      "refresh_count": 17
+      "refreshed_at": "2026-09-17T21:15:34+00:00",
+      "refresh_count": 18
     },
     {
       "match_id": "fd-561848",
@@ -70882,11 +70890,11 @@
       "xg_away": 1.341,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:42+00:00",
+      "logged_at": "2026-09-17T21:15:38+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:23+00:00",
-      "refreshed_at": "2026-09-17T18:53:42+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:38+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-561850",
@@ -70904,11 +70912,11 @@
       "xg_away": 0.942,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:22+00:00",
+      "logged_at": "2026-09-17T21:16:02+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:24+00:00",
-      "refreshed_at": "2026-09-16T12:15:22+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:02+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-09-19T14:00:00Z"
     },
     {
@@ -70927,11 +70935,11 @@
       "xg_away": 1.069,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-17T18:53:43+00:00",
+      "logged_at": "2026-09-17T21:15:38+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:24+00:00",
-      "refreshed_at": "2026-09-17T18:53:43+00:00",
-      "refresh_count": 15
+      "refreshed_at": "2026-09-17T21:15:38+00:00",
+      "refresh_count": 16
     },
     {
       "match_id": "fd-561858",
@@ -70949,11 +70957,11 @@
       "xg_away": 1.077,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:23+00:00",
+      "logged_at": "2026-09-17T21:16:02+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:24+00:00",
-      "refreshed_at": "2026-09-16T12:15:23+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:02+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-10T00:00:00Z"
     },
     {
@@ -70972,11 +70980,11 @@
       "xg_away": 1.424,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:23+00:00",
+      "logged_at": "2026-09-17T21:16:03+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:25+00:00",
-      "refreshed_at": "2026-09-16T12:15:23+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:03+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-10T00:00:00Z"
     },
     {
@@ -70995,11 +71003,11 @@
       "xg_away": 1.119,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:23+00:00",
+      "logged_at": "2026-09-17T21:16:03+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:25+00:00",
-      "refreshed_at": "2026-09-16T12:15:23+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:03+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-10T00:00:00Z"
     },
     {
@@ -71018,11 +71026,11 @@
       "xg_away": 0.919,
       "most_likely_score": "0-0",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:23+00:00",
+      "logged_at": "2026-09-17T21:16:03+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:25+00:00",
-      "refreshed_at": "2026-09-16T12:15:23+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:03+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-10T00:00:00Z"
     },
     {
@@ -71041,11 +71049,11 @@
       "xg_away": 0.812,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:23+00:00",
+      "logged_at": "2026-09-17T21:16:03+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:25+00:00",
-      "refreshed_at": "2026-09-16T12:15:23+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:03+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-10T00:00:00Z"
     },
     {
@@ -71064,11 +71072,11 @@
       "xg_away": 0.947,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:24+00:00",
+      "logged_at": "2026-09-17T21:16:03+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:26+00:00",
-      "refreshed_at": "2026-09-16T12:15:24+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:03+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-13T00:00:00Z"
     },
     {
@@ -71087,11 +71095,11 @@
       "xg_away": 0.912,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:24+00:00",
+      "logged_at": "2026-09-17T21:16:03+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:26+00:00",
-      "refreshed_at": "2026-09-16T12:15:24+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:03+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-13T00:00:00Z"
     },
     {
@@ -71110,11 +71118,11 @@
       "xg_away": 1.302,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:24+00:00",
+      "logged_at": "2026-09-17T21:16:04+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:26+00:00",
-      "refreshed_at": "2026-09-16T12:15:24+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:04+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-14T00:00:00Z"
     },
     {
@@ -71133,11 +71141,11 @@
       "xg_away": 0.949,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:24+00:00",
+      "logged_at": "2026-09-17T21:16:04+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:26+00:00",
-      "refreshed_at": "2026-09-16T12:15:24+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:04+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-17T00:00:00Z"
     },
     {
@@ -71156,11 +71164,11 @@
       "xg_away": 0.79,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:24+00:00",
+      "logged_at": "2026-09-17T21:16:04+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:26+00:00",
-      "refreshed_at": "2026-09-16T12:15:24+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:04+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-17T00:00:00Z"
     },
     {
@@ -71179,11 +71187,11 @@
       "xg_away": 0.817,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:25+00:00",
+      "logged_at": "2026-09-17T21:16:04+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:27+00:00",
-      "refreshed_at": "2026-09-16T12:15:25+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:04+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-17T00:00:00Z"
     },
     {
@@ -71202,11 +71210,11 @@
       "xg_away": 1.295,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:25+00:00",
+      "logged_at": "2026-09-17T21:16:04+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:27+00:00",
-      "refreshed_at": "2026-09-16T12:15:25+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:04+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-17T00:00:00Z"
     },
     {
@@ -71225,11 +71233,11 @@
       "xg_away": 0.833,
       "most_likely_score": "0-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:25+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:27+00:00",
-      "refreshed_at": "2026-09-16T12:15:25+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-24T00:00:00Z"
     },
     {
@@ -71248,11 +71256,11 @@
       "xg_away": 1.392,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:25+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:27+00:00",
-      "refreshed_at": "2026-09-16T12:15:25+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-24T00:00:00Z"
     },
     {
@@ -71271,11 +71279,11 @@
       "xg_away": 1.289,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:25+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:28+00:00",
-      "refreshed_at": "2026-09-16T12:15:25+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-24T00:00:00Z"
     },
     {
@@ -71294,11 +71302,11 @@
       "xg_away": 1.596,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:25+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:28+00:00",
-      "refreshed_at": "2026-09-16T12:15:25+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-24T00:00:00Z"
     },
     {
@@ -71317,11 +71325,11 @@
       "xg_away": 0.951,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:26+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:28+00:00",
-      "refreshed_at": "2026-09-16T12:15:26+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-31T00:00:00Z"
     },
     {
@@ -71340,11 +71348,11 @@
       "xg_away": 1.019,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:26+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:28+00:00",
-      "refreshed_at": "2026-09-16T12:15:26+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-31T00:00:00Z"
     },
     {
@@ -71363,11 +71371,11 @@
       "xg_away": 1.037,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:26+00:00",
+      "logged_at": "2026-09-17T21:16:05+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:28+00:00",
-      "refreshed_at": "2026-09-16T12:15:26+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:05+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-31T00:00:00Z"
     },
     {
@@ -71386,11 +71394,11 @@
       "xg_away": 0.852,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:26+00:00",
+      "logged_at": "2026-09-17T21:16:06+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:29+00:00",
-      "refreshed_at": "2026-09-16T12:15:26+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:06+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-10-31T00:00:00Z"
     },
     {
@@ -71409,11 +71417,11 @@
       "xg_away": 1.595,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:26+00:00",
+      "logged_at": "2026-09-17T21:16:06+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:29+00:00",
-      "refreshed_at": "2026-09-16T12:15:26+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:06+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-03T00:00:00Z"
     },
     {
@@ -71432,11 +71440,11 @@
       "xg_away": 1.077,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:27+00:00",
+      "logged_at": "2026-09-17T21:16:06+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:29+00:00",
-      "refreshed_at": "2026-09-16T12:15:27+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:06+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-03T00:00:00Z"
     },
     {
@@ -71455,11 +71463,11 @@
       "xg_away": 1.274,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:27+00:00",
+      "logged_at": "2026-09-17T21:16:06+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:29+00:00",
-      "refreshed_at": "2026-09-16T12:15:27+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:06+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-04T00:00:00Z"
     },
     {
@@ -71478,11 +71486,11 @@
       "xg_away": 0.949,
       "most_likely_score": "0-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:27+00:00",
+      "logged_at": "2026-09-17T21:16:06+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:29+00:00",
-      "refreshed_at": "2026-09-16T12:15:27+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:06+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-04T00:00:00Z"
     },
     {
@@ -71501,11 +71509,11 @@
       "xg_away": 1.207,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:27+00:00",
+      "logged_at": "2026-09-17T21:16:06+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:30+00:00",
-      "refreshed_at": "2026-09-16T12:15:27+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:06+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-07T00:00:00Z"
     },
     {
@@ -71524,11 +71532,11 @@
       "xg_away": 1.26,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:27+00:00",
+      "logged_at": "2026-09-17T21:16:07+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:30+00:00",
-      "refreshed_at": "2026-09-16T12:15:27+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:07+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-07T00:00:00Z"
     },
     {
@@ -71547,11 +71555,11 @@
       "xg_away": 0.988,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:28+00:00",
+      "logged_at": "2026-09-17T21:16:07+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:30+00:00",
-      "refreshed_at": "2026-09-16T12:15:28+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:07+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-07T00:00:00Z"
     },
     {
@@ -71570,11 +71578,11 @@
       "xg_away": 1.245,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:28+00:00",
+      "logged_at": "2026-09-17T21:16:07+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:30+00:00",
-      "refreshed_at": "2026-09-16T12:15:28+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:07+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-07T00:00:00Z"
     },
     {
@@ -71593,11 +71601,11 @@
       "xg_away": 1.004,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:28+00:00",
+      "logged_at": "2026-09-17T21:16:07+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:31+00:00",
-      "refreshed_at": "2026-09-16T12:15:28+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:07+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-21T00:00:00Z"
     },
     {
@@ -71616,11 +71624,11 @@
       "xg_away": 0.99,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:28+00:00",
+      "logged_at": "2026-09-17T21:16:07+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:31+00:00",
-      "refreshed_at": "2026-09-16T12:15:28+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:07+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-21T00:00:00Z"
     },
     {
@@ -71639,11 +71647,11 @@
       "xg_away": 0.919,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:28+00:00",
+      "logged_at": "2026-09-17T21:16:07+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:31+00:00",
-      "refreshed_at": "2026-09-16T12:15:28+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:07+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-21T00:00:00Z"
     },
     {
@@ -71662,11 +71670,11 @@
       "xg_away": 1.181,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:28+00:00",
+      "logged_at": "2026-09-17T21:16:08+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:31+00:00",
-      "refreshed_at": "2026-09-16T12:15:28+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:08+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-21T00:00:00Z"
     },
     {
@@ -71685,11 +71693,11 @@
       "xg_away": 1.088,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:29+00:00",
+      "logged_at": "2026-09-17T21:16:08+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:32+00:00",
-      "refreshed_at": "2026-09-16T12:15:29+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:08+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-21T00:00:00Z"
     },
     {
@@ -71708,11 +71716,11 @@
       "xg_away": 1.062,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:29+00:00",
+      "logged_at": "2026-09-17T21:16:08+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:32+00:00",
-      "refreshed_at": "2026-09-16T12:15:29+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:08+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-24T00:00:00Z"
     },
     {
@@ -71731,11 +71739,11 @@
       "xg_away": 1.491,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:29+00:00",
+      "logged_at": "2026-09-17T21:16:08+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:32+00:00",
-      "refreshed_at": "2026-09-16T12:15:29+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:08+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-24T00:00:00Z"
     },
     {
@@ -71754,11 +71762,11 @@
       "xg_away": 0.939,
       "most_likely_score": "0-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:29+00:00",
+      "logged_at": "2026-09-17T21:16:08+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:32+00:00",
-      "refreshed_at": "2026-09-16T12:15:29+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:08+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-24T00:00:00Z"
     },
     {
@@ -71777,11 +71785,11 @@
       "xg_away": 0.931,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:29+00:00",
+      "logged_at": "2026-09-17T21:16:09+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:32+00:00",
-      "refreshed_at": "2026-09-16T12:15:29+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:09+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-25T00:00:00Z"
     },
     {
@@ -71800,11 +71808,11 @@
       "xg_away": 0.862,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:30+00:00",
+      "logged_at": "2026-09-17T21:16:09+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:33+00:00",
-      "refreshed_at": "2026-09-16T12:15:30+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:09+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-25T00:00:00Z"
     },
     {
@@ -71823,11 +71831,11 @@
       "xg_away": 1.044,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:30+00:00",
+      "logged_at": "2026-09-17T21:16:09+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:33+00:00",
-      "refreshed_at": "2026-09-16T12:15:30+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:09+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-28T00:00:00Z"
     },
     {
@@ -71846,11 +71854,11 @@
       "xg_away": 0.903,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:30+00:00",
+      "logged_at": "2026-09-17T21:16:09+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:33+00:00",
-      "refreshed_at": "2026-09-16T12:15:30+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:09+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-28T00:00:00Z"
     },
     {
@@ -71869,11 +71877,11 @@
       "xg_away": 0.83,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:30+00:00",
+      "logged_at": "2026-09-17T21:16:09+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:33+00:00",
-      "refreshed_at": "2026-09-16T12:15:30+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:09+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-28T00:00:00Z"
     },
     {
@@ -71892,11 +71900,11 @@
       "xg_away": 0.956,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:30+00:00",
+      "logged_at": "2026-09-17T21:16:10+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:34+00:00",
-      "refreshed_at": "2026-09-16T12:15:30+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:10+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-11-28T00:00:00Z"
     },
     {
@@ -71915,11 +71923,11 @@
       "xg_away": 0.954,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:30+00:00",
+      "logged_at": "2026-09-17T21:16:10+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:34+00:00",
-      "refreshed_at": "2026-09-16T12:15:30+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:10+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-05T00:00:00Z"
     },
     {
@@ -71938,11 +71946,11 @@
       "xg_away": 1.438,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:31+00:00",
+      "logged_at": "2026-09-17T21:16:10+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:34+00:00",
-      "refreshed_at": "2026-09-16T12:15:31+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:10+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-05T00:00:00Z"
     },
     {
@@ -71961,11 +71969,11 @@
       "xg_away": 0.958,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:31+00:00",
+      "logged_at": "2026-09-17T21:16:10+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:34+00:00",
-      "refreshed_at": "2026-09-16T12:15:31+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:10+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-05T00:00:00Z"
     },
     {
@@ -71984,11 +71992,11 @@
       "xg_away": 1.099,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:31+00:00",
+      "logged_at": "2026-09-17T21:16:10+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:35+00:00",
-      "refreshed_at": "2026-09-16T12:15:31+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:10+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-05T00:00:00Z"
     },
     {
@@ -72007,11 +72015,11 @@
       "xg_away": 1.422,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:31+00:00",
+      "logged_at": "2026-09-17T21:16:10+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:35+00:00",
-      "refreshed_at": "2026-09-16T12:15:31+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:10+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-08T00:00:00Z"
     },
     {
@@ -72030,11 +72038,11 @@
       "xg_away": 0.906,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:31+00:00",
+      "logged_at": "2026-09-17T21:16:11+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:35+00:00",
-      "refreshed_at": "2026-09-16T12:15:31+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:11+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-08T00:00:00Z"
     },
     {
@@ -72053,11 +72061,11 @@
       "xg_away": 0.98,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:32+00:00",
+      "logged_at": "2026-09-17T21:16:11+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:35+00:00",
-      "refreshed_at": "2026-09-16T12:15:32+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:11+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-08T00:00:00Z"
     },
     {
@@ -72076,11 +72084,11 @@
       "xg_away": 1.241,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:32+00:00",
+      "logged_at": "2026-09-17T21:16:11+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:35+00:00",
-      "refreshed_at": "2026-09-16T12:15:32+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:11+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-09T00:00:00Z"
     },
     {
@@ -72099,11 +72107,11 @@
       "xg_away": 0.828,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:32+00:00",
+      "logged_at": "2026-09-17T21:16:11+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:36+00:00",
-      "refreshed_at": "2026-09-16T12:15:32+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:11+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-09T00:00:00Z"
     },
     {
@@ -72122,11 +72130,11 @@
       "xg_away": 1.04,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:32+00:00",
+      "logged_at": "2026-09-17T21:16:11+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:36+00:00",
-      "refreshed_at": "2026-09-16T12:15:32+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:11+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-12T00:00:00Z"
     },
     {
@@ -72145,11 +72153,11 @@
       "xg_away": 1.158,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:32+00:00",
+      "logged_at": "2026-09-17T21:16:11+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:36+00:00",
-      "refreshed_at": "2026-09-16T12:15:32+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:11+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-12T00:00:00Z"
     },
     {
@@ -72168,11 +72176,11 @@
       "xg_away": 1.356,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:32+00:00",
+      "logged_at": "2026-09-17T21:16:12+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:36+00:00",
-      "refreshed_at": "2026-09-16T12:15:32+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:12+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-12T00:00:00Z"
     },
     {
@@ -72191,11 +72199,11 @@
       "xg_away": 1.423,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:33+00:00",
+      "logged_at": "2026-09-17T21:16:12+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:33+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:12+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-12T00:00:00Z"
     },
     {
@@ -72214,11 +72222,11 @@
       "xg_away": 1.558,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:33+00:00",
+      "logged_at": "2026-09-17T21:16:12+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:33+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:12+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-12T00:00:00Z"
     },
     {
@@ -72237,11 +72245,11 @@
       "xg_away": 1.034,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:33+00:00",
+      "logged_at": "2026-09-17T21:16:12+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:33+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:12+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-19T00:00:00Z"
     },
     {
@@ -72260,11 +72268,11 @@
       "xg_away": 0.839,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:33+00:00",
+      "logged_at": "2026-09-17T21:16:12+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:33+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:12+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-19T00:00:00Z"
     },
     {
@@ -72283,11 +72291,11 @@
       "xg_away": 0.978,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:33+00:00",
+      "logged_at": "2026-09-17T21:16:12+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:37+00:00",
-      "refreshed_at": "2026-09-16T12:15:33+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:12+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-19T00:00:00Z"
     },
     {
@@ -72306,11 +72314,11 @@
       "xg_away": 1.194,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:34+00:00",
+      "logged_at": "2026-09-17T21:16:13+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:34+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:13+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-19T00:00:00Z"
     },
     {
@@ -72329,11 +72337,11 @@
       "xg_away": 1.089,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:34+00:00",
+      "logged_at": "2026-09-17T21:16:13+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:34+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:13+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-19T00:00:00Z"
     },
     {
@@ -72352,11 +72360,11 @@
       "xg_away": 1.264,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:34+00:00",
+      "logged_at": "2026-09-17T21:16:13+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:34+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:13+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-26T00:00:00Z"
     },
     {
@@ -72375,11 +72383,11 @@
       "xg_away": 1.359,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:34+00:00",
+      "logged_at": "2026-09-17T21:16:13+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:38+00:00",
-      "refreshed_at": "2026-09-16T12:15:34+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:13+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-26T00:00:00Z"
     },
     {
@@ -72398,11 +72406,11 @@
       "xg_away": 1.258,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:34+00:00",
+      "logged_at": "2026-09-17T21:16:13+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:34+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:13+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-26T00:00:00Z"
     },
     {
@@ -72421,11 +72429,11 @@
       "xg_away": 0.949,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:34+00:00",
+      "logged_at": "2026-09-17T21:16:13+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:34+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:13+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-26T00:00:00Z"
     },
     {
@@ -72444,11 +72452,11 @@
       "xg_away": 1.254,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:35+00:00",
+      "logged_at": "2026-09-17T21:16:14+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:35+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:14+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-29T00:00:00Z"
     },
     {
@@ -72467,11 +72475,11 @@
       "xg_away": 0.987,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:35+00:00",
+      "logged_at": "2026-09-17T21:16:14+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:35+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:14+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-29T00:00:00Z"
     },
     {
@@ -72490,11 +72498,11 @@
       "xg_away": 0.881,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:35+00:00",
+      "logged_at": "2026-09-17T21:16:14+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:39+00:00",
-      "refreshed_at": "2026-09-16T12:15:35+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:14+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-29T00:00:00Z"
     },
     {
@@ -72513,11 +72521,11 @@
       "xg_away": 0.837,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:35+00:00",
+      "logged_at": "2026-09-17T21:16:14+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:35+00:00",
-      "refresh_count": 12,
+      "refreshed_at": "2026-09-17T21:16:14+00:00",
+      "refresh_count": 13,
       "kickoff_logged": "2026-12-29T00:00:00Z"
     },
     {
@@ -72536,11 +72544,11 @@
       "xg_away": 0.926,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:35+00:00",
+      "logged_at": "2026-09-17T21:16:14+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:35+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:14+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562052",
@@ -72558,11 +72566,11 @@
       "xg_away": 1.126,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:36+00:00",
+      "logged_at": "2026-09-17T21:16:14+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:36+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:14+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562056",
@@ -72580,11 +72588,11 @@
       "xg_away": 0.932,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:36+00:00",
+      "logged_at": "2026-09-17T21:16:15+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:40+00:00",
-      "refreshed_at": "2026-09-16T12:15:36+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:15+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562058",
@@ -72602,11 +72610,11 @@
       "xg_away": 1.097,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:36+00:00",
+      "logged_at": "2026-09-17T21:16:15+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:36+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:15+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562060",
@@ -72624,11 +72632,11 @@
       "xg_away": 1.401,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:36+00:00",
+      "logged_at": "2026-09-17T21:16:15+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:36+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:15+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562065",
@@ -72646,11 +72654,11 @@
       "xg_away": 1.388,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:36+00:00",
+      "logged_at": "2026-09-17T21:16:15+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:36+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:15+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562066",
@@ -72668,11 +72676,11 @@
       "xg_away": 1.286,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:36+00:00",
+      "logged_at": "2026-09-17T21:16:15+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:36+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:15+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562070",
@@ -72690,11 +72698,11 @@
       "xg_away": 1.071,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:37+00:00",
+      "logged_at": "2026-09-17T21:16:15+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:41+00:00",
-      "refreshed_at": "2026-09-16T12:15:37+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:15+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562071",
@@ -72712,11 +72720,11 @@
       "xg_away": 1.563,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:37+00:00",
+      "logged_at": "2026-09-17T21:16:16+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:37+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:16+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562077",
@@ -72734,11 +72742,11 @@
       "xg_away": 1.06,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:37+00:00",
+      "logged_at": "2026-09-17T21:16:16+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:37+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:16+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562079",
@@ -72756,11 +72764,11 @@
       "xg_away": 1.476,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:37+00:00",
+      "logged_at": "2026-09-17T21:16:16+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:42+00:00",
-      "refreshed_at": "2026-09-16T12:15:37+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:16+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562081",
@@ -72778,11 +72786,11 @@
       "xg_away": 0.894,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:37+00:00",
+      "logged_at": "2026-09-17T21:16:16+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:37+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:16+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562083",
@@ -72800,11 +72808,11 @@
       "xg_away": 1.227,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:37+00:00",
+      "logged_at": "2026-09-17T21:16:16+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:37+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:16+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562085",
@@ -72822,11 +72830,11 @@
       "xg_away": 0.883,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:38+00:00",
+      "logged_at": "2026-09-17T21:16:17+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:38+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:17+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562087",
@@ -72844,11 +72852,11 @@
       "xg_away": 0.968,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:38+00:00",
+      "logged_at": "2026-09-17T21:16:17+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:38+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:17+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562092",
@@ -72866,11 +72874,11 @@
       "xg_away": 1.131,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:38+00:00",
+      "logged_at": "2026-09-17T21:16:17+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:43+00:00",
-      "refreshed_at": "2026-09-16T12:15:38+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:17+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562095",
@@ -72888,11 +72896,11 @@
       "xg_away": 0.963,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:38+00:00",
+      "logged_at": "2026-09-17T21:16:17+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:38+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:17+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562097",
@@ -72910,11 +72918,11 @@
       "xg_away": 0.974,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:38+00:00",
+      "logged_at": "2026-09-17T21:16:17+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:38+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:17+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562102",
@@ -72932,11 +72940,11 @@
       "xg_away": 1.117,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:38+00:00",
+      "logged_at": "2026-09-17T21:16:17+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:38+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:17+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562104",
@@ -72954,11 +72962,11 @@
       "xg_away": 1.299,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:39+00:00",
+      "logged_at": "2026-09-17T21:16:18+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:44+00:00",
-      "refreshed_at": "2026-09-16T12:15:39+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:18+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562105",
@@ -72976,11 +72984,11 @@
       "xg_away": 0.979,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:39+00:00",
+      "logged_at": "2026-09-17T21:16:18+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:39+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:18+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562112",
@@ -72998,11 +73006,11 @@
       "xg_away": 1.447,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:39+00:00",
+      "logged_at": "2026-09-17T21:16:18+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:39+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:18+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562113",
@@ -73020,11 +73028,11 @@
       "xg_away": 1.128,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:39+00:00",
+      "logged_at": "2026-09-17T21:16:18+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:39+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:18+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562116",
@@ -73042,11 +73050,11 @@
       "xg_away": 1.086,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:39+00:00",
+      "logged_at": "2026-09-17T21:16:18+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:39+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:18+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562117",
@@ -73058,17 +73066,17 @@
       "home_team": "Blackburn",
       "away_team": "Burnley",
       "p_home": 0.2583,
-      "p_draw": 0.3281,
+      "p_draw": 0.3282,
       "p_away": 0.4136,
       "xg_home": 0.925,
       "xg_away": 1.232,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:40+00:00",
+      "logged_at": "2026-09-17T21:16:19+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:45+00:00",
-      "refreshed_at": "2026-09-16T12:15:40+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:19+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562118",
@@ -73086,11 +73094,11 @@
       "xg_away": 1.326,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:40+00:00",
+      "logged_at": "2026-09-17T21:16:19+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:40+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:19+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562123",
@@ -73108,11 +73116,11 @@
       "xg_away": 1.086,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:40+00:00",
+      "logged_at": "2026-09-17T21:16:19+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:40+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:19+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562126",
@@ -73130,11 +73138,11 @@
       "xg_away": 0.964,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:40+00:00",
+      "logged_at": "2026-09-17T21:16:19+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:40+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:19+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562129",
@@ -73152,11 +73160,11 @@
       "xg_away": 1.45,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:40+00:00",
+      "logged_at": "2026-09-17T21:16:19+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:46+00:00",
-      "refreshed_at": "2026-09-16T12:15:40+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:19+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562130",
@@ -73174,11 +73182,11 @@
       "xg_away": 1.083,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:40+00:00",
+      "logged_at": "2026-09-17T21:16:19+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:40+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:19+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562135",
@@ -73196,11 +73204,11 @@
       "xg_away": 0.977,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:41+00:00",
+      "logged_at": "2026-09-17T21:16:20+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:41+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:20+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562136",
@@ -73218,11 +73226,11 @@
       "xg_away": 1.24,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:41+00:00",
+      "logged_at": "2026-09-17T21:16:20+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:41+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:20+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562138",
@@ -73240,11 +73248,11 @@
       "xg_away": 1.062,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:41+00:00",
+      "logged_at": "2026-09-17T21:16:20+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:47+00:00",
-      "refreshed_at": "2026-09-16T12:15:41+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:20+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562146",
@@ -73262,11 +73270,11 @@
       "xg_away": 0.926,
       "most_likely_score": "0-0",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:41+00:00",
+      "logged_at": "2026-09-17T21:16:20+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:41+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:20+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562147",
@@ -73284,11 +73292,11 @@
       "xg_away": 0.969,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:41+00:00",
+      "logged_at": "2026-09-17T21:16:20+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:41+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:20+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562150",
@@ -73306,11 +73314,11 @@
       "xg_away": 1.292,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:42+00:00",
+      "logged_at": "2026-09-17T21:16:20+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:42+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:20+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562154",
@@ -73328,11 +73336,11 @@
       "xg_away": 1.288,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:42+00:00",
+      "logged_at": "2026-09-17T21:16:21+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:42+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:21+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562155",
@@ -73350,11 +73358,11 @@
       "xg_away": 1.33,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:42+00:00",
+      "logged_at": "2026-09-17T21:16:21+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:48+00:00",
-      "refreshed_at": "2026-09-16T12:15:42+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:21+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562157",
@@ -73372,11 +73380,11 @@
       "xg_away": 1.611,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:42+00:00",
+      "logged_at": "2026-09-17T21:16:21+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:42+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:21+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562159",
@@ -73394,11 +73402,11 @@
       "xg_away": 1.048,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:42+00:00",
+      "logged_at": "2026-09-17T21:16:21+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:42+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:21+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562165",
@@ -73416,11 +73424,11 @@
       "xg_away": 1.112,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:42+00:00",
+      "logged_at": "2026-09-17T21:16:21+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:42+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:21+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562166",
@@ -73438,11 +73446,11 @@
       "xg_away": 0.981,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:43+00:00",
+      "logged_at": "2026-09-17T21:16:21+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:43+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:21+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562167",
@@ -73460,11 +73468,11 @@
       "xg_away": 0.956,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:43+00:00",
+      "logged_at": "2026-09-17T21:16:22+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:49+00:00",
-      "refreshed_at": "2026-09-16T12:15:43+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:22+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562170",
@@ -73482,11 +73490,11 @@
       "xg_away": 0.961,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:43+00:00",
+      "logged_at": "2026-09-17T21:16:22+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:43+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:22+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562172",
@@ -73504,11 +73512,11 @@
       "xg_away": 1.254,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:43+00:00",
+      "logged_at": "2026-09-17T21:16:22+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:43+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:22+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562173",
@@ -73526,11 +73534,11 @@
       "xg_away": 1.095,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:43+00:00",
+      "logged_at": "2026-09-17T21:16:22+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:43+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:22+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562175",
@@ -73548,11 +73556,11 @@
       "xg_away": 1.295,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:43+00:00",
+      "logged_at": "2026-09-17T21:16:22+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:50+00:00",
-      "refreshed_at": "2026-09-16T12:15:43+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:22+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562177",
@@ -73570,11 +73578,11 @@
       "xg_away": 1.116,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:44+00:00",
+      "logged_at": "2026-09-17T21:16:23+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:44+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:23+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562184",
@@ -73592,11 +73600,11 @@
       "xg_away": 1.071,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:44+00:00",
+      "logged_at": "2026-09-17T21:16:23+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:44+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:23+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562186",
@@ -73614,11 +73622,11 @@
       "xg_away": 1.095,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:44+00:00",
+      "logged_at": "2026-09-17T21:16:23+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:44+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:23+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562187",
@@ -73636,11 +73644,11 @@
       "xg_away": 1.419,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:44+00:00",
+      "logged_at": "2026-09-17T21:16:23+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:51+00:00",
-      "refreshed_at": "2026-09-16T12:15:44+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:23+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562192",
@@ -73658,11 +73666,11 @@
       "xg_away": 1.291,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T12:15:44+00:00",
+      "logged_at": "2026-09-17T21:16:23+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:44+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:23+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562194",
@@ -73680,11 +73688,11 @@
       "xg_away": 1.302,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:44+00:00",
+      "logged_at": "2026-09-17T21:16:23+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:44+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:23+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562200",
@@ -73702,11 +73710,11 @@
       "xg_away": 1.386,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T12:15:45+00:00",
+      "logged_at": "2026-09-17T21:16:24+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:52+00:00",
-      "refreshed_at": "2026-09-16T12:15:45+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:24+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562202",
@@ -73724,11 +73732,11 @@
       "xg_away": 1.046,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:50+00:00",
+      "logged_at": "2026-09-17T21:16:24+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:52+00:00",
-      "refreshed_at": "2026-09-16T16:42:50+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:24+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562203",
@@ -73746,11 +73754,11 @@
       "xg_away": 0.835,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:50+00:00",
+      "logged_at": "2026-09-17T21:16:24+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:52+00:00",
-      "refreshed_at": "2026-09-16T16:42:50+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:24+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562205",
@@ -73768,11 +73776,11 @@
       "xg_away": 1.431,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T16:42:51+00:00",
+      "logged_at": "2026-09-17T21:16:24+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:53+00:00",
-      "refreshed_at": "2026-09-16T16:42:51+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:24+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562210",
@@ -73790,11 +73798,11 @@
       "xg_away": 0.961,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:51+00:00",
+      "logged_at": "2026-09-17T21:16:24+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:53+00:00",
-      "refreshed_at": "2026-09-16T16:42:51+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:24+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562213",
@@ -73812,11 +73820,11 @@
       "xg_away": 1.114,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:51+00:00",
+      "logged_at": "2026-09-17T21:16:24+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:53+00:00",
-      "refreshed_at": "2026-09-16T16:42:51+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:24+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562215",
@@ -73834,11 +73842,11 @@
       "xg_away": 0.942,
       "most_likely_score": "0-0",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T16:42:52+00:00",
+      "logged_at": "2026-09-17T21:16:25+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:53+00:00",
-      "refreshed_at": "2026-09-16T16:42:52+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:25+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562218",
@@ -73856,11 +73864,11 @@
       "xg_away": 0.779,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:52+00:00",
+      "logged_at": "2026-09-17T21:16:25+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:54+00:00",
-      "refreshed_at": "2026-09-16T16:42:52+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:25+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562224",
@@ -73878,11 +73886,11 @@
       "xg_away": 0.998,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:53+00:00",
+      "logged_at": "2026-09-17T21:16:25+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:54+00:00",
-      "refreshed_at": "2026-09-16T16:42:53+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:25+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562226",
@@ -73900,11 +73908,11 @@
       "xg_away": 0.918,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:53+00:00",
+      "logged_at": "2026-09-17T21:16:25+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:54+00:00",
-      "refreshed_at": "2026-09-16T16:42:53+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:25+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562227",
@@ -73922,11 +73930,11 @@
       "xg_away": 1.245,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T16:42:53+00:00",
+      "logged_at": "2026-09-17T21:16:25+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:54+00:00",
-      "refreshed_at": "2026-09-16T16:42:53+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:25+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562229",
@@ -73944,11 +73952,11 @@
       "xg_away": 1.371,
       "most_likely_score": "1-1",
       "predicted_winner": "away",
-      "logged_at": "2026-09-16T16:42:54+00:00",
+      "logged_at": "2026-09-17T21:16:26+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:55+00:00",
-      "refreshed_at": "2026-09-16T16:42:54+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:26+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562231",
@@ -73966,11 +73974,11 @@
       "xg_away": 1.016,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:54+00:00",
+      "logged_at": "2026-09-17T21:16:26+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:55+00:00",
-      "refreshed_at": "2026-09-16T16:42:54+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:26+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562232",
@@ -73988,11 +73996,11 @@
       "xg_away": 0.95,
       "most_likely_score": "1-1",
       "predicted_winner": "home",
-      "logged_at": "2026-09-16T16:42:55+00:00",
+      "logged_at": "2026-09-17T21:16:26+00:00",
       "result": null,
       "first_logged_at": "2026-08-15T12:39:55+00:00",
-      "refreshed_at": "2026-09-16T16:42:55+00:00",
-      "refresh_count": 12
+      "refreshed_at": "2026-09-17T21:16:26+00:00",
+      "refresh_count": 13
     },
     {
       "match_id": "fd-562234",
