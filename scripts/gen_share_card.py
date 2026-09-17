@@ -1232,7 +1232,16 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
                 f"kortti: nousija-alaviite ei mahdu ({foot!r}, "
                 f"{d.textlength(foot, font=f_note):.0f}px > {avail}px)")
         d.text((MX, h - 116), foot, font=f_note, fill=MUTED)
-    d.text((MX, h - 84), "every club, both columns, on goaliq.app/fpl, free",
+    # 🔴 17.9.2026 PORTTI: "both columns" oli vaite SIVUN RAKENTEESTA ja se on
+    # epatosi. /fpl:n taulukon sarakkeet ovat Team | Clean sheet % | Next
+    # opponent | FDR | Next 6 CS% | Squad turnover — projisoidut maalit EIVAT
+    # ole sarake vaan rivinsisainen alarivi ("projected goals MCI 2.12 v SUN
+    # 0.75") Next opponent -solussa, eika sanaa "projected goals" ole
+    # yhdessakaan otsikossa. Molemmat LUVUT ovat siella ilmaiseksi, sarakkeita
+    # on yksi. Alaviite on kortin tarkistusreitti, joten sen on kuvattava
+    # sivua sellaisena kuin lukija sen nakee. Sanamuoto on rekisteroity
+    # data/rejected_phrases.json:iin, ettei se palaa toiseen generaattoriin.
+    d.text((MX, h - 84), "every club, both numbers, free on goaliq.app/fpl",
            font=f_foot, fill=MUTED)
     d.text((MX, h - 52), "model projections, not betting advice",
            font=_font(FONT_MED, 16), fill=MUTED)
