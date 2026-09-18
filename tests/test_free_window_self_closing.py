@@ -17,8 +17,12 @@ elementissa ja inline-skripti nayttaa sen vain kun selaimen
 Kolme mekanismia, kolme porttia tassa tiedostossa:
   (1) YKSI LUKIJA: `open_at()` on sama predikaatti Pythonissa ja skriptissa
       (`Date.now()<u`), ja portin template-lukija kayttaa sita.
-  (2) YKSI LAHDE: `data-until` on `FREE_PREMIUM_UNTIL`, ja aikaleima on
-      kirjoitettu tasan yhteen tiedostoon.
+  (2) YKSI LAHDE: `data-until` on `FREE_PREMIUM_UNTIL`, `api/premium.py`
+      (oikeuden portti) TUO saman hetken, ja jokainen muu tiedosto joka
+      nimeaa ikkunan saa kantaa vain samaksi HETKEKSI jasentyvia
+      aikaleimoja. 18.9.2026: tassa luki ennen "aikaleima on kirjoitettu
+      tasan yhteen tiedostoon" - se oli epatosi, ja sita vartioi testi joka
+      skannasi kolme kasin nimettya tiedostoa neljasta pinnasta.
   (3) INVARIANTTI JOKA VAIHEESSA: jokainen lohko renderoidaan synteettisella
       kellolla ennen / tasan / jalkeen, ja jokaisessa vaiheessa staattinen
       HTML on ilman lupausta. Skripti ajetaan Nodessa samoilla vaiheilla.
@@ -208,16 +212,147 @@ def test_data_until_on_lahteesta():
 _ISO_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})")
 
 
-def test_aikaleima_on_kirjoitettu_tasan_yhteen_tiedostoon():
-    """`src/free_window.py` on ainoa paikka. Portti, builderi ja lohkot
-    eivat kirjoita aikaleimaa: toinen kirjoitettu arvo ajautuisi erilleen."""
-    lahde = (ROOT / "src" / "free_window.py").read_text(encoding="utf-8")
-    koodi = re.sub(r'^\s*#.*$|"""[\s\S]*?"""', "", lahde, flags=re.M)
-    assert len(_ISO_RE.findall(koodi)) == 1, _ISO_RE.findall(koodi)
+#: Tiedostot joita skannaus EI lue, ja miksi. Kaksi perustelua, ei kolmatta:
+#:   - `tests/`: testit kirjoittavat synteettisia aikaleimoja (2099-01-01,
+#:     freeze-fikstuurit) tarkoituksella, ja niiden PITAA erota.
+#:   - `node_modules/`, `.git/`, `__pycache__/`: ei meidan koodia.
+_SKANNAUKSEN_ULKOPUOLELLA = ("tests", "node_modules", ".git", "__pycache__")
+
+
+def _ikkunan_kirjoittajat(juuri: Path | None = None) -> dict[str, list[str]]:
+    """{polku: [ISO-aikaleimat]} jokaisesta tiedostosta joka NIMEAA ikkunan.
+
+    Joukko johdetaan NIMESTA (`FREE_PREMIUM_UNTIL`), ei kasin nimetysta
+    listasta: uusi pinta joka kirjoittaa ikkunan hetken joutuu skannauksen
+    piiriin kayttamalla samaa nimea kuin kolme olemassa olevaa. Kasin
+    nimetty lista oli tasan se vika joka 18.9 loydettiin.
+    """
+    juuri = juuri or ROOT
+    ulos: dict[str, list[str]] = {}
+    for kansio, alikansiot, tiedostot in os.walk(juuri):
+        # Karsitaan paikan paalla: `rglob` kavelisi node_modulesin lapi.
+        alikansiot[:] = [d for d in alikansiot
+                         if d not in _SKANNAUKSEN_ULKOPUOLELLA]
+        for nimi in tiedostot:
+            if not nimi.endswith((".py", ".ts", ".svelte")):
+                continue
+            p = Path(kansio) / nimi
+            teksti = p.read_text(encoding="utf-8", errors="ignore")
+            if "FREE_PREMIUM_UNTIL" not in teksti:
+                continue
+            leimat = _ISO_RE.findall(teksti)
+            if leimat:
+                ulos[p.relative_to(juuri).as_posix()] = leimat
+    return ulos
+
+
+def test_ikkunan_hetki_on_sama_jokaisella_pinnalla():
+    """🔴 18.9.2026: TASSA OLI VAARA VAITE JA SITA VARTIOIVA VAARA TESTI.
+
+    Testin nimi oli `test_aikaleima_on_kirjoitettu_tasan_yhteen_tiedostoon`
+    ja se skannasi KOLME kasin nimettya tiedostoa. Hetki oli tosiasiassa
+    kirjoitettu neljaan paikkaan ja kahdessa eri muodossa:
+
+        src/free_window.py                       "2026-09-12T12:30:00Z"
+        api/premium.py                           "2026-09-12T12:30:00+00:00"
+        web/pro-spa/src/lib/auth.svelte.ts       '2026-09-12T12:30:00Z'
+        goaliq-app/lib/freePremiumWindow.ts      (ERI REPO)
+
+    `api/premium.py` on OIKEUDEN portti - se ratkaisee kuka oikeasti saa
+    premiumin. Seuraava ikkuna olisi voitu avata `src/free_window.py`:sta ja
+    unohtaa `api/premium.py`: paistetut sivut olisivat luvanneet ilmaista
+    Premiumia siihen asti kun API ei enaa anna sita. `until_mismatches`
+    vertaa sivun `data-until`-arvoa vain `src.free_window`:iin, `static_hits`
+    olisi tyhja (lupaus on templatessa, oikein), ja koko portti exit 0.
+
+    Korjaus on kaksiosainen:
+      (1) `api/premium.py` TUO hetken `src.free_window`:sta - kaksi
+          kirjoittajaa yhdeksi lukijaksi (mekanismi 1).
+      (2) TypeScript ei voi importata Pythonia, joten se vartioidaan
+          HETKENA eika merkkijonona: jokainen tiedosto joka nimeaa
+          `FREE_PREMIUM_UNTIL`:in saa kantaa vain aikaleimoja jotka
+          jasentyvat samaksi hetkeksi.
+    """
+    import api.premium as prem  # noqa: E402
+
+    hetki = FW.until()
+
+    # (1) Oikeuden portti lukee saman hetken - ei omaa literaalia.
+    assert prem.free_premium_window_end() == hetki, (
+        "api/premium.py antaa premiumin eri hetkeen kuin sivut lupaavat")
+    prem_lahde = (ROOT / "api" / "premium.py").read_text(encoding="utf-8")
+    prem_koodi = re.sub(r'^\s*#.*$|"""[\s\S]*?"""', "", prem_lahde, flags=re.M)
+    assert not _ISO_RE.search(prem_koodi), (
+        "api/premium.py kirjoittaa aikaleiman itse - se on toinen kirjoittaja")
+
+    # (2) Jokainen ikkunan nimeava tiedosto kantaa SAMAA HETKEA.
+    kirjoittajat = _ikkunan_kirjoittajat()
+    assert "src/free_window.py" in kirjoittajat, kirjoittajat
+    assert "web/pro-spa/src/lib/auth.svelte.ts" in kirjoittajat, (
+        "SPA:n aikaleimaa ei enaa loydy - skannaus on sokea, ei tyhja")
+    for polku, leimat in kirjoittajat.items():
+        for leima in leimat:
+            assert FW.parse_until(leima) == hetki, (
+                f"{polku} kirjoittaa ikkunan hetkeksi {leima!r}, "
+                f"mutta lahde on {FW.FREE_PREMIUM_UNTIL!r} ({hetki}). "
+                "Sivut ja API sulkisivat ikkunan eri hetkella.")
+
+    # (3) Portti ja builderi eivat kirjoita aikaleimaa lainkaan.
     for muu in ("scripts/check_free_window.py", "scripts/build_fpl_page.py"):
         teksti = (ROOT / muu).read_text(encoding="utf-8")
         koodi = re.sub(r'^\s*#.*$|"""[\s\S]*?"""', "", teksti, flags=re.M)
         assert not _ISO_RE.search(koodi), f"{muu} kirjoittaa aikaleiman itse"
+
+
+def test_skannaus_nakee_eri_hetken_myos_eri_muodossa(tmp_path):
+    """EROTTELEVUUS. Vika jota vastaan (2) on kirjoitettu ei ole "eri
+    merkkijono" vaan ERI HETKI, ja se saapuu ERI MUODOSSA (`+00:00` vs `Z`).
+    Sama hetki eri muodossa EI saa kaataa, eri hetki saa - muuten testi
+    vartioisi muotoa eika vaitetta."""
+    hetki = FW.until()
+    assert FW.parse_until("2026-09-12T12:30:00+00:00") == hetki
+    assert FW.parse_until("2026-09-12T12:30:00Z") == hetki
+    assert FW.parse_until("2026-10-03T17:30:00Z") != hetki
+
+    # Skannaus loytaa eriavan hetken tiedostosta joka NIMEAA ikkunan -
+    # myos syvalta puusta ja tiedostosta jota ei ole kasin nimetty.
+    lib = tmp_path / "web" / "pro-spa" / "src" / "lib"
+    lib.mkdir(parents=True)
+    (lib / "auth.svelte.ts").write_text(
+        "export const FREE_PREMIUM_UNTIL = '2026-10-03T17:30:00Z';",
+        encoding="utf-8")
+    loydot = _ikkunan_kirjoittajat(tmp_path)
+    assert loydot == {"web/pro-spa/src/lib/auth.svelte.ts":
+                      ["2026-10-03T17:30:00Z"]}, loydot
+    assert any(FW.parse_until(x) != hetki
+               for leimat in loydot.values() for x in leimat), loydot
+
+    # Ja tiedosto joka EI nimea ikkunaa jaa ulos: skannaus ei kaadu
+    # satunnaisesta aikaleimasta (esim. kausifikstuurista).
+    (tmp_path / "muu.py").write_text('KAUSI = "2026-10-03T17:30:00Z"',
+                                     encoding="utf-8")
+    assert "muu.py" not in _ikkunan_kirjoittajat(tmp_path)
+
+
+def test_mobiilirepon_aikaleima_kun_se_on_saatavilla():
+    """NELJAS PINTA on ERI REPOSSA (`goaliq-app/lib/freePremiumWindow.ts`)
+    eika CI nae sita: fp-checkoutissa ei ole sisarrepoa, eika sita voi
+    vaatia olemaan. Tama on siksi PAIKALLINEN lisatarkistus, EI portti - ja
+    se on kirjattu auki, jotta puuttuva kate nakyy eika nayta hoidetulta
+    (muisti: osittainen kate on pahempi kuin ei katetta).
+
+    Mobiilipuolen oma portti asuu `goaliq-app`-repossa; tama kertoo Villen
+    koneella heti jos ne ajautuvat erilleen.
+    """
+    mob = ROOT.parent / "goaliq-app" / "lib" / "freePremiumWindow.ts"
+    if not mob.is_file():
+        pytest.skip(f"mobiilirepoa ei ole talla koneella: {mob}")
+    leimat = _ISO_RE.findall(mob.read_text(encoding="utf-8"))
+    assert leimat, "mobiilin aikaleimaa ei loytynyt - tiedosto muuttui"
+    for leima in leimat:
+        assert FW.parse_until(leima) == FW.until(), (
+            f"mobiili sulkee ikkunan hetkella {leima!r}, "
+            f"web {FW.FREE_PREMIUM_UNTIL!r}")
 
 
 def test_eri_aikaleima_sivulla_kaataa_portin(tmp_path, monkeypatch):

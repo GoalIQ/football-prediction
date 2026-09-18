@@ -39,13 +39,32 @@ from __future__ import annotations
 import datetime as _dt
 import json as _json
 
-#: Sama arvo kuin goaliq-app/lib/freePremiumWindow.ts FREE_PREMIUM_UNTIL.
-#: Jos tätä muutetaan, muuta myös se — `check_free_window.py` vertaa niitä.
+#: IKKUNAN HETKI. Tama on backendin ja jokaisen paistetun sivun LAHDE:
+#: `api/premium.py` tuo taman (ei kirjoita omaa), ja sivun `data-until`,
+#: `is_open()`, `day_label()` seka portin template-lukija johdetaan tasta.
 #:
-#: 🔴 TÄMÄ ON AINOA PAIKKA JOSSA AIKALEIMA KIRJOITETAAN. Sivun
-#: `data-until`-attribuutti, `is_open()`, `day_label()` ja portin
-#: template-lukija johdetaan kaikki tästä. Toinen kirjoitettu aikaleima
-#: ajautuisi erilleen (`tests/test_free_window_self_closing.py` skannaa).
+#: 🔴 EI "AINOA PAIKKA" - NELJA PINTAA, JOISTA KAKSI ON TAMAN ULOTTUVILLA.
+#: 18.9.2026 adversariaalinen tarkistaja mittasi, etta tahan tiedostoon oli
+#: kirjoitettu vaite "tama on ainoa paikka jossa aikaleima kirjoitetaan" ja
+#: sen vartijaksi testi joka skannasi KOLME kasin nimettya tiedostoa - eli
+#: tasan se vikaluokka (kasin nimetty lista) jonka saanto 6a kieltaa. Hetki
+#: eli tosiasiassa neljassa paikassa ja eri muodoissa:
+#:   1. tama (`...Z`)
+#:   2. `api/premium.py` (`...+00:00`) - OIKEUDEN portti, eli kuka oikeasti
+#:      saa premiumin. 18.9 tehty lukijaksi: se tuo taman arvon.
+#:   3. `web/pro-spa/src/lib/auth.svelte.ts` (TypeScript, ei voi importata)
+#:   4. mobiilirepo `goaliq-app/lib/freePremiumWindow.ts` (ERI REPO)
+#: Ilman korjausta seuraava ikkuna olisi voitu avata tasta tiedostosta ja
+#: unohtaa `api/premium.py`: sivut olisivat luvanneet ilmaista siihen asti
+#: kun API ei enaa anna sita, ja jokainen portti olisi ollut vihrea.
+#: Mitattu 18.9 palauttamalla kutsupaikka: portti tulosti "OK: ilmaisikkuna
+#: on auki 3 October asti", exit 0, samalla kun API sulki sen 12.9.
+#:
+#: 3. ja 4. eivat voi importata Pythonia, joten ne vartioidaan HETKENA eika
+#: merkkijonona: `tests/test_free_window_self_closing.py` skannaa jokaisen
+#: tiedoston joka nimeaa `FREE_PREMIUM_UNTIL`:in ja vaatii, etta jokainen
+#: sen ISO-aikaleima jasentyy SAMAKSI hetkeksi kuin tama. Skannaus ei ole
+#: kasin nimetty lista: uusi pinta joutuu listalle nimen kautta.
 FREE_PREMIUM_UNTIL = "2026-09-12T12:30:00Z"
 
 

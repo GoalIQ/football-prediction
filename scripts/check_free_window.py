@@ -39,6 +39,7 @@ import datetime as _dt
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -51,11 +52,41 @@ from src.free_window import (  # noqa: E402
 #: sisallon kellosta riippumatta (rajaus on lauseen ominaisuus).
 _AINA_AUKI = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
 
-#: Julkiset pinnat joilla lupaus voi elaa. Glob, ei kasin nimetty lista:
-#: kasin nimetty lista vanhenee heti kun uusi pinta syntyy
-#: (muisti: portin-sanalista-vanhenee).
-SURFACE_GLOBS = ("*.html", "fpl/**/*.html", "llms.txt",
-                 "web/pro-spa/src/**/*.svelte", "web/pro-spa/src/**/*.ts")
+#: 🔴 GLOB ON MYOS KASIN NIMETTY LISTA (mitattu 18.9.2026).
+#: Tassa luki aiemmin `("*.html", "fpl/**/*.html", "llms.txt", ...)` ja
+#: kommentti "Glob, ei kasin nimetty lista". Glob itse oli kuitenkin kasin
+#: nimetty HAKEMISTOLISTA, ja sen ulkopuolelle oli kasvanut 2769 deployattua
+#: sivua: `predictions/**` (279 niista sitemapissa) ja `ucl/**`. Tarkistaja
+#: mittasi sen suoraan: tasan sama lupauslause on exit 1 repojuuressa ja
+#: exit 0 `predictions/`-kansiossa - portti tulostaa "OK: ... eika yksikaan
+#: pinta lupaa ilmaista Premiumia" samalla kun 2769 sivua lupaa. Se on
+#: vihrea portti todisteena vaarasta asiasta, eli tasan se mita mekanismi 2
+#: (STATIC_ALLOWED = {}) vaittaa estavansa.
+#:
+#: Korjaus (saanto 6a mekanismi 1): pintajoukko JOHDETAAN siita mika
+#: oikeasti deployataan - `hub-deploy.yml`:n push-paths - eika luetella
+#: tassa. Uusi hakemisto joka lisataan deployn piiriin tulee portin piiriin
+#: samalla rivilla; sita ei voi enaa unohtaa erikseen.
+#:
+#: POHJA on silti kirjoitettu auki kahdesta syysta, jotka ovat perusteluja
+#: eivatka unohdus:
+#:   - web-SPA (`web/pro-spa/src/**`) EI kulje hub-deployn kautta vaan
+#:     omalla wrangler-deployllaan, joten se ei nay tassa workflow'ssa.
+#:   - portin on toimittava myos tmp_path-juuressa jossa workflow'ta ei ole
+#:     (testit). Pohja yksin ei riita kattavuuteen, ja sita vartioi
+#:     `tests/test_free_window_surface_scope.py`: jokaisen sitemapissa
+#:     olevan sivun ja jokaisen deployatun tekstipinnan on oltava
+#:     `surfaces()`-joukossa.
+_BASE_GLOBS = ("*.html", "llms.txt",
+               "web/pro-spa/src/**/*.svelte", "web/pro-spa/src/**/*.ts")
+
+#: Deploy-maarittely josta julkiset pinnat johdetaan.
+DEPLOY_WORKFLOW = Path(".github/workflows/hub-deploy.yml")
+
+#: Paatteet joilla pinta kantaa LUETTAVAA TEKSTIA. `*.js`, `*.xml`,
+#: `assets/**` ja `favicon.ico` ovat deployn piirissa mutta eivat kanna
+#: lupauslausetta lukijalle; `.html` ja `.txt` kantavat.
+_TEKSTIPAATTEET = (".html", ".txt")
 
 #: Lupaus tunnistetaan MERKITYKSESTA, ei yhdesta merkkijonosta: sama vaite on
 #: kirjoitettu useassa sanamuodossa (muisti: sama-vaite-monessa-sanamuodossa).
@@ -254,9 +285,16 @@ def luettava_teksti(txt: str, now=None, *,
 
 
 def _osumat(txt: str, kuvio: re.Pattern, now=None,
-            *, ilman_js: bool = False) -> list[tuple[int, str, int, int]]:
-    """(rivinumero, osuman teksti, nakyman alku, nakyman loppu) lukijan nakymasta."""
-    nakyma, kartta = luettava_teksti(txt, now, ilman_js=ilman_js)
+            *, ilman_js: bool = False, nakyma_kartta=None
+            ) -> list[tuple[int, str, int, int]]:
+    """(rivinumero, osuman teksti, nakyman alku, nakyman loppu) lukijan nakymasta.
+
+    `nakyma_kartta`: valmiiksi rakennettu `luettava_teksti`-pari. Lukija on
+    sama funktio; tama vain saastaa saman nakyman rakentamisen uudelleen kun
+    samaa tiedostoa katsotaan monella kuviolla (2951 pintaa x 4 tarkistusta).
+    """
+    nakyma, kartta = (luettava_teksti(txt, now, ilman_js=ilman_js)
+                      if nakyma_kartta is None else nakyma_kartta)
     ulos = []
     for m in kuvio.finditer(nakyma):
         alku = kartta[m.start()] if m.start() < len(kartta) else 0
@@ -264,43 +302,60 @@ def _osumat(txt: str, kuvio: re.Pattern, now=None,
     return ulos
 
 
-def scope_misses(paths=None, now=None) -> list[tuple[str, int, str]]:
-    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta.
+def deploy_globs(workflow_text: str | None = None) -> tuple[str, ...]:
+    """Tekstipintojen globit DEPLOY-MAARITTELYSTA (`hub-deploy.yml` push-paths).
 
-    Ajetaan LUKIJAN NAKYMAAN, jotta rivinvaihto tai tagi lupauksen keskella ei
-    tee portista sokeaa (12.9.2026).
+    Lukee `paths:`-listan sellaisenaan: `'predictions/**'` -> kaikki sen
+    alta loytyvat `.html`/`.txt`-tiedostot, `'*.html'` -> juuren sivut,
+    `'llms.txt'` -> se tiedosto. Tama on se joukko joka oikeasti paatyy
+    goaliq.app:iin, joten se on myos se joukko jolla lupaus voi elaa.
 
-    Templaten avoin haara arvioidaan PAISTOHETKEN sijaan hetkella jolloin se
-    on auki: rajaus on lauseen ominaisuus eika riipu kellosta, joten
-    templaten sisalto tarkistetaan aina (`now` = templaten oma alku, ts.
-    sisalto pidetaan). Muuten rajaamaton lupaus voisi elaa templatessa
-    ikkunan ollessa kiinni ja avautua rajaamattomana seuraavassa ikkunassa.
+    Tyhja tuple kun workflow'ta ei ole (tmp_path-juuri): silloin pohjaglobit
+    vastaavat yksin, ja kattavuutta vartioi surface-scope-testi oikeassa
+    repossa.
     """
-    ulos = []
-    for p in (paths if paths is not None else surfaces()):
+    if workflow_text is None:
+        wf = ROOT / DEPLOY_WORKFLOW
         try:
-            txt = p.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+            workflow_text = wf.read_text(encoding="utf-8")
+        except OSError:
+            return ()
+    ulos: list[str] = []
+    listassa = False
+    for rivi in workflow_text.splitlines():
+        if re.match(r"^\s*paths:\s*$", rivi):
+            listassa = True
             continue
-        if is_guarded_source(p, txt):
+        if not listassa:
             continue
-        # Rajaus tarkistetaan templaten sisallosta riippumatta kellosta:
-        # arvioidaan "kaikki templatet auki" -hetkella.
-        hetki = now if now is not None else _AINA_AUKI
-        nakyma, _ = luettava_teksti(txt, hetki)
-        for rivi, osuma, a0, b0 in _osumat(txt, SCOPED_CLAIM_RE, hetki):
-            a = max(0, a0 - SCOPE_IKKUNA)
-            b = min(len(nakyma), b0 + SCOPE_IKKUNA)
-            if not SCOPE_RE.search(nakyma[a:b]):
-                ulos.append((str(p.relative_to(ROOT)), rivi, osuma))
-    return ulos
+        m = re.match(r"""^\s+-\s*(['"]?)(.+?)\1\s*$""", rivi)
+        if m:
+            ulos.append(m.group(2))
+            continue
+        if rivi.strip() and not rivi.lstrip().startswith("#"):
+            listassa = False
+    globit: list[str] = []
+    for pat in ulos:
+        if pat.endswith("/**"):
+            # Hakemisto kokonaan: kaikki tekstipinnat sen alta.
+            globit.extend(f"{pat}/*{s}" for s in _TEKSTIPAATTEET)
+        elif pat.endswith(_TEKSTIPAATTEET):
+            globit.append(pat)
+    return tuple(dict.fromkeys(globit))
+
+
+def surface_globs() -> tuple[str, ...]:
+    """Pohja + deploysta johdettu laajennus, jarjestys sailyttaen."""
+    return tuple(dict.fromkeys(_BASE_GLOBS + deploy_globs()))
 
 
 def surfaces() -> list[Path]:
     out: list[Path] = []
-    for g in SURFACE_GLOBS:
+    for g in surface_globs():
         out.extend(sorted(ROOT.glob(g)))
-    return [p for p in out if p.is_file()]
+    # dict.fromkeys: sama tiedosto voi osua kahteen globiin (esim. juuren
+    # `*.html` ja deployn `'*.html'`), eika sita saa tarkistaa kahdesti.
+    return [p for p in dict.fromkeys(out) if p.is_file()]
 
 
 #: SPA renderoi lupauksen ehdollisesti ({#if freePremiumWindowActive()}),
@@ -316,29 +371,132 @@ def is_guarded_source(path: Path, txt: str) -> bool:
     return path.suffix in (".svelte", ".ts") and bool(GUARD_RE.search(txt))
 
 
+class Tulos(NamedTuple):
+    """Kaikki nelja tarkistusta samasta lukukerrasta."""
+    hits: list
+    scope_misses: list
+    until_mismatches: list
+    static_hits: list
+
+
+def _nakymat(txt: str):
+    """Lukijan nakymien hakija tiedostolle. YKSI lukija (`luettava_teksti`),
+    mutta sama nakyma rakennetaan vain kerran.
+
+    Kun sivulla ei ole yhtaan `<template data-free-window-open>`-lohkoa,
+    `_ilman_templatea` on identiteetti JOKAISELLA `now`- ja `ilman_js`-
+    arvolla, joten kaikki nakymat ovat merkki merkilta sama. Sen varassa
+    2951 pintaa katsotaan yhdella rakennuksella nelja kertaa neljan sijaan
+    (mitattu 18.9: 95 s -> 26 s). Invariantin vartija:
+    `tests/test_free_window_surface_scope.py::test_nakymamuisti_ei_muuta_tulosta`.
+    """
+    on_template = bool(TEMPLATE_RE.search(txt))
+    muisti: dict = {}
+
+    def hae(now=None, *, ilman_js: bool = False):
+        avain = (now, ilman_js) if on_template else "VAKIO"
+        if avain not in muisti:
+            muisti[avain] = luettava_teksti(txt, now, ilman_js=ilman_js)
+        return muisti[avain]
+
+    return hae
+
+
+def _tarkista_tiedosto(p: Path, txt: str, now=None) -> Tulos:
+    """YKSI LUKIJA per tiedosto: kaikki nelja kysymysta samasta tekstista.
+
+    Ennen 18.9.2026 jokainen kysymys oli oma funktionsa joka luki tiedostot
+    itse. Neljalla erillisella pyyhkaisylla ei ollut vikaa, mutta kun
+    pintajoukko kasvoi 177:sta 2951:een (predictions/**), hinta olisi ollut
+    ~95 s per porttiajo. Sama lukija, yksi pyyhkaisy.
+    """
+    nimi = str(p.relative_to(ROOT))
+    hits_: list = []
+    scope_: list = []
+    until_: list = []
+    static_: list = []
+
+    # AIKALEIMA: tarkistetaan MYOS vartioidusta lahteesta - `data-until` on
+    # kirjoitettu arvo riippumatta siita vartioiko tiedosto lupauksen.
+    for avain, u, rivi in templates(txt):
+        if u != FREE_PREMIUM_UNTIL:
+            until_.append((nimi, rivi,
+                           f"{avain}: data-until={u!r} != "
+                           f"FREE_PREMIUM_UNTIL={FREE_PREMIUM_UNTIL!r}"))
+
+    if is_guarded_source(p, txt):
+        return Tulos(hits_, scope_, until_, static_)
+
+    hae = _nakymat(txt)
+
+    # 1) ELOSSA olevat lupaukset lukijan kellolla.
+    for rivi, osuma, _a, _b in _osumat(txt, CLAIM_RE, now,
+                                       nakyma_kartta=hae(now)):
+        hits_.append((nimi, rivi, osuma))
+    # Paivamaaraan sidottu hintavaite on vanhentunut VAIN kun ikkuna on
+    # kiinni; auki se on tosi ja kuuluu sivulle. 12.9: tama perhe puuttui,
+    # ja Ville loysi lauseen livena sen jalkeen kun portti sanoi 0.
+    if not is_open(now):
+        for rivi, osuma, _a, _b in _osumat(txt, DATED_PRICE_RE, now,
+                                           nakyma_kartta=hae(now)):
+            hits_.append((nimi, rivi, osuma))
+
+    # 2) STAATTINEN lupaus: JS:ton lukijan nakyma, kellosta riippumatta.
+    for kuvio in (CLAIM_RE, DATED_PRICE_RE):
+        for rivi, osuma, _a, _b in _osumat(
+                txt, kuvio, ilman_js=True,
+                nakyma_kartta=hae(None, ilman_js=True)):
+            static_.append((nimi, rivi, osuma))
+
+    # 3) RAJAUS ("on the web"). Templaten sisalto tarkistetaan hetkella
+    #    jolloin se on auki: rajaus on lauseen ominaisuus eika riipu kellosta.
+    hetki = now if now is not None else _AINA_AUKI
+    nakyma, kartta = hae(hetki)
+    for rivi, osuma, a0, b0 in _osumat(txt, SCOPED_CLAIM_RE, hetki,
+                                       nakyma_kartta=(nakyma, kartta)):
+        a = max(0, a0 - SCOPE_IKKUNA)
+        b = min(len(nakyma), b0 + SCOPE_IKKUNA)
+        if not SCOPE_RE.search(nakyma[a:b]):
+            scope_.append((nimi, rivi, osuma))
+
+    return Tulos(hits_, scope_, until_, static_)
+
+
+def tarkista(paths=None, now=None) -> Tulos:
+    """Koko pintajoukko yhdella lukukerralla."""
+    hits_: list = []
+    scope_: list = []
+    until_: list = []
+    static_: list = []
+    for p in (paths if paths is not None else surfaces()):
+        try:
+            txt = p.read_text(encoding="utf-8", errors="ignore")
+        except (OSError, UnicodeDecodeError):
+            continue
+        t = _tarkista_tiedosto(p, txt, now)
+        hits_ += t.hits
+        scope_ += t.scope_misses
+        until_ += t.until_mismatches
+        static_ += t.static_hits
+    return Tulos(hits_, scope_, until_, static_)
+
+
 def hits(paths=None, now=None) -> list[tuple[str, int, str]]:
     """Elossa olevat lupaukset LUKIJAN NAKYMASTA (ei raa'asta lahteesta).
 
     `now` on synteettinen kello: itsestaan sulkeutuvan lohkon template
     lasketaan nakyvaksi vain jos selain nayttaisi sen talla hetkella.
     """
-    found = []
-    for p in (paths if paths is not None else surfaces()):
-        try:
-            txt = p.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-        if is_guarded_source(p, txt):
-            continue
-        for rivi, osuma, _a, _b in _osumat(txt, CLAIM_RE, now):
-            found.append((str(p.relative_to(ROOT)), rivi, osuma))
-        # Paivamaaraan sidottu hintavaite on vanhentunut VAIN kun ikkuna on
-        # kiinni; auki se on tosi ja kuuluu sivulle. 12.9: tama perhe puuttui,
-        # ja Ville loysi lauseen livena sen jalkeen kun portti sanoi 0.
-        if not is_open(now):
-            for rivi, osuma, _a, _b in _osumat(txt, DATED_PRICE_RE, now):
-                found.append((str(p.relative_to(ROOT)), rivi, osuma))
-    return found
+    return tarkista(paths, now).hits
+
+
+def scope_misses(paths=None, now=None) -> list[tuple[str, int, str]]:
+    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta.
+
+    Ajetaan LUKIJAN NAKYMAAN, jotta rivinvaihto tai tagi lupauksen keskella ei
+    tee portista sokeaa (12.9.2026).
+    """
+    return tarkista(paths, now).scope_misses
 
 
 #: STAATTISEN LUPAUKSEN POIKKEUSLISTA (17.9.2026, CLAUDE.md 6a mekanismi 2).
@@ -367,18 +525,7 @@ def static_hits(paths=None) -> list[tuple[str, int, str]]:
     ulkopuolelle). Kysymys on "mika jaa roikkumaan", ei "mika on tanaan
     tosi", joten kelloa ei kysyta.
     """
-    found = []
-    for p in (paths if paths is not None else surfaces()):
-        try:
-            txt = p.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-        if is_guarded_source(p, txt):
-            continue
-        for kuvio in (CLAIM_RE, DATED_PRICE_RE):
-            for rivi, osuma, _a, _b in _osumat(txt, kuvio, ilman_js=True):
-                found.append((str(p.relative_to(ROOT)), rivi, osuma))
-    return found
+    return tarkista(paths).static_hits
 
 
 def static_hits_outside_allowlist(paths=None) -> list[tuple[str, int, str]]:
@@ -394,18 +541,7 @@ def until_mismatches(paths=None) -> list[tuple[str, int, str]]:
     selain sulkee ikkunan eri hetkella kuin API, SPA ja mobiili - ja
     myohempi arvo olisi lupaus jota mikaan muu pinta ei pida.
     """
-    ulos = []
-    for p in (paths if paths is not None else surfaces()):
-        try:
-            txt = p.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-        for avain, until, rivi in templates(txt):
-            if until != FREE_PREMIUM_UNTIL:
-                ulos.append((str(p.relative_to(ROOT)), rivi,
-                             f"{avain}: data-until={until!r} != "
-                             f"FREE_PREMIUM_UNTIL={FREE_PREMIUM_UNTIL!r}"))
-    return ulos
+    return tarkista(paths).until_mismatches
 
 
 def guarded_files(paths=None) -> list[str]:
@@ -682,10 +818,13 @@ def main(argv=None) -> int:
         print("FAIL: yhtaan julkista pintaa ei loytynyt - porttia ei voi "
               "todentaa (fail-closed).")
         return 1
-    found = hits(paths)
+    # YKSI PYYHKAISY: 2951 pintaa luetaan kerran ja jokainen nelja
+    # tarkistusta ajetaan samasta lukijan nakymasta (`tarkista`).
+    t = tarkista(paths)
+    found = t.hits
     # RAJAUSTARKISTUS AJETAAN AINA, myos ikkunan ollessa auki. Vaarin rajattu
     # lupaus on epatosi juuri silloin kun ikkuna on auki, ei sen jalkeen.
-    puuttuva_rajaus = scope_misses(paths)
+    puuttuva_rajaus = t.scope_misses
     if puuttuva_rajaus:
         print("FAIL: ilmaisikkunan lupaus ilman 'on the web' -rajausta. "
               "Ikkuna koskee vain webia; mobiilissa Premium on kaupan tilaus.")
@@ -694,7 +833,7 @@ def main(argv=None) -> int:
         return 1
     # AIKALEIMALLA ON YKSI LAHDE. Sivulle upotettu eri `data-until` sulkisi
     # ikkunan eri hetkella kuin API, SPA ja mobiili.
-    eri_leima = until_mismatches(paths)
+    eri_leima = t.until_mismatches
     if eri_leima:
         print("FAIL: itsestaan sulkeutuvan lohkon aikaleima eroaa lahteesta "
               "(src.free_window.FREE_PREMIUM_UNTIL). Renderoi lohko uudelleen "
@@ -711,7 +850,8 @@ def main(argv=None) -> int:
         # lupausta, joten sellainen kaataa portin JO IKKUNAN OLLESSA AUKI:
         # silloin kirjoittaja on paikalla ja korjaa; sulkeutumisen jalkeen
         # kukaan ei ole. Poikkeus vain STATIC_ALLOWED-listalla perusteluineen.
-        staattiset = static_hits_outside_allowlist(paths)
+        staattiset = [h for h in t.static_hits
+                      if Path(h[0]).as_posix() not in STATIC_ALLOWED]
         if staattiset:
             print("FAIL: ilmaisikkunan lupaus on STAATTISESSA HTML:ssa ikkunan "
                   "ollessa auki. Se sulkeutuu vain ihmisen ajamalla sivuajolla "
@@ -731,7 +871,7 @@ def main(argv=None) -> int:
         if g:
             print(f"     lisaksi {len(g)} SPA-tiedostoa mainitsee lupauksen "
                   f"mutta VARTIOI sen ajassa: {', '.join(g)}")
-        sallitut = static_hits(paths)
+        sallitut = t.static_hits
         if sallitut:
             print(f"     ja {len(sallitut)} staattista lupausta "
                   f"STATIC_ALLOWED-poikkeuksella:")
