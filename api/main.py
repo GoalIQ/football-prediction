@@ -5062,7 +5062,26 @@ def fantasy_xp(
     # ETag olisi validoinut vanhan vastauksen uudella vertailukohdalla.
     # Loytyi vain koska luin tulostetun ETagin. tests/test_xp_etag_parts.py
     # vartioi nyt etta jokainen osa on mukana.
-    etag = 'W/"xp-{}-{}-{}-{}{}{}"'.format(
+    # 18.9: VAIKUTETTAVAN IKKUNAN ARVO ETagiin, ei vain skeemaversio.
+    # 🔴 MITATTU (SPA:n haarojen purku, `TestClient` + tulostettu ETag):
+    # samalla `generated_at`illa arvoilla deadline_gameweek 5/6/7 vastaus oli
+    # summa 38.48 / 31.97 / 26.30 ja otsikko "6 GWs" / "5 GWs" / "4 GWs" —
+    # mutta ETag oli kolmesti IDENTTINEN, ja ehdollinen pyynto vanhalla
+    # tagilla vastasi 304. `schema="s9"` erottaa KENTAN OLEMASSAOLON, ei sen
+    # ARVOA; sama ansa kuin s4-s8:ssa ja tasan se jota `trend_tag` korjaa
+    # freezelle. Tanaan `horizon_total_from` tulee artefaktin
+    # `deadline_gameweek`ista, joten uusi arvo tuo myos uuden
+    # `generated_at`in eika vika laukea — mutta se on kahden kentan valinen
+    # SATTUMA, ei mekanismi: jos `actionable_gameweek`in lahde vaihtuu
+    # serve-timeksi (kello, fixtuurit, erillinen tiedosto), valimuisti
+    # myrkyttyisi hiljaa ja vain niilla joilla vastaus on jo valimuistissa.
+    # Kun ikkuna on tagissa, se ei voi tapahtua. `x` = API ei kertonut.
+    _hw = payload.get("meta") or {}
+    hw_tag = "{}.{}".format(_hw.get("horizon_total_from") if isinstance(
+        _hw.get("horizon_total_from"), int) else "x",
+        _hw.get("horizon_total_gw") if isinstance(
+            _hw.get("horizon_total_gw"), int) else "x")
+    etag = 'W/"xp-{}-{}-{}-{}{}{}{}"'.format(
         lg, generated, "m" if masked else "f", schema,
         # KIELI ON OLTAVA ETagissa. Ilman sita es-kayttajan ehdollinen pyynto
         # validoituisi englanninkielisesta valimuistista ja han saisi
@@ -5073,7 +5092,8 @@ def fantasy_xp(
         # olemassaolon, mutta ei sen ARVOA: kun uusi freeze ilmestyy
         # (gw4 -> gw5), `generated_at` voi olla sama ja luvut muuttuvat.
         # Ilman tata sarake jaisi nayttamaan edellisen kierroksen eroa.
-        f"-{trend_tag}" if trend_tag else "")
+        f"-{trend_tag}" if trend_tag else "",
+        f"-hw{hw_tag}")
     cache_control = "private, max-age=300"
     inm = request.headers.get("if-none-match", "")
     if etag in [t.strip() for t in inm.split(",")]:
