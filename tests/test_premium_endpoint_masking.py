@@ -59,6 +59,13 @@ PREMIUM_ENDPOINTS = {
     # 6.9: player stats - FPL:n luvut ja freeze-vertailu ilmaisia, eteenpain
     # katsova xP (next_gw_xp, xp_horizon_total) premium; rakentaja maskaa.
     "/api/fantasy/player-stats": ("next-gameweek and horizon xP need premium", "builder"),
+    # 18.9 COMPARE-PALVELINRAJA: "player compare for up to four players" on
+    # Premium-lause viidella julkisella pinnalla (faq.html:34/62/94,
+    # fpl.html:47, index.html:48/66/117), rekisterin tier on premium ja
+    # molemmat klientit piilottavat tyokalun ilmaiskayttajalta kokonaan --
+    # mutta anonyymi `?players=411,426` palautti 2 taytta rivia + verdictin
+    # (mitattu livena 18.9 13:40 UTC). Seitsemas kerta tata vikaluokkaa.
+    "/api/fantasy/compare": ("player compare for up to four players", "mask"),
 }
 
 # endpoint -> miksi se on tarkoituksella ilmainen
@@ -73,7 +80,6 @@ FREE_ENDPOINTS = {
     "/api/fantasy/league": "mini-league standings on free",
     "/api/fantasy/career": "career card on free",
     "/api/fantasy/model-squad": "mallin oma joukkue on julkinen",
-    "/api/fantasy/compare": "compare on free-pinnalla",
     "/api/fantasy/rival": "\"Catch your rival\" on myyntilistan FREE-puolella",
     "/api/fantasy/h2h": "mini-league head-to-head win probability on free",
     "/api/fantasy/defcon": "FPL:n omaa julkista otteludataa (koodin oma "

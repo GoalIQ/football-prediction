@@ -53,6 +53,19 @@ GATED_EXPECTED = {
     # koko GK-lohkon anonyymille. GK-parit ovat myyntilistan premium-rivi.
     # Free = sama 3 rivia jonka klientti nayttaa -> nakyva sisalto ei muutu.
     "/api/fantasy/value",
+    # 18.9 COMPARE-PALVELINRAJA: compare siirtyi FREE_EXPECTEDista tanne.
+    # Anonyymi `?players=411,426` palautti 2 taytta rivia + verdictin ja
+    # `meta.mask=None` (mitattu livena 18.9 13:40 UTC). Seitsemas kerta
+    # tata vikaluokkaa.
+    #
+    # GATED eika PARTIAL, ja se on MITATTU: molemmat klientit piilottavat
+    # comparen ilmaiskayttajalta KOKONAAN (SPA ToolsHome `{#if premium}`
+    # ymparoi seka ComparePlayersin etta XpTablen, jonka "share comparison"
+    # kutsuu samaa endpointia; mobiili `isPremium ? <CompareSection/> :
+    # <ToolsLockedTeaser/>`), ja viisi julkista pintaa mainitsevat player
+    # comparen vain Premium-lauseessa. Ilmaista ydinta ei ole, joten
+    # PARTIAL-rivi olisi vaite jota testit valvoisivat vaarana.
+    "/api/fantasy/compare",
 }
 
 # Nama ovat tarkoituksella ilmaisia (rate my team, kapteenipoiminta,
@@ -84,7 +97,7 @@ FREE_EXPECTED = {
     "/api/fantasy/defcon-leaders",
     "/api/fantasy/defcon-gw",
     "/api/fantasy/defcon-live",
-    "/api/fantasy/compare",
+    # 18.9: compare siirtyi GATED_EXPECTEDiin (perustelu siella).
     "/api/fantasy/career",
     "/api/fantasy/league/{league_id}",
     "/api/fantasy/h2h",
@@ -487,3 +500,292 @@ def test_pool_lisays_nosti_etag_skeemaversiota():
     assert len(XP_POOL_FIELDS) == 7, (
         "XP_POOL_FIELDS muuttui — tarkista ETagin skeemaversio ja paivita "
         "tama luku samassa committissa")
+
+
+# --- COMPARE-PALVELINRAJA (18.9) -------------------------------------------
+#
+# 18.9-LOYDOS JOKA MUUTTI TAKSONOMIAA: GATED-luokka mittasi vain maskin
+# OLEMASSAOLON. `test_gated_endpoints_actually_truncate` etsii rungosta
+# merkkijonon "FREE_" tai "mask_" — se pysyy vihreana vaikka maski KASVAISI
+# kymmenesta rivista viiteensataan, koska merkkijono on yha siella. Sama
+# sokeus kuin "gate on paikallaan" -tarkistuksella ennen 11.8:aa: luokka on
+# oikea, koko ei ole kenenkaan vastuulla.
+#
+# Alla oleva taulukko on poikkeuslista perusteluineen (saanto 6a kohta 2):
+# jokainen GATED-reitti nimeaa VAKION joka rajaa sen ilmaisosuuden JA sen
+# arvon. Uusi gatettu reitti ei paase listalle vahingossa (testi kaatuu ja
+# kirjoittaja joutuu paattamaan koon), eika vakion kasvattaminen voi enaa
+# tapahtua hiljaa: myyntirajan siirto nakyy diffissa kahdessa paikassa.
+#
+# `None` = reitti ei typista riveja vaan pudottaa lohkoja (wildcard-plan);
+# sen maskin muoto on lukittu omassa testissaan, ei rivimaaralla.
+GATED_MASK_SIZE: dict[str, tuple[str, int] | None] = {
+    "/api/fantasy/xp": ("FREE_XP_TEASER_N", 10),
+    "/api/fantasy/xp.csv": ("FREE_XP_TEASER_N", 10),
+    "/api/fantasy/plan": ("FREE_PLAN_GWS", 1),
+    "/api/fantasy/chip-ev": ("FREE_CHIP_WINDOWS", 3),
+    "/api/fantasy/plan-chains": ("FREE_PLAN_CHAINS", 1),
+    "/api/fantasy/edge": ("FREE_EDGE_CAPTAINS", 2),
+    "/api/fantasy/replacements": ("FREE_REPLACEMENTS_ROWS", 1),
+    "/api/fantasy/value": ("FREE_VALUE_ROWS", 3),
+    # 18.9: nolla, ja se on mitattu klienteista eika valittu — perustelu on
+    # kirjoitettu auki api/premium.py:hyn vakion viereen.
+    "/api/fantasy/compare": ("FREE_COMPARE_ROWS", 0),
+    "/api/fantasy/wildcard-plan": None,
+}
+
+
+def test_gated_routes_declare_their_mask_size():
+    """Jokainen GATED-reitti on taulukossa, ja taulukko vastaa koodia.
+
+    Tama on se portti jota ei ollut: luokka oli paatetty, koko ei.
+    """
+    import api.premium as prem
+
+    puuttuu = sorted(GATED_EXPECTED - set(GATED_MASK_SIZE))
+    ylimaarainen = sorted(set(GATED_MASK_SIZE) - GATED_EXPECTED)
+    assert not puuttuu, (
+        f"GATED-reitti ilman ilmoitettua maskin kokoa: {puuttuu}. Paata "
+        "montako rivia free saa ja kirjoita se GATED_MASK_SIZEen.")
+    assert not ylimaarainen, (
+        f"Maskin koko ilmoitettu reitille joka ei ole GATED: {ylimaarainen}.")
+
+    for route, spec in sorted(GATED_MASK_SIZE.items(),
+                              key=lambda kv: kv[0]):
+        if spec is None:
+            continue
+        nimi, odotettu = spec
+        todellinen = getattr(prem, nimi, None)
+        assert todellinen == odotettu, (
+            f"{route}: {nimi} on {todellinen}, taulukko sanoo {odotettu}. "
+            "Myyntiraja siirtyi — paivita molemmat samassa committissa tai "
+            "peru muutos.")
+
+
+# Erotteleva fikstuuri: kaksi TAYTTA rivia + verdict, eli tasan se muoto
+# jonka tuotanto palautti anonyymille 18.9. Vanha koodi (ei maskia)
+# lapaisisi "vastaa 200" -ehdon ja kaatuisi "nolla rivia" -ehtoon, joten
+# exit-koodi todistaa mekanismin eika pelkkaa importtia.
+_COMPARE_META = {
+    "generated_at": "2026-09-18T13:40:00+00:00", "horizon_gw": 6,
+    "defcon_basis_season": "2025/26", "defcon_available": True,
+    "unprojected": ["P426"],
+    "unprojected_note": "P426 is outside the projection.",
+}
+_COMPARE_ROW = {
+    "projected": True, "excluded_reason": None, "status": "a",
+    "team_short": "MCI", "pos": "FWD", "price": 15.6, "owned_pct": 73.2,
+    "xp_per_gw": 6.41, "xp_horizon_total": 38.49, "p_start": 0.925,
+    "components": {"goals": 3.06}, "components_gw": 5,
+}
+_COMPARE_VERDICT = {
+    "pick": {"id": 411, "web_name": "P411"},
+    "margin_xp_horizon": 3.49,
+    "text": "P411 projects 3.49 xP more than P426 over the horizon.",
+}
+_COMPARE_URL = "/api/fantasy/compare?players=411,426"
+_COMPARE_URL_4 = "/api/fantasy/compare?players=411,426,351,15"
+
+
+@pytest.fixture()
+def compare_client(monkeypatch):
+    """TestClient jonka compare_players palauttaa synteettisen vertailun.
+
+    Reitti importoi sen kutsun sisalla (`from src.models.fpl_planner import
+    compare_players`), joten moduuliattribuutin monkeypatch osuu. Syy
+    synteettiseen dataan: oikea vertailu lataa projektioartefaktin, jolloin
+    testi mittaisi repon datan sisaltoa eika maskia (esikaudella tyhjaa).
+    """
+    import api.main as m
+    import src.models.fpl_planner as fp
+
+    def _fake(player_ids, squad=None):
+        rows = [dict(_COMPARE_ROW, id=pid, web_name=f"P{pid}")
+                for pid in player_ids]
+        return {"meta": dict(_COMPARE_META), "players": rows,
+                "verdict": dict(_COMPARE_VERDICT)}
+
+    monkeypatch.setattr(fp, "compare_players", _fake)
+    return TestClient(m.app)
+
+
+@pytest.mark.parametrize("url,n", [(_COMPARE_URL, 2), (_COMPARE_URL_4, 4)],
+                         ids=["kaksi-pelaajaa", "nelja-pelaajaa"])
+def test_compare_masked_when_enforcement_on(compare_client, monkeypatch,
+                                            url, n):
+    """Flagi paalla + ei tokenia -> nolla rivia, ei verdiktia, meta kertoo.
+
+    Molemmat paatepisteet (2 ja 4 pelaajaa) mitataan: maski ei saa riippua
+    siita montako pelaajaa kysyttiin.
+    """
+    from api.premium import FREE_COMPARE_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    r = compare_client.get(url)
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"]["masked"] is True
+    assert d["meta"]["free_rows"] == FREE_COMPARE_ROWS
+    assert d["meta"]["total_rows"] == n
+    assert len(d["players"]) == FREE_COMPARE_ROWS, (
+        f"anonyymi sai {len(d['players'])} vertailurivia, ei "
+        f"{FREE_COMPARE_ROWS} — player compare vuotaa")
+    assert d["verdict"] is None, "suora kanta vuoti ilmaiselle"
+    assert isinstance(d["players"], list) and isinstance(d["meta"], dict), (
+        "maski rikkoi vastauksen muodon — klientti ei voi lukea meta.maskedia")
+
+
+def test_compare_mask_ei_vuoda_pelaajien_nimia(compare_client, monkeypatch):
+    """Maskattu vastaus ei saa nimeta yhtaan pyydettya pelaajaa.
+
+    `meta.unprojected` on NIMILISTA ja `verdict.text` sisaltaa molemmat
+    nimet. Pelkka `players`-listan typistys jattaisi ne nakyviin, eli
+    vertailun lopputulos ("P411 projects 3.49 xP more") olisi yha
+    luettavissa ilman premiumia — maski nayttaisi toimivan ja myisi silti
+    sen mita tyokalu myy.
+    """
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    body = compare_client.get(_COMPARE_URL).text
+    vuoti = [osa for osa in ("P411", "P426", "3.49", "38.49")
+             if osa in body]
+    assert not vuoti, f"maskattu compare-vastaus sisaltaa: {vuoti}"
+
+
+@pytest.mark.parametrize("url,n", [(_COMPARE_URL, 2), (_COMPARE_URL_4, 4)],
+                         ids=["kaksi-pelaajaa", "nelja-pelaajaa"])
+def test_compare_full_when_enforcement_off(compare_client, monkeypatch,
+                                           url, n):
+    """NEGATIIVINEN KONTROLLI: flagi pois -> taydet rivit + verdict.
+
+    Ilman tata edellinen lapaisisi myos silloin jos compare palauttaisi
+    aina nolla rivia — eli mittaisimme tyhjaa dataa emmeka maskia.
+    """
+    monkeypatch.setenv("PREMIUM_ENFORCE", "off")
+    d = compare_client.get(url).json()
+    assert d["meta"].get("masked") is not True
+    assert "free_rows" not in d["meta"]
+    assert len(d["players"]) == n
+    assert d["verdict"] is not None
+    assert d["verdict"]["text"]
+
+
+def test_compare_masked_for_invalid_token(compare_client, monkeypatch):
+    """Kelvoton token ei ohita gatea (fail-closed tunnistautumisessa)."""
+    from api.premium import FREE_COMPARE_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    r = compare_client.get(_COMPARE_URL,
+                           headers={"Authorization": "Bearer ei-kelpaa"})
+    assert r.status_code == 200
+    assert len(r.json()["players"]) == FREE_COMPARE_ROWS
+
+
+@pytest.mark.parametrize("url,n", [(_COMPARE_URL, 2), (_COMPARE_URL_4, 4)],
+                         ids=["kaksi-pelaajaa", "nelja-pelaajaa"])
+def test_compare_full_for_premium_token_when_enforcement_on(
+        compare_client, monkeypatch, url, n):
+    """Enforcement PAALLA + kelvollinen premium-token -> taysi vertailu.
+
+    Flagi-pois-kontrolli ei todista tata: siina is_premium_request palauttaa
+    True ennen token-haaraa. Tassa token kulkee koko polun kuten
+    tuotannossa — eli maksava kayttaja saa sen mista maksaa.
+    """
+    import api.premium as prem
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-1")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: True)
+    with prem._PREMIUM_CACHE_LOCK:
+        prem._PREMIUM_CACHE.clear()
+    try:
+        r = compare_client.get(url,
+                               headers={"Authorization": "Bearer premium-ok"})
+    finally:
+        with prem._PREMIUM_CACHE_LOCK:
+            prem._PREMIUM_CACHE.clear()
+    d = r.json()
+    assert d["meta"].get("masked") is not True, "premium sai maskatun vertailun"
+    assert len(d["players"]) == n
+    assert d["verdict"] is not None
+
+
+def test_compare_tuntematon_id_ei_ohita_maskia(compare_client, monkeypatch):
+    """Vaihe: kysely jonka rivit jaavat vajaiksi (tuntematon / sivussa oleva
+    pelaaja) on yha maskattu.
+
+    Ilman tata `len(players) == 0` voisi tarkoittaa kahta eri asiaa, ja
+    klientti joka paattelee lukon listan pituudesta nayttaisi lukon myos
+    premiumille jonka kysely ei tuottanut riveja. Siksi klienttien on
+    luettava `meta.masked`, ja siksi maski asettaa sen myos talla polulla.
+    """
+    import src.models.fpl_planner as fp
+
+    monkeypatch.setattr(fp, "compare_players",
+                        lambda ids, squad=None: {
+                            "meta": dict(_COMPARE_META),
+                            "players": [],
+                            "verdict": {"pick": None,
+                                        "margin_xp_horizon": None,
+                                        "text": "Not enough data."}})
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    d = compare_client.get(_COMPARE_URL).json()
+    assert d["meta"]["masked"] is True
+    assert d["meta"]["total_rows"] == 0
+    assert d["verdict"] is None
+
+
+@pytest.mark.parametrize("window_open", [True, False],
+                         ids=["ikkuna-auki", "ikkuna-kiinni"])
+def test_compare_anonymous_masked_in_every_free_window_phase(
+        compare_client, monkeypatch, window_open):
+    """6a kohta 3: invariantti mitataan joka vaiheessa, ei nykyhetkessa.
+
+    GW1-GW3 ilmaisikkuna antaa premiumin KIRJAUTUNEELLE ilman
+    Supabase-hakua. Anonyymin on pysyttava maskattuna ikkunasta riippumatta.
+    Vaihe injektoidaan, ei lueta kellosta (ikkuna on tanaan kiinni, joten
+    kellosta luettuna tama testi mittaisi vain toista haaraa). Erotteleva
+    kontrolli on seuraava testi.
+    """
+    import api.premium as prem
+    from api.premium import FREE_COMPARE_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda *a, **k: window_open)
+    d = compare_client.get(_COMPARE_URL).json()
+    assert d["meta"]["masked"] is True
+    assert len(d["players"]) == FREE_COMPARE_ROWS
+    assert d["verdict"] is None
+
+
+@pytest.mark.parametrize("window_open", [True, False],
+                         ids=["ikkuna-auki", "ikkuna-kiinni"])
+def test_compare_signed_in_non_premium_follows_free_window(
+        compare_client, monkeypatch, window_open):
+    """Erotteleva kontrolli edelliselle: vaihe VAIHTAA tuloksen
+    kirjautuneelle ei-premiumille. Ilman tata edellinen lapaisisi myos
+    silloin jos monkeypatch osuisi nimeen jota polku ei lue."""
+    import api.premium as prem
+    from api.premium import FREE_COMPARE_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda *a, **k: window_open)
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-free")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: False)
+    monkeypatch.setattr(prem, "_web_subscription_active", lambda uid: False)
+    with prem._PREMIUM_CACHE_LOCK:
+        prem._PREMIUM_CACHE.clear()
+    try:
+        d = compare_client.get(
+            _COMPARE_URL,
+            headers={"Authorization": "Bearer free-user"}).json()
+    finally:
+        with prem._PREMIUM_CACHE_LOCK:
+            prem._PREMIUM_CACHE.clear()
+    if window_open:
+        assert d["meta"].get("masked") is not True
+        assert len(d["players"]) == 2
+    else:
+        assert d["meta"]["masked"] is True
+        assert len(d["players"]) == FREE_COMPARE_ROWS

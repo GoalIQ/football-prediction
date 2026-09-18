@@ -66,6 +66,30 @@ FREE_EDGE_TEMPLATE_RISKS = 1
 # HUOM: differentials EI ole maskattu, ja syy on koodissa (api/main.py):
 # julkisen /fpl/differentials-sivun generaattori hakee sen anonyymina.
 FREE_VALUE_ROWS = 3           # sama luku kuin Value.svelte:n FREE_ROWS
+# COMPARE-PALVELINRAJA (18.9.2026). `/api/fantasy/compare` palautti
+# anonyymille TAYDET rivit ja `verdict`in, `meta.mask = None` (mitattu livena
+# 18.9 13:40 UTC: `players=411,426` -> 2 taytta riviä + verdict). Seitsemas
+# kerta samaa vikaluokkaa (captain 15.8, replacements 2.9, value 4.9,
+# rate-team 5.9, defcon-leaders 17.9).
+#
+# 🔴 ILMAISOSUUS ON NOLLA, ja se on MITATTU eika valittu:
+#   * SPA `ToolsHome.svelte`: seka `<ComparePlayers>` etta `<XpTable>` (jonka
+#     "share comparison" kutsuu samaa endpointia) ovat `{#if premium}`-lohkon
+#     sisalla. Ilmaiskayttaja ei nae vertailusta yhtaan riviä.
+#   * Mobiili `FantasyTools.tsx`: `isPremium ? <CompareSection/> :
+#     <ToolsLockedTeaser/>`, ja lukkokortti listaa comparen lukittuna.
+#   * Viisi julkista pintaa (faq.html:34/62/94, fpl.html:47, index.html:48/66/
+#     117) mainitsevat player comparen VAIN Premium-lauseessa. Yksikaan ei
+#     lupaa siita ilmaista osaa.
+# DefConissa ilmaisosuus oli top 3 koska molemmat klientit NAYTTIVAT jo top
+# 3:n. Sama sääntö tässä antaa nollan: mikä tahansa ilmaisosuus olisi ENEMMAN
+# kuin mitä UI näyttää tänään, eli keksisimme ilmaisominaisuuden jota copy ei
+# lupaa. Villen paatos oli "copy pysyy, se muuttuu todeksi", ei toisin pain.
+#
+# Siksi compare on GATED eika PARTIAL: PARTIAL tarkoittaa "ilmainen ydin +
+# premium-erittely", ja ilmaista ydinta ei ole. PARTIAL-rivi olisi vaite jota
+# testit sitten valvoisivat vaarana.
+FREE_COMPARE_ROWS = 0
 
 
 # ---------------------------------------------------------------------------
@@ -430,6 +454,39 @@ def mask_value_payload(payload: dict) -> dict:
     meta["masked"] = True
     meta["mask"] = (f"top {FREE_VALUE_ROWS} of {len(rows)} value rows, no "
                     "goalkeeper pairs (free preview)")
+    out["meta"] = meta
+    return out
+
+
+def mask_compare_payload(payload: dict) -> dict:
+    """/api/fantasy/compare freelle: ei rivejä, ei verdiktiä.
+
+    `FREE_COMPARE_ROWS = 0`, perustelu vakion vieressa. Typistys eika
+    avainten pudotus: `players` on yha lista ja `meta` yha dict, joten
+    kumpikin klientti voi lukea `meta.masked`in kaatumatta ja vanha rakenne
+    sailyy (sama periaate kuin muissa maskeissa).
+
+    `verdict` -> None eika paywall-lause: mobiilin jakokortti tulostaa
+    `data.verdict.text` JULKISEEN KUVAAN (`lib/compareCardSpec.ts`), joten
+    myyntilause tassa kentassa paatyisi jaettuun PNG:hen ohi
+    julkaisutarkistajan. None on ainoa arvo jota kortti ei voi tulostaa.
+
+    `meta.unprojected` tyhjennetaan samalla: se on NIMILISTA pyydetyista
+    pelaajista, eli se vuotaisi maskatusta vastauksesta tasan sen tiedon
+    kuka kysyttiin ja onko hanella projektio.
+    """
+    out = dict(payload)
+    rows = list(out.get("players") or [])
+    out["players"] = rows[:FREE_COMPARE_ROWS]
+    out["verdict"] = None
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["free_rows"] = FREE_COMPARE_ROWS
+    meta["total_rows"] = len(rows)
+    meta["unprojected"] = []
+    meta["unprojected_note"] = None
+    meta["mask"] = (f"{FREE_COMPARE_ROWS} of {len(rows)} compared players "
+                    "(GoalIQ Premium unlocks player compare)")
     out["meta"] = meta
     return out
 

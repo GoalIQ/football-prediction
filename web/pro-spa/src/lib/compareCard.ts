@@ -1,7 +1,7 @@
 import { shareCompareCard, type ShareOutcome } from '$lib/shareCard';
 import { teamColorByShort } from '$lib/teamColors';
 import { startPct } from '$lib/startPct';
-import type { CompareResponse, ComparePlayer } from '$lib/fantasyTools';
+import { compareMasked, type CompareResponse, type ComparePlayer } from '$lib/fantasyTools';
 
 /* YKSI LUKIJA vertailukortille (16.9).
  *
@@ -16,6 +16,18 @@ import type { CompareResponse, ComparePlayer } from '$lib/fantasyTools';
  * lukisi vertailuna.
  */
 export function compareCardSpec(data: CompareResponse) {
+	/* COMPARE-PALVELINRAJA (18.9): maskatusta vastauksesta EI synny korttia.
+	 *
+	 * Jakokortti on JULKINEN KUVA. Maskattu vastaus on nolla riviä ja
+	 * `verdict === null`, joten kortti olisi joko tyhja taulukko tai — jos
+	 * maski joskus panisi `verdict.text`:iin selityksen — myyntilause joka
+	 * paatyisi jaettuun PNG:hen ohi julkaisutarkistajan. Siksi este on
+	 * TASSA, siina yhdessa lukijassa jonka kumpikin jakopinta kutsuu, eika
+	 * kutsupaikoissa: kutsupaikkoja on kaksi ja kolmas tulee seuraavaksi.
+	 *
+	 * Palvelin on ainoa joka tietaa (`meta.masked`) — pituuspaattely olisi
+	 * epatosi premiumille jonka kysely ei tuottanut riveja. */
+	if (compareMasked(data) || data.verdict == null) return null;
 	const rows = data.players;
 	const best = (vals: (number | null | undefined)[]): number | null => {
 		const max = Math.max(...vals.map((v) => (v == null ? -Infinity : v)));
@@ -164,5 +176,9 @@ export function compareCardSpec(data: CompareResponse) {
 }
 
 export async function shareCompare(data: CompareResponse): Promise<ShareOutcome> {
-	return shareCompareCard(compareCardSpec(data));
+	const spec = compareCardSpec(data);
+	// null = maskattu vastaus. 'aborted' -> kutsuja ei kirjaa jakotapahtumaa.
+	// Nakyva selitys on lukkokortissa, ei tassa: painiketta ei renderoida.
+	if (spec == null) return 'aborted';
+	return shareCompareCard(spec);
 }

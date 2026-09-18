@@ -5672,8 +5672,10 @@ def fantasy_defcon_live(
         raise HTTPException(status_code=502, detail=f"FPL feed unavailable: {e}")
 
 
-@app.get("/api/fantasy/compare")
+@app.get("/api/fantasy/compare",
+         description="Player compare for up to four players. GoalIQ Premium.")
 def fantasy_compare(
+    request: Request,
     response: Response,
     players: str = Query(..., description="Two to four FPL element IDs, comma separated"),
     entry: int | None = Query(default=None,
@@ -5682,15 +5684,28 @@ def fantasy_compare(
 ):
     """FPL pelaajavertailu (#35): 2-4 pelaajan xP-komponenttierittely +
     hinta/EO/predicted minutes + suora kanta xP-erolla. MY-TEAM-CONTEXT
-    (3.9): entry -> `owned` per rivi."""
+    (3.9): entry -> `owned` per rivi.
+
+    18.9 COMPARE-PALVELINRAJA: "player compare for up to four players" on
+    myyty Premiumina viidella julkisella pinnalla ja molemmat klientit
+    piilottavat tyokalun ilmaiskayttajalta kokonaan, mutta anonyymi kutsu sai
+    taydet rivit ja verdiktin (mitattu 18.9 13:40 UTC). Raja oli VAIN
+    selaimessa/sovelluksessa. Maski on nyt tassa:
+    api.premium.mask_compare_payload, ilmaisosuus nolla riviä — sama maara
+    jonka kumpikin klientti nayttaa ilmaiskayttajalle tanaan.
+    """
     from src.models.fpl_planner import compare_players
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
     try:
-        return compare_players(_parse_id_csv(players, "players"),
-                               squad=_squad_ctx(entry))
+        payload = compare_players(_parse_id_csv(players, "players"),
+                                  squad=_squad_ctx(entry))
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    if not is_premium_request(request):
+        from api.premium import mask_compare_payload
+        payload = mask_compare_payload(payload)
+    return payload
 
 
 @app.get("/api/fantasy/career",
