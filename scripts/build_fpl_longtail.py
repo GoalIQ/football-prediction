@@ -824,8 +824,10 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     # 18.9: API:n meta kertoo montako kierrosta summassa on
     # (`horizon_total_gw`, s9). `horizon_gw` on sarakkeiden maara ja
     # olisi kesken kierroksen yhden kierroksen verran liikaa.
+    # 18.9: `horizon_sum_gw` palauttaa None kun payload ei kerro ikkunaansa
+    # (ennen: keksitty 6). Ikkunaton payload -> ikkunaton teksti.
     _horizon = horizon_sum_gw(meta)
-    if _gw and _horizon > 1:
+    if _gw and _horizon is not None and _horizon > 1:
         gw_txt = f"GW{_gw}-GW{_gw + _horizon - 1}"
     elif _gw:
         gw_txt = f"GW{_gw}"
@@ -870,6 +872,13 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         for i, pl in enumerate(players)
     )
     horizon = horizon_sum_gw(meta)
+    # 18.9: ei keksittya kuutosta. Ikkunaton payload -> sarake ja selite
+    # sanovat "model horizon" eivatka lukua jota API ei antanut.
+    hz_col = f"xP, {horizon} GWs" if horizon else "xP, model horizon"
+    hz_note = (
+        f"the {horizon}-gameweek projection divided by {horizon}"
+        if horizon else
+        "the model-horizon projection divided by the number of gameweeks in it")
     body = (
         f'<div class="lb-wrap"><table class="lb">'
         "<thead><tr>"
@@ -884,12 +893,12 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         # payloadissa, joten otsikko korjataan — ei keksita lukua.
         # Sama sanamuoto kuin expected-points-sivulla (portti B3, 21.8).
         '<th class="n">Owned</th><th class="n">xP/GW</th>'
-        f'<th class="n m-hide">xP, {horizon} GWs</th>'
+        f'<th class="n m-hide">{hz_col}</th>'
         "</tr></thead>"
         f"<tbody>{rows}</tbody></table></div>"
         f'<p class="note">All {len(players)} shown, free and without an '
         f"account. Ownership is FPL's own number. <em>xP/GW</em> is the "
-        f"{horizon}-gameweek projection divided by {horizon}, not a "
+        f"{hz_note}, not a "
         f'single-gameweek number: for one gameweek alone see '
         f'<a href="{BASE}/fpl/expected-points#gw-xp">expected points</a>. '
         f"Give the web tools your entry ID and the players you already own "

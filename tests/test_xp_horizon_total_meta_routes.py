@@ -537,7 +537,18 @@ def test_the_walker_sees_a_sum_without_meta():
 def test_spl_route_names_the_window_from_next_gameweek(monkeypatch, tmp_path):
     """SPL-artefakti (build_spl_xp) kirjoittaa `deadline_gameweek: null`,
     joten actionable putoaa `next_gameweek`iin ja summa kattaa koko listan.
-    Sopimuksen avaimet ovat silti metassa ja kertovat sen rehellisesti."""
+
+    🔴 18.9 (julkaisutarkistajan B3): ENNEN tata rivi oli
+    `horizon_total_from == 1` ja docstring sanoi "kertovat sen
+    rehellisesti". Se EI ollut rehellista: kentta on klientille lupaus
+    "summa alkaa seuraavasta deadlinesta", ja SPL:lla alku oli
+    `next_gameweek` toisessa asussa - kentta jonka drift on SPL-feedissa
+    mittaamatta (jono SPL-DEADLINE-GW-MITTAUS) ja jota seka mobiilin etta
+    SPA:n lukija kieltaytyy lukemasta ikkunan alkuna. Mitattu 18.9
+    tuotannosta: SPL palauttaa next_gameweek 8, deadline_gameweek None.
+    Nyt SPL saa LUKUMAARAN muttei alkua, eli kortti sanoo "6-GW horizon"
+    eika "GW8-GW13" / "next 6 GWs". Summa ja jarjestys ennallaan.
+    Ks. tests/test_xp_horizon_window_licence.py."""
     doc = _fake_xp()
     doc["meta"]["deadline_gameweek"] = None
     doc["meta"]["next_gameweek"] = 1
@@ -547,7 +558,7 @@ def test_spl_route_names_the_window_from_next_gameweek(monkeypatch, tmp_path):
     r = TestClient(m.app).get("/api/fantasy/xp?league=spl")
     assert r.status_code == 200
     data = r.json()
-    assert data["meta"]["horizon_total_from"] == 1
+    assert data["meta"]["horizon_total_from"] is None
     assert data["meta"]["horizon_total_gw"] == HORIZON
     by = {q["id"]: q for q in data["players"]}
     assert by[15]["xp_horizon_total"] == pytest.approx(RAW_TOTAL[15])

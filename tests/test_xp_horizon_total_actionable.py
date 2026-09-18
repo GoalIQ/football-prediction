@@ -223,13 +223,23 @@ def test_attach_is_idempotent_and_leaves_rows_without_gameweeks_alone():
 
 
 def test_old_payload_without_gameweek_fields_sums_everything_and_says_so():
-    """Puuttuva tieto ei ole todiste siita etta deadline olisi mennyt."""
+    """Puuttuva tieto ei ole todiste siita etta deadline olisi mennyt.
+
+    18.9 (julkaisutarkistajan B3): summa on yha koko lista, ja lukumaara
+    kertoo sen - mutta ALKUA ei julkaista. Ennen tata rivi oli
+    `horizon_total_from == HORIZON[0]`, eli rivien ensimmainen kierros
+    tarjoiltiin klientille kentassa jonka se lukee lupauksena "summa alkaa
+    seuraavasta deadlinesta". Payload joka ei kerro deadlineaan ei voi
+    luvata sita, ja rivien ensimmainen kierros voi olla jo alkanut: silloin
+    kortti olisi kirjoittanut kuvaan valin joka sisaltaa menneen kierroksen.
+    Lukumaara (tosi) jaa, lupa (epatosi) katoaa.
+    """
     data = _payload(3, 4)
     data["meta"].pop("deadline_gameweek")
     data["meta"]["next_gameweek"] = None
     out = attach_horizon_total_actionable(data)
     assert out["players"][0]["xp_horizon_total"] == round(sum(A_XP.values()), 2)
-    assert out["meta"]["horizon_total_from"] == HORIZON[0]
+    assert out["meta"]["horizon_total_from"] is None
     assert out["meta"]["horizon_total_gw"] == len(HORIZON)
 
 

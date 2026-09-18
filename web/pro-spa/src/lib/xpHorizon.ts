@@ -53,9 +53,9 @@ export interface XpHorizon {
 	/** GW-sarakkeiden maara riveissa (`horizon_gw`). Eri asia kuin `count`
 	 *  kesken kierroksen: rivit voivat alkaa jo alkaneesta kierroksesta. */
 	rows: number | null;
-	/** true vain kun API julisti summan alkavan seuraavasta deadlinesta
-	 *  (`horizon_total_gw`). false = vanha API: summa voi sisaltaa jo
-	 *  alkaneen kierroksen, eika mikaan teksti sano "next". */
+	/** true vain kun API julisti summan alkavan TIEDETYSTA kierroksesta
+	 *  (`horizon_total_gw` JA `horizon_total_from`). false = summa voi
+	 *  sisaltaa jo alkaneen kierroksen, eika mikaan teksti sano "next". */
 	actionableOnly: boolean;
 	/** "GW5-GW9" / "GW38" / null. */
 	range: string | null;
@@ -112,10 +112,18 @@ export function xpHorizon(meta: HorizonMeta | null | undefined): XpHorizon {
 	let count: number | null;
 	let actionableOnly: boolean;
 	if (totalGw != null) {
-		actionableOnly = true;
 		count = totalGw;
 		const f = gwInt(m.horizon_total_from);
 		from = f != null && f >= 1 ? f : null;
+		/* ALKU ON LUPA (18.9, julkaisutarkistajan B3). Ennen: `actionableOnly
+		   = true` heti kun `horizon_total_gw` on annettu. Mitattu 18.9
+		   tuotannosta: `/api/fantasy/xp?league=spl` palauttaa
+		   `deadline_gameweek: null`, `next_gameweek: 8`, ja backendin
+		   `actionable_gameweek` putoaa ilman deadlinea takaisin
+		   `next_gameweek`iin. Backend julkaisee siksi `horizon_total_from`in
+		   VAIN deadlinesta (`fpl_xp.horizon_total_licence`), ja sen
+		   puuttuminen ON se signaali: lukumaara on tosi, "next" ei ole. */
+		actionableOnly = from != null;
 	} else {
 		actionableOnly = false;
 		count = rows;
@@ -131,8 +139,12 @@ export function xpHorizon(meta: HorizonMeta | null | undefined): XpHorizon {
 	let over: string;
 	if (actionableOnly && count != null) {
 		if (count === 0) {
-			label = 'no gameweeks left';
-			over = 'with no gameweeks left';
+			/* 18.9 (julkaisutarkistajan "MUUT"): sama lyhenne kuin muualla
+			   lukijassa ("next 5 GWs", "6-GW horizon"). Sama lukija tuotti
+			   ennen seka lyhenteen etta tayssanan. Mobiilissa sama muutos
+			   (lib/i18n/en.ts: fantasy.xp_horizon.none_left). */
+			label = 'no GWs left';
+			over = 'with no GWs left';
 		} else {
 			label = count === 1 ? 'next GW' : `next ${gws}`;
 			over = `over the ${label}`;

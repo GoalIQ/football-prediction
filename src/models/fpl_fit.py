@@ -108,6 +108,10 @@ def fit_squad(locked_ids: list[int]) -> dict:
     # nyt lauseen puolella. `meta.horizon_gw` pysyy sarakemaarana
     # (sopimus), mutta sita ei lueta otsikkoon.
     horizon = horizon_sum_gw(xp_data["meta"])
+    # 18.9: `horizon_sum_gw` ei enaa keksi kuutosta. Ikkunaton payload ->
+    # lause ilman lukua ("over the model horizon"), ei "over the None-GW".
+    hz_over = (f"over the {horizon}-GW horizon" if horizon
+               else "over the model horizon")
     horizon_cols = int(xp_data["meta"].get("horizon_gw") or 6)
 
     free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
@@ -123,12 +127,12 @@ def fit_squad(locked_ids: list[int]) -> dict:
         tail = ("the model's best budget XI" if proven
                 else "the strongest budget XI the model found")
         message = (f"Locking {locked_names} costs nothing: this is "
-                   f"{tail} over the {horizon}-GW horizon.")
+                   f"{tail} {hz_over}.")
     else:
         tail = ("the model's best free squad" if proven
                 else "the strongest free squad the model found")
-        message = (f"Fitting {locked_names} costs {abs(delta):.1f} xP over "
-                   f"the {horizon}-GW horizon vs {tail}. "
+        message = (f"Fitting {locked_names} costs {abs(delta):.1f} xP "
+                   f"{hz_over} vs {tail}. "
                    f"Model projection, not advice you have to follow.")
 
     return {

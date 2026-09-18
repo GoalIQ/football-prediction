@@ -102,15 +102,42 @@ describe('uusi API: otsikko ja summa samasta metasta', () => {
 		expect(h.label).not.toMatch(/next/);
 	});
 
-	it('puolikas sopimus (vain horizon_total_gw): lukumaara tosi, alkua ei keksita', () => {
-		/* deadline_gameweek on metassa mutta lukija ei saa keksia siita alkua. */
+	it('puolikas sopimus (vain horizon_total_gw): lukumaara tosi, "next" EI', () => {
+		/* deadline_gameweek on metassa mutta lukija ei saa keksia siita alkua.
+		   18.9 (julkaisutarkistajan B3): ENNEN tama palautti `actionableOnly
+		   true` ja `label 'next 5 GWs'` PELKAN lukumaaran nojalla. Mitattu
+		   18.9 tuotannosta: SPL palauttaa deadline_gameweek null ja
+		   next_gameweek 8, ja backendin actionable putoaa next_gameweek:iin —
+		   eli alku olisi ollut kentta jota tama lukija kieltaytyy lukemasta.
+		   Backend julkaisee `horizon_total_from`in nyt vain deadlinesta, ja
+		   sen PUUTTUMINEN on signaali: lukumaara jaa, lupa katoaa. */
 		const HALF = { horizon_gw: 6, next_gameweek: 4, deadline_gameweek: 5, horizon_total_gw: 5 };
 		const h = xpHorizon(HALF);
-		expect(h.actionableOnly).toBe(true);
+		expect(h.actionableOnly).toBe(false);
 		expect(h.count).toBe(5);
 		expect(h.from).toBeNull();
 		expect(h.range).toBeNull();
-		expect(h.label).toBe('next 5 GWs');
+		expect(h.label).toBe('5-GW horizon');
+		expect(h.label).not.toMatch(/next/);
+		expect(h.over).toBe('over the 5-GW horizon');
+	});
+
+	it('B3 VAIHE: SPL-muoto (deadline_gameweek null) ei tuota valia eika "next"', () => {
+		/* MITATTU 18.9: /api/fantasy/xp?league=spl -> next_gameweek 8,
+		   deadline_gameweek null, horizon_gw 6, rivit GW8-13. Uudella
+		   backendilla horizon_total_gw 6 mutta horizon_total_from null. */
+		const SPL = { horizon_gw: 6, next_gameweek: 8, horizon_total_gw: 6 };
+		const h = xpHorizon(SPL);
+		expect(h.count).toBe(6);
+		expect(h.range).toBeNull();
+		for (const s of [h.label, h.over, h.span, h.gws, h.totalTitle, h.totalHelp]) {
+			expect(s).not.toMatch(/next/i);
+			expect(s).not.toMatch(/GW\d/);
+		}
+		/* EROTTELEVA: sama meta ALUN kanssa nimeaa valin. */
+		const pl = xpHorizon({ horizon_gw: 6, next_gameweek: 8, horizon_total_from: 8, horizon_total_gw: 6 });
+		expect(pl.range).toBe('GW8-GW13');
+		expect(pl.label).toBe('next 6 GWs');
 	});
 
 	it('vaiheinvariantti: uudella API:lla ikkuna alkaa aina horizon_total_from:sta', () => {
@@ -234,8 +261,12 @@ describe('valmiit julkiset tekstit', () => {
 
 	it('nolla kierrosta jaljella: otsikko sanoo sen eika valehtele valia', () => {
 		const h = xpHorizon({ horizon_gw: 6, horizon_total_gw: 0, horizon_total_from: 39 });
-		expect(h.totalTitle).toBe('Sum of expected points, no gameweeks left');
-		expect(h.totalHelp).toContain('with no gameweeks left');
+		expect(h.totalTitle).toBe('Sum of expected points, no GWs left');
+		expect(h.totalHelp).toContain('with no GWs left');
+		/* 18.9: sama lukija ei saa tuottaa seka "GWs" etta "gameweeks". */
+		for (const s of [h.label, h.over, h.span, h.gws, h.totalTitle]) {
+			expect(s).not.toMatch(/gameweek/i);
+		}
 	});
 });
 
