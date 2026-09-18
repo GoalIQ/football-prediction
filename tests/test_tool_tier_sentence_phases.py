@@ -19,7 +19,11 @@ Tapaukset:
   (d) tier vaihtuu premium -> free: sama
   (e) sekalista         -> lause jakaa luokat eika niputa
   (f) tyokalu poistetaan-> lukija kaatuu nakyvasti, ei tulosta tyhjaa
-  (g) uusi tyokalu      -> mikaan olemassa oleva lause ei ala valehdella
+  (g) uusi tyokalu      -> mikaan olemassa oleva lause ei ala valehdella,
+                           eika uutta voi nimeta ennen kuin sille on
+                           kirjoitettu sanamuoto JA kattopaatos
+  (h) lahteen editointi -> kommentoitu tier-rivi, prefiksinimi ja puuttuva
+                           kattovakio kaatavat ajon eivatka hiljene
 """
 from __future__ import annotations
 
@@ -33,6 +37,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.tool_tiers import (  # noqa: E402
+    MissingCap,
+    MissingCopy,
+    ToolTierError,
     ToolTiers,
     UnknownTool,
     WrongTier,
@@ -228,22 +235,144 @@ def test_g_uusi_tyokalu_ei_muuta_vanhaa_lausetta(uusi_tier: str) -> None:
     jalkeen = _reader(laajennettu).tier_sentence(_QUAD)
     assert ennen == jalkeen, "uusi rekisteririvi muutti lausetta jota ei pyydetty"
     assert "chip timing" not in jalkeen.lower()
-    # ...ja uusi tyokalu saa oikean luokan heti kun se pyydetaan mukaan.
-    laaja = _reader(laajennettu).tier_sentence(_QUAD + ["chip-timing"])
-    free, premium = _osat(laaja)
-    oikea, vaara = (free, premium) if uusi_tier == "free" else (premium, free)
-    assert any("the chip timing" in x.lower() for x in oikea), laaja
-    assert not any("the chip timing" in x.lower() for x in vaara), laaja
+    # ...ja rekisterin oma luku seuraa heti, ilman etta proosaa on olemassa.
+    assert _reader(laajennettu).tier("chip-timing") == uusi_tier
+
+
+@pytest.mark.parametrize("uusi_tier", ["free", "premium"])
+def test_g2_uutta_tyokalua_ei_voi_nimeta_ilman_kirjoitettua_proosaa(
+    uusi_tier: str,
+) -> None:
+    """🔴 KIERROS 2. Aiemmin proosa johdettiin rekisterin otsikosta
+    ("the " + title.lower()). Se lupasi toimivan muodon jota ei ollut:
+    23 slugista 15 tuotti julkaisukelvotonta englantia ("The value is free
+    and needs no account.", "The player xp is part of GoalIQ Premium.").
+    Oletus on poistettu: uusi tyokalu KAATAA lauseen kunnes joku kirjoittaa
+    seka sanamuodon etta kattopaatoksen, ja molemmat jaavat diffiin.
+    """
+    laajennettu = _TODAY + [("chip-timing", "Chip timing", uusi_tier)]
+    r = _reader(laajennettu)
+    with pytest.raises(MissingCopy) as exc:
+        r.tier_sentence(_QUAD + ["chip-timing"])
+    assert "chip-timing" in str(exc.value)
+    # Kaatuminen ei saa olla "tuntematon slug": rekisteri TUNTEE sen.
+    assert r.tier("chip-timing") == uusi_tier
 
 
 # --------------------------------------------------------------------------
-# Kutsupaikka: sivu ei saa kirjoittaa tier-sanaa itse
+# (h) LAHTEEN EDITOINTI. Nama nelja reittia palauttivat kierroksella 1
+# hiljaa vaaran tai tyhjan. Jokainen on mitattu; nyt jokainen kaataa ajon.
 # --------------------------------------------------------------------------
 
+_KOMMENTOITU = "\n".join([
+    "export const TOOLS: Tool[] = [",
+    "\t{",
+    "\t\tslug: 'rate-my-team',",
+    "\t\tgroup: 'team',",
+    "\t\ttitle: 'Rate my team',",
+    "\t\tquestion: 'Testikysymys?',",
+    # 🔴 Tasan tama rivi: vanha arvo jatetaan nakyviin kommenttiin.
+    "\t\t// tier: 'premium' aiemmin",
+    "\t\ttier: 'free',",
+    "\t\tanchor: 'a-rate'",
+    "\t}",
+    "];",
+    "",
+])
 
-def test_sivun_lause_tulee_lukijalta_eika_ole_kovakoodattu() -> None:
-    src = (ROOT / "scripts" / "build_fpl_longtail.py").read_text(encoding="utf-8")
-    assert "tier_sentence(" in src, "kutsupaikka ei kayta lukijaa"
-    assert "are part of GoalIQ Premium" not in src, (
-        "sivunrakentaja kirjoittaa taas tier-lauseen itse"
+
+def test_h1_kommentoitu_tier_rivi_ei_ole_arvo() -> None:
+    """🔴 Mitattu: `// tier: 'premium' aiemmin` OIKEAN `tier: 'free'`:n
+    ylapuolella -> lukija palautti premium, ilman poikkeusta. Tama on tasan
+    se editointitapa jolla tier-muutos tehdaan: vanha rivi kommentoidaan."""
+    r = ToolTiers(_KOMMENTOITU, PREFS)
+    assert r.tier("rate-my-team") == "free", (
+        "kommentoitu vanha tier-rivi luettiin arvoksi"
     )
+
+
+def test_h1b_kaksi_oikeaa_tier_kenttaa_kaataa() -> None:
+    """Erotteleva kontrolli h1:lle. Jos kommentin poisto olisi toteutettu
+    niin etta lukija vain ottaa ENSIMMAISEN osuman, tama menisi lapi: kaksi
+    OIKEAA tier-kenttaa on epaselva lahde, ei asia jonka lukija saa valita.
+    """
+    kaksi = _KOMMENTOITU.replace(
+        "\t\t// tier: 'premium' aiemmin", "\t\ttier: 'premium',"
+    )
+    with pytest.raises(ToolTierError):
+        ToolTiers(kaksi, PREFS)
+
+
+def test_h1c_kommentti_ei_niela_oikeaa_kenttaa() -> None:
+    """Positiivinen kontrolli: kommenttien poisto ei saa syoda rivin loppua.
+    Naiivi regex katkaisisi `title`-rivin URL-merkkijonon kaksoiskauttaviivan
+    kohdalta ja rekisteri jaisi vajaaksi."""
+    url_rivi = _KOMMENTOITU.replace(
+        "\t\ttitle: 'Rate my team',",
+        "\t\ttitle: 'Rate my team', // ks. https://goaliq.app/fpl",
+    )
+    r = ToolTiers(url_rivi, PREFS)
+    assert r.title("rate-my-team") == "Rate my team"
+    assert r.tier("rate-my-team") == "free"
+
+
+def test_h2_prefiksinimi_ei_kelpaa_rekisteriksi() -> None:
+    """🔴 Mitattu: `text.index('export const TOOLS')` osui `TOOLSET_META`:an,
+    ja lukija luki hiljaa vaaran taulukon."""
+    meta = "\n".join([
+        "export const TOOLSET_META: Meta[] = [",
+        "\t{ slug: 'ei-tama', group: 'x', title: 'Ei tama',",
+        "\t  question: 'q', tier: 'premium', anchor: 'a' }",
+        "];",
+        "",
+    ])
+    r = ToolTiers(meta + _registry(_TODAY), PREFS)
+    assert "ei-tama" not in r.slugs(), "lukija luki TOOLSET_META:n TOOLSina"
+    assert r.tier("rate-my-team") == "free"
+
+
+def test_h3_kaksi_samannimista_taulukkoa_kaataa() -> None:
+    with pytest.raises(ToolTierError):
+        ToolTiers(_registry(_TODAY) + _registry(_TODAY), PREFS)
+
+
+def test_h4_puuttuva_kattovakio_on_virhe_ei_none() -> None:
+    """🔴 Mitattu: jos `prefs.ts` siirtyy tai vakiot nimetaan uudelleen,
+    `caveat()` palautti hiljaa Nonen ja lause olisi sanonut watchlistista
+    vain "free" — yhta harhaanjohtava kuin se lause joka 18.9 korjattiin."""
+    r = ToolTiers(_registry(_TODAY), "")
+    with pytest.raises(MissingCap) as exc:
+        r.tier_sentence(_QUAD)
+    assert "WATCHLIST_FREE_LIMIT" in str(exc.value)
+    vain_alaraja = ToolTiers(
+        _registry(_TODAY), "export const WATCHLIST_FREE_LIMIT = 3;"
+    )
+    with pytest.raises(MissingCap):
+        vain_alaraja.tier_sentence(_QUAD)
+    vain_ylaraja = ToolTiers(_registry(_TODAY), "export const WATCHLIST_MAX = 50;")
+    with pytest.raises(MissingCap):
+        vain_ylaraja.tier_sentence(_QUAD)
+
+
+def test_h5_katto_seuraa_lahdetta_myos_uudella_arvolla() -> None:
+    """Positiivinen kontrolli h4:lle: kaatuminen ei saa olla ainoa reitti.
+    Kun vakio on olemassa, luku tulee LAHTEESTA eika koodista."""
+    muut = "\n".join([
+        "export const WATCHLIST_FREE_LIMIT = 7;",
+        "export const WATCHLIST_MAX = 99;",
+        "",
+    ])
+    r = ToolTiers(_registry(_TODAY), muut)
+    assert "seven free, up to 99 on Premium" in r.tier_sentence(_QUAD)
+
+
+def test_h6_katto_lukee_oikean_vakion_ei_prefiksia() -> None:
+    """`WATCHLIST_MAX` ei saa lukea `WATCHLIST_MAX_ROWS`ia eika toisin pain."""
+    harha = "\n".join([
+        "export const WATCHLIST_FREE_LIMIT = 3;",
+        "export const WATCHLIST_MAX_ROWS = 999;",
+        "export const WATCHLIST_MAX = 50;",
+        "",
+    ])
+    r = ToolTiers(_registry(_TODAY), harha)
+    assert "three free, up to 50 on Premium" in r.tier_sentence(_QUAD)
