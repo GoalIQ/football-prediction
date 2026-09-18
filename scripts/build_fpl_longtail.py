@@ -51,6 +51,8 @@ if str(ROOT) not in sys.path:
 # sisaltopinta oli mittaamaton. Sama vakio kuin paasivuilla eika kopio:
 # kaksi rinnakkaista snippettia eriytyisivat hiljaa.
 from src.doubt_copy import TEAM_NEWS_H1, XP_SISALTAA_EPAVARMUUDEN
+# Vapaa/premium-lause tulee rekisterista, ei tasta tiedostosta: yksi lukija.
+from src.tool_tiers import tier_sentence  # noqa: E402
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
     ROOT as _FP_ROOT,
@@ -2990,9 +2992,19 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
     vaite kaatuisi tasan silla reitilla jolla se piti todistaa.
 
     VAPAA/PREMIUM-RAJA: tama on seurakohtainen KARKI, ei koko lista — 80
-    rivia 507:sta. Rate-my-team, siirtosuunnittelija ja kapteenirankkeri
-    pysyvat premiumina. Sama peruste kuin /fpl/expected-points-rajassa:
-    lista on sisaltoa, tyokalut ovat tuote.
+    rivia 507:sta. Sama peruste kuin /fpl/expected-points-rajassa: lista on
+    sisaltoa, tyokalut ovat tuote. Mika tyokalu on kummalla puolella rajaa
+    EI LUE tassa: sen kertoo `src/tool_tiers.py`, joka lukee rekisterin
+    `web/pro-spa/src/lib/tools.ts`.
+
+    🔴 18.9.2026, KIERROS 2. Tassa oli nimeltä kolme tyokalua ja vaite etta
+    ne "pysyvat premiumina"; yksi niista on rekisterissa `tier: 'free'`.
+    Rivi oli 1500 rivia sen julkisen lauseen YLAPUOLELLA joka samana
+    paivana korjattiin, ja se jai silti pystyyn kahdesta syysta: kierroksen
+    1 portti vaati etta tyokalun nimi ja tier-sana ovat SAMALLA RIVILLA (ne
+    olivat eri riveilla), ja se tunsi nimen vain valilyontimuodossa (tassa
+    se oli viivoilla). Vaaran lauseen sanatarkka muoto asuu nyt portin
+    fikstuurissa `tests/test_tool_tier_reader_discipline.py`, ei taalla.
     """
     meta = xp.get("meta") or {}
     players = xp.get("players") or []
@@ -4526,9 +4538,18 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     tiedon nakemiseen.
 
     VAPAA/PREMIUM-RAJA: lista on sisaltoa, tyokalut ovat tuote. Ranking nakyy
-    kokonaan ilmaiseksi; rate-my-team, siirtosuunnittelija, kapteenirankkeri
-    ja watchlist pysyvat premiumina. Sama peruste kuin /fpl/stats-rajassa:
-    puolustettavuus, ei kustannus.
+    kokonaan ilmaiseksi. Mika tyokalu on kummalla puolella rajaa, EI LUE
+    TASSA eika sivun proosassa: sen kertoo `src/tool_tiers.py`, joka lukee
+    rekisterin `web/pro-spa/src/lib/tools.ts`.
+
+    🔴 18.9.2026: tassa docstringissa luki aiemmin nimeltä nelja tyokalua ja
+    vaite etta ne kaikki ovat maksullisia, ja sivun julkinen lause sanoi
+    samaa. Kaksi neljasta oli vaarin. Tama rivi oli sen vaaran lauseen
+    PERUSTELU, eli se olisi opettanut saman virheen seuraavalle
+    kirjoittajalle vaikka julkinen lause olisi korjattu. Sanatarkka muoto on
+    portin fikstuurissa `tests/test_tool_tier_reader_discipline.py` — tanne
+    sita ei jateta, koska silloin tama tiedosto sisaltaisi yha vaaran
+    tier-vaitteen luettavassa muodossa.
 
     Sarakevalinta on tahallinen: xP/90 (vauhti) ja xMins (peliaika) ERIKSEEN,
     koska niiden sekoittaminen on juuri se virhe joka korjattiin 9.8. Lukija
@@ -4769,9 +4790,17 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
             "new first choice in friendlies barely moves this number until "
             "league minutes start to build up.</p>")
            if _preseason_basis(meta) else "")
-        + '<p class="note">This ranking is free and needs no account. The tools '
-        "built on top of it, rate my team, the transfer planner, the captain "
-        "ranker and your watchlist, are part of GoalIQ Premium.</p>"
+        # 18.9: lause EI ENAA kirjoita tier-sanaa itse. Tassa niputettiin
+        # nelja tyokalua yhteen luokkaan ja kaksi niista oli vaarin. Kutsu
+        # antaa vain slugit; luokan ja sanamuodon paattaa src/tool_tiers.py
+        # joka lukee web/pro-spa/src/lib/tools.ts:aa. Tuntematon slug kaataa
+        # ajon, ja vaaraan luokkaan pyydetty lause kaataa ajon.
+        + '<p class="note">This ranking is free and needs no account. '
+        + tier_sentence(
+            ["rate-my-team", "watchlist", "transfer-planner", "captain-ranker"],
+            free_already_said=True,
+        )
+        + "</p>"
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · '
         + f'{escape(str(meta.get("caveat") or ""))[:300]} · {DISCLAIMER}</p>'
