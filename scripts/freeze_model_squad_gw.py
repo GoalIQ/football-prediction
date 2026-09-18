@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import requests
 
 import config
+from src.models import fpl_entry_history as hist_mod
 from src.models import fpl_model_entry as entry_mod
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
@@ -182,9 +183,16 @@ def pick_captain(xi: list[dict], gw: int) -> tuple[dict, dict]:
 
 
 def slim(p: dict, gw: int) -> dict:
+    from src.models.fpl_transfers import sell_price
+
     return {"id": p["id"], "web_name": p.get("web_name"),
             "team_short": p.get("team_short"), "pos": p.get("element_type"),
             "club": p.get("club"), "price": p.get("price"),
+            # Myyntihinta talteen: seuraava kierros lukee sen FPL:sta
+            # uudelleen, mutta ilman tata riville kirjattu pankki ei olisi
+            # jalkikateen tarkistettavissa (bank_after = bank_before +
+            # sum(out_selling - in_price)).
+            "selling_price": sell_price(p),
             "xp": round(gw_xp(p, gw), 3)}
 
 
@@ -240,6 +248,13 @@ def _ft_available(prev_meta: dict) -> int:
     Rullaus: kayttamaton FT siirtyy seuraavalle kierrokselle FT_MAX:iin asti.
     Vanha freeze ilman kenttaa -> oletus FT_PER_GW (ei rullausta), eli
     konservatiivinen.
+
+    17.9.2026 (RESEED-FT-KOVAKOODATTU): `ft_left` ei ole enaa freezen oma
+    kirjanpito eika reseedin vakio, vaan `attach_entry_state` kirjoittaa sen
+    FPL:n historiasta (`fpl_entry_history.free_transfers_for_gw`) seka
+    reseed- etta ketjupolulla - samasta lukijasta kuin pankin. Tama funktio
+    on yha se paikka jossa katto (FT_MAX) leikkaa: FPL:n saldo on
+    `meta.ft_available_fpl`, moottorin saama `min(saldo, FT_MAX)`.
     """
     jaljella = prev_meta.get("ft_left")
     if not isinstance(jaljella, int):
@@ -281,6 +296,18 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
     `None` tarkoittaa nyt vain yhta asiaa: jasenta ei ole poolissa,
     perityssa `_off_pool`issa EIKA bootstrapissa. Se ei ole fallback-signaali
     vaan kieltaytyminen — kutsuja EI saa pudota vapaaseen optimiin.
+
+    PANKKI JA MYYNTIHINTA TULEVAT FPL:STA, EIVAT ARITMETIIKASTA (17.9.2026,
+    FREEZE-BANK-MYYNTIHINTA). Aiemmin pankki oli `budget*10 - sum(nykyhinnat)`
+    ja lahtijasta saatiin nykyhinta. Kumpikin on oikein vain deadline-hetkella
+    ja vain jos kaikki 15 myydaan: FPL:n `value` on nykyhintasumma + pankki
+    (mitattu kolmesta deadlinesta), joten jokainen hintaliike rivin jalkeen
+    siirtaa moottorin pankkia vaikka oikea pankki ei liiku, ja nousseesta
+    pelaajasta FPL maksaa vain puolet voitosta. Mitattu 17.9 entry 116920
+    GW4 -> GW5: oikea pankki 8, vanha kaava 1002 - 996 = 6; myyntihintasumma
+    991 vs nykyhintasumma 996. Nyt `meta.bank_tenths` (FPL:n `bank`) ja
+    jokaisen rivin `selling_price` ovat PAKOLLISIA: puuttuva kentta nostaa
+    `FreezeInputError`in eika laske mitaan vanhalla kaavalla.
     """
     from src.models.fpl_transfers import MAX_TRANSFERS_PER_GW, plan_gw
 
@@ -296,13 +323,12 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
         rivi = _departed_player(p["id"], bootstrap or {})
         if rivi is not None:
             by_id_runko[p["id"]] = rivi
-    squad = [by_id_runko[p["id"]] for p in edellinen if p["id"] in by_id_runko]
+    squad = [_with_selling_price(by_id_runko[p["id"]], p)
+             for p in edellinen if p["id"] in by_id_runko]
     if len(squad) != 15:
         return None
 
-    budjetti = int(round(float(prev.get("meta", {}).get("budget", 100.0)) * 10))
-    kaytetty = sum(int(p.get("price") or 0) for p in squad)
-    bank = budjetti - kaytetty
+    bank = _bank_tenths(prev)
 
     covered = sorted({g.get("gw") for p in pool for g in (p.get("gameweeks") or [])
                       if isinstance(g.get("gw"), int)})
@@ -314,11 +340,49 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
                 "gain_xp_weighted": round(m["gain_weighted"], 2),
                 "confidence_weight": m["confidence_weight"],
                 "pair": bool(m.get("pair")),
-                "hit": m["hit"] > 0}
+                "hit": m["hit"] > 0,
+                # Pankin muutos on tarkistettavissa rivilta: myyntihinta
+                # ulos, nykyhinta sisaan.
+                "out_selling_price": m["selling_price_out"],
+                "in_price": int(m["in"]["price"])}
                for m in step["moves"]]
     return {"squad": step["squad"], "bank": step["bank_tenths"],
+            "bank_before": bank,
             "transfers": siirrot, "hits": step["hits"], "ft_available": ft,
             "ft_left": step["ft_left"], "engine": "fpl_transfers.plan_gw"}
+
+
+class FreezeInputError(ValueError):
+    """Perityn rungon rahatila puuttuu tai on epakelpo. Ei fallbackia:
+    vanha kaava (`budget - sum(nykyhinnat)`) oli juuri se vika."""
+
+
+def _bank_tenths(prev: dict) -> int:
+    """Pankki kymmenyksina perityn rungon metasta - ja VAIN sielta.
+
+    Kentan kirjoittaa `attach_entry_state` FPL:n omasta `bank`-luvusta.
+    Sen puuttuminen tarkoittaa etta runko on tullut polkua joka ei lukenut
+    FPL:aa, ja silloin ainoa oikea vastaus on kieltaytya.
+    """
+    b = (prev.get("meta") or {}).get("bank_tenths")
+    if not isinstance(b, int) or isinstance(b, bool) or b < 0:
+        raise FreezeInputError(
+            "meta.bank_tenths puuttuu perityn rungon metasta - pankki luetaan "
+            "FPL:n entry-historiasta (attach_entry_state), ei lasketa "
+            "budjetista ja nykyhinnoista")
+    return b
+
+
+def _with_selling_price(pool_row: dict, prev_row: dict) -> dict:
+    """Poolin rivi + perityn rivin myyntihinta. Kopio, jotta pooli ei saa
+    kenttaa (pooli on ostettavien lista, myyntihinta koskee vain omaa
+    runkoa)."""
+    sp = prev_row.get("selling_price")
+    if not isinstance(sp, int) or isinstance(sp, bool) or sp < 0:
+        raise FreezeInputError(
+            f"rivilta {prev_row.get('id')} puuttuu selling_price - lahtijan "
+            f"hinta on FPL:n myyntihinta (attach_entry_state), ei nykyhinta")
+    return dict(pool_row, selling_price=sp)
 
 
 def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
@@ -464,12 +528,15 @@ def load_reseed(gw: int) -> tuple[dict | None, str | None]:
 
 
 def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
-               hae=None, hae_historia=None) -> tuple[dict | None, str | None]:
+               hae=None, hae_historia=None,
+               hae_siirrot=None) -> tuple[dict | None, str | None]:
     """(prev-muotoinen runko entryn pickeista, virhe).
 
-    Budjetti luetaan entryn omasta historiasta (`budget_from_history`), ei
-    oletuksesta: wildcardin jalkeen tilin arvo ei ole 100.0m, ja vaara
-    budjetti muuttaisi siirtomoottorin vastausta hiljaa.
+    Rahatila (pankki, myyntihinnat, FPL:n `value`) luetaan entryn omasta
+    julkisesta datasta samalla lukijalla kuin ketjupolulla
+    (`entry_state_for` + `attach_entry_state`), ei oletuksesta: wildcardin
+    jalkeen tilin arvo ei ole 100.0m, ja vaara pankki muuttaisi
+    siirtomoottorin vastausta hiljaa.
     """
     hae = hae or entry_mod.fetch_picks
     try:
@@ -497,22 +564,25 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
         return None, (f"entryn GW{source_gw}-rivissa on pelaajia joita ei "
                       f"loydy poolista eika bootstrapista: {rikki}")
 
-    hae_historia = hae_historia or _entry_history
-    historia, virhe = hae_historia(entry_mod.ENTRY_ID, source_gw)
-    if virhe:
-        return None, virhe
-
-    budjetti = budget_from_history(historia)
-    return {
+    siemen = {
         "xi": [{"id": i} for i in ids[:11]],
         "bench": [{"id": i} for i in ids[11:]],
-        "meta": {"budget": budjetti,
-                 # Wildcard-kierroksen jalkeen rullausta ei ole: seuraava
-                 # kierros alkaa yhdesta ilmaisesta siirrosta.
-                 "ft_left": 0},
+        # Rahatila JA FT-saldo tulevat `attach_entry_state`ista FPL:n
+        # historiasta - tassa ei ole vakioita. 17.9 (RESEED-FT-KOVAKOODATTU):
+        # tassa oli `"ft_left": 0` perustelulla "wildcard-kierroksen jalkeen
+        # rullausta ei ole", mutta ehto ei ollut wildcard-spesifinen: GW5-
+        # reseedin lahde GW4 ei ollut wildcard, ja FPL:n saldo oli 3, ei 1.
+        "meta": {},
         # Vain rungossa, EI poolissa (ks. yllä).
         "_off_pool": lahteneet,
-    }, None
+    }
+    tila, virhe = entry_state_for(source_gw, ids, bootstrap,
+                                  hae_historia=hae_historia,
+                                  hae_siirrot=hae_siirrot)
+    if virhe:
+        return None, virhe
+    attach_entry_state(siemen, tila)
+    return siemen, None
 
 
 def _departed_player(pid: int, bootstrap: dict) -> dict | None:
@@ -563,35 +633,99 @@ def _departed_player(pid: int, bootstrap: dict) -> dict | None:
     return base
 
 
-def budget_from_history(historia: dict) -> float:
-    """Entryn kokonaisbudjetti (miljoonina) FPL:n historiarivista.
-
-    🔴 FPL:n `value` SISALTAA JO PANKIN. Mitattu 6.9.2026 entrylla 116920:
-    GW3 `value` 1001, `bank` 8, ja rungon 15 pelaajan nykyhinnat summautuvat
-    99.2:een. Myyntihinta ei voi ylittaa nykyhintaa, joten 100.1 ei voi olla
-    pelkka runko: se on runko + pankki. Vanha kaava `value + bank` antoi
-    100.9 ja moottorille 0.8m ylimaaraista - julkaisutarkistaja laski 6.9
-    etta ehdotettu pari (Hemmings + Mbeumo -> Stach + Gibbs-White) oli 0.7m
-    vajaa FPL:n omilla luvuilla. gw3.json:n `budget` 100.7 on saman virheen
-    jaljilta (99.9 + 0.8); se on immutable, joten ketjupolku lukee budjetin
-    tasta funktiosta eika perityn freezen metasta (ks. main).
-    Yksi lukija: seka reseed etta ketju kulkevat taman kautta.
-    """
-    return int(historia["value"]) / 10.0
-
-
-def _entry_history(entry: int, gw: int) -> tuple[dict | None, str | None]:
+def _entry_history(entry: int) -> tuple[dict | None, str | None]:
+    """FPL:n `entry/{id}/history/` kokonaisena (`current` + `chips`)."""
     url = f"{FPL_BASE}/entry/{entry}/history/"
     try:
         r = requests.get(url, headers=FPL_HEADERS, timeout=30)
         r.raise_for_status()
-        rivit = r.json().get("current") or []
+        d = r.json()
     except Exception as e:
         return None, f"entryn historiaa ei saatu ({e!r})"
-    for rivi in rivit:
-        if int(rivi.get("event") or 0) == gw:
-            return {"value": rivi.get("value"), "bank": rivi.get("bank")}, None
-    return None, f"entryn historiasta puuttuu GW{gw}"
+    if not isinstance(d, dict) or not isinstance(d.get("current"), list):
+        return None, "entryn historia ei ole FPL:n muotoa (current puuttuu)"
+    return d, None
+
+
+def _entry_transfers(entry: int) -> tuple[list[dict] | None, str | None]:
+    """FPL:n `entry/{id}/transfers/` (kaikki kauden siirrot, myos wildcardin).
+    Tyhja lista on aito tieto (ei siirtoja); None on 'ei saatu'."""
+    url = f"{FPL_BASE}/entry/{entry}/transfers/"
+    try:
+        r = requests.get(url, headers=FPL_HEADERS, timeout=30)
+        r.raise_for_status()
+        d = r.json()
+    except Exception as e:
+        return None, f"entryn siirtolistaa ei saatu ({e!r})"
+    if not isinstance(d, list):
+        return None, "entryn siirtolista ei ole FPL:n muotoa (ei lista)"
+    return d, None
+
+
+def entry_state_for(source_gw: int, pick_ids, bootstrap: dict, *,
+                    hae_historia=None,
+                    hae_siirrot=None) -> tuple[dict | None, str | None]:
+    """(entryn rahatila kierroksen `source_gw` rungolle, virhe).
+
+    YKSI LUKIJA molemmille poluille (reseed ja ketju): pankki FPL:n omasta
+    `bank`-kentasta, myyntihinnat FPL:n siirtolistasta + bootstrapista
+    (`fpl_entry_history.entry_state`). FAIL-CLOSED: jos jokin lahde puuttuu,
+    ei jaadyteta - vaara pankki lukitsisi siirron jota ei voi tehda.
+
+    MIKSI EI `value`: mitattu 17.9.2026 kolmesta deadlinesta (GW2-GW4) etta
+    FPL:n `value - bank` on rungon NYKYHINTOJEN summa. 6.9:n paatelma
+    "value sisaltaa pankin" oli oikea, mutta johdettu pankki
+    `value - sum(nykyhinnat)` on oikein vain deadline-hetkella: jokainen
+    hintaliike sen jalkeen siirtaa sita vaikka oikea pankki ei liiku
+    (GW4-rivi 1002 - 8 = 994 deadlinella; 17.9 nykyhinnat 996 -> "pankki" 6,
+    FPL:n bank 8). gw3.json:n `budget` 100.7 on vanhempaa `value + bank`
+    -tuplalaskua; se on immutable eika sita korjata.
+    """
+    hae_historia = hae_historia or _entry_history
+    hae_siirrot = hae_siirrot or _entry_transfers
+    historia, virhe = hae_historia(entry_mod.ENTRY_ID)
+    if virhe:
+        return None, virhe
+    siirrot, virhe = hae_siirrot(entry_mod.ENTRY_ID)
+    if virhe:
+        return None, virhe
+    try:
+        tila = hist_mod.entry_state(historia, source_gw, pick_ids, siirrot,
+                                    bootstrap)
+    except hist_mod.EntryStateError as e:
+        return None, f"entryn GW{source_gw}-rahatilaa ei voitu johtaa: {e}"
+    return tila, None
+
+
+def attach_entry_state(prev: dict, tila: dict) -> dict:
+    """Kirjoittaa lukijan tuloksen perittyyn runkoon: `meta.bank_tenths`,
+    `meta.budget` (FPL:n `value`/10, naytto), lahteet, ja jokaiselle
+    xi/penkki-riville `selling_price`. Tama on AINOA paikka joka kirjoittaa
+    nama kentat, ja `_constrained_from_prev` vaatii ne."""
+    meta = prev.setdefault("meta", {})
+    meta["budget"] = int(tila["value_tenths"]) / 10.0
+    meta["budget_source"] = "fpl_entry_history"
+    meta["bank_tenths"] = int(tila["bank_tenths"])
+    meta["bank_source"] = tila["bank_source"]
+    meta["value_tenths"] = int(tila["value_tenths"])
+    meta["selling_value_tenths"] = int(tila["selling_value_tenths"])
+    meta["selling_source"] = tila["selling_source"]
+    # 17.9 (RESEED-FT-KOVAKOODATTU): FT samasta lukijasta kuin pankki.
+    # `_ft_available` lisaa FT_PER_GW:n ja leikkaa FT_MAX:iin, joten
+    # `ft_left` kirjataan niin etta identiteetti
+    #     _ft_available(meta) == min(ft_available_fpl, FT_MAX)
+    # pitaa joka vaiheessa (testattu: rullaus, wildcard-/free hit -lahde,
+    # kulutus, hitit, katto). Ylikirjoittaa myos ketjupolulla perityn
+    # freezen oman `ft_left`-kirjanpidon: entry_mismatch-portti takaa etta
+    # entry ON peritty runko, joten FPL:n historia on saldon totuus.
+    ft_fpl = int(tila["ft_available_next"])
+    meta["ft_available_fpl"] = ft_fpl
+    meta["ft_left"] = max(0, ft_fpl - FT_PER_GW)
+    meta["ft_source"] = tila["ft_source"]
+    myynti = tila["selling"]
+    for p in (prev.get("xi") or []) + (prev.get("bench") or []):
+        p["selling_price"] = int(myynti[int(p["id"])])
+    return prev
 
 
 def next_freeze_gw(events: list[dict], now: _dt.datetime):
@@ -603,6 +737,74 @@ def next_freeze_gw(events: list[dict], now: _dt.datetime):
             str(ev.get("deadline_time", "")).replace("Z", "+00:00"))
         if dl > now and (dl - now) <= _dt.timedelta(hours=FREEZE_WINDOW_H):
             return int(ev["id"]), dl
+    return None
+
+
+def freeze_status(gw: int, deadline: _dt.datetime,
+                  now: _dt.datetime) -> dict:
+    """YKSI LUKIJA kysymykseen "voiko GW:n mallirivi viela muuttua".
+
+    🔴 MIKSI OMA LUKIJA (loydos 18.9.2026). `main()` kysyi taman rivilla
+    `if out.exists(): return 0` ja tulosti "GW{n} on jo jaadytetty". Kaikki
+    MUUT pinnat - jonorivi, cc-raportti, sessiosuunnitelma - joutuivat
+    paattelemaan saman asian KASIN, ja 17.9 se meni vaarin: jonorivi
+    FREEZE-BANK-MYYNTIHINTA sanoi "VAIKUTTAA HUOMISEEN GW5-FREEZEEN
+    (deadline 18.9 17:30 UTC) -> push ennen sita tai syote on vaara", vaikka
+    `gw5.json` oli jo jaadytetty 2026-09-17T12:18:34Z ja immutable. Koko
+    kiireellisyyspremissi oli kumottu; haaran ensimmainen vaikutus on GW6.
+
+    Palauttaa mittauksen, ei mielipidetta:
+      writable      voiko TAMAN kierroksen rivi viela syntya
+      reason        `ok` | `already_frozen` | `deadline_passed`
+      frozen_at     leima artefaktista (None jos ei jaadytetty)
+      path          artefaktin polku
+
+    Kaksi tapaa joilla kierros on lukossa, ja molemmat mitataan JOKA
+    VAIHEESSA (CLAUDE.md 6a.3): artefakti on jo olemassa (immutable), TAI
+    deadline on mennyt eika artefaktia ole - jolloin rivin kirjoittaminen
+    olisi jalkifittausta, ei ennustetta. Nykyhetkessa mitattuna
+    `out.exists()` yksin oli tosi vain siksi etta ajo sattui olemaan
+    deadlinen etupuolella.
+    """
+    path = FROZEN_DIR / f"gw{int(gw)}.json"
+    frozen_at = None
+    if path.exists():
+        try:
+            meta = (json.loads(path.read_text(encoding="utf-8")).get("meta")
+                    or {})
+            frozen_at = meta.get("frozen_at")
+        except (ValueError, OSError):
+            # Tiedosto ON olemassa: lukukelvoton leima ei tee siita
+            # kirjoitettavaa. Fail-closed.
+            frozen_at = "?"
+        return {"gw": int(gw), "writable": False, "reason": "already_frozen",
+                "frozen_at": frozen_at, "path": path}
+    if deadline <= now:
+        return {"gw": int(gw), "writable": False, "reason": "deadline_passed",
+                "frozen_at": None, "path": path}
+    return {"gw": int(gw), "writable": True, "reason": "ok",
+            "frozen_at": None, "path": path}
+
+
+def first_writable_gw(events: list[dict], now: _dt.datetime) -> int | None:
+    """Ensimmainen kierros jonka mallirivia koodimuutos voi VIELA muuttaa.
+
+    Tama on se luku jonka jonorivi ja raportti saavat sanoa. Kaydaan
+    kierrokset deadlinejarjestyksessa ja palautetaan ensimmainen jonka
+    `freeze_status` sanoo kirjoitettavaksi - ei siis "seuraava GW" eika
+    "gw+1", kumpikin olisi arvaus.
+    """
+    rivit = []
+    for ev in events:
+        try:
+            dl = _dt.datetime.fromisoformat(
+                str(ev.get("deadline_time", "")).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        rivit.append((dl, int(ev["id"])))
+    for dl, gw in sorted(rivit):
+        if freeze_status(gw, dl, now)["writable"]:
+            return gw
     return None
 
 
@@ -623,9 +825,17 @@ def main() -> int:
         return 0
     gw, dl = nxt
 
-    out = FROZEN_DIR / f"gw{gw}.json"
-    if out.exists():
-        print(f"GW{gw} on jo jäädytetty — ei ylikirjoiteta (immutable).")
+    # 🔴 KUTSUPAIKKA: immutabiliteetti luetaan `freeze_status`ista, ja ajo
+    # TULOSTAA mittauksen (leima + ensimmainen kierros johon muutos voi
+    # viela vaikuttaa). Ilman tata jokainen muu pinta paattelee saman kasin,
+    # ja 17.9 jonorivi paatteli sen vaarin.
+    tila = freeze_status(gw, dl, now)
+    out = tila["path"]
+    if not tila["writable"]:
+        seuraava = first_writable_gw(events, now)
+        print(f"GW{gw}: {tila['reason']} (jäädytetty {tila['frozen_at']}) — "
+              f"ei ylikirjoiteta (immutable). Koodimuutos vaikuttaa "
+              f"aikaisintaan GW{seuraava}:sta alkaen.")
         return 0
 
     # Sama polku kuin /api/fantasy/model-squad — ei omaa optimointia.
@@ -667,17 +877,17 @@ def main() -> int:
                 print(_esto)
                 return 1
             # Portti yllä takaa etta peritty runko ON entryn runko, joten
-            # budjetti luetaan FPL:sta eika perityn freezen metasta:
-            # gw3.json kantaa vanhan `value + bank` -tuplalaskun (100.7 vs
-            # 100.1) eika immutable-tiedostoa korjata. FAIL-CLOSED: ilman
-            # historiaa ei jaadyteta, koska vaara pankki lukitsisi siirron
-            # jota ei voi tehda (6.9).
-            _hist, _hvirhe = _entry_history(entry_mod.ENTRY_ID, edellinen[0])
-            if _hvirhe:
-                print(f"VIRHE: budjettia ei saatu FPL:sta: {_hvirhe}")
+            # pankki ja myyntihinnat luetaan FPL:sta eika perityn freezen
+            # metasta (sama lukija kuin reseedilla). FAIL-CLOSED: ilman
+            # entryn dataa ei jaadyteta, koska vaara pankki lukitsisi
+            # siirron jota ei voi tehda (6.9, 17.9).
+            _ids = [int(p["id"]) for p in
+                    (edellinen[1].get("xi") or []) + (edellinen[1].get("bench") or [])]
+            _tila, _tvirhe = entry_state_for(edellinen[0], _ids, _bootstrap)
+            if _tvirhe:
+                print(f"VIRHE: entryn rahatilaa ei saatu FPL:sta: {_tvirhe}")
                 return 1
-            edellinen[1].setdefault("meta", {})["budget"] = budget_from_history(_hist)
-            edellinen[1]["meta"]["budget_source"] = "fpl_entry_history"
+            attach_entry_state(edellinen[1], _tila)
     siirtotiedot = None
     free = None
     chip_eval = None
@@ -700,8 +910,14 @@ def main() -> int:
                     if p["id"] in _by_id]
         if len(_peritty) == 15:
             chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data)
-        rajoitettu = _constrained_from_prev(
-            prev, pool, gw, _ft_available(prev_meta), _bootstrap)
+        try:
+            rajoitettu = _constrained_from_prev(
+                prev, pool, gw, _ft_available(prev_meta), _bootstrap)
+        except FreezeInputError as e:
+            # Rahatila puuttuu perityltä rungolta: ei lasketa vanhalla
+            # kaavalla, ei jaadyteta. Nakyva puute, ei vaara rivi.
+            print(f"::error::GW{gw}: {e}")
+            return 1
         if rajoitettu is None:
             # 🔴 EI FALLBACKIA VAPAASEEN OPTIMIIN (12.9.2026). Tama haara oli
             # ennen paljas `print` + jatko vapaalla optimilla: askel on
@@ -778,12 +994,31 @@ def main() -> int:
             # (kauden aloitus, kuten ihmisellakin).
             # 4.9: budjetti EI ole vakio 100.0. Ketjussa se sattui olemaan,
             # koska jokainen freeze kirjoitti saman vakion ja seuraava luki
-            # sen. 6.9: budjetti tulee AINA FPL:n historiasta
-            # (`budget_from_history`, `value` sisaltaa pankin), seka
-            # reseedissa etta ketjussa; vaara luku muuttaisi siirtomoottorin
-            # vastausta hiljaa.
+            # sen. 6.9: budjetti tulee AINA FPL:n historiasta, seka
+            # reseedissa etta ketjussa. 17.9: `budget` on FPL:n `value`/10
+            # eli NAYTTOLUKU (nykyhinnat + pankki); moottori ei lue sita
+            # vaan `bank_tenths`ia ja rivien myyntihintoja (alla).
             "budget": round(float((edellinen[1].get("meta") or {}).get(
                 "budget", 100.0)) if edellinen else 100.0, 1),
+            # 17.9: PANKKI FPL:N OMASTA KENTASTA, myyntihinnat FPL:n
+            # siirtolistasta. `bank_tenths` on pankki siirtojen JALKEEN,
+            # `bank_tenths_before` ennen; erotus = sum(out_selling_price -
+            # in_price) siirtolokista. `value_tenths` on FPL:n oma `value`
+            # (nykyhinnat + pankki), `selling_value_tenths` se raha joka
+            # rungosta oikeasti saa. Kauden ensimmaisella jaadytyksella
+            # (ei perittya runkoa) nama ovat null.
+            "bank_tenths": (siirtotiedot or {}).get("bank"),
+            "bank_tenths_before": (siirtotiedot or {}).get("bank_before"),
+            "bank_source": ((edellinen[1].get("meta") or {}).get("bank_source")
+                            if edellinen else None),
+            "value_tenths": ((edellinen[1].get("meta") or {}).get("value_tenths")
+                             if edellinen else None),
+            "selling_value_tenths": (
+                (edellinen[1].get("meta") or {}).get("selling_value_tenths")
+                if edellinen else None),
+            "selling_source": (
+                (edellinen[1].get("meta") or {}).get("selling_source")
+                if edellinen else None),
             # Mista runko peritaan. `chain` = edellinen freeze, `entry_picks`
             # = entryn omat pickit (reseed). Ilman tata kentta lukija ei voi
             # tietaa kumpaa artefaktia rivi seuraa - juuri se tieto puuttui
@@ -809,6 +1044,13 @@ def main() -> int:
             "hits": (siirtotiedot or {}).get("hits", 0),
             "ft_available": (siirtotiedot or {}).get("ft_available"),
             "ft_left": (siirtotiedot or {}).get("ft_left", 0),
+            # 17.9: FPL:n oma saldo ennen kattoa. `ft_available` on se mita
+            # moottori sai (min(saldo, FT_MAX)), `ft_available_fpl` se mita
+            # FPL:n historia sanoo. Ilman tata lukija ei nae leikkausta.
+            "ft_available_fpl": ((edellinen[1].get("meta") or {}).get(
+                "ft_available_fpl") if edellinen else None),
+            "ft_source": ((edellinen[1].get("meta") or {}).get("ft_source")
+                          if edellinen else None),
             "squad_rebuilt": siirtotiedot is None,
             # Malli ei pelaa chippejä v0:ssa — kerrotaan datassa asti, jotta
             # paneeli ei joudu arvaamaan sitä copyn perusteella. 28.8: arvio

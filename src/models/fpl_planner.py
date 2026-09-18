@@ -35,7 +35,9 @@ from src.models import fpl_transfers as _engine
 from src.models.fpl_my_team import squad_meta
 
 HIT_COST = HIT_COST_XP  # FPL:n -4; sama lähde kuin rate-teamin hold_verdict
-FT_CARRY_MAX = 5
+# 17.9.2026: FPL:n FT-katto on yksi vakio (`fpl_entry_history.FT_MAX`), jota
+# moottori, planner ja entry-historian FT-kavely kaikki lukevat.
+FT_CARRY_MAX = _engine.FT_CARRY_MAX
 # 28.8 (PLANNER-FREEZE-DIVERGENCE): siirtologiikka asuu fpl_transfers-moottorissa
 # jota myös rate-team ja freeze käyttävät. Vakiot re-exportataan täältä, jotta
 # vanhat kutsujat (testit, fantasy_edge) näkevät saman arvon kuin moottori.

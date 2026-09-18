@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import itertools
 
+from src.models.fpl_entry_history import FT_MAX as _FT_RULE_MAX
 from src.models.fpl_rate_team import (
     DECISION_BAR_XP_PER_GW, HIT_COST_XP, MAX_PER_CLUB, POS_NAME, RateTeamError,
     _best_split, _gw_xp, hold_threshold_for,
@@ -75,8 +76,12 @@ NEAR_WINDOW_GWS = 2
 # Hitille ei riita etta lahi-ikkuna on positiivinen: -4 maksetaan nyt, joten
 # valtaosan hyodysta on tultava nyt.
 NEAR_SHARE_FOR_HIT = 0.5
-# FPL:n saanto, ei malliparametri: vapaasiirtopankin katto.
-FT_CARRY_MAX = 5
+# FPL:n saanto, ei malliparametri: vapaasiirtopankin katto. 17.9.2026
+# (RESEED-FT-KOVAKOODATTU): YKSI vakio saannolle - sama jota entry-historian
+# FT-kavely (`fpl_entry_history._ft_walk`) kayttaa. Kolme kopiota samasta
+# luvusta (taalla, plannerissa, historiassa) olisi kolme paikkaa jotka voivat
+# erota kun saanto muuttuu.
+FT_CARRY_MAX = _FT_RULE_MAX
 # Pankki katossa: kayttamatta jattaminen HUKKAA seuraavan kertymän, joten
 # siirron marginaalihinta on nolla -> ota mika tahansa aito parannus.
 BAR_BANK_FULL = 0.01
@@ -357,6 +362,74 @@ def _clubs_ok_after(clubs: dict[int, int], outs: list[dict], ins: list[dict]) ->
     return all(c.get(i["club"], 0) <= MAX_PER_CLUB for i in ins)
 
 
+def sell_price(p: dict) -> int:
+    """YKSI LUKIJA lahtijan hinnalle (17.9.2026, FREEZE-BANK-MYYNTIHINTA).
+
+    FPL maksaa myydysta pelaajasta MYYNTIHINNAN, ei nykyhintaa: noususta
+    ostaja saa puolet voitosta alaspain pyoristettyna, laskusta nykyhinnan.
+    Ennen tata jokainen budjettiehto luki `out_p["price"]` eli nykyhinnan,
+    joten moottori luuli saavansa lahtijasta enemman kuin FPL antaa (mitattu
+    17.9 entry 116920: Tzolakis 4.6 -> myy 4.5, De Cuyper 4.9 -> 4.7,
+    Mendy 4.1 -> 4.0) ja ehdotti siirtoja joihin raha ei riita.
+
+    `selling_price` on rungon rivilla kun kutsuja tuntee sen (freeze lukee
+    sen `fpl_entry_history.entry_state`ista). Ilman sita palautetaan
+    nykyhinta: julkisesta API:sta myyntihintaa ei saa, ja vasta ostetun
+    pelaajan myyntihinta ON nykyhinta - siksi `_apply`n tuoma tulokas ei
+    tarvitse kenttaa. Kutsuja joka tuntee myyntihinnan on itse vastuussa
+    siita etta kentta on jokaisella rivilla (freeze vaatii sen).
+    """
+    sp = p.get("selling_price")
+    if isinstance(sp, int) and not isinstance(sp, bool):
+        return sp
+    return int(p["price"])
+
+
+class TransferPlanError(Exception):
+    """Suunnitelma rikkoo FPL:n rahasaannon. Ei kayttajavirhe vaan moottorin
+    invariantti: FPL tekee siirrot YKSI KERRALLAAN, joten pankki ei saa kayda
+    negatiiviseksi yhdellakaan askeleella - ei edes silloin kun loppusaldo on
+    positiivinen."""
+
+
+def bank_walk(bank_tenths: int, moves: list[dict]) -> list[int]:
+    """YKSI LUKIJA juoksevalle pankille (18.9.2026, PARIN-SUORITUSJARJESTYS).
+
+    Palauttaa saldon JOKAISEN siirron jalkeen, samassa jarjestyksessa jossa
+    siirrot julkaistaan. Nostaa `TransferPlanError`in jos saldo kay
+    negatiiviseksi askeleella - eli tekee vaarasta jarjestyksesta mahdottoman
+    sen sijaan etta vahtisi sita jalkikateen.
+
+    🔴 MIKSI TAMA ON OMA LUKIJA, EI TARKISTUS KUTSUPAIKASSA (loydos 18.9).
+    `best_pair` jarjestaa parin niin etta rahaa vapauttava siirto on ensin
+    (`sell_price(o) - i["price"]` laskevasti). Se on YKSI rivi, ja rivin voi
+    kirjoittaa ekvivalentissa muodossa (`(i1["price"] - o1["price"]) >
+    (i2["price"] - o2["price"])`) joka kayttaa nykyhintaa myyntihinnan sijaan.
+    Mitattu: runko jossa DEF 3 hinta 6.0 / myynti 4.0 ja MID 8 hinta 5.0 /
+    myynti 5.0, pooli DEF 4.1 + MID 4.8, pankki 0. Oikea jarjestys
+    [8->91, 3->90] kavelee 2 -> 1; vaara jarjestys [3->90, 8->91] kavelee
+    -1 -> 1. LOPPUSALDO ON SAMA, joten summaan perustuvat testit eivat nae
+    eroa, ja lahdekoodi-grep ohitetaan samalla yhdella muokkauksella.
+    Jarjestys on tasan se joka kirjoitetaan jaadytettyyn artefaktiin
+    (`meta.transfers` + `out_selling_price`/`in_price`), joten vaara
+    jarjestys on julkinen vaite siirrosta jota FPL ei olisi hyvaksynyt.
+
+    Saldon nousu on aina `sell_price(out) - in["price"]`: FPL maksaa
+    lahtijasta myyntihinnan (ks. `sell_price`), ei nykyhintaa.
+    """
+    bank = int(bank_tenths)
+    walk: list[int] = []
+    for i, m in enumerate(moves, 1):
+        bank += sell_price(m["out"]) - int(m["in"]["price"])
+        walk.append(bank)
+        if bank < 0:
+            raise TransferPlanError(
+                f"siirtojen jarjestys vie pankin miinukselle askeleella {i}/"
+                f"{len(moves)}: {bank_tenths} -> {walk} "
+                f"(siirrot {[(m2['out']['id'], m2['in']['id']) for m2 in moves]})")
+    return walk
+
+
 def _apply(squad: list[dict], outs: list[dict], ins: list[dict]) -> list[dict]:
     out_ids = {o["id"] for o in outs}
     return [p for p in squad if p["id"] not in out_ids] + list(ins)
@@ -403,6 +476,8 @@ def _move(out_p: dict, in_p: dict, gain: float, gain_w: float, hit: float,
         # vaikka painottamaton hyoty on <= 0. Klientti nayttaa silloin syyn.
         "weighting_decided": bool(gain <= 0 < gain_w),
         "pos": POS_NAME[out_p["element_type"]],
+        # Se hinta jolla pankki oikeasti muuttuu: myyntihinta, ei nykyhinta.
+        "selling_price_out": sell_price(out_p),
     }
 
 
@@ -443,7 +518,7 @@ def single_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
 
     cands: list[tuple[float, dict, dict]] = []
     for out_p in squad:
-        budget = bank_tenths + out_p["price"]
+        budget = bank_tenths + sell_price(out_p)
         n = 0
         for in_p in by_pos[out_p["element_type"]]:
             if in_p["price"] > budget:
@@ -506,7 +581,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
     wval = {p["id"]: window_xp(p, gws) * confidence_weight(p) for p in pool}
     for p in squad:
         wval.setdefault(p["id"], window_xp(p, gws) * confidence_weight(p))
-    max_out_price = max(p["price"] for p in squad)
+    max_out_price = max(sell_price(p) for p in squad)
     by_pos: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: []}
     for p in pool:
         if p["id"] not in squad_ids:
@@ -518,7 +593,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
     # lahtija vapauttaa enintaan max_out_price.
     per_out: list[tuple[dict, list[tuple[float, dict]]]] = []
     for out_p in squad:
-        budget = bank_tenths + out_p["price"] + max_out_price
+        budget = bank_tenths + sell_price(out_p) + max_out_price
         lst = []
         for in_p in by_pos[out_p["element_type"]]:
             if in_p["price"] > budget:
@@ -538,7 +613,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
             for r2, i2 in l2:
                 if i1["id"] == i2["id"]:
                     continue
-                if i1["price"] + i2["price"] > bank_tenths + o1["price"] + o2["price"]:
+                if i1["price"] + i2["price"] > bank_tenths + sell_price(o1) + sell_price(o2):
                     continue
                 if not _clubs_ok_after(clubs, [o1, o2], [i1, i2]):
                     continue
@@ -574,7 +649,7 @@ def best_pair(squad: list[dict], pool: list[dict], bank_tenths: int,
             # Rahaa vapauttava siirto ensin, jotta pankki ei kay miinuksella
             # kun siirrot tehdaan jarjestyksessa.
             first, second = ((o1, i1), (o2, i2))
-            if (o1["price"] - i1["price"]) < (o2["price"] - i2["price"]):
+            if (sell_price(o1) - i1["price"]) < (sell_price(o2) - i2["price"]):
                 first, second = second, first
             best = {"moves": [first, second], "gain": round(gain, 4),
                     "gain_weighted": round(gain_w, 4), "evals": evals,
@@ -666,6 +741,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
     bank = bank_tenths
     fts = max(0, ft)
     moves: list[dict] = []
+    walk: list[int] = []
     hits = 0
     # Saman suunnitelman aiemmin ostamat. Kutsuja (plan_transfers) antaa
     # edellisten kierrosten ostot; tahan lisataan myos TAMAN kutsun ostot,
@@ -763,8 +839,13 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             chosen = [best_single]
         if not chosen:
             break
-        for m in chosen:
-            bank += m["out"]["price"] - m["in"]["price"]
+        # 🔴 KUTSUPAIKKA: juokseva pankki mitataan JOKA ASKELEELLA, ei vain
+        # loppusaldona. `bank_walk` nostaa poikkeuksen jos `best_pair`in
+        # jarjestys veisi valipankin miinukselle -> vaara jarjestys ei voi
+        # paasta jaadytettyyn artefaktiin.
+        askeleet = bank_walk(bank, chosen)
+        for m, bank in zip(chosen, askeleet):
+            walk.append(bank)
             squad = _apply(squad, [m["out"]], [m["in"]])
             # Tulija on heti suojattu: sama kierros ei saa ostaa ja myyda.
             protected.add(m["in"]["id"])
@@ -775,4 +856,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                 hits += 1
             moves.append(m)
     return {"moves": moves, "squad": squad, "bank_tenths": bank,
+            # Pankki JOKAISEN siirron jalkeen: tarkistusreitti artefaktiin
+            # kirjattaville riveille, ei vain loppusaldo.
+            "bank_walk": walk,
             "ft_left": fts, "hits": hits, "protected_ids": protected}

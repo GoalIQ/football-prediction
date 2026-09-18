@@ -115,9 +115,14 @@ def _laillinen_pool(ids):
 
 
 def _laillinen_freeze(ids, meta=None):
+    # 17.9 (FREEZE-BANK-MYYNTIHINTA): `_constrained_from_prev` vaatii FPL:n
+    # pankin (`meta.bank_tenths`) ja rivien `selling_price`n; `budget` on
+    # pelkka nayttoluku. Tassa pankki = 100.0m - 15 x 5.0m = 25.0m.
     rivit = [{"id": i, "web_name": f"P{i}", "pos": _POS[i], "price": 50,
-              "club": ((i - 1) % 5) + 1} for i in ids]
-    return {"meta": meta or {}, "xi": rivit[:11], "bench": rivit[11:]}
+              "club": ((i - 1) % 5) + 1, "selling_price": 50} for i in ids]
+    m = {"bank_tenths": 1000 - 50 * len(ids)}
+    m.update(meta or {})
+    return {"meta": m, "xi": rivit[:11], "bench": rivit[11:]}
 
 
 def _bootstrap(ids, *, status="u", news="left the league"):

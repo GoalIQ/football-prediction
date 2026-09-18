@@ -295,6 +295,23 @@ for _i in range(1, 41):
                                     3 if _i % 3 == 1 else 4)
 
 
+def _tila(gw, ids, price=45):
+    """Synteettinen `entry_state`-tulos: sama syote moottorille kuin vanha
+    `budget: 100.0` antoi (pankki 1000 - 15 x 45 = 325)."""
+    ids = [int(i) for i in ids]
+    return {"gw": gw, "bank_tenths": 1000 - price * len(ids),
+            "value_tenths": 1000,
+            "purchase": {i: price for i in ids},
+            "selling": {i: price for i in ids},
+            "now": {i: price for i in ids},
+            "selling_value_tenths": price * len(ids),
+            "bank_source": "test", "selling_source": "test",
+            # 17.9 (RESEED-FT-KOVAKOODATTU): FT-saldo tulee samasta
+            # lukijasta kuin pankki. 1 = ei rullausta, sama kuin vanha
+            # `ft_left: 0` -> `_ft_available` 1.
+            "ft_available_next": 1, "ft_source": "test"}
+
+
 def _pooli(ids, gw=4):
     return [{"id": i, "element_type": _POS40[i], "price": 45,
              "club": ((i - 1) % 14) + 1, "web_name": f"P{i}", "team_short": "AAA",
@@ -336,12 +353,18 @@ def _aja_freeze_main(monkeypatch, tmp_path, *, bootstrap_ids):
     _laita_freeze(tmp_path, 3, list(range(1, 16)))
     monkeypatch.setattr(m, "FROZEN_DIR", tmp_path)
     monkeypatch.setattr(m, "RESEED_DIR", tmp_path / "ei-reseedeja")
+    # 18.9: deadline on nyt-hetkeen SIDOTTU, ei kalenterileima. Kiinteana
+    # (2026-09-12 12:30Z) tama fikstuuri oli tosi vain niin kauan kuin
+    # seinakello oli sen etupuolella; `freeze_status`in jalkifittaussuoja
+    # (deadline mennyt -> ei kirjoiteta) paljasti sen 18.9. CLAUDE.md 6a.3.
     monkeypatch.setattr(m, "next_freeze_gw", lambda events, now: (
-        4, _dt.datetime(2026, 9, 12, 12, 30, tzinfo=_dt.timezone.utc)))
+        4, now + _dt.timedelta(hours=5)))
     monkeypatch.setattr(m, "entry_mismatch", lambda *a, **k: "")
-    monkeypatch.setattr(m, "_entry_history",
-                        lambda *a, **k: ({"value": 1000, "bank": 0}, None))
-    monkeypatch.setattr(m, "budget_from_history", lambda h: 100.0)
+    # 17.9: pankki ja myyntihinnat tulevat yhdesta lukijasta
+    # (`entry_state_for`), ei `budget - hinnat` -kaavasta. Tassa testissa
+    # rahatila on synteettinen: pankki 100.0m - 15 x 4.5m, myynti = nykyhinta.
+    monkeypatch.setattr(m, "entry_state_for",
+                        lambda gw, ids, boot, **k: (_tila(gw, ids), None))
 
     class _R:
         status_code = 200
@@ -455,12 +478,15 @@ def test_kieltaytyminen_puree_OIKEALLA_poolilla(monkeypatch, tmp_path):
                                        encoding="utf-8", newline="\n")
     monkeypatch.setattr(m, "FROZEN_DIR", tmp_path)
     monkeypatch.setattr(m, "RESEED_DIR", tmp_path / "ei-reseedeja")
+    # 18.9: deadline nyt-hetkeen sidottuna, ks. `_aja_freeze_main`.
     monkeypatch.setattr(m, "next_freeze_gw", lambda e, n: (
-        4, _dt.datetime(2026, 9, 12, 12, 30, tzinfo=_dt.timezone.utc)))
+        4, n + _dt.timedelta(hours=5)))
     monkeypatch.setattr(m, "entry_mismatch", lambda *a, **k: "")
-    monkeypatch.setattr(m, "_entry_history",
-                        lambda *a, **k: ({"value": 1000, "bank": 0}, None))
-    monkeypatch.setattr(m, "budget_from_history", lambda h: 100.0)
+    # 17.9: pankki ja myyntihinnat tulevat yhdesta lukijasta
+    # (`entry_state_for`), ei `budget - hinnat` -kaavasta. Tassa testissa
+    # rahatila on synteettinen: pankki 100.0m - 15 x 4.5m, myynti = nykyhinta.
+    monkeypatch.setattr(m, "entry_state_for",
+                        lambda gw, ids, boot, **k: (_tila(gw, ids), None))
 
     class _R:
         status_code = 200
