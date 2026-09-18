@@ -51,6 +51,8 @@ if str(ROOT) not in sys.path:
 # sisaltopinta oli mittaamaton. Sama vakio kuin paasivuilla eika kopio:
 # kaksi rinnakkaista snippettia eriytyisivat hiljaa.
 from src.doubt_copy import TEAM_NEWS_H1, XP_SISALTAA_EPAVARMUUDEN
+# Vapaa/premium-lause tulee rekisterista, ei tasta tiedostosta: yksi lukija.
+from src.tool_tiers import tier_sentence  # noqa: E402
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
     ROOT as _FP_ROOT,
@@ -4526,9 +4528,16 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     tiedon nakemiseen.
 
     VAPAA/PREMIUM-RAJA: lista on sisaltoa, tyokalut ovat tuote. Ranking nakyy
-    kokonaan ilmaiseksi; rate-my-team, siirtosuunnittelija, kapteenirankkeri
-    ja watchlist pysyvat premiumina. Sama peruste kuin /fpl/stats-rajassa:
-    puolustettavuus, ei kustannus.
+    kokonaan ilmaiseksi. Mika tyokalu on kummalla puolella rajaa, EI LUE
+    TASSA eika sivun proosassa: sen kertoo `src/tool_tiers.py`, joka lukee
+    rekisterin `web/pro-spa/src/lib/tools.ts`.
+
+    🔴 18.9.2026: tassa docstringissa luki aiemmin etta "rate-my-team,
+    siirtosuunnittelija, kapteenirankkeri ja watchlist pysyvat premiumina",
+    ja sivun julkinen lause sanoi samaa. Kaksi neljasta oli vaarin
+    (rate-my-team ja watchlist ovat `tier: 'free'`). Tama rivi oli sen
+    vaaran lauseen PERUSTELU, eli se olisi opettanut saman virheen
+    seuraavalle kirjoittajalle vaikka julkinen lause olisi korjattu.
 
     Sarakevalinta on tahallinen: xP/90 (vauhti) ja xMins (peliaika) ERIKSEEN,
     koska niiden sekoittaminen on juuri se virhe joka korjattiin 9.8. Lukija
@@ -4769,9 +4778,17 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
             "new first choice in friendlies barely moves this number until "
             "league minutes start to build up.</p>")
            if _preseason_basis(meta) else "")
-        + '<p class="note">This ranking is free and needs no account. The tools '
-        "built on top of it, rate my team, the transfer planner, the captain "
-        "ranker and your watchlist, are part of GoalIQ Premium.</p>"
+        # 18.9: lause EI ENAA kirjoita tier-sanaa itse. Tassa luki nelja
+        # tyokalua niputettuna premiumiksi, ja niista kaksi (rate-my-team,
+        # watchlist) on rekisterissa `tier: 'free'`. Kutsu antaa vain slugit;
+        # luokan ja sanamuodon paattaa src/tool_tiers.py joka lukee
+        # web/pro-spa/src/lib/tools.ts:aa. Tuntematon slug kaataa ajon.
+        + '<p class="note">This ranking is free and needs no account. '
+        + tier_sentence(
+            ["rate-my-team", "watchlist", "transfer-planner", "captain-ranker"],
+            free_already_said=True,
+        )
+        + "</p>"
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · '
         + f'{escape(str(meta.get("caveat") or ""))[:300]} · {DISCLAIMER}</p>'
