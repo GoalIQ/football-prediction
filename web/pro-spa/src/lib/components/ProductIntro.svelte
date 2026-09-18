@@ -22,6 +22,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
+	import { xpHorizon } from '$lib/xpHorizon';
 	import { actionableGameweek } from '$lib/gameweek';
 	import { freePremiumWindowActive } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
@@ -59,9 +60,11 @@
 	 * window). HUOM: ilmaissivun top 20 on eri taulukko (lajiteltu seuraavan
 	 * GW:n xP:lla), ala vertaa siihen.
 	 *
-	 * IKKUNA: xp_horizon_total kattaa meta.next_gameweek .. +horizon_gw-1
-	 * (mitattu 5.9: Haaland 31.21 = GW3..GW8, vaikka deadline-GW on 4).
-	 * Otsikko luetaan samasta metasta kuin summa, ei deadline-GW:sta +4.
+	 * IKKUNA: otsikko luetaan samasta metasta kuin summa ($lib/xpHorizon).
+	 * 17.9: backend summaa vain kierrokset >= meta.horizon_total_from, joten
+	 * kesken kierroksen ikkuna alkaa deadline-kierroksesta; vanhalla API:lla
+	 * lukija palauttaa rivien valin (mitattu 5.9: Haaland 31.21 = GW3..GW8,
+	 * vaikka deadline-GW oli 4) eika keksi alkua.
 	 */
 	const top = $derived.by(() => {
 		if (!xp?.meta?.available) return [];
@@ -69,8 +72,7 @@
 			.sort((a, b) => (b.xp_horizon_total ?? 0) - (a.xp_horizon_total ?? 0))
 			.slice(0, 5);
 	});
-	const winFrom = $derived(xp?.meta?.next_gameweek ?? gw ?? 0);
-	const winTo = $derived(winFrom + (xp?.meta?.horizon_gw ?? 6) - 1);
+	const horizon = $derived(xpHorizon(xp?.meta));
 
 	/**
 	 * Ikkunan aikana kutsu on "luo tili", koska maksaminen nyt ostaisi viikkoja
@@ -130,7 +132,7 @@
 		     top 20 samasta projektiosta on ilmaista tasoa myos goaliq.app/fpl:ssa. -->
 		<div class="demo">
 			<div class="demo-head">
-				<span class="demo-title">Projected points, GW{winFrom}-{winTo} total</span>
+				<span class="demo-title">Projected points, {horizon.range ?? horizon.label} total</span>
 				<span class="demo-tag">live from the model</span>
 			</div>
 			<table>
@@ -138,7 +140,7 @@
 					<tr>
 						<th scope="col">Player</th>
 						<th scope="col" class="ta-r">GW{gw} xP</th>
-						<th scope="col" class="ta-r">GW{winFrom}-{winTo}</th>
+						<th scope="col" class="ta-r">{horizon.range ?? 'Total'}</th>
 					</tr>
 				</thead>
 				<tbody>

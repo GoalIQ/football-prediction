@@ -1,6 +1,7 @@
 import { shareCompareCard, type ShareOutcome } from '$lib/shareCard';
 import { teamColorByShort } from '$lib/teamColors';
 import { startPct } from '$lib/startPct';
+import { xpHorizon } from '$lib/xpHorizon';
 import type { CompareResponse, ComparePlayer } from '$lib/fantasyTools';
 
 /* YKSI LUKIJA vertailukortille (16.9).
@@ -17,6 +18,7 @@ import type { CompareResponse, ComparePlayer } from '$lib/fantasyTools';
  */
 export function compareCardSpec(data: CompareResponse) {
 	const rows = data.players;
+	const horizon = xpHorizon(data.meta);
 	const best = (vals: (number | null | undefined)[]): number | null => {
 		const max = Math.max(...vals.map((v) => (v == null ? -Infinity : v)));
 		if (!Number.isFinite(max)) return null;
@@ -24,7 +26,7 @@ export function compareCardSpec(data: CompareResponse) {
 	};
 	return {
 			title: 'PLAYER COMPARISON',
-			subtitle: `next ${data.meta.horizon_gw ?? 6} gameweeks, GoalIQ match model`,
+			subtitle: `${horizon.label}, GoalIQ match model`,
 			fileName: 'goaliq_player_comparison.png',
 			players: rows.map((p) => {
 				const tc = teamColorByShort(p.team_short);
@@ -50,7 +52,7 @@ export function compareCardSpec(data: CompareResponse) {
 					bestIndex: best(rows.map((p) => p.xp_per_gw))
 				},
 				{
-					label: `xP ${data.meta.horizon_gw ?? 6} GWS`,
+					label: `xP ${horizon.gws.toUpperCase()}`,
 					values: rows.map((p) =>
 						p.xp_horizon_total != null ? p.xp_horizon_total.toFixed(1) : 'no xP'
 					),

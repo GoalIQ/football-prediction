@@ -11,6 +11,7 @@
 	import MethodNote from './MethodNote.svelte';
 	import SetPieceBadges from './SetPieceBadges.svelte';
 	import { startPct } from '$lib/startPct';
+	import { xpHorizon } from '$lib/xpHorizon';
 
 	let { data }: { data: XpResponse } = $props();
 
@@ -332,11 +333,38 @@
 	let sortWindowLabel = $derived(
 		sortGw != null ? `GW${sortGw}` : sortWin ? `GW${sortWin.from}-${sortWin.to}` : null
 	);
+	/** Summan ikkuna SAMASTA metasta kuin summa (yksi lukija, $lib/xpHorizon).
+	 *  Sarakkeet (gwCols) voivat alkaa jo alkaneesta kierroksesta; Total xP ei,
+	 *  ja otsikon on sanottava se mita summa kattaa. Vanhalla API:lla lukija
+	 *  ei sano "next" (ks. xpHorizon.ts). */
+	let horizon = $derived(xpHorizon(data.meta));
+	/** Summan ikkunan NIMI. Rekisteroity lahdeportissa (WINDOW_LABELS):
+	 *  sen on tultava lukijasta eika se saa olla `gwCols`-johdannainen.
+	 *  18.9 (17.9 loydetty P1-2): ennen tata rivi oli yhden muokkauksen paassa muodosta
+	 *  `$derived(colsLabel)`, ja portti pysyi vihreana koska mitaan
+	 *  `horizon_gw`:ta ei luettu. */
+	let horizonLabel = $derived(horizon.label);
+	/* 🔴 3.9 ILTA (Villen havainto): kortin arvosarake luki AINA
+	   `xp_horizon_total`ia. Kun lista on sortattu yhdella kierroksella, nimet
+	   ja jarjestys olivat oikein mutta luku oli kuuden kierroksen summa — eli
+	   kortti vastasi eri kysymykseen kuin otsikko lupasi. Sama koskee
+	   ikkunalabelia: "GW3-GW8" on valhe GW3-kortilla.
+	   18.9: ikkunanimi on YKSI johdannainen joka seuraa samaa sorttia kuin
+	   `cardValue`/`cardValueLabel` — kierros, kierrosikkuna tai (summasortilla)
+	   lukijan ikkuna. Ei enaa kahta paikallista muuttujaa share()-funktion
+	   sisalla, joilla summan ikkuna oli vaihdettavissa sarakkeiden valiin. */
+	let cardWindowLabel = $derived(sortWindowLabel ?? horizonLabel);
 	/** Ikkuna-avaimet datasta: seuraavat 2..(n-1) kierrosta. Koko horisontti on
-	 *  jo Total xP ja yksi kierros oma valintansa, joten kumpaakaan ei toisteta. */
+	 *  jo Total xP ja yksi kierros oma valintansa, joten kumpaakaan ei toisteta.
+	 *  17.9: ikkunat alkavat summan alusta (deadline-kierros, `horizon.from`),
+	 *  eivat ensimmaisesta sarakkeesta, joka kesken kierroksen on jo alkanut. */
 	let windowKeys = $derived.by(() => {
 		const out: string[] = [];
-		for (let n = 2; n < gwCols.length; n += 1) out.push(`gw${gwCols[0]}-${gwCols[n - 1]}`);
+		const start = Math.max(0, horizon.from != null ? gwCols.indexOf(horizon.from) : 0);
+		for (let e = start + 1; e < gwCols.length; e += 1) {
+			if (gwCols[start] === horizon.from && gwCols[e] === horizon.to) continue;
+			out.push(`gw${gwCols[start]}-${gwCols[e]}`);
+		}
 		return out;
 	});
 	/** Kuuluuko GW-sarake aktiiviseen kierrokseen tai ikkunaan (korostus, ei
@@ -345,9 +373,14 @@
 		if (sortGw != null) return sortGw === gw;
 		return !!sortWin && gw >= sortWin.from && gw <= sortWin.to;
 	}
-	let horizonN = $derived(data.meta.horizon_gw ?? gwCols.length ?? 6);
-	let horizonLabel = $derived(
-		gwCols.length > 0 ? `GW${gwCols[0]}–GW${gwCols[gwCols.length - 1]}` : `next ${horizonN} GWs`
+	/** Taulukon sarakkeiden vali riveista ("GW4-GW9"): mita taulukko NAYTTAA.
+	 *  Eri asia kuin `horizonLabel`, joka on Total xP:n ikkuna. */
+	let colsLabel = $derived(
+		gwCols.length === 0
+			? horizon.label
+			: gwCols.length === 1
+				? `GW${gwCols[0]}`
+				: `GW${gwCols[0]}-GW${gwCols[gwCols.length - 1]}`
 	);
 	// Kokonais-xP-rank pysyy samana sorttauksesta/ryhmittelystä riippumatta →
 	// # on aina "overall xP rank", ei rivin juokseva numero (selkeys #22).
@@ -531,16 +564,6 @@
 			// Vain ensimmäinen kirjain pieneksi — .toLowerCase() rikkoisi
 			// xP-kirjoitusasun ("by total xp").
 			const sortLabel = labelFor(sortBy).replace(/\s*\(.*\)$/, '');
-			// 🔴 3.9 ILTA (Villen havainto): kortin arvosarake luki AINA
-			// `xp_horizon_total`ia. Kun lista on sortattu yhdella kierroksella,
-			// nimet ja jarjestys olivat oikein mutta luku oli kuuden kierroksen
-			// summa — eli kortti vastasi eri kysymykseen kuin otsikko lupasi.
-			// Sama koskee ikkunalabelia: "GW3-GW8" on valhe GW3-kortilla.
-			// 6.9: ikkuna ("GW4-6") kulkee saman lukijan kautta kuin kierros.
-			const cardGw = sortGw;
-			const windowLabel = cardGw != null ? `GW${cardGw}` : horizonLabel;
-			// 6.9: ikkunasortti ("GW4-6") saman lukijan kautta; kierros sailyttaa literaalin ylla.
-			const cardWindowLabel = sortWin ? sortWindowLabel : windowLabel;
 			const sub = [
 				cardWindowLabel,
 				`by ${sortLabel.charAt(0).toLowerCase()}${sortLabel.slice(1)}`,
@@ -591,10 +614,9 @@
 	}
 </script>
 
-<h2>Player expected points, {horizonLabel}</h2>
+<h2>Player expected points, {colsLabel}</h2>
 <p class="muted">
-	<strong>Total xP</strong> = the sum of projected points across {horizonLabel}
-	({horizonN} gameweeks). <strong>xP/GW</strong> = the per-gameweek average over the same
+	<strong>Total xP</strong> = {horizon.totalHelp}. <strong>xP/GW</strong> = the per-gameweek average over the same
 	horizon. <strong>xP/90</strong> is the rate over a full 90 minutes, shown next to
 	<strong>xMins</strong> so the minutes assumption is visible instead of multiplied into one number. Click a row to see how a player's xP is built.{#if hasSetPieces}
 		The <strong>P</strong>, <strong>C</strong> and <strong>FK</strong> badges mark players
@@ -898,7 +920,7 @@
 						>xP/90</abbr
 					></th
 				>
-				<th class="num"><abbr title="Sum of expected points, {horizonLabel}">Total xP</abbr></th>
+				<th class="num"><abbr title={horizon.totalTitle}>Total xP</abbr></th>
 				{#if sortWin}
 					<th class="num sortcol"
 						><abbr title="Sum of expected points over GW{sortWin.from} to GW{sortWin.to}"

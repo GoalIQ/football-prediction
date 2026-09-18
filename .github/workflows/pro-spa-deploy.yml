@@ -49,6 +49,15 @@ jobs:
           set -euo pipefail
           npm run check
 
+      # 17.9: yksikkotestit + lahdeportti (vitest). xpHorizon.gate.test.ts
+      # lukee kutsupaikat ja kaatuu jos otsikko lukee `horizon_gw`:ta suoraan
+      # (XP-HORIZON-ALKANUT-KIERROS). Sama ajo joka julkaisee, kuten yllä.
+      - name: Portti - vitest (yksikkotestit + lahdeportit)
+        working-directory: web/pro-spa
+        run: |
+          set -euo pipefail
+          npm test
+
       - name: Build
         working-directory: web/pro-spa
         run: |

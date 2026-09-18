@@ -7,6 +7,7 @@
 	 * mukainen, paletti #108.
 	 */
 	import { capture } from '$lib/analytics';
+	import { xpHorizon } from '$lib/xpHorizon';
 	import { fetchValue, type ValueResponse } from '$lib/fantasyTools';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
@@ -109,7 +110,7 @@
 		sharing = true;
 		try {
 			const sub = [
-				`next ${data?.meta?.horizon_gw ?? 6} gameweeks`,
+				xpHorizon(data?.meta).label,
 				`by ${SORT_LABEL[sortKey]}`,
 				...(posFilter ? [posFilter] : []),
 				...(teamFilter ? [teamFilter] : [])
@@ -156,7 +157,7 @@
 	{/if}
 </div>
 <p class="muted">
-	Projected points per million spent over the next {data?.meta?.horizon_gw ?? 6} gameweeks, with a
+	Projected points per million spent {xpHorizon(data?.meta).over}, with a
 	fixture-swing flag.
 </p>
 
@@ -266,8 +267,8 @@
 			<h2 class="gk-title">GK rotation pairs</h2>
 			<p class="muted">
 				Two budget keepers whose fixtures alternate: start whichever has the better clean-sheet
-				chance each week. Pairs are ranked by that average scaled by how many of the next
-				{data?.gk?.meta?.horizon_gw ?? 6} gameweeks both clubs have a projection for.
+				chance each week. Pairs are ranked by that average scaled by how many of the
+				{xpHorizon(data?.gk?.meta).gws} in the window both clubs have a projection for.
 			</p>
 			{#if hasSquad}
 				<!-- MY-TEAM-CONTEXT (3.9): oma pari vertailuriviksi samalla kaavalla -->
@@ -367,7 +368,7 @@
 									{pair.gk_b.web_name} <span class="muted">({pair.gk_b.team_short})</span>
 									{#if pair.common_gws != null}
 										<span class="muted small"
-											>({pair.common_gws} of {data?.gk?.meta?.horizon_gw ?? '?'} GWs)</span
+											>({pair.common_gws} of {xpHorizon(data?.gk?.meta).gws})</span
 										>
 									{/if}
 								</td>
