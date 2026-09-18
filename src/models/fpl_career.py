@@ -249,8 +249,15 @@ def _latest_season(current: list[dict], past: list[dict],
                      "points_net": _netto(best)} if best else None),
         "worst_gw": ({"gw": worst["event"], "points": worst["points"],
                       "points_net": _netto(worst)} if worst else None),
-        "total_hits": sum(int(g.get("event_transfers_cost") or 0)
-                          for g in current),
+        # 18.9: nimetty "total_hit_points" (ei "total_hits") -- FPL:n
+        # `event_transfers_cost` on PISTEITA (esim. 8), ei hittien
+        # LUKUMAARAA (esim. 2 hittia). Sama ansa kuin `points` vs
+        # `points_net` (kierrokset 10-17): nimi joka lukee lukumaarana
+        # mutta kantaa pisteita on hiljainen vaara tulkinta seuraavalle
+        # lukijalle, ei tanaan tapahtuva vika (kentta on tallahetkella
+        # lukematon muualla).
+        "total_hit_points": sum(int(g.get("event_transfers_cost") or 0)
+                                for g in current),
         "bench_points": sum(int(g.get("points_on_bench") or 0)
                             for g in current),
         "gws": [{"gw": g.get("event"), "points": g.get("points"),

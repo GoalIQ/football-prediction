@@ -286,3 +286,61 @@ def test_kohtuuttoman_pitka_label_katkaistaan_eika_vuoda():
               if f["text"].startswith("ALL-TIME POINTS"))
     assert not tf["text"].endswith("…"), tf
     assert tf["size"] >= 22, tf
+
+
+# ---------------------------------------------------------------------------
+# KORTTI-MUUTTUJAN-VARJOSTUS (18.9.2026, portin 17. kierroksen sivuloydos).
+# `var d = t.xp_vs_benchmark` varjosti `drawCard(d)`:n oman parametrin
+# samassa funktiossa; nimetty uudelleen `benchGap`iksi. Ei ollut tanaan
+# aktiivinen vika (haarat eivat mene paallekkain samassa kutsussa), mutta
+# tama testi ajaa juuri sen haaran jossa varjostus tapahtui, jotta
+# uudelleennimeaminen ei hiljaa riko lukua tai muotoilua.
+# ---------------------------------------------------------------------------
+def test_beats_benchmark_lause_piirtyy_oikein_varjostuksen_poiston_jalkeen():
+    """Haara jossa entinen `var d` eli: beats_benchmark=True + numero."""
+    out = _render(_payload(model_teaser={
+        "gw": 5, "team_xp_gw": 61.2, "beats_benchmark": True,
+        "xp_vs_benchmark": 11.65, "optimal_proven": True, "horizon_gw": 6,
+    }))
+    rivit = [t for t in out["text"] if "xP vs" in t]
+    assert rivit, out["text"]
+    assert rivit[0] == "+11.7 xP vs the best possible XI, 6 GW", rivit[0]
+
+
+def test_beats_benchmark_negatiivinen_erotus_ei_saa_plus_etumerkkia():
+    """Negatiivinen kontrolli: `benchGap >= 0` -haara ei saa laueta kun
+    erotus on negatiivinen -- jos uudelleennimeaminen olisi jattanyt vanhan
+    `d`:n jonnekin (esim. globaaliksi), etumerkki voisi olla vaarin."""
+    out = _render(_payload(model_teaser={
+        "gw": 5, "team_xp_gw": 40.0, "beats_benchmark": True,
+        "xp_vs_benchmark": -3.2, "optimal_proven": False, "horizon_gw": 6,
+    }))
+    rivit = [t for t in out["text"] if "xP vs" in t]
+    assert rivit, out["text"]
+    assert rivit[0] == "-3.2 xP vs our best found XI, 6 GW", rivit[0]
+
+
+def test_drawcard_ei_varjosta_omaa_parametriaan():
+    """Staattinen portti: `drawCard(d)`:n rungossa ei saa olla `var d =`
+    -esiintymaa. Kaksi eri asiaa samalla nimella samassa funktiossa on ansa
+    seuraavalle rivin lisaajalle, vaikka se ei ole vika tanaan (muisti:
+    CLAUDE.md 6a kohta 1 -- tee vaarasta vaihtoehdosta mahdoton)."""
+    html = (ROOT / "career.html").read_text(encoding="utf-8")
+    start = html.index("function drawCard(")
+    end = html.index("\n  function roundRect(", start)
+    assert end > start, "drawCard-funktion loppukohtaa ei loydetty"
+    runko = html[start:end]
+    assert "var d " not in runko and "var d=" not in runko, (
+        "drawCard(d):n parametri on varjostettu paikallisella `d`:lla")
+
+
+def test_kontrolli_vanha_varjostava_runko_kaatuisi_porttiin():
+    """Kontrolli edelliselle: sama tarkistus vanhalla (varjostavalla)
+    rivilla PITAA kaatua, muuten portti lapaisisi minka tahansa koodin."""
+    vanha_runko = (
+        "function drawCard(d) {\n"
+        "  if (t.beats_benchmark) {\n"
+        "    var d = t.xp_vs_benchmark;\n"
+        "  }\n"
+    )
+    assert "var d " in vanha_runko or "var d=" in vanha_runko

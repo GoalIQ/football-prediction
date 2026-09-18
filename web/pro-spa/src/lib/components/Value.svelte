@@ -10,6 +10,7 @@
 	import { fetchValue, type ValueResponse } from '$lib/fantasyTools';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
+	import { debounce } from '$lib/debounce';
 
 	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
@@ -36,13 +37,28 @@
 
 	// MY-TEAM-CONTEXT (3.9): jaettu entry (Rate my team -kenttä / tallennettu)
 	// kulkee mukaan. Efekti lukee sen, joten kentän muutos hakee uudelleen.
-	$effect(() => {
-		const entry = currentEntryId();
-		loading = true;
+	//
+	// SPA-VALUE-EVENT-TUPLAKIRJAUS (18.9.2026): `fplEntry.entry` on jaettu
+	// $state jota RateTeam/TransferPlanner bindaavat suoraan inputtiin, joten
+	// se muuttuu JOKAISELLA näppäimenpainalluksella kesken kirjoittamisen —
+	// ei vain kun käyttäjä on oikeasti submittinut jonkin toisen työkalun.
+	// Ilman debouncea "116920":n kirjoittaminen laukaisi kuusi erillistä
+	// hakua (ja `fantasy_tools_used`-eventtiä value-työkalulle) yhdestä
+	// kirjoituskerrasta, vaikka käyttäjä ei ole avannut Valuea lainkaan.
+	// debounce.ts on yleinen (ks. sen oma docstring) — sama mekanismi kelpaa
+	// muillekin `currentEntryId()`-efekteille ilman kopiointia.
+	const debouncedFetch = debounce((entry: number | null) => {
 		fetchValue(entry)
 			.then((d) => (data = d))
 			.catch((e) => (error = e instanceof Error ? e.message : String(e)))
 			.finally(() => (loading = false));
+	}, 500);
+
+	$effect(() => {
+		const entry = currentEntryId();
+		loading = true;
+		debouncedFetch(entry);
+		return () => debouncedFetch.cancel();
 	});
 
 	$effect(() => {

@@ -690,9 +690,16 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
       var benchPct;
       if (t.beats_benchmark === true && typeof t.xp_vs_benchmark === 'number') {
         /* A number, not a compliment. The percentage is clamped to 100 in
-           this branch, so it would say less than the surplus does. */
-        var d = t.xp_vs_benchmark;
-        benchPct = (d >= 0 ? '+' : '') + d.toFixed(1) + ' xP vs ' + benchRef + benchWin;
+           this branch, so it would say less than the surplus does.
+           18.9: named `benchGap` instead of `d` -- `drawCard(d)`'s own
+           parameter is `d` (the full payload), and the `else` branch a few
+           lines down reads `d.past_seasons`. Shadowing it here didn't break
+           anything today because the two branches never run in the same
+           call, but the next line added to either branch could have read
+           the wrong `d` silently. Different name makes that impossible
+           instead of relying on nobody adding that line. */
+        var benchGap = t.xp_vs_benchmark;
+        benchPct = (benchGap >= 0 ? '+' : '') + benchGap.toFixed(1) + ' xP vs ' + benchRef + benchWin;
       } else {
         benchPct = Number(t.percentile).toFixed(0) + '% of ' + benchRef + benchWin;
       }

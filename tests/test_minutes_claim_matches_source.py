@@ -178,3 +178,67 @@ def test_kontrolli_vanha_lause_kaatuisi():
         "kontrolli: vanha lause EI kerro hantaa, joten ehdon 3 pitaa kaatua "
         "siihen. Jos tama assertio kaatuu, ehto on fail-open."
     )
+
+
+# ---------------------------------------------------------------------------
+# MINUUTTIPORTTI-TYYPILLINEN (18.9.2026). Tunnettu reikä yllä olevassa
+# moduulidocstringissa: ehto (2) etsii vain että hännän luku ON LÄSNÄ, ei
+# että pinta kertoo TYYPILLISEN tapauksen (share_within_5 / share_over_30).
+# Sanalista ("four in ten" kolmella kielellä ylläpidettynä) olisi juuri se
+# ansa jonka muisti `portti-joka-etsii-merkkijonoa-ei-mittaa-arvoa` nimeää:
+# se vanhenisi hiljaa. src.models.share_phrase johtaa lauseen LUVUSTA, joten
+# testi kaatuu ääneen kun mittaus muuttuu eikä copy ole seurannut sitä.
+# ---------------------------------------------------------------------------
+from src.models.share_phrase import one_in_n_phrase, share_in_ten_phrase  # noqa: E402
+
+
+def _kielet_pinnoittain() -> dict[str, str]:
+    """Pinnan nimi -> kielikoodi. SPA on vain englanniksi."""
+    kartta = {"pro-spa/XpTable.svelte": "en"}
+    for kieli in ("en", "es", "pt"):
+        for avain in AVAIMET:
+            kartta[f"{kieli}.ts:{avain}"] = kieli
+    return kartta
+
+
+def test_tyypillinen_tapaus_lause_on_johdettu_mittauksesta():
+    """Ydintesti: jokainen pinta sanoo mittauksen johtaman "N in ten" / "one
+    in M" -lauseen omalla kielellään, ei kovakoodattua sanamuotoa."""
+    _vaadi_molemmat_repot()
+    pinnat = _pinnat()
+    m = _mittaus()
+    kielet = _kielet_pinnoittain()
+    odotettu_lahella = share_in_ten_phrase(m["share_within_5"], "en")
+    odotettu_hanta = one_in_n_phrase(m["share_over_30"], "en")
+    viat = []
+    for nimi, teksti in pinnat.items():
+        kieli = kielet[nimi]
+        osa = _vaiteosa(teksti)
+        lahella = share_in_ten_phrase(m["share_within_5"], kieli)
+        hanta = one_in_n_phrase(m["share_over_30"], kieli)
+        if lahella not in osa or hanta not in osa:
+            viat.append((nimi, lahella, hanta))
+    assert not viat, (
+        f"nama pinnat eivat sano mitatun jakauman lausetta "
+        f"({odotettu_lahella} / {odotettu_hanta}): {viat}. "
+        "Mittaus: data/preseason_minutes_bias.json "
+        "(scripts/measure_preseason_minutes_bias.py)."
+    )
+
+
+def test_mutaatio_toinen_mittaus_ei_lapaisisi_nykyista_copya():
+    """Mutaatiotesti: jos mittaus antaisi olennaisesti eri jakauman, nykyinen
+    (oikea, tämänhetkiseen mittaukseen sidottu) copy EI saa läpäistä sitä —
+    muuten testi olisi fail-open eikä oikeasti mittaisi mitään."""
+    _vaadi_molemmat_repot()
+    pinnat = _pinnat()
+    vaara_lahella = share_in_ten_phrase(0.61, "en")   # oikea mittaus: 0.413
+    vaara_hanta = one_in_n_phrase(0.05, "en")          # oikea mittaus: 0.167
+    assert vaara_lahella != share_in_ten_phrase(_mittaus()["share_within_5"], "en")
+    assert vaara_hanta != one_in_n_phrase(_mittaus()["share_over_30"], "en")
+    spa = pinnat.get("pro-spa/XpTable.svelte", "")
+    osa = _vaiteosa(spa)
+    assert vaara_lahella not in osa and vaara_hanta not in osa, (
+        "kontrolli: väärän mittauksen lause löytyi nykyisestä copysta — "
+        "testi ei erottaisi oikeaa jakaumaa väärästä (fail-open)."
+    )
