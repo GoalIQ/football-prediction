@@ -4929,8 +4929,9 @@ def fantasy_xp(
     Mobiili (fetchXp) ja SPA hyötyvät molemmat ilman klienttimuutosta.
     """
     from src.models.fpl_xp import (
-        WHY_DEFAULT_LANG, WHY_LANGS, XP_PATHS, attach_minutes_trend, attach_why,
-        load_xp, minutes_trend_stamp, why_stamp,
+        WHY_DEFAULT_LANG, WHY_LANGS, XP_PATHS, attach_horizon_total_actionable,
+        attach_minutes_trend, attach_why, load_xp, minutes_trend_stamp,
+        why_stamp,
     )
     # SPL-laajennos (7.8): sama sopimus kuin /api/fantasy — oletus 'fpl' =
     # entinen vastaus, tuntematon avain = 404, ei hiljaista fallbackia.
@@ -4938,6 +4939,30 @@ def fantasy_xp(
     if lg not in XP_PATHS:
         raise HTTPException(status_code=404, detail=f"Unknown fantasy league '{league}'.")
     payload = load_xp(XP_PATHS[lg])
+    # XP-HORIZON-ALKANUT-KIERROS (17.9): `xp_horizon_total` lasketaan
+    # SERVE-TIMESSA vain kierroksilta joihin voi viela vaikuttaa
+    # (meta.horizon_total_from = actionable gameweek), rivit `gameweeks[]`
+    # pysyvat koko horisontin mittaisina (RAW_ALLOWED-peruste: sivu nayttaa
+    # gradatun kierroksen tuloksen vieressa). ENNEN maskia, koska
+    # `mask_xp_payload` valitsee ilmaisen kymmenikon tasta kentasta —
+    # muuten ilmainen top-10 olisi eri lista kuin premiumin jarjestys.
+    # Kutsupaikkaportti: tests/test_xp_horizon_total_actionable.py lukee
+    # taman funktion AST:n ja vaatii kutsun load_xp:n ja maskin valiin.
+    payload = attach_horizon_total_actionable(payload)
+    # Artefaktin rivijarjestys on putken summan mukaan (build_fpl_xp.py
+    # lajittelee `xp_horizon_total`illa). Kun summa vaihtuu serve-timessa,
+    # jarjestys lajitellaan samalla avaimella uudelleen — vakaa lajittelu.
+    # Putki kirjoittaa kentan SAMALLA funktiolla (17.9; sita ennen se oli
+    # pyoristamattomien summa ja erosi rivisummasta 234/482 rivilla, ja
+    # uudelleenlajittelu siirsi rivin 50 jo ennen deadlinea), joten ennen
+    # deadlinea luku ja jarjestys ovat artefaktin kanssa identtiset, ja
+    # kesken kierroksen klientti joka luottaa payloadin jarjestykseen
+    # (mobiilin xP-lista) ei nae 32.6:ta 33.0:n ylapuolella.
+    if isinstance(payload.get("players"), list):
+        payload["players"] = sorted(
+            payload["players"],
+            key=lambda p: -float((p.get("xp_horizon_total") if isinstance(p, dict)
+                                  else None) or 0.0))
     # Talteen ENNEN maskausta: kevyt valitsinpooli rakennetaan koko listasta.
     full_players = list(payload.get("players") or [])
     # RATE-MY-DRAFT-14-15 (10.9): valitsinpooliin myos `excluded` (sivussa
@@ -5022,7 +5047,13 @@ def fantasy_xp(
     # versionostoa ehdollinen pyynto validoisi vanhan vastauksen 304:lla ja
     # sarake jaisi tyhjaksi tasan niilta joilla vastaus on jo valimuistissa —
     # eli aktiivisimmilta kayttajilta. Sama ansa kuin s4-s7:ssa.
-    schema = "s8"
+    # 17.9 s9: `xp_horizon_total` vaihtoi SEMANTIIKKAA ilman uutta
+    # projektiota (summa vain vaikutettavista kierroksista, ei koko
+    # horisontista) ja meta sai `horizon_total_from` + `horizon_total_gw`.
+    # `generated_at` on sama, joten ilman nostoa ehdollinen pyynto validoisi
+    # vanhan vastauksen 304:lla ja klientti nayttaisi vanhan summan uuden
+    # otsikon alla tasan niille joilla vastaus on jo valimuistissa.
+    schema = "s9"
     # Liiga-avain ETagiin: ilman sitä fpl- ja spl-vastaukset voisivat
     # 304-validoitua ristiin samasta selainvälimuistista (sama URL-polku,
     # eri query) — sama vikaluokka kuin mask-bitin puuttuminen olisi.
@@ -5229,6 +5260,7 @@ def fantasy_model_squad(response: Response):
     laskentaa mallipolulla. Ei entry-ID:tä, ei kirjautumista."""
     from src.models.fpl_rate_team import (
         POS_NAME, RateTeamError, build_context, free_optimum)
+    from src.models.fpl_xp import horizon_total_meta
     response.headers["Cache-Control"] = "no-store"
     try:
         xp_data, _bootstrap, pool, _pool_by_id = build_context()
@@ -5245,6 +5277,9 @@ def fantasy_model_squad(response: Response):
                 "generated_at": xp_data["meta"].get("generated_at"),
                 "horizon_gw": xp_data["meta"].get("horizon_gw"),
                 "next_gameweek": xp_data["meta"].get("next_gameweek"),
+                # 17.9: `xi_xp_horizon` on poolin `xp_horizon_total`ien summa
+                # eli vaikutettavien kierrosten summa; ikkuna nimetaan.
+                **horizon_total_meta(xp_data["meta"]),
                 "xi_xp_horizon": round(free["xi_xp"], 2),
                 "optimal_proven": bool(free["proven"]),
             },

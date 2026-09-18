@@ -44,6 +44,9 @@ from src.doubt_copy import lauseena as doubt_lauseena
 
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
+from src.models.fpl_xp import (  # noqa: E402
+    attach_horizon_total_actionable, horizon_sum_gw,
+)
 from src.models import gw_calls as gwc  # kapteenin kerroin, yksi lukija
 from src.models.call_margin import call_state, pct_int  # suosikki: yksi lukija
 
@@ -3514,7 +3517,14 @@ def xp_table_rows(xp: dict, n: int = 4) -> str:
             f'<span>{float(p.get("owned_pct") or 0):.1f}%</span>'
             f'<span class="mock-xp">{p["xp_horizon_total"]:.1f}</span></div>'
         )
-    horizon = (xp.get("meta") or {}).get("horizon_gw")
+    # 17.9: "next N gameweeks" = montako kierrosta SUMMASSA on
+    # (`horizon_total_gw`, attach_horizon_total_actionable), ei sarakkeiden
+    # maara: kesken kierroksen lista kantaa myos alkaneen kierroksen.
+    # 18.9: sama YKSI LUKIJA kuin longtail-sivuilla; vanha payload ilman
+    # kenttaa rajaa rivien kierroslistan `actionable_gameweeks`illa.
+    _meta = xp.get("meta") or {}
+    horizon = horizon_sum_gw(
+        _meta, ((xp.get("players") or [{}])[0].get("gameweeks")) or [])
     foot = (
         '        <div class="mock-foot">Model projections'
         + (f", next {horizon} gameweeks" if horizon else "")
@@ -4047,6 +4057,10 @@ def main() -> None:
     c = build_context(fpl, acc)
     preds = load_log()
     xp = _load_json(XP_PATH)
+    if xp:
+        # 17.9: etusivun taulukon `xp_horizon_total` samasta lukijasta kuin
+        # /api/fantasy/xp - summa vain vaikutettavista kierroksista.
+        xp = attach_horizon_total_actionable(xp)
     html_out = render_page(c, xp)
     OUT_PATH.write_text(html_out, encoding="utf-8")
     sitemap_changed = update_sitemap(c["iso_date"])

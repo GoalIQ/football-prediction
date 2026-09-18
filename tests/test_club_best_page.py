@@ -36,17 +36,39 @@ _spec.loader.exec_module(gsc)
 
 @pytest.fixture(scope="module")
 def payload():
-    return json.loads(XP.read_text(encoding="utf-8"))
+    """SAMA LUKIJA kuin sivulla ja kortilla (17.9, XP-HORIZON-ALKANUT-
+    KIERROS): `xp_horizon_total` on vaikutettavien kierrosten rivisumma.
+    Raaka artefakti kantaa putken summan, ja mitattu 17.9 se erosi
+    rivisummasta 8 club-best-rivilla yhden desimaalin tarkkuudella -
+    fikstuuri joka lukee raakaa vertaisi korttia lukuun jota mikaan pinta
+    ei nayta."""
+    from src.models.fpl_xp import attach_horizon_total_actionable
+    return attach_horizon_total_actionable(
+        json.loads(XP.read_text(encoding="utf-8")))
 
 
 @pytest.fixture(scope="module")
 def html():
-    """Sivun NAKYVA teksti, ei raaka lahde.
+    """LEVYN SIVU — se jonka CF Pages tarjoilee — nakyvana tekstina.
 
     19.8: testi vertasi nimia raakaan HTMLiin ja kaatui heti kun karkeen
     nousi nimi jossa on heittomerkki (O'Reilly -> `O&#x27;Reilly`). Rivi OLI
     sivulla; testi ei nahnyt sita. Portti joka huutaa vaarasta syysta opitaan
-    ohittamaan, joten entiteetit puretaan ennen vertailua."""
+    ohittamaan, joten entiteetit puretaan ennen vertailua.
+
+    🔴 EI PROSESSISSA RENDEROITU SIVU (palautettu 18.9). 17.9 tama fikstuuri
+    vaihdettiin lukemaan `render_club_best`in tuotos samasta payloadista
+    jolla kortti tehdaan — silloin vertailu sanoo vain etta funktio on
+    sama funktio, ja levyn `fpl/club-best.html` voi olla mita tahansa.
+    Mitattu 18.9 juuri sina hetkena: 13/80 riviaa erosi nakyvalla
+    tarkkuudella (SUN GKP gap +15.3 -> +15.2, MCI DEF xP 29.7 -> 29.8).
+    Kortin alatunniste ohjaa lukijan TALLE sivulle todistamaan luvun.
+
+    Perustelu jolla vaihto tehtiin (builderin muutos jattaa levyn sivun
+    vanhaksi seuraavaan ajoon asti) on oikea havainto ja se hoidetaan
+    `tests/test_committed_pages_match_builder.py`illa: se vaatii etta
+    committattu sivu ON taman builderin ja taman artefaktin tulos, eli
+    regeneroinnin samaan pushiin. Kumpikin portti yksin ei riita."""
     if not PAGE.exists():
         pytest.skip("sivua ei ole rakennettu talla koneella")
     return _html.unescape(PAGE.read_text(encoding="utf-8"))

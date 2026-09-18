@@ -21,6 +21,7 @@ RateTeamError, ei kaatumista.
 from __future__ import annotations
 
 from src.models.fpl_gameweek import actionable_gameweek
+from src.models.fpl_xp import horizon_total_meta
 
 from statistics import pstdev
 
@@ -106,6 +107,9 @@ def value_list(top_n: int = 20) -> dict:
             # kierrokseen. Ks. src/models/fpl_gameweek.py.
             "gw": actionable_gameweek(meta),
             "horizon_gw": meta.get("horizon_gw"),
+            # 17.9: `xp_horizon_total` (ja siita jaettu `value`) on
+            # vaikutettavien kierrosten summa; ikkuna nimetaan metassa.
+            **horizon_total_meta(meta),
             "generated_at": meta.get("generated_at"),
             "note": VALUE_NOTE,
             "availability_gate": {"checked": True, "dropped": dropped,

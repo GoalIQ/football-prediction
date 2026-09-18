@@ -53,6 +53,7 @@ TOP_N = 150
 # Alle taman xGI/90 jatetaan pois lauseesta: se ei kanna painoa jonka
 # "leans on" sille antaisi (ks. template_sentence).
 from src.models.fpl_why_drivers import XGI_MIN  # noqa: E402  yksi kynnys, sama kuin ilmaissivun todiste
+from src.models.fpl_xp import attach_horizon_total_actionable  # noqa: E402
 
 # Nosta AINA kun `template_sentence` muuttuu: se on osa valimuistin avainta
 # mallipohjaisille lauseille. v2 (14.8): xGI-kynnys + kolme runkoa.
@@ -444,7 +445,27 @@ def select_players(payload: dict, gw: int, top_n: int) -> list[dict]:
 
     `gw`-parametri sailyy allekirjoituksessa: sita kaytetaan faktalohkon
     poimintaan, ei enaa jarjestykseen.
+
+    🔴 18.9 (XP-HORIZON-ALKANUT-KIERROS): JARJESTYS LUETAAN LUKIJAN LAPI,
+    EI ARTEFAKTISTA. Artefaktin `xp_horizon_total` on putken summa KOKO
+    kierroslistasta, myos jo alkaneesta kierroksesta; ruudulla nakyva
+    jarjestys tulee 17.9 alkaen serve-timen rajatusta summasta
+    (`attach_horizon_total_actionable`, /api/fantasy/xp). Kesken kierroksen
+    ne ovat eri jarjestys, ja silloin nakyvan top 150:n sisalle jaa rivi
+    ILMAN selitysta ja selitys 150:n ulkopuolelle — tasan 14.8 mitattu vika
+    uudelleen, vain eri syysta. Mitattu 18.9 tuotantoartefaktilla
+    (synteettinen deadline_gameweek = next_gameweek + 1, eli kierros
+    kesken): 378/482 rivia vaihtoi paikkaa ja 2 rivia vaihtui top 150:n
+    rajan yli — kaksi selitysta olisi kirjoitettu riville jota ostaja ei
+    nae, ja kaksi nakyvaa rivia olisi jaanyt ilman.
+
+    Lukija ajetaan TASSA eika vain `main()`issa: kutsupaikka ei voi valita
+    raa'alla summalla edes vahingossa, eika portti voi vartioida eri lukua
+    kuin ostaja nakee. Funktio on idempotentti ja johtaa arvon riveista,
+    joten jo rajatulle payloadille ajaminen ei liikuta mitaan.
     """
+    attach_horizon_total_actionable(payload)
+
     def horizon(p: dict) -> float:
         return float(p.get("xp_horizon_total") or 0.0)
     players = [p for p in (payload.get("players") or []) if horizon(p) > 0]
@@ -543,7 +564,10 @@ def main() -> int:
     if not XP_PATH.exists():
         print(f"::warning::{XP_PATH.name} puuttuu — ohitetaan.")
         return 0
-    payload = json.loads(XP_PATH.read_text(encoding="utf-8"))
+    # 18.9: sama lukija kuin API:lla ja sivuilla jo latauspisteessa —
+    # faktalohkot (`xp_horizon_total`) ja valinta lukevat rajattua summaa.
+    payload = attach_horizon_total_actionable(
+        json.loads(XP_PATH.read_text(encoding="utf-8")))
     meta = payload.get("meta") or {}
     gws = sorted({g.get("gw") for p in (payload.get("players") or [])
                   for g in (p.get("gameweeks") or []) if g.get("gw")})

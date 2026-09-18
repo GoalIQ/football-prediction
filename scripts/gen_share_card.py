@@ -256,10 +256,17 @@ def _xp_payload() -> dict:
     maskattuun dataan olisi tasan tama bugi uudelleen.
     """
     import urllib.request
+    # 17.9 (XP-HORIZON-ALKANUT-KIERROS): kortti on JULKINEN KUVA, ja se lukee
+    # artefaktia suoraan eika API:a. Artefaktin `xp_horizon_total` on putken
+    # summa koko listasta, myos jo alkaneesta kierroksesta. Sama funktio kuin
+    # API:n serve-polulla, molemmilla lahdepoluilla; idempotentti, joten
+    # API-vastaukselle ajaminen ei liikuta lukua.
+    from src.models.fpl_xp import attach_horizon_total_actionable
 
     p = DATA / "fpl_xp_projections.json"
     if p.exists():
-        data = json.loads(p.read_text(encoding="utf-8"))
+        data = attach_horizon_total_actionable(
+            json.loads(p.read_text(encoding="utf-8")))
         n = len(data.get("players") or [])
         print(f"[data] repon artefakti: {n} pelaajaa (maskaamaton)")
         return data
@@ -275,7 +282,23 @@ def _xp_payload() -> dict:
             f"rakenneta myyntipinnasta — aja tama repossa, jolloin "
             f"data/fpl_xp_projections.json on kaytettavissa.")
     print(f"[data] API: {n} pelaajaa")
-    return data
+    return attach_horizon_total_actionable(data)
+
+
+def _horizon_n(data: dict) -> int:
+    """Montako kierrosta `xp_horizon_total` kattaa — otsikon "next N GW".
+
+    17.9: oli `len(gameweeks)` eli sarakkeiden maara. Kesken kierroksen
+    lista kantaa myos alkaneen kierroksen, joten kortti olisi sanonut
+    "next 6 GW" summalle joka on viiden kierroksen summa. Luetaan samasta
+    metasta johon summa kirjoitettiin (`attach_horizon_total_actionable`);
+    vanha payload ilman kenttaa putoaa entiseen laskutapaan.
+    """
+    n = (data.get("meta") or {}).get("horizon_total_gw")
+    if isinstance(n, int) and n > 0:
+        return n
+    players = data.get("players") or []
+    return len(((players[0] if players else {}).get("gameweeks")) or []) or 6
 
 
 def _load(name: str) -> dict:
@@ -585,7 +608,7 @@ def card_price_tier(args) -> dict:
     """
     data = _xp_payload()
     players = data.get("players") or []
-    n_gw = len(((players[0] if players else {}).get("gameweeks")) or []) or 6
+    n_gw = _horizon_n(data)
 
     ranked = sorted(players, key=lambda p: -float(p.get("xp_horizon_total") or 0))
     cap = args.rank_cap or len(ranked)
@@ -665,7 +688,7 @@ def card_value(args) -> dict:
     """
     data = _xp_payload()
     players = data.get("players") or []
-    n_gw = len(((players[0] if players else {}).get("gameweeks")) or []) or 6
+    n_gw = _horizon_n(data)
     floor = args.min_mins if args.min_mins and args.min_mins < 90 else 60
     rows = []
     for p in players:
@@ -727,7 +750,7 @@ def card_club_best(args) -> dict:
 
     data = _xp_payload()
     players = data.get("players") or []
-    n_gw = len(((players[0] if players else {}).get("gameweeks")) or []) or 6
+    n_gw = _horizon_n(data)
 
     # 🔴 JAETTU LASKENTA. Alatunniste ohjaa lukijan /fpl/club-best-sivulle
     # todistamaan nama luvut. Jos kortti ja sivu laskisivat ne erikseen, ne

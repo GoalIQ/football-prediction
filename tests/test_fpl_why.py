@@ -163,17 +163,74 @@ def test_selection_matches_visible_order():
 
     Tama testi korvaa `test_select_players_orders_by_this_gw_xp`:n, joka
     koodasi vanhan kaytoksen.
+
+    🔴 18.9 (XP-HORIZON-ALKANUT-KIERROS): FIKSTUURI ON KESKEN KIERROKSEN,
+    ja `xp_horizon_total` on siina ARTEFAKTIN RAAKA luku (putken summa koko
+    listasta). Aiempi versio luki payloadin omaa kenttaa, joten se pysyi
+    vihreana vaikka nakyva jarjestys tuli 17.9 alkaen toisesta lukijasta
+    (serve-timen rajattu summa) — portti vartioi eri lukua kuin ostaja nakee.
+    Nyt sama fikstuuri erottaa KOLME toteutusta:
+      raaka summa        -> [1, 2]  (P1 30.0 > P2 14.0)
+      ensimmaisen GW:n xP-> [1, 2]  (P1 GW4 9.0 > P2 GW4 6.0)
+      rajattu summa      -> [2, 1]  (P2 12.0 > P1 10.0)   <- ainoa oikea
     """
-    payload = {"players": [
-        # Jarjestys KAANTYY jos katsotaan GW1:ta horisontin sijaan -> tama
-        # on negatiivinen kontrolli vanhaa toteutusta vastaan.
-        {"id": 1, "xp_horizon_total": 30.0, "gameweeks": [{"gw": 1, "xp": 2.0}]},
-        {"id": 2, "xp_horizon_total": 10.0, "gameweeks": [{"gw": 1, "xp": 9.0}]},
-        {"id": 3, "xp_horizon_total": 0.0, "gameweeks": [{"gw": 2, "xp": 9.9}]},
-    ]}
-    got = why.select_players(payload, gw=1, top_n=5)
-    assert [p["id"] for p in got] == [1, 2], (
-        "valinta ei seuraa xp_horizon_totalia -> maksumuurin lupaus on vaarin")
+    payload = {
+        # GW3 on kaynnissa, GW4:n deadline on edessa -> summa alkaa GW4:sta.
+        "meta": {"next_gameweek": 3, "deadline_gameweek": 4},
+        "players": [
+            {"id": 1, "xp_horizon_total": 30.0,
+             "gameweeks": [{"gw": 3, "xp": 20.0}, {"gw": 4, "xp": 9.0},
+                           {"gw": 5, "xp": 1.0}]},
+            {"id": 2, "xp_horizon_total": 14.0,
+             "gameweeks": [{"gw": 3, "xp": 2.0}, {"gw": 4, "xp": 6.0},
+                           {"gw": 5, "xp": 6.0}]},
+            # Rivi jolla on xP VAIN alkaneessa kierroksessa: ei enaa
+            # valittavissa, joten se ei saa selitysta.
+            {"id": 3, "xp_horizon_total": 9.9,
+             "gameweeks": [{"gw": 3, "xp": 9.9}]},
+        ]}
+    got = why.select_players(payload, gw=4, top_n=5)
+    assert [p["id"] for p in got] == [2, 1], (
+        "valinta ei seuraa NAKYVAA xp_horizon_totalia (rajattu summa) -> "
+        "maksumuurin lupaus 'top 150 by Total xP' on vaarin")
+
+
+def test_selection_fixture_would_pass_the_old_implementation():
+    """Erotteleva fikstuuri: EXIT-KOODI EI OLE TODISTE MEKANISMISTA.
+
+    Tama mittaa etta yllaoleva fikstuuri todella kaataisi molemmat vaarat
+    toteutukset — ilman tata testi voisi olla vihrea siksi etta kaikki
+    jarjestykset sattuvat olemaan samat."""
+    rows = [
+        {"id": 1, "xp_horizon_total": 30.0,
+         "gameweeks": [{"gw": 3, "xp": 20.0}, {"gw": 4, "xp": 9.0},
+                       {"gw": 5, "xp": 1.0}]},
+        {"id": 2, "xp_horizon_total": 14.0,
+         "gameweeks": [{"gw": 3, "xp": 2.0}, {"gw": 4, "xp": 6.0},
+                       {"gw": 5, "xp": 6.0}]},
+    ]
+    raaka = [p["id"] for p in sorted(rows, key=lambda p: -p["xp_horizon_total"])]
+    gw_xp = [p["id"] for p in sorted(
+        rows, key=lambda p: -[g["xp"] for g in p["gameweeks"] if g["gw"] == 4][0])]
+    assert raaka == [1, 2] and gw_xp == [1, 2], (raaka, gw_xp)
+
+
+def test_select_players_does_not_trust_a_raw_payload_field():
+    """Kutsupaikka ei voi ohittaa lukijaa: vaikka payloadissa lukisi
+    tahallaan vaara summa, valinta johdetaan riveista."""
+    payload = {
+        "meta": {"next_gameweek": 3, "deadline_gameweek": 4},
+        "players": [
+            {"id": 1, "xp_horizon_total": 999.0,
+             "gameweeks": [{"gw": 3, "xp": 999.0}, {"gw": 4, "xp": 1.0}]},
+            {"id": 2, "xp_horizon_total": 0.1,
+             "gameweeks": [{"gw": 3, "xp": 0.0}, {"gw": 4, "xp": 5.0}]},
+        ]}
+    got = why.select_players(payload, gw=4, top_n=5)
+    assert [p["id"] for p in got] == [2, 1], got
+    # ...ja kentta on korjattu payloadiin, jotta faktalohko ja selitysteksti
+    # lukevat samaa lukua kuin valinta.
+    assert payload["players"][0]["xp_horizon_total"] == 1.0
 
 
 def test_template_drops_meaningless_xgi():

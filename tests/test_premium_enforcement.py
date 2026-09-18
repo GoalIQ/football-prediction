@@ -489,7 +489,7 @@ def test_pool_lisays_nosti_etag_skeemaversiota():
     # ETagiin lisattiin myos `mt<gw>` (vertailukohdan kierros); pelkka s8
     # olisi jattanyt sarakkeen nayttamaan edellisen kierroksen eroa uuden
     # freezen jalkeen. Ks. tests/test_xp_etag_parts.py.
-    NYKYINEN = "s8"
+    NYKYINEN = "s9"
     src = (API_DIR / "main.py").read_text(encoding="utf-8")
     assert f'schema = "{NYKYINEN}"' in src, (
         f"ETagin skeemaversio ei ole {NYKYINEN}. Jos lisasit pooliin kentan "

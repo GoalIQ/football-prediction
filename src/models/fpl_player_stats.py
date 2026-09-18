@@ -59,6 +59,7 @@ import config
 from src.models.fpl_gameweek import actionable_gameweek
 from src.models import fpl_actuals
 from src.models.fpl_rate_team import RateTeamError
+from src.models.fpl_xp import horizon_total_meta
 
 STATS_PATH = config.DATA_DIR / "fpl_player_stats.json"
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
@@ -231,12 +232,18 @@ def _live_fields(p: dict | None, next_gw: int | None) -> tuple:
     Horisontti summataan jaljella olevista (actionable) kierroksista eika
     lueta tiedoston `xp_horizon_total`-kentasta: se kantaa myos jo alkaneen
     kierroksen (fpl_gameweek.actionable_gameweeks, mitattu 25.8).
+
+    17.9: summa tulee `fpl_xp.horizon_total_actionable`ista — samasta
+    funktiosta kuin /api/fantasy/xp:n `xp_horizon_total`. Tassa oli oma
+    silmukka joka laski saman asian toisella koodilla; kaksi lukijaa samaan
+    kysymykseen on se rakenne jossa toinen unohtaa rajauksen. `None` sailyy
+    kun yhdellakaan rivilla ei ole lukua (puuttuva luku ei ole nolla).
     """
     if not p:
         return None, None
+    from src.models.fpl_xp import horizon_total_actionable
     gws = p.get("gameweeks") or []
     nxt = None
-    total = 0.0
     seen = False
     for g in gws:
         if not isinstance(g, dict):
@@ -245,10 +252,11 @@ def _live_fields(p: dict | None, next_gw: int | None) -> tuple:
         if xp is None:
             continue
         seen = True
-        total += xp
         if next_gw is not None and g.get("gw") == next_gw:
             nxt = round(xp, 2)
-    return nxt, (round(total, 2) if seen else None)
+    if not seen:
+        return nxt, None
+    return nxt, horizon_total_actionable(gws, next_gw)
 
 
 def aggregate(stats_doc: dict, gw_doc: dict,
@@ -436,6 +444,13 @@ def aggregate(stats_doc: dict, gw_doc: dict,
             "frozen_gws": frozen_gws,
             "compared_gws": compared_gws,
             "compare_note": COMPARE_NOTE,
+            # 17.9: `goaliq.xp_horizon_total` on vaikutettavien kierrosten
+            # summa (`_live_fields` -> `horizon_total_actionable`); nama
+            # kertovat mista kierroksesta ja monestako. Sama sopimus kuin
+            # /api/fantasy/xp:lla. `live_meta` on jo `load_xp_actionable`n
+            # kirjoittama; ilman elavaa projektiota avaimet ovat null,
+            # kuten `xp_horizon_total`kin.
+            **horizon_total_meta(live_meta),
             "masked": not premium,
             "mask": None if premium else MASK_TEXT,
             "source": SOURCE,

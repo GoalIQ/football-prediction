@@ -51,6 +51,7 @@ from scripts.build_spl_phase0 import (
 )
 from src.models import spl_xp as xp
 from src.models.fpl_context import fixture_contexts, neutral_lambda
+from src.models.fpl_xp import horizon_total_actionable
 from src.models.promoted_baseline import (
     add_promoted_baseline,
     blend_thin_toward_baseline,
@@ -449,7 +450,9 @@ def main() -> int:
             } if hp else None),
             "xp_per_gw": round(total / len(horizon), 2),
             "xp_per_90": round(xp.xp_full_90(pos, rates, neutral_ctx), 2),
-            "xp_horizon_total": round(total, 2),
+            # 17.9: sama maaritelma kuin FPL-putkella ja API:n lukijalla -
+            # julkaistujen rivien summa (ks. build_fpl_xp.py).
+            "xp_horizon_total": horizon_total_actionable(gw_rows, None),
             "gameweeks": gw_rows,
         })
     players_out.sort(key=lambda p: -p["xp_horizon_total"])

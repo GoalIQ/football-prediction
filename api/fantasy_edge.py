@@ -37,7 +37,9 @@ from src.models.fpl_rate_team import (
     get_bootstrap, get_entry_picks, optimal_xi, picks_outdated, resolve_squad,
 )
 from src.models import fpl_chips, fpl_entry_history, fpl_wildcard
-from src.models.fpl_xp import load_xp
+from src.models.fpl_xp import (
+    attach_horizon_total_actionable, horizon_total_meta, load_xp,
+)
 
 from api.premium import (
     FREE_CHIP_WINDOWS, FREE_EDGE_CAPTAINS, FREE_EDGE_DIFFERENTIALS,
@@ -353,7 +355,10 @@ def fantasy_xp_csv(
 
     ?sep=; -> eurooppalainen muoto (';' erottimena, ',' desimaalina). Oletus
     ',' pysyy UK/US-Excelille, Sheetsille ja pandasille."""
-    data = load_xp()
+    # 17.9: sama `xp_horizon_total` kuin /api/fantasy/xp (vain vaikutettavat
+    # kierrokset), muuten CSV:n sarake ja sivun taulukko olisivat eri lukua
+    # kesken kierroksen. Myos jarjestys ja teaser-typistys seuraavat sita.
+    data = attach_horizon_total_actionable(load_xp())
     if not data.get("meta", {}).get("available") or not data.get("players"):
         raise HTTPException(status_code=503,
                             detail="xP projections are not available yet.")
@@ -1342,6 +1347,10 @@ def fantasy_rival(
         premium=is_premium_request(request))
     out["meta"]["gw"] = target_gw
     out["meta"]["generated_at"] = xp_data["meta"].get("generated_at")
+    # 17.9: rivien `xp_horizon` (ja siita johdettu `swing`) on poolin
+    # `xp_horizon_total` eli vaikutettavien kierrosten summa; ikkuna
+    # nimetaan metassa samalla sopimuksella kuin /api/fantasy/xp:lla.
+    out["meta"].update(horizon_total_meta(xp_data["meta"]))
     out["meta"]["disclaimer"] = DISCLAIMER
     out["you"] = {"entry": entry, "team_name": name_you,
                   "xi_xp": round(mu_you, 2), "players_matched": m_you}
@@ -1461,6 +1470,9 @@ def fantasy_edge(
             "entry": entry, "mode": mode, "gw": target_gw,
             "overall_rank": overall_rank,
             "generated_at": xp_data["meta"].get("generated_at"),
+            # 17.9: differentiaalien ja template-riskien `xp_horizon_total`
+            # on vaikutettavien kierrosten summa; ikkuna nimetaan metassa.
+            **horizon_total_meta(xp_data["meta"]),
             "formula": (f"captain score = gw_xp * (1 - {w} + {w} * EO/100) "
                         "for protect; EO term inverted for climb. Heuristic "
                         "MVP - honest weighting, not a rank simulation."),
