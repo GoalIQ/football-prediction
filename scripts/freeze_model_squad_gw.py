@@ -263,7 +263,8 @@ def _ft_available(prev_meta: dict) -> int:
 
 
 def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
-                           ft: int, bootstrap: dict | None = None) -> dict | None:
+                           ft: int, bootstrap: dict | None = None,
+                           excluded: dict[int, dict] | None = None) -> dict | None:
     """Peri edellinen runko ja tee siihen FPL:n saannoilla sallitut siirrot.
 
     28.8 (PLANNER-FREEZE-DIVERGENCE): kayttaa `fpl_transfers.plan_gw`:ta eli
@@ -320,7 +321,7 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
     for p in edellinen:
         if p["id"] in by_id_runko:
             continue
-        rivi = _departed_player(p["id"], bootstrap or {})
+        rivi = _departed_player(p["id"], bootstrap or {}, excluded)
         if rivi is not None:
             by_id_runko[p["id"]] = rivi
     squad = [_with_selling_price(by_id_runko[p["id"]], p)
@@ -344,12 +345,21 @@ def _constrained_from_prev(prev: dict, pool: list[dict], gw: int,
                 # Pankin muutos on tarkistettavissa rivilta: myyntihinta
                 # ulos, nykyhinta sisaan.
                 "out_selling_price": m["selling_price_out"],
-                "in_price": int(m["in"]["price"])}
+                "in_price": int(m["in"]["price"]),
+                # 17.9: lahtija oli pelaaja jota ei voi pelata (rakenteinen
+                # syy, ks. fpl_transfers.repair_reason). Kuolleen paikan
+                # siivouksella gain_xp on 0.0 ja tama kertoo miksi.
+                "repair": bool(m.get("repair")),
+                "repair_reason": m.get("repair_reason")}
                for m in step["moves"]]
     return {"squad": step["squad"], "bank": step["bank_tenths"],
             "bank_before": bank,
             "transfers": siirrot, "hits": step["hits"], "ft_available": ft,
-            "ft_left": step["ft_left"], "engine": "fpl_transfers.plan_gw"}
+            "ft_left": step["ft_left"], "engine": "fpl_transfers.plan_gw",
+            # 17.9: lukijan vastaus lopulliselle rungolle. Ei-tyhja = moottori
+            # jatti pelaamattoman tietoisesti (vapaa siirto meni XI-parannukseen,
+            # kuten GW5: White->Thomas +5.18 ja Dovin jaa). Metaan, ei hiljaa.
+            "unplayable_left": list(step.get("unplayable_left") or [])}
 
 
 class FreezeInputError(ValueError):
@@ -529,7 +539,9 @@ def load_reseed(gw: int) -> tuple[dict | None, str | None]:
 
 def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
                hae=None, hae_historia=None,
-               hae_siirrot=None) -> tuple[dict | None, str | None]:
+               hae_siirrot=None,
+               excluded: dict[int, dict] | None = None
+               ) -> tuple[dict | None, str | None]:
     """(prev-muotoinen runko entryn pickeista, virhe).
 
     Rahatila (pankki, myyntihinnat, FPL:n `value`) luetaan entryn omasta
@@ -557,7 +569,7 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
     # muisti `fpl-lahtenyt-pelaaja-pysyy-bootstrapissa` varoittaa.
     # Ratkaisu: han on rungossa xP 0:lla (han ei voi pelata), muttei
     # poolissa. Siirtomoottori saa myyda hanet, kukaan ei voi ostaa.
-    lahteneet = {i: _departed_player(i, bootstrap)
+    lahteneet = {i: _departed_player(i, bootstrap, excluded)
                  for i in ids if i not in by_id}
     rikki = [i for i, p in lahteneet.items() if p is None]
     if rikki:
@@ -585,7 +597,8 @@ def entry_seed(source_gw: int, pool: list[dict], bootstrap: dict,
     return siemen, None
 
 
-def _departed_player(pid: int, bootstrap: dict) -> dict | None:
+def _departed_player(pid: int, bootstrap: dict,
+                     excluded: dict[int, dict] | None = None) -> dict | None:
     """Pool-muotoinen rivi pelaajalle joka on rungossa muttei poolissa.
 
     xP on nolla joka kierrokselle, koska han ei voi pelata. Rivi on
@@ -603,10 +616,23 @@ def _departed_player(pid: int, bootstrap: dict) -> dict | None:
     mitannut heidan korvaamistaan taydella rimalla. Nyt runko rakennetaan
     samasta funktiosta kuin moottorin oma placeholder, ja tama lisaa vain
     freezen tarvitsemat lisakentat.
+
+    🔴 18.9 (adversariaalinen tarkistus): tama YLIKIRJOITTI kaksi kenttaa
+    arvoilla joita lahde ei kerro — `chance_next: 0` ja
+    `minutes_source: "left_league"`. Molemmat ovat EPATOSIA juuri sille
+    kahdelle riville joiden takia `no_projection`-lippu on olemassa: Lewis
+    (395) ja Gruev (344) putosivat artefaktista syylla `below_min_xp`, ja
+    FPL sanoo heille status "a" / "d 25 %". `chance_next: 0` on lisaksi
+    yksi `fpl_transfers.unavailable_by_fpl`in kolmesta myonteisesta
+    todisteesta, eli keksitty nolla olisi tehnyt pelikelpoisesta
+    penkkilaisesta "kuolleen paikan" freeze-polulla ja moottori olisi
+    myynyt hanet vapaalla siirrolla hyodylla 0.00. Kentat tulevat nyt
+    `placeholder_player`ista eli bootstrapista, ja artefaktin syy kulkee
+    mukana (`excluded`).
     """
     from src.models.fpl_transfers import placeholder_player
 
-    base = placeholder_player(pid, bootstrap)
+    base = placeholder_player(pid, bootstrap, (excluded or {}).get(pid))
     if base is None:
         return None
     el = {int(e.get("id") or 0): e
@@ -625,9 +651,7 @@ def _departed_player(pid: int, bootstrap: dict) -> dict | None:
         "xmins": 0.0,
         "predicted_starts": 0.0,
         "p_start": 0.0,
-        "chance_next": 0,
         "minutes_confidence": "none",
-        "minutes_source": "left_league",
         "off_pool": True,
     })
     return base
@@ -843,6 +867,12 @@ def main() -> int:
         RateTeamError, build_context, free_optimum, optimal_xi)
     try:
         xp_data, _bootstrap, pool, _by_id = build_context()
+        # 18.9: artefaktin `excluded`-rivit id:n mukaan. Kulkee jokaiseen
+        # `_departed_player`-kutsuun, jotta `no_projection_reason` on
+        # artefaktin oma syy eika kovakoodattu "unavailable"
+        # (ks. fpl_transfers.repair_reason).
+        _excl_by_id = {e["id"]: e for e in (xp_data.get("excluded") or [])
+                       if isinstance(e, dict) and e.get("id") is not None}
     except RateTeamError as e:
         print(f"VIRHE: kontekstia ei saatu ({e.detail}).")
         return 1
@@ -859,7 +889,7 @@ def main() -> int:
     reseed_meta = None
     if reseed is not None:
         siemen, virhe = entry_seed(int(reseed["source_gw"]), pool,
-                                   _bootstrap)
+                                   _bootstrap, excluded=_excl_by_id)
         if virhe:
             print(f"VIRHE: reseed GW{gw} ei onnistunut: {virhe}")
             return 1
@@ -903,7 +933,7 @@ def main() -> int:
         # jolloin ketju oli vaarassa katketa (mitattu GW4: chip_evaluation null).
         for _p in (prev.get("xi") or []) + (prev.get("bench") or []):
             if _p["id"] not in _by_id:
-                _r = _departed_player(_p["id"], _bootstrap or {})
+                _r = _departed_player(_p["id"], _bootstrap or {}, _excl_by_id)
                 if _r is not None:
                     _by_id[_p["id"]] = _r
         _peritty = [_by_id[p["id"]] for p in (prev.get("xi") or []) + (prev.get("bench") or [])
@@ -912,7 +942,7 @@ def main() -> int:
             chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data)
         try:
             rajoitettu = _constrained_from_prev(
-                prev, pool, gw, _ft_available(prev_meta), _bootstrap)
+                prev, pool, gw, _ft_available(prev_meta), _bootstrap, _excl_by_id)
         except FreezeInputError as e:
             # Rahatila puuttuu perityltä rungolta: ei lasketa vanhalla
             # kaavalla, ei jaadyteta. Nakyva puute, ei vaara rivi.
@@ -931,7 +961,8 @@ def main() -> int:
             puuttuvat = [p["id"] for p in
                          (prev.get("xi") or []) + (prev.get("bench") or [])
                          if p["id"] not in {q["id"] for q in pool}
-                         and _departed_player(p["id"], _bootstrap or {}) is None]
+                         and _departed_player(p["id"], _bootstrap or {},
+                                              _excl_by_id) is None]
             print(f"::error::GW{prev_gw}:n runkoa ei voitu peria: "
                   f"jasenta ei loydy poolista, perityista eika bootstrapista "
                   f"(id {puuttuvat}). EI jaadyteta vapaata optimia — se olisi "
@@ -1051,6 +1082,9 @@ def main() -> int:
                 "ft_available_fpl") if edellinen else None),
             "ft_source": ((edellinen[1].get("meta") or {}).get("ft_source")
                           if edellinen else None),
+            # 17.9: rungon pelaamattomat jotka jaivat siirtojen jalkeen
+            # (fpl_transfers.unplayable_members). Tyhja lista = ei yhtaan.
+            "unplayable_left": (siirtotiedot or {}).get("unplayable_left") or [],
             "squad_rebuilt": siirtotiedot is None,
             # Malli ei pelaa chippejä v0:ssa — kerrotaan datassa asti, jotta
             # paneeli ei joudu arvaamaan sitä copyn perusteella. 28.8: arvio

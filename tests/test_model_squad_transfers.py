@@ -214,3 +214,95 @@ def test_ft_left_kertoo_kayttamattomat():
     out = m._constrained_from_prev(_prev_from(squad), squad, 2, ft=2)
     assert out["transfers"] == []
     assert out["ft_left"] == 2, "kayttamattomat rullaavat eteenpain"
+
+
+# ---------------------------------------------------------------------------
+# Kuollut penkkipaikka freezen kutsupaikalta (17.9, SIIRTOMOOTTORI-EI-MYY-
+# PENKIN-PELAAMATONTA). Reseed GW5:een tuo Dovinin (171, status u) takaisin
+# penkille; 12.9 mitattu etta moottori ei myy hanta koskaan (XI-hyoty 0.0000).
+# Tama mittaa saman freezen omalta polulta: _constrained_from_prev -> plan_gw.
+# ---------------------------------------------------------------------------
+def test_ketju_siivoaa_kuolleen_penkkipaikan_vapaalla_siirrolla():
+    m = _load()
+    prev = _laillinen_freeze(list(range(1, 16)), {"budget": 100.0})
+    # Korvaaja samasta seurasta kuin lahtija (15 -> seura 5), jotta klubiraja
+    # (3/seura) pitaa vaihdon jalkeen. xP sama kuin muilla -> XI-hyoty 0.
+    korvaaja = _p(16, pos=4, club=5)
+    pool = _laillinen_pool(range(1, 15)) + [korvaaja]
+    out = m._constrained_from_prev(prev, pool, 2, ft=1,
+                                   bootstrap=_bootstrap([15]))
+    assert out is not None
+    assert [(t["out"], t["in"]) for t in out["transfers"]] == [(15, 16)], out["transfers"]
+    assert out["transfers"][0]["gain_xp"] == 0.0
+    assert out["transfers"][0]["hit"] is False
+    # Rakenteinen syy nollahyodylle kulkee freezen riville asti. 18.9: syy on
+    # TARKISTETTAVUUSJARJESTYKSESSA, eli ensin se jonka lukija nakee FPL:n
+    # ilmaispinnalta. `_bootstrap` antaa statukseksi "u".
+    assert out["transfers"][0]["repair"] is True
+    assert out["transfers"][0]["repair_reason"] == "status:u"
+    assert out["hits"] == 0 and out["ft_left"] == 0
+    assert 15 not in {p["id"] for p in out["squad"]}
+    assert out["unplayable_left"] == []
+
+
+def test_ketju_kertoo_kuolleen_paikan_joka_jai_kun_siirto_meni_xi_parannukseen():
+    """GW5:n muoto (mitattu 17.9 oikealla artefaktilla): vapaa siirto menee
+    XI-parannukseen (White->Thomas +5.18) ja Dovin jaa penkille. Oikein,
+    mutta ei hiljaa: `unplayable_left` kertoo sen freeze-metaan asti."""
+    m = _load()
+    prev = _laillinen_freeze(list(range(1, 16)), {"budget": 100.0})
+    korvaaja = _p(16, pos=4, club=5)                 # kuolleen paikan korvaaja, hyoty 0
+    parannus = _p(17, pos=3, club=1, xp=30.0)        # MID club1 -> korvaa id 11
+    pool = _laillinen_pool(range(1, 15)) + [korvaaja, parannus]
+    yksi = m._constrained_from_prev(prev, pool, 2, ft=1, bootstrap=_bootstrap([15]))
+    assert [(t["out"], t["in"]) for t in yksi["transfers"]] == [(11, 17)], yksi["transfers"]
+    assert yksi["transfers"][0]["repair"] is False
+    assert yksi["unplayable_left"] == [15], "jaanyt pelaamaton on kerrottava"
+    kaksi = m._constrained_from_prev(prev, pool, 2, ft=2, bootstrap=_bootstrap([15]))
+    assert [(t["out"], t["in"]) for t in kaksi["transfers"]] == [(11, 17), (15, 16)]
+    assert kaksi["unplayable_left"] == [] and kaksi["hits"] == 0
+
+
+def test_NEG_ketju_ei_myy_pelikelpoista_poolin_ulkopuolista(monkeypatch):
+    """🔴 KUTSUPAIKKA freeze -> _departed_player -> plan_gw, KAANTEISVIKA
+    (18.9). `lahteneet` kattaa KAIKKI rungon jasenet jotka eivat ole
+    poolissa — eika vain liigasta lahteneita. Artefakti pudottaa myos
+    `below_min_xp`-rivit (mitattu: 2/177), ja heilla FPL:n status on "a"
+    tai "d 25 %". `_departed_player` ylikirjoitti heille `chance_next: 0`,
+    joka on yksi `unavailable_by_fpl`in myonteisista todisteista: freeze
+    olisi myynyt pelikelpoisen penkkilaisen vapaalla siirrolla hyodylla
+    0.00 vaikka moottorin oma lukija on korjattu.
+
+    KONTROLLI: sama runko status "u":lla siivotaan (edellinen testi), joten
+    tama ei ole vihrea siksi ettei korvaajaa olisi."""
+    m = _load()
+    prev = _laillinen_freeze(list(range(1, 16)), {"budget": 100.0})
+    korvaaja = _p(16, pos=4, club=5)
+    pool = _laillinen_pool(range(1, 15)) + [korvaaja]
+    boot = _bootstrap([15], status="a", news="")
+    boot["elements"][0]["chance_of_playing_next_round"] = None
+    excl = {15: {"id": 15, "excluded_reason": "below_min_xp"}}
+    rivi = m._departed_player(15, boot, excl)
+    # KONTROLLIT: han on yha `needs_repair` (rima) muttei kuollut paikka.
+    from src.models.fpl_transfers import (is_unplayable, needs_repair,
+                                          repair_reason)
+    assert needs_repair(rivi) is True
+    assert rivi["chance_next"] is None, "keksitty nolla on saatavuuslippu"
+    assert is_unplayable(rivi) is False
+    assert repair_reason(rivi) == "no_projection:below_min_xp"
+    for ft in (1, 2, 5):
+        out = m._constrained_from_prev(prev, pool, 2, ft=ft, bootstrap=boot,
+                                       excluded=excl)
+        assert out is not None
+        assert out["transfers"] == [], (ft, out["transfers"])
+        assert out["ft_left"] == ft, "vapaa siirto rullaa"
+        assert out["unplayable_left"] == []
+
+
+def test_NEG_ketju_ei_maksa_hittia_kuolleeseen_paikkaan():
+    m = _load()
+    prev = _laillinen_freeze(list(range(1, 16)), {"budget": 100.0})
+    pool = _laillinen_pool(range(1, 15)) + [_p(16, pos=4, club=5)]
+    out = m._constrained_from_prev(prev, pool, 2, ft=0,
+                                   bootstrap=_bootstrap([15]))
+    assert out is not None and out["transfers"] == [] and out["hits"] == 0
