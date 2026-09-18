@@ -29,6 +29,8 @@ from datetime import datetime, timezone
 import requests
 from fastapi import HTTPException, Request
 
+from src.free_window import until as _fw_until
+
 _SUPABASE_TIMEOUT = 10
 _PREMIUM_CACHE_TTL = 300.0
 _PREMIUM_CACHE_MAX = 500
@@ -90,7 +92,18 @@ FREE_VALUE_ROWS = 3           # sama luku kuin Value.svelte:n FREE_ROWS
 # Ikkuna vaatii KIRJAUTUMISEN (ilmainen tili). Se on tarkoituksellista:
 # tarkoitus on kerata yleiso jota meilla ei ole, ja anonyymi avaus antaisi
 # premium-payloadit ilman yhtaan kontaktia ja ilman jalkea.
-FREE_PREMIUM_UNTIL_DEFAULT = "2026-09-12T12:30:00+00:00"
+# 🔴 18.9.2026: TAMA EI ENAA KIRJOITA HETKEA. Ennen tassa oli oma literaali
+# "2026-09-12T12:30:00+00:00" ja `src/free_window.py`:ssa toinen,
+# "2026-09-12T12:30:00Z" - sama hetki, ERI MUOTO, eri tiedosto, eika mikaan
+# vertaillut niita (`check_free_window.py` vertaa sivun `data-until`-arvoa
+# vain `src.free_window`:iin, ei tahan). Seuraava ikkuna olisi avattu
+# toisesta ja unohdettu toisesta: paistetut sivut olisivat luvanneet
+# ilmaista Premiumia siihen asti kun TAMA moduuli - oikeuden portti - ei
+# enaa anna sita. Lupaus jota tuote ei pida, ja jokainen portti vihrea.
+# Nyt hetkella on yksi lukija; muoto sailyy byte-identtisena ulos
+# (`ends_utc` /api/creator-report + /api/free-window), koska se johdetaan
+# samasta hetkesta eika kirjoiteta uudelleen.
+FREE_PREMIUM_UNTIL_DEFAULT = _fw_until().isoformat()
 
 
 def _env(name: str) -> str:
@@ -103,8 +116,9 @@ def free_premium_window_end() -> datetime | None:
     🔴 `FREE_PREMIUM_UNTIL` on PELKKA KATKAISIN, ei paivamaara. Se voi vain
     sulkea ikkunan ("off"/"none"/"0"/"false"), ei siirtaa sita.
 
-    Syy: sama paivamaara elaa kolmella pinnalla (tama, mobiilin
-    `lib/freePremiumWindow.ts`, web-SPA:n `auth.svelte.ts`) ja se on
+    Syy: sama paivamaara on KIRJOITETTU kolmeen paikkaan, joista tama
+    moduuli LUKEE yhden: `src/free_window.py` (lahde), mobiilin
+    `lib/freePremiumWindow.ts` ja web-SPA:n `auth.svelte.ts`. Lisaksi se on
     KIRJOITETTU AUKI julkiseen copyyn ("12 September"). Jos env voisi
     siirtaa paivaa, backend antaisi premiumin eri paivaan asti kuin mita
     sivut lupaavat, eika kumpikaan pinta tietaisi siita. Julkaisutarkistaja
@@ -113,13 +127,10 @@ def free_premium_window_end() -> datetime | None:
     """
     if _env("FREE_PREMIUM_UNTIL").lower() in {"off", "none", "0", "false"}:
         return None
-    try:
-        end = datetime.fromisoformat(FREE_PREMIUM_UNTIL_DEFAULT)
-    except ValueError:
-        return None
-    if end.tzinfo is None:
-        end = end.replace(tzinfo=timezone.utc)
-    return end
+    # YKSI LUKIJA: hetki tulee `src.free_window`:sta, ei tasta tiedostosta.
+    # Moduuli jasentaa ja varmistaa sen kerran importissa (assert), joten
+    # tassa ei ole omaa jasennysta joka voisi olla eri mielta muodosta.
+    return _fw_until()
 
 
 def free_premium_window_active(now: datetime | None = None) -> bool:

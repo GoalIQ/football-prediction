@@ -18,25 +18,75 @@ Generoiduilla pinnoilla lause johdetaan `src.free_window`:sta ja katoaa
 itsestaan; tama portti on kasin yllapidettyja pintoja varten, joita koodi ei
 voi korjata puolestaan.
 
+ITSESTAAN SULKEUTUVA LOHKO (17.9.2026, ILMAISIKKUNA-SULKEUTUU-ITSE).
+Paistetun sivun lupaus elaa nyt `<template data-free-window-open=KEY
+data-until=ISO>`-elementissa, jonka inline-skripti nayttaa vain kun
+selaimen `Date.now() < data-until`. Suljettu teksti on staattinen oletus.
+Portin lukija (`luettava_teksti`) arvioi templaten SAMALLA predikaatilla
+(`src.free_window.open_at`) sivun OMASTA `data-until`-arvosta: sisalto
+lasketaan nakyvaksi tasan silloin kun selain nayttaisi sen. Ilman tata
+portti raportoisi ikkunan sulkeuduttua vaaran positiivisen jokaisesta
+templatesta - ja paivittain punainen portti tulee ohitetuksi. Kaanteinen
+vika on sama: jos lukija pyyhkisi templaten aina, se olisi sokea sille
+mita JS-lukija nakee ennen deadlinea.
+
 Kaytto:
     python scripts/check_free_window.py
 """
 from __future__ import annotations
 
+import datetime as _dt
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.free_window import day_label, is_open  # noqa: E402
+from src.free_window import (  # noqa: E402
+    END_ATTR, FREE_PREMIUM_UNTIL, OPEN_ATTR, UNTIL_ATTR, day_label, is_open,
+    open_at)
 
-#: Julkiset pinnat joilla lupaus voi elaa. Glob, ei kasin nimetty lista:
-#: kasin nimetty lista vanhenee heti kun uusi pinta syntyy
-#: (muisti: portin-sanalista-vanhenee).
-SURFACE_GLOBS = ("*.html", "fpl/**/*.html", "llms.txt",
-                 "web/pro-spa/src/**/*.svelte", "web/pro-spa/src/**/*.ts")
+#: Hetki jolla jokainen template on auki: rajaustarkistus lukee templaten
+#: sisallon kellosta riippumatta (rajaus on lauseen ominaisuus).
+_AINA_AUKI = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
+
+#: 🔴 GLOB ON MYOS KASIN NIMETTY LISTA (mitattu 18.9.2026).
+#: Tassa luki aiemmin `("*.html", "fpl/**/*.html", "llms.txt", ...)` ja
+#: kommentti "Glob, ei kasin nimetty lista". Glob itse oli kuitenkin kasin
+#: nimetty HAKEMISTOLISTA, ja sen ulkopuolelle oli kasvanut 2769 deployattua
+#: sivua: `predictions/**` (279 niista sitemapissa) ja `ucl/**`. Tarkistaja
+#: mittasi sen suoraan: tasan sama lupauslause on exit 1 repojuuressa ja
+#: exit 0 `predictions/`-kansiossa - portti tulostaa "OK: ... eika yksikaan
+#: pinta lupaa ilmaista Premiumia" samalla kun 2769 sivua lupaa. Se on
+#: vihrea portti todisteena vaarasta asiasta, eli tasan se mita mekanismi 2
+#: (STATIC_ALLOWED = {}) vaittaa estavansa.
+#:
+#: Korjaus (saanto 6a mekanismi 1): pintajoukko JOHDETAAN siita mika
+#: oikeasti deployataan - `hub-deploy.yml`:n push-paths - eika luetella
+#: tassa. Uusi hakemisto joka lisataan deployn piiriin tulee portin piiriin
+#: samalla rivilla; sita ei voi enaa unohtaa erikseen.
+#:
+#: POHJA on silti kirjoitettu auki kahdesta syysta, jotka ovat perusteluja
+#: eivatka unohdus:
+#:   - web-SPA (`web/pro-spa/src/**`) EI kulje hub-deployn kautta vaan
+#:     omalla wrangler-deployllaan, joten se ei nay tassa workflow'ssa.
+#:   - portin on toimittava myos tmp_path-juuressa jossa workflow'ta ei ole
+#:     (testit). Pohja yksin ei riita kattavuuteen, ja sita vartioi
+#:     `tests/test_free_window_surface_scope.py`: jokaisen sitemapissa
+#:     olevan sivun ja jokaisen deployatun tekstipinnan on oltava
+#:     `surfaces()`-joukossa.
+_BASE_GLOBS = ("*.html", "llms.txt",
+               "web/pro-spa/src/**/*.svelte", "web/pro-spa/src/**/*.ts")
+
+#: Deploy-maarittely josta julkiset pinnat johdetaan.
+DEPLOY_WORKFLOW = Path(".github/workflows/hub-deploy.yml")
+
+#: Paatteet joilla pinta kantaa LUETTAVAA TEKSTIA. `*.js`, `*.xml`,
+#: `assets/**` ja `favicon.ico` ovat deployn piirissa mutta eivat kanna
+#: lupauslausetta lukijalle; `.html` ja `.txt` kantavat.
+_TEKSTIPAATTEET = (".html", ".txt")
 
 #: Lupaus tunnistetaan MERKITYKSESTA, ei yhdesta merkkijonosta: sama vaite on
 #: kirjoitettu useassa sanamuodossa (muisti: sama-vaite-monessa-sanamuodossa).
@@ -143,8 +193,40 @@ _ATTR_TEXT_RE = re.compile(
     r"""<[^>]*?\b(?:content|alt|aria-label|title)\s*=\s*("|')(.*?)\1[^>]*>""",
     re.I | re.S)
 
+#: Itsestaan sulkeutuvan lohkon avoin haara (src.free_window.self_closing_block).
+#: Ryhmat: avain, data-until, sisalto. Attribuuttien nimet tulevat samasta
+#: moduulista joka ne kirjoittaa, jotta lukija ja kirjoittaja eivat ajaudu.
+TEMPLATE_RE = re.compile(
+    r"<template\s+" + re.escape(OPEN_ATTR) + r'="([^"]*)"\s+'
+    + re.escape(UNTIL_ATTR) + r'="([^"]*)"\s*>(.*?)</template>',
+    re.S | re.I)
 
-def luettava_teksti(txt: str) -> tuple[str, list[int]]:
+
+def _ilman_templatea(txt: str, now=None, *, aina: bool = False) -> str:
+    """Pyyhi avoimen haaran templatet valilyonneiksi (pituus sailyy, joten
+    indeksikartta ja rivinumerot pysyvat suorina).
+
+    `aina=True` on JS:TON LUKIJA: `<template>` on inertti eika koskaan
+    nay. Muuten sisalto pidetaan tasan silloin kun selaimen skripti
+    nayttaisi sen: `open_at(data-until, now)`. Sama predikaatti kuin
+    `is_open()`, luettuna sivun OMASTA aikaleimasta - se on se mita
+    selain oikeasti kayttaa, ei se mita repo nyt sanoo.
+    """
+    def _pyyhi(m):
+        if aina or not open_at(m.group(2), now):
+            return " " * len(m.group(0))
+        return m.group(0)
+    return TEMPLATE_RE.sub(_pyyhi, txt)
+
+
+def templates(txt: str) -> list[tuple[str, str, int]]:
+    """(avain, data-until, rivinumero) jokaisesta avoimesta haarasta."""
+    return [(m.group(1), m.group(2), txt.count("\n", 0, m.start()) + 1)
+            for m in TEMPLATE_RE.finditer(txt)]
+
+
+def luettava_teksti(txt: str, now=None, *,
+                    ilman_js: bool = False) -> tuple[str, list[int]]:
     """(lukijan nakyma, indeksikartta alkuperaiseen tekstiin).
 
     Tagit ja rivinvaihdot romahtavat YHDEKSI valilyonniksi, jolloin sama
@@ -156,7 +238,15 @@ def luettava_teksti(txt: str) -> tuple[str, list[int]]:
     -attribuuttien sisalto, koska se on lukijalle nakyvaa (hakutulos,
     ruudunlukija). `faq.html`in oma lupaus asuu juuri `<meta description>`issa,
     ja tagien pyyhkiminen olisi tehnyt portista sokean silla sivulla.
+
+    `now`: hetki jolla itsestaan sulkeutuvan lohkon `<template>` arvioidaan
+    (oletus: nyt). `ilman_js=True`: JS:ton lukija, template ei nay koskaan.
     """
+    # 0) Itsestaan sulkeutuvan lohkon avoin haara: nakyy vain kun selain
+    #    nayttaisi sen. Ennen attribuuttikasittelya, koska templaten sisalla
+    #    on omia tageja (nappi, hintalappu) joiden teksti muuten vuotaisi.
+    txt = _ilman_templatea(txt, now, aina=ilman_js)
+
     # 1) Attribuuttiteksti ulos tagista, sen omalle paikalleen.
     def _attr(m):
         sisalto = m.group(2)
@@ -194,9 +284,17 @@ def luettava_teksti(txt: str) -> tuple[str, list[int]]:
     return "".join(ulos), kartta
 
 
-def _osumat(txt: str, kuvio: re.Pattern) -> list[tuple[int, str, int, int]]:
-    """(rivinumero, osuman teksti, nakyman alku, nakyman loppu) lukijan nakymasta."""
-    nakyma, kartta = luettava_teksti(txt)
+def _osumat(txt: str, kuvio: re.Pattern, now=None,
+            *, ilman_js: bool = False, nakyma_kartta=None
+            ) -> list[tuple[int, str, int, int]]:
+    """(rivinumero, osuman teksti, nakyman alku, nakyman loppu) lukijan nakymasta.
+
+    `nakyma_kartta`: valmiiksi rakennettu `luettava_teksti`-pari. Lukija on
+    sama funktio; tama vain saastaa saman nakyman rakentamisen uudelleen kun
+    samaa tiedostoa katsotaan monella kuviolla (2951 pintaa x 4 tarkistusta).
+    """
+    nakyma, kartta = (luettava_teksti(txt, now, ilman_js=ilman_js)
+                      if nakyma_kartta is None else nakyma_kartta)
     ulos = []
     for m in kuvio.finditer(nakyma):
         alku = kartta[m.start()] if m.start() < len(kartta) else 0
@@ -204,34 +302,60 @@ def _osumat(txt: str, kuvio: re.Pattern) -> list[tuple[int, str, int, int]]:
     return ulos
 
 
-def scope_misses(paths=None) -> list[tuple[str, int, str]]:
-    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta.
+def deploy_globs(workflow_text: str | None = None) -> tuple[str, ...]:
+    """Tekstipintojen globit DEPLOY-MAARITTELYSTA (`hub-deploy.yml` push-paths).
 
-    Ajetaan LUKIJAN NAKYMAAN, jotta rivinvaihto tai tagi lupauksen keskella ei
-    tee portista sokeaa (12.9.2026).
+    Lukee `paths:`-listan sellaisenaan: `'predictions/**'` -> kaikki sen
+    alta loytyvat `.html`/`.txt`-tiedostot, `'*.html'` -> juuren sivut,
+    `'llms.txt'` -> se tiedosto. Tama on se joukko joka oikeasti paatyy
+    goaliq.app:iin, joten se on myos se joukko jolla lupaus voi elaa.
+
+    Tyhja tuple kun workflow'ta ei ole (tmp_path-juuri): silloin pohjaglobit
+    vastaavat yksin, ja kattavuutta vartioi surface-scope-testi oikeassa
+    repossa.
     """
-    ulos = []
-    for p in (paths if paths is not None else surfaces()):
+    if workflow_text is None:
+        wf = ROOT / DEPLOY_WORKFLOW
         try:
-            txt = p.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+            workflow_text = wf.read_text(encoding="utf-8")
+        except OSError:
+            return ()
+    ulos: list[str] = []
+    listassa = False
+    for rivi in workflow_text.splitlines():
+        if re.match(r"^\s*paths:\s*$", rivi):
+            listassa = True
             continue
-        if is_guarded_source(p, txt):
+        if not listassa:
             continue
-        nakyma, _ = luettava_teksti(txt)
-        for rivi, osuma, a0, b0 in _osumat(txt, SCOPED_CLAIM_RE):
-            a = max(0, a0 - SCOPE_IKKUNA)
-            b = min(len(nakyma), b0 + SCOPE_IKKUNA)
-            if not SCOPE_RE.search(nakyma[a:b]):
-                ulos.append((str(p.relative_to(ROOT)), rivi, osuma))
-    return ulos
+        m = re.match(r"""^\s+-\s*(['"]?)(.+?)\1\s*$""", rivi)
+        if m:
+            ulos.append(m.group(2))
+            continue
+        if rivi.strip() and not rivi.lstrip().startswith("#"):
+            listassa = False
+    globit: list[str] = []
+    for pat in ulos:
+        if pat.endswith("/**"):
+            # Hakemisto kokonaan: kaikki tekstipinnat sen alta.
+            globit.extend(f"{pat}/*{s}" for s in _TEKSTIPAATTEET)
+        elif pat.endswith(_TEKSTIPAATTEET):
+            globit.append(pat)
+    return tuple(dict.fromkeys(globit))
+
+
+def surface_globs() -> tuple[str, ...]:
+    """Pohja + deploysta johdettu laajennus, jarjestys sailyttaen."""
+    return tuple(dict.fromkeys(_BASE_GLOBS + deploy_globs()))
 
 
 def surfaces() -> list[Path]:
     out: list[Path] = []
-    for g in SURFACE_GLOBS:
+    for g in surface_globs():
         out.extend(sorted(ROOT.glob(g)))
-    return [p for p in out if p.is_file()]
+    # dict.fromkeys: sama tiedosto voi osua kahteen globiin (esim. juuren
+    # `*.html` ja deployn `'*.html'`), eika sita saa tarkistaa kahdesti.
+    return [p for p in dict.fromkeys(out) if p.is_file()]
 
 
 #: SPA renderoi lupauksen ehdollisesti ({#if freePremiumWindowActive()}),
@@ -247,25 +371,177 @@ def is_guarded_source(path: Path, txt: str) -> bool:
     return path.suffix in (".svelte", ".ts") and bool(GUARD_RE.search(txt))
 
 
-def hits(paths=None) -> list[tuple[str, int, str]]:
-    """Elossa olevat lupaukset LUKIJAN NAKYMASTA (ei raa'asta lahteesta)."""
-    found = []
+class Tulos(NamedTuple):
+    """Kaikki nelja tarkistusta samasta lukukerrasta."""
+    hits: list
+    scope_misses: list
+    until_mismatches: list
+    static_hits: list
+
+
+def _nakymat(txt: str):
+    """Lukijan nakymien hakija tiedostolle. YKSI lukija (`luettava_teksti`),
+    mutta sama nakyma rakennetaan vain kerran.
+
+    Kun sivulla ei ole yhtaan `<template data-free-window-open>`-lohkoa,
+    `_ilman_templatea` on identiteetti JOKAISELLA `now`- ja `ilman_js`-
+    arvolla, joten kaikki nakymat ovat merkki merkilta sama. Sen varassa
+    2951 pintaa katsotaan yhdella rakennuksella nelja kertaa neljan sijaan
+    (mitattu 18.9: 95 s -> 26 s). Invariantin vartija:
+    `tests/test_free_window_surface_scope.py::test_nakymamuisti_ei_muuta_tulosta`.
+    """
+    on_template = bool(TEMPLATE_RE.search(txt))
+    muisti: dict = {}
+
+    def hae(now=None, *, ilman_js: bool = False):
+        avain = (now, ilman_js) if on_template else "VAKIO"
+        if avain not in muisti:
+            muisti[avain] = luettava_teksti(txt, now, ilman_js=ilman_js)
+        return muisti[avain]
+
+    return hae
+
+
+def _tarkista_tiedosto(p: Path, txt: str, now=None) -> Tulos:
+    """YKSI LUKIJA per tiedosto: kaikki nelja kysymysta samasta tekstista.
+
+    Ennen 18.9.2026 jokainen kysymys oli oma funktionsa joka luki tiedostot
+    itse. Neljalla erillisella pyyhkaisylla ei ollut vikaa, mutta kun
+    pintajoukko kasvoi 177:sta 2951:een (predictions/**), hinta olisi ollut
+    ~95 s per porttiajo. Sama lukija, yksi pyyhkaisy.
+    """
+    nimi = str(p.relative_to(ROOT))
+    hits_: list = []
+    scope_: list = []
+    until_: list = []
+    static_: list = []
+
+    # AIKALEIMA: tarkistetaan MYOS vartioidusta lahteesta - `data-until` on
+    # kirjoitettu arvo riippumatta siita vartioiko tiedosto lupauksen.
+    for avain, u, rivi in templates(txt):
+        if u != FREE_PREMIUM_UNTIL:
+            until_.append((nimi, rivi,
+                           f"{avain}: data-until={u!r} != "
+                           f"FREE_PREMIUM_UNTIL={FREE_PREMIUM_UNTIL!r}"))
+
+    if is_guarded_source(p, txt):
+        return Tulos(hits_, scope_, until_, static_)
+
+    hae = _nakymat(txt)
+
+    # 1) ELOSSA olevat lupaukset lukijan kellolla.
+    for rivi, osuma, _a, _b in _osumat(txt, CLAIM_RE, now,
+                                       nakyma_kartta=hae(now)):
+        hits_.append((nimi, rivi, osuma))
+    # Paivamaaraan sidottu hintavaite on vanhentunut VAIN kun ikkuna on
+    # kiinni; auki se on tosi ja kuuluu sivulle. 12.9: tama perhe puuttui,
+    # ja Ville loysi lauseen livena sen jalkeen kun portti sanoi 0.
+    if not is_open(now):
+        for rivi, osuma, _a, _b in _osumat(txt, DATED_PRICE_RE, now,
+                                           nakyma_kartta=hae(now)):
+            hits_.append((nimi, rivi, osuma))
+
+    # 2) STAATTINEN lupaus: JS:ton lukijan nakyma, kellosta riippumatta.
+    for kuvio in (CLAIM_RE, DATED_PRICE_RE):
+        for rivi, osuma, _a, _b in _osumat(
+                txt, kuvio, ilman_js=True,
+                nakyma_kartta=hae(None, ilman_js=True)):
+            static_.append((nimi, rivi, osuma))
+
+    # 3) RAJAUS ("on the web"). Templaten sisalto tarkistetaan hetkella
+    #    jolloin se on auki: rajaus on lauseen ominaisuus eika riipu kellosta.
+    hetki = now if now is not None else _AINA_AUKI
+    nakyma, kartta = hae(hetki)
+    for rivi, osuma, a0, b0 in _osumat(txt, SCOPED_CLAIM_RE, hetki,
+                                       nakyma_kartta=(nakyma, kartta)):
+        a = max(0, a0 - SCOPE_IKKUNA)
+        b = min(len(nakyma), b0 + SCOPE_IKKUNA)
+        if not SCOPE_RE.search(nakyma[a:b]):
+            scope_.append((nimi, rivi, osuma))
+
+    return Tulos(hits_, scope_, until_, static_)
+
+
+def tarkista(paths=None, now=None) -> Tulos:
+    """Koko pintajoukko yhdella lukukerralla."""
+    hits_: list = []
+    scope_: list = []
+    until_: list = []
+    static_: list = []
     for p in (paths if paths is not None else surfaces()):
         try:
             txt = p.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             continue
-        if is_guarded_source(p, txt):
-            continue
-        for rivi, osuma, _a, _b in _osumat(txt, CLAIM_RE):
-            found.append((str(p.relative_to(ROOT)), rivi, osuma))
-        # Paivamaaraan sidottu hintavaite on vanhentunut VAIN kun ikkuna on
-        # kiinni; auki se on tosi ja kuuluu sivulle. 12.9: tama perhe puuttui,
-        # ja Ville loysi lauseen livena sen jalkeen kun portti sanoi 0.
-        if not is_open():
-            for rivi, osuma, _a, _b in _osumat(txt, DATED_PRICE_RE):
-                found.append((str(p.relative_to(ROOT)), rivi, osuma))
-    return found
+        t = _tarkista_tiedosto(p, txt, now)
+        hits_ += t.hits
+        scope_ += t.scope_misses
+        until_ += t.until_mismatches
+        static_ += t.static_hits
+    return Tulos(hits_, scope_, until_, static_)
+
+
+def hits(paths=None, now=None) -> list[tuple[str, int, str]]:
+    """Elossa olevat lupaukset LUKIJAN NAKYMASTA (ei raa'asta lahteesta).
+
+    `now` on synteettinen kello: itsestaan sulkeutuvan lohkon template
+    lasketaan nakyvaksi vain jos selain nayttaisi sen talla hetkella.
+    """
+    return tarkista(paths, now).hits
+
+
+def scope_misses(paths=None, now=None) -> list[tuple[str, int, str]]:
+    """Lupaukset joilta puuttuu web-rajaus lahietaisyydelta.
+
+    Ajetaan LUKIJAN NAKYMAAN, jotta rivinvaihto tai tagi lupauksen keskella ei
+    tee portista sokeaa (12.9.2026).
+    """
+    return tarkista(paths, now).scope_misses
+
+
+#: STAATTISEN LUPAUKSEN POIKKEUSLISTA (17.9.2026, CLAUDE.md 6a mekanismi 2).
+#: Pinta jolla ilmaislupaus SAA olla staattisessa HTML:ssa/tekstissa, ja
+#: PERUSTELU miksi se ei voi kulkea `self_closing_block`in kautta. Tyhja
+#: tanaan: 12.9:n 19 lupauksesta 9 oli kasin kirjoitettuna (faq 6, creators 1,
+#: llms.txt 2) ja ne sulkeutuivat vasta ihmisen dispatchilla - se on tasan
+#: se vika jota tama portti vartioi. Uusi rivi tanne kaataa
+#: `tests/test_free_window_self_closing.py`:n odotuksen, joten lisays nakyy
+#: diffissa perusteluineen eika synny vahingossa. Avain on repo-suhteellinen
+#: polku kauttaviivoin.
+STATIC_ALLOWED: dict[str, str] = {}
+
+
+def static_hits(paths=None) -> list[tuple[str, int, str]]:
+    """Lupaukset JS:TTOMAN lukijan nakymasta: template ei nay koskaan.
+
+    Tama on se nakyma jonka pitaa olla tyhja riippumatta kellosta: ilman
+    JavaScriptia sivu nayttaa suljetun tekstin, joten jos lupaus loytyy
+    taalta, se on staattisessa HTML:ssa eika skriptin takana - eli se jaa
+    roikkumaan tasan kuten 12.9.
+
+    Myos paivamaaraan sidottu hintavaite lasketaan: se ei lupaa ilmaista,
+    mutta staattisena se vanhenee samalla hetkella (12.9: heron hintanootti
+    "After 12 September it is EUR3.99" jai roikkumaan GEN-markkerien
+    ulkopuolelle). Kysymys on "mika jaa roikkumaan", ei "mika on tanaan
+    tosi", joten kelloa ei kysyta.
+    """
+    return tarkista(paths).static_hits
+
+
+def static_hits_outside_allowlist(paths=None) -> list[tuple[str, int, str]]:
+    """Staattiset lupaukset joilla EI ole perusteltua poikkeusta."""
+    return [h for h in static_hits(paths)
+            if Path(h[0]).as_posix() not in STATIC_ALLOWED]
+
+
+def until_mismatches(paths=None) -> list[tuple[str, int, str]]:
+    """Templatet joiden `data-until` ei ole `src.free_window.FREE_PREMIUM_UNTIL`.
+
+    Aikaleimalla on yksi lahde. Sivulle upotettu eri arvo tarkoittaisi etta
+    selain sulkee ikkunan eri hetkella kuin API, SPA ja mobiili - ja
+    myohempi arvo olisi lupaus jota mikaan muu pinta ei pida.
+    """
+    return tarkista(paths).until_mismatches
 
 
 def guarded_files(paths=None) -> list[str]:
@@ -287,11 +563,27 @@ def guarded_files(paths=None) -> list[str]:
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
 
+def _template_rivit(text: str) -> set[int]:
+    """Rivi-indeksit (0-alkuiset) jotka kuuluvat avoimen haaran templateen."""
+    rivit: set[int] = set()
+    for m in TEMPLATE_RE.finditer(text):
+        alku = text.count("\n", 0, m.start())
+        loppu = text.count("\n", 0, m.end())
+        rivit.update(range(alku, loppu + 1))
+    return rivit
+
+
 def strip_claim(text: str) -> tuple[str, int]:
-    """Poista lupauksen kantavat lauseet. Palauttaa (uusi_teksti, montako)."""
+    """Poista lupauksen kantavat lauseet. Palauttaa (uusi_teksti, montako).
+
+    Itsestaan sulkeutuvan lohkon `<template>` ohitetaan: sen sisalto on
+    skriptin vartioima eika roiku, ja lausepoisto sen sisalla jattaisi
+    orvon tagin. Lohkon oikea kirjoittaja on `render_blocks`.
+    """
     out, poistettu = [], 0
-    for chunk in text.split("\n"):
-        if not CLAIM_RE.search(chunk):
+    suojatut = _template_rivit(text)
+    for i, chunk in enumerate(text.split("\n")):
+        if i in suojatut or not CLAIM_RE.search(chunk):
             out.append(chunk)
             continue
         lauseet = _SENT_SPLIT.split(chunk)
@@ -339,9 +631,11 @@ def render_blocks(now=None) -> list[tuple[str, str]]:
 #: orvon tagin. Poikkeuslistassa on perustelu, ja testi kaatuu jos uusi
 #: tiedosto lisataan tanne ilman sellaista (CLAUDE.md 6a, mekanismi 2).
 FIX_OHITETAAN = {
-    "fpl.html": "build_fpl_page.upsell_block() renderoi molemmat tilat itse "
-                "(auki: nootti + 'Get Premium free'; kiinni: 'Get Premium' + "
-                "hinta preesensissa). Lausepoisto jattaisi <b></b>-orvon.",
+    "fpl.html": "build_fpl_page.free_window_block() renderoi lohkon "
+                "self_closing_block():lla joka bakessa (suljettu teksti "
+                "staattisena, avoin <template>+skriptin takana). Sivu "
+                "sulkeutuu selaimen kellolla; lausepoisto jattaisi "
+                "<b></b>-orvon eika sita tarvita.",
 }
 
 
@@ -427,11 +721,19 @@ LIVE_URLS = (
 )
 
 
-def live_hits(urls=None, timeout: int = 20) -> tuple[list, list]:
+def live_hits(urls=None, timeout: int = 20, now=None) -> tuple[list, list]:
     """(osumat, virheet). Osuma = (url, rivinumero, teksti) lukijan nakymasta.
 
     Hakuvirhe EI ole tyhja tulos: se palautetaan erikseen, jotta portti voi
     olla fail-closed (muisti: nolla-ei-ole-sama-kuin-ei-tietoa).
+
+    Itsestaan sulkeutuvan lohkon template arvioidaan sivun OMASTA
+    `data-until`-arvosta (`luettava_teksti`): se on se mita lukijan selain
+    kayttaa. Paistettu sivu joka kantaa mennytta aikaleimaa ei siis lupaa
+    mitaan, vaikka sita ei olisi paistettu uudelleen sulkeutumisen jalkeen -
+    ja se on koko mekanismin pointti. Osuma raportoidaan myos silloin kun
+    sivun aikaleima on myohempi kuin repon: silloin selain nayttaa lupauksen
+    jota mikaan muu pinta ei enaa pida.
     """
     import urllib.error
     import urllib.request
@@ -448,21 +750,37 @@ def live_hits(urls=None, timeout: int = 20) -> tuple[list, list]:
         except (urllib.error.URLError, OSError, ValueError) as e:
             virheet.append((url, str(e)[:120]))
             continue
-        for rivi, teksti, _a, _b in _osumat(txt, CLAIM_RE):
+        for rivi, teksti, _a, _b in _osumat(txt, CLAIM_RE, now):
             osumat.append((url, rivi, teksti))
+        for avain, until, rivi in templates(txt):
+            if until != FREE_PREMIUM_UNTIL:
+                # Ei FAIL sinallaan (lupaus on jo osuma jos se nakyy), mutta
+                # operaattorin on nahtava etta sivu ja lahde ovat eri mielta.
+                osumat.append((url, rivi,
+                               f"HUOM {avain}: sivun data-until={until!r}, "
+                               f"lahde {FREE_PREMIUM_UNTIL!r}"
+                               if open_at(until, now) else
+                               f"(info) {avain}: sivun data-until={until!r} "
+                               f"on mennyt, lahde {FREE_PREMIUM_UNTIL!r}"))
     return osumat, virheet
 
 
-def main_live(timeout: int = 20) -> int:
+def main_live(timeout: int = 20, now=None) -> int:
     """`--live`: elaako lupaus julkisilla sivuilla JUURI NYT."""
-    osumat, virheet = live_hits(timeout=timeout)
+    osumat, virheet = live_hits(timeout=timeout, now=now)
     if virheet:
         print("FAIL: sivua ei saatu haettua - porttia ei voi todentaa "
               "(fail-closed):")
         for url, err in virheet:
             print(f"     {url}  {err}")
         return 1
-    if is_open():
+    # Pelkka info-rivi (sivun mennyt aikaleima eroaa lahteesta) ei ole
+    # lupaus: se tulostetaan mutta ei kaada.
+    infot = [o for o in osumat if o[2].startswith("(info)")]
+    osumat = [o for o in osumat if not o[2].startswith("(info)")]
+    for url, rivi, teksti in infot:
+        print(f"     {url}:{rivi}  {teksti}")
+    if is_open(now):
         print(f"OK: ilmaisikkuna on auki {day_label()} asti. Lupaus elaa "
               f"livena {len(osumat)} kohdassa "
               f"{len({u for u, _, _ in osumat})} sivulla:")
@@ -477,8 +795,9 @@ def main_live(timeout: int = 20) -> int:
           f"livena {len(osumat)} kohdassa:")
     for url, rivi, teksti in osumat:
         print(f"     {url}:{rivi}  {teksti!r}")
-    print("     Repo voi olla jo kunnossa: aja `--fix`, committaa ja "
-          "dispatchaa fpl-page-refresh (12:30-15:00 UTC ei ole ajastettua ajoa).")
+    print("     Lupaus on STAATTISESSA HTML:ssa tai templaten aikaleima on "
+          "myohempi kuin lahteen. Itsestaan sulkeutuva lohko ei tuota tata; "
+          "etsi kasin kirjoitettu lupaus ja aja `--fix` + page-refresh.")
     return 1
 
 
@@ -499,28 +818,65 @@ def main(argv=None) -> int:
         print("FAIL: yhtaan julkista pintaa ei loytynyt - porttia ei voi "
               "todentaa (fail-closed).")
         return 1
-    found = hits(paths)
+    # YKSI PYYHKAISY: 2951 pintaa luetaan kerran ja jokainen nelja
+    # tarkistusta ajetaan samasta lukijan nakymasta (`tarkista`).
+    t = tarkista(paths)
+    found = t.hits
     # RAJAUSTARKISTUS AJETAAN AINA, myos ikkunan ollessa auki. Vaarin rajattu
     # lupaus on epatosi juuri silloin kun ikkuna on auki, ei sen jalkeen.
-    puuttuva_rajaus = scope_misses(paths)
+    puuttuva_rajaus = t.scope_misses
     if puuttuva_rajaus:
         print("FAIL: ilmaisikkunan lupaus ilman 'on the web' -rajausta. "
               "Ikkuna koskee vain webia; mobiilissa Premium on kaupan tilaus.")
         for f, ln, teksti in puuttuva_rajaus:
             print(f"     {f}:{ln}  {teksti!r}")
         return 1
+    # AIKALEIMALLA ON YKSI LAHDE. Sivulle upotettu eri `data-until` sulkisi
+    # ikkunan eri hetkella kuin API, SPA ja mobiili.
+    eri_leima = t.until_mismatches
+    if eri_leima:
+        print("FAIL: itsestaan sulkeutuvan lohkon aikaleima eroaa lahteesta "
+              "(src.free_window.FREE_PREMIUM_UNTIL). Renderoi lohko uudelleen "
+              "(`--fix`), ala kirjoita aikaleimaa sivulle kasin.")
+        for f, ln, teksti in eri_leima:
+            print(f"     {f}:{ln}  {teksti}")
+        return 1
     if is_open():
+        # 🔴 STAATTINEN LUPAUS ON SE VIKA (17.9.2026, ILMAISIKKUNA-SULKEUTUU-ITSE).
+        # Lupaus staattisessa HTML:ssa sulkeutuu vasta kun joku ajaa `--fix`in
+        # JA sivun paiston JA deployn. 12.9 se oli ihmisen dispatch, ja ilman
+        # sita 9 kasin kirjoitettua lupausta kolmella sivulla olisi elanyt
+        # 2,5 h yli deadlinen. Itsestaan sulkeutuva lohko ei tuota staattista
+        # lupausta, joten sellainen kaataa portin JO IKKUNAN OLLESSA AUKI:
+        # silloin kirjoittaja on paikalla ja korjaa; sulkeutumisen jalkeen
+        # kukaan ei ole. Poikkeus vain STATIC_ALLOWED-listalla perusteluineen.
+        staattiset = [h for h in t.static_hits
+                      if Path(h[0]).as_posix() not in STATIC_ALLOWED]
+        if staattiset:
+            print("FAIL: ilmaisikkunan lupaus on STAATTISESSA HTML:ssa ikkunan "
+                  "ollessa auki. Se sulkeutuu vain ihmisen ajamalla sivuajolla "
+                  "(12.9: 2,5 h yli deadlinen ilman dispatchia). Renderoi lupaus "
+                  "`src.free_window.self_closing_block`illa, tai lisaa pinta "
+                  "STATIC_ALLOWED-listalle perusteluineen.")
+            for f, ln, teksti in staattiset:
+                print(f"     STAATTINEN {f}:{ln}  {teksti!r}")
+            return 1
         print(f"OK: ilmaisikkuna on auki {day_label()} asti. "
               f"Lupaus elaa {len(found)} kohdassa {len({f[0] for f in found})} "
-              f"tiedostossa:")
+              f"tiedostossa, kaikki itsestaan sulkeutuvassa lohkossa "
+              f"(selain sulkee deadlinella):")
         for f, ln, _ in found:
             print(f"     {f}:{ln}")
         g = guarded_files(paths)
         if g:
             print(f"     lisaksi {len(g)} SPA-tiedostoa mainitsee lupauksen "
                   f"mutta VARTIOI sen ajassa: {', '.join(g)}")
-        print("     (generoidut ja vartioidut pinnat siivoutuvat itse; kasin "
-              "yllapidetyt eivat - aja `--fix` tai portti kaatuu 12.9)")
+        sallitut = t.static_hits
+        if sallitut:
+            print(f"     ja {len(sallitut)} staattista lupausta "
+                  f"STATIC_ALLOWED-poikkeuksella:")
+            for f, ln, _ in sallitut:
+                print(f"     STAATTINEN (poikkeus) {f}:{ln}")
         return 0
     if not found:
         print(f"OK: ilmaisikkuna on kiinni ({day_label()} mennyt) eika "

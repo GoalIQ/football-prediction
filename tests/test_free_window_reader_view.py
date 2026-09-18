@@ -180,24 +180,31 @@ def test_ikkunan_sulkeuduttua_yksikaan_tekstipinta_ei_lupaa_ilmaista(
         tmp_path, monkeypatch):
     """DoD. Ajetaan KOPIOLLE, ei repolle.
 
-    `fpl.html` on poikkeuslistalla perusteluineen: sen molemmat tilat
-    renderoi `build_fpl_page.upsell_block()`, ja page-refresh bakeaa sen
-    ENNEN taman ajoa."""
+    `fpl.html` on poikkeuslistalla perusteluineen: sen lohkon renderoi
+    `build_fpl_page.free_window_block()` (self_closing_block), ja
+    page-refresh bakeaa sen ENNEN taman ajoa."""
     juuri = _kopioi_pinnat(tmp_path)
     monkeypatch.setattr(C, "ROOT", juuri)
     C.fix(now=KIINNI)
-    jaljella = [h for h in C.hits()
+    jaljella = [h for h in C.hits(now=KIINNI)
                 if h[0].replace("\\", "/") not in C.FIX_OHITETAAN]
     assert not jaljella, jaljella
 
 
 def test_ikkunan_ollessa_auki_fix_ei_poista_lupausta(tmp_path, monkeypatch):
     """KONTROLLI: ilman tata edellinen menisi lapi myos silla etta fix()
-    tyhjentaisi kaiken aina (muisti: kontrolli-lapaisi-tyhjana)."""
+    tyhjentaisi kaiken aina (muisti: kontrolli-lapaisi-tyhjana).
+
+    17.9: lukijalle annetaan sama synteettinen kello kuin fixille. GEN-lohkon
+    avoin haara on `<template>`-elementissa, jonka portti laskee nakyvaksi
+    vain kun selain nayttaisi sen - eli ennen deadlinea. Seinakellolla
+    (ikkuna kiinni 12.9 alkaen) lupaus EI nay, ja se on oikein."""
     juuri = _kopioi_pinnat(tmp_path)
     monkeypatch.setattr(C, "ROOT", juuri)
     C.fix(now=AUKI)
-    assert C.hits(), "ikkunan ollessa auki lupauksen PITAA elaa"
+    assert C.hits(now=AUKI), "ikkunan ollessa auki lupauksen PITAA elaa"
+    # Ja sama sivu ilman JavaScriptia: lupaus ei ole staattisessa HTML:ssa.
+    assert not C.static_hits(), "lupaus on staattisessa HTML:ssa, ei skriptin takana"
 
 
 def test_fix_ei_koske_lahdekoodiin(tmp_path, monkeypatch):

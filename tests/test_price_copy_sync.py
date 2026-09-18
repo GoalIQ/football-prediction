@@ -24,9 +24,13 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from api import premium  # noqa: E402
 
 # Pinnat joilla hinta esiintyy. 🔴 Lista on portin kattavuus: jos uusi sivu
 # alkaa myyda, se on lisattava tanne TAI portti ei nae sita.
@@ -44,13 +48,20 @@ IKKUNA = re.compile(r"12 September|September 12|GW4 deadline", re.I)
 def _window_end() -> dt.datetime:
     """Ikkunan paattymishetki KOODISTA, ei tasta testista.
 
-    Jos testi kovakoodaisi paivan, se voisi olla eri mielta kuin `premium.py`
-    ja portti vahtisi vaaraa hetkea.
+    Jos testi kovakoodaisi paivan, se voisi olla eri mielta kuin oikeuden
+    portti ja vahtisi vaaraa hetkea.
+
+    18.9.2026: tama luki ennen `api/premium.py`:n literaalin regexilla
+    (`FREE_PREMIUM_UNTIL_DEFAULT = "..."`). Se literaali oli ikkunan hetken
+    NELJAS kirjoittaja ja se poistettiin - `api/premium.py` tuo hetken nyt
+    `src.free_window`:sta. Luetaan siis se mita oikeuden portti oikeasti
+    palauttaa, ei sita miten se on kirjoitettu.
     """
-    s = (ROOT / "api" / "premium.py").read_text(encoding="utf-8")
-    m = re.search(r'FREE_PREMIUM_UNTIL_DEFAULT\s*=\s*"([^"]+)"', s)
-    assert m, "FREE_PREMIUM_UNTIL_DEFAULT ei loytynyt api/premium.py:sta"
-    return dt.datetime.fromisoformat(m.group(1))
+    end = premium.free_premium_window_end()
+    assert end is not None, (
+        "free_premium_window_end() palautti None - ikkuna on kytketty pois, "
+        "eika hintacopyn porttia voi todentaa")
+    return end
 
 
 def _ikkuna_auki() -> bool:
