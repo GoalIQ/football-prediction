@@ -353,8 +353,12 @@ def _aja_freeze_main(monkeypatch, tmp_path, *, bootstrap_ids):
     _laita_freeze(tmp_path, 3, list(range(1, 16)))
     monkeypatch.setattr(m, "FROZEN_DIR", tmp_path)
     monkeypatch.setattr(m, "RESEED_DIR", tmp_path / "ei-reseedeja")
+    # 18.9: deadline on nyt-hetkeen SIDOTTU, ei kalenterileima. Kiinteana
+    # (2026-09-12 12:30Z) tama fikstuuri oli tosi vain niin kauan kuin
+    # seinakello oli sen etupuolella; `freeze_status`in jalkifittaussuoja
+    # (deadline mennyt -> ei kirjoiteta) paljasti sen 18.9. CLAUDE.md 6a.3.
     monkeypatch.setattr(m, "next_freeze_gw", lambda events, now: (
-        4, _dt.datetime(2026, 9, 12, 12, 30, tzinfo=_dt.timezone.utc)))
+        4, now + _dt.timedelta(hours=5)))
     monkeypatch.setattr(m, "entry_mismatch", lambda *a, **k: "")
     # 17.9: pankki ja myyntihinnat tulevat yhdesta lukijasta
     # (`entry_state_for`), ei `budget - hinnat` -kaavasta. Tassa testissa
@@ -474,8 +478,9 @@ def test_kieltaytyminen_puree_OIKEALLA_poolilla(monkeypatch, tmp_path):
                                        encoding="utf-8", newline="\n")
     monkeypatch.setattr(m, "FROZEN_DIR", tmp_path)
     monkeypatch.setattr(m, "RESEED_DIR", tmp_path / "ei-reseedeja")
+    # 18.9: deadline nyt-hetkeen sidottuna, ks. `_aja_freeze_main`.
     monkeypatch.setattr(m, "next_freeze_gw", lambda e, n: (
-        4, _dt.datetime(2026, 9, 12, 12, 30, tzinfo=_dt.timezone.utc)))
+        4, n + _dt.timedelta(hours=5)))
     monkeypatch.setattr(m, "entry_mismatch", lambda *a, **k: "")
     # 17.9: pankki ja myyntihinnat tulevat yhdesta lukijasta
     # (`entry_state_for`), ei `budget - hinnat` -kaavasta. Tassa testissa

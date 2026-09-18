@@ -740,6 +740,74 @@ def next_freeze_gw(events: list[dict], now: _dt.datetime):
     return None
 
 
+def freeze_status(gw: int, deadline: _dt.datetime,
+                  now: _dt.datetime) -> dict:
+    """YKSI LUKIJA kysymykseen "voiko GW:n mallirivi viela muuttua".
+
+    🔴 MIKSI OMA LUKIJA (loydos 18.9.2026). `main()` kysyi taman rivilla
+    `if out.exists(): return 0` ja tulosti "GW{n} on jo jaadytetty". Kaikki
+    MUUT pinnat - jonorivi, cc-raportti, sessiosuunnitelma - joutuivat
+    paattelemaan saman asian KASIN, ja 17.9 se meni vaarin: jonorivi
+    FREEZE-BANK-MYYNTIHINTA sanoi "VAIKUTTAA HUOMISEEN GW5-FREEZEEN
+    (deadline 18.9 17:30 UTC) -> push ennen sita tai syote on vaara", vaikka
+    `gw5.json` oli jo jaadytetty 2026-09-17T12:18:34Z ja immutable. Koko
+    kiireellisyyspremissi oli kumottu; haaran ensimmainen vaikutus on GW6.
+
+    Palauttaa mittauksen, ei mielipidetta:
+      writable      voiko TAMAN kierroksen rivi viela syntya
+      reason        `ok` | `already_frozen` | `deadline_passed`
+      frozen_at     leima artefaktista (None jos ei jaadytetty)
+      path          artefaktin polku
+
+    Kaksi tapaa joilla kierros on lukossa, ja molemmat mitataan JOKA
+    VAIHEESSA (CLAUDE.md 6a.3): artefakti on jo olemassa (immutable), TAI
+    deadline on mennyt eika artefaktia ole - jolloin rivin kirjoittaminen
+    olisi jalkifittausta, ei ennustetta. Nykyhetkessa mitattuna
+    `out.exists()` yksin oli tosi vain siksi etta ajo sattui olemaan
+    deadlinen etupuolella.
+    """
+    path = FROZEN_DIR / f"gw{int(gw)}.json"
+    frozen_at = None
+    if path.exists():
+        try:
+            meta = (json.loads(path.read_text(encoding="utf-8")).get("meta")
+                    or {})
+            frozen_at = meta.get("frozen_at")
+        except (ValueError, OSError):
+            # Tiedosto ON olemassa: lukukelvoton leima ei tee siita
+            # kirjoitettavaa. Fail-closed.
+            frozen_at = "?"
+        return {"gw": int(gw), "writable": False, "reason": "already_frozen",
+                "frozen_at": frozen_at, "path": path}
+    if deadline <= now:
+        return {"gw": int(gw), "writable": False, "reason": "deadline_passed",
+                "frozen_at": None, "path": path}
+    return {"gw": int(gw), "writable": True, "reason": "ok",
+            "frozen_at": None, "path": path}
+
+
+def first_writable_gw(events: list[dict], now: _dt.datetime) -> int | None:
+    """Ensimmainen kierros jonka mallirivia koodimuutos voi VIELA muuttaa.
+
+    Tama on se luku jonka jonorivi ja raportti saavat sanoa. Kaydaan
+    kierrokset deadlinejarjestyksessa ja palautetaan ensimmainen jonka
+    `freeze_status` sanoo kirjoitettavaksi - ei siis "seuraava GW" eika
+    "gw+1", kumpikin olisi arvaus.
+    """
+    rivit = []
+    for ev in events:
+        try:
+            dl = _dt.datetime.fromisoformat(
+                str(ev.get("deadline_time", "")).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        rivit.append((dl, int(ev["id"])))
+    for dl, gw in sorted(rivit):
+        if freeze_status(gw, dl, now)["writable"]:
+            return gw
+    return None
+
+
 def main() -> int:
     try:
         r = requests.get(f"{FPL_BASE}/bootstrap-static/", headers=FPL_HEADERS,
@@ -757,9 +825,17 @@ def main() -> int:
         return 0
     gw, dl = nxt
 
-    out = FROZEN_DIR / f"gw{gw}.json"
-    if out.exists():
-        print(f"GW{gw} on jo jäädytetty — ei ylikirjoiteta (immutable).")
+    # 🔴 KUTSUPAIKKA: immutabiliteetti luetaan `freeze_status`ista, ja ajo
+    # TULOSTAA mittauksen (leima + ensimmainen kierros johon muutos voi
+    # viela vaikuttaa). Ilman tata jokainen muu pinta paattelee saman kasin,
+    # ja 17.9 jonorivi paatteli sen vaarin.
+    tila = freeze_status(gw, dl, now)
+    out = tila["path"]
+    if not tila["writable"]:
+        seuraava = first_writable_gw(events, now)
+        print(f"GW{gw}: {tila['reason']} (jäädytetty {tila['frozen_at']}) — "
+              f"ei ylikirjoiteta (immutable). Koodimuutos vaikuttaa "
+              f"aikaisintaan GW{seuraava}:sta alkaen.")
         return 0
 
     # Sama polku kuin /api/fantasy/model-squad — ei omaa optimointia.

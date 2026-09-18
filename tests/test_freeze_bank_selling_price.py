@@ -367,7 +367,13 @@ _VANHA_BUDJETTI = re.compile(r'bank\w*\s*\+\s*\w+\["price"\]')
 
 
 def test_moottorin_budjettiehdot_lukevat_sell_pricea():
-    for fn, vahintaan in ((tr.single_moves, 1), (tr.best_pair, 4), (tr.plan_gw, 1)):
+    """HUOM: tama on LAHDEPORTTI eika mittaus. Mitattu 18.9 ettei se yksin
+    riita: `best_pair`in jarjestysrivin voi kirjoittaa ekvivalenttiin muotoon
+    (`(i1["price"] - o1["price"]) > (i2["price"] - o2["price"])`) joka
+    ohittaa jokaisen merkkijonon alla ja palauttaa vian. Kayttoksellinen
+    portti on `tests/test_transfer_bank_walk.py`.
+    """
+    for fn, vahintaan in ((tr.single_moves, 1), (tr.best_pair, 4)):
         src = inspect.getsource(fn)
         assert src.count("sell_price(") >= vahintaan, fn.__name__
         assert not _VANHA_BUDJETTI.search(src), \
@@ -375,7 +381,13 @@ def test_moottorin_budjettiehdot_lukevat_sell_pricea():
     pair_src = inspect.getsource(tr.best_pair)
     assert 'o1["price"] + o2["price"]' not in pair_src
     assert '(o1["price"] - i1["price"])' not in pair_src
-    assert 'm["out"]["price"]' not in inspect.getsource(tr.plan_gw)
+    # 18.9: plan_gw ei laske pankkia itse — saldo muuttuu VAIN `bank_walk`issa,
+    # joka on sama lukija joka kieltaa negatiivisen valisaldon.
+    plan_src = inspect.getsource(tr.plan_gw)
+    assert 'm["out"]["price"]' not in plan_src
+    assert "bank_walk(" in plan_src
+    assert not _VANHA_BUDJETTI.search(plan_src)
+    assert inspect.getsource(tr.bank_walk).count("sell_price(") >= 1
 
 
 def test_freeze_ei_laske_pankkia_budjetista():

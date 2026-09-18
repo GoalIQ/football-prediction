@@ -385,6 +385,51 @@ def sell_price(p: dict) -> int:
     return int(p["price"])
 
 
+class TransferPlanError(Exception):
+    """Suunnitelma rikkoo FPL:n rahasaannon. Ei kayttajavirhe vaan moottorin
+    invariantti: FPL tekee siirrot YKSI KERRALLAAN, joten pankki ei saa kayda
+    negatiiviseksi yhdellakaan askeleella - ei edes silloin kun loppusaldo on
+    positiivinen."""
+
+
+def bank_walk(bank_tenths: int, moves: list[dict]) -> list[int]:
+    """YKSI LUKIJA juoksevalle pankille (18.9.2026, PARIN-SUORITUSJARJESTYS).
+
+    Palauttaa saldon JOKAISEN siirron jalkeen, samassa jarjestyksessa jossa
+    siirrot julkaistaan. Nostaa `TransferPlanError`in jos saldo kay
+    negatiiviseksi askeleella - eli tekee vaarasta jarjestyksesta mahdottoman
+    sen sijaan etta vahtisi sita jalkikateen.
+
+    🔴 MIKSI TAMA ON OMA LUKIJA, EI TARKISTUS KUTSUPAIKASSA (loydos 18.9).
+    `best_pair` jarjestaa parin niin etta rahaa vapauttava siirto on ensin
+    (`sell_price(o) - i["price"]` laskevasti). Se on YKSI rivi, ja rivin voi
+    kirjoittaa ekvivalentissa muodossa (`(i1["price"] - o1["price"]) >
+    (i2["price"] - o2["price"])`) joka kayttaa nykyhintaa myyntihinnan sijaan.
+    Mitattu: runko jossa DEF 3 hinta 6.0 / myynti 4.0 ja MID 8 hinta 5.0 /
+    myynti 5.0, pooli DEF 4.1 + MID 4.8, pankki 0. Oikea jarjestys
+    [8->91, 3->90] kavelee 2 -> 1; vaara jarjestys [3->90, 8->91] kavelee
+    -1 -> 1. LOPPUSALDO ON SAMA, joten summaan perustuvat testit eivat nae
+    eroa, ja lahdekoodi-grep ohitetaan samalla yhdella muokkauksella.
+    Jarjestys on tasan se joka kirjoitetaan jaadytettyyn artefaktiin
+    (`meta.transfers` + `out_selling_price`/`in_price`), joten vaara
+    jarjestys on julkinen vaite siirrosta jota FPL ei olisi hyvaksynyt.
+
+    Saldon nousu on aina `sell_price(out) - in["price"]`: FPL maksaa
+    lahtijasta myyntihinnan (ks. `sell_price`), ei nykyhintaa.
+    """
+    bank = int(bank_tenths)
+    walk: list[int] = []
+    for i, m in enumerate(moves, 1):
+        bank += sell_price(m["out"]) - int(m["in"]["price"])
+        walk.append(bank)
+        if bank < 0:
+            raise TransferPlanError(
+                f"siirtojen jarjestys vie pankin miinukselle askeleella {i}/"
+                f"{len(moves)}: {bank_tenths} -> {walk} "
+                f"(siirrot {[(m2['out']['id'], m2['in']['id']) for m2 in moves]})")
+    return walk
+
+
 def _apply(squad: list[dict], outs: list[dict], ins: list[dict]) -> list[dict]:
     out_ids = {o["id"] for o in outs}
     return [p for p in squad if p["id"] not in out_ids] + list(ins)
@@ -696,6 +741,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
     bank = bank_tenths
     fts = max(0, ft)
     moves: list[dict] = []
+    walk: list[int] = []
     hits = 0
     # Saman suunnitelman aiemmin ostamat. Kutsuja (plan_transfers) antaa
     # edellisten kierrosten ostot; tahan lisataan myos TAMAN kutsun ostot,
@@ -793,8 +839,13 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
             chosen = [best_single]
         if not chosen:
             break
-        for m in chosen:
-            bank += sell_price(m["out"]) - m["in"]["price"]
+        # 🔴 KUTSUPAIKKA: juokseva pankki mitataan JOKA ASKELEELLA, ei vain
+        # loppusaldona. `bank_walk` nostaa poikkeuksen jos `best_pair`in
+        # jarjestys veisi valipankin miinukselle -> vaara jarjestys ei voi
+        # paasta jaadytettyyn artefaktiin.
+        askeleet = bank_walk(bank, chosen)
+        for m, bank in zip(chosen, askeleet):
+            walk.append(bank)
             squad = _apply(squad, [m["out"]], [m["in"]])
             # Tulija on heti suojattu: sama kierros ei saa ostaa ja myyda.
             protected.add(m["in"]["id"])
@@ -805,4 +856,7 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
                 hits += 1
             moves.append(m)
     return {"moves": moves, "squad": squad, "bank_tenths": bank,
+            # Pankki JOKAISEN siirron jalkeen: tarkistusreitti artefaktiin
+            # kirjattaville riveille, ei vain loppusaldo.
+            "bank_walk": walk,
             "ft_left": fts, "hits": hits, "protected_ids": protected}
