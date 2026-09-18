@@ -2,7 +2,18 @@
 
 Kun jäädytetty GW on ratkennut (finished + data_checked), lasketaan mallin
 lukitulle riville FPL:n omat pisteet: XI + autosubit + kapteenin tuplaus.
-Append-only-loki data/model_squad_gw_scores.json.
+Append-only-loki data/model_squad_frozen_gw_scores.json.
+
+🔴 OMA TIEDOSTO, EI JULKINEN SARJA (KAKSI-GRADERIA-YKSI-TIEDOSTO, 17.9.2026).
+Tama graderi kirjoitti aiemmin samaan `data/model_squad_gw_scores.json`:iin
+kuin entry-pohjainen `grade_model_squad.py`. Mitattu 12.9: sama GW3 olisi
+tasta 63 p ja entrysta 72 p, ja sekaprovenienssi tarttuu (entry-graderi
+pitaa rivin jolla ei ole provisional-kenttaa "jo lopullisena"). Villen
+paatos 12.9: julkinen sarja on ENTRY-sarja (GW1-GW4 entrysta). Tama sarja on
+diagnostiikkaa - mita jaadytetty runko OLISI tehnyt - eika mikaan julkinen
+pinta lue sita. Polut ja provenienssisaannot ovat
+`src/models/model_squad_scores.py`:ssa, ja sen lukija kieltaytyy antamasta
+talle graderille entry-sarjaa vaikka polku osoitettaisiin sinne.
 
 Säännöt ovat src/models/fpl_autosub.py:ssä puhtaana logiikkana ja katettu
 omalla testisetillä (tests/test_fpl_autosub.py) — spec nimeää autosubin
@@ -27,15 +38,22 @@ import requests
 
 import config
 from src.models.fpl_autosub import score_gw
+from src.models.model_squad_scores import (FROZEN_SCORES_PATH, SOURCE_FROZEN,
+                                           SarjaVirhe, load_gw_scores,
+                                           validate_gw_scores)
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
-LOG_PATH = config.PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
+# Oma sarja, ei entry-sarja (ks. docstring). Polku maaritellaan lukijassa.
+LOG_PATH = FROZEN_SCORES_PATH
 FPL_BASE = "https://fantasy.premierleague.com/api"
 FPL_HEADERS = {"User-Agent": "Mozilla/5.0 (GoalIQ grade job)"}
 
-_NEW_LOG = {
-    "meta": {
-        "product": "GoalIQ Beat the Model — model squad per-GW scores",
+# Meta-kentat jotka lisataan kun sarja luodaan. `series_source` tulee
+# lukijalta (`load_gw_scores`), ei tasta - sita ei voi unohtaa.
+_META_DEFAULTS = {
+        "product": ("GoalIQ Beat the Model — frozen-squad per-GW scores "
+                    "(diagnostic series; the public season race reads the "
+                    "entry series in model_squad_gw_scores.json)"),
         # 🔴 CHIP-KIELTOLAUSE POISTETTU TASTA METASTA (12.9.2026,
         # julkaisutarkistajan loydos). Se oli kovakoodattu vaite JULKISEEN
         # artefaktiin: `_NEW_LOG` kirjoitetaan kun `LOG_PATH` ei ole
@@ -49,14 +67,29 @@ _NEW_LOG = {
         # Chip-tieto elaa nyt rivin omassa `active_chip`-kentassa ja
         # `model-race`-payloadin `chips_played`issa, eika sita vaiteta
         # metassa lainkaan.
-        "rules": ("The model's squad is frozen before the deadline "
-                  "(immutable, provable from git history) and scored with "
-                  "official FPL points once the gameweek finishes. "
-                  "Autosubs and the captain/vice rule are applied exactly as "
-                  "FPL applies them. Any chip the squad played is recorded "
-                  "per gameweek in active_chip. Append-only."),
-    },
-    "gameweeks": [],
+        # 🔴 EI CHIPPEJA (17.9.2026). `score_gw` tuplaa kapteenin ja ajaa
+        # autosubit, mutta ei lue chippia: 3xc ei triplaa, bench boost ei
+        # laske penkkia. Mitattu GW3 (entry pelasi 3xc): tama sarja 63 p,
+        # entry 72 p. Meta sanoo sen itse, jottei "exactly as FPL" lupaa
+        # jotain jota tama sarja ei tee (12.9 oppi: kovakoodattu vaite
+        # julkiseen artefaktiin).
+        # 🔴 SUUNTA, EI LUPAUS (18.9.2026, adversariaalinen loydos). Tassa luki
+        # "a chip round scores lower here than on the entry" - ehdoton vaite
+        # JULKISEEN artefaktiin, ja epatosi: triple captain nollan tehneelle
+        # kapteenille lisaa 2x0 = 0 p, ja bench boost nollan tehneelle
+        # penkille 0 p, joten chip-kierros voi olla TASAN sama. Tosi suunta on
+        # "ei koskaan enempaa". Mittaus + sanamuodon portti:
+        # tests/test_model_squad_scores_provenance.py
+        #   ::test_freeze_metan_chip_vaite_on_mitattu_suunta
+        "rules": ("The frozen squad is scored with official FPL points once "
+                  "the gameweek finishes. Autosubs and the captain/vice rule "
+                  "are applied as FPL applies them; chips are not modelled "
+                  "in this series (no triple captain, no bench boost), so a "
+                  "chip round never scores higher here than on the entry, and "
+                  "scores lower whenever the chip added points. Only rows "
+                  "whose frozen squad is provably the entry's squad are "
+                  "graded (provenance). Diagnostic series, append-only; the "
+                  "public season race reads the entry series."),
 }
 
 
@@ -64,8 +97,18 @@ def main() -> int:
     if not FROZEN_DIR.exists():
         print("Ei jäädytettyjä mallirivejä — ei gradattavaa.")
         return 0
-    log = (json.loads(LOG_PATH.read_text(encoding="utf-8"))
-           if LOG_PATH.exists() else json.loads(json.dumps(_NEW_LOG)))
+    # 🔴 YKSI LUKIJA (17.9.2026): kaatuu jos LOG_PATH on entry-sarja tai
+    # sekasarja. Vanha raaka `json.loads` olisi appendannut freeze-rivin
+    # entry-sarjaan ja palauttanut 0. Tekninen virhe -> 1, mitaan ei kirjoiteta.
+    try:
+        log = load_gw_scores(LOG_PATH, source=SOURCE_FROZEN)
+    except SarjaVirhe as e:
+        print(f"::error::{LOG_PATH.name}: {e} Freeze-graderi ei kirjoita "
+              f"mitaan. Sen oma sarja on {FROZEN_SCORES_PATH.name}; entry-sarjaan "
+              f"kirjoittaa vain grade_model_squad.py.")
+        return 1
+    for k, v in _META_DEFAULTS.items():
+        log["meta"].setdefault(k, v)
     done = {g.get("gw") for g in log["gameweeks"]}
 
     pending = []
@@ -141,12 +184,12 @@ def main() -> int:
         row["graded_at"] = _dt.datetime.now(_dt.timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%SZ")
         row["frozen_at"] = frozen.get("meta", {}).get("frozen_at")
-        # 🔴 PROVENIENSSI RIVIIN ASTI (12.9.2026). Samaan lokiin kirjoittaa
-        # KAKSI skriptia: tama (freeze) ja `grade_model_squad.py` (entry).
-        # Mitattu 12.9: levylla olevat GW1-GW3 ovat entry-pohjaisia, ja
-        # freeze-graderin sama GW3 olisi 63 p eika 72 p. Ilman tata kenttaa
-        # sekaprovenienssi ei nay mistaan, ja meta valehtelee sarjasta.
-        row["source"] = "frozen_squad"
+        # 🔴 PROVENIENSSI RIVIIN ASTI (12.9.2026). Mitattu 12.9: entry-sarjan
+        # GW1-GW3 ovat entry-pohjaisia, ja freeze-graderin sama GW3 olisi
+        # 63 p eika 72 p. Ilman tata kenttaa sekaprovenienssi ei nay mistaan.
+        # 17.9 alkaen sarjat ovat eri tiedostoissa, ja lukija vaatii etta
+        # jokainen rivi sanoo provenienssinsa - se on se mita lukija mittaa.
+        row["source"] = SOURCE_FROZEN
         row["provenance"] = peruste
         # Keskiarvo vertailukohdaksi: "voititko mallin" on eri kysymys kuin
         # "voititko keskiverto-FPL-managerin", ja molemmat kiinnostavat.
@@ -165,6 +208,8 @@ def main() -> int:
               f"Nama kierrokset EIVAT saa pisteita tasta graderista; ne tulevat "
               f"entry-pohjaisesta `grade_model_squad.py`:sta tai jaavat auki.")
     if graded:
+        # Portti ennen kirjoitusta: tulos on yhden provenienssin freeze-sarja.
+        validate_gw_scores(log, source=SOURCE_FROZEN)
         LOG_PATH.write_text(json.dumps(log, ensure_ascii=False, indent=1) + "\n",
                             encoding="utf-8")
     return 0

@@ -585,6 +585,10 @@ jobs:
           [ -d data/model_squad_frozen ] && git add data/model_squad_frozen
           # 13.8 (BTM V2 b): gradatut pisteet, append-only.
           [ -f data/model_squad_gw_scores.json ] && git add data/model_squad_gw_scores.json
+          # 17.9 (KAKSI-GRADERIA-YKSI-TIEDOSTO): freeze-graderin OMA sarja.
+          # Ilman tata rivia tiedosto elaisi vain runnerin levylla ja graderi
+          # gradaisi samat kierrokset joka ajossa.
+          [ -f data/model_squad_frozen_gw_scores.json ] && git add data/model_squad_frozen_gw_scores.json
           # 28.8 (GW-CALLS-LOKI): kutsut + gradaus, git-historia todistaa ajan.
           [ -f data/gw_calls.json ] && git add data/gw_calls.json
           # 🔴 7.9 (portin 17. kierros): TAMA PUUTTUI, ja tiedosto oli JAASSA

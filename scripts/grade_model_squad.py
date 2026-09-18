@@ -45,13 +45,18 @@ from pathlib import Path
 if str(Path(__file__).resolve().parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import config  # noqa: E402
 from src.data import fpl_api  # noqa: E402
+from src.models.model_squad_scores import (  # noqa: E402
+    ENTRY_SCORES_PATH, SOURCE_ENTRY, load_gw_scores, validate_gw_scores)
 
 # Sama lahde ja sama env-ohitus kuin verify_model_entry_matches_freeze.py:52,
 # jotta mallin rivi ei voi olla eri kahdessa skriptissa.
 ENTRY_ID = int(os.environ.get("FPL_MODEL_ENTRY_ID", "116920"))
-OUT_PATH = config.DATA_DIR / "model_squad_gw_scores.json"
+# 🔴 KAKSI-GRADERIA-YKSI-TIEDOSTO (17.9.2026): polku tulee lukijamoduulista,
+# jossa entry- ja freeze-sarjalla on ERI tiedosto. Tama on kanoninen,
+# julkinen sarja (Villen paatos 12.9: entry). Freeze-graderi kirjoittaa
+# omaansa (FROZEN_SCORES_PATH), eika lukija anna kummallekaan toisen sarjaa.
+OUT_PATH = ENTRY_SCORES_PATH
 
 
 def _gw_status(boot: dict, fixtures: list[dict]) -> dict[int, dict]:
@@ -172,6 +177,9 @@ def _grade_gw(gw: int, history_by_gw: dict[int, dict], status: dict) -> dict:
 
     return {
         "gw": gw,
+        # Rivin provenienssi (17.9.2026). Lukija tulkitsee source-ttoman rivin
+        # legacy-entryksi vain entry-muotoisena; uusi rivi sanoo sen itse.
+        "source": SOURCE_ENTRY,
         # 🔴 PORTIN 15. KIERROS: kommentti oli VÄÄRÄ ja se levisi lukuun asti.
         # `entry_history.points` on BRUTTO, ei "siirtokustannukset jo mukana"
         # (verifioitu FPL:n API:sta 7.9: entry 12345 GW3 points 70, cost 8,
@@ -220,15 +228,19 @@ def build(only_gw: int | None = None, verbose: bool = True) -> dict:
 
     # Sailyta aiemmin gradatut rivit: lopullinen rivi ei saa muuttua takaisin
     # provisionaaliseksi jos FPL:n vastaus hetkellisesti puuttuu.
-    existing: dict[int, dict] = {}
-    _prev_generated_at = None
-    if OUT_PATH.exists():
-        try:
-            prev = json.loads(OUT_PATH.read_text(encoding="utf-8"))
-            existing = {int(r["gw"]): r for r in (prev.get("gameweeks") or [])}
-            _prev_generated_at = (prev.get("meta") or {}).get("generated_at")
-        except (OSError, ValueError, KeyError):
-            existing = {}
+    #
+    # 🔴 YKSI LUKIJA (17.9.2026). Aiempi raaka `json.loads` piti MINKA TAHANSA
+    # rivin, ja rivi jolla ei ole `provisional`-kenttaa (freeze-graderin rivi)
+    # luettiin alla "jo lopulliseksi" - sekaprovenienssi olisi jaanyt sarjaan
+    # pysyvasti. `load_gw_scores` kaatuu jos sarjassa on kahta provenienssia
+    # tai jos se ei ole entry-sarja, ja kaatuu myos rikkinaiseen tiedostoon
+    # (vanha koodi nielaisi sen ja olisi ylikirjoittanut sarjan tyhjasta).
+    # Puuttuva tiedosto on tyhja sarja. Legacy-rivit (GW1-GW4 ilman
+    # source-kenttaa) hyvaksytaan entryna eika niita muuteta tassa.
+    prev = load_gw_scores(OUT_PATH, source=SOURCE_ENTRY)
+    existing: dict[int, dict] = {
+        int(r["gw"]): r for r in (prev.get("gameweeks") or [])}
+    _prev_generated_at = (prev.get("meta") or {}).get("generated_at")
     if _prev_generated_at is None:
         _prev_generated_at = (_dt.datetime.now(_dt.timezone.utc)
                               .replace(microsecond=0).isoformat())
@@ -276,15 +288,24 @@ def build(only_gw: int | None = None, verbose: bool = True) -> dict:
         if muuttui or not existing
         else _prev_generated_at
     )
-    return {
+    doc = {
         "meta": {
             "entry_id": ENTRY_ID,
             "source": "FPL entry history + picks (not recomputed)",
+            # Sarjan provenienssi koneluettavasti (17.9.2026): tama on
+            # entry-sarja, ja lukija kaatuu jos rivit sanovat muuta.
+            "series_source": SOURCE_ENTRY,
             "generated_at": generated_at,
             "provisional_gws": [r["gw"] for r in ordered if r.get("provisional")],
         },
         "gameweeks": ordered,
     }
+    # 🔴 PORTTI ENNEN KIRJOITUSTA. Tama doc menee kahta reittia levylle:
+    # main() kirjoittaa sen paikallisesti, ja Render palauttaa sen
+    # `model-squad-grade.yml`:n runnerille joka committaa sen gitiin.
+    # Validointi on siksi TASSA eika main():ssa - kumpikaan reitti ei voi
+    # ohittaa sita.
+    return validate_gw_scores(doc, source=SOURCE_ENTRY)
 
 
 def main(argv=None) -> int:

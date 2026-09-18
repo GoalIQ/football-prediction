@@ -83,6 +83,18 @@ jobs:
           # vihrea ajo peittaisi.
           if rows is None:
               print('::error::vastauksesta puuttuu gameweeks-kentta'); sys.exit(1)
+          # 🔴 PROVENIENSSIPORTTI (17.9, KAKSI-GRADERIA-YKSI-TIEDOSTO): sama
+          # lukija kuin kirjoittajilla. Render voi ajaa vanhempaa koodia kuin
+          # repo, ja RUNNER on se joka kirjoittaa gitiin - joten portti on
+          # tassa eika vain Renderilla. Sekasarja tai muu kuin entry-sarja ei
+          # paase levylle. Moduuli ei tarvitse asennettuja riippuvuuksia.
+          sys.path.insert(0, '.')
+          from src.models.model_squad_scores import SOURCE_ENTRY, validate_gw_scores
+          try:
+              validate_gw_scores(d, source=SOURCE_ENTRY)
+          except Exception as e:
+              print(f'::error::vastaus ei ole yhden provenienssin entry-sarja: {e}')
+              sys.exit(1)
           try:
               old = json.load(open('data/model_squad_gw_scores.json', encoding='utf-8'))
               n_old = len(old.get('gameweeks') or [])
