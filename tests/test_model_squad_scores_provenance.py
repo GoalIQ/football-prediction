@@ -22,6 +22,7 @@ Tama tiedosto mittaa kolme mekanismia:
 """
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -73,10 +74,16 @@ def _entry_rivi(gw: int, **kw) -> dict:
 
 
 def _frozen_rivi(gw: int, **kw) -> dict:
-    """Freeze-graderin rivi (score_gw + main): source + provenance."""
+    """Freeze-graderin rivi (score_gw + main): source + provenance.
+
+    Kentat pidetaan graderin todellisen tulosteen kanssa samoina; ajautumista
+    vartioi test_fikstuurit_vastaavat_graderien_todellisia_riveja (xi_ids
+    puuttui talta 18.9 asti, ja siksi se puuttui myos sormenjaljesta)."""
     r = {"gw": gw, "points": 63, "points_before_captain": 55,
-         "captain_reason": "captain", "captain_points_added": 8,
+         "captain_reason": "captain", "captain_id": 1,
+         "captain_points_added": 8,
          "bench_points": 3, "autosubs": [], "fpl_average": 55,
+         "xi_ids": list(range(1, 12)),
          "graded_at": f"2026-09-0{gw}T15:00:07Z",
          "frozen_at": f"2026-09-0{gw}T07:00:00Z",
          "source": "frozen_squad", "provenance": "entry_verified"}
@@ -135,7 +142,13 @@ def test_source_ton_entry_muotoinen_rivi_on_legacy_entry():
 @pytest.mark.parametrize("kentta", mss.FROZEN_FINGERPRINT)
 def test_source_ton_rivi_freeze_sormenjaljella_ei_ole_legacy(kentta):
     """Legacy-saanto ei saa olla fail-open: freeze-rivi josta source on
-    pudonnut EI muutu entryksi vaan kaataa."""
+    pudonnut EI muutu entryksi vaan kaataa.
+
+    HUOM: tama testi nimeaa kentat yksi kerrallaan, mutta se EI ole vartijan
+    olemassaolon todiste - parametrisointi kulkee saman tuplen yli, ja tyhja
+    tuple POISTAA taman testin (skip) sen sijaan etta kaataisi sen. Olemassaolo
+    mitataan alempana: test_sormenjalkivartija_on_olemassa_ja_erottaa_graderit
+    ja test_freeze_rivi_jolta_source_putosi_ei_lue_entryksi."""
     r = _entry_rivi(4)
     r[kentta] = _frozen_rivi(4)[kentta]
     with pytest.raises(mss.ProvenienssiRistiriita) as ei:
@@ -353,7 +366,9 @@ def _runko(gw: int) -> dict:
     }
 
 
-def _aja_freeze(monkeypatch, tmp_path, loki: Path, gws: list[int]):
+def _aja_freeze(monkeypatch, tmp_path, loki: Path, gws: list[int],
+                viritys=None):
+    """`viritys(m)` ajetaan ennen main()ia (kutsupaikan vakoilu)."""
     m = _lataa(FROZEN_GRADER, "grade_model_squad_gw_kp")
     frozen_dir = tmp_path / "frozen"
     frozen_dir.mkdir(exist_ok=True)
@@ -384,6 +399,8 @@ def _aja_freeze(monkeypatch, tmp_path, loki: Path, gws: list[int]):
                                 for i in range(1, 16)]})
 
     monkeypatch.setattr(m.requests, "get", _get)
+    if viritys is not None:
+        viritys(m)
     return m.main()
 
 
@@ -414,6 +431,239 @@ def test_freeze_graderi_kirjoittaa_omaan_sarjaansa(tmp_path, monkeypatch):
     mss.validate_gw_scores(doc, source="frozen_squad")
     with pytest.raises(mss.ProvenienssiRistiriita):
         mss.load_gw_scores(loki, source="entry")
+
+
+# ---------------------------------------------------------------------------
+# SORMENJALKIVARTIJAN OLEMASSAOLO (adversariaalinen loydos 18.9.2026)
+#
+# 🔴 MITATTU: `FROZEN_FINGERPRINT = ()` -> tama tiedosto 31 passed, 2 skipped,
+# exit 0. Vartija KATOSI eika mikaan punastunut: sita vartioi vain
+# test_source_ton_rivi_freeze_sormenjaljella_ei_ole_legacy, joka on
+# parametrisoitu saman tuplen yli, ja tyhja parametrisointi on pytestille SKIP.
+# Vahinko: freeze-rivi jolta `source` on pudonnut luetaan legacy-entryna, ja
+# koska GW1-GW4 ovat LEGACY_RIVIT_ILMAN_SOURCEA-listalla, myos elavan
+# tiedoston portti hyvaksyy sen -> julkinen sarja nayttaisi GW4:lle
+# freeze-pisteet (mitattu 12.9: GW3 63 p freezesta vs 72 p entrysta), ja
+# model-race, gw_recap ja rate-team-kortti lukisivat sen vaieten.
+#
+# Kaksi EI-PARAMETRISOITUA testia, joiden vertailukohta on graderien
+# TODELLINEN tuloste eika `_entry_rivi`/`_frozen_rivi`-fikstuuri (fikstuuri voi
+# ajautua koodista erilleen ilman etta mikaan huomauttaa).
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def todellinen_freeze_rivi(tmp_path, monkeypatch) -> dict:
+    """Rivi jonka freeze-graderi OIKEASTI kirjoittaa (main() ajettuna)."""
+    loki = tmp_path / "sormenjalki_frozen.json"
+    assert _aja_freeze(monkeypatch, tmp_path, loki, [4]) == 0
+    rivit = json.loads(loki.read_text(encoding="utf-8"))["gameweeks"]
+    assert len(rivit) == 1 and rivit[0]["source"] == mss.SOURCE_FROZEN
+    return rivit[0]
+
+
+@pytest.fixture
+def todellinen_entry_rivi(tmp_path, monkeypatch) -> dict:
+    """Rivi jonka entry-graderi OIKEASTI kirjoittaa (build() ajettuna)."""
+    g = _lataa(ENTRY_GRADER, "grade_model_squad_sormenjalki")
+    monkeypatch.setattr(g, "OUT_PATH", tmp_path / "sormenjalki_entry.json")
+    _mock_entry_fpl(monkeypatch, g, [4])
+    rivit = g.build(verbose=False)["gameweeks"]
+    assert len(rivit) == 1 and rivit[0]["source"] == mss.SOURCE_ENTRY
+    return rivit[0]
+
+
+def test_freeze_rivi_jolta_source_putosi_ei_lue_entryksi(todellinen_freeze_rivi):
+    """🔴 Mekanismi, ei merkkijono. Tasan se rivi jonka freeze-graderi
+    kirjoittaa, ilman `source`-kenttaa, ei saa lukeutua legacy-entryksi -
+    kumpikaan rivi- eika sarjatasolla. Tyhja (tai vaarille kentille osoittava)
+    FROZEN_FINGERPRINT KAATAA taman, ei poista sita."""
+    r = {k: v for k, v in todellinen_freeze_rivi.items() if k != "source"}
+    with pytest.raises(mss.ProvenienssiRistiriita):
+        mss.row_source(r)
+    # Sarjataso: legacy-GW vieressa freeze-rivi ei pese itseaan entryksi.
+    with pytest.raises(mss.ProvenienssiRistiriita):
+        mss.series_source(_doc(_entry_rivi(3), r))
+    # ...eika elavan tiedoston poikkeuslista voi hyvaksya sita: sourceless_gws
+    # nakisi GW4:n, joka ON listalla, mutta lukija kaatuu ennen sita.
+    with pytest.raises(mss.ProvenienssiRistiriita):
+        mss.validate_gw_scores(_doc(_entry_rivi(3), r), source=mss.SOURCE_ENTRY)
+
+
+def test_fikstuurit_vastaavat_graderien_todellisia_riveja(
+        todellinen_freeze_rivi, todellinen_entry_rivi):
+    """Fikstuuri joka on ajautunut koodista erilleen tekee koko tiedostosta
+    teatteria: `_frozen_rivi`:lta puuttui `xi_ids`, joten sormenjalkitestikin
+    mittasi vain niita kenttia jotka fikstuuri sattui tuntemaan."""
+    assert set(_frozen_rivi(4)) == set(todellinen_freeze_rivi), (
+        "_frozen_rivi ei vastaa freeze-graderin tulostetta: "
+        f"puuttuu {sorted(set(todellinen_freeze_rivi) - set(_frozen_rivi(4)))}, "
+        f"ylimaaraisia {sorted(set(_frozen_rivi(4)) - set(todellinen_freeze_rivi))}")
+    # `_entry_rivi` on TARKOITUKSELLA 17.9 edeltava muoto: sama kentta-
+    # joukko ilman `source`-kenttaa.
+    assert set(_entry_rivi(4)) == set(todellinen_entry_rivi) - {"source"}, (
+        "_entry_rivi ei vastaa entry-graderin tulostetta: "
+        f"puuttuu {sorted(set(todellinen_entry_rivi) - {'source'} - set(_entry_rivi(4)))}, "
+        f"ylimaaraisia {sorted(set(_entry_rivi(4)) - set(todellinen_entry_rivi))}")
+
+
+def test_sormenjalkivartija_on_olemassa_ja_erottaa_graderit(
+        todellinen_freeze_rivi, todellinen_entry_rivi):
+    """Vartijan OLEMASSAOLO ja kattavuus, mitattuna kumpaakin graderia vasten.
+
+    Kolme vaatimusta:
+      1. tuple ei ole tyhja eika kevennetty (>=4 kenttaa)
+      2. jokainen kentta on freeze-graderin todellisella rivilla - vartija ei
+         saa vartioida kenttaa jota kukaan ei kirjoita
+      3. yksikaan kentta ei ole entry-graderin rivilla - muuten laillinen
+         legacy-rivi kaatuisi
+    ja neljas joka estaa hiljaisen ajautumisen: tuple on TASAN freeze-rivin
+    kentat miinus entry-rivin kentat. Jos kumpaan tahansa graderiin lisataan
+    kentta, tama kaatuu ja kirjoittaja joutuu paattamaan onko se sormenjalki.
+    """
+    ff = set(mss.FROZEN_FINGERPRINT)
+    assert len(mss.FROZEN_FINGERPRINT) == len(ff), "tuplessa on duplikaatteja"
+    assert len(ff) >= 4, (
+        "FROZEN_FINGERPRINT tyhjennettiin tai kevennettiin: sourceless "
+        "freeze-rivi lukeutuisi legacy-entryksi ja julkinen sarja voisi "
+        "nayttaa freeze-pisteita (12.9: 63 p vs 72 p).")
+    vain_freeze = set(todellinen_freeze_rivi) - set(todellinen_entry_rivi)
+    assert ff <= set(todellinen_freeze_rivi), (
+        f"vartioidut kentat {sorted(ff - set(todellinen_freeze_rivi))} eivat "
+        f"ole freeze-graderin rivilla - vartija ei vartioi mitaan.")
+    assert not (ff & set(todellinen_entry_rivi)), (
+        f"kentat {sorted(ff & set(todellinen_entry_rivi))} ovat MOLEMMILLA "
+        f"riveilla - laillinen legacy-entry-rivi kaatuisi.")
+    assert ff == vain_freeze, (
+        f"sormenjalki ei vastaa graderien todellista eroa. Vain freezessa: "
+        f"{sorted(vain_freeze)}; tuplessa: {sorted(ff)}. Lisaa uusi kentta "
+        f"tupleen tai perustele diffissa miksi se ei erota graderia.")
+    # Ja mekanismi kenttakohtaisesti, ILMAN parametrisointia: laillinen
+    # legacy-entry-rivi + yksi sormenjalkikentta = ristiriita, ei legacy.
+    for kentta in sorted(ff):
+        laillinen = {k: v for k, v in todellinen_entry_rivi.items()
+                     if k != "source"}
+        assert mss.row_source(laillinen) == mss.SOURCE_ENTRY
+        laillinen[kentta] = todellinen_freeze_rivi[kentta]
+        with pytest.raises(mss.ProvenienssiRistiriita, match=kentta):
+            mss.row_source(laillinen)
+
+
+# ---------------------------------------------------------------------------
+# KIRJOITUSPORTIT MITTAAVAT MEKANISMIA, EI MERKKIJONOA (loydos 18.9.2026)
+#
+# Lahdeportti (test_kirjoittaja_lukee_ja_validoi_lukijan_kautta_lahteessa) vaatii
+# vain etta merkkijono `validate_gw_scores(` esiintyy ennen `.write_text(`.
+# Yksi muokkaus - `validate_gw_scores(empty_gw_scores(SOURCE), source=SOURCE)` -
+# pitaa merkkijonon paikallaan mutta validoi tyhjan docin, ja kirjoitus menee
+# lapi validoimatta. Nama kaksi testia vakoilevat KUTSUPAIKKAA ja vaativat etta
+# validoitava olio on tasan se sarja joka palautetaan / kirjoitetaan levylle.
+# ---------------------------------------------------------------------------
+def test_entry_graderin_paluuvalidointi_validoi_palautetun_sarjan(
+        tmp_path, monkeypatch):
+    g = _lataa(ENTRY_GRADER, "grade_model_squad_vakooja")
+    out = tmp_path / "scores.json"
+    _kirjoita(out, _doc(_entry_rivi(3)))
+    monkeypatch.setattr(g, "OUT_PATH", out)
+    _mock_entry_fpl(monkeypatch, g, [3, 4])
+    nahdyt = []
+    oikea = mss.validate_gw_scores
+
+    def _vakooja(doc, *, source):
+        nahdyt.append((doc, source))
+        return oikea(doc, source=source)
+
+    monkeypatch.setattr(g, "validate_gw_scores", _vakooja)
+    doc = g.build(verbose=False)
+    assert nahdyt, "build() ei validoinut mitaan"
+    validoitu, source = nahdyt[-1]
+    assert validoitu is doc, (
+        "validoitu olio ei ole build()in palauttama sarja - portti validoi "
+        "jotain muuta kuin sen mita main() kirjoittaa")
+    assert source == mss.SOURCE_ENTRY
+    assert [r["gw"] for r in validoitu["gameweeks"]] == [3, 4], (
+        "validoitu sarja oli tyhja tai vaillinainen")
+
+
+def test_freeze_graderin_kirjoitusportti_validoi_levylle_menevan_sarjan(
+        tmp_path, monkeypatch):
+    loki = tmp_path / "frozen_series.json"
+    nahdyt = []
+    oikea = mss.validate_gw_scores
+
+    def _viritys(m):
+        def _vakooja(doc, *, source):
+            # Kopio talteen: portti on ENNEN kirjoitusta, joten myohempi
+            # mutaatio ei saa peittaa sita mita portti oikeasti naki.
+            nahdyt.append((copy.deepcopy(doc), source))
+            return oikea(doc, source=source)
+        monkeypatch.setattr(m, "validate_gw_scores", _vakooja)
+
+    rc = _aja_freeze(monkeypatch, tmp_path, loki, [4], viritys=_viritys)
+    assert rc == 0 and loki.exists()
+    levy = json.loads(loki.read_text(encoding="utf-8"))
+    assert nahdyt, "freeze-graderi kirjoitti levylle validoimatta mitaan"
+    validoitu, source = nahdyt[-1]
+    assert source == mss.SOURCE_FROZEN
+    assert validoitu["gameweeks"] == levy["gameweeks"], (
+        "validoitu sarja ei ole se joka kirjoitettiin levylle")
+    assert validoitu["gameweeks"], "validoitu sarja oli tyhja"
+
+
+# ---------------------------------------------------------------------------
+# JULKISEEN ARTEFAKTIIN KIRJOITETTU VAITE (loydos 18.9.2026)
+#
+# `_META_DEFAULTS["rules"]` kirjoitetaan freeze-sarjan metaan kun tiedostoa ei
+# ole (kausivaihdos tai poistettu tiedosto) ja pushataan julkiseen repoon.
+# Siina luki: "a chip round scores lower here than on the entry" - ehdoton
+# vaite jota ei vartioinut yksikaan testi. Se on epatosi: chip voi lisata 0 p.
+# Portti mittaa suunnan score_gw:lla ja vaatii etta teksti sanoo mitatun
+# suunnan, ei lupausta.
+# ---------------------------------------------------------------------------
+def test_freeze_metan_chip_vaite_on_mitattu_suunta():
+    from src.models import fpl_autosub
+
+    runko = _runko(4)
+    minuutit = {i: 90 for i in range(1, 16)}
+
+    def _mittaa(kapteenin_pisteet):
+        pisteet = {i: (kapteenin_pisteet if i == 1 else 5)
+                   for i in range(1, 16)}
+        rivi = fpl_autosub.score_gw(runko, pisteet, minuutit)
+        perus = sum(pisteet[i] for i in rivi["xi_ids"])
+        return {
+            "perus": perus,                                # kapteeni x1
+            "kapteeni": pisteet[1],
+            "freeze": rivi["points"],                      # kapteeni x2
+            "entry_3xc": perus + 2 * pisteet[1],           # kapteeni x3
+            "entry_bb": perus + pisteet[1] + rivi["bench_points"],
+        }
+
+    # Vertailu on mielekas vain jos freeze OIKEASTI kaksinkertaistaa
+    # kapteenin (muuten "entry_3xc" ei ole yhden chipin ero vaan kahden).
+    for m in (_mittaa(0), _mittaa(8)):
+        assert m["freeze"] == m["perus"] + m["kapteeni"], (
+            "freeze-rivi ei kaksinkertaista kapteenia; talla mittauksella ei "
+            "voi sanoa mitaan chip-erosta")
+    nolla = _mittaa(0)
+    assert nolla["freeze"] == nolla["entry_3xc"], (
+        "3xc nollan tehneelle kapteenille lisaa 2x0 = 0 p, joten chip-kierros "
+        "on TASAN sama - 'a chip round scores lower' on epatosi")
+    tuottoisa = _mittaa(8)
+    assert tuottoisa["freeze"] < tuottoisa["entry_3xc"], (
+        "pisteita tehneella kapteenilla 3xc-kierros on aidosti korkeampi")
+    for m in (nolla, tuottoisa):
+        assert m["freeze"] <= m["entry_3xc"] and m["freeze"] <= m["entry_bb"], (
+            "tosi suunta on 'ei koskaan enempaa'")
+
+    mod = _lataa(FROZEN_GRADER, "grade_model_squad_gw_meta")
+    saannot = mod._META_DEFAULTS["rules"]
+    assert "never scores higher" in saannot, (
+        "meta ei sano mitattua suuntaa; artefaktin teksti on julkista tekstia")
+    for ylivaite in ("scores lower here than on the entry",
+                     "always scores lower",
+                     "scores lower than on the entry"):
+        assert ylivaite not in saannot, (
+            f"ehdoton vaite {ylivaite!r} palasi metaan: chip voi lisata 0 p, "
+            f"jolloin kierrokset ovat tasan samat (mitattu yllä).")
 
 
 def _koodi(p: Path) -> str:

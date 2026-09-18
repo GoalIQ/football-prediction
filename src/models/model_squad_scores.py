@@ -94,8 +94,22 @@ LEGACY_SOURCELESS = SOURCE_ENTRY
 
 # Kentat joita VAIN freeze-graderi tuottaa (src/models/fpl_autosub.score_gw +
 # grade_model_squad_gw.main). Entry-graderin rivilla ei ole yhtakaan naista.
+#
+# 🔴 TAMA TUPLE ON VARTIJA, JA SEN OLEMASSAOLO MITATAAN (loydos 18.9.2026).
+# Ennen: `FROZEN_FINGERPRINT = ()` poisti seka vartijan etta sita vartioivan
+# testin, koska testi oli parametrisoitu taman tuplen yli ja tyhja
+# parametrisointi on pytestille SKIP eika FAIL (mitattu: 31 passed,
+# 2 skipped, exit 0). Nyt tuplea vartioivat KAKSI ei-parametrisoitua testia
+# jotka ajavat molemmat graderit ja vertaavat tuplen TODELLISIIN riveihin:
+#   tests/test_model_squad_scores_provenance.py
+#     ::test_freeze_rivi_jolta_source_putosi_ei_lue_entryksi
+#     ::test_sormenjalkivartija_on_olemassa_ja_erottaa_graderit
+# Tuple on tasan freeze-rivin kentat miinus entry-rivin kentat; jos jompaan
+# kumpaan graderiin lisataan kentta, jalkimmainen testi kaatuu ja kirjoittaja
+# joutuu paattamaan onko uusi kentta sormenjalki vai ei. `xi_ids` (fpl_autosub
+# .score_gw) loytyi juuri siten: se oli freeze-only mutta puuttui tuplesta.
 FROZEN_FINGERPRINT = ("provenance", "points_before_captain", "captain_reason",
-                      "frozen_at")
+                      "frozen_at", "xi_ids")
 
 
 class SarjaVirhe(RuntimeError):

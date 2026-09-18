@@ -73,11 +73,20 @@ _META_DEFAULTS = {
         # entry 72 p. Meta sanoo sen itse, jottei "exactly as FPL" lupaa
         # jotain jota tama sarja ei tee (12.9 oppi: kovakoodattu vaite
         # julkiseen artefaktiin).
+        # 🔴 SUUNTA, EI LUPAUS (18.9.2026, adversariaalinen loydos). Tassa luki
+        # "a chip round scores lower here than on the entry" - ehdoton vaite
+        # JULKISEEN artefaktiin, ja epatosi: triple captain nollan tehneelle
+        # kapteenille lisaa 2x0 = 0 p, ja bench boost nollan tehneelle
+        # penkille 0 p, joten chip-kierros voi olla TASAN sama. Tosi suunta on
+        # "ei koskaan enempaa". Mittaus + sanamuodon portti:
+        # tests/test_model_squad_scores_provenance.py
+        #   ::test_freeze_metan_chip_vaite_on_mitattu_suunta
         "rules": ("The frozen squad is scored with official FPL points once "
                   "the gameweek finishes. Autosubs and the captain/vice rule "
                   "are applied as FPL applies them; chips are not modelled "
                   "in this series (no triple captain, no bench boost), so a "
-                  "chip round scores lower here than on the entry. Only rows "
+                  "chip round never scores higher here than on the entry, and "
+                  "scores lower whenever the chip added points. Only rows "
                   "whose frozen squad is provably the entry's squad are "
                   "graded (provenance). Diagnostic series, append-only; the "
                   "public season race reads the entry series."),
