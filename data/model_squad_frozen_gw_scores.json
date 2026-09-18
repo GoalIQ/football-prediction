@@ -1,0 +1,37 @@
+{
+ "meta": {
+  "series_source": "frozen_squad",
+  "product": "GoalIQ Beat the Model — frozen-squad per-GW scores (diagnostic series; the public season race reads the entry series in model_squad_gw_scores.json)",
+  "rules": "The frozen squad is scored with official FPL points once the gameweek finishes. Autosubs and the captain/vice rule are applied as FPL applies them; chips are not modelled in this series (no triple captain, no bench boost), so a chip round never scores higher here than on the entry, and scores lower whenever the chip added points. Only rows whose frozen squad is provably the entry's squad are graded (provenance). Diagnostic series, append-only; the public season race reads the entry series."
+ },
+ "gameweeks": [
+  {
+   "gw": 3,
+   "points": 63,
+   "points_before_captain": 54,
+   "captain_id": 411,
+   "captain_reason": "captain",
+   "captain_points_added": 9,
+   "autosubs": [],
+   "bench_points": 14,
+   "xi_ids": [
+    572,
+    4,
+    388,
+    10,
+    115,
+    426,
+    427,
+    68,
+    411,
+    569,
+    346
+   ],
+   "graded_at": "2026-09-18T07:55:13Z",
+   "frozen_at": "2026-09-04T12:55:13Z",
+   "source": "frozen_squad",
+   "provenance": "entry_verified",
+   "fpl_average": 51
+  }
+ ]
+}
