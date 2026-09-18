@@ -81,7 +81,9 @@ FREE_EXPECTED = {
     # pudottanut sivun kahteen riviin hiljaa.
     "/api/fantasy/differentials",
     "/api/fantasy/xg-leaders",
-    "/api/fantasy/defcon-leaders",
+    # 17.9: defcon-gw ja defcon/{player_id} pysyvat ilmaisina myos sen
+    # jalkeen kun defcon-leaders siirtyi PARTIALiin: per-GW-matriisi ja
+    # pelaajakortin DefCon-loki ovat FPL:n omaa otteludataa, eivat rankingia.
     "/api/fantasy/defcon-gw",
     "/api/fantasy/defcon-live",
     "/api/fantasy/compare",
@@ -127,6 +129,16 @@ PARTIAL_EXPECTED = {
     # kapteeni, hold-verdikti) + premium-erittely (suositukset). Viides
     # kerta tata vikaluokkaa; maski on nyt endpointissa.
     "/api/fantasy/rate-team",
+    # 17.9 DEFCON-LEADERS-PALVELINRAJA: defcon-leaders siirtyi FREEsta tanne.
+    # "Full DefCon leaderboard" on myyty premiumina vahintaan viidella
+    # pinnalla (fpl.html, build_fpl_page.py, llms.txt, mobiilin
+    # paywall-bulletit, SPA:n Leaders-teaser), mutta anonyymi kutsu sai
+    # 182 rivia (season) / 377 rivia (window=5) ja meta.masked=None
+    # (mitattu livena 12.9 ja 17.9). Portti oli VAIN selaimessa: molemmat
+    # klientit leikkasivat listan kolmeen itse. Kuudes kerta tata
+    # vikaluokkaa. Ilmainen ydin = top 3 (sama luku jonka klientit jo
+    # nayttivat), premium-erittely = loput rivit. Maski on endpointissa.
+    "/api/fantasy/defcon-leaders",
 }
 
 # Erittelykentat jotka EIVAT saa nakya ilman premiumia.
@@ -138,6 +150,11 @@ PARTIAL_PREMIUM_KEYS = {
     # Differential-kapteeni on nimenomaan myyty premium-riville.
     "/api/fantasy/captain": ("differential",),
     "/api/fantasy/rate-team": ("suggestions",),
+    # 17.9: premium-osa on LISTAN HANTA, ei kentta. Raja on yksi vakio
+    # (api.premium.FREE_LEADERS_ROWS) ja se kulkee vastauksen metassa
+    # (`free_rows`); vuoto = players-lista pidempi kuin free_rows ilman
+    # premiumia. Todennetaan ajamalla alla (molemmat basikset).
+    "/api/fantasy/defcon-leaders": ("players[free_rows:]",),
 }
 
 
@@ -487,3 +504,275 @@ def test_pool_lisays_nosti_etag_skeemaversiota():
     assert len(XP_POOL_FIELDS) == 7, (
         "XP_POOL_FIELDS muuttui — tarkista ETagin skeemaversio ja paivita "
         "tama luku samassa committissa")
+
+
+# --- DEFCON-LEADERS-PALVELINRAJA (17.9) ------------------------------------
+#
+# Maskaus todennetaan AJAMALLA molemmilla basiksilla (recent + season),
+# koska reitilla on kaksi paluupolkua ja vanha muoto palautti kummankin
+# rankkerin tuloksen suoraan. Synteettinen data monkeypatchataan lukijoihin,
+# jotta testi ei riipu repon artefaktin sisallosta (datasidonnainen testi
+# punastuu ilman etta mikaan on rikki, ks. 12.9-raportti kohta 12) eika
+# tyhjasta esikausiartefaktista (silloin mittaisimme tyhjaa vastausta).
+#
+# Erotteleva fikstuuri: LEADERS_N > FREE_LEADERS_ROWS, jotta vanha koodi
+# (ei maskia) oikeasti lapaisisi "palauttaa rivit" -ehdon ja kaatuisi
+# "tasan free_rows rivia" -ehtoon. Muuten exit-koodi ei todistaisi mekanismia.
+
+LEADERS_N = 6
+
+
+def _leaders_recent_fixture() -> dict:
+    """rank_defcon_leaders-syote: jokaisella eri hit-rate -> jarjestys on
+    yksikasitteinen, jolloin 'top 3 on sama kuin premiumin 3 ensimmaista'
+    on aito vaite eika tasapelin sattumaa."""
+    players = []
+    for i in range(1, LEADERS_N + 1):
+        hits = LEADERS_N - i  # P1 osuu 5/5, P6 0/5
+        players.append({
+            "id": i, "web_name": f"P{i}", "team_short": "TST", "pos": "DEF",
+            "price": 5.0, "owned_pct": 1.0, "basis": "2025/26",
+            "games_total": 5,
+            "recent_games": [
+                {"round": r + 1, "opp": "OPP", "venue": "H", "minutes": 90,
+                 "xg": 0.1, "xa": 0.1, "xgi": 0.2,
+                 "dc": 12 if r < hits else 3}
+                for r in range(5)],
+        })
+    return {"meta": {"available": True, "basis_season": "2025/26",
+                     "is_prev_season_basis": True,
+                     "basis_label": "Based on 2025/26",
+                     "generated_at": "2026-09-17T00:00:00"},
+            "players": players}
+
+
+def _leaders_season_fixture() -> dict:
+    """rank_defcon_season-syote (per-GW-matriisin kausisummat)."""
+    players = []
+    for i in range(1, LEADERS_N + 1):
+        hits = 30 - 4 * i
+        players.append({
+            "id": i, "code": 90000 + i, "web_name": f"P{i}",
+            "team_short": "TST", "pos": "DEF", "price": 5.0, "owned_pct": 3.0,
+            "threshold": 10, "games": 38, "hits": hits,
+            "hit_rate": round(hits / 38, 3), "dc_points": hits * 2,
+            "basis": "2025/26",
+            "per_gw": [[g + 1, "OPP", "H", 90, 8] for g in range(38)],
+        })
+    return {"meta": {"available": True, "basis_season": "2025/26",
+                     "basis_label": "Based on 2025/26",
+                     "generated_at": "2026-09-17T00:00:00",
+                     "n_players": LEADERS_N},
+            "players": players}
+
+
+@pytest.fixture()
+def leaders_client(monkeypatch):
+    """TestClient jonka defcon-lukijat palauttavat synteettisen datan.
+
+    Reitti importoi lukijat kutsun sisalla (`from src.models.fpl_leaders
+    import load_leaders, load_defcon_gw`), joten moduuliattribuutin
+    monkeypatch osuu molempiin basiksiin ja myos /defcon-gw:hen.
+    """
+    import api.main as m
+    import src.models.fpl_leaders as fl
+    monkeypatch.setattr(fl, "load_leaders", _leaders_recent_fixture)
+    monkeypatch.setattr(fl, "load_defcon_gw", _leaders_season_fixture)
+    return TestClient(m.app)
+
+
+_LEADERS_QUERIES = {
+    "recent": "/api/fantasy/defcon-leaders?window=5&top_n=400",
+    "season": "/api/fantasy/defcon-leaders?basis=season&top_n=400",
+}
+
+
+@pytest.mark.parametrize("basis", sorted(_LEADERS_QUERIES))
+def test_defcon_leaders_masked_when_enforcement_on(leaders_client, monkeypatch,
+                                                   basis):
+    """Flagi paalla + ei tokenia -> tasan free_rows rivia + meta.masked.
+
+    Rivit ovat palvelinjarjestyksen kolme ensimmaista (sama siivu jonka
+    klientit leikkasivat itse) ja taysia.
+    """
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "off")
+    full = leaders_client.get(_LEADERS_QUERIES[basis]).json()
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    r = leaders_client.get(_LEADERS_QUERIES[basis])
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"]["masked"] is True
+    assert d["meta"]["free_rows"] == FREE_LEADERS_ROWS
+    assert d["meta"]["total_rows"] == LEADERS_N
+    assert len(d["players"]) == FREE_LEADERS_ROWS, (
+        f"{basis}: anonyymi sai {len(d['players'])} rivia, ei "
+        f"{FREE_LEADERS_ROWS} — 'Full DefCon leaderboard' vuotaa")
+    assert ([p["id"] for p in d["players"]]
+            == [p["id"] for p in full["players"][:FREE_LEADERS_ROWS]])
+    for p in d["players"]:
+        for field in ("web_name", "hit_rate_pct", "dc_per_game",
+                      "defcon_points_window", "games", "price"):
+            assert p.get(field) is not None, f"maskattu rivi menetti {field}"
+
+
+@pytest.mark.parametrize("basis", sorted(_LEADERS_QUERIES))
+def test_defcon_leaders_full_when_enforcement_off(leaders_client, monkeypatch,
+                                                  basis):
+    """NEGATIIVINEN KONTROLLI: flagi pois -> koko lista, ei maskilippua.
+
+    Ilman tata edellinen lapaisisi myos silloin jos rankkeri antaisi aina
+    vain kolme rivia — eli mittaisimme dataa emmeka maskia.
+    """
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "off")
+    d = leaders_client.get(_LEADERS_QUERIES[basis]).json()
+    assert d["meta"].get("masked") is not True
+    assert "free_rows" not in d["meta"]
+    assert len(d["players"]) == LEADERS_N > FREE_LEADERS_ROWS
+
+
+def test_defcon_leaders_masked_for_invalid_token(leaders_client, monkeypatch):
+    """Kelvoton token ei ohita gatea (fail-closed tunnistautumisessa)."""
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    r = leaders_client.get(_LEADERS_QUERIES["season"],
+                           headers={"Authorization": "Bearer ei-kelpaa"})
+    assert r.status_code == 200
+    assert len(r.json()["players"]) == FREE_LEADERS_ROWS
+
+
+@pytest.mark.parametrize("basis", sorted(_LEADERS_QUERIES))
+def test_defcon_leaders_full_for_premium_token_when_enforcement_on(
+        leaders_client, monkeypatch, basis):
+    """DoD 2: enforcement PAALLA + kelvollinen premium-token -> koko lista,
+    ei maskilippua.
+
+    Flagi-pois-kontrolli ei todista tata: siina is_premium_request palauttaa
+    True ennen token-haaraa. Tassa token kulkee koko polun (verify ->
+    profiili) kuten tuotannossa. Vaihe-invariantti: tulos on sama riippumatta
+    siita onko GW1-GW3 ilmaisikkuna auki (ikkuna antaa True aiemmin, profiili
+    myohemmin; kumpikin on premium).
+    """
+    import api.premium as prem
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-1")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: True)
+    with prem._PREMIUM_CACHE_LOCK:
+        prem._PREMIUM_CACHE.clear()
+    try:
+        r = leaders_client.get(_LEADERS_QUERIES[basis],
+                               headers={"Authorization": "Bearer premium-ok"})
+    finally:
+        with prem._PREMIUM_CACHE_LOCK:
+            prem._PREMIUM_CACHE.clear()
+    assert r.status_code == 200
+    d = r.json()
+    assert d["meta"].get("masked") is not True, "premium sai maskatun listan"
+    assert "free_rows" not in d["meta"]
+    assert len(d["players"]) == LEADERS_N > FREE_LEADERS_ROWS
+
+
+def test_defcon_gw_stays_free_when_enforcement_on(leaders_client, monkeypatch):
+    """DoD 5: per-GW-matriisi pysyy ilmaisena (pelaajakortin DefCon-loki).
+
+    Sama synteettinen data kuin season-basiksella: jos joku ulottaisi
+    maskin lukijaan (load_defcon_gw) reitin sijaan, tama punastuisi.
+    """
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    d = leaders_client.get("/api/fantasy/defcon-gw").json()
+    assert "masked" not in d["meta"]
+    assert len(d["players"]) == LEADERS_N
+
+
+def test_defcon_player_stays_free_when_enforcement_on(leaders_client,
+                                                      monkeypatch):
+    """DoD 5: yhden pelaajan DefCon-loki pysyy ilmaisena."""
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    r = leaders_client.get("/api/fantasy/defcon/1?window=5")
+    assert r.status_code == 200
+    d = r.json()
+    assert d.get("meta", {}).get("masked") is not True
+    assert len(d["games"]) == 5
+
+
+def test_partial_routes_declare_what_leaks():
+    """Poikkeuslista perusteluineen (6a kohta 2): jokainen PARTIAL-reitti
+    nimeaa PARTIAL_PREMIUM_KEYSissa mika osa vastauksesta on premiumia.
+
+    PARTIAL ilman maaritelmaa on reitti jonka maskia kukaan ei ole paattanyt
+    eika mikaan testi voi todentaa (17.9 asti defcon-leaders olisi voinut
+    siirtya tanne pelkalla joukkorivilla). Maaritelma ilman reittia on
+    vanhentunut rivi joka vartioi tyhjaa.
+    """
+    ilman_maaritelmaa = sorted(PARTIAL_EXPECTED - set(PARTIAL_PREMIUM_KEYS))
+    ilman_reittia = sorted(set(PARTIAL_PREMIUM_KEYS) - PARTIAL_EXPECTED)
+    assert not ilman_maaritelmaa and not ilman_reittia, (
+        f"PARTIAL ilman premium-osan maaritelmaa: {ilman_maaritelmaa}; "
+        f"maaritelma ilman PARTIAL-reittia: {ilman_reittia}")
+
+
+@pytest.mark.parametrize("window_open", [True, False],
+                         ids=["ikkuna-auki", "ikkuna-kiinni"])
+@pytest.mark.parametrize("basis", sorted(_LEADERS_QUERIES))
+def test_defcon_leaders_anonymous_masked_in_every_free_window_phase(
+        leaders_client, monkeypatch, basis, window_open):
+    """6a kohta 3: invariantti mitataan joka vaiheessa, ei nykyhetkessa.
+
+    GW1-GW3 ilmaisikkuna (free_premium_window_active) antaa premiumin
+    KIRJAUTUNEELLE ilman Supabase-hakua. Anonyymin on pysyttava maskattuna
+    ikkunasta riippumatta: muuten "Full DefCon leaderboard" olisi kolme
+    kierrosta kaudesta julkinen curlilla. Vaihe injektoidaan, ei lueta
+    kellosta. Erotteleva kontrolli on seuraava testi.
+    """
+    import api.premium as prem
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda *a, **k: window_open)
+    d = leaders_client.get(_LEADERS_QUERIES[basis]).json()
+    assert d["meta"]["masked"] is True
+    assert d["meta"]["total_rows"] == LEADERS_N
+    assert len(d["players"]) == FREE_LEADERS_ROWS, (
+        f"{basis}, ikkuna {'auki' if window_open else 'kiinni'}: anonyymi "
+        f"sai {len(d['players'])} rivia")
+
+
+@pytest.mark.parametrize("window_open", [True, False],
+                         ids=["ikkuna-auki", "ikkuna-kiinni"])
+def test_defcon_leaders_signed_in_non_premium_follows_free_window(
+        leaders_client, monkeypatch, window_open):
+    """Erotteleva kontrolli edelliselle: vaihe VAIHTAA tuloksen
+    kirjautuneelle ei-premiumille (ikkuna auki -> koko lista, kiinni ->
+    maski). Ilman tata edellinen lapaisisi myos silloin jos monkeypatch
+    osuisi nimeen jota polku ei lue, eli mittaisimme nykyhetkea."""
+    import api.premium as prem
+    from api.premium import FREE_LEADERS_ROWS
+
+    monkeypatch.setenv("PREMIUM_ENFORCE", "on")
+    monkeypatch.setattr(prem, "free_premium_window_active",
+                        lambda *a, **k: window_open)
+    monkeypatch.setattr(prem, "_verify_token_user_id", lambda t: "user-free")
+    monkeypatch.setattr(prem, "_profile_is_premium", lambda uid: False)
+    monkeypatch.setattr(prem, "_web_subscription_active", lambda uid: False)
+    with prem._PREMIUM_CACHE_LOCK:
+        prem._PREMIUM_CACHE.clear()
+    try:
+        d = leaders_client.get(
+            _LEADERS_QUERIES["season"],
+            headers={"Authorization": "Bearer free-user"}).json()
+    finally:
+        with prem._PREMIUM_CACHE_LOCK:
+            prem._PREMIUM_CACHE.clear()
+    if window_open:
+        assert d["meta"].get("masked") is not True
+        assert len(d["players"]) == LEADERS_N
+    else:
+        assert d["meta"]["masked"] is True
+        assert len(d["players"]) == FREE_LEADERS_ROWS

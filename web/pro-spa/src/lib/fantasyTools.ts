@@ -823,6 +823,11 @@ export interface ValueResponse {
 		generated_at: string | null;
 		note: string;
 		squad?: SquadMeta;
+		/** 4.9 backend maskaa ei-premium-kutsun kolmeen riviin; 17.9 teaser
+		 *  lukee taman eika listan pituutta (3 > 3 oli epatosi -> teaser
+		 *  katosi ilmaiskayttajalta). */
+		masked?: boolean;
+		mask?: string;
 	};
 	players: ValuePlayer[];
 	gk: {
@@ -947,6 +952,15 @@ export interface DefconLeadersResponse {
 		hit_rate_denominator?: 'starts' | 'games';
 		pool_min_starts?: number;
 		hit_rate_note?: string;
+		/** 17.9: palvelin maskaa ei-premium-kutsun top 3:een. `free_rows` on
+		 *  raja (yksi vakio, api/premium.py FREE_LEADERS_ROWS) ja `total_rows`
+		 *  montako rivia sama kysely olisi antanut premiumille. Teaser lukee
+		 *  naita, ei listan pituutta: kolme rivia ei ole enaa todiste siita
+		 *  ettei enempaa ole. Defensiivinen: vanha backend ei lahetta. */
+		masked?: boolean;
+		free_rows?: number;
+		total_rows?: number;
+		mask?: string;
 	};
 	players: DefconLeaderRow[];
 }

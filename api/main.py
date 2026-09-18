@@ -5569,8 +5569,9 @@ def fantasy_player_stats(
 
 
 @app.get("/api/fantasy/defcon-leaders",
-         description="Defensive contribution leaders: actions per game, hit rate and points over a rolling window.")
+         description="Defensive contribution leaders: actions per game, hit rate and points over a rolling window. Top three free, the full leaderboard needs premium.")
 def fantasy_defcon_leaders(
+    request: Request,
     response: Response,
     window: int = Query(default=5, ge=3, le=10),
     pos: str | None = Query(default=None, pattern="^(DEF|MID|FWD)$"),
@@ -5585,7 +5586,13 @@ def fantasy_defcon_leaders(
     matriisin kausisummista — window ohitetaan. Esikaudella tämä on
     vakain basis (38 pelin hit-rate vs mielivaltainen viimeiset-N-häntä).
     top_n-katto nostettu 400:aan samalla (lista oli kova 20 → "vain 20
-    pelaajaa" -havainto; matriisissa on 373 pelaajaa)."""
+    pelaajaa" -havainto; matriisissa on 373 pelaajaa).
+
+    17.9 DEFCON-LEADERS-PALVELINRAJA: "Full DefCon leaderboard" on myyty
+    premiumina, mutta raja oli vain selaimessa ja anonyymi kutsu sai
+    182/377 rivia. Molemmat basikset kulkevat nyt SAMAN maskin lapi
+    (api.premium.mask_defcon_leaders_payload): free = top 3 + meta.masked.
+    """
     from src.models.fpl_leaders import (load_defcon_gw, load_leaders,
                                         rank_defcon_leaders,
                                         rank_defcon_season)
@@ -5593,9 +5600,15 @@ def fantasy_defcon_leaders(
     response.headers["Cache-Control"] = "no-store"
     try:
         if basis == "season":
-            return rank_defcon_season(load_defcon_gw(), pos=pos, top_n=top_n)
-        return rank_defcon_leaders(load_leaders(), window=window, pos=pos,
-                                   top_n=top_n)
+            payload = rank_defcon_season(load_defcon_gw(), pos=pos,
+                                         top_n=top_n)
+        else:
+            payload = rank_defcon_leaders(load_leaders(), window=window,
+                                          pos=pos, top_n=top_n)
+        if not is_premium_request(request):
+            from api.premium import mask_defcon_leaders_payload
+            payload = mask_defcon_leaders_payload(payload)
+        return payload
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 

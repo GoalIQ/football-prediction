@@ -391,8 +391,11 @@
 				<p class="muted note">{data.gk.meta.own_note}</p>
 			{/if}
 		{/if}
-	{:else if (data?.players?.length ?? 0) > FREE_ROWS}
-		<!-- 🔒 sama gate kuin mobiili #114: top-3 free, loput + GK-parit premium -->
+	{:else if data?.meta?.masked || (data?.players?.length ?? 0) > FREE_ROWS}
+		<!-- 🔒 sama gate kuin mobiili #114: top-3 free, loput + GK-parit premium.
+		     17.9: backend on maskannut listan kolmeen 4.9 alkaen, joten
+		     `3 > 3` oli epatosi ja teaser katosi ilmaiskayttajalta. Ehto lukee
+		     nyt palvelimen maskilippua; pituusehto jaa fallbackiksi. -->
 		<button type="button" class="teaser-row" onclick={unlock}>
 			<span>
 				Top 50 value ranking, position and team filters, and GK rotation pairs. Save your

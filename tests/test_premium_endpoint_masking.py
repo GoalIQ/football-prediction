@@ -1,11 +1,14 @@
 """Portti: premium-tyokalun endpoint ei saa palauttaa premium-sisaltoa
 kirjautumattomalle.
 
-🔴 SAMA VIKALUOKKA KOLMESTI:
+🔴 SAMA VIKALUOKKA NELJASTI:
   15.8  `/api/fantasy/captain` palautti top3:n JA differentiaalin anonyymille
   2.9   `/api/fantasy/replacements` palautti koko listan anonyymille
   4.9   `/api/fantasy/differentials` palautti 20 riviä + template_missing ja
         `/api/fantasy/value` 20 riviä + koko GK-lohkon anonyymille
+  12.9  `/api/fantasy/defcon-leaders` palautti 182 (season) / 377 (window)
+        riviä anonyymille vaikka "Full DefCon leaderboard" on myyty
+        premiumina; SPA ja mobiili leikkasivat listan kolmeen itse
 
 Joka kerta portti oli VAIN SELAIMESSA: SPA renderoi tyokalun `{#if premium}`
 tai leikkasi listan klientissa, ja suora API-kutsu sai koko sisallon. UI:n
@@ -59,6 +62,10 @@ PREMIUM_ENDPOINTS = {
     # 6.9: player stats - FPL:n luvut ja freeze-vertailu ilmaisia, eteenpain
     # katsova xP (next_gw_xp, xp_horizon_total) premium; rakentaja maskaa.
     "/api/fantasy/player-stats": ("next-gameweek and horizon xP need premium", "builder"),
+    # 17.9: "Full DefCon leaderboard" on myyty premiumina (fpl.html,
+    # build_fpl_page.py, llms.txt, mobiilin paywall-bulletit, SPA-teaser);
+    # free = top 3, sama luku jonka klientit jo nayttivat.
+    "/api/fantasy/defcon-leaders": ("full DefCon leaderboard, top 3 free", "mask"),
 }
 
 # endpoint -> miksi se on tarkoituksella ilmainen
@@ -67,8 +74,7 @@ FREE_ENDPOINTS = {
     "/api/fantasy/fit": "fit checker on free",
     "/api/fantasy/price-watch": "price watch on free",
     "/api/fantasy/defcon-live": "FPL:n omaa julkista otteludataa",
-    "/api/fantasy/defcon-gw": "sama julkinen data",
-    "/api/fantasy/defcon-leaders": "sama julkinen data",
+    "/api/fantasy/defcon-gw": "sama julkinen data (per-GW-matriisi, ei ranking)",
     "/api/fantasy/xg-leaders": "xG-leaders on free (landing lupaa sen)",
     "/api/fantasy/league": "mini-league standings on free",
     "/api/fantasy/career": "career card on free",
