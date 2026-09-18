@@ -1,7 +1,16 @@
 {
  "last_price_push": {},
  "price_alerted": {},
- "receipts": [],
+ "receipts": [
+  {
+   "id": "01a0b53e-d367-72ca-835c-1a0bb7e6513c",
+   "token": "ExponentPushToken[2nU-IDG0ooUgYHJCsHoNX_]"
+  },
+  {
+   "id": "01a0b53e-d361-715e-953a-bdb8f2dcc6d8",
+   "token": "ExponentPushToken[r2uGEOLSkAr-n_WwSYVfH2]"
+  }
+ ],
  "sent": {
   "deadline_24h:gw1": {
    "at": "2026-08-20T15:30:48Z",
@@ -48,6 +57,11 @@
    "n_targets": 1,
    "remaining_h": 0.66
   },
+  "deadline_2h:gw5": {
+   "at": "2026-09-18T15:59:48Z",
+   "n_targets": 2,
+   "remaining_h": 1.5
+  },
   "picks:gw1": {
    "at": "2026-08-20T15:30:48Z",
    "n_targets": 0,
@@ -74,6 +88,6 @@
    "player": "Thiago"
   }
  },
- "updated_at": "2026-09-18T13:25:10Z",
+ "updated_at": "2026-09-18T15:59:48Z",
  "v": 1
 }
