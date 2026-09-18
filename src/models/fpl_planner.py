@@ -202,7 +202,7 @@ def _hold_plan(gws: list[int], squad: list[dict], ft: int,
     """
     plan = []
     fts_h = ft
-    for idx, g in enumerate(gws):
+    for g in gws:
         xi = optimal_xi(squad)
         cap = max(xi, key=lambda p: _gw_xp(p, g))
         plan.append({
@@ -212,8 +212,12 @@ def _hold_plan(gws: list[int], squad: list[dict], ft: int,
             "gw_xp": round(sum(_gw_xp(p, g) for p in xi) + _gw_xp(cap, g), 2),
             "free_transfers_left": fts_h,
             "bank": round(bank_tenths / 10.0, 1),
+            # 18.9: lukijalla ei ole enaa ikkunaparametria. `gws[idx:]`
+            # kutistui viimeisessa iteraatiossa yhdeksi kierrokseksi, ja
+            # blankkaava pelaaja luokittui silloin kuolleeksi paikaksi
+            # (ks. fpl_transfers.projected_zero).
             "unplayable_left": [p["id"] for p in
-                                _engine.unplayable_members(squad, gws[idx:])],
+                                _engine.unplayable_members(squad)],
         })
         fts_h = min(FT_CARRY_MAX, fts_h + 1)
     return plan
@@ -248,8 +252,15 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     # voinut ehdottaa hanen myymistaan — se myi jonkun muun. Placeholder ei
     # koskaan paase XI:hin (0 xP), joten baseline ei muutu; se vain tekee
     # korjaussiirrosta mahdollisen. Ks. `fpl_transfers.placeholder_player`.
+    # 18.9: artefaktin oma syy kulkee placeholderiin asti. Ilman sita
+    # `repair_reason` kovakoodasi puuttuvan syyn sanaksi "unavailable" —
+    # epatosi Lewisille (395: FPL sanoo status "a", artefakti sanoo
+    # `below_min_xp`), ja tasan se sanamuoto jonka julkaisuportti hylkasi
+    # 16.9 (`_no_xp_reason`n dokumentti nimeaa hanet nimelta).
+    excl_by_id = {e["id"]: e for e in (xp_data.get("excluded") or [])
+                  if isinstance(e, dict) and e.get("id") is not None}
     for pid in missing:
-        ph = _engine.placeholder_player(pid, bootstrap)
+        ph = _engine.placeholder_player(pid, bootstrap, excl_by_id.get(pid))
         if ph is not None:
             squad.append(ph)
 

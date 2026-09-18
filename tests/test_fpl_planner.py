@@ -365,10 +365,23 @@ def test_plan_chains_squad_source_is_structured_not_prose(client):
 # 315.31 -> 315.31). Syvyysparannus ei ole pisteparannus.
 # ---------------------------------------------------------------------------
 
-def _xp_ilman(pid: int) -> dict:
-    """FAKE_XP josta pelaaja on pudotettu: planner rakentaa hanet
-    placeholderina (no_projection, 0 xP) = kuollut paikka rungossa."""
-    return dict(FAKE_XP, players=[p for p in FAKE_XP["players"] if p["id"] != pid])
+def _xp_ilman(pid: int, syy: str = "unavailable") -> dict:
+    """FAKE_XP josta pelaaja on pudotettu JA kirjattu `excluded`-listaan.
+
+    18.9: fikstuuri kirjoitettiin uusiksi oikean artefaktin muotoon. Ennen
+    tama pudotti pelaajan vain `players`ista, eika artefaktin oma syy ollut
+    missaan — ja moottori luki puuttuvan syyn saatavuusongelmaksi. Oikea
+    artefakti (data/fpl_xp_projections.json, mitattu 18.9) kirjaa JOKAISEN
+    pudotetun `excluded`-listalle syyn kanssa: 177 rivia, 175 `unavailable`
+    ja 2 `below_min_xp`. `syy` on se akseli jolla kuollut paikka ja
+    pelikelpoinen penkkilainen eroavat."""
+    el = {e["id"]: e for e in FAKE_BOOTSTRAP["elements"]}[pid]
+    rivi = {"id": pid, "web_name": el["web_name"], "excluded_reason": syy,
+            "status": el.get("status", "a"), "chance_next": None,
+            "in_projection": False}
+    return dict(FAKE_XP,
+                players=[p for p in FAKE_XP["players"] if p["id"] != pid],
+                excluded=[rivi])
 
 
 def _siirrot(g: dict) -> list[tuple[int, int]]:
@@ -393,6 +406,27 @@ def test_plan_hold_sitoo_mutta_kuollut_paikka_ei_katoa_hiljaa(monkeypatch):
     assert [g["free_transfers_left"] for g in out["plan"]] == [1, 2, 3]
     assert all(g["bank"] == 0.0 for g in out["plan"])
     assert out["totals"]["hits_taken"] == 0 and out["totals"]["net_gain"] == 0.0
+
+
+@pytest.mark.parametrize("ft", [1, 2, 5])
+def test_NEG_plan_ei_myy_below_min_xp_penkkilaista(monkeypatch, ft):
+    """🔴 KUTSUPAIKKA /api/fantasy/plan, KAANTEISVIKA (18.9). Sama fikstuuri
+    kuin yllä, mutta artefaktin syy on `below_min_xp` — Lewisin luokka (395,
+    FPL status "a", news ""). FPL ei sano etta han ei voi pelata, joten
+    hanta EI saa myyda nollahyodylla. Mitattu ennen korjausta: plan myi
+    hanet vapaalla siirrolla, gain 0.00, ja pankki nollautui.
+
+    KONTROLLI: sama runko syylla `unavailable` ON kuollut paikka (edellinen
+    testi), joten tama ei ole vihrea siksi ettei siirtoa olisi tarjolla."""
+    monkeypatch.setattr(rt, "load_xp", lambda: _xp_ilman(2, "below_min_xp"))
+    runko = [i for i in SQUAD_IDS if i not in (27, 19)] + [30, 24]
+    out = pl.plan_transfers(players=runko, horizon=3, bank=0.0, ft=ft)
+    myydyt = [t["out"]["id"] for g in out["plan"] for t in g["transfers"]]
+    assert 2 not in myydyt, myydyt
+    assert all(g["unplayable_left"] == [] for g in out["plan"])
+    # ...ja rivi jolla han nakyy kertoo syyn jonka lukija voi tarkistaa.
+    assert all(t["repair_reason"] != "no_projection:unavailable"
+               for g in out["plan"] for t in g["transfers"])
 
 
 def test_plan_siivoaa_kuolleen_paikan_kun_suunnitelma_ylittaa_riman(monkeypatch):

@@ -77,7 +77,7 @@ def test_kuollut_penkkipaikka_myydaan_vaikka_xi_hyoty_on_nolla():
     # KONTROLLI: tama ON se tapaus. Jos XI-hyoty ei olisi nolla, vanha koodi
     # olisi myynyt hanet korjausrimalla ja testi mittaisi vaaraa asiaa.
     assert e.xi_value(e._apply(squad, [dead], [repl]), GWS) - e.xi_value(squad, GWS) == 0.0
-    assert e.unplayable_members(squad, GWS) == [dead]
+    assert e.unplayable_members(squad) == [dead]
 
     step = e.plan_gw(squad, [repl], 0, GWS, ft=1)
     assert _ids(step) == [(2, 90)], step["moves"]
@@ -86,8 +86,10 @@ def test_kuollut_penkkipaikka_myydaan_vaikka_xi_hyoty_on_nolla():
     assert m["hit"] == 0.0 and m["pair"] is False
     assert m["bar"]["reason"] == "dead_slot"
     assert m["repair"] is True
-    assert m["repair_reason"] == "no_projection:unavailable"
-    assert e.unplayable_members(step["squad"], GWS) == []
+    # 18.9: syy on TARKISTETTAVUUSJARJESTYKSESSA. Dovinin status "u" on
+    # FPL:n ilmaispinnalla; artefaktin oma syy tulee vasta sen jalkeen.
+    assert m["repair_reason"] == "status:u"
+    assert e.unplayable_members(step["squad"]) == []
     assert step["ft_left"] == 0, "siivous kaytti vapaan siirron, ei hittia"
     assert step["hits"] == 0
 
@@ -112,7 +114,7 @@ def test_NEG_pelaava_penkkilainen_ei_myyda_turhaan(ft):
     rima on 0.01: penkin optimointi ei ole XI-parannus. Tama on churn-vahdin
     (12.9) sama periaate: penkkivahdin vaihto ei tuota pisteita."""
     squad = base_squad()
-    assert e.unplayable_members(squad, GWS) == [], "lukija: ei kuollutta paikkaa"
+    assert e.unplayable_members(squad) == [], "lukija: ei kuollutta paikkaa"
     step = e.plan_gw(squad, [bench_gk(2.0)], 0, GWS, ft=ft)
     assert step["moves"] == [], (ft, step["moves"])
     assert step["ft_left"] == ft, "siirto rullaa, sita ei polteta penkkiin"
@@ -126,8 +128,8 @@ def test_NEG_d_status_projektiolla_ei_ole_kuollut_paikka():
     doubtful = mk(2, 1, 2, 40, 1.0, status="d", chance_next=75)
     squad.append(doubtful)
     assert e.needs_repair(doubtful) is True
-    assert e.is_unplayable(doubtful, GWS) is False
-    assert e.unplayable_members(squad, GWS) == []
+    assert e.is_unplayable(doubtful) is False
+    assert e.unplayable_members(squad) == []
     for ft in (1, 2, 5):
         assert e.plan_gw(squad, [bench_gk(2.0)], 0, GWS, ft=ft)["moves"] == []
 
@@ -154,7 +156,7 @@ def test_NEG_kuolleeseen_paikkaan_ei_makseta_hittia():
     step = e.plan_gw(squad, [bench_gk()], 0, GWS, ft=0, max_moves=2)
     assert step["moves"] == [] and step["hits"] == 0
     # ...ja paikka jaa NAKYVIIN lukijalle, ei hiljaa.
-    assert [p["id"] for p in e.unplayable_members(step["squad"], GWS)] == [2]
+    assert [p["id"] for p in e.unplayable_members(step["squad"])] == [2]
 
 
 def test_NEG_vaihe_2_ei_ole_takaovi_hitille_lahi_ikkunasaannon_ohi():
@@ -195,7 +197,7 @@ def test_ei_korvaajaa_budjetilla_jaa_nakyviin_eika_jumita():
     liian_kallis = mk(90, 1, 20, 45, 1.0)          # 4.5 ei mahdu
     step = e.plan_gw(squad, [liian_kallis], 0, GWS, ft=2, max_moves=2)
     assert step["moves"] == []
-    assert [p["id"] for p in e.unplayable_members(step["squad"], GWS)] == [2]
+    assert [p["id"] for p in e.unplayable_members(step["squad"])] == [2]
     assert e.repair_moves(squad, [liian_kallis], 0, GWS) == []
 
 
@@ -212,10 +214,10 @@ def test_xi_parannus_voittaa_siivouksen_yhdella_siirrolla():
     pool = [bench_gk(), mk(91, 3, 21, 60, 5.0)]   # MID +1.0/GW
     yksi = e.plan_gw(squad, pool, 0, GWS, ft=1)
     assert [i for _, i in _ids(yksi)] == [91], yksi["moves"]
-    assert [p["id"] for p in e.unplayable_members(yksi["squad"], GWS)] == [2]
+    assert [p["id"] for p in e.unplayable_members(yksi["squad"])] == [2]
     kaksi = e.plan_gw(squad, pool, 0, GWS, ft=2)
     assert [i for _, i in _ids(kaksi)] == [91, 90], kaksi["moves"]
-    assert e.unplayable_members(kaksi["squad"], GWS) == []
+    assert e.unplayable_members(kaksi["squad"]) == []
     assert kaksi["hits"] == 0
 
 
@@ -271,9 +273,10 @@ def test_kuollut_paikka_korjataan_jokaisessa_vaiheessa(ft, pos, paikka, entry_kn
     pid = _DEAD_BY_POS[pos]
     squad = [p for p in base_squad() if p["id"] != pid]
     squad.append(mk(pid, pos, pid, _PRICE_BY_POS[pos], 0.0, status="u",
-                    chance_next=0, no_projection=True))
+                    chance_next=0, no_projection=True,
+                    no_projection_reason="unavailable"))
     repl = mk(90, pos, 20, _PRICE_BY_POS[pos], _REPL_XP[paikka][pos])
-    assert [p["id"] for p in e.unplayable_members(squad, GWS)] == [pid]
+    assert [p["id"] for p in e.unplayable_members(squad)] == [pid]
     xi_gain = e.xi_value(e._apply(squad, [squad[-1]], [repl]), GWS) - e.xi_value(squad, GWS)
     if paikka == "penkki":
         assert xi_gain == 0.0, "fikstuuri: penkkikorvaajan XI-hyoty ei ole nolla"
@@ -284,7 +287,7 @@ def test_kuollut_paikka_korjataan_jokaisessa_vaiheessa(ft, pos, paikka, entry_kn
 
     step = e.plan_gw(squad, [repl], 0, GWS, ft=ft, entry_known=entry_known)
     assert _ids(step) == [(pid, 90)], (ft, pos, paikka, entry_known, step["moves"])
-    assert e.unplayable_members(step["squad"], GWS) == []
+    assert e.unplayable_members(step["squad"]) == []
     assert step["hits"] == 0 and step["ft_left"] == ft - 1
     assert step["unplayable_left"] == []
     m = step["moves"][0]
@@ -307,38 +310,243 @@ def test_kuollut_paikka_korjataan_jokaisessa_vaiheessa(ft, pos, paikka, entry_kn
 # 5. Lukijan maaritelma ja riman luokka
 # ---------------------------------------------------------------------------
 
-def test_is_unplayable_on_needs_repairin_osajoukko():
-    variants = [
-        mk(2, 1, 2, 40, 0.0, no_projection=True),
+def test_is_unplayable_vaatii_myonteisen_todisteen_ja_koko_projektion():
+    """Kaksi ehtoa, molemmat ankarampia kuin `needs_repair` (18.9).
+
+    Vanha versio oli `needs_repair(p) and window_xp(p, gws) <= 0.0`, ja se
+    vaitti riveilla 323-327 etta pelkka `no_projection`-lippu tekee
+    kuolleen paikan. Se vaite oli EPATOSI Lewisin luokalle (alla), ja
+    juuri se rivi antoi moottorille luvan myyda pelikelpoinen penkkilainen
+    vapaalla siirrolla hyodylla 0.00.
+    """
+    kuolleet = [
         mk(2, 1, 2, 40, 0.0, status="u"),
         mk(2, 1, 2, 40, 0.0, status="i"),
         mk(2, 1, 2, 40, 0.0, status="a", chance_next=0),
-        mk(2, 1, 2, 40, 1.0, status="d", chance_next=75),     # White
-        mk(2, 1, 2, 40, 0.0, status="a"),                     # 4.0 penkkistrategia
-        mk(2, 1, 2, 40, 3.0, status="a"),
+        # Artefakti pudotti hanet SAATAVUUSSYYSTA: syy on rivilla.
+        mk(2, 1, 2, 40, 0.0, status="a", no_projection=True,
+           no_projection_reason="unavailable"),
     ]
-    for p in variants:
-        if e.is_unplayable(p, GWS):
-            assert e.needs_repair(p), p
-    assert e.is_unplayable(variants[0], GWS) is True
-    assert e.is_unplayable(variants[4], GWS) is False, "d + projektio ei ole kuollut"
-    assert e.is_unplayable(variants[5], GWS) is False, "pelaava 0 xP ei ole vika"
-    # gws=None = horisontti (rate-teamin lista): sama vastaus artefaktin summasta.
-    assert e.is_unplayable(variants[0], None) is True
-    assert e.is_unplayable(variants[6], None) is False
+    elavat = [
+        mk(2, 1, 2, 40, 1.0, status="d", chance_next=75),      # White
+        mk(2, 1, 2, 40, 0.0, status="a"),                      # 4.0 penkkistrategia
+        mk(2, 1, 2, 40, 3.0, status="a"),
+        # 🔴 LEWIS (395): artefakti pudotti syylla `below_min_xp`, FPL sanoo
+        # status "a" ja tyhjan news-kentan. `needs_repair` on True (rima),
+        # kuollut paikka EI (lupa myyda).
+        mk(2, 2, 2, 44, 0.0, status="a", no_projection=True,
+           no_projection_reason="below_min_xp"),
+        # Gruev (344): sama syy, status "d" 25 %.
+        mk(2, 3, 2, 45, 0.0, status="d", chance_next=25, no_projection=True,
+           no_projection_reason="below_min_xp"),
+        # 🔴 TUNTEMATON SYY EI OLE TODISTE: tuottaja unohti syyn -> paikka
+        # ei kuole. Vaarin muistaminen maksaa korkeintaan siivoamatta
+        # jaaneen paikan, ei kayttajan vapaata siirtoa.
+        mk(2, 1, 2, 40, 0.0, status="a", no_projection=True),
+        # Saatavuussyy MUTTA projektio ei ole nolla (artefakti rakennettu
+        # ennen loukkaantumista): korjausrima kylla, siivouslupa ei.
+        mk(2, 1, 2, 40, 2.0, status="u"),
+        # Nolla VAIN nykyisessa/viimeisessa kierroksessa (blank tai
+        # palaamassa): kumpikaan yksittainen kierros ei ole koko projektio.
+        mk(2, 1, 2, 40, [0.0, 0.0, 0.0, 0.0, 0.0, 3.0], status="u"),
+        mk(2, 1, 2, 40, [3.0, 0.0, 0.0, 0.0, 0.0, 0.0], status="u"),
+    ]
+    for pl in kuolleet:
+        assert e.is_unplayable(pl) is True, pl
+        assert e.needs_repair(pl) is True, "kuollut paikka on needs_repairin osajoukko"
+    for pl in elavat:
+        assert e.is_unplayable(pl) is False, pl
+    # ...ja lukija kysyy molemmat kysymykset erikseen, ei yhta.
+    lewis = elavat[3]
+    assert e.needs_repair(lewis) is True and e.projected_zero(lewis) is True
+    assert e.unavailable_by_fpl(lewis) is False, "below_min_xp ei ole saatavuuslippu"
+    # `projected_zero` lukee MOLEMMAT artefaktin luvut: valmiin
+    # horisonttisumman JA per-kierros-rivit. Vanhentunut summa ei saa
+    # yksin todistaa nollaa, eika yksittainen nollakierros kumota sita.
+    vanhentunut = mk(2, 1, 2, 40, [0.0, 0.0, 0.0, 0.0, 0.0, 4.0], status="u")
+    vanhentunut["xp_horizon_total"] = 0.0
+    assert e.projected_zero(vanhentunut) is False, "per-kierros-rivit ovat myos lahde"
+    assert e.is_unplayable(vanhentunut) is False
+    vain_summa = mk(2, 1, 2, 40, 0.0, status="u")
+    vain_summa["xp_horizon_total"] = 2.0
+    assert e.projected_zero(vain_summa) is False, "summa on myos lahde"
 
 
-def test_repair_reason_on_rakenteinen_ja_seuraa_needs_repairia():
-    assert e.repair_reason({"no_projection": True, "no_projection_reason": "below_min_xp"}) == "no_projection:below_min_xp"
-    assert e.repair_reason({"no_projection": True}) == "no_projection:unavailable"
-    assert e.repair_reason({"status": "d"}) == "status:d"
+@pytest.mark.parametrize("ft", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("pos", [1, 2, 3, 4])
+@pytest.mark.parametrize("syy", ["below_min_xp", None])
+@pytest.mark.parametrize("entry_known", [True, False])
+def test_NEG_pelikelpoista_penkkilaista_ei_myyda_nollahyodylla(ft, pos, syy, entry_known):
+    """🔴 KAANTEISVIKA (18.9, adversariaalinen tarkistus). Lewisin muoto:
+    FPL:n bootstrap sanoo status "a", news "", chance_next None, ja artefakti
+    pudotti hanet syylla `below_min_xp` (min_xp_total 1.0). Mitattu ennen
+    korjausta: `plan_gw(ft=1)` myi hanet, gain 0.00, bar reason "dead_slot",
+    pankki 1.6 -> 0.0. Kayttajalle: "myy pelikelpoinen penkkipelaajasi ja
+    polta vapaa siirto + koko pankki, +0.00 xP".
+
+    Luokan koko kasvaa kun horisontti lyhenee kauden lopussa (yha useampi
+    halpa penkkifilleri putoaa rajan alle), joten tama mitataan jokaisella
+    ft-arvolla, jokaisessa positiossa, molemmissa moodeissa ja seka
+    artefaktin syylla etta ILMAN syyta (tuottaja unohti)."""
+    pid = _DEAD_BY_POS[pos]
+    squad = [p for p in base_squad() if p["id"] != pid]
+    lewis = mk(pid, pos, pid, _PRICE_BY_POS[pos], 0.0, status="a",
+               chance_next=None, news="", no_projection=True,
+               no_projection_reason=syy)
+    squad.append(lewis)
+    # KONTROLLIT: han on `needs_repair` (lavea lippu) ja mallin nolla — eli
+    # tasan se luokka jonka vanha `is_unplayable` luki kuolleeksi paikaksi.
+    assert e.needs_repair(lewis) is True and e.projected_zero(lewis) is True
+    repl = mk(90, pos, 20, _PRICE_BY_POS[pos], 1.0)
+    assert e.unplayable_members(squad) == [], "pelikelpoinen ei ole kuollut paikka"
+    step = e.plan_gw(squad, [repl], 16, GWS, ft=ft, entry_known=entry_known)
+    assert step["moves"] == [], (ft, pos, syy, entry_known, step["moves"])
+    assert step["ft_left"] == ft, "vapaa siirto rullaa, sita ei polteta"
+    assert step["bank_tenths"] == 16, "pankki jaa koskematta"
+    assert step["unplayable_left"] == []
+    # ...eika siivoushaku edes tarjoa hanta.
+    assert e.repair_moves(squad, [repl], 16, GWS) == []
+
+
+#: Ikkunat joita `plan_transfers` syottaa: silmukka antaa `gws[idx:]`, joka
+#: KUTISTUU viimeista kierrosta kohti (fpl_planner.py: `gws_left = gws[idx:]`).
+_IKKUNAT = {"koko": GWS, "kaksi_viimeista": GWS[-2:], "viimeinen": GWS[-1:]}
+
+
+@pytest.mark.parametrize("ikkuna", sorted(_IKKUNAT))
+@pytest.mark.parametrize("ft", [1, 2, 5])
+def test_kuollut_paikka_siivotaan_jokaisessa_paatosikkunassa(ikkuna, ft):
+    """VAIHEAKSELI 3 (18.9): sama kuollut pelaaja, eri paatosikkuna."""
+    gws = _IKKUNAT[ikkuna]
+    dead = mk(2, 1, 2, 40, 0.0, status="u", chance_next=0, no_projection=True,
+              no_projection_reason="unavailable")
+    squad = [p for p in base_squad() if p["id"] != 2] + [dead]
+    step = e.plan_gw(squad, [bench_gk()], 0, gws, ft=ft)
+    assert _ids(step) == [(2, 90)], (ikkuna, ft, step["moves"])
+    assert step["unplayable_left"] == []
+
+
+@pytest.mark.parametrize("ikkuna", sorted(_IKKUNAT))
+@pytest.mark.parametrize("ft", [1, 2, 5])
+def test_NEG_blankkaava_pelaaja_ei_ole_kuollut_paikka_missaan_ikkunassa(ikkuna, ft):
+    """🔴 VAIHEINVARIANTTI MITATTIIN VAARASTA IKKUNASTA (18.9).
+
+    Pelaaja: status "d", 75 %, xP 4.0/GW viidella kierroksella ja 0.0
+    viimeisella, jolla seuralla on BLANK (`opponents: []` on artefaktin oma
+    merkinta blankille, build_fpl_xp.py). Horisonttisumma 20.0.
+
+    Mitattu ennen korjausta: `is_unplayable(gws=GWS)` False,
+    `is_unplayable(gws=GWS[-2:])` False, `is_unplayable(gws=GWS[-1:])` True
+    -> `plan_gw(gws=[8], ft=1)` myi hanet nollan arvoiseen pelaajaan, gain
+    0.0, bar "dead_slot", repair_reason "status:d". Altistus tanaan on 0
+    (GW5-GW10:n artefaktissa ei ole blankkeja), joten vanha portti olisi
+    ollut vihrea siihen asti kun ensimmainen blank tulee.
+
+    120-tapauksen matriisi ei voinut loytaa tata: sen kuolleilla pelaajilla
+    xP on 0 JOKA kierroksella, joten ikkunan pituus ei muuta vastausta."""
+    gws = _IKKUNAT[ikkuna]
+    blank = mk(2, 1, 2, 40, [4.0, 4.0, 4.0, 4.0, 4.0, 0.0],
+               status="d", chance_next=75)
+    blank["gameweeks"][-1]["opponents"] = []      # artefaktin merkinta blankille
+    # KONTROLLIT: ikkunan summa ON nolla mitatussa kierroksessa (muuten testi
+    # mittaisi vaaraa asiaa), mutta koko projektio ei ole.
+    assert e.window_xp(blank, GWS[-1:]) == 0.0
+    assert blank["xp_horizon_total"] == 20.0 and e.projected_zero(blank) is False
+    squad = [p for p in base_squad() if p["id"] != 2] + [blank]
+    arvoton = mk(90, 1, 20, 40, 0.0)
+    assert e.is_unplayable(blank) is False
+    assert e.unplayable_members(squad) == []
+    step = e.plan_gw(squad, [arvoton], 0, gws, ft=ft)
+    assert step["moves"] == [], (ikkuna, ft, step["moves"])
+    assert step["unplayable_left"] == []
+    assert e.repair_moves(squad, [arvoton], 0, gws) == []
+
+
+def test_lukijalla_ei_ole_ikkunaparametria():
+    """🔴 KUTISTUVAA IKKUNAA EI VOI EDES SYOTTAA (18.9).
+
+    Vian juuri ei ollut vaara arvo vaan se ETTA IKKUNAN SAI ANTAA: kutsuja
+    piti kadessaan `gws[idx:]`-viipaletta ja antoi sen hyvassa uskossa.
+    Portti ei mittaa arvoa vaan allekirjoitusta — jos ikkunaparametri
+    palautetaan, tama kaatuu ennen kuin yhtaakaan kierrosta on ajettu."""
+    import inspect
+    for fn in (e.is_unplayable, e.unplayable_members, e.projected_zero,
+               e.unavailable_by_fpl):
+        params = list(inspect.signature(fn).parameters)
+        assert len(params) == 1, (fn.__name__, params)
+    with pytest.raises(TypeError):
+        e.is_unplayable(mk(2, 1, 2, 40, 0.0, status="u"), GWS)
+    with pytest.raises(TypeError):
+        e.unplayable_members(base_squad(), GWS)
+
+
+def test_repair_reason_ei_koskaan_vaita_unavailablea_ilman_lahdetta():
+    """🔴 PORTTI 16.9 PALASI UUDESSA GENERAATTORISSA (18.9).
+
+    `repair_reason` kovakoodasi puuttuvan syyn sanaksi "unavailable" — sama
+    sanamuoto jonka julkaisuportti hylkasi 16.9 ja jonka takia
+    `fpl_planner._no_xp_reason` on olemassa. Sen dokumentti nimeaa Lewisin:
+    "FPL:n oma bootstrap sanoo status: 'a' ja tyhjan news-kentan. Sanoimme
+    siis eri asian kuin lahde." Kentta on suunniteltu pinnalle nayttamiseen,
+    joten oletusarvo on lupaus."""
+    # 1. Tarkistettavuusjarjestys: ilmaispinnalta luettava syy ensin.
+    assert e.repair_reason({"status": "u", "no_projection": True,
+                            "no_projection_reason": "unavailable"}) == "status:u"
+    assert e.repair_reason({"status": "d", "chance_next": 25}) == "status:d"
     assert e.repair_reason({"status": "a", "chance_next": 0}) == "chance_next:0"
+    # 2. Artefaktin oma syy kulkee lapi sellaisenaan.
+    assert e.repair_reason({"status": "a", "no_projection": True,
+                            "no_projection_reason": "below_min_xp"}) == "no_projection:below_min_xp"
+    # 3. TUNTEMATON ON TUNTEMATON, ei "unavailable".
+    assert e.repair_reason({"status": "a", "no_projection": True}) == "no_projection:unknown"
+    assert e.repair_reason({"no_projection": True}) == "no_projection:unknown"
     assert e.repair_reason({"status": "a", "chance_next": 100}) is None
     assert e.repair_reason({}) is None
-    # Jokainen move kantaa lipun — myos tavallinen siirto (False), jotta
-    # klientti ei paattele sita puuttuvasta kentasta.
+    # 4. LAHDEPORTTI: merkkijonoa "unavailable" ei saa esiintya funktion
+    #    RUNGOSSA lainkaan (dokumentaatio saa puhua siita). Kovakoodattu
+    #    oletus palaisi yhdella muokkauksella (oletusarvo or-lausekkeessa),
+    #    ja
+    #    kayttaytymisportti yksin ei nayttaisi sita ennen kuin joku
+    #    tuottaja unohtaa syyn.
+    fn = _fns()["repair_reason"]
+    runko = list(fn.body)
+    if (runko and isinstance(runko[0], ast.Expr)
+            and isinstance(runko[0].value, ast.Constant)):
+        runko = runko[1:]                      # docstring pois
+    for solmu in runko:
+        for n in ast.walk(solmu):
+            assert not (isinstance(n, ast.Constant)
+                        and n.value == "unavailable"),                 "repair_reason kovakoodaa sanan 'unavailable' (portti 16.9)"
+    # 5. Jokainen move kantaa lipun — myos tavallinen siirto (False), jotta
+    #    klientti ei paattele sita puuttuvasta kentasta.
     step = e.plan_gw(base_squad(), [mk(91, 3, 21, 60, 9.0)], 0, GWS, ft=1)
     assert step["moves"][0]["repair"] is False and step["moves"][0]["repair_reason"] is None
+
+
+def test_placeholder_kantaa_artefaktin_syyn_eika_keksi_sita():
+    """TUOTTAJAPUOLI: `placeholder_player` on toinen repon kahdesta
+    placeholder-rakentajasta (`fpl_rate_team.zero_projection_row` on toinen),
+    ja vain jalkimmainen kantoi `excluded_reason`in. Nyt molemmat."""
+    boot = {"elements": [{"id": 395, "web_name": "Lewis", "team": 3,
+                          "element_type": 2, "now_cost": 44, "status": "a",
+                          "news": "", "chance_of_playing_next_round": None}],
+            "teams": [{"id": 3, "short_name": "MCI"}]}
+    ph = e.placeholder_player(395, boot, {"id": 395, "excluded_reason": "below_min_xp"})
+    assert ph["no_projection"] is True
+    assert ph["no_projection_reason"] == "below_min_xp"
+    assert e.needs_repair(ph) is True, "korjausrima sailyy (3.9/12.9)"
+    assert e.unavailable_by_fpl(ph) is False and e.is_unplayable(ph) is False
+    assert e.repair_reason(ph) == "no_projection:below_min_xp"
+    # Ilman artefaktin rivia: syy on tuntematon, EI "unavailable".
+    tyhja = e.placeholder_player(395, boot)
+    assert tyhja["no_projection_reason"] is None
+    assert e.repair_reason(tyhja) == "no_projection:unknown"
+    assert e.is_unplayable(tyhja) is False
+    # Saatavuussyy: sama funktio, kuollut paikka.
+    dovin = e.placeholder_player(395, dict(boot, elements=[
+        dict(boot["elements"][0], status="u", news="On loan")]),
+        {"id": 395, "excluded_reason": "unavailable"})
+    assert e.is_unplayable(dovin) is True
 
 
 def test_dead_slot_rima_on_oma_luokkansa():
@@ -420,7 +628,12 @@ def test_plan_gw_kutsuu_korjaushakua_joka_lukee_yhta_lukijaa():
     assert "unplayable_members" in _calls(fns["plan_gw"])
     assert "unplayable_members" in _calls(fns["repair_moves"])
     assert "is_unplayable" in _calls(fns["unplayable_members"])
-    assert {"needs_repair", "window_xp"} <= _calls(fns["is_unplayable"])
+    assert {"unavailable_by_fpl", "projected_zero"} <= _calls(fns["is_unplayable"])
+    # 18.9: kuolleisuus EI saa lukea paatosikkunaa (ks. projected_zero).
+    assert "window_xp" not in _calls(fns["is_unplayable"])
+    assert "window_xp" not in _calls(fns["projected_zero"])
+    assert "needs_repair" not in _calls(fns["is_unplayable"]), \
+        "lavea korjauslippu ei ole lupa myyda (ks. unavailable_by_fpl)"
     # Vaihe 2 lukee saman rimalukijan ja saman vertailun kuin vaihe 1.
     assert "transfer_bar" in _calls(fns["plan_gw"])
     # Vaihe 2 on VAPAAN SIIRRON haara: repair_moves-kutsun on oltava if-lohkossa
@@ -452,3 +665,78 @@ def test_siirtoja_tuottava_funktio_lukee_lukijaa_tai_on_poikkeuslistalla():
         assert len(LUKIJAN_OHITTAVAT[name].strip()) >= 40, name
     for name in LUKIJAN_OHITTAVAT:
         assert name in fns, f"poikkeus nimeaa funktion jota ei ole: {name}"
+
+
+#: Tuotantopolut jotka rakentavat projektiottoman rungon jasenen. Jokaisen on
+#: annettava `placeholder_player`ille artefaktin `excluded`-rivi, jotta
+#: `no_projection_reason` on artefaktin oma syy eika tuntematon.
+#: POIKKEUS vaatii perustelun, ja perustelu vanhenee nakyvasti: jos poikkeus
+#: alkaa antaa rivin, testi kaatuu ja poikkeus on poistettava.
+PLACEHOLDER_ILMAN_SYYTA: dict[str, str] = {}
+
+#: (tiedosto, funktio) -parit jotka kutsuvat `placeholder_player`ia
+#: tuotannossa. Uusi kutsupaikka ei paase tanne vahingossa: testi vaatii
+#: etta jokainen LOYDETTY kutsu antaa kolme argumenttia.
+_TUOTTAJATIEDOSTOT = ("src/models/fpl_planner.py",
+                      "scripts/freeze_model_squad_gw.py")
+
+
+def test_placeholder_kutsupaikat_antavat_artefaktin_syyn():
+    """🔴 KUTSUPAIKKAPORTTI (18.9). `repair_reason` on pinnalle tarkoitettu
+    kentta, ja sen totuus syntyy TUOTTAJASSA. Yksikkotesti joka vain
+    todistaa etta funktio OSAA kantaa syyn dokumentoi kyvyn jota putki ei
+    kayta — tasan se tilanne joka 17.9:n haarassa oli
+    (`test_repair_reason_on_rakenteinen_...` oli vihrea samalla kun
+    tuotantopolku antoi jokaiselle riville "no_projection:unavailable").
+
+    Tama lukee lahdetiedostot ja vaatii etta jokainen `placeholder_player`-
+    kutsu antaa kolmannen argumentin."""
+    loydetty = 0
+    for suht in _TUOTTAJATIEDOSTOT:
+        tiedosto = ROOT / suht
+        puu = ast.parse(tiedosto.read_text(encoding="utf-8"))
+        for node in ast.walk(puu):
+            if not isinstance(node, ast.Call):
+                continue
+            f = node.func
+            nimi = (f.id if isinstance(f, ast.Name)
+                    else f.attr if isinstance(f, ast.Attribute) else None)
+            if nimi != "placeholder_player":
+                continue
+            loydetty += 1
+            avain = f"{suht}:{node.lineno}"
+            if avain in PLACEHOLDER_ILMAN_SYYTA:
+                assert len(PLACEHOLDER_ILMAN_SYYTA[avain].strip()) >= 40, avain
+                assert len(node.args) + len(node.keywords) < 3, \
+                    f"{avain} antaa jo syyn: poikkeus on vanhentunut, poista se"
+                continue
+            assert len(node.args) + len(node.keywords) >= 3, (
+                f"{avain}: placeholder_player ilman artefaktin excluded-rivia. "
+                f"Syy jaa tuntemattomaksi ja pinta saa 'no_projection:unknown'. "
+                f"Anna rivi tai lisaa perusteltu poikkeus "
+                f"PLACEHOLDER_ILMAN_SYYTA-listalle.")
+    assert loydetty >= 2, f"kutsupaikkoja ei loytynyt ({loydetty}) — portti ei mittaa mitaan"
+
+
+def test_freeze_ei_keksi_saatavuuslippua_projektiottomalle():
+    """🔴 KOLMAS PLACEHOLDER-RAKENTAJA (18.9). `freeze_model_squad_gw.
+    _departed_player` ylikirjoitti `chance_next`in nollalla ja
+    `minutes_source`n arvolla "left_league". `chance_next == 0` on YKSI
+    `unavailable_by_fpl`in kolmesta myonteisesta todisteesta, joten keksitty
+    nolla olisi tehnyt Lewisin luokasta kuolleen paikan freeze-polulla ja
+    ohittanut koko korjauksen. Kentta ei saa palata."""
+    lahde = (ROOT / "scripts" / "freeze_model_squad_gw.py").read_text(encoding="utf-8")
+    puu = ast.parse(lahde)
+    fn = next(n for n in ast.walk(puu)
+              if isinstance(n, ast.FunctionDef) and n.name == "_departed_player")
+    keksityt = set()
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Dict):
+            for k in node.keys:
+                if isinstance(k, ast.Constant) and k.value in (
+                        "chance_next", "status", "news", "no_projection_reason"):
+                    keksityt.add(k.value)
+    assert "chance_next" not in keksityt, \
+        "_departed_player keksii chance_nextin uudelleen (= saatavuuslippu)"
+    assert "status" not in keksityt, "status tulee bootstrapista, ei taalta"
+    assert "no_projection_reason" not in keksityt, "syy tulee artefaktista"

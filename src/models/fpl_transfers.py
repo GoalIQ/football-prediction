@@ -38,6 +38,18 @@ Tama moduuli on se yksi funktio. Saannot, samat kaikille:
      XI-hyoty on tasan 0.0. Ei koskaan hitilla, ei koskaan XI-pisteiden
      edelle, eika koskaan pelaavaa penkkilaista. Mitattu: Dovin (171) jai
      penkille jokaisella max_moves-arvolla koska `xi_value` ei nae penkkia.
+     18.9 (adversariaalinen tarkistus) kiristi molemmat ehdot, koska lupa
+     MYYDA on eri asia kuin matalampi RIMA:
+       - "ei voi pelata" vaatii MYONTEISEN todisteen (`unavailable_by_fpl`),
+         ei laveaa `needs_repair`ia. Ilman tata moottori myi Lewisin (395,
+         FPL status "a", artefaktin syy `below_min_xp`) vapaalla siirrolla
+         hyodylla 0.00 ja poltti pankin.
+       - "nolla" mitataan KOKO PROJEKTIOSTA (`projected_zero`), ei siita
+         paatosikkunasta jonka kutsuja sattuu pitamaan. `plan_transfers`in
+         `gws[idx:]` kutistuu yhteen kierrokseen, ja blankkaava 75 %:n
+         pelaaja luokittui silloin kuolleeksi paikaksi.
+     Kummallakaan lukijalla ei ole ikkunaparametria: vaara vaihtoehto ei ole
+     vain kielletty, sita ei voi syottaa.
 
 🔴 3.9: paino on nyt MITATTU ja arvo on 1.0 (ks. LOW_CONFIDENCE_WEIGHT).
 Alla oleva teksti kuvaa tilannetta ENNEN mittausta ja jaa historiaksi.
@@ -159,8 +171,23 @@ def confidence_weight(p: dict) -> float:
     return 1.0
 
 
-def placeholder_player(pid: int, bootstrap: dict) -> dict | None:
+def placeholder_player(pid: int, bootstrap: dict,
+                       excluded: dict | None = None) -> dict | None:
     """Rungon pelaaja JOLLE EI OLE PROJEKTIOTA, poolin muodossa ja 0 xP:lla.
+
+    `excluded` on artefaktin `excluded`-rivi TALLE pelaajalle (tai None jos
+    han ei ole listalla). 18.9: ilman sita `no_projection_reason` jai
+    tyhjaksi ja `repair_reason` kovakoodasi puuttuvan syyn sanaksi
+    "unavailable" — tasan se sanamuoto jonka julkaisuportti hylkasi 16.9
+    (Lewis, 395: FPL:n bootstrap sanoo status "a" ja tyhjan news-kentan,
+    artefakti sanoo `below_min_xp`). Kaksi placeholder-rakentajaa oli
+    repossa jo ennestaan, ja vain `fpl_rate_team.zero_projection_row` kantoi
+    syyn; nyt molemmat kantavat. Parametri on vapaaehtoinen VAIN siksi ettei
+    syyn puuttuminen saa koskaan johtaa vaaraan PAATOKSEEN — se johtaa
+    heikompaan SYYHYN (`no_projection:unknown`), ja `unavailable_by_fpl`
+    kieltaytyy pitamasta tuntematonta syyta saatavuusongelmana.
+    Kutsupaikkaportti: tests/test_transfer_bench_repair.py vaatii etta
+    tuotantopolut antavat rivin (poikkeuslista perusteluineen).
 
     🔴 MIKSI TAMA ON OLEMASSA (3.9.2026, spec kohta 6b). xP-artefakti pudottaa
     pelaajan jonka FPL-saatavuus on i/s/u/n, ja `plan_transfers` rakensi
@@ -196,6 +223,10 @@ def placeholder_player(pid: int, bootstrap: dict) -> dict | None:
         # merkita pelaajan "a":ksi ja artefakti pudottaa hanet silti (xP alle
         # min_xp_total), ja hanen korvaamisensa on silti korjaus.
         "no_projection": True,
+        # 18.9: MIKSI artefakti pudotti hanet, artefaktin omin sanoin
+        # ("unavailable" | "below_min_xp" | None jos rivia ei annettu).
+        # Tata EI johdeta statuksesta: lahde on `excluded_reason`.
+        "no_projection_reason": (excluded or {}).get("excluded_reason"),
     }
 
 
@@ -225,44 +256,141 @@ def needs_repair(p: dict) -> bool:
     return False
 
 
+#: FPL:n viralliset saatavuusliput. Vain nama (ja `chance_next == 0`) ovat
+#: MYONTEINEN todiste siita ettei pelaaja voi pelata. "d" EI ole: se on
+#: epavarmuus (Villen GO 3.9), ja 75 %:n pelaaja on pelikelpoinen.
+FPL_UNAVAILABLE_STATUS = frozenset({"i", "s", "u", "n"})
+#: Artefaktin `excluded_reason`-arvo joka on saatavuusongelma.
+#: build_fpl_xp.py:1230 kirjoittaa tasan kaksi arvoa: "unavailable" (status
+#: i/s/u/n) ja "below_min_xp" (malli pudotti hanet, FPL ei sano mitaan).
+#: Mitattu 18.9 artefaktista: 177 excluded-rivia, 175 unavailable, 2
+#: below_min_xp (Lewis 395 status "a", Gruev 344 status "d" 25 %).
+EXCLUDED_REASON_UNAVAILABLE = "unavailable"
+
+
+def unavailable_by_fpl(p: dict) -> bool:
+    """YKSI LUKIJA kysymykselle "SANOOKO LAHDE ettei han voi pelata".
+
+    MYONTEINEN todiste vaaditaan, ja tuntematon EI kelpaa. Kolme sallittua
+    lahdetta, kaikki tarkistettavissa FPL:n ilmaispinnalta tai artefaktin
+    omasta kentasta:
+      1. `status` on i/s/u/n (FPL:n oma saatavuuslippu),
+      2. `chance_next == 0` (FPL sanoo nollan),
+      3. artefakti pudotti hanet syylla `unavailable` (= sama status-ehto
+         build_fpl_xp.py:1230:ssa, kirjattuna projektiohetkella).
+
+    MIKSI TAMA ON ERI KYSYMYS KUIN `needs_repair` (18.9, adversariaalinen
+    tarkistus). `needs_repair` on tarkoituksella lavea: se laskee RIMAA
+    XI-parannukselle, ja lavea lippu maksoi siella korkeintaan sen etta
+    oikeasti hyodyllinen siirto mitattiin matalammalla rimalla. Kuolleen
+    paikan siivous on eri asia: se on LUPA MYYDA ILMAN MITAAN XI-HYOTYA.
+    Silla rimalla lavea lippu maksaa kayttajan vapaan siirron ja pankin.
+
+    Mitattu 18.9 oikealla artefaktilla ja FPL:n bootstrapilla:
+      - Lewis (395, MCI, 4.4 DEF): artefakti pudotti syylla `below_min_xp`,
+        FPL sanoo status "a", news "", chance_next None. `needs_repair`
+        True (`no_projection`), MUTTA `unavailable_by_fpl` False. Han on
+        pelikelpoinen halpa penkkifilleri, ei kuollut paikka. Ennen tata
+        erottelua moottori myi hanet vapaalla siirrolla hyodylla 0.00.
+      - Gruev (344): `below_min_xp`, status "d", 25 % -> False samoin.
+      - Dovin (171): status "u" (lainalla Leyton Orientissa) -> True.
+    Luokan koko ei ole vakio: `min_xp_total` on 1.0 ja horisontti lyhenee
+    kauden lopussa, joten yha useampi halpa penkkilainen putoaa rajan alle.
+    Siksi ehto ei saa nojata `no_projection`-lippuun.
+    """
+    if (p.get("status") or "a") in FPL_UNAVAILABLE_STATUS:
+        return True
+    if p.get("chance_next") == 0:
+        return True
+    if p.get("no_projection"):
+        return p.get("no_projection_reason") == EXCLUDED_REASON_UNAVAILABLE
+    return False
+
+
 def repair_reason(p: dict) -> str | None:
     """Rakenteinen syy sille miksi `needs_repair` on tosi (None jos ei ole).
 
     Pinta voi sanoa syyn ilman etta se paattelee sita copysta:
-    `no_projection:<artefaktin syy>` / `status:<d|i|s|u|n>` / `chance_next:0`.
-    Jarjestys on sama kuin `needs_repair`issa, jotta syy on se jonka lukija
-    ensimmaisena nakee.
+    `status:<d|i|s|u|n>` / `chance_next:0` / `no_projection:<artefaktin syy>`.
+
+    JARJESTYS ON TARKISTETTAVUUSJARJESTYS, EI `needs_repair`in (18.9).
+    Ensin se minka lukija voi tarkistaa FPL:n ilmaispinnalta yhdella
+    kutsulla (status, chance_next), vasta sitten artefaktin oma syy. Vanha
+    jarjestys luki `no_projection`in ensin ja kovakoodasi puuttuvan syyn
+    sanaksi "unavailable" — silloin Dovin (status u) sai syyn jota FPL ei
+    kerro, ja Lewis (status "a", syy `below_min_xp`) sai syyn joka on
+    EPATOSI. Julkaisuportti hylkasi tasan taman sanamuodon 16.9
+    (`fpl_planner._no_xp_reason`): "FPL:n oma bootstrap sanoo status: 'a' ja
+    tyhjan news-kentan. Sanoimme siis eri asian kuin lahde."
+
+    "unavailable" EI OLE OLETUS. Tuntematon syy on `no_projection:unknown`
+    — heikko mutta tosi. Kentta on suunniteltu pinnalle nayttamiseen, joten
+    oletusarvon on oltava sellainen jota lukija ei voi kumota.
     """
-    if p.get("no_projection"):
-        return f"no_projection:{p.get('no_projection_reason') or 'unavailable'}"
     status = p.get("status") or "a"
     if status != "a":
         return f"status:{status}"
     if p.get("chance_next") == 0:
         return "chance_next:0"
+    if p.get("no_projection"):
+        return f"no_projection:{p.get('no_projection_reason') or 'unknown'}"
     return None
 
 
-def is_unplayable(p: dict, gws: list[int] | None) -> bool:
-    """KUOLLUT PAIKKA: FPL sanoo ettei han voi pelata (`needs_repair`) JA
-    malli antaa hanelle nollan koko ikkunalle. Molempien on oltava tosia.
+def projected_zero(p: dict) -> bool:
+    """YKSI LUKIJA kysymykselle "antaako malli hanelle nollan".
+
+    Mitattu KOKO PROJEKTIOSTA, ei siita ikkunasta jonka paatos sattuu
+    kattamaan. Molemmat artefaktin luvut on oltava nollassa: valmis
+    horisonttisumma (`xp_horizon_total`) JA jokainen `gameweeks`-rivi.
+
+    MIKSI EI IKKUNAA (18.9, adversariaalinen tarkistus). Aiemmin tama oli
+    `window_xp(p, gws) <= 0.0` ja `gws` tuli `plan_transfers`in silmukasta
+    (`gws_left = gws[idx:]`), eli se KUTISTUU horisontin viimeista kierrosta
+    kohti. Mitattu: pelaaja status "d", 75 %, xP 4.0/GW kierroksilla 3-7 ja
+    0.0 kierroksella 8 (seura blankkaa), horisonttisumma 20.0 ->
+    `is_unplayable(gws=[3..8])` False, `gws=[7,8]` False, `gws=[8]` True.
+    Viimeisessa iteraatiossa moottori myi 20 xP:n pelaajan nollan arvoiseen
+    ja nayttaa rivilla "+0.00 xP". Altistus mitattuna 18.9 on 0 (GW5-GW10:n
+    artefaktissa ei ole yhtaan blankkia), eli vanha portti olisi ollut
+    vihrea siihen asti kun ensimmainen blank-kierros tulee — CLAUDE.md 6a
+    kohdan 3 ansa sanatarkasti.
+
+    Siksi TALLA FUNKTIOLLA EI OLE IKKUNAPARAMETRIA, eika `is_unplayable`illa
+    ole sita enaa myoskaan: kutistuvaa ikkunaa ei voi edes syottaa. Blank
+    (`opponents: []`) nakyy yhden kierroksen nollana, ei kuolemana.
+    """
+    if float(p.get("xp_horizon_total") or 0.0) > 0.0:
+        return False
+    return all(float(g.get("xp") or 0.0) <= 0.0
+               for g in (p.get("gameweeks") or []))
+
+
+def is_unplayable(p: dict) -> bool:
+    """KUOLLUT PAIKKA: lahde sanoo ettei han voi pelata (`unavailable_by_fpl`)
+    JA malli antaa hanelle nollan koko projektiolle (`projected_zero`).
+    Molempien on oltava tosia, ja kumpikaan ei lue paatosikkunaa.
 
     Kaksi kysymysta, ei yksi. `needs_repair` vastaa "milla rimalla hanen
     korvaamisensa mitataan" ja se on tarkoituksella lavea (Villen GO 3.9:
-    myos "d"-status). Tama vastaa "onko paikka kuollut" eli saako sen siivota
-    pois vaikka XI-hyoty on nolla. Mitattu 17.9 entry 116920:n rungolla:
-      - White (10): status d, 75 %, xP 16.9 -> needs_repair True (korjausrima
-        XI-parannukselle), is_unplayable False: hanta EI myyda nollahyodylla.
-      - Dovin (171): no_projection, xP 0 -> molemmat True: kuollut paikka.
-      - 4,0 m "a"-vahti jolla on 0 xP: needs_repair False -> ei kuollut
-        paikka. Pelaamaton halpa varavahti on tietoinen penkkistrategia,
-        ei vika, eika moottori saa polttaa siihen siirtoa.
+    myos "d"-status, ja `no_projection` ilman syyta). Tama vastaa "saako
+    paikan siivota pois vaikka XI-hyoty on nolla" — ja se on ANKARAMPI, ei
+    vain toinen ehto. Mitattu 17.9-18.9 entry 116920:n rungolla:
+      - Dovin (171): status "u", xP 0 -> kuollut paikka.
+      - White (10): status "d", 75 %, xP 16.9 -> ei kuollut paikka
+        (`projected_zero` False): hanta EI myyda nollahyodylla.
+      - Lewis (395): status "a", news "", artefaktin syy `below_min_xp`,
+        xP 0 -> EI kuollut paikka (`unavailable_by_fpl` False). Pelaamaton
+        halpa penkkilainen on tietoinen penkkistrategia, ei vika, eika
+        moottori saa polttaa siihen vapaata siirtoa ja pankkia.
+      - Sama pelaaja ilman artefaktin syyta (`no_projection_reason` None):
+        EI kuollut paikka. Tuntematon ei ole todiste.
     """
-    return needs_repair(p) and window_xp(p, gws) <= 0.0
+    return unavailable_by_fpl(p) and projected_zero(p)
 
 
-def unplayable_members(squad: list[dict], gws: list[int] | None) -> list[dict]:
-    """🔴 YKSI LUKIJA kysymykselle "onko rungossa kuollut paikka".
+def unplayable_members(squad: list[dict]) -> list[dict]:
+    """YKSI LUKIJA kysymykselle "onko rungossa kuollut paikka".
 
     `plan_gw` KYSYY taman joka kierroksella (`repair_moves`) — lahdeportti
     tests/test_transfer_bench_repair.py lukee lahdetiedoston ja vaatii kutsun.
@@ -270,8 +398,11 @@ def unplayable_members(squad: list[dict], gws: list[int] | None) -> list[dict]:
     ja jolla ei ole projektiota; jos se palauttaa rivin, moottorin on joko
     korvattava han tai jatettava se nakyvasti (ei ilmaista siirtoa jaljella
     tai ei korvaajaa budjetilla) — ei koskaan hiljaa mittarin sokeuden takia.
+
+    18.9: EI IKKUNAPARAMETRIA. Kuolleisuus on pelaajan ominaisuus, ei sen
+    ikkunan jota kutsuja sattuu pitamaan kadessaan (ks. `projected_zero`).
     """
-    return [p for p in squad if is_unplayable(p, gws)]
+    return [p for p in squad if is_unplayable(p)]
 
 
 #: Oman ostoksen myyminen maksaa kaksinkertaisen riman.
@@ -330,8 +461,9 @@ def transfer_bar(ft_left: int, *, entry_known: bool = True,
       ft = 1-2    siirto on ainoa jousto ensi viikkoon -> taysi rima
       korjaus     pelaaja jota ei voi pelata -> matalin rima (ei koske
                   hittia: -4 maksetaan silti nyt)
-      kuollut     `dead_slot` (17.9): rungon jasen jota ei voi pelata JA
-      paikka      jolla on 0 xP koko ikkunalle (`is_unplayable`). Rima on
+      kuollut     `dead_slot` (17.9): rungon jasen jolle FPL antaa
+      paikka      saatavuuslipun JA jolla on 0 xP koko projektiolle
+                  (`is_unplayable`, 18.9: ei ikkunaa). Rima on
                   0.0 eli ei-negatiivinen XI-muutos riittaa — se on siivous
                   vapaalla siirrolla, ei optimointi. Oma luokka eika
                   BAR_REPAIR = 0.0, koska BAR_REPAIR on myos parihaun
@@ -589,7 +721,8 @@ def repair_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
     joten se putosi molemmista — rima (0.01) ei koskaan nahnyt siirtoa. Tama
     haku EI pudota nollaa: se mittaa XI-hyodyn (ja nayttaa sen rehellisesti,
     0.0 on 0.0) mutta lahtija on jo paatetty lukijalla `unplayable_members`,
-    ei hyodylla. Paatos rimaa vasten tehdaan `plan_gw`:ssa samalla
+    ei hyodylla eika `gws`-ikkunalla (18.9: lukija ei lue ikkunaa lainkaan;
+    `gws` on tassa vain XI-hyodyn mittari). Paatos rimaa vasten tehdaan `plan_gw`:ssa samalla
     vertailulla kuin muillekin siirroille.
 
     Per kuollut paikka: saman position kandidaatit joihin budjetti riittaa
@@ -600,7 +733,7 @@ def repair_moves(squad: list[dict], pool: list[dict], bank_tenths: int,
     tulijan xP desc. Tyhja lista = ei kuollutta paikkaa TAI ei korvaajaa
     budjetilla (jalkimmainen jaa nakyviin: lukija palauttaa rivin yha).
     """
-    holes = unplayable_members(squad, gws)
+    holes = unplayable_members(squad)
     if not holes:
         return []
     squad_ids = {p["id"] for p in squad}
@@ -944,7 +1077,10 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
         # siirrolla, hitti on aina vaiheen 1 paatos. Lahdeportti vaatii etta
         # tama ehto lukee `fts` (tests/test_transfer_bench_repair.py).
         # Pelaavaa penkkilaista tama ei koske: `is_unplayable` vaatii etta
-        # FPL sanoo "ei voi pelata" JA xP on nolla koko ikkunalle.
+        # FPL:n OMA saatavuuslippu sanoo "ei voi pelata" (ei artefaktin
+        # `below_min_xp`) JA xP on nolla koko projektiolle (ei tassa
+        # ikkunassa). 18.9: molemmat ehdot kiristettiin, ks. moduulin
+        # docstring saanto 5.
         if not chosen and fts > 0:
             for cand in repair_moves(squad, pool, bank, gws,
                                      top_per_pos=top_per_pos, near=near):
@@ -979,4 +1115,4 @@ def plan_gw(squad: list[dict], pool: list[dict], bank_tenths: int,
     return {"moves": moves, "squad": squad, "bank_tenths": bank,
             "ft_left": fts, "hits": hits, "protected_ids": protected,
             # Lukijan vastaus lopulliselle rungolle: ei koskaan hiljaa.
-            "unplayable_left": [p["id"] for p in unplayable_members(squad, gws)]}
+            "unplayable_left": [p["id"] for p in unplayable_members(squad)]}
