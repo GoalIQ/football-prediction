@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-19T02:20:56+00:00",
+    "generated_at": "2026-09-19T03:53:32+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -9468,7 +9468,7 @@
       "predicted_starts": 79.9,
       "minutes_confidence": "med",
       "data_basis": "limited_history",
-      "owned_pct": 14.2,
+      "owned_pct": 14.3,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -9595,7 +9595,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.2,
+      "owned_pct": 3.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -67625,53 +67625,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 477,
-      "web_name": "Abbott",
-      "full_name": "Zach Abbott",
-      "team": "Nottingham Forest",
-      "team_short": "NFO",
-      "pos": "DEF",
-      "price": 4.0,
-      "owned_pct": 0.2,
-      "status": "u",
-      "news": "Has joined Southampton on loan for the rest of the season",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 17,
-        "team_name": "Nott'm Forest",
-        "minutes": 165,
-        "starts": 2,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.01,
-        "cs": 0,
-        "points": 3,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.01
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 298,
       "web_name": "Destan",
       "full_name": "Enis Destan",
@@ -68299,6 +68252,53 @@
         "cs": 0,
         "points": 2,
         "per90": null
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 477,
+      "web_name": "Abbott",
+      "full_name": "Zach Abbott",
+      "team": "Nottingham Forest",
+      "team_short": "NFO",
+      "pos": "DEF",
+      "price": 4.0,
+      "owned_pct": 0.1,
+      "status": "u",
+      "news": "Has joined Southampton on loan for the rest of the season",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 17,
+        "team_name": "Nott'm Forest",
+        "minutes": 165,
+        "starts": 2,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.01,
+        "cs": 0,
+        "points": 3,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.01
+        }
       },
       "form": {
         "value": 0.0,
