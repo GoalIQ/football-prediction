@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-19T21:51:07+00:00",
+  "updated_at": "2026-09-19T22:55:01+00:00",
   "logged_total": 3334,
-  "pending": 2709,
+  "pending": 2708,
   "voided": 8,
   "all_time": {
-    "n": 617,
-    "correct_1x2": 311,
-    "pct_1x2": 0.5041,
+    "n": 618,
+    "correct_1x2": 312,
+    "pct_1x2": 0.5049,
     "draw_n": 169,
-    "pct_draw": 0.2739,
-    "decisive_n": 448,
-    "decisive_correct": 311,
-    "pct_decisive": 0.6942,
-    "exact_n": 569,
+    "pct_draw": 0.2735,
+    "decisive_n": 449,
+    "decisive_correct": 312,
+    "pct_decisive": 0.6949,
+    "exact_n": 570,
     "exact_correct": 70,
-    "pct_exact": 0.123,
-    "brier": 0.5903,
-    "brier_n": 569
+    "pct_exact": 0.1228,
+    "brier": 0.59,
+    "brier_n": 570
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 54,
-    "pct_1x2": 0.54,
-    "draw_n": 25,
-    "pct_draw": 0.25,
-    "decisive_n": 75,
-    "decisive_correct": 54,
-    "pct_decisive": 0.72,
+    "correct_1x2": 55,
+    "pct_1x2": 0.55,
+    "draw_n": 24,
+    "pct_draw": 0.24,
+    "decisive_n": 76,
+    "decisive_correct": 55,
+    "pct_decisive": 0.7237,
     "exact_n": 100,
     "exact_correct": 6,
     "pct_exact": 0.06,
-    "brier": 0.5741,
+    "brier": 0.5696,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 33
     },
     "BSA": {
-      "n": 88,
-      "correct_1x2": 37,
-      "pct_1x2": 0.4205,
+      "n": 89,
+      "correct_1x2": 38,
+      "pct_1x2": 0.427,
       "draw_n": 29,
-      "pct_draw": 0.3295,
-      "decisive_n": 59,
-      "decisive_correct": 37,
-      "pct_decisive": 0.6271,
-      "exact_n": 88,
+      "pct_draw": 0.3258,
+      "decisive_n": 60,
+      "decisive_correct": 38,
+      "pct_decisive": 0.6333,
+      "exact_n": 89,
       "exact_correct": 11,
-      "pct_exact": 0.125,
-      "brier": 0.6372,
-      "brier_n": 88
+      "pct_exact": 0.1236,
+      "brier": 0.6342,
+      "brier_n": 89
     },
     "CL": {
       "n": 9,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 431,
-      "correct_1x2": 222,
-      "pct_1x2": 0.5151,
+      "n": 432,
+      "correct_1x2": 223,
+      "pct_1x2": 0.5162,
       "draw_n": 105,
-      "pct_draw": 0.2436,
-      "decisive_n": 326,
-      "decisive_correct": 222,
-      "pct_decisive": 0.681,
-      "exact_n": 431,
+      "pct_draw": 0.2431,
+      "decisive_n": 327,
+      "decisive_correct": 223,
+      "pct_decisive": 0.682,
+      "exact_n": 432,
       "exact_correct": 49,
-      "pct_exact": 0.1137,
-      "brier": 0.583,
-      "brier_n": 431
+      "pct_exact": 0.1134,
+      "brier": 0.5825,
+      "brier_n": 432
     },
     "stale": {
       "n": 138,
@@ -265,8 +265,8 @@
     {
       "bin_mid": 0.2551,
       "predicted": 0.2551,
-      "actual": 0.2859,
-      "n": 647
+      "actual": 0.2851,
+      "n": 649
     },
     {
       "bin_mid": 0.3403,
@@ -281,10 +281,10 @@
       "n": 217
     },
     {
-      "bin_mid": 0.5444,
-      "predicted": 0.5444,
-      "actual": 0.5333,
-      "n": 120
+      "bin_mid": 0.5441,
+      "predicted": 0.5441,
+      "actual": 0.5372,
+      "n": 121
     },
     {
       "bin_mid": 0.6448,
@@ -338,6 +338,21 @@
       "actual_score": "2-2",
       "actual_outcome": "draw",
       "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-19",
+      "home_team": "Mirassol",
+      "away_team": "Botafogo RJ",
+      "predicted_winner": "home",
+      "p_winner": 0.5048,
+      "lead_h": 4.2,
+      "most_likely_score": "1-1",
+      "actual_score": "2-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
@@ -593,21 +608,6 @@
       "actual_score": "1-1",
       "actual_outcome": "draw",
       "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-19",
-      "home_team": "Nacional",
-      "away_team": "Famalicao",
-      "predicted_winner": "away",
-      "p_winner": 0.3592,
-      "lead_h": 1.6,
-      "most_likely_score": "0-1",
-      "actual_score": "0-4",
-      "actual_outcome": "away",
-      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
