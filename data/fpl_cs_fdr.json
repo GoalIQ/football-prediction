@@ -1,7 +1,7 @@
 {
   "meta": {
     "product": "GoalIQ FPL Phase 0 — clean sheet % + model FDR",
-    "generated_at": "2026-09-20T03:54:41",
+    "generated_at": "2026-09-20T06:53:51",
     "season": "2026/27",
     "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
     "team_strength_source": "GoalIQ Dixon-Coles, Understat PL ['2526', '2627'] (sama fit-config kuin /api/predict: decay=0.0035, bayes=2.0)",
@@ -69,7 +69,7 @@
     },
     "Ipswich Town": {
       "next6_avg_cs_pct": 15.1,
-      "next6_avg_fdr": 4.17,
+      "next6_avg_fdr": 4.33,
       "next6_fixtures": 6
     },
     "Newcastle United": {
@@ -89,7 +89,7 @@
     },
     "Coventry City": {
       "next6_avg_cs_pct": 22.3,
-      "next6_avg_fdr": 3.33,
+      "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
     "Bournemouth": {
@@ -234,7 +234,7 @@
       "xg_away": 1.261,
       "p_home_win": 0.3062,
       "p_draw": 0.3102,
-      "p_away_win": 0.3837,
+      "p_away_win": 0.3836,
       "cs_home_pct": 28.3,
       "cs_away_pct": 33.2,
       "fdr_home": 3,
@@ -550,7 +550,7 @@
       "att_fdr_home": 1,
       "fdr_away": 5,
       "def_fdr_away": 5,
-      "att_fdr_away": 4
+      "att_fdr_away": 5
     },
     {
       "gameweek": 2,
@@ -592,8 +592,8 @@
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 4,
-      "fdr_away": 2,
-      "def_fdr_away": 2,
+      "fdr_away": 1,
+      "def_fdr_away": 1,
       "att_fdr_away": 1
     },
     {
@@ -1098,8 +1098,8 @@
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 1,
-      "fdr_away": 4,
-      "def_fdr_away": 4,
+      "fdr_away": 5,
+      "def_fdr_away": 5,
       "att_fdr_away": 4
     },
     {
@@ -2198,8 +2198,8 @@
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 1,
-      "fdr_away": 5,
-      "def_fdr_away": 5,
+      "fdr_away": 4,
+      "def_fdr_away": 4,
       "att_fdr_away": 4
     },
     {
@@ -3146,7 +3146,7 @@
       "att_fdr_home": 1,
       "fdr_away": 5,
       "def_fdr_away": 5,
-      "att_fdr_away": 5
+      "att_fdr_away": 4
     },
     {
       "gameweek": 14,
@@ -5454,8 +5454,8 @@
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 4,
-      "fdr_away": 1,
-      "def_fdr_away": 1,
+      "fdr_away": 2,
+      "def_fdr_away": 2,
       "att_fdr_away": 1
     },
     {
@@ -5957,8 +5957,8 @@
       "p_away_win": 0.3234,
       "cs_home_pct": 26.2,
       "cs_away_pct": 22.2,
-      "fdr_home": 3,
-      "def_fdr_home": 3,
+      "fdr_home": 2,
+      "def_fdr_home": 2,
       "att_fdr_home": 3,
       "fdr_away": 3,
       "def_fdr_away": 3,
@@ -7387,8 +7387,8 @@
       "p_away_win": 0.3174,
       "cs_home_pct": 24.9,
       "cs_away_pct": 20.0,
-      "fdr_home": 2,
-      "def_fdr_home": 2,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 2,
       "fdr_away": 4,
       "def_fdr_away": 4,
@@ -7798,7 +7798,7 @@
       "away": "Crystal Palace",
       "home_model": "Nottingham Forest",
       "away_model": "Crystal Palace",
-      "xg_home": 1.294,
+      "xg_home": 1.295,
       "xg_away": 1.338,
       "p_home_win": 0.3436,
       "p_draw": 0.2925,
