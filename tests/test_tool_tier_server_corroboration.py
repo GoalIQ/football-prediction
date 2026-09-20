@@ -242,7 +242,15 @@ def test_neljan_lauseessa_nimetyn_tyokalun_tier_on_vahvistettu() -> None:
     odotus = {
         "rate-my-team": ("free", (FREE, PARTIAL)),
         "watchlist": ("free", (NONE,)),
-        "transfer-planner": ("premium", (GATED,)),
+        # 20.9: GATED -> (GATED, PARTIAL). `/api/fantasy/plan` luokiteltiin
+        # GATEDiksi, mutta anonyymi kutsu palauttaa **200** ja
+        # `meta.mask: "first 1 of 5 gameweeks (free preview)"` (mitattu
+        # livena 20.9). Se on sama kuvio kuin `captain-ranker`illa ja
+        # `defcon-leaders`illa: premium-tyokalu jolla on ilmainen esikatselu.
+        # PARTIAL EI heikenna lupausta "Premium unlocks the transfer
+        # planner" - se antaa vahemman kuin lause lupaa, ei enempaa, ja
+        # esikatselun KOKO on nyt pinnattu (`ILMAINEN_ESIKATSELU`).
+        "transfer-planner": ("premium", (GATED, PARTIAL)),
         "captain-ranker": ("premium", (GATED, PARTIAL)),
     }
     for slug, (tier, sallitut) in odotus.items():

@@ -35,7 +35,6 @@ API_DIR = Path(__file__).resolve().parents[1] / "api"
 GATED_EXPECTED = {
     "/api/fantasy/xp",
     "/api/fantasy/xp.csv",
-    "/api/fantasy/plan",
     "/api/fantasy/chip-ev",
     # 25.8: WILDCARD-PLAN on GATED, mutta sen maski on osittainen — verdikti
     # ("kannattaako, ja kuinka paljon per kierros") on ilmainen, rivisto ja
@@ -139,6 +138,13 @@ PARTIAL_EXPECTED = {
     # vikaluokkaa. Ilmainen ydin = top 3 (sama luku jonka klientit jo
     # nayttivat), premium-erittely = loput rivit. Maski on endpointissa.
     "/api/fantasy/defcon-leaders",
+    # 20.9 MITATTU LIVENA, anonyymi `GET /api/fantasy/plan?entry=116920`:
+    # **200**, `meta.masked: True`, `meta.mask: "first 1 of 5 gameweeks
+    # (free preview)"` ja yksi taysi rivi jossa on kapteenin NIMI ja xP.
+    # Se ei ole GATED vaan PARTIAL, ja ero ei ole kosmeettinen: GATED-
+    # luokassa mikaan testi ei mittaa maskin KOKOA, joten kasvava ilmainen
+    # esikatselu ei punastuisi. Luokittelu seuraa nyt mitattua kaytosta.
+    "/api/fantasy/plan",
 }
 
 # Erittelykentat jotka EIVAT saa nakya ilman premiumia.
@@ -155,6 +161,9 @@ PARTIAL_PREMIUM_KEYS = {
     # (`free_rows`); vuoto = players-lista pidempi kuin free_rows ilman
     # premiumia. Todennetaan ajamalla alla (molemmat basikset).
     "/api/fantasy/defcon-leaders": ("players[free_rows:]",),
+    # Premium-osa on LISTAN HANTA kuten defcon-leadersissa: ilmainen saa
+    # `plan[:FREE_PLAN_GWS]`, loput kierrokset ovat premiumia.
+    "/api/fantasy/plan": ("plan[FREE_PLAN_GWS:]",),
 }
 
 
@@ -776,3 +785,69 @@ def test_defcon_leaders_signed_in_non_premium_follows_free_window(
     else:
         assert d["meta"]["masked"] is True
         assert len(d["players"]) == FREE_LEADERS_ROWS
+
+
+# ---------------------------------------------------------------------------
+# 20.9.2026: ILMAISEN ESIKATSELUN KOKO ON PAATOS, EI VAHINKO
+# ---------------------------------------------------------------------------
+
+#: Mita tuote antaa ilmaiseksi, lukuna. Arvo ja perustelu samassa paikassa.
+#:
+#: 🔴 MIKSI TAMA ON OLEMASSA. Kaikki olemassa olevat portit mittaavat maskin
+#: OLEMASSAOLOA: "kutsuuko runko gatea", "onko rungossa mask_-funktio",
+#: "kutistuuko payload". Yksikaan ei mittaa maskin KOKOA. Siksi ilmainen
+#: esikatselu voi kasvaa rivi kerrallaan ilman etta mikaan punastuu - ja
+#: se on tasan se muutos joka antaa tuotteen pois ilman etta kukaan paattaa
+#: niin. Mitattu 18.9: `/api/fantasy/plan` oli luokiteltu GATEDiksi vaikka se
+#: palauttaa anonyymille taysi rivin kapteenin nimineen, eli koko oli jo
+#: kasvanut nollasta yhteen kenenkaan huomaamatta.
+#:
+#: Taman testin kaataminen EI ole vika. Se tarkoittaa etta joku muuttaa sita
+#: mita tuote antaa ilmaiseksi, ja silloin luku muutetaan TASSA ja diffissa
+#: nakyy paatos eika sivuvaikutus.
+ILMAINEN_ESIKATSELU = {
+    "FREE_XP_TEASER_N": (10, "/api/fantasy/xp: top-10 rivia"),
+    "FREE_PLAN_GWS": (1, "/api/fantasy/plan: ensimmainen kierros"),
+    "FREE_CHIP_WINDOWS": (3, "/api/fantasy/chip-ev: kolme ikkunaa"),
+    "FREE_PLAN_CHAINS": (1, "/api/fantasy/plan-chains: yksi ketju"),
+    "FREE_EDGE_CAPTAINS": (2, "/api/fantasy/edge: kaksi kapteenirivia"),
+    "FREE_EDGE_DIFFERENTIALS": (2, "/api/fantasy/edge: kaksi differentiaalia"),
+    "FREE_CAPTAIN_PICKS": (1, "/api/fantasy/captain: yksi valinta - sama "
+                              "lupaus kuin myyntisivun 'with a captain pick'"),
+    "FREE_REPLACEMENTS_ROWS": (1, "/api/fantasy/replacements: kohde + 1 rivi"),
+    "FREE_EDGE_TEMPLATE_RISKS": (1, "/api/fantasy/edge: yksi template-riski"),
+    "FREE_VALUE_ROWS": (3, "/api/fantasy/value: sama 3 rivia jonka "
+                           "Value.svelte nayttaa"),
+    "FREE_LEADERS_ROWS": (3, "/api/fantasy/defcon-leaders: top 3"),
+}
+
+
+def test_ilmaisen_esikatselun_koko_on_paatos_ei_vahinko():
+    """Jokaisen ilmaisen esikatselun koko on pinnattu lukuna."""
+    import api.premium as prem
+    erot = []
+    for nimi, (odotus, miksi) in sorted(ILMAINEN_ESIKATSELU.items()):
+        arvo = getattr(prem, nimi, None)
+        if arvo != odotus:
+            erot.append(f"{nimi}: {arvo} (odotettu {odotus} - {miksi})")
+    assert not erot, (
+        "Ilmaisen esikatselun koko muuttui: " + "; ".join(erot) +
+        ". Jos muutos on tarkoitettu, paivita ILMAINEN_ESIKATSELU samassa "
+        "committissa - silloin diffissa nakyy paatos eika sivuvaikutus.")
+
+
+def test_jokainen_free_vakio_on_pinnattu():
+    """Negatiivinen kontrolli: uusi FREE_*-vakio ei paase ohi listan.
+
+    Ilman tata ylla oleva testi vartioisi vain niita lukuja jotka joku
+    muisti lisata, ja seuraava ilmainen esikatselu syntyisi vartioimatta -
+    sama unohdusvika jonka lista on olemassa estamaan.
+    """
+    import re as _re
+    lahde = (API_DIR / "premium.py").read_text(encoding="utf-8")
+    loydetyt = set(_re.findall(r"^(FREE_[A-Z0-9_]+)\s*=\s*\d+\s*$",
+                               lahde, flags=_re.M))
+    vartioimatta = sorted(loydetyt - set(ILMAINEN_ESIKATSELU))
+    assert not vartioimatta, (
+        f"FREE_*-vakio ilman pinnia: {vartioimatta}. Lisaa se "
+        "ILMAINEN_ESIKATSELU-listaan arvon JA perustelun kanssa.")
