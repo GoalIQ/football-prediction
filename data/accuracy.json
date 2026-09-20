@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-20T11:11:07+00:00",
+  "updated_at": "2026-09-20T12:44:12+00:00",
   "logged_total": 3334,
-  "pending": 2705,
+  "pending": 2703,
   "voided": 8,
   "all_time": {
-    "n": 621,
-    "correct_1x2": 313,
+    "n": 623,
+    "correct_1x2": 314,
     "pct_1x2": 0.504,
-    "draw_n": 169,
-    "pct_draw": 0.2721,
-    "decisive_n": 452,
-    "decisive_correct": 313,
-    "pct_decisive": 0.6925,
-    "exact_n": 573,
+    "draw_n": 170,
+    "pct_draw": 0.2729,
+    "decisive_n": 453,
+    "decisive_correct": 314,
+    "pct_decisive": 0.6932,
+    "exact_n": 575,
     "exact_correct": 71,
-    "pct_exact": 0.1239,
-    "brier": 0.5895,
-    "brier_n": 573
+    "pct_exact": 0.1235,
+    "brier": 0.5897,
+    "brier_n": 575
   },
   "rolling": {
     "n": 100,
     "correct_1x2": 53,
     "pct_1x2": 0.53,
-    "draw_n": 24,
-    "pct_draw": 0.24,
-    "decisive_n": 76,
+    "draw_n": 25,
+    "pct_draw": 0.25,
+    "decisive_n": 75,
     "decisive_correct": 53,
-    "pct_decisive": 0.6974,
+    "pct_decisive": 0.7067,
     "exact_n": 100,
     "exact_correct": 7,
     "pct_exact": 0.07,
-    "brier": 0.5762,
+    "brier": 0.5736,
     "brier_n": 100,
     "window": 100
   },
@@ -81,19 +81,19 @@
       "brier_n": 9
     },
     "DED": {
-      "n": 48,
-      "correct_1x2": 26,
-      "pct_1x2": 0.5417,
+      "n": 49,
+      "correct_1x2": 27,
+      "pct_1x2": 0.551,
       "draw_n": 14,
-      "pct_draw": 0.2917,
-      "decisive_n": 34,
-      "decisive_correct": 26,
-      "pct_decisive": 0.7647,
-      "exact_n": 48,
+      "pct_draw": 0.2857,
+      "decisive_n": 35,
+      "decisive_correct": 27,
+      "pct_decisive": 0.7714,
+      "exact_n": 49,
       "exact_correct": 1,
-      "pct_exact": 0.0208,
-      "brier": 0.6092,
-      "brier_n": 48
+      "pct_exact": 0.0204,
+      "brier": 0.6033,
+      "brier_n": 49
     },
     "ELC": {
       "n": 91,
@@ -171,19 +171,19 @@
       "brier_n": 47
     },
     "SA": {
-      "n": 45,
+      "n": 46,
       "correct_1x2": 27,
-      "pct_1x2": 0.6,
-      "draw_n": 8,
-      "pct_draw": 0.1778,
+      "pct_1x2": 0.587,
+      "draw_n": 9,
+      "pct_draw": 0.1957,
       "decisive_n": 37,
       "decisive_correct": 27,
       "pct_decisive": 0.7297,
-      "exact_n": 45,
+      "exact_n": 46,
       "exact_correct": 7,
-      "pct_exact": 0.1556,
-      "brier": 0.5022,
-      "brier_n": 45
+      "pct_exact": 0.1522,
+      "brier": 0.512,
+      "brier_n": 46
     },
     "WC": {
       "n": 104,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 435,
-      "correct_1x2": 224,
+      "n": 437,
+      "correct_1x2": 225,
       "pct_1x2": 0.5149,
-      "draw_n": 105,
-      "pct_draw": 0.2414,
-      "decisive_n": 330,
-      "decisive_correct": 224,
-      "pct_decisive": 0.6788,
-      "exact_n": 435,
+      "draw_n": 106,
+      "pct_draw": 0.2426,
+      "decisive_n": 331,
+      "decisive_correct": 225,
+      "pct_decisive": 0.6798,
+      "exact_n": 437,
       "exact_correct": 50,
-      "pct_exact": 0.1149,
-      "brier": 0.582,
-      "brier_n": 435
+      "pct_exact": 0.1144,
+      "brier": 0.5822,
+      "brier_n": 437
     },
     "stale": {
       "n": 138,
@@ -257,16 +257,16 @@
       "n": 46
     },
     {
-      "bin_mid": 0.1609,
-      "predicted": 0.1609,
-      "actual": 0.1346,
-      "n": 208
+      "bin_mid": 0.1612,
+      "predicted": 0.1612,
+      "actual": 0.1333,
+      "n": 210
     },
     {
       "bin_mid": 0.255,
       "predicted": 0.255,
-      "actual": 0.2833,
-      "n": 653
+      "actual": 0.284,
+      "n": 655
     },
     {
       "bin_mid": 0.3407,
@@ -281,10 +281,10 @@
       "n": 217
     },
     {
-      "bin_mid": 0.5442,
-      "predicted": 0.5442,
-      "actual": 0.541,
-      "n": 122
+      "bin_mid": 0.5443,
+      "predicted": 0.5443,
+      "actual": 0.5403,
+      "n": 124
     },
     {
       "bin_mid": 0.6448,
@@ -312,6 +312,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-20",
+      "home_team": "Feyenoord",
+      "away_team": "Utrecht",
+      "predicted_winner": "home",
+      "p_winner": 0.5385,
+      "lead_h": 0.4,
+      "most_likely_score": "1-1",
+      "actual_score": "5-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-09-20",
+      "home_team": "ACF Fiorentina",
+      "away_team": "SSC Napoli",
+      "predicted_winner": "away",
+      "p_winner": 0.5738,
+      "lead_h": 0.6,
+      "most_likely_score": "0-1",
+      "actual_score": "1-1",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-20",
       "home_team": "Sao Paulo",
@@ -578,36 +608,6 @@
       "actual_score": "0-1",
       "actual_outcome": "away",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-19",
-      "home_team": "Nottingham Forest",
-      "away_team": "Coventry",
-      "predicted_winner": "home",
-      "p_winner": 0.4656,
-      "lead_h": 0.7,
-      "most_likely_score": "1-1",
-      "actual_score": "0-1",
-      "actual_outcome": "away",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-19",
-      "home_team": "AS Roma",
-      "away_team": "FC Internazionale Milano",
-      "predicted_winner": "home",
-      "p_winner": 0.5049,
-      "lead_h": 0.2,
-      "most_likely_score": "1-1",
-      "actual_score": "2-2",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
