@@ -148,12 +148,20 @@ def test_setter_skriptin_tuottama_json_kelpaa_lukijalle(monkeypatch):
     spec.loader.exec_module(srp)
 
     monkeypatch.setenv("STRIPE_REGIONAL_PRICES",
-                       json.dumps(srp.kartta("price_abc123"), separators=(",", ":")))
+                       json.dumps(srp.kartta(season="price_abc123", monthly="price_m1"),
+                                  separators=(",", ":")))
     for maa in srp.MARKKINAT:
         assert resolve_price("season", maa, DEFAULT) == ("price_abc123", maa), maa
     # Listaamaton maa maksaa yha listahinnan.
     assert resolve_price("season", "GB", DEFAULT) == (DEFAULT, "default")
-    # Kuukausi ei muutu kun vain season on konfiguroitu.
+    # Molemmat planit samassa kutsussa: muuttuja kirjoitetaan yli, joten
+    # yhden planin kerrallaan asettaminen pyyhkisi toisen hiljaa.
+    for maa in srp.MARKKINAT:
+        assert resolve_price("monthly", maa, DEFAULT) == ("price_m1", maa), maa
+    # Vain season annettuna kuukausi jaa listahintaan.
+    import json as _j
+    monkeypatch.setenv("STRIPE_REGIONAL_PRICES",
+                       _j.dumps(srp.kartta(season="price_abc123")))
     assert resolve_price("monthly", "NG", DEFAULT) == (DEFAULT, "default")
 
 
@@ -165,4 +173,4 @@ def test_setter_hylkaa_vaaran_tunnisteen():
     spec.loader.exec_module(srp)
     for vaara in ("prod_ABC", "GoalIQ Premium", "", "1Tptq"):
         with pytest.raises(SystemExit):
-            srp.kartta(vaara)
+            srp.kartta(season=vaara)

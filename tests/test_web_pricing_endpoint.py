@@ -32,14 +32,16 @@ def _konfiguroi(monkeypatch, *, regional=True):
     monkeypatch.setattr(m.stripe, "api_key", "sk_test_x", raising=False)
     monkeypatch.setattr(m, "_HINTA_CACHE", {})
     if regional:
-        monkeypatch.setenv("STRIPE_REGIONAL_PRICES",
-                           json.dumps({"season": {"NG": "price_season_ng"}}))
+        monkeypatch.setenv("STRIPE_REGIONAL_PRICES", json.dumps(
+            {"season": {"NG": "price_season_ng"},
+             "monthly": {"NG": "price_monthly_ng"}}))
     else:
         monkeypatch.delenv("STRIPE_REGIONAL_PRICES", raising=False)
     hinnat = {
         "price_season_list": {"unit_amount": 2500, "currency": "eur"},
         "price_monthly_list": {"unit_amount": 399, "currency": "eur"},
         "price_season_ng": {"unit_amount": 900, "currency": "eur"},
+        "price_monthly_ng": {"unit_amount": 149, "currency": "eur"},
     }
     monkeypatch.setattr(m.stripe.Price, "retrieve",
                         staticmethod(lambda pid, **kw: hinnat[pid]))
@@ -58,10 +60,10 @@ def test_aluehinta_cf_otsakkeesta(client, monkeypatch):
     d = client.get("/api/web/pricing", headers={"CF-IPCountry": "NG"}).json()
     assert d["country"] == "NG"
     assert d["plans"]["season"] == {"amount": 9.0, "currency": "EUR", "tier": "NG"}
-    # Kuukausi ei ole kartassa -> listahinta. Tama on se epasuhta jonka
-    # Ville huomasi: 3,99/kk = 47,88/v eli 5,3 x vuosihinta. Portti tekee
-    # siita NAKYVAN eika hyvaksy sita hiljaa.
-    assert d["plans"]["monthly"]["tier"] == "default"
+    # Kuukausi on myos alueellinen. Ville huomasi 20.9 etta pelkka
+    # vuosihinnan alentaminen teki kuukaudesta 5,3 x vuosihinnan - se ei ole
+    # hinnoittelua vaan ansa.
+    assert d["plans"]["monthly"] == {"amount": 1.49, "currency": "EUR", "tier": "NG"}
 
 
 def test_kuukausi_ei_saa_olla_vuotta_kalliimpi_samassa_maassa(client, monkeypatch):
@@ -72,12 +74,15 @@ def test_kuukausi_ei_saa_olla_vuotta_kalliimpi_samassa_maassa(client, monkeypatc
     d = client.get("/api/web/pricing", headers={"CF-IPCountry": "NG"}).json()
     vuosi = d["plans"]["season"]["amount"]
     kk_vuodessa = d["plans"]["monthly"]["amount"] * 12
-    assert kk_vuodessa > vuosi, "odottamaton: kuukausi halvempi kuin vuosi"
-    # Dokumentoitu tila 20.9: epasuhta on TIEDOSSA ja odottaa alueellista
-    # kuukausihintaa. Kun se lisataan, tama raja kiristetaan.
-    assert kk_vuodessa / vuosi > 3, (
-        "epasuhta on korjaantunut -> kirista tama testi vastaamaan uutta "
-        "tilaa, ala poista sita")
+    suhde = kk_vuodessa / vuosi
+    assert suhde > 1, "odottamaton: kuukausi halvempi kuin vuosi"
+    # Listahinnan suhde on 47,88 / 25 = 1,92. Aluehinnan on oltava samaa
+    # luokkaa: jos se karkaa yli kahden, kuukausitilaus on taas ansa.
+    # 20.9 kiristetty 3:sta 2,5:een kun alueellinen kuukausihinta luotiin
+    # (1,49/kk -> 17,88/v vs 9/v = 1,99).
+    assert suhde < 2.5, (
+        f"kuukausi on {suhde:.1f} x vuosihinta aluemaassa. Listahinnassa "
+        "suhde on 1,9. Luo alueellinen kuukausihinta tai laske se.")
 
 
 def test_stripe_virhe_ei_kaada_vaan_jattaa_planin_pois(client, monkeypatch):

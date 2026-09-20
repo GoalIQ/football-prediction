@@ -12,9 +12,14 @@ Nigeria 54, Angola 49, Kenya 47, Ghana 44, Ethiopia 34, Ivory Coast 31,
 Brazil 21, India 21, Bangladesh 20 - yhteensa yli puolet kaikista
 maksumuurin nahneista, kun UK on 106, US 83 ja Suomi 57.
 
+🔴 MUUTTUJA KIRJOITETAAN KOKONAAN YLI. Siksi KAIKKI planit annetaan samalla
+ajolla: aiempi versio otti yhden planin kerrallaan, ja toinen ajo olisi
+pyyhkinyt ensimmaisen hiljaa. Se on juuri se virhe jota tama skripti on
+olemassa estamaan.
+
 AJO:
-    python scripts/set_regional_prices.py price_XXXX            # nayttaa
-    python scripts/set_regional_prices.py price_XXXX --apply    # asettaa
+    python scripts/set_regional_prices.py --season price_A --monthly price_B
+    python scripts/set_regional_prices.py --season price_A --apply
     python scripts/set_regional_prices.py --clear --apply       # poistaa
 
 Poisto palauttaa listahinnan kaikille maille: `resolve_price` putoaa
@@ -38,14 +43,28 @@ VAR = "STRIPE_REGIONAL_PRICES"
 MARKKINAT = ("NG", "AO", "KE", "GH", "ET", "CI", "BR", "IN", "BD")
 
 
-def kartta(price_id: str, plan: str = "season") -> dict:
-    """{"season": {"NG": price_id, ...}} - sama muoto jonka resolve_price lukee."""
+def _tarkista(price_id: str) -> str:
     if not isinstance(price_id, str) or not price_id.startswith("price_"):
         raise SystemExit(
             f"VIRHE: {price_id!r} ei ole Stripe-hinta. Odotettu 'price_...'. "
             "Tuotetunniste (prod_...) tai nimi EI kelpaa - resolve_price "
             "hylkaisi sen ja kaikki maksaisivat listahinnan.")
-    return {plan: {maa: price_id for maa in MARKKINAT}}
+    return price_id
+
+
+def kartta(season: str | None = None, monthly: str | None = None) -> dict:
+    """{"season": {"NG": id, ...}, "monthly": {...}} - resolve_pricen muoto.
+
+    Molemmat planit samassa kutsussa, koska muuttuja kirjoitetaan yli.
+    Puuttuva plan jaa pois kartasta = se maksaa listahinnan.
+    """
+    ulos: dict = {}
+    for nimi, pid in (("season", season), ("monthly", monthly)):
+        if pid:
+            ulos[nimi] = {maa: _tarkista(pid) for maa in MARKKINAT}
+    if not ulos:
+        raise SystemExit("VIRHE: anna ainakin --season tai --monthly")
+    return ulos
 
 
 def _env_key() -> str:
@@ -74,19 +93,23 @@ def aseta(arvo: str) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("price_id", nargs="?", help="Stripe-hinta, price_...")
-    ap.add_argument("--plan", default="season", choices=("season", "monthly"))
+    ap.add_argument("--season", help="Stripe-hinta vuositilaukselle, price_...")
+    ap.add_argument("--monthly", help="Stripe-hinta kuukausitilaukselle, price_...")
     ap.add_argument("--clear", action="store_true", help="tyhjenna (= listahinta kaikille)")
     ap.add_argument("--apply", action="store_true", help="kirjoita Renderiin")
     a = ap.parse_args()
 
-    arvo = "" if a.clear else json.dumps(kartta(a.price_id or "", a.plan),
+    arvo = "" if a.clear else json.dumps(kartta(a.season, a.monthly),
                                          separators=(",", ":"))
     if a.clear:
         print("Tyhjennetaan: kaikki maat palaavat listahintaan.")
     else:
         print(f"{VAR}={arvo}")
-        print(f"  {len(MARKKINAT)} maata, plan={a.plan}")
+        planit = [n for n, v in (("season", a.season), ("monthly", a.monthly)) if v]
+        print(f"  {len(MARKKINAT)} maata, planit: {', '.join(planit)}")
+        if "monthly" not in planit:
+            print("  HUOM: kuukausi jaa listahintaan (3,99/kk = 47,88/v), eli "
+                  "se on aluemaassa moninkertainen vuosihintaan nahden.")
     if not a.apply:
         print("\n(kuivaharjoitus - lisaa --apply jos tama on oikein)")
         return 0
