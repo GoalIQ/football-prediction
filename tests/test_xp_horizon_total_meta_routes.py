@@ -51,6 +51,7 @@ from tests.test_fpl_player_stats import _gw_doc, _gw_row, _stats_doc, _stats_row
 from tests.test_fpl_rate_team import FAKE_PICKS, POOL_BOOT, POOL_PLAYERS
 
 ROOT = Path(__file__).resolve().parents[1]
+NEWLINE = chr(10)
 
 # VAIHE: GW1 kesken (is_current), GW2:n deadline edessa. Artefaktin rivit
 # GW1-6, vaikutettavat GW2-6 -> from=2, gw=5. Poolin xp_gw on vakio per
@@ -246,7 +247,35 @@ def test_every_fantasy_route_is_tested_or_exempt_with_a_reason():
         "Jos se tarjoilee xp_horizon_totalin (tai siita johdetun summan), "
         "lisaa se TESTED-listaan ja kirjoita meta `horizon_total_meta`illa; "
         "muuten EXEMPT-listaan perusteluineen.")
-    assert listed - paths == set(), f"poistunut reitti listalla: {sorted(listed - paths)}"
+    # 20.9: tama rivi oli punainen CI:ssa (py3.11) ja vihrea lokaalisti
+    # (py3.14) — puuttuvat olivat TASMALLEEN ne 9 reittia jotka tulevat
+    # `api.fantasy_edge`in routerista. Portin viesti osoitti vaaraan
+    # suuntaan: reitit eivat olleet poistuneet LISTALTA vaan APPISTA.
+    # Portti joka ei kerro mita se NAKI maksaa kokonaisen CI-kierroksen
+    # per arvaus, joten se kertoo nyt.
+    if listed - paths:
+        import sys as _sys
+        import fastapi as _fa
+        try:
+            import api.fantasy_edge as _fe
+            fe_reitit = sorted(getattr(r, "path", "") for r in _fe.router.routes)
+            fe_tiedosto = getattr(_fe, "__file__", "?")
+        except Exception as _e:                     # pragma: no cover
+            fe_reitit, fe_tiedosto = ["import kaatui: " + repr(_e)], "?"
+        _api_mod = sorted(k for k in _sys.modules if k.startswith("api"))
+        raise AssertionError(NEWLINE.join([
+            "poistunut reitti listalla: " + str(sorted(listed - paths)),
+            "  python           : " + _sys.version.split()[0],
+            "  fastapi          : " + _fa.__version__,
+            "  api.main         : " + str(getattr(m, "__file__", "?")),
+            "  api.fantasy_edge : " + str(fe_tiedosto),
+            "  routerin reitit  : " + str(fe_reitit),
+            "  appin fantasy    : " + str(sorted(paths)),
+            "  api.* sys.modules: " + str(_api_mod),
+            "  -> Jos routerilla ON puuttuvat reitit mutta appilla EI, "
+            "app.include_router ajettiin ennen kuin router oli valmis: "
+            "sovellus tarjoilisi 404:n yhdeksalle endpointille.",
+        ]))
     for p, (_probe, why) in EXEMPT.items():
         assert why and len(why) > 20, p
 
