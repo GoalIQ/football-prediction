@@ -110,7 +110,32 @@ def test_jokainen_sitemapin_sivu_on_pinta():
     """Sivu jonka kerromme Googlelle on julkinen. Jos portti ei katso sita,
     lupaus voi elaa siella nakymattomana."""
     urlit = _sitemap_urlit()
-    assert len(urlit) > 300, f"sitemap luki vain {len(urlit)} sivua"
+    # 🔴 20.9.2026: tassa oli absoluuttinen raja `> 300`, ja se ajautui itse
+    # aiheuttamatta yhtaan oikeaa vikaa. Ennustesivut VANHENEVAT kun ottelut
+    # pelataan: yhtena paivana viisi poistui (la-liga/deportivo-real-betis,
+    # serie-a/juventus-atalanta, ...) ja kaksi CL-ottelua tuli tilalle, netto
+    # -3 -> 298. Mikaan ei ollut rikki; raja mittasi kalenteria, ei
+    # katkaisua. Testi joka kaatuu ajan kulumisesta opettaa ohittamaan sen.
+    #
+    # Rajat ovat nyt TIEDOSTOKOHTAISIA ja rakenteellisia: ne kaatuvat jos
+    # sitemap katkeaa tai regex lakkaa osumasta, mutta eivat siita etta
+    # otteluita pelataan. Levylla olevaan maaraan niita EI voi sitoa:
+    # `predictions/`issa on 2 688 html-tiedostoa mutta sitemapissa 237,
+    # koska sitemap on tarkoituksella tuoreiden otteluiden osajoukko.
+    per_tiedosto = {}
+    for sm in sorted(ROOT.glob("sitemap*.xml")):
+        n = len([m for m in re.finditer(r"<loc>([^<]+)</loc>",
+                                        sm.read_text(encoding="utf-8"))
+                 if not m.group(1).endswith(".xml")])
+        per_tiedosto[sm.name] = n
+    ALARAJAT = {"sitemap-core.xml": 5, "sitemap-fpl.xml": 20,
+                "sitemap-predictions.xml": 50}
+    for nimi, raja in ALARAJAT.items():
+        assert nimi in per_tiedosto, f"{nimi} puuttuu kokonaan"
+        assert per_tiedosto[nimi] >= raja, (
+            f"{nimi}: {per_tiedosto[nimi]} sivua, alaraja {raja}. "
+            "Tama on katkaisu, ei otteluiden vanhenemista.")
+    assert len(urlit) >= 100, f"sitemap luki vain {len(urlit)} sivua"
     pinnat = set(C.surfaces())
     puuttuu = []
     for u in urlit:
