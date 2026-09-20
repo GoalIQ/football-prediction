@@ -75,20 +75,61 @@ def _env_key() -> str:
 
 
 def aseta(arvo: str) -> None:
+    """Paivittaa YHDEN muuttujan.
+
+    🔴 MITATTU VIKA 20.9.2026, tuotannossa. Tama funktio kaytti
+    `PUT /v1/services/{id}/env-vars` -paatepistetta yhden alkion listalla.
+    Se paatepiste **KORVAA KOKO YMPARISTON** annetulla listalla - se ei
+    lisaa siihen. Tulos: `goaliq-api`:n 16 muuttujasta jai yksi, ja
+    STRIPE_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY seka webhook-salaisuudet
+    havisivat. Ostaminen hajosi, ja vika nakyi vasta kun
+    `/api/web/pricing` palautti tyhjan `plans`-listan.
+
+    Oikea paatepiste on `PUT .../env-vars/{key}`, joka koskee tasan yhteen
+    avaimeen. Sen kanssa unohdettu muuttuja ei voi kadota, koska emme
+    lahetä muiden arvoja lainkaan.
+    """
     key = _env_key()
-    body = json.dumps([{"key": VAR, "value": arvo}]).encode()
+    url = (f"https://api.render.com/v1/services/{SERVICE_ID}"
+           f"/env-vars/{VAR}")
+    body = json.dumps({"value": arvo}).encode()
     r = urllib.request.Request(
-        f"https://api.render.com/v1/services/{SERVICE_ID}/env-vars",
-        data=body, method="PUT",
+        url, data=body, method="PUT",
         headers={"Authorization": f"Bearer {key}",
                  "Content-Type": "application/json", "Accept": "application/json"})
     try:
         urllib.request.urlopen(r, timeout=30).read()
     except urllib.error.HTTPError as e:
         raise SystemExit(f"Render ({e.code}): {e.read().decode('utf-8', 'replace')[:300]}")
-    print(f"{VAR} asetettu. Render deployaa muutoksen automaattisesti.")
-    print("Verifiointi: tee osto VPN:lla listatusta maasta, tai katso "
-          "Stripe-tilauksen metadata.price_tier (pitaa olla maakoodi).")
+    print(f"{VAR} asetettu (vain tama avain). Render deployaa muutoksen.")
+    print("Verifiointi: scripts/set_regional_prices.py --nayta")
+
+
+def nayta() -> None:
+    """Listaa palvelun muuttujien NIMET. Arvoja ei tulosteta.
+
+    Tama on olemassa siksi, etta 20.9 koko ymparisto pyyhkiytyi eika sita
+    huomannut kukaan ennen kuin tuote hajosi. Nimien lukumaara on halpa
+    tarkistus ennen ja jalkeen.
+    """
+    key = _env_key()
+    nimet, cursor = [], None
+    while True:
+        u = (f"https://api.render.com/v1/services/{SERVICE_ID}"
+             f"/env-vars?limit=20" + (f"&cursor={cursor}" if cursor else ""))
+        r = urllib.request.Request(
+            u, headers={"Authorization": f"Bearer {key}", "Accept": "application/json"})
+        d = json.loads(urllib.request.urlopen(r, timeout=30).read())
+        if not d:
+            break
+        for e in d:
+            nimet.append((e.get("envVar", e)).get("key"))
+        cursor = d[-1].get("cursor")
+        if not cursor or len(d) < 20:
+            break
+    print(f"{len(nimet)} muuttujaa:")
+    for n in sorted(nimet):
+        print("  ", n)
 
 
 def main() -> int:
@@ -97,7 +138,13 @@ def main() -> int:
     ap.add_argument("--monthly", help="Stripe-hinta kuukausitilaukselle, price_...")
     ap.add_argument("--clear", action="store_true", help="tyhjenna (= listahinta kaikille)")
     ap.add_argument("--apply", action="store_true", help="kirjoita Renderiin")
+    ap.add_argument("--nayta", action="store_true",
+                    help="listaa palvelun muuttujien nimet (ei arvoja)")
     a = ap.parse_args()
+
+    if a.nayta:
+        nayta()
+        return 0
 
     arvo = "" if a.clear else json.dumps(kartta(a.season, a.monthly),
                                          separators=(",", ":"))
