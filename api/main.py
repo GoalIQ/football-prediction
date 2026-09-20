@@ -4197,20 +4197,63 @@ _HINTA_CACHE: dict[str, tuple[float, int, str]] = {}
 _HINTA_TTL = 900.0
 
 
+#: Viimeisin syy jolla hinnan haku epaonnistui, hinta-ID:ta kohden.
+#: 🔴 MITATTU 20.9.2026. `/api/web/pricing` palautti `{"plans":{}}` kolmen
+#: tunnin ajan eika yksikaan pinta kertonut miksi: `except Exception: return
+#: None` nieli syyn, ja jaljelle jai oire josta EI voi paatella onko vika
+#: avaimessa, hinta-ID:ssa vai verkossa. Sessio arvasi avaimen ja arvasi
+#: vaarin. Fail-soft on oikein kayttajalle, mutta hiljainen fail-soft on
+#: vaara meille: syy kirjataan nyt talteen ja luetaan `/api/stripe-config`:sta.
+_HINTA_VIRHE: dict[str, str] = {}
+
+#: Avaimen NAKOISET merkkijonot pois diagnostiikasta. Stripe maskaa omat
+#: virheilmoituksensa itse, mutta diagnostiikkapinta on julkinen eika se saa
+#: nojata siihen etta ULKOINEN palvelu muistaa maskata puolestamme.
+_AVAIN_HAHMO = re.compile(r"\b((?:sk|rk|pk|mk)_)[A-Za-z0-9_]{4,}")
+
+#: Epaonnistuneen haun lyhyt muisti. Onnistuminen valimuistitetaan 15 min,
+#: epaonnistuminen EI ollut lainkaan - eli rikkinaisella avaimella JOKAINEN
+#: maksumuurin lataus teki kaksi epaonnistuvaa Stripe-kutsua. Juuri silloin
+#: kun mikaan ei toimi, kuorma oli suurimmillaan. 60 s riittaa pitamaan
+#: korjauksen havaitsemisen nopeana.
+_HINTA_VIRHE_TTL = 60.0
+_HINTA_VIRHE_AIKA: dict[str, float] = {}
+
+
+def _piilota_avaimet(teksti: str) -> str:
+    """`sk_live_51Abc...` -> `sk_***`. Prefiksi jaa, koska juuri se kertoo
+    onko arvo salainen avain, rajoitettu avain vai avaimen TUNNISTE."""
+    return _AVAIN_HAHMO.sub(lambda m: f"{m.group(1)}***", teksti)
+
+
 def _stripe_price_amount(price_id: str) -> tuple[int, str] | None:
     """(sentteina, valuutta) Stripesta, TTL-valimuistilla. None jos ei saada."""
-    if not price_id or not stripe.api_key:
+    if not price_id:
+        _HINTA_VIRHE["<ei hinta-ID:ta>"] = "price id puuttuu ymparistosta"
+        return None
+    if not stripe.api_key:
+        _HINTA_VIRHE[price_id] = "STRIPE_SECRET_KEY puuttuu"
         return None
     osuma = _HINTA_CACHE.get(price_id)
     if osuma and (time.time() - osuma[0]) < _HINTA_TTL:
         return osuma[1], osuma[2]
+    viime_virhe = _HINTA_VIRHE_AIKA.get(price_id)
+    if viime_virhe and (time.time() - viime_virhe) < _HINTA_VIRHE_TTL:
+        return None                      # syy on jo _HINTA_VIRHE:ssa
     try:
         pr = stripe.Price.retrieve(price_id)
         arvo = (int(pr["unit_amount"]), str(pr["currency"]))
-    except Exception:
-        # Fail-soft: SPA putoaa omaan listahintaansa. Parempi nayttaa vanha
-        # luku kuin tyhja hinta.
+    except Exception as e:
+        # Fail-soft KAYTTAJALLE (SPA putoaa omaan listahintaansa), mutta EI
+        # hiljainen meille: syy lokiin ja diagnostiikkapinnalle.
+        syy = _piilota_avaimet(f"{type(e).__name__}: {e}")[:300]
+        _HINTA_VIRHE[price_id] = syy
+        _HINTA_VIRHE_AIKA[price_id] = time.time()
+        print(f"[pricing] Stripe.Price.retrieve({price_id}) EPAONNISTUI: {syy}",
+              flush=True)
         return None
+    _HINTA_VIRHE.pop(price_id, None)
+    _HINTA_VIRHE_AIKA.pop(price_id, None)
     _HINTA_CACHE[price_id] = (time.time(), arvo[0], arvo[1])
     return arvo
 
@@ -4350,6 +4393,33 @@ _GUEST_CHECKOUT_LIMIT = 10       # sessioita / IP / tunti
 _GUEST_CHECKOUT_WINDOW = 3600.0
 
 
+def client_ip(headers, socket_host: str = "") -> str:
+    """Ostajan oma IP, ei proxyn.
+
+    🔴 MITATTU 20.9.2026, tuotannossa. `request.client.host` EI ole kayttajan
+    IP taman palvelun takana. Ajokomento on `uvicorn api.main:app --host ...`
+    ilman `--forwarded-allow-ips`:ia, ja uvicornin oletus on `127.0.0.1`
+    (`uvicorn/config.py`: `os.environ.get("FORWARDED_ALLOW_IPS", "127.0.0.1")`).
+    Renderin reititin ei ole 127.0.0.1, joten `X-Forwarded-For` jaa
+    luottamatta ja `request.client.host` on REITITTIMEN osoite - sama arvo
+    jokaiselle maailman kavijalle. Rate limit "10/IP/tunti" oli siis
+    10/tunti YHTEENSA kaikille, ja kun kiintio tayttyi, guest-checkout
+    vastasi 429 kaikille. Se on hiljainen konversiokatko maksupolulla.
+
+    `CF-Connecting-IP` on oikea lahde taalla: api.goaliq.app on Cloudflaren
+    proxyn takana (muisti `api-domain-cloudflare-proxy`) ja Cloudflare
+    YLIKIRJOITTAA sen, joten clientti ei voi vaarentaa sita. `X-Forwarded-For`
+    olisi vaarennettavissa clientin paasta, ja vaarennettava kiintio on
+    huonompi kuin liian karkea - siksi sita EI lueta, vaan tuntematon
+    tapaus putoaa vanhaan kayttaytymiseen (yhteinen amme).
+    """
+    try:
+        cf = (headers.get("cf-connecting-ip") or headers.get("CF-Connecting-IP") or "").strip()
+    except Exception:                                    # pragma: no cover
+        cf = ""
+    return cf or (socket_host or "unknown")
+
+
 def _guest_checkout_rate_ok(ip: str) -> bool:
     now = time.time()
     hits = [t for t in _GUEST_CHECKOUT_HITS.get(ip, [])
@@ -4391,8 +4461,9 @@ def create_guest_checkout_session(
     price_id, price_tier = resolve_price(
         req.plan, request_country(request.headers), price_id)
 
-    client_ip = (request.client.host if request.client else "") or "unknown"
-    if not _guest_checkout_rate_ok(client_ip):
+    ip = client_ip(request.headers,
+                   request.client.host if request.client else "")
+    if not _guest_checkout_rate_ok(ip):
         raise HTTPException(status_code=429,
                             detail="Too many checkout attempts, try again later")
 
@@ -5971,4 +6042,37 @@ def stripe_config():
         # onko kentässä esim. lainausmerkit ("on" = 4) ilman että arvo vuotaa.
         "premium_enforce": premium_enforce_on(),
         "premium_enforce_raw_len": len((os.getenv("PREMIUM_ENFORCE") or "").strip()),
+        # 20.9: "onko avain asetettu" EI ole sama kuin "toimiiko avain".
+        # Molemmat olivat tanaan true/rikki yhta aikaa: `secret_key_set` oli
+        # true ja ostaminen oli poikki. Tama kentta KOKEILEE avainta oikealla
+        # kutsulla ja kertoo Stripen oman syyn (avain maskattuna).
+        "price_lookup": _hintahaun_tila(),
     }
+
+
+def _hintahaun_tila() -> dict:
+    """Kokeilee molemmat hinta-ID:t Stripesta ja kertoo syyn jos ei onnistu.
+
+    🔴 MIKSI TAMA ON OLEMASSA (20.9.2026). Ostaminen oli poikki kolme tuntia
+    ja ainoa nakyva oire oli `/api/web/pricing` -> `{"plans":{}}`. Siita ei
+    voi paatella syyta, joten sessio arvasi - ja arvasi vaarin, koska Stripen
+    todellinen virheteksti oli nielty `except Exception`-haaraan. Nyt syy on
+    luettavissa yhdella kutsulla ilman deployta ja ilman Renderin lokeja.
+    Ei paljasta salaisuuksia: hinta-ID ei ole salainen ja avaimet maskataan.
+    """
+    ulos: dict = {}
+    for plan, pid in (("season", STRIPE_PRICE_SEASON_ID),
+                      ("monthly", STRIPE_PRICE_MONTHLY_ID)):
+        if not pid:
+            ulos[plan] = {"price_id": None, "ok": False,
+                          "error": f"STRIPE_PRICE_{plan.upper()}_ID puuttuu"}
+            continue
+        summa = _stripe_price_amount(pid)
+        if summa is None:
+            ulos[plan] = {"price_id": pid, "ok": False,
+                          "error": _HINTA_VIRHE.get(pid, "tuntematon syy")}
+        else:
+            ulos[plan] = {"price_id": pid, "ok": True,
+                          "amount": summa[0] / 100.0,
+                          "currency": summa[1].upper()}
+    return ulos
