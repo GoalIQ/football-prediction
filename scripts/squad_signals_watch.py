@@ -213,7 +213,7 @@ def commit_report(out: Path) -> str:
     Task Schedulerista kahdesti paivassa, joten raportit jaivat kertymaan
     committaamattomina ja nakyivat vain seuraavan session `git status`issa.
 
-    KOLME VAROTOIMEA, koska tama kirjoittaa gittiin valvomatta:
+    NELJA VAROTOIMEA, koska tama kirjoittaa gittiin valvomatta:
 
     1. `git commit --only <polku>` eika `git add -A`. Jos hub-repossa on
        samaan aikaan kesken toisen ajon tai ihmisen tyota, se EI paady
@@ -225,6 +225,15 @@ def commit_report(out: Path) -> str:
        (esim. origin edella), commit jaa paikalliseksi ja siita kerrotaan.
        Valvomaton rebase konfliktin paalle on pahempi kuin pushaamaton
        commit.
+    4. **HEAD on oltava `main`.** MITATTU 20.9.2026: vahti committoi 18.9,
+       19.9 ja 20.9 haaralle `feat/mobiili-yksi-ikkunalukija`, koska hubin
+       tyopuu oli jaanyt siihen. Kolme vuorokautta saatavuussignaaleja (mm.
+       Wilson a->i, James a->d, 16 muutosta 18.9) jai haaraan jota ei ollut
+       pushattu. Varotoimet 1-3 EIVAT estaneet tata: ne vartioivat
+       tiedostojoukkoa, kesken olevaa operaatiota ja pushin epaonnistumista,
+       eivat sita MIHIN kirjoitetaan. Varotoimi 3 tulosti kylla "PUSH EI
+       MENNYT", mutta valvomattoman ajon tulostetta ei lue kukaan - siksi
+       tama on portti eika varoitus (CLAUDE.md 6a).
 
     Epaonnistuminen EI kaada vahtia: raportti on jo levylla, ja vahdin
     tehtava on liputtaa muutokset eika hoitaa versionhallintaa.
@@ -242,6 +251,15 @@ def commit_report(out: Path) -> str:
     def git(*a: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", "-C", str(HUB_ROOT), *a],
                               capture_output=True, text=True, timeout=120)
+
+    # Varotoimi 4: vain main. Irrallinen HEAD antaa returncode != 0, ja se on
+    # myos "ei main" -> fail-closed molempiin suuntiin.
+    h = git("symbolic-ref", "--quiet", "--short", "HEAD")
+    nyt_haara = h.stdout.strip() if h.returncode == 0 else None
+    if nyt_haara != "main":
+        missa = f"`{nyt_haara}`" if nyt_haara else "irrallinen HEAD"
+        return ("[squad-signals] EI COMMITTOITU: hub-repon HEAD on "
+                f"{missa}, ei main. Raportti jai levylle: " + out.name)
 
     rel = str(out.relative_to(HUB_ROOT)).replace("\\", "/")
     try:
