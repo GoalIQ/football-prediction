@@ -271,7 +271,7 @@ const CLAIM_EXCEPTIONS: Record<string, ClaimException[]> = {
 		{
 			line: '><abbr title="Sum of expected points over GW{sortWin.from} to GW{sortWin.to}"',
 			reason:
-				'ikkunasortin oma sarake: vali tulee sortin avaimesta (windowOfSort) ja solun luku on windowXp samalta valilta — eri kysymys kuin summan ikkuna'
+				'ikkunasortin oma sarake: vali tulee sortin avaimesta (windowOfSort) ja solun luku on windowXp samalta valilta, eri kysymys kuin summan ikkuna'
 		}
 	],
 	'lib/components/Replacements.svelte': [
@@ -284,7 +284,7 @@ const CLAIM_EXCEPTIONS: Record<string, ClaimException[]> = {
 		{
 			line: "{#if data.target.xp_window != null}· {data.target.xp_window.toFixed(1)} xP next {nextN}{:else}·",
 			reason:
-				'sama ikkuna kuin ylla, kohteen oma rivi: luku on xp_window ja nimilappu meta.gws:n pituus — luku ja lause samasta listasta',
+				'sama ikkuna kuin ylla, kohteen oma rivi: luku on xp_window ja nimilappu meta.gws:n pituus, luku ja lause samasta listasta',
 			requires: /\bdata\.meta\.gws\b/
 		}
 	],
@@ -292,7 +292,7 @@ const CLAIM_EXCEPTIONS: Record<string, ClaimException[]> = {
 		{
 			line: 'subtitle: `same player, best and worst opponent, next ${swingGws} gameweeks`,',
 			reason:
-				'KOLMAS MUOTO (gameweeks.filter(...).length) oikein tehtyna: swingGws on sen SAMAN suodatetun listan pituus josta rivit rakennetaan, ja suodatin on actionableGameweek — luku ja lause ovat samasta listasta, joten alkanut kierros ei voi olla vain toisessa',
+				'KOLMAS MUOTO (gameweeks.filter(...).length) oikein tehtyna: swingGws on sen SAMAN suodatetun listan pituus josta rivit rakennetaan, ja suodatin on actionableGameweek, luku ja lause ovat samasta listasta, joten alkanut kierros ei voi olla vain toisessa',
 			requires: /\bactionableGameweek\s*\(/
 		},
 		{
@@ -318,7 +318,7 @@ const CLAIM_EXCEPTIONS: Record<string, ClaimException[]> = {
 		{
 			line: "{league === 'spl' ? 'Saudi Pro League' : 'FPL'} clean sheet % + fixture difficulty, next {gws}",
 			reason:
-				'FDR-embedin ikkuna tulee iframe-parametrista (?gws=1..6) ja sama luku suodattaa naytetyt ottelut (f.gw < nextGw + gws) — ei xP-summan ikkuna',
+				'FDR-embedin ikkuna tulee iframe-parametrista (?gws=1..6) ja sama luku suodattaa naytetyt ottelut (f.gw < nextGw + gws), ei xP-summan ikkuna',
 			requires: /searchParams\.get\('gws'\)/
 		}
 	],
@@ -326,7 +326,7 @@ const CLAIM_EXCEPTIONS: Record<string, ClaimException[]> = {
 		{
 			line: 'subtitle: `next ${nearHorizon} GWs, GoalIQ match model`,',
 			reason:
-				'clean sheet % + fixture difficulty -kortti: ikkuna on cs.meta.near_horizon_gw, eri artefaktin oma kentta, ja sama luku rajaa naytetyt ottelut. HUOM: `?? 6` on keksitty oletus jos kentta puuttuu — kirjattu erillisena P2:na, ei tama portti'
+				'clean sheet % + fixture difficulty -kortti: ikkuna on cs.meta.near_horizon_gw, eri artefaktin oma kentta, ja sama luku rajaa naytetyt ottelut. HUOM: `?? 6` on keksitty oletus jos kentta puuttuu, kirjattu erillisena P2:na, ei tama portti'
 		},
 		{
 			line: '<h2>Clean sheet % + fixture difficulty <span class="muted">(next {nearHorizon} GWs)</span></h2>',
@@ -347,7 +347,7 @@ const WINDOW_LABELS: Record<string, { name: string; reason: string }[]> = {
 		{
 			name: 'cardWindowLabel',
 			reason:
-				'jakokortin alaotsikon ikkuna: kierros/ikkunasortti tai summasortilla lukijan ikkuna — kortti on kuva, joten tama ei saa olla sarakkeiden vali'
+				'jakokortin alaotsikon ikkuna: kierros/ikkunasortti tai summasortilla lukijan ikkuna, kortti on kuva, joten tama ei saa olla sarakkeiden vali'
 		}
 	],
 	'lib/components/ProductIntro.svelte': [
@@ -528,7 +528,7 @@ function labelProblems(relPath: string, src: string): string[] {
 		const ds = s.decls.filter((d) => d.name === reg.name);
 		if (ds.length === 0) {
 			out.push(
-				`${relPath}: rekisteroity ikkunanimi \`${reg.name}\` on kadonnut — paivita WINDOW_LABELS ja perustele (${reg.reason})`
+				`${relPath}: rekisteroity ikkunanimi \`${reg.name}\` on kadonnut, paivita WINDOW_LABELS ja perustele (${reg.reason})`
 			);
 			continue;
 		}
@@ -537,7 +537,7 @@ function labelProblems(relPath: string, src: string): string[] {
 				out.push(`${relPath}:${d.from}: \`${d.name}\` ei tule lukijasta ($lib/xpHorizon)`);
 			if (s.rowy.has(d.name))
 				out.push(
-					`${relPath}:${d.from}: \`${d.name}\` on rivilistan (gameweeks/gwCols) johdannainen — summan ikkuna ei tule sarakkeista`
+					`${relPath}:${d.from}: \`${d.name}\` on rivilistan (gameweeks/gwCols) johdannainen, summan ikkuna ei tule sarakkeista`
 				);
 		}
 	}
@@ -557,7 +557,7 @@ function rowsProblems(relPath: string, src: string): string[] {
 		.filter((l) => !allow.some((a) => a.line === l.text.trim()))
 		.map(
 			(l) =>
-				`${relPath}:${l.n}: \`rows\` on sarakkeiden maara, ei summan ikkuna — perustele ROWS_USES-listalla: ${l.text.trim()}`
+				`${relPath}:${l.n}: \`rows\` on sarakkeiden maara, ei summan ikkuna, perustele ROWS_USES-listalla: ${l.text.trim()}`
 		);
 }
 
@@ -571,7 +571,7 @@ describe('summan ikkunan vaite: vain lukija saa vastata (18.9 laajennus)', () =>
 		expect(problems).toEqual([]);
 	});
 
-	it('A2: poikkeuslista ei vanhene — jokainen poikkeusrivi loytyy koodista sanatarkasti', () => {
+	it('A2: poikkeuslista ei vanhene, jokainen poikkeusrivi loytyy koodista sanatarkasti', () => {
 		for (const [f, list] of Object.entries(CLAIM_EXCEPTIONS)) {
 			const lines = codeLines(read(f)).map((l) => l.text.trim());
 			const src = read(f);
@@ -802,7 +802,7 @@ function sumAndCountProblems(relPath: string, src: string): string[] {
 		.filter((l) => !allow.some((a) => a.line === l.text.trim()))
 		.map(
 			(l) =>
-				`${relPath}:${l.n}: horisonttisumma ja rivilistan pituus samalla rivilla — summan ikkuna tulee lukijasta (xpHorizon/xpTotalClaim), ei sarakkeista: ${l.text.trim()}`
+				`${relPath}:${l.n}: horisonttisumma ja rivilistan pituus samalla rivilla, summan ikkuna tulee lukijasta (xpHorizon/xpTotalClaim), ei sarakkeista: ${l.text.trim()}`
 		);
 }
 
@@ -816,7 +816,7 @@ describe('saanto E: summan ikkunaa ei nimeta rivien maaralla (sulautus havinnees
 		expect(problems).toEqual([]);
 	});
 
-	it('E2: poikkeuslista ei vanhene — jokainen poikkeusrivi loytyy koodista', () => {
+	it('E2: poikkeuslista ei vanhene, jokainen poikkeusrivi loytyy koodista', () => {
 		for (const [f, list] of Object.entries(SUM_AND_COUNT_EXCEPTIONS)) {
 			const lines = codeLines(read(f)).map((l) => l.text.trim());
 			for (const a of list)
@@ -834,7 +834,7 @@ describe('saanto E: summan ikkunaa ei nimeta rivien maaralla (sulautus havinnees
 
 	it('MUT-1 (pelaajakortin sivulause ilman vaitemerkkia): A vihrea, E punainen', () => {
 		const f = 'lib/components/PlayerCard.svelte';
-		expect(claimProblems(f, MUT_1), 'saanto A EI nae tata — siksi E on olemassa').toEqual([]);
+		expect(claimProblems(f, MUT_1), 'saanto A EI nae tata, siksi E on olemassa').toEqual([]);
 		expect(rowsProblems(f, MUT_1)).toEqual([]);
 		expect(sumAndCountProblems(f, MUT_1).length).toBeGreaterThan(0);
 	});
