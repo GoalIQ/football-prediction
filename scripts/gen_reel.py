@@ -42,6 +42,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.gen_share_card import (  # noqa: E402
     AMBER, CREAM, FONT_BOLD, FONT_MED, INK, MUTED, WORDMARK,
 )
+from src.fpl_free_coverage import fpl_free_claim  # noqa: E402
 
 W, H = 1080, 1920
 FPS = 30
@@ -102,7 +103,10 @@ def card_cs() -> dict:
         "point": f"{best_six[0]} stay top across the first six as well.",
         "point2": f"{round(best_six[1])}% a game.",
         "cta1": "The full table is free",
-        "cta2": "Every team, every gameweek",
+        # 20.9 PORTTI: "every gameweek" oli epatosi ilmaissivusta (sama
+        # vaite kuin jakokortissa, kolmas pinta). Reel nayttaa vain
+        # nollapelit, joten kate on sivun kuusi kierrosta.
+        "cta2": f"Every team, {fpl_free_claim(projected_goals=False)}",
         "generated": (doc.get("meta") or {}).get("generated_at"),
     }
 

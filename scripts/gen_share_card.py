@@ -39,6 +39,7 @@ if str(ROOT_FOR_IMPORT) not in sys.path:
     sys.path.insert(0, str(ROOT_FOR_IMPORT))
 
 from src.models.fpl_club_best import club_best_rows, gap_text  # noqa: E402
+from src.fpl_free_coverage import fpl_free_claim  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -1264,7 +1265,9 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     # on yksi. Alaviite on kortin tarkistusreitti, joten sen on kuvattava
     # sivua sellaisena kuin lukija sen nakee. Sanamuoto on rekisteroity
     # data/rejected_phrases.json:iin, ettei se palaa toiseen generaattoriin.
-    d.text((MX, h - 84), "every club, both numbers, free on goaliq.app/fpl",
+    d.text((MX, h - 84),
+           f"every club, {fpl_free_claim(projected_goals=True)}, "
+           "free on goaliq.app/fpl",
            font=f_foot, fill=MUTED)
     d.text((MX, h - 52), "model projections, not betting advice",
            font=_font(FONT_MED, 16), fill=MUTED)
@@ -1473,7 +1476,15 @@ def render_gw_outlook_hero(spec: dict, out_path: Path, cs_only: bool = False) ->
                                     ) or (fxs and spec.get("promoted")):
         _rivi(y0, _promoted_footnote(), _font(FONT_MED, 16), MUTED)
         y0 += 26
-    _rivi(y0 + 2, "All 20 teams, every gameweek: goaliq.app/fpl  ·  free, no account",
+    # 20.9 PORTTI: "every gameweek" oli epatosi ilmaissivusta, ja se on sama
+    # vaite jonka sisarfunktio render_gw_outlook korjasi jo 17.9 -- korjaus
+    # kirjoitettiin siihen yhteen funktioon, ja tama eli livena. Kate tulee
+    # nyt yhdesta lukijasta ja seuraa sita mita TAMA kortti nayttaa:
+    # cs_only -> vain nollapelit (kuusi kierrosta sivulla), muuten molemmat
+    # luvut joilla on eri horisontti (src/fpl_free_coverage.py).
+    _rivi(y0 + 2,
+          f"All 20 teams, {fpl_free_claim(projected_goals=not cs_only)}: "
+          "goaliq.app/fpl  ·  free, no account",
           _font(FONT_BOLD, 21), CREAM)
     _rivi(y0 + 34, "Match predictions logged before kick-off and graded in public.  ·  not betting advice",
           _font(FONT_MED, 15), MUTED)
