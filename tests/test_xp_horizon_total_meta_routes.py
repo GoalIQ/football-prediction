@@ -232,9 +232,79 @@ def _sum_sites(obj, path: str = "$", ctx_id=None) -> list[tuple]:
     return out
 
 
+def _reitit(kohde, prefix: str = "") -> list[str]:
+    """Kaikki reitit MYOS include_routerin takaa.
+
+    MITATTU 20.9.2026. fastapi >= 0.141 ei enaa kopioi `include_router`in
+    reitteja `app.routes`iin: se lisaa YHDEN `_IncludedRouter`-olion, jonka
+    `path` on None ja jonka takana oikeat reitit ovat
+    `original_router.routes`issa (prefix `include_context.prefix`issa).
+    Endpointit vastaavat normaalisti — mitattu eristetylla probella:
+    `GET /api/fantasy/chip-ev` -> 200 samalla kun `app.routes` ei tuntenut
+    sita. Vanhemmissa (0.136) reitit ovat suoraan listassa.
+
+    Portti luki vain `app.routes`ia, joten CI (fastapi 0.141.1, py3.11) oli
+    punainen ja lokaali (0.136.1, py3.14) vihrea. Vika oli PORTISSA, ei
+    sovelluksessa: se vaitti yhdeksan endpointin kadonneen vaikka ne
+    vastaavat. Kavellaan siis rakenteen lapi versiosta riippumatta.
+    """
+    out: list[str] = []
+    for r in getattr(kohde, "routes", []):
+        polku = getattr(r, "path", None)
+        if polku:
+            out.append(prefix + polku)
+        sisempi = getattr(r, "original_router", None)
+        if sisempi is not None:
+            ctx = getattr(r, "include_context", None)
+            out.extend(_reitit(sisempi, prefix + (getattr(ctx, "prefix", "") or "")))
+    return out
+
+
 def _all_paths() -> set[str]:
-    return {r.path for r in m.app.routes
-            if getattr(r, "path", "").startswith("/api/fantasy")}
+    return {p for p in _reitit(m.app) if p.startswith("/api/fantasy")}
+
+
+def test_reittiluku_nakee_include_routerin_takaa():
+    """Portti mitataan ASENNETTUA fastapia vasten, ei oletettua versiota.
+
+    Ilman tata `_reitit` voi hiljaa lakata nakemasta include_routerin
+    reitteja seuraavassa fastapi-muutoksessa, ja silloin YLLA oleva portti
+    lapaisisi vaarin perustein: se vaittaisi reittien kadonneen (tai
+    paastaisi uuden vartioimattoman reitin lapi) vaikka sovellus tarjoilee
+    ne. Tama testi kaatuu heti kun rakenne muuttuu, ja kertoo mihin katsoa.
+
+    Synteettinen app, ei tuotannon reitteja: mitataan MEKANISMI.
+    """
+    from fastapi import APIRouter, FastAPI
+    import fastapi as _fa
+
+    r = APIRouter()
+
+    @r.get("/chip-ev")
+    def _a():                                    # pragma: no cover
+        return {}
+
+    sovellus = FastAPI()
+
+    @sovellus.get("/api/fantasy/xp")
+    def _b():                                    # pragma: no cover
+        return {}
+
+    sovellus.include_router(r, prefix="/api/fantasy")
+    loydetyt = set(_reitit(sovellus))
+    assert "/api/fantasy/xp" in loydetyt, loydetyt
+    assert "/api/fantasy/chip-ev" in loydetyt, (
+        f"_reitit ei nae include_routerin reittia (fastapi {_fa.__version__}). "
+        "Rakenne on muuttunut: katso miten reitit ovat app.routes-listassa "
+        "(0.136: suoraan; 0.141: _IncludedRouter.original_router.routes + "
+        "include_context.prefix) ja paivita _reitit. Loydetyt: {loydetyt}")
+
+    # Ja endpoint VASTAA molemmissa: portin pitaa kertoa reitista jota
+    # sovellus oikeasti tarjoilee, ei siita mita listarakenne sattuu
+    # nayttamaan. Ilman tata rivia testi hyvaksyisi listan joka on
+    # tosi mutta irrallaan siita mita palvelin tekee.
+    with TestClient(sovellus) as cl:
+        assert cl.get("/api/fantasy/chip-ev").status_code == 200
 
 
 def test_every_fantasy_route_is_tested_or_exempt_with_a_reason():
