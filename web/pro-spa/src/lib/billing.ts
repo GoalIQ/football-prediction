@@ -80,10 +80,26 @@ export async function startCheckout(plan: PlanKey, source = 'pro_web'): Promise<
 		});
 		if (!r.ok) {
 			const detail = (await r.json().catch(() => null))?.detail;
+			// 20.9.2026 MITATTU: 180 vrk aikana webissa 20 upgrade_tapped mutta
+			// vain 11 checkout_opened. Erotus oli NAKYMATON: tama haara palautti
+			// virheen kayttajalle eika kirjannut mitaan, joten emme tienneet
+			// onko 9 puuttuvaa aitoja epaonnistumisia vai sendBeaconin hukkaamia
+			// tapahtumia. Kolme ostoa koko historiassa - 45 %:n aukko viimeisella
+			// askeleella on liikaa jaadakseen arvaukseksi.
+			capture('checkout_failed', {
+				source, plan, price: PLANS[plan].price,
+				status: r.status, detail: detail ?? null, stage: 'response'
+			});
 			return `Checkout failed (${r.status})${detail ? `: ${detail}` : ''}`;
 		}
 		const { url } = await r.json();
-		if (!url) return 'Checkout failed: no redirect URL.';
+		if (!url) {
+			capture('checkout_failed', {
+				source, plan, price: PLANS[plan].price,
+				status: r.status, detail: 'no redirect URL', stage: 'no_url'
+			});
+			return 'Checkout failed: no redirect URL.';
+		}
 		// 1.8.2026: upgrade_tapped lahtee ENNEN tata kutsua, eli se mittaa
 		// aikomusta — myos silloin kun sessio ei synny ja kayttaja ei paady
 		// Stripeen koskaan. Tama lahtee vasta kun Stripe on palauttanut URLin,
@@ -94,6 +110,13 @@ export async function startCheckout(plan: PlanKey, source = 'pro_web'): Promise<
 		window.location.href = url;
 		return null;
 	} catch (e) {
+		// Verkkovirhe tai keskeytynyt pyynto: ilman tata se nakyi vain
+		// puuttuvana checkout_openedina, eli samalta kuin mittaushukka.
+		capture('checkout_failed', {
+			source, plan, price: PLANS[plan].price,
+			status: null, detail: e instanceof Error ? e.message : String(e),
+			stage: 'exception'
+		});
 		return `Checkout failed: ${e instanceof Error ? e.message : e}`;
 	}
 }
