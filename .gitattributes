@@ -1,1 +1,6 @@
 * text=auto eol=lf
+
+# 20.9: iCalendar (RFC 5545) VAATII CRLF-rivinvaihdon. `* text=auto eol=lf`
+# normalisoi sen LF:ksi, jolloin julkaistu fpl/deadlines.ics rikkoisi
+# tiukat kalenteriohjelmat. -text = tavut sellaisenaan, ei muunnosta.
+*.ics -text

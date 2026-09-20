@@ -108,6 +108,21 @@ def test_sivu_ja_kalenteri_sanovat_saman_seuraavan_deadlinen():
 
 
 @pytest.mark.skipif(not ICS.exists(), reason="deadlines.ics ei viela generoitu")
+def test_julkaistussa_tiedostossa_on_crlf():
+    """RFC 5545 vaatii CRLF:n, ja `.gitattributes` sanoo `* text=auto eol=lf`.
+
+    MITATTU 20.9: ensimmainen commit meni repoon LF:lla, eli julkaistu
+    kalenteri olisi rikkonut tiukat kalenteriohjelmat. Korjaus on
+    `*.ics -text`, ja tama testi lukee TAVUT levylta - jos joku poistaa
+    saannon, se nakyy tassa eika kayttajan kalenterissa.
+    """
+    CRLF, LF = bytes([13, 10]), bytes([10])
+    tavut = ICS.read_bytes()
+    assert CRLF in tavut, "julkaistu .ics on LF-muodossa (RFC 5545 vaatii CRLF)"
+    assert LF not in tavut.replace(CRLF, b""), "sekamuotoisia rivinvaihtoja"
+
+
+@pytest.mark.skipif(not ICS.exists(), reason="deadlines.ics ei viela generoitu")
 def test_sivulla_on_latauslinkki():
     html = SIVU.read_text(encoding="utf-8", errors="replace")
     assert 'href="/fpl/deadlines.ics"' in html, (
