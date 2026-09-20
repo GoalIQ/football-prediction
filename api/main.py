@@ -67,6 +67,7 @@ STRIPE_WEB_WEBHOOK_SECRET = os.getenv("STRIPE_WEB_WEBHOOK_SECRET", "")
 # Streamlit-palvelussa → arvot voi kopioida sellaisenaan API-serviceen.
 STRIPE_PRICE_MONTHLY_ID = os.getenv("STRIPE_PRICE_MONTHLY_ID", "")
 STRIPE_PRICE_SEASON_ID = os.getenv("STRIPE_PRICE_SEASON_ID", "")
+from src.regional_pricing import request_country, resolve_price  # noqa: E402
 # Sallitut SPA-originit success/cancel-redirecteille (avoin redirect estetty:
 # origin validoidaan tätä listaa vasten). Laajenna envillä tarvittaessa.
 WEB_CHECKOUT_ORIGINS = [
@@ -4205,6 +4206,10 @@ def create_web_checkout_session(
             status_code=500,
             detail=f"Stripe price not configured for plan '{req.plan}' "
                    f"(STRIPE_PRICE_{'SEASON' if req.plan == 'season' else 'MONTHLY'}_ID missing)")
+    # 20.9: aluehinta. Maa luetaan CF-otsakkeesta, EI pyynnon rungosta;
+    # tuntematon maa saa taysin hinnan (src/regional_pricing.py).
+    price_id, price_tier = resolve_price(
+        req.plan, request_country(request.headers), price_id)
 
     auth_header = request.headers.get("authorization", "")
     token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
@@ -4220,7 +4225,7 @@ def create_web_checkout_session(
             customer_email=supa_user.get("email"),
             client_reference_id=supa_user["id"],
             metadata={"user_id": supa_user["id"], "plan": req.plan,
-                      "source": "pro-web",
+                      "source": "pro-web", "price_tier": price_tier,
                       **({"ref": ref} if (ref := _clean_affiliate_ref(req.ref))
                          else {})},
             success_url=f"{base}/?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
@@ -4282,6 +4287,10 @@ def create_guest_checkout_session(
             status_code=500,
             detail=f"Stripe price not configured for plan '{req.plan}' "
                    f"(STRIPE_PRICE_{'SEASON' if req.plan == 'season' else 'MONTHLY'}_ID missing)")
+    # 20.9: aluehinta. Maa luetaan CF-otsakkeesta, EI pyynnon rungosta;
+    # tuntematon maa saa taysin hinnan (src/regional_pricing.py).
+    price_id, price_tier = resolve_price(
+        req.plan, request_country(request.headers), price_id)
 
     client_ip = (request.client.host if request.client else "") or "unknown"
     if not _guest_checkout_rate_ok(client_ip):
@@ -4296,6 +4305,7 @@ def create_guest_checkout_session(
             # EI customer_email/client_reference_id — Stripe kerää emailin,
             # webhook provisioi tilin sillä (account-after-payment).
             metadata={"plan": req.plan, "source": "pro-web-guest",
+                      "price_tier": price_tier,
                       **({"ref": ref} if (ref := _clean_affiliate_ref(req.ref))
                          else {})},
             success_url=f"{base}/?checkout=success&guest=1&session_id={{CHECKOUT_SESSION_ID}}",
