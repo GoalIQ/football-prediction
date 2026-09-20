@@ -36,6 +36,12 @@
    "rejected": "2026-09-17",
    "why": "vaite SIVUN RAKENTEESTA ja epatosi: /fpl:n taulukon sarakkeet ovat Team | Clean sheet % | Next opponent | FDR | Next 6 CS% | Squad turnover, ja projisoidut maalit ovat rivinsisainen alarivi Next opponent -solussa eika sarake; sanaa 'projected goals' ei ole yhdessakaan otsikossa. Molemmat luvut ovat sivulla ilmaiseksi, mutta sarakkeita on yksi. Mitattu julkaisutarkistajalla 17.9 gw-outlook-kortin alaviitteesta.",
    "replacement": "every club, both numbers, free on goaliq.app/fpl"
+  },
+  {
+   "phrase": "every gameweek: goaliq.app/fpl",
+   "rejected": "2026-09-20",
+   "why": "vaite ILMAISSIVUN KATTEESTA ja epatosi: /fpl antaa nollapeli-%:n ottelukohtaisena enintaan kuudelle kierrokselle (taulukon 'Next 6 CS%' + gridi GW5-GW10) ja sanoo sen itse ('Each column averages the model's difficulty over six gameweeks, so this shows where the swings are, not a number for any single match'); GW11-38 ovat keskiarvolohkoja. Projisoidut maalit ovat vain seuraavasta ottelusta, 20 kertaa eli kerran per joukkue. Sama vaite oli kolmella pinnalla: render_gw_outlook (korjattu 17.9), render_gw_outlook_hero ja gen_reel.py:n reel-CTA (molemmat livena 20.9 asti). 17.9 hylattiin MERKKIJONO eika VAITE, joten eri sanoin kirjoitettu sisarpinta lapaisi portin.",
+   "replacement": "src.fpl_free_coverage.fpl_free_claim(): 'next six gameweeks' kun pinta nayttaa vain nollapelit, 'both numbers' kun se nayttaa molemmat luvut (niilla on eri horisontti). Portti: tests/test_fpl_free_coverage_claims.py"
   }
  ],
  "poikkeukset": {},
