@@ -590,6 +590,10 @@ def build_context(fpl: dict, acc: dict) -> dict:
     return {
         "season": meta.get("season", "2026/27"),
         "next_gw": next_gw,
+        # 20.9: deadline-lista .ics-tiedostoa ja heron riviä varten.
+        # Sama artefakti jonka sivu muutenkin nayttaa, joten kalenteri
+        # ja sivu eivat voi sanoa eri aikaa.
+        "deadlines": meta.get("deadlines") or [],
         "gw_label": gw_date_label(fixtures, next_gw),
         "gw_started": gw_started(fixtures, next_gw),
         "cs_rows": cs_rows,
@@ -2455,6 +2459,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
      above it. Measured before: 31 screens on a phone, 4,688 words. -->
 <p class="meta">Season {c["season"]}. Data updated {c["data_date"]}.
 {f'Gameweek {c["next_gw"]} is being played, first kick-off was {c["gw_label"]}.' if c.get("gw_started") else f'Gameweek {c["next_gw"]} starts {c["gw_label"]}.'}</p>
+{_deadline_row(c)}
 
 <div class="cta-row">
   <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl">See the full xP dashboard on GoalIQ Premium</a>
@@ -4052,6 +4057,38 @@ def update_sitemap(iso_date: str) -> bool:
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
+def _deadline_row(c: dict) -> str:
+    """Seuraava deadline + kalenterilinkki, tai tyhja jos deadlinea ei ole.
+
+    MITATTU 20.9: web-kavijoista 1 520 / 1 540 kavi tasan yhtena paivana.
+    Sivulla ei ollut mitaan syyta palata, eika sivu edes kertonut milloin
+    seuraava deadline on. FPL-kayttajan paluuhetki ON deadline, ja se tieto
+    oli jo artefaktissa paasematta lukijalle asti.
+
+    Fail-closed: ilman deadlinea rivia ei tulosteta lainkaan. Tyhja rivi on
+    parempi kuin rivi joka vaittaa aikaa jota ei ole.
+    """
+    dls = c.get("deadlines") or []
+    if not dls:
+        return ""
+    eka = dls[0]
+    try:
+        hetki = _dt.datetime.fromisoformat(eka["utc"])
+    except (KeyError, TypeError, ValueError):
+        return ""
+    if hetki.tzinfo is None:
+        hetki = hetki.replace(tzinfo=_dt.timezone.utc)
+    hetki = hetki.astimezone(_dt.timezone.utc)
+    paiva = hetki.strftime("%d %B").lstrip("0")
+    kello = hetki.strftime("%H:%M")
+    # "remaining" on tasmallinen: tiedostossa ovat kauden JALJELLA olevat
+    # deadlinet, eivat kaikki 38. Menneita ei kirjoiteta kalenteriin.
+    return (f'<p class="meta">Next deadline: Gameweek {eka["gw"]}, '
+            f'{paiva} at {kello} UTC. '
+            f'<a href="/fpl/deadlines.ics" download>Put the remaining '
+            f'deadlines in your calendar</a>.</p>')
+
+
 def main() -> None:
     fpl, acc = load_data()
     c = build_context(fpl, acc)
@@ -4063,6 +4100,14 @@ def main() -> None:
         xp = attach_horizon_total_actionable(xp)
     html_out = render_page(c, xp)
     OUT_PATH.write_text(html_out, encoding="utf-8")
+    # Kalenteri samasta ajosta kuin sivu: jos se rakennettaisiin
+    # erikseen, sivu ja kalenteri voisivat sanoa eri aikaa.
+    from src.deadline_calendar import ics as _ics
+    _kal = _ics(c.get("deadlines") or [], _dt.datetime.now(_dt.timezone.utc))
+    _kal_path = ROOT / "fpl" / "deadlines.ics"
+    if _kal:
+        _kal_path.parent.mkdir(parents=True, exist_ok=True)
+        _kal_path.write_text(_kal, encoding="utf-8", newline="")
     sitemap_changed = update_sitemap(c["iso_date"])
     index_changed = update_index(c, xp)
     # Liigalohko samaan ajoon: "live now" johdetaan fixtureista joka kerta,

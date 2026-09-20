@@ -69,7 +69,12 @@ def test_creates_session_with_streamlit_parity_metadata(client, monkeypatch):
     assert r.json()["url"] == "https://checkout.stripe.com/test"
     # Webhook-fulfillment nojaa naihin (sama muoto kuin web/pro/billing.py)
     assert created["client_reference_id"] == "user-123"
+    # 20.9: `price_tier` kertoo mika hintataso annettiin (default = listahinta).
+    # Se on metadatassa jotta toteutunut tuotto on jaettavissa hintatasoittain
+    # ilman jalkikateista IP-paattelya - se on se luku jolla aluehinnan
+    # 60 vrk:n paluuehto ratkaistaan (kpl voi nousta ja tuotto laskea).
     assert created["metadata"] == {"user_id": "user-123", "plan": "season",
+                                   "price_tier": "default",
                                    "source": "pro-web"}
     assert created["mode"] == "subscription"
     assert created["line_items"] == [{"price": "price_season_test",
@@ -107,13 +112,72 @@ def test_guest_checkout_needs_no_auth_and_omits_user_refs(client, monkeypatch):
     assert "client_reference_id" not in created
     assert "customer_email" not in created
     # Webhook tunnistaa guest-oston tästä
-    assert created["metadata"] == {"plan": "monthly", "source": "pro-web-guest"}
+    assert created["metadata"] == {"plan": "monthly", "source": "pro-web-guest",
+                                   "price_tier": "default"}
     assert created["line_items"] == [{"price": "price_monthly_test",
                                       "quantity": 1}]
     # Success-URL kantaa guest=1 → SPA näyttää "check your email" -bannerin
     assert "guest=1" in created["success_url"]
     assert created["success_url"].startswith(
         "https://pro.goaliq.app/?checkout=success")
+
+
+def test_aluehinta_tulee_cf_otsakkeesta_ja_nakyy_metadatassa(client, monkeypatch):
+    """Kytkenta, ei pelkka resolveri.
+
+    `src/regional_pricing.py`:lla on omat testinsa, mutta ne eivat kerro
+    kayttaako ENDPOINT sita. Ilman tata aluehinta voisi toimia taydellisesti
+    ja silti jaada kytkematta - ja se nakyisi vain myynnissa, kuukausien
+    paasta (muisti: testi-kutsuu-funktiota-ei-kutsupaikkaa).
+    """
+    import api.main as m
+    _configure(monkeypatch)
+    _clear_rate_bucket(monkeypatch)
+    monkeypatch.setenv(
+        "STRIPE_REGIONAL_PRICES",
+        '{"monthly": {"NG": "price_ng_monthly"}}')
+    created: dict = {}
+    monkeypatch.setattr(
+        stripe.checkout.Session, "create",
+        staticmethod(lambda **kw: (created.update(kw),
+                                   type("S", (), {"url": "https://x/y"})())[1]))
+
+    r = client.post("/api/web/checkout/guest",
+                    json={"plan": "monthly", "origin": "https://pro.goaliq.app"},
+                    headers={"CF-IPCountry": "NG"})
+    assert r.status_code == 200
+    assert created["line_items"] == [{"price": "price_ng_monthly", "quantity": 1}]
+    assert created["metadata"]["price_tier"] == "NG"
+
+    # Sama pyynto ilman otsaketta saa listahinnan: tuntematon maa ei putoa
+    # aluehintaan.
+    created.clear()
+    _clear_rate_bucket(monkeypatch)
+    r = client.post("/api/web/checkout/guest",
+                    json={"plan": "monthly", "origin": "https://pro.goaliq.app"})
+    assert created["line_items"] == [{"price": "price_monthly_test", "quantity": 1}]
+    assert created["metadata"]["price_tier"] == "default"
+
+
+def test_maata_ei_voi_valita_pyynnon_rungosta(client, monkeypatch):
+    """Jos maa tulisi rungosta, ostaja valitsisi itse hintansa."""
+    _configure(monkeypatch)
+    _clear_rate_bucket(monkeypatch)
+    monkeypatch.setenv("STRIPE_REGIONAL_PRICES",
+                       '{"monthly": {"NG": "price_ng_monthly"}}')
+    created: dict = {}
+    monkeypatch.setattr(
+        stripe.checkout.Session, "create",
+        staticmethod(lambda **kw: (created.update(kw),
+                                   type("S", (), {"url": "https://x/y"})())[1]))
+    r = client.post("/api/web/checkout/guest",
+                    json={"plan": "monthly", "origin": "https://pro.goaliq.app",
+                          "country": "NG", "region": "NG"})
+    assert r.status_code in (200, 422)
+    if r.status_code == 200:
+        assert created["line_items"] == [{"price": "price_monthly_test",
+                                          "quantity": 1}]
+        assert created["metadata"]["price_tier"] == "default"
 
 
 def test_guest_checkout_unknown_plan_422(client, monkeypatch):

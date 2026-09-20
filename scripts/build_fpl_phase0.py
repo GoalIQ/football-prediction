@@ -222,11 +222,24 @@ def fetch_fpl_official() -> dict | None:
         if (d := _parse_iso_utc(ev.get("deadline_time"))) and d > now
     ]
     next_deadline, deadline_gw = min(deadline_pairs, default=(None, None))
+    # 20.9: KAIKKI tulevat deadlinet, ei vain seuraava. Mitattu samana paivana:
+    # 1 520 / 1 540 web-kavijaa kavi tasan yhtena paivana, eli sivulla ei ole
+    # paluusyyta. FPL-kayttajan luonnollinen paluuhetki ON deadline, ja se
+    # tieto on jo tassa artefaktissa - se ei vain paassyt kayttajalle asti.
+    # Lista syottaa `fpl/deadlines.ics`:n (src/deadline_calendar.py), jotta
+    # lukija saa muistutuksen OMAAN kalenteriinsa. Yksi deadline ei riittaisi:
+    # silloin tiedosto pitaisi ladata joka kierros uudelleen.
+    deadlines = [
+        {"gw": gw, "utc": d.isoformat(timespec="seconds")}
+        for d, gw in sorted(deadline_pairs)
+        if gw is not None
+    ]
     return {
         "fixtures": fixtures,
         "teams": sorted(t["name"] for t in boot.get("teams", [])),
         "deadline_utc": next_deadline.isoformat(timespec="seconds") if next_deadline else None,
         "deadline_gw": deadline_gw,
+        "deadlines": deadlines,
         "source": "fpl-api",
         "source_label": "FPL official API (fantasy.premierleague.com)",
     }
@@ -278,6 +291,7 @@ def fetch_pulselive() -> dict:
         "teams": sorted(t["name"] for t in r.json()),
         "deadline_utc": None,  # pulselive ei tunne FPL-deadlineja
         "deadline_gw": None,
+        "deadlines": [],
         "source": "pulselive-fallback",
         "source_label": f"premierleague.com (pulselive) compSeason {COMPSEASON_2627}",
     }
@@ -671,6 +685,11 @@ def main() -> int:
             # 22.8: GW jonka deadline deadline_utc on — kesken kierroksen eri
             # kuin next_gameweek (ks. fetch_fpl_official).
             "deadline_gameweek": src.get("deadline_gw"),
+            # 20.9: kauden JALJELLA olevat deadlinet. Syottaa
+            # fpl/deadlines.ics:n ja sivun "Next deadline" -rivin.
+            # Fallback-lahde (pulselive) ei tunne deadlineja -> tyhja
+            # lista, ja silloin kalenteria eika rivia ei tulosteta.
+            "deadlines": src.get("deadlines") or [],
             # 25.8: kierrokset joiden JOKAINEN ottelu on alkanut. Emitoidaan
             # payloadiin jotta kuluttajien (mobiili, SPA, sivut, rate_team) ei
             # tarvitse paatella sita - rate_teamin datassa ei ole kickoff-aikoja
