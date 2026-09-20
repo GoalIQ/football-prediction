@@ -34,7 +34,7 @@ import json
 from pathlib import Path
 
 from src.models.fmt import fmt_pct
-from src.models.fpl_gameweek import actionable_gameweek
+from src.models.fpl_gameweek import actionable_gameweek, display_gameweek
 from src.models.fpl_xp import driver_facts
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -110,13 +110,55 @@ def fact_text(player: dict, team_cs: dict[str, float] | None = None,
     return ""
 
 
+def page_gameweek(path: Path = PHASE0_PATH) -> int | None:
+    """Kierros jonka `/fpl#clean-sheets` renderoi.
+
+    Luetaan SAMASTA dokumentista ja SAMALLA funktiolla kuin sivu
+    (`build_fpl_page.display_gw` -> `fpl_gameweek.display_gameweek`).
+    Sivun otsikko on kirjaimellisesti "Gameweek N clean sheet probabilities",
+    eli N on julkista tekstia, ja tama funktio on ainoa paikka jossa siihen
+    vastataan kortin puolella.
+    """
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return display_gameweek(doc.get("meta") or {}, doc.get("fixtures"))
+
+
 def fact_context(xp_doc: dict) -> dict:
-    """Sivun ja kortin yhteinen konteksti yhdesta xP-artefaktista."""
+    """Sivun ja kortin yhteinen konteksti yhdesta xP-artefaktista.
+
+    🔴 MITATTU 20.9.2026 (fp:n CI punainen, ajo 35528947828). Samalle
+    kysymykselle "mita kierrosta tama nollapeliluku koskee" oli KOLME
+    lukijaa: sivu `display_gameweek` (kuluva GW5), tama funktio
+    `actionable_gameweek` (GW6) ja testi metan raaka `next_gameweek`.
+    Kortin selite (`PAGE_LEGEND`, JULKISTA TEKSTIA) lupaa lukijalle
+    "the same number as on goaliq.app/fpl#clean-sheets", ja kesken
+    kierroksen se lupaus oli epatosi: kortti sanoi "ARS 31.4% clean sheet
+    chance" kun sivun solu oli 46,5 %.
+
+    🔴 MIKSI FAIL-CLOSED EIKA "KAYTA SIVUN LUKUA". Kortin muut luvut
+    (xP-horisontti, rivijarjestys) koskevat kierrosta johon voi VIELA
+    vaikuttaa. Jos nollapeliluku otettaisiin sivun nayttamasta kuluvasta
+    kierroksesta, kortti olisi sisaisesti ristiriitainen: yksi rivi
+    menneesta, muut tulevasta. Ja jos kortti pitaisi oman kierroksensa,
+    lupaus tarkistettavuudesta olisi epatosi - ilmaispinnalla EI ole
+    GW6:n nollapelilukua niin kauan kuin sivu nayttaa GW5:ta.
+    Kolmas vaihtoehto on ainoa rehellinen: kun kierrokset eroavat, EI
+    todistetta. Sama konventio kuin tuplakierroksella `load_team_cs`:ssa.
+
+    Ikkuna sulkeutuu itsestaan: `display_gameweek` siirtyy heti kun
+    kierroksen jokainen ottelu on alkanut.
+    """
     meta = xp_doc.get("meta") or {}
-    # Kierros samalta lukijalta kuin jakopinnat (fpl_gameweek): mihin voi
-    # viela vaikuttaa, ei metan raaka kierroskentta.
-    return {"team_cs": load_team_cs(actionable_gameweek(meta)),
-            "prev_season": previous_season_label(meta)}
+    act = actionable_gameweek(meta)
+    sivu = page_gameweek()
+    gw = act if (act is not None and act == sivu) else None
+    return {"team_cs": load_team_cs(gw),
+            "prev_season": previous_season_label(meta),
+            # Diagnostiikka kutsupaikoille ja testeille: miksi todiste puuttuu.
+            "cs_gameweek": gw, "cs_actionable_gw": act, "cs_page_gw": sivu}
 
 
 def card_sub(player: dict, ctx: dict) -> str | None:

@@ -369,15 +369,39 @@ def test_xp_card_fact_is_on_the_players_own_row():
 
 def test_clean_sheet_fact_equals_the_fpl_page_team_number():
     """Portti k2 C1: pelaajan nollapeli on SEURAN GW-luku samasta kentasta
-    jota /fpl renderoi, ei pistekomponentista johdettu."""
+    jota /fpl renderoi, ei pistekomponentista johdettu.
+
+    🔴 MUUTETTU 20.9.2026. Testi luki kierroksen metan RAAASTA
+    `next_gameweek`-kentasta, eli se oli KOLMAS lukija samalle kysymykselle
+    (sivu `display_gameweek`, kortti `actionable_gameweek`). Kolmella
+    lukijalla portti ei mitannut kortin polkua vaan omaansa: se oli punainen
+    kesken kierroksen vaikka kortti olisi ollut oikeassa, ja se olisi ollut
+    vihrea vaikka kortti olisi ollut vaarassa. Nyt konteksti tulee
+    `fact_context`ista - samasta funktiosta jota `gen_share_card.py` ja
+    longtail-sivut kutsuvat.
+    """
     import config as _cfg
-    from src.models.fpl_why_drivers import load_team_cs, fact_text
+    from src.models.fpl_why_drivers import fact_context, fact_text
     doc = _page_doc()
     xp = json.loads((_cfg.DATA_DIR / "fpl_xp_projections.json").read_text(encoding="utf-8"))
-    gw = xp["meta"]["next_gameweek"]
-    team_cs = load_team_cs(gw)
+    ctx = fact_context(xp)
+    team_cs = ctx["team_cs"]
     if not team_cs:
-        pytest.skip("phase0 ei kanna tata kierrosta")
+        # Kesken kierroksen sivu ja kortti puhuvat eri kierroksesta, ja
+        # silloin todistetta EI saa antaa. Se on invariantti, ei syy ohittaa:
+        # tarkistetaan etta yksikaan rivi ei kanna nollapelivaitetta.
+        assert ctx["cs_gameweek"] is None
+        for p in xp["players"]:
+            if p.get("pos") in ("GKP", "DEF"):
+                t = fact_text(p, team_cs, "2025/26")
+                assert "clean sheet chance" not in t, (
+                    p["web_name"], t,
+                    f"sivu nayttaa GW{ctx['cs_page_gw']}, kortti koskee "
+                    f"GW{ctx['cs_actionable_gw']}")
+        pytest.skip(
+            f"sivu GW{ctx['cs_page_gw']} != kortti GW{ctx['cs_actionable_gw']}: "
+            "todistetta ei anneta (tarkistettu yllä)")
+    gw = ctx["cs_gameweek"]
     # Vertailukohta on SIVUN RENDEROITY SOLU, ei oma pyoristyskonventio:
     # build_context + cs_table_html on sama polku jonka /fpl#clean-sheets ajaa.
     from scripts import build_fpl_page as bfp
@@ -516,6 +540,11 @@ def test_card_gameweek_equals_page_and_fact_gameweek_in_every_phase(monkeypatch,
     monkeypatch.setattr(gsc, "_xp_payload", lambda: data)
     seen = []
     monkeypatch.setattr(fwd, "load_team_cs", lambda gw, path=None: (seen.append(gw) or {"MCI": 40.0}))
+    # 20.9: sivun kierros on nyt osa sopimusta (`fact_context` ei anna
+    # todistetta jos sivu ja kortti puhuvat eri kierroksesta), joten se on
+    # myos syotettava - muuten tama testi mittaisi levylla olevan
+    # phase0-tiedoston kierrosta eika vaihetta jota se vaittaa mittaavansa.
+    monkeypatch.setattr(fwd, "page_gameweek", lambda path=None: deadline_gw)
     monkeypatch.setattr(gsc, "_as_of", lambda d: "10 Sep", raising=False)
 
     class _A:
@@ -532,6 +561,43 @@ def test_card_gameweek_equals_page_and_fact_gameweek_in_every_phase(monkeypatch,
     html = lt._gw_xp_section(data)
     assert f"Gameweek {deadline_gw} expected points" in html
     assert f'<span class="m-sub drv">MCI 40% clean sheet chance</span>' in html
+
+
+@pytest.mark.parametrize("next_gw,deadline_gw", [(2, 3), (4, 4), (3, 5)])
+def test_nollapelitodistetta_ei_anneta_jos_sivu_on_eri_kierroksessa(
+        monkeypatch, next_gw, deadline_gw):
+    """🔴 Portti k4b, mitattu 20.9.2026 (fp:n CI, ajo 35528947828).
+
+    `PAGE_LEGEND` on JULKISTA TEKSTIA ja se lupaa nollapeliluvusta:
+    "the same number as on goaliq.app/fpl#clean-sheets". Kesken kierroksen
+    sivu nayttaa KULUVAA kierrosta (`display_gameweek`) ja kortti koskee
+    kierrosta johon voi VIELA vaikuttaa (`actionable_gameweek`), eli lupaus
+    on silloin epatosi - lukija ei loyda kortin lukua ilmaispinnalta.
+
+    Sopimus: kun kierrokset eroavat, todistetta EI anneta. Sama konventio
+    kuin tuplakierroksella (`load_team_cs`: ei arvoa -> ei todistetta).
+    NEGATIIVINEN KONTROLLI ylla olevalle testille: ilman tata sopimuksen
+    voisi tayttaa antamalla aina saman kierroksen molemmille.
+    """
+    from scripts import gen_share_card as gsc
+    from src.models import fpl_why_drivers as fwd
+    data = _phase_payload(next_gw, deadline_gw)
+    monkeypatch.setattr(gsc, "_xp_payload", lambda: data)
+    monkeypatch.setattr(gsc, "_as_of", lambda d: "10 Sep", raising=False)
+    monkeypatch.setattr(fwd, "load_team_cs",
+                        lambda gw, path=None: ({"MCI": 40.0} if gw is not None else {}))
+    # Sivu on YHDEN kierroksen jaljessa - tasan se tilanne joka on totta
+    # jokaisena lauantai-iltapaivana kun kierros on kesken.
+    monkeypatch.setattr(fwd, "page_gameweek", lambda path=None: deadline_gw - 1)
+
+    class _A:
+        gw = None
+        top = 20
+    spec = gsc.card_xp(_A())
+    beta = next(r for r in spec["rows"] if r["name"] == "Beta")
+    assert "clean sheet chance" not in (beta["sub"] or ""), (
+        beta["sub"], "kortti julkaisi luvun jota ilmaispinnalla ei ole")
+    assert beta["sub"] == "90 xMins"
 
 
 def test_kortti_ja_sivu_lukevat_SAMAA_kierrosfunktiota():
