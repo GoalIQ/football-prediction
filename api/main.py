@@ -4227,7 +4227,9 @@ _PAKOLLISET_ENV = {
     "SUPABASE_URL": "Supabase-kutsut eivat toimi",
     "STRIPE_PRICE_SEASON_ID": "vuositilausta ei voi ostaa",
     "STRIPE_PRICE_MONTHLY_ID": "kuukausitilausta ei voi ostaa",
-    "STRIPE_WEB_WEBHOOK_SECRET": "maksu ei provisioi tilia",
+    "STRIPE_WEB_WEBHOOK_SECRET": "web-maksu ei provisioi tilia",
+    "STRIPE_WEBHOOK_SECRET": "mobiilin Stripe-webhook ei kasittele mitaan",
+    "REVENUECAT_WEBHOOK_AUTH": "Play/App Store -osto ei anna Premiumia (veloitus menee lapi)",
     "PREMIUM_ENFORCE": "PREMIUM ANNETAAN ILMAISEKSI (oletus off)",
 }
 
