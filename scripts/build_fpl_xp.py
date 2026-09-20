@@ -1355,7 +1355,14 @@ def main(argv: list[str] | None = None) -> int:
             # None kun horisontissa ei ole yhtään fixturea (blank) — ei 0.0,
             # joka lukisi "ei tuota pisteitä".
             "xp_per_90": (round(full90_sum / full90_n, 2) if full90_n else None),
-            "xp_horizon_total": round(total, 2),
+            # 17.9 (XP-HORIZON-ALKANUT-KIERROS): SAMA FUNKTIO kuin
+            # /api/fantasy/xp:n serve-polulla, CSV:lla, poolilla ja kortilla.
+            # Oli `round(total, 2)` = pyoristamattomien summa; lukija summaa
+            # julkaistut (pyoristetyt) rivit. Mitattu 17.9: ero 234/482
+            # rivilla (max 0.02), 28 rivilla yhden desimaalin tarkkuudella,
+            # ja club-best-kortti sanoi eri eron kuin sivu. Yksi maaritelma:
+            # `xp_horizon_total` on `gameweeks[].xp`-rivien summa.
+            "xp_horizon_total": xp.horizon_total_actionable(gws, None),
             "gameweeks": gws,
         }
         if pid in prior_pids:

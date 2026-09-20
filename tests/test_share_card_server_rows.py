@@ -45,13 +45,22 @@ EI_TAULUKKO = ["price-changes", "best-captain"]
 # vaan tasan yksi sallittu liite per sarake (muisti: gate-substring-osuma-on-sokea).
 YKSIKKOLIITE = {"xmins": " xMins"}
 
+#: VAIHESIDOTTU OTSIKKO (20.9). /fpl/expected-points nimeaa xP-summan
+#: horisontin otsikossaan, ja LUKU RIIPPUU KAUDEN VAIHEESTA: "6gw xp" ennen
+#: deadlinea, "5gw xp" kun kierros on jo alkanut eika summa enaa sisalla sita
+#: (fix/spa-yksi-ikkunalukija). Kovakoodattu "6gw xp" oli vihrea tasan siina
+#: vaiheessa jossa se kirjoitettiin ja muuttui punaiseksi kun kierros alkoi -
+#: CLAUDE.md 6a kohta 3. Portti ei loysty: osuman on oltava TASAN YKSI sarake,
+#: joten "xp/gw" tai "xp/90" ei kelpaa tilalle.
+XP_HORISONTTI = re.compile(r"\d+gw xp")
+
 SARAKKEET = {
     "points": {"name": "player", "team": "team", "tag": "pos",
                "mid": "xp", "value": "pts"},
     # 9.9: `tag2` = xMins (Villen pyynto: minuutit korttiin). Solu on paljas
     # luku, kortti kantaa yksikon; YKSIKKOLIITE alla sallii tasan sen.
     "expected-points": {"name": "player", "team": "team", "tag": "pos",
-                        "tag2": "xmins", "mid": "price", "value": "6gw xp"},
+                        "tag2": "xmins", "mid": "price", "value": XP_HORISONTTI},
     # 25.8: siirretty palvelinriveille. Molemmilla sivuilla on klikkilajittelu
     # ja xg-leadersilla lisaksi viisi suodatinta, joten DOM-lukija olisi
     # kantanut sen nakyman johon jakaja sattui suodattamaan.
@@ -201,6 +210,13 @@ def test_card_rows_match_the_server_rendered_table(sivu):
             arvo = kortti.get(kentta)
             if not arvo:
                 continue
+            if isinstance(otsikko, re.Pattern):
+                osumat = [h for h in otsikot if otsikko.fullmatch(h)]
+                assert len(osumat) == 1, (
+                    f"{sivu}: {otsikko.pattern!r} osui {len(osumat)} "
+                    f"sarakkeeseen theadissa {otsikot!r} - portti vartioi "
+                    "vain kun osuma on yksikasitteinen")
+                otsikko = osumat[0]
             assert otsikko in otsikot, (
                 f"{sivu}: saraketta {otsikko!r} ei ole theadissa {otsikot!r}")
             j = otsikot.index(otsikko)

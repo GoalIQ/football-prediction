@@ -69,6 +69,7 @@ from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
 SITEMAP_FPL_PATH = _FP_ROOT / "sitemap-fpl.xml"
 from scripts.build_prediction_pages import DISCLAIMER
 from src.models.fpl_club_best import POSITIONS, club_best_rows, gap_text
+from src.models.fpl_xp import attach_horizon_total_actionable, horizon_sum_gw
 
 BASE = "https://goaliq.app"
 OUT_DIR = ROOT / "fpl"
@@ -822,8 +823,13 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     # lahetti lukijan sivulle joka ei sano sita (sama vikaluokka kuin
     # FPL-SIVU-OTTELUIDEN-XG). Fallback on nyt TOSI molemmissa tapauksissa.
     _gw = meta.get("gw")
-    _horizon = int(meta.get("horizon_gw") or 6)
-    if _gw and _horizon > 1:
+    # 18.9: API:n meta kertoo montako kierrosta summassa on
+    # (`horizon_total_gw`, s9). `horizon_gw` on sarakkeiden maara ja
+    # olisi kesken kierroksen yhden kierroksen verran liikaa.
+    # 18.9: `horizon_sum_gw` palauttaa None kun payload ei kerro ikkunaansa
+    # (ennen: keksitty 6). Ikkunaton payload -> ikkunaton teksti.
+    _horizon = horizon_sum_gw(meta)
+    if _gw and _horizon is not None and _horizon > 1:
         gw_txt = f"GW{_gw}-GW{_gw + _horizon - 1}"
     elif _gw:
         gw_txt = f"GW{_gw}"
@@ -867,7 +873,14 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         "</tr>"
         for i, pl in enumerate(players)
     )
-    horizon = int(meta.get("horizon_gw") or 6)
+    horizon = horizon_sum_gw(meta)
+    # 18.9: ei keksittya kuutosta. Ikkunaton payload -> sarake ja selite
+    # sanovat "model horizon" eivatka lukua jota API ei antanut.
+    hz_col = f"xP, {horizon} GWs" if horizon else "xP, model horizon"
+    hz_note = (
+        f"the {horizon}-gameweek projection divided by {horizon}"
+        if horizon else
+        "the model-horizon projection divided by the number of gameweeks in it")
     body = (
         f'<div class="lb-wrap"><table class="lb">'
         "<thead><tr>"
@@ -882,12 +895,12 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         # payloadissa, joten otsikko korjataan — ei keksita lukua.
         # Sama sanamuoto kuin expected-points-sivulla (portti B3, 21.8).
         '<th class="n">Owned</th><th class="n">xP/GW</th>'
-        f'<th class="n m-hide">xP, {horizon} GWs</th>'
+        f'<th class="n m-hide">{hz_col}</th>'
         "</tr></thead>"
         f"<tbody>{rows}</tbody></table></div>"
         f'<p class="note">All {len(players)} shown, free and without an '
         f"account. Ownership is FPL's own number. <em>xP/GW</em> is the "
-        f"{horizon}-gameweek projection divided by {horizon}, not a "
+        f"{hz_note}, not a "
         f'single-gameweek number: for one gameweek alone see '
         f'<a href="{BASE}/fpl/expected-points#gw-xp">expected points</a>. '
         f"Give the web tools your entry ID and the players you already own "
@@ -3012,7 +3025,11 @@ def render_club_best(xp: dict, now: datetime) -> str | None:
         return None
 
     _gws = ((players[0] if players else {}).get("gameweeks")) or []
-    n_gw = len(_gws) or 6
+    # 18.9: SUMMAN pituus, ei sarakkeiden maara — `xp_horizon_total`
+    # ei sisalla jo alkanutta kierrosta, mutta rivit sisaltavat.
+    # Yksi lukija (`fpl_xp.horizon_sum_gw`), portti:
+    # tests/test_horizon_window_label_discipline.py
+    n_gw = horizon_sum_gw(meta, _gws)
     # 25.8: ikkuna johdetaan TODELLISISTA kierroksista eika kaavasta
     # `first + n - 1`, joka valehtelee heti kun lista ja aloituskierros ovat
     # eri mielta. Ks. src/models/fpl_gameweek.window_label.
@@ -3154,7 +3171,11 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         return None
 
     _gws = ((players[0] if players else {}).get("gameweeks")) or []
-    n_gw = len(_gws) or 6
+    # 18.9: SUMMAN pituus, ei sarakkeiden maara — `xp_horizon_total`
+    # ei sisalla jo alkanutta kierrosta, mutta rivit sisaltavat.
+    # Yksi lukija (`fpl_xp.horizon_sum_gw`), portti:
+    # tests/test_horizon_window_label_discipline.py
+    n_gw = horizon_sum_gw(meta, _gws)
     # 25.8: ikkuna johdetaan TODELLISISTA kierroksista eika kaavasta
     # `first + n - 1`, joka valehtelee heti kun lista ja aloituskierros ovat
     # eri mielta. Ks. src/models/fpl_gameweek.window_label.
@@ -4102,8 +4123,12 @@ def render_club_page(short: str, players: list[dict], meta: dict,
         return None
     nimi = str(players[0].get("team") or short)
     url = f"{BASE}/fpl/club/{slug}"
-    n_gw = len(((players[0]).get("gameweeks")) or []) or 6
     _gws3 = ((players[0] if players else {}).get("gameweeks")) or []
+    # 18.9: SUMMAN pituus, ei sarakkeiden maara — `xp_horizon_total`
+    # ei sisalla jo alkanutta kierrosta, mutta rivit sisaltavat.
+    # Yksi lukija (`fpl_xp.horizon_sum_gw`), portti:
+    # tests/test_horizon_window_label_discipline.py
+    n_gw = horizon_sum_gw(meta or {}, _gws3)
     window = _window_label(meta or {}, _gws3, n_gw)
 
     karki = sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))[:8]
@@ -4561,7 +4586,11 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         return None
 
     rows = sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))
-    n_gw = len(rows[0].get("gameweeks") or []) or 6
+    # 18.9: SUMMAN pituus, ei sarakkeiden maara — `xp_horizon_total`
+    # ei sisalla jo alkanutta kierrosta, mutta rivit sisaltavat.
+    # Yksi lukija (`fpl_xp.horizon_sum_gw`), portti:
+    # tests/test_horizon_window_label_discipline.py
+    n_gw = horizon_sum_gw(meta, rows[0].get("gameweeks") or [])
     # 🔴 KIERROSNUMEROT, EI "next N". Ks. yllä: `next_gameweek` on kesken
     # oleva kierros, joten "next 6" luetaan seuraavaksi kuudeksi ja se on
     # kokonaisen kierroksen verran vaarin heti kun kierros on pelattu.
@@ -5435,6 +5464,15 @@ def main() -> int:
     built = []
 
     xp = _load(XP_PATH)
+    if xp:
+        # 17.9 (XP-HORIZON-ALKANUT-KIERROS): `xp_horizon_total` samasta
+        # lukijasta kuin /api/fantasy/xp ja jakokortti - summa vain
+        # kierroksilta joihin voi viela vaikuttaa. Ilman tata club-best,
+        # expected-points, seurasivut ja Model XI olisivat kesken kierroksen
+        # kokonaisen kierroksen verran eri lukua kuin kortti jonka
+        # alatunniste ohjaa tanne. Rivit `gameweeks[]` pysyvat raakana
+        # (ikkunatekstit rajaavat itse `window_label`illa).
+        xp = attach_horizon_total_actionable(xp)
     now = _data_now(xp)
     if xp:
         page = render_captain(xp, now)

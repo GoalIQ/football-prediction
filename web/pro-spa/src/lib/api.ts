@@ -244,7 +244,15 @@ export type CardPlayer = Omit<
 export interface XpMeta {
 	available: boolean;
 	next_gameweek?: number;
+	/** GW-sarakkeiden maara riveissa. EI summan pituus: kesken kierroksen
+	 *  rivit alkavat jo alkaneesta kierroksesta. Otsikot lukevat
+	 *  `xpHorizon(meta)` ($lib/xpHorizon), eivat tata suoraan. */
 	horizon_gw?: number;
+	/** 17.9: ensimmainen kierros `xp_horizon_total`issa (deadline-kierros) ja
+	 *  montako kierrosta summattiin. Vanha API ei tuo naita; lukija on silloin
+	 *  fail-closed (ei "next"). */
+	horizon_total_from?: number;
+	horizon_total_gw?: number;
 	/** #143-katvealueraportti; baseline_mode === 'prev_season_archive'
 	 * = pre-season (mm. yellows on vielä edellisen kauden lukema). */
 	data_coverage?: { baseline_mode?: string; [key: string]: unknown };

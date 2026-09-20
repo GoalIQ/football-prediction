@@ -1037,6 +1037,11 @@ def empty_xp() -> dict:
             "generated_at": None,
             "next_gameweek": None,
             "horizon_gw": 0,
+            # XP-HORIZON-ALKANUT-KIERROS (17.9): samat avaimet kuin
+            # `attach_horizon_total_actionable` kirjoittaa, jotta klientti
+            # nakee saman skeeman myos tyhjassa rungossa.
+            "horizon_total_from": None,
+            "horizon_total_gw": 0,
         },
         "players": [],
     }
@@ -1056,6 +1061,243 @@ def empty_xp() -> dict:
 # ilman kierroksia joiden deadline on mennyt, ja `tests/test_xp_reader_
 # discipline.py` pitaa kirjaa siita kuka lukee raakaa `load_xp()`:ta ja miksi.
 # Uusi pinta saa oikean kayttaytymisen ilman etta kukaan muistaa mitaan.
+def horizon_total_actionable(rows, actionable_gw) -> float:
+    """`xp_horizon_total` = per-GW xP:n summa VAIN kierroksilta
+    `gw >= actionable_gw`. Yksi lukija; kaikki serve-polut kutsuvat tata.
+
+    🔴 MIKSI (XP-HORIZON-ALKANUT-KIERROS, mitattu livena 12.9): artefaktin
+    `xp_horizon_total` on putken summa KOKO `gameweeks[]`-listasta, ja lista
+    kantaa tarkoituksella myos jo alkaneen kierroksen (rate_team ja Model vs
+    actual tarvitsevat sen). Kesken kierroksen `next_gameweek` oli 4 ja
+    `deadline_gameweek` 5: Haaland 38.06 = GW4-9, mutta pelattavien GW5-9
+    summa oli 32.65. Luku nakyi XpTablessa, mobiilin xP-listassa,
+    ProductIntrossa ja jakokorteissa "next 6 GW" -otsikon alla, eli lukija sai
+    viisi kayttokelpoista kierrosta kuudeksi merkittyna — kokonaisen
+    kierroksen verran vaarin, ja tasan sen kierroksen verran johon han ei voi
+    enaa vaikuttaa.
+
+    Rajaus luetaan `fpl_gameweek.actionable_gameweek`ista (sama lukija kuin
+    swing-listojen `gw` ja `load_xp_actionable`), EI kellosta eika
+    `is_current`-lipusta. `actionable_gw = None` (vanha payload ilman
+    kierroskenttia) -> summa kaikista riveista, eli kaytos bittitarkasti
+    entinen. Rivi jonka `gw` ei ole kokonaisluku lasketaan mukaan samoin kuin
+    `load_xp_actionable` sailyttaa sen.
+
+    Rivien listaa EI muteta: alkanut kierros pysyy `gameweeks[]`:ssa, koska
+    sivu nayttaa gradatun kierroksen tuloksen elavan projektion vieressa
+    (`tests/test_xp_reader_discipline.py` RAW_ALLOWED `api/main.py`).
+
+    MAARITELMA ON JULKAISTUJEN RIVIEN SUMMA. Putken kirjoittajat
+    (`scripts/build_fpl_xp.py`, `scripts/build_spl_xp.py`) kutsuvat tata
+    samaa funktiota `actionable_gw=None`:lla. Ennen 17.9 putki kirjoitti
+    `round(sum(pyoristamattomat))`, ja se erosi rivisummasta 234/482
+    rivilla (max 0.02; 28 rivilla yhden desimaalin tarkkuudella), jolloin
+    API, CSV ja kortti olisivat sanoneet eri luvun kuin artefaktista
+    rakennetut sivut JO ENNEN DEADLINEA. Yksi maaritelma, yksi funktio.
+    """
+    total = 0.0
+    for g in rows or []:
+        if not isinstance(g, dict):
+            continue
+        xp = g.get("xp")
+        if isinstance(xp, bool) or not isinstance(xp, (int, float)):
+            continue
+        gw = g.get("gw")
+        if (isinstance(actionable_gw, int) and isinstance(gw, int)
+                and gw < actionable_gw):
+            continue
+        total += float(xp)
+    return round(total, 2)
+
+
+def attach_horizon_total_actionable(data: dict) -> dict:
+    """SERVE-TIME: kirjoita `players[].xp_horizon_total` uudelleen
+    `horizon_total_actionable`illa ja kerro metassa mita summattiin.
+
+    Sopimus (kiinnitetty 17.9, SPA ja mobiili rakentavat taman varaan):
+      meta.horizon_gw           ENNALLAAN = GW-sarakkeiden maara riveissa
+      meta.horizon_total_from   int  = ensimmainen summattu kierros, JA
+                                       lupa nimeta ikkuna. Julkaistaan vain
+                                       kun se tulee `deadline_gameweek`ista
+                                       (18.9, B3); muuten None, jolloin
+                                       klientti sanoo lukumaaran muttei
+                                       kierrosvalia eika sanaa "next".
+      meta.horizon_total_gw     int  = montako kierrosta summattiin
+      players[].xp_horizon_total     = summa kierroksilta >= horizon_total_from
+      players[].xp_per_gw            = xp_horizon_total / horizon_total_gw
+      players[].gameweeks[]     ENNALLAAN
+
+    `xp_per_gw` ON SAMAN LUKIJAN JOHDOS (18.9). Putki kirjoittaa sen
+    kaavalla `total / len(horizon)` eli KOKO horisontin keskiarvona
+    (`build_fpl_xp.py`, `build_spl_xp.py`), ja kentat tarjoillaan
+    vierekkain: /fpl/differentials nayttaa sarakkeet "xP/GW" ja
+    "xP, N GWs" ja SELITTAA niiden suhteen auki ("xP/GW is the
+    N-gameweek projection divided by N"). Mitattu 18.9 synteettisella
+    kesken-kierroksen vaiheella (deadline_gameweek=6, Haaland):
+    rajattu summa 31.97, putken xp_per_gw 6.41, sivun oma lasku
+    31.97/6 = 5.33 — lukija joka tekee sivun kertoman laskun sai eri
+    luvun kuin sivu nayttaa. Kentta oli pudonnut yhden lukijan
+    ulkopuolelle aanettomasti (reittiportin SUM_KEYS ei kattanut sita).
+    Nyt molemmat luvut tulevat samasta summasta ja samasta ikkunasta,
+    joten ne eivat voi olla eri mielta.
+
+    `horizon_total_gw == 0` (kausi ohi / kaikki kierrokset menneita):
+    summa on 0.0 jokaisella rivilla, joten `xp_per_gw` on 0.0 — ei
+    putken vanha luku, joka lukisi "tuottaa yha pisteita".
+
+    Idempotentti: johdetaan riveista ja metasta, ei edellisesta arvosta, joten
+    korttigeneraattori voi ajaa taman API-vastaukselle uudelleen ilman etta
+    luku liikkuu. Mutatoi annettua dictia (load_xp lukee levylta joka
+    kutsulla, joten jaettua tilaa ei ole) ja palauttaa sen.
+
+    Rivi ilman `gameweeks`-listaa jaa koskematta: siita ei voi laskea mitaan,
+    ja vanhat fikstuurit kantavat pelkan summan. Rivi jolla lista on (myos
+    tyhja) saa aina lasketun arvon — putken luku ei jaa voimaan vahingossa.
+    """
+    from src.models.fpl_gameweek import actionable_gameweek
+    meta = data.get("meta")
+    players = data.get("players")
+    if not isinstance(meta, dict) or not isinstance(players, list):
+        return data
+    gw = actionable_gameweek(meta)
+    summed: set[int] = set()
+    scoped: list[tuple[dict, list]] = []
+    for p in players:
+        if not isinstance(p, dict):
+            continue
+        rows = p.get("gameweeks")
+        if not isinstance(rows, list):
+            continue
+        scoped.append((p, rows))
+        for g in rows:
+            if not isinstance(g, dict) or not isinstance(g.get("gw"), int):
+                continue
+            if isinstance(gw, int) and g["gw"] < gw:
+                continue
+            summed.add(g["gw"])
+    # ALKU ON LUPA, EI PELKKA FAKTA (18.9, julkaisutarkistajan B3).
+    # `horizon_total_from` julkaistaan VAIN kun se tulee
+    # `deadline_gameweek`ista. `actionable_gameweek` putoaa ilman deadlinea
+    # takaisin `current_gameweek`iin eli `next_gameweek`iin, ja klientti ei
+    # nae eroa: se saa saman kentan ja lukee sen "summa alkaa seuraavasta
+    # deadlinesta" -lupauksena.
+    #
+    # 🔴 MITATTU 18.9 tuotannosta: `/api/fantasy/xp?league=spl` palauttaa
+    # `deadline_gameweek: None`, `next_gameweek: 8`, `horizon_gw: 6`, rivit
+    # GW8-13. Vanha koodi olisi julkaissut `horizon_total_from: 8`, ja
+    # mobiili+SPA olisivat kirjoittaneet JULKISEEN KUVAAN "GW8-GW13" ja
+    # "next 6 GWs" luvulle jonka ikkuna on johdettu `next_gameweek`ista —
+    # kentasta jonka drift on SPL-feedissa mittaamatta (jono
+    # SPL-DEADLINE-GW-MITTAUS) ja jonka lukijat nimenomaan kieltaytyvat
+    # lukemasta. PNG:ta ei voi korjata jalkikateen.
+    #
+    # SUMMA ITSE EI MUUTU: rajaus tehdaan yha `gw`:lla (actionable), eli
+    # luvut ovat bittitarkasti entiset. Vain LUPA nimeta ikkuna katoaa.
+    # `horizon_total_gw` (montako kierrosta summattiin) on mitattu fakta ja
+    # julkaistaan aina.
+    meta["horizon_total_from"] = horizon_total_licence(meta)
+    n = len(summed)
+    meta["horizon_total_gw"] = n
+    # KAKSI VAIHETTA, EI YKSI: `xp_per_gw` on `xp_horizon_total`
+    # jaettuna ikkunan pituudella, ja ikkunan pituus on koko payloadin
+    # ominaisuus (sama otsikko jokaisella rivilla). Yhdessa silmukassa
+    # ensimmaiset rivit jakaisivat viela kesken lasketulla luvulla.
+    for p, rows in scoped:
+        total = horizon_total_actionable(rows, gw)
+        p["xp_horizon_total"] = total
+        p["xp_per_gw"] = round(total / n, 2) if n else 0.0
+    return data
+
+
+def horizon_total_licence(meta: dict | None) -> int | None:
+    """Ikkunan alku JA lupa nimeta se. AINOA lahde: `deadline_gameweek`.
+
+    Oma funktio, jotta lahdeportti voi lukea TASAN taman rungon
+    (`tests/test_xp_horizon_window_licence.py`). Kun paatos asui
+    `attach_horizon_total_actionable`in sisalla, portti joutui arvaamaan mihin
+    asti lause ulottuu, ja `gw`-muuttujan (actionable) palautus olisi ollut
+    yhden merkin muokkaus vihrean portin alla.
+
+    `bool` on Pythonissa `int`in alityyppi: `deadline_gameweek: True` olisi
+    julkaissut kierroksen 1.
+    """
+    dl = (meta or {}).get("deadline_gameweek")
+    return dl if isinstance(dl, int) and not isinstance(dl, bool) else None
+
+
+def horizon_total_meta(meta: dict | None) -> dict:
+    """Sopimuksen meta-avaimet reitille joka tarjoilee `xp_horizon_total`in
+    (tai siita johdetun summan: team_xp_horizon, xi_xp_horizon,
+    margin_xp_horizon) OMASSA metassaan.
+
+    17.9: /api/fantasy/xp kirjoitti avaimet, mutta rate-team, fit,
+    model-squad, differentials, value, compare, edge, rival, career ja
+    player-stats rakentavat metansa kasin poimimalla avaimia `xp_data["meta"]`sta, ja
+    jokainen niista tarjoili poolin (jo rajatun) summan ILMAN tietoa siita,
+    monestako kierroksesta se on. Klientti jolla on luku mutta ei ikkunaa
+    kirjoittaa otsikkoon `horizon_gw`:n (sarakkeiden maaran), eli kesken
+    kierroksen "next 6 GW" viiden kierroksen summalle: sama vika kuin
+    kortilla.
+
+    Yksi paikka: `{**horizon_total_meta(xp_data["meta"])}` metaan.
+    Arvot tulevat `attach_horizon_total_actionable`ista (build_context ja
+    load_xp_actionable ajavat sen); tama ei laske mitaan itse eika voi olla
+    eri mielta. `tests/test_xp_horizon_total_meta_routes.py` kavelee
+    jokaisen reitin vastauksen ja vaatii avaimet aina kun summa on mukana.
+    """
+    m = meta if isinstance(meta, dict) else {}
+    return {"horizon_total_from": m.get("horizon_total_from"),
+            "horizon_total_gw": m.get("horizon_total_gw")}
+
+
+def horizon_sum_gw(meta: dict | None, gws=None,
+                   fallback: int | None = None) -> int | None:
+    """MONTAKO KIERROSTA `xp_horizon_total` SUMMAA — yksi lukija otsikoille.
+
+    🔴 EI `meta.horizon_gw`. Se on GW-SARAKKEIDEN maara riveissa, ja rivit
+    kantavat tarkoituksella myos jo alkanutta kierrosta. Kesken kierroksen
+    ne ovat eri luku (6 saraketta, 5 kierrosta summassa), ja jokainen sivu
+    joka kirjoitti otsikkoon `horizon_gw`:n sanoi "6 GWs" viiden kierroksen
+    summalle. Mitattu 18.9: `/fpl/expected-points` otsikoi summasarakkeen
+    `{len(gameweeks)}GW xP`:lla ja `/fpl/differentials` sanoi
+    "xP, 6 GWs" + "xP/GW is the 6-gameweek projection divided by 6".
+
+    Jarjestys:
+      1. `meta.horizon_total_gw` (`attach_horizon_total_actionable`) — tama
+         on TASAN summattujen kierrosten maara, ei arvio.
+      2. `gws` annettuna: vaikutettavat kierrokset siita listasta
+         (`fpl_gameweek.actionable_gameweeks`), eli sama rajaus kuin
+         summalla. Tama on reitti vanhalle payloadille jossa avainta ei ole.
+      3. `meta.horizon_gw`, sitten `fallback`.
+
+    🔴 EI KEKSITTYA KUUTOSTA (18.9, julkaisutarkistajan "MUUT"). `fallback`
+    oli `int = 6`, eli funktio palautti kuusi payloadille joka ei kertonut
+    ikkunastaan mitaan — ja sivut kirjoittivat sen otsikkoon ("next 6
+    gameweeks"). Mobiili kieltaytyy keksimasta (`lib/xpHorizon.ts`: "numero
+    jota API ei antanut on keksitty numero"), joten web sanoi eri asiaa
+    samasta datasta. Oletus on nyt None ja paluuarvo `int | None`:
+    kutsupaikka JOUTUU paattamaan mita ikkunaton sivu sanoo, eika voi vahingossa
+    julkaista kuutosta. Kutsupaikka joka oikeasti haluaa oletuksen antaa sen
+    itse (`fallback=6`) ja se nakyy diffissa.
+
+    Portti: `tests/test_horizon_window_label_discipline.py` kaataa jokaisen
+    pinnan joka nayttaa horisonttisumman ja lukee `horizon_gw`:n ohi taman.
+    """
+    m = meta if isinstance(meta, dict) else {}
+    n = m.get("horizon_total_gw")
+    if isinstance(n, int) and not isinstance(n, bool) and n > 0:
+        return n
+    if gws:
+        from src.models.fpl_gameweek import actionable_gameweeks
+        act = actionable_gameweeks(m, gws)
+        if act:
+            return len(act)
+    n = m.get("horizon_gw")
+    if isinstance(n, int) and not isinstance(n, bool) and n > 0:
+        return n
+    return fallback
+
+
 def load_xp_actionable(path: Path = XP_PATH) -> dict:
     """`load_xp()` ilman kierroksia joihin ei voi enaa vaikuttaa.
 
@@ -1078,7 +1320,10 @@ def load_xp_actionable(path: Path = XP_PATH) -> dict:
                                or g["gw"] >= gw]
     meta = data.setdefault("meta", {})
     meta["trimmed_from"] = gw
-    return data
+    # 17.9: rivien rajaus ei riittanyt — `xp_horizon_total` oli yha putken
+    # summa koko listasta, eli rajattu lukija palautti kentan joka ei
+    # vastannut omia rivejaan. Sama lukija kuin /api/fantasy/xp:lla.
+    return attach_horizon_total_actionable(data)
 
 
 def load_xp(path: Path = XP_PATH) -> dict:

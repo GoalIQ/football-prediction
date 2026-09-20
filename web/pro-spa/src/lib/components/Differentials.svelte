@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fetchDifferentials, type DifferentialsResponse, type Pos } from '$lib/fantasyTools';
+	import { xpHorizon } from '$lib/xpHorizon';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
@@ -41,7 +42,7 @@
 				midLabel: 'OWNED',
 				// 3.9 (audit): `xp_horizon_total` on SUMMA, ja pelkka "xP" luetaan
 				// kierroksen luvuksi. Ikkuna sarakeotsikkoon, kuten Valuessa.
-				valueLabel: `xP ${data?.meta?.horizon_gw ?? 6} GW`,
+				valueLabel: `xP ${xpHorizon(data?.meta).gws.toUpperCase()}`,
 				fileName: 'goaliq_differentials.png',
 				// 3.9 (audit): OWNED-sarake on FPL:n omaa dataa.
 				footNote: 'xP from the GoalIQ model, ownership from FPL',
@@ -161,9 +162,7 @@
 					<th class="num"><abbr title="Effective ownership in the FPL game">Owned %</abbr></th>
 					<th class="num m-hide"><abbr title="Average expected points per gameweek">xP/GW</abbr></th>
 					<th class="num m-hide"
-						><abbr title="Sum of expected points, next {data.meta.horizon_gw ?? 6} gameweeks"
-							>Total xP</abbr
-						></th
+						><abbr title={xpHorizon(data.meta).totalTitle}>Total xP</abbr></th
 					>
 					{#if hasDelta}
 						<th class="num"

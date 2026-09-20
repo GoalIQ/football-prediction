@@ -35,6 +35,7 @@ from src.models.fpl_rate_team import (
     build_optimal_squad,
     free_optimum,
 )
+from src.models.fpl_xp import horizon_sum_gw, horizon_total_meta
 
 MAX_LOCKED = 3
 
@@ -100,7 +101,18 @@ def fit_squad(locked_ids: list[int]) -> dict:
                  "within the budget. Try locking fewer or cheaper players.")
 
     xi_xp = fitted["xi_xp"]
-    horizon = int(xp_data["meta"].get("horizon_gw") or 6)
+    # 🔴 18.9: LAUSEEN ikkuna on SUMMAN ikkuna. `xi_xp` (ja `delta`) ovat
+    # `xp_horizon_total`ien summia eli vain vaikutettavilta kierroksilta,
+    # joten "over the 6-GW horizon" olisi kesken kierroksen kokonaisen
+    # kierroksen verran vaarin — sama vaite jonka backend juuri korjasi,
+    # nyt lauseen puolella. `meta.horizon_gw` pysyy sarakemaarana
+    # (sopimus), mutta sita ei lueta otsikkoon.
+    horizon = horizon_sum_gw(xp_data["meta"])
+    # 18.9: `horizon_sum_gw` ei enaa keksi kuutosta. Ikkunaton payload ->
+    # lause ilman lukua ("over the model horizon"), ei "over the None-GW".
+    hz_over = (f"over the {horizon}-GW horizon" if horizon
+               else "over the model horizon")
+    horizon_cols = int(xp_data["meta"].get("horizon_gw") or 6)
 
     free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
     optimal_xp = free["xi_xp"]
@@ -115,17 +127,21 @@ def fit_squad(locked_ids: list[int]) -> dict:
         tail = ("the model's best budget XI" if proven
                 else "the strongest budget XI the model found")
         message = (f"Locking {locked_names} costs nothing: this is "
-                   f"{tail} over the {horizon}-GW horizon.")
+                   f"{tail} {hz_over}.")
     else:
         tail = ("the model's best free squad" if proven
                 else "the strongest free squad the model found")
-        message = (f"Fitting {locked_names} costs {abs(delta):.1f} xP over "
-                   f"the {horizon}-GW horizon vs {tail}. "
+        message = (f"Fitting {locked_names} costs {abs(delta):.1f} xP "
+                   f"{hz_over} vs {tail}. "
                    f"Model projection, not advice you have to follow.")
 
     return {
         "meta": {
-            "horizon_gw": horizon,
+            "horizon_gw": horizon_cols,
+            # 17.9: `xp_horizon_total`, `xi_xp_horizon` ja
+            # `optimal_xp_horizon` ovat vaikutettavien kierrosten summia;
+            # ikkuna nimetaan metassa (sama sopimus kuin /xp:lla).
+            **horizon_total_meta(xp_data["meta"]),
             "next_gameweek": xp_data["meta"].get("next_gameweek"),
             "generated_at": xp_data["meta"].get("generated_at"),
             "budget_cap": round(BUDGET_TENTHS / 10, 1),

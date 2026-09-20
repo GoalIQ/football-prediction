@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { RateTeamChips } from '$lib/fantasyTools';
+	import type { XpHorizon } from '$lib/xpHorizon';
 
 	/**
 	 * DRAFT-COMPARE-OTSIKKORIVI (11.9.2026, FPL Demon -kaava).
@@ -19,7 +20,7 @@
 		rating,
 		teamXpGw,
 		teamXpHorizon,
-		horizonGw = 6,
+		horizon = null,
 		gw,
 		bank = null,
 		freeTransfers = null,
@@ -36,7 +37,12 @@
 		rating: number;
 		teamXpGw: number;
 		teamXpHorizon: number;
-		horizonGw?: number | null;
+		/** xP-summan ikkuna kutsujan metasta ($lib/xpHorizon). null = ei
+		 *  tiedossa. Vali naytetaan vain kun API julisti sen (actionableOnly):
+		 *  "Next 6 GW (GW5-10)" laskettuna `gw + horizon_gw`:sta olisi keksitty,
+		 *  koska rate-team summaa artefaktin xp_horizon_total-luvut, jotka
+		 *  voivat alkaa jo alkaneesta kierroksesta (fpl_rate_team.py:2105). */
+		horizon?: XpHorizon | null;
 		/** Kierros jolle `teamXpGw` on laskettu (meta.gw). */
 		gw: number;
 		/** null = ei tiedossa. Nolla olisi vaite tyhjasta pankista. */
@@ -102,7 +108,6 @@
 		return [...played, ...left];
 	});
 
-	let horizon = $derived(horizonGw ?? 6);
 </script>
 
 <div class="hrow" class:aligned>
@@ -140,9 +145,13 @@
 	     joten peruste kulkee mukana eika jaa poistetun lohkon mukana pois. -->
 	<span
 		class="cell"
-		title="Projected points over GW{gw} to GW{gw + horizon - 1}, captain doubled"
+		title="Projected points {horizon?.over ?? 'over the model horizon'}, captain doubled"
 	>
-		<span class="k">Next {horizon} GW <span class="u">(GW{gw}-{gw + horizon - 1})</span></span>
+		<span class="k"
+			>{#if horizon?.actionableOnly && horizon.range}Next {horizon.count} GW
+				<span class="u">({horizon.range})</span>{:else}Horizon xP
+				<span class="u">({horizon?.gws ?? 'model horizon'})</span>{/if}</span
+		>
 		<span class="v">{teamXpHorizon.toFixed(1)}<span class="u">xP</span></span>
 	</span>
 	<span class="cell" title="Money in the bank, from your FPL squad">

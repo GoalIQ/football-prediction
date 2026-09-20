@@ -14,6 +14,7 @@
 	 * (xP, captain ranker, chips, edge), ei menneisyyteen.
 	 */
 	import { capture } from '$lib/analytics';
+	import { xpHorizon } from '$lib/xpHorizon';
 	// 26.7: joukkuepaidat riveilla. IP-turva: neutraali siluetti + klubin
 	// primary-vari, EI pelaajakuvia eika krestejä. Renderoidaan <symbol>+<use>
 	// -parina (ks. PERF-huomio alempana), joten TeamKit-komponenttia ei tarvita.
@@ -141,7 +142,7 @@
 	// eteenpäin katsovaa mallidataa → sarake VAIN premiumille; ilmaisen
 	// xG-listan vapautus (26.7) koski taaksepäin katsovaa hyödykedataa.
 	let xpById = $state<Map<number, number> | null>(null);
-	let xpHorizon = $state<number | null>(null);
+	let xpHorizonN = $state<number | null>(null);
 	$effect(() => {
 		if (!premium || xpById) return;
 		fetchXp().then(
@@ -152,14 +153,14 @@
 						.filter((p) => typeof p.xp_horizon_total === 'number')
 						.map((p) => [p.id, p.xp_horizon_total])
 				);
-				xpHorizon = x.meta.horizon_gw ?? null;
+				xpHorizonN = xpHorizon(x.meta).count;
 			},
 			() => {
 				// xP-haun kaatuminen ei saa kaataa leaders-listoja — sarake vain jää pois.
 			}
 		);
 	});
-	const xpLabel = $derived(xpHorizon ? `${xpHorizon}GW xP` : 'xP');
+	const xpLabel = $derived(xpHorizonN ? `${xpHorizonN}GW xP` : 'xP');
 	const hasXpCol = $derived(premium && (xpById?.size ?? 0) > 0);
 
 	type Agg = {

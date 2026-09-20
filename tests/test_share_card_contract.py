@@ -153,8 +153,24 @@ def test_xp_kortti_seuraa_kierrossorttia():
     # Kutsupaikka: yksi lukija molemmille, ei paikan paalla paateltyja ehtoja.
     assert "value: cardValue(p)" in kortti, "kortin arvo ei tule yhdesta lukijasta"
     assert "valueLabel: cardValueLabel," in kortti, "nimilappu ei tule yhdesta lukijasta"
-    assert "const cardGw = sortGw;" in kortti
-    assert "const windowLabel = cardGw != null ? `GW${cardGw}` : horizonLabel;" in kortti
+    # 18.9 (SPA:n ikkunalukijan sulautus): ikkunanimi EI ole enaa kaksi
+    # paikallista muuttujaa share()-funktion sisalla (`cardGw`,
+    # `windowLabel`) vaan YKSI johdannainen `cardWindowLabel`. Muutos on
+    # paranus samaa luokkaa kuin 16.9: summan ikkuna oli share()-funktion
+    # sisalla vaihdettavissa sarakkeiden valiin yhdella muokkauksella, ja
+    # kortti on KUVA. Testi seuraa perassä lukijaan — se EI loysty:
+    # vaade "kortin ikkuna seuraa sorttia" on alla kolmena rivina.
+    assert "cardWindowLabel," in kortti, (
+        "kortin ikkunanimi ei tule yhdesta lukijasta (cardWindowLabel)")
+    assert "horizonLabel" not in kortti, (
+        "share() lukee summan ikkunaa suoraan — silloin kierrossortti voi "
+        "jaada ohittamatta, mika oli Villen 3.9 havainto")
+    # Lukija: sortti VOITTAA horisontin, ei toisin pain.
+    assert "let cardWindowLabel = $derived(sortWindowLabel ?? horizonLabel);" in s, (
+        "kortin ikkuna ei seuraa sorttia")
+    assert ("sortGw != null ? `GW${sortGw}` : sortWin "
+            "? `GW${sortWin.from}-${sortWin.to}` : null") in s, (
+        "sortWindowLabel ei nimea valittua kierrosta/ikkunaa")
     # Lukija: kierrossortti lukee valitun kierroksen, ei horisonttia.
     arvo = s[s.index("function cardValue("):s.index("let cardValueLabel")]
     lappu = s[s.index("let cardValueLabel"):]

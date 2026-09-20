@@ -25,7 +25,9 @@ from pathlib import Path
 
 import requests
 
-from src.models.fpl_xp import load_xp
+from src.models.fpl_xp import (
+    attach_horizon_total_actionable, horizon_total_meta, load_xp,
+)
 from src.models import fpl_actuals
 from src.models.fpl_model_race import model_points_net as _model_points_net
 from src.models.fpl_entry_history import infer_free_transfers
@@ -1444,8 +1446,18 @@ def resolve_subject_row(xp_data: dict, bootstrap: dict, by_id: dict[int, dict],
 
 def build_context() -> tuple[dict, dict, list[dict], dict[int, dict]]:
     """#35: jaettu konteksti rate-teamille + planner-suitelle:
-    (xp_data, bootstrap, pool, pool_by_id). Nostaa 503:n jos projektio puuttuu."""
-    xp_data = load_xp()
+    (xp_data, bootstrap, pool, pool_by_id). Nostaa 503:n jos projektio puuttuu.
+
+    17.9 (XP-HORIZON-ALKANUT-KIERROS): poolin `xp_horizon_total` on sama
+    serve-time-luku kuin /api/fantasy/xp:lla — summa vain kierroksilta joihin
+    voi viela vaikuttaa. Tama on YKSI paikka josta rate-team, fit,
+    model-squad, planner, captain, differentials, replacements, value,
+    compare, edge, chip-ev, wildcard-plan, plan-chains, rival, h2h ja league
+    saavat poolinsa, joten ne eivat voi nayttaa eri horisonttisummaa kuin
+    xP-taulukko. `gameweeks[]` pysyy raakana: rate-teamin "Team xP, GW3"
+    kesken GW3:a lukee kuluvan kierroksen rivin (RAW_ALLOWED-peruste).
+    """
+    xp_data = attach_horizon_total_actionable(load_xp())
     if not xp_data.get("meta", {}).get("available") or not xp_data.get("players"):
         raise RateTeamError(503, "xP projections are not available yet.")
     bootstrap = get_bootstrap()
@@ -2211,9 +2223,14 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
-            # Arvosana lasketaan koko artefaktin horisontilta (ml. kesken oleva
-            # kierros), siirrot vain niilta kierroksilta joihin siirto ehtii.
-            # Kaksi eri lukua tarkoituksella, molemmat nimetty.
+            # 17.9: arvosana, `team_xp_horizon` ja rivien `xp_horizon_total`
+            # lasketaan vaikutettavien kierrosten summasta (build_context ajaa
+            # attach_horizon_total_actionable:n; ennen 17.9 summa kantoi myos
+            # kesken olevan kierroksen). Nama kaksi kertovat mista
+            # kierroksesta ja monestako. Siirrot lasketaan vain niilta
+            # kierroksilta joihin siirto ehtii (`transfer_horizon_gw`);
+            # kaksi eri ikkunaa tarkoituksella, molemmat nimetty.
+            **horizon_total_meta(xp_data["meta"]),
             "transfer_horizon_gw": len(_t_gws) or None,
             "rating_method": "vs_optimal_budget_team",
             # 26.7: projektioiden osuvuus mukaan vastaukseen, jotta rating on

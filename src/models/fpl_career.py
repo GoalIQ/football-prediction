@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import src.models.fpl_rate_team as rt
 from src.models.fpl_rate_team import RateTeamError
+from src.models.fpl_xp import horizon_total_meta
 
 __all__ = ["career", "RateTeamError"]
 
@@ -310,6 +311,11 @@ def _model_teaser(entry: int) -> dict | None:
         # vastaan kapteeniton 310,77 olisi luku vaarasta sarakkeesta.
         "xp_vs_benchmark": _xp_vs_benchmark(rating),
         "horizon_gw": rated["meta"].get("horizon_gw"),
+        # 17.9: `team_xp_horizon` on vaikutettavien kierrosten summa
+        # (rate-team, build_context); `horizon_gw` yksin lukisi kesken
+        # kierroksen "6 GW" viiden kierroksen summalle. Sama sopimus kuin
+        # /api/fantasy/xp:lla, samasta metasta kopioituna.
+        **horizon_total_meta(rated["meta"]),
         "rating_method": rated["meta"].get("rating_method"),
         "note": ("Projected with the same match model behind GoalIQ's "
                  "public pre-match-logged track record."),
@@ -499,4 +505,7 @@ def career(entry: int) -> dict:
     teaser = _model_teaser(entry)
     if teaser:
         result["model_teaser"] = teaser
+        # 17.9: vastauksen meta nimeaa ikkunan aina kun vastaus kantaa
+        # horisonttisumman (tests/test_xp_horizon_total_meta_routes.py).
+        result["meta"].update(horizon_total_meta(teaser))
     return result

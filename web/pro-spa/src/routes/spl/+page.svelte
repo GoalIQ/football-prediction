@@ -22,6 +22,7 @@
 		type XpResponse
 	} from '$lib/api';
 	import { capture } from '$lib/analytics';
+	import { xpHorizon } from '$lib/xpHorizon';
 	import { DISCLAIMER } from '$lib/config';
 	import {
 		canShareToApps,
@@ -265,7 +266,7 @@
 			const method = await shareCard({
 				title: 'RSL EXPECTED POINTS',
 				subtitle: [
-					`next ${(xp?.meta?.horizon_gw as number) ?? 6} GWs`,
+					xpHorizon(xp?.meta).label,
 					...(posFilter !== 'ALL' ? [posFilter] : []),
 					'RSL Fantasy scoring, GoalIQ model'
 				].join(', '),
@@ -421,7 +422,7 @@
 				title: 'RSL MODEL SQUAD',
 				subtitle:
 					`${squad.cost.toFixed(1)}m of 100.0m, XI ${squad.xi_xp_horizon.toFixed(1)} xP ` +
-					`next ${(xp?.meta?.horizon_gw as number) ?? 6} GWs, GoalIQ model`,
+					`${xpHorizon(xp?.meta).over}, GoalIQ model`,
 				unitNote: 'xP per GW under each name',
 				fileName: 'goaliq_spl_model_squad.png',
 				rows: POS_ROWS.map((pos) =>
@@ -669,7 +670,7 @@
 
 	<section>
 		<div class="head-row">
-			<h2>Expected points <span class="muted">(next {(xp?.meta?.horizon_gw as number) ?? 6} GWs, top 50)</span></h2>
+			<h2>Expected points <span class="muted">({xpHorizon(xp?.meta).label}, top 50)</span></h2>
 			{#if xp?.meta?.available && players.length >= 3}
 				<button type="button" class="share-btn" onclick={shareXpCard} disabled={sharingXp}>
 					{sharingXp ? 'Rendering…' : shareButtonLabel()}
@@ -701,7 +702,7 @@
 							<th class="num">Price</th>
 							<th class="num">xP / GW</th>
 							<th class="num">xMins</th>
-							<th class="num">Total ({(xp?.meta?.horizon_gw as number) ?? 6} GW)</th>
+							<th class="num">Total ({xpHorizon(xp?.meta).gws})</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -779,7 +780,7 @@
 				</div>
 				<p class="muted small">
 					{modelSquad.note} Starting XI in bold, projected XI total {modelSquad.xi_xp_horizon.toFixed(1)}
-					xP over the next {(xp?.meta?.horizon_gw as number) ?? 6} GWs.
+					xP {xpHorizon(xp?.meta).over}.
 				</p>
 				<SquadPitch rows={pitchRows} bench={pitchBench} unitNote="xP per GW" />
 				<div class="table-wrap">

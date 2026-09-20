@@ -33,6 +33,7 @@ from src.models.fpl_rate_team import (
 )
 from src.models import fpl_transfers as _engine
 from src.models.fpl_my_team import squad_meta
+from src.models.fpl_xp import horizon_total_meta
 
 HIT_COST = HIT_COST_XP  # FPL:n -4; sama lähde kuin rate-teamin hold_verdict
 # 17.9.2026: FPL:n FT-katto on yksi vakio (`fpl_entry_history.FT_MAX`), jota
@@ -663,6 +664,10 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
         "meta": {"max_ownership": max_ownership, "pos": pos,
                  "generated_at": xp_data["meta"].get("generated_at"),
                  "horizon_gw": xp_data["meta"].get("horizon_gw"),
+                 # 17.9: rivien `xp_horizon_total` on vaikutettavien
+                 # kierrosten summa (build_context); nama kertovat mista
+                 # kierroksesta ja monestako. Sama sopimus kuin /xp:lla.
+                 **horizon_total_meta(xp_data["meta"]),
                  # 12.9: `gw` PUUTTUI, ja sivugeneraattori fallbackasi siksi
                  # merkkijonoon "this gameweek" - otsikko, title-tagi ja
                  # meta-description sanoivat siis YHTA kierrosta, kun taulukko
@@ -885,6 +890,9 @@ def compare_players(player_ids: list[int],
         }
     meta = {"generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
+            # 17.9: `xp_horizon_total` ja `margin_xp_horizon` ovat
+            # vaikutettavien kierrosten summia; ikkuna nimetaan metassa.
+            **horizon_total_meta(xp_data["meta"]),
             # V2: mistä raakastatit tulevat — frontend näyttää katteen
             # eikä myy edelliskauden lukua nykykauden mittauksena.
             "defcon_basis_season": dc_basis_season,

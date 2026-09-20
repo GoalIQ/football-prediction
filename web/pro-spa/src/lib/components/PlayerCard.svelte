@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { startPct } from '$lib/startPct';
+	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
 	// (Dubravka-case). FREE — kaikki kortin data on julkista (FPL bootstrap +
 	// julkaistut GoalIQ-projektiot). Rehellisyysraja pidetään visuaalisesti:
@@ -221,7 +222,10 @@
 	const exclusionReason = $derived(
 		player
 			? noXpReason(player, {
-					horizon: meta?.horizon_gw ?? null,
+					/* Kynnys mitattiin build-aikana KAIKKIEN rivien summasta
+					   (build_fpl_xp.py: total < MIN_XP_TOTAL), joten luku on
+					   sarakkeiden maara (`rows`), ei serve-time-summan pituus. */
+					horizon: xpHorizon(meta).rows,
 					minXp: (meta as { min_xp_total?: number } | null)?.min_xp_total ?? null
 				})
 			: null
@@ -508,11 +512,13 @@
 					sp != null && !excluded
 						? { value: `${sp}%`, label: 'chance of starting the next gameweek' }
 						: undefined,
+				// 18.9 (17.9 loydetty P1-1): mallirivi tulee VALMIINA lukijalta. Kortti on kuva,
+				// joka elaa ilman sivua, eika sen ikkunaa saa voida vaihtaa
+				// rivilistan pituudeksi yhdella muokkauksella ($lib/xpHorizon:
+				// xpTotalClaim). Luku ja ikkuna ovat samasta kutsusta.
 				modelLine:
 					premium && !excluded && typeof p.xp_horizon_total === 'number'
-						? `${p.xp_horizon_total.toFixed(1)} xP projected over a ${
-								(p.gameweeks ?? []).length
-							}-gameweek horizon`
+						? xpTotalClaim(meta, p.xp_horizon_total).text
 						: undefined,
 				// SHARE-CARD-WHY (Rowan 19.8) + todisteluvut (Rowan 20.8): ajurit
 				// omina riveinaan mallirivin alle, kukin oma lukunsa mukanaan.
@@ -751,9 +757,10 @@
 							{@const tot = player.xp_horizon_total}
 							{@const per = player.xp_per_gw}
 							{#if typeof tot === 'number' && typeof per === 'number'}
+								{@const claim = xpTotalClaim(meta, tot)}
 								<p>
-									<strong>{tot.toFixed(1)} xP</strong> projected over the next
-									{(player.gameweeks ?? []).length} gameweeks ({per.toFixed(1)} per GW).
+									<strong>{claim.value}</strong> {claim.tail}
+									({per.toFixed(1)} per GW).
 								</p>
 							{/if}
 							{#if goalOutlook}

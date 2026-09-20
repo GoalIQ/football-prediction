@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { draftPool, fetchFit, fetchXp, type FitResponse, type XpPoolPlayer } from '$lib/api';
+	import { xpHorizon } from '$lib/xpHorizon';
 	import { capture } from '$lib/analytics';
 	import { saveDraftIds } from '$lib/draft';
 	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
@@ -128,7 +129,7 @@
 			const provenBest = res.totals.optimal_proven !== false;
 			const method = await sharePitchCard({
 				title: provenBest ? 'BEST 15 AROUND YOUR LOCKS' : 'STRONGEST 15 THE MODEL FOUND',
-				subtitle: `${locked} locked, XI ${res.totals.xi_xp_horizon.toFixed(1)} xP over the ${res.meta.horizon_gw}-GW horizon, ${res.meta.budget_cap.toFixed(1)}m budget`,
+				subtitle: `${locked} locked, XI ${res.totals.xi_xp_horizon.toFixed(1)} xP over the ${xpHorizon(res.meta).span}, ${res.meta.budget_cap.toFixed(1)}m budget`,
 				unitNote: 'price, m',
 				rows,
 				bench: res.bench.map(pitchPlayer),
@@ -250,7 +251,7 @@
 
 			<dl class="totals">
 				<div>
-					<dt>XI expected points, next {result.meta.horizon_gw} GWs</dt>
+					<dt>XI expected points, {xpHorizon(result.meta).label}</dt>
 					<dd>{result.totals.xi_xp_horizon.toFixed(1)}</dd>
 				</div>
 				<div>

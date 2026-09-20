@@ -45,6 +45,8 @@ from scripts.gen_share_card import (  # noqa: E402
 
 W, H = 1080, 1920
 FPS = 30
+from src.models.fpl_xp import attach_horizon_total_actionable  # noqa: E402
+
 XP = ROOT / "data" / "fpl_xp_projections.json"
 PHASE0 = ROOT / "data" / "fpl_projections_phase0.json"
 STARTER_MINS = 60.0          # sama raja kuin copyn "expected starters only"
@@ -106,7 +108,12 @@ def card_cs() -> dict:
 
 
 def card_value() -> dict:
-    doc = json.loads(XP.read_text(encoding="utf-8"))
+    # 17.9: reel on julkinen video; `xp_horizon_total` samasta lukijasta
+    # kuin API ja kortit (vain vaikutettavat kierrokset). Ikkunan
+    # sanamuoto ("First six gameweeks") on oma rivinsa (REEL-HORISONTTI-
+    # IKKUNA).
+    doc = attach_horizon_total_actionable(
+        json.loads(XP.read_text(encoding="utf-8")))
     starters = [p for p in doc["players"]
                 if p.get("xmins", 0) >= STARTER_MINS and p.get("price")
                 and p.get("status") == "a"]

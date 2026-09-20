@@ -149,21 +149,28 @@ PATH_ALLOWED = {
     "scripts/build_fpl_xp.py":
         "KIRJOITTAJA: tama skripti tuottaa artefaktin (`OUT_PATH`). Se ei voi "
         "lukea sita rajatun lukijan lapi, koska lukijaa ei ole ennen kuin "
-        "tiedosto on olemassa.",
+        "tiedosto on olemassa. `xp_horizon_total` kirjoitetaan silti "
+        "lukijan omalla funktiolla (`horizon_total_actionable`, 17.9).",
     "scripts/build_fpl_longtail.py":
         "Rajaa itse `actionable_gameweek`illa (5 osumaa): otsikko lupaa "
         "'Best FPL Captain GW{n}', ja `next_gameweek` osoittaa kesken "
         "kierroksen jo lukittuun kierrokseen. Rajaus on tiukempi kuin "
-        "lukijan, koska se koskee myos `xp_dist`-lohkoa.",
+        "lukijan, koska se koskee myos `xp_dist`-lohkoa. Horisonttisumma "
+        "`xp_horizon_total` tulee `attach_horizon_total_actionable`ista "
+        "latauspisteessa (17.9), sama funktio kuin API:lla ja kortilla.",
     "scripts/build_fpl_page.py":
         "Sivu nayttaa myos gradatun kierroksen tuloksen elavan projektion "
         "vieressa (tarkistusreitti lukijalle); rajaus piilottaisi sen. "
         "Deadline-hetken lahde on eksplisiittisesti `deadline_gameweek` "
-        "miinus yksi.",
+        "miinus yksi. Etusivun taulukon `xp_horizon_total` tulee "
+        "`attach_horizon_total_actionable`ista latauspisteessa (17.9).",
     "scripts/build_fpl_why.py":
         "Sama tarkistusreitti kuin `build_fpl_page`: miksi-sivu selittaa "
         "juuri gradatun kierroksen, joten se tarvitsee MENNEEN kierroksen. "
-        "Rajaus tehdaan `deadline_gameweek`ista kayttokohdassa.",
+        "Rajaus tehdaan `deadline_gameweek`ista kayttokohdassa. "
+        "Horisonttisumma (valinnan jarjestys + faktalohko) tulee 18.9 "
+        "alkaen `attach_horizon_total_actionable`ista seka latauspisteessa "
+        "etta `select_players`issa, sama funktio kuin /api/fantasy/xp:lla.",
     "scripts/build_gw_digest.py":
         "Lukee vain `meta`-lohkon, ei kierroslistaa lainkaan (mitattu 7.9: "
         "0 osumaa), joten kierrosrajauksella ei ole kohdetta.",
@@ -172,16 +179,17 @@ PATH_ALLOWED = {
         "kierroslistaan); nousijavaite ei ole kierroskohtainen.",
     "scripts/gen_reel.py":
         "Lukee pelaajatason `xp_horizon_total`in, ei kierroslistaa (0 "
-        "osumaa `gameweeks[]`:hin). 🔴 HUOM: horisonttisumma sisaltaa "
-        "menneen kierroksen heti kun lista alkaa menneisyydesta, ja reelin "
-        "tekstissa lukee 'First six gameweeks' - ikkunan nimeaminen on oma "
-        "rivinsa (QUEUE REEL-HORISONTTI-IKKUNA). Rajaus ei silti kuulu "
-        "lukijalle: reel nayttaa horisontin, ei yhta kierrosta.",
+        "osumaa `gameweeks[]`:hin). Horisonttisumma tulee 17.9 alkaen "
+        "`attach_horizon_total_actionable`ista (vain vaikutettavat "
+        "kierrokset), sama funktio kuin API:lla. Reelin teksti 'First six "
+        "gameweeks' on yha oma rivinsa (QUEUE REEL-HORISONTTI-IKKUNA).",
     "scripts/gen_share_card.py":
         "Valitsee kierroksen eksplisiittisesti (`g.get('gw') == gw`) eika "
         "listan jarjestyksesta, ja ikkunan otsikko tulee `window_label`ista "
         "joka johtaa sen todellisista kierroksista. Kortti nayttaa myos "
-        "gradatun kierroksen, joten rajaus veisi silta sisallon.",
+        "gradatun kierroksen, joten rajaus veisi silta sisallon. "
+        "Horisonttisumma tulee `attach_horizon_total_actionable`ista (17.9), "
+        "sama funktio kuin API:lla.",
     "scripts/log_gw_calls.py":
         "Importoi `actionable_gameweek`in nimenomaan tata varten (portti: "
         "ei `next_gameweek` suoraan); kutsu kirjataan sille kierrokselle "

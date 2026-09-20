@@ -42,6 +42,13 @@
 	import SquadHeaderRow from './SquadHeaderRow.svelte';
 	import ProjectionsPanel from './ProjectionsPanel.svelte';
 	import type { XpResponse } from '$lib/api';
+	import { xpHorizon } from '$lib/xpHorizon';
+	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
+	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
+	function transferSpan(d: RateTeamResponse): string {
+		const n = d.transfers.hold_verdict?.horizon_gws ?? d.meta.transfer_horizon_gw;
+		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(d.meta).span;
+	}
 
 	/** 11.9: mita rivin "100" tarkoittaa. Sama portitettu ternaari kuin
 	 *  poistetuissa `.tiles`- ja `.facts`-lohkoissa, eli ei uutta vaitetta;
@@ -958,7 +965,7 @@
 				rating={data.rating.rating ?? Math.round(data.rating.percentile)}
 				teamXpGw={data.rating.team_xp_gw}
 				teamXpHorizon={data.rating.team_xp_horizon}
-				horizonGw={data.meta.horizon_gw ?? 6}
+				horizon={xpHorizon(data.meta)}
 				gw={data.meta.gw}
 				bank={data.team.bank}
 				freeTransfers={data.meta.free_transfers ?? null}
@@ -974,7 +981,7 @@
 				rating={dataB.rating.rating ?? Math.round(dataB.rating.percentile)}
 				teamXpGw={dataB.rating.team_xp_gw}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
-				horizonGw={dataB.meta.horizon_gw ?? 6}
+				horizon={xpHorizon(dataB.meta)}
 				gw={dataB.meta.gw}
 				bank={dataB.team.bank}
 				freeTransfers={dataB.meta.free_transfers ?? null}
@@ -985,13 +992,13 @@
 		</div>
 		<p class="muted compare-verdict">
 			{#if Math.abs(compareDiff ?? 0) < 0.5}
-				Dead level over the {data.meta.horizon_gw ?? 6}-GW horizon.
+				Dead level over the {xpHorizon(data.meta).span}.
 			{:else if (compareDiff ?? 0) > 0}
 				Team 1 ahead by {Math.abs(compareDiff ?? 0).toFixed(1)} xP over the
-				{data.meta.horizon_gw ?? 6}-GW horizon.
+				{xpHorizon(data.meta).span}.
 			{:else}
 				Team 2 ahead by {Math.abs(compareDiff ?? 0).toFixed(1)} xP over the
-				{data.meta.horizon_gw ?? 6}-GW horizon.
+				{xpHorizon(data.meta).span}.
 			{/if}
 		</p>
 	</div>
@@ -1258,12 +1265,7 @@
 				class="strip-item"
 				title={data.transfers.hold_verdict?.message ??
 					(stripHold
-						? `No move the model checked improves your team over the ${
-								data.transfers.hold_verdict?.horizon_gws ??
-								data.meta.transfer_horizon_gw ??
-								data.meta.horizon_gw ??
-								6
-							}-GW horizon.`
+						? `No move the model checked improves your team over the ${transferSpan(data)}.`
 						: 'The model found a move worth making.')}
 			>
 				<!-- 5.9 (Villen kysymys: "mika my teamissa on se ykkosasia mika
@@ -1333,7 +1335,7 @@
 			<details class="method">
 					<summary>How this rating is calculated</summary>
 					<p>
-						We compare your XI's projected points over a {d.meta.horizon_gw ?? 6}-gameweek horizon
+						We compare your XI's projected points over the {xpHorizon(d.meta).span}
 						to the best XI our model can build under the same squad rules: a 100.0m budget and
 						no more than three players from one club. 100 means you captured every projected
 						point those rules allow.
@@ -1403,7 +1405,7 @@
 		rating={data.rating.rating ?? Math.round(data.rating.percentile)}
 		teamXpGw={data.rating.team_xp_gw}
 		teamXpHorizon={data.rating.team_xp_horizon}
-		horizonGw={data.meta.horizon_gw ?? 6}
+		horizon={xpHorizon(data.meta)}
 		gw={data.meta.gw}
 		bank={data.team.bank}
 		freeTransfers={data.meta.free_transfers ?? null}
@@ -1676,7 +1678,7 @@
 				rating={dataB.rating.rating ?? Math.round(dataB.rating.percentile)}
 				teamXpGw={dataB.rating.team_xp_gw}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
-				horizonGw={dataB.meta.horizon_gw ?? 6}
+				horizon={xpHorizon(dataB.meta)}
 				gw={dataB.meta.gw}
 				bank={dataB.team.bank}
 				freeTransfers={dataB.meta.free_transfers ?? null}

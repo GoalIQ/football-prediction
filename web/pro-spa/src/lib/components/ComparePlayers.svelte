@@ -9,6 +9,7 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, shareButtonLabel } from '$lib/shareCard';
 	import { shareCompare } from '$lib/compareCard';
+	import { xpHorizon } from '$lib/xpHorizon';
 	import { startPct } from '$lib/startPct';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
 
@@ -179,7 +180,7 @@
 				</h3>
 				<dl>
 					<div>
-						<dt>Total xP, next {data.meta.horizon_gw ?? 6} GWs</dt>
+						<dt>Total xP, {xpHorizon(data.meta).label}</dt>
 						<dd class="strong">
 							{#if p.xp_horizon_total != null}{p.xp_horizon_total.toFixed(2)}{:else}<span
 									class="muted">no projection</span
