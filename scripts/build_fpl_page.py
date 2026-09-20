@@ -25,6 +25,7 @@ EI auto-pushia: git-komennot tulostetaan (workflow hoitaa commitin).
 
 from __future__ import annotations
 
+
 import datetime as _dt
 import json
 import os
@@ -39,6 +40,7 @@ from pathlib import Path
 # tata — sama bootstrap kuin build_prediction_pages.py:ssa.
 if str(Path(__file__).resolve().parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src import price_copy as PC  # noqa: E402
 
 from src.doubt_copy import lauseena as doubt_lauseena
 
@@ -368,16 +370,17 @@ def free_window_block(now=None) -> str:
     """
     from src.free_window import day_label, note_text, self_closing_block
     hinta_loppu = (
-        f"\u20ac3.99 a month. One subscription covers web, iOS and Android. "
-        f"Cancel anytime. 30-day money back on web purchases.</p>")
+        f"€{PC.MONTHLY} a month. One subscription covers web, iOS and "
+        f"Android. Cancel anytime. 30-day money back on web purchases. "
+        f"{PC.LOCAL_NOTE}</p>")
     auki = (
         f'<p class="price-note"><b>{note_text()}</b></p>\n'
         f'<div class="cta-row">\n'
         f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-freewindow">'
         f'Get Premium free</a>\n'
         f'</div>\n'
-        f'<p class="price-note">After {day_label()} it is \u20ac25 a year, '
-        f'which is under \u20ac2.10 a month, or '
+        f'<p class="price-note">After {day_label()} it is \u20ac{PC.SEASON} a year, '
+        f'which is under \u20ac{PC.season_monthly_cap()} a month, or '
         + hinta_loppu)
     # Ikkuna kiinni: ei ilmaislupausta, CTA takaisin ostoon, hinta preesensissa.
     kiinni = (
@@ -385,8 +388,8 @@ def free_window_block(now=None) -> str:
         f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-premium">'
         f'Get Premium</a>\n'
         f'</div>\n'
-        f'<p class="price-note">\u20ac25 a year, which is under '
-        f'\u20ac2.10 a month, or '
+        f'<p class="price-note">\u20ac{PC.SEASON} a year, which is under '
+        f'\u20ac{PC.season_monthly_cap()} a month, or '
         + hinta_loppu)
     return self_closing_block("FREE-UPSELL", kiinni, auki, now)
 
@@ -800,9 +803,10 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             (
                 "Yes. GoalIQ Premium at pro.goaliq.app adds expected points "
                 "(xP) per player for the coming gameweeks, a captain ranker and per-gameweek "
-                "breakdowns, from the same match model as this page. 3.99 EUR "
-                "per month or 25 EUR per year, and one account unlocks premium "
-                "on the web, iOS and Android."
+                "breakdowns, from the same match model as this page. "
+                f"{PC.MONTHLY} EUR per month or {PC.SEASON} EUR per year, and "
+                "one account unlocks premium on the web, iOS and Android. "
+                f"{PC.LOCAL_NOTE}"
             ),
         ),
     ]
@@ -1729,10 +1733,10 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             {"@type": "Offer", "name": "GoalIQ app (free download)",
              "price": "0", "priceCurrency": "USD"},
             {"@type": "Offer", "name": "GoalIQ Premium on the web, monthly",
-             "price": "3.99", "priceCurrency": "EUR",
+             "price": PC.MONTHLY, "priceCurrency": "EUR",
              "url": f"{PRO_URL}/checkout?plan=monthly"},
             {"@type": "Offer", "name": "GoalIQ Premium on the web, season (yearly)",
-             "price": "25", "priceCurrency": "EUR",
+             "price": PC.SEASON, "priceCurrency": "EUR",
              "url": PRO_CHECKOUT_SEASON_URL},
         ],
     }
@@ -2526,8 +2530,8 @@ log, match by match with every miss included, is on the
 <p>Premium adds per-gameweek expected points (xP) for every player in the
 projection, a captain ranker, transfer suggestions you can apply to your
 planned squad, a six-gameweek planner and the full DefCon leaderboard, from
-the same match model as this page. 3.99 EUR a month or 25 EUR a year, one
-subscription on web, iOS and Android. Rate my team, a captain pick and price
+the same match model as this page. {PC.MONTHLY} EUR a month or {PC.SEASON} EUR a year, one
+subscription on web, iOS and Android. {PC.LOCAL_NOTE} Rate my team, a captain pick and price
 watch stay free.</p>
 {free_window_block()}
 </aside>

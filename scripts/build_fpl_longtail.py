@@ -26,6 +26,7 @@ Ajo: python -m scripts.build_fpl_longtail  (accuracy-log.yml, 3 h)
 
 from __future__ import annotations
 
+
 import hashlib
 import json
 import math
@@ -44,6 +45,7 @@ except Exception:
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from src import price_copy as PC  # noqa: E402
 
 # 15.8: analytiikka MYOS longtail-sivuille. Mitattu 15.8: fpl.html sisalsi
 # PostHogin (202 latausta / 14 vrk) mutta /fpl/expected-points ja
@@ -97,7 +99,7 @@ UPSELL = (
     'pre-match-logged track record. The full toolkit (captain ranker, '
     'transfer planner, chip timing) is <a '
     'href="https://pro.goaliq.app/?tab=premium">GoalIQ Premium</a>: '
-    '3.99 €/month or 25 €/year. '
+    f'{PC.MONTHLY} €/month or {PC.SEASON} €/year. {PC.LOCAL_NOTE} '
     'One subscription on web, iOS and Android.</div>'
 )
 

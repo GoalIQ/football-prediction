@@ -36,8 +36,10 @@ sivu ei enää tarvitse ketään sulkeutuakseen.
 """
 from __future__ import annotations
 
+
 import datetime as _dt
 import json as _json
+from src import price_copy as PC
 
 #: IKKUNAN HETKI. Tama on backendin ja jokaisen paistetun sivun LAHDE:
 #: `api/premium.py` tuo taman (ei kirjoita omaa), ja sivun `data-until`,
@@ -295,9 +297,9 @@ def hero_price_note_open_html() -> str:
 
 
 def hero_price_note_closed_html() -> str:
-    return (f'<p class="cta-note">&euro;3.99 a month, or '
+    return (f'<p class="cta-note">&euro;{PC.MONTHLY} a month, or '
             f'<a href="{PRO_URL}checkout?plan=season" data-cta="hero">'
-            '&euro;25 a year</a>.</p>')
+            f'&euro;{PC.SEASON} a year</a>. {PC.LOCAL_NOTE}</p>')
 
 
 def hero_price_note_html(now: _dt.datetime | None = None) -> str:
@@ -346,14 +348,16 @@ def predictions_price_open_html() -> str:
         '      <p style="border-left:3px solid var(--amber);'
         'padding-left:10px;">' + note_text() + '</p>\n'
         '      <p style="color:var(--muted);">After that it is '
-        '€25 a year or €3.99 a month.\n'
+        f'€{PC.SEASON} a year or €{PC.MONTHLY} a month. '
+        f'{PC.LOCAL_NOTE}\n'
         '        Go deeper on every prediction.</p>')
 
 
 def predictions_price_closed_html() -> str:
     return (
-        '<div class="price">€3.99 / month</div>\n'
-        '      <p style="color:var(--muted);">Or €25 a year.\n'
+        f'<div class="price">€{PC.MONTHLY} / month</div>\n'
+        f'      <p style="color:var(--muted);">Or €{PC.SEASON} a year. '
+        f'{PC.LOCAL_NOTE}\n'
         '        Go deeper on every prediction.</p>')
 
 

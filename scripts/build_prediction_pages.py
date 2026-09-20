@@ -26,6 +26,7 @@ Ajo: python -m scripts.build_prediction_pages   (accuracy-log.yml ajaa 3 h väle
 
 from __future__ import annotations
 
+
 import json
 import re
 import sys
@@ -41,6 +42,7 @@ except Exception:
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from src import price_copy as PC  # noqa: E402
 
 from src.models import accuracy as acc
 from src.models.call_margin import call_state, pct_int
@@ -348,7 +350,7 @@ FOOTER = (
     '<a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">'
     "Google Play</a> and the "
     '<a href="https://apps.apple.com/app/id6780047163">App Store</a>. '
-    "Premium is 3.99 €/month or 25 €/year. "
+    f"Premium is {PC.MONTHLY} €/month or {PC.SEASON} €/year. {PC.LOCAL_NOTE} "
     "One subscription on web, iOS "
     "and Android.<br>" + DISCLAIMER + "</footer>\n"
 )
