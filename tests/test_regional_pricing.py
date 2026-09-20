@@ -68,6 +68,25 @@ def test_ilman_konfiguraatiota_kaytos_on_sama_kuin_ennen(monkeypatch):
     assert resolve_price("season", "NG", DEFAULT) == (DEFAULT, "default")
 
 
+@pytest.mark.parametrize("vaara", [
+    "prod_ABC123",          # tuote, ei hinta: yleisin kasin liittamisen virhe
+    "GoalIQ Premium",       # nimi
+    "1TptqDFLROrR5x8w",     # tunniste ilman prefiksia
+    "  ",                   # tyhja
+])
+def test_vaaran_muotoinen_tunniste_putoaa_oletushintaan(monkeypatch, vaara):
+    """Vaara tunniste ei saa KAATAA ostosta vaan pudota listahintaan.
+
+    Ilman tata typo Renderin muuttujassa rikkoisi ostamisen tasan niilla
+    markkinoilla joita varten aluehinta rakennettiin, ja se nakyisi vain
+    checkout_failed-tapahtumina - ei kenellekaan ennen kuin joku katsoo.
+    """
+    import json as _json
+    monkeypatch.setenv("STRIPE_REGIONAL_PRICES",
+                       _json.dumps({"season": {"NG": vaara}}))
+    assert resolve_price("season", "NG", DEFAULT) == (DEFAULT, "default")
+
+
 # --- 2. maa EI saa tulla clientilta ---------------------------------------
 
 def test_maa_luetaan_vain_cf_otsakkeesta():
@@ -110,3 +129,40 @@ def test_jokainen_checkout_kutsuu_aluehintalukijaa():
         assert "price_tier" in koodi, (
             f"{fn.name} ei kirjaa price_tieria metadataan -> toteutunutta "
             "tuottoa ei voi jakaa hintatasoittain")
+
+
+# --- 4. skripti ja lukija ovat samaa mielta muodosta ----------------------
+
+def test_setter_skriptin_tuottama_json_kelpaa_lukijalle(monkeypatch):
+    """`set_regional_prices.py` kirjoittaa muuttujan, `resolve_price` lukee sen.
+
+    Jos ne olisivat eri mielta muodosta, muuttuja nayttaisi oikealta Renderin
+    kayttoliittymassa ja jokainen maksaisi silti listahinnan - eika mikaan
+    kertoisi siita. Tama on kaytannossa koko luovutuspolun ainoa liitos.
+    """
+    import json
+    import importlib.util
+    polku = ROOT / "scripts" / "set_regional_prices.py"
+    spec = importlib.util.spec_from_file_location("srp", polku)
+    srp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(srp)
+
+    monkeypatch.setenv("STRIPE_REGIONAL_PRICES",
+                       json.dumps(srp.kartta("price_abc123"), separators=(",", ":")))
+    for maa in srp.MARKKINAT:
+        assert resolve_price("season", maa, DEFAULT) == ("price_abc123", maa), maa
+    # Listaamaton maa maksaa yha listahinnan.
+    assert resolve_price("season", "GB", DEFAULT) == (DEFAULT, "default")
+    # Kuukausi ei muutu kun vain season on konfiguroitu.
+    assert resolve_price("monthly", "NG", DEFAULT) == (DEFAULT, "default")
+
+
+def test_setter_hylkaa_vaaran_tunnisteen():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "srp", ROOT / "scripts" / "set_regional_prices.py")
+    srp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(srp)
+    for vaara in ("prod_ABC", "GoalIQ Premium", "", "1Tptq"):
+        with pytest.raises(SystemExit):
+            srp.kartta(vaara)

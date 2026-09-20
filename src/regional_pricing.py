@@ -90,4 +90,14 @@ def resolve_price(plan: str, country: str, default_price_id: str) -> tuple[str, 
     hinta = alue.get(country)
     if not isinstance(hinta, str) or not hinta.strip():
         return default_price_id, "default"
-    return hinta.strip(), country
+    hinta = hinta.strip()
+    # 20.9: MUOTOTARKISTUS. Kartta taytetaan kasin Renderin
+    # ymparistomuuttujaan, ja yleisin virhe on liittaa vaara tunniste:
+    # `prod_...` (tuote) tai `price_...`in sijaan nimi. Vaara tunniste ei
+    # putoaisi oletushintaan vaan kaataisi Stripe-kutsun, eli ostos
+    # epaonnistuisi TASAN niilla markkinoilla joita varten aluehinta
+    # rakennettiin. Muoto tarkistetaan siksi ennen kayttoa; tuntematon muoto
+    # kasitellaan kuten tuntematon maa.
+    if not hinta.startswith("price_"):
+        return default_price_id, "default"
+    return hinta, country
