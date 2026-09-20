@@ -2,6 +2,10 @@
 	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
 	import { PLANS, planApprox, startCheckout, type PlanKey } from '$lib/billing';
+	import { loadPricing, planLabel, showApprox } from '$lib/pricing.svelte';
+	// 20.9: hinta palvelimelta, ks. pricing.svelte.ts. Haku on kertaluontoinen
+	// ja fail-soft: jos se ei onnistu, PLANS jaa voimaan.
+	$effect(() => { void loadPricing(); });
 	import { capture } from '$lib/analytics';
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
 	import { freePremiumWindowActive } from '$lib/auth.svelte';
@@ -101,7 +105,7 @@
 
 <div class="plans">
 	{#each Object.entries(PLANS) as [key, plan] (key)}
-		{@const approx = planApprox(key as PlanKey)}
+		{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
 		<div class="plan">
 			<!-- 31.7: UK/US-kävijälle valuuttalikiarvo (Adaptive Pricing hoitaa
 			     checkoutin tarkan summan kävijän valuutassa) -->
@@ -111,7 +115,7 @@
 				disabled={busy !== null}
 				onclick={() => void buy(key as PlanKey)}
 			>
-				{busy === key ? 'Opening checkout…' : plan.label}
+				{busy === key ? 'Opening checkout…' : planLabel(key as PlanKey)}
 			</button>
 		</div>
 	{/each}

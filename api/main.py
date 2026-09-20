@@ -4182,6 +4182,55 @@ def _web_checkout_base_url(origin: str) -> str:
     return "https://pro.goaliq.app"
 
 
+# --- Hinta pinnalle: sama luku jonka asiakas maksaa -----------------------
+#
+# MITATTU 20.9.2026: SPA:n hintalappu oli kovakoodattu ("Season pass: 25 EUR a
+# year"), ja aluehinnan kytkemisen jalkeen nigerialainen olisi nahnyt
+# maksumuurilla 25 EUR ja Checkoutissa 9 EUR. Kukaan ei olisi ylilaskutettu,
+# mutta koko hyoty olisi jaanyt saamatta: paatos tehdaan maksumuurilla, ja
+# webin pudotus on juuri siina (383 pro_page_viewed -> 20 upgrade_tapped).
+#
+# Summa haetaan STRIPESTA, ei konfiguraatiosta. Jos se kirjoitettaisiin
+# erikseen lukuna, se voisi ajautua eri arvoon kuin se jota veloitetaan - ja
+# se vika nakyisi vasta asiakkaan kuitissa.
+_HINTA_CACHE: dict[str, tuple[float, int, str]] = {}
+_HINTA_TTL = 900.0
+
+
+def _stripe_price_amount(price_id: str) -> tuple[int, str] | None:
+    """(sentteina, valuutta) Stripesta, TTL-valimuistilla. None jos ei saada."""
+    if not price_id or not stripe.api_key:
+        return None
+    osuma = _HINTA_CACHE.get(price_id)
+    if osuma and (time.time() - osuma[0]) < _HINTA_TTL:
+        return osuma[1], osuma[2]
+    try:
+        pr = stripe.Price.retrieve(price_id)
+        arvo = (int(pr["unit_amount"]), str(pr["currency"]))
+    except Exception:
+        # Fail-soft: SPA putoaa omaan listahintaansa. Parempi nayttaa vanha
+        # luku kuin tyhja hinta.
+        return None
+    _HINTA_CACHE[price_id] = (time.time(), arvo[0], arvo[1])
+    return arvo
+
+
+@app.get("/api/web/pricing",
+         description="Prices for this visitor's country. The amount comes from Stripe, so the page cannot show a different number than the one charged.")
+def web_pricing(request: Request) -> dict:
+    maa = request_country(request.headers)
+    ulos: dict = {"country": maa or None, "plans": {}}
+    for plan, oletus in (("season", STRIPE_PRICE_SEASON_ID),
+                         ("monthly", STRIPE_PRICE_MONTHLY_ID)):
+        pid, tier = resolve_price(plan, maa, oletus)
+        summa = _stripe_price_amount(pid)
+        if summa is None:
+            continue                      # SPA kayttaa omaa oletustaan
+        ulos["plans"][plan] = {"amount": summa[0] / 100.0,
+                               "currency": summa[1].upper(), "tier": tier}
+    return ulos
+
+
 @app.post("/api/web/checkout", response_model=WebCheckoutResponse,
           description="Create a Stripe Checkout session for a signed-in web user. Identity comes from the Supabase token, never from the request body.")
 def create_web_checkout_session(
@@ -4222,6 +4271,12 @@ def create_web_checkout_session(
         session = stripe.checkout.Session.create(
             mode="subscription",
             line_items=[{"price": price_id, "quantity": 1}],
+            # 20.9: tier myos TILAUKSELLE, ei vain sessiolle. Session metadata
+            # ei kopioidu tilaukseen, ja 60 vrk:n paluuehto mitataan
+            # toteutuneesta tuotosta eli tilauksista ja niiden uusiutumisista.
+            # Ilman tata luku pitaisi johtaa yhdistamalla sessiot tilauksiin.
+            subscription_data={"metadata": {"price_tier": price_tier,
+                                            "plan": req.plan}},
             customer_email=supa_user.get("email"),
             client_reference_id=supa_user["id"],
             metadata={"user_id": supa_user["id"], "plan": req.plan,
@@ -4302,6 +4357,12 @@ def create_guest_checkout_session(
         session = stripe.checkout.Session.create(
             mode="subscription",
             line_items=[{"price": price_id, "quantity": 1}],
+            # 20.9: tier myos TILAUKSELLE, ei vain sessiolle. Session metadata
+            # ei kopioidu tilaukseen, ja 60 vrk:n paluuehto mitataan
+            # toteutuneesta tuotosta eli tilauksista ja niiden uusiutumisista.
+            # Ilman tata luku pitaisi johtaa yhdistamalla sessiot tilauksiin.
+            subscription_data={"metadata": {"price_tier": price_tier,
+                                            "plan": req.plan}},
             # EI customer_email/client_reference_id — Stripe kerää emailin,
             # webhook provisioi tilin sillä (account-after-payment).
             metadata={"plan": req.plan, "source": "pro-web-guest",
