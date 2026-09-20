@@ -4215,6 +4215,48 @@ def _stripe_price_amount(price_id: str) -> tuple[int, str] | None:
     return arvo
 
 
+#: Muuttujat joita ilman tuote on rikki tai antaa itsensa ilmaiseksi.
+#: 🔴 MITATTU 20.9.2026: Renderin ymparisto pyyhkiytyi (yksi vaara API-kutsu),
+#: ja seuraus oli NAKYMATON: palvelu kaynnistyi, vastasi 200 ja tarjoili
+#: dataa. Kaksi asiaa oli silti rikki - ostaminen (STRIPE_SECRET_KEY) ja
+#: maskaus (PREMIUM_ENFORCE oletus off = koko Premium-lista ilmaiseksi).
+#: Kumpikaan ei kirjoittanut lokiin mitaan. Nyt kirjoittaa.
+_PAKOLLISET_ENV = {
+    "STRIPE_SECRET_KEY": "ostaminen ei toimi",
+    "SUPABASE_SERVICE_ROLE_KEY": "tilien provisiointi ja premium-tarkistus ei toimi",
+    "SUPABASE_URL": "Supabase-kutsut eivat toimi",
+    "STRIPE_PRICE_SEASON_ID": "vuositilausta ei voi ostaa",
+    "STRIPE_PRICE_MONTHLY_ID": "kuukausitilausta ei voi ostaa",
+    "STRIPE_WEB_WEBHOOK_SECRET": "maksu ei provisioi tilia",
+    "PREMIUM_ENFORCE": "PREMIUM ANNETAAN ILMAISEKSI (oletus off)",
+}
+
+
+@app.on_event("startup")
+def _varoita_puuttuvista_env_muuttujista() -> None:
+    puuttuu = [f"{k} ({miksi})" for k, miksi in _PAKOLLISET_ENV.items()
+               if not (os.getenv(k) or "").strip()]
+    if puuttuu:
+        print("=" * 70, flush=True)
+        print("YMPARISTOMUUTTUJIA PUUTTUU - TUOTE ON OSITTAIN RIKKI:", flush=True)
+        for rivi in puuttuu:
+            print("  PUUTTUU:", rivi, flush=True)
+        print("=" * 70, flush=True)
+    else:
+        print("env-tarkistus: kaikki pakolliset muuttujat asetettu", flush=True)
+
+
+@app.get("/api/health/env",
+         description="Which required environment variables are missing. Names only, never values.")
+def health_env() -> dict:
+    """Nimet, EI ARVOJA. Tama on se pinta jolta 20.9:n vika olisi nakynyt
+    sekunnissa sen sijaan etta se loytyi sattumalta tyhjasta hintalistasta."""
+    puuttuu = sorted(k for k in _PAKOLLISET_ENV
+                     if not (os.getenv(k) or "").strip())
+    return {"ok": not puuttuu, "missing": puuttuu,
+            "checked": sorted(_PAKOLLISET_ENV)}
+
+
 @app.get("/api/web/pricing",
          description="Prices for this visitor's country. The amount comes from Stripe, so the page cannot show a different number than the one charged.")
 def web_pricing(request: Request) -> dict:
