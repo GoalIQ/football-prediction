@@ -1,0 +1,61 @@
+# Tuotannon ymparistomuuttujien vahti.
+#
+# 🔴 MIKSI TAMA ON OLEMASSA (20.9.2026, itse aiheutettu tuotantovika).
+# Yksi vaara Render-API-kutsu pyyhki `goaliq-api`:n 16 muuttujasta 15. Vika
+# oli TAYSIN NAKYMATON: palvelu kaynnistyi, vastasi 200 ja tarjoili dataa.
+# Silti ostaminen oli poikki (STRIPE_SECRET_KEY) ja koko Premium-lista
+# annettiin ilmaiseksi (PREMIUM_ENFORCE puuttui -> oletus off).
+#
+# Se loytyi SATTUMALTA, kun eras uusi endpoint palautti tyhjan listan. Ilman
+# sita se olisi voinut jaada paalle viikoiksi: ainoa oire olisi ollut
+# myynnin puuttuminen, ja sita on ollut ilman viallistakin.
+#
+# Endpoint jota kukaan ei kutsu ei ole seurantaa. Siksi tama ajetaan
+# aikataulussa ja KAATUU nakyvasti.
+name: env-health-watch
+
+on:
+  schedule:
+    # Kolmesti vuorokaudessa: vika joka antaa tuotteen ilmaiseksi ei saa
+    # odottaa seuraavaan aamuun.
+    - cron: "20 6,14,22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: env-health-watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Kysy tuotannolta mita puuttuu
+        run: |
+          set -euo pipefail
+          vastaus=$(curl -sS --max-time 30 https://api.goaliq.app/api/health/env)
+          echo "$vastaus"
+          # Endpoint palauttaa vain NIMET, ei koskaan arvoja.
+          if echo "$vastaus" | grep -q '"ok":true'; then
+            echo "Ymparisto taydellinen."
+            exit 0
+          fi
+          echo "::error::Tuotannosta puuttuu ymparistomuuttujia. Ostaminen tai maskaus voi olla rikki."
+          exit 1
+
+      - name: Varmista etta maskaus on paalla
+        run: |
+          set -euo pipefail
+          # PREMIUM_ENFORCE:n puuttuminen ei kaada mitaan - se lakkaa
+          # laskuttamasta. Siksi se mitataan tuloksesta eika asetuksesta.
+          vastaus=$(curl -sS --max-time 30 https://api.goaliq.app/api/fantasy/xp)
+          rivit=$(echo "$vastaus" | python -c "import json,sys; print(len(json.load(sys.stdin).get('players') or []))")
+          maskattu=$(echo "$vastaus" | python -c "import json,sys; print(json.load(sys.stdin).get('meta',{}).get('masked'))")
+          echo "rivit=$rivit masked=$maskattu"
+          if [ "$maskattu" != "True" ]; then
+            echo "::error::/api/fantasy/xp ei maskaa ($rivit rivia) - Premium on ilmaiseksi kaikille."
+            exit 1
+          fi
