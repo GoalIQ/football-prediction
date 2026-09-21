@@ -306,3 +306,70 @@ def rakenna_vendor(kaudet: list[str]) -> list[Path]:
                 p, index=False, lineterminator="\n")
             kirjoitetut.append(p)
     return kirjoitetut
+
+
+# ---------------------------------------------------------------------------
+# Kokoonpanot (UCL Fantasyn xP:n minuuttimalli seuroille joilla ei ole
+# kotiliigan pelaajadataa). Pelaaja-ID:t ovat SAMAA avaruutta kuin UCL
+# Fantasyn pelaaja-ID:t (mitattu 21.9: 250079125 molemmissa).
+# ---------------------------------------------------------------------------
+
+KOKOONPANO_DIR = config.RAW_DATA_DIR / "uefa_lineups"
+
+
+def kokoonpano(match_id: str, *, verkko: bool = True) -> dict[str, dict[str, list[str]]] | None:
+    """{joukkue_id: {'avaus': [pelaaja_id], 'penkki': [pelaaja_id]}} tai None.
+
+    Paattyneen ottelun kokoonpano ei muutu, joten levyvalimuisti on pysyva.
+    Rajapinta ei kerro vaihtoja eika minuutteja - vain avauksen ja penkin."""
+    KOKOONPANO_DIR.mkdir(parents=True, exist_ok=True)
+    p = KOKOONPANO_DIR / f"{match_id}.json"
+    if p.exists():
+        return json.loads(p.read_text(encoding="utf-8"))
+    if not verkko:
+        return None
+    try:
+        r = requests.get(f"{BASE}/{match_id}/lineups", headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        j = r.json()
+    except Exception as e:
+        print(f"[uefa_matches] kokoonpano {match_id}: {type(e).__name__}: {e}")
+        return None
+    out: dict[str, dict[str, list[str]]] = {}
+    for puoli in ("homeTeam", "awayTeam"):
+        t = j.get(puoli) or {}
+        tid = str((t.get("team") or {}).get("id") or "")
+        if not tid:
+            continue
+        out[tid] = {
+            "avaus": [str((x.get("player") or {}).get("id")) for x in t.get("field") or []
+                      if (x.get("player") or {}).get("id")],
+            "penkki": [str((x.get("player") or {}).get("id")) for x in t.get("bench") or []
+                       if (x.get("player") or {}).get("id")],
+        }
+    if out and all(len(v["avaus"]) == 11 for v in out.values()):
+        p.write_text(json.dumps(out), encoding="utf-8")
+    return out or None
+
+
+def raaka_kausi(liiga: str, kausi: str) -> list[dict]:
+    """Rajapinnan raakaottelut (ottelu-ID:t, maalintekijat) yhdelle kaudelle.
+
+    Vendoroitu CSV ei sisalla naita kenttia. Paattyneen kauden raakadata ei
+    muutu, joten sen levyvalimuisti on pysyva; kuluva kausi kulkee
+    `lataa_kausi`n TTL-polun kautta."""
+    comp = KILPAILUT[liiga]
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cp = CACHE_DIR / f"{comp}_{kausi}.json"
+    if not _vendor_polku(liiga, kausi).exists():
+        lataa_kausi(liiga, kausi)            # kuluva kausi: TTL + vara
+        return json.loads(cp.read_text(encoding="utf-8")) if cp.exists() else []
+    if cp.exists():
+        return json.loads(cp.read_text(encoding="utf-8"))
+    try:
+        raaka = _hae_raaka(comp, kausi_vuodeksi(kausi))
+        cp.write_text(json.dumps(raaka), encoding="utf-8")
+        return raaka
+    except Exception as e:
+        print(f"[uefa_matches] raaka {liiga} {kausi}: {type(e).__name__}: {e}")
+        return []
