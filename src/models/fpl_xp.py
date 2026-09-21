@@ -790,7 +790,7 @@ def apply_price_prior(mm: dict, price_pct: float, prior_minutes: float,
     return recompute_minutes(out)
 
 
-def set_p_start(mm: dict, p_start: float) -> dict:
+def set_p_start(mm: dict, p_start: float, status: str = "a", chance=None) -> dict:
     """Aseta aloitus-tn SUORAAN (manuaalinen ohitus) ja johda minuutit uudelleen.
 
     Ero `scale_p_start`iin: tuo kertoo nykyisen arvion kertoimella (syvyys-
@@ -800,12 +800,25 @@ def set_p_start(mm: dict, p_start: float) -> dict:
     Asettaa sekä p_start_raw (minuuttien johtaminen) että p_start (näyttö/
     kalibrointi) samaan arvoon: ohituksen koko pointti on että historiapohjainen
     shrinkkaus ei päde tähän pelaajaan.
+
+    XP-OVERRIDE-OHITTAA-SAATAVUUDEN (21.9.2026): ohitus korjaa VANHENTUNEEN
+    minuuttihistorian, ei pelaajan NYKYISTA FPL-saatavuutta - ne ovat kaksi eri
+    kysymystä. Kutsuja (`build_fpl_xp.py`) ajoi tämän ENNEN tätä korjausta
+    ilman että saatavuus vaikutti tulokseen lainkaan, joten epävarmalle
+    pelaajalle (status `d`/`i`/`s`/`u`/`n`) syntyi ohitusarvo jossa
+    pelaamistodennäköisyys EI ollut mukana - täsmälleen sama vikaluokka jonka
+    `/fpl` ja `/fpl/team-news` (`src/doubt_copy.py`) väittävät korjatuksi
+    kaikille pelaajille. `status`/`chance` ovat AINA mukana tässä (oletus
+    `a`/None = ei muutosta, sama fail-open-oletus kuin `boot`-elementin oma
+    `e.get("status", "a")` muualla), jotta uusi kutsupaikka ei voi unohtaa
+    tätä - se ei ole kutsujan muistin varassa.
     """
     out = dict(mm)
     v = min(max(float(p_start), 0.0), 1.0)
     out["p_start_raw"] = v
     out["p_start"] = v
-    return recompute_minutes(out)
+    out = recompute_minutes(out)
+    return apply_availability(out, status, chance)
 
 
 def congestion_multiplier(n_fixtures_in_gw: int, xmins: float) -> float:
