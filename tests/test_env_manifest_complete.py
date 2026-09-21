@@ -42,6 +42,10 @@ VAPAAEHTOISET = {
                           "mallin omalla sivulla",
     "RENDER_GIT_COMMIT": "Renderin itsensa asettama",
     "PREMIUM_ENFORCE_DEBUG": "vain paikalliseen vianetsintaan",
+    "FREE_PREMIUM_UNTIL": "pelkka katkaisin joka voi vain SULKEA ilmaisikkunan "
+                          "(api.premium: off/none/0/false); paiva tulee "
+                          "src.free_windowista. Tyhja = koodin oletus, mika "
+                          "on oikea tila",
     "STRIPE_REGIONAL_PRICES": "ilman sita kaikki maksavat listahinnan "
                               "(resolve_price on fail-closed, mikaan ei "
                               "kaadu). Villen 20.9 paatos on etta aluehinta "
@@ -52,17 +56,49 @@ VAPAAEHTOISET = {
 }
 
 
-def _env_nimet() -> set[str]:
+def _on_env_kutsu(n: ast.Call) -> bool:
+    """`os.getenv(...)` tai `os.environ.get(...)`."""
+    f = n.func
+    return isinstance(f, ast.Attribute) and (
+        f.attr == "getenv" or (f.attr == "get" and "environ" in ast.unparse(f)))
+
+
+def _kaareet(puut: list[ast.AST]) -> set[str]:
+    """Funktiot jotka lukevat ymparistomuuttujan ENSIMMAISESTA parametristaan.
+
+    🔴 21.9.2026: `api/premium.py` lukee muuttujansa kaareella
+    `_env("ADMIN_TOKEN")`, jota skannaus ei tunnistanut. `ADMIN_TOKEN` katosi
+    20.9 ympariston pyyhkiytyessa eika palautunut, koska se ei ollut
+    listalla eika portti vaatinut paatosta: admin-endpointit (gradaus,
+    push-notifikaatiot, autopilotin konversiomittari) vastasivat 403.
+    Kaare tunnistetaan RAKENTEESTA eika nimesta, jotta seuraava kaare
+    (`_getenv`, `env_str`, ...) ei ohita porttia.
+    """
     nimet: set[str] = set()
-    for p in sorted(list(API.rglob("*.py")) + list(SRC.rglob("*.py"))):
-        puu = ast.parse(p.read_text(encoding="utf-8"))
+    for puu in puut:
+        for fn in ast.walk(puu):
+            if not isinstance(fn, ast.FunctionDef) or not fn.args.args:
+                continue
+            par = fn.args.args[0].arg
+            for c in ast.walk(fn):
+                if (isinstance(c, ast.Call) and _on_env_kutsu(c) and c.args
+                        and isinstance(c.args[0], ast.Name)
+                        and c.args[0].id == par):
+                    nimet.add(fn.name)
+    return nimet
+
+
+def _env_nimet() -> set[str]:
+    polut = sorted(list(API.rglob("*.py")) + list(SRC.rglob("*.py")))
+    puut = [ast.parse(p.read_text(encoding="utf-8")) for p in polut]
+    kaareet = _kaareet(puut)
+    nimet: set[str] = set()
+    for puu in puut:
         for n in ast.walk(puu):
             if not isinstance(n, ast.Call):
                 continue
-            f = n.func
-            osuu = (isinstance(f, ast.Attribute) and f.attr in ("getenv", "get")
-                    and "environ" in ast.unparse(f))
-            osuu = osuu or (isinstance(f, ast.Attribute) and f.attr == "getenv")
+            osuu = _on_env_kutsu(n) or (
+                isinstance(n.func, ast.Name) and n.func.id in kaareet)
             if osuu and n.args and isinstance(n.args[0], ast.Constant) \
                     and isinstance(n.args[0].value, str):
                 nimet.add(n.args[0].value)
@@ -121,3 +157,28 @@ def test_skannaus_nakee_srcn():
     """Negatiivinen kontrolli: jos skannaus kutistuu takaisin api/:iin,
     tama punastuu eika hiljaa vihrea."""
     assert "STRIPE_REGIONAL_PRICES" in _env_nimet()
+
+
+def test_kaare_tunnistetaan_rakenteesta():
+    """Erotteleva kontrolli: synteettinen kaare jolla on eri nimi kuin
+    `_env` loytyy. Ilman tata portti vartioisi vain yhta nimea (muisti:
+    portti kirjoitetaan nahdylle muodolle)."""
+    lahde = (
+        "import os\n"
+        "def lue_arvo(avain):\n"
+        "    return os.environ.get(avain, '')\n"
+        "X = lue_arvo('SYNTEETTINEN_AVAIN')\n")
+    assert _kaareet([ast.parse(lahde)]) == {"lue_arvo"}
+
+
+def test_admin_token_on_vahdin_listalla():
+    """ADMIN_TOKEN on pakollinen: sen puuttuminen poistaa admin-endpointit
+    kaytosta (gradaus, push-dispatch, cache, autopilotin S12-mittari)."""
+    assert "ADMIN_TOKEN" in m._PAKOLLISET_ENV
+
+
+def test_skannaus_nakee_kaareen_kautta_luetut():
+    """Negatiivinen kontrolli kuten test_skannaus_nakee_srcn: jos
+    kaaretunnistus putoaa _env_nimet()-funktiosta, tama punastuu. Ilman
+    tata ADMIN_TOKENin pysyminen listalla peittaisi regression."""
+    assert {"ADMIN_TOKEN", "FREE_PREMIUM_UNTIL"} <= _env_nimet()

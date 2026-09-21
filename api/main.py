@@ -4291,6 +4291,11 @@ _PAKOLLISET_ENV = {
     "STRIPE_WEBHOOK_SECRET": "mobiilin Stripe-webhook ei kasittele mitaan",
     "REVENUECAT_WEBHOOK_AUTH": "Play/App Store -osto ei anna Premiumia (veloitus menee lapi)",
     "PREMIUM_ENFORCE": "PREMIUM ANNETAAN ILMAISEKSI (oletus off)",
+    # 21.9: puuttui 20.9 ympariston pyyhkiytymisen jalkeen eika mikaan
+    # kertonut siita: se luetaan kaareella `_env`, jota manifestiportti ei
+    # tunnistanut (tests/test_env_manifest_complete.py::_kaareet).
+    "ADMIN_TOKEN": "admin-endpointit pois paalta: gradaus, push-notifikaatiot, "
+                   "cache-tyhjennys ja autopilotin konversiomittari saavat 403",
 }
 
 
