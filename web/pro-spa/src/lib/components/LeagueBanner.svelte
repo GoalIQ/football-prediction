@@ -18,7 +18,8 @@
 		<strong>Beat the Model | GoalIQ</strong>
 		<span class="text">
 			The model's squad is frozen before every deadline, and we play it in FPL as entry 116920
-			with our own calls. Join our public mini-league and try to outdraft it.
+			with our own calls. Join our public mini-league and try to outdraft it. Season winner gets a
+			year of GoalIQ Premium, free.
 		</span>
 		<span class="cta">Join with code {LEAGUE_CODE}</span>
 	</span>

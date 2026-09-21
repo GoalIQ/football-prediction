@@ -115,7 +115,9 @@
 	<p class="muted proof">
 		Built on a publicly tracked match model: every prediction is logged before kick-off
 		and graded afterwards, hits and misses in the same place. Nothing gets edited once
-		kick-off comes. <a href="/fpl/model-xi">See the model's own squad</a>.
+		kick-off comes. <a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen"
+			>See the model's frozen squads</a
+		>.
 	</p>
 
 	{#if top3.length > 0}
