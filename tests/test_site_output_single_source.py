@@ -89,7 +89,9 @@ def test_sivustoon_kuuluu(polku):
     ".github/workflows/hub-deploy.yml", ".github/site-repo/deploy.yml",
     ".github/site-repo/README.md", "web/pro-spa/src/routes/spl/+page.svelte",
     "supabase/migrations/x.sql", "api/main.py", "notebooks/01_full_pipeline.ipynb",
-    "data/prediction_log.json", "data/fpl_xp_projections.json",
+    # 21.9: prediction_log.json siirtyi PUBLIC_DATAan (Villen paatos:
+    # tarkkuusloki on myyntivaite). Privaattina pysyy mm. spl_recon.json.
+    "data/spl_recon.json", "data/fpl_xp_projections.json",
     "data/fpl_2526_archive.tar.gz", "data/international_results.csv",
     "data/model_squad_exceptions/gw2.json", "data/fpl_elite_managers.csv",
     "outputs/cards/x.png", "docs/arkkitehtuuri.md",
@@ -154,7 +156,7 @@ def test_public_data_url_muoto():
         f"https://github.com/{so.PUBLIC_REPO}/tree/main/data/fpl_xp_frozen")
     assert so.public_data_url("data/fpl_xp_frozen") == so.public_data_url("data/fpl_xp_frozen/")
     with pytest.raises(KeyError):
-        so.public_data_url("data/prediction_log.json")
+        so.public_data_url("data/spl_recon.json")
 
 
 def test_builderit_eivat_kirjoita_github_osoitetta_itse():
@@ -276,3 +278,13 @@ def test_template_deploy_on_ehja_workflow():
     assert "Portti - ei lahdekoodia" in nimet and "Verifioi domainilta" in nimet
     cf = next(s for s in job["steps"] if s.get("uses", "").startswith("cloudflare/wrangler-action"))
     assert "--project-name=goaliq-hub" in cf["with"]["command"]
+
+
+def test_tarkkuusloki_on_julkinen():
+    """21.9 Villen paatos: tarkkuusloki on myyntivaite, joten sen lahde on
+    julkinen. Etusivun ja /predictions-sivun tarkkuusluvut lasketaan
+    tasta tiedostosta; jos se putoaa PUBLIC_DATAsta, vaite menettaa
+    tarkistusreittinsa hiljaa."""
+    assert so.is_site_path("data/prediction_log.json")
+    assert so.public_data_url("data/prediction_log.json").endswith(
+        "/blob/main/data/prediction_log.json")
