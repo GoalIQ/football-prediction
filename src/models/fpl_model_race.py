@@ -56,6 +56,52 @@ def model_points_net(row: dict) -> int:
     return int(row.get("points") or 0) - int(row.get("transfer_cost") or 0)
 
 
+def vs_average(rows: list[dict]) -> dict:
+    """Sarja FPL:n keskiarvoa vastaan, VAIN lopullisista kierroksista.
+
+    Brutto vs brutto, sama peruste kuin gw_recapin juoksevalla rivilla:
+    FPL julkaisee keskiarvon (`average_entry_score`) kertomatta onko se hittien
+    jalkeen, joten netto-vertailu olisi vaite jonka perustaa emme tieda.
+    Provisionaalinen kierros jaa pois: liikkuva luku ei ole track record.
+    Yksi funktio kummallekin sarjalle (malli ja entry), jotta vertailut eivat
+    voi erota perusteeltaan.
+    """
+    lopulliset = [r for r in rows or []
+                  if not r.get("provisional") and r.get("fpl_average") is not None
+                  and r.get("points") is not None]
+    pisteet = sum(int(r["points"]) for r in lopulliset)
+    ka = sum(int(r["fpl_average"]) for r in lopulliset)
+    return {"gameweeks": len(lopulliset), "points": pisteet, "average": ka,
+            "diff": pisteet - ka,
+            "gws": [int(r["gw"]) for r in lopulliset]}
+
+
+def entry_series_block(entry_series: dict | None) -> dict | None:
+    """FPL-entryn 116920 sarja race-payloadiin OMANA lohkonaan (21.9.2026).
+
+    "Our FPL entry (model + human chip calls)": ratkaisee Beat the Model
+    -miniliigan (FPL:n taulukko), mutta se EI ole mallin luku - siksi se on
+    eri kentassa eika koskaan `totals.model`issa. Additiivinen: vanha
+    klientti ohittaa kentan.
+    """
+    if not entry_series:
+        return None
+    rows = list(entry_series.get("gameweeks") or [])
+    chips = [{"gw": int(r["gw"]), "chip": str(r["chip"])}
+             for r in rows if r.get("chip")]
+    return {
+        "entry_id": (entry_series.get("meta") or {}).get("entry_id"),
+        "gameweeks": [{"gw": r["gw"], "points": r["points"],
+                       "points_net": r.get("points_net"),
+                       "fpl_average": r.get("fpl_average"),
+                       "chip": r.get("chip"),
+                       "provisional": bool(r.get("provisional"))}
+                      for r in rows],
+        "chips_played": chips,
+        "vs_average": vs_average(rows),
+    }
+
+
 def _user_points_by_gw(entry_history: dict | None) -> dict[int, dict]:
     """FPL entry/{id}/history/ → {gw: {"points": int, "bench": int}}.
 
@@ -152,15 +198,26 @@ def row_state(row: dict) -> str:
 # vertailu. Mieluummin puuttuva luku kuin vaara luku.
 def build_race(scores_log: dict | None, entry_history: dict | None,
                premium: bool = True,
-               model_history: dict | None = None) -> dict:
+               model_history: dict | None = None,
+               entry_series: dict | None = None) -> dict:
     """Puhdas ydin: mallin loki + käyttäjän historia → race-payload.
+
+    `scores_log` on JULKINEN MALLISARJA (`load_public_model_series`):
+    jaadytetty rivi, ei entrya. `entry_series` (`load_public_entry_series`)
+    tulee payloadiin erillisena lohkona `entry_series` - se ei koskaan
+    vaikuta `totals`iin eika riveihin (21.9.2026, "molemmat sarjat, malli
+    ensin").
 
     `model_history` = mallin oma `entry/{id}/history/` PYYNTOHETKELTA.
     Provisionaaliset kierrokset luetaan siita; ilman sita ne eivat tuota
-    eroa (ks. lohkokommentti yllä).
+    eroa (ks. lohkokommentti yllä). Jaadytetyssa sarjassa ei ole
+    provisionaalisia riveja, joten haara on lepotilassa.
     """
     rows = list((scores_log or {}).get("gameweeks") or [])
     rows.sort(key=lambda r: int(r.get("gw") or 0))
+    unscored = list(((scores_log or {}).get("meta") or {}).get("unscored_gws")
+                    or [])
+    entry_block = entry_series_block(entry_series)
 
     if not rows:
         return {
@@ -169,10 +226,12 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # kertoo saman ilman oletusta.
             "meta": {"available": False, "graded_gws": 0, "masked": False,
                      "model_plays_chips": False, "chips_played": [],
+                     "unscored_gws": unscored,
                      "note": NOTE_NOT_STARTED,
                      "note_code": CODE_NOT_STARTED},
             "totals": {"model": 0, "you": None, "diff": None},
             "gameweeks": [],
+            "entry_series": entry_block,
         }
 
     user = _user_points_by_gw(entry_history)
@@ -244,6 +303,9 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # True = mallin luku on jaadytetysta artefaktista ja kayttajan
             # elavasta lahteesta, eli eri hetkesta. Rivi ei tuota eroa.
             "stale_model_points": stale,
+            # 21.9: False = mallin oman hitin kustannusta ei voitu todentaa
+            # FPL:n saannoilla, ja luku on BRUTTO. Pinta merkitsee rivin.
+            "model_cost_verified": r.get("transfer_cost_verified", True) is not False,
             "your_points": None,
             "diff": None,
             "cumulative_diff": None,
@@ -341,6 +403,12 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "provisional_gws": provisional_gws,
             "provisional_states": {str(x["gw"]): x["state"] for x in out_rows
                                    if x["state"] != ROW_FINAL},
+            # 21.9: kierrokset jotka eivat ole mallisarjassa lainkaan, koodilla
+            # (`no_valid_frozen_squad` = freeze epakelpo). Pinta renderoi
+            # tekstin; kierros ei ole nolla eika entryn luku.
+            "unscored_gws": unscored,
+            "cost_unverified_gws": [x["gw"] for x in out_rows
+                                    if not x["model_cost_verified"]],
             "note": note,
             "note_code": note_code,
         },
@@ -360,6 +428,11 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # Kierrokset jotka jaivat pois koska puolet olivat eri hetkesta.
             "stale_gws": [x["gw"] for x in out_rows
                           if x.get("stale_model_points")],
+            # 21.9: mallin jaadytetty rivi FPL:n keskiarvoa vastaan (brutto,
+            # lopulliset kierrokset). Sama funktio kuin entry-lohkossa.
+            "model_vs_average": vs_average(rows),
         },
         "gameweeks": out_rows,
+        # Erillinen sarja, EI mallin luku (ks. entry_series_block).
+        "entry_series": entry_block,
     }

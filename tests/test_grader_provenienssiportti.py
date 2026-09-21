@@ -37,12 +37,14 @@ def _graderi():
 
 
 def _runko(gw, *, squad_source="chain", from_gw=None, verified=None,
-           rebuilt=None, hits=0):
+           rebuilt=None, hits=0, transfers=0):
     d = {
         "meta": {"gw": gw, "squad_source": squad_source, "from_gw": from_gw,
                  "frozen_at": f"2026-09-0{gw}T07:00:00Z",
                  "deadline": f"2026-09-0{gw}T17:30:00Z",
-                 "transfers": [], "hits": hits},
+                 "transfers": [{"out": 90 + i, "in": 95 + i}
+                               for i in range(transfers)],
+                 "hits": hits},
         "captain": 1, "vice_captain": 2,
         "xi": [{"id": i, "web_name": f"P{i}", "pos": (1 if i == 1 else
                                                       2 if i <= 5 else
@@ -95,8 +97,16 @@ class _R:
         return self._p
 
 
+#: Entryn historia kuten FPL sen antaa (mitattu 116920: GW1-4 nolla siirtoa,
+#: wildcard GW2). FT-saldo lasketaan testissa samalla lukijalla kuin
+#: graderissa, eika sita kovakoodata.
+HISTORIA = {"current": [{"event": g, "event_transfers": 0,
+                         "event_transfers_cost": 0} for g in range(1, 5)],
+            "chips": [{"name": "wildcard", "event": 2}]}
+
+
 def _aja(monkeypatch, tmp_path, rungot, *, ratkennut=True, picks=None,
-         picks_status=200):
+         picks_status=200, historia=None, historia_status=200):
     m = _graderi()
     for gw, r in rungot.items():
         (tmp_path / f"gw{gw}.json").write_text(
@@ -115,6 +125,9 @@ def _aja(monkeypatch, tmp_path, rungot, *, ratkennut=True, picks=None,
         if "/picks/" in url:
             return _R(picks if picks is not None else _picks(),
                       status=picks_status)
+        if "/history/" in url:
+            return _R(historia if historia is not None else HISTORIA,
+                      status=historia_status)
         return _R({"elements": [{"id": i, "stats": {"total_points": 5,
                                                     "minutes": 90}}
                                 for i in range(1, 16)]})
@@ -142,7 +155,8 @@ def test_epakelpo_freeze_ei_gradaudu(monkeypatch, tmp_path, capsys):
     assert [r["gw"] for r in loki["gameweeks"]] == [3], (
         "epakelpo freeze KIRJATTIIN append-only-lokiin mallin rivina")
     assert "::warning::" in out and "EI GRADATA" in out
-    assert "poikkeuspaatos" in out, "ohjeen on kerrottava mika korvaa rivin"
+    assert "unscored_gws" in out, "ohjeen on kerrottava mita kierrokselle tapahtuu"
+    assert "entryn lukua" in out
 
 
 def test_kauden_ensimmainen_vapaa_optimi_on_kelvollinen(monkeypatch, tmp_path):
@@ -195,27 +209,58 @@ def test_reseed_runko_gradataan(monkeypatch, tmp_path):
     assert _rivi(loki, 3)["provenance"] == "entry_picks"
 
 
-# --- 3. siirtokustannus ------------------------------------------------------
+# --- 3. siirtokustannus FPL:n saannoilla ------------------------------------
 
-def test_sama_15_kayttaa_fpln_veloitusta_ei_freezen_laskuria(monkeypatch,
-                                                              tmp_path):
-    """GW5 mitattu: freeze sanoo 1 hitti, FPL veloitti samoista siirroista 0."""
+def test_gw2_kolme_siirtoa_on_kahdeksan_fpln_saannolla(monkeypatch, tmp_path):
+    """Mitattu 21.9: GW2:n jaadytetty rivi teki 3 siirtoa GW1-rungosta, ja
+    FT-saldo GW2:lle on 1 kaikilla (GW1 rajaton) -> (3 - 1) x 4 = 8."""
     rc, loki = _aja(monkeypatch, tmp_path,
-                    {5: _runko(5, squad_source="entry_picks", hits=1)},
-                    picks=_picks(kustannus=0))
+                    {2: _runko(2, from_gw=1, hits=2, transfers=3)},
+                    picks=_picks(chip="wildcard"))
+    r = _rivi(loki, 2)
+    assert r["transfer_cost"] == 8 and r["transfer_cost_source"] == "fpl_rules_gw2"
+
+
+def test_reseed_kayttaa_fpln_saldoa_ei_freezen_laskuria(monkeypatch, tmp_path):
+    """GW5 mitattu: freeze sanoi 1 hitti (-4), mutta reseed perii entryn
+    saldon, ja FPL:n oma saldo historiasta oli 3 -> 2 siirtoa = 0."""
+    from src.models.fpl_entry_history import free_transfers_for_gw
+    ft = free_transfers_for_gw(HISTORIA, 5)
+    assert ft is not None and ft >= 2, "fikstuurin on oltava erotteleva"
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {5: _runko(5, squad_source="entry_picks", hits=1,
+                               transfers=2)})
     r = _rivi(loki, 5)
     assert r["transfer_cost"] == 0
-    assert r["transfer_cost_source"] == "fpl_entry_same_squad"
+    assert r["transfer_cost_source"] == "fpl_rules_entry_ft"
 
 
-def test_eri_15_tai_wildcard_kayttaa_freezen_omaa_hittikirjausta(monkeypatch,
-                                                                 tmp_path):
-    """GW2:n tapaus: entry pelasi wildcardin, joten sen veloitus ei kerro
-    mallin siirroista mitaan -> mallin oma kirjaus (2 hittia = 8 p)."""
-    rc, loki = _aja(monkeypatch, tmp_path, {2: _runko(2, from_gw=1, hits=2)},
-                    picks=_picks(kustannus=0, chip="wildcard"))
-    r = _rivi(loki, 2)
-    assert r["transfer_cost"] == 8 and r["transfer_cost_source"] == "freeze_hits"
+def test_yksi_siirto_on_aina_ilmainen(monkeypatch, tmp_path):
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {6: _runko(6, from_gw=5, hits=1, transfers=1)})
+    r = _rivi(loki, 6)
+    assert r["transfer_cost"] == 0
+    assert r["transfer_cost_source"] == "one_transfer_always_free"
+
+
+def test_ketjun_monta_siirtoa_on_todentamaton_ei_arvattu(monkeypatch, tmp_path):
+    """Ketju jatkui mallin omilla siirroilla: sen FT-laskuri on mitattu
+    vaaraksi, eika entryn saldo ole mallin saldo -> None (brutto +
+    nakyva merkinta), ei freezen omaa hittia."""
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {6: _runko(6, from_gw=5, hits=1, transfers=2)})
+    r = _rivi(loki, 6)
+    assert r["transfer_cost"] is None
+    assert r["transfer_cost_source"] == "unverified"
+
+
+def test_lukematon_historia_jattaa_reseed_kierroksen_seuraavaan_ajoon(
+        monkeypatch, tmp_path, capsys):
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {5: _runko(5, squad_source="entry_picks", transfers=2)},
+                    historia_status=503)
+    assert rc == 0 and loki is None
+    assert "seuraavaan ajoon" in capsys.readouterr().out
 
 
 # --- 4. vaiheet --------------------------------------------------------------

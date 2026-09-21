@@ -51,12 +51,11 @@ jaadytetyn rivin yli (De Cuyper XI:iin Bobby Thomasin tilalle), ja entry-sarja
 mittasi silloin mallin ja Villen yhdistelmaa vaikka copy sanoi "the model's
 squad". Entry saa poiketa; ero kirjataan riville (`entry_diverged`).
 
-(4) YKSI JULKINEN LUKIJA. Pinnat lukevat mallin kierrospisteet VAIN
-`load_public_model_series()`:lla. Se palauttaa jaadytetyn sarjan, ja
-entry-rivin ainoastaan kierrokselle jonka freeze on rakenteellisesti
-epakelpo (`freeze_invalid`) JA jolle on kirjattu Villen poikkeuspaatos
-(`data/model_squad_exceptions/gw{N}.json`) - rivi kantaa silloin
-`row_basis: "entry_fallback"` ja syyn. Portti:
+(4) KAKSI JULKISTA LUKIJAA, EI SEKOITUSTA (Villen paatos 21.9: "molemmat
+sarjat, malli ensin"). Pinnat lukevat mallin pisteet VAIN
+`load_public_model_series()`:lla (jaadytetty rivi; epakelpo freeze = kierros
+pois, `unscored_gws`) ja entryn 116920 pisteet VAIN
+`load_public_entry_series()`:lla, omana sarjanaan. Portti:
 tests/test_model_series_reader_discipline.py (raaka luku kummastakin
 sarjatiedostosta pinnan koodissa kaataa testin).
 
@@ -84,28 +83,23 @@ SOURCES = frozenset({SOURCE_ENTRY, SOURCE_FROZEN})
 # yhta kohtaa.
 #
 # Historia: 12.9.2026 paatos oli `entry` ("GW1-GW4 on gradattu entrysta;
-# gw4.json on runko jota malli ei voi saavuttaa"). GW4:n osalta se paatos
-# elaa yha poikkeuspaatoksena `model_squad_exceptions/gw4.json`, jota
-# julkinen lukija kunnioittaa (`row_basis: entry_fallback`).
+# gw4.json on runko jota malli ei voi saavuttaa"). 21.9 GW4 jaa MALLIN
+# sarjasta pois (freeze epakelpo) eika saa entryn lukua korvikkeeksi; entryn
+# luvut naytetaan erikseen `load_public_entry_series()`:lla.
 CANONICAL_SOURCE = SOURCE_FROZEN
 CANONICAL_DECISION = (
     "Villen paatos 21.9.2026: mallin julkinen kierrossarja on JAADYTETTY rivi "
     "FPL:n live-pisteilla (autosubit ja kapteeni/vara FPL:n saannoin, ei "
     "chippeja: malli ei pelaa chippeja v0:ssa, chip_evaluation.decision = "
     "not_played). Entry 116920 saa poiketa, ja ero kirjataan riville. "
-    "Kierros jonka freeze on rakenteellisesti epakelpo (squad_rebuilt) luetaan "
-    "entrysta VAIN jos sille on kirjattu Villen poikkeuspaatos.")
+    "Kierros jonka freeze on rakenteellisesti epakelpo (squad_rebuilt) jaa "
+    "mallisarjasta pois (unscored_gws), EIKA saa entryn lukua. Entryn sarja "
+    "naytetaan erikseen omalla nimellaan (miniliigan ratkaiseva sarja).")
 
 ENTRY_SCORES_PATH = config.DATA_DIR / "model_squad_gw_scores.json"
 FROZEN_SCORES_PATH = config.DATA_DIR / "model_squad_frozen_gw_scores.json"
 SERIES_PATHS = {SOURCE_ENTRY: ENTRY_SCORES_PATH, SOURCE_FROZEN: FROZEN_SCORES_PATH}
 FROZEN_DIR = config.DATA_DIR / "model_squad_frozen"
-EXCEPTIONS_DIR = config.DATA_DIR / "model_squad_exceptions"
-
-# Rivin perusta julkisessa sarjassa. `frozen` = jaadytetty rivi FPL:n
-# pisteilla. `entry_fallback` = kirjattu poikkeus (ks. `freeze_invalid`).
-ROW_BASIS_FROZEN = "frozen"
-ROW_BASIS_ENTRY_FALLBACK = "entry_fallback"
 
 # Rivi ilman source-kenttaa. Perustelu: kentta lisattiin 17.9.2026, ja siihen
 # asti AINOA kirjoittaja joka ei kirjoittanut sita oli entry-graderi
@@ -272,28 +266,31 @@ def stamp_legacy_source(doc: dict) -> dict:
     return out
 
 
+
+
 # ---------------------------------------------------------------------------
-# JULKINEN MALLISARJA (Villen paatos 21.9.2026: "mallin rivi")
+# JULKISET SARJAT (Villen paatos 21.9.2026: "molemmat sarjat, malli ensin")
 # ---------------------------------------------------------------------------
+#
+# KAKSI SARJAA, KAKSI LUKIJAA, EI SEKOITUSTA:
+#
+#   `load_public_model_series()`  MALLIN jaadytetty rivi FPL:n pisteilla.
+#                                 Tama on track record, Season racen
+#                                 "Model"-luku ja tuloskortin mallisolu.
+#   `load_public_entry_series()`  FPL-entry 116920: malli + Villen chip- ja
+#                                 kokoonpanopaatokset. Tama ratkaisee Beat
+#                                 the Model -miniliigan (FPL:n taulukko), ja
+#                                 se naytetaan ERIKSEEN omalla nimellaan.
+#
+# Mallisarjaan ei tule entry-lukua MILLAAN polulla. Kierros jonka freeze on
+# rakenteellisesti epakelpo (gw4.json) jaa sarjasta pois ja kirjataan
+# `unscored_gws`iin koodilla - se ei saa entryn lukua korvikkeeksi, koska
+# silloin mallin kausisumma sisaltaisi Villen kierroksen.
 
-EXCEPTION_KEYS = ("gw", "reason", "decided_by", "decided_at")
-
-
-def valid_exception(d, gw: int) -> tuple[dict | None, str | None]:
-    """(poikkeus, virhe). Sama saanto kuin verify-vahdilla: voimassa vain jos
-    kaikki kentat ovat epatyhjia ja gw on tasmalleen tama kierros. Vajaa
-    poikkeus on virhe, ei vapaakortti."""
-    if not isinstance(d, dict):
-        return None, f"GW{gw}: poikkeus ei ole objekti"
-    puuttuu = [k for k in EXCEPTION_KEYS if not str(d.get(k) or "").strip()]
-    if puuttuu:
-        return None, f"GW{gw}: poikkeuksen kentat puuttuvat: {', '.join(puuttuu)}"
-    try:
-        if int(d.get("gw")) != int(gw):
-            return None, f"GW{gw}: poikkeuksen gw={d.get('gw')}"
-    except (TypeError, ValueError):
-        return None, f"GW{gw}: poikkeuksen gw ei ole luku"
-    return d, None
+UNSCORED_NO_VALID_FREEZE = "no_valid_frozen_squad"
+#: Pinnan nayttama koodi -> sen merkitys. Teksti renderoidaan pinnassa
+#: (julkinen copy kulkee julkaisuportin kautta), payload kantaa vain koodin.
+UNSCORED_CODES = frozenset({UNSCORED_NO_VALID_FREEZE})
 
 
 def freeze_invalid(frozen: dict, *, earlier_exists: bool) -> str | None:
@@ -316,25 +313,34 @@ def freeze_invalid(frozen: dict, *, earlier_exists: bool) -> str | None:
     return None
 
 
-def _frozen_public_row(r: dict, freeze: dict | None) -> tuple[dict | None, str | None]:
+def _frozen_public_row(r: dict, freeze: dict | None) -> dict:
+    """Yksi jaadytetyn sarjan rivi julkiseen muotoon.
+
+    Siirtokustannus: graderi kirjaa `transfer_cost`in ja sen lahteen, ja
+    `None` tarkoittaa ettei kustannusta voitu todentaa FPL:n saannoilla -
+    silloin rivi naytetaan BRUTTONA ja `transfer_cost_verified: False`
+    sanoo sen (Villen paatos 21.9). 21.9 ENNEN gradatut rivit (GW3) eivat
+    kanna kenttaa: nolla siirtoa freezessa = 0 todennetusti, muuten
+    todentamaton. Lukua ei arvata kummassakaan suunnassa.
+    """
     gw = int(r["gw"])
-    kustannus = r.get("transfer_cost")
-    lahde = r.get("transfer_cost_source")
-    if kustannus is None:
-        # 21.9 ENNEN gradatut freeze-rivit (GW3) eivat kanna kustannusta.
-        # Hyvaksytaan vain jos freezen oma meta sanoo nolla hittia; muuten
-        # rivi jaa pois eika siita arvata lukua.
-        hitit = ((freeze or {}).get("meta") or {}).get("hits")
-        if hitit in (0, None) and freeze is not None:
-            kustannus, lahde = 0, "freeze_hits_zero_legacy"
+    if "transfer_cost" in r:
+        kustannus = r.get("transfer_cost")
+        lahde = r.get("transfer_cost_source")
+    else:
+        siirrot = ((freeze or {}).get("meta") or {}).get("transfers")
+        if freeze is not None and siirrot is not None and len(siirrot) == 0:
+            kustannus, lahde = 0, "no_transfers"
         else:
-            return None, (f"GW{gw}: rivilta puuttuu transfer_cost ja freezen "
-                          f"hits={hitit!r}; lukua ei arvata")
+            kustannus, lahde = None, "unverified"
     return {
         "gw": gw,
         "points": int(r.get("points") or 0),
-        "transfer_cost": int(kustannus),
+        "transfer_cost": None if kustannus is None else int(kustannus),
+        "transfer_cost_verified": kustannus is not None,
         "transfer_cost_source": lahde,
+        # Malli ei pelaa chippeja (freezen meta.chip None, chip_evaluation
+        # decision not_played), joten mallisarjassa ei ole chippia.
         "active_chip": None,
         "provisional": False,
         "fpl_average": r.get("fpl_average"),
@@ -345,94 +351,81 @@ def _frozen_public_row(r: dict, freeze: dict | None) -> tuple[dict | None, str |
         "autosubs": r.get("autosubs") or [],
         "graded_at": r.get("graded_at"),
         "source": SOURCE_FROZEN,
-        "row_basis": ROW_BASIS_FROZEN,
         # None = eroa ei mitattu (ennen 21.9 gradattu rivi); True/False mitattu.
         "entry_diverged": r.get("entry_diverged"),
         "entry_diff": r.get("entry_diff"),
-    }, None
+    }
 
 
-def public_model_series(frozen_doc: dict, entry_doc: dict,
-                        freezes: dict[int, dict],
-                        exceptions: dict[int, dict]) -> dict:
-    """Puhdas ydin: julkinen mallisarja yhdesta paikasta.
+def public_model_series(frozen_doc: dict, freezes: dict[int, dict]) -> dict:
+    """Puhdas ydin: mallin julkinen sarja, vain jaadytetysta sarjasta.
 
-    Jaadytetty sarja on runko. Entry-rivi otetaan VAIN kierrokselle jonka
-    freeze on `freeze_invalid` JA jolle on kelvollinen poikkeuspaatos -
-    silloin rivi sanoo sen itse (`row_basis`, `fallback_reason`). Mikaan muu
-    polku ei tuo entry-lukua sarjaan, joten Villen yliajo ei voi siirtya
-    mallin lukuun.
+    Ottaa vastaan VAIN jaadytetyn sarjan: entry-sarjaa ei edes anneta
+    funktiolle, joten entryn luku ei voi paatya mallisarjaan millaan
+    haaralla (rakenne, ei ehto).
     """
     validate_gw_scores(frozen_doc, source=SOURCE_FROZEN)
-    validate_gw_scores(entry_doc, source=SOURCE_ENTRY)
-    rows: dict[int, dict] = {}
-    missing: dict[int, str] = {}
+    rows = {}
     for r in frozen_doc.get("gameweeks") or []:
-        gw = int(r["gw"])
-        row, syy = _frozen_public_row(r, freezes.get(gw))
-        if row is None:
-            missing[gw] = syy
-        else:
-            rows[gw] = row
-    entry_rows = {int(r["gw"]): r for r in entry_doc.get("gameweeks") or []}
-    fallback = []
+        rows[int(r["gw"])] = _frozen_public_row(r, freezes.get(int(r["gw"])))
     ensimmainen = min(freezes) if freezes else None
+    unscored = []
     for gw in sorted(freezes):
         if gw in rows:
             continue
-        syy = freeze_invalid(freezes[gw],
-                             earlier_exists=(ensimmainen is not None
-                                             and gw > ensimmainen))
-        if syy is None:
-            continue            # kelvollinen freeze, ei viela gradattu
-        if gw in exceptions:
-            exc, virhe = valid_exception(exceptions.get(gw), gw)
-        else:
-            exc, virhe = None, None
-        if virhe:
-            missing[gw] = virhe
-            continue
-        if exc is None:
-            missing[gw] = f"{syy}; poikkeuspaatosta ei ole kirjattu"
-            continue
-        e = entry_rows.get(gw)
-        if e is None:
-            missing[gw] = f"{syy}; entry-rivia ei ole viela gradattu"
-            continue
-        rows[gw] = {
-            "gw": gw,
-            "points": int(e.get("points") or 0),
-            "transfer_cost": int(e.get("transfer_cost") or 0),
-            "transfer_cost_source": "entry",
-            "active_chip": e.get("active_chip"),
-            "provisional": bool(e.get("provisional")),
-            "fpl_average": e.get("fpl_average"),
-            "captain_id": e.get("captain_id"),
-            "captain_reason": None,
-            "captain_points_added": e.get("captain_points_added"),
-            "bench_points": e.get("bench_points"),
-            "autosubs": e.get("autosubs") or [],
-            "graded_at": e.get("graded_at"),
-            "source": SOURCE_ENTRY,
-            "row_basis": ROW_BASIS_ENTRY_FALLBACK,
-            "fallback_reason": str(exc["reason"]),
-            "fallback_decided": f"{exc['decided_by']} {exc['decided_at']}",
-            "entry_diverged": False,
-            "entry_diff": None,
-        }
-        fallback.append(gw)
+        if freeze_invalid(freezes[gw], earlier_exists=(ensimmainen is not None
+                                                       and gw > ensimmainen)):
+            unscored.append({"gw": gw, "code": UNSCORED_NO_VALID_FREEZE})
     return {
         "meta": {
             "series_source": CANONICAL_SOURCE,
             "decision": CANONICAL_DECISION,
-            "fallback_gws": fallback,
-            "missing_gws": {str(k): v for k, v in sorted(missing.items())},
-            # Entry EI ole mallin rivin tarkistusreitti taman sarjan
-            # riveille. Rivin `entry_diverged is False` kertoo milloin se on.
-            "entry_id": None,
+            "unscored_gws": unscored,
         },
         "gameweeks": [rows[g] for g in sorted(rows)],
     }
+
+
+def public_entry_series(entry_doc: dict) -> dict:
+    """Puhdas ydin: FPL-entryn 116920 sarja omana sarjanaan.
+
+    Tama on "our FPL entry (model + human chip calls)": entryn omat pisteet,
+    chipit ja hitit sellaisenaan. Se ratkaisee Beat the Model -miniliigan,
+    joten se naytetaan - mutta ERI nimella ja ERI kentassa kuin mallisarja.
+    """
+    validate_gw_scores(entry_doc, source=SOURCE_ENTRY)
+    from src.models.fpl_model_entry import ENTRY_ID
+    rows = []
+    for r in sorted(entry_doc.get("gameweeks") or [], key=lambda x: int(x["gw"])):
+        kustannus = int(r.get("transfer_cost") or 0)
+        pisteet = int(r.get("points") or 0)
+        rows.append({
+            "gw": int(r["gw"]),
+            "points": pisteet,
+            "points_net": pisteet - kustannus,
+            "transfer_cost": kustannus,
+            "fpl_average": r.get("fpl_average"),
+            "chip": r.get("active_chip"),
+            "provisional": bool(r.get("provisional")),
+        })
+    return {"meta": {"series_source": SOURCE_ENTRY, "entry_id": ENTRY_ID},
+            "gameweeks": rows}
+
+
+#: Julkisen repon pysyva osoite. Jaadytetty rivi on todistettavissa sen
+#: git-historiasta (commit ennen deadlinea).
+REPO_BLOB = "https://github.com/GoalIQ/football-prediction/blob/main/"
+
+
+def frozen_route(gw: int) -> dict:
+    """Mallin luvun tarkistusreitti: jaadytetty rivi julkisessa repossa.
+
+    Pisteet lasketaan FPL:n `total_points`ista tahan riviin, ja gradattu
+    rivi on `model_squad_frozen_gw_scores.json`:ssa samassa hakemistossa.
+    """
+    gw = int(gw)
+    return {"kind": "frozen_squad", "gw": gw,
+            "url": f"{REPO_BLOB}data/model_squad_frozen/gw{gw}.json"}
 
 
 def _read_dir(d) -> dict[int, dict]:
@@ -451,21 +444,22 @@ def _read_dir(d) -> dict[int, dict]:
     return out
 
 
-def load_public_model_series(*, frozen_path=None, entry_path=None,
-                             frozen_dir=None, exceptions_dir=None) -> dict:
-    """AINOA lukija jolla pinta saa lukea mallin kierrospisteet.
+def load_public_model_series(*, frozen_path=None, frozen_dir=None) -> dict:
+    """AINOA lukija jolla pinta saa lukea MALLIN kierrospisteet.
 
-    Kaatuu `SarjaVirhe`en jos jokin lahde on rikki - pinta paattaa itse onko
-    se "ei saatavilla" (fail-closed), eika lukija palauta osittaista sarjaa.
+    Kaatuu `SarjaVirhe`en jos lahde on rikki - pinta paattaa itse onko se
+    "ei saatavilla" (fail-closed), eika lukija palauta osittaista sarjaa.
     Parametrit ovat testeja varten; tuotanto kayttaa oletuspolkuja.
     """
     fp = Path(frozen_path or FROZEN_SCORES_PATH)
-    ep = Path(entry_path or ENTRY_SCORES_PATH)
     frozen_doc = load_gw_scores(fp, source=SOURCE_FROZEN)
-    entry_doc = load_gw_scores(ep, source=SOURCE_ENTRY)
-    return public_model_series(frozen_doc, entry_doc,
-                               _read_dir(frozen_dir or FROZEN_DIR),
-                               _read_dir(exceptions_dir or EXCEPTIONS_DIR))
+    return public_model_series(frozen_doc, _read_dir(frozen_dir or FROZEN_DIR))
+
+
+def load_public_entry_series(*, entry_path=None) -> dict:
+    """AINOA lukija jolla pinta saa lukea FPL-ENTRYN kierrospisteet."""
+    ep = Path(entry_path or ENTRY_SCORES_PATH)
+    return public_entry_series(load_gw_scores(ep, source=SOURCE_ENTRY))
 
 
 def provisional_hint_gws() -> list[int]:

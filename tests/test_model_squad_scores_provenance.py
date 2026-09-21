@@ -88,7 +88,7 @@ def _frozen_rivi(gw: int, **kw) -> dict:
          "frozen_at": f"2026-09-0{gw}T07:00:00Z",
          "source": "frozen_squad", "provenance": "entry_verified",
          # 21.9.2026 (Villen paatos "mallin rivi"): hitti ja entryn ero riville.
-         "transfer_cost": 0, "transfer_cost_source": "fpl_entry_same_squad",
+         "transfer_cost": 0, "transfer_cost_source": "no_transfers",
          "entry_diverged": False,
          "entry_diff": {"common": 15, "missing": [], "extra": [],
                         "xi_only_frozen": [], "xi_only_entry": [],
@@ -767,7 +767,7 @@ def test_kanoninen_paatos_on_kirjattu():
     """Paatos on vakio jolla on perustelu, ei kommentti."""
     assert mss.CANONICAL_SOURCE == mss.SOURCE_FROZEN
     assert "21.9.2026" in mss.CANONICAL_DECISION
-    assert "poikkeuspaatos" in mss.CANONICAL_DECISION
+    assert "unscored_gws" in mss.CANONICAL_DECISION
 
 
 # ===========================================================================

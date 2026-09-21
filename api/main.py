@@ -5559,11 +5559,19 @@ def fantasy_model_race(
     # rivin sarja, luettuna yhdella julkisella lukijalla. Raaka tiedostoluku
     # on kielletty pinnan koodissa (tests/test_model_series_reader_discipline.py).
     from src.models.model_squad_scores import (SarjaVirhe,
+                                               load_public_entry_series,
                                                load_public_model_series)
     try:
         log = load_public_model_series()
     except SarjaVirhe:
         log = None
+    # Entryn 116920 sarja ERIKSEEN (miniliigan ratkaiseva sarja, malli +
+    # ihmisen chip-paatokset). Ei koskaan mallin luku; `build_race` kantaa
+    # sen omassa kentassaan. Rikki -> kentta None, mallisarja ei karsi.
+    try:
+        entry_series = load_public_entry_series()
+    except SarjaVirhe:
+        entry_series = None
 
     history = None
     if entry is not None:
@@ -5594,7 +5602,7 @@ def fantasy_model_race(
             model_history = None
 
     return build_race(log, history, premium=is_premium_request(request),
-                      model_history=model_history)
+                      model_history=model_history, entry_series=entry_series)
 
 
 @app.get("/api/fantasy/plan",

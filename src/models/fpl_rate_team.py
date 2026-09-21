@@ -1703,21 +1703,22 @@ def transfer_horizon_gws(pool: list[dict], xp_data: dict, target_gw: int,
 def model_squad_gw(gw: int, *, series: dict | None = None) -> dict | None:
     """Mallin oman rivin tulos kierrokselta, JULKISESTA mallisarjasta.
 
-    21.9.2026 (Villen paatos "mallin rivi"): luku on jaadytetyn rivin luku
-    (`model_squad_scores.load_public_model_series`), ei entryn 116920.
-    Ei uutta verkkokutsua. None kun kierrosta ei ole sarjassa -> vertailu
-    jatetaan pois kokonaan (puolikas ottelu ei ole ottelu).
+    21.9.2026 (Villen paatos "molemmat sarjat, malli ensin"): luku on mallin
+    jaadytetyn rivin luku (`model_squad_scores.load_public_model_series`),
+    ei entryn 116920. Ei uutta verkkokutsua. None kun kierrosta ei ole
+    sarjassa (esim. GW4, freeze epakelpo) -> vertailu jatetaan pois
+    kokonaan (puolikas ottelu ei ole ottelu).
 
-    `entry_id` on TARKISTUSREITTI ja annetaan vain kun entry todistaa rivin
-    luvun: rivi on entry-fallback, tai entryn mitattu ero on False. Muuten
-    None, jolloin kortti ja SPA pudottavat mallisolut eivatka nayta
-    "Model · entry 116920" -reittia luvulle jota entry ei nayta (GW3: sarja
-    63, entry 72 triple captainilla). `model_entry` on aina mallin tili,
-    jotta "kayttaja ON malli" -tarkistus ei riipu reitista.
+    TARKISTUSREITTI on jaadytetty artefakti (`route`), EI entry: entry voi
+    erota rivista chipin, kokoonpanon tai siirtojen verran (GW3: malli 63,
+    entry 72 triple captainilla), joten "Model · entry 116920" osoittaisi
+    lukuun jota entry ei nayta. `entry_id` pysyy kentassa None:na vanhojen
+    klienttien takia (ne pudottavat mallisolun ilman reittia).
+    `model_entry` on aina mallin tili, jotta "kayttaja ON malli"
+    -tarkistus ei riipu reitista.
     """
     from src.models.fpl_model_entry import ENTRY_ID
-    from src.models.model_squad_scores import (ROW_BASIS_ENTRY_FALLBACK,
-                                               SarjaVirhe,
+    from src.models.model_squad_scores import (SarjaVirhe, frozen_route,
                                                load_public_model_series)
     if series is None:
         try:
@@ -1726,21 +1727,22 @@ def model_squad_gw(gw: int, *, series: dict | None = None) -> dict | None:
             return None
     for r in (series.get("gameweeks") or []):
         if r.get("gw") == gw:
-            reitti = (r.get("row_basis") == ROW_BASIS_ENTRY_FALLBACK
-                      or r.get("entry_diverged") is False)
             return {
-                "entry_id": ENTRY_ID if reitti else None,
+                "entry_id": None,
                 "model_entry": ENTRY_ID,
+                "route": frozen_route(gw),
                 # Portin 15. kierros: NETTO myos mallilla.
                 # Yksi lukija (fpl_model_race.model_points_net): netto
                 # johdetaan rivin omista kentista, ei odoteta kirjoittajalta.
+                # Todentamaton kustannus (None) -> brutto, ja `cost_verified`
+                # sanoo sen (Villen paatos 21.9).
                 "points": _model_points_net(r),
                 "points_gross": r.get("points"),
+                "cost_verified": r.get("transfer_cost_verified", True) is not False,
                 "fpl_average": r.get("fpl_average"),
                 "provisional": bool(r.get("provisional")),
-                # Portti 2.9 k4: mallin chip kortille kayttajan chipin rinnalle.
+                # Malli ei pelaa chippeja; kentta sailyy kortin muodon takia.
                 "chip": r.get("active_chip"),
-                "basis": r.get("row_basis"),
             }
     return None
 
@@ -1987,6 +1989,12 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         # mallirivia ei ole -> kortti pudottaa mallisolut.
         "model_entry_id": ((model or {}).get("entry_id")
                            if model_points is not None else None),
+        # 21.9: mallin luvun tarkistusreitti = jaadytetty artefakti.
+        # {"kind": "frozen_squad", "gw": N, "url": ...} tai None.
+        "model_route": ((model or {}).get("route")
+                        if model_points is not None else None),
+        "model_cost_verified": ((model or {}).get("cost_verified")
+                                if model_points is not None else None),
         "model_chip": ((model or {}).get("chip")
                        if model_points is not None else None),
         # Positiivinen = kayttaja voitti mallin. None kun jompikumpi puuttuu:

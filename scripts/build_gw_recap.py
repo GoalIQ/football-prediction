@@ -72,13 +72,34 @@ def _load_model_series():
         return None
 
 
+def _load_entry_series():
+    """FPL-entryn 116920 sarja omana sarjanaan tai None (21.9.2026)."""
+    from src.models.model_squad_scores import (SarjaVirhe,
+                                               load_public_entry_series)
+    try:
+        return load_public_entry_series()
+    except SarjaVirhe as e:
+        print(f"::warning::entry-sarjaa ei voi lukea: {e}")
+        return None
+
+
 def squad_rows(doc) -> list[dict]:
     rows = doc if isinstance(doc, list) else ((doc or {}).get("gameweeks") or [])
     return sorted([r for r in rows if isinstance(r, dict) and r.get("gw") is not None],
                   key=lambda r: int(r["gw"]))
 
 
-def running_record(rows: list[dict]) -> dict:
+#: Mita juokseva rivi vertaa (julkinen artefakti -> englanniksi). Oma puoli
+#: nimetaan, FPL:n luvun perustaa ei vaiteta (ks. `running_record`).
+BASIS_MODEL = ("model points before its own transfer hits, against FPL's "
+               "published average_entry_score as-is (we have not "
+               "established whether FPL's figure is before or after hits)")
+BASIS_ENTRY = ("FPL entry points before transfer hits, chips included, "
+               "against FPL's published average_entry_score as-is (we have "
+               "not established whether FPL's figure is before or after hits)")
+
+
+def running_record(rows: list[dict], basis: str = BASIS_MODEL) -> dict:
     """Juokseva rivi VAIN lopullisesti gradatuista kierroksista.
 
     Provisionaalinen kierros jatetaan pois: kesken oleva luku vaihtuu viela,
@@ -128,9 +149,7 @@ def running_record(rows: list[dict]) -> dict:
         # 🔴 Portin 20. kierros: "gross vs gross" VAITTAA etta molemmat puolet
         # ovat bruttoja, ja sulkulause kumosi saman lauseen sisalla puolet
         # siita. Nimetaan vain oma puoli.
-        "basis": "model points before its own transfer hits, against FPL's "
-                 "published average_entry_score as-is (we have not "
-                 "established whether FPL's figure is before or after hits)",
+        "basis": basis,
         "gw_list": [int(r["gw"]) for r in lopulliset],
         "total_diff": sum(diffs),
         "avg_diff": round(sum(diffs) / len(diffs), 1),
@@ -234,7 +253,35 @@ def headline_miss(acc_row):
     return paras
 
 
-def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
+def entry_block(entry_doc) -> dict | None:
+    """FPL-entryn 116920 sarja recapiin ERILLISENA lohkona (21.9.2026).
+
+    "Our FPL entry (model + human chip calls)": ratkaisee Beat the Model
+    -miniliigan, mutta se ei ole mallin track record. Additiivinen kentta,
+    ei vaikuta `running`iin eika `gameweeks`iin.
+    """
+    if not entry_doc:
+        return None
+    rows = squad_rows(entry_doc)
+    return {
+        "entry_id": (entry_doc.get("meta") or {}).get("entry_id"),
+        "running": running_record(rows, basis=BASIS_ENTRY),
+        "gameweeks": [{
+            "gw": int(r["gw"]),
+            "provisional": bool(r.get("provisional")),
+            "points": r.get("points"),
+            "points_net": r.get("points_net"),
+            "average": r.get("fpl_average"),
+            "diff": (int(r["points"]) - int(r["fpl_average"])
+                     if r.get("points") is not None
+                     and r.get("fpl_average") is not None else None),
+            "chip": r.get("chip"),
+        } for r in rows],
+    }
+
+
+def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime,
+          entry_doc=None) -> dict:
     rows = squad_rows(squad_doc)
     by_gw_calls = {int(g["gw"]): g for g in ((calls_doc or {}).get("gameweeks") or [])
                    if g.get("gw") is not None}
@@ -268,9 +315,10 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
                 "captain_id": r.get("captain_id"),
                 "captain_points_added": r.get("captain_points_added"),
                 "graded_at": r.get("graded_at"),
-                # frozen = mallin jaadytetty rivi; entry_fallback = kirjattu
-                # poikkeus (freeze epakelpo). Kuluttaja ei joudu arvaamaan.
-                "series_basis": r.get("row_basis"),
+                # 21.9: False = mallin oman hitin kustannusta ei voitu
+                # todentaa FPL:n saannoilla; `points_net` on silloin brutto.
+                "transfer_cost_verified": r.get("transfer_cost_verified",
+                                                True) is not False,
             },
             "calls": calls_block(c) if c else None,
             "accuracy": ({"mae": a.get("mae"), "n": a.get("n"),
@@ -286,12 +334,19 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
         },
         "running": running_record(rows),
         "gameweeks": gws,
+        # 21.9: mallisarjasta pois jaaneet kierrokset koodilla
+        # (`no_valid_frozen_squad`). Ei nollaa, ei entryn lukua.
+        "unscored_gws": list(((squad_doc or {}).get("meta") or {})
+                             .get("unscored_gws") or []),
+        # Erillinen sarja, EI mallin track record.
+        "entry_series": entry_block(entry_doc),
     }
 
 
 def main() -> int:
     doc = build(_load(CALLS_PATH), _load_model_series(), _load(ACC_PATH),
-                _dt.datetime.now(_dt.timezone.utc))
+                _dt.datetime.now(_dt.timezone.utc),
+                entry_doc=_load_entry_series())
     if not doc["gameweeks"]:
         print("::warning::ei gradattuja kierroksia - ei kirjoiteta recapia.")
         return 0

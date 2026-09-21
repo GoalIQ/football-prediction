@@ -20,15 +20,14 @@ tahan graderiin:
      yksi: `fpl_model_entry.entry_diff`, sama jota verify-vahti kayttaa.
   2. Rakenteellisesti epakelpo freeze (`freeze_invalid`: putosi vapaaseen
      optimiin, mitattu gw4.json 12.9) EI gradaudu: se ei ole mallin
-     saavutettava rivi. Julkinen lukija kayttaa kierrokselle entrya vain jos
-     Villen poikkeuspaatos on kirjattu (`model_squad_exceptions/`).
-  3. Siirtokustannus kuuluu riviin (`transfer_cost`). Kun jaadytetyn rivin
-     15 on tasan entryn 15 eika entry pelannut wildcardia/free hitia, siirrot
-     ovat samat ja FPL:n oma veloitus on mitattu tosiasia
-     (`transfer_cost_source: fpl_entry_same_squad`). Muuten kustannus on
-     mallin oma kirjaus `meta.hits` x 4 (`freeze_hits`). Syy: freezen
-     FT-laskuri on mitattu vaaraksi (GW5: freeze sanoo 1 hitti, FPL veloitti
-     samoista siirroista 0 p, jonorivi FREEZE-FT-LASKURI-VAARIN).
+     saavutettava rivi. Kierros jaa mallisarjasta pois nakyvalla koodilla
+     (`unscored_gws`) eika saa entryn lukua (Villen paatos 21.9).
+  3. Siirtokustannus kuuluu riviin (`transfer_cost`), ja se lasketaan
+     FPL:N SAANNOILLA, ei freezen omasta FT-laskurista (mitattu vaaraksi:
+     GW5 freeze sanoo 1 hitti, FPL:n saldo oli 3 -> 0 p, jonorivi
+     FREEZE-FT-LASKURI-VAARIN). Ks. `_siirtokustannus`. Kun kustannusta ei
+     voi todentaa, se kirjataan `None`:ksi ja rivi naytetaan bruttona
+     nakyvalla merkinnalla (Villen paatos 21.9).
 
 Entry-rivi haetaan ennen gradausta. Jos sita ei saada luettua, kierros
 JATETAAN seuraavaan ajoon: loki on append-only, eika rivia jonka ero tai
@@ -67,9 +66,8 @@ LOG_PATH = FROZEN_SCORES_PATH
 FPL_BASE = "https://fantasy.premierleague.com/api"
 FPL_HEADERS = {"User-Agent": "Mozilla/5.0 (GoalIQ grade job)"}
 
-#: Chipit joiden kierroksella entryn siirrot eivat kerro mallin siirroista
-#: mitaan (koko rivi vaihtuu ilman kustannusta).
-_NOLLAAVAT_CHIPIT = ("wildcard", "freehit")
+#: FPL:n hitin hinta per ylimaarainen siirto.
+HIT_POINTS = 4
 
 # Meta-kentat. 21.9: KIRJOITETAAN AINA (ei setdefault): sarjan asema muuttui
 # diagnostiikasta julkiseksi, ja vanha teksti ("the public season race reads
@@ -126,17 +124,53 @@ def _entry_event(gw: int) -> tuple[dict | None, str]:
         return None, f"unreachable ({e!r})"
 
 
-def _siirtokustannus(frozen: dict, event: dict | None, diff: dict | None
-                     ) -> tuple[int, str]:
-    """(kustannus, lahde). Ks. docstring kohta 3."""
-    hist = (event or {}).get("entry_history") or {}
-    chip = (event or {}).get("active_chip")
-    if (diff is not None and diff.get("squad_match")
-            and chip not in _NOLLAAVAT_CHIPIT
-            and hist.get("event_transfers_cost") is not None):
-        return int(hist["event_transfers_cost"]), "fpl_entry_same_squad"
-    hitit = ((frozen.get("meta") or {}).get("hits")) or 0
-    return 4 * int(hitit), "freeze_hits"
+def _siirtokustannus(frozen: dict, ft_fpl) -> tuple[int | None, str]:
+    """(kustannus, lahde) FPL:n saannoilla. `ft_fpl()` palauttaa FPL:n oman
+    FT-saldon taman kierroksen deadlinella entryn historiasta (tai None).
+
+    Saannot jarjestyksessa, jokainen mitattu tai FPL:n saanto:
+      GW1              siirrot rajattomat               -> 0
+      0 siirtoa                                          -> 0
+      1 siirto         FPL antaa vahintaan 1 FT joka kierros GW2:sta -> 0
+      GW2              saldo on 1 kaikilla (GW1 rajaton) -> (n - 1) x 4
+      reseed (entry_picks)  malli perii entryn rungon JA saldon, joten
+                       FPL:n oma saldo historiasta on mallin saldo
+                                                         -> max(0, n - ft) x 4
+      muu              saldoa ei voi todentaa (ketju jatkui mallin omilla
+                       siirroilla, ja sen laskuri on mitattu vaaraksi)
+                                                         -> None (brutto +
+                                                            nakyva merkinta)
+    Mitattu 21.9 GW2: 3 siirtoa, FT 1 (FPL:n historia) -> 8 = freezen oma
+    kirjaus. GW5: 2 siirtoa, reseed, FPL:n saldo 3 -> 0 (freeze sanoi 4).
+    """
+    meta = frozen.get("meta") or {}
+    gw = int(meta.get("gw") or 0)
+    n = len(meta.get("transfers") or [])
+    if gw <= 1:
+        return 0, "gw1_unlimited"
+    if n == 0:
+        return 0, "no_transfers"
+    if n == 1:
+        return 0, "one_transfer_always_free"
+    if gw == 2:
+        return HIT_POINTS * max(0, n - 1), "fpl_rules_gw2"
+    if meta.get("squad_source") == "entry_picks":
+        ft = ft_fpl()
+        if ft is not None:
+            return HIT_POINTS * max(0, n - int(ft)), "fpl_rules_entry_ft"
+    return None, "unverified"
+
+
+def _entry_history():
+    """(historia, tila). Tila ok / unreachable."""
+    from src.models.fpl_model_entry import ENTRY_ID
+    try:
+        r = requests.get(f"{FPL_BASE}/entry/{ENTRY_ID}/history/",
+                         headers=FPL_HEADERS, timeout=30)
+        r.raise_for_status()
+        return r.json(), "ok"
+    except Exception as e:
+        return None, f"unreachable ({e!r})"
 
 
 def main() -> int:
@@ -199,10 +233,10 @@ def main() -> int:
                                                      and gw > ensimmainen))
         if syy:
             epakelvot.append(int(gw))
-            print(f"::warning::GW{gw} EI GRADATA: {syy}. Julkinen lukija "
-                  f"kayttaa kierrokselle entrya vain jos Villen "
-                  f"poikkeuspaatos on kirjattu (model_squad_exceptions/"
-                  f"gw{gw}.json). Tama ei ole virhe vaan kieltaytyminen.")
+            print(f"::warning::GW{gw} EI GRADATA: {syy}. Kierros jaa "
+                  f"mallisarjasta pois (unscored_gws: no_valid_frozen_squad) "
+                  f"eika saa entryn lukua korvikkeeksi (Villen paatos 21.9). "
+                  f"Tama ei ole virhe vaan kieltaytyminen.")
             continue
         event, tila = _entry_event(int(gw))
         if tila.startswith("unreachable"):
@@ -224,11 +258,26 @@ def main() -> int:
             points[int(el["id"])] = int(st.get("total_points") or 0)
             minutes[int(el["id"])] = int(st.get("minutes") or 0)
 
+        from src.models.fpl_entry_history import free_transfers_for_gw
         from src.models.fpl_model_entry import (ProvenienssiPuuttuu,
                                                 entry_diff,
                                                 require_entry_provenance)
         diff = entry_diff(frozen, event.get("picks") or []) if event else None
-        kustannus, lahde = _siirtokustannus(frozen, event, diff)
+        historia_tila = {}
+
+        def _ft():
+            if "h" not in historia_tila:
+                historia_tila["h"] = _entry_history()
+            h, tila = historia_tila["h"]
+            return free_transfers_for_gw(h, int(gw)) if h else None
+
+        kustannus, lahde = _siirtokustannus(frozen, _ft)
+        if (lahde == "unverified" and "h" in historia_tila
+                and historia_tila["h"][0] is None):
+            print(f"::warning::GW{gw}: entryn historiaa ei saatu luettua "
+                  f"({historia_tila['h'][1]}), joten siirtokustannusta ei voi "
+                  f"todentaa. Kierros jaa seuraavaan ajoon (append-only).")
+            continue
         try:
             peruste = require_entry_provenance(frozen, FROZEN_DIR)
         except ProvenienssiPuuttuu:
@@ -265,7 +314,8 @@ def main() -> int:
         print(f"OK: GW{gw} mallin rivi gradattu — {row['points']} p "
               f"(ilman kapteenia {row['points_before_captain']}, "
               f"kapteeni {row['captain_reason']} +{row['captain_points_added']}), "
-              f"siirtokustannus {kustannus} ({lahde}), autosubit: {subs}, "
+              f"siirtokustannus {kustannus if kustannus is not None else 'TODENTAMATON'} "
+              f"({lahde}), autosubit: {subs}, "
               f"penkille jäi {row['bench_points']} p, FPL-keskiarvo "
               f"{row['fpl_average']}, entry poikkesi: {row['entry_diverged']}.")
         if row["entry_diverged"]:
