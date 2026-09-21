@@ -104,6 +104,69 @@ def test_oikea_tiedosto_lapaisee(monkeypatch, cache_dir):
     assert (cache_dir / "ENG_Premier_League_2526.csv").exists()
 
 
+def _mock_get_per_url(monkeypatch, vastaukset: dict[str, _Resp]):
+    """requests.get joka vastaa URLin mukaan. Tuntematon URL = 404."""
+    kutsut: list[str] = []
+
+    def fake_get(url, timeout=None, allow_redirects=True):
+        assert allow_redirects is False, "redirectia ei saa seurata automaattisesti"
+        kutsut.append(url)
+        return vastaukset.get(url, _Resp(404))
+
+    monkeypatch.setattr(fd.requests, "get", fake_get)
+    return kutsut
+
+
+def test_host_vaihto_samalla_polulla_seurataan(monkeypatch, cache_dir):
+    """21.9.2026: www -> apex SAMAAN tiedostoon on siirto, ei myrkytys.
+
+    Ennen korjausta jokainen co.uk-tiedosto vastasi taman ohjauksen ja vahti
+    hylkasi kaikki: NED/POR/Championship ajoivat tuotannossa snapshotilla
+    ilman kautta 26/27. Pyydetaan tarkoituksella www-osoitetta, jotta testi
+    mittaa seuraamista eika pelkkaa perus-URLin vaihtoa."""
+    www = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
+    apex = "https://football-data.co.uk/mmz4281/2526/E0.csv"
+    kutsut = _mock_get_per_url(monkeypatch, {
+        www: _Resp(302, location=apex),
+        apex: _Resp(200, content=E0_CSV.encode("latin-1")),
+    })
+    df = fd._hae_csv(www, cache_dir / "E0_2526.csv")
+    assert len(df) == 2
+    assert kutsut == [www, apex], "tasan yksi hyppy"
+
+
+def test_host_vaihto_eri_polulle_hylataan(monkeypatch, cache_dir):
+    """Host vaihtuu JA polku vaihtuu (E0 -> EC): tama on 13.8:n myrkytys."""
+    www = "https://www.football-data.co.uk/mmz4281/2627/E0.csv"
+    kutsut = _mock_get_per_url(monkeypatch, {
+        www: _Resp(302, location="https://football-data.co.uk/mmz4281/2627/EC.csv"),
+        "https://football-data.co.uk/mmz4281/2627/EC.csv": _Resp(
+            200, content=EC_CSV.encode("latin-1")),
+    })
+    with pytest.raises(ValueError):
+        fd._hae_csv(www, cache_dir / "E0_2627.csv")
+    assert kutsut == [www], "polkua vaihtavaa ohjausta ei saa hakea"
+    assert list(cache_dir.iterdir()) == []
+
+
+def test_ohjaus_vieraaseen_domainiin_hylataan(monkeypatch, cache_dir):
+    """Sama polku mutta eri domain ei ole host-siirto."""
+    www = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
+    kutsut = _mock_get_per_url(monkeypatch, {
+        www: _Resp(302, location="https://example.com/mmz4281/2526/E0.csv"),
+    })
+    with pytest.raises(ValueError):
+        fd._hae_csv(www, cache_dir / "E0_2526.csv")
+    assert kutsut == [www]
+
+
+def test_perus_url_on_apex(monkeypatch, cache_dir):
+    """Loader pyytaa suoraan apexista, jottei jokainen haku maksa hyppya."""
+    kutsut = _mock_get_per_url(monkeypatch, {})
+    fd.lataa_mainstream("ENG-Premier League", "2526")
+    assert kutsut and all(u.startswith("https://football-data.co.uk/") for u in kutsut), kutsut
+
+
 def test_diviton_vanha_formaatti_hyvaksytaan(monkeypatch, cache_dir):
     """Ilman Div-saraketta vartija ei saa laueta (vanhat kausitiedostot)."""
     _mock_get(monkeypatch, _Resp(200, content=DIVITON_CSV.encode("latin-1")))

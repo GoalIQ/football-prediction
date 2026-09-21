@@ -137,6 +137,10 @@ se tehdaan portilla."""
 BRIDGE_LEAGUES: tuple[str, ...] = (
     "INT-Europa League",
     "INT-Conference League",
+    # 21.9: CL:n karsinnat UEFAn rajapinnasta (src/data/uefa_matches.py).
+    # 🔴 PAKKO olla tassa: rivi jonka liiga ei ole silta eika turnaus
+    # luetaan KOTILIIGAKSI, jolloin Sabahin "kotiliiga" olisi CL-karsinta.
+    "INT-Champions League Qualifying",
 )
 """Turnaukset joiden ottelut ovat SILTA liigojen valilla CL:n lisaksi.
 
@@ -171,6 +175,29 @@ CLUB_ALIASES: dict[str, str] = {
     "aek athens": "pae aek",
     "psv eindhoven": "psv",
     "feyenoord rotterdam": "feyenoord",
+    # 21.9 (UEFA-rajapinta + fd.org CL vs kotiliigan lahde). Mitattu
+    # listaamalla mallinnettujen maiden UEFA-seurat joiden kanoninen nimi ei
+    # osunut kotiliigaan: 13 kpl, joista nama 12 ovat samoja seuroja. Ennen
+    # tata esim. Sporting CP (CL 26/27) oli mallissa ilman Primeiraa ja
+    # ilman Portugalin siirtymaa. Portti: tests/test_uefa_matches.py.
+    "tottenham hotspur": "tottenham",               # Understat PL
+    "real celta": "celta vigo",                     # fd.org 'RC Celta de Vigo'
+    "celta": "celta vigo",
+    "racing strasbourg alsace": "strasbourg alsace",
+    "strasbourg": "strasbourg alsace",
+    "aris thessaloniki": "aris saloniki",           # football.json GRE
+    "ofi crete": "ofi heraklion",
+    "pae olympiakos sfp": "olympiakos piraeus",
+    "olympiacos": "olympiakos piraeus",
+    "paok": "paok saloniki",
+    "n e c nijmegen": "nijmegen",                   # co.uk NED
+    "nec nijmegen": "nijmegen",
+    "braga": "sp braga",                            # co.uk POR
+    "sport lisboa e benfica": "benfica",
+    "sporting clube portugal": "sp lisbon",
+    "sporting cp": "sp lisbon",
+    "vitoria": "guimaraes",
+    "vitoria guimaraes": "guimaraes",
 }
 
 MIN_BRIDGE_MATCHES = 25
@@ -323,6 +350,22 @@ def _fold_shifts(model: "UefaJointModel") -> DixonColesModel:
     return out
 
 
+def _maaryhmat(d: pd.DataFrame, club_league: dict[str, str]) -> dict[str, str]:
+    """Kanoninen seura -> 'maa:XXX' seuroille joilla ei ole kotiliigaa.
+
+    Maa tulee UEFA-riveilta (sarakkeet home_maa/away_maa). Seura jolla on
+    mallinnettu kotiliiga ei saa ryhmaa. Ilman maatietoa ei ryhmaa."""
+    if "home_maa" not in d.columns:
+        return {}
+    out: dict[str, str] = {}
+    for puoli in ("home", "away"):
+        sub = d[[f"{puoli}_team", f"{puoli}_maa"]].dropna()
+        for club, maa in zip(sub[f"{puoli}_team"], sub[f"{puoli}_maa"]):
+            if maa and club not in club_league:
+                out.setdefault(club, f"maa:{maa}")
+    return out
+
+
 def fit_uefa_joint(
     df: pd.DataFrame,
     tournament_league: str = "INT-Champions League",
@@ -330,8 +373,15 @@ def fit_uefa_joint(
     iterations: int = 2,
     stale_seasons: frozenset[str] = frozenset(),
     bridge_leagues: tuple[str, ...] = BRIDGE_LEAGUES,
+    team_groups: str | None = None,
 ) -> UefaJointModel:
     """Sovita yhteismalli ja estimoi liigasiirtymat turnausotteluista.
+
+    `team_groups="maa"`: seura jolla EI ole mallinnettua kotiliigaa
+    kutistuu kohti oman maansa keskiarvoa eika koko datan keskiarvoa
+    (DixonColesModel.fit(team_groups=...)). Maa luetaan UEFA-rivien
+    `home_maa`/`away_maa`-sarakkeista. Kotiliigan seuroihin ei kosketa:
+    niiden kotiliigadata dominoi joka tapauksessa.
 
     `stale_seasons`: turnauskaudet jotka kelpaavat SILLAKSI (liigasiirtyman
     estimointiin) mutta EIVAT tee seurasta ennustettavaa.
@@ -386,7 +436,8 @@ def fit_uefa_joint(
     # Sama suunta myos oikeilla tuloksilla (72 CL-ottelua, log-loss 0,8965 ->
     # 0,8957). Kotiylivarmuus oli viisi kuudesta suurimmasta virheesta.
     dc = DixonColesModel(per_team_home_adv=False)
-    dc.fit(d, decay=decay, date_col="date")
+    ryhmat = _maaryhmat(d, club_league) if team_groups == "maa" else None
+    dc.fit(d, decay=decay, date_col="date", team_groups=ryhmat)
 
     la: dict[str, float] = collections.defaultdict(float)
     ld: dict[str, float] = collections.defaultdict(float)

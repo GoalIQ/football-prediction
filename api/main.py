@@ -1080,6 +1080,9 @@ def normalisoi_kaudet(
 
 
 _UEFA_JOINT_LEAGUES = ("INT-Champions League",)
+UEFA_TEAM_GROUPS = "maa"
+"""Yhteisfitin ryhmaprior (ks. `fit_uefa_joint(team_groups=...)`). Bake ja
+API lukevat saman arvon, joten artefakti ja live-fitti eivat voi erota."""
 
 
 def _on_uefa_yhteisfitti(liigat: tuple[str, ...] | list[str]) -> bool:
@@ -1153,7 +1156,30 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     # Kreikan ja Turkin siltamaaran kynnyksen yli. Lahde on avaimeton
     # (openfootball txt) ja vendoroitu, joten tama ei voi pudota tyhjaksi
     # kylmakaynnistyksessa; tyhja tulos lokitetaan silti nakyvasti.
-    silta = _lataa_otteludata_cached(list(BRIDGE_LEAGUES), turnauskaudet)
+    #
+    # 21.9: ENSISIJAINEN LAHDE ON UEFAN OMA RAJAPINTA (src/data/uefa_matches.py):
+    # EL, ECL ja CL:n karsinnat, kuluva kausi mukaan lukien. openfootball txt
+    # loppuu kauteen 25/26 eika sisalla CL-karsintoja, joten LASKilla oli
+    # mallissa yksi ottelu ja Sabahilla yksitoista. Nimet ratkaistaan
+    # PARITTAMALLA CL-ottelut fd.orgin riveihin (ei merkkijonoilla) ja
+    # kotiliigojen nimiin; ilman sita sama seura olisi kahtena entiteettina.
+    # openfootball jaa varaksi vain jos UEFA-data on kokonaan tyhja.
+    from src.data import uefa_matches as _uefa
+
+    uefa = _uefa.lataa(turnauskaudet)
+    if not uefa.empty:
+        kotinimet = set(dom["home_team"]) | set(dom["away_team"]) if not dom.empty else set()
+        uefa, _reitit = _uefa.ratkaise_nimet(uefa, tour, kotinimet)
+        silta = uefa[uefa["league"].isin(BRIDGE_LEAGUES)]
+        import collections as _collections
+        _laskuri = _collections.Counter(_reitit.values())
+        print(f"[UEFA] {turnaus}: siltarivit UEFAsta {len(silta)} "
+              f"({dict(silta['league'].value_counts())}), nimireitit {dict(_laskuri)}")
+    else:
+        silta = _lataa_otteludata_cached(
+            [L for L in BRIDGE_LEAGUES if L != _uefa.KARSINTA_LIIGA], turnauskaudet)
+        print(f"[UEFA] {turnaus}: UEFA-rajapinta tyhja -> openfootball-silta "
+              f"({len(silta)} rivia, EI CL-karsintoja)")
     if silta.empty:
         print(f"[UEFA] {turnaus}: siltaliigat {BRIDGE_LEAGUES} tyhjia -> "
               f"silta vain CL:sta (kalibroituvia liigoja vahemman)")
@@ -1169,8 +1195,15 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
             status_code=404,
             detail=f"No match data found for leagues={liigat}, seasons={kaudet}",
         )
+    # 21.9 MAARYHMA (UEFA_TEAM_GROUPS): seura ilman mallinnettua kotiliigaa
+    # kutistuu oman maansa keskiarvoon, ei suurliigojen tasolle. Mitattu
+    # takatestilla (leikkaukset 15.9.2025 ja 1.7.2026, 90 min tulos):
+    # log-loss vs ilman ryhmaa -0,004 +- 0,010 (n=318) ja -0,041 +- 0,015
+    # (n=343), karsinnoissa -0,044 +- 0,016. CL-sarjavaiheessa ero ei ole
+    # merkitseva kumpaankaan suuntaan. Raportti:
+    # goaliq-app cos-reports/cc-reports/2026-09-21-ucl-kattavuus.md.
     malli = fit_uefa_joint(df, tournament_league=turnaus, decay=decay,
-                           stale_seasons=stale)
+                           stale_seasons=stale, team_groups=UEFA_TEAM_GROUPS)
 
     # 🔴 NAYTTONIMET FD-MUODOSSA. Klientin CTA-portti vertaa
     # `/api/fixtures`-nimia `/api/teams`-nimiin, joten rosterin on puhuttava

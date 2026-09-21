@@ -31,6 +31,23 @@ CACHE_DIR = config.RAW_DATA_DIR / "footballdata"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _sama_polku(url: str, kohde: str) -> bool:
+    """Onko ohjaus pelkka host-vaihto (www <-> apex) samaan tiedostoon?
+
+    Vain https ja vain football-data.co.uk-domain: ohjaus muualle ei kelpaa
+    vaikka polku tasmaisi."""
+    from urllib.parse import urlsplit
+
+    a, b = urlsplit(url), urlsplit(kohde)
+    domain = {"football-data.co.uk", "www.football-data.co.uk"}
+    return (
+        b.scheme == "https"
+        and a.netloc in domain and b.netloc in domain
+        and a.netloc != b.netloc
+        and a.path == b.path and a.query == b.query
+    )
+
+
 def _hae_csv(url: str, cache_path: Path, force: bool = False) -> pd.DataFrame:
     if cache_path.exists() and not force:
         try:
@@ -44,6 +61,18 @@ def _hae_csv(url: str, cache_path: Path, force: bool = False) -> pd.DataFrame:
     # joukkuevalitsimessa 12.8 illalla. 3xx = tiedostoa ei ole julkaistu = ei dataa.
     r = requests.get(url, timeout=30, allow_redirects=False)
     r.raise_for_status()
+    # 21.9.2026: sivusto siirtyi www:sta apexiin, ja JOKAINEN tiedosto vastasi
+    # 302 -> https://football-data.co.uk/<sama polku>. Vahti tulkitsi sen
+    # puuttuvaksi tiedostoksi, joten NED/POR/Championship ajoivat tuotannossa
+    # vendoroidulla snapshotilla ilman kautta 26/27, ja CI-loki vaitti
+    # "kausitiedostoa ei ole julkaistu" vaikka se oli. Host-vaihto SAMALLA
+    # polulla ei ole myrkytys: sisalto on pyydetty tiedosto. Polkua vaihtava
+    # ohjaus (E0 -> EC) hylataan kuten ennenkin, ja hyppyja on tasan yksi.
+    if r.status_code in (301, 302, 307, 308):
+        kohde = r.headers.get("Location", "")
+        if _sama_polku(url, kohde):
+            r = requests.get(kohde, timeout=30, allow_redirects=False)
+            r.raise_for_status()
     if r.status_code != 200:
         kohde = r.headers.get("Location", "?")
         raise ValueError(
@@ -116,7 +145,7 @@ def lataa_mainstream(liiga: str, kausi: str, force: bool = False) -> pd.DataFram
     if liiga not in MAIN_CODES:
         return pd.DataFrame()
     code = MAIN_CODES[liiga]
-    url = f"https://www.football-data.co.uk/mmz4281/{kausi}/{code}.csv"
+    url = f"https://football-data.co.uk/mmz4281/{kausi}/{code}.csv"
     cache = CACHE_DIR / f"{liiga.replace(' ', '_').replace('-', '_')}_{kausi}.csv"
     try:
         df = _hae_csv(url, cache, force=force)
@@ -146,7 +175,7 @@ def lataa_new(liiga: str, kaudet: list[str] | None = None, force: bool = False) 
     if liiga not in NEW_FILES:
         return pd.DataFrame()
     code = NEW_FILES[liiga]
-    url = f"https://www.football-data.co.uk/new/{code}.csv"
+    url = f"https://football-data.co.uk/new/{code}.csv"
     cache = CACHE_DIR / f"{liiga.replace(' ', '_').replace('-', '_')}_all.csv"
     try:
         df = _hae_csv(url, cache, force=force)

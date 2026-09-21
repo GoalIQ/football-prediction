@@ -22,7 +22,7 @@ from src.models.dixon_coles import DixonColesModel
 ROOT = Path(__file__).resolve().parents[1]
 CL = "INT-Champions League"
 PARI = ["2526", "2627"]
-LIIGAT = ["ENG-Premier League", "ESP-La Liga-FD"]
+LIIGAT = list(up.PAKOLLISET_KALIBROIDUT)
 NYT = dt.datetime(2026, 9, 9, 12, 0, tzinfo=dt.timezone.utc)
 
 
@@ -183,7 +183,7 @@ def test_lukija_hylkaa_artefaktin_ilman_siltaa(tmp_path):
     import json
     p = tmp_path / "m.json"
     up.save(_iso_dc(121), tournament=CL, season_pair=PARI, decay=0.0035,
-            calibrated_leagues=["ENG-Premier League"], path=p, now=NYT)
+            calibrated_leagues=LIIGAT, path=p, now=NYT)
     d = json.loads(p.read_text(encoding="utf-8"))
     d["meta"]["calibrated_leagues"] = []
     p.write_text(json.dumps(d), encoding="utf-8")
@@ -194,6 +194,21 @@ def test_lukija_hylkaa_artefaktin_ilman_siltaa(tmp_path):
     p.write_text(json.dumps(d), encoding="utf-8")
     dc, syy = up.load(tournament=CL, season_pair=PARI, decay=0.0035, path=p, now=NYT)
     assert dc is None and "36 seuraa" in syy
+
+
+def test_latausvika_ei_mene_levylle(tmp_path):
+    """21.9.2026 tuotannon tapaus: 429 pudotti Serie A:n ja Ligue 1:n, ja
+    kolmen liigan artefakti committoitiin. Nyt kirjoittaja kieltaytyy."""
+    p = tmp_path / "m.json"
+    kolme = ["ENG-Premier League", "ESP-La Liga-FD", "GER-Bundesliga-FD"]
+    with pytest.raises(ValueError, match="FRA-Ligue 1-FD"):
+        up.save(_iso_dc(121), tournament=CL, season_pair=PARI, decay=0.0035,
+                calibrated_leagues=kolme, path=p, now=NYT)
+    assert not p.exists()
+    # Negatiivinen kontrolli: kaikki viisi + ylimaarainen liiga kelpaa.
+    up.save(_iso_dc(121), tournament=CL, season_pair=PARI, decay=0.0035,
+            calibrated_leagues=[*LIIGAT, "GRE-Super League"], path=p, now=NYT)
+    assert p.exists()
 
 
 def test_committattu_artefakti_lapaisee_sisaltoehdon():

@@ -42,7 +42,8 @@ class DixonColesModel:
             home_xg_col=None, away_xg_col=None, xg_weight=0.0,
             model_type="dc", shrink_defence_to_mean=False,
             competition_col=None, competition_weights=None,
-            default_competition_weight=1.0):
+            default_competition_weight=1.0,
+            team_groups=None, l2_group_mean=2.0):
         """
         Sovita malli.
 
@@ -99,6 +100,23 @@ class DixonColesModel:
             shrinkkaaminen kaventaa vain joukkueiden valisia puolustuseroja ja
             jattaa tason vapaaksi likelihoodin maaritettavaksi. Ekvivalentti
             shrinkkaamattomalle interceptille + sum(defence)=0 -rajoitteelle.
+        team_groups, l2_group_mean
+            **Ryhmaprior** (21.9.2026, UEFA-yhteismalli). ``{joukkue: ryhma}``.
+            Ryhmaan kuuluvan joukkueen attack/defence shrinkataan kohti RYHMAN
+            keskiarvoa, joka on itse vapaa parametri (sovitetaan samasta
+            datasta) ja jolla on oma heikko prior kohti 0:aa
+            (`l2_group_mean`). Ryhmaton joukkue kayttaytyy kuten ennen.
+
+            Miksi: seura jolla on vahan otteluita kutistuu kohti KOKO datan
+            keskiarvoa. UEFA-yhteismallissa se on suurliigojen keskitaso, ja
+            pienen maan seura jonka ainoa data on karsintoja toisia pienseuroja
+            vastaan nayttaa silloin keskivertoa paremmalta (mitattu 21.9:
+            Sabah 46 % suosikkina Slavia Prahaa vastaan). Maan keskiarvo on
+            oikea kutistuskohde: Vikingin ohut data nojaa Bodo/Glimtin ja
+            Molden runsaaseen dataan.
+
+            None (oletus) = parametrivektori, alustus ja tavoitefunktio
+            tasmalleen ennallaan (domestic-polku bittitarkasti).
         """
         df = matches.dropna(subset=[home_goals_col, away_goals_col]).copy()
         df[home_goals_col] = df[home_goals_col].astype(int)
@@ -165,6 +183,19 @@ class DixonColesModel:
             n_per_team = n
         else:
             n_per_team = 0
+
+        # Ryhmaprior: ryhmien keskiarvot ovat parametreja [ga(G), gd(G)]
+        # heti joukkueparametrien jalkeen, ennen gamma_globalia ja rhoa (jotka
+        # luetaan lopusta indekseilla -2 ja -1). G = 0 -> ei mitaan muutosta.
+        G = 0
+        if team_groups:
+            _ryhmat = sorted({team_groups[t] for t in teams if t in team_groups})
+            G = len(_ryhmat)
+            _gidx = {g: i for i, g in enumerate(_ryhmat)}
+            ryhma_i = np.array([_gidx.get(team_groups.get(t), -1) for t in teams])
+            on_ryhma = ryhma_i >= 0
+            ryhma_i0 = np.maximum(ryhma_i, 0)
+        g_off = 2 * n + n_per_team
 
         def neg_log_lik(params):
             attack = params[:n]
@@ -239,15 +270,25 @@ class DixonColesModel:
             # team_priors:lla voi vaihtaa esim. alasarjaestimaattiin).
             # prior_weight skaalaa per-joukkue shrinkage-vahvuuden.
             if l2_attack_defence > 0:
-                a_diff2 = prior_weight * (attack - prior_attack) ** 2
+                if G:
+                    ga = params[g_off:g_off + G]
+                    gd = params[g_off + G:g_off + 2 * G]
+                    a_target = np.where(on_ryhma, ga[ryhma_i0], prior_attack)
+                    d_prior = np.where(on_ryhma, gd[ryhma_i0], prior_defence)
+                else:
+                    a_target = prior_attack
+                    d_prior = prior_defence
+                a_diff2 = prior_weight * (attack - a_target) ** 2
                 # #61: shrink_defence_to_mean → shrinkkaa puolustuksen HAJONTAA,
                 # ei absoluuttista tasoa. Ks. fit()-docstring.
                 if shrink_defence_to_mean:
                     d_target = np.mean(defence)
                 else:
-                    d_target = prior_defence
+                    d_target = d_prior
                 d_diff2 = prior_weight * (defence - d_target) ** 2
                 nll += l2_attack_defence * (np.sum(a_diff2) + np.sum(d_diff2))
+                if G:
+                    nll += l2_group_mean * (np.sum(ga ** 2) + np.sum(gd ** 2))
             return nll
 
         # Alustusarvot — priorit annettu joukkueille auttavat konvergoimaan
@@ -260,6 +301,8 @@ class DixonColesModel:
             ])
         else:
             x0 = np.concatenate([prior_attack.copy(), prior_defence.copy(), [0.25, -0.1]])
+        if G:
+            x0 = np.concatenate([x0[:g_off], np.zeros(2 * G), x0[g_off:]])
 
         # Identifioitavuus: attack-summa = 0
         constraints = ({"type": "eq", "fun": lambda p: np.sum(p[:n])},)
@@ -286,6 +329,10 @@ class DixonColesModel:
         self.rho = params[-1]
         self.teams_ = teams
         self.model_type_ = model_type
+        if G:
+            # Diagnoosi (ei kayteta ennusteessa): ryhman keskiarvo (att, def).
+            self.group_means_ = {g: (float(params[g_off + i]), float(params[g_off + G + i]))
+                                 for g, i in _gidx.items()}
         return self
 
     def expected_goals(self, home_team, away_team, adjustments=None):

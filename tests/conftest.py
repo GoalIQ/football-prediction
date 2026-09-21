@@ -24,3 +24,18 @@ def _clear_fd_http_cache():
     m._FD_HTTP_CACHE.clear()
     yield
     m._FD_HTTP_CACHE.clear()
+
+
+@pytest.fixture(autouse=True)
+def _uefa_ei_verkkoa(monkeypatch, tmp_path_factory):
+    """21.9: UEFA-yhteisfitti hakee kuluvan kauden match.uefa.com:sta. Testi ei
+    saa riippua verkosta eika koneen levyvalimuistista: live-haku kaatuu ja
+    valimuisti on tyhja hakemisto, jolloin kuluva kausi on tyhja ja vain
+    vendoroidut kaudet ovat kaytossa (sama kaikilla koneilla ja CI:ssa)."""
+    from src.data import uefa_matches
+
+    def ei_verkkoa(*a, **k):
+        raise RuntimeError("UEFA-live-haku estetty testeissa (tests/conftest.py)")
+
+    monkeypatch.setattr(uefa_matches, "_hae_raaka", ei_verkkoa)
+    monkeypatch.setattr(uefa_matches, "CACHE_DIR", tmp_path_factory.mktemp("uefa_matches"))

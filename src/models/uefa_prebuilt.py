@@ -45,6 +45,24 @@ FORMAT_VERSION = 1
 # turnausjoukko (36) ei voi saavuttaa. 8.9 mitattu: 121 seuraa, 5 liigaa.
 MIN_CLUBS = 80
 
+# 🔴 21.9.2026: ucl-refresh committoi artefaktin jossa kalibroituvia liigoja
+# oli 3 (ENG, ESP, GER). football-data.org vastasi 429 Serie A 26/27:lle ja
+# Ligue 1:n molemmille kausille, liigat putosivat fitista hiljaa, ja
+# `validate` hyvaksyi koska "vahintaan yksi liiga". Tulos julkisessa
+# ennusteessa: Napoli 33./36, Inter Comon alapuolella. Naista viidesta
+# jokaisella on yli 150 siltaottelua (mitattu 21.9), joten puuttuminen on
+# AINA latausvika. KIRJOITTAJAN saanto, ei lukijan: lukija joka hylkaa
+# nykyisen artefaktin pudottaisi Renderin 211 s live-fittiin, joka osuu
+# samaan kiintioon. Kirjoittajan saanto riittaa, koska huono artefakti ei
+# enaa paase levylle ja seuraava onnistunut bake korvaa vanhan.
+PAKOLLISET_KALIBROIDUT = (
+    "ENG-Premier League",
+    "ESP-La Liga-FD",
+    "GER-Bundesliga-FD",
+    "ITA-Serie A-FD",
+    "FRA-Ligue 1-FD",
+)
+
 
 def validate(dc: DixonColesModel, calibrated_leagues: list[str]) -> tuple[bool, str]:
     """(kelpaa, syy) - sama saanto bakelle (ei kirjoiteta) ja lukijalle (ei ladata)."""
@@ -72,6 +90,11 @@ def save(dc: DixonColesModel, *, tournament: str, season_pair: list[str],
     ok, syy = validate(dc, calibrated_leagues)
     if not ok:
         raise ValueError(f"artefaktia ei kirjoiteta: {syy}")
+    puuttuvat = [L for L in PAKOLLISET_KALIBROIDUT if L not in calibrated_leagues]
+    if puuttuvat:
+        raise ValueError(
+            f"artefaktia ei kirjoiteta: kalibroinnista puuttuu {puuttuvat} - "
+            f"latausvika (429/katkos), ei todellisuutta; edellinen artefakti jaa")
     meta = {
         "calibrated_leagues": sorted(calibrated_leagues),
         "format_version": FORMAT_VERSION,

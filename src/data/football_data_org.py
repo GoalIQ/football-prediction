@@ -19,6 +19,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 import json
+import re
 import time
 import pandas as pd
 import requests
@@ -152,6 +153,29 @@ def tournament_last_refresh() -> float:
     return max(ts for ts, _ in _TOURNAMENT_MEM_CACHE.values())
 
 
+_RETRY_429_BUDJETTI_SEC = 130.0
+"""Kuinka kauan yksi haku saa yhteensa odottaa 429:n jalkeen. Kaksi taytta
+minuutti-ikkunaa: jos kiintio on yha taynna sen jalkeen, joku muu kayttaa
+avainta jatkuvasti eika odottaminen auta."""
+
+
+def _odotus_429(r) -> float:
+    """Palvelimen ilmoittama odotus sekunteina (+1 s marginaali).
+
+    Ensisijaisesti `X-RequestCounter-Reset`-otsake, toissijaisesti viestin
+    "Wait N seconds". Jos kumpaakaan ei ole, koko minuutti-ikkuna."""
+    try:
+        s = float(r.headers.get("X-RequestCounter-Reset", ""))
+        if s >= 0:
+            return min(s, 61.0) + 1.0
+    except (TypeError, ValueError, AttributeError):
+        pass
+    m = re.search(r"[Ww]ait (\d+) seconds?", getattr(r, "text", "") or "")
+    if m:
+        return min(float(m.group(1)), 61.0) + 1.0
+    return 61.0
+
+
 def _fetch_from_api(code: str, kausi: str, api_key: str) -> dict:
     if code not in FREE_TIER:
         return {"_error": (
@@ -163,8 +187,18 @@ def _fetch_from_api(code: str, kausi: str, api_key: str) -> dict:
     headers = {"X-Auth-Token": api_key}
     try:
         r = requests.get(url, headers=headers, timeout=20)
-        if r.status_code == 429:
-            time.sleep(8)
+        # 🔴 21.9.2026: kiintio on AVAINKOHTAINEN ja sita kayttavat samaan aikaan
+        # Render-API, ucl-refresh ja muut workflow't. Vanha kasittely odotti
+        # 8 s ja yritti kerran, vaikka palvelin sanoi "Wait 31 seconds" -
+        # toinen yritys osui samaan ikkunaan. Mitattu ucl-refresh 12:56 UTC:
+        # Serie A 26/27 ja Ligue 1 molemmat kaudet putosivat, UEFA-mallin
+        # kalibroituvat liigat 5 -> 3, Napoli 33./36. Nyt odotetaan tasan
+        # niin kauan kuin palvelin kertoo, budjetin rajoissa.
+        odotettu = 0.0
+        while r.status_code == 429 and odotettu < _RETRY_429_BUDJETTI_SEC:
+            odota = min(_odotus_429(r), _RETRY_429_BUDJETTI_SEC - odotettu)
+            time.sleep(odota)
+            odotettu += odota
             with _FDORG_RATE_LIMIT_LOCK:
                 _FDORG_LAST_CALL_AT[0] = time.time()
             r = requests.get(url, headers=headers, timeout=20)
