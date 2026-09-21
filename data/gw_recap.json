@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-21T13:00:13+00:00",
+  "generated_at": "2026-09-21T15:38:40+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -9,17 +9,18 @@
   "complete": true
  },
  "running": {
-  "gameweeks": 3,
+  "gameweeks": 4,
   "basis": "model points before its own transfer hits, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
   "gw_list": [
    1,
    2,
-   3
+   3,
+   5
   ],
-  "total_diff": -9,
-  "avg_diff": -3.0,
+  "total_diff": -14,
+  "avg_diff": -3.5,
   "beat_average": 1,
-  "below_average": 2,
+  "below_average": 3,
   "per_gw": [
    {
     "gw": 1,
@@ -44,6 +45,14 @@
     "transfer_cost": 0,
     "average": 51,
     "diff": 12
+   },
+   {
+    "gw": 5,
+    "points": 43,
+    "points_net": 43,
+    "transfer_cost": 0,
+    "average": 48,
+    "diff": -5
    }
   ]
  },
@@ -251,6 +260,91 @@
     "bias": -0.179
    },
    "headline_miss": null
+  },
+  {
+   "gw": 5,
+   "provisional": false,
+   "squad": {
+    "points": 43,
+    "points_net": 43,
+    "average": 48,
+    "diff": -5,
+    "bench_points": 9,
+    "transfer_cost": 0,
+    "chip": null,
+    "captain_id": 411,
+    "captain_points_added": 6,
+    "graded_at": "2026-09-21T15:38:40Z",
+    "transfer_cost_verified": true
+   },
+   "calls": {
+    "logged_at": "2026-09-17T12:18:35Z",
+    "deadline_utc": "2026-09-18T17:30:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": false,
+    "hits": 1,
+    "misses": 3,
+    "ungraded": 1,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "captain return, points doubled",
+      "predicted": 6.51,
+      "points": 6,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "10+ pts",
+      "predicted": 0.216,
+      "points": 6,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Thiago",
+      "team_short": "BRE",
+      "criterion": "reached p90",
+      "predicted": 11,
+      "points": 5,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "safest",
+      "web_name": "Stach",
+      "team_short": "LEE",
+      "criterion": "3+ pts",
+      "predicted": 0.82,
+      "points": 5,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "gamble",
+      "web_name": "Palmer",
+      "team_short": "CHE",
+      "criterion": "10+ pts",
+      "predicted": 0.09,
+      "points": 2,
+      "started": true,
+      "met": false
+     }
+    ]
+   },
+   "accuracy": {
+    "mae": 1.616,
+    "n": 482,
+    "bias": 0.004
+   },
+   "headline_miss": null
   }
  ],
  "unscored_gws": [
@@ -266,6 +360,11 @@
    "gw": 3,
    "from_gw": 2,
    "entry_chip": "wildcard"
+  },
+  {
+   "gw": 5,
+   "from_gw": 4,
+   "entry_chip": null
   }
  ],
  "entry_series": {
