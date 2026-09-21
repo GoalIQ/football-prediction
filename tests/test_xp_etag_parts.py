@@ -92,6 +92,26 @@ def test_eri_kieli_ei_validoidu_ristiin() -> None:
 # --------------------------------------------------------------------------
 # 18.9 (SPA:n haarojen purku): IKKUNAN ARVO, ei vain skeemaversio.
 # --------------------------------------------------------------------------
+def _ensimmainen_gw() -> int:
+    """Artefaktin ensimmainen projisoitu kierros.
+
+    21.9.2026: kiinteat 5/6/7 lakkasivat erottamasta tiloja kun GW5:n
+    ottelut paattyivat ja rivit alkoivat GW6:sta - arvot 5 ja 6 antoivat
+    saman summan (39.07), ja testi punastui ilman etta ETagissa oli vikaa.
+    Se mittasi artefaktin TAMANHETKISTA kierrosvalia (saanto 6a kohta 3).
+    Nyt deadline-arvot johdetaan artefaktin omasta alusta, joten erottelu
+    pitaa jokaisessa kauden vaiheessa.
+    """
+    import io
+    import json
+
+    raw = json.load(io.open(ROOT / "data" / "fpl_xp_projections.json",
+                            encoding="utf-8"))
+    return min(g["gw"] for p in raw["players"]
+               for g in (p.get("gameweeks") or [])
+               if isinstance(g.get("gw"), int))
+
+
 def _xp_with_deadline(dl_gw: int) -> dict:
     """Tuotantoartefakti jossa `deadline_gameweek` on siirretty mutta
     `generated_at` LUKITTU. Tasan se tila jota ETag ei erottanut."""
@@ -125,7 +145,8 @@ def test_ikkunan_arvo_on_etagissa_ei_vain_skeemaversio(monkeypatch) -> None:
     import src.models.fpl_xp as fx
 
     tagit, summat, ikkunat = [], [], []
-    for dl in (5, 6, 7):
+    ens = _ensimmainen_gw()
+    for dl in (ens, ens + 1, ens + 2):
         monkeypatch.setattr(fx, "load_xp", lambda path=None, _d=dl: _xp_with_deadline(_d))
         r = client.get("/api/fantasy/xp")
         assert r.status_code == 200, r.status_code
@@ -145,16 +166,17 @@ def test_vanha_ikkuna_ei_validoi_uutta_vastausta(monkeypatch) -> None:
     """Positiivinen kontrolli 304-polulle: tagi ei ole koriste."""
     import src.models.fpl_xp as fx
 
-    monkeypatch.setattr(fx, "load_xp", lambda path=None: _xp_with_deadline(5))
+    ens = _ensimmainen_gw()
+    monkeypatch.setattr(fx, "load_xp", lambda path=None: _xp_with_deadline(ens))
     vanha = client.get("/api/fantasy/xp").headers["etag"]
     # sama ikkuna -> 304 (muuten testi olisi vihrea vain siksi ettei mikaan
     # validoidu)
     assert client.get("/api/fantasy/xp",
                       headers={"if-none-match": vanha}).status_code == 304
-    monkeypatch.setattr(fx, "load_xp", lambda path=None: _xp_with_deadline(6))
+    monkeypatch.setattr(fx, "load_xp", lambda path=None: _xp_with_deadline(ens + 1))
     r = client.get("/api/fantasy/xp", headers={"if-none-match": vanha})
     assert r.status_code == 200, (
-        "deadline siirtyi (summa 38.48 -> 31.97) mutta vanha ETag validoi "
+        "deadline siirtyi kierroksella (summa pienenee) mutta vanha ETag validoi "
         "vastauksen 304:lla")
 
 

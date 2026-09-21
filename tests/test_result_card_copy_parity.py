@@ -111,10 +111,17 @@ def test_kortin_spec_literaalit_molemmilla_pinnoilla(literal: str):
 
 @pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
 def test_mallin_luku_vain_reitin_kanssa():
-    """Reitti ei saa kadota hiljaa: mallisolu vaatii entry-id:n molemmilla."""
+    """Reitti ei saa kadota hiljaa: mallisolu vaatii reitin molemmilla.
+
+    21.9: track record mittaa mallin JAADYTETTYA rivia (Villen paatos), joten
+    reitti on `model_route` (jaadytetty tiedosto) eika enaa entry-id. Portti
+    oli vanhentunut: se vaati `model_entry_id != null` -muotoa ja punastui
+    kaikkialla missa goaliq-app on sisarkansiona (worktreeissa ja CI:ssa se
+    ohitetaan, siksi se jai paivittamatta julkaisussa 4d336fbb2)."""
     web = _function_body(WEB.read_text(encoding="utf-8"), "luckCardSpec")
     mob = _function_body(MOBILE_SPEC.read_text(encoding="utf-8"), "luckCardSpec")
-    assert "model_entry_id != null" in web and "model_entry_id != null" in mob
+    assert "lf.model_route" in web, "SPA:n kortti ei johda mallisolua reitista"
+    assert "modelResultRoute(" in mob, "mobiilin kortti ei kayta yhta reittilukijaa"
 
 
 @pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
@@ -123,10 +130,11 @@ def test_ruudun_mallisolu_vaatii_reitin():
     renderointipolku samalle luvulle, joten sama ehto vartioidaan siella."""
     web = _strip_comments(WEB.read_text(encoding="utf-8"))
     mob = _strip_comments(MOBILE_SPEC.read_text(encoding="utf-8"))
-    assert "lastFinished.model_points != null && lastFinished.model_entry_id != null" in web
-    assert "lastFinished.vs_model != null && lastFinished.model_entry_id != null" in web
-    assert "lf.model_points != null && lf.model_entry_id != null" in mob
-    assert "lf.vs_model != null && lf.model_entry_id != null" in mob
+    # 21.9: reitti = jaadytetty rivi (`model_route`), ks. edellinen testi.
+    assert "lastFinished.model_points != null && lastFinished.model_route" in web
+    assert "lastFinished.vs_model != null && (lastFinished.model_route" in web
+    assert "{modelRoute && (" in mob
+    assert "lf.vs_model != null && modelRoute" in mob
 
 
 def test_hylatyt_sanamuodot_eivat_palaa():
