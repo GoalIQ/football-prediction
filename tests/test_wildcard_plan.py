@@ -446,6 +446,32 @@ def test_optimoijan_epaonnistuminen_kerrotaan(monkeypatch):
     assert out["available"] is False
 
 
+# ---------------------------------------------------------------------------
+# 6b. CHIP-ARVIO-EI-LUE-KAYTETTYJA-CHIPPEJA (21.9.2026)
+#
+# `gws` yksin ei riita: se suodattaa vain deadlinen, ei chipin kayttoa.
+# `chip_played_gw` on tarkoituksella tarkistettu ENNEN mitaan muuta laskentaa
+# eika johdettu `gws`:sta, jotta kutsuja ei voi (uudelleen) unohtaa sita.
+# ---------------------------------------------------------------------------
+def test_pelattu_chip_kieltaytyy_vaikka_gws_on_taynna(monkeypatch):
+    """Sama runko joka `test_vastaus_kantaa_paatoskentat`issa suosittelisi
+    wildcardia (uusi runko selvasti parempi) - MUTTA chip on jo pelattu.
+    Runkoa/poolia ei edes tarvitse rakentaa laillisiksi: kieltaytyminen
+    tapahtuu ennen optimointia, joten vaara/tyhja pooli ei muuta lopputulosta."""
+    out = wc.wildcard_plan(_rivisto(1, 1.0), _rivisto(100, 6.0), [2, 3],
+                           [], {}, _xi_fn, chip_played_gw=2)
+    assert out["available"] is False
+    assert out["played_gw"] == 2
+    assert "GW2" in out["note"]
+
+
+def test_negatiivinen_kontrolli_ilman_pelattua_chippia_suositus_ennallaan(monkeypatch):
+    """Sama kutsu ilman `chip_played_gw`:tä -> entinen kayttaytyminen (rivi
+    todistaa etta edellinen testi mittaa CHIPIA eika jotain muuta)."""
+    plan = _kutsu(_rivisto(1, 1.0), _rivisto(100, 6.0), monkeypatch=monkeypatch)
+    assert plan["available"] is True
+
+
 @pytest.mark.parametrize("kentta", ["gw", "ev_total", "ev_per_gw",
                                     "window_gws", "basis", "recommend"])
 def test_vastaus_kantaa_paatoskentat(kentta, monkeypatch):

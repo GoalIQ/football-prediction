@@ -163,16 +163,31 @@ def _optimi(pool: list[dict], gws: list[int]) -> dict | None:
 
 def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                   fixtures: list[dict], id_to_name: dict[int, str],
-                  xi_fn, mode: str = "entry") -> dict:
+                  xi_fn, mode: str = "entry", *,
+                  chip_played_gw: int | None = None) -> dict:
     """Paras wildcard-kierros, sen joukkue ja perustelut.
 
     `gws`   = kierrokset joille chipin voi VIELA pelata (deadline ei mennyt).
+              🔴 Tama suodattaa VAIN deadlinen, ei chipin kayttoa - ennen
+              CHIP-ARVIO-EI-LUE-KAYTETTYJA-CHIPPEJA (21.9.2026) yksi kutsuja
+              (freeze) luotti tahan yksin ja ehdotti chippia jonka entry oli
+              jo pelannut. `chip_played_gw` on korjaus: se ei ole johdettavissa
+              `gws`:sta, joten kutsujan on annettava se erikseen.
+    `chip_played_gw` = GW jolla wildcard on JO pelattu talla puolikkaalla
+              (fpl_chips-lukijan tulos), tai None jos ei ole pelattu. Jos
+              annettu, funktio kieltaytyy TASTA riippumatta siita mita `gws`
+              sanoo - vastuuta ei jateta kutsujalle.
     `mode`  = "entry" kun rivisto on LUKIJAN, muuten mallin oma. 🔴 Copy sanoo
               "your 15" vain ensimmaisessa: mallin rungosta puhuminen lukijan
               omistusmuodossa on vaite jota lukija ei voi tarkistaa.
     `xi_fn` = (squad, key) -> paras laillinen XI. Annetaan ulkoa, jotta tama
               moduuli ei tuo tuontikeha `api.fantasy_edge`:n kanssa.
     """
+    if chip_played_gw is not None:
+        return {"available": False,
+                "note": f"Wildcard already played in GW{chip_played_gw} "
+                        "this half.",
+                "played_gw": chip_played_gw}
     if not gws:
         return {"available": False,
                 "note": "No gameweek left in the projection horizon."}

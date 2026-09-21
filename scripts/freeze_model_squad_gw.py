@@ -395,8 +395,38 @@ def _with_selling_price(pool_row: dict, prev_row: dict) -> dict:
     return dict(pool_row, selling_price=sp)
 
 
+def _chip_played_gw(bootstrap: dict | None, gw: int, *,
+                    hae_historia=None) -> int | None:
+    """GW jolla mallin entry on JO pelannut wildcardin talla puolikkaalla,
+    tai None jos ei ole.
+
+    CHIP-ARVIO-EI-LUE-KAYTETTYJA-CHIPPEJA (21.9.2026): `_chip_evaluation`
+    laski aiemmin pelattavat kierrokset PELKASTAAN deadlinesta
+    (`[g for g in covered if g >= gw]`), eika koskaan tarkistanut oliko
+    wildcard jo kaytetty - sama vika jonka `/api/fantasy/wildcard-plan`
+    korjasi 3.9 (CHIP-EV-CHIPS-USED) mutta jota ei tuotu tanne. Sama lukija
+    (`fpl_chips.chip_state`) kaytossa nyt kummassakin paikassa.
+
+    Virhe historian haussa EI kaada arviota - se palautuu `_chip_evaluation`in
+    omaan `except`-haaraan kuten ennenkin, koska hae_historia voi heittaa.
+    """
+    from src.models import fpl_chips
+    hae_historia = hae_historia or _entry_history
+    historia, virhe = hae_historia(entry_mod.ENTRY_ID)
+    if virhe or historia is None:
+        return None
+    state = fpl_chips.chip_state(bootstrap, historia, gw).get("wc") or {}
+    if state.get("available_now"):
+        return None
+    for row in state.get("windows") or []:
+        if row["start_gw"] <= gw <= row["stop_gw"] and row.get("played_gw") is not None:
+            return row["played_gw"]
+    return None
+
+
 def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
-                     xp_data: dict) -> dict:
+                     xp_data: dict, bootstrap: dict | None = None,
+                     hae_historia=None) -> dict:
     """Wildcard-arvio mallin omalle rungolle samalla moottorilla kuin
     /api/fantasy/wildcard-plan (28.8, Villen kysymys "malli suosittelee
     wildcardia, pitaisiko sen mukaan menna").
@@ -411,8 +441,10 @@ def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
         covered = sorted({g.get("gw") for p in pool for g in (p.get("gameweeks") or [])
                           if isinstance(g.get("gw"), int)})
         gws = [g for g in covered if g >= gw]
+        chip_played_gw = _chip_played_gw(bootstrap, gw, hae_historia=hae_historia)
         plan = fpl_wildcard.wildcard_plan(squad, pool, gws, [], {},
-                                          optimal_xi_by_key, mode="model")
+                                          optimal_xi_by_key, mode="model",
+                                          chip_played_gw=chip_played_gw)
     except Exception as e:  # noqa: BLE001 - arvio ei saa kaataa freezea
         return {"available": False, "error": repr(e), "decision": "not_played",
                 "reason": "chip decisions require Ville's GO in v0"}
@@ -939,7 +971,7 @@ def main() -> int:
         _peritty = [_by_id[p["id"]] for p in (prev.get("xi") or []) + (prev.get("bench") or [])
                     if p["id"] in _by_id]
         if len(_peritty) == 15:
-            chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data)
+            chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data, _bootstrap)
         try:
             rajoitettu = _constrained_from_prev(
                 prev, pool, gw, _ft_available(prev_meta), _bootstrap, _excl_by_id)
