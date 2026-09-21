@@ -18,6 +18,7 @@
 	 *  - tappio näytetään yhtä suurella painolla kuin voitto
 	 */
 	import { fetchModelRace, type ModelRaceResponse } from '$lib/api';
+	import { MODEL_SERIES_COPY } from '$lib/modelSeriesCopy';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
@@ -172,6 +173,19 @@
 	}
 	let diff = $derived(data?.totals.diff ?? null);
 
+	// 21.9 (Villen paatos "molemmat sarjat, malli ensin"): mallisarja on
+	// jaadytetty rivi; kierros ilman kelvollista freezea on POIS sarjasta
+	// koodilla, ja entry 116920 naytetaan erikseen omana sarjanaan.
+	let unscoredGws = $derived(
+		(data?.meta?.unscored_gws ?? [])
+			.filter((u) => u.code === 'no_valid_frozen_squad')
+			.map((u) => u.gw)
+	);
+	let costUnverifiedGws = $derived(data?.meta?.cost_unverified_gws ?? []);
+	let modelVsAvg = $derived(data?.totals?.model_vs_average ?? null);
+	let entrySeries = $derived(data?.entry_series ?? null);
+	let entryRows = $derived(entrySeries ? [...entrySeries.gameweeks].reverse() : []);
+
 	//: Chipin nayttonimi FPL:n koodista. Kanoni on isolla kirjaimella ja
 	//: kaantamattomana kaikissa kielissa (`fantasy.chips.chip_*`, sama
 	//: faq/llms/fpl.html), joten sita EI kaanneta.
@@ -225,6 +239,11 @@
 					<div><span class="lbl">You</span><span class="num">{data.totals.you}</span></div>
 				{/if}
 			</div>
+			{#if modelVsAvg && modelVsAvg.gameweeks > 0}
+				<p class="muted small">
+					{MODEL_SERIES_COPY.modelVsAverage(modelVsAvg.diff, modelVsAvg.gameweeks)}
+				</p>
+			{/if}
 			{#if data.totals.you != null && (data.meta.model_points_basis ?? '').startsWith('net:')}
 				<!-- Pisteperuste luvun viereen, vain kun payload sanoo "net:".
 				     Sama lause mobiilissa (fantasy.race.basis). -->
@@ -285,6 +304,16 @@
 				</p>
 			{/if}
 
+			<!-- 21.9: kierros jota ei ole mallisarjassa lainkaan (ei nolla, ei
+			     entryn luku) ja rivit joiden mallin hittia ei voitu todentaa.
+			     Nakyva selite, sama mobiilissa (fantasy.race.series.*). -->
+			{#if unscoredGws.length}
+				<p class="prov-note">{MODEL_SERIES_COPY.unscoredNoValidFreeze(unscoredGws)}</p>
+			{/if}
+			{#if costUnverifiedGws.length}
+				<p class="prov-note">{MODEL_SERIES_COPY.costUnverified(costUnverifiedGws)}</p>
+			{/if}
+
 			<!-- 🔴 25. kierros: nappi nakyi kun rivit riittivat ENNEN suodatusta,
 			     jolloin painallus ei tehnyt mitaan. Sama ehto kuin kortilla. -->
 			{#if voiJakaa}
@@ -300,6 +329,9 @@
 						     Luku nakyy heti, mutta se ei saa esiintya lopullisena. -->
 						{#if r.provisional}
 							<span class="prov">provisional</span>
+						{/if}
+						{#if r.model_cost_verified === false}
+							<span class="prov">{MODEL_SERIES_COPY.costUnverifiedBadge}</span>
 						{/if}
 						<!-- 🔴 Mallin luku voi puuttua (vanhentunut lahde). Silloin
 						     sita EI julkaista: lukija vahentaisi sen itse ja saisi
@@ -367,10 +399,56 @@
 		{#if chipsSentence}
 			<p class="muted small">{chipsSentence}</p>
 		{/if}
+
+		<!-- 21.9: FPL-entry 116920 OMANA sarjanaan. Se ratkaisee Beat the Model
+		     -miniliigan, mutta sen chipit olivat ihmisen paatoksia, joten se ei
+		     ole mallin luku eika koskaan ylla olevissa summissa. -->
+		{#if entrySeries && entrySeries.entry_id != null && entryRows.length}
+			<div class="entry-series">
+				<h4>{MODEL_SERIES_COPY.entryTitle}</h4>
+				<p class="muted small">{MODEL_SERIES_COPY.entryNote(entrySeries.entry_id)}</p>
+				{#if entrySeries.vs_average.gameweeks > 0}
+					<p class="small">
+						{MODEL_SERIES_COPY.entryTotal(
+							entrySeries.vs_average.points,
+							entrySeries.vs_average.diff,
+							entrySeries.vs_average.gameweeks
+						)}
+					</p>
+				{/if}
+				<ul>
+					{#each entryRows as e (e.gw)}
+						<li>
+							<span class="gw">GW{e.gw}</span>
+							{#if e.provisional}
+								<span class="prov">provisional</span>
+							{/if}
+							<span class="pts">
+								{e.points}
+								{#if e.fpl_average != null}
+									<span class="muted"> · avg {e.fpl_average}</span>
+								{/if}
+								{#if e.chip}
+									<span class="muted"> · {CHIP_NAMES[e.chip] ?? e.chip}</span>
+								{/if}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
 	</section>
 {/if}
 
 <style>
+	.entry-series {
+		margin-top: var(--s-4);
+		padding-top: var(--s-3);
+		border-top: 1px solid var(--border);
+	}
+	.entry-series h4 {
+		margin: 0 0 var(--s-2);
+	}
 	.race {
 		/* Sama kohtelu kuin V1-tuloskortilla: kauden vertailu on luottamusväite. */
 		border: 2px solid var(--teal, #2ed6c2);

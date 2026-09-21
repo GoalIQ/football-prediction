@@ -197,8 +197,15 @@ export interface LastFinishedGw {
 	/** Yksi pelaaja joka selittaa >= 25 % erosta. null = ero jakautui. */
 	biggest_swing: { web_name: string | null; contribution: number } | null;
 	model_points: number | null;
-	/** Mallin oman FPL-entryn id (julkinen) — kortin reitti mallin luvulle. */
+	/** Mallin oman FPL-entryn id. 21.9 alkaen AINA null: entry ei todista
+	 *  mallin lukua (chipit ja kokoonpano voivat erota). Vanhan backendin
+	 *  vastauksessa id voi yha tulla. */
 	model_entry_id?: number | null;
+	/** 21.9: mallin luvun tarkistusreitti = jaadytetty rivi julkisessa
+	 *  repossa. null kun mallin rivia ei ole (esim. GW4). */
+	model_route?: { kind: string; gw: number; url: string } | null;
+	/** 21.9: false = mallin hitti-kustannus todentamaton, luku brutto. */
+	model_cost_verified?: boolean | null;
 	/** Mallin oman rivin chip samalla kierroksella (FPL active_chip -koodi). */
 	model_chip?: string | null;
 	/** Positiivinen = kayttaja voitti mallin. null = puolikas ottelu. */

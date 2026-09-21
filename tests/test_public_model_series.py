@@ -278,3 +278,30 @@ def test_tuloskortin_mallisolun_reitti_on_jaadytetty_artefakti():
     assert m3["route"]["url"].endswith("data/model_squad_frozen/gw3.json")
     assert m3["points"] == 63
     assert rt.model_squad_gw(4, series=malli) is None, "GW4 ei ole mallin rivi"
+
+
+# --- 7. SPA-pinnat renderoivat molemmat sarjat (kutsupaikka lahteessa) ---------
+
+def _spa(polku: str) -> str:
+    """Lahde ilman HTML- ja //-kommentteja (merkkijonoportti ei saa osua
+    omaan perustelukommenttiinsa, muisti 12.9)."""
+    import re
+    from pathlib import Path
+    s = (Path(__file__).resolve().parents[1] / "web" / "pro-spa" / "src"
+         / "lib" / "components" / polku).read_text(encoding="utf-8")
+    s = re.sub(r"<!--.*?-->", "", s, flags=re.S)
+    return "\n".join(r.split("//", 1)[0] for r in s.split("\n"))
+
+
+def test_spa_season_race_nayttaa_entry_sarjan_ja_unscored():
+    s = _spa("SeasonRace.svelte")
+    for tarvittava in ("data?.entry_series", "unscored_gws", "cost_unverified_gws",
+                       "model_vs_average", "MODEL_SERIES_COPY.entryTitle",
+                       "MODEL_SERIES_COPY.unscoredNoValidFreeze",
+                       "model_cost_verified"):
+        assert tarvittava in s, f"SeasonRace ei renderoi: {tarvittava}"
+
+
+def test_spa_tuloskortti_kayttaa_jaadytettya_reittia():
+    s = _spa("TeamPitchManager.svelte")
+    assert "model_route" in s and "MODEL_SERIES_COPY.cardModelKey" in s

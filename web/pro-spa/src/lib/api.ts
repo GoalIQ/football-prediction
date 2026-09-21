@@ -848,6 +848,33 @@ export interface ModelRaceGameweek {
 	model_autosubs?: ModelRaceAutosub[];
 	your_bench_points?: number;
 	your_transfer_cost?: number;
+	/** 21.9: false = mallin oman hitin kustannusta ei voitu todentaa FPL:n
+	 *  saannoilla, ja `model_points` on brutto. Puuttuu vanhasta backendista. */
+	model_cost_verified?: boolean;
+}
+
+/** 21.9: FPL-entry 116920 omana sarjanaan (malli + ihmisen chip-paatokset).
+ *  EI mallin luku: ei koskaan `totals.model`issa. Puuttuu vanhasta backendista. */
+export interface ModelRaceEntrySeries {
+	entry_id: number | null;
+	gameweeks: {
+		gw: number;
+		points: number;
+		points_net: number | null;
+		fpl_average: number | null;
+		chip: string | null;
+		provisional: boolean;
+	}[];
+	chips_played: { gw: number; chip: string }[];
+	vs_average: ModelRaceVsAverage;
+}
+
+export interface ModelRaceVsAverage {
+	gameweeks: number;
+	points: number;
+	average: number;
+	diff: number;
+	gws: number[];
 }
 
 export interface ModelRaceResponse {
@@ -870,6 +897,10 @@ export interface ModelRaceResponse {
 		/** "net: ..." = molemmat puolet nettoja; renderoidaan vain kun alkaa "net:". */
 		model_points_basis?: string;
 		note: string | null;
+		/** 21.9: kierrokset jotka eivat ole mallisarjassa, koodilla
+		 *  (`no_valid_frozen_squad`). Teksti: `MODEL_SERIES_COPY`. */
+		unscored_gws?: { gw: number; code: string }[];
+		cost_unverified_gws?: number[];
 	};
 	totals: {
 		model: number;
@@ -881,8 +912,11 @@ export interface ModelRaceResponse {
 		stale_gws?: number[];
 		/** Mallin koko kausi; sama kuin `model` kun entrya ei ole. */
 		model_season?: number;
+		/** 21.9: mallin jaadytetty rivi FPL:n keskiarvoa vastaan. */
+		model_vs_average?: ModelRaceVsAverage;
 	};
 	gameweeks: ModelRaceGameweek[];
+	entry_series?: ModelRaceEntrySeries | null;
 }
 
 // ---------------------------------------------------------------------------

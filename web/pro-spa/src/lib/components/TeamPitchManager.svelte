@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { MODEL_SERIES_COPY } from '$lib/modelSeriesCopy';
 	import type { Snippet } from 'svelte';
 	/**
 	 * TeamPitchManager (#113) — web-pariteetti mobiilin #106-pitchille +
@@ -565,11 +566,18 @@
 			   sovelluksesta, joten se on nailla kahdesta julkisempi. */
 			{ key: 'You', value: String(lf.points_net ?? lf.points) }
 		];
-		/* Portti 2.9 k3: mallin luku kortille VAIN reitin kanssa (entry-id
-		   solun avaimessa). Ilman id:ta kortti palaa You/Projected-muotoon. */
-		const modelRoute = lf.model_points != null && lf.model_entry_id != null;
-		if (modelRoute) {
-			headline.push({ key: `Model \u00b7 entry ${lf.model_entry_id}`, value: String(lf.model_points) });
+		/* Portti 2.9 k3: mallin luku kortille VAIN reitin kanssa (reitti
+		   solun avaimessa). 21.9: reitti on jaadytetty rivi (`model_route`),
+		   ei entry - entry voi erota chipin tai kokoonpanon verran. Ilman
+		   reittia kortti palaa You/Projected-muotoon. */
+		const modelKey = lf.model_route
+			? MODEL_SERIES_COPY.cardModelKey(lf.model_route.gw)
+			: lf.model_entry_id != null
+				? `Model \u00b7 entry ${lf.model_entry_id}`
+				: null;
+		const modelRoute = lf.model_points != null && modelKey != null;
+		if (modelRoute && modelKey) {
+			headline.push({ key: modelKey, value: String(lf.model_points) });
 		}
 		if (modelRoute && lf.vs_model != null && lf.vs_model !== 0) {
 			headline.push({
@@ -956,7 +964,20 @@
 					</div>
 					<!-- Portti 2.9 k4: mallin luku VAIN reitin kanssa, sama saanto
 					     kuin kortilla. -->
-					{#if lastFinished.model_points != null && lastFinished.model_entry_id != null}
+					{#if lastFinished.model_points != null && lastFinished.model_route}
+						<!-- 21.9: reitti on jaadytetty rivi, ei entry (entry voi erota
+						     chipin tai kokoonpanon verran). -->
+						<div class="score-side">
+							<a
+								class="score-key"
+								href={lastFinished.model_route.url}
+								rel="noopener"
+								title={MODEL_SERIES_COPY.cardModelLinkTitle}
+								>{MODEL_SERIES_COPY.cardModelKey(lastFinished.model_route.gw)}</a
+							>
+							<span class="score-val model">{lastFinished.model_points}</span>
+						</div>
+					{:else if lastFinished.model_points != null && lastFinished.model_entry_id != null}
 						<div class="score-side">
 							<span class="score-key">Model · entry {lastFinished.model_entry_id}</span>
 							<span class="score-val model">{lastFinished.model_points}</span>
@@ -964,7 +985,7 @@
 					{/if}
 				</div>
 
-				{#if lastFinished.vs_model != null && lastFinished.model_entry_id != null}
+				{#if lastFinished.vs_model != null && (lastFinished.model_route || lastFinished.model_entry_id != null)}
 					<p class="score-verdict" class:lost={lastFinished.vs_model < 0}>
 						{#if lastFinished.vs_model > 0}
 							You beat the model by {lastFinished.vs_model}
