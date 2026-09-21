@@ -39,9 +39,16 @@ export const MODEL_SERIES_COPY = {
 	costUnverified: (gws: number[]) =>
 		`${gwList(gws)}: the model's transfer cost couldn't be checked against FPL's rules, so its points there are before hits.`,
 	costUnverifiedBadge: 'before hits',
-	/** Mallin vs keskiarvo NETTONA (`model_vs_average.hits_deducted`). */
-	modelVsAverage: (diff: number, n: number) =>
-		`Model vs the FPL average: ${signed(diff)} over ${n} gameweek${n === 1 ? '' : 's'}, hits deducted`,
+	/** Mallin vs keskiarvo. Saanto 6a (21.9): teksti sanoo "hits deducted",
+	 *  joten lukija palauttaa sen VAIN kun payload itse sanoo
+	 *  `hits_deducted === true`. Bruttoluku (vanha backend, puuttuva lippu tai
+	 *  false) -> null, eika lausetta piirreta lainkaan. */
+	modelVsAverage: (
+		v: { diff: number; gameweeks: number; hits_deducted?: boolean } | null | undefined
+	): string | null =>
+		v && v.hits_deducted === true && v.gameweeks > 0
+			? `Model vs the FPL average: ${signed(v.diff)} over ${v.gameweeks} gameweek${v.gameweeks === 1 ? '' : 's'}, hits deducted`
+			: null,
 	entryTitle: 'Our FPL entry (model + our own calls)',
 	entryNote: (id: number) =>
 		`Entry ${id} on the official FPL site. It starts from the model's squad, but the chip calls and the occasional lineup change are ours, so it's scored apart from the model. It's the team in the Beat the Model mini-league table.`,

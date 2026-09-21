@@ -102,7 +102,9 @@ _META = {
                   "the GW3 row predates those fields. GW3 restarts from the "
                   "entry's squad after its GW2 wildcard. A gameweek whose "
                   "freeze rebuilt the squad from scratch (squad_rebuilt: "
-                  "true) is not scored. Append-only."),
+                  "true) is not scored; its as-frozen points are listed under "
+                  "unscored (would_have_scored) and are not part of the "
+                  "series. Append-only."),
 }
 # Taaksepain yhteensopiva nimi (testit ja vanhat kutsujat lukevat tata).
 _META_DEFAULTS = _META

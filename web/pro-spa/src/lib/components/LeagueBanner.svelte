@@ -17,9 +17,8 @@
 	<span class="body">
 		<strong>Beat the Model | GoalIQ</strong>
 		<span class="text">
-			The model picks its own FPL team this season. Join our public mini-league and try to
-			outdraft it. Season winner gets a year of GoalIQ Premium, free: one prize, decided by
-			the mini-league table when the season ends.
+			The model's squad is frozen before every deadline, and we play it in FPL as entry 116920
+			with our own calls. Join our public mini-league and try to outdraft it.
 		</span>
 		<span class="cta">Join with code {LEAGUE_CODE}</span>
 	</span>

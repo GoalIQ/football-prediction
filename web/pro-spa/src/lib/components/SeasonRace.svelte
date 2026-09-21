@@ -181,7 +181,7 @@
 	);
 	let reseeded = $derived(data?.meta?.reseeded_gws ?? []);
 	let costUnverifiedGws = $derived(data?.meta?.cost_unverified_gws ?? []);
-	let modelVsAvg = $derived(data?.totals?.model_vs_average ?? null);
+	let modelVsAvgText = $derived(MODEL_SERIES_COPY.modelVsAverage(data?.totals?.model_vs_average));
 	let entrySeries = $derived(data?.entry_series ?? null);
 	let entryRows = $derived(entrySeries ? [...entrySeries.gameweeks].reverse() : []);
 
@@ -238,10 +238,8 @@
 					<div><span class="lbl">You</span><span class="num">{data.totals.you}</span></div>
 				{/if}
 			</div>
-			{#if modelVsAvg && modelVsAvg.gameweeks > 0}
-				<p class="muted small">
-					{MODEL_SERIES_COPY.modelVsAverage(modelVsAvg.diff, modelVsAvg.gameweeks)}
-				</p>
+			{#if modelVsAvgText}
+				<p class="muted small">{modelVsAvgText}</p>
 			{/if}
 			{#if data.totals.you != null && (data.meta.model_points_basis ?? '').startsWith('net:')}
 				<!-- Pisteperuste luvun viereen, vain kun payload sanoo "net:".

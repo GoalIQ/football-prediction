@@ -40,6 +40,13 @@ SCAN_ROOTS = (SCRIPTS, ROOT / "src")
 # sisarkortti: hylkays joka ei kata julkaisevaa pintaa ei ole portti.
 WEB_ROOT = ROOT / "web" / "pro-spa" / "src"
 WEB_SUFFIXES = (".svelte", ".ts")
+# 21.9: kasin yllapidetyt julkiset sivut ja llms.txt. Rekisteri itse
+# suositteli korvaukseksi "entry 116920 is the squad it actually fields", ja
+# sama vaite eli llms.txt:ssa ja predictions.html:ssa - pinnoilla joita
+# portti ei skannannut, koska ne eivat ole skripteja. Juuren *.html
+# (myos generoidut fpl.html/index.html: vanhentunut generoitu sivu on sama
+# julkinen teksti) ja llms.txt, HTML-kommentit pois.
+PAGE_FILES = ("*.html", "llms.txt")
 NEWLINE = chr(10)
 
 
@@ -90,6 +97,10 @@ def _web_files() -> list[Path]:
                   if p.suffix in WEB_SUFFIXES and p.is_file())
 
 
+def _page_files() -> list[Path]:
+    return sorted({p for pat in PAGE_FILES for p in ROOT.glob(pat) if p.is_file()})
+
+
 def _hits(phrase: str) -> list[str]:
     reg = _registry()
     out = []
@@ -99,7 +110,7 @@ def _hits(phrase: str) -> list[str]:
             continue
         if any(phrase.lower() in lit.lower() for lit in _literals(path)):
             out.append(rel)
-    for path in _web_files():
+    for path in _web_files() + _page_files():
         rel = path.relative_to(ROOT).as_posix()
         if reg.get("poikkeukset", {}).get(rel):
             continue
@@ -175,3 +186,27 @@ def test_negatiivinen_kontrolli_skanneri_loytaa_literaalin(tmp_path) -> None:
     assert any("scored in public" in s for s in lits), lits
     assert not any(s.strip() == "scored in public" for s in lits), \
         "docstringin pitaa jaada pois, muuten selitys laukaisee portin"
+
+
+def test_julkiset_sivut_ovat_skannattavien_joukossa() -> None:
+    """21.9: llms.txt ja kasin yllapidetyt sivut kuuluvat porttiin. Tyhja
+    lista tekisi laajennuksesta aanettoman."""
+    nimet = {p.name for p in _page_files()}
+    assert {"llms.txt", "predictions.html", "creators.html", "faq.html",
+            "index.html"} <= nimet
+    assert len(nimet) >= 20
+
+
+def test_negatiivinen_kontrolli_sivuskanneri(tmp_path, monkeypatch) -> None:
+    """Kovakoodattu hylatty lause juuren sivulla laukaisee portin, mutta
+    HTML-kommentissa selitetty ei."""
+    import tests.test_rejected_phrases as t
+    (tmp_path / "x.html").write_text(
+        "<p>entry 116920 is the squad it actually fields</p>", encoding="utf-8")
+    (tmp_path / "y.html").write_text(
+        "<!-- hylatty: the squad it actually fields --><p>ok</p>",
+        encoding="utf-8")
+    monkeypatch.setattr(t, "ROOT", tmp_path)
+    monkeypatch.setattr(t, "SCAN_ROOTS", ())
+    monkeypatch.setattr(t, "WEB_ROOT", tmp_path / "ei-ole")
+    assert t._hits("squad it actually fields") == ["x.html"]

@@ -22,9 +22,14 @@ describe('MODEL_SERIES_COPY', () => {
 		expect(C.reseeded(5, 4, null)).not.toMatch(/wildcard/);
 		expect(C.reseeded(5, 4, '3xc')).not.toMatch(/wildcard/);
 	});
-	it('mallin vertailu sanoo hitit vahennetyiksi', () => {
-		expect(C.modelVsAverage(-17, 3)).toBe(
+	it('mallin vertailu sanoo hitit vahennetyiksi kun payload sanoo niin', () => {
+		expect(C.modelVsAverage({ diff: -17, gameweeks: 3, hits_deducted: true })).toBe(
 			'Model vs the FPL average: -17 over 3 gameweeks, hits deducted'
 		);
+	});
+	it('saanto 6a: bruttoluvulle ei "hits deducted" -lausetta', () => {
+		expect(C.modelVsAverage({ diff: -9, gameweeks: 3, hits_deducted: false })).toBeNull();
+		expect(C.modelVsAverage({ diff: -9, gameweeks: 3 })).toBeNull();
+		expect(C.modelVsAverage(null)).toBeNull();
 	});
 });

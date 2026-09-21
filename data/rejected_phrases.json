@@ -5,7 +5,7 @@
    "phrase": "scored in public",
    "rejected": "2026-09-03",
    "why": "epatosi: data/gw_calls.json sisaltaa vain GW2:n pisteytettyna, GW1 puuttuu kokonaan ja GW3 on graded: null",
-   "replacement": "entry 116920 is the squad it actually fields"
+   "replacement": "The model's squad is frozen before each deadline, and entry 116920 plays it with our own calls (render_projected_xi_card.py, render_standouts_card.py)"
   },
   {
    "phrase": "reaches it most often",
@@ -42,6 +42,12 @@
    "rejected": "2026-09-20",
    "why": "vaite ILMAISSIVUN KATTEESTA ja epatosi: /fpl antaa nollapeli-%:n ottelukohtaisena enintaan kuudelle kierrokselle (taulukon 'Next 6 CS%' + gridi GW5-GW10) ja sanoo sen itse ('Each column averages the model's difficulty over six gameweeks, so this shows where the swings are, not a number for any single match'); GW11-38 ovat keskiarvolohkoja. Projisoidut maalit ovat vain seuraavasta ottelusta, 20 kertaa eli kerran per joukkue. Sama vaite oli kolmella pinnalla: render_gw_outlook (korjattu 17.9), render_gw_outlook_hero ja gen_reel.py:n reel-CTA (molemmat livena 20.9 asti). 17.9 hylattiin MERKKIJONO eika VAITE, joten eri sanoin kirjoitettu sisarpinta lapaisi portin.",
    "replacement": "src.fpl_free_coverage.fpl_free_claim(): 'next six gameweeks' kun pinta nayttaa vain nollapelit, 'both numbers' kun se nayttaa molemmat luvut (niilla on eri horisontti). Portti: tests/test_fpl_free_coverage_claims.py"
+  },
+  {
+   "phrase": "squad it actually fields",
+   "rejected": "2026-09-21",
+   "why": "epatosi: entry 116920 sisaltaa omia paatoksiamme (GW2 wildcard, GW3 triple captain, GW5 kokoonpano ja varakapteeni), joten se ei ole mallin joukkue. Mallin rivi on jaadytetty runko (model_squad_scores.load_public_model_series, Villen paatos 21.9 'molemmat sarjat, malli ensin'). Sanamuoto oli rekisterissa itse KORVAUKSENA 'scored in public' -hylkaykselle.",
+   "replacement": "The model's squad is frozen before each deadline, and entry 116920 plays it with our own calls (render_projected_xi_card.py, render_standouts_card.py)"
   }
  ],
  "poikkeukset": {},
