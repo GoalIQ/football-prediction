@@ -63,17 +63,89 @@ def request_country(headers) -> str:
     return maa
 
 
-def _kartta() -> dict:
+#: Tierit joita checkout kysyy (`resolve_price(plan, ...)`, plan on
+#: WebCheckoutRequestin arvo). Muu avain kartassa on kirjoitusvirhe jota
+#: mikaan ei koskaan lue, esim. "annual" - ja sen maat maksavat listahintaa.
+TIERIT = ("season", "monthly")
+
+
+def _jasenna() -> tuple[dict, str | None]:
+    """(kartta, virhe). Ainoa paikka joka jasentaa muuttujan.
+
+    Virhe EI kaada ostoa (kartta on silloin tyhja = listahinta), mutta se
+    palautetaan jotta `kuvaa_aluehinnat()` voi nayttaa sen. Ennen 21.9
+    rikkinainen JSON oli taysin nakymaton: ostaja maksoi 25 EUR eika mikaan
+    pinta kertonut miksi.
+    """
     raaka = os.getenv("STRIPE_REGIONAL_PRICES", "").strip()
     if not raaka:
-        return {}
+        return {}, None
     try:
         d = json.loads(raaka)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
         # Rikkinainen konfiguraatio EI saa kaataa ostoa eika arvata hintaa:
         # se putoaa oletushintaan kuten tuntematon maa.
-        return {}
-    return d if isinstance(d, dict) else {}
+        return {}, f"STRIPE_REGIONAL_PRICES ei ole JSONia ({type(e).__name__}: {e})"[:240]
+    if not isinstance(d, dict):
+        return {}, "STRIPE_REGIONAL_PRICES ei ole JSON-objekti {tier: {maa: price_id}}"
+    return d, None
+
+
+def _kartta() -> dict:
+    return _jasenna()[0]
+
+
+def kuvaa_aluehinnat() -> dict:
+    """Mita aluehintakartta TODELLA tekee, luettuna samoilla lukijoilla joita
+    checkout kayttaa.
+
+    🔴 MIKSI (21.9.2026). Villen kysymys "eiko me sovittu hinnaksi 9 EUR" ei
+    ollut vastattavissa: aluehinnan tilaa ei voinut lukea mistaan. Suomesta
+    `/api/web/pricing` antaa saman vastauksen oli muuttuja asetettu tai ei,
+    maata ei voi teeskennella (Cloudflare ylikirjoittaa `CF-IPCountry`:n myos
+    suorassa origin-kutsussa), ja `resolve_price` on fail-closed eli vika
+    tekee hinnasta liian KALLIIN kaatamatta mitaan. Ymparisto pyyhkiytyi
+    20.9 kerran jo.
+
+    Kuvaus ei jasenna karttaa omalla logiikallaan: jokainen rivi ajetaan
+    `request_country`n ja `resolve_price`n lapi. Jos resolveri muuttuu,
+    kuvaus muuttuu sen mukana eika voi vaittaa rivia toimivaksi jota
+    checkout ei kayta.
+    """
+    kartta, virhe = _jasenna()
+    virheet: list[str] = [virhe] if virhe else []
+    tierit: dict[str, dict[str, str]] = {}
+    vartija = "__listahinta__"
+    for tier, alue in kartta.items():
+        if tier not in TIERIT:
+            virheet.append(
+                f"tuntematon tier '{tier}' (checkout kysyy vain "
+                f"{', '.join(TIERIT)}) - sen maat maksavat listahinnan")
+            continue
+        if not isinstance(alue, dict):
+            virheet.append(f"{tier}: ei ole objekti {{maa: price_id}}")
+            continue
+        maat: dict[str, str] = {}
+        for maa, ilmoitettu in alue.items():
+            if request_country({COUNTRY_HEADER: maa}) != maa:
+                virheet.append(
+                    f"{tier}: maakoodi '{maa}' ei ole muotoa jonka "
+                    "CF-IPCountry antaa (kaksi isoa kirjainta) - rivi ei "
+                    "osu koskaan")
+                continue
+            pid, osui = resolve_price(tier, maa, vartija)
+            if osui != maa or pid == vartija:
+                virheet.append(
+                    f"{tier}/{maa}: '{ilmoitettu}' ei kelpaa price-ID:ksi - "
+                    "maa maksaa listahinnan")
+                continue
+            maat[maa] = pid
+        tierit[tier] = maat
+    return {
+        "configured": bool(os.getenv("STRIPE_REGIONAL_PRICES", "").strip()),
+        "errors": virheet,
+        "tiers": tierit,
+    }
 
 
 def resolve_price(plan: str, country: str, default_price_id: str) -> tuple[str, str]:

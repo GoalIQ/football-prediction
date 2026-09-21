@@ -59,3 +59,20 @@ jobs:
             echo "::error::/api/fantasy/xp ei maskaa ($rivit rivia) - Premium on ilmaiseksi kaikille."
             exit 1
           fi
+
+      - name: Varmista etta aluehinta on paalla ja Stripe vahvistaa summat
+        run: |
+          set -euo pipefail
+          # 21.9: STRIPE_REGIONAL_PRICES on koodille vapaaehtoinen (ilman sita
+          # kaikki maksavat listahinnan eika mikaan kaadu), mutta Villen 20.9
+          # paatos on etta aluehinta on PAALLA. Juuri siksi sen katoaminen olisi
+          # nakymaton: se ei kaada mitaan, se vain nostaa hinnan 9 -> 25 EUR
+          # yhdeksalla markkinalla. `regional_pricing.ok` vaatii etta jokainen
+          # hinta-ID on haettu Stripesta oikealla jaksolla.
+          vastaus=$(curl -sS --max-time 30 https://api.goaliq.app/api/stripe-config)
+          echo "$vastaus" | python -c "import json,sys; r=json.load(sys.stdin).get('regional_pricing') or {}; print(json.dumps({k: r.get(k) for k in ('configured','ok','errors','tiers')}, ensure_ascii=False))"
+          ok=$(echo "$vastaus" | python -c "import json,sys; print((json.load(sys.stdin).get('regional_pricing') or {}).get('ok'))")
+          if [ "$ok" != "True" ]; then
+            echo "::error::Aluehinta ei ole voimassa (regional_pricing.ok=$ok). Aluemaat maksavat listahinnan."
+            exit 1
+          fi

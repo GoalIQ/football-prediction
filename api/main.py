@@ -52,7 +52,7 @@ from api.premium import (
     FREE_PREMIUM_UNTIL_DEFAULT, free_premium_window_active,
     is_premium_request, mask_plan_payload, mask_rate_team_payload,
     mask_xp_payload, xp_pool_rows,
-    premium_enforce_on, require_admin,
+    premium_enforce_on, require_admin, is_admin_request,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -67,7 +67,9 @@ STRIPE_WEB_WEBHOOK_SECRET = os.getenv("STRIPE_WEB_WEBHOOK_SECRET", "")
 # Streamlit-palvelussa → arvot voi kopioida sellaisenaan API-serviceen.
 STRIPE_PRICE_MONTHLY_ID = os.getenv("STRIPE_PRICE_MONTHLY_ID", "")
 STRIPE_PRICE_SEASON_ID = os.getenv("STRIPE_PRICE_SEASON_ID", "")
-from src.regional_pricing import request_country, resolve_price  # noqa: E402
+from src.regional_pricing import (  # noqa: E402
+    COUNTRY_HEADER, kuvaa_aluehinnat, request_country, resolve_price,
+)
 # Sallitut SPA-originit success/cancel-redirecteille (avoin redirect estetty:
 # origin validoidaan tätä listaa vasten). Laajenna envillä tarvittaessa.
 WEB_CHECKOUT_ORIGINS = [
@@ -4193,7 +4195,10 @@ def _web_checkout_base_url(origin: str) -> str:
 # Summa haetaan STRIPESTA, ei konfiguraatiosta. Jos se kirjoitettaisiin
 # erikseen lukuna, se voisi ajautua eri arvoon kuin se jota veloitetaan - ja
 # se vika nakyisi vasta asiakkaan kuitissa.
-_HINTA_CACHE: dict[str, tuple[float, int, str]] = {}
+#: (haettu_aika, sentit, valuutta, interval). Interval ('year'/'month' tai
+#: None kertaostolle) kulkee mukana jotta aluehinnan diagnostiikka voi
+#: todeta etta vuositierin hinta on oikeasti vuosihinta (21.9).
+_HINTA_CACHE: dict[str, tuple[float, int, str, str | None]] = {}
 _HINTA_TTL = 900.0
 
 
@@ -4243,6 +4248,11 @@ def _stripe_price_amount(price_id: str) -> tuple[int, str] | None:
     try:
         pr = stripe.Price.retrieve(price_id)
         arvo = (int(pr["unit_amount"]), str(pr["currency"]))
+        try:
+            toistuvuus = pr["recurring"]
+            interval = str(toistuvuus["interval"]) if toistuvuus else None
+        except (KeyError, TypeError):
+            interval = None
     except Exception as e:
         # Fail-soft KAYTTAJALLE (SPA putoaa omaan listahintaansa), mutta EI
         # hiljainen meille: syy lokiin ja diagnostiikkapinnalle.
@@ -4254,8 +4264,15 @@ def _stripe_price_amount(price_id: str) -> tuple[int, str] | None:
         return None
     _HINTA_VIRHE.pop(price_id, None)
     _HINTA_VIRHE_AIKA.pop(price_id, None)
-    _HINTA_CACHE[price_id] = (time.time(), arvo[0], arvo[1])
+    _HINTA_CACHE[price_id] = (time.time(), arvo[0], arvo[1], interval)
     return arvo
+
+
+def _hinnan_interval(price_id: str) -> str | None:
+    """Stripen `recurring.interval` hinnalle jonka `_stripe_price_amount`
+    on jo hakenut, tai None. Ei omaa Stripe-kutsua: sama valimuisti."""
+    osuma = _HINTA_CACHE.get(price_id)
+    return osuma[3] if osuma and len(osuma) > 3 else None
 
 
 #: Muuttujat joita ilman tuote on rikki tai antaa itsensa ilmaiseksi.
@@ -4304,9 +4321,30 @@ def health_env() -> dict:
 
 @app.get("/api/web/pricing",
          description="Prices for this visitor's country. The amount comes from Stripe, so the page cannot show a different number than the one charged.")
-def web_pricing(request: Request) -> dict:
+def web_pricing(
+    request: Request,
+    response: Response,
+    as_country: str | None = Query(
+        default=None,
+        description="Admin only: preview the price another country sees. "
+                    "Ignored without a valid X-Admin-Token. Never affects checkout."),
+) -> dict:
+    """21.9 ADMIN-ESIKATSELU: aluehintaa ei voinut verifioida Suomesta, koska
+    Cloudflare ylikirjoittaa `CF-IPCountry`:n myos suorassa origin-kutsussa.
+    `?as_country=NG` + oikea `X-Admin-Token` ajaa TASAN saman polun
+    (`resolve_price` -> Stripe) toisella maalla. Ilman tokenia parametri
+    ohitetaan hiljaa (fail-closed: ei virhetta josta voisi paatella tokenin
+    olemassaolon). Checkout ei lue tata parametria koskaan - portti
+    `tests/test_aluehinta_nakyvissa.py` vartioi sen.
+    """
     maa = request_country(request.headers)
+    esikatselu = as_country is not None and is_admin_request(request)
+    if esikatselu:
+        maa = request_country({COUNTRY_HEADER: as_country})
+        response.headers["Cache-Control"] = "no-store"
     ulos: dict = {"country": maa or None, "plans": {}}
+    if esikatselu:
+        ulos["preview"] = True
     for plan, oletus in (("season", STRIPE_PRICE_SEASON_ID),
                          ("monthly", STRIPE_PRICE_MONTHLY_ID)):
         pid, tier = resolve_price(plan, maa, oletus)
@@ -6047,6 +6085,63 @@ def stripe_config():
         # true ja ostaminen oli poikki. Tama kentta KOKEILEE avainta oikealla
         # kutsulla ja kertoo Stripen oman syyn (avain maskattuna).
         "price_lookup": _hintahaun_tila(),
+        # 21.9: aluehinnan tila ei nakynyt MISTAAN (ks. _aluehinnan_tila).
+        "regional_pricing": _aluehinnan_tila(),
+    }
+
+
+#: Tier -> Stripen interval jonka sen hinnan on oltava. Vuosi-ID kuukausi-
+#: tieriin (tai painvastoin) veloittaisi vaaralla jaksolla ilman virhetta.
+_TIERIN_INTERVAL = {"season": "year", "monthly": "month"}
+
+
+def _aluehinnan_tila() -> dict:
+    """Aluehinnan koko ketju yhdella kutsulla: env -> kartta -> Stripe.
+
+    🔴 MIKSI (21.9.2026). `STRIPE_REGIONAL_PRICES`:n tilaa ei voinut lukea
+    mistaan. `resolve_price` on fail-closed, eli kadonnut tai rikkinainen
+    muuttuja tekee hinnasta liian KALLIIN kaatamatta mitaan - yhdeksan
+    markkinan ostajat maksaisivat 25 EUR eika kukaan huomaisi. Nyt vastaus
+    kertoo: onko muuttuja asetettu, mitka rivit checkout oikeasti kayttaa
+    (sama lukija, `kuvaa_aluehinnat`), ja jokaisen hinta-ID:n summan, valuutan
+    ja jakson HAETTUNA STRIPESTA. Summa Stripesta todistaa koko ketjun;
+    kovakoodattu luku todistaisi vain sen etta joku kirjoitti luvun.
+    Ei salaisuuksia: maakoodit ja hinta-ID:t eivat ole salaisia.
+    """
+    kuvaus = kuvaa_aluehinnat()
+    virheet: list[str] = list(kuvaus["errors"])
+    hinnat: dict[str, dict] = {}
+    for tier, maat in kuvaus["tiers"].items():
+        for maa, pid in maat.items():
+            h = hinnat.setdefault(pid, {"tiers": [], "countries": []})
+            if tier not in h["tiers"]:
+                h["tiers"].append(tier)
+            h["countries"].append(maa)
+    for pid, h in hinnat.items():
+        h["countries"].sort()
+        summa = _stripe_price_amount(pid)
+        if summa is None:
+            h["ok"] = False
+            h["error"] = _HINTA_VIRHE.get(pid, "tuntematon syy")
+            virheet.append(f"{pid}: Stripe-haku epaonnistui - checkout kaatuu "
+                           f"maissa {', '.join(h['countries'])}")
+            continue
+        interval = _hinnan_interval(pid)
+        h.update(ok=True, amount=summa[0] / 100.0,
+                 currency=summa[1].upper(), interval=interval)
+        odotetut = sorted({_TIERIN_INTERVAL[t] for t in h["tiers"]})
+        if odotetut != [interval]:
+            h["ok"] = False
+            virheet.append(f"{pid}: Stripen jakso on {interval}, tier(it) "
+                           f"{'/'.join(h['tiers'])} vaativat {'/'.join(odotetut)}")
+    return {
+        "configured": kuvaus["configured"],
+        "ok": bool(kuvaus["configured"] and hinnat and not virheet),
+        "errors": virheet,
+        "tiers": {t: {"countries": sorted(maat),
+                      "price_ids": sorted(set(maat.values()))}
+                  for t, maat in kuvaus["tiers"].items()},
+        "prices": hinnat,
     }
 
 
