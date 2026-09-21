@@ -181,13 +181,15 @@
 		</a>
 
 		<nav class="nav" aria-label="GoalIQ">
-			{#each GROUPS as g (g.id)}
+			{#each GROUPS as g, i (g.id)}
 				<a href="/{g.id}" class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
+				<!-- 21.9 (Villen havainto): UCL Fantasy xP oli vain sivun alaosan
+				     "New:"-rivilla, eli Premium-kayttaja ei loytanyt sita. Oma osio
+				     kuten SPL, mutta ei etiikkarajausta -> ylapalkkiin. Heti
+				     ensimmaisen ryhman peraan: mitattu 390 px, navin lopussa se jai
+				     vaakavierityksen taakse kuten goaliq.app-linkki 11.9. -->
+				{#if i === 0}<a href="/ucl" data-cta="pro-nav-ucl">UCL Fantasy</a>{/if}
 			{/each}
-			<!-- 21.9 (Villen havainto): UCL Fantasy xP oli vain sivun alaosan
-			     "New:"-rivilla, eli Premium-kayttaja ei loytanyt sita. Oma
-			     osio kuten SPL, mutta ei etiikkarajausta -> ylapalkkiin. -->
-			<a href="/ucl" data-cta="pro-nav-ucl">UCL Fantasy</a>
 			<!-- 🔴 Villen havainto 11.9: prolta puuttui paluu goaliq.appiin. Se oli
 			     ennen ylapalkin taglinessa, ja kun tagline siirtyi Account-valikkoon,
 			     linkki katosi kirjautumattomalta kokonaan - eli juuri silta jolla se
