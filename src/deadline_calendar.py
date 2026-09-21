@@ -32,6 +32,24 @@ PRODID = "-//GoalIQ//FPL deadlines//EN"
 #: lupaa eri asiaa.
 ALARM_MINUTES = 120
 
+#: DTSTAMP on KIINTEA, ei rakennushetki.
+#:
+#: 🔴 MITATTU 21.9.2026: `fpl-data-refresh` (ajo 35558945289) heitti koko
+#: kolmen tunnin datarakennuksen pois, koska push-askeleen rebase kaatui
+#: viidesti samaan konfliktiin tiedostossa `fpl/deadlines.ics`. Syy:
+#: `DTSTAMP:{now}` muutti kaikki 33 tapahtumaa JOKAISESSA rakennuksessa, ja
+#: sivun rakentavat rinnakkain ainakin fpl-data-refresh, fpl-page-refresh ja
+#: accuracy-log. Kaksi rakennusta samasta datasta tuotti kaksi eri tiedostoa,
+#: eli konflikti oli taattu aina kun ne osuivat paallekkain.
+#:
+#: Nyt sama syote tuottaa saman tavujonon riippumatta siita milloin se
+#: rakennetaan (portti: test_sama_syote_tuottaa_saman_tiedoston). `now`
+#: vaikuttaa vain siihen mitka deadlinet ovat jo menneet. RFC 5545 vaatii
+#: DTSTAMPin mutta ei sita etta se on rakennushetki; kalenteriohjelmat
+#: tunnistavat tapahtuman UID:sta. Arvo = FPL 26/27 -kauden aikataulun
+#: julkaisun jalkeinen hetki, eli menneisyydessa kaikkiin tapahtumiin nahden.
+DTSTAMP_KIINTEA = "20260801T000000Z"
+
 
 def _stamp(d: dt.datetime) -> str:
     return d.astimezone(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -71,7 +89,7 @@ def ics(deadlines, now: dt.datetime, url: str = "https://goaliq.app/fpl") -> str
         rivit += [
             "BEGIN:VEVENT",
             f"UID:fpl-gw{gw}-deadline@goaliq.app",
-            f"DTSTAMP:{_stamp(now)}",
+            f"DTSTAMP:{DTSTAMP_KIINTEA}",
             f"DTSTART:{_stamp(hetki)}",
             f"DTEND:{_stamp(hetki)}",
             f"SUMMARY:{_esc(f'FPL GW{gw} deadline')}",

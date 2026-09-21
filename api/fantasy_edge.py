@@ -783,9 +783,14 @@ def fantasy_wildcard_plan(
             id_to_name = {t["id"]: fpl_wildcard.FPL_TO_MODEL.get(
                 t["name"], t["name"]) for t in teams}
             _pl = _playable_gws(pool, xp_data)
+            # CHIPS_HYPOTHETICAL on TIETOINEN valinta (21.9): tama pinta
+            # nayttaa luvun hypoteettisena myos pelatulle chipille ja kertoo
+            # chip-tilan erikseen alla (`chip_available`, nootti), 3.9 portin
+            # paatos. Mallin freeze sen sijaan antaa oikean chip-tilan.
             plan = fpl_wildcard.wildcard_plan(
                 squad, pool, _pl, fixtures,
-                id_to_name, _optimal_xi_for, mode)
+                id_to_name, _optimal_xi_for, mode,
+                chips=fpl_wildcard.CHIPS_HYPOTHETICAL)
             # CHIP-EV-CHIPS-USED (3.9): onko wildcard ylipaataan pelattavissa
             # talla puolikkaalla (entry 116920 pelasi sen GW2:ssa).
             _hist = _entry_history(entry)

@@ -35,11 +35,31 @@ perustan summaaminen tekisi luvusta sellaisen jota kukaan ei voi tarkistaa.
 """
 from __future__ import annotations
 
+from src.models import fpl_chips
 from src.models import fpl_rate_team as rt
 from src.models.fpl_transfers import confidence_weight
 
 # Kuinka pitkalle fixture-nakyma ulottuu xP-horisontin YLI.
 LONG_VIEW_GWS = 6
+
+
+class _Hypoteettinen:
+    """Kutsujan TIETOINEN valinta: suunnitelma lasketaan chip-tilasta
+    riippumatta. Ks. `wildcard_plan`in `chips`-parametri."""
+
+    def __repr__(self) -> str:
+        return "CHIPS_HYPOTHETICAL"
+
+
+#: CHIP-ARVIO-EI-LUE-KAYTETTYJA-CHIPPEJA (21.9.2026). `wildcard_plan` ei
+#: tarkistanut koskaan onko wildcard pelattu: se palautti `available: False`
+#: vain tyhjalle `gws`:lle ja siirsi vastuun kutsujalle docstringissa. Freeze
+#: unohti sen, ja `model_squad_frozen/gw5.json` suositteli wildcardia
+#: (`recommend: true`, 14.09 xP) entrylle joka pelasi sen GW2:ssa.
+#: Nyt chip-tila on PAKOLLINEN avainsana-argumentti ilman oletusta:
+#: unohdus on TypeError, ja hypoteettinen suunnitelma vaatii taman vakion
+#: nimeamisen kutsupaikassa, jolloin valinta nakyy diffissa (saanto 6a.2).
+CHIPS_HYPOTHETICAL = _Hypoteettinen()
 
 # 🔴 Kynnys suositukselle. Wildcard on kertakaytto — sen polttaminen pienesta
 # erosta on huonompi kuin pito, koska sama chip olisi myohemmin arvokkaampi
@@ -161,21 +181,57 @@ def _optimi(pool: list[dict], gws: list[int]) -> dict | None:
     return res if res and res.get("xi") else None
 
 
+def _ei_pelattavissa(chips: dict, gws: list[int]) -> dict:
+    """Nakyva kieltaytyminen: wildcardia ei voi pelata yhdellakaan
+    horisontin kierroksella. Syy ja seuraava ikkuna samasta lukijasta
+    (`fpl_chips`), ei paattelyna tasta moduulista."""
+    wc = chips.get("wc") or {}
+    pelattu = list(wc.get("played_gws") or [])
+    seuraava = fpl_chips.next_available_window(chips, "wc", min(gws))
+    note = (f"Wildcard already played in GW{pelattu[-1]}." if pelattu
+            else "No Wildcard left in this half.")
+    note += (f" The next Wildcard window opens in GW{seuraava['start_gw']}."
+             if seuraava else " No Wildcard window left this season.")
+    return {"available": False, "chip_available": False, "note": note,
+            "played_gws": pelattu,
+            "next_window_gw": int(seuraava["start_gw"]) if seuraava else None}
+
+
 def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                   fixtures: list[dict], id_to_name: dict[int, str],
-                  xi_fn, mode: str = "entry") -> dict:
+                  xi_fn, mode: str = "entry", *, chips) -> dict:
     """Paras wildcard-kierros, sen joukkue ja perustelut.
 
-    `gws`   = kierrokset joille chipin voi VIELA pelata (deadline ei mennyt).
+    `gws`   = horisontin kierrokset joiden deadline ei ole mennyt.
+    `chips` = PAKOLLINEN, ei oletusta. Joko `fpl_chips.chip_state(...)`-tulos,
+              jolloin vaihtopisteet rajataan kierroksiin joilla wildcardin voi
+              pelata ja suunnitelma kieltaytyy nakyvasti (`available: False` +
+              syy) jos sellaista ei ole; tai `CHIPS_HYPOTHETICAL`, kun kutsuja
+              haluaa TIETOISESTI suunnitelman chip-tilasta riippumatta (API
+              nayttaa luvun hypoteettisena ja kertoo chip-tilan erikseen, 3.9).
     `mode`  = "entry" kun rivisto on LUKIJAN, muuten mallin oma. 🔴 Copy sanoo
               "your 15" vain ensimmaisessa: mallin rungosta puhuminen lukijan
               omistusmuodossa on vaite jota lukija ei voi tarkistaa.
     `xi_fn` = (squad, key) -> paras laillinen XI. Annetaan ulkoa, jotta tama
               moduuli ei tuo tuontikeha `api.fantasy_edge`:n kanssa.
     """
+    if chips is not CHIPS_HYPOTHETICAL and not isinstance(chips, dict):
+        raise TypeError(
+            "wildcard_plan: chips on fpl_chips.chip_state()-tulos tai "
+            f"CHIPS_HYPOTHETICAL, ei {chips!r}. Tuntematon chip-tila ei saa "
+            "muuttua hiljaa 'saatavilla'-oletukseksi.")
     if not gws:
         return {"available": False,
                 "note": "No gameweek left in the projection horizon."}
+    if chips is CHIPS_HYPOTHETICAL:
+        vaihtopisteet = list(gws)
+    else:
+        # Vaihtopiste = kierros jolla chipin voi pelata. Arviointi-ikkuna
+        # (`kaikki` alla) pysyy koko horisonttina: uusi runko jaa voimaan myos
+        # puoliskorajan yli, joten hyoty lasketaan sen koko elinajalta.
+        vaihtopisteet = [g for g in gws if fpl_chips.gw_allowed(chips, "wc", g)]
+        if not vaihtopisteet:
+            return _ei_pelattavissa(chips, list(gws))
 
     def _paras_xi_xp(rivisto: list[dict], gw: int) -> float:
         """Rungon OMA optimi talle kierrokselle, PAINOTETTUNA (28.8): sama
@@ -225,7 +281,7 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
     vanha_plain = {x: _paras_xi_xp_plain(squad, x) for x in kaikki}
     uusi_plain = {x: _paras_xi_xp_plain(uusi_15, x) for x in kaikki}
     kandidaatit = []
-    for g in gws:
+    for g in vaihtopisteet:
         ikkuna = [x for x in kaikki if x >= g]
         ev = sum(uusi_per_gw[x] - vanha_per_gw[x] for x in ikkuna)
         kandidaatit.append({
@@ -301,7 +357,7 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
             # Jaljella oleva kopio on meta.notes-lohkossa.
         }
 
-    return {
+    tulos = {
         "available": True,
         "recommend": suosita,
         "gw": paras["gw"],
@@ -325,10 +381,15 @@ def wildcard_plan(squad: list[dict], pool: list[dict], gws: list[int],
                        for c in kandidaatit],
         "long_view": long_view,
         "reasons": _reasons(paras, ulos, sisaan, squad, suosita, long_view,
-                            len(kaikki), oma_rivisto, min(gws),
+                            len(kaikki), oma_rivisto, min(vaihtopisteet),
                             {x: uusi_per_gw[x] - vanha_per_gw[x]
                              for x in kaikki}),
     }
+    # Kentta vain kun chip-tila on LUETTU: hypoteettinen polku (API) pysyy
+    # tavulleen ennallaan, ja sen chip-tila kerrotaan metassa erikseen.
+    if chips is not CHIPS_HYPOTHETICAL:
+        tulos["chip_available"] = True
+    return tulos
 
 
 def _reasons(paras: dict, ulos: list[dict], sisaan: list[dict],

@@ -54,8 +54,11 @@ def _kutsu(squad, uusi_15, gws=(2, 3, 4), fixtures=None, monkeypatch=None,
     # club-id -> mallinimi. `_rivisto` jakaa klubit 1..6, ja fixturet kayttavat
     # nimia "A"/"B", joten kartta on oltava tai `long_view` jaa tyhjaksi.
     kartta = {i: nimi for i, nimi in enumerate("ABCDEF", start=1)}
+    # Tama tiedosto mittaa ajoitusta ja perusteluja, ei chip-tilaa (se on
+    # tests/test_chip_evaluation_chip_state.py:ssa), joten valinta nimetaan.
     return wc.wildcard_plan(squad, list(squad) + list(uusi_15), list(gws),
-                            fixtures or [], kartta, _xi_fn, mode)
+                            fixtures or [], kartta, _xi_fn, mode,
+                            chips=wc.CHIPS_HYPOTHETICAL)
 
 
 def _rivisto(alku, xp, gws=(2, 3, 4), **kw):
@@ -434,7 +437,8 @@ def test_kartoittamaton_nimi_loytyy():
 # 6. Reunatapaukset
 # ---------------------------------------------------------------------------
 def test_tyhja_horisontti_ei_kaadu():
-    out = wc.wildcard_plan([], [], [], [], {}, _xi_fn)
+    out = wc.wildcard_plan([], [], [], [], {}, _xi_fn,
+                           chips=wc.CHIPS_HYPOTHETICAL)
     assert out["available"] is False and out["note"]
 
 
@@ -442,7 +446,7 @@ def test_optimoijan_epaonnistuminen_kerrotaan(monkeypatch):
     """Runkoa ei saada -> `available: False` eika puolikas suunnitelma."""
     monkeypatch.setattr(wc, "_optimi", lambda pool, g: None)
     out = wc.wildcard_plan(_rivisto(1, 1.0), _rivisto(1, 1.0), [2, 3],
-                           [], {}, _xi_fn)
+                           [], {}, _xi_fn, chips=wc.CHIPS_HYPOTHETICAL)
     assert out["available"] is False
 
 
