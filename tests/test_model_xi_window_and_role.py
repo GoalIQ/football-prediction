@@ -322,7 +322,10 @@ def test_llms_txt_ei_kanna_hedgaamatonta_vaitetta():
     for kielletty in ("highest expected-points squad", "this is a budget optimum",
                       "best possible"):
         assert kielletty not in teksti, kielletty
-    assert "not the team goaliq plays" in teksti
+    # 21.9: rivi erottaa Model XI:n MALLIN kierrosrungosta (jaadytetty) ja
+    # nimeaa entryn erikseen omana asianaan.
+    assert "not the model's gameweek squad" in teksti
+    assert "entry 116920" in teksti
 
 
 def test_jakokortti_lukee_optimal_provenin():
