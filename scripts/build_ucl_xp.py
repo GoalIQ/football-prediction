@@ -135,7 +135,7 @@ def ottelut_syotteesta(syote: list[dict], md: int) -> dict[str, tuple[str, str]]
 def rakenna(md: int, *, ennen: str | None, syote: list[dict], odotus, joukkuenimi: dict[str, str],
             ottelut: dict[str, tuple[str, str]],
             uefa2627: pd.DataFrame, saatavuus_kaytossa: bool = True,
-            loo_syote: list[dict] | None = None) -> dict:
+            loo_syote: list[dict] | None = None, myohempi_kierros: bool = False) -> dict:
     """Laske xP jokaiselle syotteen pelaajalle kierroksen `md` otteluun.
 
     `ennen`: takatestin leikkauspaiva (Understat 2026 rajataan joukkueiden
@@ -262,6 +262,11 @@ def rakenna(md: int, *, ennen: str | None, syote: list[dict], odotus, joukkuenim
             saat = 0.0
         elif not saatavuus_kaytossa:
             saat = 1.0
+        elif myohempi_kierros:
+            # Syotteen tila koskee SEURAAVAA kierrosta. Myohemmille oletetaan
+            # etta loukkaantunut/pelikieltoinen voi palata (puolikas), epavarma
+            # pelaa. Rakenteellinen, ei mitattu.
+            saat = {"I": 0.5, "S": 0.5, "D": 1.0}.get(status, 1.0)
         else:
             saat = {"I": 0.0, "S": 0.0, "D": 0.5}.get(status, 1.0)
         if acc["joukkue_ottelut"] > 0 and acc["lahde"] != "ei_dataa":
@@ -434,8 +439,56 @@ def takatesti_md1(syote_md1: list[dict]) -> dict:
     return tulos
 
 
-def tuota(md: int) -> dict:
+TAKATESTI_MD1 = {
+    "matchday": 1, "cutoff": "2026-09-08", "players": 1163,
+    "mae": 1.23, "mae_constant": 1.76, "spearman": 0.63, "spearman_price": 0.37,
+    "top10_points": 10.0, "top10_points_price": 8.6,
+    "top30_points": 6.47, "top30_points_price": 5.6,
+    "note": ("Players whose share comes from UEFA matches were over-projected by "
+             "15-40% at xP >= 2; domestic-league rows were calibrated."),
+}
+"""MD1-takatestin tulos (python -m scripts.build_ucl_xp --takatesti, 21.9).
+Kovakoodattu koska takatesti vaatii verkon eika sita ajeta jokaisella
+buildilla. Raportti: goaliq-app cos-reports/cc-reports/2026-09-21-ucl-xp.md."""
+
+MIN_KOTILIIGARIVIT = 400
+
+HORISONTTI = 3
+"""Montako kierrosta eteenpain (sama idea kuin FPL:n horizon_gw, lyhyempi
+koska UCL:n sarjavaiheessa on 8 kierrosta)."""
+STATUS = {"": "a", "I": "i", "D": "d", "S": "s", "NIS": "u"}
+"""UCL-syotteen tila -> FPL-koodi jota SPA ja mobiili jo lukevat."""
+DATA_BASIS = {"kotiliiga": "domestic_league", "uefa": "uefa_matches", "ei_dataa": "no_history"}
+
+
+def ottelut_kierroksittain(raaka_cl: list[dict]) -> dict[int, dict[str, tuple[str, str]]]:
+    """Sarjavaiheen ottelut UEFAn rajapinnasta: {md: {joukkue_id: (koti, vieras)}}."""
+    out: dict[int, dict[str, tuple[str, str]]] = collections.defaultdict(dict)
+    for m in raaka_cl:
+        if ((m.get("round") or {}).get("metaData") or {}).get("type") != "GROUP_STANDINGS":
+            continue
+        try:
+            md = int((m.get("matchday") or {}).get("sequenceNumber"))
+        except (TypeError, ValueError):
+            continue
+        h, a = str(m["homeTeam"]["id"]), str(m["awayTeam"]["id"])
+        out[md][h] = out[md][a] = (h, a)
+    return out
+
+
+def seuraava_kierros(ucl_fantasy: dict) -> tuple[int, str | None]:
+    """Ensimmainen lukitsematon kierros ja sen deadline syotteen artefaktista."""
+    for m in sorted(ucl_fantasy.get("matchdays") or [], key=lambda x: x["md"]):
+        if not m.get("is_locked"):
+            return int(m["md"]), m.get("deadline_utc")
+    raise SystemExit("ei lukitsematonta kierrosta - sarjavaihe paattynyt?")
+
+
+def tuota(md: int, deadline: str | None, takatesti: dict | None = None) -> dict:
+    import datetime as _dt
+
     from src.models import uefa_prebuilt
+
     dc, syy = uefa_prebuilt.load(tournament="INT-Champions League",
                                   season_pair=list(config.current_season_pair()),
                                   decay=0.0035)
@@ -453,12 +506,81 @@ def tuota(md: int) -> dict:
     if puuttuu:
         raise SystemExit(f"joukkuekartasta puuttuu {len(puuttuu)} seuraa: {puuttuu}")
     odotus = odotusfunktio(_Taitettu(dc), nimet, lambda n: n in dc.attack)
-    ottelut = ottelut_syotteesta(syote, md)
-    t = rakenna(md, ennen=None, syote=syote, odotus=odotus, joukkuenimi=nimet,
-                ottelut=ottelut, uefa2627=u27, saatavuus_kaytossa=True)
-    return {"meta": {"md": md, "pelaajia": len(t["pelaajat"]), "saannot_selittavat": f"{ok}/{n}",
-                     "data_basis": dict(collections.Counter(p["data_basis"] for p in t["pelaajat"]))},
-            "pelaajat": sorted(t["pelaajat"], key=lambda p: -p["xp"])}
+    kierrokset = ottelut_kierroksittain(U.raaka_kausi("INT-Champions League", "2627"))
+    if md not in kierrokset:
+        raise SystemExit(f"MD{md}: UEFAn otteluohjelmassa ei ole otteluita")
+    horisontti = [k for k in range(md, md + HORISONTTI) if k in kierrokset]
+    koodi = {str(p["tId"]): p.get("cCode") for p in syote}
+
+    rivit: dict[str, dict] = {}
+    for k in horisontti:
+        t = rakenna(k, ennen=None, syote=syote, odotus=odotus, joukkuenimi=nimet,
+                    ottelut=kierrokset[k], uefa2627=u27, saatavuus_kaytossa=True,
+                    myohempi_kierros=(k != md))
+        for r in t["pelaajat"]:
+            rivi = rivit.setdefault(r["id"], {"r": r, "gws": []})
+            koti, vieras = kierrokset[k][r["tid"]]
+            vast = vieras if r["tid"] == koti else koti
+            rivi["gws"].append({"gw": k, "opponents": [{"opp": koodi.get(vast) or vast,
+                                                        "venue": "H" if r["tid"] == koti else "A"}],
+                                "xp": round(r["xp"], 2)})
+            if k == md:
+                rivi["r"] = r
+    tila = {str(p["id"]): p for p in syote}
+    pelaajat = []
+    for pid, v in rivit.items():
+        r, p = v["r"], tila[pid]
+        tot = round(sum(g["xp"] for g in v["gws"]), 2)
+        pelaajat.append({
+            "id": int(pid), "web_name": p.get("pDName"), "full_name": p.get("pFName"),
+            "team": p.get("tName"), "team_short": p.get("cCode"),
+            "pos": "GKP" if r["pos"] == "GK" else r["pos"],
+            "price": p.get("value"), "owned_pct": p.get("selPer"),
+            "status": STATUS.get(p.get("pStatus") or "", "a"),
+            "news": (p.get("trained") or "") if (p.get("pStatus") or "") else "",
+            "xmins": round(r["minuutit"]["min"], 1),
+            "p_start": round(r["minuutit"]["p_aloitus"], 3),
+            "data_basis": DATA_BASIS[r["data_basis"]],
+            "xp_per_gw": round(tot / len(v["gws"]), 2) if v["gws"] else 0.0,
+            "xp_horizon_total": tot,
+            "xp_next": v["gws"][0]["xp"] if v["gws"] else 0.0,
+            "xp_components": {kk: round(vv, 2) for kk, vv in r["komponentit"].items()},
+            "gameweeks": v["gws"],
+        })
+    pelaajat.sort(key=lambda x: -x["xp_horizon_total"])
+    kanta = collections.Counter(p["data_basis"] for p in pelaajat)
+    # 🔴 Understat voi olla estetty CI-runnerilta (datakeskus-ASN). Silloin
+    # jokainen paasarjapelaaja putoaisi "no_history"-tilaan ja lista nayttaisi
+    # tayselta. Mitattu 21.9 paikallisesti: 536 kotiliigariviä.
+    if kanta.get("domestic_league", 0) < MIN_KOTILIIGARIVIT:
+        raise SystemExit(f"vain {kanta.get('domestic_league', 0)} kotiliigapohjaista riviä "
+                         f"(< {MIN_KOTILIIGARIVIT}) - Understat ei vastannut? Ei kirjoiteta.")
+    return {
+        "meta": {
+            "product": "GoalIQ UCL Fantasy - expected points (xP)",
+            "available": True,
+            "league": "INT-Champions League",
+            "generated_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+            "season": "2026/27",
+            "source": "uefa-ucl-fantasy-feed",
+            "deadline_gameweek": md, "next_gameweek": md, "current_gameweek": md,
+            "deadline_utc": deadline,
+            "horizon_gw": len(horisontti),
+            "scoring": ("UEFA Champions League Fantasy rules, derived from the official feed's "
+                        f"own points ({ok}/{n} players who played matched exactly)"),
+            "team_strength_source": "GoalIQ Champions League model (all 36 clubs on one scale)",
+            "attack_basis": ("Share of the club's expected goals and assists per 90 minutes in its "
+                             "domestic league (Understat, five major leagues). Clubs outside those "
+                             "leagues: goals and starting line-ups in UEFA matches, shrunk harder."),
+            "minutes_basis": ("Starts and substitute appearances from the domestic league or UEFA "
+                              "line-ups, normalised to 11 starters per club; official feed "
+                              "availability applied to the next matchday."),
+            "data_basis_counts": dict(kanta),
+            "thin_data": "uefa_matches",
+            "backtest": takatesti,
+        },
+        "players": pelaajat,
+    }
 
 
 def main(argv=None) -> int:
@@ -471,10 +593,15 @@ def main(argv=None) -> int:
         tulos = takatesti_md1(hae_syote(1))
         print(json.dumps(tulos, indent=1))
         return 0
-    md = args.md or json.loads((config.DATA_DIR / "ucl_fantasy.json").read_text(encoding="utf-8"))["meta"]["matchday"]
-    out = tuota(md)
+    uf = json.loads((config.DATA_DIR / "ucl_fantasy.json").read_text(encoding="utf-8"))
+    md, deadline = seuraava_kierros(uf)
+    if args.md:
+        md = args.md
+    out = tuota(md, deadline, takatesti=TAKATESTI_MD1)
     (args.out or OUT).write_text(json.dumps(out, ensure_ascii=False, default=float), encoding="utf-8")
-    print(f"UCL xP MD{md}: {out['meta']}")
+    m = out["meta"]
+    print(f"UCL xP MD{md}: {len(out['players'])} pelaajaa, horisontti {m['horizon_gw']}, "
+          f"datapohja {m['data_basis_counts']}")
     return 0
 
 

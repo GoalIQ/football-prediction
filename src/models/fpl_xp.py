@@ -38,7 +38,10 @@ XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
 # Builderi: scripts/build_spl_xp.py (RSL-pisteytys, src/models/spl_xp.py).
 # Sama ei-fallback-periaate kuin fpl_phase0.PHASE0_PATHS: tuntematon avain = 404.
 SPL_XP_PATH = config.DATA_DIR / "spl_xp_projections.json"
-XP_PATHS = {"fpl": XP_PATH, "spl": SPL_XP_PATH}
+# UCL Fantasy (21.9): sama serving-polku, Premium (maskataan kuten FPL).
+# Builderi: scripts/build_ucl_xp.py (src/models/ucl_xp.py), ucl-refresh.yml.
+UCL_XP_PATH = config.DATA_DIR / "ucl_xp_projections.json"
+XP_PATHS = {"fpl": XP_PATH, "spl": SPL_XP_PATH, "ucl": UCL_XP_PATH}
 
 # ---------------------------------------------------------------------------
 # FPL 25/26 -pistesäännöt

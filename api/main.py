@@ -5079,7 +5079,7 @@ def fantasy_phase0(
     ),
     league: str = Query(
         default="fpl",
-        description="Fantasy-liiga: 'fpl' (oletus) tai 'spl' (Saudi Pro League).",
+        description="Fantasy league: 'fpl' (default), 'spl' (Saudi Pro League) or 'ucl' (UEFA Champions League Fantasy).",
     ),
 ):
     """FPL Phase 0 — clean sheet -% + mallipohjainen FDR per PL-joukkue/GW (free-tier).

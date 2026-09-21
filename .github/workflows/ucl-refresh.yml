@@ -95,6 +95,16 @@ jobs:
           python -m scripts.build_uefa_model || \
             echo "::warning::UEFA-mallin bake epaonnistui - API fittaa livena kunnes seuraava ajo onnistuu"
 
+      - name: Build UCL Fantasy xP (Premium, data/ucl_xp_projections.json)
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: |
+          # 21.9: xP lasketaan juuri bakatulla CL-mallilla. Epaonnistuminen EI
+          # kaada ajoa eika kirjoita tiedostoa: build kaatuu itse jos UEFA
+          # muutti pisteytysta, joukkuekartasta puuttuu seura tai CL-malli ei
+          # kelpaa - silloin edellinen projektio jaa ja varoitus nakyy.
+          python -m scripts.build_ucl_xp ||             echo "::warning::UCL xP -build epaonnistui - edellinen projektio jaa"
+
       - name: Gate — artefakti on kuluvalta kaudelta, sivut sopimuksen mukaisia
         run: |
           python -m pytest tests/test_ingest_ucl.py tests/test_ucl_phase.py \
@@ -123,6 +133,7 @@ jobs:
           [ -f sitemap-core.xml ] && git add sitemap-core.xml
           [ -f llms.txt ] && git add llms.txt
           [ -f data/uefa_joint_model.json ] && git add data/uefa_joint_model.json
+          [ -f data/ucl_xp_projections.json ] && git add data/ucl_xp_projections.json
           if git diff --cached --quiet; then
             echo "Ei muutoksia."
             exit 0
