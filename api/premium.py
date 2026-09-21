@@ -207,6 +207,21 @@ def require_admin(request: Request) -> None:
         raise HTTPException(status_code=403, detail="Invalid admin token.")
 
 
+def is_admin_request(request: Request) -> bool:
+    """Sama tarkistus kuin `require_admin`, boolina. Ei omaa vertailua:
+    kaksi toteutusta voisi olla eri mielta siita kuka on admin.
+
+    Kaytto: `/api/web/pricing?as_country=` (21.9). Siella vaara token EI saa
+    tuottaa 403:a, koska julkinen endpoint ei saa kertoa onko admin-tila
+    olemassa; parametri vain ohitetaan.
+    """
+    try:
+        require_admin(request)
+    except HTTPException:
+        return False
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Supabase-JWT-plumbing + premium-lookup
 # ---------------------------------------------------------------------------

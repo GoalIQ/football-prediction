@@ -6,9 +6,14 @@
 yllapidetaan kasin vanhenee: seuraava muuttuja lisataan koodiin eika
 listalle, ja silloin vahti on vihrea vaikka tuote on rikki.
 
-Tama testi vaatii, etta JOKAINEN `os.getenv`-nimi api/:ssa on joko
-pakollisten listalla tai nimetty vapaaehtoiseksi PERUSTELUN kanssa.
+Tama testi vaatii, etta JOKAINEN `os.getenv`-nimi api/:ssa JA src/:ssa on
+joko pakollisten listalla tai nimetty vapaaehtoiseksi PERUSTELUN kanssa.
 Unohdus muuttuu mahdottomaksi, tietoinen valinta jaa diffiin.
+
+🔴 21.9.2026: skannaus kattoi vain api/:n. `STRIPE_REGIONAL_PRICES` luetaan
+`src/regional_pricing.py`:ssa, joten se ohitti portin kokonaan - eika sen
+tilaa voinut lukea mistaan. Portti joka katsoo yhta hakemistoa vartioi
+tapausta, ei luokkaa: API ajaa myos src/:n moduuleja.
 """
 from __future__ import annotations
 
@@ -20,6 +25,7 @@ import api.main as m
 
 ROOT = Path(__file__).resolve().parents[1]
 API = ROOT / "api"
+SRC = ROOT / "src"
 
 #: Vapaaehtoiset: nimi -> miksi ilman tata parjataan.
 VAPAAEHTOISET = {
@@ -36,12 +42,19 @@ VAPAAEHTOISET = {
                           "mallin omalla sivulla",
     "RENDER_GIT_COMMIT": "Renderin itsensa asettama",
     "PREMIUM_ENFORCE_DEBUG": "vain paikalliseen vianetsintaan",
+    "STRIPE_REGIONAL_PRICES": "ilman sita kaikki maksavat listahinnan "
+                              "(resolve_price on fail-closed, mikaan ei "
+                              "kaadu). Villen 20.9 paatos on etta aluehinta "
+                              "on PAALLA, joten env-health-watch vaatii "
+                              "/api/stripe-config regional_pricing.ok=true - "
+                              "tulos mitataan Stripesta, ei pelkkaa "
+                              "muuttujan olemassaoloa",
 }
 
 
 def _env_nimet() -> set[str]:
     nimet: set[str] = set()
-    for p in sorted(API.rglob("*.py")):
+    for p in sorted(list(API.rglob("*.py")) + list(SRC.rglob("*.py"))):
         puu = ast.parse(p.read_text(encoding="utf-8"))
         for n in ast.walk(puu):
             if not isinstance(n, ast.Call):
@@ -91,3 +104,20 @@ def test_vahti_on_kytketty():
     assert "schedule:" in teksti, "vahti ei ole ajastettu"
     assert "/api/health/env" in teksti
     assert "masked" in teksti, "vahti ei mittaa maskausta tuloksesta"
+
+
+def test_vahti_mittaa_aluehinnan_tuloksesta():
+    """21.9: vapaaehtoinen muuttuja jonka Ville on paattanyt pitaa paalla.
+    Olemassaolo ei riita (rikkinainen JSON on olemassa), joten vahdin on
+    luettava `regional_pricing.ok`, joka vaatii summat Stripesta."""
+    teksti = (ROOT / ".github" / "workflows" / "env-health-watch.yml"
+              ).read_text(encoding="utf-8")
+    assert "/api/stripe-config" in teksti
+    assert "regional_pricing" in teksti
+    assert "'ok'" in teksti or '"ok"' in teksti
+
+
+def test_skannaus_nakee_srcn():
+    """Negatiivinen kontrolli: jos skannaus kutistuu takaisin api/:iin,
+    tama punastuu eika hiljaa vihrea."""
+    assert "STRIPE_REGIONAL_PRICES" in _env_nimet()
