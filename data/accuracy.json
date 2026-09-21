@@ -1,36 +1,36 @@
 {
-  "updated_at": "2026-09-20T23:11:48+00:00",
+  "updated_at": "2026-09-21T00:36:11+00:00",
   "logged_total": 3334,
-  "pending": 2671,
+  "pending": 2670,
   "voided": 8,
   "all_time": {
-    "n": 655,
-    "correct_1x2": 327,
-    "pct_1x2": 0.4992,
+    "n": 656,
+    "correct_1x2": 328,
+    "pct_1x2": 0.5,
     "draw_n": 178,
-    "pct_draw": 0.2718,
-    "decisive_n": 477,
-    "decisive_correct": 327,
-    "pct_decisive": 0.6855,
-    "exact_n": 607,
+    "pct_draw": 0.2713,
+    "decisive_n": 478,
+    "decisive_correct": 328,
+    "pct_decisive": 0.6862,
+    "exact_n": 608,
     "exact_correct": 74,
-    "pct_exact": 0.1219,
-    "brier": 0.5926,
-    "brier_n": 607
+    "pct_exact": 0.1217,
+    "brier": 0.5918,
+    "brier_n": 608
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 49,
-    "pct_1x2": 0.49,
+    "correct_1x2": 50,
+    "pct_1x2": 0.5,
     "draw_n": 25,
     "pct_draw": 0.25,
     "decisive_n": 75,
-    "decisive_correct": 49,
-    "pct_decisive": 0.6533,
+    "decisive_correct": 50,
+    "pct_decisive": 0.6667,
     "exact_n": 100,
     "exact_correct": 8,
     "pct_exact": 0.08,
-    "brier": 0.6103,
+    "brier": 0.6047,
     "brier_n": 100,
     "window": 100
   },
@@ -51,19 +51,19 @@
       "brier_n": 36
     },
     "BSA": {
-      "n": 95,
-      "correct_1x2": 39,
-      "pct_1x2": 0.4105,
+      "n": 96,
+      "correct_1x2": 40,
+      "pct_1x2": 0.4167,
       "draw_n": 30,
-      "pct_draw": 0.3158,
-      "decisive_n": 65,
-      "decisive_correct": 39,
-      "pct_decisive": 0.6,
-      "exact_n": 95,
+      "pct_draw": 0.3125,
+      "decisive_n": 66,
+      "decisive_correct": 40,
+      "pct_decisive": 0.6061,
+      "exact_n": 96,
       "exact_correct": 12,
-      "pct_exact": 0.1263,
-      "brier": 0.6339,
-      "brier_n": 95
+      "pct_exact": 0.125,
+      "brier": 0.6286,
+      "brier_n": 96
     },
     "CL": {
       "n": 9,
@@ -203,19 +203,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 469,
-      "correct_1x2": 238,
-      "pct_1x2": 0.5075,
+      "n": 470,
+      "correct_1x2": 239,
+      "pct_1x2": 0.5085,
       "draw_n": 114,
-      "pct_draw": 0.2431,
-      "decisive_n": 355,
-      "decisive_correct": 238,
-      "pct_decisive": 0.6704,
-      "exact_n": 469,
+      "pct_draw": 0.2426,
+      "decisive_n": 356,
+      "decisive_correct": 239,
+      "pct_decisive": 0.6713,
+      "exact_n": 470,
       "exact_correct": 53,
-      "pct_exact": 0.113,
-      "brier": 0.5865,
-      "brier_n": 469
+      "pct_exact": 0.1128,
+      "brier": 0.5855,
+      "brier_n": 470
     },
     "stale": {
       "n": 138,
@@ -257,10 +257,10 @@
       "n": 46
     },
     {
-      "bin_mid": 0.1613,
-      "predicted": 0.1613,
-      "actual": 0.1409,
-      "n": 220
+      "bin_mid": 0.1612,
+      "predicted": 0.1612,
+      "actual": 0.1396,
+      "n": 222
     },
     {
       "bin_mid": 0.2551,
@@ -293,10 +293,10 @@
       "n": 83
     },
     {
-      "bin_mid": 0.7361,
-      "predicted": 0.7361,
-      "actual": 0.8387,
-      "n": 31
+      "bin_mid": 0.7356,
+      "predicted": 0.7356,
+      "actual": 0.8438,
+      "n": 32
     },
     {
       "bin_mid": 0.8419,
@@ -312,6 +312,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-09-20",
+      "home_team": "Flamengo RJ",
+      "away_team": "Bragantino",
+      "predicted_winner": "home",
+      "p_winner": 0.7181,
+      "lead_h": 0.8,
+      "most_likely_score": "2-0",
+      "actual_score": "2-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-09-20",
       "home_team": "Porto",
@@ -593,21 +608,6 @@
       "actual_score": "2-1",
       "actual_outcome": "home",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-20",
-      "home_team": "Gremio",
-      "away_team": "Palmeiras",
-      "predicted_winner": "away",
-      "p_winner": 0.4826,
-      "lead_h": 1.3,
-      "most_likely_score": "0-1",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
