@@ -456,6 +456,9 @@ export interface UclXpResponse {
 		horizon_gw?: number;
 		horizon_total_gw?: number;
 		horizon_total_from?: number | null;
+		/** Palvelimen tuoreusvahti (src/models/ucl_xp.tuoreus). */
+		deadline_passed?: boolean;
+		reason?: 'league_phase_over' | 'stale';
 	};
 	players: UclXpPlayer[];
 }

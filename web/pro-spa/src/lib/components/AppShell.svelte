@@ -59,7 +59,10 @@
 	     on yha oma laatikkonsa eika footerin tekstilinkki, eli 7.8:n oppi
 	     patee; se ei vain enaa ole FPL-tyokalujen EDESSA. -->
 	<p class="spl-note">
-		New: <a href="/spl">Saudi Pro League fantasy tools</a>, completely free.
+		New: <a href="/ucl">UCL Fantasy expected points</a> for the league phase, every player up to three matchdays ahead (Premium).
+	</p>
+	<p class="spl-note">
+		<a href="/spl">Saudi Pro League fantasy tools</a>, completely free.
 	</p>
 
 	<footer>
@@ -69,9 +72,10 @@
 			<!-- SPL = oma osio (etiikkakehys 7.8): löydettävissä muttei FPL-feedin
 			     seassa — SPL:stä kiinnostumaton ei törmää siihen työkaluissa. -->
 			<a href="/spl">Saudi Pro League tools (free)</a> ·
-			<!-- UCL = web-only datapinta, ei SPA-tyokalu: linkki footeriin,
-			     EI tools.ts-rekisteriin (se lupaisi tyokalun jota ei ole). -->
+			<!-- UCL: ilmainen datapinta goaliq.app/ucl + Premium-xP omalla
+			     reitilla /ucl (21.9). Ei tools.ts-rekisteriin: oma osio kuten SPL. -->
 			<a href="https://goaliq.app/ucl/">UCL Fantasy data (free)</a> ·
+			<a href="/ucl">UCL Fantasy expected points (Premium)</a> ·
 			<a href="https://goaliq.app">goaliq.app, the free tools</a> ·
 			<a href="https://goaliq.app/privacy.html">Privacy</a> ·
 			<a href="https://goaliq.app/faq.html">FAQ</a> ·

@@ -10,6 +10,11 @@
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
 	import { freePremiumWindowActive } from '$lib/auth.svelte';
 
+	/* 21.9 (julkaisutarkistaja): /ucl-sivulla FPL-teaseri nayttaisi saman
+	   sivun UCL-kymmenikon alla toisen kaarjen (B. Fernandes, Mbeumo, Saka).
+	   UCL-sivu antaa teaser={false}; oletus ennallaan muille pinnoille. */
+	let { teaser: showTeaser = true }: { teaser?: boolean } = $props();
+
 	let error = $state<string | null>(null);
 	let busy = $state<PlanKey | null>(null);
 	let teaser = $state<XpResponse | null>(null);
@@ -21,7 +26,7 @@
 			{ source: 'pro_web', plans: ['season', 'monthly'] },
 			'paywall_shown'
 		);
-		fetchXp().then((d) => (teaser = d), () => {});
+		if (showTeaser) fetchXp().then((d) => (teaser = d), () => {});
 	});
 
 	async function buy(plan: PlanKey) {
@@ -31,7 +36,7 @@
 	}
 
 	let top3 = $derived.by(() => {
-		if (!teaser?.meta?.available) return [];
+		if (!showTeaser || !teaser?.meta?.available) return [];
 		const gw = actionableGameweek(teaser.meta);
 		return [...teaser.players].sort((a, b) => gwXp(b, gw) - gwXp(a, gw)).slice(0, 3);
 	});
@@ -69,8 +74,10 @@
 	<strong>Match model:</strong> full analysis for any fixture across the ten competitions we
 	cover, from the Premier League to the Champions League: top-10 most likely scorelines,
 	total goals, both teams to score, form and momentum trends, head-to-head record and fair
-	value estimates. Match analysis only. UCL Fantasy prices and squad news are free at
-	goaliq.app/ucl. There is no expected points model for UCL Fantasy, in any phase of the season, and we do not publish one.
+	value estimates.
+</p>
+<p class="muted">
+	UCL Fantasy prices and squad news are free at goaliq.app/ucl. During the league phase, GoalIQ Premium adds expected points for every UCL Fantasy player, up to three matchdays ahead, at pro.goaliq.app/ucl.
 </p>
 <p class="muted">
 	Both plans renew until you cancel, and you can cancel from the Account menu. One subscription

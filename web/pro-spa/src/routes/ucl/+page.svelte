@@ -100,18 +100,18 @@
 	<title>UCL Fantasy expected points | GoalIQ</title>
 	<meta
 		name="description"
-		content="Projected points for players in the official UEFA Champions League Fantasy game, up to three matchdays ahead. GoalIQ Premium."
+		content="Projected points for players in the official UEFA Champions League Fantasy game, up to three matchdays ahead in the league phase. GoalIQ Premium."
 	/>
 </svelte:head>
 
 <div class="shell">
-	<p class="crumb muted"><a href="/">GoalIQ Pro</a> / UCL Fantasy</p>
+	<p class="crumb muted"><a href="/">GoalIQ tools</a> / UCL Fantasy</p>
 	<h1>UCL Fantasy <span class="accent">expected points</span></h1>
 	<p class="lede">
 		Projected points for players in the official UEFA Champions League Fantasy game{#if hz.count && hz.actionableOnly}, for
-			the next {hz.count} matchdays{:else if hz.count}, over {hz.count} matchdays{/if}, using the game's
+			the next {hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}{:else if hz.count}, over {hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}{/if}, using the game's
 		own scoring.
-		{#if md && xp?.meta?.deadline_utc}
+		{#if md && xp?.meta?.deadline_utc && !xp.meta.deadline_passed}
 			<span class="deadline">Matchday {md} deadline: {deadlineText(xp.meta.deadline_utc)}.</span>
 		{/if}
 	</p>
@@ -120,6 +120,10 @@
 		<p class="error">Could not reach the API. {err}</p>
 	{:else if !xp}
 		<p class="muted">Loading…</p>
+	{:else if !xp.meta.available && xp.meta.reason === 'league_phase_over'}
+		<p class="muted">
+			The league phase is over. GoalIQ's UCL Fantasy projections cover the league phase only.
+		</p>
 	{:else if !xp.meta.available || !xp.players.length}
 		<p class="muted">UCL Fantasy projections are not published yet. Check back soon.</p>
 	{:else}
@@ -152,9 +156,9 @@
 				<select bind:value={sortBy}>
 					<option value="total"
 						>{hz.count && hz.actionableOnly
-							? `Next ${hz.count} matchdays`
+							? `Next ${hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}`
 							: hz.count
-								? `${hz.count} matchdays`
+								? `Over ${hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}`
 								: 'Total'}</option
 					>
 					<option value="next">Matchday {md ?? ''} only</option>
@@ -183,7 +187,7 @@
 						<th class="num"
 							><abbr
 								title={hz.count
-									? `Sum of expected points over ${hz.count} matchdays`
+									? `Sum of expected points over ${hz.count === 1 ? 'the next matchday' : `${hz.count} matchdays`}`
 									: 'Sum of expected points over the coming matchdays'}>Total</abbr
 							></th
 						>
@@ -208,7 +212,7 @@
 							<td>{p.team_short}</td>
 							<td>{p.pos}</td>
 							<td class="num">{p.price.toFixed(1)}</td>
-							<td class="num m-hide">{p.owned_pct.toFixed(1)}%</td>
+							<td class="num m-hide">{p.owned_pct.toFixed(0)}%</td>
 							<td class="num m-hide">{p.xmins.toFixed(0)}</td>
 							{#each p.gameweeks as g (g.gw)}
 								<td class="num">
@@ -224,8 +228,15 @@
 		</div>
 
 		{#if xp.meta.masked}
-			<p class="muted small">Showing the top 10. GoalIQ Premium shows every player in the game.</p>
-			<Paywall />
+			{#if rows.length === 0}
+				<p class="muted small">
+					No player in the free top 10 matches this filter. GoalIQ Premium shows every player in the
+					game.
+				</p>
+			{:else}
+				<p class="muted small">Showing the top 10. GoalIQ Premium shows every player in the game.</p>
+			{/if}
+			<Paywall teaser={false} />
 		{/if}
 
 		<section class="method">
@@ -238,9 +249,10 @@
 				<li>
 					A player's share of those goals and assists comes from his expected goals and assists per
 					90 minutes in his domestic league, for clubs in the Premier League, La Liga, Bundesliga,
-					Serie A and Ligue 1. For the other clubs it comes from goals and starting line-ups in UEFA
-					matches, and those rows are marked <span class="thin">thin data</span>. A player with no
-					match data yet is marked <span class="thin">no data</span>.
+					Serie A and Ligue 1. For the other clubs the goal share comes from goals and starting
+					line-ups in UEFA matches, assists use the average for the position, and those rows are
+					marked <span class="thin">thin data</span>. A player with no match data yet is marked
+					<span class="thin">no data</span>.
 				</li>
 				<li>
 					Points use the official UCL Fantasy scoring. Availability flags come from the official

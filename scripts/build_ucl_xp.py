@@ -32,7 +32,10 @@ from src.models.uefa_joint import canonical_name
 FEED = "https://gaming.uefa.com/en/uclfantasy/services/feeds"
 FEED_HEADERS = {"User-Agent": "curl/8.0", "Accept": "application/json, text/plain, */*",
                 "Referer": "https://gaming.uefa.com/en/uclfantasy/create-team"}
-KAUSI_ID = 90   # 2026/27 (ingest_ucl.py hakee saman)
+KAUSI_ID = 90
+"""Syotteen kausi-ID kaudelle 2026/27 (takatestin oletus). Tuotanto lukee
+ID:n ingestion artefaktista (`data/ucl_fantasy.json` meta.season_id), jonka
+ingest_ucl.py etsii itse joka kaudelle."""
 OUT = config.DATA_DIR / "ucl_xp_projections.json"
 VAIHTO_PENKILTA = 0.35
 """Osuus penkille merkityista jotka nousevat kentalle. UEFAn kokoonpano
@@ -51,8 +54,8 @@ UNDERSTAT_ALIAS = {
 # Lahteet
 # ---------------------------------------------------------------------------
 
-def hae_syote(md: int) -> list[dict]:
-    req = urllib.request.Request(f"{FEED}/players/players_{KAUSI_ID}_en_{md}.json",
+def hae_syote(md: int, kausi_id: int = KAUSI_ID) -> list[dict]:
+    req = urllib.request.Request(f"{FEED}/players/players_{kausi_id}_en_{md}.json",
                                  headers=FEED_HEADERS)
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read().decode("utf-8"))["data"]["value"]["playerList"]
@@ -155,7 +158,8 @@ def rakenna(md: int, *, ennen: str | None, syote: list[dict], odotus, joukkuenim
     # Raakadata (ottelu-ID:t, maalintekijat); kokoonpanot ottelu-ID:lla.
     raaka: list[tuple[dict, float]] = []
     for liiga in U.KILPAILUT:
-        for kausi, w in (("2526", X.EDELLINEN_KAUSI_PAINO), ("2627", 1.0)):
+        edellinen, kuluva = config.current_season_pair()
+        for kausi, w in ((edellinen, X.EDELLINEN_KAUSI_PAINO), (kuluva, 1.0)):
             for m in U.raaka_kausi(liiga, kausi):
                 if m.get("status") != "FINISHED":
                     continue
@@ -393,7 +397,11 @@ def odotusfunktio(malli, joukkuenimi: dict[str, str], tuntee):
 
 def _cl_data():
     from api.main import _lataa_otteludata_cached
-    tour = _lataa_otteludata_cached(["INT-Champions League"], ["2324", "2425", "2526", "2627"])
+    # Sama ikkuna kuin API:n yhteisfitissa: vendoroidut CL-kaudet + kuluva pari.
+    from src.data.fd_fallback import VENDORED_SEASONS
+    kaudet = sorted({*VENDORED_SEASONS.get("INT-Champions League", ()),
+                     *config.current_season_pair()})
+    tour = _lataa_otteludata_cached(["INT-Champions League"], kaudet)
     return tour
 
 
@@ -439,19 +447,10 @@ def takatesti_md1(syote_md1: list[dict]) -> dict:
     return tulos
 
 
-TAKATESTI_MD1 = {
-    "matchday": 1, "cutoff": "2026-09-08", "players": 1163,
-    "mae": 1.23, "mae_constant": 1.76, "spearman": 0.63, "spearman_price": 0.37,
-    "top10_points": 10.0, "top10_points_price": 8.6,
-    "top30_points": 6.47, "top30_points_price": 5.6,
-    "note": ("Players whose share comes from UEFA matches were over-projected by "
-             "15-40% at xP >= 2; domestic-league rows were calibrated."),
-}
-"""MD1-takatestin tulos (python -m scripts.build_ucl_xp --takatesti, 21.9).
-Kovakoodattu koska takatesti vaatii verkon eika sita ajeta jokaisella
-buildilla. Raportti: goaliq-app cos-reports/cc-reports/2026-09-21-ucl-xp.md."""
-
 MIN_KOTILIIGARIVIT = 400
+"""Alaraja kotiliigapohjaisille riveille. Jos Understat ei vastaa, lahes
+kaikki rivit putoavat UEFA-pohjalle ja artefakti olisi hiljaa huonompi:
+silloin ei kirjoiteta mitaan (vanha artefakti jaa, tuoreusvahti sulkee sen)."""
 
 HORISONTTI = 3
 """Montako kierrosta eteenpain (sama idea kuin FPL:n horizon_gw, lyhyempi
@@ -476,15 +475,36 @@ def ottelut_kierroksittain(raaka_cl: list[dict]) -> dict[int, dict[str, tuple[st
     return out
 
 
-def seuraava_kierros(ucl_fantasy: dict) -> tuple[int, str | None]:
-    """Ensimmainen lukitsematon kierros ja sen deadline syotteen artefaktista."""
+def seuraava_kierros(ucl_fantasy: dict) -> tuple[int | None, str | None]:
+    """Ensimmainen lukitsematon kierros ja sen deadline syotteen artefaktista.
+    (None, None) kun kaikki on lukittu: tuota() kirjoittaa silloin suljetun
+    artefaktin eika build kaadu (vanha kierros jaisi muuten tarjolle)."""
     for m in sorted(ucl_fantasy.get("matchdays") or [], key=lambda x: x["md"]):
         if not m.get("is_locked"):
             return int(m["md"]), m.get("deadline_utc")
-    raise SystemExit("ei lukitsematonta kierrosta - sarjavaihe paattynyt?")
+    return None, None
 
 
-def tuota(md: int, deadline: str | None, takatesti: dict | None = None) -> dict:
+KOMPONENTIT = {
+    "esiintyminen": "appearance", "maalit": "goals", "syotot": "assists",
+    "nollapeli": "clean_sheet", "paastetyt": "goals_conceded", "torjunnat": "saves",
+    "riistot": "recoveries", "kortit": "cards", "ottelun_pelaaja": "player_of_the_match",
+}
+"""Komponenttien julkiset nimet (API on julkinen pinta, avaimet englanniksi)."""
+
+
+def suljettu(md: int | None, viimeinen: int | None, syy: str) -> dict:
+    """Artefakti kun projektiota ei ole tarjolla (sarjavaihe ohi). Klientit
+    nayttavat suljetun tilan tekstin; mitaan vanhaa kierrosta ei tarjoilla."""
+    import datetime as _dt
+    return {"meta": {"product": "GoalIQ UCL Fantasy - expected points (xP)",
+                     "available": False, "reason": syy, "league": "INT-Champions League",
+                     "generated_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+                     "deadline_gameweek": md, "league_phase_last_md": viimeinen},
+            "players": []}
+
+
+def tuota(md: int, deadline: str | None, kausi_id: int = KAUSI_ID) -> dict:
     import datetime as _dt
 
     from src.models import uefa_prebuilt
@@ -494,19 +514,25 @@ def tuota(md: int, deadline: str | None, takatesti: dict | None = None) -> dict:
                                   decay=0.0035)
     if dc is None:
         raise SystemExit(f"CL-malli ei kelpaa ({syy}) - xP:ta ei rakenneta vanhalla mallilla")
-    syote = hae_syote(md)
+    kuluva = config.current_season_pair()[-1]
+    kierrokset = ottelut_kierroksittain(U.raaka_kausi("INT-Champions League", kuluva))
+    viimeinen = max(kierrokset) if kierrokset else None
+    # SARJAVAIHE OHI (julkaisutarkistaja 21.9): pudotuspeleja ei mallinneta.
+    # Kirjoitetaan suljettu artefakti eika jateta vanhaa kierrosta tarjolle.
+    if viimeinen is None or md > viimeinen:
+        return suljettu(md, viimeinen, "league_phase_over")
+    syote = hae_syote(md, kausi_id)
     ok, n, huonot = X.tarkista_saannot(syote)
     if n and ok < n:
         raise SystemExit(f"UEFA muutti pisteytysta: saannot selittavat {ok}/{n} ({huonot})")
     tour = _cl_data()
-    u27 = U.lataa(["2627"])
+    u27 = U.lataa([kuluva])
     nimet = joukkuekartta(u27, tour)
     tiimit = {str(p["tId"]) for p in syote}
     puuttuu = sorted(t for t in tiimit if t not in nimet)
     if puuttuu:
         raise SystemExit(f"joukkuekartasta puuttuu {len(puuttuu)} seuraa: {puuttuu}")
     odotus = odotusfunktio(_Taitettu(dc), nimet, lambda n: n in dc.attack)
-    kierrokset = ottelut_kierroksittain(U.raaka_kausi("INT-Champions League", "2627"))
     if md not in kierrokset:
         raise SystemExit(f"MD{md}: UEFAn otteluohjelmassa ei ole otteluita")
     horisontti = [k for k in range(md, md + HORISONTTI) if k in kierrokset]
@@ -544,7 +570,7 @@ def tuota(md: int, deadline: str | None, takatesti: dict | None = None) -> dict:
             "xp_per_gw": round(tot / len(v["gws"]), 2) if v["gws"] else 0.0,
             "xp_horizon_total": tot,
             "xp_next": v["gws"][0]["xp"] if v["gws"] else 0.0,
-            "xp_components": {kk: round(vv, 2) for kk, vv in r["komponentit"].items()},
+            "xp_components": {KOMPONENTIT[kk]: round(vv, 2) for kk, vv in r["komponentit"].items()},
             "gameweeks": v["gws"],
         })
     pelaajat.sort(key=lambda x: -x["xp_horizon_total"])
@@ -561,10 +587,11 @@ def tuota(md: int, deadline: str | None, takatesti: dict | None = None) -> dict:
             "available": True,
             "league": "INT-Champions League",
             "generated_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
-            "season": "2026/27",
+            "season": f"20{kuluva[:2]}/{kuluva[2:]}",
             "source": "uefa-ucl-fantasy-feed",
             "deadline_gameweek": md, "next_gameweek": md, "current_gameweek": md,
             "deadline_utc": deadline,
+            "league_phase_last_md": viimeinen,
             "horizon_gw": len(horisontti),
             "scoring": ("UEFA Champions League Fantasy rules, derived from the official feed's "
                         f"own points ({ok}/{n} players who played matched exactly)"),
@@ -577,7 +604,6 @@ def tuota(md: int, deadline: str | None, takatesti: dict | None = None) -> dict:
                               "availability applied to the next matchday."),
             "data_basis_counts": dict(kanta),
             "thin_data": "uefa_matches",
-            "backtest": takatesti,
         },
         "players": pelaajat,
     }
@@ -597,11 +623,18 @@ def main(argv=None) -> int:
     md, deadline = seuraava_kierros(uf)
     if args.md:
         md = args.md
-    out = tuota(md, deadline, takatesti=TAKATESTI_MD1)
+    kausi_id = int((uf.get("meta") or {}).get("season_id") or KAUSI_ID)
+    if md is None:
+        out = suljettu(None, None, "league_phase_over")
+    else:
+        out = tuota(md, deadline, kausi_id)
     (args.out or OUT).write_text(json.dumps(out, ensure_ascii=False, default=float), encoding="utf-8")
     m = out["meta"]
-    print(f"UCL xP MD{md}: {len(out['players'])} pelaajaa, horisontti {m['horizon_gw']}, "
-          f"datapohja {m['data_basis_counts']}")
+    if not m.get("available"):
+        print(f"UCL xP: ei tarjolla ({m.get('reason')}), suljettu artefakti kirjoitettu")
+    else:
+        print(f"UCL xP MD{md}: {len(out['players'])} pelaajaa, horisontti {m['horizon_gw']}, "
+              f"datapohja {m['data_basis_counts']}")
     return 0
 
 
