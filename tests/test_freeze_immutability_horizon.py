@@ -236,6 +236,15 @@ KUSTANNUS_POIKKEUKSET = {
         "Lapivienti, ei johdos: lukee valmiin rivin accuracy-lokista, jonka "
         "`transfer_cost`in on kirjoittanut grade_model_squad.py FPL:n "
         "`event_transfers_cost`ista.",
+    "src/models/model_squad_scores.py":
+        "Lapivienti julkiseen mallisarjaan (21.9.2026, Villen paatos 'mallin "
+        "rivi'), ei johdos: jaadytetyn rivin `transfer_cost` on "
+        "grade_model_squad_gw.py:n kirjoittama, ja se lukee FPL:n "
+        "`event_transfers_cost`in aina kun jaadytetty 15 on entryn 15 "
+        "(`transfer_cost_source: fpl_entry_same_squad`). Muuten lahde on "
+        "`freeze_hits` ja se kulkee rivin mukana nakyvana, jotta pinta voi "
+        "kertoa etta luku on mallin oma aikomus eika FPL:n veloitus. "
+        "Entry-fallback-rivi kantaa entry-graderin FPL-kentan sellaisenaan.",
 }
 
 

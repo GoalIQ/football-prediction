@@ -175,7 +175,8 @@ def test_oma_rivi_ei_pelaa_itseaan_vastaan(wired, monkeypatch):
     """Jos katsottava entry ON mallin rivi, ottelua ei ole. "108 vs 108,
     voitit 0:lla" olisi holynpolya joka nayttaisi rikkinaiselta."""
     monkeypatch.setattr(rt, "model_squad_gw",
-                        lambda g: {"entry_id": 1, "points": 61, "fpl_average": 50,
+                        lambda g: {"entry_id": 1, "model_entry": 1,
+                                   "points": 61, "fpl_average": 50,
                                    "provisional": False})
     monkeypatch.setattr(rt, "_entry_identity", lambda e, g: {
         "manager_name": None, "team_name": None,

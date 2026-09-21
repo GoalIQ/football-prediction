@@ -272,6 +272,9 @@ def test_kierroslohkon_diff_on_sama_brutto():
 # `test_xp_reader_discipline.py`:n perusteltu poikkeuslista).
 ENUMEROIDUT = {
     "direction": {"under", "over"},
+    # 21.9.2026: mallirivin perusta julkisessa sarjassa
+    # (model_squad_scores.ROW_BASIS_*).
+    "series_basis": {"frozen", "entry_fallback"},
     # 🔴 PORTIN 23. KIERROS (B6): enumerointi kattoi VAIN `direction`in, ja
     # heuristiikka ei loytanyt yhtaan realistista suomenkielista arvoa -
     # portti ajoi 19 uskottavalla arvolla ("kesken", "vaara", "voitto",
@@ -343,12 +346,12 @@ def test_julkinen_artefakti_ei_sisalla_suomea():
     import json
     from pathlib import Path
 
-    from scripts.build_gw_recap import (ACC_PATH, CALLS_PATH, SQUAD_PATH,
-                                        _load, build)
+    from scripts.build_gw_recap import (ACC_PATH, CALLS_PATH, _load,
+                                        _load_model_series, build)
 
     # Artefakti REGENEROIDAAN testissa: levylla oleva tiedosto voi olla
     # vanha, ja juuri se oli vika.
-    doc = build(_load(CALLS_PATH), _load(SQUAD_PATH), _load(ACC_PATH),
+    doc = build(_load(CALLS_PATH), _load_model_series(), _load(ACC_PATH),
                 _dt.datetime.now(_dt.timezone.utc))
 
     ongelmat = []
@@ -441,9 +444,9 @@ def test_kaikki_artefaktin_merkkijonokentat_on_luokiteltu():
     """
     import datetime as _dt
 
-    from scripts.build_gw_recap import (ACC_PATH, CALLS_PATH, SQUAD_PATH,
-                                        _load, build)
-    doc = build(_load(CALLS_PATH), _load(SQUAD_PATH), _load(ACC_PATH),
+    from scripts.build_gw_recap import (ACC_PATH, CALLS_PATH, _load,
+                                        _load_model_series, build)
+    doc = build(_load(CALLS_PATH), _load_model_series(), _load(ACC_PATH),
                 _dt.datetime.now(_dt.timezone.utc))
 
     tunnetut = set(ENUMEROIDUT) | ULKOINEN_TEKSTI | PROOSA

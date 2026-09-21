@@ -307,19 +307,14 @@ def test_mallin_rivin_lukija_palauttaa_netton_arvona():
     assert model_points_net(None) == 0
 
     # Ja `model_squad_gw` kayttaa sita: fikstuuri jossa brutto ja netto eroavat.
-    import json, pathlib as _pl, tempfile
-    doc = {"meta": {"entry_id": 116920},
+    # 21.9: lukija saa julkisen mallisarjan parametrina (tuotannossa
+    # model_squad_scores.load_public_model_series).
+    doc = {"meta": {"entry_id": None},
            "gameweeks": [{"gw": 3, "points": 70, "transfer_cost": 8,
                           "fpl_average": 50, "provisional": False,
-                          "active_chip": None}]}
-    polku = _pl.Path(tempfile.mkdtemp()) / "model_squad_gw_scores.json"
-    polku.write_text(json.dumps(doc), encoding="utf-8")
-    vanha_polku = rt._MODEL_SQUAD_PATH
-    try:
-        rt._MODEL_SQUAD_PATH = polku
-        out = rt.model_squad_gw(3)
-    finally:
-        rt._MODEL_SQUAD_PATH = vanha_polku
+                          "active_chip": None, "row_basis": "frozen",
+                          "entry_diverged": False}]}
+    out = rt.model_squad_gw(3, series=doc)
     assert out is not None
     assert out["points"] == 62, (
         f"mallin luku {out['points']} on brutto - kortti julistaisi voiton "

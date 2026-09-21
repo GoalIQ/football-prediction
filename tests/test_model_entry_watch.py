@@ -48,6 +48,15 @@ def _write(d, gw, deadline, ids, captain=101):
 
 
 IDS = list(range(101, 116))          # 15 pelaajaa
+
+
+def _picks(ids, captain=101, vice=None):
+    """FPL:n pickit taydessa muodossa (position + varakapteeni). 21.9: vahti
+    vertaa myos kokoonpanoa, joten fikstuuri ilman positiota olisi
+    automaattisesti 'eri XI'."""
+    vice = ids[1] if vice is None else vice
+    return [{"element": e, "position": i + 1, "is_captain": e == captain,
+             "is_vice_captain": e == vice} for i, e in enumerate(ids)]
 # HUOM: GW1:n oikea deadline (21.8.2026) on TULEVAISUUDESSA kun tama
 # kirjoitettiin, joten sita ei voi kayttaa "mennyt deadline" -tapauksena.
 # Ensimmainen versio kaytti sita ja kolme testia ajoi hiljaa vaaraan
@@ -74,39 +83,70 @@ def test_before_deadline_prints_squad_and_passes(frozen_dir, monkeypatch, capsys
     assert "P101" in out
 
 
-def test_after_deadline_match_passes(frozen_dir, monkeypatch):
+def _verified(d, gw=1):
+    return json.loads((d / f"gw{gw}.json").read_text(encoding="utf-8"))[
+        "meta"]["entry_verified"]
+
+
+def test_after_deadline_match_passes(frozen_dir, monkeypatch, capsys):
     _write(frozen_dir, 1, PAST, IDS)
     monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
-        [{"element": i, "is_captain": i == 101} for i in IDS], "200", "ok"))
+        _picks(IDS), "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 0
+    assert "OK:" in capsys.readouterr().out
+    v = _verified(frozen_dir)
+    assert v["match"] is True and v["lineup_match"] is True
 
 
-def test_after_deadline_mismatch_fails(frozen_dir, monkeypatch, capsys):
-    """NEGATIIVINEN KONTROLLI. Tama on koko vahdin olemassaolon syy: yksi
-    vaara pelaaja tilillä = julkinen vaite osoittaa joukkueeseen jota malli
-    ei valinnut."""
+def test_after_deadline_mismatch_is_recorded_not_failed(frozen_dir, monkeypatch,
+                                                        capsys):
+    """21.9.2026 (Villen paatos "mallin rivi"): julkinen sarja on jaadytetty
+    rivi, joten entryn ero EI siirry mallin lukuun. Ero kirjataan freezen
+    metaan ja sanotaan aaneen (::warning::), mutta se ei ole enaa virhe.
+    Ennen tama oli exit 1: yksi vaara pelaaja tilillä = mallin luku oli
+    Villen luku."""
     _write(frozen_dir, 1, PAST, IDS)
     wrong = IDS[:-1] + [999]
     monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
-        [{"element": i, "is_captain": i == 101} for i in wrong], "200", "ok"))
+        _picks(wrong), "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
-    assert w.main() == 1
+    assert w.main() == 0
     out = capsys.readouterr().out
-    assert "EI VASTAA" in out
+    assert "::warning::" in out and "poikkeaa" in out
+    assert "::error::" not in out
     assert "P115" in out       # jaadytetyssa mutta ei tilillä
     assert "999" in out        # tilillä mutta ei jaadytetyssa
+    assert _verified(frozen_dir)["squad_match"] is False
 
 
-def test_captain_difference_alone_fails(frozen_dir, monkeypatch, capsys):
-    """15/15 voi tasmata ja rivi olla silti vaara: kapteeni on
-    kaksinkertainen pistevaikutus."""
+def test_captain_difference_alone_is_recorded(frozen_dir, monkeypatch, capsys):
+    """15/15 voi tasmata ja rivi silti erota: kapteeni on kaksinkertainen
+    pistevaikutus, ja se kirjataan."""
     _write(frozen_dir, 1, PAST, IDS, captain=101)
     monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
-        [{"element": i, "is_captain": i == 102} for i in IDS], "200", "ok"))
+        _picks(IDS, captain=102, vice=101), "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
-    assert w.main() == 1
-    assert "KAPTEENI eroaa" in capsys.readouterr().out
+    assert w.main() == 0
+    assert "kapteeni ERI" in capsys.readouterr().out
+    assert _verified(frozen_dir)["captain_match"] is False
+
+
+def test_xi_difference_alone_is_recorded(frozen_dir, monkeypatch, capsys):
+    """🔴 21.9 mitattu GW5: sama 15 ja kapteeni, eri XI - vahti kirjasi
+    `match: True` eika kokoonpanoeroa nakynyt mistaan. Nyt se kirjataan
+    omaan kenttaansa (`lineup_match`); `match` pitaa merkityksensa (15 +
+    kapteeni), koska provenienssi ja kortti lukevat sita."""
+    _write(frozen_dir, 1, PAST, IDS)
+    vaihdettu = IDS[:10] + [IDS[11], IDS[10]] + IDS[12:]   # penkilta XI:hin
+    monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
+        _picks(vaihdettu), "200", "ok"))
+    monkeypatch.setattr("sys.argv", ["x"])
+    assert w.main() == 0
+    out = capsys.readouterr().out
+    assert "XI: vain jaadytetyssa P111" in out
+    v = _verified(frozen_dir)
+    assert v["match"] is True and v["lineup_match"] is False
 
 
 def test_missing_picks_after_deadline_fails(frozen_dir, monkeypatch):
@@ -143,7 +183,7 @@ def _write_exception(d, gw, reason="Ville pelasi wildcardin korjatulla mallilla"
 def _mismatch(monkeypatch):
     wrong = IDS[:-1] + [999]
     monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
-        [{"element": i, "is_captain": i == 101} for i in wrong], "200", "ok"))
+        _picks(wrong), "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
 
 
@@ -153,18 +193,19 @@ def test_recorded_exception_turns_mismatch_into_warning(frozen_dir, monkeypatch,
     _mismatch(monkeypatch)
     assert w.main() == 0
     out = capsys.readouterr().out
-    assert "::warning::" in out and "KIRJATTU POIKKEUS" in out
+    assert "::warning::" in out and "Kirjattu poikkeus" in out
     assert "::error::" not in out
     assert "P115" in out and "999" in out     # ero nakyy silti lokissa
 
 
 def test_exception_for_another_gw_does_not_apply(frozen_dir, monkeypatch, capsys):
-    """NEGATIIVINEN KONTROLLI: GW2:n poikkeus ei vaienna GW1:n eroa."""
+    """NEGATIIVINEN KONTROLLI: GW2:n poikkeus ei nay GW1:n erossa."""
     _write(frozen_dir, 1, PAST, IDS)
     _write_exception(frozen_dir, 2)
     _mismatch(monkeypatch)
-    assert w.main() == 1
-    assert "EI VASTAA" in capsys.readouterr().out
+    assert w.main() == 0
+    out = capsys.readouterr().out
+    assert "poikkeaa" in out and "Kirjattu poikkeus" not in out
 
 
 @pytest.mark.parametrize("bad", [
@@ -186,17 +227,18 @@ def test_exception_covers_captain_only_difference(frozen_dir, monkeypatch, capsy
     _write(frozen_dir, 1, PAST, IDS, captain=101)
     _write_exception(frozen_dir, 1)
     monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
-        [{"element": i, "is_captain": i == 102} for i in IDS], "200", "ok"))
+        _picks(IDS, captain=102, vice=101), "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 0
-    assert "KAPTEENI eroaa" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "kapteeni ERI" in out and "Kirjattu poikkeus" in out
 
 
 def test_stale_exception_is_flagged_when_squads_match(frozen_dir, monkeypatch, capsys):
     _write(frozen_dir, 1, PAST, IDS)
     _write_exception(frozen_dir, 1)
     monkeypatch.setattr(w, "fetch_picks", lambda e, g, **kw: (
-        [{"element": i, "is_captain": i == 101} for i in IDS], "200", "ok"))
+        _picks(IDS), "200", "ok"))
     monkeypatch.setattr("sys.argv", ["x"])
     assert w.main() == 0
     assert "vanhentunut" in capsys.readouterr().out
@@ -232,7 +274,8 @@ def test_exception_in_frozen_dir_is_not_read(frozen_dir, monkeypatch, capsys):
         "gw": 1, "reason": "x", "decided_by": "Ville", "decided_at": "2026-08-28"}),
         encoding="utf-8")
     _mismatch(monkeypatch)
-    assert w.main() == 1
+    assert w.main() == 0
+    assert "Kirjattu poikkeus" not in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------- workflow-rakenne

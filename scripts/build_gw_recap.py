@@ -39,7 +39,9 @@ from src.models.xp_accuracy_segments import bias_segments
 
 ROOT = Path(__file__).resolve().parents[1]
 CALLS_PATH = ROOT / "data" / "gw_calls.json"
-SQUAD_PATH = ROOT / "data" / "model_squad_gw_scores.json"
+# 21.9.2026: mallin kierrospisteet luetaan YHDELLA julkisella lukijalla
+# (`model_squad_scores.load_public_model_series`), ei tiedostosta suoraan.
+# Villen paatos: track record mittaa jaadytettya rivia, ei entrya 116920.
 ACC_PATH = ROOT / "data" / "fpl_xp_gw_accuracy.json"
 OUT_PATH = ROOT / "data" / "gw_recap.json"
 
@@ -56,6 +58,17 @@ def _load(path: Path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
+        return None
+
+
+def _load_model_series():
+    """Julkinen mallisarja tai None (puuttuva lahde nakyy metassa)."""
+    from src.models.model_squad_scores import (SarjaVirhe,
+                                               load_public_model_series)
+    try:
+        return load_public_model_series()
+    except SarjaVirhe as e:
+        print(f"::warning::mallisarjaa ei voi lukea: {e}")
         return None
 
 
@@ -255,6 +268,9 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
                 "captain_id": r.get("captain_id"),
                 "captain_points_added": r.get("captain_points_added"),
                 "graded_at": r.get("graded_at"),
+                # frozen = mallin jaadytetty rivi; entry_fallback = kirjattu
+                # poikkeus (freeze epakelpo). Kuluttaja ei joudu arvaamaan.
+                "series_basis": r.get("row_basis"),
             },
             "calls": calls_block(c) if c else None,
             "accuracy": ({"mae": a.get("mae"), "n": a.get("n"),
@@ -274,7 +290,7 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime) -> dict:
 
 
 def main() -> int:
-    doc = build(_load(CALLS_PATH), _load(SQUAD_PATH), _load(ACC_PATH),
+    doc = build(_load(CALLS_PATH), _load_model_series(), _load(ACC_PATH),
                 _dt.datetime.now(_dt.timezone.utc))
     if not doc["gameweeks"]:
         print("::warning::ei gradattuja kierroksia - ei kirjoiteta recapia.")

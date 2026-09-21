@@ -2945,14 +2945,8 @@ def fantasy_gw_review(
     # provisional=false. Artefakti kelpaa yha LISAAMAAN epavarmuutta,
     # ei poistamaan sita. Ks. src/models/fpl_gw_finality.py.
     from src.models.fpl_gw_finality import provisional_gws as _prov_gws
-    _artefakti: list[int] = []
-    _p = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
-    if _p.exists():
-        try:
-            _artefakti = list((_json.loads(_p.read_text(encoding="utf-8"))
-                               .get("meta") or {}).get("provisional_gws") or [])
-        except (OSError, ValueError):
-            _artefakti = []
+    from src.models.model_squad_scores import provisional_hint_gws as _hint
+    _artefakti: list[int] = _hint()
     prov = _prov_gws(boot.get("events"), [int(katsottava)], _artefakti)
 
     out = build_review(int(katsottava), picks, frozen, points, info, pw, prov)
@@ -3008,14 +3002,8 @@ def fantasy_my_team_ledger(
     # ei johdettu artefakti. Ks. src/models/fpl_gw_finality.py.
     import json as _json
     from src.models.fpl_gw_finality import provisional_gws as _prov_gws
-    _artefakti: list[int] = []
-    _p = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
-    if _p.exists():
-        try:
-            _artefakti = list((_json.loads(_p.read_text(encoding="utf-8"))
-                               .get("meta") or {}).get("provisional_gws") or [])
-        except (OSError, ValueError):
-            _artefakti = []
+    from src.models.model_squad_scores import provisional_hint_gws as _hint
+    _artefakti: list[int] = _hint()
     try:
         _events = _fapi.fetch_bootstrap().get("events")
     except Exception:
@@ -5548,9 +5536,11 @@ def fantasy_model_race(
 ):
     """Beat the Model V2 — Season race: mallin lukittu rivi vs sinun kautesi.
 
-    Mallin luvut tulevat committatusta lokista (data/model_squad_gw_scores.json),
-    joka on gradattu FPL:n omista pisteistä riville jonka git-historia todistaa
-    lukituksi ennen deadlinea. Tämä endpoint EI laske pisteitä pyynnössä.
+    Mallin luvut tulevat julkisesta mallisarjasta
+    (`model_squad_scores.load_public_model_series`): jaadytetty rivi FPL:n
+    omilla pisteilla, riville jonka git-historia todistaa lukituksi ennen
+    deadlinea (Villen paatos 21.9.2026). Tämä endpoint EI laske pisteitä
+    pyynnössä.
 
     FREE: kumulatiivinen ero + kierrosrivit (kilpailu on silmukan palkinto,
     V1-linjaus säilyy). PREMIUM: erittely siitä MISSÄ ero syntyi
@@ -5565,13 +5555,15 @@ def fantasy_model_race(
     from src.models.fpl_rate_team import RateTeamError
 
     response.headers["Cache-Control"] = "no-store"
-    log = None
-    path = PROJECT_ROOT / "data" / "model_squad_gw_scores.json"
-    if path.exists():
-        try:
-            log = _json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            log = None
+    # 21.9.2026 (Villen paatos "mallin rivi"): mallin puoli on JAADYTETYN
+    # rivin sarja, luettuna yhdella julkisella lukijalla. Raaka tiedostoluku
+    # on kielletty pinnan koodissa (tests/test_model_series_reader_discipline.py).
+    from src.models.model_squad_scores import (SarjaVirhe,
+                                               load_public_model_series)
+    try:
+        log = load_public_model_series()
+    except SarjaVirhe:
+        log = None
 
     history = None
     if entry is not None:

@@ -1,7 +1,8 @@
 """Beat the Model V2 vaihe c: Season race -datan kokoaminen (13.8).
 
-Yhdistää mallin gradatut kierrospisteet (data/model_squad_gw_scores.json,
-vaihe b) ja käyttäjän oman FPL-historian kumulatiiviseksi eroksi.
+Yhdistää mallin gradatut kierrospisteet (julkinen mallisarja,
+`model_squad_scores.load_public_model_series`: jaadytetty rivi, Villen
+paatos 21.9.2026) ja käyttäjän oman FPL-historian kumulatiiviseksi eroksi.
 
 MIKSI PALVELIMELLA EIKÄ KLIENTISSÄ (poikkeus speciin, tietoinen):
 spec ehdotti kumulatiivisen eron laskemista klientissä, mutta V1-tuloskortin

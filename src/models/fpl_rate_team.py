@@ -1700,27 +1700,38 @@ def transfer_horizon_gws(pool: list[dict], xp_data: dict, target_gw: int,
 # joka kierros, ja sivulla on jo Beat the Model -miniliiga. Kortti on sen
 # ottelun tulostaulu, ja poikkeama on siina twisti eika otsikko.
 
-_MODEL_SQUAD_PATH = Path(__file__).resolve().parents[2] / "data" / "model_squad_gw_scores.json"
+def model_squad_gw(gw: int, *, series: dict | None = None) -> dict | None:
+    """Mallin oman rivin tulos kierrokselta, JULKISESTA mallisarjasta.
 
+    21.9.2026 (Villen paatos "mallin rivi"): luku on jaadytetyn rivin luku
+    (`model_squad_scores.load_public_model_series`), ei entryn 116920.
+    Ei uutta verkkokutsua. None kun kierrosta ei ole sarjassa -> vertailu
+    jatetaan pois kokonaan (puolikas ottelu ei ole ottelu).
 
-def model_squad_gw(gw: int) -> dict | None:
-    """Mallin oman rivin tulos kierrokselta, committatusta lokista.
-
-    Ei uutta verkkokutsua: sama tiedosto jonka `grade_model_squad` kirjoittaa.
-    None kun kierrosta ei ole lokissa -> vertailu jatetaan pois kokonaan
-    (puolikas ottelu ei ole ottelu).
+    `entry_id` on TARKISTUSREITTI ja annetaan vain kun entry todistaa rivin
+    luvun: rivi on entry-fallback, tai entryn mitattu ero on False. Muuten
+    None, jolloin kortti ja SPA pudottavat mallisolut eivatka nayta
+    "Model · entry 116920" -reittia luvulle jota entry ei nayta (GW3: sarja
+    63, entry 72 triple captainilla). `model_entry` on aina mallin tili,
+    jotta "kayttaja ON malli" -tarkistus ei riipu reitista.
     """
-    try:
-        doc = json.loads(_MODEL_SQUAD_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    for r in (doc.get("gameweeks") or []):
+    from src.models.fpl_model_entry import ENTRY_ID
+    from src.models.model_squad_scores import (ROW_BASIS_ENTRY_FALLBACK,
+                                               SarjaVirhe,
+                                               load_public_model_series)
+    if series is None:
+        try:
+            series = load_public_model_series()
+        except SarjaVirhe:
+            return None
+    for r in (series.get("gameweeks") or []):
         if r.get("gw") == gw:
+            reitti = (r.get("row_basis") == ROW_BASIS_ENTRY_FALLBACK
+                      or r.get("entry_diverged") is False)
             return {
-                "entry_id": (doc.get("meta") or {}).get("entry_id"),
-                # Portin 15. kierros: NETTO myos mallilla. Kortti painaa
-                # mallin julkisen entry-ID:n kuvaan, joten lukija voi
-                # katsoa - ja naki bruttoa.
+                "entry_id": ENTRY_ID if reitti else None,
+                "model_entry": ENTRY_ID,
+                # Portin 15. kierros: NETTO myos mallilla.
                 # Yksi lukija (fpl_model_race.model_points_net): netto
                 # johdetaan rivin omista kentista, ei odoteta kirjoittajalta.
                 "points": _model_points_net(r),
@@ -1729,6 +1740,7 @@ def model_squad_gw(gw: int) -> dict | None:
                 "provisional": bool(r.get("provisional")),
                 # Portti 2.9 k4: mallin chip kortille kayttajan chipin rinnalle.
                 "chip": r.get("active_chip"),
+                "basis": r.get("row_basis"),
             }
     return None
 
@@ -1903,7 +1915,7 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     model = model_squad_gw(gw)
     # Jos kayttaja ON mallin rivi, ottelua ei ole. "121 vs 121, voitit 0:lla"
     # olisi holynpolya, joten vertailu jatetaan pois.
-    if model and model.get("entry_id") == entry_id:
+    if model and model.get("model_entry") == entry_id:
         model = None
     # Portti 2.9 k4: provisional-rivi (ennen bonuksia) ei saa paatya kortille
     # lopullisena — reitti nayttaisi eri luvun kuin kortti.

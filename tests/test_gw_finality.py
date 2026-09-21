@@ -85,7 +85,12 @@ def test_api_ei_lue_provisionaalia_pelkasta_artefaktista():
     fail-closed-lukijan lapi.
     """
     s = (ROOT / "api" / "main.py").read_text(encoding="utf-8", errors="replace")
-    luvut = len(re.findall(r'get\("provisional_gws"\)', s))
+    # 21.9.2026: raaka artefaktiluku siirtyi lukijamoduuliin
+    # (`model_squad_scores.provisional_hint_gws`), joten sen import on nyt
+    # api/main.py:n artefaktiluku. Molemmat muodot lasketaan, jotta raaka
+    # `get("provisional_gws")` ei voi palata ohi portin.
+    luvut = (len(re.findall(r'get\("provisional_gws"\)', s))
+             + s.count("import provisional_hint_gws"))
     lukijat = s.count("fpl_gw_finality import provisional_gws")
     assert luvut > 0, "portti ei loyda artefaktilukua lainkaan (mittaako se mitaan?)"
     assert lukijat >= luvut, (

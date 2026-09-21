@@ -16,7 +16,12 @@ Vahti ei voi korjata tätä (FPL-tilille kirjautuminen on käsityötä eikä sit
 automatisoida). Se tekee erosta ÄÄNEKKÄÄN:
 
   * ennen deadlinea  -> tulostaa rivin syötettävässä muodossa, exit 0
-  * deadlinen jälkeen -> vertaa entryn picksejä jäädytettyyn, ero = exit 1
+  * deadlinen jälkeen -> vertaa entryn picksejä jäädytettyyn ja kirjaa eron
+                         freezen metaan. 21.9.2026 alkaen ero = ::warning::
+                         ja exit 0 (Villen paatos "mallin rivi": julkinen
+                         sarja on jaadytetty rivi, joten ero ei siirry
+                         mallin lukuun). Exit 1 jaa 404:lle, rikkinaiselle
+                         poikkeukselle ja yli 24 h lukemattomalle kierrokselle.
 
 Ennen-deadlinea-haara on tarkoituksella exit 0: rivin syöttäminen on
 Villen tehtävä eikä puuttuva syöttö ole vielä virhe. Jälkeen-haara on
@@ -180,7 +185,8 @@ def fetch_picks(entry: int, gw: int, *, sleep=None):
 
 
 def record_verification(path: Path, frozen: dict, gw: int, *, squad_match: bool,
-                        captain_match: bool, common: int, now) -> None:
+                        captain_match: bool, common: int, now,
+                        lineup_match: bool | None = None) -> None:
     """Kirjoittaa `meta.entry_verified` samaan artefaktiin. Ei erillista
     tiedostoa freeze-hakemistoon: vieras tiedosto glob-kansiossa luettiin
     runkona 29.8. Kirjoitetaan vain kun tosiasia muuttuu (aikaleima ei ole
@@ -188,7 +194,8 @@ def record_verification(path: Path, frozen: dict, gw: int, *, squad_match: bool,
     from src.models.fpl_model_entry import verified_record
     rec = verified_record(gw, ENTRY_ID, squad_match=squad_match,
                           captain_match=captain_match,
-                          at=now.strftime("%Y-%m-%dT%H:%M:%SZ"), common=common)
+                          at=now.strftime("%Y-%m-%dT%H:%M:%SZ"), common=common,
+                          lineup_match=lineup_match)
     meta = frozen.setdefault("meta", {})
     vanha = dict(meta.get("entry_verified") or {})
     vanha.pop("at", None)
@@ -211,7 +218,7 @@ def record_verification(path: Path, frozen: dict, gw: int, *, squad_match: bool,
         encoding="utf-8", newline="\n")
     print(f"meta.entry_verified kirjoitettu: match={rec['match']} "
           f"(15: {rec['squad_match']}, C: {rec['captain_match']}, "
-          f"yhteisia {rec['common']})")
+          f"kokoonpano: {rec.get('lineup_match')}, yhteisia {rec['common']})")
 
 
 def main() -> int:
@@ -275,19 +282,18 @@ def main() -> int:
               f"on vaara.")
         return 1
 
-    entry_ids = {int(p["element"]) for p in picks}
-    missing = frozen_ids - entry_ids     # mallilla on, tilillä ei
-    extra = entry_ids - frozen_ids       # tilillä on, mallilla ei
+    from src.models.fpl_model_entry import entry_diff
+    diff = entry_diff(frozen, picks)
 
     # 5.9 KORTTI-PROVENIENSSI-PORTTI: tulos kirjoitetaan freezen metaan, jotta
     # kortin generaattori (ja seuraavan kierroksen ketju) lukee "onko tama
     # entryn runko" yhdesta paikasta eika oleta. Kirjoitetaan MYOS ero: se on
-    # eksplisiittinen kielto, ei vain puuttuva lupa.
-    cap_entry_all = next((int(p["element"]) for p in picks
-                          if p.get("is_captain")), None)
-    record_verification(path, frozen, gw, squad_match=not missing and not extra,
-                        captain_match=(cap_entry_all == frozen.get("captain")),
-                        common=len(frozen_ids & entry_ids), now=now)
+    # eksplisiittinen kielto, ei vain puuttuva lupa. 21.9: myos kokoonpano
+    # (`lineup_match`), jota vahti ei aiemmin nahnyt lainkaan.
+    record_verification(path, frozen, gw, squad_match=diff["squad_match"],
+                        captain_match=diff["captain_match"],
+                        common=diff["common"], now=now,
+                        lineup_match=diff["lineup_match"])
 
     if args.always_print:
         print(enterable(frozen))
@@ -298,52 +304,42 @@ def main() -> int:
               f"vapaakortti — korjaa tiedosto tai poista se.")
         return 1
 
-    if not missing and not extra:
-        cap_entry = next((int(p["element"]) for p in picks
-                          if p.get("is_captain")), None)
-        cap_frozen = frozen.get("captain")
-        if cap_entry != cap_frozen:
-            if exception:
-                print(f"::warning::KAPTEENI eroaa (tilillä {cap_entry}, "
-                      f"jaadytetyssa {cap_frozen}) — kirjattu poikkeus GW{gw}: "
-                      f"{exception['reason']} ({exception['decided_by']} "
-                      f"{exception['decided_at']})")
-                return 0
-            print(f"::error::15 tasmaa mutta KAPTEENI eroaa: tilillä "
-                  f"{cap_entry}, jaadytetyssa {cap_frozen}. Kapteeni on "
-                  f"kaksinkertainen pistevaikutus, joten tama ei ole "
-                  f"kosmeettinen ero.")
-            return 1
+    if not diff["diverged"]:
         if exception:
             print(f"::warning::GW{gw}:lle on kirjattu poikkeus mutta rivit "
-                  f"tasmaavat (15/15 + kapteeni) — poikkeus on vanhentunut, "
-                  f"poista {EXCEPTIONS_DIR.name}/gw{gw}.json.")
+                  f"tasmaavat (15/15 + kapteeni + kokoonpano) — poikkeus on "
+                  f"vanhentunut, poista {EXCEPTIONS_DIR.name}/gw{gw}.json.")
         print(f"OK: entry {ENTRY_ID} vastaa GW{gw}:n jaadytettya runkoa "
-              f"(15/15 + kapteeni).")
+              f"(15/15 + kapteeni + kokoonpano).")
         return 0
 
+    # 🔴 ERO ON SALLITTU, EI VIRHE (Villen paatos 21.9.2026, "mallin rivi").
+    # Ennen tama oli exit 1, koska julkinen sarja mittasi ENTRYA ja ero
+    # tarkoitti etta "mallin luku" oli Villen luku. Nyt julkinen sarja on
+    # jaadytetty rivi (`model_squad_scores.load_public_model_series`), joten
+    # ero ei siirry mallin lukuun - se kirjataan (freezen meta +
+    # jaadytetyn graderin rivi `entry_diverged`) ja sanotaan aaneen.
     names = {p["id"]: p.get("web_name", "?")
              for p in (frozen.get("xi") or []) + (frozen.get("bench") or [])}
+
+    def _nimet(ids):
+        return ", ".join(f"{names.get(i, i)} ({i})" for i in ids) or "-"
+
+    print(f"::warning::ENTRY {ENTRY_ID} poikkeaa GW{gw}:n jaadytetysta rivista. "
+          f"Julkinen sarja mittaa jaadytettya rivia (Villen paatos 21.9), joten "
+          f"ero on kirjattu eika se ole virhe.")
     if exception:
-        print(f"::warning::ENTRY {ENTRY_ID} eroaa GW{gw}:n jaadytetysta rungosta "
-              f"({len(missing)} puuttuu, {len(extra)} ylimaaraista) — KIRJATTU "
-              f"POIKKEUS: {exception['reason']} ({exception['decided_by']} "
-              f"{exception['decided_at']}). Data-askeleet jatkuvat.")
-        print("  Jaadytetyssa mutta EI tilillä: "
-              + ", ".join(f"{names.get(i, i)} ({i})" for i in sorted(missing)))
-        print("  Tilillä mutta EI jaadytetyssa: "
-              + ", ".join(str(i) for i in sorted(extra)))
-        return 0
-    print(f"::error::ENTRY {ENTRY_ID} EI VASTAA GW{gw}:N JAADYTETTYA RUNKOA.")
-    print(f"::error::Julkinen vaite 'malli pelaa omaa FPL-joukkuettaan' "
-          f"osoittaa joukkueeseen jota malli ei valinnut.")
-    if missing:
-        print("  Jaadytetyssa mutta EI tilillä: "
-              + ", ".join(f"{names.get(i, i)} ({i})" for i in sorted(missing)))
-    if extra:
-        print("  Tilillä mutta EI jaadytetyssa: "
-              + ", ".join(str(i) for i in sorted(extra)))
-    return 1
+        print(f"  Kirjattu poikkeus: {exception['reason']} "
+              f"({exception['decided_by']} {exception['decided_at']})")
+    print(f"  15: yhteisia {diff['common']}; jaadytetyssa mutta ei tililla: "
+          f"{_nimet(diff['missing'])}; tililla mutta ei jaadytetyssa: "
+          f"{', '.join(str(i) for i in diff['extra']) or '-'}")
+    print(f"  XI: vain jaadytetyssa {_nimet(diff['xi_only_frozen'])}; vain "
+          f"tililla {', '.join(str(i) for i in diff['xi_only_entry']) or '-'}")
+    print(f"  kapteeni {'sama' if diff['captain_match'] else 'ERI'}, "
+          f"varakapteeni {'sama' if diff['vice_match'] else 'ERI'}, "
+          f"penkkijarjestys {'sama' if diff['bench_order_match'] else 'ERI'}")
+    return 0
 
 
 if __name__ == "__main__":

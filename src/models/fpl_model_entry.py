@@ -182,15 +182,62 @@ PROVENANCE_CHAIN = "chain_from_verified"
 
 
 def verified_record(gw: int, entry: int, *, squad_match: bool,
-                    captain_match: bool, at: str, common: int) -> dict:
+                    captain_match: bool, at: str, common: int,
+                    lineup_match: bool | None = None) -> dict:
     """Metaan kirjoitettava tosiasia. `match` on True vain kun SEKA 15 ETTA
-    kapteeni tasmaavat - kapteeni on kaksinkertainen pistevaikutus."""
-    return {
+    kapteeni tasmaavat - kapteeni on kaksinkertainen pistevaikutus.
+
+    🔴 21.9.2026: `lineup_match` (XI, penkkijarjestys, varakapteeni) kirjataan
+    ERIKSEEN. GW5:n 15 ja kapteeni tasmasivat, mutta entryn XI:ssa oli De
+    Cuyper jaadytetyn Bobby Thomasin tilalla, ja vahti kirjasi pelkan
+    `match: True` - kokoonpanoero ei nakynyt mistaan. `match` pitaa silti
+    vanhan merkityksensa (15 + kapteeni), koska `provenance()` ja jaadytetyn
+    rungon kortti lukevat sita kysymyksena "onko tama entryn RUNKO", ja
+    kokoonpanon taittaminen siihen katkaisisi GW6:n ketju-provenienssin
+    sivuvaikutuksena. None = ei mitattu (vanha kutsuja).
+    """
+    rec = {
         "gw": int(gw), "entry": int(entry), "at": str(at),
         "squad_match": bool(squad_match), "captain_match": bool(captain_match),
         "common": int(common),
         "match": bool(squad_match and captain_match),
     }
+    if lineup_match is not None:
+        rec["lineup_match"] = bool(lineup_match)
+    return rec
+
+
+def entry_diff(frozen: dict, picks: list[dict]) -> dict:
+    """Jaadytetty rivi vs FPL-entryn pickit, kaikki pistevaikutteiset erot.
+
+    YKSI VERTAILIJA verify-vahdille ja jaadytetylle graderille (21.9.2026):
+    vahti kirjaa eron artefaktin metaan, graderi gradattuun riviin, eika
+    kumpikaan paattele sita omalla koodillaan. Idit ovat FPL:n element-ideja.
+    """
+    fz_xi = [int(p["id"]) for p in (frozen.get("xi") or [])]
+    fz_bench = [int(p["id"]) for p in (frozen.get("bench") or [])]
+    jarj = sorted(picks or [], key=lambda p: int(p.get("position") or 0))
+    e_xi = [int(p["element"]) for p in jarj if int(p.get("position") or 0) <= 11]
+    e_bench = [int(p["element"]) for p in jarj if int(p.get("position") or 0) > 11]
+    cap_e = next((int(p["element"]) for p in jarj if p.get("is_captain")), None)
+    vice_e = next((int(p["element"]) for p in jarj if p.get("is_vice_captain")), None)
+    fz, e = set(fz_xi + fz_bench), set(e_xi + e_bench)
+    out = {
+        "common": len(fz & e),
+        "missing": sorted(fz - e),              # jaadytetyssa, ei entryssa
+        "extra": sorted(e - fz),                # entryssa, ei jaadytetyssa
+        "xi_only_frozen": sorted(set(fz_xi) - set(e_xi)),
+        "xi_only_entry": sorted(set(e_xi) - set(fz_xi)),
+        "bench_order_match": fz_bench == e_bench,
+        "captain_match": cap_e == frozen.get("captain"),
+        "vice_match": vice_e == frozen.get("vice_captain"),
+    }
+    out["squad_match"] = not out["missing"] and not out["extra"]
+    out["lineup_match"] = (not out["xi_only_frozen"] and not out["xi_only_entry"]
+                           and out["bench_order_match"] and out["vice_match"])
+    out["diverged"] = not (out["squad_match"] and out["captain_match"]
+                           and out["lineup_match"])
+    return out
 
 
 def _is_verified(frozen: dict | None) -> bool:

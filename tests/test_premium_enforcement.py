@@ -294,18 +294,18 @@ def race_client(tmp_path, monkeypatch):
     Esikaudella oikea loki on tyhja, jolloin maskaustesti mittaisi tyhjaa
     vastausta eika maskausta (vrt. muisti `gate-substring-osuma-on-sokea`).
     """
-    import json as _json
-
     import api.main as m
-    (tmp_path / "data").mkdir()
-    (tmp_path / "data" / "model_squad_gw_scores.json").write_text(
-        _json.dumps({"gameweeks": [{
-            "gw": 1, "points": 61, "fpl_average": 57, "captain_id": 351,
-            "captain_reason": "captain", "captain_points_added": 12,
-            "bench_points": 5,
-            "autosubs": [{"out": 7, "in": 13, "pos": 2}]}]}),
-        encoding="utf-8")
-    monkeypatch.setattr(m, "PROJECT_ROOT", tmp_path)
+    import src.models.model_squad_scores as mss
+
+    # 21.9.2026: endpoint lukee julkisen mallisarjan yhdella lukijalla
+    # (load_public_model_series), ei tiedostoa PROJECT_ROOTista.
+    sarja = {"meta": {"series_source": "frozen_squad"}, "gameweeks": [{
+        "gw": 1, "points": 61, "fpl_average": 57, "captain_id": 351,
+        "captain_reason": "captain", "captain_points_added": 12,
+        "bench_points": 5, "transfer_cost": 0, "active_chip": None,
+        "provisional": False, "row_basis": "frozen",
+        "autosubs": [{"out": 7, "in": 13, "pos": 2}]}]}
+    monkeypatch.setattr(mss, "load_public_model_series", lambda **kw: sarja)
     return TestClient(m.app)
 
 

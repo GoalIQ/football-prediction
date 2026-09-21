@@ -43,11 +43,22 @@ RAKENNE, EI SOPIMUS (CLAUDE.md 6a):
       source-ton rivi kaataa testin, ja migroitu rivi kaataa sen
       vanhentuneena.
 
-KANONINEN PROVENIENSSI KAUDELLA 2026/27 = `entry` (`CANONICAL_SOURCE`,
-Villen paatos 12.9.2026). GW1-GW4 on gradattu entrysta, ja se on sarja jonka
-Season race, tuloskortti ja recap lukevat. Freeze-sarja on diagnostiikkaa
-(mita jaadytetty runko OLISI tehnyt) omassa tiedostossaan, eika sita lueta
-julkiselle pinnalle.
+KANONINEN PROVENIENSSI KAUDELLA 2026/27 = `frozen_squad` (`CANONICAL_SOURCE`,
+Villen paatos 21.9.2026, kumoaa 12.9:n `entry`-paatoksen). Julkinen track
+record, Season race, tuloskortti ja recap mittaavat MALLIN JAADYTETTYA rivia
+FPL:n live-pisteilla, eivat entrya 116920. Syy: 18.9 Ville ajoi GW5:n
+jaadytetyn rivin yli (De Cuyper XI:iin Bobby Thomasin tilalle), ja entry-sarja
+mittasi silloin mallin ja Villen yhdistelmaa vaikka copy sanoi "the model's
+squad". Entry saa poiketa; ero kirjataan riville (`entry_diverged`).
+
+(4) YKSI JULKINEN LUKIJA. Pinnat lukevat mallin kierrospisteet VAIN
+`load_public_model_series()`:lla. Se palauttaa jaadytetyn sarjan, ja
+entry-rivin ainoastaan kierrokselle jonka freeze on rakenteellisesti
+epakelpo (`freeze_invalid`) JA jolle on kirjattu Villen poikkeuspaatos
+(`data/model_squad_exceptions/gw{N}.json`) - rivi kantaa silloin
+`row_basis: "entry_fallback"` ja syyn. Portti:
+tests/test_model_series_reader_discipline.py (raaka luku kummastakin
+sarjatiedostosta pinnan koodissa kaataa testin).
 
 MIGRAATIO (ei ajeta automaattisesti). Levyn GW1-GW4-rivit ovat tuotantodataa.
 `stamp_legacy_source(doc)` on puhdas funktio joka lisaa niille
@@ -67,21 +78,34 @@ SOURCE_ENTRY = "entry"
 SOURCE_FROZEN = "frozen_squad"
 SOURCES = frozenset({SOURCE_ENTRY, SOURCE_FROZEN})
 
-# 🔴 KANONINEN PROVENIENSSI. Villen paatos 12.9.2026, toteutettu rakenteena:
-# julkinen sarja on entry-sarja. Jos tama joskus vaihtuu, vaihda vakio JA
-# kirjoita syy tahan - lukija, kirjoittajat ja testit lukevat tata yhta kohtaa.
-CANONICAL_SOURCE = SOURCE_ENTRY
+# 🔴 KANONINEN PROVENIENSSI. Villen paatos 21.9.2026, toteutettu rakenteena:
+# julkinen sarja on JAADYTETYN rivin sarja. Jos tama joskus vaihtuu, vaihda
+# vakio JA kirjoita syy tahan - lukija, kirjoittajat ja testit lukevat tata
+# yhta kohtaa.
+#
+# Historia: 12.9.2026 paatos oli `entry` ("GW1-GW4 on gradattu entrysta;
+# gw4.json on runko jota malli ei voi saavuttaa"). GW4:n osalta se paatos
+# elaa yha poikkeuspaatoksena `model_squad_exceptions/gw4.json`, jota
+# julkinen lukija kunnioittaa (`row_basis: entry_fallback`).
+CANONICAL_SOURCE = SOURCE_FROZEN
 CANONICAL_DECISION = (
-    "Villen paatos 12.9.2026: mallin julkinen kierrossarja gradataan FPL-entryn "
-    "omista pisteista (grade_model_squad.py). GW1-GW4 on gradattu entrysta. "
-    "Jaadytetty gw4.json on runko jota malli ei voi saavuttaa (8/15 vaihtui, "
-    "transfers=[]), ja freeze-graderin GW3 olisi 63 p entryn 72 p:n sijaan; "
-    "sama sarja ei voi sisaltaa molempia. Freeze-sarja on diagnostiikkaa "
-    "omassa tiedostossaan (FROZEN_SCORES_PATH).")
+    "Villen paatos 21.9.2026: mallin julkinen kierrossarja on JAADYTETTY rivi "
+    "FPL:n live-pisteilla (autosubit ja kapteeni/vara FPL:n saannoin, ei "
+    "chippeja: malli ei pelaa chippeja v0:ssa, chip_evaluation.decision = "
+    "not_played). Entry 116920 saa poiketa, ja ero kirjataan riville. "
+    "Kierros jonka freeze on rakenteellisesti epakelpo (squad_rebuilt) luetaan "
+    "entrysta VAIN jos sille on kirjattu Villen poikkeuspaatos.")
 
 ENTRY_SCORES_PATH = config.DATA_DIR / "model_squad_gw_scores.json"
 FROZEN_SCORES_PATH = config.DATA_DIR / "model_squad_frozen_gw_scores.json"
 SERIES_PATHS = {SOURCE_ENTRY: ENTRY_SCORES_PATH, SOURCE_FROZEN: FROZEN_SCORES_PATH}
+FROZEN_DIR = config.DATA_DIR / "model_squad_frozen"
+EXCEPTIONS_DIR = config.DATA_DIR / "model_squad_exceptions"
+
+# Rivin perusta julkisessa sarjassa. `frozen` = jaadytetty rivi FPL:n
+# pisteilla. `entry_fallback` = kirjattu poikkeus (ks. `freeze_invalid`).
+ROW_BASIS_FROZEN = "frozen"
+ROW_BASIS_ENTRY_FALLBACK = "entry_fallback"
 
 # Rivi ilman source-kenttaa. Perustelu: kentta lisattiin 17.9.2026, ja siihen
 # asti AINOA kirjoittaja joka ei kirjoittanut sita oli entry-graderi
@@ -109,7 +133,10 @@ LEGACY_SOURCELESS = SOURCE_ENTRY
 # joutuu paattamaan onko uusi kentta sormenjalki vai ei. `xi_ids` (fpl_autosub
 # .score_gw) loytyi juuri siten: se oli freeze-only mutta puuttui tuplesta.
 FROZEN_FINGERPRINT = ("provenance", "points_before_captain", "captain_reason",
-                      "frozen_at", "xi_ids")
+                      "frozen_at", "xi_ids",
+                      # 21.9.2026: jaadytetty graderi kirjaa hitin lahteen ja
+                      # entryn eron riville (Villen paatos "mallin rivi").
+                      "transfer_cost_source", "entry_diverged", "entry_diff")
 
 
 class SarjaVirhe(RuntimeError):
@@ -242,4 +269,223 @@ def stamp_legacy_source(doc: dict) -> dict:
             r["source"] = row_source(r)
     validate_gw_scores(out, source=LEGACY_SOURCELESS)
     out.setdefault("meta", {})["series_source"] = LEGACY_SOURCELESS
+    return out
+
+
+# ---------------------------------------------------------------------------
+# JULKINEN MALLISARJA (Villen paatos 21.9.2026: "mallin rivi")
+# ---------------------------------------------------------------------------
+
+EXCEPTION_KEYS = ("gw", "reason", "decided_by", "decided_at")
+
+
+def valid_exception(d, gw: int) -> tuple[dict | None, str | None]:
+    """(poikkeus, virhe). Sama saanto kuin verify-vahdilla: voimassa vain jos
+    kaikki kentat ovat epatyhjia ja gw on tasmalleen tama kierros. Vajaa
+    poikkeus on virhe, ei vapaakortti."""
+    if not isinstance(d, dict):
+        return None, f"GW{gw}: poikkeus ei ole objekti"
+    puuttuu = [k for k in EXCEPTION_KEYS if not str(d.get(k) or "").strip()]
+    if puuttuu:
+        return None, f"GW{gw}: poikkeuksen kentat puuttuvat: {', '.join(puuttuu)}"
+    try:
+        if int(d.get("gw")) != int(gw):
+            return None, f"GW{gw}: poikkeuksen gw={d.get('gw')}"
+    except (TypeError, ValueError):
+        return None, f"GW{gw}: poikkeuksen gw ei ole luku"
+    return d, None
+
+
+def freeze_invalid(frozen: dict, *, earlier_exists: bool) -> str | None:
+    """Syy jos jaadytetty runko EI ole mallin saavutettavissa oleva rivi.
+
+    `squad_rebuilt: true` (tai uudempi `squad_source: "free_optimum"`)
+    tarkoittaa etta freeze putosi vapaaseen optimiin eika jatkanut ketjua:
+    mitattu gw4.json 12.9 - 8/15 vaihtui samalla kun meta sanoo transfers [].
+    Kauden ENSIMMAINEN freeze on vapaa optimi luonnostaan (ei edellista
+    runkoa), joten se ei ole epakelpo - siksi `earlier_exists`.
+    """
+    meta = (frozen or {}).get("meta") or {}
+    if not earlier_exists:
+        return None
+    if meta.get("squad_source") == "free_optimum" or meta.get("squad_rebuilt") is True:
+        return (f"GW{meta.get('gw')}: freeze putosi vapaaseen optimiin "
+                f"(squad_rebuilt={meta.get('squad_rebuilt')!r}, "
+                f"squad_source={meta.get('squad_source')!r}), eli runko ei "
+                f"jatka mallin ketjua")
+    return None
+
+
+def _frozen_public_row(r: dict, freeze: dict | None) -> tuple[dict | None, str | None]:
+    gw = int(r["gw"])
+    kustannus = r.get("transfer_cost")
+    lahde = r.get("transfer_cost_source")
+    if kustannus is None:
+        # 21.9 ENNEN gradatut freeze-rivit (GW3) eivat kanna kustannusta.
+        # Hyvaksytaan vain jos freezen oma meta sanoo nolla hittia; muuten
+        # rivi jaa pois eika siita arvata lukua.
+        hitit = ((freeze or {}).get("meta") or {}).get("hits")
+        if hitit in (0, None) and freeze is not None:
+            kustannus, lahde = 0, "freeze_hits_zero_legacy"
+        else:
+            return None, (f"GW{gw}: rivilta puuttuu transfer_cost ja freezen "
+                          f"hits={hitit!r}; lukua ei arvata")
+    return {
+        "gw": gw,
+        "points": int(r.get("points") or 0),
+        "transfer_cost": int(kustannus),
+        "transfer_cost_source": lahde,
+        "active_chip": None,
+        "provisional": False,
+        "fpl_average": r.get("fpl_average"),
+        "captain_id": r.get("captain_id"),
+        "captain_reason": r.get("captain_reason"),
+        "captain_points_added": r.get("captain_points_added"),
+        "bench_points": r.get("bench_points"),
+        "autosubs": r.get("autosubs") or [],
+        "graded_at": r.get("graded_at"),
+        "source": SOURCE_FROZEN,
+        "row_basis": ROW_BASIS_FROZEN,
+        # None = eroa ei mitattu (ennen 21.9 gradattu rivi); True/False mitattu.
+        "entry_diverged": r.get("entry_diverged"),
+        "entry_diff": r.get("entry_diff"),
+    }, None
+
+
+def public_model_series(frozen_doc: dict, entry_doc: dict,
+                        freezes: dict[int, dict],
+                        exceptions: dict[int, dict]) -> dict:
+    """Puhdas ydin: julkinen mallisarja yhdesta paikasta.
+
+    Jaadytetty sarja on runko. Entry-rivi otetaan VAIN kierrokselle jonka
+    freeze on `freeze_invalid` JA jolle on kelvollinen poikkeuspaatos -
+    silloin rivi sanoo sen itse (`row_basis`, `fallback_reason`). Mikaan muu
+    polku ei tuo entry-lukua sarjaan, joten Villen yliajo ei voi siirtya
+    mallin lukuun.
+    """
+    validate_gw_scores(frozen_doc, source=SOURCE_FROZEN)
+    validate_gw_scores(entry_doc, source=SOURCE_ENTRY)
+    rows: dict[int, dict] = {}
+    missing: dict[int, str] = {}
+    for r in frozen_doc.get("gameweeks") or []:
+        gw = int(r["gw"])
+        row, syy = _frozen_public_row(r, freezes.get(gw))
+        if row is None:
+            missing[gw] = syy
+        else:
+            rows[gw] = row
+    entry_rows = {int(r["gw"]): r for r in entry_doc.get("gameweeks") or []}
+    fallback = []
+    ensimmainen = min(freezes) if freezes else None
+    for gw in sorted(freezes):
+        if gw in rows:
+            continue
+        syy = freeze_invalid(freezes[gw],
+                             earlier_exists=(ensimmainen is not None
+                                             and gw > ensimmainen))
+        if syy is None:
+            continue            # kelvollinen freeze, ei viela gradattu
+        if gw in exceptions:
+            exc, virhe = valid_exception(exceptions.get(gw), gw)
+        else:
+            exc, virhe = None, None
+        if virhe:
+            missing[gw] = virhe
+            continue
+        if exc is None:
+            missing[gw] = f"{syy}; poikkeuspaatosta ei ole kirjattu"
+            continue
+        e = entry_rows.get(gw)
+        if e is None:
+            missing[gw] = f"{syy}; entry-rivia ei ole viela gradattu"
+            continue
+        rows[gw] = {
+            "gw": gw,
+            "points": int(e.get("points") or 0),
+            "transfer_cost": int(e.get("transfer_cost") or 0),
+            "transfer_cost_source": "entry",
+            "active_chip": e.get("active_chip"),
+            "provisional": bool(e.get("provisional")),
+            "fpl_average": e.get("fpl_average"),
+            "captain_id": e.get("captain_id"),
+            "captain_reason": None,
+            "captain_points_added": e.get("captain_points_added"),
+            "bench_points": e.get("bench_points"),
+            "autosubs": e.get("autosubs") or [],
+            "graded_at": e.get("graded_at"),
+            "source": SOURCE_ENTRY,
+            "row_basis": ROW_BASIS_ENTRY_FALLBACK,
+            "fallback_reason": str(exc["reason"]),
+            "fallback_decided": f"{exc['decided_by']} {exc['decided_at']}",
+            "entry_diverged": False,
+            "entry_diff": None,
+        }
+        fallback.append(gw)
+    return {
+        "meta": {
+            "series_source": CANONICAL_SOURCE,
+            "decision": CANONICAL_DECISION,
+            "fallback_gws": fallback,
+            "missing_gws": {str(k): v for k, v in sorted(missing.items())},
+            # Entry EI ole mallin rivin tarkistusreitti taman sarjan
+            # riveille. Rivin `entry_diverged is False` kertoo milloin se on.
+            "entry_id": None,
+        },
+        "gameweeks": [rows[g] for g in sorted(rows)],
+    }
+
+
+def _read_dir(d) -> dict[int, dict]:
+    import re
+    out: dict[int, dict] = {}
+    if not Path(d).exists():
+        return out
+    for p in sorted(Path(d).glob("gw*.json")):
+        m = re.fullmatch(r"gw(\d+)\.json", p.name)
+        if not m:
+            continue
+        try:
+            out[int(m.group(1))] = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            raise SarjaVirhe(f"{p.name}: ei luettavissa ({e!r})") from e
+    return out
+
+
+def load_public_model_series(*, frozen_path=None, entry_path=None,
+                             frozen_dir=None, exceptions_dir=None) -> dict:
+    """AINOA lukija jolla pinta saa lukea mallin kierrospisteet.
+
+    Kaatuu `SarjaVirhe`en jos jokin lahde on rikki - pinta paattaa itse onko
+    se "ei saatavilla" (fail-closed), eika lukija palauta osittaista sarjaa.
+    Parametrit ovat testeja varten; tuotanto kayttaa oletuspolkuja.
+    """
+    fp = Path(frozen_path or FROZEN_SCORES_PATH)
+    ep = Path(entry_path or ENTRY_SCORES_PATH)
+    frozen_doc = load_gw_scores(fp, source=SOURCE_FROZEN)
+    entry_doc = load_gw_scores(ep, source=SOURCE_ENTRY)
+    return public_model_series(frozen_doc, entry_doc,
+                               _read_dir(frozen_dir or FROZEN_DIR),
+                               _read_dir(exceptions_dir or EXCEPTIONS_DIR))
+
+
+def provisional_hint_gws() -> list[int]:
+    """Entry-graderin `meta.provisional_gws`, VAIN epavarmuuden lisaamiseen.
+
+    `fpl_gw_finality.provisional_gws` lukee lopullisuuden FPL:n `events`ista;
+    tama lista saa ainoastaan lisata kierroksia provisionaalisiksi, ei
+    poistaa (A1, 7.9). Se ei ole mallin pistesarja, mutta se on sama
+    tiedosto, joten sekin luetaan taalta eika pinnan omalla json-luvulla.
+    Rikkinainen tai puuttuva tiedosto = tyhja vihje (FPL on paalahde).
+    """
+    try:
+        doc = load_gw_scores(ENTRY_SCORES_PATH, source=SOURCE_ENTRY)
+    except SarjaVirhe:
+        return []
+    raaka = (doc.get("meta") or {}).get("provisional_gws") or []
+    out = []
+    for g in raaka:
+        try:
+            out.append(int(g))
+        except (TypeError, ValueError):
+            continue
     return out

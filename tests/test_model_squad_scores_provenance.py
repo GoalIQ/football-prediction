@@ -86,7 +86,14 @@ def _frozen_rivi(gw: int, **kw) -> dict:
          "xi_ids": list(range(1, 12)),
          "graded_at": f"2026-09-0{gw}T15:00:07Z",
          "frozen_at": f"2026-09-0{gw}T07:00:00Z",
-         "source": "frozen_squad", "provenance": "entry_verified"}
+         "source": "frozen_squad", "provenance": "entry_verified",
+         # 21.9.2026 (Villen paatos "mallin rivi"): hitti ja entryn ero riville.
+         "transfer_cost": 0, "transfer_cost_source": "fpl_entry_same_squad",
+         "entry_diverged": False,
+         "entry_diff": {"common": 15, "missing": [], "extra": [],
+                        "xi_only_frozen": [], "xi_only_entry": [],
+                        "bench_order_match": True, "captain_match": True,
+                        "vice_match": True}}
     r.update(kw)
     return r
 
@@ -276,9 +283,10 @@ def test_kaksi_kirjoittajaa_kaksi_tiedostoa():
     assert e.OUT_PATH == mss.ENTRY_SCORES_PATH
     assert f.LOG_PATH == mss.FROZEN_SCORES_PATH
     assert e.OUT_PATH != f.LOG_PATH
-    assert mss.CANONICAL_SOURCE == "entry"
-    assert mss.ENTRY_SCORES_PATH.name == "model_squad_gw_scores.json", (
-        "julkiset lukijat (model-race, rate-team, recap) lukevat tata nimea")
+    # 21.9.2026: julkinen sarja on jaadytetty rivi, ja pinnat lukevat sen
+    # load_public_model_series()-lukijalla (ei tiedostonimella).
+    assert mss.CANONICAL_SOURCE == "frozen_squad"
+    assert mss.ENTRY_SCORES_PATH.name == "model_squad_gw_scores.json"
 
 
 def _mock_entry_fpl(monkeypatch, g, gws: list[int]):
@@ -366,6 +374,16 @@ def _runko(gw: int) -> dict:
     }
 
 
+def _entry_picks_payload() -> dict:
+    """FPL:n `entry/{id}/event/{gw}/picks/` joka vastaa `_runko`a tasan."""
+    return {"picks": [{"element": i, "position": i, "is_captain": i == 1,
+                       "is_vice_captain": i == 2,
+                       "multiplier": 2 if i == 1 else (1 if i <= 11 else 0)}
+                      for i in range(1, 16)],
+            "entry_history": {"event_transfers_cost": 0},
+            "active_chip": None}
+
+
 def _aja_freeze(monkeypatch, tmp_path, loki: Path, gws: list[int],
                 viritys=None):
     """`viritys(m)` ajetaan ennen main()ia (kutsupaikan vakoilu)."""
@@ -394,6 +412,9 @@ def _aja_freeze(monkeypatch, tmp_path, loki: Path, gws: list[int],
             return _R({"events": [{"id": g, "finished": True,
                                    "data_checked": True,
                                    "average_entry_score": 50} for g in gws]})
+        if "/picks/" in url:
+            # 21.9: graderi mittaa entryn eron ennen gradausta. Entry = runko.
+            return _R(_entry_picks_payload())
         return _R({"elements": [{"id": i, "stats": {"total_points": 5,
                                                     "minutes": 90}}
                                 for i in range(1, 16)]})
@@ -718,8 +739,8 @@ def test_refresh_committaa_freeze_sarjan():
 def test_repon_entry_sarja_on_yhden_provenienssin_ja_legacy_on_lueteltu():
     if not mss.ENTRY_SCORES_PATH.exists():
         pytest.skip("entry-sarjaa ei ole (esikausi)")
-    doc = mss.load_gw_scores(mss.ENTRY_SCORES_PATH, source=mss.CANONICAL_SOURCE)
-    assert mss.series_source(doc) in (None, mss.CANONICAL_SOURCE)
+    doc = mss.load_gw_scores(mss.ENTRY_SCORES_PATH, source=mss.SOURCE_ENTRY)
+    assert mss.series_source(doc) in (None, mss.SOURCE_ENTRY)
     ilman = mss.sourceless_gws(doc)
     uudet = [g for g in ilman if g not in LEGACY_RIVIT_ILMAN_SOURCEA]
     assert not uudet, (
@@ -744,9 +765,9 @@ def test_repon_freeze_sarja_on_freeze_sarja_jos_se_on_olemassa():
 
 def test_kanoninen_paatos_on_kirjattu():
     """Paatos on vakio jolla on perustelu, ei kommentti."""
-    assert mss.CANONICAL_SOURCE == mss.SOURCE_ENTRY
-    assert "12.9.2026" in mss.CANONICAL_DECISION
-    assert "GW1-GW4" in mss.CANONICAL_DECISION
+    assert mss.CANONICAL_SOURCE == mss.SOURCE_FROZEN
+    assert "21.9.2026" in mss.CANONICAL_DECISION
+    assert "poikkeuspaatos" in mss.CANONICAL_DECISION
 
 
 # ===========================================================================

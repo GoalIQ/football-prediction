@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Graderi ei gradaa runkoa jonka provenienssi puuttuu (12.9.2026, Villen paatos).
+"""Jaadytetty graderi: mika on mallin rivi ja mika ei (21.9.2026, Villen paatos).
 
-🔴 MITATTU. `data/model_squad_frozen/gw4.json` on runko jossa 8/15 vaihtui ja
-jonka meta sanoo `transfers: []`, `hits: 0` — runko jota malli ei voi
-saavuttaa yhdellakaan sallitulla siirtomaaralla. `provenance(gw4)` palauttaa
-`None`, ja **korttigeneraattori kieltaytyy** renderoimasta sita
-(`require_entry_provenance`). Sama portti puuttui graderilta: se olisi
-gradannut rungon jonka oma meta sanoo `squad_match: false`.
+HISTORIA. 12.9 Villen paatos oli etta julkinen sarja on ENTRY-sarja, ja
+tama graderi kieltaytyi gradaamasta runkoa jota ei ollut todistettu entryn
+rungoksi (`require_entry_provenance`). 21.9 paatos kaantyi: julkinen track
+record mittaa MALLIN JAADYTETTYA rivia, koska 18.9 Ville ajoi GW5:n rivin
+yli ja entry-sarja mittasi silloin mallin ja Villen yhdistelmaa.
 
-Villen paatos: GW4 gradataan ENTRYSTA, kuten GW1-GW3 tosiasiassa on gradattu
-(`data/model_squad_gw_scores.json`:n rivit kantavat `active_chip` ja
-`transfer_cost`, eli ne tulevat `grade_model_squad.py`:sta).
-
-🔴 MIKSI PORTTI EIKA PELKKA PAATOS. Ilman porttia paatos jaa cron-jarjestyksen
-varaan: entry-putki (`model-squad-grade.yml`, cron `17 */6`) ehtii
-normaalitilassa ensin, ja silloin tama graderi ohittaa GW4:n koska `done`
-sisaltaa sen. Mutta jos entry-putki kaatuu (ADMIN_TOKEN, 502, punainen ajo),
-tama graderi saa vuoron ja kirjaa vaaran rungon pisteet **append-only**-lokiin
-peruuttamattomasti. Portti tekee paatoksesta rakenteen: vaara vaihtoehto on
-mahdoton riippumatta siita kumpi putki ehtii.
+UUSI SAANTO, rakenteena:
+  * Kelvollinen freeze gradataan MYOS kun entry poikkeaa siita. Ero
+    kirjataan riville (`entry_diverged`, `entry_diff`).
+  * Rakenteellisesti epakelpo freeze (`squad_rebuilt: true` = putosi
+    vapaaseen optimiin; mitattu gw4.json 12.9: 8/15 vaihtui, transfers [])
+    EI gradaudu. Se ei ole mallin saavutettava rivi. Julkinen lukija
+    kayttaa kierrokselle entrya vain jos poikkeuspaatos on kirjattu.
+  * Entryn rivia ei saatu luettua -> kierros jaa seuraavaan ajoon, koska
+    loki on append-only eika mittaamatonta eroa kirjoiteta pysyvasti.
 """
 from __future__ import annotations
 
@@ -39,12 +36,13 @@ def _graderi():
     return m
 
 
-def _runko(gw, *, squad_source="chain", from_gw=None, verified=None):
+def _runko(gw, *, squad_source="chain", from_gw=None, verified=None,
+           rebuilt=None, hits=0):
     d = {
         "meta": {"gw": gw, "squad_source": squad_source, "from_gw": from_gw,
                  "frozen_at": f"2026-09-0{gw}T07:00:00Z",
                  "deadline": f"2026-09-0{gw}T17:30:00Z",
-                 "transfers": [], "hits": 0},
+                 "transfers": [], "hits": hits},
         "captain": 1, "vice_captain": 2,
         "xi": [{"id": i, "web_name": f"P{i}", "pos": (1 if i == 1 else
                                                       2 if i <= 5 else
@@ -56,6 +54,8 @@ def _runko(gw, *, squad_source="chain", from_gw=None, verified=None):
     }
     if verified is not None:
         d["meta"]["entry_verified"] = verified
+    if rebuilt is not None:
+        d["meta"]["squad_rebuilt"] = rebuilt
     return d
 
 
@@ -65,7 +65,38 @@ def _verifioitu(gw):
             "match": True}
 
 
-def _aja(monkeypatch, tmp_path, rungot, *, ratkennut=True):
+def _picks(xi_vaihto=None, kapteeni=1, kustannus=0, chip=None):
+    """Entryn pickit. `xi_vaihto=(ulos, sisaan)` siirtaa penkilta XI:hin."""
+    xi = list(range(1, 12))
+    bench = list(range(12, 16))
+    if xi_vaihto:
+        ulos, sisaan = xi_vaihto
+        xi[xi.index(ulos)] = sisaan
+        bench[bench.index(sisaan)] = ulos
+    jarj = xi + bench
+    return {"picks": [{"element": e, "position": i + 1,
+                       "is_captain": e == kapteeni,
+                       "is_vice_captain": e == 2,
+                       "multiplier": 1} for i, e in enumerate(jarj)],
+            "entry_history": {"event_transfers_cost": kustannus},
+            "active_chip": chip}
+
+
+class _R:
+    def __init__(self, payload, status=200):
+        self._p = payload
+        self.status_code = status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self):
+        return self._p
+
+
+def _aja(monkeypatch, tmp_path, rungot, *, ratkennut=True, picks=None,
+         picks_status=200):
     m = _graderi()
     for gw, r in rungot.items():
         (tmp_path / f"gw{gw}.json").write_text(
@@ -75,22 +106,15 @@ def _aja(monkeypatch, tmp_path, rungot, *, ratkennut=True):
     monkeypatch.setattr(m, "FROZEN_DIR", tmp_path)
     monkeypatch.setattr(m, "LOG_PATH", loki)
 
-    class _R:
-        def __init__(self, payload):
-            self._p = payload
-
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return self._p
-
     def _get(url, **kw):
         if "bootstrap-static" in url:
             return _R({"events": [{"id": g, "finished": ratkennut,
                                    "data_checked": ratkennut,
                                    "average_entry_score": 50}
                                   for g in rungot]})
+        if "/picks/" in url:
+            return _R(picks if picks is not None else _picks(),
+                      status=picks_status)
         return _R({"elements": [{"id": i, "stats": {"total_points": 5,
                                                     "minutes": 90}}
                                 for i in range(1, 16)]})
@@ -102,67 +126,138 @@ def _aja(monkeypatch, tmp_path, rungot, *, ratkennut=True):
     return rc, tallennettu
 
 
-def test_provenienssi_puuttuu_ei_gradata(monkeypatch, tmp_path, capsys):
-    """🔴 Ydintesti: gw4:n muotoinen runko (chain, from_gw None, ei verifiointia)."""
-    rc, loki = _aja(monkeypatch, tmp_path, {4: _runko(4)})
+def _rivi(loki, gw):
+    return next(r for r in loki["gameweeks"] if r["gw"] == gw)
+
+
+# --- 1. epakelpo freeze ei ole mallin rivi --------------------------------
+
+def test_epakelpo_freeze_ei_gradaudu(monkeypatch, tmp_path, capsys):
+    """🔴 gw4:n muoto: myohempi freeze joka putosi vapaaseen optimiin."""
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {3: _runko(3, verified=_verifioitu(3)),
+                     4: _runko(4, rebuilt=True)})
     out = capsys.readouterr().out
-    assert rc == 0, "kieltaytyminen ei ole virhe, se on kieltaytyminen"
-    assert loki is None, (
-        "runko jonka provenienssi puuttuu KIRJATTIIN append-only-lokiin — "
-        "vaara luku season raceen peruuttamattomasti")
+    assert rc == 0, "kieltaytyminen ei ole virhe"
+    assert [r["gw"] for r in loki["gameweeks"]] == [3], (
+        "epakelpo freeze KIRJATTIIN append-only-lokiin mallin rivina")
     assert "::warning::" in out and "EI GRADATA" in out
-    assert "grade_model_squad.py" in out, "ohjeen on kerrottava mika gradaa"
+    assert "poikkeuspaatos" in out, "ohjeen on kerrottava mika korvaa rivin"
+
+
+def test_kauden_ensimmainen_vapaa_optimi_on_kelvollinen(monkeypatch, tmp_path):
+    """Negatiivinen kontrolli: kauden ensimmainen freeze on vapaa optimi
+    luonnostaan (ei edellista runkoa). Sita ei saa hylata."""
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {1: _runko(1, squad_source="free_optimum", rebuilt=True)})
+    assert rc == 0 and [r["gw"] for r in loki["gameweeks"]] == [1]
+
+
+# --- 2. kelvollinen freeze gradataan vaikka entry poikkeaa ----------------
+
+def test_verifioimaton_kelvollinen_runko_gradataan(monkeypatch, tmp_path):
+    """🔴 Ydinmuutos: ennen tama rivi jai gradaamatta (GW1, GW2 levylla).
+    Mallin oma rivi on julkinen sarja, joten se gradataan."""
+    rc, loki = _aja(monkeypatch, tmp_path, {2: _runko(2, from_gw=1)})
+    r = _rivi(loki, 2)
+    assert r["source"] == "frozen_squad" and r["points"] > 0
+    assert r["provenance"] == "frozen_only"
+    assert r["entry_diverged"] is False
+
+
+def test_entry_poikkeaa_rivi_gradataan_ja_ero_kirjataan(monkeypatch, tmp_path,
+                                                        capsys):
+    """GW5:n tapaus: sama 15 ja kapteeni, eri XI (P13 penkilta P11:n tilalle)."""
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {5: _runko(5, squad_source="entry_picks", from_gw=4)},
+                    picks=_picks(xi_vaihto=(11, 13)))
+    r = _rivi(loki, 5)
+    assert r["entry_diverged"] is True
+    assert r["entry_diff"]["xi_only_frozen"] == [11]
+    assert r["entry_diff"]["xi_only_entry"] == [13]
+    assert r["entry_diff"]["common"] == 15 and r["entry_diff"]["captain_match"]
+    # Pisteet ovat JAADYTETYN XI:n, eivat entryn.
+    assert 11 in r["xi_ids"] and 13 not in r["xi_ids"]
+    assert "entry poikkesi" in capsys.readouterr().out
 
 
 def test_verifioitu_runko_gradataan(monkeypatch, tmp_path):
-    """Negatiivinen kontrolli: portti ei saa estaa kaikkea."""
     rc, loki = _aja(monkeypatch, tmp_path,
                     {3: _runko(3, verified=_verifioitu(3))})
-    assert rc == 0 and loki is not None, "verifioitu runko jai gradaamatta"
-    rivi = loki["gameweeks"][0]
-    assert rivi["gw"] == 3 and rivi["points"] > 0
+    rivi = _rivi(loki, 3)
     assert rivi["provenance"] == "entry_verified"
-    assert rivi["source"] == "frozen_squad", (
-        "provenienssi ei nay rivilla -> sekaprovenienssia ei voi havaita")
+    assert rivi["source"] == "frozen_squad"
 
 
 def test_reseed_runko_gradataan(monkeypatch, tmp_path):
-    """`entry_picks` on oma peruste: rivi TULEE entryn pickeista."""
     rc, loki = _aja(monkeypatch, tmp_path,
                     {3: _runko(3, squad_source="entry_picks")})
-    assert loki is not None and loki["gameweeks"][0]["provenance"] == "entry_picks"
+    assert _rivi(loki, 3)["provenance"] == "entry_picks"
 
 
-def test_ratkeamaton_kierros_ei_gradata_eika_valita_provenienssista(
-        monkeypatch, tmp_path, capsys):
-    """Jarjestys: ratkeamisehto ensin. Ilman tata portti huutaisi
-    provenienssista kierroksista joita ei viela pelata."""
-    rc, loki = _aja(monkeypatch, tmp_path, {4: _runko(4)}, ratkennut=False)
+# --- 3. siirtokustannus ------------------------------------------------------
+
+def test_sama_15_kayttaa_fpln_veloitusta_ei_freezen_laskuria(monkeypatch,
+                                                              tmp_path):
+    """GW5 mitattu: freeze sanoo 1 hitti, FPL veloitti samoista siirroista 0."""
+    rc, loki = _aja(monkeypatch, tmp_path,
+                    {5: _runko(5, squad_source="entry_picks", hits=1)},
+                    picks=_picks(kustannus=0))
+    r = _rivi(loki, 5)
+    assert r["transfer_cost"] == 0
+    assert r["transfer_cost_source"] == "fpl_entry_same_squad"
+
+
+def test_eri_15_tai_wildcard_kayttaa_freezen_omaa_hittikirjausta(monkeypatch,
+                                                                 tmp_path):
+    """GW2:n tapaus: entry pelasi wildcardin, joten sen veloitus ei kerro
+    mallin siirroista mitaan -> mallin oma kirjaus (2 hittia = 8 p)."""
+    rc, loki = _aja(monkeypatch, tmp_path, {2: _runko(2, from_gw=1, hits=2)},
+                    picks=_picks(kustannus=0, chip="wildcard"))
+    r = _rivi(loki, 2)
+    assert r["transfer_cost"] == 8 and r["transfer_cost_source"] == "freeze_hits"
+
+
+# --- 4. vaiheet --------------------------------------------------------------
+
+def test_ratkeamaton_kierros_ei_gradata(monkeypatch, tmp_path, capsys):
+    """Vaihe: kesken oleva kierros. Ratkeamisehto ensin, ei huutoa
+    epakelpoudesta eika tyhjaa lokia."""
+    rc, loki = _aja(monkeypatch, tmp_path, {4: _runko(4, rebuilt=True)},
+                    ratkennut=False)
     out = capsys.readouterr().out
     assert rc == 0 and loki is None
     assert "ei vielä ratkennut" in out
     assert "EI GRADATA" not in out
 
 
-def test_portti_on_kytketty_lahteessa():
-    """Lisavarmistus: kutsu on olemassa, kommentit poistettu ennen etsintaa
-    (muisti 12.9: merkkijonoportti osui omaan perustelukommenttiinsa)."""
+def test_lukematon_entry_jattaa_kierroksen_seuraavaan_ajoon(monkeypatch,
+                                                            tmp_path, capsys):
+    """Append-only: mittaamatonta eroa ei kirjata pysyvasti."""
+    rc, loki = _aja(monkeypatch, tmp_path, {3: _runko(3)}, picks_status=503)
+    assert rc == 0 and loki is None
+    assert "seuraavaan ajoon" in capsys.readouterr().out
+
+
+def test_graderi_ei_enaa_kayta_provenienssia_porttina():
+    """Kutsupaikka: `require_entry_provenance` saa olla lahteessa vain
+    tietona (except -> frozen_only), ei `continue`-porttina. Kommentit
+    poistettu ennen etsintaa (muisti 12.9)."""
     src = (ROOT / "scripts" / "grade_model_squad_gw.py").read_text(
         encoding="utf-8")
     koodi = "\n".join(r.split("#", 1)[0] for r in src.split("\n"))
-    assert "require_entry_provenance" in koodi
-    assert "ProvenienssiPuuttuu" in koodi
+    assert "freeze_invalid(" in koodi
+    i = koodi.index("except ProvenienssiPuuttuu")
+    assert "continue" not in koodi[i:i + 200], (
+        "provenienssi on taas portti: mallin oma rivi jaisi gradaamatta")
 
 
-def test_repon_gw4_ei_lapaise_porttia():
-    """🔴 Elava tila: oikea gw4.json EI saa lapaista. Jos tama kaatuu,
-    joko rivi on korjattu tai portti on rikki — kumpikin on syyta tietaa."""
-    from src.models.fpl_model_entry import (ProvenienssiPuuttuu,
-                                            require_entry_provenance)
-    frozen_dir = ROOT / "data" / "model_squad_frozen"
-    gw4 = frozen_dir / "gw4.json"
+def test_repon_gw4_on_epakelpo():
+    """🔴 Elava tila: oikea gw4.json on epakelpo freeze. Jos tama kaatuu,
+    joko rivi on korjattu tai saanto on rikki - kumpikin on syyta tietaa."""
+    from src.models.model_squad_scores import freeze_invalid
+    gw4 = ROOT / "data" / "model_squad_frozen" / "gw4.json"
     if not gw4.exists():
         pytest.skip("gw4.json puuttuu")
-    with pytest.raises(ProvenienssiPuuttuu):
-        require_entry_provenance(
-            json.loads(gw4.read_text(encoding="utf-8")), frozen_dir)
+    assert freeze_invalid(json.loads(gw4.read_text(encoding="utf-8")),
+                          earlier_exists=True)
