@@ -49,7 +49,7 @@
         },
         "Coventry": {
           "flag": "promoted",
-          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 4 matches of Premier League football, so it moves a lot with each result.",
+          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 5 matches of Premier League football, so it moves a lot with each result.",
           "is_promoted": true,
           "minutes_churn_pct": null
         },
@@ -73,13 +73,13 @@
         },
         "Hull": {
           "flag": "promoted",
-          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 4 matches of Premier League football, so it moves a lot with each result.",
+          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 5 matches of Premier League football, so it moves a lot with each result.",
           "is_promoted": true,
           "minutes_churn_pct": null
         },
         "Ipswich": {
           "flag": "promoted",
-          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 4 matches of Premier League football, so it moves a lot with each result.",
+          "note": "Promoted side. The model now has a rating of its own, but it is fitted on 5 matches of Premier League football, so it moves a lot with each result.",
           "is_promoted": true,
           "minutes_churn_pct": null
         },
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-21T08:25:02+00:00",
+    "generated_at": "2026-09-21T09:53:59+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -377,7 +377,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 39.1,
+      "owned_pct": 39.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -809,7 +809,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 21.0,
+      "owned_pct": 20.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2651,7 +2651,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 9.9,
+      "owned_pct": 10.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3659,7 +3659,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 15.3,
+      "owned_pct": 15.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6006,7 +6006,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 26.3,
+      "owned_pct": 26.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10806,7 +10806,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.2,
+      "owned_pct": 3.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -11365,7 +11365,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 6.9,
+      "owned_pct": 6.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -17067,7 +17067,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 66.6,
+      "owned_pct": 66.5,
       "status": "d",
       "news": "Knee injury - 75% chance of playing",
       "chance_next": 75,
@@ -17212,7 +17212,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 6.5,
+      "owned_pct": 6.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -54017,131 +54017,6 @@
       "last_season_show": false
     },
     {
-      "id": 638,
-      "web_name": "Norton-Cuffy",
-      "full_name": "Brooke Norton-Cuffy",
-      "team": "Hull",
-      "team_short": "HUL",
-      "pos": "DEF",
-      "xmins": 9.6,
-      "predicted_starts": 10.0,
-      "minutes_confidence": "med",
-      "data_basis": "limited_history",
-      "owned_pct": 0.3,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 1,
-      "price": 4.0,
-      "team_code": 88,
-      "last_season": null,
-      "form": {
-        "value": 0.3,
-        "gws": 3,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 6,
-        "n": 2000,
-        "mean": 0.61,
-        "p_haul": 0.001,
-        "p_blank": 0.99,
-        "p10": 0,
-        "median": 1,
-        "p90": 1,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.1,
-      "p_cameo": 0.54,
-      "p_bench": 0.36,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.02,
-      "xp_per_gw": 0.61,
-      "xp_per_90": 3.87,
-      "xp_horizon_total": 3.68,
-      "gameweeks": [
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.63
-        },
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.61
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "BRE",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.62
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.65
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "ARS",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.56
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "BHA",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.61
-        }
-      ],
-      "components": {
-        "appearance": 0.6,
-        "goals": 0.04,
-        "assists": 0.02,
-        "clean_sheet": 0.0,
-        "conceded": -0.03,
-        "saves": 0.0,
-        "defensive_contribution": 0.0,
-        "yellows": -0.03,
-        "bonus": 0.02
-      },
-      "components_gw": 6,
-      "team_flag": "promoted",
-      "last_season_show": false
-    },
-    {
       "id": 392,
       "web_name": "Aït-Nouri",
       "full_name": "Rayan Aït-Nouri",
@@ -64466,6 +64341,131 @@
       "last_season_reason": "thin_sample"
     },
     {
+      "id": 638,
+      "web_name": "Norton-Cuffy",
+      "full_name": "Brooke Norton-Cuffy",
+      "team": "Hull",
+      "team_short": "HUL",
+      "pos": "DEF",
+      "xmins": 7.2,
+      "predicted_starts": 7.5,
+      "minutes_confidence": "med",
+      "data_basis": "limited_history",
+      "owned_pct": 0.3,
+      "status": "d",
+      "news": "Hamstring injury - 75% chance of playing",
+      "chance_next": 75,
+      "yellows": 1,
+      "price": 4.0,
+      "team_code": 88,
+      "last_season": null,
+      "form": {
+        "value": 0.3,
+        "gws": 3,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.46,
+        "p_haul": 0.0,
+        "p_blank": 0.991,
+        "p10": 0,
+        "median": 0,
+        "p90": 1,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.075,
+      "p_cameo": 0.4162,
+      "p_bench": 0.5088,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.02,
+      "xp_per_gw": 0.46,
+      "xp_per_90": 3.87,
+      "xp_horizon_total": 2.77,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.47
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.46
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "BRE",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.47
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.49
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "ARS",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.42
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "BHA",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.46
+        }
+      ],
+      "components": {
+        "appearance": 0.45,
+        "goals": 0.03,
+        "assists": 0.01,
+        "clean_sheet": 0.0,
+        "conceded": -0.02,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": -0.02,
+        "bonus": 0.02
+      },
+      "components_gw": 6,
+      "team_flag": "promoted",
+      "last_season_show": false
+    },
+    {
       "id": 359,
       "web_name": "Gomez",
       "full_name": "Joe Gomez",
@@ -67098,7 +67098,7 @@
       "team_short": "NEW",
       "pos": "MID",
       "price": 6.1,
-      "owned_pct": 5.0,
+      "owned_pct": 4.9,
       "status": "i",
       "news": "Unspecified injury - Unknown return date",
       "chance_next": 0,
