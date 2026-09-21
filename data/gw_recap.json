@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-09-21T06:59:33+00:00",
+  "generated_at": "2026-09-21T07:35:22+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -9,17 +9,16 @@
   "complete": true
  },
  "running": {
-  "gameweeks": 4,
+  "gameweeks": 3,
   "basis": "model points before its own transfer hits, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
   "gw_list": [
    1,
    2,
-   3,
-   4
+   3
   ],
-  "total_diff": 34,
-  "avg_diff": 8.5,
-  "beat_average": 2,
+  "total_diff": -9,
+  "avg_diff": -3.0,
+  "beat_average": 1,
   "below_average": 2,
   "per_gw": [
    {
@@ -32,27 +31,19 @@
    },
    {
     "gw": 2,
-    "points": 108,
-    "points_net": 108,
-    "transfer_cost": 0,
+    "points": 69,
+    "points_net": 61,
+    "transfer_cost": 8,
     "average": 81,
-    "diff": 27
+    "diff": -12
    },
    {
     "gw": 3,
-    "points": 72,
-    "points_net": 72,
+    "points": 63,
+    "points_net": 63,
     "transfer_cost": 0,
     "average": 51,
-    "diff": 21
-   },
-   {
-    "gw": 4,
-    "points": 64,
-    "points_net": 64,
-    "transfer_cost": 0,
-    "average": 69,
-    "diff": -5
+    "diff": 12
    }
   ]
  },
@@ -70,7 +61,8 @@
     "chip": null,
     "captain_id": 426,
     "captain_points_added": 2,
-    "graded_at": "2026-08-25T13:12:37+00:00"
+    "graded_at": "2026-09-21T07:35:20Z",
+    "transfer_cost_verified": true
    },
    "calls": null,
    "accuracy": {
@@ -84,16 +76,17 @@
    "gw": 2,
    "provisional": false,
    "squad": {
-    "points": 108,
-    "points_net": 108,
+    "points": 69,
+    "points_net": 61,
     "average": 81,
-    "diff": 27,
-    "bench_points": 5,
-    "transfer_cost": 0,
-    "chip": "wildcard",
-    "captain_id": 426,
-    "captain_points_added": 23,
-    "graded_at": "2026-09-01T16:41:19+00:00"
+    "diff": -12,
+    "bench_points": 13,
+    "transfer_cost": 8,
+    "chip": null,
+    "captain_id": 388,
+    "captain_points_added": 2,
+    "graded_at": "2026-09-21T07:35:21Z",
+    "transfer_cost_verified": true
    },
    "calls": {
     "logged_at": "2026-08-28T17:13:07Z",
@@ -168,16 +161,17 @@
    "gw": 3,
    "provisional": false,
    "squad": {
-    "points": 72,
-    "points_net": 72,
+    "points": 63,
+    "points_net": 63,
     "average": 51,
-    "diff": 21,
+    "diff": 12,
     "bench_points": 14,
     "transfer_cost": 0,
-    "chip": "3xc",
+    "chip": null,
     "captain_id": 411,
-    "captain_points_added": 18,
-    "graded_at": "2026-09-07T15:00:07+00:00"
+    "captain_points_added": 9,
+    "graded_at": "2026-09-18T07:55:13Z",
+    "transfer_cost_verified": true
    },
    "calls": {
     "logged_at": "2026-09-03T07:03:08Z",
@@ -257,90 +251,110 @@
     "bias": -0.179
    },
    "headline_miss": null
-  },
+  }
+ ],
+ "unscored_gws": [
   {
    "gw": 4,
-   "provisional": false,
-   "squad": {
+   "code": "no_valid_frozen_squad",
+   "would_have_scored": 49,
+   "fpl_average": 69
+  }
+ ],
+ "reseeded_gws": [
+  {
+   "gw": 3,
+   "from_gw": 2,
+   "entry_chip": "wildcard"
+  }
+ ],
+ "entry_series": {
+  "entry_id": 116920,
+  "running": {
+   "gameweeks": 4,
+   "basis": "FPL entry points before transfer hits, chips included, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
+   "gw_list": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "total_diff": 34,
+   "avg_diff": 8.5,
+   "beat_average": 2,
+   "below_average": 2,
+   "per_gw": [
+    {
+     "gw": 1,
+     "points": 41,
+     "points_net": 41,
+     "transfer_cost": 0,
+     "average": 50,
+     "diff": -9
+    },
+    {
+     "gw": 2,
+     "points": 108,
+     "points_net": 108,
+     "transfer_cost": 0,
+     "average": 81,
+     "diff": 27
+    },
+    {
+     "gw": 3,
+     "points": 72,
+     "points_net": 72,
+     "transfer_cost": 0,
+     "average": 51,
+     "diff": 21
+    },
+    {
+     "gw": 4,
+     "points": 64,
+     "points_net": 64,
+     "transfer_cost": 0,
+     "average": 69,
+     "diff": -5
+    }
+   ]
+  },
+  "gameweeks": [
+   {
+    "gw": 1,
+    "provisional": false,
+    "points": 41,
+    "points_net": 41,
+    "average": 50,
+    "diff": -9,
+    "chip": null
+   },
+   {
+    "gw": 2,
+    "provisional": false,
+    "points": 108,
+    "points_net": 108,
+    "average": 81,
+    "diff": 27,
+    "chip": "wildcard"
+   },
+   {
+    "gw": 3,
+    "provisional": false,
+    "points": 72,
+    "points_net": 72,
+    "average": 51,
+    "diff": 21,
+    "chip": "3xc"
+   },
+   {
+    "gw": 4,
+    "provisional": false,
     "points": 64,
     "points_net": 64,
     "average": 69,
     "diff": -5,
-    "bench_points": 4,
-    "transfer_cost": 0,
-    "chip": null,
-    "captain_id": 426,
-    "captain_points_added": 2,
-    "graded_at": "2026-09-15T17:00:49+00:00"
-   },
-   "calls": {
-    "logged_at": "2026-09-11T07:45:26Z",
-    "deadline_utc": "2026-09-12T12:30:00Z",
-    "logged_before_deadline": true,
-    "graded": true,
-    "provisional": false,
-    "hits": 1,
-    "misses": 3,
-    "ungraded": 1,
-    "calls": [
-     {
-      "call": "model_captain",
-      "web_name": "B.Fernandes",
-      "team_short": "MUN",
-      "criterion": "captain return, points doubled",
-      "predicted": 5.5,
-      "points": 2,
-      "started": true,
-      "met": null
-     },
-     {
-      "call": "captain_pick",
-      "web_name": "B.Fernandes",
-      "team_short": "MUN",
-      "criterion": "10+ pts",
-      "predicted": 0.114,
-      "points": 2,
-      "started": true,
-      "met": false
-     },
-     {
-      "call": "ceiling",
-      "web_name": "Haaland",
-      "team_short": "MCI",
-      "criterion": "reached p90",
-      "predicted": 10,
-      "points": 9,
-      "started": true,
-      "met": false
-     },
-     {
-      "call": "safest",
-      "web_name": "Stach",
-      "team_short": "LEE",
-      "criterion": "3+ pts",
-      "predicted": 0.834,
-      "points": 3,
-      "started": true,
-      "met": true
-     },
-     {
-      "call": "gamble",
-      "web_name": "Khalaili",
-      "team_short": "CRY",
-      "criterion": "10+ pts",
-      "predicted": 0.096,
-      "points": 7,
-      "started": true,
-      "met": false
-     }
-    ]
-   },
-   "accuracy": {
-    "mae": 1.68,
-    "n": 493,
-    "bias": -0.152
-   },
-   "headline_miss": null
-  }
- ]
+    "chip": null
+   }
+  ]
+ }
 }

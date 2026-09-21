@@ -1,8 +1,8 @@
 {
  "meta": {
   "series_source": "frozen_squad",
-  "product": "GoalIQ Beat the Model — frozen-squad per-GW scores (diagnostic series; the public season race reads the entry series in model_squad_gw_scores.json)",
-  "rules": "The frozen squad is scored with official FPL points once the gameweek finishes. Autosubs and the captain/vice rule are applied as FPL applies them; chips are not modelled in this series (no triple captain, no bench boost), so a chip round never scores higher here than on the entry, and scores lower whenever the chip added points. Only rows whose frozen squad is provably the entry's squad are graded (provenance). Diagnostic series, append-only; the public season race reads the entry series."
+  "product": "GoalIQ Beat the Model: frozen-squad per-GW scores. This is the model's public series (season race and track record).",
+  "rules": "The frozen squad is the model's own line, scored with official FPL points once the gameweek finishes. Autosubs and the captain/vice rule are applied as FPL applies them, and the model's own transfer hits are in transfer_cost (null when FPL's rules could not confirm the cost). No chip is applied, because the frozen squad records none. FPL entry 116920 is a separate series: it starts from this squad, but its chips and some lineup calls were ours, so in any round the two can score differently in either direction. Rows graded by the current grader record whether the entry differed (entry_diverged, entry_diff); the GW3 row predates those fields. GW3 restarts from the entry's squad after its GW2 wildcard. A gameweek whose freeze rebuilt the squad from scratch (squad_rebuilt: true) is not scored; its as-frozen points are listed under unscored (would_have_scored) and are not part of the series. Append-only."
  },
  "gameweeks": [
   {
@@ -32,6 +32,125 @@
    "source": "frozen_squad",
    "provenance": "entry_verified",
    "fpl_average": 51
+  },
+  {
+   "gw": 1,
+   "points": 41,
+   "points_before_captain": 39,
+   "captain_id": 426,
+   "captain_reason": "captain",
+   "captain_points_added": 2,
+   "autosubs": [],
+   "bench_points": 12,
+   "xi_ids": [
+    412,
+    229,
+    498,
+    445,
+    426,
+    481,
+    237,
+    68,
+    411,
+    106,
+    346
+   ],
+   "graded_at": "2026-09-21T07:35:20Z",
+   "frozen_at": "2026-08-20T12:33:43Z",
+   "source": "frozen_squad",
+   "provenance": "frozen_only",
+   "transfer_cost": 0,
+   "transfer_cost_source": "gw1_unlimited",
+   "entry_diverged": true,
+   "entry_diff": {
+    "common": 15,
+    "missing": [],
+    "extra": [],
+    "xi_only_frozen": [],
+    "xi_only_entry": [],
+    "bench_order_match": false,
+    "captain_match": true,
+    "vice_match": true
+   },
+   "fpl_average": 50
+  },
+  {
+   "gw": 2,
+   "points": 69,
+   "points_before_captain": 67,
+   "captain_id": 388,
+   "captain_reason": "captain",
+   "captain_points_added": 2,
+   "autosubs": [],
+   "bench_points": 13,
+   "xi_ids": [
+    412,
+    388,
+    115,
+    10,
+    68,
+    237,
+    127,
+    426,
+    106,
+    411,
+    346
+   ],
+   "graded_at": "2026-09-21T07:35:21Z",
+   "frozen_at": "2026-08-27T17:04:43Z",
+   "source": "frozen_squad",
+   "provenance": "frozen_only",
+   "transfer_cost": 8,
+   "transfer_cost_source": "fpl_rules_gw2",
+   "entry_diverged": true,
+   "entry_diff": {
+    "common": 7,
+    "missing": [
+     106,
+     111,
+     127,
+     233,
+     237,
+     412,
+     445,
+     481
+    ],
+    "extra": [
+     4,
+     51,
+     171,
+     290,
+     427,
+     569,
+     572,
+     586
+    ],
+    "xi_only_frozen": [
+     106,
+     127,
+     237,
+     412
+    ],
+    "xi_only_entry": [
+     4,
+     427,
+     569,
+     572
+    ],
+    "bench_order_match": false,
+    "captain_match": false,
+    "vice_match": false
+   },
+   "fpl_average": 81
+  }
+ ],
+ "unscored": [
+  {
+   "gw": 4,
+   "code": "no_valid_frozen_squad",
+   "would_have_scored": 49,
+   "fpl_average": 69,
+   "graded_at": "2026-09-21T07:35:22Z"
   }
  ]
 }
