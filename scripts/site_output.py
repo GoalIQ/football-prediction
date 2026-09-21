@@ -80,6 +80,13 @@ PUBLIC_DATA: dict[str, str] = {
     "data/spl_deadline_snapshots/":
         "SPA /spl: 'The archived files are in the public repo, one per "
         "round: data/spl_deadline_snapshots'.",
+    "data/prediction_log.json":
+        "index.html + predictions.html tarkkuusluvut (N completed matches / "
+        "X % correct) lasketaan tasta (build_fpl_page.update_index). Villen "
+        "paatos 21.9: tarkkuusloki on myyntivaite, joten sen lahde on julkinen. "
+        "HUOM 21.9 mitattu: `date` on pelkka paiva ilman kellonaikaa ja 48 "
+        "rivia on seed/backfill-lahteisia, joten tiedostosta EI voi todentaa "
+        "'logged before kick-off' -vaitetta; julkinen selite ei vaita sita.",
 }
 
 # Julkinen selite jokaiselle PUBLIC_DATA-riville (englanti): kirjoitetaan
@@ -109,6 +116,10 @@ PUBLIC_DATA_CITED_BY: dict[str, str] = {
         "first kickoff of each round. Gameweeks 1 to 4 were added to git in "
         "one backfill on 3 September 2026; the provenance block inside each "
         "file names the build commit and the time it was generated.",
+    "data/prediction_log.json":
+        "goaliq.app and goaliq.app/predictions, the match prediction track "
+        "record. One row per match: the model's probabilities, when the row "
+        "was logged (logged_at), and the result once the match was played.",
 }
 
 

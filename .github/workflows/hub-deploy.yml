@@ -54,6 +54,7 @@ on:
       - 'data/fpl_elite_managers.json'
       - 'data/fpl_elite_ownership.json'
       - 'data/spl_deadline_snapshots/**'
+      - 'data/prediction_log.json'
   workflow_dispatch: {}
 
 concurrency:
