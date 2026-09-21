@@ -396,7 +396,8 @@ def _with_selling_price(pool_row: dict, prev_row: dict) -> dict:
 
 
 def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
-                     xp_data: dict) -> dict:
+                     xp_data: dict, *, bootstrap: dict | None,
+                     chips_played: list[dict] | None) -> dict:
     """Wildcard-arvio mallin omalle rungolle samalla moottorilla kuin
     /api/fantasy/wildcard-plan (28.8, Villen kysymys "malli suosittelee
     wildcardia, pitaisiko sen mukaan menna").
@@ -404,22 +405,42 @@ def _chip_evaluation(squad: list[dict], pool: list[dict], gw: int,
     v0: freeze EI pelaa chippia automaattisesti. Arvio kirjataan nakyviin,
     jotta mallin oma rivi ei ole hiljaa eri mielta oman wildcard-sivunsa
     kanssa. Virhe arvioinnissa ei kaada freezea: kirjataan `error`.
+
+    🔴 CHIP-TILA YHDESTA LUKIJASTA (21.9.2026). `gw5.json` suositteli
+    wildcardia (`recommend: true`, 14.09 xP) entrylle joka pelasi sen GW2:ssa:
+    taman funktion ainoa suodatus oli deadline (`g >= gw`), eika
+    `wildcard_plan` tarkistanut chip-historiaa. Nyt tila tulee
+    `fpl_chips.chip_state`ista (sama lukija kuin chip timing ja
+    wildcard-sivun `chip_available`), ja `chips_played` on pakollinen:
+    `None` = historiaa ei luettu -> nakyva kieltaytyminen, ei oletus
+    "saatavilla".
     """
+    if chips_played is None:
+        return {"available": False, "decision": "not_played",
+                "error": "chip history not loaded (FPL entry history)",
+                "reason": "chip decisions require Ville's GO in v0"}
     try:
+        from src.models import fpl_chips
         from src.models import fpl_wildcard
         from src.models.fpl_transfers import optimal_xi_by_key
         covered = sorted({g.get("gw") for p in pool for g in (p.get("gameweeks") or [])
                           if isinstance(g.get("gw"), int)})
         gws = [g for g in covered if g >= gw]
+        tila = fpl_chips.chip_state(bootstrap, {"chips": chips_played}, gw)
         plan = fpl_wildcard.wildcard_plan(squad, pool, gws, [], {},
-                                          optimal_xi_by_key, mode="model")
+                                          optimal_xi_by_key, mode="model",
+                                          chips=tila)
     except Exception as e:  # noqa: BLE001 - arvio ei saa kaataa freezea
         return {"available": False, "error": repr(e), "decision": "not_played",
                 "reason": "chip decisions require Ville's GO in v0"}
     if not plan.get("available"):
-        return {"available": False, "note": plan.get("note"),
-                "decision": "not_played",
-                "reason": "chip decisions require Ville's GO in v0"}
+        out = {"available": False, "note": plan.get("note"),
+               "decision": "not_played",
+               "reason": "chip decisions require Ville's GO in v0"}
+        if plan.get("chip_available") is False:
+            out["chip_played_gws"] = plan.get("played_gws") or []
+            out["next_window_gw"] = plan.get("next_window_gw")
+        return out
     return {
         "available": True,
         "chip": "wildcard",
@@ -718,6 +739,12 @@ def entry_state_for(source_gw: int, pick_ids, bootstrap: dict, *,
                                     bootstrap)
     except hist_mod.EntryStateError as e:
         return None, f"entryn GW{source_gw}-rahatilaa ei voitu johtaa: {e}"
+    # 21.9 CHIP-ARVIO: pelatut chipit SAMASTA historiasta jonka pankki ja FT
+    # jo lukevat. Puuttuva kentta = tuntematon (None), EI "ei pelattu":
+    # tyhjaksi tulkittu tuntematon tila oli juuri se vika jonka takia gw5.json
+    # suositteli jo pelattua wildcardia.
+    chips = historia.get("chips") if isinstance(historia, dict) else None
+    tila = dict(tila, chips=list(chips) if isinstance(chips, list) else None)
     return tila, None
 
 
@@ -727,6 +754,9 @@ def attach_entry_state(prev: dict, tila: dict) -> dict:
     xi/penkki-riville `selling_price`. Tama on AINOA paikka joka kirjoittaa
     nama kentat, ja `_constrained_from_prev` vaatii ne."""
     meta = prev.setdefault("meta", {})
+    # 21.9: pelatut chipit (FPL:n `history.chips`, None = ei luettu).
+    # `_chip_evaluation` lukee taman fpl_chips.chip_state():n kautta.
+    meta["chips_played"] = tila.get("chips")
     meta["budget"] = int(tila["value_tenths"]) / 10.0
     meta["budget_source"] = "fpl_entry_history"
     meta["bank_tenths"] = int(tila["bank_tenths"])
@@ -939,7 +969,11 @@ def main() -> int:
         _peritty = [_by_id[p["id"]] for p in (prev.get("xi") or []) + (prev.get("bench") or [])
                     if p["id"] in _by_id]
         if len(_peritty) == 15:
-            chip_eval = _chip_evaluation(_peritty, pool, gw, xp_data)
+            # Chip-historia tulee `attach_entry_state`ista (sama FPL-historia
+            # kuin pankki ja FT), molemmilla poluilla (ketju ja reseed).
+            chip_eval = _chip_evaluation(
+                _peritty, pool, gw, xp_data, bootstrap=_bootstrap,
+                chips_played=prev_meta.get("chips_played"))
         try:
             rajoitettu = _constrained_from_prev(
                 prev, pool, gw, _ft_available(prev_meta), _bootstrap, _excl_by_id)
