@@ -127,3 +127,27 @@ def test_sivulla_on_latauslinkki():
     html = SIVU.read_text(encoding="utf-8", errors="replace")
     assert 'href="/fpl/deadlines.ics"' in html, (
         "kalenteri on olemassa mutta sivulla ei ole linkkia siihen")
+
+
+def test_sama_syote_tuottaa_saman_tiedoston():
+    """21.9: rakennushetki DTSTAMPissa teki jokaisesta rakennuksesta eri
+    tiedoston, ja rinnakkaiset builderit konfliktoivat pushissa (data-refresh
+    35558945289 heitti rakennuksensa pois). Kaksi eri hetkea ennen samoja
+    deadlineja -> tavulleen sama teksti."""
+    dls = [{"gw": 6, "utc": "2026-10-10T10:00:00+00:00"},
+           {"gw": 7, "utc": "2026-10-17T10:00:00+00:00"}]
+    aamu = dt.datetime(2026, 9, 21, 0, 36, 14, tzinfo=dt.timezone.utc)
+    ilta = dt.datetime(2026, 9, 21, 3, 55, 30, tzinfo=dt.timezone.utc)
+    assert ics(dls, aamu) == ics(dls, ilta)
+
+
+def test_kiintea_leima_on_menneisyydessa_kaikkiin_tapahtumiin_nahden():
+    """Negatiivinen kontrolli: kiintea DTSTAMP ei saa olla tapahtuman jalkeen
+    (luotu ennen kuin se on olemassa). Vartioi vakion arvoa, ei vain sen
+    olemassaoloa."""
+    from src.deadline_calendar import DTSTAMP_KIINTEA
+    leima = dt.datetime.strptime(DTSTAMP_KIINTEA, "%Y%m%dT%H%M%SZ").replace(
+        tzinfo=dt.timezone.utc)
+    for d in _meta().get("deadlines") or []:
+        assert leima < dt.datetime.fromisoformat(d["utc"]).astimezone(
+            dt.timezone.utc)
