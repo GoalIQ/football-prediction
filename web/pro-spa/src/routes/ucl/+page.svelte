@@ -105,7 +105,10 @@
 </svelte:head>
 
 <div class="shell">
-	<p class="crumb muted"><a href="/">GoalIQ tools</a> / UCL Fantasy</p>
+	<p class="crumb muted">
+		<a href="https://goaliq.app" data-cta="pro-home">goaliq.app</a> / <a href="/">GoalIQ tools</a> / UCL
+		Fantasy
+	</p>
 	<h1>UCL Fantasy <span class="accent">expected points</span></h1>
 	<p class="lede">
 		Projected points for players in the official UEFA Champions League Fantasy game during the

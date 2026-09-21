@@ -464,7 +464,10 @@
 
 <div class="shell">
 	<header>
-		<p class="crumb"><a href="/">← GoalIQ tools</a></p>
+		<p class="crumb">
+			<a href="https://goaliq.app" data-cta="pro-home">goaliq.app</a> / <a href="/">GoalIQ tools</a> /
+			Saudi Pro League
+		</p>
 		<h1>Saudi Pro League <span class="accent">fantasy tools</span></h1>
 		<p class="lede">
 			Model-based tools for <strong>RSL Fantasy</strong>, the official Saudi Pro League fantasy
