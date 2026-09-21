@@ -30,6 +30,9 @@ from src.data import footballdata as fd
 # ---------------------------------------------------------------------------
 
 
+_MIN_JOUKKUEET = {"GRE-Super League": 14}
+
+
 @pytest.mark.parametrize("liiga", fd_fallback.VENDORED_LEAGUES)
 def test_snapshot_on_olemassa_ja_jarkeva(liiga):
     assert fd_fallback.on_saatavilla(liiga), (
@@ -45,7 +48,11 @@ def test_snapshot_on_olemassa_ja_jarkeva(liiga):
     assert df["away_score"].notna().all()
     assert df["date"].notna().all()
     joukkueet = set(df["home_team"]) | set(df["away_team"])
-    assert len(joukkueet) >= 18, f"{liiga}: vain {len(joukkueet)} joukkuetta"
+    # 10.9: Kreikan Super Leaguessa on 14 seuraa (kaksi kautta = 16 eri
+    # nimea), joten 18:n raja on siella vaara mittari, ei loyha. Raja on
+    # per liiga eika globaalisti loysennetty.
+    vahintaan = _MIN_JOUKKUEET.get(liiga, 18)
+    assert len(joukkueet) >= vahintaan, f"{liiga}: vain {len(joukkueet)} joukkuetta"
 
 
 def test_snapshot_kantaa_lahdeleiman():

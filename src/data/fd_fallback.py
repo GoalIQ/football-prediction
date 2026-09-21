@@ -60,7 +60,28 @@ VENDORED_LEAGUES: tuple[str, ...] = (
     # joten sen voimataso on oikeaa dataa eika priori. Kun kausi on repossa,
     # ikkuna on deterministinen eika kolikonheitto.
     "INT-Champions League",
+    # 10.9 (UCL-KATTAVUUS-ILMAISELLA-DATALLA, Villen GO): EL/ECL ovat CL-mallin
+    # SILTALIIGOJA (src/models/uefa_joint.py BRIDGE_LEAGUES) ja Kreikka/Turkki
+    # sen tukiliigoja. Lahde on openfootball (GitHub raw, ei avainta), joka
+    # voi olla alhaalla tai vaihtaa polkuaan - ja Renderin levy on efemeeri.
+    # Ilman snapshotia siltamaara riippuisi siita mitka GitHub-haut sattuivat
+    # onnistumaan kylmakaynnistyksessa, ja kalibroituvien liigojen joukko
+    # vaihtelisi uudelleenkaynnistysten valilla. Snapshot tekee siitä
+    # deterministisen: kausi joka on repossa EI voi puuttua.
+    "INT-Europa League",
+    "INT-Conference League",
+    "GRE-Super League",
+    "TUR-Super Lig",
 )
+
+# Liigat joiden snapshot rakennetaan openfootballista (ei football-data.co.uk
+# eika football-data.org). `lahde`-leima kertoo sen datassa itsessaan.
+OPENFOOTBALL_VENDORED: frozenset[str] = frozenset({
+    "INT-Europa League",
+    "INT-Conference League",
+    "GRE-Super League",
+    "TUR-Super Lig",
+})
 
 # Kaudet per vendoroitu liiga. UEFA-turnauksille kausi on eksplisiittinen,
 # koska ne EIVAT seuraa domestic-ikkunaa.
@@ -73,6 +94,16 @@ VENDORED_SEASONS: dict[str, tuple[str, ...]] = {
     # 2223 jatetaan siis pois: se toisi 41 joukkuetta joista yksikaan ei pelaa
     # tata kautta, eli pelkkaa painolastia malliin ja valitsimeen.
     "INT-Champions League": ("2324", "2425", "2526"),
+    # 10.9: sama ikkuna kuin CL:lla. openfootball/champions-league kantaa
+    # 2023-24 (el/conf), 2024-25 (el/elq/conf/confq) ja 2025-26 (toistaiseksi
+    # vain karsinnat elq/confq). Mitattu 10.9: EL 492 + ECL 806 ottelua.
+    "INT-Europa League": ("2324", "2425", "2526"),
+    "INT-Conference League": ("2324", "2425", "2526"),
+    # football.json kantaa gr.1/tr.1 kausille 2024-25 ja 2025-26; 2026-27
+    # -kansiota ei ole (mitattu 10.9: 404). Snapshot on siis viime kauteen
+    # asti, ja kuluva kausi tulee livena kun upstream sen julkaisee.
+    "GRE-Super League": ("2425", "2526"),
+    "TUR-Super Lig": ("2425", "2526"),
 }
 
 # Sarakkeet jotka snapshot kantaa. Tama on `_normalisoi`n tuloksen osajoukko;
@@ -88,6 +119,11 @@ SNAPSHOT_COLS: tuple[str, ...] = (
 DERIVED_NA_COLS: tuple[str, ...] = ("home_xg", "away_xg")
 
 SOURCE_TAG = "football-data.co.uk (vendored fallback)"
+SOURCE_TAG_OPENFOOTBALL = "openfootball (vendored fallback)"
+
+
+def lahdeleima(liiga: str) -> str:
+    return SOURCE_TAG_OPENFOOTBALL if liiga in OPENFOOTBALL_VENDORED else SOURCE_TAG
 
 
 def _slug(liiga: str) -> str:
@@ -131,5 +167,5 @@ def lataa_varasnapshot(liiga: str, kaudet: list[str] | None = None) -> pd.DataFr
     for c in DERIVED_NA_COLS:
         if c not in df.columns:
             df[c] = pd.NA
-    df["lahde"] = SOURCE_TAG
+    df["lahde"] = lahdeleima(liiga)
     return df.reset_index(drop=True)

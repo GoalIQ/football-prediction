@@ -361,6 +361,37 @@ def lataa(liiga: str, kaudet: list[str], salli_vara: bool = True) -> pd.DataFram
     return pd.concat(palaset, ignore_index=True) if palaset else pd.DataFrame()
 
 
+def turnauksen_joukkuenimet(liiga: str, kaudet: list[str]) -> set[str]:
+    """Turnauksen KAIKKIEN otteluiden joukkuenimet, myos pelaamattomien.
+
+    10.9 (UCL-KATTAVUUS-ILMAISELLA-DATALLA): `lataa` pitaa vain FINISHED-
+    rivit, joten seura jolla ei ole viela yhtaan turnaustulosta (Fenerbahce,
+    Manchester United 26/27:n alussa) ei esiinny otteludatassa turnauksen
+    nimella lainkaan. Sen nayttonimi tulisi kotiliigan datasta ('Fenerbahce'
+    football.jsonista), kun /api/fixtures sanoo 'Fenerbahce SK' - ja klientin
+    CTA-portti vertaa nimia merkkijonoina, joten nappi katoaisi vaikka seura
+    on mallissa. Tama lukija antaa football-data.orgin nimet samasta
+    JSONista josta fixtures tulevat, eika tee yhtaan uutta API-kutsua:
+    `_hae_kausi` lukee levy-/muisticachen jonka `lataa` on jo tayttanyt.
+    Ilman avainta palauttaa tyhjan joukon (nimet ovat parannus, eivat ehto).
+    """
+    api_key = _api_key()
+    if not api_key or liiga not in COMPETITION_CODES:
+        return set()
+    code = COMPETITION_CODES[liiga]
+    nimet: set[str] = set()
+    for k in kaudet:
+        data = _hae_kausi(code, _kausi_to_year(k), api_key)
+        if not data or "_error" in data:
+            continue
+        for m in data.get("matches", []):
+            for puoli in ("homeTeam", "awayTeam"):
+                n = (m.get(puoli) or {}).get("name")
+                if n:
+                    nimet.add(str(n))
+    return nimet
+
+
 def api_key_kunnossa() -> bool:
     return _api_key() is not None
 
