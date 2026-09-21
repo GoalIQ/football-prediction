@@ -59,7 +59,7 @@
 	     on yha oma laatikkonsa eika footerin tekstilinkki, eli 7.8:n oppi
 	     patee; se ei vain enaa ole FPL-tyokalujen EDESSA. -->
 	<p class="spl-note">
-		New: <a href="/ucl">UCL Fantasy expected points</a> for the league phase, every player up to three matchdays ahead (Premium).
+		New: <a href="/ucl">UCL Fantasy expected points</a> for the league phase, every player, up to three matchdays ahead (Premium).
 	</p>
 	<p class="spl-note">
 		<a href="/spl">Saudi Pro League fantasy tools</a>, completely free.

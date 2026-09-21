@@ -108,9 +108,10 @@
 	<p class="crumb muted"><a href="/">GoalIQ tools</a> / UCL Fantasy</p>
 	<h1>UCL Fantasy <span class="accent">expected points</span></h1>
 	<p class="lede">
-		Projected points for players in the official UEFA Champions League Fantasy game{#if hz.count && hz.actionableOnly}, for
-			the next {hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}{:else if hz.count}, over {hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}{/if}, using the game's
-		own scoring.
+		Projected points for players in the official UEFA Champions League Fantasy game during the
+		league phase{#if hz.count && hz.actionableOnly && !xp?.meta?.deadline_passed}, for the next
+			{hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}{:else if hz.count}, over
+			{hz.count === 1 ? 'one matchday' : `${hz.count} matchdays`}{/if}, using the game's own scoring.
 		{#if md && xp?.meta?.deadline_utc && !xp.meta.deadline_passed}
 			<span class="deadline">Matchday {md} deadline: {deadlineText(xp.meta.deadline_utc)}.</span>
 		{/if}
@@ -155,10 +156,10 @@
 				>Sort
 				<select bind:value={sortBy}>
 					<option value="total"
-						>{hz.count && hz.actionableOnly
+						>{hz.count && hz.actionableOnly && !xp?.meta?.deadline_passed
 							? `Next ${hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}`
 							: hz.count
-								? `Over ${hz.count === 1 ? 'matchday' : `${hz.count} matchdays`}`
+								? `Over ${hz.count === 1 ? 'one matchday' : `${hz.count} matchdays`}`
 								: 'Total'}</option
 					>
 					<option value="next">Matchday {md ?? ''} only</option>
@@ -203,7 +204,7 @@
 										>thin data</span
 									>{:else if noData(p)}<span
 										class="thin"
-										title="No match data for this player yet, so the number rests on a default squad role."
+										title="No match data for this player in our sources, so the number rests on a default squad role."
 										>no data</span
 									>{/if}{#if p.status !== 'a'}<span class="flag" title={p.news || 'Availability flag from the official game'}
 										>{p.status === 'd' ? 'doubt' : p.status === 'u' ? 'not in squad' : 'out'}</span
@@ -251,7 +252,7 @@
 					90 minutes in his domestic league, for clubs in the Premier League, La Liga, Bundesliga,
 					Serie A and Ligue 1. For the other clubs the goal share comes from goals and starting
 					line-ups in UEFA matches, assists use the average for the position, and those rows are
-					marked <span class="thin">thin data</span>. A player with no match data yet is marked
+					marked <span class="thin">thin data</span>. A player with no match data in our sources is marked
 					<span class="thin">no data</span>.
 				</li>
 				<li>
@@ -262,7 +263,8 @@
 			<p class="muted small">
 				These are GoalIQ model projections, not the game's own figures. Prices, ownership and
 				squad status are the official game's data. The free UCL Fantasy data pages are at
-				<a href="https://goaliq.app/ucl/">goaliq.app/ucl</a>. {DISCLAIMER}
+				<a href="https://goaliq.app/ucl/">goaliq.app/ucl</a>. GoalIQ is an independent data tool and
+				is not affiliated with UEFA. {DISCLAIMER}
 			</p>
 		</section>
 	{/if}
