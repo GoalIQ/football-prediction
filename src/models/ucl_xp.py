@@ -242,6 +242,55 @@ def xp_pelaajalle(pos: str, *, joukkue: dict, minuutit: dict, g90: float, a90: f
             "e_maalit": e_maalit, "e_syotot": e_syotot}
 
 
+# ---------------------------------------------------------------------------
+# Tuoreus serve-timessa: vanha kierros ei saa nakya tulevana.
+# ---------------------------------------------------------------------------
+
+VANHA_H = 36.0
+"""Kuinka kauan deadlinen jalkeen artefakti saa viela olla tarjolla.
+ucl-refresh ajaa 6 h valein; 36 h sallii useamman epaonnistuneen ajon ennen
+kuin data poistetaan nakyvista."""
+
+
+def tuoreus(payload: dict, nyt) -> dict:
+    """UCL-artefakti serve-timessa (21.9 julkaisutarkistajan blokkaava 1).
+
+    Build kirjoittaa `deadline_gameweek`in ja `deadline_utc`:n build-hetkella.
+    Jos build lakkaa etenemasta (sarjavaihe paattyi, UEFA muutti syotetta,
+    ajot kaatuvat), vanha kierros nakyisi tulevana. Tama on ainoa lukija
+    joka paattaa onko data tarjolla, eika se voi palauttaa pelattua
+    kierrosta:
+      - deadline mennyt -> `meta.deadline_passed = True` (klientti piilottaa
+        deadline-rivin)
+      - deadline mennyt yli VANHA_H tuntia -> `available = False`, rivit
+        pois, `reason` = 'league_phase_over' jos kierros oli sarjavaiheen
+        viimeinen, muuten 'stale'.
+    Mutatoi ja palauttaa annetun dictin (load_xp lukee levylta joka kerta)."""
+    import datetime as _dt
+
+    meta = payload.get("meta")
+    if not isinstance(meta, dict) or not meta.get("available"):
+        return payload
+    raw = meta.get("deadline_utc")
+    try:
+        dl = _dt.datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return payload
+    if dl.tzinfo is None:
+        dl = dl.replace(tzinfo=_dt.timezone.utc)
+    if nyt < dl:
+        return payload
+    meta["deadline_passed"] = True
+    if (nyt - dl).total_seconds() >= VANHA_H * 3600:
+        viimeinen = meta.get("league_phase_last_md")
+        md = meta.get("deadline_gameweek")
+        meta["available"] = False
+        meta["reason"] = ("league_phase_over" if isinstance(viimeinen, int)
+                          and isinstance(md, int) and md >= viimeinen else "stale")
+        payload["players"] = []
+    return payload
+
+
 def mom_todennakoisyydet(painot: dict[str, float]) -> dict[str, float]:
     """Ottelun pelaaja: tasan yksi per ottelu. Paino = odotettu maali- ja
     syottopanos + pieni minuuttipohja (rakenteellinen, ei sovitettu)."""

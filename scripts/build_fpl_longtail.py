@@ -601,12 +601,12 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         # sai auktoriteettia vain etusivulta. Yksi rivi jaetussa rungossa
         # antaa linkin jokaiselle longtail-sivulle kerralla.
         #
-        # 🔴 RAJAUS KULKEE LINKIN MUKANA. `tests/test_ucl_no_projection.py`
-        # vaatii, etta jokainen UCL Fantasyn NIMEAVA pinta kertoo myos ettei
-        # sille ole mallia - ja tama linkki nimeaa sen ~40 sivulla kerralla.
-        # Tiivis muoto ("no points projection") on sen portin sallittu
-        # literaali, joten linkkirivi ei ole poikkeus vaan kantaa saannon.
-        f'<a href="/ucl/">UCL Fantasy prices</a> (no points projection) · '
+        # 21.9.2026: "(no points projection)" poistettu. UCL Fantasy xP on
+        # Premiumissa (pro.goaliq.app/ucl), joten lisake luettaisiin vaitteena
+        # ettei GoalIQ:lla ole UCL-pistemallia. Linkkiteksti ei nimea osiota
+        # portin mielessa (`tests/test_ucl_no_projection.py::_kuvaileva`), ja
+        # rajaus on /ucl-sivujen herossa (`build_ucl_page.UCL_SCOPE`).
+        f'<a href="/ucl/">UCL Fantasy prices</a> · '
         f'<a href="/privacy">Privacy</a><br>{DISCLAIMER}</footer>\n'
         "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
     )

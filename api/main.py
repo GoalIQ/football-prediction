@@ -5079,7 +5079,7 @@ def fantasy_phase0(
     ),
     league: str = Query(
         default="fpl",
-        description="Fantasy league: 'fpl' (default), 'spl' (Saudi Pro League) or 'ucl' (UEFA Champions League Fantasy).",
+        description="Fantasy league: 'fpl' (default) or 'spl' (Saudi Pro League).",
     ),
 ):
     """FPL Phase 0 — clean sheet -% + mallipohjainen FDR per PL-joukkue/GW (free-tier).
@@ -5166,7 +5166,7 @@ def fantasy_xp(
     response: Response,
     league: str = Query(
         default="fpl",
-        description="Fantasy-liiga: 'fpl' (oletus) tai 'spl' (Saudi Pro League).",
+        description="Fantasy league: 'fpl' (default), 'spl' (Saudi Pro League) or 'ucl' (UEFA Champions League Fantasy, league phase).",
     ),
     lang: str = Query(
         default="en",
@@ -5214,6 +5214,14 @@ def fantasy_xp(
     if lg not in XP_PATHS:
         raise HTTPException(status_code=404, detail=f"Unknown fantasy league '{league}'.")
     payload = load_xp(XP_PATHS[lg])
+    # UCL (21.9): TUOREUS ENNEN KAIKKEA MUUTA. Build kirjoittaa kierroksen
+    # build-hetkella; jos se lakkaa etenemasta (sarjavaihe ohi, ajot kaatuvat),
+    # pelattu kierros nakyisi tulevana. `ucl_xp.tuoreus` on ainoa lukija joka
+    # paattaa onko data tarjolla (tests/test_ucl_xp_julkaisu.py, vaiheet).
+    if lg == "ucl":
+        import datetime as _dt_ucl
+        from src.models.ucl_xp import tuoreus as _ucl_tuoreus
+        payload = _ucl_tuoreus(payload, _dt_ucl.datetime.now(_dt_ucl.timezone.utc))
     # XP-HORIZON-ALKANUT-KIERROS (17.9): `xp_horizon_total` lasketaan
     # SERVE-TIMESSA vain kierroksilta joihin voi viela vaikuttaa
     # (meta.horizon_total_from = actionable gameweek), rivit `gameweeks[]`
@@ -5292,6 +5300,13 @@ def fantasy_xp(
     # ETag erottaa maskatun ja täyden vastauksen: ilman mask-bittiä free-
     # käyttäjän 304 voisi validoida premium-rivit selaimen välimuistista.
     generated = str(payload.get("meta", {}).get("generated_at") or "0")
+    # UCL-tuoreus on serve-time-tila ilman uutta generated_at:ia: ilman tata
+    # ehdollinen pyynto validoisi 304:lla vastauksen jossa kierros oli viela
+    # tuleva (muisti serve-time-kentta-etag-invalidointi).
+    if lg == "ucl":
+        _m = payload.get("meta", {})
+        generated += "-{}{}".format("p" if _m.get("deadline_passed") else "o",
+                                    "a" if _m.get("available") else "x")
     # 5.8: SKEEMAVERSIO ETagiin. `generated_at` muuttuu vain kun projektio
     # ajetaan uusiksi, joten serve-timessa lisätty kenttä (xp_per_90) EI
     # invalidoi mitään: ehdollinen pyyntö validoisi vanhan vastauksen 304:llä

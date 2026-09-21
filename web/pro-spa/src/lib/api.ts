@@ -412,6 +412,73 @@ export async function fetchSplXp(): Promise<XpResponse> {
 }
 
 // ---------------------------------------------------------------------------
+// UCL Fantasy xP (21.9): PREMIUM (Villen päätös), sama /api/fantasy/xp-polku
+// league=ucl-avaimella ja sama palvelinmaski kuin FPL:llä (top-10 teaser,
+// meta.masked). Oma tyyppi koska kentät eroavat FPL:stä: hinta ja omistus
+// ovat UEFAn pelin lukuja, kierros on matchday (MD) eikä gameweek, ja
+// data_basis kertoo onko pelaajan osuus kotiliigasta vai pelkistä
+// UEFA-otteluista (ohut data, mitattu MD1:ssä yliennusteeksi).
+// ---------------------------------------------------------------------------
+export interface UclXpMatchday {
+	gw: number;
+	opponents: { opp: string; venue: 'H' | 'A' }[];
+	xp: number;
+}
+
+export interface UclXpPlayer {
+	id: number;
+	web_name: string;
+	full_name?: string;
+	team: string;
+	team_short: string;
+	pos: 'GKP' | 'DEF' | 'MID' | 'FWD';
+	price: number;
+	owned_pct: number;
+	status: 'a' | 'd' | 'i' | 's' | 'u';
+	news?: string;
+	xmins: number;
+	p_start?: number;
+	data_basis: 'domestic_league' | 'uefa_matches' | 'no_history';
+	xp_per_gw: number;
+	xp_horizon_total: number;
+	xp_next?: number;
+	gameweeks: UclXpMatchday[];
+}
+
+export interface UclXpResponse {
+	meta: {
+		available: boolean;
+		masked?: boolean;
+		mask?: string;
+		generated_at?: string;
+		deadline_gameweek?: number | null;
+		deadline_utc?: string | null;
+		horizon_gw?: number;
+		horizon_total_gw?: number;
+		horizon_total_from?: number | null;
+		/** Palvelimen tuoreusvahti (src/models/ucl_xp.tuoreus). */
+		deadline_passed?: boolean;
+		reason?: 'league_phase_over' | 'stale';
+	};
+	players: UclXpPlayer[];
+}
+
+let uclXpP: Promise<UclXpResponse> | null = null;
+let uclXpAuthed = false;
+
+export async function fetchUclXp(): Promise<UclXpResponse> {
+	const headers = await authHeaders();
+	const hasToken = 'Authorization' in headers;
+	if (uclXpP && (uclXpAuthed || !hasToken)) return uclXpP;
+	uclXpAuthed = hasToken;
+	uclXpP = fetch(`${API_BASE}/api/fantasy/xp?league=ucl`, { headers }).then((r) => {
+		if (!r.ok) throw new Error(`/api/fantasy/xp?league=ucl -> HTTP ${r.status}`);
+		return r.json() as Promise<UclXpResponse>;
+	});
+	return uclXpP;
+}
+
+// ---------------------------------------------------------------------------
 // Ottelu-ennuste (28.7). Mitattu ennen tätä: /api/predict, /api/teams ja
 // /api/leagues olivat mobiilissa mutta EIVÄT lainkaan webissä, vaikka
 // goaliq.app:n 181 staattista ennustesivua ovat suurin indeksoitu pintamme

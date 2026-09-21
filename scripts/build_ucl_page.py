@@ -65,16 +65,24 @@ OUT_DIR = ROOT / "ucl"
 #
 # Rajaus ei siksi ole sivukohtaista copya vaan `_page()`n tuottama pakko:
 # uusi UCL-sivu ei voi syntya ilman sita, koska se ei kulje sivun kirjoittajan
-# muistin kautta. Sanamuoto on EHDOTON eika kausisidottu ("in any phase of the
-# season") - kausisidottu perustelu vanhenee itsestaan, ja tasan niin kavi
-# llms.txt:n alkuperaiselle lauseelle MD1:ssa (muisti: ehto-ei-vanhene-teksti-
-# vanhenee).
+# muistin kautta.
+#
+# 21.9.2026 (Villen paatos): UCL Fantasy xP julkaistiin Premiumina
+# (pro.goaliq.app/ucl, sarjavaihe). Vanha ehdoton kielto ("There is no
+# expected points model for UCL Fantasy, in any phase of the season") kumottiin
+# ja korvattiin kanonisella lauseella joka kertoo MISSA malli on. Rajaus
+# sailyy: NAMA ilmaissivut ovat edelleen pelkkaa UEFAn syotetta, ja
+# `tests/test_ucl_no_projection.py` kaataa buildin jos xP-luku vuotaa tanne.
+# Lause on sidottu sarjavaiheeseen ("During the league phase"), koska malli ei
+# kata pudotuspeleja: suljettu tila (`ucl_xp.tuoreus`, reason
+# league_phase_over) on sama lupaus koodina.
 # ---------------------------------------------------------------------------
-# Kanoninen kielto. Tama merkkijono esiintyy sanatarkasti myos llms.txt:ssa,
-# faq.html:ssa, index.html:ssa, predictions.html:ssa ja SPA:n Paywallissa.
-EI_MALLIA = (
-    "There is no expected points model for UCL Fantasy, in any phase of the "
-    "season, and we do not publish one."
+# Kanoninen lause. Esiintyy sanatarkasti myos llms.txt:ssa, faq.html:ssa,
+# index.html:ssa, predictions.html:ssa ja SPA:n Paywallissa. "three" on
+# `build_ucl_xp.HORISONTTI`; testi pitaa ne samana.
+UCL_XP = (
+    "During the league phase, GoalIQ Premium adds expected points for every "
+    "UCL Fantasy player, up to three matchdays ahead, at pro.goaliq.app/ucl."
 )
 
 UCL_SCOPE = (
@@ -85,7 +93,7 @@ UCL_SCOPE = (
     # korjauskohdetta meille (muisti: sama-vaite-monessa-sanamuodossa).
     # `tests/test_ucl_no_projection.py` pitaa tata literaalia sallittujen
     # listalla; uusi parafraasi ei paase listalle vahingossa.
-    + EI_MALLIA
+    + UCL_XP
 )
 
 # 🔴 EI JAETTUA `DISCLAIMER`IA. Sen sanamuoto on "GoalIQ model predictions
@@ -94,7 +102,7 @@ UCL_SCOPE = (
 # nama luvut ovat meidan arvioitamme, kun ne ovat UEFAn syotetta.
 UCL_DISCLAIMER = (
     "Every number on this page is read from UEFA's official UCL Fantasy "
-    "feed. GoalIQ does not model or project UCL Fantasy points."
+    "feed."
 )
 
 # Osion oma navigointi. Sivusopimus vaatii sisaantulevan linkin joka
@@ -617,10 +625,10 @@ def _faq(doc: dict, nyt: dt.datetime) -> list[tuple[str, str]]:
         # omin sanoin. `tests/test_ucl_no_projection.py` kaatoi sen: kysymys
         # itse on projektiovaite kunnes se on luettu loppuun, ja kuudes
         # parafraasi samasta kiellosta on kuudes eri vaite lukijalle.
-        # `UCL_DISCLAIMER` ja `EI_MALLIA` ovat ne merkkijonot jotka koko
+        # `UCL_DISCLAIMER` ja `UCL_XP` ovat ne merkkijonot jotka koko
         # sivusto kayttaa, ja vain vaihesidottu osa on oma.
         ("Are the UCL Fantasy numbers on this page GoalIQ estimates?",
-         f"No. {UCL_DISCLAIMER} {EI_MALLIA} {pistelause}"),
+         f"No. {UCL_DISCLAIMER} {pistelause} {UCL_XP}"),
         ("Is GoalIQ affiliated with UEFA?",
          "No. GoalIQ is an independent data tool and is not affiliated "
          "with, endorsed by, or paid by UEFA, the UCL Fantasy game, or "
@@ -698,8 +706,7 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         "Champions League fixtures: win probability, expected goals and the "
         "most likely scorelines for one match, at "
         '<a href="https://pro.goaliq.app/">pro.goaliq.app</a>. That is a '
-        "different product from this section. It reads a football match, not "
-        "a fantasy squad, and it produces no UCL Fantasy points.</p>"
+        "different product from this section.</p>"
         "<h2>Where the money is</h2>"
         f"<p>The {mukana} players owned by 2% or more, plotted by price "
         f"against ownership. The other {len(P) - mukana} sit at 1% or "

@@ -1,5 +1,22 @@
 # -*- coding: utf-8 -*-
-"""UCL FANTASYSSA EI OLE MALLIA, JA SE MITATAAN JOKA VAIHEESSA JA JOKA PINNALTA.
+"""ILMAISET UCL FANTASY -SIVUT OVAT SYOTETTA, JA SE MITATAAN JOKA VAIHEESSA JA
+JOKA PINNALTA.
+
+🔴 21.9.2026 (Villen paatos): UCL Fantasy xP julkaistiin Premiumina
+(pro.goaliq.app/ucl, sarjavaihe). Vanha ehdoton kielto "There is no expected
+points model for UCL Fantasy, in any phase of the season" KUMOTTIIN, ja tama
+portti kirjoitettiin kantamaan uutta tilaa:
+
+  * ilmaiset /ucl-sivut eivat edelleenkaan nayta yhtaan projektiolukua
+    (osio 1, joka vaiheessa);
+  * muut pinnat saavat puhua UCL Fantasyn pistemallista VAIN kanonisella
+    lauseella `build_ucl_page.UCL_XP`, joka kertoo missa malli on ja mihin
+    se rajautuu (osio 2);
+  * Premium-tuotteen omat tiedostot ovat `PREMIUM_PINNAT`-listalla syyn
+    kanssa, koska ne OVAT se tuote;
+  * vanha kielto ei saa palata millaan pinnalla, ja kanonisen lauseen
+    jokainen lupaus (reitti, "three", sarjavaihe) on sidottu koodiin
+    (osio 4).
 
 🔴 MITA TAMA KORJAA (COPY-SYNC-AUDIT 7.9.2026, blokkaava loydos 4)
 
@@ -17,8 +34,8 @@ pitamaan - tasan se vikaluokka jonka CLAUDE.md:n saanto 6a kohta 3 kieltaa.
 
 KOLME MEKANISMIA, SAANNON OMASSA JARJESTYKSESSA
 
-1. **Yksi lahde jota pinta ei voi ohittaa.** Kielto on yksi merkkijono
-   (`build_ucl_page.EI_MALLIA`) ja `_page()` kirjoittaa sen jokaisen
+1. **Yksi lahde jota pinta ei voi ohittaa.** Rajaus on yksi merkkijono
+   (`build_ucl_page.UCL_XP`) ja `_page()` kirjoittaa sen jokaisen
    UCL-sivun heroon. Uusi UCL-sivu ei voi syntya ilman sita, koska se ei
    kulje kirjoittajan muistin kautta.
 
@@ -62,17 +79,43 @@ from src.models import ucl_phase as up  # noqa: E402
 # parafraasin lisaaminen tanne on paatos, ei rutiini.
 # ---------------------------------------------------------------------------
 SALLITUT: dict[str, str] = {
-    bp.EI_MALLIA:
-        "kanoninen kielto; /ucl-hero, llms.txt, faq.html, index.html, "
-        "predictions.html ja SPA:n Paywall kayttavat TATA merkkijonoa",
+    bp.UCL_XP:
+        "kanoninen lause (21.9); /ucl-hero, llms.txt, faq.html, index.html, "
+        "predictions.html ja SPA:n Paywall kayttavat TATA merkkijonoa. "
+        "Kertoo missa UCL-malli on (Premium, pro.goaliq.app/ucl) ja mihin se "
+        "rajautuu (sarjavaihe, kolme kierrosta)",
     bp.UCL_DISCLAIMER:
         "/ucl-sivujen footer-varauma, joka korvasi jaetun DISCLAIMERin "
         "('GoalIQ model predictions are statistical estimates') - se vaitti "
         "UEFAn syotelukuja meidan malliennusteiksi",
-    "no points projection":
-        "tiivis muoto pinnoille joilla ei ole tilaa koko lauseelle "
-        "(fpl.html-rivi, index.html-paneelilistaus, AppShellin footer)",
 }
+
+# 🔴 KUMOTUT SANAMUODOT. Kukin naista oli tosi 21.9.2026 asti ja on nyt
+# epatosi: UCL Fantasy xP on olemassa Premiumissa. Hylatty sanamuoto palaa
+# uudessa generaattorissa (muisti), joten ne kielletaan kaikkialla eika vain
+# siella missa ne nahtiin.
+KUMOTUT: list[str] = [
+    "There is no expected points model for UCL Fantasy",
+    "we do not publish one",
+    "does not model or project UCL Fantasy",
+    "no points projection",
+    "produces no UCL Fantasy points",
+]
+
+
+def _kuvio(lause: str) -> re.Pattern:
+    """Sanatarkka lause, mutta valilyonti- ja merkkausjoustava.
+
+    Sivulla lause rivittyy (svelte, faq.html) ja sen loppuosa voi olla linkki
+    (`at <a>pro.goaliq.app/ucl</a>.`), jolloin tagien riisunta jattaa
+    valilyonnin ennen pistetta. Sanat ja niiden jarjestys pysyvat tarkkoina:
+    parafraasi ei mene lapi.
+    """
+    osat = re.findall(r"\w+|[^\w\s]", lause)
+    return re.compile(r"\s*".join(re.escape(o) for o in osat))
+
+
+_SALLITUT_KUVIOT = [_kuvio(l) for l in SALLITUT]
 
 # 🔴 KIELLETYT: projektiovaitteen sanaperhe, ei yksi sana. Greppi yhdelle
 # sanalle on sokea seuraavalle - se maksoi 16.8 nelja perakkaista
@@ -101,6 +144,22 @@ UCL_MARKERIT = [re.compile(r"ucl fantasy", re.I), re.compile(r"/ucl\b")]
 # joku sita oikeasti tarvitsee, ei varmuuden vuoksi.
 # ---------------------------------------------------------------------------
 PERUSTELLUT_POIKKEUKSET: dict[str, str] = {}
+
+# 🔴 PREMIUM-TUOTTEEN OMAT TIEDOSTOT. Nama OVAT UCL Fantasy xP, joten
+# projektiosanasto on niissa tosi eika rajauslausetta vaadita. Lista on
+# tarkka tiedostolista eika hakemisto: uusi SPA-komponentti ei paase tanne
+# vahingossa, ja Paywall (jota nayttaa myos FPL-sivuilla) kayttaa
+# kanonista lausetta eika ole listalla.
+PREMIUM_PINNAT: dict[str, str] = {
+    "web/pro-spa/src/routes/ucl/+page.svelte":
+        "itse tuote: UCL Fantasy xP -taulukko (pro.goaliq.app/ucl), "
+        "palvelinmaski top 10 ilmaiskayttajalle",
+    "web/pro-spa/src/lib/api.ts":
+        "tuotteen API-asiakas (fetchUclXp, UclXp*-tyypit ja niiden kommentit)",
+    "web/pro-spa/src/lib/components/AppShell.svelte":
+        "Pro-sovelluksen oma navi ja 'New:'-rivi joka linkkaa tuotteeseen "
+        "saman sovelluksen sisalla",
+}
 
 
 def _yksikot(teksti: str) -> list[str]:
@@ -133,8 +192,8 @@ def _luettava(polku: Path) -> str:
 
 
 def _riisu_sallitut(teksti: str) -> str:
-    for lause in SALLITUT:
-        teksti = teksti.replace(lause, " ")
+    for kuvio in _SALLITUT_KUVIOT:
+        teksti = kuvio.sub(" ", teksti)
     return teksti
 
 
@@ -228,8 +287,9 @@ def test_synteettinen_vaihe_on_se_jota_luullaan(vaihe):
 def test_ei_xp_vaitetta_missaan_kauden_vaiheessa(render, vaihe):
     h = render(_doc(vaihe), _NYT)
     assert "xP" not in h, (
-        f"{render.__name__} / {vaihe}: sivulla on xP, mutta UCL Fantasylle "
-        "ei ole mallia missaan kauden vaiheessa")
+        f"{render.__name__} / {vaihe}: ilmaisella /ucl-sivulla on xP. UCL "
+        "Fantasy xP on Premiumia (pro.goaliq.app/ucl), eika sen lukuja "
+        "nayteta syotesivuilla missaan kauden vaiheessa")
     osumat = _osumat(h)
     assert not osumat, (
         f"{render.__name__} / {vaihe}: projektiovaite UCL Fantasysta:\n  "
@@ -242,7 +302,7 @@ def test_ei_xp_vaitetta_missaan_kauden_vaiheessa(render, vaihe):
 def test_rajaus_on_sivulla_jokaisessa_vaiheessa(render, vaihe):
     """Rajaus ei saa olla esikauden copya joka katoaa MD1:ssa."""
     h = render(_doc(vaihe), _NYT)
-    assert bp.EI_MALLIA in h, (
+    assert _kuvio(bp.UCL_XP).search(h), (
         f"{render.__name__} / {vaihe}: kanoninen rajaus puuttuu")
     assert bp.UCL_DISCLAIMER in h, (
         f"{render.__name__} / {vaihe}: footer-varauma puuttuu")
@@ -279,11 +339,18 @@ def _rel(p: Path) -> str:
 
 @pytest.mark.parametrize("polku", _pinnat(), ids=_rel)
 def test_mikaan_pinta_ei_lupaa_ucl_fantasy_projektiota(polku):
+    """Projektiosta saa puhua vain kanonisella lauseella. Omin sanoin
+    kirjoitettu lupaus ('UCL Fantasy expected points for every player')
+    on uusi vaite jota kukaan ei ole tarkistanut: kattaako se pudotuspelit,
+    kuinka monta kierrosta, onko se ilmainen."""
+    rel = _rel(polku)
+    if rel in PREMIUM_PINNAT:
+        pytest.skip(f"Premium-tuote: {PREMIUM_PINNAT[rel]}")
     osumat = _osumat(_luettava(polku))
     assert not osumat, (
-        f"{_rel(polku)}: pinta vaittaa projektiota UCL Fantasysta. "
-        "UCL Fantasy on UEFAn syotetta (hinta, omistus, kokoonpanotila) "
-        "eika sille ole mallia.\n  "
+        f"{rel}: pinta puhuu UCL Fantasyn pistemallista omin sanoin. Kayta "
+        "`build_ucl_page.UCL_XP` sanatarkasti, tai lisaa tiedosto "
+        "PREMIUM_PINNAT-listalle syyn kanssa jos se on itse tuote.\n  "
         + "\n  ".join(f"[{n}] {t}" for n, t in osumat))
 
 
@@ -329,18 +396,92 @@ def test_ucl_fantasyn_nimeava_pinta_kantaa_rajauksen(polku):
     rel = _rel(polku)
     if rel in PERUSTELLUT_POIKKEUKSET:
         pytest.skip(f"poikkeus: {PERUSTELLUT_POIKKEUKSET[rel]}")
+    if rel in PREMIUM_PINNAT:
+        pytest.skip(f"Premium-tuote: {PREMIUM_PINNAT[rel]}")
     teksti = _luettava(polku)
-    assert any(l in teksti for l in SALLITUT), (
-        f"{rel}: pinta nimeaa UCL Fantasyn muttei kerro etta sille ei ole "
-        "mallia. Lisaa `build_ucl_page.EI_MALLIA` sanatarkasti, tai lisaa "
-        "tiedosto PERUSTELLUT_POIKKEUKSET-listalle syyn kanssa.")
+    assert _kuvio(bp.UCL_XP).search(teksti), (
+        f"{rel}: pinta nimeaa UCL Fantasyn muttei kerro mita siita on "
+        "ilmaiseksi ja mita Premiumissa. Lisaa `build_ucl_page.UCL_XP` "
+        "sanatarkasti, tai lisaa tiedosto PERUSTELLUT_POIKKEUKSET-listalle "
+        "syyn kanssa.")
 
 
 def test_poikkeuslistalla_ei_ole_kuolleita_rivaja():
     """Poikkeus jonka kohdetta ei ole on muistiinpano, ei paatos: se jaa
     listalle vuosiksi ja peittaa seuraavan lisayksen."""
-    puuttuu = [r for r in PERUSTELLUT_POIKKEUKSET if not (ROOT / r).exists()]
+    puuttuu = [r for r in {**PERUSTELLUT_POIKKEUKSET, **PREMIUM_PINNAT}
+               if not (ROOT / r).exists()]
     assert not puuttuu, f"poikkeuslistalla tiedostoja joita ei ole: {puuttuu}"
+
+
+# ---------------------------------------------------------------------------
+# 4. KUMOTTU KIELTO EI PALAA, JA KANONISEN LAUSEEN LUPAUKSET OVAT KOODISSA
+# ---------------------------------------------------------------------------
+def _litistetty(teksti: str) -> str:
+    return " ".join(teksti.split())
+
+
+@pytest.mark.parametrize("polku", _pinnat(), ids=_rel)
+def test_kumottu_kielto_ei_palaa_millaan_pinnalla(polku):
+    """21.9 asti tosi, nyt epatosi. JSON-LD ja llms.txt lainataan
+    sanatarkasti (Google, LLM-crawlerit), joten yksikin jaanne on julkinen
+    vaite jota emme enaa voi puolustaa."""
+    teksti = _litistetty(_luettava(polku))
+    loydetyt = [k for k in KUMOTUT if k.lower() in teksti.lower()]
+    assert not loydetyt, f"{_rel(polku)}: kumottu sanamuoto palasi: {loydetyt}"
+
+
+@pytest.mark.parametrize("vaihe", [up.ESIKAUSI, up.KESKEN, up.OHI])
+@pytest.mark.parametrize("render", _RENDEROIJAT,
+                         ids=[f.__name__ for f in _RENDEROIJAT])
+def test_kumottu_kielto_ei_palaa_ucl_sivuilla(render, vaihe):
+    h = _litistetty(render(_doc(vaihe), _NYT)).lower()
+    loydetyt = [k for k in KUMOTUT if k.lower() in h]
+    assert not loydetyt, f"{render.__name__} / {vaihe}: {loydetyt}"
+
+
+def test_kanoninen_lause_osoittaa_olemassa_olevaan_reittiin():
+    """Lause lupaa pro.goaliq.app/ucl:n. Linkki joka lupaa reitin jota ei ole
+    on sama vika kuin kielto joka kieltaa olemassa olevan tuotteen."""
+    assert "pro.goaliq.app/ucl" in bp.UCL_XP
+    reitti = ROOT / "web" / "pro-spa" / "src" / "routes" / "ucl" / "+page.svelte"
+    assert reitti.exists(), "UCL_XP lupaa reitin jota SPA:ssa ei ole"
+    assert "fetchUclXp" in reitti.read_text(encoding="utf-8"), (
+        "/ucl-reitti ei hae UCL xP:ta")
+    api = (ROOT / "web" / "pro-spa" / "src" / "lib" / "api.ts").read_text(
+        encoding="utf-8")
+    assert "/api/fantasy/xp?league=ucl" in api
+
+
+def test_kolme_kierrosta_on_mallin_horisontti():
+    """'up to three matchdays ahead' on luku, ja luku vanhenee hiljaa jos
+    horisontti muuttuu builderissa. Luetaan vakio lahteesta (ast), ei
+    importilla: builder tuo mallipinon mukanaan."""
+    import ast
+    puu = ast.parse((ROOT / "scripts" / "build_ucl_xp.py").read_text(
+        encoding="utf-8"))
+    arvot = [n.value.value for n in puu.body
+             if isinstance(n, ast.Assign)
+             and any(getattr(t, "id", None) == "HORISONTTI" for t in n.targets)
+             and isinstance(n.value, ast.Constant)]
+    assert arvot == [3], f"HORISONTTI = {arvot}, lause sanoo 'three'"
+    assert "up to three matchdays ahead" in bp.UCL_XP
+
+
+def test_sarjavaiherajaus_on_koodina():
+    """'During the league phase' on lupaus etta pudotuspeleissa ei tarjoilla
+    vanhaa kierrosta. Sen pitaa koodina: `ucl_xp.tuoreus` sulkee artefaktin
+    syylla league_phase_over (testattu tarkemmin test_ucl_xp_julkaisu.py)."""
+    from src.models import ucl_xp
+    assert bp.UCL_XP.startswith("During the league phase")
+    ulos = ucl_xp.tuoreus(
+        {"meta": {"available": True, "deadline_utc": "2027-01-27T17:45:00Z",
+                  "deadline_gameweek": 8, "league_phase_last_md": 8},
+         "players": [{"id": 1}]},
+        dt.datetime(2027, 2, 5, tzinfo=dt.timezone.utc))
+    assert ulos["meta"]["available"] is False
+    assert ulos["meta"]["reason"] == "league_phase_over"
+    assert ulos["players"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -361,8 +502,25 @@ def test_kontrolli_havaitsin_ei_kaadu_oikeaan_copyyn():
     'Champions League' + 'prediction' on tosi eika saa kaatua."""
     assert not _osumat(
         "Champions League predictions: win probability for any fixture.")
-    assert not _osumat(f"<p>{bp.EI_MALLIA}</p>")
+    assert not _osumat(f"<p>{bp.UCL_XP}</p>")
     assert not _osumat(f"<p>{bp.UCL_DISCLAIMER}</p>")
+
+
+def test_kontrolli_kanoninen_lause_tunnistetaan_rivitettyna_ja_linkattuna():
+    """Sivulla lause rivittyy ja sen loppu on linkki. Jos tunnistus vaatii
+    tavutarkan merkkijonon, index.html:n Premium-paneeli kaatuisi vaarasta
+    syysta; jos se on liian lysa, parafraasi paasisi lapi."""
+    alku, loppu = bp.UCL_XP.rsplit(" at ", 1)
+    linkattu = (f"<li>{alku.replace(', ', ',\n  ', 1)} at "
+                f'<a href="https://{loppu[:-1]}">{loppu[:-1]}</a>.</li>')
+    tiedosto = re.sub(r"<[^>]+>", " ", linkattu)
+    assert _kuvio(bp.UCL_XP).search(tiedosto)
+    assert not _osumat(tiedosto)
+    # Parafraasi samasta asiasta kaatuu edelleen.
+    assert _osumat("During the league phase, GoalIQ Premium adds projected "
+                   "points for every UCL Fantasy player.")
+    assert _osumat("GoalIQ Premium adds expected points for every UCL Fantasy "
+                   "player, in every round.")
     assert not _osumat("Free UCL Fantasy prices and ownership, no login.")
 
 

@@ -138,6 +138,10 @@ def _code_lines(p: Path) -> list[str]:
 # R1: argumentoidut `horizon_gw`-luvut. Avain: "polku:rivin teksti".
 # --------------------------------------------------------------------------
 ALLOWED_READS: dict[str, str] = {
+    "scripts/build_ucl_xp.py::print(f\"UCL xP MD{md}: {len(out['players'])} pelaajaa, horisontti {m['horizon_gw']}, \"":
+        "UCL-builderin konsolilokin rivi (CI-ajon tuloste), ei julkinen "
+        "pinta eika ikkunan nimilappu. Julkiset UCL-pinnat lukevat ikkunan "
+        "`horizon_total_gw`:sta (SPA `xpHorizon`, mobiili UclScreen).",
     'src/models/fpl_xp.py::n = m.get("horizon_gw")':
         "YKSI LUKIJA (`horizon_sum_gw`): tama ON se paikka jossa "
         "`horizon_gw` luetaan, ja vain viimeisena fallbackina kun "

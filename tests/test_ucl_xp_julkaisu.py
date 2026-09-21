@@ -104,3 +104,84 @@ def test_artefakti_ei_ole_gitignoressa():
     r = subprocess.run(["git", "check-ignore", "-q", "data/ucl_xp_projections.json"],
                        cwd=ROOT, capture_output=True)
     assert r.returncode == 1
+
+
+# ---------------------------------------------------------------------------
+# Tuoreus (julkaisutarkistaja 21.9, blokkaava 1): vanha kierros ei saa nakya
+# tulevana. Vaiheet synteettisina ajanhetkina (CLAUDE.md 6a, mek. 3).
+# ---------------------------------------------------------------------------
+import datetime as _dt
+
+_DL = _dt.datetime(2026, 10, 13, 18, 45, tzinfo=_dt.timezone.utc)
+
+
+def _payload(md=2, viimeinen=8):
+    d = _artefakti()
+    d["meta"].update({"deadline_utc": _DL.isoformat(), "deadline_gameweek": md,
+                      "league_phase_last_md": viimeinen})
+    return d
+
+
+@pytest.mark.parametrize("tunnit,available,passed,syy", [
+    (-24, True, None, None),            # ennen deadlinea
+    (5, True, True, None),              # deadline mennyt, uusi build tulossa
+    (40, False, True, "stale"),         # build ei edennyt 36 h:ssa
+])
+def test_tuoreus_vaiheittain(tunnit, available, passed, syy):
+    from src.models.ucl_xp import tuoreus
+    p = tuoreus(_payload(), _DL + _dt.timedelta(hours=tunnit))
+    assert p["meta"]["available"] is available
+    assert p["meta"].get("deadline_passed") is passed
+    assert p["meta"].get("reason") == syy
+    assert (len(p["players"]) > 0) is available, "rivit pois kun ei tarjolla"
+
+
+def test_sarjavaiheen_viimeisen_kierroksen_jalkeen_syy_on_sarjavaihe():
+    from src.models.ucl_xp import tuoreus
+    p = tuoreus(_payload(md=8, viimeinen=8), _DL + _dt.timedelta(days=3))
+    assert p["meta"]["available"] is False
+    assert p["meta"]["reason"] == "league_phase_over"
+
+
+def test_endpoint_ajaa_tuoreuden_ja_etag_vaihtuu(client, tmp_path, monkeypatch):
+    """Kutsupaikka, ei vain funktio (muisti testi-kutsuu-funktiota-ei-
+    kutsupaikkaa): vanhentunut artefakti ei saa tulla ulos API:sta."""
+    import api.main as M
+    from src.models import fpl_xp
+    p = tmp_path / "ucl.json"
+    vanha = _payload()
+    vanha["meta"]["deadline_utc"] = "2020-01-01T00:00:00+00:00"
+    p.write_text(json.dumps(vanha), encoding="utf-8")
+    monkeypatch.setitem(fpl_xp.XP_PATHS, "ucl", p)
+    monkeypatch.setattr(M, "is_premium_request", lambda request: True)
+    r = client.get("/api/fantasy/xp?league=ucl")
+    d = r.json()
+    assert d["meta"]["available"] is False and d["players"] == []
+    etag_vanha = r.headers["ETag"]
+    tuore = _payload()
+    tuore["meta"]["deadline_utc"] = "2099-01-01T00:00:00+00:00"
+    p.write_text(json.dumps(tuore), encoding="utf-8")
+    r2 = client.get("/api/fantasy/xp?league=ucl")
+    assert r2.json()["meta"]["available"] is True
+    assert r2.headers["ETag"] != etag_vanha
+
+
+def test_suljettu_artefakti_ja_lukitsematon_kierros():
+    from scripts.build_ucl_xp import seuraava_kierros, suljettu
+    kaikki_lukittu = {"matchdays": [{"md": i, "deadline_utc": "x", "is_locked": True}
+                                    for i in range(1, 9)]}
+    assert seuraava_kierros(kaikki_lukittu) == (None, None)
+    s = suljettu(None, None, "league_phase_over")
+    assert s["meta"]["available"] is False and s["players"] == []
+    assert s["meta"]["reason"] == "league_phase_over"
+
+
+def test_komponenttiavaimet_ovat_englanniksi():
+    from scripts.build_ucl_xp import KOMPONENTIT
+    from src.models import ucl_xp as X
+    jo = {"xg": 1.5, "xga": 1.0, "cs": 0.3, "gc2": 0.2}
+    r = X.xp_pelaajalle("MID", joukkue=jo, minuutit=X.minuuttiarvio(0.9, 0.0, 1.0),
+                        g90=0.2, a90=0.1, yc90=0.1, riisto3_90=0.3, kaukaa_osuus=0.1,
+                        torjunnat_per_paastetty=2.5, p_mom=0.0)
+    assert set(r["komponentit"]) == set(KOMPONENTIT), "uusi komponentti ilman julkista nimea"
+    assert all(v.isascii() and "_" in v or v.isalpha() for v in KOMPONENTIT.values())
