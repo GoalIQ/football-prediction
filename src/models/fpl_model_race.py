@@ -56,24 +56,43 @@ def model_points_net(row: dict) -> int:
     return int(row.get("points") or 0) - int(row.get("transfer_cost") or 0)
 
 
-def vs_average(rows: list[dict]) -> dict:
+def vs_average(rows: list[dict], *, net: bool = False) -> dict:
     """Sarja FPL:n keskiarvoa vastaan, VAIN lopullisista kierroksista.
 
-    Brutto vs brutto, sama peruste kuin gw_recapin juoksevalla rivilla:
-    FPL julkaisee keskiarvon (`average_entry_score`) kertomatta onko se hittien
-    jalkeen, joten netto-vertailu olisi vaite jonka perustaa emme tieda.
-    Provisionaalinen kierros jaa pois: liikkuva luku ei ole track record.
-    Yksi funktio kummallekin sarjalle (malli ja entry), jotta vertailut eivat
-    voi erota perusteeltaan.
+    `net=True` vahentaa sarjan omat hitit (`model_points_net`): MALLIN
+    paneelissa rivit ja summa ovat nettoja, joten keskiarvovertailun on
+    oltava samalla perusteella (julkaisuportti 21.9: 41+61+63 = 165 vs 182 =
+    -17, ei brutto -9). Entry-lohko kayttaa `net=False` (brutto, sama
+    peruste kuin gw_recapin BASIS_ENTRY). `hits_deducted` kertoo
+    perusteen pinnalle. Provisionaalinen kierros jaa pois: liikkuva luku ei
+    ole track record.
     """
     lopulliset = [r for r in rows or []
                   if not r.get("provisional") and r.get("fpl_average") is not None
                   and r.get("points") is not None]
-    pisteet = sum(int(r["points"]) for r in lopulliset)
+    pisteet = sum((model_points_net(r) if net else int(r["points"]))
+                  for r in lopulliset)
     ka = sum(int(r["fpl_average"]) for r in lopulliset)
     return {"gameweeks": len(lopulliset), "points": pisteet, "average": ka,
-            "diff": pisteet - ka,
+            "diff": pisteet - ka, "hits_deducted": bool(net),
             "gws": [int(r["gw"]) for r in lopulliset]}
+
+
+def reseeds_with_entry_chip(reseeds: list[dict] | None,
+                            entry_rows: list[dict] | None) -> list[dict]:
+    """Mallisarjan reseed-kierrokset + entryn chip lahdekierroksella.
+
+    Selite "the model's line restarted from our FPL entry's squad after we
+    played a wildcard there in GW2" JOHDETAAN: reseed tulee freezesta
+    (`load_public_model_series`), chip entry-sarjasta. Entry-sarjaa kaytetaan
+    tassa vain tietona siita MIKSI rivi alkoi alusta, ei lukuna. Puuttuva
+    entry-sarja -> `entry_chip` None, eika pinta vaita chippia.
+    """
+    chips = {int(r["gw"]): r.get("chip") for r in (entry_rows or [])
+             if r.get("gw") is not None}
+    return [{"gw": int(x["gw"]), "from_gw": int(x["from_gw"]),
+             "entry_chip": chips.get(int(x["from_gw"]))}
+            for x in (reseeds or [])]
 
 
 def entry_series_block(entry_series: dict | None) -> dict | None:
@@ -217,6 +236,9 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
     rows.sort(key=lambda r: int(r.get("gw") or 0))
     unscored = list(((scores_log or {}).get("meta") or {}).get("unscored_gws")
                     or [])
+    reseeded = reseeds_with_entry_chip(
+        ((scores_log or {}).get("meta") or {}).get("reseeded_gws"),
+        (entry_series or {}).get("gameweeks"))
     entry_block = entry_series_block(entry_series)
 
     if not rows:
@@ -227,6 +249,7 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             "meta": {"available": False, "graded_gws": 0, "masked": False,
                      "model_plays_chips": False, "chips_played": [],
                      "unscored_gws": unscored,
+                     "reseeded_gws": reseeded,
                      "note": NOTE_NOT_STARTED,
                      "note_code": CODE_NOT_STARTED},
             "totals": {"model": 0, "you": None, "diff": None},
@@ -407,6 +430,9 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # (`no_valid_frozen_squad` = freeze epakelpo). Pinta renderoi
             # tekstin; kierros ei ole nolla eika entryn luku.
             "unscored_gws": unscored,
+            # 21.9: kierrokset joilla mallin ketju alkoi entryn rungosta, ja
+            # entryn chip lahdekierroksella (selite, ei luku).
+            "reseeded_gws": reseeded,
             "cost_unverified_gws": [x["gw"] for x in out_rows
                                     if not x["model_cost_verified"]],
             "note": note,
@@ -428,9 +454,9 @@ def build_race(scores_log: dict | None, entry_history: dict | None,
             # Kierrokset jotka jaivat pois koska puolet olivat eri hetkesta.
             "stale_gws": [x["gw"] for x in out_rows
                           if x.get("stale_model_points")],
-            # 21.9: mallin jaadytetty rivi FPL:n keskiarvoa vastaan (brutto,
-            # lopulliset kierrokset). Sama funktio kuin entry-lohkossa.
-            "model_vs_average": vs_average(rows),
+            # 21.9: mallin jaadytetty rivi FPL:n keskiarvoa vastaan NETTONA
+            # (paneelin rivit ja summa ovat nettoja), lopulliset kierrokset.
+            "model_vs_average": vs_average(rows, net=True),
         },
         "gameweeks": out_rows,
         # Erillinen sarja, EI mallin luku (ks. entry_series_block).

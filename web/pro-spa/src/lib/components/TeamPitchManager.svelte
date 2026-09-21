@@ -640,7 +640,10 @@
 			// "gwnull"-URL voi paasta kuvaan jos gw puuttuu.
 			footNote: Number.isFinite(lf.gw)
 				? `frozen before the deadline \u00b7 goaliq.app/fpl/points/gw${lf.gw}`
-				: 'frozen before the deadline \u00b7 goaliq.app/fpl/points'
+				: 'frozen before the deadline \u00b7 goaliq.app/fpl/points',
+			// 21.9: mallisolun luku tarvitsee oman reittinsa kuvaan (jaadytetty
+			// sarja julkisessa repossa), vain kun solu on kortilla.
+			sourceNote: modelRoute && lf.model_route ? MODEL_SERIES_COPY.cardSourceNote : undefined
 		};
 	}
 	async function shareImage() {

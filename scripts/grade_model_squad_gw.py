@@ -57,6 +57,7 @@ import requests
 import config
 from src.models.fpl_autosub import score_gw
 from src.models.model_squad_scores import (FROZEN_SCORES_PATH, SOURCE_FROZEN,
+                                           UNSCORED_NO_VALID_FREEZE,
                                            SarjaVirhe, freeze_invalid,
                                            load_gw_scores, validate_gw_scores)
 
@@ -92,13 +93,16 @@ _META = {
                   "and the captain/vice rule are applied as FPL applies them, "
                   "and the model's own transfer hits are in transfer_cost "
                   "(null when FPL's rules could not confirm the cost). No "
-                  "chip is applied here, because the frozen squad records "
-                  "none: on a round where FPL entry 116920 played a chip, this "
-                  "series never scores higher than the entry, and scores lower "
-                  "whenever the chip added points. Each row records whether "
-                  "entry 116920 "
-                  "differed from the frozen squad (entry_diverged). "
-                  "Append-only."),
+                  "chip is applied, because the frozen squad records none. "
+                  "FPL entry 116920 is a separate series: it starts from this "
+                  "squad, but its chips and some lineup calls were ours, so in "
+                  "any round the two can score differently in either "
+                  "direction. Rows graded by the current grader record "
+                  "whether the entry differed (entry_diverged, entry_diff); "
+                  "the GW3 row predates those fields. GW3 restarts from the "
+                  "entry's squad after its GW2 wildcard. A gameweek whose "
+                  "freeze rebuilt the squad from scratch (squad_rebuilt: "
+                  "true) is not scored. Append-only."),
 }
 # Taaksepain yhteensopiva nimi (testit ja vanhat kutsujat lukevat tata).
 _META_DEFAULTS = _META
@@ -194,6 +198,12 @@ def main() -> int:
         log["meta"].get(k) != v for k, v in _META.items())
     log["meta"].update(_META)
     done = {g.get("gw") for g in log["gameweeks"]}
+    # 21.9 (Villen paatos GW4:sta): epakelpo freeze EI ole mallin rivi, mutta
+    # sen luku kirjataan DIAGNOSTISESTI omaan listaansa, jotta pinta voi
+    # sanoa "scored as frozen it would have had N" lukematta lukua mistaan
+    # muualta. Ei `gameweeks`issa: se lista on mallisarja.
+    done_unscored = {int(u.get("gw")) for u in (log.get("unscored") or [])
+                     if u.get("gw") is not None}
 
     kaikki = []
     for f in sorted(FROZEN_DIR.glob("gw*.json")):
@@ -202,7 +212,7 @@ def main() -> int:
         kaikki.append((int(gw), frozen))
     ensimmainen = min((g for g, _ in kaikki), default=None)
     pending = [(gw, fr) for gw, fr in sorted(kaikki, key=lambda t: t[0])
-               if gw not in done]
+               if gw not in done and gw not in done_unscored]
     if not pending:
         print("Kaikki jäädytetyt mallirivit on jo gradattu.")
         if meta_muuttui:
@@ -221,7 +231,19 @@ def main() -> int:
         return 1
 
     graded = 0
+    diagnosoitu = 0
     epakelvot = []
+
+    def _live(gw_):
+        r_ = requests.get(f"{FPL_BASE}/event/{gw_}/live/",
+                          headers=FPL_HEADERS, timeout=60)
+        r_.raise_for_status()
+        pts, mins = {}, {}
+        for el in r_.json().get("elements") or []:
+            st = el.get("stats") or {}
+            pts[int(el["id"])] = int(st.get("total_points") or 0)
+            mins[int(el["id"])] = int(st.get("minutes") or 0)
+        return pts, mins
     for gw, frozen in pending:
         ev = events.get(int(gw))
         if not ev or not (ev.get("finished") and ev.get("data_checked")):
@@ -234,10 +256,30 @@ def main() -> int:
                                                      and gw > ensimmainen))
         if syy:
             epakelvot.append(int(gw))
-            print(f"::warning::GW{gw} EI GRADATA: {syy}. Kierros jaa "
-                  f"mallisarjasta pois (unscored_gws: no_valid_frozen_squad) "
-                  f"eika saa entryn lukua korvikkeeksi (Villen paatos 21.9). "
-                  f"Tama ei ole virhe vaan kieltaytyminen.")
+            try:
+                d_pts, d_mins = _live(gw)
+            except Exception as e:
+                print(f"VIRHE: event/{gw}/live-haku epäonnistui: {e!r}")
+                return 1
+            diag = score_gw(frozen, d_pts, d_mins)
+            log.setdefault("unscored", []).append({
+                "gw": int(gw),
+                "code": UNSCORED_NO_VALID_FREEZE,
+                # Jaadytetty runko FPL:n pisteilla, samat saannot kuin
+                # mallisarjassa (autosubit, kapteeni). Brutto: epakelvon
+                # freezen siirtolista ei kuvaa mitaan (gw4: transfers []
+                # vaikka 8/15 vaihtui), joten hittia ei voi laskea.
+                "would_have_scored": diag["points"],
+                "fpl_average": ev.get("average_entry_score"),
+                "graded_at": _dt.datetime.now(_dt.timezone.utc).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"),
+            })
+            diagnosoitu += 1
+            print(f"::warning::GW{gw} EI GRADATA mallisarjaan: {syy}. "
+                  f"Kirjattu unscored-listaan (no_valid_frozen_squad), "
+                  f"diagnostinen luku {diag['points']} p, FPL-keskiarvo "
+                  f"{ev.get('average_entry_score')}. Ei entryn lukua "
+                  f"korvikkeeksi (Villen paatos 21.9).")
             continue
         event, tila = _entry_event(int(gw))
         if tila.startswith("unreachable"):
@@ -246,18 +288,10 @@ def main() -> int:
                   f"kirjata append-only-lokiin mittaamatta.")
             continue
         try:
-            r = requests.get(f"{FPL_BASE}/event/{gw}/live/",
-                             headers=FPL_HEADERS, timeout=60)
-            r.raise_for_status()
-            live = r.json()
+            points, minutes = _live(gw)
         except Exception as e:
             print(f"VIRHE: event/{gw}/live-haku epäonnistui: {e!r}")
             return 1
-        points, minutes = {}, {}
-        for el in live.get("elements") or []:
-            st = el.get("stats") or {}
-            points[int(el["id"])] = int(st.get("total_points") or 0)
-            minutes[int(el["id"])] = int(st.get("minutes") or 0)
 
         from src.models.fpl_entry_history import free_transfers_for_gw
         from src.models.fpl_model_entry import (ProvenienssiPuuttuu,
@@ -326,7 +360,7 @@ def main() -> int:
 
     if epakelvot:
         print(f"Epakelvon freezen takia gradaamatta: GW{epakelvot}.")
-    if graded or meta_muuttui:
+    if graded or diagnosoitu or meta_muuttui:
         # Portti ennen kirjoitusta: tulos on yhden provenienssin freeze-sarja.
         validate_gw_scores(log, source=SOURCE_FROZEN)
         LOG_PATH.write_text(json.dumps(log, ensure_ascii=False, indent=1) + "\n",

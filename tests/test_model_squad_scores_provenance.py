@@ -677,8 +677,11 @@ def test_freeze_metan_chip_vaite_on_mitattu_suunta():
 
     mod = _lataa(FROZEN_GRADER, "grade_model_squad_gw_meta")
     saannot = mod._META_DEFAULTS["rules"]
-    assert "never scores higher" in saannot, (
-        "meta ei sano mitattua suuntaa; artefaktin teksti on julkista tekstia")
+    # 21.9 (julkaisuportti): entry voi erota myos kokoonpanon verran, joten
+    # chip-suunta ei enaa pida - teksti sanoo etta ero voi olla kumpaan
+    # suuntaan tahansa. Ehdottomat vaitteet pysyvat kiellettyina.
+    assert "either direction" in saannot, (
+        "meta ei sano mitattua suhdetta; artefaktin teksti on julkista tekstia")
     for ylivaite in ("scores lower here than on the entry",
                      "always scores lower",
                      "scores lower than on the entry"):

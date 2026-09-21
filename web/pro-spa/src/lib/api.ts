@@ -874,6 +874,8 @@ export interface ModelRaceVsAverage {
 	points: number;
 	average: number;
 	diff: number;
+	/** true = sarjan omat hitit vahennetty (mallin paneeli). */
+	hits_deducted?: boolean;
 	gws: number[];
 }
 
@@ -899,7 +901,15 @@ export interface ModelRaceResponse {
 		note: string | null;
 		/** 21.9: kierrokset jotka eivat ole mallisarjassa, koodilla
 		 *  (`no_valid_frozen_squad`). Teksti: `MODEL_SERIES_COPY`. */
-		unscored_gws?: { gw: number; code: string }[];
+		unscored_gws?: {
+			gw: number;
+			code: string;
+			/** Graderin diagnostinen luku (jaadytetty runko FPL:n pisteilla). */
+			would_have_scored?: number | null;
+			fpl_average?: number | null;
+		}[];
+		/** Kierrokset joilla mallin ketju alkoi entryn rungosta. */
+		reseeded_gws?: { gw: number; from_gw: number; entry_chip?: string | null }[];
 		cost_unverified_gws?: number[];
 	};
 	totals: {

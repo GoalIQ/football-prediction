@@ -155,8 +155,13 @@ def test_epakelpo_freeze_ei_gradaudu(monkeypatch, tmp_path, capsys):
     assert [r["gw"] for r in loki["gameweeks"]] == [3], (
         "epakelpo freeze KIRJATTIIN append-only-lokiin mallin rivina")
     assert "::warning::" in out and "EI GRADATA" in out
-    assert "unscored_gws" in out, "ohjeen on kerrottava mita kierrokselle tapahtuu"
-    assert "entryn lukua" in out
+    assert "unscored-listaan" in out and "entryn lukua" in out
+    # 21.9 Villen paatos: luku kirjataan DIAGNOSTISESTI omaan listaansa.
+    u = loki["unscored"]
+    assert [x["gw"] for x in u] == [4]
+    assert u[0]["code"] == "no_valid_frozen_squad"
+    assert u[0]["would_have_scored"] == 5 * 11 + 5, "11 x 5 p + kapteeni"
+    assert u[0]["fpl_average"] == 50
 
 
 def test_kauden_ensimmainen_vapaa_optimi_on_kelvollinen(monkeypatch, tmp_path):
@@ -306,3 +311,11 @@ def test_repon_gw4_on_epakelpo():
         pytest.skip("gw4.json puuttuu")
     assert freeze_invalid(json.loads(gw4.read_text(encoding="utf-8")),
                           earlier_exists=True)
+
+
+def test_diagnostiikka_on_idempotentti(monkeypatch, tmp_path):
+    """Append-only: toinen ajo ei kirjaa GW4:aa uudelleen."""
+    rungot = {3: _runko(3, verified=_verifioitu(3)), 4: _runko(4, rebuilt=True)}
+    _aja(monkeypatch, tmp_path, rungot)
+    rc, loki = _aja(monkeypatch, tmp_path, rungot)
+    assert [x["gw"] for x in loki["unscored"]] == [4]

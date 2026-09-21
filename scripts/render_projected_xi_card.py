@@ -374,8 +374,8 @@ def build_html(data: dict, log: dict | None = None, now=None,
         # GW2, ja taman kortin XI-kutsu kirjataan vasta GO-hetkella). "Free-hit"
         # luki chip-suosituksena kun entry pelasi WC:n GW2:ssa -> "best XI for
         # one round". Entry-rivi erottaa hypoteettisen XI:n oikeasta joukkueesta.
-        '<div class="ftr"><span>The model plays too: <b>entry 116920</b> is the '
-        'squad it actually fields</span>'
+        '<div class="ftr"><span>The model&#39;s squad is frozen before each '
+        'deadline, and <b>entry 116920</b> plays it with our own calls</span>'
         f'<span>model projections, not betting advice · card made {card_at}</span>'
         # 🔴 TARKISTUSREITTI, EI KOTISIVUOSOITE (KORTTI-TARKISTUSREITTI 30.8).
         # Alapalkki osoitti `/fpl/expected-points`-sivun JUUREEN, joka rankkaa

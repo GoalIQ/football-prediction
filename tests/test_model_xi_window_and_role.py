@@ -139,7 +139,9 @@ def test_ilman_kierroksia_sivua_ei_renderoida():
 def test_sivu_erottaa_itsensa_entrysta():
     nakyva = _nakyva(_render([3, 4, 5, 6, 7, 8]))
     assert "116920" in nakyva
-    assert "not the team the model plays" in nakyva
+    # 21.9: mallin kierrosrivi on jaadytetty runko; entry 116920 nimetaan
+    # mini-liiga-lauseessa (entry = runko + omat paatoksemme).
+    assert "gameweek squad. That one is frozen before each deadline" in nakyva
 
 
 def test_sivu_ei_luettele_kolmatta_tapausta():
@@ -151,7 +153,9 @@ def test_sivu_ei_luettele_kolmatta_tapausta():
     nakyva = _nakyva(_render([3, 4, 5, 6, 7, 8]))
     assert "one gameweek best XI" not in nakyva
     # ...mutta olennainen erottelu on yha paikallaan
-    assert "not the team the model plays" in nakyva
+    # 21.9: mallin kierrosrivi on jaadytetty runko; entry 116920 nimetaan
+    # mini-liiga-lauseessa (entry = runko + omat paatoksemme).
+    assert "gameweek squad. That one is frozen before each deadline" in nakyva
 
 
 # --- 3. negatiiviset kontrollit --------------------------------------------
@@ -259,7 +263,7 @@ def test_entry_ilman_pelattua_kierrosta_ei_saa_rikkinaista_linkkia():
     data = _xp([1, 2, 3, 4, 5, 6])
     data["meta"]["completed_gameweeks"] = []
     html = render_model_xi(data, NOW)
-    assert "<b>Entry 116920</b>" in html
+    assert "<b>entry 116920</b>" in html
     assert "/entry/116920/event/" not in html
 
 

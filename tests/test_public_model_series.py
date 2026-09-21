@@ -118,7 +118,7 @@ def test_gw4_epakelpo_freeze_on_unscored_eika_entryn_luku():
     d = _model([_frozen_row(3, 63)],
                {3: _freeze(3), 4: _freeze(4, rebuilt=True)})
     assert 4 not in _by_gw(d)
-    assert d["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad"}]
+    assert d["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad", "would_have_scored": None, "fpl_average": None}]
     assert {u["code"] for u in d["meta"]["unscored_gws"]} <= mss.UNSCORED_CODES
 
 
@@ -165,7 +165,7 @@ def test_race_kantaa_unscored_gw4():
     malli = _model([_frozen_row(3, 63)],
                    {3: _freeze(3), 4: _freeze(4, rebuilt=True)})
     race = build_race(malli, None)
-    assert race["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad"}]
+    assert race["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad", "would_have_scored": None, "fpl_average": None}]
     assert 4 not in [r["gw"] for r in race["gameweeks"]]
 
 
@@ -175,7 +175,27 @@ def test_vs_average_vain_lopulliset_brutto():
             {"gw": 5, "points": 40, "fpl_average": 44, "provisional": True}]
     v = vs_average(rows)
     assert v == {"gameweeks": 2, "points": 110, "average": 131, "diff": -21,
-                 "gws": [1, 2]}
+                 "hits_deducted": False, "gws": [1, 2]}
+
+
+def test_mallin_vs_average_on_netto_kuten_paneelin_rivit():
+    """Julkaisuportti 21.9: paneelin rivit ja summa ovat nettoja (GW2 61),
+    joten mallin keskiarvovertailu vahentaa hitit: 41+61+63 = 165 vs 182
+    = -17, ei brutto -9. Entry-lohko pysyy bruttona."""
+    malli = _model([_frozen_row(1, 41, fpl_average=50),
+                    _frozen_row(2, 69, fpl_average=81, transfer_cost=8,
+                                transfer_cost_source="fpl_rules_gw2"),
+                    _frozen_row(3, 63, fpl_average=51)],
+                   {1: _freeze(1), 2: _freeze(2, transfers=3), 3: _freeze(3)})
+    race = build_race(malli, None, entry_series=_entry(
+        _entry_row(2, 108, fpl_average=81, transfer_cost=4)))
+    mv = race["totals"]["model_vs_average"]
+    assert (mv["points"], mv["average"], mv["diff"]) == (165, 182, -17)
+    assert mv["hits_deducted"] is True
+    assert race["totals"]["model_season"] == mv["points"], (
+        "paneelin summa ja keskiarvovertailu eri perusteella")
+    ev = race["entry_series"]["vs_average"]
+    assert ev["points"] == 108 and ev["hits_deducted"] is False
 
 
 # --- 4. todentamaton kustannus -------------------------------------------------
@@ -243,7 +263,7 @@ def test_model_race_endpoint_kantaa_molemmat_sarjat(monkeypatch):
     monkeypatch.setattr(mss, "load_public_entry_series", lambda **kw: entry)
     d = TestClient(m.app).get("/api/fantasy/model-race").json()
     assert d["totals"]["model_season"] == 41 + 63, "GW4:n 64 vuoti malliin"
-    assert d["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad"}]
+    assert d["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad", "would_have_scored": None, "fpl_average": None}]
     assert [r["gw"] for r in d["entry_series"]["gameweeks"]] == [1, 3, 4]
     assert d["entry_series"]["chips_played"] == [{"gw": 3, "chip": "3xc"}]
 
@@ -261,7 +281,7 @@ def test_recap_main_kirjoittaa_sarjat_erillaan(monkeypatch, tmp_path):
     doc = json.loads((tmp_path / "gw_recap.json").read_text(encoding="utf-8"))
     assert [g["gw"] for g in doc["gameweeks"]] == [1, 3]
     assert doc["running"]["gw_list"] == [1, 3]
-    assert doc["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad"}]
+    assert doc["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad", "would_have_scored": None, "fpl_average": None}]
     es = doc["entry_series"]
     assert es["running"]["gw_list"] == [1, 3, 4]
     assert es["running"]["basis"].startswith("FPL entry points")
@@ -275,7 +295,9 @@ def test_tuloskortin_mallisolun_reitti_on_jaadytetty_artefakti():
     m3 = rt.model_squad_gw(3, series=malli)
     assert m3["entry_id"] is None
     assert m3["route"]["kind"] == "frozen_squad" and m3["route"]["gw"] == 3
-    assert m3["route"]["url"].endswith("data/model_squad_frozen/gw3.json")
+    # Julkaisuportti 21.9: reitti on pisteytettyjen kierrosten tiedosto, ei
+    # rungon gw{n}.json (suomenkielinen reseed.reason, ei lukua).
+    assert m3["route"]["url"].endswith("data/model_squad_frozen_gw_scores.json")
     assert m3["points"] == 63
     assert rt.model_squad_gw(4, series=malli) is None, "GW4 ei ole mallin rivi"
 
@@ -298,6 +320,8 @@ def test_spa_season_race_nayttaa_entry_sarjan_ja_unscored():
     for tarvittava in ("data?.entry_series", "unscored_gws", "cost_unverified_gws",
                        "model_vs_average", "MODEL_SERIES_COPY.entryTitle",
                        "MODEL_SERIES_COPY.unscoredNoValidFreeze",
+                       "u.would_have_scored", "reseeded_gws",
+                       "MODEL_SERIES_COPY.reseeded", "x.entry_chip",
                        "model_cost_verified"):
         assert tarvittava in s, f"SeasonRace ei renderoi: {tarvittava}"
 
@@ -305,3 +329,97 @@ def test_spa_season_race_nayttaa_entry_sarjan_ja_unscored():
 def test_spa_tuloskortti_kayttaa_jaadytettya_reittia():
     s = _spa("TeamPitchManager.svelte")
     assert "model_route" in s and "MODEL_SERIES_COPY.cardModelKey" in s
+    assert "sourceNote: modelRoute" in s and "MODEL_SERIES_COPY.cardSourceNote" in s
+
+
+# --- 8. GW4: syy JA luku, luku vain payloadista ---------------------------
+
+def test_gw4_luku_tulee_graderin_diagnostiikasta():
+    """Villen paatos 21.9: GW4 pois summasta, mutta syy ja luku nakyviin.
+    Luku ja keskiarvo tulevat jaadytetyn lokin `unscored`-listasta."""
+    doc = _doc(_frozen_row(3, 63))
+    doc["unscored"] = [{"gw": 4, "code": "no_valid_frozen_squad",
+                        "would_have_scored": 49, "fpl_average": 69}]
+    d = mss.public_model_series(doc, {3: _freeze(3), 4: _freeze(4, rebuilt=True)})
+    assert d["meta"]["unscored_gws"] == [{"gw": 4, "code": "no_valid_frozen_squad",
+                                          "would_have_scored": 49,
+                                          "fpl_average": 69}]
+    assert 4 not in _by_gw(d), "diagnostinen luku ei saa tulla mallisarjaan"
+
+
+def test_gw4_ilman_diagnostiikkaa_ei_ole_lukua():
+    """Luku jota lokissa ei ole ei voi ilmestya: pinta saa None."""
+    d = _model([_frozen_row(3, 63)], {3: _freeze(3), 4: _freeze(4, rebuilt=True)})
+    u = d["meta"]["unscored_gws"][0]
+    assert u["would_have_scored"] is None and u["fpl_average"] is None
+
+
+# --- 9. GW3-reseed johdetaan payloadista ------------------------------------
+
+def _reseed_freeze(gw, source_gw):
+    f = _freeze(gw, source="entry_picks")
+    f["meta"]["reseed"] = {"gw": gw, "source_gw": source_gw, "reason": "x",
+                           "decided_by": "Ville", "decided_at": "2026-09-04"}
+    return f
+
+
+def test_reseed_kierros_ja_entryn_chip_johdetaan():
+    malli = _model([_frozen_row(2, 69), _frozen_row(3, 63)],
+                   {2: _freeze(2), 3: _reseed_freeze(3, 2)})
+    assert malli["meta"]["reseeded_gws"] == [{"gw": 3, "from_gw": 2}]
+    entry = _entry(_entry_row(2, 108, active_chip="wildcard"), _entry_row(3, 72))
+    race = build_race(malli, None, entry_series=entry)
+    assert race["meta"]["reseeded_gws"] == [{"gw": 3, "from_gw": 2,
+                                             "entry_chip": "wildcard"}]
+
+
+def test_reseed_ilman_entry_sarjaa_ei_vaita_chippia():
+    malli = _model([_frozen_row(3, 63)], {3: _reseed_freeze(3, 2)})
+    race = build_race(malli, None)
+    assert race["meta"]["reseeded_gws"] == [{"gw": 3, "from_gw": 2,
+                                             "entry_chip": None}]
+
+
+def test_ketjufreeze_ei_ole_reseed():
+    """Negatiivinen kontrolli: tavallinen ketju ei tuota selitetta."""
+    malli = _model([_frozen_row(2, 69)], {1: _freeze(1), 2: _freeze(2)})
+    assert malli["meta"]["reseeded_gws"] == []
+
+
+def test_reseed_selite_vain_pisteytetylle_kierrokselle():
+    """GW5 on reseed mutta ei viela gradattu: ei selitetta ennen rivia."""
+    malli = _model([_frozen_row(3, 63)],
+                   {3: _reseed_freeze(3, 2), 5: _reseed_freeze(5, 4)})
+    assert [x["gw"] for x in malli["meta"]["reseeded_gws"]] == [3]
+
+
+def test_repon_gw3_on_reseed_gw2_wildcardista():
+    """Elava tila: gw3.json on reseed GW2:sta, ja entry pelasi siella
+    wildcardin. Jos tama kaatuu, selite olisi vaara."""
+    malli = mss.load_public_model_series()
+    if 3 not in _by_gw(malli):
+        pytest.skip("GW3 ei ole jaadytetyssa sarjassa")
+    entry = mss.load_public_entry_series()
+    race = build_race(malli, None, entry_series=entry)
+    r3 = [x for x in race["meta"]["reseeded_gws"] if x["gw"] == 3]
+    assert r3 == [{"gw": 3, "from_gw": 2, "entry_chip": "wildcard"}]
+
+
+def test_recap_kantaa_reseedin_ja_gw4_luvun(monkeypatch, tmp_path):
+    import json
+
+    import scripts.build_gw_recap as br
+    doc = _doc(_frozen_row(2, 69), _frozen_row(3, 63))
+    doc["unscored"] = [{"gw": 4, "code": "no_valid_frozen_squad",
+                        "would_have_scored": 49, "fpl_average": 69}]
+    malli = mss.public_model_series(doc, {2: _freeze(2), 3: _reseed_freeze(3, 2),
+                                          4: _freeze(4, rebuilt=True)})
+    entry = _entry(_entry_row(2, 108, active_chip="wildcard"))
+    monkeypatch.setattr(br, "_load_model_series", lambda: malli)
+    monkeypatch.setattr(br, "_load_entry_series", lambda: entry)
+    monkeypatch.setattr(br, "_load", lambda p: None)
+    monkeypatch.setattr(br, "OUT_PATH", tmp_path / "gw_recap.json")
+    assert br.main() == 0
+    out = json.loads((tmp_path / "gw_recap.json").read_text(encoding="utf-8"))
+    assert out["unscored_gws"][0]["would_have_scored"] == 49
+    assert out["reseeded_gws"] == [{"gw": 3, "from_gw": 2, "entry_chip": "wildcard"}]

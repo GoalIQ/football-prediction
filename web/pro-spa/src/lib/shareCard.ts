@@ -340,6 +340,8 @@ export interface PitchCardSpec {
 	legend?: string;
 	/** Alatunnisteen lahdeleima; oletus on suunnitelmakortin rivi. */
 	footNote?: string;
+	/** 21.9: lisarivi lahteelle (esim. mallisolun reitti), vain kun annettu. */
+	sourceNote?: string;
 }
 
 // Sama neutraali jersey-siluetti kuin TeamKit/Leaders (IP-turva: ei oikeita
@@ -671,6 +673,12 @@ export async function renderPitchCard(spec: PitchCardSpec): Promise<Blob> {
 		ctx.font = med(19);
 		ctx.fillStyle = MUTED;
 		ctx.fillText(spec.legend, (W - ctx.measureText(spec.legend).width) / 2, y + 12);
+		y += 40;
+	}
+	if (spec.sourceNote) {
+		ctx.font = med(19);
+		ctx.fillStyle = MUTED;
+		ctx.fillText(spec.sourceNote, (W - ctx.measureText(spec.sourceNote).width) / 2, y + 12);
 		y += 40;
 	}
 	// Korkeus sisallosta: suunnitelmakortti paatyy tasan entiseen 1350:een

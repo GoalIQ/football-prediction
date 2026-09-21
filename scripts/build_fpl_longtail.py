@@ -1331,11 +1331,9 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
         entry_link = (
             '<a href="https://fantasy.premierleague.com/entry/116920/event/'
             f'{_entry_gw}" rel="noopener">entry 116920</a>')
-    # Sama linkki virkkeen ALUSSA: (n)-korjaus poisti edelta klausuulin
-    # "The model plays too:", jolloin kaksoispisteen jalkeinen pieni kirjain
-    # jai lauseen alkuun. Hylattyjen rekisteri vaatii etta entry NIMETAAN,
-    # ei etta se on pienella.
-    entry_link_capitalised = entry_link.replace(">entry 116920<", ">Entry 116920<")
+    # 21.9: entry nimetaan (linkkina) mini-liiga-lauseessa; lauseen alussa
+    # ollut isolla kirjoitettu muoto poistui kun "the squad it actually
+    # fields" -vaite poistui (entry saa poiketa jaadytetysta rungosta).
 
     hero = ("<h1>The Model XI</h1>"
             f'<p class="lede">{claim}, ranked on projected points for '
@@ -1362,18 +1360,24 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
         # sivu ei sanonut, ja lukija naki kolme eri "mallin XI:ta" ilman mitaan
         # mika kertoisi etta ne vastaavat eri kysymykseen. Sama sanamuoto kuin
         # render_projected_xi_card.py:ssa ja render_standouts_card.py:ssa.
-        f'<p class="note">This is {optimum_word}, not the team the model '
-        f"plays. {entry_link_capitalised} is the squad it actually fields, and it "
-        f"is "
-        "built under the transfer rules from what it already owns, so it is a "
+        # 21.9 (julkaisuportti): mallin kierrosrivi on JAADYTETTY runko,
+        # ja entry 116920 on se plus omat paatoksemme - "the squad it actually
+        # fields" oli epatosi siita lahtien kun entry poikkesi rungosta.
+        f'<p class="note">This is {optimum_word}, not the model&#39;s '
+        "gameweek squad. That one is frozen before each deadline and built "
+        "under the transfer rules from what it already owns, so it&#39;s a "
         "different 15.</p>"
         '<p class="note">Shirts show club colours only. GoalIQ is not '
         "affiliated with the Premier League and uses no club badges or player "
         "images. Projected points are model estimates, not betting advice.</p>"
-        '<div class="rec">The model plays this season in a public mini-league. '
-        '<a href="https://fantasy.premierleague.com/leagues/auto-join/jgi6j9">'
-        "Join with code jgi6j9</a> and try to beat it. Season winner gets a "
-        "year of Premium, free.</div>"
+        '<div class="rec">The model&#39;s squad is frozen before every '
+        "deadline. We play it in FPL as " + entry_link + ", with our own chip "
+        "calls and the occasional lineup change, and that&#39;s the team to "
+        'beat in the <a href="https://fantasy.premierleague.com/leagues/'
+        'auto-join/jgi6j9">Beat the Model mini-league</a> (code '
+        "<strong>jgi6j9</strong>). Season winner gets a year of GoalIQ "
+        "Premium, free: one prize, decided by the mini-league table when the "
+        "season ends.</div>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )

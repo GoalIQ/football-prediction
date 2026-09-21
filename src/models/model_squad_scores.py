@@ -368,6 +368,11 @@ def public_model_series(frozen_doc: dict, freezes: dict[int, dict]) -> dict:
     rows = {}
     for r in frozen_doc.get("gameweeks") or []:
         rows[int(r["gw"])] = _frozen_public_row(r, freezes.get(int(r["gw"])))
+    # Graderin diagnostinen luku epakelvolle freezelle (Villen paatos 21.9:
+    # "pois summasta, syy JA luku nakyviin"). Luku tulee VAIN tasta listasta;
+    # jos sita ei ole viela kirjattu, kentat ovat None eika pinta nayta lukua.
+    diag = {int(u["gw"]): u for u in (frozen_doc.get("unscored") or [])
+            if isinstance(u, dict) and u.get("gw") is not None}
     ensimmainen = min(freezes) if freezes else None
     unscored = []
     for gw in sorted(freezes):
@@ -375,12 +380,31 @@ def public_model_series(frozen_doc: dict, freezes: dict[int, dict]) -> dict:
             continue
         if freeze_invalid(freezes[gw], earlier_exists=(ensimmainen is not None
                                                        and gw > ensimmainen)):
-            unscored.append({"gw": gw, "code": UNSCORED_NO_VALID_FREEZE})
+            d = diag.get(gw) or {}
+            unscored.append({
+                "gw": gw, "code": UNSCORED_NO_VALID_FREEZE,
+                "would_have_scored": d.get("would_have_scored"),
+                "fpl_average": d.get("fpl_average"),
+            })
+    # Kierrokset joilla mallin ketju aloitettiin uudelleen entryn rungosta
+    # (freezen `squad_source: entry_picks` + `reseed`). Ilman selitysta GW3:n
+    # 8/15 vaihtoa GW2:sta nayttaisi piilotetulta wildcardilta paneelissa
+    # joka sanoo "no chips". Vain pisteytetyt kierrokset: selitys kuuluu
+    # riville joka on nakyvissa.
+    reseeded = []
+    for gw in sorted(rows):
+        meta = (freezes.get(gw) or {}).get("meta") or {}
+        if meta.get("squad_source") != "entry_picks":
+            continue
+        lahde = (meta.get("reseed") or {}).get("source_gw")
+        reseeded.append({"gw": gw,
+                         "from_gw": int(lahde) if lahde is not None else gw - 1})
     return {
         "meta": {
             "series_source": CANONICAL_SOURCE,
             "decision": CANONICAL_DECISION,
             "unscored_gws": unscored,
+            "reseeded_gws": reseeded,
         },
         "gameweeks": [rows[g] for g in sorted(rows)],
     }
@@ -418,14 +442,16 @@ REPO_BLOB = "https://github.com/GoalIQ/football-prediction/blob/main/"
 
 
 def frozen_route(gw: int) -> dict:
-    """Mallin luvun tarkistusreitti: jaadytetty rivi julkisessa repossa.
+    """Mallin luvun tarkistusreitti: pisteytetyt kierrokset julkisessa repossa.
 
-    Pisteet lasketaan FPL:n `total_points`ista tahan riviin, ja gradattu
-    rivi on `model_squad_frozen_gw_scores.json`:ssa samassa hakemistossa.
+    Julkaisuportti 21.9: reitti on `model_squad_frozen_gw_scores.json`, EI
+    `model_squad_frozen/gw{n}.json` - rungoissa on suomenkielinen
+    `meta.reseed.reason` eivatka ne nayta lukua. Pisteytetyssa tiedostossa
+    on luku, `xi_ids` ja rungon jaadytyshetki.
     """
     gw = int(gw)
     return {"kind": "frozen_squad", "gw": gw,
-            "url": f"{REPO_BLOB}data/model_squad_frozen/gw{gw}.json"}
+            "url": f"{REPO_BLOB}data/model_squad_frozen_gw_scores.json"}
 
 
 def _read_dir(d) -> dict[int, dict]:

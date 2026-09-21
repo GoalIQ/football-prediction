@@ -2,7 +2,9 @@
 
 MIKSI OMA RENDERI: /fpl/model-xi rakennetaan paivittain uusiksi projektioista,
 ja jo samana iltana sen penkki erosi freezesta (Mykolenko puuttui sivulta).
-Postattava kuva on lupaus "entered as-is", joten sen AINOA sallittu lahde on
+Postattava kuva on lupaus "we score it exactly as frozen" (21.9: aiempi
+"entered as-is" poistettu, koska FPL-entry 116920 saa poiketa rungosta ja
+mallin luku lasketaan jaadytetysta rungosta), joten sen AINOA sallittu lahde on
 data/model_squad_frozen/gw{n}.json — sama artefakti jota
 verify_model_entry_matches_freeze vertaa FPL-tiliin.
 
@@ -206,7 +208,7 @@ def main() -> int:
         f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})'
         + ('' if not args.sims else ', 2,000 simulated gameweeks each')
         + '</div>'
-        f'<div class="sub">{args.subtitle or f"Picked by the optimiser, frozen {frozen_at}, entered as-is"}</div></div></div>'
+        f'<div class="sub">{args.subtitle or f"Picked by the optimiser and frozen {frozen_at}. We score it exactly as frozen."}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'{bench_block}'
         # 🔴 4.9 PORTTI: "spent" laskettiin NYKYHINNOISTA, mutta se ei ole
@@ -220,7 +222,9 @@ def main() -> int:
            else f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>')
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
-        + "<span>entry 116920 · public on fantasy.premierleague.com</span>"
+        # 21.9: reitti on jaadytetty runko julkisessa repossa, ei entry
+        # (entry saa poiketa rungosta, mallin luku lasketaan rungosta).
+        + f"<span>github.com/GoalIQ/football-prediction · data/model_squad_frozen/gw{args.gw}.json</span>"
         + ('<span>goaliq.app/fpl/expected-points#top-100</span></div>'
            if args.sims else '<span>goaliq.app</span></div>')
         + "</div>")

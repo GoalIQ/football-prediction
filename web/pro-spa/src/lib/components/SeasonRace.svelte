@@ -176,11 +176,10 @@
 	// 21.9 (Villen paatos "molemmat sarjat, malli ensin"): mallisarja on
 	// jaadytetty rivi; kierros ilman kelvollista freezea on POIS sarjasta
 	// koodilla, ja entry 116920 naytetaan erikseen omana sarjanaan.
-	let unscoredGws = $derived(
-		(data?.meta?.unscored_gws ?? [])
-			.filter((u) => u.code === 'no_valid_frozen_squad')
-			.map((u) => u.gw)
+	let unscored = $derived(
+		(data?.meta?.unscored_gws ?? []).filter((u) => u.code === 'no_valid_frozen_squad')
 	);
+	let reseeded = $derived(data?.meta?.reseeded_gws ?? []);
 	let costUnverifiedGws = $derived(data?.meta?.cost_unverified_gws ?? []);
 	let modelVsAvg = $derived(data?.totals?.model_vs_average ?? null);
 	let entrySeries = $derived(data?.entry_series ?? null);
@@ -307,9 +306,20 @@
 			<!-- 21.9: kierros jota ei ole mallisarjassa lainkaan (ei nolla, ei
 			     entryn luku) ja rivit joiden mallin hittia ei voitu todentaa.
 			     Nakyva selite, sama mobiilissa (fantasy.race.series.*). -->
-			{#if unscoredGws.length}
-				<p class="prov-note">{MODEL_SERIES_COPY.unscoredNoValidFreeze(unscoredGws)}</p>
-			{/if}
+			{#each unscored as u (u.gw)}
+				<p class="prov-note">
+					{MODEL_SERIES_COPY.unscoredNoValidFreeze(
+						u.gw,
+						u.would_have_scored ?? null,
+						u.fpl_average ?? null
+					)}
+				</p>
+			{/each}
+			{#each reseeded as x (x.gw)}
+				<p class="prov-note">
+					{MODEL_SERIES_COPY.reseeded(x.gw, x.from_gw, x.entry_chip ?? null)}
+				</p>
+			{/each}
 			{#if costUnverifiedGws.length}
 				<p class="prov-note">{MODEL_SERIES_COPY.costUnverified(costUnverifiedGws)}</p>
 			{/if}

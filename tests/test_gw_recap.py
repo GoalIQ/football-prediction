@@ -297,6 +297,8 @@ ENUMEROIDUT = {
 ULKOINEN_TEKSTI = {
     "segment", "web_name", "team", "team_short", "name", "season",
     "graded_at", "generated_at", "frozen_at", "deadline", "chip", "source",
+    # 21.9: FPL:n oma chip-koodi reseed-lahdekierroksella (kuten `chip`).
+    "entry_chip",
     "deadline_utc", "logged_at",
 }
 

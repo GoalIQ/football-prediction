@@ -34,7 +34,7 @@ import json
 import sys
 from pathlib import Path
 
-from src.models.fpl_model_race import model_points_net
+from src.models.fpl_model_race import model_points_net, reseeds_with_entry_chip
 from src.models.xp_accuracy_segments import bias_segments
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -338,6 +338,11 @@ def build(calls_doc, squad_doc, acc_doc, now: _dt.datetime,
         # (`no_valid_frozen_squad`). Ei nollaa, ei entryn lukua.
         "unscored_gws": list(((squad_doc or {}).get("meta") or {})
                              .get("unscored_gws") or []),
+        # 21.9: kierrokset joilla mallin ketju alkoi entryn rungosta, ja
+        # entryn chip lahdekierroksella. Johdettu, ei kirjoitettu.
+        "reseeded_gws": reseeds_with_entry_chip(
+            ((squad_doc or {}).get("meta") or {}).get("reseeded_gws"),
+            (entry_doc or {}).get("gameweeks")),
         # Erillinen sarja, EI mallin track record.
         "entry_series": entry_block(entry_doc),
     }

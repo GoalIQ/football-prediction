@@ -439,8 +439,8 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
         # sisaltaa vain GW2:n pisteytettyna - mutta hylkays jai siihen yhteen
         # generaattoriin ja eli tassa toisessa 4.9 asti. Korvaus on
         # sisarkortin jo portin lapaissyt sanamuoto.
-        '<div class="ftr"><span>The model plays too: <b>entry 116920</b> is '
-        'the squad it actually fields</span>'
+        '<div class="ftr"><span>The model&#39;s squad is frozen before each '
+        'deadline, and <b>entry 116920</b> plays it with our own calls</span>'
         '<span>model projections, not betting advice</span>'
         # TARKISTUSREITTI (4.9 portti): paljas URL laskeutuu GW-top-20-tauluun,
         # jossa EI ole Blank- eika 10+-saraketta. Kortin prosentit ovat

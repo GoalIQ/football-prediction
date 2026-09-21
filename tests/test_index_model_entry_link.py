@@ -119,7 +119,7 @@ def _aja_splice(meta: dict, tmp_path, monkeypatch) -> str:
     linkki = (
         '<a class="mag" href="https://fantasy.premierleague.com/entry/'
         f'116920/event/{gw}" rel="noopener" '
-        'data-cta="index-model-entry">See the squad it plays &#9656;</a>')
+        'data-cta="index-model-entry">Our FPL entry, 116920 &#9656;</a>')
     uusi, n = re.subn(
         r"(<!-- GEN:MODEL-ENTRY-START -->).*?(<!-- GEN:MODEL-ENTRY-END -->)",
         lambda m: m.group(1) + linkki + m.group(2),
