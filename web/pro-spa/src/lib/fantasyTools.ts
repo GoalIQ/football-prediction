@@ -622,17 +622,50 @@ export interface CompareResponse {
 		/** UNPROJECTED-SUBJECT (16.9): sivussa olevien nimet + selitys. */
 		unprojected?: string[];
 		unprojected_note?: string | null;
+		/** COMPARE-PALVELINRAJA (18.9): palvelin maskasi. Lue `compareMasked`illa. */
+		masked?: boolean;
+		free_rows?: number;
+		total_rows?: number;
 		[key: string]: unknown;
 	};
 	players: ComparePlayer[];
+	/** COMPARE-PALVELINRAJA (18.9): `null` kun palvelin maskasi vastauksen.
+	 *  Maski EI pane paywall-lausetta tahan kenttaan, koska jakokortti
+	 *  tulostaa `verdict.text`:n julkiseen kuvaan. */
 	verdict: {
 		/** `null` kun projektoituja rivejä on alle kaksi (16.9): kantaa ei voi
 		 *  laskea, ja `text` kertoo syyn. */
 		pick: { id: number; web_name: string } | null;
 		margin_xp_horizon: number | null;
 		text: string;
-	};
+	} | null;
 }
+
+/**
+ * COMPARE-PALVELINRAJA (18.9): YKSI LUKIJA sille onko vertailu maskattu.
+ *
+ * Miksi oma funktio eika `data.players.length < 2` kutsupaikoissa: compare
+ * kutsutaan kahdesta paikasta (`ComparePlayers.svelte` ja `XpTable.svelte`:n
+ * "share comparison"), ja pituuspaattely on EPATOSI molempiin suuntiin —
+ * maskattu vastaus on nolla riviä, mutta niin on myos premiumin kysely jonka
+ * yksikaan id ei ratkennut. Sama vika korjattiin DefCon-listalta 17.9:
+ * palvelin on ainoa joka tietaa, ja se sanoo sen `meta.masked`issa.
+ *
+ * Puuttuva lippu = ei maskattu (vanha backend / valimuisti).
+ */
+export function compareMasked(data: CompareResponse | null | undefined): boolean {
+	return data?.meta?.masked === true;
+}
+
+/** COMPARE-PALVELINRAJA: YKSI teksti maskatulle vertailulle, kummallekin
+ *  kutsupaikalle (ComparePlayers + XpTable). Julkaisuportti 21.9: palvelin
+ *  tietaa vain ettei se VAHVISTANUT oikeutta (ei tokenia, vanhentunut token,
+ *  tai tilaus ei nay palvelimelle, esim. juuri ostettu ennen webhookia), joten
+ *  teksti ei saa vaittaa kayttajan tilaa. Tukireitti kattaa tapauksen jota
+ *  uudelleenkirjautuminen ei korjaa. Sama runko kuin mobiilin
+ *  `fantasy.tools.compare.locked_text`, vain tukikanava vaihtuu. */
+export const COMPARE_LOCKED_TEXT =
+	"We couldn't confirm your Premium for this session. Sign out and back in, and if it still doesn't load, email hello@goaliq.app.";
 
 /* ---------- fetch helper ---------- */
 

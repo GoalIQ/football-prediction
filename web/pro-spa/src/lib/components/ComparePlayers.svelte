@@ -2,6 +2,8 @@
 	import { draftPool, type XpResponse } from '$lib/api';
 	import {
 		fetchComparePlayers,
+		compareMasked,
+		COMPARE_LOCKED_TEXT,
 		type CompareResponse,
 		type ComparePlayer
 	} from '$lib/fantasyTools';
@@ -38,6 +40,17 @@
 	let loading = $state(false);
 	let error = $state<string | null>(null);
 	let data = $state<CompareResponse | null>(null);
+
+	/* COMPARE-PALVELINRAJA (18.9): palvelin maskaa comparen ei-premiumille
+	 * (`api.premium.mask_compare_payload`, ilmaisosuus nolla riviä). Tama
+	 * komponentti on `{#if premium}`-lohkon sisalla, joten maskattu vastaus
+	 * tarkoittaa etta KLIENTIN ja PALVELIMEN kasitys oikeudesta eroaa:
+	 * istunnon token vanhentui, tai oikeus luettiin muusta lahteesta kuin
+	 * Supabase-tokenista. Ilman tata haaraa nakyma olisi tyhja taulukko ilman
+	 * selitysta — tasan se oire jonka 18.9 DefCon-kierros nosti.
+	 * Lippu luetaan palvelimelta, EI listan pituudesta: nolla riviä on myos
+	 * premiumin vastaus kyselyyn jonka yksikaan id ei ratkennut. */
+	let masked = $derived(compareMasked(data));
 
 	/* UNPROJECTED-SUBJECT (16.9): valitsin luki `xp.players`, eli VAIN
 	 * projektiossa olevat — sama vika kuin Replacementsissa. Sivussa oleva
@@ -147,7 +160,12 @@
 
 {#if error}
 	<p class="banner error">{error}</p>
-{:else if data}
+{:else if masked}
+	<!-- COMPARE-PALVELINRAJA (18.9): lukko, ei tyhja taulukko. -->
+	<div class="locked-note">
+		<p>{COMPARE_LOCKED_TEXT}</p>
+	</div>
+{:else if data && data.verdict}
 	<div class="verdict-row">
 		<p class="verdict">{data.verdict.text}</p>
 		<button type="button" class="share-chip" onclick={shareImage} disabled={sharing}>
@@ -173,7 +191,7 @@
 	{/if}
 	<div class="cmp-grid">
 		{#each data.players as p (p.id)}
-			<div class="card cmp-card" class:winner={p.id === data.verdict.pick?.id}>
+			<div class="card cmp-card" class:winner={p.id === data.verdict?.pick?.id}>
 				<h3>
 					{p.web_name} <span class="muted">({p.team_short}, {p.pos})</span>{#if p.owned}
 						<span class="own-badge" title="In your squad">owned</span>{/if}
@@ -248,6 +266,19 @@
 		gap: var(--s-3);
 		align-items: end;
 		margin-bottom: var(--s-4);
+	}
+	.locked-note {
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: var(--s-4);
+		margin: var(--s-4) 0;
+		background: var(--surface);
+	}
+	.locked-note p {
+		margin: 0 0 var(--s-2);
+	}
+	.locked-note p:last-child {
+		margin-bottom: 0;
 	}
 	.verdict-row {
 		display: flex;

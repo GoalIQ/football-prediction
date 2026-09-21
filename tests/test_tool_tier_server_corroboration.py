@@ -19,12 +19,13 @@ TARKISTUS 18.9 (kierros 2) loysi kaksi rekisterin ja palvelimen erimielisyytta:
              tyokalu gatetun endpointin paalla saa puhua vain jos lauseessa
              on KATTO (`caveat()` ei ole None).
 
-  `compare`  rekisteri `premium`, mutta `/api/fantasy/compare` on
-             FREE_EXPECTEDissa. Toinen niista on vaarassa, ja kumpikin
-             korjaus on tuotepaatos (gate endpointtiin vs. tier auki).
-             🔒 GO Villelle. Talla valin lukija EI SAA nimeta sita: slugilla
-             ei ole `_COPY`-merkintaa, joten `phrase()` kaatuu `MissingCopy`in
-             ja mikaan pinta ei voi julkaista vaitetta kumpaankaan suuntaan.
+  `compare`  rekisteri `premium`, mutta `/api/fantasy/compare` oli
+             FREE_EXPECTEDissa. RATKAISTU 21.9 (Villen paatos: maskataan):
+             palvelin maskaa ei-premium-kutsun (`mask_compare_payload`,
+             `FREE_COMPARE_ROWS = 0`) ja reitti on GATED, eli rekisteri ja
+             palvelin sanovat nyt samaa. Lukija on yha mykka comparen
+             suhteen (ei `_COPY`-merkintaa): lauseen lisaaminen olisi uutta
+             julkista myyntitekstia, ja se kulkee julkaisuportin kautta.
 
 Tama testi lukitsee molemmat: erimielisyys on sallittu vain kun lukija on
 mykka sen tyokalun suhteen tai kun lause kertoa katon.
@@ -261,19 +262,25 @@ def test_neljan_lauseessa_nimetyn_tyokalun_tier_on_vahvistettu() -> None:
         )
 
 
+#: Erimielisyydet jotka moduulin docstring kirjaa. Joukko pinnataan
+#: TASMALLEEN: uusi erimielisyys kaataa testin (kirjaa se ja paata mita
+#: lukija saa sanoa), ja korjattu erimielisyys kaataa sen myos (poista rivi ja
+#: paivita docstring samassa committissa). 21.9: `compare` poistui, koska
+#: palvelin alkoi maskata sen.
+KIRJATUT_ERIMIELISYYDET = {"value"}
+
+
 def test_erimielisyys_on_kirjattu_eika_kadonnut() -> None:
-    """Jos `compare` (tai mika tahansa muu) ei enaa ole riidanalainen, joku
-    on korjannut sen — ja silloin tama testi kertoo etta muistiinpano ylla
-    kuuluu paivittaa. Tyhja lista ei saa liukua ohi hiljaa."""
-    riidanalaiset = _erimieliset()
-    assert "compare" in riidanalaiset, (
-        "compare ei ole enaa riidanalainen (rekisteri premium vs "
-        "/api/fantasy/compare FREE). Jos se on korjattu, poista tama rivi ja "
-        "paivita moduulin docstring; ala jata porttia vartioimaan tilaa jota "
-        "ei ole."
-    )
-    assert "compare" not in _COPY, (
-        "compare sai lauseen vaikka sen tier on riidanalainen"
+    """Riidanalaisten joukko on tasan se jonka docstring kuvaa. Jos jokin
+    poistuu, joku on korjannut sen ja muistiinpano kuuluu paivittaa; jos
+    jokin tulee lisaa, se on uusi vaite jota kukaan ei ole paattanyt.
+    Tyhja lista ei saa liukua ohi hiljaa."""
+    riidanalaiset = set(_erimieliset())
+    assert riidanalaiset == KIRJATUT_ERIMIELISYYDET, (
+        f"riidanalaiset {sorted(riidanalaiset)} != kirjatut "
+        f"{sorted(KIRJATUT_ERIMIELISYYDET)}. Paivita KIRJATUT_ERIMIELISYYDET "
+        "ja moduulin docstring samassa committissa; ala jata porttia "
+        "vartioimaan tilaa jota ei ole."
     )
 
 

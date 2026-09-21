@@ -1,7 +1,12 @@
 <script lang="ts">
 	import type { XpResponse, XpPlayer } from '$lib/api';
 	import { gwXp, windowXp } from '$lib/api';
-	import { downloadXpCsv, fetchComparePlayers } from '$lib/fantasyTools';
+	import {
+		COMPARE_LOCKED_TEXT,
+		compareMasked,
+		downloadXpCsv,
+		fetchComparePlayers
+	} from '$lib/fantasyTools';
 	import { shareCompare } from '$lib/compareCard';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
 	import { capture } from '$lib/analytics';
@@ -261,6 +266,15 @@
 		compareError = null;
 		try {
 			const res = await fetchComparePlayers(compareIds, currentEntryId());
+			/* COMPARE-PALVELINRAJA (18.9): toinen kutsupaikka samalle
+			 * endpointille. Maskatusta vastauksesta ei synny korttia
+			 * (`compareCardSpec` palauttaa nullin), mutta ilman tata haaraa
+			 * nappi vain lakkaisi tekemasta mitaan — virhe ilman viestia on
+			 * sama oire kuin tyhja taulukko. */
+			if (compareMasked(res)) {
+				compareError = COMPARE_LOCKED_TEXT;
+				return;
+			}
 			const method = await shareCompare(res);
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'xp_table_compare', method });
 		} catch (err) {
