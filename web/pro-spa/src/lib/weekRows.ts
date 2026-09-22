@@ -2,7 +2,7 @@
  * This week -nakyman rivien lukijat (22.9.2026, UX-uudistus A3 2.1).
  *
  * Rivit ovat yhden lauseen tiivistelmia olemassa olevasta datasta:
- *   - Last call        <- /api/fantasy/model-race (viimeisin gradattu kierros)
+ *   - Last gameweek    <- /api/fantasy/model-race (viimeisin gradattu kierros)
  *   - You vs the model <- /api/fantasy/model-race (totals)
  *   - GW clean sheets  <- /api/fantasy (Phase 0, ilmainen)
  * Klientti EI laske pisteita eika todennakoisyyksia: luvut ovat palvelimen,
@@ -81,6 +81,24 @@ export function lastCall(r: ModelRaceResponse | null | undefined): LastCall | nu
 		provisional: latest.provisional === true,
 		beforeHits: latest.model_cost_verified === false
 	};
+}
+
+/**
+ * Mallin oman FPL-entryn id (22.9, julkaisutarkistaja B1). YKSI lukija:
+ * This weekin "The model's captain" -kortti lukee mallin joukkueen taman
+ * entryn kautta eika optimoijan vapaasta rungosta. Lahde on model-racen
+ * `entry_series` (sama entry jonka goaliq.app/fpl nimeaa mallin rungoksi).
+ * Puuttuva tai kelvoton id -> null, eika korttia korvata millaan muulla
+ * rungolla (fail-closed).
+ */
+export function modelEntryId(r: ModelRaceResponse | null | undefined): number | null {
+	const id = r?.entry_series?.entry_id;
+	return typeof id === 'number' && Number.isInteger(id) && id > 0 ? id : null;
+}
+
+/** Mallin kortin lahdepolku: sama rate-team-lukija kuin omalla joukkueella. */
+export function modelCardPath(entryId: number): string {
+	return `/api/fantasy/rate-team?entry=${entryId}`;
 }
 
 export type SeasonLine =

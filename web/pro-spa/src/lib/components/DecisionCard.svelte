@@ -8,7 +8,7 @@
 	 * kapteeni luki lauseen keskella ("Captain suggestion: ...").
 	 *
 	 * KAIKKI LUVUT OVAT PALVELIMEN: kortti lukee yhden rate-team-vastauksen
-	 * (oma joukkue TAI mallin runko, `fetchModelCard`). Kapteeni, lahin
+	 * (oma joukkue TAI mallin oma FPL-entry, `fetchModelEntryCard`). Kapteeni, lahin
 	 * vaihtoehto, siirto ja hold-kanta tulevat backendista; klientti ei
 	 * lajittele eika laske. Lahin vaihtoehto naytetaan vain kun palvelin
 	 * antaa sen (`captain.alternative`: se tulee vain kun ero on pieni).
@@ -60,6 +60,11 @@
 		card.meta.captain_gw ?? (card.meta.gw_in_progress === true ? null : card.meta.gw)
 	);
 	const cap = $derived(card.captain?.pick ?? null);
+	/** Mallin kortin entry ja sen julkaistujen pickien kierros (lahderivi). */
+	const modelEntry = $derived(
+		typeof card.meta.entry === 'number' && card.meta.entry > 0 ? card.meta.entry : null
+	);
+	const picksGw = $derived(typeof card.meta.picks_gw === 'number' ? card.meta.picks_gw : null);
 	const alt = $derived(card.captain?.alternative ?? null);
 	/** Kapteenin vastustaja(t) samasta vastauksesta (rungon pelaajarivi). */
 	const capOpp = $derived.by(() => {
@@ -109,7 +114,7 @@
 		{#if tab === 'captain'}
 			{#if cap}
 				<p class="k">
-					{own ? 'Captain' : "The model's captain"}{#if capGw != null}, GW{capGw}{/if}
+					{own ? 'Suggested captain' : "The model's captain"}{#if capGw != null}, GW{capGw}{/if}
 				</p>
 				<p class="pick">
 					<button type="button" class="name" onclick={() => openPlayer(cap.id, 'decision_card')}
@@ -119,6 +124,19 @@
 					<span class="xp">{cap.gw_xp.toFixed(1)} <abbr title="Expected points from the GoalIQ match model">xP</abbr></span>
 				</p>
 				{#if capOpp}<p class="opp muted">{capOpp === 'no fixture' ? 'No fixture this gameweek' : `vs ${capOpp}`}</p>{/if}
+				{#if !own && modelEntry != null}
+					<!-- 22.9 (B1): tarkistusreitti. Mallin kortti lukee mallin oman
+					     FPL-entryn rungon; linkki vie FPL:n omalle sivulle, jossa
+					     rungon voi tarkistaa ilman tilia. `picks_gw` = kierros jonka
+					     pickit FPL on julkaissut (uusimmat nakyvat vasta deadlinella). -->
+					<p class="src-line muted">
+						Squad: <a
+							href="https://fantasy.premierleague.com/entry/{modelEntry}/event/{picksGw ?? capGw ?? ''}"
+							rel="noopener"
+							target="_blank">our FPL entry {modelEntry}</a
+						>{#if picksGw != null}, GW{picksGw} picks{/if}.
+					</p>
+				{/if}
 				{#if alt}
 					<p class="next">
 						Next:
@@ -305,6 +323,9 @@
 		text-decoration: none;
 	}
 	.opp {
+		font-size: var(--step--1);
+	}
+	.src-line {
 		font-size: var(--step--1);
 	}
 	.move {

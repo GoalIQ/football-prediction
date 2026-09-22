@@ -537,12 +537,13 @@
 			{/if}
 			{#if show('clean-sheets')}
 				<!-- 22.9 (A3 2.3): Teams = clean sheet % ruudukko ilman FDR:aa
-				     (brief: moat on CS% ja xP, ei FDR). Vanha matriisi (valittava
-				     GW-vali, FDR, D·A) sailyy saman reitin alla avattavana. -->
+				     (brief: moat on CS% ja xP, ei FDR). Vanha matriisi sailyy
+				     avattavana omalle kierrosvalille, ja siitakin FDR on poistettu
+				     (julkaisutarkistaja + Villen suositus 22.9). -->
 				<div id="pc-cs">
 					<TeamsCs />
 					<details class="more-grid">
-						<summary>Choose the gameweeks, with fixture difficulty</summary>
+						<summary>Choose your own gameweek range</summary>
 						<CleanSheets />
 					</details>
 				</div>

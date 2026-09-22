@@ -739,8 +739,8 @@
 					<h4>GoalIQ model view <span class="src">estimate, not team news</span></h4>
 					{#if lightOnly}
 						<p class="muted">
-							The model's view on this player (chance of starting, projected points) is part
-							of GoalIQ Premium.
+							The model's full view on this player, including chance of starting, is part of
+							GoalIQ Premium.
 						</p>
 					{:else if excluded}
 						<p class="excluded-note">
@@ -857,7 +857,7 @@
 							{/if}
 						{:else}
 							<p class="muted">
-								Projected points for this player are part of GoalIQ Premium. The start
+								The full projection for this player is part of GoalIQ Premium. The start
 								chance and official status here are free.
 							</p>
 						{/if}

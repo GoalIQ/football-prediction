@@ -22,10 +22,12 @@ import { TOOLS, type Tool } from './tools';
 import type { XpPlayer, XpResponse } from './api';
 import {
 	LOCKED_VALUE,
+	NO_XP_SAMPLE,
 	PREVIEW_ROWS,
 	gwCell,
 	lockedToolFor,
 	previewRows,
+	showsXpSample,
 	valueCell
 } from './lockPreview';
 
@@ -172,5 +174,37 @@ describe('LockedToolPreview: hinta ja ostonappi samassa laatikossa, kauppa toiss
 		const script = blankComments(src.slice(0, src.lastIndexOf('</script>')));
 		expect(script).not.toMatch(/\.sort\(/);
 		expect(script.match(/fetch[A-Z]\w*\(/g) ?? []).toEqual(['fetchXp(']);
+	});
+});
+
+describe('Chip timingin lukossa ei Player xP -naytetta (22.9, julkaisutarkistaja)', () => {
+	const src = read('LockedToolPreview.svelte');
+
+	it('poikkeuslistalla on vain premium-tyokaluja, perustelun kanssa, ja chip timing on siella', () => {
+		expect(Object.keys(NO_XP_SAMPLE)).toContain('chip-timing');
+		for (const [slug, why] of Object.entries(NO_XP_SAMPLE)) {
+			const t = TOOLS.find((x) => x.slug === slug);
+			expect(t?.tier, slug).toBe('premium');
+			expect(why.length, slug).toBeGreaterThan(20);
+		}
+		const chip = TOOLS.find((t) => t.slug === 'chip-timing')!;
+		expect(showsXpSample(chip)).toBe(false);
+		expect(showsXpSample(TOOLS.find((t) => t.slug === 'player-xp')!)).toBe(true);
+	});
+
+	it('komponentti kysyy lukijalta ennen taulukkoa, ja ilman naytetta xP:ta ei haeta', () => {
+		const m = markup(src);
+		const guard = m.indexOf('{#if !sample}');
+		const table = m.indexOf('<table>');
+		expect(guard).toBeGreaterThan(-1);
+		expect(guard).toBeLessThan(table);
+		const script = blankComments(src.slice(0, src.lastIndexOf('</script>')));
+		expect(script).toMatch(/const sample = \$derived\(showsXpSample\(tool\)\)/);
+		expect(script).toMatch(/if \(!showsXpSample\(tool\)\) return;\s*fetchXp\(\)/);
+	});
+
+	it('erotteleva kontrolli: ilman vartijaa tarkistin kaatuu', () => {
+		const m = markup(src.replace('{#if !sample}', '{#if false}'));
+		expect(m.indexOf('{#if !sample}')).toBe(-1);
 	});
 });

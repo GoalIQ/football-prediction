@@ -8,6 +8,7 @@
  * Analytiikka: jokainen onnistunut haku capturaa 'fantasy_tools_used'
  * {tool} (ei PII:tä - entry-ID EI mene eventtiin).
  */
+import { modelCardPath } from './weekRows';
 import { API_BASE } from './config';
 import { capture } from './analytics';
 import { authHeaders } from './api';
@@ -263,6 +264,8 @@ export interface RateTeamResponse {
 		/** 5.9: kierros jolle captain on laskettu; kesken kierroksen seuraava deadline-GW. */
 		captain_gw?: number;
 		mode: string;
+		/** entry-moodissa arvioitu FPL-entry (22.9: mallin kortin lahderivi). */
+		entry?: number | null;
 		gw: number;
 		picks_gw?: number | null;
 		/** RATE-TEAM-PICKS-GW-LABEL (27.8): picksit ovat vanhemmalta
@@ -746,28 +749,38 @@ export function fetchModelSquad(): Promise<ModelSquadResponse> {
 	return getTool('/api/fantasy/model-squad', 'model_squad');
 }
 
-let modelCardP: Promise<RateTeamResponse> | null = null;
+const modelCardP = new Map<number, Promise<RateTeamResponse>>();
 /**
- * 22.9 (A3 2.1): This week ilman omaa joukkuetta nayttaa MALLIN rungon
- * kapteenin. Sama rate-team-lukija kuin omalla joukkueella (players-moodi,
- * mallin runko /api/fantasy/model-squadista), joten paatoskortti lukee
- * yhta muotoa eika kapteenia paatella klientissa.
+ * 22.9 (A3 2.1): This week ilman omaa joukkuetta nayttaa MALLIN kapteenin.
  *
- * Ei `fantasy_tools_used`-eventtia: sivun avaus ei ole tyokalun kaytto, ja
- * jokainen kavija kirjautuisi muuten rate_team_draft-kayttajaksi. Tulos
- * muistetaan sivulatauksen ajan (sama kaava kuin fetchFantasy); epaonnistunut
- * haku ei jaa muistiin.
+ * 🔴 JULKAISUTARKISTAJA 22.9 (B1): ensimmainen versio luki
+ * /api/fantasy/model-squadin = optimoijan vapaan rungon (optimal_proven
+ * false). Se EI ole mallin joukkue: goaliq.app/fpl kertoo julkisesti etta
+ * mallin runko jaadytetaan ennen jokaista deadlinea ja pelataan FPL:ssa
+ * entryna 116920, ja gw_calls pisteyttaa mallin kapteenin jaadytetysta
+ * rungosta. Optimoijan ja entryn rungoissa oli 22.9 vain 8/15 samaa
+ * pelaajaa, eli kortti olisi nimennyt "The model's captain" -otsikolla
+ * pelaajan jota malli ei pelaa.
+ *
+ * Nyt lahde on mallin oma FPL-entry (id model-racen `entry_series`ista,
+ * lukija `modelEntryId`) ja sama rate-team-lukija kuin kayttajan omalla
+ * joukkueella; kapteenisaanto on sama kuin freezessa (XI:n korkein GW-xP).
+ * Polku tulee yhdesta lukijasta (`modelCardPath`, $lib/weekRows), ja portti
+ * `modelCard.gate.test.ts` kaatuu jos tama palaa model-squadiin.
+ *
+ * Ei `fantasy_tools_used`-eventtia: sivun avaus ei ole tyokalun kaytto.
+ * Tulos muistetaan sivulatauksen ajan; epaonnistunut haku ei jaa muistiin.
  */
-export function fetchModelCard(): Promise<RateTeamResponse> {
-	modelCardP ??= (async () => {
-		const squad = await getTool<ModelSquadResponse>('/api/fantasy/model-squad', 'model_squad', false);
-		const ids = squad.players.map((p) => p.id).join(',');
-		return getTool<RateTeamResponse>(`/api/fantasy/rate-team?players=${ids}`, 'rate_team_draft', false);
-	})().catch((e) => {
-		modelCardP = null;
-		throw e;
-	});
-	return modelCardP;
+export function fetchModelEntryCard(entryId: number): Promise<RateTeamResponse> {
+	let p = modelCardP.get(entryId);
+	if (!p) {
+		p = getTool<RateTeamResponse>(modelCardPath(entryId), 'rate_team', false).catch((e) => {
+			modelCardP.delete(entryId);
+			throw e;
+		});
+		modelCardP.set(entryId, p);
+	}
+	return p;
 }
 
 /** entry valinnainen (MY-TEAM-CONTEXT 3.9): annettuna omat rivit merkitään. */

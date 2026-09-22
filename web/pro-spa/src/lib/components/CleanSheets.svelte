@@ -1,10 +1,16 @@
 <script lang="ts">
 	/**
-	 * CleanSheets – CS%/FDR-matriisi GW-välivalitsimella. Web P1 (30.7):
+	 * CleanSheets – CS%-matriisi GW-välivalitsimella. Web P1 (30.7):
 	 * ekstraktoitu FreeView'sta omaksi komponentiksi, jotta yhdistetty
-	 * 6 ryhmän ToolsHome voi renderöidä sen Players-ryhmässä. Logiikka ja
-	 * markup ovat 1:1 entiset (27.7-horisonttikontrakti + 26.7 classic
-	 * -värisäännöt) – vain kuori vaihtui.
+	 * 6 ryhmän ToolsHome voi renderöidä sen Players-ryhmässä.
+	 *
+	 * 22.9 (UX-uudistus A3 2.3, julkaisutarkistaja + Villen suositus): FDR
+	 * POIS. Brief: tuotteen ydin on clean sheet % + xP + julkaistu track
+	 * record, ei FDR:aa (virallinen FPL 26/27 tekee sen). Tama on nyt Players
+	 * › Teams -nakyman "Choose your own gameweek range" -osio TeamsCs-
+	 * ruudukon alla: sama CS% omalla kierrosvalilla. Valittavissa ovat vain
+	 * mallinnetut kierrokset (`tier` near): kaukoriveilla ei ole CS%:a
+	 * rakenteellisesti (27.7), ja ilman FDR:aa niissa ei olisi mitaan lukua.
 	 */
 	import { fetchFantasy, type FantasyResponse, type FantasyTeam } from '$lib/api';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
@@ -35,17 +41,19 @@
 		if (v <= 20) return 'is-hard';
 		return '';
 	}
-	function fdrCellClass(fdr: number): string {
-		if (fdr <= 2) return 'is-easy';
-		if (fdr >= 4) return 'is-hard';
-		return '';
-	}
 
 	let nearHorizon = $derived(data?.meta?.near_horizon_gw ?? 6);
+	/* Vain kierrokset joilla on mallin CS% (lahirivit). */
 	let allGws = $derived(
-		[...new Set((data?.teams ?? []).flatMap((t) => t.fixtures.map((f) => f.gw)))].sort(
-			(a, b) => a - b
-		)
+		[
+			...new Set(
+				(data?.teams ?? []).flatMap((t) =>
+					t.fixtures
+						.filter((f) => (f.tier ?? 'near') === 'near' && typeof f.cs_pct === 'number')
+						.map((f) => f.gw)
+				)
+			)
+		].sort((a, b) => a - b)
 	);
 	let minGw = $derived(allGws[0] ?? 1);
 	let maxGw = $derived(allGws[allGws.length - 1] ?? 1);
@@ -65,25 +73,23 @@
 
 	type RangeAgg = {
 		n: number;
-		avgFdr: number | null;
 		avgCs: number | null;
 		allNear: boolean;
 	};
 
 	function rangeAgg(t: FantasyTeam): RangeAgg {
 		const fx = t.fixtures.filter((f) => f.gw >= gwFrom && f.gw <= gwTo);
-		if (!fx.length) return { n: 0, avgFdr: null, avgCs: null, allNear: false };
+		if (!fx.length) return { n: 0, avgCs: null, allNear: false };
 		const allNear = fx.every((f) => (f.tier ?? 'near') === 'near');
 		const cs = fx.map((f) => f.cs_pct).filter((v): v is number => typeof v === 'number');
 		return {
 			n: fx.length,
-			avgFdr: fx.reduce((s, f) => s + f.fdr, 0) / fx.length,
 			avgCs: allNear && cs.length === fx.length ? cs.reduce((s, v) => s + v, 0) / cs.length : null,
 			allNear
 		};
 	}
 
-	let sortKey = $state<'fdr' | 'cs' | 'n' | 'name'>('fdr');
+	let sortKey = $state<'cs' | 'n' | 'name'>('cs');
 
 	let sortedTeams = $derived.by(() => {
 		const rows = (data?.teams ?? []).map((t) => ({ t, a: rangeAgg(t) }));
@@ -91,13 +97,10 @@
 			if (x.a.n === 0 !== (y.a.n === 0)) return x.a.n === 0 ? 1 : -1;
 			if (sortKey === 'name') return x.t.name.localeCompare(y.t.name);
 			if (sortKey === 'n') return y.a.n - x.a.n;
-			if (sortKey === 'cs') {
-				if (x.a.avgCs == null && y.a.avgCs == null) return 0;
-				if (x.a.avgCs == null) return 1;
-				if (y.a.avgCs == null) return -1;
-				return y.a.avgCs - x.a.avgCs;
-			}
-			return (x.a.avgFdr ?? 99) - (y.a.avgFdr ?? 99);
+			if (x.a.avgCs == null && y.a.avgCs == null) return 0;
+			if (x.a.avgCs == null) return 1;
+			if (y.a.avgCs == null) return -1;
+			return y.a.avgCs - x.a.avgCs;
 		});
 		return rows;
 	});
@@ -110,12 +113,10 @@
 	 * haluamme: jakaja mainostaa meitä ilman että hän on maksanut. */
 	let sharing = $state(false);
 
-	/* Vain joukkueet joilla on mallinnettu CS% valitulla välillä. Kaukaisilla
-	 * kierroksilla avgCs on null (far_basis), eikä korttiin panna tyhjää
-	 * lukua eikä FDR:ää CS%:n paikalle.
+	/* Vain joukkueet joilla on mallinnettu CS% valitulla välillä.
 	 * 6.8 laiteverify-pariteetti: kortin rivit AINA CS%-järjestyksessä UI-
-	 * sortista riippumatta – FDR-sortilla rank-numerot näyttivät CS-rankingilta
-	 * jossa 31 % oli sijalla 10 ja 35 % sijalla 4 = julkisena kuvana bugilta. */
+	 * sortista riippumatta – muulla sortilla rank-numerot näyttivät CS-
+	 * rankingilta = julkisena kuvana bugilta. */
 	let shareRows = $derived(
 		sortedTeams
 			.filter((r) => r.a.avgCs != null)
@@ -131,17 +132,18 @@
 				title: 'CLEAN SHEET OUTLOOK',
 				subtitle: `GW${gwFrom} to GW${gwTo}, GoalIQ match model`,
 				nameLabel: 'TEAM',
-				midLabel: 'FDR',
+				// 22.9: FDR pois (brief). Keskisarake on ottelumaara: tyhja GW = 0
+				// ja tupla = 2 on FPL-pelaajalle olennaisin konteksti keskiarvon
+				// vieressa.
+				midLabel: 'GAMES',
 				valueLabel: 'CS%',
 				fileName: 'goaliq_clean_sheets.png',
 				rows: shareRows.map((r, i) => ({
 					rank: i + 1,
 					name: r.t.name,
-					// tyhjä GW = 0 ja tupla = 2: se on FPL-pelaajalle olennaisin
-					// konteksti keskiarvon vieressä.
-					tag: `${r.a.n}x`,
+					tag: '',
 					team: '',
-					mid: r.a.avgFdr != null ? r.a.avgFdr.toFixed(2) : '',
+					mid: String(r.a.n),
 					value: `${Math.round(r.a.avgCs as number)}%`
 				}))
 			});
@@ -151,12 +153,6 @@
 		}
 	}
 
-	let rangeHasFar = $derived(gwTo > minGw + nearHorizon - 1);
-	let hasDuoAny = $derived(
-		data?.teams?.some((t) =>
-			t.fixtures.some((f) => typeof f.def_fdr === 'number' && typeof f.att_fdr === 'number')
-		) ?? false
-	);
 </script>
 
 {#if error}
@@ -179,18 +175,10 @@
 		</h2>
 		<p class="muted">
 			Free · <strong>Avg CS%</strong> = the team's average chance of a clean sheet from the
-			match model across the gameweeks you select. It is shown only while the whole range
-			sits inside the modelled window. Beyond that the calendar still tells you where the
-			swings are, but a precise percentage would not be honest.
-			<strong>Avg FDR</strong> = average fixture difficulty from the GoalIQ model (win% +
-			xG), not FPL's official FDR; 1 = easiest, 5 = hardest. Each GW cell shows opponent,
-			venue and that fixture's clean sheet probability. Only the two ends are coloured:
-			44% or more reads gold, 20% or less reads coral, and everything between stays
-			plain, so the colour marks a threshold and not a gradient (model FDR in the
-			cell tooltip).{#if hasDuoAny}
-				The <strong>D · A</strong> chip splits difficulty by direction:
-				<strong>D</strong> = how hard it is to keep a clean sheet,
-				<strong>A</strong> = how hard it is to score, both 1 (easiest) to 5 (hardest).{/if}
+			match model across the gameweeks you select, within the modelled window. Each GW cell
+			shows opponent, venue and that fixture's clean sheet probability. Only the two ends
+			are coloured: 44% or more reads gold, 20% or less reads coral, and everything between
+			stays plain, so the colour marks a threshold and not a gradient.
 		</p>
 
 		<MethodNote summary="How these numbers are calculated">
@@ -199,11 +187,6 @@
 				team concedes zero in that fixture. It comes from a Dixon-Coles score matrix
 				(tau-corrected) fitted on match data, the same engine behind our published,
 				pre-match logged track record.
-			</p>
-			<p>
-				<strong>Fixture difficulty (FDR 1-5)</strong> is derived from the same model, not
-				from FPL's official ratings: each fixture's expected outcome is scaled onto a 1-5
-				band, so a "2" here means the model itself rates the matchup favourable.
 			</p>
 			<p>
 				Projections refresh daily, including availability and injury flags. Model
@@ -239,7 +222,6 @@
 			<label>
 				<span class="muted">Sort by</span>
 				<select bind:value={sortKey}>
-					<option value="fdr">Easiest fixtures</option>
 					<option value="cs">Best clean sheet %</option>
 					<option value="n">Most fixtures</option>
 					<option value="name">Team name</option>
@@ -257,12 +239,6 @@
 			{/if}
 		</div>
 
-		{#if rangeHasFar}
-			<p class="banner">
-				{data.meta.far_basis_label ??
-					'Fixture difficulty only beyond the next few gameweeks. Clean sheet % appears as each gameweek moves closer.'}
-			</p>
-		{/if}
 
 		{#if shareRows.length >= 3}
 			<div class="share-row">
@@ -279,8 +255,7 @@
 				<thead>
 					<tr>
 						<th>Team</th>
-						<th class="num"><abbr title="Chance of a clean sheet from the match model, averaged over the selected gameweeks. Blank when the range reaches beyond the modelled window.">Avg CS%</abbr></th>
-						<th class="num m-hide"><abbr title="Fixture difficulty from the GoalIQ model (win% + xG), not FPL's official FDR; 1 easiest to 5 hardest">Avg FDR</abbr></th>
+						<th class="num"><abbr title="Chance of a clean sheet from the match model, averaged over the selected gameweeks.">Avg CS%</abbr></th>
 						<th class="num m-hide"><abbr title="Fixtures in the selected range: 0 = blank gameweek, 2+ = double gameweek">Games</abbr></th>
 						{#each gwCols as gw (gw)}
 							<th class:is-far={gw > minGw + nearHorizon - 1} class:m-hide={gw > minGw + 1}>GW{gw}</th>
@@ -292,7 +267,6 @@
 						<tr class:is-blank={a.n === 0}>
 							<td>{t.name}</td>
 							<td class="num">{a.avgCs != null ? a.avgCs.toFixed(1) : '–'}</td>
-							<td class="num m-hide">{a.avgFdr != null ? a.avgFdr.toFixed(2) : '–'}</td>
 							<td class="num m-hide">{a.n}</td>
 							{#each gwCols as gw (gw)}
 								<!-- 🔴 filter, EI find (30.8, FDR-GRID-DGW). `find` palautti doublesta
@@ -306,20 +280,9 @@
 									<td
 										class="cs-link-cell {fs.length === 1 && typeof fs[0].cs_pct === 'number'
 											? csCellClass(fs[0].cs_pct)
-											: fs.length === 1
-												? fdrCellClass(fs[0].fdr)
-												: ''}"
+											: ''}"
 										class:m-hide={gw > minGw + 1}
-										title={fs
-											.map(
-												(x) =>
-													`${x.opponent ?? x.opponent_short} (${x.venue}) · ${
-														typeof x.def_fdr === 'number' && typeof x.att_fdr === 'number'
-															? `Defence FDR ${x.def_fdr} (clean sheet angle) · Attack FDR ${x.att_fdr} (scoring angle)`
-															: `FDR ${x.fdr}`
-													}`
-											)
-											.join(' · ') +
+										title={fs.map((x) => `${x.opponent ?? x.opponent_short} (${x.venue})`).join(' · ') +
 											(fs.length > 1
 												? ' · double gameweek, so the cell is left uncoloured: the two fixtures can pull in opposite directions'
 												: '') +
@@ -334,14 +297,10 @@
 													target="_blank"
 													rel="noopener"
 												>
-													{f.opponent_short} ({f.venue}) {csRounded(f.cs_pct)}%{#if typeof f.def_fdr === 'number' && typeof f.att_fdr === 'number'}
-														<span class="fdr-duo">D{f.def_fdr} · A{f.att_fdr}</span>{/if}
+													{f.opponent_short} ({f.venue}) {csRounded(f.cs_pct)}%
 												</a>
 											{:else}
 												{f.opponent_short} ({f.venue})
-												{#if typeof f.def_fdr === 'number' && typeof f.att_fdr === 'number'}
-													<span class="fdr-duo">D{f.def_fdr} · A{f.att_fdr}</span>
-												{:else}{f.fdr}{/if}
 											{/if}
 										{/each}
 									</td>
@@ -433,18 +392,5 @@
 	   ei katoa (FDR-GRID-DGW). */
 	.dgw-sep {
 		opacity: 0.5;
-	}
-	.fdr-duo {
-		display: inline-block;
-		margin-left: 6px;
-		padding: 0 5px;
-		border: 1px solid rgba(243, 242, 242, 0.4);
-		border-radius: var(--radius);
-		background: rgba(11, 10, 9, 0.72);
-		color: var(--giq-cream);
-		font-size: 0.72em;
-		font-weight: 700;
-		line-height: 1.6;
-		white-space: nowrap;
 	}
 </style>

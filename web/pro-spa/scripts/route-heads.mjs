@@ -39,6 +39,15 @@ try {
 }
 const { routeHeads, applyRouteHead, buildProblems, readHead, routeFile } = mod;
 
+// 22.9 (A3): vanhojen polkujen 301 palvelimella. Sama lahde kuin portissa
+// (src/lib/legacyPaths.ts), joten kartta ja tiedosto eivat voi erota.
+let legacy;
+try {
+	legacy = await import('../src/lib/legacyPaths.ts');
+} catch (e) {
+	fail(`src/lib/legacyPaths.ts ei latautunut (${e?.code ?? e})`);
+}
+
 const BUILD = fileURLToPath(new URL('../build/', import.meta.url));
 const INDEX = `${BUILD}index.html`;
 if (!existsSync(INDEX)) fail('build/index.html puuttuu (aja vite build ensin)');
@@ -83,7 +92,20 @@ const problems = buildProblems(served, heads);
 if (readFileSync(INDEX, 'utf8') !== shell) problems.push('index.html muuttui');
 if (problems.length) fail(`jalkitarkistus kaatui:\n  ${problems.join('\n  ')}`);
 
+// --- _redirects (Cloudflare Pages) -----------------------------------------
+// Fail-closed: kasin kirjoitettu static/_redirects ohitettaisiin hiljaa, joten
+// olemassa oleva tiedosto kaataa buildin. Jalkitarkistus luetaan levylta.
+const REDIRECTS = `${BUILD}_redirects`;
+if (existsSync(REDIRECTS)) fail('build/_redirects on jo olemassa (static/?): generoidaan legacyPaths.ts:sta');
+const redirects = legacy.redirectsFile();
+writeFileSync(REDIRECTS, redirects);
+if (readFileSync(REDIRECTS, 'utf8') !== redirects) fail('_redirects: levylla eri sisalto');
+for (const r of legacy.redirectRules()) {
+	if (served.has(r.from)) fail(`_redirects: ${r.from} varjostaisi reitin jolla on oma head`);
+	if (existsSync(`${BUILD}${routeFile(r.from)}`)) fail(`_redirects: ${r.from} varjostaisi tiedoston`);
+}
+
 const titles = new Set([...served.values()].map((h) => readHead(h).titles[0]));
 console.log(
-	`route-heads: OK (${written.length} reittia, ${titles.size} eri titlea, /ucl = "${readHead(served.get('/ucl')).titles[0]}")`
+	`route-heads: OK (${written.length} reittia, ${titles.size} eri titlea, /ucl = "${readHead(served.get('/ucl')).titles[0]}", _redirects ${legacy.redirectRules().length} saantoa)`
 );

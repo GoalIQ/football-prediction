@@ -95,7 +95,7 @@ export const GROUPS: Group[] = [
 		// tyokalu, joten paatyokalun kysymys ("Who should wear the armband")
 		// kuvaisi vain yhden viidesta. Julkaisutarkistajalle copy-listassa.
 		description:
-			'Find any player and sort by captain, projected points, value, differentials or price change, plus clean sheet chances by team.'
+			'Find any player and sort by value, differentials or price change, plus clean sheet chances by team. Captain and xP sorting are part of GoalIQ Premium.'
 	},
 	{
 		id: 'matches',

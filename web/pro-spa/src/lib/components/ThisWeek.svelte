@@ -6,7 +6,7 @@
 	 * deadlinea?". Jarjestys:
 	 *   1. deadline-rivi (kierros, aika lukijan vyohykkeella, jaljella)
 	 *   2. paatoskortti: Captain / Transfer / Chip (DecisionCard)
-	 *   3. Last call: edellinen kierros, malli vs sina vs FPL:n keskiarvo
+	 *   3. Last gameweek: edellinen kierros, malli vs sina vs FPL:n keskiarvo
 	 *   4. kierroksen clean sheet -rivi
 	 *   5. sina vs malli, kausi
 	 *   6. Beat the Model
@@ -24,7 +24,7 @@
 	 */
 	import { auth } from '$lib/auth.svelte';
 	import { fetchFantasy, fetchModelRace, type FantasyResponse, type ModelRaceResponse } from '$lib/api';
-	import { fetchModelCard, type RateTeamResponse } from '$lib/fantasyTools';
+	import { fetchModelEntryCard, type RateTeamResponse } from '$lib/fantasyTools';
 	import { currentEntryId, fplEntry } from '$lib/fplEntry.svelte';
 	import {
 		checkedText,
@@ -33,7 +33,7 @@
 		parseGeneratedAt,
 		weekPhase
 	} from '$lib/gameweek';
-	import { gwCleanSheets, lastCall, seasonLine } from '$lib/weekRows';
+	import { gwCleanSheets, lastCall, modelEntryId, seasonLine } from '$lib/weekRows';
 	import DecisionCard from './DecisionCard.svelte';
 	import GwReview from './GwReview.svelte';
 	import SeasonRace from './SeasonRace.svelte';
@@ -102,37 +102,7 @@
 	const chk = $derived(checkedText(parseGeneratedAt(fantasy?.meta?.generated_at), now));
 	const cs = $derived(gwCleanSheets(fantasy));
 
-	/* ---------------- kortti: oma joukkue tai mallin runko ----------------
-	   Mallin korttia ei haeta ennen kuin tiedetaan, onko kayttajalla joukkue:
-	   kirjautuneen profiili luetaan ensin, muuten tallennetun joukkueen
-	   kayttaja naki hetken mallin kortin ja sitten oman. */
 	const entryId = $derived(currentEntryId());
-	const entryKnown = $derived(
-		auth.sessionResolved && (!auth.user || fplEntry.profileChecked === auth.user.id)
-	);
-	const needModel = $derived(
-		entryKnown && !data && !loading && (entryId == null || !!error || picksNotPublished)
-	);
-	let model = $state<RateTeamResponse | null>(null);
-	let modelFailed = $state(false);
-	$effect(() => {
-		if (!needModel || model || modelFailed) return;
-		fetchModelCard().then(
-			(d) => (model = d),
-			() => (modelFailed = true)
-		);
-	});
-	const card = $derived(data ?? (needModel ? model : null));
-	const own = $derived(!!data);
-
-	let entryInput = $state('');
-	const entryInputValid = $derived(/^\d{1,10}$/.test(entryInput.trim()));
-	function submitEntry(e: SubmitEvent) {
-		e.preventDefault();
-		if (!entryInputValid) return;
-		onEntry?.(entryInput.trim());
-	}
-
 	/* ---------------- rivit: model-race ---------------- */
 	let race = $state<ModelRaceResponse | null>(null);
 	let raceDone = $state(false);
@@ -154,6 +124,56 @@
 			}
 		);
 	});
+	/* ---------------- kortti: oma joukkue tai mallin runko ----------------
+	   Mallin korttia ei haeta ennen kuin tiedetaan, onko kayttajalla joukkue:
+	   kirjautuneen profiili luetaan ensin, muuten tallennetun joukkueen
+	   kayttaja naki hetken mallin kortin ja sitten oman. */
+	const entryKnown = $derived(
+		auth.sessionResolved && (!auth.user || fplEntry.profileChecked === auth.user.id)
+	);
+	const needModel = $derived(
+		entryKnown && !data && !loading && (entryId == null || !!error || picksNotPublished)
+	);
+	let model = $state<RateTeamResponse | null>(null);
+	let modelFailed = $state(false);
+	/* 22.9 (B1): mallin kortti tulee mallin omasta FPL-entrysta, jonka id on
+	   model-racessa (`modelEntryId`). Jos kayttajan entrylla haettu race
+	   epaonnistui (esim. vaara ID), id luetaan entryttomasta racesta. */
+	let fallbackRace = $state<ModelRaceResponse | null>(null);
+	let fallbackAsked = false;
+	const modelEntry = $derived(modelEntryId(race) ?? modelEntryId(fallbackRace));
+	$effect(() => {
+		if (!needModel || !raceDone || modelEntry != null || fallbackAsked) return;
+		fallbackAsked = true;
+		fetchModelRace(null).then(
+			(r) => {
+				fallbackRace = r;
+				// Vanha backend ilman entry_series-lohkoa: ei korttia (fail-closed),
+				// ei ikuista latausrivia.
+				if (modelEntryId(r) == null) modelFailed = true;
+			},
+			() => (modelFailed = true)
+		);
+	});
+	$effect(() => {
+		const id = modelEntry;
+		if (!needModel || model || modelFailed || id == null) return;
+		fetchModelEntryCard(id).then(
+			(d) => (model = d),
+			() => (modelFailed = true)
+		);
+	});
+	const card = $derived(data ?? (needModel ? model : null));
+	const own = $derived(!!data);
+
+	let entryInput = $state('');
+	const entryInputValid = $derived(/^\d{1,10}$/.test(entryInput.trim()));
+	function submitEntry(e: SubmitEvent) {
+		e.preventDefault();
+		if (!entryInputValid) return;
+		onEntry?.(entryInput.trim());
+	}
+
 	const last = $derived(lastCall(race));
 	const season = $derived(seasonLine(race));
 
@@ -211,12 +231,14 @@
 	{/if}
 
 	<ul class="rows">
-		<!-- Last call: viimeisin kierros mallin sarjassa. -->
+		<!-- Last gameweek: viimeisin kierros mallin sarjassa. 22.9 (julkaisu-
+		     tarkistaja): nimi oli "Last call", joka englanniksi tarkoittaa
+		     viimeista mahdollisuutta eika edellista kierrosta. -->
 		{#if last}
 			<li>
 				<details bind:open={reviewOpen}>
 					<summary><span class="sum">
-						<span class="lbl">Last call, GW{last.gw}</span>
+						<span class="lbl">Last gameweek, GW{last.gw}</span>
 						{#if last.kind === 'scored'}
 							<span class="vals">
 								Model <b>{last.model ?? '–'}</b>{#if last.beforeHits}<span class="tag">before hits</span>{/if}
@@ -236,14 +258,14 @@
 							{#if entryId != null}
 								<GwReview />
 							{:else}
-								<p class="muted">Add your FPL team ID above for your own gameweek review.</p>
+								<p class="muted">Add your FPL team ID below for your own gameweek review.</p>
 							{/if}
 						{/if}
 					</div>
 				</details>
 			</li>
 		{:else if !raceDone}
-			<li class="ph" aria-hidden="true"><span class="lbl">Last call</span></li>
+			<li class="ph" aria-hidden="true"><span class="lbl">Last gameweek</span></li>
 		{/if}
 
 		<!-- Kierroksen clean sheet -rivi: ottelu kerrallaan, ei FDR:aa. -->

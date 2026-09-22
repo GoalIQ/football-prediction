@@ -26,7 +26,7 @@
 	import { preferredStore, appCtaLabel, STORE_URL, type AppStore } from '$lib/appHandoff';
 	import { actionableGameweek } from '$lib/gameweek';
 	import { xpHorizon } from '$lib/xpHorizon';
-	import { PREVIEW_ROWS, gwCell, previewRows, valueCell } from '$lib/lockPreview';
+	import { PREVIEW_ROWS, gwCell, previewRows, showsXpSample, valueCell } from '$lib/lockPreview';
 	import { findTool, type Tool } from '$lib/tools';
 
 	let { tool, onUpgrade }: { tool: Tool; onUpgrade: () => void } = $props();
@@ -51,12 +51,15 @@
 		// Sama moduulitason cache kuin ToolsHomen xP-haulla: kirjautuneelle
 		// tama on jo matkalla, kirjautumattomalle palvelin antaa maskatun
 		// kymmenikon (`mask_xp_payload`).
+		if (!showsXpSample(tool)) return;
 		fetchXp().then(
 			(d) => (xp = d),
 			() => (failed = true)
 		);
 	});
 
+	/** 22.9: Chip timingin lukossa ei xP-naytetta (NO_XP_SAMPLE). */
+	const sample = $derived(showsXpSample(tool));
 	const rows = $derived(previewRows(xp));
 	// Naytteen lahde nimetaan rekisterista (sama nimi kuin navissa).
 	const SOURCE_TOOL = findTool('players', 'player-xp')?.title ?? 'Player xP';
@@ -78,7 +81,10 @@
 	<p class="question">{tool.question}</p>
 
 	<div class="lock-card">
-		{#if failed}
+		{#if !sample}
+			<!-- 22.9: ei Player xP -naytetta tyokalulle johon se ei liity
+			     ($lib/lockPreview NO_XP_SAMPLE). Pelkka lukko ja hinta. -->
+		{:else if failed}
 			<p class="muted no-data">Could not load xP projections right now. Please try again shortly.</p>
 		{:else if noData}
 			<p class="muted no-data">xP projections are not available for this gameweek yet.</p>
@@ -244,6 +250,12 @@
 		border-top: 1px solid var(--border);
 		margin-top: var(--s-3);
 		padding-top: var(--s-3);
+	}
+	/* Ilman naytetta ostolaatikko on kortin ainoa sisalto: ei erotinviivaa. */
+	.buy:first-child {
+		border-top: 0;
+		margin-top: 0;
+		padding-top: 0;
 	}
 	.buy-head {
 		margin: 0 0 var(--s-2);
