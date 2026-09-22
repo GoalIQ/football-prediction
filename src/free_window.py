@@ -280,8 +280,16 @@ def hero_cta_open_html() -> str:
 
 
 def hero_cta_closed_html() -> str:
-    return (f'<a class="btn btn-primary" href="{PRO_URL}" '
-            'data-cta="hero-premium">Get Premium &#9656;</a>')
+    """22.9.2026 (web-audit T4): hinta nappiin ja nappi hinnastoon.
+
+    Ennen nappi sanoi vain "Get Premium" ja vei pron juureen, josta ostoon oli
+    kaksi klikkausta ja vieritys. Hinta nakyi ensimmaisen kerran pienena
+    versaalirivina napin alla, ja landingin suorat hintanapit saivat 0
+    klikkausta 30 vrk:ssa. `?tab=premium` avaa pron hinnastonakyman.
+    """
+    return (f'<a class="btn btn-primary" href="{PRO_URL}?tab=premium" '
+            f'data-cta="hero-premium">Get Premium &middot; &euro;{PC.SEASON} '
+            'a year &#9656;</a>')
 
 
 def hero_cta_html(now: _dt.datetime | None = None) -> str:

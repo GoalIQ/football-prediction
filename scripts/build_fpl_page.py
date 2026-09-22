@@ -63,6 +63,10 @@ from scripts.ranking import ranked  # deterministinen tasapelin katkaisu
 from scripts.slugs import slug as _slug  # noqa: E402
 from scripts.build_fpl_phase0 import map_name  # noqa: E402
 from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
+# 22.9 (web-audit T5 + T7): ylapalkki, Organization ja erottelurivi yhdesta
+# lahteesta. Ennen fpl.html kantoi omaa palkkia ja omaa Organization-kuvausta.
+from src import site_identity as SI  # noqa: E402
+from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 
 # #38: PostHog cookieless site-analytiikka (persistence=memory -> ei evasteita,
 # ei consent-banneria; ei PII:ta). Sama projekti kuin appi + pro-web (427890);
@@ -1677,28 +1681,9 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
     # Google sekoittaa GoalIQ:n samannimiseen Benisse-appiin + YouTube/IG-tileihin
     # → Organization + sameAs VAIN virallisiin kanaviin (Play, App Store, X,
     #   TikTok, IG - Villen vahvistamat 22.7, #121-GEO).
-    org = {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "@id": ORG_ID,
-        "name": "GoalIQ",
-        "url": BASE + "/",
-        "description": (
-            "GoalIQ makes FPL (Fantasy Premier League) tools - clean sheet "
-            "probability and fixture difficulty, rate my team with a captain pick, "
-            "a fit checker, a draft rater "
-            "and price watch free, plus an interactive team manager with a "
-            "gameweek planner, per-gameweek expected points (xP) for every player in the projection, the captain "
-            "ranker, player value, a DefCon tracker, "
-            "who replaces a player at a similar price, player compare for up to four players and transfer "
-            "suggestions with apply on GoalIQ "
-            "Premium - powered by a Dixon-Coles match model "
-            "with a public, pre-match-logged prediction track record. Built by "
-            "an independent developer in Finland. Analytics, not betting."
-        ),
-        "logo": BASE + "/assets/brand/goaliq-appicon-512.png",
-        "sameAs": [PLAY_URL, APPSTORE_URL, X_URL, TIKTOK_URL, IG_URL],
-    }
+    # 22.9: Organization tulee src/site_identity.py:sta (sama solmu kuin
+    # index.html:ssa). Oma kuvaus tassa oli yksi kolmesta eri tekstista.
+    org = SI.organization_ld()
     app = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
@@ -1724,8 +1709,8 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "leaders, a DefCon (defensive contribution) tracker, "
             "and transfer suggestions with apply. On the web it "
             "also shows upcoming fixtures and league tables. Also predicts "
-            "any match - win probability, expected goals (xG) and the most "
-            "likely score - using a Dixon-Coles model. Analytics, not betting."
+            "any match - win probability, expected goals (xG) and scoreline "
+            "probabilities - using a Dixon-Coles model. Analytics, not betting."
         ),
         "url": BASE + "/",
         "downloadUrl": [PLAY_URL, APPSTORE_URL],
@@ -2260,6 +2245,29 @@ text-transform:uppercase}
 from src.models.fpl_status import left_league
 
 
+def xp_card_caption(xp: dict | None) -> str:
+    """/fpl:n tyokaluhakemiston "Expected points" -kortin alarivi.
+
+    🔴 22.9.2026 (web-audit C2): rivi oli kovakoodattu "Projected points,
+    next gameweek", mutta /fpl/expected-points on IKKUNAN summa (GW6-11) ja
+    kortin oma kuva sanoo "next six gameweeks". Kiintea "six" olisi yhta
+    vaara kauden lopussa, kun ikkunassa on vahemman kierroksia (CLAUDE.md
+    6a(3)): ikkuna johdetaan samasta lukijasta kuin etusivun
+    XP-WINDOW-otsikko (`fpl_gameweek.window_label`).
+    """
+    if not xp or not xp.get("players"):
+        return "Projected points by gameweek"
+    from src.models.fpl_gameweek import window_label
+    meta = xp.get("meta") or {}
+    gws = ((xp.get("players") or [{}])[0] or {}).get("gameweeks") or []
+    # Fallback-pituus yhdesta lukijasta (tests/test_horizon_window_label_
+    # discipline.py), ei `meta.horizon_gw`:sta.
+    window = window_label(meta, gws, horizon_sum_gw(meta, gws, 6))
+    if not window.startswith("GW"):
+        return "Projected points by gameweek"
+    return f"Projected points, {window}"
+
+
 def team_news_block(xp: dict | None) -> str:
     """Tiivis team news -nosto fpl.html:aan (15.8.2026, Villen pyynto).
 
@@ -2423,18 +2431,11 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 
 {jsonld}
 <meta name="theme-color" content="#0B0A09">
-<style>{CSS}</style>
+<style>{CSS}{SITE_NAV_CSS}</style>
 {POSTHOG_SNIPPET}
 </head>
 <body>
-<header class="dark">
-  <div class="bar"></div>
-  <div class="nav">
-    <div class="brand"><a href="./"><svg class="brand-icon" width="26" height="26" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a></div>
-    <a class="signin" href="https://pro.goaliq.app/" data-cta="nav-signin">Sign in</a>
-    <a class="cta" href="{PRO_TAB_URL}" data-cta="nav">Open GoalIQ Premium</a>
-  </div>
-</header>
+{site_nav_html("fpl")}
 
 <main>
 <article>
@@ -2451,7 +2452,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
      images the pages already use for og:image, 450px webp, lazy, sized.
      Alt is empty: the image repeats the card's own two lines (portti 5.9). -->
 <nav class="tooldir" aria-label="Free FPL tools">
-  <a href="/fpl/expected-points"><img src="/assets/cards/tools/expected-points.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Expected points</b><span>Projected points, next gameweek</span></a>
+  <a href="/fpl/expected-points"><img src="/assets/cards/tools/expected-points.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Expected points</b><span>{xp_card_caption(xp)}</span></a>
   <a href="/fpl/best-captain"><img src="/assets/cards/tools/best-captain.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Captain picks</b><span>Who to give the armband</span></a>
   <a href="/fpl/differentials"><img src="/assets/cards/tools/differentials.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Differentials</b><span>Low owned, still rated</span></a>
   <a href="/fpl/model-xi"><img src="/assets/cards/tools/model-xi.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Model XI</b><span>Best 15 for 100.0m</span></a>
@@ -2655,6 +2656,7 @@ predictions and analytics. Not betting advice.</p>
   Association Premier League Limited. GoalIQ is not affiliated with or endorsed
   by the Premier League. Data on this page is a statistical model output for
   informational purposes.</p>
+  {SI.footer_disambig_html()}
   </div>
 </footer>
 

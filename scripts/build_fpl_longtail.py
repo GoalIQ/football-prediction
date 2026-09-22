@@ -61,6 +61,9 @@ from scripts.build_fpl_page import (  # noqa: E402
     write_urlset,
 )
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
+# Ylapalkki yhdesta lahteesta (22.9, web-audit T5): FPL-alasivun palkki vei
+# ennen ottelu-ennusteisiin ("All predictions") eika takaisin /fpl:aan.
+from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text  # todiste: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
@@ -198,6 +201,11 @@ letter-spacing:-0.01em;}
 .hero .lede{color:var(--hero-muted);max-width:640px;}
 h2{font-size:22px;margin:30px 0 10px;}
 .content{padding-top:26px;}
+/* 22 Sep (web audit C8): on a phone the lede ended 106px above the first
+   content block (hero padding 44 + content padding 26 + block margin), which
+   read as an empty screen band on /fpl/expected-points. Halved on narrow
+   screens; wide screens unchanged. */
+@media (max-width:560px){.hero{padding-bottom:22px;}.content{padding-top:12px;}}
 .card{background:var(--paper);border:1px solid var(--line);
 border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
 .lede{color:var(--muted);margin-bottom:22px;}
@@ -579,15 +587,10 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         'IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>\n'
         '<meta name="theme-color" content="#0B0A09">\n'
         f"{ld}"
-        f"<style>{_strip_css_comments(CSS)}</style>\n"
+        f"<style>{_strip_css_comments(CSS)}{SITE_NAV_CSS}</style>\n"
         "</head>\n<body>\n"
+        + site_nav_html("fpl") + "\n"
         '<header class="dark">\n'
-        '<div class="bar"></div>\n'
-        '<div class="wrap"><nav>'
-        '<a class="brand" href="/"><svg class="brand-icon" width="22" height="22" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a>'
-        '<span><a href="/predictions">All predictions</a> · '
-        '<a class="nav-cta" href="https://pro.goaliq.app/">Try it live</a></span>'
-        "</nav></div>\n"
         f'<div class="wrap hero">\n{hero}\n</div>\n'
         "</header>\n"
         f'<main class="wrap content">\n{body}\n'
@@ -717,12 +720,13 @@ def render_captain(xp: dict, now: datetime) -> str | None:
     # SEO-arvo ja teaser), LUKU menee lukon taakse — sama linja kuin
     # 2.8. ottelusivujen xG-korjauksessa: paywall kertoo mita puuttuu.
     title = f"Best FPL Captain GW{gw}: Model Pick | GoalIQ"
+    # 22.9 (web-audit C6): 287 merkkia katkesi hakutuloksessa. Tier-selitys
+    # (mika on ilmaista, mika Premiumia) on sivulla itsellaan; kuvaus kertoo
+    # vain sen mita haku kysyy.
     desc = (
         f"The GoalIQ model's best FPL captain for Gameweek {gw}: "
-        f"{top['web_name']} ({top['team_short']}). Horizon expected points "
-        f"for the top 100 players are free on our expected-points page, "
-        f"and so are the top 20 on the gameweek-specific number; the full "
-        f"ranked list on that number is GoalIQ Premium. Updated every round."
+        f"{top['web_name']} ({top['team_short']}). Free, no sign-in, updated "
+        f"every round."
     )
     hero = (
         f"<h1>Best FPL captain, Gameweek {gw}</h1>"
@@ -1294,8 +1298,7 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     _proven = False
     title = ("The GoalIQ Model XI: best 100.0m FPL squad on xP | GoalIQ"
              if _proven else
-             "The GoalIQ Model XI: the strongest 100.0m FPL squad our search "
-             "found | GoalIQ")
+             "FPL Model XI: Strongest 100.0m Squad We Found | GoalIQ")
     _desc_claim = ("The highest-scoring XI inside the 100.0m budget"
                    if _proven else
                    "The strongest XI our search found inside the 100.0m "
@@ -4221,7 +4224,10 @@ def render_club_page(short: str, players: list[dict], meta: dict,
         osat.append(f'<h2 id="squad">Squad turnover</h2>'
                     f'<p>{escape(str(conf["note"]))}</p>')
 
-    title = f"{nimi} FPL {escape(window)}: best players, set-piece takers, predicted XI | GoalIQ"
+    # 22.9 (web-audit C6): 70-83 merkkia, katkesi hakutuloksessa. Pisin seura
+    # (Nottingham Forest, Manchester United) mahtuu nyt 60:een. `_page`
+    # escapoi otsikon, joten `&` kirjoitetaan raakana.
+    title = f"{nimi} FPL {window}: Picks & Predicted XI | GoalIQ"
     lead = karki[0]
     desc = (
         f"{nimi}'s best FPL picks for {window} by projected points, who takes "
@@ -5344,13 +5350,11 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
     title = (f"FPL Gameweek {gw} Points: Projected vs Actual, Every Player | GoalIQ"
              if archive else
              f"FPL Points GW{gw}: Projected vs Actual, Every Player | GoalIQ")
+    # 22.9 (web-audit C6): 279 merkkia -> alle 160.
     desc = (
-        f"Every player's actual Gameweek {gw} FPL points next to the expected "
-        f"points GoalIQ's model published before the deadline, with goals, "
-        f"assists, defensive contribution (DefCon), bonus, BPS, xG and xA "
-        f"broken out. {n} players compared"
-        + (f", plus {n_dnp} who did not play at all. " if n_dnp else ". ")
-        + "Free, no sign-in."
+        f"Every player's actual Gameweek {gw} FPL points next to the xP our "
+        f"model published before the deadline, with goals, assists, DefCon, "
+        f"bonus and xG. Free, no sign-in."
     )
     frozen_at = fmeta.get("frozen_at") or ""
     deadline = fmeta.get("deadline") or ""
