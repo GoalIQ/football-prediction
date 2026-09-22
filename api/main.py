@@ -5678,6 +5678,102 @@ def fantasy_model_race(
                       model_history=model_history, entry_series=entry_series)
 
 
+class ModelCaptainOpponent(BaseModel):
+    opp: str | None = None
+    venue: str | None = None
+
+
+class ModelCaptainPlayer(BaseModel):
+    id: int
+    web_name: str | None = None
+    team_short: str | None = None
+    pos: str | None = None
+    gw_xp: float | None = Field(
+        default=None, description="GoalIQ expected points for `meta.gw`.")
+    opponents: list[ModelCaptainOpponent] | None = Field(
+        default=None, description="Opponents in `meta.gw`. Empty list = no "
+                                  "fixture that gameweek; null = not known.")
+
+
+class ModelCaptainPick(ModelCaptainPlayer):
+    gw_xp_frozen: float | None = Field(
+        default=None, description="Frozen source only: the xP the model had "
+                                  "when the squad was locked.")
+    gw_xp_basis: Literal["projection", "frozen"] | None = Field(
+        default=None, description="Frozen source only: whether `gw_xp` is "
+                                  "from the current projection or the "
+                                  "freeze.")
+
+
+class ModelCaptainRoute(BaseModel):
+    kind: Literal["gw_calls", "fpl_entry"]
+    gw: int | None = None
+    url: str
+
+
+class ModelCaptainMeta(BaseModel):
+    source: Literal["frozen", "entry_picks"] = Field(
+        description="frozen = the squad the model locked for `gw` "
+                    "(data/model_squad_frozen, same captain as the "
+                    "goaliq.app/fpl gameweek calls log). entry_picks = the "
+                    "model entry's picks FPL has published (`picks_gw`).")
+    gw: int | None = Field(description="Gameweek the captain is for.")
+    entry_id: int = Field(description="The model's FPL entry.")
+    picks_gw: int | None = Field(
+        default=None, description="entry_picks only: the gameweek of the "
+                                  "published FPL picks the squad came from.")
+    frozen_at: str | None = Field(
+        default=None, description="frozen only: when the squad was locked (UTC).")
+    frozen_deadline: str | None = None
+    deadline_gameweek: int | None = Field(
+        default=None, description="Next gameweek whose FPL deadline is ahead.")
+    deadline_time: str | None = None
+    generated_at: str | None = Field(
+        default=None, description="Projection timestamp behind `gw_xp`.")
+    route: ModelCaptainRoute | None = Field(
+        default=None, description="Where a reader can check the squad.")
+
+
+class ModelCaptainResponse(BaseModel):
+    meta: ModelCaptainMeta
+    captain: ModelCaptainPick | None
+    vice_captain: ModelCaptainPlayer | None = None
+    alternative: ModelCaptainPlayer | None = Field(
+        default=None, description="entry_picks only: next best captain when "
+                                  "the gap is small. Null for a frozen squad "
+                                  "(the call is locked).")
+
+
+@app.get("/api/fantasy/model-captain", response_model=ModelCaptainResponse,
+         description="The model's own captain for the next FPL deadline, with "
+                     "its source. Once the model has locked its squad for that "
+                     "gameweek the captain comes from the locked squad (the "
+                     "same captain as the gameweek calls log on "
+                     "goaliq.app/fpl); before that it comes from the model "
+                     "entry's published FPL picks. Free data.")
+def fantasy_model_captain(response: Response):
+    """Mallin kapteeni YHDESTA lukijasta (22.9.2026, julkaisutarkistaja).
+
+    Ks. `src/models/fpl_model_captain.py`. Pro-SPA:n This week ja mobiili
+    lukevat taman eivatka rate-teamia mallin entrylle: rate-team lukee
+    FPL:n julkaisemat pickit, jotka ovat freezen ja deadlinen valilla
+    edellisen kierroksen runko.
+
+    Ilmaista dataa: `response_model` rajaa vastauksen nimettyihin kenttiin,
+    joten Premium-kentta ei voi vuotaa tasta vaikka lahde muuttuisi.
+    """
+    from src.models.fpl_model_captain import ModelCaptainError, model_captain
+    from src.models.fpl_rate_team import RateTeamError
+
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return model_captain()
+    except ModelCaptainError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except RateTeamError as e:
+        raise _http_from_rate_team_error(e)
+
+
 @app.get("/api/fantasy/plan",
          description="Transfer plan across several gameweeks for an existing squad. A documented heuristic rather than a global optimum.")
 def fantasy_plan(
