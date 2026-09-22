@@ -26,7 +26,7 @@ GW_XP_HTML = """
 <td class="tm"><svg class="kit"><use href="#kMUN"/></svg><span>MUN</span></td><td>MID</td><td class="n">11.9</td>
 <td class="n hi">6.8</td><td class="m-hide">TOT (H)</td><td class="n">97</td></tr>
 <tr><td class="n">2</td><td>Isak <span class="flag" title="Only 694 minutes">!</span></td>
-<td class="tm"><span>LIV</span></td><td>FWD</td><td class="n">10.5</td>
+<td class="tm"><span>LIV</span><span class="tflag">turnover</span></td><td>FWD</td><td class="n">10.5</td>
 <td class="n hi">5.1</td><td class="m-hide">MCI (H)</td><td class="n">88</td></tr>
 </tbody></table>
 """

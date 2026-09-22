@@ -26,7 +26,10 @@ from html.parser import HTMLParser
 BASE = "https://goaliq.app"
 UA = "Mozilla/5.0 (GoalIQ reply-module verifier; +https://goaliq.app)"
 
-SKIP_CLASSES = ("m-sub", "m-only", "flag")
+# `tflag` = seuran vieressa oleva lappu ("promoted", "turnover"). Se on
+# nakyvaa tekstia, mutta ei osa seuran koodia: ilman ohitusta solu luki
+# "COVpromoted" ja 33/100 top-100-rivia jai ilman reittia (mitattu 22.9).
+SKIP_CLASSES = ("m-sub", "m-only", "flag", "tflag")
 
 
 @dataclass
