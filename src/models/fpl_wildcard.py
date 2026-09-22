@@ -72,14 +72,13 @@ MIN_EV_PER_GW = 1.5
 # joukkuetta olisi pudonnut pitkan aikavalin nakymasta HILJAA, ja pudonnut
 # pelaaja nayttaisi vain silta ettei hanella ole fixture-lukua.
 # Vrt. sama vikaluokka `src/data/fpl_match_xg.py`:ssa.
-FPL_TO_MODEL = {
-    "Ipswich Town": "Ipswich",
-    "Man City": "Manchester City",
-    "Man Utd": "Manchester United",
-    "Newcastle": "Newcastle United",
-    "Nott'm Forest": "Nottingham Forest",
-    "Spurs": "Tottenham",
-}
+#
+# 22.9 (CS-FDR-META-ERI-MIELTA): kartta on nyt SAMA sanakirja jolla
+# `build_fpl_cs_fdr` kirjoittaa `home_model`/`away_model`-kentat
+# (src/models/fpl_team_names). Oma kopio tassa oli kolmas nimikartta, ja kun
+# cs_fdr alkoi kayttaa jaettua karttaa ("Coventry City" -> "Coventry"), taman
+# kopion puute olisi pudottanut Coventryn ja Hullin pitkasta nakymasta.
+from src.models.fpl_team_names import NAME_MAP as FPL_TO_MODEL  # noqa: E402
 
 
 def nimikartta_aukot(fpl_teams: list[dict], mallinimet: set[str]) -> list[str]:

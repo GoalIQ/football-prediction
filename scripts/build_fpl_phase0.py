@@ -102,29 +102,10 @@ FAR_BASIS_LABEL = (
 )
 
 # Lähdenimi (pulselive-pitkä TAI FPL-lyhyt) -> mallin (Understat) nimi.
-NAME_MAP = {
-    # pulselive (premierleague.com)
-    "Brighton & Hove Albion": "Brighton",
-    "Tottenham Hotspur": "Tottenham",
-    "Leeds United": "Leeds",
-    "Ipswich Town": "Ipswich",
-    "Coventry City": "Coventry",
-    "Hull City": "Hull",
-    "Leicester City": "Leicester",
-    "Luton Town": "Luton",
-    "Norwich City": "Norwich",
-    "Sheffield United": "Sheffield United",
-    "West Ham United": "West Ham",
-    "West Bromwich Albion": "West Bromwich Albion",
-    # FPL-API (bootstrap-static team.name)
-    "Man City": "Manchester City",
-    "Man Utd": "Manchester United",
-    "Spurs": "Tottenham",
-    "Nott'm Forest": "Nottingham Forest",
-    "Newcastle": "Newcastle United",
-    "Wolves": "Wolverhampton Wanderers",
-    "Sheffield Utd": "Sheffield United",
-}
+# 22.9 (CS-FDR-META-ERI-MIELTA): kartta asuu nyt src/models/fpl_team_names.py:ssa,
+# koska build_fpl_cs_fdr:lla oli oma kopio josta puuttui Coventry/Hull. Nimet
+# jaavat tahan re-exportina: build_fpl_xp ja testit tuovat ne tasta moduulista.
+from src.models.fpl_team_names import NAME_MAP  # noqa: E402,F401
 
 # Mallinimi -> 3-kirjaiminen koodi (tekstipohjainen, EI seurakrestejä — 5.2.1-oppi).
 SHORT_MAP = {
@@ -141,8 +122,7 @@ SHORT_MAP = {
 }
 
 
-def map_name(source_name: str) -> str:
-    return NAME_MAP.get(source_name, source_name)
+from src.models.fpl_team_names import map_name  # noqa: E402,F401
 
 
 def short_name(model_name: str) -> str:
@@ -388,22 +368,12 @@ def compute_fixtures(dc: DixonColesModel, fixtures: list[dict],
     ctx_cfg (Phase 1b, src/models/fpl_context.py): nousija-koti-avaus-buusti +
     manuaaliset yliajot sovelletaan DC:n adjustments-mekanismilla ennen
     matriisia. None = raaka DC (alkuperäinen Phase 0 -käyttäytyminen)."""
-    from src.models.fpl_context import fixture_adjustments
-
     rows = []
     for f in fixtures:
         h = map_name(f["home"])
         a = map_name(f["away"])
         if h not in dc.attack or a not in dc.attack:
             continue  # ei pitäisi tapahtua (baseline lisätty) — ohita turvallisesti
-        adj, _ = fixture_adjustments(h, a, f.get("gameweek"), ctx_cfg)
-        lam, mu = dc.expected_goals(h, a, adjustments=adj)  # lam=koti, mu=vieras
-        m = dc.score_matrix(h, a, adjustments=adj)
-        cs_home = float(m[:, 0].sum())  # vieras tekee 0
-        cs_away = float(m[0, :].sum())  # koti tekee 0
-        p_home = float(np.tril(m, -1).sum())
-        p_draw = float(np.trace(m))
-        p_away = float(np.triu(m, 1).sum())
         rows.append(
             {
                 "gameweek": f["gameweek"],
@@ -414,16 +384,64 @@ def compute_fixtures(dc: DixonColesModel, fixtures: list[dict],
                 "away": a,
                 "home_short": short_name(h),
                 "away_short": short_name(a),
-                "xg_home": round(lam, 3),
-                "xg_away": round(mu, 3),
-                "p_home_win": round(p_home, 4),
-                "p_draw": round(p_draw, 4),
-                "p_away_win": round(p_away, 4),
-                "cs_home_pct": round(cs_home * 100, 1),
-                "cs_away_pct": round(cs_away * 100, 1),
+                **fixture_numbers(dc, h, a, f.get("gameweek"), ctx_cfg),
             }
         )
     return rows
+
+
+def fixture_numbers(dc: DixonColesModel, h: str, a: str, gw: int | None,
+                    ctx_cfg: dict | None) -> dict:
+    """Yhden ottelun xG + 1X2 + CS% mallinimilla. YKSI laskentapolku.
+
+    22.9 (CS-FDR-META-ERI-MIELTA): `build_fpl_cs_fdr` laski saman asian
+    omalla silmukallaan (Poisson + ilman kontekstikerrosta + oma nimikartta),
+    ja sama ottelu sai kaksi eri CS%:a. Nyt molemmat kutsuvat tata. Kun
+    kaava tai kontekstikerros muuttuu, se muuttuu molemmille kerralla.
+
+    ctx_cfg = `context_cfg`in tulos (Phase 1b: manuaaliset yliajot). None =
+    raaka DC.
+    """
+    from src.models.fpl_context import fixture_adjustments
+
+    adj, _ = fixture_adjustments(h, a, gw, ctx_cfg)
+    lam, mu = dc.expected_goals(h, a, adjustments=adj)  # lam=koti, mu=vieras
+    m = dc.score_matrix(h, a, adjustments=adj)
+    cs_home = float(m[:, 0].sum())  # vieras tekee 0
+    cs_away = float(m[0, :].sum())  # koti tekee 0
+    p_home = float(np.tril(m, -1).sum())
+    p_draw = float(np.trace(m))
+    p_away = float(np.triu(m, 1).sum())
+    return {
+        "xg_home": round(lam, 3),
+        "xg_away": round(mu, 3),
+        "p_home_win": round(p_home, 4),
+        "p_draw": round(p_draw, 4),
+        "p_away_win": round(p_away, 4),
+        "cs_home_pct": round(cs_home * 100, 1),
+        "cs_away_pct": round(cs_away * 100, 1),
+    }
+
+
+def context_cfg(source_teams, source_fixtures) -> tuple[dict, set[str]]:
+    """Phase 1b -kontekstikerros (nousijat + manuaaliset yliajot) lahdenimista.
+
+    Palauttaa (ctx_cfg, nousijat). Jaettu build_fpl_cs_fdr:n kanssa 22.9:
+    cs_fdr ei ajanut tata kerrosta lainkaan, joten `fpl_manual_overrides.csv`
+    liikutti /fpl-sivun CS%:a mutta ei wildcard-suunnittelijan tai chip-EV:n.
+    """
+    from src.data.loader import lataa_otteludata as _lataa
+    from src.models.fpl_context import build_context, load_overrides, promoted_teams
+
+    y = int(SEASON_LABEL[:4])
+    prev_key = f"{(y - 1) % 100:02d}{y % 100:02d}"
+    prev_matches = _lataa(["ENG-Premier League"], [prev_key])
+    fixture_team_names = {map_name(t) for t in source_teams}
+    promoted = promoted_teams(fixture_team_names, set(prev_matches["home_team"]))
+    model_fixtures = [{"gameweek": f["gameweek"], "home": map_name(f["home"]),
+                       "away": map_name(f["away"])}
+                      for f in source_fixtures if f["gameweek"]]
+    return build_context(promoted, model_fixtures, load_overrides()), promoted
 
 
 def add_fdr(rows: list[dict]) -> None:
@@ -601,18 +619,7 @@ def main() -> int:
     # Phase 1b -kontekstikerros (sama kuin xP-builderissa): nousijat =
     # fixture-joukkueet − edellisen PL-kauden joukkueet; koti-avaus-buusti +
     # manuaaliset yliajot data/fpl_manual_overrides.csv:stä.
-    from src.data.loader import lataa_otteludata as _lataa
-    from src.models.fpl_context import build_context, load_overrides, promoted_teams
-
-    y = int(SEASON_LABEL[:4])
-    prev_key = f"{(y - 1) % 100:02d}{y % 100:02d}"
-    prev_matches = _lataa(["ENG-Premier League"], [prev_key])
-    fixture_team_names = {map_name(t) for t in src["teams"]}
-    promoted = promoted_teams(fixture_team_names, set(prev_matches["home_team"]))
-    model_fixtures = [{"gameweek": f["gameweek"], "home": map_name(f["home"]),
-                       "away": map_name(f["away"])}
-                      for f in src["fixtures"] if f["gameweek"]]
-    ctx_cfg = build_context(promoted, model_fixtures, load_overrides())
+    ctx_cfg, promoted = context_cfg(src["teams"], src["fixtures"])
     print(f"      nousijat: {sorted(promoted)}, yliajoja: {len(ctx_cfg['overrides'])}")
 
     rows = compute_fixtures(dc, src["fixtures"], ctx_cfg=ctx_cfg)
