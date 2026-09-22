@@ -63,3 +63,12 @@ describe('KUTSUPAIKKA: ToolsHome ei pida ottelua omassa tilassaan', () => {
 		}
 	});
 });
+
+describe('Predict: esitaytto sovitetaan vain saman liigan joukkueisiin', () => {
+	const src = read('./components/Predict.svelte');
+	it('pending kantaa liigan ja odottaa listaa samasta liigasta', () => {
+		expect(src).toMatch(/pending = \{ league: prefill\.league, home: prefill\.home, away: prefill\.away \}/);
+		expect(src).toMatch(/teamsLeague !== pending\.league\) return;/);
+		expect(src).toMatch(/teams = t\.teams \?\? \[\];\s*teamsLeague = lg;/);
+	});
+});

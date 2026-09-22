@@ -123,11 +123,11 @@
 		return partial.length === 1 ? partial[0] : null;
 	}
 
-	let pending = $state<{ home: string; away: string } | null>(null);
+	let pending = $state<{ league: string; home: string; away: string } | null>(null);
 	$effect(() => {
 		if (!prefill) return;
 		league = prefill.league;
-		pending = { home: prefill.home, away: prefill.away };
+		pending = { league: prefill.league, home: prefill.home, away: prefill.away };
 	});
 
 	/* 22.8 (Villen bugiraportti "ei tule valmiina"): pending purettiin vain
@@ -139,7 +139,11 @@
 	 * untrackissa — efekti ei saa tilata omia kirjoituksiaan (28.7 opetus:
 	 * uusi efektikehä rikkoi bind:valuen). */
 	$effect(() => {
-		if (!pending || teamsLoading || teams.length === 0) return;
+		/* 22.9 (mitattu tuotannossa): Predict oli jo auki Valioliigalla ja ottelu
+		 * vaihtui La Ligaan. Tama efekti ajoi ENNEN joukkuehakua ja sovitti
+		 * La Ligan nimet viela ladattuun Valioliigan listaan -> tyhjat valinnat.
+		 * Sovitus odottaa nyt listaa samasta liigasta (`teamsLeague`). */
+		if (!pending || teamsLoading || teams.length === 0 || teamsLeague !== pending.league) return;
 		const p = pending;
 		const pool = teams;
 		untrack(() => {
@@ -183,11 +187,14 @@
 	// kilpa-ajon esto, ei UI-tilaa, eika sen kuulu laukaista renderointia.
 	let reqSeq = 0;
 	let teamsLoading = $state(false);
+	/** Liiga jonka joukkueet `teams` sisaltaa (null kun lista tyhjennetty). */
+	let teamsLeague = $state<string | null>(null);
 
 	$effect(() => {
 		const lg = league;
 		const seq = ++reqSeq;
 		teams = [];
+		teamsLeague = null;
 		home = '';
 		away = '';
 		teamsLoading = true;
@@ -198,6 +205,7 @@
 				if (seq !== reqSeq) return;
 				teamsLoading = false;
 				teams = t.teams ?? [];
+				teamsLeague = lg;
 				// 22.8: pending puretaan omassa efektissaan (ks. yllä) — se
 				// laukeaa myos silloin kun liiga ei vaihdu eika tama callback
 				// aja lainkaan.
