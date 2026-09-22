@@ -20,6 +20,7 @@ selkotekstina; Render = 1 prosessi -> in-memory riittaa).
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import os
 import threading
@@ -180,9 +181,34 @@ def free_premium_window_active(now: datetime | None = None) -> bool:
     return (now or datetime.now(timezone.utc)) < end
 
 
+#: Lipun paalla-arvot. YKSI lista kahdelle lipulle: `PREDICT_MASK` hyvaksyy
+#: tasan samat arvot kuin `PREMIUM_ENFORCE`, jotta Renderissa "on" tarkoittaa
+#: samaa molemmissa. Env-nimi luetaan silti `_env("...")`-literaalilla eika
+#: yhteisen kaareen kautta: tests/test_env_manifest_complete.py tunnistaa vain
+#: funktiot jotka kutsuvat os.getenvia suoraan, joten toinen kaarekerros
+#: pudottaisi uuden muuttujan manifestiportin ulkopuolelle.
+_FLAG_ON_VALUES = ("on", "1", "true", "yes")
+
+
 def premium_enforce_on() -> bool:
     """PREMIUM_ENFORCE=on/1/true/yes -> enforcement paalla. Default off."""
-    return _env("PREMIUM_ENFORCE").lower() in ("on", "1", "true", "yes")
+    return _env("PREMIUM_ENFORCE").lower() in _FLAG_ON_VALUES
+
+
+def predict_mask_on() -> bool:
+    """PREDICT_MASK=on/1/true/yes -> ennusteendpointtien maski paalla.
+
+    Default OFF, ja se on tarkoituksellinen (22.9.2026): mobiili alkoi
+    lahettaa tokenin /api/predict(-wc)- ja /api/parlay-kutsuihin vasta
+    OTA:lla 22.9 (goaliq-app lib/authPaths.ts), ja kolme mobiilin
+    Premium-kayttajaa ei ollut viela paivittanyt. Jos maski olisi paalla
+    heti, he putoaisivat maskattuun vastaukseen hiljaa. Lippu kaannetaan
+    kun mittaus nayttaa Premium-kayttajat tokenin lahettavalla buildilla.
+
+    HUOM: maski vaatii MYOS `PREMIUM_ENFORCE`n. Kun se on pois,
+    `is_premium_request` palauttaa aina True eika maski laukea koskaan.
+    """
+    return _env("PREDICT_MASK").lower() in _FLAG_ON_VALUES
 
 
 # ---------------------------------------------------------------------------
@@ -555,6 +581,150 @@ def mask_compare_payload(payload: dict) -> dict:
     meta["unprojected_note"] = None
     meta["mask"] = (f"{FREE_COMPARE_ROWS} of {len(rows)} compared players "
                     "(GoalIQ Premium unlocks player compare)")
+    out["meta"] = meta
+    return out
+
+
+# ---------------------------------------------------------------------------
+# PREDICT-API-MASK (22.9.2026): /api/predict, /api/predict-wc, /api/parlay
+#
+# MITATTU 22.9: kirjautumaton `POST /api/predict` palautti koko Premium-
+# sisallon (expected_goals_*, top_scores, O/U 2.5, BTTS, fair value,
+# form_trend, h2h_summary). Maksumuuri oli VAIN kayttoliittymassa (mobiilin
+# PredictScreen/ParlayScreen isPremium-haarat, SPA:n Predict.svelte
+# `{#if premium}`). Sama vikaluokka kuin captain 15.8, replacements 2.9,
+# value 4.9, rate-team 5.9, defcon-leaders 17.9 ja compare 18.9.
+#
+# ILMAISOSUUS ON MITATTU KLIENTEISTA, ei valittu (sama saanto kuin compare
+# 18.9: ilmaisosuus = se mita UI nayttaa ilmaiskayttajalle tanaan):
+#   * mobiili PredictScreen ilmaishaara: joukkueet, 1X2-palkit, `call`
+#     ("too close"), `data_confidence`-lippu JA `h2h`-lista (viimeiset
+#     kohtaamiset, "T5, naekyy kaikille"). XgStat ja jakokortti nayttavat
+#     lukon (`locked={!isPremium}`) eivatka lue lukua.
+#   * SPA Predict.svelte ilmaishaara: 1X2, `call`, `data_confidence`.
+#   -> `h2h` JAA ILMAISEKSI. Se on mobiilin ilmaispinnalla, ja lista on
+#      toteutuneita tuloksia, ei mallin lukua. `h2h_summary` (H2H record
+#      -palkki) ja `form_trend` ovat mobiilissa `isPremium`-haarassa.
+#   * Parlay: mobiili palauttaa lukkonakyman ENNEN kutsua (`if (!isPremium)`),
+#     SPA:ssa parlayta ei ole. Ilmaisosuus on NOLLA legia.
+#
+# ESITYS: maski on TYPISTYS ja tyypit sailyvat (tiedoston periaate yla).
+# Maskattu runko validoituu SAMALLA Pydantic-mallilla kuin maskaamaton
+# (api/main.py `_masked_json`), joten yksikaan kentta ei muutu tyypiltaan:
+#   * float-kentat -> 0.0. Pakko, ei valinta: mobiilin XgStat, Adjust-
+#     vertailu ja ShareableCard kutsuvat `expected_goals_*.toFixed(2)`
+#     ilman null-vahtia, samoin SPA:n Premium-lohko. null kaataisi nakyman.
+#     Luku renderoidaan VAIN jos klientti luulee kayttajaa Premiumiksi mutta
+#     palvelin ei (vanha build ilman tokenia) - juuri se tila jonka lippu
+#     odottaa pois ennen kaantoa.
+#   * top_scores -> [] (lista typistetaan, molemmat klientit iteroivat).
+#   * h2h_summary -> nollamuoto ja form_trend -> tyhjat listat: TASMALLEEN
+#     ne muodot jotka endpoint palauttaa jo tuotannossa kun kohtaamisia tai
+#     otteluita ei ole (`_h2h_summary`, `_team_recent_form`), eli jokainen
+#     klientti on jo kasitellyt ne. Mobiilin vahdit (`total_matches > 0`,
+#     `form_trend.home_team?.length >= 2`) piilottavat ne.
+#   * `meta` on additiivinen ja VAIN maskatussa vastauksessa. Oletusarvoinen
+#     `meta: {}` PredictionResponsessa olisi muuttanut JOKAISEN vastauksen
+#     tavut, ja lippu pois -tilan vaatimus on bittitarkka ennallaan.
+#     `meta.premium_fields` kertoo uudelle klientille mitka kentat ovat
+#     paikanpitajia, jotta sen ei tarvitse paatella sita arvoista (0.0 ei
+#     ole todiste maskista).
+# ---------------------------------------------------------------------------
+
+#: Ennustevastauksen Premium-kentat ja niiden maskattu arvo. Lista on tasan
+#: se mita klienttien Premium-haarat lukevat; kaikki muu on ilmaista.
+PREDICTION_PREMIUM_FIELDS: dict[str, object] = {
+    "expected_goals_home": 0.0,
+    "expected_goals_away": 0.0,
+    "fair_odds_home": 0.0,
+    "fair_odds_draw": 0.0,
+    "fair_odds_away": 0.0,
+    "p_over_2_5": 0.0,
+    "p_under_2_5": 0.0,
+    "p_btts_yes": 0.0,
+    "p_btts_no": 0.0,
+    "top_scores": [],
+    "h2h_summary": {"total_matches": 0, "home_team_wins": 0, "draws": 0,
+                    "away_team_wins": 0},
+    "form_trend": {"home_team": [], "away_team": []},
+}
+
+#: Ilmaiseksi jaavat kentat, perustelu ylla. Testi vaatii etta
+#: PredictionResponsen jokainen kentta on tasan toisessa naista, joten uusi
+#: kentta ei voi jaada luokittelematta (eli vuotaa oletuksena).
+PREDICTION_FREE_FIELDS = frozenset({
+    "home_team", "away_team", "p_home_win", "p_draw", "p_away_win",
+    "call", "data_confidence", "h2h",
+})
+
+FREE_PARLAY_LEGS = 0
+
+
+def predict_mask_applies(request: Request) -> bool:
+    """Maskataanko taman kutsujan ennustevastaus.
+
+    Jarjestys on tarkoituksellinen:
+      1. Lippu ensin. Lippu pois -> ei yhtaan tokenin tarkistusta eika
+         Supabase-kutsua, eli vastaus ja sen viive ovat tasan ennallaan.
+      2. Admin-token (`X-Admin-Token`) ohittaa maskin. Syy on mitattu:
+         `scripts/accuracy_pipeline.py` logaa CI:sta anonyymina live-
+         `/api/predict`:in `expected_goals_*` ja `top_scores[0]` julkiseen
+         track recordiin (prediction_log.json -> exact-score-gradaus). Ilman
+         ohitusta maski kirjoittaisi sinne 0.0-xG:n ja tyhjan tuloksen.
+      3. Muuten Premium-tarkistus (`is_premium_request`, fail-open
+         Supabase-virheessa kuten muissakin maskeissa).
+    """
+    if not predict_mask_on():
+        return False
+    if is_admin_request(request):
+        return False
+    return not is_premium_request(request)
+
+
+def mask_prediction_payload(payload: dict) -> dict:
+    """/api/predict ja /api/predict-wc freelle: 1X2 + call + luottamus + h2h.
+
+    Kentat typistetaan `PREDICTION_PREMIUM_FIELDS`in mukaan. Avaimet ja
+    jarjestys sailyvat (vanha klientti lukee samat avaimet), `meta` lisataan
+    loppuun.
+    """
+    out = dict(payload)
+    masked = []
+    for key, value in PREDICTION_PREMIUM_FIELDS.items():
+        if key in out:
+            # Kopio: jaettu oletusarvo ei saa muuttua jos kutsuja muokkaa sita.
+            out[key] = copy.deepcopy(value)
+            masked.append(key)
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["premium_fields"] = masked
+    meta["mask"] = ("1X2 probabilities only (free preview - GoalIQ Premium "
+                    "unlocks expected goals, scorelines, over/under 2.5, both "
+                    "teams to score, fair value, form and the head-to-head "
+                    "record)")
+    out["meta"] = meta
+    return out
+
+
+def mask_parlay_payload(payload: dict) -> dict:
+    """/api/parlay freelle: ei legeja, ei yhdistettya todennakoisyytta.
+
+    `FREE_PARLAY_LEGS = 0`, perustelu yla (kumpikaan klientti ei nayta
+    parlayta ilmaiskayttajalle). `n_legs`, `note`, `disclaimer` ja
+    `assumes_independence` sailyvat: ne ovat pyynnon kaiku ja kehys, eivat
+    mallin lukuja. `combined_probability` -> 0.0 eika null, koska
+    ParlayScreen kutsuu `(combined_probability * 100).toFixed(1)`.
+    """
+    out = dict(payload)
+    legs = list(out.get("legs") or [])
+    out["legs"] = legs[:FREE_PARLAY_LEGS]
+    out["combined_probability"] = 0.0
+    meta = dict(out.get("meta") or {})
+    meta["masked"] = True
+    meta["free_legs"] = FREE_PARLAY_LEGS
+    meta["premium_fields"] = ["legs", "combined_probability"]
+    meta["mask"] = (f"{FREE_PARLAY_LEGS} of {len(legs)} legs (GoalIQ Premium "
+                    "unlocks the multi-match calculator)")
     out["meta"] = meta
     return out
 

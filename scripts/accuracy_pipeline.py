@@ -445,27 +445,40 @@ def _fetch_model_teams(league: str, yrityksia: int = 3) -> list[str] | None:
     return None
 
 
-def domestic_prematch_prediction(
-    league: str, home_model: str, away_model: str
+def _predict_headers() -> dict:
+    """PREDICT-API-MASK (22.9.2026): admin-token /api/predict-kutsuun.
+
+    Palvelin maskaa ennusteen Premium-kentat anonyymilta kutsujalta kun
+    `PREDICT_MASK` on paalla (api.premium.predict_mask_applies). Tama putki
+    logaa `expected_goals_*`in ja `top_scores[0]`n julkiseen track recordiin,
+    joten sen on saatava taysi vastaus: `X-Admin-Token` ohittaa maskin.
+    Sama ADMIN_TOKEN-secret jota workflow'n error-counts-askel jo kayttaa
+    (muisti admin-endpoint-ei-service-avainta-ciihin). Puuttuva token ei kaada
+    mitaan: lippu pois -> vastaus on taysi joka tapauksessa, lippu paalla ->
+    `prediction_row_from_api` hylkaa maskatun vastauksen.
+    """
+    token = (os.environ.get("ADMIN_TOKEN") or "").strip()
+    return {"X-Admin-Token": token} if token else {}
+
+
+def prediction_row_from_api(
+    home_model: str, away_model: str, d: dict
 ) -> dict | None:
-    """Logattava pre-match-ennuste LIVE-API:sta (/api/predict) — täsmälleen
-    sama julkaistu malli jonka käyttäjät näkevät. None jos kutsu epäonnistuu."""
-    import requests
-    try:
-        r = requests.post(
-            f"{PREDICT_API_BASE}/api/predict",
-            json={"home_team": home_model, "away_team": away_model,
-                  "leagues": [league]},
-            timeout=120,
-        )
-    except Exception as e:
-        print(f"VAROITUS: /api/predict ({home_model}-{away_model}) epäonnistui: "
-              f"{type(e).__name__}: {e}")
+    """/api/predict-vastaus -> logattava rivi, tai None jos vastaus on maskattu.
+
+    🔴 MASKATTUA VASTAUSTA EI LOGATA (22.9.2026). Maskattu vastaus on
+    tyypeiltaan identtinen (xG 0.0, top_scores []), joten `float()` ei kaadu
+    ja rivi nayttaisi validilta: julkiseen lokiin paatyisi xG 0.0 ja
+    `most_likely_score = None`, ja exact-score-gradaus katoaisi hiljaa.
+    Pre-kickoff-refresh ylikirjoittaisi viela hyvat rivit nollilla. None
+    tarkoittaa molemmissa kutsupaikoissa "ohita, jata vanha rivi" (sama kuin
+    verkkovirhe), eli vika nakyy VAROITUKSENA eika vaarana datana.
+    """
+    if (d.get("meta") or {}).get("masked"):
+        print(f"VAROITUS: /api/predict ({home_model}-{away_model}) palautti "
+              "MASKATUN vastauksen (ADMIN_TOKEN puuttuu tai ei kelpaa). Rivia "
+              "ei logata: 0.0-xG ei saa paatya julkiseen track recordiin.")
         return None
-    if r.status_code != 200:
-        print(f"VAROITUS: /api/predict ({home_model}-{away_model}) → {r.status_code}.")
-        return None
-    d = r.json()
     top = d.get("top_scores") or []
     return {
         "home_team": home_model,
@@ -478,6 +491,31 @@ def domestic_prematch_prediction(
         "most_likely_score": (top[0].get("score") if top else None),
         "predicted_winner": acc.named_winner(d["p_home_win"], d["p_away_win"]),
     }
+
+
+def domestic_prematch_prediction(
+    league: str, home_model: str, away_model: str
+) -> dict | None:
+    """Logattava pre-match-ennuste LIVE-API:sta (/api/predict) — täsmälleen
+    sama julkaistu malli jonka käyttäjät näkevät. None jos kutsu epäonnistuu
+    tai vastaus on maskattu (ks. prediction_row_from_api)."""
+    import requests
+    try:
+        r = requests.post(
+            f"{PREDICT_API_BASE}/api/predict",
+            json={"home_team": home_model, "away_team": away_model,
+                  "leagues": [league]},
+            headers=_predict_headers(),
+            timeout=120,
+        )
+    except Exception as e:
+        print(f"VAROITUS: /api/predict ({home_model}-{away_model}) epäonnistui: "
+              f"{type(e).__name__}: {e}")
+        return None
+    if r.status_code != 200:
+        print(f"VAROITUS: /api/predict ({home_model}-{away_model}) → {r.status_code}.")
+        return None
+    return prediction_row_from_api(home_model, away_model, r.json())
 
 
 def log_domestic_matches(

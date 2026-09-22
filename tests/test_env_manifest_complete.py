@@ -53,6 +53,14 @@ VAPAAEHTOISET = {
                               "/api/stripe-config regional_pricing.ok=true - "
                               "tulos mitataan Stripesta, ei pelkkaa "
                               "muuttujan olemassaoloa",
+    # 22.9.2026 PREDICT-API-MASK. Vapaaehtoinen VAIN niin kauan kuin oikea
+    # tila on pois. Kun lippu kaannetaan Renderissa, siirra se
+    # api.main._PAKOLLISET_ENViin: muuten ympariston pyyhkiytyminen (20.9)
+    # avaisi ennusteiden Premium-kentat anonyymeille eika vahti huomaisi.
+    "PREDICT_MASK": "oletus pois on 22.9 OIKEA tila: kolme mobiilin "
+                    "Premium-kayttajaa oli viela buildilla joka ei laheta "
+                    "tokenia /api/predictiin. Tyhja = ennusteet maskaamatta "
+                    "kuten ennen tata muutosta (api.premium.predict_mask_on)",
 }
 
 

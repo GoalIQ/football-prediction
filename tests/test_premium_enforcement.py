@@ -839,6 +839,10 @@ ILMAINEN_ESIKATSELU = {
     "FREE_LEADERS_ROWS": (3, "/api/fantasy/defcon-leaders: top 3"),
     "FREE_COMPARE_ROWS": (0, "/api/fantasy/compare: nolla - molemmat klientit "
                              "piilottavat comparen ilmaiskayttajalta kokonaan"),
+    # 22.9 PREDICT-API-MASK (PREDICT_MASK-lipun takana, oletus pois).
+    "FREE_PARLAY_LEGS": (0, "/api/parlay: nolla - mobiilin ParlayScreen "
+                            "palauttaa lukkonakyman ennen kutsua eika SPA:ssa "
+                            "ole parlayta (tests/test_predict_mask.py)"),
 }
 
 
