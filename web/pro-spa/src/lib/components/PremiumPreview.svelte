@@ -52,10 +52,11 @@
 		'Watchlist for up to 50 players: track everyone you are deciding on',
 		'Player compare: up to four players side by side',
 		'CSV export of the full projection set',
-		// 4.8: synkattu paywall.bullet_match-avaimeen (goaliq-app/lib/i18n/en.ts).
-		// Kommentti ylla lupaa 1:1-vastaavuuden, ja 29.7 todettiin ettei yksikaan
-		// portti nae pintojen valista eroa -> se loytyy vain lukemalla molemmat.
-		'Full match analysis: top-10 scorelines, total goals, both teams to score, form & momentum and head-to-head'
+		// 🔴 PINTAERO, EI 1:1 (julkaisutarkistaja 22.9). Mobiilin paywall.bullet_match
+		// lupaa formin ja H2H:n, koska app nayttaa ne; webin Predict ei renderoi
+		// kumpaakaan, joten tassa ne on rajattu appiin. "Expected total goals" poistettiin:
+		// kumpikaan pinta ei nayta kokonaismaalien odotusarvoa, vain P(over 2.5).
+		'Full match analysis: scoreline probabilities, the chance of three or more goals, the chance both teams score, plus form & momentum and head-to-head in the app'
 	];
 
 	let teaser = $state<XpResponse | null>(null);
