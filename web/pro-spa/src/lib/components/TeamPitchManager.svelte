@@ -241,7 +241,10 @@
 	function oppOf(p: RatedPlayer): string | null {
 		// 3.9: tulosmoodissa (paattynyt kierros) projektiorivia ei ole, ja
 		// "No game" olisi valhe pelatusta ottelusta. Rivi jaa pois.
-		if (resultMode) return null;
+		// 22.9: myos ilmaispinnan tulostila (`settledView`). Kentan otsikko
+		// sanoo "GW5 result", joten GW6:n vastustaja solussa luettaisiin
+		// GW5:n otteluksi.
+		if (resultMode || settledView) return null;
 		if (selGw == null || !p.gameweeks || p.gameweeks.length === 0) return null;
 		const g = p.gameweeks.find((x) => x.gw === selGw);
 		if (!g || g.opponents.length === 0) return 'No game';
@@ -945,7 +948,17 @@
 						<span class="plabel">
 							<span class="pname">{p.web_name}</span>
 							<span class="pnums">
-								<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								<!-- 22.9: tulostilassa penkin ensimmainen luku on ratkenneen
+								     kierroksen freeze (Thomas 4.1 | 9 | +4.9), ei seuraavan
+								     kierroksen xP (5.0): otsikko sanoo "GW5 result". Pelaaja
+								     jolla ei ole lukuja saa n/a:n, ei nollaa. -->
+								{#if settledView}
+									<span class="pxp" title="Projection frozen before the deadline"
+										>{settledOf(p)?.xp.toFixed(1) ?? 'n/a'}</span
+									>
+								{:else}
+									<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								{/if}
 								<!-- 🔴 LIPPU MYOS PENKILLE. Se renderoityi VAIN XI:ssa, ja
 								     Villen kolme liputettua pelaajaa olivat kaikki
 								     penkilla — han ei nahnyt yhtaan lippua vaikka

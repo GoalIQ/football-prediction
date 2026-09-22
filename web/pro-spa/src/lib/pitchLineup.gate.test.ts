@@ -682,6 +682,25 @@ function readerProblems(raw: string): string[] {
 		.map((l) => `pitchLineup.ts:${l.n}: rungon is_captain: ${l.text.trim()}`);
 }
 
+/** Tulostilan solu ei nayta SEURAAVAN kierroksen lukua: otsikko sanoo "GW5
+ *  result", joten GW6:n vastustaja tai GW6:n xP penkilla luettaisiin GW5:n
+ *  lukuna (sama vikaluokka kuin 3.9 luckById). */
+function settledCellProblems(raw: string): string[] {
+	const flat = norm(blankComments(raw));
+	const p: string[] = [];
+	if (!flat.includes('if (resultMode || settledView) return null;'))
+		p.push('oppOf: vastustajarivi ei katoa ilmaispinnan tulostilassa (settledView)');
+	const b = flat.indexOf('{#each bench as p');
+	const bench = b === -1 ? '' : flat.slice(b);
+	if (
+		!bench.includes(
+			`{#if settledView} <span class="pxp" title="Projection frozen before the deadline" >{settledOf(p)?.xp.toFixed(1) ?? 'n/a'}</span > {:else} <span class="pxp">{xpOf(p).toFixed(1)}</span> {/if}`
+		)
+	)
+		p.push('penkki: tulostilan ensimmainen luku ei ole ratkenneen kierroksen freeze');
+	return p;
+}
+
 const PITCH = () => readRaw('./components/TeamPitchManager.svelte');
 
 describe('KUTSUPAIKKA: TeamPitchManager lukee kokoonpanon lukijalta, ei in_xi:sta', () => {
@@ -700,6 +719,9 @@ describe('KUTSUPAIKKA: TeamPitchManager lukee kokoonpanon lukijalta, ei in_xi:st
 	});
 	it('pitchLineup.ts: lukija ei lue rungon is_captainia', () => {
 		expect(readerProblems(readRaw('./pitchLineup.ts'))).toEqual([]);
+	});
+	it('tulostilan solu ei nayta seuraavan kierroksen vastustajaa eika xP:ta', () => {
+		expect(settledCellProblems(PITCH())).toEqual([]);
 	});
 });
 
@@ -796,6 +818,19 @@ describe('erotteleva fikstuuri: portti kaatuu kun kutsupaikka palautetaan', () =
 		expect(src.includes(from)).toBe(true);
 		expect(
 			readerProblems(src.replace(from, 'captainId: players.find((p) => p.is_captain)?.id ?? null,'))
+				.length
+		).toBeGreaterThan(0);
+	});
+	it('tulostilan solu: vanha oppOf-ehto ja penkin GW6-xP kaatavat portin', () => {
+		const src = PITCH();
+		const opp = 'if (resultMode || settledView) return null;';
+		const pxp = `{#if settledView}`;
+		expect(src.includes(opp) && src.includes(pxp)).toBe(true);
+		expect(settledCellProblems(src.replace(opp, 'if (resultMode) return null;')).length).toBeGreaterThan(0);
+		const i = src.indexOf(pxp, src.indexOf('{#each bench as p'));
+		const j = src.indexOf('{/if}', i) + '{/if}'.length;
+		expect(
+			settledCellProblems(src.slice(0, i) + '<span class="pxp">{xpOf(p).toFixed(1)}</span>' + src.slice(j))
 				.length
 		).toBeGreaterThan(0);
 	});
