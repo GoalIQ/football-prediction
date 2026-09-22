@@ -164,9 +164,32 @@ def _setup(monkeypatch, tmp_path, phase):
         doc = _frozen_doc(g, _squad_for(g), FROZEN_CAPTAIN, FROZEN_VICE)
         (fdir / f"gw{g}.json").write_text(json.dumps(doc), encoding="utf-8")
     monkeypatch.setattr(mc, "FROZEN_DIR", fdir)
+    # Julkaistu sivu: sama builder kuin tuotannossa (build_fpl_page.
+    # gw_calls_html), lokirivit samoista freezeista. Normaalipolulla freeze,
+    # loki ja sivu tulevat samassa commitissa (mitattu GW5: 2bba4babd).
+    monkeypatch.setattr(mc, "FPL_PAGE", _write_page(tmp_path, fdir, frozen_gws))
     t = gw_calls.parse_utc(now)
     monkeypatch.setattr(mc, "_now", lambda: t)
     return fdir, t
+
+
+def _write_page(tmp_path, fdir, gws, override: dict | None = None):
+    """fpl.html-fikstuuri jonka #gw-calls-taulukossa on rivi jokaiselle
+    kierrokselle `gws`. `override` {gw: frozen_doc} = sivu rakennettu eri
+    freezesta kuin levylla oleva (GW3 4.9: uudelleenfreeze ilman sivua)."""
+    from scripts.build_fpl_page import gw_calls_html
+    rows = []
+    for g in gws:
+        doc = (override or {}).get(g) or json.loads(
+            (fdir / f"gw{g}.json").read_text(encoding="utf-8"))
+        before = gw_calls.parse_utc(doc["meta"]["deadline"]) - dt.timedelta(hours=2)
+        rows.append(gw_calls.build_entry(doc, {}, {}, before, None))
+    page = tmp_path / "fpl.html"
+    body = gw_calls_html({"gameweeks": rows}, exception_notes={}) if rows else ""
+    page.write_text("<html><body><table><tr><td>GW6</td><td>Model squad captain</td>"
+                    "<td>Decoy (XXX)</td></tr></table>" + body + "</body></html>",
+                    encoding="utf-8")
+    return page
 
 
 @pytest.fixture(autouse=True)
@@ -360,3 +383,71 @@ def test_openapi_documents_the_route(client):
     assert ref.endswith("/ModelCaptainResponse")
     meta = spec["components"]["schemas"]["ModelCaptainMeta"]["properties"]
     assert set(meta["source"]["enum"]) == {"frozen", "entry_picks"}
+
+
+# ---- REITTI ON VAITE: "logged on goaliq.app/fpl" (julkaisutarkistaja 22.9) ----
+
+def test_frozen_card_requires_the_same_captain_on_the_published_page(
+        monkeypatch, tmp_path):
+    """GW3 4.9 (fe2043486): freeze ja loki vaihtuivat, sivu ei. Sivu nimeaa
+    vanhan kapteenin -> kortti ei saa vaittaa "logged on goaliq.app/fpl"."""
+    fdir, _ = _setup(monkeypatch, tmp_path, PHASES[1])
+    old = _frozen_doc(6, GW6_SQUAD, FROZEN_VICE, FROZEN_CAPTAIN)  # eri kapteeni
+    monkeypatch.setattr(mc, "FPL_PAGE",
+                        _write_page(tmp_path, fdir, [5, 6], override={6: old}))
+    with pytest.raises(mc.ModelCaptainError) as ei:
+        mc.model_captain()
+    assert ei.value.status_code == 503
+
+
+@pytest.mark.parametrize("page", ["no_row", "no_file", "row_outside_gw_calls"])
+def test_frozen_card_without_published_row_fails_closed(monkeypatch, tmp_path, page):
+    """Freeze pushattu ilman sivua (log_gw_calls continue-on-error, tai
+    build_fpl_page exit 2). `row_outside_gw_calls`: fikstuurin houkutusrivi
+    ennen #gw-calls-ankkuria ei kelpaa."""
+    fdir, _ = _setup(monkeypatch, tmp_path, PHASES[1])
+    if page == "no_row":
+        path = _write_page(tmp_path, fdir, [5])
+    elif page == "no_file":
+        path = tmp_path / "missing.html"
+    else:
+        path = _write_page(tmp_path, fdir, [])
+    monkeypatch.setattr(mc, "FPL_PAGE", path)
+    with pytest.raises(mc.ModelCaptainError) as ei:
+        mc.model_captain()
+    assert ei.value.status_code == 503
+
+
+def test_lag_phase_also_requires_the_published_row(monkeypatch, tmp_path):
+    """Deadline mennyt, artefakti laahaa (c_lag): sama tarkistus."""
+    fdir, _ = _setup(monkeypatch, tmp_path, PHASES[3])
+    monkeypatch.setattr(mc, "FPL_PAGE", _write_page(tmp_path, fdir, [5]))
+    with pytest.raises(mc.ModelCaptainError):
+        mc.model_captain()
+
+
+def test_logged_model_captain_reads_escaped_names():
+    page = ('<h3 id="gw-calls">x</h3><table><tbody>'
+            '<tr><td class="num">GW7</td><td>Model squad captain</td>'
+            "<td>O&#x27;Brien (NFO)</td><td>x</td></tr></tbody></table>")
+    assert mc.logged_model_captain(page, 7) == "O'Brien (NFO)"
+    assert mc.logged_model_captain(page, 8) is None
+    assert mc.logged_model_captain(None, 7) is None
+
+
+def test_repo_page_logs_the_latest_frozen_captain():
+    """SOPIMUS builderin ja lukijan valilla, oikealla datalla: repon
+    fpl.html nimeaa uusimman freezen kapteenin samassa muodossa jota lukija
+    vertaa. Kaatuu jos (a) builderin rivimuoto muuttuu niin ettei lukija
+    enaa loyda sita (kortti katoaisi hiljaa 503:een), tai (b) freeze on
+    mainissa ilman sivua (GW3 4.9 -tapaus)."""
+    from src.models.model_squad_scores import FROZEN_DIR as real_dir
+    gws = sorted(int(p.stem[2:]) for p in real_dir.glob("gw*.json") if p.stem[2:].isdigit())
+    if not gws:
+        pytest.skip("ei freezeja (kauden alku)")
+    frozen = json.loads((real_dir / f"gw{gws[-1]}.json").read_text(encoding="utf-8"))
+    call = gw_calls.model_captain_call(frozen)
+    assert call is not None
+    page = mc._read_page(None)
+    assert mc.logged_model_captain(page, gws[-1]) == mc._page_row_name(call), (
+        f"fpl.html ei nimea GW{gws[-1]}:n freezen kapteenia #gw-calls-taulukossa")

@@ -33,6 +33,18 @@ FAIL-CLOSED: jos freeze on olemassa mutta rikki (JSON, kierrosnumero,
 kapteeni ei rungossa), vastaus on virhe eika rate-teamin arvaus. Vaara
 nimi otsikon "The model's captain" alla on pahempi kuin puuttuva kortti.
 
+REITTI ON VAITE (julkaisutarkistaja 22.9, lahderivi): frozen-kortin rivi
+sanoo "logged on goaliq.app/fpl". Se on tosi vain jos SAMAN checkoutin
+`fpl.html` nimeaa kutsulokissa saman kapteenin samalle kierrokselle
+(`logged_model_captain`). Render deployaa koko repon ja hub-deploy saman
+commitin sivun, joten tarkistus mittaa sita sivua jonka lukija avaa.
+Muuten 503: freeze voi olla pushattu ilman sivua (`log_gw_calls` on
+continue-on-error, build_fpl_page exit 2 = notice), ja 4.9 GW3:n kasin
+tehty uudelleenfreeze (fe2043486) muutti rungon ja lokin mutta ei sivua,
+jolloin sivu nimesi vanhan kapteenin. Pelkka gw_calls.json-tarkistus ei
+olisi nahnyt sita. Jaljelle jaava aukko on hub-deployn kaatuminen pushin
+jalkeen: fpl-data-refreshin deploy-verify mittaa sen ja korjaa itse.
+
 ILMAISTA DATAA: kapteeni on jo ilmainen goaliq.app/fpl:ssa ja rate-teamin
 ilmaisvastauksessa (`captain.pick` + `captain.alternative`). Tama moduuli ei
 kanna siirtoehdotuksia eika muita Premium-kenttia.
@@ -42,7 +54,9 @@ Vaiheet mitataan synteettisesti: `tests/test_model_captain_phases.py`.
 from __future__ import annotations
 
 import datetime as _dt
+import html as _html
 import json
+import re
 from pathlib import Path
 
 from src.models import gw_calls
@@ -55,6 +69,13 @@ SOURCE_ENTRY_PICKS = "entry_picks"
 #: Tarkistusreitit. Freeze: goaliq.app/fpl:n kutsulokin rivi (ihmisluettava,
 #: sama kapteeni). Entry: FPL:n oma sivu julkaistuille pickeille.
 GW_CALLS_URL = "https://goaliq.app/fpl#gw-calls"
+#: Sivu jolle GW_CALLS_URL vie, samasta checkoutista kuin freeze.
+#: Testit korvaavat taman.
+FPL_PAGE = Path(__file__).resolve().parents[2] / "fpl.html"
+_GW_CALLS_ANCHOR = 'id="gw-calls"'
+_ROW_RE = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S)
+_CELL_RE = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
+_TAG_RE = re.compile(r"<[^>]+>")
 FPL_ENTRY_EVENT_URL = "https://fantasy.premierleague.com/entry/{entry}/event/{gw}"
 
 _POS = {1: "GKP", 2: "DEF", 3: "MID", 4: "FWD"}
@@ -117,6 +138,38 @@ def load_frozen_squad(gw: int, frozen_dir=None) -> dict | None:
     return doc
 
 
+def logged_model_captain(page_html: str | None, gw: int) -> str | None:
+    """Sivun kutsulokin "GW{gw} Model squad captain" -rivin pelaajasolu
+    ("Haaland (MCI)"), tai None jos rivia ei ole. Lukee vain #gw-calls-
+    taulukon, ei muita sivun taulukoita."""
+    if not page_html:
+        return None
+    start = page_html.find(_GW_CALLS_ANCHOR)
+    if start < 0:
+        return None
+    end = page_html.find("</table>", start)
+    section = page_html[start:end if end > 0 else None]
+    label = gw_calls.CALL_LABELS["model_captain"]
+    for row in _ROW_RE.findall(section):
+        cells = [_html.unescape(_TAG_RE.sub("", c)).strip()
+                 for c in _CELL_RE.findall(row)]
+        if len(cells) >= 3 and cells[0] == f"GW{int(gw)}" and cells[1] == label:
+            return cells[2]
+    return None
+
+
+def _page_row_name(call: dict) -> str:
+    """Sama muoto kuin build_fpl_page.gw_calls_html kirjoittaa."""
+    return f"{call.get('web_name') or '?'} ({call.get('team_short') or '?'})"
+
+
+def _read_page(page_path) -> str | None:
+    try:
+        return Path(page_path or FPL_PAGE).read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
 def _player(row: dict | None, pid: int, web_name, team_short, pos,
             gw: int, gw_xp) -> dict:
     """Yhteinen pelaajamuoto molemmille lahteille. `opponents` None = ei
@@ -135,12 +188,15 @@ def _player(row: dict | None, pid: int, web_name, team_short, pos,
 
 
 def _frozen_card(frozen: dict, pool_by_id: dict, xp_meta: dict,
-                 deadline: tuple[int, str] | None) -> dict:
+                 deadline: tuple[int, str] | None, page_path=None) -> dict:
     gw = int(frozen["meta"]["gw"])
     call = gw_calls.model_captain_call(frozen, pool_by_id)
     if call is None:
         raise ModelCaptainError(
             503, f"The model's frozen squad for GW{gw} has no captain in it.")
+    if logged_model_captain(_read_page(page_path), gw) != _page_row_name(call):
+        raise ModelCaptainError(
+            503, f"The model's GW{gw} captain is not on goaliq.app/fpl yet.")
     cid = int(call["player_id"])
     fresh = gw_calls.gw_xp_at(pool_by_id.get(cid), gw)
     captain = _player(pool_by_id.get(cid), cid, call["web_name"],
@@ -215,7 +271,8 @@ def _entry_picks_card(payload: dict, deadline: tuple[int, str] | None) -> dict:
     }
 
 
-def model_captain(now: _dt.datetime | None = None, *, frozen_dir=None) -> dict:
+def model_captain(now: _dt.datetime | None = None, *, frozen_dir=None,
+                  page_path=None) -> dict:
     """Mallin kapteeni seuraavalle deadlinelle, lahde nimettyna.
 
     Kutsuu rate-teamia vain kun freezea ei ole. RateTeamError ja
@@ -230,7 +287,7 @@ def model_captain(now: _dt.datetime | None = None, *, frozen_dir=None) -> dict:
         frozen = load_frozen_squad(deadline[0], frozen_dir)
         if frozen is not None:
             return _frozen_card(frozen, pool_by_id, xp_data.get("meta") or {},
-                                deadline)
+                                deadline, page_path)
 
     payload = rt.rate_team(entry=ENTRY_ID)
     cap_gw = (payload.get("meta") or {}).get("captain_gw")
@@ -240,5 +297,5 @@ def model_captain(now: _dt.datetime | None = None, *, frozen_dir=None) -> dict:
         frozen = load_frozen_squad(cap_gw, frozen_dir)
         if frozen is not None:
             return _frozen_card(frozen, pool_by_id, xp_data.get("meta") or {},
-                                deadline)
+                                deadline, page_path)
     return _entry_picks_card(payload, deadline)
