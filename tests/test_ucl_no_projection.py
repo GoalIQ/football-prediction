@@ -511,7 +511,8 @@ def test_kontrolli_kanoninen_lause_tunnistetaan_rivitettyna_ja_linkattuna():
     tavutarkan merkkijonon, index.html:n Premium-paneeli kaatuisi vaarasta
     syysta; jos se on liian lysa, parafraasi paasisi lapi."""
     alku, loppu = bp.UCL_XP.rsplit(" at ", 1)
-    linkattu = (f"<li>{alku.replace(', ', ',\n  ', 1)} at "
+    rivitetty = alku.replace(", ", ",\n  ", 1)
+    linkattu = (f"<li>{rivitetty} at "
                 f'<a href="https://{loppu[:-1]}">{loppu[:-1]}</a>.</li>')
     tiedosto = re.sub(r"<[^>]+>", " ", linkattu)
     assert _kuvio(bp.UCL_XP).search(tiedosto)
