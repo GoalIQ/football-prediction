@@ -33,6 +33,8 @@
 		toolsInGroup
 	} from '$lib/tools';
 	import LoginBox from './LoginBox.svelte';
+	import LockedToolPreview from './LockedToolPreview.svelte';
+	import { lockedToolFor } from '$lib/lockPreview';
 	import Paywall from './Paywall.svelte';
 	import PremiumPreview from './PremiumPreview.svelte';
 	import { showsProductIntro } from '$lib/introGate';
@@ -156,6 +158,14 @@
 	const paidPremium = $derived(
 		forcePremium || (!!auth.sub && auth.sub.plan !== 'gw1-3-free')
 	);
+	/**
+	 * 🔴 22.9 (web-audit T3, Villen GO): lukitun tyokalun oma URL nayttaa
+	 * naytteen ja hinnan. Ennen tata kuusi yhdeksasta premium-URLista avasi
+	 * ei-maksajalle tyhjan nakyman (haarat ovat muotoa `premium && show(..)`)
+	 * ja kolme pelkan "See Premium" -laatikon. Yksi lukija ($lib/lockPreview),
+	 * joten uusi premium-tyokalu ei voi unohtua tasta.
+	 */
+	const lockedTool = $derived(lockedToolFor(activeTool, premium));
 
 	/**
 	 * Miksi nakyma avattiin. Ratkaisee saako se sulkeutua itsestaan.
@@ -435,6 +445,10 @@
 
 	{#if showDirectory}
 		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
+	{:else if lockedTool}
+		<!-- 22.9 (T3): lukitun tyokalun nayte + hinta + ostonappi. Ennen
+		     ryhmapaneeleita, jotta yksikaan ryhma ei voi jattaa sita pois. -->
+		<LockedToolPreview tool={lockedTool} onUpgrade={goUpgrade} />
 	{:else if segment === 'week' || segment === 'team'}
 		<!-- week + team jakavat SAMAN RateTeam-elementin (sama puupositio →
 		     Svelte ei tuhoa instanssia vaihdossa → data/entry-tila säilyy). -->
@@ -521,7 +535,9 @@
 					{/if}
 				{/if}
 			{:else if show('captain-ranker') || show('fixture-swing') || show('player-xp')}
-				<!-- Sama .locked-kaava kuin Predict/Fixtures-lohkoissa. -->
+				<!-- Sama .locked-kaava kuin Predict/Fixtures-lohkoissa. 22.9: tama
+				     haara nakyy enaa vain pinotussa nakymassa (?all=1); tyokalun
+				     oma URL menee `lockedTool`-haaraan ylla. -->
 				<div class="locked">
 					<p>
 						Player xP per gameweek, the captain ranker and fixture swing are part of GoalIQ
