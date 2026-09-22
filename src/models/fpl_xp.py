@@ -619,15 +619,22 @@ def recompute_minutes(mm: dict) -> dict:
     return mm
 
 
+def availability_factor(status: str, chance) -> float:
+    """FPL-saatavuuden kerroin: a=1, d=chance-% (puuttuva 50 %), muut 0.
+    YKSI lukija: `apply_availability` ja `set_p_start` lukevat taman."""
+    if status == "a":
+        return 1.0
+    if status == "d":
+        return (chance / 100.0) if chance is not None else 0.5
+    return 0.0
+
+
 def apply_availability(mm: dict, status: str, chance) -> dict:
     """FPL-saatavuus porttina: a=ennallaan, d=skaalaa chance-%:lla,
     i/s/u/n = sivussa (p_start ja p_sub nollaan → xmins 0)."""
     if status == "a":
         return mm
-    if status == "d":
-        f = (chance / 100.0) if chance is not None else 0.5
-    else:
-        f = 0.0
+    f = availability_factor(status, chance)
     out = dict(mm)
     out["p_start_raw"] = mm["p_start_raw"] * f
     out["p_start"] = mm["p_start"] * f
@@ -793,7 +800,8 @@ def apply_price_prior(mm: dict, price_pct: float, prior_minutes: float,
     return recompute_minutes(out)
 
 
-def set_p_start(mm: dict, p_start: float) -> dict:
+def set_p_start(mm: dict, p_start: float, *, status: str, chance,
+                availability_in_value: bool) -> dict:
     """Aseta aloitus-tn SUORAAN (manuaalinen ohitus) ja johda minuutit uudelleen.
 
     Ero `scale_p_start`iin: tuo kertoo nykyisen arvion kertoimella (syvyys-
@@ -803,9 +811,31 @@ def set_p_start(mm: dict, p_start: float) -> dict:
     Asettaa sekä p_start_raw (minuuttien johtaminen) että p_start (näyttö/
     kalibrointi) samaan arvoon: ohituksen koko pointti on että historiapohjainen
     shrinkkaus ei päde tähän pelaajaan.
+
+    🔴 XP-OVERRIDE-OHITTAA-SAATAVUUDEN (22.9, julkaisutarkistajan löydös 12.9):
+    ohitus korvasi p_startin ajamatta `apply_availability`a uudelleen. Roolirivi
+    (varamiesvahti 0.08) on ARVIO ALOITTAMISESTA, ei saatavuudesta, joten jos
+    pelaaja loukkaantuu (status d/i), ohitus olisi palauttanut sen
+    pelaamistodennäköisyyden jonka FPL:n status oli juuri nollannut. Samaan
+    aikaan /fpl ja /fpl/team-news väittävät että saatavuus on xP:ssä
+    (src/doubt_copy.py). Nyt `status` ja `chance` ovat PAKOLLISIA
+    avainsana-argumentteja: kutsuja ei voi unohtaa saatavuutta, vaan joutuu
+    antamaan sen tai sanomaan eksplisiittisesti ettei sitä sovelleta.
+
+    `availability_in_value=True` vain ehdolliselle riville (`until_available`):
+    sen luku on laskettu nimenomaan poissaolon takia ja se on voimassa vain kun
+    pelaaja on ulkona, joten saatavuuden soveltaminen uudelleen laskisi saman
+    poissaolon kahdesti.
+
+    Kerroin koskee VAIN uutta p_startia: syote `mm` on jo kulkenut
+    `apply_availability`n lapi (build_fpl_xp.py), joten sen p_sub kantaa
+    kertoimen valmiiksi. Koko `apply_availability` uudelleen skaalaisi
+    p_subin kahdesti.
     """
     out = dict(mm)
     v = min(max(float(p_start), 0.0), 1.0)
+    if not availability_in_value:
+        v *= availability_factor(status, chance)
     out["p_start_raw"] = v
     out["p_start"] = v
     return recompute_minutes(out)

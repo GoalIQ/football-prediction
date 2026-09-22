@@ -1030,7 +1030,15 @@ def main(argv: list[str] | None = None) -> int:
         # (xg_mult) koskematta minuutteihin.
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
-            mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            # XP-OVERRIDE-OHITTAA-SAATAVUUDEN (22.9): FPL:n saatavuus sovelletaan
+            # ohituksen PAALLE (roolirivi on arvio aloittamisesta, ei
+            # saatavuudesta). Ehdollinen rivi on jo poissaolon luku.
+            el_ov = next((e for e in boot["elements"] if e["id"] == pid), {})
+            mm_by_player[pid] = xp.set_p_start(
+                mm_by_player[pid], ov["p_start"],
+                status=el_ov.get("status", "a"),
+                chance=el_ov.get("chance_of_playing_next_round"),
+                availability_in_value=bool(ov.get("until_available")))
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""
