@@ -48,6 +48,9 @@ from src.models import accuracy as acc
 from src.models.call_margin import call_state, pct_int
 from scripts.build_fpl_page import ROOT as _FP_ROOT, write_urlset
 from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
+# Ylapalkki ja julkaisijasolmu yhdesta lahteesta (22.9, web-audit T5 + T7).
+from src.site_identity import publisher_node  # noqa: E402
+from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from scripts.slugs import fold_ascii, slug
 
 # #119b: KAIKKI generoidut sivut (hubit + ottelusivut) omaan lapsi-sitemapiin,
@@ -75,19 +78,9 @@ BASE = "https://goaliq.app"
 # #121-GEO: kompakti publisher-node jokaiselle ottelusivulle - entiteetti-
 # disambiguaatio pitkässä hännässä (pelkkä @id-viittaus ei resolvoidu sivun
 # sisällä). sameAs vain aitoihin kanaviin (Villen vahvistamat 22.7).
-ORG_PUBLISHER = {
-    "@type": "Organization",
-    "@id": BASE + "/#organization",
-    "name": "GoalIQ",
-    "url": BASE + "/",
-    "sameAs": [
-        "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
-        "https://apps.apple.com/app/id6780047163",
-        "https://x.com/goaliqapp",
-        "https://www.tiktok.com/@goaliqfpl",
-        "https://www.instagram.com/goaliqfpl/",
-    ],
-}
+# 22.9: solmu tulee src/site_identity.py:sta. Kasin kirjoitettu lista
+# jai jalkeen (ei Blueskya, ei GitHubia) kun index.html:n lista muuttui.
+ORG_PUBLISHER = publisher_node()
 OUT_ROOT = ROOT / "predictions"
 PREDICTIONS_HTML = ROOT / "predictions.html"
 LLMS_TXT = ROOT / "llms.txt"
@@ -329,13 +322,9 @@ HEAD_BRAND = (
 )
 
 # Header avautuu tässä; _page sulkee </header>-tagin hero-lohkon jälkeen.
-NAV = (
-    '<header class="dark"><div class="bar"></div><div class="wrap"><nav>'
-    '<a class="brand" href="/"><svg class="brand-icon" width="22" height="22" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a>'
-    '<span><a href="/predictions">All predictions</a> · '
-    '<a class="nav-cta" href="https://pro.goaliq.app/">Try it live</a></span>'
-    "</nav></div>"
-)
+# 22.9 (web-audit T5): palkki tulee src/site_nav.py:sta. Ennen tassa oli
+# oma versio ("All predictions · Try it live"), yksi seitsemasta.
+NAV = site_nav_html("predictions") + '\n<header class="dark">'
 
 DISCLAIMER = (
     "GoalIQ model predictions are statistical estimates for fun and analysis, "
@@ -344,7 +333,7 @@ DISCLAIMER = (
 
 FOOTER = (
     '<footer>© 2026 GoalIQ · <a href="/predictions">Football predictions</a> · '
-    '<a href="/fpl.html">Free FPL tools</a> · '
+    '<a href="/fpl">Free FPL tools</a> · '
     '<a href="/privacy">Privacy</a><br>'
     'GoalIQ: FPL Assistant is free on '
     '<a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">'
@@ -440,7 +429,7 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         '<link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">\n'
         f"{HEAD_BRAND}"
         f"{ld}"
-        f"<style>{CSS}</style>\n"
+        f"<style>{CSS}{SITE_NAV_CSS}</style>\n"
         "</head>\n<body>\n"
         f"{NAV}\n"
         f'<div class="wrap hero">\n{hero}\n</div>\n</header>\n'
@@ -686,7 +675,7 @@ def render_match_page(comp: str, e: dict) -> str:
     body = (
         f'<div class="card big">{_prob_block(e)}</div>'
         f'<div class="stat-row">'
-        f'<div class="stat"><b>Premium</b><span>expected goals and the most likely score on '
+        f'<div class="stat"><b>Premium</b><span>expected goals and scoreline probabilities on '
         f'<a href="https://pro.goaliq.app/?tab=premium&amp;src=predict-page&amp;srcp=predictions">GoalIQ Premium</a></span></div>'
         f"</div>"
         + _confidence_block(e)
@@ -752,7 +741,7 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
         f"<h1>{escape(cfg['name'])} predictions</h1>"
         f'<p class="lede">The GoalIQ match model predicts every upcoming '
         f"{escape(cfg['name'])} fixture: win probability for each side, expected "
-        f"goals and the most likely score. Predictions are logged before kickoff "
+        f"goals and scoreline probabilities. Predictions are logged before kickoff "
         f"and graded in a public track record.</p>"
     )
     body = (

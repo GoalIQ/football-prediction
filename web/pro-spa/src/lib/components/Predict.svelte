@@ -244,7 +244,7 @@
 <h2>Predict any match</h2>
 <p class="muted lede">
 	The same model that powers our published, pre-match-logged predictions. Pick two teams and
-	it returns win probability, expected goals and the most likely scorelines.
+	it returns the win probabilities, plus expected goals and scoreline probabilities on Premium.
 </p>
 
 <form class="pick" onsubmit={run}>
@@ -430,8 +430,8 @@
 			     Sama rajaus kuin mobiilissa. -->
 			<div class="locked">
 				<strong>Free shows the win probabilities.</strong> Premium adds expected goals for
-				both teams, the most likely scorelines, over/under 2.5, both teams to score, and
-				the model's fair value.
+				both teams, scoreline probabilities, the chance of three or more goals and the chance
+				both teams score.
 				<button type="button" class="linklike" onclick={showPaywall}>See Premium</button>
 			</div>
 		{/if}

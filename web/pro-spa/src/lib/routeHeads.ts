@@ -25,6 +25,7 @@ import {
 	GROUPS,
 	GROUPS_WITHOUT_TOOLS,
 	TOOLS,
+	groupById,
 	pageTitle,
 	primaryTool,
 	toolPath,
@@ -78,6 +79,8 @@ function leadTool(group: string) {
  *  Ryhma ilman tyokaluja (This week = juuri) -> app.html:n kuvaus. */
 function groupDescription(group: string): string | null {
 	if (GROUPS_WITHOUT_TOOLS.includes(group)) return null;
+	const own = groupById(group)?.description;
+	if (own) return own;
 	const lead = leadTool(group);
 	if (lead) return lead.question;
 	return listSentence(toolsInGroup(group).map((t) => t.title));

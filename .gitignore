@@ -171,6 +171,12 @@ raw_data/
 # vaite olisi todistamaton juuri silla mekanismilla jolla se myydaan.
 !/data/model_squad_frozen/
 !/data/model_squad_frozen/*.json
+# X-reply-moottori (22.9): GW-kohtainen, julkista pintaa vasten tarkistettu
+# lukupaketti (scripts/build_reply_module.py) + kohdetilien estolista
+# (scripts/check_reply_numbers.py). Portti lukee molemmat repon tiedostoina.
+!/data/reply_modules/
+!/data/reply_modules/*.json
+!/data/reply_blocklist.json
 # 29.8: kirjatut entry-vs-freeze-poikkeukset (verify_model_entry_matches_freeze)
 !/data/model_squad_exceptions/
 !/data/model_squad_exceptions/*.json

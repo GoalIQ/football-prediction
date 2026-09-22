@@ -98,9 +98,9 @@
 </p>
 <p class="muted">
 	<strong>Match model:</strong> full analysis for any fixture across the ten competitions we
-	cover, from the Premier League to the Champions League: top-10 most likely scorelines,
-	total goals, both teams to score, form and momentum trends, head-to-head record and fair
-	value estimates.
+	cover, from the Premier League to the Champions League: scoreline probabilities, the chance
+	of three or more goals and the chance both teams score. The app adds form and momentum
+	trends and the head-to-head record.
 </p>
 <p class="muted">
 	UCL Fantasy prices and squad news are free at goaliq.app/ucl. During the league phase, GoalIQ Premium adds expected points for every UCL Fantasy player, up to three matchdays ahead, at pro.goaliq.app/ucl.

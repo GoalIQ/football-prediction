@@ -27,7 +27,7 @@
 	import { actionableGameweek } from '$lib/gameweek';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { PREVIEW_ROWS, gwCell, previewRows, valueCell } from '$lib/lockPreview';
-	import type { Tool } from '$lib/tools';
+	import { findTool, type Tool } from '$lib/tools';
 
 	let { tool, onUpgrade }: { tool: Tool; onUpgrade: () => void } = $props();
 
@@ -58,6 +58,8 @@
 	});
 
 	const rows = $derived(previewRows(xp));
+	// Naytteen lahde nimetaan rekisterista (sama nimi kuin navissa).
+	const SOURCE_TOOL = findTool('players', 'player-xp')?.title ?? 'Player xP';
 	const gw = $derived(actionableGameweek(xp?.meta));
 	const hz = $derived(xpHorizon(xp?.meta));
 	/** Tyhjat rivit haun ajaksi, jotta ostolaatikko ei siirry kun data tulee. */
@@ -81,7 +83,10 @@
 		{:else if noData}
 			<p class="muted no-data">xP projections are not available for this gameweek yet.</p>
 		{:else}
-			<p class="tag">Free preview</p>
+			<!-- 22.9 (julkaisutarkistaja): tagi nimeaa datan lahteen. Nayte on
+			     Player xP -listaa, ei lukitun tyokalun omaa dataa (esim. Captain
+			     ranker jarjestaa seuraavan GW:n mukaan). -->
+			<p class="tag">Free from {SOURCE_TOOL}: top {rows.length || PREVIEW_ROWS}</p>
 			<div class="table-wrap">
 				<table>
 					<thead>

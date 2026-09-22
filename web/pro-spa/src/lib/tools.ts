@@ -29,6 +29,11 @@ export type Group = {
 	label: string;
 	/** Sivun otsikko (<title>) kun ryhma on auki ilman tyokalua. */
 	title: string;
+	/** 22.9 (julkaisutarkistaja): FPL-ryhma -> otsikkoon "FPL tools". Rekisterin
+	 *  kentta eika kovakoodattu lista, jotta uusi ryhma ei unohdu. */
+	fpl: boolean;
+	/** Ryhmasivun kuvaus kun se ei tule tyokalusta (esim. matches). */
+	description?: string;
 };
 
 export type Tool = {
@@ -79,10 +84,19 @@ export type Tool = {
  * Vanhat polut ohjautuvat uuteen paikkaan: `LEGACY_PATHS` + `resolvePath`.
  */
 export const GROUPS: Group[] = [
-	{ id: 'week', label: 'This week', title: 'This week' },
-	{ id: 'team', label: 'My team', title: 'My team' },
-	{ id: 'players', label: 'Players', title: 'Players' },
-	{ id: 'matches', label: 'Matches', title: 'Matches' }
+	{ id: 'week', label: 'This week', title: 'This week', fpl: true },
+	{ id: 'team', label: 'My team', title: 'My team', fpl: true },
+	{ id: 'players', label: 'Players', title: 'Players', fpl: true },
+	{
+		id: 'matches',
+		label: 'Matches',
+		title: 'Matches',
+		fpl: false,
+		// Julkaisutarkistaja 22.9: "Predict a match" ensimmaisina sanoina luki
+		// vihjepalvelulta; malli- ja todennakoisyyskehys ensin. Ei lukua "10"
+		// (vanhenisi hiljaa kun LEAGUES muuttuu).
+		description: 'Win probabilities from the GoalIQ match model, plus fixtures and league tables.'
+	}
 ];
 
 /**
@@ -100,7 +114,7 @@ export const TOOLS: Tool[] = [
 		title: 'Rate my team',
 		// 5.9 portti: "the one move that improves it most" oli kayvan joukon
 		// maksimi; backend itse kirjoittaa "the best move the model checked".
-		question: 'Is my squad good, and which line is costing you?',
+		question: 'Is my squad good, and which line is costing me?',
 		tier: 'free',
 		primary: true,
 		anchor: 'tc-rate'
@@ -153,7 +167,7 @@ export const TOOLS: Tool[] = [
 		slug: 'fixture-swing',
 		group: 'players',
 		title: 'Fixture swing',
-		question: 'Whose fixtures turn from hard to easy over the next six gameweeks?',
+		question: 'Whose fixtures turn from hard to easy over the coming gameweeks?',
 		tier: 'premium',
 		anchor: 'pc-swing'
 	},
@@ -289,7 +303,7 @@ export const TOOLS: Tool[] = [
 		slug: 'predict',
 		group: 'matches',
 		title: 'Predict a match',
-		question: 'What does the model say about any fixture I choose?',
+		question: 'What does the model say about a fixture I choose?',
 		tier: 'free',
 		anchor: 'mt-predict'
 	},
@@ -557,6 +571,10 @@ export function toolPath(t: Tool): string {
 export function pageTitle(group: string, slug: string | null): string {
 	const g = groupById(group);
 	const t = findTool(group, slug);
-	if (t) return `${t.title} | GoalIQ Premium`;
-	return `${g ? g.title : 'FPL tools'} | GoalIQ Premium`;
+	// 22.9 (julkaisutarkistaja): "| GoalIQ Premium" oli 19 ilmaisella reitilla
+	// ja lukon oma teksti maarittelee Premiumin maksulliseksi tasoksi. Nyt
+	// Premium vain premium-tason tyokalulla, "FPL tools" vain FPL-ryhmissa.
+	const fpl = g?.fpl ? ' | FPL tools' : '';
+	if (t) return `${t.title}${fpl} | ${t.tier === 'premium' ? 'GoalIQ Premium' : 'GoalIQ'}`;
+	return `${g ? g.title : 'FPL tools'}${fpl} | GoalIQ`;
 }

@@ -59,6 +59,12 @@ def _landing_pages() -> list[pathlib.Path]:
         for p in sorted(ROOT.glob(pat)):
             if p.name in NOT_LANDABLE:
                 continue
+            # 22.9: test_control_chars istuttaa repojuureen hetkeksi
+            # `_kontrollimerkki_koe.html`-kontrollitiedoston. Rinnakkaisajossa
+            # (-n auto) tama skannaus osui siihen ja kaatui satunnaisesti
+            # (mitattu 2/3 ajossa). Se ei ole sivu, eika sille voi laskeutua.
+            if p.name.startswith("_kontrollimerkki_koe"):
+                continue
             out.append(p)
     return out
 

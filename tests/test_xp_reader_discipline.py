@@ -146,6 +146,16 @@ PATH_ALLOWED = {
     "src/models/fpl_player_stats.py":
         "Kutsuu `load_xp_actionable(XP_PATH)`, eli polku on vain argumentti "
         "rajatulle lukijalle - ei ohitus.",
+    "scripts/build_reply_module.py":
+        "X-reply-moduulin generaattori (22.9): kutsuu `load_xp_actionable(xp_path)`, "
+        "eli polku on argumentti rajatulle lukijalle, ja kierros tulee "
+        "`actionable_gameweek`ista (--gw joka ei ole vaikutettava kierros = exit 2). "
+        "Toinen osuma on lahdemerkinta moduulin `sources`-kentassa, ei luku.",
+    "src/marketing/reply_module.py":
+        "Reply-moduulin lukija (22.9): tuoreusvertailu ajaa `load_xp_actionable(dd / ...)` "
+        "testattavalla data-hakemistolla, eli polku on argumentti rajatulle lukijalle. "
+        "Toinen osuma on `LOCAL_SOURCES`-taulun tiedostonimi aikaleimavertailuun, "
+        "joka lukee vain meta.generated_at-kentan.",
     "scripts/build_fpl_xp.py":
         "KIRJOITTAJA: tama skripti tuottaa artefaktin (`OUT_PATH`). Se ei voi "
         "lukea sita rajatun lukijan lapi, koska lukijaa ei ole ennen kuin "

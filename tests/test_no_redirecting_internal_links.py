@@ -34,7 +34,14 @@ ROOT = Path(__file__).resolve().parents[1]
 #: Sivut joilta linkit luetaan. Glob eika kasin nimetty lista: kasin nimetty
 #: lista vanhenee heti kun uusi sivu syntyy (muisti: portin-sanalista-vanhenee).
 SIVU_GLOBIT = ("*.html", "fpl/*.html", "fpl/club/*.html", "fpl/note/*.html",
-               "ucl/*.html")
+               "fpl/points/*.html", "ucl/*.html", "predictions/*/*.html")
+# 🔴 22.9.2026 (web-audit C1): portti ohitti kaksi luokkaa.
+#   1. ABSOLUUTTISET omat linkit (`https://goaliq.app/fpl.html`). /career ja
+#      /creators linkittivat juuri niin, ja audit mittasi 308-hypyn. Portti
+#      katsoi vain `/`-alkuisia, joten se oli vihrea koko ajan.
+#   2. `predictions/**` (2 700 sivua) ei ollut globeissa. Niiden yhteinen
+#      footer linkitti `/fpl.html`:aan jokaiselta sivulta.
+OMAT_ORIGINIT = ("https://goaliq.app/", "http://goaliq.app/")
 
 #: Poikkeuslista JOSSA ON PERUSTELU (CLAUDE.md 6a, mekanismi 2). Uusi
 #: paatteellinen linkki ei paase tanne vahingossa: testi kaatuu ja kirjoittaja
@@ -55,6 +62,10 @@ def _sisaiset_html_linkit(teksti: str) -> set[str]:
     """Sisaiset linkit jotka paattyvat .html:aan."""
     ulos = set()
     for h in re.findall(r'href="([^"]+)"', teksti):
+        for origin in OMAT_ORIGINIT:
+            if h.startswith(origin):
+                h = "/" + h[len(origin):]
+                break
         if h.startswith(("http://", "https://", "#", "mailto:", "tel:")):
             continue
         polku = h.split("#", 1)[0].split("?", 1)[0]
@@ -107,6 +118,10 @@ def test_kontrolli_lukija_tunnistaa_paatteellisen_linkin():
     # ja paatteeton tai ulkoinen ei osu
     assert not _sisaiset_html_linkit('<a href="/faq">FAQ</a>')
     assert not _sisaiset_html_linkit('<a href="https://x.com/a.html">x</a>')
+    # 22.9: oma absoluuttinen linkki on sisainen (career.html:n vika).
+    assert _sisaiset_html_linkit(
+        '<a href="https://goaliq.app/fpl.html">FPL</a>') == {"/fpl.html"}
+    assert not _sisaiset_html_linkit('<a href="https://goaliq.app/fpl">FPL</a>')
 
 
 @pytest.mark.parametrize("nimi", ["career.html", "creators.html"])

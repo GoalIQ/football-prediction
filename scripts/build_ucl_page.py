@@ -45,6 +45,8 @@ from scripts.build_fpl_longtail import (  # noqa: E402
 )
 from src.models import ucl_phase as vaiheet  # noqa: E402
 from src.viz import svg_charts as sc  # noqa: E402
+# Ylapalkki yhdesta lahteesta (22.9, web-audit T5).
+from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 
 DATA = ROOT / "data" / "ucl_fantasy.json"
 OUT_DIR = ROOT / "ucl"
@@ -184,14 +186,10 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         'IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>\n'
         '<meta name="theme-color" content="#0B0A09">\n'
         f"{ld}"
-        f"<style>{_strip_css_comments(CSS)}{sc.CHART_CSS}</style>\n"
+        f"<style>{_strip_css_comments(CSS)}{sc.CHART_CSS}{SITE_NAV_CSS}</style>\n"
         "</head>\n<body>\n"
-        '<header class="dark">\n<div class="bar"></div>\n'
-        '<div class="wrap"><nav>'
-        '<a class="brand" href="/"><svg class="brand-icon" width="22" height="22" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg>Goal<span>IQ</span></a>'
-        '<span><a href="/fpl">FPL tools</a> · '
-        '<a class="nav-cta" href="https://pro.goaliq.app/">Try it live</a></span>'
-        "</nav></div>\n"
+        + site_nav_html() + "\n"
+        '<header class="dark">\n'
         f'<div class="wrap hero">\n{hero}\n'
         f'<p class="note">{UCL_SCOPE}</p>\n</div>\n</header>\n'
         f'<main class="wrap content">\n{body}\n'
@@ -703,8 +701,8 @@ def sivu_hub(doc: dict, nyt: dt.datetime) -> str:
         # yhtaan CL-ottelusivua (mitattu: prediction-lokissa 0 CL-rivia), ja
         # linkki joka lupaa reitin jota ei ole on sama vika toisin pain.
         '<p class="note">GoalIQ also has a match model, and it does cover '
-        "Champions League fixtures: win probability, expected goals and the "
-        "most likely scorelines for one match, at "
+        "Champions League fixtures: win probability, expected goals and "
+        "scoreline probabilities for one match, at "
         '<a href="https://pro.goaliq.app/">pro.goaliq.app</a>. That is a '
         "different product from this section.</p>"
         "<h2>Where the money is</h2>"

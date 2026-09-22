@@ -1495,10 +1495,357 @@ def render_gw_outlook_hero(spec: dict, out_path: Path, cs_only: bool = False) ->
     return out_path
 
 
+# ---------------------------------------------------------------------------
+# X-REPLY-KORTIT (22.9.2026, Villen GO; c3-reply-valmius.md luku 3)
+#
+# Nelja korttia jotka LUKEVAT reply-moduulia (`load_reply_module`) eivatka
+# laske mitaan itse: kortin luku = moduulin teksti = tarkistusreitin teksti.
+# Arvo ja nimilappu tulevat samasta REPLY_FIELDS-rivista (muisti
+# jakokortin-arvo-seuraa-sorttia): kortti ei voi nayttaa yhta kenttaa toisen
+# nimella, koska kumpikin luetaan samasta parista.
+#
+# Koko 1200x675 (16:9, X:n kuvasuhde, ei rajausta feedissa). Paaluku 64 px:n
+# fontilla, eli ~27 px kun X nayttaa kuvan ~500 px leveana. Korkeintaan viisi
+# riviä: enempaa ei lue puhelimen feedista kukaan.
+# ---------------------------------------------------------------------------
+RW, RH, RMX = 1200, 675, 56
+R_INK = (11, 10, 9)
+R_INK2 = (20, 19, 17)
+R_GOLD = (245, 197, 66)
+R_TEAL = (46, 214, 194)
+R_CORAL = (255, 138, 92)
+R_CREAM = (243, 242, 242)
+R_MUTED = (168, 162, 154)
+R_LINE = (243, 242, 242, 40)
+REPLY_MAX_ROWS = 5
+REPLY_VALUE_PX = 64
+
+# Brandin wordmark goaliq-appista (ei piirreta uudelleen; brief "kayta
+# assets/brand/ -tiedostoja"). Fallback repon omaan kopioon.
+REPLY_WORDMARK = _APP_DIR / "assets" / "brand" / "goaliq-wordmark-teletext-3x-288h.png"
+
+# (osio, kentta, nimilappu). Kortin arvo ja lappu luetaan TASTA parista.
+REPLY_FIELDS = {
+    "reply-cs": ("cs_top", "cs_pct", "CLEAN SHEET %"),
+    "reply-xp": ("xp_top5", "gw_xp", "GW{gw} xP"),
+}
+COMPARE_FIELDS = (("gw_xp", "GW{gw} xP"), ("p_10plus", "10+ pts"),
+                  ("p_blank", "2 pts or fewer"), ("xmins", "exp. minutes"))
+
+
+def _reply_canvas():
+    img = Image.new("RGB", (1, RH))
+    for y in range(RH):
+        t = y / (RH - 1)
+        img.putpixel((0, y), tuple(int(a + (b - a) * t) for a, b in zip(R_INK, R_INK2)))
+    canvas = img.resize((RW, RH)).convert("RGBA")
+    return canvas, ImageDraw.Draw(canvas)
+
+
+def _reply_header(canvas, d, tag: str, title: str):
+    src = REPLY_WORDMARK if REPLY_WORDMARK.exists() else WORDMARK
+    if not src.exists():
+        raise SystemExit(f"wordmark puuttuu: {REPLY_WORDMARK}")
+    wm = Image.open(src).convert("RGBA")
+    h = 50
+    wm = wm.resize((int(wm.width * h / wm.height), h), Image.LANCZOS)
+    canvas.alpha_composite(wm, (RMX, 40))
+    f_tag = _font(FONT_BOLD, 22)
+    tw = d.textlength(tag, font=f_tag)
+    d.rectangle([RW - RMX - tw - 24, 46, RW - RMX, 84], outline=R_TEAL, width=2)
+    d.text((RW - RMX - tw - 12, 52), tag, font=f_tag, fill=R_TEAL)
+    f_title = _shrink(d, title, 40, RW - 2 * RMX, 26, FONT_BOLD)
+    d.text((RMX, 116), title, font=f_title, fill=R_CREAM)
+    d.rectangle([RMX, 176, RMX + 96, 180], fill=R_GOLD)
+
+
+def _reply_footer(d, route: str, as_of: str):
+    f_foot = _font(FONT_MED, 20)
+    f_handle = _font(FONT_BOLD, 22)
+    hw = d.textlength("@goaliqapp", font=f_handle)
+    text = f"check it free: {route}  ·  {as_of}"
+    f_foot = _shrink(d, text, 20, RW - 2 * RMX - hw - 24, 14, FONT_MED)
+    d.text((RMX, RH - 62), text, font=f_foot, fill=R_MUTED)
+    d.text((RW - RMX - hw, RH - 62), "@goaliqapp", font=f_handle, fill=R_GOLD)
+    d.rectangle([0, RH - 8, RW, RH], fill=R_GOLD)
+
+
+def _as_of_iso(ts: str | None) -> str:
+    return _as_of({"meta": {"generated_at": ts or ""}})
+
+
+def _route_label(url: str) -> str:
+    return url.replace("https://", "")
+
+
+def _module_or_exit(gw: int, **kw) -> dict:
+    """CLI:n ainoa tie moduuliin. Kieltaytyminen = ei korttia (fail-closed)."""
+    from src.marketing.reply_module import ReplyModuleRefused, load_reply_module
+    try:
+        return load_reply_module(gw, **kw)
+    except ReplyModuleRefused as e:
+        raise SystemExit(f"reply-kortti: moduuli kieltaytyi: {e}")
+
+
+def reply_list_spec(module: dict, card: str, n: int = REPLY_MAX_ROWS) -> dict:
+    """reply-cs / reply-xp: moduulin osion rivit sellaisinaan, max 5."""
+    section, field, label = REPLY_FIELDS[card]
+    gw = int(module["gw"])
+    sec = (module.get("sections") or {}).get(section) or {}
+    if not sec.get("available"):
+        raise SystemExit(f"{card}: osio {section} ei saatavilla: {sec.get('reason')}")
+    rows = []
+    for r in (sec.get("rows") or [])[:min(n, REPLY_MAX_ROWS)]:
+        v = (r.get("values") or {}).get(field)
+        if not v or not v.get("public_url"):
+            raise SystemExit(f"{card}: {r.get('key')}.{field} ei ilmaispinnalla; "
+                             f"korttia ei tehda luvusta jota lukija ei voi tarkistaa")
+        if card == "reply-cs":
+            name, sub = r["team"], f"v {r['opponent']} ({r['venue']})"
+        else:
+            name, sub = r["name"], f"{r['team']} · {r['opponent']}"
+        rows.append({"name": name, "sub": sub, "value": v["text"],
+                     "route": v["public_url"], "key": f"{section}.{r['key']}.{field}"})
+    if not rows:
+        raise SystemExit(f"{card}: ei riveja")
+    routes = {r["route"] for r in rows}
+    if len(routes) != 1:
+        raise SystemExit(f"{card}: rivit eri sivuilta {sorted(routes)}; kortissa on yksi reitti")
+    title = (f"Clean sheet chance, gameweek {gw}" if card == "reply-cs"
+             else f"Expected points, gameweek {gw}")
+    return {"kind": "reply_list", "card": card, "gw": gw,
+            "tag": f"GW{gw}", "title": title,
+            "value_label": label.format(gw=gw), "rows": rows,
+            "route": rows[0]["route"], "as_of": _as_of_iso(module.get("generated_at")),
+            "file": f"goaliq-{card}-gw{gw}.png"}
+
+
+def render_reply_list(spec: dict, out_path: Path) -> Path:
+    canvas, d = _reply_canvas()
+    _reply_header(canvas, d, spec["tag"], spec["title"])
+    f_col = _font(FONT_MED, 20)
+    lab = spec["value_label"]
+    d.text((RW - RMX - d.textlength(lab, font=f_col), 196), lab, font=f_col, fill=R_MUTED)
+    top, row_h = 222, 72
+    f_rank = _font(FONT_BOLD, 30)
+    f_val = _font(FONT_BOLD, REPLY_VALUE_PX)
+    for i, r in enumerate(spec["rows"]):
+        y = top + i * row_h
+        cy = y + row_h / 2
+        if i:
+            d.line([RMX, y, RW - RMX, y], fill=R_LINE, width=1)
+        d.text((RMX, cy - 18), str(i + 1), font=f_rank, fill=R_GOLD if i == 0 else R_MUTED)
+        vw = d.textlength(r["value"], font=f_val)
+        name_max = RW - 2 * RMX - 60 - vw - 40
+        f_name = _shrink(d, r["name"], 38, name_max * 0.62, 24, FONT_BOLD)
+        d.text((RMX + 60, cy - 24), r["name"], font=f_name, fill=R_CREAM)
+        nx = RMX + 60 + d.textlength(r["name"], font=f_name) + 18
+        f_sub = _shrink(d, r["sub"], 24, max(RW - RMX - vw - 40 - nx, 60), 14, FONT_MED)
+        d.text((nx, cy - 12), r["sub"], font=f_sub, fill=R_MUTED)
+        d.text((RW - RMX - vw, cy - REPLY_VALUE_PX * 0.62), r["value"], font=f_val,
+               fill=R_GOLD)
+    _reply_footer(d, _route_label(spec["route"]), f"as of {spec['as_of']}")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(out_path, "PNG")
+    return out_path
+
+
+def captain_compare_spec(module: dict, keys: list[str]) -> dict:
+    """2-3 pelaajaa rinnakkain moduulin player_lookup-riveista (sama rivi kuin
+    captain_top5:ssa, koska molemmat tulevat `reply_sections._player_row`ista)."""
+    gw = int(module["gw"])
+    if not 2 <= len(keys) <= 3:
+        raise SystemExit("captain-compare: 2 tai 3 pelaajaa")
+    secs = module.get("sections") or {}
+    cols = []
+    for k in keys:
+        row = next((r for r in (secs.get("player_lookup") or {}).get("rows") or []
+                    if r.get("key") == k), None)
+        if row is None:
+            raise SystemExit(f"captain-compare: {k} ei moduulissa")
+        vals = []
+        for field, label in COMPARE_FIELDS:
+            v = (row.get("values") or {}).get(field)
+            if not v or not v.get("public_url"):
+                raise SystemExit(f"captain-compare: {k}.{field} ei ilmaispinnalla; "
+                                 f"valitse pelaaja joka on /fpl/expected-points-listoilla")
+            vals.append({"field": field, "label": label.format(gw=gw), "value": v["text"],
+                         "route": v["public_url"]})
+        cols.append({"name": row["name"], "team": row["team"], "opponent": row["opponent"],
+                     "values": vals})
+    return {"kind": "captain_compare", "gw": gw, "tag": f"GW{gw}",
+            "title": f"Captain comparison, gameweek {gw}", "cols": cols,
+            "route": "goaliq.app/fpl/expected-points",
+            "as_of": _as_of_iso(module.get("generated_at")),
+            "file": f"goaliq-captain-compare-gw{gw}-{'-'.join(keys)}.png"}
+
+
+def render_captain_compare(spec: dict, out_path: Path) -> Path:
+    canvas, d = _reply_canvas()
+    _reply_header(canvas, d, spec["tag"], spec["title"])
+    n = len(spec["cols"])
+    gap = 24
+    cw = (RW - 2 * RMX - gap * (n - 1)) / n
+    top, bottom = 204, RH - 86
+    f_big = _font(FONT_BOLD, 72)
+    f_lab = _font(FONT_MED, 20)
+    f_stat = _font(FONT_BOLD, 34)
+    for i, c in enumerate(spec["cols"]):
+        x0 = RMX + i * (cw + gap)
+        # Kaikki paneelit samanarvoisia: kultareunus ensimmaisella luettaisiin
+        # suositukseksi, vaikka jarjestys on vain kayttajan antama.
+        d.rectangle([x0, top, x0 + cw, bottom], outline=R_LINE, width=1)
+        px = x0 + 22
+        f_name = _shrink(d, c["name"], 40, cw - 44, 24, FONT_BOLD)
+        d.text((px, top + 18), c["name"], font=f_name, fill=R_CREAM)
+        sub = f"{c['team']} · {c['opponent']}"
+        f_sub = _shrink(d, sub, 22, cw - 44, 14, FONT_MED)
+        d.text((px, top + 70), sub, font=f_sub, fill=R_MUTED)
+        main, rest = c["values"][0], c["values"][1:]
+        d.text((px, top + 108), main["value"], font=f_big, fill=R_GOLD)
+        d.text((px, top + 190), main["label"], font=f_lab, fill=R_MUTED)
+        y = top + 232
+        for v in rest:
+            d.text((px, y + 8), v["label"], font=f_lab, fill=R_MUTED)
+            vw = d.textlength(v["value"], font=f_stat)
+            d.text((x0 + cw - 22 - vw, y), v["value"], font=f_stat,
+                   fill=R_CORAL if v["field"] == "p_blank" else R_TEAL)
+            y += 46
+    _reply_footer(d, spec["route"], f"as of {spec['as_of']}")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(out_path, "PNG")
+    return out_path
+
+
+def model_vs_template_spec(module: dict, max_names: int = 4) -> dict:
+    """Vain erot (2-4 nimea kummallakin) + xP-ero. Osio kertoo itse saatavuuden."""
+    gw = int(module["gw"])
+    sec = (module.get("sections") or {}).get("model_vs_template") or {}
+    if not sec.get("available"):
+        raise SystemExit(f"model-vs-template: ei saatavilla GW{gw}: {sec.get('reason')}")
+    mo = sec.get("model_only") or []
+    to = sec.get("template_only") or []
+    if not mo and not to:
+        raise SystemExit("model-vs-template: mallin XI = template, ei eroja kortille")
+    # Ero vain kun osio on laskenut sen vertailukelpoisena (yhta monta nimea
+    # molemmilla puolilla). Kortti ei laske sita itse.
+    gap = ((sec.get("xp_gap") or {}).get("values") or {}).get("gw_xp_gap")         if (sec.get("xp_gap") or {}).get("available") else None
+    def shown(v, fmt):
+        # Luku kortille VAIN jos sillä on ilmaisreitti. Ennen kierrosta
+        # jaadytetyn xP:n ainoa ihmisluettava reitti (/fpl/points/gw{N})
+        # ei viela ole olemassa -> nimi ilman lukua.
+        return fmt.format(v["text"]) if v and v.get("public_url") else ""
+
+    left = [{"name": r["name"], "team": r["team"],
+             "value": shown(r["values"].get("gw_xp_frozen"), "{} xP")} for r in mo[:max_names]]
+    right = [{"name": r["name"], "team": r["team"],
+              "value": shown(r["values"].get("eo_pct"), "EO {}")} for r in to[:max_names]]
+    routes = sorted({v["public_url"].replace("https://", "").replace("goaliq.app", "")
+                     for r in mo[:max_names] + to[:max_names]
+                     for v in r["values"].values() if v.get("public_url")})
+    return {"kind": "model_vs_template", "gw": gw, "tag": f"GW{gw}",
+            "title": f"Model XI vs the template, gameweek {gw}",
+            "left": left, "right": right,
+            "more_left": max(0, len(mo) - max_names), "more_right": max(0, len(to) - max_names),
+            "gap": gap["text"] if gap else None,
+            "template_rule": sec.get("template_rule"),
+            "route": "goaliq.app" + " + ".join(routes) if routes else "goaliq.app/fpl#eo-by-tier",
+            "as_of": _as_of_iso(sec.get("model_frozen_at")),
+            "file": f"goaliq-model-vs-template-gw{gw}.png"}
+
+
+def render_model_vs_template(spec: dict, out_path: Path) -> Path:
+    canvas, d = _reply_canvas()
+    _reply_header(canvas, d, spec["tag"], spec["title"])
+    colw = (RW - 2 * RMX - 40) / 2
+    f_head = _font(FONT_BOLD, 22)
+    f_name = _font(FONT_BOLD, 34)
+    f_val = _font(FONT_BOLD, 30)
+    f_team = _font(FONT_MED, 20)
+    top = 206
+    for j, (head, rows, colr, more) in enumerate((
+            ("ONLY IN THE MODEL XI", spec["left"], R_TEAL, spec["more_left"]),
+            ("TEMPLATE, NOT IN THE MODEL", spec["right"], R_CORAL, spec["more_right"]))):
+        x0 = RMX + j * (colw + 40)
+        d.text((x0, top), head, font=f_head, fill=colr)
+        d.rectangle([x0, top + 34, x0 + colw, top + 36], fill=colr)
+        y = top + 52
+        for r in rows:
+            vw = d.textlength(r["value"], font=f_val)
+            fn = _shrink(d, r["name"], 34, colw - vw - 90, 20, FONT_BOLD)
+            d.text((x0, y), r["name"], font=fn, fill=R_CREAM)
+            d.text((x0 + d.textlength(r["name"], font=fn) + 12, y + 10), r["team"],
+                   font=f_team, fill=R_MUTED)
+            d.text((x0 + colw - vw, y + 2), r["value"], font=f_val, fill=R_CREAM)
+            y += 56
+        if more:
+            d.text((x0, y), f"+{more} more", font=f_team, fill=R_MUTED)
+    rule = spec.get("template_rule") or ""
+    if rule:
+        rule = "Template = " + rule
+        f_rule = _shrink(d, rule, 20, RW - 2 * RMX, 13, FONT_MED)
+        d.text((RMX, RH - 196 if spec.get("gap") else RH - 104), rule, font=f_rule,
+               fill=R_MUTED)
+    if spec.get("gap"):
+        f_gap = _font(FONT_BOLD, 56)
+        lab = f"GW{spec['gw']} xP, model side minus template side"
+        d.text((RMX, RH - 150), lab, font=_font(FONT_MED, 22), fill=R_MUTED)
+        d.text((RMX + d.textlength(lab, font=_font(FONT_MED, 22)) + 24, RH - 178),
+               spec["gap"], font=f_gap, fill=R_GOLD)
+    _reply_footer(d, spec["route"], f"model frozen {spec['as_of']}")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(out_path, "PNG")
+    return out_path
+
+
+def _reply_cli_spec(card: str, args) -> dict:
+    """CLI-polku: moduuli VAIN lukijan kautta (ei tiedostonlukua tassa)."""
+    gw = args.gw
+    if gw is None:
+        raise SystemExit(f"{card}: --gw pakollinen (moduulin kierros)")
+    if card in REPLY_FIELDS:
+        section = REPLY_FIELDS[card][0]
+        return reply_list_spec(_module_or_exit(gw, sections=[section]), card, args.top)
+    if card == "captain-compare":
+        keys = [k.strip() for k in (args.players or "").split(",") if k.strip()]
+        # player_lookup kantaa jokaisen pelaajan; lukija karsii palautuksen
+        # naihin avaimiin ja tarkistaa juuri niiden tuoreuden ja FPL-tilan.
+        want = [f"player_lookup.{k}.{f}" for k in keys for f, _l in COMPARE_FIELDS]
+        mod = _module_or_exit(gw, sections=["player_lookup"], keys=want)
+        return captain_compare_spec(mod, keys)
+    if card == "model-vs-template":
+        return model_vs_template_spec(_module_or_exit(gw, sections=["model_vs_template"]))
+    raise SystemExit(f"tuntematon reply-kortti {card}")
+
+
+def card_reply_cs(args) -> dict:
+    return _reply_cli_spec("reply-cs", args)
+
+
+def card_reply_xp(args) -> dict:
+    return _reply_cli_spec("reply-xp", args)
+
+
+def card_captain_compare(args) -> dict:
+    return _reply_cli_spec("captain-compare", args)
+
+
+def card_model_vs_template(args) -> dict:
+    return _reply_cli_spec("model-vs-template", args)
+
+
+REPLY_RENDERERS = {"reply_list": render_reply_list,
+                   "captain_compare": render_captain_compare,
+                   "model_vs_template": render_model_vs_template}
+
+
 BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
             "xp": card_xp, "value": card_value, "club-best": card_club_best,
             "price-tier": card_price_tier,
-            "gw-outlook": card_gw_outlook}
+            "gw-outlook": card_gw_outlook,
+            "reply-cs": card_reply_cs, "reply-xp": card_reply_xp,
+            "captain-compare": card_captain_compare,
+            "model-vs-template": card_model_vs_template}
 GW_CAPABLE = {"cs"}
 
 
@@ -1522,7 +1869,11 @@ def main() -> int:
                     help="price-tier: pudota rivit jotka eivat mahdu ilmaissivun "
                          "top-N:aan (tarkistettavuus). /fpl/expected-points = 100")
     ap.add_argument("--gw", type=int, default=None,
-                    help="gw-outlook: kierros (oletus: pienin datassa)")
+                    help="gw-outlook: kierros (oletus: pienin datassa); reply-kortit: "
+                         "moduulin kierros (pakollinen)")
+    ap.add_argument("--players", default=None,
+                    help="captain-compare: 2-3 moduulin avainta pilkuilla, "
+                         "esim. haaland-mci,b-fernandes-mun")
     ap.add_argument("--out", default=None)
     ap.add_argument("--style", choices=("classic", "hero"), default="classic",
                     help="gw-outlook: hero = yksi iso karkiluku + top 5 (9.9)")
@@ -1543,6 +1894,12 @@ def main() -> int:
 
     spec = BUILDERS[a.card](a)
     out = Path(a.out) if a.out else OUT_DIR / spec["file"]
+    if spec.get("kind") in REPLY_RENDERERS:
+        if a.card in REPLY_FIELDS and a.top > REPLY_MAX_ROWS:
+            print(f"huom: reply-kortti nayttaa korkeintaan {REPLY_MAX_ROWS} rivia")
+        pth = REPLY_RENDERERS[spec["kind"]](spec, out)
+        print(f"{spec['title']} -> {pth}")
+        return 0
     if spec.get("kind") == "gw_outlook":
         if a.style == "hero":
             if not a.out:

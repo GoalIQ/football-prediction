@@ -15,13 +15,13 @@ Lähteet:
     yha 24/25+25/26 vaikka ikkuna oli jo 25/26+26/27.
 
 Metodologia:
-  - CS-% = Poisson(0; vastustajan odotetut maalit)  (FPL-speksi / kickoff-memo).
+  - CS-% = P(vastustaja 0 maalia) DC-matriisista, SAMA funktio kuin
+    fpl_projections_phase0:ssa (build_fpl_phase0.fixture_numbers, 22.9).
   - Mallipohjainen FDR (1-5) = johdettu voitto-%:sta + odotetuista päästetyistä
     maaleista, bucketoitu kvintiileihin koko kauden 760 joukkue-fixturen yli.
 
-CAVEAT (kirjattu outputtiin): 26/27 team-voimat = viime kauden priorit →
-suuntaa-antava teaser, ei tarkka. Nousijat Coventry + Hull (ei tuoretta
-ylätason xG-dataa) saavat empiirisen "promoted baseline" -priorin.
+CAVEAT (kirjattu outputtiin, johdettu ajon tilasta `cs_fdr_caveat`illa):
+nousijabaseline mainitaan VAIN niille seuroille jotka sen oikeasti saivat.
 
 EI committia tuotantoon ilman lupaa. Domestic-malli bittitarkasti koskematon —
 tämä skripti vain LUKEE mallia, ei muuta fit-koodia.
@@ -38,10 +38,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import requests
-from scipy.stats import poisson
 
 import config
-from src.data.loader import lataa_otteludata
 from src.models.dixon_coles import DixonColesModel
 
 # ---------------------------------------------------------------------------
@@ -77,24 +75,12 @@ OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_cs_fdr.json"
 FIT_DECAY = 0.0035
 FIT_BAYES = 2.0
 
-# pulselive-nimi -> mallin (Understat) nimi
-NAME_MAP = {
-    "Brighton & Hove Albion": "Brighton",
-    "Tottenham Hotspur": "Tottenham",
-    "Leeds United": "Leeds",
-    "Ipswich Town": "Ipswich",
-    "Newcastle United": "Newcastle United",
-    "Manchester City": "Manchester City",
-    "Manchester United": "Manchester United",
-    "Nottingham Forest": "Nottingham Forest",
-}
-
-# Nousijat ilman tuoretta ylätason dataa → empiirinen promoted baseline (alla).
-# Ipswich on 24/25-datassa (alaspainotettu), joten se EI tarvitse priorip.
-
-
-def map_name(pulse_name: str) -> str:
-    return NAME_MAP.get(pulse_name, pulse_name)
+# 22.9 (CS-FDR-META-ERI-MIELTA): EI OMAA NIMIKARTTAA. Taman tiedoston kartasta
+# puuttuivat "Coventry City" ja "Hull City", joten GW1:n jalkeen (kun nousijoilla
+# oli jo oma Understat-historia) cs_fdr ei loytanyt niita mallista ja antoi niille
+# nousijabaselinen. /fpl-sivu (phase0) ja xP kayttivat liveharviota, ja sama
+# ottelu sai kaksi eri CS%:a (HUL v IPS 16,8 % vs 33,0 %). Yksi kartta kaikille:
+from src.models.fpl_team_names import NAME_MAP, map_name  # noqa: E402,F401
 
 
 # ---------------------------------------------------------------------------
@@ -147,32 +133,13 @@ def fetch_teams() -> list[str]:
 # 3. Sovita PL-malli (sama config kuin tuotanto) + promoted baseline
 # ---------------------------------------------------------------------------
 def fit_model() -> tuple[DixonColesModel, list[str]]:
-    seasons = config.current_season_pair()
-    df = lataa_otteludata(["ENG-Premier League"], seasons)
-    if df.empty:
-        raise SystemExit("PL-otteludata tyhjä — ei voi sovittaa mallia.")
-    dc = DixonColesModel(per_team_home_adv=True).fit(
-        df,
-        home_team_col="home_team",
-        away_team_col="away_team",
-        home_goals_col="home_score",
-        away_goals_col="away_score",
-        decay=FIT_DECAY,
-        date_col="date",
-        l2_attack_defence=FIT_BAYES,
-        # 17.8: sama xG-painotus kuin /api/predict ja build_fpl_phase0.
-        # CS% ja FDR tulevat taman mallin maalimatriisista, joten jos tama
-        # jaisi ilman, FPL-sivut kertoisivat eri tarinaa kuin ennustesivu.
-        home_xg_col=config.DIXON_COLES_XG_COLS[0],
-        away_xg_col=config.DIXON_COLES_XG_COLS[1],
-        xg_weight=config.DIXON_COLES_XG_WEIGHT,
-    )
-    # FPL-THIN-BLEND (20.8): sama kytkenta ja sama fail-closed-portti kuin
-    # build_fpl_phase0:ssa — jaettu funktio, jottei kaksi builderia voi
-    # ajautua eri kaytokseen nousijoista.
-    from scripts.build_fpl_phase0 import _blendaa_ohuet
-    _blendaa_ohuet(dc, df, seasons)
-    return dc, seasons
+    """Sama fitti kuin build_fpl_phase0 (22.9: kopio poistettu).
+
+    Taman tiedoston fit_model oli rivi rivilta sama kuin phase0:n, mukaan
+    lukien FPL-THIN-BLEND. Kaksi kopiota samasta fitista on juuri se muoto
+    jossa ne ajautuvat erilleen hiljaa (vrt. nimikartta yllä)."""
+    from scripts.build_fpl_phase0 import fit_model as _phase0_fit
+    return _phase0_fit()
 
 
 # 27.7: siirretty jaettuun moduuliin src/models/promoted_baseline.py (sama
@@ -184,7 +151,22 @@ from src.models.promoted_baseline import add_promoted_baseline  # noqa: E402
 # ---------------------------------------------------------------------------
 # 4. Laske per-fixture CS% + win% + xG
 # ---------------------------------------------------------------------------
-def compute_fixtures(dc: DixonColesModel, fixtures: list[dict]) -> list[dict]:
+def compute_fixtures(dc: DixonColesModel, fixtures: list[dict],
+                     ctx_cfg: dict | None = None) -> list[dict]:
+    """Per-fixture xG + 1X2 + CS%. Luvut tulevat SAMASTA funktiosta kuin
+    /fpl-sivun (`build_fpl_phase0.fixture_numbers`), 22.9 alkaen.
+
+    Aiemmin tama laski CS%:n Poisson(0; mu):sta ilman kontekstikerrosta ja
+    omalla nimikartalla. Poisson ja DC-matriisin marginaali ovat sama luku
+    (tau-korjaus kumoutuu sarakesummassa), joten ero ei ollut kaavassa vaan
+    siina MITA malli sai syotteeksi: vaara nimi -> baseline. Jaettu funktio
+    tekee eron mahdottomaksi eika vain epatodennakoiseksi.
+
+    `home`/`away` pysyvat LAHDENIMINA (pulselive), koska kuluttajat
+    (fpl_wildcard, chip-EV) avaavat ne; mallinimi on `home_model`/`away_model`.
+    """
+    from scripts.build_fpl_phase0 import fixture_numbers
+
     rows = []
     for f in fixtures:
         h = map_name(f["home"])
@@ -192,22 +174,12 @@ def compute_fixtures(dc: DixonColesModel, fixtures: list[dict]) -> list[dict]:
         if h not in dc.attack or a not in dc.attack:
             # ei pitäisi tapahtua (baseline lisätty) — ohita turvallisesti
             continue
-        lam, mu = dc.expected_goals(h, a)  # lam=koti xG, mu=vieras xG
-        probs = dc.predict_1x2(h, a)       # täysi DC-matriisi (tau-korjattu)
-        cs_home = float(poisson.pmf(0, mu))  # koti pitää nollan: vieras tekee 0
-        cs_away = float(poisson.pmf(0, lam))
         rows.append(
             {
                 **f,
                 "home_model": h,
                 "away_model": a,
-                "xg_home": round(lam, 3),
-                "xg_away": round(mu, 3),
-                "p_home_win": round(probs["home"], 4),
-                "p_draw": round(probs["draw"], 4),
-                "p_away_win": round(probs["away"], 4),
-                "cs_home_pct": round(cs_home * 100, 1),
-                "cs_away_pct": round(cs_away * 100, 1),
+                **fixture_numbers(dc, h, a, f.get("gameweek"), ctx_cfg),
             }
         )
     return rows
@@ -380,6 +352,23 @@ def sanity_and_sample(rows: list[dict], teams_agg: dict, promoted: list[str],
     return ok
 
 
+def cs_fdr_caveat(baseline_teams: list[str], seasons) -> str:
+    """Totuudenmukainen caveat: kertoo mita TAMA ajo teki, ei mita kesakuussa.
+
+    22.9: kovakoodattu lause "Nousijat Coventry/Hull = empiirinen promoted
+    baseline" jai voimaan senkin jalkeen kun molemmilla oli viisi liigaottelua
+    dataa. Lause on nyt funktio ajon `missing`-listasta; tyhja lista -> ei
+    baseline-mainintaa lainkaan.
+    """
+    kaudet = "+".join(str(s) for s in seasons)
+    base = (f"Joukkuevoimat: Dixon-Coles, Understat PL {kaudet}, sama fitti ja "
+            "sama CS%-funktio kuin /fpl-sivun fpl_projections_phase0.json.")
+    if baseline_teams:
+        return (base + " Empiirinen nousijabaseline (ei ylatason dataa): "
+                + ", ".join(sorted(baseline_teams)) + ".")
+    return base + " Kaikilla seuroilla on oma ylatason data; nousijabaselinea ei kaytetty."
+
+
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
@@ -406,8 +395,13 @@ def main() -> int:
     from src.models.fpl_team_overrides import apply_to_fit
     apply_to_fit(dc, "cs-fdr")
 
-    print("[4/5] Lasketaan CS% + win% + FDR per fixture...")
-    rows = compute_fixtures(dc, fixtures)
+    print("[4/5] Lasketaan CS% + win% + FDR per fixture (sama kerros kuin /fpl)...")
+    # 22.9: SAMA Phase 1b -kontekstikerros kuin phase0:ssa ja xP:ssa
+    # (manuaaliset yliajot data/fpl_manual_overrides.csv). Ilman sita yliajo
+    # liikutti /fpl-sivun lukua mutta ei taman tiedoston lukijoita.
+    from scripts.build_fpl_phase0 import context_cfg
+    ctx_cfg, _promoted = context_cfg(teams_2627, fixtures)
+    rows = compute_fixtures(dc, fixtures, ctx_cfg=ctx_cfg)
     add_fdr(rows)
     teams_agg = team_aggregates(rows)
     # Mika ikkuna aggregaatti oikeasti on. Ilman tata kentan NIMI on ainoa
@@ -434,7 +428,9 @@ def main() -> int:
                 f"GoalIQ Dixon-Coles, Understat PL {seasons} "
                 f"(sama fit-config kuin /api/predict: decay={FIT_DECAY}, bayes={FIT_BAYES})"
             ),
-            "cs_method": "Poisson(0; vastustajan odotetut maalit)",
+            "cs_method": ("P(vastustaja 0 maalia) DC-score-matriisista; sama funktio "
+                          "kuin fpl_projections_phase0 (build_fpl_phase0.fixture_numbers)"),
+            "cs_source": "shared:build_fpl_phase0.fixture_numbers",
             "fdr_method": (
                 "Mallipohjainen 1-5: 0.55*(1-voitto%) + 0.45*(odotetut päästetyt maalit), "
                 "rank-normalisoitu, kvintiilibucket koko kauden 760 joukkue-fixturen yli"
@@ -446,10 +442,11 @@ def main() -> int:
                 "(vähän omaa xG:tä = vaikea), kvintiilibucket koko kauden "
                 "760 joukkue-fixturen yli. 1 = helpoin hyökätä, 5 = vaikein."
             ),
-            "caveat": (
-                "26/27 team-voimat = viime kauden priorit, suuntaa-antava (ei tarkka). "
-                "Nousijat Coventry/Hull = empiirinen promoted baseline (24/25 nousijatrio)."
-            ),
+            # 22.9: caveat JOHDETAAN siita mita ajo teki. Vanha kovakoodattu
+            # lause vaitti Coventryn ja Hullin olevan baselinella myos silloin
+            # kun ne ajoivat omalla liveharviollaan (tai, 22.9 asti, vaaran
+            # nimikartan takia baselinella vaikka dataa oli).
+            "caveat": cs_fdr_caveat(missing, seasons),
             "promoted_baseline_teams": missing,
             "promoted_baseline_values": baseline,
             "sanity_gate": "PASS" if gate_pass else "FAIL",
