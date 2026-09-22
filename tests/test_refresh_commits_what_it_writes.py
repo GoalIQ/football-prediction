@@ -42,6 +42,10 @@ KIRJOITTAJAT = {
     # 17.9 KAKSI-GRADERIA-YKSI-TIEDOSTO: freeze-graderi kirjoittaa omaan
     # sarjaansa, ei enaa entry-sarjaan.
     "grade_model_squad_gw": "data/model_squad_frozen_gw_scores.json",
+    # 22.9 LANDING-KORTIT-GW3-VANHAT: etusivun kortit + kierrosmerkinta.
+    # Ilman committia kortti paivittyisi runnerin levylle ja sivu jaisi
+    # edelliseen kierrokseen - tasan se vika jonka askel korjaa.
+    "refresh_site_cards": "assets/cards/cards.json",
 }
 
 # POIKKEUSLISTA: tiedosto jota refresh EI committaa, perusteluineen.

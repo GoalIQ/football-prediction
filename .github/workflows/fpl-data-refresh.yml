@@ -136,7 +136,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install "pandas>=2.1" "numpy>=1.26" "scipy>=1.11" \
             "statsmodels>=0.14" "requests>=2.31" "soccerdata>=1.8" \
-            "python-dotenv>=1.0" "tqdm>=4.66"
+            "python-dotenv>=1.0" "tqdm>=4.66" "pillow>=10"
 
       # 17.8: PAATTYNEEN 25/26-KAUDEN ARKISTO RUNNERILLE.
       #
@@ -407,6 +407,26 @@ jobs:
         continue-on-error: true
         run: python -m scripts.log_gw_calls
 
+      # 22.9 LANDING-KORTIT-GW3-VANHAT: etusivun "What the model publishes"
+      # -kortit. publish_cards_to_site sanoi "aja fpl-data-refreshissa" mutta
+      # mikaan ei ajanut sita, joten etusivu naytti GW3:n kortteja GW6:n
+      # aikana 18 vrk. Renderoi VAIN kun actionable GW vaihtuu (cards.json:n
+      # gw != data): kerran kierroksessa, samassa committissa kuin data joka
+      # kierroksen kaansi. Muuten exit 0 ilman Chromea ja ilman
+      # tiedostomuutoksia (ei commit-churnia 3 h valein).
+      # log_gw_callsin JALKEEN: standouts-kortti ei saa erota lokista ennen
+      # deadlinea (reconcile_with_log kaatuu), ja sama data = sama loki.
+      # Projected XI ajetaan --dry-run: kutsulokiin sen kirjaa Ville GO:lla.
+      # Fontit ovat repossa (scripts/card_fonts): runnerin DejaVu ei
+      # vaikuta asetteluun, ja render_card kieltaytyy kuvaamasta ylivuotoa.
+      # continue-on-error + Step health: kortin vika ei saa padota dataa;
+      # tests/test_site_card_images.py eskaloi 24 h deadlinen jalkeen.
+      - name: Render landing page cards when the actionable gameweek changes
+        id: site_cards
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.refresh_site_cards
+
       # 14.8: FREEZE EI KOSKETA FPL-TILIA. Rivi syotetaan FPL:aan kasin, joten
       # jaadytetty tiedosto ja tili ovat kaksi eri totuutta mallin joukkueesta
       # eika niiden valilla ollut mitaan joka huomaisi eron. Mitattu: entryn
@@ -591,6 +611,9 @@ jobs:
           [ -f data/model_squad_frozen_gw_scores.json ] && git add data/model_squad_frozen_gw_scores.json
           # 28.8 (GW-CALLS-LOKI): kutsut + gradaus, git-historia todistaa ajan.
           [ -f data/gw_calls.json ] && git add data/gw_calls.json
+          # 22.9: etusivun kortit + kierrosmerkinta (refresh_site_cards).
+          # Muuttuvat vain kun actionable GW vaihtuu; muuten diff on tyhja.
+          git add assets/cards/cards.json assets/cards/gameweek-card.webp assets/cards/gameweek-card-450.webp assets/cards/projected-xi-card.webp assets/cards/projected-xi-card-450.webp || echo "::warning::korttien git add epaonnistui - muu data pushataan silti"
           # 🔴 7.9 (portin 17. kierros): TAMA PUUTTUI, ja tiedosto oli JAASSA
           # 7 vrk. `build_gw_recap` ajaa rivilla 357 ja kirjoittaa oikeat luvut
           # runnerin levylle joka ajossa - mutta ilman `git add`ia ne heitetaan
@@ -706,6 +729,7 @@ jobs:
           [ "${{ steps.build_price_watch.outcome }}" = "failure" ] && { echo "::error::build_fpl_price_watch FAILAA (hinnanmuutosennuste jaa vanhaksi)"; fail=1; }
           [ "${{ steps.freeze_xp.outcome }}" = "failure" ] && { echo "::error::freeze_fpl_xp_gw FAILAA (seuraavan GW:n xP jaa jaadyttamatta)"; fail=1; }
           [ "${{ steps.freeze_squad.outcome }}" = "failure" ] && { echo "::error::freeze_model_squad_gw FAILAA (mallirivi jaa lukitsematta — Beat the Model ja Season race nojaavat siihen)"; fail=1; }
+          [ "${{ steps.site_cards.outcome }}" = "failure" ] && { echo "::error::refresh_site_cards FAILAA (etusivun kortit jaavat edelliselle kierrokselle; lue askeleen oma viesti: asettelu rikki / loki eroaa / Chrome puuttuu. tests/test_site_card_images.py punastuu 24 h deadlinen jalkeen)"; fail=1; }
           [ "${{ steps.log_calls.outcome }}" = "failure" ] && { echo "::error::log_gw_calls FAILAA (kierroksen kutsut jaavat kirjaamatta ennen deadlinea)"; fail=1; }
           [ "${{ steps.build_founder.outcome }}" = "failure" ] && { echo "::error::build_founder_stats FAILAA. Transientti upstream-virhe EI enaa punasta tata (skripti yrittaa uudelleen ja jattaa vanhan artefaktin voimaan alle 36 h ajaksi), joten punainen tarkoittaa joko sanity-virhetta TAI etta luku on ollut saamatta yli 36 h — etusivun perustajalohko nayttaa silloin vanhentunutta lukua"; fail=1; }
           [ "${{ steps.build_leaders.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_leaders FAILAA (xG- ja DefCon-leaderit jaavat vanhoiksi)"; fail=1; }

@@ -203,3 +203,19 @@ def test_dynaaminen_muoto_tunnistetaan_eika_tokenisoida():
     a = analysoi(runit)
     assert a["dynaaminen"] and a["verifioidut"] == list(CORE)
     assert puutteet("x.yml", runit) == []
+
+
+def test_etusivun_kortin_vaihto_mitataan_livesta():
+    """22.9 LANDING-KORTIT-GW3-VANHAT: kortti vaihtuu vakionimen alta eika
+    index.html muutu. Ilman korttia listalla "live = repo" on tosi ja
+    hub-deploy jaa laukaisematta. Kortit ennen sivuotosta: 40 ottelusivua
+    ei saa tyontaa niita pois MAX_PAGES-rajan takia."""
+    from scripts.verify_targets import targets
+    diff = (["assets/cards/gameweek-card.webp", "assets/cards/cards.json",
+             "assets/cards/tools/points.webp", "data/fpl_xp_projections.json"]
+            + [f"predictions/x{i:02d}.html" for i in range(40)])
+    got = targets(diff)
+    assert "assets/cards/gameweek-card.webp" in got
+    assert "assets/cards/cards.json" in got
+    assert "assets/cards/tools/points.webp" not in got
+    assert "data/fpl_xp_projections.json" not in got
