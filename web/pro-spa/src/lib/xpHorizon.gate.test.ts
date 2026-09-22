@@ -370,6 +370,14 @@ const PROP_READERS: Record<string, { name: string; typeRe: RegExp; reason: strin
 			reason:
 				'otsikkorivi saa ikkunan valmiina RateTeamilta (REQUIRED_CALLERS); ennen 17.9 propi oli horizonGw: number ja komponentti laski valin itse gw + horizonGw - 1:sta'
 		}
+	],
+	'lib/components/TeamPitchManager.svelte': [
+		{
+			name: 'horizon',
+			typeRe: /horizon\?:\s*XpHorizon\b/,
+			reason:
+				'22.9: mallin XI:n otsikko "picked on GW6-GW11 xP" saa ikkunan RateTeamilta samasta xpHorizon(meta):sta kuin otsakerivi, ja lukee sen declaredRangella (pitchLineup.pitchTitle)'
+		}
 	]
 };
 

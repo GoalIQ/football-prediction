@@ -41,6 +41,7 @@
 	import ProjectionsPanel from './ProjectionsPanel.svelte';
 	import type { XpResponse } from '$lib/api';
 	import { xpHorizon } from '$lib/xpHorizon';
+	import { modelCaptainOf } from '$lib/pitchLineup';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
 	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
 	function transferSpan(d: RateTeamResponse): string {
@@ -1362,6 +1363,8 @@
 		gwInProgress={data.meta.gw_in_progress === true}
 		lastFinished={data.last_finished ?? null}
 		picksGw={data.meta.picks_gw ?? null}
+		horizon={xpHorizon(data.meta)}
+		modelCaptain={modelCaptainOf(data)}
 		{onUpgrade}
 		initialCaptaincy={captaincy}
 		onCaptaincyChange={handleCaptaincyChange}
@@ -1654,6 +1657,8 @@
 			gwInProgress={dataB.meta.gw_in_progress === true}
 			lastFinished={dataB.last_finished ?? null}
 			picksGw={dataB.meta.picks_gw ?? null}
+			horizon={xpHorizon(dataB.meta)}
+			modelCaptain={modelCaptainOf(dataB)}
 			{onUpgrade}
 			initialCaptaincy={captaincyB}
 			onCaptaincyChange={handleCaptaincyChangeB}
