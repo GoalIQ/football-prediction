@@ -15,6 +15,14 @@ ep_next:iä, kuten GW1 ja GW2). Logiikka on src/models/fpl_xp_accuracy.py.
 Jo gradattu rivi jolta lohkot puuttuvat täydennetään paikallaan: mae/bias/n
 eivät muutu (sama syöte), vain uudet avaimet lisätään, `enriched_at` kertoo
 milloin. Toteuma haetaan fpl_api.fetch_event_live:lla (ei suoraa raw-lukua).
+
+22.9 (D5): GW-riviin tulee `vs_fpl_ep_next` (GoalIQ xP vs FPL ep_next
+riveillä joilla molemmat + toteuma, kaikki / pelasi / ei pelannut, MAE-ero).
+Jäädytetty tiedosto luetaan AINA xacc.grade_frozen():n kautta, joka päästää
+ep_next:n läpi vain kun freezen meta todistaa sen deadline-arvoksi.
+Täydennys lisää vain PUUTTUVAT avaimet: jo kirjoitettua lohkoa ei lasketa
+uudelleen (FPL voi korjata live-dataa jälkikäteen, ja append-only koskee
+myös vertailulohkoja).
 """
 from __future__ import annotations
 
@@ -31,7 +39,7 @@ from src.models import fpl_xp_accuracy as xacc
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "fpl_xp_frozen"
 LOG_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_gw_accuracy.json"
-ENRICH_KEYS = ("by_class", "by_pos_stats", "comparison")
+ENRICH_KEYS = ("by_class", "by_pos_stats", "comparison", "vs_fpl_ep_next")
 
 
 def _now() -> str:
@@ -50,7 +58,7 @@ def actual_from_live(live: dict) -> dict[int, tuple[float, float]]:
 
 def grade_gw(frozen: dict, actual: dict[int, tuple[float, float]]) -> dict:
     """Puhdas ydin: jäädytetty ennuste + toteuma {id: (pts, min)} → GW-rivi."""
-    g = xacc.grade_players(frozen.get("players") or [], actual)
+    g = xacc.grade_frozen(frozen, actual)
     return {
         "gw": frozen.get("meta", {}).get("gw"),
         "graded_at": _now(),
@@ -62,15 +70,18 @@ def grade_gw(frozen: dict, actual: dict[int, tuple[float, float]]) -> dict:
         "by_class": g["by_class"],
         "by_pos_stats": g["by_pos_stats"],
         "comparison": g["comparison"],
+        "vs_fpl_ep_next": g["vs_fpl_ep_next"],
     }
 
 
 def enrich_row(row: dict, frozen: dict, actual: dict[int, tuple[float, float]]) -> dict:
-    """Vanha GW-rivi ilman luokka-/vertailulohkoja: lisää ne, älä koske
-    olemassa oleviin lukuihin (append-only-henki: mae/bias/n pysyvät)."""
-    g = xacc.grade_players(frozen.get("players") or [], actual)
+    """Vanha GW-rivi ilman luokka-/vertailulohkoja: lisää PUUTTUVAT, älä
+    koske olemassa oleviin (append-only: mae/bias/n ja jo kirjoitetut
+    lohkot pysyvät)."""
+    g = xacc.grade_frozen(frozen, actual)
     for k in ENRICH_KEYS:
-        row[k] = g[k]
+        if k not in row:
+            row[k] = g[k]
     row["enriched_at"] = _now()
     return row
 
@@ -94,6 +105,7 @@ def main() -> int:
     log["meta"]["comparison_method_code"] = xacc.METHOD_CODE
     log["meta"]["comparison_method"] = xacc.METHOD
     log["meta"]["classes"] = dict(xacc.CLASS_LABELS)
+    log["meta"]["vs_fpl_ep_next_method_code"] = xacc.VS_FPL_METHOD_CODE
     rows_by_gw = {g.get("gw"): g for g in log["gameweeks"]}
     pending = []   # (gw, frozen, existing_row_or_None)
     for f in sorted(FROZEN_DIR.glob("gw*.json")):
@@ -131,13 +143,19 @@ def main() -> int:
             verb = "gradattu"
         else:
             enrich_row(row, frozen, actual)
-            verb = "täydennetty (by_class + comparison)"
+            verb = "täydennetty (puuttuvat lohkot)"
         graded += 1
         cmp_ = row.get("comparison")
         cmp_txt = (f"vertailu n={cmp_['n']} MAE {cmp_['mae']}" if cmp_
                    else "ei vertailua (ep_next ei jäädytetty)")
+        vs = row.get("vs_fpl_ep_next")
+        vs_txt = (f"vs ep_next n={vs['all']['n']} {vs['all']['mae']} "
+                  f"(pelasi {vs['played']['mae']}, ei pelannut "
+                  f"{vs['did_not_play']['mae']})" if vs
+                  else "ei vs ep_next -lohkoa")
         print(f"OK: GW{gw} {verb} — n={row['n']}, MAE {row['mae']}, "
-              f"bias {row['bias']}, per pos {row['mae_by_pos']}, {cmp_txt}.")
+              f"bias {row['bias']}, per pos {row['mae_by_pos']}, {cmp_txt}, "
+              f"{vs_txt}.")
     if graded:
         LOG_PATH.write_text(json.dumps(log, ensure_ascii=False, indent=1) + "\n",
                             encoding="utf-8")

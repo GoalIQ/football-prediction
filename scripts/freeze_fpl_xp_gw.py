@@ -16,6 +16,19 @@ arkistoi) ja FPL:n `form`-luku baselineksi. Bootstrap haetaan samalla
 fetcherillä kuin projektio (src/data/fpl_api.fetch_bootstrap), joten ep_next
 on samasta hetkestä kuin xP eikä toisesta hausta. Gradaus vertaa kolmea
 lukua samalla rivijoukolla (grade_fpl_xp_gw + src/models/fpl_xp_accuracy).
+
+22.9 (D5, track record vs FPL:n oma projektio): ep_next kirjataan
+deadline-arvoksi VAIN kun se todistetusti on sitä (fpl_reference_gate):
+  * hakuhetki (fpl_api.bootstrap_fetched_at, välimuistin mtime) on ennen
+    deadlinea — fetch_bootstrap voi palauttaa tunnin vanhan välimuistin, joten
+    kutsuhetki ei ole hakuhetki, ja
+  * bootstrapin is_next-kierros on jäädytettävä kierros. ep_next viittaa aina
+    FPL:n is_next-kierrokseen: deadlinen jälkeen se on jo SEURAAVAN kierroksen
+    luku (ja ep_this on deadlinen jälkeen päivittyvä luku), joten kumpikaan
+    ei ole kierroksen N deadline-arvo.
+Jos portti ei aukea, xP jäädytetään silti (pääasia) mutta ep_next/form jäävät
+pois ja meta.fpl_reference_status kertoo syyn. Gradaus lukee ep_next:n vain
+src/models/fpl_xp_accuracy.frozen_players():n kautta, joka tarkistaa saman.
 """
 from __future__ import annotations
 
@@ -28,10 +41,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from src.data import fpl_api
+from src.models import fpl_xp_accuracy as xacc
 
 XP_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "fpl_xp_frozen"
 FREEZE_WINDOW_H = 30   # päivittäinen cron ehtii aina väliin
+
+_ISO = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def _num(v) -> float | None:
@@ -80,27 +96,100 @@ def slim_rows(xp: dict, gw: int, ref: dict[int, dict] | None = None) -> list[dic
     return rows
 
 
-def main() -> int:
+def _deadline(ev: dict) -> _dt.datetime | None:
+    try:
+        return _dt.datetime.fromisoformat(
+            str(ev.get("deadline_time", "")).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def pick_freeze_target(events: list[dict], now: _dt.datetime,
+                       window_h: float = FREEZE_WINDOW_H
+                       ) -> tuple[int, _dt.datetime] | None:
+    """Ensimmäinen ratkeamaton kierros jonka deadline on TULEVAISUUDESSA ja
+    alle window_h:n päässä. Deadlinen jälkeen kierrosta ei valita koskaan:
+    jäädytys ei voi kirjoittaa kierrokselle arvoa joka haettiin sen
+    deadlinen jälkeen."""
+    for ev in events or []:
+        if ev.get("finished"):
+            continue
+        dl = _deadline(ev)
+        if dl is None:
+            continue
+        if dl > now and (dl - now) <= _dt.timedelta(hours=window_h):
+            return int(ev["id"]), dl
+    return None
+
+
+def ep_next_gw(events: list[dict]) -> int | None:
+    """Kierros johon bootstrapin ep_next viittaa: FPL:n is_next-event."""
+    for ev in events or []:
+        if ev.get("is_next"):
+            try:
+                return int(ev["id"])
+            except (KeyError, TypeError, ValueError):
+                return None
+    return None
+
+
+def fpl_reference_gate(events: list[dict], gw: int, deadline: _dt.datetime,
+                       fetched_at: _dt.datetime | None) -> str:
+    """xacc.REF_OK vain kun bootstrapin ep_next on kierroksen gw
+    deadline-arvo. Muuten syykoodi (xacc.REF_*), joka kirjataan metaan."""
+    if fetched_at is None:
+        return xacc.REF_FETCH_TIME_UNKNOWN
+    if fetched_at >= deadline:
+        return xacc.REF_FETCHED_AFTER_DEADLINE
+    if ep_next_gw(events) != int(gw):
+        return xacc.REF_OTHER_GW
+    return xacc.REF_OK
+
+
+def build_frozen(xp: dict, boot: dict, now: _dt.datetime,
+                 fetched_at: _dt.datetime | None) -> dict | None:
+    """Puhdas ydin: jäädytettävä dokumentti tai None jos ikkunassa ei ole
+    kierrosta. Ei IO:ta; main() hoitaa haun, idempotenssin ja kirjoituksen."""
+    events = (boot or {}).get("events") or []
+    target = pick_freeze_target(events, now)
+    if target is None:
+        return None
+    gw, dl = target
+    status = fpl_reference_gate(events, gw, dl, fetched_at)
+    ref = fpl_reference_by_id(boot) if status == xacc.REF_OK else None
+    rows = slim_rows(xp, gw, ref)
+    fetched_txt = (fetched_at.astimezone(_dt.timezone.utc).strftime(_ISO)
+                   if fetched_at else None)
+    meta = {"gw": gw, "deadline": dl.strftime(_ISO),
+            "frozen_at": now.strftime(_ISO),
+            "projection_generated_at": xp.get("meta", {}).get("generated_at"),
+            "n_players": len(rows),
+            "n_ep_next": sum(1 for r in rows if r.get("ep_next") is not None),
+            "fpl_reference_status": status,
+            "fpl_reference_fetched_at": fetched_txt,
+            "ep_next_gw": ep_next_gw(events)}
+    if status == xacc.REF_OK:
+        meta["fpl_reference"] = ("ep_next and form from the same FPL "
+                                 "bootstrap-static as the projection, "
+                                 "fetched at fpl_reference_fetched_at")
+    return {"meta": meta, "players": rows}
+
+
+def main(now: _dt.datetime | None = None) -> int:
+    """`now` vain testeille (vaihetestit kutsupaikan kautta); ajossa None."""
     try:
         boot = fpl_api.fetch_bootstrap()
-        events = boot.get("events") or []
+        fetched_at = fpl_api.bootstrap_fetched_at()
     except Exception as e:
         print(f"VIRHE: bootstrap-haku epäonnistui: {e!r}")
         return 1
-    now = _dt.datetime.now(_dt.timezone.utc)
-    nxt = None
-    for ev in events:
-        if ev.get("finished"):
-            continue
-        dl = _dt.datetime.fromisoformat(
-            str(ev.get("deadline_time", "")).replace("Z", "+00:00"))
-        if dl > now and (dl - now) <= _dt.timedelta(hours=FREEZE_WINDOW_H):
-            nxt = (int(ev["id"]), dl)
-            break
-    if nxt is None:
+    if now is None:
+        now = _dt.datetime.now(_dt.timezone.utc)
+    target = pick_freeze_target(boot.get("events") or [], now)
+    if target is None:
         print("Ei deadlinea freeze-ikkunassa — ei jäädytettävää.")
         return 0
-    gw, dl = nxt
+    gw, dl = target
     out = FROZEN_DIR / f"gw{gw}.json"
     if out.exists():
         print(f"GW{gw} on jo jäädytetty — ei ylikirjoiteta (immutable).")
@@ -109,30 +198,32 @@ def main() -> int:
         print("VIRHE: xP-projektiota ei ole.")
         return 1
     xp = json.loads(XP_PATH.read_text(encoding="utf-8"))
-    ref = fpl_reference_by_id(boot)
-    rows = slim_rows(xp, gw, ref)
+    doc = build_frozen(xp, boot, now, fetched_at)
+    if doc is None:   # sama target kuin yllä; ei hiljaista None-kirjoitusta
+        print("Ei deadlinea freeze-ikkunassa — ei jäädytettävää.")
+        return 0
+    meta, rows = doc["meta"], doc["players"]
     if len(rows) < 200:
         print(f"VIRHE: vain {len(rows)} riviä GW{gw}:lle — ei jäädytetä.")
         return 1
-    n_ep = sum(1 for r in rows if r.get("ep_next") is not None)
-    if n_ep < len(rows) * 0.9:
+    if meta["fpl_reference_status"] != xacc.REF_OK:
+        # xP jäädytetään silti (pääasia), mutta FPL-vertailu jää tältä
+        # kierrokselta pois ja syy näkyy lokissa ja metassa.
+        print(f"VAROITUS: ep_next ei ole GW{gw}:n deadline-arvo "
+              f"({meta['fpl_reference_status']}, haettu "
+              f"{meta['fpl_reference_fetched_at']}, is_next "
+              f"{meta['ep_next_gw']}) — jäädytetään ilman FPL-referenssiä.")
+    elif meta["n_ep_next"] < len(rows) * 0.9:
         # ep_next puuttuu laajasti -> bootstrap on outo (kausi ei alkanut,
         # kenttä tyhjä). Freeze tehdään silti (xP on pääasia), mutta luku
         # näkyy lokissa eikä hiljaa "vertailu n=0":na.
-        print(f"VAROITUS: ep_next vain {n_ep}/{len(rows)} riville.")
+        print(f"VAROITUS: ep_next vain {meta['n_ep_next']}/{len(rows)} riville.")
     FROZEN_DIR.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({
-        "meta": {"gw": gw, "deadline": dl.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                 "frozen_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                 "projection_generated_at": xp.get("meta", {}).get("generated_at"),
-                 "n_players": len(rows),
-                 "n_ep_next": n_ep,
-                 "fpl_reference": ("ep_next and form from the same FPL "
-                                   "bootstrap-static as the projection, "
-                                   "frozen at frozen_at")},
-        "players": rows,
-    }, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    print(f"OK: GW{gw} jäädytetty ({len(rows)} pelaajaa, deadline {dl}).")
+    out.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n",
+                   encoding="utf-8")
+    print(f"OK: GW{gw} jäädytetty ({len(rows)} pelaajaa, deadline {dl}, "
+          f"ep_next {meta['n_ep_next']} riviä, haettu "
+          f"{meta['fpl_reference_fetched_at']}).")
     return 0
 
 
