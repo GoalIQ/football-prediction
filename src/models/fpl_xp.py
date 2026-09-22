@@ -793,7 +793,7 @@ def apply_price_prior(mm: dict, price_pct: float, prior_minutes: float,
     return recompute_minutes(out)
 
 
-def set_p_start(mm: dict, p_start: float) -> dict:
+def set_p_start(mm: dict, p_start: float, status: str = "a", chance=None) -> dict:
     """Aseta aloitus-tn SUORAAN (manuaalinen ohitus) ja johda minuutit uudelleen.
 
     Ero `scale_p_start`iin: tuo kertoo nykyisen arvion kertoimella (syvyys-
@@ -803,12 +803,23 @@ def set_p_start(mm: dict, p_start: float) -> dict:
     Asettaa sekä p_start_raw (minuuttien johtaminen) että p_start (näyttö/
     kalibrointi) samaan arvoon: ohituksen koko pointti on että historiapohjainen
     shrinkkaus ei päde tähän pelaajaan.
+
+    status/chance (XP-OVERRIDE-OHITTAA-SAATAVUUDEN, mitattu 12.9): override
+    kirjoittaa p_startin SUORAAN, joten se muuten ohittaisi nykyisen FPL-
+    saatavuuden kokonaan — epävarmalle (`d`) tai sivussa olevalle pelaajalle
+    override tuottaisi xP:n jossa pelaamistodennäköisyys EI ole mukana, vaikka
+    `/fpl` ja `/fpl/team-news` väittävät että se on. Siksi tämä on AINOA
+    kutsupaikka overridelle: saatavuusportti ajetaan ohitetun arvon päälle
+    aina, ei vain erikseen muistettuna askeleena. status="a" (oletus) pitää
+    entisen käytöksen bittitarkasti ennallaan (`apply_availability` on no-op
+    statukselle "a").
     """
     out = dict(mm)
     v = min(max(float(p_start), 0.0), 1.0)
     out["p_start_raw"] = v
     out["p_start"] = v
-    return recompute_minutes(out)
+    out = recompute_minutes(out)
+    return apply_availability(out, status, chance)
 
 
 def congestion_multiplier(n_fixtures_in_gw: int, xmins: float) -> float:

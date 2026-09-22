@@ -1030,13 +1030,25 @@ def main(argv: list[str] | None = None) -> int:
         # (xg_mult) koskematta minuutteihin.
         if ov["p_start"] is not None:
             before = mm_by_player[pid]["p_start_raw"]
-            mm_by_player[pid] = xp.set_p_start(mm_by_player[pid], ov["p_start"])
+            # XP-OVERRIDE-OHITTAA-SAATAVUUDEN: override on VIIMEINEN SANA
+            # minuuttipassia vastaan (ks. kommentti yllä), mutta se ei saa olla
+            # viimeinen sana FPL:n saatavuutta vastaan — muuten epävarma/
+            # sivussa oleva pelaaja saisi ohituksen läpi ilman että
+            # apply_availability koskaan skaalaa sitä. set_p_start ajaa
+            # saatavuusportin sisäisesti nykyisellä status/chance-tiedolla.
+            el = next((e for e in boot["elements"] if e["id"] == pid), {})
+            mm_by_player[pid] = xp.set_p_start(
+                mm_by_player[pid], ov["p_start"],
+                status=el.get("status", "a"),
+                chance=el.get("chance_of_playing_next_round"))
             # Kerro jos ohitus söi juuri annetun hintapriorin — se on odotettu ja
             # haluttu, mutta sen on näyttävä lokissa ettei kukaan ihmettele.
             tag = " (kumosi hintapriorin)" if pid in prior_pids else ""
+            avail_tag = (f" (saatavuus {el.get('status', 'a')} sovellettu)"
+                         if el.get("status", "a") != "a" else "")
             print(f"[Overrides] {pid}: p_start {before:.2f} -> "
                   f"{ov['p_start']:.2f} "
-                  f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag} — "
+                  f"(xmins {mm_by_player[pid]['xmins']:.1f}){tag}{avail_tag} — "
                   f"{ov['reason'][:60]}")
         if ov["xg_mult"] != 1.0:
             print(f"[Overrides] {pid}: xg_mult x{ov['xg_mult']:.2f} "

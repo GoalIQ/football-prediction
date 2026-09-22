@@ -91,6 +91,39 @@ def test_scale_p_start_caps_at_one():
     assert out["xmins"] <= 90.0 + 1e-9
 
 
+def test_set_p_start_default_status_unchanged():
+    # status="a" (oletus) -> bittitarkasti entinen käytös, ei saatavuusskaalausta
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 20.0 for r in rounds}, {}, rounds)
+    out = xp.set_p_start(mm, 0.9)
+    assert out["p_start_raw"] == pytest.approx(0.9)
+    assert out["p_start"] == pytest.approx(0.9)
+
+
+def test_set_p_start_applies_availability_for_doubtful():
+    # XP-OVERRIDE-OHITTAA-SAATAVUUDEN: override + status "d" -> tulos on
+    # SAMA kuin apply_availability ajettuna ohituksen päälle, ei raaka 0.9
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 20.0 for r in rounds}, {}, rounds)
+    out = xp.set_p_start(mm, 0.9, status="d", chance=50)
+    expected = xp.apply_availability(xp.set_p_start(mm, 0.9), "d", 50)
+    assert out["p_start_raw"] == pytest.approx(expected["p_start_raw"])
+    assert out["p_start"] == pytest.approx(0.9 * 0.5)
+    assert out["xmins"] == pytest.approx(expected["xmins"])
+    # negatiivinen kontrolli: ilman korjausta (status oletuksena "a") tämä
+    # olisi jäänyt raa'aksi 0.9:ksi eikä olisi ollut skaalattu lainkaan
+    assert out["p_start"] != pytest.approx(0.9)
+
+
+def test_set_p_start_applies_availability_for_injured():
+    # status "i"/"s"/"u"/"n" -> nollaa minuutit ohituksesta huolimatta
+    rounds = [1, 2, 3, 4]
+    mm = _mm({r: 20.0 for r in rounds}, {}, rounds)
+    out = xp.set_p_start(mm, 0.9, status="i")
+    assert out["p_start"] == 0.0 and out["p_start_raw"] == 0.0
+    assert out["xmins"] == pytest.approx(0.0)
+
+
 def test_congestion_multiplier_bounds():
     # tupla-GW + kärkiminuutit → CONGESTION_MULT, ei koskaan negatiivinen/nolla
     assert xp.congestion_multiplier(2, 85.0) == xp.CONGESTION_MULT
