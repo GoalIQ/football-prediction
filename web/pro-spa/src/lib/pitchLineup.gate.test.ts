@@ -524,7 +524,11 @@ describe('otsikko: lahde ja ikkuna (M2)', () => {
 			pitchTitle('settled', { horizon: null, settledGw: 5, gw: 6 }),
 			pitchTitle('settled', { horizon: null, settledGw: null, gw: 6 })
 		].join('\n');
-		expect(all).not.toMatch(/[—–‘’“”]/);
+		// Merkit koodipisteina, jotta tama tiedosto ei itse sisalla niita.
+		const banned = new RegExp(
+			'[' + [0x2014, 0x2013, 0x2018, 0x2019, 0x201c, 0x201d].map((c) => String.fromCharCode(c)).join('') + ']'
+		);
+		expect(all).not.toMatch(banned);
 		expect(all).not.toMatch(/\bPro\b/);
 	});
 });
