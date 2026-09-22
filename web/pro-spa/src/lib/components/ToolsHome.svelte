@@ -24,6 +24,8 @@
 	import ToolRow from './ToolRow.svelte';
 	import ToolDirectory from './ToolDirectory.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { predictHref, predictPrefillFrom } from '$lib/predictLink';
 	import {
 		GROUPS,
 		LEGACY_HASH_TO_PATH,
@@ -135,10 +137,11 @@
 					| 'standings')
 			: 'predict'
 	);
-	let predictPrefill = $state<{ league: string; home: string; away: string } | null>(null);
+	/* 22.9 (Ville): ottelu URL:ssa eika tilassa. Tila katosi kun reitti vaihtui
+	   ryhmasivulta /matches tyokalusivulle /matches/predict ($lib/predictLink). */
+	const predictPrefill = $derived(predictPrefillFrom(page.url.searchParams));
 	function goPredict(lg: string, h: string, a: string) {
-		predictPrefill = { league: lg, home: h, away: a };
-		void goto('/matches/predict');
+		void goto(predictHref(lg, h, a));
 	}
 
 	const premium = $derived(forcePremium || !!auth.sub);
