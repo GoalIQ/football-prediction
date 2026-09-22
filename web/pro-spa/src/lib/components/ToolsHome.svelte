@@ -19,7 +19,6 @@
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { loadProfileEntry } from '$lib/fplEntry.svelte';
-	import DefConLive from './DefConLive.svelte';
 	import Provenance from './Provenance.svelte';
 	import LeagueBanner from './LeagueBanner.svelte';
 	import ToolRow from './ToolRow.svelte';
@@ -393,18 +392,10 @@
 		{/if}
 	{/if}
 
-	<!-- 2.8: DefCon-live ylimpänä ja segmenttien ULKOPUOLELLA — se on
-	     aikakriittinen eikä saa olla välilehden takana. Renderöi tyhjää aina
-	     kun kierros ei ole käynnissä, joten esikaudella tämä ei näy.
-	     4.9 (ylapinon budjetti): lohko pysyy tassa, mutta lista on
-	     kokoontaitettu — yhteenvetorivi (GW + montako kynnyksella) jaa
-	     nakyviin joka valilehdelle, 13 rivin lista ei. Perustelu ja mittaus
-	     `DefConLive.svelte`:n kommentissa. -->
-	<!-- 11.9: DefCon vain This week -sivulla. Tyokalusivulla se oli yksi
-	     seitsemasta rivista ennen sisaltoa. -->
-	{#if segment === 'week'}
-		<DefConLive />
-	{/if}
+	<!-- 22.9 (A3 2.1 + 5): DefCon-live siirtyi This week -sivun deadline-rivin
+	     alle (ThisWeek.svelte) ja nakyy vain kun kierros on kesken. Tassa se
+	     renderoityi myos tauolla ("GW5 final") ensimmaisena asiana, eli
+	     paattyneen kierroksen tieto oli paatosten edella. -->
 
 	<!-- 4.9: ryhman tyokalurivi. Korvaa "On this page:" -ankkuririvin, joka
 	     vieritti pitkaa sivua; nama ovat linkkeja omiin URLeihin. -->
@@ -447,7 +438,9 @@
 			     ToolRow'lla: sama ongelma, mutta ratkaisuna oma URL eika
 			     vieritys. -->
 			{#if segment === 'week' || show('rate-my-team')}
-			<div class="tool-card" id="tc-rate">
+			<!-- 22.9: This week ei ole tyokalukortti vaan sivu, joten kehys
+			     jaa pois (paatoskortti kantaa oman kehyksensa). -->
+			<div class:tool-card={segment !== 'week'} id="tc-rate">
 				<RateTeam
 					{premium}
 					{xp}

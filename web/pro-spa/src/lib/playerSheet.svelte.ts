@@ -12,6 +12,7 @@
  * kortin lisaamalla attribuutin; portti `ia.gate.test.ts` kaataa jos
  * Players-ryhman lista jattaa sen pois.
  */
+import { playerIdFromEvent } from './playerRow';
 
 export const playerSheet = $state({
 	/** Avoinna olevan kortin pelaaja, null = kiinni. */
@@ -30,23 +31,28 @@ export function closePlayer(): void {
 	playerSheet.id = null;
 }
 
-/** Elementit joiden klikkaus on oma toimintonsa eika rivin avaus. */
-const INTERACTIVE = 'a,button,input,select,textarea,summary,label,[role="button"]';
-
-/** Pelaajan id klikatusta kohdasta, tai null kun klikkaus ei kuulu
- *  pelaajariville tai osui rivin omaan kontrolliin (jakonappi, laajennus). */
-export function playerIdFromEvent(target: EventTarget | null): number | null {
-	const el = target as Element | null;
-	if (!el || typeof el.closest !== 'function') return null;
-	if (el.closest(INTERACTIVE)) return null;
-	const row = el.closest('[data-player-id]');
-	if (!row) return null;
-	const id = Number(row.getAttribute('data-player-id'));
-	return Number.isInteger(id) && id > 0 ? id : null;
-}
-
 /** Delegoitu kasittelija paneelille: `onclick={(e) => playerRowClick(e, 'players')}`. */
 export function playerRowClick(e: Event, source: string): void {
 	const id = playerIdFromEvent(e.target);
 	if (id != null) openPlayer(id, source);
+}
+
+/**
+ * Svelte-action paneelille: `<main use:playerRows={group}>`. Kuuntelija on
+ * addEventListener eika onclick-attribuutti, koska paneeli ei itse ole
+ * interaktiivinen elementti (a11y): interaktiivisia ovat rivit, ja
+ * nappaimistolla kortin saa auki Players-sivun haulla.
+ */
+export function playerRows(node: HTMLElement, source: string) {
+	let src = source;
+	const h = (e: Event) => playerRowClick(e, src);
+	node.addEventListener('click', h);
+	return {
+		update(next: string) {
+			src = next;
+		},
+		destroy() {
+			node.removeEventListener('click', h);
+		}
+	};
 }

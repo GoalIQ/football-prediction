@@ -209,8 +209,11 @@ def test_rekisteri_ei_ole_tyhja() -> None:
     kontrolli-lapaisi-tyhjana). Luvut ovat alarajoja, eivat tarkkoja."""
     text = _read(REGISTRY)
     assert len(parse_tools(text)) >= 20
-    # 11.9: 'tools'-kaatoluokka purettiin (PRO-SPA-PALETTI), ryhmia on viisi.
-    assert len(parse_groups(text)) == 5
+    # 11.9: 'tools'-kaatoluokka purettiin (PRO-SPA-PALETTI), ryhmia oli viisi.
+    # 22.9 (UX-uudistus A3): 'prices' purettiin Players-listan esiasetukseksi,
+    # ryhmia on nelja = mobiiliapin tabit (web/pro-spa/src/lib/ia.gate.test.ts
+    # vartioi nimet ja jarjestyksen, redirects.gate.test.ts vanhat polut).
+    assert len(parse_groups(text)) == 4
     assert len(parse_map(text, "LEGACY_HASH_TO_PATH")) == len(_LEGACY_IDS)
 
 

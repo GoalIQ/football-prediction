@@ -32,6 +32,7 @@
 	import GwReview from './GwReview.svelte';
 	import SeasonRace from './SeasonRace.svelte';
 	import BeatTheModel from './BeatTheModel.svelte';
+	import DefConLive from './DefConLive.svelte';
 	import type { WeeklyAction } from './WeeklyActions.svelte';
 
 	let {
@@ -149,14 +150,20 @@
 				<span class="live">GW{phase.liveGw} in progress.</span>
 				Next deadline: <b>GW{phase.gw}</b>{#if dl}, {dl.when}{dl.tz ? ` ${dl.tz}` : ''}{/if}
 			{:else}
-				<b>GW{phase.gw}</b> deadline{#if dl}
-					<span class="when">{dl.when}{dl.tz ? ` ${dl.tz}` : ''}</span>{/if}{#if left}
-					<span class="left">· {left}</span>{/if}
+				<b>GW{phase.gw}</b> deadline{#if dl}{' '}<span class="when"
+						>{dl.when}{dl.tz ? ` ${dl.tz}` : ''}</span
+					>{/if}{#if left}{' '}<span class="left">· {left}</span>{/if}
 			{/if}
 		{:else}
 			&nbsp;
 		{/if}
 	</p>
+
+	<!-- DefCon-live vain kesken kierroksen (A3 5: tauolla se nayttaa
+	     paattynytta kierrosta paatosten edella). Komponentti on sama. -->
+	{#if phase?.liveGw != null}
+		<DefConLive />
+	{/if}
 
 	{#if card}
 		<DecisionCard
@@ -218,7 +225,7 @@
 		{#if last}
 			<li>
 				<details bind:open={reviewOpen}>
-					<summary>
+					<summary><span class="sum">
 						<span class="lbl">Last call, GW{last.gw}</span>
 						{#if last.kind === 'scored'}
 							<span class="vals">
@@ -230,7 +237,7 @@
 						{:else}
 							<span class="vals muted">Not scored for the model</span>
 						{/if}
-					</summary>
+					</span></summary>
 					<div class="row-body">
 						{#if last.kind === 'unscored'}
 							<p class="muted">{last.text}</p>
@@ -269,7 +276,7 @@
 		{#if season}
 			<li>
 				<details bind:open={raceOpen}>
-					<summary>
+					<summary><span class="sum">
 						{#if season.kind === 'you'}
 							<span class="lbl">You vs the model</span>
 							<span class="vals"
@@ -278,10 +285,10 @@
 									: 's'}</span
 							>
 						{:else}
-							<span class="lbl">Season</span>
+							<span class="lbl">The model's season</span>
 							<span class="vals">{season.text}</span>
 						{/if}
-					</summary>
+					</span></summary>
 					<div class="row-body">
 						{#if raceOpen}<SeasonRace />{/if}
 					</div>
@@ -292,10 +299,10 @@
 		<!-- Beat the Model: kirjatut paatokset + mini-liiga. -->
 		<li>
 			<details bind:open={beatOpen}>
-				<summary>
+				<summary><span class="sum">
 					<span class="lbl">Beat the Model</span>
 					<span class="vals">Log your calls against the model's</span>
-				</summary>
+				</span></summary>
 				<div class="row-body">
 					{#if beatOpen}
 						{#if auth.user}
@@ -396,8 +403,8 @@
 	summary,
 	.row-link {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
+		flex-wrap: nowrap;
+		align-items: center;
 		gap: 2px var(--s-3);
 		padding: var(--s-3) 0;
 		min-height: 48px;
@@ -424,6 +431,17 @@
 	}
 	details[open] > summary::after {
 		transform: rotate(90deg);
+	}
+	.sum {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 2px var(--s-3);
+	}
+	.row-link {
+		flex-wrap: wrap;
 	}
 	.lbl {
 		font-family: var(--font-mono);

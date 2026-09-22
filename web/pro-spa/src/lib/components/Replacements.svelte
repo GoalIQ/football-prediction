@@ -322,7 +322,7 @@
 				</thead>
 				<tbody>
 					{#each data.players as p, i (p.id)}
-						<tr>
+						<tr data-player-id={p.id}>
 							<td class="num muted">{i + 1}</td>
 							<td>
 								{p.web_name}

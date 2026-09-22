@@ -9,6 +9,7 @@
 	import { pageTitle } from '$lib/tools';
 	import { auth } from '$lib/auth.svelte';
 	import { showsProductIntro } from '$lib/introGate';
+	import { playerRows } from '$lib/playerSheet.svelte';
 	import Hero from './Hero.svelte';
 	import BottomNav from './BottomNav.svelte';
 	import PlayerSheet from './PlayerSheet.svelte';
@@ -57,7 +58,11 @@
 	{@render children()}
 {:else}
 <div class="shell">
-	<main>
+	<!-- 22.9: yksi delegoitu kuuntelija kaikille FPL-pelaajariveille
+	     (`data-player-id`), ks. $lib/playerSheet. -->
+	<main use:playerRows={group}>
+		<ToolsHome {upgradeSignal} {group} {tool} {all} />
+
 		<!-- TUOTE EDELLA (Ville 5.9): kirjautumaton kavija nakee juuressa
 		     tuotteen, ei tyhjaa kuorta. Ehdot ovat tarkoituksella tiukat:
 
@@ -69,11 +74,17 @@
 		     `group === 'week'` — vain juuri. Jos kavija on menossa suoraan
 		     tyokaluun, han tietaa jo mita etsii, ja myyntipuhe sen edessa
 		     olisi este eika esittely. -->
+		<!-- 22.9 (UX-uudistus A3 2.1, Villen GO): esittely siirtyi This week
+		     -sisallon JALKEEN. Ennen tata juuressa ei ollut kirjautumattomalle
+		     muuta tuotetta kuin esittely (5.9: "ei tyhjaa kuorta"); nyt
+		     ensimmainen ruutu on paatoskortti (mallin kapteeni ilman
+		     joukkuetta), eli tuote itse on ensin ja myyntipuhe sen perassa.
+		     Ehdot ennallaan: vain juuri, vain kirjautumaton, vasta kun sessio
+		     on ratkennut. "See plans" vierittaa upgrade-ankkuriin (K2), joten
+		     jarjestys ei muuta ostopolkua. -->
 		{#if showsProductIntro(group, auth.sessionResolved, !!auth.user)}
 			<ProductIntro onUpgrade={() => upgradeSignal++} />
 		{/if}
-
-		<ToolsHome {upgradeSignal} {group} {tool} {all} />
 	</main>
 
 	<!-- SPL-nosto (7.8): footer-linkki ei riitä löydettävyyteen (sama oppi

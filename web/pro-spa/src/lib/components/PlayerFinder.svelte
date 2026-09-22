@@ -70,7 +70,7 @@
 	<PlayerSearch
 		id="players-finder"
 		label="Search players"
-		placeholder="Name or team (e.g. Haaland, ARS)"
+		placeholder="Search players (e.g. Haaland, ARS)"
 		bind:query
 		items={matches}
 		onSelect={(p) => {

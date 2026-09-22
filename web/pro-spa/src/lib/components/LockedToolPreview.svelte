@@ -112,7 +112,7 @@
 							{/each}
 						{:else}
 							{#each rows as p, i (p.id)}
-								<tr>
+								<tr data-player-id={p.id}>
 									<td class="num">{i + 1}</td>
 									<td class="player">{p.web_name} <span class="muted">{p.team_short}, {p.pos}</span></td>
 									<td class="num">{gwCell(p, gw)}</td>

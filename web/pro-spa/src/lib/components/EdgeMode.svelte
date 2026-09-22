@@ -142,7 +142,7 @@
 				</thead>
 				<tbody>
 					{#each data.captain_top5 as c, i (c.id)}
-						<tr>
+						<tr data-player-id={c.id}>
 							<td class="num">{i + 1}</td>
 							<td>{c.web_name}</td>
 							<td>{c.team_short}</td>

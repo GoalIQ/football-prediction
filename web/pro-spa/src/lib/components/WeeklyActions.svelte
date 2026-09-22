@@ -189,12 +189,16 @@
 
 		{#if note}<p class="muted">{note}</p>{/if}
 
-		<!-- Ei koskaan piiloteta sitä mitä nappi EI tee. -->
+		<!-- Ei koskaan piiloteta sitä mitä nappi EI tee. 22.9: paatoskortissa
+		     (bare) selite nakyy kun nappi nakyy eli kirjautuneelle; ilman
+		     nappia se selittaisi nappia jota ei ole. -->
+		{#if !bare || auth.user}
 		<p class="muted foot">
 			Logging keeps a record of your call against the model's. Following a transfer also updates
 			your planned squad here on GoalIQ. Nothing changes in your actual Fantasy Premier League
 			team, so make the move there yourself.
 		</p>
+		{/if}
 	</section>
 {/if}
 

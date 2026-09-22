@@ -39,6 +39,10 @@ SCANNED = [
     # loytotesti osuu siihen. Skannataan, jotta portti kattaa sen jos
     # komponentti joskus alkaa puhua siirtoverdiktista.
     Path("web/pro-spa/src/lib/components/SquadNews.svelte"),
+    # 22.9 (UX-uudistus A3 2.1): This week -sivun paatoskortti renderoi
+    # HoldVerdictCardin ja oman siirtorivinsa ("+x xP over the {n}-GW
+    # horizon") samasta rate-team-vastauksesta.
+    Path("web/pro-spa/src/lib/components/DecisionCard.svelte"),
     Path("src/models/fpl_fit.py"),
     Path("src/models/fpl_gameweek.py"),
 ]

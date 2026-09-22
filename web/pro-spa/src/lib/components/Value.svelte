@@ -221,7 +221,7 @@
 				</thead>
 				<tbody>
 					{#each visible as p, i (p.id)}
-						<tr>
+						<tr data-player-id={p.id}>
 							<td class="muted">{i + 1}</td>
 							<td
 								>{p.web_name} <span class="muted">({p.team_short})</span>{#if p.owned}

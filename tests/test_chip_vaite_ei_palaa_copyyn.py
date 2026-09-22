@@ -47,6 +47,8 @@ KIELLETYT = (
 #: alkaa puhua chipeista, se on lisattava tanne TAI portti ei nae sita.
 PINNAT = (
     FP / "web" / "pro-spa" / "src" / "lib" / "components" / "SeasonRace.svelte",
+    # 22.9: This week -sivun paatoskortin Chip-valilehti puhuu chipeista.
+    FP / "web" / "pro-spa" / "src" / "lib" / "components" / "DecisionCard.svelte",
     FP / "faq.html",
     FP / "llms.txt",
     FP / "index.html",

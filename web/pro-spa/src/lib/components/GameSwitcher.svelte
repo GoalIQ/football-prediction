@@ -2,7 +2,7 @@
 	/**
 	 * Pelivalitsin ylapalkissa (22.9.2026, UX-uudistus A3 luku 1).
 	 *
-	 * "FPL ▾" -> FPL / UCL Fantasy / RSL Fantasy. Ennen tata UCL oli navin
+	 * "FPL ▾" -> FPL / UCL / RSL (nimet rekisterin GAMES-taulukosta). Ennen tata UCL oli navin
 	 * toinen kohta ja SPL vain sivun alaosan rivilla ja footerissa, eli
 	 * kolme eri pelia kolmella eri tavalla loydettavissa. Mobiiliapissa sama
 	 * valitsin on otsikkorivilla (pinta-pariteetti).

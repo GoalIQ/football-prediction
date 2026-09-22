@@ -183,7 +183,12 @@ def test_negatiivinen_kontrolli_defcon_lista_auki() -> None:
 
 def test_negatiivinen_kontrolli_spl_takaisin_ylos() -> None:
     text = _read(PAGE)
-    rikottu = text.replace("<main>", '<p class="spl-note"></p>\n<main>', 1)
+    # 22.9: <main> sai attribuutin (use:playerRows), joten ankkuri on tagin
+    # alku eika koko tagi. Muuten korvaus ei osu eika kontrolli rikkoisi
+    # mitaan (portti mittaisi tyhjaa).
+    assert "<main" in text
+    rikottu = text.replace("<main", '<p class="spl-note"></p>\n<main', 1)
+    assert rikottu != text
     assert not _check_spl_after_tools(rikottu), (
         "Portti ei huomannut SPL-noston paluuta tyokalujen edelle."
     )

@@ -850,3 +850,13 @@ a.btn-secondary:hover {
 section + section {
 	margin-top: var(--s-8);
 }
+
+/* 22.9 (UX-uudistus A3 2.3): pelaajarivi avaa pelaajakortin sheetina
+   ($lib/playerSheet, yksi delegoitu kuuntelija AppShellissa). Kursori ja
+   hover kertovat etta rivi on napautettava. */
+tr[data-player-id] {
+	cursor: pointer;
+}
+tr[data-player-id]:hover > td {
+	background: rgba(243, 242, 242, 0.04);
+}
