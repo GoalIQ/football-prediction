@@ -15,7 +15,15 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { luckVerdict, squadLuck, LUCK_MARK, settledGwReadable } from '$lib/luck';
-	import { modelCaptainFor, pitchLineup, pitchTitle, type ModelCaptain } from '$lib/pitchLineup';
+	import {
+		modelCaptainFor,
+		pitchLineup,
+		pitchTitle,
+		settledCardNumbers,
+		armbandLabel,
+		hitLabel,
+		type ModelCaptain
+	} from '$lib/pitchLineup';
 	import type { XpHorizon } from '$lib/xpHorizon';
 	import TeamKit from './TeamKit.svelte';
 
@@ -519,12 +527,15 @@
 			if (d < 0.05) return 'You matched the projection.';
 			return diff > 0 ? `You beat the projection by ${s}.` : `You came in ${s} under the projection.`;
 		}
-		const base = `Your XI was worth ${xp.toFixed(1)} xP`;
+		// 22.9 (julkaisutarkistaja): "team", ei "XI": luku on pelanneiden summa, ja
+		// Bench Boostilla pelanneita on 15. Sama sana kuin otsikossa "Your team".
+		const base = `Your team was worth ${xp.toFixed(1)} xP`;
 		if (d < 0.05) return `${base}, you matched it.`;
 		return diff > 0 ? `${base}, you beat it by ${s}.` : `${base}, you came in ${s} under it.`;
 	}
 	/** Isoin heilahdus ILMAN kerrointa (portti 2.9 k2): lauseen luku on sama
-	 *  kuin solussa ja /fpl/points-reitilla; kerroin sanotaan aaneen. null =
+	 *  kuin /fpl/points-reitilla; kortin solu = tama x kerroin (22.9), ja
+	 *  kerroin sanotaan aaneen ("doubled by the armband"). null =
 	 *  ei lausetta (vastakkaismerkkinen heilahdus tai lukua ei loydy).
 	 *  Sama logiikka mobiilin FantasyTools.tsx:ssa. */
 	interface SwingInfo {
@@ -581,7 +592,10 @@
 		const lf = lastFinished;
 		const toCard = (r: LastFinishedGw['players'][number]): PitchCardPlayer => {
 			const tc = teamColorByShort(r.team_short ?? '');
-			const diff = r.points != null && r.xp_frozen != null ? r.points - r.xp_frozen : null;
+			// 22.9: solun luvut KERTOIMELLA samalta lukijalta kuin kentta
+			// ($lib/pitchLineup settledFactor): Haaland C 12 / 13.0, ei 6 / 6.5, ja
+			// XI:n solut summautuvat otsikon "You"-lukuun. Tuomio kertoimettomista.
+			const n = settledCardNumbers(r);
 			const verdict = luckVerdict(r.xp_frozen, r.points);
 			return {
 				name: r.web_name ?? '',
@@ -590,10 +604,10 @@
 				textColor: tc.textColor,
 				// Portti 2.9: em dash on kielletty julkisella pinnalla, ja 19 %
 				// pelaajista puuttuu freezesta (penkki ei kaanna complete-lippua).
-				xp: r.xp_frozen != null ? r.xp_frozen.toFixed(1) : 'n/a',
-				pts: r.points != null ? String(r.points) : 'n/a',
-				diff: diff != null ? fmtSigned(diff) : undefined,
-				under: diff != null ? diff < 0 : undefined,
+				xp: n.xp != null ? n.xp.toFixed(1) : 'n/a',
+				pts: n.pts != null ? String(n.pts) : 'n/a',
+				diff: n.diff != null ? fmtSigned(n.diff) : undefined,
+				under: n.diff != null ? n.diff < 0 : undefined,
 				mark: verdict != null ? LUCK_MARK[verdict] : undefined,
 				badge: r.is_captain ? 'C' : r.is_vice_captain ? 'V' : undefined
 			};
@@ -640,6 +654,9 @@
 			// Portti 2.9: chip kortille — 108 p + wildcard ilman mainintaa on
 			// puolikas vaite kontekstitta leviavalla kuvalla.
 			chipLabel(lf.chip),
+			// Julkaisutarkistaja 22.9: "You" on netto, solut brutto. Hit-viikolla
+			// solut summautuvat eri lukuun kuin otsikko, joten ero sanotaan.
+			hitLabel(lf.transfer_cost),
 			lf.average_entry_score != null ? `FPL average ${lf.average_entry_score}` : null,
 			lf.overall_rank != null
 				? `rank ${lf.overall_rank.toLocaleString('en-GB')}` +
@@ -661,12 +678,21 @@
 		if (lf.xp != null && lf.diff != null) {
 			notes.push(projectionLine(lf.xp, lf.diff, projectedInStrip));
 		} else if (lf.xp != null && !projectedInStrip) {
-			notes.push(`Your XI was worth ${lf.xp.toFixed(1)} xP.`);
+			notes.push(`Your team was worth ${lf.xp.toFixed(1)} xP.`);
 		}
 		const sw = swingInfo(lf);
 		if (sw) notes.push(swingLineEn(sw));
 		const benchCards = benched.map(toCard);
 		const hasMark = [...cardRows.flat(), ...benchCards].some((p) => p.mark != null);
+		// Julkaisutarkistaja 22.9: kapteenin solu on kerrottu (12 / 13.0), mutta
+		// alatunnisteen reitti /fpl/points/gw{n} nayttaa kertomattoman luvun
+		// (6 / 6.51). Kerroin sanotaan legendissa, jotta solu on tarkistettavissa.
+		const legend = [
+			armbandLabel(played),
+			hasMark ? `${LUCK_MARK.lucky} got lucky · ${LUCK_MARK.robbed} got robbed` : null
+		]
+			.filter(Boolean)
+			.join(' · ');
 		return {
 			title: who || `GAMEWEEK ${lf.gw} RESULT`,
 			subtitle: sub,
@@ -675,7 +701,7 @@
 			bench: benchCards,
 			headline,
 			notes,
-			legend: hasMark ? `${LUCK_MARK.lucky} got lucky \u00b7 ${LUCK_MARK.robbed} got robbed` : undefined,
+			legend: legend || undefined,
 			// Portti 2.9: vaite tarvitsee reitin. 7.9: reitti on nyt KIERROKSEN OMA
 			// sivu. `/fpl/points` nayttaa vain kuluvan kierroksen, joten GW2:n
 			// kortti lupasi sivun jolla ei ole sen kortin lukuja - ja kortti on
@@ -1086,7 +1112,7 @@
 					<!-- Poikkeama PIENEMPANA: se synnyttaa kommentit, se ei myy
 					     postausta. -->
 					<p class="score-xp">
-						Your XI was worth {lastFinished.xp.toFixed(1)} xP
+						Your team was worth {lastFinished.xp.toFixed(1)} xP
 						{#if lastFinished.diff != null}
 							<span class="xp-diff" class:under={lastFinished.diff < 0}
 								>({lastFinished.diff >= 0 ? '+' : ''}{lastFinished.diff.toFixed(1)})</span

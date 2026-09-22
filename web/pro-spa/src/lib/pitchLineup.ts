@@ -123,6 +123,66 @@ function multiplierOf(r: SettledPick): number {
 }
 
 /**
+ * Ratkenneen kierroksen rivin kerroin solun luvulle: XI:n FPL-multiplier
+ * (kapteeni 2, Triple Captain 3, Bench Boost kaikki >= 1), penkki 1 eli
+ * pelaajan oma luku. YKSI lukija kentalle (`pitchLineup().factor`) ja
+ * jakokortille (`settledCardNumbers`). Sama funktio mobiilissa
+ * (goaliq-app lib/pitchLineup.ts).
+ *
+ * 🔴 22.9 (julkaisutarkistaja, web-kentta): kentta naytti Haalandin (C)
+ * 12 / 13.0, mutta jakokortti 6 / 6.5 C, ja kortin solut summautuivat 34:aan
+ * otsikon "You 40" alla. Kortti rakensi solunsa omalla kaavallaan eika
+ * lukenut kerrointa lainkaan.
+ */
+export function settledFactor(r: SettledPick): number {
+	const m = multiplierOf(r);
+	return m >= 1 ? m : 1;
+}
+
+export interface SettledCardNumbers {
+	/** Pisteet kertoimella (FPL:n oma luku), null = ei pisteita. */
+	pts: number | null;
+	/** Deadline-freeze samalla kertoimella, null = ei freezea. */
+	xp: number | null;
+	/** pts - xp, null kun kumpi tahansa puuttuu. */
+	diff: number | null;
+}
+
+/** Jakokortin solun luvut ratkenneen kierroksen rivista. Tuomio (lucky /
+ *  robbed) EI ole taalla: se luetaan kertoimettomista ($lib/luck
+ *  `luckVerdict`), koska kerroin kuuluu summaan, ei tuomioon. */
+/**
+ * Jakokortin legendin kerroinmerkinta (julkaisutarkistaja 22.9): kortin
+ * kapteenisolu on kerrottu, reitti /fpl/points/gw{n} ei. "C = captain x2",
+ * Triple Captain "x3", ja kun varakapteeni nousi kapteeniksi (kapteeni ei
+ * pelannut) "V = vice-captain x2". null = kukaan ei pelannut kertoimella >= 2.
+ * Sama funktio mobiilissa (goaliq-app lib/pitchLineup.ts).
+ */
+export function armbandLabel(played: readonly SettledPick[]): string | null {
+	const boosted = played.find(
+		(r) => multiplierOf(r) >= 2 && (r.is_captain === true || r.is_vice_captain === true)
+	);
+	if (!boosted) return null;
+	const who = boosted.is_captain === true ? 'C = captain' : 'V = vice-captain';
+	return `${who} x${multiplierOf(boosted)}`;
+}
+
+/** Hit-viikon merkinta alaotsikkoon: "-4 hit". null kun hittia ei ole. */
+export function hitLabel(transferCost: number | null | undefined): string | null {
+	return typeof transferCost === 'number' && Number.isFinite(transferCost) && transferCost > 0
+		? `-${transferCost} hit`
+		: null;
+}
+
+export function settledCardNumbers(r: SettledPick): SettledCardNumbers {
+	const f = settledFactor(r);
+	const pts = typeof r.points === 'number' && Number.isFinite(r.points) ? r.points * f : null;
+	const xp =
+		typeof r.xp_frozen === 'number' && Number.isFinite(r.xp_frozen) ? r.xp_frozen * f : null;
+	return { pts, xp, diff: pts != null && xp != null ? pts - xp : null };
+}
+
+/**
  * Kokoonpano kentalle.
  *
  * @param players  rate-teamin rivit (ruudun runko).
@@ -145,17 +205,14 @@ export function pitchLineup(
 	if (picks.some((r) => multiplierOf(r) > 0)) {
 		const byId = new Map(players.map((p) => [p.id, p]));
 		const toPlayer = (r: SettledPick) => byId.get(r.id) ?? playerFromPick(r);
-		const mult = new Map(picks.map((r) => [r.id, multiplierOf(r)]));
+		const factorById = new Map(picks.map((r) => [r.id, settledFactor(r)]));
 		return {
 			source: 'settled',
 			xi: picks.filter((r) => multiplierOf(r) > 0).map(toPlayer),
 			bench: picks.filter((r) => multiplierOf(r) <= 0).map(toPlayer),
 			captainId: picks.find((r) => r.is_captain === true)?.id ?? null,
 			viceId: picks.find((r) => r.is_vice_captain === true)?.id ?? null,
-			factor: (id) => {
-				const m = mult.get(id) ?? 0;
-				return m >= 1 ? m : 1;
-			}
+			factor: (id) => factorById.get(id) ?? 1
 		};
 	}
 	if (plan) {

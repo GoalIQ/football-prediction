@@ -328,3 +328,30 @@ def test_mallin_rivin_lukija_palauttaa_netton_arvona():
         f"mallin luku {out['points']} on brutto - kortti julistaisi voiton "
         "jota ei ole")
     assert out["points_gross"] == 70
+
+
+# 22.9 (julkaisutarkistaja, JAKOKORTTI-TULOSTILA-KERROIN): kortin solut ovat
+# kertoimella, joten legend sanoo kertoimen ("C = captain x2") ja alaotsikko
+# hitin ("-4 hit"). Merkkijonot elavat pitchLineup-moduuleissa, eivat
+# luckCardSpecissa, joten ne vertaillaan erikseen.
+WEB_LINEUP = HERE.parents[1] / "web" / "pro-spa" / "src" / "lib" / "pitchLineup.ts"
+MOBILE_LINEUP = HERE.parents[2] / "goaliq-app" / "lib" / "pitchLineup.ts"
+
+
+@pytest.mark.skipif(not MOBILE_LINEUP.exists(), reason="goaliq-app ei ole sisarkansiona")
+@pytest.mark.parametrize("name", ("armbandLabel", "hitLabel"))
+def test_kortin_kerroin_ja_hit_samat_molemmilla_pinnoilla(name: str):
+    web = _literals(_function_body(WEB_LINEUP.read_text(encoding="utf-8"), name))
+    mob = _literals(_function_body(MOBILE_LINEUP.read_text(encoding="utf-8"), name))
+    assert web == mob, f"{name}: vain webissa {sorted(web - mob)} · vain mobiilissa {sorted(mob - web)}"
+
+
+@pytest.mark.skipif(not MOBILE_SPEC.exists(), reason="goaliq-app ei ole sisarkansiona")
+def test_kortti_sanoo_kertoimen_ja_hitin_molemmilla():
+    web = _strip_comments(_function_body(WEB.read_text(encoding="utf-8"), "luckCardSpec"))
+    mob = _strip_comments(_function_body(MOBILE_SPEC.read_text(encoding="utf-8"), "luckCardSpec"))
+    assert "armbandLabel(played)" in web and "armbandLabel(played)" in mob
+    assert "hitLabel(lf.transfer_cost)" in web
+    assert "hitLabel(lastFinished.transfer_cost)" in mob
+    assert "legend: legend || undefined" in web and "legend: legend || undefined" in mob
+

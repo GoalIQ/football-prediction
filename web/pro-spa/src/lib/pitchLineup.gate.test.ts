@@ -29,6 +29,10 @@ import {
 	modelCaptainOf,
 	pitchLineup,
 	pitchTitle,
+	armbandLabel,
+	hitLabel,
+	settledCardNumbers,
+	settledFactor,
 	type ModelCaptain,
 	type SettledPick,
 	type WhatIfPlan
@@ -846,5 +850,100 @@ describe('erotteleva fikstuuri: portti kaatuu kun kutsupaikka palautetaan', () =
 		expect(
 			headerProblems(src.replace('({declaredRange(horizon)})', '({horizon?.range})')).length
 		).toBeGreaterThan(0);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// JAKOKORTTI (JAKOKORTTI-TULOSTILA-KERROIN, 22.9): kortin solut samalta
+// kerroinlukijalta kuin kentta. Sama portti mobiilissa (goaliq-app
+// lib/pitchLineup.test.ts).
+// ---------------------------------------------------------------------------
+
+/** Kortin XI-solujen pistesumma: sama suodatin kuin luckCardSpecissa. */
+const cardSum = (L: LastFinishedGw) =>
+	L.players.filter((r) => r.multiplier > 0).reduce((s, r) => s + (settledCardNumbers(r).pts ?? 0), 0);
+
+describe('jakokortti: solut kertoimella, summa = FPL:n luku', () => {
+	it('fikstuuri on EROTTELEVA: kertoimeton kortti summautuu 34:aan, ei 40:een', () => {
+		const raw = PROD_LF.players.filter((r) => r.multiplier > 0).reduce((s, r) => s + (r.points ?? 0), 0);
+		expect(raw).toBe(34);
+		expect(PROD_LF.points).toBe(40);
+	});
+	const vaiheet: [string, LastFinishedGw, number][] = [
+		['ratkennut kierros', PROD_LF, 40],
+		[
+			'Triple Captain',
+			lf(picks(GW5.map(([id, m, c, v, pts, xp]) => [id, id === 411 ? 3 : m, c, v, pts, xp] as PickRow)), {
+				chip: '3xc'
+			}),
+			46
+		],
+		[
+			'Bench Boost',
+			lf(picks(GW5.map(([id, m, c, v, pts, xp]) => [id, m === 0 ? 1 : m, c, v, pts, xp] as PickRow)), {
+				chip: 'bboost'
+			}),
+			40 + 12
+		]
+	];
+	for (const [vaihe, L, odotus] of vaiheet) {
+		it(`vaihe ${vaihe}: XI-solujen summa = FPL (${odotus})`, () => {
+			expect(L.points).toBe(odotus);
+			expect(cardSum(L)).toBe(L.points);
+		});
+	}
+	it('kapteenin solu 12 / 13.0 / -1.0, penkki omana lukunaan, puuttuva ei ole nolla', () => {
+		const h = settledCardNumbers(PROD_LF.players.find((r) => r.id === 411)!);
+		expect(h.pts).toBe(12);
+		expect(h.xp!.toFixed(1)).toBe('13.0');
+		expect(h.diff!.toFixed(1)).toBe('-1.0');
+		expect(settledCardNumbers(PROD_LF.players.find((r) => r.id === 173)!).pts).toBe(9);
+		expect(settledCardNumbers(PROD_LF.players.find((r) => r.id === 171)!)).toEqual({
+			pts: null,
+			xp: null,
+			diff: null
+		});
+	});
+	it('kortti ja kentta: sama kerroin jokaiselle pickille (yksi lukija)', () => {
+		const lineup = pitchLineup(PLAYERS, PROD_LF.players, null, null);
+		for (const r of PROD_LF.players) expect(lineup.factor(r.id)).toBe(settledFactor(r));
+	});
+	it('KUTSUPAIKKA: luckCardSpecin toCard lukee settledCardNumbersia eika laske itse', () => {
+		const src = blankComments(readRaw('./components/TeamPitchManager.svelte'));
+		const start = src.indexOf('function luckCardSpec()');
+		expect(start).toBeGreaterThan(0);
+		const a = src.indexOf('const toCard = ', start);
+		const b = src.indexOf('const played = ', a);
+		expect(a).toBeGreaterThan(start);
+		expect(b).toBeGreaterThan(a);
+		const body = src.slice(a, b);
+		expect(body).toMatch(/settledCardNumbers\(r\)/);
+		expect(body).not.toMatch(/r\.points\s*-\s*r\.xp_frozen/);
+		expect(body).not.toMatch(/r\.xp_frozen\.toFixed|String\(r\.points\)/);
+	});
+});
+
+describe('jakokortti: kerroin legendiin, hit alaotsikkoon (julkaisutarkistaja 22.9 k2)', () => {
+	const played = (L: LastFinishedGw) => L.players.filter((r) => r.multiplier > 0);
+	it('C x2, TC x3, varakapteeni nousi, ei kerrointa', () => {
+		expect(armbandLabel(played(PROD_LF))).toBe('C = captain x2');
+		const tc = lf(picks(GW5.map(([id, m, c, v, pts, xp]) => [id, id === 411 ? 3 : m, c, v, pts, xp] as PickRow)));
+		expect(armbandLabel(played(tc))).toBe('C = captain x3');
+		const vice = lf(
+			picks(
+				GW5.map(([id, m, c, v, pts, xp]) => [id, id === 411 ? 0 : id === 426 ? 2 : m, c, v, pts, xp] as PickRow)
+			)
+		);
+		expect(armbandLabel(played(vice))).toBe('V = vice-captain x2');
+		const bb1 = lf(picks(GW5.map(([id, , , v, pts, xp]) => [id, 1, false, v, pts, xp] as PickRow)));
+		expect(armbandLabel(played(bb1))).toBeNull();
+	});
+	it('vaihe hit-viikko: solut brutto 40, otsikko netto 36, ero "-4 hit"', () => {
+		const hit = lf(picks(GW5), { transfer_cost: 4, points_net: 36 });
+		expect(cardSum(hit)).toBe(40);
+		expect(cardSum(hit) - hit.points_net!).toBe(4);
+		expect(hitLabel(hit.transfer_cost)).toBe('-4 hit');
+		expect(hitLabel(0)).toBeNull();
+		expect(hitLabel(null)).toBeNull();
 	});
 });
