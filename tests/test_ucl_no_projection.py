@@ -159,6 +159,13 @@ PREMIUM_PINNAT: dict[str, str] = {
     "web/pro-spa/src/lib/components/AppShell.svelte":
         "Pro-sovelluksen oma navi ja 'New:'-rivi joka linkkaa tuotteeseen "
         "saman sovelluksen sisalla",
+    # 22.9 (web-audit T6): tuotesivun OMA title ja description siirtyivat
+    # sivulta tanne sanatarkasti, jotta sivun <svelte:head> ja buildin
+    # ucl.html (link preview) lukevat samaa lahdetta. Teksti on sama kuin
+    # ucl/+page.svelte:ssa ennen siirtoa, eli pinta ei ole uusi.
+    "web/pro-spa/src/lib/routeHeads.ts":
+        "itse tuote: /ucl-sivun oma title/description (UCL_HEAD), jota sivu "
+        "ja buildin ucl.html lukevat",
 }
 
 

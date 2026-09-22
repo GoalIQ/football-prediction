@@ -17,6 +17,9 @@
 	import { capture } from '$lib/analytics';
 	import { DISCLAIMER } from '$lib/config';
 	import Paywall from '$lib/components/Paywall.svelte';
+	// 22.9 (T6): otsikko ja kuvaus yhdesta lahteesta, jota myos buildin
+	// ucl.html (link preview) lukee. Ks. $lib/routeHeads.
+	import { UCL_HEAD } from '$lib/routeHeads';
 
 	let xp = $state<UclXpResponse | null>(null);
 	let err = $state<string | null>(null);
@@ -97,11 +100,8 @@
 </script>
 
 <svelte:head>
-	<title>UCL Fantasy expected points | GoalIQ</title>
-	<meta
-		name="description"
-		content="Projected points for players in the official UEFA Champions League Fantasy game, up to three matchdays ahead in the league phase. GoalIQ Premium."
-	/>
+	<title>{UCL_HEAD.title}</title>
+	<meta name="description" content={UCL_HEAD.description} />
 </svelte:head>
 
 <div class="shell">

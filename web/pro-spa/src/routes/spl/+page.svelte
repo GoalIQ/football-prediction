@@ -31,6 +31,9 @@
 		type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { teamColorByShort } from '$lib/teamColors';
 	import SquadPitch from '$lib/components/SquadPitch.svelte';
+	// 22.9 (T6): otsikko, kuvaus ja canonical yhdesta lahteesta, jota myos
+	// buildin spl.html:n og/twitter-tagit lukevat. Ks. $lib/routeHeads.
+	import { SPL_HEAD, ORIGIN } from '$lib/routeHeads';
 
 	let cs = $state<FantasyResponse | null>(null);
 	let xp = $state<XpResponse | null>(null);
@@ -447,15 +450,12 @@
 </script>
 
 <svelte:head>
-	<title>Saudi Pro League fantasy tools | GoalIQ</title>
-	<meta
-		name="description"
-		content="Free model-based tools for RSL Fantasy (Saudi Pro League): clean sheet probability, fixture difficulty and expected points from the GoalIQ match model."
-	/>
+	<title>{SPL_HEAD.title}</title>
+	<meta name="description" content={SPL_HEAD.description} />
 	<!-- /spl-prerender (7.8): canonical tälle työkalusivulle itselleen —
 	     goaliq.app/spl (staattinen landing) on erillinen sisältösivu joka
 	     linkittää tänne, ei duplikaatti. -->
-	<link rel="canonical" href="https://pro.goaliq.app/spl" />
+	<link rel="canonical" href="{ORIGIN}/spl" />
 	<!-- Prerenderoidulla reitillä boot-runko näkyisi sisällön YLLÄ kunnes
 	     hydraatio poistaa sen — tällä reitillä sisältö on jo HTML:ssä,
 	     joten runko piilotetaan heti. -->
