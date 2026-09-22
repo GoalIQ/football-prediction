@@ -55,6 +55,7 @@ from api.premium import (
     mask_xp_payload, xp_pool_rows,
     premium_enforce_on, require_admin, is_admin_request,
     predict_mask_applies, mask_prediction_payload, mask_parlay_payload,
+    public_fixture_rows,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -5150,6 +5151,11 @@ def fantasy_phase0(
     if lg not in PHASE0_PATHS:
         raise HTTPException(status_code=404, detail=f"Unknown fantasy league '{league}'.")
     data = load_phase0(PHASE0_PATHS[lg])
+    # 22.9 (Villen paatos "poista"): ottelua edeltava xG ei lahde ulos
+    # tickerissa. TASSA eika return-lauseissa: funktiossa on kolme paluuta
+    # (available=False -runko, next_gw None, rajattu vastaus) ja yksi
+    # unohtunut haara olisi vuotanut koko listan.
+    data = {**data, "fixtures": public_fixture_rows(data.get("fixtures"))}
 
     teams = data.get("teams")
     meta = data.get("meta")

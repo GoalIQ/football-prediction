@@ -386,6 +386,30 @@ def is_premium_request(request: Request) -> bool:
 # meta.masked-lippu jota vanhat klientit eivat lue.
 # ---------------------------------------------------------------------------
 
+# Kentat jotka EIVAT lahde ulos /api/fantasyn ticker-riveilla (22.9.2026).
+# Villen paatos "poista": ottelua edeltava xG ei ole ilmainen. Julkisesta
+# tarkkuuslokista se poistettiin samana paivana (accuracy.strip_prematch_private),
+# mutta kirjautumaton `GET /api/fantasy` palautti sen 60 tulevasta ottelusta
+# (kuusi kierrosta) koneluettavana - sama vuoto, eri reitti, ja PREDICT_MASKin
+# kiertotie. Sivun oma "projected goals" -rivi EI kulje tasta: se rakennetaan
+# artefaktista buildissa (build_fpl_page), eika artefakti ole julkinen (404).
+# Mitattu 22.9: yksikaan klientti ei lue naita kenttia (mobiili ja SPA lukevat
+# xG:n /api/predictista, joka on PREDICT_MASKin takana).
+FIXTURE_PRIVATE_FIELDS = ("xg_home", "xg_away")
+
+
+def public_fixture_rows(fixtures) -> list:
+    """Ticker-rivit ilman ottelua edeltavaa xG:ta. Muut kentat (1X2, CS-%,
+    FDR) jaavat: ne ovat ilmaissivujen omia lukuja."""
+    if not isinstance(fixtures, list):
+        return fixtures
+    return [
+        {k: v for k, v in f.items() if k not in FIXTURE_PRIVATE_FIELDS}
+        if isinstance(f, dict) else f
+        for f in fixtures
+    ]
+
+
 def mask_xp_payload(payload: dict) -> dict:
     """/api/fantasy/xp freelle: top-N pelaajaa xp_horizon_total-jarjestyksessa.
     Rivit ovat taysia (teaser) -> vanha renderointi ei kaadu."""
