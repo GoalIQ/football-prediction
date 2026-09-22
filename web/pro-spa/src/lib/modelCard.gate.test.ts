@@ -112,7 +112,6 @@ const FROZEN_META: Partial<ModelCaptainResponse['meta']> = {
 	route: { kind: 'gw_calls', gw: 6, url: 'https://goaliq.app/fpl#gw-calls' }
 };
 
-const fmt = (d: Date) => d.toISOString().slice(0, 16);
 
 describe('mallin kortti = /api/fantasy/model-captain', () => {
 	it('polku: model-captain ilman parametreja (ei rate-team?entry=)', () => {
@@ -175,7 +174,7 @@ describe('lukija modelCaptainCard: vaiheet (saanto 6a kohta 3)', () => {
 			picksGw: 5,
 			href: 'https://fantasy.premierleague.com/entry/116920/event/5'
 		});
-		expect(modelSourceLine(c.source, fmt)).toEqual({
+		expect(modelSourceLine(c.source)).toEqual({
 			before: 'Squad: ',
 			link: 'our FPL entry 116920',
 			after: ', GW5 picks.',
@@ -204,9 +203,9 @@ describe('lukija modelCaptainCard: vaiheet (saanto 6a kohta 3)', () => {
 		expect(c.opp).toBe('LEE (A)');
 		expect(c.alt).toBeNull();
 		expect(c.source.kind).toBe('frozen');
-		const line = modelSourceLine(c.source, fmt);
+		const line = modelSourceLine(c.source);
 		expect(line).toEqual({
-			before: 'Squad frozen 2026-10-09T06:00 for GW6, logged on ',
+			before: 'Squad frozen for GW6, logged on ',
 			link: 'goaliq.app/fpl',
 			after: '.',
 			href: 'https://goaliq.app/fpl#gw-calls'
@@ -246,13 +245,13 @@ describe('lukija modelCaptainCard: vaiheet (saanto 6a kohta 3)', () => {
 			resp({ ...FROZEN_META, route: { kind: 'gw_calls', gw: 6, url: 'https://evil.test/fpl' } })
 		)!;
 		expect(bad.source.kind).toBe('frozen');
-		expect(modelSourceLine(bad.source, fmt).href).toBeNull();
+		expect(modelSourceLine(bad.source).href).toBeNull();
 		const wrongHost = modelCaptainCard(
 			resp({ route: { kind: 'fpl_entry', gw: 5, url: 'https://goaliq.app/fpl#gw-calls' } })
 		)!;
-		expect(modelSourceLine(wrongHost.source, fmt).href).toBeNull();
+		expect(modelSourceLine(wrongHost.source).href).toBeNull();
 		const noRoute = modelCaptainCard(resp({ picks_gw: null, route: null }))!;
-		expect(modelSourceLine(noRoute.source, fmt)).toEqual({
+		expect(modelSourceLine(noRoute.source)).toEqual({
 			before: 'Squad: ',
 			link: 'our FPL entry 116920',
 			after: '.',
@@ -260,10 +259,16 @@ describe('lukija modelCaptainCard: vaiheet (saanto 6a kohta 3)', () => {
 		});
 	});
 
-	it('frozen ilman aikaleimaa: rivi ilman aikaa, ei "Invalid Date"', () => {
-		const c = modelCaptainCard(resp({ ...FROZEN_META, frozen_at: 'not-a-date' }))!;
-		const l = modelSourceLine(c.source, fmt);
-		expect(l.before).toBe('Squad frozen for GW6, logged on ');
+	it('frozen-rivi ei kanna freezen aikaa (B1 22.9): linkkisivu ei nayta sita', () => {
+		// Kelvollinen, kelvoton ja puuttuva aikaleima tuottavat saman rivin.
+		for (const frozen_at of ['2026-10-09T06:00:00Z', 'not-a-date', null]) {
+			const c = modelCaptainCard(resp({ ...FROZEN_META, frozen_at }))!;
+			const l = modelSourceLine(c.source);
+			expect(l.before).toBe('Squad frozen for GW6, logged on ');
+			expect(`${l.before}${l.link}${l.after}`).not.toMatch(/\d{1,2}:\d{2}|Oct|2026|Invalid/);
+		}
+		const noGw = modelCaptainCard(resp({ ...FROZEN_META, gw: null }))!;
+		expect(modelSourceLine(noGw.source).before).toBe('Squad frozen, logged on ');
 	});
 });
 
@@ -271,6 +276,8 @@ describe('KUTSUPAIKKA: DecisionCard piirtaa lahderivin lukijalta', () => {
 	it('mallin kortti lukee modelSourceLinea eika rakenna FPL-linkkia itse', () => {
 		const card = read('./components/DecisionCard.svelte');
 		expect(card).toMatch(/modelSourceLine\(model\.source/);
+		// B1 22.9: kortti ei muotoile freezen aikaa itse (linkkisivu ei nayta sita).
+		expect(card).not.toMatch(/frozen_?[aA]t|formatDeadline/);
 		expect(card).not.toMatch(/fantasy\.premierleague\.com\/entry/);
 		expect(card).not.toMatch(/modelEntry\b/);
 	});

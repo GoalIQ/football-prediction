@@ -112,7 +112,7 @@ export const NO_FIXTURE = 'no fixture';
 
 export type ModelCaptainSource =
 	| { kind: 'entry_picks'; entryId: number; picksGw: number | null; href: string | null }
-	| { kind: 'frozen'; gw: number | null; frozenAt: Date | null; href: string | null };
+	| { kind: 'frozen'; gw: number | null; href: string | null };
 
 export type ModelCaptainCard = {
 	/** Otsikon kierros (`meta.gw`). */
@@ -169,11 +169,9 @@ export function modelCaptainCard(r: ModelCaptainResponse | null | undefined): Mo
 	const url = typeof m.route?.url === 'string' ? m.route.url : null;
 	let source: ModelCaptainSource;
 	if (m.source === 'frozen') {
-		const t = typeof m.frozen_at === 'string' ? new Date(m.frozen_at) : null;
 		source = {
 			kind: 'frozen',
 			gw,
-			frozenAt: t && !Number.isNaN(t.getTime()) ? t : null,
 			href: url?.startsWith(ROUTE_HOSTS.frozen) ? url : null
 		};
 	} else if (m.source === 'entry_picks') {
@@ -202,16 +200,23 @@ export function modelCaptainCard(r: ModelCaptainResponse | null | undefined): Mo
  * Lahderivin teksti kolmessa palassa (ennen linkkia, linkki, jalkeen), jotta
  * sama lause voidaan piirtaa linkilla tai ilman ja testata sellaisenaan.
  *   entry_picks: "Squad: our FPL entry 116920, GW5 picks."
- *   frozen:      "Squad frozen Thu 9 Oct, 09:00 EEST for GW6, logged on goaliq.app/fpl."
+ *   frozen:      "Squad frozen for GW6, logged on goaliq.app/fpl."
+ *
+ * Frozen-rivilla EI ole freezen aikaa (julkaisutarkistaja 22.9 B1): linkkisivu
+ * ei nayta sita (Logged-sarake on viimeisin kirjoitus ja piilossa mobiilissa),
+ * joten aika olisi vaite jota lukija ei voi tarkistaa. Backend palauttaa
+ * frozen-kortin vain kun sivu nimeaa saman kapteenin (fpl_model_captain.
+ * logged_model_captain), eli "logged on goaliq.app/fpl" on mitattu.
  */
-export function modelSourceLine(
-	s: ModelCaptainSource,
-	fmt: (d: Date) => string
-): { before: string; link: string; after: string; href: string | null } {
+export function modelSourceLine(s: ModelCaptainSource): {
+	before: string;
+	link: string;
+	after: string;
+	href: string | null;
+} {
 	if (s.kind === 'frozen') {
-		const when = s.frozenAt ? ` ${fmt(s.frozenAt)}` : '';
 		const gw = s.gw != null ? ` for GW${s.gw}` : '';
-		return { before: `Squad frozen${when}${gw}, logged on `, link: 'goaliq.app/fpl', after: '.', href: s.href };
+		return { before: `Squad frozen${gw}, logged on `, link: 'goaliq.app/fpl', after: '.', href: s.href };
 	}
 	return {
 		before: 'Squad: ',

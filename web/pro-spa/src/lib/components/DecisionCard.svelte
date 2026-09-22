@@ -20,7 +20,6 @@
 	 */
 	import type { RateTeamResponse } from '$lib/fantasyTools';
 	import { CHIP_NAMES } from '$lib/fantasyTools';
-	import { formatDeadline } from '$lib/gameweek';
 	import { modelSourceLine, NO_FIXTURE, type ModelCaptainCard } from '$lib/weekRows';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { openPlayer } from '$lib/playerSheet.svelte';
@@ -84,10 +83,7 @@
 	/** Mallin kortin tarkistusreitti: lahde palvelimen `meta.source`sta. */
 	const src = $derived(
 		!card && model
-			? modelSourceLine(model.source, (d) => {
-					const f = formatDeadline(d);
-					return f.tz ? `${f.when} ${f.tz}` : f.when;
-				})
+			? modelSourceLine(model.source)
 			: null
 	);
 
