@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-22T13:51:53+00:00",
+    "generated_at": "2026-09-22T15:16:42+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -3784,7 +3784,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 12.3,
+      "owned_pct": 12.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4910,7 +4910,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 27.4,
+      "owned_pct": 27.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7288,7 +7288,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.7,
+      "owned_pct": 16.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -67715,53 +67715,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 527,
-      "web_name": "Richarlison",
-      "full_name": "Richarlison de Andrade",
-      "team": "Tottenham",
-      "team_short": "TOT",
-      "pos": "FWD",
-      "price": 5.9,
-      "owned_pct": 0.7,
-      "status": "u",
-      "news": "not included in squad.",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 6,
-        "team_name": "Spurs",
-        "minutes": 1954,
-        "starts": 20,
-        "goals": 11,
-        "assists": 4,
-        "xg": 8.64,
-        "xa": 1.46,
-        "cs": 7,
-        "points": 119,
-        "per90": {
-          "goals": 0.51,
-          "assists": 0.18,
-          "xgi": 0.47
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 140,
       "web_name": "Sánchez",
       "full_name": "Robert Lynch Sánchez",
@@ -67946,6 +67899,53 @@
           "goals": 0.21,
           "assists": 0.26,
           "xgi": 0.38
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 527,
+      "web_name": "Richarlison",
+      "full_name": "Richarlison de Andrade",
+      "team": "Tottenham",
+      "team_short": "TOT",
+      "pos": "FWD",
+      "price": 5.9,
+      "owned_pct": 0.6,
+      "status": "u",
+      "news": "not included in squad.",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 6,
+        "team_name": "Spurs",
+        "minutes": 1954,
+        "starts": 20,
+        "goals": 11,
+        "assists": 4,
+        "xg": 8.64,
+        "xa": 1.46,
+        "cs": 7,
+        "points": 119,
+        "per90": {
+          "goals": 0.51,
+          "assists": 0.18,
+          "xgi": 0.47
         }
       },
       "form": {
