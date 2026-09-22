@@ -76,11 +76,20 @@
 
 	/* ---------------- deadline-rivi ---------------- */
 	let fantasy = $state<FantasyResponse | null>(null);
+	/** false = haku kesken: rivin paikka varataan, jotta sisalto ei hyppaa
+	 *  kun data saapuu (CLS, web-audit T1:n oppi). */
+	let fantasyDone = $state(false);
 	let now = $state(Date.now());
 	$effect(() => {
 		fetchFantasy().then(
-			(d) => (fantasy = d),
-			() => (fantasy = null)
+			(d) => {
+				fantasy = d;
+				fantasyDone = true;
+			},
+			() => {
+				fantasy = null;
+				fantasyDone = true;
+			}
 		);
 		const id = setInterval(() => (now = Date.now()), 60_000);
 		return () => clearInterval(id);
@@ -126,6 +135,7 @@
 
 	/* ---------------- rivit: model-race ---------------- */
 	let race = $state<ModelRaceResponse | null>(null);
+	let raceDone = $state(false);
 	let raceKey: string | null = null;
 	$effect(() => {
 		const key = String(entryId ?? '-');
@@ -133,10 +143,14 @@
 		raceKey = key;
 		fetchModelRace(entryId).then(
 			(r) => {
-				if (raceKey === key) race = r;
+				if (raceKey !== key) return;
+				race = r;
+				raceDone = true;
 			},
 			() => {
-				if (raceKey === key) race = null;
+				if (raceKey !== key) return;
+				race = null;
+				raceDone = true;
 			}
 		);
 	});
@@ -196,40 +210,6 @@
 		</div>
 	{/if}
 
-	{#if own && data}
-		<p class="team-line muted">
-			{#if fplEntry.savedEntry}Team {fplEntry.savedEntry}{:else if entryId}Team {entryId}{:else}Your draft{/if}
-			· <a href="/team">My team</a>
-		</p>
-	{:else if entryKnown && !loading}
-		<form class="entry" onsubmit={submitEntry}>
-			<label for="tw-entry">Add your FPL team ID</label>
-			<div class="entry-row">
-				<input
-					id="tw-entry"
-					inputmode="numeric"
-					autocomplete="off"
-					placeholder="e.g. 1234567"
-					bind:value={entryInput}
-				/>
-				<button class="primary" type="submit" disabled={!entryInputValid}>Show my team</button>
-			</div>
-			{#if error}
-				<p class="err">{error}</p>
-			{:else if picksNotPublished}
-				<p class="muted small">
-					FPL has not published this gameweek's squads yet. The model's picks are shown above.
-				</p>
-			{:else}
-				<p class="muted small">
-					The number in your FPL Points page address (fantasy.premierleague.com/entry/<strong
-						>YOUR-ID</strong
-					>/event/...). No login needed.
-				</p>
-			{/if}
-		</form>
-	{/if}
-
 	<ul class="rows">
 		<!-- Last call: viimeisin kierros mallin sarjassa. -->
 		{#if last}
@@ -262,6 +242,8 @@
 					</div>
 				</details>
 			</li>
+		{:else if !raceDone}
+			<li class="ph" aria-hidden="true"><span class="lbl">Last call</span></li>
 		{/if}
 
 		<!-- Kierroksen clean sheet -rivi: ottelu kerrallaan, ei FDR:aa. -->
@@ -281,6 +263,8 @@
 					<span class="go">All teams ›</span>
 				</a>
 			</li>
+		{:else if !fantasyDone}
+			<li class="ph cs-ph" aria-hidden="true"><span class="lbl">Clean sheets</span></li>
 		{/if}
 
 		<!-- Kausi: sina vs malli (tai malli vs keskiarvo ilman joukkuetta). -->
@@ -305,6 +289,8 @@
 					</div>
 				</details>
 			</li>
+		{:else if !raceDone}
+			<li class="ph" aria-hidden="true"><span class="lbl">Season</span></li>
 		{/if}
 
 		<!-- Beat the Model: kirjatut paatokset + mini-liiga. -->
@@ -327,6 +313,46 @@
 			</details>
 		</li>
 	</ul>
+
+	<!-- Oman joukkueen rivi tai ID-kentta. Rivien JALKEEN: kentta ilmestyy
+	     vasta kun sessio on ratkennut, ja paatosten ja rivien ylapuolella se
+	     tyonsi ne alas (mitattu CLS 0,12-0,20, 390 px, 4G). -->
+	{#if own && data}
+		<p class="team-line muted">
+			{#if fplEntry.savedEntry}Team {fplEntry.savedEntry}{:else if entryId}Team {entryId}{:else}Your draft{/if}
+			· <a href="/team">My team</a>
+		</p>
+	{:else if entryKnown && !loading}
+		<form class="entry" onsubmit={submitEntry}>
+			<label for="tw-entry">Add your FPL team ID</label>
+			<div class="entry-row">
+				<input
+					id="tw-entry"
+					inputmode="numeric"
+					autocomplete="off"
+					placeholder="e.g. 1234567"
+					bind:value={entryInput}
+				/>
+				<button class="primary" type="submit" disabled={!entryInputValid}>Show my team</button>
+			</div>
+			{#if error}
+				<p class="err">{error}</p>
+			{:else if picksNotPublished}
+				<p class="muted small">
+					FPL has not published this gameweek's squads yet. The model's picks are shown above.
+				</p>
+			{:else}
+				<p class="muted small">
+					The number in your FPL Points page address (fantasy.premierleague.com/entry/<strong
+						>YOUR-ID</strong
+					>/event/...). No login needed.
+				</p>
+			{/if}
+		</form>
+	{:else}
+		<!-- Paikka varattu kunnes tiedetaan kumpi nakyy. -->
+		<div class="entry-slot" aria-hidden="true"></div>
+	{/if}
 </section>
 
 <style>
@@ -370,10 +396,12 @@
 		color: var(--positive);
 		font-weight: 600;
 	}
+	/* Sama korkeus kuin paatoskortilla (valilehdet 44 + paneeli 166 + reunat):
+	   luonnos ei saa hypata kun kortti tulee. */
 	.decision-skel {
 		border: 1px solid var(--border);
 		border-left: 3px solid var(--border-strong);
-		min-height: 196px;
+		min-height: 212px;
 		padding: var(--s-4);
 		margin: 0 0 var(--s-3);
 	}
@@ -497,6 +525,20 @@
 		border: 1px solid var(--border);
 		padding: 0 4px;
 		margin-left: 4px;
+	}
+	.ph {
+		display: flex;
+		align-items: center;
+		min-height: 48px;
+		opacity: 0.6;
+	}
+	.cs-ph {
+		min-height: 104px;
+		align-items: flex-start;
+		padding-top: var(--s-3);
+	}
+	.entry-slot {
+		min-height: 150px;
 	}
 	.row-body {
 		padding: 0 0 var(--s-3);

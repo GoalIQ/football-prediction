@@ -253,7 +253,7 @@
 		padding: var(--s-3) var(--s-4) var(--s-4);
 		/* Valilehden vaihto ei saa siirtaa alla olevia riveja paljon: varattu
 		   korkeus kattaa kapteenin (yleisin) kokonaan. */
-		min-height: 150px;
+		min-height: 166px;
 	}
 	.panel p {
 		margin: 0 0 var(--s-2);

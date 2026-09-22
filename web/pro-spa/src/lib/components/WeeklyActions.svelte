@@ -135,7 +135,11 @@
 				{actions.length === 1 ? 'thing' : 'things'} to do this week
 			</h3>
 		{/if}
-		{#if !open}
+		<!-- 22.9: vain kun deadline TIEDETAAN ja se on mennyt. Ilman deadlinea
+		     (haku kesken) `open` on fail-safe false, ja lause "This gameweek is
+		     locked" vaitti lukitusta jota ei ollut; paatoskortissa se nakyi
+		     hetken ja tyonsi rivit 79 px alas ja takaisin (CLS 0,11, 390 px). -->
+		{#if !open && deadlineUtc}
 			<p class="muted locked">
 				This gameweek is locked. Decisions can only be logged before the deadline, and that is what
 				makes the comparison mean anything.

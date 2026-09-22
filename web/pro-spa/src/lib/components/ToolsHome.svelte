@@ -424,6 +424,12 @@
 	     paatoskortin alle (ThisWeek.svelte team-line), jossa se kertoo kenen
 	     luvuista kortti on ja vie My teamiin (4.9:n havainto ennallaan). -->
 
+	<!-- 22.9 (CLS): tyokalualue varaa vahintaan ruudun korkeuden. Tyokalut
+	     hakevat datansa mountin jalkeen, ja lyhyt latausrivi toi alkuperan,
+	     liigabannerin ja footerin ensimmaiseen ruutuun, josta data tyonsi ne
+	     400-750 px alas (mitattu 390 px, 4G: /matches 0,30, /players/value
+	     0,22, /players/price-watch 0,34). Varaus pitaa ne ruudun alla. -->
+	<div class="tool-area">
 	{#if showDirectory}
 		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
 	{:else if lockedTool}
@@ -596,6 +602,7 @@
 			{/if}
 		</div>
 	{/if}
+	</div>
 
 	<!-- 4.9 YLAPINON BUDJETTI (kilpailija-auditointi): alkupera-rivi ja
 	     mini-liigabanneri olivat tyokalunavin YLAPUOLELLA, eli jokainen
@@ -689,6 +696,9 @@
 		.team-grid > :global(.span-all) {
 			grid-column: 1 / -1;
 		}
+	}
+	.tool-area {
+		min-height: calc(100vh - var(--bar-h));
 	}
 	.more-grid {
 		margin: var(--s-4) 0 0;

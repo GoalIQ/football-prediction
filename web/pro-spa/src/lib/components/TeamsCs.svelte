@@ -37,7 +37,10 @@
 	{#if failed}
 		<p class="banner error">Could not load clean sheet projections right now. Please try again shortly.</p>
 	{:else if !data}
-		<p class="muted">Loading fixtures…</p>
+		<!-- Varaus: taysi ruudukko on 20 joukkuetta, ja ilman varausta sivun
+		     alaosa (liigabanneri, footer) hyppasi 400-600 px datan tullessa
+		     (mitattu CLS 0,53, 390 px, 4G; sama korjaus kuin /spl T1). -->
+		<p class="muted loading-reserve">Loading fixtures…</p>
 	{:else if !grid || grid.gws.length === 0}
 		<p class="muted">Clean sheet projections are not available for this gameweek yet.</p>
 	{:else}
@@ -89,6 +92,9 @@
 </section>
 
 <style>
+	.loading-reserve {
+		min-height: 600px;
+	}
 	.cap {
 		font-size: var(--step--1);
 		max-width: 62ch;
