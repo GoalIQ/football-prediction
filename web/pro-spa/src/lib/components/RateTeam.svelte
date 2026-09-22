@@ -29,12 +29,10 @@
 		type Captaincy
 	} from '$lib/draft';
 	import HoldVerdictCard from './HoldVerdictCard.svelte';
-	import WeeklyActions, { type WeeklyAction } from './WeeklyActions.svelte';
+	import type { WeeklyAction } from './WeeklyActions.svelte';
 	import { isOpenForLogging, loadDecisions, logDecision } from '$lib/fplDecisions';
-	import BeatTheModel from './BeatTheModel.svelte';
-	import GwReview from './GwReview.svelte';
 	import SquadNews from './SquadNews.svelte';
-	import SeasonRace from './SeasonRace.svelte';
+	import ThisWeek from './ThisWeek.svelte';
 	import { fetchFantasy } from '$lib/api';
 	import ModelWorking from './ModelWorking.svelte';
 	import PlayerSearch from './PlayerSearch.svelte';
@@ -43,6 +41,7 @@
 	import ProjectionsPanel from './ProjectionsPanel.svelte';
 	import type { XpResponse } from '$lib/api';
 	import { xpHorizon } from '$lib/xpHorizon';
+	import { modelCaptainOf } from '$lib/pitchLineup';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
 	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
 	function transferSpan(d: RateTeamResponse): string {
@@ -847,90 +846,32 @@
 </script>
 
 {#if weekMode}
-	<!-- Web P1 "This week": suppea render — viikkosilmukka ilman rate-
-	     koneistoa. Sama komponentti-instanssi kuin My teamissa (parent pitää
-	     puuposition), joten data ja entry-tila ovat jaettuja. -->
-	<h2>This week</h2>
-	<p class="muted">
-		What to do before the deadline, and how your calls are going against the model.
-	</p>
-	{#if loading}
-		<p class="muted">Loading your squad…</p>
-	{:else if data == null}
-		<!-- Tyhjätila: viikkosilmukka tarvitsee joukkueen — ohjaa My teamiin,
-		     ei duplikoitua syöttölomaketta. -->
-		<!-- 4 Sep: this used to say "Set up your team first" whenever `data` was
-		     null, including for a user who HAS a saved entry and is simply
-		     waiting on it. Measured on the live page: "Your saved FPL team is
-		     116920" and "Set up your team first" were both on screen at once,
-		     so the product read as if it did not recognise a paying user.
-		     Two different empty states, two different sentences. -->
-		<div class="week-setup">
-			{#if fplEntry.savedEntry != null}
-				<p><strong>Team {fplEntry.savedEntry} is saved, but its data has not loaded.</strong></p>
-				<p class="muted">
-					Nothing is wrong with your squad. Open My team to reload it, and this view
-					fills in with your captain call and the decisions to log.
-				</p>
-				<button class="primary" type="button" onclick={() => onGoToTeam?.()}>Reload in My team</button>
-			{:else}
-				<p><strong>Set up your team first.</strong></p>
-				<p class="muted">
-					The weekly loop needs your squad. Add your FPL entry ID or build a draft in My team,
-					and this view fills in with your captain call and the decisions to log.
-				</p>
-				<button class="primary" type="button" onclick={() => onGoToTeam?.()}>Go to My team</button>
-			{/if}
-		</div>
-	{:else}
-		<!-- 14.8 LAYOUT (Villen palaute: "ne ovat tossa allekain ns listana"):
-		     kaksi saraketta leveilla ruuduilla, TEKEMINEN vasemmalle ja TILA
-		     oikealle. Kolme taysleveaa lohkoa allekkain nayttivat
-		     samanpainoisilta eika mikaan kertonut mista aloittaa, ja ~65 %
-		     vaakatilasta oli tyhjaa. Jako ei ole esteettinen vaan
-		     merkityksellinen: vasen sarake on se mihin kayttaja koskee ennen
-		     deadlinea, oikea kertoo miten menee. Kapea ruutu palaa yhteen
-		     sarakkeeseen samassa jarjestyksessa kuin ennen. -->
-		<div class="week-grid">
-			<div class="week-col">
-				<WeeklyActions
-					gw={data.meta.captain_gw ?? (data.meta.gw_in_progress === true ? null : data.meta.gw)}
-					{deadlineUtc}
-					actions={weeklyActions}
-					onFollowTransfer={followTransferFromLoop}
-					refreshToken={decisionsVersion}
-				/>
-				<p class="captain">
-					Captain suggestion: <strong>{data.captain.pick.web_name}</strong>
-					<span class="muted">({data.captain.pick.team_short})</span>,
-					{data.captain.pick.gw_xp.toFixed(2)} xP{#if data.meta.captain_gw != null} in GW{data.meta.captain_gw}{:else if data.meta.gw_in_progress !== true} in GW{data.meta.gw}{/if}{#if data.captain.alternative}.
-						Alternative: {data.captain.alternative.web_name}
-						<span class="muted">({data.captain.alternative.team_short})</span>,
-						{data.captain.alternative.gw_xp.toFixed(2)} xP{/if}.
-				</p>
-				<!-- 🔴 Villen havainto 4.9: vasen sarake loppui kapteenilauseeseen
-				     ja jatti ison tyhjan alueen, kun oikeassa sarakkeessa oli
-				     kolme lohkoa. Gameweek review siirtyi tanne: se on
-				     KIERROKSEN katsaus (mita tapahtui), eli lahempana vasemman
-				     sarakkeen "mita teet ja mita siita seurasi" -luentaa kuin
-				     oikean sarakkeen kausikirjanpitoa. -->
-				<GwReview />
-			</div>
-			<div class="week-col">
-				<!-- B5 (7.9): sijoitus luetaan `season_rank`ista, ei
-				     `last_finished`ista. Jalkimmainen katoaa kokonaan kun MEIDAN
-				     xP-freeze puuttuu kierrokselta, ja kayttajan FPL-sijoituksella
-				     ei ole sen kanssa mitaan tekemista. Fallback vanhaan lohkoon
-				     pitaa vanhat vastaukset toimivina. -->
-				<BeatTheModel
-					rank={data.season_rank?.overall_rank ?? data.last_finished?.overall_rank ?? null}
-					rankChange={data.season_rank?.rank_change ?? data.last_finished?.rank_change ?? null}
-					rankGw={data.season_rank?.gw ?? data.last_finished?.gw ?? null}
-				/>
-				<SeasonRace />
-			</div>
-		</div>
-	{/if}
+	<!-- 22.9 (UX-uudistus A3 2.1): This week = paatoskortti + yhden rivin
+	     tiivistelmat (ThisWeek.svelte). Sama komponentti-instanssi kuin My
+	     teamissa (parent pitaa puuposition), joten data, entry ja kirjatut
+	     paatokset ovat jaettuja: ThisWeek ei hae omaa joukkuetta itse vaan
+	     saa taman instanssin `data`n. Ennen 22.9 ilman joukkuetta sivu sanoi
+	     "Set up your team first" eika nayttanyt mitaan; nyt kortti nayttaa
+	     mallin rungon kapteenin ja kentan omalle ID:lle. -->
+	<ThisWeek
+		{data}
+		{loading}
+		{error}
+		{picksNotPublished}
+		{premium}
+		onUpgrade={unlock}
+		{deadlineUtc}
+		actions={weeklyActions}
+		onFollowTransfer={followTransferFromLoop}
+		refreshToken={decisionsVersion}
+		onEntry={(id) => {
+			fplEntry.entry = id;
+			void runRate();
+		}}
+		rank={data?.season_rank?.overall_rank ?? data?.last_finished?.overall_rank ?? null}
+		rankChange={data?.season_rank?.rank_change ?? data?.last_finished?.rank_change ?? null}
+		rankGw={data?.season_rank?.gw ?? data?.last_finished?.gw ?? null}
+	/>
 {:else}
 <h2>Rate my FPL team</h2>
 {#if setupOpen}
@@ -1422,6 +1363,8 @@
 		gwInProgress={data.meta.gw_in_progress === true}
 		lastFinished={data.last_finished ?? null}
 		picksGw={data.meta.picks_gw ?? null}
+		horizon={xpHorizon(data.meta)}
+		modelCaptain={modelCaptainOf(data)}
 		{onUpgrade}
 		initialCaptaincy={captaincy}
 		onCaptaincyChange={handleCaptaincyChange}
@@ -1714,6 +1657,8 @@
 			gwInProgress={dataB.meta.gw_in_progress === true}
 			lastFinished={dataB.last_finished ?? null}
 			picksGw={dataB.meta.picks_gw ?? null}
+			horizon={xpHorizon(dataB.meta)}
+			modelCaptain={modelCaptainOf(dataB)}
 			{onUpgrade}
 			initialCaptaincy={captaincyB}
 			onCaptaincyChange={handleCaptaincyChangeB}
@@ -1826,39 +1771,8 @@
 			padding-left: var(--s-6);
 		}
 	}
-	/* 14.8: "This week" kahteen sarakkeeseen leveilla ruuduilla.
-	   VASEN = tekeminen (viikon paatokset, kapteenisuositus),
-	   OIKEA = tila (calls vs model, season race).
-	   `minmax(0, ...)` on pakollinen: ilman sita sisalla oleva taulukko
-	   levittaisi sarakkeen yli gridin ja rikkoisi koko rivin.
-	   Alle 980px palataan yhteen sarakkeeseen samassa lukujarjestyksessa. */
-	.week-grid {
-		display: grid;
-		gap: var(--s-5);
-	}
-	.week-col {
-		display: grid;
-		gap: var(--s-5);
-		align-content: start;
-		min-width: 0;
-	}
-	@media (min-width: 980px) {
-		.week-grid {
-			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-			align-items: start;
-		}
-	}
-	/* Web P1: week-tyhjätilan kortti */
-	.week-setup {
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: var(--s-4);
-		margin: var(--s-3) 0;
-		background: var(--surface);
-	}
-	.week-setup p {
-		margin: 0 0 var(--s-2);
-	}
+	/* 22.9: weekMode-tyylit (week-grid, week-col, week-setup) poistuivat
+	   ThisWeek.svelteen siirron mukana. */
 	.entry-form {
 		display: flex;
 		flex-wrap: wrap;

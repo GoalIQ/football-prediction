@@ -40,6 +40,11 @@ export const fplEntry = $state({
 	remember: true,
 	/** Minkä user-id:n profiili on jo luettu (kerran per kirjautuminen). */
 	loadedForUser: null as string | null,
+	/** 22.9: kenen profiilin luku on VALMIS (myos epaonnistunut). Eri kuin
+	 *  `loadedForUser`, joka asetetaan ennen hakua. This week odottaa tata
+	 *  ennen kuin nayttaa mallin kapteenin: muuten tallennetun joukkueen
+	 *  kayttaja naki hetken mallin kortin ja sitten oman (valahdys). */
+	profileChecked: null as string | null,
 	/** true = tallennettu ID luettu → RateTeam ajaa itsensä kerran. */
 	autoRunPending: false,
 	/**
@@ -84,6 +89,8 @@ export async function loadProfileEntry(): Promise<void> {
 		}
 	} catch {
 		// fail-safe: ei kaada työkaluja
+	} finally {
+		fplEntry.profileChecked = user.id;
 	}
 }
 

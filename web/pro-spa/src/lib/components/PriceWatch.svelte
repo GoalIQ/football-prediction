@@ -142,7 +142,7 @@
 					<tbody>
 						{#each rows as r (r.id)}
 							{@const band = confBand(r.confidence)}
-							<tr>
+							<tr data-player-id={r.id}>
 								<td
 									>{r.web_name}{#if r.owned}
 										<span class="own-badge" title="In your squad">owned</span>{/if}{#if r.already_changed_today}

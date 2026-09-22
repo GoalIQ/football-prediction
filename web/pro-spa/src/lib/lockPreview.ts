@@ -35,6 +35,23 @@ export function lockedToolFor(tool: Tool | null | undefined, premium: boolean): 
 	return !premium && tool?.tier === 'premium' ? tool : null;
 }
 
+/**
+ * Tyokalut joiden lukossa EI nayteta Player xP -naytetta, ja miksi
+ * (22.9, julkaisutarkistaja). Nayte on Player xP -listaa; se kertoo jotain
+ * pelaajavalinnasta ja siirroista, mutta chippien ajoituksesta ei mitaan,
+ * joten Chip timingin lukossa se olisi myyntiesimerkki joka ei liity
+ * tyokaluun. Lukko nayttaa silloin pelkan nimen, kysymyksen ja hinnan.
+ * Poikkeus on lista perusteluineen (saanto 6a kohta 2), ei ehto komponentissa.
+ */
+export const NO_XP_SAMPLE: Record<string, string> = {
+	'chip-timing': 'chippien ajoitus ei ole pelaajalista; xP-nayte ei kerro tyokalusta mitaan'
+};
+
+/** Naytetaanko lukossa Player xP -nayte. */
+export function showsXpSample(tool: Tool | null | undefined): boolean {
+	return !!tool && !(tool.slug in NO_XP_SAMPLE);
+}
+
 /** Naytteen rivit palvelimen jarjestyksessa. Tyhja kun dataa ei ole
  *  julkaistu (`meta.available` false) tai vastaus on vajaa. */
 export function previewRows(

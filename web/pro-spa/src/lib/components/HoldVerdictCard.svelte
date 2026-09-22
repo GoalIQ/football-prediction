@@ -5,7 +5,10 @@
 	// #63: jaettu hero-verdikti rate-teamille + plannerille. Verdikti tulee
 	// backendin hold_verdict-lohkosta (hit-tietoinen netto vs kynnys) - UI ei
 	// laske omaa kantaa, vain nostaa mallin kannan keskiöön xP-matikan kera.
-	let { verdict, surface }: { verdict: HoldVerdict; surface: 'rate_team' | 'planner' } = $props();
+	let {
+		verdict,
+		surface
+	}: { verdict: HoldVerdict; surface: 'rate_team' | 'planner' | 'this_week' } = $props();
 
 	$effect(() => {
 		// Mittaa kuinka usein malli sanoo "hold" (mobiilipariteetti: sama

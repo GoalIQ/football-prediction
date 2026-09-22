@@ -20,14 +20,18 @@
 	import { auth, sendPasswordReset, signOut, freePremiumWindowActive } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { fetchFantasy, openCustomerPortal } from '$lib/api';
-	import { actionableGameweek } from '$lib/gameweek';
-	import { GROUPS } from '$lib/tools';
+	import { actionableGameweek, checkedText, formatDeadline, parseGeneratedAt } from '$lib/gameweek';
+	import { GROUPS, groupOfPath } from '$lib/tools';
 	import SetPassword from './SetPassword.svelte';
+	import GameSwitcher from './GameSwitcher.svelte';
 
 	let { onUpgrade }: { onUpgrade?: () => void } = $props();
 
-	/* ---------------- navi ---------------- */
-	const activeGroup = $derived(page.params.group ?? 'week');
+	/* ---------------- navi ----------------
+	   22.9: aktiivinen ryhma polusta (`groupOfPath`), ei `params.group ??
+	   'week'`: jalkimmainen korosti This weekin myos /ucl- ja /spl-sivuilla,
+	   jotka ovat eri peleja eivatka FPL:n ryhmia. */
+	const activeGroup = $derived(groupOfPath(page.url.pathname));
 
 	/* ---------------- kierros + deadline (ent. WorkspaceBar) ----------------
 	   🔴 AIKA RENDEROIDAAN SELAIMEN VYOHYKKEELLA, EI PALVELIMEN. Deadline tulee
@@ -47,12 +51,9 @@
 				const t = new Date(m.deadline_utc);
 				if (!isNaN(t.getTime())) deadline = t;
 			}
-			if (m.generated_at) {
-				// generated_at tulee ilman vyohyketta: se on UTC.
-				const raw = /[Z+]|-\d\d:\d\d$/.test(m.generated_at) ? m.generated_at : `${m.generated_at}Z`;
-				const t = new Date(raw);
-				if (!isNaN(t.getTime())) checked = t;
-			}
+			// generated_at tulee ilman vyohyketta: se on UTC ($lib/gameweek).
+			const t = parseGeneratedAt(m.generated_at);
+			if (t) checked = t;
 		} catch {
 			// Palkin kierrosrivi on lisatietoa, ei nakyma.
 		}
@@ -67,28 +68,14 @@
 		}, 60000);
 		return () => clearInterval(id);
 	});
-	const LOC = 'en-GB';
-	const dl = $derived(
-		deadline
-			? deadline.toLocaleString(LOC, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-			: null
-	);
-	const tz = $derived(
-		deadline
-			? (new Intl.DateTimeFormat(LOC, { timeZoneName: 'short' })
-					.formatToParts(deadline)
-					.find((p) => p.type === 'timeZoneName')?.value ?? '')
-			: ''
-	);
-	/* 🔴 Portti 11.9: pelkka kellonaika on paivaton tuoreusvaite. Eilinen
-	   artefakti luki "checked 16:07" ja lukija luki sen tamanpaivaisena.
-	   Paiva sanotaan aaneen aina kun se ei ole tama paiva. */
-	const chk = $derived.by(() => {
-		if (!checked || now === 0) return null;
-		const t = checked.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
-		if (checked.toDateString() === new Date(now).toDateString()) return `${t} today`;
-		return `${checked.toLocaleDateString(LOC, { day: 'numeric', month: 'short' })}, ${t}`;
-	});
+	// 22.9: sama muotoilu kuin This week -sivun deadline-rivilla (yksi lukija,
+	// $lib/gameweek formatDeadline).
+	const fmt = $derived(deadline ? formatDeadline(deadline) : null);
+	const dl = $derived(fmt?.when ?? null);
+	const tz = $derived(fmt?.tz ?? '');
+	/* 🔴 Portti 11.9: paivaton tuoreusvaite on vaara. Lukija: $lib/gameweek
+	   checkedText (sama funktio kuin This week -sivun deadline-rivilla). */
+	const chk = $derived(checkedText(checked, now));
 	/* 🔴 Portti 11.9: `Date.now()` ei ole reaktiivinen, joten auki jaaneessa
 	   valilehdessa luki "deadline" viela deadlinen jalkeenkin. Kello tikittaa
 	   omana tilanaan, ja deadlinen ylitys hakee kierroksen uudelleen: pelkka
@@ -180,15 +167,17 @@
 			<span class="word">Goal<span>IQ</span></span>
 		</a>
 
+		<!-- 22.9 (A3 luku 1): pelivalitsin FPL / UCL Fantasy / RSL Fantasy.
+		     Korvaa 21.9:n UCL-linkin navin toisena kohtana: UCL ja SPL ovat
+		     eri peleja, eivat FPL:n ryhmia, ja ryhmanavissa ne veivat tilaa
+		     joka puhelimessa puuttui jo ryhmilta itseltaan (web-audit T2). -->
+		<GameSwitcher />
+
+		<!-- Tyopoydan navi. Puhelimessa (<= 640 px) samat ryhmat ovat
+		     alapalkissa (BottomNav), koska tassa rivissa ne eivat mahtuneet. -->
 		<nav class="nav" aria-label="GoalIQ">
-			{#each GROUPS as g, i (g.id)}
-				<a href="/{g.id}" class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
-				<!-- 21.9 (Villen havainto): UCL Fantasy xP oli vain sivun alaosan
-				     "New:"-rivilla, eli Premium-kayttaja ei loytanyt sita. Oma osio
-				     kuten SPL, mutta ei etiikkarajausta -> ylapalkkiin. Heti
-				     ensimmaisen ryhman peraan: mitattu 390 px, navin lopussa se jai
-				     vaakavierityksen taakse kuten goaliq.app-linkki 11.9. -->
-				{#if i === 0}<a href="/ucl" data-cta="pro-nav-ucl">UCL Fantasy</a>{/if}
+			{#each GROUPS as g (g.id)}
+				<a href={g.id === 'week' ? '/' : `/${g.id}`} class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
 			{/each}
 			<!-- 🔴 Villen havainto 11.9: prolta puuttui paluu goaliq.appiin. Se oli
 			     ennen ylapalkin taglinessa, ja kun tagline siirtyi Account-valikkoon,
@@ -376,7 +365,7 @@
 	   paluulinkki jai ruudun ulkopuolelle - eli se oli olemassa muttei
 	   loydettavissa juuri silla pinnalla jolla 60 % kavijoista on. Kapealla
 	   ruudulla se on rivin ENSIMMAINEN, kuten paluulinkki yleensa. */
-	@media (max-width: 820px) {
+	@media (max-width: 1180px) {
 		.nav a.home {
 			order: -1;
 			margin-left: 0;
@@ -502,10 +491,22 @@
 		border-color: var(--border);
 	}
 
-	/* Kapea ruutu: navi omalle riville palkin alle, jotta viisi kohtaa
-	   pysyvat sormen kokoisina. Kierrosrivi jaa pois (se on Account-
-	   valikossa ja This week -sivulla). */
-	@media (max-width: 820px) {
+	/* 22.9 (mitattu CDP:lla 1024-1366 px): palkin sisalto (merkki + valitsin
+	   + navi 433 px + kierrosrivi 403 px + tili) ei mahtunut 1180 px:n
+	   palstaan, joten navi rullasi vaakaan ja goaliq.app-linkki (1024 px:lla
+	   myos Players ja Matches) jai piiloon: T2:n vika laptopin leveydella.
+	   Siksi:
+	     - < 1400 px tuoreusleima "checked ..." jaa palkista pois; se lukee
+	       This week -sivun deadline-rivilla (sama lukija checkedText),
+	     - <= 1180 px navi on oma rivinsa palkin alla,
+	     - <= 820 px kierrosrivikin jaa pois (This week -sivulla),
+	     - <= 640 px navi on alapalkissa (BottomNav). */
+	@media (max-width: 1399px) {
+		.gw-chk {
+			display: none;
+		}
+	}
+	@media (max-width: 1180px) {
 		.bar {
 			height: auto;
 			/* 🔴 Kapealla ruudulla palkki on kaksirivinen (~92 px). Sticky se
@@ -526,9 +527,6 @@
 			order: 1;
 			margin-left: auto;
 		}
-		.gw {
-			display: none;
-		}
 		.nav {
 			order: 2;
 			flex-basis: 100%;
@@ -539,6 +537,31 @@
 		.nav a {
 			padding: 0 var(--s-3);
 			font-size: 14px;
+		}
+	}
+	@media (max-width: 820px) {
+		.gw {
+			display: none;
+		}
+	}
+	/* 22.9 PUHELIN (<= 640 px, web-audit T2): ryhmanavi on alapalkissa
+	   (BottomNav), joten ylapalkki on yksi 52 px:n rivi: merkki, pelivalitsin,
+	   tili. Sanamerkki jaa pois ja valitsin kayttaa lyhytta nimea, muuten
+	   kirjautuneen "Free · Upgrade" + Account eivat mahdu 390 px:iin. */
+	@media (max-width: 640px) {
+		.bar {
+			height: var(--bar-h);
+		}
+		.bar-in {
+			flex-wrap: nowrap;
+			padding: 0 var(--s-3);
+			gap: var(--s-2);
+		}
+		.nav {
+			display: none;
+		}
+		.word {
+			display: none;
 		}
 	}
 </style>

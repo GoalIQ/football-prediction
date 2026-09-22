@@ -716,7 +716,7 @@
 				</thead>
 				<tbody>
 					{#each xgShown as a, i (a.row.id)}
-						<tr>
+						<tr data-player-id={a.row.id}>
 							<td class="muted">{i + 1}</td>
 							<td class="pl">
 								<svg class="kit" width="26" height="26" aria-hidden="true">
@@ -885,7 +885,7 @@
 				</thead>
 				<tbody>
 					{#each dcVisible as p, i (p.id)}
-						<tr class:expanded={expandedId === p.id}>
+						<tr data-player-id={p.id} class:expanded={expandedId === p.id}>
 							<td class="muted">{i + 1}</td>
 							<td class="pl">
 								<button

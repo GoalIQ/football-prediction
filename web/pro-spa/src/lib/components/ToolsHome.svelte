@@ -18,8 +18,7 @@
 	import { auth, refreshSubscription, freePremiumWindowActive } from '$lib/auth.svelte';
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { fplEntry, loadProfileEntry } from '$lib/fplEntry.svelte';
-	import DefConLive from './DefConLive.svelte';
+	import { loadProfileEntry } from '$lib/fplEntry.svelte';
 	import Provenance from './Provenance.svelte';
 	import LeagueBanner from './LeagueBanner.svelte';
 	import ToolRow from './ToolRow.svelte';
@@ -47,6 +46,7 @@
 	import FixtureSwing from './FixtureSwing.svelte';
 	import XpTable from './XpTable.svelte';
 	import CleanSheets from './CleanSheets.svelte';
+	import TeamsCs from './TeamsCs.svelte';
 	import Value from './Value.svelte';
 	import Leaders from './Leaders.svelte';
 	import Stats from './Stats.svelte';
@@ -392,18 +392,10 @@
 		{/if}
 	{/if}
 
-	<!-- 2.8: DefCon-live ylimpänä ja segmenttien ULKOPUOLELLA — se on
-	     aikakriittinen eikä saa olla välilehden takana. Renderöi tyhjää aina
-	     kun kierros ei ole käynnissä, joten esikaudella tämä ei näy.
-	     4.9 (ylapinon budjetti): lohko pysyy tassa, mutta lista on
-	     kokoontaitettu — yhteenvetorivi (GW + montako kynnyksella) jaa
-	     nakyviin joka valilehdelle, 13 rivin lista ei. Perustelu ja mittaus
-	     `DefConLive.svelte`:n kommentissa. -->
-	<!-- 11.9: DefCon vain This week -sivulla. Tyokalusivulla se oli yksi
-	     seitsemasta rivista ennen sisaltoa. -->
-	{#if segment === 'week'}
-		<DefConLive />
-	{/if}
+	<!-- 22.9 (A3 2.1 + 5): DefCon-live siirtyi This week -sivun deadline-rivin
+	     alle (ThisWeek.svelte) ja nakyy vain kun kierros on kesken. Tassa se
+	     renderoityi myos tauolla ("GW5 final") ensimmaisena asiana, eli
+	     paattyneen kierroksen tieto oli paatosten edella. -->
 
 	<!-- 4.9: ryhman tyokalurivi. Korvaa "On this page:" -ankkuririvin, joka
 	     vieritti pitkaa sivua; nama ovat linkkeja omiin URLeihin. -->
@@ -413,6 +405,7 @@
 		active={activeTool?.slug ?? null}
 		{all}
 		{premium}
+		horizonMeta={xp?.meta ?? null}
 	/>
 
 	{#if showDirectory}
@@ -427,22 +420,16 @@
 		/>
 	{/if}
 
-	{#if segment === 'week'}
-		<!-- 🔴 Villen havainto 4.9: "this week kadotti ton fpl entry ID:n vaikka
-		     se on my teamissa". Sivu KAYTTI tallennettua joukkuetta, mutta ei
-		     kertonut sita missaan, joten lukija ei voinut tietaa kenen luvuista
-		     on kyse. Rivi kertoo sen ja vie suoraan joukkueeseen. -->
-		<p class="team-context">
-			{#if fplEntry.savedEntry}
-				Your saved FPL team is {fplEntry.savedEntry}.
-				<a href="/team/rate-my-team">Open Rate my team</a>
-			{:else}
-				<a href="/team/rate-my-team">Add your FPL entry ID</a> and this page follows your own
-				squad.
-			{/if}
-		</p>
-	{/if}
+	<!-- 22.9: "Your saved FPL team is ..." -rivi siirtyi This week -sivun
+	     paatoskortin alle (ThisWeek.svelte team-line), jossa se kertoo kenen
+	     luvuista kortti on ja vie My teamiin (4.9:n havainto ennallaan). -->
 
+	<!-- 22.9 (CLS): tyokalualue varaa vahintaan ruudun korkeuden. Tyokalut
+	     hakevat datansa mountin jalkeen, ja lyhyt latausrivi toi alkuperan,
+	     liigabannerin ja footerin ensimmaiseen ruutuun, josta data tyonsi ne
+	     400-750 px alas (mitattu 390 px, 4G: /matches 0,30, /players/value
+	     0,22, /players/price-watch 0,34). Varaus pitaa ne ruudun alla. -->
+	<div class="tool-area">
 	{#if showDirectory}
 		<!-- Hakemisto renderoitiin jo yllä; ryhman pinottu sisalto jaa pois. -->
 	{:else if lockedTool}
@@ -457,7 +444,9 @@
 			     ToolRow'lla: sama ongelma, mutta ratkaisuna oma URL eika
 			     vieritys. -->
 			{#if segment === 'week' || show('rate-my-team')}
-			<div class="tool-card" id="tc-rate">
+			<!-- 22.9: This week ei ole tyokalukortti vaan sivu, joten kehys
+			     jaa pois (paatoskortti kantaa oman kehyksensa). -->
+			<div class:tool-card={segment !== 'week'} id="tc-rate">
 				<RateTeam
 					{premium}
 					{xp}
@@ -547,7 +536,17 @@
 				</div>
 			{/if}
 			{#if show('clean-sheets')}
-				<div id="pc-cs"><CleanSheets /></div>
+				<!-- 22.9 (A3 2.3): Teams = clean sheet % ruudukko ilman FDR:aa
+				     (brief: moat on CS% ja xP, ei FDR). Vanha matriisi sailyy
+				     avattavana omalle kierrosvalille, ja siitakin FDR on poistettu
+				     (julkaisutarkistaja + Villen suositus 22.9). -->
+				<div id="pc-cs">
+					<TeamsCs />
+					<details class="more-grid">
+						<summary>Choose your own gameweek range</summary>
+						<CleanSheets />
+					</details>
+				</div>
 			{/if}
 			{#if show('value')}
 				<div class="tool-card" id="pc-value"><Value {premium} onUpgrade={goUpgrade} /></div>
@@ -565,6 +564,11 @@
 			{#if show('differentials')}
 				<div class="tool-card" id="pc-diff"><Differentials /></div>
 			{/if}
+			<!-- 22.9 (A3): entinen Price watch -ryhma, nyt Players-listan
+			     esiasetus "Price change". -->
+			{#if show('price-watch')}
+				<div class="tool-card" id="pr-watch"><PriceWatch /></div>
+			{/if}
 			{#if premium && show('edge-mode')}
 				<div class="tool-card" id="tl-edge"><EdgeMode /></div>
 			{/if}
@@ -579,10 +583,6 @@
 					{/if}
 				{/if}
 			{/if}
-		</div>
-	{:else if segment === 'prices'}
-		<div id="panel-prices" role="tabpanel" aria-labelledby="seg-prices">
-			<div class="tool-card" id="pr-watch"><PriceWatch /></div>
 		</div>
 	{:else}
 		<div id="panel-matches" role="tabpanel" aria-labelledby="seg-matches">
@@ -603,6 +603,7 @@
 			{/if}
 		</div>
 	{/if}
+	</div>
 
 	<!-- 4.9 YLAPINON BUDJETTI (kilpailija-auditointi): alkupera-rivi ja
 	     mini-liigabanneri olivat tyokalunavin YLAPUOLELLA, eli jokainen
@@ -697,9 +698,17 @@
 			grid-column: 1 / -1;
 		}
 	}
-	.team-context {
-		font-size: var(--step--1);
+	.tool-area {
+		min-height: calc(100vh - var(--bar-h));
+	}
+	.more-grid {
+		margin: var(--s-4) 0 0;
+	}
+	.more-grid > summary {
+		cursor: pointer;
 		color: var(--text-muted);
-		margin: 0 0 var(--s-3);
+		font-size: var(--step--1);
+		font-weight: 600;
+		padding: var(--s-2) 0;
 	}
 </style>

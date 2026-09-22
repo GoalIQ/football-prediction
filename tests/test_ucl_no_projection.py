@@ -143,7 +143,18 @@ UCL_MARKERIT = [re.compile(r"ucl fantasy", re.I), re.compile(r"/ucl\b")]
 # diffiin. Tyhja lista on oikea lahtotila: poikkeus lisataan silloin kun
 # joku sita oikeasti tarvitsee, ei varmuuden vuoksi.
 # ---------------------------------------------------------------------------
-PERUSTELLUT_POIKKEUKSET: dict[str, str] = {}
+PERUSTELLUT_POIKKEUKSET: dict[str, str] = {
+    # 22.9 (UX-uudistus A3 luku 1): pelivalitsimen nimi on NAVIGAATIOTA, ei
+    # osion kuvaus. Nimi renderoityy linkkitekstina (<a href="/ucl">), jonka
+    # `_kuvaileva` jattaa pois samasta syysta kuin /fpl-sivujen footerin
+    # "UCL Fantasy prices" -linkin: rajaus on yhden klikin paassa sivulla johon
+    # linkki vie. Rekisterissa ja sen portissa sama nimi on merkkijonona,
+    # joten ne eivat kulje linkkitekstin poiston kautta.
+    "web/pro-spa/src/lib/tools.ts":
+        "GAMES-taulukko: pelivalitsimen linkkiteksti /ucl-sivulle, ei kuvaus",
+    "web/pro-spa/src/lib/ia.gate.test.ts":
+        "portti joka pinnaa pelivalitsimen nimet mobiilin kanssa samoiksi",
+}
 
 # 🔴 PREMIUM-TUOTTEEN OMAT TIEDOSTOT. Nama OVAT UCL Fantasy xP, joten
 # projektiosanasto on niissa tosi eika rajauslausetta vaadita. Lista on

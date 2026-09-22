@@ -48,6 +48,9 @@ export interface FantasyFixture {
 
 export interface FantasyTeam {
 	name: string;
+	/** Lyhenne (ARS). Payload on tuonut kentan pitkaan; tyypitetty 22.9 kun
+	 *  This week -sivun clean sheet -rivi alkoi kayttaa sita. */
+	short?: string;
 	next_avg_cs_pct: number;
 	next_avg_fdr: number;
 	fixtures: FantasyFixture[];

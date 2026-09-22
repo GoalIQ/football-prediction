@@ -158,7 +158,7 @@
 				</thead>
 				<tbody>
 					{#each rows as r (r.p.id)}
-						<tr class:expanded={expandedId === r.p.id}>
+						<tr data-player-id={r.p.id} class:expanded={expandedId === r.p.id}>
 							<td>
 								<button
 									type="button"

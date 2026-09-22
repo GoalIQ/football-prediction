@@ -22,3 +22,106 @@ export function actionableGameweek(
 	   se olisi kierros 0 (muisti: nolla-ei-ole-sama-kuin-ei-tietoa). */
 	return undefined;
 }
+
+/* ------------------------------------------------------------------------
+ * Deadline-rivi (22.9.2026, A3 2.1: "kiinnitetty GW-palkki"). Hero ja This
+ * week lukevat SAMAN muotoilun: kaksi kopiota eriytyisi ensimmaisessa
+ * muutoksessa (sama vikaluokka kuin WorkspaceBar 22.8).
+ *
+ * 🔴 AIKA RENDEROIDAAN SELAIMEN VYOHYKKEELLA. Deadline tulee UTC:na;
+ * toLocaleString ilman timeZone-parametria kayttaa lukijan omaa vyohyketta.
+ * Kieli on lukittu en-GB (suomalaisella koneella rivi renderoitui muuten
+ * "pe 21.8. klo 20.30" englanninkielisessa tuotteessa).
+ * --------------------------------------------------------------------- */
+const LOC = 'en-GB';
+
+/** "Sat 10 Oct, 11:00 BST" (lukijan vyohyke). */
+export function formatDeadline(d: Date): { when: string; tz: string } {
+	const when = d.toLocaleString(LOC, {
+		weekday: 'short',
+		day: 'numeric',
+		month: 'short',
+		hour: '2-digit',
+		minute: '2-digit'
+	});
+	const tz =
+		new Intl.DateTimeFormat(LOC, { timeZoneName: 'short' })
+			.formatToParts(d)
+			.find((p) => p.type === 'timeZoneName')?.value ?? '';
+	return { when, tz };
+}
+
+export type WeekPhase = {
+	/** Kierros jonka deadline on edessa (actionableGameweek). */
+	gw: number;
+	/** Kesken oleva kierros, tai null kun mitaan ei pelata juuri nyt. */
+	liveGw: number | null;
+	deadline: Date | null;
+	/** Kokonaisia tunteja deadlineen, null ilman deadlinea tai kun se meni. */
+	hoursLeft: number | null;
+};
+
+/**
+ * Viikon vaihe fantasy-metasta. Ajetaan synteettisilla vaiheilla (saanto 6a
+ * kohta 3, `weekRows.test.ts`): ennen deadlinea, kesken kierroksen,
+ * kierrosten valissa ja kauden lopussa ilman deadlinea.
+ *
+ * `liveGw`: kierros on kesken kun `next_gameweek` on pienempi kuin
+ * `deadline_gameweek` (mitattu 30.8: 2 vs 3 ensimmaisen ottelun jalkeen).
+ * Muuten kierrosten valissa ei pelata FPL-otteluita ennen deadlinea, joten
+ * tauko ei ole paattely vaan tama sama ehto.
+ */
+export function weekPhase(
+	meta:
+		| { deadline_gameweek?: number | null; next_gameweek?: number | null; deadline_utc?: string | null }
+		| null
+		| undefined,
+	now: number
+): WeekPhase | null {
+	const gw = actionableGameweek(meta);
+	if (gw === undefined) return null;
+	const next = meta?.next_gameweek;
+	const liveGw = typeof next === 'number' && next < gw ? next : null;
+	let deadline: Date | null = null;
+	if (meta?.deadline_utc) {
+		const t = new Date(meta.deadline_utc);
+		if (!isNaN(t.getTime())) deadline = t;
+	}
+	const ms = deadline ? deadline.getTime() - now : null;
+	const hoursLeft = ms != null && ms > 0 ? Math.floor(ms / 3_600_000) : null;
+	return { gw, liveGw, deadline, hoursLeft };
+}
+
+/** "18 days" / "1 day" / "5 hours" / "under an hour". null kun deadline meni. */
+export function countdownText(hoursLeft: number | null): string | null {
+	if (hoursLeft == null) return null;
+	if (hoursLeft >= 48) {
+		const d = Math.floor(hoursLeft / 24);
+		return `${d} days`;
+	}
+	if (hoursLeft >= 24) return '1 day';
+	if (hoursLeft >= 1) return `${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}`;
+	return 'under an hour';
+}
+
+/** `generated_at` (UTC ilman vyohyketta) -> Date, tai null. */
+export function parseGeneratedAt(raw: string | null | undefined): Date | null {
+	if (!raw) return null;
+	const iso = /[Z+]|-\d\d:\d\d$/.test(raw) ? raw : `${raw}Z`;
+	const t = new Date(iso);
+	return isNaN(t.getTime()) ? null : t;
+}
+
+/**
+ * Tuoreusleima "12:51 today" / "21 Sep, 16:07" (lukijan vyohyke).
+ * 🔴 Portti 11.9: pelkka kellonaika on paivaton tuoreusvaite. Eilinen
+ * artefakti luki "checked 16:07" ja lukija luki sen tamanpaivaisena. Paiva
+ * sanotaan aaneen aina kun se ei ole tama paiva. Hero ja This week lukevat
+ * taman (22.9: sama funktio, ei kahta kopiota).
+ */
+export function checkedText(checked: Date | null, now: number): string | null {
+	if (!checked || now === 0) return null;
+	const t = checked.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
+	if (checked.toDateString() === new Date(now).toDateString()) return `${t} today`;
+	return `${checked.toLocaleDateString(LOC, { day: 'numeric', month: 'short' })}, ${t}`;
+}

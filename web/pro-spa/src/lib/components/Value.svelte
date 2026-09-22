@@ -221,7 +221,7 @@
 				</thead>
 				<tbody>
 					{#each visible as p, i (p.id)}
-						<tr>
+						<tr data-player-id={p.id}>
 							<td class="muted">{i + 1}</td>
 							<td
 								>{p.web_name} <span class="muted">({p.team_short})</span>{#if p.owned}
@@ -258,7 +258,7 @@
 			Fixture swing measures calendar difficulty variation over the horizon, not point variance.
 			xP/90 is the rate over a full 90 minutes and Mins is how much of a gameweek the model
 			expects the player to play. They are shown separately on purpose: xP already multiplies them
-			together, which hides the assumption most likely to break.
+			together, so a shaky minutes guess can hide inside a tidy total.
 		</p>
 	{/if}
 

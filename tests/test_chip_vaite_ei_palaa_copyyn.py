@@ -47,6 +47,8 @@ KIELLETYT = (
 #: alkaa puhua chipeista, se on lisattava tanne TAI portti ei nae sita.
 PINNAT = (
     FP / "web" / "pro-spa" / "src" / "lib" / "components" / "SeasonRace.svelte",
+    # 22.9: This week -sivun paatoskortin Chip-valilehti puhuu chipeista.
+    FP / "web" / "pro-spa" / "src" / "lib" / "components" / "DecisionCard.svelte",
     FP / "faq.html",
     FP / "llms.txt",
     FP / "index.html",
@@ -169,9 +171,21 @@ def test_es_chip_lause_on_mittausmuodossa():
 
 def test_chip_nayttonimet_ovat_kanonissa():
     """Kanoni on isolla kirjaimella ja kaantamattomana kaikissa kielissa.
-    Jos SPA:n ja mobiilin kartat erkanevat, sama chip saa kaksi nimea."""
-    svelte = (FP / "web" / "pro-spa" / "src" / "lib" / "components"
-              / "SeasonRace.svelte")
+    Jos SPA:n ja mobiilin kartat erkanevat, sama chip saa kaksi nimea.
+
+    22.9.2026: SPA:n kartta siirtyi SeasonRacesta jaettuun
+    `fantasyTools.ts`:aan (`CHIP_NAMES`), koska This week -sivun chip-rivi
+    tarvitsee samat nimet. SeasonRace lukee sen sielta; portti tarkistaa
+    molemmat, jotta paikallinen kopio ei voi palata hiljaa."""
+    spa = FP / "web" / "pro-spa" / "src" / "lib"
+    svelte = spa / "fantasyTools.ts"
+    race = spa / "components" / "SeasonRace.svelte"
+    if race.exists():
+        race_txt = race.read_text(encoding="utf-8")
+        assert "import { CHIP_NAMES } from '$lib/fantasyTools'" in race_txt, (
+            "SeasonRace ei lue jaettua CHIP_NAMES-karttaa")
+        assert "const CHIP_NAMES" not in race_txt, (
+            "SeasonRacessa on taas oma chip-karttansa (kaksi lukijaa)")
     tsx = APP / "components" / "SeasonRace.tsx"
     for p in (svelte, tsx):
         if not p.exists():

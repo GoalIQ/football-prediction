@@ -14,6 +14,7 @@
 	 * (ei xG-feediä SPL:lle), minuutit kausiaggregaateista. Ei väitetä
 	 * enempää kuin data kantaa — [[honest-data-labels]].
 	 */
+	import AppShell from '$lib/components/AppShell.svelte';
 	import {
 		fetchSplFantasy,
 		fetchSplXp,
@@ -462,6 +463,11 @@
 	{@html '<style>#boot{display:none}</style>'}
 </svelte:head>
 
+<!-- 22.9 (web-audit T2, muisti appshell-korjaus-ei-kata-erillisreitteja):
+     sivu renderoityy AppShellin sisalla, joten ylapalkki, pelivalitsin ja
+     puhelimen alapalkki ovat samat kuin FPL-reiteilla. Ennen 22.9 taman
+     reitin ylapalkki puuttui kokonaan. -->
+<AppShell>
 <div class="shell">
 	<header>
 		<p class="crumb">
@@ -989,6 +995,7 @@
 		<p class="muted">{DISCLAIMER} · <a href="https://goaliq.app/privacy.html">Privacy</a></p>
 	</footer>
 </div>
+</AppShell>
 
 <style>
 	.shell {

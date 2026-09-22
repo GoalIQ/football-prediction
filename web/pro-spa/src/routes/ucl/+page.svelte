@@ -12,6 +12,7 @@
 	 * merkitaan nakyvasti, eika sivulla ole yhtaan suorituskykyvaitetta jota
 	 * lukija ei voisi tarkistaa.
 	 */
+	import AppShell from '$lib/components/AppShell.svelte';
 	import { fetchUclXp, type UclXpPlayer, type UclXpResponse } from '$lib/api';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { capture } from '$lib/analytics';
@@ -104,6 +105,11 @@
 	<meta name="description" content={UCL_HEAD.description} />
 </svelte:head>
 
+<!-- 22.9 (web-audit T2, muisti appshell-korjaus-ei-kata-erillisreitteja):
+     sivu renderoityy AppShellin sisalla, joten ylapalkki, pelivalitsin ja
+     puhelimen alapalkki ovat samat kuin FPL-reiteilla. Ennen 22.9 taman
+     reitin ylapalkki puuttui kokonaan. -->
+<AppShell>
 <div class="shell">
 	<p class="crumb muted">
 		<a href="https://goaliq.app" data-cta="pro-home">goaliq.app</a> / <a href="/">GoalIQ tools</a> / UCL
@@ -272,6 +278,7 @@
 		</section>
 	{/if}
 </div>
+</AppShell>
 
 <style>
 	.shell {

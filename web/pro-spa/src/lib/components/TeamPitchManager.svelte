@@ -15,6 +15,8 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import { canShareToApps, sharePitchCard, type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { luckVerdict, squadLuck, LUCK_MARK, settledGwReadable } from '$lib/luck';
+	import { modelCaptainFor, pitchLineup, pitchTitle, type ModelCaptain } from '$lib/pitchLineup';
+	import type { XpHorizon } from '$lib/xpHorizon';
 	import TeamKit from './TeamKit.svelte';
 
 	let {
@@ -27,6 +29,8 @@
 		onCaptaincyChange,
 		lastFinished = null,
 		picksGw = null,
+		horizon = null,
+		modelCaptain = null,
 		belowPitch
 	}: {
 		players: RatedPlayer[];
@@ -47,6 +51,13 @@
 		/** Milta kierrokselta ladatut picksit ovat. Pelaajakohtaiset luvut vain
 		 *  kun tama on sama kuin `lastFinished.gw`. */
 		picksGw?: number | null;
+		/** 22.9 (M2): rate-teamin `xpHorizon(meta)`, sama kuin otsakerivilla.
+		 *  Mallin XI:n otsikko nimeaa ikkunan jolla XI valittiin. */
+		horizon?: XpHorizon | null;
+		/** 22.9: mallin kapteenikutsu (`modelCaptainOf(data)`, rate-teamin
+		 *  `captain.pick` + `meta.captain_gw`). Mallin XI:n C tulee tasta, EI
+		 *  `players[].is_captain`ista (= kayttajan oma kapteeni). */
+		modelCaptain?: ModelCaptain | null;
 		/* 11.9 DRAFT-COMPARE-OTSIKKORIVI: `bank` ja `freeTransfers` poistuivat.
 		   ITB ja FT ovat nyt SquadHeaderRow'lla kentan YLLA, samassa muodossa
 		   kaikilla kolmella pinnalla (slot A, slot B, vertailu). Ne olivat
@@ -168,6 +179,15 @@
 			: gwsAvailable
 	);
 	const resultMode = $derived(selGw != null && luckGw != null && selGw === luckGw);
+	/** 22.9 (M1): onko kentalla RATKENNUT kierros. Sama lukija ja samat
+	 *  argumentit kuin toteumakartalla (`luckById`) ja jakokortilla
+	 *  (`luckCardSpec`): kun kentan luvut ovat ratkenneen kierroksen lukuja,
+	 *  myos kokoonpanon on oltava sen kierroksen kokoonpano. Ilmaispinnalla
+	 *  tama on tosi koko suunnitteluikkunan (picksit ovat ratkenneelta
+	 *  kierrokselta deadlineen asti), Premiumissa kun tulos-chip on valittu. */
+	const settledView = $derived(
+		lastFinished != null && settledGwReadable(premium ? selGw : null, luckGw, luckSameSquad)
+	);
 	$effect(() => {
 		if (gwChips.length === 0) {
 			selGw = null;
@@ -221,7 +241,10 @@
 	function oppOf(p: RatedPlayer): string | null {
 		// 3.9: tulosmoodissa (paattynyt kierros) projektiorivia ei ole, ja
 		// "No game" olisi valhe pelatusta ottelusta. Rivi jaa pois.
-		if (resultMode) return null;
+		// 22.9: myos ilmaispinnan tulostila (`settledView`). Kentan otsikko
+		// sanoo "GW5 result", joten GW6:n vastustaja solussa luettaisiin
+		// GW5:n otteluksi.
+		if (resultMode || settledView) return null;
 		if (selGw == null || !p.gameweeks || p.gameweeks.length === 0) return null;
 		const g = p.gameweeks.find((x) => x.gw === selGw);
 		if (!g || g.opponents.length === 0) return 'No game';
@@ -236,10 +259,32 @@
 	});
 
 	const byId = $derived(new Map(players.map((p) => [p.id, p])));
-	const xi = $derived(
-		xiIds.map((id) => byId.get(id)).filter((p): p is RatedPlayer => !!p)
+	/* 🔴 22.9 (M1 + M2, pariteetti mobiilin lib/pitchLineup.ts:n kanssa):
+	   kokoonpano tulee YHDESTA lukijasta. Ennen kentta asetteli GW5:n pisteet
+	   `xiIds`:n mukaan, jonka alkutila on `in_xi` eli MALLIN XI: entry 116920
+	   GW5 Gonzalo (aloitti, 2 p) penkilla, Thomas (penkilla, 9 p) avauksessa,
+	   Haaland (C) 6 eika 12, summa 41 eika FPL:n 40.
+	     tulostila      -> FPL:n picksit (`last_finished.players`, multiplier)
+	     Premium muuten -> what-if (`xiIds`, muokattava, alkutila mallin XI)
+	     ilmainen muuten -> mallin XI (`in_xi`), otsikko sanoo sen, ja C on
+	                        mallin kapteenikutsu kentan kierrokselle (ei
+	                        `is_captain`, joka on kayttajan oma kapteeni) */
+	const lineup = $derived(
+		pitchLineup(
+			players,
+			settledView ? (lastFinished?.players ?? null) : null,
+			premium ? { xiIds, captainId, viceId } : null,
+			modelCaptainFor(modelCaptain, selGw)
+		)
 	);
-	const bench = $derived(players.filter((p) => !xiIds.includes(p.id)));
+	/** Muokkaus vain Premiumin what-ifissa. Tulostilassa C/V ja vaihdot
+	 *  muuttaisivat nakymatonta what-if-tilaa, joten ne piilotetaan. */
+	const canEdit = $derived(premium && lineup.source === 'plan');
+	const pitchHeading = $derived(
+		pitchTitle(lineup.source, { horizon, settledGw: luckGw, gw: selGw })
+	);
+	const xi = $derived(lineup.xi);
+	const bench = $derived(lineup.bench);
 	const rows = $derived(
 		POS_ORDER.map((pos) => xi.filter((p) => p.pos === pos)).filter((r) => r.length > 0)
 	);
@@ -248,12 +293,8 @@
 		for (const p of xi) c[p.pos] = (c[p.pos] ?? 0) + 1;
 		return c;
 	});
-	const effCaptain = $derived(
-		captainId != null && xiIds.includes(captainId) ? captainId : null
-	);
-	const effVice = $derived(
-		viceId != null && xiIds.includes(viceId) && viceId !== effCaptain ? viceId : null
-	);
+	const effCaptain = $derived(lineup.captainId);
+	const effVice = $derived(lineup.viceId);
 	const gwXp = $derived(
 		xi.reduce((s, p) => s + xpOf(p), 0) +
 			(effCaptain != null ? xpOf(byId.get(effCaptain)!) : 0)
@@ -312,7 +353,13 @@
 	function settledOf(p: RatedPlayer): { actual: number; xp: number; diff: number } | null {
 		const r = luckById.get(p.id);
 		if (!r || typeof r.points !== 'number' || typeof r.xp !== 'number') return null;
-		return { actual: r.points, xp: r.xp, diff: r.points - r.xp };
+		/* 22.9 (M1): solun luku KERTOIMELLA kuten FPL:n oma kentta (Haaland C
+		   12 / 13.0, ei 6 / 6.5). Silloin XI:n solut summautuvat
+		   `last_finished.points`iin ja freezet yhteenvedon lukuun. Tuomio
+		   (`markOf`) luetaan yha kertoimettomista: kerroin kuuluu summaan, ei
+		   tuomioon ($lib/luck). */
+		const f = lineup.factor(p.id);
+		return { actual: r.points * f, xp: r.xp * f, diff: (r.points - r.xp) * f };
 	}
 	function markOf(p: RatedPlayer): string | null {
 		const r = luckById.get(p.id);
@@ -379,7 +426,7 @@
 	}
 
 	function onPlayerClick(id: number) {
-		if (!premium) return;
+		if (!canEdit) return;
 		if (selectedId == null) {
 			selectedId = id;
 			return;
@@ -746,28 +793,37 @@
 			</div>
 		{/if}
 		{#if premium}
-			<div class="lineup-tools" role="group" aria-label="Formation">
-				<div class="chips">
-					{#each FORMATIONS as f (f.join('-'))}
-						<button
-							type="button"
-							class="chip"
-							class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
-							onclick={() => applyFormation(f)}
-						>
-							{f.join('-')}
-						</button>
-					{/each}
-					<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
-				</div>
+			<div class="lineup-tools" role="group" aria-label={canEdit ? 'Formation' : 'Lineup'}>
+				{#if canEdit}
+					<div class="chips">
+						{#each FORMATIONS as f (f.join('-'))}
+							<button
+								type="button"
+								class="chip"
+								class:on={counts.DEF === f[0] && counts.MID === f[1] && counts.FWD === f[2]}
+								onclick={() => applyFormation(f)}
+							>
+								{f.join('-')}
+							</button>
+						{/each}
+						<button type="button" class="chip" onclick={applyOptimal}>Optimal lineup</button>
+					</div>
+				{:else if pitchHeading}
+					<!-- 22.9 (M1): tulostilassa muodostelmat muuttaisivat nakymatonta
+					     what-if-tilaa. Niiden paikalla otsikko kertoo etta kentta on
+					     FPL:n oma kokoonpano. -->
+					<p class="label xi-title" style="margin:0">{pitchHeading}</p>
+				{/if}
 				<!-- #9a: pitch-kortti (XI + penkki) — sama kortti draftille ja ID-ratelle -->
 				<button type="button" class="chip share" onclick={shareImage} disabled={sharing}>
 					{sharing ? 'Rendering…' : shareButtonLabel()}
 				</button>
 			</div>
-		{:else}
+		{:else if pitchHeading}
+			<!-- 22.9 (M1 + M2): otsikko kokoonpanon LAHTEESTA. "Starting XI" vain
+			     kun kentalla on FPL:n picksit; mallin XI sanoo olevansa mallin. -->
 			<div class="xi-head">
-				<p class="label" style="margin:0">Starting XI</p>
+				<p class="label xi-title" style="margin:0">{pitchHeading}</p>
 			</div>
 		{/if}
 		<!-- 22.8 (Villen palaute "pitäiskö pitch olla isompi"): penkki EI ole
@@ -801,8 +857,8 @@
 						<button
 							type="button"
 							class="player"
-							class:selected={premium && selectedId === p.id}
-							disabled={!premium}
+							class:selected={canEdit && selectedId === p.id}
+							disabled={!canEdit}
 							onclick={() => onPlayerClick(p.id)}
 						>
 							<span class="kitwrap">
@@ -882,8 +938,8 @@
 					<button
 						type="button"
 						class="player compact"
-						class:selected={premium && selectedId === p.id}
-						disabled={!premium}
+						class:selected={canEdit && selectedId === p.id}
+						disabled={!canEdit}
 						onclick={() => onPlayerClick(p.id)}
 					>
 						<span class="kitwrap">
@@ -892,7 +948,17 @@
 						<span class="plabel">
 							<span class="pname">{p.web_name}</span>
 							<span class="pnums">
-								<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								<!-- 22.9: tulostilassa penkin ensimmainen luku on ratkenneen
+								     kierroksen freeze (Thomas 4.1 | 9 | +4.9), ei seuraavan
+								     kierroksen xP (5.0): otsikko sanoo "GW5 result". Pelaaja
+								     jolla ei ole lukuja saa n/a:n, ei nollaa. -->
+								{#if settledView}
+									<span class="pxp" title="Projection frozen before the deadline"
+										>{settledOf(p)?.xp.toFixed(1) ?? 'n/a'}</span
+									>
+								{:else}
+									<span class="pxp">{xpOf(p).toFixed(1)}</span>
+								{/if}
 								<!-- 🔴 LIPPU MYOS PENKILLE. Se renderoityi VAIN XI:ssa, ja
 								     Villen kolme liputettua pelaajaa olivat kaikki
 								     penkilla — han ei nahnyt yhtaan lippua vaikka
@@ -1109,6 +1175,9 @@
 		{/if}
 
 		{#if premium}
+			<!-- 22.9 (M1): valintavihje, C/V-napit ja suunnitteluohje vain
+			     muokattavassa what-ifissa, ei tulostilassa. -->
+			{#if canEdit}
 			<p class="muted hint">
 				{selectedId == null
 					? 'Click a player to select them.'
@@ -1140,6 +1209,7 @@
 				Plan your lineup here, then apply it in the official FPL app. GoalIQ never changes your
 				real team.
 			</p>
+			{/if}
 		{:else}
 			<button type="button" class="lockrow" onclick={unlock}>
 				<span class="lock-tag" aria-hidden="true">Premium</span>
@@ -1296,6 +1366,15 @@
 		font-size: var(--step--1);
 	}
 	/* #9a: Starting XI -otsikko + share-nappi samalle riville */
+	/* 22.9: otsikko on nyt lause ("Model's XI from your 15, picked on
+	   GW6-GW11 xP · GW6"). Versaalilla yksikko luki "XP" ja lause venyi. */
+	.xi-title {
+		text-transform: none;
+		letter-spacing: 0;
+		/* 390 px:ssa mallin otsikko on kaksi rivia; ilman tasausta " · GW6"
+		   jai yksin toiselle riville. */
+		text-wrap: balance;
+	}
 	.xi-head {
 		display: flex;
 		align-items: center;

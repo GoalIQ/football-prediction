@@ -225,8 +225,9 @@ describe('negatiivinen kontrolli: portti osuu siihen mita sen pitaa hylata', () 
  *  `xp_window`in — sama lahde kuin luku, ks. CLAIM_EXCEPTIONS.) */
 const ROW_SOURCE_RE = /\b(?:gameweeks|gwCols)\b/;
 
-/** Lukijan kutsu. */
-const READER_CALL_RE = /\b(?:xpHorizon|xpTotalClaim)\s*\(/;
+/** Lukijan kutsu. 22.9: `declaredRange(h)` on lukijan oma valitsin
+ *  (otsakerivin sulkeiden ikkuna), ei uusi lahde. */
+const READER_CALL_RE = /\b(?:xpHorizon|xpTotalClaim|declaredRange)\s*\(/;
 
 /** Lukijan kentat jotka KUVAAVAT SUMMAN ikkunaa. `rows` ei ole listalla:
  *  se on sarakkeiden maara (`horizon_gw`), eli tasan se luku joka oli vaarin
@@ -369,6 +370,14 @@ const PROP_READERS: Record<string, { name: string; typeRe: RegExp; reason: strin
 			reason:
 				'otsikkorivi saa ikkunan valmiina RateTeamilta (REQUIRED_CALLERS); ennen 17.9 propi oli horizonGw: number ja komponentti laski valin itse gw + horizonGw - 1:sta'
 		}
+	],
+	'lib/components/TeamPitchManager.svelte': [
+		{
+			name: 'horizon',
+			typeRe: /horizon\?:\s*XpHorizon\b/,
+			reason:
+				'22.9: mallin XI:n otsikko "picked on GW6-GW11 xP" saa ikkunan RateTeamilta samasta xpHorizon(meta):sta kuin otsakerivi, ja lukee sen declaredRangella (pitchLineup.pitchTitle)'
+		}
 	]
 };
 
@@ -465,7 +474,7 @@ function surface(relPath: string, src: string): Surface {
 
 /** Korvaa lukijan kutsut (argumentit mukaan lukien) tunnisteella `__reader`. */
 function stripReaderCalls(expr: string): string {
-	const re = /\b(?:xpHorizon|xpTotalClaim)\s*\(/g;
+	const re = /\b(?:xpHorizon|xpTotalClaim|declaredRange)\s*\(/g;
 	let out = '';
 	let i = 0;
 	for (;;) {

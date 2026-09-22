@@ -962,6 +962,7 @@
 				{/if}
 				{#each g.players as p (p.id)}
 					<tr
+						data-player-id={p.id}
 						class:selected={selected?.id === p.id}
 						onclick={() => (selectedId = p.id)}
 					>

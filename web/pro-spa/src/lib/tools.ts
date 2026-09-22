@@ -63,22 +63,40 @@ export type Tool = {
 	anchor: string;
 };
 
+/**
+ * 22.9.2026 (UX-uudistus A3, Villen GO): neljä ryhmaa, SAMAT nimet ja SAMA
+ * jarjestys kuin mobiiliapin alapalkissa (goaliq-app `feat/ux-mobiili-ia`).
+ * Mobiilin viides tabi "You" (tili, Premium) on webissa ylapalkin
+ * Sign in / Account -napeissa, ei ryhmana.
+ *
+ * 🔴 MITATTU 22.9 (web-audit T2): 390 px:lla navin viidesta kohdasta
+ * "Players", "Price watch" ja "Matches" olivat ruudun ulkopuolella ja
+ * "My team" katkesi reunaan. Siksi puhelimessa navi on alapalkki
+ * (`BottomNav`), ja ryhmia on enintaan viisi (portti `ia.gate.test.ts`).
+ *
+ * Purettu:
+ *   - 'tools' (11.9, PRO-SPA-PALETTI): 17/23 tyokalua alle 9 henkilon
+ *     kaytossa; chip timing, transfer chains ja league ovat oman joukkueen
+ *     tyokaluja (team), edge mode pelaajavalinnan (players).
+ *   - 'prices' (22.9, A3): hintamuutokset ovat FPL:n oma projektio eivatka
+ *     tuotteen ydin (brief). Price watch on nyt Players-listan esiasetus
+ *     "Price change" (`PLAYER_PRESETS`), reitti /players/price-watch.
+ * Vanhat polut ohjautuvat uuteen paikkaan: `LEGACY_PATHS` + `resolvePath`.
+ */
 export const GROUPS: Group[] = [
 	{ id: 'week', label: 'This week', title: 'This week', fpl: true },
 	{ id: 'team', label: 'My team', title: 'My team', fpl: true },
-	{ id: 'players', label: 'Players', title: 'Players', fpl: true },
-	/* 11.9 (PRO-SPA-PALETTI): 'tools'-kaatoluokka purettiin. Mitattu 30 vrk:
-	   17/23 tyokalua alle 9 henkilon kaytossa ja 194/207 kavijaa ei avannut
-	   toista reittia. Chip timing, transfer chains ja league ovat oman
-	   joukkueen tyokaluja (team), edge mode pelaajavalinnan (players).
-	   Vanhat /tools/<slug>-linkit ohjataan uuteen paikkaan reitissa. */
-	/* 5.9 (auditointi C1): label oli "Prices". Se on FPL:n PELAAJIEN
-	   hintamuutosvahti, mutta kavija joka etsii "paljonko tama maksaa"
-	   klikkaa tasan sita — ja paatyy vaaraan nakymaan. Reitti-id `prices`
-	   sailyy (vanhat linkit ja jaetut URLit eivat saa rikkoutua), vain
-	   nakyva nimi tarkentuu. Tilauksen hinta on nyt omalla reitillaan
-	   /pricing, ks. routes/pricing. */
-	{ id: 'prices', label: 'Price watch', title: 'Price watch', fpl: true },
+	{
+		id: 'players',
+		label: 'Players',
+		title: 'Players',
+		fpl: true,
+		// 22.9 (A3 2.3): /players on nyt lista esiasetuksineen eika yksi
+		// tyokalu, joten paatyokalun kysymys ("Who should wear the armband")
+		// kuvaisi vain yhden viidesta. Julkaisutarkistajalle copy-listassa.
+		description:
+			'Find any player and sort by value, differentials or price change, plus clean sheet chances by team. Captain and xP sorting are part of GoalIQ Premium.'
+	},
 	{
 		id: 'matches',
 		label: 'Matches',
@@ -150,6 +168,9 @@ export const TOOLS: Tool[] = [
 		title: 'Captain ranker',
 		question: 'Who should wear the armband this gameweek?',
 		tier: 'premium',
+		// 22.9 (A3 2.3): /players avaa listan Captain-esiasetuksella, sama
+		// ensimmainen lajittelu kuin mobiilin Players-tabissa.
+		primary: true,
 		anchor: 'pc-captain'
 	},
 	{
@@ -266,16 +287,28 @@ export const TOOLS: Tool[] = [
 		tier: 'free',
 		anchor: 'tl-league'
 	},
-	// --- Prices ------------------------------------------------------------
+	// 22.9 (A3): entinen Prices-ryhma. Players-listan esiasetus "Price
+	// change"; vanha /prices ja /prices/price-watch ohjautuvat tanne.
 	{
 		slug: 'price-watch',
-		group: 'prices',
+		group: 'players',
 		title: 'Price watch',
 		question: 'Which of my players are about to rise or fall?',
 		tier: 'free',
 		anchor: 'pr-watch'
 	},
 	// --- Matches -----------------------------------------------------------
+	// 22.9 (A3 2.4): Matches avautuu ottelulistaan (Fixtures), ei
+	// korttihakemistoon; "pick any two teams" -ennuste pysyy vieressa.
+	{
+		slug: 'fixtures',
+		group: 'matches',
+		title: 'Fixtures',
+		question: "What's coming up, and what does the model make of it?",
+		tier: 'free',
+		primary: true,
+		anchor: 'mt-fixtures'
+	},
 	{
 		slug: 'predict',
 		group: 'matches',
@@ -283,14 +316,6 @@ export const TOOLS: Tool[] = [
 		question: 'What does the model say about a fixture I choose?',
 		tier: 'free',
 		anchor: 'mt-predict'
-	},
-	{
-		slug: 'fixtures',
-		group: 'matches',
-		title: 'Fixtures',
-		question: "What's coming up, and what does the model make of it?",
-		tier: 'free',
-		anchor: 'mt-fixtures'
 	},
 	{
 		slug: 'table',
@@ -307,9 +332,10 @@ export const TOOLS: Tool[] = [
  *
  * 🔴 Naista 17/19 osoitti aiemmin RYHMAAN eika tyokaluun, eli vanha linkki
  * pudotti kayttajan pitkan pinon ylalaitaan ilman etta pyydetty tyokalu oli
- * nakyvissa. Kaksi osoittaa yha ryhmaan, ja molemmilla on syy:
+ * nakyvissa. Yksi osoittaa yha ryhmaan, ja silla on syy:
  *   - `myteam` tarkoitti koko My team -nakymaa, ei yhta tyokalua
- *   - `pricewatch` on ryhmansa ainoa tyokalu, joten /prices on sama asia
+ * (`pricewatch` osoitti /prices-ryhmaan kunnes ryhma purettiin 22.9; nyt se
+ * osoittaa suoraan tyokaluun.)
  * `tests/test_spa_tool_registry.py` kayttaa tata poikkeuslistana: uusi
  * ryhmaan osoittava ohjaus kaataa testin.
  */
@@ -325,7 +351,7 @@ export const LEGACY_HASH_TO_PATH: Record<string, string> = {
 	differentials: '/players/differentials',
 	replacements: '/players/replacements',
 	compare: '/players/compare',
-	pricewatch: '/prices',
+	pricewatch: '/players/price-watch',
 	league: '/team/league',
 	chips: '/team/chip-timing',
 	chains: '/team/transfer-chains',
@@ -337,9 +363,190 @@ export const LEGACY_HASH_TO_PATH: Record<string, string> = {
 
 /** Ryhmaan (eika tyokaluun) osoittavat vanhat hashit + syy. */
 export const LEGACY_GROUP_TARGETS: Record<string, string> = {
-	myteam: 'tarkoitti koko My team -nakymaa, ei yhta tyokalua',
-	pricewatch: 'Price watch on ryhmansa ainoa tyokalu, joten /prices on sama asia'
+	myteam: 'tarkoitti koko My team -nakymaa, ei yhta tyokalua'
 };
+
+/**
+ * VANHAT POLUT -> UUSI PAIKKA (22.9.2026, A3). Yksi kartta, yksi lukija
+ * (`resolvePath`), jota molemmat reittisivut kysyvat ennen renderointia.
+ *
+ * Tassa ovat vain polut joiden kohde EI ole johdettavissa rekisterista:
+ * purettujen ryhmien juuret ja tyokalut jotka vaihtoivat ryhmaa. Muut
+ * vanhat tyokalupolut loytyvat slugilla (`findToolAnywhere`), joten yhtakaan
+ * tyokalua ei tarvitse muistaa lisata tahan kun se siirtyy.
+ *
+ * Portti `redirects.gate.test.ts` pitaa listaa JOKAISESTA polusta joka on
+ * ollut julkinen (ryhmat ja tyokalut ennen 22.9 + /tools ennen 11.9) ja
+ * kaatuu jos yksikin niista ei paady nykyiseen reittiin.
+ */
+export const LEGACY_PATHS: Record<string, string> = {
+	// Price watch -ryhma purettiin 22.9: sen ainoa tyokalu on nyt Players-
+	// listan "Price change" -esiasetus.
+	'/prices': '/players/price-watch',
+	// 11.9 purettu Tools-ryhma: kolme neljasta tyokalusta siirtyi My teamiin,
+	// joten ryhman juuri vie sinne.
+	'/tools': '/team'
+};
+
+/** Nykyinen polku annetulle polulle, tai null kun polkua ei tunneta.
+ *
+ *  - nykyinen reitti (ryhma tai tyokalu) -> sama polku
+ *  - purettu ryhma -> `LEGACY_PATHS`
+ *  - tyokalu vanhassa ryhmassa (/tools/chip-timing, /prices/price-watch)
+ *    -> tyokalun nykyinen polku slugilla
+ *  - tuntematon tyokalu tunnetussa ryhmassa -> ryhma (linkki /players/x
+ *    tarkoitti pelaajatyokaluja)
+ *  - kaikki muu -> null (reittisivu vie juureen)
+ *
+ *  Loppukauttaviiva ei muuta vastausta. Vain polku: kutsuja kuljettaa
+ *  query-parametrit (?entry=, ?src=) itse, jotta luovutus ei katkea. */
+export function resolvePath(pathname: string): string | null {
+	const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+	if (p === '' || p === '/') return '/';
+	if (LEGACY_PATHS[p]) return LEGACY_PATHS[p];
+	const parts = p.replace(/^\//, '').split('/');
+	if (parts.length > 2) return null;
+	const [g, slug] = parts;
+	if (slug === undefined) return groupById(g) ? `/${g}` : null;
+	const here = findTool(g, slug);
+	if (here) return toolPath(here);
+	const moved = findToolAnywhere(slug);
+	if (moved) return toolPath(moved);
+	if (LEGACY_PATHS[`/${g}`]) return LEGACY_PATHS[`/${g}`];
+	return groupById(g) ? `/${g}` : null;
+}
+
+/* ------------------------------------------------------------------------
+ * Ryhmien sisainen rakenne (22.9, A3 2.2 ja 2.3). Nama ovat navigaatiota,
+ * eivat uusia tyokaluja: jokainen kohta osoittaa rekisterin tyokaluun, ja
+ * portti (`ia.gate.test.ts`) kaataa jos kohta osoittaa tyokaluun jota ei
+ * ole tai jos ryhman tyokalu jaa ilman paikkaa.
+ * --------------------------------------------------------------------- */
+
+export type Section = {
+	id: string;
+	/** Valitsimen teksti. Sama kuin mobiilissa. */
+	label: string;
+	/** Tyokalu jonka valitsin avaa. */
+	lead: string;
+	/** Osion tyokalut valitsimen alla, jarjestyksessa. */
+	tools: string[];
+};
+
+/** My team: `( Squad | Transfers | Chips )`, enintaan kolme segmenttia
+ *  (A2 saanto 5). Fit checker on siirtotyokalu (A3: "Transfers-nakyman
+ *  must-have"), watchlist ja liiga kuuluvat oman rungon seurantaan. */
+export const TEAM_SECTIONS: Section[] = [
+	{ id: 'squad', label: 'Squad', lead: 'rate-my-team', tools: ['rate-my-team', 'watchlist', 'league'] },
+	{
+		id: 'transfers',
+		label: 'Transfers',
+		lead: 'transfer-planner',
+		tools: ['transfer-planner', 'transfer-chains', 'fit-checker']
+	},
+	{ id: 'chips', label: 'Chips', lead: 'chip-timing', tools: ['chip-timing'] }
+];
+
+/** Players: `( Players | Teams )`. Teams on clean sheet -ruudukko. */
+export const PLAYERS_VIEWS: Section[] = [
+	{
+		id: 'players',
+		label: 'Players',
+		lead: 'captain-ranker',
+		tools: [
+			'captain-ranker',
+			'player-xp',
+			'value',
+			'differentials',
+			'price-watch',
+			'player-card',
+			'fixture-swing',
+			'leaders',
+			'stats',
+			'replacements',
+			'compare',
+			'edge-mode'
+		]
+	},
+	{ id: 'teams', label: 'Teams', lead: 'clean-sheets', tools: ['clean-sheets'] }
+];
+
+export type Preset = {
+	slug: string;
+	/** Esiasetuksen nimi. `horizon` = nimen peraan xP-summan ikkuna
+	 *  xpHorizon-lukijasta ("xP 6 GWs"); ilman metaa pelkka "xP", koska
+	 *  lukua jota API ei antanut ei keksita. */
+	label: string;
+	horizon?: boolean;
+};
+
+/** Players-listan esiasetukset (A3 2.3: "presetit korvaavat 5 erillista
+ *  osiota"). Jokainen on tyokalun oma reitti, joten esiasetus on
+ *  linkitettavissa ja paluunappi toimii. */
+export const PLAYER_PRESETS: Preset[] = [
+	{ slug: 'captain-ranker', label: 'Captain' },
+	{ slug: 'player-xp', label: 'xP', horizon: true },
+	{ slug: 'value', label: 'Value' },
+	{ slug: 'differentials', label: 'Differentials' },
+	{ slug: 'price-watch', label: 'Price change' }
+];
+
+/** Matches: `( Fixtures | Predict | Table )`. */
+export const MATCHES_SECTIONS: Section[] = [
+	{ id: 'fixtures', label: 'Fixtures', lead: 'fixtures', tools: ['fixtures'] },
+	{ id: 'predict', label: 'Predict', lead: 'predict', tools: ['predict'] },
+	{ id: 'table', label: 'Table', lead: 'table', tools: ['table'] }
+];
+
+/** Ryhman valitsin (segmentit), tai null kun ryhmalla ei ole valitsinta. */
+export function sectionsFor(group: string): Section[] | null {
+	if (group === 'team') return TEAM_SECTIONS;
+	if (group === 'players') return PLAYERS_VIEWS;
+	if (group === 'matches') return MATCHES_SECTIONS;
+	return null;
+}
+
+/** Osio johon tyokalu kuuluu (valitsimen aktiivinen segmentti). Ilman
+ *  tyokalua ryhman ensimmainen osio, koska ryhmasivu avaa sen. */
+export function sectionOf(group: string, slug: string | null): Section | null {
+	const secs = sectionsFor(group);
+	if (!secs) return null;
+	if (!slug) return secs[0];
+	return secs.find((s) => s.tools.includes(slug)) ?? secs[0];
+}
+
+/* ------------------------------------------------------------------------
+ * Pelivalitsin (A3 1: "FPL ▾ -> FPL / UCL Fantasy / RSL Fantasy").
+ * UCL ja SPL ovat omia reittejaan (routes/ucl, routes/spl), eivat ryhmia.
+ * --------------------------------------------------------------------- */
+export type Game = {
+	id: 'fpl' | 'ucl' | 'spl';
+	label: string;
+	/** Puhelimen ylapalkin lyhyt nimi: 390 px:lla "UCL Fantasy" + tilinapit
+	 *  eivat mahdu samalle riville (mitattu, raportti w-spa-ia.md). */
+	short: string;
+	href: string;
+};
+
+export const GAMES: Game[] = [
+	{ id: 'fpl', label: 'FPL', short: 'FPL', href: '/' },
+	{ id: 'ucl', label: 'UCL Fantasy', short: 'UCL', href: '/ucl' },
+	{ id: 'spl', label: 'RSL Fantasy', short: 'RSL', href: '/spl' }
+];
+
+/** Mika peli on auki: reitin ensimmainen segmentti ratkaisee. */
+export function gameOf(pathname: string): Game {
+	const first = pathname.replace(/^\//, '').split('/')[0];
+	return GAMES.find((g) => g.id !== 'fpl' && g.id === first) ?? GAMES[0];
+}
+
+/** Aktiivinen ryhma polusta: juuri = This week, peli-reitit (/ucl, /spl)
+ *  = ei mitaan (alapalkki nayttaa FPL:n ryhmat ilman korostusta). */
+export function groupOfPath(pathname: string): string | null {
+	const first = pathname.replace(/^\//, '').split('/')[0];
+	if (first === '') return 'week';
+	return groupById(first) ? first : null;
+}
 
 export function groupById(id: string): Group | undefined {
 	return GROUPS.find((g) => g.id === id);

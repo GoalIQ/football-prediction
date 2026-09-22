@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { startPct } from '$lib/startPct';
 	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
@@ -13,11 +14,23 @@
 		fetchPlayerDefcon,
 		type CardPlayer,
 		type DefconPlayerResponse,
-		type XpMeta
+		type XpMeta,
+		type XpPoolPlayer
 	} from '$lib/api';
 	// Free-tier-rajaus (Villen havainto 25.7): xP-numerot ovat premium-arvoa
 	// kaikkialla muualla -> kortti nayttaa ne vain premium-pinnalta (ProTools).
-	let { premium = false }: { premium?: boolean } = $props();
+	let {
+		premium = false,
+		playerId = null,
+		embedded = false
+	}: {
+		premium?: boolean;
+		/** 22.9 (A3 2.3): kortti avataan pelaajarivista (PlayerSheet). Kun id
+		 *  on annettu, kortti valitsee pelaajan itse poolista. */
+		playerId?: number | null;
+		/** true = kortti on sheetissa: ei omaa otsikkoa, esittelya eika hakua. */
+		embedded?: boolean;
+	} = $props();
 	import { capture } from '$lib/analytics';
 	import PlayerSearch from './PlayerSearch.svelte';
 	import { noXpReason } from '$lib/availabilityFlag';
@@ -60,6 +73,7 @@
 				// tuloksia" juuri niistä pelaajista joiden tilanne kiinnostaa
 				// eniten. Projektiorivit ensin, jotta ne rankkaavat kärkeen.
 				pool = [...(d.players ?? []), ...(d.excluded ?? [])];
+				lightPool = d.pool ?? [];
 				meta = d.meta ?? null;
 			},
 			() => (poolError = true)
@@ -68,6 +82,45 @@
 
 	let query = $state('');
 	let player = $state<CardPlayer | null>(null);
+	/**
+	 * 22.9: kevyt valitsinrivi (`pool`, vain FPL:n bootstrap-kentat) niille
+	 * pelaajille joita ilmaisvastaus ei kanna. Kun kortti avataan rivista,
+	 * pelaaja voi olla listassa jonka palvelin antaa kaikille (value,
+	 * differentials, price watch) mutta ei maskatussa xP-vastauksessa.
+	 *
+	 * 🔴 Tallainen pelaaja EI ole "not in the projections": hanet on
+	 * projisoitu, arvo vain ei kuulu ilmaistasoon. `lightOnly` pitaa kortin
+	 * poissa `excluded`-haarasta, joka sanoisi juuri sen vaaran asian.
+	 */
+	let lightPool = $state<XpPoolPlayer[]>([]);
+	let lightOnly = $state(false);
+	let selectedFor: number | null = null;
+	$effect(() => {
+		const id = playerId;
+		const full = pool.find((p) => p.id === id);
+		const light = full ? undefined : lightPool.find((p) => p.id === id);
+		// Valinta ei saa lukea `player`-tilaa jota se kirjoittaa (muisti:
+		// svelte-effect-cycle-kills-bindings): `selectedFor` on tavallinen
+		// muuttuja, ja kirjoitus tehdaan untrackin sisalla.
+		if (id == null || (!full && !light) || selectedFor === id) return;
+		selectedFor = id;
+		untrack(() => {
+			if (full) return select(full);
+			if (!light) return;
+			select({
+				id: light.id,
+				web_name: light.web_name,
+				full_name: light.full_name,
+				team: light.team_short,
+				team_short: light.team_short,
+				pos: light.pos,
+				price: light.price,
+				status: light.status,
+				news: light.news
+			});
+			lightOnly = true;
+		});
+	});
 
 	// Sama normalisointi kuin FitChecker/XpTable-haussa (#145/#147-pariteetti).
 	function norm(s: string): string {
@@ -113,6 +166,7 @@
 
 	function select(p: CardPlayer) {
 		player = p;
+		lightOnly = false;
 		query = '';
 		// Ei PII:tä: pelaaja-ID/positio/status ovat julkista FPL-dataa.
 		capture('player_card_viewed', { player_id: p.id, pos: p.pos, status: p.status ?? 'a' });
@@ -212,7 +266,9 @@
 			typeof player.xp_horizon_total === 'number' &&
 			typeof player.xp_per_gw === 'number'
 	);
-	const excluded = $derived(!!player && (player.in_projection === false || !hasXp));
+	const excluded = $derived(
+		!!player && !lightOnly && (player.in_projection === false || !hasXp)
+	);
 	/* 16.9: syy tulee jaetusta lukijasta (sama kuin hakurivin merkki).
 	   Aiempi versio sanoi `below_min_xp`:sta "the model expects too few
 	   minutes to project points" — mutta kynnys on xP-SUMMA, ei minuutit
@@ -555,17 +611,23 @@
 	}
 </script>
 
+{#if !embedded}
 <h2>Player card</h2>
 <p class="muted">
 	Free · Look up any covered player: the official FPL availability news side by side with
 	the GoalIQ model's view on starting and projected points. Official data comes straight
 	from the FPL API and refreshes with the daily projection build.
 </p>
+{/if}
 
 {#if poolError}
 	<p class="banner error">Could not load the player pool right now. Please try again shortly.</p>
 {:else}
-	<PlayerSearch id="pc-search" label="Find a player" bind:query items={matches} onSelect={select} />
+	{#if !embedded}
+		<PlayerSearch id="pc-search" label="Find a player" bind:query items={matches} onSelect={select} />
+	{:else if !player}
+		<p class="muted">Loading player…</p>
+	{/if}
 
 	{#if player}
 		<article class="pc card">
@@ -675,7 +737,12 @@
 
 				<section class="pc-block model">
 					<h4>GoalIQ model view <span class="src">estimate, not team news</span></h4>
-					{#if excluded}
+					{#if lightOnly}
+						<p class="muted">
+							The model's full view on this player, including chance of starting, is part of
+							GoalIQ Premium.
+						</p>
+					{:else if excluded}
 						<p class="excluded-note">
 							Not in the projections right now{#if exclusionReason}:
 								{exclusionReason}{/if}.
@@ -790,7 +857,7 @@
 							{/if}
 						{:else}
 							<p class="muted">
-								Projected points for this player are part of GoalIQ Premium. The start
+								The full projection for this player is part of GoalIQ Premium. The start
 								chance and official status here are free.
 							</p>
 						{/if}

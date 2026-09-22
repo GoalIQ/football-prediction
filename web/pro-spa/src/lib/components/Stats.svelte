@@ -338,7 +338,7 @@
 			</thead>
 			<tbody>
 				{#each visible as p, i (p.id)}
-					<tr class:open={expanded === p.id}>
+					<tr data-player-id={p.id} class:open={expanded === p.id}>
 						<td>{i + 1}</td>
 						<td>
 							<button
