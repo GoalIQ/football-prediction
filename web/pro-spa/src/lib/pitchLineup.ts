@@ -15,7 +15,9 @@
  *   'settled' = FPL:n omat picksit (`last_finished.players`). XI = multiplier
  *               > 0, penkki = 0, C/V = is_captain / is_vice_captain, solun
  *               luku kerrotaan kertoimella (kapteeni 2, TC 3, Bench Boost:
- *               kaikki 1). Otsikko "Starting XI · GW5 result".
+ *               kaikki 1). Otsikko "Your team · GW5 result" (EI "Starting XI":
+ *               FPL paivittaa multiplierin automaattivaihtojen jalkeen, ja
+ *               Bench Boostissa kentalla on 15; julkaisutarkistaja 22.9).
  *   'model'   = `in_xi` (ilmaispinta). Otsikko sanoo mita se on: "Model's XI
  *               from your 15, picked on GW6-GW11 xP · GW6". Ikkuna on SAMA
  *               merkkijono kuin otsakerivin "Next 6 GW (GW6-GW11)"
@@ -202,7 +204,7 @@ export function pitchTitle(
 	o: { horizon: XpHorizon | null | undefined; settledGw: number | null; gw: number | null }
 ): string | null {
 	if (source === 'settled') {
-		return o.settledGw != null ? `Starting XI · GW${o.settledGw} result` : 'Starting XI';
+		return o.settledGw != null ? `Your team · GW${o.settledGw} result` : 'Your team';
 	}
 	if (source === 'plan') return null;
 	const span = declaredRange(o.horizon);

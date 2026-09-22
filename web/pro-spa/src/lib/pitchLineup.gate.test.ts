@@ -271,7 +271,7 @@ describe('vaihe: ratkennut kierros + entry (tulostila)', () => {
 			expect(r.benchCells.reduce((s, c) => s + c.actual, 0)).toBe(PROD_LF.points_on_bench);
 			expect(r.lineup.captainId).toBe(411);
 			expect(r.lineup.viceId).toBe(426);
-			expect(r.title).toBe('Starting XI · GW5 result');
+			expect(r.title).toBe('Your team · GW5 result');
 			expect(r.canEdit).toBe(false);
 		});
 	}
@@ -457,8 +457,11 @@ describe('otsikko: lahde ja ikkuna (M2)', () => {
 			expect(m.startsWith("Model's XI from your 15")).toBe(true);
 			expect(m).not.toMatch(/Starting XI/);
 			const s = pitchTitle('settled', { horizon: h, settledGw: 5, gw })!;
-			expect(s.startsWith('Starting XI')).toBe(true);
+			expect(s.startsWith('Your team')).toBe(true);
 			expect(s).not.toMatch(/Model/);
+			// Tulostila EI ole "Starting XI": multiplier > 0 = automaattivaihtojen
+			// jalkeinen XI (FPL entry 11/12 GW5), BB:ssa 15 pelaajaa.
+			expect(s).not.toMatch(/Starting/);
 		}
 		expect(pitchTitle('plan', { horizon: h, settledGw: 5, gw: 6 })).toBeNull();
 	});
@@ -609,7 +612,7 @@ function pitchCallSiteProblems(raw: string): string[] {
 		p.push('otsikko ei tule pitchTitle(lineup.source, ...):sta');
 	if ((flat.match(/\{pitchHeading\}/g) ?? []).length < 2)
 		p.push('ilmais- ja Premium-tulostilan otsikko ei renderoi pitchHeadingia');
-	if (/>\s*Starting XI\s*</.test(code) || /Model's XI/.test(code))
+	if (/>\s*(Starting XI|Your team)\s*</.test(code) || /Model's XI/.test(code))
 		p.push('otsikkoliteraali markupissa: otsikon on tultava pitchTitlesta');
 
 	// 6. Tulostilassa ei muokkausta (C/V ja vaihdot muuttaisivat nakymatonta what-ifia).
@@ -774,7 +777,7 @@ const MUTATIONS: { name: string; from: string; to: string }[] = [
 		to: '(modelCaptain?.id ?? null)'
 	},
 	{
-		name: 'otsikko aina Starting XI',
+		name: 'otsikko aina tulostilan',
 		from: 'pitchTitle(lineup.source, { horizon, settledGw: luckGw, gw: selGw })',
 		to: "pitchTitle('settled', { horizon, settledGw: luckGw, gw: selGw })"
 	},
