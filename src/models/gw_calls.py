@@ -99,6 +99,54 @@ def _slim(p: dict) -> dict:
     }
 
 
+def gw_xp_at(p: dict | None, gw: int):
+    """Pelaajan GW-xP projektiorivin `gameweeks[]`:sta, tai None."""
+    for g in (p or {}).get("gameweeks") or []:
+        if int(g.get("gw", -1)) == int(gw):
+            return g.get("xp")
+    return None
+
+
+def frozen_squad_row(frozen: dict, pid) -> dict | None:
+    """Jaadytetyn rungon (XI + penkki) rivi pelaajalle, tai None."""
+    if pid is None:
+        return None
+    for p in (frozen.get("xi") or []) + (frozen.get("bench") or []):
+        if int(p["id"]) == int(pid):
+            return p
+    return None
+
+
+def model_captain_call(frozen: dict,
+                       players_by_id: dict | None = None) -> dict | None:
+    """Mallin rungon kapteenikutsu jaadytetysta rungosta. YKSI maaritelma.
+
+    22.9.2026 (julkaisutarkistaja, web-IA kierros 2): pro.goaliq.app:n
+    This week -kortti nimesi "The model's captain" rate-teamin kautta
+    entryn 116920 VANHOISTA pickeista, kun taas goaliq.app/fpl nimesi
+    saman kierroksen "Model squad captain" -rivin tasta freezesta. Freezen
+    ja deadlinen valilla ne voivat olla eri pelaaja. Nyt molemmat kulkevat
+    taman funktion kautta: gw_calls-loki (`build_entry`) ja
+    `/api/fantasy/model-captain` (`fpl_model_captain`).
+
+    HENKILO tulee freezesta (immutable). ARVO tulee tuoreesta projektiosta
+    jos se on annettu, muuten freezen luvusta (ks. `build_entry`).
+    """
+    meta = frozen.get("meta") or {}
+    gw = int(meta["gw"])
+    cap = frozen_squad_row(frozen, frozen.get("captain"))
+    if cap is None:
+        return None
+    fresh = gw_xp_at((players_by_id or {}).get(int(cap["id"])), gw)
+    return {
+        "call": "model_captain", **_slim(cap),
+        "metric": "gw_xp",
+        "value": fresh if fresh is not None else cap.get("xp"),
+        "frozen_value": cap.get("xp"),
+        "criterion": "captain return, points doubled",
+    }
+
+
 def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
                 now: _dt.datetime, players_by_id: dict | None = None) -> dict:
     """Yhden GW:n lokirivi freezesta + standouts-valinnoista.
@@ -121,26 +169,17 @@ def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
     calls: list[dict] = []
 
     def _gw_xp(p: dict):
-        for g in p.get("gameweeks") or []:
-            if int(g.get("gw", -1)) == gw:
-                return g.get("xp")
-        return None
+        return gw_xp_at(p, gw)
 
-    cap = (squad.get(int(frozen["captain"]))
-           if frozen.get("captain") is not None else None)
-    if cap is not None:
-        # Kapteenin HENKILO tulee freezesta (immutable, Ville syottaa rivin
-        # entryyn T-24 h). ARVO tulee tuoreesta projektiosta jos se on
-        # annettu: snapshot kirjaa sen mita malli sanoo kirjaushetkella, ei
-        # sita mita se sanoi vuorokausi aiemmin.
-        fresh = _gw_xp((players_by_id or {}).get(int(cap["id"])) or {})
-        calls.append({
-            "call": "model_captain", **_slim(cap),
-            "metric": "gw_xp",
-            "value": fresh if fresh is not None else cap.get("xp"),
-            "frozen_value": cap.get("xp"),
-            "criterion": "captain return, points doubled",
-        })
+    # Kapteenin HENKILO tulee freezesta (immutable, Ville syottaa rivin
+    # entryyn T-24 h). ARVO tulee tuoreesta projektiosta jos se on
+    # annettu: snapshot kirjaa sen mita malli sanoo kirjaushetkella, ei
+    # sita mita se sanoi vuorokausi aiemmin. Maaritelma on yhdessa
+    # paikassa (`model_captain_call`), jota myos /api/fantasy/model-captain
+    # kayttaa: loki ja pro-sivun kortti eivat voi nimeta eri pelaajaa.
+    cap_call = model_captain_call(frozen, players_by_id)
+    if cap_call is not None:
+        calls.append(cap_call)
 
     # pick_standouts() avaimet: captain/ceiling/safest/gamble. Lokissa kortin
     # kapteeni on "captain_pick", jotta se ei sekoitu mallin rivin kapteeniin.

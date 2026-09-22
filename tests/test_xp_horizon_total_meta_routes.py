@@ -194,6 +194,10 @@ EXEMPT: dict[str, tuple[str | None, str]] = {
         "Gradattu kierros (fpl_gw_review); ei eteenpain katsovaa summaa."),
     "/api/fantasy/my-team-ledger": (None,
         "Pistekirjanpito (fpl_my_team_ledger); ei xP-poolia."),
+    "/api/fantasy/model-captain": (None,
+        "Yhden pelaajan GW-kohtainen gw_xp (mallin kapteeni, "
+        "fpl_model_captain); ei horisonttisummaa. response_model rajaa "
+        "kentat, joten summa-avain ei voi ilmestya vastaukseen."),
     "/api/fantasy/model-race": (None,
         "Gradatut mallipisteet lokista (fpl_model_race); ei xP-poolia."),
     "/api/fantasy/xg-leaders": (None,
