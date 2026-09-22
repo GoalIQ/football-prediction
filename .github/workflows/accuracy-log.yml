@@ -99,6 +99,13 @@ jobs:
           # Tyhjä input → skriptin oletus (250/ajo ≈ koko loki vuorokaudessa).
           # Kertaluontoinen täysi kierto: aja workflow_dispatch sweep_max=4000.
           ACC_REFRESH_SWEEP_MAX: ${{ github.event.inputs.sweep_max }}
+          # 22.9 PREDICT-API-MASK: live-/api/predict maskaa Premium-kentat
+          # (xG, top_scores) anonyymilta kun PREDICT_MASK on paalla. Putki
+          # logaa ne julkiseen track recordiin, joten se tunnistautuu
+          # admin-tokenilla (X-Admin-Token ohittaa maskin). Puuttuva secret
+          # ei kaada ajoa: maskattu vastaus ohitetaan VAROITUKSELLA eika
+          # 0.0-xG:ta kirjoiteta (scripts/accuracy_pipeline.py).
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         run: python -m scripts.accuracy_pipeline run
 
       # CF-eston vahti (8.8): ACC_PREDICT_API_BASE-kierto on ollut voimassa 1.8

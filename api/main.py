@@ -36,6 +36,7 @@ import pandas as pd
 import stripe
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 import config
@@ -53,6 +54,7 @@ from api.premium import (
     is_premium_request, mask_plan_payload, mask_rate_team_payload,
     mask_xp_payload, xp_pool_rows,
     premium_enforce_on, require_admin, is_admin_request,
+    predict_mask_applies, mask_prediction_payload, mask_parlay_payload,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -2482,11 +2484,29 @@ def _team_recent_form(df: pd.DataFrame, team: str, n: int = 8) -> list[dict]:
     return out
 
 
+def _masked_json(model: BaseModel, mask_fn) -> JSONResponse:
+    """PREDICT-API-MASK (22.9.2026): maskattu vastaus samalla skeemalla.
+
+    Maskattu runko VALIDOIDAAN samalla Pydantic-mallilla kuin maskaamaton
+    ennen lahetysta: jos maskifunktio joskus vaihtaisi kentan tyyppia (esim.
+    float -> None), vanha klientti kaatuisi `.toFixed()`-kutsuun, ja tama
+    kaatuu ensin palvelimella (500 = fail-closed, ei vuotoa eika hiljaista
+    rikkoa). `meta` ei ole mallissa (ks. api.premium: oletusarvoinen meta
+    olisi muuttanut jokaisen maskaamattoman vastauksen tavut), joten se
+    lisataan validoinnin jalkeen ja vastaus menee JSONResponsena.
+    """
+    body = mask_fn(model.model_dump(mode="json"))
+    meta = body.pop("meta")
+    type(model).model_validate(body)
+    body["meta"] = meta
+    return JSONResponse(content=body)
+
+
 # ---------------------------------------------------------------------------
 # ENDPOINT: ennuste
 # ---------------------------------------------------------------------------
 @app.post("/api/predict", response_model=PredictionResponse)
-def predict(req: PredictionRequest):
+def predict(req: PredictionRequest, request: Request):
     """Tee 1X2, O/U 2.5, BTTS -ennuste annetulle ottelulle."""
     dc = _saa_malli(
         tuple(req.leagues), tuple(req.seasons),
@@ -2544,7 +2564,7 @@ def predict(req: PredictionRequest):
         "away_team": _team_recent_form(df, req.away_team),
     }
 
-    return PredictionResponse(
+    resp = PredictionResponse(
         home_team=req.home_team,
         away_team=req.away_team,
         expected_goals_home=round(float(lam), 3),
@@ -2568,6 +2588,12 @@ def predict(req: PredictionRequest):
         # maajoukkueilla ei ole siirtoikkunaa eika seurakauden vaihtuvuutta.
         data_confidence=_data_confidence(req.home_team, req.away_team),
     )
+    # PREDICT-API-MASK (22.9.2026): PREDICT_MASK-lipun takana, oletus pois.
+    # Lippu pois -> tama haara ei tee mitaan ja vastaus on bittitarkasti
+    # ennallaan (tests/test_predict_mask.py). Perustelu api/premium.py:ssa.
+    if predict_mask_applies(request):
+        return _masked_json(resp, mask_prediction_payload)
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -2600,7 +2626,7 @@ def _wc_seasons_to_loader_format(seasons: list[str]) -> list[str]:
 
 @app.post("/api/predict-wc", response_model=PredictionResponse,
           description="1X2, over/under 2.5 and both teams to score for international sides, from a prebuilt Dixon-Coles model fitted on national team results.")
-def predict_wc(req: PredictWCRequest):
+def predict_wc(req: PredictWCRequest, request: Request):
     """
     Tee 1X2, O/U 2.5, BTTS -ennuste kansainvälisten joukkueiden välille.
 
@@ -2716,7 +2742,7 @@ def predict_wc(req: PredictWCRequest):
         "away_team": _team_recent_form(df, away_canon),
     }
 
-    return PredictionResponse(
+    resp = PredictionResponse(
         home_team=req.home_team,
         away_team=req.away_team,
         expected_goals_home=round(float(lam), 3),
@@ -2737,6 +2763,11 @@ def predict_wc(req: PredictWCRequest):
         h2h_summary=h2h_summary,
         form_trend=form_trend,
     )
+    # PREDICT-API-MASK (22.9.2026): sama maski kuin /api/predict. Mobiili
+    # kutsuu tata WC-liigalle samasta PredictScreenista samoilla haaroilla.
+    if predict_mask_applies(request):
+        return _masked_json(resp, mask_prediction_payload)
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -2850,7 +2881,7 @@ def _parlay_leg_1x2(leg: ParlayLeg, idx: int) -> dict:
 
 @app.post("/api/parlay", response_model=ParlayResponse,
           description="Model-implied probability that every selected result comes in. It assumes the matches are independent, and the response says so.")
-def parlay(req: ParlayRequest):
+def parlay(req: ParlayRequest, request: Request):
     """
     Model-implied probability that all N predictions are correct.
 
@@ -2872,7 +2903,7 @@ def parlay(req: ParlayRequest):
             p_home_win=ph, p_draw=pd_, p_away_win=pa,
             pick_probability=pick_p,
         ))
-    return ParlayResponse(
+    resp = ParlayResponse(
         legs=results,
         n_legs=len(results),
         combined_probability=round(combined, 6),
@@ -2880,6 +2911,11 @@ def parlay(req: ParlayRequest):
         note="Combined probability assumes each match is independent.",
         disclaimer="Model prediction, not betting advice.",
     )
+    # PREDICT-API-MASK (22.9.2026): ilmaisosuus nolla legia (mobiili lukitsee
+    # koko nakyman ennen kutsua, SPA:ssa parlayta ei ole). Oletus pois.
+    if predict_mask_applies(request):
+        return _masked_json(resp, mask_parlay_payload)
+    return resp
 
 
 # ---------------------------------------------------------------------------

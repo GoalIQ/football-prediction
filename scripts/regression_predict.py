@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import urllib.request
 from typing import Any
@@ -62,6 +63,10 @@ def _post(url: str, payload: dict, timeout: float = 180.0):
             # Todennettu: oletus -> 403, oma UA -> 200. Ilman tätä
             # regressio- ja golden-ajot kaatuisivat tuotantoa vasten.
             "User-Agent": "GoalIQ-Regression/1.0 (+https://goaliq.app)",
+            # 22.9 PREDICT-API-MASK: tuotanto maskaa Premium-kentat
+            # anonyymilta kun PREDICT_MASK on paalla; admin-token ohittaa.
+            **({"X-Admin-Token": os.environ["ADMIN_TOKEN"].strip()}
+               if (os.environ.get("ADMIN_TOKEN") or "").strip() else {}),
         },
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -77,6 +82,12 @@ def snapshot(base: str) -> dict:
             resp = _post(f"{base}/api/predict", payload)
         except Exception as e:
             out[f"{league}|{home}-{away}"] = {"_error": str(e)}
+            continue
+        if (resp.get("meta") or {}).get("masked"):
+            # Maskattu vastaus on tyypeiltaan identtinen (xG 0.0), joten
+            # ilman tata vertailu raportoisi "regressio" eika syyta.
+            out[f"{league}|{home}-{away}"] = {
+                "_error": "masked response (PREDICT_MASK on): set ADMIN_TOKEN"}
             continue
         rec = {k: resp.get(k) for k in NUMERIC_FIELDS}
         rec["top_scores"] = [(s["score"], s["probability"]) for s in resp.get("top_scores", [])]
