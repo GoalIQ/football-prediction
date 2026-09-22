@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { RateTeamChips } from '$lib/fantasyTools';
-	import type { XpHorizon } from '$lib/xpHorizon';
+	import { declaredRange, type XpHorizon } from '$lib/xpHorizon';
 
 	/**
 	 * DRAFT-COMPARE-OTSIKKORIVI (11.9.2026, FPL Demon -kaava).
@@ -148,8 +148,8 @@
 		title="Projected points {horizon?.over ?? 'over the model horizon'}, captain doubled"
 	>
 		<span class="k"
-			>{#if horizon?.actionableOnly && horizon.range}Next {horizon.count} GW
-				<span class="u">({horizon.range})</span>{:else}Horizon xP
+			>{#if declaredRange(horizon)}Next {horizon?.count} GW
+				<span class="u">({declaredRange(horizon)})</span>{:else}Horizon xP
 				<span class="u">({horizon?.gws ?? 'model horizon'})</span>{/if}</span
 		>
 		<span class="v">{teamXpHorizon.toFixed(1)}<span class="u">xP</span></span>

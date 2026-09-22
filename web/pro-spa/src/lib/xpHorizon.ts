@@ -176,6 +176,18 @@ export function xpHorizon(meta: HorizonMeta | null | undefined): XpHorizon {
 	};
 }
 
+/** Ikkuna jonka otsakerivi nayttaa sulkeissa ("Next 6 GW (GW6-GW11)"), tai
+ *  null kun API ei julistanut summan alkua (vanha API, ei deadlinea) tai
+ *  summa kattaa nolla kierrosta.
+ *
+ *  MIKSI FUNKTIO (22.9.2026): kentan otsikko "Model's XI from your 15, picked
+ *  on GW6-GW11 xP" vaittaa saman ikkunan kuin otsakerivi. Kun molemmat
+ *  lukevat taman, ne eivat voi nayttaa eri valia, eika kentta voi nayttaa
+ *  valia jota otsakerivi ei nayta. */
+export function declaredRange(h: XpHorizon | null | undefined): string | null {
+	return h != null && h.actionableOnly && h.range != null ? h.range : null;
+}
+
 export function xpTotalClaim(
 	meta: HorizonMeta | null | undefined,
 	total: number
