@@ -31,9 +31,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import shutil
-import subprocess
 import sys
 from html import escape
 
@@ -43,6 +40,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+from scripts.card_shot import (CardLayoutError, find_chrome, render_card,
+                               with_fonts)
 from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
 
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
@@ -66,7 +65,7 @@ CSS = """
 body{background:#000;}
 .card{width:1200px;height:675px;background:
 linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
-font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
+font-family:'IBM Plex Sans',sans-serif;color:var(--cream);
 padding:34px 44px 26px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
 .brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
@@ -91,6 +90,10 @@ line-height:1;font-variant-numeric:tabular-nums;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
 .ftr b{color:var(--cream);}
+/* 22.9: tarkistusreitti ei saa katketa rivinvaihtoon (DejaVu-simulaatiossa
+se katkesi kohdasta '#top-'). nowrap tekee katkeamisesta ylivuodon, jonka
+scripts/card_shot.render_card mittaa ja kieltaytyy kuvaamasta. */
+.ftr span:last-child{white-space:nowrap;}
 """
 
 
@@ -450,10 +453,10 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     return html, s
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs" / "cards"))
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     data = json.loads(XP_PATH.read_text(encoding="utf-8"))
     log = (json.loads(CALLS_LOG_PATH.read_text(encoding="utf-8"))
            if CALLS_LOG_PATH.exists() else None)
@@ -462,38 +465,32 @@ def main() -> int:
     out_dir = Path(args.out).resolve()  # file-URI vaatii absoluuttisen polun
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / f"goaliq_standouts_gw{gw}.html"
-    html_path.write_text(html, encoding="utf-8")
+    # 22.9: fontit upotetaan vasta kuvattavaan tiedostoon (scripts/card_shot.py).
+    html_path.write_text(with_fonts(html), encoding="utf-8")
     for k, p in s.items():
         print(f"  {k:8s} {p['web_name'] if p else '-'} "
               f"{p['xp_dist'] if p else ''}")
     print(f"HTML: {html_path}")
-    candidates = [shutil.which(n) for n in
-                  ("chrome", "google-chrome", "chromium", "msedge")]
-    for env in ("ProgramFiles", "ProgramFiles(x86)"):
-        base = os.environ.get(env)
-        if base:
-            candidates.append(str(Path(base) / "Google" / "Chrome" / "Application"
-                                  / "chrome.exe"))
-    for exe in candidates:
-        if exe and Path(exe).exists():
-            png = out_dir / f"goaliq_standouts_gw{gw}.png"
-            subprocess.run([exe, "--headless=new", f"--screenshot={png}",
-                            "--window-size=1200,675", "--hide-scrollbars",
-                            html_path.as_uri()],
-                           check=True, capture_output=True, timeout=60)
-            print(f"PNG: {png}")
-            # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
-            # laskeutumissivun kortti jaisi siihen kierrokseen jona se
-            # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
-            # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
-            try:
-                from scripts.publish_cards_to_site import main as _julkaise
-                _julkaise()
-            except Exception as _e:  # ei saa kaataa kortin generointia
-                print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
-            break
-    else:
+    exe = find_chrome()
+    if exe is None:
         print("Chromea ei loytynyt - kaappaa HTML kasin.")
+        return 0
+    png = out_dir / f"goaliq_standouts_gw{gw}.png"
+    try:
+        render_card(exe, html_path, png)
+    except CardLayoutError as e:
+        print(f"::error::{e}")
+        return 1
+    print(f"PNG: {png}")
+    # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
+    # laskeutumissivun kortti jaisi siihen kierrokseen jona se
+    # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
+    # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
+    try:
+        from scripts.publish_cards_to_site import main as _julkaise
+        _julkaise([])
+    except Exception as _e:  # ei saa kaataa kortin generointia
+        print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
     return 0
 
 

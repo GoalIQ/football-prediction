@@ -38,10 +38,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
-import os
 import re
-import shutil
-import subprocess
 import sys
 from html import escape
 
@@ -52,6 +49,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from scripts.build_fpl_longtail import _kit_defs, _kit_svg
+from scripts.card_shot import (CardLayoutError, find_chrome, render_card,
+                               with_fonts)
 from scripts.publish_gate import blocked_names, load_blocklist
 from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
 # FREE-GW-XP (30.8): valintafunktiot ovat jaetussa moduulissa, jotta kortti ja
@@ -83,7 +82,7 @@ CSS = """
 body{background:#000;}
 .card{width:1200px;height:675px;background:
 linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
-font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
+font-family:'IBM Plex Sans',sans-serif;color:var(--cream);
 padding:26px 40px 20px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
 .brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
@@ -128,6 +127,11 @@ padding-top:6px;margin-top:8px;}
 .ftr{display:flex;justify-content:space-between;gap:14px;white-space:nowrap;color:var(--muted);
 font-size:13px;border-top:1px solid var(--line);padding-top:8px;margin-top:8px;}
 .ftr b{color:var(--cream);}
+/* 22.9: kolme nowrap-spania ei mahdu 1120 px:iin (mitattu 1346 px, reitti
+leikkautui kuvan ulkopuolelle). Entry-lause omalle rivilleen, reitti ja
+vastuuvapaus toiselle. Vahti: scripts/card_shot.render_card. */
+.ftr{flex-wrap:wrap;row-gap:2px;}
+.ftr span:first-child{flex-basis:100%;}
 svg.kit{display:block;margin:0 auto;}
 """
 
@@ -452,33 +456,30 @@ def main(argv=None) -> int:
     out_dir = Path(args.out).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / f"goaliq_projected_xi_gw{gw}.html"
-    html_path.write_text(html, encoding="utf-8")
+    # 22.9: fontit upotetaan vasta kuvattavaan tiedostoon (scripts/card_shot.py).
+    html_path.write_text(with_fonts(html), encoding="utf-8")
     print(f"HTML: {html_path}")
-    candidates = [shutil.which(n) for n in ("chrome", "google-chrome", "chromium", "msedge")]
-    for env in ("ProgramFiles", "ProgramFiles(x86)"):
-        base = os.environ.get(env)
-        if base:
-            candidates.append(str(Path(base) / "Google" / "Chrome" / "Application" / "chrome.exe"))
-    for exe in candidates:
-        if exe and Path(exe).exists():
-            png = out_dir / f"goaliq_projected_xi_gw{gw}.png"
-            subprocess.run([exe, "--headless=new", f"--screenshot={png}",
-                            "--window-size=1200,675", "--hide-scrollbars",
-                            html_path.as_uri()],
-                           check=True, capture_output=True, timeout=60)
-            print(f"PNG: {png}")
-            # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
-            # laskeutumissivun kortti jaisi siihen kierrokseen jona se
-            # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
-            # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
-            try:
-                from scripts.publish_cards_to_site import main as _julkaise
-                _julkaise()
-            except Exception as _e:  # ei saa kaataa kortin generointia
-                print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
-            break
-    else:
+    exe = find_chrome()
+    if exe is None:
         print("Chromea ei loytynyt - kaappaa HTML kasin.")
+    else:
+        png = out_dir / f"goaliq_projected_xi_gw{gw}.png"
+        try:
+            render_card(exe, html_path, png)
+        except CardLayoutError as e:
+            # Ennen lokia: kutsua ei kirjata kortilla jota ei voi julkaista.
+            print(f"::error::{e}")
+            return 1
+        print(f"PNG: {png}")
+        # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
+        # laskeutumissivun kortti jaisi siihen kierrokseen jona se
+        # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
+        # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
+        try:
+            from scripts.publish_cards_to_site import main as _julkaise
+            _julkaise([])
+        except Exception as _e:  # ei saa kaataa kortin generointia
+            print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
 
     if args.dry_run:
         print("dry-run: gw_calls.json ei kirjoitettu.")

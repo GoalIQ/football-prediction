@@ -207,6 +207,11 @@ PATH_ALLOWED = {
     "scripts/measure_promoted_bias.py":
         "Mittausskripti: lukee `meta`n eika kierroslistaa (0 osumaa). Tulos "
         "ei mene millekaan kayttajan nakemalle pinnalle.",
+    "scripts/publish_cards_to_site.py":
+        "Lukee vain `meta`-lohkon `actionable_gameweek`ille (0 osumaa "
+        "kierroslistaan): etusivun kortin kierrosta verrataan samaan "
+        "lukijaan jolla renderoijat nimeavat kortin (22.9 "
+        "LANDING-KORTIT-GW3-VANHAT).",
     "scripts/push_dispatch.py":
         "Valitsee kierroksen eksplisiittisesti (`g.get('gw') == gw`), missa "
         "`gw` tulee kutsujalta - ei listan ensimmaisesta alkiosta.",
