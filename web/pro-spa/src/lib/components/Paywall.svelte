@@ -56,6 +56,32 @@
 {:else}
 	<h3>Unlock GoalIQ Premium</h3>
 {/if}
+<!-- 🔴 22.9 (web-audit K2/T3, Villen GO): hinnat ja ostonapit heti otsikon
+     alle, kuvaus niiden jalkeen. Ennen viisi kappaletta tekstia ja teaseri
+     tulivat ensin, ja ostonapit jaivat ruudun alle. -->
+<div class="plans">
+	{#each Object.entries(PLANS) as [key, plan] (key)}
+		{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
+		<div class="plan">
+			<!-- 31.7: UK/US-kävijälle valuuttalikiarvo (Adaptive Pricing hoitaa
+			     checkoutin tarkan summan kävijän valuutassa) -->
+			<span class="muted">{plan.hint}{approx ? ` · ${approx}` : ''}</span>
+			<button
+				class={key === 'season' ? 'primary' : 'secondary'}
+				disabled={busy !== null}
+				onclick={() => void buy(key as PlanKey)}
+			>
+				{busy === key ? 'Opening checkout…' : planLabel(key as PlanKey)}
+			</button>
+		</div>
+	{/each}
+</div>
+
+{#if error}
+	<p class="banner error">{error}</p>
+{/if}
+
+
 <!--
 	4.8 (Villen paatos): molemmat pinnat olivat puolikkaita. Mobiilin
 	scoreline-lukko myi VAIN ottelusisaltoa ja tama sivu VAIN FPL:aa, vaikka
@@ -108,28 +134,6 @@
 	<p class="banner success">
 		Premium is free until the GW4 deadline on 12 September. You do not need to pay yet.
 	</p>
-{/if}
-
-<div class="plans">
-	{#each Object.entries(PLANS) as [key, plan] (key)}
-		{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
-		<div class="plan">
-			<!-- 31.7: UK/US-kävijälle valuuttalikiarvo (Adaptive Pricing hoitaa
-			     checkoutin tarkan summan kävijän valuutassa) -->
-			<span class="muted">{plan.hint}{approx ? ` · ${approx}` : ''}</span>
-			<button
-				class={key === 'season' ? 'primary' : 'secondary'}
-				disabled={busy !== null}
-				onclick={() => void buy(key as PlanKey)}
-			>
-				{busy === key ? 'Opening checkout…' : planLabel(key as PlanKey)}
-			</button>
-		</div>
-	{/each}
-</div>
-
-{#if error}
-	<p class="banner error">{error}</p>
 {/if}
 
 <style>

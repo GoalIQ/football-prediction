@@ -104,80 +104,11 @@
 			account below and it's on. No card, nothing to cancel.
 		</p>
 	{/if}
-	<ul class="bullets">
-		{#each BULLETS as b (b)}
-			<li>{b}</li>
-		{/each}
-	</ul>
-
-	<!-- 24.7 conviction-löydös: perumiset tapahtuvat maksuhetkellä → proof
-	     suoraan ostopäätöksen viereen (ei numeroita jotka vanhenisivat) -->
-	<p class="muted proof">
-		Built on a publicly tracked match model: every prediction is logged before kick-off
-		and graded afterwards, hits and misses in the same place. Nothing gets edited once
-		kick-off comes. <a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen"
-			>See the model's frozen squads</a
-		>.
-	</p>
-
-	{#if top3.length > 0}
-		<div class="teaser" aria-label="Locked expected points preview">
-			<table>
-				<thead>
-					<tr>
-						<th>Player</th>
-						<th class="num"><abbr title="Expected points from the GoalIQ match model">xP</abbr> · GW{actionableGameweek(teaser?.meta)}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each top3 as p, i (p.id)}
-						<tr>
-							<td>{i + 1}. {p.web_name} <span class="muted">({p.team_short}, {p.pos})</span></td>
-							<td class="num locked-val" aria-label="Locked">•.••</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-			<span class="lock-pill">
-				<svg
-					width="12"
-					height="12"
-					viewBox="0 0 24 24"
-					fill="currentColor"
-					aria-hidden="true"
-				>
-					<path
-						d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"
-					/>
-				</svg>
-				Unlocks with Premium
-			</span>
-		</div>
-	{/if}
-
-	<Provenance />
-
-	<!-- #101: osto suoraan esikatselusta — ei pakko-sign-iniä. Stripe kerää
-	     emailin ja maksun; tili + kirjautumislinkki tulevat maksun jälkeen. -->
-	<!-- WEB-TO-APP-CTA (14.8, mitattu): puhelimella sovellus ENSIN, Stripe jaa
-	     alle. Molemmat polut jaavat nakyviin — vain jarjestys vaihtuu, ja
-	     kumpikin napautus kirjaa oman eventtinsa, jotta tama on peruttavissa
-	     mittauksen perusteella eika mielipiteen. -->
-	{#if appStore}
-		<a
-			class="app-cta"
-			href={STORE_URL[appStore]}
-			rel="noopener"
-			onclick={() => capture('app_handoff_tapped', { store: appStore })}
-		>
-			{appCtaLabel(appStore)}
-		</a>
-		<p class="muted app-cta-note">
-			Same subscription either way. On your phone the store already has your
-			payment details, so it takes a few seconds.
-		</p>
-	{/if}
-
+	<!-- 🔴 22.9 (web-audit K2, Villen GO): hinnat ja ostonapit ENSIN, sitten mita
+	     Premium avaa. Ennen ominaisuuslista, todiste, esikatselu ja kauppanappi
+	     tulivat ensin, ja ostonapit jaivat 1,9 ruutua upgrade-nakyman alkua
+	     alemmas (juuressa 3,7 ruutua). 30 vrk: 169 paywall-nakymaa -> 9 upgrade.
+	     Kauppanappi on toissijainen: se katkaisee webin attribuution (T3). -->
 	<!-- 🔴 Villen havainto 16.8: "heti alkuun ihminen menee pro sivuille niin
 	     matkastaan premium 25 EUR naamaan". Ikkunan aikana ensimmainen nappi
 	     oli "Get Premium: 25 EUR / year", eli sivu pyysi rahaa asiasta joka on
@@ -230,6 +161,79 @@
 	{#if buyError}
 		<p class="banner error">{buyError}</p>
 	{/if}
+	<!-- #101: osto suoraan esikatselusta — ei pakko-sign-iniä. Stripe kerää
+	     emailin ja maksun; tili + kirjautumislinkki tulevat maksun jälkeen. -->
+	<!-- WEB-TO-APP-CTA (14.8, mitattu): puhelimella sovellus ENSIN, Stripe jaa
+	     alle. Molemmat polut jaavat nakyviin — vain jarjestys vaihtuu, ja
+	     kumpikin napautus kirjaa oman eventtinsa, jotta tama on peruttavissa
+	     mittauksen perusteella eika mielipiteen. -->
+	{#if appStore}
+		<a
+			class="app-cta"
+			href={STORE_URL[appStore]}
+			rel="noopener"
+			onclick={() => capture('app_handoff_tapped', { store: appStore })}
+		>
+			{appCtaLabel(appStore)}
+		</a>
+		<p class="muted app-cta-note">
+			Same subscription either way. On your phone the store already has your
+			payment details, so it takes a few seconds.
+		</p>
+	{/if}
+
+	<ul class="bullets">
+		{#each BULLETS as b (b)}
+			<li>{b}</li>
+		{/each}
+	</ul>
+
+	<!-- 24.7 conviction-löydös: perumiset tapahtuvat maksuhetkellä → proof
+	     suoraan ostopäätöksen viereen (ei numeroita jotka vanhenisivat) -->
+	<p class="muted proof">
+		Built on a publicly tracked match model: every prediction is logged before kick-off
+		and graded afterwards, hits and misses in the same place. Nothing gets edited once
+		kick-off comes. <a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen"
+			>See the model's frozen squads</a
+		>.
+	</p>
+
+	{#if top3.length > 0}
+		<div class="teaser" aria-label="Locked expected points preview">
+			<table>
+				<thead>
+					<tr>
+						<th>Player</th>
+						<th class="num"><abbr title="Expected points from the GoalIQ match model">xP</abbr> · GW{actionableGameweek(teaser?.meta)}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each top3 as p, i (p.id)}
+						<tr>
+							<td>{i + 1}. {p.web_name} <span class="muted">({p.team_short}, {p.pos})</span></td>
+							<td class="num locked-val" aria-label="Locked">•.••</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+			<span class="lock-pill">
+				<svg
+					width="12"
+					height="12"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"
+					/>
+				</svg>
+				Unlocks with Premium
+			</span>
+		</div>
+	{/if}
+
+	<Provenance />
 </section>
 
 <style>
@@ -304,11 +308,12 @@
 	}
 	.app-cta {
 		display: block;
-		margin: 0 0 0.5rem;
+		margin: var(--s-4) 0 0.5rem;
 		padding: 0.85rem 1rem;
 		border-radius: 10px;
-		background: var(--accent, #e5006d);
-		color: #fff;
+		background: transparent;
+		border: 1px solid var(--accent, #e5006d);
+		color: var(--accent, #e5006d);
 		font-weight: 600;
 		text-align: center;
 		text-decoration: none;

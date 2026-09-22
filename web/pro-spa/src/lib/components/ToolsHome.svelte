@@ -120,6 +120,7 @@
 		return activeTool === null || activeTool.slug === slug;
 	}
 	let upgradeOpen = $state(false);
+	const UPGRADE_ANCHOR = 'upgrade-top';
 	let checkoutSuccess = $state(false);
 	let guestCheckout = $state(false);
 
@@ -173,8 +174,16 @@
 	function openUpgrade(intent: 'gate' | 'keep') {
 		upgradeIntent = intent;
 		upgradeOpen = true;
+		scrollToUpgrade('smooth');
+	}
+	/** 🔴 22.9 (web-audit K2): vieritys osui ennen `main`-elementtiin. Juuressa
+	 *  `main`in alussa on ProductIntro-hero, joten "See plans" ja "Pricing"
+	 *  veivat kavijan YLOS heroon ja ostonapit jaivat 3,7 ruutua alle. Ankkuri
+	 *  on upgrade-nakyman oma alku, joten kohde on sama joka reitilla. */
+	function scrollToUpgrade(behavior: ScrollBehavior) {
 		requestAnimationFrame(() => {
-			document.querySelector('main')?.scrollIntoView({ behavior: 'smooth' });
+			const el = document.getElementById(UPGRADE_ANCHOR) ?? document.querySelector('main');
+			el?.scrollIntoView({ behavior, block: 'start' });
 		});
 	}
 	// 🔴 Nama kaksi eivat ota parametria. Ensimmainen versio oli
@@ -237,7 +246,12 @@
 		}
 		// #101: ?tab=premium avaa arvo-esikatselun + hinnat suoraan.
 		const tab = params.get('tab');
-		if (tab === 'premium' || tab === 'pro') upgradeOpen = true;
+		if (tab === 'premium' || tab === 'pro') {
+			upgradeOpen = true;
+			// Landingin "TRY PREMIUM" (eniten klikattu CTA) avasi nakyman
+			// ruudun alle, joten ensiruutu oli sama kuin ilman parametria.
+			scrollToUpgrade('auto');
+		}
 		// Vanhat deep-linkit uusiin ryhmiin (SegmentNav hoitaa uudet id:t).
 		// Vanha deep-linkki (#tools=leaders) ohjautuu TYOKALUUN eika ryhmaan.
 		// Ennen 4.9 se osoitti ryhmaan, eli linkki "avaa clean sheets" pudotti
@@ -318,6 +332,7 @@
 {#if upgradeOpen && !paidPremium}
 	<!-- Upgrade-näkymä: ei enää oma ylätabi vaan päällekkäinen tila, josta
 	     pääsee takaisin työkaluihin yhdellä klikillä. -->
+	<span id={UPGRADE_ANCHOR} class="upgrade-anchor" aria-hidden="true"></span>
 	<button type="button" class="back-link" onclick={() => (upgradeOpen = false)}>
 		‹ Back to the tools
 	</button>
@@ -584,6 +599,11 @@
 {/if}
 
 <style>
+	/* Kiinnitetty ylapalkki ei saa peittaa upgrade-nakyman alkua. */
+	.upgrade-anchor {
+		display: block;
+		scroll-margin-top: 72px;
+	}
 	/* 🔴 POISTA 12.9.2026 12:30 UTC jalkeen yhdessa .free-card-lohkon kanssa. */
 	.free-card {
 		border: 2px solid var(--accent);
