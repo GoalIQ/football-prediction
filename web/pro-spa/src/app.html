@@ -79,6 +79,11 @@
 				   signal worth seeing, so we do not try to filter it out. A false
 				   positive is cheaper than a dead boot nobody can see. */
 				var timer = setTimeout(function () {
+					/* 22.9: vain tuotantohost. Paikallinen ajo tyhjalla
+					   VITE_POSTHOG_KEY:lla ei kaynnista analytiikkaa, joten vahti
+					   laukesi AINA ja kirjoitti tuotannon PostHogiin kovakoodatulla
+					   avaimella. */
+					if (!/(^|\.)goaliq\.app$/.test(location.hostname)) return;
 					var KEY = 'phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7';
 					var HOST = 'https://us.i.posthog.com';
 					var did = null;
