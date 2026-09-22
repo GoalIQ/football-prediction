@@ -31,6 +31,9 @@
 		type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { teamColorByShort } from '$lib/teamColors';
 	import SquadPitch from '$lib/components/SquadPitch.svelte';
+	// 22.9 (T6): otsikko, kuvaus ja canonical yhdesta lahteesta, jota myos
+	// buildin spl.html:n og/twitter-tagit lukevat. Ks. $lib/routeHeads.
+	import { SPL_HEAD, ORIGIN } from '$lib/routeHeads';
 
 	let cs = $state<FantasyResponse | null>(null);
 	let xp = $state<XpResponse | null>(null);
@@ -447,15 +450,12 @@
 </script>
 
 <svelte:head>
-	<title>Saudi Pro League fantasy tools | GoalIQ</title>
-	<meta
-		name="description"
-		content="Free model-based tools for RSL Fantasy (Saudi Pro League): clean sheet probability, fixture difficulty and expected points from the GoalIQ match model."
-	/>
+	<title>{SPL_HEAD.title}</title>
+	<meta name="description" content={SPL_HEAD.description} />
 	<!-- /spl-prerender (7.8): canonical tälle työkalusivulle itselleen —
 	     goaliq.app/spl (staattinen landing) on erillinen sisältösivu joka
 	     linkittää tänne, ei duplikaatti. -->
-	<link rel="canonical" href="https://pro.goaliq.app/spl" />
+	<link rel="canonical" href="{ORIGIN}/spl" />
 	<!-- Prerenderoidulla reitillä boot-runko näkyisi sisällön YLLÄ kunnes
 	     hydraatio poistaa sen — tällä reitillä sisältö on jo HTML:ssä,
 	     joten runko piilotetaan heti. -->
@@ -474,11 +474,16 @@
 			game. Clean sheet probability, fixture difficulty and expected points from the same GoalIQ match
 			model that powers our FPL toolkit. <strong>Completely free.</strong>
 		</p>
-		{#if deadline}
-			<p class="deadline">
+		<!-- 🔴 22.9 (web-audit T1): rivi on olemassa myos ennen dataa. Se oli
+		     `{#if deadline}`, joten prerenderoidusta HTML:sta puuttui yksi rivi,
+		     ja kun data tuli, disclaimer ja kaikki sen alla hyppasivat 37-38 px. -->
+		<p class="deadline">
+			{#if deadline}
 				GW{nextGw} deadline: {deadline.toUTCString().replace(':00 GMT', ' UTC')}
-			</p>
-		{/if}
+			{:else}
+				&nbsp;
+			{/if}
+		</p>
 		<div class="disclaimer">
 			<p>
 				GoalIQ is an independent data tool. We are not affiliated with, endorsed by, or paid by
@@ -507,7 +512,8 @@
 		{#if csError}
 			<p class="error">Could not reach the API. {csError}</p>
 		{:else if !cs}
-			<p class="muted">Loading…</p>
+			<!-- T1: varattu korkeus, ks. .loading-reserve -->
+			<p class="muted loading-reserve">Loading…</p>
 		{:else if !cs.meta.available}
 			<p class="muted">SPL projections not published yet. Check back soon.</p>
 		{:else}
@@ -683,7 +689,7 @@
 		{#if xpError}
 			<p class="error">Could not reach the API. {xpError}</p>
 		{:else if !xp}
-			<p class="muted">Loading…</p>
+			<p class="muted loading-reserve">Loading…</p>
 		{:else if !xp.meta.available}
 			<p class="muted">SPL xP not published yet. Check back soon.</p>
 		{:else}
@@ -1027,6 +1033,19 @@
 	}
 	.deadline {
 		font-weight: 600;
+	}
+	/* 🔴 22.9 (web-audit T1): CLS 0,646 (390 px) ja 0,736-0,762 (1280 px),
+	   mitattu `vite preview`lla. Prerenderoitu sivu oli lyhyt (kaksi
+	   "Loading…"-rivia), joten upsell ja footer olivat ensimmaisessa ruudussa,
+	   ja kun data tuli, CS-taulukko (noin 690 px leveallakin) tyonsi ne
+	   ruudun alle: yksi siirtyma, koko ruutu.
+	   Varaus on PIENEMPI kuin tayttynyt osio millakin leveydella (18
+	   joukkuetta = 18 rivia; xP 50 rivia), joten data voi vain kasvattaa
+	   osiota eika mikaan sen alla nouse nakyviin. Ja se on tarpeeksi suuri,
+	   etta osion alla oleva on jo valmiiksi ruudun ulkopuolella. */
+	.loading-reserve {
+		min-height: 600px;
+		margin: 0;
 	}
 	.disclaimer {
 		border: 1px solid var(--border);

@@ -79,6 +79,8 @@
 				   signal worth seeing, so we do not try to filter it out. A false
 				   positive is cheaper than a dead boot nobody can see. */
 				var timer = setTimeout(function () {
+					/* Production host only. A local run with an empty VITE_POSTHOG_KEY never starts analytics, so this watchdog always fired and wrote a false boot failure to the production project. */
+					if (!/(^|\.)goaliq\.app$/.test(location.hostname)) return;
 					var KEY = 'phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7';
 					var HOST = 'https://us.i.posthog.com';
 					var did = null;
