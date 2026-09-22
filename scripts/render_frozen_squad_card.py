@@ -129,6 +129,34 @@ def cell(p: dict, cap: int, vice: int, size: int = 46,
                        if dist else None) + '</div>')
 
 
+def money_line(meta: dict) -> str:
+    """Kortin raharivi FPL:n omista luvuista freezen metasta.
+
+    🔴 FROZEN-KORTTI-RAHALUKU-VAARIN (22.9, mitattu 18.9): kortti tulosti
+    "<nykyhintojen summa>m spent" aina kun `meta.squad_value_m` puuttui, ja
+    freeze ei ole koskaan kirjoittanut sita kenttaa, eli haara laukesi joka
+    kerta. 4.9:n portti oli jo tuominnut sanamuodon: ostohinnat eivat ole
+    julkisia, eika nykyhintojen summa ole rungon raha (GW5: 99.8m "spent" kun
+    myyntiarvo oli 99.1m). Freeze kirjoittaa 17.9 alkaen
+    `selling_value_tenths` (se raha jonka rungosta oikeasti saa) ja
+    `bank_tenths` (FPL:n `bank`), `attach_entry_state` ainoana kirjoittajana.
+
+    Fail-closed: puuttuva myyntiarvo kaataa ajon. Varalaskentaa nykyhinnoista
+    EI ole, koska se on juuri se vaara luku jota kortti ei saa vaittaa.
+    """
+    sv = meta.get("selling_value_tenths")
+    if not isinstance(sv, int):
+        raise SystemExit(
+            "meta.selling_value_tenths puuttuu freezesta: kortti ei laske "
+            "rahalukua nykyhinnoista (FROZEN-KORTTI-RAHALUKU-VAARIN). "
+            "Jaadyta kierros attach_entry_statella tai renderoi ilman korttia.")
+    line = f"<b>{sv / 10:.1f}m</b> selling value"
+    bank = meta.get("bank_tenths")
+    if isinstance(bank, int):
+        line += f" · {bank / 10:.1f}m in the bank"
+    return line
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gw", type=int, default=1)
@@ -154,8 +182,8 @@ def main() -> int:
     print(f"provenienssi: {peruste}")
     xi, bench = frozen["xi"], frozen["bench"]
     cap, vice = frozen["captain"], frozen["vice_captain"]
-    total = sum(p["price"] for p in xi + bench) / 10.0
     meta_val = frozen.get("meta") or {}
+    money = money_line(meta_val)
     import datetime as _dt
     raw = str(frozen.get("meta", {}).get("frozen_at", ""))[:10]
     frozen_at = _dt.date.fromisoformat(raw).strftime("%d %b").lstrip("0") if raw else ""
@@ -215,11 +243,7 @@ def main() -> int:
         # kumpikaan oikea luku: ostohinnat eivat ole julkisia, ja FPL:n oma
         # sivu nayttaa rungon myyntiarvon + pankin. Kun runko tulee entrysta,
         # kaytetaan FPL:n omia lukuja ja oikeaa sanaa.
-        + (f'<div class="ftr"><span><b>{meta_val["squad_value_m"]:.1f}m</b> squad'
-           + (f' · {meta_val["bank_m"]:.1f}m in the bank' if meta_val.get("bank_m") is not None else '')
-           + '</span>'
-           if meta_val.get("squad_value_m") is not None
-           else f'<div class="ftr"><span><b>{total:.1f}m</b> spent</span>')
+        + f'<div class="ftr"><span>{money}</span>'
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
         # 21.9: reitti on jaadytetty runko julkisessa repossa, ei entry
