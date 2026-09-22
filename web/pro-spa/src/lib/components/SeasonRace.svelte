@@ -21,6 +21,7 @@
 	import { MODEL_SERIES_COPY } from '$lib/modelSeriesCopy';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
+	import { CHIP_NAMES } from '$lib/fantasyTools';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let data = $state<ModelRaceResponse | null>(null);
@@ -185,15 +186,9 @@
 	let entrySeries = $derived(data?.entry_series ?? null);
 	let entryRows = $derived(entrySeries ? [...entrySeries.gameweeks].reverse() : []);
 
-	//: Chipin nayttonimi FPL:n koodista. Kanoni on isolla kirjaimella ja
-	//: kaantamattomana kaikissa kielissa (`fantasy.chips.chip_*`, sama
-	//: faq/llms/fpl.html), joten sita EI kaanneta.
-	const CHIP_NAMES: Record<string, string> = {
-		wildcard: 'Wildcard',
-		bboost: 'Bench Boost',
-		'3xc': 'Triple Captain',
-		freehit: 'Free Hit'
-	};
+	//: Chipin nayttonimi FPL:n koodista (`CHIP_NAMES`, $lib/fantasyTools).
+	//: Kanoni on isolla kirjaimella ja kaantamattomana kaikissa kielissa
+	//: (`fantasy.chips.chip_*`, sama faq/llms/fpl.html), joten sita EI kaanneta.
 
 	function chipPhrase(c: { gw: number; chip: string }): string {
 		const name = CHIP_NAMES[c.chip] ?? c.chip;

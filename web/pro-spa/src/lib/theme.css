@@ -126,6 +126,9 @@
 	/* 11.9: sovelluksen ylapalkki. Sticky-elementit (taulukon thead,
 	   sivupaneelit) lukevat taman, jotta ne asettuvat palkin ALLE. */
 	--bar-h: 52px;
+	/* 22.9 (web-audit T2): puhelimen alapalkin korkeus ilman safe-areaa.
+	   BottomNav ja AppShellin varaus lukevat saman arvon. */
+	--bottom-nav-h: 56px;
 }
 
 /* 8.8 (Villen havainto): leveilla naytoilla taulukoiden sarakkeet jaivat

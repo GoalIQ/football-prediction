@@ -231,6 +231,16 @@ export interface RateTeamChips {
 	remaining: { name: string; from_gw: number; available_now: boolean }[];
 }
 
+/** Chipin nayttonimi FPL:n koodista (22.9: jaettu, oli SeasonRacen sisalla).
+ *  Nimet ovat FPL:n omia ja kaantamattomia kaikilla pinnoilla. Tuntematon
+ *  koodi naytetaan sellaisenaan: uusi chip on tieto, ei virhe. */
+export const CHIP_NAMES: Record<string, string> = {
+	wildcard: 'Wildcard',
+	bboost: 'Bench Boost',
+	'3xc': 'Triple Captain',
+	freehit: 'Free Hit'
+};
+
 export interface RateTeamResponse {
 	/** LUCK-PITCH (1.9): paattynyt kierros. `team.players[].in_xi` on MALLIN
 	 *  optimi-XI eika sita mita kayttaja pelasi, joten kierroksen tulos EI ole
@@ -676,7 +686,7 @@ export const COMPARE_LOCKED_TEXT =
 
 /* ---------- fetch helper ---------- */
 
-async function getTool<T>(path: string, tool: FantasyTool): Promise<T> {
+async function getTool<T>(path: string, tool: FantasyTool, track = true): Promise<T> {
 	let r: Response;
 	try {
 		// Edge-sprint kohta 1: Bearer-token kaikkiin fantasy-kutsuihin
@@ -703,7 +713,7 @@ async function getTool<T>(path: string, tool: FantasyTool): Promise<T> {
 	}
 	const data = (await r.json()) as T;
 	// Onnistunut haku = työkalu käytetty (ei PII: entry-ID ei mene eventtiin)
-	capture('fantasy_tools_used', { tool });
+	if (track) capture('fantasy_tools_used', { tool });
 	return data;
 }
 
@@ -734,6 +744,30 @@ export interface ModelSquadResponse {
 
 export function fetchModelSquad(): Promise<ModelSquadResponse> {
 	return getTool('/api/fantasy/model-squad', 'model_squad');
+}
+
+let modelCardP: Promise<RateTeamResponse> | null = null;
+/**
+ * 22.9 (A3 2.1): This week ilman omaa joukkuetta nayttaa MALLIN rungon
+ * kapteenin. Sama rate-team-lukija kuin omalla joukkueella (players-moodi,
+ * mallin runko /api/fantasy/model-squadista), joten paatoskortti lukee
+ * yhta muotoa eika kapteenia paatella klientissa.
+ *
+ * Ei `fantasy_tools_used`-eventtia: sivun avaus ei ole tyokalun kaytto, ja
+ * jokainen kavija kirjautuisi muuten rate_team_draft-kayttajaksi. Tulos
+ * muistetaan sivulatauksen ajan (sama kaava kuin fetchFantasy); epaonnistunut
+ * haku ei jaa muistiin.
+ */
+export function fetchModelCard(): Promise<RateTeamResponse> {
+	modelCardP ??= (async () => {
+		const squad = await getTool<ModelSquadResponse>('/api/fantasy/model-squad', 'model_squad', false);
+		const ids = squad.players.map((p) => p.id).join(',');
+		return getTool<RateTeamResponse>(`/api/fantasy/rate-team?players=${ids}`, 'rate_team_draft', false);
+	})().catch((e) => {
+		modelCardP = null;
+		throw e;
+	});
+	return modelCardP;
 }
 
 /** entry valinnainen (MY-TEAM-CONTEXT 3.9): annettuna omat rivit merkitään. */

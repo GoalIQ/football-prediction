@@ -34,7 +34,8 @@
 		deadlineUtc,
 		actions,
 		onFollowTransfer,
-		refreshToken
+		refreshToken,
+		bare = false
 	}: {
 		gw: number | null;
 		deadlineUtc: string | null;
@@ -54,6 +55,13 @@
 		 * logged-tila ladataan uudelleen.
 		 */
 		refreshToken?: number;
+		/**
+		 * 22.9 (A3 2.1): paatoskortin sisalla. Kortti nayttaa jo mallin
+		 * valinnan, joten tama renderoi vain kirjaustilan ja napit: ilman
+		 * tata sama kapteeni olisi ruudulla kahdesti kahdella pyoristyksella.
+		 * Selite siita mita nappi EI tee jaa nakyviin myos tassa.
+		 */
+		bare?: boolean;
 	} = $props();
 
 	let logged = $state<Record<string, StoredDecision>>({});
@@ -118,13 +126,15 @@
 </script>
 
 {#if gw != null && actions.length > 0}
-	<section class="weekly">
+	<section class="weekly" class:bare>
 		<!-- 28.7: monikkobugi. Livesivulla luki "1 things to do this week", ja
 	     yksi tehtava on esikaudella tavallisin tila. -->
+		{#if !bare}
 			<h3>
 				{actions.length}
 				{actions.length === 1 ? 'thing' : 'things'} to do this week
 			</h3>
+		{/if}
 		{#if !open}
 			<p class="muted locked">
 				This gameweek is locked. Decisions can only be logged before the deadline, and that is what
@@ -136,9 +146,11 @@
 			{@const rec = logged[a.kind]}
 			<div class="row">
 				<div class="body">
-					<span class="kind">{a.label}</span>
-					<p class="model">The model says: {a.modelText}</p>
-					{#if a.rationale}<p class="muted why">{a.rationale}</p>{/if}
+					{#if !bare}
+						<span class="kind">{a.label}</span>
+						<p class="model">The model says: {a.modelText}</p>
+						{#if a.rationale}<p class="muted why">{a.rationale}</p>{/if}
+					{/if}
 					{#if rec}
 						<p class="done">
 							{rec.followed ? 'Logged: following the model' : 'Logged: going your own way'}
@@ -193,6 +205,23 @@
 		padding: var(--s-4);
 		margin: var(--s-4) 0;
 		background: var(--surface);
+	}
+	.weekly.bare {
+		border: 0;
+		padding: 0;
+		margin: var(--s-3) 0 0;
+		background: transparent;
+	}
+	.weekly.bare .row {
+		border-top: 0;
+		padding: 0;
+	}
+	.weekly.bare .body {
+		min-width: 0;
+		flex-basis: 100%;
+	}
+	.weekly.bare .body:empty {
+		display: none;
 	}
 	h3 {
 		margin: 0 0 var(--s-3);
