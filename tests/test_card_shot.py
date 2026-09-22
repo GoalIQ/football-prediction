@@ -164,8 +164,11 @@ def _xi_data():
     for i in range(5):
         ps.append(p(f"Striker{i}", "FWD", clubs[(i + 5) % 8], 6.5, 5.2 - i * 0.4))
     dl = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=3)).isoformat()
-    return {"meta": {"deadline_gameweek": gw, "next_gameweek": gw,
-                     "deadline_utc": dl, "generated_at": "2026-09-22T08:07:47+00:00"},
+    return {"meta": {"deadline_gameweek": gw, "next_gameweek": gw, "available": True,
+                     "deadline_utc": dl,
+                     # oma generated_at: free_optimumin valimuisti avaintaa
+                     # sen mukaan, eika fikstuuri saa osua oikean datan XI:hin
+                     "generated_at": "2000-01-01T00:00:00+00:00"},
             "players": ps}
 
 
@@ -179,3 +182,21 @@ def test_projected_xi_pohja_renderoituu_ehjana_pitkilla_nimilla(tmp_path):
     p.write_text(C.with_fonts(html), encoding="utf-8")
     C.render_card(CHROME, p, tmp_path / "xi.png")
     assert (tmp_path / "xi.png").exists()
+
+
+def test_sisaltotiiviste_ohittaa_aikaleimat_mutta_ei_lukuja():
+    a = "<div class='card'>GW6 · projection run 22 Sep 08:07 UTC <b>21%</b></div>"
+    b = "<div class='card'>GW6 · projection run 22 Sep 11:07 UTC <b>21%</b></div>"
+    c = "<div class='card'>GW6 · projection run 22 Sep 08:07 UTC <b>20%</b></div>"
+    d1 = a.replace("GW6 ·", "GW6 · card made 22 Sep 08:44 UTC ·")
+    d2 = a.replace("GW6 ·", "GW6 · card made 23 Sep 11:44 UTC ·")
+    assert C.content_signature(a) == C.content_signature(b)
+    assert C.content_signature(d1) == C.content_signature(d2)
+    assert C.content_signature(a) != C.content_signature(c)
+    # Deadline on sisaltoa (vaihtuu kierroksen mukana), ei aikaleima.
+    e = "<div class='card'>GW6 deadline Sat 10 Oct 10:00 UTC</div>"
+    f = "<div class='card'>GW6 deadline Sat 17 Oct 10:00 UTC</div>"
+    assert C.content_signature(e) != C.content_signature(f)
+    # Tyyli ei ole sisaltoa.
+    g = "<style>.x{color:red}</style>" + a
+    assert C.content_signature(g) == C.content_signature(a)

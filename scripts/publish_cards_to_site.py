@@ -1,4 +1,4 @@
-"""Julkaise uusimmat generoidut kortit sivustolle VAKIONIMILLA + kierrosmerkinta.
+"""Julkaise uusimmat generoidut kortit sivustolle VAKIONIMILLA + sisaltotiiviste.
 
 🔴 MIKSI VAKIONIMI (4.9.2026). Laskeutumissivulla ei ollut yhtaan kuvaa
 tuotteesta: 0 kuvaa ja 2 559 sanaa proosaa, jossa kavijaa pyydetaan
@@ -21,12 +21,19 @@ mekanismivikaa:
      workflow ei ajanut sita. Nyt ajaa: `scripts/refresh_site_cards.py`.
   2. Tuoreusportti luki tiedoston mtimea. CI:n tuoreessa checkoutissa ika on
      aina 0 vrk, joten portti oli CI:ssa sokea (lokaalisti punainen 17 vrk).
-Siksi kortin kierros kirjoitetaan nyt `assets/cards/cards.json`:iin samalla
-kun kuva julkaistaan, ja portti (`kortin_tila`) vertaa sita samaan lukijaan
-jolla renderoijat nimeavat kortin (`actionable_gameweek`). Aikaleimaa ei
-lueta mistaan.
 
-Julkaisu kieltaytyy kortista jonka kierros on eri kuin datan actionable GW:
+🔴 22.9 JULKAISUPORTTI: KIERROS EI RIITA, SISALTO RATKAISEE. Ensimmainen
+korjaus vertasi kortin kierrosta dataan. Portti blokkasi sen: 22 vrk:n
+maaotteluvalilla GW6:n kortti olisi ollut "ajan tasalla" koko ajan, vaikka
+ilmaissivu `/fpl/expected-points` paivittyy 3 h valein ja kortin prosentit
+alkavat erota sivun luvuista (tai kortille jaa loukkaantunut pelaaja).
+Nyt `cards.json` kantaa kortin NAKYVAN SISALLON tiivisteen
+(`card_shot.content_signature`: nimet + pyoristetyt luvut + otsikot, ilman
+aikaleimoja), ja kortti renderoidaan kun nykyisen projektion tiiviste on eri.
+Portti (`kortin_tila`) vertaa samaa tiivistetta, joten kortti joka ei vastaa
+sivun lukuja kaatuu - myos saman kierroksen sisalla.
+
+Julkaisu kieltaytyy lahteesta jonka tiiviste ei vastaa nykyista projektiota:
 vanha PNG `outputs/`issa ei voi enaa paatya sivulle tuoreen nimella.
 Myos 450 px -variantit (index.html:n srcset) tehdaan tassa; ne tehtiin 5.9
 kasin eivatka paivittyneet kuvan mukana.
@@ -47,6 +54,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+from scripts.card_shot import content_signature
 from src.models.fpl_gameweek import actionable_gameweek  # sama lukija kuin renderoijilla
 
 CARDS_IN = config.PROJECT_ROOT / "outputs" / "cards"
@@ -58,9 +66,10 @@ LEVEYS = 900
 LEVEYS_PIENI = 450
 LAATU = 82
 
-# Kuinka kauan edellisen kierroksen kortti saa olla sivulla kun data on jo
-# kaantynyt seuraavaan. Perustelu ja vaiheittainen mittaus:
-# tests/test_site_card_images.py (ARMONAIKA-lohko).
+# Kuinka kauan kortti saa olla eri kuin nykyinen projektio SEN JALKEEN kun
+# renderointia on yritetty ja se kaatui (cards.json: `stale_since`).
+# Perustelu ja vaiheittainen mittaus: tests/test_site_card_images.py
+# (ARMONAIKA-lohko).
 ARMONAIKA = dt.timedelta(hours=24)
 
 # (lahdekuvio, kohdenimi). Kuvio poimii kierrosnumeron, jotta uusin voittaa.
@@ -112,11 +121,15 @@ def sha256(polku: Path) -> str:
     return hashlib.sha256(polku.read_bytes()).hexdigest()
 
 
-def lue_meta(path: Path = XP_PATH) -> dict:
+def lue_meta(path: Path | None = None) -> dict:
+    # Polku luetaan KUTSUHETKELLA (ei oletusarvona): oletusarvo jaatyisi
+    # import-hetkeen, ja testin/ajon polunvaihto ohittaisi sen hiljaa.
+    path = path or XP_PATH
     return (json.loads(path.read_text(encoding="utf-8")).get("meta") or {})
 
 
-def lue_manifesti(path: Path = MANIFEST) -> dict:
+def lue_manifesti(path: Path | None = None) -> dict:
+    path = path or MANIFEST
     if not path.exists():
         return {}
     try:
@@ -126,57 +139,96 @@ def lue_manifesti(path: Path = MANIFEST) -> dict:
     return d if isinstance(d, dict) else {}
 
 
-def kortin_tila(entry: dict | None, meta: dict,
+def kirjoita_manifesti(manifesti: dict) -> None:
+    # newline="\n": samat tavut Windowsilla ja runnerilla.
+    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+    MANIFEST.write_text(json.dumps(manifesti, indent=1, sort_keys=True)
+                        + "\n", encoding="utf-8", newline="\n")
+
+
+def nykyiset_tiivisteet(now: dt.datetime | None = None) -> dict[str, str | None]:
+    """YKSI LUKIJA: mita kukin kortti nayttaisi NYT, tiivisteena.
+
+    HTML tulee samasta funktiosta jolla renderoija kuvaisi kortin
+    (`current_card_html`, samat syotetiedostot). None = korttia ei voi
+    muodostaa nykyisesta datasta (esim. loki eroaa kortista ennen deadlinea);
+    silloin sita ei myoskaan voi renderoida.
+    """
+    from scripts import render_projected_xi_card, render_standouts_card
+    lahteet = {"gameweek-card.webp": render_standouts_card,
+               "projected-xi-card.webp": render_projected_xi_card}
+    out: dict[str, str | None] = {}
+    for nimi in NIMET:
+        try:
+            out[nimi] = content_signature(lahteet[nimi].current_card_html(now))
+        except (Exception, SystemExit) as e:  # noqa: BLE001 - None kertoo sen
+            print(f"::warning::{nimi}: korttia ei voi muodostaa nykyisesta "
+                  f"datasta: {e!r}")
+            out[nimi] = None
+    return out
+
+
+def kortin_tila(entry: dict | None, nykyinen: str | None, meta: dict,
                 now: dt.datetime) -> tuple[bool, str]:
     """YKSI LUKIJA: saako taman kortin nayttaa sivulla juuri nyt?
 
-    Vertaa kortin kierrosta (cards.json) samaan lukijaan jolla renderoijat
-    nimeavat kortin (`actionable_gameweek`). Sallittu:
-      * kortti = actionable GW
-      * kortti = actionable - 1, enintaan ARMONAIKA kortin oman deadlinen
-        jalkeen (refresh-ajon viive + yksi uusintayritys)
-    Ei sallittu: kaikki muu, myos kortti joka on datan EDELLA (kortti ja sivu
-    eri datasta) ja puuttuva merkinta (kuva vaihdettu ohi julkaisun).
-
-    Datan oma tuoreus ei ole taman portin asia: jos refresh on kuollut,
-    kortti on yhta tuore kuin data, ja sen vahtivat datan omat portit.
+    Kortti on ajan tasalla kun sen tiiviste (cards.json) = tiiviste joka
+    lasketaan nykyisesta projektiosta samalla funktiolla jolla kortti
+    renderoidaan. Poikkeama sallitaan vain ARMONAIKA sen jalkeen kun
+    renderointia on YRITETTY ja se kaatui (`stale_since`, jonka
+    refresh_site_cards kirjoittaa). Ilman yritysta poikkeama kaatuu heti:
+    se tarkoittaa etta joku muutti dataa tai kortin pohjaa renderoimatta.
     """
-    act = actionable_gameweek(meta)
-    if act is None:
+    if actionable_gameweek(meta) is None:
         return True, ("datassa ei ole tulevaa kierrosta (kauden tauko), "
                       "ei verrattavaa")
-    if not entry or not isinstance(entry.get("gw"), int):
-        return False, ("kortilla ei ole kierrosmerkintaa assets/cards/cards.json:ssa "
+    if not entry or not entry.get("signature"):
+        return False, ("kortilla ei ole sisaltotiivistetta assets/cards/cards.json:ssa "
                        "(julkaistu ohi publish_cards_to_site:n?)")
-    gw = entry["gw"]
-    if gw == act:
-        return True, f"kortti GW{gw} = actionable GW{act}"
-    if gw > act:
-        return False, (f"kortti GW{gw} on datan edella (actionable GW{act}): "
-                       "kortti ja sivu ovat eri datasta")
-    dl = _utc(entry.get("deadline_utc"))
-    if gw == act - 1 and dl is not None and now <= dl + ARMONAIKA:
-        h = (now - dl).total_seconds() / 3600
-        return True, (f"kortti GW{gw}, actionable GW{act}: GW{gw}:n deadline "
-                      f"meni {h:.1f} h sitten, armonaika "
+    if nykyinen is not None and entry["signature"] == nykyinen:
+        return True, f"kortti GW{entry.get('gw')} vastaa nykyista projektiota"
+    alkaen = _utc(entry.get("stale_since"))
+    mika = ("nykyisesta datasta ei voi muodostaa korttia" if nykyinen is None
+            else f"kortin sisalto ({entry['signature']}) != nykyinen projektio "
+                 f"({nykyinen})")
+    if alkaen is not None and now <= alkaen + ARMONAIKA:
+        h = (now - alkaen).total_seconds() / 3600
+        return True, (f"{mika}; renderointi kaatui {h:.1f} h sitten, armonaika "
                       f"{ARMONAIKA.total_seconds() / 3600:.0f} h")
-    return False, (f"kortti GW{gw}, actionable GW{act}"
-                   + (f", GW{gw}:n deadline {dl:%Y-%m-%d %H:%M} UTC" if dl else "")
-                   + ". Aja `python -m scripts.refresh_site_cards` tai "
-                     "tarkista fpl-data-refreshin 'Render landing page cards' -askel.")
+    return False, (mika + (f"; renderointi kaatunut {alkaen:%Y-%m-%d %H:%M} UTC alkaen"
+                           if alkaen else "; renderointia ei ole yritetty")
+                   + ". Aja `python -m scripts.refresh_site_cards` ja committaa "
+                     "kortit samaan pushiin.")
 
 
-def tarvitsee_renderoinnin(manifesti: dict, meta: dict) -> list[str]:
-    """Kortit joiden kierros != actionable GW. CI:n liipaisin.
+def tarvitsee_renderoinnin(manifesti: dict, nykyiset: dict[str, str | None],
+                           meta: dict) -> list[str]:
+    """Kortit joiden tiiviste != nykyinen. CI:n liipaisin.
 
-    Ei armonaikaa: armonaika on portin toleranssi viiveelle, ei syy odottaa.
-    Tyhja lista = ei renderointia eika committia (ei churnia joka ajossa).
+    Ei armonaikaa: armonaika on portin toleranssi kaatuneelle yritykselle,
+    ei syy odottaa. Tyhja lista = ei renderointia eika tiedostomuutoksia.
     """
-    act = actionable_gameweek(meta)
-    if act is None:
+    if actionable_gameweek(meta) is None:
         return []
     return [n for n in NIMET
-            if (manifesti.get(n) or {}).get("gw") != act]
+            if nykyiset.get(n) is None
+            or (manifesti.get(n) or {}).get("signature") != nykyiset.get(n)]
+
+
+def merkitse_vanhaksi(nimet: list[str], now: dt.datetime) -> None:
+    """Renderointi kaatui: kirjaa ENSIMMAINEN kaatumishetki (ei ylikirjoiteta
+    myohemmilla yrityksilla, joten armonaika ei liu'u eika tiedosto muutu
+    joka ajossa)."""
+    manifesti = lue_manifesti()
+    muuttui = False
+    for n in nimet:
+        e = manifesti.setdefault(n, {})
+        if not e.get("stale_since"):
+            e["stale_since"] = now.astimezone(dt.timezone.utc).isoformat(
+                timespec="seconds")
+            muuttui = True
+    if muuttui:
+        kirjoita_manifesti(manifesti)
 
 
 def _tallenna(im, kohde: Path, leveys: int) -> None:
@@ -186,11 +238,12 @@ def _tallenna(im, kohde: Path, leveys: int) -> None:
     pieni.convert("RGB").save(kohde, "WEBP", quality=LAATU, method=6)
 
 
-def julkaise(meta: dict, now: dt.datetime) -> int:
+def julkaise(nykyiset: dict[str, str | None], meta: dict,
+             now: dt.datetime) -> int:
     """Kirjoita webp + 450-variantti + cards.json-rivi jokaiselle kortille jonka
-    uusin lahde on actionable GW:lta. Palauttaa julkaistujen maaran."""
+    uusimman lahteen (PNG + sen HTML) tiiviste = nykyinen. Palauttaa
+    julkaistujen maaran."""
     from PIL import Image
-    act = actionable_gameweek(meta)
     CARDS_OUT.mkdir(parents=True, exist_ok=True)
     manifesti = lue_manifesti()
     tehty = 0
@@ -199,17 +252,20 @@ def julkaise(meta: dict, now: dt.datetime) -> int:
         if lahde is None:
             print(f"::notice::{nimi}: lahdekorttia ei ole, vanha jaa voimaan.")
             continue
-        gw = _kierros(kuvio, lahde)
-        if gw != act:
-            print(f"::notice::{nimi}: uusin lahde {lahde.name} on GW{gw}, data "
-                  f"on GW{act} - ei julkaista eri kierroksen korttia.")
+        html = lahde.with_suffix(".html")
+        tiiviste = (content_signature(html.read_text(encoding="utf-8"))
+                    if html.exists() else None)
+        if tiiviste is None or tiiviste != nykyiset.get(nimi):
+            print(f"::notice::{nimi}: lahde {lahde.name} ei vastaa nykyista "
+                  f"projektiota ({tiiviste} != {nykyiset.get(nimi)}) - ei julkaista.")
             continue
         kohde, pieni = CARDS_OUT / nimi, CARDS_OUT / pieni_nimi(nimi)
         im = Image.open(lahde)
         _tallenna(im, kohde, LEVEYS)
         _tallenna(im, pieni, LEVEYS_PIENI)
         manifesti[nimi] = {
-            "gw": gw,
+            "gw": _kierros(kuvio, lahde),
+            "signature": tiiviste,
             "deadline_utc": meta.get("deadline_utc"),
             "projection_generated_at": meta.get("generated_at"),
             "source": lahde.name,
@@ -222,9 +278,7 @@ def julkaise(meta: dict, now: dt.datetime) -> int:
               f"({pieni.stat().st_size / 1024:.0f} kB)")
         tehty += 1
     if tehty:
-        # newline="\n": samat tavut Windowsilla ja runnerilla.
-        MANIFEST.write_text(json.dumps(manifesti, indent=1, sort_keys=True)
-                            + "\n", encoding="utf-8", newline="\n")
+        kirjoita_manifesti(manifesti)
     else:
         print("::warning::Yhtaan korttia ei julkaistu.")
     return tehty
@@ -237,11 +291,12 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     meta = lue_meta()
     now = dt.datetime.now(dt.timezone.utc)
+    nykyiset = nykyiset_tiivisteet(now)
     if args.check:
         manifesti = lue_manifesti()
         huono = 0
         for nimi in NIMET:
-            ok, syy = kortin_tila(manifesti.get(nimi), meta, now)
+            ok, syy = kortin_tila(manifesti.get(nimi), nykyiset.get(nimi), meta, now)
             print(f"{'OK   ' if ok else 'VANHA'} {nimi}: {syy}")
             huono += not ok
         return 1 if huono else 0
@@ -252,7 +307,7 @@ def main(argv=None) -> int:
         # ei julkaistu ja askel oli vihrea.
         print("::error::Pillow puuttuu - kortteja ei julkaistu sivustolle.")
         return 1
-    julkaise(meta, now)
+    julkaise(nykyiset, meta, now)
     return 0
 
 

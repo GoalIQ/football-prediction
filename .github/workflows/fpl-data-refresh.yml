@@ -410,10 +410,12 @@ jobs:
       # 22.9 LANDING-KORTIT-GW3-VANHAT: etusivun "What the model publishes"
       # -kortit. publish_cards_to_site sanoi "aja fpl-data-refreshissa" mutta
       # mikaan ei ajanut sita, joten etusivu naytti GW3:n kortteja GW6:n
-      # aikana 18 vrk. Renderoi VAIN kun actionable GW vaihtuu (cards.json:n
-      # gw != data): kerran kierroksessa, samassa committissa kuin data joka
-      # kierroksen kaansi. Muuten exit 0 ilman Chromea ja ilman
-      # tiedostomuutoksia (ei commit-churnia 3 h valein).
+      # aikana 18 vrk. Renderoi VAIN kun kortin NAKYVA sisalto muuttuisi
+      # (cards.json:n tiiviste != nykyisen projektion tiiviste; julkaisuportti
+      # 22.9: pelkka GW-vaihdos jattaisi kortin 22 vrk jalkeen ilmaissivusta).
+      # Mitattu 12.-22.9 historiasta: 35 muutosta 85 data-commitissa.
+      # Renderointi menee samaan committiin kuin data joka sen muutti; muuten
+      # exit 0 ilman Chromea ja ilman tiedostomuutoksia.
       # log_gw_callsin JALKEEN: standouts-kortti ei saa erota lokista ennen
       # deadlinea (reconcile_with_log kaatuu), ja sama data = sama loki.
       # Projected XI ajetaan --dry-run: kutsulokiin sen kirjaa Ville GO:lla.
@@ -611,8 +613,8 @@ jobs:
           [ -f data/model_squad_frozen_gw_scores.json ] && git add data/model_squad_frozen_gw_scores.json
           # 28.8 (GW-CALLS-LOKI): kutsut + gradaus, git-historia todistaa ajan.
           [ -f data/gw_calls.json ] && git add data/gw_calls.json
-          # 22.9: etusivun kortit + kierrosmerkinta (refresh_site_cards).
-          # Muuttuvat vain kun actionable GW vaihtuu; muuten diff on tyhja.
+          # 22.9: etusivun kortit + sisaltotiiviste (refresh_site_cards).
+          # Muuttuvat vain kun kortin nakyva sisalto muuttuu; muuten diff on tyhja.
           git add assets/cards/cards.json assets/cards/gameweek-card.webp assets/cards/gameweek-card-450.webp assets/cards/projected-xi-card.webp assets/cards/projected-xi-card-450.webp || echo "::warning::korttien git add epaonnistui - muu data pushataan silti"
           # 🔴 7.9 (portin 17. kierros): TAMA PUUTTUI, ja tiedosto oli JAASSA
           # 7 vrk. `build_gw_recap` ajaa rivilla 357 ja kirjoittaa oikeat luvut

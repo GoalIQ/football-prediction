@@ -105,6 +105,24 @@ def with_fonts(html: str) -> str:
     return html.replace("<style>", "<style>" + font_face_css(), 1)
 
 
+def stamp_utc(t, with_day: bool = False) -> str:
+    """'Fri 4 Sep 17:30 UTC' / '29 Aug 07:05 UTC': paivan etunolla pois,
+    tunnin etunolla jaa (7:05 lukisi 12 h -kellolta). Siirretty 22.9
+    render_projected_xi_cardista, jotta molemmat kortit leimaavat ajan samalla
+    muodolla (julkaisuportti: standouts-otsikon deadline- ja projektiorivi)."""
+    import datetime as _dt
+    t = t.astimezone(_dt.timezone.utc)
+    day = f"{t.strftime('%a')} {t.day}" if with_day else str(t.day)
+    return f"{day} {t.strftime('%b %H:%M')} UTC"
+
+
+def fmt_utc(s: str | None, with_day: bool = False) -> str:
+    if not s:
+        return ""
+    from src.models.gw_calls import parse_utc
+    return stamp_utc(parse_utc(s), with_day)
+
+
 def find_chrome() -> str | None:
     candidates = [shutil.which(n) for n in
                   ("chrome", "google-chrome", "chromium", "msedge")]
@@ -177,6 +195,27 @@ _MEASURE_JS = r"""
 })();
 </script>
 """
+
+
+# Aikaleimat jotka muuttuvat joka ajossa ilman etta kortin SISALTO muuttuu.
+# Deadline EI ole tassa: se on sisaltoa ja vaihtuu vain kierroksen mukana.
+_AIKALEIMAT = re.compile(
+    r"(projection run|card made) \d{1,2} [A-Z][a-z]{2} \d{2}:\d{2} UTC")
+
+
+def content_signature(html: str) -> str:
+    """Kortin nakyva sisalto tiivisteena: nimet, pyoristetyt luvut, otsikot.
+
+    22.9 (julkaisuportti): etusivun kortti renderoidaan uudelleen kun TAMA
+    muuttuu, ei vasta kierroksen vaihtuessa. Tiiviste lasketaan samasta
+    nakyvasta tekstista jonka lukija nakee, joten myos pohjan tekstimuutos
+    (esim. tiilen nimi) muuttaa sen. Projektion ja kuvan aikaleimat
+    riisutaan: ne muuttuisivat joka 3 h ajossa vaikka yksikaan luku ei
+    muuttuisi. Pelkka tyylimuutos (CSS) ei muuta tiivistetta.
+    """
+    import hashlib
+    teksti = " ".join(_AIKALEIMAT.sub(" ", visible_text(html)).split())
+    return hashlib.sha256(teksti.encode("utf-8")).hexdigest()[:16]
 
 
 def visible_text(html: str) -> str:

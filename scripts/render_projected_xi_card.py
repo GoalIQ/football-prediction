@@ -49,14 +49,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from scripts.build_fpl_longtail import _kit_defs, _kit_svg
-from scripts.card_shot import (CardLayoutError, find_chrome, render_card,
-                               with_fonts)
+from scripts.card_shot import (CardLayoutError, find_chrome, fmt_utc,
+                               render_card, stamp_utc, with_fonts)
 from scripts.publish_gate import blocked_names, load_blocklist
 from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
 # FREE-GW-XP (30.8): valintafunktiot ovat jaetussa moduulissa, jotta kortti ja
 # ilmaissivun tarkistusreitti EIVAT voi laskea eri listaa. Ks. src/models/fpl_gw_xp.
 from src.models.fpl_gw_xp import (EXCLUDED_NAMES, club_of as _club_of,
                                   eligible, excluded as _excluded, gw_xp,
+                                  gw_xp_list_ids,
                                   opponent_text as _opp_text,
                                   top_projected as _top_projected)
 from src.models.gw_calls import (PROJECTED_XI_CALL, DeadlinePassed, NEW_LOG,
@@ -276,33 +277,29 @@ def reconcile_with_log(sq: dict, gw: int, log: dict | None, now) -> dict:
 # Renderointi
 # ---------------------------------------------------------------------------
 
-def _fmt_utc(s: str | None, with_day: bool = False) -> str:
-    if not s:
-        return ""
-    return _stamp(parse_utc(s), with_day)
-
-
-def _stamp(t: _dt.datetime, with_day: bool = False) -> str:
-    """'Fri 4 Sep 17:30 UTC' / '29 Aug 07:05 UTC': paivan etunolla pois,
-    tunnin etunolla jaa (7:05 lukisi 12 h -kellolta)."""
-    t = t.astimezone(_dt.timezone.utc)
-    day = f"{t.strftime('%a')} {t.day}" if with_day else str(t.day)
-    return f"{day} {t.strftime('%b %H:%M')} UTC"
+# 22.9: aikaleimat yhdesta paikasta (scripts/card_shot.py), jotta standouts-
+# ja XI-kortti leimaavat deadlinen ja projektion samalla muodolla.
+_fmt_utc = fmt_utc
+_stamp = stamp_utc
 
 
 def _promoted(p: dict) -> bool:
     return (p.get("team_flag") or "") == "promoted"
 
 
-def _cell(p: dict, cap_id: int, vice_id: int, size: int = 52) -> str:
+def _cell(p: dict, cap_id: int, vice_id: int, size: int = 52,
+          show_xp: bool = True) -> str:
+    """`show_xp=False`: nimi + seura ilman lukua (22.9 julkaisuportti: luku
+    naytetaan vain pelaajalle joka on sivun #gw-xp-listalla)."""
     badge = ""
     if int(p["id"]) == cap_id:
         badge = '<span class="badge">C</span>'
     elif int(p["id"]) == vice_id:
         badge = '<span class="badge v">V</span>'
+    luku = f' · <i>{float(p["gw_xp"]):.1f}</i>' if show_xp else ""
     return ('<div class="xip">' + badge + _kit_svg(p["team_short"], size=size)
             + f'<b>{escape(str(p["web_name"]))}</b>'
-            + f'<span>{escape(str(p["team_short"]))} · <i>{float(p["gw_xp"]):.1f}</i></span></div>')
+            + f'<span>{escape(str(p["team_short"]))}{luku}</span></div>')
 
 
 def build_html(data: dict, log: dict | None = None, now=None,
@@ -328,10 +325,24 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f'<td class="xp">{gw_xp(p, gw):.1f}</td>'
         "</tr>"
         for i, p in enumerate(top, 1))
+    # 🔴 22.9 JULKAISUPORTTI (fail-closed): kortin jokainen luku on
+    # tarkistettava ilmaissivulta. Luku naytetaan vain pelaajalle joka on
+    # sivun #gw-xp-listalla, ja lista tulee SAMASTA funktiosta kuin sivulla
+    # (`free_rows` -> `gw_xp_list_ids`). Mitattu 22.9: penkin nelja lukua
+    # (Phillips 1.0, Emersonn 3.8, Slater 3.4, Thomas-Asante 2.9) eivat olleet
+    # listalla, joten lukija ei voinut tarkistaa niita mistaan. Penkki
+    # naytetaan siksi aina ilman lukuja, ja XI:n pelaaja listan ulkopuolelta
+    # samoin. Yhteissumma naytetaan vain kun jokainen sen yhteenlaskettava on
+    # kortilla nakyvissa: muuten lukija ei voi laskea sita itse.
+    listalla = gw_xp_list_ids(data, blocklist)
     by_type = {t: [p for p in sq["xi"] if p["element_type"] == t] for t in (1, 2, 3, 4)}
-    pitch = "".join('<div class="xirow">' + "".join(_cell(p, cap_id, vice_id) for p in by_type[t])
+    pitch = "".join('<div class="xirow">' + "".join(
+        _cell(p, cap_id, vice_id, show_xp=p["id"] in listalla) for p in by_type[t])
                     + "</div>" for t in (1, 2, 3, 4))
-    bench_html = "".join(_cell(p, -1, -1, size=40) for p in sq["bench"])
+    bench_html = "".join(_cell(p, -1, -1, size=40, show_xp=False) for p in sq["bench"])
+    summa_nakyy = all(p["id"] in listalla for p in sq["xi"])
+    tot_html = (f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div>'
+                if summa_nakyy else "")
     shorts = [p["team_short"] for p in sq["xi"] + sq["bench"]]
     promoted_on_card = any(_promoted(p) for p in top)
     from scripts.gen_share_card import promoted_footnote
@@ -368,7 +379,7 @@ def build_html(data: dict, log: dict | None = None, now=None,
         f'<div class="left"><div class="lbl">GW{gw} projected points, top {len(top)}</div>'
         f'<table><tbody>{rows}</tbody></table>{footnote}</div>'
         f'<div class="right"><div class="lblrow"><div class="lbl">Best XI for GW{gw} alone ({sq["formation"]})</div>'
-        f'<div class="tot"><b>{sq["xi_xp"]:.1f}</b> projected, captain doubled</div></div>'
+        f'{tot_html}</div>'
         f'<div class="pitch">{pitch}</div>'
         f'<div class="bench"><span class="blbl">Bench</span>{bench_html}</div>'
         '<div class="fn">Best 15 for this gameweek alone under FPL squad rules: '
@@ -429,16 +440,31 @@ def write_call(log: dict, payload: dict, meta: dict, now) -> dict:
                        now, source={"projection_generated_at": meta.get("generated_at")})
 
 
+def card_inputs() -> tuple[dict, list[dict], dict]:
+    """Kortin syotteet levylta. YKSI paikka: main() ja current_card_html()
+    lukevat samat tiedostot, joten etusivun tiiviste (publish_cards_to_site)
+    lasketaan tasan siita mista kortti renderoitaisiin."""
+    data = json.loads(XP_PATH.read_text(encoding="utf-8"))
+    return data, load_blocklist(), _load_log()
+
+
+def current_card_html(now=None) -> str:
+    """HTML jonka main() kuvaisi nyt (ilman upotettuja fontteja), portti ajettuna."""
+    data, blocklist, log = card_inputs()
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    html, _ = build_html(data, log=log, now=now, blocklist=blocklist)
+    gate(html, blocklist)
+    return html
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs" / "cards"))
     ap.add_argument("--dry-run", action="store_true",
                     help="renderoi kortti, ala kirjoita data/gw_calls.json:iin")
     args = ap.parse_args(argv)
-    data = json.loads(XP_PATH.read_text(encoding="utf-8"))
+    data, blocklist, log = card_inputs()
     meta = data.get("meta") or {}
-    blocklist = load_blocklist()
-    log = _load_log()
     now = _dt.datetime.now(_dt.timezone.utc)
     html, payload = build_html(data, log=log, now=now, blocklist=blocklist)
     gate(html, blocklist)
