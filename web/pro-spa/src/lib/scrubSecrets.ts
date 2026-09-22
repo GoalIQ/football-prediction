@@ -30,6 +30,11 @@ const JWT_RE = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]+/g;
 
 export const REDACTED = '[redacted]';
 
+function isPlainObject(v: object): boolean {
+	const proto = Object.getPrototypeOf(v);
+	return proto === Object.prototype || proto === null;
+}
+
 export function scrubString(value: string): string {
 	if (!value) return value;
 	return value.replace(PARAM_RE, `$1${REDACTED}`).replace(JWT_RE, REDACTED);
@@ -51,6 +56,21 @@ export function scrubSecrets<T>(value: T, depth = 0): T {
 	}
 	if (typeof value === 'string') return scrubString(value) as T;
 	if (Array.isArray(value)) return value.map((v) => scrubSecrets(v, depth + 1)) as T;
+	// 🔴 22.9: Object.entries(Date) on [], joten Date muuttui {}:ksi. posthog-js
+	// lahettaa `timestamp`-kentan Date-oliona, ja PostHog hylkasi koko eran
+	// 400:lla 14.9 alkaen ($pageleave 0/vrk 15.9 alkaen). Date ei voi kantaa
+	// salaisuutta, joten se kulkee sellaisenaan.
+	if (value instanceof Date) return value;
+	if (value && typeof value === 'object' && !isPlainObject(value)) {
+		// Muu kuin tavallinen olio (URL, Error, luokan instanssi): ei rekursiota
+		// Object.entriesilla (sama vika kuin Datella), vaan siivous JSON-muodossa
+		// kuten syvyyskatolla. Ei fail-open: merkkijonot siivotaan silti.
+		try {
+			return JSON.parse(scrubString(JSON.stringify(value))) as T;
+		} catch {
+			return REDACTED as T;
+		}
+	}
 	if (value && typeof value === 'object') {
 		const out: Record<string, unknown> = {};
 		for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
