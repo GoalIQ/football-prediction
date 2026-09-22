@@ -398,7 +398,7 @@ def test_mobile_css_ei_mene_palkin_gen_lohkoon(name, tmp_path):
 #: vain todennakoisyyden kolmelle tai useammalle maalille, ei odotusarvoa
 #: (julkaisutarkistaja blokkasi sen 22.9).
 VEDONLYONTISANAT = re.compile(
-    r"most[ -]likely scor|likely scorelines|\bBTTS\b|both teams to score|"
+    r"most[ -]likely (?:\w+ )?scor|likely scorelines|\bBTTS\b|both teams to score|"
     r"expected total goals|fair value|top-10 scorelines", re.I)
 
 
@@ -422,7 +422,8 @@ def test_julkisilla_pinnoilla_ei_vedonlyontisanastoa():
 
 
 def test_kontrolli_vedonlyontisanat_osuvat():
-    for lause in ("the most likely scorelines", "top-10 scorelines, total goals and BTTS",
+    for lause in ("the most likely scorelines", "the most likely exact scorelines",
+                  "top-10 scorelines, total goals and BTTS",
                   "expected total goals", "both teams to score"):
         assert VEDONLYONTISANAT.search(lause), lause
     for lause in ("scoreline probabilities", "the chance both teams score",
