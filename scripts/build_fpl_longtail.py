@@ -775,8 +775,9 @@ def render_captain(xp: dict, now: datetime) -> str | None:
         )
         + "</div>"
         '<p class="note"><strong>Start%</strong> is how likely the model thinks '
+        # 22.9 (Villen brief): ei vedonlyontisanastoa, ks. data/rejected_phrases.json.
         "he is to be in the XI. Near 50 it is a coin flip, and a captaincy on a "
-        "coin flip is a bet on team news. Check the press conference before you "
+        "coin flip depends on the team news. Check the press conference before you "
         "commit the armband.</p>"
         # 21.8: FPL-XP-COPY-RISTIRIITA. Tama sivu vaitti "Expected points
         # are in GoalIQ Premium" samalla kun /fpl/expected-points servaa
@@ -4598,7 +4599,10 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
     if not meta.get("available") or not players:
         return None
 
-    rows = sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))
+    # 22.9: sama jarjestysfunktio kuin standouts-kortin poolilla, jotta kortti
+    # ei voi nimeta pelaajaa jota #top-100 ei nayta (julkaisuportti).
+    from src.models.fpl_gw_xp import HORIZON_TOP_N, horizon_ranked
+    rows = horizon_ranked(players)
     # 18.9: SUMMAN pituus, ei sarakkeiden maara — `xp_horizon_total`
     # ei sisalla jo alkanutta kierrosta, mutta rivit sisaltavat.
     # Yksi lukija (`fpl_xp.horizon_sum_gw`), portti:
@@ -4667,9 +4671,9 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         "</tr>"
         # Sama 100 rivin DOM-rajaus kuin xg-leadersissa; koko lista on
         # nakyvissa positiosuodattimen kautta appissa/premiumissa.
-        for i, r in enumerate(rows[:100])
+        for i, r in enumerate(rows[:HORIZON_TOP_N])
     )
-    kitdefs = _kit_defs(p.get("team_short") for p in rows[:100])
+    kitdefs = _kit_defs(p.get("team_short") for p in rows[:HORIZON_TOP_N])
     # Jakokortti PALVELIMEN riveilta, samasta `rows`-listasta kuin taulukko.
     # Teksti on julkaisutarkistajan hyvaksyma (ajo 2): kierrosnumerot eivat
     # "next 6" (koska next_gameweek on KESKEN oleva kierros, joten "next 6"
@@ -4750,7 +4754,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
         "</tr></thead>"
-        f"<tbody>{trows}</tbody></table></div>{_flag_legend(rows[:100])}{_driver_legend(rows[:100], ctx_top)}"
+        f"<tbody>{trows}</tbody></table></div>{_flag_legend(rows[:HORIZON_TOP_N])}{_driver_legend(rows[:HORIZON_TOP_N], ctx_top)}"
     )
     hero = (
         "<h1>FPL expected points, top 100 players ranked</h1>"
@@ -4805,10 +4809,13 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         + _share_button()
         + f"{kitdefs}{table}"
         + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
-        + _tflag_note(xp, rows[:100], rows) +
+        + _tflag_note(xp, rows[:HORIZON_TOP_N], rows) +
         '<p class="note"><strong>Start% near 50 means the model is split.'
-        "</strong> Those totals are a bet on team news, not a settled "
-        "projection. A keeper on 51% is not a 45-minute keeper.</p>"
+        # 22.9 (Villen brief): ei vedonlyontisanastoa, ks. data/rejected_phrases.json.
+        # 22.9 kierros 2: "assume the team news holds" oli epatosi
+        # MEKANISMIVAITE (malli ei oleta uutisia, se painottaa Start%:lla).
+        "</strong> Those totals depend on the team news. They are not a "
+        "settled projection. A keeper on 51% is not a 45-minute keeper.</p>"
         # 10.8: mitattu harha julki (Villen valinta C). Nelja korjausyritysta
         # havisi, viimeisin ristiinvalidoitu kalibrointi kaikilla varianteilla,
         # joten lukua EI sadeta. Sama vaste kuin siirtosokeudessa: kerro se.

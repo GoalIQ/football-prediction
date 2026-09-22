@@ -228,9 +228,7 @@ def test_dry_run_renders_but_does_not_write_log(tmp_path, monkeypatch):
     log_path = tmp_path / "gw_calls.json"
     monkeypatch.setattr(mod, "XP_PATH", xp)
     monkeypatch.setattr(mod, "CALLS_LOG_PATH", log_path)
-    monkeypatch.setattr(mod.shutil, "which", lambda n: None)  # ei Chromea testissa
-    monkeypatch.delenv("ProgramFiles", raising=False)
-    monkeypatch.delenv("ProgramFiles(x86)", raising=False)
+    monkeypatch.setattr(mod, "find_chrome", lambda: None)  # ei Chromea testissa
     assert main(["--dry-run", "--out", str(tmp_path / "out")]) == 0
     assert (tmp_path / "out" / f"goaliq_projected_xi_gw{GW}.html").exists()
     assert not log_path.exists(), "dry-run ei saa kirjoittaa lokia"
@@ -247,9 +245,7 @@ def test_write_refused_after_deadline(tmp_path, monkeypatch):
     log_path = tmp_path / "gw_calls.json"
     monkeypatch.setattr(mod, "XP_PATH", xp)
     monkeypatch.setattr(mod, "CALLS_LOG_PATH", log_path)
-    monkeypatch.setattr(mod.shutil, "which", lambda n: None)
-    monkeypatch.delenv("ProgramFiles", raising=False)
-    monkeypatch.delenv("ProgramFiles(x86)", raising=False)
+    monkeypatch.setattr(mod, "find_chrome", lambda: None)  # ei Chromea testissa
     assert main(["--out", str(tmp_path / "out")]) == 1
     assert not log_path.exists()
 

@@ -20,7 +20,7 @@ status a, jotta kortti ei nosta penkkilaista):
   CEILING        suurin p90 (tasapeli: p_haul) - ei "highest", koska p90 on
                  kokonaisluku ja sama katto voi olla usealla (27.8: 10 kolmella)
   SAFEST PICK    pienin p_blank niista joiden GW-xP >= 4
-  THE GAMBLE     suurin p_haul niista joiden p_blank >= 0.35
+  BOOM OR BUST   (avain `gamble`) suurin p_haul niista joiden p_blank >= 0.35
   Nelja eri nimea (poissulku jarjestyksessa). Nousija (team_flag promoted)
   saa tahden + alaviitteen kuten 25.8 GW2-outlook-kortti.
 
@@ -31,9 +31,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import shutil
-import subprocess
 import sys
 from html import escape
 
@@ -43,6 +40,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
+from scripts.card_shot import (CardLayoutError, find_chrome, fmt_utc,
+                               render_card, with_fonts)
+from src.models.gw_calls import CALL_LABELS  # nayttonimet yhdesta paikasta
 from src.models.fpl_gameweek import actionable_gameweek  # portti: ei next_gameweek suoraan
 
 XP_PATH = config.DATA_DIR / "fpl_xp_projections.json"
@@ -66,7 +66,7 @@ CSS = """
 body{background:#000;}
 .card{width:1200px;height:675px;background:
 linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
-font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
+font-family:'IBM Plex Sans',sans-serif;color:var(--cream);
 padding:34px 44px 26px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
 .brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
@@ -80,8 +80,6 @@ text-transform:uppercase;font-weight:700;}
 .tile .name{font-size:30px;font-weight:700;margin-top:10px;white-space:nowrap;
 overflow:hidden;text-overflow:ellipsis;}
 .tile .meta{color:var(--muted);font-size:15px;margin-top:2px;}
-.tile .range{color:var(--muted);font-size:15px;margin-top:26px;}
-.tile .range b{color:var(--cream);font-weight:600;}
 .tile .big{font-size:54px;font-weight:700;color:var(--amber);margin-top:auto;
 line-height:1;font-variant-numeric:tabular-nums;}
 .tile .big small{font-size:18px;white-space:nowrap;color:var(--muted);font-weight:500;margin-left:6px;}
@@ -91,6 +89,10 @@ line-height:1;font-variant-numeric:tabular-nums;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:14px;border-top:1px solid var(--line);padding-top:10px;}
 .ftr b{color:var(--cream);}
+/* 22.9: tarkistusreitti ei saa katketa rivinvaihtoon (DejaVu-simulaatiossa
+se katkesi kohdasta '#top-'). nowrap tekee katkeamisesta ylivuodon, jonka
+scripts/card_shot.render_card mittaa ja kieltaytyy kuvaamasta. */
+.ftr span:last-child{white-space:nowrap;}
 """
 
 
@@ -100,7 +102,7 @@ def _dist_gw(players: list[dict]) -> int | None:
     return next(iter(gws)) if len(gws) == 1 else None
 
 
-def _pool(players: list[dict]) -> list[dict]:
+def _pool(players: list[dict], meta: dict | None = None) -> list[dict]:
     """Sama rajaus kuin ilmaispinnan GW-xP-listalla, plus kortin p_start-raja.
 
     🔴 VILLEN HUOMIO 4.9.2026. Kortti nimesi Andersonin "safest pickiksi",
@@ -118,17 +120,27 @@ def _pool(players: list[dict]) -> list[dict]:
     jalkeen, jotta katto lasketaan samoista pelaajista kuin sivulla.
     Estolista ja Thiaw-esto tulevat samalta lukijalta (`eligible`), eivat
     taman tiedoston omasta kopiosta.
+
+    🔴 22.9 (julkaisuportti): kortin prosentit (10+, Blank, Ceiling)
+    tarkistetaan sivun #top-100-taulusta, joten pooli rajataan sen joukkoon
+    SAMALLA funktiolla kuin sivu (`horizon_top_ids_actionable`). Pelaaja jota
+    taulu ei nayta ei voi olla kortilla; tilalle tulee seuraava ehdokas tai
+    "no pick". `meta` puuttuu vain testifikstuureissa (raakasumma).
     """
     from scripts.publish_gate import load_blocklist
-    from src.models.fpl_gw_xp import top_projected
+    from src.models.fpl_gw_xp import (horizon_top_ids,
+                                      horizon_top_ids_actionable, top_projected)
     gw = _dist_gw(players)
     if gw is None:
         return []
+    taulussa = (horizon_top_ids_actionable({"meta": meta, "players": players})
+                if meta is not None else horizon_top_ids(players))
     capped = top_projected(players, gw, len(players), load_blocklist())
     return [p for p in capped
             if p.get("xp_dist")
             and float(p.get("p_start") or 0) >= MIN_P_START
-            and gw_xp(p) is not None]
+            and gw_xp(p) is not None
+            and p.get("id") in taulussa]
 
 
 def gw_xp(p: dict):
@@ -171,10 +183,11 @@ def assert_dist_gameweek(players: list[dict], gw: int) -> None:
             f"(QUEUE: XP-DIST-KIERROS) ennen julkaisua.")
 
 
-def pick_standouts(players: list[dict]) -> dict:
+def pick_standouts(players: list[dict], meta: dict | None = None) -> dict:
     """Puhdas valintafunktio (testattava). Palauttaa avaimet
-    captain/ceiling/safest/gamble -> pelaajarivi tai None."""
-    pool = _pool(players)
+    captain/ceiling/safest/gamble -> pelaajarivi tai None. `meta` rajaa
+    poolin sivun #top-100-joukkoon (ks. `_pool`)."""
+    pool = _pool(players, meta)
     if not pool:
         return {"captain": None, "ceiling": None, "safest": None, "gamble": None}
     d = lambda p: p["xp_dist"]
@@ -244,6 +257,40 @@ def claim_scope(pool: list[dict], pick: dict | None, val,
             "labels": [labels[_key(p)] for p in ahead if _key(p) in labels]}
 
 
+def _nakyvat_rivit(data: dict) -> tuple[list[dict], list[dict]]:
+    """Kortin tarkistusreitin rivit jotka tayttavat kortin OMAN ehdon.
+
+    (#gw-xp-rivit, #top-100-rivit), SAMOILLA funktioilla kuin sivu
+    (`free_rows`, `horizon_top_ids_actionable`). Ehto on se jonka kortti
+    sanoo aaneen alaotsikossa: "at least a 60% chance of starting", ja
+    rivilla on jakauma (ilman sita taulu nayttaa "-" eika vertailua ole).
+    Estolista koskee vain #gw-xp:ta, kuten sivulla.
+    """
+    from scripts.publish_gate import load_blocklist
+    from src.models.fpl_gw_xp import free_rows, horizon_top_ids_actionable
+    players = data.get("players") or []
+
+    def ehto(p):
+        return (float(p.get("p_start") or 0) >= MIN_P_START
+                and bool(p.get("xp_dist")))
+    gw_rivit = [p for p in free_rows(data, load_blocklist())[1] if ehto(p)]
+    top_ids = horizon_top_ids_actionable(data)
+    top_rivit = [p for p in players if p.get("id") in top_ids and ehto(p)]
+    return gw_rivit, top_rivit
+
+
+def _yhdiste(*joukot: list[dict]) -> list[dict]:
+    """Pelaajat kerran (avaimena id), jarjestys sailyy."""
+    nahty, out = set(), []
+    for j in joukot:
+        for p in j:
+            k = _key(p)
+            if k not in nahty:
+                nahty.add(k)
+                out.append(p)
+    return out
+
+
 def scope_phrase(superlative: str, sc: dict) -> str:
     """Superlatiivi siina laajuudessa kuin se on tosi, tai tyhja."""
     if sc["ahead"] and not sc["on_card"]:
@@ -277,11 +324,10 @@ def _tile(lbl: str, p: dict | None, big: str, small: str, why: str) -> str:
             f'<div class="name">{escape(p["web_name"])}</div>'
             f'<div class="meta">{escape(p["pos"])} · {escape(p["team_short"])}{star}'
             f' · {float(p.get("price") or 0):.1f}m</div>'
-            # "8 weeks in 10 between a and b": vali p10..p90 kattaa rakenteellisesti
-            # >= 80 % (typistys nostaa). EI "range"/"floor": havaittu vaihteluvali
-            # oli 0-31 (mitattu n=200 000), joten sisaltavyytta ei luvata.
-            f'<div class="range">8 weeks in 10 between <b>{p["xp_dist"]["p10"]}</b> '
-            f'and <b>{p["xp_dist"]["p90"]}</b></div>'
+            # 🔴 22.9 (julkaisuportti): rivi "8 weeks in 10 between p10 and
+            # p90" POISTETTU. p10 ei ole ilmaissivulla missaan sarakkeessa,
+            # joten lukija ei voinut tarkistaa sita. Jokainen kortin luku on
+            # #top-100-taulussa (10+, Blank, Ceiling) tai johdettu siita.
             f'<div class="big">{escape(big)}<small>{escape(small)}</small></div>'
             f'<div class="why">{escape(why)}</div></div>')
 
@@ -349,26 +395,37 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     meta = data.get("meta") or {}
     gw = int(actionable_gameweek(meta) or 0)
     assert_dist_gameweek(players, gw)
-    s = reconcile_with_log(pick_standouts(players), gw, log, now, players)
+    s = reconcile_with_log(pick_standouts(players, meta), gw, log, now, players)
     pct = lambda x: f"{round(x * 100)}%"
     # Vertailujoukko on sama kuin valinnassa: koko pooli katolle, ja
     # safestille sama xP-rajattu joukko josta safest valitaan.
-    pool = _pool(players)
+    pool = _pool(players, meta)
     safe_pool = [p for p in pool if (gw_xp(p) or 0) >= SAFE_MIN_XP]
+    # 🔴 22.9 JULKAISUPORTTI (kierros 2): superlatiivi tarkistetaan SIITA
+    # mita lukija nakee, ei vain kortin poolista. Pooli soveltaa seurakattoa,
+    # sivun #top-100 ei: 18.9 kortti sanoi "lowest blank chance after our
+    # captain pick, blanks 20%" kun taulussa nakyi Cityn neljas pelaaja
+    # (Anderson) blank 17 %, Start 97. Tarkistaja mittasi 148 commitista 49
+    # joissa safest olisi ollut epatosi. Vertailujoukko = pooli ∪ reitin
+    # rivit jotka tayttavat kortin oman ehdon, ja vertailu NAYTETYILLA
+    # pyoristyksilla (sivu: round(p*100) %, GW-xP 1 desimaali), jolloin
+    # nakyva tasapeli sanotaan "joint".
+    gw_rivit, top_rivit = _nakyvat_rivit(data)
     scopes = {
         # 10.9 (QUEUE KORTIN-KAPTEENITIILI-CLAIM-SCOPE): kapteenin "top GW
         # projection in the pool" oli ainoa superlatiivi joka ei kulkenut
-        # taman lukijan lapi. Tanaan tosi valinnan rakenteen takia - mutta
-        # niin olivat ceiling ja safest ennen kuin julkaisivat itsensa
-        # kumoavan lauseen. Tasapeli -> "joint top", parempi poolissa -> ei
-        # superlatiivia.
-        "captain": claim_scope(pool, s["captain"],
-                               lambda p: gw_xp(p) or 0.0, True, {}),
-        "ceiling": claim_scope(pool, s["ceiling"],
-                               lambda p: p["xp_dist"]["p90"], True,
+        # taman lukijan lapi. Tasapeli -> "joint top", parempi poolissa -> ei
+        # superlatiivia. Reitti: #gw-xp (`free_rows`).
+        "captain": claim_scope(_yhdiste(pool, gw_rivit), s["captain"],
+                               lambda p: round(gw_xp(p) or 0.0, 1), True, {}),
+        # Reitti: #top-100, Ceiling-sarake (kokonaisluku).
+        "ceiling": claim_scope(_yhdiste(pool, top_rivit), s["ceiling"],
+                               lambda p: int(p["xp_dist"]["p90"]), True,
                                {"captain": s["captain"]}),
-        "safest": claim_scope(safe_pool, s["safest"],
-                              lambda p: p["xp_dist"]["p_blank"], False,
+        # Reitti: #top-100, Blank-sarake (round(p*100) %).
+        "safest": claim_scope(_yhdiste(safe_pool, top_rivit), s["safest"],
+                              lambda p: round(float(p["xp_dist"]["p_blank"]) * 100),
+                              False,
                               {"captain": s["captain"], "ceiling": s["ceiling"]}),
     }
     tiles = "".join([
@@ -394,9 +451,12 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
               "3+ pts",
               (", ".join(x for x in [
                   scope_phrase("lowest blank chance", scopes["safest"]),
-                  f"median {s['safest']['xp_dist']['median']} pts"] if x)
+                  # 22.9: ei mediaania (ei sivulla); Blank-sarakkeen luku.
+                  f"blanks {pct(s['safest']['xp_dist']['p_blank'])}"] if x)
                if s["safest"] else "")),
-        _tile("The gamble", s["gamble"],
+        # 22.9 (Villen brief): ei vedonlyontisanastoa. Sisainen avain `gamble`
+        # jaa (kutsuloki), nayttonimi on CALL_LABELSin kanssa sama.
+        _tile(CALL_LABELS["gamble"], s["gamble"],
               pct(s["gamble"]["xp_dist"]["p_haul"]) if s["gamble"] else "-",
               "10+ pts",
               # Sama pyoristetty haul kuin kapteenilla sanotaan aaneen, ei piiloteta.
@@ -431,6 +491,10 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
         # merkkiversion - tasan sen jonka 1.8 paatos poisti.
         + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
         f'<div><div class="title">GW{gw} standouts from {n:,} simulated gameweeks</div>'
+        # 22.9 (julkaisuportti): kortti on tilannekuva, joten projektion aika
+        # ja deadline datasta, sama muoto kuin projected-XI-kortilla.
+        f'<div class="sub">GW{gw} deadline {fmt_utc(meta.get("deadline_utc"), with_day=True)}'
+        f' · projection run {fmt_utc(meta.get("generated_at"))}</div>'
         '<div class="sub">Same numbers as our xP, run that many times. Only players with '
         'at least a 60% chance of starting.</div></div></div>'
         f'<div class="tiles">{tiles}</div>{footnote}'
@@ -450,50 +514,73 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     return html, s
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs" / "cards"))
-    args = ap.parse_args()
+def card_inputs() -> tuple[dict, dict | None]:
+    """Kortin syotteet levylta. YKSI paikka: main() ja current_card_html()
+    lukevat samat tiedostot, joten etusivun tiiviste (publish_cards_to_site)
+    lasketaan tasan siita mista kortti renderoitaisiin."""
     data = json.loads(XP_PATH.read_text(encoding="utf-8"))
     log = (json.loads(CALLS_LOG_PATH.read_text(encoding="utf-8"))
            if CALLS_LOG_PATH.exists() else None)
+    return data, log
+
+
+def _tyhja_kortti(s: dict) -> bool:
+    """Kaikki nelja tiilta "no pick": korttia ei julkaista (22.9 kierros 2).
+    Vanha kortti jaa sivulle, refresh kirjaa kaatumisen (stale_since) ja
+    portti eskaloi 24 h jalkeen - tyhja kortti etusivulla ei ole tuote."""
+    return all(v is None for v in s.values())
+
+
+def current_card_html(now=None) -> str:
+    """HTML jonka main() kuvaisi nyt (ilman upotettuja fontteja). Kaatuu
+    samoin kuin main(), jotta tiiviste ei lupaa korttia jota ei renderoida."""
+    data, log = card_inputs()
+    html, s = build_html(data, log=log, now=now)
+    if _tyhja_kortti(s):
+        raise RuntimeError("kaikki nelja tiilta ovat 'no pick' - ei julkaista")
+    return html
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(config.PROJECT_ROOT / "outputs" / "cards"))
+    args = ap.parse_args(argv)
+    data, log = card_inputs()
     html, s = build_html(data, log=log)
+    if _tyhja_kortti(s):
+        print("::error::standouts: kaikki nelja tiilta ovat 'no pick' - korttia "
+              "ei renderoida eika julkaista, vanha jaa sivulle.")
+        return 1
     gw = int(actionable_gameweek(data.get("meta") or {}) or 0)
     out_dir = Path(args.out).resolve()  # file-URI vaatii absoluuttisen polun
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / f"goaliq_standouts_gw{gw}.html"
-    html_path.write_text(html, encoding="utf-8")
+    # 22.9: fontit upotetaan vasta kuvattavaan tiedostoon (scripts/card_shot.py).
+    html_path.write_text(with_fonts(html), encoding="utf-8")
     for k, p in s.items():
         print(f"  {k:8s} {p['web_name'] if p else '-'} "
               f"{p['xp_dist'] if p else ''}")
     print(f"HTML: {html_path}")
-    candidates = [shutil.which(n) for n in
-                  ("chrome", "google-chrome", "chromium", "msedge")]
-    for env in ("ProgramFiles", "ProgramFiles(x86)"):
-        base = os.environ.get(env)
-        if base:
-            candidates.append(str(Path(base) / "Google" / "Chrome" / "Application"
-                                  / "chrome.exe"))
-    for exe in candidates:
-        if exe and Path(exe).exists():
-            png = out_dir / f"goaliq_standouts_gw{gw}.png"
-            subprocess.run([exe, "--headless=new", f"--screenshot={png}",
-                            "--window-size=1200,675", "--hide-scrollbars",
-                            html_path.as_uri()],
-                           check=True, capture_output=True, timeout=60)
-            print(f"PNG: {png}")
-            # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
-            # laskeutumissivun kortti jaisi siihen kierrokseen jona se
-            # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
-            # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
-            try:
-                from scripts.publish_cards_to_site import main as _julkaise
-                _julkaise()
-            except Exception as _e:  # ei saa kaataa kortin generointia
-                print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
-            break
-    else:
+    exe = find_chrome()
+    if exe is None:
         print("Chromea ei loytynyt - kaappaa HTML kasin.")
+        return 0
+    png = out_dir / f"goaliq_standouts_gw{gw}.png"
+    try:
+        render_card(exe, html_path, png)
+    except CardLayoutError as e:
+        print(f"::error::{e}")
+        return 1
+    print(f"PNG: {png}")
+    # 4.9: paivita sivuston vakionimikuva samalla. Ilman tata
+    # laskeutumissivun kortti jaisi siihen kierrokseen jona se
+    # viimeksi julkaistiin kasin, ja vakionimi saisi vanhan kortin
+    # nayttamaan tuoreelta. Vahti: tests/test_site_card_images.py.
+    try:
+        from scripts.publish_cards_to_site import main as _julkaise
+        _julkaise([])
+    except Exception as _e:  # ei saa kaataa kortin generointia
+        print(f"::warning::sivuston kortin paivitys epaonnistui: {_e!r}")
     return 0
 
 

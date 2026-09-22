@@ -7,7 +7,7 @@ ei kaynnistynyt botin pushista, ja muuttuneet sivut olivat livena vanhoina
 kunnes ne dispatchattiin kasin. Vahti oli vihrea tyhjalla vertailulla.
 
 Tama tulostaa verify_live_pages.sh:lle listan: ajon committamat *.html-sivut
-(git diff HEAD~1..HEAD) + kiintea ydin, enintaan MAX_PAGES (accuracy-log voi
+ja etusivun kortit (git diff HEAD~1..HEAD) + kiintea ydin, enintaan MAX_PAGES (accuracy-log voi
 muuttaa satoja ottelusivuja; niista otetaan deterministinen otos, ydin aina).
 
     bash scripts/verify_live_pages.sh $(python scripts/verify_targets.py)
@@ -30,11 +30,32 @@ def changed_html(diff_lines: list[str]) -> list[str]:
     return out
 
 
+def changed_cards(diff_lines: list[str]) -> list[str]:
+    """Etusivun kortit (assets/cards/*.webp + cards.json, ei tools/).
+
+    22.9 LANDING-KORTIT-GW3-VANHAT: fpl-data-refresh vaihtaa kortit kerran
+    kierroksessa, mutta index.html EI muutu (kuva vaihtuu vakionimen alta).
+    Ilman tata "live = repo" olisi tosi kaikille mitatuille sivuille, hub-deploy
+    jaisi laukaisematta ja uusi kortti jaisi repoon. Sama vika kuin 9.9:n
+    xg-leaders-sivulla, eri tiedostotyyppi.
+    """
+    out = []
+    for line in diff_lines:
+        p = line.strip().replace("\\", "/")
+        if (p.startswith("assets/cards/") and p.count("/") == 2
+                and p.endswith((".webp", "cards.json"))):
+            out.append(p)
+    return out
+
+
 def targets(diff_lines: list[str], core=CORE, max_pages: int = MAX_PAGES) -> list[str]:
-    """Ydin ensin, sitten muuttuneet (deterministisessa jarjestyksessa),
-    duplikaatit pois, enintaan max_pages."""
+    """Ydin ensin, sitten muuttuneet kortit ja sivut (deterministisessa
+    jarjestyksessa), duplikaatit pois, enintaan max_pages. Kortit ennen sivuja:
+    niita on enintaan viisi eika accuracy-login satojen sivujen otos saa
+    tyontaa niita listalta."""
     seen: list[str] = []
-    for p in list(core) + sorted(set(changed_html(diff_lines))):
+    for p in (list(core) + sorted(set(changed_cards(diff_lines)))
+              + sorted(set(changed_html(diff_lines)))):
         if p not in seen:
             seen.append(p)
     return seen[:max_pages]

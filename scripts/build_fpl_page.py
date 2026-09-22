@@ -3003,13 +3003,13 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
     return (
         '<h3 id="gw-calls">Gameweek calls, logged and scored</h3>'
         "<p>The captain of the model's own FPL squad and the four picks on the "
-        "weekly standouts card (captain pick, ceiling, safest pick, the gamble) "
+        "weekly standouts card (captain pick, ceiling, safest pick, boom or bust) "
         "go into a log with a timestamp. The row follows the latest "
         "projection until the FPL deadline and never changes after it. The "
         "Logged column shows the last write before the deadline. "
         "Once the gameweek has been played, each call is scored with official "
         "FPL points. A hit means the player did what the call said: 10 or more "
-        "points for the captain pick and the gamble, the ceiling number or more "
+        "points for the captain pick and the boom-or-bust pick, the ceiling number or more "
         "for ceiling, 3 or more for the safest pick. Provisional rows wait for "
         "FPL to confirm bonus points.</p>"
         '<div class="scroll"><table>'
