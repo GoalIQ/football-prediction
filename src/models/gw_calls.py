@@ -65,7 +65,9 @@ CALL_LABELS = {
     "captain_pick": "Captain pick",
     "ceiling": "Ceiling",
     "safest": "Safest pick",
-    "gamble": "The gamble",
+    # 22.9 (Villen brief): nayttonimi ilman vedonlyontisanastoa. Sisainen
+    # avain `gamble` jaa, koska se on data/gw_calls.json:n historiassa.
+    "gamble": "Boom or bust",
     "projected_xi": "Projected XI",
 }
 

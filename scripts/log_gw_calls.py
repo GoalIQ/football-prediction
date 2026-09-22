@@ -71,7 +71,8 @@ def main(argv=None) -> int:
     # vahti oli vain kortilla, ja lokipolku oli turvassa vain sattumalta).
     assert_dist_gameweek(players, gw)
     by_id = {int(p["id"]): p for p in players if "id" in p}
-    standouts = pick_standouts(players)
+    # meta: sama #top-100-rajaus kuin kortilla (22.9), muuten loki ja kortti eroaisivat.
+    standouts = pick_standouts(players, meta)
     now = _dt.datetime.now(_dt.timezone.utc)
     log = load_log()
     try:

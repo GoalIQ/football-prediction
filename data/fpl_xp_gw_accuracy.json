@@ -9,7 +9,8 @@
    "blank": "Played, blank (2 points or fewer)",
    "ticker": "Ticker (3 to 9 points)",
    "haul": "Haul (10 or more points)"
-  }
+  },
+  "vs_fpl_ep_next_method_code": "fpl_xp_gw_accuracy.vs_fpl_ep_next.v1"
  },
  "gameweeks": [
   {
@@ -48,7 +49,7 @@
     }
    },
    "comparison": null,
-   "enriched_at": "2026-08-29T11:46:32Z",
+   "enriched_at": "2026-09-22T10:01:03Z",
    "by_pos_stats": {
     "DEF": {
      "n": 166,
@@ -70,7 +71,8 @@
      "mae": 1.742,
      "bias": 0.311
     }
-   }
+   },
+   "vs_fpl_ep_next": null
   },
   {
    "gw": 2,
@@ -129,7 +131,9 @@
      "bias": -0.035
     }
    },
-   "comparison": null
+   "comparison": null,
+   "vs_fpl_ep_next": null,
+   "enriched_at": "2026-09-22T10:01:03Z"
   },
   {
    "gw": 3,
@@ -268,7 +272,37 @@
       }
      }
     }
-   }
+   },
+   "vs_fpl_ep_next": {
+    "method_code": "fpl_xp_gw_accuracy.vs_fpl_ep_next.v1",
+    "n_missing_ep_next": 0,
+    "n_missing_actual": 0,
+    "all": {
+     "n": 501,
+     "mae": {
+      "goaliq": 1.536,
+      "fpl_ep_next": 1.688
+     },
+     "goaliq_minus_fpl": -0.151
+    },
+    "played": {
+     "n": 306,
+     "mae": {
+      "goaliq": 1.907,
+      "fpl_ep_next": 2.431
+     },
+     "goaliq_minus_fpl": -0.524
+    },
+    "did_not_play": {
+     "n": 195,
+     "mae": {
+      "goaliq": 0.955,
+      "fpl_ep_next": 0.521
+     },
+     "goaliq_minus_fpl": 0.433
+    }
+   },
+   "enriched_at": "2026-09-22T10:01:03Z"
   },
   {
    "gw": 4,
@@ -407,7 +441,37 @@
       }
      }
     }
-   }
+   },
+   "vs_fpl_ep_next": {
+    "method_code": "fpl_xp_gw_accuracy.vs_fpl_ep_next.v1",
+    "n_missing_ep_next": 0,
+    "n_missing_actual": 0,
+    "all": {
+     "n": 493,
+     "mae": {
+      "goaliq": 1.68,
+      "fpl_ep_next": 1.648
+     },
+     "goaliq_minus_fpl": 0.032
+    },
+    "played": {
+     "n": 305,
+     "mae": {
+      "goaliq": 2.101,
+      "fpl_ep_next": 2.304
+     },
+     "goaliq_minus_fpl": -0.203
+    },
+    "did_not_play": {
+     "n": 188,
+     "mae": {
+      "goaliq": 0.998,
+      "fpl_ep_next": 0.586
+     },
+     "goaliq_minus_fpl": 0.412
+    }
+   },
+   "enriched_at": "2026-09-22T10:01:03Z"
   },
   {
    "gw": 5,
@@ -546,7 +610,37 @@
       }
      }
     }
-   }
+   },
+   "vs_fpl_ep_next": {
+    "method_code": "fpl_xp_gw_accuracy.vs_fpl_ep_next.v1",
+    "n_missing_ep_next": 0,
+    "n_missing_actual": 0,
+    "all": {
+     "n": 482,
+     "mae": {
+      "goaliq": 1.616,
+      "fpl_ep_next": 1.588
+     },
+     "goaliq_minus_fpl": 0.029
+    },
+    "played": {
+     "n": 299,
+     "mae": {
+      "goaliq": 2.017,
+      "fpl_ep_next": 2.223
+     },
+     "goaliq_minus_fpl": -0.207
+    },
+    "did_not_play": {
+     "n": 183,
+     "mae": {
+      "goaliq": 0.962,
+      "fpl_ep_next": 0.549
+     },
+     "goaliq_minus_fpl": 0.414
+    }
+   },
+   "enriched_at": "2026-09-22T10:01:03Z"
   }
  ]
 }

@@ -48,6 +48,24 @@
    "rejected": "2026-09-21",
    "why": "epatosi: entry 116920 sisaltaa omia paatoksiamme (GW2 wildcard, GW3 triple captain, GW5 kokoonpano ja varakapteeni), joten se ei ole mallin joukkue. Mallin rivi on jaadytetty runko (model_squad_scores.load_public_model_series, Villen paatos 21.9 'molemmat sarjat, malli ensin'). Sanamuoto oli rekisterissa itse KORVAUKSENA 'scored in public' -hylkaykselle.",
    "replacement": "The model's squad is frozen before each deadline, and entry 116920 plays it with our own calls (render_projected_xi_card.py, render_standouts_card.py)"
+  },
+  {
+   "phrase": "the gamble",
+   "rejected": "2026-09-22",
+   "why": "vedonlyontisanastoa kortin tiilen ja kutsulokin NAYTTONIMENA (Villen brief 22.9: ei vedonlyontisanastoa julkisilla pinnoilla). Rekisteroidaan nayttomuoto eika paljasta avainta `gamble`: se on sisainen kutsuavain data/gw_calls.json:n historiassa (pick_standouts, CALL_LABELS) eika nay lukijalle. Julkaisutarkistaja blokkasi 22.9 standouts-kortin tiilen 'THE GAMBLE' ja /fpl:n #gw-calls-proosan.",
+   "replacement": "'Boom or bust' (tiili ja CALL_LABELS), proosassa 'the boom-or-bust pick' (render_standouts_card.py, src/models/gw_calls.py, build_fpl_page.gw_calls_html)"
+  },
+  {
+   "phrase": "bet on team news",
+   "rejected": "2026-09-22",
+   "why": "vedonlyontisanastoa ilmaissivulla (Villen brief 22.9). Mitattu 22.9: /fpl/expected-points ('Those totals are a bet on team news') ja /fpl/best-captain ('a captaincy on a coin flip is a bet on team news'), molemmat build_fpl_longtail.py:n literaaleja.",
+   "replacement": "'Those totals depend on the team news.' ja 'a captaincy on a coin flip depends on the team news' (scripts/build_fpl_longtail.py)"
+  },
+  {
+   "phrase": "assume the team news holds",
+   "rejected": "2026-09-22",
+   "why": "epatosi MEKANISMIVAITE /fpl/expected-pointsissa (julkaisutarkistaja 22.9 kierros 2): malli ei oleta joukkueuutisten pitavan, vaan xP painotetaan aloitustodennakoisyydella (Start%). Lause korvasi 'bet on team news' -sanamuodon samana paivana, eli korjaus toi uuden epatoden vaitteen (muisti: oma-korjaus-on-yhta-altis).",
+   "replacement": "'Those totals depend on the team news.' (scripts/build_fpl_longtail.py)"
   }
  ],
  "poikkeukset": {},

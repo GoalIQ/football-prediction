@@ -170,3 +170,46 @@ def free_rows(xp: dict, blocklist: list[dict] | None = None
     if not isinstance(gw, int):
         return None, []
     return gw, top_projected(players, gw, FREE_TOP_N, blocklist)
+
+
+# /fpl/expected-points#top-100: rivimaara ja jarjestys YHDESSA paikassa
+# (22.9.2026, julkaisuportti). Standouts-kortin prosentit (10+, Blank,
+# Ceiling) tarkistetaan TASTA taulusta, joten kortti saa nimeta vain
+# pelaajan joka on taulussa. Kun sivu ja kortti laskivat joukon kumpikin
+# omalla silmukallaan, niiden valilla ei ollut mitaan joka huomaisi eron
+# (muisti: kuratoitu-lista-jaettuun-moduuliin).
+HORIZON_TOP_N = 100
+
+
+def horizon_ranked(players: list[dict]) -> list[dict]:
+    """Koko lista horisontti-xP:n mukaan laskevasti: sivun #top-100-jarjestys.
+
+    `sorted` on vakaa, joten tasapelit sailyttavat syotteen jarjestyksen
+    samalla tavalla sivulla ja kortilla.
+    """
+    return sorted(players, key=lambda p: -(p.get("xp_horizon_total") or 0))
+
+
+def horizon_top_ids(players: list[dict], n: int = HORIZON_TOP_N) -> set:
+    """Sivun #top-100-taulukon pelaajien id:t (sama funktio kuin sivulla)."""
+    return {p.get("id") for p in horizon_ranked(players)[:n]}
+
+
+def gw_xp_list_ids(xp: dict, blocklist: list[dict] | None = None) -> set:
+    """Sivun #gw-xp-taulukon pelaajien id:t (`free_rows`, sama kuin sivulla)."""
+    return {p.get("id") for p in free_rows(xp, blocklist)[1]}
+
+
+def horizon_top_ids_actionable(xp: dict, n: int = HORIZON_TOP_N) -> set:
+    """#top-100 SAMASTA payloadista jonka sivun builder renderoi.
+
+    Builder ajaa `attach_horizon_total_actionable`in ennen sivua (summa vain
+    kierroksilta joihin voi viela vaikuttaa). Raakakentta eroaa siita kesken
+    kierroksen, joten kortti joka jarjestaisi raakasummalla voisi nimeta
+    pelaajan jota sivun taulu ei nayta. Kopio: attach mutatoi syotetta.
+    """
+    import copy
+
+    from src.models.fpl_xp import attach_horizon_total_actionable
+    payload = attach_horizon_total_actionable(copy.deepcopy(xp))
+    return horizon_top_ids(payload.get("players") or [], n)
