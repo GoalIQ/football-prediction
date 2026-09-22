@@ -103,3 +103,25 @@ export function countdownText(hoursLeft: number | null): string | null {
 	if (hoursLeft >= 1) return `${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}`;
 	return 'under an hour';
 }
+
+/** `generated_at` (UTC ilman vyohyketta) -> Date, tai null. */
+export function parseGeneratedAt(raw: string | null | undefined): Date | null {
+	if (!raw) return null;
+	const iso = /[Z+]|-\d\d:\d\d$/.test(raw) ? raw : `${raw}Z`;
+	const t = new Date(iso);
+	return isNaN(t.getTime()) ? null : t;
+}
+
+/**
+ * Tuoreusleima "12:51 today" / "21 Sep, 16:07" (lukijan vyohyke).
+ * 🔴 Portti 11.9: pelkka kellonaika on paivaton tuoreusvaite. Eilinen
+ * artefakti luki "checked 16:07" ja lukija luki sen tamanpaivaisena. Paiva
+ * sanotaan aaneen aina kun se ei ole tama paiva. Hero ja This week lukevat
+ * taman (22.9: sama funktio, ei kahta kopiota).
+ */
+export function checkedText(checked: Date | null, now: number): string | null {
+	if (!checked || now === 0) return null;
+	const t = checked.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
+	if (checked.toDateString() === new Date(now).toDateString()) return `${t} today`;
+	return `${checked.toLocaleDateString(LOC, { day: 'numeric', month: 'short' })}, ${t}`;
+}

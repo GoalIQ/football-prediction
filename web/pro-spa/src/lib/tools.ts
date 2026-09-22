@@ -86,7 +86,17 @@ export type Tool = {
 export const GROUPS: Group[] = [
 	{ id: 'week', label: 'This week', title: 'This week', fpl: true },
 	{ id: 'team', label: 'My team', title: 'My team', fpl: true },
-	{ id: 'players', label: 'Players', title: 'Players', fpl: true },
+	{
+		id: 'players',
+		label: 'Players',
+		title: 'Players',
+		fpl: true,
+		// 22.9 (A3 2.3): /players on nyt lista esiasetuksineen eika yksi
+		// tyokalu, joten paatyokalun kysymys ("Who should wear the armband")
+		// kuvaisi vain yhden viidesta. Julkaisutarkistajalle copy-listassa.
+		description:
+			'Find any player and sort by captain, projected points, value, differentials or price change, plus clean sheet chances by team.'
+	},
 	{
 		id: 'matches',
 		label: 'Matches',

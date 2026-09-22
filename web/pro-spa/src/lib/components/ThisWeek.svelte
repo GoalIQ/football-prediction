@@ -26,7 +26,13 @@
 	import { fetchFantasy, fetchModelRace, type FantasyResponse, type ModelRaceResponse } from '$lib/api';
 	import { fetchModelCard, type RateTeamResponse } from '$lib/fantasyTools';
 	import { currentEntryId, fplEntry } from '$lib/fplEntry.svelte';
-	import { countdownText, formatDeadline, weekPhase } from '$lib/gameweek';
+	import {
+		checkedText,
+		countdownText,
+		formatDeadline,
+		parseGeneratedAt,
+		weekPhase
+	} from '$lib/gameweek';
 	import { gwCleanSheets, lastCall, seasonLine } from '$lib/weekRows';
 	import DecisionCard from './DecisionCard.svelte';
 	import GwReview from './GwReview.svelte';
@@ -82,6 +88,9 @@
 	const phase = $derived(weekPhase(fantasy?.meta, now));
 	const dl = $derived(phase?.deadline ? formatDeadline(phase.deadline) : null);
 	const left = $derived(countdownText(phase?.hoursLeft ?? null));
+	/* Tuoreusleima (Portti 11.9): palkki nayttaa sen vain >= 1400 px:n
+	   ruudulla, joten deadline-rivi kantaa sen kaikilla leveyksilla. */
+	const chk = $derived(checkedText(parseGeneratedAt(fantasy?.meta?.generated_at), now));
 	const cs = $derived(gwCleanSheets(fantasy));
 
 	/* ---------------- kortti: oma joukkue tai mallin runko ----------------
@@ -157,6 +166,7 @@
 		{:else}
 			&nbsp;
 		{/if}
+		<span class="chk">{#if chk}Checked {chk}{:else}&nbsp;{/if}</span>
 	</p>
 
 	<!-- DefCon-live vain kesken kierroksen (A3 5: tauolla se nayttaa
@@ -261,8 +271,9 @@
 					<span class="lbl">GW{cs.gw} clean sheets</span>
 					<span class="cs">
 						{#each cs.rows as r (`${r.team}-${r.opponent}`)}
-							<span class="cs-item" title="{r.team} vs {r.opponent} ({r.venue})">
-								<b>{r.team}</b> {Math.round(r.cs)}%
+							<span class="cs-item">
+								<span><b>{r.team}</b> {Math.round(r.cs)}%</span>
+								<span class="opp">v {r.opponent} ({r.venue})</span>
 								<span class="bar" style="width: {Math.max(4, Math.round(r.cs))}%" aria-hidden="true"></span>
 							</span>
 						{/each}
@@ -319,8 +330,14 @@
 </section>
 
 <style>
+	/* Yksi palsta kaikilla leveyksilla: kortti ja rivit samaa leveytta
+	   (teeman `li` rajautuu lukuleveyteen --measure, rivi ei ole proosaa). */
 	.week {
 		margin: 0 0 var(--s-4);
+		max-width: 760px;
+	}
+	.rows > li {
+		max-width: none;
 	}
 	.visually-hidden {
 		position: absolute;
@@ -343,6 +360,11 @@
 	.gw-line .when {
 		color: var(--accent);
 		font-weight: 600;
+	}
+	.gw-line .chk {
+		display: block;
+		font-size: 11px;
+		color: var(--faint);
 	}
 	.gw-line .live {
 		color: var(--positive);
@@ -440,8 +462,16 @@
 		align-items: baseline;
 		gap: 2px var(--s-3);
 	}
+	/* Clean sheet -rivi: nimio ja "All teams" ylarivilla, ottelut alla
+	   yhdella rivilla (mitattu 390 px: kolmen ottelun rivi mahtuu). */
 	.row-link {
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		row-gap: var(--s-2);
+	}
+	.row-link .cs {
+		grid-column: 1 / -1;
+		grid-row: 2;
 	}
 	.lbl {
 		font-family: var(--font-mono);
@@ -474,15 +504,18 @@
 	.cs {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--s-1) var(--s-4);
+		gap: var(--s-1) var(--s-5);
 		font-size: var(--step--1);
-		flex: 1 1 60%;
 	}
 	.cs-item {
 		display: inline-flex;
 		flex-direction: column;
 		min-width: 5.5em;
 		font-variant-numeric: tabular-nums;
+	}
+	.cs-item .opp {
+		font-size: 0.85em;
+		color: var(--text-muted);
 	}
 	.bar {
 		display: block;
