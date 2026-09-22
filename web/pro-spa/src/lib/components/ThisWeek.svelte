@@ -16,11 +16,11 @@
 	 * 🔴 ENNEN (mitattu 22.9, a1-mobiiliaudit + web): ilman joukkuetta sivu
 	 * sanoi "Set up your team first" eika nayttanyt mitaan, ja tauolla
 	 * paasisalto oli tyhja lista. Nyt ilman joukkuetta kortti nayttaa MALLIN
-	 * rungon kapteenin (sama rate-team-lukija), ja tauolla kortti nayttaa
+	 * kapteenin (/api/fantasy/model-captain), ja tauolla kortti nayttaa
 	 * seuraavan deadline-kierroksen, koska projektiot ovat jo olemassa.
 	 *
-	 * Vain olemassa olevaa dataa: rate-team, model-squad, model-race ja
-	 * /api/fantasy. Ei uusia endpointteja, ei klientin laskemia lukuja.
+	 * Vain palvelimen dataa: rate-team (oma joukkue), model-captain (mallin
+	 * kortti), model-race ja /api/fantasy. Ei klientin laskemia lukuja.
 	 */
 	import { auth } from '$lib/auth.svelte';
 	import { fetchFantasy, fetchModelRace, type FantasyResponse, type ModelRaceResponse } from '$lib/api';
@@ -33,7 +33,13 @@
 		parseGeneratedAt,
 		weekPhase
 	} from '$lib/gameweek';
-	import { gwCleanSheets, lastCall, modelEntryId, seasonLine } from '$lib/weekRows';
+	import {
+		gwCleanSheets,
+		lastCall,
+		modelCaptainCard,
+		seasonLine,
+		type ModelCaptainCard
+	} from '$lib/weekRows';
 	import DecisionCard from './DecisionCard.svelte';
 	import GwReview from './GwReview.svelte';
 	import SeasonRace from './SeasonRace.svelte';
@@ -134,36 +140,26 @@
 	const needModel = $derived(
 		entryKnown && !data && !loading && (entryId == null || !!error || picksNotPublished)
 	);
-	let model = $state<RateTeamResponse | null>(null);
+	let model = $state<ModelCaptainCard | null>(null);
 	let modelFailed = $state(false);
-	/* 22.9 (B1): mallin kortti tulee mallin omasta FPL-entrysta, jonka id on
-	   model-racessa (`modelEntryId`). Jos kayttajan entrylla haettu race
-	   epaonnistui (esim. vaara ID), id luetaan entryttomasta racesta. */
-	let fallbackRace = $state<ModelRaceResponse | null>(null);
-	let fallbackAsked = false;
-	const modelEntry = $derived(modelEntryId(race) ?? modelEntryId(fallbackRace));
+	/* 22.9 (freeze-ikkuna): mallin kortti tulee /api/fantasy/model-captainista.
+	   Palvelin paattaa lahteen (jaadytetty runko tai FPL:n julkaisemat pickit)
+	   ja kertoo sen (`meta.source`). Kortti ei tarvitse model-racea eika
+	   entry-id:ta. Virhe tai tuntematon lahde -> ei korttia (fail-closed):
+	   EI paluuta rate-teamiin, koska se toisi takaisin freeze-ikkunan vian
+	   (kaksi julkista pintaa, kaksi eri kapteenia). */
 	$effect(() => {
-		if (!needModel || !raceDone || modelEntry != null || fallbackAsked) return;
-		fallbackAsked = true;
-		fetchModelRace(null).then(
-			(r) => {
-				fallbackRace = r;
-				// Vanha backend ilman entry_series-lohkoa: ei korttia (fail-closed),
-				// ei ikuista latausrivia.
-				if (modelEntryId(r) == null) modelFailed = true;
+		if (!needModel || model || modelFailed) return;
+		fetchModelEntryCard().then(
+			(d) => {
+				const v = modelCaptainCard(d);
+				if (v) model = v;
+				else modelFailed = true;
 			},
 			() => (modelFailed = true)
 		);
 	});
-	$effect(() => {
-		const id = modelEntry;
-		if (!needModel || model || modelFailed || id == null) return;
-		fetchModelEntryCard(id).then(
-			(d) => (model = d),
-			() => (modelFailed = true)
-		);
-	});
-	const card = $derived(data ?? (needModel ? model : null));
+	const modelCard = $derived(!data && needModel ? model : null);
 	const own = $derived(!!data);
 
 	let entryInput = $state('');
@@ -209,10 +205,10 @@
 		<DefConLive />
 	{/if}
 
-	{#if card}
+	{#if data || modelCard}
 		<DecisionCard
-			{card}
-			{own}
+			card={data}
+			model={modelCard}
 			{premium}
 			{onUpgrade}
 			{deadlineUtc}

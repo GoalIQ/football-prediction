@@ -18,6 +18,7 @@ export type FantasyTool =
 	| 'wildcard_plan'
 	| 'rate_team_draft'
 	| 'model_squad'
+	| 'model_captain'
 	| 'price_watch'
 	| 'plan'
 	| 'captain'
@@ -749,7 +750,55 @@ export function fetchModelSquad(): Promise<ModelSquadResponse> {
 	return getTool('/api/fantasy/model-squad', 'model_squad');
 }
 
-const modelCardP = new Map<number, Promise<RateTeamResponse>>();
+/** Mallin kapteenin pelaajarivi (`GET /api/fantasy/model-captain`, 22.9). */
+export interface ModelCaptainPlayer {
+	id: number;
+	web_name: string | null;
+	team_short: string | null;
+	pos: Pos | null;
+	/** xP kierrokselle `meta.gw`. */
+	gw_xp: number | null;
+	/** [] = ei ottelua kierroksella, null = ei tietoa (pelaaja puuttuu projektiosta). */
+	opponents: { opp: string | null; venue: string | null }[] | null;
+}
+
+/**
+ * `GET /api/fantasy/model-captain` (backend 22.9, football-prediction
+ * 73cb5ac10). Palvelin paattaa lahteen: `frozen` = kortin kierrokselle on
+ * jaadytetty runko (sama kapteeni kuin goaliq.app/fpl:n "Model squad
+ * captain" -rivi), `entry_picks` = FPL:n julkaisemat pickit entrylle 116920.
+ * Kenttakuvaus: cos-reports/ux-uudistus-2026-09/toteutus/mallin-kapteeni-freeze.md.
+ */
+export interface ModelCaptainResponse {
+	meta: {
+		source: 'frozen' | 'entry_picks';
+		/** Kierros jolle kapteeni on (otsikon GW). */
+		gw: number | null;
+		entry_id: number;
+		/** Vain entry_picks: FPL:n julkaisemien pickien kierros. */
+		picks_gw: number | null;
+		/** Vain frozen (UTC ISO). */
+		frozen_at: string | null;
+		frozen_deadline: string | null;
+		deadline_gameweek: number | null;
+		deadline_time: string | null;
+		generated_at: string | null;
+		/** frozen: https://goaliq.app/fpl#gw-calls, entry_picks: FPL:n entry-sivu. */
+		route: { kind: 'gw_calls' | 'fpl_entry'; gw: number | null; url: string } | null;
+	};
+	captain:
+		| (ModelCaptainPlayer & {
+				gw_xp_frozen?: number | null;
+				gw_xp_basis?: 'projection' | 'frozen' | null;
+		  })
+		| null;
+	/** Vain frozen: freezen varakapteeni. */
+	vice_captain: ModelCaptainPlayer | null;
+	/** Vain entry_picks (close call); frozen = null. */
+	alternative: ModelCaptainPlayer | null;
+}
+
+let modelCardP: Promise<ModelCaptainResponse> | null = null;
 /**
  * 22.9 (A3 2.1): This week ilman omaa joukkuetta nayttaa MALLIN kapteenin.
  *
@@ -757,30 +806,35 @@ const modelCardP = new Map<number, Promise<RateTeamResponse>>();
  * /api/fantasy/model-squadin = optimoijan vapaan rungon (optimal_proven
  * false). Se EI ole mallin joukkue: goaliq.app/fpl kertoo julkisesti etta
  * mallin runko jaadytetaan ennen jokaista deadlinea ja pelataan FPL:ssa
- * entryna 116920, ja gw_calls pisteyttaa mallin kapteenin jaadytetysta
- * rungosta. Optimoijan ja entryn rungoissa oli 22.9 vain 8/15 samaa
- * pelaajaa, eli kortti olisi nimennyt "The model's captain" -otsikolla
- * pelaajan jota malli ei pelaa.
+ * entryna 116920.
  *
- * Nyt lahde on mallin oma FPL-entry (id model-racen `entry_series`ista,
- * lukija `modelEntryId`) ja sama rate-team-lukija kuin kayttajan omalla
- * joukkueella; kapteenisaanto on sama kuin freezessa (XI:n korkein GW-xP).
- * Polku tulee yhdesta lukijasta (`modelCardPath`, $lib/weekRows), ja portti
- * `modelCard.gate.test.ts` kaatuu jos tama palaa model-squadiin.
+ * 🔴 TOINEN KIERROS 22.9 (freeze-ikkuna): korjaus luki
+ * `rate-team?entry=116920`, eli FPL:n JULKAISEMAT pickit. FPL julkaisee ne
+ * vasta deadlinella, mutta runko jaadytetaan noin 29 h ennen. Siina valissa
+ * goaliq.app/fpl nimesi kapteenin freezesta ja kortti edellisen kierroksen
+ * pickeista: kaksi julkista pintaa, kaksi eri nimea saman otsikon alla.
+ *
+ * Nyt palvelin paattaa lahteen yhdessa paikassa
+ * (`/api/fantasy/model-captain`, src/models/fpl_model_captain.py) ja kertoo
+ * sen vastauksessa (`meta.source`). Klientti ei valitse lahdetta eika palaa
+ * rate-teamiin virheessa: virhe = ei korttia (fail-closed). Polku tulee
+ * yhdesta lukijasta (`modelCardPath`, $lib/weekRows), ja portti
+ * `modelCard.gate.test.ts` kaatuu jos tama palaa rate-teamiin tai
+ * model-squadiin.
  *
  * Ei `fantasy_tools_used`-eventtia: sivun avaus ei ole tyokalun kaytto.
  * Tulos muistetaan sivulatauksen ajan; epaonnistunut haku ei jaa muistiin.
  */
-export function fetchModelEntryCard(entryId: number): Promise<RateTeamResponse> {
-	let p = modelCardP.get(entryId);
-	if (!p) {
-		p = getTool<RateTeamResponse>(modelCardPath(entryId), 'rate_team', false).catch((e) => {
-			modelCardP.delete(entryId);
-			throw e;
-		});
-		modelCardP.set(entryId, p);
+export function fetchModelEntryCard(): Promise<ModelCaptainResponse> {
+	if (!modelCardP) {
+		modelCardP = getTool<ModelCaptainResponse>(modelCardPath(), 'model_captain', false).catch(
+			(e) => {
+				modelCardP = null;
+				throw e;
+			}
+		);
 	}
-	return p;
+	return modelCardP;
 }
 
 /** entry valinnainen (MY-TEAM-CONTEXT 3.9): annettuna omat rivit merkitään. */

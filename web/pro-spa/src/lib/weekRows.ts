@@ -13,6 +13,7 @@
  * jalkeen jolla mallia ei gradattu, ja ilman dataa.
  */
 import type { FantasyResponse, FantasyTeam, ModelRaceResponse } from './api';
+import type { ModelCaptainPlayer, ModelCaptainResponse } from './fantasyTools';
 import { actionableGameweek } from './gameweek';
 import { MODEL_SERIES_COPY } from './modelSeriesCopy';
 
@@ -84,21 +85,140 @@ export function lastCall(r: ModelRaceResponse | null | undefined): LastCall | nu
 }
 
 /**
- * Mallin oman FPL-entryn id (22.9, julkaisutarkistaja B1). YKSI lukija:
- * This weekin "The model's captain" -kortti lukee mallin joukkueen taman
- * entryn kautta eika optimoijan vapaasta rungosta. Lahde on model-racen
- * `entry_series` (sama entry jonka goaliq.app/fpl nimeaa mallin rungoksi).
- * Puuttuva tai kelvoton id -> null, eika korttia korvata millaan muulla
- * rungolla (fail-closed).
+ * Mallin kortin lahdepolku (22.9, freeze-ikkunan korjaus). Palvelin paattaa
+ * lahteen (`meta.source`): jaadytetty runko jos kortin kierrokselle on
+ * freeze, muuten FPL:n julkaisemat pickit mallin entrylle. Ei parametreja:
+ * klientti ei tarvitse entry-id:ta eika model-racea kortin avaamiseen.
+ *
+ * 🔴 Ennen tata polku oli `rate-team?entry=116920`, joka lukee vain FPL:n
+ * julkaisemat pickit. Freezen (~29 h ennen deadlinea) ja deadlinen valilla
+ * se nimesi edellisen kierroksen rungon kapteenin, vaikka goaliq.app/fpl
+ * nimesi jo jaadytetyn rungon kapteenin. Portti: modelCard.gate.test.ts.
  */
-export function modelEntryId(r: ModelRaceResponse | null | undefined): number | null {
-	const id = r?.entry_series?.entry_id;
-	return typeof id === 'number' && Number.isInteger(id) && id > 0 ? id : null;
+export function modelCardPath(): string {
+	return '/api/fantasy/model-captain';
 }
 
-/** Mallin kortin lahdepolku: sama rate-team-lukija kuin omalla joukkueella. */
-export function modelCardPath(entryId: number): string {
-	return `/api/fantasy/rate-team?entry=${entryId}`;
+/** Kortin kapteenirivi: nimi ja joukkue ovat aina tekstia, xP voi puuttua. */
+export type ModelCaptainPick = {
+	id: number;
+	web_name: string;
+	team_short: string;
+	gw_xp: number | null;
+};
+
+/** Vastustajarivi kun kierroksella ei ole ottelua (opponents = []). */
+export const NO_FIXTURE = 'no fixture';
+
+export type ModelCaptainSource =
+	| { kind: 'entry_picks'; entryId: number; picksGw: number | null; href: string | null }
+	| { kind: 'frozen'; gw: number | null; frozenAt: Date | null; href: string | null };
+
+export type ModelCaptainCard = {
+	/** Otsikon kierros (`meta.gw`). */
+	gw: number | null;
+	captain: ModelCaptainPick | null;
+	/** "TOT (H)" / "TOT (H), ARS (A)"; NO_FIXTURE; null = ei tietoa, ei rivia. */
+	opp: string | null;
+	/** Vain entry_picks (close call). Freezella ei ole vaihtoehtoa. */
+	alt: ModelCaptainPick | null;
+	source: ModelCaptainSource;
+};
+
+/** Tarkistusreitin linkki vain omaan tai FPL:n hostiin (palvelimen url). */
+const ROUTE_HOSTS: Record<ModelCaptainSource['kind'], string> = {
+	frozen: 'https://goaliq.app/',
+	entry_picks: 'https://fantasy.premierleague.com/'
+};
+
+function pickFrom(p: ModelCaptainPlayer | null | undefined): ModelCaptainPick | null {
+	if (!p || typeof p.id !== 'number' || typeof p.web_name !== 'string' || !p.web_name) return null;
+	return {
+		id: p.id,
+		web_name: p.web_name,
+		team_short: p.team_short ?? '',
+		gw_xp: typeof p.gw_xp === 'number' && Number.isFinite(p.gw_xp) ? p.gw_xp : null
+	};
+}
+
+function oppFrom(p: ModelCaptainPlayer | null | undefined): string | null {
+	const o = p?.opponents;
+	if (!Array.isArray(o)) return null;
+	if (o.length === 0) return NO_FIXTURE;
+	const parts = o
+		.filter((x) => typeof x?.opp === 'string' && x.opp)
+		.map((x) => (x.venue ? `${x.opp} (${x.venue})` : String(x.opp)));
+	return parts.length ? parts.join(', ') : null;
+}
+
+/**
+ * YKSI lukija `/api/fantasy/model-captain`-vastaukselle (saanto 6a kohta 1).
+ * Kenttakartta: cos-reports/ux-uudistus-2026-09/toteutus/mallin-kapteeni-freeze.md.
+ *
+ *   - kapteeni = `captain`, otsikon GW = `meta.gw`, vaihtoehto = `alternative`
+ *   - vastustaja = `captain.opponents` (null -> ei rivia, [] -> NO_FIXTURE)
+ *   - lahderivi haarautuu `meta.source`:n mukaan, linkki = `meta.route.url`
+ *
+ * Tuntematon lahde -> null (kortti ei keksi mista kapteeni tuli). Klientti
+ * ei valitse lahdetta: sen tekee palvelin, ja lukija vain kertoo sen.
+ */
+export function modelCaptainCard(r: ModelCaptainResponse | null | undefined): ModelCaptainCard | null {
+	const m = r?.meta;
+	if (!m) return null;
+	const gw = typeof m.gw === 'number' ? m.gw : null;
+	const url = typeof m.route?.url === 'string' ? m.route.url : null;
+	let source: ModelCaptainSource;
+	if (m.source === 'frozen') {
+		const t = typeof m.frozen_at === 'string' ? new Date(m.frozen_at) : null;
+		source = {
+			kind: 'frozen',
+			gw,
+			frozenAt: t && !Number.isNaN(t.getTime()) ? t : null,
+			href: url?.startsWith(ROUTE_HOSTS.frozen) ? url : null
+		};
+	} else if (m.source === 'entry_picks') {
+		if (typeof m.entry_id !== 'number' || !Number.isInteger(m.entry_id) || m.entry_id <= 0) return null;
+		source = {
+			kind: 'entry_picks',
+			entryId: m.entry_id,
+			picksGw: typeof m.picks_gw === 'number' ? m.picks_gw : null,
+			href: url?.startsWith(ROUTE_HOSTS.entry_picks) ? url : null
+		};
+	} else {
+		return null;
+	}
+	const captain = pickFrom(r?.captain);
+	return {
+		gw,
+		captain,
+		opp: captain ? oppFrom(r?.captain) : null,
+		// Lukittu runko ei tarjoa "close call" -vaihtoehtoa, vaikka kentta tulisi.
+		alt: source.kind === 'frozen' ? null : pickFrom(r?.alternative),
+		source
+	};
+}
+
+/**
+ * Lahderivin teksti kolmessa palassa (ennen linkkia, linkki, jalkeen), jotta
+ * sama lause voidaan piirtaa linkilla tai ilman ja testata sellaisenaan.
+ *   entry_picks: "Squad: our FPL entry 116920, GW5 picks."
+ *   frozen:      "Squad frozen Thu 9 Oct, 09:00 EEST for GW6, logged on goaliq.app/fpl."
+ */
+export function modelSourceLine(
+	s: ModelCaptainSource,
+	fmt: (d: Date) => string
+): { before: string; link: string; after: string; href: string | null } {
+	if (s.kind === 'frozen') {
+		const when = s.frozenAt ? ` ${fmt(s.frozenAt)}` : '';
+		const gw = s.gw != null ? ` for GW${s.gw}` : '';
+		return { before: `Squad frozen${when}${gw}, logged on `, link: 'goaliq.app/fpl', after: '.', href: s.href };
+	}
+	return {
+		before: 'Squad: ',
+		link: `our FPL entry ${s.entryId}`,
+		after: s.picksGw != null ? `, GW${s.picksGw} picks.` : '.',
+		href: s.href
+	};
 }
 
 export type SeasonLine =

@@ -7,18 +7,21 @@
 	 * saanto 16). Ennen tata sama tieto oli kolmessa lohkossa allekkain ja
 	 * kapteeni luki lauseen keskella ("Captain suggestion: ...").
 	 *
-	 * KAIKKI LUVUT OVAT PALVELIMEN: kortti lukee yhden rate-team-vastauksen
-	 * (oma joukkue TAI mallin oma FPL-entry, `fetchModelEntryCard`). Kapteeni, lahin
-	 * vaihtoehto, siirto ja hold-kanta tulevat backendista; klientti ei
-	 * lajittele eika laske. Lahin vaihtoehto naytetaan vain kun palvelin
-	 * antaa sen (`captain.alternative`: se tulee vain kun ero on pieni).
+	 * KAIKKI LUVUT OVAT PALVELIMEN: kortti lukee joko kayttajan oman joukkueen
+	 * rate-team-vastauksen (`card`) tai mallin kapteenin
+	 * (`model` = `modelCaptainCard(/api/fantasy/model-captain)`, $lib/weekRows).
+	 * Kapteeni, lahin vaihtoehto, siirto ja hold-kanta tulevat backendista;
+	 * klientti ei lajittele eika laske. Lahin vaihtoehto naytetaan vain kun
+	 * palvelin antaa sen (`captain.alternative`: se tulee vain kun ero on pieni).
 	 *
 	 * Premium-raja on palvelimen: ilmaisvastauksessa siirtoehdotuksia ei ole
 	 * (`mask_rate_team_payload`), joten kortti ei voi naytta niita vaikka
-	 * haara olisi vaarin.
+	 * haara olisi vaarin. Mallin kortti ei kanna siirtoja lainkaan.
 	 */
 	import type { RateTeamResponse } from '$lib/fantasyTools';
 	import { CHIP_NAMES } from '$lib/fantasyTools';
+	import { formatDeadline } from '$lib/gameweek';
+	import { modelSourceLine, NO_FIXTURE, type ModelCaptainCard } from '$lib/weekRows';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { openPlayer } from '$lib/playerSheet.svelte';
 	import { capture } from '$lib/analytics';
@@ -28,8 +31,8 @@
 	type Tab = 'captain' | 'transfer' | 'chip';
 
 	let {
-		card,
-		own,
+		card = null,
+		model = null,
 		premium = false,
 		onUpgrade,
 		deadlineUtc = null,
@@ -37,9 +40,10 @@
 		onFollowTransfer,
 		refreshToken = 0
 	}: {
-		card: RateTeamResponse;
-		/** true = kayttajan oma joukkue, false = mallin runko. */
-		own: boolean;
+		/** Kayttajan oma joukkue (rate-team). Annettuna voittaa mallin kortin. */
+		card?: RateTeamResponse | null;
+		/** Mallin kapteeni ilman omaa joukkuetta (/api/fantasy/model-captain). */
+		model?: ModelCaptainCard | null;
 		premium?: boolean;
 		onUpgrade?: () => void;
 		deadlineUtc?: string | null;
@@ -49,6 +53,9 @@
 		refreshToken?: number;
 	} = $props();
 
+	/** true = kayttajan oma joukkue, false = mallin kortti. */
+	const own = $derived(card != null);
+
 	let tab = $state<Tab>('captain');
 	function pick(t: Tab) {
 		tab = t;
@@ -57,37 +64,45 @@
 
 	/** Kierros jolle kapteeni on laskettu (kesken kierroksen deadline-GW). */
 	const capGw = $derived(
-		card.meta.captain_gw ?? (card.meta.gw_in_progress === true ? null : card.meta.gw)
+		card
+			? (card.meta.captain_gw ?? (card.meta.gw_in_progress === true ? null : card.meta.gw))
+			: (model?.gw ?? null)
 	);
-	const cap = $derived(card.captain?.pick ?? null);
-	/** Mallin kortin entry ja sen julkaistujen pickien kierros (lahderivi). */
-	const modelEntry = $derived(
-		typeof card.meta.entry === 'number' && card.meta.entry > 0 ? card.meta.entry : null
-	);
-	const picksGw = $derived(typeof card.meta.picks_gw === 'number' ? card.meta.picks_gw : null);
-	const alt = $derived(card.captain?.alternative ?? null);
-	/** Kapteenin vastustaja(t) samasta vastauksesta (rungon pelaajarivi). */
+	const cap = $derived(card ? (card.captain?.pick ?? null) : (model?.captain ?? null));
+	const alt = $derived(card ? (card.captain?.alternative ?? null) : (model?.alt ?? null));
+	/** Kapteenin vastustaja(t): oma kortti rungon pelaajarivista, mallin kortti
+	 *  lukijalta (`captain.opponents`: [] = ei ottelua, null = ei rivia). */
 	const capOpp = $derived.by(() => {
+		if (!card) return model?.opp ?? null;
 		if (!cap || capGw == null) return null;
 		const row = card.team?.players?.find((p) => p.id === cap.id);
 		const g = row?.gameweeks?.find((x) => x.gw === capGw);
 		if (!g) return null;
-		if (g.opponents.length === 0) return 'no fixture';
+		if (g.opponents.length === 0) return NO_FIXTURE;
 		return g.opponents.map((o) => `${o.opp} (${o.venue})`).join(', ');
 	});
+	/** Mallin kortin tarkistusreitti: lahde palvelimen `meta.source`sta. */
+	const src = $derived(
+		!card && model
+			? modelSourceLine(model.source, (d) => {
+					const f = formatDeadline(d);
+					return f.tz ? `${f.when} ${f.tz}` : f.when;
+				})
+			: null
+	);
 
-	const sug = $derived(card.transfers?.suggestions?.[0] ?? null);
-	const verdict = $derived(card.transfers?.hold_verdict ?? null);
+	const sug = $derived(card?.transfers?.suggestions?.[0] ?? null);
+	const verdict = $derived(card?.transfers?.hold_verdict ?? null);
 	/** Palvelin maskasi siirtoehdotukset (ilmaistaso) ja kanta on "siirra". */
 	const moveIsPremium = $derived(
-		card.meta?.masked === true && !premium && verdict?.verdict === 'transfer'
+		card?.meta?.masked === true && !premium && verdict?.verdict === 'transfer'
 	);
 	const span = $derived.by(() => {
-		const n = verdict?.horizon_gws ?? card.meta.transfer_horizon_gw;
-		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(card.meta).span;
+		const n = verdict?.horizon_gws ?? card?.meta.transfer_horizon_gw;
+		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(card?.meta).span;
 	});
 
-	const chips = $derived(card.meta?.chips ?? null);
+	const chips = $derived(card?.meta?.chips ?? null);
 	const chipsNow = $derived((chips?.remaining ?? []).filter((c) => c.available_now));
 	const chipsLater = $derived((chips?.remaining ?? []).filter((c) => !c.available_now));
 	const chipName = (c: string) => CHIP_NAMES[c] ?? c;
@@ -121,20 +136,20 @@
 						>{cap.web_name}</button
 					>
 					<span class="team">{cap.team_short}</span>
-					<span class="xp">{cap.gw_xp.toFixed(1)} <abbr title="Expected points from the GoalIQ match model">xP</abbr></span>
+					{#if cap.gw_xp != null}<span class="xp"
+							>{cap.gw_xp.toFixed(1)} <abbr title="Expected points from the GoalIQ match model">xP</abbr></span
+						>{/if}
 				</p>
-				{#if capOpp}<p class="opp muted">{capOpp === 'no fixture' ? 'No fixture this gameweek' : `vs ${capOpp}`}</p>{/if}
-				{#if !own && modelEntry != null}
-					<!-- 22.9 (B1): tarkistusreitti. Mallin kortti lukee mallin oman
-					     FPL-entryn rungon; linkki vie FPL:n omalle sivulle, jossa
-					     rungon voi tarkistaa ilman tilia. `picks_gw` = kierros jonka
-					     pickit FPL on julkaissut (uusimmat nakyvat vasta deadlinella). -->
+				{#if capOpp}<p class="opp muted">{capOpp === NO_FIXTURE ? 'No fixture this gameweek' : `vs ${capOpp}`}</p>{/if}
+				{#if src}
+					<!-- Tarkistusreitti (22.9). Lahde on palvelimen `meta.source`:
+					     entry_picks = FPL:n julkaisemat pickit (linkki FPL:n entry-
+					     sivulle), frozen = mallin jaadytetty runko (linkki
+					     goaliq.app/fpl#gw-calls, jossa sama kapteeni on lokissa).
+					     Teksti tulee lukijalta `modelSourceLine` ($lib/weekRows). -->
 					<p class="src-line muted">
-						Squad: <a
-							href="https://fantasy.premierleague.com/entry/{modelEntry}/event/{picksGw ?? capGw ?? ''}"
-							rel="noopener"
-							target="_blank">our FPL entry {modelEntry}</a
-						>{#if picksGw != null}, GW{picksGw} picks{/if}.
+						{src.before}{#if src.href}<a href={src.href} rel="noopener" target="_blank">{src.link}</a
+							>{:else}{src.link}{/if}{src.after}
 					</p>
 				{/if}
 				{#if alt}
@@ -144,7 +159,7 @@
 							>{alt.web_name}</button
 						>
 						<span class="muted">{alt.team_short}</span>
-						{alt.gw_xp.toFixed(1)} xP. Close call.
+						{#if alt.gw_xp != null}{alt.gw_xp.toFixed(1)} xP.{/if} Close call.
 					</p>
 				{/if}
 				{#if own}
@@ -161,7 +176,7 @@
 				<p class="muted">No captain projection for this gameweek yet.</p>
 			{/if}
 		{:else if tab === 'transfer'}
-			{#if !own}
+			{#if !card}
 				<p class="k">Transfer</p>
 				<p>Add your FPL team ID below and the model checks transfers for your own squad.</p>
 			{:else if premium && sug && !card.transfers.hold}
@@ -208,7 +223,7 @@
 			</p>
 		{:else}
 			<p class="k">Chip</p>
-			{#if !own}
+			{#if !card}
 				<p>Add your FPL team ID below to see which chips you still have.</p>
 			{:else if chips}
 				{#if chipsNow.length}
