@@ -45,6 +45,10 @@ def nakyva_copy(teksti: str) -> str:
     runko = teksti.split("<body", 1)[1] if "<body" in teksti else teksti
     runko = re.sub(r"<!--.*?-->", " ", runko, flags=re.S)
     runko = re.sub(r"<(script|style)\b.*?</\1>", " ", runko, flags=re.S | re.I)
+    # 22.9.2026: sivuston yhteinen ylapalkki (src/site_nav.py) on runkoa, ei
+    # sivun copya. Ilman tata palkin muutos siirtaisi FAQ:n "Last updated"
+    # -paivaa vaikka yksikaan vastaus ei muuttunut.
+    runko = re.sub(r'<nav class="gqn".*?</nav>', " ", runko, flags=re.S)
     runko = re.sub(r'<p class="updated">.*?</p>', " ", runko, flags=re.S)
     runko = re.sub(r'<p class="updated"[^>]*>.*?</p>', " ", runko, flags=re.S)
     runko = re.sub(r"<[^>]+>", " ", runko)

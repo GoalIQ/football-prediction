@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Football Match Predictions: Win Probability, xG &amp; Scorelines | GoalIQ</title>
-<meta name="description" content="Win probability, expected goals and likely scorelines for every match, from a Dixon-Coles model with a published, pre-match-logged track record. Not betting advice." />
+<title>Football Match Predictions, Logged Before Kickoff | GoalIQ</title>
+<meta name="description" content="Win probability, expected goals and scoreline probabilities for every match, from a model with a public, pre-match-logged track record. Not betting advice." />
 <link rel="canonical" href="https://goaliq.app/predictions" />
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/goaliq-favicon-32.png">
@@ -22,8 +22,8 @@
 <meta name="theme-color" content="#0B0A09">
 
 <!-- Open Graph / social preview -->
-<meta property="og:title" content="Football Match Predictions: Win Probability, xG &amp; Scorelines | GoalIQ" />
-<meta property="og:description" content="Win probability, expected goals and the most likely scorelines for any football match, from a model with a published, pre-match-logged track record. Analytics, not betting." />
+<meta property="og:title" content="Football Match Predictions, Logged Before Kickoff | GoalIQ" />
+<meta property="og:description" content="Win probability, expected goals and scoreline probabilities for any football match, from a model with a published, pre-match-logged track record. Analytics, not betting." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://goaliq.app/predictions" />
 <meta property="og:image" content="https://goaliq.app/assets/brand/og/predictions-1200x630.png" />
@@ -33,24 +33,34 @@
 <meta name="twitter:site" content="@goaliqapp" />
 <meta name="twitter:image" content="https://goaliq.app/assets/brand/og/predictions-1200x630.png" />
 
+<!-- GEN:SITE-IDENTITY-START src/site_identity.py renders this; do not edit by hand -->
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "Organization",
  "@id": "https://goaliq.app/#organization",
  "name": "GoalIQ",
- "logo": "https://goaliq.app/assets/brand/goaliq-appicon-512.png",
+ "legalName": "Savikurki Digital Oy",
+ "alternateName": [
+  "GoalIQ FPL",
+  "GoalIQ: FPL Assistant"
+ ],
  "url": "https://goaliq.app/",
- "description": "GoalIQ predicts football matches - win probability, expected goals (xG) and the most likely scorelines - with a Dixon-Coles match model and a public, pre-match-logged prediction track record. It also makes FPL (Fantasy Premier League) tools powered by the same model. Built by an independent developer in Finland. Analytics, not betting.",
+ "logo": "https://goaliq.app/assets/brand/goaliq-appicon-512.png",
+ "description": "GoalIQ makes Fantasy Premier League (FPL) tools for the web, iOS and Android. They run on a football match model whose predictions are logged before kickoff and graded in public, hits and misses included. Analytics, not betting.",
+ "disambiguatingDescription": "GoalIQ at goaliq.app does not publish betting tips and has no YouTube channel. It is not affiliated with the GOAL IQ YouTube channel, goaliq.live or goaliq.uk.",
  "sameAs": [
   "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
   "https://apps.apple.com/app/id6780047163",
   "https://x.com/goaliqapp",
+  "https://bsky.app/profile/goaliqapp.bsky.social",
+  "https://www.instagram.com/goaliqfpl/",
   "https://www.tiktok.com/@goaliqfpl",
-  "https://www.instagram.com/goaliqfpl/"
+  "https://github.com/GoalIQ"
  ]
 }
 </script>
+<!-- GEN:SITE-IDENTITY-END -->
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
@@ -59,7 +69,7 @@
  "operatingSystem": "Android, iOS, Web",
  "identifier": "com.veikkoville.goaliq",
  "applicationCategory": "SportsApplication",
- "description": "Football prediction app: pick any two teams and get win probability for each side, expected goals (xG) and the most likely scorelines from a Dixon-Coles statistical model. Covers the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, the Champions League, Brasileirao, the Championship, Eredivisie and Primeira Liga. Every model prediction is logged before kick-off and publicly tracked. Analytics, not betting.",
+ "description": "Football prediction app: pick any two teams and get win probability for each side, expected goals (xG) and scoreline probabilities from a Dixon-Coles statistical model. Covers the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, the Champions League, Brasileirao, the Championship, Eredivisie and Primeira Liga. Every model prediction is logged before kick-off and publicly tracked. Analytics, not betting.",
  "url": "https://goaliq.app/predictions",
  "downloadUrl": [
   "https://play.google.com/store/apps/details?id=com.veikkoville.goaliq",
@@ -110,7 +120,7 @@
    "name": "How does GoalIQ predict football matches?",
    "acceptedAnswer": {
     "@type": "Answer",
-    "text": "GoalIQ uses a Dixon-Coles statistical model with the tau correction for low scores, time decay so recent matches count more, and shrinkage toward the league mean. For a club fixture it is fitted on that league's own results, last full season plus the current one as it plays, weighted on both goals and the xG those matches produced where an xG feed exists. For any fixture it estimates the win probability for each side and the draw, expected goals for both teams, and the probability of the most likely scorelines."
+    "text": "GoalIQ uses a Dixon-Coles statistical model with the tau correction for low scores, time decay so recent matches count more, and shrinkage toward the league mean. For a club fixture it is fitted on that league's own results, last full season plus the current one as it plays, weighted on both goals and the xG those matches produced where an xG feed exists. For any fixture it estimates the win probability for each side and the draw, expected goals for both teams, and scoreline probabilities."
    }
   },
   {
@@ -157,6 +167,7 @@
 </script>
 <!-- GEN:ACC-DATASET-END -->
 
+<!-- GEN:SITE-NAV-CSS-START src/site_nav.py renders this; do not edit by hand --><style>nav.gqn,nav.gqn *{box-sizing:border-box;}nav.gqn{display:block;position:relative;z-index:40;margin:0;padding:0;background:#0B0A09;border:0;border-bottom:1px solid rgba(243,242,242,.18);font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;line-height:1.2;text-transform:none;letter-spacing:0;}nav.gqn .gqn-in{max-width:1100px;margin:0 auto;padding:8px 20px;display:flex;align-items:center;flex-wrap:nowrap;gap:0 24px;}nav.gqn a{display:inline-flex;align-items:center;min-height:44px;margin:0;padding:0;border:0;background:none;color:#F3F2F2;text-decoration:none;font:inherit;letter-spacing:.01em;text-transform:none;white-space:nowrap;}nav.gqn a:hover{background:none;color:#F3F2F2;text-decoration:none;}nav.gqn a:focus-visible{outline:2px solid #2ED6C2;outline-offset:2px;}nav.gqn a.gqn-brand{font-size:18px;font-weight:700;gap:8px;flex:none;}nav.gqn .gqn-word{color:#F3F2F2;}nav.gqn .gqn-word span{color:#F5C542;}nav.gqn .gqn-icon{display:block;width:26px;height:26px;flex:none;margin:0;}nav.gqn .gqn-main{display:flex;align-items:center;gap:0 22px;flex:1 1 auto;}nav.gqn a.gqn-sec{font-weight:600;border-bottom:2px solid transparent;padding:2px 0 0;}nav.gqn a.gqn-sec:hover{border-bottom-color:rgba(245,197,66,.55);}nav.gqn a.gqn-sec[aria-current]{color:#F5C542;border-bottom-color:#F5C542;}nav.gqn .gqn-acct{display:flex;align-items:center;gap:0 16px;flex:none;margin-left:auto;}nav.gqn a.gqn-signin{color:#C9C4BC;font-weight:500;}nav.gqn a.gqn-signin:hover{color:#F3F2F2;}nav.gqn a.gqn-cta{min-height:40px;padding:0 14px;border:1px solid #F5C542;color:#F5C542;font-weight:700;}nav.gqn a.gqn-cta:hover{background:#F5C542;color:#0B0A09;}@media (max-width:640px){nav.gqn .gqn-in{flex-wrap:wrap;padding:4px 16px 0;gap:0 12px;}nav.gqn .gqn-acct{order:2;gap:0 12px;}nav.gqn .gqn-main{order:3;flex:1 1 100%;gap:0;border-top:1px solid rgba(243,242,242,.12);}nav.gqn a.gqn-sec{flex:1 1 0;justify-content:center;}nav.gqn a.gqn-brand{font-size:17px;}nav.gqn a.gqn-cta{padding:0 12px;}}</style><!-- GEN:SITE-NAV-CSS-END -->
 <style>
   /* Redesign 24.7 (brand-tokens.md): same language as index.html: Space
      Grotesk display font, dark ink hero + 6px magenta stripe, cream body.
@@ -550,18 +561,13 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 </script>
 </head>
 <body>
+<!-- GEN:SITE-NAV-START src/site_nav.py renders this; do not edit by hand -->
+<nav class="gqn" aria-label="GoalIQ"><div class="gqn-in"><a class="gqn-brand" href="/"><svg class="gqn-icon" width="26" height="26" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg><span class="gqn-word">Goal<span>IQ</span></span></a><div class="gqn-main"><a class="gqn-sec" href="/fpl">FPL tools</a><a class="gqn-sec" href="/predictions" aria-current="true">Predictions</a></div><div class="gqn-acct"><a class="gqn-signin" href="https://pro.goaliq.app/" data-cta="nav-signin">Sign in</a><a class="gqn-cta" href="https://pro.goaliq.app/?tab=premium" data-cta="nav">Try Premium</a></div></div></nav>
+<!-- GEN:SITE-NAV-END -->
 
 <!-- Dark ink hero (redesign 24.7): nav + hero in the same shell as index.html -->
 <div class="hero-shell">
 <div class="wrap">
-  <nav>
-    <div class="logo"><a href="/"><svg class="logo-mark-img" width="32" height="32" viewBox="0 0 44 44" role="img" aria-label="GoalIQ" focusable="false"><rect x="0" y="0" width="44" height="44" fill="#F5C542"/><text x="22" y="30" text-anchor="middle" font-family="IBM Plex Mono,ui-monospace,Consolas,monospace" font-size="20" font-weight="700" letter-spacing="-0.5" fill="#0B0A09">IQ</text></svg> GoalIQ</a></div>
-    <div style="display:flex; gap:20px; align-items:center;">
-      <a class="nav-link" href="/fpl">Free FPL tools</a>
-      <a class="nav-link" href="/career">Career card</a>
-      <a class="nav-cta" href="https://pro.goaliq.app/?tab=premium" data-cta="predictions-nav">Try Premium</a>
-    </div>
-  </nav>
 
   <header class="hero">
     <span class="badge">Every prediction logged before kick-off, publicly tracked</span>
@@ -588,7 +594,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
   <div class="wrap demo-inner">
     <div>
       <h2>What you get for <span class="accent">every match</span></h2>
-      <p>Win probability for home, draw and away. Expected goals for both sides. The most likely scorelines ranked by probability, plus head-to-head history and form.</p>
+      <p>Win probability for home, draw and away. Expected goals for both sides. Scoreline probabilities, plus head-to-head history and form in the app.</p>
       <p>The same model powers GoalIQ's <a href="/fpl" style="color:var(--teal-ink);font-weight:700;">free FPL tools</a>: clean sheet probability, fixture difficulty, rate my team and price watch.</p>
       <div class="cta-row" style="margin-top:22px; justify-content:flex-start;">
         <a class="btn-primary" href="https://pro.goaliq.app/" data-cta="predictions-demo">Try it on any fixture</a>
@@ -605,7 +611,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         <span class="draw" style="width:26%"></span>
         <span class="away" style="width:28%"></span>
       </div>
-      <div class="prob-legend"><span>Win probability</span><span>xG for both sides</span><span>Likely scorelines</span></div>
+      <div class="prob-legend"><span>Win probability</span><span>xG for both sides</span><span>Scoreline probabilities</span></div>
       <p style="margin-top:14px; color:var(--muted); font-size:14px;"><!-- GEN:ACC-PROOF-START -->The model logs every prediction before kickoff. 50.1% correct results across 657 completed matches.<!-- GEN:ACC-PROOF-END --></p>
     </div>
   </div>
@@ -632,7 +638,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <div class="step">
         <div class="n">3</div>
         <h3>See the full picture</h3>
-        <p>Win probabilities, expected goals, likely scorelines, head-to-head history and each team's form trend.</p>
+        <p>Win probabilities, expected goals and scoreline probabilities, plus head-to-head history and each team's form trend in the app.</p>
       </div>
     </div>
   </div>
@@ -705,8 +711,8 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         Go deeper on every prediction.</p>
 <!-- GEN:FREE-PRICE-END -->
       <ul class="premium-list">
-        <li>Top-10 most likely scorelines for any match</li>
-        <li>Form &amp; momentum and full head-to-head breakdowns</li>
+        <li>Scoreline probabilities for any match</li>
+        <li>In the app: form &amp; momentum and full head-to-head breakdowns</li>
         <li>Full FPL toolkit: interactive team manager with gameweek planner, per-gameweek xP with ownership, minutes outlook and CSV export, captain ranker, the top 50 value ranking (xP per million) with position and team filters, DefCon tracker with price-band filters, shareable image cards and transfer suggestions with apply</li>
         <li>Chip timing for the best Wildcard, Bench Boost, Triple Captain and Free Hit windows, transfer plans that chain 1 to 2 moves, and an edge mode with rank-aware picks for your mini-league</li>
         <li>Player compare for up to four players side by side, a 50-player watchlist, plus upcoming fixtures and league tables on the web</li>
@@ -730,7 +736,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       <dt>How accurate are GoalIQ football predictions?</dt>
       <dd>GoalIQ publishes its full prediction track record: every prediction is logged before kick-off and graded against the final result afterwards, hits and misses included, with no edits. The current accuracy numbers are shown on this page and refreshed after every round, and the raw log is available as machine-readable JSON.</dd>
       <dt>How does GoalIQ predict football matches?</dt>
-      <dd>GoalIQ uses a Dixon-Coles statistical model with the tau correction for low scores, time decay so recent matches count more, and shrinkage toward the league mean. For a club fixture it is fitted on that league's own results, last full season plus the current one as it plays, weighted on both goals and the xG those matches produced where an xG feed exists. For any fixture it estimates the win probability for each side and the draw, expected goals for both teams, and the probability of the most likely scorelines.</dd>
+      <dd>GoalIQ uses a Dixon-Coles statistical model with the tau correction for low scores, time decay so recent matches count more, and shrinkage toward the league mean. For a club fixture it is fitted on that league's own results, last full season plus the current one as it plays, weighted on both goals and the xG those matches produced where an xG feed exists. For any fixture it estimates the win probability for each side and the draw, expected goals for both teams, and scoreline probabilities.</dd>
       <dt>Is GoalIQ a betting app?</dt>
       <dd>No. GoalIQ is an analytics tool, not a gambling service. It has no bookmaker links and gives no betting advice. Predictions are statistical estimates for fun, analysis and fantasy football planning.</dd>
     </dl>
@@ -760,6 +766,11 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       &nbsp;·&nbsp;
       <a href="#get">Get the app</a>
     </div>
+  </div>
+  <div class="wrap">
+<!-- GEN:SITE-DISAMBIG-START src/site_identity.py renders this; do not edit by hand -->
+<p class="gq-disambig" style="margin:12px 0 0;font-size:13px;line-height:1.5;">Official GoalIQ: goaliq.app. We do not publish betting tips and have no YouTube channel. <a href="/faq#similar-names">Sites with a similar name</a></p>
+<!-- GEN:SITE-DISAMBIG-END -->
   </div>
 </footer>
 

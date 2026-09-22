@@ -187,17 +187,10 @@ ALLOWED: dict[str, list[Poikkeus]] = {
             ),
             free=("clean-sheets", "price-watch"),
         ),
-        Poikkeus(
-            ote="rate my team with a captain pick, a fit checker",
-            reason=(
-                "JSON-LD:n `description` (Organization/WebSite). Hakukoneille "
-                "ja LLM-pinnoille menevaa myyntitekstia; se ei kulje sivun "
-                "proosan kautta eika lukija tuota JSON-LD:ta. Nimetyt "
-                "tyokalut tarkistetaan rekisterista."
-            ),
-            free=("rate-my-team", "fit-checker", "price-watch"),
-            premium=("captain-ranker",),
-        ),
+        # 22.9.2026: poistettu poikkeus "rate my team with a captain pick, a
+        # fit checker" (Organization.description). Kuvaus on nyt
+        # identiteetti eika ominaisuuslista (src/site_identity.py,
+        # web-audit T7), eika siina nimeta yhtaan tyokalua.
         Poikkeus(
             ote="price watch, expected points for the next gameweek (the top 20, web)",
             reason=(
