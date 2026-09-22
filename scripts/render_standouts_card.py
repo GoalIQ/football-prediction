@@ -257,6 +257,40 @@ def claim_scope(pool: list[dict], pick: dict | None, val,
             "labels": [labels[_key(p)] for p in ahead if _key(p) in labels]}
 
 
+def _nakyvat_rivit(data: dict) -> tuple[list[dict], list[dict]]:
+    """Kortin tarkistusreitin rivit jotka tayttavat kortin OMAN ehdon.
+
+    (#gw-xp-rivit, #top-100-rivit), SAMOILLA funktioilla kuin sivu
+    (`free_rows`, `horizon_top_ids_actionable`). Ehto on se jonka kortti
+    sanoo aaneen alaotsikossa: "at least a 60% chance of starting", ja
+    rivilla on jakauma (ilman sita taulu nayttaa "-" eika vertailua ole).
+    Estolista koskee vain #gw-xp:ta, kuten sivulla.
+    """
+    from scripts.publish_gate import load_blocklist
+    from src.models.fpl_gw_xp import free_rows, horizon_top_ids_actionable
+    players = data.get("players") or []
+
+    def ehto(p):
+        return (float(p.get("p_start") or 0) >= MIN_P_START
+                and bool(p.get("xp_dist")))
+    gw_rivit = [p for p in free_rows(data, load_blocklist())[1] if ehto(p)]
+    top_ids = horizon_top_ids_actionable(data)
+    top_rivit = [p for p in players if p.get("id") in top_ids and ehto(p)]
+    return gw_rivit, top_rivit
+
+
+def _yhdiste(*joukot: list[dict]) -> list[dict]:
+    """Pelaajat kerran (avaimena id), jarjestys sailyy."""
+    nahty, out = set(), []
+    for j in joukot:
+        for p in j:
+            k = _key(p)
+            if k not in nahty:
+                nahty.add(k)
+                out.append(p)
+    return out
+
+
 def scope_phrase(superlative: str, sc: dict) -> str:
     """Superlatiivi siina laajuudessa kuin se on tosi, tai tyhja."""
     if sc["ahead"] and not sc["on_card"]:
@@ -367,20 +401,31 @@ def build_html(data: dict, log: dict | None = None, now=None) -> tuple[str, dict
     # safestille sama xP-rajattu joukko josta safest valitaan.
     pool = _pool(players, meta)
     safe_pool = [p for p in pool if (gw_xp(p) or 0) >= SAFE_MIN_XP]
+    # 🔴 22.9 JULKAISUPORTTI (kierros 2): superlatiivi tarkistetaan SIITA
+    # mita lukija nakee, ei vain kortin poolista. Pooli soveltaa seurakattoa,
+    # sivun #top-100 ei: 18.9 kortti sanoi "lowest blank chance after our
+    # captain pick, blanks 20%" kun taulussa nakyi Cityn neljas pelaaja
+    # (Anderson) blank 17 %, Start 97. Tarkistaja mittasi 148 commitista 49
+    # joissa safest olisi ollut epatosi. Vertailujoukko = pooli ∪ reitin
+    # rivit jotka tayttavat kortin oman ehdon, ja vertailu NAYTETYILLA
+    # pyoristyksilla (sivu: round(p*100) %, GW-xP 1 desimaali), jolloin
+    # nakyva tasapeli sanotaan "joint".
+    gw_rivit, top_rivit = _nakyvat_rivit(data)
     scopes = {
         # 10.9 (QUEUE KORTIN-KAPTEENITIILI-CLAIM-SCOPE): kapteenin "top GW
         # projection in the pool" oli ainoa superlatiivi joka ei kulkenut
-        # taman lukijan lapi. Tanaan tosi valinnan rakenteen takia - mutta
-        # niin olivat ceiling ja safest ennen kuin julkaisivat itsensa
-        # kumoavan lauseen. Tasapeli -> "joint top", parempi poolissa -> ei
-        # superlatiivia.
-        "captain": claim_scope(pool, s["captain"],
-                               lambda p: gw_xp(p) or 0.0, True, {}),
-        "ceiling": claim_scope(pool, s["ceiling"],
-                               lambda p: p["xp_dist"]["p90"], True,
+        # taman lukijan lapi. Tasapeli -> "joint top", parempi poolissa -> ei
+        # superlatiivia. Reitti: #gw-xp (`free_rows`).
+        "captain": claim_scope(_yhdiste(pool, gw_rivit), s["captain"],
+                               lambda p: round(gw_xp(p) or 0.0, 1), True, {}),
+        # Reitti: #top-100, Ceiling-sarake (kokonaisluku).
+        "ceiling": claim_scope(_yhdiste(pool, top_rivit), s["ceiling"],
+                               lambda p: int(p["xp_dist"]["p90"]), True,
                                {"captain": s["captain"]}),
-        "safest": claim_scope(safe_pool, s["safest"],
-                              lambda p: p["xp_dist"]["p_blank"], False,
+        # Reitti: #top-100, Blank-sarake (round(p*100) %).
+        "safest": claim_scope(_yhdiste(safe_pool, top_rivit), s["safest"],
+                              lambda p: round(float(p["xp_dist"]["p_blank"]) * 100),
+                              False,
                               {"captain": s["captain"], "ceiling": s["ceiling"]}),
     }
     tiles = "".join([
@@ -479,10 +524,21 @@ def card_inputs() -> tuple[dict, dict | None]:
     return data, log
 
 
+def _tyhja_kortti(s: dict) -> bool:
+    """Kaikki nelja tiilta "no pick": korttia ei julkaista (22.9 kierros 2).
+    Vanha kortti jaa sivulle, refresh kirjaa kaatumisen (stale_since) ja
+    portti eskaloi 24 h jalkeen - tyhja kortti etusivulla ei ole tuote."""
+    return all(v is None for v in s.values())
+
+
 def current_card_html(now=None) -> str:
-    """HTML jonka main() kuvaisi nyt (ilman upotettuja fontteja)."""
+    """HTML jonka main() kuvaisi nyt (ilman upotettuja fontteja). Kaatuu
+    samoin kuin main(), jotta tiiviste ei lupaa korttia jota ei renderoida."""
     data, log = card_inputs()
-    return build_html(data, log=log, now=now)[0]
+    html, s = build_html(data, log=log, now=now)
+    if _tyhja_kortti(s):
+        raise RuntimeError("kaikki nelja tiilta ovat 'no pick' - ei julkaista")
+    return html
 
 
 def main(argv=None) -> int:
@@ -491,6 +547,10 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     data, log = card_inputs()
     html, s = build_html(data, log=log)
+    if _tyhja_kortti(s):
+        print("::error::standouts: kaikki nelja tiilta ovat 'no pick' - korttia "
+              "ei renderoida eika julkaista, vanha jaa sivulle.")
+        return 1
     gw = int(actionable_gameweek(data.get("meta") or {}) or 0)
     out_dir = Path(args.out).resolve()  # file-URI vaatii absoluuttisen polun
     out_dir.mkdir(parents=True, exist_ok=True)

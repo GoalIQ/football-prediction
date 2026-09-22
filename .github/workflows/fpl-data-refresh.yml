@@ -423,7 +423,7 @@ jobs:
       # vaikuta asetteluun, ja render_card kieltaytyy kuvaamasta ylivuotoa.
       # continue-on-error + Step health: kortin vika ei saa padota dataa;
       # tests/test_site_card_images.py eskaloi 24 h deadlinen jalkeen.
-      - name: Render landing page cards when the actionable gameweek changes
+      - name: Render landing page cards when their visible content changes
         id: site_cards
         if: steps.guard.outputs.proceed == 'true'
         continue-on-error: true

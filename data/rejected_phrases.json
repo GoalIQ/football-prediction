@@ -59,7 +59,13 @@
    "phrase": "bet on team news",
    "rejected": "2026-09-22",
    "why": "vedonlyontisanastoa ilmaissivulla (Villen brief 22.9). Mitattu 22.9: /fpl/expected-points ('Those totals are a bet on team news') ja /fpl/best-captain ('a captaincy on a coin flip is a bet on team news'), molemmat build_fpl_longtail.py:n literaaleja.",
-   "replacement": "'Those totals assume the team news holds.' ja 'a captaincy on a coin flip depends on the team news' (scripts/build_fpl_longtail.py)"
+   "replacement": "'Those totals depend on the team news.' ja 'a captaincy on a coin flip depends on the team news' (scripts/build_fpl_longtail.py)"
+  },
+  {
+   "phrase": "assume the team news holds",
+   "rejected": "2026-09-22",
+   "why": "epatosi MEKANISMIVAITE /fpl/expected-pointsissa (julkaisutarkistaja 22.9 kierros 2): malli ei oleta joukkueuutisten pitavan, vaan xP painotetaan aloitustodennakoisyydella (Start%). Lause korvasi 'bet on team news' -sanamuodon samana paivana, eli korjaus toi uuden epatoden vaitteen (muisti: oma-korjaus-on-yhta-altis).",
+   "replacement": "'Those totals depend on the team news.' (scripts/build_fpl_longtail.py)"
   }
  ],
  "poikkeukset": {},

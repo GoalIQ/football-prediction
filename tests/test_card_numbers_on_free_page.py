@@ -213,3 +213,19 @@ def test_lokin_ja_kortin_kutsupaikat_antavat_metan():
     import scripts.render_standouts_card as S
     assert "pick_standouts(players, meta)" in inspect.getsource(LG)
     assert "pick_standouts(players, meta)" in inspect.getsource(S.build_html)
+
+
+def test_tyhjaa_korttia_ei_renderoida(tmp_path, monkeypatch):
+    """Kaikki nelja tiilta 'no pick' -> main() palauttaa 1 ilman HTML:aa ja
+    PNG:ta, ja current_card_html kaatuu (tiiviste = None -> refresh kirjaa
+    kaatumisen, vanha kortti jaa sivulle)."""
+    import scripts.render_standouts_card as S
+    players = [p for p in _kentta(n_tayte=100) if p["id"] >= 1000] + [_tahti()]
+    xp = tmp_path / "xp.json"
+    xp.write_text(json.dumps({"meta": META, "players": players}), encoding="utf-8")
+    monkeypatch.setattr(S, "XP_PATH", xp)
+    monkeypatch.setattr(S, "CALLS_LOG_PATH", tmp_path / "ei-lokia.json")
+    assert S.main(["--out", str(tmp_path / "out")]) == 1
+    assert not (tmp_path / "out").exists() or not any((tmp_path / "out").iterdir())
+    with pytest.raises(RuntimeError, match="no pick"):
+        S.current_card_html()

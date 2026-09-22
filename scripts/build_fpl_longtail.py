@@ -4812,7 +4812,9 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         + _tflag_note(xp, rows[:HORIZON_TOP_N], rows) +
         '<p class="note"><strong>Start% near 50 means the model is split.'
         # 22.9 (Villen brief): ei vedonlyontisanastoa, ks. data/rejected_phrases.json.
-        "</strong> Those totals assume the team news holds. They are not a "
+        # 22.9 kierros 2: "assume the team news holds" oli epatosi
+        # MEKANISMIVAITE (malli ei oleta uutisia, se painottaa Start%:lla).
+        "</strong> Those totals depend on the team news. They are not a "
         "settled projection. A keeper on 51% is not a 45-minute keeper.</p>"
         # 10.8: mitattu harha julki (Villen valinta C). Nelja korjausyritysta
         # havisi, viimeisin ristiinvalidoitu kalibrointi kaikilla varianteilla,
