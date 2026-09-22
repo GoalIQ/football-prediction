@@ -159,7 +159,37 @@ def load_log(path: Path = LOG_PATH) -> dict:
     return data
 
 
+# Kentat jotka EIVAT saa nakya lokissa ennen ottelua (Villen paatos 22.9.2026).
+# 2.8: todennakoisin tulos saa olla julkinen koska se gradataan (pct_exact),
+# mutta xG ei ole gradattu mittari eika sita tarvita vaitteen tueksi -> xG on
+# Premium. 21.9 koko loki julkaistiin (goaliq.app/data/prediction_log.json +
+# julkinen repo) ottamatta kantaa tahan kenttaan, ja 22.9 mitattiin: 2 669
+# TULEVAN ottelun xG oli ilmaiseksi luettavissa ennen ottelua. Se on sama luku
+# jonka palvelinmaski (PREDICT_MASK) piilottaa /api/predictista, eli lokista
+# olisi tullut maskin helpoin kiertotie.
+PREMATCH_PRIVATE_FIELDS = ("xg_home", "xg_away")
+
+
+def strip_prematch_private(log: dict) -> dict:
+    """Nollaa ottelua edeltavat Premium-kentat (muokkaa paikan paalla).
+
+    Ehto on `result is None` eika kellonaika: rivi on julkinen heti kun se
+    kirjoitetaan, ja gradaamaton rivi voi olla myos kesken ottelun. Gradatun
+    rivin xG jaa (ottelu on pelattu, eika luku ole enaa ennakkotieto).
+    """
+    for e in (log.get("predictions") or []):
+        if e.get("result") is None:
+            for k in PREMATCH_PRIVATE_FIELDS:
+                if e.get(k) is not None:
+                    e[k] = None
+    return log
+
+
 def save_log(log: dict, path: Path = LOG_PATH) -> None:
+    """AINOA kirjoittaja. Siivous on TASSA eika kutsupaikoissa: jokainen
+    kirjoittaja (pre-match-lokitus, refresh, backfill, gradaus) menee taman
+    lapi, joten yksikaan uusi kutsupaikka ei voi unohtaa saantoa."""
+    strip_prematch_private(log)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
