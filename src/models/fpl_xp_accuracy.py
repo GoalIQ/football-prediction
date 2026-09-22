@@ -16,8 +16,29 @@ Vertailun saanto: rivi otetaan vertailuun vain jos KAIKKI kolme lukua on
 jaadytetty. Puuttuva ep_next EI ole 0 (0 olisi "FPL ennusti nollaa" ja
 tekisi FPL:sta huonomman kuin se on). GW1 ja GW2 jaadytettiin ennen tata
 riviä ilman ep_next-kenttaa -> niilta vertailu on None, ei nolla.
+
+22.9.2026 (D5: track record vs FPL:n oma projektio):
+  * frozen_players / grade_frozen: AINOA reitti jolla gradaus lukee
+    jaadytetyn ep_next:n. Se palauttaa ep_next/form-kentat vain jos freezen
+    meta todistaa niiden olevan kierroksen deadline-arvo (haettu ennen
+    deadlinea, is_next = kierros). Muuten kentat riisutaan ja vertailu on
+    None. Vahti: tests/test_ep_next_reader_discipline.py.
+  * vs_fpl_ep_next: kahden ennustajan vertailu (GoalIQ xP vs FPL ep_next)
+    riveilla joilla on xp, ep_next JA toteuma, jaettuna minuuttiehdolla
+    (pelasi / ei pelannut). Ei vaadi form-kenttaa kuten `comparison`.
 """
 from __future__ import annotations
+
+import datetime as _dt
+
+# Freezen FPL-referenssin tila (meta.fpl_reference_status). Kirjoittaja
+# (scripts/freeze_fpl_xp_gw.fpl_reference_gate) ja lukija (frozen_players)
+# kayttavat samoja koodeja.
+REF_OK = "ok"
+REF_FETCH_TIME_UNKNOWN = "fetch_time_unknown"
+REF_FETCHED_AFTER_DEADLINE = "fetched_at_or_after_deadline"
+REF_OTHER_GW = "ep_next_refers_to_other_gw"
+REF_KEYS = ("ep_next", "form")
 
 CLASS_DNP = "dnp"
 CLASS_BLANK = "blank"
@@ -104,6 +125,10 @@ def grade_players(players: list[dict], actual: dict[int, tuple[float, float | No
                                    rivit (mae_by_pos ilman n:aa ei poolaudu)
       comparison                   kolmen ennustajan MAE samalla rivijoukolla
                                    (rivit joilla xp, ep_next JA form) tai None
+      vs_fpl_ep_next               GoalIQ vs FPL ep_next, kaikki / pelasi /
+                                   ei pelannut (ks. vs_fpl_ep_next) tai None
+    Kutsu jaadytetylla tiedostolla grade_frozen():n kautta, ei suoraan: vain
+    se tarkistaa etta ep_next on deadline-arvo.
     Pelaaja jota ei loydy toteumasta on 0 p / 0 min (aito DNP-miss, kuten
     vanhassa gradauksessa).
     """
@@ -139,6 +164,7 @@ def grade_players(players: list[dict], actual: dict[int, tuple[float, float | No
         "by_class": {c: _group_stats(by_class[c]) for c in CLASSES},
         "by_pos_stats": {pos: _group_stats(ds) for pos, ds in sorted(by_pos.items()) if ds},
         "comparison": _comparison(cmp_rows),
+        "vs_fpl_ep_next": vs_fpl_ep_next(players, actual),
     }
     return out
 
@@ -170,6 +196,119 @@ def _comparison(rows: list[tuple]) -> dict | None:
         "by_pos": {pos: {"n": len(rs), "mae": _mae_triplet(rs)}
                    for pos, rs in sorted(by_pos.items()) if rs},
     }
+
+
+VS_FPL_METHOD_CODE = "fpl_xp_gw_accuracy.vs_fpl_ep_next.v1"
+
+
+def _parse_utc(v) -> _dt.datetime | None:
+    if not v:
+        return None
+    try:
+        d = _dt.datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return d if d.tzinfo else d.replace(tzinfo=_dt.timezone.utc)
+
+
+def ep_next_is_deadline_value(meta: dict) -> bool:
+    """Todistaako freezen meta etta jaadytetty ep_next on kierroksen gw
+    deadline-arvo?
+
+    22.9 alkaen (meta.fpl_reference_status olemassa): status ok, is_next-
+    kierros (ep_next_gw) == gw ja hakuhetki < deadline.
+
+    29.8-rakenne (GW3-GW5, ei statusta): meta.fpl_reference olemassa ja
+    frozen_at < deadline. Riittaa, koska bootstrap haettiin ENNEN frozen_at:ia
+    (valimuisti on aina lukuhetkea vanhempi) ja freeze valitsi kierroksen
+    jonka deadline oli tulevaisuudessa, eli FPL:n is_next-kierroksen.
+    Kaikki muu (GW1/GW2 ilman kenttaa, puuttuva deadline) -> False."""
+    meta = meta or {}
+    gw = meta.get("gw")
+    deadline = _parse_utc(meta.get("deadline"))
+    if gw is None or deadline is None:
+        return False
+    if "fpl_reference_status" in meta:
+        if meta.get("fpl_reference_status") != REF_OK:
+            return False
+        if meta.get("ep_next_gw") != gw:
+            return False
+        fetched = _parse_utc(meta.get("fpl_reference_fetched_at"))
+        return fetched is not None and fetched < deadline
+    if "fpl_reference" not in meta:
+        return False
+    frozen_at = _parse_utc(meta.get("frozen_at"))
+    return frozen_at is not None and frozen_at < deadline
+
+
+def frozen_players(frozen: dict) -> list[dict]:
+    """Ainoa lukija jaadytetyille riveille gradausta varten. ep_next/form
+    palautetaan vain jos ep_next_is_deadline_value(meta); muuten ne
+    riisutaan, jolloin comparison ja vs_fpl_ep_next ovat None eivatka
+    vertaa deadlinen jalkeen haettua lukua."""
+    players = (frozen or {}).get("players") or []
+    if ep_next_is_deadline_value((frozen or {}).get("meta") or {}):
+        return list(players)
+    return [{k: v for k, v in p.items() if k not in REF_KEYS} for p in players]
+
+
+def grade_frozen(frozen: dict, actual: dict[int, tuple[float, float | None]]) -> dict:
+    """grade_players jaadytetylle tiedostolle frozen_players():n kautta."""
+    return grade_players(frozen_players(frozen), actual)
+
+
+def _pair_stats(rows: list[tuple[float, float, float]]) -> dict:
+    """rows: (xp, ep_next, actual). goaliq_minus_fpl lasketaan
+    pyoristamattomista MAE:ista (ei kahden pyoristetyn luvun erotus);
+    negatiivinen = GoalIQ:n virhe pienempi."""
+    if not rows:
+        return {"n": 0, "mae": None, "goaliq_minus_fpl": None}
+    act = [r[2] for r in rows]
+    g = mae([r[0] for r in rows], act)
+    e = mae([r[1] for r in rows], act)
+    return {"n": len(rows),
+            "mae": {PRED_GOALIQ: round(g, 3), PRED_EP_NEXT: round(e, 3)},
+            "goaliq_minus_fpl": round(g - e, 3)}
+
+
+def vs_fpl_ep_next(players: list[dict],
+                   actual: dict[int, tuple[float, float | None]]) -> dict | None:
+    """D5: GoalIQ xP vs FPL ep_next samoilla pelaajilla.
+
+    Rivi mukaan vain kun xp, ep_next JA toteuma ovat olemassa. Toisin kuin
+    grade_players, toteumasta puuttuvaa EI oleteta 0 p / 0 min:ksi: vertailu
+    koskee pelaajia joilla molemmat ennusteet ja toteuma on, ja puuttuvat
+    lasketaan erikseen (n_missing_*). Jako: played = minuutteja > 0,
+    did_not_play = 0 min (sama raja kuin classify_outcome:n DNP). Pelaamaton
+    rivi mittaa minuuttiennustetta, pelannut pisteennustetta, joten reilu
+    vertailu raportoi molemmat erikseen eika vain summaa.
+    Ei yhtaan vertailukelpoista rivia -> None (ei nollarivia)."""
+    played: list[tuple[float, float, float]] = []
+    dnp: list[tuple[float, float, float]] = []
+    n_no_ep = n_no_actual = 0
+    for p in players or []:
+        xp = _as_float(p.get("xp"))
+        if xp is None:
+            continue
+        ep = _as_float(p.get("ep_next"))
+        if ep is None:
+            n_no_ep += 1
+            continue
+        a = actual.get(int(p["id"]))
+        if a is None:
+            n_no_actual += 1
+            continue
+        pts, mins = a
+        row = (xp, ep, float(pts or 0.0))
+        (played if (mins is not None and mins > 0) else dnp).append(row)
+    if not played and not dnp:
+        return None
+    return {"method_code": VS_FPL_METHOD_CODE,
+            "n_missing_ep_next": n_no_ep,
+            "n_missing_actual": n_no_actual,
+            "all": _pair_stats(played + dnp),
+            "played": _pair_stats(played),
+            "did_not_play": _pair_stats(dnp)}
 
 
 def pool_groups(groups: list[dict]) -> dict | None:

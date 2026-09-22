@@ -79,6 +79,18 @@ def fetch_bootstrap(max_age_s: float = 3600, force: bool = False) -> dict:
     return data
 
 
+def bootstrap_fetched_at() -> _dt.datetime | None:
+    """UTC-hetki jolloin fetch_bootstrap():n viimeksi palauttama data haettiin
+    FPL:lta (valimuistitiedoston mtime). fetch_bootstrap voi palauttaa jopa
+    tunnin vanhan valimuistin, joten kutsuhetki EI ole hakuhetki; xP-freeze
+    kirjaa taman ep_next-arvon hakuhetkeksi (D5, 22.9.2026). None jos
+    tiedostoa ei ole."""
+    path = CACHE_DIR / "bootstrap_static.json"
+    if not path.exists():
+        return None
+    return _dt.datetime.fromtimestamp(path.stat().st_mtime, tz=_dt.timezone.utc)
+
+
 def fetch_fixtures(max_age_s: float = 6 * 3600, force: bool = False) -> list:
     """fixtures: kaikki kauden ottelut event/kickoff/tulos-kentillä."""
     path = _cache_path("fixtures.json")
