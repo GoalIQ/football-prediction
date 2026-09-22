@@ -86,6 +86,9 @@ FREE_ENDPOINTS = {
     "/api/fantasy/league": "mini-league standings on free",
     "/api/fantasy/career": "career card on free",
     "/api/fantasy/model-squad": "mallin oma joukkue on julkinen",
+    "/api/fantasy/model-captain": "mallin kapteeni on jo julkinen /fpl:n "
+                                  "kutsulokissa ja rate-teamin ilmaisessa "
+                                  "captain.pickissa (22.9)",
     "/api/fantasy/rival": "\"Catch your rival\" on myyntilistan FREE-puolella",
     "/api/fantasy/h2h": "mini-league head-to-head win probability on free",
     "/api/fantasy/defcon": "FPL:n omaa julkista otteludataa (koodin oma "

@@ -86,6 +86,11 @@ FREE_EXPECTED = {
     "/api/fantasy/price-watch",
     "/api/fantasy/fit",
     "/api/fantasy/model-squad",
+    # 22.9: mallin kapteeni seuraavalle deadlinelle. Sama kapteeni on jo
+    # julkinen goaliq.app/fpl:n kutsulokissa ja rate-teamin ilmaisessa
+    # `captain.pick`issa; vastaus rajataan response_modelilla nimettyihin
+    # kenttiin (ei siirtoehdotuksia).
+    "/api/fantasy/model-captain",
     # 4.9 VILLEN PAATOS: differentials on ilmainen kaikilla pinnoilla
     # (landing, rekisterin tier, SPA:n gate, API). Mitattu syy paatoksen
     # taustalla: julkisen /fpl/differentials-sivun generaattori hakee taman
