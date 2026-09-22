@@ -158,7 +158,10 @@ export const TOOLS: Tool[] = [
 		slug: 'clean-sheets',
 		group: 'players',
 		title: 'Clean sheets',
-		question: 'Which defence is most likely to keep a clean sheet this week?',
+		// 22.9 (T6): kysymys on nyt myos reitin meta/og-kuvaus eli julkista
+		// tekstia; "most likely" on copy-saannoissa kielletty. Sanamuoto on
+		// tyokalun oma ("the team's average chance of a clean sheet").
+		question: 'Which defence has the best chance of a clean sheet this week?',
 		tier: 'free',
 		anchor: 'pc-cs'
 	},
