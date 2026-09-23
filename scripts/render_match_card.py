@@ -10,10 +10,15 @@ eriytya.
 Vain 1X2 (julkaisutarkistaja 23.9): xG ja todennakoisin tulos ovat appissa
 Premium-lukossa, joten julkinen kortti ei kanna niita.
 
+Luvut ja suosikki luetaan AINA tuotannon API:sta (sama POST /api/predict-wc
+jota appi kayttaa), ei kasin syotetyista prosenteista (saanto 6a, julkaisu-
+tarkistaja 23.9). Korostus seuraa palvelimen `call`-kenttaa: kun ero on
+mitatun marginaalin sisalla (too_close), mitaan ei korosteta.
+
 AJO:
-    python scripts/render_match_card.py --home Netherlands --away Germany \\
-        --probs 0.4705 0.2282 0.3012 --title "NATIONS LEAGUE" \\
-        --tag "LEAGUE A" --when "THU 24 SEP" --out outputs/cards/ned_ger.png
+    python -m scripts.render_match_card --home Netherlands --away Germany
+        --league "INT-Nations League" --tag MD1 --when "THU 24 SEP  ·  LEAGUE A"
+        --stamp "as of 23 Sep" --out outputs/cards/unl_ned_ger.png
 """
 from __future__ import annotations
 
@@ -80,10 +85,48 @@ def _flag(canvas: Image.Image, name: str, cx: int, top: int, w: int = 132, h: in
     canvas.paste(fl, (cx - w // 2, top), mask)
 
 
-def render(home: str, away: str, probs, title: str, tag: str, when: str,
+API = "https://api.goaliq.app/api/predict-wc"
+
+
+def fetch_prediction(home: str, away: str, league: str) -> dict:
+    import json
+    import urllib.request
+    req = urllib.request.Request(
+        API, data=json.dumps({"home_team": home, "away_team": away,
+                              "leagues": [league]}).encode(),
+        headers={"Content-Type": "application/json", "User-Agent": "goaliq-card"})
+    return json.load(urllib.request.urlopen(req, timeout=60))
+
+
+def unl_league_letter(home: str) -> str | None:
+    """UNL-lohkon liigakirjain ('Group A2' -> 'A') tuotannon taulukosta,
+    ei kasin (23.9: testikortti sai vaaran 'LEAGUE A' Kosovo-Irlannille)."""
+    import json
+    import urllib.parse
+    import urllib.request
+    url = ("https://api.goaliq.app/api/standings?"
+           + urllib.parse.urlencode({"league": "INT-Nations League"}))
+    d = json.load(urllib.request.urlopen(
+        urllib.request.Request(url, headers={"User-Agent": "goaliq-card"}), timeout=60))
+    for g in d.get("groups") or []:
+        if any(r.get("team_name") == home for r in g.get("rows") or []):
+            m = re.match(r"Group ([A-D])\d", g.get("group") or "")
+            return m.group(1) if m else None
+    return None
+
+
+def favourite_index(call: dict | None) -> int | None:
+    """Palvelimen `call` -> korostettava sarake (0 koti, 2 vieras) tai None.
+    Tasapelia ei koskaan korosteta suosikkina, eika mitaan kun too_close."""
+    if not call or call.get("too_close"):
+        return None
+    return {"home": 0, "away": 2}.get(call.get("favourite"))
+
+
+def render(home: str, away: str, pred: dict, title: str, tag: str, when: str,
            stamp: str, out: Path) -> Path:
-    h_p, d_p, a_p = pct_100(probs)
-    fav = max(range(3), key=lambda i: (h_p, d_p, a_p)[i])
+    h_p, d_p, a_p = pct_100((pred["p_home_win"], pred["p_draw"], pred["p_away_win"]))
+    fav = favourite_index(pred.get("call"))
 
     grad = Image.new("RGB", (1, H))
     for y in range(H):
@@ -151,14 +194,21 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--home", required=True)
     ap.add_argument("--away", required=True)
-    ap.add_argument("--probs", type=float, nargs=3, required=True)
+    ap.add_argument("--league", required=True, help='esim. "INT-Nations League"')
     ap.add_argument("--title", default="NATIONS LEAGUE")
     ap.add_argument("--tag", default="")
     ap.add_argument("--when", required=True)
     ap.add_argument("--stamp", required=True, help='esim. "as of 23 Sep"')
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    print(render(a.home, a.away, a.probs, a.title, a.tag, a.when, a.stamp, Path(a.out)))
+    pred = fetch_prediction(a.home, a.away, a.league)
+    when = a.when
+    if a.league == "INT-Nations League":
+        letter = unl_league_letter(pred["home_team"])
+        if not letter:
+            raise SystemExit(f"{a.home}: UNL-lohkoa ei loytynyt taulukosta")
+        when = f"{a.when}  ·  LEAGUE {letter}"
+    print(render(a.home, a.away, pred, a.title, a.tag, when, a.stamp, Path(a.out)))
     return 0
 
 
