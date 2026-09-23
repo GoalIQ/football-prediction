@@ -26,10 +26,14 @@
 	// YKSI lukija ($lib/uclPicks), sama kuin mobiilissa.
 	import {
 		UCL_DIFF_MAX_OWNED,
-		UCL_VIEWS,
 		uclPicks,
 		type UclView
 	} from '$lib/uclPicks';
+	// 23.9 (UCL-MENUT, Villen valinta "sama rakenne kuin FPL/RSL"): osiot
+	// Players | Teams ovat palkissa, osion sisalla FPL:n esiasetukset.
+	import GameViewNav from '$lib/components/GameViewNav.svelte';
+	import { gameViewState } from '$lib/gameView.svelte';
+	import type { UclPageView } from '$lib/tools';
 
 	let xp = $state<UclXpResponse | null>(null);
 	let err = $state<string | null>(null);
@@ -48,22 +52,46 @@
 	let q = $state('');
 	let maxPrice = $state<number | null>(null);
 	let sortBy = $state<'total' | 'next'>('total');
-	let view = $state<UclView>('all');
 	let includeThin = $state(false);
 
-	const VIEW_LABEL: Record<UclView, string> = {
-		all: 'All players',
-		captain: 'Captain',
-		value: 'Value',
-		differentials: 'Differentials'
+	/* Nakyma hashista yhden lukijan kautta ($lib/gameView.svelte, sama kuin
+	   /spl). Sama analytiikkatapahtuma kuin 23.9 vaihe 1:n valilehdilla. */
+	const gv = gameViewState<UclPageView>('ucl', 'ucl_view_changed');
+	let view = $derived(gv.view);
+	/** Sivun nakyma -> uclPicksin lista. 'xp' on kaikkien pelaajien lista. */
+	const PICK_VIEWS: Partial<Record<UclPageView, Exclude<UclView, 'all'>>> = {
+		captain: 'captain',
+		value: 'value',
+		differentials: 'differentials'
 	};
-	function setView(v: UclView) {
-		if (v === view) return;
-		view = v;
-		capture('ucl_view_changed', { view: v });
-	}
+	let pickView = $derived(PICK_VIEWS[view] ?? null);
+	let playersList = $derived(view === 'xp' || pickView !== null);
 	let picks = $derived(
-		view === 'all' ? null : uclPicks(xp?.players, xp?.meta, view, { pos, includeThin })
+		pickView ? uclPicks(xp?.players, xp?.meta, pickView, { pos, includeThin }) : null
+	);
+
+	/* Compare two players (Players > More). Valinta koko listasta; maskattu
+	   (ilmainen) vastaus on vain kymmenen karki, joten nakyma on lukossa. */
+	let cmpA = $state<number | null>(null);
+	let cmpB = $state<number | null>(null);
+	let cmpPool = $derived(
+		[...(xp?.players ?? [])].sort((a, b) => a.web_name.localeCompare(b.web_name))
+	);
+	let cmpPlayers = $derived(
+		[cmpA, cmpB]
+			.map((id) => (xp?.players ?? []).find((p) => p.id === id))
+			.filter((p): p is UclXpPlayer => !!p)
+	);
+
+	/* Teams: joukkueiden clean sheet % kierroksittain (artefaktin `teams`,
+	   sama CL-malli kuin puolustajien xP). Keskiarvo lasketaan riveista. */
+	let teams = $derived(
+		(xp?.teams ?? []).map((t) => ({
+			t,
+			avg: t.fixtures.length
+				? t.fixtures.reduce((a, f) => a + f.cs_pct, 0) / t.fixtures.length
+				: null
+		}))
 	);
 
 	let md = $derived(xp?.meta?.deadline_gameweek ?? null);
@@ -165,6 +193,8 @@
 		{/if}
 	</p>
 
+	<GameViewNav game="ucl" {view} horizonMeta={xp?.meta ?? null} />
+
 	{#if err}
 		<p class="error">Could not reach the API. {err}</p>
 	{:else if !xp}
@@ -176,24 +206,14 @@
 	{:else if !xp.meta.available || !xp.players.length}
 		<p class="muted">UCL Fantasy projections are not published yet. Check back soon.</p>
 	{:else}
-		<div class="views" role="tablist" aria-label="UCL Fantasy views">
-			{#each UCL_VIEWS as v (v)}
-				<button
-					role="tab"
-					aria-selected={view === v}
-					class:active={view === v}
-					onclick={() => setView(v)}>{VIEW_LABEL[v]}</button
-				>
-			{/each}
-		</div>
-
+		{#if playersList}
 		<div class="controls">
 			<div class="posrow">
 				{#each ['ALL', 'GKP', 'DEF', 'MID', 'FWD'] as pf (pf)}
 					<button class:active={pos === pf} onclick={() => (pos = pf as Pos)}>{pf}</button>
 				{/each}
 			</div>
-			{#if view === 'all'}
+			{#if view === 'xp'}
 			<label
 				>Club
 				<select bind:value={club}>
@@ -237,7 +257,7 @@
 			{#if picks.state === 'locked'}
 				<p class="muted">
 					This list is part of GoalIQ Premium. The free view shows the top 10 by expected points under
-					All players.
+					xP.
 				</p>
 				<Paywall teaser={false} />
 			{:else if picks.state === 'no_matchday'}
@@ -397,6 +417,105 @@
 			<Paywall teaser={false} />
 		{/if}
 		{/if}
+		{:else if view === 'compare'}
+			<h2>Compare two players</h2>
+			{#if xp.meta.masked}
+				<p class="muted">
+					Comparing players is part of GoalIQ Premium. The free view shows the top 10 by expected
+					points under xP.
+				</p>
+				<Paywall teaser={false} />
+			{:else}
+				<div class="cmp-row">
+					{#each [0, 1] as slot (slot)}
+						<select
+							value={(slot === 0 ? cmpA : cmpB) ?? ''}
+							onchange={(e) => {
+								const v = Number((e.target as HTMLSelectElement).value) || null;
+								if (slot === 0) cmpA = v;
+								else cmpB = v;
+								if (cmpA && cmpB) capture('ucl_compare_used');
+							}}
+						>
+							<option value="">Pick player {slot + 1}…</option>
+							{#each cmpPool as p (p.id)}
+								<option value={p.id}>{p.web_name} ({p.team_short}, {p.pos})</option>
+							{/each}
+						</select>
+					{/each}
+				</div>
+				{#if cmpPlayers.length === 2}
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr><th></th>{#each cmpPlayers as p (p.id)}<th>{p.web_name} ({p.team_short})</th>{/each}</tr>
+							</thead>
+							<tbody>
+								<tr><td>Price</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.price.toFixed(1)}</td>{/each}</tr>
+								<tr><td>Owned</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.owned_pct.toFixed(0)}%</td>{/each}</tr>
+								<tr><td>Expected minutes, MD{md ?? ''}</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xmins.toFixed(0)}</td>{/each}</tr>
+								{#each mdCols as g (g)}
+									<tr>
+										<td>MD{g}</td>
+										{#each cmpPlayers as p (p.id)}
+											{@const m = p.gameweeks.find((x) => x.gw === g)}
+											<td class="num">
+												{#if m}<span class="opp">{m.opponents.map((o) => `${o.opp} ${o.venue}`).join(', ')}</span>{m.xp.toFixed(1)}{:else}–{/if}
+											</td>
+										{/each}
+									</tr>
+								{/each}
+								<tr><td>Total, {windowText}</td>{#each cmpPlayers as p (p.id)}<td class="num strong">{p.xp_horizon_total.toFixed(1)}</td>{/each}</tr>
+								<tr>
+									<td>Data</td>
+									{#each cmpPlayers as p (p.id)}
+										<td class="num">{thin(p) ? 'thin data' : noData(p) ? 'no data' : 'domestic league'}</td>
+									{/each}
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			{/if}
+		{:else if view === 'clean-sheets'}
+			<h2>Clean sheet % by matchday</h2>
+			{#if !teams.length}
+				<p class="muted">Clean sheet chances by club are not published yet. Check back soon.</p>
+			{:else}
+				<p class="muted small view-lede">
+					The chance each club keeps a clean sheet in its matches over {windowText}, from
+					GoalIQ's Champions League model. The same number is behind the clean sheet points of
+					every goalkeeper and defender in the xP list.
+				</p>
+				<div class="table-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>Club</th>
+								<th class="num">avg CS%</th>
+								{#each mdCols as g (g)}
+									<th class="num">MD{g}</th>
+								{/each}
+							</tr>
+						</thead>
+						<tbody>
+							{#each teams as { t, avg } (t.id)}
+								<tr>
+									<td>{t.name} <span class="muted">{t.short}</span></td>
+									<td class="num strong">{avg == null ? '–' : `${avg.toFixed(1)}%`}</td>
+									{#each mdCols as g (g)}
+										{@const f = t.fixtures.find((x) => x.gw === g)}
+										<td class="num">
+											{#if f}<span class="opp">{f.opp} {f.venue}</span>{Math.round(f.cs_pct)}%{:else}–{/if}
+										</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+		{/if}
 
 		<section class="method">
 			<h2>How the number is built</h2>
@@ -469,25 +588,18 @@
 		display: flex;
 		gap: var(--s-1);
 	}
-	.views {
+	.cmp-row {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--s-1);
-		margin-top: var(--s-4);
-		border-bottom: 1px solid var(--border);
+		gap: var(--s-2);
+		margin: var(--s-2) 0 var(--s-3);
 	}
-	.views button {
-		background: none;
-		border: none;
-		border-bottom: 2px solid transparent;
-		padding: var(--s-1) var(--s-2);
-		cursor: pointer;
-		color: inherit;
-		font-weight: 600;
-	}
-	.views button.active {
-		border-bottom-color: var(--accent);
-		color: var(--accent);
+	.cmp-row select {
+		background: var(--surface);
+		color: var(--text);
+		border: 1px solid var(--border);
+		padding: var(--s-1);
+		max-width: 100%;
 	}
 	.view-lede {
 		max-width: 70ch;

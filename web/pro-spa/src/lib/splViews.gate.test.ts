@@ -99,10 +99,10 @@ describe('/spl-sivu', () => {
 			expect(markup.includes(h), h).toBe(true);
 	});
 
-	it('nakyma luetaan vain splViewin kautta', () => {
-		expect(script).toContain('splView(page.url.hash)');
-		expect(src).not.toMatch(/location\.hash/);
-		expect(markup).toContain('<SplViewNav {view}');
+	it('nakyma luetaan vain yhteisen lukijan kautta', () => {
+		expect(script).toContain("gameViewState<SplView>('spl', 'spl_view_changed')");
+		expect(src).not.toMatch(/location\.hash|page\.url\.hash/);
+		expect(markup).toContain('<GameViewNav game="spl" {view}');
 	});
 
 	it('erotteleva: poistettu nakyma kaatuu', () => {

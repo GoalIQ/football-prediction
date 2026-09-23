@@ -516,22 +516,43 @@ export function sectionOf(group: string, slug: string | null): Section | null {
 }
 
 /* ------------------------------------------------------------------------
- * RSL Fantasy (/spl): sama valitsin ja esiasetukset kuin FPL:ssa (23.9,
- * Villen pyynto "RSL fantasyn vois kans jasennella noilla menuilla").
+ * Muiden pelien nakymat: RSL Fantasy (/spl) ja UCL Fantasy (/ucl) samalla
+ * rakenteella kuin FPL (23.9, Villen pyynnot "RSL fantasyn vois kans
+ * jasennella noilla menuilla" ja UCL:lle "sama rakenne kuin FPL/RSL").
  *
- * /spl oli yksi pitka pino yhdeksasta osiosta. Rakenne on nyt sama kuin
- * FPL:n Players-ryhmassa: ( Players | Teams | Model squad ), Players-
- * nakymassa esiasetukset Captain / xP / Value / Differentials ja loput
- * "More"-kohdassa. RSL on taysin ilmainen, joten lukkoja ei ole.
+ * Osiot (esim. Players | Teams | Model squad) ovat sovelluksen palkissa
+ * (`navItems`, Villen valinta B), osion sisalla FPL:n esiasetukset Captain /
+ * xP / Value / Differentials ja loput "More"-kohdassa.
  *
- * Nakyma on hashissa (/spl#value), koska /spl on prerenderoitu (SEO):
- * query-parametria ei voi lukea prerenderissa, hash luetaan selaimessa.
- * Linkki on silti jaettava ja paluunappi toimii.
+ * Nakyma on hashissa (/spl#value, /ucl#clean-sheets): /spl on prerenderoitu
+ * (SEO), eika query-parametria voi lukea prerenderissa. Linkki on silti
+ * jaettava ja paluunappi toimii.
  *
- * YKSI LUKIJA: sivu kysyy nakyman `splView`ilta eika lue hashia itse, ja
- * portti (`splViews.gate.test.ts`) kaataa jos osio jaa ilman nakymaa tai
- * on kahdessa.
+ * YKSI LUKIJA: sivut ja palkit kysyvat nakyman `gameView`ilta eivatka lue
+ * hashia itse. Portit `splViews.gate.test.ts` ja `uclViews.gate.test.ts`
+ * kaatavat jos nakyma jaa ilman sisaltoa tai osiota, tai on kahdessa.
  * --------------------------------------------------------------------- */
+export type GameId = 'spl' | 'ucl';
+
+export type GameSection<V extends string = string> = {
+	id: string;
+	label: string;
+	lead: V;
+	views: V[];
+	/** Alapalkin kuvake (`NAV_ICONS`-avain). */
+	icon: string;
+};
+
+export type GameViews<V extends string = string> = {
+	sections: GameSection<V>[];
+	/** Players-osion esiasetukset: samat nimet ja jarjestys kuin FPL:n
+	 *  `PLAYER_PRESETS`issa. */
+	presets: { view: V; label: string; horizon?: boolean }[];
+	/** Muut nakymat valitsimen alla, osioittain. */
+	more: Record<string, { view: V; label: string }[]>;
+	defaultView: V;
+};
+
 export type SplView =
 	| 'captain'
 	| 'xp'
@@ -543,68 +564,100 @@ export type SplView =
 	| 'accuracy'
 	| 'model-squad';
 
-export type SplSection = {
-	id: string;
-	label: string;
-	lead: SplView;
-	views: SplView[];
-	/** Alapalkin kuvake (`NAV_ICONS`-avain). */
-	icon: string;
-};
+/** UCL: sivun xP-lista on 'xp' (uclPicksin 'all'). Teams = joukkueiden
+ *  clean sheet % kierroksittain samasta CL-mallista kuin puolustajien xP. */
+export type UclPageView = 'captain' | 'xp' | 'value' | 'differentials' | 'compare' | 'clean-sheets';
 
-export const SPL_SECTIONS: SplSection[] = [
-	{
-		id: 'players',
-		label: 'Players',
-		lead: 'captain',
-		views: ['captain', 'xp', 'value', 'differentials', 'compare', 'leaders'],
-		icon: 'players'
-	},
-	{
-		id: 'teams',
-		label: 'Teams',
-		lead: 'clean-sheets',
-		views: ['clean-sheets', 'accuracy'],
-		icon: 'shield'
-	},
-	{ id: 'squad', label: 'Model squad', lead: 'model-squad', views: ['model-squad'], icon: 'team' }
-];
-
-/** Players-nakyman esiasetukset: samat nimet ja jarjestys kuin FPL:n
- *  `PLAYER_PRESETS`issa (ilman Price changea, jota RSL-syote ei anna). */
-export const SPL_PRESETS: { view: SplView; label: string; horizon?: boolean }[] = [
+const PRESETS: { view: 'captain' | 'xp' | 'value' | 'differentials'; label: string; horizon?: boolean }[] = [
 	{ view: 'captain', label: 'Captain' },
 	{ view: 'xp', label: 'xP', horizon: true },
 	{ view: 'value', label: 'Value' },
 	{ view: 'differentials', label: 'Differentials' }
 ];
 
-/** Muut nakymat valitsimen alla, osioittain. */
-export const SPL_MORE: Record<string, { view: SplView; label: string }[]> = {
-	players: [
-		{ view: 'compare', label: 'Compare two players' },
-		{ view: 'leaders', label: "Last season's leaders" }
-	],
-	teams: [
-		{ view: 'clean-sheets', label: 'Clean sheets and fixtures' },
-		{ view: 'accuracy', label: 'How our calls have gone' }
-	]
+export const GAME_VIEWS: { spl: GameViews<SplView>; ucl: GameViews<UclPageView> } = {
+	spl: {
+		sections: [
+			{
+				id: 'players',
+				label: 'Players',
+				lead: 'captain',
+				views: ['captain', 'xp', 'value', 'differentials', 'compare', 'leaders'],
+				icon: 'players'
+			},
+			{
+				id: 'teams',
+				label: 'Teams',
+				lead: 'clean-sheets',
+				views: ['clean-sheets', 'accuracy'],
+				icon: 'shield'
+			},
+			{ id: 'squad', label: 'Model squad', lead: 'model-squad', views: ['model-squad'], icon: 'team' }
+		],
+		// Ilman Price changea, jota RSL-syote ei anna.
+		presets: [...PRESETS],
+		more: {
+			players: [
+				{ view: 'compare', label: 'Compare two players' },
+				{ view: 'leaders', label: "Last season's leaders" }
+			],
+			teams: [
+				{ view: 'clean-sheets', label: 'Clean sheets and fixtures' },
+				{ view: 'accuracy', label: 'How our calls have gone' }
+			]
+		},
+		// RSL on ilmainen: avataan kapteenilla kuten FPL:n Players.
+		defaultView: 'captain'
+	},
+	ucl: {
+		sections: [
+			{
+				id: 'players',
+				label: 'Players',
+				lead: 'xp',
+				views: ['captain', 'xp', 'value', 'differentials', 'compare'],
+				icon: 'players'
+			},
+			{ id: 'teams', label: 'Teams', lead: 'clean-sheets', views: ['clean-sheets'], icon: 'shield' }
+		],
+		// Ei horisonttia nimeen: xpHorizonin nimi on GW-muotoinen ("xP 3 GWs"),
+		// ja UCL:n kierros on matchday (sivu valttaa GW-muotoja, 21.9).
+		presets: PRESETS.map(({ view, label }) => ({ view, label })),
+		more: { players: [{ view: 'compare', label: 'Compare two players' }] },
+		// UCL-listat ovat Premiumia; ilmainen nakee xP-listan kymmenen karkea,
+		// joten oletus on xP eika lukittu kapteenilista (sama kuin 23.9 vaihe 1).
+		defaultView: 'xp'
+	}
 };
 
-export const SPL_DEFAULT_VIEW: SplView = 'captain';
-
-/** Nakyma hashista ("#value" -> 'value'). Tuntematon tai tyhja -> oletus,
- *  jotta vanha tai kirjoitusvirheellinen linkki avaa sivun eika tyhjaa. */
-export function splView(hash: string | null | undefined): SplView {
+/** Nakyma hashista ("#value" -> 'value'). Tuntematon tai tyhja -> pelin
+ *  oletus, jotta vanha tai kirjoitusvirheellinen linkki avaa sivun eika tyhjaa. */
+export function gameView(game: GameId, hash: string | null | undefined): string {
+	const g = GAME_VIEWS[game] as GameViews;
 	const id = (hash ?? '').replace(/^#/, '');
-	return SPL_SECTIONS.some((s) => (s.views as string[]).includes(id))
-		? (id as SplView)
-		: SPL_DEFAULT_VIEW;
+	return g.sections.some((s) => s.views.includes(id)) ? id : g.defaultView;
 }
 
-export function splSectionOf(view: SplView): SplSection {
-	return SPL_SECTIONS.find((s) => s.views.includes(view)) ?? SPL_SECTIONS[0];
+export function gameSectionOf(game: GameId, view: string): GameSection {
+	const g = GAME_VIEWS[game] as GameViews;
+	return g.sections.find((s) => s.views.includes(view)) ?? g.sections[0];
 }
+
+/** Vieritetaanko ylos: vain kun palkin osio vaihtuu, ei osion sisalla. */
+export function sectionChanged(game: GameId, from: string, to: string): boolean {
+	return gameSectionOf(game, from).id !== gameSectionOf(game, to).id;
+}
+
+// RSL-nimet (23.9 ensimmainen versio) ohuina aliaksina samaan lukijaan.
+export const SPL_SECTIONS = GAME_VIEWS.spl.sections;
+export const SPL_PRESETS = GAME_VIEWS.spl.presets;
+export const SPL_MORE = GAME_VIEWS.spl.more;
+export const SPL_DEFAULT_VIEW: SplView = GAME_VIEWS.spl.defaultView;
+export const splView = (hash: string | null | undefined): SplView => gameView('spl', hash) as SplView;
+export const splSectionOf = (view: SplView): GameSection<SplView> =>
+	gameSectionOf('spl', view) as GameSection<SplView>;
+export const uclView = (hash: string | null | undefined): UclPageView =>
+	gameView('ucl', hash) as UclPageView;
 
 /* ------------------------------------------------------------------------
  * Pelivalitsin (A3 1: "FPL ▾ -> FPL / UCL Fantasy / RSL Fantasy").
@@ -645,7 +698,7 @@ export function groupOfPath(pathname: string): string | null {
  * 22.9:n A3 piirsi FPL:n ryhmat (This week / My team / Players / Matches)
  * myos /ucl- ja /spl-reiteille ilman korostusta. RSL-sivulla palkki vei siis
  * FPL:aan eika RSL:n omiin osioihin. Nyt palkki on pelin oma: FPL:ssa
- * ryhmat, RSL:ssa `SPL_SECTIONS`. Takaisin FPL:aan paasee pelivalitsimesta.
+ * ryhmat, RSL:ssa ja UCL:ssa `GAME_VIEWS`in osiot. Takaisin FPL:aan paasee pelivalitsimesta.
  *
  * YKSI LUKIJA: ylapalkki (Hero) ja alapalkki (BottomNav) kysyvat kohteet ja
  * aktiivisen kohdan taalta; portti `ia.gate.test.ts`.
@@ -653,8 +706,14 @@ export function groupOfPath(pathname: string): string | null {
 export type NavItem = { id: string; label: string; href: string; icon: string };
 
 export function navItems(pathname: string): NavItem[] {
-	if (gameOf(pathname).id === 'spl')
-		return SPL_SECTIONS.map((s) => ({ id: s.id, label: s.label, href: `/spl#${s.lead}`, icon: s.icon }));
+	const game = gameOf(pathname).id;
+	if (game !== 'fpl')
+		return (GAME_VIEWS[game].sections as GameSection[]).map((s) => ({
+			id: s.id,
+			label: s.label,
+			href: `/${game}#${s.lead}`,
+			icon: s.icon
+		}));
 	return GROUPS.map((g) => ({
 		id: g.id,
 		label: g.label,
@@ -663,12 +722,12 @@ export function navItems(pathname: string): NavItem[] {
 	}));
 }
 
-/** Aktiivinen palkin kohta. RSL: nakyman osio hashista (`splView`). UCL:lla
- *  ei omaa palkkia viela, joten FPL:n ryhmia ei korosteta siella. */
+/** Aktiivinen palkin kohta: FPL:ssa ryhma polusta, muissa peleissa
+ *  nakyman osio hashista (`gameView`). */
 export function activeNav(pathname: string, hash: string): string | null {
 	const game = gameOf(pathname).id;
-	if (game === 'spl') return splSectionOf(splView(hash)).id;
-	return game === 'fpl' ? groupOfPath(pathname) : null;
+	if (game !== 'fpl') return gameSectionOf(game, gameView(game, hash)).id;
+	return groupOfPath(pathname);
 }
 
 export function groupById(id: string): Group | undefined {

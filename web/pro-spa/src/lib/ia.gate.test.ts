@@ -153,7 +153,7 @@ describe('3. alapalkki', () => {
 		for (const path of ['/', '/spl', '/ucl'])
 			for (const g of navItems(path)) expect(NAV_ICONS[g.icon], `${path} ${g.id}`).toBeTruthy();
 	});
-	it('palkki on pelin oma: FPL = ryhmat, RSL = omat osiot (23.9 valinta B)', () => {
+	it('palkki on pelin oma: FPL = ryhmat, RSL ja UCL = omat osiot (23.9 valinta B)', () => {
 		expect(navItems('/').map((g) => g.label)).toEqual(GROUPS.map((g) => g.label));
 		expect(navItems('/players/value').map((g) => g.id)).toEqual(GROUPS.map((g) => g.id));
 		expect(navItems('/spl').map((g) => g.label)).toEqual(SPL_SECTIONS.map((s) => s.label));
@@ -163,7 +163,10 @@ describe('3. alapalkki', () => {
 		expect(activeNav('/spl', '')).toBe('players');
 		expect(activeNav('/spl', '#model-squad')).toBe('squad');
 		expect(activeNav('/players/value', '')).toBe('players');
-		expect(activeNav('/ucl', '')).toBeNull();
+		// UCL sai oman palkin samana iltana (Villen valinta: sama rakenne).
+		expect(navItems('/ucl').map((g) => g.label)).toEqual(['Players', 'Teams']);
+		expect(activeNav('/ucl', '')).toBe('players');
+		expect(activeNav('/ucl', '#clean-sheets')).toBe('teams');
 	});
 	it('ylapalkki lukee saman lukijan, eika nayta FPL:n deadlinea muiden pelien sivuilla', () => {
 		const hero = code('./components/Hero.svelte');

@@ -465,6 +465,17 @@ export interface UclXpResponse {
 		reason?: 'league_phase_over' | 'stale';
 	};
 	players: UclXpPlayer[];
+	/** 23.9 (UCL-MENUT): joukkueiden clean sheet % kierroksittain samasta
+	 *  CL-mallista kuin puolustajien xP (scripts/build_ucl_xp.joukkuetaso).
+	 *  Puuttuu vanhemmasta artefaktista; tyhja kun data on vanhentunut. */
+	teams?: UclTeam[];
+}
+
+export interface UclTeam {
+	id: number;
+	name: string;
+	short: string;
+	fixtures: { gw: number; opp: string; venue: 'H' | 'A'; cs_pct: number; xg: number; xga: number }[];
 }
 
 let uclXpP: Promise<UclXpResponse> | null = null;

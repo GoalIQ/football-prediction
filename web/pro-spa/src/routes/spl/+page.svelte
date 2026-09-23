@@ -32,9 +32,9 @@
 		type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { teamColorByShort } from '$lib/teamColors';
 	import SquadPitch from '$lib/components/SquadPitch.svelte';
-	import SplViewNav from '$lib/components/SplViewNav.svelte';
-	import { page } from '$app/state';
-	import { SPL_DEFAULT_VIEW, splView, type SplView } from '$lib/tools';
+	import GameViewNav from '$lib/components/GameViewNav.svelte';
+	import { gameViewState } from '$lib/gameView.svelte';
+	import type { SplView } from '$lib/tools';
 	// 22.9 (T6): otsikko, kuvaus ja canonical yhdesta lahteesta, jota myos
 	// buildin spl.html:n og/twitter-tagit lukevat. Ks. $lib/routeHeads.
 	import { SPL_HEAD, ORIGIN } from '$lib/routeHeads';
@@ -56,17 +56,12 @@
 		);
 	});
 
-	/* 23.9 RSL-MENUT: nakyma hashista yhden lukijan kautta (`splView`).
+	/* 23.9 RSL-MENUT: nakyma hashista yhden lukijan kautta
+	   ($lib/gameView.svelte: sama UCL:lla, vierittaa ylos kun osio vaihtuu).
 	   Prerender piirtaa oletusnakyman; selain vaihtaa hashin mukaan heti
 	   hydraation jalkeen ja jokaisella hash-linkilla (page.url paivittyy). */
-	let view = $state<SplView>(SPL_DEFAULT_VIEW);
-	let viewSeen = false;
-	$effect(() => {
-		const v = splView(page.url.hash);
-		if (viewSeen && v !== view) capture('spl_view_changed', { view: v });
-		viewSeen = true;
-		view = v;
-	});
+	const gv = gameViewState<SplView>('spl', 'spl_view_changed');
+	let view = $derived(gv.view);
 	/** Nakymat jotka tarvitsevat xP-vastauksen (lataus- ja virhetila yhteinen). */
 	const XP_VIEWS: SplView[] = ['captain', 'value', 'differentials', 'leaders', 'compare', 'model-squad'];
 
@@ -124,6 +119,14 @@
 		return Math.abs(worst.actual_cs - worst.expected_cs) >= 3 ? worst : null;
 	});
 	let nextGw = $derived((cs?.meta?.next_gameweek as number) ?? 1);
+	/** Kapteenilistan kierros samasta vastauksesta kuin luku (xP:n
+	 *  `gameweeks[0]`), ei CS-kutsun metasta: jos se kaatuisi, otsikko
+	 *  sanoisi GW1 (julkaisutarkistaja 23.9). */
+	let captainGw = $derived(
+		(xp?.meta as { next_gameweek?: number } | undefined)?.next_gameweek ??
+			xp?.players?.[0]?.gameweeks?.[0]?.gw ??
+			nextGw
+	);
 	let deadline = $derived.by(() => {
 		const raw = cs?.meta?.deadline_utc as string | undefined;
 		if (!raw) return null;
@@ -511,7 +514,7 @@
 
 	<!-- 23.9 RSL-MENUT: sama valitsin kuin FPL:ssa. Jokainen osio on tasan
 	     yhdessa nakymassa (portti splViews.gate.test.ts). -->
-	<SplViewNav {view} horizonMeta={xp?.meta ?? null} />
+	<GameViewNav game="spl" {view} horizonMeta={xp?.meta ?? null} />
 
 	{#if view === 'clean-sheets'}
 		<section>
@@ -698,7 +701,7 @@
 		{:else}
 			<section>
 				<h2>How our clean sheet calls have gone</h2>
-				<p class="muted">No round has been graded yet. Check back after the next round finishes.</p>
+				<p class="muted">The round-by-round record isn't available right now.</p>
 			</section>
 		{/if}
 	{/if}
@@ -779,7 +782,7 @@
 			{#if view === 'captain'}
 				<section>
 					<div class="head-row">
-						<h2>Captain picks <span class="muted">(GW{nextGw})</span></h2>
+						<h2>Captain picks <span class="muted">(GW{captainGw})</span></h2>
 						{#if captainPicks.length >= 3}
 							<button type="button" class="share-btn" onclick={shareCaptainCard} disabled={sharingCaptain}>
 								{sharingCaptain ? 'Rendering…' : shareButtonLabel()}
@@ -791,7 +794,7 @@
 							<thead>
 								<tr>
 									<th>#</th><th>Player</th><th>Team</th><th>Pos</th>
-									<th>Opponent</th><th class="num">GW{nextGw} xP</th>
+									<th>Opponent</th><th class="num">GW{captainGw} xP</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -1141,6 +1144,7 @@
 	}
 	/* 23.9 RSL-MENUT: nakyman ensimmainen osio kuuluu valitsimelle, ei ole
 	   uusi lohko sivulla (FPL:ssa sama vali ToolRow'n alla). */
+	header + section,
 	:global(.more) + section,
 	:global(.tool-row) + section {
 		margin-top: var(--s-4);

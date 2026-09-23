@@ -1,28 +1,32 @@
 <script lang="ts">
-	/** RSL Fantasy -sivun (/spl) nakymavalitsin: sama rakenne ja ulkoasu kuin
-	 *  FPL:n `ToolRow` (23.9, Villen pyynto "RSL fantasyn vois kans jasennella
-	 *  noilla menuilla").
+	/** Muiden pelien (RSL /spl, UCL /ucl) nakymavalitsin: sama rakenne ja
+	 *  ulkoasu kuin FPL:n `ToolRow` (23.9, Villen pyynnot "RSL fantasyn vois
+	 *  kans jasennella noilla menuilla" ja UCL:lle "sama rakenne").
 	 *
-	 *  Osiot ( Players | Teams | Model squad ) ovat sovelluksen palkissa
-	 *  (Villen valinta B: palkki pelin mukaan, `navItems`), joten tama rivi
-	 *  kantaa vain osion sisaisen valinnan:
+	 *  Osiot ( Players | Teams | ... ) ovat sovelluksen palkissa (Villen
+	 *  valinta B: palkki pelin mukaan, `navItems`), joten tama rivi kantaa
+	 *  vain osion sisaisen valinnan:
 	 *    Players: esiasetukset Captain / xP / Value / Differentials,
 	 *             loput "More player tools" -avattavassa
-	 *    Teams:   Clean sheets and fixtures / How our calls have gone
+	 *    muut:    osion nakymat rivina, jos niita on useampi
 	 *
-	 *  Rakenne tulee rekisterista (`SPL_SECTIONS`, `SPL_PRESETS`, `SPL_MORE`);
-	 *  tama komponentti ei maarittele omaa. Kohteet ovat hash-linkkeja
-	 *  (/spl#value), koska sivu on prerenderoitu: linkki on jaettava ja
-	 *  paluunappi toimii. RSL on ilmainen, joten lukkoja ei ole.
+	 *  Rakenne tulee rekisterista (`GAME_VIEWS`); tama komponentti ei
+	 *  maarittele omaa. Kohteet ovat hash-linkkeja (/spl#value), koska /spl
+	 *  on prerenderoitu: linkki on jaettava ja paluunappi toimii.
 	 */
-	import { SPL_MORE, SPL_PRESETS, splSectionOf, type SplView } from '$lib/tools';
+	import { GAME_VIEWS, gameSectionOf, type GameId, type GameViews } from '$lib/tools';
 	import { xpHorizon, type HorizonMeta } from '$lib/xpHorizon';
 
-	let { view, horizonMeta = null }: { view: SplView; horizonMeta?: HorizonMeta | null } = $props();
+	let {
+		game,
+		view,
+		horizonMeta = null
+	}: { game: GameId; view: string; horizonMeta?: HorizonMeta | null } = $props();
 
-	const section = $derived(splSectionOf(view));
-	const more = $derived(SPL_MORE[section.id] ?? []);
-	const presetViews = new Set<SplView>(SPL_PRESETS.map((p) => p.view));
+	const def = $derived(GAME_VIEWS[game] as GameViews);
+	const section = $derived(gameSectionOf(game, view));
+	const more = $derived(def.more[section.id] ?? []);
+	const presetViews = $derived(new Set<string>(def.presets.map((p) => p.view)));
 	const moreOpen = $derived(section.id === 'players' && !presetViews.has(view));
 	const hz = $derived(xpHorizon(horizonMeta));
 	function presetLabel(label: string, horizon?: boolean): string {
@@ -33,7 +37,7 @@
 {#if section.id === 'players'}
 	<nav class="presets" aria-label="Sort players">
 		<span class="presets-lbl" aria-hidden="true">Sort</span>
-		{#each SPL_PRESETS as p (p.view)}
+		{#each def.presets as p (p.view)}
 			<a
 				href="#{p.view}"
 				class="chip"

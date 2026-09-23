@@ -475,6 +475,39 @@ def ottelut_kierroksittain(raaka_cl: list[dict]) -> dict[int, dict[str, tuple[st
     return out
 
 
+def joukkuetaso(horisontti: list[int], kierrokset: dict, odotus, syote: list[dict]) -> list[dict]:
+    """Joukkueiden nollapeli- ja maaliodotus horisontin kierroksille (23.9, UCL-MENUT).
+
+    Villen valinta 23.9: UCL saa saman rakenteen kuin FPL ja RSL, eli myos
+    Teams-nakyman (clean sheet % ja otteluvaikeus kierroksittain). Luvut tulevat
+    SAMASTA `odotus`-funktiosta kuin pelaajien nollapeli-komponentti
+    (`ucl_xp.xp_pelaajalle`: p60 x joukkue['cs']), joten joukkueen CS% ja sen
+    puolustajien xP eivat voi kertoa eri tarinaa.
+
+    Ottelu jota malli ei tunne (odotus -> None) jaa pois eika saa nollaa:
+    puuttuva luku ei ole 0 %.
+    """
+    tiedot = {str(p["tId"]): (p.get("tName"), p.get("cCode")) for p in syote}
+    joukkueet: dict[str, dict] = {}
+    for k in horisontti:
+        for koti, vieras in sorted(set((kierrokset.get(k) or {}).values())):
+            o = odotus(koti, vieras)
+            if o is None:
+                continue
+            for puoli, vast in ((koti, vieras), (vieras, koti)):
+                nimi, lyhyt = tiedot.get(puoli, (None, None))
+                t = joukkueet.setdefault(puoli, {"id": int(puoli), "name": nimi or puoli,
+                                                 "short": lyhyt or puoli, "fixtures": []})
+                t["fixtures"].append({
+                    "gw": k, "opp": tiedot.get(vast, (None, None))[1] or vast,
+                    "venue": "H" if puoli == koti else "A",
+                    "cs_pct": round(o[puoli]["cs"] * 100, 1),
+                    "xg": round(o[puoli]["xg"], 2), "xga": round(o[puoli]["xga"], 2),
+                })
+    return sorted(joukkueet.values(), key=lambda t: (
+        -sum(f["cs_pct"] for f in t["fixtures"]) / max(len(t["fixtures"]), 1), t["short"]))
+
+
 def seuraava_kierros(ucl_fantasy: dict) -> tuple[int | None, str | None]:
     """Ensimmainen lukitsematon kierros ja sen deadline syotteen artefaktista.
     (None, None) kun kaikki on lukittu: tuota() kirjoittaa silloin suljetun
@@ -606,6 +639,7 @@ def tuota(md: int, deadline: str | None, kausi_id: int = KAUSI_ID) -> dict:
             "thin_data": "uefa_matches",
         },
         "players": pelaajat,
+        "teams": joukkuetaso(horisontti, kierrokset, odotus, syote),
     }
 
 

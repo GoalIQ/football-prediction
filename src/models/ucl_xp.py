@@ -288,6 +288,10 @@ def tuoreus(payload: dict, nyt) -> dict:
         meta["reason"] = ("league_phase_over" if isinstance(viimeinen, int)
                           and isinstance(md, int) and md >= viimeinen else "stale")
         payload["players"] = []
+        # 23.9 (UCL-MENUT): joukkuetaso on samaa pelattua kierrosta. Ilman
+        # tata vanhentunut CS% jaisi tarjolle kun pelaajarivit jo poistuivat.
+        if "teams" in payload:
+            payload["teams"] = []
     return payload
 
 
