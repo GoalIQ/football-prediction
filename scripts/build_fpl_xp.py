@@ -444,6 +444,266 @@ def _form_block(e: dict, boot: dict, preseason: bool,
     return {"value": round(value, 1), "gws": gws, "basis": FORM_BASIS}
 
 
+def minute_passes(elements: list[dict], mins_by_round: dict, starts_by_round: dict,
+                  prev_rounds_by_player: dict, cur_mins_by_player: dict,
+                  recency_window: bool, log=print) -> tuple[dict[int, dict], set[int]]:
+    """Minuuttimallin passit: malli + saatavuus, syvyys, hintapriori, joukkuerajoite.
+
+    Palauttaa (mm_by_player, blended_pids). Funktio on erotettu main():sta
+    23.9.2026 (XP-DOUBT-LIPPU-LAIMENEE), jotta samat passit voidaan ajaa
+    kahdesti: FPL:n statuksilla ja terveena (`healthy_elements`). Ks.
+    `availability_after_passes`. Passien sisalto on siirretty sellaisenaan.
+    """
+    # #33: probabilistinen minuuttimalli — kaksi passia:
+    #   A) minutes_model + saatavuus-gate per pelaaja
+    #   B) syvyys-korjaus klubi+positio-ryhmittäin (Σp_start → historialliset
+    #      starttipaikat; availability-nollaama kilpailija nostaa muita capatusti)
+    # Pre-season: koko edelliskausi tasapainoin (kuten päättyneen kauden ajo);
+    # live-kausi: last-6 recency.
+    mm_window = 6 if recency_window else None
+    # Kierrosuniversumi on PELAAJAKOHTAINEN, ei kaikkien joukkueiden unioni:
+    # blank gameweek ei tuota riviä element-summaryyn, joten unionissa se
+    # luettiin penkitykseksi ja painoi p_startin nimittäjää (todennettu
+    # 9.8.2026: Haalandilta puuttuivat kierrokset 31 ja 34 = Cityn blankit,
+    # Palmerilta 34 = Chelsean blank). Pelaajan omat rivit = hänen joukkueensa
+    # pelaamat kierrokset, ja kesken kautta siirtyneellä vain PL-jakso.
+    prounds_by_player = {e["id"]: sorted(mins_by_round[e["id"]])
+                         for e in elements}
+    mm_by_player: dict[int, dict] = {}
+    for e in elements:
+        pid = e["id"]
+        mm = xp.minutes_model(mins_by_round[pid], starts_by_round[pid],
+                              prounds_by_player[pid], n_last=mm_window)
+        # XP-SEASON-CARRY (28.8): kausihaara perii esikausiarvion ja
+        # liu'uttaa kuluvaan kauteen START_WINDOW:n aikana. Ilman tata GW1:n
+        # valiin jattanyt pelaaja sai xMins 0 (Watkins/Gyokeres/Pope, 90
+        # pelaajaa pois projektiosta) ja arkistokierrosten yhdistaminen
+        # samaan ikkunaan painotti loppukauden lepuutusta (ks. blend_minutes).
+        if xp.MINUTES_PREV_BLEND and recency_window and pid in prev_rounds_by_player:
+            pm, ps = prev_rounds_by_player[pid]
+            mm_prev = xp.minutes_model(pm, ps, sorted(pm), n_last=None)
+            w_cur = xp.prev_minutes_weight(len(prounds_by_player[pid]))
+            mm = xp.blend_minutes(mm, mm_prev, w_cur)
+        mm_by_player[pid] = xp.apply_availability(
+            mm, e.get("status", "a"), e.get("chance_of_playing_next_round"))
+    groups: dict[tuple[int, int], list[int]] = defaultdict(list)
+    for e in elements:
+        groups[(e["team"], e["element_type"])].append(e["id"])
+    for (_team, _pos), pids in groups.items():
+        # slots = ryhmän toteutuneet startit / kierros ikkunassa (itsekonsistentti).
+        # Sama blank-korjaus kuin yllä: joukkueen kierrokset = ryhmän pelaajien
+        # rivien unioni, muuten nimittäjä sisältäisi pelaamattomat kierrokset ja
+        # slots deflatoituisi eri tahtiin kuin p_start.
+        team_rounds = sorted({rnd for p in pids for rnd in prounds_by_player[p]})
+        window_rounds = (team_rounds if mm_window is None
+                         else team_rounds[-mm_window:])
+        slots = (sum(starts_by_round[p].get(rnd, 0)
+                     for p in pids for rnd in window_rounds)
+                 / max(len(window_rounds), 1))
+        # Syvyys nojaa RAAKAAN start-shareen (slots samasta datasta → konsistentti)
+        f = xp.depth_factor([mm_by_player[p]["p_start_raw"] for p in pids], slots)
+        if f != 1.0:
+            for p in pids:
+                mm_by_player[p] = xp.scale_p_start(mm_by_player[p], f)
+
+    # -----------------------------------------------------------------
+    # HINTAPRIORI OHUELLE OTOKSELLE (4.8.2026). Kytketty vasta nyt: se
+    # peruutettiin 27.7 ja koodissa (src/models/fpl_xp.py) oli kolme ehtoa
+    # ennen uudelleenkytkentaa. Kaikki kolme on nyt mitattu.
+    #
+    # EHTO 1 — per-positio-validointi. Peruutusmuistiinpano epaili ettei hinta
+    # erottele maalivahteja (kaikki 4.0-5.5M). Mitattuna se erottelee: ohuen
+    # otoksen Brier w=0 -> paras painolla, GKP 0.0613 -> 0.0503, DEF 0.0474 ->
+    # 0.0409, MID 0.0533 -> 0.0452, FWD 0.0678 -> 0.0521. Kaikki paranevat.
+    #
+    # EHTO 2 — priorin JA syvyysnormalisoinnin yhteisvaikutus. Tama oli koko
+    # 27.7. vian syy, ja se on KYTKENTAJARJESTYS eika priori itse. Sama
+    # priori, kaksi paikkaa, mitattu paksussa otoksessa (p_start >= 70 %,
+    # n=102):
+    #     ENNEN syvyys-passia (27.7. tapa): xP-mediaani -3.6 %,
+    #        yli 5 % pudonneita 39/102, pahimmat Donnarumma -16.5 %,
+    #        Gyokeres -15.0 %, Raya -14.9 %   <- vika toistettu
+    #     JALKEEN syvyys-passin (tama):     xP-mediaani +0.00 %,
+    #        yli 5 % pudonneita 0/102
+    # Mekanismi: ennen passia nostettu varamiehen p_start meni depth_factorin
+    # syotteeksi, joka skaalasi koko ryhman alas ja ykkospelaaja absorboi sen.
+    # Passin jalkeen priori ei voi enaa siirtaa massaa toiselta pelaajalta.
+    #
+    # EHTO 3 — regressioportti korkean omistuksen pelaajille. Ensimmaisessa
+    # ajossa yksi rikkoi portin: Diop (IPS, 20 % omistus) -7.6 %. Han on
+    # hintapersentiililtaan 0.00 eli halvin mahdollinen, ja juuri sille
+    # alaryhmalle backtest sanoi ettei priori auta (HALPA + ohut: Brier
+    # -1.5 %, baseline oli jo oikeassa). Siksi priori rajataan sinne missa
+    # hyoty on MITATTU (persentiili >= 0.30: KESKI +13.8 %, KALLIS +35.0 %).
+    # Rajauksen jalkeen: yli 10 % omistettuja 45, yli 5 % pudonneita 0 —
+    # itse asiassa koko projektiossa EI YHTAAN yli 5 % pudonnutta.
+    #
+    # Hinta rajauksesta: uusia projektioon 29 -> 16. Se on tarkoituksellista;
+    # halvassa hannassa priori ei tuonut mitattua hyotya.
+    # -----------------------------------------------------------------
+    PRICE_BLEND_MIN_PCT = 0.30
+    price_pct_by_id: dict[int, float] = {}
+    for _et in (1, 2, 3, 4):
+        _grp = sorted([e for e in elements if e["element_type"] == _et],
+                      key=lambda e: (e.get("now_cost") or 0, e["id"]))
+        for _i, _e in enumerate(_grp):
+            price_pct_by_id[_e["id"]] = _i / max(len(_grp) - 1, 1)
+    blended_pids: set[int] = set()
+    for e in elements:
+        pid = e["id"]
+        mins = cur_mins_by_player.get(pid, 0.0)
+        # mins == 0 kuuluu historiattomien prioriin (alempana), ei tanne.
+        if mins <= 0 or mins >= xp.PRICE_PRIOR_THIN_MINUTES:
+            continue
+        if price_pct_by_id[pid] < PRICE_BLEND_MIN_PCT:
+            continue
+        if not price_blend_allowed(e):
+            # 3.9: saatavuusportti ajettiin JO (apply_availability yllä),
+            # mutta sekoitus toi nollatulle p_startille massaa takaisin
+            # hintapriorista: Woltemade (status u, Juventus-laina) sai
+            # p_start 0.15 ja 0.56 xP/GW, ja paatyi "best option" -riville
+            # predicted-lineups-sivulle. Portti 0 -> ei sekoitusta.
+            continue
+        before = mm_by_player[pid]["p_start"]
+        mm_by_player[pid] = xp.apply_price_prior(
+            mm_by_player[pid], price_pct_by_id[pid], mins)
+        if abs(mm_by_player[pid]["p_start"] - before) > 1e-9:
+            blended_pids.add(pid)
+    log(f"      hintapriori (ohut otos): {len(blended_pids)} pelaajaa — "
+          f"paino {xp.PRICE_PRIOR_WEIGHT}, vain persentiili >= "
+          f"{PRICE_BLEND_MIN_PCT}, syvyys-passin JALKEEN")
+
+    # -----------------------------------------------------------------
+    # RAKENTEELLINEN JOUKKUERAJOITE (5.8.2026) — ks. fpl_xp.TEAM_*_SLOTS.
+    #
+    # Klubi+positio-passi yllä ei sido, koska sen `slots` tulee samojen
+    # pelaajien historiasta. Tämä passi sitoo pelin sääntöön: tasan 1
+    # maalivahti + 10 kenttäpelaajaa. Ylibuukattu ryhmä skaalataan alas
+    # RAJATTA (tila on mahdoton), alibuukattu vain DEPTH_BOOST_CAP:iin —
+    # nousijaklubien 4,71 ei ole sama vika vaan ohuen otoksen hintapriori,
+    # eikä sitä korjata kertomalla kaikki kahdella.
+    #
+    # SIJAINTI: hintapriorin JÄLKEEN (muuten priori siirtäisi massaa
+    # normalisoinnin läpi, sama mekanismi kuin 27.7. vika) mutta
+    # pelaajaohitusten EDELLÄ (ohitus on tietoinen ihmispäätös ja sen pitää
+    # tarkoittaa sitä mitä CSV:ssä lukee — ks. seuraava lohko).
+    etype_by_pid = {e["id"]: e["element_type"] for e in elements}
+    team_pids: dict[int, list[int]] = defaultdict(list)
+    for e in elements:
+        team_pids[e["team"]].append(e["id"])
+    struct_before, struct_after, n_scaled = [], [], 0
+    for _tid, pids in team_pids.items():
+        for slots, is_gk in ((xp.TEAM_GK_SLOTS, True),
+                             (xp.TEAM_OUTFIELD_SLOTS, False)):
+            grp = [p for p in pids
+                   if (etype_by_pid[p] == 1) == is_gk
+                   and mm_by_player[p]["p_start_raw"] > 0]
+            if not grp:
+                continue
+            ps = [mm_by_player[p]["p_start_raw"] for p in grp]
+            tot = sum(ps)
+            if is_gk:
+                struct_before.append(tot)
+            if tot > slots:
+                # Ylibuukattu: naulatut avaajat (raw >= NAILED_PROTECT) ovat
+                # koskemattomia — Villen korjaus 5.8: selkea ykkoshyokkaaja ei
+                # maksa keskikentan ruuhkasta. Leikkaus kohdistuu p**k:lla vain
+                # kiistanalaisiin paikkoihin (jaljelle jaavat slotit).
+                prot = [p for p in grp
+                        if mm_by_player[p]["p_start_raw"]
+                        >= xp.NAILED_PROTECT_P_START]
+                rest = [p for p in grp if p not in prot]
+                prot_sum = sum(mm_by_player[p]["p_start_raw"] for p in prot)
+                if prot_sum >= slots or not rest:
+                    # Degeneraatti (naulattuja enemman kuin paikkoja) ->
+                    # p**k koko ryhmalle; kaytannossa ei tapahdu.
+                    target, cut = grp, slots
+                else:
+                    target, cut = rest, slots - prot_sum
+                cps = [mm_by_player[p]["p_start_raw"] for p in target]
+                k = xp.structural_exponent(cps, cut)
+                if k > 1.0:
+                    n_scaled += 1
+                    for p in target:
+                        cur = mm_by_player[p]["p_start_raw"]
+                        f = (cur ** k) / cur if cur > 0 else 1.0
+                        mm_by_player[p] = xp.scale_p_start(mm_by_player[p], f)
+            else:
+                # Alibuukattu: sama capattu nosto kuin ennen (nousijaklubien
+                # ohut otos ei ole sama vika eika sita korjata tassa).
+                f = xp.depth_factor(ps, slots)
+                if f != 1.0:
+                    n_scaled += 1
+                    for p in grp:
+                        mm_by_player[p] = xp.scale_p_start(mm_by_player[p], f)
+            if is_gk:
+                struct_after.append(
+                    sum(mm_by_player[p]["p_start_raw"] for p in grp))
+    if struct_before:
+        log(f"      rakenteellinen joukkuerajoite: {n_scaled} ryhmää skaalattu; "
+              f"GKP-summa max {max(struct_before):.2f} -> {max(struct_after):.2f} "
+              f"(paikkoja {xp.TEAM_GK_SLOTS:.0f})")
+    return mm_by_player, blended_pids
+
+
+def healthy_elements(elements: list[dict]) -> list[dict]:
+    """Samat pelaajat ilman EPAVARMUUSLIPPUA: d (0 < kerroin < 1) -> a.
+
+    Varmat poissaolot (i/s/u/n, kerroin 0) PYSYVAT. Terve ajo kysyy "mika on
+    taman pelaajan P(aloittaa | kaytettavissa)", ja se riippuu siita keta
+    vastaan han kilpailee: loukkaantunut joukkuetoveri ei kilpaile. Jos
+    kaikki liput poistettaisiin, epavarman pelaajan terve arvo laskettaisiin
+    maailmassa jossa sivussa oleva kilpailija on kentalla, ja se jaisi
+    liian matalaksi (mitattu testissa
+    test_varma_poissaolo_pysyy_terveessa_ajossa).
+    """
+    return [{**e, "status": "a", "chance_of_playing_next_round": None}
+            if 0.0 < availability_factor(e) < 1.0 else e
+            for e in elements]
+
+
+def availability_after_passes(mm_flagged: dict[int, dict], mm_healthy: dict[int, dict],
+                              elements: list[dict]) -> tuple[dict[int, dict], set[int]]:
+    """Epavarman pelaajan (0 < kerroin < 1) aloitus-tn = kerroin x terveen ajon tn.
+
+    🔴 XP-DOUBT-LIPPU-LAIMENEE (23.9.2026, julkaisutarkistajan mittaus M101:ssa):
+    lippu kerrottiin minuuttimalliin ENNEN kolmea passia, ja jokainen niista
+    palautti osan poistetusta massasta takaisin:
+      - syvyyspassi: ryhman summa laskee -> kerroin nostaa KOKO ryhmaa, myos
+        lippupelaajaa itseaan (capattu 1.10),
+      - hintapriori: `0.75 p + 0.25 x persentiili` on additiivinen, joten
+        lippu ei skaalaa priorin osuutta (alkukaudella se koskee lahes kaikkia,
+        koska kuluvan kauden minuutteja on alle 900),
+      - joukkuerajoite: alibuukattu ryhma nostetaan samalla tavalla.
+    Mitattu: Joao Pedro d/75 -> p_start 0.6013 vs 0.6939 ilman lippua, eli
+    kerroin 0.867 eika 0.75. /fpl/team-news lupaa "with the reduced chance of
+    playing already priced in" (src/doubt_copy.py).
+
+    Maaritelma: P(aloittaa) = P(kaytettavissa) x P(aloittaa | kaytettavissa),
+    ja jalkimmainen on sama pelaaja samoilla passeilla ilman lippua. Siksi
+    lippupelaajan rivi otetaan terveesta ajosta ja lippu kerrotaan
+    `apply_availability`lla VASTA NYT, kerran.
+
+    Joukkuetoverit pitavat lipullisen ajon arvonsa: sielta tulee uudelleenjako
+    (epavarman avaajan puuttuva massa nostaa varamiesta). Kerroin 0 (i/s/u/n)
+    on jo nolla jokaisessa passissa (`price_blend_allowed`, `p_start_raw > 0`
+    -suodatin), joten niihin ei kosketa.
+
+    Palauttaa (mm_by_player, korvattujen pelaajien id:t).
+    """
+    out = dict(mm_flagged)
+    replaced: set[int] = set()
+    for e in elements:
+        pid = e["id"]
+        f = availability_factor(e)
+        if not (0.0 < f < 1.0) or pid not in mm_healthy:
+            continue
+        out[pid] = xp.apply_availability(mm_healthy[pid], e.get("status", "a"),
+                                         e.get("chance_of_playing_next_round"))
+        replaced.add(pid)
+    return out, replaced
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser()
@@ -572,195 +832,25 @@ def main(argv: list[str] | None = None) -> int:
                 {int(k): int(v) for k, v in prev_b["starts_by_round"].items()})
     priors = xp.position_priors(acc_by_player, pos_by_player)
 
-    # #33: probabilistinen minuuttimalli — kaksi passia:
-    #   A) minutes_model + saatavuus-gate per pelaaja
-    #   B) syvyys-korjaus klubi+positio-ryhmittäin (Σp_start → historialliset
-    #      starttipaikat; availability-nollaama kilpailija nostaa muita capatusti)
-    # Pre-season: koko edelliskausi tasapainoin (kuten päättyneen kauden ajo);
-    # live-kausi: last-6 recency.
-    mm_window = 6 if recency_window else None
-    # Kierrosuniversumi on PELAAJAKOHTAINEN, ei kaikkien joukkueiden unioni:
-    # blank gameweek ei tuota riviä element-summaryyn, joten unionissa se
-    # luettiin penkitykseksi ja painoi p_startin nimittäjää (todennettu
-    # 9.8.2026: Haalandilta puuttuivat kierrokset 31 ja 34 = Cityn blankit,
-    # Palmerilta 34 = Chelsean blank). Pelaajan omat rivit = hänen joukkueensa
-    # pelaamat kierrokset, ja kesken kautta siirtyneellä vain PL-jakso.
-    prounds_by_player = {e["id"]: sorted(mins_by_round[e["id"]])
-                         for e in boot["elements"]}
-    mm_by_player: dict[int, dict] = {}
-    for e in boot["elements"]:
-        pid = e["id"]
-        mm = xp.minutes_model(mins_by_round[pid], starts_by_round[pid],
-                              prounds_by_player[pid], n_last=mm_window)
-        # XP-SEASON-CARRY (28.8): kausihaara perii esikausiarvion ja
-        # liu'uttaa kuluvaan kauteen START_WINDOW:n aikana. Ilman tata GW1:n
-        # valiin jattanyt pelaaja sai xMins 0 (Watkins/Gyokeres/Pope, 90
-        # pelaajaa pois projektiosta) ja arkistokierrosten yhdistaminen
-        # samaan ikkunaan painotti loppukauden lepuutusta (ks. blend_minutes).
-        if xp.MINUTES_PREV_BLEND and recency_window and pid in prev_rounds_by_player:
-            pm, ps = prev_rounds_by_player[pid]
-            mm_prev = xp.minutes_model(pm, ps, sorted(pm), n_last=None)
-            w_cur = xp.prev_minutes_weight(len(prounds_by_player[pid]))
-            mm = xp.blend_minutes(mm, mm_prev, w_cur)
-        mm_by_player[pid] = xp.apply_availability(
-            mm, e.get("status", "a"), e.get("chance_of_playing_next_round"))
-    groups: dict[tuple[int, int], list[int]] = defaultdict(list)
-    for e in boot["elements"]:
-        groups[(e["team"], e["element_type"])].append(e["id"])
-    for (_team, _pos), pids in groups.items():
-        # slots = ryhmän toteutuneet startit / kierros ikkunassa (itsekonsistentti).
-        # Sama blank-korjaus kuin yllä: joukkueen kierrokset = ryhmän pelaajien
-        # rivien unioni, muuten nimittäjä sisältäisi pelaamattomat kierrokset ja
-        # slots deflatoituisi eri tahtiin kuin p_start.
-        team_rounds = sorted({rnd for p in pids for rnd in prounds_by_player[p]})
-        window_rounds = (team_rounds if mm_window is None
-                         else team_rounds[-mm_window:])
-        slots = (sum(starts_by_round[p].get(rnd, 0)
-                     for p in pids for rnd in window_rounds)
-                 / max(len(window_rounds), 1))
-        # Syvyys nojaa RAAKAAN start-shareen (slots samasta datasta → konsistentti)
-        f = xp.depth_factor([mm_by_player[p]["p_start_raw"] for p in pids], slots)
-        if f != 1.0:
-            for p in pids:
-                mm_by_player[p] = xp.scale_p_start(mm_by_player[p], f)
-
-    # -----------------------------------------------------------------
-    # HINTAPRIORI OHUELLE OTOKSELLE (4.8.2026). Kytketty vasta nyt: se
-    # peruutettiin 27.7 ja koodissa (src/models/fpl_xp.py) oli kolme ehtoa
-    # ennen uudelleenkytkentaa. Kaikki kolme on nyt mitattu.
-    #
-    # EHTO 1 — per-positio-validointi. Peruutusmuistiinpano epaili ettei hinta
-    # erottele maalivahteja (kaikki 4.0-5.5M). Mitattuna se erottelee: ohuen
-    # otoksen Brier w=0 -> paras painolla, GKP 0.0613 -> 0.0503, DEF 0.0474 ->
-    # 0.0409, MID 0.0533 -> 0.0452, FWD 0.0678 -> 0.0521. Kaikki paranevat.
-    #
-    # EHTO 2 — priorin JA syvyysnormalisoinnin yhteisvaikutus. Tama oli koko
-    # 27.7. vian syy, ja se on KYTKENTAJARJESTYS eika priori itse. Sama
-    # priori, kaksi paikkaa, mitattu paksussa otoksessa (p_start >= 70 %,
-    # n=102):
-    #     ENNEN syvyys-passia (27.7. tapa): xP-mediaani -3.6 %,
-    #        yli 5 % pudonneita 39/102, pahimmat Donnarumma -16.5 %,
-    #        Gyokeres -15.0 %, Raya -14.9 %   <- vika toistettu
-    #     JALKEEN syvyys-passin (tama):     xP-mediaani +0.00 %,
-    #        yli 5 % pudonneita 0/102
-    # Mekanismi: ennen passia nostettu varamiehen p_start meni depth_factorin
-    # syotteeksi, joka skaalasi koko ryhman alas ja ykkospelaaja absorboi sen.
-    # Passin jalkeen priori ei voi enaa siirtaa massaa toiselta pelaajalta.
-    #
-    # EHTO 3 — regressioportti korkean omistuksen pelaajille. Ensimmaisessa
-    # ajossa yksi rikkoi portin: Diop (IPS, 20 % omistus) -7.6 %. Han on
-    # hintapersentiililtaan 0.00 eli halvin mahdollinen, ja juuri sille
-    # alaryhmalle backtest sanoi ettei priori auta (HALPA + ohut: Brier
-    # -1.5 %, baseline oli jo oikeassa). Siksi priori rajataan sinne missa
-    # hyoty on MITATTU (persentiili >= 0.30: KESKI +13.8 %, KALLIS +35.0 %).
-    # Rajauksen jalkeen: yli 10 % omistettuja 45, yli 5 % pudonneita 0 —
-    # itse asiassa koko projektiossa EI YHTAAN yli 5 % pudonnutta.
-    #
-    # Hinta rajauksesta: uusia projektioon 29 -> 16. Se on tarkoituksellista;
-    # halvassa hannassa priori ei tuonut mitattua hyotya.
-    # -----------------------------------------------------------------
-    PRICE_BLEND_MIN_PCT = 0.30
-    price_pct_by_id: dict[int, float] = {}
-    for _et in (1, 2, 3, 4):
-        _grp = sorted([e for e in boot["elements"] if e["element_type"] == _et],
-                      key=lambda e: (e.get("now_cost") or 0, e["id"]))
-        for _i, _e in enumerate(_grp):
-            price_pct_by_id[_e["id"]] = _i / max(len(_grp) - 1, 1)
-    blended_pids: set[int] = set()
-    for e in boot["elements"]:
-        pid = e["id"]
-        mins = cur_mins_by_player.get(pid, 0.0)
-        # mins == 0 kuuluu historiattomien prioriin (alempana), ei tanne.
-        if mins <= 0 or mins >= xp.PRICE_PRIOR_THIN_MINUTES:
-            continue
-        if price_pct_by_id[pid] < PRICE_BLEND_MIN_PCT:
-            continue
-        if not price_blend_allowed(e):
-            # 3.9: saatavuusportti ajettiin JO (apply_availability yllä),
-            # mutta sekoitus toi nollatulle p_startille massaa takaisin
-            # hintapriorista: Woltemade (status u, Juventus-laina) sai
-            # p_start 0.15 ja 0.56 xP/GW, ja paatyi "best option" -riville
-            # predicted-lineups-sivulle. Portti 0 -> ei sekoitusta.
-            continue
-        before = mm_by_player[pid]["p_start"]
-        mm_by_player[pid] = xp.apply_price_prior(
-            mm_by_player[pid], price_pct_by_id[pid], mins)
-        if abs(mm_by_player[pid]["p_start"] - before) > 1e-9:
-            blended_pids.add(pid)
-    print(f"      hintapriori (ohut otos): {len(blended_pids)} pelaajaa — "
-          f"paino {xp.PRICE_PRIOR_WEIGHT}, vain persentiili >= "
-          f"{PRICE_BLEND_MIN_PCT}, syvyys-passin JALKEEN")
-
-    # -----------------------------------------------------------------
-    # RAKENTEELLINEN JOUKKUERAJOITE (5.8.2026) — ks. fpl_xp.TEAM_*_SLOTS.
-    #
-    # Klubi+positio-passi yllä ei sido, koska sen `slots` tulee samojen
-    # pelaajien historiasta. Tämä passi sitoo pelin sääntöön: tasan 1
-    # maalivahti + 10 kenttäpelaajaa. Ylibuukattu ryhmä skaalataan alas
-    # RAJATTA (tila on mahdoton), alibuukattu vain DEPTH_BOOST_CAP:iin —
-    # nousijaklubien 4,71 ei ole sama vika vaan ohuen otoksen hintapriori,
-    # eikä sitä korjata kertomalla kaikki kahdella.
-    #
-    # SIJAINTI: hintapriorin JÄLKEEN (muuten priori siirtäisi massaa
-    # normalisoinnin läpi, sama mekanismi kuin 27.7. vika) mutta
-    # pelaajaohitusten EDELLÄ (ohitus on tietoinen ihmispäätös ja sen pitää
-    # tarkoittaa sitä mitä CSV:ssä lukee — ks. seuraava lohko).
-    etype_by_pid = {e["id"]: e["element_type"] for e in boot["elements"]}
-    team_pids: dict[int, list[int]] = defaultdict(list)
-    for e in boot["elements"]:
-        team_pids[e["team"]].append(e["id"])
-    struct_before, struct_after, n_scaled = [], [], 0
-    for _tid, pids in team_pids.items():
-        for slots, is_gk in ((xp.TEAM_GK_SLOTS, True),
-                             (xp.TEAM_OUTFIELD_SLOTS, False)):
-            grp = [p for p in pids
-                   if (etype_by_pid[p] == 1) == is_gk
-                   and mm_by_player[p]["p_start_raw"] > 0]
-            if not grp:
-                continue
-            ps = [mm_by_player[p]["p_start_raw"] for p in grp]
-            tot = sum(ps)
-            if is_gk:
-                struct_before.append(tot)
-            if tot > slots:
-                # Ylibuukattu: naulatut avaajat (raw >= NAILED_PROTECT) ovat
-                # koskemattomia — Villen korjaus 5.8: selkea ykkoshyokkaaja ei
-                # maksa keskikentan ruuhkasta. Leikkaus kohdistuu p**k:lla vain
-                # kiistanalaisiin paikkoihin (jaljelle jaavat slotit).
-                prot = [p for p in grp
-                        if mm_by_player[p]["p_start_raw"]
-                        >= xp.NAILED_PROTECT_P_START]
-                rest = [p for p in grp if p not in prot]
-                prot_sum = sum(mm_by_player[p]["p_start_raw"] for p in prot)
-                if prot_sum >= slots or not rest:
-                    # Degeneraatti (naulattuja enemman kuin paikkoja) ->
-                    # p**k koko ryhmalle; kaytannossa ei tapahdu.
-                    target, cut = grp, slots
-                else:
-                    target, cut = rest, slots - prot_sum
-                cps = [mm_by_player[p]["p_start_raw"] for p in target]
-                k = xp.structural_exponent(cps, cut)
-                if k > 1.0:
-                    n_scaled += 1
-                    for p in target:
-                        cur = mm_by_player[p]["p_start_raw"]
-                        f = (cur ** k) / cur if cur > 0 else 1.0
-                        mm_by_player[p] = xp.scale_p_start(mm_by_player[p], f)
-            else:
-                # Alibuukattu: sama capattu nosto kuin ennen (nousijaklubien
-                # ohut otos ei ole sama vika eika sita korjata tassa).
-                f = xp.depth_factor(ps, slots)
-                if f != 1.0:
-                    n_scaled += 1
-                    for p in grp:
-                        mm_by_player[p] = xp.scale_p_start(mm_by_player[p], f)
-            if is_gk:
-                struct_after.append(
-                    sum(mm_by_player[p]["p_start_raw"] for p in grp))
-    if struct_before:
-        print(f"      rakenteellinen joukkuerajoite: {n_scaled} ryhmää skaalattu; "
-              f"GKP-summa max {max(struct_before):.2f} -> {max(struct_after):.2f} "
-              f"(paikkoja {xp.TEAM_GK_SLOTS:.0f})")
+    # XP-DOUBT-LIPPU-LAIMENEE (23.9): passit ajetaan kahdesti. Lipullinen ajo
+    # antaa joukkuetovereiden uudelleenjaon, terve ajo epavarman pelaajan
+    # P(aloittaa | kaytettavissa). Lippu kerrotaan vasta passien jalkeen.
+    mm_by_player, blended_flagged = minute_passes(
+        boot["elements"], mins_by_round, starts_by_round, prev_rounds_by_player,
+        cur_mins_by_player, recency_window)
+    mm_healthy, blended_healthy = minute_passes(
+        healthy_elements(boot["elements"]), mins_by_round, starts_by_round,
+        prev_rounds_by_player, cur_mins_by_player, recency_window,
+        log=lambda *a, **k: None)
+    _before = {pid: mm_by_player[pid]["p_start"] for pid in mm_by_player}
+    mm_by_player, doubt_pids = availability_after_passes(
+        mm_by_player, mm_healthy, boot["elements"])
+    blended_pids = (blended_flagged - doubt_pids) | (blended_healthy & doubt_pids)
+    if doubt_pids:
+        _moves = sorted(_before[p] - mm_by_player[p]["p_start"] for p in doubt_pids)
+        print(f"      saatavuus passien jalkeen: {len(doubt_pids)} epavarmaa (d); "
+              f"p_start laski mediaanilla {_moves[len(_moves) // 2]:.3f}, "
+              f"enimmillaan {_moves[-1]:.3f}")
 
     print("[5/6] xP per pelaaja per GW (horisontti + Phase 1b -konteksti)...")
     # Tulevat fixturet per GW mallinimillä
