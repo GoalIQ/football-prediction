@@ -228,7 +228,7 @@
 			<input type="search" placeholder="Search player or club" bind:value={q} />
 			{:else if picks?.state === 'rows'}
 				<label class="thin-toggle">
-					<input type="checkbox" bind:checked={includeThin} /> Show thin-data rows
+					<input type="checkbox" bind:checked={includeThin} /> Show players with thin or no data
 				</label>
 			{/if}
 		</div>
@@ -236,8 +236,8 @@
 		{#if picks}
 			{#if picks.state === 'locked'}
 				<p class="muted">
-					{VIEW_LABEL[view]} ranks every player in the game, so it needs the full list in GoalIQ Premium.
-					The free view shows the top 10 by expected points under All players.
+					This list is part of GoalIQ Premium. The free view shows the top 10 by expected points under
+					All players.
 				</p>
 				<Paywall teaser={false} />
 			{:else if picks.state === 'no_matchday'}
@@ -249,11 +249,11 @@
 					{#if view === 'captain'}
 						Players ranked by expected points on matchday {picks.md} only.
 					{:else if view === 'value'}
-						Expected points over {windowText} per million of price. Players flagged doubtful, injured
-						or out are left out.
+						Expected points over {windowText} per million of price. Only players with no availability
+						flag are listed.
 					{:else}
 						Players owned by {UCL_DIFF_MAX_OWNED}% or fewer of UCL Fantasy managers, ranked by expected
-						points over {windowText}. Players flagged doubtful, injured or out are left out.
+						points over {windowText}. Only players with no availability flag are listed.
 					{/if}
 					{#if !includeThin && picks.hiddenThin > 0}
 						{picks.hiddenThin === 1
