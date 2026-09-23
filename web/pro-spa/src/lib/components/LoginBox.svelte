@@ -4,7 +4,8 @@
 		signUp,
 		sendMagicLink,
 		signInWithGoogle,
-		freePremiumWindowActive
+		freePremiumWindowActive,
+		freePremiumUntilLabel
 	} from '$lib/auth.svelte';
 	import { GOOGLE_AUTH_ENABLED } from '$lib/config';
 
@@ -69,7 +70,7 @@
 	<h3>Create your free account</h3>
 	<p class="muted">
 		Email and a password, that is all it takes. Premium switches on straight away and stays on
-		until the GW4 deadline on 12 September. No card, nothing to cancel. Already have an
+		until the GW4 deadline on {freePremiumUntilLabel()}. No card, nothing to cancel. Already have an
 		account? Use Sign in below and Premium is on there too.
 	</p>
 {:else}

@@ -10,7 +10,7 @@
 	$effect(() => { void loadPricing(); });
 	import Provenance from './Provenance.svelte';
 	import { preferredStore, appCtaLabel, STORE_URL } from '$lib/appHandoff';
-	import { freePremiumWindowActive } from '$lib/auth.svelte';
+	import { freePremiumWindowActive, freePremiumUntilLabel } from '$lib/auth.svelte';
 
 	// #95: login-seinä myy ennen lomaketta — sama arvolupaus kuin mobiilin
 	// UpgradeCard-paywallissa. Copy 1:1 paywall.bullet_* -en-avaimista
@@ -101,7 +101,7 @@
 	     🔴 POISTA 12.9.2026 12:30 UTC jalkeen. -->
 	{#if freePremiumWindowActive()}
 		<p class="banner success">
-			Premium is free until the GW4 deadline on 12 September, so GW1 to GW3. Create a free
+			Premium is free until the GW4 deadline on {freePremiumUntilLabel()}, so GW1 to GW3. Create a free
 			account below and it's on. No card, nothing to cancel.
 		</p>
 	{/if}
@@ -138,7 +138,7 @@
 
 	{#if freePremiumWindowActive()}
 		<details class="pay-later">
-			<summary>Rather pay now and keep Premium after 12 September?</summary>
+			<summary>Rather pay now and keep Premium after {freePremiumUntilLabel()}?</summary>
 			{@render planButtons(true)}
 		</details>
 	{:else}
@@ -150,7 +150,7 @@
 		<!-- Ikkunan aikana "skip the signup" on suoraan vastakkainen ohje kuin
 		     se jonka haluamme: tili ON se polku. 🔴 POISTA 12.9.2026 12:30 UTC. -->
 		<p class="muted no-account">
-			After 12 September it is {PLANS.monthly.label} or {PLANS.season.label}. One subscription
+			After {freePremiumUntilLabel()} it is {PLANS.monthly.label} or {PLANS.season.label}. One subscription
 			covers web, iOS and Android, and you can cancel from the Account menu once you are signed in.
 		</p>
 	{:else}

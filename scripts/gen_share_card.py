@@ -27,9 +27,11 @@ AJO:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -106,6 +108,54 @@ def _shrink(d, text, px, max_w, min_px, font_path):
             f"gen_share_card: teksti ei mahdu korttiin edes {px}px:lla "
             f"({leveys:.0f} px / {max_w:.0f} px). Lyhenna se: {text}")
     return f
+
+
+def _card_row_count(spec: dict) -> int | None:
+    """Parhaan yrityksen rivimaara sidecariin. Ei kriittinen invariantti --
+    sha256 todistaa kortin sisallon, tama on vain ihmisluettava vihje. Eri
+    korttityypit nimeavat listansa eri tavalla (rows / fixtures / cols /
+    left+right), joten tama kokeilee tunnetut avaimet eika arvaa."""
+    for key in ("rows", "fixtures", "cols"):
+        v = spec.get(key)
+        if isinstance(v, list):
+            return len(v)
+    left, right = spec.get("left"), spec.get("right")
+    if isinstance(left, list) or isinstance(right, list):
+        return len(left or []) + len(right or [])
+    return None
+
+
+def _save_with_sidecar(canvas, out_path: Path, spec: dict, **save_kwargs) -> Path:
+    """POSTATTU-KORTTI-EI-OLE-TALLESSA (22.9.2026): tallentaa kortin VIERELLE
+    sidecar-JSONin (rivit, generated_at, sha256) samassa kirjoituksessa.
+
+    TAUSTA. `outputs/` on .gitignoressa ja jokainen ajo kirjoittaa saman
+    tiedostonimen yli, joten postattua korttia ei voinut todistaa jalkikateen
+    - `git log -- outputs/cards/` on aina tyhja (mitattu 12.9, GW4-kortti
+    M82 kadonnut talla tavalla). Sidecar syntyy levylle HETI kortin kanssa,
+    ei erillisena kasin tehtavana askeleena, joten unohdus ei voi jattaa
+    korttia ilman todistetta (saanto 6a mekanismi 1: yksi kirjoituspaikka
+    joka ei voi palauttaa vaaraa - jokainen `render*`-funktio kutsuu tata
+    yhta paikkaa sen sijaan etta kukin tallentaisi itse).
+
+    sha256 lasketaan LEVYLLA OLEVASTA tiedostosta PNG-koodauksen JALKEEN, ei
+    canvasin raakadatasta: `optimize=True` (osa kutsupaikoista) voi tuottaa
+    eri tavuja samasta kuvasta, ja sidecarin on todistettava se tiedosto
+    joka oikeasti postataan, ei valivaihe.
+    """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(out_path, "PNG", **save_kwargs)
+    digest = hashlib.sha256(out_path.read_bytes()).hexdigest()
+    sidecar = {
+        "file": out_path.name,
+        "card": spec.get("title") or spec.get("route") or out_path.stem,
+        "rows": _card_row_count(spec),
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "sha256": digest,
+    }
+    out_path.with_name(out_path.name + ".json").write_text(
+        json.dumps(sidecar, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return out_path
 
 
 def render(spec: dict, out_path: Path) -> Path:
@@ -229,9 +279,7 @@ def render(spec: dict, out_path: Path) -> Path:
     d.text((MX, h - 54), spec["footNote2"], font=f_foot2, fill=MUTED)
     d.rectangle([0, h - 8, W, h], fill=AMBER)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    canvas.convert("RGB").save(out_path, "PNG")
-    return out_path
+    return _save_with_sidecar(canvas, out_path, spec)
 
 
 # ---------------------------------------------------------------------------
@@ -1272,9 +1320,7 @@ def render_gw_outlook(spec: dict, out_path: Path) -> Path:
     d.text((MX, h - 52), "model projections, not betting advice",
            font=_font(FONT_MED, 16), fill=MUTED)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    canvas.convert("RGB").save(out_path, "PNG", optimize=True)
-    return out_path
+    return _save_with_sidecar(canvas, out_path, spec, optimize=True)
 
 
 def render_gw_outlook_hero(spec: dict, out_path: Path, cs_only: bool = False) -> Path:
@@ -1489,10 +1535,8 @@ def render_gw_outlook_hero(spec: dict, out_path: Path, cs_only: bool = False) ->
     _rivi(y0 + 34, "Match predictions logged before kick-off and graded in public.  ·  not betting advice",
           _font(FONT_MED, 15), MUTED)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas = canvas.crop((0, 0, W, y0 + 72))
-    canvas.convert("RGB").save(out_path, "PNG", optimize=True)
-    return out_path
+    return _save_with_sidecar(canvas, out_path, spec, optimize=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1645,9 +1689,7 @@ def render_reply_list(spec: dict, out_path: Path) -> Path:
         d.text((RW - RMX - vw, cy - REPLY_VALUE_PX * 0.62), r["value"], font=f_val,
                fill=R_GOLD)
     _reply_footer(d, _route_label(spec["route"]), f"as of {spec['as_of']}")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    canvas.convert("RGB").save(out_path, "PNG")
-    return out_path
+    return _save_with_sidecar(canvas, out_path, spec)
 
 
 def captain_compare_spec(module: dict, keys: list[str]) -> dict:
@@ -1712,9 +1754,7 @@ def render_captain_compare(spec: dict, out_path: Path) -> Path:
                    fill=R_CORAL if v["field"] == "p_blank" else R_TEAL)
             y += 46
     _reply_footer(d, spec["route"], f"as of {spec['as_of']}")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    canvas.convert("RGB").save(out_path, "PNG")
-    return out_path
+    return _save_with_sidecar(canvas, out_path, spec)
 
 
 def model_vs_template_spec(module: dict, max_names: int = 4) -> dict:
@@ -1793,9 +1833,7 @@ def render_model_vs_template(spec: dict, out_path: Path) -> Path:
         d.text((RMX + d.textlength(lab, font=_font(FONT_MED, 22)) + 24, RH - 178),
                spec["gap"], font=f_gap, fill=R_GOLD)
     _reply_footer(d, spec["route"], f"model frozen {spec['as_of']}")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    canvas.convert("RGB").save(out_path, "PNG")
-    return out_path
+    return _save_with_sidecar(canvas, out_path, spec)
 
 
 def _reply_cli_spec(card: str, args) -> dict:

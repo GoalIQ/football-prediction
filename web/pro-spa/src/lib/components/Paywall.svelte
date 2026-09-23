@@ -8,7 +8,7 @@
 	$effect(() => { void loadPricing(); });
 	import { capture } from '$lib/analytics';
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
-	import { freePremiumWindowActive } from '$lib/auth.svelte';
+	import { freePremiumWindowActive, freePremiumUntilLabel } from '$lib/auth.svelte';
 
 	/* 21.9 (julkaisutarkistaja): /ucl-sivulla FPL-teaseri nayttaisi saman
 	   sivun UCL-kymmenikon alla toisen kaarjen (B. Fernandes, Mbeumo, Saka).
@@ -46,10 +46,10 @@
      kayttajalla ON jo Premium. "Unlock" olisi vaara verbi ja lukisi silta etta
      jotain on kiinni. 🔴 POISTA HAARA 12.9.2026 12:30 UTC jalkeen. -->
 {#if freePremiumWindowActive()}
-	<h3>Keep Premium after 12 September</h3>
+	<h3>Keep Premium after {freePremiumUntilLabel()}</h3>
 	<p class="muted">
 		Nothing is locked right now, so there is no rush. Worth saying plainly: paying today
-		starts the subscription today, it does not wait for 12 September, so you would be
+		starts the subscription today, it does not wait for {freePremiumUntilLabel()}, so you would be
 		paying for weeks you already have for free. Coming back after the window is the
 		cheaper move, and this is only here for anyone who would rather deal with it now.
 	</p>
@@ -132,7 +132,7 @@
      🔴 POISTA 12.9.2026 12:30 UTC jalkeen. -->
 {#if freePremiumWindowActive()}
 	<p class="banner success">
-		Premium is free until the GW4 deadline on 12 September. You do not need to pay yet.
+		Premium is free until the GW4 deadline on {freePremiumUntilLabel()}. You do not need to pay yet.
 	</p>
 {/if}
 

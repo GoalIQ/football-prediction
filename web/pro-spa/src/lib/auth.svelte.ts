@@ -55,6 +55,20 @@ export function freePremiumWindowActive(now: Date = new Date()): boolean {
 	return now.getTime() < FREE_PREMIUM_UNTIL_MS;
 }
 
+// SPA-IKKUNAN-PAIVA-KIRJOITETTU-AUKI (22.9.2026): "12 September" oli
+// kirjoitettu kasin yhdeksaan merkkijonoon nelja komponentissa sen sijaan
+// etta ne lukisivat sen tasta. Ikkunan seuraava avaus olisi vaatinut
+// muistamaan kaikki yhdeksan, ja unohdus jattaa vaaran paivan nakyviin
+// (sama vikaluokka jonka `ILMAISIKKUNA-SULKEUTUU-ITSE` korjasi paistetuille
+// sivuille, ks. fp `src/free_window.py: day_label()` — sama muoto,
+// '%d %B' ilman johtavaa nollaa).
+export function freePremiumUntilLabel(): string {
+	const d = new Date(FREE_PREMIUM_UNTIL_MS);
+	const day = d.getUTCDate();
+	const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+	return `${day} ${month}`;
+}
+
 /** Ikkunan aikainen entitlement. `plan` on oma arvonsa, jotta UI voi kertoa
  *  rehellisesti mista oikeus tulee eika vaita ostettua tilausta. */
 export function freeWindowSub(): GiqSub {
