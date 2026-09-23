@@ -77,6 +77,17 @@ describe('/ucl-sivu', () => {
 	});
 });
 
+describe('prerender: nakyma-hashit eivat ole ankkureita', () => {
+	// 23.9: ensimmainen pro-spa-deploy kaatui, koska prerender vaatii
+	// id="captain"-elementin linkille /spl#captain. Poikkeus on vain pelien
+	// nakymille rekisterista, muualla puuttuva ankkuri kaataa yha buildin.
+	const cfg = read('../../vite.config.ts');
+	it('handleMissingId ohittaa vain rekisterin nakymat ja heittaa muuten', () => {
+		expect(cfg).toContain("import { GAME_VIEWS } from './src/lib/tools';");
+		expect(cfg).toMatch(/handleMissingId: \(\{ path, id, message \}\) => \{\s*if \(GAME_VIEW_HASHES\[path\]\?\.has\(id\)\) return;\s*throw new Error\(message\);/);
+	});
+});
+
 describe('yhteinen nakymatila (gameViewState)', () => {
 	const gv = read('./gameView.svelte.ts');
 	it('lukee hashin gameViewin kautta ja vierittaa vain osion vaihtuessa', () => {

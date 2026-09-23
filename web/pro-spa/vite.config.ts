@@ -1,6 +1,20 @@
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { GAME_VIEWS } from './src/lib/tools';
+
+/** RSL- ja UCL-sivujen nakymat ovat hasheja (/spl#captain), eivat ankkureita:
+ *  sivu lukee hashin `gameView`illa eika sivulla ole id="captain"-elementtia
+ *  (se vierittaisi selaimen keskelle sivua). Prerender kaatui tahan 23.9
+ *  ensimmaisessa pro-spa-deployssa. Poikkeus koskee VAIN naita hasheja naille
+ *  poluille, ja ne luetaan samasta rekisterista kuin sivut; muualla puuttuva
+ *  ankkuri kaataa buildin kuten ennenkin (portti uclViews.gate.test.ts). */
+const GAME_VIEW_HASHES: Record<string, Set<string>> = Object.fromEntries(
+	Object.entries(GAME_VIEWS).map(([game, def]) => [
+		`/${game}`,
+		new Set(def.sections.flatMap((s) => s.views as string[]))
+	])
+);
 
 export default defineConfig({
 	plugins: [
@@ -14,6 +28,13 @@ export default defineConfig({
 			// Staattinen export Cloudflare Pagesille (QUEUE #14 lukittu
 			// arkkitehtuuri): prerender + SPA-fallback, ei palvelinruntimea.
 			adapter: adapter({ fallback: 'index.html' }),
+
+			prerender: {
+				handleMissingId: ({ path, id, message }) => {
+					if (GAME_VIEW_HASHES[path]?.has(id)) return;
+					throw new Error(message);
+				}
+			},
 
 			// 30.7.2026 P0-insidentti: deploy-ikkunassa chunk-URL sai origin-
 			// fallbackin (index.html) ja zone-edge cachetti sen IMMUTABLE-
