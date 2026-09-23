@@ -10,6 +10,7 @@ import { capture, identifyUser, resetAnalytics } from './analytics';
 import { invalidateProfileRow } from './profileRow';
 import { storedRef } from './billing';
 import { clearDraft } from './draft';
+import { FREE_PREMIUM_UNTIL } from './freeWindow';
 
 export interface GiqUser {
 	id: string;
@@ -47,7 +48,13 @@ const SUB_CACHE_KEY = 'giq:sub:v1';
 //    elaa ikkunan yli, joten cachetettu synteettinen tilaus nayttaisi
 //    premiumia viela ikkunan sulkeuduttua. writeSubCache saa siksi nahda
 //    VAIN todellisen tilauksen; ikkuna lisataan vasta muistiin.
-export const FREE_PREMIUM_UNTIL = '2026-09-12T12:30:00Z';
+// Ikkunan ajat ja niista johdetut tekstit: ./freeWindow.ts (yksi lahde).
+export {
+	FREE_PREMIUM_UNTIL,
+	FREE_PREMIUM_UNTIL_GW,
+	FREE_PREMIUM_UNTIL_DAY,
+	FREE_PREMIUM_GWS
+} from './freeWindow';
 const FREE_PREMIUM_UNTIL_MS = Date.parse(FREE_PREMIUM_UNTIL);
 
 export function freePremiumWindowActive(now: Date = new Date()): boolean {

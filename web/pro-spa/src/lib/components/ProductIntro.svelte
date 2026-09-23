@@ -24,7 +24,7 @@
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { actionableGameweek } from '$lib/gameweek';
-	import { freePremiumWindowActive } from '$lib/auth.svelte';
+	import { freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { planApprox } from '$lib/billing';
 	import { loadPricing, webCheckoutBlocked } from '$lib/pricing.svelte';
@@ -197,7 +197,7 @@
 		{:else if inWindow}
 			<button type="button" class="primary" onclick={onUpgrade}>Create a free account</button>
 			<p class="act-note muted">
-				Premium is free until 12 September. No card, nothing to cancel. After that it is
+				Premium is free until {FREE_PREMIUM_UNTIL_DAY}. No card, nothing to cancel. After that it is
 				€3.99 a month or €25 for the season{#if approxMonthly}
 					({approxMonthly}, {approxSeason}){/if}.
 			</p>

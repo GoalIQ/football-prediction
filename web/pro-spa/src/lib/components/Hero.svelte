@@ -17,7 +17,7 @@
 	 */
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { auth, sendPasswordReset, signOut, freePremiumWindowActive } from '$lib/auth.svelte';
+	import { auth, sendPasswordReset, signOut, freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { fetchFantasy, openCustomerPortal } from '$lib/api';
 	import { actionableGameweek, checkedText, formatDeadline, parseGeneratedAt } from '$lib/gameweek';
@@ -148,7 +148,7 @@
 			// 12.9.2026: leima oli ainoa ilmaisikkunan lupaus SPA:ssa jota mikaan
 			// ei vartioinut ajassa. Ikkunan sulkeuduttua se olisi lukenut
 			// "Premium, free until 12 September" 12. syyskuuta jalkeen.
-			? (freePremiumWindowActive() ? 'Premium, free until 12 September' : 'Premium')
+			? (freePremiumWindowActive() ? `Premium, free until ${FREE_PREMIUM_UNTIL_DAY}` : 'Premium')
 			: auth.sub
 				? 'Premium'
 				: auth.sub === null

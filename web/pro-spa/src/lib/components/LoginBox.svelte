@@ -1,11 +1,5 @@
 <script lang="ts">
-	import {
-		signIn,
-		signUp,
-		sendMagicLink,
-		signInWithGoogle,
-		freePremiumWindowActive
-	} from '$lib/auth.svelte';
+	import { signIn, signUp, sendMagicLink, signInWithGoogle, freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW } from '$lib/auth.svelte';
 	import { GOOGLE_AUTH_ENABLED } from '$lib/config';
 
 	// 🔴 Villen havainto 16.8: "missa ohjeistus". Tama lomake avautui aina
@@ -69,7 +63,7 @@
 	<h3>Create your free account</h3>
 	<p class="muted">
 		Email and a password, that is all it takes. Premium switches on straight away and stays on
-		until the GW4 deadline on 12 September. No card, nothing to cancel. Already have an
+		until the GW{FREE_PREMIUM_UNTIL_GW} deadline on {FREE_PREMIUM_UNTIL_DAY}. No card, nothing to cancel. Already have an
 		account? Use Sign in below and Premium is on there too.
 	</p>
 {:else}

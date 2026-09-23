@@ -15,7 +15,7 @@
 	 * osto- ja checkout-paluulogiikka siirtyi ProView'sta tänne sellaisenaan.
 	 */
 	import { onMount } from 'svelte';
-	import { auth, refreshSubscription, freePremiumWindowActive } from '$lib/auth.svelte';
+	import { auth, refreshSubscription, freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW, FREE_PREMIUM_GWS } from '$lib/auth.svelte';
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { loadProfileEntry } from '$lib/fplEntry.svelte';
@@ -330,9 +330,9 @@
 	     sisassa sisaankaynti oli tekstilinkkina, eli sivun tarkein teko nakyi
 	     samankokoisena kuin sen ymparilla oleva selitys. -->
 	<div class="free-card">
-		<h2>Premium is free until 12 September</h2>
+		<h2>Premium is free until {FREE_PREMIUM_UNTIL_DAY}</h2>
 		<p>
-			That is GW1 to GW3. Create a free account and every Premium tool switches on straight
+			That is {FREE_PREMIUM_GWS}. Create a free account and every Premium tool switches on straight
 			away. No card, nothing to cancel, and nothing happens when the window closes unless you
 			decide to keep it.
 		</p>
@@ -379,7 +379,7 @@
 			     ostopolun on oltava tassa - muuten kukaan ei voi ostaa
 			     ikkunan aikana vaikka haluaisi. -->
 			<p class="banner success">
-				Premium is open to every account until the GW4 deadline on 12 September. Nothing to pay
+				Premium is open to every account until the GW{FREE_PREMIUM_UNTIL_GW} deadline on {FREE_PREMIUM_UNTIL_DAY}. Nothing to pay
 				and nothing to cancel. <button type="button" class="linklike" onclick={goKeepPremium}
 					>Keep it after that</button
 				>
