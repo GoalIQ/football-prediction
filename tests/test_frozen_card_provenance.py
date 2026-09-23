@@ -134,8 +134,10 @@ def test_card_generator_is_wired():
     src = (config.PROJECT_ROOT / "scripts/render_frozen_squad_card.py"
            ).read_text(encoding="utf-8")
     assert "require_entry_provenance(frozen, FROZEN_DIR)" in src
-    # portti ennen ensimmaista renderointiaskelta
-    assert src.index("require_entry_provenance(frozen") < src.index("xi, bench = frozen")
+    # portti ennen ensimmaista renderointiaskelta. 23.9: HTML rakennetaan
+    # build_htmlissa, joten jarjestys mitataan mainin sisalla.
+    main = src[src.index("def main() -> int:"):]
+    assert main.index("require_entry_provenance(frozen") < main.index("build_html(frozen")
 
 
 def test_card_main_fails_closed_on_the_4_9_chain(tmp_path, monkeypatch):

@@ -18,9 +18,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -30,6 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from scripts.build_fpl_longtail import _kit_defs, _kit_svg
+from scripts.card_shot import (CardLayoutError, find_chrome, render_card,
+                               with_fonts)
 
 FROZEN_DIR = config.PROJECT_ROOT / "data" / "model_squad_frozen"
 
@@ -41,7 +40,7 @@ CSS = """
 body{background:#000;}
 .card{width:1200px;height:675px;background:
 linear-gradient(160deg,var(--ink) 0%,var(--ink2) 70%,#101a17 100%);
-font-family:'Segoe UI',system-ui,sans-serif;color:var(--cream);
+font-family:'IBM Plex Sans',sans-serif;color:var(--cream);
 padding:34px 44px 26px;display:flex;flex-direction:column;}
 .hdr{display:flex;justify-content:space-between;align-items:baseline;}
 .brand{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;text-transform:uppercase;font-weight:800;font-size:24px;letter-spacing:.5px;color:var(--cream);}.brand b{font-weight:800;letter-spacing:.5px;}.brand i{font-style:normal;color:var(--amber);}
@@ -60,7 +59,7 @@ font-variant-numeric:tabular-nums;white-space:nowrap;}
 .xip span.xp i{font-style:normal;color:var(--muted);font-weight:400;font-size:12px;}
 .xip span.sim{color:var(--amber);font-size:11px;margin-top:1px;
 white-space:nowrap;letter-spacing:-.1px;}
-.badge{position:absolute;top:-4px;right:14px;background:var(--amber);
+.badge{position:absolute;top:0;right:14px;background:var(--amber);
 color:var(--ink);font-size:13px;font-weight:700;width:22px;height:22px;
 border-radius:50%;line-height:22px;}
 .badge.v{background:var(--cream);}
@@ -68,15 +67,16 @@ border-radius:50%;line-height:22px;}
 .bench{display:flex;align-items:center;gap:18px;border-top:1px solid var(--line);
 padding-top:10px;}
 .bench .lbl{color:var(--muted);font-size:14px;width:60px;}
-.bench .xip{width:96px;}
+.bench .xip{width:124px;}
 .bench .xip b{font-size:13px;}
 .ftr{display:flex;justify-content:space-between;color:var(--muted);
 font-size:14px;margin-top:6px;}
 .ftr b{color:var(--cream);font-weight:600;}
 svg.kit{display:block;margin:0 auto;}
-.xip span em.flag{font-style:normal;font-weight:700;}
-.xip span em.flag.d{color:#F5A142;}
-.xip span em.flag.out{color:#FF6B6B;}
+.xip span em.flag{font-style:normal;font-weight:700;color:var(--ink);
+padding:0 4px;border-radius:3px;}
+.xip span em.flag.d{background:#F5A142;}
+.xip span em.flag.out{background:#FF6B6B;}
 """
 
 
@@ -229,6 +229,100 @@ def money_line(meta: dict) -> str:
     return line
 
 
+# Paidan koko kentalla ja penkilla. Sims-tilassa jokaisella aloittajalla on
+# kaksi rivia enemman (xP + jakauma), ja 46 px:n paidoilla nelja kentan rivia
+# vievat penkin ja alatunnisteen kuvan alapuolelle (KORTTI-SIMS-YLIVUOTO 23.9:
+# GitHub-reitti eli kortin tarkistusreitti leikkautui pois). Pienempi paita on
+# ainoa korkeus joka ei ole tietoa.
+KIT = {False: (46, 42), True: (34, 30)}
+
+
+def build_html(frozen: dict, gw: int, *, sims: bool = False,
+               dists: dict | None = None, xps: dict | None = None,
+               hide_bench: bool = False,
+               subtitle_override: str | None = None) -> str:
+    """Kortin HTML ilman fontteja (ne lisataan vasta kuvattavaan tiedostoon,
+    `card_shot.with_fonts`). Erotettu mainista 23.9, jotta asettelu voidaan
+    mitata testissa samalla pohjalla joka julkaistaan."""
+    import datetime as _dt
+    dists, xps = dists or {}, xps or {}
+    xi, bench = frozen["xi"], frozen["bench"]
+    cap, vice = frozen["captain"], frozen["vice_captain"]
+    meta_val = frozen.get("meta") or {}
+    money = money_line(meta_val)
+    raw = str(meta_val.get("frozen_at", ""))[:10]
+    frozen_at = _dt.date.fromisoformat(raw).strftime("%d %b").lstrip("0") if raw else ""
+
+    rows = {t: [p for p in xi if p["pos"] == t] for t in (1, 2, 3, 4)}
+    shape = "-".join(str(len(rows[t])) for t in (2, 3, 4))
+    kit_xi, kit_bench = KIT[sims]
+    pitch = "".join(
+        '<div class="xirow">'
+        + "".join(cell(p, cap, vice, size=kit_xi, dist=dists.get(int(p["id"])),
+                       chip=meta_val.get("chip"),
+                       xp=xps.get(int(p["id"])))
+                  for p in rows[t])
+        + "</div>" for t in (1, 2, 3, 4))
+    bench_html = "".join(cell(p, cap=-1, vice=-1, size=kit_bench) for p in bench)
+    shorts = [p["team_short"] for p in xi + bench]
+
+    bench_block = ("" if hide_bench
+                   else f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>')
+    return (
+        "<!doctype html><meta charset='utf-8'>"
+        f"<style>{CSS}</style>"
+        f'<svg width="0" height="0" style="position:absolute">{_kit_defs(shorts)}</svg>'
+        + ('<div class="card sims">' if sims else '<div class="card">')
+        + '<div class="hdr"><div><span class="brand">'
+        # 30.8: merkki src/brand.py:sta (Villen 1.8 paatos).
+        + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
+        f'<div><div class="title">The model&#39;s own FPL squad, GW{gw} ({shape})'
+        + ('' if not sims else ', 2,000 simulated gameweeks each')
+        + '</div>'
+        f'<div class="sub">{subtitle(xi + ([] if hide_bench else bench), frozen_at, subtitle_override)}</div></div></div>'
+        f'<div class="pitch">{pitch}</div>'
+        f'{bench_block}'
+        # 🔴 4.9 PORTTI: "spent" laskettiin NYKYHINNOISTA, mutta se ei ole
+        # kumpikaan oikea luku: ostohinnat eivat ole julkisia, ja FPL:n oma
+        # sivu nayttaa rungon myyntiarvon + pankin. Kun runko tulee entrysta,
+        # kaytetaan FPL:n omia lukuja ja oikeaa sanaa.
+        + f'<div class="ftr"><span>{money}</span>'
+        # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
+        # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
+        # 21.9: reitti on jaadytetty runko julkisessa repossa, ei entry
+        # (entry saa poiketa rungosta, mallin luku lasketaan rungosta).
+        + f"<span>github.com/GoalIQ/football-prediction · data/model_squad_frozen/gw{gw}.json</span>"
+        + ('<span>goaliq.app/fpl/expected-points#top-100</span></div>'
+           if sims else '<span>goaliq.app</span></div>')
+        + "</div>")
+
+
+def load_sims(gw: int) -> tuple[dict, dict]:
+    """Jakaumat ja kierroksen xP samasta artefaktista kuin ilmaissivu."""
+    xp = json.loads((config.DATA_DIR / "fpl_xp_projections.json")
+                    .read_text(encoding="utf-8"))
+    gws = {(pp.get("xp_dist") or {}).get("gw") for pp in xp.get("players") or []
+           if pp.get("xp_dist")}
+    gws.discard(None)
+    # 🔴 Kortin otsikko sanoo GW:n, luvut tulevat `xp_dist`:sta. Jos ne
+    # ovat eri kierrokselta, kortti julkaisisi vaaran kierroksen luvut
+    # oikean kierroksen nimella (sama vika mitattiin standouts-kortista
+    # 30.8). Fail-closed.
+    if gws != {gw}:
+        raise SystemExit(
+            f"SIMULAATIOT ERI KIERROKSELTA: kortti on GW{gw} mutta "
+            f"xp_dist on kierrokselta {sorted(gws)}. Aja projektio "
+            "uudelleen ennen kuin julkaiset kortin.")
+    dists = {int(pp["id"]): pp["xp_dist"] for pp in xp["players"]
+             if pp.get("xp_dist") and pp.get("id") is not None}
+    xps: dict = {}
+    for pp in xp["players"]:
+        for g in pp.get("gameweeks") or []:
+            if g.get("gw") == gw and pp.get("id") is not None:
+                xps[int(pp["id"])] = float(g.get("xp") or 0.0)
+    return dists, xps
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gw", type=int, default=1)
@@ -252,107 +346,34 @@ def main() -> int:
     from src.models.fpl_model_entry import require_entry_provenance
     peruste = require_entry_provenance(frozen, FROZEN_DIR)
     print(f"provenienssi: {peruste}")
-    xi, bench = frozen["xi"], frozen["bench"]
-    cap, vice = frozen["captain"], frozen["vice_captain"]
-    meta_val = frozen.get("meta") or {}
-    money = money_line(meta_val)
-    import datetime as _dt
-    raw = str(frozen.get("meta", {}).get("frozen_at", ""))[:10]
-    frozen_at = _dt.date.fromisoformat(raw).strftime("%d %b").lstrip("0") if raw else ""
-
-    rows = {t: [p for p in xi if p["pos"] == t] for t in (1, 2, 3, 4)}
-    shape = "-".join(str(len(rows[t])) for t in (2, 3, 4))
-    dists: dict = {}
-    xps: dict = {}
-    if args.sims:
-        xp = json.loads((config.DATA_DIR / "fpl_xp_projections.json")
-                        .read_text(encoding="utf-8"))
-        gws = {(pp.get("xp_dist") or {}).get("gw") for pp in xp.get("players") or []
-               if pp.get("xp_dist")}
-        gws.discard(None)
-        # 🔴 Kortin otsikko sanoo GW:n, luvut tulevat `xp_dist`:sta. Jos ne
-        # ovat eri kierrokselta, kortti julkaisisi vaaran kierroksen luvut
-        # oikean kierroksen nimella (sama vika mitattiin standouts-kortista
-        # 30.8). Fail-closed.
-        if gws != {args.gw}:
-            raise SystemExit(
-                f"SIMULAATIOT ERI KIERROKSELTA: kortti on GW{args.gw} mutta "
-                f"xp_dist on kierrokselta {sorted(gws)}. Aja projektio "
-                "uudelleen ennen kuin julkaiset kortin.")
-        dists = {int(pp["id"]): pp["xp_dist"] for pp in xp["players"]
-                 if pp.get("xp_dist") and pp.get("id") is not None}
-        for pp in xp["players"]:
-            for g in pp.get("gameweeks") or []:
-                if g.get("gw") == args.gw and pp.get("id") is not None:
-                    xps[int(pp["id"])] = float(g.get("xp") or 0.0)
-    pitch = "".join(
-        '<div class="xirow">'
-        + "".join(cell(p, cap, vice, dist=dists.get(int(p["id"])),
-                       chip=(frozen.get("meta") or {}).get("chip"),
-                       xp=xps.get(int(p["id"])))
-                  for p in rows[t])
-        + "</div>" for t in (1, 2, 3, 4))
-    bench_html = "".join(cell(p, cap=-1, vice=-1, size=42) for p in bench)
-    shorts = [p["team_short"] for p in xi + bench]
-
-    bench_block = ("" if args.hide_bench
-                   else f'<div class="bench"><span class="lbl">Bench</span>{bench_html}</div>')
-    html = (
-        "<!doctype html><meta charset='utf-8'>"
-        f"<style>{CSS}</style>"
-        f'<svg width="0" height="0" style="position:absolute">{_kit_defs(shorts)}</svg>'
-        '<div class="card">'
-        '<div class="hdr"><div><span class="brand">'
-        # 30.8: merkki src/brand.py:sta (Villen 1.8 paatos).
-        + logo_svg(28) + '<b>Goal<i>IQ</i></b></span></div>'
-        f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})'
-        + ('' if not args.sims else ', 2,000 simulated gameweeks each')
-        + '</div>'
-        f'<div class="sub">{subtitle(xi + ([] if args.hide_bench else bench), frozen_at, args.subtitle)}</div></div></div>'
-        f'<div class="pitch">{pitch}</div>'
-        f'{bench_block}'
-        # 🔴 4.9 PORTTI: "spent" laskettiin NYKYHINNOISTA, mutta se ei ole
-        # kumpikaan oikea luku: ostohinnat eivat ole julkisia, ja FPL:n oma
-        # sivu nayttaa rungon myyntiarvon + pankin. Kun runko tulee entrysta,
-        # kaytetaan FPL:n omia lukuja ja oikeaa sanaa.
-        + f'<div class="ftr"><span>{money}</span>'
-        # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
-        # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
-        # 21.9: reitti on jaadytetty runko julkisessa repossa, ei entry
-        # (entry saa poiketa rungosta, mallin luku lasketaan rungosta).
-        + f"<span>github.com/GoalIQ/football-prediction · data/model_squad_frozen/gw{args.gw}.json</span>"
-        + ('<span>goaliq.app/fpl/expected-points#top-100</span></div>'
-           if args.sims else '<span>goaliq.app</span></div>')
-        + "</div>")
+    dists, xps = load_sims(args.gw) if args.sims else ({}, {})
+    html = build_html(frozen, args.gw, sims=args.sims, dists=dists, xps=xps,
+                      hide_bench=args.hide_bench,
+                      subtitle_override=args.subtitle)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / f"model-squad-gw{args.gw}.html"
-    html_path.write_text(html, encoding="utf-8")
+    # 23.9: fontit upotetaan vasta kuvattavaan tiedostoon (scripts/card_shot.py),
+    # jolloin asettelu ei riipu koneen fonteista.
+    html_path.write_text(with_fonts(html), encoding="utf-8")
     print(f"HTML: {html_path}")
 
-    # 22.8: ei kovakoodattua C:\-polkua (test_no_machine_specific_paths) —
-    # PATH ensin, sitten Windowsin ohjelmakansiot env-muuttujien kautta.
-    candidates = [shutil.which(n) for n in
-                  ("chrome", "google-chrome", "chromium", "msedge")]
-    for env in ("ProgramFiles", "ProgramFiles(x86)"):
-        base = os.environ.get(env)
-        if base:
-            candidates.append(
-                str(Path(base) / "Google" / "Chrome" / "Application"
-                    / "chrome.exe"))
-    for exe in candidates:
-        if exe and Path(exe).exists():
-            png = out_dir / f"model-squad-gw{args.gw}.png"
-            subprocess.run(
-                [exe, "--headless=new", f"--screenshot={png}",
-                 "--window-size=1200,675", "--hide-scrollbars",
-                 html_path.as_uri()],
-                check=True, capture_output=True, timeout=60)
-            print(f"PNG: {png}")
-            break
-    else:
+    exe = find_chrome()
+    if exe is None:
         print("Chromea ei loytynyt - kaappaa HTML kasin.")
+        return 0
+    png = out_dir / f"model-squad-gw{args.gw}.png"
+    try:
+        # 🔴 KORTTI-SIMS-YLIVUOTO (23.9): kortti kuvattiin suoraan Chromella,
+        # joten ylivuoto paatyi PNG:hen hiljaa (penkki ja tarkistusreitti
+        # leikkautuivat pois). render_card mittaa asettelun ensin ja
+        # kieltaytyy kirjoittamasta kuvaa.
+        render_card(exe, html_path, png)
+    except CardLayoutError as e:
+        print(f"::error::{e}")
+        return 1
+    print(f"PNG: {png}")
     return 0
 
 

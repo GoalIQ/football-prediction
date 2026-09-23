@@ -23,7 +23,8 @@ from scripts import card_shot as C
 
 ROOT = Path(__file__).resolve().parent.parent
 RENDEROIJAT = ["scripts/render_standouts_card.py",
-               "scripts/render_projected_xi_card.py"]
+               "scripts/render_projected_xi_card.py",
+               "scripts/render_frozen_squad_card.py"]
 
 
 def test_upotetut_fontit_ja_lisenssi_ovat_repossa():
@@ -78,10 +79,10 @@ def test_fontit_upotetaan_vain_kuvattavaan_tiedostoon():
 
 
 def test_ongelmien_luokittelu():
-    hyva = {"outside": [], "clipped": [], "ellipsis": ["td.nm x"], "fonts": [],
-            "card": [1200, 675]}
+    hyva = {"outside": [], "overlap": [], "clipped": [], "ellipsis": ["td.nm x"],
+            "fonts": [], "card": [1200, 675]}
     assert C.problems(hyva) == [], "ellipsi on suunniteltu katkaisu"
-    for avain in ("outside", "clipped", "fonts"):
+    for avain in ("outside", "overlap", "clipped", "fonts"):
         paha = dict(hyva, **{avain: ["span x"]})
         assert C.problems(paha), avain
     assert C.problems(dict(hyva, card=[1346, 675]))
@@ -125,6 +126,56 @@ def test_ylivuotava_alapalkki_ei_paady_kuvaksi(tmp_path):
     with pytest.raises(C.CardLayoutError, match="valuu yli"):
         C.render_card(CHROME, html, png)
     assert not png.exists()
+
+
+@tarvitsee_chromen
+def test_reunallinen_kehys_kortin_alla_ei_paady_kuvaksi(tmp_path):
+    """KORTTI-SIMS-YLIVUOTO 23.9: penkki on oma reunallinen kehyksensa, joten
+    sen teksti oli 'kehyksen sisalla' vaikka koko penkki oli 675 px:n alla.
+    Kortin raja tarkistetaan aina, ei vain lahimman kehyksen."""
+    p = tmp_path / "kortti.html"
+    p.write_text(C.with_fonts(
+        "<!doctype html><meta charset='utf-8'><style>*{margin:0;padding:0}"
+        ".card{width:1200px;height:675px;font-family:'IBM Plex Sans',sans-serif}"
+        ".tayte{height:660px}.bench{border-top:1px solid #555;height:60px}"
+        "</style><div class='card'><div class='tayte'></div>"
+        "<div class='bench'><b>Dovin</b></div><div>kortin alla</div></div>"),
+        encoding="utf-8")
+    with pytest.raises(C.CardLayoutError, match=r"valuu yli: b \"Dovin\" out of div\.card"):
+        C.render_card(CHROME, p, tmp_path / "kortti.png")
+
+
+@tarvitsee_chromen
+def test_paallekkaiset_tekstit_eivat_paady_kuvaksi(tmp_path):
+    """23.9: kapteenimerkki peitti ylemman rivin 'blank 9%' -tekstin."""
+    p = tmp_path / "kortti.html"
+    p.write_text(C.with_fonts(
+        "<!doctype html><meta charset='utf-8'><style>*{margin:0;padding:0}"
+        ".card{width:1200px;height:675px;font-family:'IBM Plex Sans',sans-serif;"
+        "position:relative}.c{position:absolute;left:40px;top:34px}"
+        "</style><div class='card'><div style='padding:30px 40px'>"
+        "10+ 21% · blank 9%</div><span class='c'>C</span></div>"),
+        encoding="utf-8")
+    with pytest.raises(C.CardLayoutError, match="tekstit paallekkain"):
+        C.render_card(CHROME, p, tmp_path / "kortti.png")
+
+
+@tarvitsee_chromen
+def test_merkin_tausta_ei_saa_peittaa_tekstia(tmp_path):
+    """23.9 mitattu: C-kirjaimen ja tekstin glyfit menivat paallekkain vain
+    2 px, mutta merkin ympyra peitti tekstia 4 px. Peittaja on tausta."""
+    p = tmp_path / "kortti.html"
+    p.write_text(C.with_fonts(
+        "<!doctype html><meta charset='utf-8'><style>*{margin:0;padding:0}"
+        ".card{width:1200px;height:675px;font-family:'IBM Plex Sans',sans-serif;"
+        "position:relative}.t{position:absolute;left:40px;top:40px;font-size:11px}"
+        ".b{position:absolute;left:60px;top:50px;width:22px;height:22px;"
+        "border-radius:50%;background:#F5C542;font-size:13px;line-height:22px;"
+        "text-align:center}</style><div class='card'>"
+        "<span class='t'>10+ 21% · blank 9%</span><span class='b'>C</span></div>"),
+        encoding="utf-8")
+    with pytest.raises(C.CardLayoutError, match=r"covers span\.t"):
+        C.render_card(CHROME, p, tmp_path / "kortti.png")
 
 
 @tarvitsee_chromen

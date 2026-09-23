@@ -152,8 +152,18 @@ def _base_args(exe: str, size: tuple[int, int]) -> list[str]:
     return args
 
 
-# Mittaus ajetaan selaimessa fonttien latauduttua. Kolme vikaluokkaa:
-#   outside   tekstirivi kortin tai lahimman reunallisen kehyksen ulkopuolella
+# Mittaus ajetaan selaimessa fonttien latauduttua. Vikaluokat:
+#   outside   tekstirivi lahimman reunallisen kehyksen TAI kortin ulkopuolella.
+#             23.9 (KORTTI-SIMS-YLIVUOTO): kehys yksin ei riita. Jakokortin
+#             penkki on oma reunallinen kehyksensa, joten kun koko penkki valui
+#             675 px:n alle, sen teksti oli yha "kehyksen sisalla" eika mikaan
+#             kaatunut. Kortin raja tarkistetaan nyt aina.
+#   overlap   kaksi eri tekstia paallekkain, tai absoluuttisesti sijoitettu
+#             taytetty elementti (merkki) peittaa tekstia joka ei ole sen oma.
+#             23.9: kapteenimerkin ympyra peitti ylemman rivin "blank 9%"
+#             -tekstin 4 px, kun sims-kortti tiivistettiin. Glyfien laatikot
+#             menivat paallekkain vain 2 px, joten pelkka teksti-teksti-vertailu
+#             ei nahnyt sita: peittaja on ympyran tausta, ei C-kirjain.
 #   clipped   overflow:hidden leikkaa tekstin ILMAN ellipsia (hiljainen katkos)
 #   ellipsis  tarkoituksellinen katkaisu (varoitus, ei kaada)
 #   fonts     upotettu fontti ei latautunut (status error)
@@ -169,20 +179,39 @@ _MEASURE_JS = r"""
     e=e.parentElement;}return card;}
   function clippedBy(el,card){var e=el;while(e&&e!==card){
     if(getComputedStyle(e).overflowX!=='visible')return true;e=e.parentElement;}return false;}
+  function beyond(r,b){return r.right>b.right+1||r.left<b.left-1||r.bottom>b.bottom+1||r.top<b.top-1;}
   function run(){
-    var card=document.querySelector('.card');var out={outside:[],clipped:[],ellipsis:[],fonts:[],card:null};
+    var card=document.querySelector('.card');var out={outside:[],overlap:[],clipped:[],ellipsis:[],fonts:[],card:null};
     if(!card){out.outside.push('no .card element');return done(out);}
     var cr=card.getBoundingClientRect();out.card=[cr.width,cr.height];
-    var w=document.createTreeWalker(card,NodeFilter.SHOW_TEXT);var n;
+    var w=document.createTreeWalker(card,NodeFilter.SHOW_TEXT);var n;var boxes=[];
     while((n=w.nextNode())){
       if(!n.textContent.trim())continue;var el=n.parentElement;
       if(clippedBy(el,card))continue;
       var f=frame(el,card);var fr=f.getBoundingClientRect();
       var rg=document.createRange();rg.selectNodeContents(n);var rs=rg.getClientRects();
       for(var i=0;i<rs.length;i++){var r=rs[i];if(!r.width)continue;
-        if(r.right>fr.right+1||r.left<fr.left-1||r.bottom>fr.bottom+1||r.top<fr.top-1){
-          out.outside.push(desc(el)+' out of '+desc(f).slice(0,40)+' at '+[r.left,r.top,r.right,r.bottom].map(Math.round).join(','));break;}}
+        boxes.push({n:n,el:el,r:r});
+        var b=beyond(r,fr)?f:(beyond(r,cr)?card:null);
+        if(b){
+          out.outside.push(desc(el)+' out of '+desc(b).slice(0,40)+' at '+[r.left,r.top,r.right,r.bottom].map(Math.round).join(','));break;}}
     }
+    // Eri tekstisolmut eivat saa peittaa toisiaan. 2 px:n toleranssi:
+    // saman rivin perakkaiset solmut koskettavat reunoilla.
+    for(var a=0;a<boxes.length;a++)for(var c=a+1;c<boxes.length;c++){
+      var A=boxes[a],B=boxes[c];if(A.n===B.n)continue;
+      var ox=Math.min(A.r.right,B.r.right)-Math.max(A.r.left,B.r.left);
+      var oy=Math.min(A.r.bottom,B.r.bottom)-Math.max(A.r.top,B.r.top);
+      if(ox>2&&oy>2)out.overlap.push(desc(A.el).slice(0,50)+' x '+desc(B.el).slice(0,50));}
+    card.querySelectorAll('*').forEach(function(el){var s=getComputedStyle(el);
+      if(s.position!=='absolute'&&s.position!=='fixed')return;
+      if(s.backgroundColor==='transparent'||/^rgba\(.*,\s*0\)$/.test(s.backgroundColor))return;
+      var E=el.getBoundingClientRect();var seen={};
+      boxes.forEach(function(B){if(el.contains(B.n)||seen[desc(B.el)])return;
+        var ox=Math.min(E.right,B.r.right)-Math.max(E.left,B.r.left);
+        var oy=Math.min(E.bottom,B.r.bottom)-Math.max(E.top,B.r.top);
+        if(ox>2&&oy>2){seen[desc(B.el)]=1;
+          out.overlap.push(desc(el).slice(0,50)+' covers '+desc(B.el).slice(0,50));}});});
     card.querySelectorAll('*').forEach(function(el){var s=getComputedStyle(el);
       if(s.overflowX!=='visible'&&el.scrollWidth>el.clientWidth+1)
         (s.textOverflow==='ellipsis'?out.ellipsis:out.clipped).push(desc(el)+' '+el.scrollWidth+'>'+el.clientWidth);});
@@ -249,6 +278,7 @@ def problems(report: dict, text: str = "") -> list[str]:
     if report.get("error"):
         out.append(report["error"])
     out += ["valuu yli: " + x for x in report.get("outside", [])]
+    out += ["tekstit paallekkain: " + x for x in report.get("overlap", [])]
     out += ["leikkautuu ilman ellipsia: " + x for x in report.get("clipped", [])]
     out += ["fontti ei latautunut: " + x for x in report.get("fonts", [])]
     if report.get("card") and [round(v) for v in report["card"]] != list(KOKO):

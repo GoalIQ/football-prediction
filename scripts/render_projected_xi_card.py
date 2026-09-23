@@ -112,7 +112,7 @@ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .xip span{display:block;font-size:12px;color:var(--muted);
 font-variant-numeric:tabular-nums;white-space:nowrap;}
 .xip span i{font-style:normal;color:var(--amber);font-weight:700;}
-.badge{position:absolute;top:-3px;right:20px;background:var(--amber);
+.badge{position:absolute;top:0;right:20px;background:var(--amber);
 color:var(--ink);font-size:12px;font-weight:700;width:20px;height:20px;
 border-radius:50%;line-height:20px;}
 .badge.v{background:var(--cream);}

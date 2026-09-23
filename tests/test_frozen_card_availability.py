@@ -170,7 +170,7 @@ def test_ohitus_ei_pudota_lippulausetta_hiljaa():
 
 def test_kutsupaikka_kayttaa_alaotsikkoa_nakyvista_pelaajista():
     src = (ROOT / "scripts" / "render_frozen_squad_card.py").read_text(encoding="utf-8")
-    assert "subtitle(xi + ([] if args.hide_bench else bench), frozen_at, args.subtitle)" in src
+    assert "subtitle(xi + ([] if hide_bench else bench), frozen_at, subtitle_override)" in src
     assert "Picked by the optimiser and frozen {frozen_at}. We score" not in src.split("def subtitle")[0]
 
 
