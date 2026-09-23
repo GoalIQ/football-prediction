@@ -37,7 +37,9 @@ def player_values(gw: int, key: str) -> dict:
     row = next((r for r in rows if r["key"] == key), None)
     if row is None:
         raise SystemExit(f"{key}: ei moduulissa gw{gw}")
-    out = {"name": row["name"], "team": row["team"]}
+    # IBM Plex Monon ß-glyfi (ſʒ-muoto) lukee kortilla "Groʒ":na (julkaisu-
+    # tarkistaja 23.9); @OfficialFPL:n oma grafiikka kirjoittaa GROSS.
+    out = {"name": row["name"].replace("ß", "ss"), "team": row["team"]}
     for k in PUBLIC_KEYS:
         v = row["values"].get(k) or {}
         if not v.get("public_url"):
