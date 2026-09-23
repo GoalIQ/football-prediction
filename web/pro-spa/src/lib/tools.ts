@@ -516,6 +516,97 @@ export function sectionOf(group: string, slug: string | null): Section | null {
 }
 
 /* ------------------------------------------------------------------------
+ * RSL Fantasy (/spl): sama valitsin ja esiasetukset kuin FPL:ssa (23.9,
+ * Villen pyynto "RSL fantasyn vois kans jasennella noilla menuilla").
+ *
+ * /spl oli yksi pitka pino yhdeksasta osiosta. Rakenne on nyt sama kuin
+ * FPL:n Players-ryhmassa: ( Players | Teams | Model squad ), Players-
+ * nakymassa esiasetukset Captain / xP / Value / Differentials ja loput
+ * "More"-kohdassa. RSL on taysin ilmainen, joten lukkoja ei ole.
+ *
+ * Nakyma on hashissa (/spl#value), koska /spl on prerenderoitu (SEO):
+ * query-parametria ei voi lukea prerenderissa, hash luetaan selaimessa.
+ * Linkki on silti jaettava ja paluunappi toimii.
+ *
+ * YKSI LUKIJA: sivu kysyy nakyman `splView`ilta eika lue hashia itse, ja
+ * portti (`splViews.gate.test.ts`) kaataa jos osio jaa ilman nakymaa tai
+ * on kahdessa.
+ * --------------------------------------------------------------------- */
+export type SplView =
+	| 'captain'
+	| 'xp'
+	| 'value'
+	| 'differentials'
+	| 'compare'
+	| 'leaders'
+	| 'clean-sheets'
+	| 'accuracy'
+	| 'model-squad';
+
+export type SplSection = {
+	id: string;
+	label: string;
+	lead: SplView;
+	views: SplView[];
+	/** Alapalkin kuvake (`NAV_ICONS`-avain). */
+	icon: string;
+};
+
+export const SPL_SECTIONS: SplSection[] = [
+	{
+		id: 'players',
+		label: 'Players',
+		lead: 'captain',
+		views: ['captain', 'xp', 'value', 'differentials', 'compare', 'leaders'],
+		icon: 'players'
+	},
+	{
+		id: 'teams',
+		label: 'Teams',
+		lead: 'clean-sheets',
+		views: ['clean-sheets', 'accuracy'],
+		icon: 'shield'
+	},
+	{ id: 'squad', label: 'Model squad', lead: 'model-squad', views: ['model-squad'], icon: 'team' }
+];
+
+/** Players-nakyman esiasetukset: samat nimet ja jarjestys kuin FPL:n
+ *  `PLAYER_PRESETS`issa (ilman Price changea, jota RSL-syote ei anna). */
+export const SPL_PRESETS: { view: SplView; label: string; horizon?: boolean }[] = [
+	{ view: 'captain', label: 'Captain' },
+	{ view: 'xp', label: 'xP', horizon: true },
+	{ view: 'value', label: 'Value' },
+	{ view: 'differentials', label: 'Differentials' }
+];
+
+/** Muut nakymat valitsimen alla, osioittain. */
+export const SPL_MORE: Record<string, { view: SplView; label: string }[]> = {
+	players: [
+		{ view: 'compare', label: 'Compare two players' },
+		{ view: 'leaders', label: "Last season's leaders" }
+	],
+	teams: [
+		{ view: 'clean-sheets', label: 'Clean sheets and fixtures' },
+		{ view: 'accuracy', label: 'How our calls have gone' }
+	]
+};
+
+export const SPL_DEFAULT_VIEW: SplView = 'captain';
+
+/** Nakyma hashista ("#value" -> 'value'). Tuntematon tai tyhja -> oletus,
+ *  jotta vanha tai kirjoitusvirheellinen linkki avaa sivun eika tyhjaa. */
+export function splView(hash: string | null | undefined): SplView {
+	const id = (hash ?? '').replace(/^#/, '');
+	return SPL_SECTIONS.some((s) => (s.views as string[]).includes(id))
+		? (id as SplView)
+		: SPL_DEFAULT_VIEW;
+}
+
+export function splSectionOf(view: SplView): SplSection {
+	return SPL_SECTIONS.find((s) => s.views.includes(view)) ?? SPL_SECTIONS[0];
+}
+
+/* ------------------------------------------------------------------------
  * Pelivalitsin (A3 1: "FPL ▾ -> FPL / UCL Fantasy / RSL Fantasy").
  * UCL ja SPL ovat omia reittejaan (routes/ucl, routes/spl), eivat ryhmia.
  * --------------------------------------------------------------------- */
@@ -546,6 +637,38 @@ export function groupOfPath(pathname: string): string | null {
 	const first = pathname.replace(/^\//, '').split('/')[0];
 	if (first === '') return 'week';
 	return groupById(first) ? first : null;
+}
+
+/* ------------------------------------------------------------------------
+ * Palkin kohteet pelin mukaan (23.9, Villen valinta "B: palkki pelin mukaan").
+ *
+ * 22.9:n A3 piirsi FPL:n ryhmat (This week / My team / Players / Matches)
+ * myos /ucl- ja /spl-reiteille ilman korostusta. RSL-sivulla palkki vei siis
+ * FPL:aan eika RSL:n omiin osioihin. Nyt palkki on pelin oma: FPL:ssa
+ * ryhmat, RSL:ssa `SPL_SECTIONS`. Takaisin FPL:aan paasee pelivalitsimesta.
+ *
+ * YKSI LUKIJA: ylapalkki (Hero) ja alapalkki (BottomNav) kysyvat kohteet ja
+ * aktiivisen kohdan taalta; portti `ia.gate.test.ts`.
+ * --------------------------------------------------------------------- */
+export type NavItem = { id: string; label: string; href: string; icon: string };
+
+export function navItems(pathname: string): NavItem[] {
+	if (gameOf(pathname).id === 'spl')
+		return SPL_SECTIONS.map((s) => ({ id: s.id, label: s.label, href: `/spl#${s.lead}`, icon: s.icon }));
+	return GROUPS.map((g) => ({
+		id: g.id,
+		label: g.label,
+		href: g.id === 'week' ? '/' : `/${g.id}`,
+		icon: g.id
+	}));
+}
+
+/** Aktiivinen palkin kohta. RSL: nakyman osio hashista (`splView`). UCL:lla
+ *  ei omaa palkkia viela, joten FPL:n ryhmia ei korosteta siella. */
+export function activeNav(pathname: string, hash: string): string | null {
+	const game = gameOf(pathname).id;
+	if (game === 'spl') return splSectionOf(splView(hash)).id;
+	return game === 'fpl' ? groupOfPath(pathname) : null;
 }
 
 export function groupById(id: string): Group | undefined {

@@ -16,23 +16,25 @@
 	 * palkki lakkaa lukemasta rekisteria.
 	 */
 	import { page } from '$app/state';
-	import { GROUPS, groupOfPath } from '$lib/tools';
+	import { activeNav, navItems } from '$lib/tools';
 	import { NAV_ICONS } from '$lib/navIcons';
 
-	const active = $derived(groupOfPath(page.url.pathname));
+	// 23.9: kohteet pelin mukaan (FPL:n ryhmat / RSL:n osiot), ks. navItems.
+	const items = $derived(navItems(page.url.pathname));
+	const active = $derived(activeNav(page.url.pathname, page.url.hash));
 </script>
 
-<nav class="bottom-nav" aria-label="Sections">
-	{#each GROUPS as g (g.id)}
+<nav class="bottom-nav" aria-label="Sections" style="--nav-cols: {items.length}">
+	{#each items as g (g.id)}
 		<a
-			href={g.id === 'week' ? '/' : `/${g.id}`}
+			href={g.href}
 			class:active={active === g.id}
 			aria-current={active === g.id ? 'page' : undefined}
 			data-cta="pro-bottom-{g.id}"
 		>
 			<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
 				<path
-					d={NAV_ICONS[g.id]}
+					d={NAV_ICONS[g.icon]}
 					fill="none"
 					stroke="currentColor"
 					stroke-width="1.7"
@@ -57,7 +59,7 @@
 			bottom: 0;
 			z-index: 35;
 			display: grid;
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: repeat(var(--nav-cols, 4), minmax(0, 1fr));
 			height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
 			padding-bottom: env(safe-area-inset-bottom, 0px);
 			background: var(--bg);

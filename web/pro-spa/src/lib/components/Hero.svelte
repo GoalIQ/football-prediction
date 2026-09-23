@@ -21,17 +21,23 @@
 	import { capture } from '$lib/analytics';
 	import { fetchFantasy, openCustomerPortal } from '$lib/api';
 	import { actionableGameweek, checkedText, formatDeadline, parseGeneratedAt } from '$lib/gameweek';
-	import { GROUPS, groupOfPath } from '$lib/tools';
+	import { activeNav, gameOf, navItems } from '$lib/tools';
 	import SetPassword from './SetPassword.svelte';
 	import GameSwitcher from './GameSwitcher.svelte';
 
 	let { onUpgrade }: { onUpgrade?: () => void } = $props();
 
 	/* ---------------- navi ----------------
-	   22.9: aktiivinen ryhma polusta (`groupOfPath`), ei `params.group ??
-	   'week'`: jalkimmainen korosti This weekin myos /ucl- ja /spl-sivuilla,
-	   jotka ovat eri peleja eivatka FPL:n ryhmia. */
-	const activeGroup = $derived(groupOfPath(page.url.pathname));
+	   22.9: aktiivinen ryhma polusta, ei `params.group ?? 'week'`: jalkimmainen
+	   korosti This weekin myos /ucl- ja /spl-sivuilla.
+	   23.9 (Villen valinta B): kohteet pelin mukaan, sama lukija kuin
+	   alapalkilla (`navItems`, `activeNav`). */
+	const navList = $derived(navItems(page.url.pathname));
+	const activeGroup = $derived(activeNav(page.url.pathname, page.url.hash));
+	/** FPL:n kierros ja deadline kuuluvat FPL:lle. RSL-sivulla sama rivi olisi
+	 *  vaaran pelin deadline (mitattu 23.9: "GW6 deadline Sat 10 Oct" RSL:n
+	 *  GW8-sivun ylla); sivu nayttaa oman deadlinensa itse. */
+	const fplGame = $derived(gameOf(page.url.pathname).id === 'fpl');
 
 	/* ---------------- kierros + deadline (ent. WorkspaceBar) ----------------
 	   🔴 AIKA RENDEROIDAAN SELAIMEN VYOHYKKEELLA, EI PALVELIMEN. Deadline tulee
@@ -176,8 +182,8 @@
 		<!-- Tyopoydan navi. Puhelimessa (<= 640 px) samat ryhmat ovat
 		     alapalkissa (BottomNav), koska tassa rivissa ne eivat mahtuneet. -->
 		<nav class="nav" aria-label="GoalIQ">
-			{#each GROUPS as g (g.id)}
-				<a href={g.id === 'week' ? '/' : `/${g.id}`} class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
+			{#each navList as g (g.id)}
+				<a href={g.href} class:active={activeGroup === g.id} aria-current={activeGroup === g.id ? 'page' : undefined}>{g.label}</a>
 			{/each}
 			<!-- 🔴 Villen havainto 11.9: prolta puuttui paluu goaliq.appiin. Se oli
 			     ennen ylapalkin taglinessa, ja kun tagline siirtyi Account-valikkoon,
@@ -188,7 +194,7 @@
 			<a class="home" href="https://goaliq.app" data-cta="pro-home">goaliq.app</a>
 		</nav>
 
-		{#if gw !== null || dl}
+		{#if fplGame && (gw !== null || dl)}
 			<div class="gw">
 				{#if gw !== null}<b>GW{gw}</b>{/if}
 				{#if dl}

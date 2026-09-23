@@ -26,6 +26,9 @@ import { blankComments } from './sourceScan';
 import {
 	GAMES,
 	GROUPS,
+	SPL_SECTIONS,
+	activeNav,
+	navItems,
 	MATCHES_SECTIONS,
 	PLAYERS_VIEWS,
 	PLAYER_PRESETS,
@@ -141,11 +144,34 @@ function heroHidesNavOnPhone(heroSrc: string): boolean {
 }
 
 describe('3. alapalkki', () => {
-	it('lukee rekisterin ryhmat ja jokaisella ryhmalla on kuvake', () => {
+	it('lukee rekisterin kohteet ja jokaisella kohteella on kuvake', () => {
+		// 23.9 (Villen valinta B): kohteet pelin mukaan yhdesta lukijasta.
 		const bn = code('./components/BottomNav.svelte');
-		expect(bn).toMatch(/import \{ GROUPS, groupOfPath \} from '\$lib\/tools'/);
-		expect(bn).toMatch(/\{#each GROUPS as g/);
-		for (const g of GROUPS) expect(NAV_ICONS[g.id], g.id).toBeTruthy();
+		expect(bn).toMatch(/import \{ activeNav, navItems \} from '\$lib\/tools'/);
+		expect(bn).toMatch(/\{#each items as g/);
+		expect(bn).toContain('navItems(page.url.pathname)');
+		for (const path of ['/', '/spl', '/ucl'])
+			for (const g of navItems(path)) expect(NAV_ICONS[g.icon], `${path} ${g.id}`).toBeTruthy();
+	});
+	it('palkki on pelin oma: FPL = ryhmat, RSL = omat osiot (23.9 valinta B)', () => {
+		expect(navItems('/').map((g) => g.label)).toEqual(GROUPS.map((g) => g.label));
+		expect(navItems('/players/value').map((g) => g.id)).toEqual(GROUPS.map((g) => g.id));
+		expect(navItems('/spl').map((g) => g.label)).toEqual(SPL_SECTIONS.map((s) => s.label));
+		expect(navItems('/spl').map((g) => g.href)).toEqual(SPL_SECTIONS.map((s) => `/spl#${s.lead}`));
+		expect(activeNav('/spl', '#value')).toBe('players');
+		expect(activeNav('/spl', '#accuracy')).toBe('teams');
+		expect(activeNav('/spl', '')).toBe('players');
+		expect(activeNav('/spl', '#model-squad')).toBe('squad');
+		expect(activeNav('/players/value', '')).toBe('players');
+		expect(activeNav('/ucl', '')).toBeNull();
+	});
+	it('ylapalkki lukee saman lukijan, eika nayta FPL:n deadlinea muiden pelien sivuilla', () => {
+		const hero = code('./components/Hero.svelte');
+		expect(hero).toContain('navItems(page.url.pathname)');
+		expect(hero).toContain('activeNav(page.url.pathname, page.url.hash)');
+		expect(hero).toMatch(/\{#each navList as g/);
+		expect(hero).toContain('{#if fplGame && (gw !== null || dl)}');
+		expect(hero).not.toMatch(/\{#each GROUPS as g/);
 	});
 	it('puhelimen katkaisupiste on 640 px kaikissa kolmessa, ja Hero piilottaa ylanavin siina', () => {
 		const b = phoneBreakpoints();

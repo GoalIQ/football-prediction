@@ -32,6 +32,9 @@
 		type PitchCardPlayer, shareButtonLabel} from '$lib/shareCard';
 	import { teamColorByShort } from '$lib/teamColors';
 	import SquadPitch from '$lib/components/SquadPitch.svelte';
+	import SplViewNav from '$lib/components/SplViewNav.svelte';
+	import { page } from '$app/state';
+	import { SPL_DEFAULT_VIEW, splView, type SplView } from '$lib/tools';
 	// 22.9 (T6): otsikko, kuvaus ja canonical yhdesta lahteesta, jota myos
 	// buildin spl.html:n og/twitter-tagit lukevat. Ks. $lib/routeHeads.
 	import { SPL_HEAD, ORIGIN } from '$lib/routeHeads';
@@ -52,6 +55,20 @@
 			(e) => (xpError = String(e))
 		);
 	});
+
+	/* 23.9 RSL-MENUT: nakyma hashista yhden lukijan kautta (`splView`).
+	   Prerender piirtaa oletusnakyman; selain vaihtaa hashin mukaan heti
+	   hydraation jalkeen ja jokaisella hash-linkilla (page.url paivittyy). */
+	let view = $state<SplView>(SPL_DEFAULT_VIEW);
+	let viewSeen = false;
+	$effect(() => {
+		const v = splView(page.url.hash);
+		if (viewSeen && v !== view) capture('spl_view_changed', { view: v });
+		viewSeen = true;
+		view = v;
+	});
+	/** Nakymat jotka tarvitsevat xP-vastauksen (lataus- ja virhetila yhteinen). */
+	const XP_VIEWS: SplView[] = ['captain', 'value', 'differentials', 'leaders', 'compare', 'model-squad'];
 
 	let nearHorizon = $derived((cs?.meta?.near_horizon_gw as number) ?? 6);
 
@@ -490,490 +507,542 @@
 				&nbsp;
 			{/if}
 		</p>
-		<div class="disclaimer">
-			<p>
-				GoalIQ is an independent data tool. We are not affiliated with, endorsed by, or paid by
-				the Saudi Pro League, the RSL Fantasy game, or any club. These tools are free, so
-				nobody is paying us to cover this league, including you.
-			</p>
-			<p class="basis">
-				<strong>Data basis, stated plainly:</strong> team strengths come from a goals-based
-				Dixon-Coles model fitted on two seasons of SPL results (no free per-match xG feed exists
-				for this league). Player projections use realized goal and assist rates plus RSL Fantasy's
-				own scoring rules; minutes are estimated from last season's aggregate playing time. This
-				is coarser than our FPL pipeline and the confidence labels reflect that.
-			</p>
-		</div>
 	</header>
 
-	<section>
-		<div class="head-row">
-			<h2>Clean sheet % + fixture difficulty <span class="muted">(next {nearHorizon} GWs)</span></h2>
-			{#if cs?.meta?.available && teams.length >= 3}
-				<button type="button" class="share-btn" onclick={shareCsCard} disabled={sharingList !== null}>
-					{shareLabel('spl_cs')}
-				</button>
-			{/if}
-		</div>
-		{#if csError}
-			<p class="error">Could not reach the API. {csError}</p>
-		{:else if !cs}
-			<!-- T1: varattu korkeus, ks. .loading-reserve -->
-			<p class="muted loading-reserve">Loading…</p>
-		{:else if !cs.meta.available}
-			<p class="muted">SPL projections not published yet. Check back soon.</p>
-		{:else}
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>Team</th>
-							<th class="num">avg CS%</th>
-							<th class="num">avg FDR</th>
-							<th>Fixtures</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each teams as { t, avgFdr, avgCs } (t.name)}
-							<tr>
-								<td>
-									{t.name}
-									<span class="muted">{(t as unknown as { short?: string }).short ?? ''}</span>
-								</td>
-								<td class="num">{avgCs == null ? '–' : avgCs.toFixed(1) + '%'}</td>
-								<td class="num {fdrClass(avgFdr)}">{avgFdr === 99 ? '–' : avgFdr.toFixed(2)}</td>
-								<td class="fixtures">
-									{#each t.fixtures.filter((f) => f.gw >= nextGw && f.gw < nextGw + nearHorizon) as f (f.gw + f.opponent_short)}
-										<!-- 11.8: kierrosnumero oli VAIN title-attribuutissa, eli
-										     mobiilissa saavuttamaton. Ilman sita tyhjaa kierrosta ei
-										     voi nahda sivulta: puuttuva GW nakyy vain siina etta
-										     numerosarjassa on aukko (GW1 GW2 GW4 GW4 ...). Sama
-										     vikaluokka kuin `varoitus-kaukana-luvusta`. -->
-										<span class="chip {fdrClass(f.fdr)}" title="GW{f.gw}: {f.opponent} ({f.venue})">
-											<span class="gw">GW{f.gw}</span>
-											{f.opponent_short}
-											{f.venue === 'H' ? '(H)' : '(A)'}{typeof f.cs_pct === 'number'
-												? ` ${Math.round(f.cs_pct)}%`
-												: ''}
-										</span>
-									{/each}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
-	</section>
+	<!-- 23.9 RSL-MENUT: sama valitsin kuin FPL:ssa. Jokainen osio on tasan
+	     yhdessa nakymassa (portti splViews.gate.test.ts). -->
+	<SplViewNav {view} horizonMeta={xp?.meta ?? null} />
 
-	{#if recon}
-		<section>
-			<h2>How our clean sheet calls have gone</h2>
-			<p>
-				Before every round kicks off the model puts a clean sheet probability on record
-				for each side, and we keep the file that was published at the time. Over
-				GW{recon.season_to_date.gameweeks[0]} to
-				GW{recon.season_to_date.gameweeks[recon.season_to_date.gameweeks.length - 1]}
-				that is {recon.season_to_date.sides} team-rounds across
-				{recon.season_to_date.matches} matches. They add up to
-				{recon.season_to_date.expected_cs} expected clean sheets, and
-				{recon.season_to_date.actual_cs} happened. Brier score
-				{recon.season_to_date.brier.toFixed(3)}, against
-				{recon.season_to_date.naive_brier.toFixed(3)} for a flat guess at the clean sheet
-				rate in the two completed seasons before this one
-				({(recon.season_to_date.naive_p * 100).toFixed(1)}%). Lower is better, but
-				{recon.season_to_date.sides} sides is a small sample and a gap that size is inside
-				the noise. The archived files are in the public repo, one per round:
-				<a
-					href="https://github.com/GoalIQ/football-prediction/tree/main/data/spl_deadline_snapshots"
-					rel="noopener">data/spl_deadline_snapshots</a
-				>.
-			</p>
-			<!-- 3.9: kierroskohtainen erittely on osa rehellisyytta. Kauden luku
-			     on mallin puolella, mutta se ei ole sita joka kierros, ja
-			     yhteisluku yksin piilottaisi sen. -->
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>Round</th>
-							<th class="num">Sides</th>
-							<th class="num">Expected CS</th>
-							<th class="num">Actual</th>
-							<th class="num">Brier</th>
-							<th class="num">Flat guess</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each recon.gameweeks as g (g.gameweek)}
-							<tr>
-								<td>GW{g.gameweek}</td>
-								<td class="num">{g.sides}</td>
-								<td class="num">{g.expected_cs.toFixed(2)}</td>
-								<td class="num">{g.actual_cs}</td>
-								<td class="num" class:strong={g.brier < g.naive_brier}
-									>{g.brier.toFixed(3)}</td
-								>
-								<td class="num">{g.naive_brier.toFixed(3)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			<p class="muted small">
-				Bold means the model came in under the flat guess that round. Rounds do not all
-				have nine matches: the league feed counts a postponed match in the round it is
-				actually played, which is why the sides column moves. With 16 to 20 sides in a
-				round, no single row here proves much.
-			</p>
-			<!-- 3.9: poikkeava kierros luetaan ARTEFAKTISTA. Kasin kirjoitettuna
-			     ("GW2 is the outlier: nine against 4.77") lause olisi ollut tosi
-			     tasan sen paivan ja jaanyt sivulle vaarana. Sama saanto kuin
-			     lohkon muilla luvuilla. -->
-			{#if outlierGw}
-				<p class="muted small">
-					GW{outlierGw.gameweek} is the outlier: {outlierGw.actual_cs} clean sheets
-					against {outlierGw.expected_cs.toFixed(2)} expected.
-					{#if outlierGw.brier < outlierGw.naive_brier}
-						The model still came in under the flat guess that round, because it had the
-						probability on the right sides even though the overall level was too low.
-					{:else}
-						It came in over the flat guess that round, so the level and the ordering
-						were both off.
-					{/if}
-				</p>
-			{/if}
-			<h3>GW{recon.gameweek} match by match</h3>
-			<p>The most recent round that finished.</p>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>Match</th>
-							<th class="num">Score</th>
-							<th class="num">Home CS%</th>
-							<th class="num">Away CS%</th>
-							<th>Clean sheets</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each recon.fixtures as f (f.home + f.away)}
-							<tr>
-								<td>{f.home} v {f.away}</td>
-								<td class="num">{f.score}</td>
-								<td class="num" class:strong={f.cs_home_kept}>{f.cs_home_pct.toFixed(1)}%</td>
-								<td class="num" class:strong={f.cs_away_kept}>{f.cs_away_pct.toFixed(1)}%</td>
-								<td>
-									{[f.cs_home_kept ? f.home_short : null, f.cs_away_kept ? f.away_short : null]
-										.filter(Boolean)
-										.join(', ') || 'none'}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			<p class="muted small">
-				GW{recon.gameweek} on its own: Brier {recon.brier.toFixed(3)} against
-				{recon.naive_brier.toFixed(3)} for the flat guess, over {recon.sides} sides. The
-				probabilities come from the last projection build before this round kicked
-				off{#if recon.snapshot?.generated_at}&nbsp;({recon.snapshot.generated_at.slice(0, 10)}){/if};
-				they have not been recomputed since.
-			</p>
-		</section>
-	{/if}
-
-	<section>
-		<div class="head-row">
-			<h2>Expected points <span class="muted">({xpHorizon(xp?.meta).label}, top 50)</span></h2>
-			{#if xp?.meta?.available && players.length >= 3}
-				<button type="button" class="share-btn" onclick={shareXpCard} disabled={sharingXp}>
-					{sharingXp ? 'Rendering…' : shareButtonLabel()}
-				</button>
-			{/if}
-		</div>
-		{#if xpError}
-			<p class="error">Could not reach the API. {xpError}</p>
-		{:else if !xp}
-			<p class="muted loading-reserve">Loading…</p>
-		{:else if !xp.meta.available}
-			<p class="muted">SPL xP not published yet. Check back soon.</p>
-		{:else}
-			<div class="posrow">
-				{#each ['ALL', 'GKP', 'DEF', 'MID', 'FWD'] as pf (pf)}
-					<button
-						class:active={posFilter === pf}
-						onclick={() => (posFilter = pf as PosFilter)}>{pf}</button
-					>
-				{/each}
-			</div>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>Player</th>
-							<th>Team</th>
-							<th>Pos</th>
-							<th class="num">Price</th>
-							<th class="num">xP / GW</th>
-							<th class="num">xMins</th>
-							<th class="num">Total ({xpHorizon(xp?.meta).gws})</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each players as p (p.id)}
-							<tr>
-								<td>{p.web_name}</td>
-								<td>{p.team_short}</td>
-								<td>{p.pos}</td>
-								<td class="num">{(p as unknown as { price?: number }).price?.toFixed(1) ?? '–'}</td>
-								<td class="num strong">{p.xp_per_gw.toFixed(2)}</td>
-								<td class="num">{p.xmins.toFixed(0)}</td>
-								<td class="num">{p.xp_horizon_total.toFixed(1)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			<p class="muted small">
-				Minutes confidence is "med" at best for this league: the RSL API exposes season totals,
-				not per-round history. Players new to the league use price-based role priors until real
-				minutes accumulate.
-			</p>
-		{/if}
-	</section>
-
-	{#if xp?.meta?.available}
+	{#if view === 'clean-sheets'}
 		<section>
 			<div class="head-row">
-				<h2>Captain picks <span class="muted">(GW{nextGw})</span></h2>
-				{#if captainPicks.length >= 3}
-					<button type="button" class="share-btn" onclick={shareCaptainCard} disabled={sharingCaptain}>
-						{sharingCaptain ? 'Rendering…' : shareButtonLabel()}
+				<h2>Clean sheet % + fixture difficulty <span class="muted">(next {nearHorizon} GWs)</span></h2>
+				{#if cs?.meta?.available && teams.length >= 3}
+					<button type="button" class="share-btn" onclick={shareCsCard} disabled={sharingList !== null}>
+						{shareLabel('spl_cs')}
 					</button>
 				{/if}
 			</div>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr>
-							<th>#</th><th>Player</th><th>Team</th><th>Pos</th>
-							<th>Opponent</th><th class="num">GW{nextGw} xP</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each captainPicks as { p, gw1 }, i (p.id)}
-							<tr>
-								<td>{i + 1}</td>
-								<td>{p.web_name}</td>
-								<td>{p.team_short}</td>
-								<td>{p.pos}</td>
-								<td>
-									{(p.gameweeks?.[0]?.opponents ?? [])
-										.map((o) => `${o.opp} (${o.venue})`)
-										.join(', ') || '–'}
-								</td>
-								<td class="num strong">{gw1.toFixed(2)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			<p class="muted small">
-				Captain scores double in RSL Fantasy, so the ranking is simply the highest single-GW
-				xP among players the model expects to start.
-			</p>
-		</section>
-
-		{#if modelSquad}
-			<section>
-				<div class="head-row">
-					<h2>The model squad <span class="muted">({modelSquad.cost.toFixed(1)}m of 100.0m)</span></h2>
-					<button type="button" class="share-btn" onclick={shareSquadCard} disabled={sharingSquad}>
-						{sharingSquad ? 'Rendering…' : shareButtonLabel()}
-					</button>
-				</div>
-				<p class="muted small">
-					{modelSquad.note} Starting XI in bold, projected XI total {modelSquad.xi_xp_horizon.toFixed(1)}
-					xP {xpHorizon(xp?.meta).over}.
-				</p>
-				<SquadPitch rows={pitchRows} bench={pitchBench} unitNote="xP per GW" />
+			{#if csError}
+				<p class="error">Could not reach the API. {csError}</p>
+			{:else if !cs}
+				<!-- T1: varattu korkeus, ks. .loading-reserve -->
+				<p class="muted loading-reserve">Loading…</p>
+			{:else if !cs.meta.available}
+				<p class="muted">SPL projections not published yet. Check back soon.</p>
+			{:else}
 				<div class="table-wrap">
 					<table>
 						<thead>
-							<tr><th>Pos</th><th>Player</th><th>Team</th><th class="num">Price</th><th class="num">xP / GW</th></tr>
+							<tr>
+								<th>Team</th>
+								<th class="num">avg CS%</th>
+								<th class="num">avg FDR</th>
+								<th>Fixtures</th>
+							</tr>
 						</thead>
 						<tbody>
-							{#each modelSquad.players as p (p.id)}
-								<tr class:xi={p.in_xi}>
-									<td>{p.pos}</td>
-									<td class={p.in_xi ? 'strong' : ''}>{p.web_name}{p.in_xi ? '' : ' (bench)'}</td>
-									<td>{p.team_short}</td>
-									<td class="num">{p.price.toFixed(1)}</td>
-									<td class="num">{p.xp_per_gw.toFixed(2)}</td>
+							{#each teams as { t, avgFdr, avgCs } (t.name)}
+								<tr>
+									<td>
+										{t.name}
+										<span class="muted">{(t as unknown as { short?: string }).short ?? ''}</span>
+									</td>
+									<td class="num">{avgCs == null ? '–' : avgCs.toFixed(1) + '%'}</td>
+									<td class="num {fdrClass(avgFdr)}">{avgFdr === 99 ? '–' : avgFdr.toFixed(2)}</td>
+									<td class="fixtures">
+										{#each t.fixtures.filter((f) => f.gw >= nextGw && f.gw < nextGw + nearHorizon) as f (f.gw + f.opponent_short)}
+											<!-- 11.8: kierrosnumero oli VAIN title-attribuutissa, eli
+											     mobiilissa saavuttamaton. Ilman sita tyhjaa kierrosta ei
+											     voi nahda sivulta: puuttuva GW nakyy vain siina etta
+											     numerosarjassa on aukko (GW1 GW2 GW4 GW4 ...). Sama
+											     vikaluokka kuin `varoitus-kaukana-luvusta`. -->
+											<span class="chip {fdrClass(f.fdr)}" title="GW{f.gw}: {f.opponent} ({f.venue})">
+												<span class="gw">GW{f.gw}</span>
+												{f.opponent_short}
+												{f.venue === 'H' ? '(H)' : '(A)'}{typeof f.cs_pct === 'number'
+													? ` ${Math.round(f.cs_pct)}%`
+													: ''}
+											</span>
+										{/each}
+									</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
 				</div>
+			{/if}
+		</section>
+	{/if}
+
+	{#if view === 'accuracy'}
+		{#if recon}
+			<section>
+				<h2>How our clean sheet calls have gone</h2>
+				<p>
+					Before every round kicks off the model puts a clean sheet probability on record
+					for each side, and we keep the file that was published at the time. Over
+					GW{recon.season_to_date.gameweeks[0]} to
+					GW{recon.season_to_date.gameweeks[recon.season_to_date.gameweeks.length - 1]}
+					that is {recon.season_to_date.sides} team-rounds across
+					{recon.season_to_date.matches} matches. They add up to
+					{recon.season_to_date.expected_cs} expected clean sheets, and
+					{recon.season_to_date.actual_cs} happened. Brier score
+					{recon.season_to_date.brier.toFixed(3)}, against
+					{recon.season_to_date.naive_brier.toFixed(3)} for a flat guess at the clean sheet
+					rate in the two completed seasons before this one
+					({(recon.season_to_date.naive_p * 100).toFixed(1)}%). Lower is better, but
+					{recon.season_to_date.sides} sides is a small sample and a gap that size is inside
+					the noise. The archived files are in the public repo, one per round:
+					<a
+						href="https://github.com/GoalIQ/football-prediction/tree/main/data/spl_deadline_snapshots"
+						rel="noopener">data/spl_deadline_snapshots</a
+					>.
+				</p>
+				<!-- 3.9: kierroskohtainen erittely on osa rehellisyytta. Kauden luku
+				     on mallin puolella, mutta se ei ole sita joka kierros, ja
+				     yhteisluku yksin piilottaisi sen. -->
+				<div class="table-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>Round</th>
+								<th class="num">Sides</th>
+								<th class="num">Expected CS</th>
+								<th class="num">Actual</th>
+								<th class="num">Brier</th>
+								<th class="num">Flat guess</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each recon.gameweeks as g (g.gameweek)}
+								<tr>
+									<td>GW{g.gameweek}</td>
+									<td class="num">{g.sides}</td>
+									<td class="num">{g.expected_cs.toFixed(2)}</td>
+									<td class="num">{g.actual_cs}</td>
+									<td class="num" class:strong={g.brier < g.naive_brier}
+										>{g.brier.toFixed(3)}</td
+									>
+									<td class="num">{g.naive_brier.toFixed(3)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<p class="muted small">
+					Bold means the model came in under the flat guess that round. Rounds do not all
+					have nine matches: the league feed counts a postponed match in the round it is
+					actually played, which is why the sides column moves. With 16 to 20 sides in a
+					round, no single row here proves much.
+				</p>
+				<!-- 3.9: poikkeava kierros luetaan ARTEFAKTISTA. Kasin kirjoitettuna
+				     ("GW2 is the outlier: nine against 4.77") lause olisi ollut tosi
+				     tasan sen paivan ja jaanyt sivulle vaarana. Sama saanto kuin
+				     lohkon muilla luvuilla. -->
+				{#if outlierGw}
+					<p class="muted small">
+						GW{outlierGw.gameweek} is the outlier: {outlierGw.actual_cs} clean sheets
+						against {outlierGw.expected_cs.toFixed(2)} expected.
+						{#if outlierGw.brier < outlierGw.naive_brier}
+							The model still came in under the flat guess that round, because it had the
+							probability on the right sides even though the overall level was too low.
+						{:else}
+							It came in over the flat guess that round, so the level and the ordering
+							were both off.
+						{/if}
+					</p>
+				{/if}
+				<h3>GW{recon.gameweek} match by match</h3>
+				<p>The most recent round that finished.</p>
+				<div class="table-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>Match</th>
+								<th class="num">Score</th>
+								<th class="num">Home CS%</th>
+								<th class="num">Away CS%</th>
+								<th>Clean sheets</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each recon.fixtures as f (f.home + f.away)}
+								<tr>
+									<td>{f.home} v {f.away}</td>
+									<td class="num">{f.score}</td>
+									<td class="num" class:strong={f.cs_home_kept}>{f.cs_home_pct.toFixed(1)}%</td>
+									<td class="num" class:strong={f.cs_away_kept}>{f.cs_away_pct.toFixed(1)}%</td>
+									<td>
+										{[f.cs_home_kept ? f.home_short : null, f.cs_away_kept ? f.away_short : null]
+											.filter(Boolean)
+											.join(', ') || 'none'}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<p class="muted small">
+					GW{recon.gameweek} on its own: Brier {recon.brier.toFixed(3)} against
+					{recon.naive_brier.toFixed(3)} for the flat guess, over {recon.sides} sides. The
+					probabilities come from the last projection build before this round kicked
+					off{#if recon.snapshot?.generated_at}&nbsp;({recon.snapshot.generated_at.slice(0, 10)}){/if};
+					they have not been recomputed since.
+				</p>
+			</section>
+		{:else if csError}
+			<section><p class="error">Could not reach the API. {csError}</p></section>
+		{:else if !cs}
+			<section><p class="muted loading-reserve">Loading…</p></section>
+		{:else}
+			<section>
+				<h2>How our clean sheet calls have gone</h2>
+				<p class="muted">No round has been graded yet. Check back after the next round finishes.</p>
 			</section>
 		{/if}
+	{/if}
 
+	{#if view === 'xp'}
 		<section>
 			<div class="head-row">
-				<!-- 3.9 (audit): otsikko lupasi horisontin luvun, mutta `vpm` on
-				     xP per KIERROS per miljoona. Sarakeotsikko sanoi sen jo
-				     oikein ("xP / m" rivilla jossa on "xP / GW" vieressa), mutta
-				     h2 luki toisin. -->
-				<h2>Best value <span class="muted">(xP per gameweek per million)</span></h2>
-				{#if valuePicks.length >= 3}
-					<button type="button" class="share-btn" onclick={shareValueCard} disabled={sharingList !== null}>
-						{shareLabel('spl_value')}
+				<h2>Expected points <span class="muted">({xpHorizon(xp?.meta).label}, top 50)</span></h2>
+				{#if xp?.meta?.available && players.length >= 3}
+					<button type="button" class="share-btn" onclick={shareXpCard} disabled={sharingXp}>
+						{sharingXp ? 'Rendering…' : shareButtonLabel()}
 					</button>
 				{/if}
 			</div>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Price</th><th class="num">xP / GW</th><th class="num">xP / GW per &pound;m</th></tr>
-					</thead>
-					<tbody>
-						{#each valuePicks as { p, vpm } (p.id)}
+			{#if xpError}
+				<p class="error">Could not reach the API. {xpError}</p>
+			{:else if !xp}
+				<p class="muted loading-reserve">Loading…</p>
+			{:else if !xp.meta.available}
+				<p class="muted">SPL xP not published yet. Check back soon.</p>
+			{:else}
+				<div class="posrow">
+					{#each ['ALL', 'GKP', 'DEF', 'MID', 'FWD'] as pf (pf)}
+						<button
+							class:active={posFilter === pf}
+							onclick={() => (posFilter = pf as PosFilter)}>{pf}</button
+						>
+					{/each}
+				</div>
+				<div class="table-wrap">
+					<table>
+						<thead>
 							<tr>
-								<td>{p.web_name}</td>
-								<td>{p.team_short}</td>
-								<td>{p.pos}</td>
-								<td class="num">{p.price?.toFixed(1) ?? '–'}</td>
-								<td class="num">{p.xp_per_gw.toFixed(2)}</td>
-								<td class="num strong">{vpm.toFixed(3)}</td>
+								<th>Player</th>
+								<th>Team</th>
+								<th>Pos</th>
+								<th class="num">Price</th>
+								<th class="num">xP / GW</th>
+								<th class="num">xMins</th>
+								<th class="num">Total ({xpHorizon(xp?.meta).gws})</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			<p class="muted small">
-				Players below 45 expected minutes are excluded: a good rate on tiny minutes is a bench
-				risk, not a bargain.
-			</p>
+						</thead>
+						<tbody>
+							{#each players as p (p.id)}
+								<tr>
+									<td>{p.web_name}</td>
+									<td>{p.team_short}</td>
+									<td>{p.pos}</td>
+									<td class="num">{(p as unknown as { price?: number }).price?.toFixed(1) ?? '–'}</td>
+									<td class="num strong">{p.xp_per_gw.toFixed(2)}</td>
+									<td class="num">{p.xmins.toFixed(0)}</td>
+									<td class="num">{p.xp_horizon_total.toFixed(1)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<p class="muted small">
+					Minutes confidence is "med" at best for this league: the RSL API exposes season totals,
+					not per-round history. Players new to the league use price-based role priors until real
+					minutes accumulate.
+				</p>
+			{/if}
 		</section>
+	{/if}
 
-		<section>
-			<div class="head-row">
-				<h2>Differentials <span class="muted">(under 10% ownership)</span></h2>
-				{#if differentials.length >= 3}
-					<button type="button" class="share-btn" onclick={shareDiffCard} disabled={sharingList !== null}>
-						{shareLabel('spl_diff')}
-					</button>
-				{/if}
-			</div>
-			<div class="table-wrap">
-				<table>
-					<thead>
-						<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Owned</th><th class="num">Price</th><th class="num">xP / GW</th></tr>
-					</thead>
-					<tbody>
-						{#each differentials as p (p.id)}
-							<tr>
-								<td>{p.web_name}</td>
-								<td>{p.team_short}</td>
-								<td>{p.pos}</td>
-								<td class="num">{(p.owned_pct ?? 0).toFixed(1)}%</td>
-								<td class="num">{p.price?.toFixed(1) ?? '–'}</td>
-								<td class="num strong">{p.xp_per_gw.toFixed(2)}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</section>
-
-		<section>
-			<div class="head-row">
-				<h2>Last season's leaders <span class="muted">(2025/26, RSL Fantasy data)</span></h2>
-				{#if leaders('points').length >= 3}
-					<button type="button" class="share-btn" onclick={shareLeadersCard} disabled={sharingList !== null}>
-						{shareLabel('spl_leaders')}
-					</button>
-				{/if}
-			</div>
-			<div class="leaders-grid">
-				{#each [['goals', 'Goals'], ['assists', 'Assists'], ['points', 'Fantasy points']] as [key, label] (key)}
-					<div>
-						<h3>{label}</h3>
+	<!-- Nakymat jotka lukevat xP-vastausta: yksi lataus- ja virhetila kaikille,
+	     jotta mikaan nakyma ei jaa tyhjaksi ennen dataa (oli: koko lohko
+	     piilossa kunnes `xp.meta.available`). -->
+	{#if XP_VIEWS.includes(view)}
+		{#if xpError}
+			<section><p class="error">Could not reach the API. {xpError}</p></section>
+		{:else if !xp || !xp.meta.available}
+			<section>
+				<p class="muted loading-reserve">{xp ? 'SPL xP not published yet. Check back soon.' : 'Loading…'}</p>
+			</section>
+		{:else}
+			{#if view === 'captain'}
+				<section>
+					<div class="head-row">
+						<h2>Captain picks <span class="muted">(GW{nextGw})</span></h2>
+						{#if captainPicks.length >= 3}
+							<button type="button" class="share-btn" onclick={shareCaptainCard} disabled={sharingCaptain}>
+								{sharingCaptain ? 'Rendering…' : shareButtonLabel()}
+							</button>
+						{/if}
+					</div>
+					<div class="table-wrap">
 						<table>
+							<thead>
+								<tr>
+									<th>#</th><th>Player</th><th>Team</th><th>Pos</th>
+									<th>Opponent</th><th class="num">GW{nextGw} xP</th>
+								</tr>
+							</thead>
 							<tbody>
-								{#each leaders(key as 'goals' | 'assists' | 'points') as p (p.id)}
+								{#each captainPicks as { p, gw1 }, i (p.id)}
 									<tr>
-										<td>{p.web_name} <span class="muted">{p.team_short}</span></td>
-										<td class="num strong">{p.last_season?.[key as 'goals' | 'assists' | 'points']}</td>
+										<td>{i + 1}</td>
+										<td>{p.web_name}</td>
+										<td>{p.team_short}</td>
+										<td>{p.pos}</td>
+										<td>
+											{(p.gameweeks?.[0]?.opponents ?? [])
+												.map((o) => `${o.opp} (${o.venue})`)
+												.join(', ') || '–'}
+										</td>
+										<td class="num strong">{gw1.toFixed(2)}</td>
 									</tr>
 								{/each}
 							</tbody>
 						</table>
 					</div>
-				{/each}
-			</div>
-		</section>
-
-		<section>
-			<h2>Compare two players</h2>
-			<div class="cmp-row">
-				{#each [0, 1] as slot (slot)}
-					<!-- `?? ''` on pakollinen: cmpA/cmpB ovat `number | null`, ja null ei vastaa
-					     yhtaan optionia -> selectedIndex = -1 ja kontrolli renderoituu TAYSIN
-					     TYHJANA (mitattu tuotannosta 15.8). Placeholderin arvo on tyhja
-					     merkkijono, joten null pitaa kaantaa siksi jotta "Pick player N…"
-					     nakyy suljetussa kontrollissa. -->
-					<select
-						value={(slot === 0 ? cmpA : cmpB) ?? ''}
-						onchange={(e) => {
-							const v = Number((e.target as HTMLSelectElement).value) || null;
-							if (slot === 0) cmpA = v;
-							else cmpB = v;
-							if (cmpA && cmpB) capture('spl_compare_used');
-						}}
-					>
-						<option value="">Pick player {slot + 1}…</option>
-						{#each pool.slice(0, 200) as p (p.id)}
-							<option value={p.id}>{p.web_name} ({p.team_short}, {p.pos})</option>
-						{/each}
-					</select>
-				{/each}
-			</div>
-			{#if cmpPlayers.length === 2}
-				<div class="table-wrap">
-					<table>
-						<thead>
-							<tr><th></th>{#each cmpPlayers as p (p.id)}<th>{p.web_name} ({p.team_short})</th>{/each}</tr>
-						</thead>
-						<tbody>
-							<tr><td>Price</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.price?.toFixed(1) ?? '–'}</td>{/each}</tr>
-							<tr><td>xP / GW</td>{#each cmpPlayers as p (p.id)}<td class="num strong">{p.xp_per_gw.toFixed(2)}</td>{/each}</tr>
-							<tr><td>xP / 90</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xp_per_90?.toFixed(2) ?? '–'}</td>{/each}</tr>
-							<tr><td>Expected minutes</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xmins.toFixed(0)}</td>{/each}</tr>
-							<!-- 11.8: otsikot olivat kovakoodattu "25/26" mutta rivi renderoi
-							     last_season-kentan riippumatta kaudesta. 535 pelaajasta 13:lla se on
-							     2024/25 ja 7:lla 2023/24 (mm. nousijoiden pelaajat), joten sivu
-							     valitti heidan kohdallaan kautta. Kausi nakyviin omalle riville. -->
-							<tr><td>Season shown</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.season ?? '–'}</td>{/each}</tr>
-							<!-- 11.8: minuutit puuttuivat kokonaan. `last_season.minutes` tulee
-							     API:sta mutta sita ei renderoitu missaan koko sivulla, joten
-							     "2 maalia / 2732 minuuttia" -tyyppista vaitetta EI voinut
-							     tarkistaa talta sivulta — ja rivi "Expected minutes" yllapuolella
-							     nayttaa eri suureen (xmins ~82), joten lukija olisi katsonut
-							     vaaraa lukua ja luullut tarkistaneensa. Maalit ilman minuutteja
-							     on lisaksi harhaanjohtava pari: 2 maalia on eri asia 400 ja 2700
-							     minuutissa. -->
-							<tr><td>Minutes played</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.minutes ?? '–'}</td>{/each}</tr>
-							<tr><td>Goals</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.goals ?? '–'}</td>{/each}</tr>
-							<tr><td>Assists</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.assists ?? '–'}</td>{/each}</tr>
-							<tr><td>Fantasy points</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.points ?? '–'}</td>{/each}</tr>
-						</tbody>
-					</table>
-				</div>
+					<p class="muted small">
+						Captain scores double in RSL Fantasy, so the ranking is simply the highest single-GW
+						xP among players the model expects to start.
+					</p>
+				</section>
 			{/if}
-		</section>
+
+			{#if view === 'model-squad'}
+				{#if modelSquad}
+					<section>
+						<div class="head-row">
+							<h2>The model squad <span class="muted">({modelSquad.cost.toFixed(1)}m of 100.0m)</span></h2>
+							<button type="button" class="share-btn" onclick={shareSquadCard} disabled={sharingSquad}>
+								{sharingSquad ? 'Rendering…' : shareButtonLabel()}
+							</button>
+						</div>
+						<p class="muted small">
+							{modelSquad.note} Starting XI in bold, projected XI total {modelSquad.xi_xp_horizon.toFixed(1)}
+							xP {xpHorizon(xp?.meta).over}.
+						</p>
+						<SquadPitch rows={pitchRows} bench={pitchBench} unitNote="xP per GW" />
+						<div class="table-wrap">
+							<table>
+								<thead>
+									<tr><th>Pos</th><th>Player</th><th>Team</th><th class="num">Price</th><th class="num">xP / GW</th></tr>
+								</thead>
+								<tbody>
+									{#each modelSquad.players as p (p.id)}
+										<tr class:xi={p.in_xi}>
+											<td>{p.pos}</td>
+											<td class={p.in_xi ? 'strong' : ''}>{p.web_name}{p.in_xi ? '' : ' (bench)'}</td>
+											<td>{p.team_short}</td>
+											<td class="num">{p.price.toFixed(1)}</td>
+											<td class="num">{p.xp_per_gw.toFixed(2)}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</section>
+				{:else}
+					<section>
+						<h2>The model squad</h2>
+						<p class="muted">The model squad is not published yet. Check back soon.</p>
+					</section>
+				{/if}
+			{/if}
+
+			{#if view === 'value'}
+				<section>
+					<div class="head-row">
+						<!-- 3.9 (audit): otsikko lupasi horisontin luvun, mutta `vpm` on
+						     xP per KIERROS per miljoona. Sarakeotsikko sanoi sen jo
+						     oikein ("xP / m" rivilla jossa on "xP / GW" vieressa), mutta
+						     h2 luki toisin. -->
+						<h2>Best value <span class="muted">(xP per gameweek per million)</span></h2>
+						{#if valuePicks.length >= 3}
+							<button type="button" class="share-btn" onclick={shareValueCard} disabled={sharingList !== null}>
+								{shareLabel('spl_value')}
+							</button>
+						{/if}
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Price</th><th class="num">xP / GW</th><th class="num">xP / GW per &pound;m</th></tr>
+							</thead>
+							<tbody>
+								{#each valuePicks as { p, vpm } (p.id)}
+									<tr>
+										<td>{p.web_name}</td>
+										<td>{p.team_short}</td>
+										<td>{p.pos}</td>
+										<td class="num">{p.price?.toFixed(1) ?? '–'}</td>
+										<td class="num">{p.xp_per_gw.toFixed(2)}</td>
+										<td class="num strong">{vpm.toFixed(3)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+					<p class="muted small">
+						Players below 45 expected minutes are excluded: a good rate on tiny minutes is a bench
+						risk, not a bargain.
+					</p>
+				</section>
+			{/if}
+
+			{#if view === 'differentials'}
+				<section>
+					<div class="head-row">
+						<h2>Differentials <span class="muted">(under 10% ownership)</span></h2>
+						{#if differentials.length >= 3}
+							<button type="button" class="share-btn" onclick={shareDiffCard} disabled={sharingList !== null}>
+								{shareLabel('spl_diff')}
+							</button>
+						{/if}
+					</div>
+					<div class="table-wrap">
+						<table>
+							<thead>
+								<tr><th>Player</th><th>Team</th><th>Pos</th><th class="num">Owned</th><th class="num">Price</th><th class="num">xP / GW</th></tr>
+							</thead>
+							<tbody>
+								{#each differentials as p (p.id)}
+									<tr>
+										<td>{p.web_name}</td>
+										<td>{p.team_short}</td>
+										<td>{p.pos}</td>
+										<td class="num">{(p.owned_pct ?? 0).toFixed(1)}%</td>
+										<td class="num">{p.price?.toFixed(1) ?? '–'}</td>
+										<td class="num strong">{p.xp_per_gw.toFixed(2)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</section>
+			{/if}
+
+			{#if view === 'leaders'}
+				<section>
+					<div class="head-row">
+						<h2>Last season's leaders <span class="muted">(2025/26, RSL Fantasy data)</span></h2>
+						{#if leaders('points').length >= 3}
+							<button type="button" class="share-btn" onclick={shareLeadersCard} disabled={sharingList !== null}>
+								{shareLabel('spl_leaders')}
+							</button>
+						{/if}
+					</div>
+					<div class="leaders-grid">
+						{#each [['goals', 'Goals'], ['assists', 'Assists'], ['points', 'Fantasy points']] as [key, label] (key)}
+							<div>
+								<h3>{label}</h3>
+								<table>
+									<tbody>
+										{#each leaders(key as 'goals' | 'assists' | 'points') as p (p.id)}
+											<tr>
+												<td>{p.web_name} <span class="muted">{p.team_short}</span></td>
+												<td class="num strong">{p.last_season?.[key as 'goals' | 'assists' | 'points']}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			{#if view === 'compare'}
+				<section>
+					<h2>Compare two players</h2>
+					<div class="cmp-row">
+						{#each [0, 1] as slot (slot)}
+							<!-- `?? ''` on pakollinen: cmpA/cmpB ovat `number | null`, ja null ei vastaa
+							     yhtaan optionia -> selectedIndex = -1 ja kontrolli renderoituu TAYSIN
+							     TYHJANA (mitattu tuotannosta 15.8). Placeholderin arvo on tyhja
+							     merkkijono, joten null pitaa kaantaa siksi jotta "Pick player N…"
+							     nakyy suljetussa kontrollissa. -->
+							<select
+								value={(slot === 0 ? cmpA : cmpB) ?? ''}
+								onchange={(e) => {
+									const v = Number((e.target as HTMLSelectElement).value) || null;
+									if (slot === 0) cmpA = v;
+									else cmpB = v;
+									if (cmpA && cmpB) capture('spl_compare_used');
+								}}
+							>
+								<option value="">Pick player {slot + 1}…</option>
+								{#each pool.slice(0, 200) as p (p.id)}
+									<option value={p.id}>{p.web_name} ({p.team_short}, {p.pos})</option>
+								{/each}
+							</select>
+						{/each}
+					</div>
+					{#if cmpPlayers.length === 2}
+						<div class="table-wrap">
+							<table>
+								<thead>
+									<tr><th></th>{#each cmpPlayers as p (p.id)}<th>{p.web_name} ({p.team_short})</th>{/each}</tr>
+								</thead>
+								<tbody>
+									<tr><td>Price</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.price?.toFixed(1) ?? '–'}</td>{/each}</tr>
+									<tr><td>xP / GW</td>{#each cmpPlayers as p (p.id)}<td class="num strong">{p.xp_per_gw.toFixed(2)}</td>{/each}</tr>
+									<tr><td>xP / 90</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xp_per_90?.toFixed(2) ?? '–'}</td>{/each}</tr>
+									<tr><td>Expected minutes</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xmins.toFixed(0)}</td>{/each}</tr>
+									<!-- 11.8: otsikot olivat kovakoodattu "25/26" mutta rivi renderoi
+									     last_season-kentan riippumatta kaudesta. 535 pelaajasta 13:lla se on
+									     2024/25 ja 7:lla 2023/24 (mm. nousijoiden pelaajat), joten sivu
+									     valitti heidan kohdallaan kautta. Kausi nakyviin omalle riville. -->
+									<tr><td>Season shown</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.season ?? '–'}</td>{/each}</tr>
+									<!-- 11.8: minuutit puuttuivat kokonaan. `last_season.minutes` tulee
+									     API:sta mutta sita ei renderoitu missaan koko sivulla, joten
+									     "2 maalia / 2732 minuuttia" -tyyppista vaitetta EI voinut
+									     tarkistaa talta sivulta — ja rivi "Expected minutes" yllapuolella
+									     nayttaa eri suureen (xmins ~82), joten lukija olisi katsonut
+									     vaaraa lukua ja luullut tarkistaneensa. Maalit ilman minuutteja
+									     on lisaksi harhaanjohtava pari: 2 maalia on eri asia 400 ja 2700
+									     minuutissa. -->
+									<tr><td>Minutes played</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.minutes ?? '–'}</td>{/each}</tr>
+									<tr><td>Goals</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.goals ?? '–'}</td>{/each}</tr>
+									<tr><td>Assists</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.assists ?? '–'}</td>{/each}</tr>
+									<tr><td>Fantasy points</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.last_season?.points ?? '–'}</td>{/each}</tr>
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</section>
+			{/if}
+		{/if}
 	{/if}
+
+	<!-- 23.9 RSL-MENUT: disclaimer siirtyi sisallon alle. Otsikon alla se vei
+	     390 px:lla koko ensimmaisen ruudun (valitsin 698 px:n kohdalla 844 px:n
+	     nakymassa). 7.8:n linjaus (disclaimer nakyvissa) pysyy: sama teksti
+	     samalla sivulla, myos prerenderoidussa HTML:ssa. -->
+	<div class="disclaimer">
+		<p>
+			GoalIQ is an independent data tool. We are not affiliated with, endorsed by, or paid by
+			the Saudi Pro League, the RSL Fantasy game, or any club. These tools are free, so
+			nobody is paying us to cover this league, including you.
+		</p>
+		<p class="basis">
+			<strong>Data basis, stated plainly:</strong> team strengths come from a goals-based
+			Dixon-Coles model fitted on two seasons of SPL results (no free per-match xG feed exists
+			for this league). Player projections use realized goal and assist rates plus RSL Fantasy's
+			own scoring rules; minutes are estimated from last season's aggregate playing time. This
+			is coarser than our FPL pipeline and the confidence labels reflect that.
+		</p>
+	</div>
 
 	<section class="upsell">
 		<h2>Play FPL too?</h2>
@@ -1058,7 +1127,7 @@
 		border: 1px solid var(--border);
 		border-left: 3px solid var(--accent);
 		padding: var(--s-3);
-		margin: var(--s-4) 0;
+		margin: var(--s-8) 0 var(--s-4);
 		font-size: 0.9em;
 	}
 	.disclaimer p {
@@ -1069,6 +1138,12 @@
 	}
 	section {
 		margin-top: var(--s-8);
+	}
+	/* 23.9 RSL-MENUT: nakyman ensimmainen osio kuuluu valitsimelle, ei ole
+	   uusi lohko sivulla (FPL:ssa sama vali ToolRow'n alla). */
+	:global(.more) + section,
+	:global(.tool-row) + section {
+		margin-top: var(--s-4);
 	}
 	.table-wrap {
 		overflow-x: auto;
