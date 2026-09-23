@@ -125,6 +125,13 @@ def training_data(start: str):
     return lataa(window_start=start, include=UNL_INCLUDE)
 
 
+def display_data(start: str):
+    """H2H, vire ja joukkuekortti: KAIKKI maaottelut ikkunassa. Mallin
+    treenidata ("any") jattaa pois pienten maiden keskinaiset ottelut, jolloin
+    esim. Andorra-Malta-H2H olisi tyhja ja viimeiset viisi ottelua vaarat."""
+    return lataa(window_start=start, include="all")
+
+
 def fit_unl_model(start: str):
     from src.models.dixon_coles import DixonColesModel
     df = training_data(start)

@@ -162,3 +162,22 @@ def test_fixtures_ja_standings_unl(client, monkeypatch):
     assert f["fixtures"][0]["home_team"] == "Portugal" and "stale" not in f
     s = client.get("/api/standings", params={"league": nl.UNL_LEAGUE}).json()
     assert s["groups"][0]["group"] == "Group A1" and s["stale"] is True
+
+
+def test_unl_h2h_ja_joukkuekortti_kayttavat_kaikkia_otteluita(client):
+    """Mallin treenidata ('any') ei sisalla pienten maiden keskinaisia
+    otteluita; naytto (H2H, vire, joukkuekortti) kayttaa kaikkia."""
+    import pandas as pd
+    start = nl.unl_model_meta()["window_start"]
+    kaikki = nl.display_data(start)
+    pari = kaikki[((kaikki.home_team == "Andorra") & (kaikki.away_team == "Malta"))
+                  | ((kaikki.home_team == "Malta") & (kaikki.away_team == "Andorra"))]
+    treeni = nl.training_data(start)
+    assert len(pari) > 0, "testidata: Andorra-Malta puuttuu ikkunasta"
+    assert len(treeni[(treeni.home_team == "Andorra") & (treeni.away_team == "Malta")]) == 0
+    r = _unl(client, "Andorra", "Malta").json()
+    assert r["h2h_summary"] and sum(v for k, v in r["h2h_summary"].items()
+                                    if isinstance(v, int)) > 0
+    t = client.get("/api/team/Türki̇ye", params={"leagues": nl.UNL_LEAGUE})
+    assert t.status_code == 200, t.text[:200]
+    assert len(t.json()["last_5_matches"]) == 5

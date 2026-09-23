@@ -2169,7 +2169,16 @@ def team_detail(
     """
     if seasons is None:
         seasons = config.current_season_pair()
-    df = _lataa_otteludata_cached(list(leagues), list(seasons))
+    # 23.9: UNL-joukkuekortti maaotteludatasta (kaikki ottelut), nimi mallin
+    # avaimeksi. Loader ei tunne UNL-koodia -> ilman tata 404.
+    from src.data.nations_league import UNL_LEAGUE
+    if list(leagues) == [UNL_LEAGUE]:
+        from src.data.nations_league import (
+            display_data, resolve_unl_name, unl_model_meta, window_start)
+        team_name = resolve_unl_name(team_name) or team_name
+        df = display_data(unl_model_meta().get("window_start") or window_start())
+    else:
+        df = _lataa_otteludata_cached(list(leagues), list(seasons))
     if df.empty:
         raise HTTPException(
             status_code=404,
@@ -2770,8 +2779,8 @@ def predict_wc(req: PredictWCRequest, request: Request):
     # _team_recent_form ovat geneerisia (df + nimet). df ladataan loader_seasons-
     # formaatissa (#69:n turnaus-TTL hoitaa cachen).
     if is_unl:
-        from src.data.nations_league import training_data, unl_model_meta, window_start
-        df = training_data(unl_model_meta().get("window_start") or window_start())
+        from src.data.nations_league import display_data, unl_model_meta, window_start
+        df = display_data(unl_model_meta().get("window_start") or window_start())
     else:
         df = _lataa_otteludata_cached(list(req.leagues), loader_seasons)
     h2h_all = df[
