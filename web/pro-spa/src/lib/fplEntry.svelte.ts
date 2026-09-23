@@ -20,6 +20,7 @@ import type { RateTeamResponse } from './fantasyTools';
 import { supabase } from './supabase';
 import { auth } from './auth.svelte';
 import { fetchOwnProfileRow, invalidateProfileRow } from './profileRow';
+import { readCachedEntry, writeCachedEntry } from './rateTeamCache';
 
 const VALID = /^\d{1,10}$/;
 
@@ -77,15 +78,34 @@ export async function loadProfileEntry(): Promise<void> {
 	const user = auth.user;
 	if (!user || fplEntry.loadedForUser === user.id) return;
 	fplEntry.loadedForUser = user.id;
+	// 23.9 (Villen havainto "My team lataa liian kauan"): rate-team odotti
+	// tata profiilikierrosta joka latauksella (mitattu 394 -> 947 ms ennen
+	// kuin haku edes alkoi). Tilin arvon kopio selaimessa kaynnistaa haun
+	// heti; profiili tasmaytetaan perassa ja se voittaa jos arvot eroavat.
+	const cached = readCachedEntry(user.id);
+	if (cached) {
+		fplEntry.savedEntry = cached;
+		if (!fplEntry.entry) fplEntry.entry = cached;
+		fplEntry.autoRunPending = true;
+	}
 	try {
 		// Perf 31.7: jaettu boot-select (profileRow) — puuttuva sarake näkyy
 		// undefined-kenttänä ja alla oleva validointi hoitaa sen kuten ennen.
 		const row = await fetchOwnProfileRow(user.id);
 		const v = row?.fpl_entry_id;
 		if (v != null && VALID.test(String(v))) {
-			fplEntry.savedEntry = String(v);
-			if (!fplEntry.entry) fplEntry.entry = String(v);
-			fplEntry.autoRunPending = true;
+			const s = String(v);
+			writeCachedEntry(user.id, s);
+			if (s !== cached) {
+				// Tili voittaa kopion (joukkue vaihdettu toisella laitteella).
+				fplEntry.savedEntry = s;
+				if (!fplEntry.entry || fplEntry.entry === cached) fplEntry.entry = s;
+				fplEntry.autoRunPending = true;
+			}
+		} else if (row != null && cached) {
+			// Tililla ei ole joukkuetta (unohdettu toisella laitteella).
+			writeCachedEntry(user.id, null);
+			fplEntry.savedEntry = null;
 		}
 	} catch {
 		// fail-safe: ei kaada työkaluja
@@ -96,11 +116,23 @@ export async function loadProfileEntry(): Promise<void> {
 
 /** Tallenna onnistuneesta rate/plan-hausta (kirjautuneena + remember). */
 export async function persistEntry(id: number): Promise<void> {
-	if (!auth.user || !fplEntry.remember) return;
+	const user = auth.user;
+	if (!user || !fplEntry.remember) return;
+	const s = String(id);
 	try {
+		// 23.9: joka lataus kirjoitti saman arvon uudelleen (RPC) ja mitatoi
+		// profiilirivin, jolloin muut lukijat hakivat sen uudelleen. Jaettu
+		// boot-rivi kertoo onko arvo jo tilissa (ei uutta pyyntoa).
+		const row = await fetchOwnProfileRow(user.id);
+		if (row != null && String(row.fpl_entry_id ?? '') === s) {
+			fplEntry.savedEntry = s;
+			writeCachedEntry(user.id, s);
+			return;
+		}
 		const { error } = await supabase.rpc('set_fpl_entry_id', { entry: id });
 		if (!error) {
-			fplEntry.savedEntry = String(id);
+			fplEntry.savedEntry = s;
+			writeCachedEntry(user.id, s);
 			invalidateProfileRow();
 		}
 	} catch {
@@ -114,6 +146,7 @@ export async function toggleRemember(): Promise<void> {
 	if (!auth.user) return;
 	try {
 		if (!fplEntry.remember) {
+			writeCachedEntry(auth.user.id, null);
 			const { error } = await supabase.rpc('set_fpl_entry_id', { entry: null });
 			if (!error) {
 				fplEntry.savedEntry = null;
@@ -135,6 +168,7 @@ export async function forgetEntry(): Promise<void> {
 		fplEntry.savedEntry = null;
 		return;
 	}
+	writeCachedEntry(auth.user.id, null);
 	try {
 		const { error } = await supabase.rpc('set_fpl_entry_id', { entry: null });
 		if (!error) {

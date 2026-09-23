@@ -114,6 +114,10 @@
 	let raceDone = $state(false);
 	let raceKey: string | null = null;
 	$effect(() => {
+		// 23.9: kirjautuneen haku lahti ensin ILMAN entrya ja uudelleen kun
+		// profiili oli luettu (mitattu: ensimmainen 394 -> 1 402 ms, heitettiin
+		// pois). Odotetaan kunnes entry tai sen puuttuminen tiedetaan.
+		if (entryId == null && !entryKnown) return;
 		const key = String(entryId ?? '-');
 		if (raceKey === key) return;
 		raceKey = key;

@@ -35,6 +35,7 @@
 	import ThisWeek from './ThisWeek.svelte';
 	import { fetchFantasy } from '$lib/api';
 	import ModelWorking from './ModelWorking.svelte';
+	import { readStoredRateTeam, writeStoredRateTeam } from '$lib/rateTeamCache';
 	import PlayerSearch from './PlayerSearch.svelte';
 	import TeamPitchManager from './TeamPitchManager.svelte';
 	import SquadHeaderRow from './SquadHeaderRow.svelte';
@@ -191,13 +192,33 @@
 		void tick().then(() => draftBoxEl?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 	}
 
-	async function runRate() {
+	// 23.9: vain viimeisin haku saa kirjoittaa tuloksen. Profiilin
+	// tasmaytys voi vaihtaa entryn kesken tallennetun kopion revalidoinnin.
+	let rateSeq = 0;
+
+	/** auto = tallennettu ID (automaattiajo): viimeisin selaimeen tallennettu
+	 *  vastaus nakyy heti ja tuore korvaa sen (lib/rateTeamCache.ts). Lomake
+	 *  hakee aina tuoreen: kayttaja on voinut juuri tehda siirron FPL:ssa. */
+	async function runRate(auto = false) {
 		if (!entryValid || loading) return;
-		loading = true;
+		const seq = ++rateSeq;
+		const id = Number(fplEntry.entry.trim());
+		const uid = auth.user?.id ?? null;
+		const stored = auto && uid ? readStoredRateTeam(id, uid, premium) : null;
+		if (stored) {
+			data = stored;
+			picksNotPublished = false;
+			setupOpenManual = false;
+			fplEntry.lastResult = { key: resultKey(String(id), 'a'), slot: 'a', data: stored };
+		} else {
+			loading = true;
+		}
 		error = null;
 		try {
-			const id = Number(fplEntry.entry.trim());
-			data = await fetchRateTeam(id);
+			const fresh = await fetchRateTeam(id);
+			if (seq !== rateSeq) return;
+			data = fresh;
+			if (uid && fplEntry.remember) writeStoredRateTeam(id, uid, fresh);
 			picksNotPublished = false;
 			setupOpenManual = false; // tulos nakyviin, lomake pois tielta
 			// 4.9: tulos storeen, jotta paluu valilehdelta ei menetä sitä.
@@ -212,6 +233,13 @@
 			// esikaudella (picks_not_published) — pelkka entry nayttaisi nollaa 21.8. asti.
 			capture('rate_team_succeeded', { mode: 'entry', slot: 'a' });
 		} catch (err) {
+			if (seq !== rateSeq) return;
+			// Tallennettu vastaus kuuluu samalle kierrokselle (deadline ei ole
+			// mennyt): verkkovirhe ei pyyhi sita naytolta.
+			if (stored) {
+				loading = false;
+				return;
+			}
 			data = null;
 			// 28.7 (PI-16): esikaudella entry-ID-polku EI VOI onnistua, koska FPL
 			// julkaisee kokoonpanot vasta GW1-deadlinen jälkeen. Se ei ole
@@ -257,10 +285,13 @@
 		if (cached.key === want) data = cached.data;
 	});
 	$effect(() => {
-		if (fplEntry.autoRunPending && entryValid && !data && !loading) {
-			fplEntry.autoRunPending = false;
-			void runRate();
-		}
+		if (!fplEntry.autoRunPending || !entryValid || loading) return;
+		// 23.9: profiilin arvo voi korvata selaimen kopion jo haetun tuloksen
+		// jalkeen -> aja uudelleen kun nakyva tulos on eri joukkueen.
+		const shown = data?.meta?.mode === 'entry' ? data.meta.entry : null;
+		if (data && (shown == null || shown === Number(fplEntry.entry.trim()))) return;
+		fplEntry.autoRunPending = false;
+		void runRate(true);
 	});
 
 	function unlock() {
