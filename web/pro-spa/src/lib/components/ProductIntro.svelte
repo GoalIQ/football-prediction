@@ -27,6 +27,8 @@
 	import { freePremiumWindowActive } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { planApprox } from '$lib/billing';
+	import { loadPricing, webCheckoutBlocked } from '$lib/pricing.svelte';
+	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
 
 	let { onUpgrade }: { onUpgrade: () => void } = $props();
 
@@ -37,6 +39,9 @@
 
 	onMount(() => {
 		capture('product_intro_shown', { source: 'pro_web_root' }, 'product_intro_shown');
+		// 23.9: sama maatieto kuin muilla ostopinnoilla (palvelimen
+		// `web_checkout`). UK (ml. Mansaari) ei nae verkkohintaa.
+		void loadPricing();
 		fetchXp().then(
 			(d) => {
 				xp = d;
@@ -185,7 +190,11 @@
 	</div>
 
 	<div class="act">
-		{#if inWindow}
+		<!-- 23.9: UK (ml. Mansaari) -> kauppailmoitus verkkohinnan ja
+		     "See plans" -napin tilalle ($lib/region). Muut maat ennallaan. -->
+		{#if webCheckoutBlocked()}
+			<StoreOnlyNotice source="pro_web_root" compact />
+		{:else if inWindow}
 			<button type="button" class="primary" onclick={onUpgrade}>Create a free account</button>
 			<p class="act-note muted">
 				Premium is free until 12 September. No card, nothing to cancel. After that it is

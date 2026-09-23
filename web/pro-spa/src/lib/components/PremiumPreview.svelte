@@ -3,8 +3,15 @@
 	import { onMount } from 'svelte';
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { PLANS, planApprox, startCheckout, type PlanKey } from '$lib/billing';
-	import { loadPricing, planLabel, showApprox } from '$lib/pricing.svelte';
+	import { PLANS, planApprox, type PlanKey } from '$lib/billing';
+	import {
+		loadPricing,
+		openCheckout,
+		planLabel,
+		showApprox,
+		webCheckoutBlocked
+	} from '$lib/pricing.svelte';
+	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
 	// 20.9: hinta palvelimelta, ks. pricing.svelte.ts. Haku on kertaluontoinen
 	// ja fail-soft: jos se ei onnistu, PLANS jaa voimaan.
 	$effect(() => { void loadPricing(); });
@@ -67,7 +74,7 @@
 
 	async function buy(plan: PlanKey) {
 		busy = plan;
-		buyError = await startCheckout(plan, 'pro_web_preview');
+		buyError = await openCheckout(plan, 'pro_web_preview');
 		busy = null;
 	}
 
@@ -136,7 +143,10 @@
 		</div>
 	{/snippet}
 
-	{#if freePremiumWindowActive()}
+	<!-- 23.9: UK -> kauppailmoitus Stripe-nappien tilalle ($lib/region). -->
+	{#if webCheckoutBlocked()}
+		<StoreOnlyNotice source="pro_web_preview" />
+	{:else if freePremiumWindowActive()}
 		<details class="pay-later">
 			<summary>Rather pay now and keep Premium after 12 September?</summary>
 			{@render planButtons(true)}
@@ -146,7 +156,9 @@
 	{/if}
 	<!-- #102: rehellinen copy — tili LUODAAN oston jälkeen (webhook provisioi),
 	     joten "No account needed" oli faktavirhe. -->
-	{#if freePremiumWindowActive()}
+	{#if webCheckoutBlocked()}
+		<!-- 23.9: ei Stripe-copya kun verkko-osto on suljettu. -->
+	{:else if freePremiumWindowActive()}
 		<!-- Ikkunan aikana "skip the signup" on suoraan vastakkainen ohje kuin
 		     se jonka haluamme: tili ON se polku. 🔴 POISTA 12.9.2026 12:30 UTC. -->
 		<p class="muted no-account">
@@ -169,6 +181,8 @@
 	     kumpikin napautus kirjaa oman eventtinsa, jotta tama on peruttavissa
 	     mittauksen perusteella eika mielipiteen. -->
 	{#if appStore}
+		<!-- 23.9: kauppailmoitus sisaltaa jo kauppalinkit, ei toista kertaa. -->
+		{#if !webCheckoutBlocked()}
 		<a
 			class="app-cta"
 			href={STORE_URL[appStore]}
@@ -181,6 +195,7 @@
 			Same subscription either way. On your phone the store already has your
 			payment details, so it takes a few seconds.
 		</p>
+		{/if}
 	{/if}
 
 	<ul class="bullets">

@@ -71,7 +71,8 @@ STRIPE_WEB_WEBHOOK_SECRET = os.getenv("STRIPE_WEB_WEBHOOK_SECRET", "")
 STRIPE_PRICE_MONTHLY_ID = os.getenv("STRIPE_PRICE_MONTHLY_ID", "")
 STRIPE_PRICE_SEASON_ID = os.getenv("STRIPE_PRICE_SEASON_ID", "")
 from src.regional_pricing import (  # noqa: E402
-    COUNTRY_HEADER, kuvaa_aluehinnat, request_country, resolve_price,
+    COUNTRY_HEADER, REGION_STORE_ONLY_ERROR, kuvaa_aluehinnat, request_country,
+    resolve_price, web_checkout_allowed,
 )
 # Sallitut SPA-originit success/cancel-redirecteille (avoin redirect estetty:
 # origin validoidaan tätä listaa vasten). Laajenna envillä tarvittaessa.
@@ -4172,6 +4173,38 @@ def _auto_promo_discount() -> list[dict] | None:
     return [{"promotion_code": code}]
 
 
+#: Sama lause kuin SPA:n ilmoituksessa. Vanha, selaimen valimuistissa oleva
+#: SPA-versio nayttaa taman `detail`-kentan virhebannerissa, joten backendin
+#: voi deployata ennen SPA:ta ilman etta UK-kavija saa pelkan "403":n.
+REGION_STORE_ONLY_MESSAGE = (
+    "In the UK and the Isle of Man, GoalIQ Premium is available through the App Store and Google Play."
+)
+
+
+def _checkout_region_block(request: Request, endpoint: str) -> JSONResponse | None:
+    """403 `region_app_store_only` jos kavijan maassa ei myyda verkossa, muuten None.
+
+    UK (ml. Mansaari): verkko-osto suljettu, Premium myydaan sovelluskauppojen
+    kautta (paatos 23.9.2026). Maa luetaan VAIN Cloudflaren `CF-IPCountry`-otsakkeesta
+    (`request_country`), ei pyynnon rungosta eika admin-esikatselusta.
+    Puuttuva maa ei esta (ks. `src/regional_pricing.py`).
+
+    JOKAINEN funktio joka kutsuu `stripe.checkout.Session.create`a kutsuu
+    tata ennen sita: portti `tests/test_uk_store_only.py` kaatuu muuten.
+    """
+    maa = request_country(request.headers)
+    if web_checkout_allowed(maa):
+        return None
+    print(f"[checkout] {endpoint}: verkko-osto suljettu maalle {maa} "
+          f"-> {REGION_STORE_ONLY_ERROR}", flush=True)
+    return JSONResponse(
+        status_code=403,
+        content={"error": REGION_STORE_ONLY_ERROR, "country": maa,
+                 "detail": REGION_STORE_ONLY_MESSAGE},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 class CheckoutRequest(BaseModel):
     """Request for creating a Stripe Checkout session."""
     user_id: str = Field(..., description="Supabase user UUID")
@@ -4185,7 +4218,7 @@ class CheckoutResponse(BaseModel):
 
 @app.post("/api/checkout", response_model=CheckoutResponse,
           description="Create a Stripe Checkout session for a premium subscription started in the mobile app.")
-def create_checkout_session(req: CheckoutRequest):
+def create_checkout_session(req: CheckoutRequest, request: Request):
     """
     Luo Stripe Checkout Session premium-tilaukselle.
 
@@ -4193,6 +4226,10 @@ def create_checkout_session(req: CheckoutRequest):
     kayttaja maksaa → Stripe lahettaa webhook:in joka päivittää
     Supabase profiles.is_premium = true.
     """
+    # 23.9: UK-esto myos tahan kuolleeseen polkuun: se luo yha oikean
+    # Stripe-session jos joku kutsuu sita.
+    if (esto := _checkout_region_block(request, "/api/checkout")) is not None:
+        return esto
     if not stripe.api_key:
         raise HTTPException(
             status_code=500,
@@ -4512,7 +4549,12 @@ def web_pricing(
     if esikatselu:
         maa = request_country({COUNTRY_HEADER: as_country})
         response.headers["Cache-Control"] = "no-store"
-    ulos: dict = {"country": maa or None, "plans": {}}
+    # 23.9: `web_checkout` false = SPA piilottaa Stripe-napit ja nayttaa
+    # kauppalinkit. Sama lukija kuin checkoutin estossa, joten pinta ja
+    # checkout eivat voi olla eri mielta (esikatselu vaikuttaa vain tahan
+    # nayttoon, ei checkoutiin).
+    ulos: dict = {"country": maa or None,
+                  "web_checkout": web_checkout_allowed(maa), "plans": {}}
     if esikatselu:
         ulos["preview"] = True
     for plan, oletus in (("season", STRIPE_PRICE_SEASON_ID),
@@ -4530,7 +4572,7 @@ def web_pricing(
           description="Create a Stripe Checkout session for a signed-in web user. Identity comes from the Supabase token, never from the request body.")
 def create_web_checkout_session(
     req: WebCheckoutRequest, request: Request
-) -> WebCheckoutResponse:
+) -> WebCheckoutResponse | JSONResponse:
     """GoalIQ Pro SPA (pro.goaliq.app, QUEUE #14) — Stripe Checkout -session.
 
     Staattinen SPA ei voi pitää STRIPE_SECRET_KEY:tä → session luodaan täällä.
@@ -4539,6 +4581,9 @@ def create_web_checkout_session(
     olemassa oleva webhook /api/webhook/stripe-web (metadata-muoto identtinen
     Streamlit-billingin kanssa: user_id + plan + source).
     """
+    # 23.9: UK -> sovelluskauppa. Ennen authia ja Stripe-kutsuja.
+    if (esto := _checkout_region_block(request, "/api/web/checkout")) is not None:
+        return esto
     if not stripe.api_key:
         raise HTTPException(
             status_code=500,
@@ -4644,7 +4689,7 @@ def _guest_checkout_rate_ok(ip: str) -> bool:
           description="Create a Stripe Checkout session without an account. Stripe collects the email, and the account is created after payment.")
 def create_guest_checkout_session(
     req: WebCheckoutRequest, request: Request
-) -> WebCheckoutResponse:
+) -> WebCheckoutResponse | JSONResponse:
     """#101 — suora osto ILMAN tiliä (konversiovuodon fix).
 
     Ei authia: Stripe Checkout kerää emailin + maksun yhdessä näkymässä.
@@ -4653,6 +4698,10 @@ def create_guest_checkout_session(
     Kirjautuneen käyttäjän polku pysyy /api/web/checkout:issa (client_
     reference_id linkittää oston suoraan tiliin) — SPA valitsee endpointin.
     """
+    # 23.9: UK -> sovelluskauppa. Ennen rate limitia: estetty yritys ei
+    # kuluta IP:n kiintiota eika avaa Stripe-sessiota.
+    if (esto := _checkout_region_block(request, "/api/web/checkout/guest")) is not None:
+        return esto
     if not stripe.api_key:
         raise HTTPException(
             status_code=500,

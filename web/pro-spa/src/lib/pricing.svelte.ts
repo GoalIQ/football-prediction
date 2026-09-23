@@ -12,7 +12,8 @@
  * epaonnistuu, `PLANS` jaa voimaan: vanha oikea luku on parempi kuin tyhja.
  */
 import { API_BASE } from './config';
-import { PLANS, type PlanKey } from './billing';
+import { PLANS, startCheckout, type PlanKey } from './billing';
+import { REGION_STORE_ONLY, pricingBlocksWebCheckout } from './region';
 
 interface Hinta {
 	amount: number;
@@ -22,6 +23,28 @@ interface Hinta {
 
 let live = $state<Partial<Record<PlanKey, Hinta>>>({});
 let haettu = false;
+
+/** 23.9: verkko-osto suljettu kavijan maassa (UK), ks. `region.ts`.
+ *  Kaksi lahdetta, sama palvelimen lukija: hintavastauksen `web_checkout:
+ *  false` tai checkout-kutsun 403 `region_app_store_only`. Kerran tosi, pysyy
+ *  tosena sivun elinajan. */
+let storeOnly = $state(false);
+
+/** Naytetaanko Stripe-napit vai kauppailmoitus. */
+export function webCheckoutBlocked(): boolean {
+	return storeOnly;
+}
+
+/** Ainoa tapa jolla komponentti avaa checkoutin. Palauttaa virheviestin tai
+ *  null. Alue-esto EI ole virhe: se kaantaa nakyman kauppailmoitukseksi. */
+export async function openCheckout(plan: PlanKey, source?: string): Promise<string | null> {
+	const tulos = await startCheckout(plan, source);
+	if (tulos === REGION_STORE_ONLY) {
+		storeOnly = true;
+		return null;
+	}
+	return tulos;
+}
 
 /** Valuutta lukijan silmin. Tuntematon koodi nayttaa koodina, ei arvattuna
  *  symbolina: vaara symboli on vaarempi kuin tylsa. */
@@ -41,6 +64,7 @@ export async function loadPricing(): Promise<void> {
 		const r = await fetch(`${API_BASE}/api/web/pricing`);
 		if (!r.ok) return;
 		const d = await r.json();
+		if (pricingBlocksWebCheckout(d)) storeOnly = true;
 		if (d && typeof d === 'object' && d.plans && typeof d.plans === 'object') {
 			live = d.plans as Partial<Record<PlanKey, Hinta>>;
 		}

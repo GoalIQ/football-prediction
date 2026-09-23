@@ -21,8 +21,15 @@
 	import { onMount } from 'svelte';
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
-	import { PLANS, planApprox, startCheckout, type PlanKey } from '$lib/billing';
-	import { loadPricing, planLabel, showApprox } from '$lib/pricing.svelte';
+	import { PLANS, planApprox, type PlanKey } from '$lib/billing';
+	import {
+		loadPricing,
+		openCheckout,
+		planLabel,
+		showApprox,
+		webCheckoutBlocked
+	} from '$lib/pricing.svelte';
+	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
 	import { preferredStore, appCtaLabel, STORE_URL, type AppStore } from '$lib/appHandoff';
 	import { actionableGameweek } from '$lib/gameweek';
 	import { xpHorizon } from '$lib/xpHorizon';
@@ -71,7 +78,7 @@
 
 	async function buy(plan: PlanKey) {
 		busy = plan;
-		buyError = await startCheckout(plan, `pro_web_lock_${tool.slug}`);
+		buyError = await openCheckout(plan, `pro_web_lock_${tool.slug}`);
 		busy = null;
 	}
 </script>
@@ -140,6 +147,10 @@
 
 		<div class="buy">
 			<p class="buy-head"><strong>{tool.title}</strong> is part of GoalIQ Premium.</p>
+			<!-- 23.9: UK -> kauppailmoitus Stripe-nappien tilalle ($lib/region). -->
+			{#if webCheckoutBlocked()}
+				<StoreOnlyNotice source={`pro_web_lock_${tool.slug}`} />
+			{:else}
 			<div class="plans">
 				{#each Object.entries(PLANS) as [key, plan] (key)}
 					{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
@@ -158,16 +169,19 @@
 					</div>
 				{/each}
 			</div>
+			{/if}
 			{#if buyError}
 				<p class="banner error">{buyError}</p>
 			{/if}
+			{#if !webCheckoutBlocked()}
 			<p class="muted small">
 				Already subscribed in the GoalIQ app? Sign in with the same account and Premium is already
 				active here.
 			</p>
+			{/if}
 			<p class="more">
 				<button type="button" class="linkish" onclick={onUpgrade}>See Premium</button>
-				{#if appStore}
+				{#if appStore && !webCheckoutBlocked()}
 					<a
 						class="app-link"
 						href={STORE_URL[appStore]}

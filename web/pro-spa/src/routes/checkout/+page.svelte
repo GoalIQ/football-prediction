@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { startCheckout, PLANS, type PlanKey } from '$lib/billing';
+	import { PLANS, type PlanKey } from '$lib/billing';
+	import { openCheckout, webCheckoutBlocked } from '$lib/pricing.svelte';
 	import Provenance from '$lib/components/Provenance.svelte';
+	import StoreOnlyNotice from '$lib/components/StoreOnlyNotice.svelte';
 
 	// #101: suora ostopolku — goaliq.app-etusivun hinta-CTA:t laskeutuvat
 	// tänne (?plan=monthly|annual|season) ja jatkavat HETI Stripe
@@ -18,7 +20,9 @@
 
 	async function go(source: string) {
 		busy = true;
-		error = await startCheckout(plan, source);
+		// 23.9: UK-kavijan maa selviaa vasta taman kutsun vastauksesta (403
+		// region_app_store_only), jolloin nakyma kaantyy kauppailmoitukseksi.
+		error = await openCheckout(plan, source);
 		busy = false;
 	}
 
@@ -37,14 +41,20 @@
 			Skip the signup: pay with Stripe and we'll set up your account and email you a
 			sign-in link for the web and the GoalIQ app.
 		</p>
+	{:else if webCheckoutBlocked()}
+		<StoreOnlyNotice source="checkout_route" />
 	{:else if error}
 		<p class="banner error">{error}</p>
 		<button class="primary" onclick={() => void go('checkout_route_retry')}>Try again</button>
 	{/if}
 	<Provenance />
 	<p class="muted">
-		<a href="/">Back to GoalIQ Premium on the web</a> · Cancel anytime from the Account menu. One
-		subscription covers web, iOS and Android.
+		{#if webCheckoutBlocked()}
+			<a href="/">Back to GoalIQ on the web</a>
+		{:else}
+			<a href="/">Back to GoalIQ Premium on the web</a> · Cancel anytime from the Account menu. One
+			subscription covers web, iOS and Android.
+		{/if}
 	</p>
 </div>
 

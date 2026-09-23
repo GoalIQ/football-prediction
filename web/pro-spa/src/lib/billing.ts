@@ -12,6 +12,7 @@
 import { API_BASE } from './config';
 import { accessToken } from './auth.svelte';
 import { capture, captureBeforeUnload } from './analytics';
+import { REGION_STORE_ONLY, isStoreOnlyBody } from './region';
 
 /** 11.8: alennettu hinta hintapaikkaan ja koodi NAPIN TEKSTIIN. Ennen tata
  *  paywall sanoi "25 €/year" ja koodi mainittiin hintissa, eli kayttaja klikkasi
@@ -60,7 +61,12 @@ export function planApprox(plan: PlanKey): string | null {
 
 /** Vie Stripe Checkoutiin. Kirjautunut → authed endpoint (osto linkittyy
  * tiliin heti); kirjautumaton → guest endpoint (tili syntyy maksun jälkeen).
- * Palauttaa virheviestin tai null (= redirect käynnissä). */
+ * Palauttaa virheviestin, null (= redirect käynnissä) tai `REGION_STORE_ONLY`
+ * (23.9: kävijän maassa osto vain sovelluskaupasta).
+ *
+ * ÄLÄ KUTSU SUORAAN KOMPONENTISTA: käytä `openCheckout`ia
+ * (`pricing.svelte.ts`), joka muuttaa `REGION_STORE_ONLY`n kauppailmoitukseksi.
+ * Suora kutsu näyttäisi koodin virhebannerissa. Portti: `region.gate.test.ts`. */
 export async function startCheckout(plan: PlanKey, source = 'pro_web'): Promise<string | null> {
 	// Web-funnel: osto-intentti ennen redirectiä (sama muoto kuin #12)
 	capture('upgrade_tapped', { source, plan, price: PLANS[plan].price });
@@ -79,7 +85,18 @@ export async function startCheckout(plan: PlanKey, source = 'pro_web'): Promise<
 			})
 		});
 		if (!r.ok) {
-			const detail = (await r.json().catch(() => null))?.detail;
+			const body = await r.json().catch(() => null);
+			// 23.9: UK -> sovelluskauppa. Ei virhe vaan ohjaus, joten oma
+			// tapahtuma eika checkout_failed: upgrade_tapped -> checkout_opened
+			// -aukko pysyy selitettynä ilman että esto näyttää vialta.
+			if (isStoreOnlyBody(body)) {
+				capture('checkout_store_only', {
+					source, plan, price: PLANS[plan].price,
+					status: r.status, country: body?.country ?? null
+				});
+				return REGION_STORE_ONLY;
+			}
+			const detail = body?.detail;
 			// 20.9.2026 MITATTU: 180 vrk aikana webissa 20 upgrade_tapped mutta
 			// vain 11 checkout_opened. Erotus oli NAKYMATON: tama haara palautti
 			// virheen kayttajalle eika kirjannut mitaan, joten emme tienneet

@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { actionableGameweek } from '$lib/gameweek';
 	import { onMount } from 'svelte';
-	import { PLANS, planApprox, startCheckout, type PlanKey } from '$lib/billing';
-	import { loadPricing, planLabel, showApprox } from '$lib/pricing.svelte';
+	import { PLANS, planApprox, type PlanKey } from '$lib/billing';
+	import {
+		loadPricing,
+		openCheckout,
+		planLabel,
+		showApprox,
+		webCheckoutBlocked
+	} from '$lib/pricing.svelte';
+	import StoreOnlyNotice from './StoreOnlyNotice.svelte';
 	// 20.9: hinta palvelimelta, ks. pricing.svelte.ts. Haku on kertaluontoinen
 	// ja fail-soft: jos se ei onnistu, PLANS jaa voimaan.
 	$effect(() => { void loadPricing(); });
@@ -31,7 +38,7 @@
 
 	async function buy(plan: PlanKey) {
 		busy = plan;
-		error = await startCheckout(plan);
+		error = await openCheckout(plan);
 		busy = null;
 	}
 
@@ -59,6 +66,10 @@
 <!-- 🔴 22.9 (web-audit K2/T3, Villen GO): hinnat ja ostonapit heti otsikon
      alle, kuvaus niiden jalkeen. Ennen viisi kappaletta tekstia ja teaseri
      tulivat ensin, ja ostonapit jaivat ruudun alle. -->
+<!-- 23.9: UK -> kauppailmoitus Stripe-nappien tilalle ($lib/region). -->
+{#if webCheckoutBlocked()}
+	<StoreOnlyNotice source="pro_web_paywall" />
+{:else}
 <div class="plans">
 	{#each Object.entries(PLANS) as [key, plan] (key)}
 		{@const approx = showApprox(key as PlanKey) ? planApprox(key as PlanKey) : null}
@@ -76,6 +87,7 @@
 		</div>
 	{/each}
 </div>
+{/if}
 
 {#if error}
 	<p class="banner error">{error}</p>
@@ -105,6 +117,9 @@
 <p class="muted">
 	UCL Fantasy prices and squad news are free at goaliq.app/ucl. During the league phase, GoalIQ Premium adds expected points for every UCL Fantasy player, up to three matchdays ahead, with captain, value and differential lists, at pro.goaliq.app/ucl.
 </p>
+<!-- 23.9: kauppailmoitus sanoo jo saman tilin ja app-oston asian; nama kaksi
+     rivia koskevat verkko-ostoa. -->
+{#if !webCheckoutBlocked()}
 <p class="muted">
 	Both plans renew until you cancel, and you can cancel from the Account menu. One subscription
 	covers web, iOS and Android.
@@ -113,6 +128,7 @@
 	Already subscribed in the GoalIQ app? Sign in with the same account and Premium is already
 	active here.
 </p>
+{/if}
 
 {#if top3.length > 0}
 	<div class="teaser card">

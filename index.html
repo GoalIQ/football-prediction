@@ -1396,7 +1396,7 @@ document.addEventListener('click', function (e) {
 
 <script>
 /* 31 Jul: Stripe Adaptive Pricing charges the visitor's currency at
-   checkout; this adds a DISPLAY approximation for UK/US visitors. The rates
+   checkout; this adds a DISPLAY approximation for US visitors. The rates
    are updated by hand, "about" keeps them honest. */
 (function () {
   var region = '';
@@ -1405,7 +1405,10 @@ document.addEventListener('click', function (e) {
   // Stripe shows the exact local amount at checkout, so naming the currency
   // without quoting our own figure is enough here. We also avoid claiming
   // anything about how the charge is made, and say only what is certainly true.
-  var local = (region === 'GB' || region === 'US')
+  // 23.9: not GB. In the UK (incl. the Isle of Man) Premium is sold through
+  // the App Store and Google Play only, so there is no web checkout to show a
+  // local price in.
+  var local = (region === 'US')
     ? 'your local price is shown at checkout' : null;
   if (!local) return;
   function add(sel, txt) {

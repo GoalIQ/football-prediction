@@ -63,6 +63,42 @@ def request_country(headers) -> str:
     return maa
 
 
+# --- Maat joissa EI myyda suoraan verkossa (paatos 23.9.2026) ---------------
+#
+# UK (ml. Mansaari): verkko-osto suljettu, Premium myydaan sovelluskauppojen
+# (App Store, Google Play) kautta. Kavija ohjataan sinne.
+#
+# LISTA ON KOODISSA EIKA YMPARISTOSSA tarkoituksella: Renderin ymparisto
+# pyyhkiytyi 20.9 kerran, ja ymparistomuuttujana tama esto olisi silloin
+# kadonnut aanettomasti ja UK-myynti avautunut ilman etta mikaan kertoo.
+# Muutos listaan on diffissa nakyva paatos.
+#
+# FAIL-OPEN PUUTTUVALLE MAALLE (vastakkainen kuin aluehinnassa): tyhja,
+# XX- tai T1-otsake EI esta ostoa. Esto koskee vain listalla olevaa maata,
+# jotta Cloudflaren otsakkeen puuttuminen ei voi pysayttaa koko verkkomyyntia.
+#
+# Olemassa olevat tilaukset eivat kulje taman kautta: uusiminen tapahtuu
+# Stripessa ilman checkoutia, ja asiakasportaali (/api/customer-portal) on
+# eri reitti. Esto koskee vain UUDEN checkout-session luontia.
+
+#: Maat joissa verkko-osto (Stripe Checkout) on suljettu ja osto ohjataan
+#: sovelluskauppaan. Arvot ovat CF-IPCountry-muotoa. GB = Iso-Britannia,
+#: IM = Mansaari. Kanaalisaaret (JE, GG) eivat ole listalla.
+WEB_CHECKOUT_STORE_ONLY = frozenset({"GB", "IM"})
+
+#: Virhekoodi jonka SPA tunnistaa (`web/pro-spa/src/lib/region.ts`).
+REGION_STORE_ONLY_ERROR = "region_app_store_only"
+
+
+def web_checkout_allowed(country: str) -> bool:
+    """Saako tasta maasta avata Stripe Checkoutin.
+
+    `country` on `request_country()`n palauttama arvo (kaksi isoa kirjainta
+    tai ""). Tuntematon tai puuttuva maa -> True (ks. perustelu ylla).
+    """
+    return (country or "").strip().upper() not in WEB_CHECKOUT_STORE_ONLY
+
+
 #: Tierit joita checkout kysyy (`resolve_price(plan, ...)`, plan on
 #: WebCheckoutRequestin arvo). Muu avain kartassa on kirjoitusvirhe jota
 #: mikaan ei koskaan lue, esim. "annual" - ja sen maat maksavat listahintaa.
