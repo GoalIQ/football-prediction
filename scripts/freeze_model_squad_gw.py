@@ -182,9 +182,21 @@ def pick_captain(xi: list[dict], gw: int) -> tuple[dict, dict]:
     return ranked[0], ranked[1]
 
 
-def slim(p: dict, gw: int) -> dict:
+def slim(p: dict, gw: int, *, element: dict | None) -> dict:
+    """Jaadytetty pelaajarivi.
+
+    `element` on saman pelaajan FPL-bootstrap-rivi jaadytyshetkella, ja se on
+    PAKOLLINEN avainsana-argumentti (KORTTI-PENKIN-SAATAVUUSMERKKI, 23.9):
+    kutsuja ei voi unohtaa saatavuutta. 18.9 GW5-kortissa Oliver Dovin nakyi
+    tavallisena penkkilaisena, vaikka FPL sanoi `status u` ("Has joined Leyton
+    Orient on loan"), koska freeze ei kantanut statusta eika kortti saa lukea
+    muuta lahdetta kuin freezen. Status kirjataan tassa, jolloin se on osa
+    immutable-totuutta: kortti nayttaa sen mika oli totta jaadytettaessa.
+    `status: None` = bootstrap ei tuntenut pelaajaa (kortti kieltaytyy).
+    """
     from src.models.fpl_transfers import sell_price
 
+    el = element or {}
     return {"id": p["id"], "web_name": p.get("web_name"),
             "team_short": p.get("team_short"), "pos": p.get("element_type"),
             "club": p.get("club"), "price": p.get("price"),
@@ -193,7 +205,10 @@ def slim(p: dict, gw: int) -> dict:
             # jalkikateen tarkistettavissa (bank_after = bank_before +
             # sum(out_selling - in_price)).
             "selling_price": sell_price(p),
-            "xp": round(gw_xp(p, gw), 3)}
+            "xp": round(gw_xp(p, gw), 3),
+            "status": el.get("status"),
+            "chance": el.get("chance_of_playing_next_round"),
+            "news": el.get("news") or ""}
 
 
 # 🔴 SIIRTORAJOITE (25.8.2026, Villen paatos "korjaa malli").
@@ -897,6 +912,8 @@ def main() -> int:
         RateTeamError, build_context, free_optimum, optimal_xi)
     try:
         xp_data, _bootstrap, pool, _by_id = build_context()
+        # Saatavuus jaadytyshetkella (slim, KORTTI-PENKIN-SAATAVUUSMERKKI).
+        _el_by_id = {e["id"]: e for e in (_bootstrap or {}).get("elements") or []}
         # 18.9: artefaktin `excluded`-rivit id:n mukaan. Kulkee jokaiseen
         # `_departed_player`-kutsuun, jotta `no_projection_reason` on
         # artefaktin oma syy eika kovakoodattu "unavailable"
@@ -1131,8 +1148,8 @@ def main() -> int:
         },
         "captain": cap["id"],
         "vice_captain": vice["id"],
-        "xi": [slim(p, gw) for p in xi],
-        "bench": [slim(p, gw) for p in bench],
+        "xi": [slim(p, gw, element=_el_by_id.get(p["id"])) for p in xi],
+        "bench": [slim(p, gw, element=_el_by_id.get(p["id"])) for p in bench],
     }, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"OK: GW{gw} mallin runko jäädytetty "
           f"({cost / 10:.1f}m, kapteeni {cap.get('web_name')}, "

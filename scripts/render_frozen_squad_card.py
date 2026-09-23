@@ -74,6 +74,9 @@ padding-top:10px;}
 font-size:14px;margin-top:6px;}
 .ftr b{color:var(--cream);font-weight:600;}
 svg.kit{display:block;margin:0 auto;}
+.xip span em.flag{font-style:normal;font-weight:700;}
+.xip span em.flag.d{color:#F5A142;}
+.xip span em.flag.out{color:#FF6B6B;}
 """
 
 
@@ -109,6 +112,39 @@ def sim_line(p: dict, dist: dict | None) -> str:
             f'· {blank}</span>')
 
 
+def availability_mark(p: dict) -> str:
+    """FPL:n saatavuusmerkki jaadytetysta rivista, tai tyhja jos pelaaja on `a`.
+
+    🔴 KORTTI-PENKIN-SAATAVUUSMERKKI (23.9, julkaisutarkistajan loydos 18.9):
+    GW5-kortissa Oliver Dovin nakyi tavallisena penkkilaisena hintaan 4.0m,
+    vaikka FPL sanoi `status u` (laina Leyton Orientiin). Kortti on pysyva
+    kuva, ja jos se jaetaan ilman saatetta, merkki puuttuu. Status tulee
+    freezesta (`slim`, kirjattu jaadytyshetkella), koska kortin AINOA lahde on
+    freeze.
+
+    Merkki on hintarivin jatkona (" · 75%" / " · out"), ei kuvan paalla: 23.9
+    renderoinnissa kulmamerkki peitti paidan. d = FPL:n oma prosentti
+    (chance_of_playing_next_round), muut = out.
+    Fail-closed: rivi ilman `status`-avainta (jaadytetty ennen 23.9) tai
+    `status: None` (bootstrap ei tuntenut pelaajaa) kaataa ajon, koska
+    merkitsematon pelaaja on juuri se vaite jota kortti ei saa tehda.
+    """
+    if p.get("status") is None:
+        raise SystemExit(
+            f"{p.get('web_name')} (id {p.get('id')}): freeze ei kanna FPL:n "
+            "saatavuutta (status puuttuu). Kortti ei voi merkita pelaajaa, joten "
+            "sita ei renderoida (KORTTI-PENKIN-SAATAVUUSMERKKI). Jaadyta "
+            "kierros uudelleen tai renderoi ilman korttia.")
+    status = p["status"]
+    if status == "a":
+        return ""
+    if status == "d" and p.get("chance") is not None:
+        return f' · <em class="flag d">{int(p["chance"])}%</em>'
+    if status == "d":
+        return ' · <em class="flag d">doubt</em>'
+    return ' · <em class="flag out">out</em>'
+
+
 def cell(p: dict, cap: int, vice: int, size: int = 46,
          dist: dict | None = None, chip: str | None = None,
          xp: float | None = None) -> str:
@@ -123,7 +159,8 @@ def cell(p: dict, cap: int, vice: int, size: int = 46,
         badge = '<span class="badge v">V</span>'
     return ('<div class="xip">' + badge + _kit_svg(p["team_short"], size=size)
             + f'<b>{p["web_name"]}</b>'
-            + f'<span>{p["team_short"]} · {p["price"] / 10:.1f}m</span>'
+            + f'<span>{p["team_short"]} · {p["price"] / 10:.1f}m'
+            + availability_mark(p) + '</span>'
             + xp_line(xp)
             + sim_line(p, dict(dist, _gkp=(p.get("pos") == 1))
                        if dist else None) + '</div>')
