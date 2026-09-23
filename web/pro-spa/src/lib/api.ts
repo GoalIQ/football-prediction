@@ -7,6 +7,7 @@
  * Moduulitason promise-cache: data päivittyy viikkotasolla → yksi haku per
  * sivulataus riittää (Streamlitin ttl=900 vastine).
  */
+import { predictRequest } from './predictRequest';
 import { API_BASE } from './config';
 import { accessToken } from './auth.svelte';
 
@@ -582,15 +583,12 @@ export async function predictMatch(
 	topN: number
 ): Promise<PredictResponse> {
 	const headers = await authHeaders();
-	const r = await fetch(`${API_BASE}/api/predict`, {
+	// 23.9: seura- vai maajoukkuemalli, YKSI lukija ($lib/predictRequest).
+	const req = predictRequest(league, home, away, topN);
+	const r = await fetch(`${API_BASE}${req.path}`, {
 		method: 'POST',
 		headers: { ...headers, 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			home_team: home,
-			away_team: away,
-			leagues: [league],
-			top_n: topN
-		})
+		body: JSON.stringify(req.body)
 	});
 	if (!r.ok) {
 		const detail = (await r.json().catch(() => null))?.detail;

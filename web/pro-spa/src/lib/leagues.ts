@@ -28,6 +28,9 @@ export interface SpaLeague {
 	calendarYear?: boolean;
 	/** Turnaus: ei liigataulukkoa (pariteetti mobiilin StandingsScreenin kanssa). */
 	tournament?: boolean;
+	/** 23.9: maajoukkueet. Ennuste tulee POST /api/predict-wc:sta omalla
+	 *  mallillaan (lib/predictRequest.ts), ei seuramallista. */
+	national?: boolean;
 }
 
 export const LEAGUES: SpaLeague[] = [
@@ -40,7 +43,10 @@ export const LEAGUES: SpaLeague[] = [
 	{ code: 'NED-Eredivisie', label: 'Eredivisie' },
 	{ code: 'POR-Primeira Liga', label: 'Primeira Liga' },
 	{ code: 'BRA-Serie A', label: 'Brasileirao', calendarYear: true },
-	{ code: 'INT-Champions League', label: 'Champions League', tournament: true }
+	{ code: 'INT-Champions League', label: 'Champions League', tournament: true },
+	// 23.9 (Villen havainto: Nations League puuttui webista). Mobiilissa
+	// 23.9 alkaen; backend src/data/nations_league.py.
+	{ code: 'INT-Nations League', label: 'Nations League', tournament: true, national: true }
 ];
 
 /** Otteluohjelma: kaikki, turnaukset mukaan lukien. */

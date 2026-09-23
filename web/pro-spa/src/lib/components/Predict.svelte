@@ -22,7 +22,7 @@
 		predictMatch,
 		type PredictResponse
 	} from '$lib/api';
-	import { LEAGUES as SPA_LEAGUES } from '$lib/leagues';
+	import { LEAGUES as SPA_LEAGUES, findLeague } from '$lib/leagues';
 	import { capture } from '$lib/analytics';
 
 	let {
@@ -42,6 +42,9 @@
 	 *  kun Brasileirao puuttui niista kokonaan. */
 	const LEAGUES = SPA_LEAGUES;
 	let league = $state('ENG-Premier League');
+	/** 23.9: maajoukkueliiga (Nations League). Oma malli, ei julkisessa
+	 *  tarkkuuslokissa: ingressin "pre-match-logged" ei pade sille. */
+	const national = $derived(!!findLeague(league)?.national);
 	let teams = $state<string[]>([]);
 	let home = $state('');
 	let away = $state('');
@@ -176,7 +179,7 @@
 			away = '';
 			data = null;
 			const puuttuva = h ? p.away : p.home;
-			error = `${puuttuva} is not in the ${league} model yet, so this match cannot be predicted. A club appears once the model has matches for it in this competition.`;
+			error = `${puuttuva} is not in the ${league} model yet, so this match cannot be predicted. A ${national ? 'team' : 'club'} appears once the model has matches for it in this competition.`;
 			pending = null;
 		});
 	});
@@ -250,10 +253,21 @@
 </script>
 
 <h2>Predict any match</h2>
-<p class="muted lede">
-	The same model that powers our published, pre-match-logged predictions. Pick two teams and
-	it returns the win probabilities, plus expected goals and scoreline probabilities on Premium.
-</p>
+<!-- 23.9: Nations League ajaa maajoukkuemallilla eika sen ennusteita
+     kirjata tarkkuuslokiin (sama rajaus kuin hubin FAQ:ssa), joten
+     seuraliigojen ingressi olisi sille epatosi. -->
+{#if national}
+	<p class="muted lede">
+		National teams have their own model. Pick two teams and it returns the win probabilities,
+		plus expected goals and scoreline probabilities on Premium. These predictions aren't in the
+		public track record.
+	</p>
+{:else}
+	<p class="muted lede">
+		The same model that powers our published, pre-match-logged predictions. Pick two teams and
+		it returns the win probabilities, plus expected goals and scoreline probabilities on Premium.
+	</p>
+{/if}
 
 <form class="pick" onsubmit={run}>
 	<div class="field">
