@@ -55,7 +55,7 @@ flex-direction:column;justify-content:space-evenly;}
 .xip b{display:block;font-size:15px;font-weight:600;margin-top:2px;
 white-space:nowrap;}
 .xip span{display:block;font-size:13px;color:var(--muted);
-font-variant-numeric:tabular-nums;}
+font-variant-numeric:tabular-nums;white-space:nowrap;}
 .xip span.xp{color:var(--cream);font-size:14px;margin-top:3px;font-weight:600;}
 .xip span.xp i{font-style:normal;color:var(--muted);font-weight:400;font-size:12px;}
 .xip span.sim{color:var(--amber);font-size:11px;margin-top:1px;
@@ -136,13 +136,48 @@ def availability_mark(p: dict) -> str:
             "sita ei renderoida (KORTTI-PENKIN-SAATAVUUSMERKKI). Jaadyta "
             "kierros uudelleen tai renderoi ilman korttia.")
     status = p["status"]
-    if status == "a":
+    chance = p.get("chance")
+    # Prosentti ensin (julkaisutarkistaja 23.9): jos FPL antaa luvun 1-99,
+    # kortti nayttaa sen statuksesta riippumatta, eika voi olla ristiriidassa
+    # FPL:n oman luvun kanssa.
+    if isinstance(chance, int) and 1 <= chance <= 99:
+        return f' · <em class="flag d">{chance}%</em>'
+    if status == "a" or (status == "d" and chance == 100):
         return ""
-    if status == "d" and p.get("chance") is not None:
-        return f' · <em class="flag d">{int(p["chance"])}%</em>'
-    if status == "d":
+    if status == "d" and chance is None:
         return ' · <em class="flag d">doubt</em>'
     return ' · <em class="flag out">out</em>'
+
+
+FLAGS_CLAUSE = "FPL flags too"
+
+
+def subtitle(players: list[dict], frozen_at: str, override: str | None) -> str:
+    """Alaotsikko. Kun kortilla on yksikin saatavuusmerkki, lause kertoo
+    etta myos FPL:n liput ovat jaadytyshetkelta.
+
+    🔴 Julkaisutarkistaja 23.9 (BLOKATTU k1): "frozen 17 Sep" paivasi
+    pelaajavalinnan, ei lippua, ja lukija tarkistaa lipun FPL:sta joka
+    nayttaa vain nykytilan. Mitattu GW5-ikkunasta: freezen (17.9 12:18) ja
+    deadlinen valilla merkki olisi muuttunut 23/198 liputetulla pelaajalla.
+    Muisti lippu-ilman-kierrosta-on-vaite.
+
+    `--subtitle`-ohitus ei saa pudottaa lausetta hiljaa (deadline-paivan
+    uudelleenrakennus): jos merkkeja on eika ohitus nimea FPL:n lippuja,
+    ajo kaatuu.
+    """
+    marked = any(availability_mark(p) for p in players)
+    if override is not None:
+        if marked and "flags" not in override:
+            raise SystemExit(
+                "--subtitle ei kerro etta FPL:n liput ovat jaadytyshetkelta, "
+                "mutta kortilla on saatavuusmerkki. Lisaa esim. "
+                f"'{FLAGS_CLAUSE}' ohitukseen.")
+        return override
+    if marked:
+        return (f"Picked by the optimiser and frozen {frozen_at}, {FLAGS_CLAUSE}. "
+                "We score it exactly as frozen.")
+    return f"Picked by the optimiser and frozen {frozen_at}. We score it exactly as frozen."
 
 
 def cell(p: dict, cap: int, vice: int, size: int = 46,
@@ -273,7 +308,7 @@ def main() -> int:
         f'<div><div class="title">The model&#39;s own FPL squad, GW{args.gw} ({shape})'
         + ('' if not args.sims else ', 2,000 simulated gameweeks each')
         + '</div>'
-        f'<div class="sub">{args.subtitle or f"Picked by the optimiser and frozen {frozen_at}. We score it exactly as frozen."}</div></div></div>'
+        f'<div class="sub">{subtitle(xi + ([] if args.hide_bench else bench), frozen_at, args.subtitle)}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'{bench_block}'
         # 🔴 4.9 PORTTI: "spent" laskettiin NYKYHINNOISTA, mutta se ei ole

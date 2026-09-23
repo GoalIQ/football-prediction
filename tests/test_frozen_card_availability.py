@@ -129,3 +129,51 @@ def test_kirjoittaja_ja_lukija_samat_kentat():
     assert 'p.get("status")' in src and 'p.get("chance")' in src
     assert '"status": el.get("status")' in FREEZE_SRC
     assert '"chance": el.get("chance_of_playing_next_round")' in FREEZE_SRC
+
+
+# ---------------------------------------------------------------- julkaisutarkistaja k1 (23.9)
+@pytest.mark.parametrize("status,chance,expect", [
+    ("a", 75, ">75%</em>"),     # prosentti voittaa statuksen
+    ("i", 50, ">50%</em>"),
+    ("d", 0, ">out</em>"),
+    ("d", 100, ""),
+])
+def test_prosentti_ratkaistaan_ensin(status, chance, expect):
+    mark = card.availability_mark({"id": 1, "web_name": "X", "status": status,
+                                   "chance": chance})
+    assert (expect in mark) if expect else mark == ""
+
+
+def _p(status="a", chance=None):
+    return {"id": 1, "web_name": "X", "status": status, "chance": chance}
+
+
+def test_alaotsikko_kertoo_etta_liput_ovat_jaadytyshetkelta():
+    """Lippu ilman hetkea on vaite (muisti lippu-ilman-kierrosta-on-vaite)."""
+    sub = card.subtitle([_p(), _p("u", 0)], "17 Sep", None)
+    assert sub == ("Picked by the optimiser and frozen 17 Sep, FPL flags too. "
+                   "We score it exactly as frozen.")
+
+
+def test_ilman_merkkeja_alaotsikko_ennallaan():
+    sub = card.subtitle([_p(), _p("d", 100)], "17 Sep", None)
+    assert sub == "Picked by the optimiser and frozen 17 Sep. We score it exactly as frozen."
+
+
+def test_ohitus_ei_pudota_lippulausetta_hiljaa():
+    with pytest.raises(SystemExit):
+        card.subtitle([_p("d", 75)], "17 Sep", "Rebuilt on deadline day.")
+    ok = card.subtitle([_p("d", 75)], "17 Sep", "Rebuilt on deadline day, FPL flags too.")
+    assert "flags" in ok
+    assert card.subtitle([_p()], "17 Sep", "Rebuilt on deadline day.") == "Rebuilt on deadline day."
+
+
+def test_kutsupaikka_kayttaa_alaotsikkoa_nakyvista_pelaajista():
+    src = (ROOT / "scripts" / "render_frozen_squad_card.py").read_text(encoding="utf-8")
+    assert "subtitle(xi + ([] if args.hide_bench else bench), frozen_at, args.subtitle)" in src
+    assert "Picked by the optimiser and frozen {frozen_at}. We score" not in src.split("def subtitle")[0]
+
+
+def test_hintarivi_ei_rivity():
+    """Penkin 96 px solu rivitti 'AVL · 4.5m ·' / 'doubt' (tarkistaja 23.9)."""
+    assert "font-variant-numeric:tabular-nums;white-space:nowrap;}" in card.CSS
