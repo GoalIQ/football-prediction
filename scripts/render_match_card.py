@@ -32,7 +32,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from scripts.gen_share_card import (AMBER, CREAM, FONT_BOLD, FONT_MED, INK, INK2,
-                                    MUTED, WORDMARK, _font)
+                                    MUTED, _font)
+from src.brand import WORDMARK_PNG
 
 W, H, MX = 1200, 675, 60
 PANEL_BG = (24, 23, 21)
@@ -135,8 +136,8 @@ def render(home: str, away: str, pred: dict, title: str, tag: str, when: str,
     c = grad.resize((W, H)).convert("RGBA")
     d = ImageDraw.Draw(c)
 
-    if WORDMARK.exists():
-        wm = Image.open(WORDMARK).convert("RGBA")
+    if WORDMARK_PNG.exists():
+        wm = Image.open(WORDMARK_PNG).convert("RGBA")
         wm = wm.resize((int(wm.width * 56 / wm.height), 56), Image.LANCZOS)
         c.alpha_composite(wm, (W - MX - wm.width, 48))
 

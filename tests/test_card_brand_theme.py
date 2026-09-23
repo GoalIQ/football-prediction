@@ -48,11 +48,32 @@ def test_negative_control_the_pattern_would_catch_teal():
 
 
 def test_cards_take_the_mark_from_the_shared_brand_module():
-    """Merkki YHDESTA lahteesta. Villen 1.8 paatos."""
+    """Merkki YHDESTA lahteesta. Villen 1.8 paatos.
+
+    23.9.2026: kaksi muotoa, sama lahde. HTML-kortit piirtavat merkin
+    `logo_svg()`:lla, PIL-kortit (render_match_card, render_swap_card) liimaavat
+    `src.brand.WORDMARK_PNG`:n. Portti kaatui 23.9 kolmessa CI-ajossa, koska se
+    tunsi vain HTML-muodon, vaikka PIL-kortit kayttivat jo hyvaksyttya
+    sanamerkkia (gen_share_card.WORDMARK). Polku siirrettiin src/brand.py:hyn,
+    eika kortti saa nimeta omaa merkkitiedostoa."""
     for p in CARD_SCRIPTS:
         txt = p.read_text(encoding="utf-8", errors="ignore")
-        assert "from src.brand import logo_svg" in txt, p.name
-        assert "logo_svg(" in txt, p.name
+        html = "from src.brand import logo_svg" in txt and "logo_svg(" in txt
+        raster = ("from src.brand import WORDMARK_PNG" in txt
+                  and "Image.open(WORDMARK_PNG)" in txt)
+        assert html or raster, p.name
+        assert "goaliq-wordmark" not in txt, f"{p.name}: oma merkkipolku"
+
+
+def test_raster_mark_path_lives_only_in_the_brand_module():
+    """gen_share_card (ja sita lukevat gen_reel/gen_share_video) kayttaa samaa
+    tiedostoa kuin kortit, ja tiedosto on olemassa."""
+    from src.brand import WORDMARK_PNG
+    gen = (ROOT / "scripts" / "gen_share_card.py").read_text(encoding="utf-8")
+    assert "from src.brand import WORDMARK_PNG as WORDMARK" in gen
+    assert '"goaliq-wordmark-teletext.png"' not in gen
+    assert WORDMARK_PNG.name == "goaliq-wordmark-teletext.png"
+    assert WORDMARK_PNG.exists(), WORDMARK_PNG
 
 
 def test_cards_do_not_hand_roll_a_wordmark_without_the_mark():

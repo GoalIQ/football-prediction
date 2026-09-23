@@ -13,9 +13,17 @@ Käyttö generaattoreissa: `from src.brand import logo_svg, brand_link`.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 AMBER = "#F5C542"
 INK = "#0B0A09"
 MONO = "IBM Plex Mono,ui-monospace,Consolas,monospace"
+
+#: Rasterikorttien (PIL) sanamerkki. 23.9.2026: HTML-kortit piirtavat merkin
+#: logo_svg():lla, PIL-kortit (render_match_card, render_swap_card,
+#: gen_share_card) liimaavat taman kuvan. Polku asuu VAIN taalla, jotta
+#: kumpikin muoto tulee yhdesta lahteesta (tests/test_card_brand_theme.py).
+WORDMARK_PNG = Path(__file__).resolve().parent.parent / "assets" / "brand" / "goaliq-wordmark-teletext.png"
 
 
 def logo_svg(size: int = 26, cls: str = "brand-icon") -> str:

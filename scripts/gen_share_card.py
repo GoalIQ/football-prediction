@@ -61,7 +61,8 @@ _APP_DIR = Path(os.environ.get("GOALIQ_APP_DIR")
 _FONT_DIR = _APP_DIR / "node_modules" / "@expo-google-fonts" / "ibm-plex-mono"
 FONT_BOLD = _FONT_DIR / "700Bold" / "IBMPlexMono_700Bold.ttf"
 FONT_MED = _FONT_DIR / "500Medium" / "IBMPlexMono_500Medium.ttf"
-WORDMARK = ROOT / "assets" / "brand" / "goaliq-wordmark-teletext.png"
+# 23.9.2026: polku src/brand.py:ssa (yksi lahde merkille, ks. test_card_brand_theme).
+from src.brand import WORDMARK_PNG as WORDMARK  # noqa: E402
 
 
 def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:

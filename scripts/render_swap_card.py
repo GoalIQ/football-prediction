@@ -22,7 +22,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from scripts.gen_share_card import (AMBER, CREAM, FONT_BOLD, FONT_MED, INK, INK2,
-                                    MUTED, WORDMARK, _draw_kit_pil, _font)
+                                    MUTED, _draw_kit_pil, _font)
+from src.brand import WORDMARK_PNG
 from src.marketing.reply_module import load_reply_module
 
 W, H, MX = 1200, 675, 60
@@ -56,8 +57,8 @@ def render(gw: int, left: dict, right: dict, left_label: str, right_label: str,
         grad.putpixel((0, y), tuple(int(a + (b - a) * t) for a, b in zip(INK, INK2)))
     c = grad.resize((W, H)).convert("RGBA")
     d = ImageDraw.Draw(c)
-    if WORDMARK.exists():
-        wm = Image.open(WORDMARK).convert("RGBA")
+    if WORDMARK_PNG.exists():
+        wm = Image.open(WORDMARK_PNG).convert("RGBA")
         wm = wm.resize((int(wm.width * 56 / wm.height), 56), Image.LANCZOS)
         c.alpha_composite(wm, (W - MX - wm.width, 48))
 
