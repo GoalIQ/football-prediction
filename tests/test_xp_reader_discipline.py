@@ -204,6 +204,12 @@ PATH_ALLOWED = {
         "Importoi `actionable_gameweek`in nimenomaan tata varten (portti: "
         "ei `next_gameweek` suoraan); kutsu kirjataan sille kierrokselle "
         "johon voi viela vaikuttaa.",
+    "scripts/measure_doubt_horizon.py":
+        "Mittausskripti (XP-DOUBT-HORISONTTI 23.9): lukee artefaktin "
+        "git-historiasta vain pelaajatason `status`- ja `chance_next`-kentat "
+        "(0 osumaa kierroslistaan), ja deadline valitaan FPL:n bootstrapista "
+        "eksplisiittisesti. Tulos ei mene millekaan kayttajan nakemalle "
+        "pinnalle, se kirjataan DOUBT_RECOVERY-kommenttiin.",
     "scripts/measure_promoted_bias.py":
         "Mittausskripti: lukee `meta`n eika kierroslistaa (0 osumaa). Tulos "
         "ei mene millekaan kayttajan nakemalle pinnalle.",

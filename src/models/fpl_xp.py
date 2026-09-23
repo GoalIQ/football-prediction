@@ -629,17 +629,66 @@ def availability_factor(status: str, chance) -> float:
     return 0.0
 
 
-def apply_availability(mm: dict, status: str, chance) -> dict:
-    """FPL-saatavuus porttina: a=ennallaan, d=skaalaa chance-%:lla,
-    i/s/u/n = sivussa (p_start ja p_sub nollaan → xmins 0)."""
-    if status == "a":
-        return mm
+# XP-DOUBT-HORISONTTI (23.9.2026). FPL:n `chance_of_playing_next_round`
+# koskee SEURAAVAA kierrosta, mutta builder kertoi sen koko horisonttiin
+# GW n..n+5, eli d/25-lippu myi pelaajan kuudeksi kierrokseksi.
+#
+# Mitattu kauden 26/27 GW1-5 deadlineilta (fp:n paivittain commitoitu
+# data/fpl_xp_projections.json, viimeisin ajo ennen kutakin deadlinea, ja
+# FPL:n oma luku seuraavilla deadlineilla; skripti
+# scripts/measure_doubt_horizon.py). Odotettu saatavuus FPL:n omana lukuna:
+#
+#   k kierrosta lipun jalkeen          1              2              3
+#   d/75                         0.735 (n=49)   0.750 (n=41)   0.776 (n=29)
+#   d/25 + d/50                  0.732 (n=14)   0.750 (n=9)    0.667 (n=6)
+#   terveet a                    0.944 (n=1935) 0.883 (n=1461) 0.830 (n=981)
+#
+# Lippu ei siis katoa seuraavalla kierroksella (puolet palautuu, kolmannes
+# on yha epavarma, osa putoaa pois), mutta haitta TERVEESEEN verrattuna
+# vaimenee: 0.735 / 0.944 = 0.78, 0.750 / 0.883 = 0.85, 0.776 / 0.830 = 0.94
+# (k = 3 d/75:n otoksesta; matalan lipun n = 6 on liian pieni).
+# Suhde terveisiin on oikea mitta, koska terveen pelaajan xP:ta ei
+# diskontata tulevalla loukkaantumisriskilla: siirtosuunnitelma vertaa
+# naita kahta.
+#
+# Matala lippu (25/50) palautuu SAMALLE tasolle jo seuraavalla deadlinella,
+# joten taso ei riipu alkuperaisesta prosentista. Kolmannen kierroksen
+# jalkeen dataa ei ole: viimeinen mitattu taso pidetaan, ei ekstrapoloida
+# ylospain.
+DOUBT_RECOVERY: tuple[float, ...] = (0.78, 0.85, 0.94)
+
+
+def round_availability_factor(status: str, chance, k: int) -> float:
+    """Saatavuuskerroin kierrokselle joka on `k` kierrosta sen kierroksen
+    jalkeen jota FPL:n prosentti koskee (k = 0: FPL:n oma luku).
+
+    YKSI lukija horisontin kierroksille. d-lippu (0 < kerroin < 1):
+    kierrokselle k >= 1 mitattu palautuminen `DOUBT_RECOVERY`, mutta ei
+    koskaan alle FPL:n oman prosentin. a (1) ja varmat poissaolot (0)
+    ennallaan: varman poissaolon paluuta ei ole mitattu, eika tama rivi
+    koske sita.
+    """
     f = availability_factor(status, chance)
+    if k <= 0 or not (0.0 < f < 1.0):
+        return f
+    return max(f, DOUBT_RECOVERY[min(k, len(DOUBT_RECOVERY)) - 1])
+
+
+def scale_availability(mm: dict, f: float) -> dict:
+    """Minuuttimalli saatavuuskertoimella `f` (p_start, p_start_raw, p_sub)."""
     out = dict(mm)
     out["p_start_raw"] = mm["p_start_raw"] * f
     out["p_start"] = mm["p_start"] * f
     out["p_sub"] = mm["p_sub"] * f
     return recompute_minutes(out)
+
+
+def apply_availability(mm: dict, status: str, chance) -> dict:
+    """FPL-saatavuus porttina: a=ennallaan, d=skaalaa chance-%:lla,
+    i/s/u/n = sivussa (p_start ja p_sub nollaan → xmins 0)."""
+    if status == "a":
+        return mm
+    return scale_availability(mm, availability_factor(status, chance))
 
 
 def depth_factor(group_p_starts: list[float], slots: float) -> float:

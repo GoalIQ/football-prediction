@@ -704,6 +704,33 @@ def availability_after_passes(mm_flagged: dict[int, dict], mm_healthy: dict[int,
     return out, replaced
 
 
+def round_minutes(mm: dict, element: dict, gw: int, headline_gw: int, *,
+                  availability_in_value: bool) -> dict:
+    """Minuuttimalli horisontin kierrokselle `gw`.
+
+    🔴 XP-DOUBT-HORISONTTI (23.9.2026): FPL:n prosentti koskee otsikko-
+    kierrosta (deadline-kierros), mutta sama minuuttimalli kaytettiin koko
+    horisonttiin, eli d/25-lippu myi pelaajan kuudeksi kierrokseksi. Mitattu
+    palautuminen ja sen lahde: `fpl_xp.DOUBT_RECOVERY`.
+
+    Kierroksen k minuutit ovat lopullinen malli skaalattuna suhteella
+    f_k / f. Se on tasmalleen sama kuin `scale_availability(terve, f_k)`
+    kaikilla kolmella polulla joilla epavarman pelaajan malli syntyy
+    (mallipolku `availability_after_passes`, hintapriori, kasiohitus
+    `set_p_start`), koska jokainen kertoo p_start_raw'n, p_startin ja p_subin
+    samalla f:lla ja minuutit johdetaan niista. Ehdollinen ohitusrivi
+    (`until_available`) on jo poissaolon luku, joten sita ei skaalata.
+    k < 0 (kesken oleva kierros ennen otsikkokierrosta): FPL:n oma luku.
+    """
+    status = element.get("status", "a")
+    chance = element.get("chance_of_playing_next_round")
+    f = xp.availability_factor(status, chance)
+    f_k = xp.round_availability_factor(status, chance, gw - headline_gw)
+    if availability_in_value or f <= 0.0 or f_k == f:
+        return mm
+    return xp.scale_availability(mm, f_k / f)
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser()
@@ -1242,7 +1269,9 @@ def main(argv: list[str] | None = None) -> int:
         # korvaa minutes_form+availability_factor-skalaarin. Pre-season: koko
         # kausi tasapainoin (mm_window=None), live-kausi: last-6 recency.
         mm = mm_by_player[pid]
-        xmins, p60, p1_59 = mm["xmins"], mm["p60"], mm["p1_59"]
+        # Otsikkokierroksen minuutit (rivin xmins, e_bonus). Horisontin
+        # kierrokset: round_minutes silmukassa.
+        xmins = mm["xmins"]
 
         model_team_name = [n for n, i in name_to_fid.items() if i == fid][0]
 
@@ -1292,15 +1321,20 @@ def main(argv: list[str] | None = None) -> int:
         # jotta kaksi ajoa samalla datalla antaa saman luvun.
         dist_samples = None
         dist_rng = np.random.default_rng(1_000_003 * int(pid) + int(headline_gw))
+        conditional_ov = bool((override_applied.get(pid) or {}).get("until_available"))
         for g in horizon:
             ctxs = ctx_by_gw.get(g, {}).get(fid, [])
             opps = opp_by_gw.get(g, {}).get(fid, [])
+            # XP-DOUBT-HORISONTTI (23.9): FPL:n prosentti koskee vain
+            # otsikkokierrosta, myohemmille mitattu palautuminen.
+            mm_r = round_minutes(mm, e, g, headline_gw,
+                                 availability_in_value=conditional_ov)
             # Phase 1b: minuuttikerroin (MM-väsymys yms.) per joukkue/GW
             # + #33: tupla-GW-ruuhka → pieni rotaatioriski kärkipelaajille
             mult = (xmins_multiplier(model_team_name, g, cfg)
-                    * xp.congestion_multiplier(len(ctxs), xmins))
-            xm_g = min(xmins * mult, 90.0)
-            p60_g, p1_g = min(p60 * mult, 1.0), min(p1_59 * mult, 1.0)
+                    * xp.congestion_multiplier(len(ctxs), mm_r["xmins"]))
+            xm_g = min(mm_r["xmins"] * mult, 90.0)
+            p60_g, p1_g = min(mm_r["p60"] * mult, 1.0), min(mm_r["p1_59"] * mult, 1.0)
             gw_xp = 0.0
             for c in ctxs:
                 comp = xp.xp_components(pos, rates, xm_g, p60_g, p1_g, c)
