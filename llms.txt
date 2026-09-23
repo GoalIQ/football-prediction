@@ -7,6 +7,7 @@
 - [Football match predictions](https://goaliq.app/predictions): GoalIQ predicts any football match - win probability for each side, expected goals (xG) and scoreline probabilities - from a Dixon-Coles model. Covers the Premier League, La Liga, Bundesliga, Serie A, Ligue 1, the Champions League, Brasileirao (plays through the European summer), the Championship, Eredivisie and Primeira Liga.
 - Every model prediction is logged before kick-off and graded after the match, hits and misses included. The current aggregate accuracy is published on the page and as machine-readable JSON at https://api.goaliq.app/api/accuracy.
 - Each covered league has a hub page plus a dedicated page per fixture for the whole season. Hub: https://goaliq.app/predictions/<league>/ (ItemList JSON-LD, the fixtures coming up). Fixture: https://goaliq.app/predictions/<league>/<home-team>-vs-<away-team> (SportsEvent JSON-LD).
+- The GoalIQ app also predicts the UEFA Nations League 2026/27 (national teams). App only: there are no pages for it on goaliq.app, and these predictions are not part of the logged track record or /api/accuracy.
 <!-- GEN:LLMS-START -->
 - [Premier League predictions](https://goaliq.app/predictions/premier-league/): 330 fixture pages.
 - [La Liga predictions](https://goaliq.app/predictions/la-liga/): 310 fixture pages.
