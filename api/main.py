@@ -41,7 +41,7 @@ from pydantic import BaseModel, Field, field_validator
 
 import config
 from src.data.loader import lataa_otteludata
-from src.models.call_margin import call_state
+from src.models.call_margin import call_state, call_state_national
 from src.models.dixon_coles import DixonColesModel, apply_match_adjustments
 
 import requests
@@ -2832,7 +2832,8 @@ def predict_wc(req: PredictWCRequest, request: Request):
         p_home_win=round(p_1x2["home"], 4),
         p_draw=round(p_1x2["draw"], 4),
         p_away_win=round(p_1x2["away"], 4),
-        call=call_state(p_1x2["home"], p_1x2["draw"], p_1x2["away"]),
+        # 23.9: raja seuralokista, maajoukkueita ei kirjata -> ei osumaprosenttia
+        call=call_state_national(p_1x2["home"], p_1x2["draw"], p_1x2["away"]),
         fair_odds_home=round(1.0 / max(p_1x2["home"], 0.001), 2),
         fair_odds_draw=round(1.0 / max(p_1x2["draw"], 0.001), 2),
         fair_odds_away=round(1.0 / max(p_1x2["away"], 0.001), 2),

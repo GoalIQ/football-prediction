@@ -246,3 +246,25 @@ def call_state(
         "favourite": "home" if float(p_home) >= float(p_away) else "away",
         "too_close": False, "reason": "gap_above_margin", **common,
     }
+
+
+def call_state_national(p_home: float, p_draw: float, p_away: float,
+                        margin: object = _UNSET) -> dict:
+    """Maajoukkue-ennusteen call (/api/predict-wc): sama raja, ei osumaprosenttia.
+
+    23.9.2026 (julkaisutarkistaja + Villen paatos): marginaali ja
+    below_hit_pct mitataan SEURAMALLIN tarkkuuslokista (data/call_margin.json;
+    WC-rivit ilman voittotodennakoisyytta on jatetty pois), eika maajoukkue-
+    ennusteita kirjata lokiin. "The model's named side has won 48%" olisi
+    maajoukkueen alla vaite eri lahteesta, samalla ruudulla jossa lukee "these
+    predictions aren't in the public track record".
+
+    favourite/too_close/gap_pp/margin_pp pysyvat ennallaan, joten mikaan pinta
+    ei ala nimeta suosikkia jota se ei ennen nimennyt. below_hit_pct = None
+    piilottaa "Too close to call" -laatikon webissa ja mobiilissa (molemmat
+    vaativat sen), ja `basis` kertoo mista raja tulee.
+    """
+    out = call_state(p_home, p_draw, p_away, margin)
+    out["below_hit_pct"] = None
+    out["basis"] = "club_log"
+    return out
