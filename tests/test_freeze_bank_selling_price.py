@@ -424,7 +424,9 @@ def test_freezen_rivi_kantaa_myyntihinnan():
     artefaktista eika vain ajon lokista."""
     m = _load_freeze()
     rivi = m.slim({"id": 1, "price": 50, "selling_price": 47,
-                   "gameweeks": [{"gw": 2, "xp": 1.0}]}, 2)
+                   "gameweeks": [{"gw": 2, "xp": 1.0}]}, 2,
+                   element={"status": "a"})
     assert rivi["selling_price"] == 47 and rivi["price"] == 50
-    tulokas = m.slim({"id": 2, "price": 50, "gameweeks": []}, 2)
+    tulokas = m.slim({"id": 2, "price": 50, "gameweeks": []}, 2,
+                     element={"status": "a"})
     assert tulokas["selling_price"] == 50
