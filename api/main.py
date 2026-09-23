@@ -1504,7 +1504,8 @@ class PredictionRequest(BaseModel):
 
 
 class PredictWCRequest(BaseModel):
-    """World Cup prediction request: international sides, not clubs.
+    """National team prediction request: international sides, not clubs.
+    `leagues` is ["INT-World Cup"] (default) or ["INT-Nations League"].
 
     Seasons are given as four digit years, for example ["2018", "2022", "2026"].
     """
@@ -1520,7 +1521,7 @@ class PredictWCRequest(BaseModel):
                             examples=["France"])
     leagues: list[str] = Field(
         default=["INT-World Cup"],
-        description="Leave as the default. This endpoint supports only this code.",
+        description="['INT-World Cup'] (default) or ['INT-Nations League'].",
     )
     seasons: list[str] = Field(
         default=["2018", "2022", "2026"],
@@ -1677,6 +1678,8 @@ def list_leagues():
         "uefa_tournaments": [
             "INT-Champions League", "INT-Europa League", "INT-Conference League",
         ],
+        # 23.9: maajoukkueet (esirakennettu malli, POST /api/predict-wc).
+        "national_team_competitions": ["INT-Nations League"],
         "available_seasons": config.seasons_since("2122"),
         # Selitykset mobiilia varten — joukkueiden valinta liigan mukaan
         "league_presets": {
@@ -1686,15 +1689,8 @@ def list_leagues():
                 "seasons": config.current_season_pair(),
             },
         },
-        "coming_soon": [
-            {
-                "code": "INT-World Cup",
-                "label": "World Cup 2026",
-                "icon": "🏆",
-                "available_from": "2026-06-11",
-                "note": "World Cup predictions launching when the tournament starts on June 11, 2026.",
-            },
-        ],
+        # 23.9: WC 2026 paattyi 19.7; "launching June 11" -lupaus poistettu.
+        "coming_soon": [],
     }
 
 
@@ -1718,6 +1714,13 @@ def list_teams(
         return TeamsResponse(
             leagues=leagues, seasons=seasons,
             teams=sorted(WC2026_TEAMS), n_matches=len(WC2026_TEAMS),
+        )
+    # 23.9: UNL 2026/27 -> 54 osallistujaa mallin avaimina (ei fittia).
+    from src.data.nations_league import UNL_LEAGUE, UNL_TEAMS
+    if leagues == [UNL_LEAGUE]:
+        return TeamsResponse(
+            leagues=leagues, seasons=seasons,
+            teams=sorted(UNL_TEAMS), n_matches=len(UNL_TEAMS),
         )
     # 8.9: normalisoidaan MYOS tassa, jotta vastauksen `seasons` kertoo saman
     # ikkunan josta joukkuelista tosiasiassa tulee. Ilman tata vastaus
@@ -2064,6 +2067,17 @@ def league_standings(
         _kausi_to_year,
     )
 
+    # 23.9: UNL-lohkot UEFAn omasta rajapinnasta, turnausmuodossa {groups}.
+    from src.data.nations_league import UNL_LEAGUE, unl_standings
+    if league == UNL_LEAGUE:
+        try:
+            groups, stale = unl_standings()
+        except Exception as e:
+            raise HTTPException(status_code=503,
+                                detail=f"UEFA standings unavailable: {type(e).__name__}")
+        return {"league": league, "season": None, "groups": groups,
+                **({"stale": True} if stale else {})}
+
     if season is None:
         season = config.current_season()
     league_for_fd = FD_LEAGUE_ALIASES.get(league, league)
@@ -2245,6 +2259,18 @@ def upcoming_fixtures(
     """
     from datetime import datetime, timedelta, timezone
     from src.data.football_data_org import FIXTURE_STANDINGS_CODES, _api_key
+
+    # 23.9: UNL tulee UEFAn omasta rajapinnasta (ei football-data.orgin
+    # ilmaistasolla). Sama vastausmuoto.
+    from src.data.nations_league import UNL_LEAGUE, unl_fixtures
+    if league == UNL_LEAGUE:
+        try:
+            fixtures, stale = unl_fixtures(days)
+        except Exception as e:
+            raise HTTPException(status_code=503,
+                                detail=f"UEFA fixtures unavailable: {type(e).__name__}")
+        return {"league": league, "days": days, "fixtures": fixtures,
+                **({"stale": True} if stale else {})}
 
     league_for_fd = FD_LEAGUE_ALIASES.get(league, league)
     code = FIXTURE_STANDINGS_CODES.get(league_for_fd)
@@ -2636,42 +2662,57 @@ def predict_wc(req: PredictWCRequest, request: Request):
     Starter ei jaksa fitata "any"-mallia (195 maata) ajossa ilman timeoutia.
     H2H/form-trend ladataan martj42-datasta (cachetettu CSV-suodatus).
     """
-    if req.leagues != ["INT-World Cup"]:
+    # 23.9 (Villen GO): UEFA Nations League 2026/27 samaan endpointiin omalla
+    # mallillaan (src/data/nations_league.py). WC-polku on bittitarkasti
+    # ennallaan; UNL eroaa kolmessa kohdassa: joukkueportti, malli ja kotietu
+    # (UNL:n sarjavaihe pelataan koti- ja vierasotteluina, ei neutraalilla).
+    from src.data.nations_league import UNL_LEAGUE
+    is_unl = req.leagues == [UNL_LEAGUE]
+    if not is_unl and req.leagues != ["INT-World Cup"]:
         raise HTTPException(
             status_code=400,
-            detail="WC endpoint supports only leagues=['INT-World Cup']. "
-                   "Use /api/predict for other leagues.",
+            detail="WC endpoint supports only leagues=['INT-World Cup'] "
+                   f"or ['{UNL_LEAGUE}']. Use /api/predict for other leagues.",
         )
 
-    # #79: resolvoi joukkuenimet FD-kanoniseen muotoon (frontend voi lähettää
-    # FD-, martj42- tai varianttinimiä). resolve_wc_name palauttaa None jos ei
-    # WC2026-maa → 404. Mallin sisäiset nimet + H2H-data ovat kanonisia.
-    from src.data.wc_teams import resolve_wc_name
-    home_canon = resolve_wc_name(req.home_team)
-    away_canon = resolve_wc_name(req.away_team)
+    if is_unl:
+        from src.data.nations_league import resolve_unl_name as _resolve
+        _kuka = "a UEFA Nations League 2026/27 team"
+    else:
+        # #79: resolvoi joukkuenimet FD-kanoniseen muotoon (frontend voi lähettää
+        # FD-, martj42- tai varianttinimiä). resolve_wc_name palauttaa None jos ei
+        # WC2026-maa → 404. Mallin sisäiset nimet + H2H-data ovat kanonisia.
+        from src.data.wc_teams import resolve_wc_name as _resolve
+        _kuka = "a World Cup 2026 team"
+    home_canon = _resolve(req.home_team)
+    away_canon = _resolve(req.away_team)
     if home_canon is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Home team '{req.home_team}' is not a World Cup 2026 team.",
+            detail=f"Home team '{req.home_team}' is not {_kuka}.",
         )
     if away_canon is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Away team '{req.away_team}' is not a World Cup 2026 team.",
+            detail=f"Away team '{req.away_team}' is not {_kuka}.",
         )
 
-    loader_seasons = _wc_seasons_to_loader_format(req.seasons)
+    loader_seasons = None if is_unl else _wc_seasons_to_loader_format(req.seasons)
 
-    # #79: lataa esirakennettu WC-malli (ei fittiä ajossa). JSON-lataus on
+    # #79: lataa esirakennettu malli (ei fittiä ajossa). JSON-lataus on
     # lru-cachetettu → ~ms. req.decay/req.bayes_shrinkage jätetään huomiotta
-    # (malli on rakennettu WC_FIT_DECAY/WC_FIT_BAYES-arvoilla offline).
-    from src.data.international_results import load_wc_model
+    # (malli on rakennettu offline omilla vakioillaan).
     try:
-        dc_cached = load_wc_model()
+        if is_unl:
+            from src.data.nations_league import load_unl_model
+            dc_cached = load_unl_model()
+        else:
+            from src.data.international_results import load_wc_model
+            dc_cached = load_wc_model()
     except Exception as e:
         raise HTTPException(
             status_code=503,
-            detail=f"WC model unavailable: {type(e).__name__}",
+            detail=f"{'UNL' if is_unl else 'WC'} model unavailable: {type(e).__name__}",
         )
 
     # WC-otteluita pelataan neutraalilla maalla (Qatar 2022, USA/CAN/MEX 2026).
@@ -2687,11 +2728,15 @@ def predict_wc(req: PredictWCRequest, request: Request):
     # γ/2 viedään defence-parametriin, koska defence esiintyy SEKÄ lam:ssa
     # (defence[away]) ETTÄ mu:ssa (defence[home]) → boost osuu molempiin.
     # Shallow-kopio: defence-dict KORVATAAN uudella, alkuperäinen cache säilyy.
-    dc = copy.copy(dc_cached)
-    half_home_adv = dc_cached.home_advantage / 2.0
-    dc.defence = {t: v + half_home_adv for t, v in dc_cached.defence.items()}
-    dc.home_advantage = 0.0
-    dc.home_advantage_per_team = {t: 0.0 for t in dc.teams_}
+    if is_unl:
+        # UNL: kotijoukkue pelaa kotonaan -> mallin oppima kotietu jaa.
+        dc = dc_cached
+    else:
+        dc = copy.copy(dc_cached)
+        half_home_adv = dc_cached.home_advantage / 2.0
+        dc.defence = {t: v + half_home_adv for t, v in dc_cached.defence.items()}
+        dc.home_advantage = 0.0
+        dc.home_advantage_per_team = {t: 0.0 for t in dc.teams_}
 
     # Sekundaarivahti: maa on validi WC-maa mutta sillä ei ole dataa ikkunassa
     # (käytännössä ei tapahdu — min ~22-38 ottelua/maa). Kanoniset nimet.
@@ -2724,7 +2769,11 @@ def predict_wc(req: PredictWCRequest, request: Request):
     # kayttaa). Mirror domestic /api/predict -polusta — _h2h_summary +
     # _team_recent_form ovat geneerisia (df + nimet). df ladataan loader_seasons-
     # formaatissa (#69:n turnaus-TTL hoitaa cachen).
-    df = _lataa_otteludata_cached(list(req.leagues), loader_seasons)
+    if is_unl:
+        from src.data.nations_league import training_data, unl_model_meta, window_start
+        df = training_data(unl_model_meta().get("window_start") or window_start())
+    else:
+        df = _lataa_otteludata_cached(list(req.leagues), loader_seasons)
     h2h_all = df[
         ((df["home_team"] == home_canon) & (df["away_team"] == away_canon))
         | ((df["home_team"] == away_canon) & (df["away_team"] == home_canon))

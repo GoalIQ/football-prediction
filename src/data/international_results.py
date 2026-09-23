@@ -176,9 +176,13 @@ def _build(window_start: str, include: str) -> pd.DataFrame:
     played["home_team"] = played["home_team"].map(_canon)
     played["away_team"] = played["away_team"].map(_canon)
 
-    h_in = played["home_team"].isin(WC2026_TEAMS_SET)
-    a_in = played["away_team"].isin(WC2026_TEAMS_SET)
-    played = played[(h_in & a_in) if include == "both" else (h_in | a_in)]
+    # 23.9: "all" = kaikki maaottelut (UNL-takatestin vertailuvaihtoehto;
+    # tuotannon UNL-malli kayttaa "any", ks. src/data/nations_league.py).
+    # "any"/"both" rajaavat WC 2026 -maihin.
+    if include != "all":
+        h_in = played["home_team"].isin(WC2026_TEAMS_SET)
+        a_in = played["away_team"].isin(WC2026_TEAMS_SET)
+        played = played[(h_in & a_in) if include == "both" else (h_in | a_in)]
 
     out = pd.DataFrame(
         {
