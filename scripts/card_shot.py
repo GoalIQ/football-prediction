@@ -164,6 +164,11 @@ def _base_args(exe: str, size: tuple[int, int]) -> list[str]:
 #             -tekstin 4 px, kun sims-kortti tiivistettiin. Glyfien laatikot
 #             menivat paallekkain vain 2 px, joten pelkka teksti-teksti-vertailu
 #             ei nahnyt sita: peittaja on ympyran tausta, ei C-kirjain.
+#   contrast  taytetyn merkin (oma peittava tausta) teksti alle 4.5:1 omaa
+#             taustaansa vasten. 23.9 julkaisutarkistaja: kapteenimerkin C oli
+#             harmaa amberilla (1.56:1), koska `.xip span` oli spesifisempi kuin
+#             `.badge`. CSS:n lukeminen ei nae spesifisyytta; selaimen laskema
+#             vari nakee.
 #   clipped   overflow:hidden leikkaa tekstin ILMAN ellipsia (hiljainen katkos)
 #   ellipsis  tarkoituksellinen katkaisu (varoitus, ei kaada)
 #   fonts     upotettu fontti ei latautunut (status error)
@@ -179,11 +184,23 @@ _MEASURE_JS = r"""
     e=e.parentElement;}return card;}
   function clippedBy(el,card){var e=el;while(e&&e!==card){
     if(getComputedStyle(e).overflowX!=='visible')return true;e=e.parentElement;}return false;}
+  function rgb(c){var m=c.match(/rgba?\(([^)]+)\)/);if(!m)return null;
+    var v=m[1].split(',').map(parseFloat);return {r:v[0],g:v[1],b:v[2],a:v.length>3?v[3]:1};}
+  function lum(c){function ch(x){x/=255;return x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4);}
+    return 0.2126*ch(c.r)+0.7152*ch(c.g)+0.0722*ch(c.b);}
+  function ratio(a,b){var x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);}
   function beyond(r,b){return r.right>b.right+1||r.left<b.left-1||r.bottom>b.bottom+1||r.top<b.top-1;}
   function run(){
-    var card=document.querySelector('.card');var out={outside:[],overlap:[],clipped:[],ellipsis:[],fonts:[],card:null};
+    var card=document.querySelector('.card');var out={outside:[],overlap:[],contrast:[],clipped:[],ellipsis:[],fonts:[],card:null};
     if(!card){out.outside.push('no .card element');return done(out);}
     var cr=card.getBoundingClientRect();out.card=[cr.width,cr.height];
+    // Taytetty merkki: peittava oma tausta ja suora teksti.
+    card.querySelectorAll('*').forEach(function(el){var s=getComputedStyle(el);
+      var bg=rgb(s.backgroundColor);if(!bg||bg.a<1)return;
+      var own=Array.prototype.some.call(el.childNodes,function(c){
+        return c.nodeType===3&&c.textContent.trim();});
+      if(!own)return;var fg=rgb(s.color);if(!fg)return;var k=ratio(fg,bg);
+      if(k<4.5)out.contrast.push(desc(el).slice(0,50)+' '+k.toFixed(2)+':1 ('+s.color+' on '+s.backgroundColor+')');});
     var w=document.createTreeWalker(card,NodeFilter.SHOW_TEXT);var n;var boxes=[];
     while((n=w.nextNode())){
       if(!n.textContent.trim())continue;var el=n.parentElement;
@@ -279,6 +296,7 @@ def problems(report: dict, text: str = "") -> list[str]:
         out.append(report["error"])
     out += ["valuu yli: " + x for x in report.get("outside", [])]
     out += ["tekstit paallekkain: " + x for x in report.get("overlap", [])]
+    out += ["merkin kontrasti alle 4.5:1: " + x for x in report.get("contrast", [])]
     out += ["leikkautuu ilman ellipsia: " + x for x in report.get("clipped", [])]
     out += ["fontti ei latautunut: " + x for x in report.get("fonts", [])]
     if report.get("card") and [round(v) for v in report["card"]] != list(KOKO):

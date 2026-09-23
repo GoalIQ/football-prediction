@@ -79,10 +79,10 @@ def test_fontit_upotetaan_vain_kuvattavaan_tiedostoon():
 
 
 def test_ongelmien_luokittelu():
-    hyva = {"outside": [], "overlap": [], "clipped": [], "ellipsis": ["td.nm x"],
-            "fonts": [], "card": [1200, 675]}
+    hyva = {"outside": [], "overlap": [], "contrast": [], "clipped": [],
+            "ellipsis": ["td.nm x"], "fonts": [], "card": [1200, 675]}
     assert C.problems(hyva) == [], "ellipsi on suunniteltu katkaisu"
-    for avain in ("outside", "overlap", "clipped", "fonts"):
+    for avain in ("outside", "overlap", "contrast", "clipped", "fonts"):
         paha = dict(hyva, **{avain: ["span x"]})
         assert C.problems(paha), avain
     assert C.problems(dict(hyva, card=[1346, 675]))
@@ -175,6 +175,24 @@ def test_merkin_tausta_ei_saa_peittaa_tekstia(tmp_path):
         "<span class='t'>10+ 21% · blank 9%</span><span class='b'>C</span></div>"),
         encoding="utf-8")
     with pytest.raises(C.CardLayoutError, match=r"covers span\.t"):
+        C.render_card(CHROME, p, tmp_path / "kortti.png")
+
+
+@tarvitsee_chromen
+def test_harmaa_kirjain_merkissa_ei_paady_kuvaksi(tmp_path):
+    """23.9 julkaisutarkistaja: `.xip span{color:muted}` voitti `.badge`n
+    spesifisyydella ja C oli harmaa amberilla (1.56:1). Sama rakenne kuin
+    kortissa, jotta portti mittaa selaimen laskeman varin eika CSS:aa."""
+    p = tmp_path / "kortti.html"
+    p.write_text(C.with_fonts(
+        "<!doctype html><meta charset='utf-8'><style>*{margin:0;padding:0}"
+        ".card{width:1200px;height:675px;font-family:'IBM Plex Sans',sans-serif}"
+        ".xip{position:relative;width:124px}.xip span{color:#A8A29A}"
+        ".badge{position:absolute;top:0;right:14px;background:#F5C542;"
+        "color:#0B0A09;width:22px;height:22px}</style><div class='card'>"
+        "<div class='xip'><span class='badge'>C</span></div></div>"),
+        encoding="utf-8")
+    with pytest.raises(C.CardLayoutError, match=r"kontrasti alle 4\.5:1: span\.badge"):
         C.render_card(CHROME, p, tmp_path / "kortti.png")
 
 

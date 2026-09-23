@@ -63,6 +63,9 @@ white-space:nowrap;letter-spacing:-.1px;}
 color:var(--ink);font-size:13px;font-weight:700;width:22px;height:22px;
 border-radius:50%;line-height:22px;}
 .badge.v{background:var(--cream);}
+/* 23.9 julkaisutarkistaja: `.xip span` (0,1,1) voitti `.badge`n (0,1,0), ja
+C/V/TC-kirjain oli harmaa amberilla (1.56:1). Vahti: card_shot contrast. */
+.xip span.badge{color:var(--ink);}
 .badge.tc{width:32px;border-radius:11px;font-size:14px;font-weight:800;right:8px;}
 .bench{display:flex;align-items:center;gap:18px;border-top:1px solid var(--line);
 padding-top:10px;}

@@ -116,6 +116,9 @@ font-variant-numeric:tabular-nums;white-space:nowrap;}
 color:var(--ink);font-size:12px;font-weight:700;width:20px;height:20px;
 border-radius:50%;line-height:20px;}
 .badge.v{background:var(--cream);}
+/* 23.9 julkaisutarkistaja: `.xip span` (0,1,1) voitti `.badge`n (0,1,0), ja
+C/V/TC-kirjain oli harmaa amberilla (1.56:1). Vahti: card_shot contrast. */
+.xip span.badge{color:var(--ink);}
 .bench{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);
 padding-top:6px;margin-top:8px;}
 .bench .blbl{color:var(--muted);font-size:13px;width:52px;}
