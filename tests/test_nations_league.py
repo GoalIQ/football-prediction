@@ -181,3 +181,26 @@ def test_unl_h2h_ja_joukkuekortti_kayttavat_kaikkia_otteluita(client):
     t = client.get("/api/team/Türki̇ye", params={"leagues": nl.UNL_LEAGUE})
     assert t.status_code == 200, t.text[:200]
     assert len(t.json()["last_5_matches"]) == 5
+
+
+def test_by_date_nayttaa_unl_valimuistista_ilman_upstreamia(client, monkeypatch):
+    """Villen havainto 23.9: UNL ei nakynyt "every league on one day"
+    -nakymassa. by-date lukee UNL:n VAIN valimuistista (unl-warm-saie), kuten
+    football-data-liigat: kayttajan pyynto ei odota upstreamia."""
+    kutsut = []
+    monkeypatch.setattr(nl.requests, "get", lambda *a, **k: kutsut.append(a) or (_ for _ in ()).throw(AssertionError("upstream")))
+    monkeypatch.setattr(nl, "cached_matches", lambda: [
+        _m("Portugal", "Wales", "2026-09-24"),
+        _m("Türki̇ye", "France", "2026-09-25"),
+        _m("Spain", "Italy", "2026-09-24", status="FINISHED"),
+    ])
+    r = client.get("/api/fixtures/by-date", params={"date": "2026-09-24"}).json()
+    unl = [g for g in r["leagues"] if g["league"] == nl.UNL_LEAGUE]
+    assert len(unl) == 1 and [f["home_team"] for f in unl[0]["fixtures"]] == ["Portugal"]
+    assert kutsut == []
+    # lammittamaton valimuisti: ei UNL-ryhmaa, ei virhetta, ei upstreamia
+    monkeypatch.setattr(nl, "cached_matches", lambda: None)
+    r2 = client.get("/api/fixtures/by-date", params={"date": "2026-09-24"}).json()
+    assert not [g for g in r2["leagues"] if g["league"] == nl.UNL_LEAGUE]
+    assert r2["leagues_covered"] < r2["leagues_known"]
+    assert kutsut == []

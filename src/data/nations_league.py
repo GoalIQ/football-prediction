@@ -264,12 +264,36 @@ def fixtures_from_matches(raw: list, date_from, date_to) -> list[dict]:
     return out
 
 
+def _matches_key() -> str:
+    return f"unl-matches:{unl_season_year()}"
+
+
+def cached_matches() -> list | None:
+    """UEFAn ottelurivit PELKASTA valimuistista (ei verkkoa). /api/fixtures/
+    by-date kayttaa tata: kayttajan pyynto ei odota upstreamia (sama saanto
+    kuin football-data-liigoilla). None = ei viela lammitetty."""
+    with _lock:
+        hit = _cache.get(_matches_key())
+    return hit[1] if hit else None
+
+
+def warm_matches() -> bool:
+    """Hae UEFAn ottelut valimuistiin (lammitinsaie). True jos onnistui."""
+    try:
+        _get_cached(_matches_key(), "https://match.uefa.com/v5/matches",
+                    {"competitionId": UNL_COMPETITION_ID, "seasonYear": unl_season_year(),
+                     "limit": 500, "offset": 0, "order": "ASC"})
+        return True
+    except Exception:
+        return False
+
+
 def unl_fixtures(days: int, now=None) -> tuple[list[dict], bool]:
     import datetime as dt
     now = now or dt.datetime.now(dt.timezone.utc)
     year = unl_season_year()
     raw, stale = _get_cached(
-        f"unl-matches:{year}", "https://match.uefa.com/v5/matches",
+        _matches_key(), "https://match.uefa.com/v5/matches",
         {"competitionId": UNL_COMPETITION_ID, "seasonYear": year,
          "limit": 500, "offset": 0, "order": "ASC"})
     today = now.date()

@@ -975,6 +975,15 @@ def _warmup_default_models():
                      name="fd-warm").start()
     print("[fd-warm] lammitin kaynnistetty")
 
+    # 23.9: UEFA Nations League -otteluiden lammitin (UEFAn rajapinta, ei
+    # football-data). /api/fixtures/by-date lukee UNL:n vain valimuistista.
+    def _unl_warm_loop():
+        from src.data.nations_league import warm_matches
+        while True:
+            ok = warm_matches()
+            time.sleep(20 * 60 if ok else 5 * 60)
+    threading.Thread(target=_unl_warm_loop, daemon=True, name="unl-warm").start()
+
     def _fit_all():
         warmed = tuple(config.current_season_pair())
         _fit_seasons(warmed)
@@ -2407,6 +2416,20 @@ def fixtures_by_date(
         leagues.append({"league": league_name, "code": code,
                         "fixtures": rows})
 
+    # 23.9 (Villen havainto: UNL ei nakynyt "every league on one day"
+    # -nakymassa): UEFA Nations League UEFAn rajapinnasta, samalla saannolla
+    # kuin yllä: VAIN valimuistista (unl-warm-saie), ei upstream-kutsua.
+    from src.data.nations_league import UNL_LEAGUE, cached_matches, fixtures_from_matches
+    known = len(code_to_league) + 1
+    unl_raw = cached_matches()
+    if unl_raw is not None:
+        covered += 1
+        d0 = _dt.strptime(want, "%Y-%m-%d").date()
+        unl_rows = fixtures_from_matches(unl_raw, d0, d0)
+        if unl_rows:
+            total += len(unl_rows)
+            leagues.append({"league": UNL_LEAGUE, "code": "UNL", "fixtures": unl_rows})
+
     # Liigat aikajarjestykseen paivan sisalla: ensin alkava liiga ylos.
     leagues.sort(key=lambda g: g["fixtures"][0]["datetime"] or "")
     return {
@@ -2414,7 +2437,7 @@ def fixtures_by_date(
         "leagues": leagues,
         "total": total,
         "leagues_covered": covered,
-        "leagues_known": len(code_to_league),
+        "leagues_known": known,
     }
 
 
