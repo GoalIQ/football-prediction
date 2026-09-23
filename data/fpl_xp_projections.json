@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-23T06:47:11+00:00",
+    "generated_at": "2026-09-23T08:11:21+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -4910,7 +4910,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 27.7,
+      "owned_pct": 27.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -67489,48 +67489,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 441,
-      "web_name": "Obi",
-      "full_name": "Chido Obi",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "FWD",
-      "price": 4.5,
-      "owned_pct": 1.0,
-      "status": "u",
-      "news": "Has joined Willem II on loan for the rest of the season",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 1,
-        "team_name": "Man Utd",
-        "minutes": 0,
-        "starts": 0,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.0,
-        "cs": 0,
-        "points": 0,
-        "per90": null
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": false
-    },
-    {
       "id": 107,
       "web_name": "Furo",
       "full_name": "Kaye Furo",
@@ -67619,6 +67577,48 @@
       "excluded_reason": "unavailable",
       "last_season_show": true,
       "last_season_reason": "no_projection"
+    },
+    {
+      "id": 441,
+      "web_name": "Obi",
+      "full_name": "Chido Obi",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "FWD",
+      "price": 4.5,
+      "owned_pct": 0.9,
+      "status": "u",
+      "news": "Has joined Willem II on loan for the rest of the season",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 1,
+        "team_name": "Man Utd",
+        "minutes": 0,
+        "starts": 0,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.0,
+        "cs": 0,
+        "points": 0,
+        "per90": null
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": false
     },
     {
       "id": 329,
