@@ -272,7 +272,11 @@ def test_fantasy_xp_endpoint_shape(client):
     # `private` + `Vary: Authorization` ovat pakollisia, koska vastaus riippuu
     # Bearer-tokenista (mask_xp_payload) eikä saa päätyä jaettuun välimuistiin.
     assert r.headers["cache-control"] == "private, max-age=300"
-    assert r.headers["vary"] == "Authorization"
+    # 23.9: starlette 1.7 (CI:n pinnaamaton asennus) lisaa CORSin "Origin"-
+    # arvon. Invariantti on etta vastaus vaihtelee tokenin mukaan (maskattu vs
+    # taysi), ei Vary-otsakkeen tarkka merkkijono.
+    vary = {v.strip().lower() for v in r.headers["vary"].split(",")}
+    assert "authorization" in vary
     assert r.headers["etag"].startswith('W/"xp-')
     data = r.json()
     assert "meta" in data and "players" in data
