@@ -1,5 +1,5 @@
 /**
- * Portti: UCL Fantasy -sivun (/ucl) rakenne ja yhteinen nakymatila (23.9,
+ * Portti: /ucl-sivun rakenne ja yhteinen nakymatila (23.9,
  * UCL-MENUT + julkaisutarkistajan RSL-korjaus).
  *
  * Villen valinta 23.9: UCL saa saman rakenteen kuin FPL ja RSL. Palkissa

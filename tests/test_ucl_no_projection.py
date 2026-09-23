@@ -491,7 +491,16 @@ def test_listalupaus_vastaa_nakymia():
     assert {"captain", "value", "differentials"} <= nakymat, nakymat
     sivu = (ROOT / "web" / "pro-spa" / "src" / "routes" / "ucl" / "+page.svelte"
             ).read_text(encoding="utf-8")
-    assert "uclPicks(" in sivu and "UCL_VIEWS" in sivu, (
+    # 23.9 (UCL-MENUT): valilehtirivi korvattiin palkin osiolla ja FPL:n
+    # esiasetuksilla ($lib/tools GAME_VIEWS.ucl). Lupaus sidotaan nyt siihen:
+    # listat ovat UCL-rekisterin Players-osiossa, ja sivu renderoi ne
+    # uclPicksilla ja valitsimella.
+    tools = (ROOT / "web" / "pro-spa" / "src" / "lib" / "tools.ts").read_text(encoding="utf-8")
+    ucl = re.search(r"\n\tucl: \{(.*?)\n\t\}", tools, re.S)
+    assert ucl, "GAME_VIEWS.ucl puuttuu $lib/tools.ts:sta"
+    osio = re.search(r"id: 'players'.*?views: \[([^\]]*)\]", ucl.group(1), re.S)
+    assert osio and {"captain", "value", "differentials"} <= set(re.findall(r"'(\w+)'", osio.group(1)))
+    assert "uclPicks(" in sivu and '<GameViewNav game="ucl"' in sivu, (
         "/ucl ei renderoi listoja joita lause lupaa")
 
 
