@@ -504,6 +504,29 @@ def test_listalupaus_vastaa_nakymia():
         "/ucl ei renderoi listoja joita lause lupaa")
 
 
+def test_ilmainen_cs_lupaus_on_sidottu():
+    """23.9 (julkaisutarkistaja, UCL-lupauksen copy-sync): UCL_XP lupaa
+    "Club-by-club clean sheet chances are free there." Lupaus on tosi vain
+    kun (a) /ucl ei lukitse clean-sheets-nakymaa ilmaiselta ja (b) palvelimen
+    maski sailyttaa artefaktin teams-lohkon. Kumpikaan ei ollut sidottu:
+    maski sailytti lohkon vain siksi etta se kopioi koko payloadin."""
+    assert "Club-by-club clean sheet chances are free there." in bp.UCL_XP
+    sivu = (ROOT / "web" / "pro-spa" / "src" / "routes" / "ucl" / "+page.svelte"
+            ).read_text(encoding="utf-8")
+    m = re.search(r"locked=\{xp\?\.meta\?\.masked \? \[([^\]]*)\] : \[\]\}", sivu)
+    assert m, "/ucl:n lukituslista puuttuu"
+    assert "'clean-sheets'" not in m.group(1), "clean sheet -nakyma lukittu ilmaiselta"
+    from api.premium import mask_xp_payload
+    teams = [{"id": 1, "name": "Arsenal", "short": "ARS",
+              "fixtures": [{"gw": 2, "opp": "LIL", "venue": "H", "cs_pct": 54.0,
+                            "xg": 2.1, "xga": 0.6}]}]
+    players = [{"id": i, "xp_horizon_total": float(i)} for i in range(30)]
+    out = mask_xp_payload({"meta": {"available": True}, "players": players,
+                           "teams": teams})
+    assert out["meta"]["masked"] is True
+    assert out["teams"] == teams
+
+
 def test_kolme_kierrosta_on_mallin_horisontti():
     """'up to three matchdays ahead' on luku, ja luku vanhenee hiljaa jos
     horisontti muuttuu builderissa. Luetaan vakio lahteesta (ast), ei
@@ -561,10 +584,15 @@ def test_kontrolli_kanoninen_lause_tunnistetaan_rivitettyna_ja_linkattuna():
     """Sivulla lause rivittyy ja sen loppu on linkki. Jos tunnistus vaatii
     tavutarkan merkkijonon, index.html:n Premium-paneeli kaatuisi vaarasta
     syysta; jos se on liian lysa, parafraasi paasisi lapi."""
-    alku, loppu = bp.UCL_XP.rsplit(" at ", 1)
+    # 23.9: vakio on kaksi lausetta (ilmainen CS-lupaus perassa), joten
+    # pilkotaan URL:n kohdalta eika viimeisesta " at ":sta (julkaisutarkistaja:
+    # muuten koko hanta linkitettaisiin ja testi mittaisi vaaraa asiaa).
+    url = "pro.goaliq.app/ucl"
+    alku, loppu = bp.UCL_XP.split(f" at {url}", 1)
+    assert loppu.startswith("."), loppu
     rivitetty = alku.replace(", ", ",\n  ", 1)
     linkattu = (f"<li>{rivitetty} at "
-                f'<a href="https://{loppu[:-1]}">{loppu[:-1]}</a>.</li>')
+                f'<a href="https://{url}">{url}</a>{loppu}</li>')
     tiedosto = re.sub(r"<[^>]+>", " ", linkattu)
     assert _kuvio(bp.UCL_XP).search(tiedosto)
     assert not _osumat(tiedosto)
