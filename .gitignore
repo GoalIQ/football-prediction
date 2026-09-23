@@ -31,6 +31,9 @@ raw_data/
 !/data/international_results.README.md
 # Esirakennettu WC-malli (#79) — vendoroitu, ladataan ajossa (ei fittiä Renderillä).
 !/data/wc_model.json
+# 23.9: UEFA Nations League -malli (src/data/nations_league.py) ladataan ajossa
+# kuten WC-malli; ilman tata Render palauttaisi UNL:lle 503.
+!/data/unl_model.json
 # Vendoroitu World Football Elo -snapshot (#79 konfederaatio-kalibrointi).
 !/data/elo_ratings.csv
 # 8.9.2026: vendoroitu varasnapshot football-data.co.uk -liigoille. Lahde oli
