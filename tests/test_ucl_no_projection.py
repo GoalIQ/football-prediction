@@ -162,6 +162,12 @@ PERUSTELLUT_POIKKEUKSET: dict[str, str] = {
 # vahingossa, ja Paywall (jota nayttaa myos FPL-sivuilla) kayttaa
 # kanonista lausetta eika ole listalla.
 PREMIUM_PINNAT: dict[str, str] = {
+    # 23.9 (UCL-LAAJENNUS-FPL-TYYLIIN vaihe 1): /ucl:n Captain / Value /
+    # Differentials -listojen YKSI lukija. Ei pinta vaan tuotteen logiikka;
+    # sen otsikkokommentti nimeaa tuotteen.
+    "web/pro-spa/src/lib/uclPicks.ts":
+        "tuotteen oma lukija: Captain/Value/Differentials maskaamattomasta "
+        "UCL xP -vastauksesta (sivu ei laske listoja itse)",
     "web/pro-spa/src/routes/ucl/+page.svelte":
         "itse tuote: UCL Fantasy xP -taulukko (pro.goaliq.app/ucl), "
         "palvelinmaski top 10 ilmaiskayttajalle",
@@ -469,6 +475,24 @@ def test_kanoninen_lause_osoittaa_olemassa_olevaan_reittiin():
     api = (ROOT / "web" / "pro-spa" / "src" / "lib" / "api.ts").read_text(
         encoding="utf-8")
     assert "/api/fantasy/xp?league=ucl" in api
+
+
+def test_listalupaus_vastaa_nakymia():
+    """23.9 (UCL-LAAJENNUS-FPL-TYYLIIN vaihe 1): lause lupaa "captain, value
+    and differential lists". Lupaus on sidottu nakymiin jotka /ucl oikeasti
+    renderoi: yksi lukija ($lib/uclPicks, UCL_VIEWS) ja sivu kutsuu sita.
+    Jos nakyma poistuu, lause kaatuu tahan eika jaa lupaamaan sita."""
+    assert "with captain, value and differential lists" in bp.UCL_XP
+    picks = (ROOT / "web" / "pro-spa" / "src" / "lib" / "uclPicks.ts").read_text(
+        encoding="utf-8")
+    m = re.search(r"UCL_VIEWS[^=]*=\s*\[([^\]]*)\]", picks)
+    assert m, "UCL_VIEWS puuttuu $lib/uclPicks.ts:sta"
+    nakymat = set(re.findall(r"'(\w+)'", m.group(1)))
+    assert {"captain", "value", "differentials"} <= nakymat, nakymat
+    sivu = (ROOT / "web" / "pro-spa" / "src" / "routes" / "ucl" / "+page.svelte"
+            ).read_text(encoding="utf-8")
+    assert "uclPicks(" in sivu and "UCL_VIEWS" in sivu, (
+        "/ucl ei renderoi listoja joita lause lupaa")
 
 
 def test_kolme_kierrosta_on_mallin_horisontti():

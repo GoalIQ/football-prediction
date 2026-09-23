@@ -84,7 +84,8 @@ OUT_DIR = ROOT / "ucl"
 # `build_ucl_xp.HORISONTTI`; testi pitaa ne samana.
 UCL_XP = (
     "During the league phase, GoalIQ Premium adds expected points for every "
-    "UCL Fantasy player, up to three matchdays ahead, at pro.goaliq.app/ucl."
+    "UCL Fantasy player, up to three matchdays ahead, with captain, value and "
+    "differential lists, at pro.goaliq.app/ucl."
 )
 
 UCL_SCOPE = (

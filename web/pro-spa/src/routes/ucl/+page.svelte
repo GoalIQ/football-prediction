@@ -21,6 +21,15 @@
 	// 22.9 (T6): otsikko ja kuvaus yhdesta lahteesta, jota myos buildin
 	// ucl.html (link preview) lukee. Ks. $lib/routeHeads.
 	import { UCL_HEAD } from '$lib/routeHeads';
+	// 23.9 (UCL-LAAJENNUS-FPL-TYYLIIN vaihe 1): Captain / Value / Differentials
+	// samasta vastauksesta, FPL:n Players-esiasetusten kaava. Listat laskee
+	// YKSI lukija ($lib/uclPicks), sama kuin mobiilissa.
+	import {
+		UCL_DIFF_MAX_OWNED,
+		UCL_VIEWS,
+		uclPicks,
+		type UclView
+	} from '$lib/uclPicks';
 
 	let xp = $state<UclXpResponse | null>(null);
 	let err = $state<string | null>(null);
@@ -39,6 +48,23 @@
 	let q = $state('');
 	let maxPrice = $state<number | null>(null);
 	let sortBy = $state<'total' | 'next'>('total');
+	let view = $state<UclView>('all');
+	let includeThin = $state(false);
+
+	const VIEW_LABEL: Record<UclView, string> = {
+		all: 'All players',
+		captain: 'Captain',
+		value: 'Value',
+		differentials: 'Differentials'
+	};
+	function setView(v: UclView) {
+		if (v === view) return;
+		view = v;
+		capture('ucl_view_changed', { view: v });
+	}
+	let picks = $derived(
+		view === 'all' ? null : uclPicks(xp?.players, xp?.meta, view, { pos, includeThin })
+	);
 
 	let md = $derived(xp?.meta?.deadline_gameweek ?? null);
 	let mdCols = $derived(xp?.players?.[0]?.gameweeks?.map((g) => g.gw) ?? []);
@@ -47,6 +73,19 @@
 	// palvelin julkaisi horizon_total_from:n). Yksikko on matchday, joten
 	// lukijan GW-muotoiltuja nimia (gws, range) ei kayteta.
 	let hz = $derived(xpHorizon(xp?.meta));
+	/* Summan ikkuna samasta lukijasta kuin taulukon otsikko: "next" vain
+	   kun palvelin antoi luvan (hz.actionableOnly) eika deadline ole mennyt. */
+	let windowText = $derived(
+		hz.count && hz.actionableOnly && !xp?.meta?.deadline_passed
+			? hz.count === 1
+				? 'the next matchday'
+				: `the next ${hz.count} matchdays`
+			: hz.count
+				? hz.count === 1
+					? 'one matchday'
+					: `${hz.count} matchdays`
+				: 'the coming matchdays'
+	);
 	let clubs = $derived(
 		[...new Set((xp?.players ?? []).map((p) => p.team_short))].sort((a, b) => a.localeCompare(b))
 	);
@@ -137,12 +176,24 @@
 	{:else if !xp.meta.available || !xp.players.length}
 		<p class="muted">UCL Fantasy projections are not published yet. Check back soon.</p>
 	{:else}
+		<div class="views" role="tablist" aria-label="UCL Fantasy views">
+			{#each UCL_VIEWS as v (v)}
+				<button
+					role="tab"
+					aria-selected={view === v}
+					class:active={view === v}
+					onclick={() => setView(v)}>{VIEW_LABEL[v]}</button
+				>
+			{/each}
+		</div>
+
 		<div class="controls">
 			<div class="posrow">
 				{#each ['ALL', 'GKP', 'DEF', 'MID', 'FWD'] as pf (pf)}
 					<button class:active={pos === pf} onclick={() => (pos = pf as Pos)}>{pf}</button>
 				{/each}
 			</div>
+			{#if view === 'all'}
 			<label
 				>Club
 				<select bind:value={club}>
@@ -175,7 +226,104 @@
 				</select>
 			</label>
 			<input type="search" placeholder="Search player or club" bind:value={q} />
+			{:else if picks?.state === 'rows'}
+				<label class="thin-toggle">
+					<input type="checkbox" bind:checked={includeThin} /> Show players with thin or no data
+				</label>
+			{/if}
 		</div>
+
+		{#if picks}
+			{#if picks.state === 'locked'}
+				<p class="muted">
+					This list is part of GoalIQ Premium. The free view shows the top 10 by expected points under
+					All players.
+				</p>
+				<Paywall teaser={false} />
+			{:else if picks.state === 'no_matchday'}
+				<p class="muted">
+					Captain picks return when projections for the next matchday are published.
+				</p>
+			{:else if picks.state === 'rows'}
+				<p class="muted small view-lede">
+					{#if view === 'captain'}
+						Players ranked by expected points on matchday {picks.md} only.
+					{:else if view === 'value'}
+						Expected points over {windowText} per million of price. Only players with no availability
+						flag are listed.
+					{:else}
+						Players owned by {UCL_DIFF_MAX_OWNED}% or fewer of UCL Fantasy managers, ranked by expected
+						points over {windowText}. Only players with no availability flag are listed.
+					{/if}
+					{#if !includeThin && picks.hiddenThin > 0}
+						{picks.hiddenThin === 1
+							? 'One player with thin or no data would rank here and is hidden.'
+							: `${picks.hiddenThin} players with thin or no data would rank here and are hidden.`}
+					{/if}
+				</p>
+				<div class="table-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>Player</th>
+								<th>Club</th>
+								<th>Pos</th>
+								<th class="num">Price</th>
+								<th class="num">Owned</th>
+								{#if view === 'captain'}
+									<th class="num">MD{picks.md}</th>
+								{:else}
+									<th class="num"
+										><abbr title={`Sum of expected points over ${windowText}`}>Total</abbr></th
+									>
+									{#if view === 'value'}
+										<th class="num"><abbr title="Expected points per million of price">xP per m</abbr></th>
+									{/if}
+								{/if}
+							</tr>
+						</thead>
+						<tbody>
+							{#each picks.rows as r, i (r.player.id)}
+								{@const p = r.player}
+								{@const g = p.gameweeks.find((x) => x.gw === picks.md)}
+								<tr>
+									<td class="muted">{i + 1}</td>
+									<td>
+										{p.web_name}{#if thin(p)}<span class="thin">thin data</span>{:else if noData(p)}<span
+												class="thin">no data</span
+											>{/if}{#if p.status !== 'a'}<span class="flag" title={p.news || 'Availability flag from the official game'}
+												>{p.status === 'd' ? 'doubt' : p.status === 'u' ? 'not in squad' : 'out'}</span
+											>{/if}
+									</td>
+									<td>{p.team_short}</td>
+									<td>{p.pos}</td>
+									<td class="num">{p.price.toFixed(1)}</td>
+									<td class="num">{p.owned_pct.toFixed(0)}%</td>
+									{#if view === 'captain'}
+										<td class="num strong">
+											{#if g}<span class="opp"
+													>{g.opponents.map((o) => `${o.opp} ${o.venue}`).join(', ')}</span
+												>{/if}{r.score.toFixed(1)}
+										</td>
+									{:else}
+										<td class="num" class:strong={view === 'differentials'}
+											>{p.xp_horizon_total.toFixed(1)}</td
+										>
+										{#if view === 'value'}
+											<td class="num strong">{r.score.toFixed(2)}</td>
+										{/if}
+									{/if}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{#if picks.rows.length === 0}
+					<p class="muted small">No player matches this filter.</p>
+				{/if}
+			{/if}
+		{:else}
 
 		<div class="table-wrap">
 			<table>
@@ -248,6 +396,7 @@
 			{/if}
 			<Paywall teaser={false} />
 		{/if}
+		{/if}
 
 		<section class="method">
 			<h2>How the number is built</h2>
@@ -318,6 +467,34 @@
 	}
 	.posrow {
 		display: flex;
+		gap: var(--s-1);
+	}
+	.views {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s-1);
+		margin-top: var(--s-4);
+		border-bottom: 1px solid var(--border);
+	}
+	.views button {
+		background: none;
+		border: none;
+		border-bottom: 2px solid transparent;
+		padding: var(--s-1) var(--s-2);
+		cursor: pointer;
+		color: inherit;
+		font-weight: 600;
+	}
+	.views button.active {
+		border-bottom-color: var(--accent);
+		color: var(--accent);
+	}
+	.view-lede {
+		max-width: 70ch;
+	}
+	.thin-toggle {
+		display: inline-flex;
+		align-items: center;
 		gap: var(--s-1);
 	}
 	.posrow button {

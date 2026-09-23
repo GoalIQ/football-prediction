@@ -38,7 +38,7 @@ export const ORIGIN = 'https://pro.goaliq.app';
 export const UCL_HEAD = {
 	title: 'UCL Fantasy expected points | GoalIQ',
 	description:
-		'Projected points for players in the official UEFA Champions League Fantasy game, up to three matchdays ahead in the league phase. GoalIQ Premium.'
+		'GoalIQ Premium: projected points for UEFA Champions League Fantasy players up to three matchdays ahead in the league phase, plus captain, value and differential lists.'
 } as const;
 
 /** SPL-sivun oma otsikko ja kuvaus (routes/spl/+page.svelte lukee nama). */
