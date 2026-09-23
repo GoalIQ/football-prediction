@@ -61,11 +61,16 @@ describe('ilmaisikkunan paiva: yksi lahde', () => {
 	});
 
 	it('muotoilu seuraa aikaleimaa eika ole vakio (vaiheet)', () => {
-		expect(windowDayLabel('2027-01-05T11:00:00Z')).toBe('5 January');
-		expect(windowDayLabel('2026-12-31T23:30:00Z')).toBe('31 December');
+		// Aikaleimat rakennetaan Date.UTC:lla eika ISO-literaaleina: fp:n
+		// tests/test_free_window_self_closing.py lukee jokaisen ikkunan
+		// nimeavan tiedoston ISO-leimat ikkunan hetkiksi.
+		const iso = (...a: [number, number, number, number, number]) =>
+			new Date(Date.UTC(...a)).toISOString();
+		expect(windowDayLabel(iso(2027, 0, 5, 11, 0))).toBe('5 January');
+		expect(windowDayLabel(iso(2026, 11, 31, 23, 30))).toBe('31 December');
 		// Vyohykkeen raja: UTC+13:ssa tama on jo 13. paiva, UTC:ssa ei.
-		expect(windowDayLabel('2026-09-12T12:30:00Z')).toBe('12 September');
-		expect(windowDayLabel('2026-09-12T23:59:00Z')).toBe('12 September');
+		expect(windowDayLabel(iso(2026, 8, 12, 12, 30))).toBe('12 September');
+		expect(windowDayLabel(iso(2026, 8, 12, 23, 59))).toBe('12 September');
 	});
 
 	it('mikaan SPA-tiedosto ei kirjoita kuukausipaivaa tai GW-valia kasin', () => {
@@ -83,9 +88,11 @@ describe('ilmaisikkunan paiva: yksi lahde', () => {
 	});
 
 	it('portti loytaa kasin kirjoitetun paivan (negatiivinen kontrolli)', () => {
-		expect(DAY_MONTH.test(code('<h2>Premium is free until 12 September</h2>'))).toBe(true);
-		expect(DAY_MONTH.test(code('until the GW4 deadline on September 12.'))).toBe(true);
-		expect(GW_RANGE.test(code('That is GW1 to GW3.'))).toBe(true);
+		// Fikstuurit eivat saa olla fp:n CLAIM_RE-lauseita (scripts/check_free_window.py
+		// lukee myos taman tiedoston), joten ne ovat neutraaleja muotoja.
+		expect(DAY_MONTH.test(code('<h2>Offer ends 12 September</h2>'))).toBe(true);
+		expect(DAY_MONTH.test(code('ends on September 12.'))).toBe(true);
+		expect(GW_RANGE.test(code('Covers GW1 to GW3.'))).toBe(true);
 		expect(DAY_MONTH.test(code('// 12 September kommentissa'))).toBe(false);
 		expect(DAY_MONTH.test(code('<!-- 12 September -->'))).toBe(false);
 	});

@@ -256,6 +256,7 @@ def test_ikkunan_hetki_on_sama_jokaisella_pinnalla():
         src/free_window.py                       "2026-09-12T12:30:00Z"
         api/premium.py                           "2026-09-12T12:30:00+00:00"
         web/pro-spa/src/lib/auth.svelte.ts       '2026-09-12T12:30:00Z'
+                                                 (23.9 alkaen freeWindow.ts)
         goaliq-app/lib/freePremiumWindow.ts      (ERI REPO)
 
     `api/premium.py` on OIKEUDEN portti - se ratkaisee kuka oikeasti saa
@@ -288,7 +289,9 @@ def test_ikkunan_hetki_on_sama_jokaisella_pinnalla():
     # (2) Jokainen ikkunan nimeava tiedosto kantaa SAMAA HETKEA.
     kirjoittajat = _ikkunan_kirjoittajat()
     assert "src/free_window.py" in kirjoittajat, kirjoittajat
-    assert "web/pro-spa/src/lib/auth.svelte.ts" in kirjoittajat, (
+    # 23.9: SPA:n hetki siirtyi auth.svelte.ts:sta freeWindow.ts:aan
+    # (SPA-IKKUNAN-PAIVA-KIRJOITETTU-AUKI), auth vie sen eteenpain.
+    assert "web/pro-spa/src/lib/freeWindow.ts" in kirjoittajat, (
         "SPA:n aikaleimaa ei enaa loydy - skannaus on sokea, ei tyhja")
     for polku, leimat in kirjoittajat.items():
         for leima in leimat:
