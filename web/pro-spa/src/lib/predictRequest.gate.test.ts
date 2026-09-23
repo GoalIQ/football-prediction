@@ -71,4 +71,14 @@ describe('kutsupaikat', () => {
 		expect(m.slice(ifNat, orElse)).not.toContain('pre-match-logged');
 		expect(logged).toBeGreaterThan(orElse);
 	});
+
+	it('Predict: maajoukkueen esitayttovirhe ei lupaa "yet ... appears once"', () => {
+		const src = read('components/Predict.svelte');
+		const i = src.indexOf('error = national');
+		expect(i).toBeGreaterThan(-1);
+		const natBranch = src.slice(i, src.indexOf('\n\t\t\t\t:', i));
+		expect(natBranch).toContain("We couldn't find");
+		expect(natBranch).toContain('${leagueLabel}');
+		expect(natBranch).not.toMatch(/\byet\b|appears once/);
+	});
 });

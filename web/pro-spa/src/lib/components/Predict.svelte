@@ -179,7 +179,13 @@
 			away = '';
 			data = null;
 			const puuttuva = h ? p.away : p.home;
-			error = `${puuttuva} is not in the ${league} model yet, so this match cannot be predicted. A ${national ? 'team' : 'club'} appears once the model has matches for it in this competition.`;
+			// 23.9 (julkaisutarkistaja): maajoukkuemallin lista on kiintea (54
+			// UNL-maata) eika sovitettu "matches in this competition" -otteluihin,
+			// joten seuraliigojen "yet ... appears once" olisi sille epatosi.
+			const leagueLabel = findLeague(league)?.label ?? league;
+			error = national
+				? `We couldn't find ${puuttuva} among the ${leagueLabel} teams, so this match can't be predicted.`
+				: `${puuttuva} is not in the ${league} model yet, so this match cannot be predicted. A club appears once the model has matches for it in this competition.`;
 			pending = null;
 		});
 	});
