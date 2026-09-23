@@ -60,7 +60,12 @@ describe('/ucl-sivu', () => {
 	it('vanha valilehtirivi on poissa ja valitsin on sivulla', () => {
 		expect(markup).not.toContain('role="tablist"');
 		expect(markup).not.toContain('UCL_VIEWS');
-		expect(markup).toContain('<GameViewNav game="ucl" {view}');
+		expect(markup).toMatch(/<GameViewNav\s+game="ucl"\s+\{view\}/);
+	});
+	it('maskatulle lukitut nakymat saavat Premium-merkin kuten FPL:ssa', () => {
+		expect(markup).toContain(
+			"locked={xp?.meta?.masked ? ['captain', 'value', 'differentials', 'compare'] : []}"
+		);
 	});
 	it('Teams lukee artefaktin joukkuetason', () => {
 		expect(script).toContain('xp?.teams ?? []');

@@ -193,7 +193,14 @@
 		{/if}
 	</p>
 
-	<GameViewNav game="ucl" {view} horizonMeta={xp?.meta ?? null} />
+	<!-- Maskatulle (ilmainen) listat ja vertailu ovat Premiumia: sama merkki kuin
+	     FPL:n lukituissa esiasetuksissa (julkaisutarkistaja 23.9). -->
+	<GameViewNav
+		game="ucl"
+		{view}
+		horizonMeta={xp?.meta ?? null}
+		locked={xp?.meta?.masked ? ['captain', 'value', 'differentials', 'compare'] : []}
+	/>
 
 	{#if err}
 		<p class="error">Could not reach the API. {err}</p>
@@ -453,7 +460,7 @@
 							<tbody>
 								<tr><td>Price</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.price.toFixed(1)}</td>{/each}</tr>
 								<tr><td>Owned</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.owned_pct.toFixed(0)}%</td>{/each}</tr>
-								<tr><td>Expected minutes, MD{md ?? ''}</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xmins.toFixed(0)}</td>{/each}</tr>
+								<tr><td>{md ? `Expected minutes, MD${md}` : 'Expected minutes, next matchday'}</td>{#each cmpPlayers as p (p.id)}<td class="num">{p.xmins.toFixed(0)}</td>{/each}</tr>
 								{#each mdCols as g (g)}
 									<tr>
 										<td>MD{g}</td>
@@ -484,8 +491,8 @@
 			{:else}
 				<p class="muted small view-lede">
 					The chance each club keeps a clean sheet in its matches over {windowText}, from
-					GoalIQ's Champions League model. The same number is behind the clean sheet points of
-					every goalkeeper and defender in the xP list.
+					GoalIQ's Champions League model. The same number is behind the clean sheet points in the
+					xP list.
 				</p>
 				<div class="table-wrap">
 					<table>

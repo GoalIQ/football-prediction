@@ -20,8 +20,16 @@
 	let {
 		game,
 		view,
-		horizonMeta = null
-	}: { game: GameId; view: string; horizonMeta?: HorizonMeta | null } = $props();
+		horizonMeta = null,
+		locked = []
+	}: {
+		game: GameId;
+		view: string;
+		horizonMeta?: HorizonMeta | null;
+		/** Nakymat jotka ovat talle kayttajalle Premiumia (merkki kuten FPL:n
+		 *  ToolRow'ssa). Sivu paattaa tason palvelimen maskista. */
+		locked?: string[];
+	} = $props();
 
 	const def = $derived(GAME_VIEWS[game] as GameViews);
 	const section = $derived(gameSectionOf(game, view));
@@ -43,7 +51,11 @@
 				class="chip"
 				class:hz={p.horizon}
 				class:active={view === p.view}
-				aria-current={view === p.view ? 'page' : undefined}>{presetLabel(p.label, p.horizon)}</a
+				aria-current={view === p.view ? 'page' : undefined}
+				>{presetLabel(p.label, p.horizon)}{#if locked.includes(p.view)}<span
+						class="lock"
+						aria-label="Premium">Premium</span
+					>{/if}</a
 			>
 		{/each}
 	</nav>
@@ -51,7 +63,11 @@
 		<summary>More player tools</summary>
 		<nav class="tool-row" aria-label="More player tools">
 			{#each more as m (m.view)}
-				<a href="#{m.view}" class:active={view === m.view}>{m.label}</a>
+				<a href="#{m.view}" class:active={view === m.view}
+					>{m.label}{#if locked.includes(m.view)}<span class="lock" aria-label="Premium"
+							>Premium</span
+						>{/if}</a
+				>
 			{/each}
 		</nav>
 	</details>
@@ -149,5 +165,17 @@
 	.tool-row a.active {
 		color: var(--accent-strong);
 		border-color: var(--accent);
+	}
+	/* Sama kuin ToolRow.svelten .lock. */
+	.lock {
+		font-family: var(--font-mono);
+		font-size: 0.7em;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: var(--accent);
+		border: 1px solid var(--accent);
+		padding: 0.1em 0.35em;
+		margin-left: 0.4em;
+		vertical-align: 0.08em;
 	}
 </style>

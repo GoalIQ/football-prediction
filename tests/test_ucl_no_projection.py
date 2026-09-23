@@ -500,7 +500,7 @@ def test_listalupaus_vastaa_nakymia():
     assert ucl, "GAME_VIEWS.ucl puuttuu $lib/tools.ts:sta"
     osio = re.search(r"id: 'players'.*?views: \[([^\]]*)\]", ucl.group(1), re.S)
     assert osio and {"captain", "value", "differentials"} <= set(re.findall(r"'(\w+)'", osio.group(1)))
-    assert "uclPicks(" in sivu and '<GameViewNav game="ucl"' in sivu, (
+    assert "uclPicks(" in sivu and re.search(r'<GameViewNav\s+game="ucl"', sivu), (
         "/ucl ei renderoi listoja joita lause lupaa")
 
 

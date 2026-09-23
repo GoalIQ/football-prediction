@@ -260,10 +260,10 @@
 		try {
 			const method = await shareCard({
 				title: 'RSL CAPTAIN PICKS',
-				subtitle: `Gameweek ${nextGw}, RSL Fantasy scoring, GoalIQ model`,
+				subtitle: `Gameweek ${captainGw}, RSL Fantasy scoring, GoalIQ model`,
 				midLabel: 'FIXTURE',
 				valueLabel: 'xP',
-				fileName: `goaliq_spl_captains_gw${nextGw}.png`,
+				fileName: `goaliq_spl_captains_gw${captainGw}.png`,
 				rows: captainPicks.map(({ p, gw1 }, i) => ({
 					rank: i + 1,
 					name: p.web_name,
