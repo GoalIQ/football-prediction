@@ -350,3 +350,37 @@ def test_seuraavalta_kierrokselta_ulkona_oleva_ei_ole_korvaaja():
     rivit = {r[0]: r for r in _rows(html, "out")}
     assert "Varamies" in rivit["Loukkaantunut"][-1]
     assert "Kiellossa" not in rivit["Loukkaantunut"][-1]
+
+
+# XP-POISSAOLO-PALUU, julkaisutarkistaja k3 (24.9): alaviitteen poikkeuslause on
+# DATASTA RIIPPUVA. hub-deploy vie sivun ulos heti mergessa, ja ennen kuin
+# artefakti on rakennettu uudella koodilla pelikieltopelaaja on excludedissa:
+# silloin lause vaittaisi poikkeuksen jota data ei toteuta. Kaksi vaihetta (6a(3)).
+_POIKKEUS = "The one exception is a suspension with an end date"
+
+
+def _alaviite(html):
+    return re.search(r'<h2 id="out">.*?<p class="note">(.*?)</p>', html, re.S).group(1)
+
+
+def test_alaviite_ilman_palaavaa_pelikieltopelaajaa_ei_lupaa_poikkeusta():
+    """Vaihe 1: vanha artefakti, pelikieltopelaaja excludedissa."""
+    html = render_team_news(_xp(
+        [_p("Terve", xp_horizon_total=20.0)],
+        [_p("Kiellossa", status="s", chance_next=0, news="Suspended until 17 Oct")],
+    ), NOW)
+    nootti = _alaviite(html)
+    assert _POIKKEUS not in nootti
+    assert "out of its projection, so the last column is our own number" in nootti
+
+
+def test_alaviite_palaavan_pelikieltopelaajan_kanssa_kertoo_poikkeuksen():
+    """Vaihe 2: uusi artefakti, pelikieltopelaaja projektiossa (players)."""
+    html = render_team_news(_xp(
+        [_p("Terve", xp_horizon_total=20.0),
+         _p("Kiellossa", status="s", chance_next=0, news="Suspended until 17 Oct",
+            xp_horizon_total=9.6)],
+    ), NOW)
+    nootti = _alaviite(html)
+    assert _POIKKEUS in nootti
+    assert "from his return. So the last column is our own number" in nootti

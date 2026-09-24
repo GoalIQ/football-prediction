@@ -75,7 +75,8 @@ from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
 SITEMAP_FPL_PATH = _FP_ROOT / "sitemap-fpl.xml"
 from scripts.build_prediction_pages import DISCLAIMER
 from src.models.fpl_club_best import POSITIONS, club_best_rows, gap_text
-from src.models.fpl_xp import attach_horizon_total_actionable, horizon_sum_gw
+from src.models.fpl_xp import (attach_horizon_total_actionable, horizon_sum_gw,
+                               returns_from_suspension)
 
 BASE = "https://goaliq.app"
 OUT_DIR = ROOT / "fpl"
@@ -3277,6 +3278,17 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             return f'<td class="n">{ls:.0f}<span class="m-hide"> last yr</span></td>'
         return '<td class="n">-</td>'
 
+    # XP-POISSAOLO-PALUU (24.9, julkaisutarkistaja k3): poikkeuslause on tosi
+    # vain kun ARTEFAKTI projisoi palaavan pelikieltopelaajan. hub-deploy vie
+    # sivun ulos heti mergessa, ja vanha artefakti pitaa hanet excludedissa;
+    # silloin lause vaittaisi poikkeuksen jota data ei toteuta. Sama lukija
+    # kuin siirtomoottorilla (fpl_xp.returns_from_suspension).
+    _palaavia = any(returns_from_suspension(p, now.date()) for p in players)
+    _poikkeus = (
+        ". The one exception is a suspension with an end date in FPL's news: "
+        "that player gets zero for the gameweeks he's banned and a normal "
+        "projection from his return. So the last column is our own "
+        if _palaavia else ", so the last column is our own ")
     sections = []
     if out_rows:
         trows = "".join(
@@ -3320,11 +3332,9 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             f"<tbody>{trows}</tbody></table></div>"
             '<p class="note">Last season is the player\'s final FPL total, '
             "a fixed historical number, not a projection. The model leaves a "
-            "ruled-out player out of its projection. The one exception is a "
-            "suspension with an end date in FPL's news: that player gets zero "
-            "for the gameweeks he's banned and a normal projection from his "
-            "return. So the last column is our own "
-            "number instead: the club's best available player in the same "
+            "ruled-out player out of its projection"
+            + _poikkeus
+            + "number instead: the club's best available player in the same "
             "position and what we project them to score. A dash means no "
             "other available player at that club cleared the projection threshold "
             "there.</p>"
