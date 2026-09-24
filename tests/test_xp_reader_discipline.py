@@ -210,6 +210,12 @@ PATH_ALLOWED = {
         "(0 osumaa kierroslistaan), ja deadline valitaan FPL:n bootstrapista "
         "eksplisiittisesti. Tulos ei mene millekaan kayttajan nakemalle "
         "pinnalle, se kirjataan DOUBT_RECOVERY-kommenttiin.",
+    "scripts/measure_injury_return.py":
+        "Mittausskripti (XP-LOUKKAANTUMINEN-PALUU 24.9): lukee artefaktin "
+        "git-historiasta vain pelaajatason `status`-, `chance_next`- ja "
+        "`news`-kentat (0 osumaa kierroslistaan); paluukierros ja deadline "
+        "valitaan FPL:n fixtures- ja bootstrap-datasta. Tulos ei mene "
+        "millekaan kayttajan nakemalle pinnalle, se kirjataan jonoriviin.",
     "scripts/measure_promoted_bias.py":
         "Mittausskripti: lukee `meta`n eika kierroslistaa (0 osumaa). Tulos "
         "ei mene millekaan kayttajan nakemalle pinnalle.",
