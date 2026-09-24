@@ -16,7 +16,10 @@
  * renderoitya muotoa.
  *
  * Nelja luokkaa, ja jokainen on tosi omassa tapauksessaan:
- *   left     status `u` — pysyvasti pois, ei kierrossidonnainen
+ *   not in PL squad  status `u` — pysyvasti pois, ei kierrossidonnainen.
+ *            24.9: oli "left club", mutta 1/105 u-pelaajasta (Richarlison,
+ *            news "not included in squad.", joukkue yha Spurs) ei ole
+ *            lahtenyt seurasta. "not in PL squad" on tosi kaikille 105:lle.
  *   out      status `i`/`s`/`n` tai chance 0 — FPL:n oma lippu
  *   doubt    status `d` — FPL:n oma prosentti kun se on tiedossa
  *   no xP    ei projektiota mutta EI lippua — vaittaa vain meidan luvusta
@@ -38,7 +41,7 @@ export interface AvailabilityFlag {
 /** Merkki hakuriville, tai `null` kun rivilla ei ole sanottavaa. */
 export function availabilityFlag(p: AvailabilityRow): AvailabilityFlag | null {
 	const s = p.status ?? 'a';
-	if (s === 'u') return { text: 'left club', tone: 'out' };
+	if (s === 'u') return { text: 'not in PL squad', tone: 'out' };
 	if (s === 'i' || s === 's' || s === 'n') return { text: 'out', tone: 'out' };
 	if (s === 'd') {
 		return {
@@ -130,8 +133,12 @@ export function repairNote(
 	else why = noXpReason(row);
 	if (!why) return null;
 	const nolla = Math.abs(gainXp) < 0.005;
+	// Tarkistaja 24.9: "a squad place he can't use" oli epatosi d- ja
+	// below_min_xp-riveille (repair on tosi myos niille), ja "Your best XI
+	// doesn't change" ei pida kierroksittain (planneri valitsee yhden XI:n
+	// horisontin summasta). Lause on sidottu plannerin omaan mittariin.
 	const title = nolla
-		? `${why}. The move fills a squad place he can't use. Your best XI doesn't change, which is why it shows +0.00 xP.`
-		: `${why}. The move replaces a squad place he can't use.`;
+		? `${why}. Swapping him out adds no projected points to your best XI over the rest of the horizon, so it shows +0.00 xP.`
+		: `${why}.`;
 	return { text: `${name}: ${flag.text}`, title };
 }

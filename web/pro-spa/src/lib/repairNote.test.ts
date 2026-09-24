@@ -25,7 +25,7 @@ describe('repairRow: backendin repair_reason -> AvailabilityRow', () => {
 describe('repairNote: plannerin korjausrivi', () => {
 	it('Dovin (status u, +0.00): mitattu 18.9 tapaus saa syyn', () => {
 		const n = repairNote('Dovin', 'status:u', 0);
-		expect(n?.text).toBe('Dovin: left club');
+		expect(n?.text).toBe('Dovin: not in PL squad');
 		expect(n?.title).toContain('FPL lists this player as no longer in the league');
 		expect(n?.title).toContain('+0.00 xP');
 	});
@@ -52,6 +52,20 @@ describe('repairNote: plannerin korjausrivi', () => {
 
 	it('status d ilman prosenttia: merkki doubt', () => {
 		expect(repairNote('Z', 'status:d', 0)?.text).toBe('Z: doubt');
+	});
+
+	it('tooltip ei vaita pelaajaa kayttokelvottomaksi (d / below_min_xp)', () => {
+		// Tarkistaja 24.9: tuotannossa repair=true myos "Palmer -> Mbeumo
+		// +6.72 status:d" (FPL 75 %, xP 24.31). Syylause riittaa.
+		for (const [reason, gain] of [
+			['status:d', 6.72],
+			['status:d', 0],
+			['no_projection:below_min_xp', 0]
+		] as const) {
+			const t = repairNote('P', reason, gain)?.title ?? '';
+			expect(t).not.toMatch(/can't|cannot|best XI doesn't change/);
+		}
+		expect(repairNote('P', 'status:d', 6.72)?.title).toBe('FPL lists this player as doubtful.');
 	});
 
 	it('tuntematon syy -> ei merkkia', () => {

@@ -36,7 +36,9 @@ TAPAUKSET = [
     ({"status": "s", "chance_next": 0, "in_projection": False}, "out"),
     ({"status": "n", "chance_next": None, "in_projection": False}, "out"),
     # Seurasta lahtenyt EI ole kierrossidonnainen -> oma sanansa
-    ({"status": "u", "chance_next": 0, "in_projection": False}, "left club"),
+    # 24.9: oli "left club"; Richarlison (u, "not included in squad.", yha
+    # Spurs) teki siita epatoden. Sana on sama kaikille 105 u-pelaajalle.
+    ({"status": "u", "chance_next": 0, "in_projection": False}, "not in PL squad"),
     # Kyseenalainen: FPL:n oma prosentti, ei meidan tulkintaamme
     ({"status": "d", "chance_next": 25, "in_projection": True}, "25%"),
     ({"status": "d", "chance_next": None, "in_projection": True}, "doubt"),
