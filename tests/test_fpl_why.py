@@ -586,8 +586,11 @@ def test_driver_facts_set_pieces_only_counts_a_real_duty():
     kuin kortin set piece -merkeissa (1. tai 2. ottaja)."""
     from src.models.fpl_xp import driver_facts
     p = _rich_player()
-    assert driver_facts(p)["set_pieces"] == "Corners"
+    # 24.9 SETPIECE-SELITE-TOINEN-POTKIJA: toinen ottaja nimetaan erikseen.
+    assert driver_facts(p)["set_pieces"] == "2nd on corners"
     p["set_pieces"] = {"pens": 1, "corners": 2, "fk": None}
+    assert driver_facts(p)["set_pieces"] == "Penalties, 2nd on corners"
+    p["set_pieces"] = {"pens": 1, "corners": 1, "fk": None}
     assert driver_facts(p)["set_pieces"] == "Penalties, corners"
     p["set_pieces"] = {"pens": 3, "corners": 5, "fk": None}
     assert "set_pieces" not in driver_facts(p)
