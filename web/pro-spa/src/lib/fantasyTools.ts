@@ -419,6 +419,11 @@ export interface PlanTransfer {
 	confidence_weight_in?: number;
 	confidence_weight_out?: number;
 	weighting_decided?: boolean;
+	/** 17.9 backend: lahtija on pelaaja jota ei voi pelata (siirto = korjaus).
+	 *  Syy rakenteisena, ks. availabilityFlag.repairNote. Puuttuu vanhalta
+	 *  payloadilta; puuttuva ei ole "ei korjaus" vaan "ei tietoa". */
+	repair?: boolean;
+	repair_reason?: string | null;
 }
 
 export interface PlanGw {
