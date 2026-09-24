@@ -4,6 +4,7 @@
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
 	import HoldVerdictCard from './HoldVerdictCard.svelte';
 	import { capture } from '$lib/analytics';
+	import { repairNote } from '$lib/availabilityFlag';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
@@ -337,6 +338,10 @@
 									>{t.gain_xp_remaining >= 0 ? '+' : ''}{t.gain_xp_remaining.toFixed(2)} xP</span
 								>
 								{#if t.hit}<span class="hit">{t.hit} hit</span>{/if}
+								{#if t.repair}
+									{@const korjaus = repairNote(t.out.web_name, t.repair_reason, t.gain_xp_remaining)}
+									{#if korjaus}<span class="wnote" title={korjaus.title}>{korjaus.text}</span>{/if}
+								{/if}
 								{#if t.weighting_decided}<span class="wnote" title="The player leaving is on a promoted club, so the model discounts his projection by {Math.round((1 - (t.confidence_weight_out ?? 1)) * 100)}% when deciding. On the raw projection this move loses points.">low confidence out</span>{/if}
 							</li>
 						{/each}

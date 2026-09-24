@@ -78,3 +78,60 @@ export function noXpReason(
 	if (p.in_projection === false) return 'this player is outside the projection';
 	return null;
 }
+
+/**
+ * SIIRTOSUUNNITELMAN KORJAUSRIVI (24.9, SIIRTOSUUNNITELMA-NOLLA-XP-SELITE).
+ *
+ * MITATTU 18.9: kuolleen penkkipaikan siivous nakyi plannerissa muodossa
+ * "Dovin -> Lecomte +0.00 xP" ilman syyta, ja otsikon siirtolaskuri kasvoi
+ * yhdella. Backend kantaa syyn rakenteisena (`fpl_transfers.repair_reason`):
+ * `status:<d|i|s|u|n>` / `chance_next:0` / `no_projection:<syy>`.
+ *
+ * Syy muunnetaan SAMAAN AvailabilityRowiin jota hakurivi lukee, joten
+ * planneri ei keksi omaa sanastoa: merkki on `availabilityFlag`in teksti.
+ * Tuntematon muoto -> null, eli rivi ei vaita mitaan mita lahde ei sano.
+ * `no_projection` ei saa `noXpReason`in kynnyslausetta: se koskee
+ * `below_min_xp`ia, ja korjaussyy on eri (pelaaja poistettu projektiosta).
+ */
+export function repairRow(reason: string | null | undefined): AvailabilityRow | null {
+	if (!reason) return null;
+	const i = reason.indexOf(':');
+	if (i < 0) return null;
+	const kind = reason.slice(0, i);
+	const value = reason.slice(i + 1);
+	if (kind === 'status' && ['d', 'i', 's', 'u', 'n'].includes(value)) return { status: value };
+	if (kind === 'chance_next' && value === '0') return { chance_next: 0 };
+	if (kind === 'no_projection' && value) return { in_projection: false, excluded_reason: value };
+	return null;
+}
+
+export interface RepairNote {
+	text: string;
+	title: string;
+}
+
+/** Merkki + selite siirtoriville, tai `null` kun syyta ei tunneta. */
+export function repairNote(
+	name: string,
+	reason: string | null | undefined,
+	gainXp: number
+): RepairNote | null {
+	const row = repairRow(reason);
+	if (!row) return null;
+	const flag = availabilityFlag(row);
+	if (!flag) return null;
+	let why: string | null;
+	if (row.in_projection === false) why = 'This player is outside our projection';
+	else if (row.status == null && row.chance_next === 0)
+		why = 'FPL gives this player a 0% chance of playing the next round';
+	// `status:d` ilman prosenttia: syymerkkijono ei kanna chancea, joten
+	// sanotaan vain lippu (noXpReason vaatisi luvun).
+	else if (row.status === 'd') why = 'FPL lists this player as doubtful';
+	else why = noXpReason(row);
+	if (!why) return null;
+	const nolla = Math.abs(gainXp) < 0.005;
+	const title = nolla
+		? `${why}. The move fills a squad place he can't use. Your best XI doesn't change, which is why it shows +0.00 xP.`
+		: `${why}. The move replaces a squad place he can't use.`;
+	return { text: `${name}: ${flag.text}`, title };
+}
