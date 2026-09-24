@@ -105,3 +105,43 @@ def test_detector_negative_controls(sample: str, should_flag: bool):
     """
     found = EM_DASH in _visible_text_from_html(sample)
     assert found is should_flag
+
+
+# 24.9.2026: `--spa`-tila jota SPA:n vitest-portti (copyStyle.gate.test.ts)
+# kutsuu. {:else}–{/if} meni lapi vanhasta em-dash-testista ylla (se ei tunne
+# en dashia) ja punasi tests.yml:n ~20 h. Erotteleva fikstuuri: sama tyhja
+# solu lainausmerkeissa on sallittu puuttuvan arvon merkki.
+@pytest.mark.parametrize(
+    "markup,should_flag",
+    [
+        ("{#if m}{m.xp}{:else}–{/if}", True),
+        ("{#if m}{m.xp}{:else}—{/if}", True),
+        ("{#if m}{m.xp}{:else}{'–'}{/if}", False),
+        ("<td>{a != null ? a : '–'}</td>", False),
+        ("<p>GW6–11</p>", True),
+    ],
+)
+def test_spa_mode_scan_placeholder(tmp_path, markup: str, should_flag: bool):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "check_copy_style", ROOT / "scripts" / "check_copy_style.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    f = tmp_path / "X.svelte"
+    f.write_text(markup, encoding="utf-8")
+    assert bool(mod.scan(f)) is should_flag
+
+
+def test_spa_mode_is_green_and_stdlib_only():
+    """`--spa` ei saa importata api.mainia: pro-spa-deploy ajaa sen ilman
+    backendin riippuvuuksia."""
+    import subprocess
+    import sys
+
+    r = subprocess.run(
+        [sys.executable, "-X", "importtime", "scripts/check_copy_style.py", "--spa"],
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert r.returncode == 0, r.stdout
+    assert "--spa OK" in r.stdout
+    assert "api.main" not in r.stderr and "fastapi" not in r.stderr

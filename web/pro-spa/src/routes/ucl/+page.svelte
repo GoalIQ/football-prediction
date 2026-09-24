@@ -467,7 +467,7 @@
 										{#each cmpPlayers as p (p.id)}
 											{@const m = p.gameweeks.find((x) => x.gw === g)}
 											<td class="num">
-												{#if m}<span class="opp">{m.opponents.map((o) => `${o.opp} ${o.venue}`).join(', ')}</span>{m.xp.toFixed(1)}{:else}–{/if}
+												{#if m}<span class="opp">{m.opponents.map((o) => `${o.opp} ${o.venue}`).join(', ')}</span>{m.xp.toFixed(1)}{:else}{'–'}{/if}
 											</td>
 										{/each}
 									</tr>
@@ -513,7 +513,7 @@
 									{#each mdCols as g (g)}
 										{@const f = t.fixtures.find((x) => x.gw === g)}
 										<td class="num">
-											{#if f}<span class="opp">{f.opp} {f.venue}</span>{Math.round(f.cs_pct)}%{:else}–{/if}
+											{#if f}<span class="opp">{f.opp} {f.venue}</span>{Math.round(f.cs_pct)}%{:else}{'–'}{/if}
 										</td>
 									{/each}
 								</tr>

@@ -411,13 +411,41 @@ def scan_meta_codes(root: Path | None = None) -> list[tuple[str, str, str]]:
     return puutteet
 
 
+def spa_targets() -> list[Path]:
+    if not SPA_DIR.exists():
+        return []
+    return sorted(set(SPA_DIR.rglob("*.svelte")) | set(SPA_DIR.rglob("*.ts")))
+
+
+def main_spa() -> int:
+    """`--spa`: vain pro-spa:n lahde, vain stdlib (24.9.2026).
+
+    MIKSI: SPA-muutos pushattiin kahdesti 23.9 ajamatta taman portin koko
+    ajoa, ja tests.yml oli punainen ~20 h ({:else}–{/if} UCL-sivulla).
+    SPA:n oma porttisarja (vitest, jonka pro-spa-deploy ajaa ja jota
+    SPA-kehittaja ajaa) kutsuu tata tilaa `copyStyle.gate.test.ts`:ssa, joten
+    saanto on yksi toteutus eika kahta ajautuvaa kopiota. Taysi ajo importoi
+    api.mainin (openapi) eika siksi toimi node-ymparistossa.
+    """
+    targets = spa_targets()
+    hits = [(p, n, t) for p in targets for n, t in scan(p)]
+    if not hits:
+        print(f"check_copy_style --spa OK - 0 em/en dashia ({len(targets)} tiedostoa)")
+        return 0
+    print(f"check_copy_style --spa FAIL - {len(hits)} em/en dashia nakyvassa tekstissa:\n")
+    for path, line_no, text in hits:
+        print(f"  {path.relative_to(ROOT).as_posix()}:{line_no}\n    {text}\n")
+    print("Puuttuvan arvon merkki kulkee lainausmerkeissa: {'-'}-lauseke "
+          "(en dash lainausmerkeissa), kuten CleanSheets.svelte. Muuten piste, "
+          "pilkku tai kaksoispiste.")
+    return 1
+
+
 def main() -> int:
     targets: list[Path] = []
     for g in HTML_GLOBS:
         targets += sorted(ROOT.glob(g))
-    if SPA_DIR.exists():
-        targets += sorted(SPA_DIR.rglob("*.svelte"))
-        targets += sorted(SPA_DIR.rglob("*.ts"))
+    targets += spa_targets()
     targets += [ROOT / c for c in COPY_CSV if (ROOT / c).exists()]
     targets = sorted(set(targets))
 
@@ -512,4 +540,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main_spa() if "--spa" in sys.argv[1:] else main())
