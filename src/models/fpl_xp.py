@@ -1621,10 +1621,24 @@ def driver_facts(player: dict) -> dict:
     if isinstance(sp, dict):
         # Sama kynnys kuin kortin set piece -merkeissa: 1. tai 2. ottaja.
         # Kolmas nimi listalla ei ole vastuu vaan jarjestysnumero.
-        duties = [_SET_PIECE_WORD[k] for k in ("pens", "corners", "fk")
-                  if isinstance(sp.get(k), (int, float)) and 1 <= sp[k] <= 2]
-        if duties:
-            out["set_pieces"] = ", ".join(duties).capitalize()
+        # 24.9 (SETPIECE-SELITE-TOINEN-POTKIJA): toinen ottaja nimetaan
+        # erikseen ("2nd on"). Ennen Mbeumo (2/2/2) ja B.Fernandes (1/1/1)
+        # saivat saman tekstin "on penalties, corners, free kicks", eli
+        # lukija ei nahnyt kumpi potkii.
+        def _duties(order: int) -> list[str]:
+            return [_SET_PIECE_WORD[k] for k in ("pens", "corners", "fk")
+                    if isinstance(sp.get(k), (int, float)) and sp[k] == order]
+        parts = []
+        if _duties(1):
+            parts.append(", ".join(_duties(1)))
+        if _duties(2):
+            parts.append("2nd on " + ", ".join(_duties(2)))
+        if parts:
+            # Ryhmien valissa puolipiste (julkaisutarkistaja 24.9): pilkulla
+            # "on penalties, 2nd on corners, free kicks" (Saka 1/2/2) voi
+            # lukea niin etta free kicks kuuluisi ykkosryhmaan.
+            txt = "; ".join(parts)
+            out["set_pieces"] = txt[0].upper() + txt[1:]
 
     gws = player.get("gameweeks")
     if isinstance(gws, list):
