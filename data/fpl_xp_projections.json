@@ -9,7 +9,7 @@
       "historical_median_pct": 13.0,
       "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
       "note": "Descriptive, not predictive. The flag says a rating is built on weaker information; it does not say which way that moves the projection.",
-      "n_flagged_players": 171,
+      "n_flagged_players": 173,
       "teams": {
         "Arsenal": {
           "flag": null,
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-24T13:58:42+00:00",
+    "generated_at": "2026-09-24T15:49:35+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -169,8 +169,8 @@
       "promoted_prior_players": 246,
       "promoted_prior_method": "Promoted-club players with no Premier League minutes: minutes come from a role prior built on FPL price order (XI slots 1/4/4/2 per position; top p_start 0.72, next two 0.30, rest 0.08) times the FPL availability gate. Rates come from a position prior. data_basis=no_history, minutes_confidence=low, minutes_method=promoted_price_prior.",
       "player_basis_counts": {
-        "pl_history": 253,
-        "limited_history": 160,
+        "pl_history": 256,
+        "limited_history": 161,
         "no_history": 66
       },
       "basis_threshold_minutes": 450.0,
@@ -201,14 +201,14 @@
     ],
     "horizon_gw": 6,
     "min_xp_total": 1.0,
-    "n_players": 479,
-    "n_excluded": 188,
+    "n_players": 483,
+    "n_excluded": 184,
     "last_season_block": {
-      "hidden": 397,
-      "short_season": 71,
+      "hidden": 398,
+      "short_season": 73,
       "new_club": 36,
       "thin_sample": 55,
-      "no_projection": 108
+      "no_projection": 105
     },
     "excluded_note": "excluded[] lists FPL players who are not in the projection (availability flag i/s/u/n, or horizon xP below 1.0). The rows exist for search and the player card: in_projection=false, with no xP/xmins/p_start fields. Older clients can ignore the list.",
     "excluded_note_code": "fpl_xp.excluded_note.v1",
@@ -1097,7 +1097,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 50.6,
+      "owned_pct": 50.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6878,7 +6878,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 15.6,
+      "owned_pct": 15.5,
       "status": "d",
       "news": "Ankle injury - 75% chance of playing",
       "chance_next": 75,
@@ -9853,7 +9853,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 7.0,
+      "owned_pct": 7.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -17073,7 +17073,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 6.9,
+      "owned_pct": 7.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -17361,7 +17361,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 65.6,
+      "owned_pct": 65.5,
       "status": "d",
       "news": "Knee injury - 75% chance of playing",
       "chance_next": 75,
@@ -28194,6 +28194,131 @@
       "last_season_show": false
     },
     {
+      "id": 315,
+      "web_name": "Fatawu",
+      "full_name": "Abdul Fatawu",
+      "team": "Ipswich",
+      "team_short": "IPS",
+      "pos": "MID",
+      "xmins": 0.0,
+      "predicted_starts": 0.0,
+      "minutes_confidence": "high",
+      "data_basis": "limited_history",
+      "owned_pct": 0.2,
+      "status": "s",
+      "news": "Suspended until 17 Oct",
+      "chance_next": 0,
+      "yellows": 2,
+      "price": 5.4,
+      "team_code": 40,
+      "last_season": null,
+      "form": {
+        "value": 1.5,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.0,
+        "p_haul": 0.0,
+        "p_blank": 1.0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.0,
+      "p_cameo": 0.0,
+      "p_bench": 1.0,
+      "set_pieces": {
+        "pens": null,
+        "corners": 2,
+        "fk": null
+      },
+      "e_bonus": 0.0,
+      "xp_per_gw": 2.3,
+      "xp_per_90": 3.38,
+      "xp_horizon_total": 13.81,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.0
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.54
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "NFO",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.82
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.73
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "BOU",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.77
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.95
+        }
+      ],
+      "components": {
+        "appearance": 0.0,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": 0.0,
+        "bonus": 0.0
+      },
+      "components_gw": 6,
+      "team_flag": "promoted",
+      "last_season_show": false
+    },
+    {
       "id": 423,
       "web_name": "Shaw",
       "full_name": "Luke Shaw",
@@ -30393,6 +30518,151 @@
       "components_gw": 6,
       "team_flag": "promoted",
       "last_season_show": false
+    },
+    {
+      "id": 492,
+      "web_name": "Awoniyi",
+      "full_name": "Taiwo Awoniyi",
+      "team": "Coventry",
+      "team_short": "COV",
+      "pos": "FWD",
+      "xmins": 0.0,
+      "predicted_starts": 0.0,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 0.4,
+      "status": "s",
+      "news": "Suspended until 19 Oct",
+      "chance_next": 0,
+      "yellows": 0,
+      "price": 5.4,
+      "team_code": 9,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 17,
+        "team_name": "Nott'm Forest",
+        "minutes": 480,
+        "starts": 3,
+        "goals": 4,
+        "assists": 2,
+        "xg": 3.68,
+        "xa": 0.77,
+        "cs": 1,
+        "points": 43,
+        "per90": {
+          "goals": 0.75,
+          "assists": 0.38,
+          "xgi": 0.83
+        }
+      },
+      "form": {
+        "value": 0.5,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.0,
+        "p_haul": 0.0,
+        "p_blank": 1.0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.0,
+      "p_cameo": 0.0,
+      "p_bench": 1.0,
+      "set_pieces": {
+        "pens": 5,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.0,
+      "xp_per_gw": 2.04,
+      "xp_per_90": 4.87,
+      "xp_horizon_total": 12.24,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.0
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.46
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.49
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.43
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.32
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "CRY",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.54
+        }
+      ],
+      "components": {
+        "appearance": 0.0,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": 0.0,
+        "bonus": 0.0
+      },
+      "components_gw": 6,
+      "team_flag": "promoted",
+      "minutes_basis_flag": "short_season",
+      "last_season_show": true,
+      "last_season_reason": "short_season"
     },
     {
       "id": 553,
@@ -35559,6 +35829,148 @@
         "defensive_contribution": 0.03,
         "yellows": -0.05,
         "bonus": 0.06
+      },
+      "components_gw": 6,
+      "last_season_show": false
+    },
+    {
+      "id": 398,
+      "web_name": "Foden",
+      "full_name": "Phil Foden",
+      "team": "Manchester City",
+      "team_short": "MCI",
+      "pos": "MID",
+      "xmins": 0.0,
+      "predicted_starts": 0.0,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 1.8,
+      "status": "s",
+      "news": "Suspended until 17 Oct",
+      "chance_next": 0,
+      "yellows": 1,
+      "price": 6.9,
+      "team_code": 43,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 43,
+        "team_name": "Man City",
+        "minutes": 2078,
+        "starts": 23,
+        "goals": 7,
+        "assists": 5,
+        "xg": 6.03,
+        "xa": 4.76,
+        "cs": 11,
+        "points": 131,
+        "per90": {
+          "goals": 0.3,
+          "assists": 0.22,
+          "xgi": 0.47
+        }
+      },
+      "form": {
+        "value": 2.0,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.0,
+        "p_haul": 0.0,
+        "p_blank": 1.0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.0,
+      "p_cameo": 0.0,
+      "p_bench": 1.0,
+      "set_pieces": {
+        "pens": null,
+        "corners": 2,
+        "fk": 2
+      },
+      "e_bonus": 0.0,
+      "xp_per_gw": 1.6,
+      "xp_per_90": 5.05,
+      "xp_horizon_total": 9.62,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "LIV",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.0
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.25
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "AVL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.75
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "BHA",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.86
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "NFO",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.74
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.02
+        }
+      ],
+      "components": {
+        "appearance": 0.0,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": 0.0,
+        "bonus": 0.0
       },
       "components_gw": 6,
       "last_season_show": false
@@ -44655,7 +45067,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "pl_history",
-      "owned_pct": 1.0,
+      "owned_pct": 0.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -51504,6 +51916,150 @@
       },
       "components_gw": 6,
       "last_season_show": false
+    },
+    {
+      "id": 153,
+      "web_name": "Disasi",
+      "full_name": "Axel Disasi",
+      "team": "Crystal Palace",
+      "team_short": "CRY",
+      "pos": "DEF",
+      "xmins": 0.0,
+      "predicted_starts": 0.0,
+      "minutes_confidence": "med",
+      "data_basis": "pl_history",
+      "owned_pct": 0.1,
+      "status": "s",
+      "news": "Suspended until 25 Oct",
+      "chance_next": 0,
+      "yellows": 0,
+      "price": 4.5,
+      "team_code": 31,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 21,
+        "team_name": "West Ham",
+        "minutes": 1254,
+        "starts": 14,
+        "goals": 0,
+        "assists": 0,
+        "xg": 1.1,
+        "xa": 0.03,
+        "cs": 6,
+        "points": 49,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.08
+        }
+      },
+      "form": {
+        "value": 0.2,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.0,
+        "p_haul": 0.0,
+        "p_blank": 1.0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.0,
+      "p_cameo": 0.0,
+      "p_bench": 1.0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.0,
+      "xp_per_gw": 0.77,
+      "xp_per_90": 3.52,
+      "xp_horizon_total": 4.65,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "NFO",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.0
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "BHA",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.0
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.25
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.12
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "LIV",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.0
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "COV",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.28
+        }
+      ],
+      "components": {
+        "appearance": 0.0,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": 0.0,
+        "bonus": 0.0
+      },
+      "components_gw": 6,
+      "minutes_basis_flag": "short_season",
+      "last_season_show": true,
+      "last_season_reason": "short_season"
     },
     {
       "id": 375,
@@ -67073,7 +67629,7 @@
       "team_short": "NEW",
       "pos": "DEF",
       "price": 4.5,
-      "owned_pct": 1.9,
+      "owned_pct": 1.8,
       "status": "i",
       "news": "Unspecified injury - Unknown return date",
       "chance_next": 0,
@@ -67092,53 +67648,6 @@
       "in_projection": false,
       "excluded_reason": "unavailable",
       "last_season_show": false
-    },
-    {
-      "id": 398,
-      "web_name": "Foden",
-      "full_name": "Phil Foden",
-      "team": "Manchester City",
-      "team_short": "MCI",
-      "pos": "MID",
-      "price": 6.9,
-      "owned_pct": 1.8,
-      "status": "s",
-      "news": "Suspended until 17 Oct",
-      "chance_next": 0,
-      "yellows": 1,
-      "set_pieces": {
-        "pens": null,
-        "corners": 2,
-        "fk": 2
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 43,
-        "team_name": "Man City",
-        "minutes": 2078,
-        "starts": 23,
-        "goals": 7,
-        "assists": 5,
-        "xg": 6.03,
-        "xa": 4.76,
-        "cs": 11,
-        "points": 131,
-        "per90": {
-          "goals": 0.3,
-          "assists": 0.22,
-          "xgi": 0.47
-        }
-      },
-      "form": {
-        "value": 2.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
     },
     {
       "id": 260,
@@ -68096,53 +68605,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 492,
-      "web_name": "Awoniyi",
-      "full_name": "Taiwo Awoniyi",
-      "team": "Coventry",
-      "team_short": "COV",
-      "pos": "FWD",
-      "price": 5.4,
-      "owned_pct": 0.4,
-      "status": "s",
-      "news": "Suspended until 19 Oct",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": 5,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 17,
-        "team_name": "Nott'm Forest",
-        "minutes": 480,
-        "starts": 3,
-        "goals": 4,
-        "assists": 2,
-        "xg": 3.68,
-        "xa": 0.77,
-        "cs": 1,
-        "points": 43,
-        "per90": {
-          "goals": 0.75,
-          "assists": 0.38,
-          "xgi": 0.83
-        }
-      },
-      "form": {
-        "value": 0.5,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 431,
       "web_name": "Amad",
       "full_name": "Amad Diallo",
@@ -68407,34 +68869,6 @@
       "last_season": null,
       "form": {
         "value": 0.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": false
-    },
-    {
-      "id": 315,
-      "web_name": "Fatawu",
-      "full_name": "Abdul Fatawu",
-      "team": "Ipswich",
-      "team_short": "IPS",
-      "pos": "MID",
-      "price": 5.4,
-      "owned_pct": 0.2,
-      "status": "s",
-      "news": "Suspended until 17 Oct",
-      "chance_next": 0,
-      "yellows": 2,
-      "set_pieces": {
-        "pens": null,
-        "corners": 2,
-        "fk": null
-      },
-      "last_season": null,
-      "form": {
-        "value": 1.5,
         "gws": 4,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
@@ -69413,53 +69847,6 @@
       "in_projection": false,
       "excluded_reason": "unavailable",
       "last_season_show": false
-    },
-    {
-      "id": 153,
-      "web_name": "Disasi",
-      "full_name": "Axel Disasi",
-      "team": "Crystal Palace",
-      "team_short": "CRY",
-      "pos": "DEF",
-      "price": 4.5,
-      "owned_pct": 0.1,
-      "status": "s",
-      "news": "Suspended until 25 Oct",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 21,
-        "team_name": "West Ham",
-        "minutes": 1254,
-        "starts": 14,
-        "goals": 0,
-        "assists": 0,
-        "xg": 1.1,
-        "xa": 0.03,
-        "cs": 6,
-        "points": 49,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.08
-        }
-      },
-      "form": {
-        "value": 0.2,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
     },
     {
       "id": 487,
