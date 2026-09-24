@@ -126,6 +126,10 @@
 <style>
 	.picker-row {
 		display: flex;
+		/* 24.9: u-merkki "not in PL squad" + nowrap-statsit ylittivat 390 px:n
+		   rivin 6/6 mitatulla u-rivilla (julkaisutarkistaja, CDP). Rivitys
+		   korjaa ylivuodon ja laskee rivin korkeuden 72 -> 62 px. */
+		flex-wrap: wrap;
 		gap: 8px;
 		align-items: baseline;
 		width: 100%;
