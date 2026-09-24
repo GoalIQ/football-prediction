@@ -465,7 +465,9 @@ def test_fact_text_set_piece_needs_first_or_second_taker():
     assert fact_text(_player("MID", pens=1, xgi=0.32), CS, PS) == "on penalties"
     # 24.9 SETPIECE-SELITE-TOINEN-POTKIJA: toinen ottaja nimetaan erikseen.
     assert fact_text(_player("MID", pens=2, corners=1, fk=1, xgi=0.68), CS, PS) \
-        == "on corners, free kicks, 2nd on penalties"
+        == "on corners, free kicks; 2nd on penalties"
+    # Saka 24.9 (1/2/2): puolipiste erottaa ryhmat, free kicks kuuluu 2nd-ryhmaan.
+    assert fact_text(_player("MID", pens=1, corners=2, fk=2), CS, PS)         == "on penalties; 2nd on corners, free kicks"
     assert fact_text(_player("MID", pens=1, corners=1, fk=1), CS, PS) \
         == "on penalties, corners, free kicks"
     # Mbeumo 24.9 (2/2/2): ei samaa tekstia kuin B.Fernandesilla (1/1/1).

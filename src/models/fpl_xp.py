@@ -1634,7 +1634,10 @@ def driver_facts(player: dict) -> dict:
         if _duties(2):
             parts.append("2nd on " + ", ".join(_duties(2)))
         if parts:
-            txt = ", ".join(parts)
+            # Ryhmien valissa puolipiste (julkaisutarkistaja 24.9): pilkulla
+            # "on penalties, 2nd on corners, free kicks" (Saka 1/2/2) voi
+            # lukea niin etta free kicks kuuluisi ykkosryhmaan.
+            txt = "; ".join(parts)
             out["set_pieces"] = txt[0].upper() + txt[1:]
 
     gws = player.get("gameweeks")

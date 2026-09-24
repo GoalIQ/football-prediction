@@ -94,7 +94,7 @@ def fact_text(player: dict, team_cs: dict[str, float] | None = None,
     facts = driver_facts(player)
     sp = facts.get("set_pieces")
     if sp:
-        # "Penalties, 2nd on corners" -> "on penalties, 2nd on corners";
+        # "Penalties; 2nd on corners" -> "on penalties; 2nd on corners";
         # pelkka toinen ottaja "2nd on penalties" ilman "on "-etuliitetta.
         s = str(sp)[0].lower() + str(sp)[1:]
         return s if s.startswith("2nd on") else "on " + s
