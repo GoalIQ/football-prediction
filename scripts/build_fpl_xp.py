@@ -662,6 +662,38 @@ def healthy_elements(elements: list[dict]) -> list[dict]:
             for e in elements]
 
 
+def suspension_returns(elements: list[dict], today: _dt.date) -> dict[int, _dt.date]:
+    """XP-POISSAOLO-PALUU (24.9): pelikieltopelaajat (`s`) joiden paluupaivan
+    FPL:n news kertoo. Viitepaiva vuodelle on news_added (FPL:n oma leima),
+    muuten tanaan. Lukematon news -> ei rivia -> nykyinen kaytos."""
+    out: dict[int, _dt.date] = {}
+    for e in elements:
+        if e.get("status") != "s":
+            continue
+        ref = today
+        added = e.get("news_added")
+        if isinstance(added, str) and len(added) >= 10:
+            try:
+                ref = _dt.date.fromisoformat(added[:10])
+            except ValueError:
+                ref = today
+        d = xp.suspension_return_date(e.get("news"), ref)
+        if d is not None:
+            out[e["id"]] = d
+    return out
+
+
+def returning_elements(elements: list[dict], returning: dict[int, _dt.date]) -> list[dict]:
+    """Samat pelaajat, mutta paluupaivallinen pelikieltopelaaja kaytettavissa.
+
+    Kysymys on sama kuin epavarman pelaajan tervessa ajossa: P(aloittaa |
+    kaytettavissa). Joukkuetovereiden liput pysyvat, koska paluukierroksella
+    han kilpailee niita vastaan jotka silloin ovat kentalla."""
+    return [{**e, "status": "a", "chance_of_playing_next_round": None}
+            if e["id"] in returning else e
+            for e in elements]
+
+
 def availability_after_passes(mm_flagged: dict[int, dict], mm_healthy: dict[int, dict],
                               elements: list[dict]) -> tuple[dict[int, dict], set[int]]:
     """Epavarman pelaajan (0 < kerroin < 1) aloitus-tn = kerroin x terveen ajon tn.
@@ -705,7 +737,8 @@ def availability_after_passes(mm_flagged: dict[int, dict], mm_healthy: dict[int,
 
 
 def round_minutes(mm: dict, element: dict, gw: int, headline_gw: int, *,
-                  availability_in_value: bool) -> dict:
+                  availability_in_value: bool, mm_return: dict | None = None,
+                  return_factor: float | None = None) -> dict:
     """Minuuttimalli horisontin kierrokselle `gw`.
 
     🔴 XP-DOUBT-HORISONTTI (23.9.2026): FPL:n prosentti koskee otsikko-
@@ -722,11 +755,18 @@ def round_minutes(mm: dict, element: dict, gw: int, headline_gw: int, *,
     (`until_available`) on jo poissaolon luku, joten sita ei skaalata.
     k < 0 (kesken oleva kierros ennen otsikkokierrosta): FPL:n oma luku.
     """
+    if availability_in_value:
+        return mm
+    # XP-POISSAOLO-PALUU (24.9): pelikielto koskee vain kierroksia ennen FPL:n
+    # paluupaivaa. `return_factor` = osuus kierroksen otteluista paluupaivana
+    # tai sen jalkeen (fpl_xp.suspension_round_factor); 0 -> kielletty kierros.
+    if mm_return is not None and return_factor is not None:
+        return xp.scale_availability(mm_return, return_factor) if return_factor > 0 else mm
     status = element.get("status", "a")
     chance = element.get("chance_of_playing_next_round")
     f = xp.availability_factor(status, chance)
     f_k = xp.round_availability_factor(status, chance, gw - headline_gw)
-    if availability_in_value or f <= 0.0 or f_k == f:
+    if f <= 0.0 or f_k == f:
         return mm
     return xp.scale_availability(mm, f_k / f)
 
@@ -869,6 +909,19 @@ def main(argv: list[str] | None = None) -> int:
         healthy_elements(boot["elements"]), mins_by_round, starts_by_round,
         prev_rounds_by_player, cur_mins_by_player, recency_window,
         log=lambda *a, **k: None)
+    # XP-POISSAOLO-PALUU (24.9): kolmas ajo vain jos jollakin pelikieltopelaajalla
+    # on luettava paluupaiva. Siita otetaan VAIN palaajien rivit.
+    returning = suspension_returns(boot["elements"],
+                                   _dt.datetime.now(_dt.timezone.utc).date())
+    mm_return: dict[int, dict] = {}
+    if returning:
+        mm_ret_all, _ = minute_passes(
+            returning_elements(boot["elements"], returning), mins_by_round,
+            starts_by_round, prev_rounds_by_player, cur_mins_by_player,
+            recency_window, log=lambda *a, **k: None)
+        mm_return = {pid: mm_ret_all[pid] for pid in returning if pid in mm_ret_all}
+        print(f"      pelikielto: {len(mm_return)} pelaajalla luettava paluupaiva "
+              f"({', '.join(sorted(d.isoformat() for d in returning.values()))})")
     _before = {pid: mm_by_player[pid]["p_start"] for pid in mm_by_player}
     mm_by_player, doubt_pids = availability_after_passes(
         mm_by_player, mm_healthy, boot["elements"])
@@ -942,6 +995,9 @@ def main(argv: list[str] | None = None) -> int:
     name_to_fid = {n: i + 1 for i, n in enumerate(fixture_teams)}
     ctx_by_gw: dict[int, dict[int, list[dict]]] = {}
     opp_by_gw: dict[int, dict[int, list[dict]]] = {}
+    # XP-POISSAOLO-PALUU (24.9): joukkueen ottelupaivat per kierros (UTC).
+    # Tuntematon kickoff = None, jonka suspension_round_factor laskee poissaoloksi.
+    kickoff_days: dict[int, dict[str, list]] = {}
     for g in horizon:
         fxs = []
         for f in upcoming:
@@ -953,6 +1009,12 @@ def main(argv: list[str] | None = None) -> int:
             fxs.append({"team_h": name_to_fid[h], "team_a": name_to_fid[a],
                         "event": g})
             opp_by_gw.setdefault(g, defaultdict(list))
+            ko_ms = f.get("kickoff_ms")
+            ko_day = (_dt.datetime.fromtimestamp(ko_ms / 1000, _dt.timezone.utc).date()
+                      if ko_ms else None)
+            kickoff_days.setdefault(g, defaultdict(list))
+            kickoff_days[g][h].append(ko_day)
+            kickoff_days[g][a].append(ko_day)
             opp_by_gw[g][name_to_fid[h]].append({"opp": short_name(a), "venue": "H"})
             opp_by_gw[g][name_to_fid[a]].append({"opp": short_name(h), "venue": "A"})
         fid_to_model = {v: k for k, v in name_to_fid.items()}
@@ -1269,11 +1331,29 @@ def main(argv: list[str] | None = None) -> int:
         # korvaa minutes_form+availability_factor-skalaarin. Pre-season: koko
         # kausi tasapainoin (mm_window=None), live-kausi: last-6 recency.
         mm = mm_by_player[pid]
+        model_team_name = [n for n, i in name_to_fid.items() if i == fid][0]
+
+        # XP-POISSAOLO-PALUU (24.9): paluupaivallinen pelikieltopelaaja.
+        # Otsikkokierroksella FPL:n oma chance 0 voittaa paivan (FPL:n luku
+        # koskee juuri sita kierrosta); muille kierroksille paivan mukaan.
+        ret_date = returning.get(pid) if pid in mm_return else None
+
+        def _return_factor(g: int) -> float | None:
+            if ret_date is None:
+                return None
+            if g == headline_gw and e.get("chance_of_playing_next_round") == 0:
+                return 0.0
+            return xp.suspension_round_factor(
+                ret_date, (kickoff_days.get(g) or {}).get(model_team_name, []))
+
+        f_head = _return_factor(headline_gw)
+        if f_head:
+            # Kielto paattyy ennen otsikkokierrosta: rivin kentat (xmins,
+            # Start%) samasta minuuttimallista kuin kierroksen xP.
+            mm = xp.scale_availability(mm_return[pid], f_head)
         # Otsikkokierroksen minuutit (rivin xmins, e_bonus). Horisontin
         # kierrokset: round_minutes silmukassa.
         xmins = mm["xmins"]
-
-        model_team_name = [n for n, i in name_to_fid.items() if i == fid][0]
 
         # MAALIUHKAN OHITUS. Tämä on ainoa paikka jossa "seura tekee vähemmän
         # maaleja" voidaan sanoa: `attack_delta` ei yllä tänne lainkaan, koska
@@ -1328,7 +1408,9 @@ def main(argv: list[str] | None = None) -> int:
             # XP-DOUBT-HORISONTTI (23.9): FPL:n prosentti koskee vain
             # otsikkokierrosta, myohemmille mitattu palautuminen.
             mm_r = round_minutes(mm, e, g, headline_gw,
-                                 availability_in_value=conditional_ov)
+                                 availability_in_value=conditional_ov,
+                                 mm_return=mm_return.get(pid) if ret_date else None,
+                                 return_factor=_return_factor(g))
             # Phase 1b: minuuttikerroin (MM-väsymys yms.) per joukkue/GW
             # + #33: tupla-GW-ruuhka → pieni rotaatioriski kärkipelaajille
             mult = (xmins_multiplier(model_team_name, g, cfg)

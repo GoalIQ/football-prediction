@@ -64,6 +64,7 @@ from __future__ import annotations
 import itertools
 
 from src.models.fpl_entry_history import FT_MAX as _FT_RULE_MAX
+from src.models.fpl_xp import returns_from_suspension
 from src.models.fpl_rate_team import (
     DECISION_BAR_XP_PER_GW, HIT_COST_XP, MAX_PER_CLUB, POS_NAME, RateTeamError,
     _best_split, _gw_xp, hold_threshold_for,
@@ -254,6 +255,11 @@ def needs_repair(p: dict) -> bool:
     """
     if p.get("no_projection"):
         return True
+    # XP-POISSAOLO-PALUU (24.9): pelikielto jonka paluupaiva on tiedossa ja
+    # joka mahtuu horisonttiin (pelaaja on projektiossa) ei ole kuollut paikka.
+    # Hanen nollansa kielletyille kierroksille ovat jo artefaktin xP:ssa.
+    if returns_from_suspension(p):
+        return False
     if (p.get("status") or "a") != "a":
         return True
     if p.get("chance_next") == 0:
@@ -303,6 +309,10 @@ def unavailable_by_fpl(p: dict) -> bool:
     kauden lopussa, joten yha useampi halpa penkkilainen putoaa rajan alle.
     Siksi ehto ei saa nojata `no_projection`-lippuun.
     """
+    # XP-POISSAOLO-PALUU (24.9): sama poikkeus kuin needs_repairissa. Lupa
+    # myyda ilman XI-hyotya ei koske pelaajaa joka palaa horisontin sisalla.
+    if returns_from_suspension(p):
+        return False
     if (p.get("status") or "a") in FPL_UNAVAILABLE_STATUS:
         return True
     if p.get("chance_next") == 0:
