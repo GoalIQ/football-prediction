@@ -419,6 +419,14 @@ export interface PlanTransfer {
 	confidence_weight_in?: number;
 	confidence_weight_out?: number;
 	weighting_decided?: boolean;
+	/** 17.9 (backend): lähtijä on pelaaja jota ei voi pelata -> siirto on
+	 *  KORJAUS, ei arvosiirto. Kuolleen paikan siivouksella `gain_xp_remaining`
+	 *  on 0.0 (XI ei muutu), ja ilman tätä paria rivi "+0.00 xP" on lukijalle
+	 *  selittämätön (SIIRTOSUUNNITELMA-NOLLA-XP-SELITE, 24.9). Koodi on
+	 *  rakenteinen (`status:d` / `chance_next:0` / `no_projection:<syy>`),
+	 *  luetaan `repairReasonText`illa ($lib/availabilityFlag). */
+	repair?: boolean;
+	repair_reason?: string | null;
 }
 
 export interface PlanGw {

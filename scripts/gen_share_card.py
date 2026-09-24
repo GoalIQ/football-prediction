@@ -27,9 +27,11 @@ AJO:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -63,6 +65,44 @@ FONT_BOLD = _FONT_DIR / "700Bold" / "IBMPlexMono_700Bold.ttf"
 FONT_MED = _FONT_DIR / "500Medium" / "IBMPlexMono_500Medium.ttf"
 # 23.9.2026: polku src/brand.py:ssa (yksi lahde merkille, ks. test_card_brand_theme).
 from src.brand import WORDMARK_PNG as WORDMARK  # noqa: E402
+
+
+def sidecar_path(out: Path) -> Path:
+    """Sidecarin polku samassa kansiossa samalla rungolla, pääte `.json`."""
+    return out.with_suffix(".json")
+
+
+def write_sidecar(out: Path, *, card: str, rows: int,
+                   generated_at: str | None) -> Path:
+    """Kirjoita kortin PNG:n rinnalle todiste-sidecar (POSTATTU-KORTTI-EI-OLE-TALLESSA,
+    24.9.2026).
+
+    `outputs/` on .gitignoressa ja jokainen ajo ylikirjoittaa saman
+    tiedostonimen, joten postattua korttia ei voi jalkikateen todistaa
+    pelkasta polusta — 9.9 postattu GW4-kortti (M82) katosi tasan nain.
+    Sidecar ei itsessaan ratkaise talletusta (kortti pitaa yha kopioida
+    goaliq-appin `cos-reports/marketing/assets/posted-cards/`-kansioon ennen
+    postausta), mutta antaa POSTATTU-rivin tarvitseman todisteen: mika kortti,
+    montako riviä, minka artefaktin ajanhetkella (jos tiedossa), ja tarkka
+    tavuvertailu (sha256) jolla kopio voidaan todentaa muuttumattomaksi.
+
+    `generated_at` on parhaan tiedon mukainen: osa korttityypeista ei kanna
+    lahdeartefaktin omaa aikaleimaa spec-sanakirjassaan, jolloin arvo on None
+    eika renderointihetkea vaihdeta sen tilalle (vaihdettu arvo nayttaisi
+    tarkemmalta kuin se on).
+    """
+    sha = hashlib.sha256(out.read_bytes()).hexdigest()
+    doc = {
+        "card": card,
+        "file": out.name,
+        "rows": rows,
+        "generated_at": generated_at,
+        "rendered_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "sha256": sha,
+    }
+    p = sidecar_path(out)
+    p.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return p
 
 
 def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:
@@ -1899,7 +1939,9 @@ def main() -> int:
         if a.card in REPLY_FIELDS and a.top > REPLY_MAX_ROWS:
             print(f"huom: reply-kortti nayttaa korkeintaan {REPLY_MAX_ROWS} rivia")
         pth = REPLY_RENDERERS[spec["kind"]](spec, out)
-        print(f"{spec['title']} -> {pth}")
+        sc = write_sidecar(pth, card=a.card, rows=len(spec.get("rows") or []),
+                            generated_at=spec.get("as_of"))
+        print(f"{spec['title']} -> {pth} (sidecar {sc.name})")
         return 0
     if spec.get("kind") == "gw_outlook":
         if a.style == "hero":
@@ -1909,11 +1951,15 @@ def main() -> int:
             pth = render_gw_outlook_hero(spec, out, cs_only=a.cs_only)
         else:
             pth = render_gw_outlook(spec, out)
-        print("GW%s outlook (%d ottelua) -> %s"
-              % (spec["gw"], len(spec["fixtures"]), pth))
+        sc = write_sidecar(pth, card=a.card, rows=len(spec.get("fixtures") or []),
+                            generated_at=spec.get("generated_at") or None)
+        print("GW%s outlook (%d ottelua) -> %s (sidecar %s)"
+              % (spec["gw"], len(spec["fixtures"]), pth, sc.name))
         return 0
     p = render(spec, out)
-    print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
+    sc = write_sidecar(p, card=a.card, rows=len(spec.get("rows") or []),
+                        generated_at=spec.get("generated_at") or None)
+    print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p} (sidecar {sc.name})")
     return 0
 
 

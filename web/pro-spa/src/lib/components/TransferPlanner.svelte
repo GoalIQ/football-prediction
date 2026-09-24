@@ -7,6 +7,7 @@
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
+	import { repairReasonText } from '$lib/availabilityFlag';
 
 	// #73: lataustilan askeleet = putken oikeat vaiheet (rehellinen checklist)
 	const WORKING_STEPS = [
@@ -338,6 +339,9 @@
 								>
 								{#if t.hit}<span class="hit">{t.hit} hit</span>{/if}
 								{#if t.weighting_decided}<span class="wnote" title="The player leaving is on a promoted club, so the model discounts his projection by {Math.round((1 - (t.confidence_weight_out ?? 1)) * 100)}% when deciding. On the raw projection this move loses points.">low confidence out</span>{/if}
+								{#if repairReasonText(t.repair_reason)}
+									<p class="repair-note muted">{t.out.web_name}: {repairReasonText(t.repair_reason)} — the model clears the spot even though the swap doesn't gain points.</p>
+								{/if}
 							</li>
 						{/each}
 					</ul>
@@ -439,6 +443,10 @@
 	.roll {
 		margin-bottom: var(--s-2);
 		font-weight: 700;
+	}
+	.repair-note {
+		font-size: var(--step--2);
+		margin: 2px 0 0;
 	}
 	.gw-meta {
 		margin: 0;

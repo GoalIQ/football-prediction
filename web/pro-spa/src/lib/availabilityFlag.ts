@@ -78,3 +78,40 @@ export function noXpReason(
 	if (p.in_projection === false) return 'this player is outside the projection';
 	return null;
 }
+
+/**
+ * Sama koodi tulee siirtosuunnittelijan `repair_reason`-kentästä
+ * (`src/models/fpl_transfers.repair_reason`, muoto `status:<d|i|s|u|n>` /
+ * `chance_next:0` / `no_projection:<syy>`). YKSI LUKIJA myös tälle
+ * (SIIRTOSUUNNITELMA-NOLLA-XP-SELITE, 24.9): ennen tätä kuolleen paikan
+ * siivousrivi näytti "+0.00 xP" ilman mitään syytä (mitattu entry 116920,
+ * GW7: "Dovin → Lecomte +0.00 xP").
+ *
+ * Koodi on rakenteinen (ei valmis lause) juuri siksi ettei pinta joudu
+ * arvaamaan syytä copysta — sama periaate kuin `noXpReason`issa.
+ */
+export function repairReasonText(reason: string | null | undefined): string | null {
+	if (!reason) return null;
+	const sep = reason.indexOf(':');
+	const kind = sep === -1 ? reason : reason.slice(0, sep);
+	const value = sep === -1 ? '' : reason.slice(sep + 1);
+	if (kind === 'status') {
+		if (value === 'u') return 'FPL lists this player as no longer in the league';
+		if (value === 'i') return 'FPL lists this player as injured';
+		if (value === 's') return 'FPL lists this player as suspended';
+		if (value === 'n') return 'FPL lists this player as not available';
+		if (value === 'd') return 'FPL has flagged this player as a doubt';
+		return `FPL status: ${value}`;
+	}
+	if (kind === 'chance_next') {
+		return 'FPL gives this player a 0% chance of playing the next round';
+	}
+	if (kind === 'no_projection') {
+		if (value === 'below_min_xp')
+			return 'the model projects this player under the cutoff over the horizon';
+		// "unknown" (fpl_transfers.repair_reason): heikko mutta tosi syy —
+		// ei arvata sanaa "unavailable" jota lähde ei kerro.
+		return 'the model has stopped projecting minutes for this player';
+	}
+	return null;
+}
