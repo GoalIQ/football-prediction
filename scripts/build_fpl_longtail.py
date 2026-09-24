@@ -3233,9 +3233,15 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
     # korvaa ja mita meidan malli antaa hanelle. Laskenta on jaettu moduuli
     # club_best_rows, sama jota /fpl/club-best kayttaa, joten luvut eivat voi
     # ajautua erilleen.
+    # XP-POISSAOLO-PALUU (24.9): pelikieltopelaaja jonka paluupaiva on tiedossa
+    # on nyt projektiossa (xP nolla vain kielletyille kierroksille), joten hanen
+    # 6 kierroksen summansa voi nostaa hanet seuransa karkeen. Korvaaja on
+    # "the club's best available player": seuraavalta kierrokselta ulkona
+    # oleva (chance 0) ei kelpaa korvaamaan toista ulkona olevaa.
+    cover_pool = [p for p in players if p.get("chance_next") != 0]
     cover: dict[tuple[str, str], dict] = {}
     for _pos in POSITIONS:
-        for _row in club_best_rows(players, _pos):
+        for _row in club_best_rows(cover_pool, _pos):
             cover[(_row["club"], _pos)] = _row
 
     def _cover_cell(r):
@@ -3245,6 +3251,15 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             return "<td>-</td>"
         return (f'<td>{escape(str(c["name"]))} '
                 f'<span class="hi">{c["xp"]:.1f}</span></td>')
+
+    def _last_season_cell(r):
+        """Ruled out -taulukon "Last season": AINA viime kauden FPL-summa.
+        XP-POISSAOLO-PALUU (24.9): palaava pelikieltopelaaja on projektiossa,
+        ja `_xp_cell` nayttaisi hanen xP:nsa tassa otsikon alla."""
+        ls = (r.get("last_season") or {}).get("points")
+        if isinstance(ls, (int, float)):
+            return f'<td class="n">{ls:.0f}<span class="m-hide"> last yr</span></td>'
+        return '<td class="n">-</td>'
 
     def _xp_cell(r, last_season_fallback=True):
         v = r.get("xp_horizon_total")
@@ -3272,7 +3287,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             f'<td class="m-hide">{escape(str(r.get("pos", "")))}</td>'
             f'<td>{escape((r.get("news") or "").strip())}</td>'
             f'<td class="n">{_owned(r):.1f}%</td>'
-            + _xp_cell(r)
+            + _last_season_cell(r)
             + _cover_cell(r)
             + "</tr>"
             for r in out_rows
@@ -3304,11 +3319,11 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
             "</tr></thead>"
             f"<tbody>{trows}</tbody></table></div>"
             '<p class="note">Last season is the player\'s final FPL total, '
-            "a fixed historical number, not a projection. The model does not "
-            "project a player it has ruled out, so the last column is our own "
+            "a fixed historical number, not a projection. The model projects "
+            "zero for the gameweeks a player is ruled out, so the last column is our own "
             "number instead: the club's best available player in the same "
             "position and what we project them to score. A dash means no "
-            "other player at that club cleared the projection threshold "
+            "other available player at that club cleared the projection threshold "
             "there.</p>"
         )
 

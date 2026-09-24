@@ -321,3 +321,32 @@ def test_epavarman_xp_sarakkeeseen_ei_vuoda_viime_kauden_pisteita():
     assert len(rivit) == 1, rivit
     assert rivit[0][-1] == "-", f"xP-sarakkeessa on jotain muuta: {rivit[0]}"
     assert "56" not in " ".join(rivit[0])
+
+
+def test_palaava_pelikieltopelaaja_ei_vuoda_xp_lukua_ruled_out_sarakkeeseen():
+    """XP-POISSAOLO-PALUU (24.9): paluupaivallinen pelikieltopelaaja on
+    PROJEKTIOSSA (players[], xP nolla vain kielletyille kierroksille). Ruled
+    out -taulukon "Last season" -sarake nayttaa silti viime kauden, ei xP:ta."""
+    html = render_team_news(_xp(
+        [_p("Terve", xp_horizon_total=20.0),
+         _p("Kiellossa", status="s", chance_next=0, news="Suspended until 17 Oct",
+            xp_horizon_total=9.6, last_season={"points": 150})],
+    ), NOW)
+    rivit = _rows(html, "out")
+    assert len(rivit) == 1 and rivit[0][0] == "Kiellossa"
+    assert "150" in rivit[0][-2] and "9.6" not in rivit[0][-2]
+
+
+def test_seuraavalta_kierrokselta_ulkona_oleva_ei_ole_korvaaja():
+    """Korvaaja on "the club's best available player". Palaava pelikielto-
+    pelaaja voi olla seuransa paras 6 kierroksen summalla, mutta han on itse
+    ulkona seuraavalla kierroksella."""
+    html = render_team_news(_xp(
+        [_p("Varamies", xp_horizon_total=8.0),
+         _p("Kiellossa", status="s", chance_next=0, news="Suspended until 17 Oct",
+            xp_horizon_total=15.0)],
+        [_p("Loukkaantunut", chance_next=0, news="Knee injury - Unknown return date")],
+    ), NOW)
+    rivit = {r[0]: r for r in _rows(html, "out")}
+    assert "Varamies" in rivit["Loukkaantunut"][-1]
+    assert "Kiellossa" not in rivit["Loukkaantunut"][-1]

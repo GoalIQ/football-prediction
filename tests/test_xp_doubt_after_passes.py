@@ -198,10 +198,13 @@ def test_main_ajaa_passit_kahdesti_ja_lippu_jalkeen():
     calls = [n for n in ast.walk(main) if isinstance(n, ast.Call)
              and isinstance(n.func, ast.Name)]
     passes = [c for c in calls if c.func.id == "minute_passes"]
-    assert len(passes) == 2, "main() ajaa minute_passesin tasan kahdesti"
+    # 24.9 XP-POISSAOLO-PALUU: kolmas ajo palaaville pelikieltopelaajille
+    # (returning_elements, vain jos jollakin on luettava paluupaiva).
+    assert len(passes) == 3, "main() ajaa minute_passesin: lipullinen, terve, paluu"
     firsts = [ast.unparse(c.args[0]) for c in passes]
     assert "boot['elements']" in firsts
     assert "healthy_elements(boot['elements'])" in firsts
+    assert "returning_elements(boot['elements'], returning)" in firsts
     after = [n for n in ast.walk(main) if isinstance(n, ast.Assign)
              and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Name)
              and n.value.func.id == "availability_after_passes"]
