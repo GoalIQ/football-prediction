@@ -27,7 +27,9 @@ ohilaukaus/torjunta, maalivahdin syöttöbonus. MAE sietää nämä.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
+import re
 from pathlib import Path
 
 import config
@@ -672,6 +674,84 @@ def round_availability_factor(status: str, chance, k: int) -> float:
     if k <= 0 or not (0.0 < f < 1.0):
         return f
     return max(f, DOUBT_RECOVERY[min(k, len(DOUBT_RECOVERY)) - 1])
+
+
+# XP-POISSAOLO-PALUU (24.9.2026). Pelikieltolippu `s` antoi kertoimen 0 KOKO
+# horisonttiin GW n..n+5: yhden ottelun pelikielto pudotti pelaajan
+# projektiosta (xP alle 1.0 -> excluded 'unavailable'), ja siirtomoottori
+# myi kuolleena paikkana pelaajan joka palaa seuraavalla kierroksella.
+#
+# FPL:n news kertoo paluupaivan: "Suspended until 17 Oct". Mitattu 24.9:
+#   - nykyiset 4/4 (Foden MCI, Fatawu IPS 17.10 = GW7; Awoniyi COV 19.10 =
+#     GW7; Disasi CRY 25.10 = GW8): paiva on joukkueen ENSIMMAISEN kiellon
+#     jalkeisen ottelun paiva,
+#   - ratkenneet kiellot fp:n commitoidusta artefaktihistoriasta (Christie
+#     29.8, Andersen 30.8, Methalie 5.9, Gomes 19.9, Fofana): jokainen oli
+#     pelikelpoinen sina paivana (element-summary: pelasi, tai joukkue pelasi
+#     ja han oli kokoonpanossa myohemmin). Fofanan ENSIMMAINEN paiva (6.9)
+#     oli viikon liian myohainen ja FPL korjasi sen 30.8:ksi, eli virhe on
+#     varovaiseen suuntaan (pelaaja poissa kierroksen liian pitkaan).
+# Lukematon news -> None -> nykyinen kaytos (0 koko horisonttiin).
+SUSPENDED_UNTIL_RE = re.compile(r"^\s*Suspended until (\d{1,2}) ([A-Za-z]{3})[a-z]*\b")
+_KUUKAUDET = {m: i for i, m in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun",
+     "jul", "aug", "sep", "oct", "nov", "dec"), start=1)}
+# Vuosi paatellaan viitepaivasta (news_added tai tanaan): lahin vuosi jolla
+# paiva ei ole yli 60 vrk viitteen takana. "until 3 Jan" joulukuussa = ensi
+# vuosi; kuukausia vanha news on vanhentunut, ei tulevaisuuden paiva.
+SUSPENSION_YEAR_SLACK_DAYS = 60
+
+
+def suspension_return_date(news, ref: _dt.date) -> _dt.date | None:
+    """FPL:n pelikielto-newsin paluupaiva, tai None jos sita ei voi lukea.
+
+    None on fail-closed: kutsuja pitaa nykyisen kaytoksen (poissa koko
+    horisontin), eika paiva koskaan synny arvauksesta.
+    """
+    m = SUSPENDED_UNTIL_RE.match(news or "")
+    if not m:
+        return None
+    kk = _KUUKAUDET.get(m.group(2).lower())
+    if kk is None:
+        return None
+    raja = ref - _dt.timedelta(days=SUSPENSION_YEAR_SLACK_DAYS)
+    for vuosi in (ref.year, ref.year + 1):
+        try:
+            d = _dt.date(vuosi, kk, int(m.group(1)))
+        except ValueError:
+            return None
+        if d >= raja:
+            return d
+    return None
+
+
+def suspension_round_factor(return_date: _dt.date,
+                            kickoffs: list[_dt.date | None]) -> float:
+    """Osuus kierroksen otteluista joissa pelaaja on pelikelpoinen.
+
+    Kickoff-paiva >= paluupaiva (FPL:n paiva ON paluuottelun paiva, mitattu).
+    Tuntematon kickoff lasketaan poissaoloksi (fail-closed), ja tyhja
+    kierros (blank) on 0.
+    """
+    if not kickoffs:
+        return 0.0
+    ok = sum(1 for k in kickoffs if k is not None and k >= return_date)
+    return ok / len(kickoffs)
+
+
+def returns_from_suspension(p: dict, today: _dt.date | None = None) -> bool:
+    """Projektiossa oleva pelikieltopelaaja jonka paluupaivan FPL:n news kertoo.
+
+    YKSI LUKIJA siirtomoottorille (fpl_transfers.needs_repair /
+    unavailable_by_fpl): tallainen pelaaja EI ole kuollut paikka, koska
+    artefaktin xP on nolla vain kielletyille kierroksille (XP-POISSAOLO-PALUU).
+    Ilman projektiota (`no_projection`, kielto yli horisontin) han on yha
+    korjattava, ja lukematon news pitaa vanhan kaytoksen.
+    """
+    if (p.get("status") or "a") != "s" or p.get("no_projection"):
+        return False
+    ref = today or _dt.datetime.now(_dt.timezone.utc).date()
+    return suspension_return_date(p.get("news"), ref) is not None
 
 
 def scale_availability(mm: dict, f: float) -> dict:

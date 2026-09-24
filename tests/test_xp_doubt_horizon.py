@@ -183,7 +183,10 @@ def test_silmukka_johtaa_minuutit_round_minutesista():
     c = calls[0]
     assert [ast.unparse(a) for a in c.args] == ["mm", "e", "g", "headline_gw"]
     assert {k.arg: ast.unparse(k.value) for k in c.keywords} == {
-        "availability_in_value": "conditional_ov"}
+        "availability_in_value": "conditional_ov",
+        # XP-POISSAOLO-PALUU (24.9), tests/test_xp_suspension_return.py
+        "mm_return": "mm_return.get(pid) if ret_date else None",
+        "return_factor": "_return_factor(g)"}
     src = ast.unparse(loop)
     # Silmukka ei saa lukea pelaajatason minuutteja suoraan (vanha polku).
     for vanha in ("xmins * mult", "p60 * mult", "p1_59 * mult"):
