@@ -138,6 +138,9 @@ def accumulate_history(rows: list[dict]) -> dict:
 # vauhti kantaa heti ~77 % (1500+90 / 1500+90+450) ja kuluva kausi ohittaa
 # arkiston painossa noin GW17:n jalkeen (1500 min). Nolla ei kelpaa (mitattu
 # yllä) ja 1.0 pitaisi kuluvan kauden alisteisena koko syksyn.
+# MITATTU 25.9 GW2-5 (scripts/measure_xp_carry_blend.py, walk-forward, xGI/90 MAE
+# minuuteilla painotettu): 0 selvasti huonoin (+6-10 %), 0.5/0.7/1.0 lahes
+# tasoissa (ero < 1,5 %), GW5:lla 0.5 paras (0.1547 vs 1.0 0.1551). Pidetaan 0.5.
 PREV_SEASON_CARRY = 0.5
 
 
@@ -166,16 +169,21 @@ def carry_prev_season(acc: dict, prev_acc: dict | None,
 # kaudella loukkaantuneet mutta GW1:n avanneet putosivat liikaa (Palmer
 # xMins 82 -> 53, Saka 67 -> 47, Isak 90 -> 42), koska esikausiarvio kantaa
 # vanhan loukkaantumisjakson. Tuore 90 min avaus + FPL-status a on vahvempi
-# nayte roolista kuin viime kevaan poissaolo. 🔴 KALIBROIMATON: mittaa
-# GW2-4:n toteutuneilla minuuteilla (data/fpl_xp_gw_accuracy.json) kumpi
-# painotus antaa pienemman xMins-MAE:n, ja paivita tama luku sen mukaan.
+# nayte roolista kuin viime kevaan poissaolo. MITATTU 25.9 (ks. alla
+# MINUTES_PREV_BLEND): arvot 0.5 / 1.0 / 2.0 antoivat GW2:lla xMins MAE 15.2 /
+# 17.4 / 19.6 vs sekoitus pois 12.1, joten luku on merkityksellinen vain jos
+# sekoitus joskus kytketaan.
 PREV_MINUTES_PRIOR_ROUNDS = 1.0
 # Kytkin: sekoitetaanko esikausiarvio minuutteihin kausihaarassa. Mitattu
 # 28.8 (n/(n+1)): korjaa GW1:n valiin jattaneet (Watkins 34 -> 43 xMins)
 # mutta pudottaa viime kaudella loukkaantuneet GW1-avaajat (Palmer 82 -> 58,
 # Isak 90 -> 56, White 86 -> 56). Oletus POIS: vauhtien arkistokorjaus
-# shippaa yksin, minuutit kuten ennen (kuluva kausi + hintapriori). Kytke
-# paalle vasta kun GW2-4:n xMins-MAE on mitattu molemmilla.
+# shippaa yksin, minuutit kuten ennen (kuluva kausi + hintapriori).
+# MITATTU 25.9 GW2-5 (scripts/measure_xp_carry_blend.py, walk-forward, ydinmalli,
+# n ~475/kierros): POIS on paras JOKA kierroksella. xMins MAE GW2 12.1 vs 15.2-19.6,
+# GW3 11.1 vs 13.3-17.6, GW4 12.1 vs 13.3-16.5. Myos suunniteltu tapaus (viime
+# kauden >= 1500 min, kuluvalla kaudella vain nollia, n=55 GW2): POIS 14.4 vs
+# 23.3-34.9 - he jaivat yleensa pois jatkossakin. Pidetaan POIS.
 MINUTES_PREV_BLEND = False
 
 
