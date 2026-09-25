@@ -3581,7 +3581,50 @@ SLICE_LABELS = {
     "no minutes at all": "Never appeared",
     "prior >=60 min (expected starters)": "We expected 60+ minutes",
     "prior >=60 AND played": "We expected 60+ and they played",
+    # 25.9: puuttui, joten rivi renderoityi raakanimella "prior >=80 AND played".
+    "prior >=80 AND played": "We expected 80+ and they played",
 }
+
+# Alle taman (minuuttia) harha luetaan "lahes tasan" -vaitteeksi; yli sen
+# aloittajien harha nimetaan erikseen. Sama raja kuin preseason-portin
+# ERO_KYNNYS_MIN (tests/test_minutes_claim_matches_source.py).
+MINACC_TASAN_MIN = 3.0
+MINACC_ALOITTAJA_NIMETAAN_MIN = 5.0
+
+
+def minacc_bias_lause(doc: dict) -> str:
+    """Bias-selitys SAMOISTA riveista jotka taulukko nayttaa (25.9.2026).
+
+    Ennen lause oli kasin kirjoitettu: "close to unbiased for players who got
+    on the pitch at all, and the whole overshoot sits with the players who
+    never appeared". Alkuosa piti (pelanneet -1,8), mutta jalkiosa oli
+    ristiriidassa taulukon oman rivin kanssa: aloittajiksi arvioidut jotka
+    pelasivat jaivat +9,4 min arviosta (MINACC-JA-NOTE-COPY-SYNCIIN). Nyt
+    jokainen vaite on ehdollinen luvulle jonka lukija nakee rivilla ylla."""
+    rivit = {r.get("slice"): r for r in doc.get("slices_prior_only") or []}
+    pelasi = rivit.get("played >=1 min in GW1-6")
+    ei = rivit.get("no minutes at all")
+    aloittajat = rivit.get("prior >=60 AND played")
+    osat = ["Bias is how far we were above what happened."]
+    tasan = False
+    if pelasi and ei:
+        if abs(pelasi["bias"]) < MINACC_TASAN_MIN:
+            tasan = True
+            osat.append(f"Players who got on the pitch average out close to even "
+                        f"({pelasi['bias']:+.1f}), and the overall overshoot comes "
+                        f"from the {ei['n']} players who never appeared "
+                        f"({ei['bias']:+.1f}).")
+        else:
+            osat.append(f"Players who got on the pitch average "
+                        f"{pelasi['bias']:+.1f}, and the {ei['n']} players who "
+                        f"never appeared {ei['bias']:+.1f}.")
+    if aloittajat and aloittajat["bias"] >= MINACC_ALOITTAJA_NIMETAAN_MIN:
+        # Julkaisutarkistaja 25.9: vastakohta ("Starters are different.") vain
+        # kun edellinen lause sanoi "close to even", muuten sille ei ole vastinetta.
+        osat.append(("Starters are different. " if tasan else "")
+                    + f"Players we expected to start who did play came in "
+                    f"{aloittajat['bias']:.1f} minutes under our estimate.")
+    return " ".join(osat)
 
 
 def _preseason_basis(meta: dict) -> bool:
@@ -3709,9 +3752,7 @@ def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
         f"<th>Group</th><th>Players</th><th>Average error, minutes</th>"
         f"<th>Bias, minutes</th></tr></thead><tbody>{leikkaukset}"
         f"</tbody></table></div>"
-        f"<p>Bias is how far we were above what happened. The column is "
-        f"close to unbiased for players who got on the pitch at all, and the "
-        f"whole overshoot sits with the players who never appeared.</p>"
+        f"<p>{escape(minacc_bias_lause(doc))}</p>"
 
         + (f"<h2>After the squad constraint</h2>"
            f"<p>The builder normalises each club to one keeper and ten outfield "
