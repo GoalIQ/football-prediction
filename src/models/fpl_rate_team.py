@@ -2179,27 +2179,25 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     xp_data, bootstrap, pool, pool_by_id = build_context()
     mode = "manual" if players else "entry"
     missing: list[int] = []
-    # RATE-TEAM-FREEHIT-PALAUTUS (25.9): kentta nayttaa kesken olevan
-    # kierroksen joukkueen sellaisena kuin se pelaa (22.8 linjaus), joten
-    # kesken olevalla FH-kierroksella FH-joukkue pysyy. Kun naytettava
-    # kierros on siirtynyt FH-kierroksen ohi, FH-joukkue on historiaa ja
-    # arvioidaan se johon FPL palautti. Sama `display_gameweek`-ehto kuin
-    # target_gw:lla alla, jotta kentta ja joukkue eivat voi olla eri vaiheessa.
+    # RATE-TEAM-FREEHIT-PALAUTUS (25.9): FH-joukkue palautetaan AINA kun
+    # kierrosta ei pyydetty. 25.9 ilta (Villen paatos, suositus "FH-kierroksen
+    # aikana suunnitellaan palautuvalla"): ensimmainen versio piti kesken
+    # olevalla FH-kierroksella FH-joukkueen kentalla, jolloin arvosana,
+    # siirrot ja kapteeni laskettiin 3-4 vrk joukkueelle jota kayttajalla ei
+    # ole seuraavassa deadlinessa. FH-kierroksen pisteisiin ei voi enaa
+    # vaikuttaa, joten tyokalu siirtyy suoraan seuraavaan kierrokseen (alla
+    # `_base`). FPL palauttaa rungon suunnittelussa jo FH:n deadlinesta.
     from src.models.fpl_gameweek import display_gameweek as _disp
-    _fh_mode = "revert"
-    if mode == "entry" and gw is None:
-        _pg = _resolve_gw(bootstrap, None)
-        _sh = _disp(xp_data.get("meta") or {})
-        if not (isinstance(_sh, int) and _sh > _pg):
-            _fh_mode = "as_played"
-    _res = resolve_squad_ex(bootstrap, entry, gw, players, captain, bank,
-                            freehit=_fh_mode)
+    _res = resolve_squad_ex(bootstrap, entry, gw, players, captain, bank)
     squad_ids, captain_id = _res["squad_ids"], _res["captain_id"]
     bank_tenths, picks_gw = _res["bank_tenths"], _res["picks_gw"]
     freehit_reverted_from = _res["freehit_reverted_from"]
     rated_gw = _res["rated_gw"]
-    freehit_in_play = (picks_gw if _fh_mode == "as_played"
-                       and _res["chip"] == FREEHIT_CHIP else None)
+    # FH-kierros viela kaynnissa (naytettava kierros ei ole ohittanut sita).
+    _sh0 = _disp(xp_data.get("meta") or {})
+    freehit_in_play = (picks_gw if freehit_reverted_from is not None
+                       and not (isinstance(_sh0, int) and _sh0 > picks_gw)
+                       else None)
 
     # Esikausiclamppi: picks voi tulla viime kauden GW:stä (esim. GW38), mutta
     # projektiot kattavat tulevan horisontin (GW1–6) → xP-laskennan GW on aina
@@ -2225,6 +2223,13 @@ def rate_team(entry: int | None = None, gw: int | None = None,
         _shown = _disp(xp_data.get("meta") or {})
         _base = (_shown if isinstance(_shown, int) and _shown > picks_gw
                  else picks_gw)
+        # FH-kierros kaynnissa: sen pisteet kuuluvat joukkueelle jota ei enaa
+        # arvioida, joten kentta ja suunnittelu ovat seuraavassa kierroksessa.
+        if freehit_in_play is not None:
+            from src.models.fpl_gameweek import actionable_gameweek as _act
+            _nxt = _act(xp_data.get("meta") or {})
+            if isinstance(_nxt, int) and _nxt > picks_gw:
+                _base = _nxt
     target_gw = clamp_gw_to_projections(_base, pool, xp_data)
 
     squad: list[dict] = []
@@ -2391,8 +2396,8 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # Klientti nimeaa sen, koska joukkue ei ole se jonka kayttaja
             # naki FPL:ssa viimeksi pelaavan.
             "freehit_reverted_from": freehit_reverted_from,
-            # FH-kierros kesken: kentta nayttaa FH-joukkueen sellaisena kuin
-            # se pelaa, mutta se palautuu kierroksen jalkeen. None muuten.
+            # FH-kierros viela kaynnissa. Joukkue on silti palautettu ja
+            # kentta on seuraavassa kierroksessa (25.9 ilta). None muuten.
             "freehit_in_play": freehit_in_play,
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),

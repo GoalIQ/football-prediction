@@ -85,13 +85,20 @@ def _team_ids(out):
 
 # --- rate_team: kentta seuraa vaihetta -------------------------------------
 
-def test_fh_kierros_kesken_kentta_nayttaa_pelatun_joukkueen(monkeypatch):
+def test_fh_kierros_kesken_suunnitellaan_palautuvalla_seuraavaan_kierrokseen(monkeypatch):
+    """25.9 ilta (Villen paatos): ensimmainen versio arvioi kesken olevalla
+    FH-kierroksella FH-joukkueen, jolloin arvosana, siirrot ja kapteeni olivat
+    3-4 vrk joukkueelle jota ei ole seuraavassa deadlinessa. Nyt palautuva
+    runko ja kentta seuraavassa kierroksessa (FH-kierroksen pisteisiin ei voi
+    enaa vaikuttaa)."""
     _install(monkeypatch, FH_GW2, completed=[1])
     out = rt.rate_team(entry=ENTRY)
-    assert _team_ids(out) == sorted(FH_IDS)
-    assert out["meta"]["picks_gw"] == 2
+    assert _team_ids(out) == sorted(SQUAD_IDS)
+    assert out["meta"]["gw"] == 3
+    assert out["meta"]["picks_gw"] == 1
     assert out["meta"]["freehit_in_play"] == 2
-    assert out["meta"]["freehit_reverted_from"] is None
+    assert out["meta"]["freehit_reverted_from"] == 2
+    assert out["team"]["bank"] == 1.5
 
 
 def test_fh_kierroksen_jalkeen_arvioidaan_palautunut_joukkue(monkeypatch):
@@ -112,10 +119,14 @@ def test_fh_kierroksen_jalkeen_arvioidaan_palautunut_joukkue(monkeypatch):
 
 
 @pytest.mark.parametrize("completed", [[1], [1, 2]])
-def test_liput_eivat_koskaan_ole_paalla_yhtaaikaa(monkeypatch, completed):
+def test_joka_vaiheessa_arvioidaan_palautuva_runko_seuraavaan_kierrokseen(monkeypatch, completed):
+    """Invariantti molemmissa vaiheissa (6a (3)): runko on FH:ta edeltava ja
+    arvioitava kierros on FH-kierroksen jalkeinen."""
     _install(monkeypatch, FH_GW2, completed=completed)
-    meta = rt.rate_team(entry=ENTRY)["meta"]
-    assert not (meta["freehit_in_play"] and meta["freehit_reverted_from"])
+    out = rt.rate_team(entry=ENTRY)
+    assert _team_ids(out) == sorted(SQUAD_IDS)
+    assert out["meta"]["gw"] > 2
+    assert out["meta"]["freehit_reverted_from"] == 2
 
 
 # --- yksi lukija: suunnittelijat saavat aina palautuneen --------------------
