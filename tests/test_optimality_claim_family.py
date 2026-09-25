@@ -87,6 +87,17 @@ KUVIOT = [
     # checked" joka kerta; julkinen teksti ei saa pudottaa varausta.
     r"(?:gains?|scores?) (?:you )?(?:the )?most\b",
     r"the one (?:transfer|move|player) that",
+    # 25.9 (FIT-CHECKER-OPTIMI-VAITE): seitsemas sanamuoto. Fit checkerin
+    # "builds the strongest/best valid 15" meni ohi kuudelta pinnalta (web,
+    # hub-FAQ + JSON-LD, llms.txt, mobiili en/es/pt, App Store + Play en/es/pt),
+    # koska "valid" ja "builds the" eivat osuneet mihinkaan kuvioon. Haku ei
+    # ole todistettu (optimal_xi_proven False), joten muoto on "searches for".
+    r"builds? (?:you )?the (?:best|strongest)",
+    r"(?:best|strongest) valid (?:15|squad|XI|team)",
+    r"construye la (?:mejor|plantilla más fuerte)",
+    r"(?:la )?mejor plantilla válida",
+    r"monta o (?:melhor|elenco mais forte)",
+    r"(?:o )?melhor elenco válido",
     # es/pt
     r"plantilla óptima",
     r"equipo óptimo",
