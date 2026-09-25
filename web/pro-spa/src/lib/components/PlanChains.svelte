@@ -247,7 +247,13 @@
 			     jo kaynyt julkaisutarkistajan lapi (28.8). "These chains start from"
 			     olisi tarkempi kolmen ketjun nakymassa, mutta se olisi UUTTA
 			     julkista tekstia -> portti ensin. Kirjattu raporttiin. -->
-			<strong>This plan starts from your GW{data.meta.squad_source?.gw} squad.</strong>
+			<!-- RATE-TEAM-FREEHIT-PALAUTUS (julkaisutarkistaja k2, B4): runko on
+			     FH:ta edeltava, joten "your GW{gw} squad" olisi epatosi. -->
+			{#if typeof data.meta.squad_source?.freehit_reverted_from === 'number'}
+				<strong>This plan starts from the squad you had before your GW{data.meta.squad_source.freehit_reverted_from} Free Hit.</strong>
+			{:else}
+				<strong>This plan starts from your GW{data.meta.squad_source?.gw} squad.</strong>
+			{/if}
 			FPL publishes GW{staleNext} squads a while after the deadline, so any transfers you
 			already made aren't in it.
 			{#if hasSavedDraft}

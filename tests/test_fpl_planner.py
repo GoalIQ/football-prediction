@@ -354,7 +354,10 @@ def test_plan_chains_squad_source_is_structured_not_prose(client):
                     + ",".join(str(i) for i in SQUAD_IDS))
     assert r.status_code == 200, r.text
     ss = r.json()["meta"]["squad_source"]
-    assert set(ss) == {"mode", "gw", "deadline_gw", "stale"}
+    # RATE-TEAM-FREEHIT-PALAUTUS (25.9): freehit_reverted_from on rakenteinen
+    # lisakentta (None ilman palautusta), ei proosaa.
+    assert set(ss) == {"mode", "gw", "deadline_gw", "stale", "freehit_reverted_from"}
+    assert ss["freehit_reverted_from"] is None
 
 
 # ---------------------------------------------------------------------------

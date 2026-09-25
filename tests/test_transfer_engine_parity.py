@@ -309,7 +309,9 @@ def test_squad_source_is_structured_not_prose(_mock_fpl):
     i18n:sta) ja deadline_gw tulee samasta lahteesta kuin picks_outdated."""
     out = pl.plan_transfers(players=WEAK_SQUAD, horizon=6, bank=10.0, ft=1)
     ss = out["meta"]["squad_source"]
-    assert set(ss) == {"mode", "gw", "deadline_gw", "stale"}
+    # RATE-TEAM-FREEHIT-PALAUTUS (25.9): rakenteinen lisakentta, ei proosaa.
+    assert set(ss) == {"mode", "gw", "deadline_gw", "stale", "freehit_reverted_from"}
+    assert ss["freehit_reverted_from"] is None
     assert "note" not in ss
     assert ss["mode"] == "manual" and ss["stale"] is False
     # Negatiivinen kontrolli: vanha proosa ei saa palata mihinkaan payloadiin

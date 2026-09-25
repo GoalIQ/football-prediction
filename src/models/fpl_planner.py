@@ -29,7 +29,7 @@ from src.models.fpl_rate_team import (
     MAX_PER_CLUB, RateTeamError, apply_availability_gate, build_context,
     build_hold_verdict, captain_suggestion, clamp_gw_to_projections,
     hold_threshold_for, planning_start_gw,
-    optimal_xi, picks_outdated, resolve_squad, _gw_xp,
+    optimal_xi, picks_outdated, resolve_squad, resolve_squad_ex, _gw_xp,
 )
 from src.models import fpl_transfers as _engine
 from src.models.fpl_my_team import squad_meta
@@ -240,8 +240,11 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     if not 0 <= ft <= FT_CARRY_MAX:
         raise RateTeamError(400, f"ft must be between 0 and {FT_CARRY_MAX}.")
     xp_data, bootstrap, pool, pool_by_id = build_context()
-    squad_ids, _cap, bank_tenths, picks_gw = resolve_squad(
-        bootstrap, entry, gw, players, None, bank)
+    # RATE-TEAM-FREEHIT-PALAUTUS (25.9): _ex jotta squad_source voi kertoa
+    # palautuksen. Runko on FH:ta edeltava; `gw` pysyy FH-kierroksena, koska
+    # stale-lause ("FPL still shows the GW5 squad") koskee FPL:n julkaisua.
+    _rs = resolve_squad_ex(bootstrap, entry, gw, players, None, bank)
+    squad_ids, bank_tenths, picks_gw = _rs["squad_ids"], _rs["bank_tenths"], _rs["picks_gw"]
     start_gw = planning_start_gw(picks_gw, pool, xp_data)
     gws = _horizon_gws(pool, start_gw, horizon)
 
@@ -443,6 +446,9 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
         "gw": picks_gw,
         "deadline_gw": _dl_gw if isinstance(_dl_gw, int) else None,
         "stale": bool(_stale),
+        # Julkaisutarkistaja 25.9 (B4): palautuksessa "This plan starts from
+        # your GW{gw} squad" olisi epatosi (runko on FH:ta edeltava).
+        "freehit_reverted_from": _rs["freehit_reverted_from"],
     }
 
     return {

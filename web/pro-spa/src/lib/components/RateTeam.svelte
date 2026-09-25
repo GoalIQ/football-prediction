@@ -1184,7 +1184,26 @@
 	     entryn julkisessa listassa). Naytetty runko on siis pakosta
 	     edellisen kierroksen, ja ilman tata rivia kayttaja paattelee etta
 	     tuote on rikki. Ehto tulee backendista (meta.picks_outdated). -->
-	{#if data.meta.picks_outdated === true && typeof data.meta.picks_gw === 'number' && typeof data.meta.deadline_gameweek === 'number'}
+	<!-- RATE-TEAM-FREEHIT-PALAUTUS (25.9): palautunut runko ei ole
+	     GW{picks_gw}:n joukkue vaan FH:ta edeltava, joten tavallinen
+	     "This is your GW5 squad" olisi epatosi. Oma muunnelma, sama
+	     julkaisuajan lause ja sama CTA. -->
+	{#if typeof data.meta.freehit_reverted_from === 'number'}
+		<p class="notice-preseason">
+			<strong>Your GW{data.meta.freehit_reverted_from} Free Hit squad has reverted.</strong>
+			<!-- Julkaisutarkistaja 25.9 (B2): "puts back for GW{n}" vain kun
+			     picks_outdated, joka on tosi TASAN kun deadline = FH-kierros + 1.
+			     Ilman ehtoa lause nakyisi vain tilassa jossa se on vaarin. -->
+			This is the squad you had before it{#if data.meta.picks_outdated === true && typeof data.meta.deadline_gameweek === 'number'}, the one FPL
+				puts back for GW{data.meta.deadline_gameweek}{/if}.{#if data.meta.picks_outdated === true && typeof data.meta.deadline_gameweek === 'number'}
+				FPL publishes GW{data.meta.deadline_gameweek} squads a while after the
+				deadline{#if pickDeadlineLocal}&nbsp;({pickDeadlineLocal}){/if}, so import again once
+				yours is public on the FPL site. Changed your team already?
+				<button type="button" class="linklike" onclick={openDraftFromNotice}>
+					Rate my draft</button
+				> instead: pick the new 15 by hand and the model rates them now.{/if}
+		</p>
+	{:else if data.meta.picks_outdated === true && typeof data.meta.picks_gw === 'number' && typeof data.meta.deadline_gameweek === 'number'}
 		<!-- Sanamuoto julkaisuportin 27.8 korjaamana: (1) ei luvata hetkea
 		     ("shortly after" nojasi n=1-mittaukseen ja osui ikkunaan jossa
 		     oma cache + is_current-flippi voivat antaa virheen), vaan
