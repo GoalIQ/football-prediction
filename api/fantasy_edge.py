@@ -35,6 +35,7 @@ from src.models.fpl_rate_team import (
     XI_MIN, BUDGET_TENTHS, RateTeamError, _fetch_fpl, _gw_xp, _resolve_gw,
     apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
     get_bootstrap, get_entry_picks, optimal_xi, picks_outdated, resolve_squad,
+    resolve_squad_ex,
 )
 from src.models import fpl_chips, fpl_entry_history, fpl_wildcard
 from src.models.fpl_xp import (
@@ -961,8 +962,10 @@ def fantasy_plan_chains(
                      xp_data["meta"].get("generated_at"))
         payload = _cache_get(cache_key)
         if payload is None:
-            squad_ids, _cap, bank_tenths, picks_gw = resolve_squad(
-                bootstrap, entry, None, player_ids, None, None)
+            # RATE-TEAM-FREEHIT-PALAUTUS (25.9): sama sopimus kuin plannerissa.
+            _rs = resolve_squad_ex(bootstrap, entry, None, player_ids, None, None)
+            squad_ids, bank_tenths, picks_gw = (_rs["squad_ids"], _rs["bank_tenths"],
+                                                _rs["picks_gw"])
             start_gw = planning_start_gw(picks_gw, pool, xp_data)
             covered = _covered_gws(pool)
             gws = [g for g in covered if g >= start_gw][:horizon]
@@ -1106,6 +1109,7 @@ def fantasy_plan_chains(
                 "gw": picks_gw,
                 "deadline_gw": _dl_gw if isinstance(_dl_gw, int) else None,
                 "stale": bool(_stale),
+                "freehit_reverted_from": _rs["freehit_reverted_from"],
             }
 
             payload = {

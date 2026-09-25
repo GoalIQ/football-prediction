@@ -450,7 +450,7 @@ export interface PlanResponse {
 		note?: string;
 		/** 28.8: entry-moodissa FPL nayttaa edellisen kierroksen rungon
 		 *  deadlineen asti; stale=true -> UI ohjaa manuaalisyottoon. */
-		squad_source?: { mode: 'entry' | 'manual'; gw: number; deadline_gw: number | null; stale: boolean };
+		squad_source?: { mode: 'entry' | 'manual'; gw: number; deadline_gw: number | null; stale: boolean; freehit_reverted_from?: number | null };
 		[key: string]: unknown;
 	};
 	hold_verdict?: HoldVerdict;
@@ -1518,7 +1518,7 @@ export interface PlanChainsResponse {
 		note?: string;
 		/** PLAN-CHAINS-SQUAD-SOURCE (29.8): sama sopimus kuin PlanResponsessa,
 		 *  jotta stale-rivi renderoityy identtisesti molemmissa tyokaluissa. */
-		squad_source?: { mode: 'entry' | 'manual'; gw: number; deadline_gw: number | null; stale: boolean };
+		squad_source?: { mode: 'entry' | 'manual'; gw: number; deadline_gw: number | null; stale: boolean; freehit_reverted_from?: number | null };
 		[key: string]: unknown;
 	};
 	baseline_xp_no_transfers: number;

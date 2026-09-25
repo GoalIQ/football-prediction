@@ -184,3 +184,24 @@ def test_edeltava_kierros_puuttuu_pitaa_fh_joukkueen_eika_vaita_palautusta(monke
 def test_tuntematon_tila_kaatuu_nimetysti():
     with pytest.raises(ValueError):
         rt.resolve_squad_ex(BOOT, ENTRY, None, None, None, None, freehit="maybe")
+
+
+# --- B4 (julkaisutarkistaja k2): suunnittelupinnat kertovat palautuksen ------
+
+def test_plannerin_squad_source_kertoo_palautuksen(monkeypatch):
+    """Planneri suunnittelee palautuneesta rungosta, mutta sen stale-lause
+    sanoi "This plan starts from your GW{gw} squad" -> epatosi. gw pysyy
+    FH-kierroksena (FPL:n julkaisu), ja freehit_reverted_from kertoo syyn."""
+    _install(monkeypatch, FH_GW2, completed=[1, 2])
+    from src.models import fpl_planner
+    out = fpl_planner.plan_transfers(entry=ENTRY, horizon=3)
+    ss = out["meta"]["squad_source"]
+    assert ss["gw"] == 2 and ss["stale"] is True
+    assert ss["freehit_reverted_from"] == 2
+
+
+def test_ilman_fh_squad_source_ei_vaita_palautusta(monkeypatch):
+    _install(monkeypatch, {1: _picks(FH_IDS), 2: _picks(SQUAD_IDS)}, completed=[1, 2])
+    from src.models import fpl_planner
+    ss = fpl_planner.plan_transfers(entry=ENTRY, horizon=3)["meta"]["squad_source"]
+    assert ss["freehit_reverted_from"] is None
