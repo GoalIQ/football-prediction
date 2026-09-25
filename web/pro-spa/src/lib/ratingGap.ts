@@ -11,10 +11,11 @@
  * eli samat joukkueet erottuvat, ja luku on samassa yksikossa kuin rivin
  * muut luvut.
  *
- * Vertailu on AINA ilman kapteenia molemmilla puolilla:
- * `team_xp_horizon_no_captain` vs `optimal_team_xp`. Rivin "Next N GW" -luku
- * sisaltaa kapteenin, joten perusterivi nimeaa molemmat summat, muuten lukija
- * laskee eron vaarista luvuista.
+ * Vertailu on AINA ilman kapteenin TUPLAUSTA molemmilla puolilla:
+ * `team_xp_horizon_no_captain` vs `optimal_team_xp`. Kapteeni on summassa
+ * kerran (julkaisutarkistaja 25.9: "captain left out" olisi antanut 243.5 eika
+ * 282.6, eli tarkistusreitti katkeaa). Rivin "Next N GW" -luku sisaltaa
+ * tuplauksen, joten perusterivi nimeaa molemmat summat.
  *
  * Yksi lukija kaikille pinnoille (CLAUDE.md 6a mekanismi 1): otsikkorivi,
  * perusterivi ja vertailunakyma lukevat taman, eika mikaan niista laske eroa
@@ -79,10 +80,10 @@ export function ratingGapLabel(g: RatingGap): string {
  *  jotta ikkuna on sama kuin rivin horisonttisolussa. */
 export function ratingGapBasis(g: RatingGap, over: string): string {
 	const ref = g.optimal_proven
-		? 'Best squad = the best one the rules allow inside the 100.0m budget.'
+		? 'Best squad = the strongest squad the model can build inside the 100.0m budget.'
 		: 'Best found = the strongest squad the model found inside the 100.0m budget.';
 	return (
 		`${ref} Its XI projects ${g.best.toFixed(1)} xP ${over} and yours ` +
-		`${g.mine.toFixed(1)}, captain left out on both sides.`
+		`${g.mine.toFixed(1)}, captain bonus left out on both sides.`
 	);
 }

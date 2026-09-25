@@ -48,7 +48,7 @@ describe('ratingGap', () => {
 		const s = ratingGapBasis(g!, 'over GW6-GW11');
 		expect(s).toContain('319.4 xP over GW6-GW11');
 		expect(s).toContain('yours 282.6');
-		expect(s).toContain('captain left out on both sides');
+		expect(s).toContain('captain bonus left out on both sides');
 	});
 });
 

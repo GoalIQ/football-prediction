@@ -1303,22 +1303,22 @@
 					     those rules allow" oli epatosi: haku ei ole todistettu
 					     (optimal_xi_proven False tuotannossa), ja mallin oma joukkue
 					     voitti vertailukohdan livena. Nyt luku on ero xP:na. -->
+					<!-- Julkaisutarkistaja 25.9: "same rules as yours" oli epatosi
+					     (kayttajan joukkueen arvo voi olla yli 100.0m, mitattu 101.3m),
+					     ja kapteeni on summassa kerran, vain tuplaus jaa pois. -->
 					<p>
-						The model searches for the strongest squad it can find under the same rules as
-						yours: a 100.0m budget and no more than three players from one club. The number
-						above is your XI's projected points over the {xpHorizon(d.meta).span} minus that
-						squad's XI, with the captain left out on both sides. Minus means behind, plus means
-						your XI projects more than that squad.
+						The model searches for the strongest squad it can find on a fresh 100.0m budget,
+						with no more than three players from one club. The number above is your XI's
+						projected points over the {xpHorizon(d.meta).span} minus that squad's XI, with the
+						captain bonus left out on both sides.
 					</p>
 					<p>
 						Other FPL sites run their own projections and their own scale, so their number and
-						ours are not comparable and neither is wrong. Two ratings can disagree simply
-						because they measure against different reference points, not because one is broken.
+						ours are not comparable and neither is wrong.
 					</p>
 					<p>
-						Ours answers one narrow question: how many projected points does your XI leave on
-						the table against that squad? It says nothing about your rank, and projections are
-						estimates, not outcomes.
+						Ours answers one narrow question: how far does your XI project behind or ahead of
+						that squad? It says nothing about your rank, and projections can miss.
 					</p>
 					<!-- 26.7: rating on vain niin hyva kuin projektiot sen alla, joten
 					     ne on graded ja luku naytetaan. Tekee ratingista falsifioituvan

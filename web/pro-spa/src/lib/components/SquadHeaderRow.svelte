@@ -114,7 +114,7 @@
 	{#if gap}
 		<!-- MP-09: ei varipistetta. Vari olisi arvio hyvasta ja huonosta, eika
 		     sille ole rajaa jonka voisi perustella. Etumerkki kertoo suunnan. -->
-		<span class="cell" title="Your XI's projected points minus the comparison squad's, captain left out on both sides">
+		<span class="cell" title="Your XI's projected points minus the comparison squad's, captain bonus left out on both sides">
 			<span class="k">{ratingGapLabel(gap)}</span>
 			<span class="v">{gap.text}</span>
 		</span>
