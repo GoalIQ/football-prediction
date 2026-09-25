@@ -96,3 +96,28 @@ def test_koko_artefakti_ei_vaita_vastuuta_kolmannelle():
             rikkeet.append(p.get("web_name"))
     assert not rikkeet, rikkeet
     assert kolmansia > 0, "artefaktissa ei yhtaan 3.+ ottajaa - testi ei mittaa"
+
+
+SPA_KORTTI = ROOT / "web" / "pro-spa" / "src" / "lib" / "components" / "PlayerCard.svelte"
+
+
+def test_spa_kortin_ei_vastuuta_haara_on_tosi_kolmannelle():
+    """SETPIECE-PELAAJAKORTTI-OTSIKKO 25.9: SPA:n pelaajakortin haara
+    `{:else}` (spListed = jokin jarjestys <= 2 on epatosi) kattaa MYOS 3.+
+    ottajat, joten sen lause ei saa vaittaa etta pelaaja puuttuu FPL:n
+    listoilta ("No ... duties in FPL's lists" oli epatosi Odegaardille).
+    Raja: sama kuin set_piece_duties.
+
+    MUTAATIO: palauta vanha lause tai raja `v <= 3` -> punainen."""
+    import re
+    # Kommentit pois: selitys saa lainata vanhaa lausetta, renderoity teksti ei.
+    src = re.sub(r"<!--.*?-->", "", SPA_KORTTI.read_text(encoding="utf-8"), flags=re.S)
+    assert "duties in FPL's lists" not in src
+    raja = re.search(r"const spListed = \$derived\.by\(\(\) => \{(.*?)\}\);", src, re.S)
+    assert raja, "spListed-lukija puuttuu"
+    from src.models.fpl_xp import SET_PIECE_DUTY_MAX_ORDER
+    assert f"v <= {SET_PIECE_DUTY_MAX_ORDER}" in raja.group(1), raja.group(1)
+    haara = re.search(r"\{#if spListed\}.*?\{:else\}(.*?)\{/if\}", src, re.S)
+    assert haara, "spListed-haara puuttuu"
+    teksti = re.sub(r"<!--.*?-->", "", haara.group(1), flags=re.S)
+    assert "dut" not in teksti.lower(), teksti

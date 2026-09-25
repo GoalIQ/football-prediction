@@ -730,7 +730,10 @@
 						{#if spListed}
 							<p class="muted sp-line">Set pieces: <SetPieceBadges sp={player.set_pieces} /></p>
 						{:else}
-							<p class="muted">No penalty, corner or free-kick duties in FPL's lists.</p>
+							<!-- 25.9 (SETPIECE-PELAAJAKORTTI-OTSIKKO): haara kattaa MYOS 3.+ ottajat
+							     (Odegaard pilkuissa 3.), joten "no duties in FPL's lists" oli
+							     epatosi. Raja sama kuin fpl_xp.set_piece_duties (1-2). -->
+							<p class="muted">Not first or second choice for penalties, corners or free kicks in FPL's order.</p>
 						{/if}
 					{/if}
 				</section>
