@@ -210,8 +210,8 @@
 			</p>
 		{/if}
 		<p class="act-proof muted">
-			Every match prediction is logged before kick-off and graded after, hits and misses
-			included. <a href="https://goaliq.app/fpl#track-record">See the record</a>.
+			Every match prediction in the record is logged before kick-off and graded after, hits
+			and misses included. <a href="https://goaliq.app/fpl#track-record">See the record</a>.
 		</p>
 	</div>
 </section>

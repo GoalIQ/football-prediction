@@ -207,7 +207,8 @@
 	<!-- 24.7 conviction-löydös: perumiset tapahtuvat maksuhetkellä → proof
 	     suoraan ostopäätöksen viereen (ei numeroita jotka vanhenisivat) -->
 	<p class="muted proof">
-		Built on a publicly tracked match model: every prediction is logged before kick-off
+		Built on a publicly tracked match model: every prediction in
+		<a href="https://goaliq.app/fpl#track-record">its record</a> is logged before kick-off
 		and graded afterwards, hits and misses in the same place. Nothing gets edited once
 		kick-off comes. <a href="https://github.com/GoalIQ/football-prediction/tree/main/data/model_squad_frozen"
 			>See the model's frozen squads</a
