@@ -98,6 +98,12 @@ KUVIOT = [
     r"(?:la )?mejor plantilla válida",
     r"monta o (?:melhor|elenco mais forte)",
     r"(?:o )?melhor elenco válido",
+    # Kahdeksas (julkaisutarkistaja 25.9): otsikko- ja nappimuodot.
+    r"best (?:XI|squad) around",
+    r"mejor XI con",
+    r"mejor plantilla a su alrededor",
+    r"melhor XI com",
+    r"melhor elenco ao redor",
     # es/pt
     r"plantilla óptima",
     r"equipo óptimo",

@@ -225,7 +225,9 @@
 				</button>
 			</div>
 
-			<h3>Best XI around your locks</h3>
+			<!-- FIT-CHECKER-OPTIMI-VAITE (julkaisutarkistaja 25.9): "Best" vain kun
+			     haku on todistettu; tuotannossa optimal_proven on False. -->
+			<h3>{result.totals.optimal_proven === false ? 'Strongest XI the model found around your locks' : 'Best XI around your locks'}</h3>
 			<div class="table-wrap">
 				<table>
 					<thead>
