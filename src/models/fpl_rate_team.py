@@ -1444,7 +1444,44 @@ def resolve_subject_row(xp_data: dict, bootstrap: dict, by_id: dict[int, dict],
     raise RateTeamError(404, "Player {} is not in the FPL player list.".format(player_id))
 
 
-def build_context() -> tuple[dict, dict, list[dict], dict[int, dict]]:
+def projection_bootstrap(xp_data: dict) -> dict:
+    """Bootstrapin muotoinen tilannekuva PROJEKTIOHETKELTA, artefaktin omista
+    riveista: omistus, hinta, positio ja saatavuus sellaisina kuin FPL ne
+    antoi kun `fpl_xp_projections.json` rakennettiin.
+
+    Staattisen sivun lahde (AUTO-S16, 25.9.2026): /fpl/differentials haki
+    ennen dataa elavasta API:sta, joten sama sivu sai eri sisallon jokaisessa
+    workflow'ssa (Render palveli edellista artefaktia, omistus eli
+    tunneittain). Kaksi rinnakkaista ajoa kirjoitti saman rivin eri tavalla ja
+    fpl-data-refreshin push kaatui rebase-konfliktiin (3 kertaa 17.-25.9).
+    Tasta tilannekuvasta laskettu sivu on artefaktin puhdas funktio: jokainen
+    ajo tuottaa samasta checkoutista samat tavut.
+
+    `team` on FPL:n `team_code` (yksikasitteinen seura-avain), EI bootstrapin
+    team-id: kelpaa seurakohtaiseen ryhmittelyyn, ei FPL-id:ksi.
+    Elavan saatavuusportin vertailu (`availability_changes`) ei loyda tasta
+    mitaan, koska tila on sama kuin projektiossa. Se on tarkoitus: sivu
+    kertoo projektion tilan, ja seuraava refresh rakentaa sen uudelleen."""
+    pos_id = {v: k for k, v in POS_NAME.items()}
+    elements = []
+    for p in xp_data.get("players") or []:
+        if p.get("id") is None or p.get("pos") not in pos_id:
+            continue
+        elements.append({
+            "id": p["id"],
+            "element_type": pos_id[p["pos"]],
+            "team": p.get("team_code"),
+            "now_cost": int(round(float(p.get("price") or 0.0) * 10)),
+            "selected_by_percent": p.get("owned_pct"),
+            "status": p.get("status") or "a",
+            "chance_of_playing_next_round": p.get("chance_next"),
+            "news": p.get("news") or "",
+        })
+    return {"elements": elements}
+
+
+def build_context(as_of_projection: bool = False
+                  ) -> tuple[dict, dict, list[dict], dict[int, dict]]:
     """#35: jaettu konteksti rate-teamille + planner-suitelle:
     (xp_data, bootstrap, pool, pool_by_id). Nostaa 503:n jos projektio puuttuu.
 
@@ -1456,11 +1493,16 @@ def build_context() -> tuple[dict, dict, list[dict], dict[int, dict]]:
     saavat poolinsa, joten ne eivat voi nayttaa eri horisonttisummaa kuin
     xP-taulukko. `gameweeks[]` pysyy raakana: rate-teamin "Team xP, GW3"
     kesken GW3:a lukee kuluvan kierroksen rivin (RAW_ALLOWED-peruste).
+
+    `as_of_projection=True` (staattiset sivut): bootstrap on
+    `projection_bootstrap`in tilannekuva eika elava FPL-haku, joten tulos ei
+    riipu siita milloin sita kutsutaan. API kayttaa aina elavaa.
     """
     xp_data = attach_horizon_total_actionable(load_xp())
     if not xp_data.get("meta", {}).get("available") or not xp_data.get("players"):
         raise RateTeamError(503, "xP projections are not available yet.")
-    bootstrap = get_bootstrap()
+    bootstrap = (projection_bootstrap(xp_data) if as_of_projection
+                 else get_bootstrap())
     price_by_id = {e["id"]: e for e in bootstrap.get("elements") or []}
     pool = _projection_pool(xp_data, price_by_id)
     return xp_data, bootstrap, pool, {p["id"]: p for p in pool}

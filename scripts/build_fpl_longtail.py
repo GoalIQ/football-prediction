@@ -18,8 +18,9 @@ Kolme evergreen-URLia, per-GW päivittyvä sisältö:
 
 EI Premium-vuotoa: teaser-syvyys peilaa appin free/premium-rajaa.
 Datalähteet: data/fpl_xp_projections.json + data/fpl_price_watch.json
-(committattuja) + /api/fantasy/differentials (EO vaatii bootstrap-joinin —
-yksi kevyt kutsu; virhe → sivu ohitetaan, ei kaatoa).
+(committattuja). EI verkkoa: differentials lasketaan samalla
+`differential_finder`illa kuin API, artefaktin omasta tilannekuvasta
+(AUTO-S16 25.9, `_differentials_doc`).
 Gambling-safe: predictions/xP/model — EI betting/odds/tips.
 Ajo: python -m scripts.build_fpl_longtail  (accuracy-log.yml, 3 h)
 """
@@ -32,7 +33,6 @@ import json
 import math
 import re
 import sys
-import urllib.request
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
@@ -97,7 +97,6 @@ GW_ACCURACY_PATH = ROOT / "data" / "fpl_xp_gw_accuracy.json"
 POINTS_DIR = OUT_DIR / "points"
 # 8.8: joukkuetason puolustusprofiili (scripts/build_understat_team_defence.py)
 DEFENCE_PATH = ROOT / "data" / "understat_team_defence_2526.json"
-API = "https://api.goaliq.app"  # 27.7: pois estetysta onrender.com-vyohykkeesta
 
 UPSELL = (
     '<div class="rec">Powered by the GoalIQ match model with a published, '
@@ -623,24 +622,30 @@ def _load(path: Path) -> dict | None:
         return None
 
 
-def _fetch_differentials() -> dict | None:
-    # 27.7: EKSPLISIITTINEN User-Agent on PAKOLLINEN. Kun API siirtyi
-    # api.goaliq.app-domainiin Cloudflaren taakse, CF alkoi torjua urllib:n
-    # oletus-UA:n ("Python-urllib/3.x") 403:lla -> differentials-sivu olisi
-    # lakannut paivittymasta HILJAA (builderi nappaa poikkeuksen ja jatkaa
-    # varoituksella). onrender.com-osoite vastasi ilman tata.
-    #
-    # Sama koskee KAIKKIA skripteja jotka hakevat api.goaliq.app:sta
-    # urllibilla — jos lisaat uuden, muista UA.
-    req = urllib.request.Request(
-        f"{API}/api/fantasy/differentials?max_ownership=10",
-        headers={"User-Agent": "GoalIQ-PageBuilder/1.0 (+https://goaliq.app)"},
-    )
+def _differentials_doc() -> dict | None:
+    """/fpl/differentials-sivun data CHECKOUTIN artefaktista, ei verkosta.
+
+    🔴 AUTO-S16 (25.9.2026): sivu haki ennen datan elavasta
+    `api.goaliq.app/api/fantasy/differentials`-reitista. Sama builderi ajetaan
+    kolmessa workflow'ssa (fpl-data-refresh, accuracy-log, fpl-page-refresh),
+    ja jokainen sai eri vastauksen: Render palveli EDELLISTA artefaktia
+    (refresh rakentaa sivun ennen omaa pushiaan, joten sivu oli aina yhden
+    artefaktin jaljessa) ja omistus tuli elavasta FPL:sta. Kaksi rinnakkaista
+    ajoa kirjoitti taulukkorivin eri tavalla, ja fpl-data-refreshin push
+    kaatui rebase-konfliktiin viidesti perakkain (ajot 35479829273,
+    35547995561, 36079421360), jolloin koko ajon data jai pois mainista.
+
+    Nyt sama `differential_finder` kuin API:lla, mutta omistus ja saatavuus
+    artefaktin omasta tilannekuvasta (`as_of_projection=True`). Sivu on
+    checkoutin puhdas funktio: samasta artefaktista jokainen workflow tuottaa
+    samat tavut, joten toinen kirjoittaja ei voi konfliktoida. Portti:
+    tests/test_differentials_page_deterministic.py."""
+    from src.models.fpl_planner import differential_finder
+    from src.models.fpl_rate_team import RateTeamError
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.load(r)
-    except Exception as e:
-        print(f"VAROITUS: differentials-haku epäonnistui: {type(e).__name__}: {e}")
+        return differential_finder(max_ownership=10.0, as_of_projection=True)
+    except RateTeamError as e:
+        print(f"VAROITUS: differentials ohitettu: {e.detail}")
         return None
 
 
@@ -5608,7 +5613,7 @@ def main() -> int:
         if n_art:
             built.append(f"note x{n_art}")
 
-    diff = _fetch_differentials()
+    diff = _differentials_doc()
     if diff:
         page = render_differentials(diff, now)
         if page:

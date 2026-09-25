@@ -596,7 +596,8 @@ def _actionable_gw(meta: dict) -> int | None:
 
 def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
                         pos: str | None = None,
-                        squad: dict | None = None) -> dict:
+                        squad: dict | None = None,
+                        as_of_projection: bool = False) -> dict:
     """Matala EO × korkea xP -listaus koko poolista (ei vaadi entryä).
 
     #71: mukana myös model_vs_crowd-osio — missä malli on ERI mieltä kuin
@@ -608,13 +609,19 @@ def differential_finder(max_ownership: float = DIFFERENTIAL_MAX_OWNERSHIP,
     differentiaali sinulle), jokaiselle riville `owned`, ja `template_missing`
     = korkeimman omistuksen pelaajat joita rungossa EI ole (sama kuvio kuin
     edge-endpointin template_risks). Ilman squadia vastaus on entinen.
+
+    `as_of_projection=True` (AUTO-S16, 25.9): omistus ja saatavuus
+    artefaktin tilannekuvasta (`build_context`), ei elavasta FPL:sta.
+    Staattinen /fpl/differentials kayttaa tata, jotta sivu on checkoutin
+    puhdas funktio eika kaksi workflow'ta kirjoita samaa riviä eri tavalla.
     """
     if not 0 < max_ownership <= 100:
         raise RateTeamError(400, "max_ownership must be in (0, 100].")
     pos_by_name = {v: k for k, v in POS_NAME.items()}
     if pos is not None and pos not in pos_by_name:
         raise RateTeamError(400, f"pos must be one of {sorted(pos_by_name)}.")
-    xp_data, bootstrap, pool, _by_id = build_context()
+    xp_data, bootstrap, pool, _by_id = build_context(
+        as_of_projection=as_of_projection)
     # Persentiilit lasketaan TAYDESTA poolista (vertailukohta ei saa heilua
     # yksittaisen loukkaantumisen mukana), vasta listat suodatetaan.
     mvc = _model_vs_crowd(pool)
