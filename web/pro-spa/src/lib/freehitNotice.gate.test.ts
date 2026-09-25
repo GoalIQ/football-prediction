@@ -18,6 +18,15 @@ describe('Free Hit -selite', () => {
 		expect(src).not.toMatch(/\{#if data\.meta\.picks_outdated === true && typeof data\.meta\.picks_gw/);
 	});
 
+	it('"puts back for GW" vain picks_outdated-ehdon sisalla (B2)', () => {
+		const fh = src.indexOf("{#if typeof data.meta.freehit_reverted_from === 'number'}");
+		const block = src.slice(fh, src.indexOf('{:else if data.meta.picks_outdated', fh));
+		const i = block.indexOf('puts back for GW{data.meta');
+		const guard = block.lastIndexOf('{#if', i);
+		expect(i).toBeGreaterThan(-1);
+		expect(block.slice(guard, i)).toContain('data.meta.picks_outdated === true');
+	});
+
 	it('FH-selite ei vaita palautunutta runkoa GW{picks_gw}:n joukkueeksi', () => {
 		const fh = src.indexOf("{#if typeof data.meta.freehit_reverted_from === 'number'}");
 		const block = src.slice(fh, src.indexOf('{:else if data.meta.picks_outdated', fh));

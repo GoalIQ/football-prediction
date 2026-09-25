@@ -1543,6 +1543,7 @@ def _pre_freehit_picks(entry: int, picks_gw: int,
             break
         data, cur = prev, cur - 1
         reverted_from = picks_gw
+    data = {**data, "_rated_gw": cur}
     return data, reverted_from
 
 
@@ -1624,6 +1625,7 @@ def resolve_squad_ex(bootstrap: dict, entry: int | None, gw: int | None,
         return {"squad_ids": list(players), "captain_id": captain,
                 "bank_tenths": bank_tenths,
                 "picks_gw": _resolve_gw(bootstrap, gw),
+                "rated_gw": _resolve_gw(bootstrap, gw),
                 "chip": None, "freehit_reverted_from": None}
     if entry is None:
         raise RateTeamError(400, "Provide either entry or players.")
@@ -1644,6 +1646,9 @@ def resolve_squad_ex(bootstrap: dict, entry: int | None, gw: int | None,
         bank_tenths = int((picks_data.get("entry_history") or {}).get("bank") or 0)
     return {"squad_ids": squad_ids, "captain_id": captain_id,
             "bank_tenths": bank_tenths, "picks_gw": picks_gw,
+            # Kierros jonka picksit OIKEASTI arvioidaan: FH-palautuksessa
+            # FH:ta edeltava, muuten picks_gw.
+            "rated_gw": picks_data.get("_rated_gw", picks_gw),
             "chip": chip, "freehit_reverted_from": reverted_from}
 
 
@@ -2192,6 +2197,7 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     squad_ids, captain_id = _res["squad_ids"], _res["captain_id"]
     bank_tenths, picks_gw = _res["bank_tenths"], _res["picks_gw"]
     freehit_reverted_from = _res["freehit_reverted_from"]
+    rated_gw = _res["rated_gw"]
     freehit_in_play = (picks_gw if _fh_mode == "as_played"
                        and _res["chip"] == FREEHIT_CHIP else None)
 
@@ -2363,7 +2369,16 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             # "projected" tarkoittaa TATA hetkea eika nykyhetkea.
             "xp_frozen_at": (frozen_info or {}).get("frozen_at"),
             "xp_frozen_deadline": (frozen_info or {}).get("deadline"),
-            "picks_gw": picks_gw if mode == "entry" else None,
+            # 🔴 Julkaisutarkistaja 25.9 (B1): klientit paattelevat "sama
+            # runko kuin viimeksi pelattu" ehdosta picks_gw == last_finished.gw
+            # (TeamPitchManager luckSameSquad, mobiilin luckSameSquadForChips)
+            # ja piirtavat silloin PELATUN joukkueen kentalle. FH-palautuksessa
+            # arvioitu runko on FH:ta edeltava, joten picks_gw kertoo SEN
+            # kierroksen; muuten kentalla olisi FH-joukkue selitteen "This is
+            # the squad you had before it" alla. picks_outdated lasketaan
+            # alla yha FH-kierroksesta (FPL julkaisee seuraavan kierroksen
+            # picksit vasta deadlinen jalkeen).
+            "picks_gw": rated_gw if mode == "entry" else None,
             # RATE-TEAM-PICKS-GW-LABEL (27.8): klientti nayttaa selitysrivin
             # kun picksit ovat vanhemmalta kierrokselta kuin suunniteltava.
             # Kentat ovat vakaita tunnisteita/arvoja, teksti klienttien i18n:sta.

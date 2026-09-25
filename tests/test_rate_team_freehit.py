@@ -89,6 +89,7 @@ def test_fh_kierros_kesken_kentta_nayttaa_pelatun_joukkueen(monkeypatch):
     _install(monkeypatch, FH_GW2, completed=[1])
     out = rt.rate_team(entry=ENTRY)
     assert _team_ids(out) == sorted(FH_IDS)
+    assert out["meta"]["picks_gw"] == 2
     assert out["meta"]["freehit_in_play"] == 2
     assert out["meta"]["freehit_reverted_from"] is None
 
@@ -101,6 +102,13 @@ def test_fh_kierroksen_jalkeen_arvioidaan_palautunut_joukkue(monkeypatch):
     assert out["team"]["bank"] == 1.5
     assert out["meta"]["freehit_reverted_from"] == 2
     assert out["meta"]["freehit_in_play"] is None
+    # B1 (julkaisutarkistaja 25.9): picks_gw = arvioidun rungon kierros, jotta
+    # klienttien "sama runko kuin viimeksi pelattu" (picks_gw == last_finished.gw)
+    # ei piirra FH-joukkuetta kentalle palautuneen rungon selitteen alle.
+    assert out["meta"]["picks_gw"] == 1
+    # ...mutta julkaisulause lasketaan FH-kierroksesta (GW3-picksit tulevat
+    # vasta GW3:n deadlinen jalkeen)
+    assert out["meta"]["picks_outdated"] is True
 
 
 @pytest.mark.parametrize("completed", [[1], [1, 2]])

@@ -1191,7 +1191,10 @@
 	{#if typeof data.meta.freehit_reverted_from === 'number'}
 		<p class="notice-preseason">
 			<strong>Your GW{data.meta.freehit_reverted_from} Free Hit squad has reverted.</strong>
-			This is the squad you had before it{#if typeof data.meta.deadline_gameweek === 'number'}, the one FPL
+			<!-- Julkaisutarkistaja 25.9 (B2): "puts back for GW{n}" vain kun
+			     picks_outdated, joka on tosi TASAN kun deadline = FH-kierros + 1.
+			     Ilman ehtoa lause nakyisi vain tilassa jossa se on vaarin. -->
+			This is the squad you had before it{#if data.meta.picks_outdated === true && typeof data.meta.deadline_gameweek === 'number'}, the one FPL
 				puts back for GW{data.meta.deadline_gameweek}{/if}.{#if data.meta.picks_outdated === true && typeof data.meta.deadline_gameweek === 'number'}
 				FPL publishes GW{data.meta.deadline_gameweek} squads a while after the
 				deadline{#if pickDeadlineLocal}&nbsp;({pickDeadlineLocal}){/if}, so import again once
