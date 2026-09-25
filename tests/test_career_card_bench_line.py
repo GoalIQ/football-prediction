@@ -59,13 +59,19 @@ def leveys(teksti: str, koko: int = KOKO) -> float:
     return len(teksti) * EM * koko
 
 
-# Kortin kolme haaraa, kirjoitettuna auki samoilla saannoilla kuin JS.
+# Kortin haarat, kirjoitettuna auki samoilla saannoilla kuin JS.
+# MP-09 (25.9): xP-ero AINA kun API antaa sen (ei vain ylityksessa), koska
+# rate-team-tyokalu nayttaa saman luvun. Prosentti jaa vain vanhan APIn
+# varapoluksi. Peili oli ennen fail-open (`proven is False`), vaikka JS on
+# fail-closed (`=== true`): puuttuva lippu antoi peilissa vahvan muodon.
+# Vahva muoto ei ole enaa "the best possible XI" (julkaisutarkistaja 25.9:
+# todistus on ehdollinen GoalIQ:n omalle penkkisaannolle).
 def rivi(*, beats: bool, proven: bool | None, pct: float, xp: float | None,
          horizon: int | None) -> str:
     win = ", %d GW" % horizon if horizon else ""
-    ref = "our best found XI" if proven is False else "the best possible XI"
-    if beats and xp is not None:
-        merkki = "+" if xp >= 0 else ""
+    ref = "our best XI" if proven is True else "our best found XI"
+    if xp is not None:
+        merkki = "+" if xp > 0 else ""
         return "%s%.1f xP vs %s%s" % (merkki, xp, ref, win)
     return "%.0f%% of %s%s" % (pct, ref, win)
 
@@ -85,6 +91,10 @@ TAPAUKSET = [
     dict(beats=True, proven=False, pct=100.0, xp=-9.9, horizon=12),
     # horisontti puuttuu
     dict(beats=True, proven=False, pct=100.0, xp=11.7, horizon=None),
+    # MP-09: jaljessa oleva joukkue saa nyt xP-rivin (mitattu 25.9: -36.8
+    # FPL-rankingin ykkoselle, -58.9 heikoimmalle naytteelle)
+    dict(beats=False, proven=False, pct=88.0, xp=-36.8, horizon=6),
+    dict(beats=False, proven=None, pct=82.0, xp=-158.9, horizon=38),
 ]
 
 
@@ -115,11 +125,13 @@ def test_kontrolli_vanha_rivi_oli_nelja_pikselia_rajalla():
 
 def test_kortti_lukee_optimal_provenin_ja_beats_benchmarkin():
     kortti = CARD.read_text(encoding="utf-8")
-    for kentta in ("optimal_proven", "beats_benchmark", "xp_vs_benchmark",
-                   "horizon_gw"):
+    for kentta in ("optimal_proven", "xp_vs_benchmark", "horizon_gw"):
         assert kentta in kortti, kentta
     assert "best possible budget squad" not in kortti, (
         "hedgaamaton vaite on yha kortissa")
+    i = kortti.index("var benchRef")
+    assert "the best possible XI" not in kortti[i:i + 200], (
+        "MP-09: vahva muoto palasi korttiin")
 
 
 def test_kortti_kayttaa_fittextia_takarajana():
@@ -180,30 +192,48 @@ def test_kortti_on_fail_closed_puuttuvalle_lipulle():
     assert "t.optimal_proven === true" in lohko, lohko
     assert "=== false" not in lohko, (
         "fail-open: puuttuva lippu putoaisi vahvaan vaitteeseen")
-    # ...ja vahva vaite on `true`-haarassa, ei fallbackina
+    # ...ja vahva vaite on `true`-haarassa, ei fallbackina. MP-09 (25.9):
+    # vahva muoto on nyt 'our best XI' (ei "the best possible XI").
     tosi = lohko.index("true")
-    assert lohko.index("the best possible XI") > tosi, lohko
+    assert lohko.index("'our best XI'") > tosi, lohko
 
 
-def test_beats_benchmark_haara_on_myos_fail_closed():
-    """Sama saanto ylijaamahaaralle: undefined ei saa laukaista sita."""
+def test_xp_haara_on_myos_fail_closed():
+    """Sama saanto xP-haaralle: undefined ei saa laukaista sita.
+
+    MP-09 (25.9): haara ei enaa riipu `beats_benchmark`ista vaan siita onko
+    luku olemassa. Puuttuva luku (vanha API) putoaa prosenttiin eika tulosta
+    "NaN xP" jaettuun kuvaan."""
     kortti = CARD.read_text(encoding="utf-8")
-    i = kortti.index("t.beats_benchmark")
-    assert "t.beats_benchmark === true" in kortti[i - 40:i + 60],         kortti[i - 40:i + 60]
+    i = kortti.index("var benchPct")
+    lohko = kortti[i:i + 700]
+    # Koko ehto, ei osamerkkijono: vanha `t.beats_benchmark === true &&
+    # typeof ...` sisaltaa saman palan ja lapaisisi, vaikka jaljessa oleva
+    # joukkue saisi yha prosentin (mutaatio mitattu 25.9).
+    assert "if (typeof t.xp_vs_benchmark === 'number') {" in lohko, lohko
 
 
 def test_mobiilikortti_on_fail_closed():
     """Sama vika olisi ollut mobiilissa. Siella se kirjoitettiin oikein
-    ensimmalla kerralla, ja tama pitaa sen niin."""
-    app = ROOT.parent / "goaliq-app" / "components" / "FantasyShareCard.tsx"
-    if not app.exists():
+    ensimmalla kerralla, ja tama pitaa sen niin.
+
+    MP-09 (25.9): kortin vertailulause siirtyi yhteen lukijaan
+    `lib/ratingGap.ts` (sama kuin otsikkorivilla). Invariantti on sama:
+    puuttuva `optimal_proven` EI ole todistettu, ja vahva muoto on vain
+    true-haarassa. Kortti ei saa koota lausetta itse."""
+    app = ROOT.parent / "goaliq-app"
+    kortti = app / "components" / "FantasyShareCard.tsx"
+    lukija = app / "lib" / "ratingGap.ts"
+    if not kortti.exists():
         import pytest as _p
         _p.skip("goaliq-app ei ole checkoutattu")
-    src = app.read_text(encoding="utf-8")
-    assert "optimalProven === true" in src, (
+    assert lukija.exists(), "lib/ratingGap.ts puuttuu: kortti kokoaa lauseen itse?"
+    src = lukija.read_text(encoding="utf-8")
+    assert "optimal_proven: r.optimal_proven === true" in src, (
         "fail-open: puuttuva lippu putoaisi vahvaan vaitteeseen")
-    i = src.index("optimalProven === true")
-    lohko = src[i:i + 220]
-    assert lohko.index("the best squad the rules allow") < lohko.index(
+    i = src.index("export function ratingGapShareSentence")
+    lohko = src[i:i + 400]
+    assert lohko.index("the strongest squad the model can build") < lohko.index(
         "the strongest squad our search found"), lohko
+    assert "ratingGapShareSentence(gap)" in kortti.read_text(encoding="utf-8")
 

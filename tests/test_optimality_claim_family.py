@@ -160,12 +160,11 @@ PINNAT = _pinnat()
 # ---------------------------------------------------------------------------
 # POIKKEUSLISTA: rivi paasee tanne VAIN perustelun kanssa.
 # ---------------------------------------------------------------------------
+# MP-09 (25.9): store.config.json poistui listalta. Sen kuusi kohtaa (en/es/pt
+# kuvaus + promo) korjattiin goaliq-appissa 'the model found' / 'searches for'
+# -muotoon. HUOM: tiedosto on korjattu repossa, mutta App Storen live-listaus
+# paivittyy vasta metadata-pushilla (Villen GO).
 SALLITUT: dict[str, str] = {
-    "store.config.json":
-        "🔒 Store-listaukset eivat ole hotfixattavissa (arvostelusykli). Kaksi "
-        "kohtaa sanoo 'the strongest squad the rules allow'. Korjataan "
-        "seuraavan submitin yhteydessa; Villen GO tarvitaan siihen joka "
-        "tapauksessa. Jonossa OPTIMAL-VAITE-MOBIILISSA-JA-STORESSA.",
     "en.ts":
         "Nappiteksti 'Optimal lineup' jarjestaa KAYTTAJAN OMAN 15:n parhaaksi "
         "XI:ksi. Se on 11-of-15 -valinta eli lahtokohtaisesti eksakti, toisin "

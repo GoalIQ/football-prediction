@@ -42,6 +42,7 @@
 	import ProjectionsPanel from './ProjectionsPanel.svelte';
 	import type { XpResponse } from '$lib/api';
 	import { xpHorizon } from '$lib/xpHorizon';
+	import { ratingGap, ratingGapBasis } from '$lib/ratingGap';
 	import { modelCaptainOf } from '$lib/pitchLineup';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
 	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
@@ -50,21 +51,14 @@
 		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(d.meta).span;
 	}
 
-	/** 11.9: mita rivin "100" tarkoittaa. Sama portitettu ternaari kuin
-	 *  poistetuissa `.tiles`- ja `.facts`-lohkoissa, eli ei uutta vaitetta;
-	 *  se vain kulkee nyt sen luvun mukana jota se selittaa. */
-	function ratingGapOf(d: RateTeamResponse): string | null {
-		const g = d.rating.gap_to_optimal_xp;
-		if (typeof g !== 'number') return null;
-		return g > 0.05 ? `You are ${g.toFixed(1)} xP off it.` : 'You are level with it.';
-	}
+	/** MP-09 (25.9): otsikkorivin "vs best found" -luvun peruste. Luku ja
+	 *  lause samasta lukijasta ($lib/ratingGap), ikkuna samasta metasta kuin
+	 *  rivin horisonttisolu. null = ei vertailukohtaa -> ei lukua eika lausetta
+	 *  (ennen vanha API sai tahan "percentile of rated teams", jota mikaan
+	 *  nykyinen backend ei palauta). */
 	function ratingBasisOf(d: RateTeamResponse): string | null {
-		if (d.meta.rating_method == null && d.rating.optimal_team_xp == null) {
-			return 'Rating is the percentile of rated teams.';
-		}
-		return d.rating.optimal_proven === false
-			? '100 = the strongest squad the model found inside the 100.0m budget.'
-			: '100 = the best squad the rules allow inside the 100.0m budget.';
+		const g = ratingGap(d.rating);
+		return g ? ratingGapBasis(g, xpHorizon(d.meta).over) : null;
 	}
 
 	// #73: lataustilan askeleet = putken oikeat vaiheet (rehellinen checklist)
@@ -934,7 +928,7 @@
 			<SquadHeaderRow
 				aligned
 				label="Team 1"
-				rating={data.rating.rating ?? Math.round(data.rating.percentile)}
+				gap={ratingGap(data.rating)}
 				teamXpGw={data.rating.team_xp_gw}
 				teamXpHorizon={data.rating.team_xp_horizon}
 				horizon={xpHorizon(data.meta)}
@@ -944,13 +938,12 @@
 				chips={data.meta.chips}
 				weakestLine={data.rating.weakest_line}
 				ratingBasis={ratingBasisOf(data)}
-		ratingGap={ratingGapOf(data)}
 				showGwXp={true}
 			/>
 			<SquadHeaderRow
 				aligned
 				label="Team 2"
-				rating={dataB.rating.rating ?? Math.round(dataB.rating.percentile)}
+				gap={ratingGap(dataB.rating)}
 				teamXpGw={dataB.rating.team_xp_gw}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
 				horizon={xpHorizon(dataB.meta)}
@@ -1305,22 +1298,27 @@
 		     sanoa: mita vasten 100 mitataan. -->
 		<div class="tiles-notes">
 			<details class="method">
-					<summary>How this rating is calculated</summary>
+					<summary>How this comparison is calculated</summary>
+					<!-- MP-09 (25.9): "100 means you captured every projected point
+					     those rules allow" oli epatosi: haku ei ole todistettu
+					     (optimal_xi_proven False tuotannossa), ja mallin oma joukkue
+					     voitti vertailukohdan livena. Nyt luku on ero xP:na. -->
+					<!-- Julkaisutarkistaja 25.9: "same rules as yours" oli epatosi
+					     (kayttajan joukkueen arvo voi olla yli 100.0m, mitattu 101.3m),
+					     ja kapteeni on summassa kerran, vain tuplaus jaa pois. -->
 					<p>
-						We compare your XI's projected points over the {xpHorizon(d.meta).span}
-						to the best XI our model can build under the same squad rules: a 100.0m budget and
-						no more than three players from one club. 100 means you captured every projected
-						point those rules allow.
+						The model searches for the strongest squad it can find on a fresh 100.0m budget,
+						with no more than three players from one club. The number above is your XI's
+						projected points over the {xpHorizon(d.meta).span} minus that squad's XI, with the
+						captain bonus left out on both sides.
 					</p>
 					<p>
 						Other FPL sites run their own projections and their own scale, so their number and
-						ours are not comparable and neither is wrong. Two ratings can disagree simply
-						because they measure against different reference points, not because one is broken.
+						ours are not comparable and neither is wrong.
 					</p>
 					<p>
-						Ours answers one narrow question: how much of the available projected points did
-						your squad capture? It says nothing about your rank, and projections are estimates,
-						not outcomes.
+						Ours answers one narrow question: how far does your XI project behind or ahead of
+						that squad? It says nothing about your rank, and projections can miss.
 					</p>
 					<!-- 26.7: rating on vain niin hyva kuin projektiot sen alla, joten
 					     ne on graded ja luku naytetaan. Tekee ratingista falsifioituvan
@@ -1374,7 +1372,7 @@
 	     elavan GW-xP:n): sama luku kahdesti parinsadan pikselin sisalla
 	     lukisi kahtena eri lukuna. ITB ja FT siirtyivat tanne nauhasta. -->
 	<SquadHeaderRow
-		rating={data.rating.rating ?? Math.round(data.rating.percentile)}
+		gap={ratingGap(data.rating)}
 		teamXpGw={data.rating.team_xp_gw}
 		teamXpHorizon={data.rating.team_xp_horizon}
 		horizon={xpHorizon(data.meta)}
@@ -1649,7 +1647,7 @@
 			     pitchin otsikkonauhaa ennen kenttaa, joten GW-xP on rivilla aina kun
 			     kentta ei sita nayta. -->
 			<SquadHeaderRow
-				rating={dataB.rating.rating ?? Math.round(dataB.rating.percentile)}
+				gap={ratingGap(dataB.rating)}
 				teamXpGw={dataB.rating.team_xp_gw}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
 				horizon={xpHorizon(dataB.meta)}
@@ -1659,7 +1657,6 @@
 				chips={dataB.meta.chips}
 				weakestLine={dataB.rating.weakest_line}
 				ratingBasis={ratingBasisOf(dataB)}
-				ratingGap={ratingGapOf(dataB)}
 				showGwXp={!premium}
 			/>
 			<p class="captain">

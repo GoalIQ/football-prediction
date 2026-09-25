@@ -334,7 +334,10 @@ def test_jakokortti_lukee_optimal_provenin():
     vain toinen portin takana."""
     kortti = (ROOT / "career.html").read_text(encoding="utf-8")
     assert "optimal_proven" in kortti, "jakokortti ei lue porttia"
-    assert "beats_benchmark" in kortti
+    # MP-09 (25.9): kortti nayttaa xP-eron aina kun `xp_vs_benchmark` on
+    # olemassa, eika enaa haaraudu `beats_benchmark`in mukaan (ks.
+    # test_career_card_bench_line.test_xp_haara_on_myos_fail_closed).
+    assert "xp_vs_benchmark" in kortti
     # ...ja teaser valittaa lipun eteenpain, muuten kortti ei voi lukea sita
     teaser = (ROOT / "src" / "models" / "fpl_career.py").read_text(
         encoding="utf-8")

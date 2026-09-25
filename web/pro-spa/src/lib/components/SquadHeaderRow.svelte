@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { RateTeamChips } from '$lib/fantasyTools';
 	import { declaredRange, type XpHorizon } from '$lib/xpHorizon';
+	import { ratingGapLabel, type RatingGap } from '$lib/ratingGap';
 
 	/**
 	 * DRAFT-COMPARE-OTSIKKORIVI (11.9.2026, FPL Demon -kaava).
@@ -17,7 +18,7 @@
 	 * sellaisenaan, jotta jokaiselle numerolle on reitti payloadiin.
 	 */
 	let {
-		rating,
+		gap,
 		teamXpGw,
 		teamXpHorizon,
 		horizon = null,
@@ -27,14 +28,16 @@
 		chips = undefined,
 		weakestLine = null,
 		ratingBasis = null,
-		ratingGap = null,
 		showGwXp = false,
 		label = null,
 		aligned = false
 	}: {
-		/** `rating.rating ?? Math.round(rating.percentile)`, kutsuja valitsee:
-		 *  vanha backend palauttaa vain percentilen. */
-		rating: number;
+		/** Ero vertailujoukkueeseen, `ratingGap(data.rating)`. null = API ei
+		 *  antanut vertailukohtaa -> solu jaa pois.
+		 *  🔴 MP-09 (25.9): ennen tassa oli `rating` ja "88/100" 90/75-
+		 *  varirajoilla. Luku ei ollut prosenttipiste, ja rajoille ei ollut
+		 *  perustetta (livena kaikki 82-92). Ks. $lib/ratingGap. */
+		gap: RatingGap | null;
 		teamXpGw: number;
 		teamXpHorizon: number;
 		/** xP-summan ikkuna kutsujan metasta ($lib/xpHorizon). null = ei
@@ -56,16 +59,12 @@
 		 *  sen sanatarkasti ("names the line that is costing you"), joten se
 		 *  kuuluu jokaiselle pinnalle eika vain ilmaiskayttajan nauhaan. */
 		weakestLine?: string | null;
-		/** Mita 100 tarkoittaa. Kutsuja muodostaa lauseen, koska vain se nakee
-		 *  `optimal_proven`-lipun; rivi ei saa keksia perustaa itse.
+		/** Mita vasten ero mitataan, `ratingGapBasis(gap, over)`. Kutsuja
+		 *  muodostaa lauseen, koska vain se nakee ikkunan metan.
 		 *  🔴 Portti 11.9: tama renderoidaan NAKYVANA rivina, ei title-
 		 *  attribuuttina. Hover ei ole olemassa kosketuslaitteella, ja luku
-		 *  ilman asteikkoaan on vaite ilman reittia. */
+		 *  ilman vertailukohtaansa on vaite ilman reittia. */
 		ratingBasis?: string | null;
-		/** Etaisyys vertailukohtaan sanoina ("You are 3.4 xP off it."). Tama
-		 *  luku katosi kayttoliittymasta kun `.tiles`-lohko poistui, ja se on
-		 *  ainoa asia joka tekee ratingista falsifioituvan yhdella silmayksella. */
-		ratingGap?: string | null;
 		/** GW-xP naytetaan rivilla VAIN kun kentan otsikkonauha ei nayta sita
 		 *  alapuolella. Premium-pitch renderoi elavan GW-xP:n, ja sama luku
 		 *  kahdesti 200 pikselin sisalla lukisi kahtena eri asiana. */
@@ -112,17 +111,14 @@
 
 <div class="hrow" class:aligned>
 	{#if label}<span class="hlabel">{label}</span>{/if}
-	<span class="cell" title="GoalIQ model rating out of 100. Green from 90, amber from 75.">
-		<span class="k">Rating</span>
-		<span class="v">
-			<span
-				class="dot"
-				class:good={rating >= 90}
-				class:mid={rating >= 75 && rating < 90}
-				class:bad={rating < 75}
-			></span>{rating}<span class="u">/100</span>
+	{#if gap}
+		<!-- MP-09: ei varipistetta. Vari olisi arvio hyvasta ja huonosta, eika
+		     sille ole rajaa jonka voisi perustella. Etumerkki kertoo suunnan. -->
+		<span class="cell" title="Your XI's projected points minus the comparison squad's, captain bonus left out on both sides">
+			<span class="k">{ratingGapLabel(gap)}</span>
+			<span class="v">{gap.text}</span>
 		</span>
-	</span>
+	{/if}
 	{#if weakestLine}
 		<!-- 13.9 (portti WG5): vanha "The line the model would strengthen first"
 		     nimesi mekanismin jota _line_strength ei laske. Se vertaa XI:n rivin
@@ -188,7 +184,7 @@
 	{/if}
 </div>
 {#if ratingBasis}
-	<p class="hrow-basis">{ratingBasis}{ratingGap ? ` ${ratingGap}` : ''}</p>
+	<p class="hrow-basis">{ratingBasis}</p>
 {/if}
 
 <style>
@@ -252,22 +248,6 @@
 		font-weight: 400;
 		color: var(--text-muted);
 		margin-left: 2px;
-	}
-	.dot {
-		display: inline-block;
-		width: 8px;
-		height: 8px;
-		margin-right: 6px;
-		background: var(--text-muted);
-	}
-	.dot.good {
-		background: var(--positive);
-	}
-	.dot.mid {
-		background: var(--accent);
-	}
-	.dot.bad {
-		background: var(--negative);
 	}
 	.chips .v {
 		white-space: normal;

@@ -403,8 +403,9 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
          rating on arrival, so this lands on the answer, not on a form. -->
     <div class="next-step" id="nextStep" hidden>
       <h3>Same team, what does the model make of it?</h3>
-      <p>Your squad rated out of 100, the captain pick for this gameweek and the line that
-        is costing you most. Free, no account needed.</p>
+      <p>The captain pick for this gameweek, and how far your XI projects behind or ahead of
+        the strongest squad the model found. It also names the line that is costing you most.
+        Free, no account needed.</p>
       <a class="btn" id="rateLink" href="https://pro.goaliq.app/team" data-cta="career-rate">Rate this team &#9656;</a>
     </div>
   </div>
@@ -689,13 +690,17 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
          the card printed "100% of the best possible XI" from a benchmark its
          own data shows beaten. Only a proven flag may make the strong claim. */
       var benchRef = (t.optimal_proven === true)
-        ? 'the best possible XI' : 'our best found XI';
+        ? 'our best XI' : 'our best found XI';
       var benchPct;
-      if (t.beats_benchmark === true && typeof t.xp_vs_benchmark === 'number') {
-        /* A number, not a compliment. The percentage is clamped to 100 in
-           this branch, so it would say less than the surplus does. */
-        var d = t.xp_vs_benchmark;
-        benchPct = (d >= 0 ? '+' : '') + d.toFixed(1) + ' xP vs ' + benchRef + benchWin;
+      /* MP-09 (25 Sep): always the xP gap when the API gives it, not only
+         above the benchmark. The rate-team tool now shows the same number
+         ("vs best found -36.8 xP"), and "88% of" packed every measured team
+         into 82-92. The percentage stays only as the old-API fallback. */
+      if (typeof t.xp_vs_benchmark === 'number') {
+        /* Not `d`: that name is drawCard's own parameter (the career data),
+           and shadowing it here would break any later `d.` read. */
+        var gapXp = t.xp_vs_benchmark;
+        benchPct = (gapXp > 0 ? '+' : '') + gapXp.toFixed(1) + ' xP vs ' + benchRef + benchWin;
       } else {
         benchPct = Number(t.percentile).toFixed(0) + '% of ' + benchRef + benchWin;
       }
