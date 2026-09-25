@@ -276,6 +276,12 @@ export interface RateTeamResponse {
 		 *  backendissa (picks_outdated), jotta web ja mobiili eivat vastaa
 		 *  eri tavalla. */
 		picks_outdated?: boolean;
+		/** RATE-TEAM-FREEHIT-PALAUTUS (25.9): FH-kierros jonka joukkue
+		 *  palautettiin; arvioitu runko on FH:ta edeltava. null = ei palautusta.
+		 *  Kun tama on luku, "This is your GW{picks_gw} squad" olisi epatosi. */
+		freehit_reverted_from?: number | null;
+		/** FH-kierros kesken: kentta nayttaa FH-joukkueen. null muuten. */
+		freehit_in_play?: number | null;
 		deadline_gameweek?: number | null;
 		/** Deadline-GW:n deadline ISO-aikana (UTC), esitysta varten. */
 		deadline_time?: string | null;
