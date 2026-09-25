@@ -1550,6 +1550,27 @@ WHY_DRIVER_MAX = 3
 
 _SET_PIECE_WORD = {"pens": "penalties", "corners": "corners", "fk": "free kicks"}
 
+#: Erikoistilannevastuu = FPL:n jarjestyksessa 1. tai 2. ottaja. Kolmas nimi
+#: listalla on jarjestysnumero, ei vastuu (julkaisuportti 10.9 ja 24.9).
+SET_PIECE_DUTY_MAX_ORDER = 2
+
+
+def set_piece_duties(sp) -> dict[str, int]:
+    """{avain: jarjestys} tehtavista joissa pelaaja on 1. tai 2. ottaja.
+
+    YKSI lukija kaikille pinnoille jotka sanovat "set piece duties" tai
+    nimeavat ottajan (WHY-SETPIECE-KYNNYS 25.9): `driver_facts` ja
+    `build_fpl_why.player_facts` lukevat taman. Ennen why-lause hyvaksyi
+    minka tahansa jarjestysnumeron (`if sp.get(k)`), ja 12 pelaajaa joiden
+    paras jarjestys oli 3. tai huonompi sai lauseen "...and set piece duties"
+    (Odegaard 3/-/4, Rashford -/-/3). Vahti: tests/test_set_piece_duty_reader.py.
+    """
+    if not isinstance(sp, dict):
+        return {}
+    return {k: int(sp[k]) for k in ("pens", "corners", "fk")
+            if isinstance(sp.get(k), (int, float)) and not isinstance(sp.get(k), bool)
+            and 1 <= sp[k] <= SET_PIECE_DUTY_MAX_ORDER}
+
 #: Puhtaan pelin pisteet pelipaikan nimella (CS_PTS on element_type-avaimin).
 _CS_PTS_BY_POS = {POS_NAME[k]: float(v) for k, v in CS_PTS.items() if v}
 
@@ -1625,9 +1646,10 @@ def driver_facts(player: dict) -> dict:
         # erikseen ("2nd on"). Ennen Mbeumo (2/2/2) ja B.Fernandes (1/1/1)
         # saivat saman tekstin "on penalties, corners, free kicks", eli
         # lukija ei nahnyt kumpi potkii.
+        duties = set_piece_duties(sp)
+
         def _duties(order: int) -> list[str]:
-            return [_SET_PIECE_WORD[k] for k in ("pens", "corners", "fk")
-                    if isinstance(sp.get(k), (int, float)) and sp[k] == order]
+            return [_SET_PIECE_WORD[k] for k, o in duties.items() if o == order]
         parts = []
         if _duties(1):
             parts.append(", ".join(_duties(1)))

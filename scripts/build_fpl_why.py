@@ -53,7 +53,7 @@ TOP_N = 150
 # Alle taman xGI/90 jatetaan pois lauseesta: se ei kanna painoa jonka
 # "leans on" sille antaisi (ks. template_sentence).
 from src.models.fpl_why_drivers import XGI_MIN  # noqa: E402  yksi kynnys, sama kuin ilmaissivun todiste
-from src.models.fpl_xp import attach_horizon_total_actionable  # noqa: E402
+from src.models.fpl_xp import attach_horizon_total_actionable, set_piece_duties  # noqa: E402
 
 # Nosta AINA kun `template_sentence` muuttuu: se on osa valimuistin avainta
 # mallipohjaisille lauseille. v2 (14.8): xGI-kynnys + kolme runkoa.
@@ -223,7 +223,9 @@ def player_facts(player: dict, gw: int, horizon: int) -> dict:
             "assists_per90": _num(per90.get("assists"), 2),
             "xgi_per90": _num(per90.get("xgi"), 2),
         }
-    takers = [k for k in ("pens", "corners", "fk") if sp.get(k)]
+    # WHY-SETPIECE-KYNNYS 25.9: sama lukija kuin driver_facts ja kortti
+    # (1. tai 2. ottaja). `if sp.get(k)` hyvaksyi minka tahansa jarjestyksen.
+    takers = list(set_piece_duties(sp))
     if takers:
         facts["set_piece_duties"] = takers
     if player.get("news"):
