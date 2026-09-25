@@ -3445,6 +3445,54 @@ def _supabase_users() -> Optional[list[dict]]:
         return None
 
 
+# Web-tilauksen tilat joilla tilaus on voimassa (Stripe-webhook kirjoittaa
+# `active` tai Stripen oman statuksen).
+_WEB_ACTIVE_STATUSES = frozenset({"active", "trialing", "past_due"})
+
+
+def _premium_breakdown(user_ids: list[str]) -> Optional[dict]:
+    """Konversion YKSI lukija (25.9.2026): {"premium": {id: premium_source},
+    "web_active": {id, ...}} tai None jos haku epaonnistui.
+
+    `premium` = `profiles.is_premium` NYT, arvona `premium_source` (None jos
+    leimaamaton). `web_active` = voimassa oleva web_subscriptions-rivi; sita
+    kaytetaan vain leimaamattoman Premium-tilin luokitteluun. `_paid_user_ids`
+    jaa luojaraporteille ennalleen (ks. sen docstring)."""
+    if not user_ids or not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        return {"premium": {}, "web_active": set()}
+    key = SUPABASE_SERVICE_ROLE_KEY
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+    premium: dict[str, Optional[str]] = {}
+    web_active: set[str] = set()
+    try:
+        for i in range(0, len(user_ids), 100):
+            ids = ",".join(user_ids[i:i + 100])
+            r = requests.get(
+                f"{SUPABASE_URL}/rest/v1/profiles"
+                f"?id=in.({ids})&is_premium=is.true&select=id,premium_source",
+                headers=headers, timeout=20)
+            if r.status_code != 200:
+                print(f"[conversion] profiles -> {r.status_code}")
+                return None
+            for row in r.json() or []:
+                if row.get("id"):
+                    premium[row["id"]] = row.get("premium_source") or None
+            r2 = requests.get(
+                f"{SUPABASE_URL}/rest/v1/web_subscriptions"
+                f"?user_id=in.({ids})&select=user_id,status",
+                headers=headers, timeout=20)
+            if r2.status_code != 200:
+                print(f"[conversion] web_subscriptions -> {r2.status_code}")
+                return None
+            for row in r2.json() or []:
+                if row.get("user_id") and row.get("status") in _WEB_ACTIVE_STATUSES:
+                    web_active.add(row["user_id"])
+    except requests.RequestException as e:
+        print(f"[conversion] haku kaatui: {type(e).__name__}")
+        return None
+    return {"premium": premium, "web_active": web_active}
+
+
 def _paid_user_ids(user_ids: list[str]) -> Optional[dict[str, set[str]]]:
     """Ketka annetuista tileista maksavat, ja mita kautta.
 
@@ -3596,42 +3644,57 @@ def admin_conversion(request: Request):
                             detail="Could not read the account list just now. "
                                    "This is not zero accounts.")
     ids = [u["id"] for u in users if u.get("id")]
-    paid = _paid_user_ids(ids)
-    if paid is None:
+    tila = _premium_breakdown(ids)
+    if tila is None:
         raise HTTPException(status_code=503,
                             detail="Could not read subscription state just now. "
                                    "This is not zero subscribers.")
 
     total = len(ids)
-    # 🔴 KOLME AMPARIA, EI KAHTA. Ensimmainen versio (31.8) palautti
-    # `premium_app` = is_premium ilman web-tilausta ja DIGEST rendersi sen
-    # muodossa "store 15". Se oli vaite jota data ei kanna: comp-Premiumit on
-    # annettu KASIN Supabaseen eivatka ne eroa store-ostosta millaan tavalla
-    # jota tama data naytaisi. Ampari on siksi nimeltaan `unattributed`, ja
-    # se kutistuu itsestaan sita mukaa kun tileja merkitaan.
-    comp_ids = {u["id"] for u in users
-                if (u.get("user_metadata") or {}).get("comp") is True
-                and u.get("id")}
-    web_set, rest = paid["web"], paid["app"]
-    comp_set = rest & comp_ids
-    unattributed = rest - comp_ids
-    web, comp, unatt = len(web_set), len(comp_set), len(unattributed)
-    premium = web + comp + unatt
+    # 🔴 NELJA AMPARIA, YKSI LAHDE (25.9.2026). Premium = `profiles.is_premium`
+    # nyt, ja luokka luetaan `profiles.premium_source`-sarakkeesta, johon
+    # webhookit leimaavat `stripe_web`/`revenuecat` ja comp-tilit on merkitty
+    # kasin `comp`. Ennen:
+    #   (1) comp luettiin VAIN auth-metadatan `comp`-lipusta. 12 comp-tilia oli
+    #       merkitty premium_sourceen, joten DIGEST sanoi "comp 0, attribuoimatta
+    #       14" ja konversion ylaraja 8,9 % oli comp-tileja.
+    #   (2) "web" oli jokainen web_subscriptions-rivi TILASTA RIIPPUMATTA:
+    #       perutut tilaukset laskettiin maksaviksi (web 7, kun stripe_web 3),
+    #       ja Premium-summa 21 ylitti is_premium-tilien maaran 17.
+    #   (3) store-osto (revenuecat) oli "attribuoimaton", vaikka lahde tietaa sen.
+    # Comp: sarake TAI vanha metadata-lippu (POST /api/admin/comp-premium),
+    # jotta kumpikaan merkintatapa ei vuoda konversioksi.
+    comp_meta = {u["id"] for u in users
+                 if (u.get("user_metadata") or {}).get("comp") is True and u.get("id")}
+    comp_set, web_set, store_set, unatt_set = set(), set(), set(), set()
+    for uid, lahde in tila["premium"].items():
+        if lahde == "comp" or uid in comp_meta:
+            comp_set.add(uid)
+        elif lahde == "stripe_web" or (lahde is None and uid in tila["web_active"]):
+            web_set.add(uid)
+        elif lahde == "revenuecat":
+            store_set.add(uid)
+        else:
+            unatt_set.add(uid)
+    web, store = len(web_set), len(store_set)
+    comp, unatt = len(comp_set), len(unatt_set)
+    premium = len(tila["premium"])
     window = free_premium_window_active()
 
     # Konversio on VALI, ei luku, niin kauan kuin yksikin tili on
-    # attribuoimatta. Alaraja laskee vain todistetusti maksavat (web-tilaus);
+    # attribuoimatta. Alaraja laskee todistetusti maksavat (web + store);
     # ylaraja olettaa jokaisen attribuoimattoman maksaneeksi. Kun
     # `unattributed` on 0, rajat ovat sama luku ja `exact` on tosi.
     # Comp-tilit EIVAT ole kummassakaan rajassa: ne eivat ole konversioita.
-    lo = round(100.0 * web / total, 2) if total else None
-    hi = round(100.0 * (web + unatt) / total, 2) if total else None
+    lo = round(100.0 * (web + store) / total, 2) if total else None
+    hi = round(100.0 * (web + store + unatt) / total, 2) if total else None
 
     return {
         "measured_at": datetime.now(timezone.utc).isoformat(),
         "total_accounts": total,
         "premium_accounts": premium,
         "premium_web": web,
+        "premium_store": store,
         "premium_comp": comp,
         "premium_unattributed": unatt,
         "conversion_pct_min": lo,
@@ -3645,11 +3708,10 @@ def admin_conversion(request: Request):
             "the product. Do not compare a window number against a non-window "
             "one."
             if window else
-            "Aggregate only. premium_unattributed is profiles.is_premium with "
-            "no web subscription and no comp marker: a store purchase or an "
-            "unmarked comp account, and this data cannot tell them apart. "
-            "Mark comp accounts with POST /api/admin/comp-premium and the "
-            "range closes."
+            "Aggregate only. Premium is profiles.is_premium now, classed by "
+            "profiles.premium_source (stripe_web, revenuecat, comp). "
+            "premium_unattributed has no source, no active web subscription "
+            "and no comp marker: set premium_source and the range closes."
         ),
     }
 

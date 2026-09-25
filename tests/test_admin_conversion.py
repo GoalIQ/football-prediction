@@ -33,7 +33,11 @@ class _Resp:
 
 
 def _wire(monkeypatch, users, web=(), app_prem=(), users_status=200,
-          sub_status=200, window=False):
+          sub_status=200, window=False, sources=None, web_status=None):
+    """sources: {id: premium_source}, web_status: {id: status} (oletus active).
+    is_premium = web + app_prem + sourcesin avaimet."""
+    sources = sources or {}
+    web_status = web_status or {}
     monkeypatch.setattr(m, "SUPABASE_URL", "https://supa.test")
     monkeypatch.setattr(m, "SUPABASE_SERVICE_ROLE_KEY", "key")
     monkeypatch.setenv("ADMIN_TOKEN", "adm")
@@ -48,9 +52,12 @@ def _wire(monkeypatch, users, web=(), app_prem=(), users_status=200,
         if sub_status != 200:
             return _Resp({"msg": "nope"}, sub_status)
         if "web_subscriptions" in url:
-            return _Resp([{"user_id": u, "status": "active"} for u in web])
+            return _Resp([{"user_id": u, "status": web_status.get(u, "active")}
+                          for u in set(web) | set(web_status)])
         if "profiles" in url:
-            return _Resp([{"id": u} for u in set(web) | set(app_prem)])
+            prem = (set(web) - {u for u, st in web_status.items() if st == "canceled"}
+                    | set(app_prem) | set(sources))
+            return _Resp([{"id": u, "premium_source": sources.get(u)} for u in prem])
         return _Resp([])
 
     monkeypatch.setattr(m.requests, "get", fake_get)
@@ -147,6 +154,59 @@ def test_ei_yhtaan_tilia_ei_jaa_nollalla(monkeypatch):
     assert d["total_accounts"] == 0
     assert d["conversion_pct_min"] is None and d["conversion_pct_max"] is None
     assert d["conversion_exact"] is False
+
+
+# --- 25.9.2026: yksi lahde (profiles.premium_source) ------------------------
+
+def test_premium_source_comp_on_comp_ilman_metadataa(monkeypatch):
+    """VIKA 1: 12 comp-tilia oli merkitty premium_sourceen, ei metadataan, ja
+    DIGEST sanoi comp 0. MUTAATIO: poista `lahde == "comp"` -> punainen."""
+    d = _get(_wire(monkeypatch, _users(10), sources={"u2": "comp", "u3": "comp"},
+                   web=["u0"])).json()
+    assert d["premium_comp"] == 2 and d["premium_unattributed"] == 0
+    assert d["conversion_pct_max"] == 10.0
+
+
+def test_peruttu_web_tilaus_ei_ole_premium(monkeypatch):
+    """VIKA 2: jokainen web_subscriptions-rivi laskettiin maksavaksi tilasta
+    riippumatta (web 7, kun voimassa 3)."""
+    d = _get(_wire(monkeypatch, _users(10), web=["u0"],
+                   web_status={"u1": "canceled"})).json()
+    assert d["premium_web"] == 1 and d["premium_accounts"] == 1
+
+
+def test_leimaamaton_premium_perutulla_web_rivilla_ei_ole_web(monkeypatch):
+    """Tilasuodattimen erotteleva tapaus: is_premium, ei lahdetta, vain
+    peruttu web-rivi -> attribuoimaton (ei todistetusti maksava).
+    MUTAATIO: poista status-ehto `_premium_breakdown`ista -> punainen."""
+    d = _get(_wire(monkeypatch, _users(10), sources={"u5": None},
+                   web_status={"u5": "canceled"})).json()
+    assert d["premium_web"] == 0 and d["premium_unattributed"] == 1
+
+
+def test_store_osto_on_konversio_ei_attribuoimaton(monkeypatch):
+    d = _get(_wire(monkeypatch, _users(10), sources={"u4": "revenuecat"})).json()
+    assert d["premium_store"] == 1 and d["premium_unattributed"] == 0
+    assert d["conversion_pct_min"] == d["conversion_pct_max"] == 10.0
+
+
+def test_lahde_voittaa_vanhan_web_rivin(monkeypatch):
+    """Store-ostaja jolla on vanha web-rivi luokitellaan lahteen mukaan."""
+    d = _get(_wire(monkeypatch, _users(10), sources={"u1": "revenuecat"},
+                   web_status={"u1": "active"})).json()
+    assert d["premium_store"] == 1 and d["premium_web"] == 0
+
+
+def test_mitattu_jakauma_25_9(monkeypatch):
+    """Oikea tila 25.9 (Supabase, lukuoikeus): 17 Premiumia = 12 comp +
+    3 stripe_web + 1 revenuecat + 1 leimaamaton, 236 tilia."""
+    src = {f"u{i}": "comp" for i in range(12)}
+    src.update({"u12": "stripe_web", "u13": "stripe_web", "u14": "stripe_web",
+                "u15": "revenuecat", "u16": None})
+    d = _get(_wire(monkeypatch, _users(236), sources=src)).json()
+    assert (d["premium_accounts"], d["premium_comp"], d["premium_web"],
+            d["premium_store"], d["premium_unattributed"]) == (17, 12, 3, 1, 1)
+    assert d["conversion_pct_min"] == 1.69 and d["conversion_pct_max"] == 2.12
 
 
 # --- fail-closed: nolla ei ole sama kuin "ei tietoa" ----------------------
