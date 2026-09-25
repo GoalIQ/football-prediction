@@ -1508,11 +1508,73 @@ def build_context(as_of_projection: bool = False
     return xp_data, bootstrap, pool, {p["id"]: p for p in pool}
 
 
+FREEHIT_CHIP = "freehit"
+# FPL:n saannoilla kaudella on kaksi Free Hitia (yksi per puolisko), joten
+# kaksi perakkaista FH-kierrosta on mahdollinen (GW19 + GW20). Palautus
+# kavelee taaksepain enintaan taman verran.
+_FREEHIT_WALKBACK_MAX = 2
+
+
+def _pre_freehit_picks(entry: int, picks_gw: int,
+                       picks_data: dict) -> tuple[dict, int | None]:
+    """Free Hit -kierroksen picksit -> joukkue johon FPL palauttaa.
+
+    🔴 MIKSI (25.9.2026, julkaisutarkistajan sivulöydös MP-09:ssa, mitattu
+    FPL:sta). Entry 895045 (FPL overall #1) pelasi GW5:llä Free Hitin, ja
+    rate-team arvioi GW6-GW11:lle FH-joukkueen (`picks_gw: 5`, 15 GW5-id:ta),
+    vaikka FPL palauttaa joukkueen GW6:ksi GW4:n kokoonpanoon (eri 15).
+    Rating, siirtoehdotukset, kapteeni ja pankki laskettiin joukkueelle jota
+    kayttajalla ei ole, seuraavaan deadlineen asti.
+
+    Palauttaa (picks_data, reverted_from). reverted_from = FH-kierros kun
+    palautettiin, muuten None. Jos edeltavaa kierrosta ei saada (404), FH-
+    joukkue jaa: vaara joukkue on parempi kuin virhe, ja meta ei silloin vaita
+    palautusta.
+    """
+    data, cur, reverted_from = picks_data, picks_gw, None
+    for _ in range(_FREEHIT_WALKBACK_MAX):
+        if data.get("active_chip") != FREEHIT_CHIP or cur <= 1:
+            break
+        try:
+            prev = _fetch_fpl(f"/entry/{entry}/event/{cur - 1}/picks/")
+        except RateTeamError:
+            break
+        if not (prev.get("picks") or []):
+            break
+        data, cur = prev, cur - 1
+        reverted_from = picks_gw
+    return data, reverted_from
+
+
 def resolve_squad(bootstrap: dict, entry: int | None, gw: int | None,
                   players: list[int] | None, captain: int | None,
                   bank: float | None) -> tuple[list[int], int | None, int, int]:
     """#35: jaettu joukkueresoluutio → (squad_ids, captain_id, bank_tenths,
-    picks_gw). entry-moodi hakee picksit; manual-moodi validoi 15 ID:tä."""
+    picks_gw). entry-moodi hakee picksit; manual-moodi validoi 15 ID:tä.
+
+    Free Hit palautetaan AINA kun kierrosta ei pyydetty eksplisiittisesti:
+    kaikki kutsujat (planneri, kapteeni, ketjut, edge, my team) suunnittelevat
+    tulevaa, ja tuleva joukkue on FH:ta edeltava. Rate-teamin kentta joka
+    nayttaa kesken olevan FH-kierroksen pisteita kutsuu
+    `resolve_squad_ex(..., freehit="as_played")`."""
+    r = resolve_squad_ex(bootstrap, entry, gw, players, captain, bank)
+    return r["squad_ids"], r["captain_id"], r["bank_tenths"], r["picks_gw"]
+
+
+def resolve_squad_ex(bootstrap: dict, entry: int | None, gw: int | None,
+                     players: list[int] | None, captain: int | None,
+                     bank: float | None, freehit: str = "revert") -> dict:
+    """Kuten resolve_squad, mutta palauttaa dictin jossa myos `chip`
+    (picks_gw:n active_chip, None manual-moodissa) ja
+    `freehit_reverted_from` (FH-kierros kun joukkue palautettiin, muuten None).
+
+    freehit="revert" (oletus): FH-kierroksen joukkue korvataan FH:ta
+    edeltavalla, jos kierrosta ei pyydetty eksplisiittisesti (`gw` None).
+    freehit="as_played": FH-joukkue sellaisenaan (kesken olevan kierroksen
+    nayttö). Eksplisiittinen `gw` saa aina pelatun joukkueen: gw-review pyytaa
+    menneen kierroksen sellaisena kuin se pelattiin."""
+    if freehit not in ("revert", "as_played"):
+        raise ValueError(f"freehit must be 'revert' or 'as_played', got {freehit!r}")
     bank_tenths = int(round((bank or 0.0) * 10))
     if players:
         if len(players) != 15:
@@ -1559,7 +1621,10 @@ def resolve_squad(bootstrap: dict, entry: int | None, gw: int | None,
         # yli 100.0m:n runko ilman bankia = 0.0m pankissa (ei negatiivista).
         if bank is None:
             bank_tenths = max(0, 1000 - cost_tenths)
-        return list(players), captain, bank_tenths, _resolve_gw(bootstrap, gw)
+        return {"squad_ids": list(players), "captain_id": captain,
+                "bank_tenths": bank_tenths,
+                "picks_gw": _resolve_gw(bootstrap, gw),
+                "chip": None, "freehit_reverted_from": None}
     if entry is None:
         raise RateTeamError(400, "Provide either entry or players.")
     picks_gw = _resolve_gw(bootstrap, gw)
@@ -1567,12 +1632,19 @@ def resolve_squad(bootstrap: dict, entry: int | None, gw: int | None,
     picks = picks_data.get("picks") or []
     if not picks:
         raise RateTeamError(404, f"Entry {entry} has no picks for GW{picks_gw}.")
+    chip = picks_data.get("active_chip")
+    reverted_from = None
+    if freehit == "revert" and gw is None:
+        picks_data, reverted_from = _pre_freehit_picks(entry, picks_gw, picks_data)
+        picks = picks_data.get("picks") or []
     squad_ids = [pk["element"] for pk in picks]
     cap = [pk["element"] for pk in picks if pk.get("is_captain")]
     captain_id = captain or (cap[0] if cap else None)
     if bank is None:
         bank_tenths = int((picks_data.get("entry_history") or {}).get("bank") or 0)
-    return squad_ids, captain_id, bank_tenths, picks_gw
+    return {"squad_ids": squad_ids, "captain_id": captain_id,
+            "bank_tenths": bank_tenths, "picks_gw": picks_gw,
+            "chip": chip, "freehit_reverted_from": reverted_from}
 
 
 def clamp_gw_to_projections(target_gw: int, pool: list[dict],
@@ -2102,8 +2174,26 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     xp_data, bootstrap, pool, pool_by_id = build_context()
     mode = "manual" if players else "entry"
     missing: list[int] = []
-    squad_ids, captain_id, bank_tenths, picks_gw = resolve_squad(
-        bootstrap, entry, gw, players, captain, bank)
+    # RATE-TEAM-FREEHIT-PALAUTUS (25.9): kentta nayttaa kesken olevan
+    # kierroksen joukkueen sellaisena kuin se pelaa (22.8 linjaus), joten
+    # kesken olevalla FH-kierroksella FH-joukkue pysyy. Kun naytettava
+    # kierros on siirtynyt FH-kierroksen ohi, FH-joukkue on historiaa ja
+    # arvioidaan se johon FPL palautti. Sama `display_gameweek`-ehto kuin
+    # target_gw:lla alla, jotta kentta ja joukkue eivat voi olla eri vaiheessa.
+    from src.models.fpl_gameweek import display_gameweek as _disp
+    _fh_mode = "revert"
+    if mode == "entry" and gw is None:
+        _pg = _resolve_gw(bootstrap, None)
+        _sh = _disp(xp_data.get("meta") or {})
+        if not (isinstance(_sh, int) and _sh > _pg):
+            _fh_mode = "as_played"
+    _res = resolve_squad_ex(bootstrap, entry, gw, players, captain, bank,
+                            freehit=_fh_mode)
+    squad_ids, captain_id = _res["squad_ids"], _res["captain_id"]
+    bank_tenths, picks_gw = _res["bank_tenths"], _res["picks_gw"]
+    freehit_reverted_from = _res["freehit_reverted_from"]
+    freehit_in_play = (picks_gw if _fh_mode == "as_played"
+                       and _res["chip"] == FREEHIT_CHIP else None)
 
     # Esikausiclamppi: picks voi tulla viime kauden GW:stä (esim. GW38), mutta
     # projektiot kattavat tulevan horisontin (GW1–6) → xP-laskennan GW on aina
@@ -2123,7 +2213,6 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     # varten ja sai GW2:n, jolloin vertailtavaa ei ollut lainkaan ja katsaus
     # vastasi `available: false` juuri silloin kun se on ajankohtaisin.
     # Automaattinen siirto on OLETUS, ei pakotus.
-    from src.models.fpl_gameweek import display_gameweek as _disp
     if gw is not None:
         _base = picks_gw
     else:
@@ -2282,6 +2371,14 @@ def rate_team(entry: int | None = None, gw: int | None = None,
             "deadline_time": deadline_time_for(bootstrap, _dl_gw),
             "picks_outdated": (picks_outdated(picks_gw, _dl_gw)
                                if mode == "entry" else False),
+            # RATE-TEAM-FREEHIT-PALAUTUS (25.9): FH-kierros jonka joukkue
+            # palautettiin (arvioitava joukkue on FH:ta edeltava), tai None.
+            # Klientti nimeaa sen, koska joukkue ei ole se jonka kayttaja
+            # naki FPL:ssa viimeksi pelaavan.
+            "freehit_reverted_from": freehit_reverted_from,
+            # FH-kierros kesken: kentta nayttaa FH-joukkueen sellaisena kuin
+            # se pelaa, mutta se palautuu kierroksen jalkeen. None muuten.
+            "freehit_in_play": freehit_in_play,
             "season": xp_data["meta"].get("season"),
             "generated_at": xp_data["meta"].get("generated_at"),
             "horizon_gw": xp_data["meta"].get("horizon_gw"),
