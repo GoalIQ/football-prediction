@@ -3616,8 +3616,8 @@ def minacc_bias_lause(doc: dict) -> str:
                         f"({ei['bias']:+.1f}).")
         else:
             osat.append(f"Players who got on the pitch average "
-                        f"{pelasi['bias']:+.1f}, and the {ei['n']} players who "
-                        f"never appeared {ei['bias']:+.1f}.")
+                        f"{pelasi['bias']:+.1f}, and players who never appeared "
+                        f"average {ei['bias']:+.1f}.")
     if aloittajat and aloittajat["bias"] >= MINACC_ALOITTAJA_NIMETAAN_MIN:
         # Julkaisutarkistaja 25.9: vastakohta ("Starters are different.") vain
         # kun edellinen lause sanoi "close to even", muuten sille ei ole vastinetta.
