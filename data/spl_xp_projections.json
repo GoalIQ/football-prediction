@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-09-25T15:59:43",
+  "generated_at": "2026-09-25T19:11:24",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -25,7 +25,7 @@
     "Neom SC"
    ],
    "source": "measured",
-   "baseline_attack": -0.1372,
+   "baseline_attack": -0.1371,
    "baseline_defence": 0.2505
   },
   "sanity_gate": "PASS",
@@ -498,7 +498,7 @@
    "team_short": "QAD",
    "pos": "MID",
    "price": 11.9,
-   "owned_pct": 35.9,
+   "owned_pct": 35.8,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -7980,7 +7980,7 @@
    },
    "xp_per_gw": 2.69,
    "xp_per_90": 5.25,
-   "xp_horizon_total": 16.14,
+   "xp_horizon_total": 16.13,
    "gameweeks": [
     {
      "gw": 8,
@@ -7990,7 +7990,7 @@
        "venue": "H"
       }
      ],
-     "xp": 2.36
+     "xp": 2.35
     },
     {
      "gw": 9,
@@ -9105,7 +9105,7 @@
    "team_short": "ETT",
    "pos": "DEF",
    "price": 5.2,
-   "owned_pct": 13.7,
+   "owned_pct": 13.6,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -21687,7 +21687,7 @@
    "team_short": "NEO",
    "pos": "DEF",
    "price": 5.1,
-   "owned_pct": 12.4,
+   "owned_pct": 12.5,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -29517,7 +29517,7 @@
    "team_short": "HIL",
    "pos": "MID",
    "price": 8.5,
-   "owned_pct": 3.6,
+   "owned_pct": 3.7,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -50276,6 +50276,93 @@
    ]
   },
   {
+   "id": 630,
+   "web_name": "Trezeguet",
+   "full_name": "Mahmoud Ahmed Ibrahim Hassan",
+   "team": "Al Riyadh",
+   "team_short": "RIY",
+   "pos": "MID",
+   "price": 6.4,
+   "owned_pct": 1.0,
+   "status": "i",
+   "news": "Muscle Injury - Expected Return: Mid Oct - إصابة عضلية - العودة المتوقعة: منتصف أوكتوبر",
+   "chance_next": 0,
+   "yellows": 0,
+   "xmins": 5.5,
+   "predicted_starts": 0.0,
+   "minutes_confidence": "low",
+   "p_start": 0.0,
+   "p_cameo": 0.275,
+   "p_bench": 0.725,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 0.38,
+   "xp_per_90": 5.14,
+   "xp_horizon_total": 2.29,
+   "gameweeks": [
+    {
+     "gw": 8,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.4
+    },
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.36
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "DIR",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.36
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.39
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.37
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.41
+    }
+   ]
+  },
+  {
    "id": 130,
    "web_name": "M. Al Abboud",
    "full_name": "Mehdi Al Abboud",
@@ -50371,93 +50458,6 @@
       }
      ],
      "xp": 0.42
-    }
-   ]
-  },
-  {
-   "id": 630,
-   "web_name": "Trezeguet",
-   "full_name": "Mahmoud Ahmed Ibrahim Hassan",
-   "team": "Al Riyadh",
-   "team_short": "RIY",
-   "pos": "MID",
-   "price": 6.4,
-   "owned_pct": 1.0,
-   "status": "i",
-   "news": "Muscle Injury - Expected Return: Mid Oct - إصابة عضلية - العودة المتوقعة: منتصف أوكتوبر",
-   "chance_next": 0,
-   "yellows": 0,
-   "xmins": 5.5,
-   "predicted_starts": 0.0,
-   "minutes_confidence": "low",
-   "p_start": 0.0,
-   "p_cameo": 0.275,
-   "p_bench": 0.725,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 0.38,
-   "xp_per_90": 5.14,
-   "xp_horizon_total": 2.28,
-   "gameweeks": [
-    {
-     "gw": 8,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.4
-    },
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.36
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "DIR",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.36
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.39
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.37
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.4
     }
    ]
   },
