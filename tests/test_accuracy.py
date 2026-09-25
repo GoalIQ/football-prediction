@@ -33,13 +33,15 @@ def test_named_winner_never_draw():
 # upsert + set_result idempotenssi + osumalogiikka
 # ---------------------------------------------------------------------------
 def _entry(mid, winner, mls=None, p=(None, None, None), date="2026-06-20"):
+    # 25.9: kirjausaika oletuksena. Track record laskee vain rivit joilla se on
+    # (accuracy.counts_in_record); aikaleimaton rivi testataan erikseen.
     return {
         "match_id": mid, "source": "test", "competition": "WC", "date": date,
         "home_team": "A", "away_team": "B",
         "p_home": p[0], "p_draw": p[1], "p_away": p[2],
         "xg_home": None, "xg_away": None,
         "most_likely_score": mls, "predicted_winner": winner,
-        "logged_at": None, "result": None,
+        "logged_at": f"{date}T00:00:00+00:00" if date else None, "result": None,
     }
 
 
@@ -253,7 +255,10 @@ def test_seed_parse_matches_published_record():
         hs, as_ = r.pop("_seed_score")
         acc.upsert_prediction(log, r)
         acc.set_result(log, r["match_id"], hs, as_)
-    at = acc.compute_aggregate(log)["all_time"]
+    # 25.9: seed-riveilla ei ole kirjausaikaa -> eivat laske track recordiin.
+    assert acc.compute_aggregate(log)["all_time"]["n"] == 0
+    # Parsinnan golden-check silti: hubin julkaistu 21/40 samasta metriikasta.
+    at = acc._metrics_block(log["predictions"])
     assert at["n"] == 40
     assert at["correct_1x2"] == 21          # WC-hubin julkaistu 21/40
     assert at["decisive_correct"] == 21
@@ -752,7 +757,7 @@ def test_lead_hours_and_by_lead_split():
     vanha.update(kickoff="2026-08-22T14:00:00Z",
                  logged_at="2026-08-01T14:00:00+00:00")
     siemen = _entry("fd-42", "home", mls="2-1", date="2026-08-22")
-    siemen.update(kickoff="2026-08-22T14:00:00Z")   # logged_at = None
+    siemen.update(kickoff="2026-08-22T14:00:00Z", logged_at=None)
     for e in (tuore, vanha, siemen):
         acc.upsert_prediction(log, e)
         acc.set_result(log, e["match_id"], 2, 1)
@@ -764,10 +769,12 @@ def test_lead_hours_and_by_lead_split():
     by_lead = acc.compute_aggregate(log)["by_lead"]
     assert by_lead["fresh"]["n"] == 1
     assert by_lead["stale"]["n"] == 1
-    assert by_lead["unknown"]["n"] == 1
+    # 25.9: aikaleimaton rivi ei laske track recordiin lainkaan, joten
+    # "unknown"-koriin ei jaa mitaan (ennen: 1).
+    assert by_lead["unknown"]["n"] == 0
     assert by_lead["fresh_max_lead_h"] == acc.LEAD_FRESH_MAX_H
     # headline ei muutu lead-jaosta
-    assert acc.compute_aggregate(log)["all_time"]["n"] == 3
+    assert acc.compute_aggregate(log)["all_time"]["n"] == 2
 
 
 def test_domestic_reconcile_via_combined_matches():

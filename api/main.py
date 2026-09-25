@@ -5118,7 +5118,7 @@ def revenuecat_config():
 
 
 @app.get("/api/accuracy",
-         description="The public accuracy record. Every prediction is logged before kick-off and graded once the match has been played, misses included.")
+         description="The public accuracy record. Every prediction in it is logged before kick-off and graded once the match has been played, misses included.")
 def model_accuracy(
     response: Response,
     include: str | None = Query(default=None, pattern="^(pending)$"),

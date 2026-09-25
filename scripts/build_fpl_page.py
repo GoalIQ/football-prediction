@@ -46,6 +46,7 @@ from src.doubt_copy import lauseena as doubt_lauseena
 
 # Pending-predikaatti JAETTUNA: sama saanto API:lle ja generoiduille sivuille.
 from src.models.accuracy import is_pending as acc_is_pending  # noqa: E402
+from src.models.accuracy import counts_in_record as acc_counts_in_record  # noqa: E402
 from src.models.fpl_xp import (  # noqa: E402
     attach_horizon_total_actionable, horizon_sum_gw,
 )
@@ -555,7 +556,11 @@ def build_context(fpl: dict, acc: dict) -> dict:
     dec_n = at.get("decisive_n", 0)
     dec_c = at.get("decisive_correct", 0)
     pct_dec = at.get("pct_decisive", 0.0) * 100
-    logged = acc.get("logged_total", n)
+    # 25.9: "logged before kickoff" -luku = rivit joilla on kirjausaika, ja
+    # odottavat = accuracy.is_pending. Ennen `logged_total - n` laski myos
+    # void-rivit (siirretyt + 48 aikaleimatonta MM-rivia) "tuleviksi".
+    logged = acc["logged_with_timestamp"]
+    pending = acc["pending"]
 
     gen_dt = _dt.datetime.fromisoformat(meta["generated_at"])
     acc_dt = _dt.datetime.fromisoformat(acc["updated_at"])
@@ -632,7 +637,7 @@ def build_context(fpl: dict, acc: dict) -> dict:
         "acc_dec_c": dec_c,
         "acc_pct_dec": pct_dec,
         "acc_logged": logged,
-        "acc_pending": max(0, logged - n),
+        "acc_pending": pending,
         "by_comp": by_comp,
         "data_date": gen_dt.strftime("%d %B %Y").lstrip("0"),
         "acc_date": acc_dt.strftime("%d %B %Y").lstrip("0"),
@@ -948,6 +953,11 @@ _PENDING_INLINE_ROWS = 60
 
 CALL_MARGIN_PATH = ROOT / "data" / "call_margin.json"
 
+#: Julkinen reitti koko lokiin (myos void-riveihin). fp-repo on julkinen.
+#: raw-osoite: GitHubin blob-sivu ei nayta 2,5 Mt:n tiedostoa lainkaan.
+PREDICTION_LOG_URL = ("https://raw.githubusercontent.com/GoalIQ/football-prediction/"
+                      "main/data/prediction_log.json")
+
 
 def _margin_scope(doc: dict) -> str:
     """Selita ero heron kokonaislukuun, jos sellainen on.
@@ -1022,7 +1032,14 @@ def record_table_html(preds: list[dict], c: dict) -> str:
     ne mainitaan lukumääränä. Uusin ensin; seed-rivit (WC-lohkovaihe, ei
     päivämäärää) pohjalle. Gradaus = 90 min -tulos (Villen 20.7-normi:
     ET/pilkut = tasapeli): duration != REGULAR merkitään tähdellä."""
-    graded = [e for e in preds if e.get("result")]
+    graded = [e for e in preds if acc_counts_in_record(e)]
+    # 25.9: gradatut mutta void (MM-hubin seed-rivit ilman aikaleimaa) eivat
+    # ole taulukossa eivatka luvussa; lukija nakee montako ja miksi.
+    # 25.9: gradatut rivit jotka eivat laske (aikaleimattomat MM-rivit).
+    # Nootti nimeaa ne MM:n lohkovaiheeksi; test_track_record_void kaatuu jos
+    # joukkoon tulee muu kilpailu, jolloin nootin sanamuoto pitaa paivittaa.
+    pois_void = sum(1 for e in preds
+                    if e.get("result") and not acc_counts_in_record(e))
 
     def sort_key(e: dict) -> str:
         return e.get("date") or ""
@@ -1082,6 +1099,19 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             "</tr>"
         )
 
+    # 25.9 (Villen GO): track recordista pois jatetyt gradatut rivit nimetaan,
+    # jotta lukija joka nakee luvun muuttuneen tietaa miksi. Lause vain kun
+    # niita on (data), ei kovakoodattua 40:ta.
+    void_note = (
+        f'<p class="rec-note">{pois_void} World Cup 2026 group-stage '
+        f"predictions are not counted here or in the rate above: they went "
+        f"into the log without a timestamp of their own, so the log can't show "
+        f"they were made before kick-off. They stay in the "
+        f'<a href="{PREDICTION_LOG_URL}">prediction log file</a>, marked void '
+        f"with the reason NO_TIMESTAMP.</p>"
+        if pois_void
+        else ""
+    )
     star_note = (
         "<p class=\"rec-note\">* Knockout matches level after 90 minutes are "
         "graded as a draw. Extra time and penalty shootouts do not count "
@@ -1299,6 +1329,7 @@ def record_table_html(preds: list[dict], c: dict) -> str:
             )
         )
         + star_note
+        + void_note
         + pending_note
         + pending_block
         + "<script>document.querySelectorAll('.rec-filter').forEach(function(b){"
@@ -1782,7 +1813,7 @@ def accuracy_dataset_ld(c: dict, page_url: str) -> dict:
         "@type": "Dataset",
         "name": "GoalIQ football prediction accuracy log (pre-match, publicly tracked)",
         "description": (
-            f"Every GoalIQ model prediction is logged before kickoff and "
+            f"Every GoalIQ model prediction in this record is logged before kickoff and "
             f"reconciled against the final result and never edited after kick-off. "
             f"Current aggregate: {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
             f"across {c['acc_n']} completed matches. Includes per-match win/draw/loss "
@@ -3722,12 +3753,12 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
         f"all competitions</div>"
     )
     proof = (
-        f"The model logs every prediction before kickoff. "
+        f"Every prediction in the record was logged before kickoff. "
         f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches."
     )
     trust = (
         f"Built on a model with {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
-        f"across {c['acc_n']} completed matches, every prediction logged before kick-off."
+        f"across {c['acc_n']} completed matches, every one logged before kick-off."
     )
     new = re.sub(
         r"(<!-- GEN:ACC-CHIP-START -->).*?(<!-- GEN:ACC-CHIP-END -->)",
@@ -3922,12 +3953,12 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
         f"all competitions</div>"
     )
     proof = (
-        f"The model logs every prediction before kickoff. "
+        f"Every prediction in the record was logged before kickoff. "
         f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches."
     )
     trust = (
         f"Built on a model with {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
-        f"across {c['acc_n']} completed matches, every prediction logged before kick-off."
+        f"across {c['acc_n']} completed matches, every one logged before kick-off."
     )
     new = re.sub(
         r"(<!-- GEN:ACC-CHIP-START -->).*?(<!-- GEN:ACC-CHIP-END -->)",
@@ -3962,7 +3993,7 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
 WC_HUB_PATH = ROOT / "world-cup-2026-predictions.html"
 
 
-def update_wc_recap(acc: dict) -> bool:
+def update_wc_recap(acc: dict, preds: list[dict]) -> bool:
     """#140: WC-recap-hubin GEN:WCRECAP-lohko accuracy.json:sta (ei kovakoodattuja
     prosentteja sivulla, vrt. #118). Hub on pysyvä conviction-asetti — luvut
     tulevat by_competition.WC:stä joka on jäädytetty (turnaus ohi) mutta
@@ -3977,10 +4008,19 @@ def update_wc_recap(acc: dict) -> bool:
     # acc_pct_1x2, jonka build_context kertoo sadalla).
     pct_1x2 = (wc.get("pct_1x2") or 0.0) * 100.0
     pct_dec = (wc.get("pct_decisive") or 0.0) * 100.0
+    # 25.9: "across all N completed World Cup matches" oli tosi kun kaikki 104
+    # laskettiin. Nyt 48 aikaleimatonta rivia on void, joten lohko nimeaa
+    # erotuksen samasta lokista eika vaita N:aa koko turnaukseksi.
+    pois = sum(1 for e in preds if e.get("competition") == "WC"
+               and e.get("result") and not acc_counts_in_record(e))
+    pois_txt = (
+        f" {pois} group-stage predictions were added to the log without a "
+        "timestamp, so they are marked void and not counted here."
+        if pois else "")
     block = (
         '<div class="statrow">'
         f'<div class="stat"><div class="num">{fmt_pct(pct_1x2)}</div>'
-        f'<div class="lbl">correct 1X2 results across all {n} completed '
+        f'<div class="lbl">correct 1X2 results across {n} counted '
         "World Cup matches "
         f'({wc.get("correct_1x2")} of {n})</div></div>'
         f'<div class="stat"><div class="num">{fmt_pct(pct_dec)}</div>'
@@ -3991,7 +4031,7 @@ def update_wc_recap(acc: dict) -> bool:
         '<p class="meta">Knockout matches level after 90 minutes are graded '
         "as a draw; extra time and penalty shootouts do not count toward the "
         "result. Numbers update automatically from the same public log as "
-        "the track record page.</p>"
+        f"the track record page.{pois_txt}</p>"
     )
     s = WC_HUB_PATH.read_text(encoding="utf-8")
     new = re.sub(
@@ -4123,7 +4163,7 @@ def main() -> None:
     # epaonnistunut haku EI kirjoita lohkoa, jolloin vanha oikea teksti jaa.
     index_changed = update_index_leagues() or index_changed
     predictions_changed = update_predictions(c, preds)
-    wc_recap_changed = update_wc_recap(acc)
+    wc_recap_changed = update_wc_recap(acc, preds)
 
     print("=" * 64)
     print("FPL-LANDING BAKE OK")

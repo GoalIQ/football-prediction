@@ -28,7 +28,8 @@ LOG_PATH = PROJECT_ROOT / "data" / "prediction_log.json"
 def build(log_path: Path = LOG_PATH) -> dict:
     doc = json.loads(log_path.read_text(encoding="utf-8"))
     rows = doc.get("predictions") or []
-    graded = [r for r in rows if r.get("result")]
+    from src.models.accuracy import counts_in_record
+    graded = [r for r in rows if counts_in_record(r)]
     out = measure_margin(graded)
     out["measured_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     out["source"] = "data/prediction_log.json"

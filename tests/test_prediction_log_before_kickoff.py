@@ -5,7 +5,7 @@ tarkistettavissa julkisesta lokista (TARKKUUSLOKI-KICKOFF-VAITE, 25.9.2026).
 Mitattu 25.9: 657 gradatusta rivista 609:lla on `kickoff`, ja niilla KAIKILLA
 `logged_at`, `first_logged_at` ja `refreshed_at` ovat ennen kickoffia. Loput 48
 ovat kesan MM-hubin rivejä (`wc_hub_seed` 40 ilman paivaa ja aikaleimaa,
-`wc_hub_upcoming_backfill` 8 kirjattu ennen ottelupaivaa). Portti pitaa tilan:
+`wc_hub_upcoming_backfill` 8, myos ilman aikaleimaa). Portti pitaa tilan:
 
 1. gradattu rivi jolla on kickoff: jokainen kirjausaika < kickoff
 2. rivi ilman kickoffia sallitaan VAIN perustellulta vanhalta lahteelta
@@ -24,10 +24,11 @@ LOKI = ROOT / "data" / "prediction_log.json"
 # Lahde -> miksi sen riveilla ei ole kickoffia. Uusi merkinta vaatii perustelun.
 ILMAN_KICKOFFIA = {
     "wc_hub_seed": "MM 2026 -hubista kesalla siemennetyt 40 rivia: ei paivaa eika "
-                   "aikaleimaa. Julkaisupaatos (poisto track recordista vai copyn "
-                   "rajaus) on Villella, jonorivi TARKKUUSLOKI-KICKOFF-VAITE.",
-    "wc_hub_upcoming_backfill": "MM 2026 -hubin tulevat ottelut, kirjattu ennen "
-                                "ottelupaivaa (logged_at < date), kickoff-kellonaika puuttuu.",
+                   "aikaleimaa. Villen paatos 25.9: void NO_TIMESTAMP, ei track "
+                   "recordissa (tests/test_track_record_void.py).",
+    "wc_hub_upcoming_backfill": "MM 2026 -hubin 8 rivia, EI logged_at-aikaleimaa (25.9 "
+                                "korjattu: aiempi 'kirjattu ennen ottelupaivaa' oli "
+                                "mittausvirhe). void NO_TIMESTAMP, ei track recordissa.",
 }
 AJAT = ("logged_at", "first_logged_at", "refreshed_at")
 

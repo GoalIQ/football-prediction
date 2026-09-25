@@ -336,9 +336,28 @@ def is_pending(e: dict) -> bool:
     return not e.get("result") and not e.get("void")
 
 
+def counts_in_record(e: dict) -> bool:
+    """Laskeeko rivi julkiseen track recordiin. YKSI LUKIJA (25.9.2026).
+
+    Gradattu (`result`) JA ei `void`. Void oli ennen vain siirretyille
+    otteluille (joilla ei ole tulosta), mutta 25.9 Villen paatoksella kesan
+    MM-hubin 48 rivia merkittiin `void: NO_TIMESTAMP`: niilla ON tulos,
+    mutta ei aikaleimaa, joten lupaus "logged before kick-off" ei ole niille
+    tarkistettavissa. Aggregaatti, julkinen per-ottelu-taulukko ja
+    call margin -mittaus lukevat kaikki taman; kolme erillista
+    `if e.get("result")`-suodatinta olisi jattanyt yhden pinnan laskemaan
+    ne edelleen.
+
+    Kirjausaika (`logged_at`) on lisaksi pakollinen: jos uusi aikaleimaton
+    lahde (esim. `accuracy_pipeline seed`) lisaa riveja eika kukaan muista
+    void-merkintaa, ne eivat silti paase track recordiin."""
+    return (bool(e.get("result")) and not e.get("void")
+            and bool(e.get("logged_at")))
+
+
 def _resolved(log: dict) -> list[dict]:
-    """Ennusteet joilla on toteutunut tulos, aikajärjestyksessä (vanhin->uusin)."""
-    rows = [e for e in log["predictions"] if e.get("result")]
+    """Track recordiin laskettavat ennusteet, aikajärjestyksessä (vanhin->uusin)."""
+    rows = [e for e in log["predictions"] if counts_in_record(e)]
     rows.sort(key=lambda e: (e.get("date") or "", e.get("logged_at") or ""))
     return rows
 
@@ -574,6 +593,12 @@ def compute_aggregate(
     return {
         "updated_at": _now_iso(),
         "logged_total": len(log["predictions"]),
+        # 25.9: julkinen lupaus "logged before kickoff" koskee vain riveja joilla
+        # on kirjausaika. Kesan MM-hubin 48 rivilta se puuttuu (void
+        # NO_TIMESTAMP), joten ne eivat kuulu tahan lukuun. logged_total pysyy
+        # API-sopimuksena ennallaan.
+        "logged_with_timestamp": sum(
+            1 for e in log["predictions"] if e.get("logged_at")),
         "pending": pending,
         # 10.8: siirretty/peruttu ottelu EI ole pending. Nelja 29.7. BSA-ottelua
         # oli FD:ssa POSTPONED ja ne istuivat pending-listan KARJESSA (lista on
