@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-09-24T23:51:22",
+  "generated_at": "2026-09-25T02:41:40",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -9006,7 +9006,7 @@
    "team_short": "ETT",
    "pos": "MID",
    "price": 6.2,
-   "owned_pct": 17.9,
+   "owned_pct": 18.0,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -25805,105 +25805,6 @@
    ]
   },
   {
-   "id": 370,
-   "web_name": "Abu Khalifa",
-   "full_name": "Amin Abu Khalifa",
-   "team": "Al Riyadh",
-   "team_short": "RIY",
-   "pos": "DEF",
-   "price": 4.0,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 39.6,
-   "predicted_starts": 40.9,
-   "minutes_confidence": "low",
-   "p_start": 0.4093,
-   "p_cameo": 0.2177,
-   "p_bench": 0.373,
-   "data_basis": "no_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.04,
-     "assists": 0.07
-    }
-   },
-   "xp_per_gw": 1.46,
-   "xp_per_90": 4.41,
-   "xp_horizon_total": 8.77,
-   "gameweeks": [
-    {
-     "gw": 8,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.6
-    },
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.95
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "DIR",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.9
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.59
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.11
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.62
-    }
-   ]
-  },
-  {
    "id": 631,
    "web_name": "Abascal",
    "full_name": "Rodrigo Abascal",
@@ -26023,6 +25924,93 @@
      "assists": 0.07
     }
    },
+   "xp_per_gw": 1.46,
+   "xp_per_90": 4.41,
+   "xp_horizon_total": 8.77,
+   "gameweeks": [
+    {
+     "gw": 8,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.6
+    },
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.95
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "DIR",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.9
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.59
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.11
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.62
+    }
+   ]
+  },
+  {
+   "id": 702,
+   "web_name": "Y. Al Mousa",
+   "full_name": "Yasser Muhammad Al Musa",
+   "team": "Al Riyadh",
+   "team_short": "RIY",
+   "pos": "DEF",
+   "price": 4.0,
+   "owned_pct": 0.0,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 39.6,
+   "predicted_starts": 40.9,
+   "minutes_confidence": "low",
+   "p_start": 0.4093,
+   "p_cameo": 0.2177,
+   "p_bench": 0.373,
+   "data_basis": "no_history",
+   "last_season": null,
    "xp_per_gw": 1.46,
    "xp_per_90": 4.41,
    "xp_horizon_total": 8.77,
@@ -27533,7 +27521,7 @@
    "team": "Al Ittihad",
    "team_short": "ITT",
    "pos": "MID",
-   "price": 4.4,
+   "price": 4.3,
    "owned_pct": 0.6,
    "status": "a",
    "news": "",
@@ -33530,7 +33518,7 @@
    "team": "Neom SC",
    "team_short": "NEO",
    "pos": "DEF",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 0.7,
    "status": "a",
    "news": "",
@@ -35486,7 +35474,7 @@
    "team": "Al Hazem",
    "team_short": "HAZ",
    "pos": "MID",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 10.2,
    "status": "a",
    "news": "",
@@ -41732,14 +41720,14 @@
    ]
   },
   {
-   "id": 702,
-   "web_name": "Y. Al Mousa",
-   "full_name": "Yasser Muhammad Al Musa",
+   "id": 370,
+   "web_name": "Abu Khalifa",
+   "full_name": "Amin Abu Khalifa",
    "team": "Al Riyadh",
    "team_short": "RIY",
    "pos": "DEF",
-   "price": 4.0,
-   "owned_pct": 0.0,
+   "price": 3.9,
+   "owned_pct": 0.1,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -41751,7 +41739,19 @@
    "p_cameo": 0.2177,
    "p_bench": 0.5994,
    "data_basis": "no_history",
-   "last_season": null,
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.04,
+     "assists": 0.07
+    }
+   },
    "xp_per_gw": 0.66,
    "xp_per_90": 4.41,
    "xp_horizon_total": 3.98,
@@ -45527,7 +45527,7 @@
    "team": "Al Kholood",
    "team_short": "KLD",
    "pos": "DEF",
-   "price": 4.0,
+   "price": 4.1,
    "owned_pct": 4.1,
    "status": "a",
    "news": "",
