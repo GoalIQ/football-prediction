@@ -40,7 +40,7 @@
 	const TARGETS = [
 		{ label: 'Free FPL tools', url: 'https://goaliq.app/fpl' },
 		{ label: 'Front page', url: 'https://goaliq.app/' },
-		{ label: 'The Model XI (best 15 in 100.0m)', url: 'https://goaliq.app/fpl/model-xi' },
+		{ label: "The Model XI (the model's 15 in 100.0m)", url: 'https://goaliq.app/fpl/model-xi' },
 		{ label: 'Match predictions and record', url: 'https://goaliq.app/predictions' },
 		{ label: 'Premium tools (this site)', url: 'https://pro.goaliq.app/' }
 	];
