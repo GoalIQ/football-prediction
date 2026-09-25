@@ -790,8 +790,10 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
         (
             "Is GoalIQ free?",
             (
-                "Yes. Clean sheet probability and fixture difficulty are free, on the web "
-                "and in the GoalIQ app for Android and iOS."
+                # FDR-VAITE-APPISSA (25.9): FDR poistettiin mobiilista 22.9
+                # (goaliq-app 7aed3655), joten app-vaite koskee vain CS:aa.
+                "Yes. Clean sheet probability is free on the web and in the GoalIQ "
+                "app for Android and iOS, and fixture difficulty is free on the web."
             ),
         ),
         (
@@ -1724,7 +1726,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
         "applicationCategory": "SportsApplication",
         "description": (
             "Free FPL assistant and football prediction app. Free FPL tools: "
-            "clean sheet probability and fixture difficulty, rate my team with a "
+            "clean sheet probability, fixture difficulty (web), rate my team with a "
             "captain pick, price watch, expected points for the next gameweek "
             "(the top 20, web), and shareable image cards of the free "
             "tables on the web. GoalIQ Premium adds an interactive "
