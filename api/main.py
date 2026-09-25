@@ -4560,6 +4560,11 @@ _PAKOLLISET_ENV = {
     # tunnistanut (tests/test_env_manifest_complete.py::_kaareet).
     "ADMIN_TOKEN": "admin-endpointit pois paalta: gradaus, push-notifikaatiot, "
                    "cache-tyhjennys ja autopilotin konversiomittari saavat 403",
+    # 25.9 (Villen GO, PREDICT-API-EI-MASKAA): oletus pois, joten puuttuva
+    # muuttuja ei kaada mitaan vaan antaa kirjautumattomalle koko Premium-
+    # ennusteen. env-health-watch mittaa lisaksi tuloksen (meta.masked).
+    "PREDICT_MASK": "ennusteiden Premium-kentat (xG, tulokset, O/U, BTTS) "
+                    "annetaan kirjautumattomalle (oletus off)",
 }
 
 

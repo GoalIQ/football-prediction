@@ -544,3 +544,17 @@ def test_every_prediction_endpoint_calls_the_mask():
                             f"{before[0].lineno} - maski on kuollutta koodia")
         branch = ast.unparse(fn.body[idx])
         assert "return _masked_json(resp, mask_" in branch, path
+
+
+def test_maski_paalla_on_vartioitu_tuotannossa():
+    """25.9 PREDICT_MASK=on (Villen GO). Lipun oletus on pois, joten sen
+    katoaminen (vrt. ympariston pyyhkiytyminen 20.9) ei kaada mitaan vaan
+    avaa Premium-kentat hiljaa. Kaksi lukkoa: nimi pakollisissa ja tulos
+    mitattuna env-health-watchissa. MUTAATIO: poista jompikumpi -> punainen."""
+    from pathlib import Path
+    import api.main as m
+    assert "PREDICT_MASK" in m._PAKOLLISET_ENV
+    wf = (Path(__file__).resolve().parent.parent / ".github" / "workflows"
+          / "env-health-watch.yml").read_text(encoding="utf-8")
+    assert "https://api.goaliq.app/api/predict" in wf
+    assert "get('meta',{}).get('masked')" in wf

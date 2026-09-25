@@ -60,6 +60,23 @@ jobs:
             exit 1
           fi
 
+      - name: Varmista etta ennustemaski on paalla
+        run: |
+          set -euo pipefail
+          # 25.9 (PREDICT-API-EI-MASKAA, Villen GO): PREDICT_MASK:n oletus on
+          # pois, joten sen katoaminen ei kaada mitaan vaan avaa Premium-kentat
+          # kirjautumattomalle. Mitataan tuloksesta: anonyymi /api/predict ->
+          # meta.masked = true.
+          vastaus=$(curl -sS --max-time 60 -X POST https://api.goaliq.app/api/predict \
+            -H "Content-Type: application/json" \
+            -d '{"home_team":"Arsenal","away_team":"Chelsea","league":"PL","top_n":10}')
+          maskattu=$(echo "$vastaus" | python -c "import json,sys; print(json.load(sys.stdin).get('meta',{}).get('masked'))")
+          echo "predict masked=$maskattu"
+          if [ "$maskattu" != "True" ]; then
+            echo "::error::/api/predict ei maskaa kirjautumattomalle - Premium-ennusteet ilmaiseksi."
+            exit 1
+          fi
+
       - name: Varmista etta aluehinta on paalla ja Stripe vahvistaa summat
         run: |
           set -euo pipefail
