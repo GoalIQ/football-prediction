@@ -697,8 +697,10 @@ td .m-sub.is-caveat{display:block;font-size:11px;font-weight:400;opacity:.72;
          ("vs best found -36.8 xP"), and "88% of" packed every measured team
          into 82-92. The percentage stays only as the old-API fallback. */
       if (typeof t.xp_vs_benchmark === 'number') {
-        var d = t.xp_vs_benchmark;
-        benchPct = (d > 0 ? '+' : '') + d.toFixed(1) + ' xP vs ' + benchRef + benchWin;
+        /* Not `d`: that name is drawCard's own parameter (the career data),
+           and shadowing it here would break any later `d.` read. */
+        var gapXp = t.xp_vs_benchmark;
+        benchPct = (gapXp > 0 ? '+' : '') + gapXp.toFixed(1) + ' xP vs ' + benchRef + benchWin;
       } else {
         benchPct = Number(t.percentile).toFixed(0) + '% of ' + benchRef + benchWin;
       }
