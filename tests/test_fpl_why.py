@@ -55,6 +55,19 @@ def test_facts_carry_the_model_components(facts):
     assert facts["last_season"]["xgi_per90"] == 0.68
 
 
+def test_facts_set_piece_duties_only_counts_first_or_second_taker():
+    # Julkaisutarkistajan loydos 24.9: Odegaard 3/-/4 sai "set piece duties"
+    # vaikka paras jarjestys on 3. Sama kynnys kuin driver_facts (1./2.).
+    third_and_fourth = dict(PLAYER, set_pieces={"pens": 3, "corners": None, "fk": 4})
+    assert "set_piece_duties" not in why.player_facts(third_and_fourth, gw=1, horizon=2)
+
+    second_only = dict(PLAYER, set_pieces={"pens": None, "corners": 2, "fk": None})
+    assert why.player_facts(second_only, gw=1, horizon=2)["set_piece_duties"] == ["corners"]
+
+    mixed = dict(PLAYER, set_pieces={"pens": 1, "corners": 5, "fk": 2})
+    assert why.player_facts(mixed, gw=1, horizon=2)["set_piece_duties"] == ["pens", "fk"]
+
+
 def test_facts_drop_empty_fields():
     thin = {"id": 1, "web_name": "X", "gameweeks": []}
     got = why.player_facts(thin, gw=1, horizon=2)

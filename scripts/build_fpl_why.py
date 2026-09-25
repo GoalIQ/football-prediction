@@ -223,7 +223,13 @@ def player_facts(player: dict, gw: int, horizon: int) -> dict:
             "assists_per90": _num(per90.get("assists"), 2),
             "xgi_per90": _num(per90.get("xgi"), 2),
         }
-    takers = [k for k in ("pens", "corners", "fk") if sp.get(k)]
+    # Sama kynnys kuin `fpl_xp.driver_facts` ja kortin set piece -merkeissa:
+    # 1. tai 2. ottaja. `sp.get(k)` on jarjestysnumero, ei totuusarvo, joten
+    # totuusarvotesti hyvaksyi minka tahansa jarjestyksen (3., 4., 5.) —
+    # julkaisutarkistajan loydos 24.9: 12 pelaajaa sai "set piece duties"
+    # vaikka paras jarjestys oli 3. tai huonompi.
+    takers = [k for k in ("pens", "corners", "fk")
+              if isinstance(sp.get(k), (int, float)) and sp[k] in (1, 2)]
     if takers:
         facts["set_piece_duties"] = takers
     if player.get("news"):
