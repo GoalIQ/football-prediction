@@ -194,16 +194,25 @@ def test_beats_benchmark_haara_on_myos_fail_closed():
 
 def test_mobiilikortti_on_fail_closed():
     """Sama vika olisi ollut mobiilissa. Siella se kirjoitettiin oikein
-    ensimmalla kerralla, ja tama pitaa sen niin."""
-    app = ROOT.parent / "goaliq-app" / "components" / "FantasyShareCard.tsx"
-    if not app.exists():
+    ensimmalla kerralla, ja tama pitaa sen niin.
+
+    MP-09 (25.9): kortin vertailulause siirtyi yhteen lukijaan
+    `lib/ratingGap.ts` (sama kuin otsikkorivilla). Invariantti on sama:
+    puuttuva `optimal_proven` EI ole todistettu, ja vahva muoto on vain
+    true-haarassa. Kortti ei saa koota lausetta itse."""
+    app = ROOT.parent / "goaliq-app"
+    kortti = app / "components" / "FantasyShareCard.tsx"
+    lukija = app / "lib" / "ratingGap.ts"
+    if not kortti.exists():
         import pytest as _p
         _p.skip("goaliq-app ei ole checkoutattu")
-    src = app.read_text(encoding="utf-8")
-    assert "optimalProven === true" in src, (
+    assert lukija.exists(), "lib/ratingGap.ts puuttuu: kortti kokoaa lauseen itse?"
+    src = lukija.read_text(encoding="utf-8")
+    assert "optimal_proven: r.optimal_proven === true" in src, (
         "fail-open: puuttuva lippu putoaisi vahvaan vaitteeseen")
-    i = src.index("optimalProven === true")
-    lohko = src[i:i + 220]
+    i = src.index("export function ratingGapShareSentence")
+    lohko = src[i:i + 400]
     assert lohko.index("the best squad the rules allow") < lohko.index(
         "the strongest squad our search found"), lohko
+    assert "ratingGapShareSentence(gap)" in kortti.read_text(encoding="utf-8")
 
