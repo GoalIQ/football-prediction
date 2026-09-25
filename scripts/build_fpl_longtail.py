@@ -5031,6 +5031,24 @@ def _pvm_lyhyt(iso: str) -> str:
         return ""
 
 
+#: Kierrokset joilla gameweek calls -loki (data/gw_calls.json) kaytti eri
+#: projektiota kuin sivun jaadytetty xP. Sivu lupaa "the projection this model
+#: published before the deadline"; jos kutsujen luvut ovat toisesta ajosta,
+#: lukija nakee kaksi lukua samasta pelaajasta eika syyta. Portti
+#: tests/test_points_frozen_vs_calls.py kaatuu jos jollain kierroksella
+#: kutsun gw_xp poikkeaa jaadytetysta yli kynnyksen EIKA tassa ole selitetta.
+#: GW2 (mitattu 25.9): jaadytys 27.8 16:59 UTC, kutsut 28.8 17:08 UTC
+#: XP-SEASON-CARRY-korjauksen jalkeen (Bruno 3.96 vs 5.74). Model squad
+#: captain (Guehi 4.76) asetettiin jaadytyksesta, muut neljä korjatusta.
+FROZEN_VS_CALLS_NOTE = {
+    2: ("For GW2 this is the projection frozen on 27 August. The model was "
+        "fixed on 28 August, before the deadline, and the four standouts card "
+        'picks in the <a href="/fpl#gw-calls">gameweek calls log</a> were '
+        "recomputed with it. The model squad captain in that log still came "
+        "from the 27 August freeze."),
+}
+
+
 def _latest_frozen_gw(gw: int) -> dict | None:
     """Kierroksen deadlinella jaadytetty xP-lumikuva, tai None."""
     return _load(XP_FROZEN_DIR / f"gw{gw}.json")
@@ -5449,6 +5467,8 @@ def render_points(player_gw: dict, now: datetime, gw: int | None = None,
         + (f" This page is the permanent record for Gameweek {gw}: it does "
            "not change when the next gameweek is played." if archive else "")
         + "</p>"
+        + (f'<p class="lede">{FROZEN_VS_CALLS_NOTE[int(gw)]}</p>'
+           if int(gw) in FROZEN_VS_CALLS_NOTE else "")
     )
 
     # Toinen MAE-luku: KAIKKI jaadytetyt, pelaamattomat mukaan lukien.
