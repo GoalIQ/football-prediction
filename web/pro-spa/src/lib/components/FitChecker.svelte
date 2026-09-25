@@ -156,9 +156,12 @@
 <section class="tool-card">
 	<h2>Fit checker</h2>
 	<p class="muted">
-		Free · Lock 1-3 must-have players and the model builds the strongest valid 15-player
-		squad around them, then shows what forcing those picks costs against the same squad
-		built with no locks.
+		<!-- FIT-CHECKER-OPTIMI-VAITE (25.9): "builds the strongest valid 15" oli
+		     optimivaite, vaikka haku ei ole todistettu (optimal_xi_proven False).
+		     Sama muoto kuin App Storen promossa ja rate-teamissa: haku, ei tulos. -->
+		Free · Lock 1-3 must-have players and the model searches for the strongest 15-player
+		squad around them, then shows what forcing those picks costs against the strongest
+		squad it finds with no locks.
 		No FPL entry ID needed. Prices come straight from the official FPL API and update the
 		moment FPL opens the new season's game.
 	</p>
@@ -222,7 +225,9 @@
 				</button>
 			</div>
 
-			<h3>Best XI around your locks</h3>
+			<!-- FIT-CHECKER-OPTIMI-VAITE (julkaisutarkistaja 25.9): "Best" vain kun
+			     haku on todistettu; tuotannossa optimal_proven on False. -->
+			<h3>{result.totals.optimal_proven === false ? 'Strongest XI the model found around your locks' : 'Best XI around your locks'}</h3>
 			<div class="table-wrap">
 				<table>
 					<thead>
