@@ -1,0 +1,54 @@
+# FP-DISPATCH-RELAY, SAMAN REPON VERSIO (26.9.2026). Ks.
+# scripts/fp_dispatch_relay.py docstring: siirretty goaliq-appista tanne
+# QUEUE-rivin ACTIONS-MINUUTIT-RELAY-FP:HEN mukaisesti (goaliq-appin Actions-
+# kiintio 90 %:ssa 25.9, tama relay yksin ~285 min/kk siella).
+#
+# 🔒 EI VIELA KAYTOSSA TUOTANNOSSA: goaliq-appin cf-worker/fp-cron-relay
+# laukaisee YHA goaliq-appin vanhaa fp-dispatch-relay.yml:aa HTTP:lla joka
+# tunti. Kunnes worker osoitetaan tahan (vaatii workerin
+# GITHUB_DISPATCH_TOKEN-secretin vaihdon Actions-write-tokeniksi tahan
+# repoon, Villen paatos), tama workflow on olemassa mutta sen oma
+# schedule-triggeri riittaa laukaisemaan sen itsenaisesti (GitHubin cron,
+# ei workeria) — se ei ole sama tae ajoituksesta kuin workerilla, mutta ei
+# myoskaan riko mitaan nykyista, koska goaliq-appin relay hoitaa saman tyon
+# rinnalla siihen asti. Kahden relayn paallekkaisyys on vaaraton:
+# `decide()` skippaa jos ajo on jo olemassa slotin jalkeen, joten kumpi
+# tahansa ehtii ensin ei tuplaa laukaisua.
+name: fp-dispatch-relay
+
+on:
+  schedule:
+    # :50 -> viimeisen 60 min ikkuna kattaa slotit :00, :15, :17, :20, :40, :45.
+    - cron: "50 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = tulosta paatokset, ala laukaise"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: fp-dispatch-relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Laukaise workflow't joiden slotti osui tähän tuntiin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+          extra=""
+          if [ "$DRY_RUN" = "true" ]; then
+            extra="--dry-run"
+          fi
+          python3 scripts/fp_dispatch_relay.py $extra

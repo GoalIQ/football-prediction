@@ -27,9 +27,11 @@ AJO:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -1850,6 +1852,40 @@ BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
 GW_CAPABLE = {"cs"}
 
 
+# --- Sidecar: mita kortti VÄITTI kun se piirrettiin -------------------------
+# QUEUE POSTATTU-KORTTI-EI-OLE-TALLESSA (26.9.2026): outputs/ on gitignoressa
+# ja jokainen ajo kirjoittaa saman tiedostonimen yli, joten postattu kortti
+# ei ole enaa olemassa missaan sen jalkeen kun seuraava ajo piirtaa saman
+# nimen. Sidecar on kortin VIERELLA sama hetki kirjoitettu tosite: jos kortti
+# kopioidaan postauksen yhteydessa talteen (kuten posted-cards/-kaytanto jo
+# tekee), sidecar kulkee mukana ja POSTATTU-rivi voi todistaa etta tallennettu
+# kuva ON se joka postattiin eika myohempi ajo ylikirjoittamassa samaa nimea.
+def write_card_sidecar(out_path: Path, card: str, spec: dict) -> Path:
+    """Kirjoittaa `<out_path>.json`: generated_at, sha256, rivit.
+
+    sha256 lasketaan JUURI KIRJOITETUSTA tiedostosta (ei muistista), jotta
+    sidecar todistaa mita levylla oikeasti on eika mita koodi luuli
+    kirjoittavansa. Rivit otetaan spekin `rows`- tai `fixtures`-kentasta
+    (kortin data), jos jompikumpi on JSON-serialisoituva sellaisenaan;
+    kortit joilla ei ole kumpaakaan (esim. defence/stats, jotka koostavat
+    rivinsa erikseen ennen kutsua) kirjaavat vain n_rows=None eivätkä kaadu.
+    """
+    png_bytes = out_path.read_bytes()
+    rows = spec.get("rows") if isinstance(spec.get("rows"), list) else None
+    if rows is None and isinstance(spec.get("fixtures"), list):
+        rows = spec["fixtures"]
+    sidecar = {
+        "card": card,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "sha256": hashlib.sha256(png_bytes).hexdigest(),
+        "n_rows": len(rows) if rows is not None else None,
+        "rows": rows,
+    }
+    side_path = out_path.with_name(out_path.name + ".json")
+    side_path.write_text(json.dumps(sidecar, ensure_ascii=False, indent=1), encoding="utf-8")
+    return side_path
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="GoalIQ share card generator")
     ap.add_argument("card", choices=sorted(BUILDERS))
@@ -1899,6 +1935,7 @@ def main() -> int:
         if a.card in REPLY_FIELDS and a.top > REPLY_MAX_ROWS:
             print(f"huom: reply-kortti nayttaa korkeintaan {REPLY_MAX_ROWS} rivia")
         pth = REPLY_RENDERERS[spec["kind"]](spec, out)
+        write_card_sidecar(pth, a.card, spec)
         print(f"{spec['title']} -> {pth}")
         return 0
     if spec.get("kind") == "gw_outlook":
@@ -1909,10 +1946,12 @@ def main() -> int:
             pth = render_gw_outlook_hero(spec, out, cs_only=a.cs_only)
         else:
             pth = render_gw_outlook(spec, out)
+        write_card_sidecar(pth, a.card, spec)
         print("GW%s outlook (%d ottelua) -> %s"
               % (spec["gw"], len(spec["fixtures"]), pth))
         return 0
     p = render(spec, out)
+    write_card_sidecar(p, a.card, spec)
     print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
     return 0
 
