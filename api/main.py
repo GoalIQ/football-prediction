@@ -3250,8 +3250,32 @@ def fantasy_my_team_ledger(
         if pk is not None:
             picks_by_gw[int(gw)] = pk
 
+    # 26.9 (MP-14, julkaisutarkistaja B3/B4): kierroksen tila samasta
+    # lukijasta kuin gradaaja ja model-race (fpl_gw_finality.gw_fixture_status
+    # + fpl_model_race.row_state), ja FPL:n oma kierroskeskiarvo
+    # vertailukohdaksi. Bootstrap tai fixtures puuttuu -> tila 'unknown'
+    # (fail-closed), keskiarvo puuttuu -> summaa ei anneta.
+    from src.models.fpl_gw_finality import gw_fixture_status as _gw_fx
+    from src.models.fpl_model_race import row_state as _row_state
+    _tilat: dict[int, str] = {}
+    _keskiarvot: dict[int, int] = {}
+    if _events is not None:
+        try:
+            _fx = _fapi.fetch_fixtures(max_age_s=1800)
+            _st = _gw_fx({"events": _events}, _fx)
+        except Exception:
+            _st = {}
+        for g in prov:
+            s_ = _st.get(g) or {}
+            _tilat[g] = _row_state({"provisional": True,
+                                    "all_fixtures_played": s_.get("all_fixtures_played")})
+        for e in _events:
+            if isinstance(e, dict) and isinstance(e.get("id"), int):
+                _keskiarvot[e["id"]] = e.get("average_entry_score")
+
     try:
-        return build_ledger(history, picks_by_gw, prov)
+        return build_ledger(history, picks_by_gw, prov,
+                            states=_tilat, averages=_keskiarvot)
     except RateTeamError as e:
         raise _http(e)
 

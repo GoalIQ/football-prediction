@@ -125,3 +125,73 @@ def test_ilman_entrya_selite_eika_nollat():
     assert out["meta"]["available"] is False
     assert out["meta"]["note_code"] == L.CODE_NO_ENTRY
     assert out["totals"] == {"projected": None, "actual": None, "diff": None}
+
+
+# ---------------------------------------------------------------------------
+# 26.9 (MP-14, julkaisutarkistaja B3/B4): kesken oleva kierros ja vertailukohta
+# ---------------------------------------------------------------------------
+
+
+def test_kesken_oleva_kierros_ei_ole_riveissa_eika_summissa(freeze):
+    """B3: GW:n deadlinen jalkeen koko kierroksen projektio (~55) verrattiin
+    osittaisiin pisteisiin -> ~-55 pylvas. Kesken oleva jaa pois ja kerrotaan."""
+    freeze({1: {10: 5.0}, 2: {10: 55.0}})
+    out = L.build_ledger(_hist([(1, 8, 0, 0), (2, 3, 0, 0)]),
+                         {1: _picks([(10, 1)]), 2: _picks([(10, 1)])},
+                         provisional_gws=[2], states={2: "in_progress"})
+    assert [r["gw"] for r in out["gameweeks"]] == [1]
+    assert out["meta"]["in_progress_gws"] == [2]
+    assert out["totals"]["actual"] == 8 and out["totals"]["projected"] == 5.0
+    assert out["meta"]["provisional_gws"] == []
+
+
+def test_tila_kulkee_riville_ja_tuntematon_on_oletus(freeze):
+    freeze({1: {10: 5.0}, 2: {10: 5.0}, 3: {10: 5.0}})
+    out = L.build_ledger(_hist([(1, 8, 0, 0), (2, 8, 0, 0), (3, 8, 0, 0)]),
+                         {g: _picks([(10, 1)]) for g in (1, 2, 3)},
+                         provisional_gws=[2, 3], states={2: "awaiting_check"})
+    assert [r["state"] for r in out["gameweeks"]] == ["final", "awaiting_check", "unknown"]
+    # Kesken-tila ilman provisionaalisuutta ei poista lopullista kierrosta.
+    out2 = L.build_ledger(_hist([(1, 8, 0, 0)]), {1: _picks([(10, 1)])},
+                          provisional_gws=[], states={1: "in_progress"})
+    assert [r["gw"] for r in out2["gameweeks"]] == [1]
+
+
+def test_fpl_keskiarvo_rivilla_ja_summassa_vain_kun_kaikille_on(freeze):
+    """B4: vertailukohta FPL:n omasta keskiarvosta; osittainen summa ei kelpaa."""
+    freeze({1: {10: 5.0}, 2: {10: 5.0}})
+    kaksi = (_hist([(1, 8, 0, 0), (2, 3, 0, 0)]), {1: _picks([(10, 1)]), 2: _picks([(10, 1)])})
+    out = L.build_ledger(*kaksi, averages={1: 50, 2: 81})
+    assert [r["fpl_average"] for r in out["gameweeks"]] == [50, 81]
+    assert out["totals"]["fpl_average"] == 131
+    for puuttuva in ({1: 50}, {1: 50, 2: 0}, {1: 50, 2: None}, None):
+        assert L.build_ledger(*kaksi, averages=puuttuva)["totals"]["fpl_average"] is None
+
+
+def test_endpoint_kytkee_tilan_ja_keskiarvon(monkeypatch, client):
+    """Kutsupaikka: endpoint lukee kierroksen tilan jaetusta lukijasta ja
+    keskiarvon bootstrapista (testi kaatuu jos kytkenta puuttuu)."""
+    from src.data import fpl_api
+    monkeypatch.setattr(L.fpl_actuals, "frozen_xp_for", lambda gw: {10: 5.0})
+    monkeypatch.setattr(fpl_api, "fetch_entry_history",
+                        lambda *a, **k: _hist([(1, 8, 0, 0), (2, 3, 0, 0)]))
+    monkeypatch.setattr(fpl_api, "fetch_entry_picks", lambda *a, **k: _picks([(10, 1)]))
+    monkeypatch.setattr(fpl_api, "fetch_bootstrap", lambda *a, **k: {"events": [
+        {"id": 1, "finished": True, "data_checked": True, "average_entry_score": 50},
+        {"id": 2, "finished": False, "data_checked": False, "average_entry_score": 0},
+    ]})
+    import datetime as dt
+    pian = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=2)).isoformat()
+    monkeypatch.setattr(fpl_api, "fetch_fixtures", lambda *a, **k: [
+        {"event": 1, "finished_provisional": True, "kickoff_time": "2026-08-22T14:00:00Z"},
+        {"event": 2, "finished_provisional": False, "kickoff_time": pian},
+    ])
+    import src.models.model_squad_scores as mss
+    monkeypatch.setattr(mss, "provisional_hint_gws", lambda: [])
+    r = client.get("/api/fantasy/my-team-ledger?entry=424242")
+    assert r.status_code == 200, r.text
+    b = r.json()
+    assert [g["gw"] for g in b["gameweeks"]] == [1]
+    assert b["meta"]["in_progress_gws"] == [2]
+    assert b["gameweeks"][0]["fpl_average"] == 50
+    assert b["totals"]["fpl_average"] == 50
