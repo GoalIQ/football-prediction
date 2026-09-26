@@ -909,7 +909,8 @@ def main() -> int:
 
     # Sama polku kuin /api/fantasy/model-squad — ei omaa optimointia.
     from src.models.fpl_rate_team import (
-        RateTeamError, build_context, free_optimum, optimal_xi)
+        RateTeamError, build_context, free_optimum, free_optimum_key,
+        optimal_xi)
     try:
         xp_data, _bootstrap, pool, _by_id = build_context()
         # Saatavuus jaadytyshetkella (slim, KORTTI-PENKIN-SAATAVUUSMERKKI).
@@ -1037,7 +1038,7 @@ def main() -> int:
             print("::error::sisainen: vapaa optimi ketjupolulla — ei jaadyteta.")
             return 1
         try:
-            free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
+            free = free_optimum(pool, free_optimum_key(xp_data))
         except RateTeamError as e:
             print(f"VIRHE: mallin runkoa ei saatu ({e.detail}).")
             return 1

@@ -296,6 +296,12 @@ def _squad_clubs_ok(squad: list[dict]) -> bool:
 
 
 _OPTIMAL_XP_CACHE: dict[str, dict] = {}
+# 26.9 (THIS-WEEK-LATAUS-HIDAS): vapaa optimi lasketaan kerrallaan yhdessa
+# saikeessa. Kylma laskenta maksaa ~3,4 s paikallisesti ja mitattiin
+# tuotannossa 4,9 s:n ensimmaiseksi rate-team-vastaukseksi (lammin 0,12 s).
+# Ilman lukkoa kaynnistyksen lammitin ja samaan aikaan saapuva pyynto
+# laskisivat saman optimin rinnakkain 0,5 vCPU:lla ja kumpikin hidastuisi.
+_OPTIMAL_LOCK = threading.Lock()
 _NEG = float("-inf")
 # Viimeisimmän optimoinnin todistustila. Copy saa väittää "paras mahdollinen"
 # VAIN kun tämä on True (28.7: aiempi ahne heuristiikka jäi mitatusti 14.19 xP
@@ -1013,12 +1019,45 @@ def free_optimum(pool: list[dict], cache_key: str) -> dict:
     Fit checker (#155) käyttää TÄTÄ vertailukohtanaan → sen "vapaa optimi" ei voi
     poiketa rate-teamin benchmarkista.
     """
-    hit = _OPTIMAL_XP_CACHE.get(cache_key)
-    if hit is None:
-        hit = build_optimal_squad(pool)
-        _OPTIMAL_XP_CACHE.clear()
-        _OPTIMAL_XP_CACHE[cache_key] = hit
+    with _OPTIMAL_LOCK:
+        hit = _OPTIMAL_XP_CACHE.get(cache_key)
+        if hit is None:
+            hit = build_optimal_squad(pool)
+            _OPTIMAL_XP_CACHE.clear()
+            _OPTIMAL_XP_CACHE[cache_key] = hit
     return hit
+
+
+def free_optimum_key(xp_data: dict) -> str:
+    """Vapaan optimin valimuistiavain. YKSI paikka: kaynnistyksen lammitin ja
+    jokainen kutsuja (rate-team, model-squad, fit checker, freeze) lukevat
+    avaimen taalta, joten lammitetty tulos on tasmalleen se jota pyynto
+    hakee. Jos kutsuja muodostaisi avaimen itse, lammitys voisi osua eri
+    avaimeen ja jokainen deploy olisi taas kylma (tests/
+    test_free_optimum_warm.py kaataa sellaisen kutsupaikan)."""
+    return str((xp_data.get("meta") or {}).get("generated_at"))
+
+
+def warm_free_optimum() -> dict:
+    """Laske vapaa optimi valimuistiin ennen ensimmaista pyyntoa.
+
+    🔴 MIKSI (26.9.2026, Villen havainto "miksi squadin loading kestaa taas"
+    paatoskortin tabilla): valimuisti on prosessin muistissa ja Render
+    kaynnistaa prosessin uudelleen jokaisella mainin pushilla (20.-25.9:
+    49-90 committia vuorokaudessa, suurin osa datan paivityksia). Jokaisen
+    deployn jalkeen ensimmainen rate-team / model-squad / fit checker -kutsu
+    laski optimin pyynnon sisalla: tuotannossa 4,9 s vs lammin 0,12 s.
+    Hiljaisella liikenteella se ensimmainen kutsuja on yleensa kayttaja.
+
+    Kayttaa samaa kontekstia (`build_context`) ja samaa avainta
+    (`free_optimum_key`) kuin pyynnot. Palauttaa mittauksen lokiin."""
+    t0 = time.time()
+    xp_data, _bootstrap, pool, _pool_by_id = build_context()
+    t1 = time.time()
+    res = free_optimum(pool, free_optimum_key(xp_data))
+    return {"key": free_optimum_key(xp_data), "context_s": round(t1 - t0, 2),
+            "optimum_s": round(time.time() - t1, 2),
+            "proven": bool(res.get("proven"))}
 
 
 def optimal_budget_team_xp(pool: list[dict], cache_key: str) -> float:
@@ -2302,8 +2341,7 @@ def rate_team(entry: int | None = None, gw: int | None = None,
     # kuin desimaalinen prosentti). beats_benchmark kertoo jos joukkue YLITTÄÄ
     # benchmarkin: aiemmin se leikattiin hiljaa sataan, jolloin tieto katosi ja
     # luku näytti ontolta imartelulta. Nyt se on eksplisiittinen ja ansaittu.
-    cache_key = str(xp_data["meta"].get("generated_at"))
-    optimal_xp = optimal_budget_team_xp(pool, cache_key)
+    optimal_xp = optimal_budget_team_xp(pool, free_optimum_key(xp_data))
     raw_pct = (100.0 * team_xp_horizon / optimal_xp) if optimal_xp > 0 else 0.0
     pct_of_optimal = round(min(100.0, raw_pct), 1)
     rating = int(round(min(100.0, raw_pct)))

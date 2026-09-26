@@ -34,6 +34,7 @@ from src.models.fpl_rate_team import (
     build_context,
     build_optimal_squad,
     free_optimum,
+    free_optimum_key,
 )
 from src.models.fpl_xp import horizon_sum_gw, horizon_total_meta
 
@@ -114,7 +115,7 @@ def fit_squad(locked_ids: list[int]) -> dict:
                else "over the model horizon")
     horizon_cols = int(xp_data["meta"].get("horizon_gw") or 6)
 
-    free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
+    free = free_optimum(pool, free_optimum_key(xp_data))
     optimal_xp = free["xi_xp"]
     # "Paras" saa esiintyä copyssa vain kun MOLEMMAT puolet vertailua ovat
     # todistettuja: väite koskee sekä lukittua runkoa että vertailukohtaa.
