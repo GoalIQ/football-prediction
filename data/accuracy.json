@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-26T12:54:46+00:00",
+  "updated_at": "2026-09-26T13:47:41+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
   "pending": 2669,
@@ -201,6 +201,41 @@
       "brier": 0.4916,
       "brier_n": 56
     }
+  },
+  "by_model": {
+    "club": {
+      "n": 553,
+      "correct_1x2": 266,
+      "pct_1x2": 0.481,
+      "draw_n": 149,
+      "pct_draw": 0.2694,
+      "decisive_n": 404,
+      "decisive_correct": 266,
+      "pct_decisive": 0.6584,
+      "exact_n": 553,
+      "exact_correct": 63,
+      "pct_exact": 0.1139,
+      "brier": 0.6014,
+      "brier_n": 553,
+      "logged_with_timestamp": 3230
+    },
+    "national": {
+      "n": 56,
+      "correct_1x2": 35,
+      "pct_1x2": 0.625,
+      "draw_n": 15,
+      "pct_draw": 0.2679,
+      "decisive_n": 41,
+      "decisive_correct": 35,
+      "pct_decisive": 0.8537,
+      "exact_n": 56,
+      "exact_correct": 11,
+      "pct_exact": 0.1964,
+      "brier": 0.4916,
+      "brier_n": 56,
+      "logged_with_timestamp": 56
+    },
+    "unclassified_n": 0
   },
   "by_lead": {
     "fresh": {
