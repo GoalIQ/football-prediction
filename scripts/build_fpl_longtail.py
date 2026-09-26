@@ -34,6 +34,7 @@ import math
 import re
 import sys
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from html import escape
 from pathlib import Path
 
@@ -931,22 +932,31 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     return _page(title, desc, url, hero, body, jsonld)
 
 
+UK = ZoneInfo("Europe/London")
+
+
 def _eta_label(p: dict) -> str:
     """Paiva kynnykseen ihmisluettavana. 22.8: FPL julkaisee taman itse, ja
-    se on sivun ainoa toimintaan johtava luku. Puuttuva kentta (vanha
-    velocity-arvio) -> "on watch", EI "not soon" — arvio ei tiennyt paivaa."""
+    se on sivun ainoa toimintaan johtava luku.
+
+    26.9 (PRICE-ETA-PALVELINSIVUT): staattinen sivu ei tieda lukijan
+    aikavyohyketta, joten "tonight"/"tomorrow" oli vaarin osalle lukijoista
+    (FPL:n paivitys 23:00Z on Aasiassa aamu). Nyt absoluuttinen hetki
+    `eta_at`:sta UK-aikana, sama lahde kuin SPA:n ja mobiilin lib/priceEta.
+    Ilman `eta_at`:ia ei paivaa (fail-closed), vaikka `eta_days` olisi.
+    """
     # "due" vaittaisi varmuutta jota lahde itse ei vaita: FPL antaa jokaiselle
     # projektiolle likelihood-kentan. "projected" on se mita luku on.
     # "no date yet" eika "on watch": jalkimmainen on SPA:ssa jo statuslabel
     # eri merkityksessa, ja sama sanapari kahdessa merkityksessa luetaan vaarin.
-    eta = p.get("eta_days")
-    if eta == 0:
-        return "projected tonight"
-    if eta == 1:
-        return "projected tomorrow"
-    if isinstance(eta, int):
-        return f"projected in {eta} days"
-    return "no date yet"
+    at = p.get("eta_at")
+    if not isinstance(at, str) or not at:
+        return "no date yet"
+    try:
+        t = datetime.fromisoformat(at.replace("Z", "+00:00")).astimezone(UK)
+    except ValueError:
+        return "no date yet"
+    return f"projected for the {t:%a} {t.day} {t:%b} update, {t:%H:%M} UK time"
 
 
 def render_price_changes(pw: dict, now: datetime) -> str:

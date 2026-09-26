@@ -269,7 +269,10 @@ def flag_lines(flags: dict | None, next_gw: int | None = None) -> list[dict]:
         kun = ""
         if isinstance(eta, (int, float)):
             if eta < 1:
-                kun = ", tonight if it gets there"
+                # 26.9 (PRICE-ETA-PALVELINSIVUT): "tonight" riippui lukijan
+                # aikavyohykkeesta (paivitys 23:00Z on Aasiassa aamu). "The
+                # next price update" on sama hetki jokaiselle lukijalle.
+                kun = ", at the next price update if it gets there"
             elif eta <= 1:
                 kun = ", within a day if it gets there"
         out.append({

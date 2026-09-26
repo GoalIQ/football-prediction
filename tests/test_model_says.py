@@ -101,7 +101,18 @@ def test_hintalause_ei_vaita_muutoksen_tapahtuvan():
             assert v not in matala, (eta, v, r["text"])
 
 
-AIKASANAT = ("tonight", "today", "within a day", "tomorrow")
+AIKASANAT = ("next price update", "tonight", "today", "within a day", "tomorrow")
+
+
+def test_hintalause_ei_riipu_lukijan_aikavyohykkeesta():
+    """26.9: backend ei tieda lukijan aikaa, joten suhteelliset paivasanat
+    ("tonight", "tomorrow", "today") eivat saa esiintya millaan etalla."""
+    for eta in (0, 0.5, 1, 2, None):
+        r = MS.flag_lines({"price": [{"web_name": "X", "direction": "rise",
+                                      "progress_pct": 68, "eta_days": eta}]})[0]
+        matala = r["text"].lower()
+        for sana in ("tonight", "tomorrow", "today"):
+            assert sana not in matala, (eta, r["text"])
 
 
 def test_aikavaite_esiintyy_vain_kun_data_tukee_sita():
