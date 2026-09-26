@@ -116,3 +116,18 @@ def test_owned_note_ei_vaita_paivaa():
     low = OWNED_NOTE.lower()
     for sana in ("tonight", "today", "tomorrow"):
         assert sana not in low, sana
+
+
+def test_alle_vuorokauden_vali_katkaisee_listan():
+    """Julkaisutarkistaja 26.9 k2 (U1): kevaan kellonsiirrossa UK-keskiyohon
+    sidottu lista antaisi 23 h valin, ja kaksi paivitysta saisi klientilla
+    saman paivasanan. Lista katkaistaan ensimmaiseen alle 24 h valiin."""
+    kevat = ["2027-03-27T00:00:00Z", "2027-03-28T00:00:00Z", "2027-03-28T23:00:00Z"]
+    assert price_update_times(_boot([], times=kevat)) == kevat[:2]
+    rows = _rows(build_payload(_boot(ELEMENTS, times=kevat)))
+    assert rows[1]["eta_at"] == kevat[0] and rows[2]["eta_at"] == kevat[1]
+    assert "eta_at" not in rows[3]
+    # Syksyn 25 h vali ja tavallinen 24 h vali kelpaavat kokonaan.
+    syksy = ["2026-10-24T23:00:00Z", "2026-10-26T00:00:00Z", "2026-10-27T00:00:00Z"]
+    assert price_update_times(_boot([], times=syksy)) == syksy
+    assert price_update_times(_boot([], times=TIMES)) == TIMES

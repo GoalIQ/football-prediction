@@ -153,6 +153,10 @@ describe('kutsupaikat lukevat paivasanan vain $lib/priceEta:sta', () => {
 			expect(src).toMatch(/import \{ clock \} from '\$lib\/now\.svelte'/);
 		});
 	}
+	it('kello kaynnistyy moduulin latautuessa selaimessa (k2 H1)', () => {
+		const src = readFileSync(new URL('./now.svelte.ts', import.meta.url), 'utf-8');
+		expect(src).toMatch(/^if \(typeof window !== 'undefined'\) start\(\);$/m);
+	});
 	it('SquadNews leikkaa listat ruudun runkoon lukijalla', () => {
 		expect(read('SquadNews.svelte')).toMatch(/squadPriceMoves\(ids, lists\?\.risers, lists\?\.fallers/);
 	});

@@ -156,13 +156,24 @@ def price_update_times(bootstrap: dict) -> list[str]:
     if not isinstance(raw, list):
         return []
     out: list[str] = []
+    prev: _dt.datetime | None = None
     for v in raw:
         if not isinstance(v, str):
             return []
         try:
-            _dt.datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ")
+            t = _dt.datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ")
         except ValueError:
             return []
+        # Julkaisutarkistaja 26.9 k2 (U1): klientin paivasana olettaa ettei
+        # kahden paivityksen valinen aika ole alle vuorokauden. Kevaan
+        # kellonsiirrossa (28.3.2027) UK-keskiyohon sidottu lista antaisi 23 h
+        # valin, ja kaksi paivitysta saisi saman sanan ("tonight / tonight")
+        # 13 vyohykkeessa 30:sta. Lista katkaistaan ensimmaiseen alle 24 h
+        # valiin: myohemmat offsetit jaavat ilman eta_at:ia (fail-closed,
+        # "No date yet"), ei vaaraa sanaa.
+        if prev is not None and (t - prev) < _dt.timedelta(hours=24):
+            break
+        prev = t
         out.append(v)
     return out
 

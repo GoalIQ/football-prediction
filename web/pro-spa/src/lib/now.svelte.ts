@@ -25,6 +25,11 @@ function start(): void {
 	});
 }
 
+// Julkaisutarkistaja 26.9 k2 (H1): ajastin kaynnistyy heti moduulin
+// latautuessa selaimessa. Ennen ensimmaista lukemista `current` olisi muuten
+// latauksen hetki, ja ensimmainen sana voisi olla enintaan minuutin vanha.
+if (typeof window !== 'undefined') start();
+
 export const clock = {
 	get now(): number {
 		start();
