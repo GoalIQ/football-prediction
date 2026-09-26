@@ -34,7 +34,6 @@ import math
 import re
 import sys
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 from html import escape
 from pathlib import Path
 
@@ -56,6 +55,7 @@ from src import price_copy as PC  # noqa: E402
 from src.doubt_copy import TEAM_NEWS_H1, XP_SISALTAA_EPAVARMUUDEN
 # Vapaa/premium-lause tulee rekisterista, ei tasta tiedostosta: yksi lukija.
 from src.tool_tiers import tier_sentence  # noqa: E402
+from src.price_update_time import price_update_parts  # noqa: E402
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
     ROOT as _FP_ROOT,
@@ -932,10 +932,7 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
     return _page(title, desc, url, hero, body, jsonld)
 
 
-UK = ZoneInfo("Europe/London")
-
-
-def _eta_label(p: dict) -> str:
+def _eta_label(p: dict, now: datetime | None = None) -> str:
     """Paiva kynnykseen ihmisluettavana. 22.8: FPL julkaisee taman itse, ja
     se on sivun ainoa toimintaan johtava luku.
 
@@ -943,20 +940,19 @@ def _eta_label(p: dict) -> str:
     aikavyohyketta, joten "tonight"/"tomorrow" oli vaarin osalle lukijoista
     (FPL:n paivitys 23:00Z on Aasiassa aamu). Nyt absoluuttinen hetki
     `eta_at`:sta UK-aikana, sama lahde kuin SPA:n ja mobiilin lib/priceEta.
-    Ilman `eta_at`:ia ei paivaa (fail-closed), vaikka `eta_days` olisi.
+    Ilman `eta_at`:ia tai mennylla hetkella ei paivaa (fail-closed), vaikka
+    `eta_days` olisi. Muotoilija jaettu GW review -lauseen kanssa
+    (src/price_update_time.py).
     """
     # "due" vaittaisi varmuutta jota lahde itse ei vaita: FPL antaa jokaiselle
     # projektiolle likelihood-kentan. "projected" on se mita luku on.
     # "no date yet" eika "on watch": jalkimmainen on SPA:ssa jo statuslabel
     # eri merkityksessa, ja sama sanapari kahdessa merkityksessa luetaan vaarin.
-    at = p.get("eta_at")
-    if not isinstance(at, str) or not at:
+    osat = price_update_parts(p.get("eta_at"), now)
+    if not osat:
         return "no date yet"
-    try:
-        t = datetime.fromisoformat(at.replace("Z", "+00:00")).astimezone(UK)
-    except ValueError:
-        return "no date yet"
-    return f"projected for the {t:%a} {t.day} {t:%b} update, {t:%H:%M} UK time"
+    paiva, klo = osat
+    return f"projected for the {paiva} price update, {klo} UK time"
 
 
 def render_price_changes(pw: dict, now: datetime) -> str:
@@ -966,8 +962,10 @@ def render_price_changes(pw: dict, now: datetime) -> str:
     url = f"{BASE}/fpl/price-changes"
     title = "FPL Price Changes Tonight: Risers & Fallers | GoalIQ"
     desc = (
-        "FPL's own price projection for tonight's risers and fallers, with "
-        "the day FPL projects each change. Free, no sign-in."
+        # Julkaisutarkistaja B3 (26.9): lista on "lahimpana muutosta", ei
+        # "tonight's", ja useimmilla riveilla ei ole paivaa.
+        "Which FPL prices change tonight? FPL's own projection of who's closest "
+        "to a rise or fall, plus the projected date when there is one. Free, no sign-in."
     )
 
     def rows(items, label, attr=""):
@@ -977,7 +975,7 @@ def render_price_changes(pw: dict, now: datetime) -> str:
             f'<div class="mrow"><div><strong>{escape(p["web_name"])}</strong>'
             f'<div class="meta">£{p["now_cost"]:.1f}m · '
             f'{round(float(p.get("confidence") or 0) * 100)}% of the way · '
-            f'{_eta_label(p)}</div></div>'
+            f'{_eta_label(p, now)}</div></div>'
             f'<span class="pick">{label}</span></div>'
             for p in items[:10]
         )

@@ -217,7 +217,8 @@ def review_lines(review: dict | None, rows: int | None = None,
     return out
 
 
-def flag_lines(flags: dict | None, next_gw: int | None = None) -> list[dict]:
+def flag_lines(flags: dict | None, next_gw: int | None = None,
+               now=None) -> list[dict]:
     """Lippulohkon lauseet. Maara ensin, sitten nimet."""
     out: list[dict] = []
     av = (flags or {}).get("availability") or []
@@ -258,7 +259,6 @@ def flag_lines(flags: dict | None, next_gw: int | None = None) -> list[dict]:
         suunta = f.get("direction")
         if suunta not in ("rise", "fall"):
             continue
-        eta = f.get("eta_days")
         # 🔴 "Voi nousta" eika "nousee". Hintamuutos on ennuste eika tapahtuma,
         # ja `progress_pct` on edistyma kynnysta kohti eika varmuus.
         # 🔴 AIKAVAITE ON EHDOLLINEN, JA EHTO SANOTAAN. "68% of the way to a
@@ -266,15 +266,16 @@ def flag_lines(flags: dict | None, next_gw: int | None = None) -> list[dict]:
         # "tonight if it gets there" sanoo saman ilman lupausta. Ja aikasana
         # esiintyy VAIN kun `eta_days` tukee sita - mutaatiotesti joka liitti
         # "tonight":in kolmen paivan etaan meni muuten lapi.
+        # 26.9 (PRICE-ETA-PALVELINSIVUT, julkaisutarkistaja B1-B2): aika
+        # `eta_at`:sta absoluuttisena UK-hetkena, ei `eta_days`-offsetista.
+        # "tonight" riippui lukijan aikavyohykkeesta, "within a day" oli
+        # offsetilla 1 aina vaarin (24-48 h), ja "next update" vanheni heti
+        # paivityksen jalkeen. Mennyt tai puuttuva hetki -> ei aikalausetta.
+        from src.price_update_time import price_update_parts
+        osat = price_update_parts(f.get("eta_at"), now)
         kun = ""
-        if isinstance(eta, (int, float)):
-            if eta < 1:
-                # 26.9 (PRICE-ETA-PALVELINSIVUT): "tonight" riippui lukijan
-                # aikavyohykkeesta (paivitys 23:00Z on Aasiassa aamu). "The
-                # next price update" on sama hetki jokaiselle lukijalle.
-                kun = ", at the next price update if it gets there"
-            elif eta <= 1:
-                kun = ", within a day if it gets there"
+        if osat:
+            kun = f", at the {osat[0]} price update ({osat[1]} UK time) if it gets there"
         out.append({
             "code": f"flags.price.{suunta}",
             "text": (f"{f.get('web_name')} is {int(p)}% of the way to a price "

@@ -183,18 +183,7 @@ def build_review(gw: int | None, picks: dict | None,
                 "news": news or None,
             })
 
-    omat_set = set(omat)
-    hinta = []
-    for suunta in ("risers", "fallers"):
-        for r in ((price_watch or {}).get(suunta) or []):
-            if r.get("id") in omat_set:
-                hinta.append({
-                    "id": r.get("id"), "web_name": r.get("web_name"),
-                    "direction": "rise" if suunta == "risers" else "fall",
-                    "progress_pct": r.get("progress_pct"),
-                    "eta_days": r.get("eta_days"),
-                    "confidence": r.get("confidence"),
-                })
+    hinta = price_flags(price_watch, omat)
 
     _fmeta = fpl_actuals.frozen_meta(gw) or {}
     _hist = picks.get("entry_history") or {}
@@ -285,3 +274,22 @@ def build_review(gw: int | None, picks: dict | None,
             "price": sorted(hinta, key=lambda r: -(r["progress_pct"] or 0)),
         },
     }
+
+
+def price_flags(price_watch: dict | None, omat) -> list[dict]:
+    """Oman rungon hintaliput price watchista. 26.9: `eta_at` mukana, jotta
+    GW review -lause voi sanoa absoluuttisen hetken (fpl_model_says)."""
+    omat_set = set(omat)
+    hinta = []
+    for suunta in ("risers", "fallers"):
+        for r in ((price_watch or {}).get(suunta) or []):
+            if r.get("id") in omat_set:
+                hinta.append({
+                    "id": r.get("id"), "web_name": r.get("web_name"),
+                    "direction": "rise" if suunta == "risers" else "fall",
+                    "progress_pct": r.get("progress_pct"),
+                    "eta_days": r.get("eta_days"),
+                    "eta_at": r.get("eta_at"),
+                    "confidence": r.get("confidence"),
+                })
+    return hinta

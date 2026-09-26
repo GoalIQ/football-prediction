@@ -101,37 +101,33 @@ def test_hintalause_ei_vaita_muutoksen_tapahtuvan():
             assert v not in matala, (eta, v, r["text"])
 
 
-AIKASANAT = ("next price update", "tonight", "today", "within a day", "tomorrow")
-
-
-def test_hintalause_ei_riipu_lukijan_aikavyohykkeesta():
-    """26.9: backend ei tieda lukijan aikaa, joten suhteelliset paivasanat
-    ("tonight", "tomorrow", "today") eivat saa esiintya millaan etalla."""
-    for eta in (0, 0.5, 1, 2, None):
-        r = MS.flag_lines({"price": [{"web_name": "X", "direction": "rise",
-                                      "progress_pct": 68, "eta_days": eta}]})[0]
-        matala = r["text"].lower()
-        for sana in ("tonight", "tomorrow", "today"):
-            assert sana not in matala, (eta, r["text"])
+AIKASANAT = ("price update", "tonight", "today", "within a day", "tomorrow")
 
 
 def test_aikavaite_esiintyy_vain_kun_data_tukee_sita():
     """🔴 Mutaatio joka liitti "tonight":in KOLMEN PAIVAN etaan meni lapi
-    aiemmasta portista. Aikasana on sidottava `eta_days`:iin."""
-    for eta, saa_olla in ((0, True), (0.5, True), (1, True),
-                          (2, False), (3, False), (None, False)):
+    aiemmasta portista. 26.9: aika sidottu tulevaan `eta_at`:iin, ei
+    `eta_days`:iin (tarkempi portti: test_price_changes_eta_label.py)."""
+    from datetime import datetime, timezone
+    nyt = datetime(2026, 9, 26, 12, tzinfo=timezone.utc)
+    for kw, saa_olla in (({"eta_at": "2026-09-26T23:00:00Z"}, True),
+                         ({"eta_at": "2026-09-25T23:00:00Z"}, False),
+                         ({"eta_days": 0}, False), ({"eta_days": 1}, False),
+                         ({}, False)):
         r = MS.flag_lines({"price": [{"web_name": "X", "direction": "rise",
-                                      "progress_pct": 68,
-                                      "eta_days": eta}]})[0]
+                                      "progress_pct": 68, **kw}]}, now=nyt)[0]
         matala = r["text"].lower()
         loytyi = any(a in matala for a in AIKASANAT)
-        assert loytyi == saa_olla, (eta, r["text"])
+        assert loytyi == saa_olla, (kw, r["text"])
 
 
 def test_aikavaite_on_ehdollinen():
     """Ajankohta koskee tapahtumaa joka ei ole varma, joten ehto sanotaan."""
+    from datetime import datetime, timezone
     r = MS.flag_lines({"price": [{"web_name": "X", "direction": "rise",
-                                  "progress_pct": 68, "eta_days": 0}]})[0]
+                                  "progress_pct": 68,
+                                  "eta_at": "2026-09-26T23:00:00Z"}]},
+                      now=datetime(2026, 9, 26, 12, tzinfo=timezone.utc))[0]
     assert "if it gets there" in r["text"], r["text"]
 
 
