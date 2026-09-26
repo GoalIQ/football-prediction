@@ -69,9 +69,11 @@ def test_tuntematon_koodi_ei_putoa_hiljaa_kumpaankaan():
     assert bm["unclassified_n"] == 1
 
 
-def test_spa_alaviite_lukee_seuramallin_lohkoa():
+def test_spa_alaviite_ei_vaita_blended_lukua_samaksi_malliksi():
+    # Julkaisutarkistaja 26.9 (versio B): lause rajataan seuramalliin eika siina
+    # ole lukua ennen kuin /predictions nayttaa seuramallin summan samasta
+    # lahteesta. Blended-luku (all_time) ei saa palata tahan lauseeseen.
     src = (ROOT / "web/pro-spa/src/lib/components/Provenance.svelte").read_text(encoding="utf-8")
-    koodi = src.split("</script>")[0]
-    assert "by_model?.club" in koodi
-    # Blended-lukua ei saa kayttaa lauseessa joka vaittaa "the same match model".
-    assert "all_time" not in koodi
+    assert "pre-match-logged club predictions" in src
+    assert "all_time" not in src and "fetchAccuracy" not in src
+    assert "https://goaliq.app/predictions#record" in src

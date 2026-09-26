@@ -279,8 +279,9 @@
 	</p>
 {:else}
 	<p class="muted lede">
-		The same model that powers our published, pre-match-logged predictions. Pick two teams and
-		it returns the win probabilities, plus expected goals and scoreline probabilities on Premium.
+		The same model that powers our published, pre-match-logged club predictions. Pick two teams
+		and it returns the win probabilities, plus expected goals and scoreline probabilities on
+		Premium.
 	</p>
 {/if}
 
