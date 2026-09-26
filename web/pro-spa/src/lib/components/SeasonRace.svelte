@@ -23,6 +23,14 @@
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import { CHIP_NAMES } from '$lib/fantasyTools';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
+	import {
+		RACE_LINE_ARIA,
+		RACE_LINE_CAPTION,
+		RACE_LINE_GAP,
+		pointTooltip,
+		raceLineGeometry,
+		raceLineView
+	} from '$lib/raceLine';
 
 	let data = $state<ModelRaceResponse | null>(null);
 	let failed = $state(false);
@@ -174,6 +182,15 @@
 	}
 	let diff = $derived(data?.totals.diff ?? null);
 
+	// MP-14 toinen puolisko (26.9): kumulatiivinen eroviiva. Luvut ja geometria
+	// $lib/raceLine:sta (yksi lukija); viimeinen piste on tasan totals.diff tai
+	// viivaa ei piirreta. Mitat viewBox-yksikoissa kuten SeasonLedgerissa.
+	const LW = 320;
+	const LH = 120;
+	let line = $derived(raceLineView(data));
+	let lineGeom = $derived(line ? raceLineGeometry(line, LW, LH) : null);
+	let activePt = $state<number | null>(null);
+
 	// 21.9 (Villen paatos "molemmat sarjat, malli ensin"): mallisarja on
 	// jaadytetty rivi; kierros ilman kelvollista freezea on POIS sarjasta
 	// koodilla, ja entry 116920 naytetaan erikseen omana sarjanaan.
@@ -254,6 +271,74 @@
 				</p>
 			{:else if data.meta.note}
 				<p class="muted">{data.meta.note}</p>
+			{/if}
+
+			<!-- MP-14 toinen puolisko (26.9): juokseva ero kierros kierrokselta.
+			     Taulukkonakyma on alla oleva kierroslista. Katko = kierros joka ei
+			     ole kisassa (ei interpoloida). -->
+			{#if line && lineGeom}
+				<div class="line-chart">
+					<svg viewBox="0 0 {LW} {LH}" role="img" aria-label={RACE_LINE_ARIA}>
+						<line
+							class="zero"
+							x1={lineGeom.plotLeft}
+							x2={lineGeom.plotRight}
+							y1={lineGeom.zero}
+							y2={lineGeom.zero}
+						/>
+						{#each lineGeom.segments as sg (sg.x1)}
+							<line class="seg" class:dashed={sg.dashed} x1={sg.x1} y1={sg.y1} x2={sg.x2} y2={sg.y2} />
+						{/each}
+						{#each lineGeom.markers as m (m.gw)}
+							<circle
+								class="pt"
+								class:above={m.cum > 0}
+								class:below={m.cum < 0}
+								class:prov={m.state !== 'final'}
+								class:dim={activePt != null && activePt !== m.i}
+								cx={m.cx}
+								cy={m.cy}
+								r="4"
+							/>
+							<rect
+								class="hit"
+								x={m.cx - lineGeom.slot / 2}
+								y="0"
+								width={lineGeom.slot}
+								height={LH}
+								tabindex="0"
+								role="button"
+								aria-label={pointTooltip(m)}
+								onmouseenter={() => (activePt = m.i)}
+								onmouseleave={() => (activePt = null)}
+								onfocus={() => (activePt = m.i)}
+								onblur={() => (activePt = null)}
+							/>
+						{/each}
+						{#each lineGeom.ticks as tk (tk.gw)}
+							<text class="tick" x={tk.x} y={LH - 4} text-anchor="middle">{tk.gw}</text>
+						{/each}
+						<text class="end" x={lineGeom.endLabel.x} y={lineGeom.endLabel.y}>{lineGeom.endLabel.text}</text>
+						{#if lineGeom.zeroLabel}
+							<text class="tick" x={lineGeom.zeroLabel.x} y={lineGeom.zeroLabel.y}>0</text>
+						{/if}
+					</svg>
+					{#if activePt != null}
+						{@const m = lineGeom.markers[activePt]}
+						<div
+							class="tip"
+							class:edge-l={m.cx / LW < 0.35}
+							class:edge-r={m.cx / LW > 0.65}
+							style="left: {((m.cx / LW) * 100).toFixed(2)}%; top: {((m.cy / LH) * 100).toFixed(2)}%"
+						>
+							{pointTooltip(m)}
+						</div>
+					{/if}
+				</div>
+				<p class="muted small line-cap">{RACE_LINE_CAPTION}</p>
+				{#if line.hasGap}
+					<p class="muted small line-cap">{RACE_LINE_GAP}</p>
+				{/if}
 			{/if}
 
 			<!-- 🔴 Nakyva selite, EI pelkka tooltip: `title` ei aukea
@@ -444,6 +529,101 @@
 {/if}
 
 <style>
+	/* Eroviiva: sama validoitu diverging-pari kuin SeasonLedgerissa (tumma
+	   pinta, CVD dE 12.8). Vari toistaa sijainnin (nollaviivan ylla/alla),
+	   joten se ei ole ainoa koodaus. */
+	.line-chart {
+		--race-above: #1fa898;
+		--race-below: #e0663a;
+		position: relative;
+		max-width: 560px;
+		margin: var(--s-2) 0 0;
+	}
+	.line-chart svg {
+		display: block;
+		width: 100%;
+		height: auto;
+		overflow: visible;
+	}
+	.line-chart .zero {
+		stroke: var(--border-strong);
+		stroke-width: 1;
+		vector-effect: non-scaling-stroke;
+	}
+	.line-chart .seg {
+		stroke: var(--text-muted);
+		stroke-width: 2;
+		vector-effect: non-scaling-stroke;
+		stroke-linecap: round;
+	}
+	.line-chart .seg.dashed {
+		stroke-dasharray: 4 4;
+	}
+	.line-chart .pt {
+		fill: var(--text-muted);
+		stroke: var(--surface);
+		stroke-width: 2;
+	}
+	.line-chart .pt.above {
+		fill: var(--race-above);
+	}
+	.line-chart .pt.below {
+		fill: var(--race-below);
+	}
+	.line-chart .pt.prov {
+		fill: var(--surface);
+		stroke: var(--text-muted);
+		stroke-width: 1.5;
+	}
+	.line-chart .pt.dim {
+		opacity: 0.4;
+	}
+	.line-chart .hit {
+		fill: transparent;
+		outline: none;
+	}
+	.line-chart .hit:focus-visible {
+		stroke: var(--text);
+		stroke-width: 1;
+	}
+	.line-chart .tick {
+		fill: var(--text-muted);
+		font-size: 9px;
+		font-family: var(--font-mono);
+	}
+	.line-chart .end {
+		fill: var(--text);
+		font-size: 9px;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.line-chart .tip {
+		position: absolute;
+		transform: translate(-50%, calc(-100% - 8px));
+		background: var(--surface);
+		border: 1px solid var(--border-strong);
+		padding: 4px 8px;
+		font-size: 0.8rem;
+		/* max-content: reunaan ankkuroitu vihje ei saa kutistua jaljella olevaan
+		   tilaan (mitattu 358 px: 65 px leveä, 179 px korkea). */
+		width: max-content;
+		max-width: min(260px, 80vw);
+		white-space: normal;
+		pointer-events: none;
+		font-variant-numeric: tabular-nums;
+		z-index: 1;
+	}
+	.line-chart .tip.edge-l {
+		transform: translate(-12px, calc(-100% - 8px));
+	}
+	.line-chart .tip.edge-r {
+		transform: translate(calc(-100% + 12px), calc(-100% - 8px));
+	}
+	.small.line-cap {
+		font-size: 0.78rem;
+		line-height: 1.45;
+		margin: var(--s-1) 0 var(--s-2);
+	}
 	.entry-series {
 		margin-top: var(--s-4);
 		padding-top: var(--s-3);
