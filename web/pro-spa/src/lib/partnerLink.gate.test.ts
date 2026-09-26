@@ -9,7 +9,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { FPL_DEMON } from './partners';
+import { FPL_DEMON, partnerActive } from './partners';
 
 const LIB = fileURLToPath(new URL('.', import.meta.url));
 const SRC = join(LIB, '..');
@@ -40,6 +40,18 @@ describe('kumppanilinkki', () => {
 		expect(osumat).toEqual(['lib/partners.ts']);
 	});
 
+	it('paattyy itsestaan (B4): nakyy ennen activeUntilia, ei sen jalkeen', () => {
+		const raja = Date.parse(FPL_DEMON.activeUntil);
+		expect(Number.isFinite(raja)).toBe(true);
+		expect(partnerActive(FPL_DEMON, raja - 1)).toBe(true);
+		expect(partnerActive(FPL_DEMON, raja)).toBe(false);
+		expect(partnerActive(FPL_DEMON, Date.parse('2026-09-26T12:00:00Z'))).toBe(true);
+		expect(partnerActive({ ...FPL_DEMON, activeUntil: '' }, raja - 1)).toBe(false);
+		expect(partnerActive({ ...FPL_DEMON, activeUntil: 'huomenna' }, raja - 1)).toBe(false);
+		// Kokeilu on sovittu GW10:n loppuun; pidempi paiva vaatii paatoksen.
+		expect(FPL_DEMON.activeUntil <= '2026-11-10').toBe(true);
+	});
+
 	it('komponentti: href partnerista, uusi valilehti, noopener, klikkaus kirjataan', () => {
 		const src = strip(read('components/PartnerLink.svelte'));
 		expect(src).toMatch(/href=\{partner\.url\}/);
@@ -47,6 +59,8 @@ describe('kumppanilinkki', () => {
 		expect(src).toMatch(/rel="noopener"/);
 		expect(src).toMatch(/capture\('partner_link_clicked', \{ partner: partner\.id, surface \}\)/);
 		expect(src).toMatch(/<span class="tag">Partner<\/span>/);
+		// Koko kappale on paattymisehdon sisalla, ei vain osa.
+		expect(src.trim()).toMatch(/\{#if partnerActive\(partner\)\}\s*<p class="partner">[\s\S]*<\/p>\s*\{\/if\}/);
 	});
 
 	it('sijoitus: maksajan haarassa XpTablen alla, ei lukitussa esikatselussa', () => {

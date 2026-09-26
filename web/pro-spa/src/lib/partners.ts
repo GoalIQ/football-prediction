@@ -11,15 +11,30 @@
  *  meidan luvuillamme (cos-reports/cc-reports/2026-09-26-fpldemon-kumppanuus.md).
  *
  *  URL vaihdetaan tahan kun Demon lahettaa haluamansa linkin.
+ *
+ *  PAATTYMINEN (julkaisutarkistaja B4, saanto 6a): lause "run on these
+ *  projections" on tosi vain kumppanuuden ajan. `activeUntil` sammuttaa linkin
+ *  itsestaan; jatko vaatii tietoisen paivamaaramuutoksen diffissa. Jos
+ *  kumppanuus loppuu aiemmin, aseta mennyt paiva ja deployaa.
  */
 export interface Partner {
 	id: string;
 	name: string;
 	url: string;
+	/** ISO-paiva (UTC-keskiyo), josta alkaen linkkia ei nayteta. */
+	activeUntil: string;
+}
+
+/** true = linkki saa nakya. Puuttuva tai virheellinen paiva = ei nayteta. */
+export function partnerActive(p: Partner, now: number = Date.now()): boolean {
+	const until = Date.parse(p.activeUntil);
+	return Number.isFinite(until) && now < until;
 }
 
 export const FPL_DEMON: Partner = {
 	id: 'fpldemon',
 	name: 'FPL Demon',
-	url: 'https://fpldemon.com/fpl/planner?utm_source=goaliq&utm_medium=partner&ref=goaliq'
+	url: 'https://fpldemon.com/fpl/planner?utm_source=goaliq&utm_medium=partner&ref=goaliq',
+	// Kokeilu GW10:n loppuun; katsaus ti 10.11. (rutiini trig_015PLmRamWe8S1J9ZBJMvtGP).
+	activeUntil: '2026-11-10'
 };

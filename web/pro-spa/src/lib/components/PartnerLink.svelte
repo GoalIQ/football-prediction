@@ -5,11 +5,12 @@
 	 * linkki on sovittu, ei riippumaton suositus.
 	 */
 	import { capture } from '$lib/analytics';
-	import type { Partner } from '$lib/partners';
+	import { partnerActive, type Partner } from '$lib/partners';
 
 	let { partner, surface }: { partner: Partner; surface: string } = $props();
 </script>
 
+{#if partnerActive(partner)}
 <p class="partner">
 	<span class="tag">Partner</span>
 	{partner.name}'s planner and solver run on these projections.
@@ -21,6 +22,7 @@
 		>Plan your transfers there</a
 	>
 </p>
+{/if}
 
 <style>
 	.partner {
