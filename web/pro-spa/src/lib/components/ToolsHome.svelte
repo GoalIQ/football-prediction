@@ -140,6 +140,14 @@
 	/* 22.9 (Ville): ottelu URL:ssa eika tilassa. Tila katosi kun reitti vaihtui
 	   ryhmasivulta /matches tyokalusivulle /matches/predict ($lib/predictLink). */
 	const predictPrefill = $derived(predictPrefillFrom(page.url.searchParams));
+	/* 26.9 (UNL-PREDICT-KAKSI-VAITETTA): alaviite Provenance sanoo "the same
+	   match model behind our published, pre-match-logged predictions: 49% ...
+	   across 609". Maajoukkueilla on oma malli eika niita kirjata lokiin
+	   (Predictin oma ingressi sanoo saman), joten alaviite ei nay silloin. */
+	let predictNational = $state(false);
+	const hideProvenance = $derived(
+		segment === 'matches' && matchesView === 'predict' && predictNational
+	);
 	function goPredict(lg: string, h: string, a: string) {
 		void goto(predictHref(lg, h, a));
 	}
@@ -595,7 +603,12 @@
 			     joten oma nappirivi poistui. Nakyma tulee reitista. -->
 			{#if matchesView === 'predict'}
 				<div class="tool-card" id="mt-predict">
-					<Predict {premium} onUpgrade={goUpgrade} prefill={predictPrefill} />
+					<Predict
+						{premium}
+						onUpgrade={goUpgrade}
+						prefill={predictPrefill}
+						onNationalChange={(n) => (predictNational = n)}
+					/>
 				</div>
 			{:else if matchesView === 'fixtures'}
 				<div class="tool-card" id="mt-fixtures">
@@ -614,7 +627,9 @@
 	     Kumpikaan ei ole aikakriittinen: alkupera on luottamusrivi ja liiga
 	     on kausipitka kutsu. Molemmat lukevat nyt tyokalujen JALKEEN, jossa
 	     ne yha nakyvat samalla sivulla ilman hakua. -->
-	<Provenance />
+	{#if !hideProvenance}
+		<Provenance />
+	{/if}
 	<LeagueBanner />
 {/if}
 

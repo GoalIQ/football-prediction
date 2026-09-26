@@ -28,12 +28,18 @@
 	let {
 		premium = false,
 		onUpgrade,
-		prefill = null
+		prefill = null,
+		onNationalChange
 	}: {
 		premium?: boolean;
 		onUpgrade?: () => void;
 		/** Fixtures-näkymästä tuleva esitäyttö. Null = käyttäjä valitsee itse. */
 		prefill?: { league: string; home: string; away: string } | null;
+		/** 26.9: ToolsHome piilottaa seuramallin alkupera-alaviitteen
+		 *  (Provenance) kun valittuna on maajoukkueliiga. Liiga on taman
+		 *  komponentin tilaa (valitsin ei paivita URL:ia), joten se kerrotaan
+		 *  ylospain eika paatella osoitteesta. */
+		onNationalChange?: (national: boolean) => void;
 	} = $props();
 
 	/** 28.7: KURATOITU lista. 8.8: siirretty $lib/leagues.ts:aan, koska
@@ -45,6 +51,9 @@
 	/** 23.9: maajoukkueliiga (Nations League). Oma malli, ei julkisessa
 	 *  tarkkuuslokissa: ingressin "pre-match-logged" ei pade sille. */
 	const national = $derived(!!findLeague(league)?.national);
+	$effect(() => {
+		onNationalChange?.(national);
+	});
 	let teams = $state<string[]>([]);
 	let home = $state('');
 	let away = $state('');
