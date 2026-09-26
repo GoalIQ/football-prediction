@@ -9,9 +9,11 @@
 	 * entry 1 -> 14/15 pelaajaa eri). Nyt lahde on sama runko joka on ruudulla:
 	 * saatavuus `players`-listasta (FPL:n chance_next/news/status artefaktissa),
 	 * hintaliikkeet price watchista ja VAIN niille id:ille jotka ovat rungossa.
-	 * Manual-moodissa (ei entrya) hintarivit jaavat pois.
+	 * 26.9: hintarivit leikataan risers/fallers-listoilta ruudun runkoon, joten ne
+	 * toimivat myos draftilla (ei entrya). Paivasana: $lib/priceEta.
 	 */
-	import { fetchPriceWatch, type PriceWatchOwnedMove } from '$lib/fantasyTools';
+	import { fetchPriceWatch, type PriceMove } from '$lib/fantasyTools';
+	import { priceEtaWord, squadPriceMoves } from '$lib/priceEta';
 
 	type Row = {
 		id: number;
@@ -20,24 +22,15 @@
 		news?: string | null;
 		status?: string | null;
 	};
-	let { players, entry }: { players: Row[]; entry: number | null } = $props();
+	// `entry` sailyy propina (kutsupaikka), mutta hintarivit eivat enaa tarvitse
+	// sita: risers/fallers leikataan ruudun runkoon (sama saanto kuin saatavuudella).
+	let { players }: { players: Row[]; entry?: number | null } = $props();
 
-	let moves = $state<{ rising: PriceWatchOwnedMove[]; falling: PriceWatchOwnedMove[] } | null>(null);
-	let loadedEntry = $state<number | null>(null);
-
+	let lists = $state<{ risers: PriceMove[]; fallers: PriceMove[] } | null>(null);
 	$effect(() => {
-		if (entry == null) {
-			moves = null;
-			loadedEntry = null;
-			return;
-		}
-		if (loadedEntry === entry) return;
-		loadedEntry = entry;
-		fetchPriceWatch(entry).then(
-			(d) => {
-				moves = d.owned ? { rising: d.owned.rising ?? [], falling: d.owned.falling ?? [] } : null;
-			},
-			() => (moves = null)
+		fetchPriceWatch(null).then(
+			(d) => (lists = { risers: d.risers ?? [], fallers: d.fallers ?? [] }),
+			() => (lists = null)
 		);
 	});
 
@@ -52,21 +45,13 @@
 				(typeof p.chance_next === 'number' && p.chance_next < 100)
 		)
 	);
-	// Portti k5: vain "soon"-rivit joilla on paiva. "rising_watch" ja
-	// eta_days null olisivat vaite ilman perustetta ("price rise no date yet").
-	const sure = (m: PriceWatchOwnedMove) =>
-		ids.has(m.id) && /_soon$/.test(m.status) && m.eta_days != null;
-	const rising = $derived((moves?.rising ?? []).filter(sure));
-	const falling = $derived((moves?.falling ?? []).filter(sure));
-
-	function eta(m: PriceWatchOwnedMove): string {
-		if (m.eta_days == null || m.eta_days <= 0) return 'tonight';
-		if (m.eta_days === 1) return 'tomorrow';
-		return `in ${m.eta_days} days`;
-	}
+	// 26.9 (PRICE-ETA-ABSOLUUTTINEN-AIKA): vain `_soon` + tuleva `eta_at`, ja
+	// paivasana lukijan paikallisessa ajassa ($lib/priceEta). Ennen "tonight"
+	// johdettiin eta_days-offsetista ja oli vaarin Amerikoissa joka ilta.
+	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, Date.now()));
 </script>
 
-{#if avail.length || rising.length || falling.length}
+{#if avail.length || moves.rising.length || moves.falling.length}
 	<section class="wrap squad-news">
 		<h3>Your squad before the deadline</h3>
 		<ul>
@@ -77,18 +62,18 @@
 					{#if p.news}<span class="muted">{p.news}</span>{/if}
 				</li>
 			{/each}
-			{#each rising as m (m.id)}
-				<li><strong>{m.web_name}</strong> price rise {eta(m)}</li>
+			{#each moves.rising as m (m.id)}
+				<li><strong>{m.web_name}</strong> price rise {priceEtaWord(m.eta)}</li>
 			{/each}
-			{#each falling as m (m.id)}
-				<li><strong>{m.web_name}</strong> price fall {eta(m)}</li>
+			{#each moves.falling as m (m.id)}
+				<li><strong>{m.web_name}</strong> price fall {priceEtaWord(m.eta)}</li>
 			{/each}
 		</ul>
 		<!-- Portti k5: lahde nakyy aina, ei vain manual-moodissa. Hintaliike on
 		     FPL:n oma projektio ja paiva liikkuu myohaisten siirtojen mukana. -->
 		<p class="muted small">
 			Availability from FPL. Price moves are FPL's own projection, and the day moves with
-			late transfers.{#if entry == null} Price moves need an entry ID.{/if}
+			late transfers.
 		</p>
 	</section>
 {/if}
