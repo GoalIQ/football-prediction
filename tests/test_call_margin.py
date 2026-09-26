@@ -227,6 +227,11 @@ def test_margin_block_numbers_come_from_artefact():
     assert "<th>With a winner</th>" in html and "<td>24</td>" in html
     for banned in ("about half", "clearly more", "every refresh", "not from a bookmaker"):
         assert banned not in html
+    # 26.9 (UNL-PREDICT-KAKSI-VAITETTA): lupaus "they say too close to call"
+    # koskee vain seuraotteluita. Maajoukkue-Predict (UNL) ei nayta laatikkoa
+    # (call_state_national: below_hit_pct = None), joten rajaamaton lause oli
+    # epatosi UNL-sivulla. Julkaisutarkistaja 26.9: rajaus ei saa kadota siistiessa.
+    assert "For club matches the match pages and the apps do not:" in html
     # puuttuva kentta -> ei lohkoa, ei puolikasta lausetta
     assert call_margin_html({**doc, "decisive_below_pct": None}) == ""
     assert call_margin_html(None) == ""
