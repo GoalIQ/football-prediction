@@ -671,6 +671,8 @@ def _club_block(m: dict | None) -> dict | None:
         "dec_n": m.get("decisive_n", 0),
         "dec_c": m.get("decisive_correct", 0),
         "pct_dec": (m.get("pct_decisive") or 0.0) * 100,
+        "draw_n": m.get("draw_n") if m.get("draw_n") is not None
+        else max(0, m["n"] - m.get("decisive_n", 0)),
         "logged": m["logged_with_timestamp"],
     }
 
@@ -701,9 +703,8 @@ def track_record_sentences(c: dict) -> list[str]:
     if k:
         return [
             (
-                f"The GoalIQ club model has logged {k['logged']} pre-match predictions "
-                f"for domestic league and Champions League matches, before kickoff and "
-                f"never edited after kick-off."
+                "The GoalIQ club model's predictions for domestic league and Champions "
+                "League matches are logged before kick-off and never edited after it."
             ),
             (
                 f"Across the {k['n']} completed club matches, it called the result "
@@ -724,40 +725,20 @@ def track_record_sentences(c: dict) -> list[str]:
                 "and have their own row in the prediction record."
             ),
         ]
-    # Vanha skeema: blended-luku ilman mallivaitetta.
+    # Vanha skeema (ei by_modelia): blended-luku ilman mallivaitetta, ja vain
+    # luvut jotka chip nayttaa samalla sivulla (julkaisutarkistaja B3).
     return [
         (
-            f"GoalIQ has logged {c['acc_logged']} pre-match predictions, "
-            f"before kickoff and never edited after kick-off, starting with the 2026 "
-            f"World Cup and now covering domestic leagues."
+            "GoalIQ's predictions are logged before kick-off and never edited after it. "
+            "The record started with the 2026 World Cup and now covers domestic leagues "
+            "and the Champions League."
         ),
         (
             f"Across the {c['acc_n']} completed matches in all competitions, the "
             f"predictions called the result correctly in {fmt_pct(c['acc_pct_1x2'])} "
             f"of matches."
         ),
-        # 1.8.2026 rehellisyyskorjaus: luku on laskettu TOTEUTUNEEN tuloksen
-        # mukaan (accuracy.py: actual_outcome != "draw"), ei sen mukaan mitä
-        # malli ennusti. Malli nimeää todennäköisemmän voittajan joka ottelussa,
-        # joten "kun malli nimesi voittajan" antoi ymmärtää valikoinnin jota ei
-        # ole. Sama sanamuoto kuin WC-sivulla, joka kuvasi tämän alusta oikein.
-        (
-            f"In the {c['acc_dec_n']} matches that did not end in a draw, the "
-            f"predictions called the result right {fmt_pct(c['acc_pct_dec'])} of the "
-            f"time ({c['acc_dec_c']} of {c['acc_dec_n']})."
-        ),
-        # 🔴 11.9.2026, julkaisuportti. Mitattu `data/prediction_log.json`:sta:
-        # `predicted_winner` on home 2364 tai away 956, EI KERTAAKAAN draw.
-        # Edellinen lause siis pudottaa nimittajasta jokaisen ottelun jota malli
-        # ei rakenteellisesti voi osua, ja osumaluku on sama 240. Ilman tata
-        # rivia luku 70 % luetaan mallin vahvuudeksi eika rajaukseksi. Lause on
-        # samassa lukijassa kuin muut, jotta se kulkee myos FAQ:hun ja
-        # JSON-LD:hen eika jaa vain sivulle (muisti: varoitus-kaukana-luvusta).
-        (
-            f"Every prediction names a side, so every draw counts as a miss and "
-            f"that {fmt_pct(c['acc_pct_dec'])} is the same "
-            f"{c['acc_dec_c']} hits over a smaller number of matches."
-        ),
+        "Every prediction names a side, so every draw counts as a miss.",
     ]
 
 
@@ -922,8 +903,10 @@ def by_comp_html(c: dict) -> str:
         f'<span class="bycomp-pct">{fmt_pct(k["pct"])}</span>'
         f'<span class="bycomp-n">{k["correct"]} of {k["n"]}</span>'
         "</div>"
-        '<div class="bycomp-sub">World Cup 2026 is our national-team model and '
-        "isn&#39;t in this line.</div>"
+        + _bycomp_sub({"dec_n": k["dec_n"], "pct_dec": k["pct_dec"],
+                       "dec_correct": k["dec_c"], "draw_n": k["draw_n"]})
+        + '<div class="bycomp-sub">World Cup 2026 predictions came from our '
+        "national-team model and aren&#39;t in this line.</div>"
         "</div>"
     ) if k else ""
     return (

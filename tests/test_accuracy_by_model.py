@@ -90,3 +90,7 @@ def test_fmt_pct_decimals_nolla():
     assert fmt_pct(50, 0) == "50%"
     assert fmt_pct(51.0) == "51%"
     assert fmt_pct(48.1) == "48.1%"
+    # Tarkistaja E3: tasapisteet ylospain kuten SPA:n toFixed (fmt.test.ts).
+    assert fmt_pct(48.25) == "48.3%"
+    assert fmt_pct(46.25) == "46.3%"
+    assert fmt_pct(38.65) == "38.6%"  # binaarinen arvo 38.6499..., ei tasapiste

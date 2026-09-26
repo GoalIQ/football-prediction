@@ -43,13 +43,41 @@ def test_seuramallin_lohko_oikeasta_lokista(club):
 def test_lauseet_seuramallista_ja_mm_erikseen(club):
     c = {**BLENDED, "acc_club": club}
     teksti = " ".join(b.track_record_sentences(c))
-    assert "The GoalIQ club model has logged" in teksti
+    assert "The GoalIQ club model's predictions" in teksti
+    # Tarkistaja B1: kirjattujen maara (sis. pelaamattomat) ei ole ilmaispinnalla.
+    assert str(club["logged"]) not in teksti
     assert f"Across the {club['n']} completed club matches" in teksti
     assert b.fmt_pct(club["pct"]) in teksti
     assert "separate national-team model" in teksti
     # Blended-luku ei esiinny mallin tuloksena.
     assert "609" not in teksti and "49.4%" not in teksti
     assert "starting with the 2026 World Cup" not in teksti
+
+
+def _luvut(teksti: str) -> set[str]:
+    import re
+    return set(re.findall(r"\d+(?:\.\d+)?%?", teksti.replace("1X2", "")))
+
+
+def test_jokainen_track_record_luku_loytyy_kilpailulohkosta(club):
+    # Tarkistaja B2 (saanto 6a, yksi lukija): lause ei saa sisaltaa lukua jota
+    # linkin takana oleva kilpailulohko ei nayta. "2026" on vuosiluku.
+    rivi = {"code": "WC", "name": "World Cup 2026", "n": 56, "correct": 35,
+            "pct": 62.5, "dec_n": 0, "dec_c": 0, "pct_dec": 0.0, "draw_n": 0}
+    c = {**BLENDED, "acc_club": club, "by_comp": [rivi]}
+    lohko = b.by_comp_html(c)
+    puuttuu = {x for x in _luvut(" ".join(b.track_record_sentences(c))) if x != "2026"
+               and x not in lohko}
+    assert not puuttuu, puuttuu
+
+
+def test_fallbackin_luvut_ovat_chipin_luvut():
+    # Tarkistaja B3: vanhan skeeman lauseissa vain luvut jotka chip nayttaa
+    # ("49.4% ... across 609 completed matches, all competitions").
+    c = {**BLENDED, "acc_club": None}
+    sallitut = {str(c["acc_n"]), b.fmt_pct(c["acc_pct_1x2"]), "2026"}
+    assert _luvut(" ".join(b.track_record_sentences(c))) <= sallitut
+    assert _luvut(b.acc_trust_sentence(c)) <= sallitut
 
 
 def test_vanha_skeema_ei_nimea_blended_lukua_malliksi():
@@ -80,6 +108,9 @@ def test_kilpailulohkossa_seuramallin_summa_ensimmaisena(club):
     assert f"{club['correct']} of {club['n']}" in html
     assert b.fmt_pct(club["pct"]) in html
     assert "national-team model" in html
+    # Summarivilla sama alarivi kuin muilla (ratkenneet + tasapelit).
+    assert f"({club['dec_c']} of {club['dec_n']})" in html
+    assert f"{club['n'] - club['dec_n']} draws" in html
     # Ilman by_modelia summariviä ei keksita.
     ilman = b.by_comp_html({**BLENDED, "acc_club": None, "by_comp": [rivi]})
     assert "All club matches" not in ilman

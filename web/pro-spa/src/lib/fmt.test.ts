@@ -11,5 +11,9 @@ describe('fmtPct', () => {
 		expect(fmtPct(100)).toBe('100%');
 		expect(fmtPct(50, 0)).toBe('50%');
 		expect(fmtPct(0)).toBe('0%');
+		// Tasapisteet ylospain, sama kuin fmt_pct (Decimal ROUND_HALF_UP).
+		expect(fmtPct(48.25)).toBe('48.3%');
+		expect(fmtPct(46.25)).toBe('46.3%');
+		expect(fmtPct(38.65)).toBe('38.6%');
 	});
 });
