@@ -137,6 +137,43 @@ def classify_official(pct_now: float, projections: list[dict],
     return status, round(progress, 2), round(100.0 * progress, 1), eta
 
 
+def price_update_times(bootstrap: dict) -> list[str]:
+    """FPL:n omat hintapaivitysten ajat (ISO Z), offset i = lista[i].
+
+    🔴 MIKSI (26.9.2026, julkaisutarkistaja MP-10): `eta_days` on offset
+    FPL:n seuraavaan hintapaivitykseen, eika klientti tieda sen kellonaikaa.
+    Sana "tonight" johdettiin offsetista 0 ja oli vaarin Amerikoissa joka ilta
+    (Sao Paulossa paivitys on 20:00, jonka jalkeen offset 0 osoittaa jo
+    huomiseen) seka kaikkialla paivityksen ja seuraavan buildin valissa.
+    FPL julkaisee ajat itse: `game_config.settings.price_change_deadlines`
+    (26.9: kolme aikaa 23:00Z, sama maara kuin projektioissa). Kellonaikaa ei
+    kovakoodata: talviaika 25.10 voi siirtaa sen.
+
+    Palauttaa vain jasentyvat ISO-ajat; muoto ei tasmaa -> tyhja lista
+    (fail-closed: ilman aikaa rivi ei saa `eta_at`ia)."""
+    raw = (((bootstrap.get("game_config") or {}).get("settings") or {})
+           .get("price_change_deadlines"))
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for v in raw:
+        if not isinstance(v, str):
+            return []
+        try:
+            _dt.datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            return []
+        out.append(v)
+    return out
+
+
+def eta_at_for(times: list[str], eta: int | None) -> str | None:
+    """Offsetin absoluuttinen aika tai None (puuttuva/lyhyt lista)."""
+    if not isinstance(eta, int) or eta < 0 or eta >= len(times):
+        return None
+    return times[eta]
+
+
 def classify(net_event: int, owners: float,
              cost_change_event: int) -> tuple[str, float, float]:
     """→ (status, confidence, progress_pct). Puhdas funktio → testattava."""
@@ -188,6 +225,7 @@ def _empty_note(bootstrap: dict, n_active: int) -> tuple[str, str]:
 def build_payload(bootstrap: dict) -> dict:
     total_players = int(bootstrap.get("total_players") or 0)
     official = has_official_fields(bootstrap)
+    update_times = price_update_times(bootstrap) if official else []
     rows = []
     for e in bootstrap.get("elements") or []:
         net_event = int(e.get("transfers_in_event") or 0) - \
@@ -219,6 +257,11 @@ def build_payload(bootstrap: dict) -> dict:
             # yönä). Heuristiikka ei voinut tätä tietää, joten kenttä puuttuu
             # kokonaan fallback-tilassa — tyhjä ei ole sama kuin "ei tänään".
             **({"eta_days": eta} if official and eta is not None else {}),
+            # 26.9: offsetin absoluuttinen aika FPL:n omasta listasta. Klientti
+            # laskee paivasanan TASTA laitteen ajassa ja pudottaa menneen;
+            # puuttuva lista -> ei kenttaa -> ei paivasanaa (fail-closed).
+            **({"eta_at": eta_at_for(update_times, eta)}
+               if official and eta_at_for(update_times, eta) else {}),
         })
     # Virallisella polulla kiireellisin ensin: pienin eta_days voittaa, ja
     # vasta sen sisalla suurin edistyminen. Pelkka progress-jarjestys nostaisi
