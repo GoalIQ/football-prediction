@@ -253,9 +253,13 @@ def call_state_national(p_home: float, p_draw: float, p_away: float,
     """Maajoukkue-ennusteen call (/api/predict-wc): sama raja, ei osumaprosenttia.
 
     23.9.2026 (julkaisutarkistaja + Villen paatos): marginaali ja
-    below_hit_pct mitataan SEURAMALLIN tarkkuuslokista (data/call_margin.json;
-    WC-rivit ilman voittotodennakoisyytta on jatetty pois), eika maajoukkue-
-    ennusteita kirjata lokiin. "The model's named side has won 48%" olisi
+    below_hit_pct mitataan julkisesta tarkkuuslokista (data/call_margin.json,
+    lahde data/prediction_log.json), eika UNL-/maajoukkue-ennusteita kirjata
+    sinne. Tarkennus 26.9 (PROVENANCE-SEURAMALLI-609): loki EI ole puhtaasti
+    seuramallin. Siina on kesan 56 MM-rivia maajoukkuemallista, ja mitattu 26.9
+    kaikilla 56:lla on voittotodennakoisyys, joten ne ovat mukana mittauksessa
+    (n_graded 609 = n_graded_all). Mallikohtainen jako: accuracy.model_of.
+    "The model's named side has won 48%" olisi
     maajoukkueen alla vaite eri lahteesta, samalla ruudulla jossa lukee "these
     predictions aren't in the public track record".
 

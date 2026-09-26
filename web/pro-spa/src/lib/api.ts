@@ -325,6 +325,13 @@ export interface FantasyResponse {
 
 export interface AccuracyResponse {
 	all_time?: { n?: number; pct_1x2?: number };
+	/** 26.9: seuramalli ja maajoukkuemalli erikseen (accuracy.model_of).
+	 *  Puuttuu vanhasta accuracy.jsonista kunnes putki on ajanut. */
+	by_model?: {
+		club?: { n?: number; pct_1x2?: number | null };
+		national?: { n?: number; pct_1x2?: number | null };
+		unclassified_n?: number;
+	};
 	[key: string]: unknown;
 }
 

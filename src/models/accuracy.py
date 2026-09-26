@@ -362,6 +362,37 @@ def _resolved(log: dict) -> list[dict]:
     return rows
 
 
+# 26.9 (PROVENANCE-SEURAMALLI-609): kilpailukoodi -> malli. Lokirivilla ei ole
+# mallikenttaa, ja pro.goaliq.app:n alaviite sanoi "the same match model ...
+# 49% across 609" vaikka 56 riveista oli maajoukkuemallin MM-ennusteita (oma
+# UNL-ingressi: "National teams have their own model"). Jako tehdaan TASSA
+# yhdessa paikassa eika pinnan kasilistalla. Tuntematon koodi ei putoa
+# kumpaankaan hiljaa: se lasketaan `unclassified_n`:aan, ja
+# tests/test_accuracy_by_model.py kaatuu jos lokissa on luokittelematon koodi.
+NATIONAL_COMPETITIONS = frozenset({"WC", "EC"})
+CLUB_COMPETITIONS = frozenset(
+    {"BL1", "BSA", "CL", "DED", "ELC", "FL1", "PD", "PL", "PPL", "SA"})
+
+
+def model_of(competition: Optional[str]) -> Optional[str]:
+    """'club' / 'national' / None (luokittelematon)."""
+    if competition in CLUB_COMPETITIONS:
+        return "club"
+    if competition in NATIONAL_COMPETITIONS:
+        return "national"
+    return None
+
+
+def _by_model(rows: list[dict]) -> dict:
+    club = [e for e in rows if model_of(e.get("competition")) == "club"]
+    national = [e for e in rows if model_of(e.get("competition")) == "national"]
+    return {
+        "club": _metrics_block(club),
+        "national": _metrics_block(national),
+        "unclassified_n": len(rows) - len(club) - len(national),
+    }
+
+
 def _metrics_block(rows: list[dict]) -> dict:
     """1X2-, decisive- ja exact-osumat + Brier/n riviltä."""
     n = len(rows)
@@ -609,6 +640,9 @@ def compute_aggregate(
         "all_time": all_time,
         "rolling": rolling,
         "by_competition": by_comp,
+        # 26.9: seuramalli ja maajoukkuemalli erikseen (ks. model_of). Pinta
+        # joka vaittaa "the same match model" lukee `club`-lohkoa.
+        "by_model": _by_model(rows),
         # Additiivinen: kertoo kuinka moni gradattu rivi oli tuore kickoffissa
         # ja kuinka moni esikauden jaannos. Headline ei muutu tasta.
         "by_lead": _by_lead(rows),
