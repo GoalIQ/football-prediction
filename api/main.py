@@ -3265,10 +3265,18 @@ def fantasy_my_team_ledger(
             _st = _gw_fx({"events": _events}, _fx)
         except Exception:
             _st = {}
+        _ev_by = {e.get("id"): e for e in _events if isinstance(e, dict)}
         for g in prov:
             s_ = _st.get(g) or {}
-            _tilat[g] = _row_state({"provisional": True,
-                                    "all_fixtures_played": s_.get("all_fixtures_played")})
+            tila_ = _row_state({"provisional": True,
+                                "all_fixtures_played": s_.get("all_fixtures_played")})
+            # k2 suositus (B3-jaannos): tuntematon tila mutta FPL:n oma
+            # nykyinen kierros eika finished -> kesken. Muuten fixtures-haun
+            # kaatuminen tai siirretty ottelu toisi osittaisen kierroksen summiin.
+            ev_ = _ev_by.get(g) or {}
+            if tila_ == "unknown" and ev_.get("is_current") and not ev_.get("finished"):
+                tila_ = "in_progress"
+            _tilat[g] = tila_
         for e in _events:
             if isinstance(e, dict) and isinstance(e.get("id"), int):
                 _keskiarvot[e["id"]] = e.get("average_entry_score")

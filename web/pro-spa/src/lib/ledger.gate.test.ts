@@ -25,7 +25,7 @@ const LIVE: LedgerResponse = {
 describe('ledgerView: yksi lukija luvulle, lauseelle ja pylvaille', () => {
 	it('elava vastaus: summat, erotus ja kierrosmaara samasta nakymasta', () => {
 		const v = ledgerView(LIVE)!;
-		expect(ledgerSummary(v)).toBe('+179.8 points vs the projection over 5 gameweeks');
+		expect(ledgerSummary(v)).toBe('+179.8 vs the projection, +169 vs the FPL average, over 5 gameweeks');
 		expect(ledgerHeadline(v)).toBe(
 			'You scored 468 over these gameweeks. The projection said 288.2, and the FPL average was 299.'
 		);
@@ -40,7 +40,7 @@ describe('ledgerView: yksi lukija luvulle, lauseelle ja pylvaille', () => {
 			totals: { projected: 60, actual: 48, diff: -12 },
 			gameweeks: [{ ...LIVE.gameweeks[0], projected: 60, actual: 48, diff: -12, cumulative_diff: -12 }]
 		})!;
-		expect(ledgerSummary(v)).toBe('-12.0 points vs the projection over 1 gameweek');
+		expect(ledgerSummary(v)).toBe('48 points over 1 gameweek against a projection of 60.0');
 		expect(signed(0)).toBe('0.0');
 	});
 
@@ -65,9 +65,16 @@ describe('ledgerView: yksi lukija luvulle, lauseelle ja pylvaille', () => {
 		expect(barTooltip(v.bars[0])).toBe('GW2: projected 49.4, scored 119, +69.6');
 	});
 
+	it('k2 C2: keskiarvon alla oleva nakee miinuksen jo kiinni olevalla rivilla', () => {
+		// Mitattu 26.9 entry 12345: 268 / 225.32 / FPL-keskiarvo 299.
+		const v = ledgerView({ ...LIVE, totals: { projected: 225.32, actual: 268, diff: 42.68, fpl_average: 299 } })!;
+		expect(ledgerSummary(v)).toBe('+42.7 vs the projection, -31 vs the FPL average, over 5 gameweeks');
+	});
+
 	it('keskiarvo puuttuu -> lause ilman vertailua (ei osittaista summaa)', () => {
 		const v = ledgerView({ ...LIVE, totals: { ...LIVE.totals, fpl_average: null } })!;
 		expect(ledgerHeadline(v)).toBe('You scored 468 over these gameweeks. The projection said 288.2.');
+		expect(ledgerSummary(v)).toBe('468 points over 5 gameweeks against a projection of 288.2');
 	});
 
 	it('ei dataa tai ei saatavilla -> ei lohkoa (ei nollaa)', () => {

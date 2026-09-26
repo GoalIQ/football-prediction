@@ -195,3 +195,43 @@ def test_endpoint_kytkee_tilan_ja_keskiarvon(monkeypatch, client):
     assert b["meta"]["in_progress_gws"] == [2]
     assert b["gameweeks"][0]["fpl_average"] == 50
     assert b["totals"]["fpl_average"] == 50
+
+
+def test_keskiarvo_vain_lopullisille_kierroksille(freeze):
+    """k2 C1: FPL:n keskiarvo liikkuu kunnes data_checked (GW3 36 -> 51).
+    Vahvistamattoman rivin keskiarvo on None, ja summa putoaa pois."""
+    freeze({1: {10: 5.0}, 2: {10: 5.0}})
+    out = L.build_ledger(_hist([(1, 8, 0, 0), (2, 3, 0, 0)]),
+                         {1: _picks([(10, 1)]), 2: _picks([(10, 1)])},
+                         provisional_gws=[2], states={2: "awaiting_check"},
+                         averages={1: 50, 2: 36})
+    assert [r["fpl_average"] for r in out["gameweeks"]] == [50, None]
+    assert out["totals"]["fpl_average"] is None
+
+
+def test_endpoint_tuntematon_nykyinen_kierros_on_kesken(monkeypatch, client):
+    """k2 B3-jaannos: fixtures-haku kaatuu, FPL:n nykyinen kierros ei ole
+    finished -> kierros jaa pois eika tuo osittaisia pisteita summiin.
+    Vahvistamaton mutta pelattu kierros (awaiting_check) ei tuo keskiarvoa."""
+    from src.data import fpl_api
+    monkeypatch.setattr(L.fpl_actuals, "frozen_xp_for", lambda gw: {10: 5.0})
+    monkeypatch.setattr(fpl_api, "fetch_entry_history",
+                        lambda *a, **k: _hist([(1, 8, 0, 0), (2, 3, 0, 0), (3, 1, 0, 0)]))
+    monkeypatch.setattr(fpl_api, "fetch_entry_picks", lambda *a, **k: _picks([(10, 1)]))
+    monkeypatch.setattr(fpl_api, "fetch_bootstrap", lambda *a, **k: {"events": [
+        {"id": 1, "finished": True, "data_checked": True, "average_entry_score": 50},
+        {"id": 2, "finished": True, "data_checked": False, "average_entry_score": 36},
+        {"id": 3, "finished": False, "data_checked": False, "is_current": True,
+         "average_entry_score": 12},
+    ]})
+    def kaatuu(*a, **k):
+        raise RuntimeError("fixtures alhaalla")
+    monkeypatch.setattr(fpl_api, "fetch_fixtures", kaatuu)
+    import src.models.model_squad_scores as mss
+    monkeypatch.setattr(mss, "provisional_hint_gws", lambda: [])
+    b = client.get("/api/fantasy/my-team-ledger?entry=424242").json()
+    assert [g["gw"] for g in b["gameweeks"]] == [1, 2]
+    assert b["meta"]["in_progress_gws"] == [3]
+    assert [g["state"] for g in b["gameweeks"]] == ["final", "unknown"]
+    assert [g["fpl_average"] for g in b["gameweeks"]] == [50, None]
+    assert b["totals"]["fpl_average"] is None

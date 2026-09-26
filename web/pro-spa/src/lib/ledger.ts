@@ -76,10 +76,22 @@ export function signed(n: number): string {
 	return `${v > 0 ? '+' : ''}${v.toFixed(1)}`;
 }
 
-/** Kiinni olevan taitoksen rivi: luku ja kierrosmaara samasta nakymasta. */
+/** Kokonaisluku etumerkilla: +169 / -31 / 0. */
+export function signedInt(n: number): string {
+	const v = Math.round(n);
+	return `${v > 0 ? '+' : ''}${v}`;
+}
+
+/** Kiinni olevan taitoksen rivi: luku ja kierrosmaara samasta nakymasta.
+ *  Julkaisutarkistaja k2 (C2): useimmat nakevat vain taman rivin, joten
+ *  vertailukohta (FPL:n keskiarvo) kuuluu tahan. Ilman keskiarvoa ei
+ *  etumerkkia: plus projektiota vastaan oli oletustila, ei signaali. */
 export function ledgerSummary(v: LedgerView): string {
 	const gws = v.graded === 1 ? '1 gameweek' : `${v.graded} gameweeks`;
-	return `${signed(v.diff)} points vs the projection over ${gws}`;
+	if (v.fplAverage != null) {
+		return `${signed(v.diff)} vs the projection, ${signedInt(v.actual - v.fplAverage)} vs the FPL average, over ${gws}`;
+	}
+	return `${v.actual} points over ${gws} against a projection of ${r1(v.projected).toFixed(1)}`;
 }
 
 /** Avatun taitoksen paalause: omat pisteet, projektio ja FPL:n keskiarvo

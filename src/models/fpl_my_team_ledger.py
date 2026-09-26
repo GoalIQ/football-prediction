@@ -67,8 +67,9 @@ def _projected_for(picks: dict, frozen: dict[int, float]) -> tuple[float, int]:
 
 
 def _average(v: Any) -> int | None:
-    """FPL:n kierroskeskiarvo tai None. 0 ja puuttuva = ei tietoa (FPL
-    antaa 0:n kierrokselle jota ei ole viela laskettu)."""
+    """FPL:n kierroskeskiarvo tai None. 0 ja puuttuva = ei tietoa. Huom: FPL
+    antaa valiaikaisen luvun jo kesken vahvistuksen (ei 0:aa), siksi kutsuja
+    ottaa keskiarvon vain lopullisille kierroksille (k2 C1)."""
     if isinstance(v, bool) or not isinstance(v, (int, float)) or v <= 0:
         return None
     return int(v)
@@ -132,6 +133,9 @@ def build_ledger(entry_history: dict | None,
             puuttuvat.append(gw)
             continue
 
+        tila = (ROW_FINAL if gw not in prov
+                else tilat.get(gw) if tilat.get(gw) in (ROW_AWAITING_CHECK, ROW_UNKNOWN)
+                else ROW_UNKNOWN)
         projected, hits = _projected_for(picks, frozen)
         # 🔴 Portin 11. kierros: NETTO. `entry_history.points` on brutto, ja
         # sen vertaaminen jaadytettyyn projektioon antoi kayttajalle hitin
@@ -156,10 +160,12 @@ def build_ledger(entry_history: dict | None,
             "transfer_cost": int(h.get("event_transfers_cost") or 0),
             "provisional": gw in prov,
             # final / awaiting_check / unknown (in_progress on jo pois).
-            "state": (ROW_FINAL if gw not in prov
-                      else tilat.get(gw) if tilat.get(gw) in (ROW_AWAITING_CHECK, ROW_UNKNOWN)
-                      else ROW_UNKNOWN),
-            "fpl_average": _average(keskiarvot.get(gw)),
+            "state": tila,
+            # 🔴 k2 (C1): FPL:n keskiarvo liikkuu kunnes data_checked (mitattu
+            # model_squad_gw_scores.json:n historiasta: GW3 36 -> 51, GW4
+            # 63 -> 67 -> 69), ja valiaikainen oli aina pienempi = imarteli
+            # kayttajaa. Vain lopullisille riveille.
+            "fpl_average": _average(keskiarvot.get(gw)) if tila == ROW_FINAL else None,
         })
 
     if not rows:
