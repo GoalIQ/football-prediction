@@ -32,6 +32,7 @@
 	import type { WeeklyAction } from './WeeklyActions.svelte';
 	import { isOpenForLogging, loadDecisions, logDecision } from '$lib/fplDecisions';
 	import SquadNews from './SquadNews.svelte';
+	import SeasonLedger from './SeasonLedger.svelte';
 	import ThisWeek from './ThisWeek.svelte';
 	import { fetchFantasy } from '$lib/api';
 	import ModelWorking from './ModelWorking.svelte';
@@ -1424,6 +1425,10 @@
 	     (plannedPlayers) + price watchin omat rivit, ei gw-review'n viimeisen
 	     paattyneen kierroksen pickit. -->
 	<SquadNews players={plannedPlayers} entry={currentEntryId()} />
+
+	<!-- MP-14 (26.9): kausi jaadytettya projektiota vastaan, vain FPL-entrylle
+	     (draftilla ei ole FPL-historiaa). Luvut: $lib/ledger. -->
+	<SeasonLedger entry={data.meta.mode === 'entry' ? (data.meta.entry ?? null) : null} />
 
 	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
 	     sen alla = "% of the best possible budget team" (uusi semantiikka,
