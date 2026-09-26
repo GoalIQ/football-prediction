@@ -52,6 +52,9 @@ def test_lohkot_summautuvat_headlineen_ja_kilpailuriveihin():
     comp = agg["by_competition"]
     assert bm["club"]["n"] == sum(v["n"] for k, v in comp.items() if k in acc.CLUB_COMPETITIONS)
     assert bm["national"]["n"] == sum(v["n"] for k, v in comp.items() if k in acc.NATIONAL_COMPETITIONS)
+    # Kirjattujen maara jakautuu samoin (sivun "has logged N" -lause).
+    assert (bm["club"]["logged_with_timestamp"] + bm["national"]["logged_with_timestamp"]
+            == agg["logged_with_timestamp"])
     # MM-rivit ovat maajoukkuemallin, eivat seuramallin.
     if "WC" in comp:
         assert bm["national"]["n"] >= comp["WC"]["n"] > 0

@@ -383,12 +383,19 @@ def model_of(competition: Optional[str]) -> Optional[str]:
     return None
 
 
-def _by_model(rows: list[dict]) -> dict:
+def _by_model(rows: list[dict], predictions: list[dict] = ()) -> dict:
     club = [e for e in rows if model_of(e.get("competition")) == "club"]
     national = [e for e in rows if model_of(e.get("competition")) == "national"]
+
+    def _logged(model: str) -> int:
+        # Sama perusta kuin `logged_with_timestamp`: kirjausaika on olemassa.
+        return sum(1 for e in predictions
+                   if e.get("logged_at") and model_of(e.get("competition")) == model)
+
     return {
-        "club": _metrics_block(club),
-        "national": _metrics_block(national),
+        "club": {**_metrics_block(club), "logged_with_timestamp": _logged("club")},
+        "national": {**_metrics_block(national),
+                     "logged_with_timestamp": _logged("national")},
         "unclassified_n": len(rows) - len(club) - len(national),
     }
 
@@ -642,7 +649,7 @@ def compute_aggregate(
         "by_competition": by_comp,
         # 26.9: seuramalli ja maajoukkuemalli erikseen (ks. model_of). Pinta
         # joka vaittaa "the same match model" lukee `club`-lohkoa.
-        "by_model": _by_model(rows),
+        "by_model": _by_model(rows, log["predictions"]),
         # Additiivinen: kertoo kuinka moni gradattu rivi oli tuore kickoffissa
         # ja kuinka moni esikauden jaannos. Headline ei muutu tasta.
         "by_lead": _by_lead(rows),

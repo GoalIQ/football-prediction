@@ -561,6 +561,12 @@ def build_context(fpl: dict, acc: dict) -> dict:
     # void-rivit (siirretyt + 48 aikaleimatonta MM-rivia) "tuleviksi".
     logged = acc["logged_with_timestamp"]
     pending = acc["pending"]
+    # 26.9 (PROVENANCE-LUKU-SIVULLE): seuramallin oma lohko. Blended
+    # all_time sisaltaa MM-kisojen maajoukkuemallin rivit, joten lause
+    # "the model ... 49.4%" vaitti niista jotain mita ne eivat ole.
+    # None = vanha accuracy.json ilman by_model-kenttaa (fpl-page-refresh voi
+    # bakettaa vanhaa skeemaa vasten): silloin lauseet eivat nimea mallia.
+    acc_club = _club_block((acc.get("by_model") or {}).get("club"))
 
     gen_dt = _dt.datetime.fromisoformat(meta["generated_at"])
     acc_dt = _dt.datetime.fromisoformat(acc["updated_at"])
@@ -638,6 +644,7 @@ def build_context(fpl: dict, acc: dict) -> dict:
         "acc_pct_dec": pct_dec,
         "acc_logged": logged,
         "acc_pending": pending,
+        "acc_club": acc_club,
         "by_comp": by_comp,
         "data_date": gen_dt.strftime("%d %B %Y").lstrip("0"),
         "acc_date": acc_dt.strftime("%d %B %Y").lstrip("0"),
@@ -653,17 +660,81 @@ def venue_txt(v: str) -> str:
     return "home" if v == "H" else "away"
 
 
+def _club_block(m: dict | None) -> dict | None:
+    """Seuramallin lohko by_modelista sivun muodossa. None jos puuttuu tai tyhja."""
+    if not m or not m.get("n") or m.get("logged_with_timestamp") is None:
+        return None
+    return {
+        "n": m["n"],
+        "correct": m.get("correct_1x2", 0),
+        "pct": (m.get("pct_1x2") or 0.0) * 100,
+        "dec_n": m.get("decisive_n", 0),
+        "dec_c": m.get("decisive_correct", 0),
+        "pct_dec": (m.get("pct_decisive") or 0.0) * 100,
+        "logged": m["logged_with_timestamp"],
+    }
+
+
+def acc_trust_sentence(c: dict) -> str:
+    """ACC-TRUST-rivi etusivulle JA /predictionsiin: YKSI lukija, ei kahta kopiota."""
+    k = c.get("acc_club")
+    if k:
+        return (
+            f"Built on a model with {fmt_pct(k['pct'])} correct 1X2 results "
+            f"across {k['n']} completed club matches, every one logged before kick-off."
+        )
+    return (
+        f"Every prediction in the record was logged before kick-off: "
+        f"{fmt_pct(c['acc_pct_1x2'])} correct 1X2 results across {c['acc_n']} "
+        f"completed matches, all competitions."
+    )
+
+
 def track_record_sentences(c: dict) -> list[str]:
-    """Sitaatinkelpoiset faktalauseet, käytetään sekä sivulla että FAQ:ssa."""
+    """Sitaatinkelpoiset faktalauseet, käytetään sekä sivulla että FAQ:ssa.
+
+    26.9: seuramallin luvut kun by_model on saatavilla. MM-ennusteet tulivat
+    erillisesta maajoukkuemallista, joten "the GoalIQ model ... starting with
+    the 2026 World Cup" nimesi ne vaaran mallin tuotoksiksi.
+    """
+    k = c.get("acc_club")
+    if k:
+        return [
+            (
+                f"The GoalIQ club model has logged {k['logged']} pre-match predictions "
+                f"for domestic league and Champions League matches, before kickoff and "
+                f"never edited after kick-off."
+            ),
+            (
+                f"Across the {k['n']} completed club matches, it called the result "
+                f"correctly in {fmt_pct(k['pct'])} of them."
+            ),
+            (
+                f"In the {k['dec_n']} club matches that did not end in a draw, it "
+                f"called the result right {fmt_pct(k['pct_dec'])} of the time "
+                f"({k['dec_c']} of {k['dec_n']})."
+            ),
+            (
+                f"The model always names a side, so every draw counts as a miss and "
+                f"that {fmt_pct(k['pct_dec'])} is the same {k['dec_c']} hits over a "
+                f"smaller number of matches."
+            ),
+            (
+                "World Cup 2026 predictions came from a separate national-team model "
+                "and have their own row in the prediction record."
+            ),
+        ]
+    # Vanha skeema: blended-luku ilman mallivaitetta.
     return [
         (
-            f"The GoalIQ model has logged {c['acc_logged']} pre-match predictions, "
+            f"GoalIQ has logged {c['acc_logged']} pre-match predictions, "
             f"before kickoff and never edited after kick-off, starting with the 2026 "
             f"World Cup and now covering domestic leagues."
         ),
         (
-            f"Across the {c['acc_n']} completed matches, the model called the "
-            f"result correctly in {fmt_pct(c['acc_pct_1x2'])} of matches."
+            f"Across the {c['acc_n']} completed matches in all competitions, the "
+            f"predictions called the result correctly in {fmt_pct(c['acc_pct_1x2'])} "
+            f"of matches."
         ),
         # 1.8.2026 rehellisyyskorjaus: luku on laskettu TOTEUTUNEEN tuloksen
         # mukaan (accuracy.py: actual_outcome != "draw"), ei sen mukaan mitä
@@ -671,9 +742,9 @@ def track_record_sentences(c: dict) -> list[str]:
         # joten "kun malli nimesi voittajan" antoi ymmärtää valikoinnin jota ei
         # ole. Sama sanamuoto kuin WC-sivulla, joka kuvasi tämän alusta oikein.
         (
-            f"In the {c['acc_dec_n']} matches that did not end in a draw, the model "
-            f"called the result right {fmt_pct(c['acc_pct_dec'])} of the time "
-            f"({c['acc_dec_c']} of {c['acc_dec_n']})."
+            f"In the {c['acc_dec_n']} matches that did not end in a draw, the "
+            f"predictions called the result right {fmt_pct(c['acc_pct_dec'])} of the "
+            f"time ({c['acc_dec_c']} of {c['acc_dec_n']})."
         ),
         # 🔴 11.9.2026, julkaisuportti. Mitattu `data/prediction_log.json`:sta:
         # `predicted_winner` on home 2364 tai away 956, EI KERTAAKAAN draw.
@@ -683,7 +754,7 @@ def track_record_sentences(c: dict) -> list[str]:
         # samassa lukijassa kuin muut, jotta se kulkee myos FAQ:hun ja
         # JSON-LD:hen eika jaa vain sivulle (muisti: varoitus-kaukana-luvusta).
         (
-            f"The model always names a side, so every draw counts as a miss and "
+            f"Every prediction names a side, so every draw counts as a miss and "
             f"that {fmt_pct(c['acc_pct_dec'])} is the same "
             f"{c['acc_dec_c']} hits over a smaller number of matches."
         ),
@@ -841,11 +912,26 @@ def by_comp_html(c: dict) -> str:
         + "</div>"
         for r in c["by_comp"]
     )
+    # 26.9: seuramallin summa naykyviin samasta lahteesta kuin alaviitteen ja
+    # track recordin luku (by_model.club), jotta lukija loytaa sen laskematta.
+    k = c.get("acc_club")
+    total = (
+        '<div class="bycomp-row">'
+        '<div class="bycomp-main">'
+        '<span class="bycomp-name">All club matches</span>'
+        f'<span class="bycomp-pct">{fmt_pct(k["pct"])}</span>'
+        f'<span class="bycomp-n">{k["correct"]} of {k["n"]}</span>'
+        "</div>"
+        '<div class="bycomp-sub">World Cup 2026 is our national-team model and '
+        "isn&#39;t in this line.</div>"
+        "</div>"
+    ) if k else ""
     return (
         '<div class="bycomp" aria-label="Accuracy by competition">'
         '<div class="bycomp-title">By competition</div>'
         '<p class="bycomp-note">The model never picks a draw, so every draw is '
-        'a miss in the first column.</p>' 
+        'a miss in the first column.</p>'
+        + total
         + rows
         + "</div>"
     )
@@ -3758,10 +3844,7 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
         f"Every prediction in the record was logged before kickoff. "
         f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches."
     )
-    trust = (
-        f"Built on a model with {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
-        f"across {c['acc_n']} completed matches, every one logged before kick-off."
-    )
+    trust = acc_trust_sentence(c)
     new = re.sub(
         r"(<!-- GEN:ACC-CHIP-START -->).*?(<!-- GEN:ACC-CHIP-END -->)",
         lambda m: m.group(1) + chip + m.group(2), s, flags=re.S)
@@ -3958,10 +4041,7 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
         f"Every prediction in the record was logged before kickoff. "
         f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches."
     )
-    trust = (
-        f"Built on a model with {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
-        f"across {c['acc_n']} completed matches, every one logged before kick-off."
-    )
+    trust = acc_trust_sentence(c)
     new = re.sub(
         r"(<!-- GEN:ACC-CHIP-START -->).*?(<!-- GEN:ACC-CHIP-END -->)",
         lambda m: m.group(1) + chip + m.group(2), s, flags=re.S)
