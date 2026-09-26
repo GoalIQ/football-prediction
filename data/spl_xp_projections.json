@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-09-26T00:59:15",
+  "generated_at": "2026-09-26T02:45:06",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -181,13 +181,13 @@
     "in_xi": false
    },
    {
-    "id": 504,
-    "web_name": "A. Al Otaibi",
-    "team_short": "KLD",
+    "id": 312,
+    "web_name": "Al Khathami",
+    "team_short": "KLJ",
     "pos": "FWD",
     "price": 4.3,
-    "xp_per_gw": 1.85,
-    "xp_horizon_total": 11.08,
+    "xp_per_gw": 1.86,
+    "xp_horizon_total": 11.18,
     "in_xi": false
    }
   ]
@@ -2467,105 +2467,6 @@
       }
      ],
      "xp": 4.13
-    }
-   ]
-  },
-  {
-   "id": 312,
-   "web_name": "Al Khathami",
-   "full_name": "Abdulmajeed Al Khathami",
-   "team": "Al Khaleej",
-   "team_short": "KLJ",
-   "pos": "FWD",
-   "price": 4.4,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 50.0,
-   "predicted_starts": 51.7,
-   "minutes_confidence": "low",
-   "p_start": 0.517,
-   "p_cameo": 0.275,
-   "p_bench": 0.208,
-   "data_basis": "no_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.53,
-     "assists": 0.17
-    }
-   },
-   "xp_per_gw": 3.71,
-   "xp_per_90": 6.52,
-   "xp_horizon_total": 22.25,
-   "gameweeks": [
-    {
-     "gw": 8,
-     "opponents": [
-      {
-       "opp": "ETT",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.67
-    },
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.92
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.72
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "AHL",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.08
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.92
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.94
     }
    ]
   },
@@ -5799,7 +5700,7 @@
    "team_short": "HAZ",
    "pos": "MID",
    "price": 5.9,
-   "owned_pct": 1.0,
+   "owned_pct": 0.9,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -15446,6 +15347,93 @@
    ]
   },
   {
+   "id": 319,
+   "web_name": "Welson Diogo",
+   "full_name": "Wilson da Cruz",
+   "team": "Al Khaleej",
+   "team_short": "KLJ",
+   "pos": "FWD",
+   "price": 4.4,
+   "owned_pct": 0.2,
+   "status": "d",
+   "news": "Doubtful - مشكوك في مشاركته",
+   "chance_next": 50,
+   "yellows": 0,
+   "xmins": 27.7,
+   "predicted_starts": 25.9,
+   "minutes_confidence": "low",
+   "p_start": 0.2585,
+   "p_cameo": 0.275,
+   "p_bench": 0.4665,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 2.02,
+   "xp_per_90": 6.52,
+   "xp_horizon_total": 12.14,
+   "gameweeks": [
+    {
+     "gw": 8,
+     "opponents": [
+      {
+       "opp": "ETT",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.0
+    },
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.14
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.03
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "AHL",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.68
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.14
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.15
+    }
+   ]
+  },
+  {
    "id": 675,
    "web_name": "Semper",
    "full_name": "Adrian Semper",
@@ -17900,6 +17888,105 @@
    ]
   },
   {
+   "id": 312,
+   "web_name": "Al Khathami",
+   "full_name": "Abdulmajeed Al Khathami",
+   "team": "Al Khaleej",
+   "team_short": "KLJ",
+   "pos": "FWD",
+   "price": 4.3,
+   "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 25.4,
+   "predicted_starts": 23.1,
+   "minutes_confidence": "low",
+   "p_start": 0.231,
+   "p_cameo": 0.275,
+   "p_bench": 0.494,
+   "data_basis": "no_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.53,
+     "assists": 0.17
+    }
+   },
+   "xp_per_gw": 1.86,
+   "xp_per_90": 6.52,
+   "xp_horizon_total": 11.18,
+   "gameweeks": [
+    {
+     "gw": 8,
+     "opponents": [
+      {
+       "opp": "ETT",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.84
+    },
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.97
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.87
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "AHL",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.55
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.97
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.98
+    }
+   ]
+  },
+  {
    "id": 647,
    "web_name": "Al Hubayshi",
    "full_name": "Fahad Majed Mohammed Alhubayshi",
@@ -18575,7 +18662,7 @@
    "team": "Abha",
    "team_short": "ABH",
    "pos": "FWD",
-   "price": 4.4,
+   "price": 4.3,
    "owned_pct": 0.4,
    "status": "a",
    "news": "",
@@ -31778,93 +31865,6 @@
    ]
   },
   {
-   "id": 319,
-   "web_name": "Welson Diogo",
-   "full_name": "Wilson da Cruz",
-   "team": "Al Khaleej",
-   "team_short": "KLJ",
-   "pos": "FWD",
-   "price": 4.4,
-   "owned_pct": 0.2,
-   "status": "d",
-   "news": "Doubtful - مشكوك في مشاركته",
-   "chance_next": 50,
-   "yellows": 0,
-   "xmins": 15.4,
-   "predicted_starts": 11.6,
-   "minutes_confidence": "low",
-   "p_start": 0.1155,
-   "p_cameo": 0.275,
-   "p_bench": 0.6095,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 1.19,
-   "xp_per_90": 6.52,
-   "xp_horizon_total": 7.16,
-   "gameweeks": [
-    {
-     "gw": 8,
-     "opponents": [
-      {
-       "opp": "ETT",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.18
-    },
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.26
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.2
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "AHL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.0
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.26
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.26
-    }
-   ]
-  },
-  {
    "id": 202,
    "web_name": "Dahal",
    "full_name": "Sabri Dahal",
@@ -36626,7 +36626,7 @@
    "team": "Al Hilal",
    "team_short": "HIL",
    "pos": "MID",
-   "price": 4.9,
+   "price": 4.8,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",
@@ -38495,7 +38495,7 @@
    "team": "Al Ittihad",
    "team_short": "ITT",
    "pos": "DEF",
-   "price": 4.0,
+   "price": 3.9,
    "owned_pct": 0.2,
    "status": "a",
    "news": "",
@@ -42122,7 +42122,7 @@
    "team": "Al Ahli",
    "team_short": "AHL",
    "pos": "DEF",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",
@@ -51719,7 +51719,7 @@
    "team": "Al Riyadh",
    "team_short": "RIY",
    "pos": "MID",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",
