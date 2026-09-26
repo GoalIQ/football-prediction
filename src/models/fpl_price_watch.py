@@ -47,10 +47,13 @@ def empty_price_watch() -> dict:
     }
 
 
+# 26.9: ei enaa "Tonight means..." - paivasana ilman kellonaikaa oli vaarin
+# muilla aikavyohykkeilla. `eta_at` on paivityksen aika, klientti nayttaa sen
+# lukijan paikallisessa ajassa.
 OWNED_NOTE = (
     "Owned counts how many of your 15 are on the risers and fallers lists. "
-    "Tonight means FPL's own projection crosses the threshold at the next "
-    "price update."
+    "eta_at is the FPL price update at which FPL's own projection crosses "
+    "the threshold."
 )
 
 
@@ -75,15 +78,20 @@ def annotate_owned(payload: dict, squad_ids: set[int]) -> dict:
     payload["fallers"] = _mark(payload.get("fallers"))
     own_r = [r for r in payload["risers"] if r["owned"]]
     own_f = [r for r in payload["fallers"] if r["owned"]]
+    # `n_tonight` (vanha nimi, yhteensopivuus) = seuraavan hintapaivityksen
+    # rivit (eta_days == 0). Se EI ole lukijan paikallinen "tanaan": klientit
+    # laskevat paivasanan `eta_at`ista.
     tonight = [r for r in own_r + own_f if r.get("eta_days") == 0]
+
+    def _own(r: dict) -> dict:
+        return {"id": r["id"], "web_name": r["web_name"],
+                "status": r.get("status"), "eta_days": r.get("eta_days"),
+                "eta_at": r.get("eta_at")}
+
     payload["owned"] = {
         "squad_size": len(ids),
-        "rising": [{"id": r["id"], "web_name": r["web_name"],
-                    "status": r.get("status"), "eta_days": r.get("eta_days")}
-                   for r in own_r],
-        "falling": [{"id": r["id"], "web_name": r["web_name"],
-                     "status": r.get("status"), "eta_days": r.get("eta_days")}
-                    for r in own_f],
+        "rising": [_own(r) for r in own_r],
+        "falling": [_own(r) for r in own_f],
         "n_rising": len(own_r),
         "n_falling": len(own_f),
         "n_tonight": len(tonight),

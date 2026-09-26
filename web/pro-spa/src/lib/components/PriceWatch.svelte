@@ -3,6 +3,10 @@
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
+	import { nextUpdateMoves, priceEta, priceEtaWord } from '$lib/priceEta';
+	// Reaktiivinen hetki (julkaisutarkistaja 26.9 B2): sana lasketaan uudelleen
+	// minuutin valein ja valilehden palatessa, ei vain datan saapuessa.
+	import { clock } from '$lib/now.svelte';
 
 	let data = $state<PriceWatchResponse | null>(null);
 	let error = $state<string | null>(null);
@@ -19,10 +23,13 @@
 	const owned = $derived(data?.owned ?? null);
 	function ownedLine(o: NonNullable<PriceWatchResponse['owned']>): string {
 		const parts: string[] = [];
-		if (o.n_tonight > 0) {
-			parts.push(`${o.n_tonight} of your ${o.squad_size} move tonight`);
+		// 26.9: "tonight" vain kun paivitys on lukijan illassa ($lib/priceEta);
+		// backendin n_tonight laski eta_days == 0 riippumatta kellonajasta.
+		const next = nextUpdateMoves([...o.rising, ...o.falling], clock.now);
+		if (next.n > 0 && next.kind) {
+			parts.push(`${next.n} of your ${o.squad_size} move ${next.kind}`);
 		}
-		const rest = o.n_rising + o.n_falling - o.n_tonight;
+		const rest = o.n_rising + o.n_falling - next.n;
 		if (rest > 0) {
 			parts.push(`${rest} more on watch`);
 		}
@@ -45,7 +52,7 @@
 	 * vierekkain. Ilman paivaa nayta aina watch-taso. */
 	function statusLabel(r: PriceMove): string {
 		const s =
-			r.status.endsWith('_soon') && typeof r.eta_days !== 'number'
+			r.status.endsWith('_soon') && priceEta(r.eta_at, clock.now) == null
 				? r.status.replace('_soon', '_watch')
 				: r.status;
 		return STATUS_LABEL[s] ?? s;
@@ -142,6 +149,7 @@
 					<tbody>
 						{#each rows as r (r.id)}
 							{@const band = confBand(r.confidence)}
+							{@const eta = priceEta(r.eta_at, clock.now)}
 							<tr data-player-id={r.id}>
 								<td
 									>{r.web_name}{#if r.owned}
@@ -155,12 +163,8 @@
 									</span>
 								</td>
 								<td class="eta">
-									{#if r.eta_days === 0}
-										Tonight
-									{:else if r.eta_days === 1}
-										Tomorrow
-									{:else if typeof r.eta_days === 'number'}
-										In {r.eta_days} days
+									{#if eta}
+										{priceEtaWord(eta, true)}
 									{:else}
 										<!-- "No date yet" eika "Not in 3 days": jalkimmainen on
 										     kaksitulkintainen, ja "on watch" torm aisi viereisen
@@ -218,7 +222,7 @@
 	{:else}
 		<!-- 3.9 ilta: sama hiljainen aukko kuin GK-rotaatiossa. -->
 		<p class="muted">
-			This list does not know your squad yet, so it cannot say which of your 15 are moving tonight. Put your FPL entry ID into Rate my team under My team.
+			This list does not know your squad yet, so it cannot say which of your 15 are about to move. Put your FPL entry ID into Rate my team under My team.
 		</p>
 	{/if}
 	<div class="watch-grid">

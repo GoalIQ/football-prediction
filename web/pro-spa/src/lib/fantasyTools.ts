@@ -372,6 +372,10 @@ export interface PriceMove {
 	 *  Puuttuu kun luku tulee vanhasta velocity-arviosta — se ei voinut tietää
 	 *  päivää, ja puuttuva kenttä on eri asia kuin "ei lähipäivinä". */
 	eta_days?: number;
+	/** 26.9: FPL:n hintapaivityksen aika (ISO Z) jolloin projektio ylittaa
+	 *  kynnyksen. Paivasana lasketaan TASTA lukijan ajassa ($lib/priceEta),
+	 *  ei eta_days-offsetista. Puuttuu kun FPL ei julkaissut aikoja. */
+	eta_at?: string | null;
 	/** MY-TEAM-CONTEXT (3.9): vain kun entry lähetettiin. */
 	owned?: boolean;
 }
@@ -381,6 +385,7 @@ export interface PriceWatchOwnedMove {
 	web_name: string;
 	status: string;
 	eta_days?: number | null;
+	eta_at?: string | null;
 }
 
 export interface PriceWatchResponse {
