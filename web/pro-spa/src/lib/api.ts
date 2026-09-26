@@ -1025,6 +1025,10 @@ export interface LedgerGameweek {
 	bench_points: number;
 	transfer_cost: number;
 	provisional: boolean;
+	/** 26.9 (MP-14): final / awaiting_check / unknown. Kesken oleva kierros ei ole riveissa. */
+	state?: 'final' | 'awaiting_check' | 'unknown';
+	/** FPL:n oma kierroskeskiarvo (average_entry_score), null = ei tietoa. */
+	fpl_average?: number | null;
 }
 
 export interface LedgerResponse {
@@ -1034,11 +1038,19 @@ export interface LedgerResponse {
 		/** Kierrokset jotka jaivat pois koska freezea ei ole. EI nolla. */
 		missing_freeze_gws?: number[];
 		provisional_gws?: number[];
+		/** 26.9: kesken olevat kierrokset, jatetty pois riveista ja summista. */
+		in_progress_gws?: number[];
 		basis?: string;
 		note: string | null;
 		note_code?: string | null;
 	};
-	totals: { projected: number | null; actual: number | null; diff: number | null };
+	totals: {
+		projected: number | null;
+		actual: number | null;
+		diff: number | null;
+		/** Summa vain jos jokaiselle kierrokselle on keskiarvo. */
+		fpl_average?: number | null;
+	};
 	gameweeks: LedgerGameweek[];
 }
 

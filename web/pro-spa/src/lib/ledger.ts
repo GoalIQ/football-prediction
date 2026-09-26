@@ -19,6 +19,8 @@ export interface LedgerBar {
 	actual: number;
 	diff: number;
 	provisional: boolean;
+	/** final / awaiting_check / unknown (kesken oleva ei ole mukana). */
+	state: 'final' | 'awaiting_check' | 'unknown';
 	matched: number;
 }
 
@@ -27,10 +29,13 @@ export interface LedgerView {
 	projected: number;
 	actual: number;
 	diff: number;
+	/** FPL:n kierroskeskiarvojen summa samoilta kierroksilta, null = ei vertailua. */
+	fplAverage: number | null;
 	bars: LedgerBar[];
 	/** Pylvasasteikon puolikorkeus (suurin |diff|, vahintaan 1). */
 	maxAbs: number;
 	missing: number[];
+	inProgress: number[];
 	provisional: number[];
 	partial: { gw: number; matched: number }[];
 }
@@ -47,6 +52,7 @@ export function ledgerView(r: LedgerResponse | null | undefined): LedgerView | n
 		actual: g.actual,
 		diff: g.diff,
 		provisional: g.provisional === true,
+		state: (g.state ?? (g.provisional ? 'unknown' : 'final')) as LedgerBar['state'],
 		matched: g.players_matched
 	}));
 	return {
@@ -54,10 +60,12 @@ export function ledgerView(r: LedgerResponse | null | undefined): LedgerView | n
 		projected: t.projected,
 		actual: t.actual,
 		diff: t.diff,
+		fplAverage: typeof t.fpl_average === 'number' ? t.fpl_average : null,
 		bars,
 		maxAbs: Math.max(1, ...bars.map((b) => Math.abs(b.diff))),
 		missing: [...(r.meta.missing_freeze_gws ?? [])].sort((a, b) => a - b),
-		provisional: bars.filter((b) => b.provisional).map((b) => b.gw),
+		inProgress: [...(r.meta.in_progress_gws ?? [])].sort((a, b) => a - b),
+		provisional: bars.filter((b) => b.state !== 'final').map((b) => b.gw),
 		partial: bars.filter((b) => b.matched < 15).map((b) => ({ gw: b.gw, matched: b.matched }))
 	};
 }
@@ -74,13 +82,16 @@ export function ledgerSummary(v: LedgerView): string {
 	return `${signed(v.diff)} points vs the projection over ${gws}`;
 }
 
-/** Avatun taitoksen paalause: molemmat summat, ero niiden valinen. */
+/** Avatun taitoksen paalause: omat pisteet, projektio ja FPL:n keskiarvo
+ *  (julkaisutarkistaja 26.9 B4: ilman vertailukohtaa plus oli oletustila).
+ *  Keskiarvo-osa jaa pois jos yhdellekin kierrokselle ei ole keskiarvoa. */
 export function ledgerHeadline(v: LedgerView): string {
-	return `You scored ${v.actual}. The projection frozen before each deadline said ${r1(v.projected).toFixed(1)}.`;
+	const base = `You scored ${v.actual} over these gameweeks. The projection said ${r1(v.projected).toFixed(1)}`;
+	return v.fplAverage != null ? `${base}, and the FPL average was ${v.fplAverage}.` : `${base}.`;
 }
 
 export function barTooltip(b: LedgerBar): string {
-	return `GW${b.gw}: projected ${r1(b.projected).toFixed(1)}, scored ${b.actual}, ${signed(b.diff)}${b.provisional ? ' (provisional)' : ''}`;
+	return `GW${b.gw}: projected ${r1(b.projected).toFixed(1)}, scored ${b.actual}, ${signed(b.diff)}${b.state !== 'final' ? ' (provisional)' : ''}`;
 }
 
 const gwList = (gws: number[]) => gws.map((g) => `GW${g}`).join(', ');
@@ -89,10 +100,16 @@ const gwList = (gws: number[]) => gws.map((g) => `GW${g}`).join(', ');
 export function ledgerNotes(v: LedgerView): string[] {
 	const out: string[] = [];
 	if (v.missing.length) {
-		out.push(`Not included: ${gwList(v.missing)}. No projection was frozen before that deadline.`);
+		out.push(`Not included: ${gwList(v.missing)}, because we couldn't pair a frozen projection with your picks.`);
 	}
-	if (v.provisional.length) {
-		out.push(`${gwList(v.provisional)} still provisional: FPL has not confirmed the points yet.`);
+	for (const gw of v.inProgress) out.push(`GW${gw} is still being played, so it isn't included yet.`);
+	// Sama kolmen tilan teksti kuin SeasonRacessa (model-race), ei omaa mekanismia.
+	for (const b of v.bars) {
+		if (b.state === 'awaiting_check') {
+			out.push(`GW${b.gw}: played but not confirmed, so bonus points can still change these totals.`);
+		} else if (b.state === 'unknown') {
+			out.push(`GW${b.gw}: not confirmed yet, so these totals can still move.`);
+		}
 	}
 	for (const p of v.partial) {
 		out.push(`GW${p.gw}: ${p.matched} of your 15 had a frozen projection.`);

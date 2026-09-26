@@ -101,7 +101,7 @@
 						class="bar"
 						class:above={b.diff >= 0}
 						class:below={b.diff < 0}
-						class:prov={b.provisional}
+						class:prov={b.state !== 'final'}
 						class:dim={active != null && active !== b.i}
 						x={b.x}
 						y={b.top}
@@ -157,7 +157,7 @@
 				<tbody>
 					{#each view.bars as b (b.gw)}
 						<tr>
-							<td>{b.gw}{b.provisional ? '*' : ''}</td>
+							<td>{b.gw}{b.state !== 'final' ? '*' : ''}</td>
 							<td class="num">{b.projected.toFixed(1)}</td>
 							<td class="num">{b.actual}</td>
 							<td class="num">{signed(b.diff)}</td>
@@ -168,8 +168,8 @@
 		</details>
 
 		<p class="muted small">
-			The projection is frozen before each deadline for the team you picked, with your captain
-			doubled and the bench left out. Your points are after transfer hits.
+			Each player's projection is frozen before the deadline, then counted the way FPL counted
+			your points, chips and auto-subs included. Your points are after transfer hits.
 		</p>
 		{#each ledgerNotes(view) as n (n)}
 			<p class="muted small">{n}</p>

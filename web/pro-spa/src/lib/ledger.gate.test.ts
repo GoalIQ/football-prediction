@@ -12,7 +12,7 @@ import { barTooltip, ledgerHeadline, ledgerNotes, ledgerSummary, ledgerView, sig
 // Mitattu tuotannosta 26.9 (entry 895045).
 const LIVE: LedgerResponse = {
 	meta: { available: true, graded_gws: 5, missing_freeze_gws: [], provisional_gws: [], note: null },
-	totals: { projected: 288.18, actual: 468, diff: 179.82 },
+	totals: { projected: 288.18, actual: 468, diff: 179.82, fpl_average: 299 },
 	gameweeks: [
 		{ gw: 1, projected: 56.8, actual: 97, diff: 40.2, cumulative_diff: 40.2, players_matched: 15, bench_points: 0, transfer_cost: 0, provisional: false },
 		{ gw: 2, projected: 49.44, actual: 119, diff: 69.56, cumulative_diff: 109.76, players_matched: 15, bench_points: 7, transfer_cost: 0, provisional: false },
@@ -26,7 +26,9 @@ describe('ledgerView: yksi lukija luvulle, lauseelle ja pylvaille', () => {
 	it('elava vastaus: summat, erotus ja kierrosmaara samasta nakymasta', () => {
 		const v = ledgerView(LIVE)!;
 		expect(ledgerSummary(v)).toBe('+179.8 points vs the projection over 5 gameweeks');
-		expect(ledgerHeadline(v)).toBe('You scored 468. The projection frozen before each deadline said 288.2.');
+		expect(ledgerHeadline(v)).toBe(
+			'You scored 468 over these gameweeks. The projection said 288.2, and the FPL average was 299.'
+		);
 		expect(v.bars.map((b) => b.gw)).toEqual([1, 2, 3, 4, 5]);
 		expect(v.maxAbs).toBeCloseTo(69.56);
 		expect(ledgerNotes(v)).toEqual([]);
@@ -45,18 +47,27 @@ describe('ledgerView: yksi lukija luvulle, lauseelle ja pylvaille', () => {
 	it('varaumat: puuttuva freeze, provisionaalinen ja vajaa kattavuus kerrotaan', () => {
 		const v = ledgerView({
 			...LIVE,
-			meta: { ...LIVE.meta, missing_freeze_gws: [3, 1], provisional_gws: [5] },
+			meta: { ...LIVE.meta, missing_freeze_gws: [3, 1], provisional_gws: [4, 5], in_progress_gws: [6] },
 			gameweeks: [
 				{ ...LIVE.gameweeks[1], players_matched: 14 },
-				{ ...LIVE.gameweeks[4], provisional: true }
+				{ ...LIVE.gameweeks[3], provisional: true, state: 'awaiting_check' },
+				{ ...LIVE.gameweeks[4], provisional: true, state: 'unknown' }
 			]
 		})!;
 		expect(ledgerNotes(v)).toEqual([
-			'Not included: GW1, GW3. No projection was frozen before that deadline.',
-			'GW5 still provisional: FPL has not confirmed the points yet.',
+			"Not included: GW1, GW3, because we couldn't pair a frozen projection with your picks.",
+			"GW6 is still being played, so it isn't included yet.",
+			'GW4: played but not confirmed, so bonus points can still change these totals.',
+			'GW5: not confirmed yet, so these totals can still move.',
 			'GW2: 14 of your 15 had a frozen projection.'
 		]);
-		expect(barTooltip(v.bars[1])).toBe('GW5: projected 58.1, scored 63, +4.9 (provisional)');
+		expect(barTooltip(v.bars[2])).toBe('GW5: projected 58.1, scored 63, +4.9 (provisional)');
+		expect(barTooltip(v.bars[0])).toBe('GW2: projected 49.4, scored 119, +69.6');
+	});
+
+	it('keskiarvo puuttuu -> lause ilman vertailua (ei osittaista summaa)', () => {
+		const v = ledgerView({ ...LIVE, totals: { ...LIVE.totals, fpl_average: null } })!;
+		expect(ledgerHeadline(v)).toBe('You scored 468 over these gameweeks. The projection said 288.2.');
 	});
 
 	it('ei dataa tai ei saatavilla -> ei lohkoa (ei nollaa)', () => {
