@@ -959,6 +959,55 @@ from src.data.international_results import WC_FIT_DECAY, WC_FIT_BAYES
 _SEASON_RECHECK_SEC = 1800
 
 
+# 26.9 (THIS-WEEK-LATAUS-HIDAS): kuinka kauan kaynnistys odottaa vapaan
+# optimin lammitysta ennen kuin portti aukeaa. Uvicorn ajaa startupin ennen
+# kuin se sitoo portin, ja Render ohjaa liikenteen uuteen instanssiin vasta
+# kun portti vastaa, joten tama odotus nakyy vain deployn kestossa, ei
+# kayttajalle: vanha lammin instanssi palvelee sen ajan. Raja pitaa
+# kaynnistyksen varmana jos FPL ei vastaa (timeout 15 s): saie jatkaa ja
+# myohemmat pyynnot odottavat samaa laskentaa lukossa, eivat aloita uutta.
+_OPTIMUM_WARM_WAIT_SEC = 30
+
+
+def _optimum_warm_enabled() -> bool:
+    """Vain Renderissa (Render asettaa RENDER=true). Testit ja paikallinen
+    `uvicorn` eivat hae FPL:aa kaynnistyksessa."""
+    return bool((os.getenv("RENDER") or "").strip())
+
+
+@app.on_event("startup")
+def _warm_free_optimum() -> None:
+    """Vapaa optimi valimuistiin ennen ensimmaista pyyntoa.
+
+    🔴 MIKSI (26.9.2026, Villen havainto "miksi squadin loading kestaa taas
+    ... this weekissa"): rate-team, model-squad ja fit checker laskivat
+    vapaan optimin ensimmaisen pyynnon sisalla jokaisen deployn jalkeen
+    (tuotannossa 4,9 s, lammin 0,12 s), ja deployja on 49-90 vuorokaudessa.
+    Rekisteroity ENNEN mallien lammitysta: niiden fit-saikeet kilpailisivat
+    muuten samasta 0,5 vCPU:sta."""
+    if not _optimum_warm_enabled():
+        return
+    from src.models.fpl_rate_team import warm_free_optimum
+
+    tulos: dict = {}
+
+    def _aja() -> None:
+        try:
+            tulos.update(warm_free_optimum())
+        except Exception as e:  # kaynnistys ei saa kaatua lammitykseen
+            tulos["virhe"] = f"{type(e).__name__}: {e}"
+
+    t0 = time.time()
+    saie = threading.Thread(target=_aja, daemon=True, name="optimum-warm")
+    saie.start()
+    saie.join(_OPTIMUM_WARM_WAIT_SEC)
+    if saie.is_alive():
+        print(f"[optimum-warm] kesken {_OPTIMUM_WARM_WAIT_SEC} s jalkeen, "
+              "jatkuu taustalla", flush=True)
+    else:
+        print(f"[optimum-warm] {tulos} ({time.time() - t0:.1f}s)", flush=True)
+
+
 @app.on_event("startup")
 def _warmup_default_models():
     def _fit_seasons(kaudet: tuple[str, ...]) -> None:
@@ -5809,12 +5858,12 @@ def fantasy_model_squad(response: Response):
     eriytyä; ks. fpl_fit-docstring 29.7). Lukee committatun projektion, ei
     laskentaa mallipolulla. Ei entry-ID:tä, ei kirjautumista."""
     from src.models.fpl_rate_team import (
-        POS_NAME, RateTeamError, build_context, free_optimum)
+        POS_NAME, RateTeamError, build_context, free_optimum, free_optimum_key)
     from src.models.fpl_xp import horizon_total_meta
     response.headers["Cache-Control"] = "no-store"
     try:
         xp_data, _bootstrap, pool, _pool_by_id = build_context()
-        free = free_optimum(pool, str(xp_data["meta"].get("generated_at")))
+        free = free_optimum(pool, free_optimum_key(xp_data))
         if not free["xi"] or len(free["bench"]) != 4:
             raise HTTPException(status_code=503,
                                 detail="Model squad unavailable.")
