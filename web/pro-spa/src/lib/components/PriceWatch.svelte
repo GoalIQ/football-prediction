@@ -4,6 +4,9 @@
 	import { capture } from '$lib/analytics';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
 	import { nextUpdateMoves, priceEta, priceEtaWord } from '$lib/priceEta';
+	// Reaktiivinen hetki (julkaisutarkistaja 26.9 B2): sana lasketaan uudelleen
+	// minuutin valein ja valilehden palatessa, ei vain datan saapuessa.
+	import { clock } from '$lib/now.svelte';
 
 	let data = $state<PriceWatchResponse | null>(null);
 	let error = $state<string | null>(null);
@@ -22,7 +25,7 @@
 		const parts: string[] = [];
 		// 26.9: "tonight" vain kun paivitys on lukijan illassa ($lib/priceEta);
 		// backendin n_tonight laski eta_days == 0 riippumatta kellonajasta.
-		const next = nextUpdateMoves([...o.rising, ...o.falling], Date.now());
+		const next = nextUpdateMoves([...o.rising, ...o.falling], clock.now);
 		if (next.n > 0 && next.kind) {
 			parts.push(`${next.n} of your ${o.squad_size} move ${next.kind}`);
 		}
@@ -49,7 +52,7 @@
 	 * vierekkain. Ilman paivaa nayta aina watch-taso. */
 	function statusLabel(r: PriceMove): string {
 		const s =
-			r.status.endsWith('_soon') && priceEta(r.eta_at, Date.now()) == null
+			r.status.endsWith('_soon') && priceEta(r.eta_at, clock.now) == null
 				? r.status.replace('_soon', '_watch')
 				: r.status;
 		return STATUS_LABEL[s] ?? s;
@@ -146,7 +149,7 @@
 					<tbody>
 						{#each rows as r (r.id)}
 							{@const band = confBand(r.confidence)}
-							{@const eta = priceEta(r.eta_at, Date.now())}
+							{@const eta = priceEta(r.eta_at, clock.now)}
 							<tr data-player-id={r.id}>
 								<td
 									>{r.web_name}{#if r.owned}

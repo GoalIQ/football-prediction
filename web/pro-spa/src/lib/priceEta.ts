@@ -60,7 +60,13 @@ export function priceEta(
 	if (typeof etaAt !== 'string') return null;
 	const at = Date.parse(etaAt);
 	if (!Number.isFinite(at) || at <= nowMs) return null;
-	const diff = dayIndex(clock(at - EVENING_SHIFT_MS)) - dayIndex(clock(nowMs));
+	// Julkaisutarkistaja 26.9 (B1): kalenteriero yksin antoi kahdelle eri
+	// paivitykselle saman sanan klo 00-06 paikallista aikaa (Helsinki 00:30:
+	// tonight / tonight / tomorrow). Taysia vuorokausia jaljella on alaraja.
+	const diff = Math.max(
+		dayIndex(clock(at - EVENING_SHIFT_MS)) - dayIndex(clock(nowMs)),
+		Math.floor((at - nowMs) / DAY_MS)
+	);
 	if (diff <= 0) {
 		const h = clock(at).h;
 		return { kind: h >= 6 && h <= 17 ? 'today' : 'tonight', days: 0 };

@@ -27,6 +27,7 @@ const HELSINKI = zone(180);
 const SAO_PAULO = zone(-180);
 const MEXICO = zone(-360);
 const SYDNEY = zone(600);
+const KOLKATA = zone(330);
 const at = (iso: string) => Date.parse(iso);
 
 const UPD_26 = '2026-09-26T23:00:00Z';
@@ -71,6 +72,32 @@ describe('priceEta: paivasana lukijan ajassa', () => {
 	});
 });
 
+describe('julkaisutarkistaja 26.9 B1: kaksi eri paivitysta ei saa samaa sanaa', () => {
+	const hel0030 = at('2026-09-26T21:30:00Z');
+	it('Helsinki 00:30: tamanoinen tonight, huominen tomorrow', () => {
+		expect(priceEta(UPD_26, hel0030, HELSINKI)?.kind).toBe('tonight');
+		expect(priceEta(UPD_27, hel0030, HELSINKI)?.kind).toBe('tomorrow');
+	});
+	it('Kolkata 03:00: ylihuominen -> in 2 days', () => {
+		expect(priceEta(UPD_28, hel0030, KOLKATA)).toEqual({ kind: 'days', days: 2 });
+	});
+	it('yhteenveto laskee vain seuraavan paivityksen', () => {
+		const rows = [
+			{ id: 1, web_name: 'A', status: 'rising_soon', eta_at: UPD_26 },
+			{ id: 2, web_name: 'B', status: 'rising_soon', eta_at: UPD_27 }
+		];
+		expect(nextUpdateMoves(rows, hel0030, HELSINKI)).toEqual({ n: 1, kind: 'tonight' });
+	});
+	it('invariantti: kolme paivitysta, kolme eri paivaa joka vyohykkeessa vartin valein', () => {
+		for (const clock of [LONDON, HELSINKI, SAO_PAULO, MEXICO, SYDNEY, KOLKATA]) {
+			for (let t = at('2026-09-26T00:00:00Z'); t < at('2026-09-26T23:00:00Z'); t += 15 * 60_000) {
+				const d = [UPD_26, UPD_27, UPD_28].map((u) => priceEta(u, t, clock)?.days ?? NaN);
+				expect(d[0] < d[1] && d[1] < d[2], `${new Date(t).toISOString()} ${d}`).toBe(true);
+			}
+		}
+	});
+});
+
 describe('squadPriceMoves ja nextUpdateMoves', () => {
 	const risers = [
 		{ id: 1, web_name: 'Saka', status: 'rising_soon', eta_at: UPD_26 },
@@ -108,13 +135,31 @@ describe('kutsupaikat lukevat paivasanan vain $lib/priceEta:sta', () => {
 			expect(src).toMatch(/from '\$lib\/priceEta'/);
 		});
 	}
+	for (const f of ['SquadNews.svelte', 'PriceWatch.svelte']) {
+		it(`${f}: lukija saa reaktiivisen hetken, ei Date.now():ia (B2)`, () => {
+			const src = read(f).replace(/<!--[\s\S]*?-->/g, '').replace(/\/\/[^\n]*/g, '');
+			// Argumentit sulkutasoa laskien (regex pysahtyisi `(p) =>`-sulkuun).
+			const args = (i: number) => {
+				let depth = 0;
+				for (let j = i; j < src.length; j++) {
+					if (src[j] === '(') depth++;
+					else if (src[j] === ')' && --depth === 0) return src.slice(i + 1, j);
+				}
+				return src.slice(i);
+			};
+			const calls = [...src.matchAll(/\b(priceEta|sureMove|squadPriceMoves|nextUpdateMoves)\(/g)];
+			expect(calls.length).toBeGreaterThan(0);
+			for (const m of calls) expect(args(m.index! + m[0].length - 1)).not.toMatch(/Date\.now\(\)/);
+			expect(src).toMatch(/import \{ clock \} from '\$lib\/now\.svelte'/);
+		});
+	}
 	it('SquadNews leikkaa listat ruudun runkoon lukijalla', () => {
 		expect(read('SquadNews.svelte')).toMatch(/squadPriceMoves\(ids, lists\?\.risers, lists\?\.fallers/);
 	});
 	it('PriceWatch: sarake, statusluokka ja yhteenveto samasta lukijasta', () => {
 		const src = read('PriceWatch.svelte');
-		expect(src).toMatch(/\{@const eta = priceEta\(r\.eta_at, Date\.now\(\)\)\}/);
-		expect(src).toMatch(/_soon'\) && priceEta\(r\.eta_at, Date\.now\(\)\) == null/);
+		expect(src).toMatch(/\{@const eta = priceEta\(r\.eta_at, clock\.now\)\}/);
+		expect(src).toMatch(/_soon'\) && priceEta\(r\.eta_at, clock\.now\) == null/);
 		expect(src).toMatch(/nextUpdateMoves\(\[\.\.\.o\.rising, \.\.\.o\.falling\]/);
 	});
 });

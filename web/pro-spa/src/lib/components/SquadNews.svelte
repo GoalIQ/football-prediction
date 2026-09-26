@@ -14,6 +14,7 @@
 	 */
 	import { fetchPriceWatch, type PriceMove } from '$lib/fantasyTools';
 	import { priceEtaWord, squadPriceMoves } from '$lib/priceEta';
+	import { clock } from '$lib/now.svelte';
 
 	type Row = {
 		id: number;
@@ -48,7 +49,7 @@
 	// 26.9 (PRICE-ETA-ABSOLUUTTINEN-AIKA): vain `_soon` + tuleva `eta_at`, ja
 	// paivasana lukijan paikallisessa ajassa ($lib/priceEta). Ennen "tonight"
 	// johdettiin eta_days-offsetista ja oli vaarin Amerikoissa joka ilta.
-	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, Date.now()));
+	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, clock.now));
 </script>
 
 {#if avail.length || moves.rising.length || moves.falling.length}
