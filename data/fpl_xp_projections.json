@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-26T03:55:23+00:00",
+    "generated_at": "2026-09-26T06:53:53+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -4329,7 +4329,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 25.9,
+      "owned_pct": 25.8,
       "status": "d",
       "news": "Muscular injury - 75% chance of playing",
       "chance_next": 75,
@@ -11222,7 +11222,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.8,
+      "owned_pct": 3.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -43554,153 +43554,6 @@
       "last_season_show": false
     },
     {
-      "id": 158,
-      "web_name": "Gittens",
-      "full_name": "Jamie Bynoe-Gittens",
-      "team": "Chelsea",
-      "team_short": "CHE",
-      "pos": "MID",
-      "xmins": 19.3,
-      "predicted_starts": 16.0,
-      "minutes_confidence": "low",
-      "minutes_source": "price_prior",
-      "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
-      "data_basis": "limited_history",
-      "owned_pct": 0.0,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.8,
-      "team_code": 8,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 8,
-        "team_name": "Chelsea",
-        "minutes": 486,
-        "starts": 5,
-        "goals": 0,
-        "assists": 2,
-        "xg": 0.81,
-        "xa": 0.94,
-        "cs": 1,
-        "points": 25,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.37,
-          "xgi": 0.32
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 4,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 6,
-        "n": 2000,
-        "mean": 1.06,
-        "p_haul": 0.006,
-        "p_blank": 0.897,
-        "p10": 0,
-        "median": 1,
-        "p90": 3,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.16,
-      "p_cameo": 0.378,
-      "p_bench": 0.462,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.05,
-      "xp_per_gw": 1.03,
-      "xp_per_90": 3.86,
-      "xp_horizon_total": 6.19,
-      "gameweeks": [
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "BOU",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.04
-        },
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.98
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.09
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "MUN",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.02
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "SUN",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.01
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "LEE",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.05
-        }
-      ],
-      "minutes_method": "promoted_price_prior",
-      "components": {
-        "appearance": 0.67,
-        "goals": 0.18,
-        "assists": 0.1,
-        "clean_sheet": 0.03,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.04,
-        "yellows": -0.03,
-        "bonus": 0.06
-      },
-      "components_gw": 6,
-      "team_flag": "high_turnover",
-      "last_season_show": true,
-      "last_season_reason": "thin_sample"
-    },
-    {
       "id": 300,
       "web_name": "Walton",
       "full_name": "Christian Walton",
@@ -48823,6 +48676,153 @@
         "bonus": 0.1
       },
       "components_gw": 6,
+      "last_season_show": true,
+      "last_season_reason": "thin_sample"
+    },
+    {
+      "id": 158,
+      "web_name": "Gittens",
+      "full_name": "Jamie Bynoe-Gittens",
+      "team": "Chelsea",
+      "team_short": "CHE",
+      "pos": "MID",
+      "xmins": 14.7,
+      "predicted_starts": 12.0,
+      "minutes_confidence": "low",
+      "minutes_source": "price_prior",
+      "minutes_override_reason": "no Premier League minutes yet, expected role estimated from where the player is priced in his club's squad",
+      "data_basis": "limited_history",
+      "owned_pct": 0.0,
+      "status": "d",
+      "news": "Ankle injury - 75% chance of playing",
+      "chance_next": 75,
+      "yellows": 0,
+      "price": 5.8,
+      "team_code": 8,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 8,
+        "team_name": "Chelsea",
+        "minutes": 486,
+        "starts": 5,
+        "goals": 0,
+        "assists": 2,
+        "xg": 0.81,
+        "xa": 0.94,
+        "cs": 1,
+        "points": 25,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.37,
+          "xgi": 0.32
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 4,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.82,
+        "p_haul": 0.004,
+        "p_blank": 0.92,
+        "p10": 0,
+        "median": 0,
+        "p90": 2,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.12,
+      "p_cameo": 0.297,
+      "p_bench": 0.583,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.04,
+      "xp_per_gw": 0.91,
+      "xp_per_90": 3.86,
+      "xp_horizon_total": 5.43,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "BOU",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.8
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "EVE",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.78
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.94
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.97
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.95
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "LEE",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.99
+        }
+      ],
+      "minutes_method": "promoted_price_prior",
+      "components": {
+        "appearance": 0.52,
+        "goals": 0.14,
+        "assists": 0.08,
+        "clean_sheet": 0.02,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.03,
+        "yellows": -0.02,
+        "bonus": 0.04
+      },
+      "components_gw": 6,
+      "team_flag": "high_turnover",
       "last_season_show": true,
       "last_season_reason": "thin_sample"
     },
