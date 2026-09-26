@@ -840,6 +840,9 @@ from api.fantasy_edge import router as _fantasy_edge_router  # noqa: E402
 # koodia). Loytyi tests/test_scripts_no_undefined_globals.py:lla.
 from api.fantasy_edge import _http  # noqa: E402
 app.include_router(_fantasy_edge_router)
+# 26.9.2026: kumppanisyote (FPL Demon), avaimella, sallittujen kenttien lista.
+from api.partner_feed import router as _partner_feed_router  # noqa: E402
+app.include_router(_partner_feed_router)
 
 
 # ---------------------------------------------------------------------------

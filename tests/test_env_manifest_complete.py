@@ -44,6 +44,9 @@ VAPAAEHTOISET = {
     "RENDER": "Renderin itsensa asettama (RENDER=true); vain kaynnistyksen "
               "optimilammityksen ehto, puuttuva = ei lammitysta (testit, lokaali)",
     "PREMIUM_ENFORCE_DEBUG": "vain paikalliseen vianetsintaan",
+    "PARTNER_XP_KEYS": "kumppanisyote /api/partner/xp (26.9, FPL Demon). "
+                       "Puuttuva = reitti pois paalta (403), mikaan muu ei "
+                       "riipu siita",
     "FREE_PREMIUM_UNTIL": "pelkka katkaisin joka voi vain SULKEA ilmaisikkunan "
                           "(api.premium: off/none/0/false); paiva tulee "
                           "src.free_windowista. Tyhja = koodin oletus, mika "
