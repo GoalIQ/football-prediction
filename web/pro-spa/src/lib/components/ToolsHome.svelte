@@ -47,6 +47,8 @@
 	import CaptainRanker from './CaptainRanker.svelte';
 	import FixtureSwing from './FixtureSwing.svelte';
 	import XpTable from './XpTable.svelte';
+	import PartnerLink from './PartnerLink.svelte';
+	import { FPL_DEMON } from '$lib/partners';
 	import CleanSheets from './CleanSheets.svelte';
 	import TeamsCs from './TeamsCs.svelte';
 	import Value from './Value.svelte';
@@ -532,6 +534,9 @@
 					{/if}
 					{#if show('player-xp')}
 						<div class="tool-card" id="pc-xp"><XpTable data={xp} /></div>
+						<!-- 26.9 kumppanilinkki (FPL Demon): vain maksajan listan alla,
+						     ei lukitussa esikatselussa (ks. $lib/partners). -->
+						<PartnerLink partner={FPL_DEMON} surface="player_xp" />
 					{/if}
 				{/if}
 			{:else if show('captain-ranker') || show('fixture-swing') || show('player-xp')}
