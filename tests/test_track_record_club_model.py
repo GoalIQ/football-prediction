@@ -123,3 +123,15 @@ def test_trust_lauseella_yksi_lukija():
     kutsut = [n for n in ast.walk(puu) if isinstance(n, ast.Call)
               and getattr(n.func, "id", None) == "acc_trust_sentence"]
     assert len(kutsut) == 2, "etusivu ja /predictions lukevat saman funktion"
+
+
+def test_build_context_valittaa_seuramallin_lohkon():
+    # Kutsupaikka, ei vain funktio (mutaatio 26.9: acc_club = None jai henkiin).
+    fpl, _ = b.load_data()
+    agg = acc.compute_aggregate(acc.load_log())
+    c = b.build_context(fpl, agg)
+    assert c["acc_club"] is not None
+    assert c["acc_club"]["n"] == agg["by_model"]["club"]["n"]
+    # Vanha skeema ilman by_modelia -> None (fallback), ei kaadu.
+    vanha = {k: v for k, v in agg.items() if k != "by_model"}
+    assert b.build_context(fpl, vanha)["acc_club"] is None
