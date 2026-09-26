@@ -136,7 +136,7 @@ describe('raceLineGeometry: nolla aina asteikolla, mikaan piste ei leikkaudu', (
 		})!;
 		const g = raceLineGeometry(v, W, H);
 		expect(g.segments.map((s) => s.dashed)).toEqual([true]);
-		expect(pointTooltip(v.points[1])).toBe('GW2: you 119, model 61 (+58). Running total +114 (provisional)');
+		expect(pointTooltip(v.points[1])).toBe('GW2: you 119, model 61 (+58). Running difference +114 (provisional)');
 	});
 
 	it('vanha payload ilman state-kenttaa: provisional ratkaisee', () => {
@@ -150,9 +150,9 @@ describe('raceLineGeometry: nolla aina asteikolla, mikaan piste ei leikkaudu', (
 
 	it('vihje: luvut samasta rivista, todentamaton hitti merkitaan', () => {
 		const v = raceLineView(LIVE)!;
-		expect(pointTooltip(v.points[3])).toBe('GW5: you 63, model 43 (+20). Running total +161');
+		expect(pointTooltip(v.points[3])).toBe('GW5: you 63, model 43 (+20). Running difference +161');
 		expect(pointTooltip({ ...v.points[0], costVerified: false })).toBe(
-			"GW1: you 97, model 41 (+56). Running total +56 (model's hit not verified)"
+			"GW1: you 97, model 41 (+56). Running difference +56 (model's points before hits)"
 		);
 	});
 

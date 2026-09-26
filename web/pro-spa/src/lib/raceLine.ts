@@ -16,6 +16,7 @@
  *  - nolla on aina asteikolla, koska nollaviiva on "tasoissa mallin kanssa".
  */
 import type { ModelRaceResponse } from './api';
+import { MODEL_SERIES_COPY } from './modelSeriesCopy';
 
 export type RaceState = 'final' | 'in_progress' | 'awaiting_check' | 'unknown';
 
@@ -83,15 +84,16 @@ export function signedPts(n: number): string {
 }
 
 export function pointTooltip(p: RacePoint): string {
-	const base = `GW${p.gw}: you ${p.you}, model ${p.model} (${signedPts(p.diff)}). Running total ${signedPts(p.cum)}`;
+	const base = `GW${p.gw}: you ${p.you}, model ${p.model} (${signedPts(p.diff)}). Running difference ${signedPts(p.cum)}`;
 	const tags: string[] = [];
 	if (p.state !== 'final') tags.push('provisional');
-	if (!p.costVerified) tags.push("model's hit not verified");
+	// Julkaisutarkistaja B2: sama sanamuoto kuin kortin rivimerkki (yksi lahde).
+	if (!p.costVerified) tags.push(`model's points ${MODEL_SERIES_COPY.costUnverifiedBadge}`);
 	return tags.length ? `${base} (${tags.join(', ')})` : base;
 }
 
 export const RACE_LINE_CAPTION =
-	'Running difference after each gameweek. Above the line you are ahead of the model, below it the model is ahead.';
+	"Running difference after each gameweek. Above zero you're ahead of the model, below zero the model is ahead.";
 export const RACE_LINE_GAP = "A break in the line is a gameweek that isn't counted in the race.";
 export const RACE_LINE_ARIA = "Running difference between your points and the model's, after each gameweek";
 

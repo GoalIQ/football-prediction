@@ -278,7 +278,7 @@
 			     ole kisassa (ei interpoloida). -->
 			{#if line && lineGeom}
 				<div class="line-chart">
-					<svg viewBox="0 0 {LW} {LH}" role="img" aria-label={RACE_LINE_ARIA}>
+					<svg viewBox="0 0 {LW} {LH}" role="group" aria-label={RACE_LINE_ARIA}>
 						<line
 							class="zero"
 							x1={lineGeom.plotLeft}
