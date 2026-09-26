@@ -72,11 +72,21 @@ def test_tuntematon_koodi_ei_putoa_hiljaa_kumpaankaan():
     assert bm["unclassified_n"] == 1
 
 
-def test_spa_alaviite_ei_vaita_blended_lukua_samaksi_malliksi():
-    # Julkaisutarkistaja 26.9 (versio B): lause rajataan seuramalliin eika siina
-    # ole lukua ennen kuin /predictions nayttaa seuramallin summan samasta
-    # lahteesta. Blended-luku (all_time) ei saa palata tahan lauseeseen.
+def test_spa_alaviite_lukee_seuramallin_lohkoa():
+    # 26.9 versio A (PROVENANCE-LUKU-SIVULLE): luku seuramallin lohkosta ja
+    # samassa muodossa kuin /predictions-sivun summarivi. Blended-luku
+    # (all_time) ei saa palata lauseeseen joka vaittaa "the same match model".
     src = (ROOT / "web/pro-spa/src/lib/components/Provenance.svelte").read_text(encoding="utf-8")
-    assert "pre-match-logged club predictions" in src
-    assert "all_time" not in src and "fetchAccuracy" not in src
+    koodi = src.split("</script>")[0]
+    assert "by_model?.club" in koodi
+    assert "fmtPct(" in koodi
+    assert "all_time" not in src
+    assert "pre-match-logged club" in src and "graded club matches" in src
     assert "https://goaliq.app/predictions#record" in src
+
+
+def test_fmt_pct_decimals_nolla():
+    from src.models.fmt import fmt_pct
+    assert fmt_pct(50, 0) == "50%"
+    assert fmt_pct(51.0) == "51%"
+    assert fmt_pct(48.1) == "48.1%"

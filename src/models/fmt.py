@@ -9,4 +9,9 @@ from __future__ import annotations
 
 def fmt_pct(x: float, decimals: int = 1) -> str:
     """51.0 -> "51%", 38.6 -> "38.6%". Ei pankkiiripyoristysta kokonaisluvuksi."""
-    return f"{x:.{decimals}f}".rstrip("0").rstrip(".") + "%"
+    s = f"{x:.{decimals}f}"
+    # 26.9: rstrip("0") ilman desimaalipistetta sei kokonaisluvun nollat
+    # (50 -> "5%" kun decimals=0). Vain desimaaliosan nollat pois.
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
+    return s + "%"
