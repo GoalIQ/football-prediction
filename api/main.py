@@ -979,8 +979,8 @@ def _optimum_warm_enabled() -> bool:
 def _warm_free_optimum() -> None:
     """Vapaa optimi valimuistiin ennen ensimmaista pyyntoa.
 
-    🔴 MIKSI (26.9.2026, Villen havainto "miksi squadin loading kestaa taas
-    ... this weekissa"): rate-team, model-squad ja fit checker laskivat
+    🔴 MIKSI (26.9.2026, Villen havainto "miksi squadin loading kestaa taas"
+    paatoskortin tabilla): rate-team, model-squad ja fit checker laskivat
     vapaan optimin ensimmaisen pyynnon sisalla jokaisen deployn jalkeen
     (tuotannossa 4,9 s, lammin 0,12 s), ja deployja on 49-90 vuorokaudessa.
     Rekisteroity ENNEN mallien lammitysta: niiden fit-saikeet kilpailisivat

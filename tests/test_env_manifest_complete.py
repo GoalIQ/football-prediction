@@ -41,6 +41,8 @@ VAPAAEHTOISET = {
     "FPL_MODEL_ENTRY_ID": "oletus on koodissa; vaara arvo nakyisi heti "
                           "mallin omalla sivulla",
     "RENDER_GIT_COMMIT": "Renderin itsensa asettama",
+    "RENDER": "Renderin itsensa asettama (RENDER=true); vain kaynnistyksen "
+              "optimilammityksen ehto, puuttuva = ei lammitysta (testit, lokaali)",
     "PREMIUM_ENFORCE_DEBUG": "vain paikalliseen vianetsintaan",
     "FREE_PREMIUM_UNTIL": "pelkka katkaisin joka voi vain SULKEA ilmaisikkunan "
                           "(api.premium: off/none/0/false); paiva tulee "

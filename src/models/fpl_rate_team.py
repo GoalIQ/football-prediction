@@ -1041,8 +1041,8 @@ def free_optimum_key(xp_data: dict) -> str:
 def warm_free_optimum() -> dict:
     """Laske vapaa optimi valimuistiin ennen ensimmaista pyyntoa.
 
-    🔴 MIKSI (26.9.2026, Villen havainto "miksi squadin loading kestaa taas
-    ... this weekissa"): valimuisti on prosessin muistissa ja Render
+    🔴 MIKSI (26.9.2026, Villen havainto "miksi squadin loading kestaa taas"
+    paatoskortin tabilla): valimuisti on prosessin muistissa ja Render
     kaynnistaa prosessin uudelleen jokaisella mainin pushilla (20.-25.9:
     49-90 committia vuorokaudessa, suurin osa datan paivityksia). Jokaisen
     deployn jalkeen ensimmainen rate-team / model-squad / fit checker -kutsu
