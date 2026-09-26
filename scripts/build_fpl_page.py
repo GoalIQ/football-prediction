@@ -1012,7 +1012,7 @@ def call_margin_html(doc: dict | None) -> str:
         '<div class="bycomp" id="margin" aria-label="When the model does not name a favourite">'
         '<div class="bycomp-title">When the model does not name a favourite</div>'
         f'<p class="bycomp-note">The track record above always names the more likely '
-        f'side. The match pages and the apps do not: when the gap between the home and '
+        f'side. For club matches the match pages and the apps do not: when the gap between the home and '
         f'away win chances is under <strong>{m} percentage points</strong>, they say '
         f'"too close to call". The line comes from this log, no bookmaker is involved. '
         f'Under {m} points there have been {doc["n_below_margin"]} graded matches, '
