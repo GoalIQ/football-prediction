@@ -43,6 +43,7 @@
 	// prosenttiilina omaa positiota vasten. Ilmaista tietoa (Villen linja:
 	// raakaluvut ilmaiseksi, malli maksaa), joten ei gatea eika teaseria.
 	import { fetchPlayerStatsShared, type PlayerStatsResponse } from '$lib/fantasyTools';
+	import GoalsXgChart from './GoalsXgChart.svelte';
 	import {
 		percentileOf,
 		ordinal,
@@ -946,6 +947,14 @@
 									<tr>
 										<th>GW</th>
 										<th class="num">Points</th>
+										<!-- MP-17: vertailuryhma backendilta (pos_avg_pts), ei
+										     laskettu tassa. Tyhja = kierros kesken tai ei dataa. -->
+										<th class="num"
+											><abbr
+												title="Average points of {positionWord(statsRow?.pos)} who played that gameweek"
+												>Pos avg</abbr
+											></th
+										>
 										<th class="num">Expected</th>
 										<th class="num">Diff</th>
 									</tr>
@@ -955,6 +964,7 @@
 										<tr>
 											<td>GW{g.gw}</td>
 											<td class="num">{g.pts ?? ''}</td>
+											<td class="num">{g.pos_avg_pts != null ? g.pos_avg_pts.toFixed(1) : ''}</td>
 											<td class="num">{g.xp_frozen != null ? g.xp_frozen.toFixed(1) : ''}</td>
 											<td class="num"
 												>{g.pts != null && g.xp_frozen != null
@@ -967,11 +977,18 @@
 							</table>
 						</div>
 						<p class="muted hintline">
-							Expected is the model's projection frozen before that deadline.
+							Pos avg is the average FPL points of {positionWord(statsRow?.pos)} who played
+							at least a minute that gameweek, finished gameweeks only. Expected is the
+							model's projection frozen before that deadline.
 						</p>
 					{/if}
 				</section>
 			{/if}
+
+			<!-- MP-17 (27.9): maalit vs xG kumulatiivisena. FREE (FPL:n luvut).
+			     Komponentti ei piirra mitaan jos pelaaja ei ole pelannut tai
+			     API ei laheta kenttia ($lib/goalsXg palauttaa null). -->
+			<GoalsXgChart gws={statsRow?.goaliq.gws} />
 
 			{#if premium && !excluded}
 			{@const gws = player.gameweeks ?? []}
