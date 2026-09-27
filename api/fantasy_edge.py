@@ -478,6 +478,8 @@ def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]
             top = max(kelpaa, key=lambda r: r[f"{chip}_ev"])
             best[chip] = {"gw": top["gw"], "ev": top[f"{chip}_ev"],
                           "basis": top["basis"]}
+            if chip == "tc" and top.get("tc_player"):
+                best[chip]["player"] = top["tc_player"]
             if top.get(f'{chip}_window_gws') is not None:
                 best[chip]['window_gws'] = top[f'{chip}_window_gws']
         arvio = [w for w in karkeat if w.get(f"{chip}_ev") is not None
@@ -488,6 +490,25 @@ def _pick_best(windows: list[dict], state: dict[str, dict]) -> tuple[dict, dict]
                 "gw": top["gw"], "ev": top[f"{chip}_ev"],
                 "basis": top["basis"]}
     return best, best_estimate
+
+
+def _tc_candidates(squad: list[dict], covered: list[int],
+                   state: dict[str, dict]) -> list[dict]:
+    """TC-TARGET-PLAYER (27.9): rungon pelaajat ja kunkin paras Triple
+    Captain -kierros horisontissa. Vain kierrokset joilla TC:n voi viela
+    pelata (fpl_chips.gw_allowed), joten valitsin ei ehdota pelattua chippia.
+    TC lisaa kapteenille yhden kertoimen, joten sen arvo = pelaajan GW-xP."""
+    gws = [g for g in covered if fpl_chips.gw_allowed(state, "tc", g)]
+    out = []
+    for p in squad:
+        by_gw = [{"gw": g, "xp": round(_gw_xp(p, g), 2)} for g in gws]
+        if not by_gw:
+            continue
+        top = max(by_gw, key=lambda r: r["xp"])
+        out.append({**_mini(p), "by_gw": by_gw,
+                    "best_gw": top["gw"], "best_xp": top["xp"]})
+    out.sort(key=lambda r: (-r["best_xp"], r["web_name"]))
+    return out
 
 
 def _budget_notes(budget_tenths: int, budget_source: str,
@@ -589,7 +610,12 @@ def fantasy_chip_ev(
                 xi_total = sum(_gw_xp(p, g) for p in xi_g)
                 bench = [p for p in squad if p["id"] not in xi_ids]
                 bb = sum(_gw_xp(p, g) for p in bench)
-                tc = max((_gw_xp(p, g) for p in xi_g), default=0.0)
+                # TC-TARGET-PLAYER (27.9): TC olettaa XI:n PARHAAN kapteenin,
+                # ei kayttajan nykyista. Rivi nimeaa kenen luvusta se syntyy,
+                # muuten kapteenin vaihto kentalla ei nay mitenkaan (Villen
+                # havainto 2.9: Fernandes -> Haaland, ehdotus pysyi samana).
+                tc_p = max(xi_g, key=lambda p: _gw_xp(p, g), default=None)
+                tc = _gw_xp(tc_p, g) if tc_p is not None else 0.0
                 fh_xi = _greedy_budget_xi(pool, key=lambda p: _gw_xp(p, g),
                                           budget_tenths=budget_tenths)
                 # Sama peruste kuin `wc`:lla: nolla ei ole sama kuin "oma XI voitti".
@@ -620,6 +646,8 @@ def fantasy_chip_ev(
                        "wc_ev_per_gw": round(wc / len(gws_left), 2) if gws_left else None,
                        "bb_ev": round(bb, 2),
                        "tc_ev": round(tc, 2), "fh_ev": round(fh, 2),
+                       "tc_player": ({"id": tc_p["id"], "web_name": tc_p["web_name"]}
+                                     if tc_p is not None else None),
                        "basis": "player_xp"}
                 windows.append(row)
                 per_chip["wc"].append(wc)
@@ -648,6 +676,8 @@ def fantasy_chip_ev(
                     "wc_window_gws": None,
                     "bb_ev": round(base["bb"] * q, 2),
                     "tc_ev": round(base["tc"] * q, 2),
+                    # Skaalattu keskiarvo, ei kenenkaan pelaajan luku.
+                    "tc_player": None,
                     "fh_ev": round(base["fh"] * q, 2),
                     "basis": "team_approx_cs_fdr",
                 })
@@ -660,6 +690,7 @@ def fantasy_chip_ev(
             # Paras poimitaan nyt VAIN pelaajatason riveilta; karkea arvio
             # raportoidaan erikseen omalla nimellaan.
             best, best_estimate = _pick_best(windows, chip_state)
+            tc_candidates = _tc_candidates(squad, covered, chip_state)
             payload = {
                 "meta": {
                     "entry": entry, "mode": mode,
@@ -712,6 +743,11 @@ def fantasy_chip_ev(
                           "current_gw": current_gw,
                           "state": chip_state},
                 "budget": {"tenths": budget_tenths, "source": budget_source},
+                # TC-TARGET-PLAYER (27.9): pelaajavalitsin. Rungon jokaiselle
+                # pelaajalle paras TC-kierros horisontissa (vain kierrokset
+                # joilla TC:n voi pelata). Sama luku kuin rivin tc_ev silloin
+                # kun pelaaja on kierroksen paras kapteeni.
+                "tc_candidates": tc_candidates,
             }
             _cache_put(cache_key, payload)
     except RateTeamError as e:
@@ -726,6 +762,10 @@ def fantasy_chip_ev(
         # toisella nimella, ja pelkka `best`:n tyhjennys jattaisi sen nakyviin.
         payload["best"] = {}
         payload["best_estimate"] = {}
+        # TC-TARGET-PLAYER: kapteenin nimi on mallin valinta (premium), ei
+        # ilmaisesikatselun osa. Luku jaa, nimi ja valitsin eivat.
+        payload["windows"] = [{**w, "tc_player": None} for w in payload["windows"]]
+        payload["tc_candidates"] = []
         # 3.9 PORTTI: `best` on maskattu, joten sita kuvaava nootti puhuu
         # asiasta jota ilmaiskayttaja ei nae. Pudotetaan se, muut jaavat.
         payload["meta"] = {**payload["meta"], "notes": [
