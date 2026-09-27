@@ -1850,6 +1850,41 @@ BUILDERS = {"cs": card_cs, "defence": card_defence, "stats": card_stats,
 GW_CAPABLE = {"cs"}
 
 
+def write_sidecar(png: Path, spec: dict, argv: list[str]) -> Path:
+    """POSTATTU-KORTTI-EI-OLE-TALLESSA (27.9): jokaisen kortin viereen
+    `<kortti>.png.json`: sha256, argumentit, tuotantohetki ja kortin rivit.
+
+    Mitattu 12.9: outputs/ on gitignoressa ja jokainen ajo kirjoittaa saman
+    tiedostonimen yli, joten 9.9 postattua GW4-korttia ei ollut enaa missaan.
+    Kortti on julkista tekstia: postauksen jalkeen sen on oltava todennettavissa
+    (mita tasmalleen postattiin ja mista datasta). Sivutiedosto kulkee kuvan
+    mukana arkistoon (goaliq-app scripts/archive_posted_card.py).
+    """
+    import datetime as _dt
+    import hashlib
+    import json as _json
+
+    digest = hashlib.sha256(png.read_bytes()).hexdigest()
+    rows = spec.get("rows")
+    meta = {
+        "file": png.name,
+        "sha256": digest,
+        "card": argv[0] if argv else None,
+        "argv": argv,
+        "rendered_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "title": spec.get("title"),
+        "subtitle": spec.get("subtitle"),
+        "gw": spec.get("gw"),
+        "source_generated_at": spec.get("generated_at") or spec.get("source_generated_at"),
+        "rows": rows if isinstance(rows, list) else None,
+        "n_fixtures": len(spec["fixtures"]) if isinstance(spec.get("fixtures"), list) else None,
+    }
+    side = png.with_name(png.name + ".json")
+    side.write_text(_json.dumps(meta, ensure_ascii=False, indent=1, default=str) + "\n",
+                    encoding="utf-8")
+    return side
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="GoalIQ share card generator")
     ap.add_argument("card", choices=sorted(BUILDERS))
@@ -1900,6 +1935,7 @@ def main() -> int:
             print(f"huom: reply-kortti nayttaa korkeintaan {REPLY_MAX_ROWS} rivia")
         pth = REPLY_RENDERERS[spec["kind"]](spec, out)
         print(f"{spec['title']} -> {pth}")
+        print(f"sivutiedosto -> {write_sidecar(Path(pth), spec, sys.argv[1:])}")
         return 0
     if spec.get("kind") == "gw_outlook":
         if a.style == "hero":
@@ -1911,9 +1947,11 @@ def main() -> int:
             pth = render_gw_outlook(spec, out)
         print("GW%s outlook (%d ottelua) -> %s"
               % (spec["gw"], len(spec["fixtures"]), pth))
+        print(f"sivutiedosto -> {write_sidecar(Path(pth), spec, sys.argv[1:])}")
         return 0
     p = render(spec, out)
     print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
+    print(f"sivutiedosto -> {write_sidecar(Path(p), spec, sys.argv[1:])}")
     return 0
 
 
