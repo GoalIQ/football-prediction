@@ -22,3 +22,25 @@ def step_run_text(step: dict) -> str:
     env = (step or {}).get("env") or {}
     polut = " ".join(str(env.get(k) or "") for k in ("CI_PUSH_DATA", "CI_PUSH_PAGES")).split()
     return run + "\ngit add " + " ".join(polut) + "\ngit push origin HEAD:main\n"
+
+
+def workflow_text_expanded(path) -> str:
+    """Koko workflow-tiedoston teksti + skriptiaskelten laajennetut rivit.
+
+    Portit jotka lukevat raakatekstia (`test_page_deploy_discipline`) eivat
+    muuten nae ci_push_rebuild.sh:n git add -polkuja lainkaan.
+    """
+    import yaml
+    from pathlib import Path
+    teksti = Path(path).read_text(encoding="utf-8", errors="replace")
+    try:
+        doc = yaml.safe_load(teksti) or {}
+    except yaml.YAMLError:
+        return teksti
+    lisat = []
+    for job in (doc.get("jobs") or {}).values():
+        for step in (job or {}).get("steps") or []:
+            run = (step or {}).get("run")
+            if isinstance(run, str) and SKRIPTI in run:
+                lisat.append(step_run_text(step)[len(run):])
+    return teksti + "".join(lisat)
