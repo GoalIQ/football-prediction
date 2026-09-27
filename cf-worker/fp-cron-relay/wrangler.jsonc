@@ -1,0 +1,29 @@
+{
+	// CF-CRON-RELAY (AUTO-S14, 12.9.2026). Ks. src/index.js ja README.md.
+	//
+	// 🔴 CRON ON SAMA KUIN RELAYN OMA SLOTTI. `fp-dispatch-relay.yml` julistaa
+	// `cron: "50 * * * *"`, ja sen kommentti perustelee minuutin: ":50 ->
+	// viimeisen 60 min ikkuna kattaa fp-slotit :00, :15, :17, :20, :40, :45."
+	// Jos tama luku eriytyy siita, worker laukaisee relayn hetkella jolta
+	// relayn lookback ei kata samoja slotteja. Testi
+	// `tests/test_cf_cron_relay.py` kaataa silloin.
+	//
+	// Kellonaikaa EI siirreta (AUTO-S14-rivin toimenpide sanoo sen suoraan):
+	// korjaus on LAUKAISIN, ei aikataulu.
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "fp-cron-relay",
+	"main": "src/index.js",
+	"compatibility_date": "2026-09-12",
+	"triggers": {
+		"crons": ["50 * * * *"]
+	},
+	// Tarkkailtavuus paalle: ilman tata `console.error` ei jaa mihinkaan
+	// muualle kuin `wrangler tail`iin, joka nakyy vain kun joku katsoo.
+	"observability": {
+		"enabled": true
+	},
+	// EI vars-lohkoa salaisuudelle. GITHUB_DISPATCH_TOKEN_FP asetetaan
+	// `wrangler secret put`illa, jotta se ei ole missaan tiedostossa.
+	// Testi vartioi ettei tahan ilmesty token-kenttaa.
+	"workers_dev": false
+}
