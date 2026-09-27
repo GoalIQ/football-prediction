@@ -318,7 +318,10 @@ _REASON_SISAINEN = (
     (r"\bid \d+", "viittaus toisen rivin id:hen"),
     (r"p_start|xg_mult|until_available|review_by", "sarakkeen nimi"),
     (r"\bsums? to\b", "sisainen laskelma"),
-    (r"\b(?:the|this|that) \w+ row\b|\brow\b", "viittaus CSV-riviin"),
+    (r"\b(?:the|this|that) \w+ row\b|(?<!\bin a )\brow\b", "viittaus CSV-riviin"),
+    # Tarkistaja 27.9 k2: Dubravkan rivi paasi lapi naista kahdesta.
+    (r"\bprior\b", "sisainen termi (minuuttipriori)"),
+    (r"\bsame (?:reports|sources|reasoning)\b", "viittaus lahteeseen jota lukija ei nae"),
 )
 
 
@@ -343,6 +346,14 @@ def test_reason_gate_negative_control():
     assert _reason_viat("Liverpool's backup keeper. Alisson played every minute "
                         "of GW1-5 in FPL's match data, so Mamardashvili's start "
                         "chance is set low") == []
+    dubravka_vanha = ("Signed as experienced deputy to Kinsky at Tottenham (same reports, "
+                      "6/2026). Last season 3150 min / 35 starts was at Newcastle as first "
+                      "choice, so the minutes prior reads him as a starter at a club where he "
+                      "is the backup. Without this he outranked the actual number one")
+    assert set(_reason_viat(dubravka_vanha)) >= {"sisainen termi (minuuttipriori)",
+                                                 "viittaus lahteeseen jota lukija ei nae"}
+    # "in a row" on tavallista englantia, ei CSV-viittaus.
+    assert _reason_viat("Started five games in a row") == []
 
 # --- until_available: rivi purkautuu kun pelaaja palaa (Villen kysymys 16.8)
 
