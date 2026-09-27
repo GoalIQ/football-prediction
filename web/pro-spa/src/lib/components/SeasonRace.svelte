@@ -237,7 +237,7 @@
 {#if data && !failed}
 	<section class="race">
 		<h3>Season race: your squad vs the model's</h3>
-		<p class="sub">Every point your team scored, gameweek by gameweek.</p>
+		<p class="sub">Your points against the model's, gameweek by gameweek.</p>
 
 		{#if !data.meta.available}
 			<p class="muted">{data.meta.note}</p>
