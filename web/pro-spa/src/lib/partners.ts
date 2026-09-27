@@ -10,7 +10,8 @@
  *  on ostohetki, ja linkki tarjoaisi siina ilmaisen vaihtoehdon joka pyorii
  *  meidan luvuillamme (cos-reports/cc-reports/2026-09-26-fpldemon-kumppanuus.md).
  *
- *  URL vaihdetaan tahan kun Demon lahettaa haluamansa linkin.
+ *  URL on Demonin itse lahettama (X DM 27.9 klo 6.46), sellaisenaan: hanen
+ *  analytiikkansa lukee HANEN tagejaan, joten emme keksi omia.
  *
  *  PAATTYMINEN (julkaisutarkistaja B4, saanto 6a): lause "run on these
  *  projections" on tosi vain kumppanuuden ajan. `activeUntil` sammuttaa linkin
@@ -34,7 +35,7 @@ export function partnerActive(p: Partner, now: number = Date.now()): boolean {
 export const FPL_DEMON: Partner = {
 	id: 'fpldemon',
 	name: 'FPL Demon',
-	url: 'https://fpldemon.com/fpl/planner?utm_source=goaliq&utm_medium=partner&ref=goaliq',
+	url: 'https://fpldemon.com/fpl/planner?utm_source=goaliq&utm_medium=social&utm_campaign=goaliq',
 	// Kokeilu GW10:n loppuun; katsaus ti 10.11. (rutiini trig_015PLmRamWe8S1J9ZBJMvtGP).
 	activeUntil: '2026-11-10'
 };

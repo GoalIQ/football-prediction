@@ -24,12 +24,14 @@ function walk(dir: string): string[] {
 }
 
 describe('kumppanilinkki', () => {
-	it('URL: https, kumppanin domain ja meidan seurantatagi', () => {
+	it('URL: https, planneri ja Demonin itse antamat seurantatagit (DM 27.9)', () => {
 		const u = new URL(FPL_DEMON.url);
 		expect(u.protocol).toBe('https:');
 		expect(u.hostname).toBe('fpldemon.com');
+		expect(u.pathname).toBe('/fpl/planner');
 		expect(u.searchParams.get('utm_source')).toBe('goaliq');
-		expect(u.searchParams.get('ref')).toBe('goaliq');
+		expect(u.searchParams.get('utm_medium')).toBe('social');
+		expect(u.searchParams.get('utm_campaign')).toBe('goaliq');
 	});
 
 	it('kumppanin domain vain partners.ts:ssa (ei kasin kirjoitettuja URL:eja)', () => {
