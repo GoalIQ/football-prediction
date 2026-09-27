@@ -22,12 +22,16 @@ ei kaada ajoa (continue-on-error) ja sen kaatuminen nakyy Step healthissa.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
 import yaml
 
 from scripts import render_deploy_after_freeze as rd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workflow_step_text import step_run_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 WF = ROOT / ".github" / "workflows" / "fpl-data-refresh.yml"
@@ -131,7 +135,8 @@ def _index(steps, pred):
 def test_workflow_ajaa_askeleen_pushin_jalkeen():
     steps = _steps()
     i_freeze = _index(steps, lambda s: s.get("id") == "freeze_squad")
-    i_push = _index(steps, lambda s: "git push origin HEAD:main" in (s.get("run") or ""))
+    # 27.9: push-askel kutsuu ci_push_rebuild.sh:ta; jaettu lukija laajentaa sen.
+    i_push = _index(steps, lambda s: "git push origin HEAD:main" in step_run_text(s))
     i_rd = _index(steps, lambda s: "scripts.render_deploy_after_freeze" in (s.get("run") or ""))
     assert i_freeze >= 0 and i_push >= 0, "freeze- tai push-askel puuttuu"
     assert i_rd > i_push > i_freeze, (

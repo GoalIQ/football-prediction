@@ -729,10 +729,14 @@ def test_refresh_committaa_freeze_sarjan():
     """Oma tiedosto ilman git add -rivia eläisi vain runnerin levylla ja
     graderi gradaisi samat kierrokset joka ajossa (muisti:
     gitignored-fix-silent-regression)."""
-    wf = REFRESH_WF.read_text(encoding="utf-8", errors="replace")
+    # 27.9: polut ovat ci_push_rebuild.sh:n env-listoissa -> jaettu lukija.
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from workflow_step_text import workflow_text_expanded
+    wf = workflow_text_expanded(REFRESH_WF)
     addit = "\n".join(r for r in wf.splitlines() if "git add" in r)
-    assert "data/model_squad_frozen_gw_scores.json" in addit
-    gi = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "data/model_squad_frozen_gw_scores.json" in addit.split()
+    gi =(ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "!/data/model_squad_frozen_gw_scores.json" in gi
 
 
