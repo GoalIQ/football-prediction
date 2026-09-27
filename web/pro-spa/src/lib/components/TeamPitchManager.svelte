@@ -24,12 +24,13 @@
 		hitLabel,
 		type ModelCaptain
 	} from '$lib/pitchLineup';
-	import { whatIfDefaultCaptain, whatIfInitialCaptain } from '$lib/whatIfStart';
+	import { modelBaselineXp, whatIfInitialCaptain } from '$lib/whatIfStart';
 	import type { XpHorizon } from '$lib/xpHorizon';
 	import TeamKit from './TeamKit.svelte';
 
 	let {
 		players,
+		modelPlayers,
 		premium = false,
 		defaultGw = null,
 		gwInProgress = false,
@@ -43,6 +44,11 @@
 		belowPitch
 	}: {
 		players: RatedPlayer[];
+		/** WHATIF-ALKUTILA (julkaisutarkistaja 27.9, B2): runko jonka malli
+		 *  arvioi (`data.team.players`). `players` on siirtojen jalkeinen
+		 *  runko, jonka tulevalla pelaajalla on lahtevan `in_xi`; vertailu
+		 *  "vs the model's XI" luetaan tasta. Pakollinen. */
+		modelPlayers: RatedPlayer[];
 		premium?: boolean;
 		/** #123: aloitus-GW (rate-teamin meta.gw eli seuraava deadline). */
 		defaultGw?: number | null;
@@ -310,14 +316,11 @@
 	);
 	// #122: lataus-tilan (importattu XI + kapteeni) xP samalle GW:lle →
 	// user-editin ero näytetään eksplisiittisenä labelina, ei äänettömänä.
-	// Vertailukohta = mallin XI + mallin kapteeni (sama kuin alkutila ilman
-	// omaa tallennettua kapteenia), ei viime kierroksen FPL-kapteeni.
-	const baselineXp = $derived.by(() => {
-		const base = players.filter((p) => p.in_xi);
-		const defCap = whatIfDefaultCaptain(players, modelCaptain, defaultGw ?? null);
-		const cap = players.find((p) => p.id === defCap);
-		return base.reduce((s, p) => s + xpOf(p), 0) + (cap ? xpOf(cap) : 0);
-	});
+	// Vertailukohta = mallin XI + mallin kapteeni KENTAN kierrokselle,
+	// arvioidusta rungosta (B1 + B2, julkaisutarkistaja 27.9).
+	const baselineXp = $derived(
+		modelBaselineXp(modelPlayers, modelCaptain, selGw ?? defaultGw ?? null, xpOf)
+	);
 	const editDelta = $derived(gwXp - baselineXp);
 
 	/* LUCK-PITCH (1.9): paattyneen kierroksen luvut backendin omasta lohkosta.

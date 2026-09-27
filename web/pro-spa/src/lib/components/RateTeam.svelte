@@ -1406,6 +1406,7 @@
 	/>
 	<TeamPitchManager
 		players={plannedPlayers}
+		modelPlayers={data.team.players}
 		{premium}
 		belowPitch={ratingTiles}
 		defaultGw={data.meta.gw}
@@ -1704,6 +1705,7 @@
 		</div>
 		<TeamPitchManager
 			players={dataB.team.players}
+			modelPlayers={dataB.team.players}
 			{premium}
 			defaultGw={dataB.meta.gw}
 			gwInProgress={dataB.meta.gw_in_progress === true}
