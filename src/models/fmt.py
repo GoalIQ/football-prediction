@@ -21,3 +21,16 @@ def fmt_pct(x: float, decimals: int = 1) -> str:
     if "." in s:
         s = s.rstrip("0").rstrip(".")
     return s + "%"
+
+
+def fmt_fixed(x: float, decimals: int = 0) -> str:
+    """Kiinteat desimaalit kuten JS:n toFixed: 46.5 -> "47", 44.25 -> "44.3" (1).
+
+    27.9 (julkaisutarkistaja, PRO-JOUKKUENAKYMA): /fpl muotoili CS%:n
+    `format(x, ".0f")`:lla, joka pyoristaa tasapisteen parilliseen (46.5 ->
+    "46"), kun SPA:n Teams-nakyma ja joukkuepaneeli nayttavat Math.roundilla
+    "47". Klubisivulta paneeliin ja /fpl:aan kulkeva lukija nakee saman
+    ottelun kahdella luvulla. Eroaa fmt_pct:sta vain siina, ettei nollia
+    riisuta ("44.0" pysyy).
+    """
+    return str(Decimal(x).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP))

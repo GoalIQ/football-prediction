@@ -261,7 +261,7 @@ def load_data() -> tuple[dict, dict]:
 # 10.9: fmt_pct asuu src/models/fmt.py:ssa, koska ilmaissivun todiste
 # (fpl_why_drivers) renderoi saman nollapeliluvun ja sen on oltava
 # merkkijonona sama kuin tassa taulukossa. Nimi sailyy tassa moduulissa.
-from src.models.fmt import fmt_pct  # noqa: E402
+from src.models.fmt import fmt_fixed, fmt_pct  # noqa: E402
 
 
 def gw_date_label(fixtures: list[dict], gw: int) -> str:
@@ -1437,7 +1437,7 @@ def _run_cell(r: dict) -> str:
         return "&ndash;"
     n = int(r.get("run_n") or 0)
     return (f'<span title="Average clean sheet probability over the next '
-            f'{n} matches in the grid below">{v:.0f}%</span>')
+            f'{n} matches in the grid below">{fmt_fixed(v)}%</span>')
 
 
 def cs_table_html(c: dict) -> str:
@@ -1688,7 +1688,7 @@ def avg_cells(r: dict) -> str:
             '<td class="num m-hide">0</td>'
         )
     return (
-        f'<td class="num"><strong>{r["avg_cs"]:.1f}%</strong></td>'
+        f'<td class="num"><strong>{fmt_fixed(r["avg_cs"], 1)}%</strong></td>'
         f'<td class="num m-hide">{r["avg_fdr"]:.2f}</td>'
         f'<td class="num m-hide">{r["n"]}</td>'
     )
@@ -1729,7 +1729,7 @@ def fdr_grid_html(c: dict) -> str:
                 # captionin lupaus "20% or less in coral" oli livena
                 # kumottavissa kolmella nakyvalla solulla (MCI GW4, MUN GW4,
                 # EVE GW6). Sama pyoristysjuuri kuin Avg CS% -korjauksessa.
-                shown = format(float(fx["cs_pct"]), ".0f")
+                shown = fmt_fixed(float(fx["cs_pct"]))
                 cls = cs_cell_class(float(shown))
                 href = predict_cell_href(r["team"], fx["opponent"], fx["venue"])
                 links.append(
@@ -1742,7 +1742,7 @@ def fdr_grid_html(c: dict) -> str:
                 )
             # Yhden ottelun solu kantaa luokan kuten ennen; doublessa solu
             # ei saa luokkaa (se varjaisi molemmat) vaan kumpikin linkki oman.
-            td_cls = (" " + cs_cell_class(float(format(float(fxs[0]["cs_pct"]), ".0f")))
+            td_cls = (" " + cs_cell_class(float(fmt_fixed(float(fxs[0]["cs_pct"]))))
                       if len(fxs) == 1 else "")
             cells.append(f'<td class="num{td_cls}{m}">' + "<br>".join(links) + "</td>")
         rows.append(
