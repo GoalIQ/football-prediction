@@ -2007,6 +2007,24 @@ def season_rank_block(entry_id: int | None, bootstrap: dict) -> dict | None:
     }
 
 
+def _live_points(gw: int) -> dict[int, int]:
+    """{element_id: total_points} FPL:n kierroksen live-datasta, tai {} jos
+    haku ei onnistu. 27.9 (MOBIILI-IA-JATKOT, Dovin "n/a"): toteumatiedostossa
+    on rivi vain pelanneille, joten pelaamattoman pelaajan luku haetaan FPL:n
+    omasta lahteesta eika arvata nollaksi (tiedosto voi myos laahata)."""
+    try:
+        from src.data import fpl_api
+        data = fpl_api.fetch_event_live(gw)
+    except Exception:
+        return {}
+    out: dict[int, int] = {}
+    for el in (data or {}).get("elements") or []:
+        pts = ((el or {}).get("stats") or {}).get("total_points")
+        if isinstance(el.get("id"), int) and isinstance(pts, int):
+            out[el["id"]] = pts
+    return out
+
+
 def last_finished_block(entry_id: int | None, bootstrap: dict,
                         pool_by_id: dict[int, dict],
                         season: str | None) -> dict | None:
@@ -2036,6 +2054,7 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
     rows: list[dict] = []
     xp_total = 0.0
     complete = True
+    live: dict[int, int] | None = None
     for pk in picks.get("picks") or []:
         pid = pk.get("element")
         mult = pk.get("multiplier")
@@ -2044,6 +2063,12 @@ def last_finished_block(entry_id: int | None, bootstrap: dict,
         el = elements.get(pid) or {}
         meta = pool_by_id.get(pid) or {}
         pts = actuals.get(pid)
+        if pts is None:
+            # Pelaamaton pelaaja: FPL:n oma luku (yleensa 0) live-datasta.
+            # Haku vain kun tarvitaan, ja epaonnistuessa luku jaa tuntemattomaksi.
+            if live is None:
+                live = _live_points(gw)
+            pts = live.get(pid)
         xp = frozen.get(pid)
         if isinstance(xp, (int, float)):
             xp_total += float(xp) * mult

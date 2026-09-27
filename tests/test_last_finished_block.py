@@ -69,6 +69,8 @@ def wired(monkeypatch):
     monkeypatch.setattr(rt.fpl_actuals, "points_for", lambda g, s=None: {1: 23, 2: 4, 3: 9})
     monkeypatch.setattr(rt.fpl_actuals, "frozen_xp_for", lambda g: {1: 4.0, 2: 3.0, 3: 2.0})
     monkeypatch.setattr(rt.fpl_actuals, "frozen_meta", lambda g: {"frozen_at": "X", "deadline": "Y"})
+    # Ei verkkoa testeissa: FPL:n live-data puuttuu oletuksena (haku epaonnistui).
+    monkeypatch.setattr(rt, "_live_points", lambda g: {})
     return None
 
 
@@ -332,3 +334,29 @@ def test_model_entry_id_puuttuu_ilman_mallirivia(wired, monkeypatch):
     b = rt.last_finished_block(1, BS, {}, "2026/27")
     assert b["model_points"] is None
     assert b["model_entry_id"] is None
+
+
+def test_pelaamattoman_luku_tulee_fpln_live_datasta(wired, monkeypatch):
+    """27.9 (MOBIILI-IA-JATKOT, Dovin "n/a"): toteumatiedostossa on rivi vain
+    pelanneille. Puuttuva luku haetaan FPL:n kierroksen live-datasta (FPL
+    nayttaa 0), eika arvata. Jos live-haku ei onnistu, luku jaa None:ksi
+    (test_puuttuva_toteuma_on_null_eika_nolla)."""
+    monkeypatch.setattr(rt.fpl_actuals, "points_for", lambda g, s=None: {2: 4, 3: 9})
+    kutsut = []
+    monkeypatch.setattr(rt, "_live_points", lambda g: kutsut.append(g) or {1: 0})
+    b = rt.last_finished_block(1, BS, {}, "2026/27")
+    assert next(r for r in b["players"] if r["id"] == 1)["points"] == 0
+    assert kutsut == [kutsut[0]], "live-data haettiin useammin kuin kerran"
+
+
+def test_live_pisteet_jasennetaan_fpln_muodosta(monkeypatch):
+    fake = {"elements": [{"id": 7, "stats": {"total_points": 0, "minutes": 0}},
+                         {"id": 8, "stats": {"total_points": 12}},
+                         {"id": "x", "stats": {"total_points": 3}}]}
+    monkeypatch.setattr("src.data.fpl_api.fetch_event_live", lambda gw: fake)
+    assert rt._live_points(5) == {7: 0, 8: 12}
+
+    def boom(gw):
+        raise RuntimeError("fpl alhaalla")
+    monkeypatch.setattr("src.data.fpl_api.fetch_event_live", boom)
+    assert rt._live_points(5) == {}
