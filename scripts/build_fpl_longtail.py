@@ -55,6 +55,7 @@ from src import price_copy as PC  # noqa: E402
 from src.doubt_copy import TEAM_NEWS_H1, XP_SISALTAA_EPAVARMUUDEN
 # Vapaa/premium-lause tulee rekisterista, ei tasta tiedostosta: yksi lukija.
 from src.tool_tiers import tier_sentence  # noqa: E402
+from src.partners import FPL_DEMON, partner_line_html  # noqa: E402
 from src.price_update_time import price_update_parts  # noqa: E402
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
@@ -4891,7 +4892,12 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         + _share_button()
         + f"{kitdefs}{table}"
         + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
-        + _tflag_note(xp, rows[:HORIZON_TOP_N], rows) +
+        + _tflag_note(xp, rows[:HORIZON_TOP_N], rows)
+        # 27.9 KUMPPANILINKKI (FPL Demon, Villen paatos): taulukon alle, kauas
+        # sivun lopun UPSELL/CTA:sta, joka on taman sivun ostohetki. Rivi,
+        # URL ja paattyminen src/partners.py:sta; "" kun kumppanuus ei ole
+        # voimassa. Portti: tests/test_partner_link.py
+        + partner_line_html(FPL_DEMON, now, "hub_expected_points") +
         '<p class="note"><strong>Start% near 50 means the model is split.'
         # 22.9 (Villen brief): ei vedonlyontisanastoa, ks. data/rejected_phrases.json.
         # 22.9 kierros 2: "assume the team news holds" oli epatosi
