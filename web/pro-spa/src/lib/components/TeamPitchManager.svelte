@@ -24,6 +24,7 @@
 		hitLabel,
 		type ModelCaptain
 	} from '$lib/pitchLineup';
+	import { whatIfDefaultCaptain, whatIfInitialCaptain } from '$lib/whatIfStart';
 	import type { XpHorizon } from '$lib/xpHorizon';
 	import TeamKit from './TeamKit.svelte';
 
@@ -143,10 +144,10 @@
 		// muuten jokainen uusi rate-ajo pyyhkisi käyttäjän oman valinnan.
 		const savedCap = initialCaptaincy?.captain_id;
 		const savedVice = initialCaptaincy?.vice_id;
-		captainId =
-			savedCap != null && cur.has(savedCap)
-				? savedCap
-				: (players.find((p) => p.is_captain)?.id ?? null);
+		// WHATIF-ALKUTILA (Villen paatos 27.9): mallin XI + MALLIN kapteeni;
+		// tallennettu oma kapteeni voittaa. `is_captain` on viime kierroksen
+		// FPL-kapteeni, ei kayttajan tulevan kierroksen valinta.
+		captainId = whatIfInitialCaptain(players, savedCap, modelCaptain, defaultGw ?? null);
 		viceId = savedVice != null && cur.has(savedVice) && savedVice !== captainId ? savedVice : null;
 		selectedId = null;
 	});
@@ -309,9 +310,12 @@
 	);
 	// #122: lataus-tilan (importattu XI + kapteeni) xP samalle GW:lle →
 	// user-editin ero näytetään eksplisiittisenä labelina, ei äänettömänä.
+	// Vertailukohta = mallin XI + mallin kapteeni (sama kuin alkutila ilman
+	// omaa tallennettua kapteenia), ei viime kierroksen FPL-kapteeni.
 	const baselineXp = $derived.by(() => {
 		const base = players.filter((p) => p.in_xi);
-		const cap = players.find((p) => p.is_captain);
+		const defCap = whatIfDefaultCaptain(players, modelCaptain, defaultGw ?? null);
+		const cap = players.find((p) => p.id === defCap);
 		return base.reduce((s, p) => s + xpOf(p), 0) + (cap ? xpOf(cap) : 0);
 	});
 	const editDelta = $derived(gwXp - baselineXp);
@@ -790,7 +794,7 @@
 						<span class="xp-val">{gwXp.toFixed(1)}</span>
 						{#if Math.abs(editDelta) >= 0.05}
 							<span class="xp-delta"
-								>{editDelta > 0 ? '+' : ''}{editDelta.toFixed(1)} xP vs your loaded lineup</span
+								>{editDelta > 0 ? '+' : ''}{editDelta.toFixed(1)} xP vs the model's XI</span
 							>
 						{/if}
 					</span>

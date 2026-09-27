@@ -559,7 +559,7 @@ const IN_XI_ALLOWED: { line: string; reason: string }[] = [
 	{
 		line: 'const base = players.filter((p) => p.in_xi);',
 		reason:
-			'baselineXp: what-ifin "xP vs your loaded lineup" -vertailukohta on se mita editoriin ladattiin (alkutila). Ei kentan kokoonpano.'
+			"baselineXp: what-ifin 'xP vs the model's XI' -vertailukohta = mallin XI + mallin kapteeni (WHATIF-ALKUTILA 27.9). Ei kentan kokoonpano."
 	}
 ];
 
