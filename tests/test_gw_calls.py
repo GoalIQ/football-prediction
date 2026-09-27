@@ -460,3 +460,19 @@ def test_gw_calls_html_linkki_on_lauseen_sisalla():
     html = gw_calls_html(log, exception_notes={}, names=NIMET)
     assert ("public at <a href=\"https://fantasy.premierleague.com/entry/116920"
             "/event/6\">FPL entry 116920</a>.") in html
+
+
+def test_siirron_nimi_bootstrapista_kun_pelaaja_ei_ole_rungossa_eika_projektiossa():
+    """27.9: GW5:n siirto kirjattiin "out_name": null (Mendy, id 586)."""
+    fr = _frozen()
+    fr["meta"]["transfers"] = [{"out": 586, "in": 388, "hit": False}]
+    e = build_entry(fr, _standouts(), {}, BEFORE, names={586: "Mendy"})
+    assert e["model_transfers"][0]["out_name"] == "Mendy"
+    # Kontrolli: ilman nimikarttaa sama siirto on nimeton (ei keksitty nimi).
+    e2 = build_entry(fr, _standouts(), {}, BEFORE)
+    assert e2["model_transfers"][0]["out_name"] is None
+    # Rungon/projektion nimi voittaa bootstrapin (ei ylikirjoitusta).
+    fr["meta"]["transfers"] = [{"out": 229, "in": 388, "hit": False}]
+    e3 = build_entry(fr, _standouts(), {}, BEFORE, {229: {"web_name": "Tarkowski"}},
+                     names={229: "Vaara"})
+    assert e3["model_transfers"][0]["out_name"] == "Tarkowski"
