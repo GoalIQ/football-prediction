@@ -1,0 +1,55 @@
+# FP-DISPATCH-RELAY: GitHubin cron laahaa tassa repossa (7 vrk 10.9:
+# fpl-transfer-watch 26 %, ucl-refresh 39 %, fpl-data-refresh 46 %,
+# accuracy-log 59 %). Tama workflow kutsuu `gh workflow run` niille kohteille
+# joiden cron-slotti osui viimeiseen tuntiin eika oma cron ehtinyt itse
+# (dedupe: ajo luotu slotin jalkeen -> ei tuplaa). Kohteiden oma cron jaa
+# varmistukseksi. Logiikka ja kohdelista: scripts/fp_dispatch_relay.py,
+# portti: tests/test_fp_dispatch_relay.py.
+#
+# LAUKAISIN on Cloudflare-worker cf-worker/fp-cron-relay samalla slotilla
+# (portti tests/test_cf_cron_relay.py sitoo ne yhteen), koska myos taman
+# workflow'n oma cron laahaa. Oma cron on varmistus.
+#
+# 27.9.2026 siirretty goaliq-appista (yksityinen, ~870 laskutettua min/kk)
+# tanne julkiseen repoon, jossa ajot ovat ilmaisia. Kohteet laukaistaan
+# taman ajon GITHUB_TOKENilla (workflow_dispatch kaynnistaa workflow'n myos
+# GITHUB_TOKENilla), joten PAT:ia ei tarvita.
+name: fp-dispatch-relay
+
+on:
+  schedule:
+    # :50 -> viimeisen 60 min ikkuna kattaa slotit :00, :15, :17, :20, :40, :45.
+    - cron: "50 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = tulosta paatokset, ala laukaise"
+        required: false
+        default: "false"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: fp-dispatch-relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Laukaise workflow't joiden slotti osui tähän tuntiin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+          extra=""
+          if [ "$DRY_RUN" = "true" ]; then
+            extra="--dry-run"
+          fi
+          python3 -m scripts.fp_dispatch_relay $extra

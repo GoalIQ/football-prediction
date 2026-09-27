@@ -45,6 +45,9 @@ EXCLUDED_DIRS = (
     "src/", "tests/", "scripts/", "notebooks/", "web/", "data/", "outputs/",
     "logs/", "docs/", "api/", "supabase/", "pages/", ".github/",
     ".devcontainer/",
+    # 27.9.2026: Cloudflare-workerin lahde (fp-cron-relay, siirretty
+    # goaliq-appista). Deployataan wranglerilla, ei sivustona.
+    "cf-worker/",
 )
 # Tiedostopaatteet jotka eivat koskaan paady sivustolle.
 EXCLUDED_SUFFIXES = (
