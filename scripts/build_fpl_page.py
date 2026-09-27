@@ -1884,10 +1884,11 @@ def accuracy_dataset_ld(c: dict, page_url: str) -> dict:
         "@type": "Dataset",
         "name": "GoalIQ football prediction accuracy log (pre-match, publicly tracked)",
         "description": (
-            f"Every GoalIQ model prediction in this record is logged before kickoff and "
+            f"Every GoalIQ model prediction in this record is logged before kick-off and "
             f"reconciled against the final result and never edited after kick-off. "
             f"Current aggregate: {fmt_pct(c['acc_pct_1x2'])} correct 1X2 results "
-            f"across {c['acc_n']} completed matches. Includes per-match win/draw/loss "
+            f"across {c['acc_n']} completed matches in all competitions. Includes per-match "
+            f"win/draw/loss "
             f"probabilities, expected goals (xG) and reconciled outcomes."
         ),
         "url": page_url,
@@ -2477,7 +2478,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         f'<span>correct in matches that did not end in a draw '
         f'({c["acc_dec_c"]} of {c["acc_dec_n"]})</span></div>'
         f'<div class="stat"><b>{c["acc_logged"]}</b>'
-        f'<span>predictions logged before kickoff, hits and misses</span></div>'
+        f'<span>predictions logged before kick-off, hits and misses</span></div>'
         "</div>"
     )
 
@@ -3824,8 +3825,9 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
         f"all competitions</div>"
     )
     proof = (
-        f"Every prediction in the record was logged before kickoff. "
-        f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches."
+        f"Every prediction in the record was logged before kick-off. "
+        f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches, "
+        f"all competitions."
     )
     trust = acc_trust_sentence(c)
     new = re.sub(
@@ -3840,7 +3842,7 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
     # Teletext-ticker (2 ticker-set-kopiota) samasta lähteestä kuin chipit —
     # kovakoodattuna se jäi jälkeen jokaisella bakella (P1 30.7).
     ticker = (
-        f'<b>{c["acc_n"]} completed matches</b>\n      '
+        f'<b>{c["acc_n"]} completed matches, all competitions</b>\n      '
         f'<b class="t-amber">&#9612; {fmt_pct(c["acc_pct_1x2"])} correct results</b>'
     )
     new, n_ticker = re.subn(
@@ -4021,8 +4023,9 @@ def update_predictions(c: dict, preds: list[dict]) -> bool:
         f"all competitions</div>"
     )
     proof = (
-        f"Every prediction in the record was logged before kickoff. "
-        f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches."
+        f"Every prediction in the record was logged before kick-off. "
+        f"{fmt_pct(c['acc_pct_1x2'])} correct results across {c['acc_n']} completed matches, "
+        f"all competitions."
     )
     trust = acc_trust_sentence(c)
     new = re.sub(
