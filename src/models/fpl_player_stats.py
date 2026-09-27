@@ -77,6 +77,15 @@ COMPARE_NOTE = ("compared_gws are finished gameweeks with a deadline freeze. "
                 "FPL row (played minutes). A frozen player with no minutes "
                 "is not in the comparison.")
 
+# MP-17 (27.9.2026): kierroksen vertailuryhma. Sama pelipaikka, vain
+# vahintaan minuutin pelanneet, vain VALMIIT kierrokset: kesken olevan
+# kierroksen osittainen keskiarvo liikkuisi paivan mittaan ilman syyta
+# (saanto 6a). Lasketaan KAIKISTA pelaajista ennen pos-/top_n-rajausta, joten
+# suodatin ei muuta vertailukohtaa.
+POS_AVG_NOTE = ("pos_avg_pts: average FPL points in that gameweek of players "
+                "in the same position who played at least one minute. "
+                "Finished gameweeks only.")
+
 # GW-rivin sarakkeet jotka summataan ikkunan yli. Avain = vastauksen kentta,
 # arvo = gw-tiedoston sarake. Kaikki FPL:n virallisia lukuja.
 _SUM_COLS = {
@@ -321,6 +330,7 @@ def aggregate(stats_doc: dict, gw_doc: dict,
     live_idx, next_gw = _live_index(live_xp)
 
     players_out: list[dict] = []
+    grp: dict[tuple[str, int], list] = {}
     for pid_s, rows in (gw_doc.get("players") or {}).items():
         try:
             pid = int(pid_s)
@@ -373,10 +383,17 @@ def aggregate(stats_doc: dict, gw_doc: dict,
         gws_out = []
         for g in range(lo, hi + 1):
             fx = frozen_by_gw.get(g, {}).get(pid) if g in frozen_by_gw else None
+            row = per_gw.get(g)
             gws_out.append({
                 "gw": g,
-                "pts": int(round(per_gw[g]["pts"])) if g in per_gw else None,
+                "pts": int(round(row["pts"])) if row else None,
                 "xp_frozen": round(float(fx), 2) if fx is not None else None,
+                # MP-17: puuttuva rivi = null (ei pelannut / ei joukkueessa),
+                # EI nolla. Nolla on vaite ("pelasi, ei maalia").
+                "mins": int(round(row["mins"])) if row else None,
+                "g": int(round(row["g"])) if row else None,
+                "xg": round(row["xg"], 2) if row else None,
+                "pos_avg_pts": None,  # taytetaan kun kaikki pelaajat on nahty
             })
         xp_frozen = round(xp_sum, 2) if n_cmp else None
         diff = round(pts_sum - xp_sum, 2) if n_cmp else None
@@ -395,6 +412,13 @@ def aggregate(stats_doc: dict, gw_doc: dict,
         web_name = pick(st.get("name"), lv.get("web_name"))
         team_short = pick(st.get("team"), lv.get("team_short"))
         ppos = pick(st.get("pos"), lv.get("pos"))
+        # MP-17: vertailuryhma ennen pos-suodatinta (ks. POS_AVG_NOTE).
+        if ppos:
+            for g, acc in per_gw.items():
+                if g <= cmp_hi and acc["mins"] > 0:
+                    s_ = grp.setdefault((ppos, g), [0.0, 0])
+                    s_[0] += acc["pts"]
+                    s_[1] += 1
         if pos != "ALL" and ppos != pos:
             continue
         price = pick(_num(st.get("price")), _num(lv.get("price")))
@@ -424,6 +448,11 @@ def aggregate(stats_doc: dict, gw_doc: dict,
             },
         })
 
+    pos_avg = {k: round(v[0] / v[1], 2) for k, v in grp.items() if v[1]}
+    for p in players_out:
+        for row in p["goaliq"]["gws"]:
+            row["pos_avg_pts"] = pos_avg.get((p["pos"], row["gw"]))
+
     # Jarjestys: pisteet laskeva, freeze-xP laskeva, id nouseva.
     players_out.sort(key=lambda p: (
         -p["fpl"]["pts"],
@@ -444,6 +473,7 @@ def aggregate(stats_doc: dict, gw_doc: dict,
             "frozen_gws": frozen_gws,
             "compared_gws": compared_gws,
             "compare_note": COMPARE_NOTE,
+            "pos_avg_note": POS_AVG_NOTE,
             # 17.9: `goaliq.xp_horizon_total` on vaikutettavien kierrosten
             # summa (`_live_fields` -> `horizon_total_actionable`); nama
             # kertovat mista kierroksesta ja monestako. Sama sopimus kuin

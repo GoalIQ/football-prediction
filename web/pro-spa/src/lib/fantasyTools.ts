@@ -1159,6 +1159,14 @@ export interface PlayerStatsGw {
 	gw: number;
 	pts: number | null;
 	xp_frozen: number | null;
+	/** MP-17 (27.9): FPL:n rivista. null = ei rivia (ei pelannut / ei
+	 *  joukkueessa), EI nolla. Valinnaisia: vanha API ei laheta niita, ja
+	 *  silloin kortti ei piirra kaaviota lainkaan (goalsXgView -> null). */
+	mins?: number | null;
+	g?: number | null;
+	xg?: number | null;
+	/** Saman pelipaikan pelanneiden keskiarvopisteet; vain valmiit kierrokset. */
+	pos_avg_pts?: number | null;
 }
 
 export interface PlayerStatsGoaliq {

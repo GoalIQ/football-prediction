@@ -104,7 +104,9 @@ def test_compared_gws_require_both_freeze_and_actuals():
     assert a["goaliq"]["pts_compared"] == 16
     assert a["goaliq"]["diff"] == pytest.approx(5.4)
     assert [g["gw"] for g in a["goaliq"]["gws"]] == [1, 2, 3]
-    assert a["goaliq"]["gws"][0] == {"gw": 1, "pts": 6, "xp_frozen": None}
+    assert a["goaliq"]["gws"][0] == {"gw": 1, "pts": 6, "xp_frozen": None,
+                                     "mins": 90, "g": 0, "xg": 0.1,
+                                     "pos_avg_pts": 6.0}
 
 
 def test_pts_compared_uses_only_gws_where_player_has_row_and_freeze():
@@ -117,7 +119,10 @@ def test_pts_compared_uses_only_gws_where_player_has_row_and_freeze():
     assert b["goaliq"]["n_compared"] == 1
     assert b["goaliq"]["xp_frozen"] == pytest.approx(2.2)
     assert b["goaliq"]["pts_compared"] == 1
-    assert b["goaliq"]["gws"][1] == {"gw": 2, "pts": None, "xp_frozen": 3.0}
+    # MP-17: ei rivia -> mins/g/xg null, EI nolla (nolla vaittaisi etta pelasi).
+    assert b["goaliq"]["gws"][1] == {"gw": 2, "pts": None, "xp_frozen": 3.0,
+                                     "mins": None, "g": None, "xg": None,
+                                     "pos_avg_pts": None}
 
 
 def test_unfinished_round_is_not_compared_even_with_freeze_and_rows():
@@ -146,7 +151,9 @@ def test_double_gameweek_rows_sum_into_one_gw():
     assert a["fpl"]["games"] == 2          # kaksi kierrosta, ei kolme
     assert a["fpl"]["mins"] == 270
     assert a["fpl"]["xg"] == pytest.approx(1.1)
-    assert a["goaliq"]["gws"][1] == {"gw": 2, "pts": 13, "xp_frozen": 8.0}
+    assert a["goaliq"]["gws"][1] == {"gw": 2, "pts": 13, "xp_frozen": 8.0,
+                                     "mins": 180, "g": 0, "xg": 1.0,
+                                     "pos_avg_pts": 13.0}
     assert a["goaliq"]["pts_compared"] == 13
 
 
@@ -307,3 +314,72 @@ def test_api_player_stats_responds_with_disk_files(client):
 def test_api_player_stats_rejects_unknown_window(client):
     assert client.get("/api/fantasy/player-stats?window=bogus").status_code == 422
     assert client.get("/api/fantasy/player-stats?pos=XX").status_code == 422
+
+
+# --- (g) MP-17: maalit/xG per GW + vertailuryhma (27.9) ---------------------
+
+def _pos_group():
+    """Kolme MIDia ja yksi DEF. MID 3 pelasi GW2:ssa 0 min (rivi on)."""
+    stats = _stats_doc([_stats_row(1, "A", "MID"), _stats_row(2, "B", "MID"),
+                        _stats_row(3, "C", "MID"), _stats_row(4, "D", "DEF")],
+                       finished=2)
+    gw = _gw_doc({1: [_gw_row(1, 10, g=2, xg=1.25), _gw_row(2, 2)],
+                  2: [_gw_row(1, 2), _gw_row(2, 6)],
+                  3: [_gw_row(1, 3), _gw_row(2, 0, mins=0)],
+                  4: [_gw_row(1, 1), _gw_row(2, 15)]}, max_gw=3)
+    # GW3 on alkanut (max_gw 3) mutta ei valmis (finished 2).
+    gw["players"]["1"].append(_gw_row(3, 12, g=1, xg=0.4))
+    gw["players"]["2"].append(_gw_row(3, 2))
+    return stats, gw
+
+
+def test_goals_and_xg_per_gw_come_from_rows():
+    stats, gw = _pos_group()
+    out = aggregate(stats, gw, {}, None)
+    a = next(p for p in out["players"] if p["id"] == 1)
+    assert [(r["gw"], r["g"], r["xg"], r["mins"]) for r in a["goaliq"]["gws"]] == [
+        (1, 2, 1.25, 90), (2, 0, 0.1, 90), (3, 1, 0.4, 90)]
+
+
+def test_pos_avg_counts_only_players_who_played_in_same_position():
+    stats, gw = _pos_group()
+    out = aggregate(stats, gw, {}, None)
+    a = next(p for p in out["players"] if p["id"] == 1)
+    # GW1 MID: (10 + 2 + 3) / 3; GW2 MID: C pelasi 0 min -> (2 + 6) / 2.
+    assert a["goaliq"]["gws"][0]["pos_avg_pts"] == 5.0
+    assert a["goaliq"]["gws"][1]["pos_avg_pts"] == 4.0
+    d = next(p for p in out["players"] if p["id"] == 4)
+    assert [r["pos_avg_pts"] for r in d["goaliq"]["gws"]][:2] == [1.0, 15.0]
+    assert "same position" in out["meta"]["pos_avg_note"]
+
+
+def test_pos_avg_is_none_for_unfinished_gameweek():
+    """Saanto 6a(3): sama funktio kesken kierroksen. GW3 ei ole valmis."""
+    stats, gw = _pos_group()
+    out = aggregate(stats, gw, {}, None)
+    a = next(p for p in out["players"] if p["id"] == 1)
+    assert a["goaliq"]["gws"][2]["pts"] == 12       # toteuma nakyy
+    assert a["goaliq"]["gws"][2]["pos_avg_pts"] is None
+    # Kun GW3 valmistuu, vertailukohta syntyy: (12 + 2) / 2.
+    stats["meta"]["finished_events"] = 3
+    out = aggregate(stats, gw, {}, None)
+    a = next(p for p in out["players"] if p["id"] == 1)
+    assert a["goaliq"]["gws"][2]["pos_avg_pts"] == 7.0
+
+
+def test_pos_avg_does_not_depend_on_pos_filter_or_top_n():
+    stats, gw = _pos_group()
+    kaikki = aggregate(stats, gw, {}, None)
+    mid = aggregate(stats, gw, {}, None, pos="MID", top_n=1)
+    a1 = next(p for p in kaikki["players"] if p["id"] == 1)
+    a2 = mid["players"][0]
+    assert a2["id"] == 1
+    assert a1["goaliq"]["gws"] == a2["goaliq"]["gws"]
+
+
+def test_preseason_has_no_rows_so_everything_is_null():
+    stats = _stats_doc([_stats_row(1, "A", "MID")], finished=0)
+    gw = _gw_doc({1: [_gw_row(1, 0, mins=0)]}, max_gw=1)
+    out = aggregate(stats, gw, {}, None)
+    r = out["players"][0]["goaliq"]["gws"][0]
+    assert r["mins"] == 0 and r["pos_avg_pts"] is None
