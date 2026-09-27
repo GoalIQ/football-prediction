@@ -123,3 +123,23 @@ def test_fpl_data_on_ignoroitu_ja_paivittainen_deploy_on_olemassa():
     assert any(_matches("fpl/player-gw.json", p) for p in _ignored_paths())
     wf = RENDER_YAML.parent / ".github" / "workflows" / "render-daily-deploy.yml"
     assert wf.is_file(), "fpl/** on ignoroitu mutta paivittaista deployta ei ole"
+
+
+def test_datareitti_ajaa_vahintaan_kuuden_tunnin_valein():
+    """27.9: kun buildFilter vietiin liveen, render-daily-deploy on API:n
+    AINOA datareitti. Villen paatos: nelja ajoa vuorokaudessa, eli
+    peräkkäisten ajojen vali enintaan 6 h (mitattuna vuorokauden yli)."""
+    import yaml
+    wf = RENDER_YAML.parent / ".github" / "workflows" / "render-daily-deploy.yml"
+    doc = yaml.safe_load(wf.read_text(encoding="utf-8"))
+    on = doc.get("on") or doc.get(True)  # PyYAML lukee 'on' -> True
+    crons = [c["cron"] for c in on["schedule"]]
+    minuutit = []
+    for c in crons:
+        mm, hh, dom, mon, dow = c.split()
+        assert (dom, mon, dow) == ("*", "*", "*"), f"ei paivittainen: {c}"
+        minuutit.append(int(hh) * 60 + int(mm))
+    minuutit.sort()
+    valit = [b - a for a, b in zip(minuutit, minuutit[1:])]
+    valit.append(24 * 60 - minuutit[-1] + minuutit[0])
+    assert len(crons) >= 4 and max(valit) <= 6 * 60, (crons, valit)
