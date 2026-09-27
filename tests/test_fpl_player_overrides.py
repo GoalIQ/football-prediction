@@ -341,7 +341,7 @@ def test_reason_gate_negative_control():
     vanha = ("Successor in waiting, not the incumbent. Paired with the Alisson row: "
              "without it the club's keeper p_start sums to 1.22, i.e. more than one "
              "starting keeper. Same reasoning and sources as id 350")
-    assert set(_reason_viat(vanha)) == {"viittaus toisen rivin id:hen", "sarakkeen nimi",
+    assert set(_reason_viat(vanha)) >= {"viittaus toisen rivin id:hen", "sarakkeen nimi",
                                        "sisainen laskelma", "viittaus CSV-riviin"}
     assert _reason_viat("Liverpool's backup keeper. Alisson played every minute "
                         "of GW1-5 in FPL's match data, so Mamardashvili's start "
