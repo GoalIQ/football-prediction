@@ -10,7 +10,7 @@
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
-	import { TC_ASSUMPTION, TC_PICK_LABEL, tcPickLine, tcRowSuffix } from '$lib/tcTarget';
+	import { TC_ASSUMPTION, tcPickLabel, tcPickLine, tcRowSuffix } from '$lib/tcTarget';
 
 	const WORKING_STEPS = [
 		'Loading model xP projections',
@@ -284,7 +284,7 @@
 					<p class="est-line">{TC_ASSUMPTION}</p>
 					{#if data.tc_candidates && data.tc_candidates.length > 0 && tcCand}
 						<label class="tc-pick">
-							<span>{TC_PICK_LABEL}</span>
+							<span>{tcPickLabel(data.meta.horizon_gws)}</span>
 							<select
 								value={tcCand.id}
 								onchange={(e) => (tcPick = Number((e.currentTarget as HTMLSelectElement).value))}

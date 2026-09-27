@@ -15,10 +15,19 @@ export function tcRowSuffix(w: Pick<ChipWindow, 'tc_player'>): string {
 	return w.tc_player?.web_name ? ` · ${w.tc_player.web_name}` : '';
 }
 
+// Julkaisutarkistaja 27.9 k2: "Each row assumes..." ei pateny skaalatuille
+// (GW26*) riveille joilla ei ole XI:ta, ja "X, not Y" on koneen rakenne.
 export const TC_ASSUMPTION =
-	"Each row assumes the best captain in that gameweek's XI, not the captain you have picked now.";
+	"Each named captain is the highest-xP player in that gameweek's XI, so changing your captain won't change these numbers.";
 
-export const TC_PICK_LABEL = 'Best Triple Captain week for';
+/** Valitsin laskee vain pelaajaprojektion horisontin (meta.horizon_gws), joten
+ *  label sanoo sen: muuten "best week" luettaisiin koko kauden parhaaksi,
+ *  vaikka samalla kortilla on korkeampia skaalattuja GW26*-riveja. */
+export function tcPickLabel(horizon: number[] | null | undefined): string {
+	const gws = (horizon ?? []).filter((g) => Number.isFinite(g));
+	if (gws.length === 0) return 'Best Triple Captain week for';
+	return `Best Triple Captain week in GW${Math.min(...gws)}-${Math.max(...gws)} for`;
+}
 
 /** Valitun pelaajan rivi: "Haaland: GW7, +8.4 xP est." */
 export function tcPickLine(c: Pick<TcCandidate, 'web_name' | 'best_gw' | 'best_xp'>): string {
