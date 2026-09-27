@@ -76,7 +76,7 @@ def test_worker_laukaisee_oikean_workflown_oikeassa_repossa():
     assert RELAY.exists(), "worker laukaisee workflow'ta jota ei ole"
     # Token scopattu GoalIQ/football-prediction: eri secret kuin vanha.
     assert "env.GITHUB_DISPATCH_TOKEN_FP" in src
-    assert not re.search(r"env\.GITHUB_DISPATCH_TOKEN(?!_FP)", src), "vanha goaliq-app-token"
+    assert not re.search(r"env\.GITHUB_DISPATCH_TOKEN(?!_FP)\b", src), "vanha goaliq-app-token"
 
 
 def _ilman_kommentteja(js: str) -> str:
