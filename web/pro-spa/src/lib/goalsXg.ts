@@ -34,8 +34,8 @@ export interface GoalsXgView {
 
 export function goalsXgView(gws: PlayerStatsGw[] | null | undefined): GoalsXgView | null {
 	if (!gws || gws.length === 0) return null;
-	// Vanha API: kenttaa ei ole lainkaan (undefined). Ei arvata nollia.
-	if (!gws.some((r) => r.mins !== undefined)) return null;
+	// Vanha API (kentat undefined) ja pelaamaton pelaaja: kummallakaan ei ole
+	// yhtaan minuuttia -> ei kaaviota. Ei arvata nollia.
 	if (!gws.some((r) => (r.mins ?? 0) > 0)) return null;
 	let cumG = 0;
 	let cumXg = 0;
