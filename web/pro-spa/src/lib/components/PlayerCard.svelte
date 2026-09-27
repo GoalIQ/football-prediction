@@ -44,6 +44,7 @@
 	// raakaluvut ilmaiseksi, malli maksaa), joten ei gatea eika teaseria.
 	import { fetchPlayerStatsShared, type PlayerStatsResponse } from '$lib/fantasyTools';
 	import GoalsXgChart from './GoalsXgChart.svelte';
+	import { cardFromLight, cardSearchPool, type CardSearchItem } from '$lib/cardSearch';
 	import { GOALS_XG_TITLE, goalsXgView } from '$lib/goalsXg';
 	import {
 		percentileOf,
@@ -109,17 +110,7 @@
 		untrack(() => {
 			if (full) return select(full);
 			if (!light) return;
-			select({
-				id: light.id,
-				web_name: light.web_name,
-				full_name: light.full_name,
-				team: light.team_short,
-				team_short: light.team_short,
-				pos: light.pos,
-				price: light.price,
-				status: light.status,
-				news: light.news
-			});
+			select(cardFromLight(light));
 			lightOnly = true;
 		});
 	});
@@ -135,10 +126,20 @@
 			.replace(/[-.]/g, ' ')
 			.trim();
 	}
+	/** 27.9: haku kattaa myos kevyet rivit (ks. $lib/cardSearch). */
+	const searchPool = $derived(cardSearchPool(pool, lightPool));
+	function selectFromSearch(item: CardSearchItem) {
+		if (item.light) {
+			select(cardFromLight(item));
+			lightOnly = true;
+			return;
+		}
+		select(item);
+	}
 	const matches = $derived.by(() => {
 		const q = norm(query);
 		if (q.length < 2) return [];
-		return pool
+		return searchPool
 			.filter(
 				(p) =>
 					norm(p.web_name).includes(q) ||
@@ -628,7 +629,7 @@
 	<p class="banner error">Could not load the player pool right now. Please try again shortly.</p>
 {:else}
 	{#if !embedded}
-		<PlayerSearch id="pc-search" label="Find a player" bind:query items={matches} onSelect={select} />
+		<PlayerSearch id="pc-search" label="Find a player" bind:query items={matches} onSelect={selectFromSearch} />
 	{:else if !player}
 		<p class="muted">Loading player…</p>
 	{/if}
