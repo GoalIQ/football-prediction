@@ -86,9 +86,8 @@
 #   TOT: Kinsky 90/90/90/90/90 (5 starttia), Dubravka 0/0/0/0/0, status a.
 # Molempien rivien peruste pitaa, ja poisto laukaisisi yha hintapriori-ansan
 # (mins <= 0, ks. ylla). Uusi paiva molemmille 2026-10-28 (GW8:n jalkeen).
-# AVOIN: rivin 351 reason viittaa Alisson-riviin (id 350), joka poistettiin 25.8;
-# teksti nakyy pelaajakortissa (minutes_override_reason), joten sen muutos
-# ajetaan julkaisutarkistajan kautta erikseen.
+# 27.9: rivin 351 reason kirjoitettu uudelleen julkaisutarkistajan kautta
+#   (vanha viittasi poistettuun Alisson-riviin id 350).
 player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #
 # HARKITTU JA HYLÄTTY — Havertz (ARS, 7.5M, p_start 0.25, xmins 15.5), 27.7:
@@ -103,5 +102,5 @@ player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #   Ohitus vaatisi keksityn luvun jolle ei ole mitattua perustetta, ja jokainen
 #   ohitus syö todennettavuuslupausta. Kapea ero ei ole sen arvoinen.
 #   Hintapriori korjaa tämän aikanaan oikeaa kautta.
-497,Dubravka,0.08,"Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",2026-10-28
-351,Mamardashvili,0.15,"Successor in waiting, not the incumbent. Paired with the Alisson row: without it the club's keeper p_start sums to 1.22, i.e. more than one starting keeper. Same reasoning and sources as id 350",2026-10-28
+497,Dubravka,0.08,"Tottenham's backup keeper. Kinsky played every minute of GW1-5 in FPL's match data, so Dubravka's start chance is set low",2026-10-28
+351,Mamardashvili,0.15,"Liverpool's backup keeper. Alisson played every minute of GW1-5 in FPL's match data, so Mamardashvili's start chance is set low",2026-10-28
