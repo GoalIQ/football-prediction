@@ -1,0 +1,109 @@
+# EO-PUTKI-N200 (27.9.2026): elite ownership -putki ajaa itsensa.
+#
+# `scripts/fpl_elite_tick.py` paattaa bootstrapin kierrostiloista, otetaanko
+# sijoitusotos (kierros valmis + tarkistettu, seuraava deadline edessa) vai
+# haetaanko valinnat (deadline mennyt, otos edelliselta kierrokselta). Vaiheet
+# ajettiin ennen kasin, ja GW5:n EO menetettiin kun otos jai ottamatta GW4:n
+# jalkeen. Kuuden tunnin tahti riittaa: seuraavan deadlinen ja kierroksen
+# valmistumisen valissa on aina paivia.
+#
+# 🔴 AVOIN MITTAUS: fpl_elite_ownership.py:n otsikko varoittaa FPL-estosta
+# GitHubin IP-avaruudesta (kesa 2026). fpl-data-refresh hakee bootstrapin ja
+# element-summaryt runnerilta nyt ongelmitta, mutta entry-picks-reitti
+# mitataan ensimmaisella picks-ajolla (10.10 GW6-deadlinen jalkeen). Jos se
+# kaatuu, ajo punastuu (ei continue-on-error tick-askeleessa) eika hiljene.
+name: fpl-elite-tick
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: fpl-elite-tick
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write    # hub-deployn dispatch deploy-verifyssa
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install builder deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pandas>=2.1" "numpy>=1.26" "scipy>=1.11" \
+            "statsmodels>=0.14" "requests>=2.31" "soccerdata>=1.8" \
+            "python-dotenv>=1.0" "tqdm>=4.66"
+
+      - name: Elite ownership tick (snapshot / picks / none)
+        id: tick
+        run: python -m scripts.fpl_elite_tick
+
+      # fpl.html:n EO-by-tier-osio luetaan samasta artefaktista (sivu ja data
+      # samassa committissa, SIVU-JA-DATA-ERI-AJOSSA-2). Exit 2 = fail-safe.
+      - name: Bake fpl.html from the same data
+        id: bake_fpl_page
+        if: steps.tick.outputs.action == 'picks'
+        continue-on-error: true
+        run: |
+          set +e
+          python scripts/build_fpl_page.py
+          rc=$?
+          set -e
+          if [ "$rc" = "0" ]; then echo "Bake OK."
+          elif [ "$rc" = "2" ]; then echo "::notice::build_fpl_page.py exit 2 = fail-safe. Ohitetaan."
+          else echo "::error::build_fpl_page.py kaatui exit $rc"; exit "$rc"; fi
+
+      # Sama push kuin muissa refresheissa (scripts/ci_push_rebuild.sh):
+      # konfliktissa sivu rakennetaan uudelleen tuoreen mainin + taman ajon
+      # datan paalle; jos joku muu muutti samaa datatiedostoa, skripti kaatuu.
+      - name: Commit + push to main
+        id: push
+        if: steps.tick.outputs.action != 'none'
+        env:
+          CI_PUSH_DATA: >-
+            data/fpl_rank_snapshot.json data/fpl_elite_ownership.json
+            data/fpl_elite_managers.json
+          CI_PUSH_PAGES: >-
+            fpl.html sitemap.xml sitemap-core.xml index.html fpl/
+            sitemap-fpl.xml predictions.html world-cup-2026-predictions.html
+          CI_PUSH_BUILD: >-
+            python scripts/build_fpl_page.py
+          CI_PUSH_MSG: "data(elite): EO-tick (sijoitusotos / valinnat) [skip ci]"
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          bash scripts/ci_push_rebuild.sh
+
+      # `[skip ci]` estaa hub-deployn kaynnistymisen pushista, joten live
+      # tarkistetaan ja deploy laukaistaan mittauksen perusteella (sama kuin
+      # accuracy-log ja fpl-page-refresh).
+      - name: Deploy-verify — live servaa repon sivut (+ itsekorjaus)
+        id: hubdispatch
+        if: steps.push.outputs.pushed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/verify_live_pages.sh $(python scripts/verify_targets.py)
+
+      - name: Step health (fail loud, data jo pushattu)
+        if: always()
+        run: |
+          fail=0
+          [ "${{ steps.bake_fpl_page.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA (EO-osio jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.hubdispatch.outcome }}" = "failure" ] && { echo "::error::deploy-verify FAILAA (data committoitu, sivudeploy jai valiin)"; fail=1; }
+          exit $fail
