@@ -101,8 +101,10 @@ export type TeamPanel = {
 	/** null = xP maskattu (ilmainen) tai xP-dataa ei ole. */
 	players: TeamPanelPlayer[] | null;
 	masked: boolean;
-	/** xP-summan ikkuna samasta lukijasta kuin summa ("next 6 GWs"). */
-	window: string;
+	/** xP-summan ikkuna samasta lukijasta kuin summa ("next 6 GWs"), null
+	 *  kunnes xP-vastaus on haettu: ilman metaa xpHorizon antaisi "model
+	 *  horizon" -yleisnimen (mitattu livena 27.9 latauksen aikana). */
+	window: string | null;
 	clubUrl: string | null;
 };
 
@@ -172,7 +174,7 @@ export function teamPanel(
 		fixtures,
 		players,
 		masked,
-		window: xpHorizon(xp?.meta).label,
+		window: xp ? xpHorizon(xp.meta).label : null,
 		clubUrl: clubPageUrl(key)
 	};
 }

@@ -147,7 +147,7 @@
 					</p>
 				{/if}
 
-				<h3>Players by projected points, {panel.window}</h3>
+				<h3>Players by projected points{panel.window ? `, ${panel.window}` : ''}</h3>
 				{#if panel.players}
 					<table class="squad">
 						<thead>

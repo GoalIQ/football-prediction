@@ -121,6 +121,11 @@ describe('teamPanel', () => {
 		expect(t.fixtures.flatMap((g) => g.items).some((f) => f.gw === 5)).toBe(false);
 	});
 
+	it('ikkunan nimi vasta kun xP on haettu (ei "model horizon" latauksen aikana)', () => {
+		expect(teamPanel(fantasy(6, 6), null, 'ARS')!.window).toBeNull();
+		expect(teamPanel(fantasy(6, 6), xp(true), 'ARS')!.window).toBe('next 6 GWs');
+	});
+
 	it('CS-keskiarvo ilman lukua -> ei valia', () => {
 		const f = fantasy(6, 6);
 		(f.teams[1] as { fixtures: unknown[] }).fixtures = [];
