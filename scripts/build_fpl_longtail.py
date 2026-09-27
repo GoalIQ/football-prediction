@@ -4189,6 +4189,27 @@ def _xi_omissions(players: list[dict], valitut: list[dict]) -> str:
             "and last season&#x27;s minutes: " + " ".join(lauseet) + "</p>")
 
 
+TEAM_PANEL_URL = "https://pro.goaliq.app/?team={short}"
+
+
+def _team_panel_link(short: str, nimi: str) -> str:
+    """Linkki pron joukkuepaneeliin (PRO-JOUKKUENAKYMA, Villen paatos 27.9).
+
+    Seurasivu on ilmainen ja indeksoitu; paneeli nayttaa saman seuran
+    ottelut clean sheet -todennakoisyyksineen ja (Premiumissa) koko joukkueen
+    xP-jarjestyksessa. Parametri on FPL-lyhenne, jonka SPA:n `teamParam`
+    hyvaksyy (portti: tests/test_club_page_team_panel_link.py ja
+    web/pro-spa/src/lib/teamPanel.gate.test.ts).
+    """
+    href = TEAM_PANEL_URL.format(short=short)
+    return (
+        '<p class="note">'
+        f'<a href="{escape(href)}">{escape(nimi)} in the FPL tools</a>: '
+        "clean sheet chance match by match, and the squad by projected "
+        "points in Premium.</p>"
+    )
+
+
 def render_club_page(short: str, players: list[dict], meta: dict,
                      now: datetime, saatavilla: set[str] | None = None) -> str | None:
     """Yhden seuran esittelysivu (15.8.2026, Villen tilaus).
@@ -4330,6 +4351,7 @@ def render_club_page(short: str, players: list[dict], meta: dict,
         f"{_kit_defs([short])}"
         + _club_switcher(slug, saatavilla or {slug})
         + _share_row(f"{nimi} FPL {window}: best players, set pieces, XI", url)
+        + _team_panel_link(short, nimi)
         + "".join(osat)
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
