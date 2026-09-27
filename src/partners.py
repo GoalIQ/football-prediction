@@ -6,8 +6,12 @@ FPL Demon: GoalIQ:n xP-syote (/api/partner/xp) pyorittaa hanen plannerinsa ja
 solverinsa, sovittu X DM:ssa 26.9 (kokeilu GW10:n loppuun). Me linkitamme
 hanen planneriinsa (ehtojen kohta 4).
 
-SIJOITUS (Villen paatos 27.9): ILMAISEN /fpl/expected-points -sivun top 100
--taulukon alle. Ensimmainen versio (fp `feat/partner-link-demon`) oli vain
+SIJOITUS (Villen paatos 27.9): ILMAINEN /fpl/expected-points -sivu, GW-top 20
+-taulukon alle (#gw-xp). Kierroskohtainen taulukko on se luku jonka hanen
+plannerinsa nayttaa, ja koko top 100 jaa linkin ja sivun lopun UPSELL/CTA:n
+valiin. Ensimmainen hub-versio oli top 100:n alla, ja julkaisutarkistaja mittasi
+27.9 (390x844): linkki ja ostonappi samassa puhelinruudussa 424 px:n paassa,
+valissa "the transfer planner is Premium". Ensimmainen versio kaikkiaan (fp `feat/partner-link-demon`) oli vain
 maksajan SPA-listan alla, ja sen nakisi 4-5 maksajaa joilla on jo oma
 planneri: Demonin utm-seuranta nayttaisi nollaa, vaikka lupasimme "tracked
 links both ways". EI lukitussa esikatselussa eika paywallissa: se on
@@ -34,9 +38,11 @@ FPL_DEMON: dict[str, str] = {
             "?utm_source=goaliq&utm_medium=social&utm_campaign=goaliq"),
     # Kokeilu GW10:n loppuun; katsaus ti 10.11. (rutiini trig_015PLmRamWe8S1J9ZBJMvtGP).
     "active_until": "2026-11-10",
-    # Versio A (HANDOVER, kumppanilinkkirivi). Vaihdetaan B:hen tai C:hen
-    # deployn yhteydessa jos solver ei kayta lukujamme tai horisontti on eri.
-    "claim": "{name}'s planner and solver run on these projections.",
+    # Julkaisutarkistaja 27.9: EI "these projections" (rivin lahella on
+    # horisonttisumma, jota hanen plannerissaan ei ole missaan muodossa) eika
+    # "and solver" (lukija ei voi tarkistaa ilman Team ID:ta). "five" on
+    # syotteen horisontti: portti sitoo sen api/partner_feed.PARTNER_XP_HORIZONiin.
+    "claim": "{name}'s planner uses our xP for the next five gameweeks.",
     "cta": "Plan your transfers there",
 }
 

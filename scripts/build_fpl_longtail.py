@@ -4894,7 +4894,15 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # ja postaukset linkittavat tanne (#gw-xp), ja jos osio olisi 100
         # rivin alla, tarkistusreitti vaatisi vierityksen jonka jalkeen
         # lukija on jo ohittanut sen luvun jota han tuli tarkistamaan.
-        + _gw_xp_section(xp) +
+        + _gw_xp_section(xp)
+        # 27.9 KUMPPANILINKKI (FPL Demon, Villen paatos): GW-taulukon alle, ei
+        # top 100:n alle. Kierroskohtainen luku on se jonka hanen plannerinsa
+        # nayttaa, ja koko top 100 jaa taman ja sivun lopun UPSELL/CTA:n
+        # (ostohetki) valiin; top 100:n alla ne olivat samassa puhelinruudussa
+        # (julkaisutarkistaja 27.9, 424 px). Rivi, URL ja paattyminen
+        # src/partners.py:sta; "" kun kumppanuus ei ole voimassa.
+        # Portti: tests/test_partner_link.py
+        + partner_line_html(FPL_DEMON, now, "hub_expected_points") +
         # ANKKURI (4.9 portti): standouts-kortin ja postausten tarkistusreitti
         # osoittaa TAHAN tauluun, koska Blank- ja 10+-sarakkeet ovat vain
         # tassa. Paljas URL laskeutuu GW-top-20-tauluun jossa niita ei ole.
@@ -4914,12 +4922,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         + _share_button()
         + f"{kitdefs}{table}"
         + SHARE_CARD_JS.replace("__CARD_ROWS_FN__", "function(){return null;}")
-        + _tflag_note(xp, rows[:HORIZON_TOP_N], rows)
-        # 27.9 KUMPPANILINKKI (FPL Demon, Villen paatos): taulukon alle, kauas
-        # sivun lopun UPSELL/CTA:sta, joka on taman sivun ostohetki. Rivi,
-        # URL ja paattyminen src/partners.py:sta; "" kun kumppanuus ei ole
-        # voimassa. Portti: tests/test_partner_link.py
-        + partner_line_html(FPL_DEMON, now, "hub_expected_points") +
+        + _tflag_note(xp, rows[:HORIZON_TOP_N], rows) +
         '<p class="note"><strong>Start% near 50 means the model is split.'
         # 22.9 (Villen brief): ei vedonlyontisanastoa, ks. data/rejected_phrases.json.
         # 22.9 kierros 2: "assume the team news holds" oli epatosi

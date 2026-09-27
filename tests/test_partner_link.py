@@ -8,8 +8,10 @@ Portti vartioi nelja asiaa:
   3. linkki paattyy itsestaan `active_until`-paivana (julkaisutarkistaja B4);
   4. SIJOITUS mitataan RENDEROIDYLTA sivulta, ei funktiosta (muisti:
      testi kutsuu funktiota, ei kutsupaikkaa): ilmaisen /fpl/expected-points
-     -sivun top 100 -taulukon alla, ennen UPSELL/CTA:ta joka on ostohetki,
-     ja vain talla sivulla.
+     -sivun GW-taulukon alla ja ENNEN top 100:aa, jotta koko top 100 jaa
+     linkin ja UPSELL/CTA:n (ostohetki) valiin, ja vain talla sivulla;
+  5. lauseen "five" on syotteen horisontti (saanto 6a: kaksi paikkaa samalle
+     luvulle, joten niiden ero kaataa buildin eika jata lausetta valehtelemaan).
 """
 from __future__ import annotations
 
@@ -69,7 +71,8 @@ def test_ends_by_itself():
 def test_line_markup():
     html = partner_line_html(FPL_DEMON, BEFORE, "hub_expected_points")
     assert html.startswith('<p class="note"><strong>Partner:</strong> ')
-    assert "FPL Demon's planner and solver run on these projections." in html
+    assert "FPL Demon's planner uses our xP for the next five gameweeks." in html
+    assert "solver" not in html and "these projections" not in html
     assert 'href="https://fpldemon.com/fpl/planner?utm_source=goaliq&amp;utm_medium=social&amp;utm_campaign=goaliq"' in html
     assert 'target="_blank"' in html
     assert 'rel="noopener sponsored"' in html
@@ -91,16 +94,25 @@ def _xp(next_gw: int = 6, dl_gw: int = 6) -> dict:
     }
 
 
-def test_free_expected_points_page_places_it_under_the_table():
+def test_free_expected_points_page_places_it_under_the_gw_table():
     import scripts.build_fpl_longtail as L
     page = L.render_expected_points(_xp(), BEFORE) or ""
     assert page.count("fpldemon.com") == 1
     link = page.index("fpldemon.com")
+    gw = page.index('id="gw-xp"')
+    gw_table_end = page.index("</table>", gw)
     top100 = page.index('id="top-100"')
-    table_end = page.index("</table>", top100)
+    top100_end = page.index("</table>", top100)
     upsell = page.index(L.UPSELL)
     cta = page.index('class="cta-row"')
-    assert top100 < table_end < link < upsell < cta
+    # Koko top 100 -taulukko linkin ja ostohetken valissa.
+    assert gw < gw_table_end < link < top100 < top100_end < upsell < cta
+
+
+def test_claim_horizon_matches_the_feed():
+    from api.partner_feed import PARTNER_XP_HORIZON
+    sanat = {3: "three", 4: "four", 5: "five", 6: "six", 8: "eight"}
+    assert f"next {sanat[PARTNER_XP_HORIZON]} gameweeks" in FPL_DEMON["claim"]
 
 
 def test_expired_page_has_no_link():
