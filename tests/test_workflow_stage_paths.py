@@ -22,6 +22,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+import sys  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workflow_step_text import step_run_text  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = ROOT / ".github" / "workflows"
 
@@ -130,7 +134,7 @@ def workflow_tyot_jotka_bakettavat() -> list:
             steps = job.get("steps", []) or []
             rivit = []
             for s in steps:
-                run = s.get("run")
+                run = step_run_text(s)
                 if run:
                     rivit += _rivit_ilman_kommentteja(run)
             teksti = "\n".join(rivit)
