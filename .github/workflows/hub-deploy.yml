@@ -166,13 +166,18 @@ jobs:
       # deploy ei todista etta domain tarjoilee uuden sisallon; CF:n
       # propagaatio on mitattu minuuteissa, ja cutover-paivana ensimmaiset
       # ~3 min palauttivat 522.
+      # 27.9.2026: kuvio sietaa tarkenteen ("609 completed matches, all
+      # competitions"). Tiukka `</b>` heti luvun jalkeen jatti EXPECTin
+      # tyhjaksi ja pipefail kaatoi askeleen vaikka deploy oli onnistunut.
+      # Portti tests/test_hub_deploy_verify_pattern.py ajaa TAMAN kuvion
+      # generoitua index.html:aa vasten.
       - name: Verifioi domainilta
         run: |
           set -euo pipefail
-          EXPECT=$(grep -oE '<b>[0-9]+ completed matches</b>' index.html | head -1)
+          EXPECT=$(grep -oE '<b>[0-9]+ completed matches[^<]*</b>' index.html | head -1)
           echo "odotetaan: $EXPECT"
           for i in $(seq 1 20); do
-            LIVE=$(curl -sS --max-time 20 https://goaliq.app/ | grep -oE '<b>[0-9]+ completed matches</b>' | head -1 || true)
+            LIVE=$(curl -sS --max-time 20 https://goaliq.app/ | grep -oE '<b>[0-9]+ completed matches[^<]*</b>' | head -1 || true)
             if [ "$LIVE" = "$EXPECT" ]; then echo "OK ($i. yritys): $LIVE"; exit 0; fi
             echo "$i: live=$LIVE, odotetaan 15 s"; sleep 15
           done
