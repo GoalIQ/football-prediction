@@ -49,6 +49,18 @@ def load_log() -> dict:
     return json.loads(json.dumps(NEW_LOG))
 
 
+def _bootstrap_names() -> dict:
+    """{element_id: web_name} FPL:n bootstrapista (CI:ssa valimuistissa).
+    Epaonnistuessa {}: nimen puuttuminen ei saa estaa kutsujen kirjausta."""
+    try:
+        from src.data import fpl_api
+        boot = fpl_api.fetch_bootstrap()
+    except Exception:
+        return {}
+    return {int(e["id"]): e.get("web_name") for e in boot.get("elements") or []
+            if e.get("id") is not None and e.get("web_name")}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gw", type=int, default=None)
@@ -76,7 +88,7 @@ def main(argv=None) -> int:
     now = _dt.datetime.now(_dt.timezone.utc)
     log = load_log()
     try:
-        entry = build_entry(frozen, standouts, meta, now, by_id)
+        entry = build_entry(frozen, standouts, meta, now, by_id, _bootstrap_names())
         upsert(log, entry, now)
     except DeadlinePassed as e:
         have = any(int(r.get("gw", -1)) == gw

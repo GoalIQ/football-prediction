@@ -148,7 +148,8 @@ def model_captain_call(frozen: dict,
 
 
 def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
-                now: _dt.datetime, players_by_id: dict | None = None) -> dict:
+                now: _dt.datetime, players_by_id: dict | None = None,
+                names: dict | None = None) -> dict:
     """Yhden GW:n lokirivi freezesta + standouts-valinnoista.
 
     frozen: data/model_squad_frozen/gw{N}.json (meta.gw, meta.deadline,
@@ -211,7 +212,13 @@ def build_entry(frozen: dict, standouts: dict, xp_meta: dict,
         p = squad.get(int(pid))
         if p is None and players_by_id:
             p = players_by_id.get(int(pid))
-        return (p or {}).get("web_name")
+        nimi = (p or {}).get("web_name")
+        # 27.9: GW5:n siirto kirjattiin "out_name": null (Mendy, id 586):
+        # poistuva pelaaja ei ole uudessa rungossa eika projektiossa. Nimi
+        # FPL:n bootstrapista (`names`), jottei lokiin jaa nimetonta siirtoa.
+        if not nimi and names:
+            nimi = names.get(int(pid))
+        return nimi
 
     transfers = [{
         "out": t.get("out"), "out_name": _name(t.get("out")),
