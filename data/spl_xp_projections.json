@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-09-27T01:01:10",
+  "generated_at": "2026-09-27T02:42:42",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -25,7 +25,7 @@
     "Neom SC"
    ],
    "source": "measured",
-   "baseline_attack": -0.1372,
+   "baseline_attack": -0.1371,
    "baseline_defence": 0.2505
   },
   "sanity_gate": "PASS",
@@ -7881,7 +7881,7 @@
    },
    "xp_per_gw": 2.69,
    "xp_per_90": 5.25,
-   "xp_horizon_total": 16.14,
+   "xp_horizon_total": 16.13,
    "gameweeks": [
     {
      "gw": 8,
@@ -7891,7 +7891,7 @@
        "venue": "H"
       }
      ],
-     "xp": 2.36
+     "xp": 2.35
     },
     {
      "gw": 9,
@@ -20987,105 +20987,6 @@
    ]
   },
   {
-   "id": 163,
-   "web_name": "O. Al Turki",
-   "full_name": "Osama Al Turki",
-   "team": "Al Fayha",
-   "team_short": "FYH",
-   "pos": "DEF",
-   "price": 4.0,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 39.7,
-   "predicted_starts": 41.1,
-   "minutes_confidence": "low",
-   "p_start": 0.4113,
-   "p_cameo": 0.2188,
-   "p_bench": 0.3699,
-   "data_basis": "no_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.04,
-     "assists": 0.07
-    }
-   },
-   "xp_per_gw": 1.69,
-   "xp_per_90": 4.67,
-   "xp_horizon_total": 10.14,
-   "gameweeks": [
-    {
-     "gw": 8,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.93
-    },
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "KLJ",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.76
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "AHL",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.54
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.74
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "FSL",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.01
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.16
-    }
-   ]
-  },
-  {
    "id": 455,
    "web_name": "T. Al Jaadi",
    "full_name": "Turki Al Jaadi",
@@ -21193,6 +21094,93 @@
    "pos": "DEF",
    "price": 4.5,
    "owned_pct": 1.0,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 39.7,
+   "predicted_starts": 41.1,
+   "minutes_confidence": "low",
+   "p_start": 0.4113,
+   "p_cameo": 0.2188,
+   "p_bench": 0.3699,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 1.69,
+   "xp_per_90": 4.67,
+   "xp_horizon_total": 10.14,
+   "gameweeks": [
+    {
+     "gw": 8,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.93
+    },
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "KLJ",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.76
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "AHL",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.54
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.74
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "FSL",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.01
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.16
+    }
+   ]
+  },
+  {
+   "id": 646,
+   "web_name": "Al Harshan",
+   "full_name": "Ali Dhafer Saleh Al Harshan",
+   "team": "Al Fayha",
+   "team_short": "FYH",
+   "pos": "DEF",
+   "price": 4.0,
+   "owned_pct": 0.0,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -27014,7 +27002,7 @@
    "team": "Abha",
    "team_short": "ABH",
    "pos": "MID",
-   "price": 4.9,
+   "price": 4.8,
    "owned_pct": 0.0,
    "status": "a",
    "news": "",
@@ -28091,7 +28079,7 @@
    "team": "Al Kholood",
    "team_short": "KLD",
    "pos": "MID",
-   "price": 5.1,
+   "price": 5.2,
    "owned_pct": 6.6,
    "status": "a",
    "news": "",
@@ -39578,14 +39566,14 @@
    ]
   },
   {
-   "id": 646,
-   "web_name": "Al Harshan",
-   "full_name": "Ali Dhafer Saleh Al Harshan",
+   "id": 148,
+   "web_name": "Al Nakhli",
+   "full_name": "Ali Al Nakhli",
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "DEF",
-   "price": 4.0,
-   "owned_pct": 0.0,
+   "price": 3.9,
+   "owned_pct": 0.2,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -39597,7 +39585,19 @@
    "p_cameo": 0.2188,
    "p_bench": 0.5974,
    "data_basis": "no_history",
-   "last_season": null,
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.04,
+     "assists": 0.07
+    }
+   },
    "xp_per_gw": 0.77,
    "xp_per_90": 4.67,
    "xp_horizon_total": 4.62,
@@ -50276,6 +50276,93 @@
    ]
   },
   {
+   "id": 630,
+   "web_name": "Trezeguet",
+   "full_name": "Mahmoud Ahmed Ibrahim Hassan",
+   "team": "Al Riyadh",
+   "team_short": "RIY",
+   "pos": "MID",
+   "price": 6.4,
+   "owned_pct": 1.0,
+   "status": "i",
+   "news": "Muscle Injury - Expected Return: Mid Oct - إصابة عضلية - العودة المتوقعة: منتصف أوكتوبر",
+   "chance_next": 0,
+   "yellows": 0,
+   "xmins": 5.5,
+   "predicted_starts": 0.0,
+   "minutes_confidence": "low",
+   "p_start": 0.0,
+   "p_cameo": 0.275,
+   "p_bench": 0.725,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 0.38,
+   "xp_per_90": 5.14,
+   "xp_horizon_total": 2.29,
+   "gameweeks": [
+    {
+     "gw": 8,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.4
+    },
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.36
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "DIR",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.36
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.39
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.37
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.41
+    }
+   ]
+  },
+  {
    "id": 130,
    "web_name": "M. Al Abboud",
    "full_name": "Mehdi Al Abboud",
@@ -50371,93 +50458,6 @@
       }
      ],
      "xp": 0.42
-    }
-   ]
-  },
-  {
-   "id": 630,
-   "web_name": "Trezeguet",
-   "full_name": "Mahmoud Ahmed Ibrahim Hassan",
-   "team": "Al Riyadh",
-   "team_short": "RIY",
-   "pos": "MID",
-   "price": 6.4,
-   "owned_pct": 1.0,
-   "status": "i",
-   "news": "Muscle Injury - Expected Return: Mid Oct - إصابة عضلية - العودة المتوقعة: منتصف أوكتوبر",
-   "chance_next": 0,
-   "yellows": 0,
-   "xmins": 5.5,
-   "predicted_starts": 0.0,
-   "minutes_confidence": "low",
-   "p_start": 0.0,
-   "p_cameo": 0.275,
-   "p_bench": 0.725,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 0.38,
-   "xp_per_90": 5.14,
-   "xp_horizon_total": 2.28,
-   "gameweeks": [
-    {
-     "gw": 8,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.4
-    },
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.36
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "DIR",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.36
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.39
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.37
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.4
     }
    ]
   },
@@ -51317,14 +51317,14 @@
    ]
   },
   {
-   "id": 148,
-   "web_name": "Al Nakhli",
-   "full_name": "Ali Al Nakhli",
+   "id": 158,
+   "web_name": "Al Dowaish",
+   "full_name": "Mohammed Al Dowaish",
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "DEF",
    "price": 3.9,
-   "owned_pct": 0.2,
+   "owned_pct": 0.1,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -51416,9 +51416,9 @@
    ]
   },
   {
-   "id": 158,
-   "web_name": "Al Dowaish",
-   "full_name": "Mohammed Al Dowaish",
+   "id": 163,
+   "web_name": "O. Al Turki",
+   "full_name": "Osama Al Turki",
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "DEF",
