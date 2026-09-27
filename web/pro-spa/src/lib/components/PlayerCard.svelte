@@ -436,7 +436,7 @@
 	);
 	const smallSample = $derived(windowGws.length > 0 && windowGws.length <= 5);
 	/** MP-17: maalit vs xG. null = ei piirreta (ei minuutteja / vanha API). */
-	const goalsXg = $derived(goalsXgView(statsRow?.goaliq.gws));
+	const goalsXg = $derived(goalsXgView(statsRow?.goaliq.gws, statsRow?.pos));
 	/** Pisteet ja jaadytetty xP kierroksittain. Vain kierrokset joilta on
 	 *  jompikumpi luku; tyhja rivi ei kerro mitaan. */
 	const gwCompare = $derived(
@@ -950,16 +950,17 @@
 									<tr>
 										<th>GW</th>
 										<th class="num">Points</th>
+										<th class="num">Expected</th>
+										<th class="num">Diff</th>
 										<!-- MP-17: vertailuryhma backendilta (pos_avg_pts), ei
-										     laskettu tassa. Tyhja = kierros kesken tai ei dataa. -->
+										     laskettu tassa. Diffin JALKEEN (tarkistaja 27.9: Diff =
+										     Points - Expected, ei Points - avg). Tyhja = kierros kesken. -->
 										<th class="num"
 											><abbr
 												title="Average points of {positionWord(statsRow?.pos)} who played that gameweek"
-												>Pos avg</abbr
+												>{statsRow?.pos ?? 'Pos'} avg</abbr
 											></th
 										>
-										<th class="num">Expected</th>
-										<th class="num">Diff</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -967,22 +968,22 @@
 										<tr>
 											<td>GW{g.gw}</td>
 											<td class="num">{g.pts ?? ''}</td>
-											<td class="num">{g.pos_avg_pts != null ? g.pos_avg_pts.toFixed(1) : ''}</td>
 											<td class="num">{g.xp_frozen != null ? g.xp_frozen.toFixed(1) : ''}</td>
 											<td class="num"
 												>{g.pts != null && g.xp_frozen != null
 													? (g.pts - g.xp_frozen).toFixed(1)
 													: ''}</td
 											>
+											<td class="num">{g.pos_avg_pts != null ? g.pos_avg_pts.toFixed(1) : ''}</td>
 										</tr>
 									{/each}
 								</tbody>
 							</table>
 						</div>
 						<p class="muted hintline">
-							Pos avg is the average FPL points of {positionWord(statsRow?.pos)} who played
-							at least a minute that gameweek, finished gameweeks only. Expected is the
-							model's projection frozen before that deadline.
+							Expected is the model's projection frozen before that deadline.
+							{statsRow?.pos ?? 'Pos'} avg is the average FPL points of {positionWord(statsRow?.pos)}
+							who played at least a minute that gameweek, finished gameweeks only.
 						</p>
 					{/if}
 				</section>

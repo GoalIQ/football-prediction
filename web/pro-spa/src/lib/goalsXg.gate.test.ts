@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import type { PlayerStatsGw } from './fantasyTools';
 import {
 	GOALS_XG_CAPTION,
+	GOALS_XG_TITLE,
 	goalsXgGeometry,
 	goalsXgHeadline,
 	goalsXgTooltip,
@@ -41,6 +42,12 @@ describe('goalsXgView', () => {
 		expect(goalsXgView(null)).toBeNull();
 	});
 
+	it('maalivahti ja 0 maalia / 0.0 xG -> null (tyhja viiva, tarkistaja 27.9)', () => {
+		expect(goalsXgView([row(1, 90, 0, 0.3)], 'GKP')).toBeNull();
+		expect(goalsXgView([row(1, 90, 0, 0.3)], 'DEF')).not.toBeNull();
+		expect(goalsXgView([row(1, 90, 0, 0.02), row(2, 90, 0, 0.01)], 'DEF')).toBeNull();
+	});
+
 	it('pelaaja jolla ei ole minuutteja -> null', () => {
 		expect(goalsXgView([row(1, 0), row(2, null)])).toBeNull();
 	});
@@ -54,7 +61,7 @@ describe('goalsXgView', () => {
 		]);
 		expect(v.totalG).toBe(3);
 		expect(v.totalXg).toBe(1.55);
-		expect(goalsXgTooltip(v.points[1])).toBe('GW2: no FPL row (did not feature)');
+		expect(goalsXgTooltip(v.points[1])).toBe("GW2: didn't play");
 		expect(goalsXgTooltip(v.points[2])).toBe(
 			'GW3: 2 goals from 1.10 xG · season so far 3 goals from 1.6 xG'
 		);
@@ -71,6 +78,8 @@ describe('copy', () => {
 	it('otsikko on luvut ilman tulkintaa', () => {
 		const v = goalsXgView([row(1, 90, 1, 0.45), row(2, 90, 0, 0.1)])!;
 		expect(goalsXgHeadline(v)).toBe('1 goal from 0.6 xG, GW1-2');
+		// "Goals against" = paastetyt maalit jalkapallossa.
+		expect(GOALS_XG_TITLE.toLowerCase()).not.toContain('against');
 		const kaikki = goalsXgHeadline(v) + GOALS_XG_CAPTION;
 		for (const sana of ['overperform', 'underperform', 'regress', 'lucky', 'unlucky', 'clinical', 'due ']) {
 			expect(kaikki.toLowerCase()).not.toContain(sana);
@@ -97,11 +106,14 @@ describe('kutsupaikka', () => {
 	it('PlayerCard: komponentti kerran statsRow-datalla, Pos avg backendilta', () => {
 		const pc = strip(read('components/PlayerCard.svelte'));
 		expect(pc.match(/<GoalsXgChart /g)?.length).toBe(1);
-		expect(pc).toContain('goalsXgView(statsRow?.goaliq.gws)');
+		expect(pc).toContain('goalsXgView(statsRow?.goaliq.gws, statsRow?.pos)');
 		expect(pc).toContain('<GoalsXgChart view={goalsXg} />');
 		// Otsikko PlayerCardin omilla luokilla (scoped CSS ei ulotu lapseen).
 		expect(pc).toMatch(/<h4 class="gw-title">\{GOALS_XG_TITLE\} <span class="src">source: FPL<\/span><\/h4>/);
 		expect(pc).toContain('g.pos_avg_pts != null ? g.pos_avg_pts.toFixed(1)');
+		// Avg-sarake Diffin jalkeen: Diff = Points - Expected on vierekkain.
+		const i = (x: string) => pc.indexOf(x);
+		expect(i('<th class="num">Diff</th>')).toBeLessThan(i("{statsRow?.pos ?? 'Pos'} avg</abbr"));
 		// Kaavio "Season so far" -osion jalkeen, ei mallinakyman sisalla.
 		expect(pc.indexOf('<GoalsXgChart')).toBeGreaterThan(pc.indexOf('Season so far, against his position'));
 	});

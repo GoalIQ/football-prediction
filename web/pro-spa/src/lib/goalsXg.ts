@@ -5,8 +5,8 @@
  * (/api/fantasy/player-stats `goaliq.gws[]`), ei mallin estimaatteja.
  *
  * REHELLISYYS:
- *  - kierros jolta ei ole FPL-rivia (mins null) ei lisaa mitaan eika ole
- *    "0 maalia": tooltip sanoo "no FPL row"
+ *  - kierros jolla pelaaja ei pelannut (mins null: penkki tai ei ottelua) ei
+ *    lisaa mitaan eika ole "0 maalia": tooltip sanoo "didn't play""
  *  - vanha API ilman kenttia -> null, kaaviota ei piirreta (ei nollaviivaa
  *    joka vaittaisi 0 maalia / 0 xG)
  *  - pelaaja joka ei ole pelannut minuuttiakaan -> null
@@ -15,7 +15,8 @@ import type { PlayerStatsGw } from './fantasyTools';
 
 export interface GoalsXgPoint {
 	gw: number;
-	/** FPL-rivi olemassa (voi olla 0 min). */
+	/** Pelasi (backend antaa rivin vain kun minuutteja > 0; penkki ja
+	 *  kierros ilman ottelua ovat null). */
 	hasRow: boolean;
 	mins: number | null;
 	g: number;
@@ -32,8 +33,14 @@ export interface GoalsXgView {
 	toGw: number;
 }
 
-export function goalsXgView(gws: PlayerStatsGw[] | null | undefined): GoalsXgView | null {
+export function goalsXgView(
+	gws: PlayerStatsGw[] | null | undefined,
+	pos?: string | null
+): GoalsXgView | null {
 	if (!gws || gws.length === 0) return null;
+	// Julkaisutarkistaja 27.9: maalivahdin kaavio on aina nollaviiva (24/24),
+	// eika se kerro mitaan.
+	if (pos === 'GKP') return null;
 	// Vanha API (kentat undefined) ja pelaamaton pelaaja: kummallakaan ei ole
 	// yhtaan minuuttia -> ei kaaviota. Ei arvata nollia.
 	if (!gws.some((r) => (r.mins ?? 0) > 0)) return null;
@@ -51,6 +58,8 @@ export function goalsXgView(gws: PlayerStatsGw[] | null | undefined): GoalsXgVie
 	// Loppupaan rivittomat kierrokset (tuleva / ei viela pelattu) pois:
 	// viiva ei jatku tulevaisuuteen.
 	while (points.length > 1 && !points[points.length - 1].hasRow) points.pop();
+	// "0 goals from 0.0 xG" on tosi mutta tyhja viiva (27.9: 155/421 korttia).
+	if (cumG === 0 && Math.round(cumXg * 10) === 0) return null;
 	return {
 		points,
 		totalG: cumG,
@@ -74,14 +83,16 @@ export function goalsXgHeadline(v: GoalsXgView): string {
 }
 
 export function goalsXgTooltip(p: GoalsXgPoint): string {
-	if (!p.hasRow) return `GW${p.gw}: no FPL row (did not feature)`;
+	if (!p.hasRow) return `GW${p.gw}: didn't play`;
 	const tama = `GW${p.gw}: ${goalsWord(p.g)} from ${p.xg.toFixed(2)} xG`;
 	return `${tama} · season so far ${goalsWord(p.cumG)} from ${p.cumXg.toFixed(1)} xG`;
 }
 
-export const GOALS_XG_TITLE = 'Goals against expected goals';
+// Julkaisutarkistaja 27.9: "Goals against" luetaan paastetyiksi maaleiksi;
+// lahde oli selitteessa kolmesti ja sama disclaimer jo kortilla ylempana.
+export const GOALS_XG_TITLE = 'Goals vs expected goals';
 export const GOALS_XG_CAPTION =
-	"Running totals from FPL's own numbers. xG is FPL's expected goals, the quality of the chances he shot from, not a GoalIQ projection.";
+	"Running totals. xG is FPL's expected goals: how many goals shots like his usually produce.";
 export const GOALS_XG_ARIA = 'Running total of goals and of expected goals, after each gameweek';
 
 export interface GoalsXgPad {
