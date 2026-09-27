@@ -102,6 +102,7 @@ jobs:
       # FPL-data ei ole available / sanity gate ei mene lapi). Kaikki muu
       # nollasta poikkeava on vika ja kaataa ajon.
       - name: Bake fpl.html from repo data
+        id: bake_fpl_page
         run: |
           set +e
           python scripts/build_fpl_page.py
@@ -128,7 +129,7 @@ jobs:
       # Siksi bake tehdaan TASSA, samasta datasta joka juuri laskeutui.
       # accuracy-log jatkaa oman bakensa varmistuksena.
       - name: Bake FPL long-tail pages from the same data
-        id: longtail
+        id: bake_longtail
         run: |
           out=$(python -m scripts.build_fpl_longtail) || {
             echo "::error::build_fpl_longtail kaatui - 15 long-tail-sivua jaa vanhaksi"
@@ -152,50 +153,39 @@ jobs:
       # no-op), joten askel on turvallinen joka ajolla eika siivous jaa kenenkaan
       # muistin varaan. Sama sivu-ajo committaa ja hub-deploy julkaisee.
       - name: Free-window promise self-clean (no-op while the window is open)
+        id: bake_free_window
         run: python scripts/check_free_window.py --fix
 
+      # 27.9.2026 (CI-PUSH-REBUILD-MUUT-WORKFLOWT): vanha viiden rebasen
+      # silmukka korvattu scripts/ci_push_rebuild.sh:lla (sama kuin
+      # accuracy-log, AUTO-S16). Tama ajo ei kirjoita dataa (CI_PUSH_DATA
+      # tyhja), joten konfliktissa sivut rakennetaan uudelleen tuoreen mainin
+      # datasta: juuri se mita sivuajon kuuluukin tehda.
+      # CI_PUSH_PAGES: `fpl/` kattaa long-tail-sivut seka alihakemistot club/
+      # ja note/. 🔴 30.8: lista on oltava build_fpl_page.py:n
+      # KIRJOITUSKOHTEIDEN ylijoukko. `predictions.html` ja
+      # `world-cup-2026-predictions.html` puuttuivat -> rebase kieltaytyi ->
+      # sivu jaatyi (26.8, 28.8, 30.8). `test_workflow_stage_paths.py` pitaa
+      # taman listan ja builderin synkassa - ala muokkaa vain toista.
+      # CI_PUSH_BUILD = samat bake-askeleet kuin ylla (portti
+      # tests/test_ci_push_rebuild.py vaatii ne kaikki).
       - name: Commit + push to main (Pages serves fresh page)
         id: push
+        env:
+          CI_PUSH_DATA: ""
+          CI_PUSH_PAGES: >-
+            fpl.html sitemap.xml sitemap-core.xml index.html fpl/
+            sitemap-fpl.xml predictions.html world-cup-2026-predictions.html
+            faq.html creators.html llms.txt
+          CI_PUSH_BUILD: >-
+            python scripts/build_fpl_page.py;
+            python -m scripts.build_fpl_longtail;
+            python scripts/check_free_window.py --fix
+          CI_PUSH_MSG: "geo(fpl): FPL-landing + long-tail refresh [skip ci]"
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # `fpl/` kattaa long-tail-sivut seka alihakemistot club/ ja note/.
-          # 🔴 30.8: lista on oltava build_fpl_page.py:n KIRJOITUSKOHTEIDEN
-          # ylijoukko. `predictions.html` ja `world-cup-2026-predictions.html`
-          # puuttuivat: builder kirjoittaa ne, mutta ne jaivat vaiheistamatta
-          # -> rebase kieltaytyi -> sivu jaatyi (26.8, 28.8, 30.8 kaikki heti
-          # UTC-keskiyon jalkeen). `test_workflow_stage_paths.py` pitaa taman
-          # listan ja builderin synkassa - ala muokkaa vain toista.
-          git add fpl.html sitemap.xml sitemap-core.xml index.html fpl/ sitemap-fpl.xml predictions.html world-cup-2026-predictions.html faq.html creators.html llms.txt
-          if git diff --cached --quiet; then
-            echo "Ei muutoksia (data ennallaan tai bake fail-safe) — ohitetaan commit."
-            exit 0
-          fi
-          git commit -m "geo(fpl): FPL-landing + long-tail refresh [skip ci]"
-          for i in 1 2 3 4 5; do
-            git fetch origin main || true
-            # 30.8: --autostash. Bake kirjoittaa myos `git add` -whitelistin
-            # ulkopuolelle (build_fpl_page.py:n LIVE_BACK/FWD-ikkuna siirtyy
-            # UTC-vuorokauden vaihtuessa -> predictions.html muuttuu). Ilman
-            # autostashia rebase kieltaytyy ("cannot rebase: You have unstaged
-            # changes") ja KAIKKI viisi yritysta kaatuvat samaan asiaan. Se ei
-            # ole kilpailu vaan deterministinen jaatyminen, ja loki nimesi sen
-            # vaarin: sivu jai 5 h datasta jalkeen eika mikaan huutanut.
-            if ! rebase_virhe=$(git rebase --autostash origin/main 2>&1); then
-              echo "$rebase_virhe"
-              git rebase --abort 2>/dev/null || true
-              echo "Yritys $i: REBASE kaatui (EI push-kilpailu) - ks. syy ylla."
-            elif git push origin HEAD:main; then
-              echo "Pushed to main (yritys $i)."
-              echo "pushed=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            else
-              echo "Yritys $i: push hylattiin (kilpailu?) - rebase + retry."
-            fi
-            sleep 5
-          done
-          echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
-          exit 1
+          bash scripts/ci_push_rebuild.sh
 
       # Deploy-verify (P1 5.7): Pages-deploy failaa transientisti (~40 %
       # 4.-5.7) → varmista että live goaliq.app todella servaa HEADin

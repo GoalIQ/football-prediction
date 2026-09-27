@@ -24,7 +24,11 @@ rivin tai kirjoittamaan perustelun poikkeuslistalle.
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workflow_step_text import workflow_text_expanded  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 WF = ROOT / ".github" / "workflows" / "fpl-data-refresh.yml"
@@ -54,7 +58,10 @@ POIKKEUKSET: dict[str, str] = {}
 
 
 def _workflow() -> str:
-    return WF.read_text(encoding="utf-8", errors="replace")
+    # 27.9: push-askel kutsuu scripts/ci_push_rebuild.sh:ta ja polut ovat
+    # env-listoissa. Jaettu lukija laajentaa ne `git add` -riviksi; raaka
+    # read_text ei nakisi niita lainkaan (portti olisi lakannut mittaamasta).
+    return workflow_text_expanded(WF)
 
 
 def _git_add_rivit(teksti: str) -> str:
@@ -88,8 +95,10 @@ def test_kontrolli_havaitsin_lukee_oikeaa_lohkoa():
     vihrea siksi etta `_git_add_rivit` palauttaa tyhjaa (muisti:
     kontrolli-lapaisi-tyhjana)."""
     addit = _git_add_rivit(_workflow())
-    assert addit.count("git add") >= 10, (
-        f"git add -rivit ei loytynyt odotetusti: {addit.count('git add')}")
+    polut = {t for r in addit.splitlines() for t in r.split()
+             if "/" in t or t.endswith((".json", ".html"))}
+    assert len(polut) >= 20, (
+        f"git add -polkuja ei loytynyt odotetusti: {len(polut)}")
     # Ja tunnettu rivi on siella.
     assert "data/gw_calls.json" in addit
     # Keksitty tiedosto EI ole.

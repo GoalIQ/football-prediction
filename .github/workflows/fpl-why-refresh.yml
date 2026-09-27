@@ -76,39 +76,20 @@ jobs:
           python -m scripts.build_fpl_why \
             --top-n "${{ github.event.inputs.top_n || '150' }}"
 
+      # 27.9.2026 (CI-PUSH-REBUILD-MUUT-WORKFLOWT): vanha viiden rebasen
+      # silmukka korvattu scripts/ci_push_rebuild.sh:lla (sama kuin
+      # accuracy-log, AUTO-S16). Tama ajo kirjoittaa vain datan; sivut jotka
+      # lukevat fpl_why.jsonin rakentaa fpl-page-refresh, joten
+      # CI_PUSH_PAGES ja CI_PUSH_BUILD ovat tyhjia. Jos joku muu muutti
+      # fpl_why.jsonia ajon aikana, skripti kaatuu eika ylikirjoita.
       - name: Commit + push to main (Render serves the explanations)
+        id: push
+        env:
+          CI_PUSH_DATA: data/fpl_why.json
+          CI_PUSH_PAGES: ""
+          CI_PUSH_BUILD: ""
+          CI_PUSH_MSG: "chore(fpl): why-this-pick explanations refresh [skip ci]"
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/fpl_why.json || {
-            echo "::warning::git add data/fpl_why.json epäonnistui (gitignore?)"
-            exit 0
-          }
-          if git diff --cached --quiet; then
-            echo "Ei muutoksia (selitykset ennallaan) — ohitetaan commit."
-            exit 0
-          fi
-          git commit -m "chore(fpl): why-this-pick explanations refresh [skip ci]"
-          for i in 1 2 3 4 5; do
-            git fetch origin main || true
-            # 30.8: --autostash. Bake kirjoittaa myos `git add` -whitelistin
-            # ulkopuolelle (build_fpl_page.py:n LIVE_BACK/FWD-ikkuna siirtyy
-            # UTC-vuorokauden vaihtuessa -> predictions.html muuttuu). Ilman
-            # autostashia rebase kieltaytyy ("cannot rebase: You have unstaged
-            # changes") ja KAIKKI viisi yritysta kaatuvat samaan asiaan. Se ei
-            # ole kilpailu vaan deterministinen jaatyminen, ja loki nimesi sen
-            # vaarin: sivu jai 5 h datasta jalkeen eika mikaan huutanut.
-            if ! rebase_virhe=$(git rebase --autostash origin/main 2>&1); then
-              echo "$rebase_virhe"
-              git rebase --abort 2>/dev/null || true
-              echo "Yritys $i: REBASE kaatui (EI push-kilpailu) - ks. syy ylla."
-            elif git push origin HEAD:main; then
-              echo "Pushed to main (yritys $i)."
-              exit 0
-            else
-              echo "Yritys $i: push hylattiin (kilpailu data-cronin kanssa?) - rebase + retry."
-            fi
-            sleep 5
-          done
-          echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
-          exit 1
+          bash scripts/ci_push_rebuild.sh
