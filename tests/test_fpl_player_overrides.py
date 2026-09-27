@@ -307,6 +307,43 @@ def test_every_shipped_row_has_a_reason_and_a_review_date(field):
     for pid, ov in load_player_overrides()[0].items():
         assert ov[field], f"pelaaja {pid}: {field} puuttuu"
 
+
+# 27.9 (julkaisutarkistaja): reason on JULKISTA tekstia. Se naytetaan
+# pelaajakortissa ("Set by hand: <reason>.") seka SPA:ssa etta mobiilissa ja
+# kulkee jakokortin kuvassa. Mamardashvilin rivi viittasi poistettuun
+# "Alisson-riviin (id 350)" ja lukuun "p_start sums to 1.22" kuukauden.
+# Sisainen viittaus toiseen riviin vanhenee kun rivi poistetaan, eika lukija
+# voi tarkistaa sita mistaan.
+_REASON_SISAINEN = (
+    (r"\bid \d+", "viittaus toisen rivin id:hen"),
+    (r"p_start|xg_mult|until_available|review_by", "sarakkeen nimi"),
+    (r"\bsums? to\b", "sisainen laskelma"),
+    (r"\b(?:the|this|that) \w+ row\b|\brow\b", "viittaus CSV-riviin"),
+)
+
+
+def _reason_viat(reason: str) -> list[str]:
+    import re
+    return [syy for kuvio, syy in _REASON_SISAINEN if re.search(kuvio, reason, re.I)]
+
+
+def test_shipped_reason_is_public_text_without_internal_references():
+    viat = {pid: _reason_viat(ov["reason"])
+            for pid, ov in load_player_overrides()[0].items()}
+    viat = {pid: v for pid, v in viat.items() if v}
+    assert not viat, f"reason-kentta ei ole julkista tekstia: {viat}"
+
+
+def test_reason_gate_negative_control():
+    vanha = ("Successor in waiting, not the incumbent. Paired with the Alisson row: "
+             "without it the club's keeper p_start sums to 1.22, i.e. more than one "
+             "starting keeper. Same reasoning and sources as id 350")
+    assert set(_reason_viat(vanha)) == {"viittaus toisen rivin id:hen", "sarakkeen nimi",
+                                       "sisainen laskelma", "viittaus CSV-riviin"}
+    assert _reason_viat("Liverpool's backup keeper. Alisson played every minute "
+                        "of GW1-5 in FPL's match data, so Mamardashvili's start "
+                        "chance is set low") == []
+
 # --- until_available: rivi purkautuu kun pelaaja palaa (Villen kysymys 16.8)
 
 def test_until_available_flag_is_parsed(tmp_path):
