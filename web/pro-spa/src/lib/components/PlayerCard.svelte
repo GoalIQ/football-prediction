@@ -44,6 +44,7 @@
 	// raakaluvut ilmaiseksi, malli maksaa), joten ei gatea eika teaseria.
 	import { fetchPlayerStatsShared, type PlayerStatsResponse } from '$lib/fantasyTools';
 	import GoalsXgChart from './GoalsXgChart.svelte';
+	import { GOALS_XG_TITLE, goalsXgView } from '$lib/goalsXg';
 	import {
 		percentileOf,
 		ordinal,
@@ -434,6 +435,8 @@
 				: `GW${windowGws[0]}-${windowGws[windowGws.length - 1]}`
 	);
 	const smallSample = $derived(windowGws.length > 0 && windowGws.length <= 5);
+	/** MP-17: maalit vs xG. null = ei piirreta (ei minuutteja / vanha API). */
+	const goalsXg = $derived(goalsXgView(statsRow?.goaliq.gws));
 	/** Pisteet ja jaadytetty xP kierroksittain. Vain kierrokset joilta on
 	 *  jompikumpi luku; tyhja rivi ei kerro mitaan. */
 	const gwCompare = $derived(
@@ -988,7 +991,15 @@
 			<!-- MP-17 (27.9): maalit vs xG kumulatiivisena. FREE (FPL:n luvut).
 			     Komponentti ei piirra mitaan jos pelaaja ei ole pelannut tai
 			     API ei laheta kenttia ($lib/goalsXg palauttaa null). -->
-			<GoalsXgChart gws={statsRow?.goaliq.gws} />
+			{#if goalsXg}
+				<!-- Otsikko ja osio TASSA eika lapsikomponentissa: `.gw-title`/`.src`
+				     ovat taman komponentin scoped-tyyleja (27.9 lapsessa otsikko
+				     renderoitiin tyylittomana, mitattu selaimella). -->
+				<section class="pcent">
+					<h4 class="gw-title">{GOALS_XG_TITLE} <span class="src">source: FPL</span></h4>
+					<GoalsXgChart view={goalsXg} />
+				</section>
+			{/if}
 
 			{#if premium && !excluded}
 			{@const gws = player.gameweeks ?? []}

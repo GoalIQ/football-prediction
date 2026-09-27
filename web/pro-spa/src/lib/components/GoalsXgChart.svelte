@@ -9,31 +9,26 @@
 	 * validaattorilla tummaa pintaa #141311 vasten: #B8891A / #1FA898, kaikki
 	 * kuusi tarkistusta PASS (CVD dE 13.9, normaali 18.5).
 	 */
-	import type { PlayerStatsGw } from '$lib/fantasyTools';
 	import {
 		GOALS_XG_ARIA,
 		GOALS_XG_CAPTION,
-		GOALS_XG_TITLE,
 		goalsXgGeometry,
 		goalsXgHeadline,
 		goalsXgTooltip,
-		goalsXgView
+		type GoalsXgView
 	} from '$lib/goalsXg';
 
-	let { gws }: { gws: PlayerStatsGw[] | null | undefined } = $props();
+	/** Nakyma tulee kutsujalta (PlayerCard: goalsXgView), joka myos omistaa
+	 *  osion otsikon omilla tyyleillaan. */
+	let { view }: { view: GoalsXgView } = $props();
 
 	const W = 320;
 	const H = 120;
-	const view = $derived(goalsXgView(gws));
-	const geom = $derived(view ? goalsXgGeometry(view, W, H) : null);
+	const geom = $derived(goalsXgGeometry(view, W, H));
 	let active = $state<number | null>(null);
 </script>
 
-{#if view && geom}
-	<section class="gxg">
-		<h4 class="gw-title">
-			{GOALS_XG_TITLE} <span class="src">source: FPL</span>
-		</h4>
+<div class="gxg">
 		<p class="headline">{goalsXgHeadline(view)}</p>
 		<div class="line-chart">
 			<svg viewBox="0 0 {W} {H}" role="group" aria-label={GOALS_XG_ARIA}>
@@ -82,7 +77,7 @@
 			<span class="sw xg" aria-hidden="true"></span> expected goals (xG)
 			<span class="muted">· GW on the axis</span>
 		</p>
-		<p class="muted hintline">{GOALS_XG_CAPTION}</p>
+		<p class="cap">{GOALS_XG_CAPTION}</p>
 		<details class="table">
 			<summary>Show as a table</summary>
 			<div class="table-wrap">
@@ -110,14 +105,18 @@
 				</table>
 			</div>
 		</details>
-	</section>
-{/if}
+</div>
 
 <style>
 	.gxg {
 		--gxg-goals: #b8891a;
 		--gxg-xg: #1fa898;
-		margin-top: var(--s-4);
+		margin-bottom: var(--s-4);
+	}
+	.cap {
+		font-size: var(--step--1);
+		color: var(--text-muted);
+		margin: var(--s-1) 0 0;
 	}
 	.headline {
 		margin: var(--s-1) 0 0;

@@ -97,7 +97,10 @@ describe('kutsupaikka', () => {
 	it('PlayerCard: komponentti kerran statsRow-datalla, Pos avg backendilta', () => {
 		const pc = strip(read('components/PlayerCard.svelte'));
 		expect(pc.match(/<GoalsXgChart /g)?.length).toBe(1);
-		expect(pc).toContain('<GoalsXgChart gws={statsRow?.goaliq.gws} />');
+		expect(pc).toContain('goalsXgView(statsRow?.goaliq.gws)');
+		expect(pc).toContain('<GoalsXgChart view={goalsXg} />');
+		// Otsikko PlayerCardin omilla luokilla (scoped CSS ei ulotu lapseen).
+		expect(pc).toMatch(/<h4 class="gw-title">\{GOALS_XG_TITLE\} <span class="src">source: FPL<\/span><\/h4>/);
 		expect(pc).toContain('g.pos_avg_pts != null ? g.pos_avg_pts.toFixed(1)');
 		// Kaavio "Season so far" -osion jalkeen, ei mallinakyman sisalla.
 		expect(pc.indexOf('<GoalsXgChart')).toBeGreaterThan(pc.indexOf('Season so far, against his position'));
@@ -105,7 +108,8 @@ describe('kutsupaikka', () => {
 
 	it('komponentti ei laske summia itse, legenda + taulukko + katkoviiva', () => {
 		const c = strip(read('components/GoalsXgChart.svelte'));
-		expect(c).toContain('goalsXgView(gws)');
+		expect(c).toContain('goalsXgGeometry(view, W, H)');
+		expect(c).not.toContain('gw-title');
 		expect(c).not.toMatch(/\.reduce\(|\+=/);
 		expect(c).toContain('class="legend"');
 		expect(c).toContain('Show as a table');
