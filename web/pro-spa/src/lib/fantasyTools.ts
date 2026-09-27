@@ -1336,8 +1336,22 @@ export interface ChipWindow {
 	bb_ev: number;
 	tc_ev: number;
 	fh_ev: number;
+	/** TC-TARGET-PLAYER (27.9): kenen GW-xP:sta tc_ev on (XI:n paras
+	 *  kapteeni). null skaalatulla rivilla ja ilmaiskayttajalla (maski). */
+	tc_player?: { id: number; web_name: string } | null;
 	/** 'player_xp' (6 GW:n horisontti) | 'team_approx_cs_fdr' (GW7+). */
 	basis: string;
+}
+
+/** TC-TARGET-PLAYER: rungon pelaaja ja hanen paras TC-kierroksensa. */
+export interface TcCandidate {
+	id: number;
+	web_name: string;
+	team_short: string;
+	pos: string;
+	by_gw: { gw: number; xp: number }[];
+	best_gw: number;
+	best_xp: number;
 }
 
 export interface ChipBest {
@@ -1346,6 +1360,8 @@ export interface ChipBest {
 	basis: string;
 	/** Vain wildcardilla: montako kierrosta luku kattaa. */
 	window_gws?: number;
+	/** Vain Triple Captainilla: parhaan rivin kapteeni. */
+	player?: { id: number; web_name: string };
 }
 
 /** CHIP-EV-CHIPS-USED (3.9): puolikkaan ikkuna + entryn pelattu chip. */
@@ -1385,6 +1401,8 @@ export interface ChipEvResponse {
 	 *  Aiemmin nama rivit kilpailivat samassa `best`-maksimissa mitattujen
 	 *  kanssa ja voittivat sen. Maskattuna {}. */
 	best_estimate?: Partial<Record<'bb' | 'tc' | 'fh', ChipBest>>;
+	/** TC-TARGET-PLAYER: pelaajavalitsin. Maskattuna []. */
+	tc_candidates?: TcCandidate[];
 	/** Per chip: puolikkaiden ikkunat, pelattu GW, tarjolla nyt. */
 	chips?: {
 		history_loaded: boolean;

@@ -10,6 +10,7 @@
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import MethodNote from './MethodNote.svelte';
 	import ModelWorking from './ModelWorking.svelte';
+	import { TC_ASSUMPTION, TC_PICK_LABEL, tcPickLine, tcRowSuffix } from '$lib/tcTarget';
 
 	const WORKING_STEPS = [
 		'Loading model xP projections',
@@ -152,6 +153,12 @@
 			sharing = false;
 		}
 	}
+	// TC-TARGET-PLAYER (27.9): pelaajavalitsin. Oletus = ensimmainen (paras)
+	// ehdokas; backend lajittelee ja maskaa (ilmaiselle []).
+	let tcPick = $state<number | null>(null);
+	let tcCand = $derived(
+		data?.tc_candidates?.find((c) => c.id === tcPick) ?? data?.tc_candidates?.[0] ?? null
+	);
 	let hasTeamApprox = $derived(
 		data?.windows?.some((w) => w.basis !== 'player_xp') ?? false
 	);
@@ -228,6 +235,9 @@
 					<p class="best-ev">
 						<span class="ev-num">{best.ev > 0 ? '+' : ''}{best.ev.toFixed(1)}</span>
 						<span class="ev-unit">xP est.</span>
+						{#if chip.key === 'tc' && best.player}
+							<span class="window-note">captain {best.player.web_name}</span>
+						{/if}
 						{#if best.window_gws != null}
 						<!-- 🔴 Kumulatiivinen luku sanoo mita se kattaa, LUVUN
 						     VIERESSA. Ilman tata lukija vertaa 6 kierroksen
@@ -259,12 +269,34 @@
 									>{(chip.ev(w) as number) > 0 ? '+' : ''}{(chip.ev(w) as number).toFixed(1)}<!--
 									-->{#if chip.key === 'wc' && w.wc_window_gws != null}<span
 											class="window-note">over {w.wc_window_gws} GWs</span
+										>{/if}{#if chip.key === 'tc' && tcRowSuffix(w)}<span
+											class="window-note">{tcRowSuffix(w)}</span
 										>{/if}</td
 								>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
+				{#if chip.key === 'tc'}
+					<!-- TC-TARGET-PLAYER (27.9): laskenta olettaa XI:n parhaan
+					     kapteenin, ja ruutu sanoo sen. Valitsin: rungon pelaajan
+					     oma paras TC-kierros (backend tc_candidates). -->
+					<p class="est-line">{TC_ASSUMPTION}</p>
+					{#if data.tc_candidates && data.tc_candidates.length > 0 && tcCand}
+						<label class="tc-pick">
+							<span>{TC_PICK_LABEL}</span>
+							<select
+								value={tcCand.id}
+								onchange={(e) => (tcPick = Number((e.currentTarget as HTMLSelectElement).value))}
+							>
+								{#each data.tc_candidates as c (c.id)}
+									<option value={c.id}>{c.web_name} ({c.pos})</option>
+								{/each}
+							</select>
+						</label>
+						<p class="est-line tc-pick-line">{tcPickLine(tcCand)}</p>
+					{/if}
+				{/if}
 			</div>
 		{/each}
 	</div>
@@ -294,6 +326,21 @@
 {/if}
 
 <style>
+	.tc-pick {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--s-2);
+		margin-top: var(--s-2);
+		font-size: var(--step--1);
+		color: var(--text-muted);
+	}
+	.tc-pick select {
+		max-width: 100%;
+	}
+	.tc-pick-line {
+		font-variant-numeric: tabular-nums;
+	}
 	.chip-form {
 		display: flex;
 		flex-wrap: wrap;
