@@ -26,6 +26,10 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workflow_step_text import workflow_text_expanded  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 WF = ROOT / ".github" / "workflows"
@@ -41,8 +45,9 @@ POIKKEUKSET: dict[str, str] = {}
 
 
 def _workflow_tekstit() -> dict[str, str]:
-    return {p.name: p.read_text(encoding="utf-8", errors="replace")
-            for p in sorted(WF.glob("*.yml"))}
+    # 27.9: ci_push_rebuild.sh-askeleen git add -polut ovat env:ssa, joten
+    # teksti laajennetaan samalla lukijalla kuin muissa workflow-porteissa.
+    return {p.name: workflow_text_expanded(p) for p in sorted(WF.glob("*.yml"))}
 
 
 def _committaa_sivuja(teksti: str) -> list[str]:
