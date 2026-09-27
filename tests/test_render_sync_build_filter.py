@@ -60,7 +60,7 @@ def test_apply_patches_only_build_filter(monkeypatch, tmp_path):
     assert len(kuvat) == 1 and '"buildFilter": null' in kuvat[0].read_text(encoding="utf-8")
 
 
-def test_measure_only_never_writes(monkeypatch):
+def test_measure_only_never_writes(monkeypatch, tmp_path):
     kutsut = []
 
     def fake_req(method, url, body=None):
@@ -68,5 +68,9 @@ def test_measure_only_never_writes(monkeypatch):
         return {"buildFilter": None}
 
     monkeypatch.setattr(R, "_req", fake_req)
+    # Eristys: 27.9 mutaatio (apply-ehto pois) kirjoitti ennen-kuvan OIKEAAN
+    # outputs/-kansioon, koska ROOT ei ollut tmp:ssa.
+    monkeypatch.setattr(R, "ROOT", tmp_path)
     assert R.main([]) == 1  # ajautunut -> exit 1
     assert kutsut == ["GET"]
+    assert not (tmp_path / "outputs").exists()
