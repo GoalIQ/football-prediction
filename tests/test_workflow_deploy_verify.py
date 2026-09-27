@@ -34,6 +34,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+import sys  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workflow_step_text import step_run_text  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 VERIFY = "verify_live_pages.sh"
@@ -59,8 +63,8 @@ def _run_lohkot(doc: dict) -> list[str]:
     out = []
     for job in (doc.get("jobs") or {}).values():
         for step in (job or {}).get("steps") or []:
-            r = (step or {}).get("run")
-            if isinstance(r, str):
+            r = step_run_text(step)
+            if r:
                 out.append(r)
     return out
 
