@@ -45,6 +45,15 @@ PAIRS = [
     # PAYLOAD-KENTAT-ILMAN-PINTAA (10.9): kaksi uutta lausetta molemmilla pinnoilla
     ("fantasy.race.stale", "components/SeasonRace.svelte"),
     ("fantasy.race.basis", "components/SeasonRace.svelte"),
+    # MP14-RACE-COPY (26.9): subtitle ylilupasi (kaikki pisteet, vaikka stale/unscored
+    # kierrokset jaavat kisan ulkopuolelle). Rekisteroity tanne jotta drift ei
+    # toistu hiljaa (sama luokka kuin 7.9:n nelinkertainen kopio).
+    # HUOM: "line restarted" -> "squad restarted" (samat avaimet, modelSeriesCopy.ts)
+    # EI ole tassa listassa: _strip_braces on tarkoitettu Svelten `{expr}`-tageille,
+    # ja modelSeriesCopy.ts:n ulomman objektiliteraalin `{` romahduttaa koko sisallon
+    # yhdeksi tokeniksi (mitattu tata riviä rakennettaessa). Sen pariteetti on
+    # web/pro-spa/src/lib/modelSeriesCopy.test.ts:ssa.
+    ("fantasy.race.subtitle", "components/SeasonRace.svelte"),
 ]
 
 TOKEN = "§"

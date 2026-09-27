@@ -33,8 +33,8 @@ export const MODEL_SERIES_COPY = {
 	 *  VAIN kun payload sanoo entryn pelanneen wildcardin lahdekierroksella. */
 	reseeded: (gw: number, fromGw: number, entryChip: string | null) =>
 		entryChip === 'wildcard'
-			? `GW${gw}: the model's line restarted from our FPL entry's squad after we played a wildcard there in GW${fromGw}.`
-			: `GW${gw}: the model's line restarted from our FPL entry's squad.`,
+			? `GW${gw}: the model's squad restarted from our FPL entry's squad after we played a wildcard there in GW${fromGw}.`
+			: `GW${gw}: the model's squad restarted from our FPL entry's squad.`,
 	/** Rivit joiden mallin hitti-kustannusta ei voitu todentaa. */
 	costUnverified: (gws: number[]) =>
 		`${gwList(gws)}: the model's transfer cost couldn't be checked against FPL's rules, so its points there are before hits.`,

@@ -65,6 +65,36 @@ FONT_MED = _FONT_DIR / "500Medium" / "IBMPlexMono_500Medium.ttf"
 from src.brand import WORDMARK_PNG as WORDMARK  # noqa: E402
 
 
+def sidecar_path(png_path: Path) -> Path:
+    return png_path.with_name(png_path.name + ".json")
+
+
+def write_sidecar(png_path: Path, spec: dict) -> Path:
+    """POSTATTU-KORTTI-EI-OLE-TALLESSA (26.9.2026).
+
+    `outputs/` on .gitignoressa ja joka ajo kirjoittaa saman tiedostonimen
+    yli, joten postattu kortti ei ollut jalkikateen todistettavissa (9.9:n
+    GW4-kortista ei jaanyt mitaan gitiin). Jokainen renderoitu kortti saa
+    sidecarin PNG:n vierelle: sha256 (todistaa TASMALLEEN tama tiedosto),
+    artefaktin generated_at (jos spec kantaa sen) ja spec itse (rivit/sarakkeet
+    sellaisina kuin ne renderoitiin). Kutsupaikka on YKSI (main()), jotta uusi
+    korttityyppi ei voi unohtaa sidecaria - se kirjoitetaan aina kun PNG on jo
+    levylla.
+    """
+    import hashlib
+    digest = hashlib.sha256(png_path.read_bytes()).hexdigest()
+    doc = {
+        "png": png_path.name,
+        "sha256": digest,
+        "generated_at": spec.get("generated_at", ""),
+        "spec": spec,
+    }
+    out = sidecar_path(png_path)
+    out.write_text(json.dumps(doc, ensure_ascii=False, indent=1, default=str) + "\n",
+                    encoding="utf-8")
+    return out
+
+
 def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:
     if not path.exists():
         # Fontin puuttuminen muuttaisi kortin ilmeen taysin ja hiljaa.
@@ -1899,6 +1929,7 @@ def main() -> int:
         if a.card in REPLY_FIELDS and a.top > REPLY_MAX_ROWS:
             print(f"huom: reply-kortti nayttaa korkeintaan {REPLY_MAX_ROWS} rivia")
         pth = REPLY_RENDERERS[spec["kind"]](spec, out)
+        write_sidecar(pth, spec)
         print(f"{spec['title']} -> {pth}")
         return 0
     if spec.get("kind") == "gw_outlook":
@@ -1909,10 +1940,12 @@ def main() -> int:
             pth = render_gw_outlook_hero(spec, out, cs_only=a.cs_only)
         else:
             pth = render_gw_outlook(spec, out)
+        write_sidecar(pth, spec)
         print("GW%s outlook (%d ottelua) -> %s"
               % (spec["gw"], len(spec["fixtures"]), pth))
         return 0
     p = render(spec, out)
+    write_sidecar(p, spec)
     print(f"{spec['title']} ({len(spec['rows'])} rivia) -> {p}")
     return 0
 

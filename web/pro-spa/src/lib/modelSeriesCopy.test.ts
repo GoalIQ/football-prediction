@@ -22,6 +22,15 @@ describe('MODEL_SERIES_COPY', () => {
 		expect(C.reseeded(5, 4, null)).not.toMatch(/wildcard/);
 		expect(C.reseeded(5, 4, '3xc')).not.toMatch(/wildcard/);
 	});
+	/* MP14-RACE-COPY (26.9): "the model's line restarted" luki piirretyksi
+	 * viivaksi eika ketjun uudelleenkaynnistykseksi (samat avaimet mobiilissa,
+	 * ks. goaliq-app lib/seasonRaceCopy.test.ts). */
+	it('reseed: sanoo "squad restarted", ei "line restarted"', () => {
+		expect(C.reseeded(5, 4, null)).toMatch(/the model's squad restarted/);
+		expect(C.reseeded(3, 2, 'wildcard')).toMatch(/the model's squad restarted/);
+		expect(C.reseeded(5, 4, null)).not.toMatch(/the model's line restarted/);
+		expect(C.reseeded(3, 2, 'wildcard')).not.toMatch(/the model's line restarted/);
+	});
 	it('mallin vertailu sanoo hitit vahennetyiksi kun payload sanoo niin', () => {
 		expect(C.modelVsAverage({ diff: -17, gameweeks: 3, hits_deducted: true })).toBe(
 			'Model vs the FPL average: -17 over 3 gameweeks, hits deducted'
