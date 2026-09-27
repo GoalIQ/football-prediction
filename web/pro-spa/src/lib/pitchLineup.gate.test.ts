@@ -555,12 +555,9 @@ const IN_XI_ALLOWED: { line: string; reason: string }[] = [
 		line: 'xiIds = players.filter((p) => p.in_xi).map((p) => p.id);',
 		reason:
 			'Premiumin what-if-ALKUTILA (reset-efekti). Se on muokattava suunnitelma eika koskaan tulostilan kokoonpano: tulostila tulee pitchLineupin settled-haarasta.'
-	},
-	{
-		line: 'const base = players.filter((p) => p.in_xi);',
-		reason:
-			'baselineXp: what-ifin "xP vs your loaded lineup" -vertailukohta on se mita editoriin ladattiin (alkutila). Ei kentan kokoonpano.'
 	}
+	// 27.9 (WHATIF-ALKUTILA B2): baselineXp:n `in_xi`-rivi poistui. Vertailu
+	// lukee arvioidun rungon `$lib/whatIfStart` modelBaselineXp:n kautta.
 ];
 
 /** Ongelmat TeamPitchManagerin lahteessa. Oma funktio, jotta sama saanto

@@ -24,11 +24,13 @@
 		hitLabel,
 		type ModelCaptain
 	} from '$lib/pitchLineup';
+	import { modelBaselineXp, whatIfInitialCaptain } from '$lib/whatIfStart';
 	import type { XpHorizon } from '$lib/xpHorizon';
 	import TeamKit from './TeamKit.svelte';
 
 	let {
 		players,
+		modelPlayers,
 		premium = false,
 		defaultGw = null,
 		gwInProgress = false,
@@ -42,6 +44,11 @@
 		belowPitch
 	}: {
 		players: RatedPlayer[];
+		/** WHATIF-ALKUTILA (julkaisutarkistaja 27.9, B2): runko jonka malli
+		 *  arvioi (`data.team.players`). `players` on siirtojen jalkeinen
+		 *  runko, jonka tulevalla pelaajalla on lahtevan `in_xi`; vertailu
+		 *  "vs the model's XI" luetaan tasta. Pakollinen. */
+		modelPlayers: RatedPlayer[];
 		premium?: boolean;
 		/** #123: aloitus-GW (rate-teamin meta.gw eli seuraava deadline). */
 		defaultGw?: number | null;
@@ -143,10 +150,10 @@
 		// muuten jokainen uusi rate-ajo pyyhkisi käyttäjän oman valinnan.
 		const savedCap = initialCaptaincy?.captain_id;
 		const savedVice = initialCaptaincy?.vice_id;
-		captainId =
-			savedCap != null && cur.has(savedCap)
-				? savedCap
-				: (players.find((p) => p.is_captain)?.id ?? null);
+		// WHATIF-ALKUTILA (Villen paatos 27.9): mallin XI + MALLIN kapteeni;
+		// tallennettu oma kapteeni voittaa. `is_captain` on viime kierroksen
+		// FPL-kapteeni, ei kayttajan tulevan kierroksen valinta.
+		captainId = whatIfInitialCaptain(players, savedCap, modelCaptain, defaultGw ?? null);
 		viceId = savedVice != null && cur.has(savedVice) && savedVice !== captainId ? savedVice : null;
 		selectedId = null;
 	});
@@ -309,11 +316,11 @@
 	);
 	// #122: lataus-tilan (importattu XI + kapteeni) xP samalle GW:lle →
 	// user-editin ero näytetään eksplisiittisenä labelina, ei äänettömänä.
-	const baselineXp = $derived.by(() => {
-		const base = players.filter((p) => p.in_xi);
-		const cap = players.find((p) => p.is_captain);
-		return base.reduce((s, p) => s + xpOf(p), 0) + (cap ? xpOf(cap) : 0);
-	});
+	// Vertailukohta = mallin XI + mallin kapteeni KENTAN kierrokselle,
+	// arvioidusta rungosta (B1 + B2, julkaisutarkistaja 27.9).
+	const baselineXp = $derived(
+		modelBaselineXp(modelPlayers, modelCaptain, selGw ?? defaultGw ?? null, xpOf)
+	);
 	const editDelta = $derived(gwXp - baselineXp);
 
 	/* LUCK-PITCH (1.9): paattyneen kierroksen luvut backendin omasta lohkosta.
@@ -790,7 +797,7 @@
 						<span class="xp-val">{gwXp.toFixed(1)}</span>
 						{#if Math.abs(editDelta) >= 0.05}
 							<span class="xp-delta"
-								>{editDelta > 0 ? '+' : ''}{editDelta.toFixed(1)} xP vs your loaded lineup</span
+								>{editDelta > 0 ? '+' : ''}{editDelta.toFixed(1)} xP vs the model's XI</span
 							>
 						{/if}
 					</span>
