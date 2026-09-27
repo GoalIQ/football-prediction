@@ -274,8 +274,8 @@
 {#if national}
 	<p class="muted lede">
 		National teams have their own model. Pick two teams and it returns the win probabilities,
-		plus expected goals and scoreline probabilities on Premium. These predictions aren't in the
-		public track record.
+		plus expected goals and scoreline probabilities on Premium. Predictions you run here aren't in
+		the public track record.
 	</p>
 {:else}
 	<p class="muted lede">
