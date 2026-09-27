@@ -131,12 +131,11 @@ export function teamPanel(
 	const from = actionableGameweek(fantasy.meta);
 	const fixtures: TeamPanel['fixtures'] = [];
 	if (from !== undefined) {
-		const gws = [...new Set((team.fixtures ?? []).map((f) => f.gw))]
-			.filter((gw) => gw >= from)
-			.sort((a, b) => a - b);
-		const last = from + Math.max(0, maxGws) - 1;
+		// Ikkuna paattyy seuran viimeiseen otteluun: sen jalkeiset tyhjat
+		// kierrokset eivat ole "Blank" vaan dataa jota ei viela ole.
+		const lastFixture = Math.max(-Infinity, ...(team.fixtures ?? []).map((f) => f.gw));
+		const last = Math.min(from + Math.max(0, maxGws) - 1, lastFixture);
 		for (let gw = from; gw <= last; gw++) {
-			if (!gws.length || gw > gws[gws.length - 1]) break;
 			const items = (team.fixtures ?? [])
 				.filter((f) => f.gw === gw)
 				.map((f) => ({

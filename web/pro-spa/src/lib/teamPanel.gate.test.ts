@@ -53,7 +53,9 @@ function fantasy(next: number, deadline: number): FantasyResponse {
 					fx(7, 'NFO', 'A', 49.9),
 					fx(9, 'CHE', 'H', 30),
 					fx(9, 'BOU', 'A', 41),
-					fx(10, 'NEW', 'A', undefined, 'far')
+					fx(10, 'NEW', 'A', undefined, 'far'),
+					// Kaukorivi jolla on silti luku: tier ratkaisee, ei kentan olemassaolo.
+					fx(11, 'SUN', 'H', 30, 'far')
 				]
 			},
 			{
@@ -97,13 +99,18 @@ function xp(masked: boolean): XpResponse {
 describe('teamPanel', () => {
 	it('ottelut deadline-kierroksesta; tuplakierros, tyhja kierros, kaukorivi ilman lukua', () => {
 		const t = teamPanel(fantasy(6, 6), xp(false), 'ARS')!;
-		expect(t.fixtures.map((g) => g.gw)).toEqual([6, 7, 8, 9, 10]);
+		expect(t.fixtures.map((g) => g.gw)).toEqual([6, 7, 8, 9, 10, 11]);
 		expect(t.fixtures[0].items).toEqual([
 			{ gw: 6, opponent: 'LEE', opponentName: 'LEE FC', venue: 'H', cs: 46.5 }
 		]);
 		expect(t.fixtures[2].items).toEqual([]);
 		expect(t.fixtures[3].items.map((f) => f.opponent)).toEqual(['CHE', 'BOU']);
 		expect(t.fixtures[4].items[0].cs).toBeNull();
+		expect(t.fixtures[5].items[0].cs).toBeNull();
+		// Ikkuna ei jatku viimeisen ottelun yli (maxGws 8 -> silti GW11 asti).
+		expect(teamPanel(fantasy(6, 6), null, 'ARS', 8)!.fixtures.at(-1)!.gw).toBe(11);
+		// Kaikki ottelut ennen deadline-kierrosta -> ei riveja.
+		expect(teamPanel(fantasy(12, 12), null, 'ARS')!.fixtures).toEqual([]);
 		// Keskiarvon vali = Teams-ruudukon sarakkeet (vain CS%:lliset lahirivit).
 		expect(t.avgRange).toBe('GW6-GW9');
 	});
