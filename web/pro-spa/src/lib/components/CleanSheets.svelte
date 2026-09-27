@@ -15,6 +15,7 @@
 	import { fetchFantasy, type FantasyResponse, type FantasyTeam } from '$lib/api';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
+	import { openTeam } from '$lib/teamSheet.svelte';
 	import MethodNote from './MethodNote.svelte';
 
 	let data = $state<FantasyResponse | null>(null);
@@ -265,7 +266,11 @@
 				<tbody>
 					{#each sortedTeams as { t, a } (t.name)}
 						<tr class:is-blank={a.n === 0}>
-							<td>{t.name}</td>
+							<td
+								><button type="button" class="team-link" onclick={() => openTeam(t.short ?? t.name, 'clean_sheets')}
+									>{t.name}</button
+								></td
+							>
 							<td class="num">{a.avgCs != null ? a.avgCs.toFixed(1) : '–'}</td>
 							<td class="num m-hide">{a.n}</td>
 							{#each gwCols as gw (gw)}

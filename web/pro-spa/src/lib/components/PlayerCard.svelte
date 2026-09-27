@@ -46,6 +46,7 @@
 	import GoalsXgChart from './GoalsXgChart.svelte';
 	import { cardFromLight, cardSearchPool, type CardSearchItem } from '$lib/cardSearch';
 	import { GOALS_XG_TITLE, goalsXgView } from '$lib/goalsXg';
+	import { openTeam } from '$lib/teamSheet.svelte';
 	import {
 		percentileOf,
 		ordinal,
@@ -647,7 +648,10 @@
 				<p class="muted pc-sub">
 					{#if player.full_name && player.full_name !== player.web_name}{player.full_name}
 						·{/if}
-					{player.team} · {player.pos}{#if typeof player.price === 'number' && player.price > 0}
+					<!-- PRO-JOUKKUENAKYMA 27.9: seura avaa joukkuepaneelin. -->
+					<button type="button" class="team-link" onclick={() => openTeam(player?.team_short, 'player_card')}
+						>{player.team}</button
+					> · {player.pos}{#if typeof player.price === 'number' && player.price > 0}
 						· {player.price.toFixed(1)}m{/if}{#if typeof player.owned_pct === 'number'}
 						· owned by {player.owned_pct.toFixed(1)}%{/if}
 				</p>

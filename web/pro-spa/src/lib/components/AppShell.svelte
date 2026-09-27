@@ -13,6 +13,7 @@
 	import Hero from './Hero.svelte';
 	import BottomNav from './BottomNav.svelte';
 	import PlayerSheet from './PlayerSheet.svelte';
+	import TeamSheet from './TeamSheet.svelte';
 	import ProductIntro from './ProductIntro.svelte';
 	import ToolsHome from './ToolsHome.svelte';
 
@@ -127,6 +128,8 @@
 <!-- 22.9: pelaajakortti avautuu mista tahansa pelaajarivista (A3 2.3).
      Yksi instanssi koko sovellukselle; rivit kertovat vain pelaajan id:n. -->
 <PlayerSheet />
+<!-- PRO-JOUKKUENAKYMA 27.9: joukkuepaneeli, sama malli (yksi instanssi). -->
+<TeamSheet />
 
 <!-- 22.9 (web-audit T2): puhelimen alapalkki. Tila sen alla varataan, jotta
      sivun viimeinen rivi (footer) ei jaa palkin taakse. -->

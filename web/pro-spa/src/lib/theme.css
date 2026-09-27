@@ -860,3 +860,21 @@ tr[data-player-id] {
 tr[data-player-id]:hover > td {
 	background: rgba(243, 242, 242, 0.04);
 }
+
+/* 27.9 (PRO-JOUKKUENAKYMA): seuran nimi tai lyhenne avaa joukkuepaneelin
+   ($lib/teamSheet). Nappi joka lukee tekstina: pisteviiva kertoo etta se
+   aukeaa, eika se vie rivin tilaa isommaksi. */
+button.team-link {
+	background: none;
+	border: none;
+	padding: 0;
+	min-height: 0;
+	font: inherit;
+	color: inherit;
+	text-decoration: underline dotted;
+	text-underline-offset: 3px;
+	cursor: pointer;
+}
+button.team-link:hover {
+	text-decoration-style: solid;
+}

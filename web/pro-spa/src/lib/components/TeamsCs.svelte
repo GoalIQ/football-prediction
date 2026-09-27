@@ -13,6 +13,7 @@
 	 */
 	import { fetchFantasy, type FantasyResponse } from '$lib/api';
 	import { teamsCsGrid } from '$lib/weekRows';
+	import { openTeam } from '$lib/teamSheet.svelte';
 
 	let data = $state<FantasyResponse | null>(null);
 	let failed = $state(false);
@@ -63,7 +64,11 @@
 				<tbody>
 					{#each grid.rows as r (r.name)}
 						<tr>
-							<td class="stick"><abbr title={r.name}>{r.team}</abbr></td>
+							<td class="stick"
+								><button type="button" class="team-link" title={r.name} onclick={() => openTeam(r.team, 'teams_cs')}
+									>{r.team}</button
+								></td
+							>
 							<td class="num">{r.avg != null ? `${Math.round(r.avg)}%` : '–'}</td>
 							{#each r.cells as c (c.gw)}
 								<td>

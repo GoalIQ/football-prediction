@@ -9,6 +9,7 @@
 	import { auth } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { closePlayer, playerSheet } from '$lib/playerSheet.svelte';
+	import { teamOnTop } from '$lib/teamSheet.svelte';
 	import PlayerCard from './PlayerCard.svelte';
 
 	let closeBtn = $state<HTMLButtonElement | null>(null);
@@ -29,7 +30,8 @@
 	});
 
 	function onKey(e: KeyboardEvent) {
-		if (playerSheet.id != null && e.key === 'Escape') closePlayer();
+		// Joukkuepaneeli voi olla kortin paalla: Escape sulkee vain ylimman.
+		if (playerSheet.id != null && e.key === 'Escape' && !teamOnTop()) closePlayer();
 	}
 </script>
 
