@@ -46,8 +46,11 @@ export function roundXp(p: RosterPlayer, gw: number | null): number {
 
 /** Mallin kapteeni kierrokselle `gw`: backendin kutsu jos se koskee tata
  *  kierrosta ja pelaaja on rungossa, muuten mallin saanto (XI:n suurin
- *  kierroksen xP; tasapelissa rungon jarjestyksessa ensimmainen, kuten
- *  Pythonin vakaa lajittelu). null vain kun rungossa ei ole mallin XI:ta. */
+ *  kierroksen xP). Tasapelissa rungon jarjestyksessa ensimmainen; backend
+ *  ratkaisee tasapelin XI:n omassa jarjestyksessa pyoristamattomilla
+ *  luvuilla, mutta saantoa kaytetaan vain kierroksilla joille backend ei
+ *  anna kutsua, joten ne eivat voi nayttaa eri kapteenia samalle
+ *  kierrokselle. null vain kun rungossa ei ole mallin XI:ta. */
 export function whatIfDefaultCaptain<P extends RosterPlayer>(
 	players: readonly P[],
 	modelCaptain: ModelCaptain | null | undefined,
