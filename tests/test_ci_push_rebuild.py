@@ -238,6 +238,7 @@ PUSH_WORKFLOWT = {
     "fpl-data-refresh.yml": "data/fpl_xp_projections.json",
     "fpl-page-refresh.yml": None,  # ei kirjoita dataa
     "fpl-why-refresh.yml": "data/fpl_why.json",
+    "fpl-elite-tick.yml": "data/fpl_elite_ownership.json",
 }
 
 _PY_RE = re.compile(r"python3?\s+(?:-m\s+)?(scripts[./][\w./]+)")
