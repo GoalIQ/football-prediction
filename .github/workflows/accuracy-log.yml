@@ -217,48 +217,36 @@ jobs:
 
       - name: Commit + push to main (Render auto-deploy → /api/accuracy)
         id: push
+        # 27.9.2026 (AUTO-S16): vanha viiden rebasen silmukka korvattu
+        # scripts/ci_push_rebuild.sh:lla. Kun toinen workflow oli ajon aikana
+        # regeneroinut SAMAT sivut eri syotteesta, konflikti oli
+        # deterministinen ja kaikki viisi yritysta kaatuivat (26.9 13:35 UTC,
+        # ajo 36245702189: fpl.html/index.html/predictions.html). Nyt
+        # konfliktissa sivut rakennetaan uudelleen tuoreen mainin + taman
+        # ajon datan paalle. Jos joku muu muutti TAMAN ajon datatiedostoa,
+        # skripti kaatuu eika ylikirjoita (hylatty 'meidan voittaa' 21.9).
+        # CI_PUSH_BUILD = samat bake-askeleet kuin ylla (portti
+        # tests/test_ci_push_rebuild.py vaatii ne kaikki).
+        env:
+          CI_PUSH_DATA: >-
+            data/prediction_log.json data/accuracy.json
+            data/international_results.csv data/call_margin.json
+            data/api_error_counts.json
+          # llms.txt (#231-GEO 5.8): build_prediction_pages kirjoittaa sen
+          # GEN:LLMS-lohkon, joten se on generoitu polku.
+          CI_PUSH_PAGES: >-
+            predictions/ fpl/ sitemap.xml sitemap-core.xml
+            sitemap-predictions.xml sitemap-fpl.xml predictions.html fpl.html
+            index.html llms.txt world-cup-2026-predictions.html
+          CI_PUSH_BUILD: >-
+            python -m scripts.build_fpl_page;
+            python -m scripts.build_prediction_pages;
+            python -m scripts.build_fpl_longtail
+          CI_PUSH_MSG: "chore(accuracy): auto-log pre-match + reconcile [skip ci]"
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/prediction_log.json data/accuracy.json data/international_results.csv
-          git add data/call_margin.json
-          git add data/api_error_counts.json 2>/dev/null || true
-          # llms.txt (#231-GEO 5.8): build_prediction_pages kirjoittaa nyt sen
-          # GEN:LLMS-lohkon. Ilman tata riviä ajo kirjoittaisi tiedoston ja
-          # muutos katoaisi aanettomasti — sama vikaluokka kuin itse ongelma.
-          git add predictions/ fpl/ sitemap.xml sitemap-core.xml sitemap-predictions.xml sitemap-fpl.xml predictions.html fpl.html index.html llms.txt world-cup-2026-predictions.html || true
-          if git diff --cached --quiet; then
-            echo "Ei muutoksia (ei uusia pre-matcheja eikä tuloksia) — ohitetaan commit."
-            exit 0
-          fi
-          git commit -m "chore(accuracy): auto-log pre-match + reconcile [skip ci]"
-          # main on jaettu (wc-knockout-refresh voi pushata samaan ikkunaan 28.6).
-          # Eri tiedostot (data/*.json vs wc_model.json/elo/intl) → rebase aina puhdas.
-          # Rebase tuoreimman origin/main päälle + retry kilpailun varalta.
-          for i in 1 2 3 4 5; do
-            git fetch origin main || true
-            # 30.8: --autostash. Bake kirjoittaa myos `git add` -whitelistin
-            # ulkopuolelle (build_fpl_page.py:n LIVE_BACK/FWD-ikkuna siirtyy
-            # UTC-vuorokauden vaihtuessa -> predictions.html muuttuu). Ilman
-            # autostashia rebase kieltaytyy ("cannot rebase: You have unstaged
-            # changes") ja KAIKKI viisi yritysta kaatuvat samaan asiaan. Se ei
-            # ole kilpailu vaan deterministinen jaatyminen, ja loki nimesi sen
-            # vaarin: sivu jai 5 h datasta jalkeen eika mikaan huutanut.
-            if ! rebase_virhe=$(git rebase --autostash origin/main 2>&1); then
-              echo "$rebase_virhe"
-              git rebase --abort 2>/dev/null || true
-              echo "Yritys $i: REBASE kaatui (EI push-kilpailu) - ks. syy ylla."
-            elif git push origin HEAD:main; then
-              echo "Pushed to main (yritys $i) → Render auto-deploy."
-              echo "pushed=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            else
-              echo "Yritys $i: push hylattiin (kilpailu?) - rebase + retry."
-            fi
-            sleep 5
-          done
-          echo "VIRHE: push mainiin epäonnistui 5 yrityksen jälkeen."
-          exit 1
+          bash scripts/ci_push_rebuild.sh
 
       # 19.8: HUB-DEPLOY ON LAUKAISTAVA KASIN.
       # Commit-viestissa on `[skip ci]`, ja se estaa GitHubia kaynnistamasta
