@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-09-27T14:27:37+00:00",
+    "generated_at": "2026-09-27T15:04:19+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -4520,7 +4520,7 @@
       "p_bench": 0.074,
       "set_pieces": {
         "pens": null,
-        "corners": 3,
+        "corners": 4,
         "fk": null
       },
       "e_bonus": 0.4,
@@ -11222,7 +11222,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "thin Premier League sample, the expected role is part model and part where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.9,
+      "owned_pct": 4.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -37704,7 +37704,7 @@
       "p_bench": 0.1156,
       "set_pieces": {
         "pens": 2,
-        "corners": 4,
+        "corners": 5,
         "fk": null
       },
       "e_bonus": 0.07,
@@ -49555,7 +49555,7 @@
       "predicted_starts": 15.0,
       "minutes_confidence": "low",
       "minutes_source": "override",
-      "minutes_override_reason": "Successor in waiting, not the incumbent. Paired with the Alisson row: without it the club's keeper p_start sums to 1.22, i.e. more than one starting keeper. Same reasoning and sources as id 350",
+      "minutes_override_reason": "Liverpool's backup keeper. Alisson played every minute of GW1-5 in FPL's match data, so Mamardashvili's start chance is set low",
       "data_basis": "limited_history",
       "owned_pct": 0.1,
       "status": "a",
@@ -51435,7 +51435,7 @@
       "p_bench": 0.7212,
       "set_pieces": {
         "pens": null,
-        "corners": null,
+        "corners": 3,
         "fk": null
       },
       "e_bonus": 0.07,
@@ -63331,7 +63331,7 @@
       "predicted_starts": 8.0,
       "minutes_confidence": "low",
       "minutes_source": "override",
-      "minutes_override_reason": "Signed as experienced deputy to Kinsky at Tottenham (same reports, 6/2026). Last season 3150 min / 35 starts was at Newcastle as first choice, so the minutes prior reads him as a starter at a club where he is the backup. Without this he outranked the actual number one",
+      "minutes_override_reason": "Tottenham's backup keeper. Kinsky played every minute of GW1-5 in FPL's match data, so Dubravka's start chance is set low",
       "data_basis": "pl_history",
       "owned_pct": 17.1,
       "status": "a",
