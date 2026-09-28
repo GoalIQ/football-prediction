@@ -64,6 +64,18 @@ class LoaderTulokset:
         # missa se TIEDETAAN - poikkeuskasittelijassa - eika paatella
         # jalkikateen virheteksteja nuuskimalla.
         self.katkokset: dict[str, str] = {}
+        # 28.9 XG-NELJA-LIIGAA-UNDERSTAT: -FD-liigan xG-rikastuksen tilasto
+        # (ok/rivit, tai `virhe`). /api/debug/load nayttaa taman; API ei
+        # tallenna pysyvaan valimuistiin dataa jonka rikastus epaonnistui.
+        self.fd_xg: dict[str, dict] = {}
+
+
+def _understat_rivit(koodi: str, kaudet: list[str]) -> pd.DataFrame:
+    """Understatin pelatut ottelut xG:n kera (sama kuin haara 1 alla), FD-rikastukselle."""
+    from src.data.understat import lataa_otteludata as lataa_us
+    us = lataa_us([koodi], kaudet, cache_dir=config.RAW_DATA_DIR / "understat")
+    us = us.rename(columns={"home_goals": "home_score", "away_goals": "away_score"})
+    return us[us["home_score"].notna() & us["away_score"].notna()].copy()
 
 
 def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable[str]) -> LoaderTulokset:
@@ -159,6 +171,12 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
                     continue
                 fd = lataa_fdorg(liiga, kaudet)
                 if not fd.empty:
+                    # XG-NELJA-LIIGAA-UNDERSTAT (28.9): -FD-liigoille ottelun xG
+                    # Understatista, nimet ennallaan. Fail-open (src/data/fd_xg.py).
+                    from src.data.fd_xg import rikasta_liiga
+                    fd, fd_tilasto = rikasta_liiga(liiga, fd, kaudet, _understat_rivit)
+                    if fd_tilasto is not None:
+                        tulos.fd_xg[liiga] = fd_tilasto
                     palaset.append(fd)
                     tulos.onnistui[liiga] = len(fd)
                     continue
@@ -247,6 +265,11 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
     if palaset:
         tulos.data = pd.concat(palaset, ignore_index=True).sort_values("date").reset_index(drop=True)
         tulos.data = _taydenna_xg_fpl_datasta(tulos.data)
+        # API ei tallenna tata pysyvaan valimuistiin jos rikastus kaatui
+        # (api/main._lataa_otteludata_cached): muuten yksi Understat-katko
+        # kaynnistyksessa jattaisi -FD-liigat ilman xG:ta koko prosessin ajaksi.
+        tulos.data.attrs["fd_xg_virhe"] = sorted(
+            l for l, t in tulos.fd_xg.items() if t.get("virhe"))
     return tulos
 
 

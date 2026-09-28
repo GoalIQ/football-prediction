@@ -27,6 +27,21 @@ def _clear_fd_http_cache():
 
 
 @pytest.fixture(autouse=True)
+def _fd_xg_ei_understatia(monkeypatch):
+    """28.9 (XG-NELJA-LIIGAA-UNDERSTAT): loaderin FD-haara hakee ottelun xG:n
+    Understatista. Testi ei saa riippua verkosta eika koneen Understat-
+    valimuistista: haku kaatuu, jolloin rikastus on fail-open ja -FD-rivit
+    pysyvat ilman xG:ta (sama kaikilla koneilla ja CI:ssa). Rikastuksen oma
+    portti (tests/test_fd_xg.py) korvaa taman omalla syotteellaan."""
+    from src.data import loader
+
+    def ei_verkkoa(*a, **k):
+        raise RuntimeError("Understat-haku FD-rikastukselle estetty testeissa (tests/conftest.py)")
+
+    monkeypatch.setattr(loader, "_understat_rivit", ei_verkkoa)
+
+
+@pytest.fixture(autouse=True)
 def _uefa_ei_verkkoa(monkeypatch, tmp_path_factory):
     """21.9: UEFA-yhteisfitti hakee kuluvan kauden match.uefa.com:sta. Testi ei
     saa riippua verkosta eika koneen levyvalimuistista: live-haku kaatuu ja

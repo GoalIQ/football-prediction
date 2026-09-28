@@ -899,7 +899,10 @@ def _lataa_otteludata_cached(liigat, kaudet) -> pd.DataFrame:
         # ei "liigalla ei ole dataa" — ja pysyvä cache jäädytti sen koko
         # prosessin eliniäksi: tuotannon /api/teams?leagues=ITA-Serie A-FD
         # palautti 404 vaikka data latautui lokaalisti (380 riviä).
-        if not new_df.empty:
+        # 28.9 XG-NELJA-LIIGAA-UNDERSTAT: data jonka -FD-xG-rikastus kaatui
+        # (Understat ei vastannut) EI mene pysyvaan valimuistiin, jotta
+        # seuraava pyynto yrittaa uudelleen (fail-open, ei jaatymista).
+        if not new_df.empty and not new_df.attrs.get("fd_xg_virhe"):
             _DATA_CACHE[key] = new_df
         return new_df
 
@@ -6570,6 +6573,9 @@ def debug_load(
         "rows_loaded": int(len(tulos.data)),
         "successes_per_league": tulos.onnistui,
         "errors_per_league": tulos.virheet,
+        # 28.9: -FD-liigan xG-rikastus (ok/rivit tai virhe). Copyn "xG in the
+        # Premier League, La Liga, ..." -vaite mitataan tasta.
+        "fd_xg_per_league": tulos.fd_xg,
         "sample_columns": list(tulos.data.columns) if not tulos.data.empty else [],
     }
 
