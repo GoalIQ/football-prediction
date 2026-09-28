@@ -55,6 +55,7 @@ from src import price_copy as PC  # noqa: E402
 from src.doubt_copy import TEAM_NEWS_H1, XP_SISALTAA_EPAVARMUUDEN
 # Vapaa/premium-lause tulee rekisterista, ei tasta tiedostosta: yksi lukija.
 from src.tool_tiers import tier_sentence  # noqa: E402
+from src.partners import FPL_DEMON, partner_line_html  # noqa: E402
 from src.price_update_time import price_update_parts  # noqa: E402
 from scripts.build_fpl_page import (  # noqa: E402
     POSTHOG_SNIPPET,
@@ -4893,7 +4894,15 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # ja postaukset linkittavat tanne (#gw-xp), ja jos osio olisi 100
         # rivin alla, tarkistusreitti vaatisi vierityksen jonka jalkeen
         # lukija on jo ohittanut sen luvun jota han tuli tarkistamaan.
-        + _gw_xp_section(xp) +
+        + _gw_xp_section(xp)
+        # 27.9 KUMPPANILINKKI (FPL Demon, Villen paatos): GW-taulukon alle, ei
+        # top 100:n alle. Kierroskohtainen luku on se jonka hanen plannerinsa
+        # nayttaa, ja koko top 100 jaa taman ja sivun lopun UPSELL/CTA:n
+        # (ostohetki) valiin; top 100:n alla ne olivat samassa puhelinruudussa
+        # (julkaisutarkistaja 27.9, 424 px). Rivi, URL ja paattyminen
+        # src/partners.py:sta; "" kun kumppanuus ei ole voimassa.
+        # Portti: tests/test_partner_link.py
+        + partner_line_html(FPL_DEMON, now, "hub_expected_points") +
         # ANKKURI (4.9 portti): standouts-kortin ja postausten tarkistusreitti
         # osoittaa TAHAN tauluun, koska Blank- ja 10+-sarakkeet ovat vain
         # tassa. Paljas URL laskeutuu GW-top-20-tauluun jossa niita ei ole.
