@@ -3062,6 +3062,78 @@ def entry_actual_sentence(gw_row: dict, names: dict | None = None,
     return "", ""
 
 
+# Chipit joilla jaadytetty siirtosuunnitelma ei kuvaa kierrosta: koko rivi
+# vaihtuu, ja chip-rivi (`entry_actual_sentence`) kertoo sen jo.
+_KOKO_RUNKO_CHIPIT = ("wildcard", "freehit")
+
+
+def _siirtolista(parit: list[tuple[str, str]]) -> str:
+    osat = [f"{o} to {i}" for o, i in parit]
+    return osat[0] if len(osat) == 1 else ", ".join(osat[:-1]) + " and " + osat[-1]
+
+
+def _siirtoja(n: int) -> str:
+    return f"{n} transfer" + ("" if n == 1 else "s")
+
+
+def model_transfers_sentence(gw_row: dict, names: dict | None = None,
+                             notes: dict | None = None) -> tuple[str, str]:
+    """Mallin jaadytetyn rungon siirrot vs tilin toteutuneet siirrot, YKSI rivi.
+
+    MODEL-TRANSFERS-RIVI (28.9, S9-etusignaali 33x): `model_transfers` oli
+    taytetty 29.8 alkaen eika yksikaan pinta naeyttanyt sita. Kentta yksin on
+    vaarallinen (julkaisuportti 29.8): GW2:ssa freeze listasi 3 siirtoa ja
+    tili pelasi wildcardin, joten suunnitelma ilman toteumaa luetaan tilin
+    tekemisiksi. Siksi rivi syntyy VAIN kun molemmat puolet ovat datassa:
+    `model_transfers` ja `entry_actual.made` (FPL:n omat parit).
+
+    Palauttaa (lause, href) kuten `entry_actual_sentence`. `("", "")` kun:
+    - kierroksella on julkinen nootti (se kertoo tarkemmin),
+    - chip on wildcard tai free hit (koko runko vaihtui, chip-rivi kertoo),
+    - jompikumpi puoli puuttuu (None ei ole sama kuin ei siirtoja),
+    - kumpikaan ei listaa siirtoja (kontrasti tyhjaa vastaan, portti B8),
+    - yksikin nimi puuttuu (numero ei ole tarkistettavissa).
+
+    🔴 Hittia EI mainita missaan muodossa: freezen hit-lippu oli GW5:lla
+    vaarin (FREEZE-FT-LASKURI-VAARIN: FPL antoi 3 vapaata, freeze kirjasi
+    hitin), eika FPL:n siirtosivulla ole hittisaraketta (portti 30.8).
+    """
+    gw = gw_row.get("gw")
+    if notes and gw in notes:
+        return "", ""
+    ea = gw_row.get("entry_actual")
+    if not isinstance(ea, dict) or ea.get("chip") in _KOKO_RUNKO_CHIPIT:
+        return "", ""
+    suunniteltu = gw_row.get("model_transfers")
+    tehty = ea.get("made")
+    if suunniteltu is None or tehty is None or (not suunniteltu and not tehty):
+        return "", ""
+    nimet = names or {}
+    try:
+        s_parit = [((t.get("out_name") or nimet.get(int(t["out"]))),
+                    (t.get("in_name") or nimet.get(int(t["in"])))) for t in suunniteltu]
+        t_parit = [(nimet.get(int(t["out"])), nimet.get(int(t["in"]))) for t in tehty]
+        sama = ({int(t["out"]) for t in suunniteltu} == {int(t["out"]) for t in tehty}
+                and {int(t["in"]) for t in suunniteltu} == {int(t["in"]) for t in tehty})
+    except (KeyError, TypeError, ValueError):
+        return "", ""
+    if any(not o or not i for o, i in s_parit + t_parit):
+        return "", ""
+
+    alku = f"The model's frozen squad for GW{gw} listed "
+    if sama:
+        n = len(s_parit)
+        lause = (f"{alku}{_siirtoja(n)}, {_siirtolista(s_parit)}, and the squad made "
+                 + ("that transfer." if n == 1 else f"those {n}."))
+    else:
+        lause = (f"{alku}{_siirtoja(len(s_parit))}, {_siirtolista(s_parit)}."
+                 if s_parit else f"{alku}no transfers.")
+        lause += (f" The squad made {len(t_parit)}, {_siirtolista(t_parit)}."
+                  if t_parit else " The squad made none.")
+    entry_url = f"https://fantasy.premierleague.com/entry/{FPL_ENTRY_ID}"
+    return lause + " Its transfers are public at ", f"{entry_url}/transfers"
+
+
 def player_names(xp: dict | None) -> dict:
     """{element_id: web_name} projektioista. Kapteenin nimi ilman tata olisi
     pelkka numero, jota lukija ei voi tarkistaa."""
@@ -3094,8 +3166,10 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
             trs.append(
                 '<tr class="gw-note"><td class="num">'
                 f'GW{gw_row["gw"]}</td><td colspan="6">{escape(note)}</td></tr>')
-        actual, entry_href = entry_actual_sentence(gw_row, names, notes)
-        if actual:
+        for actual, entry_href in (entry_actual_sentence(gw_row, names, notes),
+                                   model_transfers_sentence(gw_row, names, notes)):
+            if not actual:
+                continue
             # Linkki on lauseen viimeinen osa, ei erillinen fragmentti sen
             # perassa: "... public at FPL entry 116920." on lause, kun taas
             # "... B.Fernandes. FPL entry 116920." on kaksi pistetta ja

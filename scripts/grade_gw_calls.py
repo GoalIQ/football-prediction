@@ -18,12 +18,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config  # noqa: E402
 from src.data import fpl_api  # noqa: E402
-from src.models.gw_calls import (entry_actual, grade_entry,  # noqa: E402
-                                 gw_status)
+from src.models.gw_calls import (entry_actual, entry_transfers_made,  # noqa: E402
+                                 grade_entry, gw_status)
 
 import os
 ENTRY_ID = int(os.environ.get("FPL_MODEL_ENTRY_ID", "116920"))
 LOG_PATH = config.DATA_DIR / "gw_calls.json"
+
+
+def fill_made(rows: list[dict], fetch) -> int:
+    """Taydenna `entry_actual.made` riveille joilta se puuttuu (MODEL-TRANSFERS-RIVI 28.9).
+
+    Ajetaan myos lopullisesti gradatuille riveille: siirrot ovat lukittuja
+    deadlinen jalkeen, joten kentan voi lisata jalkikateen, ja GW2-GW5
+    gradattiin ennen kuin kentta oli olemassa. Yksi haku kattaa koko kauden.
+    Fail-open: jos FPL ei vastaa, kentta jaa puuttumaan ja sivu ei sano
+    mitaan (renderoija vaatii kentan)."""
+    puuttuvat = [r for r in rows
+                 if isinstance(r.get("entry_actual"), dict) and "made" not in r["entry_actual"]]
+    if not puuttuvat:
+        return 0
+    try:
+        kaikki = fetch()
+    except Exception as e:
+        print(f"HUOM: entry/{ENTRY_ID}/transfers ei luettavissa: {e!r}")
+        return 0
+    if kaikki is None:
+        print(f"HUOM: entry/{ENTRY_ID}/transfers 404 - made jaa taydentamatta.")
+        return 0
+    for r in puuttuvat:
+        r["entry_actual"]["made"] = entry_transfers_made(kaikki, int(r["gw"]))
+        print(f"OK: GW{r['gw']} entry_actual.made = {len(r['entry_actual']['made'])} siirtoa")
+    return len(puuttuvat)
 
 
 def main() -> int:
@@ -31,17 +57,32 @@ def main() -> int:
         print("Ei gw_calls.json-lokia - ei gradattavaa.")
         return 0
     log = json.loads(LOG_PATH.read_text(encoding="utf-8"))
-    todo = [r for r in log.get("gameweeks") or []
+    rows = log.get("gameweeks") or []
+    todo = [r for r in rows
             if not r.get("graded") or r["graded"].get("provisional")]
-    if not todo:
+    changed = 0
+    if todo:
+        rc = _grade(todo)
+        if rc is None:
+            return 1
+        changed += rc
+    else:
         print("Kaikki kutsut on gradattu lopullisesti.")
-        return 0
+    changed += fill_made(rows, lambda: fpl_api.fetch_entry_transfers(ENTRY_ID, force=True))
+    if changed:
+        LOG_PATH.write_text(json.dumps(log, ensure_ascii=False, indent=1) + "\n",
+                            encoding="utf-8")
+    return 0
+
+
+def _grade(todo: list[dict]) -> int | None:
+    """Gradaa rivit; palauttaa muuttuneiden maaran, None jos FPL-haku kaatui."""
     try:
         boot = fpl_api.fetch_bootstrap(force=True)
         fixtures = fpl_api.fetch_fixtures(force=True)
     except Exception as e:
         print(f"VIRHE: FPL-haku epaonnistui: {e!r}")
-        return 1
+        return None
     status = gw_status(boot, fixtures)
     now = _dt.datetime.now(_dt.timezone.utc)
     changed = 0
@@ -55,7 +96,7 @@ def main() -> int:
             live = fpl_api.fetch_event_live(gw, force=True)
         except Exception as e:
             print(f"VIRHE: event/{gw}/live epaonnistui: {e!r}")
-            return 1
+            return None
         points, minutes, starts = {}, {}, {}
         for el in live.get("elements") or []:
             s = el.get("stats") or {}
@@ -85,10 +126,7 @@ def main() -> int:
         flag = " (provisionaalinen)" if st["provisional"] else ""
         print(f"OK: GW{gw} gradattu{flag}: " + ", ".join(
             f"{k} {v['points']}p" for k, v in row["graded"]["by_call"].items()))
-    if changed:
-        LOG_PATH.write_text(json.dumps(log, ensure_ascii=False, indent=1) + "\n",
-                            encoding="utf-8")
-    return 0
+    return changed
 
 
 if __name__ == "__main__":

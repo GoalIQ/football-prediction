@@ -462,6 +462,206 @@ def test_gw_calls_html_linkki_on_lauseen_sisalla():
             "/event/6\">FPL entry 116920</a>.") in html
 
 
+# ---------------------------------------------------------------------------
+# MODEL-TRANSFERS-RIVI (28.9.2026, S9-etusignaali 33x)
+#
+# `model_transfers` = mallin suunnitelma freezesta, `entry_actual.made` = FPL:n
+# omat parit. Rivi vain kun molemmat ovat datassa. Fixturet ovat tuotannon
+# muotoisia: FPL:n entry/{id}/transfers/-rivi mitattu 28.9 (GW5 Mendy -> Thomas).
+# ---------------------------------------------------------------------------
+
+import re
+
+SNIMET = {586: "Mendy", 173: "Thomas", 10: "White", 8: "Calafiori",
+          229: "Tarkowski", 388: "Guehi", 426: "B.Fernandes"}
+FPL_SIIRTO_GW5 = [
+    {"element_in": 173, "element_in_cost": 40, "element_out": 586, "element_out_cost": 40,
+     "entry": 116920, "event": 5, "time": "2026-09-18T13:26:31.649469Z"},
+    {"element_in": 8, "element_in_cost": 57, "element_out": 10, "element_out_cost": 55,
+     "entry": 116920, "event": 5, "time": "2026-09-18T13:26:31.645315Z"},
+    {"element_in": 388, "element_in_cost": 45, "element_out": 229, "element_out_cost": 50,
+     "entry": 116920, "event": 2, "time": "2026-08-25T14:32:32.343792Z"},
+]
+# Tuotannon GW5-rivi 28.9: out_name null (ennen 4f5ed6cc6), hit-lippu vaarin.
+GW5_SUUNNITELMA = [{"out": 586, "out_name": None, "in": 173, "in_name": "Thomas", "hit": False},
+                   {"out": 10, "out_name": "White", "in": 8, "in_name": "Calafiori", "hit": True}]
+
+
+def _srivi(gw, suunnitelma, made, chip=None):
+    return {"gw": gw, "calls": MC, "model_transfers": suunnitelma,
+            "entry_actual": {"transfers": len(made or []), "transfers_cost": 0,
+                             "chip": chip, "captain": 388, "made": made}}
+
+
+def _mts(rivi, nimet=SNIMET, notes=None):
+    from scripts.build_fpl_page import model_transfers_sentence
+    return model_transfers_sentence(rivi, nimet, notes or {})
+
+
+def test_entry_transfers_made_suodattaa_kierroksen_ja_jarjestaa_ajan_mukaan():
+    from src.models.gw_calls import entry_transfers_made
+    assert entry_transfers_made(FPL_SIIRTO_GW5, 5) == [{"out": 10, "in": 8},
+                                                      {"out": 586, "in": 173}]
+    assert entry_transfers_made(FPL_SIIRTO_GW5, 2) == [{"out": 229, "in": 388}]
+    # [] on dataa (ei siirtoja), None on puuttuva tieto.
+    assert entry_transfers_made(FPL_SIIRTO_GW5, 4) == []
+    assert entry_transfers_made([], 5) == []
+    assert entry_transfers_made(None, 5) is None
+
+
+def test_siirtorivi_kun_tili_teki_suunnitellut_siirrot():
+    made = [{"out": 10, "in": 8}, {"out": 586, "in": 173}]   # FPL:n jarjestys eri
+    lause, href = _mts(_srivi(5, GW5_SUUNNITELMA, made))
+    assert lause == ("The model's frozen squad for GW5 listed 2 transfers, Mendy to Thomas "
+                     "and White to Calafiori, and the squad made those 2. "
+                     "Its transfers are public at ")
+    assert href == "https://fantasy.premierleague.com/entry/116920/transfers"
+
+
+def test_siirtorivi_yksi_siirto_yksikossa():
+    s = [{"out": 229, "out_name": "Tarkowski", "in": 388, "in_name": "Guehi", "hit": False}]
+    lause, _ = _mts(_srivi(7, s, [{"out": 229, "in": 388}]))
+    assert lause.startswith("The model's frozen squad for GW7 listed 1 transfer, "
+                            "Tarkowski to Guehi, and the squad made that transfer.")
+
+
+def test_siirtorivi_kun_tili_teki_eri_siirron():
+    s = [{"out": 229, "out_name": "Tarkowski", "in": 388, "in_name": "Guehi", "hit": False}]
+    lause, _ = _mts(_srivi(7, s, [{"out": 10, "in": 8}]))
+    assert lause.startswith("The model's frozen squad for GW7 listed 1 transfer, "
+                            "Tarkowski to Guehi. The squad made 1, White to Calafiori.")
+
+
+def test_siirtorivi_suunnitelma_ilman_toteumaa_ja_toisin_pain():
+    s = [{"out": 229, "out_name": "Tarkowski", "in": 388, "in_name": "Guehi", "hit": False}]
+    lause, _ = _mts(_srivi(7, s, []))
+    assert lause.startswith("The model's frozen squad for GW7 listed 1 transfer, "
+                            "Tarkowski to Guehi. The squad made none.")
+    lause, _ = _mts(_srivi(7, [], [{"out": 10, "in": 8}]))
+    assert lause.startswith("The model's frozen squad for GW7 listed no transfers. "
+                            "The squad made 1, White to Calafiori.")
+
+
+def test_siirtorivi_sama_joukko_eri_parit_on_sama():
+    """FPL parittaa siirrot omalla tavallaan; runko on sama jos samat pelaajat
+    lahtivat ja tulivat."""
+    made = [{"out": 586, "in": 8}, {"out": 10, "in": 173}]
+    lause, _ = _mts(_srivi(5, GW5_SUUNNITELMA, made))
+    assert "and the squad made those 2." in lause
+
+
+def test_siirtolista_kolmella():
+    s = [{"out": 586, "in": 173}, {"out": 10, "in": 8}, {"out": 229, "in": 388}]
+    lause, _ = _mts(_srivi(8, s, [dict(t) for t in s]))
+    assert "Mendy to Thomas, White to Calafiori and Tarkowski to Guehi" in lause
+
+
+@pytest.mark.parametrize("rivi,syy", [
+    (_srivi(5, [], []), "kumpikaan ei listaa siirtoja"),
+    (_srivi(5, GW5_SUUNNITELMA, None), "made puuttuu (ei taydennetty)"),
+    (_srivi(5, None, [{"out": 10, "in": 8}]), "model_transfers puuttuu"),
+    (_srivi(2, GW5_SUUNNITELMA, [{"out": 10, "in": 8}], chip="wildcard"), "wildcard"),
+    (_srivi(9, GW5_SUUNNITELMA, [{"out": 10, "in": 8}], chip="freehit"), "free hit"),
+    ({"gw": 5, "model_transfers": GW5_SUUNNITELMA, "entry_actual": None}, "ennen gradausta"),
+    ({"gw": 5, "model_transfers": GW5_SUUNNITELMA}, "ei entry_actualia"),
+])
+def test_siirtorivi_ei_synny(rivi, syy):
+    assert _mts(rivi) == ("", ""), syy
+
+
+def test_siirtorivi_ei_synny_nootin_kierroksella():
+    rivi = _srivi(5, GW5_SUUNNITELMA, [{"out": 10, "in": 8}, {"out": 586, "in": 173}])
+    assert _mts(rivi) != ("", "")
+    assert _mts(rivi, notes={5: "nootti"}) == ("", "")
+
+
+def test_siirtorivi_ei_nimea_numerolla():
+    """Nimeton pelaaja ei ole tarkistettavissa: ei rivia, ei '?'-merkkia."""
+    rivi = _srivi(5, GW5_SUUNNITELMA, [{"out": 10, "in": 8}, {"out": 586, "in": 173}])
+    ilman_mendya = {k: v for k, v in SNIMET.items() if k != 586}
+    assert _mts(rivi, nimet=ilman_mendya) == ("", "")
+
+
+def test_siirtorivi_toimii_chipilla_joka_ei_vaihda_runkoa():
+    rivi = _srivi(11, GW5_SUUNNITELMA, [{"out": 10, "in": 8}, {"out": 586, "in": 173}],
+                  chip="bboost")
+    assert _mts(rivi)[0].startswith("The model's frozen squad for GW11 listed 2 transfers")
+
+
+def test_siirtorivi_ei_koskaan_puhu_hitista():
+    """FREEZE-FT-LASKURI-VAARIN: GW5:n hit-lippu oli vaarin, eika FPL:n
+    siirtosivulla ole hittia (portti 30.8 B11)."""
+    rivit = [_srivi(5, GW5_SUUNNITELMA, [{"out": 10, "in": 8}, {"out": 586, "in": 173}]),
+             _srivi(6, [dict(t, hit=True) for t in GW5_SUUNNITELMA], []),
+             _srivi(7, [dict(t, hit=True) for t in GW5_SUUNNITELMA], [{"out": 229, "in": 388}])]
+    for rivi in rivit:
+        lause, _ = _mts(rivi)
+        assert lause, rivi["gw"]
+        assert not re.search(r"\b(hit|hits|point|points|cost)\b", lause, re.I), lause
+
+
+def test_gw_calls_html_siirtorivi_chip_rivin_jalkeen_ja_ennen_kutsuja():
+    from scripts.build_fpl_page import gw_calls_html
+    rivi = _srivi(11, GW5_SUUNNITELMA, [{"out": 10, "in": 8}, {"out": 586, "in": 173}],
+                  chip="3xc")
+    rivi.update(logged_at="2026-11-01T10:00:00Z", deadline_utc="2026-11-01T11:00:00Z")
+    html = gw_calls_html({"gameweeks": [rivi]}, exception_notes={}, names=SNIMET)
+    chip = html.index("played a Triple Captain in GW11")
+    siirto = html.index("frozen squad for GW11 listed 2 transfers")
+    kutsu = html.index("<td>Guehi (?)</td>")
+    assert chip < siirto < kutsu
+    assert ('public at <a href="https://fantasy.premierleague.com/entry/116920/transfers">'
+            "FPL entry 116920</a>.") in html
+
+
+def test_fill_made_taydentaa_vain_puuttuvat_yhdella_haulla():
+    from scripts.grade_gw_calls import fill_made
+    rivit = [{"gw": 5, "entry_actual": {"transfers": 2}},
+             {"gw": 4, "entry_actual": {"transfers": 0}},
+             {"gw": 3, "entry_actual": {"transfers": 0, "made": []}},
+             {"gw": 6, "entry_actual": None}]
+    haut = []
+
+    def fetch():
+        haut.append(1)
+        return FPL_SIIRTO_GW5
+
+    assert fill_made(rivit, fetch) == 2
+    assert len(haut) == 1
+    assert rivit[0]["entry_actual"]["made"] == [{"out": 10, "in": 8}, {"out": 586, "in": 173}]
+    assert rivit[1]["entry_actual"]["made"] == []
+    assert rivit[3]["entry_actual"] is None
+    assert fill_made(rivit, fetch) == 0 and len(haut) == 1   # idempotentti
+
+
+@pytest.mark.parametrize("fetch", [lambda: None,
+                                   lambda: (_ for _ in ()).throw(RuntimeError("403"))])
+def test_fill_made_fail_open_ei_kirjoita_tyhjaa(fetch):
+    """404/virhe ei saa muuttua 'ei siirtoja' -dataksi (None != [])."""
+    from scripts.grade_gw_calls import fill_made
+    rivit = [{"gw": 5, "entry_actual": {"transfers": 2}}]
+    assert fill_made(rivit, fetch) == 0
+    assert "made" not in rivit[0]["entry_actual"]
+
+
+def test_grade_main_taydentaa_made_vaikka_kaikki_on_gradattu(tmp_path, monkeypatch):
+    """Kutsupaikka: GW2-GW5 olivat lopullisesti gradattuja ennen kentan
+    syntya, ja main() palasi ennen 'Kaikki kutsut on gradattu lopullisesti'."""
+    import scripts.grade_gw_calls as g
+    loki = tmp_path / "gw_calls.json"
+    loki.write_text(json.dumps({"gameweeks": [
+        {"gw": 5, "graded": {"provisional": False}, "model_transfers": GW5_SUUNNITELMA,
+         "entry_actual": {"transfers": 2, "transfers_cost": 0, "chip": None, "captain": 411}}]}),
+        encoding="utf-8")
+    monkeypatch.setattr(g, "LOG_PATH", loki)
+    monkeypatch.setattr(g.fpl_api, "fetch_entry_transfers", lambda *a, **k: FPL_SIIRTO_GW5)
+    monkeypatch.setattr(g.fpl_api, "fetch_bootstrap",
+                        lambda *a, **k: pytest.fail("valmiilla lokilla ei gradata"))
+    assert g.main() == 0
+    rivi = json.loads(loki.read_text(encoding="utf-8"))["gameweeks"][0]
+    assert rivi["entry_actual"]["made"] == [{"out": 10, "in": 8}, {"out": 586, "in": 173}]
+
+
 def test_siirron_nimi_bootstrapista_kun_pelaaja_ei_ole_rungossa_eika_projektiossa():
     """27.9: GW5:n siirto kirjattiin "out_name": null (Mendy, id 586)."""
     fr = _frozen()
