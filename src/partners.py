@@ -21,8 +21,8 @@ luvuillamme.
 KORTTI JA TOINEN PINTA (Villen paatos 28.9): 12 px harmaa alaviiterivi ei
 nakynyt, kun Demon antaa meille logopillerin plannerinsa kentan ylla ja
 yläpalkin valilehden. Nyt sama kortti kahdella ilmaisella pinnalla:
-/fpl/expected-points GW-taulukon alaviitteiden jalkeen ja /fpl-paasivun
-tyokaluhakemiston alla (ensimmainen ruutu). Ei navigaatioon: se veisi
+/fpl/expected-points GW-taulukon alaviitteiden jalkeen ja /fpl-paasivulla
+heti heron jalkeen (meidan oma Premium-nappi ensin). Ei navigaatioon: se veisi
 kavijan pois jokaiselta sivulta, myos ostohetkelta.
 
 URL on Demonin itse lahettama (X DM 27.9 klo 6.46), sellaisenaan: hanen

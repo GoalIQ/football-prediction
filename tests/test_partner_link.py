@@ -11,7 +11,7 @@ Portti vartioi:
      testi kutsuu funktiota, ei kutsupaikkaa):
        - /fpl/expected-points: GW-taulukon alla ja ENNEN top 100:aa, jotta koko
          top 100 jaa kortin ja UPSELL/CTA:n (ostohetki) valiin;
-       - /fpl: tyokaluhakemiston (nav.tooldir) alla, ennen Premium-osiota;
+       - /fpl: heti heron jalkeen, eli meidan oma Premium-nappi tulee ensin;
      ja kummallakin sivulla kortti on tasan kerran JA sen tyyli on sivulla
      (luokka ilman tyylia olisi 12 px:n rivi uudelleen, eli se vika jota
      kortti korjaa);
@@ -152,15 +152,20 @@ def _fpl_page(iso_date: str | None = None) -> str:
     return B.render_page(c, B._load_json(B.XP_PATH))
 
 
-def test_fpl_page_places_it_under_the_tool_directory():
+def test_fpl_page_places_it_after_our_own_hero_cta():
+    """Meidan Premium-nappi (hero-CTA) ensin, kortti heti heron jalkeen ja ennen
+    ensimmaista data-osiota. Tyokaluhakemiston alla kortti oli 390 px:lla
+    304 px ostonapin YLAPUOLELLA samassa ruudussa (mitattu 28.9)."""
     page = _fpl_page((BEFORE - timedelta(days=1)).date().isoformat())
     assert page.count("fpldemon.com") == 1
     assert page.count(CARD) == 1
     assert page.count(CARD_CSS) == 1, "kortti ilman tyylia on taas alaviiterivi"
     card = page.index(CARD)
-    tooldir_end = page.index("</nav>", page.index('class="tooldir"'))
+    hero_cta = page.index('data-cta="fpl"')
+    hero_end = page.index("</section>", hero_cta)
+    first_data = page.index('id="clean-sheets"')
     premium = page.index("Unlock the full FPL toolkit with Premium")
-    assert tooldir_end < card < premium
+    assert hero_cta < hero_end < card < first_data < premium
     assert "surface:'hub_fpl'" in page
 
 

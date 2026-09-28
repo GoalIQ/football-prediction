@@ -2495,8 +2495,12 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     # `test_no_finnish_in_public_js.py` kaatavat siita (kumpikin kaatui
     # kerran tasta samasta rivista).
     #
-    # 28.9 KUMPPANIKORTTI (FPL Demon, Villen paatos): tyokaluhakemiston alle,
-    # sama kortti kuin /fpl/expected-points-sivulla (src/partners.py). Kello on
+    # 28.9 KUMPPANIKORTTI (FPL Demon, Villen paatos): heti heron JALKEEN, eli
+    # meidan oma Premium-nappi (hero-CTA) tulee ensin. Ensimmainen versio oli
+    # tyokaluhakemiston alla, ja 390 px:lla kortti oli 304 px ostonapin
+    # YLAPUOLELLA samassa ruudussa (sama ostohetki-vika jonka julkaisutarkistaja
+    # mittasi 27.9). Sama kortti kuin /fpl/expected-points-sivulla
+    # (src/partners.py). Kello on
     # DATAN paiva, ei ajohetki, jotta sama data antaa saman sivun; kortti
     # sammuu itsestaan active_until-paivana. Portti: tests/test_partner_link.py
     partner_card = partner_card_html(
@@ -2573,7 +2577,6 @@ def render_page(c: dict, xp: dict | None = None) -> str:
   <a href="/fpl/team-news"><img src="/assets/cards/tools/team-news.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Team news</b><span>Who is out right now</span></a>
   <a href="/fpl/points"><img src="/assets/cards/tools/points.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Points vs projection</b><span>How the model did</span></a>
 </nav>
-{partner_card}
 <!-- 5 Sep (LANDING-LYHENNYS): the 110-word lede repeated the directory
      above it. Measured before: 31 screens on a phone, 4,688 words. -->
 <p class="meta">Season {c["season"]}. Data updated {c["data_date"]}.
@@ -2596,6 +2599,7 @@ GoalIQ Premium, free: one prize, decided by the mini-league table when the seaso
 
 <div class="wrap content">
 
+{partner_card}
 {team_news}
 <h2 id="clean-sheets">Gameweek {c["next_gw"]} clean sheet probabilities</h2>
 <p>Model clean sheet probability for the {len(c["cs_rows"])} Premier League teams
