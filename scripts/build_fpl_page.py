@@ -68,6 +68,7 @@ from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 # lahteesta. Ennen fpl.html kantoi omaa palkkia ja omaa Organization-kuvausta.
 from src import site_identity as SI  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
+from src.partners import FPL_DEMON, PARTNER_CARD_CSS, partner_card_html  # noqa: E402
 
 # #38: PostHog cookieless site-analytiikka (persistence=memory -> ei evasteita,
 # ei consent-banneria; ei PII:ta). Sama projekti kuin appi + pro-web (427890);
@@ -2493,6 +2494,14 @@ def render_page(c: dict, xp: dict | None = None) -> str:
     # kommentti nakyy view-sourcessa, ja `test_viewsource_comments.py` +
     # `test_no_finnish_in_public_js.py` kaatavat siita (kumpikin kaatui
     # kerran tasta samasta rivista).
+    #
+    # 28.9 KUMPPANIKORTTI (FPL Demon, Villen paatos): tyokaluhakemiston alle,
+    # sama kortti kuin /fpl/expected-points-sivulla (src/partners.py). Kello on
+    # DATAN paiva, ei ajohetki, jotta sama data antaa saman sivun; kortti
+    # sammuu itsestaan active_until-paivana. Portti: tests/test_partner_link.py
+    partner_card = partner_card_html(
+        FPL_DEMON, _dt.datetime.fromisoformat(c["iso_date"]), "hub_fpl")
+    partner_css = PARTNER_CARD_CSS if partner_card else ""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2534,7 +2543,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 
 {jsonld}
 <meta name="theme-color" content="#0B0A09">
-<style>{CSS}{SITE_NAV_CSS}</style>
+<style>{CSS}{SITE_NAV_CSS}{partner_css}</style>
 {POSTHOG_SNIPPET}
 </head>
 <body>
@@ -2564,6 +2573,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
   <a href="/fpl/team-news"><img src="/assets/cards/tools/team-news.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Team news</b><span>Who is out right now</span></a>
   <a href="/fpl/points"><img src="/assets/cards/tools/points.webp" width="450" height="236" loading="lazy" decoding="async" alt=""><b>Points vs projection</b><span>How the model did</span></a>
 </nav>
+{partner_card}
 <!-- 5 Sep (LANDING-LYHENNYS): the 110-word lede repeated the directory
      above it. Measured before: 31 screens on a phone, 4,688 words. -->
 <p class="meta">Season {c["season"]}. Data updated {c["data_date"]}.
