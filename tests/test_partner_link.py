@@ -105,6 +105,37 @@ def test_card_markup():
     assert "#F5C542" not in PARTNER_CARD_CSS.upper()
 
 
+LOGO = 'class="partner-logo"'
+
+
+def test_logo_ships_with_the_site():
+    """Logo on polussa jonka hub-deploy vie sivustolle, se on olemassa, ja se
+    on terava 2x-naytolla (44 px kortissa -> vahintaan 88 px lahteena).
+    Puuttuva tiedosto olisi rikkinainen kuva kumppanin kortissa."""
+    from PIL import Image
+    from scripts.site_output import is_site_path
+    rel = FPL_DEMON["logo"].lstrip("/")
+    assert is_site_path(rel)
+    path = ROOT / rel
+    assert path.is_file()
+    assert path.stat().st_size < 20_000
+    with Image.open(path) as im:
+        assert im.format == "WEBP"
+        assert im.width == im.height >= 88
+
+
+def test_logo_markup():
+    html = partner_card_html(FPL_DEMON, BEFORE, "hub_fpl")
+    assert html.count(LOGO) == 1
+    # Nimi on heti vieressa tekstina: tyhja alt, ettei ruudunlukija lue sita kahdesti.
+    assert (f'<img {LOGO} src="{FPL_DEMON["logo"]}" width="44" height="44" '
+            'alt="" loading="lazy" decoding="async">') in html
+    assert html.index(LOGO) < html.index('class="partner-text"')
+    assert ".partner-card .partner-logo{" in PARTNER_CARD_CSS
+    # Ilman logoa kortti toimii kuten ennen.
+    assert LOGO not in partner_card_html({**FPL_DEMON, "logo": ""}, BEFORE, "hub_fpl")
+
+
 def _xp(next_gw: int = 6, dl_gw: int = 6) -> dict:
     return {
         "meta": {"available": True, "next_gameweek": next_gw,
@@ -134,6 +165,7 @@ def test_free_expected_points_page_places_it_under_the_gw_table():
     # Koko top 100 -taulukko kortin ja ostohetken valissa.
     assert gw < gw_table_end < card < top100 < top100_end < upsell < cta
     assert "surface:'hub_expected_points'" in page
+    assert page.count(LOGO) == 1 and page.count(".partner-card .partner-logo{") == 1
 
 
 def test_card_css_only_where_the_card_is():
@@ -167,6 +199,7 @@ def test_fpl_page_places_it_after_our_own_hero_cta():
     premium = page.index("Unlock the full FPL toolkit with Premium")
     assert hero_cta < hero_end < card < first_data < premium
     assert "surface:'hub_fpl'" in page
+    assert page.count(LOGO) == 1 and page.count(".partner-card .partner-logo{") == 1
 
 
 def test_claim_horizon_matches_the_feed():

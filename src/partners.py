@@ -51,6 +51,10 @@ FPL_DEMON: dict[str, str] = {
     # syotteen horisontti: portti sitoo sen api/partner_feed.PARTNER_XP_HORIZONiin.
     "claim": "{name}'s planner uses our xP for the next five gameweeks.",
     "cta": "Plan your transfers there",
+    # Demonin oma logo (X DM 28.9, alkuperainen 916 px JPG tallessa
+    # Documents/goaliq-kumppanit/). Hanen plannerissaan meilla on logopilleri
+    # kentan ylla, joten tekstinimi yksin ei ollut vastavuoroinen.
+    "logo": "/assets/partners/fpldemon-logo.webp",
 }
 
 
@@ -80,7 +84,8 @@ PARTNER_CARD_CSS = """
 gap:12px 20px;margin:22px 0;padding:14px 18px;max-width:760px;
 background:var(--paper,#1F1D1A);border:1px solid var(--line-strong,rgba(243,242,242,.4));
 border-left:4px solid #FF4D57;}
-.partner-card .partner-text{flex:1 1 260px;min-width:0;}
+.partner-card .partner-logo{flex:none;display:block;width:44px;height:44px;border-radius:8px;}
+.partner-card .partner-text{flex:1 1 200px;min-width:0;}
 .partner-card .partner-kicker{display:block;margin-bottom:2px;font-family:var(--mono,monospace);
 font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint,#8A847A);}
 .partner-card p{margin:0;max-width:none;font-size:16px;line-height:1.45;color:var(--cream,#F3F2F2);}
@@ -112,9 +117,14 @@ def partner_card_html(p: dict, now: datetime, surface: str) -> str:
     surf = escape(surface, quote=True)
     name = f'<b class="partner-name">{escape(p["name"], quote=False)}</b>'
     claim = escape(p["claim"], quote=False).replace("{name}", name)
+    # alt="": nimi on heti vieressa tekstina, ruudunlukija lukisi sen muuten
+    # kahdesti. width/height varaavat tilan ennen latausta (ei layout-hyppya).
+    logo = (f'<img class="partner-logo" src="{escape(p["logo"], quote=True)}" '
+            'width="44" height="44" alt="" loading="lazy" decoding="async">'
+            if p.get("logo") else "")
     return (
         f'<aside class="partner-card" aria-label="Partner: {escape(p["name"], quote=True)}">'
-        '<div class="partner-text"><span class="partner-kicker">Partner</span>'
+        f'{logo}<div class="partner-text"><span class="partner-kicker">Partner</span>'
         f"<p>{claim}</p></div>"
         f'<a class="partner-btn" href="{escape(p["url"], quote=True)}" target="_blank" '
         'rel="noopener sponsored" '
