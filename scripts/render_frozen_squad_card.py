@@ -204,32 +204,17 @@ def cell(p: dict, cap: int, vice: int, size: int = 46,
                        if dist else None) + '</div>')
 
 
-def money_line(meta: dict) -> str:
-    """Kortin raharivi FPL:n omista luvuista freezen metasta.
-
-    🔴 FROZEN-KORTTI-RAHALUKU-VAARIN (22.9, mitattu 18.9): kortti tulosti
-    "<nykyhintojen summa>m spent" aina kun `meta.squad_value_m` puuttui, ja
-    freeze ei ole koskaan kirjoittanut sita kenttaa, eli haara laukesi joka
-    kerta. 4.9:n portti oli jo tuominnut sanamuodon: ostohinnat eivat ole
-    julkisia, eika nykyhintojen summa ole rungon raha (GW5: 99.8m "spent" kun
-    myyntiarvo oli 99.1m). Freeze kirjoittaa 17.9 alkaen
-    `selling_value_tenths` (se raha jonka rungosta oikeasti saa) ja
-    `bank_tenths` (FPL:n `bank`), `attach_entry_state` ainoana kirjoittajana.
-
-    Fail-closed: puuttuva myyntiarvo kaataa ajon. Varalaskentaa nykyhinnoista
-    EI ole, koska se on juuri se vaara luku jota kortti ei saa vaittaa.
-    """
-    sv = meta.get("selling_value_tenths")
-    if not isinstance(sv, int):
-        raise SystemExit(
-            "meta.selling_value_tenths puuttuu freezesta: kortti ei laske "
-            "rahalukua nykyhinnoista (FROZEN-KORTTI-RAHALUKU-VAARIN). "
-            "Jaadyta kierros attach_entry_statella tai renderoi ilman korttia.")
-    line = f"<b>{sv / 10:.1f}m</b> selling value"
-    bank = meta.get("bank_tenths")
-    if isinstance(bank, int):
-        line += f" · {bank / 10:.1f}m in the bank"
-    return line
+# 🔴 KORTISSA EI OLE RAHALUKUA (FROZEN-KORTTI-RAHALUKU-VAARIN, Villen GO 28.9
+# CC:n suosituksesta). Historia: 4.9 "<nykyhintojen summa>m spent" (portti:
+# ostohinnat eivat ole julkisia), 22.9 "<myyntiarvo>m selling value · <pankki>m
+# in the bank" freezen metasta. Ville huomasi 28.9 etta luvut eivat tasmaa
+# FPL:aan, ja mittaus vahvisti: FPL kirjasi GW5-deadlinella value 100.4m ja
+# bank 0.5m, freezen uudelleenlaskenta 18.9 antoi pankiksi 1.2m. Lisaksi
+# myyntiarvo nakyy FPL:ssa VAIN tilin omistajalle, joten lukija ei voi
+# tarkistaa sita ilmaispinnalta. Kortin asia on kokoonpano ja kapteeni;
+# rahaluku oli ainoa rivi jota ei voinut tarkistaa. Freeze kirjoittaa
+# `selling_value_tenths`/`bank_tenths` yha omaa suunnitteluaan varten, mutta
+# kortti ei lue niita (portti tests/test_frozen_card_money.py).
 
 
 # Paidan koko kentalla ja penkilla. Sims-tilassa jokaisella aloittajalla on
@@ -252,8 +237,7 @@ def build_html(frozen: dict, gw: int, *, sims: bool = False,
     xi, bench = frozen["xi"], frozen["bench"]
     cap, vice = frozen["captain"], frozen["vice_captain"]
     meta_val = frozen.get("meta") or {}
-    money = money_line(meta_val)
-    raw = str(meta_val.get("frozen_at", ""))[:10]
+    raw =str(meta_val.get("frozen_at", ""))[:10]
     frozen_at = _dt.date.fromisoformat(raw).strftime("%d %b").lstrip("0") if raw else ""
 
     rows = {t: [p for p in xi if p["pos"] == t] for t in (1, 2, 3, 4)}
@@ -285,11 +269,8 @@ def build_html(frozen: dict, gw: int, *, sims: bool = False,
         f'<div class="sub">{subtitle(xi + ([] if hide_bench else bench), frozen_at, subtitle_override)}</div></div></div>'
         f'<div class="pitch">{pitch}</div>'
         f'{bench_block}'
-        # 🔴 4.9 PORTTI: "spent" laskettiin NYKYHINNOISTA, mutta se ei ole
-        # kumpikaan oikea luku: ostohinnat eivat ole julkisia, ja FPL:n oma
-        # sivu nayttaa rungon myyntiarvon + pankin. Kun runko tulee entrysta,
-        # kaytetaan FPL:n omia lukuja ja oikeaa sanaa.
-        + f'<div class="ftr"><span>{money}</span>'
+        # Ei rahalukua: "KORTISSA EI OLE RAHALUKUA" -kommentti ylempana (28.9).
+        + '<div class="ftr">'
         # 21.8 portti B1: EI linkkiä /fpl/model-xi-sivulle — se regeneroituu
         # päivittäin ja sen 15 voi erota freezestä (erosi jo samana iltana).
         # 21.9: reitti on jaadytetty runko julkisessa repossa, ei entry

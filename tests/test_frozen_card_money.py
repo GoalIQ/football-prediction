@@ -1,21 +1,23 @@
-"""FROZEN-KORTTI-RAHALUKU-VAARIN (22.9.2026): mallin jakokortin raharivi FPL:n
-omista luvuista, ei nykyhintojen summasta.
+"""FROZEN-KORTTI-RAHALUKU-VAARIN: mallin jakokortissa EI ole rahalukua (28.9.2026).
 
-Mitattu 18.9: `render_frozen_squad_card.py` tulosti "<summa>m spent" aina kun
-`meta.squad_value_m` puuttui, ja freeze ei ollut koskaan kirjoittanut sita:
-GW5 "99.8m spent" kun myyntiarvo oli 99.1m. 4.9:n portti oli jo tuominnut
-sanamuodon (ostohinnat eivat ole julkisia).
+Historia:
+- 4.9 portti tuomitsi "<nykyhintojen summa>m spent" (ostohinnat eivat ole julkisia).
+- 22.9 kortti luki `selling_value_tenths` + `bank_tenths` freezen metasta:
+  "<b>99.1m</b> selling value · 1.2m in the bank".
+- 28.9 Ville: "eihan 99.1m selling value ja 1.2m in the bank tasmaa?" Mitattu:
+  FPL kirjasi GW5-deadlinella value 1004 ja bank 5 (entry/116920/event/5/picks),
+  eli pankki 0.5m eika 1.2m. Myyntiarvo nakyy FPL:ssa vain tilin omistajalle,
+  joten lukija ei voi tarkistaa sita ilmaispinnalta. Villen GO CC:n
+  suositukselle: rahaluku pois kortista.
 
-Kortti on pysyva kuva (julkinen teksti), joten puuttuva kentta kaataa ajon.
+Kortti on pysyva kuva (julkinen teksti). Portti kaatuu jos kortti alkaa taas
+lukea rahakenttia tai tulostaa rahasanan alatunnisteeseen.
 """
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -24,6 +26,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import render_frozen_squad_card as card  # noqa: E402
 
 SRC = (ROOT / "scripts" / "render_frozen_squad_card.py").read_text(encoding="utf-8")
+RAHASANAT = re.compile(r"selling value|in the bank|\bspent\b|\bbank\b|team value|squad value", re.I)
 
 
 def _code(src: str) -> str:
@@ -32,43 +35,47 @@ def _code(src: str) -> str:
     return "\n".join(ln.split("#", 1)[0] for ln in src.splitlines())
 
 
-def test_fpln_omat_luvut_myyntiarvo_ja_pankki():
-    assert card.money_line({"selling_value_tenths": 991, "bank_tenths": 12}) == (
-        "<b>99.1m</b> selling value · 1.2m in the bank")
+def _runko(meta: dict) -> dict:
+    """Tuotannon muotoinen runko: 15 pelaajaa, freezen meta rahakenttineen."""
+    pos = [1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4]
+
+    def p(i, ps):
+        return {"id": 200 + i, "web_name": f"P{i}", "team_short": "ARS", "pos": ps,
+                "price": 55, "status": "a", "chance": None}
+    xi = [p(i, ps) for i, ps in enumerate(pos)]
+    bench = [p(11 + i, ps) for i, ps in enumerate([1, 2, 3, 4])]
+    return {"xi": xi, "bench": bench, "captain": xi[-1]["id"], "vice_captain": xi[-2]["id"],
+            "meta": meta}
 
 
-def test_pankki_puuttuu_rivi_ilman_pankkia():
-    assert card.money_line({"selling_value_tenths": 1000}) == "<b>100.0m</b> selling value"
+def _alatunniste(html: str) -> str:
+    m = re.search(r'<div class="ftr">(.*?)</div>', html, re.S)
+    assert m, "alatunniste puuttuu"
+    return m.group(1)
 
 
-@pytest.mark.parametrize("meta", [{}, {"selling_value_tenths": None},
-                                  {"squad_value_m": 99.8}, {"selling_value_tenths": "991"}])
-def test_puuttuva_myyntiarvo_kaataa_ajon(meta):
-    with pytest.raises(SystemExit):
-        card.money_line(meta)
+def test_kortissa_ei_ole_rahalukua_vaikka_meta_kantaa_kentat():
+    """Erotteleva fikstuuri: metassa ON molemmat kentat (22.9-version syote)."""
+    meta = {"gw": 6, "frozen_at": "2026-10-09T05:00:00Z", "chip": None,
+            "selling_value_tenths": 991, "bank_tenths": 12}
+    html = card.build_html(_runko(meta), 6)
+    ftr = _alatunniste(html)
+    assert not RAHASANAT.search(ftr), ftr
+    assert "99.1" not in html and "1.2m" not in html
+    assert "data/model_squad_frozen/gw6.json" in ftr
 
 
-def test_gw5_freeze_ilman_kenttia_ei_renderoidy_spent_luvulla():
-    """DoD-fikstuuri: oikea gw5.json (jaadytetty 17.9 ennen kenttia)."""
-    gw5 = ROOT / "data" / "model_squad_frozen" / "gw5.json"
-    if not gw5.exists():
-        pytest.skip("gw5.json puuttuu")
-    meta = json.loads(gw5.read_text(encoding="utf-8")).get("meta") or {}
-    assert meta.get("selling_value_tenths") is None, "fikstuuri ei ole enaa erotteleva"
-    with pytest.raises(SystemExit):
-        card.money_line(meta)
+def test_kortti_renderoityy_ilman_rahakenttia():
+    """22.9-versio kaatoi ajon kun myyntiarvo puuttui (gw5.json). Nyt kentat
+    eivat ole kortin syote lainkaan."""
+    html = card.build_html(_runko({"gw": 5, "frozen_at": "2026-09-17T12:18:34Z"}), 5)
+    assert not RAHASANAT.search(_alatunniste(html))
 
 
-def test_kutsupaikka_lukee_money_linea_eika_laske_nykyhinnoista():
+def test_kortin_koodi_ei_lue_rahakenttia():
     code = _code(SRC)
-    assert "money = money_line(meta_val)" in code
-    assert "{money}" in code
-    assert "spent" not in code, "'spent'-sanamuoto palasi kortin koodiin"
+    assert "money_line" not in code
+    assert "selling_value_tenths" not in code and "bank_tenths" not in code
+    assert "squad_value_m" not in code
+    assert "spent" not in code
     assert not re.search(r'sum\(\s*p\["price"\]', code), "rahaluku lasketaan taas nykyhinnoista"
-
-
-def test_kirjoittaja_ja_lukija_samat_kentat():
-    """Freeze on kenttien AINOA kirjoittaja (attach_entry_state)."""
-    freeze = (ROOT / "scripts" / "freeze_model_squad_gw.py").read_text(encoding="utf-8")
-    assert 'meta["selling_value_tenths"] = int(' in freeze
-    assert 'meta["bank_tenths"] = int(' in freeze
