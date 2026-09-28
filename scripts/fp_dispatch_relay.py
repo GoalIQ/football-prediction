@@ -65,23 +65,55 @@ TARGETS: list[dict] = [
     # ilmaiseksi ja katkaisi ostamisen ilman yhtaan virhetta). Vahti on
     # arvokas vain ajallaan: GitHubin cron on laahannut 5-12 h.
     {"workflow": "env-health-watch.yml", "slots": None},
+    # 28.9 (AUTO-S14): kolme workflow'ta oli poikkeuksina perusteella "viive
+    # ei haittaa". S14 ei tieda sita, ja elite-tick toteutui 2/4 = 50 %
+    # ensimmaisena vuorokautenaan. Kaikki kolme paattavat tilasta itse
+    # (tick: otos/valinnat/none, grade: gradaa uudelleen, page-refresh:
+    # rakentaa sivun), joten myohassa tuleva cron-tupla ei tee mitaan uutta.
+    {"workflow": "fpl-elite-tick.yml", "slots": None},
+    {"workflow": "model-squad-grade.yml", "slots": None},
+    {"workflow": "fpl-page-refresh.yml", "slots": None},
 ]
 
-# Cron-workflow't joita relay EI laukaise. Jokaisella perustelu; uusi
-# cron-workflow kaataa portin kunnes se on jommassakummassa.
-EXCEPTIONS: dict[str, str] = {
-    "fp-dispatch-relay.yml": "relay itse: sen oma cron on varmistus CF-workerin :50-laukaisulle, "
-                             "ei relayn kohde",
-    "render-daily-deploy.yml": "tuotanto-deploy Renderiin = GO-REQUIRED; relay ei saa "
-                               "laukaista deployta (CLAUDE.md turvaportti)",
-    "wc-knockout-refresh.yml": "kertaluontoinen cron 28.6. (MM-pudotuspelit), ohi",
-    "model-squad-grade.yml": "toteuma 86 % (3.9 mittaus), ei S14-signaalia",
-    "affiliate-attrib-watch.yml": "viikoittainen, ei S14-signaalia; issue-vahti sietaa viiveen",
-    "fpl-page-refresh.yml": "paivittainen, ei S14-signaalia",
-    "fpl-why-refresh.yml": "paivittainen, ei S14-signaalia",
-    "free-window-watch.yml": "paivittainen, ei S14-signaalia",
-    "fpl-elite-tick.yml": "6 h tahti ja vaiheiden (kierros valmis -> seuraava deadline) valilla "
-                          "paivia, joten tuntien cron-viive ei haittaa",
+# S14-mittarin (goaliq-app scripts/autopilot/cron_realization.py) ikkuna ja
+# kynnys: alle S14_MIN_REQUESTED slottia S14_WINDOW_DAYS vuorokaudessa ei
+# mitata lainkaan. Pariteetin vartioi goaliq-appin
+# scripts/autopilot/tests/test_cron_expr_parity.py.
+S14_WINDOW_DAYS = 7
+S14_MIN_REQUESTED = 4
+
+# Poikkeuksen sallitut syyt. "Viive ei haittaa" EI ole syy: S14 mittaa
+# toteumaa perustelusta riippumatta, ja GitHubin cron laahaa koko repossa,
+# joten jokainen mitattava workflow joka jatetaan relayn ulkopuolelle nostaa
+# signaalin ennen pitkaa (28.9: fpl-elite-tick 2/4 heti ensimmaisena
+# vuorokautena). Mitattava ja uudelleen ajettava workflow kuuluu TARGETS:iin.
+EXCEPTION_CATEGORIES: dict[str, str] = {
+    "relay": "relay itse",
+    "go_required": "laukaisu olisi tuotanto-deploy tai muu GO-REQUIRED",
+    "kertaluonteinen": "cron on kertaluonteinen ja ohi",
+    "ei_idempotentti": "toinen ajo samasta slotista vaaristaa datan (esim. lisaa rivin sarjaan)",
+    "maksullinen": "ajo kutsuu maksullista rajapintaa; tupla-ajo maksaa",
+    "alle_s14_kynnyksen": "alle S14_MIN_REQUESTED slottia ikkunassa, S14 ei mittaa (portti laskee)",
+}
+
+# Cron-workflow't joita relay EI laukaise: {nimi: (kategoria, perustelu)}.
+# Uusi cron-workflow kaataa portin kunnes se on jommassakummassa, ja
+# kategorian on oltava EXCEPTION_CATEGORIES:ssa.
+EXCEPTIONS: dict[str, tuple[str, str]] = {
+    "fp-dispatch-relay.yml": ("relay", "relay itse: sen oma cron on varmistus CF-workerin "
+                                       ":50-laukaisulle, ei relayn kohde"),
+    "render-daily-deploy.yml": ("go_required", "tuotanto-deploy Renderiin = GO-REQUIRED; relay "
+                                               "ei saa laukaista deployta (CLAUDE.md turvaportti)"),
+    "wc-knockout-refresh.yml": ("kertaluonteinen", "kertaluontoinen cron 28.6. "
+                                                   "(MM-pudotuspelit), ohi"),
+    "affiliate-attrib-watch.yml": ("alle_s14_kynnyksen", "viikoittainen (1 slotti / 7 vrk); "
+                                                         "issue-vahti sietaa viiveen"),
+    "fpl-why-refresh.yml": ("maksullinen", "kutsuu Claude Batches API:a (ANTHROPIC_API_KEY); "
+                                           "myohastynyt cron + relay = kaksi maksullista ajoa"),
+    "free-window-watch.yml": ("ei_idempotentti", "lisaa rivin free_window_log.jsonl:iin ja "
+                                                 "affiliate_cohort_log.jsonl:iin joka ajolla "
+                                                 "ilman paivakohtaista tarkistusta; tupla-ajo "
+                                                 "tuplaa sarjan rivin"),
 }
 
 

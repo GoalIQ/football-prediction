@@ -14,13 +14,13 @@ Paatoslogiikalle positiivinen JA negatiivinen kontrolli ilman verkkoa.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
 from scripts import fp_dispatch_relay as relay
-from scripts.cron_expr import cron_exprs
+from scripts.cron_expr import _matches, cron_exprs, parse_cron
 
 ROOT = Path(__file__).resolve().parents[1]
 WF = ROOT / ".github" / "workflows"
@@ -59,8 +59,58 @@ def test_targets_and_exceptions_exist_and_have_cron(fp):
 def test_targets_and_exceptions_are_disjoint_and_reasons_nonempty():
     targets = {t["workflow"] for t in relay.TARGETS}
     assert not targets & set(relay.EXCEPTIONS)
-    for name, reason in relay.EXCEPTIONS.items():
+    for name, (_kategoria, reason) in relay.EXCEPTIONS.items():
         assert reason and len(reason) >= 15, f"{name}: perustelu puuttuu"
+
+
+# ------------------------------------------------------------- poikkeuksen syy (AUTO-S14 28.9)
+# fpl-elite-tick oli poikkeuksena perusteella "tuntien cron-viive ei haittaa"
+# ja toteutui 2/4 = 50 % ensimmaisena vuorokautenaan -> S14 P2. Viiveen
+# siedettavyys ei ole kategoria, joten sita perustelua ei voi enaa kirjoittaa.
+def test_exception_category_is_from_closed_list():
+    vaarat = {n: k for n, (k, _r) in relay.EXCEPTIONS.items()
+              if k not in relay.EXCEPTION_CATEGORIES}
+    assert not vaarat, (
+        f"poikkeuksen kategoria ei ole sallittu: {vaarat}. Sallitut: "
+        f"{sorted(relay.EXCEPTION_CATEGORIES)}. Jos workflow mitataan (S14) ja sen voi "
+        "ajaa uudelleen, se kuuluu TARGETS:iin.")
+
+
+def _slots_in_window(exprs: list[str]) -> int:
+    """Slottien maara S14-ikkunassa. Paras mahdollinen viikko (maksimi 53 viikon
+    yli), jotta kuukausi- tai paivamaarasidottu cron ei lipsahda kynnyksen alle
+    satunnaisella viikolla."""
+    crons = [parse_cron(e) for e in exprs]
+    start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    per_min = []
+    t = start
+    end = start + timedelta(days=371)
+    while t < end:
+        per_min.append(any(_matches(c, t) for c in crons))
+        t += timedelta(minutes=1)
+    w = relay.S14_WINDOW_DAYS * 24 * 60
+    best = cur = sum(per_min[:w])
+    for i in range(w, len(per_min)):
+        cur += per_min[i] - per_min[i - w]
+        best = max(best, cur)
+    return best
+
+
+def test_below_s14_floor_category_is_computed_not_claimed(fp):
+    for name, (kategoria, _r) in relay.EXCEPTIONS.items():
+        if kategoria != "alle_s14_kynnyksen":
+            continue
+        n = _slots_in_window(cron_exprs(fp[name]))
+        assert n < relay.S14_MIN_REQUESTED, (
+            f"{name}: {n} slottia / {relay.S14_WINDOW_DAYS} vrk >= S14_MIN_REQUESTED "
+            f"{relay.S14_MIN_REQUESTED} -> S14 mittaa sen. Siirra TARGETS:iin.")
+
+
+def test_floor_computation_negative_control():
+    """Erotteleva kontrolli: viikoittainen alittaa, paivittainen ja 6 h eivat."""
+    assert _slots_in_window(["17 6 * * 1"]) == 1
+    assert _slots_in_window(["10 5 * * *"]) == 7
+    assert _slots_in_window(["23 */6 * * *"]) == 28
 
 
 def test_every_target_has_workflow_dispatch(fp):
