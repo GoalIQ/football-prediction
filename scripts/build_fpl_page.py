@@ -3827,11 +3827,13 @@ def sync_index_articles() -> bool:
     return True
 
 
-def update_index(c: dict, xp: dict | None = None) -> bool:
+def update_index(c: dict, xp: dict | None = None,
+                 now: _dt.datetime | None = None) -> bool:
     """Täytä index.html:n GEN:ACC-markerit tuoreilla accuracy-luvuilla.
     Sama lähde ja refresh-tahti kuin fpl.html (ei staleja kovakoodauksia)."""
     if not INDEX_PATH.exists():
         return False
+    now = now or _dt.datetime.now(_dt.timezone.utc)
     s = INDEX_PATH.read_text(encoding="utf-8")
     chip = (
         f'<div class="num">{fmt_pct(c["acc_pct_1x2"])}</div>'
@@ -3998,6 +4000,20 @@ def update_index(c: dict, xp: dict | None = None) -> bool:
             raise RuntimeError(
                 f"index.html GEN:LATEST-ARTICLES: odotettiin 1 markerilohko, "
                 f"loytyi {n_art}")
+
+    # 28.9: kumppanikortti heron oikeaan sarakkeeseen (src/partners.py
+    # kertoo miksi). Lohko kirjoitetaan AINA, myos tyhjana: kumppanuuden
+    # paattyessa kortti ja sen tyyli poistuvat seuraavassa ajossa.
+    partner_card = partner_card_html(FPL_DEMON, now, "hub_index")
+    partner_block = (f"<style>{PARTNER_CARD_CSS}</style>{partner_card}"
+                     if partner_card else "")
+    new, n_pc = re.subn(
+        r"(<!-- GEN:PARTNER-CARD-START -->).*?(<!-- GEN:PARTNER-CARD-END -->)",
+        lambda m: m.group(1) + partner_block + m.group(2), new, flags=re.S)
+    if n_pc != 1:
+        raise RuntimeError(
+            f"index.html GEN:PARTNER-CARD: odotettiin 1 markerilohko, "
+            f"loytyi {n_pc}")
 
     news_block = team_news_block(xp)
     if news_block:

@@ -25,6 +25,16 @@ yläpalkin valilehden. Nyt sama kortti kahdella ilmaisella pinnalla:
 heti heron jalkeen (meidan oma Premium-nappi ensin). Ei navigaatioon: se veisi
 kavijan pois jokaiselta sivulta, myos ostohetkelta.
 
+ETUSIVU (Villen paatos 28.9 "tasapainotetaan nakyvyydessa"): Demon antaa meille
+ylapalkin valilehden joka sivulla ja logopillerin plannerinsa ensimmaiselle
+ruudulle; meilla kortti oli 1.2-3.4 ruutua alaspain. Etusivun heron oikea
+sarake on meidan xP-taulukkomme, eli sama luku jota hanen plannerinsa kayttaa:
+kortti tarkkuussirun ja nostetun muistion valiin. Tyopoydalla ensimmaisella
+ruudulla, puhelimella meidan omien heronappien JALKEEN (ne ovat DOM-jarjestyksessa
+ennen oikeaa saraketta). EI Pro-SPA:han: siella sen nakisivat lahinna maksajat,
+ja lukittu esikatselu on ostohetki (Villen paatos 27.9).
+Etusivun muuttujat ovat --panel ja --font-mono; CSS lukee ne varalla.
+
 URL on Demonin itse lahettama (X DM 27.9 klo 6.46), sellaisenaan: hanen
 analytiikkansa lukee HANEN tagejaan.
 
@@ -74,7 +84,7 @@ def partner_active(p: dict, now: datetime) -> bool:
 
 # Pinnat joilla kortti saa nakya. Uusi pinta vaatii rivin tahan JA portin
 # (tests/test_partner_link.py mittaa jokaisen renderoidylta sivulta).
-SURFACES = ("hub_expected_points", "hub_fpl")
+SURFACES = ("hub_expected_points", "hub_fpl", "hub_index")
 
 # Hanen punaisensa, ei meidan amberimme: meidan omat ostonapit ovat amberia,
 # joten kumppanin nappi ei saa nayttaa meidan CTA:lta. Kontrasti
@@ -82,16 +92,16 @@ SURFACES = ("hub_expected_points", "hub_fpl")
 PARTNER_CARD_CSS = """
 .partner-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
 gap:12px 20px;margin:22px 0;padding:14px 18px;max-width:760px;
-background:var(--paper,#1F1D1A);border:1px solid var(--line-strong,rgba(243,242,242,.4));
+background:var(--paper,var(--panel,#1F1D1A));border:1px solid var(--line-strong,rgba(243,242,242,.4));
 border-left:4px solid #FF4D57;}
 .partner-card .partner-logo{flex:none;display:block;width:44px;height:44px;border-radius:8px;}
 .partner-card .partner-text{flex:1 1 200px;min-width:0;}
-.partner-card .partner-kicker{display:block;margin-bottom:2px;font-family:var(--mono,monospace);
+.partner-card .partner-kicker{display:block;margin-bottom:2px;font-family:var(--mono,var(--font-mono,monospace));
 font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint,#8A847A);}
 .partner-card p{margin:0;max-width:none;font-size:16px;line-height:1.45;color:var(--cream,#F3F2F2);}
 .partner-card .partner-name{color:#FF4D57;font-weight:700;}
 .partner-card .partner-btn{flex:none;display:inline-block;min-height:44px;padding:11px 18px;
-border:1px solid #FF4D57;color:#FF4D57;font-family:var(--mono,monospace);font-size:14px;
+border:1px solid #FF4D57;color:#FF4D57;font-family:var(--mono,var(--font-mono,monospace));font-size:14px;
 font-weight:700;text-decoration:none;white-space:nowrap;}
 .partner-card .partner-btn:hover{background:#FF4D57;color:var(--ink,#0B0A09);}
 @media (max-width:520px){.partner-card .partner-btn{width:100%;text-align:center;}}

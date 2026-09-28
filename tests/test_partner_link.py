@@ -12,6 +12,8 @@ Portti vartioi:
        - /fpl/expected-points: GW-taulukon alla ja ENNEN top 100:aa, jotta koko
          top 100 jaa kortin ja UPSELL/CTA:n (ostohetki) valiin;
        - /fpl: heti heron jalkeen, eli meidan oma Premium-nappi tulee ensin;
+       - / (etusivu, 28.9): heron oikea sarake, xP-taulukon ja tarkkuussirun
+         alla, omien heronappien jalkeen DOM:ssa;
      ja kummallakin sivulla kortti on tasan kerran JA sen tyyli on sivulla
      (luokka ilman tyylia olisi 12 px:n rivi uudelleen, eli se vika jota
      kortti korjaa);
@@ -202,6 +204,59 @@ def test_fpl_page_places_it_after_our_own_hero_cta():
     assert page.count(LOGO) == 1 and page.count(".partner-card .partner-logo{") == 1
 
 
+def _index_page(tmp_path, monkeypatch, now: datetime) -> str:
+    """Aja OIKEA etusivun builder (update_index) kopioon index.html:sta."""
+    import shutil
+
+    import scripts.build_fpl_page as B
+    idx = tmp_path / "index.html"
+    shutil.copy(ROOT / "index.html", idx)
+    monkeypatch.setattr(B, "INDEX_PATH", idx)
+    c = B.build_context(*B.load_data())
+    B.update_index(c, B._load_json(B.XP_PATH), now=now)
+    return idx.read_text(encoding="utf-8")
+
+
+def test_index_places_it_in_the_hero_after_our_own_buttons(tmp_path, monkeypatch):
+    """Etusivu (Villen paatos 28.9): heron oikeaan sarakkeeseen meidan
+    xP-taulukon ja tarkkuussirun alle, ennen nostettua muistiota. Omat
+    heronapit ovat DOM:ssa ennen oikeaa saraketta, joten puhelimella ne
+    tulevat ensin. Ajetaan kahdesti: lohko ei saa monistua."""
+    import scripts.build_fpl_page as B
+    page = _index_page(tmp_path, monkeypatch, BEFORE)
+    B.update_index(B.build_context(*B.load_data()), B._load_json(B.XP_PATH), now=BEFORE)
+    page = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert page.count("fpldemon.com") == 1
+    assert page.count(CARD) == 1
+    assert page.count(CARD_CSS) == 1, "kortti ilman tyylia on taas alaviiterivi"
+    assert page.count(LOGO) == 1
+    assert "surface:'hub_index'" in page
+    card = page.index(CARD)
+    order = [
+        page.index('data-cta="hero-premium"'),
+        page.index('data-cta="hero-free"'),
+        page.index("<!-- GEN:XP-TABLE-END -->"),
+        page.index('class="record-chip compact"'),
+        card,
+        page.index("<!-- GEN:LATEST-ARTICLES-START -->"),
+        page.index('<section id="pro">'),
+    ]
+    assert order == sorted(order)
+
+
+def test_index_card_disappears_when_the_partnership_ends(tmp_path, monkeypatch):
+    """Ensin voimassa (kortti kirjoitetaan), sitten paattynyt: jo kirjoitettu
+    kortti poistuu. Pelkka paattynyt ajo repon tyhjista markereista lapaisisi
+    myos builderin joka ei koske lohkoon lainkaan."""
+    import scripts.build_fpl_page as B
+    assert CARD in _index_page(tmp_path, monkeypatch, BEFORE)
+    B.update_index(B.build_context(*B.load_data()), B._load_json(B.XP_PATH), now=UNTIL)
+    page = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert "fpldemon.com" not in page
+    assert CARD not in page and CARD_CSS not in page
+    assert "<!-- GEN:PARTNER-CARD-START --><!-- GEN:PARTNER-CARD-END -->" in page
+
+
 def test_claim_horizon_matches_the_feed():
     from api.partner_feed import PARTNER_XP_HORIZON
     sanat = {3: "three", 4: "four", 5: "five", 6: "six", 8: "eight"}
@@ -218,10 +273,10 @@ def test_expired_pages_have_no_card():
         assert CARD not in p and CARD_CSS not in p
 
 
-def test_call_sites_are_the_two_surfaces():
-    """Muut sivut (ja paywall) eivat saa korttia vahingossa: kutsupaikkoja on
-    kaksi, yksi kummallekin SURFACES-pinnalle. Uusi sijoitus vaatii tietoisen
-    muutoksen tahan ja SURFACESiin."""
+def test_call_sites_are_the_surfaces():
+    """Muut sivut (ja paywall) eivat saa korttia vahingossa: yksi kutsupaikka
+    kullekin SURFACES-pinnalle. Uusi sijoitus vaatii tietoisen muutoksen
+    tahan ja SURFACESiin."""
     kutsut = []
     for p in [*(ROOT / "scripts").rglob("*.py"), *(ROOT / "src").rglob("*.py"),
               *(ROOT / "api").rglob("*.py")]:
@@ -233,8 +288,9 @@ def test_call_sites_are_the_two_surfaces():
     assert sorted(kutsut) == [
         ("scripts/build_fpl_longtail.py", "hub_expected_points"),
         ("scripts/build_fpl_page.py", "hub_fpl"),
+        ("scripts/build_fpl_page.py", "hub_index"),
     ]
-    assert sorted(SURFACES) == ["hub_expected_points", "hub_fpl"]
+    assert sorted(SURFACES) == ["hub_expected_points", "hub_fpl", "hub_index"]
     src = (ROOT / "scripts" / "build_fpl_longtail.py").read_text(encoding="utf-8")
     alku = src.index("def render_expected_points(")
     loppu = src.index("\ndef ", alku + 1)

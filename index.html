@@ -930,6 +930,9 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         <div class="tr-links"><a href="/predictions#record">Full record &#9656;</a><a class="alt" href="/fpl">See the tools it powers &#9656;</a></div>
       </div>
     </div>
+    <!-- Partner card: filled between the markers by build_fpl_page.update_index
+         from src/partners.py. Empty when the partnership has ended. -->
+    <!-- GEN:PARTNER-CARD-START --><!-- GEN:PARTNER-CARD-END -->
     <!-- Featured note: filled between the markers by
          build_fpl_page.update_index from data/fpl_notes.json.
          Position is deliberate: above the fold, in the hero. -->
