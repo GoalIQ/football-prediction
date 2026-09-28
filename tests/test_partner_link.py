@@ -244,6 +244,23 @@ def test_index_places_it_in_the_hero_after_our_own_buttons(tmp_path, monkeypatch
     assert order == sorted(order)
 
 
+def test_index_layout_keeps_our_buttons_first():
+    """Mitattu 28.9 esikatselusta ennen naita saantoja: puhelimella (390 px)
+    kortti nousi otsikon ylapuolelle (flex-pinon order 0), ja tyopoydalla
+    (1440x844) korkeampi oikea sarake tyonsi heronapit 724 -> 818 px, eli
+    Premium-nappi puoliksi ensimmaisen ruudun alle. DOM-jarjestys ei nae
+    kumpaakaan, joten portti lukee etusivun omat asettelusaannot."""
+    s = (ROOT / "index.html").read_text(encoding="utf-8")
+    hero = re.search(r"\n  \.hero \{ display: grid;[^}]*\}", s)
+    assert hero and "grid-template-rows: auto 1fr;" in hero.group(0)
+    mobile = s[s.index("@media (max-width: 900px) {\n    .hero, .toolkit"):]
+    mobile = mobile[:mobile.index("\n  }\n")]
+    orders = dict(re.findall(r"\.([\w-]+(?: \.[\w-]+)?) \{ order: (\d+); \}", mobile))
+    assert orders["cta-row"] < orders["hero-side .partner-card"] < orders["note-list"]
+    assert orders["hero-side .partner-card"] == orders["record-chip"], \
+        "sama order kuin tarkkuussirulla: DOM-jarjestys pitaa kortin sen jalkeen"
+
+
 def test_index_card_disappears_when_the_partnership_ends(tmp_path, monkeypatch):
     """Ensin voimassa (kortti kirjoitetaan), sitten paattynyt: jo kirjoitettu
     kortti poistuu. Pelkka paattynyt ajo repon tyhjista markereista lapaisisi
