@@ -18,6 +18,13 @@ links both ways". EI lukitussa esikatselussa eika paywallissa: se on
 ostohetki, ja linkki tarjoaisi siina ilmaisen vaihtoehdon joka pyorii meidan
 luvuillamme.
 
+KORTTI JA TOINEN PINTA (Villen paatos 28.9): 12 px harmaa alaviiterivi ei
+nakynyt, kun Demon antaa meille logopillerin plannerinsa kentan ylla ja
+yläpalkin valilehden. Nyt sama kortti kahdella ilmaisella pinnalla:
+/fpl/expected-points GW-taulukon alaviitteiden jalkeen ja /fpl-paasivulla
+heti heron jalkeen (meidan oma Premium-nappi ensin). Ei navigaatioon: se veisi
+kavijan pois jokaiselta sivulta, myos ostohetkelta.
+
 URL on Demonin itse lahettama (X DM 27.9 klo 6.46), sellaisenaan: hanen
 analytiikkansa lukee HANEN tagejaan.
 
@@ -61,24 +68,57 @@ def partner_active(p: dict, now: datetime) -> bool:
     return now < until
 
 
-def partner_line_html(p: dict, now: datetime, surface: str) -> str:
-    """Kumppanirivi hub-sivulle, tai "" kun kumppanuus ei ole voimassa.
+# Pinnat joilla kortti saa nakya. Uusi pinta vaatii rivin tahan JA portin
+# (tests/test_partner_link.py mittaa jokaisen renderoidylta sivulta).
+SURFACES = ("hub_expected_points", "hub_fpl")
+
+# Hanen punaisensa, ei meidan amberimme: meidan omat ostonapit ovat amberia,
+# joten kumppanin nappi ei saa nayttaa meidan CTA:lta. Kontrasti
+# #FF4D57 vs --paper #1F1D1A = 5.2:1 (WCAG AA 4.5).
+PARTNER_CARD_CSS = """
+.partner-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+gap:12px 20px;margin:22px 0;padding:14px 18px;max-width:760px;
+background:var(--paper,#1F1D1A);border:1px solid var(--line-strong,rgba(243,242,242,.4));
+border-left:4px solid #FF4D57;}
+.partner-card .partner-text{flex:1 1 260px;min-width:0;}
+.partner-card .partner-kicker{display:block;margin-bottom:2px;font-family:var(--mono,monospace);
+font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint,#8A847A);}
+.partner-card p{margin:0;max-width:none;font-size:16px;line-height:1.45;color:var(--cream,#F3F2F2);}
+.partner-card .partner-name{color:#FF4D57;font-weight:700;}
+.partner-card .partner-btn{flex:none;display:inline-block;min-height:44px;padding:11px 18px;
+border:1px solid #FF4D57;color:#FF4D57;font-family:var(--mono,monospace);font-size:14px;
+font-weight:700;text-decoration:none;white-space:nowrap;}
+.partner-card .partner-btn:hover{background:#FF4D57;color:var(--ink,#0B0A09);}
+@media (max-width:520px){.partner-card .partner-btn{width:100%;text-align:center;}}
+"""
+
+
+def partner_card_html(p: dict, now: datetime, surface: str) -> str:
+    """Kumppanikortti hub-sivulle, tai "" kun kumppanuus ei ole voimassa.
+
+    Kortin CSS on PARTNER_CARD_CSS; sivu joka kutsuu tata liittaa sen omaan
+    <style>-lohkoonsa (portti tarkistaa etta molemmat ovat sivulla).
 
     rel="sponsored": sovittu vastavuoroinen linkki, ei riippumaton suositus
-    (hakukoneille sama kuin "Partner:"-merkinta lukijalle). Klikkaus kirjataan
+    (hakukoneille sama kuin "Partner"-merkinta lukijalle). Klikkaus kirjataan
     samalla tapahtumanimella kuin SPA kayttaisi, jotta meidan puolen luku on
-    verrattavissa Demonin utm-lukuun.
+    verrattavissa Demonin utm-lukuun; `surface` erottaa pinnat.
     """
+    if surface not in SURFACES:
+        raise ValueError(f"tuntematon kumppanipinta: {surface!r}")
     if not partner_active(p, now):
         return ""
     pid = escape(p["id"], quote=True)
     surf = escape(surface, quote=True)
+    name = f'<b class="partner-name">{escape(p["name"], quote=False)}</b>'
+    claim = escape(p["claim"], quote=False).replace("{name}", name)
     return (
-        '<p class="note"><strong>Partner:</strong> '
-        f'{escape(p["claim"].format(name=p["name"]), quote=False)} '
-        f'<a href="{escape(p["url"], quote=True)}" target="_blank" '
+        f'<aside class="partner-card" aria-label="Partner: {escape(p["name"], quote=True)}">'
+        '<div class="partner-text"><span class="partner-kicker">Partner</span>'
+        f"<p>{claim}</p></div>"
+        f'<a class="partner-btn" href="{escape(p["url"], quote=True)}" target="_blank" '
         'rel="noopener sponsored" '
         "onclick=\"window.posthog&amp;&amp;posthog.capture('partner_link_clicked',"
         f"{{partner:'{pid}',surface:'{surf}'}})\">"
-        f'{escape(p["cta"], quote=False)}</a>.</p>'
+        f'{escape(p["cta"], quote=False)} &rarr;</a></aside>'
     )
