@@ -234,6 +234,9 @@
   /* CLASSIC: the bright #2ED6C2 is unreadable AS TEXT on cream (~1.9:1).
      Text always uses --teal-ink; the bright teal is kept for rules. */
   .hero .badge { color: var(--teal-ink); }
+  /* 28 Sep: the badge links to #record. 'See the full record' sat at
+     1,128px on a 390px phone, below the 844px fold. */
+  a.badge { text-decoration: none; }
   .hero h1 { color: var(--ink); }
   .hero p.sub { color: var(--hero-muted); }
   .hero p.sub a { color: var(--teal-ink); font-weight: 600; }
@@ -570,7 +573,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
 <div class="wrap">
 
   <header class="hero">
-    <span class="badge">Every prediction in the record logged before kick-off, publicly tracked</span>
+    <a class="badge" href="#record" data-cta="predictions-hero-record">Every prediction in the record logged before kick-off, publicly tracked</a>
     <h1>Football match predictions, <span class="accent">from a model that shows its record</span></h1>
     <p class="sub">GoalIQ predicts any football match: win probability for each side, from a Dixon-Coles model. Pick two teams and the model does the rest. Free on the web and in the app. Expected goals and the top-10 scoreline table are part of GoalIQ Premium.</p>
     <div class="cta-row" id="get">
