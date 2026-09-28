@@ -84,7 +84,46 @@ def joukkuekartta(fd: pd.DataFrame, us: pd.DataFrame) -> dict[str, str]:
     for t, (u, n) in ehdokas.items():
         if u not in varattu or n > varattu[u][1]:
             varattu[u] = (t, n)
-    return {t: u for u, (t, _n) in varattu.items()}
+    kartta = {t: u for u, (t, _n) in varattu.items()}
+    return _ankkuroi(kartta, fd_p, fd, us_paivat)
+
+
+def _ankkuroi(kartta: dict[str, str], fd_p, fd: pd.DataFrame, us_paivat) -> dict[str, str]:
+    """Toinen kierros: tuntematon joukkue tunnistetaan tunnetun vastustajan kautta.
+
+    Julkaisutarkistaja 28.9: ensimmainen kierros ei kartoittanut NOUSIJOITA
+    kauden alussa (liian vahan aania, tasapeli) -> Bundesliga 26/27 25/36 rivia,
+    Elversberg/Paderborn/Schalke kokonaan ilman xG:ta, sama joka elokuu. Kun
+    ottelun toinen puoli on kartassa, saman paivan (+-1) Understat-ottelu jossa
+    se pelaa SAMALLA puolella kertoo toisen puolen nimen. Hyvaksytaan vain
+    yksiselitteinen karki ja vapaa Understat-nimi; tulosvartija (rikasta)
+    estaa silti vaaran xG:n."""
+    kartta = dict(kartta)
+    for _ in range(3):   # ankkuroitu joukkue voi ankkuroida seuraavan
+        vapaat = {n for pari in us_paivat.values() for hu in pari for n in hu}
+        vapaat -= set(kartta.values())
+        aanet: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
+        for d, h, a in zip(fd_p, fd["home_team"], fd["away_team"]):
+            for tunnettu, tuntematon, puoli in ((h, a, 0), (a, h, 1)):
+                if tunnettu not in kartta or tuntematon in kartta:
+                    continue
+                for dd in PAIVA_TOLERANSSI:
+                    for pari in us_paivat.get(d + pd.Timedelta(days=dd), ()):
+                        if pari[puoli] == kartta[tunnettu] and pari[1 - puoli] in vapaat:
+                            aanet[tuntematon][pari[1 - puoli]] += 1
+        varattu: dict[str, tuple[str, int]] = {}
+        for t, c in aanet.items():
+            top = c.most_common(2)
+            if len(top) == 2 and top[0][1] == top[1][1]:
+                continue
+            u, n = top[0]
+            if u not in varattu or n > varattu[u][1]:
+                varattu[u] = (t, n)
+        if not varattu:
+            break
+        for u, (t, _n) in varattu.items():
+            kartta[t] = u
+    return kartta
 
 
 def rikasta(fd: pd.DataFrame, us: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -134,18 +173,26 @@ def rikasta(fd: pd.DataFrame, us: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     return out, tilasto
 
 
-def rikasta_liiga(liiga: str, fd: pd.DataFrame, kaudet, lataa_understat) -> pd.DataFrame:
+def rikasta_liiga(liiga: str, fd: pd.DataFrame, kaudet,
+                  lataa_understat) -> tuple[pd.DataFrame, dict | None]:
     """Loaderin kutsupaikka. `lataa_understat(understat_koodi, kaudet)` palauttaa
-    Understat-rivit (home_score/away_score/home_xg/away_xg). Fail-open."""
+    Understat-rivit (home_score/away_score/home_xg/away_xg). Fail-open.
+
+    Palauttaa (df, tilasto). Tilasto None = liigalla ei ole Understat-paria
+    (ei yritetty). Epaonnistuminen EI ole hiljainen: tilastossa on `virhe`,
+    loader kirjaa sen `LoaderTulokset.fd_xg`:hen ja /api/debug/load nayttaa sen
+    (julkaisutarkistaja 28.9: ilman tata copyn "xG viidessa liigassa" -vaitetta
+    ei voinut mitata tuotannosta, koska rikastamaton ja rikastettu data nayttavat
+    samalta sarakelistalta)."""
     koodi = UNDERSTAT_FOR_FD.get(liiga)
     if koodi is None or fd.empty:
-        return fd
+        return fd, None
     try:
         us = lataa_understat(koodi, list(kaudet))
     except Exception as e:
         print(f"[fd_xg] {liiga}: Understat ei vastannut ({type(e).__name__}: {e}) -> ilman xG:ta")
-        return fd
+        return fd, {"rivit": len(fd), "ok": 0, "virhe": f"{type(e).__name__}: {e}"[:300]}
     out, t = rikasta(fd, us)
     print(f"[fd_xg] {liiga}: xG {t['ok']}/{t['rivit']} rivia (tulos eri {t['tulos_eri']}, "
           f"ei paria {t['ei_paria']}, kartta {t['kartta']})")
-    return out
+    return out, t

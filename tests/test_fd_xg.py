@@ -116,8 +116,9 @@ def test_fail_open_understat_virhe_palauttaa_fd_rivit():
 
     def kaatuu(koodi, kaudet):
         raise RuntimeError("tls_requests: 403")
-    out = fd_xg.rikasta_liiga("FRA-Ligue 1-FD", fd, ["2526"], kaatuu)
+    out, t = fd_xg.rikasta_liiga("FRA-Ligue 1-FD", fd, ["2526"], kaatuu)
     assert out is fd
+    assert "403" in t["virhe"] and t["ok"] == 0, "epaonnistuminen ei saa olla hiljainen"
 
 
 def test_ei_fd_liiga_ei_kutsu_understatia():
@@ -125,7 +126,8 @@ def test_ei_fd_liiga_ei_kutsu_understatia():
 
     def ei_saa(koodi, kaudet):
         raise AssertionError("Understatia kutsuttiin liigalle jolla ei ole karttaa")
-    assert fd_xg.rikasta_liiga("NED-Eredivisie", fd, ["2526"], ei_saa) is fd
+    out, t = fd_xg.rikasta_liiga("NED-Eredivisie", fd, ["2526"], ei_saa)
+    assert out is fd and t is None
 
 
 def test_understat_koodi_on_loaderin_understat_liiga():
@@ -149,3 +151,75 @@ def test_loaderin_fd_haara_kutsuu_rikastusta(monkeypatch):
     assert t.onnistui.get("FRA-Ligue 1-FD") == len(fd)
     assert t.data.home_xg.notna().sum() == len(fd)
     assert set(t.data.home_team) == set(FD_NIMI.values())
+    assert t.fd_xg["FRA-Ligue 1-FD"]["ok"] == len(fd)
+    assert t.data.attrs.get("fd_xg_virhe") == []
+
+
+def test_loader_kirjaa_rikastuksen_virheen(monkeypatch):
+    import src.data.loader as L
+    fd = _fd(_kierrokset(4))
+    monkeypatch.setattr(L, "api_key_kunnossa", lambda: True)
+    monkeypatch.setattr(L, "lataa_fdorg", lambda liiga, kaudet: fd.copy())
+    t = L.lataa_otteludata_yksityiskohtaisesti(["FRA-Ligue 1-FD"], ["2526"])  # conftest estaa Understatin
+    assert "virhe" in t.fd_xg["FRA-Ligue 1-FD"]
+    assert t.data.attrs.get("fd_xg_virhe") == ["FRA-Ligue 1-FD"]
+    assert t.data.home_xg.isna().all(), "fail-open: rivit ilman xG:ta"
+
+
+def test_api_ei_tallenna_valimuistiin_kun_rikastus_kaatui(monkeypatch):
+    import api.main as m
+    kutsut = []
+
+    def lataa(liigat, kaudet):
+        kutsut.append(1)
+        df = pd.DataFrame({"x": [1]})
+        df.attrs["fd_xg_virhe"] = ["ESP-La Liga-FD"] if len(kutsut) == 1 else []
+        return df
+    monkeypatch.setattr(m, "lataa_otteludata", lataa)
+    avain = (("ESP-La Liga-FD",), ("2526",))
+    m._DATA_CACHE.pop(avain, None)
+    try:
+        m._lataa_otteludata_cached(["ESP-La Liga-FD"], ["2526"])
+        assert avain not in m._DATA_CACHE, "kaatunut rikastus jai pysyvaan valimuistiin"
+        m._lataa_otteludata_cached(["ESP-La Liga-FD"], ["2526"])
+        assert avain in m._DATA_CACHE and len(kutsut) == 2
+    finally:
+        m._DATA_CACHE.pop(avain, None)
+
+
+def test_debug_load_nayttaa_rikastuksen(monkeypatch, client):
+    import src.data.loader as L
+    t = L.LoaderTulokset()
+    t.data = pd.DataFrame({"home_team": ["A"]})
+    t.fd_xg = {"ESP-La Liga-FD": {"rivit": 1, "ok": 1}}
+    monkeypatch.setattr(L, "lataa_otteludata_yksityiskohtaisesti", lambda liigat, kaudet: t)
+    r = client.get("/api/debug/load", params={"leagues": "ESP-La Liga-FD", "seasons": "2526"})
+    assert r.status_code == 200
+    assert r.json()["fd_xg_per_league"] == {"ESP-La Liga-FD": {"rivit": 1, "ok": 1}}
+
+
+def test_nousija_yhdella_ottelulla_ankkuroidaan_tunnettuun_vastustajaan():
+    """Julkaisutarkistaja 28.9: Bundesligan nousijat (Elversberg, Paderborn,
+    Schalke) jaivat 26/27:n alussa kokonaan ilman xG:ta, koska aanissa oli
+    tasapeli. Ankkuri: vastustaja on kartassa -> saman paivan ottelu kertoo nimen."""
+    us = _kierrokset(8)
+    d = us.date.max() + pd.Timedelta(days=7)
+    uudet = pd.DataFrame([
+        {"date": d, "home_team": "Paderborn", "away_team": "Rennes", "home_score": 2,
+         "away_score": 1, "home_xg": 1.7, "away_xg": 0.9},
+        {"date": d, "home_team": "Lyon", "away_team": "Nice", "home_score": 0,
+         "away_score": 0, "home_xg": 0.8, "away_xg": 0.6},
+        {"date": d, "home_team": "Marseille", "away_team": "Lens", "home_score": 1,
+         "away_score": 1, "home_xg": 1.1, "away_xg": 1.0}])
+    us2 = pd.concat([us, uudet], ignore_index=True)
+    FD_NIMI["Paderborn"] = "SC Paderborn 07"
+    try:
+        fd = _fd(us2)
+        kartta = fd_xg.joukkuekartta(fd, us2)
+        assert kartta.get("SC Paderborn 07") == "Paderborn"
+        out, t = fd_xg.rikasta(fd, us2)
+        rivi = out[out.home_team == "SC Paderborn 07"].iloc[0]
+        assert (rivi.home_xg, rivi.away_xg) == (1.7, 0.9)
+        assert t["tulos_eri"] == 0
+    finally:
+        FD_NIMI.pop("Paderborn")
