@@ -5,5 +5,6 @@
  "decided_at": "2026-09-12",
  "recorded_by": "CC 2026-09-12 ilta. Ilman tata fpl-data-refresh on punainen joka 3 h: verify_model_entry_matches_freeze nakee aidon 7/15 eron eika reittia ulos ole. Poikkeus koskee VAIN GW4:aa.",
  "applies_until": "GW5-freeze (gw5.json) korvaa taman latest_frozen()-valinnassa",
- "public_note_missing": "TIETOINEN PUUTE. gw2.json:lla on public_note joka renderoidaan /fpl:lle; GW4:lle sita EI ole viela kirjoitettu, koska se on julkista tekstia ja vaatii julkaisutarkistajan + Villen GO:n. Ilman kenttaa sivu ei nayta selitysta - sama tilanne kuin ennen tata poikkeusta, ei regressio. -> QUEUE FREEZE-KETJU-GW4-PUBLIC-NOTE"
+ "public_note": "The squad frozen for GW4 in data/model_squad_frozen is not the squad that played. It changes 8 of the 15 players from GW3 while listing no transfers, because the freeze rebuilt it from scratch by mistake. The squad that played GW4 kept its GW3 players and captained B.Fernandes, the captain in the row below; its picks are public at FPL entry 116920.",
+ "note_gate": "julkaisutarkistaja 28.9 k1: mekanismilause pois (Dovin 171 puuttuu myos fpl_xp_frozen gw3/gw5:sta ilman rebuildia, eli 'one player was missing from the projection data' ei kesta tarkistusta), tilalle squad_rebuilt-muotoilu kuten web/pro-spa/src/lib/modelSeriesCopy.ts ja goaliq-app en.ts. Villen GO 28.9."
 }
