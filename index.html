@@ -945,7 +945,23 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     </div>
     <!-- Partner card: filled between the markers by build_fpl_page.update_index
          from src/partners.py. Empty when the partnership has ended. -->
-    <!-- GEN:PARTNER-CARD-START --><!-- GEN:PARTNER-CARD-END -->
+    <!-- GEN:PARTNER-CARD-START --><style>
+.partner-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+gap:12px 20px;margin:22px 0;padding:14px 18px;max-width:760px;
+background:var(--paper,var(--panel,#1F1D1A));border:1px solid var(--line-strong,rgba(243,242,242,.4));
+border-left:4px solid #FF4D57;}
+.partner-card .partner-logo{flex:none;display:block;width:44px;height:44px;border-radius:8px;}
+.partner-card .partner-text{flex:1 1 200px;min-width:0;}
+.partner-card .partner-kicker{display:block;margin-bottom:2px;font-family:var(--mono,var(--font-mono,monospace));
+font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint,#8A847A);}
+.partner-card p{margin:0;max-width:none;font-size:16px;line-height:1.45;color:var(--cream,#F3F2F2);}
+.partner-card .partner-name{color:#FF4D57;font-weight:700;}
+.partner-card .partner-btn{flex:none;display:inline-block;min-height:44px;padding:11px 18px;
+border:1px solid #FF4D57;color:#FF4D57;font-family:var(--mono,var(--font-mono,monospace));font-size:14px;
+font-weight:700;text-decoration:none;white-space:nowrap;}
+.partner-card .partner-btn:hover{background:#FF4D57;color:var(--ink,#0B0A09);}
+@media (max-width:520px){.partner-card .partner-btn{width:100%;text-align:center;}}
+</style><aside class="partner-card" aria-label="Partner: FPL Demon"><img class="partner-logo" src="/assets/partners/fpldemon-logo.webp" width="44" height="44" alt="" loading="lazy" decoding="async"><div class="partner-text"><span class="partner-kicker">Partner</span><p><b class="partner-name">FPL Demon</b>'s planner uses our xP for the next five gameweeks.</p></div><a class="partner-btn" href="https://fpldemon.com/fpl/planner?utm_source=goaliq&amp;utm_medium=social&amp;utm_campaign=goaliq" target="_blank" rel="noopener sponsored" onclick="window.posthog&amp;&amp;posthog.capture('partner_link_clicked',{partner:'fpldemon',surface:'hub_index'})">Plan your transfers there &rarr;</a></aside><!-- GEN:PARTNER-CARD-END -->
     <!-- Featured note: filled between the markers by
          build_fpl_page.update_index from data/fpl_notes.json.
          Position is deliberate: above the fold, in the hero. -->
