@@ -331,6 +331,13 @@
   .hero-side { grid-area: side; }
   .hero { display: grid; grid-template-columns: 1.05fr .95fr;
           grid-template-areas: "lead side" "pitch side"; row-gap: 0;
+          /* 28.9: the side column (table, track record, partner card, note)
+             is taller than lead + pitch. With implicit rows the spanning
+             column's extra height was split across BOTH rows and pushed the
+             hero buttons down (measured 1440x844: 724 -> 818 px with the
+             partner card, i.e. the Premium button half below the fold).
+             auto + 1fr puts all of it under the pitch. */
+          grid-template-rows: auto 1fr;
           column-gap: clamp(24px, 4vw, 48px);
           align-items: start; padding: clamp(30px, 5vw, 60px) 0 clamp(26px, 4vw, 44px); }
   .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--ink);
@@ -378,6 +385,8 @@
 
   /* Track record -chip herossa: GEN:ACC-CHIP writes here (.num/.lbl) */
   .hero-side { display: flex; flex-direction: column; gap: clamp(14px, 1.8vw, 20px); }
+  /* Partner card (GEN:PARTNER-CARD, src/partners.py): the column's gap spaces it. */
+  .hero-side .partner-card { margin: 0; max-width: none; }
   /* 11 Sep: the live xP table in the hero. Narrow column: four columns (Owned
      dropped), no min-width forcing a sideways scroll. */
   .hero-table .table-inner { min-width: 0; }
@@ -572,6 +581,10 @@
     .cta-note { order: 5; }
     .countdown { order: 6; }
     .record-chip { order: 7; }
+    /* Same order as the track record, after it in the DOM: below our own
+       buttons and the record, above the note (measured 28.9: without this the
+       card took order 0 and sat above the headline). */
+    .hero-side .partner-card { order: 7; }
     .note-list { order: 8; }
     .note-more { order: 9; }
     .hero-lead h1 { margin-bottom: 0; }
