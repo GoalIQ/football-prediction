@@ -11,7 +11,7 @@ SIJOITUS (Villen paatos 27.9): ILMAINEN /fpl/expected-points -sivu, GW-top 20
 plannerinsa nayttaa, ja koko top 100 jaa linkin ja sivun lopun UPSELL/CTA:n
 valiin. Ensimmainen hub-versio oli top 100:n alla, ja julkaisutarkistaja mittasi
 27.9 (390x844): linkki ja ostonappi samassa puhelinruudussa 424 px:n paassa,
-valissa "the transfer planner is Premium". Ensimmainen versio kaikkiaan (fp `feat/partner-link-demon`) oli vain
+valissa sivun maksullisuuslause (upsell-kappale). Ensimmainen versio kaikkiaan (fp `feat/partner-link-demon`) oli vain
 maksajan SPA-listan alla, ja sen nakisi 4-5 maksajaa joilla on jo oma
 planneri: Demonin utm-seuranta nayttaisi nollaa, vaikka lupasimme "tracked
 links both ways". EI lukitussa esikatselussa eika paywallissa: se on
