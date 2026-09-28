@@ -23,6 +23,20 @@ GOLDEN_PATH = Path(__file__).parent / "golden" / "domestic_predict_golden.json"
 
 pytestmark = pytest.mark.slow
 
+# 28.9 (XG-NELJA-LIIGAA-UNDERSTAT): golden sisaltaa -FD-liigojen xG-rikastuksen
+# (tuotanto == lokaali, tests.update_golden). conftest estaa Understat-haun
+# muilta testeilta; TAMA testi on hidas paikallinen tuotantovertailu, joten se
+# palauttaa oikean lukijan. Viite otetaan import-hetkella, ennen fixtureita.
+from src.data import loader as _loader  # noqa: E402
+
+_OIKEA_UNDERSTAT = _loader._understat_rivit
+
+
+@pytest.fixture(autouse=True)
+def _oikea_understat(_fd_xg_ei_understatia, monkeypatch):
+    """Riippuu conftestin estosta, jotta tama ajetaan sen JALKEEN."""
+    monkeypatch.setattr(_loader, "_understat_rivit", _OIKEA_UNDERSTAT)
+
 
 @pytest.fixture(scope="module")
 def golden() -> dict:
