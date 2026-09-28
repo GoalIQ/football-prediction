@@ -223,3 +223,24 @@ def test_nousija_yhdella_ottelulla_ankkuroidaan_tunnettuun_vastustajaan():
         assert t["tulos_eri"] == 0
     finally:
         FD_NIMI.pop("Paderborn")
+
+
+def test_kaksi_fd_joukkuetta_ei_saa_samaa_understat_nimea():
+    """Yksi-yhteen: 'X FC' nakee vain 'A':n (1 aani), 'A FC' nakee 'A':n 2
+    aanella. Ilman saantoa molemmat kartoittuisivat A:han, ja X:n rivi saisi
+    A-C-ottelun xG:n koska tulos sattuu olemaan sama."""
+    d1, d2, d3 = (pd.Timestamp(x) for x in ("2025-08-16", "2025-08-23", "2025-08-30"))
+
+    def r(d, h, a, hs, as_, hx=None, ax=None):
+        rivi = {"date": d, "home_team": h, "away_team": a, "home_score": hs, "away_score": as_}
+        if hx is not None:
+            rivi.update(home_xg=hx, away_xg=ax)
+        return rivi
+    fd = pd.DataFrame([r(d1, "A FC", "B FC", 1, 0), r(d2, "A FC", "C FC", 2, 1),
+                       r(d3, "X FC", "C FC", 1, 1)])
+    us = pd.DataFrame([r(d1, "A", "B", 1, 0, 1.1, 0.4), r(d2, "A", "C", 2, 1, 1.9, 0.8),
+                       r(d3, "A", "C", 1, 1, 0.7, 0.7)])
+    kartta = fd_xg.joukkuekartta(fd, us)
+    assert kartta.get("A FC") == "A" and "X FC" not in kartta
+    out, _t = fd_xg.rikasta(fd, us)
+    assert pd.isna(out.loc[2, "home_xg"]), "X FC sai toisen joukkueen ottelun xG:n"
