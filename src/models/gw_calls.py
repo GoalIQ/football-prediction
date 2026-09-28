@@ -278,6 +278,26 @@ def entry_actual(history_row: dict | None, picks: dict | None) -> dict | None:
     return out or None
 
 
+def entry_transfers_made(transfers: list | None, gw: int) -> list | None:
+    """Tilin toteutuneet siirrot kierrokselle `gw` (`entry_actual.made`).
+
+    `transfers` = entry/{id}/transfers/ koko kaudelta. None = listaa ei saatu
+    (ei tietoa, sivu ei sano mitaan); [] = siirtoja ei tehty (dataa). Sama
+    ero kuin `fpl_api.fetch_entry_transfers`issa.
+
+    28.9 (MODEL-TRANSFERS-RIVI): `model_transfers` on mallin suunnitelma
+    freezesta, `entry_actual.transfers` pelkka lukumaara. Rinnakkain
+    naytettava rivi tarvitsee FPL:n omat parit, ei lukua. Hittia EI tallenneta:
+    freezen hit-lippu oli GW5:lla vaarin (FREEZE-FT-LASKURI-VAARIN), ja
+    FPL:n siirtosivulla hittia ei ole.
+    """
+    if transfers is None:
+        return None
+    rivit = sorted((t for t in transfers if int(t.get("event") or 0) == int(gw)),
+                   key=lambda t: str(t.get("time") or ""))
+    return [{"out": int(t["element_out"]), "in": int(t["element_in"])} for t in rivit]
+
+
 # ---------------------------------------------------------------------------
 # PROJECTED-XI-KORTTI (29.8.2026, GW-PROJECTED-XI-CARD): XI + kapteeni on
 # yksi kutsu, ei 11. Gradataan FPL:n saannoilla: kapteeni tuplana, nollan

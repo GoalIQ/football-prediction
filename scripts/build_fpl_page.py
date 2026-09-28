@@ -3062,6 +3062,79 @@ def entry_actual_sentence(gw_row: dict, names: dict | None = None,
     return "", ""
 
 
+# Chipit joilla jaadytetty siirtosuunnitelma ei kuvaa kierrosta: koko rivi
+# vaihtuu, ja chip-rivi (`entry_actual_sentence`) kertoo sen jo.
+_KOKO_RUNKO_CHIPIT = ("wildcard", "freehit")
+
+
+def _siirtolista(parit: list[tuple[str, str]]) -> str:
+    osat = [f"{o} to {i}" for o, i in parit]
+    return osat[0] if len(osat) == 1 else ", ".join(osat[:-1]) + " and " + osat[-1]
+
+
+def model_transfers_sentence(gw_row: dict, names: dict | None = None,
+                             notes: dict | None = None) -> tuple[str, str]:
+    """Mallin jaadytetty siirtosuunnitelma vs tilin toteutuneet siirrot, VAIN kun ne eroavat.
+
+    MODEL-TRANSFERS-RIVI (28.9, S9-etusignaali 33x): `model_transfers` oli
+    taytetty 29.8 alkaen eika yksikaan pinta naeyttanyt sita. Kentta yksin on
+    vaarallinen (julkaisuportti 29.8): GW2:ssa freeze listasi 3 siirtoa ja
+    tili pelasi wildcardin, joten suunnitelma ilman toteumaa luetaan tilin
+    tekemisiksi. Siksi rivi vaatii molemmat puolet: `model_transfers` ja
+    `entry_actual.made` (FPL:n omat parit).
+
+    🔴 Julkaisutarkistaja BLOKKASI 28.9 ensimmaisen version, jossa rivi syntyi
+    myos kun suunnitelma ja toteuma tasmasivat ("...listed 2 transfers, ...,
+    and the squad made those 2"). Se on sama vika kuin B7 (kapteeni vain kun
+    se eroaa) ja B13 (sama runko joka siirtokierroksella): mallin oma joukkue
+    teki mita malli sanoi, eika rivi kerro lukijalle mitaan jota taulukko ei
+    jo kerro. Siksi TASMAAVA kierros ei tuota rivia. Samalla kierroksella
+    suunnitelmanimi taytettiin projektiosta, vaikka julkinen lahde
+    (`gw_calls.json` GW5 `out_name: null`) ei sisaltanyt sita: suunnitelman
+    nimet luetaan NYT VAIN lokin kentista `out_name`/`in_name`. Toteuman nimet
+    tulevat `names`ista, koska FPL:n siirtosivu nayttaa samat nimet.
+
+    Palauttaa (lause, href) kuten `entry_actual_sentence`. `("", "")` kun:
+    - kierroksella on julkinen nootti (se kertoo tarkemmin),
+    - chip on wildcard tai free hit (koko runko vaihtui, chip-rivi kertoo),
+    - jompikumpi puoli puuttuu (None ei ole sama kuin ei siirtoja),
+    - kumpikaan ei listaa siirtoja (kontrasti tyhjaa vastaan, portti B8),
+    - samat pelaajat lahtivat ja tulivat (B7/B13, ks. ylla),
+    - yksikin nimi puuttuu (numero ei ole tarkistettavissa).
+
+    🔴 Hittia EI mainita missaan muodossa: freezen hit-lippu oli GW5:lla
+    vaarin (FREEZE-FT-LASKURI-VAARIN: FPL antoi 3 vapaata, freeze kirjasi
+    hitin), eika FPL:n siirtosivulla ole hittisaraketta (portti 30.8).
+    """
+    gw = gw_row.get("gw")
+    if notes and gw in notes:
+        return "", ""
+    ea = gw_row.get("entry_actual")
+    if not isinstance(ea, dict) or ea.get("chip") in _KOKO_RUNKO_CHIPIT:
+        return "", ""
+    suunniteltu = gw_row.get("model_transfers")
+    tehty = ea.get("made")
+    if suunniteltu is None or tehty is None or (not suunniteltu and not tehty):
+        return "", ""
+    nimet = names or {}
+    try:
+        sama = ({int(t["out"]) for t in suunniteltu} == {int(t["out"]) for t in tehty}
+                and {int(t["in"]) for t in suunniteltu} == {int(t["in"]) for t in tehty})
+        s_parit = [(t.get("out_name"), t.get("in_name")) for t in suunniteltu]
+        t_parit = [(nimet.get(int(t["out"])), nimet.get(int(t["in"]))) for t in tehty]
+    except (KeyError, TypeError, ValueError):
+        return "", ""
+    if sama or any(not o or not i for o, i in s_parit + t_parit):
+        return "", ""
+
+    alku = f"The model's frozen plan for GW{gw} "
+    lause = f"{alku}was {_siirtolista(s_parit)}." if s_parit else f"{alku}had no transfers."
+    lause += (f" The squad went {_siirtolista(t_parit)}." if t_parit
+              else " The squad made no transfers.")
+    entry_url = f"https://fantasy.premierleague.com/entry/{FPL_ENTRY_ID}"
+    return lause + " Its transfer history is public at ", f"{entry_url}/transfers"
+
+
 def player_names(xp: dict | None) -> dict:
     """{element_id: web_name} projektioista. Kapteenin nimi ilman tata olisi
     pelkka numero, jota lukija ei voi tarkistaa."""
@@ -3094,8 +3167,10 @@ def gw_calls_html(log: dict | None, exception_notes: dict[int, str] | None = Non
             trs.append(
                 '<tr class="gw-note"><td class="num">'
                 f'GW{gw_row["gw"]}</td><td colspan="6">{escape(note)}</td></tr>')
-        actual, entry_href = entry_actual_sentence(gw_row, names, notes)
-        if actual:
+        for actual, entry_href in (entry_actual_sentence(gw_row, names, notes),
+                                   model_transfers_sentence(gw_row, names, notes)):
+            if not actual:
+                continue
             # Linkki on lauseen viimeinen osa, ei erillinen fragmentti sen
             # perassa: "... public at FPL entry 116920." on lause, kun taas
             # "... B.Fernandes. FPL entry 116920." on kaksi pistetta ja
