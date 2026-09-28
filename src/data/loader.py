@@ -66,6 +66,14 @@ class LoaderTulokset:
         self.katkokset: dict[str, str] = {}
 
 
+def _understat_rivit(koodi: str, kaudet: list[str]) -> pd.DataFrame:
+    """Understatin pelatut ottelut xG:n kera (sama kuin haara 1 alla), FD-rikastukselle."""
+    from src.data.understat import lataa_otteludata as lataa_us
+    us = lataa_us([koodi], kaudet, cache_dir=config.RAW_DATA_DIR / "understat")
+    us = us.rename(columns={"home_goals": "home_score", "away_goals": "away_score"})
+    return us[us["home_score"].notna() & us["away_score"].notna()].copy()
+
+
 def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable[str]) -> LoaderTulokset:
     tulos = LoaderTulokset()
     liigat = list(liigat)
@@ -159,6 +167,10 @@ def lataa_otteludata_yksityiskohtaisesti(liigat: Iterable[str], kaudet: Iterable
                     continue
                 fd = lataa_fdorg(liiga, kaudet)
                 if not fd.empty:
+                    # XG-NELJA-LIIGAA-UNDERSTAT (28.9): -FD-liigoille ottelun xG
+                    # Understatista, nimet ennallaan. Fail-open (src/data/fd_xg.py).
+                    from src.data.fd_xg import rikasta_liiga
+                    fd = rikasta_liiga(liiga, fd, kaudet, _understat_rivit)
                     palaset.append(fd)
                     tulos.onnistui[liiga] = len(fd)
                     continue
