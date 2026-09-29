@@ -150,14 +150,14 @@ def test_mittari_kayttaa_vain_seuramallin_riveja(tmp_path):
     assert out["scope"] == "club"
     assert out["n_graded"] == 30, out["n_graded"]
     assert out["n_graded_all"] == 42
-    assert out["excluded"] == {"other_model": 12, "other_model_competitions": ["WC"],
-                               "no_win_probability": 0}
+    assert out["excluded"] == {"national_model": 12, "national_competitions": ["WC"],
+                               "unclassified": 0, "no_win_probability": 0}
     assert out["decisive_above_won"] == 30 and out["decisive_above_n"] == 30
 
 
 def test_lause_johdetaan_poissulkulaskureista():
     d = _doc(n_graded=553, n_graded_all=609, scope="club",
-             excluded={"other_model": 56, "other_model_competitions": ["WC"],
+             excluded={"national_model": 56, "national_competitions": ["WC"],
                        "no_win_probability": 0})
     teksti = _margin_scope(d)
     assert teksti == (" of the 609 in the record above; the other 56 are "
@@ -169,7 +169,7 @@ def test_lause_johdetaan_poissulkulaskureista():
 
 def test_muu_kilpailu_ei_ole_world_cup():
     d = _doc(n_graded=553, n_graded_all=570, excluded={
-        "other_model": 17, "other_model_competitions": ["UNL", "WC"],
+        "national_model": 17, "national_competitions": ["UNL", "WC"],
         "no_win_probability": 0})
     assert "national-team fixtures" in _margin_scope(d)
     assert "World Cup" not in _margin_scope(d)
@@ -177,7 +177,7 @@ def test_muu_kilpailu_ei_ole_world_cup():
 
 def test_kaksi_syyta_molemmat_nimetaan():
     d = _doc(n_graded=549, n_graded_all=609, excluded={
-        "other_model": 56, "other_model_competitions": ["WC"], "no_win_probability": 4})
+        "national_model": 56, "national_competitions": ["WC"], "no_win_probability": 4})
     t = _margin_scope(d)
     assert "56 are World Cup fixtures" in t and "4 are logged without a win probability" in t
 
@@ -185,7 +185,7 @@ def test_kaksi_syyta_molemmat_nimetaan():
 def test_laskurit_eivat_selita_eroa_ei_keksita_syyta():
     """NEGATIIVINEN KONTROLLI: ero 56, laskurit sanovat 50 -> ei syylausetta."""
     d = _doc(n_graded=553, n_graded_all=609, excluded={
-        "other_model": 50, "other_model_competitions": ["WC"], "no_win_probability": 0})
+        "national_model": 50, "national_competitions": ["WC"], "no_win_probability": 0})
     t = _margin_scope(d)
     assert t == " of the 609 in the record above"
 
@@ -197,3 +197,18 @@ def test_tuotantoartefakti_on_seuramallin():
     import json
     doc = json.loads((ROOT / "data" / "call_margin.json").read_text(encoding="utf-8"))
     assert doc.get("scope") == "club", "artefakti on mitattu ilman seuramallirajausta"
+
+
+def test_luokittelematon_ei_ole_maajoukkuemalli(tmp_path):
+    """Julkaisutarkistaja 29.9: uusi seurakilpailukoodi ennen CLUB_COMPETITIONS-
+    paivitysta ei saa paatya lauseeseen 'from the national-team model'."""
+    from scripts.measure_call_margin import build
+    seura = [_lokirivi("PL", 0.55, 0.20, "home", True, i) for i in range(30)]
+    mm = [_lokirivi("WC", 0.55, 0.20, "away", False, 100 + i) for i in range(5)]
+    outo = [_lokirivi("ZZZ-UUSI", 0.55, 0.20, "home", True, 200)]
+    out = build(_loki(tmp_path, seura + mm + outo))
+    assert out["excluded"]["national_model"] == 5
+    assert out["excluded"]["unclassified"] == 1
+    teksti = _margin_scope(out)
+    assert teksti == " of the 36 in the record above", teksti
+    assert "national-team" not in teksti

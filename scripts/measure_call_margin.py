@@ -40,10 +40,14 @@ def build(log_path: Path = LOG_PATH) -> dict:
     out["scope"] = "club"
     # Heron luku (kaikki gradatut), jotta sivu voi nimeta eron.
     out["n_graded_all"] = len(graded)
-    muut = [r for r in graded if model_of(r.get("competition")) != "club"]
+    maa = [r for r in graded if model_of(r.get("competition")) == "national"]
     out["excluded"] = {
-        "other_model": len(muut),
-        "other_model_competitions": sorted({str(r.get("competition")) for r in muut}),
+        "national_model": len(maa),
+        "national_competitions": sorted({str(r.get("competition")) for r in maa}),
+        # Luokittelematon kilpailukoodi (esim. uusi seurakilpailu ennen kuin
+        # CLUB_COMPETITIONS paivitetaan): ei nimeta maajoukkuemalliksi, sivu
+        # putoaa syyttomaan lauseeseen (julkaisutarkistaja 29.9).
+        "unclassified": sum(1 for r in graded if model_of(r.get("competition")) is None),
         # Seurariveja joilla ei ole voittotodennakoisyytta (measure_margin
         # ohittaa ne): club-syotteen kaikki miinus kaytetyt.
         "no_win_probability": len(club) - out["n_graded"],

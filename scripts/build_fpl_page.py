@@ -1054,14 +1054,16 @@ def _margin_scope(doc: dict) -> str:
     # laskureista, ei kiinteasta lauseesta: jos MM-rivit saavat
     # todennakoisyyden tai lokiin tulee muu malli, lause seuraa.
     osat = []
-    muu = int(ex.get("other_model") or 0)
-    if muu:
-        comps = ex.get("other_model_competitions") or []
+    maa = int(ex.get("national_model") or 0)
+    if maa:
+        comps = ex.get("national_competitions") or []
         mika = "World Cup fixtures" if comps == ["WC"] else "national-team fixtures"
-        osat.append((muu, f"{mika} from the national-team model"))
+        osat.append((maa, f"{mika} from the national-team model"))
     ilman = int(ex.get("no_win_probability") or 0)
     if ilman:
         osat.append((ilman, "logged without a win probability"))
+    # Luokittelemattomille ei ole syylausetta: ne jaavat summasta pois, joten
+    # ero ei tasmaa ja lause putoaa alla syyttomaan muotoon.
     if sum(n for n, _ in osat) != ero:
         # Laskurit eivat selita eroa: ei keksita syyta (fail-closed).
         return f" of the {kaikki} in the record above"
