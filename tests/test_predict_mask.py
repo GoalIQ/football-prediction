@@ -294,6 +294,19 @@ def test_admin_token_bypasses_mask(pm_client, monkeypatch, path, body):
     assert bad["meta"]["masked"] is True
 
 
+@pytest.mark.parametrize("path,body", ENDPOINTS + [("/api/parlay", PARLAY_BODY)])
+def test_non_ascii_admin_token_is_masked_not_500(pm_client, monkeypatch, path,
+                                                 body):
+    """Mitattu tuotannossa 28.9: ei-ASCII X-Admin-Token -> 500, koska
+    compare_digest(str, str) nosti TypeErrorin. Nyt se on vaara token."""
+    _mask_on(monkeypatch)
+    monkeypatch.setenv("ADMIN_TOKEN", ADMIN)
+    # Tavut sellaisinaan: Starlette dekoodaa headerin latin-1:na -> 'Ã¤...'.
+    token = ("ä" + ADMIN).encode("utf-8")
+    got = _post(pm_client, path, body, {"X-Admin-Token": token}).json()
+    assert got["meta"]["masked"] is True
+
+
 @pytest.mark.parametrize("window_open,expect_masked", [(False, True),
                                                        (True, False)])
 def test_logged_in_free_user_follows_free_window(pm_client, monkeypatch,

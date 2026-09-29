@@ -20,13 +20,13 @@ TURVA (saanto 6a, "tee vaarasta vaihtoehdosta mahdoton"):
 """
 from __future__ import annotations
 
-import hmac
 import logging
 import os
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from api.premium import secrets_equal
 from src.models.fpl_xp import load_xp_actionable
 
 router = APIRouter()
@@ -68,7 +68,7 @@ def require_partner(request: Request) -> str:
     if provided:
         for key, name in keys.items():
             # Vakioaikainen vertailu jokaista avainta vasten.
-            if hmac.compare_digest(provided, key):
+            if secrets_equal(provided, key):
                 return name
     raise HTTPException(status_code=401, detail="Invalid partner key.")
 

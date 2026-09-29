@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import hmac
 import os
 import threading
 import time
@@ -215,6 +216,19 @@ def predict_mask_on() -> bool:
 # Admin-portti (/api/admin/clear-cache)
 # ---------------------------------------------------------------------------
 
+def secrets_equal(provided: str, expected: str) -> bool:
+    """Headerista luetun salaisuuden vakioaikainen vertailu TAVUINA.
+
+    Ainoa paikka jossa API vertaa salaisuutta (portti
+    tests/test_secret_compare.py). `hmac.compare_digest(str, str)` nostaa
+    TypeErrorin jos kummassakin on ei-ASCII-merkki, ja Starlette dekoodaa
+    headerit latin-1:na, joten kuka tahansa sai 500:n lahettamalla 'ä':n
+    (mitattu tuotannossa 28.9: /api/predict + X-Admin-Token -> 500).
+    """
+    return hmac.compare_digest(provided.encode("utf-8"),
+                               expected.encode("utf-8"))
+
+
 def require_admin(request: Request) -> None:
     """X-Admin-Token-header verrataan ADMIN_TOKEN-enviin.
 
@@ -228,8 +242,7 @@ def require_admin(request: Request) -> None:
                                    "(ADMIN_TOKEN not configured).")
     provided = (request.headers.get("x-admin-token") or "").strip()
     # Vakiaikainen vertailu (timing-side-channel-hygienia).
-    import hmac
-    if not provided or not hmac.compare_digest(provided, admin_token):
+    if not provided or not secrets_equal(provided, admin_token):
         raise HTTPException(status_code=403, detail="Invalid admin token.")
 
 
