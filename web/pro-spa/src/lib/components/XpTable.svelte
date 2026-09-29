@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { XpResponse, XpPlayer } from '$lib/api';
+	import { actionableRows } from '$lib/gameweek';
 	import { gwXp, windowXp } from '$lib/api';
 	import {
 		COMPARE_LOCKED_TEXT,
@@ -319,7 +320,9 @@
 	   nimenomaan `next_gw`:lle (build_fpl_xp.py: components_gw = next_gw).
 	   Deadline-kierros tahan tekisi nimilapusta eri kierroksen kuin data. */
 	let nextGw = $derived(data.meta.next_gameweek);
-	let gwCols = $derived(data.players[0]?.gameweeks?.map((g) => g.gw) ?? []);
+	// 29.9 XP-HORISONTIN-ALKU: sarakkeet, lajittelut ja otsikko vain
+	// vaikutettavista kierroksista (kesken GW6:n ei GW6-saraketta).
+	let gwCols = $derived(actionableRows(data.meta, data.players[0]?.gameweeks).map((g) => g.gw));
 	// SOLIO-OPPI (19.8, Villen tilaus): per-GW-solut lämpökartaksi — silmäys
 	// kertoo missä pisteviikot ovat lukematta yhtään lukua. Skaalan yläpää on
 	// näkyvien arvojen 95. persentiili, jottei yksi kapteeniviikko lataa koko
@@ -328,7 +331,7 @@
 	let heatMax = $derived.by(() => {
 		const vals: number[] = [];
 		for (const p of data.players) {
-			for (const g of p.gameweeks ?? []) {
+			for (const g of actionableRows(data.meta, p.gameweeks)) {
 				if (typeof g.xp === 'number' && g.xp > 0) vals.push(g.xp);
 			}
 		}

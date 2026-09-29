@@ -12,7 +12,7 @@
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { formatSwing, swingOf } from '$lib/fixtureSwing';
-	import { actionableGameweek } from '$lib/gameweek';
+	import { actionableRows } from '$lib/gameweek';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
@@ -74,9 +74,7 @@
 	// 13.9 (portti WG7): lista ja alaotsikko vain kierroksista joihin lukija voi
 	// viela vaikuttaa. Kesken olevan GW4:n Low oli listalla, vaikka GW4:n
 	// siirrot ja kapteeni oli jo lukittu. Sama lukija kuin muualla SPA:ssa.
-	const fromGw = $derived(actionableGameweek(data?.meta));
-	const playable = (gws: XpPlayer['gameweeks'] | undefined) =>
-		(gws ?? []).filter((g) => fromGw == null || g.gw >= fromGw);
+	const playable = (gws: XpPlayer['gameweeks'] | undefined) => actionableRows(data?.meta, gws);
 
 	const swingGws = $derived(
 		Math.max(0, ...(data?.players ?? []).map((p) => playable(p.gameweeks).length))
@@ -191,7 +189,7 @@
 							<tr class="gw-row">
 								<td colspan="4">
 									<div class="gw-strip" role="list">
-										{#each (r.p.gameweeks ?? []).filter((g) => g.opponents.length > 0) as g (g.gw)}
+										{#each playable(r.p.gameweeks).filter((g) => g.opponents.length > 0) as g (g.gw)}
 											<span
 												role="listitem"
 												class="gw-chip"
