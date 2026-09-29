@@ -12,7 +12,7 @@
 	import { type XpResponse, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { formatSwing, swingOf } from '$lib/fixtureSwing';
-	import { actionableRows } from '$lib/gameweek';
+	import { actionableGameweek } from '$lib/gameweek';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
 	let { data = null }: { data?: XpResponse | null } = $props();
@@ -74,7 +74,9 @@
 	// 13.9 (portti WG7): lista ja alaotsikko vain kierroksista joihin lukija voi
 	// viela vaikuttaa. Kesken olevan GW4:n Low oli listalla, vaikka GW4:n
 	// siirrot ja kapteeni oli jo lukittu. Sama lukija kuin muualla SPA:ssa.
-	const playable = (gws: XpPlayer['gameweeks'] | undefined) => actionableRows(data?.meta, gws);
+	const fromGw = $derived(actionableGameweek(data?.meta));
+	const playable = (gws: XpPlayer['gameweeks'] | undefined) =>
+		(gws ?? []).filter((g) => fromGw == null || g.gw >= fromGw);
 
 	const swingGws = $derived(
 		Math.max(0, ...(data?.players ?? []).map((p) => playable(p.gameweeks).length))

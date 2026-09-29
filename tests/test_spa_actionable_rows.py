@@ -78,7 +78,9 @@ def test_poikkeuslista_ei_vanhene():
     ("lib/components/PlayerCard.svelte", "actionableRows(meta, player.gameweeks)[0]"),
     ("lib/components/PlayerCard.svelte", "{@const gws = actionableRows(meta, player.gameweeks)}"),
     ("lib/components/XpTable.svelte", "actionableRows(data.meta, data.players[0]?.gameweeks)"),
-    ("lib/components/FixtureSwing.svelte", "actionableRows(data?.meta, gws)"),
+    # FixtureSwingin `playable` on jo actionableGameweek-suodatin (portti WG7 13.9);
+    # 29.9 myos avattu strippi kulkee sen kautta.
+    ("lib/components/FixtureSwing.svelte", "playable(r.p.gameweeks).filter((g) => g.opponents.length > 0)"),
 ])
 def test_kutsupaikat_lukevat_lukijan(rel, odotettu):
     assert odotettu in (SRC / rel).read_text(encoding="utf-8")
