@@ -384,3 +384,43 @@ def test_alaviite_palaavan_pelikieltopelaajan_kanssa_kertoo_poikkeuksen():
     nootti = _alaviite(html)
     assert _POIKKEUS in nootti
     assert "from his return. So the last column is our own number" in nootti
+
+
+# ---------------------------------------------------------------------------
+# 29.9.2026 TEAM-NEWS-HORISONTTIVAITE: status koskee seuraavaa deadlinea,
+# ei koko xP-ikkunaa. Kuvaverifiointi: kortti sanoi "official FPL
+# availability, GW6-11" ja title/meta "ruled out or doubtful for GW6-11",
+# vaikka kortin #1 (Elanga) paluupaiva oli 10.10 eli ennen GW11:ta.
+# ---------------------------------------------------------------------------
+
+def _xp_dl(players, dl):
+    d = _xp(players)
+    d["meta"]["deadline_gameweek"] = dl
+    return d
+
+
+def _ulos(name="Elanga"):
+    return _p(name, status="i", chance_next=0, news="Hamstring - Expected back 10 Oct",
+              in_projection=False)
+
+
+def test_status_vaite_nimeaa_seuraavan_deadlinen_ei_ikkunaa():
+    html = render_team_news(_xp_dl([_ulos()], 6), NOW)
+    assert html
+    assert re.search(r"ruled out[^<\"]{0,40}GW\d+\s*-\s*\d+", html) is None, \
+        "status-vaite kattaa koko ikkunan"
+    assert "availability, GW" not in html
+    assert "official FPL status for GW6" in html
+    assert "FPL Team News GW6: Injuries and Suspensions | GoalIQ" in html
+    # k1 (B): ulkona olevaa malli ei projisoi -> kuvaus ei saa luvata sita.
+    assert "ruled-out ones show the club's best available cover" in html
+
+
+def test_ilman_deadlinea_ei_keksita_kierrosta():
+    """NEGATIIVINEN KONTROLLI: kauden jalkeen (ei deadline_gameweekia) lause
+    ei nimea kierrosta eika johda sita ikkunasta."""
+    html = render_team_news(_xp_dl([_ulos()], None), NOW)
+    assert html
+    assert "official FPL status right now" in html
+    assert "FPL Team News: Injuries and Suspensions | GoalIQ" in html
+    assert "status for GW" not in html
