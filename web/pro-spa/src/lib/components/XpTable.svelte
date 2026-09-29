@@ -913,7 +913,7 @@
 					></th
 				>
 				<th class="num m-hide"
-					><abbr title="A strong week. He goes past this in fewer than one gameweek in ten (90th percentile of the same simulations)"
+					><abbr title="A strong week. He goes past this in no more than one gameweek in ten (90th percentile of the same simulations)"
 						>Ceiling</abbr
 					></th
 				>

@@ -84,6 +84,36 @@
    "rejected": "2026-09-29",
    "why": "julkaisutarkistaja 29.9 (TEAM-NEWS-HORISONTTIVAITE k1): team news -sivun kuvaus lupasi mallin projektion kaikille listatuille, mutta malli jattaa poissaolevan projektiosta pois ja rivilla on seuran paras korvaaja (75/104 pelaajaa).",
    "replacement": "'Doubtful players carry the model's {window} projection, ruled-out ones show the club's best available cover.' (build_fpl_longtail.render_team_news)"
+  },
+  {
+   "phrase": "fewer than one week in ten",
+   "rejected": "2026-09-29",
+   "why": "julkaisutarkistaja 29.9 (korttiperustelut k1 B3): p90 = int(np.percentile(2000 simulaatiota, 90)), joten P(X > p90) <= 10 %, ei aidosti alle. Haalandin kortissa '14% chance of 10 or more' + 'goes past 10 in fewer than one week in ten'.",
+   "replacement": "'He goes past {p90} in no more than one week in ten' (+ ei nayteta kun p90 = haul_pts, $lib/xpDist.showCeiling)"
+  },
+  {
+   "phrase": "fewer than one gameweek in ten",
+   "rejected": "2026-09-29",
+   "why": "sama kuin 'fewer than one week in ten' (XpTable Ceiling-otsikon abbr-title).",
+   "replacement": "'no more than one gameweek in ten'"
+  },
+  {
+   "phrase": "reaches this in about one gameweek in ten",
+   "rejected": "2026-09-29",
+   "why": "julkaisutarkistaja 29.9 B3: 'reaches' = P(X >= p90), joka on rakenteellisesti vahintaan 10 %; hubin xP-taulukossa Haaland 10+ 14 % ja Ceiling 10 samasta tapahtumasta eri luvuilla.",
+   "replacement": "'He goes past this in no more than one gameweek in ten' (build_fpl_longtail)"
+  },
+  {
+   "phrase": "The model's view on starting",
+   "rejected": "2026-09-29",
+   "why": "julkaisutarkistaja 29.9 B1: data_basis on maali- ja syottovauhdin datapohja (fpl_xp.data_basis, M_PRIOR_ATTACK), ei aloitus-tn:n. Lause oli epatosi hintapriori- (Pope 2416 min viime kaudella, luku = hintataso), ohitus- ja ohuen otoksen riveilla.",
+   "replacement": "'Goal and assist rates: {DATA_BASIS_LABEL}' (PlayerCard.svelte)"
+  },
+  {
+   "phrase": "thin Premier League sample",
+   "rejected": "2026-09-29",
+   "why": "kuvaverifiointi 29.9: 225 pelaajan kortti (pl_history + price_blend) sanoi samaan aikaan pitkan historian ja 'thin Premier League sample'. Ohut = cur_mins < PRICE_PRIOR_THIN_MINUTES, kausi pitaa nimeta.",
+   "replacement": "build_fpl_xp.minutes_reason() ('under 900 Premier League minutes this season/last season, ...')"
   }
  ],
  "poikkeukset": {},

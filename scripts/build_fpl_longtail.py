@@ -4876,7 +4876,7 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         f'{_dist_gw_label(rows, dl_gw if isinstance(dl_gw, int) else None)}, from the same 2,000 simulated gameweeks'
         '">Blank</abbr></th>'
         f'<th class="n m-hide"><abbr title="A strong week in '
-        f'{_dist_gw_label(rows, dl_gw if isinstance(dl_gw, int) else None)}. He reaches this in about one gameweek in ten '
+        f'{_dist_gw_label(rows, dl_gw if isinstance(dl_gw, int) else None)}. He goes past this in no more than one gameweek in ten '
         '(90th percentile of the same simulations)">Ceiling</abbr></th>'
         '<th class="n">Start%</th>'
         '<th class="n m-hide">xMins</th><th class="n m-hide">Own%</th>'
