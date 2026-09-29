@@ -113,6 +113,15 @@ UPSELL = (
 # tumma ink-hero, cream-body, paper-kortit, pillerinapit). Longtail-sivuilla
 # OMA template — build_prediction_pages.CSS/NAV/_page jää prediction-sivujen
 # vanhaan asuun, ei sivuvaikutuksia sinne.
+def _status_gw_label(meta: dict) -> str | None:
+    """Kierros jota FPL:n saatavuusstatus koskee: seuraava deadline (29.9).
+
+    None kun artefakti ei kerro sita (esim. kauden jalkeen): silloin lause
+    ei nimea kierrosta lainkaan eika keksi sita ikkunasta."""
+    gw = meta.get("deadline_gameweek")
+    return f"GW{gw}" if isinstance(gw, int) and gw > 0 else None
+
+
 def _window_label(meta: dict, gws, fallback_n: int) -> str:
     """Ohut kaare jaettuun `fpl_gameweek.window_label`:iin (25.8)."""
     from src.models.fpl_gameweek import window_label
@@ -3208,6 +3217,11 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
     # `first + n - 1`, joka valehtelee heti kun lista ja aloituskierros ovat
     # eri mielta. Ks. src/models/fpl_gameweek.window_label.
     window = _window_label(meta, _gws, n_gw)
+    # 29.9 (TEAM-NEWS-HORISONTTIVAITE): FPL:n status on SEURAAVAN deadlinen
+    # tieto (chance_of_playing_next_round + paluupaiva), ei koko ikkunan.
+    # "ruled out or doubtful for GW6-11" vaitti Elangan (paluu 10.10) olevan
+    # poissa GW11:een asti. Ikkuna kuuluu vain xP-luvuille.
+    status = _status_gw_label(meta)
     url = f"{BASE}/fpl/team-news"
 
     def _owned(r):
@@ -3325,7 +3339,7 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         # Arvo on omistus-% (ilmainen, FPL:n oma luku), ei xP:ta.
         kortti_out = _card_spec_attr(
             title="RULED OUT, MOST OWNED FIRST",
-            subtitle=f"official FPL availability, {window}",
+            subtitle=f"official FPL status for {status}" if status else "official FPL status right now",
             value_label="OWNED",
             foot="cover options for each one are free on goaliq.app/fpl/team-news",
             foot2="FPL availability data, not betting advice",
@@ -3385,10 +3399,12 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
         )
 
     n_out, n_doubt = len(out_rows), len(doubt_rows)
-    title = f"FPL Team News: Injuries and Suspensions ({window}) | GoalIQ"
+    title = (f"FPL Team News {status}: Injuries and Suspensions | GoalIQ" if status
+             else "FPL Team News: Injuries and Suspensions | GoalIQ")
     desc = (
-        f"Every Premier League player currently ruled out or doubtful for "
-        f"{window}, with ownership and what the model projects them to score. "
+        f"Every Premier League player the official FPL status lists as ruled out "
+        f"or doubtful{f' for {status}' if status else ''}, with ownership and what "
+        f"the model projects them to score over {window}. "
         f"{n_out} out, {n_doubt} doubtful. Free, no sign-in."
     )
     hero = (
