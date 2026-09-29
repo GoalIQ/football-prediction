@@ -68,6 +68,7 @@
 	let {
 		forcePremium = false,
 		upgradeSignal = 0,
+		signInSignal = 0,
 		group = 'week',
 		tool = null,
 		all = false
@@ -76,6 +77,8 @@
 		forcePremium?: boolean;
 		/** Heron Upgrade-badge nostaa tätä → upgrade-näkymä auki. */
 		upgradeSignal?: number;
+		/** Heron Sign in nostaa tata -> sama nakyma, vieritys LoginBoxiin. */
+		signInSignal?: number;
 		/** Reitin ryhma (/week, /players, ...). Reitti on totuus, ei tila. */
 		group?: string;
 		/** Reitin tyokalu (/players/leaders) tai null = ryhman hakemisto. */
@@ -125,6 +128,8 @@
 	}
 	let upgradeOpen = $state(false);
 	const UPGRADE_ANCHOR = 'upgrade-top';
+	/** LoginBoxin oma ankkuri (sama id LoginBox.sveltessa). */
+	const SIGNIN_ANCHOR = 'signin';
 	let checkoutSuccess = $state(false);
 	let guestCheckout = $state(false);
 
@@ -192,18 +197,21 @@
 	 */
 	let upgradeIntent = $state<'gate' | 'keep'>('gate');
 
-	function openUpgrade(intent: 'gate' | 'keep') {
+	function openUpgrade(intent: 'gate' | 'keep', target: string = UPGRADE_ANCHOR) {
 		upgradeIntent = intent;
 		upgradeOpen = true;
-		scrollToUpgrade('smooth');
+		scrollToUpgrade('smooth', target);
 	}
 	/** 🔴 22.9 (web-audit K2): vieritys osui ennen `main`-elementtiin. Juuressa
 	 *  `main`in alussa on ProductIntro-hero, joten "See plans" ja "Pricing"
 	 *  veivat kavijan YLOS heroon ja ostonapit jaivat 3,7 ruutua alle. Ankkuri
 	 *  on upgrade-nakyman oma alku, joten kohde on sama joka reitilla. */
-	function scrollToUpgrade(behavior: ScrollBehavior) {
+	function scrollToUpgrade(behavior: ScrollBehavior, target: string = UPGRADE_ANCHOR) {
 		requestAnimationFrame(() => {
-			const el = document.getElementById(UPGRADE_ANCHOR) ?? document.querySelector('main');
+			const el =
+				document.getElementById(target) ??
+				document.getElementById(UPGRADE_ANCHOR) ??
+				document.querySelector('main');
 			el?.scrollIntoView({ behavior, block: 'start' });
 		});
 	}
@@ -233,6 +241,16 @@
 		if (upgradeSignal > lastSignal) {
 			lastSignal = upgradeSignal;
 			goUpgrade();
+		}
+	});
+	// 29.9 (LOGIN-ASETTELU): "Sign in" avaa saman nakyman, mutta kohde on
+	// LoginBoxin ankkuri eika myyntisivun alku (mitattu 390 px: laatikko
+	// oli 2 011 px alempana, tyopoydalla 1 695 px).
+	let lastSignIn = 0;
+	$effect(() => {
+		if (signInSignal > lastSignIn) {
+			lastSignIn = signInSignal;
+			openUpgrade('gate', SIGNIN_ANCHOR);
 		}
 	});
 

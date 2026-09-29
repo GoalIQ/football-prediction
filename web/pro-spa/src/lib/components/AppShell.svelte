@@ -38,6 +38,8 @@
 	} = $props();
 
 	let upgradeSignal = $state(0);
+	// 29.9: Hero "Sign in" -> upgrade-nakyma vieritettyna LoginBoxiin.
+	let signInSignal = $state(0);
 </script>
 
 <svelte:head>
@@ -53,7 +55,7 @@
 
 <!-- 11.9: Hero on sovelluksen ylapalkki (navi + kierros + tili) ja
      kulkee koko leveydella .shellin ULKOPUOLELLA; sisalto pysyy palstassa. -->
-<Hero onUpgrade={() => upgradeSignal++} />
+<Hero onUpgrade={() => upgradeSignal++} onSignIn={() => signInSignal++} />
 
 {#if children}
 	{@render children()}
@@ -62,7 +64,7 @@
 	<!-- 22.9: yksi delegoitu kuuntelija kaikille FPL-pelaajariveille
 	     (`data-player-id`), ks. $lib/playerSheet. -->
 	<main use:playerRows={group}>
-		<ToolsHome {upgradeSignal} {group} {tool} {all} />
+		<ToolsHome {upgradeSignal} {signInSignal} {group} {tool} {all} />
 
 		<!-- TUOTE EDELLA (Ville 5.9): kirjautumaton kavija nakee juuressa
 		     tuotteen, ei tyhjaa kuorta. Ehdot ovat tarkoituksella tiukat:

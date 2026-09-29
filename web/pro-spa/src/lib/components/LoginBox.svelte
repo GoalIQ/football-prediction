@@ -58,6 +58,7 @@
 
 <!-- #101: osto ei enää vaadi tiliä (napit PremiumPreview'ssä yllä) →
      tämä lomake palvelee OLEMASSA OLEVIA tilejä, ei portita ostoa. -->
+<span id="signin" class="signin-anchor" aria-hidden="true"></span>
 {#if windowOpen}
 	<!-- 🔴 POISTA 12.9.2026 12:30 UTC jalkeen: palauta alla oleva sign-in-otsikko. -->
 	<h3>Create your free account</h3>
@@ -72,27 +73,6 @@
 		Subscribed in the GoalIQ app, bought Premium here earlier, or want to use an existing
 		account? Sign in and Premium is active here too.
 	</p>
-{/if}
-
-<div class="modes" role="tablist" aria-label="Sign in or create account">
-	<button
-		class="ghost"
-		class:active={mode === 'in'}
-		role="tab"
-		aria-selected={mode === 'in'}
-		onclick={() => (mode = 'in')}>Sign in</button
-	>
-	<button
-		class="ghost"
-		class:active={mode === 'up'}
-		role="tab"
-		aria-selected={mode === 'up'}
-		onclick={() => (mode = 'up')}>Create account</button
-	>
-</div>
-
-{#if mode === 'up'}
-	<p class="muted">One GoalIQ account works in the app and on the web.</p>
 {/if}
 
 {#if GOOGLE_AUTH_ENABLED}
@@ -125,6 +105,32 @@
 	<p class="or muted"><span>or use email</span></p>
 {/if}
 
+<!-- 29.9 (LOGIN-ASETTELU): valilehdet ohjaavat VAIN sahkopostilomaketta
+     (Google luo tai avaa tilin itse), joten ne ovat Googlen jalkeen. Ennen
+     ne olivat ylimpana, ja lukija valitsi tilan ennen kuin nki etta
+     Google ohittaa valinnan kokonaan. -->
+<div class="modes" role="tablist" aria-label="Sign in or create account">
+	<button
+		class="ghost"
+		class:active={mode === 'in'}
+		role="tab"
+		aria-selected={mode === 'in'}
+		onclick={() => (mode = 'in')}>Sign in</button
+	>
+	<button
+		class="ghost"
+		class:active={mode === 'up'}
+		role="tab"
+		aria-selected={mode === 'up'}
+		onclick={() => (mode = 'up')}>Create account</button
+	>
+</div>
+
+{#if mode === 'up'}
+	<p class="muted">One GoalIQ account works in the app and on the web.</p>
+{/if}
+
+
 <form class="card" onsubmit={submit}>
 	<label for="email">Email</label>
 	<input id="email" type="email" autocomplete="email" bind:value={email} />
@@ -155,6 +161,11 @@
 </form>
 
 <style>
+	/* Sama marginaali kuin ToolsHomen .upgrade-anchor: kiinnitetty ylapalkki. */
+	.signin-anchor {
+		display: block;
+		scroll-margin-top: 72px;
+	}
 	.oauth {
 		display: flex;
 		align-items: center;
