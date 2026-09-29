@@ -78,6 +78,12 @@
    "rejected": "2026-09-29",
    "why": "julkaisutarkistaja 29.9 (M114): vaite etta malli pelaa omaa FPL-joukkuettaan ja tekee sen chip-paatokset. Joukkue on mallin runko, chipit ja entry 116920 ovat meidan.",
    "replacement": "'We play our model's squad in FPL (entry 116920)'"
+  },
+  {
+   "phrase": "projects them to score",
+   "rejected": "2026-09-29",
+   "why": "julkaisutarkistaja 29.9 (TEAM-NEWS-HORISONTTIVAITE k1): team news -sivun kuvaus lupasi mallin projektion kaikille listatuille, mutta malli jattaa poissaolevan projektiosta pois ja rivilla on seuran paras korvaaja (75/104 pelaajaa).",
+   "replacement": "'Doubtful players carry the model's {window} projection, ruled-out ones show the club's best available cover.' (build_fpl_longtail.render_team_news)"
   }
  ],
  "poikkeukset": {},

@@ -412,6 +412,8 @@ def test_status_vaite_nimeaa_seuraavan_deadlinen_ei_ikkunaa():
     assert "availability, GW" not in html
     assert "official FPL status for GW6" in html
     assert "FPL Team News GW6: Injuries and Suspensions | GoalIQ" in html
+    # k1 (B): ulkona olevaa malli ei projisoi -> kuvaus ei saa luvata sita.
+    assert "ruled-out ones show the club's best available cover" in html
 
 
 def test_ilman_deadlinea_ei_keksita_kierrosta():

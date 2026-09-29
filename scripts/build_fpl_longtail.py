@@ -3402,9 +3402,13 @@ def render_team_news(xp: dict, now: datetime) -> str | None:
     title = (f"FPL Team News {status}: Injuries and Suspensions | GoalIQ" if status
              else "FPL Team News: Injuries and Suspensions | GoalIQ")
     desc = (
+        # 29.9 julkaisutarkistaja (B): malli EI projisoi poissaolevaa, sen
+        # rivilla on seuran paras korvaaja. "what the model projects them to
+        # score" oli epatosi 75 pelaajalle 104:sta.
         f"Every Premier League player the official FPL status lists as ruled out "
-        f"or doubtful{f' for {status}' if status else ''}, with ownership and what "
-        f"the model projects them to score over {window}. "
+        f"or doubtful{f' for {status}' if status else ''}, sorted by ownership. "
+        f"Doubtful players carry the model's {window} projection, ruled-out ones "
+        f"show the club's best available cover. "
         f"{n_out} out, {n_doubt} doubtful. Free, no sign-in."
     )
     hero = (
