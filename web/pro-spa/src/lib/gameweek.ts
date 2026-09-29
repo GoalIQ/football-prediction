@@ -23,6 +23,24 @@ export function actionableGameweek(
 	return undefined;
 }
 
+/** Rivit joihin lukija voi viela vaikuttaa (29.9.2026, XP-HORISONTIN-ALKU).
+ *
+ * xP-rivit (`gameweeks[]`) alkavat kesken olevasta kierroksesta, koska
+ * rate_team ja kentta tarvitsevat sen. ENNUSTEpinnat eivat: kesken GW6:n
+ * PlayerCard nayttaisi "GW6 · ARS (H)" seuraavana otteluna ja XpTable
+ * GW6-sarakkeen + "GW6 xP (high to low)" -lajittelun lukitulle kierrokselle.
+ * Sama rajaus kuin backendin `fpl_gameweek.actionable_gameweeks`issa.
+ * Poikkeukset (ProjectionsPanel, TeamPitchManager: kuluva kierros kentan
+ * parina) on kirjattu porttiin tests/test_spa_actionable_rows.py.
+ */
+export function actionableRows<T extends { gw: number }>(
+	meta: { deadline_gameweek?: number | null; next_gameweek?: number | null } | null | undefined,
+	rows: T[] | null | undefined
+): T[] {
+	const from = actionableGameweek(meta);
+	return (rows ?? []).filter((g) => from == null || g.gw >= from);
+}
+
 /* ------------------------------------------------------------------------
  * Deadline-rivi (22.9.2026, A3 2.1: "kiinnitetty GW-palkki"). Hero ja This
  * week lukevat SAMAN muotoilun: kaksi kopiota eriytyisi ensimmaisessa

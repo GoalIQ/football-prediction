@@ -301,12 +301,12 @@ def test_endpoint_serves_the_actionable_sum_and_the_meta_contract(
     assert names == (["B", "A"] if frm > HORIZON[0] else ["A", "B"]), phase
 
 
-def test_endpoint_etag_carries_schema_s9(xp_client):
+def test_endpoint_etag_carries_schema_s10(xp_client):
     """Semantiikka vaihtui ilman uutta projektiota: `generated_at` on sama,
     joten vain skeemaversio erottaa vanhan valimuistivastauksen uudesta."""
     r = xp_client(3, 4).get("/api/fantasy/xp")
-    assert "-s9" in r.headers["etag"], r.headers["etag"]
-    assert "-s8" not in r.headers["etag"]
+    assert "-s10" in r.headers["etag"], r.headers["etag"]
+    assert "-s9-" not in r.headers["etag"] and not r.headers["etag"].rstrip('"').endswith("-s9")
 
 
 def test_free_teaser_is_picked_by_the_actionable_sum(xp_client, monkeypatch):

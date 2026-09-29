@@ -1606,7 +1606,7 @@ def _clean_sheet_pct(player: dict) -> float | None:
 
 
 
-def driver_facts(player: dict) -> dict:
+def driver_facts(player: dict, from_gw: int | None = None) -> dict:
     """Yhden rivin todiste jokaiselle ajurille, mallin omista kentista.
 
     MIKSI SERVE-TIME. Sama peruste kuin `why`-lauseella itsellaan: selitykset
@@ -1630,6 +1630,10 @@ def driver_facts(player: dict) -> dict:
 
     Vain kentat jotka payloadissa OIKEASTI ovat: puuttuva kentta = ajuri
     jaa ilman lukua, ei placeholderia eika arvausta.
+
+    `from_gw` (29.9 XP-HORISONTIN-ALKU): ensimmainen vaikutettava kierros.
+    Rivit alkavat kesken olevasta kierroksesta, joten ilman rajausta
+    "Fixtures"-ajuri alkoi kesken GW6:n GW6:n (lukitun) vastustajasta.
     """
     out: dict[str, str] = {}
 
@@ -1673,6 +1677,9 @@ def driver_facts(player: dict) -> dict:
     gws = player.get("gameweeks")
     if isinstance(gws, list):
         opps = []
+        if isinstance(from_gw, int):
+            gws = [g for g in gws
+                   if isinstance((g or {}).get("gw"), int) and g["gw"] >= from_gw]
         for g in gws[:WHY_DRIVER_MAX]:
             for o in ((g or {}).get("opponents") or []):
                 if o.get("opp"):
@@ -1725,6 +1732,8 @@ def attach_why(payload: dict, entries: dict | None = None,
     if not entries:
         return payload
     lang = lang if lang in WHY_LANGS else WHY_DEFAULT_LANG
+    from src.models.fpl_gameweek import actionable_gameweek
+    from_gw = actionable_gameweek(payload.get("meta") or {})
     n = 0
     for p in payload.get("players") or []:
         if not isinstance(p, dict):
@@ -1745,7 +1754,7 @@ def attach_why(payload: dict, entries: dict | None = None,
         # oma nakemys siita mika on isoin, eika sita saa jarjestaa uusiksi.
         drivers = [d for d in (entry.get("drivers") or []) if isinstance(d, str)]
         drivers = drivers[:WHY_DRIVER_MAX]
-        facts = driver_facts(p)
+        facts = driver_facts(p, from_gw)
         p["why"] = {
             "sentence": sentence,
             "drivers": drivers,

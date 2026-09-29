@@ -191,7 +191,7 @@
 							<tr class="gw-row">
 								<td colspan="4">
 									<div class="gw-strip" role="list">
-										{#each (r.p.gameweeks ?? []).filter((g) => g.opponents.length > 0) as g (g.gw)}
+										{#each playable(r.p.gameweeks).filter((g) => g.opponents.length > 0) as g (g.gw)}
 											<span
 												role="listitem"
 												class="gw-chip"

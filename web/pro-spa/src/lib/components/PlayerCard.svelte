@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { startPct } from '$lib/startPct';
+	import { actionableRows } from '$lib/gameweek';
 	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
 	import { HAUL_POINTS, showCeiling } from '$lib/xpDist';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
@@ -666,7 +667,7 @@
 			     samat kentat yhteen paikkaan. xP on premium kuten muuallakin;
 			     free-pinnalla ruutu jaa pois eika nayta lukittua laatikkoa. -->
 			{#if !excluded}
-				{@const nextGwRow = (player.gameweeks ?? [])[0]}
+				{@const nextGwRow = actionableRows(meta, player.gameweeks)[0]}
 				<dl class="pc-overview">
 					{#if premium && typeof player.xp_per_gw === 'number'}
 						<div><dt>xP per GW</dt><dd>{player.xp_per_gw.toFixed(1)}</dd></div>
@@ -1015,7 +1016,7 @@
 			{/if}
 
 			{#if premium && !excluded}
-			{@const gws = player.gameweeks ?? []}
+			{@const gws = actionableRows(meta, player.gameweeks)}
 			<h4 class="gw-title">Projected points by gameweek</h4>
 			<div class="table-wrap">
 				<table>
@@ -1027,7 +1028,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each player.gameweeks as g (g.gw)}
+						{#each gws as g (g.gw)}
 							<tr>
 								<td>GW{g.gw}</td>
 								<td class:muted={g.opponents.length === 0}>{fixtureLabel(g.opponents)}</td>
