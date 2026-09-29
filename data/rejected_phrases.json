@@ -66,6 +66,18 @@
    "rejected": "2026-09-22",
    "why": "epatosi MEKANISMIVAITE /fpl/expected-pointsissa (julkaisutarkistaja 22.9 kierros 2): malli ei oleta joukkueuutisten pitavan, vaan xP painotetaan aloitustodennakoisyydella (Start%). Lause korvasi 'bet on team news' -sanamuodon samana paivana, eli korjaus toi uuden epatoden vaitteen (muisti: oma-korjaus-on-yhta-altis).",
    "replacement": "'Those totals depend on the team news.' (scripts/build_fpl_longtail.py)"
+  },
+  {
+   "phrase": "our model's wildcard",
+   "rejected": "2026-09-29",
+   "why": "julkaisutarkistaja 29.9 (M114): entry 116920:n chipit ovat meidan paatoksiamme, eivat mallin. /fpl sanoo julkisesti 'We play it in FPL as entry 116920, with our own chip calls'. Sama vaite oli M113-luonnoksessa ('our model's Gameweek 2 wildcard'). Sukua 21.9 hylatylle 'squad it actually fields'.",
+   "replacement": "'We play our model's squad in FPL and used our wildcard back in Gameweek 2'"
+  },
+  {
+   "phrase": "model's own FPL team",
+   "rejected": "2026-09-29",
+   "why": "julkaisutarkistaja 29.9 (M114): vaite etta malli pelaa omaa FPL-joukkuettaan ja tekee sen chip-paatokset. Joukkue on mallin runko, chipit ja entry 116920 ovat meidan.",
+   "replacement": "'We play our model's squad in FPL (entry 116920)'"
   }
  ],
  "poikkeukset": {},
