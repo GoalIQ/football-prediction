@@ -25,7 +25,7 @@
 	import SetPassword from './SetPassword.svelte';
 	import GameSwitcher from './GameSwitcher.svelte';
 
-	let { onUpgrade }: { onUpgrade?: () => void } = $props();
+	let { onUpgrade, onSignIn }: { onUpgrade?: () => void; onSignIn?: () => void } = $props();
 
 	/* ---------------- navi ----------------
 	   22.9: aktiivinen ryhma polusta, ei `params.group ?? 'week'`: jalkimmainen
@@ -93,9 +93,13 @@
 		capture('pricing_tapped', { source: 'pro_header' });
 		onUpgrade?.();
 	}
+	/* 29.9 (LOGIN-ASETTELU): "Sign in" kutsui samaa onUpgradea kuin Pricing,
+	   joten olemassa oleva kayttaja paatyi myyntisivun alkuun ja
+	   kirjautumislaatikko oli 2 011 px alempana (390 px, mitattu). Oma
+	   signaali avaa saman nakyman mutta vierittaa suoraan LoginBoxiin. */
 	function signIn() {
 		capture('sign_in_tapped', { source: 'pro_header' });
-		onUpgrade?.();
+		(onSignIn ?? onUpgrade)?.();
 	}
 	let menuOpen = $state(false);
 	let portalBusy = $state(false);
