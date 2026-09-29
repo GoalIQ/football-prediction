@@ -771,6 +771,25 @@ def round_minutes(mm: dict, element: dict, gw: int, headline_gw: int, *,
     return xp.scale_availability(mm, f_k / f)
 
 
+def minutes_reason(source: str, preseason: bool) -> str:
+    """Minuuttilipun perustelu kortille (price_blend / price_prior).
+
+    29.9.2026 (kuvaverifiointi + julkaisutarkistaja k1): ohut otos tarkoittaa
+    `cur_mins_by_player`ia, joka on kauden aikana TAMAN kauden minuutit ja
+    pre-seasonissa viime kauden arkiston minuutit. Lause nimeaa kauden, koska
+    kortti nayttaa viereen kausien yli kantavan maali- ja syottovauhdin
+    pohjan. Raja luetaan vakiosta, ei proosasta.
+    """
+    kausi = "last season" if preseason else "this season"
+    if source == "price_blend":
+        return (f"under {xp.PRICE_PRIOR_THIN_MINUTES} Premier League minutes {kausi}, "
+                "so part of the expected role comes from where the player is priced")
+    if source == "price_prior":
+        return (f"no Premier League minutes {kausi}{'' if preseason else ' yet'}, "
+                "expected role estimated from where the player is priced in his club's squad")
+    raise ValueError(f"tuntematon minutes_source: {source}")
+
+
 def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser()
@@ -1495,9 +1514,7 @@ def main(argv: list[str] | None = None) -> int:
                     # 29.9: "this season" - kortti nayttaa viereen data_basis-
                     # tekstin "based on the player's own PL minutes" (kausien
                     # yli), joten kauden rajaus on sanottava.
-                    "minutes_override_reason":
-                        "no Premier League minutes this season yet, expected role "
-                        "estimated from where the player is priced in his club's squad",
+                    "minutes_override_reason": minutes_reason("price_prior", preseason),
                 }
                 if pid in prior_pids
                 else {
@@ -1511,10 +1528,7 @@ def main(argv: list[str] | None = None) -> int:
                     # lauseen kanssa 225 pelaajalla (Haaland, Joao Pedro, Raya
                     # ...): ohut = TAMAN kauden minuutit < raja, historia on
                     # silti pitka. Raja luetaan vakiosta, ei proosasta.
-                    "minutes_override_reason":
-                        f"under {xp.PRICE_PRIOR_THIN_MINUTES} Premier League "
-                        "minutes this season, so part of the expected role comes "
-                        "from where the player is priced",
+                    "minutes_override_reason": minutes_reason("price_blend", preseason),
                 }
                 if pid in blended_pids
                 else {}

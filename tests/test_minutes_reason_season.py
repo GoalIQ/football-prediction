@@ -1,29 +1,52 @@
 # -*- coding: utf-8 -*-
-"""Portti: minuuttilipun perustelu sanoo KAUDEN (29.9.2026, kuvaverifiointi).
+"""Portti: minuuttilipun perustelu nimeaa KAUDEN oikein joka vaiheessa (29.9.2026).
 
 Mitattu 29.9 pro.goaliq.appin pelaajakortista (Haaland GW6): kortti sanoi
-samassa nakymassa "The model's view on starting, based on the player's own PL
-minutes" (data_basis pl_history, kausien yli kantava historia) JA
-"Part model, part price: thin Premier League sample" (minutes_source
-price_blend). Ohut otos tarkoittaa TAMAN kauden minuutteja alle
-PRICE_PRIOR_THIN_MINUUTIN, mutta teksti ei sanonut sita: 225 pelaajaa
-artefaktissa kantoi molemmat lauseet, mukana eniten omistetut.
+"thin Premier League sample" 225 pelaajalle joilla on pitka PL-historia.
+Ohut otos tarkoittaa `cur_mins_by_player`ia: kauden aikana TAMAN kauden
+minuutit, pre-seasonissa viime kauden arkiston minuutit (julkaisutarkistaja
+k1 B2: kovakoodattu "this season" olisi ollut vaarin pre-seasonissa).
 
-Portti lukee build_fpl_xp.py:n KUTSUPAIKAN (dict-literaali jossa
-minutes_source on price_blend / price_prior), ei erillista funktiota.
+Saanto 6a kohta 3: sama funktio ajetaan molemmilla vaiheilla. Kohta 1:
+kutsupaikka lukee funktion eika kirjoita proosaa itse.
 """
 from __future__ import annotations
 
 import ast
+import importlib
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "scripts" / "build_fpl_xp.py"
+xpb = importlib.import_module("scripts.build_fpl_xp")
 
 
-def _perustelut() -> dict[str, ast.expr]:
+@pytest.mark.parametrize("preseason,kausi", [(False, "this season"), (True, "last season")])
+@pytest.mark.parametrize("source", ["price_blend", "price_prior"])
+def test_perustelu_nimeaa_vaiheen_kauden(source, preseason, kausi):
+    t = xpb.minutes_reason(source, preseason)
+    assert kausi in t, t
+    assert "thin Premier League sample" not in t
+    assert "minutes yet," not in t or not preseason, "pre-season ei voi sanoa 'yet'"
+
+
+def test_ohuen_otoksen_raja_luetaan_vakiosta(monkeypatch):
+    monkeypatch.setattr(xpb.xp, "PRICE_PRIOR_THIN_MINUTES", 1234)
+    assert "under 1234 Premier League minutes" in xpb.minutes_reason("price_blend", False)
+
+
+def test_tuntematon_lahde_ei_keksi_tekstia():
+    with pytest.raises(ValueError):
+        xpb.minutes_reason("override", False)
+
+
+def test_kutsupaikka_lukee_funktion():
+    """KUTSUPAIKKA: minutes_override_reason price_blend/price_prior-riveilla on
+    `minutes_reason(<sama lahde>, preseason)`, ei kasin kirjoitettu lause."""
     tree = ast.parse(SRC.read_text(encoding="utf-8"))
-    out: dict[str, ast.expr] = {}
+    loydetty = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.Dict):
             continue
@@ -31,34 +54,10 @@ def _perustelut() -> dict[str, ast.expr]:
         if "minutes_source" not in keys or "minutes_override_reason" not in keys:
             continue
         src = node.values[keys.index("minutes_source")]
-        if isinstance(src, ast.Constant) and src.value in ("price_blend", "price_prior"):
-            out[src.value] = node.values[keys.index("minutes_override_reason")]
-    return out
-
-
-def _teksti(e: ast.expr) -> str:
-    if isinstance(e, ast.Constant):
-        return str(e.value)
-    if isinstance(e, ast.JoinedStr):
-        return "".join(v.value if isinstance(v, ast.Constant) else "{}" for v in e.values)
-    raise AssertionError(f"perustelu ei ole literaali: {ast.dump(e)[:80]}")
-
-
-def test_molemmat_perustelut_loytyvat():
-    p = _perustelut()
-    assert set(p) == {"price_blend", "price_prior"}, p.keys()
-
-
-def test_perustelu_rajaa_kauteen():
-    for nimi, e in _perustelut().items():
-        t = _teksti(e)
-        assert "this season" in t, (nimi, t)
-        assert "thin Premier League sample" not in t, (nimi, t)
-
-
-def test_ohuen_otoksen_raja_luetaan_vakiosta():
-    """Raja ei saa olla proosaa: jos PRICE_PRIOR_THIN_MINUTES muuttuu, lause seuraa."""
-    e = _perustelut()["price_blend"]
-    assert isinstance(e, ast.JoinedStr), "perustelu ei lue rajaa vakiosta"
-    nimet = [ast.unparse(v.value) for v in e.values if isinstance(v, ast.FormattedValue)]
-    assert nimet == ["xp.PRICE_PRIOR_THIN_MINUTES"], nimet
+        if not (isinstance(src, ast.Constant) and src.value in ("price_blend", "price_prior")):
+            continue
+        val = node.values[keys.index("minutes_override_reason")]
+        assert isinstance(val, ast.Call) and ast.unparse(val.func) == "minutes_reason", ast.unparse(val)
+        assert [ast.unparse(a) for a in val.args] == [repr(src.value), "preseason"], ast.unparse(val)
+        loydetty[src.value] = True
+    assert set(loydetty) == {"price_blend", "price_prior"}

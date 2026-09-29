@@ -211,7 +211,7 @@
 	const DATA_BASIS_LABEL: Record<string, string> = {
 		pl_history: "based on the player's own PL minutes",
 		limited_history: 'thin PL sample, the position average carries most of the weight',
-		no_history: 'no PL minutes yet, position average only'
+		no_history: 'no PL minutes this season or last, position average only'
 	};
 
 	// Etuliite aloitus-tn:n lähteelle. Sanamuoto kertoo KUKA luvun asetti:
@@ -547,7 +547,7 @@
 			// vieressa - jos se putoaa jaettavasta kuvasta, luku matkustaa ilman
 			// sita varausta joka tekee siita rehellisen ([[honest-data-labels]]).
 			if (!excluded && sp != null && p.data_basis && p.data_basis !== 'pl_history') {
-				noteBits.push(DATA_BASIS_LABEL[p.data_basis] ?? p.data_basis);
+				noteBits.push(`goal and assist rates: ${DATA_BASIS_LABEL[p.data_basis] ?? p.data_basis}`);
 			}
 			// Lahde mukaan MYOS jaettavaan kuvaan. Kortti on se artefakti joka
 			// lahtee appista ulos, ja juuri siina luku on isoimmillaan: jos
@@ -780,8 +780,13 @@
 							</p>
 						{/if}
 						{#if player.data_basis}
+							<!-- 29.9 (julkaisutarkistaja k1 B1): data_basis on maali- ja
+							     syottovauhdin datapohja (fpl_xp.data_basis, M_PRIOR_ATTACK),
+							     EI aloitus-tn:n. "The model's view on starting, based on the
+							     player's own PL minutes" oli epatosi hintapriori-, ohitus- ja
+							     ohuen otoksen riveilla. -->
 							<p class="muted">
-								The model's view on starting, {DATA_BASIS_LABEL[player.data_basis] ??
+								Goal and assist rates: {DATA_BASIS_LABEL[player.data_basis] ??
 									player.data_basis}.
 							</p>
 						{/if}
@@ -790,9 +795,9 @@
 						{#if player.xp_dist}
 							<p class="dist-line">
 								GW{player.xp_dist.gw} range: {Math.round(player.xp_dist.p_haul * 100)}% chance of
-								{HAUL_POINTS} or more points, {Math.round(player.xp_dist.p_blank * 100)}% chance of 2 or
-								fewer.{#if showCeiling(player.xp_dist.p90)}
-									He goes past {player.xp_dist.p90} in fewer than one week in ten.{/if}
+								{player.xp_dist.haul_pts ?? HAUL_POINTS} or more points, {Math.round(player.xp_dist.p_blank * 100)}% chance of 2 or
+								fewer.{#if showCeiling(player.xp_dist.p90, player.xp_dist.haul_pts)}
+									He goes past {player.xp_dist.p90} in no more than one week in ten.{/if}
 							</p>
 						{/if}
 						<!-- 4.8: aloitus-tn:n LÄHDE kun se ei ole puhtaasti mallin laskema.

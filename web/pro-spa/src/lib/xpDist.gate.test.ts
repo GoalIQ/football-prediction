@@ -18,6 +18,11 @@ describe('showCeiling', () => {
 		expect(showCeiling(HAUL_POINTS + 1)).toBe(true);
 		expect(showCeiling(6)).toBe(true);
 	});
+	it('raja luetaan payloadista kun se on annettu', () => {
+		expect(showCeiling(12, 12)).toBe(false);
+		expect(showCeiling(10, 12)).toBe(true);
+		expect(showCeiling(10, null)).toBe(false);
+	});
 	it('puuttuva luku ei nayta lausetta', () => {
 		expect(showCeiling(undefined)).toBe(false);
 		expect(showCeiling(null)).toBe(false);
@@ -30,13 +35,18 @@ describe('PlayerCard kayttaa lukijaa', () => {
 		readFileSync(fileURLToPath(new URL('./components/PlayerCard.svelte', import.meta.url)), 'utf8')
 	);
 	it('kattolause on showCeiling-ehdon sisalla', () => {
-		const i = src.indexOf('showCeiling(player.xp_dist.p90)');
+		const i = src.indexOf('showCeiling(player.xp_dist.p90');
 		const j = src.indexOf('He goes past');
 		expect(i).toBeGreaterThan(0);
 		expect(j).toBeGreaterThan(i);
 		expect(src.indexOf('{/if}', i)).toBeGreaterThan(j);
 	});
-	it('pisteraja tulee vakiosta, ei kovakoodista', () => {
-		expect(src).toContain('{HAUL_POINTS} or more points');
+	it('pisteraja tulee payloadista, ei kovakoodista', () => {
+		expect(src).toContain('{player.xp_dist.haul_pts ?? HAUL_POINTS} or more points');
+		expect(src).toContain('showCeiling(player.xp_dist.p90, player.xp_dist.haul_pts)');
+	});
+	it('lause sanoo no more than (p90 = int-persentiili, P(X > p90) <= 10 %)', () => {
+		// Vanhan muodon paluun estaa data/rejected_phrases.json (skannaa .svelte/.ts).
+		expect(src).toContain('in no more than one week in ten');
 	});
 });
