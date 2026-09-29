@@ -1044,8 +1044,31 @@ def _margin_scope(doc: dict) -> str:
     if not kaikki or not kaytetty or kaikki == kaytetty:
         return ""
     ero = kaikki - kaytetty
-    return (f" of the {kaikki} in the record above; the other {ero} are "
-            f"World Cup fixtures logged without a win probability")
+    ex = doc.get("excluded")
+    if not isinstance(ex, dict):
+        # Artefakti ennen 29.9 (ei scope-rajausta): ero oli MM-rivit ilman
+        # todennakoisyytta.
+        return (f" of the {kaikki} in the record above; the other {ero} are "
+                f"World Cup fixtures logged without a win probability")
+    # 29.9: mittaus rajattiin seuramalliin. Syyt johdetaan artefaktin
+    # laskureista, ei kiinteasta lauseesta: jos MM-rivit saavat
+    # todennakoisyyden tai lokiin tulee muu malli, lause seuraa.
+    osat = []
+    muu = int(ex.get("other_model") or 0)
+    if muu:
+        comps = ex.get("other_model_competitions") or []
+        mika = "World Cup fixtures" if comps == ["WC"] else "national-team fixtures"
+        osat.append((muu, f"{mika} from the national-team model"))
+    ilman = int(ex.get("no_win_probability") or 0)
+    if ilman:
+        osat.append((ilman, "logged without a win probability"))
+    if sum(n for n, _ in osat) != ero:
+        # Laskurit eivat selita eroa: ei keksita syyta (fail-closed).
+        return f" of the {kaikki} in the record above"
+    if len(osat) == 1:
+        return f" of the {kaikki} in the record above; the other {ero} are {osat[0][1]}"
+    return (f" of the {kaikki} in the record above; of the other {ero}, "
+            + " and ".join(f"{n} are {t}" for n, t in osat))
 
 
 def call_margin_html(doc: dict | None) -> str:
@@ -1090,7 +1113,8 @@ def call_margin_html(doc: dict | None) -> str:
         f'{doc["decisive_below_won"]} of those ({doc["decisive_below_pct"]}%). At {m} '
         f'points and above the named side won {doc["decisive_above_won"]} of '
         f'{doc["decisive_above_n"]} ({doc["decisive_above_pct"]}%). Measured '
-        f'{measured_txt} from {doc["n_graded"]} graded matches{_margin_scope(doc)}.</p>'
+        f'{measured_txt} from {doc["n_graded"]} graded '
+        f'{"club " if doc.get("scope") == "club" else ""}matches{_margin_scope(doc)}.</p>'
         '<table class="margin-tbl"><thead><tr><th>Gap (points)</th><th>Matches</th>'
         '<th>With a winner</th><th>Named side won, when there was a winner</th>'
         '</tr></thead><tbody>'
