@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import { startPct } from '$lib/startPct';
 	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
+	import { HAUL_POINTS, showCeiling } from '$lib/xpDist';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
 	// (Dubravka-case). FREE — kaikki kortin data on julkista (FPL bootstrap +
 	// julkaistut GoalIQ-projektiot). Rehellisyysraja pidetään visuaalisesti:
@@ -789,8 +790,9 @@
 						{#if player.xp_dist}
 							<p class="dist-line">
 								GW{player.xp_dist.gw} range: {Math.round(player.xp_dist.p_haul * 100)}% chance of
-								10 or more points, {Math.round(player.xp_dist.p_blank * 100)}% chance of 2 or
-								fewer. He goes past {player.xp_dist.p90} in fewer than one week in ten.
+								{HAUL_POINTS} or more points, {Math.round(player.xp_dist.p_blank * 100)}% chance of 2 or
+								fewer.{#if showCeiling(player.xp_dist.p90)}
+									He goes past {player.xp_dist.p90} in fewer than one week in ten.{/if}
 							</p>
 						{/if}
 						<!-- 4.8: aloitus-tn:n LÄHDE kun se ei ole puhtaasti mallin laskema.

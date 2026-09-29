@@ -1492,9 +1492,12 @@ def main(argv: list[str] | None = None) -> int:
                     # nayttaa luvun isolla. Ilman lippua UI ei voi erottaa
                     # sita mallin omasta arviosta.
                     "minutes_source": "price_prior",
+                    # 29.9: "this season" - kortti nayttaa viereen data_basis-
+                    # tekstin "based on the player's own PL minutes" (kausien
+                    # yli), joten kauden rajaus on sanottava.
                     "minutes_override_reason":
-                        "no Premier League minutes yet, expected role estimated "
-                        "from where the player is priced in his club's squad",
+                        "no Premier League minutes this season yet, expected role "
+                        "estimated from where the player is priced in his club's squad",
                 }
                 if pid in prior_pids
                 else {
@@ -1503,9 +1506,15 @@ def main(argv: list[str] | None = None) -> int:
                     # minuuteista, joten "based on the player's own PL
                     # minutes" ei enaa pida taysin paikkaansa.
                     "minutes_source": "price_blend",
+                    # 29.9 (kuvaverifiointi): "thin Premier League sample"
+                    # ilman kautta oli ristiriidassa saman kortin data_basis-
+                    # lauseen kanssa 225 pelaajalla (Haaland, Joao Pedro, Raya
+                    # ...): ohut = TAMAN kauden minuutit < raja, historia on
+                    # silti pitka. Raja luetaan vakiosta, ei proosasta.
                     "minutes_override_reason":
-                        "thin Premier League sample, the expected role is part "
-                        "model and part where the player is priced",
+                        f"under {xp.PRICE_PRIOR_THIN_MINUTES} Premier League "
+                        "minutes this season, so part of the expected role comes "
+                        "from where the player is priced",
                 }
                 if pid in blended_pids
                 else {}
