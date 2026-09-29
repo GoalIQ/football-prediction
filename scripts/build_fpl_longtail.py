@@ -1252,9 +1252,15 @@ def render_model_xi(xp: dict, now: datetime) -> str | None:
     # (muisti: ehto-ei-vanhene-teksti-vanhenee). Ilman ikkunaa sivua EI
     # renderoida lainkaan - xP-luku ilman ikkunaa on juuri se vaara
     # vaihtoehto joka pitaa tehda mahdottomaksi.
-    gws = sorted({g.get("gw") for p in players
-                  for g in (p.get("gameweeks") or [])
-                  if isinstance(g.get("gw"), int)})
+    # 29.9 XP-HORISONTIN-ALKU: rivit alkavat kesken olevasta kierroksesta,
+    # mutta `xp_horizon_total` on vaikutettavien summa. Ennen tata sivu sanoi
+    # kesken GW6:n "310.8 projected points over GW6-GW11 (6 gameweeks)"
+    # viiden kierroksen (GW7-11) summalle. Sama suodatin kuin muilla
+    # ennustepinnoilla (fpl_gameweek.actionable_gameweeks).
+    from src.models.fpl_gameweek import actionable_gameweeks
+    gws = actionable_gameweeks(xp.get("meta") or {}, sorted({
+        g.get("gw") for p in players for g in (p.get("gameweeks") or [])
+        if isinstance(g.get("gw"), int)}))
     if not gws:
         return None
     window = (f"GW{gws[0]}" if len(gws) == 1

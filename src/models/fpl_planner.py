@@ -27,7 +27,7 @@ from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, DECISION_BAR_XP_PER_GW, HIT_COST_XP,
     HOLD_THRESHOLD_XP, POS_NAME,
     MAX_PER_CLUB, RateTeamError, apply_availability_gate, build_context,
-    build_hold_verdict, captain_suggestion, clamp_gw_to_projections,
+    actionable_captain_gw, build_hold_verdict, captain_suggestion, clamp_gw_to_projections,
     hold_threshold_for, planning_start_gw,
     optimal_xi, picks_outdated, resolve_squad, resolve_squad_ex, _gw_xp,
 )
@@ -511,6 +511,10 @@ def captain_picker(entry: int | None = None, gw: int | None = None,
     squad_ids, _cap, _bank, picks_gw = resolve_squad(
         bootstrap, entry, gw, players, None, None)
     target_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+    # 29.9 XP-HORISONTIN-ALKU: kapteenikutsu on toimenpide, joten sen kierros
+    # on se johon viela voi vaikuttaa (sama lukija kuin rate_team). Kesken
+    # GW6:n clamp palauttaa kuluvan (lukitun) kierroksen.
+    cap_gw = actionable_captain_gw(target_gw, pool, xp_data)
     squad = [pool_by_id[i] for i in squad_ids if i in pool_by_id]
     if len(squad) < 11:
         raise RateTeamError(422, "Too few projected players in the squad.")
@@ -522,12 +526,12 @@ def captain_picker(entry: int | None = None, gw: int | None = None,
     dropped = apply_availability_gate(xi, bootstrap)[1]
     dropped_ids = {r["id"] for r in dropped}
     gated_xi = [p for p in xi if p["id"] not in dropped_ids] or xi
-    ranked = sorted(gated_xi, key=lambda p: _gw_xp(p, target_gw), reverse=True)
+    ranked = sorted(gated_xi, key=lambda p: _gw_xp(p, cap_gw), reverse=True)
 
     def _fmt(p):
         return {"id": p["id"], "web_name": p["web_name"],
                 "team_short": p["team_short"],
-                "gw_xp": round(_gw_xp(p, target_gw), 2),
+                "gw_xp": round(_gw_xp(p, cap_gw), 2),
                 "owned_pct": p.get("owned_pct")}
 
     top3 = [_fmt(p) for p in ranked[:3]]
@@ -537,7 +541,7 @@ def captain_picker(entry: int | None = None, gw: int | None = None,
                  if (p.get("owned_pct") or 100.0) <= CAPTAIN_DIFFERENTIAL_EO),
                 None)
     return {
-        "meta": {"gw": target_gw,
+        "meta": {"gw": cap_gw,
                  "generated_at": xp_data["meta"].get("generated_at"),
                  "availability_gate": {
                      "checked": True,

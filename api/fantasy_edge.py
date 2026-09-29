@@ -33,7 +33,8 @@ from src.models.fpl_planner import HIT_COST, TOP_CANDIDATES_PER_POS
 from src.models.fpl_rate_team import (
     AVAILABILITY_GATE_NOTE, MAX_PER_CLUB, POS_NAME, SQUAD_QUOTA, XI_MAX,
     XI_MIN, BUDGET_TENTHS, RateTeamError, _fetch_fpl, _gw_xp, _resolve_gw,
-    apply_availability_gate, build_context, clamp_gw_to_projections, planning_start_gw,
+    actionable_captain_gw, apply_availability_gate, build_context, clamp_gw_to_projections,
+    planning_start_gw,
     get_bootstrap, get_entry_picks, optimal_xi, picks_outdated, resolve_squad,
     resolve_squad_ex,
 )
@@ -1446,6 +1447,9 @@ def fantasy_edge(
         squad_ids, _cap, _bank, picks_gw = resolve_squad(
             bootstrap, entry, None, None, None, None)
         target_gw = clamp_gw_to_projections(picks_gw, pool, xp_data)
+        # 29.9 XP-HORISONTIN-ALKU: kapteenilista on toimenpide -> vaikutettava
+        # kierros (sama lukija kuin rate_team ja captain_picker).
+        cap_gw = actionable_captain_gw(target_gw, pool, xp_data)
         squad = [pool_by_id[i] for i in squad_ids if i in pool_by_id]
         if len(squad) < 11:
             raise RateTeamError(
@@ -1467,7 +1471,7 @@ def fantasy_edge(
         eo = _owned(p) / 100.0
         factor = (1 - w + w * eo) if mode == "protect" else \
             (1 - w + w * (1 - eo))
-        return _gw_xp(p, target_gw) * factor
+        return _gw_xp(p, cap_gw) * factor
 
     cap_rows = []
     for p in sorted(xi, key=_cap_score, reverse=True)[:5]:
@@ -1479,11 +1483,11 @@ def fantasy_edge(
                    "enough to keep him in the protect list.")
         else:
             why = (f"Only {eo:.0f}% owned with "
-                   f"{_gw_xp(p, target_gw):.1f} xP - a haul moves you up, "
+                   f"{_gw_xp(p, cap_gw):.1f} xP - a haul moves you up, "
                    "not sideways.") if eo < 20 else \
                   (f"Template pick ({eo:.0f}% owned) - safe floor, "
                    "limited climb upside.")
-        cap_rows.append({**_mini(p), "gw_xp": round(_gw_xp(p, target_gw), 2),
+        cap_rows.append({**_mini(p), "gw_xp": round(_gw_xp(p, cap_gw), 2),
                          "owned_pct": eo,
                          "score": round(_cap_score(p), 2),
                          "rationale": why})
@@ -1516,7 +1520,7 @@ def fantasy_edge(
 
     payload = {
         "meta": {
-            "entry": entry, "mode": mode, "gw": target_gw,
+            "entry": entry, "mode": mode, "gw": cap_gw,
             "overall_rank": overall_rank,
             "generated_at": xp_data["meta"].get("generated_at"),
             # 17.9: differentiaalien ja template-riskien `xp_horizon_total`

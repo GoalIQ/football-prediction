@@ -188,7 +188,10 @@ def player_facts(player: dict, gw: int, horizon: int) -> dict:
     gws = player.get("gameweeks") or []
     this_gw = next((g for g in gws if g.get("gw") == gw), None)
     fixtures = []
-    for g in gws[:horizon]:
+    # 29.9 XP-HORISONTIN-ALKU: rivit alkavat kesken olevasta kierroksesta.
+    # `gws[:horizon]` antoi kesken GW6:n lauseen "..., with ARS (H), CHE (A)
+    # to come" jossa ensimmainen vastustaja oli jo pelatun/lukitun GW6:n.
+    for g in [g for g in gws if isinstance(g.get("gw"), int) and g["gw"] >= gw][:horizon]:
         for opp in (g.get("opponents") or []):
             fixtures.append(f"{opp.get('opp')} ({opp.get('venue')})")
 
@@ -586,7 +589,10 @@ def main() -> int:
         print(f"::warning::otsikkokierros GW{gw} ei ole projektiossa {gws} "
               f"- kaytetaan GW{gws[0]}")
         gw = gws[0]
-    horizon = len(gws)
+    # 29.9 XP-HORISONTIN-ALKU: horisontti = vaikutettavat kierrokset, samat
+    # joista `xp_horizon_total` on laskettu. `len(gws)` antoi kesken GW6:n
+    # avaimen `xp_next_6_gws` viiden kierroksen summalle.
+    horizon = len(fplgw.actionable_gameweeks(meta, gws)) or len(gws)
 
     players = select_players(payload, gw, args.top_n)
     print(f"GW{gw}, horisontti {horizon} kierrosta, {len(players)} pelaajaa")

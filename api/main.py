@@ -5670,7 +5670,10 @@ def fantasy_xp(
     # `generated_at` on sama, joten ilman nostoa ehdollinen pyynto validoisi
     # vanhan vastauksen 304:lla ja klientti nayttaisi vanhan summan uuden
     # otsikon alla tasan niille joilla vastaus on jo valimuistissa.
-    schema = "s9"
+    # 29.9 s10: why.driver_facts.fixtures alkaa nyt vaikutettavasta
+    # kierroksesta (XP-HORISONTIN-ALKU). Serve-time-kentan ARVO vaihtuu
+    # deployssa ilman uutta `generated_at`ia.
+    schema = "s10"
     # Liiga-avain ETagiin: ilman sitä fpl- ja spl-vastaukset voisivat
     # 304-validoitua ristiin samasta selainvälimuistista (sama URL-polku,
     # eri query) — sama vikaluokka kuin mask-bitin puuttuminen olisi.
