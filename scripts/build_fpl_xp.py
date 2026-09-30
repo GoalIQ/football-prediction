@@ -1457,6 +1457,10 @@ def main(argv: list[str] | None = None) -> int:
                 "gw": g,
                 "opponents": opps,   # [] = blank GW
                 "xp": round(gw_xp, 2),
+                # KUMPPANI-MINUUTIT (30.9): kierroksen odotetut minuutit
+                # SAMASTA xm_g:sta jolla gw_xp laskettiin (per ottelu x
+                # otteluiden maara: tupla-GW enintaan 180, blank = 0).
+                "xmins": round(xm_g * len(ctxs), 1),
             })
         if total < MIN_XP_TOTAL:
             # Rehellinen syy: FPL:n virallinen saatavuuslippu (i/s/u/n) vs

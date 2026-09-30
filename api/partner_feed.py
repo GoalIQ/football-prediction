@@ -2,8 +2,15 @@
 
 Ensimmainen kumppani FPL Demon (fpldemon.com), ehdot sovittu X DM:ssa 26.9
 (Villen GO): FPL-pelaaja-id + seuraavat 5 kierrosta, luvut vain plannerin ja
-solverin sisalla, "Projected points powered by GoalIQ" + linkki. Minuutit ja
-muut mallin kentat EIVAT kuulu syotteeseen.
+solverin sisalla, "Projected points powered by GoalIQ" + linkki. Muut mallin
+kentat EIVAT kuulu syotteeseen.
+
+MINUUTIT (29.9, Villen DM "Yes on minutes"): Demon pyysi odotetut minuutit
+solveria ja plannerin minuuttisaatoa varten. `xmins` per kierros samasta
+horisontista kuin `xp`, samat kayttorajat. Arvo on kierroksen summa
+(tupla-GW enintaan 180, 0 = ei ottelua). Demon merkitsee kayttajan
+muokkaaman pelaajan plannerissa (DM 29.9), joten credit kattaa vain meidan
+lukumme.
 
 TURVA (saanto 6a, "tee vaarasta vaihtoehdosta mahdoton"):
   - Vastaus rakennetaan SALLITTUJEN kenttien listasta (`TOP_FIELDS`,
@@ -39,7 +46,7 @@ PARTNER_XP_HORIZON = 5
 #: joka "vain lisaa yhden kentan": testi lukee nama samat joukot.
 TOP_FIELDS = frozenset({"source", "attribution", "link", "generated_at",
                         "gameweeks", "note", "players"})
-PLAYER_FIELDS = frozenset({"id", "xp"})
+PLAYER_FIELDS = frozenset({"id", "xp", "xmins"})
 
 ATTRIBUTION = "Projected points powered by GoalIQ"
 NOTE = ("Players not listed have no projection for these gameweeks. "
@@ -89,11 +96,15 @@ def build_partner_xp(data: dict, partner: str,
         pid = p.get("id")
         if not isinstance(pid, int):
             continue
-        xp = {str(g["gw"]): round(float(g["xp"]), 1)
-              for g in (p.get("gameweeks") or [])
-              if g.get("gw") in wanted and isinstance(g.get("xp"), (int, float))}
+        rows_in = [g for g in (p.get("gameweeks") or [])
+                   if g.get("gw") in wanted and isinstance(g.get("xp"), (int, float))]
+        xp = {str(g["gw"]): round(float(g["xp"]), 1) for g in rows_in}
+        # Minuutit samoille kierroksille kuin xp. Vanha projektio ilman
+        # kenttaa -> {} (ei arvausta rivin otsikkominuuteista).
+        xmins = {str(g["gw"]): round(float(g["xmins"]), 1) for g in rows_in
+                 if isinstance(g.get("xmins"), (int, float))}
         if xp:
-            rows.append({"id": pid, "xp": xp})
+            rows.append({"id": pid, "xp": xp, "xmins": xmins})
     return {
         "source": "GoalIQ",
         "attribution": ATTRIBUTION,
