@@ -114,6 +114,18 @@
    "rejected": "2026-09-29",
    "why": "kuvaverifiointi 29.9: 225 pelaajan kortti (pl_history + price_blend) sanoi samaan aikaan pitkan historian ja 'thin Premier League sample'. Ohut = cur_mins < PRICE_PRIOR_THIN_MINUTES, kausi pitaa nimeta.",
    "replacement": "build_fpl_xp.minutes_reason() ('under 900 Premier League minutes this season/last season, ...')"
+  },
+  {
+   "phrase": "No PL data yet",
+   "rejected": "2026-09-30",
+   "why": "MOBIILI-DATAPOHJA-LABEL 30.9 (julkaisutarkistaja 29.9 k2): data_basis mittaa maali- ja syottovauhdin otosta tama kausi + viime kauden arkisto. 'Ei viela PL-dataa' oli epatosi pelaajille joilla on PL-minuutteja vanhemmilta kausilta (Hullin Dowell 905 min 2021/22).",
+   "replacement": "'No recent PL minutes' ($lib/dataBasis basisTag; mobiili fantasy.xp.basis_no_history)"
+  },
+  {
+   "phrase": "little Premier League history",
+   "rejected": "2026-09-30",
+   "why": "MOBIILI-DATAPOHJA-LABEL 30.9 (julkaisutarkistaja 29.9 k2): data_basis mittaa maali- ja syottovauhdin otosta tama kausi + viime kauden arkisto. 'Ei viela PL-dataa' oli epatosi pelaajille joilla on PL-minuutteja vanhemmilta kausilta (Hullin Dowell 905 min 2021/22).",
+   "replacement": "'Thin PL sample this season and last, ...' ($lib/dataBasis basisTag)"
   }
  ],
  "poikkeukset": {},

@@ -4,6 +4,7 @@
 	import { actionableRows } from '$lib/gameweek';
 	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
 	import { HAUL_POINTS, showCeiling } from '$lib/xpDist';
+	import { DATA_BASIS_LABEL } from '$lib/dataBasis';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
 	// (Dubravka-case). FREE — kaikki kortin data on julkista (FPL bootstrap +
 	// julkaistut GoalIQ-projektiot). Rehellisyysraja pidetään visuaalisesti:
@@ -208,12 +209,6 @@
 		if (!sp) return false;
 		return [sp.pens, sp.corners, sp.fk].some((v) => typeof v === 'number' && v <= 2);
 	});
-
-	const DATA_BASIS_LABEL: Record<string, string> = {
-		pl_history: "based on the player's own PL minutes",
-		limited_history: 'thin PL sample, the position average carries most of the weight',
-		no_history: 'no PL minutes this season or last, position average only'
-	};
 
 	// Etuliite aloitus-tn:n lähteelle. Sanamuoto kertoo KUKA luvun asetti:
 	// "Set by hand" ei saa lukea kuten mallin oma arvio, koska se ei ole sitä.

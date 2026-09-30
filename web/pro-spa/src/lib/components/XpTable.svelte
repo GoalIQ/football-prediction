@@ -18,6 +18,7 @@
 	import SetPieceBadges from './SetPieceBadges.svelte';
 	import { startPct } from '$lib/startPct';
 	import { xpHorizon } from '$lib/xpHorizon';
+	import { basisRatesLine, basisTag } from '$lib/dataBasis';
 
 	let { data }: { data: XpResponse } = $props();
 
@@ -981,16 +982,14 @@
 						</td>
 						<td class="num muted">{rankById.get(p.id)}</td>
 						<td
-							>{p.web_name}{#if p.data_basis === 'limited_history' || p.data_basis === 'no_history'}
+							>{p.web_name}{#if basisTag(p.data_basis)}
 								<!-- #143-WEB/#146: datapohja-rehellisyysmerkintä (pariteetti
 								     mobiiliin: sama tagi + sama selite tooltipissa;
-								     pl_history = ei labelia, puuttuva kenttä = ei mitään) -->
-								<span
-									class="basis-tag"
-									title={p.data_basis === 'no_history'
-										? 'No Premier League data for this player yet, this is a position-based estimate.'
-										: 'The model has little Premier League history for this player yet, so treat this projection as less certain.'}
-									>{p.data_basis === 'no_history' ? 'No PL data yet' : 'Limited data'}</span
+								     pl_history = ei labelia, puuttuva kenttä = ei mitään).
+								     30.9: tekstit $lib/dataBasis:sta (maali- ja syottovauhdin
+								     otos, ei "No PL data yet"). -->
+								<span class="basis-tag" title={basisTag(p.data_basis)?.title}
+									>{basisTag(p.data_basis)?.label}</span
 								>{/if}<SetPieceBadges sp={p.set_pieces} /></td
 						>
 						<td
@@ -1129,11 +1128,13 @@
 					(<span class="conf-text conf-{selected.minutes_confidence}"
 						>{CONF_LABEL[selected.minutes_confidence]} confidence</span
 					>){/if}. Model-based estimate; confidence reflects sample size and rotation
-				stability.{#if selected.data_basis === 'limited_history'}{' '}Limited data:
-					the model has little Premier League history for this player yet, so treat
-					this projection as less certain.{:else if selected.data_basis === 'no_history'}{' '}No
-					PL data yet: this is a position-based estimate.{/if}
+				stability.
 			</p>
+			<!-- 30.9: datapohja on maali- ja syottovauhdin otos, ei aloitus-tn:n,
+			     joten se on oma lauseensa eika minuuttirivin jatke. -->
+			{#if basisRatesLine(selected.data_basis)}
+				<p class="muted">{basisRatesLine(selected.data_basis)}</p>
+			{/if}
 		{/if}
 	{/if}
 	<p class="muted">Differentials (xP vs ownership) come in Phase 2.</p>
