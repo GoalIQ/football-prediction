@@ -4,6 +4,7 @@
 	import { actionableRows } from '$lib/gameweek';
 	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
 	import { HAUL_POINTS, showCeiling } from '$lib/xpDist';
+	import { basisLabel, basisRatesLine } from '$lib/dataBasis';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
 	// (Dubravka-case). FREE — kaikki kortin data on julkista (FPL bootstrap +
 	// julkaistut GoalIQ-projektiot). Rehellisyysraja pidetään visuaalisesti:
@@ -208,12 +209,6 @@
 		if (!sp) return false;
 		return [sp.pens, sp.corners, sp.fk].some((v) => typeof v === 'number' && v <= 2);
 	});
-
-	const DATA_BASIS_LABEL: Record<string, string> = {
-		pl_history: "based on the player's own PL minutes",
-		limited_history: 'thin PL sample, the position average carries most of the weight',
-		no_history: 'no PL minutes this season or last, position average only'
-	};
 
 	// Etuliite aloitus-tn:n lähteelle. Sanamuoto kertoo KUKA luvun asetti:
 	// "Set by hand" ei saa lukea kuten mallin oma arvio, koska se ei ole sitä.
@@ -547,8 +542,9 @@
 			// pelaajilla positiokeskiarvo kantaa. Appi nayttaa taman labelin kortin
 			// vieressa - jos se putoaa jaettavasta kuvasta, luku matkustaa ilman
 			// sita varausta joka tekee siita rehellisen ([[honest-data-labels]]).
-			if (!excluded && sp != null && p.data_basis && p.data_basis !== 'pl_history') {
-				noteBits.push(`goal and assist rates: ${DATA_BASIS_LABEL[p.data_basis] ?? p.data_basis}`);
+			const basisLbl = basisLabel(p.data_basis);
+			if (!excluded && sp != null && p.data_basis !== 'pl_history' && basisLbl) {
+				noteBits.push(`goal and assist rates: ${basisLbl}`);
 			}
 			// Lahde mukaan MYOS jaettavaan kuvaan. Kortti on se artefakti joka
 			// lahtee appista ulos, ja juuri siina luku on isoimmillaan: jos
@@ -780,16 +776,12 @@
 									<span class="muted">({player.minutes_confidence} confidence)</span>{/if}
 							</p>
 						{/if}
-						{#if player.data_basis}
+						{#if basisRatesLine(player.data_basis)}
 							<!-- 29.9 (julkaisutarkistaja k1 B1): data_basis on maali- ja
 							     syottovauhdin datapohja (fpl_xp.data_basis, M_PRIOR_ATTACK),
-							     EI aloitus-tn:n. "The model's view on starting, based on the
-							     player's own PL minutes" oli epatosi hintapriori-, ohitus- ja
-							     ohuen otoksen riveilla. -->
-							<p class="muted">
-								Goal and assist rates: {DATA_BASIS_LABEL[player.data_basis] ??
-									player.data_basis}.
-							</p>
+							     EI aloitus-tn:n. 30.9 (k1): tuntematon arvo ei paase ruudulle
+							     raakana, lukija $lib/dataBasis on fail-closed. -->
+							<p class="muted">{basisRatesLine(player.data_basis)}</p>
 						{/if}
 						<!-- XP-DISTRIBUTION 27.8: pistearvion muoto. Tulee API:sta vain
 						     premium-riveilla (sama maski kuin xP), joten ehto riittaa. -->
