@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { DATA_BASIS_LABEL, basisRatesLine, basisTag } from './dataBasis';
+import { DATA_BASIS_LABEL, basisLabel, basisRatesLine, basisTag } from './dataBasis';
 import { blankComments } from './sourceScan';
 
 const lue = (rel: string) =>
@@ -27,7 +27,8 @@ describe('lukija', () => {
 		expect(basisTag('no_history')?.label).toBe('No recent PL minutes');
 	});
 	it('tuntematon tai puuttuva arvo ei nayta mitaan (ei raakaa arvoa)', () => {
-		for (const v of [undefined, null, '', 'full', 'toString', 42]) {
+		for (const v of [undefined, null, '', 'full', 'toString', 'constructor', 42]) {
+			expect(basisLabel(v)).toBeNull();
 			expect(basisRatesLine(v)).toBeNull();
 			expect(basisTag(v)).toBeNull();
 		}
@@ -61,12 +62,14 @@ describe('kutsupaikat', () => {
 		expect(xt.indexOf('basisRatesLine(selected.data_basis)', j)).toBeGreaterThan(j);
 	});
 	it('PlayerCard lukee saman taulun eika pida omaa kopiota', () => {
-		expect(pc).toContain("import { DATA_BASIS_LABEL, basisRatesLine } from '$lib/dataBasis';");
+		expect(pc).toContain("import { basisLabel, basisRatesLine } from '$lib/dataBasis';");
 		expect(pc).not.toMatch(/const DATA_BASIS_LABEL\b/);
 	});
 	it('PlayerCardin rivi on fail-closed (ei raakaa arvoa ruudulle)', () => {
 		expect(pc).toContain('{#if basisRatesLine(player.data_basis)}');
 		expect(pc).toContain('{basisRatesLine(player.data_basis)}</p>');
-		expect(pc).not.toMatch(/DATA_BASIS_LABEL\[[^\]]+\]\s*\?\?/);
+		expect(pc).not.toMatch(/DATA_BASIS_LABEL\[/);
+		// Jakokortin nootti: sama lukija (k2 30.9: taulun indeksi oli tosi 'toString'-avaimella).
+		expect(pc).toContain('const basisLbl = basisLabel(p.data_basis);');
 	});
 });

@@ -39,9 +39,16 @@ const TAG: Record<string, { label: string; title: string }> = {
 const own = (o: object, k: unknown): k is string =>
 	typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
 
+/** Label tunnetulle datapohjalle, muuten null (ei prototyypin avaimia:
+ *  `DATA_BASIS_LABEL['toString']` olisi tosi-arvo). */
+export function basisLabel(b: unknown): string | null {
+	return own(DATA_BASIS_LABEL, b) ? DATA_BASIS_LABEL[b] : null;
+}
+
 /** "Goal and assist rates: ..." tunnetulle datapohjalle, muuten null. */
 export function basisRatesLine(b: unknown): string | null {
-	return own(DATA_BASIS_LABEL, b) ? `Goal and assist rates: ${DATA_BASIS_LABEL[b]}.` : null;
+	const label = basisLabel(b);
+	return label ? `Goal and assist rates: ${label}.` : null;
 }
 
 /** Listan tagi vain priorinvaraisille riveille (pl_history = ei tagia). */

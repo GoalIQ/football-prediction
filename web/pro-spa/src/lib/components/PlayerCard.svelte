@@ -4,7 +4,7 @@
 	import { actionableRows } from '$lib/gameweek';
 	import { xpHorizon, xpTotalClaim } from '$lib/xpHorizon';
 	import { HAUL_POINTS, showCeiling } from '$lib/xpDist';
-	import { DATA_BASIS_LABEL, basisRatesLine } from '$lib/dataBasis';
+	import { basisLabel, basisRatesLine } from '$lib/dataBasis';
 	// UX-palaute-erä (25.7) kohta 1: player card / hakutietopankki
 	// (Dubravka-case). FREE — kaikki kortin data on julkista (FPL bootstrap +
 	// julkaistut GoalIQ-projektiot). Rehellisyysraja pidetään visuaalisesti:
@@ -542,8 +542,9 @@
 			// pelaajilla positiokeskiarvo kantaa. Appi nayttaa taman labelin kortin
 			// vieressa - jos se putoaa jaettavasta kuvasta, luku matkustaa ilman
 			// sita varausta joka tekee siita rehellisen ([[honest-data-labels]]).
-			if (!excluded && sp != null && p.data_basis && p.data_basis !== 'pl_history' && DATA_BASIS_LABEL[p.data_basis]) {
-				noteBits.push(`goal and assist rates: ${DATA_BASIS_LABEL[p.data_basis]}`);
+			const basisLbl = basisLabel(p.data_basis);
+			if (!excluded && sp != null && p.data_basis !== 'pl_history' && basisLbl) {
+				noteBits.push(`goal and assist rates: ${basisLbl}`);
 			}
 			// Lahde mukaan MYOS jaettavaan kuvaan. Kortti on se artefakti joka
 			// lahtee appista ulos, ja juuri siina luku on isoimmillaan: jos
