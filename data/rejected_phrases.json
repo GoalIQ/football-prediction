@@ -126,6 +126,18 @@
    "rejected": "2026-09-30",
    "why": "MOBIILI-DATAPOHJA-LABEL 30.9 (julkaisutarkistaja 29.9 k2): data_basis mittaa maali- ja syottovauhdin otosta tama kausi + viime kauden arkisto. 'Ei viela PL-dataa' oli epatosi pelaajille joilla on PL-minuutteja vanhemmilta kausilta (Hullin Dowell 905 min 2021/22).",
    "replacement": "'Thin PL sample this season and last, ...' ($lib/dataBasis basisTag)"
+  },
+  {
+   "phrase": "rates are the position average",
+   "rejected": "2026-09-30",
+   "why": "julkaisutarkistaja 30.9 k1: build_fpl_xp kertoo xg90/xa90:n joukkue- (fpl_team_overrides attack_mult) ja pelaajakertoimella player_ratesin JALKEEN, joten no_history-rivin vauhti ei ole positiokeskiarvo vaan nojaa siihen (30.9: Newcastle 0.90, 7 riviä).",
+   "replacement": "'... use the position average' ($lib/dataBasis)"
+  },
+  {
+   "phrase": "position average only",
+   "rejected": "2026-09-30",
+   "why": "julkaisutarkistaja 30.9 k1: build_fpl_xp kertoo xg90/xa90:n joukkue- (fpl_team_overrides attack_mult) ja pelaajakertoimella player_ratesin JALKEEN, joten no_history-rivin vauhti ei ole positiokeskiarvo vaan nojaa siihen (30.9: Newcastle 0.90, 7 riviä).",
+   "replacement": "'... use the position average' ($lib/dataBasis)"
   }
  ],
  "poikkeukset": {},

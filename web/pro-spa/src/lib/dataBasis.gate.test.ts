@@ -36,6 +36,13 @@ describe('lukija', () => {
 		const t = basisTag('no_history')!;
 		expect(`${t.label} ${t.title} ${DATA_BASIS_LABEL.no_history}`).not.toMatch(/\byet\b/i);
 	});
+	it('no_history: vauhti NOJAA keskiarvoon, ei ole se (joukkuekerroin, tarkistaja 30.9)', () => {
+		const t = basisTag('no_history')!;
+		// Vanhan yhtasuuruusmuodon paluun estaa data/rejected_phrases.json.
+		for (const s of [t.title, DATA_BASIS_LABEL.no_history]) {
+			expect(s).toMatch(/use the position average/);
+		}
+	});
 });
 
 describe('kutsupaikat', () => {
@@ -54,7 +61,12 @@ describe('kutsupaikat', () => {
 		expect(xt.indexOf('basisRatesLine(selected.data_basis)', j)).toBeGreaterThan(j);
 	});
 	it('PlayerCard lukee saman taulun eika pida omaa kopiota', () => {
-		expect(pc).toContain("import { DATA_BASIS_LABEL } from '$lib/dataBasis';");
+		expect(pc).toContain("import { DATA_BASIS_LABEL, basisRatesLine } from '$lib/dataBasis';");
 		expect(pc).not.toMatch(/const DATA_BASIS_LABEL\b/);
+	});
+	it('PlayerCardin rivi on fail-closed (ei raakaa arvoa ruudulle)', () => {
+		expect(pc).toContain('{#if basisRatesLine(player.data_basis)}');
+		expect(pc).toContain('{basisRatesLine(player.data_basis)}</p>');
+		expect(pc).not.toMatch(/DATA_BASIS_LABEL\[[^\]]+\]\s*\?\?/);
 	});
 });

@@ -20,7 +20,7 @@
 export const DATA_BASIS_LABEL: Record<string, string> = {
 	pl_history: "based on the player's own PL minutes",
 	limited_history: 'thin PL sample, the position average carries most of the weight',
-	no_history: 'no PL minutes this season or last, position average only'
+	no_history: 'no PL minutes this season or last, so they use the position average'
 };
 
 const TAG: Record<string, { label: string; title: string }> = {
@@ -32,7 +32,7 @@ const TAG: Record<string, { label: string; title: string }> = {
 	no_history: {
 		label: 'No recent PL minutes',
 		title:
-			"No Premier League minutes this season or last, so this player's goal and assist rates are the position average."
+			"No Premier League minutes this season or last, so this player's goal and assist rates use the position average."
 	}
 };
 
