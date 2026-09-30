@@ -12,6 +12,7 @@
 	import { currentEntryId } from '$lib/fplEntry.svelte';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
+	import { DATA_BASIS_TAG, DATA_BASIS_TOOLTIP } from '$lib/dataBasisCopy';
 	import ComponentSplit from './ComponentSplit.svelte';
 	import WhyThisPick from './WhyThisPick.svelte';
 	import MethodNote from './MethodNote.svelte';
@@ -984,13 +985,14 @@
 							>{p.web_name}{#if p.data_basis === 'limited_history' || p.data_basis === 'no_history'}
 								<!-- #143-WEB/#146: datapohja-rehellisyysmerkintä (pariteetti
 								     mobiiliin: sama tagi + sama selite tooltipissa;
-								     pl_history = ei labelia, puuttuva kenttä = ei mitään) -->
+								     pl_history = ei labelia, puuttuva kenttä = ei mitään).
+								     30.9: teksti tulee $lib/dataBasisCopy:sta (yksi lukija),
+								     ei enaa taman tiedoston omasta kopiosta - PlayerCard.svelte
+								     korjasi no_history-sanamuodon 29.9 mutta tama ei seurannut. -->
 								<span
 									class="basis-tag"
-									title={p.data_basis === 'no_history'
-										? 'No Premier League data for this player yet, this is a position-based estimate.'
-										: 'The model has little Premier League history for this player yet, so treat this projection as less certain.'}
-									>{p.data_basis === 'no_history' ? 'No PL data yet' : 'Limited data'}</span
+									title={DATA_BASIS_TOOLTIP[p.data_basis]}
+									>{DATA_BASIS_TAG[p.data_basis]}</span
 								>{/if}<SetPieceBadges sp={p.set_pieces} /></td
 						>
 						<td
