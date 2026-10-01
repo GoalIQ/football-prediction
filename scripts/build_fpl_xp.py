@@ -1666,11 +1666,22 @@ def main(argv: list[str] | None = None) -> int:
             "These fill in automatically once the 2026/27 game opens."
         )
     if prior_pids:
+        # DATAPOHJA-JATKOT 3 (1.10): ryhma on `cur_mins_by_player == 0` eli ei
+        # PL-minuutteja TALLA kaudella (esikaudella viime kaudella), kaikista
+        # seuroista (prior_team_ids = kaikki). Ennen: "promoted-club players
+        # ... with no Premier League history" = kaksi epatotta vaitetta.
+        # Julkaisutarkistaja k1: priori koskee ROOLIA (minuutteja), ei vauhtia
+        # (8/102 on pl_history), ja ohitus voittaa hinnan; no_history_teams on
+        # seurat joiden yksikaan pelaaja ei pelannut, ei reittausfitin aukko.
+        kausi = "last season" if preseason else "this season"
         todo.append(
-            f"{len(prior_pids)} promoted-club players are on a position prior "
-            f"with no Premier League history: {no_history_teams}. Roles come "
-            "from price order, and they sharpen as 2026/27 gameweeks are "
-            "played."
+            f"{len(prior_pids)} players with no Premier League minutes "
+            f"{kausi} get their expected role from where they are priced in "
+            "their club's squad, unless a manual override sets their start "
+            "chance. It sharpens as gameweeks are played."
+            + (f" Clubs where no current player logged Premier League "
+               f"minutes {kausi}: {', '.join(no_history_teams)}."
+               if no_history_teams else "")
         )
     tc_meta = attach_team_confidence(players)
     n_short = attach_minutes_basis_flag(players)
@@ -1768,13 +1779,20 @@ def main(argv: list[str] | None = None) -> int:
                 # Nousijaseurat ovat poolissa mutta EIVÄT historian varassa.
                 "teams_without_player_history": no_history_teams,
                 "promoted_prior_players": len(prior_pids),
+                # DATAPOHJA-JATKOT 3 (julkaisutarkistaja k1 1.10): vanha teksti
+                # oli nelja kertaa vanhentunut (promoted-club, 0.72/0.30/0.08,
+                # "rates from a position prior", data_basis=no_history: 36/102
+                # rivia ei ole). Tierit luetaan vakiosta, ei proosasta.
                 "promoted_prior_method": (
-                    "Promoted-club players with no Premier League minutes: "
-                    "minutes come from a role prior built on FPL price order "
-                    "(XI slots 1/4/4/2 per position; top p_start 0.72, next two "
-                    "0.30, rest 0.08) times the FPL availability gate. Rates "
-                    "come from a position prior. "
-                    "data_basis=no_history, minutes_confidence=low, "
+                    f"Players at any club with no Premier League minutes "
+                    f"{'last season' if preseason else 'this season'}: minutes "
+                    "come from a role prior built on FPL price order within "
+                    "club and position (XI slots 1/4/4/2; top p_start "
+                    f"{PROMOTED_PRIOR_TIERS[0][0]:g}, next two "
+                    f"{PROMOTED_PRIOR_TIERS[1][0]:g}, rest "
+                    f"{PROMOTED_PRIOR_TIERS[2][0]:g}) times the FPL availability "
+                    "gate, unless a manual override sets the start chance. Goal "
+                    "and assist rates follow data_basis like every other row. "
                     "minutes_method=promoted_price_prior."),
                 "player_basis_counts": {
                     v: sum(1 for p in players if p["data_basis"] == v)
@@ -1795,7 +1813,8 @@ def main(argv: list[str] | None = None) -> int:
                     "data_basis per player: pl_history = the player's own "
                     "Premier League history carries at least 50% of the weight; "
                     "limited_history = thin sample, the position prior "
-                    "dominates; no_history = no Premier League minutes. "
+                    "dominates; no_history = no Premier League minutes this "
+                    "season or last. "
                     "transfers_known=false means the pre-season bootstrap is "
                     "last season's, so summer transfers are not visible."
                 ),
