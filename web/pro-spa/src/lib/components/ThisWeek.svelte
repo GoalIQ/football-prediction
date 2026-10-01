@@ -68,7 +68,7 @@
 		error?: string | null;
 		picksNotPublished?: boolean;
 		premium?: boolean;
-		onUpgrade?: () => void;
+		onUpgrade?: (source?: string) => void;
 		deadlineUtc?: string | null;
 		actions?: WeeklyAction[];
 		onFollowTransfer?: (choice: Record<string, unknown>) => boolean;

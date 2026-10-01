@@ -9,6 +9,7 @@ import { supabase } from './supabase';
 import { capture, identifyUser, resetAnalytics } from './analytics';
 import { invalidateProfileRow } from './profileRow';
 import { storedRef } from './billing';
+import { attributionData, storedPartner } from './partnerAttribution';
 import { clearDraft } from './draft';
 import { FREE_PREMIUM_UNTIL } from './freeWindow';
 
@@ -189,10 +190,14 @@ export async function signUp(email: string, password: string): Promise<string | 
 	// `options.data` kirjoittaa Supabasen `raw_user_meta_data`an, joten
 	// uutta saraketta eika tuotantomigraatiota ei tarvita.
 	const ref = storedRef();
+	// 1.10: kumppani (utm_medium=partner) omaan avaimeensa, ei refiin
+	// ($lib/partnerAttribution: ref menee provisioihin, partner ei).
+	const partner = storedPartner();
+	const meta = attributionData(ref, partner);
 	const { data, error } = await supabase.auth.signUp({
 		email,
 		password,
-		...(ref ? { options: { data: { ref } } } : {})
+		...(meta ? { options: { data: meta } } : {})
 	});
 	if (error) return error.message;
 	// 🔴 Uusi tili aloittaa TYHJÄNÄ. Ilman tätä `syncDraft` työntää selaimeen
@@ -200,7 +205,7 @@ export async function signUp(email: string, password: string): Promise<string | 
 	// draftia — ja viikkosilmukka alkaa neuvoa kapteenia joukkueeseen jota
 	// käyttäjä ei ole valinnut. Havaittu 16.8 oikealla rekisteröitymisellä.
 	clearDraft();
-	if (data.user) capture('signup_completed', ref ? { ref } : undefined, 'signup');
+	if (data.user) capture('signup_completed', meta ?? undefined, 'signup');
 	return null;
 }
 
@@ -257,10 +262,12 @@ async function adoptOAuthAccount(u: {
 }): Promise<void> {
 	if (u.app_metadata?.provider === 'email') return;
 	const ref = storedRef();
+	const partner = storedPartner();
 	// Refia EI ylikirjoiteta: ensimmainen luoja pitaa attribuution (sama
-	// saanto kuin captureRefissa).
-	if (ref && !u.user_metadata?.ref) {
-		await supabase.auth.updateUser({ data: { ref } });
+	// saanto kuin captureRefissa). Sama kumppanille (1.10).
+	const meta = attributionData(ref, partner, u.user_metadata);
+	if (meta) {
+		await supabase.auth.updateUser({ data: meta });
 	}
 	const created = u.created_at ? Date.parse(u.created_at) : NaN;
 	const signedIn = u.last_sign_in_at ? Date.parse(u.last_sign_in_at) : NaN;
@@ -269,7 +276,11 @@ async function adoptOAuthAccount(u: {
 		(!Number.isFinite(signedIn) || Math.abs(signedIn - created) < 120_000);
 	if (fresh) {
 		clearDraft();
-		capture('signup_completed', ref ? { ref, method: 'google' } : { method: 'google' }, 'signup');
+		capture(
+			'signup_completed',
+			{ ...(ref ? { ref } : {}), ...(partner ? { partner } : {}), method: 'google' },
+			'signup'
+		);
 	}
 }
 
