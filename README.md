@@ -1,5 +1,13 @@
 # Dixon-Coles Football Prediction Model
 
+**Rights.** GoalIQ's data and projections in this repository (for example
+`data/fpl_xp_projections.json`) are © Savikurki Digital Oy, all rights
+reserved. Using them in another product or service needs written permission
+from Savikurki Digital Oy. Making the repository public grants no licence to
+its code or data beyond viewing and forking on GitHub (GitHub Terms of
+Service, section D.5). Third-party source data (Fantasy Premier League,
+Understat and others) keeps its own owners and licences.
+
 > **What the public API actually serves:** Dixon-Coles only. `/api/predict`
 > imports `DixonColesModel` and nothing else (`api/main.py`), and fits it with
 > the tau correction, time decay, Bayesian shrinkage and per-team home
