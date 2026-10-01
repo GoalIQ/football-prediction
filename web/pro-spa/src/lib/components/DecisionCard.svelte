@@ -45,7 +45,8 @@
 		/** Mallin kapteeni ilman omaa joukkuetta (/api/fantasy/model-captain). */
 		model?: ModelCaptainCard | null;
 		premium?: boolean;
-		onUpgrade?: () => void;
+		/** 1.10: lahde erottaa lukon funnelissa (`decision_transfer_lock`). */
+		onUpgrade?: (source?: string) => void;
 		deadlineUtc?: string | null;
 		/** Kirjattavat paatokset (vain omalle joukkueelle). */
 		actions?: WeeklyAction[];
@@ -97,6 +98,17 @@
 	const span = $derived.by(() => {
 		const n = verdict?.horizon_gws ?? card?.meta.transfer_horizon_gw;
 		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(card?.meta).span;
+	});
+
+	/** 1.10 (mittaus cc-reports/2026-10-01-demon-polku-ja-konversiomittari.md):
+	 *  lukitun siirron naytosta ei lahtenyt tapahtumaa, ja klikkaus jakoi
+	 *  sourcen `fantasy_tools` muiden lukkojen kanssa. Nyt oma source,
+	 *  kerran per kierros per sivulataus. */
+	const LOCK_SOURCE = 'decision_transfer_lock';
+	$effect(() => {
+		if (tab === 'transfer' && moveIsPremium) {
+			capture('paywall_shown', { source: LOCK_SOURCE, gw: capGw }, `paywall_shown_${LOCK_SOURCE}_${capGw}`);
+		}
 	});
 
 	const chips = $derived(card?.meta?.chips ?? null);
@@ -208,7 +220,7 @@
 				{#if moveIsPremium}
 					<p class="lock-line">
 						The move itself is part of GoalIQ Premium.
-						<button type="button" class="linklike" onclick={() => onUpgrade?.()}>See Premium</button>
+						<button type="button" class="linklike" onclick={() => onUpgrade?.(LOCK_SOURCE)}>See Premium</button>
 					</p>
 				{/if}
 			{:else}

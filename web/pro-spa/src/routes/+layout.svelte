@@ -4,6 +4,7 @@
 	import { initAnalytics, capture } from '$lib/analytics';
 	import { initAuth } from '$lib/auth.svelte';
 	import { captureRef, stripRefFromAddressBar } from '$lib/billing';
+	import { capturePartner } from '$lib/partnerAttribution';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 
 	let { children } = $props();
@@ -17,6 +18,8 @@
 		// asti tämä on ainoa jäljellä oleva yhteys luojaan.
 		const q0 = new URLSearchParams(window.location.search);
 		captureRef(window.location.search);
+		// 1.10: kumppanilinkki (utm_medium=partner) tilille talteen samalla hetkella.
+		capturePartner(window.location.search);
 		// 3.9: talletettu -> pois osoiteriviltä (src/srcp ja hash jäävät).
 		stripRefFromAddressBar();
 		// LUOVUTUS `?entry=` (5.9, auditointi C4). goaliq.app/career pyytaa

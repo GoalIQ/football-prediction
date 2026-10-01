@@ -290,9 +290,11 @@
 		void runRate(true);
 	});
 
-	function unlock() {
-		// Sama funnel-pari kuin Paywall/billing, source erottaa työkalupolun
-		capture('upgrade_tapped', { source: 'fantasy_tools' });
+	function unlock(source?: unknown) {
+		// Sama funnel-pari kuin Paywall/billing, source erottaa työkalupolun.
+		// 1.10: lapsi voi nimeta oman lukkonsa (DecisionCard:
+		// decision_transfer_lock); `onclick={unlock}` antaa MouseEventin -> oletus.
+		capture('upgrade_tapped', { source: typeof source === 'string' ? source : 'fantasy_tools' });
 		onUpgrade?.();
 	}
 
