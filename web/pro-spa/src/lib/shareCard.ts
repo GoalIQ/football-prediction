@@ -79,16 +79,20 @@ export interface CardSpec {
 	heroFirstRow?: boolean;
 	/** SHARE-CARD-ULKOASU: vertailurivi listan ylapuolella. */
 	hero?: CardHero;
-	/** SHARE-CARD-ULKOASU: palkki rivin taustalle, pituus = rivin arvo / suurin
-	 *  arvo (vertailurivi mukaan lukien). Palkki luetaan SAMASTA merkkijonosta
-	 *  kuin naytetty luku (`valueBarFractions`), joten kuva ei voi nayttaa eri
-	 *  suuruutta kuin numero. Jos yksikin arvo ei ole ei-negatiivinen luku,
-	 *  palkkeja ei piirreta lainkaan (osittainen kaavio olisi vaite). */
+	/** SHARE-CARD-ULKOASU: palkki rivin alareunaan, pituus = rivin arvo / suurin
+	 *  LISTAN arvo. Palkki luetaan SAMASTA merkkijonosta kuin naytetty luku
+	 *  (`valueBarFractions`), joten kuva ei voi nayttaa eri suuruutta kuin
+	 *  numero. Jos yksikin arvo ei ole ei-negatiivinen luku, palkkeja ei
+	 *  piirreta lainkaan (osittainen kaavio olisi vaite).
+	 *
+	 *  Vertailurivi EI saa palkkia (julkaisutarkistaja k1 1.10): Palmerin palkki
+	 *  paattyi kohtaan 0.75 suoraan rivin "75% to play GW6 in FPL" alle ja luettiin
+	 *  FPL:n prosentiksi. Ero on jo luvuissa ja "+8.0 vs" -sarakkeessa. */
 	valueBars?: boolean;
 }
 
 /** Palkkien pituudet [0..1] naytetyista arvoista, tai null jos yksikin arvo ei
- *  ole puhdas ei-negatiivinen luku. Jarjestys: rivit, sitten vertailurivi. */
+ *  ole puhdas ei-negatiivinen luku. Vain listan rivit, ei vertailurivia. */
 export function valueBarFractions(values: string[]): number[] | null {
 	const nums = values.map((v) => (/^\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : NaN));
 	if (nums.length === 0 || nums.some((n) => !Number.isFinite(n))) return null;
@@ -178,9 +182,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	const heroH = hero?.row.sub ? ROW_H + 30 : ROW_H;
 	const listTop = ROW_TOP + (hero ? heroH + HERO_GAP : 0);
 	const H = listTop + n * rowH + FOOT_H;
-	const fracs = spec.valueBars
-		? valueBarFractions([...spec.rows.map((r) => r.value), ...(hero ? [hero.row.value] : [])])
-		: null;
+	const fracs = spec.valueBars ? valueBarFractions(spec.rows.map((r) => r.value)) : null;
 	const canvas = document.createElement('canvas');
 	canvas.width = W;
 	canvas.height = H;
@@ -371,7 +373,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	};
 
 	if (hero) {
-		drawRow(hero.row, ROW_TOP, heroH, { first: false, isHero: true, frac: fracs ? fracs[n] : null });
+		drawRow(hero.row, ROW_TOP, heroH, { first: false, isHero: true, frac: null });
 	}
 	for (let i = 0; i < n; i++) {
 		drawRow(spec.rows[i], listTop + i * rowH, rowH, {

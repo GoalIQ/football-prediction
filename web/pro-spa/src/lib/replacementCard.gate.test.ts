@@ -110,13 +110,12 @@ describe('kortin spec', () => {
 			expect(r.deltaUp).toBe(d > 0);
 		}
 	});
-	it('ilman lahtijan projektiota: ei eroja, arvo "no xP", ei palkkeja', () => {
+	it('ilman lahtijan projektiota: ei eroja, arvo "no xP", listan palkit silti', () => {
 		const s = replacementsCardSpec(vastaus(null, [32.31, 31.03, 27.96], 0));
 		expect(s.hero?.row.value).toBe('no xP');
 		expect(s.rows.every((r) => r.delta === undefined)).toBe(true);
-		expect(
-			valueBarFractions([...s.rows.map((r) => r.value), s.hero!.row.value])
-		).toBeNull();
+		// Vertailurivi ei kuulu palkkeihin (k1 1.10), joten sen "no xP" ei esta niita.
+		expect(valueBarFractions(s.rows.map((r) => r.value))).not.toBeNull();
 	});
 	it('FPL:n luku kantaa kierroksen, eika 100 % paady kuvaan', () => {
 		expect(replacementsCardSpec(vastaus(24.27, [30, 29, 28], 75)).hero?.row.sub).toBe(
@@ -147,6 +146,14 @@ describe('kutsupaikat', () => {
 		const src = lue('./components/Replacements.svelte');
 		expect(src).toMatch(/shownGap\(p\.xp_window, t\)/);
 		expect(src).not.toMatch(/xp_gap_vs_target/);
+	});
+	it('vertailurivi ei saa palkkia vaikka sen arvo on luku (k1 1.10)', () => {
+		// Palmerin 24.3/32.3 = 0.75 piirtyi rivin "75% to play GW6 in FPL" alle ja
+		// luettiin FPL:n prosentiksi.
+		const src = lue('./shareCard.ts');
+		expect(src).toMatch(/valueBarFractions\(spec\.rows\.map\(\(r\) => r\.value\)\)/);
+		expect(src).toMatch(/drawRow\(hero\.row, ROW_TOP, heroH, \{ first: false, isHero: true, frac: null \}\)/);
+		expect(src).not.toMatch(/hero\.row\.value\]/);
 	});
 	it('kortinpiirtaja ei piirra keksittya seuravaria', () => {
 		const src = lue('./shareCard.ts');
