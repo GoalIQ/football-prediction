@@ -771,6 +771,73 @@ def round_minutes(mm: dict, element: dict, gw: int, headline_gw: int, *,
     return xp.scale_availability(mm, f_k / f)
 
 
+def season_has_started(fixtures: list[dict] | None) -> bool:
+    """True heti kun kauden ENSIMMAINEN ottelu on potkaistu kayntiin.
+
+    DATAPOHJA-JATKOT kohta 1 (30.9.2026): vanha ehto luki bootstrapin
+    event-tason `finished`-lippua, joka pysyy False'na KOKO GW1:n ajan
+    (kickoff - viimeisen ottelun gradaus, ~3-4 vrk). Sina ikkunassa
+    builder jatkoi jaadytetyn 25/26-arkiston kayttoa (ks. PREV_BASELINES_PATH)
+    vaikka GW1:ssa debytoinut oli jo pelannut: kortti vaitti "no Premier
+    League minutes this season" vaikka debyytti oli juuri tapahtunut.
+
+    Sama akseli kuin fpl_gameweek.completed_gameweeks: kickoff-aika ei voi
+    laahata eika sita voi unohtaa kaantaa, toisin kuin event['finished'].
+    """
+    now_ms = _dt.datetime.now(_dt.timezone.utc).timestamp() * 1000
+    return any(f.get("kickoff_ms") and f["kickoff_ms"] < now_ms
+               for f in fixtures or [])
+
+
+def expected_prev_baselines_season_key(events: list[dict] | None) -> str | None:
+    """Season_key jota PREV_BASELINES_PATH:n PITAISI kantaa, johdettu GW1:n
+    deadline-VUODESTA (ei kovakoodattu kausinumero).
+
+    DATAPOHJA-JATKOT kohta 2 (30.9.2026): PREV_BASELINES_PATH osoittaa
+    kiinteasti `fpl_prev_baselines_2526.json`-tiedostoon. Kun 2027/28-kausi
+    avautuu, polku jaa 2025/26-kauteen eika kukaan huomaa: `minutes_reason`
+    sanoisi "last season" 2026/27-datasta ja carry_prev_season sekoittaisi
+    vaaraa kautta - hiljaa, ilman virhetta. Tama funktio palauttaa oikean
+    arvon ETUKATEEN jotta kutsuja voi assertoida sen ja kaataa ajon sen
+    sijaan etta data muuttuu hiljaa epatodeksi.
+
+    `None` jos GW1:n deadlinea ei voida lukea (fail-open puuttuvalle
+    datalle - ei liity season_key-ongelmaan).
+    """
+    gw1 = next((e for e in events or [] if e.get("id") == 1), None)
+    dl = (gw1 or {}).get("deadline_time")
+    if not dl:
+        return None
+    try:
+        start_year = _dt.datetime.fromisoformat(str(dl).replace("Z", "+00:00")).year
+    except (TypeError, ValueError):
+        return None
+    return f"{str(start_year - 1)[-2:]}{str(start_year)[-2:]}"
+
+
+def check_prev_baselines_season(prev_archive: dict, events: list[dict] | None) -> None:
+    """Kaataa ajon jos PREV_BASELINES_PATH on vaaralta kaudelta.
+
+    Ks. expected_prev_baselines_season_key. Ei-virhe (fail-open) kun jompi
+    kumpi avain puuttuu - silloin kyse on eri, jo olemassa olevasta
+    virhetilasta (tiedosto puuttuu / bootstrap ilman GW1:ta), ei tasta
+    vanhentumisluokasta.
+    """
+    archive_key = (prev_archive.get("meta") or {}).get("season_key")
+    expected_key = expected_prev_baselines_season_key(events)
+    if archive_key is None or expected_key is None:
+        return
+    if archive_key != expected_key:
+        raise RuntimeError(
+            f"PREV_BASELINES_PATH ({PREV_BASELINES_PATH.name}) on vanhentunut: "
+            f"artefaktin season_key={archive_key!r} mutta bootstrapin GW1 "
+            f"odottaa edellisen kauden season_key={expected_key!r}. Jaadyta "
+            "uusi artefakti (scripts/build_fpl_prev_baselines.py) edellisesta "
+            "kaudesta ennen taman kauden buildia - muuten 'last season' "
+            "-tekstit ja carry_prev_season sekoittavat vaaraa kautta hiljaa "
+            "(DATAPOHJA-JATKOT kohta 2).")
+
+
 def minutes_reason(source: str, preseason: bool) -> str:
     """Minuuttilipun perustelu kortille (price_blend / price_prior).
 
@@ -804,8 +871,9 @@ def main(argv: list[str] | None = None) -> int:
     boot = fpl_api.fetch_bootstrap()
     # Pre-season = kohdekaudella ei yhtään pelattua GW:tä → element-summaryt
     # ovat tyhjiä eikä niitä haeta; baselinet jäädytetystä artefaktista
-    # (PREV_BASELINES_PATH, element code -mappaus).
-    preseason = not any(ev.get("finished") for ev in boot.get("events", []))
+    # (PREV_BASELINES_PATH, element code -mappaus). Kickoff-pohjainen
+    # (season_has_started), EI event['finished'] — ks. funktion docstring.
+    preseason = not season_has_started(src.get("fixtures"))
     prev_players: dict | None = None
     recency_window = False  # True = last-6-recency minuuttimallissa
     # Addendum 2: viime kauden kausisummat player cardia varten luetaan
@@ -815,6 +883,7 @@ def main(argv: list[str] | None = None) -> int:
         prev_archive = json.loads(PREV_BASELINES_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         prev_archive = {"players": {}, "meta": {}}
+    check_prev_baselines_season(prev_archive, boot.get("events"))
     prev_by_code: dict = prev_archive.get("players") or {}
     if preseason:
         prev = prev_archive
