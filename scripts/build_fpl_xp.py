@@ -1666,11 +1666,17 @@ def main(argv: list[str] | None = None) -> int:
             "These fill in automatically once the 2026/27 game opens."
         )
     if prior_pids:
+        # DATAPOHJA-JATKOT 3 (1.10): ryhma on `cur_mins_by_player == 0` eli ei
+        # PL-minuutteja TALLA kaudella (esikaudella viime kaudella), kaikista
+        # seuroista (prior_team_ids = kaikki). Ennen: "promoted-club players
+        # ... with no Premier League history" = kaksi epatotta vaitetta.
+        kausi = "last season" if preseason else "this season"
         todo.append(
-            f"{len(prior_pids)} promoted-club players are on a position prior "
-            f"with no Premier League history: {no_history_teams}. Roles come "
-            "from price order, and they sharpen as 2026/27 gameweeks are "
-            "played."
+            f"{len(prior_pids)} players with no Premier League minutes "
+            f"{kausi} are on a position prior. Roles come from price order, "
+            "and they sharpen as gameweeks are played."
+            + (f" Teams without Premier League results in the rating fit: "
+               f"{no_history_teams}." if no_history_teams else "")
         )
     tc_meta = attach_team_confidence(players)
     n_short = attach_minutes_basis_flag(players)

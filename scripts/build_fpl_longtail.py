@@ -4975,7 +4975,8 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         # kirjoittamassa siitä X-vastausta.
         + (('<p class="note"><strong>Start% does not read pre-season.</strong> '
             "It comes from last season's minutes and FPL's own availability "
-            "flags, and for players with no Premier League history yet, from "
+            "flags, and for players with no Premier League minutes last "
+            "season, from "
             "how they are priced in the squad. A player who has looked like a "
             "new first choice in friendlies barely moves this number until "
             "league minutes start to build up.</p>")
