@@ -6,8 +6,10 @@
 	import {
 		fetchPlanChains,
 		fetchPlanChainsDraft,
+		type ChainMove,
 		type PlanChainsResponse
 	} from '$lib/fantasyTools';
+	import { transferPairText, transferTag } from '$lib/transferLabel';
 	import {
 		runWithSquadFallback,
 		NoSquadInputError,
@@ -114,13 +116,15 @@
 			// pois (kierroksen kokonais-xP olisi eri suure samassa sarakkeessa).
 			// Jos ketjussa ei ole yhtaan siirtoa, kortti sanoo sen otsikossa ja
 			// rivit ovat kierrosten kokonais-xP samalla yksikolla.
-			const moves: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
+			const moves: { rank: number; name: string; tag: string; tag2?: string; team: string; mid: string; value: string }[] = [];
 			for (const g of hero.gws) {
 				for (const m of g.moves) {
 					moves.push({
 						rank: moves.length + 1,
 						name: `${m.out.web_name} to ${m.in.web_name}`,
-						tag: `GW${g.gw}`,
+						// 1.10: shareCardin tag on pos-tagi nimen vieressa; kierros tag2:een.
+						tag: m.out.pos,
+						tag2: `GW${g.gw}`,
 						team: m.in.team_short,
 						mid: m.hit ? `-${m.hit}` : '',
 						value: `${m.gain_xp_remaining >= 0 ? '+' : ''}${m.gain_xp_remaining.toFixed(2)}`
@@ -156,10 +160,10 @@
 	}
 	let alternatives = $derived(data?.plans?.slice(1, 3) ?? []);
 
-	function movesSummary(plan: { gws: { moves: { out: { web_name: string }; in: { web_name: string } }[] }[] }): string {
+	function movesSummary(plan: { gws: { moves: ChainMove[] }[] }): string {
 		const parts: string[] = [];
 		for (const g of plan.gws) {
-			for (const m of g.moves) parts.push(`${m.out.web_name} to ${m.in.web_name}`);
+			for (const m of g.moves) parts.push(transferPairText(m.out, m.in));
 		}
 		return parts.length > 0 ? parts.join(', ') : 'No transfers, roll every week';
 	}
@@ -300,9 +304,9 @@
 						<ul class="moves">
 							{#each g.moves as m (m.out.id + '-' + m.in.id)}
 								<li>
-									{m.out.web_name} <span class="muted">({m.out.team_short})</span>
+									{m.out.web_name} <span class="muted">({transferTag(m.out.pos, m.out.team_short)})</span>
 									<span class="arrow">→</span>
-									{m.in.web_name} <span class="muted">({m.in.team_short})</span>
+									{m.in.web_name} <span class="muted">({transferTag(m.in.pos, m.in.team_short)})</span>
 									<!-- 🔴 3.9 ilta: merkki oli kovakoodattu "+", joten negatiivinen
 									     hyoty renderoityi muodossa "+-0.87". -->
 									<span class="gain" class:negative={m.gain_xp_remaining < 0}

@@ -305,11 +305,11 @@ def test_per_kierros_luku_tasmaa_naytettyyn_kokonaislukuun():
 # (5) HOLD-SYY-EI-VAIN-LUKU (6.9): lause nimeaa siirron, ja nimi tulee
 # samasta lohkosta kuin luku
 # ---------------------------------------------------------------------------
-from src.models.fpl_planner import best_checked_move
+from src.models.fpl_planner import best_checked_move, move_player_label
 
 
 def _named(msg: str) -> tuple[str, str] | None:
-    m = re.search("Best move the model checked, (.+?) to (.+?)[:,]? ", msg)
+    m = re.search("Best move the model checked, (.+?) to (.+?)(?:: | pays off )", msg)
     return (m.group(1), m.group(2)) if m else None
 
 
@@ -336,7 +336,9 @@ def test_hold_lause_nimeaa_siirron_samasta_lohkosta_kuin_luku():
                 continue
             seen += 1
             assert field is not None, f"{name} ft={ft}: lause ilman kenttaa"
-            assert nm == (field["out"]["web_name"], field["in"]["web_name"])
+            assert field["pos"] == "MID"
+            assert nm == (move_player_label(field["out"], field["pos"]),
+                          move_player_label(field["in"], field["pos"]))
             assert field["in"]["id"] == pool[0]["id"]
             pr = _printed(msg)
             if pr is not None:
@@ -373,3 +375,23 @@ def test_hold_lause_ilman_nimia_on_bittitarkasti_entinen():
     msg = hold_message(0, 0.0, GWS, later)
     assert msg.startswith("Best move the model checked, A to B pays off later than GW3-GW4.")
     assert best_checked_move(later, 0)["gain_xp_per_gw"] is None
+
+
+def test_siirtopari_nimeaa_pelipaikan_ja_seuran():
+    """1.10 (Villen havainto): "Tzolis to Tavernier" luettiin maalivahdin
+    vaihdoksi kenttapelaajaan (Tzolakis on Hullin GKP). Lause ja kentta
+    kantavat pelipaikan; muoto on sama kuin SPA:n transferLabel.ts:ssa
+    (transferLabel.test.ts kayttaa samaa odotettua merkkijonoa)."""
+    best = {"case": "below_bar", "value_xp_per_gw": 0.06,
+            "bar_xp_per_gw": 0.5, "window_gws": [6, 7],
+            "out": {"id": 557, "web_name": "Tzolis", "team_short": "ARS",
+                    "element_type": 3},
+            "in": {"id": 68, "web_name": "Tavernier", "team_short": "BOU",
+                   "element_type": 3}}
+    msg = hold_message(0, 0.0, [6, 7], best)
+    assert msg.startswith("Best move the model checked, Tzolis (MID, ARS) to "
+                          "Tavernier (MID, BOU): +0.06 xP per gameweek")
+    assert best_checked_move(best, 0)["pos"] == "MID"
+    # Ilman pelipaikkaa ja seuraa pelkka nimi (vanha payload).
+    assert move_player_label({"web_name": "A"}, None) == "A"
+    assert move_player_label({"web_name": "A", "team_short": "ARS"}, None) == "A (ARS)"

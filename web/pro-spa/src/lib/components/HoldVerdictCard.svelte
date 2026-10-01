@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { capture } from '$lib/analytics';
 	import type { HoldVerdict } from '$lib/fantasyTools';
+	import { transferPairText } from '$lib/transferLabel';
 
 	// #63: jaettu hero-verdikti rate-teamille + plannerille. Verdikti tulee
 	// backendin hold_verdict-lohkosta (hit-tietoinen netto vs kynnys) - UI ei
@@ -71,9 +72,10 @@
 	// HOLD-SYY-EI-VAIN-LUKU (6.9): lause nimeaa siirron jonka malli tarkisti.
 	// Nimet tulevat samasta lohkosta kuin luku (backend best_checked_move),
 	// ei erillisesta hausta. Ilman kenttaa (vanha payload) lause on entinen.
+	// 1.10: pelipaikka + seura nimen peraan ($lib/transferLabel).
 	const who = $derived(
 		verdict.best_checked_move
-			? `, ${verdict.best_checked_move.out.web_name} to ${verdict.best_checked_move.in.web_name}`
+			? `, ${transferPairText(verdict.best_checked_move.out, verdict.best_checked_move.in, verdict.best_checked_move.pos)}`
 			: ''
 	);
 	const planLabel = $derived(

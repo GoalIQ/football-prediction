@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { transferPairText, transferTag } from '$lib/transferLabel';
 	import { tick } from 'svelte';
 	import {
 		fetchRateTeam,
@@ -138,7 +139,7 @@
 			out.push({
 				kind: 'transfer',
 				label: 'Transfer',
-				modelText: `${sug.out.web_name} → ${sug.in.web_name}`,
+				modelText: transferPairText(sug.out, sug.in, sug.pos, ' → '),
 				modelChoice: {
 					out_id: sug.out.id,
 					in_id: sug.in.id,
@@ -1265,7 +1266,7 @@
 				{:else}
 					{@const top = data.transfers.suggestions[0]}
 					Before the deadline
-					<strong>{top.out.web_name} → {top.in.web_name}</strong>
+					<strong>{transferPairText(top.out, top.in, top.pos, ' → ')}</strong>
 					<!-- Ikkuna mukana: luku on delta_xp_horizon eli koko jaljella oleva
 					     horisontti, ja "Before the deadline" -kehys saisi sen lukemaan
 					     taman kierroksen tuottona (portti 5.9). -->
@@ -1456,7 +1457,8 @@
 				{@const top = data.transfers.suggestions[0]}
 				<p class="verdict-line">
 					Weak spot: <strong>{data.rating.weakest_line}</strong>. Top upgrade:
-					<strong>{top.out.web_name}</strong> to <strong>{top.in.web_name}</strong>,
+					<strong>{top.out.web_name}</strong> ({transferTag(top.pos, top.out.team_short)}) to
+					<strong>{top.in.web_name}</strong> ({transferTag(top.pos, top.in.team_short)}),
 					<span class="gain-text">+{top.delta_xp_horizon.toFixed(2)} xP</span>.
 				</p>
 			{/if}
@@ -1471,7 +1473,8 @@
 			{@const top = data.transfers.suggestions[0]}
 			<p class="verdict-line">
 				Weak spot: <strong>{data.rating.weakest_line}</strong>. Top upgrade:
-				<strong>{top.out.web_name}</strong> to <strong>{top.in.web_name}</strong>,
+				<strong>{top.out.web_name}</strong> ({transferTag(top.pos, top.out.team_short)}) to
+					<strong>{top.in.web_name}</strong> ({transferTag(top.pos, top.in.team_short)}),
 				<span class="gain-text">+{top.delta_xp_horizon.toFixed(2)} xP</span>.
 			</p>
 		{/if}
