@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { transferTag } from '$lib/transferLabel';
 	import { fetchPlan, fetchPlanDraft, type PlanResponse } from '$lib/fantasyTools';
 	import { runWithSquadFallback, NoSquadInputError, savedDraft15, type SquadBasis } from '$lib/squadInput';
 	import { fplEntry, persistEntry } from '$lib/fplEntry.svelte';
@@ -83,13 +84,15 @@
 			// kokonais-xP vain kun siirtoja ei ole lainkaan), max 12 rivia
 			// (6 GW x 2 siirtoa), verdiktin gain 2 desimaalilla ettei kortti
 			// voi pyoristaa itsensa kynnyksen vaaralle puolelle.
-			const moves: { rank: number; name: string; tag: string; team: string; mid: string; value: string }[] = [];
+			const moves: { rank: number; name: string; tag: string; tag2?: string; team: string; mid: string; value: string }[] = [];
 			for (const g of data.plan) {
 				for (const tr of g.transfers) {
 					moves.push({
 						rank: moves.length + 1,
 						name: `${tr.out.web_name} to ${tr.in.web_name}`,
-						tag: `GW${g.gw}`,
+						// 1.10: shareCardin tag on pos-tagi nimen vieressa; kierros tag2:een.
+						tag: tr.pos,
+						tag2: `GW${g.gw}`,
 						team: tr.in.team_short,
 						mid: tr.hit ? `-${tr.hit}` : '',
 						value: `${tr.gain_xp_remaining >= 0 ? '+' : ''}${tr.gain_xp_remaining.toFixed(2)}`
@@ -335,9 +338,9 @@
 					<ul class="moves">
 						{#each g.transfers as t (t.out.id + '-' + t.in.id)}
 							<li>
-								{t.out.web_name} <span class="muted">({t.out.team_short})</span>
+								{t.out.web_name} <span class="muted">({transferTag(t.pos, t.out.team_short)})</span>
 								<span class="arrow">→</span>
-								{t.in.web_name} <span class="muted">({t.in.team_short})</span>
+								{t.in.web_name} <span class="muted">({transferTag(t.pos, t.in.team_short)})</span>
 								<!-- 🔴 3.9 ilta: merkki oli kovakoodattu "+", joten negatiivinen
 								     hyoty renderoityi muodossa "+-0.87 xP". -->
 								<span class="gain" class:negative={t.gain_xp_remaining < 0}

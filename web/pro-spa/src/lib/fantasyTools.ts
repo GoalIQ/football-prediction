@@ -155,6 +155,8 @@ export interface HoldVerdict {
 export interface BestCheckedMove {
 	out: { id: number; web_name: string; team_short: string | null };
 	in: { id: number; web_name: string; team_short: string | null };
+	/** 1.10: parin pelipaikka (sama sisaan ja ulos). Puuttuu vanhasta payloadista. */
+	pos?: Pos | null;
 	case: 'below_bar' | 'later';
 	/** null `later`-haarassa (lahi-ikkunassa ei lukua). */
 	gain_xp_per_gw: number | null;

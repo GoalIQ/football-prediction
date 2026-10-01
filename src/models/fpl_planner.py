@@ -89,11 +89,25 @@ def _move_names(best: dict | None) -> str:
     `best`-lohkossa: puolikas nimi olisi vaite jota ei voi tarkistaa."""
     if not best:
         return ""
-    out_name = (best.get("out") or {}).get("web_name")
-    in_name = (best.get("in") or {}).get("web_name")
-    if out_name and in_name:
-        return f", {out_name} to {in_name}"
+    out_p = best.get("out") or {}
+    in_p = best.get("in") or {}
+    if out_p.get("web_name") and in_p.get("web_name"):
+        et = out_p.get("element_type")
+        pos = POS_NAME.get(et) if et is not None else None
+        return f", {move_player_label(out_p, pos)} to {move_player_label(in_p, pos)}"
     return ""
+
+
+def move_player_label(p: dict, pos: str | None) -> str:
+    """"Tzolis (MID, ARS)". PURE. Sama muoto kuin SPA:n
+    $lib/transferLabel.transferPlayerText.
+
+    1.10 (Villen havainto): pelkka sukunimi sekoitti Tzolisin (MID, ARS) ja
+    Tzolakisin (GKP, HUL), ja siirto luettiin maalivahdin vaihdoksi
+    kenttapelaajaan. Puuttuva osa jaa pois; molempien puuttuessa pelkka nimi
+    (vanha payload ilman element_type/team_short pysyy entisena)."""
+    bits = [b for b in (pos, p.get("team_short")) if b]
+    return f"{p['web_name']} ({', '.join(bits)})" if bits else p["web_name"]
 
 
 def best_checked_move(best: dict | None, n_moves: int) -> dict | None:
@@ -123,9 +137,13 @@ def best_checked_move(best: dict | None, n_moves: int) -> dict | None:
         return {"id": p.get("id"), "web_name": p.get("web_name"),
                 "team_short": p.get("team_short")}
 
+    # 1.10 (Villen havainto, Tzolis MID vs Tzolakis GKP): pari kantaa
+    # pelipaikan, jotta lause voi nimeta sen. Siirto on aina sama pelipaikka.
+    et = out_p.get("element_type")
     return {
         "out": _mini(out_p),
         "in": _mini(in_p),
+        "pos": POS_NAME.get(et) if et is not None else None,
         "case": best.get("case"),
         # Sama luku ja sama ikkuna kuin lauseessa; `later`-haarassa None.
         "gain_xp_per_gw": best.get("value_xp_per_gw"),

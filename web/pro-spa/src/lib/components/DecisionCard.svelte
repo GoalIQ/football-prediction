@@ -23,6 +23,7 @@
 	import { modelSourceLine, NO_FIXTURE, type ModelCaptainCard } from '$lib/weekRows';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { openPlayer } from '$lib/playerSheet.svelte';
+	import { transferTag } from '$lib/transferLabel';
 	import { capture } from '$lib/analytics';
 	import WeeklyActions, { type WeeklyAction } from './WeeklyActions.svelte';
 	import HoldVerdictCard from './HoldVerdictCard.svelte';
@@ -182,11 +183,13 @@
 					<button type="button" class="name small" onclick={() => openPlayer(sug.out.id, 'decision_card')}
 						>{sug.out.web_name}</button
 					>
+					<span class="team">{transferTag(sug.pos, sug.out.team_short)}</span>
 					<span class="arrow" aria-hidden="true">→</span>
 					<span class="muted">In</span>
 					<button type="button" class="name small" onclick={() => openPlayer(sug.in.id, 'decision_card')}
 						>{sug.in.web_name}</button
 					>
+					<span class="team">{transferTag(sug.pos, sug.in.team_short)}</span>
 				</p>
 				<p class="muted">
 					{sug.delta_xp_horizon >= 0 ? '+' : ''}{sug.delta_xp_horizon.toFixed(1)} xP over the {span},
