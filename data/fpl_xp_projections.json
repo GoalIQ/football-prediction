@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-01T06:08:24+00:00",
+    "generated_at": "2026-10-01T07:52:26+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -167,7 +167,7 @@
       "teams_without_player_data": [],
       "teams_without_player_history": [],
       "promoted_prior_players": 246,
-      "promoted_prior_method": "Promoted-club players with no Premier League minutes: minutes come from a role prior built on FPL price order (XI slots 1/4/4/2 per position; top p_start 0.72, next two 0.30, rest 0.08) times the FPL availability gate. Rates come from a position prior. data_basis=no_history, minutes_confidence=low, minutes_method=promoted_price_prior.",
+      "promoted_prior_method": "Players at any club with no Premier League minutes this season: minutes come from a role prior built on FPL price order within club and position (XI slots 1/4/4/2; top p_start 0.38, next two 0.16, rest 0.096) times the FPL availability gate, unless a manual override sets the start chance. Goal and assist rates follow data_basis like every other row. minutes_method=promoted_price_prior.",
       "player_basis_counts": {
         "pl_history": 256,
         "limited_history": 161,
@@ -176,7 +176,7 @@
       "basis_threshold_minutes": 450.0,
       "prev_season_carry": 0.5,
       "prev_season_carry_note": "Last season's minutes and rates count at 0.5 weight alongside this season's rows, so a player's own rate carries most of the weight from GW1 and this season overtakes the archive around GW17.",
-      "note": "data_basis per player: pl_history = the player's own Premier League history carries at least 50% of the weight; limited_history = thin sample, the position prior dominates; no_history = no Premier League minutes. transfers_known=false means the pre-season bootstrap is last season's, so summer transfers are not visible."
+      "note": "data_basis per player: pl_history = the player's own Premier League history carries at least 50% of the weight; limited_history = thin sample, the position prior dominates; no_history = no Premier League minutes this season or last. transfers_known=false means the pre-season bootstrap is last season's, so summer transfers are not visible."
     },
     "context_layer": {
       "promoted_teams": [
@@ -216,7 +216,7 @@
       "min_xp_total": 1.0
     },
     "todo": [
-      "246 promoted-club players are on a position prior with no Premier League history: []. Roles come from price order, and they sharpen as 2026/27 gameweeks are played."
+      "246 players with no Premier League minutes this season get their expected role from where they are priced in their club's squad, unless a manual override sets their start chance. It sharpens as gameweeks are played."
     ]
   },
   "players": [
@@ -11690,7 +11690,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.1,
+      "owned_pct": 4.2,
       "status": "a",
       "news": "",
       "chance_next": null,
