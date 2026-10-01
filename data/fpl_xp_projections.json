@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-01T15:47:35+00:00",
+    "generated_at": "2026-10-01T18:56:52+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -2300,7 +2300,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 11.5,
+      "owned_pct": 11.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7890,7 +7890,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 22.4,
+      "owned_pct": 22.3,
       "status": "d",
       "news": "Thigh injury - 75% chance of playing",
       "chance_next": 75,
@@ -70774,53 +70774,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 84,
-      "web_name": "Collins",
-      "full_name": "Nathan Collins",
-      "team": "Brentford",
-      "team_short": "BRE",
-      "pos": "DEF",
-      "price": 5.4,
-      "owned_pct": 1.0,
-      "status": "i",
-      "news": "Calf injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 1,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 94,
-        "team_name": "Brentford",
-        "minutes": 2971,
-        "starts": 32,
-        "goals": 1,
-        "assists": 2,
-        "xg": 2.24,
-        "xa": 1.71,
-        "cs": 9,
-        "points": 129,
-        "per90": {
-          "goals": 0.03,
-          "assists": 0.06,
-          "xgi": 0.12
-        }
-      },
-      "form": {
-        "value": 0.3,
-        "gws": 3,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 171,
       "web_name": "Dovin",
       "full_name": "Oliver Dovin",
@@ -70887,6 +70840,53 @@
       },
       "form": {
         "value": 2.3,
+        "gws": 3,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 84,
+      "web_name": "Collins",
+      "full_name": "Nathan Collins",
+      "team": "Brentford",
+      "team_short": "BRE",
+      "pos": "DEF",
+      "price": 5.4,
+      "owned_pct": 0.9,
+      "status": "i",
+      "news": "Calf injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 1,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 94,
+        "team_name": "Brentford",
+        "minutes": 2971,
+        "starts": 32,
+        "goals": 1,
+        "assists": 2,
+        "xg": 2.24,
+        "xa": 1.71,
+        "cs": 9,
+        "points": 129,
+        "per90": {
+          "goals": 0.03,
+          "assists": 0.06,
+          "xgi": 0.12
+        }
+      },
+      "form": {
+        "value": 0.3,
         "gws": 3,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
