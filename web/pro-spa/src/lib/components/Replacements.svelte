@@ -7,6 +7,7 @@
 	} from '$lib/fantasyTools';
 	import PlayerSearch, { type SearchItem } from './PlayerSearch.svelte';
 	import { shareCard, shareButtonLabel } from '$lib/shareCard';
+	import { replacementsCardSpec, shownGap, windowLabelOf } from '$lib/replacementCard';
 	import { capture } from '$lib/analytics';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
 
@@ -102,40 +103,22 @@
 		void load();
 	}
 
+	/* SHARE-CARD-ULKOASU (1.10): ero lasketaan NAYTETYISTA luvuista samalla
+	 * lukijalla kuin jakokortti (`shownGap`), jotta "31.0" ja lahtijan "24.3"
+	 * vierekkain eivat anna "+6.8":aa. Ilman lahtijan projektiota tyhja. */
+	function gapOf(p: ReplacementRow) {
+		const t = data?.target.xp_window;
+		return t != null ? shownGap(p.xp_window, t) : null;
+	}
 	function gap(p: ReplacementRow): string {
-		const v = p.xp_gap_vs_target;
-		if (v == null) return '';
-		return (v > 0 ? '+' : '') + v.toFixed(1);
+		return gapOf(p)?.text ?? '';
 	}
 
 	/* Lahtijalla ei ole projektiota (sivussa FPL:ssa). Vanha backend ei tuo
 	 * lippua -> oletus true, eli kayttaytyminen on entinen. */
 	let targetProjected = $derived(data?.meta.target_projected !== false);
 
-	/* Jakokortin luku lahtijasta. Sama muoto kuin ehdokasriveilla
-	 * (`75% to play`), ja kierros luvun perassa koska FPL:n luku koskee vain
-	 * seuraavaa kierrosta. Ilman lukua (esim. status `u`, seurasta lahtenyt)
-	 * kaytetaan backendin sanamuotoa sellaisenaan — ei omaa tulkintaa. */
-	function targetCardValue(d: ReplacementsResponse): string {
-		if (d.target.xp_window != null) return `${d.target.xp_window.toFixed(1)} xP`;
-		if (d.target.chance_next != null && d.meta.gws.length > 0)
-			return `${d.target.chance_next}% to play GW${d.meta.gws[0]} in FPL, no projection`;
-		/* PORTTI 16.9 (toinen kierros): fallback oli 'unavailable in FPL'. Se on
-		 * epatosi rivilla joka on `excluded` KYNNYKSEN takia eika lipun: mitattu
-		 * samana paivana Lewis (MCI), FPL-status `a`, ei uutisia, mutta ei
-		 * projektiota. 'no xP' vaittaa tasan yhden asian — meilla ei ole tata
-		 * lukua — ja se on tosi molemmissa tapauksissa eika vanhene kierroksen
-		 * vaihtuessa. */
-		return 'no xP';
-	}
-
-	let windowLabel = $derived(
-		data && data.meta.gws.length > 0
-			? data.meta.gws.length === 1
-				? `GW${data.meta.gws[0]}`
-				: `GW${data.meta.gws[0]}-${data.meta.gws[data.meta.gws.length - 1]}`
-			: ''
-	);
+	let windowLabel = $derived(data ? windowLabelOf(data.meta.gws) : '');
 	let nextN = $derived(data ? data.meta.gws.length : gws);
 	let dropped = $derived(data?.meta.availability_gate?.dropped ?? []);
 	let squad = $derived(data?.meta.squad ?? null);
@@ -149,40 +132,8 @@
 		if (sharing || !data || data.players.length < 3) return;
 		sharing = true;
 		try {
-			const m = data.meta;
-			const method = await shareCard({
-				title: `WHO REPLACES ${data.target.web_name.toUpperCase()}`,
-				// PORTTI 2.9: lahtijan oma luku kortille (ilman sita kahden rivin
-				// Bruno-kortti luki alaspain-siirron suosituksena) ja ikkuna luvun
-				// paalle, koska ilmaispinnan "xP" on 6 GW:n summa eri ikkunasta.
-				// 16.9: lahtijalla ei aina ole projektiota (sivussa FPL:ssa) -> kortti
-				// sanoo sen, ei jata lukua pois hiljaa eika keksi nollaa.
-				// PORTTI 16.9: ensimmainen versioni luki "out in FPL". Se oli (a)
-				// vahvempi kuin backendin tarkoituksella valittu "unavailable in
-				// FPL" ja (b) kierrokseton: FPL:n `chance_next` koskee VAIN
-				// seuraavaa kierrosta, joten viiden kierroksen ikkunan vieressa
-				// paljas "out" vaitti enemman kuin lahde. Kortti on pysyva kuva,
-				// joten se vaittaisi sita viela senkin jalkeen kun lippu nousee.
-				// Nyt kortilla on FPL:n oma luku ja se kierros jota luku koskee.
-				subtitle: `${data.target.pos} ${m.price_min.toFixed(1)}-${m.price_max.toFixed(1)}m, ${windowLabel} · ${data.target.web_name} ${targetCardValue(data)} · GoalIQ model`,
-				midLabel: 'OWNED',
-				valueLabel: `xP ${windowLabel}`,
-				footNote: 'xP from the GoalIQ model, ownership from FPL',
-				fileName: 'goaliq_replacements.png',
-				rows: data.players.slice(0, 5).map((p, i) => ({
-					rank: i + 1,
-					name: p.web_name,
-					tag: p.pos,
-					// Ville 2.9: Rowan jakaa KUVAN, joten hinta ja syy kortille.
-					tag2: `${p.price.toFixed(1)}m`,
-					team: p.team_short,
-					// Portti k3: paljas "75%" OWNED-sarakkeen vieressa luettiin omistukseksi -> yksikko.
-					badges: p.status === 'd' && p.chance_next != null ? [`${p.chance_next}% to play`] : undefined,
-					mid: `${p.owned_pct.toFixed(1)}%`,
-					value: p.xp_window.toFixed(1),
-					sub: p.reason.text
-				}))
-			});
+			// Spec ja sen portti-historia: $lib/replacementCard.ts.
+			const method = await shareCard(replacementsCardSpec(data));
 			if (method !== 'aborted') capture('xp_card_shared', { list: 'replacements', method });
 		} finally {
 			sharing = false;
@@ -341,8 +292,8 @@
 							{#if targetProjected}
 								<td
 									class="num"
-									class:gap-pos={(p.xp_gap_vs_target ?? 0) > 0}
-									class:gap-neg={(p.xp_gap_vs_target ?? 0) < 0}>{gap(p)}</td
+									class:gap-pos={gapOf(p)?.sign === 1}
+									class:gap-neg={gapOf(p)?.sign === -1}>{gap(p)}</td
 								>
 							{/if}
 							<td class="reason">{p.reason.text}</td>

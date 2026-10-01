@@ -599,6 +599,9 @@
 				   kuva on se mika elaa ilman sivua. Arvosarake seuraa nyt
 				   sorttia samalla lukijalla kuin jarjestys. */
 				valueLabel: cardValueLabel,
+				// SHARE-CARD-ULKOASU (1.10): palkki luetaan samasta merkkijonosta kuin
+				// arvo; prosentti- ja etumerkkisortit eivat saa palkkia (moottori).
+				valueBars: true,
 				fileName: 'goaliq_xp_list.png',
 				// 3.9 (audit): PRICE-sarake on FPL:n omaa dataa.
 				footNote: 'xP from the GoalIQ model, xMins = expected minutes, price from FPL',

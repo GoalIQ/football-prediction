@@ -144,6 +144,7 @@
 					name: r.t.name,
 					tag: '',
 					team: '',
+					...(r.t.short ? { colorTeam: r.t.short } : {}),
 					mid: String(r.a.n),
 					value: `${Math.round(r.a.avgCs as number)}%`
 				}))

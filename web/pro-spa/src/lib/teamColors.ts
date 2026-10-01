@@ -136,6 +136,14 @@ function hashColor(name: string): string {
 	return `hsl(${hue}, 45%, 32%)`;
 }
 
+/** Vain tunnettu seuraväri, muuten null. Jakokortin seurablokki (SHARE-CARD-
+ *  ULKOASU 1.10) ei saa piirtää hash-väriä: keksitty väri kuvassa näyttäisi
+ *  seuran omalta. */
+export function knownTeamColor(short: string): TeamColor | null {
+	const hit = BY_SHORT[short];
+	return hit ? { color: hit[0], textColor: hit[1] } : null;
+}
+
 export function teamColorByShort(short: string): TeamColor {
 	const hit = BY_SHORT[short?.toUpperCase?.() ?? ''];
 	if (hit) return { color: hit[0], textColor: hit[1] };
