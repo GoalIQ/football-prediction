@@ -1410,6 +1410,7 @@
 		{premium}
 		belowPitch={ratingTiles}
 		defaultGw={data.meta.gw}
+		deadlineGw={data.meta.deadline_gameweek ?? null}
 		gwInProgress={data.meta.gw_in_progress === true}
 		lastFinished={data.last_finished ?? null}
 		picksGw={data.meta.picks_gw ?? null}
@@ -1708,6 +1709,7 @@
 			modelPlayers={dataB.team.players}
 			{premium}
 			defaultGw={dataB.meta.gw}
+			deadlineGw={dataB.meta.deadline_gameweek ?? null}
 			gwInProgress={dataB.meta.gw_in_progress === true}
 			lastFinished={dataB.last_finished ?? null}
 			picksGw={dataB.meta.picks_gw ?? null}
