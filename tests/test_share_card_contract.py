@@ -99,9 +99,21 @@ FPL_SARAKEKORTIT = ["XpTable.svelte", "Value.svelte", "Differentials.svelte",
                     "Watchlist.svelte", "Replacements.svelte"]
 
 
+# SHARE-CARD-ULKOASU (1.10): Replacements-kortin spec siirtyi omaan
+# moduuliinsa (sama spec mobiilissa). Portti lukee specin sielta, ja vaatii
+# etta sivu jakaa kortin juuri sen kautta (muuten lukisimme tiedostoa jota
+# kukaan ei kayta).
+SPEC_MODUULI = {"Replacements.svelte": ("replacementCard.ts",
+                                        "shareCard(replacementsCardSpec(data))")}
+
+
 @pytest.mark.parametrize("tiedosto", FPL_SARAKEKORTIT)
 def test_fpl_omistama_sarake_attribuoidaan(tiedosto):
     s = _src(COMPONENTS / tiedosto)
+    if tiedosto in SPEC_MODUULI:
+        moduuli, kutsu = SPEC_MODUULI[tiedosto]
+        assert kutsu in s, f"{tiedosto} ei jaa korttia {moduuli}:n kautta"
+        s = _src(SPA / "lib" / moduuli)
     assert "footNote:" in s and "from FPL" in s, (
         f"{tiedosto}: kortilla on FPL:n oma sarake (PRICE/OWNED) ilman "
         f"attribuutiota")

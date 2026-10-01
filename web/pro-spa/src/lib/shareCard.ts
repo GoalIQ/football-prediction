@@ -12,7 +12,7 @@
  * nappia ei renderöidä freelle.
  */
 
-import { teamColorByShort } from './teamColors';
+import { knownTeamColor, teamColorByShort } from './teamColors';
 import { kitByShort, kitLayers } from './teamKits';
 
 export interface CardRow {
@@ -33,6 +33,23 @@ export interface CardRow {
 	/** 2.9: toinen rivi nimen alle (replacements: syy). Kasvattaa rivikorkeutta
 	 *  koko kortilla jos yhdellakin rivilla on. */
 	sub?: string;
+	/** SHARE-CARD-ULKOASU (1.10): ero vertailuriviin (replacements: lahtija),
+	 *  esim. "+8.0 vs Palmer". Kutsuja laskee sen NAYTETYISTA (pyoristetyista)
+	 *  luvuista, jotta kortin oma aritmetiikka tasmaa. Piirretaan toisen rivin
+	 *  oikeaan laitaan; `deltaUp` = amber, muuten muted. */
+	delta?: string;
+	deltaUp?: boolean;
+	/** Seura jonka vari piirretaan rank-sarakkeeseen kun `team` on tyhja
+	 *  (joukkuetason lista, esim. clean sheets: nimi on jo seuran nimi). */
+	colorTeam?: string;
+}
+
+/** SHARE-CARD-ULKOASU (1.10): vertailurivi listan ylapuolella (replacements:
+ *  pelaaja jota korvataan). `label` on rivin ylapuolinen otsake. Sana valitaan
+ *  kutsujassa: "OUT" ei kay, koska se luetaan saatavuusvaitteena (portti 16.9). */
+export interface CardHero {
+	label: string;
+	row: Omit<CardRow, 'rank' | 'delta' | 'deltaUp'>;
 }
 
 export interface CardSpec {
@@ -60,6 +77,28 @@ export interface CardSpec {
 	 *  HUONOIMMASTA kutsusta, jolloin sama korostus nostaa mallin pahimman
 	 *  hudin karjeksi. Korostus on jarjestyksen ominaisuus, ei kortin. */
 	heroFirstRow?: boolean;
+	/** SHARE-CARD-ULKOASU: vertailurivi listan ylapuolella. */
+	hero?: CardHero;
+	/** SHARE-CARD-ULKOASU: palkki rivin alareunaan, pituus = rivin arvo / suurin
+	 *  LISTAN arvo. Palkki luetaan SAMASTA merkkijonosta kuin naytetty luku
+	 *  (`valueBarFractions`), joten kuva ei voi nayttaa eri suuruutta kuin
+	 *  numero. Jos yksikin arvo ei ole ei-negatiivinen luku, palkkeja ei
+	 *  piirreta lainkaan (osittainen kaavio olisi vaite).
+	 *
+	 *  Vertailurivi EI saa palkkia (julkaisutarkistaja k1 1.10): Palmerin palkki
+	 *  paattyi kohtaan 0.75 suoraan rivin "75% to play GW6 in FPL" alle ja luettiin
+	 *  FPL:n prosentiksi. Ero on jo luvuissa ja "+8.0 vs" -sarakkeessa. */
+	valueBars?: boolean;
+}
+
+/** Palkkien pituudet [0..1] naytetyista arvoista, tai null jos yksikin arvo ei
+ *  ole puhdas ei-negatiivinen luku. Vain listan rivit, ei vertailurivia. */
+export function valueBarFractions(values: string[]): number[] | null {
+	const nums = values.map((v) => (/^\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : NaN));
+	if (nums.length === 0 || nums.some((n) => !Number.isFinite(n))) return null;
+	const max = Math.max(...nums);
+	if (max <= 0) return null;
+	return nums.map((n) => n / max);
 }
 
 /** Alle taman rivimaaran kortti ei ole lista vaan ilmoitus. Sama luku kuin
@@ -73,6 +112,11 @@ const MX = 60;
 const ROW_TOP = 404;
 const ROW_H = 80;
 const FOOT_H = 146;
+// SHARE-CARD-ULKOASU (1.10): seurablokin leveys rank-sarakkeessa, arvon koko,
+// ja vertailurivin jalkeinen vali (listan oma otsake mahtuu siihen).
+const RANK_W = 66;
+const VALUE_PX = 44;
+const HERO_GAP = 64;
 
 const INK = '#0b0a09';
 const INK2 = '#141311';
@@ -81,6 +125,8 @@ const CREAM = '#f3f2f2';
 const MUTED = '#a8a29a';
 const LINE = 'rgba(243,242,242,0.13)';
 const TAG_LINE = 'rgba(243,242,242,0.33)';
+// Vahemman harmaata (Ville 2.9): keskisarake ja seura kermana, himmennettyna.
+const CREAM_DIM = 'rgba(243,242,242,0.78)';
 
 const FONT = '"IBM Plex Mono", ui-monospace, monospace';
 const bold = (px: number) => `700 ${px}px ${FONT}`;
@@ -129,9 +175,14 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	const wm = await loadWordmark();
 
 	const n = spec.rows.length;
-	const hasSub = spec.rows.some((r) => !!r.sub);
+	const hero = spec.hero;
+	const hasSub = spec.rows.some((r) => !!r.sub || !!r.delta);
 	const rowH = hasSub ? ROW_H + 30 : ROW_H;
-	const H = ROW_TOP + n * rowH + FOOT_H;
+	// Vertailurivi on yksikerroksinen ellei silla ole omaa toista rivia.
+	const heroH = hero?.row.sub ? ROW_H + 30 : ROW_H;
+	const listTop = ROW_TOP + (hero ? heroH + HERO_GAP : 0);
+	const H = listTop + n * rowH + FOOT_H;
+	const fracs = spec.valueBars ? valueBarFractions(spec.rows.map((r) => r.value)) : null;
 	const canvas = document.createElement('canvas');
 	canvas.width = W;
 	canvas.height = H;
@@ -182,32 +233,67 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	ctx.fillStyle = MUTED;
 	ctx.fillText(spec.subtitle, (W - ctx.measureText(spec.subtitle).width) / 2, 306);
 
-	// Sarakeotsikot
+	// Sarakeotsikot. Vertailurivin kanssa ylarivi nimeaa vertailurivin ja
+	// listalla on oma otsake (sarakkeiden nimet eivat toistu).
 	const fxRight = W - MX - 180;
+	const rowX = MX - 12;
+	const rowW = W - 2 * (MX - 12);
 	ctx.font = med(19);
-	ctx.fillText(spec.nameLabel ?? 'PLAYER', MX + 76, ROW_TOP - 34);
+	ctx.fillStyle = MUTED;
+	ctx.fillText(hero ? hero.label : (spec.nameLabel ?? 'PLAYER'), MX + 76, ROW_TOP - 34);
 	if (spec.midLabel) {
 		ctx.fillText(spec.midLabel, fxRight - ctx.measureText(spec.midLabel).width, ROW_TOP - 34);
 	}
 	ctx.fillText(spec.valueLabel, W - MX - ctx.measureText(spec.valueLabel).width, ROW_TOP - 34);
+	if (hero) ctx.fillText(spec.nameLabel ?? 'PLAYER', MX + 76, listTop - 34);
 
-	for (let i = 0; i < n; i++) {
-		const r = spec.rows[i];
-		const y = ROW_TOP + i * rowH;
+	const drawRow = (
+		r: Omit<CardRow, 'rank'> & { rank?: number },
+		y: number,
+		h: number,
+		o: { first: boolean; isHero: boolean; frac: number | null }
+	) => {
 		// sub-rivilla paarivi nousee ylos ja syy piirretaan sen alle
-		const cy = hasSub ? y + 40 : y + rowH / 2;
-		const first = i === 0 && spec.heroFirstRow !== false;
+		const twoLine = h > ROW_H;
+		const cy = twoLine ? y + 40 : y + h / 2;
+		// Vertailurivi neutraalilla kehyksella (julkaisutarkistaja k2 1.10): koralli
+		// luettiin FPL:n lippuvariksi terveenkin lahtijan kortissa, ja LUCK_CORAL
+		// tarkoittaa korttiperheessa jo 'odotettua heikompaa'.
+		const accent = o.isHero ? MUTED : o.first ? AMBER : null;
 
-		// Rivikehys: karkirivi amber-kehyksella, muut ohuella viivalla
-		ctx.strokeStyle = first ? AMBER : LINE;
-		ctx.lineWidth = first ? 2 : 1;
-		ctx.strokeRect(MX - 12, y + 4, W - 2 * (MX - 12), rowH - 8);
+		// Palkki ohuena raitana rivin alareunaan (pituus = naytetty arvo /
+		// suurin). 1.10 kuva: koko rivin taustapalkki paattyi keskelle lukuja.
+		if (o.frac != null && o.frac > 0) {
+			ctx.fillStyle = o.first ? AMBER : 'rgba(243,242,242,0.38)';
+			ctx.fillRect(rowX + RANK_W, y + h - 11, (rowW - RANK_W) * o.frac, 6);
+		}
 
-		// rank oikeaan reunaan tasattuna
-		ctx.font = bold(28);
-		ctx.fillStyle = first ? AMBER : MUTED;
-		const rk = String(r.rank);
-		ctx.fillText(rk, MX + 34 - ctx.measureText(rk).width, cy - 16);
+		// Seurablokki rank-sarakkeeseen, vain tunnetulla seuravarilla.
+		const club = r.team || r.colorTeam;
+		const tc = club ? knownTeamColor(club) : null;
+		if (tc) {
+			ctx.fillStyle = tc.color;
+			ctx.fillRect(rowX, y + 4, RANK_W, h - 8);
+		}
+
+		// Rivikehys: vertailurivi korallilla, karkirivi amberilla, muut ohuella viivalla
+		ctx.strokeStyle = accent ?? LINE;
+		ctx.lineWidth = accent ? 2 : 1;
+		ctx.strokeRect(rowX, y + 4, rowW, h - 8);
+
+		// rank: seurablokissa keskella paremman kontrastin varilla, muuten kuten ennen
+		if (r.rank != null) {
+			ctx.font = bold(28);
+			const rk = String(r.rank);
+			const rw = ctx.measureText(rk).width;
+			if (tc) {
+				ctx.fillStyle = contrast(tc.textColor, tc.color) >= contrast(INK, tc.color) ? tc.textColor : INK;
+				ctx.fillText(rk, rowX + (RANK_W - rw) / 2, cy - 16);
+			} else {
+				ctx.fillStyle = o.first ? AMBER : MUTED;
+				ctx.fillText(rk, MX + 34 - rw, cy - 16);
+			}
+		}
 
 		// nimi + pos-tagi + joukkue + badget
 		let x = MX + 76;
@@ -244,7 +330,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		}
 
 		ctx.font = med(20);
-		ctx.fillStyle = MUTED;
+		ctx.fillStyle = CREAM_DIM;
 		ctx.fillText(r.team, x, cy - 10);
 		x += ctx.measureText(r.team).width + 12;
 
@@ -262,21 +348,42 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		if (r.mid) {
 			const fPx = shrink(ctx, r.mid, 24, 190, 14, med);
 			ctx.font = med(fPx);
-			ctx.fillStyle = MUTED;
+			ctx.fillStyle = CREAM_DIM;
 			ctx.fillText(r.mid, fxRight - ctx.measureText(r.mid).width, cy - fPx * 0.55);
 		}
 
 		// arvo oikeaan laitaan
-		ctx.font = bold(36);
-		ctx.fillStyle = first ? AMBER : CREAM;
-		ctx.fillText(r.value, W - MX - ctx.measureText(r.value).width, cy - 36 * 0.58);
+		const vPx = shrink(ctx, r.value, VALUE_PX, 160, 24, bold);
+		ctx.font = bold(vPx);
+		ctx.fillStyle = o.first ? AMBER : CREAM;
+		ctx.fillText(r.value, W - MX - ctx.measureText(r.value).width, cy - vPx * 0.58);
 
+		// Toinen rivi: syy vasemmalle, ero vertailuriviin oikeaan laitaan.
+		let subRight = W - MX;
+		if (r.delta) {
+			ctx.font = bold(22);
+			ctx.fillStyle = r.deltaUp ? AMBER : MUTED;
+			const dw = ctx.measureText(r.delta).width;
+			ctx.fillText(r.delta, subRight - dw, y + h - 38);
+			subRight -= dw + 24;
+		}
 		if (r.sub) {
-			const sPx = shrink(ctx, r.sub, 20, W - 2 * MX - 76, 14, med);
+			const sPx = shrink(ctx, r.sub, 20, subRight - (MX + 76), 14, med);
 			ctx.font = med(sPx);
 			ctx.fillStyle = MUTED;
-			ctx.fillText(r.sub, MX + 76, y + rowH - 34);
+			ctx.fillText(r.sub, MX + 76, y + h - 36);
 		}
+	};
+
+	if (hero) {
+		drawRow(hero.row, ROW_TOP, heroH, { first: false, isHero: true, frac: null });
+	}
+	for (let i = 0; i < n; i++) {
+		drawRow(spec.rows[i], listTop + i * rowH, rowH, {
+			first: i === 0 && spec.heroFirstRow !== false,
+			isHero: false,
+			frac: fracs ? fracs[i] : null
+		});
 	}
 
 	// Footer + amber-alaraita (brandin tunniste)
