@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { doubtFlagText } from '$lib/doubtFlag';
 	import { MODEL_SERIES_COPY } from '$lib/modelSeriesCopy';
 	import type { Snippet } from 'svelte';
 	/**
@@ -33,6 +34,7 @@
 		modelPlayers,
 		premium = false,
 		defaultGw = null,
+		deadlineGw = null,
 		gwInProgress = false,
 		onUpgrade,
 		initialCaptaincy,
@@ -52,6 +54,10 @@
 		premium?: boolean;
 		/** #123: aloitus-GW (rate-teamin meta.gw eli seuraava deadline). */
 		defaultGw?: number | null;
+		/** MOBIILI-IA-JATKOT (1.10): rate-teamin `meta.deadline_gameweek`, eli
+		 *  kierros jota FPL:n `chance_next` koskee. Saatavuuslippu nimeaa sen kun
+		 *  kentta nayttaa muuta kierrosta ($lib/doubtFlag). */
+		deadlineGw?: number | null;
 		/** 22.8: naytettava kierros on kesken -> luvut liikkuvat. */
 		gwInProgress?: boolean;
 		onUpgrade?: () => void;
@@ -203,6 +209,9 @@
 	const settledView = $derived(
 		lastFinished != null && settledGwReadable(premium ? selGw : null, luckGw, luckSameSquad)
 	);
+	/** Kierros jota kentan luvut koskevat: tulostilassa ratkennut kierros,
+	 *  muuten valittu. Saatavuuslippu vertaa tata `deadlineGw`:hen. */
+	const shownGw = $derived(settledView ? luckGw : selGw);
 	$effect(() => {
 		if (gwChips.length === 0) {
 			selGw = null;
@@ -946,12 +955,12 @@
 									</span>
 								{/if}
 							</span>
-							{#if typeof p.chance_next === 'number' && p.chance_next < 100}
+							{#if doubtFlagText(p.chance_next, shownGw, deadlineGw)}
 								<span
 									class="doubt"
 									class:out={p.chance_next === 0}
 									title={p.news ?? ''}
-								>{p.chance_next === 0 ? 'OUT' : `${p.chance_next}%`}</span>
+								>{doubtFlagText(p.chance_next, shownGw, deadlineGw)}</span>
 							{/if}
 							{#if oppOf(p)}
 								<span class="popp">{oppOf(p)}</span>
@@ -999,12 +1008,12 @@
 								     jossa lippu painaa eniten: penkkipelaaja on se jonka
 								     nostat XI:hin. Mobiilissa tata vikaa ei ole, koska
 								     siella penkki kayttaa samaa komponenttia kuin XI. -->
-								{#if typeof p.chance_next === 'number' && p.chance_next < 100}
+								{#if doubtFlagText(p.chance_next, shownGw, deadlineGw)}
 									<span
 										class="doubt"
 										class:out={p.chance_next === 0}
 										title={p.news ?? ''}
-									>{p.chance_next === 0 ? 'OUT' : `${p.chance_next}%`}</span>
+									>{doubtFlagText(p.chance_next, shownGw, deadlineGw)}</span>
 								{/if}
 								{#if settledOf(p)}
 									{@const sp = settledOf(p)!}
