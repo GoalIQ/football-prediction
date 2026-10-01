@@ -256,12 +256,15 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		// sub-rivilla paarivi nousee ylos ja syy piirretaan sen alle
 		const twoLine = h > ROW_H;
 		const cy = twoLine ? y + 40 : y + h / 2;
-		const accent = o.isHero ? LUCK_CORAL : o.first ? AMBER : null;
+		// Vertailurivi neutraalilla kehyksella (julkaisutarkistaja k2 1.10): koralli
+		// luettiin FPL:n lippuvariksi terveenkin lahtijan kortissa, ja LUCK_CORAL
+		// tarkoittaa korttiperheessa jo 'odotettua heikompaa'.
+		const accent = o.isHero ? MUTED : o.first ? AMBER : null;
 
 		// Palkki ohuena raitana rivin alareunaan (pituus = naytetty arvo /
 		// suurin). 1.10 kuva: koko rivin taustapalkki paattyi keskelle lukuja.
 		if (o.frac != null && o.frac > 0) {
-			ctx.fillStyle = o.isHero ? LUCK_CORAL : o.first ? AMBER : 'rgba(243,242,242,0.38)';
+			ctx.fillStyle = o.first ? AMBER : 'rgba(243,242,242,0.38)';
 			ctx.fillRect(rowX + RANK_W, y + h - 11, (rowW - RANK_W) * o.frac, 6);
 		}
 
