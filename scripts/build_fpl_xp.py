@@ -59,6 +59,7 @@ from src.models.fpl_context import (
     xmins_multiplier,
 )
 from src.models.fpl_player_overrides import load_player_overrides
+from src.models.fpl_season import check_season_label, load_prev_archive
 
 OUT_PATH = config.PROJECT_ROOT / "data" / "fpl_xp_projections.json"
 
@@ -811,10 +812,11 @@ def main(argv: list[str] | None = None) -> int:
     # Addendum 2: viime kauden kausisummat player cardia varten luetaan
     # SAMASTA jaadytetysta artefaktista aina (myos live-kaudella) — se on
     # committattu ja avaimena kausien yli pysyva element code.
-    try:
-        prev_archive = json.loads(PREV_BASELINES_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        prev_archive = {"players": {}, "meta": {}}
+    # DATAPOHJA-JATKOT 2 (1.10): arkisto ja kauden nimi tarkistetaan
+    # bootstrapia vasten. Polku ja SEASON_LABEL ovat kovakoodattuja; kauden
+    # vaihtuessa ne olisivat hiljaa vaarin ('last season' = kaksi kautta sitten).
+    check_season_label(SEASON_LABEL, boot)
+    prev_archive = load_prev_archive(PREV_BASELINES_PATH, boot)
     prev_by_code: dict = prev_archive.get("players") or {}
     if preseason:
         prev = prev_archive
