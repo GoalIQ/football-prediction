@@ -46,14 +46,16 @@ export function replacementsCardSpec(d: ReplacementsResponse): CardSpec {
 	// 100 % ei ole tieto vaan varmuusvaite kuvassa -> vain alle 100.
 	const chance =
 		t.chance_next != null && t.chance_next < 100 && m.gws.length > 0
-			? `${t.chance_next}% to play GW${m.gws[0]}`
+			? `${t.chance_next}% to play GW${m.gws[0]} in FPL`
 			: null;
 	const heroRow: Omit<CardRow, 'rank' | 'delta' | 'deltaUp'> = {
 		name: t.web_name,
 		tag: t.pos,
 		tag2: `${t.price.toFixed(1)}m`,
 		team: t.team_short,
-		...(chance ? { badges: [chance] } : {}),
+		// 1.10 kuva: merkkina se litisti mobiilissa nimen nollaleveaksi ->
+		// toiselle riville (FPL:n luku, FPL nimetty).
+		...(chance ? { sub: chance } : {}),
 		mid: `${t.owned_pct.toFixed(1)}%`,
 		// 16.9: lahtijalla ei aina ole projektiota (sivussa FPL:ssa) -> kortti
 		// sanoo sen, ei jata lukua pois hiljaa eika keksi nollaa.

@@ -119,10 +119,10 @@ describe('kortin spec', () => {
 		).toBeNull();
 	});
 	it('FPL:n luku kantaa kierroksen, eika 100 % paady kuvaan', () => {
-		expect(replacementsCardSpec(vastaus(24.27, [30, 29, 28], 75)).hero?.row.badges).toEqual([
-			'75% to play GW6'
-		]);
-		expect(replacementsCardSpec(vastaus(24.27, [30, 29, 28], 100)).hero?.row.badges).toBeUndefined();
+		expect(replacementsCardSpec(vastaus(24.27, [30, 29, 28], 75)).hero?.row.sub).toBe(
+			'75% to play GW6 in FPL'
+		);
+		expect(replacementsCardSpec(vastaus(24.27, [30, 29, 28], 100)).hero?.row.sub).toBeUndefined();
 	});
 });
 
