@@ -154,6 +154,30 @@ def window_label(meta: dict, gws, fallback_n: int | None = None) -> str:
     return f"GW{act[0]}-{act[-1]}"
 
 
+def season_underway(fixtures) -> bool:
+    """Onko kohdekaudesta pelattu yhtaan ottelua loppuun?
+
+    PRESEASON-GW1-IKKUNA (DATAPOHJA-JATKOT kohta 1, 2.10.2026). build_fpl_xp.py
+    paatteli esikauden `not any(ev.get("finished") for ev in boot["events"])`:lla
+    — sama `event.finished`-lippu jonka tama moduuli jo tuntee epaluotettavaksi
+    (ks. tiedoston yllaoleva dokumentaatio): se kaantyy vasta kun GW1:n VIIMEINEN
+    ottelu on paattynyt, ei kun ensimmainen on.
+
+    Konkreettinen vika: GW1-viikonloppuna (perjantaista maanantaihin, ~3-4 vrk)
+    debytantti joka pelaa jo perjantain avausottelussa luetaan silti
+    esikautiseksi, koska event.finished on False koko viikonlopun. Esikaudella
+    per-pelaaja-dataa (element-summary) EI haeta lainkaan (rivi 821+), joten
+    debytantin kortti sanoo "no Premier League minutes this season or last"
+    vaikka han jo pelasi sen ottelun loppuun.
+
+    Korjaus: sama resepti kuin `completed_gameweeks` — fixturen OMA
+    `finished`-kentta kaantyy heti ottelun paatyttya, ei vasta koko
+    gameweekin. `any` eika `all`: yksikin paattynyt ottelu riittaa osoittamaan
+    etta kausi on alkanut ja per-pelaaja-data on jo olemassa sille pelaajalle.
+    """
+    return any(f.get("finished") for f in fixtures or [])
+
+
 def completed_gameweeks(fixtures) -> list[int]:
     """Kierrokset joiden JOKAINEN ottelu on jo alkanut.
 

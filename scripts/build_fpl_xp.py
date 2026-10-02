@@ -806,7 +806,15 @@ def main(argv: list[str] | None = None) -> int:
     # Pre-season = kohdekaudella ei yhtään pelattua GW:tä → element-summaryt
     # ovat tyhjiä eikä niitä haeta; baselinet jäädytetystä artefaktista
     # (PREV_BASELINES_PATH, element code -mappaus).
-    preseason = not any(ev.get("finished") for ev in boot.get("events", []))
+    #
+    # DATAPOHJA-JATKOT kohta 1 (2.10.2026): EI `ev.get("finished")`-lippua
+    # (boot["events"]) — se kaantyy vasta GW1:n VIIMEISEN ottelun jalkeen,
+    # ei ensimmaisen. `fplgw.season_underway` lukee fixturejen OMAN
+    # finished-kentan (sama resepti kuin `completed_gameweeks`/
+    # `display_gameweek`), joka kaantyy heti ensimmaisen ottelun paatyttya.
+    # Ks. fpl_gameweek.season_underway docstring: ilman tata GW1-viikonloppuna
+    # (~3-4 vrk) debytantti joka jo pelasi luetaan silti esikautiseksi.
+    preseason = not fplgw.season_underway(src["fixtures"])
     prev_players: dict | None = None
     recency_window = False  # True = last-6-recency minuuttimallissa
     # Addendum 2: viime kauden kausisummat player cardia varten luetaan
