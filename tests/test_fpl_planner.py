@@ -678,3 +678,31 @@ def test_endpoint_replacements_masked_without_premium(client, monkeypatch):
     monkeypatch.setenv("PREMIUM_ENFORCE", "off")
     b = client.get("/api/fantasy/replacements?player=20").json()
     assert "masked" not in b["meta"] and len(b["players"]) == 5
+
+
+def test_differential_captain_ei_ole_maalivahti():
+    # 2.10 (Villen kuvakatselmus): Lammens GKP 9.9 % ehdotettiin kapteeniksi.
+    ranked = [
+        {"id": 1, "element_type": 1, "owned_pct": 9.9},   # GKP, korkein
+        {"id": 7, "element_type": 3, "owned_pct": 40.0},  # yli rajan
+        {"id": 9, "element_type": 3, "owned_pct": 6.8},   # oikea vastaus
+    ]
+    assert pl.pick_differential_captain(ranked)["id"] == 9
+    # NEG: ilman suodatinta tulos olisi ollut maalivahti.
+    assert ranked[0]["owned_pct"] <= pl.CAPTAIN_DIFFERENTIAL_EO
+    assert pl.pick_differential_captain(ranked[:1]) is None
+    assert pl.pick_differential_captain([]) is None
+
+
+def test_captain_picker_kayttaa_differential_lukijaa(monkeypatch):
+    # Kutsupaikka, ei vain funktio: jos captain_picker palaa omaan
+    # next()-valintaansa, tama kaatuu.
+    nahdyt = []
+
+    def vakoja(ranked):
+        nahdyt.append(len(ranked))
+        return None
+
+    monkeypatch.setattr(pl, "pick_differential_captain", vakoja)
+    out = pl.captain_picker(entry=424242)
+    assert nahdyt and out["differential"] is None

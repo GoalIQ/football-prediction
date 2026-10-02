@@ -523,6 +523,22 @@ def plan_transfers(entry: int | None = None, gw: int | None = None,
     }
 
 
+def pick_differential_captain(ranked: list[dict]) -> dict | None:
+    """Differential-kapteeni: paras XI:n pelaaja jonka omistus <= EO-raja.
+
+    2.10.2026 (Villen mobiilikatselmus): kuvassa ehdotettiin maalivahtia
+    (Lammens, 9.9 %), koska valinta otti ensimmaisen omistusrajan alittavan
+    positiosta riippumatta. Maalivahti on vahiten omistettu juuri siksi,
+    ettei kukaan kapteenoi sita; ehdotus nakyi sovelluksessa ja webissa
+    "Differential captain" -otsikolla. Maalivahdit (element_type 1) pois.
+    `ranked` on jo jarjestetty kierroksen xP:n mukaan.
+    """
+    return next((p for p in ranked
+                 if p.get("element_type") != 1
+                 and (p.get("owned_pct") or 100.0) <= CAPTAIN_DIFFERENTIAL_EO),
+                None)
+
+
 def captain_picker(entry: int | None = None, gw: int | None = None,
                    players: list[int] | None = None) -> dict:
     """Top-3 kapteeniehdokasta + differential-kapteeni (EO ≤ 10 %)."""
@@ -556,9 +572,7 @@ def captain_picker(entry: int | None = None, gw: int | None = None,
     top3 = [_fmt(p) for p in ranked[:3]]
     for i, t in enumerate(top3):
         t["gap_to_top"] = round(top3[0]["gw_xp"] - t["gw_xp"], 2) if i else 0.0
-    diff = next((p for p in ranked
-                 if (p.get("owned_pct") or 100.0) <= CAPTAIN_DIFFERENTIAL_EO),
-                None)
+    diff = pick_differential_captain(ranked)
     return {
         "meta": {"gw": cap_gw,
                  "generated_at": xp_data["meta"].get("generated_at"),
