@@ -30,6 +30,7 @@
 		type DefconLeadersResponse,
 		type XgLeadersResponse
 	} from '$lib/fantasyTools';
+	import { defconDefaultBasis } from '$lib/defconBasis';
 
 	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
@@ -49,6 +50,10 @@
 	// DefConin basis/ikkuna ei saa liikuttaa xG-listaa eikä toisinpäin.
 	// Siksi oma dcWindow + kaksi erillistä hakuefektiä.
 	let dcBasis = $state<'recent' | 'season'>('season');
+	// 2.10 (mobiilin kuvakatselmus, pariteetti): kiintea 'season' nayttaa GW6:lla
+	// 2025/26-listan. Oletus vaihtuu kerran $lib/defconBasis-lukijan mukaan kun
+	// kuluvan kauden ikkuna on taynna; kayttajan oma valinta voittaa.
+	let dcBasisTouched = false;
 	let dcWindow = $state(5);
 
 	$effect(() => {
@@ -56,7 +61,14 @@
 		loading = true;
 		error = null;
 		fetchXgLeaders(w)
-			.then((x) => (xg = x))
+			.then((x) => {
+				xg = x;
+				const def = defconDefaultBasis(x.meta, dcWindow);
+				if (!dcBasisTouched && dcBasis !== def) {
+					dcBasisTouched = true;
+					dcBasis = def;
+				}
+			})
 			.catch((e) => (error = e instanceof Error ? e.message : String(e)))
 			.finally(() => (loading = false));
 	});
@@ -790,7 +802,10 @@
 			class="window-chip"
 			class:on={dcBasis === 'season'}
 			aria-pressed={dcBasis === 'season'}
-			onclick={() => (dcBasis = 'season')}>Full season</button
+			onclick={() => {
+				dcBasisTouched = true;
+				dcBasis = 'season';
+			}}>Full season</button
 		>
 		{#each WINDOWS as w (w)}
 			<button
@@ -799,6 +814,7 @@
 				class:on={dcBasis === 'recent' && dcWindow === w}
 				aria-pressed={dcBasis === 'recent' && dcWindow === w}
 				onclick={() => {
+					dcBasisTouched = true;
 					dcBasis = 'recent';
 					dcWindow = w;
 				}}>Last {w}</button

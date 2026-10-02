@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { transferWhy } from '$lib/decisionRowCopy';
 	import { transferPairText, transferTag } from '$lib/transferLabel';
 	import { tick } from 'svelte';
 	import {
@@ -146,7 +147,7 @@
 					out: sug.out.web_name,
 					in: sug.in.web_name
 				},
-				rationale: `+${sug.delta_xp_horizon.toFixed(2)} xP over the horizon, ${sug.delta_cost.toFixed(1)}m cost.`
+				rationale: transferWhy(sug.delta_xp_horizon, sug.delta_cost)
 			});
 		}
 		return out;
@@ -934,6 +935,7 @@
 				label="Team 1"
 				gap={ratingGap(data.rating)}
 				teamXpGw={data.rating.team_xp_gw}
+				captainName={data.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 				teamXpHorizon={data.rating.team_xp_horizon}
 				horizon={xpHorizon(data.meta)}
 				gw={data.meta.gw}
@@ -949,6 +951,7 @@
 				label="Team 2"
 				gap={ratingGap(dataB.rating)}
 				teamXpGw={dataB.rating.team_xp_gw}
+				captainName={dataB.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
 				horizon={xpHorizon(dataB.meta)}
 				gw={dataB.meta.gw}
@@ -1397,6 +1400,7 @@
 	<SquadHeaderRow
 		gap={ratingGap(data.rating)}
 		teamXpGw={data.rating.team_xp_gw}
+		captainName={data.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 		teamXpHorizon={data.rating.team_xp_horizon}
 		horizon={xpHorizon(data.meta)}
 		gw={data.meta.gw}
@@ -1680,6 +1684,7 @@
 			<SquadHeaderRow
 				gap={ratingGap(dataB.rating)}
 				teamXpGw={dataB.rating.team_xp_gw}
+				captainName={dataB.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
 				horizon={xpHorizon(dataB.meta)}
 				gw={dataB.meta.gw}

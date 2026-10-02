@@ -278,7 +278,7 @@
 						<strong>{ownPair.avg_best_cs_pct.toFixed(1)}%</strong>
 						<span class="muted"
 							>(rank {ownPair.rank} of {ownPair.of}{#if data?.gk?.meta?.own_budget != null},
-								{data.gk.meta.own_budget.toFixed(1)}m to spend on two keepers{/if})</span
+								£{data.gk.meta.own_budget.toFixed(1)}m to spend on two keepers{/if})</span
 						>
 					</p>
 				{:else if data?.gk?.meta?.own_pair_note}

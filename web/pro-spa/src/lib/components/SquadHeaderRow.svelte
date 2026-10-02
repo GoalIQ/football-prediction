@@ -29,6 +29,7 @@
 		weakestLine = null,
 		ratingBasis = null,
 		showGwXp = false,
+		captainName = null,
 		label = null,
 		aligned = false
 	}: {
@@ -69,6 +70,10 @@
 		 *  alapuolella. Premium-pitch renderoi elavan GW-xP:n, ja sama luku
 		 *  kahdesti 200 pikselin sisalla lukisi kahtena eri asiana. */
 		showGwXp?: boolean;
+		/** 2.10 (mobiilin kuvakatselmus, pariteetti): kapteeni jonka `teamXpGw`
+		 *  tuplaa (team.players[].is_captain). Manageri voi nayttaa samalle
+		 *  kierrokselle eri kapteenilla eri luvun, joten kapteeni nimetaan. */
+		captainName?: string | null;
 		/** Vertailunakyman "Team 1" / "Team 2". */
 		label?: string | null;
 		/** Vertailussa rivit ovat saman gridin sisalla, jotta sarakkeet
@@ -134,7 +139,7 @@
 	{#if showGwXp}
 		<span class="cell">
 			<span class="k">GW{gw} xP</span>
-			<span class="v">{teamXpGw.toFixed(1)}</span>
+			<span class="v">{teamXpGw.toFixed(1)}{#if captainName} (C {captainName}){/if}</span>
 		</span>
 	{/if}
 	<!-- "captain doubled" oli ennen `.tiles`-laatan alaotsikkona. Luku on sama,

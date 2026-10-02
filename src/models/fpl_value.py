@@ -376,11 +376,11 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
             out["for_you"] = for_you
             meta["for_you_note"] = (
                 f"Pairs your two keepers plus your bank can pay for "
-                f"({meta['own_budget']:.1f}m). Transfers needed counts how many "
+                f"(£{meta['own_budget']:.1f}m). Transfers needed counts how many "
                 f"of the pair you do not own."
                 if for_you else
                 f"No pair fits your two keepers plus your bank "
-                f"({meta['own_budget']:.1f}m). The full list is below.")
+                f"(£{meta['own_budget']:.1f}m). The full list is below.")
             reachable = _best_reachable(own_score_val)
             out["reachable_pair"] = reachable
             # Paras pari johon RAHA riittaa, siirtojen maarasta riippumatta.
@@ -399,10 +399,10 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
             if affordable is not None:
                 meta["affordable_note"] = (
                     "Best pair your two keepers plus your bank can pay for "
-                    f"({meta['own_budget']:.1f}m): "
+                    f"(£{meta['own_budget']:.1f}m): "
                     f"{affordable['gk_a']['web_name']} + "
                     f"{affordable['gk_b']['web_name']}, "
-                    f"{affordable['combined_price']:.1f}m, "
+                    f"£{affordable['combined_price']:.1f}m, "
                     f"{affordable['transfers_needed']} transfer"
                     f"{'s' if affordable['transfers_needed'] != 1 else ''}.")
             if reachable is not None:
@@ -413,7 +413,7 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
                 meta["reachable_note"] = (
                     f"One transfer away: keep {keep['web_name']} and pair him "
                     f"with {add['web_name']} ({add['team_short']}, "
-                    f"{add['price']:.1f}m).")
+                    f"£{add['price']:.1f}m).")
     return out
 
 
