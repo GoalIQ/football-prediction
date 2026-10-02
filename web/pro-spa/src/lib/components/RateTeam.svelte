@@ -934,6 +934,7 @@
 				label="Team 1"
 				gap={ratingGap(data.rating)}
 				teamXpGw={data.rating.team_xp_gw}
+				captainName={data.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 				teamXpHorizon={data.rating.team_xp_horizon}
 				horizon={xpHorizon(data.meta)}
 				gw={data.meta.gw}
@@ -949,6 +950,7 @@
 				label="Team 2"
 				gap={ratingGap(dataB.rating)}
 				teamXpGw={dataB.rating.team_xp_gw}
+				captainName={dataB.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
 				horizon={xpHorizon(dataB.meta)}
 				gw={dataB.meta.gw}
@@ -1397,6 +1399,7 @@
 	<SquadHeaderRow
 		gap={ratingGap(data.rating)}
 		teamXpGw={data.rating.team_xp_gw}
+		captainName={data.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 		teamXpHorizon={data.rating.team_xp_horizon}
 		horizon={xpHorizon(data.meta)}
 		gw={data.meta.gw}
@@ -1680,6 +1683,7 @@
 			<SquadHeaderRow
 				gap={ratingGap(dataB.rating)}
 				teamXpGw={dataB.rating.team_xp_gw}
+				captainName={dataB.team.players.find((pl) => pl.is_captain)?.web_name ?? null}
 				teamXpHorizon={dataB.rating.team_xp_horizon}
 				horizon={xpHorizon(dataB.meta)}
 				gw={dataB.meta.gw}
