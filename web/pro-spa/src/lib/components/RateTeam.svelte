@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { transferWhy } from '$lib/decisionRowCopy';
 	import { transferPairText, transferTag } from '$lib/transferLabel';
 	import { tick } from 'svelte';
 	import {
@@ -146,7 +147,7 @@
 					out: sug.out.web_name,
 					in: sug.in.web_name
 				},
-				rationale: `+${sug.delta_xp_horizon.toFixed(2)} xP over the horizon, ${sug.delta_cost.toFixed(1)}m cost.`
+				rationale: transferWhy(sug.delta_xp_horizon, sug.delta_cost)
 			});
 		}
 		return out;

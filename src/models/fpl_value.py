@@ -413,7 +413,7 @@ def gk_rotation_pairs(top_n: int = 10, squad: dict | None = None) -> dict:
                 meta["reachable_note"] = (
                     f"One transfer away: keep {keep['web_name']} and pair him "
                     f"with {add['web_name']} ({add['team_short']}, "
-                    f"{add['price']:.1f}m).")
+                    f"£{add['price']:.1f}m).")
     return out
 
 

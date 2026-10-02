@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ownedWatchText } from '$lib/decisionRowCopy';
 	import { fetchPriceWatch, confBand, type PriceWatchResponse, type PriceMove } from '$lib/fantasyTools';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
@@ -31,7 +32,7 @@
 		}
 		const rest = o.n_rising + o.n_falling - next.n;
 		if (rest > 0) {
-			parts.push(`${rest} more on watch`);
+			parts.push(ownedWatchText(rest, parts.length));
 		}
 		if (parts.length === 0) return `None of your ${o.squad_size} are on these lists.`;
 		return parts.join(', ') + '.';
