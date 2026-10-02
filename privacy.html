@@ -415,12 +415,16 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
       Our public website (goaliq.app) uses PostHog in a cookieless mode:
       anonymous page-view counts are collected in memory only, no cookies or
       other identifiers are stored on your device, and no personal data is
-      collected. This is why the website does not show a cookie banner.
+      collected.
     </p>
     <p>
       The website also uses Cloudflare Web Analytics to count visits and to
-      measure how fast pages load. Cloudflare states that Web Analytics does
-      not collect or use visitors' personal data.
+      measure how fast pages load. It records the page address, the referring
+      site, your browser, operating system, device type and country.
+      Cloudflare states that Web Analytics does not use cookies or local
+      storage and does not collect or use visitors' personal data. Because
+      neither PostHog nor Cloudflare Web Analytics stores anything on your
+      device, the website does not show a cookie banner.
     </p>
 
     <h2>3. How we use your information</h2>
@@ -467,8 +471,11 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         <a href="https://posthog.com/privacy" target="_blank">Privacy policy</a>
       </li>
       <li>
-        <strong>Cloudflare</strong>: hosting for the website (goaliq.app) and
-        visit counts with Cloudflare Web Analytics.
+        <strong>Cloudflare</strong> (US company): hosting for the website
+        (goaliq.app and pro.goaliq.app). Cloudflare also routes traffic to our
+        API (api.goaliq.app), which the App and pro.goaliq.app use, so it
+        processes your IP address and technical request data. Visit counts on
+        goaliq.app come from Cloudflare Web Analytics.
         <a href="https://www.cloudflare.com/privacypolicy/" target="_blank">Privacy policy</a>
       </li>
       <li>
@@ -561,10 +568,11 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
     <h2>10. International data transfers</h2>
     <p>
       Your account data is primarily stored within the European Union (Supabase
-      EU region). Some service providers, including PostHog (analytics) and
-      Render (API hosting), process data in the United States. In those cases
-      the providers rely on GDPR-approved transfer mechanisms such as Standard
-      Contractual Clauses.
+      EU region). Some service providers, including PostHog (analytics),
+      Render (API hosting) and Cloudflare (website hosting and API traffic),
+      process data in the United States. In those cases the providers rely on
+      GDPR-approved transfer mechanisms such as the EU-U.S. Data Privacy
+      Framework or Standard Contractual Clauses.
     </p>
 
     <h2>11. Changes to this policy</h2>
