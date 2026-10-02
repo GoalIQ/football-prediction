@@ -192,7 +192,7 @@
 								     "27.00 total xP":n alla ja lukija luki sen pisteina. -->
 								{p.model_vs_crowd_delta != null
 									? (p.model_vs_crowd_delta > 0 ? '+' : '') +
-										p.model_vs_crowd_delta.toFixed(2) +
+										p.model_vs_crowd_delta.toFixed(0) +
 										' %ile'
 									: '–'}
 							</td>
@@ -250,7 +250,7 @@
 									<span class="num"
 										>{p.owned_pct.toFixed(1)}% owned ·
 										<strong class="delta-pos"
-											>+{(p.model_vs_crowd_delta ?? 0).toFixed(2)} %ile</strong
+											>+{(p.model_vs_crowd_delta ?? 0).toFixed(0)} %ile</strong
 										></span
 									>
 								</li>
@@ -273,7 +273,7 @@
 									<span class="num"
 										>{p.owned_pct.toFixed(1)}% owned ·
 										<strong class="delta-neg"
-											>{(p.model_vs_crowd_delta ?? 0).toFixed(2)} %ile</strong
+											>{(p.model_vs_crowd_delta ?? 0).toFixed(0)} %ile</strong
 										></span
 									>
 								</li>
