@@ -3851,6 +3851,25 @@ def render_minutes_accuracy(doc: dict | None, now: datetime) -> str | None:
                  f"<h1>{escape(otsikko)}</h1>", body, jsonld)
 
 
+def _note_meta_desc(teksti: str, raja: int = 300) -> str:
+    """Jakokortin ja hakutuloksen kuvaus: ensimmainen kappale, katkaistuna
+    viimeiseen kokonaiseen lauseeseen rajan sisalla.
+
+    2.10.2026: kova [:300] katkaisi kolmen muistion kuvauksen kesken sanan
+    ("FPL has been", "that in y"). Lause loppuu ". ", "? " tai "! " -kohtaan,
+    joten desimaali (0.99) ei katkaise. Jos rajan sisalla ei ole yhtaan
+    kokonaista lausetta, katkaistaan sanarajaan ja merkitaan "…".
+    """
+    teksti = " ".join(str(teksti).split())
+    if len(teksti) <= raja:
+        return teksti
+    alku = teksti[:raja + 1]
+    loput = [m.end() - 1 for m in re.finditer(r"[.?!] ", alku)]
+    if loput:
+        return alku[:loput[-1]].rstrip()
+    return alku[:raja].rsplit(" ", 1)[0].rstrip(" ,;:") + "…"
+
+
 def render_note_page(n: dict, now: datetime) -> str | None:
     """Yksi artikkeli omalla URLillaan: /fpl/note/<slug>.
 
@@ -3885,7 +3904,7 @@ def render_note_page(n: dict, now: datetime) -> str | None:
 
     url = f"{BASE}/fpl/note/{slug}"
     tekstit = [x for x in (n.get("paragraphs") or []) if isinstance(x, str)]
-    desc = (tekstit[0] if tekstit else otsikko)[:300]
+    desc = _note_meta_desc(tekstit[0] if tekstit else otsikko)
     check = str(n.get("check_url") or f"{BASE}/fpl/stats")
     cta = escape(str(n.get("cta") or "Check the numbers"))
 

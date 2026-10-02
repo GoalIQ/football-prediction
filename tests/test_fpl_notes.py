@@ -276,3 +276,56 @@ def test_seurasivu_kertoo_mita_tyhja_erikoistilanne_tarkoittaa():
     h = f.read_text(encoding="utf-8")
     assert "has not published an order" in h
     assert "not a lineup leak" in h
+
+
+# --- Jakokortin kuvaus ei katkea kesken lauseen (2.10.2026) -----------------
+# Kova [:300] katkaisi kolmen muistion og:/twitter:/meta-kuvauksen kesken
+# sanan ("FPL has been", "that in y"). Kuvaus loppuu nyt kokonaiseen
+# lauseeseen tai merkittyyn katkaisuun, eika desimaali (0.99) ole lauseen loppu.
+
+def test_muistion_kuvaus_loppuu_kokonaiseen_lauseeseen():
+    import re
+
+    from scripts.build_fpl_longtail import render_note_page
+
+    for n in _doc().get("notes") or []:
+        sivu = render_note_page(n, NOW)
+        if not sivu:
+            continue
+        m = re.search(r'<meta property="og:description" content="([^"]*)"', sivu)
+        assert m, n["slug"]
+        kuvaus = m.group(1)
+        assert len(kuvaus.replace("&#x27;", "'")) <= 300, n["slug"]
+        assert kuvaus.rstrip().endswith((".", "?", "!", "…")), (
+            f"{n['slug']}: kuvaus katkeaa kesken lauseen: ...{kuvaus[-40:]!r}")
+
+
+def test_kuvauksen_katkaisu_ei_pysahdy_desimaaliin_eika_sanaan():
+    from scripts.build_fpl_longtail import _note_meta_desc
+
+    lause = "Spurs are at 0.99 against Chelsea. "
+    teksti = lause * 20
+    tulos = _note_meta_desc(teksti)
+    assert tulos.endswith("Chelsea.")
+    assert len(tulos) <= 300
+    # ei yhtaan lauseen loppua rajan sisalla -> sanaraja + merkki
+    pitka = "word " * 100
+    tulos = _note_meta_desc(pitka)
+    assert tulos.endswith("…") and not tulos.endswith(" …")
+    assert len(tulos) <= 301
+    # lyhyt teksti sellaisenaan
+    assert _note_meta_desc("Short one.") == "Short one."
+
+
+def test_jokainen_muistio_on_fpl_sitemapissa():
+    # 2.10.2026: muistio julkaistiin renderoimalla notes.html + oma sivu kasin,
+    # ja tama tiedosto oli vihrea. Sitemap jai paivittamatta, ja tests.yml
+    # punastui vasta pushin jalkeen test_page_contractissa. Muistion
+    # julkaisuvirta ajaa tata tiedostoa, joten tarkistus kuuluu tanne.
+    sitemap = (ROOT / "sitemap-fpl.xml").read_text(encoding="utf-8")
+    puuttuu = [n["slug"] for n in _doc().get("notes") or []
+               if n.get("paragraphs")
+               and f"https://goaliq.app/fpl/note/{n['slug']}</loc>" not in sitemap]
+    assert not puuttuu, (
+        f"muistio(t) puuttuu sitemap-fpl.xml:sta: {puuttuu}. Lisaa <url>-lohko "
+        "(sama muoto kuin muilla /fpl/note/-riveilla) tai aja build_fpl_longtail.")
