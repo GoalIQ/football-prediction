@@ -204,3 +204,34 @@ def test_latausvika_ei_mene_levylle(tmp_path):
     up.save(_iso_dc(121), tournament=CL, season_pair=PARI, decay=0.0035,
             calibrated_leagues=[*LIIGAT, "GRE-Super League"], path=p, now=NYT)
     assert p.exists()
+
+
+def test_bake_workflow_committaa_artefaktin_ja_saa_avaimen():
+    """3.10.2026: cl-model-bake.yml korvaa ucl-refreshin bake-askeleen.
+    Levylle kirjoitettu malli joka ei paady git addiin katoaa ajon mukana, ja
+    ilman avainta malli on pelkka turnausjoukko."""
+    wf = (ROOT / ".github" / "workflows" / "cl-model-bake.yml").read_text(encoding="utf-8")
+    assert "python -m scripts.build_uefa_model" in wf
+    assert re.search(r"git add data/uefa_joint_model\.json", wf)
+    bake = wf[wf.find("Bake Champions League joint model"):wf.find("Commit + push")]
+    assert "FOOTBALL_DATA_API_KEY" in bake
+
+
+def test_render_ei_fittaa_livena(monkeypatch):
+    """3.10.2026: live-fitti Renderilla ylitti 512 Mi ja kaatoi koko API:n.
+    Renderilla (RENDER-ymparistomuuttuja) puuttuva artefakti = 503, ei fittia."""
+    import pandas as pd
+    from fastapi import HTTPException
+
+    import api.main as M
+
+    fitattu = []
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setattr(up, "load", lambda **kw: (None, "testi: puuttuu"))
+    monkeypatch.setattr(M, "_lataa_otteludata_cached",
+                        lambda liigat, kaudet: fitattu.append(liigat) or pd.DataFrame())
+    with pytest.raises(HTTPException) as e:
+        M._fit_uefa_yhteismalli(("INT-Champions League",), ("2526", "2627"), 0.0035)
+    assert e.value.status_code == 503
+    assert fitattu == [], "Renderilla ei saa ladata fittidataa"
+

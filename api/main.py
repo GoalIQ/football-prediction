@@ -1192,6 +1192,16 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
             print(f"[UEFA] {turnaus}: esirakennettu malli ({syy}), "
                   f"{len(valmis.attack)} seuraa")
             return valmis
+        # 3.10.2026: RENDERILLA EI LIVE-FITTIA. Kylma yhteisfitti ylitti 512 Mi
+        # muistirajan (OOM 3.10 12:49 UTC) ja kaatoi koko API:n, myos FPL:n.
+        # Ilman kelpaavaa artefaktia CL-ennuste on 503 ja muu API pysyy
+        # pystyssa. Artefaktin bakkaa .github/workflows/cl-model-bake.yml.
+        # Portti: tests/test_uefa_prebuilt.py::test_render_ei_fittaa_livena.
+        if os.environ.get("RENDER"):
+            print(f"[UEFA] {turnaus}: esirakennettu malli ei kelpaa ({syy}) "
+                  f"-> 503 (Renderilla ei live-fittia)")
+            raise HTTPException(status_code=503,
+                                detail="Champions League model is being rebuilt. Try again later.")
         print(f"[UEFA] {turnaus}: esirakennettu malli ei kelpaa ({syy}) "
               f"-> live-fitti")
     # 🔴 TURNAUKSELLE LEVEAMPI IKKUNA KUIN KOTILIIGOILLE. Turnauskaudet ovat

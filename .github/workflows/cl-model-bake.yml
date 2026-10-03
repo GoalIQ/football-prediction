@@ -1,0 +1,65 @@
+# Champions League -mallin bake (3.10.2026).
+#
+# MIKSI. API lataa CL-mallin esirakennettuna (data/uefa_joint_model.json,
+# src/models/uefa_prebuilt.py, voimassa 26 h). Bake ajettiin ennen ucl-refreshissa,
+# joka poistettiin 3.10 (UCL Fantasy lopetettu, Villen paatos). Ilman artefaktia
+# Render fittasi mallin itse, ylitti 512 Mi muistirajan (OOM 3.10 12:49 UTC) ja
+# kaatoi koko API:n FPL mukaan lukien. Nyt API ei fittaa CL:aa Renderilla
+# lainkaan (api/main.py), joten tama ajo on CL-ennusteiden ainoa lahde.
+#
+# Ajastus: 25 min ennen jokaista render-daily-deploy-slottia (04:45, 10:45,
+# 16:45, 22:45 UTC), jotta deploy vie tuoreen artefaktin. data/** on Renderin
+# buildFilterin ignoredPaths-listalla, joten commit ei deployaa itse.
+#
+# 0 EUROA: julkinen repo, GitHubin runner. Data on avointa (football-data.org
+# + openfootball), ei UEFAn palveluita (tests/test_no_uefa_fetch.py).
+name: cl-model-bake
+on:
+  schedule:
+    - cron: "20 4,10,16,22 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cl-model-bake
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+
+      - name: Bake Champions League joint model
+        env:
+          # Ilman avainta kotiliigat latautuvat tyhjina ja malli olisi pelkka
+          # turnausjoukko; bake kieltaytyy kirjoittamasta sellaista.
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python -m scripts.build_uefa_model
+
+      - name: Commit + push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -f data/uefa_joint_model.json ] && git add data/uefa_joint_model.json
+          if git diff --cached --quiet; then
+            echo "Ei muutoksia."
+            exit 0
+          fi
+          git commit -m "chore(cl): Champions League model bake [skip ci]"
+          git pull --rebase --autostash -q origin main || true
+          git push origin main

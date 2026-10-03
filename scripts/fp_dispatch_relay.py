@@ -56,6 +56,9 @@ TARGETS: list[dict] = [
     {"workflow": "fpl-transfer-watch.yml", "slots": None},
     # ucl-refresh.yml poistettu 3.10.2026 (UCL Fantasy lopetettu, Villen paatos).
     {"workflow": "accuracy-log.yml", "slots": None},
+    # 3.10.2026: CL-mallin bake ennen render-daily-deployta (myohastyessa
+    # deploy vie vanhan artefaktin ja API palauttaa CL:lle 503).
+    {"workflow": "cl-model-bake.yml", "slots": None},
     # Vain 3 h -slotti: 09:15- ja :40-slotit ovat guardattuja
     # `github.event.schedule`-arvolla, joka on tyhja dispatch-ajossa ->
     # dispatch tekisi taysrefreshin guardatun snapshotin sijaan. Guardattujen
