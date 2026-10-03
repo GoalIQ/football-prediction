@@ -60,10 +60,44 @@
 				function push(err, kind) {
 					if (buf.length < MAX) buf.push({ error: err, kind: kind });
 				}
+				var KEY = 'phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7';
+				var HOST = 'https://us.i.posthog.com';
+				/* Stale HTML after a deploy: the browser runs an older index whose
+				   entry chunk no longer exists ('Failed to fetch dynamically imported
+				   module .../entry/start.*.js', four real users in thirty days). One
+				   reload fetches the current HTML. The sessionStorage lock stops a
+				   loop when the chunk is genuinely gone: a second failure within a
+				   minute falls through to the normal report below. No storage means
+				   no reload, because without the lock a reload could repeat forever. */
+				var STALE = /dynamically imported module|Importing a module script failed/i;
+				var LOCK = 'giq_stale_chunk_reload';
+				function lastReload() {
+					try {
+						return +sessionStorage.getItem(LOCK) || 0;
+					} catch (e) {
+						return -1;
+					}
+				}
+				function staleReload(err) {
+					var msg = String((err && err.message) || err || '');
+					if (!STALE.test(msg)) return false;
+					var last = lastReload();
+					if (last < 0 || Date.now() - last < 60000) return false;
+					try {
+						sessionStorage.setItem(LOCK, String(Date.now()));
+					} catch (e) {
+						return false;
+					}
+					send('web_boot_stale_reload', { first_error: msg });
+					location.reload();
+					return true;
+				}
 				function onErr(ev) {
+					if (staleReload(ev.error || ev.message)) return;
 					push(ev.error || new Error(ev.message || 'Unknown error'), 'error');
 				}
 				function onRej(ev) {
+					if (staleReload(ev.reason)) return;
 					push(ev.reason || new Error('Unhandled rejection'), 'unhandledrejection');
 				}
 				window.addEventListener('error', onErr);
@@ -79,10 +113,27 @@
 				   signal worth seeing, so we do not try to filter it out. A false
 				   positive is cheaper than a dead boot nobody can see. */
 				var timer = setTimeout(function () {
+					var first = buf.length ? buf[0].error : null;
+					var last = lastReload();
+					send('web_boot_failed', {
+						source: 'boot_failsafe',
+						error_count: buf.length,
+						first_error: first ? String((first && first.message) || first) : null,
+						first_error_kind: buf.length ? buf[0].kind : null,
+						/* Separates two failures, measured rather than guessed:
+						   false = the runtime came up and replaced this shell
+						   with its own error page (a route chunk failed);
+						   true = the runtime never started at all, for example
+						   the entry chunk never arrived. */
+						boot_shell_present: !!document.getElementById('boot'),
+						ready_state: document.readyState,
+						/* true = the stale-chunk reload already ran and did not help. */
+						after_stale_reload: last > 0 && Date.now() - last < 60000
+					});
+				}, 10000);
+				function send(event, props) {
 					/* Production host only. A local run with an empty VITE_POSTHOG_KEY never starts analytics, so this watchdog always fired and wrote a false boot failure to the production project. */
 					if (!/(^|\.)goaliq\.app$/.test(location.hostname)) return;
-					var KEY = 'phc_ASmq5P9R5goGTDxze3GkXHJqU6RsvMCNqunSVBMgGkn7';
-					var HOST = 'https://us.i.posthog.com';
 					var did = null;
 					try {
 						/* Reuse the posthog-js distinct_id so the event attaches to
@@ -91,26 +142,9 @@
 						if (raw) did = JSON.parse(raw).distinct_id || null;
 					} catch (e) {}
 					if (!did) did = 'boot-failsafe-' + Math.random().toString(36).slice(2);
-					var first = buf.length ? buf[0].error : null;
-					var body = JSON.stringify({
-						api_key: KEY,
-						event: 'web_boot_failed',
-						properties: {
-							distinct_id: did,
-							$current_url: location.href,
-							source: 'boot_failsafe',
-							error_count: buf.length,
-							first_error: first ? String((first && first.message) || first) : null,
-							first_error_kind: buf.length ? buf[0].kind : null,
-							/* Separates two failures, measured rather than guessed:
-							   false = the runtime came up and replaced this shell
-							   with its own error page (a route chunk failed);
-							   true = the runtime never started at all, for example
-							   the entry chunk never arrived. */
-							boot_shell_present: !!document.getElementById('boot'),
-							ready_state: document.readyState
-						}
-					});
+					props.distinct_id = did;
+					props.$current_url = location.href;
+					var body = JSON.stringify({ api_key: KEY, event: event, properties: props });
 					try {
 						var blob = new Blob([body], { type: 'application/json' });
 						if (!navigator.sendBeacon || !navigator.sendBeacon(HOST + '/e/', blob)) {
@@ -123,7 +157,7 @@
 							});
 						}
 					} catch (e) {}
-				}, 10000);
+				}
 			})();
 		</script>
 		<!-- "Show all columns" toggle. Narrow screens hide some columns with
