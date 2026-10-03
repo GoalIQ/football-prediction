@@ -78,13 +78,16 @@ jobs:
       # Verifioi DOMAINILTA, ei deployn statuksesta. Cloudflare injektoi
       # challenge-skriptin ennen </body> per-pyynto vaihtuvalla tunnisteella,
       # joten se riisutaan ennen vertailua (sama kuin verify_live_pages.sh).
+      # 3.10: myos CF Pages Web Analytics -beacon (kommenttiparin valissa),
+      # ja se ENSIN, koska STRIPin ahne .*</script> sois beaconin skriptin.
       - name: Verifioi domainilta
         run: |
           set -uo pipefail
+          BEACON='s|<!-- Cloudflare Pages Analytics -->.*<!-- Cloudflare Pages Analytics -->||'
           STRIP='s|<script>(function(){function c(){var b=a\.contentDocument.*</script>||'
           WANT=$(md5sum index.html | cut -d' ' -f1)
           for i in $(seq 1 24); do
-            GOT=$(curl -sfL --max-time 20 https://goaliq.app/ | sed "$STRIP" | md5sum | cut -d' ' -f1 || echo fetch-fail)
+            GOT=$(curl -sfL --max-time 20 https://goaliq.app/ | sed -e "$BEACON" -e "$STRIP" | md5sum | cut -d' ' -f1 || echo fetch-fail)
             if [ "$GOT" = "$WANT" ]; then echo "OK ($i. yritys): live index.html = repo"; exit 0; fi
             echo "$i: live=$GOT repo=$WANT, odotetaan 15 s"; sleep 15
           done

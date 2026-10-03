@@ -40,10 +40,21 @@ SLEEP="${VERIFY_SLEEP:-20}"
 # 17.8: riisuttu live == repon tiedosto bittitarkasti.
 CF_STRIP='s|<script>(function(){function c(){var b=a\.contentDocument.*</script>||'
 
+# 3.10.2026: CF Pages Web Analytics (kytketty 2.10, LANDING-KAVIJAMITTAUS)
+# injektoi beaconin JOKAISEN sivun </body>:n eteen kommenttiparin valiin.
+# Repossa sita ei ole, joten 2.10 ~15 UTC alkaen jokainen sivuja kirjoittava
+# workflow (fpl-data-refresh, accuracy-log, fpl-elite-tick, fpl-page-refresh,
+# ucl-refresh) oli punainen ja dispatchasi turhan hub-deployn joka ajolla.
+# Mitattu 3.10: riisuttu live == origin/main bittitarkasti (fpl.html,
+# index.html, fpl/xg-leaders.html). Riisutaan ENNEN CF_STRIPia: sen ahne
+# .*</script> sois muuten beaconin skriptin ja jattaisi kommentit jaljelle.
+# tests/test_verify_live_pages_strip.py ajaa taman skriptin oikeasti.
+BEACON_STRIP='s|<!-- Cloudflare Pages Analytics -->.*<!-- Cloudflare Pages Analytics -->||'
+
 # -L ON PAKOLLINEN: CF Pages 308-ohjaa .html-URLit puhtaisiin polkuihin, ja
 # ilman sita curl palauttaa TYHJAN bodyn (md5 d41d8cd9...) eli askel vertaisi
 # HEADia tyhjaan merkkijonoon.
-elava() { curl -sfL --max-time 20 "$BASE/$1" | sed "$CF_STRIP" | md5sum | cut -d' ' -f1 || echo "fetch-fail"; }
+elava() { curl -sfL --max-time 20 "$BASE/$1" | sed -e "$BEACON_STRIP" -e "$CF_STRIP" | md5sum | cut -d' ' -f1 || echo "fetch-fail"; }
 repo()  { md5sum "$1" | cut -d' ' -f1; }
 
 echo "Odotetut hashit:"
