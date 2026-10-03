@@ -1031,14 +1031,8 @@ def _warmup_default_models():
                      name="fd-warm").start()
     print("[fd-warm] lammitin kaynnistetty")
 
-    # 23.9: UEFA Nations League -otteluiden lammitin (UEFAn rajapinta, ei
-    # football-data). /api/fixtures/by-date lukee UNL:n vain valimuistista.
-    def _unl_warm_loop():
-        from src.data.nations_league import warm_matches
-        while True:
-            ok = warm_matches()
-            time.sleep(20 * 60 if ok else 5 * 60)
-    threading.Thread(target=_unl_warm_loop, daemon=True, name="unl-warm").start()
+    # 3.10.2026: UNL-lammitin (match.uefa.com 20 min valein) poistettu,
+    # UEFA-haku lopetettu (tests/test_no_uefa_fetch.py).
 
     def _fit_all():
         warmed = tuple(config.current_season_pair())
@@ -1225,29 +1219,14 @@ def _fit_uefa_yhteismalli(liigat: tuple[str, ...], kaudet: tuple[str, ...],
     # (openfootball txt) ja vendoroitu, joten tama ei voi pudota tyhjaksi
     # kylmakaynnistyksessa; tyhja tulos lokitetaan silti nakyvasti.
     #
-    # 21.9: ENSISIJAINEN LAHDE ON UEFAN OMA RAJAPINTA (src/data/uefa_matches.py):
-    # EL, ECL ja CL:n karsinnat, kuluva kausi mukaan lukien. openfootball txt
-    # loppuu kauteen 25/26 eika sisalla CL-karsintoja, joten LASKilla oli
-    # mallissa yksi ottelu ja Sabahilla yksitoista. Nimet ratkaistaan
-    # PARITTAMALLA CL-ottelut fd.orgin riveihin (ei merkkijonoilla) ja
-    # kotiliigojen nimiin; ilman sita sama seura olisi kahtena entiteettina.
-    # openfootball jaa varaksi vain jos UEFA-data on kokonaan tyhja.
-    from src.data import uefa_matches as _uefa
-
-    uefa = _uefa.lataa(turnauskaudet)
-    if not uefa.empty:
-        kotinimet = set(dom["home_team"]) | set(dom["away_team"]) if not dom.empty else set()
-        uefa, _reitit = _uefa.ratkaise_nimet(uefa, tour, kotinimet)
-        silta = uefa[uefa["league"].isin(BRIDGE_LEAGUES)]
-        import collections as _collections
-        _laskuri = _collections.Counter(_reitit.values())
-        print(f"[UEFA] {turnaus}: siltarivit UEFAsta {len(silta)} "
-              f"({dict(silta['league'].value_counts())}), nimireitit {dict(_laskuri)}")
-    else:
-        silta = _lataa_otteludata_cached(
-            [L for L in BRIDGE_LEAGUES if L != _uefa.KARSINTA_LIIGA], turnauskaudet)
-        print(f"[UEFA] {turnaus}: UEFA-rajapinta tyhja -> openfootball-silta "
-              f"({len(silta)} rivia, EI CL-karsintoja)")
+    # 3.10.2026: SILTA VAIN AVOIMESTA DATASTA. 21.9-3.10 ensisijainen lahde oli
+    # UEFAn rajapinta (match.uefa.com: EL, ECL ja CL-karsinnat kuluva kausi
+    # mukaan lukien). Haku lopetettiin Villen paatoksella. openfootball txt (vendoroitu)
+    # loppuu kauteen 25/26 eika sisalla CL-karsintoja, joten karsinnoista
+    # tulleiden seurojen data ohenee (21.9: LASK, Sabah, Viking).
+    # Portti: tests/test_no_uefa_fetch.py.
+    silta = _lataa_otteludata_cached(list(BRIDGE_LEAGUES), turnauskaudet)
+    print(f"[UEFA] {turnaus}: openfootball-silta ({len(silta)} rivia, EI CL-karsintoja)")
     if silta.empty:
         print(f"[UEFA] {turnaus}: siltaliigat {BRIDGE_LEAGUES} tyhjia -> "
               f"silta vain CL:sta (kalibroituvia liigoja vahemman)")
@@ -2132,16 +2111,12 @@ def league_standings(
         _kausi_to_year,
     )
 
-    # 23.9: UNL-lohkot UEFAn omasta rajapinnasta, turnausmuodossa {groups}.
+    # 3.10.2026: UNL-lohkoille ei ole lahdetta (UEFA-haku lopetettu) ->
+    # 200 + tyhja {groups}, klientin tyhjatila.
     from src.data.nations_league import UNL_LEAGUE, unl_standings
     if league == UNL_LEAGUE:
-        try:
-            groups, stale = unl_standings()
-        except Exception as e:
-            raise HTTPException(status_code=503,
-                                detail=f"UEFA standings unavailable: {type(e).__name__}")
-        return {"league": league, "season": None, "groups": groups,
-                **({"stale": True} if stale else {})}
+        groups, _stale = unl_standings()
+        return {"league": league, "season": None, "groups": groups}
 
     if season is None:
         season = config.current_season()
@@ -2334,17 +2309,12 @@ def upcoming_fixtures(
     from datetime import datetime, timedelta, timezone
     from src.data.football_data_org import FIXTURE_STANDINGS_CODES, _api_key
 
-    # 23.9: UNL tulee UEFAn omasta rajapinnasta (ei football-data.orgin
-    # ilmaistasolla). Sama vastausmuoto.
+    # 3.10.2026: UNL-otteluille ei ole lahdetta (UEFA-haku lopetettu) ->
+    # 200 + tyhja lista, klientin tyhjatila.
     from src.data.nations_league import UNL_LEAGUE, unl_fixtures
     if league == UNL_LEAGUE:
-        try:
-            fixtures, stale = unl_fixtures(days)
-        except Exception as e:
-            raise HTTPException(status_code=503,
-                                detail=f"UEFA fixtures unavailable: {type(e).__name__}")
-        return {"league": league, "days": days, "fixtures": fixtures,
-                **({"stale": True} if stale else {})}
+        fixtures, _stale = unl_fixtures(days)
+        return {"league": league, "days": days, "fixtures": fixtures}
 
     league_for_fd = FD_LEAGUE_ALIASES.get(league, league)
     code = FIXTURE_STANDINGS_CODES.get(league_for_fd)
@@ -2472,19 +2442,8 @@ def fixtures_by_date(
         leagues.append({"league": league_name, "code": code,
                         "fixtures": rows})
 
-    # 23.9 (Villen havainto: UNL ei nakynyt "every league on one day"
-    # -nakymassa): UEFA Nations League UEFAn rajapinnasta, samalla saannolla
-    # kuin yllä: VAIN valimuistista (unl-warm-saie), ei upstream-kutsua.
-    from src.data.nations_league import UNL_LEAGUE, cached_matches, fixtures_from_matches
-    known = len(code_to_league) + 1
-    unl_raw = cached_matches()
-    if unl_raw is not None:
-        covered += 1
-        d0 = _dt.strptime(want, "%Y-%m-%d").date()
-        unl_rows = fixtures_from_matches(unl_raw, d0, d0)
-        if unl_rows:
-            total += len(unl_rows)
-            leagues.append({"league": UNL_LEAGUE, "code": "UNL", "fixtures": unl_rows})
+    # 3.10.2026: UNL poistettu tasta nakymasta (UEFA-haku lopetettu).
+    known = len(code_to_league)
 
     # Liigat aikajarjestykseen paivan sisalla: ensin alkava liiga ylos.
     leagues.sort(key=lambda g: g["fixtures"][0]["datetime"] or "")
@@ -5532,7 +5491,7 @@ def fantasy_xp(
     """
     from src.models.fpl_xp import (
         WHY_DEFAULT_LANG, WHY_LANGS, XP_PATHS, attach_horizon_total_actionable,
-        attach_minutes_trend, attach_why, load_xp, minutes_trend_stamp,
+        attach_minutes_trend, attach_why, empty_xp, load_xp, minutes_trend_stamp,
         why_stamp,
     )
     # SPL-laajennos (7.8): sama sopimus kuin /api/fantasy — oletus 'fpl' =
@@ -5541,14 +5500,11 @@ def fantasy_xp(
     if lg not in XP_PATHS:
         raise HTTPException(status_code=404, detail=f"Unknown fantasy league '{league}'.")
     payload = load_xp(XP_PATHS[lg])
-    # UCL (21.9): TUOREUS ENNEN KAIKKEA MUUTA. Build kirjoittaa kierroksen
-    # build-hetkella; jos se lakkaa etenemasta (sarjavaihe ohi, ajot kaatuvat),
-    # pelattu kierros nakyisi tulevana. `ucl_xp.tuoreus` on ainoa lukija joka
-    # paattaa onko data tarjolla (tests/test_ucl_xp_julkaisu.py, vaiheet).
+    # 3.10.2026: UCL Fantasy lopetettu (Villen paatos). Vaikka tiedosto ilmestyisi levylle, sita ei
+    # tarjoilla: aina tyhja runko -> klientin tyhjatila. Portti:
+    # tests/test_no_uefa_fetch.py.
     if lg == "ucl":
-        import datetime as _dt_ucl
-        from src.models.ucl_xp import tuoreus as _ucl_tuoreus
-        payload = _ucl_tuoreus(payload, _dt_ucl.datetime.now(_dt_ucl.timezone.utc))
+        payload = empty_xp()
     # XP-HORIZON-ALKANUT-KIERROS (17.9): `xp_horizon_total` lasketaan
     # SERVE-TIMESSA vain kierroksilta joihin voi viela vaikuttaa
     # (meta.horizon_total_from = actionable gameweek), rivit `gameweeks[]`

@@ -39,9 +39,7 @@ POIKKEUKSET: dict[str, str] = {
                   "kuluva kierros kentalla; suunniteltu",
     "routes/spl/+page.svelte": "SPL:n oma artefakti (spl_xp) ja kierroslogiikka, ei FPL:n "
                   "deadline_gameweekia; eri tarkastus",
-    "routes/ucl/+page.svelte": "UCL:n matchday-artefakti (ucl_xp), oma MD-logiikka; eri tarkastus",
-    "lib/uclSquad.ts": "UCL My team (3.10): analyseSquad rajaa horisontin meta.deadline_gameweekista "
-                  "alkaen ja mennyt deadline -> unavailable; vaiheet testattu uclSquad.test.ts:ssa",
+    # 3.10.2026: routes/ucl ja lib/uclSquad.ts poistettu (UCL Fantasy lopetettu).
 }
 
 

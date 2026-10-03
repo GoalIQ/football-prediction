@@ -58,50 +58,6 @@ def test_kausi_johdetaan_configista(monkeypatch):
     assert nl.unl_season_year() == 2028
 
 
-# --- UEFAn rivit -> API-muoto --------------------------------------------------
-def _m(home, away, date, status="UPCOMING", md="1"):
-    return {"status": status,
-            "kickOffTime": {"date": date, "dateTime": f"{date}T18:45:00Z"},
-            "matchday": {"sequenceNumber": md},
-            "homeTeam": {"internationalName": home, "teamCode": home[:3].upper()},
-            "awayTeam": {"internationalName": away, "teamCode": away[:3].upper()}}
-
-
-def test_ottelut_vaiheittain():
-    raw = [
-        _m("Portugal", "Wales", "2026-09-24"),
-        _m("Türki̇ye", "Bosnia and Herzegovina", "2026-09-27", md="2"),
-        _m("Spain", "Italy", "2026-09-24", status="FINISHED"),  # pelattu
-        _m("Brazil", "Wales", "2026-09-25"),                    # ei UNL-maa
-        _m("France", "Belgium", "2026-11-17", md="6"),          # ikkunan ulkopuolella
-    ]
-    alku = dt.date(2026, 9, 23)
-    out = nl.fixtures_from_matches(raw, alku, alku + dt.timedelta(days=7))
-    assert [(f["home_team"], f["away_team"], f["matchday"]) for f in out] == [
-        ("Portugal", "Wales", 1), ("Turkey", "Bosnia-Herzegovina", 2)]
-    # ennen kautta: ei mitaan; kauden lopussa pelatut eivat nay
-    assert nl.fixtures_from_matches(raw, dt.date(2026, 8, 1), dt.date(2026, 8, 20)) == []
-    kaikki_pelattu = [dict(r, status="FINISHED") for r in raw]
-    assert nl.fixtures_from_matches(kaikki_pelattu, alku, dt.date(2026, 12, 31)) == []
-
-
-def test_taulukko_lohkoiksi():
-    raw = [{"group": {"metaData": {"groupName": "Group A1"}}, "items": [
-        {"rank": 2, "team": {"internationalName": "Wales", "teamCode": "WAL"},
-         "played": 1, "won": 0, "drawn": 0, "lost": 1, "goalsFor": 0,
-         "goalsAgainst": 2, "goalDifference": -2, "points": 0},
-        {"rank": 1, "team": {"internationalName": "Türki̇ye", "teamCode": "TUR"},
-         "played": 1, "won": 1, "drawn": 0, "lost": 0, "goalsFor": 2,
-         "goalsAgainst": 0, "goalDifference": 2, "points": 3},
-    ]}, {"group": {"metaData": {"groupName": "Group X"}}, "items": []}]
-    g = nl.groups_from_standings(raw)
-    assert [x["group"] for x in g] == ["Group A1"]
-    assert [r["team_name"] for r in g[0]["rows"]] == ["Turkey", "Wales"]
-    assert set(g[0]["rows"][0]) >= {"position", "team_name", "played_games", "won",
-                                    "draw", "lost", "goals_for", "goals_against",
-                                    "goal_difference", "points", "form"}
-
-
 # --- API --------------------------------------------------------------------------
 def _unl(client, home, away):
     return client.post("/api/predict-wc", json={
@@ -152,16 +108,13 @@ def test_teams_unl(client):
     assert r.json()["teams"] == sorted(nl.UNL_TEAMS)
 
 
-def test_fixtures_ja_standings_unl(client, monkeypatch):
-    monkeypatch.setattr(nl, "unl_fixtures", lambda days, now=None: (
-        [{"date": "2026-09-24", "datetime": "2026-09-24T18:45:00Z", "home_team": "Portugal",
-          "away_team": "Wales", "home_team_short_name": "POR", "away_team_short_name": "WAL",
-          "matchday": 1}], False))
-    monkeypatch.setattr(nl, "unl_standings", lambda: ([{"group": "Group A1", "rows": []}], True))
-    f = client.get("/api/fixtures", params={"league": nl.UNL_LEAGUE, "days": 7}).json()
-    assert f["fixtures"][0]["home_team"] == "Portugal" and "stale" not in f
-    s = client.get("/api/standings", params={"league": nl.UNL_LEAGUE}).json()
-    assert s["groups"][0]["group"] == "Group A1" and s["stale"] is True
+def test_fixtures_ja_standings_unl_tyhjat_ilman_lahdetta(client):
+    """3.10.2026: UNL:n ottelut ja lohkot haettiin UEFAlta; haku lopetettu.
+    Reitit vastaavat 200 + tyhja (klientin tyhjatila), eivat 503:a."""
+    f = client.get("/api/fixtures", params={"league": nl.UNL_LEAGUE, "days": 7})
+    assert f.status_code == 200 and f.json()["fixtures"] == []
+    s = client.get("/api/standings", params={"league": nl.UNL_LEAGUE})
+    assert s.status_code == 200 and s.json()["groups"] == []
 
 
 def test_unl_h2h_ja_joukkuekortti_kayttavat_kaikkia_otteluita(client):
@@ -183,24 +136,7 @@ def test_unl_h2h_ja_joukkuekortti_kayttavat_kaikkia_otteluita(client):
     assert len(t.json()["last_5_matches"]) == 5
 
 
-def test_by_date_nayttaa_unl_valimuistista_ilman_upstreamia(client, monkeypatch):
-    """Villen havainto 23.9: UNL ei nakynyt "every league on one day"
-    -nakymassa. by-date lukee UNL:n VAIN valimuistista (unl-warm-saie), kuten
-    football-data-liigat: kayttajan pyynto ei odota upstreamia."""
-    kutsut = []
-    monkeypatch.setattr(nl.requests, "get", lambda *a, **k: kutsut.append(a) or (_ for _ in ()).throw(AssertionError("upstream")))
-    monkeypatch.setattr(nl, "cached_matches", lambda: [
-        _m("Portugal", "Wales", "2026-09-24"),
-        _m("Türki̇ye", "France", "2026-09-25"),
-        _m("Spain", "Italy", "2026-09-24", status="FINISHED"),
-    ])
+def test_by_date_ei_sisalla_unl_ryhmaa(client):
+    """3.10.2026: UNL poistettu by-date-nakymasta (UEFA-haku lopetettu)."""
     r = client.get("/api/fixtures/by-date", params={"date": "2026-09-24"}).json()
-    unl = [g for g in r["leagues"] if g["league"] == nl.UNL_LEAGUE]
-    assert len(unl) == 1 and [f["home_team"] for f in unl[0]["fixtures"]] == ["Portugal"]
-    assert kutsut == []
-    # lammittamaton valimuisti: ei UNL-ryhmaa, ei virhetta, ei upstreamia
-    monkeypatch.setattr(nl, "cached_matches", lambda: None)
-    r2 = client.get("/api/fixtures/by-date", params={"date": "2026-09-24"}).json()
-    assert not [g for g in r2["leagues"] if g["league"] == nl.UNL_LEAGUE]
-    assert r2["leagues_covered"] < r2["leagues_known"]
-    assert kutsut == []
+    assert not [g for g in r["leagues"] if g["league"] == nl.UNL_LEAGUE]

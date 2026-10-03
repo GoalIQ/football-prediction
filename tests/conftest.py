@@ -41,16 +41,5 @@ def _fd_xg_ei_understatia(monkeypatch):
     monkeypatch.setattr(loader, "_understat_rivit", ei_verkkoa)
 
 
-@pytest.fixture(autouse=True)
-def _uefa_ei_verkkoa(monkeypatch, tmp_path_factory):
-    """21.9: UEFA-yhteisfitti hakee kuluvan kauden match.uefa.com:sta. Testi ei
-    saa riippua verkosta eika koneen levyvalimuistista: live-haku kaatuu ja
-    valimuisti on tyhja hakemisto, jolloin kuluva kausi on tyhja ja vain
-    vendoroidut kaudet ovat kaytossa (sama kaikilla koneilla ja CI:ssa)."""
-    from src.data import uefa_matches
-
-    def ei_verkkoa(*a, **k):
-        raise RuntimeError("UEFA-live-haku estetty testeissa (tests/conftest.py)")
-
-    monkeypatch.setattr(uefa_matches, "_hae_raaka", ei_verkkoa)
-    monkeypatch.setattr(uefa_matches, "CACHE_DIR", tmp_path_factory.mktemp("uefa_matches"))
+# 3.10.2026: UEFA-live-haun esto poistettu, koska src/data/uefa_matches.py on
+# poistettu (UEFA-haku lopetettu). Portti: tests/test_no_uefa_fetch.py.

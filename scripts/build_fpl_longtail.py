@@ -622,7 +622,6 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         # ettei GoalIQ:lla ole UCL-pistemallia. Linkkiteksti ei nimea osiota
         # portin mielessa (`tests/test_ucl_no_projection.py::_kuvaileva`), ja
         # rajaus on /ucl-sivujen herossa (`build_ucl_page.UCL_SCOPE`).
-        f'<a href="/ucl/">UCL Fantasy prices</a> · '
         f'<a href="/privacy">Privacy</a><br>{DISCLAIMER}</footer>\n'
         "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
     )

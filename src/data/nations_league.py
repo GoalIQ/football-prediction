@@ -14,23 +14,20 @@ esirakennettuna mallinaan `data/unl_model.json`:
   * UNL:n sarjavaihe pelataan KOTI- JA VIERASOTTELUINA, joten kotietu
     SAILYY (WC neutraloi sen, koska kisat olivat neutraalilla maalla).
 
-Ottelut ja sarjataulukko tulevat UEFAn omasta julkisesta rajapinnasta
-(match.uefa.com / standings.uefa.com, sama taho kuin UCL-syote), ei
-football-data.orgista (UNL ei ole sen ilmaistasolla).
+Otteluita ja sarjataulukkoa EI ole 3.10.2026 alkaen. Ne haettiin UEFAn
+rajapinnasta (match.uefa.com / standings.uefa.com); haku lopetettiin Villen
+paatoksella.
+UNL ei ole football-data.orgin ilmaistasolla, joten korvaavaa lahdetta ei ole.
+Ennustemalli (martj42, CC0) jaa. Portti: tests/test_no_uefa_fetch.py.
 
 Saanto 6a: mika vaihtuu alla -> kausi (seasonYear johdetaan
-config.current_season():sta, ei kovakoodata), joukkuenimet (UEFAn nimet
-kanonisoidaan YHDESSA lukijassa `resolve_unl_name`), rajapinnan saatavuus
-(TTL-cache + vanha vastaus varalle, virhe ei kaada endpointia hiljaa).
+config.current_season():sta, ei kovakoodata), joukkuenimet (kanonisoidaan
+YHDESSA lukijassa `resolve_unl_name`).
 """
 from __future__ import annotations
 
-import threading
-import time
 import unicodedata
 from functools import lru_cache
-
-import requests
 
 import config
 from src.data.international_results import (
@@ -186,154 +183,21 @@ def unl_model_meta() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# UEFAn rajapinta: ottelut ja sarjataulukko
+# Ottelut ja sarjataulukko: ei lahdetta (UEFA-haku lopetettu 3.10.2026)
 # ---------------------------------------------------------------------------
-_HEADERS = {"User-Agent": "curl/8.4.0", "Accept": "application/json"}
-_TTL_SEC = 30 * 60
-_cache: dict[str, tuple[float, object]] = {}
-_lock = threading.Lock()
-
-
-def _get_cached(key: str, url: str, params: dict) -> tuple[object, bool]:
-    """(data, stale). Tuore haku TTL:n jalkeen; virheessa vanha vastaus
-    stale-lipulla. Ilman vanhaa vastausta virhe nousee kutsujalle."""
-    now = time.time()
-    with _lock:
-        hit = _cache.get(key)
-    if hit and now - hit[0] < _TTL_SEC:
-        return hit[1], False
-    try:
-        r = requests.get(url, params=params, headers=_HEADERS, timeout=20)
-        r.raise_for_status()
-        data = r.json()
-    except Exception:
-        if hit:
-            return hit[1], True
-        raise
-    with _lock:
-        _cache[key] = (now, data)
-    return data, False
-
-
-def _team(t: dict) -> str | None:
-    tr = (t or {}).get("translations") or {}
-    for n in (t.get("internationalName") if t else None,
-              ((tr.get("displayName") or {}).get("EN")),
-              ((tr.get("displayOfficialName") or {}).get("EN"))):
-        r = resolve_unl_name(n)
-        if r:
-            return r
-    return None
-
-
-def _matchday(md) -> int | None:
-    """UEFA: {'sequenceNumber': '1', ...} (merkkijono, mitattu 23.9)."""
-    v = md.get("sequenceNumber") if isinstance(md, dict) else md
-    try:
-        return int(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def fixtures_from_matches(raw: list, date_from, date_to) -> list[dict]:
-    """UEFAn ottelurivit -> /api/fixtures-muoto. Vain pelaamattomat,
-    [date_from, date_to]-ikkunassa, joukkuenimet mallin avaimina (Predict-
-    esitaytto osuu suoraan). Puhdas funktio: testataan synteettisilla riveilla."""
-    out = []
-    for m in raw or []:
-        if m.get("status") == "FINISHED":
-            continue
-        ko = m.get("kickOffTime") or {}
-        dt_s = ko.get("dateTime") or ""
-        d = (ko.get("date") or dt_s[:10])
-        if not d or not (date_from.isoformat() <= d <= date_to.isoformat()):
-            continue
-        h, a = _team(m.get("homeTeam") or {}), _team(m.get("awayTeam") or {})
-        if not h or not a:
-            continue
-        out.append({
-            "date": d,
-            "datetime": dt_s or None,
-            "home_team": h,
-            "away_team": a,
-            "home_team_short_name": (m.get("homeTeam") or {}).get("teamCode"),
-            "away_team_short_name": (m.get("awayTeam") or {}).get("teamCode"),
-            "matchday": _matchday(m.get("matchday")),
-        })
-    out.sort(key=lambda f: f["datetime"] or f["date"])
-    return out
-
-
-def _matches_key() -> str:
-    return f"unl-matches:{unl_season_year()}"
+# Reitit vastaavat 200 + tyhja lista, jolloin klientit nayttavat oman
+# tyhjatilansa ("No Nations League matches scheduled", "Group tables are
+# unavailable"). 503 olisi nayttanyt verkkovirheelta.
 
 
 def cached_matches() -> list | None:
-    """UEFAn ottelurivit PELKASTA valimuistista (ei verkkoa). /api/fixtures/
-    by-date kayttaa tata: kayttajan pyynto ei odota upstreamia (sama saanto
-    kuin football-data-liigoilla). None = ei viela lammitetty."""
-    with _lock:
-        hit = _cache.get(_matches_key())
-    return hit[1] if hit else None
-
-
-def warm_matches() -> bool:
-    """Hae UEFAn ottelut valimuistiin (lammitinsaie). True jos onnistui."""
-    try:
-        _get_cached(_matches_key(), "https://match.uefa.com/v5/matches",
-                    {"competitionId": UNL_COMPETITION_ID, "seasonYear": unl_season_year(),
-                     "limit": 500, "offset": 0, "order": "ASC"})
-        return True
-    except Exception:
-        return False
+    """Ei otteluita valimuistissa: /api/fixtures/by-date jattaa UNL:n pois."""
+    return None
 
 
 def unl_fixtures(days: int, now=None) -> tuple[list[dict], bool]:
-    import datetime as dt
-    now = now or dt.datetime.now(dt.timezone.utc)
-    year = unl_season_year()
-    raw, stale = _get_cached(
-        _matches_key(), "https://match.uefa.com/v5/matches",
-        {"competitionId": UNL_COMPETITION_ID, "seasonYear": year,
-         "limit": 500, "offset": 0, "order": "ASC"})
-    today = now.date()
-    return fixtures_from_matches(raw, today, today + dt.timedelta(days=days)), stale
-
-
-def groups_from_standings(raw: list) -> list[dict]:
-    """UEFAn standings -> /api/standings turnausmuoto {group, rows}. Rivin
-    avaimet samat kuin football-data-polun `_fd_standings_row` + form."""
-    groups = []
-    for g in raw or []:
-        name = ((g.get("group") or {}).get("metaData") or {}).get("groupName")
-        rows = []
-        for it in sorted(g.get("items") or [], key=lambda x: x.get("rank") or 99):
-            team = _team(it.get("team") or {})
-            if not team:
-                continue
-            rows.append({
-                "position": it.get("rank"),
-                "team_name": team,
-                "team_short_name": (it.get("team") or {}).get("teamCode"),
-                "team_crest": None,
-                "played_games": it.get("played", 0),
-                "won": it.get("won", 0),
-                "draw": it.get("drawn", 0),
-                "lost": it.get("lost", 0),
-                "goals_for": it.get("goalsFor", 0),
-                "goals_against": it.get("goalsAgainst", 0),
-                "goal_difference": it.get("goalDifference", 0),
-                "points": it.get("points", 0),
-                "form": None,
-            })
-        if name and rows:
-            groups.append({"group": name, "rows": rows})
-    return groups
+    return [], False
 
 
 def unl_standings() -> tuple[list[dict], bool]:
-    year = unl_season_year()
-    raw, stale = _get_cached(
-        f"unl-standings:{year}", "https://standings.uefa.com/v1/standings",
-        {"competitionId": UNL_COMPETITION_ID, "seasonYear": year})
-    return groups_from_standings(raw), stale
+    return [], False

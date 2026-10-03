@@ -144,7 +144,8 @@ def test_servattavan_sivun_committaava_workflow_verifioi_deployn():
 def test_portti_nakee_edes_yhden_verifioivan_workflown():
     """Portti joka ei loyda mitaan mitattavaa on vihrea vaarasta syysta."""
     osumat = [n for n, r in _workflowt() if analysoi(r)["servattavat"]]
-    assert "ucl-refresh.yml" in osumat and "accuracy-log.yml" in osumat, osumat
+    # 3.10.2026: ucl-refresh.yml poistettu (UEFA-haku lopetettu).
+    assert "accuracy-log.yml" in osumat and "fpl-data-refresh.yml" in osumat, osumat
 
 
 def test_poikkeuslistalla_ei_ole_kuolleita_rivaja():

@@ -47,10 +47,10 @@ raw_data/
 # siltadataksi. Ilman tata poikkeusta vendoroitu data jaisi repon ulkopuolelle
 # ja tuotanto hakisi kolme kautta livena joka kylmakaynnistyksessa.
 # Rakennus: scripts/build_uefa_matches.py
-!/data/uefa_matches/
-!/data/uefa_matches/*.csv
+# 3.10.2026: poistettu (Villen paatos), ei un-ignorea: /data/uefa_matches/
+# 3.10.2026: poistettu (Villen paatos), ei un-ignorea: /data/uefa_matches/*.csv
 # 21.9: UCL Fantasy xP (Premium, API lukee levylta kuten FPL:n projektion).
-!/data/ucl_xp_projections.json
+# 3.10.2026: poistettu (Villen paatos), ei un-ignorea: /data/ucl_xp_projections.json
 # Portin hylkaamat sanamuodot (4.9): tests/test_rejected_phrases.py lukee
 # taman, joten gitignore-aukko olisi hiljainen regressio - testi kaatuisi
 # CI:ssa tiedostoon jota ei ole repossa (muisti: gitignored-fix-silent-regression).
@@ -113,7 +113,7 @@ raw_data/
 !/data/gw_recap.json
 # UCL Fantasy -syote normalisoituna (7.9.2026). Sivu ja SPA lukevat taman,
 # ja se on julkinen lahde jonka lukija voi avata.
-!/data/ucl_fantasy.json
+# 3.10.2026: poistettu (Villen paatos), ei un-ignorea: /data/ucl_fantasy.json
 # 28.7: PELAAJATASON minuuttiohitukset. Tama poikkeus PUUTTUI kun tiedosto
 # luotiin 27.7 -> se jai vain kehityskoneelle, CI-runnerilla sita ei ollut, ja
 # load_player_overrides() palautti hiljaa tyhjan dictin. Seuraus: 27.7 korjattu
@@ -305,7 +305,7 @@ outputs/gw_digest/
 .wrangler/
 
 # 9.9.2026: esirakennettu UEFA-yhteismalli (ks. src/models/uefa_prebuilt.py) -
-# committoidaan kuten wc_model.json, muuten ucl-refreshin git add kaatuu hiljaa.
+# committoidaan kuten wc_model.json. 3.10.2026: artefakti poistettu eika sita enaa bakata; API fittaa CL-mallin livena.
 !/data/uefa_joint_model.json
 # Kauden alun minuuttiharhan mittaus (12.9): copy sanoo "14 minutes lower"
 # kolmella pinnalla, ja tests/test_minutes_claim_matches_source.py sitoo luvun

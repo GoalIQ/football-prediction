@@ -3,7 +3,7 @@
  *
  * 🔴 MITATTU 22.9: pron raaka HTML (jota X, Bluesky, Slack ja Facebook
  * lukevat, eivat aja JS:aa) oli sama 11 658 tavun index.html jokaisella
- * reitilla paitsi /spl. 21.9 markkinoitu `pro.goaliq.app/ucl` nakyi
+ * reitilla paitsi /spl. 21.9 markkinoitu pro-sovelluksen /ucl-reitti nakyi
  * jaettuna "GoalIQ Premium | FPL tools", ja og:url osoitti juureen.
  *
  * Mekanismi: `scripts/route-heads.mjs` kirjoittaa buildin jalkeen jokaiselle
@@ -36,9 +36,10 @@ export const ORIGIN = 'https://pro.goaliq.app';
 
 /** UCL-sivun oma otsikko ja kuvaus (routes/ucl/+page.svelte lukee nama). */
 export const UCL_HEAD = {
-	title: 'UCL Fantasy expected points | GoalIQ',
+	// 3.10.2026: UCL Fantasy lopetettu (Villen paatos); reitti on ilmoitus.
+	title: 'UCL Fantasy | GoalIQ',
 	description:
-		'Clean sheet chances for every Champions League club in the league phase, free. GoalIQ Premium adds expected points for each UCL Fantasy player up to three matchdays ahead, with captain, value and differential lists, and plans transfers and chips for your own squad.'
+		'UCL Fantasy is no longer part of GoalIQ. The Fantasy Premier League tools and match predictions are still here.'
 } as const;
 
 /** SPL-sivun oma otsikko ja kuvaus (routes/spl/+page.svelte lukee nama). */

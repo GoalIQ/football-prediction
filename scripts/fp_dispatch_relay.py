@@ -54,8 +54,7 @@ LOOKBACK_MIN = 60
 # (osajoukon on oltava tiedoston croneja; portti tarkistaa).
 TARGETS: list[dict] = [
     {"workflow": "fpl-transfer-watch.yml", "slots": None},
-    # ucl-refresh.yml poistettu 3.10.2026: UEFA-haku lopetettu (Villen paatos,
-    # UEFAn kayttoehdot 6.2), workflow disabloitu ja cron poistettu.
+    # ucl-refresh.yml poistettu 3.10.2026 (UCL Fantasy lopetettu, Villen paatos).
     {"workflow": "accuracy-log.yml", "slots": None},
     # Vain 3 h -slotti: 09:15- ja :40-slotit ovat guardattuja
     # `github.event.schedule`-arvolla, joka on tyhja dispatch-ajossa ->
