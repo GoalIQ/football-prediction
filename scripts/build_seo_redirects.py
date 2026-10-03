@@ -83,6 +83,10 @@ def _old_title_names(path: str) -> tuple[str, str]:
     return m.group(1).strip(), m.group(2).strip()
 
 
+UCL_POISTETTU = ["/ucl /fpl 301", "/ucl/* /fpl 301"]
+"""Poistetut /ucl-sivut (3.10.2026) ohjataan FPL-tyokaluihin."""
+
+
 def main() -> int:
     deleted, added = _name_status()
     print(f"poistettuja ottelusivuja {len(deleted)}, lisattyja {len(added)}")
@@ -114,6 +118,8 @@ def main() -> int:
         "# 301-kartta commitin 6908a643 uudelleennimeamille ottelusivuille.",
         "# GENEROITU: scripts/build_seo_redirects.py - ala muokkaa kasin.",
     ]
+    # 3.10.2026: UCL Fantasy -sivut poistettu (Villen paatos).
+    lines += UCL_POISTETTU
     lines += [f"/{o} /{n} 301" for o, n in rows]
     OUT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Kirjoitettu: {OUT_PATH} ({len(rows)} saantoa)")

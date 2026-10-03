@@ -739,8 +739,8 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
         )
     hero = (
         f"<h1>{escape(cfg['name'])} predictions</h1>"
-        f'<p class="lede">The GoalIQ match model predicts every upcoming '
-        f"{escape(cfg['name'])} fixture: win probability for each side, expected "
+        f'<p class="lede">The GoalIQ match model predicts upcoming '
+        f"{escape(cfg['name'])} fixtures: win probability for each side, expected "
         f"goals and scoreline probabilities. Predictions are logged before kickoff "
         f"and graded in a public track record.</p>"
     )

@@ -163,12 +163,10 @@ describe('3. alapalkki', () => {
 		expect(activeNav('/spl', '')).toBe('players');
 		expect(activeNav('/spl', '#model-squad')).toBe('squad');
 		expect(activeNav('/players/value', '')).toBe('players');
-		// UCL sai oman palkin samana iltana (Villen valinta: sama rakenne).
-		// 3.10 (vaiheet 5-7): oma joukkue omana osionaan kuten RSL:n Model squad.
-		expect(navItems('/ucl').map((g) => g.label)).toEqual(['Players', 'Teams', 'My team']);
-		expect(activeNav('/ucl', '')).toBe('players');
-		expect(activeNav('/ucl', '#clean-sheets')).toBe('teams');
-		expect(activeNav('/ucl', '#my-team')).toBe('squad');
+		// 3.10.2026: UCL Fantasy poistettu (Villen paatos). /ucl on ilmoitus, jonka
+		// palkki on FPL:n oma (paluu FPL-tyokaluihin), eika mikaan ole korostettuna.
+		expect(navItems('/ucl')).toEqual(navItems('/'));
+		expect(activeNav('/ucl', '#my-team')).toBeNull();
 	});
 	it('ylapalkki lukee saman lukijan, eika nayta FPL:n deadlinea muiden pelien sivuilla', () => {
 		const hero = code('./components/Hero.svelte');
@@ -208,13 +206,13 @@ describe('3. alapalkki', () => {
 });
 
 describe('4. pelivalitsin ja erillisreitit', () => {
-	it('FPL / UCL Fantasy / RSL Fantasy, kohteet ovat olemassa olevia reitteja', () => {
-		expect(GAMES.map((g) => g.label)).toEqual(['FPL', 'UCL Fantasy', 'RSL Fantasy']);
+	it('FPL / RSL Fantasy, kohteet ovat olemassa olevia reitteja (UCL poistettu 3.10.2026)', () => {
+		expect(GAMES.map((g) => g.label)).toEqual(['FPL', 'RSL Fantasy']);
 		for (const g of GAMES) {
 			const rel = g.href === '/' ? '../routes/+page.svelte' : `../routes${g.href}/+page.svelte`;
 			expect(existsSync(fileURLToPath(new URL(rel, import.meta.url))), g.href).toBe(true);
 		}
-		expect(gameOf('/ucl').id).toBe('ucl');
+		expect(gameOf('/ucl').id).toBe('fpl');
 		expect(gameOf('/spl').id).toBe('spl');
 		expect(gameOf('/players/value').id).toBe('fpl');
 		expect(gameOf('/').id).toBe('fpl');

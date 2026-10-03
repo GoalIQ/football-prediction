@@ -37,18 +37,9 @@ from src.models.uefa_joint import (
 CL = "INT-Champions League"
 EL = "INT-Europa League"
 ECL = "INT-Conference League"
-KARSINTA = "INT-Champions League Qualifying"
 OPENFOOTBALL_SILTA = (EL, ECL)
 """Varasilta jos UEFAn rajapinta on tyhja (src/data/uefa_matches.py on
 ensisijainen). Karsintoja ei ole openfootballissa lainkaan."""
-
-
-def _ei_uefaa(monkeypatch):
-    """API-testit jotka mittaavat openfootball-varapolkua: UEFA tyhjaksi."""
-    from src.data import uefa_matches
-
-    monkeypatch.setattr(uefa_matches, "lataa",
-                        lambda kaudet, liigat=None: pd.DataFrame(columns=uefa_matches.COLUMNS))
 
 
 # ---------------------------------------------------------------------------
@@ -56,8 +47,9 @@ def _ei_uefaa(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_siltaliigat_ovat_el_ecl_ja_cl_karsinnat():
-    assert set(BRIDGE_LEAGUES) == {EL, ECL, KARSINTA}, BRIDGE_LEAGUES
+def test_siltaliigat_ovat_el_ja_ecl():
+    """3.10.2026: CL-karsinnat pois (ainoa lahde oli UEFAn rajapinta)."""
+    assert set(BRIDGE_LEAGUES) == {EL, ECL}, BRIDGE_LEAGUES
 
 
 def test_siltaliiga_ei_ole_tukiliiga():
@@ -211,7 +203,6 @@ def test_api_lataa_siltaliigat_ja_nimeaa_seurat_fixtures_muodossa(monkeypatch):
 
     monkeypatch.setattr(M, "_lataa_otteludata_cached", lataa)
     monkeypatch.setattr(up, "load", lambda **kw: (None, "testi"))
-    _ei_uefaa(monkeypatch)
     monkeypatch.setattr(fdo, "turnauksen_joukkuenimet",
                         lambda liiga, kaudet: {"Turk 5 SK FC"} if liiga == CL else set())
     monkeypatch.setattr("src.data.fd_fallback.lataa_varasnapshot",
@@ -239,61 +230,8 @@ def test_api_pyytaa_siltaliigat_vain_turnausikkunalla(monkeypatch):
 
     monkeypatch.setattr(M, "_lataa_otteludata_cached", lataa)
     monkeypatch.setattr(up, "load", lambda **kw: (None, "testi"))
-    _ei_uefaa(monkeypatch)
     M._fit_uefa_yhteismalli((CL,), ("2526", "2627"), 0.0035, allow_prebuilt=False)
     assert kaudet_per_liigat[OPENFOOTBALL_SILTA] == kaudet_per_liigat[(CL,)]
-
-
-def test_api_kayttaa_uefan_siltaa_eika_openfootballia(monkeypatch):
-    """Ensisijainen polku (21.9): silta tulee UEFAn rajapinnasta samalla
-    ikkunalla kuin CL, EIKA openfootballia pyydeta. UEFA-nimi ('Turk 5 Spor
-    Kulubu') ratkaistaan kotiliigan nimeksi tokenijoukolla, jotta seura ei
-    ole kahtena entiteettina."""
-    import api.main as M
-    from src.data import uefa_matches
-    from src.models import uefa_prebuilt as up
-
-    d = _data_jossa_silta_on_vain_el()
-    el = d[d.league == EL].copy()
-    kotiliiga = d[d.league != EL].copy()
-    pyydetyt: dict[tuple[str, ...], tuple[str, ...]] = {}
-
-    def lataa(liigat, kaudet):
-        pyydetyt[tuple(liigat)] = tuple(kaudet)
-        return kotiliiga[kotiliiga.league.isin(list(liigat))].copy()
-
-    uefa_kaudet: list[tuple[str, ...]] = []
-
-    def uefa_lataa(kaudet, liigat=None):
-        uefa_kaudet.append(tuple(kaudet))
-        u = el.copy()
-        # UEFAn virallinen nimi eroaa kanonisesti kotiliigan nimesta
-        # ('Turk 3 Spor Kulubu' vs 'Turk 3 SK'); vaihtoehtonimi 'Turk 3' osuu.
-        for puoli in ("home", "away"):
-            alkup = u[f"{puoli}_team"]
-            turk = alkup.str.match(r"^Turk \d SK$")
-            virallinen = alkup.where(~turk, alkup.str.replace(" SK", " Spor Kulubu", regex=False))
-            vaihtoehto = alkup.where(~turk, alkup.str.replace(" SK", "", regex=False))
-            u[f"{puoli}_uefa_id"] = alkup
-            u[f"{puoli}_team"] = virallinen
-            u[f"{puoli}_nimet"] = virallinen.where(~turk, virallinen + "|" + vaihtoehto)
-            u[f"{puoli}_maa"] = ""
-        u["vaihe"] = "TOURNAMENT"
-        return u
-
-    monkeypatch.setattr(M, "_lataa_otteludata_cached", lataa)
-    monkeypatch.setattr(up, "load", lambda **kw: (None, "testi"))
-    monkeypatch.setattr(uefa_matches, "lataa", uefa_lataa)
-    dc = M._fit_uefa_yhteismalli((CL,), ("2526", "2627"), 0.0035, allow_prebuilt=False)
-
-    assert OPENFOOTBALL_SILTA not in pyydetyt, "UEFA-datan kanssa openfootballia ei pyydeta"
-    assert uefa_kaudet and uefa_kaudet[0] == pyydetyt[(CL,)], "silta CL:n ikkunalla"
-    # Erotteleva ehto: ilman nimiratkaisua UEFA-rivit olisivat 'Spor Kulubu'
-    # -seuroja ilman kotiliigaa, Turkin siltamaara putoaisi nollaan eika
-    # liiga kalibroituisi.
-    assert "TUR-Super Lig" in dc.uefa_calibrated_leagues_
-    assert not any("Spor Kulubu" in k for k in dc.attack), sorted(dc.attack)
-    assert {f"Turk {i} SK" for i in range(6)} <= set(dc.attack)
 
 
 def test_api_kayttaa_maaryhmaa(monkeypatch):
@@ -315,6 +253,5 @@ def test_api_kayttaa_maaryhmaa(monkeypatch):
                         lambda liigat, kaudet: d[d.league.isin(list(liigat))].copy())
     monkeypatch.setattr(up, "load", lambda **kw: (None, "testi"))
     monkeypatch.setattr(uefa_joint, "fit_uefa_joint", kaappaa)
-    _ei_uefaa(monkeypatch)
     M._fit_uefa_yhteismalli((CL,), ("2526", "2627"), 0.0035, allow_prebuilt=False)
     assert saadut.get("team_groups") == "maa" == M.UEFA_TEAM_GROUPS

@@ -532,7 +532,8 @@ export function sectionOf(group: string, slug: string | null): Section | null {
  * hashia itse. Portit `splViews.gate.test.ts` ja `uclViews.gate.test.ts`
  * kaatavat jos nakyma jaa ilman sisaltoa tai osiota, tai on kahdessa.
  * --------------------------------------------------------------------- */
-export type GameId = 'spl' | 'ucl';
+// 3.10.2026: 'ucl' poistettu (UCL Fantasy lopetettu, Villen paatos).
+export type GameId = 'spl';
 
 export type GameSection<V extends string = string> = {
 	id: string;
@@ -564,17 +565,6 @@ export type SplView =
 	| 'accuracy'
 	| 'model-squad';
 
-/** UCL: sivun xP-lista on 'xp' (uclPicksin 'all'). Teams = joukkueiden
- *  clean sheet % kierroksittain samasta CL-mallista kuin puolustajien xP. */
-export type UclPageView =
-	| 'captain'
-	| 'xp'
-	| 'value'
-	| 'differentials'
-	| 'compare'
-	| 'clean-sheets'
-	| 'my-team';
-
 const PRESETS: { view: 'captain' | 'xp' | 'value' | 'differentials'; label: string; horizon?: boolean }[] = [
 	{ view: 'captain', label: 'Captain' },
 	{ view: 'xp', label: 'xP', horizon: true },
@@ -582,7 +572,7 @@ const PRESETS: { view: 'captain' | 'xp' | 'value' | 'differentials'; label: stri
 	{ view: 'differentials', label: 'Differentials' }
 ];
 
-export const GAME_VIEWS: { spl: GameViews<SplView>; ucl: GameViews<UclPageView> } = {
+export const GAME_VIEWS: { spl: GameViews<SplView> } = {
 	spl: {
 		sections: [
 			{
@@ -615,28 +605,6 @@ export const GAME_VIEWS: { spl: GameViews<SplView>; ucl: GameViews<UclPageView> 
 		},
 		// RSL on ilmainen: avataan kapteenilla kuten FPL:n Players.
 		defaultView: 'captain'
-	},
-	ucl: {
-		sections: [
-			{
-				id: 'players',
-				label: 'Players',
-				lead: 'xp',
-				views: ['captain', 'xp', 'value', 'differentials', 'compare'],
-				icon: 'players'
-			},
-			{ id: 'teams', label: 'Teams', lead: 'clean-sheets', views: ['clean-sheets'], icon: 'shield' },
-			// 3.10 (vaiheet 5-7): kayttajan oma joukkue kasin syotettyna; analyysi
-			// $lib/uclSquad. Syotto ilmainen, analyysi Premium (maski palvelimella).
-			{ id: 'squad', label: 'My team', lead: 'my-team', views: ['my-team'], icon: 'team' }
-		],
-		// Ei horisonttia nimeen: xpHorizonin nimi on GW-muotoinen ("xP 3 GWs"),
-		// ja UCL:n kierros on matchday (sivu valttaa GW-muotoja, 21.9).
-		presets: PRESETS.map(({ view, label }) => ({ view, label })),
-		more: { players: [{ view: 'compare', label: 'Compare two players' }] },
-		// UCL-listat ovat Premiumia; ilmainen nakee xP-listan kymmenen karkea,
-		// joten oletus on xP eika lukittu kapteenilista (sama kuin 23.9 vaihe 1).
-		defaultView: 'xp'
 	}
 };
 
@@ -666,15 +634,13 @@ export const SPL_DEFAULT_VIEW: SplView = GAME_VIEWS.spl.defaultView;
 export const splView = (hash: string | null | undefined): SplView => gameView('spl', hash) as SplView;
 export const splSectionOf = (view: SplView): GameSection<SplView> =>
 	gameSectionOf('spl', view) as GameSection<SplView>;
-export const uclView = (hash: string | null | undefined): UclPageView =>
-	gameView('ucl', hash) as UclPageView;
 
 /* ------------------------------------------------------------------------
  * Pelivalitsin (A3 1: "FPL ▾ -> FPL / UCL Fantasy / RSL Fantasy").
  * UCL ja SPL ovat omia reittejaan (routes/ucl, routes/spl), eivat ryhmia.
  * --------------------------------------------------------------------- */
 export type Game = {
-	id: 'fpl' | 'ucl' | 'spl';
+	id: 'fpl' | 'spl';
 	label: string;
 	/** Puhelimen ylapalkin lyhyt nimi: 390 px:lla "UCL Fantasy" + tilinapit
 	 *  eivat mahdu samalle riville (mitattu, raportti w-spa-ia.md). */
@@ -684,7 +650,7 @@ export type Game = {
 
 export const GAMES: Game[] = [
 	{ id: 'fpl', label: 'FPL', short: 'FPL', href: '/' },
-	{ id: 'ucl', label: 'UCL Fantasy', short: 'UCL', href: '/ucl' },
+	// 3.10.2026: UCL Fantasy poistettu (Villen paatos); /ucl on ilmoitus.
 	{ id: 'spl', label: 'RSL Fantasy', short: 'RSL', href: '/spl' }
 ];
 

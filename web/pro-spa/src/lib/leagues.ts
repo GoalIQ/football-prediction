@@ -49,8 +49,9 @@ export const LEAGUES: SpaLeague[] = [
 	{ code: 'INT-Nations League', label: 'Nations League', tournament: true, national: true }
 ];
 
-/** Otteluohjelma: kaikki, turnaukset mukaan lukien. */
-export const FIXTURE_LEAGUES = LEAGUES;
+/** Otteluohjelma: kaikki, turnaukset mukaan lukien. 3.10.2026: Nations League
+ *  pois, koska sen otteluille ei ole lahdetta (ennustin jaa). */
+export const FIXTURE_LEAGUES = LEAGUES.filter((l) => l.code !== 'INT-Nations League');
 
 /** Sarjataulukko: vain sarjat. */
 export const STANDINGS_LEAGUES = LEAGUES.filter((l) => !l.tournament);

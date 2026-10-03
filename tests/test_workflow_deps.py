@@ -371,12 +371,12 @@ def _puutteet_kansiosta(kansio: Path) -> set[tuple[str, str]]:
 
 def test_portti_kaataa_workflown_josta_asennus_on_poistettu(tmp_path):
     """Positiivinen mutaatio: sama tiedosto ilman pip-rivia on puute."""
-    lahde = WORKFLOWS / "ucl-refresh.yml"
+    lahde = WORKFLOWS / "fpl-data-refresh.yml"
     teksti = lahde.read_text(encoding="utf-8")
     assert "pip install" in teksti, "lahde ei enaa asenna mitaan - valitse toinen"
     riisuttu = "\n".join(
         r for r in teksti.splitlines() if "pip install" not in r)
-    (tmp_path / "ucl-refresh.yml").write_text(riisuttu, encoding="utf-8")
+    (tmp_path / "fpl-data-refresh.yml").write_text(riisuttu, encoding="utf-8")
     loydot = _puutteet_kansiosta(tmp_path)
     assert any(imp == "numpy" for _, imp in loydot), (
         "portti ei havainnut puuttuvaa numpyta ilman asennusaskelta - "
@@ -386,14 +386,14 @@ def test_portti_kaataa_workflown_josta_asennus_on_poistettu(tmp_path):
 def test_portti_ei_valita_ylimaaraisesta_paketista(tmp_path):
     """Negatiivinen mutaatio: liikaa asennettu ei ole vika. Vaara positiivinen
     opettaisi ohittamaan portin yhta tehokkaasti kuin puuttuva portti."""
-    lahde = WORKFLOWS / "ucl-refresh.yml"
+    lahde = WORKFLOWS / "tests.yml"
     teksti = lahde.read_text(encoding="utf-8")
     lisatty = teksti.replace(
         "pip install -r requirements.txt pytest httpx",
         "pip install -r requirements.txt pytest httpx rich",
     )
     assert lisatty != teksti, "asennusrivia ei loytynyt - paivita kontrolli"
-    (tmp_path / "ucl-refresh.yml").write_text(lisatty, encoding="utf-8")
+    (tmp_path / "tests.yml").write_text(lisatty, encoding="utf-8")
     assert not _puutteet_kansiosta(tmp_path), "ylimaarainen paketti luettiin viaksi"
 
 

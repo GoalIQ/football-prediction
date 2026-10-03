@@ -129,14 +129,9 @@ def test_bake_kayttaa_samaa_decayta_kuin_api():
         inspect.signature(M._saa_malli).parameters["decay"].default
 
 
-def test_ucl_refresh_committaa_artefaktin_jonka_bake_kirjoittaa():
-    """Sama portti kuin test_refresh_commits_what_it_writes, ucl-refreshille:
-    levylle kirjoitettu malli joka ei paady git addiin katoaa ajon mukana."""
-    wf = (ROOT / ".github" / "workflows" / "ucl-refresh.yml").read_text(encoding="utf-8")
-    assert "scripts.build_uefa_model" in wf
-    assert re.search(r"git add data/uefa_joint_model\.json", wf), \
-        "bake kirjoittaa data/uefa_joint_model.json mutta commit-askel ei lisaa sita"
-    assert ".venv" not in wf
+# 3.10.2026: ucl-refresh.yml (bake + commit) ja UEFA-pohjainen
+# data/uefa_joint_model.json poistettu (UEFA-haku lopetettu). Lukija jaa:
+# puuttuva artefakti -> live-fitti avoimella datalla.
 
 
 def test_artefakti_ei_ole_gitignoressa():
@@ -209,19 +204,3 @@ def test_latausvika_ei_mene_levylle(tmp_path):
     up.save(_iso_dc(121), tournament=CL, season_pair=PARI, decay=0.0035,
             calibrated_leagues=[*LIIGAT, "GRE-Super League"], path=p, now=NYT)
     assert p.exists()
-
-
-def test_committattu_artefakti_lapaisee_sisaltoehdon():
-    """Repon oma artefakti: jos tama kaatuu, tuotanto fittaa livena (hidas
-    mutta oikea) - ja joku on committoinut ohuen mallin."""
-    import json
-    d = json.loads(up.PATH.read_text(encoding="utf-8"))
-    ok, syy = up.validate(type("K", (), {"attack": d["attack"]})(),
-                          d["meta"].get("calibrated_leagues") or [])
-    assert ok, syy
-
-
-def test_bake_askel_saa_football_data_avaimen():
-    wf = (ROOT / ".github" / "workflows" / "ucl-refresh.yml").read_text(encoding="utf-8")
-    bake = wf[wf.find("Bake UEFA joint model"):wf.find("name: Gate")]
-    assert "FOOTBALL_DATA_API_KEY" in bake, "bake ilman avainta tuottaa 36 seuran mallin"

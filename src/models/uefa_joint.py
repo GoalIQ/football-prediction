@@ -137,10 +137,10 @@ se tehdaan portilla."""
 BRIDGE_LEAGUES: tuple[str, ...] = (
     "INT-Europa League",
     "INT-Conference League",
-    # 21.9: CL:n karsinnat UEFAn rajapinnasta (src/data/uefa_matches.py).
-    # 🔴 PAKKO olla tassa: rivi jonka liiga ei ole silta eika turnaus
-    # luetaan KOTILIIGAKSI, jolloin Sabahin "kotiliiga" olisi CL-karsinta.
-    "INT-Champions League Qualifying",
+    # 3.10.2026: "INT-Champions League Qualifying" poistettu. Sen ainoa lahde
+    # oli UEFAn rajapinta (src/data/uefa_matches.py, poistettu: UEFA-haku
+    # lopetettu). Jos karsintarivit palaavat muusta lahteesta, liiga on
+    # lisattava tanne: muuten rivi luetaan KOTILIIGAKSI.
 )
 """Turnaukset joiden ottelut ovat SILTA liigojen valilla CL:n lisaksi.
 

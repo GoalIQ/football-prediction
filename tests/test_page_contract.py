@@ -446,5 +446,9 @@ def test_hakemistoindeksin_canonical_paattyy_kauttaviivaan(sivut):
 def test_kontrolli_indeksisivuja_loytyi(sivut):
     """Vahti vahdille: edellinen portti on vihrea myos silloin kun
     yhtaan indeksisivua ei loydy (muisti: kontrolli-lapaisi-tyhjana)."""
+    # 3.10.2026: /ucl/ oli ainoa alihakemistoindeksi ja poistettiin. Kontrolli
+    # vertaa nyt kahta lukua samasta lahteesta: jokainen kauttaviivaan
+    # paattyva sitemap-URL (paitsi juuri) loytyy index.html:na.
     n = sum(1 for _, f in sivut if f.name == "index.html" and f.parent != ROOT)
-    assert n >= 1, "yhtaan alihakemiston index.html:aa ei loytynyt"
+    hakemistot = sum(1 for u, _ in sivut if str(u).endswith("/") and str(u).rstrip("/") not in ("", "https://goaliq.app"))
+    assert n == hakemistot, f"alihakemistoindeksit {n} vs sitemapin hakemisto-URLit {hakemistot}"

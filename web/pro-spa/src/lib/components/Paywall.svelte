@@ -109,13 +109,10 @@
 	during a gameweek, shareable image cards and per-gameweek breakdowns.
 </p>
 <p class="muted">
-	<strong>Match model:</strong> full analysis for any fixture across the ten competitions we
+	<strong>Match model:</strong> full analysis for fixtures across the ten competitions we
 	cover, from the Premier League to the Champions League: scoreline probabilities, the chance
 	of three or more goals and the chance both teams score. The app adds form and momentum
 	trends and the head-to-head record.
-</p>
-<p class="muted">
-	UCL Fantasy prices and squad news are free at goaliq.app/ucl. During the league phase, GoalIQ Premium adds expected points for every UCL Fantasy player, up to three matchdays ahead, with captain, value and differential lists, at pro.goaliq.app/ucl. Add your own squad and Premium picks its best XI and plans transfers and chips. Club-by-club clean sheet chances are free there.
 </p>
 <!-- 23.9: kauppailmoitus sanoo jo saman tilin ja app-oston asian; nama kaksi
      rivia koskevat verkko-ostoa. -->
