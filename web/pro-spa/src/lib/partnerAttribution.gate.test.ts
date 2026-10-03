@@ -71,6 +71,15 @@ describe('kutsupaikat', () => {
 		expect(src('./billing.ts')).not.toMatch(/partner/i);
 	});
 
+	it('OAuth-paluu ajaa adoptoinnin kun kayttaja vaihtuu (GOOGLE-OAUTH-REF-E2E)', () => {
+		// Mitattu 3.10 Supabasesta: Google-signup ?ref=TESTREF 2.10 14:50 UTC ->
+		// auth.users.raw_user_meta_data.ref = TESTREF. Polku toimii vain jos
+		// applySession kutsuu adoptOAuthAccountia; ilman sita updateUser-rivi
+		// jaa funktioon eika yllaoleva testi huomaa mitaan.
+		const a = src('./auth.svelte.ts');
+		expect(a).toMatch(/if \(u && u\.id !== prevId\) \{[^}]*\badoptOAuthAccount\(u\b/);
+	});
+
 	it('lukittu siirto: oma source seka naytolle etta klikkaukselle', () => {
 		const d = src('./components/DecisionCard.svelte');
 		expect(d).toMatch(/LOCK_SOURCE = 'decision_transfer_lock'/);
