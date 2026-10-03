@@ -183,6 +183,14 @@ PREMIUM_PINNAT: dict[str, str] = {
     "web/pro-spa/src/lib/routeHeads.ts":
         "itse tuote: /ucl-sivun oma title/description (UCL_HEAD), jota sivu "
         "ja buildin ucl.html lukevat",
+    # 3.10 (UCL-LAAJENNUS vaiheet 5-7): /ucl#my-team. Sama asema kuin
+    # uclPicks.ts:lla: lukija ja tuotteen oma nakyma, ei uusi myyntipinta.
+    "web/pro-spa/src/lib/uclSquad.ts":
+        "tuotteen oma lukija: oman joukkueen XI, siirrot ja chipit "
+        "maskaamattomasta UCL xP -vastauksesta (sivu ei laske itse)",
+    "web/pro-spa/src/lib/components/UclMyTeam.svelte":
+        "itse tuote: /ucl#my-team -nakyma pro.goaliq.app/ucl-sivulla "
+        "(syotto ilmainen, analyysi lukittu maskatulta)",
 }
 
 
@@ -502,6 +510,29 @@ def test_listalupaus_vastaa_nakymia():
     assert osio and {"captain", "value", "differentials"} <= set(re.findall(r"'(\w+)'", osio.group(1)))
     assert "uclPicks(" in sivu and re.search(r'<GameViewNav\s+game="ucl"', sivu), (
         "/ucl ei renderoi listoja joita lause lupaa")
+
+
+def test_oma_joukkue_lupaus_on_sidottu():
+    """3.10 (UCL-LAAJENNUS vaiheet 5-7): lause lupaa "Add your own squad and
+    Premium picks its best XI and plans transfers and chips." Tosi vain kun
+    /ucl:n rekisterissa on my-team, sivu renderoi UclMyTeam-komponentin, se
+    laskee XI:n, siirrot ja chipit yhdesta lukijasta ($lib/uclSquad), ja
+    analyysi on lukittu maskatulta (syotto on ilmainen, analyysi Premium:
+    julkaisutarkistaja 3.10 blokkasi version joka teki tarkistuksesta
+    Premiumin)."""
+    assert ("Add your own squad and Premium picks its best XI and plans "
+            "transfers and chips.") in bp.UCL_XP
+    spa = ROOT / "web" / "pro-spa" / "src"
+    tools = (spa / "lib" / "tools.ts").read_text(encoding="utf-8")
+    ucl = re.search(r"\n\tucl: \{(.*?)\n\t\}", tools, re.S)
+    assert ucl and "views: ['my-team']" in ucl.group(1), "my-team puuttuu UCL-rekisterista"
+    sivu = (spa / "routes" / "ucl" / "+page.svelte").read_text(encoding="utf-8")
+    assert "<UclMyTeam {xp} />" in sivu, "/ucl ei renderoi oman joukkueen nakymaa"
+    comp = (spa / "lib" / "components" / "UclMyTeam.svelte").read_text(encoding="utf-8")
+    for kutsu in ("analyseSquad(", "suggestTransfers(", "chipAdvice("):
+        assert kutsu in comp, f"UclMyTeam ei kutsu {kutsu}"
+    lib = (spa / "lib" / "uclSquad.ts").read_text(encoding="utf-8")
+    assert "if (meta.masked) return { state: 'locked' };" in lib, "analyysi ei ole Premiumin takana"
 
 
 def test_ilmainen_cs_lupaus_on_sidottu():

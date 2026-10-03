@@ -32,6 +32,7 @@
 	// 23.9 (UCL-MENUT, Villen valinta "sama rakenne kuin FPL/RSL"): osiot
 	// Players | Teams ovat palkissa, osion sisalla FPL:n esiasetukset.
 	import GameViewNav from '$lib/components/GameViewNav.svelte';
+	import UclMyTeam from '$lib/components/UclMyTeam.svelte';
 	import { gameViewState } from '$lib/gameView.svelte';
 	import type { UclPageView } from '$lib/tools';
 
@@ -484,6 +485,8 @@
 					</div>
 				{/if}
 			{/if}
+		{:else if view === 'my-team'}
+			<UclMyTeam {xp} />
 		{:else if view === 'clean-sheets'}
 			<h2>Clean sheet % by matchday</h2>
 			{#if !teams.length}

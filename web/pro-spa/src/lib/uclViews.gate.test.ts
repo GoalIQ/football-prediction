@@ -28,8 +28,8 @@ const UCL = GAME_VIEWS.ucl;
 const views = UCL.sections.flatMap((s) => s.views);
 
 describe('UCL-rekisteri', () => {
-	it('osiot Players | Teams, jokainen nakyma tasan yhdessa', () => {
-		expect(UCL.sections.map((s) => s.label)).toEqual(['Players', 'Teams']);
+	it('osiot Players | Teams | My team, jokainen nakyma tasan yhdessa', () => {
+		expect(UCL.sections.map((s) => s.label)).toEqual(['Players', 'Teams', 'My team']);
 		expect(new Set(views).size).toBe(views.length);
 	});
 	it('esiasetukset ovat FPL:n nimet samassa jarjestyksessa', () => {
@@ -53,9 +53,9 @@ describe('/ucl-sivu', () => {
 		expect(script).toMatch(/let playersList = \$derived\(view === 'xp' \|\| pickView !== null\)/);
 		for (const v of ['captain', 'value', 'differentials'])
 			expect(script, v).toMatch(new RegExp(`${v}: '${v}'`));
-		for (const v of ['compare', 'clean-sheets'])
+		for (const v of ['compare', 'clean-sheets', 'my-team'])
 			expect(markup.split(`view === '${v}'`).length - 1, v).toBe(1);
-		expect(views.sort()).toEqual(['captain', 'clean-sheets', 'compare', 'differentials', 'value', 'xp']);
+		expect(views.sort()).toEqual(['captain', 'clean-sheets', 'compare', 'differentials', 'my-team', 'value', 'xp']);
 	});
 	it('vanha valilehtirivi on poissa ja valitsin on sivulla', () => {
 		expect(markup).not.toContain('role="tablist"');
@@ -66,6 +66,16 @@ describe('/ucl-sivu', () => {
 		expect(markup).toContain(
 			"locked={xp?.meta?.masked ? ['captain', 'value', 'differentials', 'compare'] : []}"
 		);
+	});
+	it('My team: syotto ei ole lukossa, analyysi vain uclSquad-lukijasta (3.10)', () => {
+		// Joukkueen syotto on ilmainen (pool), joten my-team ei kuulu lukittuihin.
+		expect(markup).not.toMatch(/locked=\{[^}]*'my-team'/);
+		expect(markup).toMatch(/view === 'my-team'\}\s*<UclMyTeam \{xp\} \/>/);
+		const comp = read('./components/UclMyTeam.svelte');
+		expect(comp).toContain('analyseSquad(ids, plain.pool ?? [], plain.players, plain.meta, bank)');
+		// Laskenta snapshotista: proxyjen lapi mitattu 6,5 s (3.10).
+		expect(comp).toContain('$state.snapshot(xp)');
+		expect(comp).not.toMatch(/gaming\.uefa\.com|uclfantasy\/services/);
 	});
 	it('Teams lukee artefaktin joukkuetason', () => {
 		expect(script).toContain('xp?.teams ?? []');
