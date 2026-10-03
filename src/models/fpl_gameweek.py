@@ -32,6 +32,31 @@ from __future__ import annotations
 import datetime as _dt
 
 
+def season_started(bootstrap: dict) -> bool:
+    """Onko kausi alkanut: jokin kierros on kaynnissa tai pelattu.
+
+    3.10.2026: tama oli ennen kahteen paikkaan ERI muodossa kirjoitettu
+    (`fpl_rate_team.season_started` = `is_current or finished`,
+    `build_fpl_xp.py`:n oma `preseason = not any(finished)` = puuttui
+    `is_current` kokonaan). Jalkimmainen piti GW1:ta "esikautena" niin
+    kauan kuin event.finished oli False — GW1:n ottelut kestavat ~3-4 vrk,
+    ja sina aikana builderi ohitti kuluvan kauden element-summary-haun
+    kokonaan ja luotti VAIN jaadytettyyn edellisen kauden artefaktiin.
+    Seuraus: GW1:ssa debytoinut pelaaja (joka EI ole viime kaudella
+    pelannut, esim. uusi siirto) nayttaytyi "no_history"-rivina ja kortti
+    vaitti "No PL minutes this season or last" vaikka pelaaja oli juuri
+    pelannut GW1:n. `is_current` flippaa FPL:ssa lahella deadlinea/kickoffia
+    (katso moduulin ylatason dokumentaatio laahauksesta TOISEEN suuntaan:
+    se jaa paalle liian pitkaan, ei kytkeydy liian aikaisin), joten se on
+    oikea signaali "ottelut ovat alkaneet" -kysymykselle.
+
+    Yksi lukija kaikille kutsujille (fpl_rate_team re-exporttaa taman,
+    build_fpl_xp ja build_fpl_price_watch kutsuvat suoraan) jottei kolmas
+    kopio voi ajautua vaarin huomaamatta."""
+    return any(bool(e.get("is_current")) or bool(e.get("finished"))
+               for e in (bootstrap.get("events") or []))
+
+
 def current_gameweek(meta: dict) -> int | None:
     """Kierros jota joukkue juuri nyt keraa.
 

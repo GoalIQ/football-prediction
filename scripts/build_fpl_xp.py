@@ -806,7 +806,18 @@ def main(argv: list[str] | None = None) -> int:
     # Pre-season = kohdekaudella ei yhtään pelattua GW:tä → element-summaryt
     # ovat tyhjiä eikä niitä haeta; baselinet jäädytetystä artefaktista
     # (PREV_BASELINES_PATH, element code -mappaus).
-    preseason = not any(ev.get("finished") for ev in boot.get("events", []))
+    #
+    # 3.10.2026: tämä oli `not any(ev.get("finished") ...)`, joka pysyy True:na
+    # koko GW1:n keston (~3-4 vrk event.finished flippaa vasta kun KAIKKI
+    # ottelut on päätetty). Sinä aikana GW1:ssä debytoinut pelaaja (ei
+    # viime kauden PL-historiaa) sai "no_history"-rivin ja kortti väitti
+    # "No PL minutes this season or last", vaikka pelaaja oli juuri pelannut
+    # GW1:n — builderi ei vielä hakenut kuluvan kauden element-summarya.
+    # `fplgw.season_started` (is_current OR finished) kääntyy FPL:ssä lähellä
+    # deadlinea/kickoffia, siis juuri kun ottelut alkavat, ei kun ne
+    # päättyvät. Yksi lukija: samaa funktiota käyttävät fpl_rate_team ja
+    # build_fpl_price_watch (ks. tests/test_gameweek_phase_invariants.py).
+    preseason = not fplgw.season_started(boot)
     prev_players: dict | None = None
     recency_window = False  # True = last-6-recency minuuttimallissa
     # Addendum 2: viime kauden kausisummat player cardia varten luetaan

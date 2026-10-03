@@ -29,6 +29,11 @@ from src.models.fpl_xp import (
     attach_horizon_total_actionable, horizon_total_meta, load_xp,
 )
 from src.models import fpl_actuals
+# 3.10.2026: season_started siirrettiin fpl_gameweek.py:hyn (yksi lukija, ks.
+# sen docstring) koska build_fpl_xp.py tarvitsi saman logiikan ja oma kopionsa
+# oli ajautunut vaarin. Re-export sailyttaa taman moduulin kutsupaikat
+# (rt.season_started(...)) ja testin tests/test_fpl_rate_team.py koskemattomina.
+from src.models.fpl_gameweek import season_started
 from src.models.fpl_model_race import model_points_net as _model_points_net
 from src.models.fpl_entry_history import infer_free_transfers
 from src.models import fpl_chips
@@ -165,13 +170,6 @@ def _fetch_fpl(path: str) -> dict:
 
 def get_bootstrap() -> dict:
     return _fetch_fpl("/bootstrap-static/")
-
-
-def season_started(bootstrap: dict) -> bool:
-    """Onko kausi alkanut: jokin kierros on kaynnissa tai pelattu. Esikaudella
-    kaikki eventit ovat is_current=False ja GW1 on is_next."""
-    return any(bool(e.get("is_current")) or bool(e.get("finished"))
-               for e in (bootstrap.get("events") or []))
 
 
 def _resolve_gw(bootstrap: dict, gw: int | None) -> int:

@@ -51,6 +51,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import requests
 
 import config
+from src.models import fpl_gameweek as fplgw
 from src.models.fpl_price_watch import (DISCLAIMER_ESTIMATE,
                                         DISCLAIMER_OFFICIAL)
 
@@ -217,10 +218,13 @@ def _empty_note(bootstrap: dict, n_active: int) -> tuple[str, str]:
     alkanut — vanha versio väitti esikautta myös GW1:n jälkeen (kuvakaappaus
     Villeltä 22.8), koska ehto oli pelkkä n_active == 0. Kauden aikana tyhjä
     lista tarkoittaa joko siirtolaskurien nollausikkunaa deadlinen jälkeen
-    tai sitä ettei kukaan ole kynnyksen tuntumassa."""
-    season_started = any(ev.get("finished") or ev.get("is_current")
-                         for ev in bootstrap.get("events") or [])
-    if not season_started:
+    tai sitä ettei kukaan ole kynnyksen tuntumassa.
+
+    3.10.2026: tämä oli oma paikallinen kopio samasta kaavasta kuin
+    `fpl_gameweek.season_started` — oikea tällä kertaa, mutta kaksi
+    riippumatonta kopiota samasta invariantista on juuri se tilanne jossa
+    kolmas (`build_fpl_xp.py`) ajautui väärin huomaamatta. Yksi lukija."""
+    if not fplgw.season_started(bootstrap):
         return ("Pre-season: no transfer activity yet - price watch "
                 "goes live when the FPL game opens.",
                 "price_watch.note.preseason")

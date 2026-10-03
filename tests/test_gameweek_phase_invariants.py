@@ -34,7 +34,7 @@ import pytest
 
 from api import fantasy_edge as fe
 from src.models import fpl_chips
-from src.models.fpl_gameweek import actionable_gameweek
+from src.models.fpl_gameweek import actionable_gameweek, season_started
 from src.models.fpl_leaders import rank_xg_leaders
 from src.models.fpl_rate_team import _player_gameweeks
 
@@ -125,3 +125,49 @@ def test_the_guard_itself_would_fail_on_the_old_behaviour():
     vihrea siksi ettei se mittaa mitaan."""
     gws = [g["gw"] for g in _player_gameweeks(_player(), min_gw=None)]
     assert min(gws) < PHASES[0][2]
+
+
+# 3.10.2026 (DATAPOHJA-JATKOT 1): GW1-ikkuna. `build_fpl_xp.py`:n oma
+# `preseason`-lippu oli `not any(ev.get("finished") ...)`, joka pysyy True:na
+# koko GW1:n pelatun viikon — `event.finished` flippaa vasta kun KAIKKI
+# kierroksen ottelut on paatetty (~3-4 vrk). Sina aikana builderi ohitti
+# kuluvan kauden element-summary-haun kokonaan (preseason-haara), ja GW1:ssa
+# debytoinut pelaaja (ei viime kauden PL-historiaa) sai "no_history"-rivin:
+# kortti vaitti "No PL minutes this season or last" vaikka pelaaja oli juuri
+# pelannut GW1:n. Oikea kysymys on "ovatko ottelut ALKANEET", ei "ovatko ne
+# PAATTYNEET" — `fpl_gameweek.season_started` (is_current OR finished)
+# vastaa siihen, ja on nyt builderin, fpl_rate_teamin ja build_fpl_price_watchin
+# yhteinen lukija.
+BOOT_PHASES = [
+    ("preseason", {"events": [{"id": 1, "is_current": False,
+                                "is_next": True, "finished": False}]}),
+    ("gw1_live", {"events": [{"id": 1, "is_current": True,
+                               "is_next": False, "finished": False}]}),
+    ("gw1_finished_gw2_next", {"events": [
+        {"id": 1, "is_current": False, "finished": True},
+        {"id": 2, "is_current": True, "is_next": False, "finished": False},
+    ]}),
+]
+
+
+@pytest.mark.parametrize("phase,boot", BOOT_PHASES)
+def test_season_started_follows_kickoff_not_full_time(phase, boot):
+    """`season_started` kaantyy GW1:n KICKOFFISTA (is_current), ei siita kun
+    viimeinen ottelu paattyy (finished). Debytoinnin minuutit tulee nahda
+    heti kun hanet pelautetaan, ei 3-4 vrk:n viiveella."""
+    expected = phase != "preseason"
+    assert season_started(boot) is expected, phase
+
+
+def test_old_preseason_formula_would_stay_wrong_through_all_of_gw1():
+    """Negatiivinen kontrolli: vanha kaava `not any(finished)` oli yha True
+    koko ajan kun GW1 oli kaynnissa (yksikaan ottelu ei ollu ehtinyt
+    'finished'), vaikka kierros oli todellisuudessa alkanut. Jos vanha ja
+    uusi kaava sanoisivat tassa vaiheessa samaa, korjaus ei mittaisi mitaan
+    ja testi lapaisisi tyhjana."""
+    _, boot = BOOT_PHASES[1]  # gw1_live
+    old_preseason = not any(ev.get("finished") for ev in boot["events"])
+    new_preseason = not season_started(boot)
+    assert old_preseason is True
+    assert new_preseason is False
+    assert old_preseason != new_preseason
