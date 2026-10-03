@@ -211,3 +211,24 @@ def test_main_without_token_exits_2(monkeypatch, capsys):
     monkeypatch.delenv("GH_TOKEN", raising=False)
     assert relay.main([]) == 2
     assert "GH_TOKEN puuttuu" in capsys.readouterr().out
+
+
+def test_one_failing_dispatch_does_not_stop_the_rest(monkeypatch):
+    """3.10.2026: disabloitu ucl-refresh olisi kaatanut relayn klo 12:50 ja
+    jattanyt accuracy-login, fpl-data-refreshin ja ymparistovahdin
+    laukaisematta. Epaonnistuva kohde kirjataan, loput laukaistaan, exit 1."""
+    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setattr(relay, "TARGETS", [{"workflow": "a.yml", "slots": None},
+                                           {"workflow": "b.yml", "slots": None}])
+    monkeypatch.setattr(relay, "read_workflow_yaml", lambda wf: "")
+    monkeypatch.setattr(relay, "decide", lambda *a, **k: ("dispatch", "testi"))
+    laukaistu = []
+
+    def dispatch(wf, *a, **k):
+        if wf == "a.yml":
+            raise RuntimeError("workflow is disabled")
+        laukaistu.append(wf)
+
+    monkeypatch.setattr(relay, "dispatch", dispatch)
+    assert relay.main([]) == 1
+    assert laukaistu == ["b.yml"]

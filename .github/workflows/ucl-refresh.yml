@@ -9,10 +9,11 @@
 # valissa on 5 viikon taukoja. Tunneittain ajaminen olisi kuormaa ilman
 # hyotya; kerran 6 h riittaa hintamuutoksiin ja kokoonpanotietoihin, ja
 # deadline-paivina se on tarpeeksi tihea.
+# ⛔ 3.10.2026: LOPETETTU (Villen paatos "ei mitaan riskeja ehtorikkomuksista",
+# UEFAn kayttoehdot 6.2). Workflow disabled_manually, cron poistettu, relay ei
+# laukaise. Ks. goaliq-app cos-reports/2026-10-03-goaliq-strategialinja.md luku 7.
 name: ucl-refresh
 on:
-  schedule:
-    - cron: "20 */6 * * *"
   workflow_dispatch: {}
 
 permissions:

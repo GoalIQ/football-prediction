@@ -54,7 +54,8 @@ LOOKBACK_MIN = 60
 # (osajoukon on oltava tiedoston croneja; portti tarkistaa).
 TARGETS: list[dict] = [
     {"workflow": "fpl-transfer-watch.yml", "slots": None},
-    {"workflow": "ucl-refresh.yml", "slots": None},
+    # ucl-refresh.yml poistettu 3.10.2026: UEFA-haku lopetettu (Villen paatos,
+    # UEFAn kayttoehdot 6.2), workflow disabloitu ja cron poistettu.
     {"workflow": "accuracy-log.yml", "slots": None},
     # Vain 3 h -slotti: 09:15- ja :40-slotit ovat guardattuja
     # `github.event.schedule`-arvolla, joka on tyhja dispatch-ajossa ->
@@ -199,20 +200,31 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     dispatched = 0
+    failed: list[str] = []
     for t in TARGETS:
         wf = t["workflow"]
         yaml_text = read_workflow_yaml(wf)
         action, reason = decide(wf, yaml_text, t["slots"], now,
                                 lambda since, wf=wf: recent_runs(wf, since, now))
         if action == "dispatch" and not a.dry_run:
-            dispatch(wf)
-            dispatched += 1
-        tag = "DISPATCH" if action == "dispatch" else "skip"
+            # 3.10.2026: yksi epaonnistuva kohde (esim. disabloitu workflow)
+            # ei saa estaa muiden kohteiden laukaisua. Ennen tata RuntimeError
+            # katkaisi silmukan ja loput datapaivitykset jaivat laukaisematta.
+            try:
+                dispatch(wf)
+                dispatched += 1
+            except RuntimeError as e:
+                failed.append(wf)
+                action, reason = "failed", f"laukaisu epaonnistui: {e}"
+        tag = {"dispatch": "DISPATCH", "failed": "FAILED"}.get(action, "skip")
         if a.dry_run and action == "dispatch":
             tag = "DRY-RUN dispatch"
         print(f"[{tag:>16}] {wf}: {reason}")
     print(f"relay {now:%Y-%m-%dT%H:%MZ}: {dispatched} laukaisua, {len(TARGETS)} kohdetta"
           f"{' (dry-run)' if a.dry_run else ''}")
+    if failed:
+        print(f"EPAONNISTUI: {', '.join(failed)}")
+        return 1
     return 0
 
 
