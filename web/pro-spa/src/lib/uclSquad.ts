@@ -197,12 +197,18 @@ function replaced(squad: readonly UclSquadPlayer[], outs: readonly UclSquadPlaye
 	return [...squad.filter((p) => !outIds.has(p.id)), ...ins];
 }
 
-const CANDIDATES_PER_POS = 40;
+/** Wildcard-haun ehdokasraja per pelipaikka (toistuva haku; copy: "best squad we can find"). */
+const WILDCARD_CANDIDATES_PER_POS = 40;
 const PAIR_CANDIDATES_PER_OUT = 12;
 /** Parin on oltava vahintaan nain paljon parempi kuin paras yksittainen siirto. */
 export const PAIR_MIN_EXTRA = 0.1;
 
-function candidatesByPos(all: readonly UclSquadPlayer[], squad: readonly UclSquadPlayer[], mds: readonly number[]) {
+function candidatesByPos(
+	all: readonly UclSquadPlayer[],
+	squad: readonly UclSquadPlayer[],
+	mds: readonly number[],
+	cap?: number
+) {
 	const inSquad = new Set(squad.map((p) => p.id));
 	const total = (p: UclSquadPlayer) => mds.reduce((s, md) => s + playerXp(p, md), 0);
 	const out = new Map<string, UclSquadPlayer[]>();
@@ -212,7 +218,7 @@ function candidatesByPos(all: readonly UclSquadPlayer[], squad: readonly UclSqua
 			all
 				.filter((p) => p.pos === pos && !inSquad.has(p.id) && suggestable(p))
 				.sort((a, b) => total(b) - total(a) || a.id - b.id)
-				.slice(0, CANDIDATES_PER_POS)
+				.slice(0, cap ?? Infinity)
 		);
 	}
 	return out;
@@ -222,6 +228,13 @@ function candidatesByPos(all: readonly UclSquadPlayer[], squad: readonly UclSqua
  * Paras yksi siirto ja paras kahden siirron pari horisontin pisteilla
  * (parhaan XI:n summa, ei pelaajan oma summa: penkkiin jaava ostos ei
  * nosta pisteita). Hitit: siirrot yli ilmaisten * 4.
+ *
+ * Yksittainen siirto kay KAIKKI ehdokkaat joihin pankki riittaa, koska
+ * nakyma lupaa "No transfer within your bank adds expected points".
+ * 3.10 hold-copy-portti: aiempi raja (40 parasta xP:n mukaan) olisi
+ * pienella pankilla jattanyt kaikki varalliset ehdokkaat pois ja tehnyt
+ * lauseesta vaaran. Pari ja Wildcard ovat rajattuja hakuja (copy ei lupaa
+ * niista kattavuutta).
  */
 export function suggestTransfers(
 	squad: readonly UclSquadPlayer[],
@@ -229,10 +242,10 @@ export function suggestTransfers(
 	bank: number,
 	freeTransfers: number,
 	mds: readonly number[],
-	opts: { pairs?: boolean } = {}
+	opts: { pairs?: boolean; cap?: number } = {}
 ): { single: UclMove | null; double: UclMove | null } {
 	const base = squadPoints(squad, mds);
-	const cands = candidatesByPos(all, squad, mds);
+	const cands = candidatesByPos(all, squad, mds, opts.cap);
 	const free = Math.max(0, Math.min(UCL_RULES.freeMax, Math.floor(freeTransfers)));
 	const move = (outs: UclSquadPlayer[], ins: UclSquadPlayer[], pts: number): UclMove => {
 		const hits = Math.max(0, outs.length - free);
@@ -318,7 +331,10 @@ export function wildcardSquad(
 	let curBank = bank;
 	const base = squadPoints(squad, mds);
 	for (let r = 0; r < maxRounds; r++) {
-		const { single } = suggestTransfers(cur, all, curBank, UCL_RULES.freeMax, mds, { pairs: false });
+		const { single } = suggestTransfers(cur, all, curBank, UCL_RULES.freeMax, mds, {
+			pairs: false,
+			cap: WILDCARD_CANDIDATES_PER_POS
+		});
 		if (!single || single.gain < 0.05) break;
 		const o = cur.find((p) => p.id === single.out[0])!;
 		const i = all.find((p) => p.id === single.in[0])!;

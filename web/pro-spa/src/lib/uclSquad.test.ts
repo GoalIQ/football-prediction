@@ -164,6 +164,15 @@ describe('suggestTransfers', () => {
 		expect(suggestTransfers(s, [...s, gk], squadBank(s), 2, MDS).single).toBeNull();
 	});
 
+	it('yksittainen siirto kay kaikki varalliset ehdokkaat (copy lupaa "No transfer within your bank")', () => {
+		const s = squad(); // pankki 10, hyokkaajat 6.0 / 3.0 xP
+		// 45 kallista tahtea joihin ei ole varaa, ja yksi halpa parannus 46:ntena.
+		const stars = Array.from({ length: 45 }, (_, i) => pl('FWD', `S${i}`, 30, 9));
+		const cheap = pl('FWD', 'C1', 6, 4);
+		const r = suggestTransfers(s, [...s, ...stars, cheap], squadBank(s), 2, MDS);
+		expect(r.single?.in).toEqual([cheap.id]);
+	});
+
 	it('thin data ja ei-saatavilla eivat ole ehdotuksia', () => {
 		const s = squad();
 		const thin = pl('FWD', 'B1', 5, 20, { data_basis: 'uefa_matches' });

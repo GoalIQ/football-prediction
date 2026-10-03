@@ -45,6 +45,10 @@ SCANNED = [
     Path("web/pro-spa/src/lib/components/DecisionCard.svelte"),
     Path("src/models/fpl_fit.py"),
     Path("src/models/fpl_gameweek.py"),
+    # 3.10 (UCL My team): siirto- ja chip-copy ("No transfer within your bank
+    # adds ...", "best squad we can find"). Yksittainen siirtohaku on
+    # kattava (uclSquad.suggestTransfers), pari ja Wildcard rajattuja.
+    Path("web/pro-spa/src/lib/components/UclMyTeam.svelte"),
 ]
 
 #: Komponentit jotka mainitsevat verdiktidatan mutta joita EI skannata,

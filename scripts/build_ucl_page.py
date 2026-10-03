@@ -85,8 +85,9 @@ OUT_DIR = ROOT / "ucl"
 UCL_XP = (
     "During the league phase, GoalIQ Premium adds expected points for every "
     "UCL Fantasy player, up to three matchdays ahead, with captain, value and "
-    "differential lists, at pro.goaliq.app/ucl. Club-by-club clean sheet "
-    "chances are free there."
+    "differential lists, at pro.goaliq.app/ucl. Add your own squad and "
+    "Premium picks its best XI and plans transfers and chips. Club-by-club "
+    "clean sheet chances are free there."
 )
 
 UCL_SCOPE = (

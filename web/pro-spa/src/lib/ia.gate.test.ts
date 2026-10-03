@@ -164,9 +164,11 @@ describe('3. alapalkki', () => {
 		expect(activeNav('/spl', '#model-squad')).toBe('squad');
 		expect(activeNav('/players/value', '')).toBe('players');
 		// UCL sai oman palkin samana iltana (Villen valinta: sama rakenne).
-		expect(navItems('/ucl').map((g) => g.label)).toEqual(['Players', 'Teams']);
+		// 3.10 (vaiheet 5-7): oma joukkue omana osionaan kuten RSL:n Model squad.
+		expect(navItems('/ucl').map((g) => g.label)).toEqual(['Players', 'Teams', 'My team']);
 		expect(activeNav('/ucl', '')).toBe('players');
 		expect(activeNav('/ucl', '#clean-sheets')).toBe('teams');
+		expect(activeNav('/ucl', '#my-team')).toBe('squad');
 	});
 	it('ylapalkki lukee saman lukijan, eika nayta FPL:n deadlinea muiden pelien sivuilla', () => {
 		const hero = code('./components/Hero.svelte');

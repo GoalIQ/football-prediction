@@ -38,7 +38,7 @@ export const ORIGIN = 'https://pro.goaliq.app';
 export const UCL_HEAD = {
 	title: 'UCL Fantasy expected points | GoalIQ',
 	description:
-		'Clean sheet chances for every Champions League club in the league phase, free. GoalIQ Premium adds expected points for each UCL Fantasy player up to three matchdays ahead, with captain, value and differential lists.'
+		'Clean sheet chances for every Champions League club in the league phase, free. GoalIQ Premium adds expected points for each UCL Fantasy player up to three matchdays ahead, with captain, value and differential lists, and plans transfers and chips for your own squad.'
 } as const;
 
 /** SPL-sivun oma otsikko ja kuvaus (routes/spl/+page.svelte lukee nama). */

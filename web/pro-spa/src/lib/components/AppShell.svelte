@@ -97,7 +97,7 @@
 	     on yha oma laatikkonsa eika footerin tekstilinkki, eli 7.8:n oppi
 	     patee; se ei vain enaa ole FPL-tyokalujen EDESSA. -->
 	<p class="spl-note">
-		New: free clean sheet chances by club for <a href="/ucl#clean-sheets">UCL Fantasy</a> in the league phase. Captain, value and differential lists are Premium.
+		New for <a href="/ucl#my-team">UCL Fantasy</a>: add your squad and Premium picks your best XI and plans your transfers and chips. Clean sheet chances by club stay free.
 	</p>
 	<p class="spl-note">
 		<a href="/spl">Saudi Pro League fantasy tools</a>, completely free.

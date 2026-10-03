@@ -135,8 +135,8 @@
 
 <h2>My team</h2>
 <p class="muted view-lede">
-	Add the 15 players from your UCL Fantasy squad. They are saved on this device only; GoalIQ does
-	not connect to your UEFA account.
+	Add the 15 players from your UCL Fantasy squad. They're saved on this device only, and GoalIQ
+	doesn't connect to your UEFA account.
 </p>
 
 <div class="squad">
@@ -206,7 +206,7 @@
 
 {#if analysis.state === 'locked'}
 	<p class="muted">
-		Your best XI, captain, transfer ideas and chip timing are part of GoalIQ Premium. Your squad is
+		Your best XI, captain, transfer ideas and chip plans are part of GoalIQ Premium. Your squad is
 		saved here either way.
 	</p>
 	<Paywall teaser={false} />
@@ -258,8 +258,8 @@
 		<p>No transfer within your bank adds expected points to your best XI over {span}.</p>
 	{/if}
 	<p class="muted small">
-		Gains count only the players who would make your best XI. Players marked thin data and anyone
-		flagged unavailable are left out.
+		Gains count only the players who would make your best XI. Players with thin or no data and
+		anyone with an availability flag are left out.
 	</p>
 
 	<h3>Chips</h3>
