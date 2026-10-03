@@ -566,7 +566,14 @@ export type SplView =
 
 /** UCL: sivun xP-lista on 'xp' (uclPicksin 'all'). Teams = joukkueiden
  *  clean sheet % kierroksittain samasta CL-mallista kuin puolustajien xP. */
-export type UclPageView = 'captain' | 'xp' | 'value' | 'differentials' | 'compare' | 'clean-sheets';
+export type UclPageView =
+	| 'captain'
+	| 'xp'
+	| 'value'
+	| 'differentials'
+	| 'compare'
+	| 'clean-sheets'
+	| 'my-team';
 
 const PRESETS: { view: 'captain' | 'xp' | 'value' | 'differentials'; label: string; horizon?: boolean }[] = [
 	{ view: 'captain', label: 'Captain' },
@@ -618,7 +625,10 @@ export const GAME_VIEWS: { spl: GameViews<SplView>; ucl: GameViews<UclPageView> 
 				views: ['captain', 'xp', 'value', 'differentials', 'compare'],
 				icon: 'players'
 			},
-			{ id: 'teams', label: 'Teams', lead: 'clean-sheets', views: ['clean-sheets'], icon: 'shield' }
+			{ id: 'teams', label: 'Teams', lead: 'clean-sheets', views: ['clean-sheets'], icon: 'shield' },
+			// 3.10 (vaiheet 5-7): kayttajan oma joukkue kasin syotettyna; analyysi
+			// $lib/uclSquad. Syotto ilmainen, analyysi Premium (maski palvelimella).
+			{ id: 'squad', label: 'My team', lead: 'my-team', views: ['my-team'], icon: 'team' }
 		],
 		// Ei horisonttia nimeen: xpHorizonin nimi on GW-muotoinen ("xP 3 GWs"),
 		// ja UCL:n kierros on matchday (sivu valttaa GW-muotoja, 21.9).

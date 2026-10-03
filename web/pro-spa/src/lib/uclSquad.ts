@@ -199,6 +199,8 @@ function replaced(squad: readonly UclSquadPlayer[], outs: readonly UclSquadPlaye
 
 const CANDIDATES_PER_POS = 40;
 const PAIR_CANDIDATES_PER_OUT = 12;
+/** Parin on oltava vahintaan nain paljon parempi kuin paras yksittainen siirto. */
+export const PAIR_MIN_EXTRA = 0.1;
 
 function candidatesByPos(all: readonly UclSquadPlayer[], squad: readonly UclSquadPlayer[], mds: readonly number[]) {
 	const inSquad = new Set(squad.map((p) => p.id));
@@ -267,6 +269,10 @@ export function suggestTransfers(
 	}
 	if (single && single.gain <= 1e-9) single = null;
 	if (double && double.gain <= 1e-9) double = null;
+	// Pari vain kun toinen siirto tuo jotain: muuten ehdotus "kaksi siirtoa,
+	// sama hyoty" kuluttaisi siirron tyhjaan (mitattu 3.10 oikealla datalla:
+	// Kane -> Mbappe +0.5 ja pari Kane+Valle -> Mbappe+Natan, sama +0.5).
+	if (double && single && double.gain <= single.gain + PAIR_MIN_EXTRA) double = null;
 	return { single, double };
 }
 

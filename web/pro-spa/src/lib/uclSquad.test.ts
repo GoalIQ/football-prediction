@@ -145,6 +145,18 @@ describe('suggestTransfers', () => {
 		expect(r.double).toBeNull();
 	});
 
+	it('pari vain kun toinen siirto tuo lisaa (ei "kaksi siirtoa, sama hyoty")', () => {
+		const s = squad();
+		const star = pl('FWD', 'B1', 7, 8); // ainoa todellinen parannus
+		const benchGk = pl('GKP', 'B2', 4, 3); // sama xP kuin oma GK: ei lisaa mitaan
+		const r = suggestTransfers(s, [...s, star, benchGk], squadBank(s), 2, MDS);
+		expect(r.single?.in).toEqual([star.id]);
+		expect(r.double).toBeNull();
+		const star2 = pl('MID', 'B3', 7, 8);
+		const r2 = suggestTransfers(s, [...s, star, star2], squadBank(s), 2, MDS);
+		expect(r2.double?.gain).toBeGreaterThan(r2.single!.gain + 0.1);
+	});
+
 	it('penkille jaava ostos ei ole parannus (pisteet XI:sta, ei pelaajan summasta)', () => {
 		const s = squad();
 		// Vain varamaalivahdin paikka: GK1 3.0, GK2 3.0 -> uusi GK 2.9 ei aloita.

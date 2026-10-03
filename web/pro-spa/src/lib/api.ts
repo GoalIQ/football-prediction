@@ -457,6 +457,9 @@ export interface UclXpResponse {
 		reason?: 'league_phase_over' | 'stale';
 	};
 	players: UclXpPlayer[];
+	/** Koko pelaajalista ilman xP:ta, myos maskattuun vastaukseen
+	 *  (api/main.py xp_pool_rows): /ucl#my-team -joukkueen syotto. */
+	pool?: { id: number; web_name: string; pos: string; team_short: string; price: number; status?: string; news?: string }[];
 	/** 23.9 (UCL-MENUT): joukkueiden clean sheet % kierroksittain samasta
 	 *  CL-mallista kuin puolustajien xP (scripts/build_ucl_xp.joukkuetaso).
 	 *  Puuttuu vanhemmasta artefaktista; tyhja kun data on vanhentunut. */
