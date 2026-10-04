@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-04T12:53:36+00:00",
+    "generated_at": "2026-10-04T15:03:51+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -2168,7 +2168,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 11.7,
+      "owned_pct": 11.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4803,7 +4803,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 32.7,
+      "owned_pct": 32.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -70548,53 +70548,6 @@
       "last_season_show": false
     },
     {
-      "id": 260,
-      "web_name": "Wilson",
-      "full_name": "Harry Wilson",
-      "team": "Leeds",
-      "team_short": "LEE",
-      "pos": "MID",
-      "price": 6.2,
-      "owned_pct": 1.7,
-      "status": "i",
-      "news": "Thigh injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 1,
-      "set_pieces": {
-        "pens": null,
-        "corners": 2,
-        "fk": 2
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 54,
-        "team_name": "Fulham",
-        "minutes": 2674,
-        "starts": 32,
-        "goals": 10,
-        "assists": 9,
-        "xg": 5.88,
-        "xa": 4.77,
-        "cs": 9,
-        "points": 168,
-        "per90": {
-          "goals": 0.34,
-          "assists": 0.3,
-          "xgi": 0.36
-        }
-      },
-      "form": {
-        "value": 0.3,
-        "gws": 3,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 556,
       "web_name": "Targett",
       "full_name": "Matt Targett",
@@ -70635,6 +70588,53 @@
       "in_projection": false,
       "excluded_reason": "below_min_xp",
       "last_season_show": false
+    },
+    {
+      "id": 260,
+      "web_name": "Wilson",
+      "full_name": "Harry Wilson",
+      "team": "Leeds",
+      "team_short": "LEE",
+      "pos": "MID",
+      "price": 6.2,
+      "owned_pct": 1.6,
+      "status": "i",
+      "news": "Thigh injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 1,
+      "set_pieces": {
+        "pens": null,
+        "corners": 2,
+        "fk": 2
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 54,
+        "team_name": "Fulham",
+        "minutes": 2674,
+        "starts": 32,
+        "goals": 10,
+        "assists": 9,
+        "xg": 5.88,
+        "xa": 4.77,
+        "cs": 9,
+        "points": 168,
+        "per90": {
+          "goals": 0.34,
+          "assists": 0.3,
+          "xgi": 0.36
+        }
+      },
+      "form": {
+        "value": 0.3,
+        "gws": 3,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
     },
     {
       "id": 198,
