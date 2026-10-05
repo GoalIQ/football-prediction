@@ -20,6 +20,7 @@ import pytest
 from scripts import build_fpl_why as why
 from scripts.build_fpl_xp import _this_season_block
 from src.models.fpl_why_drivers import fact_context, fact_text, fact_text_ctx
+from src.models.fpl_leaders import MIN_CURRENT_GAMES
 from src.models.fpl_xp import XGI_SEASON_MIN_MINUTES, driver_facts, xgi_per90
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -39,11 +40,16 @@ def _row(phase: str, last: dict | None = LAST, pos: str = "FWD") -> dict:
         # kirjoittaisi ne this_season-nimella, kortti vaittaisi viime kautta
         # kuluvaksi.
         "preseason": (_bootstrap(2953, 28.17), True),
-        "thin": (_bootstrap(270, 3.0), False),
+        "thin": (_bootstrap(180, 2.0), False),
         "mid": (_bootstrap(450, 4.95), False),
     }[phase]
     return {"id": 1, "web_name": "H", "pos": pos, "xmins": 90,
             "last_season": last, "this_season": _this_season_block(e, pre)}
+
+
+def test_raja_on_sama_kuin_leaders_sivulla():
+    """Kortti ja Leaders vaihtavat kuluvaan kauteen samassa kohdassa."""
+    assert XGI_SEASON_MIN_MINUTES == MIN_CURRENT_GAMES * 90
 
 
 def test_esikausi_ei_kirjoita_kuluvaa_kautta():

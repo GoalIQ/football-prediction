@@ -22,7 +22,7 @@ Nyt: TODISTE JOLLA ON REITTI.
   "ARS 51% clean sheet chance". Vain GKP/DEF.
 - xGI/90, kausi nimettyna, sama lattia kuin why-selitteella (XGI_MIN). 5.10
   alkaen kuluva kausi ("0.99 xGI/90 in 2026/27") kun pelaajalla on
-  XGI_SEASON_MIN_MINUTES PL-minuuttia, muuten viime kausi ("0.57 xGI/90 in
+  XGI_SEASON_MIN_MINUTES (270) PL-minuuttia, muuten viime kausi ("0.57 xGI/90 in
   2025/26"); valinta `fpl_xp.xgi_headline`. Reitti: FPL:n pelaajasivu
   (kuluva kausi) ja history_past (viime kausi). Vain MID/FWD.
 - Ei koskaan: minutes (xMins on jo rivilla), fixtures, bonus, price,

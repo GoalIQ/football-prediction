@@ -1605,11 +1605,12 @@ def _clean_sheet_pct(player: dict) -> float | None:
     return max(0.0, min(100.0, 100.0 * float(pts) / per_cs))
 
 
-#: Kuluvan kauden xGI/90 kelpaa todisteeksi vasta talla PL-minuuttimaaralla.
-#: Sama raja jolla malli antaa pelaajan omalle hyokkaysvauhdille puolet
-#: painosta positiopriorin rinnalla (M_PRIOR_ATTACK, julkaistu metassa
-#: `basis_threshold_minutes`). Alle sen kuluvan kauden luku on kohinaa.
-XGI_SEASON_MIN_MINUTES = M_PRIOR_ATTACK
+#: Kuluvan kauden xGI/90 kelpaa todisteeksi vasta talla PL-minuuttimaaralla:
+#: kolme taytta ottelua, sama raja jolla Leaders-sivu siirtyy kuluvaan
+#: kauteen (fpl_leaders.MIN_CURRENT_GAMES = 3; testi pitaa ne samoina).
+#: 5.10 mitattu: M_PRIOR_ATTACK (450) oli GW5:n jalkeen suurin mahdollinen
+#: minuuttimaara, ja vain 52/483 rivia ylitti sen (Saka 416, Palmer 442).
+XGI_SEASON_MIN_MINUTES = 3 * 90
 
 
 def xgi_per90(player: dict) -> dict:
