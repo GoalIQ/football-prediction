@@ -498,11 +498,12 @@ def test_defence_ei_vaita_each_kun_ottelumaarat_eroavat():
     """🔴 `max()` ei todista sanaa "each". Tanaan kaikilla 17 joukkueella on 38
     ottelua, mutta kesken kauden ajettu artefakti antaisi eri lukuja ja `max`
     vaittaisi silti "each"."""
-    import json as _json
-    d = ROOT / "data" / "understat_team_defence_2526.json"
-    if not d.exists():
+    # 5.10: sama lukija kuin sivu (kuluva kausi tai edellinen), muuten
+    # testi vertaisi sivun korttia eri kauden ottelumaariin.
+    from src.models.fpl_defence import load_defence
+    doc = load_defence()
+    if not doc:
         pytest.skip("defence-data ei saatavilla")
-    doc = _json.loads(d.read_text(encoding="utf-8"))
     rivit = doc.get("teams") or doc.get("rows") or []
     maarat = {r.get("matches") or 0 for r in rivit}
     teksti = _kortin_spec("defence")["footNote2"]
