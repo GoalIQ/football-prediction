@@ -68,6 +68,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text_ctx  # todiste: yksi lukija
+from src.models.fpl_defence import is_season_so_far, load_defence  # kausi: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
 from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
 
@@ -98,7 +99,7 @@ XP_FROZEN_DIR = ROOT / "data" / "fpl_xp_frozen"
 GW_ACCURACY_PATH = ROOT / "data" / "fpl_xp_gw_accuracy.json"
 POINTS_DIR = OUT_DIR / "points"
 # 8.8: joukkuetason puolustusprofiili (scripts/build_understat_team_defence.py)
-DEFENCE_PATH = ROOT / "data" / "understat_team_defence_2526.json"
+# 5.10: kausi valitaan lukijassa (src/models/fpl_defence.load_defence), ei tassa.
 
 UPSELL = (
     '<div class="rec">Powered by the GoalIQ match model with a published, '
@@ -2805,6 +2806,9 @@ def render_defence(defence: dict, now: datetime) -> str | None:
     # tata kautta. Kausi ja ottelumaara luetaan metasta, ei kovakoodata.
     _dmeta = (defence.get("meta") or {})
     _dkausi = str(_dmeta.get("season") or "")
+    so_far = is_season_so_far(defence)
+    if so_far and _dkausi:
+        _dkausi += " so far"
     # 🔴 `max()` EI TODISTA "each". Tanaan kaikilla 17 joukkueella on 38
     # ottelua, mutta kesken kauden ajettu artefakti antaisi eri lukuja ja
     # `max` vaittaisi silti "each". Sana kaytetaan vain kun arvot ovat samat.
@@ -2861,11 +2865,21 @@ def render_defence(defence: dict, now: datetime) -> str | None:
     )
     promoted = meta.get("promoted_no_data") or []
     relegated = meta.get("relegated_excluded") or []
-    scope = (
-        f"<strong>{escape(season)} season, per match.</strong> This covers the "
-        f"{len(rows)} clubs that played in the Premier League last season and "
-        "are still in it."
-    )
+    if so_far:
+        # 5.10: kuluva kausi (lukija valitsee sen kun jokaisella seuralla on
+        # MIN_CURRENT_GAMES ottelua). Otoskoko kerrotaan, koska viisi ottelua
+        # ei ole sama asia kuin 38.
+        _lause = ottelumaara_lause({r.get("matches") or 0 for r in rows})
+        scope = (
+            f"<strong>{escape(season)} season so far, per match.</strong> "
+            f"Every Premier League club, {escape(_lause.strip())}"
+        )
+    else:
+        scope = (
+            f"<strong>{escape(season)} season, per match.</strong> This covers the "
+            f"{len(rows)} clubs that played in the Premier League last season and "
+            "are still in it."
+        )
     if promoted:
         scope += (
             # 10.9 (QUEUE DEFENCE-SIVU-25-26-LAUSE): "no Premier League shot
@@ -5795,7 +5809,7 @@ def main() -> int:
             (OUT_DIR / "stats.html").write_text(page, encoding="utf-8")
             built.append("stats")
 
-    defence = _load(DEFENCE_PATH)
+    defence = load_defence()
     if defence:
         page = render_defence(defence, now)
         if page:

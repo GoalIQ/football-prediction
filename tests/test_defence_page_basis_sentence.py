@@ -39,21 +39,63 @@ def test_no_promoted_no_sentence():
     assert html and "came up from the Championship" not in html
 
 
-def test_live_artefact_is_last_season_not_current():
-    """"last season" on kovakoodattu lauseeseen ja kausi luetaan metasta. Jos
-    DEFENCE_PATH joskus osoittaa kuluvan kauden tiedostoon, lause olisi
-    epatosi. Portti: artefaktin kausi ei saa olla kuluva kausi."""
-    import json
+def test_live_artefact_copy_matches_its_season():
+    """5.10: lukija (src/models/fpl_defence.load_defence) valitsee kuluvan
+    kauden kun jokaisella seuralla on MIN_CURRENT_GAMES ottelua. Copy seuraa
+    artefaktia: kuluva kausi -> "season so far" eika "last season";
+    edellinen kausi -> "last season". Aiempi portti vaati etta data ON viime
+    kauden, koska lause oli kovakoodattu."""
     import config
-    from scripts.build_fpl_longtail import DEFENCE_PATH
-    if not DEFENCE_PATH.exists():
+    from src.models.fpl_defence import is_season_so_far, load_defence
+    doc = load_defence()
+    if not doc:
         return
-    meta = json.loads(DEFENCE_PATH.read_text(encoding="utf-8"))["meta"]
-    cur = config.current_season()                      # esim. "2627"
-    cur_label = f"20{cur[:2]}/{cur[2:]}"                # "2026/27"
-    assert meta["season"] != cur_label, (
-        f"defence-sivun data on kuluvaa kautta ({meta['season']}), mutta copy sanoo 'last season'")
-    html = render_defence(json.loads(DEFENCE_PATH.read_text(encoding="utf-8")),
-                          datetime(2026, 9, 10, tzinfo=timezone.utc))
-    assert "17 clubs" in html or f"{meta.get('n_teams')} clubs" in html
+    meta = doc["meta"]
+    cur = config.current_season()
+    cur_label = f"20{cur[:2]}/{cur[2:]}"
+    html = render_defence(doc, datetime(2026, 10, 5, tzinfo=timezone.utc))
+    if meta["season"] == cur_label:
+        assert is_season_so_far(doc) or meta.get("complete") is True
+        assert f"{cur_label} season so far, per match" in html
+        assert "played in the Premier League last season" not in html
+    else:
+        assert "played in the Premier League last season" in html
 
+
+def _cur_doc(matches, promoted=()):
+    row = {"team": "Arsenal", "xg_pm": 1.1, "head_pm": 0.6, "central_pm": 1.2,
+           "six_pm": 0.4, "wide_pm": 1.0, "edge_pm": 1.5, "sp_xg_pm": 0.2,
+           "shots_pm": 8.0, "matches": matches, "far_pm": 1.1, "hvc_pm": 0.4,
+           "pens": 0, "box_share": 46.0}
+    return {"meta": {"available": True, "season": "2026/27", "complete": False,
+                     "promoted_no_data": list(promoted), "relegated_excluded": [],
+                     "generated_at": "2026-10-05T16:00:00+00:00"},
+            "teams": [row]}
+
+
+def test_reader_phases(tmp_path):
+    """Saanto 6a(3): sama lukija kauden eri vaiheissa."""
+    import json
+    from src.models.fpl_defence import load_defence
+    prev = _defence([])
+    (tmp_path / "understat_team_defence_2526.json").write_text(json.dumps(prev))
+    # esikausi: kuluvan kauden tiedostoa ei ole -> edellinen kausi
+    assert load_defence("2627", tmp_path)["meta"]["season"] == "2025/26"
+    cur = tmp_path / "understat_team_defence_2627.json"
+    # kaksi ottelua: alle MIN_CURRENT_GAMES -> edellinen kausi
+    cur.write_text(json.dumps(_cur_doc(2)))
+    assert load_defence("2627", tmp_path)["meta"]["season"] == "2025/26"
+    # nousija ilman dataa -> edellinen kausi (taulukosta puuttuisi seura)
+    cur.write_text(json.dumps(_cur_doc(5, ["Hull"])))
+    assert load_defence("2627", tmp_path)["meta"]["season"] == "2025/26"
+    # kesken kauden, viisi ottelua -> kuluva kausi, copy "so far"
+    cur.write_text(json.dumps(_cur_doc(5)))
+    doc = load_defence("2627", tmp_path)
+    assert doc["meta"]["season"] == "2026/27"
+    html = render_defence(doc, datetime(2026, 10, 5, tzinfo=timezone.utc))
+    assert "2026/27 season so far, per match" in html
+    assert "Every Premier League club, 5 matches each." in html
+    assert "last season" not in html
+    # rikkinainen kuluvan kauden tiedosto ei tyhjenna sivua
+    cur.write_text("{")
+    assert load_defence("2627", tmp_path)["meta"]["season"] == "2025/26"

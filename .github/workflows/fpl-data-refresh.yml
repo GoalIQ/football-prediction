@@ -119,7 +119,9 @@ jobs:
       - name: Compute cache week
         if: steps.guard.outputs.proceed == 'true'
         id: week
-        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+          echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
       - name: Cache soccerdata (Understat)
         if: steps.guard.outputs.proceed == 'true'
@@ -499,6 +501,28 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_fpl_player_gw
 
+      # 5.10 (Villen havainto): /fpl/defence kuluvalta kaudelta. Pelattu
+      # ottelu ei muutu, joten Understatin ottelutiedostot sailyvat ajojen
+      # valilla (paivaavain + restore-keys = inkrementaalinen) ja skripti
+      # hakee vain uudet. --max-age-hours 20: koko askel ohitetaan jos
+      # committoitu artefakti on alle 20 h vanha, eli Understatiin mennaan
+      # kerran vuorokaudessa eika joka refreshissa. continue-on-error: hakuvirhe
+      # jattaa edellisen artefaktin voimaan (sanity exit 2 = ei kirjoitusta).
+      - name: Cache Understat match files (team defence)
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        uses: actions/cache@v6
+        with:
+          path: data/raw/understat
+          key: understat-matches-${{ steps.week.outputs.day }}
+          restore-keys: understat-matches-
+
+      - name: Build team defence profile (current season)
+        id: build_defence
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_understat_team_defence --fetch --max-age-hours 20
+
       # 6.9 (SIVU-JA-DATA-ERI-AJOSSA-2): sivut rakennetaan SAMASSA ajossa kuin
       # artefakti ja committoidaan samassa committissa. Aiemmin projektio
       # paivittyi taalla ~3 h valein mutta /fpl-sivut vain fpl-page-refreshissa,
@@ -625,6 +649,7 @@ jobs:
             assets/cards/projected-xi-card.webp
             assets/cards/projected-xi-card-450.webp
             data/gw_recap.json fpl/player-gw.json data/push_state.json
+            data/understat_team_defence_*.json
           CI_PUSH_PAGES: >-
             fpl.html sitemap.xml sitemap-core.xml index.html fpl/
             sitemap-fpl.xml predictions.html world-cup-2026-predictions.html
@@ -707,6 +732,7 @@ jobs:
           [ "${{ steps.build_phase0.outcome }}" = "failure" ] && { echo "::error::build_fpl_phase0 FAILAA (sanity-gate; fpl_projections_phase0.json jaa vanhaksi, /fpl CS/FDR ei paivity) - PHASE0-SANITY-GATE-RHO"; fail=1; }
           [ "${{ steps.build_cs_fdr.outcome }}" = "failure" ] && { echo "::error::build_fpl_cs_fdr FAILAA (sanity-gate tai kaatuminen; fpl_cs_fdr.json jaa vanhaksi, wildcard lukee sita)"; fail=1; }
           [ "${{ steps.build_stats.outcome }}" = "failure" ] && { echo "::error::build_fpl_stats FAILAA (stats-sivun taulukko jaa vanhaksi)"; fail=1; }
+          [ "${{ steps.build_defence.outcome }}" = "failure" ] && { echo "::error::build_understat_team_defence FAILAA (Understat-haku tai sanity; /fpl/defence jaa edelliseen artefaktiin)"; fail=1; }
           [ "${{ steps.bake_player_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_player_gw FAILAA (stats-sivun GW-ikkuna jaa vanhaksi)"; fail=1; }
           [ "${{ steps.bake_fpl_page.outcome }}" = "failure" ] && { echo "::error::build_fpl_page FAILAA (fpl.html jaa eri ajosta kuin artefakti)"; fail=1; }
           [ "${{ steps.bake_longtail.outcome }}" = "failure" ] && { echo "::error::build_fpl_longtail FAILAA (long-tail-sivut jaavat eri ajosta kuin artefakti)"; fail=1; }

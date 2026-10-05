@@ -88,6 +88,10 @@ SALLITTU_VAROITUS_VAIN: dict[str, str] = {
         "SPL ei saa punata FPL-refreshia (Villen ehto 7.8).",
     "Sync SPL page data basis from the artefact":
         "SPL ei saa punata FPL-refreshia (Villen ehto 7.8).",
+    "Cache Understat match files (team defence)":
+        "Valimuistin puuttuminen ei muuta dataa: build_understat_team_defence "
+        "hakee silloin kaikki pelatut ottelut uudelleen, ja sen oma epaonnistuminen "
+        "nakyy Step healthissa (build_defence). (5.10)",
 }
 
 

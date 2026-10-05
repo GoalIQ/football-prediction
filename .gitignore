@@ -139,7 +139,10 @@ raw_data/
 # staattinen, joten artefakti rakennetaan kerran lokaalisti ja committataan —
 # CI ei hae 380 ottelusivua eikä altista GH-runnerin IP:tä estoille.
 !/data/understat_player_shots_2526.json
-!/data/understat_team_defence_2526.json
+# 5.10: puolustusprofiili myos KULUVALTA kaudelta (CI paivittaa kerran
+# vuorokaudessa, fpl-data-refresh). Glob, ettei kausivaihto piilota uutta
+# tiedostoa (muisti: uusi data-artefakti on gitignoressa).
+!/data/understat_team_defence_*.json
 
 # 8.8 STATS-ZONE: /fpl/stats -sivun lähdedata (scripts/build_fpl_stats.py).
 # Ilman tätä !-poikkeusta tiedosto jää kehityskoneelle ja CI:n regenerointi

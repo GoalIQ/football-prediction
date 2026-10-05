@@ -368,7 +368,8 @@ def card_defence(args) -> dict:
 
     KOLME ASIAA JOTKA KORTIN ON SANOTTAVA, koska se matkustaa yksin ilman
     sivun ymparoivaa tekstia:
-      1. Otos on KOKO edellinen kausi (38 ottelua/joukkue), ei alkanut kausi.
+      1. Otos: koko paattynyt kausi TAI kuluva kausi tahan asti (5.10 alkaen,
+         alaotsikko sanoo kumpi).
       2. xg_pm SISALTAA rangaistuspotkut -- vain vyohykesarakkeet jattavat ne
          pois (build_understat_team_defence.py lisaa xG:n ennen penalty-
          continueta).
@@ -378,14 +379,20 @@ def card_defence(args) -> dict:
          mittaamatta. Sama sokea piste kaatoi /fpl/defence-sivun 8.8.
     Arvot luetaan metasta, jotta kortti ei voi erkaantua datasta.
     """
-    d = _load("understat_team_defence_2526.json")
+    # 5.10: sama lukija kuin /fpl/defence (kuluva kausi kun jokaisella
+    # seuralla on MIN_CURRENT_GAMES ottelua, muuten edellinen kausi).
+    from src.models.fpl_defence import is_season_so_far, load_defence
+    d = load_defence(data_dir=DATA)
+    if not d:
+        raise SystemExit("Puolustusdataa ei loydy (understat_team_defence_*.json)")
     meta = d.get("meta", {})
     teams = [t for t in d.get("teams", []) if t.get("xg_pm") is not None]
     ranked = sorted(teams, key=lambda t: float(t["xg_pm"]))[:args.top]
     season = meta.get("season", "last season")
     promoted = meta.get("promoted_no_data") or []
     n_have, n_all = len(teams), meta.get("n_current_teams") or len(teams)
-    sub = f"{season} full season, per match, penalties included"
+    span = "so far" if is_season_so_far(d) else "full season"
+    sub = f"{season} {span}, per match, penalties included"
     foot = f"{n_have} of {n_all} clubs"
     if promoted:
         foot += f", no data yet: {', '.join(promoted)}"

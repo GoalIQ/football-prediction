@@ -22,14 +22,23 @@ Vyohykkeet normalisoidussa kentassa (x = pituus kohti maalia, y = leveys):
 Rangaistuspotkut lasketaan omaan sarakkeeseensa EIKA vyohykkeisiin: ne eivat
 kerro puolustuksen rakenteesta mitaan.
 
-Ajo: python -m scripts.build_understat_team_defence [--season 2526]
+KULUVA KAUSI (5.10.2026, Villen havainto): sivu nayttaa kuluvaa kautta kun
+jokaisella seuralla on MIN_CURRENT_GAMES ottelua (lukija
+`src/models/fpl_defence.load_defence`). `--fetch` hakee Understatista kauden
+ottelulistan aina tuoreena ja VAIN puuttuvat pelatut ottelut; pelattu ottelu
+ei muutu, joten valimuisti kasvaa yhdella kierroksella kerrallaan. CI ajaa
+taman kerran vuorokaudessa (`--max-age-hours`), ei joka refreshissa.
+
+Ajo: python -m scripts.build_understat_team_defence [--season 2627] [--fetch]
 """
 from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import gzip
 import json
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -37,9 +46,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config
 from scripts.build_fpl_phase0 import map_name
-from scripts.build_understat_shots import (HIGH_VALUE_XG, LEAGUE_ID,
-                                           load_season_match_ids)
+from scripts.build_understat_shots import (CACHE_DIR, HIGH_VALUE_XG, LEAGUE_ID,
+                                           load_season_match_ids,
+                                           season_dir_key)
 from src.data.fpl_api import fetch_bootstrap
+from src.models.fpl_defence import defence_path
+from src.models.fpl_leaders import MIN_CURRENT_GAMES
+
+UNDERSTAT = "https://understat.com"
+FETCH_SLEEP_S = 1.0
 
 BOX_X = 0.843
 SIX_X = 0.945
@@ -47,7 +62,82 @@ CENTRAL_HALF_WIDTH = 0.132   # 18 m leveydesta puolet 68 m kentalla
 EDGE_X = 0.75
 
 SANITY_MIN_TEAMS = 15   # 20 miinus nousijat joilla ei ole PL-dataa
-SANITY_MIN_MATCHES = 30
+SANITY_MIN_MATCHES = 30  # paattynyt kausi; kesken kauden MIN_CURRENT_GAMES
+
+
+def _json_body(raw: bytes) -> dict:
+    """Understat palauttaa gzipatun rungon ilman Content-Encodingia."""
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    return json.loads(raw)
+
+
+def fetch_season(season: str, cache_dir: Path = CACHE_DIR,
+                 sleep: float = FETCH_SLEEP_S) -> tuple[int, int]:
+    """Kauden ottelulista tuoreena + puuttuvat pelatut ottelut valimuistiin.
+
+    Samat reitit ja sama tiedostomuoto kuin soccerdatan valimuistissa
+    (`league_1_season_<vuosi>.json`, `match_<id>.json` = raaka API-JSON),
+    joten `build()` lukee molemmat samalla tavalla. Soccerdatan
+    `read_shot_events` kaatuu tassa pandas-versiossa (5.10: "too many values
+    to unpack"), siksi haku on tassa. Palauttaa (uudet, pelatut).
+    """
+    import requests
+
+    year = season_dir_key(season)
+    s = requests.Session()
+    s.headers["User-Agent"] = "Mozilla/5.0"
+    page = f"{UNDERSTAT}/league/EPL/{year}"
+    s.get(page, timeout=30).raise_for_status()
+    hdr = {"X-Requested-With": "XMLHttpRequest", "Referer": page}
+    r = s.get(f"{UNDERSTAT}/getLeagueData/EPL/{year}", headers=hdr, timeout=30)
+    r.raise_for_status()
+    league = _json_body(r.content)
+    if not league.get("dates"):
+        raise RuntimeError(f"Understat {year}: tyhja ottelulista")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    (cache_dir / f"league_{LEAGUE_ID}_season_{year}.json").write_text(
+        json.dumps(league, ensure_ascii=False), encoding="utf-8")
+    played = [int(m["id"]) for m in league["dates"] if m.get("isResult")]
+    new = 0
+    for mid in played:
+        path = cache_dir / f"match_{mid}.json"
+        if path.exists():
+            continue
+        time.sleep(sleep)
+        r = s.get(f"{UNDERSTAT}/getMatchData/{mid}",
+                  headers={**hdr, "Referer": f"{UNDERSTAT}/match/{mid}"},
+                  timeout=30)
+        r.raise_for_status()
+        blob = _json_body(r.content)
+        shots = blob.get("shots") or {}
+        if not (shots.get("h") or shots.get("a")):
+            # Pelattu ottelu ilman yhtaan laukausta on datavirhe, ei 0-0.
+            raise RuntimeError(f"Understat match {mid}: ei laukauksia")
+        path.write_text(json.dumps(blob, ensure_ascii=False), encoding="utf-8")
+        new += 1
+    return new, len(played)
+
+
+def season_complete(season: str, cache_dir: Path = CACHE_DIR) -> bool:
+    """Onko kauden jokainen ottelu pelattu (Understatin ottelulista)."""
+    path = cache_dir / f"league_{LEAGUE_ID}_season_{season_dir_key(season)}.json"
+    dates = json.loads(path.read_text(encoding="utf-8")).get("dates") or []
+    return bool(dates) and all(m.get("isResult") for m in dates)
+
+
+def is_fresh(path: Path, max_age_hours: float,
+             now: _dt.datetime | None = None) -> bool:
+    """Onko artefakti alle `max_age_hours` vanha (meta.generated_at)."""
+    try:
+        meta = json.loads(path.read_text(encoding="utf-8"))["meta"]
+        ts = _dt.datetime.fromisoformat(meta["generated_at"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=_dt.timezone.utc)
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    return (now - ts) < _dt.timedelta(hours=max_age_hours)
 
 
 def zone(x: float, y: float) -> str:
@@ -152,10 +242,14 @@ def build(season: str) -> dict:
         "meta": {
             "available": True,
             "season": f"20{season[:2]}/{season[2:]}",
+            # False = kausi kesken: sivu ja kortti sanovat "so far" eivatka
+            # "full season", ja sanity hyvaksyy MIN_CURRENT_GAMES ottelua.
+            "complete": season_complete(season),
             "promoted_no_data": promoted,
             "relegated_excluded": relegated,
             "n_current_teams": len(current),
-            "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),
+            "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(
+                timespec="seconds"),
             "source": "Understat shot-level data (own xG model, NOT Opta)",
             "matches_read": read,
             "matches_missing": missing,
@@ -193,8 +287,10 @@ def sanity(data: dict) -> list[str]:
         fails.append(f"vain {len(rows)} joukkuetta")
     if meta["matches_missing"]:
         fails.append(f"{meta['matches_missing']} ottelua puuttuu valimuistista")
+    min_matches = (SANITY_MIN_MATCHES if meta.get("complete", True)
+                   else MIN_CURRENT_GAMES)
     for r in rows:
-        if r["matches"] < SANITY_MIN_MATCHES:
+        if r["matches"] < min_matches:
             fails.append(f"{r['team']}: vain {r['matches']} ottelua")
             break
         zones = (r["six_pm"] + r["central_pm"] + r["wide_pm"] + r["edge_pm"]
@@ -213,8 +309,19 @@ def sanity(data: dict) -> list[str]:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--season", default="2526")
+    ap.add_argument("--season", default=config.current_season())
+    ap.add_argument("--fetch", action="store_true",
+                    help="hae ottelulista + puuttuvat ottelut Understatista")
+    ap.add_argument("--max-age-hours", type=float, default=None,
+                    help="ohita koko ajo jos artefakti on tata tuoreempi")
     args = ap.parse_args(argv)
+    out = defence_path(args.season)
+    if args.max_age_hours is not None and is_fresh(out, args.max_age_hours):
+        print(f"{out.name} alle {args.max_age_hours:g} h vanha, ei hakua")
+        return 0
+    if args.fetch:
+        new, played = fetch_season(args.season)
+        print(f"Understat {args.season}: {played} pelattua, {new} uutta haettu")
     data = build(args.season)
     fails = sanity(data)
     if fails:
@@ -222,7 +329,6 @@ def main(argv=None) -> int:
         for f in fails:
             print(f"  - {f}")
         return 2
-    out = config.DATA_DIR / f"understat_team_defence_{args.season}.json"
     out.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     m = data["meta"]
     print("=" * 64)
