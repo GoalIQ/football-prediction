@@ -20,9 +20,11 @@ Nyt: TODISTE JOLLA ON REITTI.
   (`fpl_projections_phase0.json` teams[].fixtures[gw].cs_pct) ja SAMALLA
   muotoilijalla (`fmt.fmt_pct`: "38.6%", ei "39%"), solussa seuran lyhenne:
   "ARS 51% clean sheet chance". Vain GKP/DEF.
-- xGI/90 viime kaudelta, kausi nimettyna ("0.57 xGI/90 in 2025/26"), sama
-  lattia kuin why-selitteella (XGI_MIN). Reitti: FPL:n pelaajahistoria
-  (history_past kantaa expected_goal_involvements + minutes). Vain MID/FWD.
+- xGI/90, kausi nimettyna, sama lattia kuin why-selitteella (XGI_MIN). 5.10
+  alkaen kuluva kausi ("0.99 xGI/90 in 2026/27") kun pelaajalla on
+  XGI_SEASON_MIN_MINUTES PL-minuuttia, muuten viime kausi ("0.57 xGI/90 in
+  2025/26"); valinta `fpl_xp.xgi_headline`. Reitti: FPL:n pelaajasivu
+  (kuluva kausi) ja history_past (viime kausi). Vain MID/FWD.
 - Ei koskaan: minutes (xMins on jo rivilla), fixtures, bonus, price,
   differential. Yksi todiste per rivi; jos mitaan ei ole, rivi on tyhja.
 
@@ -35,7 +37,7 @@ from pathlib import Path
 
 from src.models.fmt import fmt_pct
 from src.models.fpl_gameweek import actionable_gameweek, display_gameweek
-from src.models.fpl_xp import driver_facts
+from src.models.fpl_xp import XGI_SEASON_MIN_MINUTES, driver_facts, xgi_headline
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 PHASE0_PATH = PROJECT_ROOT / "data" / "fpl_projections_phase0.json"
@@ -50,8 +52,9 @@ NEVER = ("minutes", "fixtures", "bonus", "price", "differential")
 PAGE_LEGEND = ("Under each name: the one number the projection leans on. "
                "Clean sheet chance is his club's for this gameweek, the same "
                "number as on goaliq.app/fpl#clean-sheets. Set-piece order (first "
-               "or second taker only) and last season's xGI come from FPL's own "
-               "player pages.")
+               "or second taker only) and xGI per 90 come from FPL's own player "
+               f"pages: this season's once he has {int(XGI_SEASON_MIN_MINUTES)} "
+               "Premier League minutes, last season's until then.")
 
 
 def load_team_cs(gw: int | None, path: Path = PHASE0_PATH) -> dict[str, float]:
@@ -73,21 +76,33 @@ def load_team_cs(gw: int | None, path: Path = PHASE0_PATH) -> dict[str, float]:
     return out
 
 
-def previous_season_label(meta: dict | None) -> str | None:
-    """'2026/27' -> '2025/26'. None jos kautta ei voi johtaa (ei arvausta)."""
+def season_label(meta: dict | None) -> str | None:
+    """Metan kausi muodossa '2026/27', tai None jos muoto ei ole tama."""
     s = str((meta or {}).get("season") or "")
     if len(s) == 7 and s[4] == "/" and s[:4].isdigit():
+        return s
+    return None
+
+
+def previous_season_label(meta: dict | None) -> str | None:
+    """'2026/27' -> '2025/26'. None jos kautta ei voi johtaa (ei arvausta)."""
+    s = season_label(meta)
+    if s:
         y = int(s[:4])
         return f"{y - 1}/{str(y)[2:]}"
     return None
 
 
 def fact_text(player: dict, team_cs: dict[str, float] | None = None,
-              prev_season: str | None = None) -> str:
+              prev_season: str | None = None, season: str | None = None) -> str:
     """Yhden rivin todiste tai tyhja.
 
     "on penalties, corners" | "ARS 51% clean sheet chance" |
-    "0.57 xGI/90 in 2025/26".
+    "0.99 xGI/90 in 2026/27" | "0.57 xGI/90 in 2025/26".
+
+    xGI-luvun kausi valitaan `fpl_xp.xgi_headline`illa. Kun kuluva kausi
+    kelpaa mutta `season` puuttuu, rivi on tyhja: luku ilman kautta olisi
+    vaite jota lukija ei voi tarkistaa, eika viime kauteen pudota.
     """
     if not isinstance(player, dict):
         return ""
@@ -106,10 +121,13 @@ def fact_text(player: dict, team_cs: dict[str, float] | None = None,
             # Sama muotoilija kuin /fpl#clean-sheets-taulukossa: "38.6%", ei "39%".
             return f"{short} {fmt_pct(cs)} clean sheet chance"
         return ""
-    if pos in ("MID", "FWD") and prev_season:
-        xgi = ((player.get("last_season") or {}).get("per90") or {}).get("xgi")
-        if isinstance(xgi, (int, float)) and xgi >= XGI_MIN:
-            return f"{float(xgi):.2f} xGI/90 in {prev_season}"
+    if pos in ("MID", "FWD"):
+        h = xgi_headline(player)
+        if h:
+            which, xgi = h
+            label = season if which == "this" else prev_season
+            if label and xgi >= XGI_MIN:
+                return f"{xgi:.2f} xGI/90 in {label}"
     return ""
 
 
@@ -159,9 +177,18 @@ def fact_context(xp_doc: dict) -> dict:
     sivu = page_gameweek()
     gw = act if (act is not None and act == sivu) else None
     return {"team_cs": load_team_cs(gw),
+            "season": season_label(meta),
             "prev_season": previous_season_label(meta),
             # Diagnostiikka kutsupaikoille ja testeille: miksi todiste puuttuu.
             "cs_gameweek": gw, "cs_actionable_gw": act, "cs_page_gw": sivu}
+
+
+def fact_text_ctx(player: dict, ctx: dict) -> str:
+    """`fact_text` `fact_context`in tuloksella. Sivu, jakokortti ja kortin
+    alarivi kutsuvat TATA: kun kausi tuli kutsupaikoilta erikseen, yksi
+    unohdettu argumentti tyhjensi kuluvan kauden todisteen hiljaa."""
+    return fact_text(player, ctx.get("team_cs"), ctx.get("prev_season"),
+                     ctx.get("season"))
 
 
 def card_sub(player: dict, ctx: dict) -> str | None:
@@ -170,7 +197,7 @@ def card_sub(player: dict, ctx: dict) -> str | None:
     xm = player.get("xmins")
     if isinstance(xm, (int, float)):
         osat.append(f"{xm:.0f} xMins")
-    t = fact_text(player, ctx.get("team_cs"), ctx.get("prev_season"))
+    t = fact_text_ctx(player, ctx)
     if t:
         osat.append(t)
     return "  ·  ".join(osat) if osat else None

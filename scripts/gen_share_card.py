@@ -495,7 +495,7 @@ def card_xp(args) -> dict:
     # (src/models/fpl_why_drivers.card_sub) -> sama teksti. P/FK-badget
     # pysyvat poissa: sama tieto on nyt tekstina, ei kahdesti.
     from src.models.fpl_minutes_flags import flag_symbol, legend_parts
-    from src.models.fpl_why_drivers import card_sub, fact_context, fact_text
+    from src.models.fpl_why_drivers import card_sub, fact_context, fact_text_ctx
     ctx = fact_context(data)
     # 9.9 PORTTI: sivu (#gw-xp) jarjestaa top_projected-lukijalla (tasapeli
     # id:lla, korkeintaan MAX_PER_CLUB per seura). Kortti lajitteli itse ja
@@ -522,7 +522,7 @@ def card_xp(args) -> dict:
         rows.append({"name": p["web_name"], "tag": p["pos"],
                      "team": p["team_short"], "mid": fx,
                      "_xp": float(g.get("xp") or 0.0), "badges": badges,
-                     "fact_text": fact_text(p, ctx["team_cs"], ctx["prev_season"]) or None,
+                     "fact_text": fact_text_ctx(p, ctx) or None,
                      "sub": card_sub(p, ctx)})
     # Thiaw ei markkinointiin (Villen ohje 10.8, koskee generoituja kortteja).
     # Kortin sisalto on datavetoinen, joten esto on generaattorissa eika

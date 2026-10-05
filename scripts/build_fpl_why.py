@@ -53,12 +53,12 @@ TOP_N = 150
 # Alle taman xGI/90 jatetaan pois lauseesta: se ei kanna painoa jonka
 # "leans on" sille antaisi (ks. template_sentence).
 from src.models.fpl_why_drivers import XGI_MIN  # noqa: E402  yksi kynnys, sama kuin ilmaissivun todiste
-from src.models.fpl_xp import attach_horizon_total_actionable, set_piece_duties  # noqa: E402
+from src.models.fpl_xp import attach_horizon_total_actionable, set_piece_duties, xgi_per90  # noqa: E402
 
 # Nosta AINA kun `template_sentence` muuttuu: se on osa valimuistin avainta
 # mallipohjaisille lauseille. v2 (14.8): xGI-kynnys + kolme runkoa.
 # v3 (14.8): es/pt-lokalisointi — jokainen merkinta kantaa nyt kolme lausetta.
-TEMPLATE_VERSION = 3
+TEMPLATE_VERSION = 4
 
 # Maksumuuri lupaa `paywall.bullet_why`-rivilla selityksen ostajan omalla
 # kielella es- ja pt-lokaaleilla. Ilman naita kaikki 150 lausetta olisivat
@@ -98,6 +98,7 @@ PHRASES = {
     "en": {
         "minutes": "about {mins} minutes a game",
         "xgi": "{xgi} expected goal involvements per 90 last season",
+        "xgi_this": "{xgi} expected goal involvements per 90 this season",
         "set_pieces": "set piece duties",
         "join": " and ",
         "tail": ", with {opps} to come",
@@ -106,6 +107,7 @@ PHRASES = {
     "es": {
         "minutes": "unos {mins} minutos por partido",
         "xgi": "{xgi} participaciones de gol esperadas por 90 la temporada pasada",
+        "xgi_this": "{xgi} participaciones de gol esperadas por 90 esta temporada",
         "set_pieces": "los balones parados",
         "join": " y ",
         "tail": ", con {opps} por delante",
@@ -114,6 +116,7 @@ PHRASES = {
     "pt": {
         "minutes": "cerca de {mins} minutos por jogo",
         "xgi": "{xgi} participações em gols esperadas por 90 na temporada passada",
+        "xgi_this": "{xgi} participações em gols esperadas por 90 nesta temporada",
         "set_pieces": "as bolas paradas",
         "join": " e ",
         "tail": ", com {opps} pela frente",
@@ -129,7 +132,7 @@ POLL_MAX_MINUTES = 55
 # eika sita voisi suodattaa tai kaantaa.
 DRIVERS = [
     "minutes",          # xMins / aloitustodennakoisyys
-    "attacking_output", # viime kauden xGI/90, maalit, syotot
+    "attacking_output", # xGI/90 (kuluva kausi kun kelpaa, muuten viime), maalit, syotot
     "fixtures",         # vastustajat horisontissa
     "clean_sheets",     # puolustajat/maalivahdit
     "set_pieces",       # pilkut, kulmat, vapaapotkut
@@ -226,6 +229,11 @@ def player_facts(player: dict, gw: int, horizon: int) -> dict:
             "assists_per90": _num(per90.get("assists"), 2),
             "xgi_per90": _num(per90.get("xgi"), 2),
         }
+    # 5.10: kuluvan kauden xGI/90 samalla lukijalla kuin kortin ajuririvi
+    # (fpl_xp.xgi_per90): lohko on mukana vain kun minuuttiraja tayttyy.
+    this_xgi = xgi_per90(player)["this"]
+    if this_xgi is not None:
+        facts["this_season"] = {"xgi_per90": _num(this_xgi, 2)}
     # WHY-SETPIECE-KYNNYS 25.9: sama lukija kuin driver_facts ja kortti
     # (1. tai 2. ottaja). `if sp.get(k)` hyvaksyi minka tahansa jarjestyksen.
     takers = list(set_piece_duties(sp))
@@ -337,6 +345,16 @@ def sentence_problems(sentence: str, facts: dict) -> list[str]:
     return problems
 
 
+def _xgi_choice(facts: dict) -> tuple[str, float | None]:
+    """Lauseen ja ajurien xGI: ("xgi_this", arvo) kun faktoissa on kuluvan
+    kauden lohko, muuten ("xgi", viime kausi). Sama saanto kuin
+    `fpl_xp.xgi_headline`: kun kuluva kausi on mukana, viime kauteen ei
+    pudota vaikka kuluva luku jaisi lattian alle."""
+    if "this_season" in facts:
+        return "xgi_this", (facts["this_season"] or {}).get("xgi_per90")
+    return "xgi", (facts.get("last_season") or {}).get("xgi_per90")
+
+
 def template_sentence(facts: dict, lang: str = DEFAULT_LANG) -> str:
     """Deterministinen varalause kun malli hylataan tai ei vastaa.
 
@@ -354,14 +372,14 @@ def template_sentence(facts: dict, lang: str = DEFAULT_LANG) -> str:
     bits = []
     if mins is not None:
         bits.append(ph["minutes"].format(mins=f"{mins:g}"))
-    xgi = (facts.get("last_season") or {}).get("xgi_per90")
+    xgi_key, xgi = _xgi_choice(facts)
     # KYNNYS: 48/138 lausetta siteerasi xGI/90:n alle 0,15 ja 23 alle 0,10
     # (pienin 0,01). "The projection leans on 0.09 expected goal involvements
     # per 90" vaittaa projektion nojaavan lukuun joka ei kanna mitaan — se on
     # kaiken perusteleminen samalla syvyydella, eli konetunnusmerkki JA
     # epatosi painotusvaite. Alle kynnyksen luku jatetaan pois, ei pyoristeta.
     if xgi and float(xgi) >= XGI_MIN:
-        bits.append(ph["xgi"].format(xgi=f"{xgi:g}"))
+        bits.append(ph[xgi_key].format(xgi=f"{xgi:g}"))
     if facts.get("set_piece_duties"):
         bits.append(ph["set_pieces"])
     if not bits:
@@ -408,7 +426,7 @@ def template_drivers(facts: dict) -> list[str]:
     mins = facts.get("expected_minutes")
     if mins is not None and float(mins) >= 60:
         out.append("minutes")
-    xgi = (facts.get("last_season") or {}).get("xgi_per90")
+    _, xgi = _xgi_choice(facts)
     if xgi and float(xgi) >= XGI_MIN:
         out.append("attacking_output")
     if facts.get("position") in ("GKP", "DEF"):

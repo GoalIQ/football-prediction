@@ -67,7 +67,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 # ennen ottelu-ennusteisiin ("All predictions") eika takaisin /fpl:aan.
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
-from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text  # todiste: yksi lukija
+from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text_ctx  # todiste: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
 from scripts.table_tools import TABLE_TOOLS_JS  # noqa: E402
 
@@ -4583,7 +4583,7 @@ def _driver_sub(r: dict, ctx: dict) -> str:
     samasta kentasta kuin /fpl, xGI kausi nimettyna. Nakyy joka leveydella
     (ei m-hide), koska jakokortti lainaa saman tekstin.
     """
-    txt = fact_text(r, ctx.get("team_cs"), ctx.get("prev_season"))
+    txt = fact_text_ctx(r, ctx)
     return f'<span class="m-sub drv">{escape(txt)}</span>' if txt else ""
 
 
@@ -4611,7 +4611,7 @@ def _opponent_sub(r: dict, gw: int) -> str:
 
 def _driver_legend(rows: list[dict], ctx: dict) -> str:
     """Selite alariville, vain kun taulussa on ainakin yksi todiste."""
-    if any(fact_text(r, ctx.get("team_cs"), ctx.get("prev_season")) for r in rows):
+    if any(fact_text_ctx(r, ctx) for r in rows):
         return f'<p class="note">{escape(PAGE_LEGEND)}</p>'
     return ""
 

@@ -1605,6 +1605,54 @@ def _clean_sheet_pct(player: dict) -> float | None:
     return max(0.0, min(100.0, 100.0 * float(pts) / per_cs))
 
 
+#: Kuluvan kauden xGI/90 kelpaa todisteeksi vasta talla PL-minuuttimaaralla.
+#: Sama raja jolla malli antaa pelaajan omalle hyokkaysvauhdille puolet
+#: painosta positiopriorin rinnalla (M_PRIOR_ATTACK, julkaistu metassa
+#: `basis_threshold_minutes`). Alle sen kuluvan kauden luku on kohinaa.
+XGI_SEASON_MIN_MINUTES = M_PRIOR_ATTACK
+
+
+def xgi_per90(player: dict) -> dict:
+    """YKSI LUKIJA xGI/90-todisteelle: {"this": float|None, "last": float|None}.
+
+    5.10.2026 (Villen havainto): GW5:n jalkeen kortin "Attacking output" sanoi
+    Haalandille "0.86 xGI/90 last season", vaikka samalla kortilla oli jo
+    GW1-5 luvut (4.95 xGI / 450 min). Kortin ajuririvi, why-lause ja
+    /fpl/expected-points lukivat kukin viime kautta itse. Nyt ne lukevat taman.
+
+    `this` vain kun rivilla on kuluvan kauden lohko JA minuutteja on
+    vahintaan XGI_SEASON_MIN_MINUTES. Builder ei kirjoita lohkoa esikaudella
+    (bootstrap kantaa silloin edellisen kauden lukuja), joten `this` ei voi
+    olla viime kauden luku vaaralla nimella.
+    """
+    out: dict = {"this": None, "last": None}
+    ts = player.get("this_season") or {}
+    mins = ts.get("minutes")
+    v = (ts.get("per90") or {}).get("xgi")
+    if (isinstance(mins, (int, float)) and mins >= XGI_SEASON_MIN_MINUTES
+            and isinstance(v, (int, float)) and v >= 0):
+        out["this"] = float(v)
+    lv = ((player.get("last_season") or {}).get("per90") or {}).get("xgi")
+    if isinstance(lv, (int, float)) and lv >= 0:
+        out["last"] = float(lv)
+    return out
+
+
+def xgi_headline(player: dict) -> tuple[str, float] | None:
+    """Yhden luvun pinnoille: ("this"|"last", arvo) tai None.
+
+    Kuluva kausi kun se kelpaa, muuten viime kausi. Kun kuluva kausi kelpaa
+    mutta luku on pieni, viime kauteen EI pudota: talla kaudella pelaaja ei
+    tuota, ja vanha luku vaittaisi muuta. Kynnyksen (XGI_MIN) soveltaa
+    kutsuja, koska ajuririvi ja lause kayttavat eri lattiaa.
+    """
+    x = xgi_per90(player)
+    if x["this"] is not None:
+        return ("this", x["this"])
+    if x["last"] is not None:
+        return ("last", x["last"])
+    return None
+
 
 def driver_facts(player: dict, from_gw: int | None = None) -> dict:
     """Yhden rivin todiste jokaiselle ajurille, mallin omista kentista.
@@ -1641,10 +1689,17 @@ def driver_facts(player: dict, from_gw: int | None = None) -> dict:
     if isinstance(mins, (int, float)) and mins > 0:
         out["minutes"] = f"{round(float(mins))} mins a game"
 
-    per90 = (player.get("last_season") or {}).get("per90") or {}
-    xgi = per90.get("xgi")
-    if isinstance(xgi, (int, float)) and xgi > 0:
-        out["attacking_output"] = f"{float(xgi):.2f} xGI/90 last season"
+    # Molemmat luvut kun kuluva kausi kelpaa: malli painottaa viela viime
+    # kautta (PREV_SEASON_CARRY), joten pelkka kuluva luku liioittelisi sen
+    # osuutta siihen mihin projektio nojaa.
+    x = xgi_per90(player)
+    if x["this"] is not None and x["this"] > 0:
+        txt = f"{x['this']:.2f} xGI/90 this season"
+        if x["last"] is not None and x["last"] > 0:
+            txt += f", {x['last']:.2f} last season"
+        out["attacking_output"] = txt
+    elif x["this"] is None and x["last"] is not None and x["last"] > 0:
+        out["attacking_output"] = f"{x['last']:.2f} xGI/90 last season"
 
     cs = _clean_sheet_pct(player)
     if cs is not None:

@@ -445,6 +445,33 @@ def _form_block(e: dict, boot: dict, preseason: bool,
     return {"value": round(value, 1), "gws": gws, "basis": FORM_BASIS}
 
 
+def _this_season_block(e: dict, preseason: bool) -> dict | None:
+    """Kuluvan kauden PL-minuutit ja xGI bootstrapista (5.10.2026).
+
+    Lukija on `fpl_xp.xgi_per90`; se paattaa kelpaako luku todisteeksi.
+    Esikaudella None: bootstrapin minutes ja expected_goal_involvements ovat
+    silloin edellisen kauden lukuja, ja `this_season`-nimella ne olisivat
+    vaaran kauden lukuja. Luvut sellaisenaan FPL:sta, joten ne ovat
+    tarkistettavissa FPL:n omalta pelaajasivulta.
+    """
+    if preseason:
+        return None
+    try:
+        mins = int(e.get("minutes") or 0)
+        xgi = float(e.get("expected_goal_involvements") or 0.0)
+    except (TypeError, ValueError):
+        return None
+    per90 = e.get("expected_goal_involvements_per_90")
+    if not isinstance(per90, (int, float)):
+        per90 = (xgi / mins * 90.0) if mins > 0 else None
+    return {
+        "season": SEASON_LABEL,
+        "minutes": mins,
+        "xgi": round(xgi, 2),
+        "per90": {"xgi": round(float(per90), 2) if per90 is not None else None},
+    }
+
+
 def minute_passes(elements: list[dict], mins_by_round: dict, starts_by_round: dict,
                   prev_rounds_by_player: dict, cur_mins_by_player: dict,
                   recency_window: bool, log=print) -> tuple[dict[int, dict], set[int]]:
@@ -1570,6 +1597,9 @@ def main(argv: list[str] | None = None) -> int:
             # jäädytetystä 25/26-artefaktista. null = ei PL-kautta 25/26
             # (nousijapelaaja / ulkomailta tullut) — sarjatasoa EI sekoiteta.
             "last_season": _last_season(e),
+            # 5.10: kuluvan kauden minuutit + xGI (None esikaudella). Lukija
+            # fpl_xp.xgi_per90 valitsee kortin ja why-lauseen xGI-todisteen.
+            "this_season": _this_season_block(e, preseason),
             # PLAYER-FORM (27.8): FPL:n virallinen form + otoskoko, None
             # esikaudella (ks. _form_block). Klientit piilottavat rivin
             # kun lohko puuttuu - ei tyhjaa lupausta.
