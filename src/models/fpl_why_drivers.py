@@ -49,12 +49,17 @@ XGI_MIN = 0.15
 PUBLISHABLE = ("set_pieces", "clean_sheets", "attacking_output")
 NEVER = ("minutes", "fixtures", "bonus", "price", "differential")
 
-PAGE_LEGEND = ("Under each name: the one number the projection leans on. "
+# Julkaisutarkistaja 5.10: "the one number the projection leans on" + kuluvan
+# kauden xGI vaitti etta projektio nojaa kuluvaan kauteen, vaikka viime kausi
+# painaa mallissa enemman noin GW17:aan asti (PREV_SEASON_CARRY). Siksi
+# "one number behind" ja viimeinen lause.
+PAGE_LEGEND = ("Under each name: one number behind the projection. "
                "Clean sheet chance is his club's for this gameweek, the same "
                "number as on goaliq.app/fpl#clean-sheets. Set-piece order (first "
                "or second taker only) and xGI per 90 come from FPL's own player "
                f"pages: this season's once he has {int(XGI_SEASON_MIN_MINUTES)} "
-               "Premier League minutes, last season's until then.")
+               "Premier League minutes, last season's until then. Last season "
+               "still counts in the projection.")
 
 
 def load_team_cs(gw: int | None, path: Path = PHASE0_PATH) -> dict[str, float]:

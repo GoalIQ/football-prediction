@@ -364,7 +364,7 @@ def test_xp_card_fact_is_on_the_players_own_row():
             assert r["sub"].endswith(t), r
     assert not puuttuu, "kortin todiste ei ole pelaajan rivilla:\n  " + "\n  ".join(puuttuu)
     assert any(r.get("fact_text") for r in spec["rows"])
-    assert "Under each name: the one number the projection leans on." in html
+    assert "Under each name: one number behind the projection." in html
 
 
 def test_clean_sheet_fact_equals_the_fpl_page_team_number():

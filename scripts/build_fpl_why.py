@@ -99,6 +99,7 @@ PHRASES = {
         "minutes": "about {mins} minutes a game",
         "xgi": "{xgi} expected goal involvements per 90 last season",
         "xgi_this": "{xgi} expected goal involvements per 90 this season",
+        "xgi_this_last": "{xgi} expected goal involvements per 90 this season ({last} last season)",
         "set_pieces": "set piece duties",
         "join": " and ",
         "tail": ", with {opps} to come",
@@ -108,6 +109,7 @@ PHRASES = {
         "minutes": "unos {mins} minutos por partido",
         "xgi": "{xgi} participaciones de gol esperadas por 90 la temporada pasada",
         "xgi_this": "{xgi} participaciones de gol esperadas por 90 esta temporada",
+        "xgi_this_last": "{xgi} participaciones de gol esperadas por 90 esta temporada ({last} la temporada pasada)",
         "set_pieces": "los balones parados",
         "join": " y ",
         "tail": ", con {opps} por delante",
@@ -117,6 +119,7 @@ PHRASES = {
         "minutes": "cerca de {mins} minutos por jogo",
         "xgi": "{xgi} participações em gols esperadas por 90 na temporada passada",
         "xgi_this": "{xgi} participações em gols esperadas por 90 nesta temporada",
+        "xgi_this_last": "{xgi} participações em gols esperadas por 90 nesta temporada ({last} na temporada passada)",
         "set_pieces": "as bolas paradas",
         "join": " e ",
         "tail": ", com {opps} pela frente",
@@ -379,7 +382,14 @@ def template_sentence(facts: dict, lang: str = DEFAULT_LANG) -> str:
     # kaiken perusteleminen samalla syvyydella, eli konetunnusmerkki JA
     # epatosi painotusvaite. Alle kynnyksen luku jatetaan pois, ei pyoristeta.
     if xgi and float(xgi) >= XGI_MIN:
-        bits.append(ph[xgi_key].format(xgi=f"{xgi:g}"))
+        # Julkaisutarkistaja 5.10: pelkka kuluva luku nimesi syotteista sen
+        # jolla on pienin paino (viime kausi painaa enemman ~GW17:aan asti).
+        # Viime kausi sulkeisiin samalla ehdolla kuin kortin ajuririvilla.
+        last = (facts.get("last_season") or {}).get("xgi_per90")
+        if xgi_key == "xgi_this" and last and float(last) > 0:
+            bits.append(ph["xgi_this_last"].format(xgi=f"{xgi:g}", last=f"{last:g}"))
+        else:
+            bits.append(ph[xgi_key].format(xgi=f"{xgi:g}"))
     if facts.get("set_piece_duties"):
         bits.append(ph["set_pieces"])
     if not bits:

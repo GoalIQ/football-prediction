@@ -79,8 +79,8 @@ def test_kesken_kauden_kuluva_kausi_kaikilla_pinnoilla():
     assert fact_text_ctx(r, CTX) == "0.99 xGI/90 in 2026/27"
     facts = why.player_facts(r, gw=6, horizon=3)
     s = why.template_sentence(facts)
-    assert "0.99 expected goal involvements per 90 this season" in s
-    assert "last season" not in s
+    # Viime kausi sulkeisiin: malli painottaa sita yha eniten (julkaisutarkistaja 5.10).
+    assert "0.99 expected goal involvements per 90 this season (0.86 last season)" in s
     assert "attacking_output" in why.template_drivers(facts)
     # Lauseen luku on faktalohkossa (lukuprovenienssiportti).
     assert why.ungrounded_numbers(s, facts) == []
@@ -103,11 +103,22 @@ def test_nousija_ilman_viime_kautta_saa_kuluvan():
     r = _row("mid", last=None)
     assert driver_facts(r)["attacking_output"] == "0.99 xGI/90 this season"
     assert fact_text_ctx(r, CTX) == "0.99 xGI/90 in 2026/27"
+    s = why.template_sentence(why.player_facts(r, gw=6, horizon=3))
+    assert "per 90 this season" in s and "last season" not in s
 
 
 def test_kausi_puuttuu_tyhja_eika_viime_kausi():
     r = _row("mid")
     assert fact_text(r, {}, "2025/26", None) == ""
+
+
+def test_selite_ei_vaita_kuluvan_kauden_kantavan():
+    """Julkaisutarkistaja 5.10: "the one number the projection leans on" oli
+    epatosi kun luku on kuluvalta kaudelta ja viime kausi painaa enemman."""
+    from src.models.fpl_why_drivers import PAGE_LEGEND
+    assert "the one number the projection leans on" not in PAGE_LEGEND
+    assert "Last season still counts in the projection." in PAGE_LEGEND
+    assert f"{int(XGI_SEASON_MIN_MINUTES)} Premier League minutes" in PAGE_LEGEND
 
 
 def test_fact_context_kantaa_kauden(monkeypatch):
