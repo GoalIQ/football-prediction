@@ -9,7 +9,7 @@
       "historical_median_pct": 13.0,
       "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
       "note": "Descriptive, not predictive. The flag says a rating is built on weaker information; it does not say which way that moves the projection.",
-      "n_flagged_players": 173,
+      "n_flagged_players": 172,
       "teams": {
         "Arsenal": {
           "flag": null,
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-06T15:54:23+00:00",
+    "generated_at": "2026-10-06T18:55:55+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -162,7 +162,7 @@
       "player_basis_counts": {
         "pl_history": 256,
         "limited_history": 161,
-        "no_history": 66
+        "no_history": 65
       },
       "basis_threshold_minutes": 450.0,
       "prev_season_carry": 0.5,
@@ -192,8 +192,8 @@
     ],
     "horizon_gw": 6,
     "min_xp_total": 1.0,
-    "n_players": 483,
-    "n_excluded": 184,
+    "n_players": 482,
+    "n_excluded": 185,
     "last_season_block": {
       "hidden": 398,
       "short_season": 73,
@@ -540,7 +540,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.1,
+      "owned_pct": 14.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3668,7 +3668,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 12.8,
+      "owned_pct": 12.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4745,7 +4745,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 29.6,
+      "owned_pct": 29.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -12627,7 +12627,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.7,
+      "owned_pct": 5.6,
       "status": "d",
       "news": "Thigh injury - 50% chance of playing",
       "chance_next": 50,
@@ -15589,7 +15589,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 17.2,
+      "owned_pct": 17.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -21446,7 +21446,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 1.5,
+      "owned_pct": 1.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -71822,148 +71822,6 @@
       "last_season_show": false
     },
     {
-      "id": 444,
-      "web_name": "Jaouen",
-      "full_name": "Ewen Jaouen",
-      "team": "Newcastle United",
-      "team_short": "NEW",
-      "pos": "GKP",
-      "xmins": 5.5,
-      "predicted_starts": 4.8,
-      "minutes_confidence": "low",
-      "minutes_source": "price_prior",
-      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
-      "data_basis": "no_history",
-      "owned_pct": 0.0,
-      "status": "d",
-      "news": "Ankle injury - 50% chance of playing",
-      "chance_next": 50,
-      "yellows": 0,
-      "price": 4.4,
-      "team_code": 4,
-      "last_season": null,
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 0,
-        "xgi": 0.0,
-        "per90": {
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 6,
-        "n": 2000,
-        "mean": 0.27,
-        "p_haul": 0.0,
-        "p_blank": 0.974,
-        "p10": 0,
-        "median": 0,
-        "p90": 1,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.048,
-      "p_cameo": 0.0952,
-      "p_bench": 0.8568,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.02,
-      "xp_per_gw": 0.43,
-      "xp_per_90": 3.72,
-      "xp_horizon_total": 2.59,
-      "gameweeks": [
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "COV",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.31,
-          "xmins": 5.5
-        },
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "AVL",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.42,
-          "xmins": 8.4
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "CRY",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.44,
-          "xmins": 9.2
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.51,
-          "xmins": 10.1
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.48,
-          "xmins": 10.1
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "ARS",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.43,
-          "xmins": 10.1
-        }
-      ],
-      "minutes_method": "promoted_price_prior",
-      "components": {
-        "appearance": 0.18,
-        "goals": 0.0,
-        "assists": 0.0,
-        "clean_sheet": 0.07,
-        "conceded": -0.02,
-        "saves": 0.06,
-        "defensive_contribution": 0.0,
-        "yellows": -0.0,
-        "bonus": 0.01
-      },
-      "components_gw": 6,
-      "team_flag": "high_turnover",
-      "last_season_show": false
-    },
-    {
       "id": 76,
       "web_name": "Tóth.A",
       "full_name": "Alex Tóth",
@@ -79850,6 +79708,34 @@
       "owned_pct": 0.0,
       "status": "u",
       "news": "Has joined Newport County on loan until January",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": null,
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": false
+    },
+    {
+      "id": 444,
+      "web_name": "Jaouen",
+      "full_name": "Ewen Jaouen",
+      "team": "Newcastle United",
+      "team_short": "NEW",
+      "pos": "GKP",
+      "price": 4.4,
+      "owned_pct": 0.0,
+      "status": "i",
+      "news": "Unspecified injury - Unknown return date",
       "chance_next": 0,
       "yellows": 0,
       "set_pieces": {
