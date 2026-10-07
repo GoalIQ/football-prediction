@@ -53,8 +53,10 @@ FPL_DEMON: dict[str, str] = {
     "name": "FPL Demon",
     "url": ("https://fpldemon.com/fpl/planner"
             "?utm_source=goaliq&utm_medium=social&utm_campaign=goaliq"),
-    # Kokeilu GW10:n loppuun; katsaus ti 10.11. (rutiini trig_015PLmRamWe8S1J9ZBJMvtGP).
-    "active_until": "2026-11-10",
+    # PAATTYNYT 7.10.2026: Demon palasi omiin projektioihinsa ja poisti
+    # syotteen omalta puoleltaan (X DM 7.10). Kortti pois kaikilta pinnoilta
+    # (Villen "demon yhteys pois"); alun perin kokeilu GW10:n loppuun 10.11.
+    "active_until": "2026-10-07",
     # Julkaisutarkistaja 27.9: EI "these projections" (rivin lahella on
     # horisonttisumma, jota hanen plannerissaan ei ole missaan muodossa) eika
     # "and solver" (lukija ei voi tarkistaa ilman Team ID:ta). "five" on
