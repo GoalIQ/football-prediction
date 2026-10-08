@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-07T21:54:41+00:00",
+    "generated_at": "2026-10-08T00:38:37+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -3351,7 +3351,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 24.7,
+      "owned_pct": 24.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3968,7 +3968,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 28.2,
+      "owned_pct": 28.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4904,7 +4904,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.9,
+      "owned_pct": 5.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5379,7 +5379,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 40.9,
+      "owned_pct": 41.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -33411,7 +33411,7 @@
       "news": "",
       "chance_next": null,
       "yellows": 1,
-      "price": 4.0,
+      "price": 3.9,
       "team_code": 40,
       "last_season": null,
       "this_season": {
@@ -39451,7 +39451,7 @@
       },
       "e_bonus": 0.05,
       "xp_per_gw": 1.6,
-      "xp_per_90": 3.16,
+      "xp_per_90": 3.17,
       "xp_horizon_total": 9.63,
       "gameweeks": [
         {
@@ -56636,6 +56636,148 @@
       "last_season_reason": "new_club"
     },
     {
+      "id": 303,
+      "web_name": "Kipré",
+      "full_name": "Cédric Kipré",
+      "team": "Ipswich",
+      "team_short": "IPS",
+      "pos": "DEF",
+      "xmins": 19.3,
+      "predicted_starts": 16.0,
+      "minutes_confidence": "low",
+      "minutes_source": "price_prior",
+      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
+      "data_basis": "no_history",
+      "owned_pct": 0.9,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 3.9,
+      "team_code": 40,
+      "last_season": null,
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 0,
+        "xgi": 0.0,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.91,
+        "p_haul": 0.002,
+        "p_blank": 0.921,
+        "p10": 0,
+        "median": 0,
+        "p90": 2,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.16,
+      "p_cameo": 0.378,
+      "p_bench": 0.462,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.05,
+      "xp_per_gw": 0.8,
+      "xp_per_90": 3.05,
+      "xp_horizon_total": 4.83,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.95,
+          "xmins": 19.3
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.59,
+          "xmins": 19.3
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "NFO",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.8,
+          "xmins": 19.3
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.84,
+          "xmins": 19.3
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "BOU",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.77,
+          "xmins": 19.3
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.88,
+          "xmins": 19.3
+        }
+      ],
+      "minutes_method": "promoted_price_prior",
+      "components": {
+        "appearance": 0.67,
+        "goals": 0.08,
+        "assists": 0.04,
+        "clean_sheet": 0.15,
+        "conceded": -0.09,
+        "saves": 0.0,
+        "defensive_contribution": 0.07,
+        "yellows": -0.04,
+        "bonus": 0.05
+      },
+      "components_gw": 6,
+      "team_flag": "promoted",
+      "last_season_show": false
+    },
+    {
       "id": 153,
       "web_name": "Disasi",
       "full_name": "Axel Disasi",
@@ -71526,148 +71668,6 @@
       "last_season_reason": "thin_sample"
     },
     {
-      "id": 303,
-      "web_name": "Kipré",
-      "full_name": "Cédric Kipré",
-      "team": "Ipswich",
-      "team_short": "IPS",
-      "pos": "DEF",
-      "xmins": 10.7,
-      "predicted_starts": 9.6,
-      "minutes_confidence": "low",
-      "minutes_source": "price_prior",
-      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
-      "data_basis": "no_history",
-      "owned_pct": 0.9,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 3.9,
-      "team_code": 40,
-      "last_season": null,
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 0,
-        "xgi": 0.0,
-        "per90": {
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 6,
-        "n": 2000,
-        "mean": 0.51,
-        "p_haul": 0.001,
-        "p_blank": 0.949,
-        "p10": 0,
-        "median": 0,
-        "p90": 1,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.096,
-      "p_cameo": 0.1808,
-      "p_bench": 0.7232,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.03,
-      "xp_per_gw": 0.44,
-      "xp_per_90": 3.05,
-      "xp_horizon_total": 2.63,
-      "gameweeks": [
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.52,
-          "xmins": 10.7
-        },
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.32,
-          "xmins": 10.7
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "NFO",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.43,
-          "xmins": 10.7
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "HUL",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.46,
-          "xmins": 10.7
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "BOU",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.42,
-          "xmins": 10.7
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "TOT",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.48,
-          "xmins": 10.7
-        }
-      ],
-      "minutes_method": "promoted_price_prior",
-      "components": {
-        "appearance": 0.36,
-        "goals": 0.05,
-        "assists": 0.02,
-        "clean_sheet": 0.09,
-        "conceded": -0.05,
-        "saves": 0.0,
-        "defensive_contribution": 0.04,
-        "yellows": -0.02,
-        "bonus": 0.03
-      },
-      "components_gw": 6,
-      "team_flag": "promoted",
-      "last_season_show": false
-    },
-    {
       "id": 364,
       "web_name": "Tsimikas",
       "full_name": "Kostas Tsimikas",
@@ -72135,7 +72135,7 @@
       "news": "",
       "chance_next": null,
       "yellows": 0,
-      "price": 4.5,
+      "price": 4.4,
       "team_code": 43,
       "last_season": {
         "season": "2025/26",
