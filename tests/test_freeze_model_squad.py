@@ -56,14 +56,14 @@ def legal_squad() -> tuple[list[dict], list[dict]]:
 
 def test_laillinen_runko_lapaisee():
     xi, bench = legal_squad()
-    assert validate_squad(xi, bench) == []
+    assert validate_squad(xi, bench, siirrot=None) == []
 
 
 def test_seurakatto_rike_havaitaan():
     """12.8:n bugi: neljä samasta seurasta. Sama runko ilman riketta läpäisi yllä."""
     xi, bench = legal_squad()
     bench[1]["club"] = 10          # seurasta 10 tulee 4 pelaajaa
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, siirrot=None)
     assert any("yli 3/seura" in p for p in problems), problems
 
 
@@ -73,34 +73,74 @@ def test_seurakatto_rike_myos_kokonaan_penkilla():
     for b in bench[1:]:
         b["club"] = 14
     bench[0]["club"] = 14          # 4 pelaajaa seurasta 14, kaikki penkillä
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, siirrot=None)
     assert any("yli 3/seura" in p for p in problems), problems
 
 
 def test_budjetin_ylitys_havaitaan():
     xi, bench = legal_squad()
     xi[0]["price"] = 900           # 15 x 50 = 750 -> 1600 kymmenyksiä
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, siirrot=None)
     assert any("yli 100.0m" in p for p in problems), problems
+
+
+def _gw6_siirrot(bank_before: int = 5, bank: int = 0) -> dict:
+    """9.10.2026 GW6 sellaisenaan: Dovin (myynti 40) -> Rushworth (45)."""
+    return {"bank_before": bank_before, "bank": bank,
+            "transfers": [{"out_selling_price": 40, "in_price": 45}]}
+
+
+def _arvo_noussut() -> tuple[list[dict], list[dict]]:
+    """Laillinen runko jonka nykyhintasumma on 100.6m (GW6 freezen luku)."""
+    xi, bench = legal_squad()
+    xi[0]["price"] = 50 + (1006 - 750)
+    return xi, bench
+
+
+def test_perityn_rungon_arvonnousu_ei_ole_budjettirike():
+    """GW6 kieltaytyi 'hinta 100.6m yli 100.0m' vaikka pankki oli 0.0m.
+
+    Erotteleva: sama runko ILMAN siirtolokia (kauden ensimmainen freeze)
+    kaatuu yli 100.0m:n, joten testi ei mene lapi vain siksi etta
+    hintatarkistus olisi poistettu kokonaan.
+    """
+    xi, bench = _arvo_noussut()
+    assert validate_squad(xi, bench, siirrot=_gw6_siirrot()) == []
+    assert any("yli 100.0m" in p
+               for p in validate_squad(xi, bench, siirrot=None))
+
+
+def test_perityn_rungon_negatiivinen_pankki_havaitaan():
+    xi, bench = _arvo_noussut()
+    problems = validate_squad(xi, bench,
+                              siirrot=_gw6_siirrot(bank_before=4, bank=-1))
+    assert any("siirtojen jalkeen" in p for p in problems), problems
+
+
+def test_pankki_joka_ei_tasmaa_siirtolokiin_havaitaan():
+    """Moottorin oma pankkiluku ei kelpaa jos siirtoloki sanoo muuta."""
+    xi, bench = _arvo_noussut()
+    problems = validate_squad(xi, bench, siirrot=_gw6_siirrot(bank=5))
+    assert any("ei tasmaa" in p for p in problems), problems
 
 
 def test_positiojakauman_rike_havaitaan():
     xi, bench = legal_squad()
     xi[1]["element_type"] = 3      # DEF -> MID: 4 DEF / 6 MID
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, siirrot=None)
     assert any("positiojakauma" in p for p in problems), problems
 
 
 def test_sama_pelaaja_kahdesti_havaitaan():
     xi, bench = legal_squad()
     bench[3] = dict(xi[10])        # duplikaatti FWD
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, siirrot=None)
     assert any("kahdesti" in p for p in problems), problems
 
 
 def test_vajaa_runko_havaitaan():
     xi, bench = legal_squad()
-    problems = validate_squad(xi, bench[:3])
+    problems = validate_squad(xi, bench[:3], siirrot=None)
     assert any("14 pelaajaa" in p for p in problems), problems
 
 
@@ -206,7 +246,7 @@ def test_optimaalisuusvahti_ei_valita_parhaasta_jaosta():
     """Kontrolli: kun jako on jo paras, vahti on hiljaa."""
     xi, bench = legal_squad()
     _horizon(xi, bench, [30.0] * 11, [5.0] * 4)
-    assert validate_squad(xi, bench) == []
+    assert validate_squad(xi, bench, siirrot=None) == []
 
 
 def test_optimaalisuusvahti_havaitsee_penkille_haviavan_xin():
@@ -220,7 +260,7 @@ def test_optimaalisuusvahti_havaitsee_penkille_haviavan_xin():
     _horizon(xi, bench,
              [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 4.0],
              [1.0, 1.0, 1.0, 25.0])
-    problems = validate_squad(xi, bench)
+    problems = validate_squad(xi, bench, siirrot=None)
     assert any("häviää omalle penkilleen" in p for p in problems), problems
 
 
@@ -229,4 +269,25 @@ def test_optimaalisuusvahti_ohitetaan_ilman_horisonttilukuja():
     KeyErroriin eikä toisaalta teeskennellä tarkistaneensa."""
     xi, bench = legal_squad()
     assert all("xp_horizon_total" not in p for p in xi + bench)
-    assert validate_squad(xi, bench) == []
+    assert validate_squad(xi, bench, siirrot=None) == []
+
+
+def test_kutsupaikka_antaa_siirtolokin_validoinnille():
+    """Kutsupaikka, ei vain funktio: main() antaa `siirtotiedot`in.
+
+    Jos main antaisi `siirrot=None`, perityn rungon raha mitattaisiin taas
+    kiintealla 100.0m:lla ja GW6:n kieltaytyminen toistuisi.
+    """
+    import ast
+    from pathlib import Path
+
+    lahde = (Path(__file__).resolve().parents[1]
+             / "scripts" / "freeze_model_squad_gw.py").read_text(encoding="utf-8")
+    main = next(n for n in ast.walk(ast.parse(lahde))
+                if isinstance(n, ast.FunctionDef) and n.name == "main")
+    kutsut = [n for n in ast.walk(main) if isinstance(n, ast.Call)
+              and getattr(n.func, "id", None) == "validate_squad"]
+    assert len(kutsut) == 1, kutsut
+    kw = {k.arg: k.value for k in kutsut[0].keywords}
+    assert isinstance(kw.get("siirrot"), ast.Name)
+    assert kw["siirrot"].id == "siirtotiedot"

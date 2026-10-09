@@ -66,7 +66,7 @@ def test_peritty_ylitys_sallitaan() -> None:
     prev = _prev(squad, [p["id"] for p in squad])
     xi, bench = _split(squad)
     assert inherited_club_excess(squad, prev) == {2: 4}
-    assert validate_squad(xi, bench, prev=prev) == []
+    assert validate_squad(xi, bench, prev=prev, siirrot=None) == []
 
 
 def test_ostettu_ylitys_kaataa() -> None:
@@ -80,7 +80,7 @@ def test_ostettu_ylitys_kaataa() -> None:
             "bench": [p for p in squad if p["id"] in ids[11:]]}
     xi, bench = _split(squad)
     assert inherited_club_excess(squad, prev) == {}
-    ongelmat = validate_squad(xi, bench, prev=prev)
+    ongelmat = validate_squad(xi, bench, prev=prev, siirrot=None)
     assert any("yli 3/seura" in o for o in ongelmat), ongelmat
 
 
@@ -88,7 +88,7 @@ def test_ilman_edellista_runkoa_katto_on_ehdoton() -> None:
     """Kauden ensimmainen freeze: mitaan ei peritty, joten katto patee."""
     clubs = [2, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6]
     xi, bench = _split(_squad(clubs))
-    ongelmat = validate_squad(xi, bench, prev=None)
+    ongelmat = validate_squad(xi, bench, prev=None, siirrot=None)
     assert any("yli 3/seura" in o for o in ongelmat), ongelmat
 
 
@@ -99,8 +99,8 @@ def test_laillinen_runko_menee_lapi_kummallakin_tavalla() -> None:
     squad = _squad(clubs)
     xi, bench = _split(squad)
     prev = _prev(squad, [p["id"] for p in squad])
-    assert validate_squad(xi, bench, prev=prev) == []
-    assert validate_squad(xi, bench, prev=None) == []
+    assert validate_squad(xi, bench, prev=prev, siirrot=None) == []
+    assert validate_squad(xi, bench, prev=None, siirrot=None) == []
 
 
 def test_muut_saannot_patevat_yha_peritylle_rungolle() -> None:
@@ -111,7 +111,7 @@ def test_muut_saannot_patevat_yha_peritylle_rungolle() -> None:
     squad[0]["element_type"] = 3  # rikotaan kiintio
     xi, bench = _split(squad)
     prev = _prev(squad, [p["id"] for p in squad])
-    ongelmat = validate_squad(xi, bench, prev=prev)
+    ongelmat = validate_squad(xi, bench, prev=prev, siirrot=None)
     assert any("positiojakauma" in o for o in ongelmat), ongelmat
 
 
@@ -129,4 +129,4 @@ def test_osittain_peritty_ylitys_kaataa(n_uusia: int) -> None:
     prev = {"xi": jaljella[:11], "bench": jaljella[11:]}
     xi, bench = _split(squad)
     assert inherited_club_excess(squad, prev) == {}
-    assert any("yli 3/seura" in o for o in validate_squad(xi, bench, prev=prev))
+    assert any("yli 3/seura" in o for o in validate_squad(xi, bench, prev=prev, siirrot=None))

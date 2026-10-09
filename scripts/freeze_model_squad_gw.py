@@ -93,7 +93,8 @@ def inherited_club_excess(squad: list[dict], prev: dict | None) -> dict[int, int
 
 
 def validate_squad(xi: list[dict], bench: list[dict],
-                   prev: dict | None = None) -> list[str]:
+                   prev: dict | None = None, *,
+                   siirrot: dict | None) -> list[str]:
     """Palauta rikkeet listana; tyhjä lista = laillinen runko.
 
     Tarkistetaan koko 15:n runko, ei pelkkää XI:tä — kattorike voi olla
@@ -102,6 +103,11 @@ def validate_squad(xi: list[dict], bench: list[dict],
     `prev` = edellisen kierroksen jäädytetty runko. Sen kanssa seurakatto
     sallii PERITYN ylityksen (ks. `inherited_club_excess`); ilman sitä
     käytös on entinen eli katto on ehdoton.
+
+    `siirrot` = `_constrained_from_prev`in tulos (pakollinen avainsana, jotta
+    kutsupaikka ei voi unohtaa sita). Raha mitataan silloin FPL:n pankista
+    ja myyntihinnoista, ei nykyhintasummasta. `None` = kauden ensimmainen
+    jaadytys, jolloin runko ostetaan alusta 100.0m:lla.
     """
     problems: list[str] = []
     squad = list(xi) + list(bench)
@@ -128,9 +134,28 @@ def validate_squad(xi: list[dict], bench: list[dict],
     if ostetut:
         problems.append(f"yli {MAX_PER_CLUB}/seura: {ostetut}")
 
+    # 🔴 PERITYN RUNGON RAHA ON PANKKI, EI NYKYHINTASUMMA (9.10.2026).
+    # GW6:n freeze kieltaytyi kolme kertaa ("hinta 100.6m yli 100.0m")
+    # vaikka ainoa siirto oli Dovin (myynti 4.0) -> Rushworth (4.5) pankilla
+    # 0.5: entryn arvo oli noussut 100.4m:aan (FPL value GW5), joten
+    # nykyhintasumma voi laillisesti ylittaa 100.0. Kiintea katto oli oikein
+    # vain kauden ensimmaisella jaadytyksella. Pankki lasketaan tassa
+    # uudelleen siirtolokista eika luoteta moottorin omaan lukuun.
     cost = sum(int(p.get("price") or 0) for p in squad)
-    if cost > BUDGET_TENTHS:
-        problems.append(f"hinta {cost / 10:.1f}m yli {BUDGET_TENTHS / 10:.1f}m")
+    if siirrot is None:
+        if cost > BUDGET_TENTHS:
+            problems.append(
+                f"hinta {cost / 10:.1f}m yli {BUDGET_TENTHS / 10:.1f}m")
+    else:
+        pankki = int(siirrot["bank_before"]) + sum(
+            int(t["out_selling_price"]) - int(t["in_price"])
+            for t in siirrot.get("transfers") or [])
+        if pankki != siirrot.get("bank"):
+            problems.append(
+                f"pankki {siirrot.get('bank')} ei tasmaa siirtolokiin "
+                f"(laskettu {pankki})")
+        if pankki < 0:
+            problems.append(f"pankki {pankki / 10:.1f}m siirtojen jalkeen")
 
     # OPTIMAALISUUSVAHTI (14.8): laillinen ei riitä. 14.8 julkaistu malli-XI
     # oli täysin laillinen mutta hävisi omalle penkilleen 7.4 % — kuka tahansa
@@ -1047,7 +1072,8 @@ def main() -> int:
         print(f"VIRHE: runko vajaa (XI {len(xi)}, penkki {len(bench)}).")
         return 1
 
-    problems = validate_squad(xi, bench, prev=(edellinen[1] if edellinen else None))
+    problems = validate_squad(xi, bench, prev=(edellinen[1] if edellinen else None),
+                              siirrot=siirtotiedot)
     if problems:
         print("VIRHE: optimoija palautti LAITTOMAN rungon — ei jäädytetä:")
         for p in problems:
