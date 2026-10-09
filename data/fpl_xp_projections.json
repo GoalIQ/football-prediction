@@ -9,7 +9,7 @@
       "historical_median_pct": 13.0,
       "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
       "note": "Descriptive, not predictive. The flag says a rating is built on weaker information; it does not say which way that moves the projection.",
-      "n_flagged_players": 180,
+      "n_flagged_players": 181,
       "teams": {
         "Arsenal": {
           "flag": null,
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-09T18:54:10+00:00",
+    "generated_at": "2026-10-09T21:24:53+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -161,7 +161,7 @@
       "promoted_prior_method": "Players at any club with no Premier League minutes this season: minutes come from a role prior built on FPL price order within club and position (XI slots 1/4/4/2; top p_start 0.38, next two 0.16, rest 0.096) times the FPL availability gate, unless a manual override sets the start chance. Goal and assist rates follow data_basis like every other row. minutes_method=promoted_price_prior.",
       "player_basis_counts": {
         "pl_history": 253,
-        "limited_history": 161,
+        "limited_history": 162,
         "no_history": 68
       },
       "basis_threshold_minutes": 450.0,
@@ -192,14 +192,14 @@
     ],
     "horizon_gw": 6,
     "min_xp_total": 1.0,
-    "n_players": 482,
-    "n_excluded": 185,
+    "n_players": 483,
+    "n_excluded": 184,
     "last_season_block": {
       "hidden": 394,
       "short_season": 73,
       "new_club": 37,
-      "thin_sample": 55,
-      "no_projection": 108
+      "thin_sample": 56,
+      "no_projection": 107
     },
     "excluded_note": "excluded[] lists FPL players who are not in the projection (availability flag i/s/u/n, or horizon xP below 1.0). The rows exist for search and the player card: in_projection=false, with no xP/xmins/p_start fields. Older clients can ignore the list.",
     "excluded_note_code": "fpl_xp.excluded_note.v1",
@@ -382,7 +382,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 38.0,
+      "owned_pct": 37.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -540,7 +540,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 15.8,
+      "owned_pct": 16.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1489,7 +1489,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 51.0,
+      "owned_pct": 51.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -1805,7 +1805,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 9.4,
+      "owned_pct": 9.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2580,7 +2580,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.2,
+      "owned_pct": 14.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3018,7 +3018,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 17.9,
+      "owned_pct": 18.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3334,7 +3334,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 43.1,
+      "owned_pct": 43.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4107,7 +4107,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 31.3,
+      "owned_pct": 31.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4404,7 +4404,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 23.9,
+      "owned_pct": 23.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -4880,7 +4880,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 7.1,
+      "owned_pct": 7.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5039,7 +5039,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 29.7,
+      "owned_pct": 30.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5200,7 +5200,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 5.7,
+      "owned_pct": 5.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5778,7 +5778,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 33.0,
+      "owned_pct": 33.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -6728,7 +6728,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.2,
+      "owned_pct": 14.0,
       "status": "d",
       "news": "Ankle injury - 75% chance of playing",
       "chance_next": 75,
@@ -6886,7 +6886,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 19.4,
+      "owned_pct": 19.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -7363,7 +7363,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 41.9,
+      "owned_pct": 42.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -8934,7 +8934,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.0,
+      "owned_pct": 2.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -9850,147 +9850,6 @@
       "last_season_reason": "short_season"
     },
     {
-      "id": 597,
-      "web_name": "Suzuki",
-      "full_name": "Zion Suzuki",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "GKP",
-      "xmins": 90.0,
-      "predicted_starts": 93.3,
-      "minutes_confidence": "high",
-      "minutes_source": "price_blend",
-      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
-      "data_basis": "limited_history",
-      "owned_pct": 1.9,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 5.0,
-      "team_code": 7,
-      "last_season": null,
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 360,
-        "xgi": 0.01,
-        "per90": {
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 2.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 6,
-        "n": 2000,
-        "mean": 3.51,
-        "p_haul": 0.001,
-        "p_blank": 0.386,
-        "p10": 1,
-        "median": 3,
-        "p90": 7,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.9326,
-      "p_cameo": 0.0,
-      "p_bench": 0.0674,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.4,
-      "xp_per_gw": 3.68,
-      "xp_per_90": 3.68,
-      "xp_horizon_total": 22.09,
-      "gameweeks": [
-        {
-          "gw": 6,
-          "opponents": [
-            {
-              "opp": "BRE",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.8,
-          "xmins": 90.0
-        },
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "NEW",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.51,
-          "xmins": 90.0
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 3.17,
-          "xmins": 90.0
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "H"
-            }
-          ],
-          "xp": 4.41,
-          "xmins": 90.0
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "MUN",
-              "venue": "A"
-            }
-          ],
-          "xp": 3.03,
-          "xmins": 90.0
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "SUN",
-              "venue": "H"
-            }
-          ],
-          "xp": 4.17,
-          "xmins": 90.0
-        }
-      ],
-      "components": {
-        "appearance": 2.0,
-        "goals": 0.0,
-        "assists": 0.01,
-        "clean_sheet": 1.02,
-        "conceded": -0.45,
-        "saves": 0.84,
-        "defensive_contribution": 0.0,
-        "yellows": -0.05,
-        "bonus": 0.43
-      },
-      "components_gw": 6,
-      "team_flag": "high_turnover",
-      "last_season_show": false
-    },
-    {
       "id": 13,
       "web_name": "Rice",
       "full_name": "Declan Rice",
@@ -10319,7 +10178,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 64.0,
+      "owned_pct": 64.3,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -10632,7 +10491,7 @@
       "predicted_starts": 96.6,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 7.4,
+      "owned_pct": 7.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -10773,7 +10632,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.4,
+      "owned_pct": 4.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -11372,7 +11231,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 2.4,
+      "owned_pct": 2.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -11530,7 +11389,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.7,
+      "owned_pct": 3.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -12626,7 +12485,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 6.7,
+      "owned_pct": 7.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -13103,7 +12962,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 7.3,
+      "owned_pct": 7.2,
       "status": "d",
       "news": "Hamstring injury - 75% chance of playing",
       "chance_next": 75,
@@ -13727,6 +13586,147 @@
       "last_season_show": false
     },
     {
+      "id": 597,
+      "web_name": "Suzuki",
+      "full_name": "Zion Suzuki",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "GKP",
+      "xmins": 83.6,
+      "predicted_starts": 86.7,
+      "minutes_confidence": "high",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
+      "data_basis": "limited_history",
+      "owned_pct": 1.9,
+      "status": "a",
+      "news": "",
+      "chance_next": null,
+      "yellows": 0,
+      "price": 5.0,
+      "team_code": 7,
+      "last_season": null,
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 360,
+        "xgi": 0.01,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 2.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 3.25,
+        "p_haul": 0.001,
+        "p_blank": 0.439,
+        "p10": 1,
+        "median": 3,
+        "p90": 7,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.8669,
+      "p_cameo": 0.0,
+      "p_bench": 0.1331,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.37,
+      "xp_per_gw": 3.42,
+      "xp_per_90": 3.68,
+      "xp_horizon_total": 20.52,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "BRE",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.53,
+          "xmins": 83.6
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "A"
+            }
+          ],
+          "xp": 3.26,
+          "xmins": 83.6
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 2.94,
+          "xmins": 83.6
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 4.09,
+          "xmins": 83.6
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 2.82,
+          "xmins": 83.6
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 3.88,
+          "xmins": 83.6
+        }
+      ],
+      "components": {
+        "appearance": 1.86,
+        "goals": 0.0,
+        "assists": 0.01,
+        "clean_sheet": 0.95,
+        "conceded": -0.42,
+        "saves": 0.78,
+        "defensive_contribution": 0.0,
+        "yellows": -0.04,
+        "bonus": 0.4
+      },
+      "components_gw": 6,
+      "team_flag": "high_turnover",
+      "last_season_show": false
+    },
+    {
       "id": 541,
       "web_name": "Meunier",
       "full_name": "Thomas Meunier",
@@ -14037,7 +14037,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.8,
+      "owned_pct": 3.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -15912,7 +15912,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 16.5,
+      "owned_pct": 16.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -19267,7 +19267,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.8,
+      "owned_pct": 3.7,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -19881,7 +19881,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 7.9,
+      "owned_pct": 8.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -20037,7 +20037,7 @@
       "predicted_starts": 96.6,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 12.3,
+      "owned_pct": 12.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -20358,7 +20358,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 9.2,
+      "owned_pct": 9.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -20637,7 +20637,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.8,
+      "owned_pct": 0.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -21110,7 +21110,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 5.7,
+      "owned_pct": 5.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -22181,7 +22181,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 2.5,
+      "owned_pct": 2.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -22639,7 +22639,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 1.8,
+      "owned_pct": 1.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -23880,7 +23880,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.6,
+      "owned_pct": 5.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -24660,7 +24660,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 0.3,
+      "owned_pct": 0.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -25738,7 +25738,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 8.2,
+      "owned_pct": 8.1,
       "status": "d",
       "news": "Illness - 50% chance of playing",
       "chance_next": 50,
@@ -26056,7 +26056,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 18.1,
+      "owned_pct": 17.9,
       "status": "d",
       "news": "Unspecified injury - 75% chance of playing",
       "chance_next": 75,
@@ -27789,7 +27789,7 @@
       "predicted_starts": 57.9,
       "minutes_confidence": "med",
       "data_basis": "limited_history",
-      "owned_pct": 8.1,
+      "owned_pct": 8.0,
       "status": "d",
       "news": "Hamstring injury - 75% chance of playing",
       "chance_next": 75,
@@ -27928,7 +27928,7 @@
       "predicted_starts": 74.0,
       "minutes_confidence": "med",
       "data_basis": "pl_history",
-      "owned_pct": 7.3,
+      "owned_pct": 7.2,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -28688,7 +28688,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 2.2,
+      "owned_pct": 2.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -32952,7 +32952,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 0.6,
+      "owned_pct": 0.7,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -35863,7 +35863,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 10.2,
+      "owned_pct": 10.1,
       "status": "d",
       "news": "Unspecified injury - 75% chance of playing",
       "chance_next": 75,
@@ -37365,7 +37365,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.5,
+      "owned_pct": 0.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -38914,7 +38914,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.7,
+      "owned_pct": 4.6,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -39535,7 +39535,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.0,
+      "owned_pct": 1.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -40334,7 +40334,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 2.6,
+      "owned_pct": 2.5,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -43072,7 +43072,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 3.6,
+      "owned_pct": 3.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -48290,7 +48290,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.4,
+      "owned_pct": 0.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -50155,7 +50155,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.5,
+      "owned_pct": 0.6,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -65198,7 +65198,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "limited_history",
-      "owned_pct": 0.7,
+      "owned_pct": 0.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -66742,7 +66742,7 @@
       "predicted_starts": 9.0,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 7.0,
+      "owned_pct": 6.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -72441,7 +72441,7 @@
       "predicted_starts": 21.8,
       "minutes_confidence": "med",
       "data_basis": "limited_history",
-      "owned_pct": 2.5,
+      "owned_pct": 2.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -73495,6 +73495,166 @@
       "last_season_show": false
     },
     {
+      "id": 29,
+      "web_name": "M.Bizot",
+      "full_name": "Marco Bizot",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "GKP",
+      "xmins": 6.0,
+      "predicted_starts": 8.9,
+      "minutes_confidence": "med",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
+      "data_basis": "limited_history",
+      "owned_pct": 0.1,
+      "status": "d",
+      "news": "Back injury - 75% chance of playing",
+      "chance_next": 75,
+      "yellows": 0,
+      "price": 4.5,
+      "team_code": 7,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 7,
+        "team_name": "Aston Villa",
+        "minutes": 585,
+        "starts": 6,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.0,
+        "cs": 1,
+        "points": 16,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.0
+        }
+      },
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 90,
+        "xgi": 0.0,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 6,
+        "n": 2000,
+        "mean": 0.23,
+        "p_haul": 0.0,
+        "p_blank": 0.965,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.0886,
+      "p_cameo": 0.0,
+      "p_bench": 0.9114,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.01,
+      "xp_per_gw": 0.26,
+      "xp_per_90": 3.34,
+      "xp_horizon_total": 1.56,
+      "gameweeks": [
+        {
+          "gw": 6,
+          "opponents": [
+            {
+              "opp": "BRE",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.23,
+          "xmins": 6.0
+        },
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.22,
+          "xmins": 6.2
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.22,
+          "xmins": 6.8
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.34,
+          "xmins": 7.5
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.23,
+          "xmins": 7.5
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.32,
+          "xmins": 7.5
+        }
+      ],
+      "components": {
+        "appearance": 0.13,
+        "goals": 0.0,
+        "assists": 0.0,
+        "clean_sheet": 0.07,
+        "conceded": -0.03,
+        "saves": 0.05,
+        "defensive_contribution": 0.0,
+        "yellows": -0.01,
+        "bonus": 0.02
+      },
+      "components_gw": 6,
+      "team_flag": "high_turnover",
+      "last_season_show": true,
+      "last_season_reason": "thin_sample"
+    },
+    {
       "id": 243,
       "web_name": "Alcaraz",
       "full_name": "Carlos Alcaraz Durán",
@@ -74079,7 +74239,7 @@
       "team_short": "LIV",
       "pos": "FWD",
       "price": 9.1,
-      "owned_pct": 19.8,
+      "owned_pct": 19.2,
       "status": "i",
       "news": "Thigh injury - Unknown return date",
       "chance_next": 0,
@@ -74126,7 +74286,7 @@
       "team_short": "LIV",
       "pos": "MID",
       "price": 7.2,
-      "owned_pct": 10.8,
+      "owned_pct": 10.5,
       "status": "i",
       "news": "Ankle injury - Unknown return date",
       "chance_next": 0,
@@ -74173,7 +74333,7 @@
       "team_short": "ARS",
       "pos": "MID",
       "price": 6.3,
-      "owned_pct": 10.0,
+      "owned_pct": 9.6,
       "status": "i",
       "news": "Hamstring injury - Expected back 24 Oct",
       "chance_next": 0,
@@ -74201,7 +74361,7 @@
       "team_short": "TOT",
       "pos": "DEF",
       "price": 5.4,
-      "owned_pct": 7.0,
+      "owned_pct": 6.9,
       "status": "i",
       "news": "Hamstring injury - Unknown return date",
       "chance_next": 0,
@@ -74248,7 +74408,7 @@
       "team_short": "SUN",
       "pos": "FWD",
       "price": 5.7,
-      "owned_pct": 6.3,
+      "owned_pct": 6.2,
       "status": "i",
       "news": "Hamstring injury - Expected back 25 Oct",
       "chance_next": 0,
@@ -74295,7 +74455,7 @@
       "team_short": "BOU",
       "pos": "MID",
       "price": 6.1,
-      "owned_pct": 4.8,
+      "owned_pct": 4.7,
       "status": "i",
       "news": "Thigh injury - Unknown return date",
       "chance_next": 0,
@@ -74342,7 +74502,7 @@
       "team_short": "NEW",
       "pos": "MID",
       "price": 6.1,
-      "owned_pct": 3.9,
+      "owned_pct": 3.8,
       "status": "i",
       "news": "Unspecified injury - Unknown return date",
       "chance_next": 0,
@@ -74417,7 +74577,7 @@
       "team_short": "NFO",
       "pos": "FWD",
       "price": 5.8,
-      "owned_pct": 2.5,
+      "owned_pct": 2.4,
       "status": "i",
       "news": "Calf injury - Unknown return date",
       "chance_next": 0,
@@ -74511,7 +74671,7 @@
       "team_short": "SUN",
       "pos": "DEF",
       "price": 4.9,
-      "owned_pct": 2.2,
+      "owned_pct": 2.1,
       "status": "i",
       "news": "Hamstring injury - Unknown return date",
       "chance_next": 0,
@@ -74558,7 +74718,7 @@
       "team_short": "HUL",
       "pos": "DEF",
       "price": 4.0,
-      "owned_pct": 1.6,
+      "owned_pct": 1.5,
       "status": "i",
       "news": "Ankle injury - Unknown return date",
       "chance_next": 0,
@@ -74734,6 +74894,34 @@
       "last_season_reason": "no_projection"
     },
     {
+      "id": 171,
+      "web_name": "Dovin",
+      "full_name": "Oliver Dovin",
+      "team": "Coventry",
+      "team_short": "COV",
+      "pos": "GKP",
+      "price": 4.0,
+      "owned_pct": 1.0,
+      "status": "u",
+      "news": "Has joined Leyton Orient on loan for the rest of the season",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": null,
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": false
+    },
+    {
       "id": 528,
       "web_name": "Scarlett",
       "full_name": "Dane Scarlett",
@@ -74741,7 +74929,7 @@
       "team_short": "TOT",
       "pos": "FWD",
       "price": 4.5,
-      "owned_pct": 1.1,
+      "owned_pct": 1.0,
       "status": "u",
       "news": "Has joined Leyton Orient permanently",
       "chance_next": 0,
@@ -74775,34 +74963,6 @@
       "excluded_reason": "unavailable",
       "last_season_show": true,
       "last_season_reason": "no_projection"
-    },
-    {
-      "id": 171,
-      "web_name": "Dovin",
-      "full_name": "Oliver Dovin",
-      "team": "Coventry",
-      "team_short": "COV",
-      "pos": "GKP",
-      "price": 4.0,
-      "owned_pct": 1.0,
-      "status": "u",
-      "news": "Has joined Leyton Orient on loan for the rest of the season",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": null,
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": false
     },
     {
       "id": 84,
@@ -75369,53 +75529,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 36,
-      "web_name": "Maatsen",
-      "full_name": "Ian Maatsen",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "DEF",
-      "price": 4.4,
-      "owned_pct": 0.5,
-      "status": "i",
-      "news": "Ankle injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 1,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 7,
-        "team_name": "Aston Villa",
-        "minutes": 1590,
-        "starts": 17,
-        "goals": 0,
-        "assists": 1,
-        "xg": 1.26,
-        "xa": 2.39,
-        "cs": 2,
-        "points": 54,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.06,
-          "xgi": 0.21
-        }
-      },
-      "form": {
-        "value": 0.5,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 466,
       "web_name": "Neave",
       "full_name": "Sean Neave",
@@ -75497,6 +75610,53 @@
       },
       "form": {
         "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 36,
+      "web_name": "Maatsen",
+      "full_name": "Ian Maatsen",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "DEF",
+      "price": 4.4,
+      "owned_pct": 0.4,
+      "status": "i",
+      "news": "Ankle injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 1,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 7,
+        "team_name": "Aston Villa",
+        "minutes": 1590,
+        "starts": 17,
+        "goals": 0,
+        "assists": 1,
+        "xg": 1.26,
+        "xa": 2.39,
+        "cs": 2,
+        "points": 54,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.06,
+          "xgi": 0.21
+        }
+      },
+      "form": {
+        "value": 0.5,
         "gws": 2,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
@@ -77058,53 +77218,6 @@
       "in_projection": false,
       "excluded_reason": "unavailable",
       "last_season_show": false
-    },
-    {
-      "id": 29,
-      "web_name": "M.Bizot",
-      "full_name": "Marco Bizot",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "GKP",
-      "price": 4.5,
-      "owned_pct": 0.1,
-      "status": "i",
-      "news": "Back injury - Expected back 10 Oct",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 7,
-        "team_name": "Aston Villa",
-        "minutes": 585,
-        "starts": 6,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.0,
-        "cs": 1,
-        "points": 16,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
     },
     {
       "id": 18,
