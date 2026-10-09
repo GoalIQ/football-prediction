@@ -852,6 +852,124 @@
      }
     }
    }
+  },
+  {
+   "gw": 6,
+   "deadline_utc": "2026-10-10T10:00:00Z",
+   "logged_at": "2026-10-09T15:12:20Z",
+   "updated_at": "2026-10-09T15:12:20Z",
+   "source": {
+    "freeze_frozen_at": "2026-10-09T15:12:19Z",
+    "projection_generated_at": "2026-10-09T15:11:59+00:00"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 426,
+     "web_name": "B.Fernandes",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "gw_xp",
+     "value": 6.76,
+     "frozen_value": 6.76,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 426,
+     "web_name": "B.Fernandes",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "p_haul",
+     "value": 0.212,
+     "criterion": "10+ pts",
+     "gw_xp": 6.76,
+     "xp_dist": {
+      "p_haul": 0.212,
+      "p_blank": 0.091,
+      "p10": 3,
+      "median": 6,
+      "p90": 12,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 427,
+     "web_name": "Mbeumo",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "p90",
+     "value": 12,
+     "criterion": "reached p90",
+     "gw_xp": 6.07,
+     "xp_dist": {
+      "p_haul": 0.174,
+      "p_blank": 0.164,
+      "p10": 2,
+      "median": 5,
+      "p90": 12,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p_3plus",
+     "value": 0.836,
+     "criterion": "3+ pts",
+     "gw_xp": 5.49,
+     "xp_dist": {
+      "p_haul": 0.134,
+      "p_blank": 0.164,
+      "p10": 2,
+      "median": 4,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 165,
+     "web_name": "João Pedro",
+     "team_short": "CHE",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.09,
+     "criterion": "10+ pts",
+     "gw_xp": 3.76,
+     "xp_dist": {
+      "p_haul": 0.09,
+      "p_blank": 0.428,
+      "p10": 0,
+      "median": 3,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [
+    {
+     "out": 171,
+     "out_name": "Dovin",
+     "in": 110,
+     "in_name": "Rushworth",
+     "hit": false
+    }
+   ],
+   "entry_actual": null,
+   "graded": null
   }
  ]
 }
