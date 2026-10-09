@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-10-08T21:54:29+00:00",
+  "updated_at": "2026-10-09T00:54:37+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2663,
+  "pending": 2662,
   "voided": 56,
   "all_time": {
-    "n": 615,
+    "n": 616,
     "correct_1x2": 304,
-    "pct_1x2": 0.4943,
-    "draw_n": 166,
-    "pct_draw": 0.2699,
+    "pct_1x2": 0.4935,
+    "draw_n": 167,
+    "pct_draw": 0.2711,
     "decisive_n": 449,
     "decisive_correct": 304,
     "pct_decisive": 0.6771,
-    "exact_n": 615,
+    "exact_n": 616,
     "exact_correct": 76,
-    "pct_exact": 0.1236,
-    "brier": 0.5917,
-    "brier_n": 615
+    "pct_exact": 0.1234,
+    "brier": 0.5922,
+    "brier_n": 616
   },
   "rolling": {
     "n": 100,
     "correct_1x2": 49,
     "pct_1x2": 0.49,
-    "draw_n": 26,
-    "pct_draw": 0.26,
-    "decisive_n": 74,
+    "draw_n": 27,
+    "pct_draw": 0.27,
+    "decisive_n": 73,
     "decisive_correct": 49,
-    "pct_decisive": 0.6622,
+    "pct_decisive": 0.6712,
     "exact_n": 100,
     "exact_correct": 10,
     "pct_exact": 0.1,
-    "brier": 0.6142,
+    "brier": 0.6157,
     "brier_n": 100,
     "window": 100
   },
@@ -52,19 +52,19 @@
       "brier_n": 36
     },
     "BSA": {
-      "n": 103,
+      "n": 104,
       "correct_1x2": 44,
-      "pct_1x2": 0.4272,
-      "draw_n": 32,
-      "pct_draw": 0.3107,
+      "pct_1x2": 0.4231,
+      "draw_n": 33,
+      "pct_draw": 0.3173,
       "decisive_n": 71,
       "decisive_correct": 44,
       "pct_decisive": 0.6197,
-      "exact_n": 103,
+      "exact_n": 104,
       "exact_correct": 14,
-      "pct_exact": 0.1359,
-      "brier": 0.6256,
-      "brier_n": 103
+      "pct_exact": 0.1346,
+      "brier": 0.6282,
+      "brier_n": 104
     },
     "CL": {
       "n": 9,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 559,
+      "n": 560,
       "correct_1x2": 269,
-      "pct_1x2": 0.4812,
-      "draw_n": 151,
-      "pct_draw": 0.2701,
+      "pct_1x2": 0.4804,
+      "draw_n": 152,
+      "pct_draw": 0.2714,
       "decisive_n": 408,
       "decisive_correct": 269,
       "pct_decisive": 0.6593,
-      "exact_n": 559,
+      "exact_n": 560,
       "exact_correct": 65,
-      "pct_exact": 0.1163,
-      "brier": 0.6018,
-      "brier_n": 559,
+      "pct_exact": 0.1161,
+      "brier": 0.6023,
+      "brier_n": 560,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 477,
+      "n": 478,
       "correct_1x2": 243,
-      "pct_1x2": 0.5094,
-      "draw_n": 116,
-      "pct_draw": 0.2432,
+      "pct_1x2": 0.5084,
+      "draw_n": 117,
+      "pct_draw": 0.2448,
       "decisive_n": 361,
       "decisive_correct": 243,
       "pct_decisive": 0.6731,
-      "exact_n": 477,
+      "exact_n": 478,
       "exact_correct": 55,
-      "pct_exact": 0.1153,
-      "brier": 0.5855,
-      "brier_n": 477
+      "pct_exact": 0.1151,
+      "brier": 0.5861,
+      "brier_n": 478
     },
     "stale": {
       "n": 138,
@@ -293,16 +293,16 @@
       "n": 46
     },
     {
-      "bin_mid": 0.1615,
-      "predicted": 0.1615,
-      "actual": 0.1422,
-      "n": 225
+      "bin_mid": 0.1616,
+      "predicted": 0.1616,
+      "actual": 0.1416,
+      "n": 226
     },
     {
       "bin_mid": 0.2552,
       "predicted": 0.2552,
-      "actual": 0.2817,
-      "n": 703
+      "actual": 0.2827,
+      "n": 704
     },
     {
       "bin_mid": 0.3409,
@@ -319,8 +319,8 @@
     {
       "bin_mid": 0.5457,
       "predicted": 0.5457,
-      "actual": 0.5407,
-      "n": 135
+      "actual": 0.5368,
+      "n": 136
     },
     {
       "bin_mid": 0.6448,
@@ -348,6 +348,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-08",
+      "home_team": "Santos",
+      "away_team": "Flamengo RJ",
+      "predicted_winner": "away",
+      "p_winner": 0.5505,
+      "lead_h": 0.6,
+      "most_likely_score": "1-1",
+      "actual_score": "2-2",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-08",
       "home_team": "Cruzeiro",
@@ -627,21 +642,6 @@
       "lead_h": 0.0,
       "most_likely_score": "1-0",
       "actual_score": "2-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-09-20",
-      "home_team": "Villarreal CF",
-      "away_team": "Levante UD",
-      "predicted_winner": "home",
-      "p_winner": 0.7421,
-      "lead_h": 0.5,
-      "most_likely_score": "2-0",
-      "actual_score": "3-1",
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
