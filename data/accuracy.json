@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-10-11T09:24:41+00:00",
+  "updated_at": "2026-10-11T12:39:44+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2609,
+  "pending": 2607,
   "voided": 57,
   "all_time": {
-    "n": 668,
-    "correct_1x2": 337,
+    "n": 670,
+    "correct_1x2": 338,
     "pct_1x2": 0.5045,
-    "draw_n": 181,
-    "pct_draw": 0.271,
-    "decisive_n": 487,
-    "decisive_correct": 337,
-    "pct_decisive": 0.692,
-    "exact_n": 668,
+    "draw_n": 182,
+    "pct_draw": 0.2716,
+    "decisive_n": 488,
+    "decisive_correct": 338,
+    "pct_decisive": 0.6926,
+    "exact_n": 670,
     "exact_correct": 83,
-    "pct_exact": 0.1243,
-    "brier": 0.5899,
-    "brier_n": 668
+    "pct_exact": 0.1239,
+    "brier": 0.5897,
+    "brier_n": 670
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 53,
-    "pct_1x2": 0.53,
+    "correct_1x2": 54,
+    "pct_1x2": 0.54,
     "draw_n": 27,
     "pct_draw": 0.27,
     "decisive_n": 73,
-    "decisive_correct": 53,
-    "pct_decisive": 0.726,
+    "decisive_correct": 54,
+    "pct_decisive": 0.7397,
     "exact_n": 100,
     "exact_correct": 13,
     "pct_exact": 0.13,
-    "brier": 0.6001,
+    "brier": 0.5884,
     "brier_n": 100,
     "window": 100
   },
@@ -82,19 +82,19 @@
       "brier_n": 9
     },
     "DED": {
-      "n": 57,
-      "correct_1x2": 31,
-      "pct_1x2": 0.5439,
+      "n": 58,
+      "correct_1x2": 32,
+      "pct_1x2": 0.5517,
       "draw_n": 18,
-      "pct_draw": 0.3158,
-      "decisive_n": 39,
-      "decisive_correct": 31,
-      "pct_decisive": 0.7949,
-      "exact_n": 57,
+      "pct_draw": 0.3103,
+      "decisive_n": 40,
+      "decisive_correct": 32,
+      "pct_decisive": 0.8,
+      "exact_n": 58,
       "exact_correct": 4,
-      "pct_exact": 0.0702,
-      "brier": 0.6068,
-      "brier_n": 57
+      "pct_exact": 0.069,
+      "brier": 0.5991,
+      "brier_n": 58
     },
     "ELC": {
       "n": 104,
@@ -172,19 +172,19 @@
       "brier_n": 57
     },
     "SA": {
-      "n": 53,
+      "n": 54,
       "correct_1x2": 32,
-      "pct_1x2": 0.6038,
-      "draw_n": 9,
-      "pct_draw": 0.1698,
+      "pct_1x2": 0.5926,
+      "draw_n": 10,
+      "pct_draw": 0.1852,
       "decisive_n": 44,
       "decisive_correct": 32,
       "pct_decisive": 0.7273,
-      "exact_n": 53,
+      "exact_n": 54,
       "exact_correct": 7,
-      "pct_exact": 0.1321,
-      "brier": 0.507,
-      "brier_n": 53
+      "pct_exact": 0.1296,
+      "brier": 0.514,
+      "brier_n": 54
     },
     "WC": {
       "n": 56,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 612,
-      "correct_1x2": 302,
+      "n": 614,
+      "correct_1x2": 303,
       "pct_1x2": 0.4935,
-      "draw_n": 166,
-      "pct_draw": 0.2712,
-      "decisive_n": 446,
-      "decisive_correct": 302,
-      "pct_decisive": 0.6771,
-      "exact_n": 612,
+      "draw_n": 167,
+      "pct_draw": 0.272,
+      "decisive_n": 447,
+      "decisive_correct": 303,
+      "pct_decisive": 0.6779,
+      "exact_n": 614,
       "exact_correct": 72,
-      "pct_exact": 0.1176,
-      "brier": 0.5989,
-      "brier_n": 612,
+      "pct_exact": 0.1173,
+      "brier": 0.5987,
+      "brier_n": 614,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 530,
-      "correct_1x2": 276,
-      "pct_1x2": 0.5208,
-      "draw_n": 131,
-      "pct_draw": 0.2472,
-      "decisive_n": 399,
-      "decisive_correct": 276,
-      "pct_decisive": 0.6917,
-      "exact_n": 530,
+      "n": 532,
+      "correct_1x2": 277,
+      "pct_1x2": 0.5207,
+      "draw_n": 132,
+      "pct_draw": 0.2481,
+      "decisive_n": 400,
+      "decisive_correct": 277,
+      "pct_decisive": 0.6925,
+      "exact_n": 532,
       "exact_correct": 62,
-      "pct_exact": 0.117,
-      "brier": 0.5838,
-      "brier_n": 530
+      "pct_exact": 0.1165,
+      "brier": 0.5836,
+      "brier_n": 532
     },
     "stale": {
       "n": 138,
@@ -293,28 +293,28 @@
       "n": 51
     },
     {
-      "bin_mid": 0.1615,
-      "predicted": 0.1615,
-      "actual": 0.144,
-      "n": 257
+      "bin_mid": 0.1613,
+      "predicted": 0.1613,
+      "actual": 0.1434,
+      "n": 258
     },
     {
-      "bin_mid": 0.2551,
-      "predicted": 0.2551,
-      "actual": 0.2776,
-      "n": 753
+      "bin_mid": 0.255,
+      "predicted": 0.255,
+      "actual": 0.2781,
+      "n": 755
     },
     {
-      "bin_mid": 0.3409,
-      "predicted": 0.3409,
-      "actual": 0.3106,
-      "n": 396
+      "bin_mid": 0.3408,
+      "predicted": 0.3408,
+      "actual": 0.3098,
+      "n": 397
     },
     {
       "bin_mid": 0.4468,
       "predicted": 0.4468,
-      "actual": 0.4143,
-      "n": 251
+      "actual": 0.4127,
+      "n": 252
     },
     {
       "bin_mid": 0.5467,
@@ -323,10 +323,10 @@
       "n": 149
     },
     {
-      "bin_mid": 0.6457,
-      "predicted": 0.6457,
-      "actual": 0.7363,
-      "n": 91
+      "bin_mid": 0.646,
+      "predicted": 0.646,
+      "actual": 0.7391,
+      "n": 92
     },
     {
       "bin_mid": 0.7364,
@@ -348,6 +348,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-11",
+      "home_team": "Utrecht",
+      "away_team": "Willem II",
+      "predicted_winner": "home",
+      "p_winner": 0.6739,
+      "lead_h": 0.9,
+      "most_likely_score": "2-1",
+      "actual_score": "3-1",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-10-11",
+      "home_team": "Como 1907",
+      "away_team": "AS Roma",
+      "predicted_winner": "home",
+      "p_winner": 0.4513,
+      "lead_h": 1.1,
+      "most_likely_score": "1-1",
+      "actual_score": "0-0",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-11",
       "home_team": "Sao Paulo",
@@ -615,36 +645,6 @@
       "actual_outcome": "home",
       "hit_1x2": true,
       "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-10",
-      "home_team": "Go Ahead Eagles",
-      "away_team": "Sparta Rotterdam",
-      "predicted_winner": "home",
-      "p_winner": 0.6375,
-      "lead_h": 1.6,
-      "most_likely_score": "2-1",
-      "actual_score": "3-3",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-10",
-      "home_team": "Lille OSC",
-      "away_team": "Le Havre AC",
-      "predicted_winner": "home",
-      "p_winner": 0.5846,
-      "lead_h": 2.4,
-      "most_likely_score": "1-0",
-      "actual_score": "1-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": true,
       "duration": null,
       "regular_score": null
     }
