@@ -1,7 +1,7 @@
 {
   "meta": {
     "product": "GoalIQ FPL Phase 0 — clean sheet % + model FDR",
-    "generated_at": "2026-10-12T21:53:52",
+    "generated_at": "2026-10-12T22:22:39",
     "season": "2026/27",
     "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
     "team_strength_source": "GoalIQ Dixon-Coles, Understat PL ['2526', '2627'] (sama fit-config kuin /api/predict: decay=0.0035, bayes=2.0)",
@@ -562,7 +562,7 @@
       "att_fdr_home": 5,
       "fdr_away": 1,
       "def_fdr_away": 1,
-      "att_fdr_away": 1
+      "att_fdr_away": 2
     },
     {
       "gameweek": 3,
@@ -3048,7 +3048,7 @@
       "att_fdr_home": 2,
       "fdr_away": 3,
       "def_fdr_away": 3,
-      "att_fdr_away": 2
+      "att_fdr_away": 1
     },
     {
       "gameweek": 14,
@@ -4269,7 +4269,7 @@
       "home_model": "Chelsea",
       "away_model": "Newcastle United",
       "xg_home": 2.259,
-      "xg_away": 1.212,
+      "xg_away": 1.211,
       "p_home_win": 0.5988,
       "p_draw": 0.2175,
       "p_away_win": 0.1838,
@@ -4336,7 +4336,7 @@
       "away_model": "Bournemouth",
       "xg_home": 1.851,
       "xg_away": 1.35,
-      "p_home_win": 0.4797,
+      "p_home_win": 0.4796,
       "p_draw": 0.2529,
       "p_away_win": 0.2674,
       "cs_home_pct": 25.9,
@@ -5370,7 +5370,7 @@
       "away_model": "Brentford",
       "xg_home": 1.159,
       "xg_away": 1.349,
-      "p_home_win": 0.3045,
+      "p_home_win": 0.3046,
       "p_draw": 0.3008,
       "p_away_win": 0.3946,
       "cs_home_pct": 26.0,
@@ -6653,7 +6653,7 @@
       "cs_away_pct": 21.8,
       "fdr_home": 4,
       "def_fdr_home": 4,
-      "att_fdr_home": 3,
+      "att_fdr_home": 2,
       "fdr_away": 3,
       "def_fdr_away": 3,
       "att_fdr_away": 2
@@ -8391,7 +8391,7 @@
       "cs_away_pct": 21.8,
       "fdr_home": 1,
       "def_fdr_home": 1,
-      "att_fdr_home": 2,
+      "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 5
