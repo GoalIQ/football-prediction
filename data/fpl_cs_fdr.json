@@ -1,7 +1,7 @@
 {
   "meta": {
     "product": "GoalIQ FPL Phase 0 — clean sheet % + model FDR",
-    "generated_at": "2026-10-12T15:54:36",
+    "generated_at": "2026-10-12T18:54:47",
     "season": "2026/27",
     "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
     "team_strength_source": "GoalIQ Dixon-Coles, Understat PL ['2526', '2627'] (sama fit-config kuin /api/predict: decay=0.0035, bayes=2.0)",
@@ -29,7 +29,7 @@
     },
     "Leeds United": {
       "next6_avg_cs_pct": 23.2,
-      "next6_avg_fdr": 3.33,
+      "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
     "Aston Villa": {
@@ -59,7 +59,7 @@
     },
     "Fulham": {
       "next6_avg_cs_pct": 25.7,
-      "next6_avg_fdr": 3.0,
+      "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
     "Sunderland": {
@@ -2056,8 +2056,8 @@
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 2,
-      "fdr_away": 4,
-      "def_fdr_away": 4,
+      "fdr_away": 5,
+      "def_fdr_away": 5,
       "att_fdr_away": 5
     },
     {
@@ -2408,8 +2408,8 @@
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 1,
-      "fdr_away": 5,
-      "def_fdr_away": 5,
+      "fdr_away": 4,
+      "def_fdr_away": 4,
       "att_fdr_away": 3
     },
     {
@@ -5018,7 +5018,7 @@
       "away_model": "Manchester United",
       "xg_home": 1.878,
       "xg_away": 1.479,
-      "p_home_win": 0.4583,
+      "p_home_win": 0.4582,
       "p_draw": 0.2496,
       "p_away_win": 0.2921,
       "cs_home_pct": 22.8,
@@ -5306,7 +5306,7 @@
       "xg_away": 1.467,
       "p_home_win": 0.3253,
       "p_draw": 0.2847,
-      "p_away_win": 0.39,
+      "p_away_win": 0.3901,
       "cs_home_pct": 23.1,
       "cs_away_pct": 26.6,
       "fdr_home": 3,
@@ -6733,7 +6733,7 @@
       "home_model": "Aston Villa",
       "away_model": "Brighton",
       "xg_home": 1.426,
-      "xg_away": 1.632,
+      "xg_away": 1.631,
       "p_home_win": 0.321,
       "p_draw": 0.2685,
       "p_away_win": 0.4105,
@@ -6873,7 +6873,7 @@
       "cs_away_pct": 16.6,
       "fdr_home": 1,
       "def_fdr_home": 1,
-      "att_fdr_home": 2,
+      "att_fdr_home": 1,
       "fdr_away": 5,
       "def_fdr_away": 5,
       "att_fdr_away": 5
@@ -7555,7 +7555,7 @@
       "cs_away_pct": 16.6,
       "fdr_home": 3,
       "def_fdr_home": 3,
-      "att_fdr_home": 1,
+      "att_fdr_home": 2,
       "fdr_away": 4,
       "def_fdr_away": 4,
       "att_fdr_away": 3
