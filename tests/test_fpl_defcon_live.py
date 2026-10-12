@@ -135,3 +135,55 @@ def test_pelaaja_ilman_live_riveja_on_nolla_ei_none():
         out = dcl.load_defcon_live(ids=[12])
     p = out["players"][0]
     assert p["defcon"] == 0 and p["minutes"] == 0 and p["remaining"] == 10
+
+
+# --- Penkki ei kuulu kokoonpanoon (12.10.2026) -------------------------------
+# GoalIQ-entryn GW6: "0/11 at the threshold" sisalsi penkilla pelanneet Slaterin
+# ja Calvert-Lewinin. Vaiheet ovat FPL:n oikeasta datasta 12.10 (entry 100 ja
+# 107 GW5: automaattisen vaihdon jalkeen tulija on XI-paikalla kertoimella 1).
+
+def _with_picks(monkeypatch, picks):
+    monkeypatch.setattr(dcl, "_entry_picks", lambda entry_id, gw: picks)
+    return {p["id"] for p in dcl.load_defcon_live(entry_id=123)["players"]}
+
+
+def test_kesken_kierroksen_penkilla_pelannut_ei_ole_rivilla(monkeypatch):
+    ids = _with_picks(monkeypatch, [
+        {"element": 11, "position": 1, "multiplier": 1, "is_captain": False},
+        {"element": 12, "position": 2, "multiplier": 1, "is_captain": False},
+        {"element": 13, "position": 5, "multiplier": 2, "is_captain": True},
+        # Penkki: pelasi 20 min ja on DefCon-kelpoinen -> vanha koodi laski sen
+        {"element": 14, "position": 14, "multiplier": 0, "is_captain": False},
+    ])
+    assert ids == {11, 12, 13}
+
+
+def test_automaattisen_vaihdon_jalkeen_tulija_on_rivilla(monkeypatch):
+    # FPL vaihtaa paikat: tulija (14) XI-paikalle kertoimella 1, lahtija (12)
+    # penkille kertoimella 0.
+    ids = _with_picks(monkeypatch, [
+        {"element": 11, "position": 1, "multiplier": 1, "is_captain": False},
+        {"element": 14, "position": 2, "multiplier": 1, "is_captain": False},
+        {"element": 13, "position": 5, "multiplier": 2, "is_captain": True},
+        {"element": 12, "position": 13, "multiplier": 0, "is_captain": False},
+    ])
+    assert ids == {11, 13, 14}
+
+
+def test_bench_boostilla_penkki_on_rivilla(monkeypatch):
+    # Paikkanumero ei kerro chipia; kerroin kertoo.
+    ids = _with_picks(monkeypatch, [
+        {"element": 11, "position": 1, "multiplier": 1, "is_captain": False},
+        {"element": 12, "position": 2, "multiplier": 1, "is_captain": False},
+        {"element": 13, "position": 5, "multiplier": 2, "is_captain": True},
+        {"element": 14, "position": 14, "multiplier": 1, "is_captain": False},
+    ])
+    assert ids == {11, 12, 13, 14}
+
+
+def test_ilman_kerrointa_paikka_ratkaisee(monkeypatch):
+    ids = _with_picks(monkeypatch, [
+        {"element": 12, "position": 11, "is_captain": False},
+        {"element": 14, "position": 12, "is_captain": False},
+    ])
+    assert ids == {12}

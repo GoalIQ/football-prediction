@@ -168,6 +168,28 @@ def _entry_picks(entry_id: int, gw: int) -> list[dict]:
     return picks
 
 
+def _counts_this_gw(pick: dict) -> bool:
+    """Tuottaako pelaaja pisteita taman kierroksen kokoonpanossa.
+
+    🔴 12.10.2026: penkki tuli mukaan. Entry-polku palautti kaikki 15 pickia
+    ja paneeli suodatti vain `eligible && minutes > 0`, joten penkilla pelannut
+    (GoalIQ-entryn GW6: Slater ja Calvert-Lewin) laskettiin "11 at the
+    threshold" -lukuun. 9 avauksen pelaajaa + 2 penkkilaista = 11, joten luku
+    nayttaa uskottavalta. Suodatus on TASSA eika klientissa: web ja mobiili
+    lukevat saman payloadin, eika kumpikaan voi unohtaa sita.
+
+    `multiplier` on FPL:n oma vastaus kaikissa vaiheissa (mitattu 12.10):
+    kesken kierroksen penkki = 0; automaattisen vaihdon jalkeen FPL siirtaa
+    tulijan XI-paikalle kertoimella 1 ja lahtijan penkille kertoimella 0;
+    Bench Boostilla kaikki 15 = 1. Paikkanumero ei kerro Bench Boostia,
+    siksi se on vain varapolku jos kerroin puuttuu.
+    """
+    m = pick.get("multiplier")
+    if isinstance(m, int):
+        return m > 0
+    return 1 <= int(pick.get("position") or 0) <= 11
+
+
 def _unavailable(note: str) -> dict:
     return {
         "meta": {
@@ -288,7 +310,8 @@ def load_defcon_live(entry_id: int | None = None,
         picks = _entry_picks(entry_id, gw)
         wanted = [(int(p["element"]), int(p.get("position") or 0),
                    bool(p.get("is_captain")))
-                  for p in picks if isinstance(p.get("element"), int)]
+                  for p in picks
+                  if isinstance(p.get("element"), int) and _counts_this_gw(p)]
     else:
         wanted = [(int(i), 0, False) for i in (ids or [])]
 
