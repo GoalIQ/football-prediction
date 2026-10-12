@@ -109,14 +109,21 @@ export const CARD_MIN_ROWS = 3;
 
 const W = 1080;
 const MX = 60;
-const ROW_TOP = 404;
 const ROW_H = 80;
 const FOOT_H = 146;
-// SHARE-CARD-ULKOASU (1.10): seurablokin leveys rank-sarakkeessa, arvon koko,
-// ja vertailurivin jalkeinen vali (listan oma otsake mahtuu siihen).
-const RANK_W = 66;
-const VALUE_PX = 44;
-const HERO_GAP = 64;
+
+/* JAKOKORTTI-ULKOASU 12.10.2026 (Ville: "ne on aika huonot nyt").
+ * Listakortin oma mitoitus. Vanhassa kortissa keskitetty wordmark + viiva veivat
+ * 180 px ennen otsikkoa, jokainen rivi ja tagi oli kehyksessa ja kaikki teksti
+ * monoa. Nyt: pieni wordmark vasempaan ylakulmaan, otsikko Plex Sansilla (rivittyy
+ * kahdelle ennen kuin kutistuu), rivit ilman kehyksia, seuran paita varilaatikon
+ * tilalla ja positio/seura/xMins nimen alla yhdella rivilla. Paletti ja Plex-
+ * perhe ovat brandi (paletti-mandaatti 11.9), niita ei vaihdettu. */
+const L_ROW_H = 84;
+const L_SUB_H = 30;
+const L_FOOT_H = 132;
+const L_NAME_X = MX + 116;
+const L_KIT = 46;
 
 const INK = '#0b0a09';
 const INK2 = '#141311';
@@ -124,13 +131,17 @@ const AMBER = '#f5c542';
 const CREAM = '#f3f2f2';
 const MUTED = '#a8a29a';
 const LINE = 'rgba(243,242,242,0.13)';
-const TAG_LINE = 'rgba(243,242,242,0.33)';
 // Vahemman harmaata (Ville 2.9): keskisarake ja seura kermana, himmennettyna.
 const CREAM_DIM = 'rgba(243,242,242,0.78)';
 
 const FONT = '"IBM Plex Mono", ui-monospace, monospace';
 const bold = (px: number) => `700 ${px}px ${FONT}`;
 const med = (px: number) => `500 ${px}px ${FONT}`;
+// Proosa (otsikko, nimet, alatunniste) Plex Sansilla: mono on luvuille.
+// Sama jako kuin sivuilla 4.9 alkaen (muisti yksi-fontti-kaikkeen).
+const SANS = '"IBM Plex Sans", system-ui, sans-serif';
+const sansBold = (px: number) => `700 ${px}px ${SANS}`;
+const sansMed = (px: number) => `500 ${px}px ${SANS}`;
 
 // LUCK-PITCH: erotuksen varit, samat tokenit kuin sovelluksen teemassa.
 const LUCK_TEAL = '#2ED6C2';
@@ -165,24 +176,80 @@ function shrink(
 	return px;
 }
 
+/** Otsikon rivitys: kokeillaan isoa kokoa kahdelle riville ennen kutistamista.
+ *  Vanha kortti kutisti pitkan otsikon yhdelle riville jopa 36 px:iin, jolloin
+ *  puhelimen syotteessa (kortti ~0,45x) se oli lukukelvoton. */
+function fitTitle(
+	ctx: CanvasRenderingContext2D,
+	text: string,
+	maxW: number
+): { px: number; lines: string[] } {
+	// Yksi rivi ensin 58 px:iin asti: kahdelle riville katkennut lyhyt otsikko
+	// jattaa orvon sanan ("TOP 10 BY EXPECTED / POINTS") ja venyttaa kortin yli 4:5:n.
+	for (let px = 76; px >= 58; px -= 2) {
+		ctx.font = sansBold(px);
+		if (ctx.measureText(text).width <= maxW) return { px, lines: [text] };
+	}
+	for (let px = 76; px >= 52; px -= 4) {
+		ctx.font = sansBold(px);
+		const words = text.split(' ');
+		const lines: string[] = [];
+		let cur = '';
+		for (const w of words) {
+			const next = cur ? `${cur} ${w}` : w;
+			if (cur && ctx.measureText(next).width > maxW) {
+				lines.push(cur);
+				cur = w;
+			} else cur = next;
+		}
+		if (cur) lines.push(cur);
+		if (lines.length <= 2 && lines.every((l) => ctx.measureText(l).width <= maxW)) {
+			return { px, lines };
+		}
+	}
+	return { px: shrink(ctx, text, 52, maxW, 32, sansBold), lines: [text] };
+}
+
 export async function renderCard(spec: CardSpec): Promise<Blob> {
 	// Fontit varmasti ladattuina ennen mittauksia (muuten measureText valehtelee).
 	await Promise.all([
-		document.fonts.load(bold(60)),
-		document.fonts.load(bold(36)),
-		document.fonts.load(med(24))
+		document.fonts.load(bold(46)),
+		document.fonts.load(med(18)),
+		document.fonts.load(sansBold(72)),
+		document.fonts.load(sansMed(24))
 	]).catch(() => undefined);
 	const wm = await loadWordmark();
 
+	// Mittauskanvas otsikon rivitykseen ennen kuin korkeus tiedetaan.
+	const probe = document.createElement('canvas').getContext('2d');
+	if (!probe) throw new Error('canvas 2d context unavailable');
+	const title = fitTitle(probe, spec.title, W - 2 * MX);
+	const titleLH = Math.round(title.px * 1.04);
+
 	const n = spec.rows.length;
 	const hero = spec.hero;
+	const hasMeta = (r: Omit<CardRow, 'rank'>) => !!(r.tag || r.team || r.tag2);
 	const hasSub = spec.rows.some((r) => !!r.sub || !!r.delta);
-	const rowH = hasSub ? ROW_H + 30 : ROW_H;
-	// Vertailurivi on yksikerroksinen ellei silla ole omaa toista rivia.
-	const heroH = hero?.row.sub ? ROW_H + 30 : ROW_H;
-	const listTop = ROW_TOP + (hero ? heroH + HERO_GAP : 0);
-	const H = listTop + n * rowH + FOOT_H;
+	const rowH = L_ROW_H + (hasSub ? L_SUB_H : 0);
+	const heroH = L_ROW_H + (hero?.row.sub ? L_SUB_H : 0);
+
+	// Pystyrytmi: wordmark -> otsikko -> alaotsikko -> sarakeotsikot -> rivit.
+	const TITLE_Y = 150;
+	const subY = TITLE_Y + title.lines.length * titleLH + 14;
+	const headY = subY + 30 + 46;
+	const heroTop = headY + 40;
+	const listHeadY = hero ? heroTop + heroH + 40 : headY;
+	const listTop = hero ? listHeadY + 40 : heroTop;
+	const H = listTop + n * rowH + L_FOOT_H;
 	const fracs = spec.valueBars ? valueBarFractions(spec.rows.map((r) => r.value)) : null;
+	// Ilman yhtaan paitaa (managerilista, joukkuelista ilman seurakoodia) nimi
+	// siirtyy paitasarakkeen paikalle: tyhja kaista vasemmalla nayttaa virheelta.
+	const hasKit = (r: Omit<CardRow, 'rank'>) => {
+		const c = r.team || r.colorTeam;
+		return !!(c && knownTeamColor(c));
+	};
+	const nameX = spec.rows.some(hasKit) || (hero ? hasKit(hero.row) : false) ? L_NAME_X : MX + 60;
+
 	const canvas = document.createElement('canvas');
 	canvas.width = W;
 	canvas.height = H;
@@ -190,158 +257,136 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	if (!ctx) throw new Error('canvas 2d context unavailable');
 	ctx.textBaseline = 'top';
 
-	// INK-gradientti kuten feature graphicissa
 	const g = ctx.createLinearGradient(0, 0, 0, H);
 	g.addColorStop(0, INK);
 	g.addColorStop(1, INK2);
 	ctx.fillStyle = g;
 	ctx.fillRect(0, 0, W, H);
 
-	// Wordmark ylareunaan keskelle + amber-viiva (brandin tunniste)
+	// Brandi pienena vasempaan ylakulmaan: se tunnistaa, otsikko kertoo.
+	const WM_H = 46;
 	if (wm) {
-		const wmH = 84;
-		const wmW = Math.round((wm.width * wmH) / wm.height);
-		ctx.drawImage(wm, (W - wmW) / 2, 64, wmW, wmH);
+		ctx.drawImage(wm, MX, 52, Math.round((wm.width * WM_H) / wm.height), WM_H);
 	} else {
-		ctx.font = bold(56);
+		ctx.font = bold(32);
 		const gw = ctx.measureText('GOAL').width;
-		const box = 76;
-		const total = gw + 14 + box;
-		const x0 = (W - total) / 2;
 		ctx.fillStyle = CREAM;
-		ctx.fillText('GOAL', x0, 72);
+		ctx.fillText('GOAL', MX, 58);
 		ctx.fillStyle = AMBER;
-		ctx.fillRect(x0 + gw + 14, 64, box, box);
+		ctx.fillRect(MX + gw + 8, 52, WM_H, WM_H);
 		ctx.fillStyle = INK;
-		ctx.font = bold(40);
-		ctx.fillText('IQ', x0 + gw + 14 + (box - ctx.measureText('IQ').width) / 2, 82);
+		ctx.font = bold(24);
+		ctx.fillText('IQ', MX + gw + 8 + (WM_H - ctx.measureText('IQ').width) / 2, 63);
 	}
-	ctx.fillStyle = AMBER;
-	ctx.beginPath();
-	ctx.roundRect((W - 120) / 2, 176, 120, 6, 3);
-	ctx.fill();
-
-	// Otsikko + alaotsikko
-	// SHARE-CARD-SUBTITLE-SHRINK (29.8): otsikko ja alaotsikko kutistuvat kuten
-	// pelaajanimet. Plex Mono 22 px ~ 13,2 px/merkki -> ~72 merkkia mahtui, sen yli
-	// leikkautui molemmista paista ilman virhetta (FitChecker 88, TransferPlanner 73
-	// mitattu julkaisuportissa 27.8).
-	shrink(ctx, spec.title, 60, W - 2 * MX, 36, bold);
-	ctx.fillStyle = CREAM;
-	ctx.fillText(spec.title, (W - ctx.measureText(spec.title).width) / 2, 226);
-	shrink(ctx, spec.subtitle, 22, W - 2 * MX, 14, med);
+	ctx.font = med(20);
 	ctx.fillStyle = MUTED;
-	ctx.fillText(spec.subtitle, (W - ctx.measureText(spec.subtitle).width) / 2, 306);
+	ctx.fillText('goaliq.app', W - MX - ctx.measureText('goaliq.app').width, 66);
 
-	// Sarakeotsikot. Vertailurivin kanssa ylarivi nimeaa vertailurivin ja
-	// listalla on oma otsake (sarakkeiden nimet eivat toistu).
+	// Otsikko + alaotsikko vasemmalle tasattuina.
+	ctx.fillStyle = CREAM;
+	ctx.font = sansBold(title.px);
+	title.lines.forEach((l, i) => ctx.fillText(l, MX - 2, TITLE_Y + i * titleLH));
+	ctx.fillStyle = AMBER;
+	ctx.fillRect(MX, TITLE_Y - 30, 56, 6);
+	shrink(ctx, spec.subtitle, 26, W - 2 * MX, 16, sansMed);
+	ctx.fillStyle = MUTED;
+	ctx.fillText(spec.subtitle, MX, subY);
+
 	const fxRight = W - MX - 180;
 	const rowX = MX - 12;
 	const rowW = W - 2 * (MX - 12);
-	ctx.font = med(19);
-	ctx.fillStyle = MUTED;
-	ctx.fillText(hero ? hero.label : (spec.nameLabel ?? 'PLAYER'), MX + 76, ROW_TOP - 34);
-	if (spec.midLabel) {
-		ctx.fillText(spec.midLabel, fxRight - ctx.measureText(spec.midLabel).width, ROW_TOP - 34);
-	}
-	ctx.fillText(spec.valueLabel, W - MX - ctx.measureText(spec.valueLabel).width, ROW_TOP - 34);
-	if (hero) ctx.fillText(spec.nameLabel ?? 'PLAYER', MX + 76, listTop - 34);
+
+	const colHeads = (y: number, name: string, withCols: boolean) => {
+		ctx.font = med(17);
+		ctx.fillStyle = MUTED;
+		ctx.fillText(name, nameX, y);
+		if (withCols) {
+			if (spec.midLabel) {
+				ctx.fillText(spec.midLabel, fxRight - ctx.measureText(spec.midLabel).width, y);
+			}
+			ctx.fillText(spec.valueLabel, W - MX - ctx.measureText(spec.valueLabel).width, y);
+		}
+		ctx.fillStyle = LINE;
+		ctx.fillRect(rowX, y + 30, rowW, 1);
+	};
+	// Vertailurivin kanssa ylarivi nimeaa vertailurivin ja listalla on oma otsake
+	// (sarakkeiden nimet eivat toistu).
+	colHeads(headY, hero ? hero.label : (spec.nameLabel ?? 'PLAYER'), true);
+	if (hero) colHeads(listHeadY, spec.nameLabel ?? 'PLAYER', false);
 
 	const drawRow = (
 		r: Omit<CardRow, 'rank'> & { rank?: number },
 		y: number,
 		h: number,
-		o: { first: boolean; isHero: boolean; frac: number | null }
+		o: { first: boolean; isHero: boolean; frac: number | null; last: boolean }
 	) => {
-		// sub-rivilla paarivi nousee ylos ja syy piirretaan sen alle
-		const twoLine = h > ROW_H;
-		const cy = twoLine ? y + 40 : y + h / 2;
-		// Vertailurivi neutraalilla kehyksella (julkaisutarkistaja k2 1.10): koralli
-		// luettiin FPL:n lippuvariksi terveenkin lahtijan kortissa, ja LUCK_CORAL
-		// tarkoittaa korttiperheessa jo 'odotettua heikompaa'.
-		const accent = o.isHero ? MUTED : o.first ? AMBER : null;
+		const meta = hasMeta(r);
+		// Paalohko (nimi + metarivi) ylimpaan L_ROW_H:hon; syyrivi sen alle.
+		const nameY = meta ? y + 14 : y + (L_ROW_H - 34) / 2;
+		const blockMid = y + L_ROW_H / 2;
 
-		// Palkki ohuena raitana rivin alareunaan (pituus = naytetty arvo /
-		// suurin). 1.10 kuva: koko rivin taustapalkki paattyi keskelle lukuja.
-		if (o.frac != null && o.frac > 0) {
-			ctx.fillStyle = o.first ? AMBER : 'rgba(243,242,242,0.38)';
-			ctx.fillRect(rowX + RANK_W, y + h - 11, (rowW - RANK_W) * o.frac, 6);
+		// Karkirivi: hento amber-pohja + reuna. Vertailurivi: neutraali pohja
+		// (julkaisutarkistaja k2 1.10: koralli luettiin FPL:n lippuvariksi).
+		if (o.first || o.isHero) {
+			ctx.fillStyle = o.first ? 'rgba(245,197,66,0.08)' : 'rgba(243,242,242,0.05)';
+			ctx.fillRect(rowX, y + 2, rowW, h - 4);
+			ctx.fillStyle = o.first ? AMBER : MUTED;
+			ctx.fillRect(rowX, y + 2, 5, h - 4);
 		}
 
-		// Seurablokki rank-sarakkeeseen, vain tunnetulla seuravarilla.
+		// Palkki ohuena raitana rivin alareunaan (pituus = naytetty arvo / suurin).
+		if (o.frac != null && o.frac > 0) {
+			ctx.fillStyle = o.first ? AMBER : 'rgba(243,242,242,0.30)';
+			ctx.fillRect(nameX, y + h - 6, (W - MX - nameX) * o.frac, 3);
+		}
+		if (!o.last && !o.first && !o.isHero) {
+			ctx.fillStyle = LINE;
+			ctx.fillRect(rowX, y + h - 1, rowW, 1);
+		}
+
+		if (r.rank != null) {
+			ctx.font = bold(24);
+			const rk = String(r.rank);
+			ctx.fillStyle = o.first ? AMBER : MUTED;
+			ctx.fillText(rk, MX + 30 - ctx.measureText(rk).width, blockMid - 13);
+		}
+
+		// Seuran paita varilaatikon tilalle, vain tunnetulla seuravarilla.
 		const club = r.team || r.colorTeam;
 		const tc = club ? knownTeamColor(club) : null;
-		if (tc) {
-			ctx.fillStyle = tc.color;
-			ctx.fillRect(rowX, y + 4, RANK_W, h - 8);
+		if (tc && club) {
+			drawKit(ctx, { color: tc.color, textColor: tc.textColor, team: club }, MX + 50, blockMid - L_KIT / 2 - 2, L_KIT, false);
 		}
 
-		// Rivikehys: vertailurivi korallilla, karkirivi amberilla, muut ohuella viivalla
-		ctx.strokeStyle = accent ?? LINE;
-		ctx.lineWidth = accent ? 2 : 1;
-		ctx.strokeRect(rowX, y + 4, rowW, h - 8);
-
-		// rank: seurablokissa keskella paremman kontrastin varilla, muuten kuten ennen
-		if (r.rank != null) {
-			ctx.font = bold(28);
-			const rk = String(r.rank);
-			const rw = ctx.measureText(rk).width;
-			if (tc) {
-				ctx.fillStyle = contrast(tc.textColor, tc.color) >= contrast(INK, tc.color) ? tc.textColor : INK;
-				ctx.fillText(rk, rowX + (RANK_W - rw) / 2, cy - 16);
-			} else {
-				ctx.fillStyle = o.first ? AMBER : MUTED;
-				ctx.fillText(rk, MX + 34 - rw, cy - 16);
-			}
-		}
-
-		// nimi + pos-tagi + joukkue + badget
-		let x = MX + 76;
-		const nPx = shrink(ctx, r.name, 32, 330, 20, bold);
-		ctx.font = bold(nPx);
+		// Nimi (Sans) + badget perään
+		const badgeW = (r.badges ?? []).reduce((s, b) => {
+			ctx.font = bold(16);
+			return s + ctx.measureText(b).width + 20 + 8;
+		}, 0);
+		const nPx = shrink(ctx, r.name, 34, fxRight - 40 - nameX - badgeW, 20, sansBold);
+		ctx.font = sansBold(nPx);
 		ctx.fillStyle = CREAM;
-		ctx.fillText(r.name, x, cy - nPx * 0.62);
-		x += ctx.measureText(r.name).width + 16;
-
-		// 3.9 (audit): tyhja tagi piirsi 16x30 px:n TYHJAN kehyksen joka riville.
-		// Osui Standingsiin (tag aina '') ja Season raceen (tag vain osalla
-		// riveista -> repaleinen sekoitus). Mobiili on vahtinut tata alusta.
-		if (r.tag) {
-			ctx.font = bold(17);
-			const pw = ctx.measureText(r.tag).width + 16;
-			ctx.strokeStyle = TAG_LINE;
-			ctx.lineWidth = 1;
-			ctx.strokeRect(x, cy - 15, pw, 30);
-			ctx.fillText(r.tag, x + 8, cy - 10);
-			x += pw + 12;
-		}
-
-		// Toinen tagi samassa laatikossa: rivin kausi sekakausilistalla.
-		// Alaotsikko ei voi sanoa kumpi rivi on kumpaa kautta.
-		if (r.tag2) {
-			ctx.font = bold(17);
-			ctx.fillStyle = MUTED;
-			const pw2 = ctx.measureText(r.tag2).width + 16;
-			ctx.strokeStyle = TAG_LINE;
-			ctx.lineWidth = 1;
-			ctx.strokeRect(x, cy - 15, pw2, 30);
-			ctx.fillText(r.tag2, x + 8, cy - 10);
-			x += pw2 + 12;
-		}
-
-		ctx.font = med(20);
-		ctx.fillStyle = CREAM_DIM;
-		ctx.fillText(r.team, x, cy - 10);
-		x += ctx.measureText(r.team).width + 12;
-
+		ctx.fillText(r.name, nameX, nameY + (34 - nPx) / 2);
+		let x = nameX + ctx.measureText(r.name).width + 12;
 		for (const b of r.badges ?? []) {
-			ctx.font = bold(17);
-			const bw = ctx.measureText(b).width + 14;
-			ctx.strokeStyle = AMBER;
-			ctx.strokeRect(x, cy - 14, bw, 28);
+			ctx.font = bold(16);
+			const bw = ctx.measureText(b).width + 20;
 			ctx.fillStyle = AMBER;
-			ctx.fillText(b, x + 7, cy - 9);
+			ctx.beginPath();
+			ctx.roundRect(x, nameY + 5, bw, 26, 4);
+			ctx.fill();
+			ctx.fillStyle = INK;
+			ctx.fillText(b, x + 10, nameY + 9);
 			x += bw + 8;
+		}
+
+		// Metarivi: positio · seura · toinen tagi. Tyhjat kentat putoavat pois,
+		// joten tyhja tagi ei piirra mitaan (3.9 audit: tyhja kehys joka riville).
+		if (meta) {
+			const parts = [r.tag, r.team, r.tag2].filter(Boolean);
+			ctx.font = med(18);
+			ctx.fillStyle = MUTED;
+			ctx.fillText(parts.join(' · '), nameX, nameY + 44);
 		}
 
 		// keskisarake (fixture / price) oikealle tasattuna
@@ -349,55 +394,59 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 			const fPx = shrink(ctx, r.mid, 24, 190, 14, med);
 			ctx.font = med(fPx);
 			ctx.fillStyle = CREAM_DIM;
-			ctx.fillText(r.mid, fxRight - ctx.measureText(r.mid).width, cy - fPx * 0.55);
+			ctx.fillText(r.mid, fxRight - ctx.measureText(r.mid).width, blockMid - fPx * 0.55);
 		}
 
 		// arvo oikeaan laitaan
-		const vPx = shrink(ctx, r.value, VALUE_PX, 160, 24, bold);
+		const vPx = shrink(ctx, r.value, 46, 170, 24, bold);
 		ctx.font = bold(vPx);
 		ctx.fillStyle = o.first ? AMBER : CREAM;
-		ctx.fillText(r.value, W - MX - ctx.measureText(r.value).width, cy - vPx * 0.58);
+		ctx.fillText(r.value, W - MX - ctx.measureText(r.value).width, blockMid - vPx * 0.58);
 
 		// Toinen rivi: syy vasemmalle, ero vertailuriviin oikeaan laitaan.
+		const subY = y + L_ROW_H - 2;
 		let subRight = W - MX;
 		if (r.delta) {
-			ctx.font = bold(22);
+			ctx.font = bold(21);
 			ctx.fillStyle = r.deltaUp ? AMBER : MUTED;
 			const dw = ctx.measureText(r.delta).width;
-			ctx.fillText(r.delta, subRight - dw, y + h - 38);
+			ctx.fillText(r.delta, subRight - dw, subY);
 			subRight -= dw + 24;
 		}
 		if (r.sub) {
-			const sPx = shrink(ctx, r.sub, 20, subRight - (MX + 76), 14, med);
-			ctx.font = med(sPx);
-			ctx.fillStyle = MUTED;
-			ctx.fillText(r.sub, MX + 76, y + h - 36);
+			const sPx = shrink(ctx, r.sub, 21, subRight - nameX, 14, sansMed);
+			ctx.font = sansMed(sPx);
+			ctx.fillStyle = CREAM_DIM;
+			ctx.fillText(r.sub, nameX, subY);
 		}
 	};
 
 	if (hero) {
-		drawRow(hero.row, ROW_TOP, heroH, { first: false, isHero: true, frac: null });
+		drawRow(hero.row, heroTop, heroH, { first: false, isHero: true, frac: null, last: true });
 	}
 	for (let i = 0; i < n; i++) {
 		drawRow(spec.rows[i], listTop + i * rowH, rowH, {
 			first: i === 0 && spec.heroFirstRow !== false,
 			isHero: false,
-			frac: fracs ? fracs[i] : null
+			frac: fracs ? fracs[i] : null,
+			last: i === n - 1
 		});
 	}
 
-	// Footer + amber-alaraita (brandin tunniste)
-	ctx.font = med(20);
+	// Alatunniste: lahde vasemmalle, tili oikealle, amber-alaraita (brandin tunniste).
+	ctx.fillStyle = LINE;
+	ctx.fillRect(rowX, H - L_FOOT_H + 28, rowW, 1);
+	shrink(ctx, spec.footNote ?? 'projections from the GoalIQ match model', 20, W - 2 * MX - 220, 14, sansMed);
 	ctx.fillStyle = MUTED;
-	ctx.fillText(spec.footNote ?? 'projections from the GoalIQ match model', MX, H - 88);
-	ctx.font = bold(20);
-	ctx.fillStyle = AMBER;
-	ctx.fillText('@goaliqapp', W - MX - ctx.measureText('@goaliqapp').width, H - 88);
-	ctx.font = med(17);
-	ctx.fillStyle = MUTED;
+	ctx.fillText(spec.footNote ?? 'projections from the GoalIQ match model', MX, H - 84);
+	ctx.font = sansMed(17);
+	ctx.fillStyle = 'rgba(168,162,154,0.75)';
 	ctx.fillText(spec.footNote2 ?? 'model projections, not betting advice', MX, H - 54);
+	ctx.font = bold(24);
 	ctx.fillStyle = AMBER;
-	ctx.fillRect(0, H - 8, W, 8);
+	ctx.fillText('@goaliqapp', W - MX - ctx.measureText('@goaliqapp').width, H - 74);
+	ctx.fillStyle = AMBER;
+	ctx.fillRect(0, H - 10, W, 10);
 
 	return new Promise<Blob>((resolve, reject) => {
 		canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('canvas toBlob failed'))), 'image/png');
@@ -499,7 +548,9 @@ function drawKit(
 	p: { color: string; textColor: string; team: string },
 	x: number,
 	y: number,
-	size: number
+	size: number,
+	// Listakortin pieni paita ilman rintatekstia: 46 px:ssa GOALIQ on 4 px:n tahra.
+	mark = true
 ) {
 	ctx.save();
 	ctx.translate(x, y);
@@ -541,7 +592,7 @@ function drawKit(
 	ctx.stroke(new Path2D(JERSEY));
 	// 2.9 PAITAPAIVITYS: GOALIQ rintaan sponsorin paikalle, lyhenne pois paidasta
 	// (se on aina tekstina paidan vieressa). Halo kuten ennen raidoille.
-	if (size >= 40) {
+	if (mark && size >= 40) {
 		ctx.font = `800 9px ${FONT}`;
 		ctx.textBaseline = 'alphabetic';
 		const mark = 'GOALIQ';

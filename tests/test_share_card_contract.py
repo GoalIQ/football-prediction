@@ -51,12 +51,17 @@ def test_tyhja_tagi_ei_piirra_kehysta():
     """`tag: ''` strokasi 16x30 px:n tyhjan laatikon JOKA riville.
 
     Osui Standingsiin (tag aina tyhja) ja Season raceen (tag vain osalla
-    riveista -> repaleinen sekoitus laatikoita ja tyhjaa)."""
+    riveista -> repaleinen sekoitus laatikoita ja tyhjaa).
+
+    12.10.2026 (jakokortin uusi ulkoasu): tagit ovat nimen alla metarivin
+    tekstia ilman kehysta. Tyhja kentta putoaa suodattimessa pois, joten tyhja
+    tagi ei voi piirtaa mitaan, eika listakortissa ole enaa kehyksia lainkaan."""
     s = _src(ENGINE)
-    i = s.index("const pw = ctx.measureText(r.tag).width + 16;")
-    edelta = s[max(0, i - 400):i]
-    assert "if (r.tag) {" in edelta, (
-        "tagilaatikko piirretaan ilman tyhjatarkistusta")
+    body = s[s.index("export async function renderCard("):
+             s.index("/* ---------- #9a jatko (31.7): pitch-jakokortti")]
+    assert "[r.tag, r.team, r.tag2].filter(Boolean)" in body, (
+        "metarivi ei suodata tyhjia tageja")
+    assert "strokeRect" not in body, "listakortti piirtaa taas kehyksia"
 
 
 def test_alatunnisteen_molemmat_rivit_ovat_ylikirjoitettavissa():
@@ -278,3 +283,22 @@ def test_entry_tyokalu_kertoo_kun_entrya_ei_ole(tiedosto):
     assert "does not know your squad yet" in s, (
         f"{tiedosto}: ei kerro kun entrya ei ole — vastaus nayttaa vain "
         f"vaaralta")
+
+
+def test_sivujen_kortin_paidat_tulevat_team_colorsista():
+    """12.10.2026: sivujen kortti sai seurapaidat. Ne upotetaan rakennusvaiheessa
+    src/models/team_colors.py:sta, josta sivujen SVG-paidat ja PIL-kortit jo
+    lukevat; kasin kirjoitettu JS-kopio olisi neljas totuus samasta paidasta."""
+    import json
+    import re
+
+    from scripts.share_card_js import SHARE_CARD_JS
+    from src.models import team_colors as tc
+
+    assert "__KITS__" not in SHARE_CARD_JS, "paitadata jai upottamatta"
+    m = re.search(r"var KD=(\{.*?\});\n", SHARE_CARD_JS)
+    assert m, "korttiin ei upotettu paitadataa"
+    kd = json.loads(m.group(1))
+    assert kd["geom"]["J"] == tc._JERSEY
+    for short, (color, _text) in tc._TEAM_COLORS.items():
+        assert kd["kits"][short]["c"] == color, short
