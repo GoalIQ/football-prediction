@@ -283,3 +283,22 @@ def test_entry_tyokalu_kertoo_kun_entrya_ei_ole(tiedosto):
     assert "does not know your squad yet" in s, (
         f"{tiedosto}: ei kerro kun entrya ei ole — vastaus nayttaa vain "
         f"vaaralta")
+
+
+def test_sivujen_kortin_paidat_tulevat_team_colorsista():
+    """12.10.2026: sivujen kortti sai seurapaidat. Ne upotetaan rakennusvaiheessa
+    src/models/team_colors.py:sta, josta sivujen SVG-paidat ja PIL-kortit jo
+    lukevat; kasin kirjoitettu JS-kopio olisi neljas totuus samasta paidasta."""
+    import json
+    import re
+
+    from scripts.share_card_js import SHARE_CARD_JS
+    from src.models import team_colors as tc
+
+    assert "__KITS__" not in SHARE_CARD_JS, "paitadata jai upottamatta"
+    m = re.search(r"var KD=(\{.*?\});\n", SHARE_CARD_JS)
+    assert m, "korttiin ei upotettu paitadataa"
+    kd = json.loads(m.group(1))
+    assert kd["geom"]["J"] == tc._JERSEY
+    for short, (color, _text) in tc._TEAM_COLORS.items():
+        assert kd["kits"][short]["c"] == color, short

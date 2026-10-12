@@ -242,6 +242,13 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	const listTop = hero ? listHeadY + 40 : heroTop;
 	const H = listTop + n * rowH + L_FOOT_H;
 	const fracs = spec.valueBars ? valueBarFractions(spec.rows.map((r) => r.value)) : null;
+	// Ilman yhtaan paitaa (managerilista, joukkuelista ilman seurakoodia) nimi
+	// siirtyy paitasarakkeen paikalle: tyhja kaista vasemmalla nayttaa virheelta.
+	const hasKit = (r: Omit<CardRow, 'rank'>) => {
+		const c = r.team || r.colorTeam;
+		return !!(c && knownTeamColor(c));
+	};
+	const nameX = spec.rows.some(hasKit) || (hero ? hasKit(hero.row) : false) ? L_NAME_X : MX + 60;
 
 	const canvas = document.createElement('canvas');
 	canvas.width = W;
@@ -292,7 +299,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 	const colHeads = (y: number, name: string, withCols: boolean) => {
 		ctx.font = med(17);
 		ctx.fillStyle = MUTED;
-		ctx.fillText(name, L_NAME_X, y);
+		ctx.fillText(name, nameX, y);
 		if (withCols) {
 			if (spec.midLabel) {
 				ctx.fillText(spec.midLabel, fxRight - ctx.measureText(spec.midLabel).width, y);
@@ -330,7 +337,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 		// Palkki ohuena raitana rivin alareunaan (pituus = naytetty arvo / suurin).
 		if (o.frac != null && o.frac > 0) {
 			ctx.fillStyle = o.first ? AMBER : 'rgba(243,242,242,0.30)';
-			ctx.fillRect(L_NAME_X, y + h - 6, (W - MX - L_NAME_X) * o.frac, 3);
+			ctx.fillRect(nameX, y + h - 6, (W - MX - nameX) * o.frac, 3);
 		}
 		if (!o.last && !o.first && !o.isHero) {
 			ctx.fillStyle = LINE;
@@ -356,11 +363,11 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 			ctx.font = bold(16);
 			return s + ctx.measureText(b).width + 20 + 8;
 		}, 0);
-		const nPx = shrink(ctx, r.name, 34, fxRight - 40 - L_NAME_X - badgeW, 20, sansBold);
+		const nPx = shrink(ctx, r.name, 34, fxRight - 40 - nameX - badgeW, 20, sansBold);
 		ctx.font = sansBold(nPx);
 		ctx.fillStyle = CREAM;
-		ctx.fillText(r.name, L_NAME_X, nameY + (34 - nPx) / 2);
-		let x = L_NAME_X + ctx.measureText(r.name).width + 12;
+		ctx.fillText(r.name, nameX, nameY + (34 - nPx) / 2);
+		let x = nameX + ctx.measureText(r.name).width + 12;
 		for (const b of r.badges ?? []) {
 			ctx.font = bold(16);
 			const bw = ctx.measureText(b).width + 20;
@@ -379,7 +386,7 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 			const parts = [r.tag, r.team, r.tag2].filter(Boolean);
 			ctx.font = med(18);
 			ctx.fillStyle = MUTED;
-			ctx.fillText(parts.join(' · '), L_NAME_X, nameY + 44);
+			ctx.fillText(parts.join(' · '), nameX, nameY + 44);
 		}
 
 		// keskisarake (fixture / price) oikealle tasattuna
@@ -407,10 +414,10 @@ export async function renderCard(spec: CardSpec): Promise<Blob> {
 			subRight -= dw + 24;
 		}
 		if (r.sub) {
-			const sPx = shrink(ctx, r.sub, 21, subRight - L_NAME_X, 14, sansMed);
+			const sPx = shrink(ctx, r.sub, 21, subRight - nameX, 14, sansMed);
 			ctx.font = sansMed(sPx);
 			ctx.fillStyle = CREAM_DIM;
-			ctx.fillText(r.sub, L_NAME_X, subY);
+			ctx.fillText(r.sub, nameX, subY);
 		}
 	};
 
