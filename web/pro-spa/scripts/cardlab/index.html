@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>body{background:#222;font-family:'IBM Plex Mono'}</style>
+</head>
+<body>
+<span style="font-family:'IBM Plex Sans';font-weight:700">a</span>
+<span style="font-family:'IBM Plex Sans Condensed';font-weight:700">a</span>
+<script type="module">
+import { renderCard } from './out/shareCard.js';
+
+const xp = [
+  ['Haaland','FWD','MCI',87,'15.6','32.3'],['B.Fernandes','MID','MUN',90,'11.9','27.6'],
+  ['Saka','MID','ARS',86,'9.6','26.9'],['Gabriel','DEF','ARS',90,'7.9','25.4'],
+  ['Mbeumo','MID','MUN',90,'7.9','25.2'],['Guéhi','DEF','MCI',90,'6.0','24.9'],
+  ['Calafiori','DEF','ARS',83,'5.9','23.7'],['Cherki','MID','MCI',72,'7.8','23.3'],
+  ['Thiago','FWD','BRE',89,'7.8','23.0'],['Gibbs-White','MID','NFO',90,'8.0','22.8'],
+];
+const SPECS = {
+  xp: {
+    title: 'TOP 10 BY EXPECTED POINTS', subtitle: 'GW7-11, GoalIQ match model',
+    midLabel: 'PRICE', valueLabel: '5GW xP', valueBars: true, fileName: 'x.png',
+    footNote: 'xP from the GoalIQ model, xMins = expected minutes, price from FPL',
+    rows: xp.map((r, i) => ({ rank: i + 1, name: r[0], tag: r[1], team: r[2], tag2: `${r[3]} xMins`, mid: r[4], value: r[5] })),
+  },
+  defcon: {
+    title: 'DEFCON LIVE', subtitle: 'GW6, 0 of 9 at the threshold, in progress',
+    midLabel: 'MINS', valueLabel: 'DEFCON', fileName: 'x.png',
+    footNote: 'live FPL match feed', footNote2: 'not betting advice',
+    rows: [
+      ['Gabriel','DEF','ARS',90,5,10],['Guéhi','DEF','MCI',90,4,10],['Calafiori','DEF','ARS',81,4,10],
+      ['B.Fernandes (C)','MID','MUN',90,6,12],['Tavernier','MID','BOU',72,5,12],['Haaland','FWD','MCI',79,5,12],
+      ['De Cuyper','DEF','BHA',67,3,10],['Mbeumo','MID','MUN',90,2,12],['Gonzalo','FWD','LEE',86,1,12],
+    ].map((r, i) => ({ rank: i + 1, name: r[0], tag: r[1], team: r[2], mid: `${r[3]}'`, value: `${r[4]}/${r[5]}` })),
+  },
+  cs: {
+    title: 'CLEAN SHEET OUTLOOK', subtitle: 'GW7 to GW11, GoalIQ match model',
+    nameLabel: 'TEAM', midLabel: 'GAMES', valueLabel: 'CS%', fileName: 'x.png',
+    rows: [['Arsenal','ARS','5','46%'],['Man City','MCI','5','41%'],['Liverpool','LIV','5','37%'],
+           ['Chelsea','CHE','5','35%'],['Crystal Palace','CRY','5','33%'],['Newcastle','NEW','5','31%']]
+      .map((r, i) => ({ rank: i + 1, name: r[0], tag: '', team: '', colorTeam: r[1], mid: r[2], value: r[3] })),
+  },
+  repl: {
+    title: 'REPLACEMENTS FOR PALMER', subtitle: 'GW7-11, same budget, GoalIQ match model',
+    midLabel: 'PRICE', valueLabel: '5GW xP', fileName: 'x.png',
+    hero: { label: 'REPLACING', row: { name: 'Palmer', tag: 'MID', team: 'CHE', mid: '9.7', value: '19.4', sub: '75% to play GW7 in FPL' } },
+    rows: [
+      { rank: 1, name: 'Saka', tag: 'MID', team: 'ARS', mid: '9.6', value: '26.9', sub: 'best fixtures of the three', delta: '+7.5 vs Palmer', deltaUp: true },
+      { rank: 2, name: 'Rogers', tag: 'MID', team: 'CHE', mid: '7.9', value: '22.1', sub: 'frees £1.8m', delta: '+2.7 vs Palmer', deltaUp: true },
+      { rank: 3, name: 'Gibbs-White', tag: 'MID', team: 'NFO', mid: '8.0', value: '22.8', sub: 'on pens', badges: ['P'], delta: '+3.4 vs Palmer', deltaUp: true },
+    ],
+  },
+};
+
+window.renderAll = async () => {
+  await document.fonts.ready;
+  const out = {};
+  for (const [k, spec] of Object.entries(SPECS)) {
+    const blob = await renderCard(spec);
+    out[k] = await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+  }
+  return out;
+};
+window.__ready = true;
+</script>
+</body>
+</html>

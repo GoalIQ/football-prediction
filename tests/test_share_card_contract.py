@@ -51,12 +51,17 @@ def test_tyhja_tagi_ei_piirra_kehysta():
     """`tag: ''` strokasi 16x30 px:n tyhjan laatikon JOKA riville.
 
     Osui Standingsiin (tag aina tyhja) ja Season raceen (tag vain osalla
-    riveista -> repaleinen sekoitus laatikoita ja tyhjaa)."""
+    riveista -> repaleinen sekoitus laatikoita ja tyhjaa).
+
+    12.10.2026 (jakokortin uusi ulkoasu): tagit ovat nimen alla metarivin
+    tekstia ilman kehysta. Tyhja kentta putoaa suodattimessa pois, joten tyhja
+    tagi ei voi piirtaa mitaan, eika listakortissa ole enaa kehyksia lainkaan."""
     s = _src(ENGINE)
-    i = s.index("const pw = ctx.measureText(r.tag).width + 16;")
-    edelta = s[max(0, i - 400):i]
-    assert "if (r.tag) {" in edelta, (
-        "tagilaatikko piirretaan ilman tyhjatarkistusta")
+    body = s[s.index("export async function renderCard("):
+             s.index("/* ---------- #9a jatko (31.7): pitch-jakokortti")]
+    assert "[r.tag, r.team, r.tag2].filter(Boolean)" in body, (
+        "metarivi ei suodata tyhjia tageja")
+    assert "strokeRect" not in body, "listakortti piirtaa taas kehyksia"
 
 
 def test_alatunnisteen_molemmat_rivit_ovat_ylikirjoitettavissa():

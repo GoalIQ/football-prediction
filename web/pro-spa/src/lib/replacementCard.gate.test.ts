@@ -152,7 +152,8 @@ describe('kutsupaikat', () => {
 		// luettiin FPL:n prosentiksi.
 		const src = lue('./shareCard.ts');
 		expect(src).toMatch(/valueBarFractions\(spec\.rows\.map\(\(r\) => r\.value\)\)/);
-		expect(src).toMatch(/drawRow\(hero\.row, ROW_TOP, heroH, \{ first: false, isHero: true, frac: null \}\)/);
+		// 12.10 uusi ulkoasu: y-paikka on laskettu (heroTop), saanto on frac: null.
+		expect(src).toMatch(/drawRow\(hero\.row, \w+, heroH, \{ first: false, isHero: true, frac: null\b/);
 		expect(src).not.toMatch(/hero\.row\.value\]/);
 	});
 	it('kortinpiirtaja ei piirra keksittya seuravaria', () => {
