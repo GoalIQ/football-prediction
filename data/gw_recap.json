@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-10-13T13:24:32+00:00",
+  "generated_at": "2026-10-13T19:00:21+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -9,18 +9,19 @@
   "complete": true
  },
  "running": {
-  "gameweeks": 4,
+  "gameweeks": 5,
   "basis": "model points before its own transfer hits, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
   "gw_list": [
    1,
    2,
    3,
-   5
+   5,
+   6
   ],
-  "total_diff": -14,
-  "avg_diff": -3.5,
+  "total_diff": -15,
+  "avg_diff": -3.0,
   "beat_average": 1,
-  "below_average": 3,
+  "below_average": 4,
   "per_gw": [
    {
     "gw": 1,
@@ -53,6 +54,14 @@
     "transfer_cost": 0,
     "average": 48,
     "diff": -5
+   },
+   {
+    "gw": 6,
+    "points": 57,
+    "points_net": 57,
+    "transfer_cost": 0,
+    "average": 58,
+    "diff": -1
    }
   ]
  },
@@ -343,6 +352,91 @@
     "mae": 1.616,
     "n": 482,
     "bias": 0.004
+   },
+   "headline_miss": null
+  },
+  {
+   "gw": 6,
+   "provisional": false,
+   "squad": {
+    "points": 57,
+    "points_net": 57,
+    "average": 58,
+    "diff": -1,
+    "bench_points": 7,
+    "transfer_cost": 0,
+    "chip": null,
+    "captain_id": 426,
+    "captain_points_added": 1,
+    "graded_at": "2026-10-13T19:00:20Z",
+    "transfer_cost_verified": true
+   },
+   "calls": {
+    "logged_at": "2026-10-09T15:12:20Z",
+    "deadline_utc": "2026-10-10T10:00:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": false,
+    "hits": 2,
+    "misses": 2,
+    "ungraded": 1,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "captain return, points doubled",
+      "predicted": 6.76,
+      "points": 1,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "B.Fernandes",
+      "team_short": "MUN",
+      "criterion": "10+ pts",
+      "predicted": 0.212,
+      "points": 1,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Mbeumo",
+      "team_short": "MUN",
+      "criterion": "reached p90",
+      "predicted": 12,
+      "points": 8,
+      "started": true,
+      "met": false
+     },
+     {
+      "call": "safest",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "3+ pts",
+      "predicted": 0.836,
+      "points": 6,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "gamble",
+      "web_name": "João Pedro",
+      "team_short": "CHE",
+      "criterion": "10+ pts",
+      "predicted": 0.09,
+      "points": 12,
+      "started": true,
+      "met": true
+     }
+    ]
+   },
+   "accuracy": {
+    "mae": 1.612,
+    "n": 483,
+    "bias": -0.105
    },
    "headline_miss": null
   }
