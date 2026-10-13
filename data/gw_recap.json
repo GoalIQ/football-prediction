@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-10-13T19:00:21+00:00",
+  "generated_at": "2026-10-13T20:35:19+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -464,19 +464,20 @@
  "entry_series": {
   "entry_id": 116920,
   "running": {
-   "gameweeks": 5,
+   "gameweeks": 6,
    "basis": "FPL entry points before transfer hits, chips included, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
    "gw_list": [
     1,
     2,
     3,
     4,
-    5
+    5,
+    6
    ],
-   "total_diff": 26,
-   "avg_diff": 5.2,
+   "total_diff": 25,
+   "avg_diff": 4.2,
    "beat_average": 2,
-   "below_average": 3,
+   "below_average": 4,
    "per_gw": [
     {
      "gw": 1,
@@ -517,6 +518,14 @@
      "transfer_cost": 0,
      "average": 48,
      "diff": -8
+    },
+    {
+     "gw": 6,
+     "points": 57,
+     "points_net": 57,
+     "transfer_cost": 0,
+     "average": 58,
+     "diff": -1
     }
    ]
   },
@@ -568,7 +577,7 @@
    },
    {
     "gw": 6,
-    "provisional": true,
+    "provisional": false,
     "points": 57,
     "points_net": 57,
     "average": 58,
