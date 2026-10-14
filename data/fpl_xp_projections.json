@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-14T15:55:20+00:00",
+    "generated_at": "2026-10-14T19:07:02+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -1173,7 +1173,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 52.3,
+      "owned_pct": 52.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2104,7 +2104,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 31.9,
+      "owned_pct": 32.0,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3036,7 +3036,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 13.7,
+      "owned_pct": 13.8,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -8023,7 +8023,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 45.0,
+      "owned_pct": 45.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -8641,7 +8641,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 69.7,
+      "owned_pct": 69.8,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -10502,7 +10502,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 9.2,
+      "owned_pct": 9.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -19168,7 +19168,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 27.8,
+      "owned_pct": 27.7,
       "status": "d",
       "news": "Hamstring injury - 75% chance of playing",
       "chance_next": 75,
@@ -27131,7 +27131,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "limited_history",
-      "owned_pct": 8.3,
+      "owned_pct": 8.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -37751,6 +37751,148 @@
       "last_season_reason": "short_season"
     },
     {
+      "id": 618,
+      "web_name": "Goretzka",
+      "full_name": "Leon Goretzka",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "MID",
+      "xmins": 33.5,
+      "predicted_starts": 38.0,
+      "minutes_confidence": "low",
+      "minutes_source": "price_prior",
+      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
+      "data_basis": "no_history",
+      "owned_pct": 0.0,
+      "status": "a",
+      "news": "",
+      "chance_next": 100,
+      "yellows": 0,
+      "price": 5.9,
+      "team_code": 7,
+      "last_season": null,
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 0,
+        "xgi": 0.0,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 7,
+        "n": 2000,
+        "mean": 1.55,
+        "p_haul": 0.008,
+        "p_blank": 0.811,
+        "p10": 0,
+        "median": 1,
+        "p90": 4,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.38,
+      "p_cameo": 0.217,
+      "p_bench": 0.403,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.12,
+      "xp_per_gw": 1.61,
+      "xp_per_90": 3.92,
+      "xp_horizon_total": 9.65,
+      "gameweeks": [
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.57,
+          "xmins": 33.5
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.48,
+          "xmins": 33.5
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.75,
+          "xmins": 33.5
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.45,
+          "xmins": 33.5
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.69,
+          "xmins": 33.5
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.71,
+          "xmins": 33.5
+        }
+      ],
+      "minutes_method": "promoted_price_prior",
+      "components": {
+        "appearance": 0.92,
+        "goals": 0.3,
+        "assists": 0.15,
+        "clean_sheet": 0.04,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.11,
+        "yellows": -0.07,
+        "bonus": 0.12
+      },
+      "components_gw": 7,
+      "team_flag": "high_turnover",
+      "last_season_show": false
+    },
+    {
       "id": 599,
       "web_name": "Cherif",
       "full_name": "Sidiki Cherif",
@@ -41910,148 +42052,6 @@
       "components_gw": 7,
       "last_season_show": true,
       "last_season_reason": "thin_sample"
-    },
-    {
-      "id": 618,
-      "web_name": "Goretzka",
-      "full_name": "Leon Goretzka",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "MID",
-      "xmins": 25.6,
-      "predicted_starts": 28.5,
-      "minutes_confidence": "low",
-      "minutes_source": "price_prior",
-      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
-      "data_basis": "no_history",
-      "owned_pct": 0.0,
-      "status": "d",
-      "news": "Knee injury - 75% chance of playing",
-      "chance_next": 75,
-      "yellows": 0,
-      "price": 5.9,
-      "team_code": 7,
-      "last_season": null,
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 0,
-        "xgi": 0.0,
-        "per90": {
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 7,
-        "n": 2000,
-        "mean": 1.18,
-        "p_haul": 0.005,
-        "p_blank": 0.853,
-        "p10": 0,
-        "median": 0,
-        "p90": 4,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.285,
-      "p_cameo": 0.1877,
-      "p_bench": 0.5273,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.09,
-      "xp_per_gw": 1.42,
-      "xp_per_90": 3.92,
-      "xp_horizon_total": 8.5,
-      "gameweeks": [
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "NEW",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.21,
-          "xmins": 25.6
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.18,
-          "xmins": 26.6
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.51,
-          "xmins": 28.8
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "MUN",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.38,
-          "xmins": 31.7
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "SUN",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.6,
-          "xmins": 31.7
-        },
-        {
-          "gw": 12,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.62,
-          "xmins": 31.7
-        }
-      ],
-      "minutes_method": "promoted_price_prior",
-      "components": {
-        "appearance": 0.71,
-        "goals": 0.23,
-        "assists": 0.11,
-        "clean_sheet": 0.03,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.08,
-        "yellows": -0.05,
-        "bonus": 0.09
-      },
-      "components_gw": 7,
-      "team_flag": "high_turnover",
-      "last_season_show": false
     },
     {
       "id": 81,
@@ -75095,7 +75095,7 @@
       "team_short": "LIV",
       "pos": "MID",
       "price": 7.1,
-      "owned_pct": 7.7,
+      "owned_pct": 7.6,
       "status": "i",
       "news": "Ankle injury - Unknown return date",
       "chance_next": 0,
@@ -75142,7 +75142,7 @@
       "team_short": "ARS",
       "pos": "MID",
       "price": 6.3,
-      "owned_pct": 6.5,
+      "owned_pct": 6.4,
       "status": "i",
       "news": "Hamstring injury - Expected back 1 Nov",
       "chance_next": 0,
@@ -75311,7 +75311,7 @@
       "team_short": "NEW",
       "pos": "MID",
       "price": 6.1,
-      "owned_pct": 3.1,
+      "owned_pct": 3.0,
       "status": "i",
       "news": "Unspecified injury - Unknown return date",
       "chance_next": 0,
@@ -77871,48 +77871,6 @@
       "excluded_reason": "unavailable",
       "last_season_show": true,
       "last_season_reason": "no_projection"
-    },
-    {
-      "id": 349,
-      "web_name": "Mateo Joseph",
-      "full_name": "Mateo Joseph Fernández-Regatillo",
-      "team": "Leeds",
-      "team_short": "LEE",
-      "pos": "FWD",
-      "price": 4.5,
-      "owned_pct": 0.1,
-      "status": "i",
-      "news": "Knee injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 2,
-        "team_name": "Leeds",
-        "minutes": 0,
-        "starts": 0,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.0,
-        "cs": 0,
-        "points": 0,
-        "per90": null
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": false
     },
     {
       "id": 285,
@@ -80855,6 +80813,48 @@
         "fk": null
       },
       "last_season": null,
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": false
+    },
+    {
+      "id": 349,
+      "web_name": "Mateo Joseph",
+      "full_name": "Mateo Joseph Fernández-Regatillo",
+      "team": "Leeds",
+      "team_short": "LEE",
+      "pos": "FWD",
+      "price": 4.5,
+      "owned_pct": 0.0,
+      "status": "i",
+      "news": "Knee injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 2,
+        "team_name": "Leeds",
+        "minutes": 0,
+        "starts": 0,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.0,
+        "cs": 0,
+        "points": 0,
+        "per90": null
+      },
       "form": {
         "value": 0.0,
         "gws": 2,
