@@ -9,7 +9,7 @@
       "historical_median_pct": 13.0,
       "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
       "note": "Descriptive, not predictive. The flag says a rating is built on weaker information; it does not say which way that moves the projection.",
-      "n_flagged_players": 181,
+      "n_flagged_players": 182,
       "teams": {
         "Arsenal": {
           "flag": null,
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-14T06:54:47+00:00",
+    "generated_at": "2026-10-14T08:15:11+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -162,7 +162,7 @@
       "player_basis_counts": {
         "pl_history": 275,
         "limited_history": 148,
-        "no_history": 62
+        "no_history": 63
       },
       "basis_threshold_minutes": 450.0,
       "prev_season_carry": 0.5,
@@ -193,8 +193,8 @@
     ],
     "horizon_gw": 6,
     "min_xp_total": 1.0,
-    "n_players": 485,
-    "n_excluded": 182,
+    "n_players": 486,
+    "n_excluded": 181,
     "last_season_block": {
       "hidden": 400,
       "short_season": 74,
@@ -5972,7 +5972,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 4.5,
+      "owned_pct": 4.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -18394,7 +18394,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 6.9,
+      "owned_pct": 6.8,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -41731,6 +41731,148 @@
       "last_season_reason": "thin_sample"
     },
     {
+      "id": 618,
+      "web_name": "Goretzka",
+      "full_name": "Leon Goretzka",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "MID",
+      "xmins": 25.6,
+      "predicted_starts": 28.5,
+      "minutes_confidence": "low",
+      "minutes_source": "price_prior",
+      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
+      "data_basis": "no_history",
+      "owned_pct": 0.0,
+      "status": "d",
+      "news": "Knee injury - 75% chance of playing",
+      "chance_next": 75,
+      "yellows": 0,
+      "price": 5.9,
+      "team_code": 7,
+      "last_season": null,
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 0,
+        "xgi": 0.0,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 7,
+        "n": 2000,
+        "mean": 1.18,
+        "p_haul": 0.005,
+        "p_blank": 0.853,
+        "p10": 0,
+        "median": 0,
+        "p90": 4,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.285,
+      "p_cameo": 0.1877,
+      "p_bench": 0.5273,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.09,
+      "xp_per_gw": 1.42,
+      "xp_per_90": 3.92,
+      "xp_horizon_total": 8.5,
+      "gameweeks": [
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.21,
+          "xmins": 25.6
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.18,
+          "xmins": 26.6
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.51,
+          "xmins": 28.8
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.38,
+          "xmins": 31.7
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.6,
+          "xmins": 31.7
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.62,
+          "xmins": 31.7
+        }
+      ],
+      "minutes_method": "promoted_price_prior",
+      "components": {
+        "appearance": 0.71,
+        "goals": 0.23,
+        "assists": 0.11,
+        "clean_sheet": 0.03,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.08,
+        "yellows": -0.05,
+        "bonus": 0.09
+      },
+      "components_gw": 7,
+      "team_flag": "high_turnover",
+      "last_season_show": false
+    },
+    {
       "id": 157,
       "web_name": "Estêvão",
       "full_name": "Estêvão Almeida de Oliveira Gonçalves",
@@ -47505,148 +47647,6 @@
       "last_season_show": false
     },
     {
-      "id": 582,
-      "web_name": "Madjo",
-      "full_name": "Brian Madjo",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "FWD",
-      "xmins": 14.7,
-      "predicted_starts": 12.0,
-      "minutes_confidence": "low",
-      "minutes_source": "price_prior",
-      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
-      "data_basis": "no_history",
-      "owned_pct": 0.2,
-      "status": "d",
-      "news": "Unspecified injury - 75% chance of playing",
-      "chance_next": 75,
-      "yellows": 0,
-      "price": 5.4,
-      "team_code": 7,
-      "last_season": null,
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 0,
-        "xgi": 0.0,
-        "per90": {
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 7,
-        "n": 2000,
-        "mean": 0.96,
-        "p_haul": 0.009,
-        "p_blank": 0.899,
-        "p10": 0,
-        "median": 0,
-        "p90": 3,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.12,
-      "p_cameo": 0.297,
-      "p_bench": 0.583,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.1,
-      "xp_per_gw": 1.06,
-      "xp_per_90": 4.5,
-      "xp_horizon_total": 6.37,
-      "gameweeks": [
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "NEW",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.92,
-          "xmins": 14.7
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.87,
-          "xmins": 15.3
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.12,
-          "xmins": 16.6
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "MUN",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.03,
-          "xmins": 18.2
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "SUN",
-              "venue": "H"
-            }
-          ],
-          "xp": 1.2,
-          "xmins": 18.2
-        },
-        {
-          "gw": 12,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "A"
-            }
-          ],
-          "xp": 1.23,
-          "xmins": 18.2
-        }
-      ],
-      "minutes_method": "promoted_price_prior",
-      "components": {
-        "appearance": 0.52,
-        "goals": 0.3,
-        "assists": 0.03,
-        "clean_sheet": 0.0,
-        "conceded": 0.0,
-        "saves": 0.0,
-        "defensive_contribution": 0.0,
-        "yellows": -0.03,
-        "bonus": 0.1
-      },
-      "components_gw": 7,
-      "team_flag": "high_turnover",
-      "last_season_show": false
-    },
-    {
       "id": 160,
       "web_name": "Garnacho",
       "full_name": "Alejandro Garnacho Ferreyra",
@@ -48739,6 +48739,148 @@
         "bonus": 0.05
       },
       "components_gw": 7,
+      "last_season_show": false
+    },
+    {
+      "id": 582,
+      "web_name": "Madjo",
+      "full_name": "Brian Madjo",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "FWD",
+      "xmins": 10.0,
+      "predicted_starts": 8.0,
+      "minutes_confidence": "low",
+      "minutes_source": "price_prior",
+      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
+      "data_basis": "no_history",
+      "owned_pct": 0.2,
+      "status": "d",
+      "news": "Unspecified injury - 50% chance of playing",
+      "chance_next": 50,
+      "yellows": 0,
+      "price": 5.4,
+      "team_code": 7,
+      "last_season": null,
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 0,
+        "xgi": 0.0,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 7,
+        "n": 2000,
+        "mean": 0.65,
+        "p_haul": 0.003,
+        "p_blank": 0.932,
+        "p10": 0,
+        "median": 0,
+        "p90": 2,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.08,
+      "p_cameo": 0.207,
+      "p_bench": 0.713,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.07,
+      "xp_per_gw": 1.01,
+      "xp_per_90": 4.5,
+      "xp_horizon_total": 6.08,
+      "gameweeks": [
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.63,
+          "xmins": 10.0
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "MCI",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.87,
+          "xmins": 15.3
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.12,
+          "xmins": 16.6
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.03,
+          "xmins": 18.2
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "SUN",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.2,
+          "xmins": 18.2
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.23,
+          "xmins": 18.2
+        }
+      ],
+      "minutes_method": "promoted_price_prior",
+      "components": {
+        "appearance": 0.36,
+        "goals": 0.2,
+        "assists": 0.02,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": -0.02,
+        "bonus": 0.07
+      },
+      "components_gw": 7,
+      "team_flag": "high_turnover",
       "last_season_show": false
     },
     {
@@ -61890,7 +62032,7 @@
       "minutes_source": "price_prior",
       "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
       "data_basis": "no_history",
-      "owned_pct": 0.3,
+      "owned_pct": 0.2,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -79695,34 +79837,6 @@
       "excluded_reason": "unavailable",
       "last_season_show": true,
       "last_season_reason": "no_projection"
-    },
-    {
-      "id": 618,
-      "web_name": "Goretzka",
-      "full_name": "Leon Goretzka",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "MID",
-      "price": 5.9,
-      "owned_pct": 0.0,
-      "status": "i",
-      "news": "Knee injury - Expected back 17 Oct",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": null,
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": false
     },
     {
       "id": 297,
