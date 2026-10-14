@@ -1,17 +1,17 @@
 {
   "margin_pp": 16,
-  "decisive_below_n": 166,
+  "decisive_below_n": 167,
   "decisive_below_won": 88,
   "decisive_below_pct": 53,
-  "decisive_above_n": 323,
-  "decisive_above_won": 246,
+  "decisive_above_n": 324,
+  "decisive_above_won": 247,
   "decisive_above_pct": 76,
   "method": "|p_home - p_away| in 8 pp buckets over graded rows; margin = lowest bucket edge above which every bucket with n >= 25 has named-winner hit rate >= 60 % among decisive (non-draw) matches. Floor 4 pp, cap 40 pp.",
-  "n_graded": 667,
-  "n_graded_all": 723,
-  "n_below_margin": 237,
-  "hit_pct_below_margin": 37.1,
-  "measured_at": "2026-10-14T17:04:05+00:00",
+  "n_graded": 669,
+  "n_graded_all": 725,
+  "n_below_margin": 238,
+  "hit_pct_below_margin": 37.0,
+  "measured_at": "2026-10-14T18:55:08+00:00",
   "buckets": [
     {
       "gap_from_pp": 0,
@@ -28,12 +28,12 @@
       "gap_from_pp": 8,
       "gap_to_pp": 16,
       "open_ended": false,
-      "n": 120,
-      "hit_pct": 36.7,
-      "draw_pct": 34.2,
-      "decisive_n": 79,
+      "n": 121,
+      "hit_pct": 36.4,
+      "draw_pct": 33.9,
+      "decisive_n": 80,
       "decisive_won": 44,
-      "decisive_hit_pct": 55.7
+      "decisive_hit_pct": 55.0
     },
     {
       "gap_from_pp": 16,
@@ -61,12 +61,12 @@
       "gap_from_pp": 32,
       "gap_to_pp": 40,
       "open_ended": false,
-      "n": 66,
-      "hit_pct": 50.0,
-      "draw_pct": 30.3,
-      "decisive_n": 46,
-      "decisive_won": 33,
-      "decisive_hit_pct": 71.7
+      "n": 67,
+      "hit_pct": 50.7,
+      "draw_pct": 29.9,
+      "decisive_n": 47,
+      "decisive_won": 34,
+      "decisive_hit_pct": 72.3
     },
     {
       "gap_from_pp": 40,
