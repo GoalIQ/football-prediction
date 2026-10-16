@@ -314,3 +314,12 @@ outputs/gw_digest/
 # gitignored-fix-silent-regression). Rakennus:
 # scripts/measure_preseason_minutes_bias.py
 !/data/preseason_minutes_bias.json
+# 16.10.2026: aallonharjan FPL-skeemavahdin tilannekuva (vertailukohta viikosta toiseen;
+# ilman tata vahti olisi raportoinut joka ajossa "ensimmainen tilannekuva").
+!/data/fpl_schema_snapshot.json
+# 16.10.2026: Bluesky-botti (scripts/bsky_bot.py): kohteet, estolista, tila, postausloki, tulokset.
+!/data/bsky_targets.json
+!/data/bsky_blocklist.json
+!/data/bsky_state.json
+!/data/bsky_posted.jsonl
+!/data/bsky_performance.json

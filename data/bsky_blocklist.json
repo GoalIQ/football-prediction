@@ -1,0 +1,11 @@
+{
+  "_miksi": "Bluesky-tilit joille botti EI vastaa (16.10.2026). Sama linja kuin data/reply_blocklist.json (X, C2 22.9): kilpaileva FPL-tuote tai sen kanssa sponsoroitu/kumppanuudessa oleva tili. Lisaksi automaattiset tilit. Tilin avaaminen on Villen paatos: poista rivi ja kirjaa syy commit-viestiin.",
+  "accounts": [
+    {"handle": "ffscoutfpl.bsky.social", "why": "Fantasy Football Scout, kilpaileva tuote"},
+    {"handle": "fplreview.com", "why": "FPL Review, kilpaileva tuote"},
+    {"handle": "fplsalah.bsky.social", "why": "FFH:n kirjoittaja (bio @FFH_HQ), harmaa = ei"},
+    {"handle": "fpltoni.bsky.social", "why": "FFH-ambassadori (bio), harmaa = ei"},
+    {"handle": "fplalerts.com", "why": "automaattinen tili"},
+    {"handle": "officialfpl.bsky.social", "why": "epavirallinen automaattinen uudelleenjakotili"}
+  ]
+}

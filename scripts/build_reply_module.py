@@ -92,7 +92,7 @@ def _src(file_label: str, path: Path | None, generated_at, stamp_name: str | Non
     return d
 
 
-def build(gw_arg: int | None, dry_run: bool, out_dir: Path | None = None) -> int:
+def build(gw_arg: int | None, dry_run: bool, out_dir: Path | None = None, strict: bool = True) -> int:
     from scripts.publish_gate import load_blocklist
     from src.models.fpl_gameweek import actionable_gameweek
     from src.models.fpl_xp import attach_horizon_total_actionable, load_xp_actionable
@@ -222,11 +222,18 @@ def build(gw_arg: int | None, dry_run: bool, out_dir: Path | None = None) -> int
     # fpl_entry-luvut luetaan samasta API-vastauksesta jonka FPL:n entry-sivu
     # renderoi; reitin nimi kertoo sen.
     print(f"      varmennettu julkista pintaa vasten: {ok}, ilman ilmaisreittia: {none}")
-    if bad:
+    if bad and strict:
         print(f"VIRHE: {len(bad)} lukua eroaa julkiselta pinnalta. Moduulia EI kirjoiteta.")
         for b in bad[:30]:
             print(f"   {b}")
         return 1
+    if bad:
+        # 16.10 (Bluesky-botti): lempea tila pudottaa VAIN eroavat luvut. resolve_routes on jo
+        # asettanut niille public_url = None, joten load_reply_module ei anna niita julkiseen
+        # tekstiin. X-kasityon tiukka tila (oletus) hylkaa yha koko moduulin.
+        print(f"      huom: {len(bad)} lukua eroaa julkiselta pinnalta, pudotettu (strict=False)")
+        for b in bad[:10]:
+            print(f"   {b}")
 
     named = {}
     by_id = {int(e["id"]): e for e in boot.get("elements") or []}
@@ -258,7 +265,7 @@ def build(gw_arg: int | None, dry_run: bool, out_dir: Path | None = None) -> int
         },
         "sources": sources,
         "surfaces": surf_meta,
-        "counts": {"verified": ok, "no_free_route": none},
+        "counts": {"verified": ok, "no_free_route": none, "dropped_mismatch": len(bad)},
         "named_players": named,
         "sections": sections,
         "build_started_at": started,

@@ -196,6 +196,7 @@ def resolve_routes(sections: dict, pages: dict, gw: int, verified_at: str,
         url, err, route = verify_value(v, pages, gw, field, ctx)
         if err:
             bad.append(f"{key}: {err}")
+            url = None  # ristiriitainen luku ei saa reittia (lempea tila nojaa tahan)
         src = sources.get(v.get("src")) or {}
         v["source"] = f"{src.get('file')}@{src.get('commit')}"
         v["generated_at"] = src.get("generated_at")
