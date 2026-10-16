@@ -1402,6 +1402,8 @@ def main(argv: list[str] | None = None) -> int:
         # Otsikkokierroksen minuutit (rivin xmins, e_bonus). Horisontin
         # kierrokset: round_minutes silmukassa.
         xmins = mm["xmins"]
+        if headline_gw in xp.loan_ineligible_gws(e):
+            xmins = 0.0
 
         # MAALIUHKAN OHITUS. Tämä on ainoa paikka jossa "seura tekee vähemmän
         # maaleja" voidaan sanoa: `attack_delta` ei yllä tänne lainkaan, koska
@@ -1450,8 +1452,11 @@ def main(argv: list[str] | None = None) -> int:
         dist_samples = None
         dist_rng = np.random.default_rng(1_000_003 * int(pid) + int(headline_gw))
         conditional_ov = bool((override_applied.get(pid) or {}).get("until_available"))
+        # Lainaeste (FPL scout_risks): xP ja minuutit nollaksi estokierroksella.
+        loan_gws = xp.loan_ineligible_gws(e)
         for g in horizon:
-            ctxs = ctx_by_gw.get(g, {}).get(fid, [])
+            all_ctxs = ctx_by_gw.get(g, {}).get(fid, [])
+            ctxs = xp.playable_contexts(all_ctxs, g, loan_gws)
             opps = opp_by_gw.get(g, {}).get(fid, [])
             # XP-DOUBT-HORISONTTI (23.9): FPL:n prosentti koskee vain
             # otsikkokierrosta, myohemmille mitattu palautuminen.

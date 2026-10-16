@@ -986,6 +986,27 @@ def congestion_multiplier(n_fixtures_in_gw: int, xmins: float) -> float:
     return 1.0
 
 
+def loan_ineligible_gws(element: dict) -> set[int]:
+    """Kierrokset, joilla FPL ilmoittaa lainasopimusesteen (`scout_risks`,
+    property `loan_ineligible`). Lainapelaaja ei voi pelata emoseuraansa vastaan.
+    Puuttuva tai virheellinen kenttä = tyhjä joukko (ennen 26/27 kenttää ei ole)."""
+    out: set[int] = set()
+    for risk in element.get("scout_risks") or []:
+        if not isinstance(risk, dict) or risk.get("property") != "loan_ineligible":
+            continue
+        try:
+            out.add(int(risk.get("gameweek")))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def playable_contexts(ctxs: list, gw: int, loan_gws: set[int]) -> list:
+    """Kierroksen ottelukontekstit, joissa pelaaja voi pelata: lainaesteen
+    kierroksella ei yhtään (xP ja minuutit nollaksi)."""
+    return [] if gw in loan_gws else ctxs
+
+
 # ---------------------------------------------------------------------------
 # xP yhdelle fixturelle
 # ---------------------------------------------------------------------------
