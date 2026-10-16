@@ -140,6 +140,10 @@ def test_actionable_reader_drops_past_gameweeks_and_says_so(tmp_path,
 XP_ARTIFACT = "fpl_xp_projections.json"
 
 PATH_ALLOWED = {
+    "scripts/bsky_bot.py":
+        "Ei rajaa kierroksia, koska ei lue yhtaan kierrosta: lukee VAIN meta.deadline_utc:n paattaakseen ajetaanko Bluesky-botin aivot (aikataulu, ei "
+        "xP-lukua). Julkaistavat luvut tulevat reply-moduulin lukijasta (load_reply_module), ja "
+        "paatosaskel ajetaan ennen riippuvuuksien asennusta, joten raskas lukija ei kelpaa.",
     "src/models/fpl_xp.py":
         "Lukija itse: `load_xp` ja `load_xp_actionable` avaavat tiedoston, "
         "joten polkuluku on tassa valttamaton.",

@@ -48,6 +48,8 @@ EXCLUDED_DIRS = (
     # 27.9.2026: Cloudflare-workerin lahde (fp-cron-relay, siirretty
     # goaliq-appista). Deployataan wranglerilla, ei sivustona.
     "cf-worker/",
+    # 16.10.2026: Claude-agenttien maaritykset (bsky-tarkistaja). Ohje agentille, ei sivustoa.
+    ".claude/",
 )
 # Tiedostopaatteet jotka eivat koskaan paady sivustolle.
 EXCLUDED_SUFFIXES = (

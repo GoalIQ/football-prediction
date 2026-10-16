@@ -116,7 +116,7 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
     for tell in STYLE_TELLS:
         if tell in low:
             probs.append(f"tyylikielto: {tell.strip()!r}")
-    if re.search(r"(?:is|are|was)n't [^.,;]{1,40}, (?:it|they|he|she)(?:'s| is| are)", low):
+    if re.search(r"\b(?:is|are|was)n't [^.,;]{1,40}, (?:it|they|he|she)(?:'s| is| are)\b", low):
         probs.append("tyylikielto: negatiivinen parallelismi (ei X, vaan Y)")
     if text.count("!") > 1:
         probs.append("yli yksi huutomerkki")
