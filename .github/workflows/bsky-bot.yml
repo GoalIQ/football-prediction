@@ -42,9 +42,12 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      # 16.10 ensimmainen ajo: "No module named 'requests'" -> paatos tarvitsee botin importit.
       - name: Ajetaanko aivot
         id: paata
-        run: python -m scripts.bsky_bot should-think ${{ github.event.inputs.think == 'kylla' && '--force' || '' }}
+        run: |
+          python -m pip install --quiet requests
+          python -m scripts.bsky_bot should-think ${{ github.event.inputs.think == 'kylla' && '--force' || '' }}
 
       - name: Riippuvuudet
         if: steps.paata.outputs.think == 'true'
