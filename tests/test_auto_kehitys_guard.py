@@ -44,7 +44,11 @@ def test_kehitys_sallii_tuotekoodin(polku):
     "tests/test_auto_kehitys_guard.py", "tests/test_auto_kehitys_workflow.py", "README.md",
 ])
 def test_kehitys_hylkaa_kielletyn(polku):
-    assert guard.tarkista_polut("kehitys", [polku]), polku
+    virheet = guard.tarkista_polut("kehitys", [polku])
+    assert virheet, polku
+    # Eksplisiittinen kielto, ei vain "ei sallituissa": kielto ei saa kadota, jos sallittuja laajennetaan.
+    if polku not in ("README.md", "docs/BENCHMARK.md"):
+        assert "kielletty" in virheet[0], virheet
 
 
 def test_aallonharja_sallii_vain_benchmarkin():
