@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-10-16T02:26:11",
+  "generated_at": "2026-10-16T04:00:32",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -35,8 +35,8 @@
  },
  "model_squad": {
   "budget": 100.0,
-  "cost": 91.7,
-  "xi_xp_horizon": 325.1,
+  "cost": 86.3,
+  "xi_xp_horizon": 317.9,
   "optimal_proven": false,
   "note": "Strongest squad the model found (greedy search with local swaps), not a proven optimum. RSL rules: 100.0 budget, 2 GK / 5 DEF / 5 MID / 3 FWD, max 3 per club.",
   "players": [
@@ -51,13 +51,13 @@
     "in_xi": true
    },
    {
-    "id": 326,
-    "web_name": "M. Alghanem",
-    "team_short": "KLJ",
+    "id": 557,
+    "web_name": "Y. Al Ruwaili",
+    "team_short": "HAZ",
     "pos": "GKP",
     "price": 3.9,
-    "xp_per_gw": 0.98,
-    "xp_horizon_total": 5.9,
+    "xp_per_gw": 1.03,
+    "xp_horizon_total": 6.17,
     "in_xi": false
    },
    {
@@ -101,24 +101,14 @@
     "in_xi": false
    },
    {
-    "id": 22,
-    "web_name": "Girotto",
-    "team_short": "FSL",
-    "pos": "DEF",
-    "price": 4.6,
-    "xp_per_gw": 3.52,
-    "xp_horizon_total": 21.14,
-    "in_xi": false
-   },
-   {
-    "id": 470,
-    "web_name": "Quinones",
+    "id": 466,
+    "web_name": "Álvarez",
     "team_short": "QAD",
-    "pos": "MID",
-    "price": 11.9,
-    "xp_per_gw": 5.6,
-    "xp_horizon_total": 33.59,
-    "in_xi": true
+    "pos": "DEF",
+    "price": 5.0,
+    "xp_per_gw": 3.6,
+    "xp_horizon_total": 21.59,
+    "in_xi": false
    },
    {
     "id": 142,
@@ -161,6 +151,16 @@
     "in_xi": true
    },
    {
+    "id": 682,
+    "web_name": "Vada",
+    "team_short": "NEO",
+    "pos": "MID",
+    "price": 6.0,
+    "xp_per_gw": 4.41,
+    "xp_horizon_total": 26.44,
+    "in_xi": true
+   },
+   {
     "id": 294,
     "web_name": "King",
     "team_short": "KLJ",
@@ -175,7 +175,7 @@
     "web_name": "Lacazette",
     "team_short": "NEO",
     "pos": "FWD",
-    "price": 7.3,
+    "price": 7.4,
     "xp_per_gw": 5.31,
     "xp_horizon_total": 31.88,
     "in_xi": true
@@ -398,7 +398,7 @@
    "team": "Al Qadsiah",
    "team_short": "QAD",
    "pos": "MID",
-   "price": 11.9,
+   "price": 12.0,
    "owned_pct": 38.2,
    "status": "a",
    "news": "",
@@ -596,7 +596,7 @@
    "team": "Neom SC",
    "team_short": "NEO",
    "pos": "FWD",
-   "price": 7.3,
+   "price": 7.4,
    "owned_pct": 28.9,
    "status": "a",
    "news": "",
@@ -7591,7 +7591,7 @@
    "team": "Al Diriyah",
    "team_short": "DIR",
    "pos": "DEF",
-   "price": 5.0,
+   "price": 5.1,
    "owned_pct": 4.2,
    "status": "a",
    "news": "",
@@ -9261,7 +9261,7 @@
    "team": "Al Ettifaq",
    "team_short": "ETT",
    "pos": "DEF",
-   "price": 4.6,
+   "price": 4.7,
    "owned_pct": 9.6,
    "status": "a",
    "news": "",
@@ -10173,97 +10173,6 @@
    ]
   },
   {
-   "id": 7,
-   "web_name": "Al Daajani",
-   "full_name": "Nasser Al Daajani",
-   "team": "Abha",
-   "team_short": "ABH",
-   "pos": "MID",
-   "price": 4.4,
-   "owned_pct": 0.4,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 39.6,
-   "predicted_starts": 41.0,
-   "minutes_confidence": "low",
-   "p_start": 0.4102,
-   "p_cameo": 0.2182,
-   "p_bench": 0.3717,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 2.3,
-   "xp_per_90": 5.19,
-   "xp_horizon_total": 13.77,
-   "gameweeks": [
-    {
-     "gw": 9,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.75
-    },
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.15
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "NEO",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.89
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "FSL",
-       "venue": "H"
-      },
-      {
-       "opp": "ITT",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.91
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.04
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.03
-    }
-   ]
-  },
-  {
    "id": 8,
    "web_name": "M. Al Hamsal",
    "full_name": "Mohammed Al Hamsal",
@@ -10363,6 +10272,109 @@
    "pos": "MID",
    "price": 4.4,
    "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 39.6,
+   "predicted_starts": 41.0,
+   "minutes_confidence": "low",
+   "p_start": 0.4102,
+   "p_cameo": 0.2182,
+   "p_bench": 0.3717,
+   "data_basis": "no_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.19,
+     "assists": 0.2
+    }
+   },
+   "xp_per_gw": 2.3,
+   "xp_per_90": 5.19,
+   "xp_horizon_total": 13.77,
+   "gameweeks": [
+    {
+     "gw": 9,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.75
+    },
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.15
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "NEO",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.89
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "FSL",
+       "venue": "H"
+      },
+      {
+       "opp": "ITT",
+       "venue": "H"
+      }
+     ],
+     "xp": 3.91
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.04
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.03
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "web_name": "B. Al Mutairi",
+   "full_name": "Bader Al Mutairi",
+   "team": "Abha",
+   "team_short": "ABH",
+   "pos": "MID",
+   "price": 4.4,
+   "owned_pct": 0.0,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -13207,7 +13219,7 @@
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "FWD",
-   "price": 4.0,
+   "price": 3.9,
    "owned_pct": 3.8,
    "status": "a",
    "news": "",
@@ -14887,13 +14899,13 @@
    ]
   },
   {
-   "id": 46,
-   "web_name": "Nassief",
-   "full_name": "Abdulelah Nassief",
+   "id": 34,
+   "web_name": "Al Hassawi",
+   "full_name": "Mohammed Al Hassawi",
    "team": "Al Faisaly",
    "team_short": "FSL",
    "pos": "GKP",
-   "price": 4.0,
+   "price": 3.9,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",
@@ -15368,7 +15380,7 @@
    "team": "Al Kholood",
    "team_short": "KLD",
    "pos": "MID",
-   "price": 5.2,
+   "price": 5.3,
    "owned_pct": 8.2,
    "status": "a",
    "news": "",
@@ -19174,14 +19186,14 @@
    ]
   },
   {
-   "id": 11,
-   "web_name": "B. Al Mutairi",
-   "full_name": "Bader Al Mutairi",
+   "id": 7,
+   "web_name": "Al Daajani",
+   "full_name": "Nasser Al Daajani",
    "team": "Abha",
    "team_short": "ABH",
    "pos": "MID",
-   "price": 4.4,
-   "owned_pct": 0.0,
+   "price": 4.3,
+   "owned_pct": 0.4,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -19193,19 +19205,7 @@
    "p_cameo": 0.2182,
    "p_bench": 0.5986,
    "data_basis": "no_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.19,
-     "assists": 0.2
-    }
-   },
+   "last_season": null,
    "xp_per_gw": 1.21,
    "xp_per_90": 5.19,
    "xp_horizon_total": 7.25,
@@ -21775,9 +21775,9 @@
    ]
   },
   {
-   "id": 34,
-   "web_name": "Al Hassawi",
-   "full_name": "Mohammed Al Hassawi",
+   "id": 46,
+   "web_name": "Nassief",
+   "full_name": "Abdulelah Nassief",
    "team": "Al Faisaly",
    "team_short": "FSL",
    "pos": "GKP",
@@ -22058,7 +22058,7 @@
    "team": "Al Ettifaq",
    "team_short": "ETT",
    "pos": "DEF",
-   "price": 3.9,
+   "price": 3.8,
    "owned_pct": 0.8,
    "status": "a",
    "news": "",
@@ -22355,7 +22355,7 @@
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "MID",
-   "price": 4.4,
+   "price": 4.3,
    "owned_pct": 0.0,
    "status": "a",
    "news": "",
@@ -24014,7 +24014,7 @@
    "team": "Al Ettifaq",
    "team_short": "ETT",
    "pos": "DEF",
-   "price": 3.9,
+   "price": 3.8,
    "owned_pct": 0.7,
    "status": "a",
    "news": "",
@@ -26279,7 +26279,7 @@
    "team": "Al Fayha",
    "team_short": "FYH",
    "pos": "MID",
-   "price": 4.5,
+   "price": 4.4,
    "owned_pct": 0.1,
    "status": "a",
    "news": "",

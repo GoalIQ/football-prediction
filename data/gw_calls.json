@@ -1019,6 +1019,116 @@
      }
     }
    }
+  },
+  {
+   "gw": 7,
+   "deadline_utc": "2026-10-17T10:00:00Z",
+   "logged_at": "2026-10-16T04:00:34Z",
+   "updated_at": "2026-10-16T04:00:34Z",
+   "source": {
+    "freeze_frozen_at": "2026-10-16T04:00:33Z",
+    "projection_generated_at": "2026-10-16T03:54:31+00:00"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "gw_xp",
+     "value": 7.99,
+     "frozen_value": 7.99,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.323,
+     "criterion": "10+ pts",
+     "gw_xp": 7.99,
+     "xp_dist": {
+      "p_haul": 0.323,
+      "p_blank": 0.039,
+      "p10": 3,
+      "median": 8,
+      "p90": 14,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 399,
+     "web_name": "Cherki",
+     "team_short": "MCI",
+     "pos": "MID",
+     "metric": "p90",
+     "value": 11,
+     "criterion": "reached p90",
+     "gw_xp": 5.53,
+     "xp_dist": {
+      "p_haul": 0.137,
+      "p_blank": 0.237,
+      "p10": 2,
+      "median": 5,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 12,
+     "web_name": "Saka",
+     "team_short": "ARS",
+     "pos": "MID",
+     "metric": "p_3plus",
+     "value": 0.816,
+     "criterion": "3+ pts",
+     "gw_xp": 5.35,
+     "xp_dist": {
+      "p_haul": 0.106,
+      "p_blank": 0.184,
+      "p10": 2,
+      "median": 4,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 249,
+     "web_name": "Barry",
+     "team_short": "EVE",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.098,
+     "criterion": "10+ pts",
+     "gw_xp": 4.34,
+     "xp_dist": {
+      "p_haul": 0.098,
+      "p_blank": 0.401,
+      "p10": 1,
+      "median": 3,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [],
+   "entry_actual": null,
+   "graded": null
   }
  ]
 }
