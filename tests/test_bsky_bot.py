@@ -241,3 +241,23 @@ def test_mentioihin_vastataan_vain_tunnistettuun_kysymykseen():
                           phrases=gate.rejected_phrases()) == [], o["text"]
     # toinen ajo: samaan ilmoitukseen ei vastata uudelleen
     assert bot.mention_items(ses, mod, vals, s) == []
+
+
+@pytest.mark.parametrize("teksti", [
+    "Haaland is a crucial pick at 8.0 this week.",
+    "Haaland is not just a captain, he's a lock at 8.0.",
+    "Best odds of the week: Haaland at 8.0.",
+    "Here's the thing: Haaland at 8.0.",
+    "Haaland at 8.0!! Huge!",
+])
+def test_tyylikiellot(teksti):
+    probs = chk(_post(teksti, ["captain_top5.haaland-mci.gw_xp"]))
+    assert any("tyyli" in p or "huutomerk" in p for p in probs), probs
+
+
+def test_lukukatto_vastaus_yksi_postaus_kaksi():
+    keys = ["captain_top5.haaland-mci.gw_xp", "cs_top.ars.cs_pct"]
+    assert any("liikaa lukuja" in p for p in chk(_reply("Haaland 8.0 and Arsenal 49% for GW7.", keys)))
+    assert chk(_post("Haaland 8.0 and Arsenal 49% for GW7.", keys)) == []
+    k3 = keys + ["captain_top5.haaland-mci.p_10plus"]
+    assert any("liikaa lukuja" in p for p in chk(_post("Haaland 8.0, 32% for 10+, Arsenal 49%.", k3)))
