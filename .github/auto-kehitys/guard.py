@@ -26,7 +26,7 @@ SALLITUT = {
     "kehitys": (
         "api/*", "src/*", "scripts/*", "tests/*",
         "web/pro-spa/src/*", "web/pro-spa/static/*", "web/pro-spa/scripts/*",
-        "fpl/*", "predictions/*", "*.html", "llms.txt", "sitemap*.xml",
+        "fpl/*", "predictions/*", "*.html", "llms.txt", "sitemap*.xml", "ref-bridge.js",
         "docs/AUTO-BACKLOG.md",
     ),
     "aallonharja": (
