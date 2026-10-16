@@ -105,6 +105,17 @@ def fetch_history_past(elements: list[dict]) -> dict[int, dict | None]:
     return out
 
 
+def clean_news(news: str | None) -> str:
+    """SPL:n uutiskenttä julkiseen artefaktiin: em/en dash -> '-'.
+
+    16.10.2026: SPL:n kaksikielinen uutinen ("Back Injury - Expected Return ... - <arabiaa> – ...")
+    toi en dashin data/spl_xp_projections.json:iin, ja copy-portti (check_copy_style,
+    test_public_json_copy) piti tests.yml:n punaisena 9.10. alkaen. Arabiankielinen teksti
+    on oikeaa dataa ja jää; vain viivamerkki vaihdetaan.
+    """
+    return (news or "").replace("–", "-").replace("—", "-")
+
+
 def price_tier_factor(rank_in_group: int, pos: int) -> float:
     """Hintajärjestyksen rooliprioritier klubi+positio-ryhmässä: position
     XI-slotit = tier 0 (0.47), 2 seuraavaa = tier 1 (0.21), loput 0.05 —
@@ -425,7 +436,7 @@ def main() -> int:
             "price": (e.get("now_cost") or 0) / 10.0,
             "owned_pct": float(e.get("selected_by_percent") or 0.0),
             "status": e.get("status", "a"),
-            "news": e.get("news") or "",
+            "news": clean_news(e.get("news")),
             "chance_next": e.get("chance_of_playing_next_round"),
             "yellows": int(acc["yc"]),
             "xmins": round(mm["xmins"], 1),
