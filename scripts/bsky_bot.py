@@ -439,11 +439,15 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> in
             rejected.append({"text": text, "why": probs, "source": it.get("source", "rule")})
             continue
         image = None
-        if it.get("card") and not dry:
+        if it.get("card"):
+            # Kuivanakin renderoidaan: ensimmainen ajo todistaa etta Chrome ja kortti toimivat ajoympäristossa.
             try:
                 from scripts import bsky_card
                 c = bsky_card.render(it["card"])
-                image = {"blob": session.upload_image(c["bytes"], c["mime"]), "alt": c["alt"], "w": c["w"], "h": c["h"]}
+                print(f"kortti {it['card']}: {c['mime']} {c['w']}x{c['h']} {len(c['bytes'])} t")
+                if not dry:
+                    image = {"blob": session.upload_image(c["bytes"], c["mime"]), "alt": c["alt"],
+                             "w": c["w"], "h": c["h"]}
             except Exception as e:  # noqa: BLE001 - kuva on lisa, ei ehto
                 print(f"kortti {it['card']} epaonnistui: {e!r}")
         reply = (it.get("target") or {}).get("reply")
