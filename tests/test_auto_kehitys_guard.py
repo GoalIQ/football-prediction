@@ -29,7 +29,7 @@ schema = _lataa("fpl_schema_watch")
 @pytest.mark.parametrize("polku", [
     "src/models/fpl_xp.py", "api/main.py", "scripts/build_fpl_page.py", "tests/test_uusi.py",
     "web/pro-spa/src/routes/+page.svelte", "fpl/expected-points.html", "predictions/premier-league/index.html",
-    "fpl.html", "llms.txt", "docs/AUTO-BACKLOG.md",
+    "fpl.html", "llms.txt", "ref-bridge.js", "docs/AUTO-BACKLOG.md",
 ])
 def test_kehitys_sallii_tuotekoodin(polku):
     assert guard.tarkista_polut("kehitys", [polku]) == []

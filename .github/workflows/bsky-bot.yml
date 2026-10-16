@@ -1,0 +1,172 @@
+# Bluesky-botti @goaliqapp (16.10.2026, Villen GO: automaattinen postausbotti + replyt, vain Bluesky).
+#
+#   aivot     Claude (Max-tilauksen OAuth-token, 0 e) lukee ennakoivan tilannekuvan (scripts/bsky_bot.py
+#             context: tarkistetut luvut, FPL:n hinta- ja statussignaalit, tupla/tyhjat kierrokset,
+#             Blueskyn ja X:n FPL-keskustelu tykkayksineen, omat tulokset) ja ehdottaa 0-4 postausta tai
+#             vastausta. bsky-tarkistaja (.claude/agents) tarkistaa ne. Ajetaan 09 ja 17 UTC seka
+#             deadlinea edeltavat 6 h (kiintio). Lukuoikeus, EI Bluesky-tunnusta: tulos on pelkka queue.json.
+#   julkaise  Joka tunti: mentioihin vastaukset, aivojen ehdotukset ja pohjapostaukset (deadline, tulos)
+#             src/marketing/bsky_gate.py:n lapi, kortti sivun omasta jakokortista, postaus, mittaus,
+#             tila mainiin. Ilman BLUESKY_APP_PASSWORDia kuivaharjoitus (tulos ajon yhteenvedossa).
+
+name: bsky-bot
+
+on:
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+    inputs:
+      think:
+        description: 'aja aivot nyt (kylla/ei)'
+        default: 'ei'
+
+concurrency:
+  group: bsky-bot
+  cancel-in-progress: false
+
+jobs:
+  aivot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    outputs:
+      think: ${{ steps.paata.outputs.think }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Ajetaanko aivot
+        id: paata
+        run: python -m scripts.bsky_bot should-think ${{ github.event.inputs.think == 'kylla' && '--force' || '' }}
+
+      - name: Riippuvuudet
+        if: steps.paata.outputs.think == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Tilannekuva
+        if: steps.paata.outputs.think == 'true'
+        env:
+          BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
+        run: python -m scripts.bsky_bot context --out /tmp/bsky
+
+      - name: Aivot ehdottavat
+        if: steps.paata.outputs.think == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: >-
+            --max-turns 60
+            --add-dir /tmp/bsky
+            --allowedTools "Read,Write,Glob,Grep,WebSearch,WebFetch,Task"
+          prompt: |
+            You are the brain of @goaliqapp, GoalIQ's account on Bluesky. GoalIQ is a football model with free FPL
+            tools and match predictions. You decide what the account posts and replies in the next hours. You do
+            not post anything yourself: you write a list of items to /tmp/bsky/queue.json, and a separate job
+            checks every item mechanically before anything goes out.
+
+            Read first: /tmp/bsky/briefing.json, docs/bsky/AANI.md (voice and rules, follow every line),
+            docs/bsky/FPL-TIETO.md (the game), data/bsky_performance.json (what has worked).
+
+            1. ANTICIPATE. What will FPL managers be talking about in the next 12 hours? Use the briefing:
+               hours_to_deadline, fpl.news_36h (injuries, doubts), fpl.price_tonight_fpl_projection (FPL's own
+               price predictor), fixtures_double_blank, and social: what the FPL accounts on Bluesky and X
+               (x_read_only, read only, never mention X) are posting and which posts get likes. The likes tell
+               you which topics have attention right now. You may use WebSearch for today's press conference
+               team news if it changes what a manager should do, but never put a number from the web in a post.
+            2. DECIDE 0 to 4 items within caps_left_today. Kinds:
+               - "post": own post. Prefer a card image when the post is about a list.
+               - "reply": reply to an item in social.bluesky with reply_eligible true, ONLY if caps_left_today.reply
+                 is above 0 (unsolicited replies are off unless the owner turns them on: Bluesky's bot guide asks
+                 bots to interact only with users who tagged them).
+               Lean towards topics with a higher engaged_rate_bayes in performance, but make about one in four
+               items an experiment with a topic or structure we haven't tried. Zero items is a valid answer:
+               only post when there is something a busy manager would stop for.
+            3. ITEM FORMAT (JSON object):
+               {"kind": "post"|"reply", "topic": one of captain, clean_sheets, differential, template, recap,
+                track_record, injury, price, fixtures, prediction, player, reply_question,
+                "slot": "deadline:gw<N>" for the pre-deadline captain post or "recap:gw<N-1>" for the result
+                post (so the fallback template is not posted twice), otherwise omit,
+                "text": the text; in posts put the word LINK where the short link goes,
+                "keys": every briefing.numbers key whose number appears in the text,
+                "link": a goaliq.app path for posts, e.g. "/fpl/best-captain", "/fpl/expected-points#gw-xp",
+                        "/fpl/team-news", "/fpl/price-changes", "/fpl#clean-sheets"; null for replies,
+                "card": one of "best-captain", "expected-points", "team-news", "price-changes", "xg-leaders",
+                        "defence", "stats", "points/gw<N>" or null,
+                "target": for replies copy uri, cid, handle, created_at and text from the briefing item,
+                "why": one sentence, "anticipation": what you expect people to be discussing and why}
+            4. HARD RULES (the checker rejects otherwise): numbers only from briefing.numbers, exactly as written,
+               with their keys; a post with numbers links to the `page` of those numbers (one page per post);
+               at most one number in a reply, two in a post; no link and no product name in a
+               reply; no em or en dash; no betting words; never claim to be human or deny automation.
+            5. REVIEW. Give your items to the bsky-tarkistaja subagent (Task tool). Drop every BLOCK, or apply its
+               small fix and review again. Then write the final JSON array to /tmp/bsky/queue.json with the Write
+               tool. Write [] if nothing passes.
+
+      - uses: actions/upload-artifact@v4
+        if: steps.paata.outputs.think == 'true'
+        with:
+          name: bsky-queue
+          path: /tmp/bsky/queue.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  julkaise:
+    needs: aivot
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Riippuvuudet (botti + kortit)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt selenium pillow
+
+      - uses: actions/download-artifact@v4
+        if: needs.aivot.outputs.think == 'true'
+        continue-on-error: true
+        with:
+          name: bsky-queue
+          path: /tmp/bsky
+
+      - name: Julkaise (portti jokaiselle)
+        env:
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
+        run: python -m scripts.bsky_bot publish --queue /tmp/bsky/queue.json ${{ needs.aivot.outputs.think == 'true' && '--thought' || '' }}
+
+      - name: Mittaa kiinnostus
+        continue-on-error: true
+        run: python -m scripts.bsky_bot perf
+
+      - name: Tila mainiin
+        env:
+          CI_PUSH_DATA: data/bsky_state.json data/bsky_posted.jsonl data/bsky_performance.json
+          CI_PUSH_PAGES: ""
+          CI_PUSH_BUILD: ""
+          CI_PUSH_MSG: "data(bsky): botin tila, postausloki ja tulokset [skip ci] [skip render]"
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          bash scripts/ci_push_rebuild.sh

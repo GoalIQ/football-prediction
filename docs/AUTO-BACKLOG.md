@@ -27,6 +27,9 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-10: Ilmaisella /fpl#gw-calls-paneelilla kutsut seuraavat uusinta projektiota deadlineen asti, xP-jäädytys
   tehdään noin vuorokautta ennen. GW6:lla ero 0.93. Ylläpitäjä päätti 16.10: jäädytys päivittyy deadlineen asti. → backlog 2026-10-16
 
+- 2026-10: Yllapitaja: Bluesky-botin pitaa tietaa mitka postaukset herattavat kiinnostusta ja mitka saavat asiakkaita.
+  Kiinnostus mitataan (data/bsky_performance.json), asiakkaat vaativat kanava-attribuution. → backlog 2026-10-16
+
 ## Avoimet
 
 - [ ] Lainaeste xP:hen: lue `elements[].scout_risks` (property `loan_ineligible`, `gameweek`) yhdellä lukijalla
@@ -45,6 +48,22 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   ei muutu, puuttuva luodaan; testi kaatuu jos deadline-ehto poistetaan. (ylläpitäjän signaali 2026-10, lähde: Signaalit)
       Pisteet: (lukittu) arvo 3/3 · kiire 3/3 · työ M · myynti 1/3 · uutuus 0/2 = 9
       Mittari: tests/test_points_frozen_vs_calls.py: GW8 kutsujen ja jäädytyksen ero alle 0.05 · tarkistus 2026-10-26
+- [ ] Kanava-attribuutio hubista sovellukseen: `ref-bridge.js` kuljettaa `utm_source`, `utm_medium`, `utm_campaign` ja
+  `utm_content` jokaiseen pro.goaliq.app-linkkiin samalla tavalla kuin `ref`in (ensimmainen kosketus pysyy), ja SPA
+  (`web/pro-spa/src/lib/partnerAttribution.ts`) tallentaa tilille avaimen `channel` = {source, campaign, content}
+  ensimmaisesta kosketuksesta. `partner`-avain ja `ref` (provisiot) pysyvat ennallaan eika niita sekoiteta. Testit:
+  ref-bridge kuljettaa utm:t ja vain sallitut merkit; attributionData kirjoittaa channelin vain kun tililla ei ole.
+  (yllapitajan signaali 2026-10-16: botin pitaa tietaa mitka postaukset saavat asiakkaita, lahde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · tyo M · myynti 3/3 · uutuus 1/2 = 10
+      Mittari: uuden tilin raw_user_meta_data.channel.source = bluesky Bluesky-linkista tulleella · tarkistus 2026-11-01
+- [ ] Konversio kanavittain: `/api/admin/conversion` palauttaa lisaksi aggregaatin `by_channel` (tilit ja Premiumit
+  kanavan source ja campaign mukaan, myos `partner`-avaimesta), ei sahkoposteja eika kayttajarivejä. Sitten
+  `scripts/bsky_bot.py perf` lukee sen ADMIN_TOKENilla ja kirjoittaa data/bsky_performance.json:iin `customers`-
+  osion aiheittain (utm_campaign = aihe). Testit: aggregaatti synteettisilla kayttajilla, ei henkilotietoja vastauksessa.
+  Tyonkulun bsky-bot.yml perf-askel tarvitsee ADMIN_TOKEN-envin: lisataan kasin mergen yhteydessa.
+  (yllapitajan signaali 2026-10-16, lahde: Signaalit; riippuu edellisesta rivista)
+      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · tyo M · myynti 3/3 · uutuus 1/2 = 9
+      Mittari: data/bsky_performance.json customers-osio ei tyhja kun kanavalta on tili · tarkistus 2026-11-15
 - [ ] Jakokortin PIL-generaattori uuteen ulkoasuun: `scripts/gen_share_card.py` piirtää saman asettelun
   kuin SPA:n ja sivujen kortti (`scripts/share_card_js.py`, web/pro-spa). Todennus: `tests/test_share_card_*.py`
   vihreä ja uusi testi, joka vertaa kortin rivien järjestyksen ja otsikot JS-kortin sopimukseen.
