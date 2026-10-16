@@ -31,8 +31,14 @@ def _state(**kw):
     return s
 
 
-def _post(text, keys, **kw):
-    return {"kind": "post", "text": text, "keys": keys, **kw}
+def _post(text, keys, link="/fpl/expected-points#gw-xp", **kw):
+    return {"kind": "post", "text": text, "keys": keys, "link": link, **kw}
+
+
+@pytest.fixture(autouse=True)
+def _vastaukset_paalla(monkeypatch):
+    """Pyytamattomat vastaukset ovat oletuksena pois (0/vrk); testit mittaavat niiden muut ehdot."""
+    monkeypatch.setattr(gate, "OUTBOUND_REPLIES_PER_DAY", 4)
 
 
 def _reply(text, keys, age_h=1.0, handle="fpl.page", uri="at://x/1", **kw):
@@ -46,7 +52,7 @@ def chk(item, state=None, blocked=frozenset(), phrases=()):
                       phrases=list(phrases))
 
 
-OK_TEXT = "GW7 captain: Haaland at 8.0 expected points, 32% chance of 10+. goaliq.app/fpl/best-captain"
+OK_TEXT = "GW7 captain: Haaland at 8.0 expected points, 32% chance of 10+. goaliq.app/fpl/expected-points"
 OK_KEYS = ["captain_top5.haaland-mci.gw_xp", "captain_top5.haaland-mci.p_10plus"]
 
 
@@ -124,14 +130,46 @@ def test_facetit_tavuoffseteilla_ja_utm():
     assert u2.endswith("#gw-calls") and "?utm_source" in u2
 
 
-def test_varapostaukset_lapaisevat_portin():
-    mod = {"gw": 7, "deadline_utc": (NOW + timedelta(hours=16)).isoformat(), "sections": {
-        "captain_top5": {"rows": [{"key": "haaland-mci", "name": "Haaland"}]},
-        "cs_top": {"rows": [{"key": "ars", "team": "Arsenal"}]},
+def _mod(gap=2.5, dl_h=16):
+    return {"gw": 7, "deadline_utc": (NOW + timedelta(hours=dl_h)).isoformat(), "sections": {
+        "captain_top5": {"rows": [{"key": "haaland-mci", "name": "Haaland", "player_id": 1}]},
+        "xp_top5": {"rows": [{"key": "haaland-mci", "player_id": 1}, {"key": "cherki-mci", "player_id": 2}]},
         "last_gw": {"available": True, "gw": 6}}}
+
+
+def _vals(gap=2.5):
     vals = dict(V)
-    vals["last_gw.entry_points"] = {"text": "57", "public_url": "https://fantasy.premierleague.com/entry/116920/event/6"}
-    vals["last_gw.fpl_average"] = {"text": "58", "public_url": "https://fantasy.premierleague.com/entry/116920/event/6"}
+    entry = "https://fantasy.premierleague.com/entry/116920/event/6"
+    vals["captain_top5.haaland-mci.gw_xp"] = {"text": "8.0", "value": 8.0,
+                                              "public_url": "https://goaliq.app/fpl/expected-points#gw-xp"}
+    vals["xp_top5.haaland-mci.gw_xp"] = {"text": "8.0", "value": 8.0, "public_url": "https://goaliq.app/fpl/expected-points#gw-xp"}
+    vals["xp_top5.cherki-mci.gw_xp"] = {"text": "x", "value": 8.0 - gap, "public_url": "https://goaliq.app/fpl/expected-points#gw-xp"}
+    vals["last_gw.entry_points"] = {"text": "57", "public_url": entry}
+    vals["last_gw.fpl_average"] = {"text": "58", "public_url": entry}
+    return vals
+
+
+@pytest.mark.parametrize("gap,perhe", [(2.5, bot.CAPTAIN_CLEAR), (0.3, bot.CAPTAIN_CLOSE)])
+def test_varmuuslause_vain_kun_ero_kantaa(monkeypatch, gap, perhe):
+    monkeypatch.setattr(bot, "_transfer_cost", lambda gw: 0)
+    it = [i for i in bot.fallback_items(_mod(), _vals(gap), NOW, _state()) if i["topic"] == "captain"][0]
+    assert any(it["text"] == tpl.format(gw=7, name="Haaland", xp="8.0", p10="32%") for tpl in perhe), it["text"]
+
+
+def test_tulospostaus_suunta_ja_miinuspisteet(monkeypatch):
+    monkeypatch.setattr(bot, "_transfer_cost", lambda gw: 0)
+    rec = [i for i in bot.fallback_items(_mod(), _vals(), NOW, _state()) if i["topic"] == "recap"][0]
+    assert "below" in rec["text"] and rec["link"].startswith("https://fantasy.premierleague.com/")
+    assert rec["card"] is None
+    monkeypatch.setattr(bot, "_transfer_cost", lambda gw: 4)
+    assert not [i for i in bot.fallback_items(_mod(), _vals(), NOW, _state()) if i["topic"] == "recap"]
+    monkeypatch.setattr(bot, "_transfer_cost", lambda gw: None)
+    assert not [i for i in bot.fallback_items(_mod(), _vals(), NOW, _state()) if i["topic"] == "recap"]
+
+
+def test_varapostaukset_lapaisevat_portin(monkeypatch):
+    monkeypatch.setattr(bot, "_transfer_cost", lambda gw: 0)
+    mod, vals = _mod(), _vals()
     items = bot.fallback_items(mod, vals, NOW, _state())
     assert {i["slot"] for i in items} == {"deadline:gw7", "recap:gw6"}
     for it in items:
@@ -141,7 +179,7 @@ def test_varapostaukset_lapaisevat_portin():
     # slot kerran: toinen ajo ei tee samaa postausta
     assert bot.fallback_items(mod, vals, NOW, _state(posted_slots=["deadline:gw7", "recap:gw6"])) == []
     # deadline-ikkunan ulkopuolella ei kapteenipostausta
-    late = {**mod, "deadline_utc": (NOW + timedelta(hours=1)).isoformat()}
+    late = _mod(dl_h=1)
     assert "deadline:gw7" not in {i["slot"] for i in bot.fallback_items(late, vals, NOW, _state())}
 
 
@@ -223,19 +261,27 @@ def _ilmo(uri, teksti, reason="mention"):
 
 def test_mentioihin_vastataan_vain_tunnistettuun_kysymykseen():
     mod = {"gw": 7, "sections": {
-        "player_lookup": {"rows": [{"key": "saka-ars", "name": "Saka"}]},
+        "player_lookup": {"rows": [{"key": "saka-ars", "name": "Saka", "team": "ARS"},
+                                   {"key": "thomas-cov", "name": "Thomas", "team": "COV"},
+                                   {"key": "wilson-ful", "name": "Wilson", "team": "FUL"},
+                                   {"key": "wilson-new", "name": "Wilson", "team": "NEW"}]},
         "captain_top5": {"rows": [{"key": "haaland-mci", "name": "Haaland"}]}}}
-    vals = {**V, "player_lookup.saka-ars.gw_xp": {"text": "5.4", "public_url": "x"},
-            "player_lookup.saka-ars.xp_6gw": {"text": "31.0", "public_url": "x"}}
+    vals = {**V, "player_lookup.saka-ars.gw_xp": {"text": "5.3", "public_url": "x"},
+            "player_lookup.thomas-cov.gw_xp": {"text": "4.3", "public_url": "x"},
+            "player_lookup.wilson-ful.gw_xp": {"text": "4.1", "public_url": "x"}}
     s = _state()
-    ses = _Sessio([_ilmo("at://a/1", "@goaliqapp is Saka worth it?"),
-                   _ilmo("at://a/2", "@goaliqapp who should I captain"),
+    ses = _Sessio([_ilmo("at://a/1", "@goaliqapp is Saka worth a transfer?"),
+                   _ilmo("at://a/2", "@goaliqapp who should I captain?"),
                    _ilmo("at://a/3", "@goaliqapp nice work"),
-                   _ilmo("at://a/4", "liked", reason="like")])
+                   _ilmo("at://a/4", "liked", reason="like"),
+                   _ilmo("at://a/5", "@goaliqapp your captain blanked lol"),
+                   _ilmo("at://a/6", "@goaliqapp did you see Thomas Frank's team?"),
+                   _ilmo("at://a/7", "@goaliqapp Wilson for GW7?"),
+                   _ilmo("at://a/8", "@goaliqapp Saka or Thomas for points?")])
     out = bot.mention_items(ses, mod, vals, s)
     assert [o["target"]["uri"] for o in out] == ["at://a/1", "at://a/2"]
-    assert "Saka" in out[0]["text"] and "Haaland" in out[1]["text"]
-    assert set(s["handled_notifications"]) == {"at://a/1", "at://a/2", "at://a/3"}
+    assert "Saka (ARS)" in out[0]["text"] and "Haaland" in out[1]["text"]
+    assert set(s["handled_notifications"]) == {f"at://a/{i}" for i in (1, 2, 3, 5, 6, 7, 8)}
     for o in out:   # pohjavastaus laapaisee portin (yksi luku, ei linkkia, ei tuotenimea)
         assert gate.check(o, values=vals, gw=7, now=NOW, state=_state(), blocklist=set(),
                           phrases=gate.rejected_phrases()) == [], o["text"]
@@ -256,8 +302,41 @@ def test_tyylikiellot(teksti):
 
 
 def test_lukukatto_vastaus_yksi_postaus_kaksi():
-    keys = ["captain_top5.haaland-mci.gw_xp", "cs_top.ars.cs_pct"]
-    assert any("liikaa lukuja" in p for p in chk(_reply("Haaland 8.0 and Arsenal 49% for GW7.", keys)))
-    assert chk(_post("Haaland 8.0 and Arsenal 49% for GW7.", keys)) == []
-    k3 = keys + ["captain_top5.haaland-mci.p_10plus"]
+    keys = ["captain_top5.haaland-mci.gw_xp", "captain_top5.haaland-mci.p_10plus"]
+    assert any("liikaa lukuja" in p for p in chk(_reply("Haaland 8.0 and 32% for GW7.", keys)))
+    assert chk(_post("Haaland 8.0 and a 32% chance of 10+ in GW7.", keys)) == []
+    k3 = keys + ["cs_top.ars.cs_pct"]
     assert any("liikaa lukuja" in p for p in chk(_post("Haaland 8.0, 32% for 10+, Arsenal 49%.", k3)))
+
+
+def test_luvun_sivu_on_linkin_sivu():
+    """6a: ensimmaiset pohjat linkittivat best-captain-sivulle, jolla 8.0 ei nay (julkaisutarkistaja 16.10)."""
+    k = ["captain_top5.haaland-mci.gw_xp"]
+    assert chk(_post("Haaland tops the model at 8.0.", k, link="/fpl/expected-points#gw-xp")) == []
+    probs = chk(_post("Haaland tops the model at 8.0.", k, link="/fpl/best-captain"))
+    assert any("nakyy sivulla" in p for p in probs), probs
+    assert any("ilman linkkia" in p for p in chk(_post("Haaland tops the model at 8.0.", k, link=None)))
+    assert chk(_post("Everyone's on Haaland this week. Fair enough.", [], link=None)) == []
+
+
+def test_pyytamattomat_vastaukset_oletuksena_pois(monkeypatch):
+    import importlib
+    monkeypatch.delenv("BSKY_OUTBOUND_REPLIES_PER_DAY", raising=False)
+    g2 = importlib.reload(gate)
+    try:
+        assert g2.OUTBOUND_REPLIES_PER_DAY == 0
+        probs = g2.check(_reply("Model has Haaland at 8.0 for GW7.", ["captain_top5.haaland-mci.gw_xp"]),
+                         values=V, gw=7, now=NOW, state=_state(), blocklist=set(), phrases=[])
+        assert any("kiintio" in p for p in probs)
+    finally:
+        importlib.reload(gate)
+
+
+def test_mention_estolista_ja_ika():
+    t = {"uri": "at://m/1", "cid": "c", "handle": "ffscoutfpl.bsky.social",
+         "created_at": (NOW - timedelta(hours=1)).isoformat()}
+    it = {"kind": "mention_reply", "text": "The model has Haaland at 8.0 for GW7.",
+          "keys": ["captain_top5.haaland-mci.gw_xp"], "target": t}
+    assert any("estolistalla" in p for p in chk(it, blocked={"ffscoutfpl.bsky.social"}))
+    old = {**it, "target": {**t, "handle": "fan.bsky.social", "created_at": (NOW - timedelta(hours=9)).isoformat()}}
+    assert any("4 h" in p for p in chk(old))

@@ -49,6 +49,7 @@ SITE = "https://goaliq.app"
 TOPICS = ("captain", "clean_sheets", "differential", "template", "recap", "track_record", "injury",
           "price", "fixtures", "prediction", "player", "reply_question", "mention")
 SIGNAL_MAX_AGE = timedelta(hours=12)
+BOT_BIO = " Posts and replies are automated."   # julkaisutarkistaja 16.10, ehto mention-vastauksille
 
 
 # ---------------------------------------------------------------- tila ja loki
@@ -134,21 +135,46 @@ def utm_link(path: str, topic: str, content: str) -> tuple[str, str]:
 
 # ---------------------------------------------------------------- deterministiset ehdotukset
 
-# Pohjat vaihtavat runkoa kierroksittain (gw % 3): sama runko joka viikko on tyyliohjeen
-# slop-tell nro 1. Kanta ensin, enintaan kaksi lukua (kortti kantaa loput). Nama ovat VARA:
-# aivojen (Claude) kirjoittama postaus samaan slotiin korvaa pohjan.
-CAPTAIN_TEMPLATES = (
+# Pohjat ovat julkaisutarkistajan 16.10 korjaamat sellaisenaan. Ne ovat VARA: aivojen (Claude) postaus samaan
+# slotiin korvaa pohjan. Runko vaihtuu kierroksittain (sama runko joka viikko = slop-tell nro 1).
+# Varmuuslause vain kun data kantaa sen: ilmaistaulukon ykkosen ja kakkosen ero >= CLEAR_GAP xP. Mitattu
+# jaadytyksista: GW1 0.08, GW2 0.12, GW3 1.65, GW4 0.03, GW5 0.88, GW6 0.73, GW7 2.46 (raja on paatos).
+CLEAR_GAP = 0.5
+CAPTAIN_CLEAR = (
     "Not overthinking the armband in GW{gw}. {name} tops the model at {xp} expected points. LINK",
-    "GW{gw} armband is {name} for the model: {xp} expected points and a {p10} shot at 10+. LINK",
-    "Plenty of captain debates this week. The model isn't having one: {name}, {xp} expected points in GW{gw}. LINK",
+    "Armband's sorted for GW{gw}. The model has {name} at {xp} expected points and a {p10} chance of 10+. LINK",
+    "The model's GW{gw} captain is {name}, and it isn't close: {xp} expected points. LINK",
 )
-# Sivu (goaliq.app/fpl): "We play it in FPL as entry 116920, with our own chip calls and the occasional
-# lineup change, and that's the team to beat in the Beat the Model mini-league." Siksi ei "the model's picks".
+CAPTAIN_CLOSE = (
+    "Close captain call in GW{gw}. {name} is top of the model at {xp} expected points, but the next name isn't far behind. LINK",
+    "No obvious armband in GW{gw}. {name} edges it for the model at {xp} expected points. LINK",
+)
+# FPL:ssa joukkueen nimi on "GoalIQ's Team", joten "our FPL team"; luvut nakyvat FPL:n entry-sivulla
+# (moduulin public_url), ei goaliq.appissa -> linkki sinne, ilman korttia (points-kortti nayttaa eri pelaajat).
 RECAP_TEMPLATES = (
-    "GW{gw} is in the books. The Beat the Model team scored {pts}, the FPL average was {avg}. LINK",
-    "{pts} for the Beat the Model team in GW{gw}. The average manager got {avg}. LINK",
-    "GW{gw}: Beat the Model team {pts}, FPL average {avg}. Think you can beat it? LINK",
+    "GW{gw} done. Our FPL team got {pts}, {dir} the average manager's {avg}. LINK",
+    "{pts} for our FPL team in GW{gw}, {dir} the FPL average of {avg}. LINK",
+    "Our FPL team finished GW{gw} {dir} the average: {pts} against {avg}. Think you can beat it? LINK",
 )
+GW_XP_PAGE = "/fpl/expected-points#gw-xp"
+
+
+def _num(values: dict, key: str) -> float | None:
+    v = values.get(key)
+    try:
+        return float(v["value"]) if v else None
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _transfer_cost(gw: int) -> int | None:
+    """Kierroksen miinuspisteet gw_calls-lokista; None = ei tietoa (tulospostaus ohitetaan)."""
+    for row in (load_json(DATA / "gw_calls.json", {}) or {}).get("gameweeks") or []:
+        if int(row.get("gw") or -1) == gw:
+            ea = row.get("entry_actual") or {}
+            c = ea.get("transfers_cost")
+            return int(c) if isinstance(c, (int, float)) else None
+    return None
 
 
 def fallback_items(mod: dict, values: dict, now: datetime, state: dict) -> list[dict]:
@@ -159,66 +185,99 @@ def fallback_items(mod: dict, values: dict, now: datetime, state: dict) -> list[
     to_dl = dl - now
     slot = f"deadline:gw{gw}"
     cap = next(iter(rows(mod, "captain_top5")), None)
-    if timedelta(hours=3) <= to_dl <= timedelta(hours=30) and slot not in state["posted_slots"] and cap:
+    xs = rows(mod, "xp_top5")
+    if (timedelta(hours=3) <= to_dl <= timedelta(hours=30) and slot not in state["posted_slots"] and cap
+            and len(xs) >= 2 and xs[0].get("player_id") == cap.get("player_id")):
         ck = f"captain_top5.{cap['key']}"
         xp, p10 = val(values, f"{ck}.gw_xp"), val(values, f"{ck}.p_10plus")
-        tpl = CAPTAIN_TEMPLATES[gw % 3]
-        keys = [f"{ck}.gw_xp"] + ([f"{ck}.p_10plus"] if "{p10}" in tpl else [])
-        if xp and (p10 or "{p10}" not in tpl):
+        a, b = _num(values, f"xp_top5.{xs[0]['key']}.gw_xp"), _num(values, f"xp_top5.{xs[1]['key']}.gw_xp")
+        if xp and a is not None and b is not None:
+            if a - b >= CLEAR_GAP:
+                tpl = CAPTAIN_CLEAR[gw % 3]
+                if "{p10}" in tpl and not p10:
+                    tpl = CAPTAIN_CLEAR[0]
+            else:
+                tpl = CAPTAIN_CLOSE[gw % 2]
+            keys = [f"{ck}.gw_xp"] + ([f"{ck}.p_10plus"] if "{p10}" in tpl else [])
             out.append({"kind": "post", "topic": "captain", "slot": slot,
                         "text": tpl.format(gw=gw, name=cap["name"], xp=xp, p10=p10),
-                        "keys": keys, "link": "/fpl/best-captain", "card": "best-captain"})
+                        "keys": keys, "link": GW_XP_PAGE, "card": "best-captain"})
     lg = (mod.get("sections") or {}).get("last_gw") or {}
     rslot = f"recap:gw{lg.get('gw')}"
-    if lg.get("available") and rslot not in state["posted_slots"] and lg.get("gw") == gw - 1:
+    if (lg.get("available") and rslot not in state["posted_slots"] and lg.get("gw") == gw - 1
+            and _transfer_cost(int(lg["gw"])) == 0):   # miinuspisteviikolla brutto/netto mittaamatta
         pts, avg = val(values, "last_gw.entry_points"), val(values, "last_gw.fpl_average")
-        if pts and avg:
+        url = (values.get("last_gw.entry_points") or {}).get("public_url")
+        if pts and avg and url and url == (values.get("last_gw.fpl_average") or {}).get("public_url"):
+            d = "above" if int(pts) > int(avg) else ("below" if int(pts) < int(avg) else "level with")
             out.append({"kind": "post", "topic": "recap", "slot": rslot,
-                        "text": RECAP_TEMPLATES[lg["gw"] % 3].format(gw=lg["gw"], pts=pts, avg=avg),
-                        "keys": ["last_gw.entry_points", "last_gw.fpl_average"],
-                        "link": "/fpl#gw-calls", "card": f"points/gw{lg['gw']}"})
+                        "text": RECAP_TEMPLATES[lg["gw"] % 3].format(gw=lg["gw"], pts=pts, avg=avg, dir=d),
+                        "keys": ["last_gw.entry_points", "last_gw.fpl_average"], "link": url, "card": None})
     return out
 
 
-def _player_index(mod: dict) -> dict[str, dict]:
-    idx = {}
+# Mentioihin vastataan vain kun data ja kysymys ovat yksiselitteisia (julkaisutarkistaja 16.10, ehdot a-f).
+FPL_WORDS = ("fpl", "xp", "captain", "transfer", "gw", "gameweek", "points", "pick", "bench", "wildcard")
+
+
+def _player_index(mod: dict) -> dict[str, list[dict]]:
+    idx: dict[str, list[dict]] = {}
     for r in rows(mod, "player_lookup"):
         name = str(r.get("name") or "")
         if len(name) >= 4:
-            idx[name.lower()] = r
+            idx.setdefault(name.lower(), []).append(r)
     return idx
 
 
+def _own_texts() -> dict[str, str]:
+    return {r["uri"]: r.get("text") or "" for r in read_log() if r.get("uri")}
+
+
 def mention_items(session, mod: dict, values: dict, state: dict) -> list[dict]:
-    """Vastaus vain kun joku mainitsee tai vastaa meille (pyytanyt) ja kysyy pelaajasta tai kapteenista."""
+    """Vastaus vain kun joku mainitsee tai vastaa meille (opt-in) ja KYSYY pelaajasta tai kapteenista."""
     out = []
     idx = _player_index(mod)
     gw = int(mod["gw"])
     handled = set(state["handled_notifications"])
+    own = _own_texts()
     for n in session.notifications(50):
         if n.get("reason") not in ("mention", "reply") or n.get("uri") in handled:
             continue
         handled.add(n["uri"])
-        text = str((n.get("record") or {}).get("text") or "")
+        rec = n.get("record") or {}
+        text = str(rec.get("text") or "")
         low = text.lower()
-        hit = next((r for nm, r in idx.items() if re.search(rf"\b{re.escape(nm)}\b", low)), None)
-        post = {"uri": n["uri"], "cid": n["cid"], "record": n.get("record") or {}}
+        if "?" not in text:                                    # b) vain kysymykseen
+            continue
+        hits = [rs for nm, rs in idx.items() if re.search(rf"\b{re.escape(nm)}\b", low)]
+        post = {"uri": n["uri"], "cid": n["cid"], "record": rec}
         ref = bsky.reply_ref(post)
         target = {"uri": n["uri"], "cid": n["cid"], "root_uri": ref["root"]["uri"],
                   "handle": (n.get("author") or {}).get("handle", ""), "reply": ref,
                   "created_at": n.get("indexedAt")}
-        if hit:
+        parent_uri = ((rec.get("reply") or {}).get("parent") or {}).get("uri", "")
+        parent_text = own.get(parent_uri, "")
+        if hits:
+            if len(hits) != 1 or len(hits[0]) != 1:            # c) ja d) useampi tai samanniminen pelaaja
+                continue
+            hit = hits[0][0]
+            team = str(hit.get("team") or "")
+            if not (any(w in low for w in FPL_WORDS) or (team and team.lower() in low)):
+                continue                                       # e) tavallinen sana ilman FPL-kontekstia
+            if hit["name"].lower() in parent_text.lower():     # f) toistaisi oman postauksen
+                continue
             k = f"player_lookup.{hit['key']}"
             xp = val(values, f"{k}.gw_xp")
-            if xp:   # yksi luku vastaukseen (portti: MAX_NUMBERS["mention_reply"] = 1)
+            if xp:
+                label = f"{hit['name']} ({team})" if team else hit["name"]
                 out.append({"kind": "mention_reply", "topic": "mention", "target": target,
-                            "text": f"The model has {hit['name']} at {xp} expected points for GW{gw}.",
+                            "text": f"The model has {label} at {xp} expected points for GW{gw}.",
                             "keys": [f"{k}.gw_xp"]})
         elif "captain" in low:
             cap = next(iter(rows(mod, "captain_top5")), None)
             key = f"captain_top5.{cap['key']}.gw_xp" if cap else ""
             xp = val(values, key) if cap else None
-            if xp:
+            if xp and cap["name"].lower() not in parent_text.lower():
                 out.append({"kind": "mention_reply", "topic": "mention", "target": target,
                             "text": f"GW{gw}: the model has {cap['name']} top for captain at {xp} expected points.",
                             "keys": [key]})
@@ -347,10 +406,12 @@ def cmd_context(out_dir: Path) -> int:
             sec = k.split(".", 1)[0]
             if sec == "player_lookup" and not k.endswith((".gw_xp", ".xp_6gw")):
                 continue
-            compact[k] = v.get("text")
+            compact[k] = {"text": v.get("text"), "page": bsky_gate_page(v.get("public_url"))}
         brief["numbers"] = compact
         brief["numbers_note"] = ("ONLY these numbers may appear in text, exactly as written, and every one "
-                                 "must be listed in the item's keys. Text without numbers is also fine.")
+                                 "must be listed in the item's keys. A post that uses numbers must link to the "
+                                 "page where they appear (`page`), and all its numbers must come from that one "
+                                 "page. Text without numbers is also fine.")
         try:
             boot = _fpl_bootstrap()
             brief["fpl"] = fpl_signals(boot, now, gw)
@@ -391,11 +452,20 @@ def _mark(state: dict, item: dict, now: datetime) -> None:
     state["recent_texts"] = (state["recent_texts"] + [item["text"]])[-60:]
 
 
+def bsky_gate_page(url) -> str | None:
+    return gate.page_of(str(url)) if url else None
+
+
 def prepare(item: dict, content_id: str) -> tuple[str, dict]:
-    """LINK-paikkamerkki -> lyhyt nayttoteksti; palauttaa (teksti, {nayttoteksti: utm-uri})."""
+    """LINK-paikkamerkki -> lyhyt nayttoteksti; palauttaa (teksti, {nayttoteksti: uri}).
+    goaliq.app-polku saa utm:t (kanava tilille asti); ulkoinen osoite (FPL:n entry-sivu) ei."""
     text, links = item["text"], {}
     if item.get("link") and item["kind"] == "post":
-        disp, uri = utm_link(item["link"], item.get("topic") or "post", content_id)
+        link = str(item["link"])
+        if link.startswith("http"):
+            disp, uri = link.split("://", 1)[1], link
+        else:
+            disp, uri = utm_link(link, item.get("topic") or "post", content_id)
         text = text.replace("LINK", disp) if "LINK" in text else f"{text} {disp}"
         links[disp] = uri
     return text.replace("LINK", "").strip(), links
@@ -416,7 +486,13 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> in
         session = bsky.Session(os.environ.get("BLUESKY_HANDLE", bsky.HANDLE), pw)
 
     items: list[dict] = []
-    if session and mod:
+    if session and not state.get("bot_label_at"):
+        try:
+            session.ensure_bot_label(BOT_BIO)
+            state["bot_label_at"] = now.isoformat()
+        except Exception as e:  # noqa: BLE001 - ilman merkintaa ei vastata mentioihin
+            print(f"botti-merkinta epaonnistui: {e!r}")
+    if session and mod and state.get("bot_label_at"):
         items += mention_items(session, mod, values, state)
     if queue_path and queue_path.exists():
         for it in load_json(queue_path, []):

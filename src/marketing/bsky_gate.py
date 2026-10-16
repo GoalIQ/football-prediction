@@ -18,7 +18,9 @@ Mita mitataan (kaikki kaatavat):
 from __future__ import annotations
 
 import json
+import os
 import re
+import urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -27,7 +29,10 @@ from scripts.public_text import BANNED
 
 MAX_CHARS = 300
 POSTS_PER_DAY = 3
-OUTBOUND_REPLIES_PER_DAY = 4
+# Pyytamattomat vastaukset muiden postauksiin. OLETUS 0 (16.10.2026): atproto-botin opas: "please only
+# interact (like, repost, reply, etc.) if the user has tagged the bot account ... or your bot may be flagged
+# for spam". Ville paattaa: repo-muuttuja BSKY_OUTBOUND_REPLIES_PER_DAY (tyonkulku valittaa sen).
+OUTBOUND_REPLIES_PER_DAY = int(os.environ.get("BSKY_OUTBOUND_REPLIES_PER_DAY") or 0)
 MENTION_REPLIES_PER_DAY = 3      # "kaytto, ei sanamuoto": vastaus kaikkeen minuuteissa = botin tunnusmerkki
 # Lukuja tekstissa (kierrosnumeroa ei lasketa). Luku tukee kantaa, ei korvaa sita; kolme lukua
 # samassa tekstissa on tunnusmerkki eika todiste (tyyliohje D2). Postauksen kortti kantaa loput.
@@ -73,6 +78,14 @@ def allowed_numbers(values: dict[str, dict]) -> set[str]:
         if key.endswith("p_10plus"):
             out.add("10+")
     return out
+
+
+def page_of(url: str, site: str = "https://goaliq.app") -> str:
+    """Sivun tunniste ilman skeemaa, kyselya ja #-osaa: 'goaliq.app/fpl/expected-points'."""
+    if not url.startswith("http"):
+        url = site + "/" + url.lstrip("/")
+    s = urllib.parse.urlsplit(url)
+    return (s.netloc + s.path).rstrip("/").lower()
 
 
 def _words(t: str) -> set[str]:
@@ -130,6 +143,18 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
     if len([n for n in nums if n != "10+"]) > cap_n:
         probs.append(f"liikaa lukuja ({len(nums)} > {cap_n}): yksi luku tukee kantaa")
 
+    # 6a (julkaisutarkistaja 16.10): luvun on nayttava sivulla, jolle postaus linkittaa. Ensimmaiset pohjat
+    # linkittivat best-captain-sivulle, jolla 8.0 ei nay. Postaus jossa on lukuja tarvitsee linkin.
+    if kind == "post" and used:
+        link = item.get("link")
+        if not link:
+            probs.append("lukuja ilman linkkia sivulle jolla ne nakyvat")
+        else:
+            lp = page_of(str(link))
+            for k, v in used.items():
+                if page_of(str(v.get("public_url") or "")) != lp:
+                    probs.append(f"luku {k} nakyy sivulla {page_of(str(v.get('public_url') or ''))}, linkki vie {lp}")
+
     if kind in ("reply", "mention_reply"):
         if _URL_RE.search(text):
             probs.append("vastauksessa linkki")
@@ -142,7 +167,7 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
             probs.append("tahan postaukseen on jo vastattu")
         if (tgt.get("root_uri") or tgt.get("uri")) in set(state.get("replied_roots") or []):
             probs.append("tahan ketjuun on jo vastattu")
-    if kind == "reply":
+    if kind in ("reply", "mention_reply"):   # estolista ja 4 h koskevat myos mentioita (tarkistaja 16.10)
         tgt = item.get("target") or {}
         handle = str(tgt.get("handle") or "").lower()
         if handle in blocklist:
@@ -154,7 +179,7 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         except ValueError:
             probs.append("kohdepostauksen aika puuttuu")
         last = (state.get("author_last_reply") or {}).get(handle)
-        if last and now - datetime.fromisoformat(last) < AUTHOR_COOLDOWN:
+        if kind == "reply" and last and now - datetime.fromisoformat(last) < AUTHOR_COOLDOWN:
             probs.append(f"tekijalle vastattu alle 48 h sitten: {handle}")
 
     day = now.date().isoformat()

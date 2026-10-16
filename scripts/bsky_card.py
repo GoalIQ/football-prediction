@@ -68,7 +68,7 @@ def alt_text(spec: dict | None) -> str:
     for r in (spec.get("rows") or [])[:10]:
         team = f" ({r.get('team')})" if r.get("team") else ""
         rows.append(f"{r.get('rank', '')}. {r.get('name', '')}{team} {r.get('value', '')}".strip())
-    parts = [str(spec.get("title") or ""), str(spec.get("subtitle") or "")]
+    parts = [str(spec.get("title") or "").rstrip(". "), str(spec.get("subtitle") or "").rstrip(". ")]
     label = spec.get("valueLabel")
     head = ". ".join(p for p in parts if p)
     body = "; ".join(rows)

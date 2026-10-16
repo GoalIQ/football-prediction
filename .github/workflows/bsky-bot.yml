@@ -54,6 +54,8 @@ jobs:
 
       - name: Tilannekuva
         if: steps.paata.outputs.think == 'true'
+        env:
+          BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
         run: python -m scripts.bsky_bot context --out /tmp/bsky
 
       - name: Aivot ehdottavat
@@ -83,8 +85,9 @@ jobs:
                team news if it changes what a manager should do, but never put a number from the web in a post.
             2. DECIDE 0 to 4 items within caps_left_today. Kinds:
                - "post": own post. Prefer a card image when the post is about a list.
-               - "reply": reply to an item in social.bluesky with reply_eligible true. This is the main way to
-                 reach people: our own feed has very few followers.
+               - "reply": reply to an item in social.bluesky with reply_eligible true, ONLY if caps_left_today.reply
+                 is above 0 (unsolicited replies are off unless the owner turns them on: Bluesky's bot guide asks
+                 bots to interact only with users who tagged them).
                Lean towards topics with a higher engaged_rate_bayes in performance, but make about one in four
                items an experiment with a topic or structure we haven't tried. Zero items is a valid answer:
                only post when there is something a busy manager would stop for.
@@ -102,7 +105,8 @@ jobs:
                 "target": for replies copy uri, cid, handle, created_at and text from the briefing item,
                 "why": one sentence, "anticipation": what you expect people to be discussing and why}
             4. HARD RULES (the checker rejects otherwise): numbers only from briefing.numbers, exactly as written,
-               with their keys; at most one number in a reply, two in a post; no link and no product name in a
+               with their keys; a post with numbers links to the `page` of those numbers (one page per post);
+               at most one number in a reply, two in a post; no link and no product name in a
                reply; no em or en dash; no betting words; never claim to be human or deny automation.
             5. REVIEW. Give your items to the bsky-tarkistaja subagent (Task tool). Drop every BLOCK, or apply its
                small fix and review again. Then write the final JSON array to /tmp/bsky/queue.json with the Write
@@ -149,6 +153,7 @@ jobs:
       - name: Julkaise (portti jokaiselle)
         env:
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
         run: python -m scripts.bsky_bot publish --queue /tmp/bsky/queue.json ${{ needs.aivot.outputs.think == 'true' && '--thought' || '' }}
 
       - name: Mittaa kiinnostus

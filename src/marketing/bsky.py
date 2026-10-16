@@ -100,6 +100,31 @@ class Session:
         r.raise_for_status()
         return r.json()
 
+    def ensure_bot_label(self, bio_suffix: str) -> bool:
+        """Self-label "bot" + automaatiolause bioon (atproto-botin opas: "bot accounts should identify
+        themselves by adding a self-label to their profile"). Idempotentti; True = profiilia muutettiin."""
+        h = dict(UA, Authorization=f"Bearer {self.jwt}")
+        r = requests.get(f"{PDS}/xrpc/com.atproto.repo.getRecord", headers=h, timeout=30,
+                         params={"repo": self.did, "collection": "app.bsky.actor.profile", "rkey": "self"})
+        r.raise_for_status()
+        d = r.json()
+        rec = dict(d.get("value") or {"$type": "app.bsky.actor.profile"})
+        vals = list(((rec.get("labels") or {}).get("values")) or [])
+        has_label = any(v.get("val") == "bot" for v in vals)
+        desc = str(rec.get("description") or "")
+        need_bio = bio_suffix.strip() not in desc and len(desc.rstrip() + bio_suffix) <= 256
+        if has_label and not need_bio:
+            return False
+        if not has_label:
+            vals.append({"val": "bot"})
+        rec["labels"] = {"$type": "com.atproto.label.defs#selfLabels", "values": vals}
+        if need_bio:
+            rec["description"] = desc.rstrip() + bio_suffix
+        self._post("com.atproto.repo.putRecord", json={
+            "repo": self.did, "collection": "app.bsky.actor.profile", "rkey": "self",
+            "record": rec, "swapRecord": d.get("cid")})
+        return True
+
     def notifications(self, limit: int = 50) -> list[dict]:
         return _get("app.bsky.notification.listNotifications", {"limit": limit},
                     base=PDS, token=self.jwt).get("notifications") or []
