@@ -75,6 +75,7 @@ KIELLETYT_RIVIT = (
     (re.compile(r"(?i)\bstripe\b"), "maksut (Stripe): ihmisen päätös"),
     (re.compile(r"ANTHROPIC_API_KEY|api\.anthropic\.com"), "maksullinen kielimallirajapinta (0 euron sääntö)"),
     (re.compile(r"(?i)uefa\.com"), "UEFAn käyttöehdot 6.2 kieltävät automaattisen keruun"),
+    (re.compile(r"(?i)understat\.com"), "Understatin robots.txt: Disallow: / (vain repoon jo committoitu 2025/26-data)"),
     (re.compile(r"€"), "hinta tai raha julkisessa tekstissä: myyntilupaus on ihmisen"),
     (re.compile(r"\b3[.,]99\b"), "Premiumin hinta: myyntilupaus on ihmisen"),
     (re.compile(r"—"), "em dash on kielletty kaikessa tekstissä"),

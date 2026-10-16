@@ -66,6 +66,7 @@ def test_poikkeus_koskee_vain_omaa_profiilia():
 @pytest.mark.parametrize("rivi", [
     "stripe.Customer.create(email=e)", "key = os.environ['ANTHROPIC_API_KEY']",
     "url = 'https://gaming.uefa.com/en/uclfantasy'", "<p>Premium 3,99 € a month</p>", "Only 3.99",
+    "BASE = 'https://understat.com/league/EPL/2026'",
     "<p>Model picks — captain</p>",
 ])
 def test_kielletty_sisalto_tuotantokoodissa(rivi):

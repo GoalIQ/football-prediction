@@ -66,7 +66,8 @@ Kielletty:
 
 - **UEFA** (uefa.com, gaming.uefa.com): käyttöehtojen kohta 6.2 kieltää automaattisen keruun
   (`tests/test_no_uefa_fetch.py`).
-- **Understatin kuluvan kauden puolustussivu** (`/fpl/defence`): robots.txt kieltää.
+- **Understat**: robots.txt on `User-agent: * / Disallow: /`. Ei uusia hakuja; vain repoon jo committoitu
+  kauden 2025/26 data (haara `feat/defence-current-season` on pysyvästi mergaamatta samasta syystä).
 - Maksulliset rajapinnat ja maksulliset tasot (0 euron sääntö), myös maksullinen kielimallirajapinta.
 - Kirjautumista vaativat sivut, maksumuurin kiertäminen, vedonlyöntisivustojen keruu.
 
