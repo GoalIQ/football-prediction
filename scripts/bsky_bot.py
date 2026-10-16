@@ -130,7 +130,7 @@ def utm_link(path: str, topic: str, content: str) -> tuple[str, str]:
                                 "utm_campaign": topic, "utm_content": content})
     base, frag = (path.split("#", 1) + [""])[:2]
     uri = f"{SITE}{base}?{q}" + (f"#{frag}" if frag else "")
-    return f"goaliq.app{path}", uri
+    return f"goaliq.app{base}", uri   # nakyva teksti ilman #-osaa; ankkuri on vain osoitteessa
 
 
 # ---------------------------------------------------------------- deterministiset ehdotukset

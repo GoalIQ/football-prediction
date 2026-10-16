@@ -29,7 +29,10 @@ SRC = ROOT / "src"
 
 #: Vapaaehtoiset: nimi -> miksi ilman tata parjataan.
 VAPAAEHTOISET = {
-    "STRIPE_PRICE_ID": "vanha yhden hinnan endpoint; SPA kayttaa "
+    "BSKY_OUTBOUND_REPLIES_PER_DAY": "Bluesky-botin pyytamattomat vastaukset; puuttuva = 0 on OIKEA "
+                                     "oletus (atproto-botin opas: vain opt-in-vuorovaikutus), Ville "
+                                     "avaa repo-muuttujalla. Ei API:n muuttuja (vain bsky-bot.yml)",
+    "STRIPE_PRICE_ID":"vanha yhden hinnan endpoint; SPA kayttaa "
                        "/api/web/checkoutia eika tata",
     "STRIPE_AUTO_PROMO_CODE": "tyhja = ei esitaytettya alennusta. Se on "
                               "Villen paatos 15.8 (EARLY30 poistettiin), "
