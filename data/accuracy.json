@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-10-16T20:56:32+00:00",
+  "updated_at": "2026-10-16T21:54:41+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2537,
+  "pending": 2535,
   "voided": 57,
   "all_time": {
-    "n": 740,
-    "correct_1x2": 379,
-    "pct_1x2": 0.5122,
-    "draw_n": 193,
-    "pct_draw": 0.2608,
-    "decisive_n": 547,
-    "decisive_correct": 379,
-    "pct_decisive": 0.6929,
-    "exact_n": 740,
-    "exact_correct": 88,
-    "pct_exact": 0.1189,
-    "brier": 0.588,
-    "brier_n": 740
+    "n": 742,
+    "correct_1x2": 380,
+    "pct_1x2": 0.5121,
+    "draw_n": 194,
+    "pct_draw": 0.2615,
+    "decisive_n": 548,
+    "decisive_correct": 380,
+    "pct_decisive": 0.6934,
+    "exact_n": 742,
+    "exact_correct": 89,
+    "pct_exact": 0.1199,
+    "brier": 0.5882,
+    "brier_n": 742
   },
   "rolling": {
     "n": 100,
@@ -31,7 +31,7 @@
     "exact_n": 100,
     "exact_correct": 10,
     "pct_exact": 0.1,
-    "brier": 0.5533,
+    "brier": 0.5552,
     "brier_n": 100,
     "window": 100
   },
@@ -97,19 +97,19 @@
       "brier_n": 62
     },
     "ELC": {
-      "n": 117,
-      "correct_1x2": 46,
-      "pct_1x2": 0.3932,
+      "n": 118,
+      "correct_1x2": 47,
+      "pct_1x2": 0.3983,
       "draw_n": 32,
-      "pct_draw": 0.2735,
-      "decisive_n": 85,
-      "decisive_correct": 46,
-      "pct_decisive": 0.5412,
-      "exact_n": 117,
+      "pct_draw": 0.2712,
+      "decisive_n": 86,
+      "decisive_correct": 47,
+      "pct_decisive": 0.5465,
+      "exact_n": 118,
       "exact_correct": 13,
-      "pct_exact": 0.1111,
-      "brier": 0.6726,
-      "brier_n": 117
+      "pct_exact": 0.1102,
+      "brier": 0.6714,
+      "brier_n": 118
     },
     "FL1": {
       "n": 55,
@@ -127,19 +127,19 @@
       "brier_n": 55
     },
     "PD": {
-      "n": 78,
+      "n": 79,
       "correct_1x2": 40,
-      "pct_1x2": 0.5128,
-      "draw_n": 21,
-      "pct_draw": 0.2692,
+      "pct_1x2": 0.5063,
+      "draw_n": 22,
+      "pct_draw": 0.2785,
       "decisive_n": 57,
       "decisive_correct": 40,
       "pct_decisive": 0.7018,
-      "exact_n": 78,
-      "exact_correct": 11,
-      "pct_exact": 0.141,
-      "brier": 0.5747,
-      "brier_n": 78
+      "exact_n": 79,
+      "exact_correct": 12,
+      "pct_exact": 0.1519,
+      "brier": 0.5777,
+      "brier_n": 79
     },
     "PL": {
       "n": 60,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 684,
-      "correct_1x2": 344,
+      "n": 686,
+      "correct_1x2": 345,
       "pct_1x2": 0.5029,
-      "draw_n": 178,
-      "pct_draw": 0.2602,
-      "decisive_n": 506,
-      "decisive_correct": 344,
-      "pct_decisive": 0.6798,
-      "exact_n": 684,
-      "exact_correct": 77,
-      "pct_exact": 0.1126,
-      "brier": 0.5959,
-      "brier_n": 684,
+      "draw_n": 179,
+      "pct_draw": 0.2609,
+      "decisive_n": 507,
+      "decisive_correct": 345,
+      "pct_decisive": 0.6805,
+      "exact_n": 686,
+      "exact_correct": 78,
+      "pct_exact": 0.1137,
+      "brier": 0.5961,
+      "brier_n": 686,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 602,
-      "correct_1x2": 318,
-      "pct_1x2": 0.5282,
-      "draw_n": 143,
-      "pct_draw": 0.2375,
-      "decisive_n": 459,
-      "decisive_correct": 318,
-      "pct_decisive": 0.6928,
-      "exact_n": 602,
-      "exact_correct": 67,
-      "pct_exact": 0.1113,
-      "brier": 0.5822,
-      "brier_n": 602
+      "n": 604,
+      "correct_1x2": 319,
+      "pct_1x2": 0.5281,
+      "draw_n": 144,
+      "pct_draw": 0.2384,
+      "decisive_n": 460,
+      "decisive_correct": 319,
+      "pct_decisive": 0.6935,
+      "exact_n": 604,
+      "exact_correct": 68,
+      "pct_exact": 0.1126,
+      "brier": 0.5825,
+      "brier_n": 604
     },
     "stale": {
       "n": 138,
@@ -299,22 +299,22 @@
       "n": 284
     },
     {
-      "bin_mid": 0.2545,
-      "predicted": 0.2545,
-      "actual": 0.2684,
-      "n": 831
+      "bin_mid": 0.2546,
+      "predicted": 0.2546,
+      "actual": 0.2686,
+      "n": 834
     },
     {
       "bin_mid": 0.3411,
       "predicted": 0.3411,
-      "actual": 0.3176,
-      "n": 444
+      "actual": 0.3169,
+      "n": 445
     },
     {
-      "bin_mid": 0.4466,
-      "predicted": 0.4466,
-      "actual": 0.422,
-      "n": 282
+      "bin_mid": 0.4464,
+      "predicted": 0.4464,
+      "actual": 0.4225,
+      "n": 284
     },
     {
       "bin_mid": 0.5471,
@@ -348,6 +348,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-16",
+      "home_team": "Burnley",
+      "away_team": "Wolves",
+      "predicted_winner": "away",
+      "p_winner": 0.4107,
+      "lead_h": 0.1,
+      "most_likely_score": "1-1",
+      "actual_score": "1-2",
+      "actual_outcome": "away",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-10-16",
+      "home_team": "RC Deportivo La Coruña",
+      "away_team": "Levante UD",
+      "predicted_winner": "home",
+      "p_winner": 0.4466,
+      "lead_h": 0.1,
+      "most_likely_score": "1-1",
+      "actual_score": "1-1",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": true,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-16",
       "home_team": "Le Mans FC",
@@ -614,36 +644,6 @@
       "actual_score": "3-3",
       "actual_outcome": "draw",
       "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-13",
-      "home_team": "Villarreal CF",
-      "away_team": "SSC Napoli",
-      "predicted_winner": "home",
-      "p_winner": 0.407,
-      "lead_h": 0.1,
-      "most_likely_score": "1-1",
-      "actual_score": "3-1",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-13",
-      "home_team": "RB Leipzig",
-      "away_team": "PSV",
-      "predicted_winner": "home",
-      "p_winner": 0.4692,
-      "lead_h": 0.1,
-      "most_likely_score": "2-2",
-      "actual_score": "1-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
