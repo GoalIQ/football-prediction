@@ -340,3 +340,12 @@ def test_mention_estolista_ja_ika():
     assert any("estolistalla" in p for p in chk(it, blocked={"ffscoutfpl.bsky.social"}))
     old = {**it, "target": {**t, "handle": "fan.bsky.social", "created_at": (NOW - timedelta(hours=9)).isoformat()}}
     assert any("4 h" in p for p in chk(old))
+
+
+def test_bio_lause_omana_lauseenaan():
+    s = " Posts and replies are automated."
+    assert bsky.bio_with_suffix("Beat the model: code jgi6j9", s) == "Beat the model: code jgi6j9. Posts and replies are automated."
+    rikki = "Beat the model: code jgi6j9 Posts and replies are automated."
+    assert bsky.bio_with_suffix(rikki, s) == "Beat the model: code jgi6j9. Posts and replies are automated."
+    ok = "Free at goaliq.app. Posts and replies are automated."
+    assert bsky.bio_with_suffix(ok, s) == ok

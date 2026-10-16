@@ -112,14 +112,15 @@ class Session:
         vals = list(((rec.get("labels") or {}).get("values")) or [])
         has_label = any(v.get("val") == "bot" for v in vals)
         desc = str(rec.get("description") or "")
-        need_bio = bio_suffix.strip() not in desc and len(desc.rstrip() + bio_suffix) <= 256
+        want = bio_with_suffix(desc, bio_suffix)
+        need_bio = want != desc and len(want) <= 256
         if has_label and not need_bio:
             return False
         if not has_label:
             vals.append({"val": "bot"})
         rec["labels"] = {"$type": "com.atproto.label.defs#selfLabels", "values": vals}
         if need_bio:
-            rec["description"] = desc.rstrip() + bio_suffix
+            rec["description"] = want
         self._post("com.atproto.repo.putRecord", json={
             "repo": self.did, "collection": "app.bsky.actor.profile", "rkey": "self",
             "record": rec, "swapRecord": d.get("cid")})
@@ -150,6 +151,16 @@ class Session:
                 "aspectRatio": {"width": image["w"], "height": image["h"]}}]}
         return self._post("com.atproto.repo.createRecord",
                           json={"repo": self.did, "collection": "app.bsky.feed.post", "record": rec})
+
+
+def bio_with_suffix(desc: str, suffix: str) -> str:
+    """Bio + automaatiolause omana lauseenaan. 16.10 ensimmainen versio liitti lauseen ilman pistetta:
+    "...league code jgi6j9 Posts and replies are automated." -> korjataan myos se."""
+    s = suffix.strip()
+    base = desc.replace(s, "").rstrip()
+    if base and base[-1] not in ".!?":
+        base += "."
+    return f"{base} {s}".strip()
 
 
 def reply_ref(post: dict) -> dict:
