@@ -161,3 +161,83 @@ def test_botin_tiedostot_eivat_ole_gitignoressa(polku):
     r = subprocess.run(["git", "check-ignore", "-q", polku], cwd=ROOT, stdin=subprocess.DEVNULL,
                        capture_output=True)
     assert r.returncode == 1, f"{polku} on gitignoressa"
+
+
+# ---------------------------------------------------------------- tyonkulun turvainvariantit
+
+def _wf():
+    import yaml
+    teksti = (ROOT / ".github" / "workflows" / "bsky-bot.yml").read_text(encoding="utf-8")
+    return teksti, yaml.safe_load(teksti)
+
+
+def test_aivoilla_vain_lukuoikeus_eika_bluesky_tunnusta():
+    import yaml
+    teksti, doc = _wf()
+    aivot = doc["jobs"]["aivot"]
+    assert all(v in ("read", "none") for v in aivot["permissions"].values())
+    co = [s for s in aivot["steps"] if str(s.get("uses", "")).startswith("actions/checkout")]
+    assert co and all((s.get("with") or {}).get("persist-credentials") is False for s in co)
+    assert "BLUESKY" not in yaml.safe_dump(aivot)
+    claude = [s for s in aivot["steps"] if "claude-code-action" in str(s.get("uses", ""))][0]
+    tyokalut = claude["with"]["claude_args"].split('--allowedTools "', 1)[1].split('"', 1)[0]
+    assert "Bash" not in tyokalut, "aivot eivat aja koodia: vain Read/Write/haku"
+    assert "ANTHROPIC_API_KEY" not in teksti and "anthropic_api_key" not in teksti
+
+
+def test_salasana_vain_julkaisuaskeleelle():
+    import yaml
+    _t, doc = _wf()
+    for nimi, job in doc["jobs"].items():
+        for s in job["steps"]:
+            env = yaml.safe_dump(s.get("env") or {})
+            if "BLUESKY_APP_PASSWORD" in env:
+                assert nimi == "julkaise" and "bsky_bot publish" in str(s.get("run")), s
+
+
+@pytest.mark.parametrize("tunti,viimeksi_h,deadline_h,odotus", [
+    (9, None, 40, True), (17, None, 40, True), (12, None, 40, False),
+    (12, None, 5, True), (12, 1, 5, False), (9, 1, 40, False), (12, None, -1, False),
+])
+def test_aivojen_ajopaatos(tunti, viimeksi_h, deadline_h, odotus):
+    now = datetime(2026, 10, 17, tunti, 37, tzinfo=timezone.utc)
+    s = _state()
+    if viimeksi_h is not None:
+        s["last_think_at"] = (now - timedelta(hours=viimeksi_h)).isoformat()
+    assert bot.should_think(now, s, now + timedelta(hours=deadline_h)) is odotus
+    assert bot.should_think(now, s, now + timedelta(hours=deadline_h), force=True) is True
+
+
+class _Sessio:
+    def __init__(self, ilmoitukset):
+        self.n = ilmoitukset
+
+    def notifications(self, limit=50):
+        return self.n
+
+
+def _ilmo(uri, teksti, reason="mention"):
+    return {"uri": uri, "cid": "c" + uri[-1], "reason": reason, "indexedAt": NOW.isoformat(),
+            "author": {"handle": "fan.bsky.social"}, "record": {"text": teksti}}
+
+
+def test_mentioihin_vastataan_vain_tunnistettuun_kysymykseen():
+    mod = {"gw": 7, "sections": {
+        "player_lookup": {"rows": [{"key": "saka-ars", "name": "Saka"}]},
+        "captain_top5": {"rows": [{"key": "haaland-mci", "name": "Haaland"}]}}}
+    vals = {**V, "player_lookup.saka-ars.gw_xp": {"text": "5.4", "public_url": "x"},
+            "player_lookup.saka-ars.xp_6gw": {"text": "31.0", "public_url": "x"}}
+    s = _state()
+    ses = _Sessio([_ilmo("at://a/1", "@goaliqapp is Saka worth it?"),
+                   _ilmo("at://a/2", "@goaliqapp who should I captain"),
+                   _ilmo("at://a/3", "@goaliqapp nice work"),
+                   _ilmo("at://a/4", "liked", reason="like")])
+    out = bot.mention_items(ses, mod, vals, s)
+    assert [o["target"]["uri"] for o in out] == ["at://a/1", "at://a/2"]
+    assert "Saka" in out[0]["text"] and "Haaland" in out[1]["text"]
+    assert set(s["handled_notifications"]) == {"at://a/1", "at://a/2", "at://a/3"}
+    for o in out:   # pohjavastaus laapaisee portin (yksi luku, ei linkkia, ei tuotenimea)
+        assert gate.check(o, values=vals, gw=7, now=NOW, state=_state(), blocklist=set(),
+                          phrases=gate.rejected_phrases()) == [], o["text"]
+    # toinen ajo: samaan ilmoitukseen ei vastata uudelleen
+    assert bot.mention_items(ses, mod, vals, s) == []

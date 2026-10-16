@@ -79,6 +79,10 @@ TARGETS: list[dict] = [
     # 16.10.2026: auto-PR-muistutus (5 slottia/vko). Idempotentti: yksi issue,
     # paivitys enintaan kerran 20 tunnissa, joten cron-tupla ei tee mitaan uutta.
     {"workflow": "auto-pr-muistutus.yml", "slots": None},
+    # 16.10.2026: Bluesky-botti (tunneittain). Idempotentti: tila (slotit, vastatut postaukset,
+    # aivojen viimeisin ajo) on mainissa ja concurrency-ryhma sarjallistaa, joten cron-tupla
+    # ei postaa toista kertaa eika aja aivoja uudelleen alle 2 h:ssa.
+    {"workflow": "bsky-bot.yml", "slots": None},
 ]
 
 # S14-mittarin (goaliq-app scripts/autopilot/cron_realization.py) ikkuna ja

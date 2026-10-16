@@ -134,6 +134,23 @@ def utm_link(path: str, topic: str, content: str) -> tuple[str, str]:
 
 # ---------------------------------------------------------------- deterministiset ehdotukset
 
+# Pohjat vaihtavat runkoa kierroksittain (gw % 3): sama runko joka viikko on tyyliohjeen
+# slop-tell nro 1. Kanta ensin, enintaan kaksi lukua (kortti kantaa loput). Nama ovat VARA:
+# aivojen (Claude) kirjoittama postaus samaan slotiin korvaa pohjan.
+CAPTAIN_TEMPLATES = (
+    "Not overthinking the armband in GW{gw}. {name} tops the model at {xp} expected points. LINK",
+    "GW{gw} armband is {name} for the model: {xp} expected points and a {p10} shot at 10+. LINK",
+    "Plenty of captain debates this week. The model isn't having one: {name}, {xp} expected points in GW{gw}. LINK",
+)
+# Sivu (goaliq.app/fpl): "We play it in FPL as entry 116920, with our own chip calls and the occasional
+# lineup change, and that's the team to beat in the Beat the Model mini-league." Siksi ei "the model's picks".
+RECAP_TEMPLATES = (
+    "GW{gw} is in the books. The Beat the Model team scored {pts}, the FPL average was {avg}. LINK",
+    "{pts} for the Beat the Model team in GW{gw}. The average manager got {avg}. LINK",
+    "GW{gw}: Beat the Model team {pts}, FPL average {avg}. Think you can beat it? LINK",
+)
+
+
 def fallback_items(mod: dict, values: dict, now: datetime, state: dict) -> list[dict]:
     """Postaukset jotka botti tekee ilman aivojakin (aivot voivat korvata saman slotin)."""
     out = []
@@ -142,32 +159,24 @@ def fallback_items(mod: dict, values: dict, now: datetime, state: dict) -> list[
     to_dl = dl - now
     slot = f"deadline:gw{gw}"
     cap = next(iter(rows(mod, "captain_top5")), None)
-    cs = next(iter(rows(mod, "cs_top")), None)
-    if (timedelta(hours=3) <= to_dl <= timedelta(hours=30) and slot not in state["posted_slots"]
-            and cap and cs):
+    if timedelta(hours=3) <= to_dl <= timedelta(hours=30) and slot not in state["posted_slots"] and cap:
         ck = f"captain_top5.{cap['key']}"
-        sk = f"cs_top.{cs['key']}.cs_pct"
-        xp, p10, csp = val(values, f"{ck}.gw_xp"), val(values, f"{ck}.p_10plus"), val(values, sk)
-        if xp and p10 and csp:
-            out.append({
-                "kind": "post", "topic": "captain", "slot": slot,
-                "text": (f"GW{gw} captain: the model's top pick is {cap['name']} at {xp} expected points, "
-                         f"with a {p10} chance of 10+. Highest clean sheet chance this round: "
-                         f"{cs['team']} at {csp}. LINK"),
-                "keys": [f"{ck}.gw_xp", f"{ck}.p_10plus", sk],
-                "link": "/fpl/best-captain", "card": "best-captain"})
+        xp, p10 = val(values, f"{ck}.gw_xp"), val(values, f"{ck}.p_10plus")
+        tpl = CAPTAIN_TEMPLATES[gw % 3]
+        keys = [f"{ck}.gw_xp"] + ([f"{ck}.p_10plus"] if "{p10}" in tpl else [])
+        if xp and (p10 or "{p10}" not in tpl):
+            out.append({"kind": "post", "topic": "captain", "slot": slot,
+                        "text": tpl.format(gw=gw, name=cap["name"], xp=xp, p10=p10),
+                        "keys": keys, "link": "/fpl/best-captain", "card": "best-captain"})
     lg = (mod.get("sections") or {}).get("last_gw") or {}
     rslot = f"recap:gw{lg.get('gw')}"
     if lg.get("available") and rslot not in state["posted_slots"] and lg.get("gw") == gw - 1:
         pts, avg = val(values, "last_gw.entry_points"), val(values, "last_gw.fpl_average")
         if pts and avg:
-            out.append({
-                "kind": "post", "topic": "recap", "slot": rslot,
-                "text": (f"GW{lg['gw']}: the FPL team that plays the model's picks scored {pts}. "
-                         f"The FPL average was {avg}. Every pick is logged before the deadline and scored "
-                         f"after it. LINK"),
-                "keys": ["last_gw.entry_points", "last_gw.fpl_average"],
-                "link": f"/fpl/points/gw{lg['gw']}", "card": f"points/gw{lg['gw']}"})
+            out.append({"kind": "post", "topic": "recap", "slot": rslot,
+                        "text": RECAP_TEMPLATES[lg["gw"] % 3].format(gw=lg["gw"], pts=pts, avg=avg),
+                        "keys": ["last_gw.entry_points", "last_gw.fpl_average"],
+                        "link": "/fpl#gw-calls", "card": f"points/gw{lg['gw']}"})
     return out
 
 
@@ -200,11 +209,11 @@ def mention_items(session, mod: dict, values: dict, state: dict) -> list[dict]:
                   "created_at": n.get("indexedAt")}
         if hit:
             k = f"player_lookup.{hit['key']}"
-            xp, x6 = val(values, f"{k}.gw_xp"), val(values, f"{k}.xp_6gw")
-            if xp and x6:
+            xp = val(values, f"{k}.gw_xp")
+            if xp:   # yksi luku vastaukseen (portti: MAX_NUMBERS["mention_reply"] = 1)
                 out.append({"kind": "mention_reply", "topic": "mention", "target": target,
-                            "text": f"{hit['name']}: {xp} expected points for GW{gw}, {x6} over the next six gameweeks.",
-                            "keys": [f"{k}.gw_xp", f"{k}.xp_6gw"]})
+                            "text": f"The model has {hit['name']} at {xp} expected points for GW{gw}.",
+                            "keys": [f"{k}.gw_xp"]})
         elif "captain" in low:
             cap = next(iter(rows(mod, "captain_top5")), None)
             key = f"captain_top5.{cap['key']}.gw_xp" if cap else ""
@@ -392,7 +401,7 @@ def prepare(item: dict, content_id: str) -> tuple[str, dict]:
     return text.replace("LINK", "").strip(), links
 
 
-def cmd_publish(queue_path: Path | None, dry: bool) -> int:
+def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> int:
     now = datetime.now(timezone.utc)
     state = load_state()
     blocked, phrases = blocklist(), gate.rejected_phrases()
@@ -455,11 +464,19 @@ def cmd_publish(queue_path: Path | None, dry: bool) -> int:
                          "target_handle": (it.get("target") or {}).get("handle"),
                          "target_uri": (it.get("target") or {}).get("uri"), "dry_run": dry,
                          "why": it.get("why"), "anticipation": it.get("anticipation")})
+    if thought:
+        state["last_think_at"] = now.isoformat()
     if not dry:
         with LOG_PATH.open("a", encoding="utf-8") as f:
             for r in log_rows:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
         save_json(STATE_PATH, state)
+    elif thought:
+        # Kuivana postauksia ei kirjata, mutta aivojen ajohetki kylla: muuten kiintiota kuluu
+        # joka tunti niin kauan kuin Bluesky-salasana puuttuu.
+        s = load_state()
+        s["last_think_at"] = now.isoformat()
+        save_json(STATE_PATH, s)
     print(f"julkaistu {published}, hylatty {len(rejected)}, kuiva={dry}")
     for r in rejected:
         print(f"  HYLATTY ({r['source']}): {r['text'][:120]} -> {'; '.join(r['why'])[:300]}")
@@ -527,6 +544,37 @@ def cmd_perf() -> int:
     return 0
 
 
+THINK_HOURS_UTC = (9, 17)          # aktiivisimmat FPL-tunnit (viestintatyyli 5b) -> kiintio ~2-3 ajoa/vrk
+THINK_DEADLINE_WINDOW = timedelta(hours=6)
+THINK_MIN_GAP = timedelta(hours=2)
+
+
+def should_think(now: datetime, state: dict, deadline: datetime | None, force: bool = False) -> bool:
+    """Ajetaanko aivot (Claude, kuluttaa tilauksen kiintiota) tassa ajossa."""
+    if force:
+        return True
+    last = state.get("last_think_at")
+    if last and now - datetime.fromisoformat(last) < THINK_MIN_GAP:
+        return False
+    if now.hour in THINK_HOURS_UTC:
+        return True
+    return bool(deadline and timedelta(0) < deadline - now <= THINK_DEADLINE_WINDOW)
+
+
+def cmd_should_think(force: bool) -> int:
+    now = datetime.now(timezone.utc)
+    meta = (load_json(DATA / "fpl_xp_projections.json", {}) or {}).get("meta") or {}
+    dl = meta.get("deadline_utc")
+    deadline = datetime.fromisoformat(dl.replace("Z", "+00:00")) if dl else None
+    think = should_think(now, load_state(), deadline, force)
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            f.write("think=" + ("true" if think else "false") + "\n")
+    print(f"aivot: {think} (klo {now:%H} UTC, deadline {dl})")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -535,12 +583,17 @@ def main(argv=None) -> int:
     p = sub.add_parser("publish")
     p.add_argument("--queue")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--thought", action="store_true", help="aivot ajettiin tassa ajossa (kirjaa tilaan)")
+    st = sub.add_parser("should-think")
+    st.add_argument("--force", action="store_true")
     sub.add_parser("perf")
     a = ap.parse_args(argv)
     if a.cmd == "context":
         return cmd_context(Path(a.out))
     if a.cmd == "publish":
-        return cmd_publish(Path(a.queue) if a.queue else None, a.dry_run)
+        return cmd_publish(Path(a.queue) if a.queue else None, a.dry_run, a.thought)
+    if a.cmd == "should-think":
+        return cmd_should_think(a.force)
     return cmd_perf()
 
 

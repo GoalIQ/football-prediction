@@ -28,6 +28,19 @@ from scripts.public_text import BANNED
 MAX_CHARS = 300
 POSTS_PER_DAY = 3
 OUTBOUND_REPLIES_PER_DAY = 4
+MENTION_REPLIES_PER_DAY = 3      # "kaytto, ei sanamuoto": vastaus kaikkeen minuuteissa = botin tunnusmerkki
+# Lukuja tekstissa (kierrosnumeroa ei lasketa). Luku tukee kantaa, ei korvaa sita; kolme lukua
+# samassa tekstissa on tunnusmerkki eika todiste (tyyliohje D2). Postauksen kortti kantaa loput.
+MAX_NUMBERS = {"post": 2, "reply": 1, "mention_reply": 1}
+# Tyyliohjeen kielletyt kuviot (pienilla kirjaimilla, osamerkkijono). Sanasto + rakenteet.
+STYLE_TELLS = (
+    "additionally", "align with", "bolstered", "crucial", "delve", "emphasizing", "enduring", "enhance",
+    "fostering", "garner", "highlight", "interplay", "intricate", "meticulous", "pivotal", "robust",
+    "showcase", "tapestry", "testament", "underscore", "vibrant", "serves as", "stands as",
+    "not just ", "rather than", "in short", "the bottom line", "let's dive", "here's the thing",
+    "game-changer", "game changer", "it's worth noting", "as you spotted", "great question",
+    "betting", " odds", "tips", "lock of the week",
+)
 TARGET_MAX_AGE = timedelta(hours=4)
 AUTHOR_COOLDOWN = timedelta(hours=48)
 SIMILAR = 0.8
@@ -87,6 +100,13 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         if ch in text:
             probs.append(f"kielletty merkki: {name}")
     low = text.lower()
+    for tell in STYLE_TELLS:
+        if tell in low:
+            probs.append(f"tyylikielto: {tell.strip()!r}")
+    if re.search(r"(?:is|are|was)n't [^.,;]{1,40}, (?:it|they|he|she)(?:'s| is| are)", low):
+        probs.append("tyylikielto: negatiivinen parallelismi (ei X, vaan Y)")
+    if text.count("!") > 1:
+        probs.append("yli yksi huutomerkki")
     for ph in phrases:
         if ph and ph in low:
             probs.append(f"hylatty sanamuoto: {ph!r}")
@@ -102,10 +122,13 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         if m.group(1) not in gws and m.group(1) not in {str(int(g) - 1) for g in gws}:
             probs.append(f"kierros GW{m.group(1)} ei ole moduulin kierros tai edellinen")
     body = _GW_RE.sub(" ", body)
-    for m in _NUM_RE.finditer(body):
-        n = m.group(0)
+    nums = [m.group(0) for m in _NUM_RE.finditer(body)]
+    for n in nums:
         if n not in ok_nums and n.rstrip("%") not in ok_nums:
             probs.append(f"luku {n!r} ei tule kaytetyista moduuliavaimista")
+    cap_n = MAX_NUMBERS.get(kind, 1)
+    if len([n for n in nums if n != "10+"]) > cap_n:
+        probs.append(f"liikaa lukuja ({len(nums)} > {cap_n}): yksi luku tukee kantaa")
 
     if kind in ("reply", "mention_reply"):
         if _URL_RE.search(text):
@@ -140,6 +163,8 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         probs.append(f"omien postausten kiintio {POSTS_PER_DAY}/vrk taynna")
     if kind == "reply" and counts.get("reply", 0) >= OUTBOUND_REPLIES_PER_DAY:
         probs.append(f"vastauskiintio {OUTBOUND_REPLIES_PER_DAY}/vrk taynna")
+    if kind == "mention_reply" and counts.get("mention", 0) >= MENTION_REPLIES_PER_DAY:
+        probs.append(f"mention-vastauskiintio {MENTION_REPLIES_PER_DAY}/vrk taynna")
     for prev in (state.get("recent_texts") or [])[-40:]:
         if similar(text, prev):
             probs.append("lahes sama teksti kuin aiempi postaus (toisto)")
