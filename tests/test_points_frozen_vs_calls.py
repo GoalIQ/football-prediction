@@ -15,6 +15,7 @@ kierrokselle jolla on seka kutsut etta jaadytys, ei vain nykyiselle.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -80,15 +81,18 @@ def _pvm(iso: str) -> str:
 
 def test_selitteen_paivat_tulevat_datasta():
     """'frozen on 27 August' = jaadytyksen projektioajo, 'fixed on 28
-    August' = kutsujen projektioajo. Kovakoodattu paiva ei saa erota."""
+    August' / 'updated on 10 October' = kutsujen projektioajo. Kovakoodattu
+    paiva ei saa erota. 16.10: GW2:n ero oli mallikorjaus ('fixed'), GW6:n
+    tavallinen paivitys ('updated'); kumpikin paiva tulee datasta."""
     rivit = {gw: (row, fr) for gw, row, fr in _kierrokset()}
     for gw, teksti in lt.FROZEN_VS_CALLS_NOTE.items():
         row, fr = rivit[gw]
         jaadytys = _pvm(fr["meta"]["projection_generated_at"])
         kutsut = _pvm(row["source"]["projection_generated_at"])
         assert f"frozen on {jaadytys}" in teksti
-        assert f"fixed on {kutsut}" in teksti
-        assert f"from the {jaadytys} freeze" in teksti
+        assert f"fixed on {kutsut}" in teksti or f"updated on {kutsut}" in teksti
+        for viite in re.findall(r"from the (\d{1,2} [A-Z][a-z]+) freeze", teksti):
+            assert viite == jaadytys, (gw, viite)
 
 
 def test_gw2_sivu_nayttaa_selitteen():

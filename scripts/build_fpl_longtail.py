@@ -5132,6 +5132,13 @@ FROZEN_VS_CALLS_NOTE = {
         'picks in the <a href="/fpl#gw-calls">gameweek calls log</a> were '
         "recomputed with it. The model squad captain in that log still came "
         "from the 27 August freeze."),
+    # GW6 (mitattu 16.10): xP-jaadytys 9.10 06:54 UTC, kutsut paivittyivat 10.10 07:02
+    # UTC projektiosta 10.10 06:54 (kutsut seuraavat uusinta projektiota deadlineen asti).
+    # Boom or bust Joao Pedro 3.75 kutsussa vs 2.82 jaadytyksessa (ero 0.93).
+    6: ("For GW6 this is the projection frozen on 9 October. The picks in the "
+        '<a href="/fpl#gw-calls">gameweek calls log</a> follow the latest '
+        "projection until the deadline and were last updated on 10 October, so "
+        "their numbers can differ from this table."),
 }
 
 
