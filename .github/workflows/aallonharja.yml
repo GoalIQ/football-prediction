@@ -1,0 +1,178 @@
+# Aallonharja (16.10.2026, Villen linjaus: tuote benchmarkataan ja uusia ominaisuuksia haetaan
+# sekä FPL-työkaluihin että ennusteisiin). Viikoittain:
+#   1. FPL-skeemavahti (deterministinen): bootstrap-staticin kentät, chipit ja pistesäännöt vs edellinen
+#      tilannekuva. Sääntömuutos on aalto, johon ehtii ensimmäisenä (DefCon 2025/26).
+#   2. Agentti päivittää docs/BENCHMARK.md:n: kilpailijat (FPL ja ennusteet), mallin omat mittarit
+#      (xP vs FPL:n ep_next, 1X2 ja Brier) ja uudet aallot. Se kirjoittaa havainnot Signaaleiksi ja
+#      enintään kolme backlog-riviä, joista auto-kehitys tekee PR:t.
+# Sama turvamalli kuin auto-kehityksessä: agentilla vain lukuoikeus, portti mainin versiosta, ihminen mergeää.
+# 0 euroa: Max-tilauksen OAuth-token, julkinen repo.
+
+name: aallonharja
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '23 3 * * 0'  # sunnuntai 03:23 UTC, ennen maanantain auto-kehitysajoa
+
+concurrency:
+  group: aallonharja
+  cancel-in-progress: false
+
+jobs:
+  agentti:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tulos: ${{ steps.paketoi.outputs.tulos }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Tilaus-token on asetettu
+        env:
+          T: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN puuttuu. Ville: claude setup-token, sitten gh secret set CLAUDE_CODE_OAUTH_TOKEN -R GoalIQ/football-prediction"
+            exit 1
+          fi
+
+      - name: Avoin aallonharja-PR estää uuden
+        id: avoin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh pr list --state open --limit 100 --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("aallonharja/"))] | length')
+          if [ "${n:-0}" -gt 0 ]; then saa=false; else saa=true; fi
+          echo "saa=$saa" >> "$GITHUB_OUTPUT"
+          echo "pvm=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+          echo "Avoimia aallonharja-PR:iä $n, uusi ajo sallittu: $saa"
+
+      - name: FPL-skeemavahti
+        if: steps.avoin.outputs.saa == 'true'
+        run: python .github/auto-kehitys/fpl_schema_watch.py --snapshot data/fpl_schema_snapshot.json --out /tmp/fpl-schema-diff.md
+
+      - name: Agentti päivittää benchmarkin (commit paikallisesti)
+        if: steps.avoin.outputs.saa == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: >-
+            --max-turns 90
+            --add-dir /tmp
+            --allowedTools "WebSearch,WebFetch,Bash(git:*),Bash(python:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(wc:*),Bash(echo:*),Read,Edit,Write,Glob,Grep"
+          prompt: |
+            Olet GoalIQ:n aallonharja-agentti. Tänään on ${{ steps.avoin.outputs.pvm }}. Päivität viikoittaisen
+            benchmarkin ja syötät tuotekehitykselle uusia ominaisuuksia. Et pushaa etkä avaa PR:ää: työnkulku tekee
+            sen, kun kieltoportti on hyväksynyt muutoksen. Aja yksi komento kerrallaan, älä ketjuta &&:lla tai ;:lla.
+
+            Lue ensin docs/TUOTEPERIAATTEET.md, docs/BENCHMARK.md (edellinen kierros), docs/AUTO-BACKLOG.md, llms.txt
+            ja /tmp/fpl-schema-diff.md (FPL-skeemavahdin tulos tältä viikolta).
+
+            1. MALLIN OMAT MITTARIT. Lue data/fpl_xp_gw_accuracy.json (GoalIQ xP vs FPL:n ep_next samoilla riveillä)
+               ja data/accuracy.json (1X2-osuma, Brier, kalibraatio). Kirjaa luvut ja muutos edelliseen kierrokseen.
+               Jos GoalIQ häviää perustasolle jollain kierroksella tai sarjalla, se on signaali.
+            2. KILPAILIJAT. Käy läpi BENCHMARK.md:n palvelut (FPL ja ennusteet) julkisilta, kirjautumattomilta sivuilta:
+               ominaisuussivut, changelogit, blogit, kauppakuvaukset. Etsi myös uudet merkittävät palvelut. Enintään
+               noin 30 hakua tai sivua. Ei kirjautumista, ei maksumuurin kiertämistä, ei UEFA:n sivuja.
+               Merkitse varmistamaton "?", älä arvaa.
+            3. AALLOT. Mitä uutta FPL:ssä ja ennusteissa nousee tällä viikolla (sääntö- ja datamuutokset, uudet
+               ominaisuudet, mitä yhteisö pyytää julkisesti luettavissa keskusteluissa)? FPL-skeeman muutos on aina aalto.
+            4. Päivitä docs/BENCHMARK.md: säilytä rakenne, päivitä matriisit ja mittarit, kirjoita alkuun lohko
+               "## Muutokset <pvm>" (mitä muuttui edellisestä, lähteet). Lähteet URL:eina.
+            5. Kirjoita docs/AUTO-BACKLOG.md:n Signaalit-lohkoon havainnot, joilla on tuotevaikutus (muoto
+               "- <vvvv-kk>: <havainto> (lähde: <URL tai tiedosto>)"). Kirjoita lisäksi enintään KOLME uutta riviä
+               Avoimet-listan loppuun (ennen "## Tehdyt") TUOTEPERIAATTEET.md:n muodossa Pisteet- ja Mittari-kenttineen,
+               merkintä "(aallonharja <pvm>, lähde: <URL>)". Suosi uutuutta 2 ja ominaisuuksia, joita kilpailijat myyvät
+               maksullisena (myynti 2). Vähintään yksi FPL ja yksi ennusteet, jos aineisto antaa. Ei rivejä, jotka vaativat
+               maksullista dataa, UEFA-dataa tai uutta riippuvuutta. Älä muuta olemassa olevia rivejä.
+            6. Luo haara: git checkout -b aallonharja/${{ steps.avoin.outputs.pvm }}. Lisää docs/BENCHMARK.md,
+               docs/AUTO-BACKLOG.md ja data/fpl_schema_snapshot.json (jos muuttui). Aseta git config user.name
+               "goaliq-auto[bot]" ja user.email "actions@users.noreply.github.com". Commit-viesti Write-työkalulla
+               /tmp/commit.txt:hen ja git commit -F /tmp/commit.txt. Muita tiedostoja ei saa muuttaa (portti hylkää).
+            7. Kirjoita /tmp/pr-title.txt: "aallonharja: ${{ steps.avoin.outputs.pvm }}" ja /tmp/pr-body.md: ensimmäinen
+               rivi "Riskiluokka: docs", sitten kolme tärkeintä havaintoa, uudet backlog-rivit perusteluineen ja lähteet.
+               Ei em dashia (—).
+
+      - name: Paketoi tulos
+        id: paketoi
+        if: steps.avoin.outputs.saa == 'true'
+        run: |
+          set -e
+          haara=$(git rev-parse --abbrev-ref HEAD)
+          case "$haara" in
+            aallonharja/*) ;;
+            *) echo "::error::Agentti ei luonut aallonharja/-haaraa. Syy: agentin loki."; exit 1 ;;
+          esac
+          if [ "$(git rev-list --count origin/main..HEAD)" = "0" ]; then
+            echo "::error::Haara $haara luotiin ilman committia."; exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/auto"
+          git bundle create "$RUNNER_TEMP/auto/auto.bundle" "$haara" ^origin/main
+          printf '%s\n' "$haara" > "$RUNNER_TEMP/auto/haara.txt"
+          cp /tmp/pr-title.txt "$RUNNER_TEMP/auto/" 2>/dev/null || true
+          cp /tmp/pr-body.md "$RUNNER_TEMP/auto/" 2>/dev/null || true
+          echo "tulos=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.paketoi.outputs.tulos == 'true'
+        with:
+          name: aallonharja-tulos
+          path: ${{ runner.temp }}/auto
+          retention-days: 7
+
+  julkaise:
+    needs: agentti
+    if: needs.agentti.outputs.tulos == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: aallonharja-tulos
+          path: ${{ runner.temp }}/auto
+
+      - name: Kieltoportti mainin versiosta
+        id: portti
+        run: |
+          set -e
+          haara=$(head -n1 "$RUNNER_TEMP/auto/haara.txt" | tr -d '\r')
+          if ! printf '%s' "$haara" | grep -Eq '^aallonharja/[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "::error::Haaran nimi ei kelpaa: $haara"; exit 1
+          fi
+          git fetch -q "$RUNNER_TEMP/auto/auto.bundle" "$haara:$haara"
+          git show origin/main:.github/auto-kehitys/guard.py > "$RUNNER_TEMP/guard.py"
+          python "$RUNNER_TEMP/guard.py" --profile aallonharja --base origin/main --head "$haara"
+          echo "haara=$haara" >> "$GITHUB_OUTPUT"
+
+      - name: Push aallonharja/-haara ja avaa PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAARA: ${{ steps.portti.outputs.haara }}
+        run: |
+          set -e
+          otsikko=$(head -n1 "$RUNNER_TEMP/auto/pr-title.txt" 2>/dev/null | tr -d '\r' | cut -c1-110)
+          case "$otsikko" in aallonharja:\ *) ;; *) otsikko="aallonharja: ${HAARA#aallonharja/}" ;; esac
+          runko="$RUNNER_TEMP/auto/pr-body.md"
+          [ -s "$runko" ] || printf 'Riskiluokka: docs\n\nAgentti ei kirjoittanut PR:n kuvausta.\n' > "$runko"
+          git push origin "refs/heads/$HAARA:refs/heads/$HAARA"
+          gh pr create --base main --head "$HAARA" --title "$otsikko" --body-file "$runko"

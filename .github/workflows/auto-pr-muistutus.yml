@@ -1,0 +1,60 @@
+# Auto-PR-muistutus (16.10.2026, malli lsl-aikataulut): auto-kehitys ei aloita uutta työtä, kun kaksi sen
+# PR:ää odottaa katselmusta. Lsl:ssä avoin auto-PR seisoi viikon ja silmukka pysähtyi (16 PR:stä 3 mergattu).
+# Arkiaamuisin: issue (GitHub lähettää sähköpostin), kun auto/- tai aallonharja/-PR on odottanut yli 48 h.
+# Suljetaan itse, kun odottavia ei ole. Kulut: sekunteja Actions-aikaa julkisessa repossa.
+name: Auto-PR-muistutus
+
+on:
+  schedule:
+    - cron: '43 5 * * 1-5'  # ma-pe 05:43 UTC; ei täystuntia
+  workflow_dispatch: {}
+
+permissions:
+  pull-requests: read
+  issues: write
+
+jobs:
+  muistuta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const RAJA_H = 48;
+            const OTSIKKO = 'Auto-kehityksen PR odottaa katselmusta';
+            const nyt = Date.now();
+            const prs = await github.paginate(github.rest.pulls.list, { owner, repo, state: 'open', per_page: 100 });
+            const odottavat = prs
+              .filter(p => /^(auto|aallonharja)\//.test(p.head.ref))
+              .map(p => ({ p, h: Math.floor((nyt - new Date(p.created_at).getTime()) / 36e5) }))
+              .filter(x => x.h >= RAJA_H);
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const auki = issues.find(i => !i.pull_request && i.title === OTSIKKO);
+            if (!odottavat.length) {
+              if (auki) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: auki.number,
+                  body: 'Ei enää yli kaksi vuorokautta odottaneita auto-PR:iä. Suljetaan.' });
+                await github.rest.issues.update({ owner, repo, issue_number: auki.number, state: 'closed' });
+              }
+              core.info('Ei odottavia auto-PR:iä.');
+              return;
+            }
+            // Idempotentti (fp-dispatch-relay + myöhästynyt cron = kaksi ajoa): enintään yksi päivitys 20 tunnissa.
+            if (auki && nyt - new Date(auki.updated_at).getTime() < 20 * 36e5) {
+              core.info('Issue päivitetty alle 20 h sitten, ohitetaan.');
+              return;
+            }
+            const rivit = odottavat.map(({ p, h }) =>
+              `- #${p.number} ${p.title} (odottanut ${Math.floor(h / 24)} vrk ${h % 24} h)`).join('\n');
+            const runko = 'Auto-kehitys ei aloita uutta työtä, kun kaksi PR:ää odottaa. Katselmoi (merge squashilla, korjauspyyntö tai sulkeminen):\n\n' +
+              rivit + '\n\nTämä issue suljetaan automaattisesti, kun odottavia ei ole.';
+            if (auki) {
+              await github.rest.issues.update({ owner, repo, issue_number: auki.number, body: runko });
+              await github.rest.issues.createComment({ owner, repo, issue_number: auki.number,
+                body: `Muistutus: ${odottavat.length} PR:ää odottaa yhä.\n\n${rivit}` });
+            } else {
+              await github.rest.issues.create({ owner, repo, title: OTSIKKO, body: runko, assignees: ['Veikkoville'] });
+            }
+            core.info(`${odottavat.length} odottavaa PR:ää.`);

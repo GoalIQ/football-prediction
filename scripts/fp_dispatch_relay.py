@@ -76,6 +76,9 @@ TARGETS: list[dict] = [
     {"workflow": "fpl-elite-tick.yml", "slots": None},
     {"workflow": "model-squad-grade.yml", "slots": None},
     {"workflow": "fpl-page-refresh.yml", "slots": None},
+    # 16.10.2026: auto-PR-muistutus (5 slottia/vko). Idempotentti: yksi issue,
+    # paivitys enintaan kerran 20 tunnissa, joten cron-tupla ei tee mitaan uutta.
+    {"workflow": "auto-pr-muistutus.yml", "slots": None},
 ]
 
 # S14-mittarin (goaliq-app scripts/autopilot/cron_realization.py) ikkuna ja
@@ -113,6 +116,11 @@ EXCEPTIONS: dict[str, tuple[str, str]] = {
                                                          "issue-vahti sietaa viiveen"),
     "fpl-why-refresh.yml": ("maksullinen", "kutsuu Claude Batches API:a (ANTHROPIC_API_KEY); "
                                            "myohastynyt cron + relay = kaksi maksullista ajoa"),
+    "auto-kehitys.yml": ("alle_s14_kynnyksen", "3 slottia / 7 vrk (ma, ke, pe). Lisaksi ei "
+                                               "idempotentti: tupla-ajo tekisi toisen PR:n ja "
+                                               "kuluttaisi Claude-kiintiota kahdesti"),
+    "aallonharja.yml": ("alle_s14_kynnyksen", "viikoittainen (1 slotti / 7 vrk); avoin "
+                                              "aallonharja-PR estaa toisen ajon"),
     "free-window-watch.yml": ("ei_idempotentti", "lisaa rivin free_window_log.jsonl:iin ja "
                                                  "affiliate_cohort_log.jsonl:iin joka ajolla "
                                                  "ilman paivakohtaista tarkistusta; tupla-ajo "

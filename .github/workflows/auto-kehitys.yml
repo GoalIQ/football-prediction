@@ -1,0 +1,268 @@
+# Auto-kehitys (16.10.2026, Villen linjaus: tuotekehitys on automaatiota).
+# Agentti tekee yhden backlog-rivin (docs/AUTO-BACKLOG.md) ja työnkulku avaa siitä PR:n. Ihminen mergeää.
+# Malli: lsl-aikataulut/.github/workflows/auto-kehitys.yml (ajossa 28.8.2026 alkaen), ja sen opit mukana:
+# enintään kaksi avointa auto-PR:ää, varatut rivit, kärkivuoro, tyhjä ajo on punainen.
+#
+# 0 EUROA: Claude ajetaan Max-tilauksen OAuth-tokenilla (secret CLAUDE_CODE_OAUTH_TOKEN, `claude setup-token`).
+# Maksullista API-avainta ei lueta lainkaan (portti tests/test_auto_kehitys_workflow.py). Julkinen repo,
+# joten Actions-minuutit ovat ilmaisia.
+#
+# AGENTILLA EI OLE KIRJOITUSOIKEUTTA (CLAUDE.md 6a: tee väärästä vaihtoehdosta mahdoton). Repossa on
+# tuotantosalaisuuksia (Stripe, Cloudflare, Render-hook) ja bottien push mainiin. Siksi:
+#   agentti   token vain luku, checkout ilman tunnuksia; agentti committaa paikallisesti ja tulos
+#             siirtyy git bundlena artefaktiin. Agentti ei voi pushata mainiin eikä minnekään.
+#   julkaise  ajaa kieltoportin MAININ versiosta (agentti ei voi löysätä sitä haarallaan), pushaa vain
+#             auto/-haaran, avaa PR:n ja käynnistää testit. Ei koskaan mergeä eikä deployta.
+
+name: auto-kehitys
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '41 2 * * 1,3,5'  # ma, ke, pe 02:41 UTC; ei täystuntia. GitHubin viive (5-12 h) ei haittaa tätä.
+
+concurrency:
+  group: auto-kehitys
+  cancel-in-progress: false
+
+jobs:
+  agentti:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tulos: ${{ steps.paketoi.outputs.tulos }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Riippuvuudet (testejä varten)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Tilaus-token on asetettu
+        env:
+          T: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN puuttuu. Ville: claude setup-token, sitten gh secret set CLAUDE_CODE_OAUTH_TOKEN -R GoalIQ/football-prediction"
+            exit 1
+          fi
+
+      # Enintään kaksi avointa auto-PR:ää; avoimien haarojen rastittamat rivit ovat varattuja.
+      # Kärkivuoro: mainin auto:-commitit (squash-merge), kun määrä % 3 == 2.
+      - name: Avoimet auto-PR:t, varatut rivit ja kärkivuoro
+        id: avoin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          tehdyt=$(git log --format=%s HEAD | grep -c '^auto:' || true)
+          haarat=$(gh pr list --state open --limit 100 --json headRefName \
+            --jq '.[] | select(.headRefName | startswith("auto/")) | .headRefName')
+          maara=$(printf '%s\n' "$haarat" | grep -c . || true)
+          varatut=""
+          for h in $haarat; do
+            git fetch -q --depth 1 origin "$h"
+            r=$(git diff HEAD FETCH_HEAD -- docs/AUTO-BACKLOG.md | sed -n 's/^+- \[x\] //p' | tr -d '\r' | cut -c1-160)
+            if [ -n "$r" ]; then varatut="$varatut$r"$'\n'; fi
+          done
+          if [ "$maara" -lt 2 ]; then saa=true; else saa=false; fi
+          if [ $(( ${tehdyt:-0} % 3 )) -eq 2 ]; then karki=true; else karki=false; fi
+          {
+            echo "maara=$maara"
+            echo "saa=$saa"
+            echo "karki=$karki"
+            echo "pvm=$(date -u +%F)"
+            echo "varatut<<VARATUT_EOF"
+            printf '%s' "$varatut"
+            echo "VARATUT_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Avoimia auto-PR:iä $maara, uusi tehtävä sallittu: $saa, kärkivuoro: $karki (auto-commiteja $tehdyt)"
+          printf 'Varatut rivit:\n%s' "$varatut"
+
+      - name: Agentti tekee yhden tehtävän (commit paikallisesti)
+        if: steps.avoin.outputs.saa == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: >-
+            --max-turns 80
+            --add-dir /tmp
+            --allowedTools "Bash(git:*),Bash(python:*),Bash(pytest:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(npx vitest:*),Bash(cd:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(wc:*),Bash(sort:*),Bash(cut:*),Bash(diff:*),Bash(sed -n:*),Bash(echo:*),Bash(mkdir:*),Bash(cp:*),Bash(test:*),Bash(find:*),Read,Edit,Write,Glob,Grep"
+          prompt: |
+            Olet GoalIQ:n (football-prediction) auto-kehitysagentti. Teet YHDEN rajatun tehtävän ja committaat sen
+            paikalliselle auto/-haaralle. Et pushaa etkä avaa PR:ää: työnkulku tekee sen sinun jälkeesi, kun
+            kieltoportti (.github/auto-kehitys/guard.py, mainin versio) on hyväksynyt muutoksen. Repon juuri, main checkoutattuna.
+            Tänään on ${{ steps.avoin.outputs.pvm }}.
+
+            KOMENNOT: aja yksi komento kerrallaan, älä ketjuta &&:lla tai ;:lla (putki head-, tail-, grep-, wc- tai
+            sort-komentoon on sallittu). Muokkaa tiedostoja Edit- ja Write-työkaluilla. Väliaikaiset tiedostot /tmp:hen.
+            Commit-viesti ensin tiedostoon Write-työkalulla: git commit -F /tmp/commit.txt.
+
+            0. Avoimia auto-PR:iä on nyt ${{ steps.avoin.outputs.maara }}. VARATUT rivit (älä valitse, älä muokkaa):
+               ${{ steps.avoin.outputs.varatut || '(ei varattuja rivejä)' }}
+               Jos avoimia on 1: valitse rivi, joka ei ole VARATUT. Jos sellaista ei ole, älä ideoi äläkä luo haaraa:
+               lopeta ja kerro syy.
+            KÄRKIVUORO: ${{ steps.avoin.outputs.karki }}. Lue docs/TUOTEPERIAATTEET.md luku "Kärkivuoro ja signaalit":
+            - Jos avoimia on 0: lue Signaalit-lohko. Alle 30 päivää vanhasta havainnosta ilman merkintää "→ backlog"
+              kirjoita enintään yksi rivi Avoimet-listan loppuun (muoto ja kentät kuten ideoinnissa) ja lisää havainnon
+              perään "→ backlog <pvm>".
+            - Jos KÄRKIVUORO on true: lukitut ensin, muuten suurimman pisteen rivi, jonka uutuus on 2/2. L-rivistä tee
+              vaihe 1 (noin 300 riviä) ja kirjoita loput vaiheet uusiksi riveiksi tehdyn alle. Jos uutuus 2 -riviä ei
+              ole, ideoi yksi teemoista ja docs/BENCHMARK.md:stä ja toteuta sen vaihe 1. PR-runkoon "Kärkivuoro: kyllä".
+
+            1. Lue docs/TUOTEPERIAATTEET.md, docs/AUTO-BACKLOG.md ja docs/BENCHMARK.md (jos on).
+               a) IDEOINTI: jos avoimia auto-PR:iä on 0 ja Avoimet-listalla on alle KOLME "- [ ]"-riviä, kirjoita ensin
+                  KOLME riviä Avoimet-listan loppuun (ennen otsikkoa "## Tehdyt") luvun "Hyvän backlog-rivin muoto"
+                  mukaan, Pisteet- ja Mittari-kenttineen, konservatiivisesti. Vähintään yksi osuu luvun "Tuotekehityksen
+                  suunta" teemaan, ja ainakin yksi koskee FPL:ää ja yksi ennusteita. Merkitse jokaiseen
+                  "(agentin ehdotus <pvm>, lähde: <teema/benchmark/signaali/koodi>)". Älä lukitse rivejä.
+               b) Valitse rivi (ei VARATUT): (1) "(lukittu)" listan järjestyksessä; (2) suurin piste
+                  2 × arvo + kiire + myynti + uutuus - työ (S 0, M 1, L 2); (3) tasapelissä ylempi. Älä muuta muiden
+                  rivien pisteitä. Jos rivi on epäselvä, vaatii ihmisen päätöstä (hinta, Free/Premium-raja, uusi
+                  datalähde, riippuvuus) tai osuu kieltoon, älä koodaa: lisää rivin alle "  - ⚠️ EHDOTUS/KYSYMYS: ..."
+                  ja committaa vain se muutos.
+            2. Luo haara: git checkout -b auto/<pvm>-<lyhyt-aihe> (vain pienet kirjaimet, numerot ja viivat).
+            3. Toteuta. Sallitut: api/**, src/**, scripts/**, tests/**, web/pro-spa/src/**, web/pro-spa/static/**,
+               fpl/**, predictions/** ja juuren *.html vain builderin tulosteena, llms.txt, sitemap*.xml, docs/AUTO-BACKLOG.md.
+               KIELLETTY (portti hylkää koko muutoksen): .github/**, docs/TUOTEPERIAATTEET.md, CLAUDE.md, render.yaml,
+               requirements*.txt, web/pro-spa/package*.json, data/**, supabase/**, cf-worker/**, api/premium.py,
+               src/regional_pricing.py, checkout, index.html, faq.html, creators.html, privacy.html, tilisivut,
+               _redirects, robots.txt. Kielletyt sisällöt tuotantokoodissa: Stripe, hinnat (€, 3,99), UEFA-osoitteet,
+               maksulliset rajapinnat, em dash (—). Ei uusia riippuvuuksia, ei verkkohakuja UEFA:lta eikä Understatin
+               kuluvan kauden puolustussivulta, ei raskasta laskentaa API-pyynnössä (Render 512 Mi).
+               Noin 300 käsin kirjoitettua riviä enintään; generoidut sivut eivät laske.
+            4. Todenna. Aja muuttamiesi alueiden testit: python -m pytest <testitiedostot> -q. Uusi käyttäytyminen saa
+               testin, ja testin pitää kaatua, jos kutsupaikka poistetaan (TUOTEPERIAATTEET.md). Jos muutit builderia,
+               aja se ja committaa regeneroitu sivu. Jos muutit web/pro-spa:ta: cd web/pro-spa, npm ci, npm run check,
+               npm test, npm run build. Aja python scripts/check_copy_style.py. Koko nopea sarja ajetaan PR:lle erikseen.
+            5. Merkitse rivi backlogissa "- [x]" ja lisää perään " (PR, <pvm>)".
+            6. git config user.name "goaliq-auto[bot]" ja user.email "actions@users.noreply.github.com", git add ja
+               git commit -F /tmp/commit.txt. Kirjoita sitten Write-työkalulla:
+               /tmp/pr-title.txt: yksi rivi, alkaa "auto: ".
+               /tmp/pr-body.md: ENSIMMÄINEN rivi täsmälleen "Riskiluokka: docs", "Riskiluokka: testi" tai
+               "Riskiluokka: julkaiseva" (docs = vain docs/**; testi = vain tests/** ja docs; muuten julkaiseva, koska
+               merge mainiin vie API:n, sivut tai botit tuotantoon). TOINEN rivi tehdyn rivin Mittari-kenttä yhdellä
+               rivillä ("Mittari: ... · tarkistus <pvm>" tai "Mittari: puuttuu rivistä"). Sitten tyhjä rivi ja osiot:
+               Mitä / Miksi (backlog-rivi ja piste) / Miten todennettu (komennot ja tulokset) / Julkinen teksti (jokainen
+               uusi tai muuttunut käyttäjälle näkyvä merkkijono sellaisenaan, tai "ei muutoksia") / Free vai Premium
+               (ehdotus, jos uusi ominaisuus) / Julkaisu (mitä mergen jälkeen pitää ajaa, esim. pro-spa-deploy) /
+               Mitä EI tehty / Riskit.
+            7. ÄLÄ pushaa, älä mergaa, älä koske muihin backlog-riveihin.
+
+      # Tyhjä ajo on virhe, kun työ oli sallittu eikä avoimia auto-PR:iä ollut (lsl 14.10.2026).
+      - name: Paketoi tulos
+        id: paketoi
+        if: steps.avoin.outputs.saa == 'true'
+        run: |
+          set -e
+          haara=$(git rev-parse --abbrev-ref HEAD)
+          maara="${{ steps.avoin.outputs.maara }}"
+          case "$haara" in
+            auto/*) ;;
+            *)
+              if [ "$maara" = "0" ]; then
+                echo "::error::Agentti ei luonut auto/-haaraa, vaikka avoimia auto-PR:iä ei ollut. Syy: agentin loki."; exit 1
+              fi
+              echo "::warning::Ei uutta haaraa (avoimia auto-PR:iä $maara)."; echo "tulos=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+          esac
+          if [ "$(git rev-list --count origin/main..HEAD)" = "0" ]; then
+            echo "::error::Haara $haara luotiin ilman committia."; exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/auto"
+          git bundle create "$RUNNER_TEMP/auto/auto.bundle" "$haara" ^origin/main
+          printf '%s\n' "$haara" > "$RUNNER_TEMP/auto/haara.txt"
+          cp /tmp/pr-title.txt "$RUNNER_TEMP/auto/" 2>/dev/null || true
+          cp /tmp/pr-body.md "$RUNNER_TEMP/auto/" 2>/dev/null || true
+          echo "tulos=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.paketoi.outputs.tulos == 'true'
+        with:
+          name: auto-tulos
+          path: ${{ runner.temp }}/auto
+          retention-days: 7
+
+  julkaise:
+    needs: agentti
+    if: needs.agentti.outputs.tulos == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: auto-tulos
+          path: ${{ runner.temp }}/auto
+
+      - name: Kieltoportti mainin versiosta
+        id: portti
+        run: |
+          set -e
+          haara=$(head -n1 "$RUNNER_TEMP/auto/haara.txt" | tr -d '\r')
+          if ! printf '%s' "$haara" | grep -Eq '^auto/[a-z0-9][a-z0-9._-]{0,80}$'; then
+            echo "::error::Haaran nimi ei kelpaa: $haara"; exit 1
+          fi
+          git fetch -q "$RUNNER_TEMP/auto/auto.bundle" "$haara:$haara"
+          git show origin/main:.github/auto-kehitys/guard.py > "$RUNNER_TEMP/guard.py"
+          python "$RUNNER_TEMP/guard.py" --profile kehitys --base origin/main --head "$haara"
+          echo "haara=$haara" >> "$GITHUB_OUTPUT"
+
+      - name: Push auto/-haara ja avaa PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAARA: ${{ steps.portti.outputs.haara }}
+        run: |
+          set -e
+          otsikko=$(head -n1 "$RUNNER_TEMP/auto/pr-title.txt" 2>/dev/null | tr -d '\r' | cut -c1-110)
+          case "$otsikko" in auto:\ *) ;; *) otsikko="auto: ${otsikko:-$HAARA}" ;; esac
+          runko="$RUNNER_TEMP/auto/pr-body.md"
+          [ -s "$runko" ] || printf 'Riskiluokka: julkaiseva\nMittari: puuttuu rivistä\n\nAgentti ei kirjoittanut PR:n kuvausta.\n' > "$runko"
+          git push origin "refs/heads/$HAARA:refs/heads/$HAARA"
+          gh pr create --base main --head "$HAARA" --title "$otsikko" --body-file "$runko"
+          gh workflow run tests.yml --ref "$HAARA"
+          echo "PR avattu ja testit käynnistetty haaralle $HAARA"
+
+      # SPA:lle ei ole PR-CI:tä (pro-spa-deploy on vain käsin). Tarkistus ajetaan tässä, ja tulos kommentoidaan PR:ään.
+      - name: SPA-tarkistus, jos muutos koskee web/pro-spa:ta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAARA: ${{ steps.portti.outputs.haara }}
+        run: |
+          if ! git diff --name-only "origin/main...$HAARA" | grep -q '^web/pro-spa/'; then
+            echo "Ei SPA-muutoksia."; exit 0
+          fi
+          git checkout -q "$HAARA"
+          cd web/pro-spa
+          tila=0
+          npm ci > /tmp/spa.log 2>&1 && npm run check >> /tmp/spa.log 2>&1 && npm test >> /tmp/spa.log 2>&1 && npm run build >> /tmp/spa.log 2>&1 || tila=$?
+          if [ "$tila" = "0" ]; then
+            gh pr comment "$HAARA" --body "SPA-tarkistus vihreä: npm ci, check, test, build."
+          else
+            { echo "SPA-tarkistus PUNAINEN (exit $tila). Lokin loppu:"; echo '```'; tail -n 40 /tmp/spa.log; echo '```'; } > /tmp/spa-kommentti.md
+            gh pr comment "$HAARA" --body-file /tmp/spa-kommentti.md
+            echo "::error::SPA-tarkistus punainen"; exit 1
+          fi
