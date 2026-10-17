@@ -348,6 +348,19 @@ ALLOWED: dict[str, list[Poikkeus]] = {
             ),
         ),
     ],
+    "src/marketing/bsky_gate.py": [
+        Poikkeus(
+            ote="if tyokalu and free claim re search lause",
+            reason=(
+                "Bluesky-portin tunnistuslista (Villen paatos 17.10): PREMIUM_TOOL_TERMS "
+                "ei ole copya vaan sanasto, jolla portti HYLKAA postauksen joka lupaa "
+                "henkilokohtaisen tyokalun ilmaiseksi. Lista nimeaa tyokalut juuri siksi "
+                "etta niita ei voi kutsua ilmaisiksi; mikaan teksti ei paady julkiseksi "
+                "tasta rivista."
+            ),
+            premium=("fit-checker", "watchlist", "chip-timing"),
+        ),
+    ],
     "src/models/fpl_player_stats.py": [
         Poikkeus(
             ote="Next-gameweek and horizon xP are GoalIQ Premium",
