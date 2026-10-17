@@ -354,9 +354,27 @@ def test_every_fantasy_route_is_tested_or_exempt_with_a_reason():
         assert why and len(why) > 20, p
 
 
+#: 17.10 HENKILOKOHTAISET TYOKALUT PREMIUMIIN: kytkin (21.10.2026) muuttaa
+#: rate-teamin ja fitin enforce=on-vastauksen. Vaihe injektoidaan eika lueta
+#: kellosta (CLAUDE.md 6a kohta 3): ilman tata testi mittaisi 20.10 asti vain
+#: "ennen"-haaraa ja punastuisi 21.10 ilman etta mikaan olisi rikki.
+#: Mitattu 17.10 ajamalla koko sarja kytkimen jalkeisella kellolla: kaksi
+#: tapausta (rate-team-on, fit-on) olisi kaatunut juuri tahan.
+_VAIHEET = {
+    "ennen-kytkinta": "2026-10-20T23:59:59+00:00",
+    "kytkimen-jalkeen": "2026-11-01T12:00:00+00:00",
+}
+
+
+@pytest.mark.parametrize("vaihe", sorted(_VAIHEET))
 @pytest.mark.parametrize("enforce", ["off", "on"])
 @pytest.mark.parametrize("path", sorted(TESTED))
-def test_route_serving_the_sum_names_the_window(monkeypatch, enforce, path):
+def test_route_serving_the_sum_names_the_window(monkeypatch, enforce, path,
+                                                vaihe):
+    import datetime as _dt
+    import api.premium as _prem
+    _hetki = _dt.datetime.fromisoformat(_VAIHEET[vaihe])
+    monkeypatch.setattr(_prem, "_utcnow", lambda: _hetki)
     monkeypatch.setenv("PREMIUM_ENFORCE", enforce)
     r = TestClient(m.app).get(TESTED[path])
     assert r.status_code == 200, (path, r.status_code, r.text[:200])
@@ -383,6 +401,14 @@ def test_route_serving_the_sum_names_the_window(monkeypatch, enforce, path):
     row_sites = [s for s in sites if s[1] in ROW_KEYS]
     if enforce == "off" and row_sites:
         assert checked, f"{path}: yhtaan pelaajarivia ei tarkistettu"
+    if meta.get("locked_tool"):
+        # 17.10: lukittu henkilokohtainen tyokalu EI tarjoile summaa. Avain
+        # voi jaada paikanpitajana (rate-teamin rating 0.0, ks. api.premium
+        # RATE_TEAM_PREMIUM_RATING_FIELDS) tai Nonena (fitin totals), mutta
+        # yksikaan arvo ei saa olla oikea summa.
+        vuoto = [(w, v) for w, _k, v, _c in sites if v not in (None, 0.0)]
+        assert not vuoto, (path, vaihe, vuoto[:3])
+        return
     if sites and not row_sites:
         # Vain joukkuetason summa (model-squad, career): sen johdos
         # tarkistetaan reitin omassa testissa alla.

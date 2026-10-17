@@ -56,6 +56,11 @@ from api.premium import (
     premium_enforce_on, require_admin, is_admin_request,
     predict_mask_applies, mask_prediction_payload, mask_parlay_payload,
     public_fixture_rows,
+    # 17.10 henkilokohtaiset tyokalut Premiumiin (ajastettu kytkin).
+    personal_tools_mask_applies, mask_rate_team_preview_payload,
+    mask_model_squad_payload, mask_gw_review_payload,
+    mask_my_team_ledger_payload, mask_fit_payload, mask_defcon_live_payload,
+    mask_price_watch_entry_payload, mask_differentials_entry_payload,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -3079,7 +3084,11 @@ def fantasy_gw_review(
     🔴 `worst_call` on payloadissa yhta nakyvasti kuin `best_call`.
     Rehellisyys on kayttoliittyma, ei alaviite.
 
-    FREE: sama peruste kuin my-team-ledgerilla.
+    PREMIUM 21.10.2026 alkaen (Villen paatos 17.10 "tyokalut taakse",
+    aiempi linja 4.9 oli FREE): kayttajan oman kierroksen katsaus on
+    henkilokohtainen tyokalu. Mallin julkinen tarkkuus jaa ilmaiseksi muilla
+    pinnoilla (track record, /fpl:n kutsuloki). Maski: api.premium
+    `mask_gw_review_payload`, kytkin `personal_tools_mask_applies`.
     """
     import json as _json
 
@@ -3107,7 +3116,12 @@ def fantasy_gw_review(
         katsottava = _act.max_gw()
 
     if not katsottava:
-        return build_review(None, None, None, None)
+        # Tyhja tila kulkee saman maskin lapi: klientti lukee lukituksen
+        # `meta.masked`ista, ei siita onko katsausta (vrt. compare 18.9).
+        tyhja = build_review(None, None, None, None)
+        if personal_tools_mask_applies(request):
+            return mask_gw_review_payload(tyhja)
+        return tyhja
 
     try:
         picks = _fapi.fetch_entry_picks(entry, int(katsottava))
@@ -3166,6 +3180,8 @@ def fantasy_gw_review(
                                       bool(_meta.get("provisional")),
                                       _meta.get("chip"))
                          + flag_lines(out.get("flags"), _seur))
+    if personal_tools_mask_applies(request):
+        return mask_gw_review_payload(out)
     return out
 
 
@@ -3184,8 +3200,11 @@ def fantasy_my_team_ledger(
     mallin nayttamaan tarkemmalta kuin se on. Sama vika loydettiin ja
     korjattiin "Model vs actual" -listasta 22.8.
 
-    FREE: koko ledger. Tama on rehellisyyspinta eika premium-ominaisuus - luku
-    joka voi nolata mallin ei kuulu maksumuurin taakse.
+    PREMIUM 21.10.2026 alkaen (Villen paatos 17.10 "tyokalut taakse"; 25.8 -
+    4.9 linja oli FREE rehellisyyspintana). Ledger on kayttajan OMAN rivin
+    kausikirjanpito, eli henkilokohtainen tyokalu. Mallin oma julkinen
+    tarkkuus (track record, mallin rivi) jaa ilmaiseksi. Maski: api.premium
+    `mask_my_team_ledger_payload`, kytkin `personal_tools_mask_applies`.
     """
     from src.data import fpl_api as _fapi
     from src.models.fpl_my_team_ledger import build_ledger
@@ -3257,10 +3276,13 @@ def fantasy_my_team_ledger(
                 _keskiarvot[e["id"]] = e.get("average_entry_score")
 
     try:
-        return build_ledger(history, picks_by_gw, prov,
-                            states=_tilat, averages=_keskiarvot)
+        out = build_ledger(history, picks_by_gw, prov,
+                           states=_tilat, averages=_keskiarvot)
     except RateTeamError as e:
         raise _http(e)
+    if personal_tools_mask_applies(request):
+        return mask_my_team_ledger_payload(out)
+    return out
 
 
 @app.get("/api/admin/model-squad-scores",
@@ -5700,6 +5722,7 @@ def fantasy_xp(
 @app.get("/api/fantasy/price-watch",
          description="Price change forecast for FPL players, rising and falling. With entry, marks which of your 15 are on the lists.")
 def fantasy_price_watch(
+    request: Request,
     response: Response,
     entry: int | None = Query(default=None,
                               description="Julkinen FPL entry-ID (valinnainen): "
@@ -5712,6 +5735,12 @@ def fantasy_price_watch(
     sanity-gaten takana) — endpoint vain lukee tiedoston, EI laskentaa
     pyynnössä. Estimaatti, ei virallinen (disclaimer metassa). no-store kuten
     muut fantasy-endpointit.
+
+    17.10 (tyokalut Premiumiin, kytkin 21.10): julkinen lista pysyy
+    ilmaisena; `entry`-parametrin omistusmerkinnat vain Premiumille.
+    Ei-Premium + entry -> lista ilman merkintoja + meta.masked, eika
+    joukkuetta haeta FPL:sta lainkaan. Ilman entrya vastaus on ennallaan
+    (kytkinta ei kysyta).
     """
     from src.models.fpl_price_watch import load_price_watch
     response.headers["Cache-Control"] = "no-store"
@@ -5740,6 +5769,8 @@ def fantasy_price_watch(
         pass  # loki ei saa kaataa price watchia
     # MY-TEAM-CONTEXT (3.9): entry -> omistetut rivit + owned-yhteenveto.
     # Entry-virhe ei kaada price watchia (fail-safe squad_context).
+    if entry is not None and personal_tools_mask_applies(request):
+        return mask_price_watch_entry_payload(payload)
     if entry is not None:
         from src.models.fpl_my_team import squad_context, squad_meta
         from src.models.fpl_price_watch import annotate_owned
@@ -5798,8 +5829,14 @@ def fantasy_rate_team(
                             captain=captain, bank=bank, ft=ft)
     except RateTeamError as e:
         raise _http_from_rate_team_error(e)
+    # 17.10 (tyokalut Premiumiin, kytkin 21.10): ei-Premium saa vain
+    # arvosana-esimaun (api.premium.mask_rate_team_preview_payload).
+    # Tama haara ensin: kytkimen jalkeen se kattaa myos alla olevan 5.9-maskin.
+    if personal_tools_mask_applies(request):
+        return mask_rate_team_preview_payload(payload)
     # 5.9: siirtosuositukset ovat Premium-rivi myyntisivulla, mutta endpoint
-    # palautti ne anonyymille. Maski endpointissa, ei klientissa.
+    # palautti ne anonyymille. Maski endpointissa, ei klientissa. Ennen
+    # 21.10 kytkinta (ja admin-tokenilla) tama on ei-Premiumin raja.
     if not is_premium_request(request):
         return mask_rate_team_payload(payload)
     return payload
@@ -5839,6 +5876,7 @@ def _parse_id_csv(raw: str, label: str) -> list[int]:
 @app.get("/api/fantasy/fit",
          description="Lock one to three players and get the best squad that still fits the budget and the FPL squad rules, plus the gap to the model own pick.")
 def fantasy_fit(
+    request: Request,
     response: Response,
     locked: str = Query(..., description="One to three FPL element IDs, comma separated"),
 ):
@@ -5846,24 +5884,35 @@ def fantasy_fit(
     niiden ympärille (horisontti-xP, sama ahne heuristiikka kuin #50-optimi)
     + delta vs mallin vapaa optimibudjettijoukkue. Ei entry-ID:tä, ei
     kirjautumista (PI-13: toimii go-live-hetkellä). Lukee committatun
-    projektion, ei laskentaa mallipolulla."""
+    projektion, ei laskentaa mallipolulla.
+
+    17.10 (tyokalut Premiumiin, kytkin 21.10): lukittu ei-Premiumille
+    (api.premium.mask_fit_payload)."""
     from src.models.fpl_fit import fit_squad
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
     try:
-        return fit_squad(_parse_id_csv(locked, "locked"))
+        payload = fit_squad(_parse_id_csv(locked, "locked"))
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    if personal_tools_mask_applies(request):
+        return mask_fit_payload(payload)
+    return payload
 
 
 @app.get("/api/fantasy/model-squad",
          description="The squad the model would pick, used to prefill the comparison slot. Same source as the fit checker, so the numbers cannot drift apart.")
-def fantasy_model_squad(response: Response):
+def fantasy_model_squad(request: Request, response: Response):
     """1.8: Joukkue 2 -vertailuslotin "mallin runko" -esitäyttö (mobiili+web).
     Palauttaa SAMAN vapaan optimirungon jota rate-teamin benchmark, fit checker
     ja /fpl/model-xi käyttävät (free_optimum → yksi optimoija, luvut eivät voi
     eriytyä; ks. fpl_fit-docstring 29.7). Lukee committatun projektion, ei
-    laskentaa mallipolulla. Ei entry-ID:tä, ei kirjautumista."""
+    laskentaa mallipolulla. Ei entry-ID:tä, ei kirjautumista.
+
+    17.10 (tyokalut Premiumiin, kytkin 21.10): lukittu ei-Premiumille
+    (api.premium.mask_model_squad_payload), koska Team 2 -vertailu on
+    Premium-tyokalu. Sama runko on yha julkinen /fpl/model-xi-sivulla:
+    lukitus koskee vertailutyokalua, ei rungon salaisuutta."""
     from src.models.fpl_rate_team import (
         POS_NAME, RateTeamError, build_context, free_optimum, free_optimum_key)
     from src.models.fpl_xp import horizon_total_meta
@@ -5878,7 +5927,7 @@ def fantasy_model_squad(response: Response):
             return {"id": p["id"], "web_name": p["web_name"],
                     "team_short": p["team_short"],
                     "pos": POS_NAME[p["element_type"]]}
-        return {
+        payload = {
             "meta": {
                 "generated_at": xp_data["meta"].get("generated_at"),
                 "horizon_gw": xp_data["meta"].get("horizon_gw"),
@@ -5893,6 +5942,9 @@ def fantasy_model_squad(response: Response):
         }
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    if personal_tools_mask_applies(request):
+        return mask_model_squad_payload(payload)
+    return payload
 
 
 @app.get("/api/fantasy/model-race",
@@ -6154,6 +6206,7 @@ def fantasy_captain(
 
 @app.get("/api/fantasy/differentials")
 def fantasy_differentials(
+    request: Request,
     response: Response,
     max_ownership: float = Query(default=10.0, gt=0, le=100),
     pos: str | None = Query(default=None),
@@ -6167,21 +6220,28 @@ def fantasy_differentials(
     from src.models.fpl_planner import differential_finder
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
+    # 17.10 (tyokalut Premiumiin, kytkin 21.10): JULKINEN LISTA PYSYY
+    # ILMAISENA, vain oman joukkueen suodatus (entry) on Premium. Kytkinta
+    # kysytaan VAIN entryn kanssa, joten anonyymi listakutsu
+    # (scripts/build_reply_module.py, Bluesky-vastausmoduuli) on tavu tavulta
+    # ennallaan. Ei-Premium + entry -> julkinen lista + meta.masked, eika
+    # joukkuetta haeta FPL:sta lainkaan.
+    lock_entry = entry is not None and personal_tools_mask_applies(request)
     try:
-        squad = _squad_ctx(entry)
-        # 🔴 EI MASKIA, JA SYY ON MITATTU (4.9.2026). Tama endpoint on
-        # julkisen `/fpl/differentials`-sivun DATALAHDE: sivugeneraattori
-        # (`scripts/build_fpl_longtail.py`) hakee sen CI:sta ANONYYMINA, ja
-        # se nielee virheen varoituksella. Maski olisi siis pudottanut sivun
-        # 20 rivista kahteen HILJAA, ja sivu olisi nayttanyt toimivalta.
-        # Sivun oma copy myy loput premiumina ("+19 more in Premium"), eli
-        # ilmainen listaus on tuotepaatos eika vuoto. Jos tama halutaan
-        # portittaa, generaattorille on ensin annettava toinen reitti dataan
-        # (paikallinen artefakti) — jonorivi DIFFERENTIALS-MYYNTIRAJA.
-        return differential_finder(max_ownership=max_ownership, pos=pos,
-                                   squad=squad)
+        squad = None if lock_entry else _squad_ctx(entry)
+        # 🔴 JULKISTA LISTAA EI MASKATA, JA SYY ON MITATTU (4.9.2026). Tama
+        # endpoint oli julkisen `/fpl/differentials`-sivun datalahde (sivu
+        # lukee nyt checkoutin artefaktia, AUTO-S16 25.9), ja Bluesky-botin
+        # vastausmoduuli hakee sen yha anonyymina. Sivun oma copy myy loput
+        # premiumina ("+19 more in Premium"), eli ilmainen listaus on
+        # tuotepaatos eika vuoto.
+        out = differential_finder(max_ownership=max_ownership, pos=pos,
+                                  squad=squad)
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    if lock_entry:
+        return mask_differentials_entry_payload(out)
+    return out
 
 
 def _squad_ctx(entry: int | None, players: list[int] | None = None):
@@ -6394,6 +6454,7 @@ def fantasy_defcon_gw(request: Request, response: Response):
 
 @app.get("/api/fantasy/defcon-live")
 def fantasy_defcon_live(
+    request: Request,
     response: Response,
     entry: int | None = Query(default=None, ge=1, le=99_999_999,
                               description="FPL entry ID (oma joukkue)"),
@@ -6426,12 +6487,18 @@ def fantasy_defcon_live(
 
     response.headers["Cache-Control"] = "no-store"
     try:
-        return load_defcon_live(entry_id=entry, ids=id_list)
+        payload = load_defcon_live(entry_id=entry, ids=id_list)
     except RateTeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except requests.RequestException as e:
         # Ylavirran katko ei saa nayttaa meidan bugilta.
         raise HTTPException(status_code=502, detail=f"FPL feed unavailable: {e}")
+    # 17.10 (tyokalut Premiumiin, kytkin 21.10): oman rungon live-DefCon on
+    # henkilokohtainen tyokalu. Sisarreitit defcon-gw ja defcon/{id} (FPL:n
+    # julkinen otteludata) pysyvat ilmaisina.
+    if personal_tools_mask_applies(request):
+        return mask_defcon_live_payload(payload)
+    return payload
 
 
 @app.get("/api/fantasy/compare",

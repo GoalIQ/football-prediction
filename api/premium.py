@@ -777,3 +777,320 @@ def mask_plan_payload(payload: dict) -> dict:
     out["meta"] = meta
     out["plan"] = list(payload.get("plan") or [])[:FREE_PLAN_GWS]
     return out
+
+
+# ---------------------------------------------------------------------------
+# HENKILOKOHTAISET TYOKALUT PREMIUMIIN (Villen paatos 17.10.2026)
+#
+# Spesifikaatio: goaliq-app cos-reports/2026-10-17-tyokalut-maksumuuriin-spec.md.
+# Kaikki tyokalut jotka lukevat KAYTTAJAN OMAA joukkuetta (entry, oma runko,
+# kahden entryn vertailu) siirtyvat Premiumiin. Sisalto josta uudet kavijat
+# tulevat (julkiset listat, ottelusivut, track record) jaa ilmaiseksi.
+#
+# 🔴 AJASTETTU KYTKIN, EI LIPPU. Lukitus alkaa `PERSONAL_TOOLS_ENFORCE_FROM`
+# -hetkesta ilman deployta, ja syy on julkaisujarjestys (spec "Periaate" 4):
+# SPA + mobiili on saatava osaamaan lukitusnakyma ENNEN kuin palvelin alkaa
+# maskata. Mobiilin OTA leviaa paivissa (kayttaja avaa appin -> lataus ->
+# seuraava kaynnistys), eika vanha mobiili osaa nayttaa uutta lukitusta:
+# se nakisi vain tyhjan kentan. Kellopohjainen kytkin antaa OTA:lle ajan
+# levita ja tekee kaannosta toistettavan (sama hetki jokaisella instanssilla,
+# ei env-muuttujaa joka voisi olla eri arvossa kuin copy lupaa - sama syy kuin
+# `free_premium_window_end`in docstringissa).
+#
+# 🔴 PALVELIN ON AINOA TOTUUS (spec "Periaate" 1). Ei 402/403: klientit
+# odottavat 200:aa. Typistys ei null (tiedoston periaate ylla): avaimet
+# sailyvat, listat typistetaan, ja `meta.masked = True` +
+# `meta.locked_tool = <slug>` kertovat klientille mika lukittiin. Klientti
+# lukee lukituksen VASTAUKSESTA, ei omasta isPremium-lipustaan.
+#
+# Ylläpitäjän esikatselu: `X-Admin-Token` + `X-Preview-Lock: 1` antaa
+# maskatun vastauksen heti, jotta lukitus voidaan todentaa tuotannosta ennen
+# kytkimen hetkea. Pelkka admin-token ohittaa maskin (CI ja skriptit, sama
+# perustelu kuin `predict_mask_applies`issa).
+# ---------------------------------------------------------------------------
+
+#: Lukituksen alkuhetki. Perustelu ylla: mobiilin OTA ehtii levita ennen
+#: tata, eika vanha mobiili osaa nayttaa uutta lukitusta. Hetken siirtaminen
+#: on koodimuutos tarkoituksella (ei env): se koskee seka palvelinta etta
+#: copya, ja molempien on muututtava samassa diffissa.
+PERSONAL_TOOLS_ENFORCE_FROM = datetime(2026, 10, 21, 0, 0, tzinfo=timezone.utc)
+
+#: Ylläpitäjän esikatseluotsake. Vaikuttaa VAIN admin-tokenin kanssa.
+PREVIEW_LOCK_HEADER = "x-preview-lock"
+
+#: Lukitun tyokalun ilmaisosuus riveina. NOLLA, ja se on paatos eika vahinko:
+#: lukittu tyokalu ei anna ilmaiseksi yhtaan riviä (spec-taulukko, "lukittu").
+#: Esimakua on vain rate-teamissa, ja sen rajaus on kenttalista
+#: (`RATE_TEAM_PREVIEW_RATING_FIELDS`), ei rivimaara.
+FREE_PERSONAL_TOOL_ROWS = 0
+
+#: Rate-teamin esimaku: arvosanan kentat jotka jaavat ilmaiseksi.
+RATE_TEAM_PREVIEW_RATING_FIELDS = ("rating", "rating_max", "percentile",
+                                   "beats_benchmark")
+
+#: Rate-teamin `rating`-lohkon Premium-kentat ja niiden paikanpitaja.
+#: 🔴 Avaimet SAILYVAT tyyppeineen, ja syy on mitattu 17.10: mobiilin
+#: `lib/squadHeaderRow.ts` kutsuu `data.rating.team_xp_gw.toFixed(1)` ja
+#: `team_xp_horizon.toFixed(1)` ilman null-vahtia. Puuttuva avain kaataisi
+#: nakyman sellaisella mobiilibuildilla johon OTA ei ole viela ehtinyt. Sama
+#: ratkaisu ja perustelu kuin `PREDICTION_PREMIUM_FIELDS`issa (0.0 eika null).
+#: Paikanpitajat luetellaan `meta.premium_fields`issa, jotta uusi klientti ei
+#: paattele maskia arvoista (0.0 ei ole todiste maskista).
+RATE_TEAM_PREMIUM_RATING_FIELDS: dict[str, object] = {
+    "team_xp_gw": 0.0,
+    "team_xp_horizon": 0.0,
+    "team_xp_horizon_no_captain": 0.0,
+    "optimal_proven": False,
+    "optimal_team_xp": None,      # mobiilin tyyppi: number | null (ratingGap vahtii)
+    "gap_to_optimal_xp": None,    # sama
+    "strongest_line": None,       # klientit: `|| null` / `!!x &&`
+    "weakest_line": None,
+}
+
+#: Rate-teamin ylatason lohkot ja niiden kohtelu esimaussa. Lohko jota ei ole
+#: tassa (uusi kentta builderissa) typistetaan oletuksena (`_blank_section`),
+#: eli uusi kentta ei voi vuotaa unohduksen takia (6a kohta 1).
+RATE_TEAM_PREVIEW_KEEP = ("meta", "season_rank")
+
+
+def _utcnow() -> datetime:
+    """Kello yhdessa paikassa, jotta testit voivat ajaa kytkimen synteettisilla
+    hetkilla (CLAUDE.md 6a kohta 3) koskematta vakioon."""
+    return datetime.now(timezone.utc)
+
+
+def personal_tools_enforced(now: datetime | None = None) -> bool:
+    """Onko henkilokohtaisten tyokalujen lukitus alkanut."""
+    return (now or _utcnow()) >= PERSONAL_TOOLS_ENFORCE_FROM
+
+
+def preview_lock_requested(request: Request) -> bool:
+    """`X-Preview-Lock: 1` (tai on/true/yes). Ei merkitse mitaan ilman
+    admin-tokenia: `personal_tools_mask_applies` lukee taman vain admin-
+    haarassa."""
+    raw = (request.headers.get(PREVIEW_LOCK_HEADER) or "").strip().lower()
+    return raw in _FLAG_ON_VALUES
+
+
+def personal_tools_mask_applies(request: Request,
+                                now: datetime | None = None) -> bool:
+    """Maskataanko taman kutsujan henkilokohtainen tyokaluvastaus.
+
+    Jarjestys on tarkoituksellinen:
+      1. Admin-token ensin. Esikatseluotsakkeen kanssa maski heti (ylläpitäjä
+         todentaa lukituksen tuotannossa ennen kytkimen hetkea), ilman sita
+         ei maskia (CI ja skriptit saavat taman vastauksen kuten ennenkin).
+      2. Ennen `PERSONAL_TOOLS_ENFORCE_FROM`ia ei maskia. Tama haara EI kutsu
+         `is_premium_request`ia, eli ennen hetkea vastaus ja sen viive ovat
+         tasan ennallaan (ei yhtaan Supabase-kutsua lisaa).
+      3. Muuten Premium-tarkistus (`is_premium_request`, fail-open Supabase-
+         virheessa kuten muissa maskeissa; PREMIUM_ENFORCE pois -> ei maskia).
+    """
+    if is_admin_request(request):
+        return preview_lock_requested(request)
+    if not personal_tools_enforced(now):
+        return False
+    return not is_premium_request(request)
+
+
+def _blank_leaf(value):
+    """Lista -> typistetty lista (FREE_PERSONAL_TOOL_ROWS = 0), muu -> None.
+    Objekti ei sailyta sisaltoaan: sen kentat ovat juuri sita mita lukitaan."""
+    if isinstance(value, (list, tuple)):
+        return list(value)[:FREE_PERSONAL_TOOL_ROWS]
+    return None
+
+
+def _blank_section(value):
+    """Ylatason lohko lukittuun muotoon. Dict sailyttaa AVAIMENSA (klientti voi
+    lukea `x.players`in kaatumatta), arvot typistetaan `_blank_leaf`illa.
+    Lista -> [], skalaari -> None."""
+    if isinstance(value, dict):
+        return {k: _blank_leaf(v) for k, v in value.items()}
+    return _blank_leaf(value)
+
+
+def _locked_meta(payload: dict, slug: str, text: str,
+                 content_keys: tuple[str, ...] = (),
+                 overrides: dict | None = None) -> dict:
+    """Meta ennallaan, paitsi `content_keys` (kentat jotka kertovat kayttajan
+    omasta tuloksesta) typistetaan. Lisaa lukituslipun, slugin ja selitteen."""
+    meta = dict(payload.get("meta") or {})
+    for k in content_keys:
+        if k in meta:
+            meta[k] = _blank_leaf(meta[k])
+    meta.update(overrides or {})
+    meta["masked"] = True
+    meta["locked_tool"] = slug
+    meta["mask"] = text
+    return meta
+
+
+def lock_personal_tool_payload(payload: dict, slug: str, text: str,
+                               content_keys: tuple[str, ...] = (),
+                               overrides: dict | None = None) -> dict:
+    """Lukitun tyokalun vastaus: jokainen ylatason lohko paitsi `meta`
+    typistetaan (`_blank_section`), meta saa lukituslipun.
+
+    🔴 Lohkoja EI valita nimelta vaan kaikki typistetaan, eli builderiin
+    lisatty uusi kentta on lukittu oletuksena (6a kohta 1: lukija ei voi
+    palauttaa vaaraa unohduksen takia). Alkuperaista ei mutatoida.
+    `meta.available` (jos builderilla on se) -> False: vanha klientti joka ei
+    lue `meta.masked`ia nayttaa silloin builderin oman "ei nakyvaa" -tilan,
+    jonka se jo osaa, eika yrita piirtaa typistettya lohkoa.
+    """
+    out = {k: _blank_section(v) for k, v in payload.items() if k != "meta"}
+    ov = dict(overrides or {})
+    if "available" in (payload.get("meta") or {}):
+        ov.setdefault("available", False)
+    out["meta"] = _locked_meta(payload, slug, text, content_keys, ov)
+    return out
+
+
+def mask_rate_team_preview_payload(payload: dict) -> dict:
+    """/api/fantasy/rate-team ei-Premiumille kytkimen jalkeen: arvosana-esimaku.
+
+    JAA (spec-taulukko rivi 1, "arvosana ja joukkueen tunnistetiedot"):
+    `rating`in nelja kenttaa, `meta` (entry, kierros, chipit, siirrot =
+    FPL:n julkista tietoa), `season_rank` (FPL:n oma sijoitus), `team.bank`.
+    LAHTEE: pitch (`team.players`), kapteeni + vaihtoehto, hold-verdikti,
+    siirrot, heikoin/vahvin linja, paattyneen kierroksen tulos
+    (`last_finished`), xP-summat.
+    """
+    out: dict = {}
+    for k, v in payload.items():
+        if k in RATE_TEAM_PREVIEW_KEEP:
+            out[k] = v
+        elif k == "rating":
+            src = v if isinstance(v, dict) else {}
+            r = {f: src.get(f) for f in RATE_TEAM_PREVIEW_RATING_FIELDS}
+            for f, placeholder in RATE_TEAM_PREMIUM_RATING_FIELDS.items():
+                r[f] = copy.deepcopy(placeholder)
+            # Builderin uusi rating-kentta: typistetaan oletuksena.
+            for f, val in src.items():
+                if f not in r:
+                    r[f] = _blank_leaf(val)
+            out[k] = r
+        elif k == "team":
+            src = v if isinstance(v, dict) else {}
+            out[k] = {f: (val if f == "bank" else _blank_leaf(val))
+                      for f, val in src.items()}
+        else:
+            # captain, last_finished -> None; transfers -> {suggestions: [],
+            # hold: None, window_gws: [], note: None, hold_verdict: None}.
+            # `transfers.note` lahtee myos: sen sanamuoto kertoo verdiktin
+            # ("holding is a fine play").
+            out[k] = (_blank_section(v) if k == "transfers"
+                      else _blank_leaf(v))
+    meta = dict(payload.get("meta") or {})
+    meta["masked"] = True
+    meta["locked_tool"] = "rate-my-team"
+    meta["premium_fields"] = sorted(
+        ["rating." + f for f in RATE_TEAM_PREMIUM_RATING_FIELDS]
+        + [k for k in payload if k not in RATE_TEAM_PREVIEW_KEEP
+           and k not in ("rating", "team")]
+        + ["team.players", "team.missing_ids"])
+    meta["mask"] = ("rating only (free preview - GoalIQ Premium unlocks the "
+                    "pitch, captain, transfers and hold verdict)")
+    out["meta"] = meta
+    return out
+
+
+def mask_model_squad_payload(payload: dict) -> dict:
+    """/api/fantasy/model-squad: lukittu (Team 2 -vertailun esitaytto).
+    Rungon xP-summa metassa on tuloksen osa, joten se typistetaan."""
+    return lock_personal_tool_payload(
+        payload, "rate-my-team",
+        "GoalIQ Premium unlocks the model squad comparison",
+        content_keys=("xi_xp_horizon",))
+
+
+#: Lukitun tyokalun `note`/`note_code` -> None silloin kun builderin oma
+#: "ei nakyvaa" -lause olisi vaara syy ("The review opens once a gameweek has
+#: been played"). Vanha klientti nayttaa `available: false` -tilassa taman
+#: lauseen; lukitulle kayttajalle se olisi vaite jota tuote ei tarkoita.
+_NOTE_CLEARED = {"note": None, "note_code": None}
+
+
+def mask_gw_review_payload(payload: dict) -> dict:
+    """/api/fantasy/gw-review: lukittu. Kierroksen tunniste ja freeze-aikaleimat
+    jaavat (ne kertovat MIKA kierros lukittiin), kayttajan oma tulos lahtee."""
+    return lock_personal_tool_payload(
+        payload, "gw-review",
+        "GoalIQ Premium unlocks the gameweek review",
+        content_keys=("players_compared", "total_picks", "chip", "auto_subs",
+                      "fpl_points", "transfer_cost", "fpl_points_net"),
+        overrides=dict(_NOTE_CLEARED))
+
+
+def mask_my_team_ledger_payload(payload: dict) -> dict:
+    """/api/fantasy/my-team-ledger: lukittu. `graded_gws` -> 0 ja kierroslistat
+    tyhjiksi: tasan builderin oma "ei viela riveja" -muoto."""
+    return lock_personal_tool_payload(
+        payload, "season-ledger",
+        "GoalIQ Premium unlocks the season ledger",
+        content_keys=("missing_freeze_gws", "in_progress_gws",
+                      "provisional_gws"),
+        overrides={"graded_gws": 0, **_NOTE_CLEARED})
+
+
+def mask_fit_payload(payload: dict) -> dict:
+    """/api/fantasy/fit: lukittu. Budjettikatto jaa (saanto), rungon hinta ja
+    pankki lahtevat (tulos)."""
+    return lock_personal_tool_payload(
+        payload, "fit-checker",
+        "GoalIQ Premium unlocks the fit checker",
+        content_keys=("squad_cost", "bank"))
+
+
+def mask_defcon_live_payload(payload: dict) -> dict:
+    """/api/fantasy/defcon-live: lukittu. Kierros, tila ja kynnykset jaavat
+    (FPL:n saanto), oman rungon rivit lahtevat."""
+    return lock_personal_tool_payload(
+        payload, "defcon-live",
+        "GoalIQ Premium unlocks DefCon live for your squad")
+
+
+def mask_h2h_payload(payload: dict) -> dict:
+    """/api/fantasy/h2h: lukittu. Menetelma ja vastuuvapaus jaavat metaan,
+    voittotodennakoisyydet ja joukkueiden xP lahtevat."""
+    return lock_personal_tool_payload(
+        payload, "league",
+        "GoalIQ Premium unlocks the head-to-head win probability")
+
+
+def mask_price_watch_entry_payload(payload: dict) -> dict:
+    """/api/fantasy/price-watch + entry ei-Premiumille: julkinen lista ilman
+    omistusmerkintoja. Reitti jattaa joukkueen hakematta, tama poistaa varmuuden
+    vuoksi `owned`-jaljet (rivilippu, yhteenveto, meta.squad)."""
+    out = dict(payload)
+    for side in ("risers", "fallers"):
+        rows = out.get(side)
+        if isinstance(rows, list):
+            out[side] = [{k: v for k, v in r.items() if k != "owned"}
+                         if isinstance(r, dict) else r for r in rows]
+    out.pop("owned", None)
+    meta = dict(out.get("meta") or {})
+    meta.pop("squad", None)
+    meta["masked"] = True
+    meta["locked_tool"] = "price-watch"
+    meta["mask"] = ("public list without your squad marks (GoalIQ Premium "
+                    "marks the players you own)")
+    out["meta"] = meta
+    return out
+
+
+def mask_differentials_entry_payload(payload: dict) -> dict:
+    """/api/fantasy/differentials + entry ei-Premiumille: julkinen lista ilman
+    oman joukkueen suodatusta. Reitti laskee listan ilman joukkuetta, tama
+    poistaa varmuuden vuoksi joukkuesidonnaiset kentat."""
+    out = {k: v for k, v in payload.items() if k != "template_missing"}
+    meta = {k: v for k, v in (payload.get("meta") or {}).items()
+            if k not in ("squad", "owned_excluded", "template_note")}
+    meta["masked"] = True
+    meta["locked_tool"] = "differentials"
+    meta["mask"] = ("public list without your squad filter (GoalIQ Premium "
+                    "removes the players you own and lists the template "
+                    "players you are missing)")
+    out["meta"] = meta
+    return out

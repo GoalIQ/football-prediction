@@ -41,11 +41,21 @@ API = Path(__file__).resolve().parents[1] / "api"
 #   "mask"     handleri kutsuu mask_<x>_payloadia
 #   "truncate" handleri leikkaa vastauksen itse (`if not premium:`)
 #   "builder"  premium-lippu menee rakentajalle (`premium=is_premium_request`)
+#   "lock"     17.10: ajastettu kytkin `personal_tools_mask_applies(request)`
+#              JA maskifunktio samassa haarassa (pelkka kytkin ei typista)
 MECHANISMS = {
     "mask": r"mask_\w+_payload",
     "truncate": r"if not premium|if not is_premium_request",
     "builder": r"premium=is_premium_request",
+    # Ikkuna 1500 merkkia: differentials laskee lipun ennen listan
+    # rakentamista ja maskaa sen jalkeen (joukkuetta ei haeta lukitulle).
+    "lock": (r"personal_tools_mask_applies\(request\)[\s\S]{0,1500}?"
+             r"return mask_\w+_payload\("),
 }
+
+#: Premium-tarkistuksen todiste rungossa. 17.10: henkilokohtaisen tyokalun
+#: kytkin kutsuu is_premium_requestia api.premiumin sisalla.
+PREMIUM_CHECKS = ("is_premium_request", "personal_tools_mask_applies(request)")
 
 PREMIUM_ENDPOINTS = {
     "/api/fantasy/xp": ("per-gameweek xP on premium-listan ensimmainen rivi", "mask"),
@@ -73,40 +83,53 @@ PREMIUM_ENDPOINTS = {
     # mutta anonyymi `?players=411,426` palautti 2 taytta rivia + verdictin
     # (mitattu livena 18.9 13:40 UTC). Seitsemas kerta tata vikaluokkaa.
     "/api/fantasy/compare": ("player compare for up to four players", "mask"),
+    # --- 17.10.2026 VILLEN PAATOS "tyokalut taakse": henkilokohtaiset
+    # FPL-tyokalut Premiumiin (spec goaliq-app cos-reports/2026-10-17-
+    # tyokalut-maksumuuriin-spec.md). Yhdeksan reittia siirtyi
+    # FREE_ENDPOINTSista tanne. Mekanismi on ajastettu kytkin
+    # (`personal_tools_mask_applies`, PERSONAL_TOOLS_ENFORCE_FROM 21.10.2026,
+    # jotta mobiilin OTA ehtii levita) + maskifunktio. Ajonaikainen todennus
+    # ennen/jalkeen kytkimen: tests/test_personal_tools_lock.py.
+    "/api/fantasy/rate-team": ("rate my team: arvosana on esimaku, pitch, "
+                               "kapteeni, siirrot ja hold-verdikti Premium",
+                               "lock"),
+    "/api/fantasy/model-squad": ("Team 2 -vertailu (mallin runko vertailuun) "
+                                 "on Premium; sama runko jaa julkiseksi "
+                                 "/fpl/model-xi-sivulle", "lock"),
+    # 4.9-linja ("rehellisyyspinta ei maksumuurin taakse") korvattu 17.10:
+    # mallin OMA julkinen tarkkuus jaa ilmaiseksi (track record, kutsuloki),
+    # kayttajan oman rivin katsaus ja kirjanpito ovat Premium-tyokaluja.
+    "/api/fantasy/gw-review": ("oman kierroksen katsaus on Premium", "lock"),
+    "/api/fantasy/my-team-ledger": ("season ledger on Premium", "lock"),
+    "/api/fantasy/fit": ("fit checker on Premium", "lock"),
+    "/api/fantasy/defcon-live": ("oman rungon live-DefCon on Premium", "lock"),
+    "/api/fantasy/h2h": ("mini-league head-to-head win probability on "
+                         "Premium; sarjataulukko jaa ilmaiseksi", "lock"),
+    # Julkinen lista jaa ilmaiseksi, vain `entry` (oma joukkue) on Premium.
+    "/api/fantasy/price-watch": ("oman joukkueen omistusmerkinnat Premium, "
+                                 "julkinen hintalista ilmainen", "lock"),
+    # Julkinen lista jaa ilmaiseksi (Bluesky-vastausmoduuli hakee sen
+    # anonyymina, scripts/build_reply_module.py), vain oman joukkueen
+    # suodatus on Premium.
+    "/api/fantasy/differentials": ("oman joukkueen suodatus Premium, "
+                                   "julkinen lista ilmainen", "lock"),
 }
 
 # endpoint -> miksi se on tarkoituksella ilmainen
 FREE_ENDPOINTS = {
-    "/api/fantasy/rate-team": "rate my team on myyntilistan FREE-puolella",
-    "/api/fantasy/fit": "fit checker on free",
-    "/api/fantasy/price-watch": "price watch on free",
-    "/api/fantasy/defcon-live": "FPL:n omaa julkista otteludataa",
     "/api/fantasy/defcon-gw": "sama julkinen data (per-GW-matriisi, ei ranking)",
     "/api/fantasy/xg-leaders": "xG-leaders on free (landing lupaa sen)",
+    # 17.10: sarjataulukko jaa ilmaiseksi (spec rivi 11); payloadissa ei ole
+    # voittotodennakoisyys- eika rival-kenttia. H2h on erillinen reitti.
     "/api/fantasy/league": "mini-league standings on free",
     "/api/fantasy/career": "career card on free",
-    "/api/fantasy/model-squad": "mallin oma joukkue on julkinen",
     "/api/fantasy/model-captain": "mallin kapteeni on jo julkinen /fpl:n "
-                                  "kutsulokissa ja rate-teamin ilmaisessa "
-                                  "captain.pickissa (22.9)",
-    "/api/fantasy/rival": "\"Catch your rival\" on myyntilistan FREE-puolella",
-    "/api/fantasy/h2h": "mini-league head-to-head win probability on free",
+                                  "kutsulokissa (22.9); 17.10 spec rivi 3: "
+                                  "mallin oma kapteeni jaa sisalloksi",
+    "/api/fantasy/rival": "\"Catch your rival\" otsikko on ilmainen, "
+                          "erittely jo Premium (builder-maski, 17.10 ennallaan)",
     "/api/fantasy/defcon": "FPL:n omaa julkista otteludataa (koodin oma "
                            "perustelu: ei mallin tuotoksia -> ei maskia)",
-    # VILLEN PAATOS 4.9: gameweek review ja ledger ovat ILMAISIA, ja
-    # landingin premium-listalta poistettiin rivi joka lupasi ne
-    # premiumina. Alkuperainen peruste (25.8) patee: "huti maksumuurin
-    # takana on sama asia kuin ei hutia" — rehellisyyspinta ei saa olla
-    # maksumuurin takana.
-    "/api/fantasy/gw-review": "Villen paatos 4.9 + 25.8 rehellisyysperuste",
-    "/api/fantasy/my-team-ledger": "sama kuin gw-review",
-    # VILLEN PAATOS 4.9: differentials on ILMAINEN. Se oli jo kaytannossa
-    # ilmainen (julkisen /fpl/differentials-sivun generaattori hakee sen
-    # CI:sta anonyymina ja nielee virheen varoituksella, joten maski olisi
-    # pudottanut sivun kahteen riviin hiljaa). Nyt myos myyntilupaus,
-    # rekisterin tier ja SPA:n gate sanovat saman.
-    "/api/fantasy/differentials": "Villen paatos 4.9: ilmainen; julkinen "
-                                  "/fpl/differentials-sivu rakentuu siita",
 }
 
 
@@ -136,7 +159,7 @@ def _mask_problem(route: str, mechanism: str) -> str | None:
     body = _find_handler(route)
     if body is None:
         return f"{route}: reittia ei loydy api/-lahteesta"
-    if "is_premium_request" not in body:
+    if not any(c in body for c in PREMIUM_CHECKS):
         return f"{route}: ei kysy is_premium_requestia"
     pattern = MECHANISMS.get(mechanism)
     if pattern is None:
@@ -218,3 +241,18 @@ def test_negatiivinen_kontrolli_premium_check_katoaa() -> None:
     assert body
     rikottu = body.replace("is_premium_request", "True")
     assert "is_premium_request" not in rikottu
+
+
+def test_negatiivinen_kontrolli_lock_ilman_maskia() -> None:
+    """17.10: "lock"-mekanismi vaatii kytkimen JA maskifunktion. Pelkka
+    kytkinkutsu (tai maski ilman kytkinta) ei kelpaa."""
+    body = _find_handler("/api/fantasy/fit")
+    assert body and re.search(MECHANISMS["lock"], body), "fit ei kayta lockia"
+    ilman_maskia = body.replace("return mask_fit_payload(payload)",
+                                "return payload")
+    assert re.search(MECHANISMS["lock"], ilman_maskia) is None
+    ilman_kytkinta = body.replace("personal_tools_mask_applies(request)",
+                                  "False")
+    assert re.search(MECHANISMS["lock"], ilman_kytkinta) is None
+    assert not any(c in ilman_kytkinta for c in PREMIUM_CHECKS), (
+        "fitin ainoa premium-tarkistus on kytkin; sen poisto on loydyttava")

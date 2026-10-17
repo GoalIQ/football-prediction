@@ -47,6 +47,8 @@ from api.premium import (
     FREE_CHIP_WINDOWS, FREE_EDGE_CAPTAINS, FREE_EDGE_DIFFERENTIALS,
     FREE_EDGE_TEMPLATE_RISKS, FREE_PLAN_CHAINS, FREE_XP_TEASER_N,
     is_premium_request,
+    # 17.10 henkilokohtaiset tyokalut Premiumiin (ajastettu kytkin).
+    mask_h2h_payload, personal_tools_mask_applies,
 )
 
 router = APIRouter()
@@ -1266,6 +1268,7 @@ def _entry_xi_xp(entry: int, gw_picks: int, gw_xp_target: int, pool_by_id):
 @router.get("/api/fantasy/h2h",
             description="Win probability between two entries for one gameweek. It assumes the two squads are independent, and the response says so.")
 def fantasy_h2h(
+    request: Request,
     response: Response,
     entry_a: int = Query(...), entry_b: int = Query(...),
     gw: int | None = Query(default=None, ge=1, le=38),
@@ -1274,7 +1277,11 @@ def fantasy_h2h(
     kummankin XI:n xP-summa (kapteeni tuplana) = odotusarvo; varianssi =
     sum(multiplier^2 * 2.5 * xP) per pelaaja (dokumentoitu heuristiikka,
     riippumattomuusoletus — yhteiset pelaajat kumoavat toisensa vain
-    odotusarvossa, eivat varianssissa). p_draw_band = |ero| <= 3 p."""
+    odotusarvossa, eivat varianssissa). p_draw_band = |ero| <= 3 p.
+
+    17.10 (tyokalut Premiumiin, kytkin 21.10): lukittu ei-Premiumille
+    (api.premium.mask_h2h_payload). Mini-liigan sarjataulukko
+    (/api/fantasy/league/{id}) pysyy ilmaisena."""
     response.headers["Cache-Control"] = "no-store"
     try:
         xp_data, bootstrap, pool, pool_by_id = build_context()
@@ -1291,7 +1298,7 @@ def fantasy_h2h(
     p_a = 1.0 - _phi((H2H_DRAW_BAND - d) / s)
     p_b = _phi((-H2H_DRAW_BAND - d) / s)
     p_band = max(0.0, 1.0 - p_a - p_b)
-    return {
+    payload = {
         "meta": {
             "gw": target_gw,
             "generated_at": xp_data["meta"].get("generated_at"),
@@ -1312,6 +1319,9 @@ def fantasy_h2h(
         "p_draw_band": round(p_band, 4),
         "p_b": round(p_b, 4),
     }
+    if personal_tools_mask_applies(request):
+        return mask_h2h_payload(payload)
+    return payload
 
 
 # ---------------------------------------------------------------------------

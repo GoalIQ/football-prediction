@@ -65,49 +65,78 @@ GATED_EXPECTED = {
     # comparen vain Premium-lauseessa. Ilmaista ydinta ei ole, joten
     # PARTIAL-rivi olisi vaite jota testit valvoisivat vaarana.
     "/api/fantasy/compare",
+    # --- 17.10.2026 HENKILOKOHTAISET TYOKALUT PREMIUMIIN (Villen paatos
+    # "tyokalut taakse", spec goaliq-app cos-reports/2026-10-17-tyokalut-
+    # maksumuuriin-spec.md). Kuusi reittia siirtyi FREE_EXPECTEDista tanne.
+    # Kaikki lukevat KAYTTAJAN OMAA joukkuetta tai rakentavat sen, ja
+    # spec-taulukko merkitsee ne "lukittu" (ilmaisosuus nolla,
+    # api.premium.FREE_PERSONAL_TOOL_ROWS). Maski on AJASTETUN KYTKIMEN takana
+    # (`personal_tools_mask_applies`, PERSONAL_TOOLS_ENFORCE_FROM 21.10), jotta
+    # mobiilin OTA ehtii levita ennen kuin palvelin alkaa maskata.
+    # Ajonaikainen todennus joka vaiheessa: tests/test_personal_tools_lock.py.
+    #
+    # gw-review + my-team-ledger: 25.8-4.9 linja oli "rehellisyyspinta ei saa
+    # olla maksumuurin takana". 17.10 paatos erottaa kaksi asiaa: MALLIN oma
+    # julkinen tarkkuus (track record, /fpl:n kutsuloki, mallin rivi
+    # model-racessa) jaa ilmaiseksi, KAYTTAJAN oman rivin katsaus ja
+    # kausikirjanpito ovat henkilokohtaisia tyokaluja.
+    "/api/fantasy/gw-review",
+    "/api/fantasy/my-team-ledger",
+    "/api/fantasy/fit",
+    # Team 2 -vertailun esitaytto. Sama runko on julkinen /fpl/model-xi
+    # -sivulla; lukitus koskee vertailutyokalua, ei rungon salaisuutta.
+    "/api/fantasy/model-squad",
+    # Oman rungon live-DefCon. Sisarreitit defcon-gw ja defcon/{id} pysyvat
+    # FREE_EXPECTEDissa (FPL:n julkinen otteludata, ei kayttajan joukkue).
+    "/api/fantasy/defcon-live",
+    # Mini-liigan head-to-head-voittotodennakoisyys. Sarjataulukko
+    # (league/{league_id}) pysyy ilmaisena.
+    "/api/fantasy/h2h",
 }
 
-# Nama ovat tarkoituksella ilmaisia (rate my team, kapteenipoiminta,
-# price watch, leaderboardien karki, career, mini-liiga). Jos jokin naista
-# muuttuu premiumiksi, se lisataan GATED_EXPECTEDiin ja gate koodiin.
+# Nama ovat tarkoituksella ilmaisia (leaderboardien karki, career,
+# mini-liigan taulukko, mallin oma kapteeni). Jos jokin naista muuttuu
+# premiumiksi, se lisataan GATED_EXPECTEDiin ja gate koodiin.
+#
+# 🔴 17.10: HENKILOKOHTAINEN TYOKALU EI SAA OLLA TALLA LISTALLA (spec
+# "Periaate" 3). Tyokalu joka lukee kayttajan omaa joukkuetta on GATED tai
+# PARTIAL. `test_henkilokohtainen_reitti_ei_ole_free` kaatuu jos sellainen
+# palaa tanne.
 FREE_EXPECTED = {
-    # 25.8: MY TEAM LEDGER on tietoisesti ilmainen. Se nayttaa kuinka paljon
-    # mallin ennuste erosi lukijan TOTEUTUNEISTA pisteista, eli se on luku joka
-    # voi nolata mallin. Mitattu ensimmaisella ajolla: mallin oma joukkue
-    # yliennustettiin 14,6 pisteella (55,64 -> 41). Rehellisyyspinta
-    # maksumuurin takana kumoaa itsensa - koko tuote myydaan silla etta
-    # tarkkuuden voi tarkistaa ennen maksamista.
-    "/api/fantasy/my-team-ledger",
-    # 25.8: POST-GW-KATSAUS samasta syysta. Sen `worst_call`-kentta nayttaa
-    # mallin PAHIMMAN hudin kierroksella, ja se on koko pinnan tarkoitus:
-    # rehellisyys on kayttoliittyma. Huti maksumuurin takana on sama asia kuin
-    # ei hutia.
-    "/api/fantasy/gw-review",
-    "/api/fantasy/price-watch",
-    "/api/fantasy/fit",
-    "/api/fantasy/model-squad",
     # 22.9: mallin kapteeni seuraavalle deadlinelle. Sama kapteeni on jo
-    # julkinen goaliq.app/fpl:n kutsulokissa ja rate-teamin ilmaisessa
-    # `captain.pick`issa; vastaus rajataan response_modelilla nimettyihin
-    # kenttiin (ei siirtoehdotuksia).
+    # julkinen goaliq.app/fpl:n kutsulokissa; vastaus rajataan
+    # response_modelilla nimettyihin kenttiin (ei siirtoehdotuksia).
+    # 17.10: jaa sisalloksi (spec rivi 3: "mallin oma kapteeni jaa").
     "/api/fantasy/model-captain",
-    # 4.9 VILLEN PAATOS: differentials on ilmainen kaikilla pinnoilla
-    # (landing, rekisterin tier, SPA:n gate, API). Mitattu syy paatoksen
-    # taustalla: julkisen /fpl/differentials-sivun generaattori hakee taman
-    # CI:sta ANONYYMINA ja nielee virheen varoituksella, joten maski olisi
-    # pudottanut sivun kahteen riviin hiljaa.
-    "/api/fantasy/differentials",
     "/api/fantasy/xg-leaders",
     # 17.9: defcon-gw ja defcon/{player_id} pysyvat ilmaisina myos sen
     # jalkeen kun defcon-leaders siirtyi PARTIALiin: per-GW-matriisi ja
     # pelaajakortin DefCon-loki ovat FPL:n omaa otteludataa, eivat rankingia.
     "/api/fantasy/defcon-gw",
-    "/api/fantasy/defcon-live",
     # 18.9: compare siirtyi GATED_EXPECTEDiin (perustelu siella).
+    # 17.10: career jaa ilmaiseksi (spec rivi 20: jakelukortti).
     "/api/fantasy/career",
+    # 17.10: sarjataulukko jaa ilmaiseksi (spec rivi 11). Payloadissa ei ole
+    # voittotodennakoisyys- eika rival-kenttia (vain FPL:n standings-proxy),
+    # joten typistettavaa ei ole; head-to-head on erillinen /h2h (GATED).
     "/api/fantasy/league/{league_id}",
-    "/api/fantasy/h2h",
     "/api/fantasy/defcon/{player_id}",
+}
+
+#: 17.10: henkilokohtaiset tyokalureitit (spec-taulukko). Yksikaan ei saa olla
+#: FREE_EXPECTEDissa; jokaisen on kutsuttava `personal_tools_mask_applies`ia.
+#: price-watch ja differentials ovat tassa entry-parametrinsa takia (julkinen
+#: lista on ilmainen, oman joukkueen merkinnat/suodatus Premium).
+PERSONAL_TOOL_ROUTES = {
+    "/api/fantasy/rate-team",
+    "/api/fantasy/model-squad",
+    "/api/fantasy/gw-review",
+    "/api/fantasy/my-team-ledger",
+    "/api/fantasy/fit",
+    "/api/fantasy/defcon-live",
+    "/api/fantasy/h2h",
+    "/api/fantasy/price-watch",
+    "/api/fantasy/differentials",
 }
 
 # KOLMAS LUOKKA (13.8): ilmainen ydin + premium-erittely samassa vastauksessa.
@@ -145,7 +174,19 @@ PARTIAL_EXPECTED = {
     # siirtosuositukset, joten vastaus on ilmainen ydin (rating, linjat,
     # kapteeni, hold-verdikti) + premium-erittely (suositukset). Viides
     # kerta tata vikaluokkaa; maski on nyt endpointissa.
+    # 17.10 (kytkin 21.10): ilmainen ydin kapenee arvosanaan (spec rivi 1:
+    # rating, rating_max, percentile, beats_benchmark + tunnistetiedot);
+    # pitch, kapteeni, linjat, hold-verdikti ja siirrot ovat Premiumia
+    # (api.premium.mask_rate_team_preview_payload). Ennen kytkinta 5.9-maski.
     "/api/fantasy/rate-team",
+    # 17.10 (kytkin 21.10): julkinen hintalista on ilmainen ydin, `entry`n
+    # omistusmerkinnat (owned-lippu riveilla, owned-yhteenveto, meta.squad)
+    # ovat Premium-erittely (spec rivi 14).
+    "/api/fantasy/price-watch",
+    # 17.10 (kytkin 21.10): julkinen differentiaalilista on ilmainen ydin
+    # (Bluesky-vastausmoduuli hakee sen anonyymina), oman joukkueen
+    # suodatus (omistetut pois, template_missing) on Premium (spec rivi 18).
+    "/api/fantasy/differentials",
     # 17.9 DEFCON-LEADERS-PALVELINRAJA: defcon-leaders siirtyi FREEsta tanne.
     # "Full DefCon leaderboard" on myyty premiumina vahintaan viidella
     # pinnalla (fpl.html, build_fpl_page.py, llms.txt, mobiilin
@@ -173,7 +214,17 @@ PARTIAL_PREMIUM_KEYS = {
     "/api/fantasy/rival": ("differentials",),
     # Differential-kapteeni on nimenomaan myyty premium-riville.
     "/api/fantasy/captain": ("differential",),
-    "/api/fantasy/rate-team": ("suggestions",),
+    # 17.10: kytkimen jalkeen koko tyokalu arvosanaa lukuun ottamatta.
+    # Ennen kytkinta (5.9-maski) vain `suggestions`. Todennus ajamalla:
+    # tests/test_personal_tools_lock.py.
+    "/api/fantasy/rate-team": (
+        "suggestions", "hold_verdict", "captain", "team.players",
+        "last_finished", "rating.strongest_line", "rating.weakest_line",
+        "rating.team_xp_gw", "rating.team_xp_horizon"),
+    "/api/fantasy/price-watch": ("owned", "risers[].owned",
+                                 "fallers[].owned", "meta.squad"),
+    "/api/fantasy/differentials": ("template_missing", "meta.squad",
+                                   "meta.owned_excluded"),
     # 17.9: premium-osa on LISTAN HANTA, ei kentta. Raja on yksi vakio
     # (api.premium.FREE_LEADERS_ROWS) ja se kulkee vastauksen metassa
     # (`free_rows`); vuoto = players-lista pidempi kuin free_rows ilman
@@ -201,8 +252,20 @@ def _scan_gates() -> dict[str, bool]:
         for k, (i, path) in enumerate(hits):
             end = hits[k + 1][0] if k + 1 < len(hits) else len(lines)
             body = "\n".join(lines[i:end])
-            gates[path] = "is_premium_request" in body
+            # 17.10: henkilokohtaisen tyokalun gate on ajastettu kytkin
+            # `personal_tools_mask_applies(request)`, joka kutsuu
+            # is_premium_requestia api.premiumin sisalla.
+            gates[path] = ("is_premium_request" in body
+                           or "personal_tools_mask_applies(request)" in body)
     return gates
+
+
+#: Typistyksen todiste rungossa: FREE_*-vakio tai mask_<x>_payload-kutsu.
+#: 🔴 17.10: EI pelkka "mask_"-alimerkkijono. `personal_tools_mask_applies`
+#: sisaltaa sen, joten vanha `"mask_" in body` olisi hyvaksynyt pelkan
+#: kytkinkutsun ilman yhtaan maskia, eli tasan sen vikatilan jota testi
+#: vartioi ("gate ilman typistysta").
+_TRUNCATION_EVIDENCE = re.compile(r"FREE_[A-Z]|\bmask_\w+_payload\b")
 
 
 def test_premium_endpoints_are_gated():
@@ -258,12 +321,43 @@ def test_gated_endpoints_actually_truncate():
     toothless = []
     for path in sorted(GATED_EXPECTED):
         body = gates.get(path, "")
-        if not ("FREE_" in body or "mask_" in body):
+        if not _TRUNCATION_EVIDENCE.search(body):
             toothless.append(path)
     assert not toothless, (
         f"Gate ilman typistysta: {toothless}. Endpoint laskee premium-lipun "
         "mutta ei kutista payloadia — portti on vihrea ja data vuotaa silti."
     )
+
+
+def test_typistystodiste_ei_hyvaksy_pelkkaa_kytkinta():
+    """Negatiivinen kontrolli 17.10 tiukennukselle: pelkka kytkinkutsu ei ole
+    typistys, mutta kytkin + maskifunktio on."""
+    assert not _TRUNCATION_EVIDENCE.search(
+        "if personal_tools_mask_applies(request):\n    return payload")
+    assert _TRUNCATION_EVIDENCE.search(
+        "if personal_tools_mask_applies(request):\n"
+        "    return mask_fit_payload(payload)")
+    assert _TRUNCATION_EVIDENCE.search("players[:FREE_XP_TEASER_N]")
+
+
+def test_henkilokohtainen_reitti_ei_ole_free():
+    """17.10 (spec "Periaate" 3): henkilokohtainen tyokalureitti EI saa olla
+    FREE_EXPECTEDissa, ja jokainen on luokiteltu GATED tai PARTIAL.
+
+    Ilman tata seuraava "tama on rehellisyyspinta" -perustelu voisi palauttaa
+    reitin ilmaiseksi yhdella joukkorivilla, ja `test_free_endpoints_stay_
+    ungated` kaatuisi vasta kun joku huomaa kytkinkutsun - eli vaara suunta.
+    """
+    vapaana = sorted(PERSONAL_TOOL_ROUTES & FREE_EXPECTED)
+    assert not vapaana, f"henkilokohtainen tyokalu FREE-listalla: {vapaana}"
+    luokittelematta = sorted(PERSONAL_TOOL_ROUTES
+                             - GATED_EXPECTED - PARTIAL_EXPECTED)
+    assert not luokittelematta, (
+        f"henkilokohtainen tyokalu ilman GATED/PARTIAL-luokkaa: "
+        f"{luokittelematta}")
+    gates = _scan_gates()
+    tuntematon = sorted(PERSONAL_TOOL_ROUTES - set(gates))
+    assert not tuntematon, f"reittia ei loydy koodista: {tuntematon}"
 
 
 def test_free_endpoints_stay_ungated():
@@ -843,6 +937,12 @@ ILMAINEN_ESIKATSELU = {
     "FREE_PARLAY_LEGS": (0, "/api/parlay: nolla - mobiilin ParlayScreen "
                             "palauttaa lukkonakyman ennen kutsua eika SPA:ssa "
                             "ole parlayta (tests/test_predict_mask.py)"),
+    # 17.10 HENKILOKOHTAISET TYOKALUT PREMIUMIIN (kytkin 21.10).
+    "FREE_PERSONAL_TOOL_ROWS": (0, "lukitut henkilokohtaiset tyokalut "
+                                   "(gw-review, my-team-ledger, fit, "
+                                   "model-squad, defcon-live, h2h): nolla - "
+                                   "spec-taulukko merkitsee ne 'lukittu' "
+                                   "(tests/test_personal_tools_lock.py)"),
 }
 
 
@@ -908,6 +1008,15 @@ GATED_MASK_SIZE: dict[str, tuple[str, int] | None] = {
     # kirjoitettu auki api/premium.py:hyn vakion viereen.
     "/api/fantasy/compare": ("FREE_COMPARE_ROWS", 0),
     "/api/fantasy/wildcard-plan": None,
+    # 17.10: lukitut henkilokohtaiset tyokalut, ilmaisosuus nolla riviä.
+    # Maskin muoto (avaimet sailyvat, listat tyhjiksi, meta.locked_tool) on
+    # lukittu ajamalla tests/test_personal_tools_lock.py:ssa.
+    "/api/fantasy/gw-review": ("FREE_PERSONAL_TOOL_ROWS", 0),
+    "/api/fantasy/my-team-ledger": ("FREE_PERSONAL_TOOL_ROWS", 0),
+    "/api/fantasy/fit": ("FREE_PERSONAL_TOOL_ROWS", 0),
+    "/api/fantasy/model-squad": ("FREE_PERSONAL_TOOL_ROWS", 0),
+    "/api/fantasy/defcon-live": ("FREE_PERSONAL_TOOL_ROWS", 0),
+    "/api/fantasy/h2h": ("FREE_PERSONAL_TOOL_ROWS", 0),
 }
 
 
