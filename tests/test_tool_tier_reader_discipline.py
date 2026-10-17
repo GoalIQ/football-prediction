@@ -342,6 +342,41 @@ ALLOWED: dict[str, list[Poikkeus]] = {
             ),
             free=("rate-my-team",),
         ),
+        # --- 17.10 HENKILOKOHTAISET TYOKALUT PREMIUMIIN (kytkin 21.10). Maskien
+        # `meta.mask` on julkista API-tekstia kuten player-statsin MASK_TEXT,
+        # ja `meta.locked_tool`-slugi on samassa kutsussa.
+        Poikkeus(
+            ote="GoalIQ Premium unlocks the fit checker",
+            reason=(
+                "/api/fantasy/fit-maskin `meta.mask`: palvelin lukitsee fitin "
+                "ei-tilaajalta 21.10 alkaen (Villen paatos 17.10). Vaite "
+                "tarkistetaan rekisterista, ja 🔴 17.10 se on PUNAINEN "
+                "tarkoituksella: web/pro-spa/src/lib/tools.ts sanoo yha "
+                "fit-checker 'free'. SPA-vaihe kaantaa rekisterin, sama syy "
+                "kuin test_tool_tier_server_corroboration-erimielisyydella."
+            ),
+            premium=("fit-checker",),
+        ),
+        Poikkeus(
+            ote="GoalIQ Premium unlocks the model squad comparison",
+            reason=(
+                "/api/fantasy/model-squad-maskin `meta.mask`. Vaite koskee Team "
+                "2 -VERTAILUA (mallin runko vertailuslottiin), ei koko "
+                "rate-my-team-tyokalua: `rate-my-team` on samassa kutsussa "
+                "vain `meta.locked_tool`-avaimena, jolla klientti tietaa minka "
+                "nakyman lukko on. Rate-my-teamin arvosana jaa ilmaiseksi, "
+                "joten tyokalun tier-vaitetta ei kirjata."
+            ),
+        ),
+        Poikkeus(
+            ote="public list without your squad marks (GoalIQ Premium",
+            reason=(
+                "/api/fantasy/price-watch + entry -maskin `meta.mask`. Hintalista "
+                "itse on ilmainen (rekisteri free, tarkistetaan); vain entryn "
+                "omistusmerkinnat lukitaan, ja niilla ei ole omaa slugia."
+            ),
+            free=("price-watch",),
+        ),
     ],
 }
 

@@ -5736,11 +5736,11 @@ def fantasy_price_watch(
     pyynnössä. Estimaatti, ei virallinen (disclaimer metassa). no-store kuten
     muut fantasy-endpointit.
 
-    17.10 (tyokalut Premiumiin, kytkin 21.10): julkinen lista pysyy
-    ilmaisena; `entry`-parametrin omistusmerkinnat vain Premiumille.
-    Ei-Premium + entry -> lista ilman merkintoja + meta.masked, eika
-    joukkuetta haeta FPL:sta lainkaan. Ilman entrya vastaus on ennallaan
-    (kytkinta ei kysyta).
+    17.10 (kytkin 21.10, ks. api.premium HENKILOKOHTAISET TYOKALUT):
+    `entry`-parametrin omistusmerkinnat ovat henkilokohtaista dataa ja ne
+    lukitaan ei-tilaajalta (`mask_price_watch_entry_payload`): lista ilman
+    merkintoja + meta.masked, eika joukkuetta haeta FPL:sta lainkaan. Ilman
+    entrya vastaus on ennallaan (kytkinta ei kysyta).
     """
     from src.models.fpl_price_watch import load_price_watch
     response.headers["Cache-Control"] = "no-store"
@@ -5886,8 +5886,8 @@ def fantasy_fit(
     kirjautumista (PI-13: toimii go-live-hetkellä). Lukee committatun
     projektion, ei laskentaa mallipolulla.
 
-    17.10 (tyokalut Premiumiin, kytkin 21.10): lukittu ei-Premiumille
-    (api.premium.mask_fit_payload)."""
+    17.10: maski `mask_fit_payload` ajastetun kytkimen takana (luokka ja
+    perustelu: api.premium HENKILOKOHTAISET TYOKALUT)."""
     from src.models.fpl_fit import fit_squad
     from src.models.fpl_rate_team import RateTeamError
     response.headers["Cache-Control"] = "no-store"
@@ -5909,10 +5909,10 @@ def fantasy_model_squad(request: Request, response: Response):
     eriytyä; ks. fpl_fit-docstring 29.7). Lukee committatun projektion, ei
     laskentaa mallipolulla. Ei entry-ID:tä, ei kirjautumista.
 
-    17.10 (tyokalut Premiumiin, kytkin 21.10): lukittu ei-Premiumille
-    (api.premium.mask_model_squad_payload), koska Team 2 -vertailu on
-    Premium-tyokalu. Sama runko on yha julkinen /fpl/model-xi-sivulla:
-    lukitus koskee vertailutyokalua, ei rungon salaisuutta."""
+    17.10: maski `mask_model_squad_payload` ajastetun kytkimen takana
+    (luokka ja perustelu: api.premium HENKILOKOHTAISET TYOKALUT). Sama
+    runko on yha julkinen /fpl/model-xi-sivulla: lukitus koskee Team 2
+    -vertailua, ei rungon salaisuutta."""
     from src.models.fpl_rate_team import (
         POS_NAME, RateTeamError, build_context, free_optimum, free_optimum_key)
     from src.models.fpl_xp import horizon_total_meta

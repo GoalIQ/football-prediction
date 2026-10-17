@@ -1060,7 +1060,7 @@ def mask_h2h_payload(payload: dict) -> dict:
 
 
 def mask_price_watch_entry_payload(payload: dict) -> dict:
-    """/api/fantasy/price-watch + entry ei-Premiumille: julkinen lista ilman
+    """Hintalistareitti + entry ei-tilaajalle: sama lista ilman
     omistusmerkintoja. Reitti jattaa joukkueen hakematta, tama poistaa varmuuden
     vuoksi `owned`-jaljet (rivilippu, yhteenveto, meta.squad)."""
     out = dict(payload)
