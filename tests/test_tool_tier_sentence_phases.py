@@ -205,6 +205,29 @@ def test_e2_watchlistin_katto_on_lauseessa() -> None:
     assert "five free, up to 80 on Premium" in muu, muu
 
 
+def test_e3_premium_watchlist_nollakatolla_ei_lupaa_ilmaista() -> None:
+    """17.10.2026 (tyokalut taakse): watchlist Premiumiin, katto 0. Vaihe
+    synteettisena (6a kohta 3): sama rekisteri ja prefs kuin tuotannossa
+    17.10 jalkeen. Lause ei saa sanoa "0 free" eika "zero free", eika nimeta
+    watchlistia ilmaiseksi; Premiumin ylaraja luetaan yha lahteesta."""
+    jalkeen = _swap(_TODAY, "watchlist", "premium")
+    r = ToolTiers(
+        _registry(jalkeen),
+        "export const WATCHLIST_FREE_LIMIT = 0;\nexport const WATCHLIST_MAX = 50;\n",
+    )
+    sentence = r.tier_sentence(_QUAD)
+    free, premium = _osat(sentence)
+    assert any("your watchlist (up to 50 players)" in x.lower() for x in premium), sentence
+    assert not any("watchlist" in x.lower() for x in free), sentence
+    assert "0 free" not in sentence and "zero free" not in sentence.lower(), sentence
+    # Katto palaa lahteesta ilman kasityota.
+    takaisin = ToolTiers(
+        _registry(jalkeen),
+        "export const WATCHLIST_FREE_LIMIT = 2;\nexport const WATCHLIST_MAX = 50;\n",
+    ).caveat("watchlist")
+    assert takaisin == "two free, up to 50 on Premium", takaisin
+
+
 # --------------------------------------------------------------------------
 # (f) poistettu tyokalu kaataa nakyvasti
 # --------------------------------------------------------------------------

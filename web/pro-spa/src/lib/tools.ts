@@ -125,6 +125,11 @@ export const TOOLS: Tool[] = [
 		// 5.9 portti: "the one move that improves it most" oli kayvan joukon
 		// maksimi; backend itse kirjoittaa "the best move the model checked".
 		question: 'Is my squad good, and which line is costing me?',
+		// 17.10 (tyokalut taakse): reitti aukeaa kaikille, koska arvosana on
+		// ilmainen esimaku (palvelimella PARTIAL: mask_rate_team_preview_payload).
+		// Analyysi (linjat, kapteeni, siirrot, chipit, pitch) lukitaan
+		// komponentissa $lib/personalLock-lukijalla, ei tasolla: 'premium'
+		// veisi reitin LockedToolPreview'hun ja esimaku katoaisi.
 		tier: 'free',
 		primary: true,
 		anchor: 'tc-rate'
@@ -134,7 +139,9 @@ export const TOOLS: Tool[] = [
 		group: 'team',
 		title: 'Fit checker',
 		question: 'Which 15 does the model build around the players I lock in?',
-		tier: 'free',
+		// 17.10 (tyokalut taakse): Premium kokonaan. /api/fantasy/fit on
+		// palvelimella GATED (mask_fit_payload, FREE_PERSONAL_TOOL_ROWS = 0).
+		tier: 'premium',
 		anchor: 'tc-fit'
 	},
 	{
@@ -150,7 +157,9 @@ export const TOOLS: Tool[] = [
 		group: 'team',
 		title: 'Watchlist',
 		question: 'Which players am I still deciding on?',
-		tier: 'free',
+		// 17.10 (tyokalut taakse): Premium kokonaan (prefs.ts
+		// WATCHLIST_FREE_LIMIT = 0). Palvelimella ei ole watchlist-endpointtia.
+		tier: 'premium',
 		anchor: 'tc-watchlist'
 	},
 	// --- Players -----------------------------------------------------------
@@ -234,6 +243,9 @@ export const TOOLS: Tool[] = [
 		// Villen paatos 4.9: ilmainen. Se oli jo kaytannossa ilmainen (julkisen
 		// /fpl/differentials-sivun datalahde), joten premium-merkki lupasi
 		// lukon jota ei ollut.
+		// 17.10: julkinen lista jaa ilmaiseksi; vain oman joukkueen suodatus
+		// on Premiumia (palvelimella PARTIAL, mask_differentials_entry_payload),
+		// ja se lukitaan komponentissa ($lib/personalLock).
 		tier: 'free',
 		anchor: 'pc-diff'
 	},
@@ -284,6 +296,9 @@ export const TOOLS: Tool[] = [
 		group: 'team',
 		title: 'Beat the Model league',
 		question: 'How am I doing against the model and my rivals in the mini-league?',
+		// 17.10: sarjataulukko jaa ilmaiseksi (/api/fantasy/league/{id} FREE);
+		// head-to-head-voittotodennakoisyys on Premiumia (/h2h GATED) ja
+		// lukitaan komponentissa ($lib/personalLock).
 		tier: 'free',
 		anchor: 'tl-league'
 	},
@@ -294,6 +309,9 @@ export const TOOLS: Tool[] = [
 		group: 'players',
 		title: 'Price watch',
 		question: 'Which of my players are about to rise or fall?',
+		// 17.10: julkinen lista jaa ilmaiseksi; oman joukkueen merkinnat ovat
+		// Premiumia (palvelimella PARTIAL, mask_price_watch_entry_payload) ja
+		// lukitaan komponentissa ($lib/personalLock).
 		tier: 'free',
 		anchor: 'pr-watch'
 	},

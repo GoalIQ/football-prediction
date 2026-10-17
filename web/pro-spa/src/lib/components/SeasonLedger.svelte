@@ -9,7 +9,14 @@
 	 * Muoto: poikkeama nollaviivasta per kierros (dataviz: "above/below a
 	 * baseline"). Varit validoitu tummaa pintaa vasten (CVD dE 12.8), ja
 	 * etumerkki nakyy myos suunnasta, joten vari ei ole ainoa koodaus.
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivi 8): Premiumia kokonaan (Villen
+	 * paatos kumosi "ilmainen" -linjan). Lukitus $lib/personalLock-lukijasta:
+	 * ilman Premiumia ei hakua, ja palvelimen lukitsema vastaus (locked_tool
+	 * 'season-ledger') ei piirra mitaan. Lukitusnakyma on Rate my teamin oma
+	 * (LOCK_COPY 'rate-my-team' mainitsee kauden), joten tama ei piirra omaa.
 	 */
+	import { personalLock } from '$lib/personalLock';
 	import { fetchMyTeamLedger, type LedgerResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import {
@@ -21,14 +28,14 @@
 		signed
 	} from '$lib/ledger';
 
-	let { entry }: { entry: number | null } = $props();
+	let { entry, premium = false }: { entry: number | null; premium?: boolean } = $props();
 
 	let data = $state<LedgerResponse | null>(null);
 	let loadedFor = $state<number | null>(null);
 	let active = $state<number | null>(null);
 
 	$effect(() => {
-		if (entry == null) {
+		if (entry == null || personalLock(premium)) {
 			data = null;
 			loadedFor = null;
 			return;
@@ -46,7 +53,7 @@
 		);
 	});
 
-	const view = $derived(ledgerView(data));
+	const view = $derived(personalLock(premium, data) ? null : ledgerView(data));
 
 	// Kaavion geometria (viewBox-yksikot). Nollaviiva sinne missa 0 on
 	// asteikolla: pelkat plussat eivat jata tyhjaa alapuoliskoa.

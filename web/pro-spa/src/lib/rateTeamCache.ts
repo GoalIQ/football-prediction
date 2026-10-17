@@ -20,8 +20,19 @@
  *   - tilaus                -> maskattu vastaus ei kelpaa premiumille (lukittu
  *                              siirtolista maksavalle). Maskaamaton syntyy vain
  *                              saman tilin premium-tokenilla.
+ *   - tilaus, 17.10.2026    -> rivi kantaa TASON jolla se haettiin (`premium`),
+ *                              ja se kelpaa vain samalle tasolle. Tyokalut
+ *                              taakse: kytkimen (21.10) jalkeen ilmaisen vastaus
+ *                              on lukittu (`meta.locked_tool`), ennen sita taysi.
+ *                              Kumpikaan ei saa nayttaa toisen tason nakymaa:
+ *                              lukittu rivi Premiumille olisi tyhja analyysi, ja
+ *                              Premium-aikana haettu taysi rivi ilmaiselle olisi
+ *                              lukitun sisallon lahde. Rivi ilman tasoa (ennen
+ *                              17.10 kirjoitettu) ei kelpaa kenellekaan
+ *                              (fail-closed, yksi tuore haku).
  */
 import type { RateTeamResponse } from './fantasyTools';
+import { serverLockedTool } from './personalLock';
 
 export const RATE_TEAM_STORED_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -33,6 +44,7 @@ export interface RateTeamLike {
 		entry?: number | null;
 		deadline_time?: string | null;
 		masked?: boolean | null;
+		locked_tool?: string | null;
 	} | null;
 }
 
@@ -41,6 +53,8 @@ export interface StoredRateTeam<T extends RateTeamLike = RateTeamLike> {
 	userKey: string;
 	entry: number;
 	fetchedAt: number;
+	/** 17.10: taso jolla vastaus haettiin. Puuttuva = ei kelpaa. */
+	premium?: boolean;
 	data: T;
 }
 
@@ -58,7 +72,9 @@ export function storedRateTeamUsable(
 	if (!(age >= 0 && age < RATE_TEAM_STORED_MAX_AGE_MS)) return false;
 	const deadline = Date.parse(stored.data.meta?.deadline_time ?? '');
 	if (!Number.isFinite(deadline) || now >= deadline) return false;
+	if (stored.premium !== want.premium) return false;
 	if (want.premium && stored.data.meta?.masked === true) return false;
+	if (want.premium && serverLockedTool(stored.data) != null) return false;
 	return true;
 }
 
@@ -88,13 +104,19 @@ export function readStoredRateTeam(
 	}
 }
 
-export function writeStoredRateTeam(entry: number, userId: string, data: RateTeamResponse): void {
+export function writeStoredRateTeam(
+	entry: number,
+	userId: string,
+	data: RateTeamResponse,
+	premium: boolean
+): void {
 	try {
 		const row: StoredRateTeam<RateTeamResponse> = {
 			v: 1,
 			userKey: `u:${userId}`,
 			entry,
 			fetchedAt: Date.now(),
+			premium,
 			data
 		};
 		storage()?.setItem(RESULT_KEY, JSON.stringify(row));

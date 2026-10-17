@@ -75,7 +75,9 @@ PINNAT: dict[str, Pinta] = {
         None,
         "Watchlist on selaimen oma lista (web/pro-spa/src/lib/prefs.ts). "
         "Palvelimella ei ole watchlist-endpointtia; katto on prefs.ts:n "
-        "WATCHLIST_FREE_LIMIT, ja se luetaan lauseeseen.",
+        "WATCHLIST_FREE_LIMIT (17.10.2026: 0, tyokalu Premiumia), ja se "
+        "luetaan lauseeseen. Lukitus on klienttiportti "
+        "(web/pro-spa/src/lib/personalLock.ts).",
     ),
     "player-card": Pinta(
         None,
@@ -241,8 +243,12 @@ def test_neljan_lauseessa_nimetyn_tyokalun_tier_on_vahvistettu() -> None:
     suuntaa."""
     reader = load()
     odotus = {
+        # 17.10.2026 (tyokalut taakse): rate-my-team jaa ilmaiseksi koska
+        # arvosana on esimaku (PARTIAL: mask_rate_team_preview_payload);
+        # watchlist on Premiumia kokonaan (prefs.ts WATCHLIST_FREE_LIMIT = 0,
+        # ei endpointtia, joten palvelinluokka on yha NONE).
         "rate-my-team": ("free", (FREE, PARTIAL)),
-        "watchlist": ("free", (NONE,)),
+        "watchlist": ("premium", (NONE,)),
         # 20.9: GATED -> (GATED, PARTIAL). `/api/fantasy/plan` luokiteltiin
         # GATEDiksi, mutta anonyymi kutsu palauttaa **200** ja
         # `meta.mask: "first 1 of 5 gameweeks (free preview)"` (mitattu

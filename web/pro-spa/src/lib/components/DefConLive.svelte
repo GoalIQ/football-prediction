@@ -8,15 +8,28 @@
 	 *
 	 * Päivittyy 60 s välein, mutta EI kun välilehti on taustalla — turha
 	 * kuorma Renderin 0.5 vCPU:lle ja FPL:lle. Backend cachettaa saman 60 s.
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivi 16): Premiumia kokonaan. Lukitus
+	 * $lib/personalLock-lukijasta: ilman Premiumia ei hakua eika pollausta,
+	 * ja palvelimen lukitsema vastaus (locked_tool 'defcon-live', meta.available
+	 * false) nayttaa lukon eika tyhjaa. Lukko vain kun joukkue on tiedossa:
+	 * ilman joukkuetta lohko on tyhja kuten ennenkin.
 	 */
 	import { onMount } from 'svelte';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import { fetchDefconLive, type DefconLiveResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { shareCard, canShareToApps } from '$lib/shareCard';
+	import { personalLock, serverLockedTool } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
+
+	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
 	const POLL_MS = 60_000;
 	let data = $state<DefconLiveResponse | null>(null);
+	/** Palvelimen lukitsema vastaus (vaikka klientti uskoisi Premiumiin). */
+	let lockedRes = $state<DefconLiveResponse | null>(null);
+	const locked = $derived(personalLock(premium, lockedRes));
 	// Plain let, EI $state: tätä luetaan ja kirjoitetaan efektin sisällä, ja
 	// reaktiivisena se tekisi efektikehän (muisti: svelte-effect-cycle).
 	let lastLoaded: string | null = null;
@@ -31,6 +44,12 @@
 	async function load(id: string) {
 		try {
 			const res = await fetchDefconLive(Number(id));
+			if (serverLockedTool(res)) {
+				lockedRes = res;
+				data = null;
+				return;
+			}
+			lockedRes = null;
 			data = res.meta.available ? res : null;
 		} catch {
 			data = null; // live-feedin katko ei saa näkyä virheenä työkalusivulla
@@ -39,7 +58,7 @@
 
 	$effect(() => {
 		const id = entryId;
-		if (!id) {
+		if (!id || personalLock(premium)) {
 			data = null;
 			lastLoaded = null;
 			return;
@@ -53,7 +72,7 @@
 	onMount(() => {
 		const timer = setInterval(() => {
 			const id = entryId;
-			if (id && !document.hidden) void load(id);
+			if (id && !document.hidden && !locked) void load(id);
 		}, POLL_MS);
 		return () => clearInterval(timer);
 	});
@@ -178,7 +197,9 @@
 	});
 </script>
 
-{#if rows.length > 0}
+{#if locked && entryId}
+	<PersonalLock tool="defcon-live" {onUpgrade} compact />
+{:else if rows.length > 0}
 	<section class="dcl" aria-label="Defensive contribution, live">
 		<div class="bar">
 			<button

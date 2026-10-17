@@ -89,8 +89,11 @@ describe('kutsupaikat', () => {
 	const read = (f: string) => readFileSync(new URL(`./components/${f}`, import.meta.url), 'utf-8');
 	it('RateTeam nayttaa lohkon vain FPL-entrylle', () => {
 		const src = read('RateTeam.svelte');
+		// 17.10 (tyokalut taakse): kutsupaikka valittaa myos tason, jolla
+		// SeasonLedger lukitsee itsensa ($lib/personalLock, portti
+		// personalLock.gate.test.ts).
 		expect(src).toMatch(
-			/<SeasonLedger entry=\{data\.meta\.mode === 'entry' \? \(data\.meta\.entry \?\? null\) : null\} \/>/
+			/<SeasonLedger entry=\{data\.meta\.mode === 'entry' \? \(data\.meta\.entry \?\? null\) : null\} \{premium\} \/>/
 		);
 	});
 	it('SeasonLedger ei muotoile lukuja itse (lause ja luku samasta lukijasta)', () => {

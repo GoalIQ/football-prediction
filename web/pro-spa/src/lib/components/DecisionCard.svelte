@@ -17,8 +17,18 @@
 	 * Premium-raja on palvelimen: ilmaisvastauksessa siirtoehdotuksia ei ole
 	 * (`mask_rate_team_payload`), joten kortti ei voi naytta niita vaikka
 	 * haara olisi vaarin. Mallin kortti ei kanna siirtoja lainkaan.
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivit 3-4): OMAN joukkueen kapteeni,
+	 * siirto, chipit ja hold-verdikti ovat Premiumia kokonaan. Lukitus tulee
+	 * $lib/personalLock-lukijasta (`ownLocked`): ei Premiumia TAI palvelin
+	 * lukitsi rate-team-vastauksen. Lukittuna kortti nayttaa MALLIN kapteenin
+	 * (`model`, /api/fantasy/model-captain, sisaltoa) ja lukon omille
+	 * paatoksille. Ennen 17.10 ilmainen naki oman kapteenin ja hold-verdiktin,
+	 * ja vain siirtopari oli lukittu (`decision_transfer_lock`).
 	 */
 	import type { RateTeamResponse } from '$lib/fantasyTools';
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
 	import { CHIP_NAMES } from '$lib/fantasyTools';
 	import { modelSourceLine, NO_FIXTURE, type ModelCaptainCard } from '$lib/weekRows';
 	import { xpHorizon } from '$lib/xpHorizon';
@@ -45,8 +55,9 @@
 		/** Mallin kapteeni ilman omaa joukkuetta (/api/fantasy/model-captain). */
 		model?: ModelCaptainCard | null;
 		premium?: boolean;
-		/** 1.10: lahde erottaa lukon funnelissa (`decision_transfer_lock`). */
-		onUpgrade?: (source?: string) => void;
+		/** Avaa upgrade-nakyman. Ei kirjaa tapahtumaa: PersonalLock kirjaa
+		 *  `upgrade_tapped {source: 'personal_lock_this-week'}`. */
+		onUpgrade?: () => void;
 		deadlineUtc?: string | null;
 		/** Kirjattavat paatokset (vain omalle joukkueelle). */
 		actions?: WeeklyAction[];
@@ -54,29 +65,33 @@
 		refreshToken?: number;
 	} = $props();
 
+	/** 17.10: oma joukkue on annettu mutta sen paatokset ovat lukittuja. */
+	const ownLocked = $derived(card != null && personalLock(premium, card));
+	/** Oma joukkue jonka paatokset saa nayttaa, tai null (mallin kortti). */
+	const mine = $derived(ownLocked ? null : card);
 	/** true = kayttajan oma joukkue, false = mallin kortti. */
-	const own = $derived(card != null);
+	const own = $derived(mine != null);
 
 	let tab = $state<Tab>('captain');
 	function pick(t: Tab) {
 		tab = t;
-		capture('decision_tab_opened', { tab: t, own });
+		capture('decision_tab_opened', { tab: t, own, locked: ownLocked });
 	}
 
 	/** Kierros jolle kapteeni on laskettu (kesken kierroksen deadline-GW). */
 	const capGw = $derived(
-		card
-			? (card.meta.captain_gw ?? (card.meta.gw_in_progress === true ? null : card.meta.gw))
+		mine
+			? (mine.meta.captain_gw ?? (mine.meta.gw_in_progress === true ? null : mine.meta.gw))
 			: (model?.gw ?? null)
 	);
-	const cap = $derived(card ? (card.captain?.pick ?? null) : (model?.captain ?? null));
-	const alt = $derived(card ? (card.captain?.alternative ?? null) : (model?.alt ?? null));
+	const cap = $derived(mine ? (mine.captain?.pick ?? null) : (model?.captain ?? null));
+	const alt = $derived(mine ? (mine.captain?.alternative ?? null) : (model?.alt ?? null));
 	/** Kapteenin vastustaja(t): oma kortti rungon pelaajarivista, mallin kortti
 	 *  lukijalta (`captain.opponents`: [] = ei ottelua, null = ei rivia). */
 	const capOpp = $derived.by(() => {
-		if (!card) return model?.opp ?? null;
+		if (!mine) return model?.opp ?? null;
 		if (!cap || capGw == null) return null;
-		const row = card.team?.players?.find((p) => p.id === cap.id);
+		const row = mine.team?.players?.find((p) => p.id === cap.id);
 		const g = row?.gameweeks?.find((x) => x.gw === capGw);
 		if (!g) return null;
 		if (g.opponents.length === 0) return NO_FIXTURE;
@@ -84,34 +99,19 @@
 	});
 	/** Mallin kortin tarkistusreitti: lahde palvelimen `meta.source`sta. */
 	const src = $derived(
-		!card && model
+		!mine && model
 			? modelSourceLine(model.source)
 			: null
 	);
 
-	const sug = $derived(card?.transfers?.suggestions?.[0] ?? null);
-	const verdict = $derived(card?.transfers?.hold_verdict ?? null);
-	/** Palvelin maskasi siirtoehdotukset (ilmaistaso) ja kanta on "siirra". */
-	const moveIsPremium = $derived(
-		card?.meta?.masked === true && !premium && verdict?.verdict === 'transfer'
-	);
+	const sug = $derived(mine?.transfers?.suggestions?.[0] ?? null);
+	const verdict = $derived(mine?.transfers?.hold_verdict ?? null);
 	const span = $derived.by(() => {
-		const n = verdict?.horizon_gws ?? card?.meta.transfer_horizon_gw;
-		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(card?.meta).span;
+		const n = verdict?.horizon_gws ?? mine?.meta.transfer_horizon_gw;
+		return typeof n === 'number' ? `${n}-GW horizon` : xpHorizon(mine?.meta).span;
 	});
 
-	/** 1.10 (mittaus cc-reports/2026-10-01-demon-polku-ja-konversiomittari.md):
-	 *  lukitun siirron naytosta ei lahtenyt tapahtumaa, ja klikkaus jakoi
-	 *  sourcen `fantasy_tools` muiden lukkojen kanssa. Nyt oma source,
-	 *  kerran per kierros per sivulataus. */
-	const LOCK_SOURCE = 'decision_transfer_lock';
-	$effect(() => {
-		if (tab === 'transfer' && moveIsPremium) {
-			capture('paywall_shown', { source: LOCK_SOURCE, gw: capGw }, `paywall_shown_${LOCK_SOURCE}_${capGw}`);
-		}
-	});
-
-	const chips = $derived(card?.meta?.chips ?? null);
+	const chips = $derived(mine?.meta?.chips ?? null);
 	const chipsNow = $derived((chips?.remaining ?? []).filter((c) => c.available_now));
 	const chipsLater = $derived((chips?.remaining ?? []).filter((c) => !c.available_now));
 	const chipName = (c: string) => CHIP_NAMES[c] ?? c;
@@ -181,14 +181,22 @@
 						{refreshToken}
 					/>
 				{/if}
-			{:else}
+			{:else if !ownLocked}
 				<p class="muted">No captain projection for this gameweek yet.</p>
 			{/if}
+			{#if ownLocked}
+				<!-- 17.10: mallin kapteeni ylla on sisaltoa; oman XI:n kapteeni on
+				     Premiumia (palvelin: captain null lukitussa rate-teamissa). -->
+				<PersonalLock tool="this-week" {onUpgrade} compact />
+			{/if}
 		{:else if tab === 'transfer'}
-			{#if !card}
+			{#if ownLocked}
+				<p class="k">Transfer</p>
+				<PersonalLock tool="this-week" {onUpgrade} compact />
+			{:else if !mine}
 				<p class="k">Transfer</p>
 				<p>Add your FPL team ID below and the model checks transfers for your own squad.</p>
-			{:else if premium && sug && !card.transfers.hold}
+			{:else if premium && sug && !mine.transfers.hold}
 				<p class="k">Transfer</p>
 				<p class="move">
 					<span class="muted">Out</span>
@@ -217,12 +225,6 @@
 				/>
 			{:else if verdict}
 				<HoldVerdictCard {verdict} surface="this_week" />
-				{#if moveIsPremium}
-					<p class="lock-line">
-						The move itself is part of GoalIQ Premium.
-						<button type="button" class="linklike" onclick={() => onUpgrade?.(LOCK_SOURCE)}>See Premium</button>
-					</p>
-				{/if}
 			{:else}
 				<p class="muted">No transfer call for this squad yet.</p>
 			{/if}
@@ -234,7 +236,9 @@
 			</p>
 		{:else}
 			<p class="k">Chip</p>
-			{#if !card}
+			{#if ownLocked}
+				<PersonalLock tool="this-week" {onUpgrade} compact />
+			{:else if !mine}
 				<p>Add your FPL team ID below to see which chips you still have.</p>
 			{:else if chips}
 				{#if chipsNow.length}
@@ -362,20 +366,6 @@
 	}
 	.arrow {
 		color: var(--accent);
-	}
-	.lock-line {
-		font-size: var(--step--1);
-	}
-	.linklike {
-		background: none;
-		border: none;
-		padding: 0;
-		min-height: 0;
-		color: var(--accent);
-		font: inherit;
-		font-weight: 700;
-		text-decoration: underline;
-		cursor: pointer;
 	}
 	.more-link {
 		margin-top: var(--s-3) !important;

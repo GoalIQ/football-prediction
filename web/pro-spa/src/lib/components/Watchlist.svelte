@@ -4,10 +4,18 @@
 	 * Määrittely: goaliq-app/cos-reports/beat-the-model-maarittely-2026-07-29.md §3.
 	 *
 	 * Pelaajat seurantaan → hinta ja availability-liput SINUN pelaajistasi
-	 * yhdellä silmäyksellä. FREE 3 pelaajaa, premium rajatta (gate täällä,
-	 * kanta sallii 50 = roskadatan torjunta). Sama teaser-kaava kuin
-	 * leaders-listoissa: free näkee mekanismin, premium poistaa rajan.
+	 * yhdellä silmäyksellä. Premium enintaan 50 (kanta sallii 50 =
+	 * roskadatan torjunta).
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivi 13): Premiumia kokonaan. Ennen
+	 * tata ilmainen seurasi 3 pelaajaa ("Free tracks 3 players"). Nyt
+	 * prefs.ts WATCHLIST_FREE_LIMIT = 0, tools.ts watchlist = premium (oma
+	 * reitti -> LockedToolPreview) ja tama komponentti lukitsee itsensa
+	 * $lib/personalLock-lukijalla pinotussa nakymassa (?all=1). Lukittuna ei
+	 * hakua: tallennettu lista jaa tilille, mutta sita ei nayteta.
 	 */
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
 	import { fetchXp, type XpPlayer } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { fetchPriceWatch } from '$lib/fantasyTools';
@@ -26,7 +34,9 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 
-	let { premium = false }: { premium?: boolean } = $props();
+	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
+
+	const locked = $derived(personalLock(premium));
 
 	let pool = $state<XpPlayer[]>([]);
 	let prefs = $state<FplPrefs>({ ...EMPTY_PREFS });
@@ -47,6 +57,7 @@
 	};
 
 	$effect(() => {
+		if (locked) return;
 		fetchXp().then(
 			(d) => (pool = d.players ?? []),
 			() => {}
@@ -204,11 +215,16 @@
 </script>
 
 <section class="watchlist">
+	{#if locked}
+		<h3>Watchlist</h3>
+		<PersonalLock tool="watchlist" {onUpgrade} />
+	{:else}
 	<button type="button" class="head" aria-expanded={open} onclick={toggle}>
 		<h3>Watchlist {#if rows.length > 0}<span class="muted count">({rows.length})</span>{/if}</h3>
 		<span class="chev" aria-hidden="true">{open ? '▾' : '▸'}</span>
 	</button>
-	{#if open}
+	{/if}
+	{#if open && !locked}
 	<p class="muted">
 		Track the players you are watching: price and availability at a glance.
 	</p>
@@ -303,9 +319,9 @@
 				query = '';
 			}}
 		/>
-	{:else if !premium}
-		<p class="muted limit">Free tracks {WATCHLIST_FREE_LIMIT} players. Premium tracks up to 50.</p>
 	{/if}
+	<!-- 17.10: "Free tracks 3 players. Premium tracks up to 50." poistui:
+	     ilmaista tasoa ei ole, ja lukittu nakyma on ylla. -->
 	{/if}
 </section>
 

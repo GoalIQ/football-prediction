@@ -8,20 +8,31 @@
 	// Reaktiivinen hetki (julkaisutarkistaja 26.9 B2): sana lasketaan uudelleen
 	// minuutin valein ja valilehden palatessa, ei vain datan saapuessa.
 	import { clock } from '$lib/now.svelte';
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
+
+	// 17.10.2026 (tyokalut taakse, spec rivi 14): julkinen lista jaa
+	// ilmaiseksi, oman joukkueen merkinnat (owned-rivi, "owned"-badge) ovat
+	// Premiumia. Lukitus $lib/personalLock-lukijasta: ilman Premiumia entrya
+	// ei edes laheteta (julkinen lista ilman joukkuetta), ja palvelimen
+	// lukitsema vastaus (locked_tool 'price-watch') piilottaa merkinnat.
+	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
 	let data = $state<PriceWatchResponse | null>(null);
 	let error = $state<string | null>(null);
 
 	// MY-TEAM-CONTEXT (3.9): jaettu entry mukaan -> omat rivit merkitään.
 	$effect(() => {
-		const entry = currentEntryId();
+		const entry = personalLock(premium) ? null : currentEntryId();
 		fetchPriceWatch(entry).then(
 			(d) => (data = d),
 			(e) => (error = e instanceof Error ? e.message : String(e))
 		);
 	});
 
-	const owned = $derived(data?.owned ?? null);
+	/** Oman joukkueen merkinnat lukittu (julkinen lista silti auki). */
+	const ownLocked = $derived(personalLock(premium, data));
+	const owned = $derived(ownLocked ? null : (data?.owned ?? null));
 	function ownedLine(o: NonNullable<PriceWatchResponse['owned']>): string {
 		const parts: string[] = [];
 		// 26.9: "tonight" vain kun paivitys on lukijan illassa ($lib/priceEta);
@@ -153,7 +164,7 @@
 							{@const eta = priceEta(r.eta_at, clock.now)}
 							<tr data-player-id={r.id}>
 								<td
-									>{r.web_name}{#if r.owned}
+									>{r.web_name}{#if r.owned && !ownLocked}
 										<span class="own-badge" title="In your squad">owned</span>{/if}{#if r.already_changed_today}
 										<span class="muted"> (changed today)</span>{/if}</td
 								>
@@ -207,7 +218,9 @@
 		{data.meta.note ?? 'No price change candidates right now. Check back later.'}
 	</p>
 {:else}
-	{#if owned}
+	{#if ownLocked}
+		<PersonalLock tool="price-watch" {onUpgrade} compact />
+	{:else if owned}
 		<!-- MY-TEAM-CONTEXT (3.9): omat 15 listoilla, nimet mukana -->
 		<p class="owned-line">
 			<strong>{ownedLine(owned)}</strong>

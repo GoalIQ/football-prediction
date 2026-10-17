@@ -1,5 +1,7 @@
 /**
  * Portti: kumppaniattribuutio tilille + lukitun siirron oma funnel-source (1.10.2026).
+ * 17.10.2026: lukitun siirron source korvautui henkilokohtaisten tyokalujen
+ * lukolla (PersonalLock, source 'personal_lock' / 'personal_lock_<tool>').
  *
  * Mittaus cc-reports/2026-10-01-demon-polku-ja-konversiomittari.md:
  *   - Demonin `utm_source=fpldemon` ei paatynyt tilille lainkaan (vain `?ref=`).
@@ -80,12 +82,22 @@ describe('kutsupaikat', () => {
 		expect(a).toMatch(/if \(u && u\.id !== prevId\) \{[^}]*\badoptOAuthAccount\(u\b/);
 	});
 
-	it('lukittu siirto: oma source seka naytolle etta klikkaukselle', () => {
+	/* 17.10.2026 (tyokalut taakse): 1.10:n `decision_transfer_lock` (vain
+	   siirtopari lukittu) korvautui koko oman paatoskortin lukolla. Mittari
+	   sailyy erotteluvoimaisena: nakyma ja klikkaus kirjataan YHDESSA
+	   komponentissa (PersonalLock) tyokalukohtaisella lahteella, eika
+	   kutsupaikka kirjaa klikkausta toista kertaa. */
+	it('lukittu paatoskortti: oma source seka naytolle etta klikkaukselle', () => {
+		const lock = src('./components/PersonalLock.svelte');
+		expect(lock).toMatch(/capture\(\s*'paywall_shown',\s*\{ source: PERSONAL_LOCK_SOURCE, tool \}/);
+		expect(lock).toMatch(/capture\('upgrade_tapped', \{ source: lockUpgradeSource\(tool\) \}\)/);
 		const d = src('./components/DecisionCard.svelte');
-		expect(d).toMatch(/LOCK_SOURCE = 'decision_transfer_lock'/);
-		expect(d).toMatch(/capture\('paywall_shown', \{ source: LOCK_SOURCE/);
-		expect(d).toMatch(/onUpgrade\?\.\(LOCK_SOURCE\)/);
+		expect(d).toMatch(/<PersonalLock tool="this-week" \{onUpgrade\}/);
+		expect(d).not.toMatch(/decision_transfer_lock/);
+		// RateTeam ei enaa kirjaa upgrade_tappedia itse (ennen `unlock` +
+		// 'fantasy_tools'): ThisWeekille menee pelkka avaaja.
 		const r = src('./components/RateTeam.svelte');
-		expect(r).toMatch(/capture\('upgrade_tapped', \{ source: typeof source === 'string' \? source : 'fantasy_tools' \}\)/);
+		expect(r).not.toMatch(/capture\('upgrade_tapped'/);
+		expect(r).toMatch(/<ThisWeek[\s\S]*?\{onUpgrade\}[\s\S]*?\/>/);
 	});
 });

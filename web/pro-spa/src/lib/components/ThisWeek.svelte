@@ -21,7 +21,16 @@
 	 *
 	 * Vain palvelimen dataa: rate-team (oma joukkue), model-captain (mallin
 	 * kortti), model-race ja /api/fantasy. Ei klientin laskemia lukuja.
+	 *
+	 * 17.10.2026 (tyokalut taakse): oman joukkueen paatoskortti, GW review,
+	 * DefCon live ja Beat the Model ovat Premiumia. Lukitus tulee
+	 * $lib/personalLock-lukijasta. Ilmaiselle jolla on oma joukkue kortti
+	 * nayttaa MALLIN kapteenin (sisaltoa, spec rivi 3) ja lukon omille
+	 * paatoksille; Season race ja Last gameweek -rivin otsikko ovat ennallaan.
+	 * `onUpgrade` avaa upgrade-nakyman eika kirjaa tapahtumaa (PersonalLock
+	 * kirjaa).
 	 */
+	import { personalLock } from '$lib/personalLock';
 	import { auth } from '$lib/auth.svelte';
 	import { fetchFantasy, fetchModelRace, type FantasyResponse, type ModelRaceResponse } from '$lib/api';
 	import { fetchModelEntryCard, type RateTeamResponse } from '$lib/fantasyTools';
@@ -68,7 +77,8 @@
 		error?: string | null;
 		picksNotPublished?: boolean;
 		premium?: boolean;
-		onUpgrade?: (source?: string) => void;
+		/** Avaa upgrade-nakyman. Ei kirjaa tapahtumaa (lukitusnakyma kirjaa). */
+		onUpgrade?: () => void;
 		deadlineUtc?: string | null;
 		actions?: WeeklyAction[];
 		onFollowTransfer?: (choice: Record<string, unknown>) => boolean;
@@ -141,8 +151,12 @@
 	const entryKnown = $derived(
 		auth.sessionResolved && (!auth.user || fplEntry.profileChecked === auth.user.id)
 	);
+	/** 17.10: oma joukkue on ladattu mutta sen paatokset ovat lukittuja. */
+	const ownLocked = $derived(data != null && personalLock(premium, data));
 	const needModel = $derived(
-		entryKnown && !data && !loading && (entryId == null || !!error || picksNotPublished)
+		entryKnown &&
+			!loading &&
+			(ownLocked || (!data && (entryId == null || !!error || picksNotPublished)))
 	);
 	let model = $state<ModelCaptainCard | null>(null);
 	let modelFailed = $state(false);
@@ -163,8 +177,14 @@
 			() => (modelFailed = true)
 		);
 	});
-	const modelCard = $derived(!data && needModel ? model : null);
+	const modelCard = $derived((!data || ownLocked) && needModel ? model : null);
 	const own = $derived(!!data);
+	/** Kortti piirretaan kun oma joukkue on auki, mallin kortti on tullut, tai
+	 *  oma joukkue on lukittu ja mallin kortti epaonnistui (lukko yksin). */
+	const showCard = $derived(
+		(!!data && !ownLocked) || !!modelCard || (ownLocked && modelFailed)
+	);
+	const beatLocked = $derived(personalLock(premium));
 
 	let entryInput = $state('');
 	const entryInputValid = $derived(/^\d{1,10}$/.test(entryInput.trim()));
@@ -206,10 +226,13 @@
 	<!-- DefCon-live vain kesken kierroksen (A3 5: tauolla se nayttaa
 	     paattynytta kierrosta paatosten edella). Komponentti on sama. -->
 	{#if phase?.liveGw != null}
-		<DefConLive />
+		<DefConLive {premium} {onUpgrade} />
 	{/if}
 
-	{#if data || modelCard}
+	{#if showCard}
+		<!-- 17.10: kortti saa oman joukkueen AINA kun se on ladattu; lukitus
+		     ratkeaa kortissa ($lib/personalLock), ja mallin kortti kulkee
+		     mukana lukitun joukkueen kapteeniksi. -->
 		<DecisionCard
 			card={data}
 			model={modelCard}
@@ -256,7 +279,7 @@
 						{/if}
 						{#if reviewOpen}
 							{#if entryId != null}
-								<GwReview />
+								<GwReview {premium} {onUpgrade} />
 							{:else}
 								<p class="muted">Add your FPL team ID below for your own gameweek review.</p>
 							{/if}
@@ -320,12 +343,14 @@
 			<details bind:open={beatOpen}>
 				<summary><span class="sum">
 					<span class="lbl">Beat the Model</span>
-					<span class="vals">Log your calls against the model's</span>
+					<span class="vals">Log your calls against the model's{#if beatLocked}<span class="tag">Premium</span>{/if}</span>
 				</span></summary>
 				<div class="row-body">
 					{#if beatOpen}
-						{#if auth.user}
-							<BeatTheModel {rank} {rankChange} {rankGw} />
+						<!-- 17.10: kirjaus, tulostaulu ja paivakirja ovat Premiumia;
+						     lukittu nakee lukon myos kirjautumatta. -->
+						{#if auth.user || beatLocked}
+							<BeatTheModel {premium} {onUpgrade} {rank} {rankChange} {rankGw} />
 						{:else}
 							<p class="muted">Sign in to log your captain and transfer calls and see who comes out ahead.</p>
 						{/if}

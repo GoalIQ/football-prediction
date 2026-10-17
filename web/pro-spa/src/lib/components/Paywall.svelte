@@ -103,10 +103,16 @@
 	⚠️ Pinta-pariteetti: parikorjaus on goaliq-app/screens/PredictScreen.tsx +
 	lib/i18n/*.ts (vrt. em-dash-ja-pinta-pariteetti).
 -->
+<!-- 17.10.2026 (tyokalut taakse): henkilokohtaiset tyokalut ensin, koska ne
+     ovat se mita ilmainen nakee lukittuna. Sama joukko kuin PremiumPreview'n
+     BULLETS-karjessa ja $lib/personalLock LOCK_COPYssa. -->
 <p class="muted">
-	<strong>FPL:</strong> per-gameweek expected points (xP), captain ranker and replacements that leave out the players you already own,
-	chip timing, transfer plan chains, edge mode, a live DefCon panel for your own squad
-	during a gameweek, shareable image cards and per-gameweek breakdowns.
+	<strong>FPL:</strong> the full Rate my team analysis with the captain pick for your own squad,
+	mini-league head-to-head win probabilities, the fit checker, your gameweek review, the
+	watchlist, a live DefCon panel for your own squad during a gameweek, per-gameweek expected
+	points (xP), captain ranker and replacements that leave out the players you already own,
+	chip timing, transfer plan chains, edge mode, shareable image cards and per-gameweek
+	breakdowns.
 </p>
 <p class="muted">
 	<strong>Match model:</strong> full analysis for fixtures across the ten competitions we

@@ -17,27 +17,38 @@
 	 *    kosketuslaitteella hoveria ei ole.
 	 *  - klientti EI laske mitään. Kaikki luvut tulevat endpointilta, joka
 	 *    lukee kierroksen deadline-freezen.
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivi 7): Premiumia kokonaan. Lukitus
+	 * $lib/personalLock-lukijasta: ilman Premiumia ei hakua, ja palvelimen
+	 * lukitsema vastaus (locked_tool 'gw-review', meta.note null) nayttaa
+	 * lukon eika tyhjaa note-rivia.
 	 */
 	import { fetchGwReview, type GwReviewResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { fplEntry } from '$lib/fplEntry.svelte';
 	import { gwReviewCardSpec, reviewTotals } from '$lib/gwReviewCard';
 	import { shareCard, shareButtonLabel } from '$lib/shareCard';
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
+
+	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
 	let data = $state<GwReviewResponse | null>(null);
 	let failed = $state(false);
 	let loadedKey = $state<string | null>(null);
 	let viewedFired = false;
+	const locked = $derived(personalLock(premium, data));
 
 	$effect(() => {
 		const raw = (fplEntry.entry || fplEntry.savedEntry || '').trim();
 		const entry = /^\d{1,10}$/.test(raw) ? Number(raw) : null;
-		const key = String(entry ?? '-');
+		const open = !personalLock(premium);
+		const key = `${entry ?? '-'}:${open ? 'p' : 'l'}`;
 		if (loadedKey === key) return;
 		loadedKey = key;
 		failed = false;
 		data = null;
-		if (entry == null) return;
+		if (entry == null || !open) return;
 		fetchGwReview(entry)
 			.then((r) => {
 				data = r;
@@ -81,7 +92,9 @@
 <section class="wrap">
 	<h3>Gameweek review</h3>
 
-	{#if failed}
+	{#if locked}
+		<PersonalLock tool="gw-review" {onUpgrade} />
+	{:else if failed}
 		<p class="muted">Could not reach the API. Try again in a moment.</p>
 	{:else if !data}
 		<p class="muted">Add your FPL team ID above to see your gameweek review.</p>

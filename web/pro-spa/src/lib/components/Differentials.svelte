@@ -1,10 +1,19 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { untrack } from 'svelte';
 	import { fetchDifferentials, type DifferentialsResponse, type Pos } from '$lib/fantasyTools';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { shareCard, canShareToApps, shareButtonLabel} from '$lib/shareCard';
 	import { capture } from '$lib/analytics';
 	import { currentEntryId } from '$lib/fplEntry.svelte';
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
+
+	// 17.10.2026 (tyokalut taakse, spec rivi 18): julkinen lista jaa
+	// ilmaiseksi, oman joukkueen suodatus (omistetut pois, "Template you are
+	// missing", owned-badge) on Premiumia. Lukitus $lib/personalLock-
+	// lukijasta: ilman Premiumia entrya ei laheteta, ja palvelimen lukitsema
+	// vastaus (locked_tool 'differentials') piilottaa joukkuekohtaiset kentat.
+	let { premium = false, onUpgrade }: { premium?: boolean; onUpgrade?: () => void } = $props();
 
 	const POSITIONS = ['All', 'GKP', 'DEF', 'MID', 'FWD'] as const;
 
@@ -19,9 +28,10 @@
 	let hasDelta = $derived(data?.players.some((p) => p.model_vs_crowd_delta != null) ?? false);
 	let mvc = $derived(data?.model_vs_crowd ?? null);
 	// MY-TEAM-CONTEXT (3.9): omistetut pois listalta + template you are missing
-	let squad = $derived(data?.meta?.squad ?? null);
+	let squadLocked = $derived(personalLock(premium, data));
+	let squad = $derived(squadLocked ? null : (data?.meta?.squad ?? null));
 	let hasSquad = $derived(squad?.available === true);
-	let templateMissing = $derived(data?.template_missing ?? []);
+	let templateMissing = $derived(squadLocked ? [] : (data?.template_missing ?? []));
 
 	let sharing = $state(false);
 
@@ -61,21 +71,32 @@
 		}
 	}
 
+	/** 17.10: tason vaihto kesken haun -> yksi haku perään, ettei Premiumin
+	 *  lista jaa ilman joukkuetta. */
+	let reloadPending = false;
 	async function load() {
-		if (!maxValid || loading) return;
+		if (!maxValid) return;
+		if (loading) {
+			reloadPending = true;
+			return;
+		}
 		loading = true;
 		error = null;
 		try {
 			data = await fetchDifferentials(
 				maxOwnership,
 				pos === 'All' ? null : (pos as Pos),
-				currentEntryId()
+				personalLock(premium) ? null : currentEntryId()
 			);
 		} catch (err) {
 			data = null;
 			error = err instanceof Error ? err.message : String(err);
 		}
 		loading = false;
+		if (reloadPending) {
+			reloadPending = false;
+			void load();
+		}
 	}
 
 	function apply(e: SubmitEvent) {
@@ -83,9 +104,16 @@
 		void load();
 	}
 
-	// Ensimmäinen haku oletusfilttereillä heti kun komponentti on näkyvissä
-	onMount(() => {
-		void load();
+	// Ensimmäinen haku oletusfilttereillä heti kun komponentti on näkyvissä.
+	// 17.10: haku uudelleen kun taso vaihtuu (tilaus ratkeaa mountin jalkeen),
+	// koska entry lahtee vain Premiumille. untrack: suodattimien kirjoitus ei
+	// saa laukaista hakua (se on Update-napin tehtava).
+	let loadedFor: boolean | null = null;
+	$effect(() => {
+		const p = premium;
+		if (loadedFor === p) return;
+		loadedFor = p;
+		untrack(() => void load());
 	});
 </script>
 
@@ -136,7 +164,9 @@
 {:else if data.players.length === 0}
 	<p class="muted">No players under {maxOwnership}% ownership match. Try a higher limit.</p>
 {:else}
-	{#if hasSquad}
+	{#if squadLocked}
+		<PersonalLock tool="differentials" {onUpgrade} compact />
+	{:else if hasSquad}
 		<p class="muted">
 			Players you already own are left out{#if (data.meta.owned_excluded ?? 0) > 0}
 				({data.meta.owned_excluded} under this limit){/if}.
@@ -244,7 +274,7 @@
 							{#each mvc.model_backs as p (p.id)}
 								<li>
 									<span
-										>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span>{#if p.owned}
+										>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span>{#if p.owned && !squadLocked}
 											<span class="own-badge">owned</span>{/if}</span
 									>
 									<span class="num"
@@ -267,7 +297,7 @@
 							{#each mvc.crowd_backs as p (p.id)}
 								<li>
 									<span
-										>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span>{#if p.owned}
+										>{p.web_name} <span class="muted">{p.team_short} · {p.pos}</span>{#if p.owned && !squadLocked}
 											<span class="own-badge">owned</span>{/if}</span
 									>
 									<span class="num"

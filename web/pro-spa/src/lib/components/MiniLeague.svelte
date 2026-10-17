@@ -13,13 +13,23 @@
 	import { capture } from '$lib/analytics';
 	import RivalPanel from './RivalPanel.svelte';
 	import { fplEntry } from '$lib/fplEntry.svelte';
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
 
 	// UX-palaute-erä (25.7) kohta 5: "Use this team" — FPL:ssä ei ole
 	// globaalia nimihakua, joten nimipohjainen joukkueen valinta kulkee
 	// liigan standings-rivin kautta: nappi asettaa rivin entry-ID:n jaettuun
 	// fplEntry-storeen + autoRunPending → Rate my team ajaa arvion heti.
 	// onUseTeam: FreeView vaihtaa segmentin rateteam-paneeliin.
-	let { onUseTeam }: { onUseTeam?: () => void } = $props();
+	// 17.10.2026 (tyokalut taakse, spec rivi 11): sarjataulukko jaa
+	// ilmaiseksi, head-to-head-voittotodennakoisyys on Premiumia (/h2h GATED,
+	// locked_tool 'league'). Lukitus $lib/personalLock-lukijasta; Catch your
+	// rival (RivalPanel) on ennallaan (palvelimen oma osittainen maski).
+	let {
+		onUseTeam,
+		premium = false,
+		onUpgrade
+	}: { onUseTeam?: () => void; premium?: boolean; onUpgrade?: () => void } = $props();
 
 	function useTeam(row: LeagueRow) {
 		fplEntry.entry = String(row.entry);
@@ -47,6 +57,8 @@
 	let h2hError = $state<string | null>(null);
 	let h2h = $state<H2hResponse | null>(null);
 	let selected = $state<LeagueRow[]>([]);
+	/** Head-to-head lukittu: ei Premiumia TAI palvelin lukitsi vastauksen. */
+	const h2hLocked = $derived(personalLock(premium, h2h));
 
 	let idValid = $derived(/^\d{1,10}$/.test(leagueId.trim()));
 
@@ -92,7 +104,8 @@
 		}
 		selected = selected.length >= 2 ? [selected[1], row] : [...selected, row];
 		h2h = null;
-		if (selected.length === 2) {
+		// 17.10: lukittuna ei hakua; lukitusnakyma piirtyy kahden rivin valinnasta.
+		if (selected.length === 2 && !personalLock(premium)) {
 			h2hLoading = true;
 			try {
 				h2h = await fetchH2h(selected[0].entry, selected[1].entry);
@@ -126,8 +139,8 @@
 <h2>Mini-league: standings and head-to-head win probabilities</h2>
 <p class="muted">
 	Paste your classic league's ID (from the league page URL on the FPL site) to see the
-	table. Then pick any two managers to get the model's win probability for the next
-	gameweek, based on each squad's projected XI points.
+	table. {#if h2hLocked}With GoalIQ Premium, pick{:else}Then pick{/if} any two managers to get
+	the model's win probability for the next gameweek, based on each squad's projected XI points.
 </p>
 
 <form class="league-form" onsubmit={load}>
@@ -167,7 +180,11 @@
 			<p class="muted">Crunching the head-to-head…</p>
 		{:else if h2hError}
 			<p class="banner error">{h2hError}</p>
-		{:else if h2h}
+		{:else if selected.length === 2 && h2hLocked}
+			<!-- 17.10: lukittu vastaus on typistetty (entry_a jne. tyhjia), joten
+			     lukko tarkistetaan ENNEN palkkia eika palkki voi kaatua siihen. -->
+			<PersonalLock tool="league" {onUpgrade} />
+		{:else if h2h && !h2hLocked}
 			<!-- Voittotodennäköisyyspalkki: A / tasaband / B -->
 			<div class="h2h card" aria-label="Head-to-head win probability">
 				<p class="h2h-head">

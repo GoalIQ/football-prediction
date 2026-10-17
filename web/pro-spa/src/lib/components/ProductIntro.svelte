@@ -170,9 +170,17 @@
 		</div>
 	{/if}
 
+	<!-- 17.10.2026 (tyokalut taakse): otsikko "What you get" luki seka tilin
+	     etta tilauksen lupauksena, ja ilmainen tili ei enaa saa oman joukkueen
+	     analyysia. Otsikko nimeaa nyt Premiumin, ja ensimmainen rivi kertoo mita
+	     omasta joukkueesta avautuu (sama joukko kuin $lib/personalLock LOCK_COPY). -->
 	<div class="what">
-		<h2>What you get</h2>
+		<h2>What Premium gives you</h2>
 		<ul>
+			<li>
+				Your own squad in full: the weak spot, the captain for your XI, the pitch, your
+				gameweek review and DefCon live during a gameweek.
+			</li>
 			<li>
 				The best move the model checked, with the hit priced in. Often that's a hold, and
 				it says so.

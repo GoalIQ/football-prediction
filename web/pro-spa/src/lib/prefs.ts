@@ -8,7 +8,11 @@ import { fetchOwnProfileRow, invalidateProfileRow } from './profileRow';
 const KEY = 'goaliq.fplPrefs';
 const TS_KEY = 'goaliq.fplPrefs.updatedAt';
 
-export const WATCHLIST_FREE_LIMIT = 3;
+/** 17.10.2026 (tyokalut taakse): watchlist on Premiumia kokonaan, joten
+ *  ilmaisen tason katto on nolla. Watchlist.svelte lukitsee nakyman
+ *  $lib/personalLock-lukijalla; tama katto pitaa lisaysrajan samassa linjassa
+ *  myos jos lukitus joskus ohitetaan. src/tool_tiers.py lukee taman. */
+export const WATCHLIST_FREE_LIMIT = 0;
 export const WATCHLIST_MAX = 50;
 
 export interface SeasonObjective {

@@ -24,6 +24,7 @@ function row(over: Partial<StoredRateTeam> = {}, meta: Record<string, unknown> =
 		userKey: 'u:abc',
 		entry: 116920,
 		fetchedAt: DEADLINE - 48 * H,
+		premium: true,
 		data: { meta: { entry: 116920, deadline_time: '2026-10-10T10:00:00Z', masked: false, ...meta } },
 		...over
 	};
@@ -55,10 +56,35 @@ describe('storedRateTeamUsable', () => {
 		expect(storedRateTeamUsable(row(), { ...want, entry: 1 }, DEADLINE - 40 * H)).toBe(false);
 		expect(storedRateTeamUsable(row({}, { entry: 5 }), want, DEADLINE - 40 * H)).toBe(false);
 	});
-	it('maskattu ei kelpaa premiumille, kelpaa ilmaiselle', () => {
-		const masked = row({}, { masked: true });
+	it('maskattu ei kelpaa premiumille, kelpaa ilmaiselle (ilmaisena haettu)', () => {
+		const masked = row({ premium: false }, { masked: true });
 		expect(storedRateTeamUsable(masked, want, DEADLINE - 40 * H)).toBe(false);
 		expect(storedRateTeamUsable(masked, { ...want, premium: false }, DEADLINE - 40 * H)).toBe(true);
+	});
+	/* 17.10 (tyokalut taakse): rivi kelpaa vain sille tasolle jolla se haettiin.
+	   Vaiheet synteettisina (6a kohta 3): ennen kytkinta 21.10 ilmaisen vastaus
+	   on taysi, jalkeen lukittu; Premiumin vastaus on aina taysi. */
+	it('taso vaihtui: Premiumina haettu ei kelpaa ilmaiselle eika painvastoin', () => {
+		const t = DEADLINE - 40 * H;
+		const premiumRow = row({ premium: true });
+		const freeFull = row({ premium: false }); // ilmainen ennen kytkinta: taysi vastaus
+		const freeLocked = row({ premium: false }, { masked: true, locked_tool: 'rate-my-team' });
+		expect(storedRateTeamUsable(premiumRow, { ...want, premium: false }, t)).toBe(false);
+		expect(storedRateTeamUsable(freeFull, want, t)).toBe(false);
+		expect(storedRateTeamUsable(freeLocked, want, t)).toBe(false);
+		expect(storedRateTeamUsable(freeFull, { ...want, premium: false }, t)).toBe(true);
+		expect(storedRateTeamUsable(freeLocked, { ...want, premium: false }, t)).toBe(true);
+	});
+	it('palvelimen lukitsema rivi ei kelpaa Premiumille vaikka taso tasmaisi', () => {
+		const t = DEADLINE - 40 * H;
+		const lockedButTagged = row({ premium: true }, { locked_tool: 'rate-my-team' });
+		expect(storedRateTeamUsable(lockedButTagged, want, t)).toBe(false);
+	});
+	it('rivi ilman tasoa (kirjoitettu ennen 17.10) ei kelpaa kenellekaan', () => {
+		const t = DEADLINE - 40 * H;
+		const legacy = row({ premium: undefined });
+		expect(storedRateTeamUsable(legacy, want, t)).toBe(false);
+		expect(storedRateTeamUsable(legacy, { ...want, premium: false }, t)).toBe(false);
 	});
 	it('roskarivi ei kaada', () => {
 		expect(storedRateTeamUsable(null, want, 0)).toBe(false);
@@ -74,8 +100,9 @@ describe('kutsupaikat', () => {
 		const start = src.indexOf('async function runRate(');
 		expect(start).toBeGreaterThan(0);
 		const body = src.slice(start, src.indexOf('\n\t}\n', start));
-		expect(body).toMatch(/readStoredRateTeam\(/);
-		expect(body).toMatch(/writeStoredRateTeam\(/);
+		expect(body).toMatch(/readStoredRateTeam\(id, uid, premium\)/);
+		// 17.10: kirjoitus kantaa tason jolla vastaus haettiin.
+		expect(body).toMatch(/writeStoredRateTeam\(id, uid, fresh, premium\)/);
 		expect(src).toMatch(/void runRate\(true\)/);
 	});
 	it('entry-ID luetaan kopiosta ENNEN profiilikierrosta', () => {

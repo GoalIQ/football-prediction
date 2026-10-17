@@ -11,7 +11,13 @@
 	 * hintaliikkeet price watchista ja VAIN niille id:ille jotka ovat rungossa.
 	 * 26.9: hintarivit leikataan risers/fallers-listoilta ruudun runkoon, joten ne
 	 * toimivat myos draftilla (ei entrya). Paivasana: $lib/priceEta.
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivi 10): Premiumia, klienttiportti.
+	 * Lukitus $lib/personalLock-lukijasta: ilman Premiumia ei hakua eika
+	 * piirtoa. Lukitusnakyma on Rate my teamin oma (LOCK_COPY 'rate-my-team'
+	 * mainitsee squad newsin), joten tama ei piirra omaa.
 	 */
+	import { personalLock } from '$lib/personalLock';
 	import { fetchPriceWatch, type PriceMove } from '$lib/fantasyTools';
 	import { priceEtaWord, squadPriceMoves } from '$lib/priceEta';
 	import { clock } from '$lib/now.svelte';
@@ -25,10 +31,16 @@
 	};
 	// `entry` sailyy propina (kutsupaikka), mutta hintarivit eivat enaa tarvitse
 	// sita: risers/fallers leikataan ruudun runkoon (sama saanto kuin saatavuudella).
-	let { players }: { players: Row[]; entry?: number | null } = $props();
+	let { players, premium = false }: { players: Row[]; entry?: number | null; premium?: boolean } =
+		$props();
 
+	const locked = $derived(personalLock(premium));
 	let lists = $state<{ risers: PriceMove[]; fallers: PriceMove[] } | null>(null);
 	$effect(() => {
+		if (locked) {
+			lists = null;
+			return;
+		}
 		fetchPriceWatch(null).then(
 			(d) => (lists = { risers: d.risers ?? [], fallers: d.fallers ?? [] }),
 			() => (lists = null)
@@ -52,7 +64,7 @@
 	const moves = $derived(squadPriceMoves(ids, lists?.risers, lists?.fallers, clock.now));
 </script>
 
-{#if avail.length || moves.rising.length || moves.falling.length}
+{#if !locked && (avail.length || moves.rising.length || moves.falling.length)}
 	<section class="wrap squad-news">
 		<h3>Your squad before the deadline</h3>
 		<ul>

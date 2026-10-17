@@ -497,13 +497,23 @@
 				     Planner saa koko leveyden: se sisältää taulukoita joita
 				     puolikas sarake ei kanna. -->
 				<div class="team-grid">
+					<!-- 17.10 (tyokalut taakse): fit checker ja watchlist ovat
+					     premium-tasoa; omat reitit menevat `lockedTool`-haaraan ylla,
+					     ja pinotussa nakymassa (?all=1) komponentit lukitsevat itsensa
+					     ($lib/personalLock), jotta lukko nayttaa mita se avaa. -->
 					{#if show('fit-checker')}
 						<div class="tool-card" id="tc-fit">
-							<FitChecker onOpenRateTeam={() => goto('/team/rate-my-team')} />
+							<FitChecker
+								{premium}
+								onUpgrade={goUpgrade}
+								onOpenRateTeam={() => goto('/team/rate-my-team')}
+							/>
 						</div>
 					{/if}
 					{#if show('watchlist')}
-						<div class="tool-card" id="tc-watchlist"><Watchlist {premium} /></div>
+						<div class="tool-card" id="tc-watchlist">
+							<Watchlist {premium} onUpgrade={goUpgrade} />
+						</div>
 					{/if}
 					{#if premium && show('transfer-planner')}
 						<div class="tool-card span-all" id="tc-planner"><TransferPlanner /></div>
@@ -519,7 +529,7 @@
 					{/if}
 					{#if show('league')}
 						<div class="tool-card span-all" id="tl-league">
-							<MiniLeague onUseTeam={() => goto('/team')} />
+							<MiniLeague {premium} onUpgrade={goUpgrade} onUseTeam={() => goto('/team')} />
 						</div>
 					{/if}
 				</div>
@@ -591,12 +601,12 @@
 			     kaytannossa ilmainen — julkinen /fpl/differentials-sivu
 			     rakennetaan samasta endpointista ilman kirjautumista. -->
 			{#if show('differentials')}
-				<div class="tool-card" id="pc-diff"><Differentials /></div>
+				<div class="tool-card" id="pc-diff"><Differentials {premium} onUpgrade={goUpgrade} /></div>
 			{/if}
 			<!-- 22.9 (A3): entinen Price watch -ryhma, nyt Players-listan
 			     esiasetus "Price change". -->
 			{#if show('price-watch')}
-				<div class="tool-card" id="pr-watch"><PriceWatch /></div>
+				<div class="tool-card" id="pr-watch"><PriceWatch {premium} onUpgrade={goUpgrade} /></div>
 			{/if}
 			{#if premium && show('edge-mode')}
 				<div class="tool-card" id="tl-edge"><EdgeMode /></div>

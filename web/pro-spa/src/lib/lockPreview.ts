@@ -44,7 +44,11 @@ export function lockedToolFor(tool: Tool | null | undefined, premium: boolean): 
  * Poikkeus on lista perusteluineen (saanto 6a kohta 2), ei ehto komponentissa.
  */
 export const NO_XP_SAMPLE: Record<string, string> = {
-	'chip-timing': 'chippien ajoitus ei ole pelaajalista; xP-nayte ei kerro tyokalusta mitaan'
+	'chip-timing': 'chippien ajoitus ei ole pelaajalista; xP-nayte ei kerro tyokalusta mitaan',
+	// 17.10 (tyokalut taakse): watchlist seuraa hintaa ja saatavuutta omille
+	// pelaajille, ei xP-jarjestysta; xP-kymmenikko olisi myyntiesimerkki
+	// toisesta tyokalusta.
+	watchlist: 'watchlist on hinta- ja saatavuusseuranta omille pelaajille; xP-nayte ei kerro siita mitaan'
 };
 
 /** Naytetaanko lukossa Player xP -nayte. */

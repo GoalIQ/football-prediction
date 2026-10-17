@@ -47,6 +47,8 @@
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { ratingGap, ratingGapBasis } from '$lib/ratingGap';
 	import { modelCaptainOf } from '$lib/pitchLineup';
+	import { personalLock, ratingPreview, type LockablePayload } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
 	/** Siirtoikkunan pituus sanoina: verdiktin oma ikkuna, sitten siirto-
 	 *  ikkuna, viimeisena xP-summan lukija. Ei keksittya 6:ta. */
 	function transferSpan(d: RateTeamResponse): string {
@@ -72,9 +74,10 @@
 		'Checking every transfer against holding'
 	];
 
-	// FREE/PREMIUM-raja komponenttitasolla: siirtosuositukset renderöityvät
-	// VAIN premium={true} (ProView, tilauksen takana). Free näyttää lukitun
-	// teaser-rivin joka vie Paywalliin (onUpgrade → Pro-tab).
+	// FREE/PREMIUM-raja (17.10.2026, tyokalut taakse): ilmaiseksi arvosana
+	// (rating), kaikki muu Premiumia. Raja ratkeaa $lib/personalLock-lukijassa
+	// (`locked` alla): ei Premiumia TAI palvelin lukitsi vastauksen. Ennen
+	// 17.10 ilmaiselle naytettiin koko arvio ja vain siirtolista oli lukittu.
 	let {
 		premium = false,
 		onUpgrade,
@@ -215,7 +218,7 @@
 			const fresh = await fetchRateTeam(id);
 			if (seq !== rateSeq) return;
 			data = fresh;
-			if (uid && fplEntry.remember) writeStoredRateTeam(id, uid, fresh);
+			if (uid && fplEntry.remember) writeStoredRateTeam(id, uid, fresh, premium);
 			picksNotPublished = false;
 			setupOpenManual = false; // tulos nakyviin, lomake pois tielta
 			// 4.9: tulos storeen, jotta paluu valilehdelta ei menetä sitä.
@@ -291,13 +294,28 @@
 		void runRate(true);
 	});
 
-	function unlock(source?: unknown) {
-		// Sama funnel-pari kuin Paywall/billing, source erottaa työkalupolun.
-		// 1.10: lapsi voi nimeta oman lukkonsa (DecisionCard:
-		// decision_transfer_lock); `onclick={unlock}` antaa MouseEventin -> oletus.
-		capture('upgrade_tapped', { source: typeof source === 'string' ? source : 'fantasy_tools' });
-		onUpgrade?.();
-	}
+	/**
+	 * 17.10.2026 (tyokalut taakse): YKSI lukitusehto koko komponentille.
+	 * `unlock` + teaser-rivi ("Transfer suggestions ... Unlock with Premium")
+	 * ja `paywall_shown {source: 'fantasy_tools'}` poistuivat: ilmainen ei enaa
+	 * nae arviota jonka alla teaser oli, vaan arvosanan ja lukitusnakyman
+	 * (PersonalLock kirjaa paywall_shown/upgrade_tapped source
+	 * 'personal_lock'). `onUpgrade` valitetaan lapsille sellaisenaan: se avaa
+	 * upgrade-nakyman eika kirjaa mitaan, joten klikkaus lasketaan kerran.
+	 */
+	const locked = $derived(personalLock(premium, data));
+	/** Klientti uskoo Premiumiin mutta naytetty vastaus on lukittu (esim.
+	 *  kirjautui sisaan tai osti kesken istunnon): yksi tuore haku per entry.
+	 *  Vahti estaa silmukan jos palvelin lukitsee yha (fail-closed nakyma). */
+	let relockRetriedFor: string | null = null;
+	$effect(() => {
+		if (!premium || !data || loading || !entryValid) return;
+		if (!personalLock(premium, data) || data.meta?.mode !== 'entry') return;
+		const key = fplEntry.entry.trim();
+		if (relockRetriedFor === key) return;
+		relockRetriedFor = key;
+		void runRate();
+	});
 
 	// P1 (23.7): esikausi-draft — FPL julkaisee picksit vasta GW-deadlinen
 	// jälkeen, joten ennen GW1:tä entry-polku on tyhjän päällä. Draft: valitse
@@ -706,13 +724,6 @@
 		return true;
 	}
 
-	$effect(() => {
-		// Paywall-pariteetti: teaser näkyvissä = paywall_shown (kerran per lataus)
-		if (!premium && data) {
-			capture('paywall_shown', { source: 'fantasy_tools' }, 'paywall_shown_fantasy_tools');
-		}
-	});
-
 	// --- 1.8: Joukkue 2 (vertailuslotti) -----------------------------------
 	// Kevyt rinnakkaisslotti samoilla arviointiominaisuuksilla: oma entry/
 	// draft/tulos. TARKOITUKSELLA EI: tallennusta laitteelle/tilille, FM-
@@ -725,6 +736,12 @@
 	let loadingB = $state(false);
 	let errorB = $state<string | null>(null);
 	let dataB = $state<RateTeamResponse | null>(null);
+	/** 17.10: vertailuslotin (Team 2) lukitus. Spec: Team 2 / mallin joukkue
+	 *  -vertailu on Premiumia kokonaan. Oma vastaus tai mallin runko
+	 *  (/api/fantasy/model-squad, locked_tool 'rate-my-team') voi olla
+	 *  palvelimen lukitsema vaikka klientti uskoisi Premiumiin. */
+	let modelSquadLock = $state<LockablePayload>(null);
+	const lockedB = $derived(personalLock(premium, dataB, modelSquadLock));
 	let picksNotPublishedB = $state(false);
 	let draftOpenB = $state(false);
 	let picksB = $state<XpPoolPlayer[]>([]);
@@ -818,6 +835,14 @@
 		capture('fpl_model_squad_loaded', { slot: 'b' });
 		try {
 			const ms = await fetchModelSquad();
+			// 17.10: lukittu runko on typistetty (players []); ilman tata
+			// vahtia kayttaja nakisi virheen "not available right now".
+			if (personalLock(premium, ms)) {
+				modelSquadLock = ms;
+				dataB = null;
+				loadingB = false;
+				return;
+			}
 			if (pool.length === 0) {
 				const d = await fetchXp();
 				pool = draftPool(d);
@@ -839,8 +864,12 @@
 		loadingB = false;
 	}
 	const compareDiff = $derived(
-		data && dataB ? data.rating.team_xp_horizon - dataB.rating.team_xp_horizon : null
+		data && dataB && !locked && !lockedB
+			? data.rating.team_xp_horizon - dataB.rating.team_xp_horizon
+			: null
 	);
+	/** Esimaun lause lukitulle (arvosana + ikkuna samasta metasta kuin muualla). */
+	const preview = $derived(data ? ratingPreview(data.rating, xpHorizon(data.meta).over) : null);
 	/** 6.9: kentta + penkki -lohkon korkeus TeamPitchManagerista; sivupaneeli
 	 *  on tasan sen korkuinen ja lista rullaa sisalla (Villen tarkennus 2). */
 	let pitchCore = $state(0);
@@ -889,7 +918,7 @@
 		{error}
 		{picksNotPublished}
 		{premium}
-		onUpgrade={unlock}
+		{onUpgrade}
 		{deadlineUtc}
 		actions={weeklyActions}
 		onFollowTransfer={followTransferFromLoop}
@@ -918,8 +947,10 @@
 {/if}
 
 <!-- 1.8: vertailurivi — näkyy heti kun molemmilla joukkueilla on tulos,
-     valitusta slotista riippumatta (se on koko featuren pointti). -->
-{#if data && dataB}
+     valitusta slotista riippumatta (se on koko featuren pointti).
+     17.10: vertailu on Premiumia (spec rivi 2), ja kumpikin puoli voi olla
+     palvelimen lukitsema. -->
+{#if data && dataB && !locked && !lockedB}
 	<div class="compare-box">
 		<p class="compare-title">Team 1 vs Team 2</p>
 		<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: sama rivi kuin slot A:lla ja B:lla,
@@ -1227,27 +1258,49 @@
 			> instead: pick the new 15 by hand and the model rates them now.
 		</p>
 	{/if}
-	{@const capGap =
-		data.captain.alternative != null
-			? data.captain.pick.gw_xp - data.captain.alternative.gw_xp
-			: null}
+	{#if locked}
+		<!-- 17.10.2026 (tyokalut taakse): ilmaiseksi vain arvosana. Palvelin
+		     jattaa rating-, percentile- ja beats_benchmark-kentat oikeiksi myos
+		     lukittuun vastaukseen, joten esimaku on sama ennen ja jalkeen
+		     kytkimen 21.10. Kaikki muu (linjat, kapteeni, siirrot, chipit,
+		     pitch, Squad news, Season ledger, xP-luvut) on lukitusnakyman
+		     takana. Lause: $lib/personalLock ratingPreview. -->
+		{#if preview}
+			<div class="rating-preview">
+				<p class="k">Rating</p>
+				{#if preview.pct != null}
+					<p class="rp-num">{preview.pct}%</p>
+				{/if}
+				<p class="rp-text">{preview.text}</p>
+			</div>
+		{/if}
+		<PersonalLock tool="rate-my-team" {onUpgrade} />
+	{:else}
+	<!-- 17.10: kapteeni luetaan vahdin kautta. Lukittu vastaus (captain: null)
+	     ei paase tanne `locked`-haaran takia, mutta vanha esimakumaski tai
+	     tuleva muutos ei saa kaataa nakymaa (ennen: data.captain.pick suoraan). -->
+	{@const capPick = data.captain?.pick ?? null}
+	{@const capAlt = data.captain?.alternative ?? null}
+	{@const capGap = capPick && capAlt != null ? capPick.gw_xp - capAlt.gw_xp : null}
 	{@const capClose = capGap != null && capGap < 0.15}
 	<!-- 11.9 DRAFT-COMPARE-OTSIKKORIVI: rating-luku siirtyi SquadHeaderRow'hun
 	     (kentan ylle). Nauha pitaa sen mita se yksin osaa sanoa: kapteeni ja
 	     siirtoverdikti. Sama luku kahdessa lohkossa allekkain olisi kaksi
 	     vaitetta yhdesta, ja vain toinen olisi portin nakyvissa. -->
 	<div class="verdict-strip">
+		{#if capPick}
 		<span
 			class="strip-item"
 			title={capClose && capGap != null
 				? capGap < 0.005
-					? `${data.captain.alternative?.web_name} is level on xP this GW.`
-					: `${data.captain.alternative?.web_name} is only ${capGap.toFixed(2)} xP behind, so this one is close.`
+					? `${capAlt?.web_name} is level on xP this GW.`
+					: `${capAlt?.web_name} is only ${capGap.toFixed(2)} xP behind, so this one is close.`
 				: 'The model pick for the armband this gameweek.'}
 		>
-			Captain <strong>{data.captain.pick.web_name}</strong
+			Captain <strong>{capPick.web_name}</strong
 			>{#if capClose}<span class="strip-note">close call</span>{/if}
 		</span>
+		{/if}
 		{#if premium}
 			{@const stripHold = data.transfers.hold_verdict?.verdict
 				? data.transfers.hold_verdict.verdict === 'hold'
@@ -1288,21 +1341,9 @@
 					>
 				{/if}
 			</span>
-		{:else}
-			<!-- Ilmaiselle heikoin linja on aito vastaus kysymykseen "mista
-			     aloitan", ja se on ilmaista tietoa. Konkreettinen siirtopari
-			     on se mika on maksullista, ja tunniste sanoo sen suoraan. -->
-			<!-- 11.9: heikoin linja on nyt SquadHeaderRow'n oma solu, jonka
-			     jokainen pinta nakee. Nauha pitaa vain sen mita se lisaa:
-			     konkreettinen siirtopari on maksullinen. -->
-			<!-- 🔴 Portti 11.9 BLOKKASI muodon "the move that fixes it": malli ei
-			     suodata siirtoehdokkaita heikoimman linjan mukaan (weakest_line ei
-			     ole syote `transfer_suggestions`issa), ja premium-vastaus voi olla
-			     "hold". Nimetty kausaalisuhde olisi ollut vaite jota koodi ei tee. -->
-			<span class="strip-item">
-				The transfer the model would make <span class="strip-tag">Premium</span>
-			</span>
 		{/if}
+		<!-- 17.10: ilmaisen nauhan haara ("The transfer the model would make
+		     Premium") poistui: lukittu nakyma ei tule tanne lainkaan (`locked`). -->
 	</div>
 	<!-- 14.8: TULOS JA SILMUKKA VIERELLE, EI ALLE.
 	     `.rating` on tarkoituksella `max-width: 680px` (lukumitta), joten
@@ -1433,11 +1474,11 @@
 	     poissa, kenen hinta liikkuu tanaan. Portti k4: lahde on RUUDUN runko
 	     (plannedPlayers) + price watchin omat rivit, ei gw-review'n viimeisen
 	     paattyneen kierroksen pickit. -->
-	<SquadNews players={plannedPlayers} entry={currentEntryId()} />
+	<SquadNews players={plannedPlayers} entry={currentEntryId()} {premium} />
 
 	<!-- MP-14 (26.9): kausi jaadytettya projektiota vastaan, vain FPL-entrylle
 	     (draftilla ei ole FPL-historiaa). Luvut: $lib/ledger. -->
-	<SeasonLedger entry={data.meta.mode === 'entry' ? (data.meta.entry ?? null) : null} />
+	<SeasonLedger entry={data.meta.mode === 'entry' ? (data.meta.entry ?? null) : null} {premium} />
 
 	<!-- #50: hero-luku = Team xP horisontilla (FPL-natiivi mittari); rating
 	     sen alla = "% of the best possible budget team" (uusi semantiikka,
@@ -1569,19 +1610,18 @@
 		{#if data.transfers.note}
 			<p class="muted">{data.transfers.note}</p>
 		{/if}
-	{:else}
-		<button type="button" class="teaser-row" onclick={unlock}>
-			<span>
-				Transfer suggestions <span class="muted">(out → in, with projected xP gain)</span>
-			</span>
-			<span class="locked" aria-label="Locked">•.••</span>
-			<span class="cta">Unlock with Premium</span>
-		</button>
+	{/if}
+	<!-- 17.10: teaser-rivi ("Transfer suggestions ... Unlock with Premium")
+	     poistui; lukittu nakyma on `locked`-haarassa ylla. -->
 	{/if}
 {/if}
 {/if}
 
-{#if slot === 'b'}
+{#if slot === 'b' && lockedB}
+	<!-- 17.10 (spec rivi 2): Team 2 / mallin joukkue -vertailu on Premiumia
+	     kokonaan. Valitsin jaa nakyviin, jotta lukko kertoo mita se avaa. -->
+	<PersonalLock tool="team-compare" {onUpgrade} />
+{:else if slot === 'b'}
 	<!-- 1.8: Joukkue 2 — sama arviointi, kevyt runko (ei tallennusta, ei
 	     FM-silmukkaa, ei siirtosuunnitelmaa; ne kuuluvat omalle joukkueelle). -->
 	<p class="muted hint">
@@ -2049,17 +2089,6 @@
 		font-weight: 700;
 		margin-left: 0.35em;
 	}
-	.strip-tag {
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		color: var(--accent);
-		border: 1px solid var(--accent);
-		padding: 0.1em 0.35em;
-		margin-left: 0.4em;
-		vertical-align: 0.12em;
-	}
 
 	/* 28.7: mittaperusta omalle rivilleen, jotta /100-luku ei jaa selittamatta */
 	/* Hero-luvun peruste samalla rivilla, pienempana */
@@ -2101,35 +2130,35 @@
 		color: var(--positive);
 		font-weight: 700;
 	}
-	/* Lukittu teaser: sama •.••-kieli kuin Paywall-teaser */
-	.teaser-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--s-3);
-		width: 100%;
+	/* 17.10: lukitun nakyman arvosana (esimaku). Sama lukumitta kuin
+	   verdict-linella; luku isona, peruste lauseena sen alla. */
+	.rating-preview {
 		max-width: 640px;
-		text-align: left;
-		background: var(--surface);
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
+		background: var(--surface);
 		padding: var(--s-3) var(--s-4);
-		color: var(--text);
-		font-weight: 500;
+		margin: 0 0 var(--s-3);
+	}
+	.rating-preview .k {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+	.rp-num {
+		margin: var(--s-1) 0;
+		font-size: var(--step-2);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.rp-text {
+		margin: 0;
 		font-size: var(--step--1);
-	}
-	.teaser-row:hover {
-		border-color: var(--accent);
-	}
-	.locked {
-		color: var(--giq-rust);
-		font-weight: 700;
-		letter-spacing: 2px;
-		margin-left: auto;
-	}
-	.cta {
-		color: var(--positive);
-		font-weight: 700;
+		max-width: 60ch;
 	}
 
 	/* SOLIO-OPPI (19.8): yhteenvetonauha. Sama pintakieli kuin muissa

@@ -9,8 +9,17 @@
 	 *
 	 * REHELLISYYS: molemmat suunnat samalla painolla, gradaamattomat kerrotaan
 	 * eikä arvata, ennen ensimmäistä gradausta sanotaan suoraan milloin tulokset
-	 * tulevat. FREE: tuloskortti on silmukan palkinto, ei myyntimuuri.
+	 * tulevat.
+	 *
+	 * 17.10.2026 (tyokalut taakse, spec rivi 5): kirjaus, tulostaulu ja
+	 * paivakirja ovat Premiumia kokonaan. Ennen tata tuloskortti oli ilmainen
+	 * ("silmukan palkinto, ei myyntimuuri"); Villen paatos 17.10 kumosi sen.
+	 * Lukitus $lib/personalLock-lukijasta. Tiedot ovat Supabasessa eika
+	 * palvelin maskaa niita, joten tama on klienttiportti (spec: "Supabase,
+	 * klienttiportti"): lukittuna kirjauksia ei edes ladata.
 	 */
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
 	import { auth } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { canShareToApps, shareCard, shareButtonLabel} from '$lib/shareCard';
@@ -38,8 +47,18 @@
 	let {
 		rank = null,
 		rankChange = null,
-		rankGw = null
-	}: { rank?: number | null; rankChange?: number | null; rankGw?: number | null } = $props();
+		rankGw = null,
+		premium = false,
+		onUpgrade
+	}: {
+		rank?: number | null;
+		rankChange?: number | null;
+		rankGw?: number | null;
+		premium?: boolean;
+		onUpgrade?: () => void;
+	} = $props();
+
+	const locked = $derived(personalLock(premium));
 
 	let rows = $state<StoredDecision[] | null>(null);
 	// V4 kauden tavoite (FM: johtokunnan odotukset). Sama prefs-objekti kuin
@@ -53,7 +72,7 @@
 
 	$effect(() => {
 		void auth.user;
-		if (!auth.user) {
+		if (!auth.user || locked) {
 			rows = null;
 			return;
 		}
@@ -139,7 +158,9 @@
 	let whatIf = $derived(rows ? whatIfRows(rows) : []);
 </script>
 
-{#if auth.user && rows != null && score != null}
+{#if locked}
+	<PersonalLock tool="beat-the-model" {onUpgrade} />
+{:else if auth.user && rows != null && score != null}
 	<section class="beat">
 		<h3>Your calls vs the model</h3>
 		<p class="sub">Only the calls you logged, decision by decision.</p>

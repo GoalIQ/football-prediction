@@ -7,8 +7,15 @@
 	import { teamColorByShort } from '$lib/teamColors';
 	import MethodNote from './MethodNote.svelte';
 	import PlayerSearch from './PlayerSearch.svelte';
+	import { personalLock } from '$lib/personalLock';
+	import PersonalLock from './PersonalLock.svelte';
 
-	// #155 Fit checker (FREE): lukitse 1-3 pakkopelaajaa → paras laillinen
+	// 17.10.2026 (tyokalut taakse, spec rivi 15): Premiumia kokonaan.
+	// tools.ts fit-checker = premium (oma reitti -> LockedToolPreview); tama
+	// komponentti lukitsee itsensa $lib/personalLock-lukijalla pinotussa
+	// nakymassa (?all=1) ja palvelimen lukitsemalle vastaukselle (locked_tool
+	// 'fit-checker': xi/bench tyhjia, totals null). Lukittuna ei poolihakua.
+	// #155 Fit checker (alun perin FREE): lukitse 1-3 pakkopelaajaa → paras laillinen
 	// runko niiden ympärille + mitä lukitseminen maksaa vs mallin vapaa
 	// optimibudjettijoukkue. Ei entry-ID:tä → toimii myös go-live-hetkellä
 	// (PI-13). Free-pinnassa EI näytetä per-pelaaja-xP:tä (sama raja kuin
@@ -17,11 +24,16 @@
 	// UX-palaute-erä (25.7) kohta 3: "Save as draft" vie tuloksen 15 ID:tä
 	// samaan draft-storageen jota RateTeam käyttää → onOpenRateTeam-callback
 	// (FreeView vaihtaa segmentin) ja draft latautuu siellä automaattisesti.
-	let { onOpenRateTeam }: { onOpenRateTeam?: () => void } = $props();
+	let {
+		onOpenRateTeam,
+		premium = false,
+		onUpgrade
+	}: { onOpenRateTeam?: () => void; premium?: boolean; onUpgrade?: () => void } = $props();
 
 	let pool = $state<XpPoolPlayer[]>([]);
 	let poolError = $state(false);
 	$effect(() => {
+		if (personalLock(premium)) return;
 		// 14.8: sama pooli kuin draft raterilla — lukitusvalitsin oli rikki
 		// samasta syysta (maskattu teaser 10 rivia).
 		fetchXp().then(
@@ -35,6 +47,7 @@
 	let result = $state<FitResponse | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
+	const locked = $derived(personalLock(premium, result));
 
 	let chosen = $derived(locks.filter((p): p is XpPoolPlayer => p != null));
 
@@ -155,11 +168,15 @@
 
 <section class="tool-card">
 	<h2>Fit checker</h2>
+	{#if locked}
+		<PersonalLock tool="fit-checker" {onUpgrade} />
+	{:else}
 	<p class="muted">
 		<!-- FIT-CHECKER-OPTIMI-VAITE (25.9): "builds the strongest valid 15" oli
 		     optimivaite, vaikka haku ei ole todistettu (optimal_xi_proven False).
-		     Sama muoto kuin App Storen promossa ja rate-teamissa: haku, ei tulos. -->
-		Free · Lock 1-3 must-have players and the model searches for the strongest 15-player
+		     Sama muoto kuin App Storen promossa ja rate-teamissa: haku, ei tulos.
+		     17.10: "Free ·" -etuliite poistui (tyokalu on Premiumia). -->
+		Lock 1-3 must-have players and the model searches for the strongest 15-player
 		squad around them, then shows what forcing those picks costs against the strongest
 		squad it finds with no locks.
 		No FPL entry ID needed. Prices come straight from the official FPL API and update the
@@ -298,6 +315,7 @@
 				</div>
 			{/if}
 		{/if}
+	{/if}
 	{/if}
 </section>
 

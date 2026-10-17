@@ -36,10 +36,20 @@
 		if (appStore) capture('app_handoff_shown', { store: appStore });
 	});
 
+	// 17.10.2026 (tyokalut taakse): henkilokohtaiset tyokalut siirtyivat
+	// Premiumiin, joten ne ovat listan karjessa (ne ovat se mita ilmainen nakee
+	// lukittuna). COPY-SYNC: mobiilin paywall.bullet_* (goaliq-app
+	// lib/i18n/en.ts + es/pt) saa samat rivit mobiilivaiheessa.
 	const BULLETS = [
+		"Rate my team in full: the weak spot, the hold or transfer call with the move itself, your chips and the pitch with each player's projection",
+		'Captain pick for your own XI, with the closest alternative when it is a close call',
+		"Mini-league head-to-head: the model's win probability for the next gameweek between any two managers",
 		'Which players actually close the gap on your mini-league rival, and whether they already have them',
 		'Season race breakdown: where the gap to the model came from, captaincy, bench points and autosubs, round by round',
+		"Beat the Model: log your captain and transfer calls and see them graded against the model's",
 		'Decision journal: what each call you made differently from the model cost or gained, gameweek by gameweek',
+		'Gameweek review: what the model projected for your players against what they scored',
+		'DefCon live: your players against the defensive contribution threshold while a gameweek is played',
 		'Per-player xP projections for every gameweek',
 		// WHY-THIS-PICK (14.8): heti xP:n jalkeen, koska se selittaa juuri sen
 		// luvun. Kattavuus (150) on copyssa: premium nakee ~505 pelaajaa, joten
@@ -53,6 +63,7 @@
 		// ja se oli vaara; copy-sync-auditointi 25.8 loysi sen.
 		'Share as image: post-ready cards from your XI, the captain ranker, the value ranking and leaderboards',
 		'Replacements: who replaces a player, same position, ranked by xP over the coming gameweeks. With your team ID the price ceiling is your bank plus his current price',
+		'Fit checker: the strongest 15 the model finds around up to three players you lock in',
 		'Multi-gameweek transfer planner and plan chains',
 		'Chip timing: best window for Wildcard, Bench Boost, Triple Captain and Free Hit',
 		'Edge mode: protect or climb your rank with ownership-weighted picks',

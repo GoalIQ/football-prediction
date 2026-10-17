@@ -57,7 +57,9 @@ kumoajan mittaamat nelja fail-open-reittia):
 MIKSI KATTO ON LAUSEESSA. Pelkka `tier: 'free'` ei riita watchlistille,
 koska ilmaisella on kolmen pelaajan katto. Sanamuoto on kopioitu pinnalta
 joka jo sanoo taman oikein (`llms.txt`: "a watchlist ...; three free, up to
-50 on Premium"). Uutta myyntilupausta ei keksitty.
+50 on Premium"). Uutta myyntilupausta ei keksitty. 17.10.2026 (tyokalut
+taakse): watchlist on Premiumia ja katto nolla; katto luetaan yha lahteesta,
+ja nollalla lause kertoo vain Premiumin ylarajan (`_COPY`-merkinta).
 
 MITA LUKIJA EI TIEDA. Tier asuu tassa repossa kuudessa paikassa. Tama
 lukija kattaa kolme (SPA-rekisteri + watchlistin katto + Value-listan
@@ -182,20 +184,28 @@ _COPY: dict[str, ToolCopy] = {
         phrase="rate my team",
         cap=NoCap(
             "Ei kattoa lauseessa. Tyokalu on rekisterissa ilmainen, mutta "
-            "/api/fantasy/rate-team maskaa `suggestions`-kentan "
-            "(tests/test_premium_enforcement.py PARTIAL). Lause ei lupaa "
-            "siirtosuosituksia vaan luokan, joten se pitaa maskauksesta "
-            "huolimatta. Kattolauseen lisaaminen olisi UUSI julkinen "
-            "myyntilupaus ja kuuluu julkaisutarkistajalle, ei tanne."
+            "/api/fantasy/rate-team maskaa ilmaiselta kaiken paitsi "
+            "arvosanan (17.10.2026: mask_rate_team_preview_payload, kytkin "
+            "21.10; tests/test_premium_enforcement.py PARTIAL). Lause lupaa "
+            "luokan, ei kenttia: reitti aukeaa ilmaiseksi ja arvosana on "
+            "ilmainen. 🔴 AVOIN COPY-VAIHEELLE: 'rate my team is free' lukee "
+            "17.10 jalkeen laajempana kuin arvosana. Kattolauseen (esim. "
+            "'the rating free, the full analysis on Premium') lisaaminen on "
+            "UUSI julkinen myyntilupaus ja kuuluu julkaisutarkistajalle, ei tanne."
         ),
     ),
     "watchlist": ToolCopy(
         phrase="your watchlist",
+        # 17.10.2026 (tyokalut taakse): watchlist on Premiumia kokonaan
+        # (WATCHLIST_FREE_LIMIT = 0, tools.ts tier premium). Nollakatolla
+        # lause ei sano "0 free" vaan pelkan Premiumin ylarajan; luku tulee
+        # yha lahteesta, joten katon palautus nakyy lauseessa ilman kasityota.
         cap=Cap(
             source="prefs",
             consts=("WATCHLIST_FREE_LIMIT", "WATCHLIST_MAX"),
             render=lambda low, high: (
                 _word(low) + " free, up to " + str(high) + " on Premium"
+                if low > 0 else "up to " + str(high) + " players"
             ),
         ),
     ),
