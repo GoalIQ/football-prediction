@@ -51,6 +51,16 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   `tests/test_xp_horizon_total_meta_routes.py` ja `tests/test_transfer_horizon_parity.py` kutsuvat live-FPL:n
   entry-rajapintaa, joka vastaa 503 kun peli päivittyy. Koodissa ei ollut vikaa. Sama toistuu joka deadline, ja
   pysyvästi punaiseksi tottunut putki nielee oikean regression. Testi ei saa riippua siitä, onko FPL ylhäällä.
+- 2026-10: Huippumanagerien omistus (`data/fpl_elite_ownership.json`, top 1k/10k/100k, n=200 per taso) näkyy
+  vain /fpl-sivulla. API ei tarjoa sitä eikä SPA:n pelaajakortti näytä sitä, vaikka kortissa on jo omistus-%.
+  Jos se tuodaan kortille, otoskoko näkyy lukijalle samasta artefaktista kuin sivulla.
+- 2026-10: SPA:n tulostila (TeamPitchManager settledView) näyttää ratkenneen kierroksen pelaajalle FPL:n nykyisen
+  saatavuuslipun (`chance_of_playing_next_round`) ilman kierrosta, eli lippu näyttää koskevan jo pelattua kierrosta.
+  Piilotus ei käy, koska ilmaispinnalla tulostila on päällä koko suunnitteluikkunan. Lippu sidotaan kierrokseen
+  ("GW8 OUT" / "GW8 75%", deadline_gameweek) samalla lukijalla kuin muualla. Mobiilin vastaava kohta on ihmisen työ (OTA).
+- 2026-10: xP-builderin esikausiehto `preseason = not any(finished)` tekee GW1:n aikana debytoineesta pelaajasta
+  no_history-rivin, jolloin kortti sanoo "No PL minutes this season or last" noin 3-4 vrk. Seuraava osuma
+  elokuu 2027; vaihetesti (ennen GW1:tä, GW1 kesken, GW1 gradattu) estää toiston.
 
 ## Avoimet
 
