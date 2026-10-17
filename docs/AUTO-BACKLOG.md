@@ -69,6 +69,21 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 
 ## Avoimet
 
+- [ ] Automaattinen kierrosrecap goaliq.app/fpl/notes-sivulle (ylläpitäjän päätös 2026-10-17): muistioita ei enää
+  kirjoiteta käsin, joten sivustolle ei tule uutta sisältöä. Uusi `scripts/build_fpl_recap_note.py` lisää
+  `data/fpl_notes.json`:iin yhden recap-muistion kierrosta kohden samaan muotoon kuin nykyiset (slug, date, title,
+  paragraphs, claims, check_url, cta), ja nykyinen `build_fpl_longtail.py` renderöi sen. Luvut VAIN artefakteista:
+  `data/gw_recap.json` (mallijoukkueen pisteet vs FPL-keskiarvo, juokseva ero, kutsujen osumat ja hudit) ja
+  `data/fpl_xp_gw_accuracy.json` comparison (GoalIQ xP vs form, MAE); jokainen luku claimsiin ja check_url sivulle,
+  josta lukija näkee sen ilman tiliä (/fpl#xp-accuracy, /fpl#gw-calls, FPL:n entry-sivu). Tappiot mukaan samalla
+  painolla kuin voitot. Vähintään kolme pohjaa vuorotellen (sama runko joka viikko on AI-tunnusmerkki), ei em dashia,
+  data/rejected_phrases.json ja scripts/check_copy_style.py läpi. Muistio syntyy vain kun kierros on lopullisesti
+  gradattu (ei provisional) ja täsmälleen kerran (idempotentti slug recap-gwN). Vaihetesti: ennen gradausta ei
+  muistiota, provisional ei muistiota, gradattu tasan yksi, toinen ajo ei tuplaa; testi kaatuu jos gradausehto
+  poistetaan. PR:n Julkinen teksti -osioon pohjat sanatarkasti (julkaisutarkistaja ennen mergeä). Työnkulun askel
+  (gradauksen jälkeen fpl-data-refreshiin) lisätään käsin mergen yhteydessä. (ylläpitäjän signaali 2026-10, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ M · myynti 1/3 · uutuus 1/2 = 8
+      Mittari: /fpl/notes näyttää GW8-recapin 48 tunnin sisällä GW8:n gradauksesta · tarkistus 2026-10-30
 - [x] Lainaeste xP:hen: lue `elements[].scout_risks` (property `loan_ineligible`, `gameweek`) yhdellä lukijalla
   (esim. `src/models/fpl_xp.py: loan_ineligible_gws(element) -> set[int]`) ja aseta xP-putkessa
   (`scripts/build_fpl_xp.py`) pelaajan `gameweeks[].xp` ja `xmins` nollaksi niillä kierroksilla; horisonttisumma ja
