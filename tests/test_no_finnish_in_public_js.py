@@ -54,8 +54,10 @@ _FUNKTIOSANAT = (
     r"|nolla|vaite|ettei|jottei|han|lukuja|loytyi|vasta|yksi|kaksi|kortti|kortin"
     r"|taulukko|nappi|kentta|jos|ei|jotka|joka|tila|tausta|siivoa|tunnista"
     r"|uudelle|jaettu|vanhentunut|kosmetiikkaa|konventio|sailyvat)\b"
-    # Verbipaatteet: naita ei esiinny englannin sanan lopussa.
-    r"|\b\w*(?:ttaa|ttaisi|taan|tiin|isesti|vat|isivat)\b"
+    # Verbipaatteet: naita ei esiinny englannin sanan lopussa. Paatteen edessa
+    # vahintaan yksi kirjain (\w+): pelkka paate ei ole suomen sana, mutta
+    # englannin "VAT" on (17.10: FAQ:n "Web prices include VAT" hylattiin).
+    r"|\b\w+(?:ttaa|ttaisi|taan|tiin|isesti|vat|isivat)\b"
 )
 _SKANDI = r"[äöÄÖ]"
 _VAHVA = re.compile(_SKANDI + "|" + _FUNKTIOSANAT, re.IGNORECASE)
@@ -208,6 +210,9 @@ def test_gate_catches_planted_finnish():
         "Implicit-flow: detectSessionInUrl asettaa session hashista.",
         "coral-teksti vaalealla: syvennetty (AA 4.8:1 kermalla)",
         "Tila: lomake uudelle salasanalle",
+        # 17.10: \w+ ennen paatetta ei saa pudottaa oikeita verbeja
+        "// kaikki sarakkeet ovat samassa jarjestyksessa",
+        "// arvot haetaan palvelimelta",
     ]
     for rivi in istutetut:
         assert _suomea(rivi), f"portti ei nae istutettua suomea: {rivi!r}"
@@ -228,6 +233,9 @@ def test_gate_does_not_flag_english():
         "// Exactly one spec per page. With two tables querySelector would",
         # 27.8: samaa sanaa kahdesti ei ole kaksi heikkoa signaalia
         "villa: Aston Villa fixture list, villa again",
+        # 17.10: lyhenne joka on pelkka verbipaate
+        "Web prices include VAT for buyers in the EU.",
+        "VAT ID: FI36523604",
     ]
     for rivi in englanti:
         osuma = _suomea(rivi)
