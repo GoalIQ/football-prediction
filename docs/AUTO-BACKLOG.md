@@ -29,6 +29,15 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 
 - 2026-10: Yllapitaja: Bluesky-botin pitaa tietaa mitka postaukset herattavat kiinnostusta ja mitka saavat asiakkaita.
   Kiinnostus mitataan (data/bsky_performance.json), asiakkaat vaativat kanava-attribuution. → backlog 2026-10-16
+- 2026-10: `data/fpl_xp_projections.json` `players[].this_season` (kuluvan kauden PL-minuutit, xGI ja xGI/90 FPL:n
+  bootstrapista) on täytetty 100 %:lle pelaajista, mutta SPA ja mobiili eivät lue sitä: pelaajakortti näyttää
+  kuluvan kauden luvun vain why-lauseessa, jonka `scripts/build_fpl_why.py` laskee omasta lähteestään. Autopilot S9
+  nostaa kentän joka aamu (17.10).
+- 2026-10: Lainaesteen PR:n (#1) jatko, kaksi vaihetta: (a) jos otsikkokierros on estokierros, rivin `xmins` on 0
+  mutta `predicted_starts` ja minuuttijakauma (p_start, p_cameo, p_bench) tulevat yhä minuuttimallista, eli sama rivi
+  sanoo "0 minuuttia" ja "aloittaa todennäköisesti". Ensimmäinen osuma xP-listan pelaajalla 17.10 mitattuna: GW12
+  (GW8:n estopelaaja on excluded-listalla). (b) Tuplakierroksella este koskee vain emoseuraa vastaan pelattavaa ottelua, mutta PR nollaa koko kierroksen.
+  FPL:n kentässä ei ole vastustajaa, se on vain notes-tekstissä ("face their parent club").
 
 ## Avoimet
 
