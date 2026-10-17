@@ -38,6 +38,11 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   sanoo "0 minuuttia" ja "aloittaa todennäköisesti". Ensimmäinen osuma xP-listan pelaajalla 17.10 mitattuna: GW12
   (GW8:n estopelaaja on excluded-listalla). (b) Tuplakierroksella este koskee vain emoseuraa vastaan pelattavaa ottelua, mutta PR nollaa koko kierroksen.
   FPL:n kentässä ei ole vastustajaa, se on vain notes-tekstissä ("face their parent club").
+- 2026-10: Mallijoukkue jäi GW1-6 FPL-keskiarvosta 15 p, ja kapteenivalinta selittää koko eron (eniten kapteenoitu
+  olisi tuonut 16 p lisää). Jäädytetyn xP:n yläpää: jokaisen kierroksen 20 suurinta xP:ta, toteuma miinus xP,
+  FWD +0.55 (n 19), DEF -0.37 (n 41), MID -0.53 (n 55). Viikkobenchmarkista puuttuu yläpään kalibrointi
+  pelipaikoittain ja mallin kapteenin ero eniten kapteenoituun (liukuva koko kausi). Parametrimuutos ei kuulu
+  agentille (ylläpitäjän päätös); mittari kuuluu.
 
 ## Avoimet
 
