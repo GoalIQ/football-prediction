@@ -61,6 +61,7 @@ from api.premium import (
     mask_model_squad_payload, mask_gw_review_payload,
     mask_my_team_ledger_payload, mask_fit_payload, mask_defcon_live_payload,
     mask_price_watch_entry_payload, mask_differentials_entry_payload,
+    mask_captain_entry_payload,
 )
 
 # Stripe-konfiguraatio (Render env varseista)
@@ -6195,6 +6196,12 @@ def fantasy_captain(
                     row["set_pieces"] = src["set_pieces"]
     except Exception:
         pass  # enrichment ei koskaan kaada peruspayloadia
+    # 17.10 ilta (kytkin 21.10): kapteenikutsu OMALLE XI:lle (entry) on
+    # henkilokohtainen tyokalu -> nolla rivia ei-tilaajalle
+    # (api.premium.mask_captain_entry_payload). Ilman entrya (draft) alla
+    # oleva 15.8-raja pysyy esimakuna.
+    if entry is not None and personal_tools_mask_applies(request):
+        return mask_captain_entry_payload(payload)
     # 15.8: maskaus VASTA enrichmentin jalkeen, jotta free-rivi saa samat
     # e_bonus/set_pieces-kentat kuin premium — maski koskee rivien MAARAA,
     # ei niiden sisaltoa.

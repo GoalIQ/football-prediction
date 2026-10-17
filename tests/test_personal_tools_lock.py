@@ -517,7 +517,9 @@ REITIT = {
 
 # Reitit joiden julkinen osa jaa ilmaiseksi: maski laukeaa vain `entry`n
 # kanssa. Mitataan omissa testeissaan alla (spy: joukkuetta ei haeta).
-ENTRY_REITIT = {"/api/fantasy/price-watch", "/api/fantasy/differentials"}
+# Captain: ilman entrya (draft) 15.8-esimaku (yksi valinta) jaa.
+ENTRY_REITIT = {"/api/fantasy/price-watch", "/api/fantasy/differentials",
+                "/api/fantasy/captain"}
 
 
 def _get(client, url, headers):
@@ -706,6 +708,103 @@ def test_differentials_entry_muut_kutsujat(client, kutsujat, monkeypatch,
     else:
         assert "locked_tool" not in d["meta"]
         assert d["template_missing"] and kutsut == [424242]
+
+
+# --- captain: oma XI (entry) lukittu, draft-esimaku jaa ---------------------
+
+_KAPTEENIT = [{"id": 90001 + i, "web_name": f"Kapteeni Ehdokas{i}",
+               "team_short": "AAA", "gw_xp": 7.0 - i, "owned_pct": 30.0,
+               "gap_to_top": float(i)} for i in range(3)]
+
+
+def _fake_captain(monkeypatch):
+    import copy as _copy
+    import src.models.fpl_planner as pl
+
+    def picker(entry=None, gw=None, players=None):
+        return {"meta": {"gw": 8, "generated_at": "g",
+                         "availability_gate": {
+                             "checked": True, "note": "gate",
+                             "dropped": [{"id": 90009,
+                                          "web_name": "Sivussa Oleva"}]}},
+                "top3": _copy.deepcopy(_KAPTEENIT),
+                "differential": {"id": 90008, "web_name": "Erikois Kapteeni",
+                                 "gw_xp": 5.1, "owned_pct": 2.0}}
+    monkeypatch.setattr(pl, "captain_picker", picker)
+
+
+_CAP_ENTRY = "/api/fantasy/captain?entry=424242"
+_CAP_DRAFT = "/api/fantasy/captain?players=" + ",".join(
+    str(i) for i in range(1, 16))
+
+
+def test_captain_entry_lukittu_kytkimen_jalkeen(client, kutsujat, monkeypatch):
+    _fake_captain(monkeypatch)
+    monkeypatch.setattr(prem, "_utcnow", lambda: JALKEEN)
+    for kutsuja in ("anonyymi", "kirjautunut-ilmainen"):
+        r = _get(client, _CAP_ENTRY, kutsujat[kutsuja])
+        d = r.json()
+        assert d["meta"]["masked"] is True, kutsuja
+        assert d["meta"]["locked_tool"] == "rate-my-team"
+        assert d["meta"]["free_rows"] == 0 and d["meta"]["total_rows"] == 3
+        assert d["top3"] == [] and d["differential"] is None
+        assert d["meta"]["availability_gate"]["dropped"] == []
+        m = d["meta"]["mask"]
+        assert m.isascii() and "—" not in m and "–" not in m
+        vuoti = [n for n in ("Kapteeni Ehdokas", "Erikois Kapteeni",
+                             "Sivussa Oleva") if n in r.text]
+        assert not vuoti, f"{kutsuja} vuoti: {vuoti}"
+
+
+def test_captain_draft_esimaku_jaa_kytkimen_jalkeen(client, kutsujat,
+                                                    monkeypatch):
+    """Ilman entrya (draft) 15.8-raja pysyy: yksi valinta, ei lukitusta."""
+    _fake_captain(monkeypatch)
+    monkeypatch.setattr(prem, "_utcnow", lambda: JALKEEN)
+    d = _get(client, _CAP_DRAFT, kutsujat["anonyymi"]).json()
+    assert "locked_tool" not in d["meta"]
+    assert d["meta"]["masked"] is True
+    assert [p["web_name"] for p in d["top3"]] == ["Kapteeni Ehdokas0"]
+    assert d["differential"] is None
+
+
+@pytest.mark.parametrize("kutsuja,vaihe,url,odotus", [
+    # (kutsuja, hetki, URL, "lukittu" | "esimaku" | "taysi")
+    ("anonyymi", ENNEN, _CAP_ENTRY, "esimaku"),
+    ("anonyymi", ENNEN, _CAP_DRAFT, "esimaku"),
+    ("premium", JALKEEN, _CAP_ENTRY, "taysi"),
+    ("premium", JALKEEN, _CAP_DRAFT, "taysi"),
+    # Admin ilman esikatselua ei ole premium: 15.8-raja, ei lukitusta.
+    ("admin", JALKEEN, _CAP_ENTRY, "esimaku"),
+    ("admin-esikatselu", ENNEN, _CAP_ENTRY, "lukittu"),
+    ("admin-esikatselu", ENNEN, _CAP_DRAFT, "esimaku"),
+], ids=["anon-ennen-entry", "anon-ennen-draft", "premium-entry",
+        "premium-draft", "admin-entry", "esikatselu-entry",
+        "esikatselu-draft"])
+def test_captain_vaiheet_ja_kutsujat(client, kutsujat, monkeypatch, kutsuja,
+                                     vaihe, url, odotus):
+    _fake_captain(monkeypatch)
+    monkeypatch.setattr(prem, "_utcnow", lambda: vaihe)
+    d = _get(client, url, kutsujat[kutsuja]).json()
+    if odotus == "lukittu":
+        assert d["meta"]["locked_tool"] == "rate-my-team"
+        assert d["top3"] == [] and d["differential"] is None
+    elif odotus == "esimaku":
+        assert "locked_tool" not in d["meta"]
+        assert len(d["top3"]) == prem.FREE_CAPTAIN_PICKS == 1
+        assert d["differential"] is None
+    else:
+        assert d["meta"].get("masked") is not True
+        assert len(d["top3"]) == 3 and d["differential"]["web_name"]
+
+
+def test_captain_entry_maski_ei_mutatoi():
+    full = {"meta": {"availability_gate": {"dropped": [{"id": 1}]}},
+            "top3": [{"id": 1}], "differential": {"id": 2}}
+    kopio = repr(full)
+    out = prem.mask_captain_entry_payload(full)
+    assert out["top3"] == [] and out["differential"] is None
+    assert repr(full) == kopio
 
 
 def test_reply_moduuli_hakee_differentialsin_ilman_entrya():

@@ -63,7 +63,11 @@ PREMIUM_ENDPOINTS = {
     "/api/fantasy/plan-chains": ("transfer plans, hits counted", "truncate"),
     "/api/fantasy/chip-ev": ("chip timing windows", "truncate"),
     "/api/fantasy/edge": ("edge mode, rank-aware picks", "truncate"),
-    "/api/fantasy/captain": ("captain ranker: differential + bonus", "mask"),
+    # 17.10 ilta: "mask" -> "lock". Entryn kanssa (oma XI) kytkimen jalkeen
+    # nolla rivia (mask_captain_entry_payload); ilman entrya 15.8-maski
+    # (mask_captain_payload, yksi valinta) pysyy.
+    "/api/fantasy/captain": ("captain ranker: differential + bonus; oman "
+                             "XI:n kapteeni lukittu", "lock"),
     "/api/fantasy/replacements": ("who replaces a player", "mask"),
     "/api/fantasy/value": ("player value + goalkeeper rotation pairs", "mask"),
     "/api/fantasy/wildcard-plan": ("wildcard draft is part of the planner", "truncate"),

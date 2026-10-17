@@ -137,6 +137,9 @@ PERSONAL_TOOL_ROUTES = {
     "/api/fantasy/h2h",
     "/api/fantasy/price-watch",
     "/api/fantasy/differentials",
+    # 17.10 ilta: kapteenikutsu omalle XI:lle (entry) lukitaan kytkimen
+    # jalkeen (nolla rivia); ilman entrya yksi valinta jaa esimauksi.
+    "/api/fantasy/captain",
 }
 
 # KOLMAS LUOKKA (13.8): ilmainen ydin + premium-erittely samassa vastauksessa.
@@ -213,7 +216,11 @@ PARTIAL_PREMIUM_KEYS = {
         "model_captain_id", "model_bench_points", "model_autosubs"),
     "/api/fantasy/rival": ("differentials",),
     # Differential-kapteeni on nimenomaan myyty premium-riville.
-    "/api/fantasy/captain": ("differential",),
+    # 17.10 ilta (kytkin 21.10): entryn kanssa myos `top3` kokonaan
+    # (nolla rivia, api.premium.mask_captain_entry_payload) ja
+    # `meta.availability_gate.dropped` (oman XI:n nimet).
+    "/api/fantasy/captain": ("differential", "top3 (entry)",
+                             "meta.availability_gate.dropped (entry)"),
     # 17.10: kytkimen jalkeen koko tyokalu arvosanaa lukuun ottamatta.
     # Ennen kytkinta (5.9-maski) vain `suggestions`. Todennus ajamalla:
     # tests/test_personal_tools_lock.py.
@@ -924,8 +931,9 @@ ILMAINEN_ESIKATSELU = {
     "FREE_PLAN_CHAINS": (1, "/api/fantasy/plan-chains: yksi ketju"),
     "FREE_EDGE_CAPTAINS": (2, "/api/fantasy/edge: kaksi kapteenirivia"),
     "FREE_EDGE_DIFFERENTIALS": (2, "/api/fantasy/edge: kaksi differentiaalia"),
-    "FREE_CAPTAIN_PICKS": (1, "/api/fantasy/captain: yksi valinta - sama "
-                              "lupaus kuin myyntisivun 'with a captain pick'"),
+    "FREE_CAPTAIN_PICKS": (1, "/api/fantasy/captain ILMAN entrya (draft): "
+                              "yksi valinta, rankkerin esimaku. Entryn kanssa "
+                              "kytkimen (21.10) jalkeen FREE_PERSONAL_TOOL_ROWS"),
     "FREE_REPLACEMENTS_ROWS": (1, "/api/fantasy/replacements: kohde + 1 rivi"),
     "FREE_EDGE_TEMPLATE_RISKS": (1, "/api/fantasy/edge: yksi template-riski"),
     "FREE_VALUE_ROWS": (3, "/api/fantasy/value: sama 3 rivia jonka "
@@ -940,7 +948,8 @@ ILMAINEN_ESIKATSELU = {
     # 17.10 HENKILOKOHTAISET TYOKALUT PREMIUMIIN (kytkin 21.10).
     "FREE_PERSONAL_TOOL_ROWS": (0, "lukitut henkilokohtaiset tyokalut "
                                    "(gw-review, my-team-ledger, fit, "
-                                   "model-squad, defcon-live, h2h): nolla - "
+                                   "model-squad, defcon-live, h2h) ja "
+                                   "captain + entry: nolla - "
                                    "spec-taulukko merkitsee ne 'lukittu' "
                                    "(tests/test_personal_tools_lock.py)"),
 }

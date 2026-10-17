@@ -1059,6 +1059,36 @@ def mask_h2h_payload(payload: dict) -> dict:
         "GoalIQ Premium unlocks the head-to-head win probability")
 
 
+def mask_captain_entry_payload(payload: dict) -> dict:
+    """/api/fantasy/captain + entry ei-tilaajalle kytkimen jalkeen: nolla
+    kapteenirivia (paatos 17.10 ilta: kapteeni OMALLE XI:lle on
+    henkilokohtainen tyokalu, spec-taulukon rivi 3).
+
+    Ilman entrya (draft, `players=`) 15.8-maski pysyy: yksi valinta on
+    rankkerin esimaku. Typistys ei null: `top3` on yha lista ja `meta` dict.
+    `meta.availability_gate.dropped` tyhjennetaan, koska se nimeaa kayttajan
+    oman XI:n sivussa olevat pelaajat.
+    """
+    out = dict(payload)
+    top = list(out.get("top3") or [])
+    out["top3"] = top[:FREE_PERSONAL_TOOL_ROWS]
+    out["differential"] = None
+    meta = dict(out.get("meta") or {})
+    gate = meta.get("availability_gate")
+    if isinstance(gate, dict):
+        gate = dict(gate)
+        gate["dropped"] = _blank_leaf(gate.get("dropped") or [])
+        meta["availability_gate"] = gate
+    meta["masked"] = True
+    meta["locked_tool"] = "rate-my-team"
+    meta["free_rows"] = FREE_PERSONAL_TOOL_ROWS
+    meta["total_rows"] = len(top)
+    meta["mask"] = (f"{FREE_PERSONAL_TOOL_ROWS} of {len(top)} captain picks "
+                    "for your own squad (GoalIQ Premium unlocks them)")
+    out["meta"] = meta
+    return out
+
+
 def mask_price_watch_entry_payload(payload: dict) -> dict:
     """Hintalistareitti + entry ei-tilaajalle: sama lista ilman
     omistusmerkintoja. Reitti jattaa joukkueen hakematta, tama poistaa varmuuden
