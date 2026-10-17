@@ -223,6 +223,16 @@ def test_aivoilla_vain_lukuoikeus_eika_bluesky_tunnusta():
     assert "ANTHROPIC_API_KEY" not in teksti and "anthropic_api_key" not in teksti
 
 
+def test_releen_kaynnistamat_aivot_eivat_kaadu_bottiesteeseen():
+    # 17.10: rele dispatchaa GITHUB_TOKENilla -> actor github-actions[bot]; ilman allowed_bots-rivia
+    # claude-code-action kaatuu ennen mallia (3/3 ajoa 16.-17.10). Vain tama botti, ei '*'.
+    _t, doc = _wf()
+    aivot = doc["jobs"]["aivot"]
+    claude = [s for s in aivot["steps"] if "claude-code-action" in str(s.get("uses", ""))][0]
+    botit = [b.strip() for b in str(claude["with"].get("allowed_bots", "")).split(",") if b.strip()]
+    assert botit == ["github-actions"], botit
+
+
 def test_salasana_vain_julkaisuaskeleelle():
     import yaml
     _t, doc = _wf()

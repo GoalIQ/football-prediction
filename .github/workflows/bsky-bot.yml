@@ -67,6 +67,10 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # 17.10 (Villen lupa): fp-dispatch-relay kaynnistaa ajon GITHUB_TOKENilla (actor github-actions[bot]),
+          # ja action hylkaa botin ilman tata ("Workflow initiated by non-human actor"). Aivot kaatuivat 3/3.
+          # Vain tama yksi botti, ei '*'.
+          allowed_bots: 'github-actions'
           claude_args: >-
             --max-turns 60
             --add-dir /tmp/bsky
