@@ -47,6 +47,10 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   tekee `round(.., 3)` ja `scripts/build_fpl_page.py` `_mae_cell` vielä `:.2f`. Did not play -rivin GoalIQ-arvo
   0.9653 näkyy "0.96" (yksi pyöristys antaisi 0.97). Korjaus vaihtaa julkisen luvun; julkaistu teksti voi
   lainata vanhaa.
+- 2026-10: tests.yml meni punaiseksi GW7-deadlinen aikana (17.10 noin 09:57-10:15 UTC, kolme peräkkäistä ajoa), koska
+  `tests/test_xp_horizon_total_meta_routes.py` ja `tests/test_transfer_horizon_parity.py` kutsuvat live-FPL:n
+  entry-rajapintaa, joka vastaa 503 kun peli päivittyy. Koodissa ei ollut vikaa. Sama toistuu joka deadline, ja
+  pysyvästi punaiseksi tottunut putki nielee oikean regression. Testi ei saa riippua siitä, onko FPL ylhäällä.
 
 ## Avoimet
 
