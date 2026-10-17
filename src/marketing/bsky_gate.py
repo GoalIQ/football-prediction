@@ -46,6 +46,19 @@ STYLE_TELLS = (
     "game-changer", "game changer", "it's worth noting", "as you spotted", "great question",
     "betting", " odds", "tips", "lock of the week",
 )
+# 17.10.2026 (Villen paatos, goaliq-app cos-reports/2026-10-17-tyokalut-maksumuuriin-spec.md): henkilokohtaiset
+# FPL-tyokalut ovat Premiumia. Botti ei saa luvata niita ilmaiseksi. Ilmaista on sisalto: ennusteet, clean sheet
+# -taulukot, expected points -sivut, track record ja artikkelit. Saanto: tyokalun nimi ja ilmaisuussana samassa
+# virkkeessa = hylkays. "Free Hit" ja "free transfer" ovat FPL:n omia termeja eivatka ilmaisuuslupauksia.
+PREMIUM_TOOL_TERMS = (
+    "rate my team", "rate your team", "rate my draft", "team rater", "your captain", "captain for your",
+    "mini-league", "mini league", "head-to-head", "h2h", "rival", "watchlist", "fit checker", "season race",
+    "beat the model", "gameweek review", "gw review", "season ledger", "squad news", "defcon live",
+    "planner", "chip timing", "transfer suggestions",
+)
+_FREE_CLAIM_RE = re.compile(
+    r"\bfree\b(?!\s*(?:hit|transfers?|kicks?|agents?))|no sign[- ]?in|no log[- ]?in|no account|without an account",
+    re.I)
 TARGET_MAX_AGE = timedelta(hours=4)
 AUTHOR_COOLDOWN = timedelta(hours=48)
 SIMILAR = 0.8
@@ -120,6 +133,10 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         probs.append("tyylikielto: negatiivinen parallelismi (ei X, vaan Y)")
     if text.count("!") > 1:
         probs.append("yli yksi huutomerkki")
+    for lause in re.split(r"[.!?\n]+", low):
+        tyokalu = next((t for t in PREMIUM_TOOL_TERMS if t in lause), None)
+        if tyokalu and _FREE_CLAIM_RE.search(lause):
+            probs.append(f"lupaa Premium-tyokalun ilmaiseksi: {tyokalu!r}")
     for ph in phrases:
         if ph and ph in low:
             probs.append(f"hylatty sanamuoto: {ph!r}")

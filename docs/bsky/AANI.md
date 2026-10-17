@@ -57,6 +57,12 @@ Rotate structures. Three that work:
 - (C) Reaction or question without numbers: "Gross creating more chances than anyone in Europe and
   still under 10% owned. Who's on him?"
 
+Free vs Premium (from 17.10.2026): free on goaliq.app are match predictions, clean sheet chances, the
+expected points pages, the track record and the notes. Every tool for your own team is GoalIQ Premium:
+rate my team, the captain pick for your team, mini-league and rival tools, the watchlist, the fit checker,
+the planner and chip timing. Never write that one of those is free or needs no sign-in. Link to a free page,
+not to a tool, when the post is about free content.
+
 Links go in own posts only, as the short form goaliq.app/... (the bot adds tracking invisibly).
 Prefer a card image when the post is about a list (captain, expected points, points vs projection).
 

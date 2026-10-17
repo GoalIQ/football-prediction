@@ -311,6 +311,30 @@ def test_tyylikiellot(teksti):
     assert any("tyyli" in p or "huutomerk" in p for p in probs), probs
 
 
+@pytest.mark.parametrize("teksti", [
+    "Rate my team is free on goaliq.app.",
+    "Free mini-league tool with head-to-head odds for your league.",
+    "Track three players on the watchlist, no sign-in needed.",
+    "Our fit checker works with no login.",
+    "Chip timing for free: plan your Wildcard.",
+])
+def test_premium_tyokalua_ei_luvata_ilmaiseksi(teksti):
+    # 17.10.2026 Villen paatos: henkilokohtaiset tyokalut ovat Premiumia.
+    probs = chk({"kind": "post", "text": teksti, "keys": []})
+    assert any("Premium-tyokalun ilmaiseksi" in p for p in probs), probs
+
+
+@pytest.mark.parametrize("teksti", [
+    "Free Hit or Wildcard this week? The planner likes holding.",
+    "One free transfer and a bench problem. Rate my team says hold.",
+    "Clean sheet chances are free on goaliq.app, no sign-in.",
+    "Your rival has Haaland. Do you?",
+])
+def test_fpl_termit_ja_ilmainen_sisalto_paasevat(teksti):
+    probs = chk({"kind": "post", "text": teksti, "keys": []})
+    assert not any("Premium-tyokalun ilmaiseksi" in p for p in probs), probs
+
+
 def test_lukukatto_vastaus_yksi_postaus_kaksi():
     keys = ["captain_top5.haaland-mci.gw_xp", "captain_top5.haaland-mci.p_10plus"]
     assert any("liikaa lukuja" in p for p in chk(_reply("Haaland 8.0 and 32% for GW7.", keys)))
