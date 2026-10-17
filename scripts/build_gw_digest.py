@@ -66,7 +66,7 @@ MINI_LEAGUE_CODE = "jgi6j9"
 # tama lista muuttuu — testi pitaa ne synkassa.
 PREMIUM_FEATURES = (
     "the team manager",
-    "a GW1 to GW6 gameweek planner",
+    "a six-gameweek planner",
 )
 
 # Ilmaissivun /fpl/expected-points katkaisukohta ("Top 100 by expected points

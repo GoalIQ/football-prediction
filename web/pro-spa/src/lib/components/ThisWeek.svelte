@@ -281,7 +281,7 @@
 							{#if entryId != null}
 								<GwReview {premium} {onUpgrade} />
 							{:else}
-								<p class="muted">Add your FPL team ID below for your own gameweek review.</p>
+								<p class="muted">{#if beatLocked}With GoalIQ Premium, add{:else}Add{/if} your FPL team ID below for your own gameweek review.</p>
 							{/if}
 						{/if}
 					</div>

@@ -1267,7 +1267,7 @@
 		     takana. Lause: $lib/personalLock ratingPreview. -->
 		{#if preview}
 			<div class="rating-preview">
-				<p class="k">Rating</p>
+				<p class="k">Vs best found</p>
 				{#if preview.pct != null}
 					<p class="rp-num">{preview.pct}%</p>
 				{/if}

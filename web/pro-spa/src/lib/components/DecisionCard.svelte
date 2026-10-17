@@ -195,7 +195,7 @@
 				<PersonalLock tool="this-week" {onUpgrade} compact />
 			{:else if !mine}
 				<p class="k">Transfer</p>
-				<p>Add your FPL team ID below and the model checks transfers for your own squad.</p>
+				<p>{#if premium}Add your FPL team ID below and the model checks transfers for your own squad.{:else}With GoalIQ Premium, add your FPL team ID below and the model checks transfers for your own squad.{/if}</p>
 			{:else if premium && sug && !mine.transfers.hold}
 				<p class="k">Transfer</p>
 				<p class="move">
@@ -239,7 +239,7 @@
 			{#if ownLocked}
 				<PersonalLock tool="this-week" {onUpgrade} compact />
 			{:else if !mine}
-				<p>Add your FPL team ID below to see which chips you still have.</p>
+				<p>{#if premium}Add your FPL team ID below to see which chips you still have.{:else}With GoalIQ Premium, add your FPL team ID below to see which chips you still have.{/if}</p>
 			{:else if chips}
 				{#if chipsNow.length}
 					<p>Available this gameweek: <strong>{chipsNow.map((c) => chipName(c.name)).join(', ')}</strong>.</p>

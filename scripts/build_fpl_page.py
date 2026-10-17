@@ -821,7 +821,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "against the model's own squad, head-to-head win probability "
                 "in your mini-league, the watchlist, your own players marked "
                 "in price watch and differentials filtered by your squad; an interactive team manager (formations, bench swaps, "
-                "captaincy, a GW1 to GW6 gameweek planner with each player's "
+                "captaincy, a six-gameweek planner with each player's "
                 "opponent per week), per-gameweek expected points (xP) for every player in the projection, the captain "
                 "ranker, transfer suggestions with one-tap apply to your "
                 "planned squad, player value (xP per million) for the top 50 with position and team filters, showing the scoring rate per 90 minutes and expected minutes separately so a high rate on low minutes reads as a bench risk and not a bargain, a live DefCon "
@@ -1836,7 +1836,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "team (the full rate my team analysis with the captain pick for "
             "your squad, mini-league head-to-head win probability, the fit "
             "checker, your gameweek review and the watchlist), an interactive "
-            "team manager with a GW1 to GW6 gameweek planner, per-gameweek "
+            "team manager with a six-gameweek planner, per-gameweek "
             "expected points (xP) for every player in the projection, the captain "
             "ranker, chip timing for Wildcard, Bench "
             "Boost, Triple Captain and Free Hit, transfer plans that chain 1 to "
@@ -1844,8 +1844,7 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "million) for the top 50 with position and team filters, showing "
             "the scoring rate per 90 minutes and expected minutes separately "
             "so a high rate on low minutes reads as a bench risk and not a "
-            "bargain, xG "
-            "leaders, a DefCon (defensive contribution) tracker, "
+            "bargain, a DefCon (defensive contribution) tracker, "
             "and transfer suggestions with apply. On the web it "
             "also shows upcoming fixtures and league tables. Also predicts "
             "any match - win probability, expected goals (xG) and scoreline "
@@ -2495,11 +2494,10 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         for p in (10, 22, 34, 46, 58)
     )
 
-    # 17.10.2026 (tyokalut taakse): otsikko nimeaa arvosanan eika koko
-    # tyokalua, koska vain arvosana on jaon mukaan maksuton (spec
-    # jakotaulukko rivi 1). SEO-riski (spec "Mittari") on Villen
-    # paatettavissa; og- ja twitter-otsikko lukevat saman muuttujan.
-    title = "Free FPL Tools: Team Rating, Captain Pick, Clean Sheets | GoalIQ"
+    # 17.10.2026: julkaisutarkistaja palautti alkuperaisen otsikon (tarkistus
+    # cos-reports/cc-reports/2026-10-17). og- ja twitter-otsikko lukevat
+    # saman muuttujan.
+    title = "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ"
     # 5.9 SEO: 358 merkkia katkesi hakutuloksessa; nyt alle 160.
     meta_desc = (
         "Free FPL tools, no sign-in: clean sheet probability, fixture "
