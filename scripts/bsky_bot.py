@@ -540,6 +540,7 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> in
         log_rows.append({"at": now.isoformat(timespec="seconds"), "uri": res.get("uri"), "cid": res.get("cid"),
                          "kind": it["kind"], "topic": it.get("topic"), "slot": it.get("slot"), "text": text,
                          "keys": it.get("keys") or [], "utm_content": cid if links else None,
+                         "links": links or None,
                          "card": it.get("card") if image else None, "source": it.get("source", "rule"),
                          "target_handle": (it.get("target") or {}).get("handle"),
                          "target_uri": (it.get("target") or {}).get("uri"), "dry_run": dry,
@@ -568,6 +569,114 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> in
                 f.write(f"- {r['kind']}/{r['topic']}: {r['text']}\n")
             for r in rejected:
                 f.write(f"- HYLATTY: {r['text'][:140]} ({'; '.join(r['why'])[:200]})\n")
+    return 0
+
+
+# ---------------------------------------------------------------- X-jono (Villen paatos 17.10)
+#
+# X:aan ei postata automaattisesti (maksullinen API + X:n automaatiosaannot kieltavat sivuston skriptauksen).
+# Jokaisesta julkaistusta Bluesky-POSTAUKSESTA (ei vastauksista) tehdaan Villelle issue, josta han postaa
+# itse puhelimella: X-versio (utm_source=x) + linkki Bluesky-postaukseen. Kuvaa ei tarvita, koska
+# goaliq.app-linkki tuo X:aan sivun oman esikatselukortin. Teksti on sama joka lapaisi bsky_gaten.
+
+X_MAX = 280
+X_URL_LEN = 23                       # X laskee jokaisen linkin 23 merkiksi (t.co)
+X_MIRROR_MAX_AGE = timedelta(hours=6)  # vanhempi postaus (esim. deadline mennyt) ei kuulu X:aan
+X_ISSUE_REPO = "GoalIQ/football-prediction"
+X_ISSUE_ASSIGNEE = "Veikkoville"
+X_ISSUE_LABEL = "x-jono"
+_URL_RE = re.compile(r"https?://\S+")
+
+
+def x_length(text: str) -> int:
+    return len(_URL_RE.sub("", text)) + X_URL_LEN * len(_URL_RE.findall(text))
+
+
+def bsky_web_url(uri: str | None) -> str | None:
+    """at://did/app.bsky.feed.post/<rkey> -> bsky.app-osoite jonka Ville voi avata."""
+    m = re.match(r"at://[^/]+/app\.bsky\.feed\.post/([A-Za-z0-9]+)$", str(uri or ""))
+    return f"https://bsky.app/profile/{bsky.HANDLE}/post/{m.group(1)}" if m else None
+
+
+def x_version(row: dict) -> str | None:
+    """Bluesky-postauksen X-versio: lyhyt goaliq.app-teksti -> taysi osoite utm_source=x:lla.
+    None jos X:n raja ylittyy (ei katkaista: katkaistu luku on eri vaite)."""
+    text = row.get("text") or ""
+    links = row.get("links") or {}
+    if not links:
+        # Ennen 17.10 lokiin ei tallennettu osoitetta: rakennetaan nakyvasta polusta (ankkuri puuttuu).
+        for disp in re.findall(r"goaliq\.app/\S*", text):
+            links[disp] = utm_link(disp.split("goaliq.app", 1)[1] or "/", row.get("topic") or "post",
+                                   row.get("utm_content") or "x")[1]
+    for disp, uri in links.items():
+        if "goaliq.app" in uri:
+            uri = uri.replace("utm_source=bluesky", "utm_source=x")
+        text = text.replace(disp, uri)
+    return text if x_length(text) <= X_MAX else None
+
+
+def pending_x_mirror(log_rows: list[dict], state: dict, now: datetime) -> list[dict]:
+    done = set(state.get("x_mirrored") or [])
+    out = []
+    for r in log_rows:
+        if r.get("kind") != "post" or r.get("dry_run") or not r.get("uri") or r["uri"] in done:
+            continue
+        try:
+            at = datetime.fromisoformat(str(r.get("at")))
+        except ValueError:
+            continue
+        if now - at <= X_MIRROR_MAX_AGE:
+            out.append(r)
+    return out
+
+
+def x_issue(row: dict, x_text: str | None) -> dict:
+    web = bsky_web_url(row.get("uri"))
+    if x_text is None:
+        body = (f"Bluesky-postaus ylittaa X:n {X_MAX} merkkia linkki mukaan laskettuna, joten X-versiota ei tehty.\n\n"
+                f"Bluesky: {web}\n\n```\n{row.get('text')}\n```\n")
+    else:
+        body = (f"Kopioi X:aan (postaat itse). {x_length(x_text)}/{X_MAX} merkkia, linkki tuo sivun "
+                f"esikatselukortin.\n\n```\n{x_text}\n```\n\nBluesky-alkuperainen: {web}\n\n"
+                f"Aihe {row.get('topic')} · lahde {row.get('source', 'rule')} · julkaistu {row.get('at')}. "
+                f"Sulje issue kun postattu tai ohitettu.\n")
+    return {"title": f"X: {(row.get('text') or '')[:70]}", "body": body,
+            "assignees": [X_ISSUE_ASSIGNEE], "labels": [X_ISSUE_LABEL]}
+
+
+def _create_issue(payload: dict, token: str) -> str:
+    import urllib.request
+    req = urllib.request.Request(f"https://api.github.com/repos/{X_ISSUE_REPO}/issues",
+                                 data=json.dumps(payload).encode("utf-8"), method="POST",
+                                 headers={"Authorization": f"Bearer {token}",
+                                          "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode("utf-8")).get("html_url", "")
+
+
+def cmd_x_mirror(now: datetime | None = None, create=None) -> int:
+    now = now or datetime.now(timezone.utc)
+    token = os.environ.get("GH_TOKEN", "").strip()
+    if create is None and token:
+        create = lambda p: _create_issue(p, token)  # noqa: E731
+    state = load_state()
+    rows_ = pending_x_mirror(read_log(), state, now)
+    made = 0
+    for r in rows_:
+        payload = x_issue(r, x_version(r))
+        if create is None:
+            print(f"[KUIVA, ei GH_TOKENia] issue: {payload['title']}")
+            continue
+        try:
+            print(f"X-jono: {create(payload)}")
+        except Exception as e:  # noqa: BLE001 - seuraava ajo yrittaa uudelleen (ei merkita tehdyksi)
+            print(f"X-jono epaonnistui: {e!r}")
+            continue
+        state["x_mirrored"] = (list(state.get("x_mirrored") or []) + [r["uri"]])[-500:]
+        made += 1
+    if made:
+        save_json(STATE_PATH, state)
+    print(f"X-jono: {made} issueta, odottavia {len(rows_)}")
     return 0
 
 
@@ -667,6 +776,7 @@ def main(argv=None) -> int:
     st = sub.add_parser("should-think")
     st.add_argument("--force", action="store_true")
     sub.add_parser("perf")
+    sub.add_parser("x-mirror", help="julkaistuista postauksista X-versio issueksi Villelle")
     a = ap.parse_args(argv)
     if a.cmd == "context":
         return cmd_context(Path(a.out))
@@ -674,6 +784,8 @@ def main(argv=None) -> int:
         return cmd_publish(Path(a.queue) if a.queue else None, a.dry_run, a.thought)
     if a.cmd == "should-think":
         return cmd_should_think(a.force)
+    if a.cmd == "x-mirror":
+        return cmd_x_mirror()
     return cmd_perf()
 
 

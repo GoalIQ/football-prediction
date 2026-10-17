@@ -359,3 +359,84 @@ def test_bio_lause_omana_lauseenaan():
     assert bsky.bio_with_suffix(rikki, s) == "Beat the model: code jgi6j9. Posts and replies are automated."
     ok = "Free at goaliq.app. Posts and replies are automated."
     assert bsky.bio_with_suffix(ok, s) == ok
+
+
+# ---------------------------------------------------------------- X-jono (Villen paatos 17.10)
+
+_LINK = "https://goaliq.app/fpl/expected-points?utm_source=bluesky&utm_medium=partner&utm_campaign=captain&utm_content=2026101710-0#gw-xp"
+
+
+def _row(**kw):
+    r = {"at": (NOW - timedelta(hours=1)).isoformat(), "uri": "at://did:plc:abc/app.bsky.feed.post/3mxzcg",
+         "kind": "post", "topic": "captain", "dry_run": False, "source": "rule", "utm_content": "2026101710-0",
+         "text": "Armband's sorted for GW7. The model has Haaland at 8.0 expected points. goaliq.app/fpl/expected-points",
+         "links": {"goaliq.app/fpl/expected-points": _LINK}}
+    r.update(kw)
+    return r
+
+
+def test_x_versio_vaihtaa_lahteen_ja_sailyttaa_ankkurin():
+    x = bot.x_version(_row())
+    assert "utm_source=x&" in x and "utm_source=bluesky" not in x and x.endswith("#gw-xp")
+    assert x.startswith("Armband's sorted for GW7.")
+    assert bot.x_length(x) == len(x) - len(x.split(" ")[-1]) + 23
+
+
+def test_x_versio_ilman_tallennettua_linkkia_rakennetaan_polusta():
+    x = bot.x_version(_row(links=None))
+    assert "https://goaliq.app/fpl/expected-points?utm_source=x&" in x
+
+
+def test_x_versio_ylipitka_ei_katkaista():
+    assert bot.x_version(_row(text="a" * 270 + " goaliq.app/fpl/expected-points")) is None
+
+
+def test_x_jonoon_vain_tuoreet_oikeat_postaukset():
+    rows = [_row(), _row(kind="reply", uri="at://d/app.bsky.feed.post/r1"), _row(dry_run=True, uri=None),
+            _row(uri="at://d/app.bsky.feed.post/vanha", at=(NOW - timedelta(hours=7)).isoformat()),
+            _row(uri="at://d/app.bsky.feed.post/tehty")]
+    got = bot.pending_x_mirror(rows, {"x_mirrored": ["at://d/app.bsky.feed.post/tehty"]}, NOW)
+    assert [r["uri"] for r in got] == ["at://did:plc:abc/app.bsky.feed.post/3mxzcg"]
+
+
+def test_x_issue_osoitettu_villelle_ja_linkki_blueskyhyn():
+    p = bot.x_issue(_row(), bot.x_version(_row()))
+    assert p["assignees"] == ["Veikkoville"] and p["labels"] == ["x-jono"]
+    assert "https://bsky.app/profile/goaliqapp.bsky.social/post/3mxzcg" in p["body"]
+    assert "utm_source=x" in p["body"]
+
+
+def test_x_mirror_kirjaa_tehdyn_eika_tee_kahdesti(monkeypatch, tmp_path):
+    state = _state()
+    monkeypatch.setattr(bot, "load_state", lambda: state)
+    monkeypatch.setattr(bot, "read_log", lambda: [_row()])
+    monkeypatch.setattr(bot, "save_json", lambda path, obj: None)
+    tehdyt = []
+    bot.cmd_x_mirror(NOW, create=lambda p: tehdyt.append(p) or "url")
+    bot.cmd_x_mirror(NOW, create=lambda p: tehdyt.append(p) or "url")
+    assert len(tehdyt) == 1 and state["x_mirrored"] == [_row()["uri"]]
+
+
+def test_x_mirror_epaonnistunut_ei_merkitse(monkeypatch):
+    state = _state()
+    monkeypatch.setattr(bot, "load_state", lambda: state)
+    monkeypatch.setattr(bot, "read_log", lambda: [_row()])
+    monkeypatch.setattr(bot, "save_json", lambda path, obj: None)
+
+    def kaatuu(p):
+        raise RuntimeError("403")
+    bot.cmd_x_mirror(NOW, create=kaatuu)
+    assert not state.get("x_mirrored")
+
+
+def test_julkaisu_tallentaa_linkin_ja_tyonkulku_ajaa_x_jonon():
+    import inspect
+    assert '"links": links or None' in inspect.getsource(bot.cmd_publish)
+    _t, doc = _wf()
+    job = doc["jobs"]["julkaise"]
+    assert job["permissions"].get("issues") == "write"
+    askel = [s for s in job["steps"] if "bsky_bot x-mirror" in str(s.get("run"))]
+    assert askel and "GITHUB_TOKEN" in str(askel[0].get("env"))
+    nimet = [s.get("name") for s in job["steps"]]
+    assert nimet.index(askel[0]["name"]) > nimet.index("Julkaise (portti jokaiselle)")
+    assert nimet.index(askel[0]["name"]) < nimet.index("Tila mainiin")

@@ -134,6 +134,7 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: write
+      issues: write   # 17.10 X-jono: issue Villelle jokaisesta postauksesta (Ville postaa X:aan itse)
     steps:
       - uses: actions/checkout@v5
         with:
@@ -162,6 +163,13 @@ jobs:
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
         run: python -m scripts.bsky_bot publish --queue /tmp/bsky/queue.json ${{ needs.aivot.outputs.think == 'true' && '--thought' || '' }}
+
+      # Villen paatos 17.10: X-versio issueksi (osoitettu Villelle -> push + sahkoposti), ei X-automaatiota.
+      - name: X-jono (issue Villelle)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m scripts.bsky_bot x-mirror
 
       - name: Mittaa kiinnostus
         continue-on-error: true
