@@ -66,6 +66,13 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   /api/fantasy/captain ja /api/fantasy/edge palauttivat meta.gw 7 (data 09:53) vielä 12:40, koska 10:45-deploy oli
   myöhässä. Freezelle on jo vastaava askel (`scripts/render_deploy_after_freeze.py`); deadlinen ylitykselle ei ole.
   Työnkulun askel lisätään käsin mergen yhteydessä.
+- 2026-10: `/fpl/expected-points`-sivun leimarivi näyttää "Updated <pvm> ·  · ", kun caveat on tyhjä
+  (`scripts/build_fpl_longtail.py` noin rivi 5013): erotin kirjoitetaan ilman tarkistusta, onko sen jälkeen tekstiä.
+- 2026-10: `fpl.html`:n meta-description on 174 merkkiä, vaikka builderin oma kommentti asettaa tavoitteeksi alle 160
+  (hakutulos katkaisee). Testi, joka mittaa pituuden builderin tuloksesta, estää toiston.
+- 2026-10: Mobiilin hintahälytys (`schedulePriceAlerts`) lukee yhä tallennetun watchlistin myös ilmaiselta, vaikka
+  watchlist on 17.10 alkaen Premiumia. Ei lupaa mitään julkisesti, mutta lukko ja hälytys ovat eri mieltä. Mobiili on
+  ihmisen työ (OTA).
 
 ## Avoimet
 
