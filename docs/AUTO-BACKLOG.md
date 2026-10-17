@@ -43,6 +43,10 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   FWD +0.55 (n 19), DEF -0.37 (n 41), MID -0.53 (n 55). Viikkobenchmarkista puuttuu yläpään kalibrointi
   pelipaikoittain ja mallin kapteenin ero eniten kapteenoituun (liukuva koko kausi). Parametrimuutos ei kuulu
   agentille (ylläpitäjän päätös); mittari kuuluu.
+- 2026-10: /fpl#xp-accuracy pyöristää yhdistetyt rivit kahdesti: `src/models/fpl_xp_accuracy.py` `pool_groups`
+  tekee `round(.., 3)` ja `scripts/build_fpl_page.py` `_mae_cell` vielä `:.2f`. Did not play -rivin GoalIQ-arvo
+  0.9653 näkyy "0.96" (yksi pyöristys antaisi 0.97). Korjaus vaihtaa julkisen luvun; julkaistu teksti voi
+  lainata vanhaa.
 
 ## Avoimet
 
