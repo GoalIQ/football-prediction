@@ -61,6 +61,11 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-10: xP-builderin esikausiehto `preseason = not any(finished)` tekee GW1:n aikana debytoineesta pelaajasta
   no_history-rivin, jolloin kortti sanoo "No PL minutes this season or last" noin 3-4 vrk. Seuraava osuma
   elokuu 2027; vaihetesti (ennen GW1:tä, GW1 kesken, GW1 gradattu) estää toiston.
+- 2026-10: Deadlinen jälkeen API jää lukitulle kierrokselle, kunnes seuraava render-daily-deploy vie uuden datan
+  Renderiin. 17.10 mitattuna: GW7-deadline 10:00 UTC, artefakti ja /fpl/model-xi siirtyivät GW8:aan 12:30, mutta
+  /api/fantasy/captain ja /api/fantasy/edge palauttivat meta.gw 7 (data 09:53) vielä 12:40, koska 10:45-deploy oli
+  myöhässä. Freezelle on jo vastaava askel (`scripts/render_deploy_after_freeze.py`); deadlinen ylitykselle ei ole.
+  Työnkulun askel lisätään käsin mergen yhteydessä.
 
 ## Avoimet
 
