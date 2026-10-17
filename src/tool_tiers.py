@@ -181,17 +181,22 @@ def _word(n: int) -> str:
 # --------------------------------------------------------------------------
 _COPY: dict[str, ToolCopy] = {
     "rate-my-team": ToolCopy(
-        phrase="rate my team",
+        # 17.10.2026 (tyokalut taakse, copy-vaihe): fraasi nimeaa ILMAISEN
+        # OSAN eika koko tyokalua. "Rate my team is free as well" luki
+        # 17.10 jalkeen lupauksena koko analyysista (heikoin linja, kapteeni
+        # omalle joukkueelle, siirrot, chipit), joka on Premiumia. Arvosana on
+        # se mita palvelin antaa ilmaiselle (RATE_TEAM_PREVIEW_RATING_FIELDS)
+        # ja SPA nayttaa lukitulle ($lib/personalLock ratingPreview), joten
+        # "the squad rating" on tarkistettavissa ilmaispinnalta.
+        phrase="the squad rating in rate my team",
         cap=NoCap(
             "Ei kattoa lauseessa. Tyokalu on rekisterissa ilmainen, mutta "
             "/api/fantasy/rate-team maskaa ilmaiselta kaiken paitsi "
             "arvosanan (17.10.2026: mask_rate_team_preview_payload, kytkin "
-            "21.10; tests/test_premium_enforcement.py PARTIAL). Lause lupaa "
-            "luokan, ei kenttia: reitti aukeaa ilmaiseksi ja arvosana on "
-            "ilmainen. 🔴 AVOIN COPY-VAIHEELLE: 'rate my team is free' lukee "
-            "17.10 jalkeen laajempana kuin arvosana. Kattolauseen (esim. "
-            "'the rating free, the full analysis on Premium') lisaaminen on "
-            "UUSI julkinen myyntilupaus ja kuuluu julkaisutarkistajalle, ei tanne."
+            "21.10; tests/test_premium_enforcement.py PARTIAL). Kattoa ei "
+            "tarvita, koska fraasi itse rajaa vaitteen arvosanaan: lause "
+            "sanoo ilmaiseksi vain sen minka palvelin antaa ilmaiseksi, eika "
+            "lupaa analyysia lainkaan."
         ),
     ),
     "watchlist": ToolCopy(

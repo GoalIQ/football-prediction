@@ -124,7 +124,11 @@ export const TOOLS: Tool[] = [
 		title: 'Rate my team',
 		// 5.9 portti: "the one move that improves it most" oli kayvan joukon
 		// maksimi; backend itse kirjoittaa "the best move the model checked".
-		question: 'Is my squad good, and which line is costing me?',
+		// 17.10 (copy-vaihe): kysymys on myos /team-reitin metakuvaus ja kortti
+		// ilman lukkomerkkia, joten se kuvaa ilmaisen osan (arvosana, sama
+		// vertailukohta kuin $lib/personalLock ratingPreview). "Which line is
+		// costing me" (heikoin linja) on Premiumia.
+		question: 'How does my squad rate against the strongest one the model found?',
 		// 17.10 (tyokalut taakse): reitti aukeaa kaikille, koska arvosana on
 		// ilmainen esimaku (palvelimella PARTIAL: mask_rate_team_preview_payload).
 		// Analyysi (linjat, kapteeni, siirrot, chipit, pitch) lukitaan
@@ -308,7 +312,9 @@ export const TOOLS: Tool[] = [
 		slug: 'price-watch',
 		group: 'players',
 		title: 'Price watch',
-		question: 'Which of my players are about to rise or fall?',
+		// 17.10 (copy-vaihe): julkinen lista on ilmainen, omien pelaajien
+		// merkinta Premiumia, joten kysymys ei puhu "my players".
+		question: 'Which players are about to rise or fall in price?',
 		// 17.10: julkinen lista jaa ilmaiseksi; oman joukkueen merkinnat ovat
 		// Premiumia (palvelimella PARTIAL, mask_price_watch_entry_payload) ja
 		// lukitaan komponentissa ($lib/personalLock).

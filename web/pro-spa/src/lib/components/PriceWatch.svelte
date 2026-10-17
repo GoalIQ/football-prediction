@@ -206,7 +206,9 @@
 	{data?.meta.official_projection
 		? "FPL's own price projection, closest change first."
 		: 'Estimated price change candidates based on FPL net-transfer velocity.'}
-	Free tool.
+	<!-- 17.10 (copy-vaihe): "Free tool." lupasi koko tyokalun; oman joukkueen
+	     merkinnat ovat Premiumia (PersonalLock alla), julkinen lista ilmainen. -->
+	The list is free.
 </p>
 
 {#if error}

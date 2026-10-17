@@ -771,15 +771,21 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
         ),
         (
             "Is GoalIQ good for FPL?",
+            # 17.10.2026 (tyokalut taakse): jako on goaliq-app
+            # cos-reports/2026-10-17-tyokalut-maksumuuriin-spec.md:n
+            # jakotaulukossa. Tier-vaitteet on kirjattu poikkeuslistalle
+            # (tests/test_tool_tier_reader_discipline.py).
             (
                 "Yes. GoalIQ is built FPL-first: clean sheet probability, fixture "
-                "difficulty, rate my team with a captain pick, a fit checker "
-                "that searches for the strongest 15 around your must-have players, "
-                "a draft rater (no team ID needed), price watch and "
+                "difficulty, a rating for your squad from rate my team, price watch and "
                 "the full xG/xA/xGI leaderboard for every player "
                 "with data, a filterable player stats table with shots, "
                 "shots in the box and key passes, "
-                "are free, and GoalIQ Premium adds an interactive team manager "
+                "are free, and GoalIQ Premium adds the tools for your own team "
+                "(the full rate my team analysis with the captain pick for your "
+                "squad, a fit checker that searches for the strongest 15 around "
+                "your must-have players, mini-league head-to-head win "
+                "probability and your gameweek review), an interactive team manager "
                 "with a gameweek planner, per-gameweek expected points (xP) for every player in the projection, the "
                 "captain ranker, chip timing for the best Wildcard, Bench Boost, "
                 "Triple Captain and Free Hit windows, transfer plans that chain "
@@ -794,25 +800,27 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             "What FPL tools does GoalIQ have?",
             (
                 "Free: clean sheet probabilities, fixture difficulty ratings "
-                "(FDR), rate my team with a captain pick, a draft "
-                "rater (pick 15, no team ID needed), the fit checker (lock "
-                "must-have players, the model searches for the strongest 15 "
-                "around them), price watch, a per-gameweek points table where each player's actual FPL points sit next to the expected points the model published before that deadline, "
-                "a season-long Beat the model scoreboard "
-                "(log your calls before the deadline and they get graded "
-                "against the model's every gameweek), the season race "
-                "against the model's own squad, which is locked before every "
-                "deadline and scored with official FPL points, and Catch your rival "
-                "(how likely you are to close the gap to anyone in your "
-                "mini-league with the gameweeks left), a watchlist for the "
-                "players you are deciding on, the "
+                "(FDR), a rating for your squad from rate my team, your "
+                "mini-league table, price watch, a per-gameweek points table where each player's actual FPL points sit next to the expected points the model published before that deadline, "
+                "the "
                 "full xG/xA/xGI leaderboard for every player with data, expected points for the next gameweek alone, the top 20 players with each one's opponent and start chance (web), a "
                 "filterable player stats table with shots, shots in the box "
                 "and key passes, the "
                 "top three of the value and DefCon lists, and "
                 "shareable image cards of the clean sheet outlook and price "
                 "watch tables on the web. GoalIQ "
-                "Premium: an interactive team manager (formations, bench swaps, "
+                "Premium: the tools for your own team, which are the full rate "
+                "my team and draft rater analysis (the weak spot in your XI, "
+                "the captain pick for your squad, the hold or transfer call and "
+                "your chips), the fit checker (lock must-have players, the "
+                "model searches for the strongest 15 around them), a second "
+                "squad rated next to yours, your gameweek review, a "
+                "season-long Beat the model scoreboard (log your calls before "
+                "the deadline and they get graded against the model's every "
+                "gameweek) with a decision journal, the season race breakdown "
+                "against the model's own squad, head-to-head win probability "
+                "in your mini-league, the watchlist, your own players marked "
+                "in price watch and differentials filtered by your squad; an interactive team manager (formations, bench swaps, "
                 "captaincy, a GW1 to GW6 gameweek planner with each player's "
                 "opponent per week), per-gameweek expected points (xP) for every player in the projection, the captain "
                 "ranker, transfer suggestions with one-tap apply to your "
@@ -1820,10 +1828,14 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
         "applicationCategory": "SportsApplication",
         "description": (
             "Free FPL assistant and football prediction app. Free FPL tools: "
-            "clean sheet probability, fixture difficulty (web), rate my team with a "
-            "captain pick, price watch, expected points for the next gameweek "
+            "clean sheet probability, fixture difficulty (web), a rating for "
+            "your squad from rate my team, your mini-league table, "
+            "price watch, expected points for the next gameweek "
             "(the top 20, web), and shareable image cards of the free "
-            "tables on the web. GoalIQ Premium adds an interactive "
+            "tables on the web. GoalIQ Premium adds the tools for your own "
+            "team (the full rate my team analysis with the captain pick for "
+            "your squad, mini-league head-to-head win probability, the fit "
+            "checker, your gameweek review and the watchlist), an interactive "
             "team manager with a GW1 to GW6 gameweek planner, per-gameweek "
             "expected points (xP) for every player in the projection, the captain "
             "ranker, chip timing for Wildcard, Bench "
@@ -2483,12 +2495,16 @@ def render_page(c: dict, xp: dict | None = None) -> str:
         for p in (10, 22, 34, 46, 58)
     )
 
-    title = "Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ"
+    # 17.10.2026 (tyokalut taakse): otsikko nimeaa arvosanan eika koko
+    # tyokalua, koska vain arvosana on jaon mukaan maksuton (spec
+    # jakotaulukko rivi 1). SEO-riski (spec "Mittari") on Villen
+    # paatettavissa; og- ja twitter-otsikko lukevat saman muuttujan.
+    title = "Free FPL Tools: Team Rating, Captain Pick, Clean Sheets | GoalIQ"
     # 5.9 SEO: 358 merkkia katkesi hakutuloksessa; nyt alle 160.
     meta_desc = (
         "Free FPL tools, no sign-in: clean sheet probability, fixture "
-        "difficulty, player stats, xG leaders, rate my team and price watch. "
-        "Premium adds per-gameweek xP and a planner."
+        "difficulty, player stats, xG leaders, price watch and a squad rating. "
+        "Premium adds the analysis of your own team."
     )
 
     faq_html = "".join(
@@ -2556,7 +2572,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/goaliq-apple-touch-180.png">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ">
+<meta property="og:title" content="{title}">
 <meta property="og:description" content="{meta_desc}">
 <meta property="og:url" content="{CANONICAL}">
 <!-- Page-specific share card; see the comment in index.html. -->
@@ -2565,7 +2581,7 @@ def render_page(c: dict, xp: dict | None = None) -> str:
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@goaliqapp">
-<meta name="twitter:title" content="Free FPL Tools: Rate My Team, Captain Pick, Clean Sheets | GoalIQ">
+<meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{meta_desc}">
 <meta name="twitter:image" content="{BASE}/assets/brand/og/fpl-1200x630.png">
 
@@ -2649,9 +2665,9 @@ Model-derived, not the official FPL difficulty.</p>
 (low CS% = hard fixture, high CS% = easy). H home, A away.</p>
 <p class="inline-up">The grid says which fixtures turn.
 <a href="https://pro.goaliq.app/team?src=fpl-fdr&amp;srcp=fpl" data-cta="inline-fdr">Rate my
-team</a> is free and needs no account: it names the line that is costing you and gives you a
-captain. Premium is what comes after that, the transfer chains over the run with the hit
-priced in.</p>
+team</a> rates your squad for free, no account needed. Premium names the line that is
+costing you, gives you a captain for your squad and adds the transfer chains over the run
+with the hit priced in.</p>
 <!-- The proof follows the promise. This section used to sit directly under the
      hero, which left the page's own promise, the clean sheet table, 8,676px
      down on a phone: eleven screens away. Nothing is hidden. The block is fully
@@ -2670,12 +2686,13 @@ log, match by match with every miss included, is on the
 {eo_by_tier}
 <aside class="upsell">
 <h2 id="pro">Unlock the full FPL toolkit with Premium</h2>
-<p>Premium adds per-gameweek expected points (xP) for every player in the
-projection, a captain ranker, transfer suggestions you can apply to your
-planned squad, a six-gameweek planner and the full DefCon leaderboard, from
-the same match model as this page. {PC.MONTHLY} EUR a month or {PC.SEASON} EUR a year, one
-subscription on web, iOS and Android. Rate my team, a captain pick and price
-watch stay free.</p>
+<p>Premium adds the full analysis of your own team, per-gameweek expected
+points (xP) for every player in the projection, a captain ranker, transfer
+suggestions you can apply to your planned squad, a six-gameweek planner and
+the full DefCon leaderboard, from the same match model as this page.
+{PC.MONTHLY} EUR a month or {PC.SEASON} EUR a year, one subscription on web,
+iOS and Android. The rating for your squad, the model's captain pick and the
+price watch list stay free.</p>
 {free_window_block()}
 </aside>
 

@@ -166,17 +166,49 @@ ALLOWED: dict[str, list[Poikkeus]] = {
         ),
     ],
     "scripts/build_fpl_page.py": [
+        # 17.10.2026 (tyokalut taakse, copy-vaihe): poistettu poikkeus
+        # "captain ranker, chip timing for the best Wildcard" (free sanoi
+        # fit-checker, joka on nyt premium). Saman FAQ-vastauksen tier-vaite
+        # on nyt alla olevassa "are free, and GoalIQ Premium adds the tools
+        # for your own team" -poikkeuksessa.
         Poikkeus(
-            ote="captain ranker, chip timing for the best Wildcard",
+            ote="are free, and GoalIQ Premium adds the tools for your own team",
             reason=(
-                "fpl.html:n FAQ-vastaus listaa ilmaisen ja maksullisen puolen "
-                "samassa kappaleessa. Se on pitka myyntiteksti eika "
-                "tier-listaus, ja sen kaantaminen lukijan lauseiksi on eri tyo "
-                "(koko FAQ, ei yksi lause). Molemmat puolet tarkistetaan alla "
-                "rekisterista."
+                "fpl.html:n FAQ 'Is GoalIQ good for FPL?' listaa ilmaisen ja "
+                "maksullisen puolen samassa kappaleessa (pitka myyntiteksti, "
+                "ei tier-listaus). 17.10 jako: rate my teamista ilmaiseksi "
+                "vain arvosana ('a rating for your squad from rate my team'), "
+                "koko analyysi ja fit checker Premiumissa. rate-my-team on "
+                "rekisterissa free koska reitti aukeaa arvosanalle (PARTIAL), "
+                "joten se kirjataan free-puolelle; analyysin lukitus on "
+                "palvelimen maskissa ja $lib/personalLockissa."
             ),
-            premium=("captain-ranker", "chip-timing", "edge-mode"),
-            free=("rate-my-team", "fit-checker", "price-watch"),
+            premium=("fit-checker", "captain-ranker", "chip-timing", "edge-mode"),
+            free=("rate-my-team", "price-watch"),
+        ),
+        Poikkeus(
+            ote="watch tables on the web. GoalIQ Premium: the tools for your own team",
+            reason=(
+                "fpl.html:n FAQ 'What FPL tools does GoalIQ have?': ilmaispuolen "
+                "loppu ja Premium-puolen alku samassa yksikossa. 17.10 jako: "
+                "ilmaiseksi arvosana, mini-liigan taulukko ja price watchin "
+                "julkinen lista; Premiumissa koko rate my team- ja "
+                "draft-analyysi, fit checker, watchlist, h2h ja oman joukkueen "
+                "merkinnat. Vaitteet tarkistetaan rekisterista."
+            ),
+            premium=("fit-checker", "watchlist"),
+            free=("rate-my-team", "price-watch", "clean-sheets"),
+        ),
+        Poikkeus(
+            ote="tables on the web. GoalIQ Premium adds the tools for your own team",
+            reason=(
+                "fpl.html:n SoftwareApplication-JSON-LD:n kuvaus (hakukoneille, "
+                "ei sivun proosaa). Sama 17.10 jako kuin FAQ:ssa: arvosana "
+                "ilmaiseksi, koko analyysi, h2h, fit checker, GW review ja "
+                "watchlist Premiumissa. Vaitteet tarkistetaan rekisterista."
+            ),
+            premium=("fit-checker", "watchlist"),
+            free=("rate-my-team", "price-watch"),
         ),
         Poikkeus(
             ote="clean sheet outlook and price watch tables on the web",
@@ -230,19 +262,11 @@ ALLOWED: dict[str, list[Poikkeus]] = {
             ),
             premium=("player-xp", "captain-ranker"),
         ),
-        Poikkeus(
-            ote="is free and needs no account: it names the line",
-            reason=(
-                "fdr-ruudukon inline-upsell. Lause on sanasta sanaan sama kuin "
-                "lukijan free_sentence(['rate-my-team']), mutta se elaa "
-                "keskella HTML-ankkuria jonka teksti katkeaa rivinvaihtoon, "
-                "joten lukijan kutsu vaatisi linkin pilkkomisen. Molemmat "
-                "vaitteet tarkistetaan rekisterista, joten tier-muutos kaataa "
-                "taman."
-            ),
-            free=("rate-my-team",),
-            premium=("transfer-chains",),
-        ),
+        # 17.10.2026: poistettu poikkeus "is free and needs no account: it
+        # names the line" (fdr-ruudukon inline-upsell). Lause lupasi
+        # ilmaiseksi heikoimman linjan ja kapteenin, jotka ovat nyt
+        # Premiumia; uusi lause ("rates your squad for free ... Premium names
+        # the line") ei ole skannerin tier-muotoa.
     ],
     "scripts/push_dispatch.py": [
         Poikkeus(
@@ -290,6 +314,30 @@ ALLOWED: dict[str, list[Poikkeus]] = {
                 "free-draft-poolin perustelu: valitsin tarvitsee koko "
                 "pelaajajoukon vaikka teaser on maskattu. Koskee payloadin "
                 "kokoa, ei tyokalun tieria."
+            ),
+        ),
+        # --- 17.10.2026 copy-vaihe: OpenAPI-kuvaukset (api.goaliq.app/
+        # openapi.json on julkinen pinta) kertovat henkilokohtaisen osan
+        # olevan Premiumia. Reitin polku nimeaa tyokalun, siksi skanneri osuu.
+        Poikkeus(
+            ote="The lists are free; with entry, marking which of your 15 are on them is part of GoalIQ Premium",
+            reason=(
+                "/api/fantasy/price-watch-reitin OpenAPI-kuvaus. Hintalistat "
+                "ovat ilmaisia (rekisteri free, tarkistetaan); vain entryn "
+                "omistusmerkinnat lukitaan (mask_price_watch_entry_payload), "
+                "ja niilla ei ole omaa slugia."
+            ),
+            free=("price-watch",),
+        ),
+        Poikkeus(
+            ote="Same source as the fit checker, so the numbers cannot drift apart. Comparing two squads is part of GoalIQ Premium",
+            reason=(
+                "/api/fantasy/model-squad-reitin OpenAPI-kuvaus. Premium-vaite "
+                "koskee Team 2 -VERTAILUA (mask_model_squad_payload), ei fit "
+                "checkeria: fit checker on mainittu vain datalahteena. Sama "
+                "rajaus kuin api/premium.py:n 'GoalIQ Premium unlocks the model "
+                "squad comparison' -poikkeuksessa, joten tyokalun tier-vaitetta "
+                "ei kirjata."
             ),
         ),
         Poikkeus(

@@ -3063,7 +3063,7 @@ def clear_cache(request: Request):
 
 
 @app.get("/api/fantasy/gw-review",
-         description="Post-gameweek review: what the model said, what happened, and what needs attention before the next deadline.")
+         description="Post-gameweek review for your own squad: what the model said, what happened, and what needs attention before the next deadline. Part of GoalIQ Premium.")
 def fantasy_gw_review(
     request: Request,
     response: Response,
@@ -3187,7 +3187,7 @@ def fantasy_gw_review(
 
 
 @app.get("/api/fantasy/my-team-ledger",
-         description="Your own team: what the model projected before each deadline against what you actually scored, cumulative.")
+         description="Your own team: what the model projected before each deadline against what you actually scored, cumulative. Part of GoalIQ Premium.")
 def fantasy_my_team_ledger(
     request: Request,
     response: Response,
@@ -5721,7 +5721,7 @@ def fantasy_xp(
 
 
 @app.get("/api/fantasy/price-watch",
-         description="Price change forecast for FPL players, rising and falling. With entry, marks which of your 15 are on the lists.")
+         description="Price change forecast for FPL players, rising and falling. The lists are free; with entry, marking which of your 15 are on them is part of GoalIQ Premium.")
 def fantasy_price_watch(
     request: Request,
     response: Response,
@@ -5788,7 +5788,7 @@ def fantasy_price_watch(
 
 
 @app.get("/api/fantasy/rate-team",
-         description="Rate an FPL squad from its public entry ID and suggest transfers.")
+         description="Rate an FPL squad from its public entry ID. The rating is free; the rest of the analysis, including the captain pick and transfer suggestions, is part of GoalIQ Premium.")
 def fantasy_rate_team(
     request: Request,
     response: Response,
@@ -5875,7 +5875,7 @@ def _parse_id_csv(raw: str, label: str) -> list[int]:
 
 
 @app.get("/api/fantasy/fit",
-         description="Lock one to three players and get the best squad that still fits the budget and the FPL squad rules, plus the gap to the model own pick.")
+         description="Lock one to three players and get the best squad that still fits the budget and the FPL squad rules, plus the gap to the model own pick. Part of GoalIQ Premium.")
 def fantasy_fit(
     request: Request,
     response: Response,
@@ -5902,7 +5902,7 @@ def fantasy_fit(
 
 
 @app.get("/api/fantasy/model-squad",
-         description="The squad the model would pick, used to prefill the comparison slot. Same source as the fit checker, so the numbers cannot drift apart.")
+         description="The squad the model would pick, used to prefill the comparison slot. Same source as the fit checker, so the numbers cannot drift apart. Comparing two squads is part of GoalIQ Premium.")
 def fantasy_model_squad(request: Request, response: Response):
     """1.8: Joukkue 2 -vertailuslotin "mallin runko" -esitäyttö (mobiili+web).
     Palauttaa SAMAN vapaan optimirungon jota rate-teamin benchmark, fit checker
@@ -6211,7 +6211,8 @@ def fantasy_captain(
     return payload
 
 
-@app.get("/api/fantasy/differentials")
+@app.get("/api/fantasy/differentials",
+         description="Low-owned players the model still rates. The list is free; with entry, leaving out the players you own and listing the template players you are missing is part of GoalIQ Premium.")
 def fantasy_differentials(
     request: Request,
     response: Response,
@@ -6459,7 +6460,8 @@ def fantasy_defcon_gw(request: Request, response: Response):
     return payload
 
 
-@app.get("/api/fantasy/defcon-live")
+@app.get("/api/fantasy/defcon-live",
+         description="Your own squad's defensive contributions against the DefCon threshold while a gameweek is being played. Part of GoalIQ Premium.")
 def fantasy_defcon_live(
     request: Request,
     response: Response,

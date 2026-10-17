@@ -1266,7 +1266,7 @@ def _entry_xi_xp(entry: int, gw_picks: int, gw_xp_target: int, pool_by_id):
 
 
 @router.get("/api/fantasy/h2h",
-            description="Win probability between two entries for one gameweek. It assumes the two squads are independent, and the response says so.")
+            description="Win probability between two entries for one gameweek. It assumes the two squads are independent, and the response says so. Part of GoalIQ Premium; the league standings stay free.")
 def fantasy_h2h(
     request: Request,
     response: Response,
