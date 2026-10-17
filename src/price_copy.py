@@ -16,21 +16,17 @@ pakottaa samaan muottiin - mutta LUKU on yksi.
 `tests/test_price_copy_discipline.py` kaataa buildin jos luku ilmestyy
 takaisin kasin kirjoitettuna.
 
-ALUEHINTA. 20.9 alkaen yhdeksan mitattua markkinaa saa halvemman hinnan
-(`src/regional_pricing.py`). Staattinen sivu ei voi nayttaa kavijakohtaista
-lukua, joten se kertoo LISTAhinnan ja `LOCAL_NOTE` sanoo etta se voi olla
-alempi. Vaittamatta mitaan tiettya lukua: 25 EUR on tosi valtaosalle, ja
-se jolle se ei ole, nakee oikean luvun maksumuurilla (`/api/web/pricing`).
+ALUEHINTA POISTUI 17.10.2026. 20.9 alkaen yhdeksan markkinaa sai verkossa
+halvemman hinnan, ja sivut sanoivat "Prices are lower in some countries."
+17.10 alkaen verkko-osto on auki vain `src/regional_pricing.py`:n
+WEB_CHECKOUT_COUNTRIES-maissa, eika yhdellakaan niista ole aluehintaa, joten
+lause olisi epatosi. Se on `data/rejected_phrases.json`:ssa, jotta se ei palaa.
 """
 from __future__ import annotations
 
 #: Listahinta. EI kirjoiteta kasin muualle.
 MONTHLY = "3.99"
 SEASON = "25"
-
-#: Aluehinnan varaus. Tarkistettavissa niille joita se koskee: he nakevat
-#: oikean luvun maksumuurilla ja Checkoutissa.
-LOCAL_NOTE = "Prices are lower in some countries."
 
 
 def monthly(symbol: str = "€", *, before: bool = True) -> str:

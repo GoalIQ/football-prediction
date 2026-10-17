@@ -4293,17 +4293,17 @@ def _auto_promo_discount() -> list[dict] | None:
 
 #: Sama lause kuin SPA:n ilmoituksessa. Vanha, selaimen valimuistissa oleva
 #: SPA-versio nayttaa taman `detail`-kentan virhebannerissa, joten backendin
-#: voi deployata ennen SPA:ta ilman etta UK-kavija saa pelkan "403":n.
+#: voi deployata ennen SPA:ta ilman etta rajatun maan kavija saa pelkan "403":n.
 REGION_STORE_ONLY_MESSAGE = (
-    "In the UK and the Isle of Man, GoalIQ Premium is available through the App Store and Google Play."
+    "GoalIQ Premium isn't sold on the web in your country, only in the app (App Store and Google Play)."
 )
 
 
 def _checkout_region_block(request: Request, endpoint: str) -> JSONResponse | None:
     """403 `region_app_store_only` jos kavijan maassa ei myyda verkossa, muuten None.
 
-    UK (ml. Mansaari): verkko-osto suljettu, Premium myydaan sovelluskauppojen
-    kautta (paatos 23.9.2026). Maa luetaan VAIN Cloudflaren `CF-IPCountry`-otsakkeesta
+    Verkko-osto vain `WEB_CHECKOUT_COUNTRIES`-maista, muualta sovelluskauppaan
+    (paatos 17.10.2026; UK jo 23.9.2026). Maa luetaan VAIN Cloudflaren `CF-IPCountry`-otsakkeesta
     (`request_country`), ei pyynnon rungosta eika admin-esikatselusta.
     Puuttuva maa ei esta (ks. `src/regional_pricing.py`).
 

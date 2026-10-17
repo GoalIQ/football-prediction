@@ -1,7 +1,8 @@
-/** Maat joissa Premiumia ei myyda verkossa (paatos 23.9.2026).
+/** Maat joissa Premiumia ei myyda verkossa (paatos 17.10.2026; UK jo 23.9.2026).
  *
- * UK (ml. Mansaari): verkko-osto suljettu, Premium myydaan sovelluskauppojen
- * (App Store, Google Play) kautta. Kavija ohjataan sinne.
+ * Verkko-osto on auki vain backendin sallittujen maiden listalla (EU, ETA, CH,
+ * US, CA, AU, NZ, JP). Muualla Premium myydaan sovelluskauppojen (App Store,
+ * Google Play) kautta. Kavija ohjataan sinne.
  *
  * MAATA EI PAATELLA SELAIMESTA. Palvelin lukee sen Cloudflaren
  * `CF-IPCountry`-otsakkeesta ja kertoo tuloksen kahdella tavalla:
@@ -20,7 +21,7 @@ export const REGION_STORE_ONLY = 'region_app_store_only';
 /** Ilmoituksen teksti. Sama lause kuin backendin `detail`issa, jonka vanha
  *  valimuistissa oleva SPA-versio nayttaa virhebannerissa. */
 export const STORE_ONLY_COPY =
-	'In the UK and the Isle of Man, GoalIQ Premium is available through the App Store and Google Play.';
+	"GoalIQ Premium isn't sold on the web in your country, only in the app (App Store and Google Play).";
 
 /** Toinen rivi: sama tili toimii webissa (sama vaite kuin Paywallin
  *  "Already subscribed in the GoalIQ app?" -rivi). */

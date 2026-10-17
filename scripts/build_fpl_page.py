@@ -378,8 +378,7 @@ def free_window_block(now=None) -> str:
     from src.free_window import day_label, note_text, self_closing_block
     hinta_loppu = (
         f"€{PC.MONTHLY} a month. One subscription covers web, iOS and "
-        f"Android. Cancel anytime. 30-day money back on web purchases. "
-        f"{PC.LOCAL_NOTE}</p>")
+        f"Android. Cancel anytime. 30-day money back on web purchases.</p>")
     auki = (
         f'<p class="price-note"><b>{note_text()}</b></p>\n'
         f'<div class="cta-row">\n'
@@ -870,8 +869,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
                 "(xP) per player for the coming gameweeks, a captain ranker and per-gameweek "
                 "breakdowns, from the same match model as this page. "
                 f"{PC.MONTHLY} EUR per month or {PC.SEASON} EUR per year, and "
-                "one account unlocks premium on the web, iOS and Android. "
-                f"{PC.LOCAL_NOTE}"
+                "one account unlocks premium on the web, iOS and Android."
             ),
         ),
     ]
@@ -2676,7 +2674,7 @@ log, match by match with every miss included, is on the
 projection, a captain ranker, transfer suggestions you can apply to your
 planned squad, a six-gameweek planner and the full DefCon leaderboard, from
 the same match model as this page. {PC.MONTHLY} EUR a month or {PC.SEASON} EUR a year, one
-subscription on web, iOS and Android. {PC.LOCAL_NOTE} Rate my team, a captain pick and price
+subscription on web, iOS and Android. Rate my team, a captain pick and price
 watch stay free.</p>
 {free_window_block()}
 </aside>

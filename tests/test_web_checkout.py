@@ -129,13 +129,15 @@ def test_aluehinta_tulee_cf_otsakkeesta_ja_nakyy_metadatassa(client, monkeypatch
     kayttaako ENDPOINT sita. Ilman tata aluehinta voisi toimia taydellisesti
     ja silti jaada kytkematta - ja se nakyisi vain myynnissa, kuukausien
     paasta (muisti: testi-kutsuu-funktiota-ei-kutsupaikkaa).
+    17.10: maa on verkkokassan sallittujen listalla (PT); NG ohjataan nyt
+    sovelluskauppaan (tests/test_uk_store_only.py).
     """
     import api.main as m
     _configure(monkeypatch)
     _clear_rate_bucket(monkeypatch)
     monkeypatch.setenv(
         "STRIPE_REGIONAL_PRICES",
-        '{"monthly": {"NG": "price_ng_monthly"}}')
+        '{"monthly": {"PT": "price_pt_monthly"}}')
     created: dict = {}
     monkeypatch.setattr(
         stripe.checkout.Session, "create",
@@ -144,10 +146,10 @@ def test_aluehinta_tulee_cf_otsakkeesta_ja_nakyy_metadatassa(client, monkeypatch
 
     r = client.post("/api/web/checkout/guest",
                     json={"plan": "monthly", "origin": "https://pro.goaliq.app"},
-                    headers={"CF-IPCountry": "NG"})
+                    headers={"CF-IPCountry": "PT"})
     assert r.status_code == 200
-    assert created["line_items"] == [{"price": "price_ng_monthly", "quantity": 1}]
-    assert created["metadata"]["price_tier"] == "NG"
+    assert created["line_items"] == [{"price": "price_pt_monthly", "quantity": 1}]
+    assert created["metadata"]["price_tier"] == "PT"
 
     # Sama pyynto ilman otsaketta saa listahinnan: tuntematon maa ei putoa
     # aluehintaan.

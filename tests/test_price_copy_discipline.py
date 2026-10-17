@@ -75,7 +75,7 @@ def test_hintaa_ei_kirjoiteta_kasin_julkiseen_tekstiin():
             loydot[rel] = osumat[:3]
     assert not loydot, (
         "listahinta kovakoodattuna julkiseen tekstiin: "
-        f"{loydot}. Kayta src/price_copy.py:ta (MONTHLY / SEASON / LOCAL_NOTE). "
+        f"{loydot}. Kayta src/price_copy.py:ta (MONTHLY / SEASON). "
         "Jos luku on tosi juuri tassa eika se ole julkista copya, lisaa "
         "tiedosto POIKKEUKSET-listalle PERUSTELUN kanssa.")
 
@@ -143,18 +143,14 @@ def test_julkaistu_pinta_kayttaa_samaa_lukua(pinta):
         "Kaksi pintaa samasta luvusta on kaksi tilaisuutta olla eri mielta.")
 
 
-def test_aluehinnan_varaus_on_jokaisella_hintapinnalla():
-    """Aluehinta on paalla 20.9 alkaen. Pinta joka mainitsee hinnan mutta ei
-    varausta vaittaa yhta hintaa kaikille."""
-    puuttuu = []
-    for pinta in PINNAT:
-        p = ROOT / pinta
-        if not p.exists():
-            continue
-        teksti = p.read_text(encoding="utf-8", errors="replace")
-        if not COPY_PRICE_RE.search(teksti):
-            continue
-        if PC.LOCAL_NOTE not in teksti:
-            puuttuu.append(pinta)
-    assert not puuttuu, (
-        f"hinta mainitaan mutta aluehinnan varaus puuttuu: {puuttuu}")
+def test_aluehinnan_varaus_ei_palaa_hintapinnoille():
+    """17.10.2026: aluehintamaat ohjataan sovelluskauppaan (src/regional_pricing.py),
+    joten verkkohinta on sama kaikille joille verkkokassa on auki. Vanha varaus
+    "Prices are lower in some countries." olisi epatosi. Sama lause on
+    data/rejected_phrases.json:ssa (skriptit, SPA, juuren sivut)."""
+    lause = "Prices are lower in some countries"
+    loytyy = [pinta for pinta in PINNAT
+              if (ROOT / pinta).exists()
+              and lause in (ROOT / pinta).read_text(encoding="utf-8", errors="replace")]
+    assert not loytyy, f"poistunut aluehinnan varaus on yha pinnalla: {loytyy}"
+    assert not hasattr(PC, "LOCAL_NOTE"), "LOCAL_NOTE palasi src/price_copy.py:hyn"

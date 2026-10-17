@@ -897,7 +897,7 @@ posthog.capture('web_landing_viewed',{page:location.pathname});
         <a class="btn btn-ghost" href="/fpl" data-cta="hero-free">Try the free tools</a>
       </div>
       <!-- GEN:FREE-HERO-PRICE-START  check_free_window.py --fix renderoi taman; ala muokkaa kasin -->
-<p class="cta-note">&euro;3.99 a month, or <a href="https://pro.goaliq.app/checkout?plan=season" data-cta="hero">&euro;25 a year</a>. Prices are lower in some countries.</p>
+<p class="cta-note">&euro;3.99 a month, or <a href="https://pro.goaliq.app/checkout?plan=season" data-cta="hero">&euro;25 a year</a>.</p>
 <!-- GEN:FREE-HERO-PRICE-END -->
       <p class="cta-note">Free download on <a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">Google Play</a> and the <a href="https://apps.apple.com/app/id6780047163">App Store</a>. One subscription covers web, iOS and Android.</p>
       <!-- #72: GW deadline countdown. Fallback = GW1 opening Fri 21 Aug 2026; JS
@@ -1412,9 +1412,9 @@ document.addEventListener('click', function (e) {
   // Stripe shows the exact local amount at checkout, so naming the currency
   // without quoting our own figure is enough here. We also avoid claiming
   // anything about how the charge is made, and say only what is certainly true.
-  // 23.9: not GB. In the UK (incl. the Isle of Man) Premium is sold through
-  // the App Store and Google Play only, so there is no web checkout to show a
-  // local price in.
+  // 17.10: web checkout is open only in the countries listed in
+  // src/regional_pricing.py (the UK has been App Store and Google Play only
+  // since 23.9).
   var local = (region === 'US')
     ? 'your local price is shown at checkout' : null;
   if (!local) return;

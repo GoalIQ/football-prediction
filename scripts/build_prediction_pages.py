@@ -339,7 +339,7 @@ FOOTER = (
     '<a href="https://play.google.com/store/apps/details?id=com.veikkoville.goaliq">'
     "Google Play</a> and the "
     '<a href="https://apps.apple.com/app/id6780047163">App Store</a>. '
-    f"Premium is {PC.MONTHLY} €/month or {PC.SEASON} €/year. {PC.LOCAL_NOTE} "
+    f"Premium is {PC.MONTHLY} €/month or {PC.SEASON} €/year. "
     "One subscription on web, iOS "
     "and Android.<br>" + DISCLAIMER + "</footer>\n"
 )

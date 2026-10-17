@@ -63,28 +63,40 @@ def request_country(headers) -> str:
     return maa
 
 
-# --- Maat joissa EI myyda suoraan verkossa (paatos 23.9.2026) ---------------
+# --- Maat joissa myydaan suoraan verkossa (paatos 17.10.2026) ---------------
 #
-# UK (ml. Mansaari): verkko-osto suljettu, Premium myydaan sovelluskauppojen
-# (App Store, Google Play) kautta. Kavija ohjataan sinne.
+# SALLITTUJEN LISTA, EI ESTOLISTA. Verkkokassassa myyja on Savikurki Digital Oy
+# (Stripe ei ole merchant of record). Monessa maassa ulkomaisen digipalvelun
+# myyjan on rekisteroidyttava paikalliseen ALV:iin ensimmaisesta kuluttajamyynnista
+# (UK, Intia, Kenia, Ghana ...), ja lista muuttuu. Sovelluskaupoissa Apple ja
+# Google tilittavat veron itse. Siksi verkko-osto on auki vain maissa, joiden
+# velvoite on tarkistettu (goaliq-app cos-reports/talous/2026-10-17-alv-paatos.md):
+#   - EU: Suomen ALV, koska rajat ylittava EU-kuluttajamyynti on alle 10 000 e/v
+#     (arvonlisaverolaki 69 m §), eli ei OSS-ilmoitusta.
+#   - IS, LI, NO, CH, US, CA, AU, NZ, JP: rekisteroitymisraja ulkomaiselle
+#     myyjalle on moninkertainen yhtion myyntiin nahden.
+# Muu maa (myos UK ja Mansaari, aiempi paatos 23.9.2026) ohjataan sovelluskauppaan.
+# Uusi maa lisataan vasta kun sen velvoite on tarkistettu: unohdus ei voi avata
+# myyntia uuteen maahan.
 #
 # LISTA ON KOODISSA EIKA YMPARISTOSSA tarkoituksella: Renderin ymparisto
-# pyyhkiytyi 20.9 kerran, ja ymparistomuuttujana tama esto olisi silloin
-# kadonnut aanettomasti ja UK-myynti avautunut ilman etta mikaan kertoo.
-# Muutos listaan on diffissa nakyva paatos.
+# pyyhkiytyi 20.9 kerran, ja ymparistomuuttujana rajaus olisi silloin
+# kadonnut aanettomasti. Muutos listaan on diffissa nakyva paatos.
 #
 # FAIL-OPEN PUUTTUVALLE MAALLE (vastakkainen kuin aluehinnassa): tyhja,
-# XX- tai T1-otsake EI esta ostoa. Esto koskee vain listalla olevaa maata,
-# jotta Cloudflaren otsakkeen puuttuminen ei voi pysayttaa koko verkkomyyntia.
+# XX- tai T1-otsake EI esta ostoa, jotta Cloudflaren otsakkeen puuttuminen ei
+# voi pysayttaa koko verkkomyyntia.
 #
 # Olemassa olevat tilaukset eivat kulje taman kautta: uusiminen tapahtuu
 # Stripessa ilman checkoutia, ja asiakasportaali (/api/customer-portal) on
-# eri reitti. Esto koskee vain UUDEN checkout-session luontia.
+# eri reitti. Rajaus koskee vain UUDEN checkout-session luontia.
 
-#: Maat joissa verkko-osto (Stripe Checkout) on suljettu ja osto ohjataan
-#: sovelluskauppaan. Arvot ovat CF-IPCountry-muotoa. GB = Iso-Britannia,
-#: IM = Mansaari. Kanaalisaaret (JE, GG) eivat ole listalla.
-WEB_CHECKOUT_STORE_ONLY = frozenset({"GB", "IM"})
+_EU = frozenset({
+    "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "HR", "HU",
+    "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK",
+})
+#: Maat joissa verkko-osto (Stripe Checkout) on auki. Arvot CF-IPCountry-muotoa.
+WEB_CHECKOUT_COUNTRIES = _EU | frozenset({"IS", "LI", "NO", "CH", "US", "CA", "AU", "NZ", "JP"})
 
 #: Virhekoodi jonka SPA tunnistaa (`web/pro-spa/src/lib/region.ts`).
 REGION_STORE_ONLY_ERROR = "region_app_store_only"
@@ -94,9 +106,11 @@ def web_checkout_allowed(country: str) -> bool:
     """Saako tasta maasta avata Stripe Checkoutin.
 
     `country` on `request_country()`n palauttama arvo (kaksi isoa kirjainta
-    tai ""). Tuntematon tai puuttuva maa -> True (ks. perustelu ylla).
+    tai ""). Puuttuva maa -> True, listan ulkopuolinen maa -> False
+    (ks. perustelu ylla).
     """
-    return (country or "").strip().upper() not in WEB_CHECKOUT_STORE_ONLY
+    maa = (country or "").strip().upper()
+    return not maa or maa in WEB_CHECKOUT_COUNTRIES
 
 
 #: Tierit joita checkout kysyy (`resolve_price(plan, ...)`, plan on

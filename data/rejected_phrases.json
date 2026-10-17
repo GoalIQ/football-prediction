@@ -144,6 +144,12 @@
    "rejected": "2026-10-01",
    "why": "julkaisutarkistaja 30.9 (MOBIILI-DATAPOHJA-LABEL k1, DATAPOHJA-JATKOT 3): ryhma on data_basis == no_history eli EI PL-minuutteja talla tai viime kaudella. 18/66 rivilla on vanhempaa PL-historiaa (Meslier 3 150 min 2020/21), joten 'no Premier League history' on epatosi.",
    "replacement": "'no Premier League minutes this season or last' (esikaudella: 'no Premier League minutes last season'), sama termi kuin $lib/dataBasis / fantasy.xp.basis_no_history_info"
+  },
+  {
+   "phrase": "Prices are lower in some countries",
+   "rejected": "2026-10-17",
+   "why": "julkaisutarkistaja 17.10 (WEB-CHECKOUT-MAALISTA): kaikki yhdeksan aluehintamaata (AO BD BR CI ET GH IN KE NG) ohjataan sovelluskauppaan, joten halvempaa verkkohintaa ei voi ostaa mistaan. Varauksen tarkistusreitti (maksumuuri ja Checkout) piilotetaan juuri niilta mailta.",
+   "replacement": "ei korvaavaa lausetta: listahinta (src/price_copy.py MONTHLY / SEASON) on sama kaikissa WEB_CHECKOUT_COUNTRIES-maissa"
   }
  ],
  "poikkeukset": {},

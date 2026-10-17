@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Portti: UK-kavija ei voi avata Stripe Checkoutia, muut voivat.
+"""Portti: verkko-osto (Stripe Checkout) vain sallittujen maiden listalta.
 
-UK (ml. Mansaari): verkko-osto suljettu, Premium myydaan sovelluskauppojen
-kautta (paatos 23.9.2026).
+Paatos 17.10.2026 (goaliq-app cos-reports/talous/2026-10-17-alv-paatos.md): EU, ETA,
+CH, US, CA, AU, NZ, JP. Muualta (myos UK ja Mansaari, paatos 23.9.2026) osto
+ohjataan sovelluskauppaan.
 
 Vartioitavat invariantit:
-  1. GB ja IM -> 403 `region_app_store_only` kaikilla kolmella
+  1. Listan ulkopuolinen maa (GB, IM, IN, KE) -> 403 `region_app_store_only` kaikilla kolmella
      checkout-reitilla, eika Stripe-sessiota synny.
-  2. FI, US, JE, GG ja PUUTTUVA maa -> checkout toimii kuten ennen (fail-open:
+  2. FI, US, DE, JP ja PUUTTUVA maa -> checkout toimii kuten ennen (fail-open:
      otsakkeen puuttuminen ei saa pysayttaa koko verkkomyyntia).
   3. Maa tulee vain CF-IPCountry-otsakkeesta: ei rungosta eika
      admin-esikatselusta.
@@ -28,7 +29,7 @@ from fastapi.testclient import TestClient
 
 import api.main as m
 from src.regional_pricing import (
-    COUNTRY_HEADER, REGION_STORE_ONLY_ERROR, WEB_CHECKOUT_STORE_ONLY,
+    COUNTRY_HEADER, REGION_STORE_ONLY_ERROR, WEB_CHECKOUT_COUNTRIES,
     request_country, web_checkout_allowed,
 )
 
@@ -89,16 +90,20 @@ REITIT = {"guest": _guest, "authed": _authed, "mobile": _mobile}
 
 # --- 1. lukija ---------------------------------------------------------------
 
-def test_lista_on_tasan_gb_ja_im():
+def test_sallittujen_lista_on_tasan_paatoksen_mukainen():
     """Listan muutos on paatos, ei sivuvaikutus: testi kaatuu ja diff nayttaa sen.
-    Mansaari (IM) on listalla, Kanaalisaaret (JE, GG) eivat."""
-    assert WEB_CHECKOUT_STORE_ONLY == frozenset({"GB", "IM"})
+    Uusi maa lisataan vasta kun sen ALV-velvoite on tarkistettu."""
+    eu = {"AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "HR", "HU",
+          "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"}
+    assert WEB_CHECKOUT_COUNTRIES == frozenset(eu | {"IS", "LI", "NO", "CH", "US", "CA", "AU", "NZ", "JP"})
+    assert not {"GB", "IM", "JE", "GG"} & WEB_CHECKOUT_COUNTRIES
 
 
 @pytest.mark.parametrize("otsake, sallittu", [
     ("GB", False), ("gb", False), (" GB ", False),
-    ("IM", False), ("im", False), ("JE", True), ("GG", True),
-    ("FI", True), ("US", True), ("IE", True), ("NG", True),
+    ("IM", False), ("im", False), ("JE", False), ("GG", False),
+    ("IN", False), ("KE", False), ("NG", False), ("AE", False),
+    ("FI", True), ("US", True), ("IE", True), ("NO", True), ("JP", True),
     ("", True), ("XX", True), ("T1", True), ("GBR", True),
 ])
 def test_lukija_cf_otsakkeesta(otsake, sallittu):
@@ -109,10 +114,10 @@ def test_puuttuva_otsake_sallii():
     assert web_checkout_allowed(request_country({})) is True
 
 
-# --- 2. GB ja IM estetty kaikilla reiteilla, Stripea ei kutsuta -------------
+# --- 2. listan ulkopuolinen maa estetty kaikilla reiteilla, Stripea ei kutsuta
 
 @pytest.mark.parametrize("reitti", list(REITIT))
-@pytest.mark.parametrize("maa", ["GB", "IM"])
+@pytest.mark.parametrize("maa", ["GB", "IM", "IN", "KE"])
 def test_estetty_maa_saa_403_ja_virhekoodin(client, stripe_mock, reitti, maa):
     r = REITIT[reitti](client, headers={"CF-IPCountry": maa})
     assert r.status_code == 403, r.text
@@ -126,8 +131,8 @@ def test_estetty_maa_saa_403_ja_virhekoodin(client, stripe_mock, reitti, maa):
 
 
 @pytest.mark.parametrize("reitti", list(REITIT))
-@pytest.mark.parametrize("maa", ["FI", "US", "JE", "GG", None],
-                         ids=["FI", "US", "JE", "GG", "ei-otsaketta"])
+@pytest.mark.parametrize("maa", ["FI", "US", "DE", "JP", None],
+                         ids=["FI", "US", "DE", "JP", "ei-otsaketta"])
 def test_muut_maat_ja_puuttuva_maa_sallitaan(client, stripe_mock, reitti, maa):
     otsakkeet = {"CF-IPCountry": maa} if maa else {}
     r = REITIT[reitti](client, headers=otsakkeet)
@@ -179,7 +184,8 @@ def _pricing_ilman_stripea(monkeypatch):
 
 
 @pytest.mark.parametrize("maa, odotus", [("GB", False), ("IM", False), ("FI", True),
-                                          ("US", True), ("JE", True), (None, True)])
+                                          ("US", True), ("JE", False), ("IN", False),
+                                          (None, True)])
 def test_pricing_kertoo_web_checkoutin(client, monkeypatch, maa, odotus):
     _pricing_ilman_stripea(monkeypatch)
     r = client.get("/api/web/pricing", headers={"CF-IPCountry": maa} if maa else {})
