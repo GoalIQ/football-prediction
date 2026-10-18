@@ -1,4 +1,35 @@
-# GoalIQ-benchmark 16.10.2026: FPL-työkalut ja otteluennusteet
+# GoalIQ-benchmark 18.10.2026: FPL-työkalut ja otteluennusteet
+
+## Muutokset 18.10.2026
+
+Edellinen kierros 16.10.2026. Kausi 2026/27, GW7 pelattu (deadline la 17.10.), GW8:n deadline pe 23.10. (ei varmistettu uudelleen tällä kierroksella, ks. 4.8). Haettu noin 14 sivua ja hakua, hakukoneen tiivistelmät merkitty "h", varmistamaton "?".
+
+**Mallin omat mittarit (muutos 16.10. jälkeen)**
+- 1X2-osuma: 51,5 % (403/782), edellinen 51,1 % (376/736). Seuraottelut 50,7 % (368/726), edellinen 50,1 %. MM 2026 ennallaan 62,5 % (35/56). Ratkaisseissa 69,5 % (403/580), edellinen 69,2 %. [G7]
+- Brier 0,5881 (n=782), edellinen 0,588 (n=736): käytännössä ennallaan. Viimeiset 100 ottelua 0,582, edellinen 0,555, eli liukuva Brier heikkeni 0,027, vaikka osumaprosentti nousi 59 %:iin. Tasajakauman Brier kolmella lopputuloksella on 0,667. [G7]
+- Heikoimmat sarjat Brierillä: Championship 0,674 (n=129, osuma 40,3 %), joka on tasajakaumaa huonompi, ja Premier League 0,628 (n=65, osuma 44,6 %). Parhaat: Serie A 0,522, Primeira Liga 0,537, Bundesliga 0,565. [G7]
+- Vanhentuneet ennusteet (stale, lead yli 48 h) osuvat 44,2 % (n=138, Brier 0,613), tuoreet 53,1 % (n=644, Brier 0,583). [G7]
+- Kalibraatio: 0,65-lokero aliarvioi (ennuste 0,646, toteuma 0,731, n=104), 0,84-lokero yliarvioi (ennuste 0,839, toteuma 0,737, n=19). Keskialueet 0,25-0,55 osuvat noin 3 prosenttiyksikön sisään. [G7]
+- xP vs FPL ep_next (MAE): GW6 1,612 vs 1,626 (GW6 gradattu 13.10.). GW7:ää ei ole vielä gradattu. Kierroksittain GoalIQ vs ep_next: GW3 1,536 vs 1,688, GW4 1,680 vs 1,648, GW5 1,616 vs 1,588, GW6 1,612 vs 1,626. GoalIQ häviää siis kahdella neljästä vertailukierroksesta (GW4, GW5). [G3, G14]
+- Signaalit perustasoa vastaan: pelaajat, jotka eivät pelaa (dnp), GoalIQ häviää ep_nextille joka kierroksella (GW6 0,945 vs 0,460), ja isot pisteet (10+) GoalIQ häviää joka kierroksella GW3-GW6 (GW6 9,286 vs 8,727). Maalivahdit häviävät GW3-GW6 (GW6 1,363 vs 0,963). Ennallaan edelliseen: GoalIQ voittaa tikettiluokassa (3-9 p) ja blank-luokassa joka kierroksella. [G14]
+
+**Kilpailijat ja markkina**
+- FPLXI julkaisee nyt kierroskohtaisen virheen: GW1 ±1,42, GW6 ±1,09, kauden keskiarvo ±1,17 pistettä pelaajaa kohden (n 599-667 per kierros), pisteytys 70/100. Otos ja mittaus eivät ole vertailukelpoisia GoalIQ:n MAE:n kanssa (GoalIQ arvioi myös pelaamattomat, n noin 500), joten lukuja ei verrata suoraan. Hinta ennallaan £19,99, early bird päättyi GW3:n jälkeen. [F21, F36]
+- FPL Pulse: ilmaisversiossa nyt ennustetut pisteet seuraavalle kierrokselle, Pro viidelle kierrokselle; Transfer Planner, Reddit Pulse ja Premier League News merkitty uusiksi; "Chip Timing Suggestions" luvattu myöhemmin kaudella. Miniliigan simulaatio ennallaan (100 000 kautta, ilmaisella yksi). [F22]
+- ScoreGPT: 30 päivän julkinen tarkkuus 18.10.: GPT-6.1 Sol 69,5 % (719), Grok 4.7 67,7 % (721), Claude Opus 5.5 65,0 % (712), Kimi K3 62,7 %, DeepSeek-V4-Pro 56,6 % (166). Sivu sanoo itse: "Agreement is a model vote, not a probability." Uutta: NFL ja college football, kausiennusteet viidelle Euroopan huippusarjalle. Ei hintoja sivulla. [P10]
+- Opta Analyst: kausisimulaatio julkaistu 14.8. (10 000 simulaatiota, ajettu 13.8.): Arsenal 38,0 % mestaruus, City 20,5 %, Liverpool 9,2 %; putoamisriski Hull 38,7 %, Ipswich 31,2 %. Syötteenä vedonlyöntikertoimet, joten GoalIQ ei voi kopioida syötettä, vain tuotteen. Sivu ei ilmoita uusia ominaisuuksia. [P5]
+- FPL Rogue: työkalut jaettu Free, Lite ja Pro. Pro: Player Rotation Planner, Projected Points, Chip Planner, Captain Picker, Differentials. Free: FDR, ennustetut avaukset, erikoistilanteet. Lite: EO ja eliittimanagerien trendit. Ei "uusi"-merkintöjä. [F20]
+- Fix: uudet tuotesivut ChatFPL (NEW), Assistant Manager (AI-siirrot), Team Reveal Live, Pre-Season Pack; hintamuutosblogit päivittäin (16.-18.10.). Ei päivämääriä tuotteille. [F10]
+- FFH: ei changelogia eikä lokakuun ominaisuusjulkistusta löytynyt; Announcements-sivulla "User Data Breach" -viesti (otsikko, päivä 10.10., vuosi varmistamatta). [F37]
+- FPL Guru (403) ja FPL Review (sivu ilman runkotekstiä): ei päivitystä, merkitty "?".
+- Uusia merkittäviä palveluja ei löytynyt tällä kierroksella; hauissa nousi vain pieniä sovelluksia ilman todennettua tarkkuutta (ForecastLabs, Scorepredict) [P14].
+
+**Virallinen FPL ja skeema**
+- FPL:n skeemavahdin ensimmäinen tilannekuva (`data/fpl_schema_snapshot.json`) tallennettiin, joten vertailukohtaa ei vielä ole eikä muutosta voi todeta [G15]. Seuraava viikko antaa ensimmäisen diffin.
+- bootstrap-static 18.10.: kentät `scout_risks`, `scout_news_link`, `price_change_*` ennallaan. Luetuissa ensimmäisissä 100 000 merkissä (noin ensimmäiset pelaajat) `scout_risks` oli kaikilla tyhjä, eikä koko vastausta (1,78 M merkkiä) luettu, joten listan sisällöstä ei voi sanoa mitään; 16.10. rivejä oli 15 [F27].
+- PL vahvistaa: squad viewsiin tulee myöhemmin kaudella form ja hinnanmuutoksen todennäköisyys (julkaisu 31.7.) [F15b].
+
+**Matriisit**: FPL Pulse xP-solu muutettu (ilmainen 1 GW, Pro 5 GW), FPLXI-rivi päivitetty julkisella tarkkuudella, ScoreGPT:n tarkkuus päivitetty. Muut solut ennallaan.
 
 Ensimmäinen kilpailija- ja ominaisuusbenchmark backlogin syötteeksi. Kausi 2026/27, GW7 (deadline la 17.10. klo 10.00 UTC).
 
@@ -38,15 +69,15 @@ Deadline-muistutukset (24 h ja 2 h ennen, palvelinpush), hinnanmuutoksen iltahä
 ### 1.5 Otteluennusteet
 - 10 sarjaa: Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Mestarien liiga, Brasileirão, Championship, Eredivisie ja Primeira Liga. UEFA Nations League vain sovelluksessa ja SPA:ssa, ei track recordissa [G1].
 - 2 541 ottelusivua ja 10 sarjahubia, uudelleengenerointi 3 h välein. Ottelusivulla 1X2-todennäköisyys ilmaiseksi, xG ja tulosjakauma Premiumissa [G1].
-- Track record (luettu 16.10. klo 12.54 UTC): 51,1 % oikein (376/736), seuraottelut 50,1 % (341/680), MM 2026 62,5 % (35/56). Ratkaisseissa otteluissa 69,2 %. Malli ei koskaan valitse tasapeliä, joten 26 % tasapeleistä on aina hutia. Sarjakohtainen erittely ja ottelukohtainen lista ovat sivulla [G2, G4, G7].
-- Brier 0,588 (n=736; viimeiset 100 ottelua 0,555) ja 10 lokeron kalibraatio ovat olemassa JSONissa (/api/accuracy) ja sovelluksen rolling-kortissa, mutta eivät web-sivuilla (grep predictions.html, index.html ja fpl.html 16.10) [G7, G11].
+- Track record (luettu 18.10. klo 06.42 UTC; 16.10.: 51,1 % ja 376/736): 51,5 % oikein (403/782), seuraottelut 50,7 % (368/726), MM 2026 62,5 % (35/56). Ratkaisseissa otteluissa 69,5 %. Malli ei koskaan valitse tasapeliä, joten 26 % tasapeleistä on aina hutia. Sarjakohtainen erittely ja ottelukohtainen lista ovat sivulla [G2, G4, G7].
+- Brier 0,588 (n=782; viimeiset 100 ottelua 0,582, 16.10. 0,555) ja 10 lokeron kalibraatio ovat olemassa JSONissa (/api/accuracy) ja sovelluksen rolling-kortissa, mutta eivät web-sivuilla (grep predictions.html, index.html ja fpl.html 16.10) [G7, G11].
 
 ### 1.6 Havaintoja nykytilasta benchmarkin valossa (mitattu 16.10)
 - Premium-portitus toimii palvelinpuolella: /api/fantasy/xp ilman tunnusta palauttaa `meta.masked = true` ja 10 pelaajaa [G9]. Heinäkuun analyysin P0-huoli ei enää päde.
 - BPS 26/27 -muutokset on huomioitu xP:n bonushistoriassa (`fpl_xp.py`, #151) [G10].
 - Price watch näyttää FPL:n oman virallisen hintaprojektion, päivitys 3 h välein (`generated_at` 13.47 UTC, luettu 16.58 UTC). Virallinen peli päivittää saman datan 15 minuutin välein [G10, F16].
 - FPL:n API:ssa on 26/27 uusi kenttä `scout_risks` (lainasopimusesto tietyllä kierroksella, korttipelikieltoriski). GoalIQ:n koodi ei lue sitä (grep 16.10) [F27].
-- Projektiotarkkuus FPL:n ep_nextiä vastaan (MAE): GW3 1,54 vs 1,69, GW4 1,68 vs 1,65, GW5 1,62 vs 1,59, GW6 1,61 vs 1,63. Isot pisteet (10+, n=53): GoalIQ 8,77 vs ep_next 8,24 [G3].
+- Projektiotarkkuus FPL:n ep_nextiä vastaan (MAE): GW3 1,54 vs 1,69, GW4 1,68 vs 1,65, GW5 1,62 vs 1,59, GW6 1,61 vs 1,63 (ennallaan 18.10., GW7 ei vielä gradattu). Isot pisteet (10+, n=53): GoalIQ 8,77 vs ep_next 8,24 [G3].
 - Ei ole: live-pisteitä tai live-rankia, AI-chattia, kausisimulaatiota (mestaruus, putoaminen), monen GW:n hyökkäysvaikeutta, kenttäpelaajien rotaatiopareja, oman joukkueen status-pushia.
 
 ## 2. Ominaisuusmatriisi: FPL
@@ -87,8 +118,8 @@ Sarakkeet: GIQ = GoalIQ, FFH = Fantasy Football Hub, FPLR = FPL Review, LFPL = L
 
 | Palvelu | Hinta | Erottava piirre | Lähde |
 |---|---|---|---|
-| FPLXI | £19,99 kertamaksu kaudelle (early bird, nousi GW3:n jälkeen), ei automaattista uusintaa; ilmaistaso | Oma ML-malli 5 GW eteenpäin, deterministinen optimoija (XI, kapteeni, penkkijärjestys), joukkueen tuonti ID:llä tai kuvakaappauksesta, julkinen tarkkuus per GW deadlineen lukittuna | F21 |
-| FPL Pulse | ilmainen; Pro £2,99/kk tai £24,99/v | Miniliigan Monte Carlo -simulaatio (100 000 kautta; ilmaisella yksi ajo), live-miniliiga, AI-avustaja "Gaffer's Pulse", "Reddit Pulse" (r/FantasyPL:n päivittäinen analyysi, Pro) | F22 |
+| FPLXI | £19,99 kertamaksu kaudelle (early bird, nousi GW3:n jälkeen), ei automaattista uusintaa; ilmaistaso | Oma ML-malli 5 GW eteenpäin, deterministinen optimoija (XI, kapteeni, penkkijärjestys), joukkueen tuonti ID:llä tai kuvakaappauksesta, julkinen tarkkuus per GW deadlineen lukittuna (18.10.: ±1,17 p keskivirhe, GW1-GW6, n 599-667 per kierros; ilmaistasolla yksi siirtoehdotus per kierros) | F21, F36 |
+| FPL Pulse | ilmainen; Pro £2,99/kk tai £24,99/v | Miniliigan Monte Carlo -simulaatio (100 000 kautta; ilmaisella yksi ajo), live-miniliiga, AI-avustaja "Gaffer's Pulse", "Reddit Pulse" (r/FantasyPL:n päivittäinen analyysi, Pro); 18.10.: ennustetut pisteet ilmaiseksi seuraavalle kierrokselle ja Pro-tasolla viidelle, Transfer Planner (Pro), chip-ajoitus luvattu myöhemmin kaudella | F22 |
 | FPL Guru | ilmainen 26/27-julkaisun ajan | Siirto-, kapteeni- ja chip-työkalut sekä chat; MCP-liitin Claudeen, ChatGPT:hen, Claude Codeen ja Codexiin | F23 |
 | FPLai | Pro £6,99/kk; kausipassi £34,99 (voimassa 31.5.2027 asti) | iPhone, Apple Watch ja web; "Elite Pulse" top 1k -seuranta, Team DNA | F24 |
 | FPL Copilot (fplcopilot.com) | ? | HiGHS MIP -solver 10 GW eteenpäin, Claude-pohjainen chat-kerros (h) | F34 |
@@ -109,7 +140,7 @@ Sarakkeet: GIQ = GoalIQ, FFH = Fantasy Football Hub, FPLR = FPL Review, LFPL = L
 | Tulosjakauma | ✓ (top 10, Prem.) | ✓h (correct score) | ✓h (ennustettu tulos) | ✓h (ehdotettu tulos) | ? | ✓h | – | ✓ (4 todennäköisintä) | ✓ (exact score) | G5, P2, P3, P4, P7, P9, P10 |
 | BTTS ja yli 2,5 maalia | ✓ (sovellus, Prem.) | ✓h | ✓h | ✓h | ? | ✓h | – | ✓ (ilm.) | ? | G5, P1, P3, P4, P7, P9 |
 | Kauden simulaatio (mestaruus, top-4/5, putoaminen) | – | ? | ? | ? | ✓ (10 000 simulaatiota) | ? | ✓ | ? (15 000 simuloitua kautta mainitaan) | – | P5, P8, P9 |
-| Julkinen, ennen kickoffia lokattu track record | ✓ (n=736, ottelukohtainen) | ? (lähteet ristiriidassa) | ? | ? | ? | ? | – | – (ei mainita) | ✓ (30 pv, 2 712 arvioitua) | G4, P1, P9, P10 |
+| Julkinen, ennen kickoffia lokattu track record | ✓ (n=782, ottelukohtainen) | ? (lähteet ristiriidassa) | ? | ? | ? | ? | – | – (ei mainita) | ✓ (30 pv, 3 036 arvioitua 18.10.) | G4, P1, P9, P10 |
 | Brier tai kalibraatio julkisesti | osittain (JSON ja sovellus, ei web) | ? | ? | ? | ? | ? | – | – | ✓ (kalibraatio) | G7, P10 |
 | Vedonlyöntikytkös näkyvissä (kertoimet, panokset, value-vedot) | – (ei kertoimia) | ✓h (Kelly-pohjaiset) | ✓h (kertoimet) | ✓h (panoskoko) | – (kertoimet mallin syötteenä) | ✓h (betting picks) | ? | – ("no tips, affiliate links or odds") | ? | G1, P1, P2, P3, P4, P5, P7, P9 |
 | Kielimalli ennusteessa tai selityksessä | – (ei kielimallia ennustepolussa) | – ("purely mathematical") | ? | ? | – | ✓h (AI bet assistant) | – | – | ✓ (5 kielimallin konsensus) | G1, P1, P7, P10 |
@@ -276,6 +307,8 @@ Luettu 16.10.2026, ellei toisin mainita. "h" = hakukoneen tiivistelmä, sivua ei
 - [G11] mobiilisovelluksen näkymät (eri repo): Parlay ja Model Accuracy
 - [G12] `data/fpl_xp_frozen/gw7.json` (jäädytetyt kentät)
 - [G13] sisäinen ominaisuusanalyysi 25.7.2026 (ei tässä repossa)
+- [G14] `data/fpl_xp_gw_accuracy.json` (GW1-GW6 gradattu, luettu 18.10.2026), `data/accuracy.json` (updated_at 2026-10-18T06:42:39Z)
+- [G15] `data/fpl_schema_snapshot.json` (ensimmäinen tilannekuva 18.10.2026), `/tmp/fpl-schema-diff.md`
 
 **FPL-kilpailijat ja virallinen peli**
 - [F1] Fantasy Football Hub, etusivu ja navigaatio: https://www.fantasyfootballhub.co.uk/
@@ -313,6 +346,9 @@ Luettu 16.10.2026, ellei toisin mainita. "h" = hakukoneen tiivistelmä, sivua ei
 - [F33] Technology Record, FPL Companion (h): https://www.technologyrecord.com/article/microsoft-copilot-powered-fantasy-premier-league-companion-to-debut-this-season
 - [F34] FPL Copilot (h): https://fplcopilot.com/solver
 - [F35] LiveFPL X, GW1-rekisteröinnit (h): https://x.com/livefplnet
+- [F36] FPLXI, etusivu ja julkinen tarkkuus (18.10.2026): https://fplxi.com/
+- [F37] FFH, tiedotteet (18.10.2026, h): https://www.fantasyfootballhub.co.uk/category/announcements
+- [F15b] Premier League, FPL-muutokset 2026/27 (31.7.2026, squad views -tulevat kentät): https://www.premierleague.com/en/news/4679873/all-you-need-to-know-about-changes-to-fpl-for-202627
 
 **Ennustepalvelut**
 - [P1] Forebet FAQ (403 suoraan, h): https://www.forebet.com/en/faq
@@ -327,6 +363,7 @@ Luettu 16.10.2026, ellei toisin mainita. "h" = hakukoneen tiivistelmä, sivua ei
 - [P10] ScoreGPT: https://scoregpt.app/
 - [P11] Ding, Guo, Xu: "FIFA World Cup 2026 as a Contamination-Free Benchmark for LLM Forecasting Agents" (20.7.2026): https://arxiv.org/abs/2607.17765
 - [P12] xGStat (h): https://www.xgstat.com/
+- [P14] ForecastLabs (h): https://www.producthunt.com/products/forecastlabs-ai ; TeamRankings, jalkapallon backtest (osuma 54,5 % / 334 ottelua, Brier 0,621 kolmen lopputuloksen asteikolla, h): https://www2.teamrankings.com/soccer/backtests
 - [P13] AIM GO (h): https://apps.apple.com/us/app/aim-go-football-prediction-ai/id6763239787 ; BetBrothers (h): https://betbrothers.ai/
 
 **Yhteisö**

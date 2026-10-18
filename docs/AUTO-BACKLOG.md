@@ -73,6 +73,19 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-10: Mobiilin hintahälytys (`schedulePriceAlerts`) lukee yhä tallennetun watchlistin myös ilmaiselta, vaikka
   watchlist on 17.10 alkaen Premiumia. Ei lupaa mitään julkisesti, mutta lukko ja hälytys ovat eri mieltä. Mobiili on
   ihmisen työ (OTA).
+- 2026-10: Championship-ennusteiden Brier on 0.674 (n=129, osuma 40.3 %), eli tasajakaumaa (0.667) huonompi, ja
+  Premier League 0.628 (n=65). Liukuva Brier (100 ottelua) heikkeni 0.555:stä 0.582:een kahdessa päivässä, vaikka osuma
+  nousi 59 %:iin. Vanhentuneet ennusteet (lead yli 48 h) osuvat 44.2 % (n=138) vs tuoreet 53.1 % (n=644).
+  (lähde: data/accuracy.json, docs/BENCHMARK.md Muutokset 2026-10-18)
+- 2026-10: xP häviää FPL:n ep_nextille pelaamattomien pelaajien luokassa joka kierroksella (GW6 MAE 0.945 vs 0.460),
+  isoissa pisteissä (10+) joka kierroksella GW3-GW6 (GW6 9.29 vs 8.73) ja maalivahdeilla GW3-GW6. Kokonaisuutena
+  GoalIQ hävisi GW4:n ja GW5:n (1.680 vs 1.648, 1.616 vs 1.588) ja voitti GW3:n ja GW6:n niukasti. Mallin muutos on
+  ylläpitäjän päätös; mittari on jo olemassa. (lähde: data/fpl_xp_gw_accuracy.json)
+- 2026-10: Kilpailijat siirtyvät julkiseen tarkkuuteen ja ilmaisiin ennusteisiin: FPLXI julkaisee kierroskohtaisen
+  virheen (±1.17 p), FPL Pulse antaa ennustetut pisteet seuraavalle kierrokselle ilmaiseksi ja lupaa chip-ajoituksen
+  myöhemmin kaudella, ScoreGPT myy 7/14/30 pv:n KPI-ikkunoita Pro-tasolla. (lähde: https://fplxi.com/ , https://www.fplpulse.com/ , https://scoregpt.app/)
+- 2026-10: FPL-skeemavahdin ensimmäinen tilannekuva tallennettiin 18.10. (`data/fpl_schema_snapshot.json`), joten
+  skeemamuutosta ei vielä voi todeta. Seuraava viikko antaa ensimmäisen diffin. (lähde: /tmp/fpl-schema-diff.md)
 
 ## Avoimet
 
@@ -171,5 +184,18 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   lähde: https://www.fantasyfootballpundit.com/)
       Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 1/3 · uutuus 1/2 = 6
       Mittari: /fpl/expected-points#gw-xp näyttää sarakkeet; Web Analytics -käynnit · tarkistus 2026-11-30
+- [ ] Pelaajan tasaisuus stats-taulukkoon: lisää /fpl/stats-sivulle ja SPA:n Players/stats-näkymään sarakkeet
+  "return rate" (osuus pelatuista kierroksista, joilla pelaaja sai vähintään 5 pistettä) ja pisteiden hajonta per
+  aloitus, laskettuna FPL:n kierroshistoriasta, jota stats-näkymä jo lukee; vähimmäisaloitukset näkyvät, puuttuva
+  arvo on "ei dataa". Builder + regeneroitu sivu + llms.txt samassa PR:ssä. Free/Premium-sijoitus ehdotetaan
+  PR:n rungossa, ihminen päättää. (aallonharja 2026-10-18, lähde: https://www.fplrogue.com/tools)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 8
+      Mittari: /fpl/stats näyttää sarakkeet ja testi vihreä; Web Analytics -käynnit /fpl/stats · tarkistus 2026-11-30
+- [ ] Rullaavat aikaikkunat track recordiin: `/api/accuracy` palauttaa osuuden ja Brierin myös viimeisiltä 30 ja 90
+  päivältä (ottelun päivän mukaan, sama loki, n näkyy), ja /predictions näyttää ne nykyisen rolling-100:n rinnalla.
+  Luku luetaan artefaktista, ei lasketa sivulla. Ei muokkaa kirjattuja ennusteita. llms.txt päivitetään samassa
+  PR:ssä. (aallonharja 2026-10-18, lähde: https://scoregpt.app/)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ S · myynti 2/3 · uutuus 1/2 = 8
+      Mittari: /api/accuracy sisältää ikkunat ja /predictions näyttää samat n:t; testit vihreät · tarkistus 2026-11-30
 
 ## Tehdyt
