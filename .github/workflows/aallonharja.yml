@@ -11,7 +11,12 @@
 name: aallonharja
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      vain_mittausdata:
+        description: "true = aja vain mittausdata-työ (ei Claudea), esim. avainten tarkistukseen"
+        required: false
+        default: "false"
   schedule:
     - cron: '23 3 * * 0'  # sunnuntai 03:23 UTC, ennen maanantain auto-kehitysajoa
 
@@ -20,7 +25,41 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 18.10 (Villen GO, mittarisilmukka): konversio, Search Console ja PostHog. Tällä työllä on lukuavaimet,
+  # agenttityöllä ei. Tuotos on jo julkisuussäännön mukainen (vain suhdeluvut, muutos-% ja kokoluokat,
+  # .github/auto-kehitys/mittausdata.py), joten agentti ei voi vuotaa tilien tai käyntien määriä.
+  mittausdata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Hae mittausdata
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+        run: |
+          python -m pip install --quiet requests google-auth
+          python .github/auto-kehitys/mittausdata.py --out "$RUNNER_TEMP/mittausdata"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mittausdata
+          path: ${{ runner.temp }}/mittausdata
+          retention-days: 7
+
   agentti:
+    needs: mittausdata
+    if: ${{ !cancelled() && github.event.inputs.vain_mittausdata != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
     permissions:
@@ -63,6 +102,24 @@ jobs:
         if: steps.avoin.outputs.saa == 'true'
         run: python .github/auto-kehitys/fpl_schema_watch.py --snapshot data/fpl_schema_snapshot.json --out /tmp/fpl-schema-diff.md
 
+      - uses: actions/download-artifact@v4
+        if: steps.avoin.outputs.saa == 'true'
+        continue-on-error: true
+        with:
+          name: mittausdata
+          path: /tmp/mittausdata
+
+      # Portit talteen ennen agenttia; erääntyneet mittarit ja tulokset lähteittäin agentille.
+      - name: Erääntyneet mittarit
+        if: steps.avoin.outputs.saa == 'true'
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/portit" /tmp/mittarit /tmp/mittausdata
+          cp .github/auto-kehitys/tulos.py .github/auto-kehitys/mittarit.py "$RUNNER_TEMP/portit/"
+          python "$RUNNER_TEMP/portit/mittarit.py" eraantyneet --out /tmp/mittarit/eraantyneet.json > /dev/null
+          python "$RUNNER_TEMP/portit/mittarit.py" kooste --out /tmp/mittarit/kooste.json > /dev/null
+          echo "Erääntyneitä mittareita: $(python -c "import json; print(len(json.load(open('/tmp/mittarit/eraantyneet.json'))))")"
+
       - name: Agentti päivittää benchmarkin (commit paikallisesti)
         if: steps.avoin.outputs.saa == 'true'
         uses: anthropics/claude-code-action@v1
@@ -80,6 +137,29 @@ jobs:
 
             Lue ensin docs/TUOTEPERIAATTEET.md, docs/BENCHMARK.md (edellinen kierros), docs/AUTO-BACKLOG.md, llms.txt
             ja /tmp/fpl-schema-diff.md (FPL-skeemavahdin tulos tältä viikolta).
+
+            JULKISUUSSÄÄNTÖ: repo on julkinen. Kirjoita tiedostoihin vain suhdelukuja (konversio-%, CTR, sijainti),
+            muutosprosentteja ja kokoluokkia, joita /tmp/mittausdata/*.json antaa. Älä koskaan kirjoita tilien,
+            Premium-tilaajien, käyntien tai tapahtumien absoluuttisia määriä, vaikka löytäisit ne muualta.
+
+            0. MITTARIEN SULKU (ensin, pakollinen). /tmp/mittarit/eraantyneet.json listaa tehdyt rivit, joiden
+               tarkistuspäivä on mennyt eikä tulosta ole. Mittaa jokainen rivin Mittari-kentän lähteestä: repon
+               tiedostot ja testit, julkiset sivut (WebFetch goaliq.app), /api/accuracy, /tmp/mittausdata/gsc.json
+               (Search Console), /tmp/mittausdata/posthog.json (tapahtumat ja sivut kokoluokkina) ja
+               /tmp/mittausdata/konversio.json. Kirjoita rivin viimeisen kenttärivin alle täsmälleen yksi rivi:
+                     Tulos ${{ steps.avoin.outputs.pvm }}: ✅ <mitä mitattiin ja mistä>
+               (✅ täyttyi, ❌ ei täyttynyt, ➖ ei mitattavissa: kerro mikä lähde puuttui). Kuusi välilyöntiä
+               alussa kuten Pisteet- ja Mittari-riveillä. Älä muuta Pisteet- tai Mittari-rivejä äläkä vanhoja
+               Tulos-rivejä: työnkulku tarkistaa tämän (mittarit.py tarkista) ja hylkää koko haaran.
+               /tmp/mittarit/kooste.json kertoo tulokset lähteittäin; kirjaa se BENCHMARKin Muutokset-lohkoon.
+            0b. TAVOITEFUNKTIO. Ensisijainen mittari on ilmais->Premium-konversio (/tmp/mittausdata/konversio.json).
+               Kirjaa Muutokset-lohkoon konversioväli ja muutos edelliseen viikkoon, tai "ei saatavilla" syineen.
+               Jos "vertailukelpoinen" on false, sano se. Vähintään yksi uusista riveistä on konversio- tai
+               hankintapolulla (rekisteröityminen, Premium-esikatselu, hakukoneliikenne, kanava-attribuutio).
+            0c. HAKUKONE. Jos /tmp/mittausdata/gsc.json on "ok": etsi sivut, joilla on paljon näyttöjä (pieni
+               nayttosija) mutta matala CTR tai sijainti 5-15, ja haut, joihin mikään sivu ei vastaa hyvin. Tee
+               niistä Signaaleja ja enintään yksi backlog-rivi, jonka Mittari on GSC:n CTR tai sijainti kyseiselle
+               sivulle (tarkistus 28 vrk päähän). Jos gsc tai posthog puuttuu, kirjaa se Muutokset-lohkoon.
 
             1. MALLIN OMAT MITTARIT. Lue data/fpl_xp_gw_accuracy.json (GoalIQ xP vs FPL:n ep_next samoilla riveillä)
                ja data/accuracy.json (1X2-osuma, Brier, kalibraatio). Kirjaa luvut ja muutos edelliseen kierrokseen.
@@ -105,6 +185,10 @@ jobs:
             7. Kirjoita /tmp/pr-title.txt: "aallonharja: ${{ steps.avoin.outputs.pvm }}" ja /tmp/pr-body.md: ensimmäinen
                rivi "Riskiluokka: docs", sitten kolme tärkeintä havaintoa, uudet backlog-rivit perusteluineen ja lähteet.
                Ei em dashia (—).
+
+      - name: Tulos
+        if: steps.avoin.outputs.saa == 'true'
+        run: python "$RUNNER_TEMP/portit/tulos.py" --nimi aallonharja --haara aallonharja/
 
       - name: Paketoi tulos
         id: paketoi
@@ -162,6 +246,11 @@ jobs:
           git fetch -q "$RUNNER_TEMP/auto/auto.bundle" "$haara:$haara"
           git show origin/main:.github/auto-kehitys/guard.py > "$RUNNER_TEMP/guard.py"
           python "$RUNNER_TEMP/guard.py" --profile aallonharja --base origin/main --head "$haara"
+          # 18.10: jokainen erääntynyt mittari sai Tulos-rivin, eikä vanhoja Pisteet-, Mittari- tai Tulos-rivejä muutettu.
+          git show origin/main:.github/auto-kehitys/mittarit.py > "$RUNNER_TEMP/mittarit.py"
+          git show origin/main:docs/AUTO-BACKLOG.md > "$RUNNER_TEMP/backlog-main.md"
+          git show "$haara:docs/AUTO-BACKLOG.md" > "$RUNNER_TEMP/backlog-haara.md"
+          python "$RUNNER_TEMP/mittarit.py" tarkista --pohja "$RUNNER_TEMP/backlog-main.md" --uusi "$RUNNER_TEMP/backlog-haara.md"
           echo "haara=$haara" >> "$GITHUB_OUTPUT"
 
       - name: Push aallonharja/-haara ja avaa PR

@@ -630,14 +630,49 @@ def pending_x_mirror(log_rows: list[dict], state: dict, now: datetime) -> list[d
     return out
 
 
-def x_issue(row: dict, x_text: str | None) -> dict:
+def card_image_url(uri: str | None, fetch=None) -> str | None:
+    """Bluesky-postauksen kortin taysikokoinen kuva julkisesta AppView'sta (ei tunnusta), tai None.
+
+    18.10.2026 (Ville: "tarviin sen kuvan kans sahkopostilla"): X-issue sisalsi vain tekstin, vaikka
+    Blueskyssa oli jakokortti. Kuva haetaan julkaistusta postauksesta eika tiedostosta, joten X:aan
+    menee tasan sama kortti kuin Blueskyyn.
+    """
+    if not uri or not str(uri).startswith("at://"):
+        return None
+    if fetch is None:
+        # Ei `import urllib.request` tässä: se tekisi `urllib`ista paikallisen nimen koko funktiolle.
+        from urllib.request import urlopen
+
+        def fetch(url):
+            with urlopen(url, timeout=20) as r:
+                return json.loads(r.read().decode("utf-8"))
+    try:
+        doc = fetch("https://public.api.bsky.app/xrpc/app.bsky.feed.getPosts?uris="
+                    + urllib.parse.quote(str(uri), safe=""))
+        embed = ((doc.get("posts") or [{}])[0].get("embed")) or {}
+    except Exception:  # noqa: BLE001 - kuva on lisa: puuttuva kuva ei saa estaa X-tekstia
+        return None
+    kuvat = embed.get("images") or (embed.get("media") or {}).get("images") or []
+    if kuvat and kuvat[0].get("fullsize"):
+        return kuvat[0]["fullsize"]
+    return (embed.get("external") or {}).get("thumb")
+
+
+def x_issue(row: dict, x_text: str | None, image_url: str | None = None) -> dict:
     web = bsky_web_url(row.get("uri"))
+    if row.get("card") and image_url:
+        kuva = (f"Kortti (tallenna kuva ja liita X-postaukseen):\n\n![kortti]({image_url})\n\n"
+                f"Suora linkki kuvaan: {image_url}\n\n")
+    elif row.get("card"):
+        kuva = f"Kortti: kuvaa ei saatu haettua, tallenna se Bluesky-postauksesta {web}\n\n"
+    else:
+        kuva = ""
     if x_text is None:
         body = (f"Bluesky-postaus ylittaa X:n {X_MAX} merkkia linkki mukaan laskettuna, joten X-versiota ei tehty.\n\n"
-                f"Bluesky: {web}\n\n```\n{row.get('text')}\n```\n")
+                f"Bluesky: {web}\n\n```\n{row.get('text')}\n```\n\n{kuva}")
     else:
         body = (f"Kopioi X:aan (postaat itse). {x_length(x_text)}/{X_MAX} merkkia, linkki tuo sivun "
-                f"esikatselukortin.\n\n```\n{x_text}\n```\n\nBluesky-alkuperainen: {web}\n\n"
+                f"esikatselukortin.\n\n```\n{x_text}\n```\n\n{kuva}Bluesky-alkuperainen: {web}\n\n"
                 f"Aihe {row.get('topic')} · lahde {row.get('source', 'rule')} · julkaistu {row.get('at')}. "
                 f"Sulje issue kun postattu tai ohitettu.\n")
     return {"title": f"X: {(row.get('text') or '')[:70]}", "body": body,
@@ -654,7 +689,7 @@ def _create_issue(payload: dict, token: str) -> str:
         return json.loads(r.read().decode("utf-8")).get("html_url", "")
 
 
-def cmd_x_mirror(now: datetime | None = None, create=None) -> int:
+def cmd_x_mirror(now: datetime | None = None, create=None, image_fetch=None) -> int:
     now = now or datetime.now(timezone.utc)
     token = os.environ.get("GH_TOKEN", "").strip()
     if create is None and token:
@@ -663,7 +698,8 @@ def cmd_x_mirror(now: datetime | None = None, create=None) -> int:
     rows_ = pending_x_mirror(read_log(), state, now)
     made = 0
     for r in rows_:
-        payload = x_issue(r, x_version(r))
+        kuva = card_image_url(r.get("uri"), fetch=image_fetch) if r.get("card") else None
+        payload = x_issue(r, x_version(r), kuva)
         if create is None:
             print(f"[KUIVA, ei GH_TOKENia] issue: {payload['title']}")
             continue

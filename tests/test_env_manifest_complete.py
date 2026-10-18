@@ -29,6 +29,9 @@ SRC = ROOT / "src"
 
 #: Vapaaehtoiset: nimi -> miksi ilman tata parjataan.
 VAPAAEHTOISET = {
+    "MAILERLITE_API_TOKEN": "tervetulosynkan varapolku (18.10.2026): avain tulee normaalisti CI:sta "
+                            "otsakkeessa (GitHubin salaisuus, yksi paikka). Puuttuva = /api/admin/"
+                            "mailerlite-sync palauttaa 400, eika mikaan muu toiminto riipu siita",
     "BSKY_OUTBOUND_REPLIES_PER_DAY": "Bluesky-botin pyytamattomat vastaukset; puuttuva = 0 on OIKEA "
                                      "oletus (atproto-botin opas: vain opt-in-vuorovaikutus), Ville "
                                      "avaa repo-muuttujalla. Ei API:n muuttuja (vain bsky-bot.yml)",

@@ -47,8 +47,10 @@ ennusteiden lukija, ja tekijä tai kumppani, joka lainaa lukuja (ilmaispinnan pi
 - **Copy-sync.** Uusi tai muuttunut ominaisuus päivittää `llms.txt`:n ja sen sivun kuvauksen samassa
   PR:ssä. Hinnat, Premium-lupaukset, landing ja FAQ ovat ihmisen (myyntilupaus).
 - **Julkinen teksti on englantia, lyhyttä ja tarkistettavaa.** Ei em dashia (—), ei solver-jargonia,
-  ei markkinointisuperlatiiveja. Ihminen ajaa julkaisutarkistajan ennen mergeä, joten jokainen uusi tai
-  muuttunut käyttäjälle näkyvä merkkijono listataan PR:n rungossa.
+  ei markkinointisuperlatiiveja. Julkaisutarkistaja ajetaan CI:ssä jokaiselle auto-PR:lle
+  (`julkaisutarkistus.yml`, tulos PR:ään kommenttina ja labelina), joten jokainen uusi tai muuttunut
+  käyttäjälle näkyvä merkkijono listataan PR:n rungossa. Diff tarkistetaan silti: rungon "ei muutoksia"
+  ei ohita diffissä näkyvää tekstiä.
 - **Free/Premium-raja on myyntipäätös.** Agentti ei siirrä ominaisuutta rajan yli. Uusi ominaisuus
   ehdotetaan Premiumiin tai ilmaiseksi PR:n rungossa, ja ihminen päättää.
 - **Render 512 Mi.** Ei raskasta laskentaa eikä mallin sovitusta API-pyynnössä tai käynnistyksessä
@@ -134,16 +136,32 @@ Jokaisen avoimen rivin alle tulee kaksi kenttää omille riveilleen:
 - **kiire**: 3 = ikkuna alle 30 päivässä (deadline-rytmi, tupla- tai tyhjä kierros, chip-ikkuna,
   siirtoikkuna, kauden vaihe); 2 = 30-90 päivää; 1 = ei aikarajaa.
 - **työ**: S = alle 50 riviä; M = 50-300; L = yli 300, selvitys ensin tai riippuu toisesta rivistä.
-- **myynti**: 3 = maksava käyttäjä tai ylläpitäjä on pyytänyt (Signaalit); 2 = kilpailija myy tätä
-  maksullisena (BENCHMARK.md); 1 = ei tiedossa.
+- **myynti**: 3 = konversio- tai hankintapolulla (rekisteröitymiseen tai Premium-esikatseluun johtava
+  pinta, hakukoneliikenne Search Consolen mukaan, kanava-attribuutio) tai maksava käyttäjä tai ylläpitäjä on
+  pyytänyt (Signaalit); 2 = kilpailija myy tätä maksullisena (BENCHMARK.md); 1 = ei tiedossa.
 - **uutuus**: 2 = uusi kyky, jota GoalIQ:lla ei ole; 1 = parantaa olemassa olevaa; 0 = korjaus, testi tai
   siistiminen.
-- **Piste** = 2 × arvo + kiire + myynti + uutuus - työ (S 0, M 1, L 2). Suurin ensin, tasapelissä ylempi.
+- **Piste** = 2 × arvo + kiire + 2 × myynti + uutuus - työ (S 0, M 1, L 2) + näyttö. Suurin ensin,
+  tasapelissä ylempi. Myynti painaa kaksinkertaisesti, koska ensisijainen mittari on ilmais->Premium-
+  konversio (ylläpitäjän päätös 18.10.2026). Työnkulku laskee pisteen komponenteista
+  (`.github/auto-kehitys/mittarit.py valitse`); rivin "= N" on vain tieto.
+- **näyttö**: saman lähteen (aallonharja, agentin ehdotus, ylläpitäjä) kolme viimeisintä mitattua
+  tulosta: vähintään kaksi ❌ = -1, vähintään kaksi ✅ = +1, muuten 0. Rivityyppi, joka ei liikuta
+  mittaria, putoaa jonossa.
 - **Lukitus**: ylläpitäjä voi aloittaa Pisteet-kentän merkinnällä `(lukittu)`. Lukitut tehdään ensin.
   Agentti ei lukitse eikä muuta olemassa olevia pisteitä tai mittareita.
 - **Konservatiivisesti**: epävarmassa pienempi arvo, kiire ja myynti ja suurempi työ.
-- **Mittari**: lähteen on oltava jo olemassa: PostHog-tapahtumat, `/api/accuracy`,
-  `data/fpl_xp_gw_accuracy.json`, Cloudflare Web Analytics, autopilotin signaalit, testit.
+- **Mittari**: lähteen on oltava jo olemassa ja aallonharjan luettavissa: repon tiedostot ja testit,
+  julkiset sivut, `/api/accuracy`, `data/fpl_xp_gw_accuracy.json`, konversio (`/api/admin/conversion`),
+  Search Console (sivun CTR ja sijainti) ja PostHog (tapahtumat ja sivut kokoluokkina). Cloudflare Web
+  Analytics ei ole CI:n luettavissa, joten se ei yksin kelpaa mittariksi. Kirjoita mittari niin, että se
+  täyttyy tai ei (raja tai "näkyy"), ei absoluuttisena määränä.
+- **Tulos**: aallonharja mittaa joka sunnuntai tehdyt rivit, joiden tarkistuspäivä on mennyt, ja kirjoittaa
+  rivin alle `Tulos <pvm>: ✅|❌|➖ <mitä mitattiin>` (➖ = ei mitattavissa, syy). Julkaisu hylkää haaran,
+  jos erääntynyt mittari jäi ilman tulosta tai vanhoja Pisteet-, Mittari- tai Tulos-rivejä muutettiin.
+- **Julkisuus**: repo on julkinen. Tiedostoihin vain suhdeluvut (konversio-%, CTR, sijainti),
+  muutosprosentit ja kokoluokat. Tilien, Premium-tilaajien, käyntien ja tapahtumien absoluuttisia määriä ei
+  kirjoiteta (mittausdata antaa agentille vain sallitut muodot).
 
 ### Kärkivuoro ja signaalit
 
@@ -153,3 +171,17 @@ Jokaisen avoimen rivin alle tulee kaksi kenttää omille riveilleen:
 - **Signaali muuttuu riviksi.** Alle 30 päivää vanhasta havainnosta, jolla ei ole merkintää "→ backlog",
   agentti kirjoittaa enintään yhden rivin ajoa kohden ja merkitsee havainnon.
 - Enintään kaksi avointa auto-PR:ää kerrallaan. Ihminen mergeää (squash, otsikko säilyy `auto:`-alkuisena).
+
+## Automaation omat rajat (ylläpitäjän päätös 18.10.2026)
+
+- **Vihreä ajo ilman tulosta on punainen.** Jokainen Claude-askel ilmoittaa tuloksensa
+  (`.github/auto-kehitys/tulos.py`): haara, jolla on commit, vaadittu tiedosto tai perusteltu nolla
+  (`/tmp/ohitus.txt`). Portti `tests/test_auto_kehitys_tulos.py` vaatii tämän jokaiselta Claude-työnkululta.
+- **Claude vain harkintaan.** Valinta, pisteet, mittareiden erääntyminen, julkisen tekstin poiminta ja
+  riskiluokka lasketaan koodissa. Claude ajetaan vain `anthropics/claude-code-action`illa ja tilauksen
+  OAuth-tokenilla, aina deterministisen ehdon takana, ja jokainen Claude-työnkulku on budjetissa
+  (`tests/test_auto_kehitys_budjetti.py`: ajot viikossa, max-turns, perustelu). Maksullista avainta tai
+  Anthropicin SDK:ta ei käytetä missään työnkulussa.
+- **Sähköposti**: tervetuloviestin lähettää MailerLiten automaatio, kun uusi tili liittyy ryhmään
+  (`tervetulo-synkka.yml`, `src/mailerlite_sync.py`). Viikoittaista viestiä koko listalle ei lähetetä
+  (GW5-deadlineviesti 18.9.2026: avattu 7,2 %, klikkejä 0). Agentti ei koske sähköpostiin.

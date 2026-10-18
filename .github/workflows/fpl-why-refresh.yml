@@ -1,4 +1,4 @@
-# WHY-THIS-PICK: "miksi tämä pelaaja" -selitykset (Claude Batches API).
+# WHY-THIS-PICK: "miksi tämä pelaaja" -selitykset (deterministiset runkolauseet, 0 euroa).
 #
 # MIKSI OMA WORKFLOW EIKÄ STEPPI fpl-data-refreshissä: Batches API on
 # eräajo, jonka valmistuminen kestää tyypillisesti minuutteja mutta saa
@@ -11,9 +11,9 @@
 # Skripti diffaa komponenttihashin, joten muuttumattomat rivit eivät maksa
 # mitään ja päivän ajo koskee käytännössä vain liikkuneita pelaajia.
 #
-# TURVA: data-only, ei mallimuutosta. ANTHROPIC_API_KEY:n puuttuminen EI
-# kaada ajoa — skripti kirjoittaa deterministiset mallipohjalauseet ja kirjaa
-# ohituksen näkyvästi (sama linjaus kuin ADMIN_TOKEN grade-decisions-askeleessa).
+# TURVA: data-only, ei mallimuutosta. 18.10.2026 alkaen ajo kirjoittaa aina
+# deterministiset mallipohjalauseet: maksullista kielimallipolkua ei ole tässä
+# työnkulussa lainkaan (0 euron sääntö, alempana).
 
 name: fpl-why-refresh
 
@@ -60,18 +60,16 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install "anthropic>=0.68" "requests>=2.31"
+          pip install "requests>=2.31"
 
-      # KULULUKKO (Villen linjaus 14.8: ei mitaan maksullista ilman erillista
-      # hyvaksyntaa). Skripti vaatii KAKSI asiaa ennen kuin se soittaa
-      # maksulliseen APIin: avaimen JA `WHY_USE_MODEL=1`. Tata ei aseteta
-      # tassa. Syy: jos ANTHROPIC_API_KEY joskus lisataan repoon jotain MUUTA
-      # tarkoitusta varten, tama vuorokausittainen cron alkaisi muuten
-      # kuluttaa rahaa hiljaa eika kukaan paattaisi sita.
-      # Ilman lippua: 150 runkolausetta, deterministisia, 0 kulua, ei virhetta.
+      # 0 EUROA (Villen GO 18.10.2026, automaatiokohta 6): maksullinen polku on
+      # poistettu tasta tyonkulusta kokonaan, ei vain lukittu. Ennen ajo asensi
+      # anthropic-SDK:n ja valitti ANTHROPIC_API_KEY:n; kululukko (avain JA
+      # WHY_USE_MODEL=1) esti kulun, mutta tyonkulku oli valmis maksamaan heti kun
+      # joku lisaa avaimen. Nyt skripti kirjoittaa aina deterministiset
+      # runkolauseet (150 kpl, 0 kulua). Portti tests/test_auto_kehitys_budjetti.py
+      # kaataa buildin, jos mikaan tyonkulku viittaa maksulliseen avaimeen.
       - name: Generate explanations
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python -m scripts.build_fpl_why \
             --top-n "${{ github.event.inputs.top_n || '150' }}"

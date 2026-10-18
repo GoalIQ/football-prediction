@@ -44,13 +44,26 @@ def test_agentilla_vain_lukuoikeus(nimi):
     assert checkout and all((s.get("with") or {}).get("persist-credentials") is False for s in checkout)
 
 
+# 18.10.2026 (mittarisilmukka): aallonharjan mittausdata-työ lukee konversion, Search Consolen ja
+# PostHogin lukuavaimilla. Ne sallitaan VAIN siinä työssä, jossa ei ole Claudea eikä kirjoitusoikeutta.
+MITTAUSTYO = {"aallonharja.yml": ("mittausdata", {"ADMIN_TOKEN", "GSC_SERVICE_ACCOUNT_JSON",
+                                                  "POSTHOG_PERSONAL_API_KEY"})}
+
+
 @pytest.mark.parametrize("nimi", sorted(AGENTTITYONKULUT))
 def test_vain_tilauksen_token(nimi):
-    teksti, _ = _lue(nimi)
+    teksti, doc = _lue(nimi)
     assert "ANTHROPIC_API_KEY" not in teksti
     assert "anthropic_api_key" not in teksti
-    salaisuudet = set(re.findall(r"secrets\.([A-Za-z0-9_]+)", teksti))
-    assert salaisuudet <= {"CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_TOKEN"}, salaisuudet
+    for jnimi, job in doc["jobs"].items():
+        salaisuudet = set(re.findall(r"secrets\.([A-Za-z0-9_]+)", yaml.safe_dump(job)))
+        sallitut = {"CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_TOKEN"}
+        mittaus = MITTAUSTYO.get(nimi)
+        if mittaus and jnimi == mittaus[0]:
+            assert not _agenttiaskel(job), "mittaustyössä ei saa olla Claudea"
+            assert all(v in ("read", "none") for v in (job.get("permissions") or {"x": "write"}).values())
+            sallitut = mittaus[1]
+        assert salaisuudet <= sallitut, (jnimi, salaisuudet)
 
 
 @pytest.mark.parametrize("nimi", sorted(AGENTTITYONKULUT))

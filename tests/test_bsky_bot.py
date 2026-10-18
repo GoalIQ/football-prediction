@@ -453,6 +453,43 @@ def test_x_mirror_epaonnistunut_ei_merkitse(monkeypatch):
     assert not state.get("x_mirrored")
 
 
+_KUVA = "https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:abc/bafkreikortti"
+
+
+def test_kortin_kuva_haetaan_postauksesta():
+    kuvat = {"posts": [{"embed": {"$type": "app.bsky.embed.images#view", "images": [{"fullsize": _KUVA}]}}]}
+    media = {"posts": [{"embed": {"media": {"images": [{"fullsize": _KUVA}]}}}]}
+    ulkoinen = {"posts": [{"embed": {"external": {"thumb": _KUVA}}}]}
+    for doc in (kuvat, media, ulkoinen):
+        assert bot.card_image_url("at://did:plc:abc/app.bsky.feed.post/x", fetch=lambda u, d=doc: d) == _KUVA
+    assert bot.card_image_url("at://x/app.bsky.feed.post/y", fetch=lambda u: {"posts": [{}]}) is None
+
+    def kaatuu(u):
+        raise OSError("verkko")
+    assert bot.card_image_url("at://x/app.bsky.feed.post/y", fetch=kaatuu) is None
+    assert bot.card_image_url(None) is None
+
+
+def test_x_issue_sisaltaa_kortin_kuvan():
+    p = bot.x_issue(_row(card="best-captain"), bot.x_version(_row()), _KUVA)
+    assert f"![kortti]({_KUVA})" in p["body"] and f"Suora linkki kuvaan: {_KUVA}" in p["body"]
+    ilman = bot.x_issue(_row(card="best-captain"), bot.x_version(_row()), None)
+    assert "kuvaa ei saatu haettua" in ilman["body"] and "bsky.app/profile" in ilman["body"]
+    assert "Kortti" not in bot.x_issue(_row(), bot.x_version(_row()))["body"]
+
+
+def test_x_mirror_hakee_kortin_kuvan(monkeypatch):
+    """Kutsupaikka: ilman card_image_url-kutsua cmd_x_mirrorissa kuva ei tule issueen."""
+    state = _state()
+    monkeypatch.setattr(bot, "load_state", lambda: state)
+    monkeypatch.setattr(bot, "read_log", lambda: [_row(card="team-news")])
+    monkeypatch.setattr(bot, "save_json", lambda path, obj: None)
+    tehdyt = []
+    bot.cmd_x_mirror(NOW, create=lambda p: tehdyt.append(p) or "url",
+                     image_fetch=lambda u: {"posts": [{"embed": {"images": [{"fullsize": _KUVA}]}}]})
+    assert len(tehdyt) == 1 and f"![kortti]({_KUVA})" in tehdyt[0]["body"]
+
+
 def test_julkaisu_tallentaa_linkin_ja_tyonkulku_ajaa_x_jonon():
     import inspect
     assert '"links": links or None' in inspect.getsource(bot.cmd_publish)

@@ -3795,6 +3795,34 @@ def admin_conversion(request: Request):
     }
 
 
+@app.post("/api/admin/mailerlite-sync",
+          description="Adds accounts created in the last N days to the MailerLite welcome group. "
+                      "Counts only, no emails. Requires an admin token.")
+def admin_mailerlite_sync(request: Request, paivia: int = 14):
+    """Uudet tilit MailerLiten ryhmaan, josta MailerLiten automaatio lahettaa tervetuloviestin.
+
+    Villen paatos 18.10.2026 (tervetuloviesti viikkoblastin sijaan). Logiikka ja turvat:
+    `src/mailerlite_sync.py`. MailerLiten avain tulee CI:sta otsakkeessa (GitHubin salaisuus,
+    yksi paikka) tai Renderin ymparistosta, jos sinne on asetettu. Tilit luetaan samasta
+    `_supabase_users()`-lukijasta kuin konversio: None on 503, ei "nolla tilia".
+    """
+    require_admin(request)
+    from src import mailerlite_sync
+
+    token = (request.headers.get("x-mailerlite-token") or os.environ.get("MAILERLITE_API_TOKEN") or "").strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="MailerLite token missing.")
+    paivia = max(1, min(int(paivia), 60))
+    users = _supabase_users()
+    if users is None:
+        raise HTTPException(status_code=503,
+                            detail="Could not read the account list just now. This is not zero accounts.")
+    try:
+        return mailerlite_sync.synkkaa(users, mailerlite_sync.MailerLite(token), paivia=paivia)
+    except requests.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"MailerLite request failed: {type(e).__name__}")
+
+
 class CompPremiumRequest(BaseModel):
     email: str
     comp: bool = True

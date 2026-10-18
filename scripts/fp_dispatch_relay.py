@@ -83,6 +83,12 @@ TARGETS: list[dict] = [
     # aivojen viimeisin ajo) on mainissa ja concurrency-ryhma sarjallistaa, joten cron-tupla
     # ei postaa toista kertaa eika aja aivoja uudelleen alle 2 h:ssa.
     {"workflow": "bsky-bot.yml", "slots": None},
+    # 18.10.2026: fpl-why-refresh on nyt deterministinen (maksullinen polku poistettu tyonkulusta), ja
+    # skripti diffaa komponenttihashin, joten cron-tupla ei kirjoita mitaan uutta.
+    {"workflow": "fpl-why-refresh.yml", "slots": None},
+    # 18.10.2026: uudet tilit MailerLiten tervetuloryhmaan. Idempotentti: upsert ei lisaa olemassa olevaa
+    # uudelleen eika automaatio laukea toista kertaa samalle tilaajalle.
+    {"workflow": "tervetulo-synkka.yml", "slots": None},
 ]
 
 # S14-mittarin (goaliq-app scripts/autopilot/cron_realization.py) ikkuna ja
@@ -118,8 +124,6 @@ EXCEPTIONS: dict[str, tuple[str, str]] = {
                                                    "(MM-pudotuspelit), ohi"),
     "affiliate-attrib-watch.yml": ("alle_s14_kynnyksen", "viikoittainen (1 slotti / 7 vrk); "
                                                          "issue-vahti sietaa viiveen"),
-    "fpl-why-refresh.yml": ("maksullinen", "kutsuu Claude Batches API:a (ANTHROPIC_API_KEY); "
-                                           "myohastynyt cron + relay = kaksi maksullista ajoa"),
     "auto-kehitys.yml": ("alle_s14_kynnyksen", "3 slottia / 7 vrk (ma, ke, pe). Lisaksi ei "
                                                "idempotentti: tupla-ajo tekisi toisen PR:n ja "
                                                "kuluttaisi Claude-kiintiota kahdesti"),

@@ -1,0 +1,202 @@
+# Julkaisutarkistus CI:ssä (18.10.2026, Villen GO: "julkaisutarkistaja ajetaan CI:ssä").
+#
+# Ennen tätä jokainen auto-PR odotti CoS-sessiota, joka ajoi julkaisutarkistajan käsin ennen kuin
+# Ville näki PR:n. Nyt auto-kehitys käynnistää tämän heti PR:n avattuaan, ja tulos tulee PR:ään
+# kommenttina ja labelina (julkaisutarkistus-lapi / -blokattu / -ei-tekstia). Villen GO lyhenee.
+#
+#   poimi       vain luku: PR-rungon "Julkinen teksti" -osio + diffin käyttäjälle näkyvät merkkijonot
+#               (.github/auto-kehitys/julkinen_teksti.py mainista). Ei tekstiä -> Claudea ei ajeta.
+#   tarkista    vain luku: Claude tilauksen OAuth-tokenilla (0 euroa), ohje
+#               .claude/agents/julkaisutarkistaja-ci.md MAINISTA (agentin haara ei voi löysätä sitä).
+#               Tulosportti: verdikti-tiedosto on pakollinen (.github/auto-kehitys/tulos.py).
+#   kommentoi   kirjoittaa kommentin ja labelin. Ei koskaan mergeä.
+#
+# Laukaisu: auto-kehitys.yml:n julkaise-työ (`gh workflow run julkaisutarkistus.yml -f pr=N`), tai käsin.
+
+name: julkaisutarkistus
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Auto-PR:n numero"
+        required: true
+
+concurrency:
+  group: julkaisutarkistus-${{ github.event.inputs.pr }}
+  cancel-in-progress: false
+
+jobs:
+  poimi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tarvitaan: ${{ steps.poimi.outputs.tarvitaan }}
+      sha: ${{ steps.pr.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: PR:n tiedot
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.inputs.pr }}
+        run: |
+          set -e
+          case "$PR" in ''|*[!0-9]*) echo "::error::PR-numero ei kelpaa: $PR"; exit 1 ;; esac
+          haara=$(gh pr view "$PR" --json headRefName --jq .headRefName)
+          case "$haara" in auto/*) ;; *) echo "::error::Vain auto/-haarat tarkistetaan: $haara"; exit 1 ;; esac
+          sha=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+          gh pr view "$PR" --json body --jq .body > "$RUNNER_TEMP/runko.md"
+          git fetch -q origin "pull/$PR/head"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Poimi julkinen teksti
+        id: poimi
+        env:
+          SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          set -e
+          git show origin/main:.github/auto-kehitys/julkinen_teksti.py > "$RUNNER_TEMP/jt.py"
+          python "$RUNNER_TEMP/jt.py" --base origin/main --head "$SHA" --runko "$RUNNER_TEMP/runko.md" \
+            --out "$RUNNER_TEMP/jt" | tee -a "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jt-syote
+          path: ${{ runner.temp }}/jt
+          retention-days: 7
+
+  tarkista:
+    needs: poimi
+    if: needs.poimi.outputs.tarvitaan == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Tilaus-token on asetettu
+        env:
+          T: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN puuttuu"; exit 1
+          fi
+
+      # Ohje ja tulosportti mainista ENNEN kuin PR:n haara tulee työpuuhun.
+      - name: PR:n haara työpuuhun, ohje mainista
+        env:
+          PR: ${{ github.event.inputs.pr }}
+          SHA: ${{ needs.poimi.outputs.sha }}
+        run: |
+          set -e
+          mkdir -p /tmp/jt "$RUNNER_TEMP/portit"
+          git show origin/main:.claude/agents/julkaisutarkistaja-ci.md > /tmp/jt/ohje.md
+          git show origin/main:.github/auto-kehitys/tulos.py > "$RUNNER_TEMP/portit/tulos.py"
+          git fetch -q origin "pull/$PR/head"
+          git checkout -q --detach "$SHA"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: jt-syote
+          path: /tmp/jt
+
+      - name: Julkaisutarkistaja
+        if: needs.poimi.outputs.tarvitaan == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # auto-kehitys käynnistää tämän GITHUB_TOKENilla (actor github-actions[bot]); ilman tätä
+          # action hylkää ajon (muisti claude-code-action-allowed-bots-rele). Vain tämä yksi botti.
+          allowed_bots: 'github-actions'
+          claude_args: >-
+            --max-turns 30
+            --add-dir /tmp/jt
+            --allowedTools "Read,Grep,Glob,WebFetch,Write"
+          prompt: |
+            Lue /tmp/jt/ohje.md ja toimi täsmälleen sen mukaan. Tarkistettava syöte on /tmp/jt/syote.md
+            (auto-PR #${{ github.event.inputs.pr }}). PR:n haara on checkoutattu repon juureen. Älä aloita
+            aliagenttia. Kirjoita verdikti Write-työkalulla tiedostoon /tmp/jt/verdikti.md; ensimmäinen rivi
+            on "VERDIKTI: JULKAISTAVISSA" tai "VERDIKTI: BLOKATTU". Tiedoston kirjoittaminen on pakollinen.
+
+      - name: Tulos
+        if: needs.poimi.outputs.tarvitaan == 'true'
+        run: |
+          python "$RUNNER_TEMP/portit/tulos.py" --nimi julkaisutarkistus --tiedosto /tmp/jt/verdikti.md \
+            --rivi '^VERDIKTI: (JULKAISTAVISSA|BLOKATTU)'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jt-verdikti
+          path: /tmp/jt/verdikti.md
+          if-no-files-found: ignore
+          retention-days: 7
+
+  kommentoi:
+    needs: [poimi, tarkista]
+    if: ${{ !cancelled() && needs.poimi.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        if: needs.poimi.outputs.tarvitaan == 'true'
+        continue-on-error: true
+        with:
+          name: jt-verdikti
+          path: ${{ runner.temp }}/jt
+
+      - name: Kommentti ja label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+          PR: ${{ github.event.inputs.pr }}
+          TARVITAAN: ${{ needs.poimi.outputs.tarvitaan }}
+        run: |
+          set -e
+          ajo="$GITHUB_SERVER_URL/$R/actions/runs/$GITHUB_RUN_ID"
+          for l in "julkaisutarkistus-lapi:0E8A16" "julkaisutarkistus-blokattu:B60205" "julkaisutarkistus-ei-tekstia:C5DEF5"; do
+            gh label create "${l%%:*}" -R "$R" --color "${l##*:}" --force
+          done
+          v="$RUNNER_TEMP/jt/verdikti.md"
+          tila=0
+          if [ "$TARVITAAN" != "true" ]; then
+            label=julkaisutarkistus-ei-tekstia
+            printf 'Julkaisutarkistus: PR-rungon mukaan julkinen teksti ei muutu, eikä diffistä löytynyt käyttäjälle näkyvää merkkijonoa. Claudea ei ajettu. Ajo: %s\n' "$ajo" > "$RUNNER_TEMP/k.md"
+          elif [ -s "$v" ] && grep -q '^VERDIKTI: JULKAISTAVISSA' "$v"; then
+            label=julkaisutarkistus-lapi
+            { echo "Julkaisutarkistus (CI, $ajo):"; echo; cat "$v"; } > "$RUNNER_TEMP/k.md"
+          elif [ -s "$v" ] && grep -q '^VERDIKTI: BLOKATTU' "$v"; then
+            label=julkaisutarkistus-blokattu
+            { echo "Julkaisutarkistus (CI, $ajo):"; echo; cat "$v"; } > "$RUNNER_TEMP/k.md"
+          else
+            label=julkaisutarkistus-blokattu
+            tila=1
+            printf 'Julkaisutarkistus EI ANTANUT VERDIKTIÄ (ajo epäonnistui), joten tulkitaan blokatuksi. Ajo: %s\n' "$ajo" > "$RUNNER_TEMP/k.md"
+          fi
+          for muu in julkaisutarkistus-lapi julkaisutarkistus-blokattu julkaisutarkistus-ei-tekstia; do
+            [ "$muu" = "$label" ] || gh pr edit "$PR" -R "$R" --remove-label "$muu" 2>/dev/null || true
+          done
+          gh pr edit "$PR" -R "$R" --add-label "$label"
+          gh pr comment "$PR" -R "$R" --body-file "$RUNNER_TEMP/k.md"
+          exit $tila

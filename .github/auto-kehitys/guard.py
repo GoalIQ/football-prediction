@@ -60,6 +60,7 @@ KIELLETYT = {
     "robots.txt": "hakukoneohjaus",
     "scripts/render_sync_build_filter.py": "tuotantoinfra",
     "scripts/push_site_repo.sh": "julkaisu",
+    "src/mailerlite_sync.py": "sähköpostilista ja tervetuloviesti: ihmisen päätös (18.10.2026)",
     "tests/test_auto_kehitys_*": "tämän portin omat testit",
 }
 
