@@ -4,16 +4,16 @@
     "available": true,
     "phase": 0,
     "league": "SAU-Saudi Pro League",
-    "generated_at": "2026-10-18T07:37:05",
+    "generated_at": "2026-10-18T09:53:46",
     "season": "2026/27",
     "source": "spl-fantasy-api",
     "fixture_source": "RSL Fantasy official API (fantasy.spl.com.sa)",
-    "team_strength_source": "GoalIQ Dixon-Coles, SPL results (ESPN) ['2425', '2526', '2627'] incl. 71 played 26/27 matches from the RSL Fantasy feed - goals-based fit (decay=0.0035, bayes=2.0); no free per-match xG feed exists for the SPL",
+    "team_strength_source": "GoalIQ Dixon-Coles, SPL results (ESPN) ['2425', '2526', '2627'] incl. 77 played 26/27 matches from the RSL Fantasy feed - goals-based fit (decay=0.0035, bayes=2.0); no free per-match xG feed exists for the SPL",
     "cs_method": "P(opponent scores 0) from the DC score matrix (tau corrected)",
     "fdr_method": "Model based 1-5: 0.55*rank(1 - win%) + 0.45*rank(expected goals conceded), quintile bucket across every team fixture of the season",
     "att_fdr_method": "Attack FDR 1-5: rank(own expected xG in the fixture) inverted (little xG of your own means a hard fixture), quintile bucket across every team fixture. 1 = easiest to attack against, 5 = hardest.",
     "caveat_code": "spl_phase0.caveat.v1",
-    "caveat": "Team strengths are fitted on the last two seasons plus the 71 matches of 26/27 played so far (goals-based, no xG data for the SPL). Promoted sides blend from a measured promoted baseline toward their fitted strength as real matches accumulate (full weight at 6). No manual context layer (unlike FPL Phase 1b).",
+    "caveat": "Team strengths are fitted on the last two seasons plus the 77 matches of 26/27 played so far (goals-based, no xG data for the SPL). Promoted sides blend from a measured promoted baseline toward their fitted strength as real matches accumulate (full weight at 6). No manual context layer (unlike FPL Phase 1b).",
     "promoted_baseline_teams": [
       "Abha",
       "Al Diriyah",
@@ -27,7 +27,7 @@
       ],
       "applied_to": []
     },
-    "inseason_matches_in_fit": 71,
+    "inseason_matches_in_fit": 77,
     "thin_sample_blend": {
       "blended": {},
       "n_min": 6,
@@ -37,8 +37,8 @@
         "Neom SC"
       ],
       "source": "measured",
-      "baseline_attack": -0.1384,
-      "baseline_defence": 0.2406
+      "baseline_attack": -0.151,
+      "baseline_defence": 0.2572
     },
     "sanity_gate": "PASS",
     "next_gameweek": 10,
@@ -325,7 +325,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 50.6
+          "cs_pct": 50.3
         },
         {
           "gw": 11,
@@ -335,9 +335,9 @@
           "kickoff_ms": 1792778400000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 22.1
+          "cs_pct": 22.5
         },
         {
           "gw": 12,
@@ -349,7 +349,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 53.0
+          "cs_pct": 49.9
         },
         {
           "gw": 13,
@@ -361,7 +361,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 38.3
+          "cs_pct": 38.5
         },
         {
           "gw": 14,
@@ -373,7 +373,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 51.2
+          "cs_pct": 51.0
         },
         {
           "gw": 15,
@@ -385,7 +385,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 43.0
+          "cs_pct": 42.7
         },
         {
           "gw": 16,
@@ -608,7 +608,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 43.0,
+      "next_avg_cs_pct": 42.5,
       "next_avg_fdr": 1.33,
       "next_n": 6
     },
@@ -626,7 +626,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 43.4
+          "cs_pct": 44.4
         },
         {
           "gw": 11,
@@ -638,7 +638,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 55.9
+          "cs_pct": 46.2
         },
         {
           "gw": 12,
@@ -650,7 +650,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 45.1
+          "cs_pct": 44.2
         },
         {
           "gw": 13,
@@ -662,7 +662,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 43.6
+          "cs_pct": 42.3
         },
         {
           "gw": 14,
@@ -674,7 +674,7 @@
           "def_fdr": 3,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 21.1
+          "cs_pct": 21.4
         },
         {
           "gw": 15,
@@ -686,7 +686,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 47.2
+          "cs_pct": 47.4
         },
         {
           "gw": 16,
@@ -826,8 +826,8 @@
           "opponent_short": "NEO",
           "venue": "A",
           "kickoff_ms": 1808002800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 1,
+          "def_fdr": 1,
           "att_fdr": 1,
           "tier": "far"
         },
@@ -909,7 +909,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 42.7,
+      "next_avg_cs_pct": 41.0,
       "next_avg_fdr": 1.33,
       "next_n": 6
     },
@@ -927,7 +927,7 @@
           "def_fdr": 1,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 42.0
+          "cs_pct": 42.5
         },
         {
           "gw": 11,
@@ -939,7 +939,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 47.3
+          "cs_pct": 47.1
         },
         {
           "gw": 12,
@@ -951,7 +951,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 31.0
+          "cs_pct": 31.2
         },
         {
           "gw": 13,
@@ -963,7 +963,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 44.1
+          "cs_pct": 44.2
         },
         {
           "gw": 14,
@@ -975,7 +975,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 51.9
+          "cs_pct": 48.1
         },
         {
           "gw": 15,
@@ -983,11 +983,11 @@
           "opponent_short": "ITT",
           "venue": "A",
           "kickoff_ms": 1795651200000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 30.9
+          "cs_pct": 31.2
         },
         {
           "gw": 16,
@@ -1118,7 +1118,7 @@
           "kickoff_ms": 1807743600000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -1173,7 +1173,7 @@
           "kickoff_ms": 1810076400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -1210,8 +1210,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 41.2,
-      "next_avg_fdr": 1.5,
+      "next_avg_cs_pct": 40.7,
+      "next_avg_fdr": 1.33,
       "next_n": 6
     },
     {
@@ -1228,7 +1228,7 @@
           "def_fdr": 2,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 45.8
+          "cs_pct": 45.7
         },
         {
           "gw": 11,
@@ -1238,9 +1238,9 @@
           "kickoff_ms": 1792769400000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 29.4
+          "cs_pct": 29.5
         },
         {
           "gw": 12,
@@ -1252,7 +1252,7 @@
           "def_fdr": 3,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 41.9
+          "cs_pct": 42.6
         },
         {
           "gw": 13,
@@ -1260,11 +1260,11 @@
           "opponent_short": "FSL",
           "venue": "A",
           "kickoff_ms": 1793836800000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 54.5
+          "cs_pct": 44.4
         },
         {
           "gw": 14,
@@ -1288,7 +1288,7 @@
           "def_fdr": 2,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 50.0
+          "cs_pct": 51.8
         },
         {
           "gw": 16,
@@ -1375,7 +1375,7 @@
           "kickoff_ms": 1805328000000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 5,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -1386,7 +1386,7 @@
           "kickoff_ms": 1806620400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -1441,7 +1441,7 @@
           "kickoff_ms": 1808953200000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
@@ -1452,7 +1452,7 @@
           "kickoff_ms": 1809558000000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 5,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -1500,8 +1500,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 39.4,
-      "next_avg_fdr": 2.83,
+      "next_avg_cs_pct": 38.1,
+      "next_avg_fdr": 3.0,
       "next_n": 6
     },
     {
@@ -1518,7 +1518,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 42.3
+          "cs_pct": 41.9
         },
         {
           "gw": 11,
@@ -1530,7 +1530,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 16.4
+          "cs_pct": 16.2
         },
         {
           "gw": 12,
@@ -1542,7 +1542,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 47.0
+          "cs_pct": 46.6
         },
         {
           "gw": 13,
@@ -1554,7 +1554,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 49.5
+          "cs_pct": 51.2
         },
         {
           "gw": 14,
@@ -1566,7 +1566,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 16.2
+          "cs_pct": 15.8
         },
         {
           "gw": 15,
@@ -1578,7 +1578,7 @@
           "def_fdr": 1,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 49.3
+          "cs_pct": 45.6
         },
         {
           "gw": 16,
@@ -1751,8 +1751,8 @@
           "opponent_short": "NAS",
           "venue": "H",
           "kickoff_ms": 1810076400000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -1790,7 +1790,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 36.8,
+      "next_avg_cs_pct": 36.2,
       "next_avg_fdr": 2.0,
       "next_n": 6
     },
@@ -1808,7 +1808,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 27.9
+          "cs_pct": 28.2
         },
         {
           "gw": 11,
@@ -1820,7 +1820,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 41.0
+          "cs_pct": 40.9
         },
         {
           "gw": 12,
@@ -1830,9 +1830,9 @@
           "kickoff_ms": 1793367900000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 48.7
+          "cs_pct": 47.6
         },
         {
           "gw": 13,
@@ -1844,7 +1844,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 34.9
+          "cs_pct": 36.0
         },
         {
           "gw": 14,
@@ -1856,7 +1856,7 @@
           "def_fdr": 2,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 34.2
+          "cs_pct": 33.0
         },
         {
           "gw": 15,
@@ -1868,7 +1868,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 23.8
+          "cs_pct": 24.2
         },
         {
           "gw": 16,
@@ -1911,7 +1911,7 @@
           "kickoff_ms": 1797701400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -1988,7 +1988,7 @@
           "kickoff_ms": 1807138800000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2032,7 +2032,7 @@
           "kickoff_ms": 1808953200000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -2091,7 +2091,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 35.1,
+      "next_avg_cs_pct": 35.0,
       "next_avg_fdr": 2.33,
       "next_n": 6
     },
@@ -2109,7 +2109,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 11.9
+          "cs_pct": 12.2
         },
         {
           "gw": 11,
@@ -2121,7 +2121,7 @@
           "def_fdr": 1,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 46.9
+          "cs_pct": 46.1
         },
         {
           "gw": 12,
@@ -2131,9 +2131,9 @@
           "kickoff_ms": 1793371800000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 52.1
+          "cs_pct": 51.1
         },
         {
           "gw": 13,
@@ -2145,7 +2145,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 23.5
+          "cs_pct": 24.2
         },
         {
           "gw": 14,
@@ -2155,9 +2155,9 @@
           "kickoff_ms": 1795132800000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 1,
+          "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 37.3
+          "cs_pct": 36.9
         },
         {
           "gw": 15,
@@ -2169,7 +2169,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 36.4
+          "cs_pct": 37.0
         },
         {
           "gw": 16,
@@ -2199,8 +2199,8 @@
           "opponent_short": "FYH",
           "venue": "A",
           "kickoff_ms": 1797206400000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -2223,7 +2223,7 @@
           "kickoff_ms": 1802908800000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
@@ -2256,7 +2256,7 @@
           "kickoff_ms": 1805328000000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
@@ -2267,7 +2267,7 @@
           "kickoff_ms": 1806620400000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -2276,8 +2276,8 @@
           "opponent_short": "HAZ",
           "venue": "H",
           "kickoff_ms": 1807138800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 1,
+          "def_fdr": 1,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -2311,7 +2311,7 @@
           "kickoff_ms": 1808348400000,
           "fdr": 1,
           "def_fdr": 1,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -2331,8 +2331,8 @@
           "opponent_short": "ITT",
           "venue": "H",
           "kickoff_ms": 1809558000000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -2381,9 +2381,311 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 34.7,
+      "next_avg_cs_pct": 34.6,
       "next_avg_fdr": 2.67,
       "next_n": 6
+    },
+    {
+      "name": "Abha",
+      "short": "ABH",
+      "fixtures": [
+        {
+          "gw": 10,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "H",
+          "kickoff_ms": 1792423200000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 28.6
+        },
+        {
+          "gw": 11,
+          "opponent": "Neom SC",
+          "opponent_short": "NEO",
+          "venue": "A",
+          "kickoff_ms": 1792850400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 24.0
+        },
+        {
+          "gw": 12,
+          "opponent": "Al Faisaly",
+          "opponent_short": "FSL",
+          "venue": "H",
+          "kickoff_ms": 1793104800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 32.6
+        },
+        {
+          "gw": 12,
+          "opponent": "Al Ittihad",
+          "opponent_short": "ITT",
+          "venue": "H",
+          "kickoff_ms": 1793367900000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 17.5
+        },
+        {
+          "gw": 13,
+          "opponent": "Al Shabab",
+          "opponent_short": "SHB",
+          "venue": "H",
+          "kickoff_ms": 1793836800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 31.9
+        },
+        {
+          "gw": 14,
+          "opponent": "Al Taawoun",
+          "opponent_short": "TWN",
+          "venue": "A",
+          "kickoff_ms": 1795132800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 28.9
+        },
+        {
+          "gw": 15,
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
+          "venue": "H",
+          "kickoff_ms": 1795651200000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 32.0
+        },
+        {
+          "gw": 16,
+          "opponent": "Al Hilal",
+          "opponent_short": "HIL",
+          "venue": "A",
+          "kickoff_ms": 1796256000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 17,
+          "opponent": "Al Fateh",
+          "opponent_short": "FAT",
+          "venue": "H",
+          "kickoff_ms": 1796860800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 18,
+          "opponent": "Al Hazem",
+          "opponent_short": "HAZ",
+          "venue": "A",
+          "kickoff_ms": 1797206400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 19,
+          "opponent": "Al Ahli",
+          "opponent_short": "AHL",
+          "venue": "H",
+          "kickoff_ms": 1802304000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 20,
+          "opponent": "Al Khaleej",
+          "opponent_short": "KLJ",
+          "venue": "A",
+          "kickoff_ms": 1802908800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 21,
+          "opponent": "Al Fayha",
+          "opponent_short": "FYH",
+          "venue": "H",
+          "kickoff_ms": 1803513600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 22,
+          "opponent": "Al Ettifaq",
+          "opponent_short": "ETT",
+          "venue": "A",
+          "kickoff_ms": 1804723200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 23,
+          "opponent": "Al Nassr",
+          "opponent_short": "NAS",
+          "venue": "H",
+          "kickoff_ms": 1805328000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 24,
+          "opponent": "Al Diriyah",
+          "opponent_short": "DIR",
+          "venue": "H",
+          "kickoff_ms": 1806620400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 25,
+          "opponent": "Al Faisaly",
+          "opponent_short": "FSL",
+          "venue": "A",
+          "kickoff_ms": 1807138800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 26,
+          "opponent": "Al Qadsiah",
+          "opponent_short": "QAD",
+          "venue": "H",
+          "kickoff_ms": 1807743600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 27,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "A",
+          "kickoff_ms": 1808002800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 28,
+          "opponent": "Neom SC",
+          "opponent_short": "NEO",
+          "venue": "H",
+          "kickoff_ms": 1808348400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 29,
+          "opponent": "Al Ittihad",
+          "opponent_short": "ITT",
+          "venue": "A",
+          "kickoff_ms": 1808953200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 30,
+          "opponent": "Al Shabab",
+          "opponent_short": "SHB",
+          "venue": "A",
+          "kickoff_ms": 1809558000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 31,
+          "opponent": "Al Taawoun",
+          "opponent_short": "TWN",
+          "venue": "H",
+          "kickoff_ms": 1810076400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 32,
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
+          "venue": "A",
+          "kickoff_ms": 1810767600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 33,
+          "opponent": "Al Hilal",
+          "opponent_short": "HIL",
+          "venue": "H",
+          "kickoff_ms": 1811113200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 34,
+          "opponent": "Al Fateh",
+          "opponent_short": "FAT",
+          "venue": "A",
+          "kickoff_ms": 1811458800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        }
+      ],
+      "next_avg_cs_pct": 27.9,
+      "next_avg_fdr": 3.57,
+      "next_n": 7
     },
     {
       "name": "Al Fayha",
@@ -2395,11 +2697,11 @@
           "opponent_short": "AHL",
           "venue": "H",
           "kickoff_ms": 1792422300000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 18.3
+          "cs_pct": 17.9
         },
         {
           "gw": 11,
@@ -2411,7 +2713,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 28.9
+          "cs_pct": 26.9
         },
         {
           "gw": 12,
@@ -2423,7 +2725,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 37.5
+          "cs_pct": 32.7
         },
         {
           "gw": 13,
@@ -2435,7 +2737,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 9.2
+          "cs_pct": 9.1
         },
         {
           "gw": 14,
@@ -2447,7 +2749,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 36.7
+          "cs_pct": 32.7
         },
         {
           "gw": 15,
@@ -2459,7 +2761,7 @@
           "def_fdr": 3,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 45.4
+          "cs_pct": 43.2
         },
         {
           "gw": 16,
@@ -2480,7 +2782,7 @@
           "kickoff_ms": 1796860800000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
@@ -2533,8 +2835,8 @@
           "opponent_short": "KLD",
           "venue": "A",
           "kickoff_ms": 1804723200000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -2557,7 +2859,7 @@
           "kickoff_ms": 1806620400000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -2568,7 +2870,7 @@
           "kickoff_ms": 1807138800000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2601,7 +2903,7 @@
           "kickoff_ms": 1808348400000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 3,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -2610,8 +2912,8 @@
           "opponent_short": "FSL",
           "venue": "A",
           "kickoff_ms": 1808953200000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -2632,8 +2934,8 @@
           "opponent_short": "FAT",
           "venue": "A",
           "kickoff_ms": 1810076400000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -2671,8 +2973,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 29.3,
-      "next_avg_fdr": 3.33,
+      "next_avg_cs_pct": 27.1,
+      "next_avg_fdr": 3.5,
       "next_n": 6
     },
     {
@@ -2689,7 +2991,7 @@
           "def_fdr": 3,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 40.3
+          "cs_pct": 38.7
         },
         {
           "gw": 11,
@@ -2701,7 +3003,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 24.5
+          "cs_pct": 24.6
         },
         {
           "gw": 12,
@@ -2713,7 +3015,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 6.9
+          "cs_pct": 7.0
         },
         {
           "gw": 13,
@@ -2725,7 +3027,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 24.1
+          "cs_pct": 23.3
         },
         {
           "gw": 14,
@@ -2737,7 +3039,7 @@
           "def_fdr": 3,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 29.0
+          "cs_pct": 28.7
         },
         {
           "gw": 15,
@@ -2749,7 +3051,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 37.5
+          "cs_pct": 36.2
         },
         {
           "gw": 16,
@@ -2768,8 +3070,8 @@
           "opponent_short": "FSL",
           "venue": "A",
           "kickoff_ms": 1796860800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -2812,9 +3114,9 @@
           "opponent_short": "SHB",
           "venue": "H",
           "kickoff_ms": 1802908800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2823,8 +3125,8 @@
           "opponent_short": "NEO",
           "venue": "A",
           "kickoff_ms": 1803513600000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
@@ -2946,7 +3248,7 @@
           "kickoff_ms": 1810767600000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2972,311 +3274,9 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 27.1,
+      "next_avg_cs_pct": 26.4,
       "next_avg_fdr": 3.5,
       "next_n": 6
-    },
-    {
-      "name": "Abha",
-      "short": "ABH",
-      "fixtures": [
-        {
-          "gw": 10,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "H",
-          "kickoff_ms": 1792423200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 28.5
-        },
-        {
-          "gw": 11,
-          "opponent": "Neom SC",
-          "opponent_short": "NEO",
-          "venue": "A",
-          "kickoff_ms": 1792850400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 19.8
-        },
-        {
-          "gw": 12,
-          "opponent": "Al Faisaly",
-          "opponent_short": "FSL",
-          "venue": "H",
-          "kickoff_ms": 1793104800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 35.6
-        },
-        {
-          "gw": 12,
-          "opponent": "Al Ittihad",
-          "opponent_short": "ITT",
-          "venue": "H",
-          "kickoff_ms": 1793367900000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 16.2
-        },
-        {
-          "gw": 13,
-          "opponent": "Al Shabab",
-          "opponent_short": "SHB",
-          "venue": "H",
-          "kickoff_ms": 1793836800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 30.5
-        },
-        {
-          "gw": 14,
-          "opponent": "Al Taawoun",
-          "opponent_short": "TWN",
-          "venue": "A",
-          "kickoff_ms": 1795132800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 27.7
-        },
-        {
-          "gw": 15,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
-          "venue": "H",
-          "kickoff_ms": 1795651200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 30.7
-        },
-        {
-          "gw": 16,
-          "opponent": "Al Hilal",
-          "opponent_short": "HIL",
-          "venue": "A",
-          "kickoff_ms": 1796256000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 17,
-          "opponent": "Al Fateh",
-          "opponent_short": "FAT",
-          "venue": "H",
-          "kickoff_ms": 1796860800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 18,
-          "opponent": "Al Hazem",
-          "opponent_short": "HAZ",
-          "venue": "A",
-          "kickoff_ms": 1797206400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 19,
-          "opponent": "Al Ahli",
-          "opponent_short": "AHL",
-          "venue": "H",
-          "kickoff_ms": 1802304000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 20,
-          "opponent": "Al Khaleej",
-          "opponent_short": "KLJ",
-          "venue": "A",
-          "kickoff_ms": 1802908800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 21,
-          "opponent": "Al Fayha",
-          "opponent_short": "FYH",
-          "venue": "H",
-          "kickoff_ms": 1803513600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 22,
-          "opponent": "Al Ettifaq",
-          "opponent_short": "ETT",
-          "venue": "A",
-          "kickoff_ms": 1804723200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 23,
-          "opponent": "Al Nassr",
-          "opponent_short": "NAS",
-          "venue": "H",
-          "kickoff_ms": 1805328000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 24,
-          "opponent": "Al Diriyah",
-          "opponent_short": "DIR",
-          "venue": "H",
-          "kickoff_ms": 1806620400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 25,
-          "opponent": "Al Faisaly",
-          "opponent_short": "FSL",
-          "venue": "A",
-          "kickoff_ms": 1807138800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 26,
-          "opponent": "Al Qadsiah",
-          "opponent_short": "QAD",
-          "venue": "H",
-          "kickoff_ms": 1807743600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 27,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "A",
-          "kickoff_ms": 1808002800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 28,
-          "opponent": "Neom SC",
-          "opponent_short": "NEO",
-          "venue": "H",
-          "kickoff_ms": 1808348400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 29,
-          "opponent": "Al Ittihad",
-          "opponent_short": "ITT",
-          "venue": "A",
-          "kickoff_ms": 1808953200000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 30,
-          "opponent": "Al Shabab",
-          "opponent_short": "SHB",
-          "venue": "A",
-          "kickoff_ms": 1809558000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 31,
-          "opponent": "Al Taawoun",
-          "opponent_short": "TWN",
-          "venue": "H",
-          "kickoff_ms": 1810076400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 32,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
-          "venue": "A",
-          "kickoff_ms": 1810767600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 33,
-          "opponent": "Al Hilal",
-          "opponent_short": "HIL",
-          "venue": "H",
-          "kickoff_ms": 1811113200000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 34,
-          "opponent": "Al Fateh",
-          "opponent_short": "FAT",
-          "venue": "A",
-          "kickoff_ms": 1811458800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        }
-      ],
-      "next_avg_cs_pct": 27.0,
-      "next_avg_fdr": 3.86,
-      "next_n": 7
     },
     {
       "name": "Al Shabab",
@@ -3292,7 +3292,7 @@
           "def_fdr": 2,
           "att_fdr": 1,
           "tier": "near",
-          "cs_pct": 36.4
+          "cs_pct": 32.3
         },
         {
           "gw": 11,
@@ -3304,7 +3304,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 27.9
+          "cs_pct": 27.1
         },
         {
           "gw": 12,
@@ -3316,7 +3316,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 17.3
+          "cs_pct": 17.5
         },
         {
           "gw": 13,
@@ -3328,7 +3328,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 41.5
+          "cs_pct": 40.2
         },
         {
           "gw": 14,
@@ -3340,7 +3340,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 22.3
+          "cs_pct": 22.7
         },
         {
           "gw": 15,
@@ -3371,8 +3371,8 @@
           "opponent_short": "DIR",
           "venue": "A",
           "kickoff_ms": 1796860800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 5,
           "tier": "far"
         },
@@ -3415,8 +3415,8 @@
           "opponent_short": "RIY",
           "venue": "A",
           "kickoff_ms": 1802908800000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -3428,7 +3428,7 @@
           "kickoff_ms": 1803513600000,
           "fdr": 2,
           "def_fdr": 2,
-          "att_fdr": 2,
+          "att_fdr": 1,
           "tier": "far"
         },
         {
@@ -3459,8 +3459,8 @@
           "opponent_short": "FYH",
           "venue": "A",
           "kickoff_ms": 1806620400000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -3492,8 +3492,8 @@
           "opponent_short": "FSL",
           "venue": "A",
           "kickoff_ms": 1808002800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -3525,9 +3525,9 @@
           "opponent_short": "ABH",
           "venue": "H",
           "kickoff_ms": 1809558000000,
-          "fdr": 1,
-          "def_fdr": 1,
-          "att_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -3538,7 +3538,7 @@
           "kickoff_ms": 1810076400000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -3575,7 +3575,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 25.4,
+      "next_avg_cs_pct": 24.5,
       "next_avg_fdr": 3.17,
       "next_n": 6
     },
@@ -3593,7 +3593,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 10.5
+          "cs_pct": 10.6
         },
         {
           "gw": 11,
@@ -3605,7 +3605,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 35.5
+          "cs_pct": 35.4
         },
         {
           "gw": 12,
@@ -3617,7 +3617,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 24.4
+          "cs_pct": 24.7
         },
         {
           "gw": 13,
@@ -3641,7 +3641,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 41.2
+          "cs_pct": 39.6
         },
         {
           "gw": 15,
@@ -3653,7 +3653,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 22.6
+          "cs_pct": 25.7
         },
         {
           "gw": 16,
@@ -3729,7 +3729,7 @@
           "kickoff_ms": 1804723200000,
           "fdr": 3,
           "def_fdr": 3,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
@@ -3760,8 +3760,8 @@
           "opponent_short": "SHB",
           "venue": "H",
           "kickoff_ms": 1807138800000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -3826,8 +3826,8 @@
           "opponent_short": "ABH",
           "venue": "A",
           "kickoff_ms": 1810076400000,
-          "fdr": 1,
-          "def_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -3865,599 +3865,7 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 23.4,
-      "next_avg_fdr": 3.67,
-      "next_n": 6
-    },
-    {
-      "name": "Al Faisaly",
-      "short": "FSL",
-      "fixtures": [
-        {
-          "gw": 10,
-          "opponent": "Al Shabab",
-          "opponent_short": "SHB",
-          "venue": "A",
-          "kickoff_ms": 1792432800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 16.2
-        },
-        {
-          "gw": 11,
-          "opponent": "Al Nassr",
-          "opponent_short": "NAS",
-          "venue": "H",
-          "kickoff_ms": 1792762200000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 9.5
-        },
-        {
-          "gw": 12,
-          "opponent": "Abha",
-          "opponent_short": "ABH",
-          "venue": "A",
-          "kickoff_ms": 1793104800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 41.2
-        },
-        {
-          "gw": 12,
-          "opponent": "Al Fayha",
-          "opponent_short": "FYH",
-          "venue": "A",
-          "kickoff_ms": 1793458500000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 25.9
-        },
-        {
-          "gw": 13,
-          "opponent": "Al Diriyah",
-          "opponent_short": "DIR",
-          "venue": "H",
-          "kickoff_ms": 1793836800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 33.3
-        },
-        {
-          "gw": 14,
-          "opponent": "Al Ahli",
-          "opponent_short": "AHL",
-          "venue": "A",
-          "kickoff_ms": 1795132800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 5.2
-        },
-        {
-          "gw": 15,
-          "opponent": "Al Khaleej",
-          "opponent_short": "KLJ",
-          "venue": "H",
-          "kickoff_ms": 1795651200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 31.2
-        },
-        {
-          "gw": 16,
-          "opponent": "Al Taawoun",
-          "opponent_short": "TWN",
-          "venue": "A",
-          "kickoff_ms": 1796256000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 17,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
-          "venue": "H",
-          "kickoff_ms": 1796860800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 18,
-          "opponent": "Al Hilal",
-          "opponent_short": "HIL",
-          "venue": "H",
-          "kickoff_ms": 1797206400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 19,
-          "opponent": "Neom SC",
-          "opponent_short": "NEO",
-          "venue": "A",
-          "kickoff_ms": 1802304000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 20,
-          "opponent": "Al Fateh",
-          "opponent_short": "FAT",
-          "venue": "A",
-          "kickoff_ms": 1802908800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 21,
-          "opponent": "Al Qadsiah",
-          "opponent_short": "QAD",
-          "venue": "H",
-          "kickoff_ms": 1803513600000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 22,
-          "opponent": "Al Hazem",
-          "opponent_short": "HAZ",
-          "venue": "A",
-          "kickoff_ms": 1804723200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 23,
-          "opponent": "Al Ettifaq",
-          "opponent_short": "ETT",
-          "venue": "H",
-          "kickoff_ms": 1805328000000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 24,
-          "opponent": "Al Ittihad",
-          "opponent_short": "ITT",
-          "venue": "A",
-          "kickoff_ms": 1806620400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 25,
-          "opponent": "Abha",
-          "opponent_short": "ABH",
-          "venue": "H",
-          "kickoff_ms": 1807138800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 26,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "A",
-          "kickoff_ms": 1807743600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 27,
-          "opponent": "Al Shabab",
-          "opponent_short": "SHB",
-          "venue": "H",
-          "kickoff_ms": 1808002800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 28,
-          "opponent": "Al Nassr",
-          "opponent_short": "NAS",
-          "venue": "A",
-          "kickoff_ms": 1808348400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 29,
-          "opponent": "Al Fayha",
-          "opponent_short": "FYH",
-          "venue": "H",
-          "kickoff_ms": 1808953200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 30,
-          "opponent": "Al Diriyah",
-          "opponent_short": "DIR",
-          "venue": "A",
-          "kickoff_ms": 1809558000000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 31,
-          "opponent": "Al Ahli",
-          "opponent_short": "AHL",
-          "venue": "H",
-          "kickoff_ms": 1810076400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 32,
-          "opponent": "Al Khaleej",
-          "opponent_short": "KLJ",
-          "venue": "A",
-          "kickoff_ms": 1810767600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 33,
-          "opponent": "Al Taawoun",
-          "opponent_short": "TWN",
-          "venue": "H",
-          "kickoff_ms": 1811113200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 34,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
-          "venue": "A",
-          "kickoff_ms": 1811458800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        }
-      ],
-      "next_avg_cs_pct": 23.2,
-      "next_avg_fdr": 3.86,
-      "next_n": 7
-    },
-    {
-      "name": "Al Hazem",
-      "short": "HAZ",
-      "fixtures": [
-        {
-          "gw": 10,
-          "opponent": "Al Hilal",
-          "opponent_short": "HIL",
-          "venue": "A",
-          "kickoff_ms": 1792432800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 6.5
-        },
-        {
-          "gw": 11,
-          "opponent": "Al Fayha",
-          "opponent_short": "FYH",
-          "venue": "H",
-          "kickoff_ms": 1792676400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 36.9
-        },
-        {
-          "gw": 12,
-          "opponent": "Al Khaleej",
-          "opponent_short": "KLJ",
-          "venue": "A",
-          "kickoff_ms": 1793284500000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 28.0
-        },
-        {
-          "gw": 13,
-          "opponent": "Al Nassr",
-          "opponent_short": "NAS",
-          "venue": "H",
-          "kickoff_ms": 1793836800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "near",
-          "cs_pct": 10.4
-        },
-        {
-          "gw": 14,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
-          "venue": "A",
-          "kickoff_ms": 1795132800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 34.3
-        },
-        {
-          "gw": 15,
-          "opponent": "Al Ettifaq",
-          "opponent_short": "ETT",
-          "venue": "A",
-          "kickoff_ms": 1795651200000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 22.0
-        },
-        {
-          "gw": 16,
-          "opponent": "Al Qadsiah",
-          "opponent_short": "QAD",
-          "venue": "H",
-          "kickoff_ms": 1796256000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 17,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "A",
-          "kickoff_ms": 1796860800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 18,
-          "opponent": "Abha",
-          "opponent_short": "ABH",
-          "venue": "H",
-          "kickoff_ms": 1797206400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 19,
-          "opponent": "Al Diriyah",
-          "opponent_short": "DIR",
-          "venue": "A",
-          "kickoff_ms": 1802304000000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 20,
-          "opponent": "Al Ittihad",
-          "opponent_short": "ITT",
-          "venue": "H",
-          "kickoff_ms": 1802908800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 21,
-          "opponent": "Al Shabab",
-          "opponent_short": "SHB",
-          "venue": "A",
-          "kickoff_ms": 1803513600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 22,
-          "opponent": "Al Faisaly",
-          "opponent_short": "FSL",
-          "venue": "H",
-          "kickoff_ms": 1804723200000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 23,
-          "opponent": "Al Taawoun",
-          "opponent_short": "TWN",
-          "venue": "A",
-          "kickoff_ms": 1805328000000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 24,
-          "opponent": "Al Ahli",
-          "opponent_short": "AHL",
-          "venue": "H",
-          "kickoff_ms": 1806620400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 25,
-          "opponent": "Neom SC",
-          "opponent_short": "NEO",
-          "venue": "A",
-          "kickoff_ms": 1807138800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 26,
-          "opponent": "Al Fateh",
-          "opponent_short": "FAT",
-          "venue": "A",
-          "kickoff_ms": 1807743600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 27,
-          "opponent": "Al Hilal",
-          "opponent_short": "HIL",
-          "venue": "H",
-          "kickoff_ms": 1808002800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 28,
-          "opponent": "Al Fayha",
-          "opponent_short": "FYH",
-          "venue": "A",
-          "kickoff_ms": 1808348400000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 29,
-          "opponent": "Al Khaleej",
-          "opponent_short": "KLJ",
-          "venue": "H",
-          "kickoff_ms": 1808953200000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 30,
-          "opponent": "Al Nassr",
-          "opponent_short": "NAS",
-          "venue": "A",
-          "kickoff_ms": 1809558000000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 31,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
-          "venue": "H",
-          "kickoff_ms": 1810076400000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 32,
-          "opponent": "Al Ettifaq",
-          "opponent_short": "ETT",
-          "venue": "H",
-          "kickoff_ms": 1810767600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 33,
-          "opponent": "Al Qadsiah",
-          "opponent_short": "QAD",
-          "venue": "A",
-          "kickoff_ms": 1811113200000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 34,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "H",
-          "kickoff_ms": 1811458800000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 2,
-          "tier": "far"
-        }
-      ],
-      "next_avg_cs_pct": 23.0,
+      "next_avg_cs_pct": 23.7,
       "next_avg_fdr": 3.67,
       "next_n": 6
     },
@@ -4475,7 +3883,7 @@
           "def_fdr": 4,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 17.9
+          "cs_pct": 19.5
         },
         {
           "gw": 11,
@@ -4483,11 +3891,11 @@
           "opponent_short": "KLD",
           "venue": "A",
           "kickoff_ms": 1792854300000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 26.5
+          "cs_pct": 27.8
         },
         {
           "gw": 12,
@@ -4495,11 +3903,11 @@
           "opponent_short": "TWN",
           "venue": "A",
           "kickoff_ms": 1793453400000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 29.7
+          "cs_pct": 31.3
         },
         {
           "gw": 13,
@@ -4511,7 +3919,7 @@
           "def_fdr": 5,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 7.8
+          "cs_pct": 8.8
         },
         {
           "gw": 14,
@@ -4523,7 +3931,7 @@
           "def_fdr": 4,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 17.4
+          "cs_pct": 18.9
         },
         {
           "gw": 15,
@@ -4535,7 +3943,7 @@
           "def_fdr": 2,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 34.2
+          "cs_pct": 35.5
         },
         {
           "gw": 16,
@@ -4554,8 +3962,8 @@
           "opponent_short": "FYH",
           "venue": "H",
           "kickoff_ms": 1796860800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 1,
+          "def_fdr": 1,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -4609,8 +4017,8 @@
           "opponent_short": "ABH",
           "venue": "H",
           "kickoff_ms": 1804723200000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 1,
+          "def_fdr": 1,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -4620,8 +4028,8 @@
           "opponent_short": "FSL",
           "venue": "A",
           "kickoff_ms": 1805328000000,
-          "fdr": 1,
-          "def_fdr": 1,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -4686,8 +4094,8 @@
           "opponent_short": "TWN",
           "venue": "H",
           "kickoff_ms": 1808953200000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -4747,91 +4155,103 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 22.2,
-      "next_avg_fdr": 3.5,
+      "next_avg_cs_pct": 23.6,
+      "next_avg_fdr": 3.17,
       "next_n": 6
     },
     {
-      "name": "Al Khaleej",
-      "short": "KLJ",
+      "name": "Al Faisaly",
+      "short": "FSL",
       "fixtures": [
         {
           "gw": 10,
-          "opponent": "Al Fateh",
-          "opponent_short": "FAT",
+          "opponent": "Al Shabab",
+          "opponent_short": "SHB",
           "venue": "A",
-          "kickoff_ms": 1792346400000,
+          "kickoff_ms": 1792432800000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 24.6
+          "cs_pct": 14.9
         },
         {
           "gw": 11,
-          "opponent": "Al Ahli",
-          "opponent_short": "AHL",
-          "venue": "A",
-          "kickoff_ms": 1792692000000,
+          "opponent": "Al Nassr",
+          "opponent_short": "NAS",
+          "venue": "H",
+          "kickoff_ms": 1792762200000,
           "fdr": 5,
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 4.0
+          "cs_pct": 8.5
         },
         {
           "gw": 12,
-          "opponent": "Al Hazem",
-          "opponent_short": "HAZ",
+          "opponent": "Abha",
+          "opponent_short": "ABH",
+          "venue": "A",
+          "kickoff_ms": 1793104800000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 38.2
+        },
+        {
+          "gw": 12,
+          "opponent": "Al Fayha",
+          "opponent_short": "FYH",
+          "venue": "A",
+          "kickoff_ms": 1793458500000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 24.7
+        },
+        {
+          "gw": 13,
+          "opponent": "Al Diriyah",
+          "opponent_short": "DIR",
           "venue": "H",
-          "kickoff_ms": 1793284500000,
+          "kickoff_ms": 1793836800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 31.4
+        },
+        {
+          "gw": 14,
+          "opponent": "Al Ahli",
+          "opponent_short": "AHL",
+          "venue": "A",
+          "kickoff_ms": 1795132800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 4.6
+        },
+        {
+          "gw": 15,
+          "opponent": "Al Khaleej",
+          "opponent_short": "KLJ",
+          "venue": "H",
+          "kickoff_ms": 1795651200000,
           "fdr": 3,
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 29.5
-        },
-        {
-          "gw": 13,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "A",
-          "kickoff_ms": 1793836800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 2,
-          "tier": "near",
-          "cs_pct": 22.1
-        },
-        {
-          "gw": 14,
-          "opponent": "Al Ittihad",
-          "opponent_short": "ITT",
-          "venue": "H",
-          "kickoff_ms": 1795132800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 14.1
-        },
-        {
-          "gw": 15,
-          "opponent": "Al Faisaly",
-          "opponent_short": "FSL",
-          "venue": "A",
-          "kickoff_ms": 1795651200000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 37.2
+          "cs_pct": 29.3
         },
         {
           "gw": 16,
-          "opponent": "Al Diriyah",
-          "opponent_short": "DIR",
-          "venue": "H",
+          "opponent": "Al Taawoun",
+          "opponent_short": "TWN",
+          "venue": "A",
           "kickoff_ms": 1796256000000,
           "fdr": 4,
           "def_fdr": 4,
@@ -4840,53 +4260,53 @@
         },
         {
           "gw": 17,
-          "opponent": "Al Qadsiah",
-          "opponent_short": "QAD",
-          "venue": "A",
-          "kickoff_ms": 1796860800000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 18,
-          "opponent": "Al Taawoun",
-          "opponent_short": "TWN",
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
           "venue": "H",
-          "kickoff_ms": 1797206400000,
+          "kickoff_ms": 1796860800000,
           "fdr": 3,
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
         {
-          "gw": 19,
-          "opponent": "Al Shabab",
-          "opponent_short": "SHB",
-          "venue": "A",
-          "kickoff_ms": 1802304000000,
+          "gw": 18,
+          "opponent": "Al Hilal",
+          "opponent_short": "HIL",
+          "venue": "H",
+          "kickoff_ms": 1797206400000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 3,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 19,
+          "opponent": "Neom SC",
+          "opponent_short": "NEO",
+          "venue": "A",
+          "kickoff_ms": 1802304000000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
           "gw": 20,
-          "opponent": "Abha",
-          "opponent_short": "ABH",
-          "venue": "H",
+          "opponent": "Al Fateh",
+          "opponent_short": "FAT",
+          "venue": "A",
           "kickoff_ms": 1802908800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 2,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
           "tier": "far"
         },
         {
           "gw": 21,
-          "opponent": "Al Hilal",
-          "opponent_short": "HIL",
-          "venue": "A",
+          "opponent": "Al Qadsiah",
+          "opponent_short": "QAD",
+          "venue": "H",
           "kickoff_ms": 1803513600000,
           "fdr": 5,
           "def_fdr": 5,
@@ -4895,75 +4315,75 @@
         },
         {
           "gw": 22,
-          "opponent": "Neom SC",
-          "opponent_short": "NEO",
-          "venue": "H",
+          "opponent": "Al Hazem",
+          "opponent_short": "HAZ",
+          "venue": "A",
           "kickoff_ms": 1804723200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 23,
+          "opponent": "Al Ettifaq",
+          "opponent_short": "ETT",
+          "venue": "H",
+          "kickoff_ms": 1805328000000,
           "fdr": 4,
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "far"
         },
         {
-          "gw": 23,
-          "opponent": "Al Riyadh",
-          "opponent_short": "RIY",
+          "gw": 24,
+          "opponent": "Al Ittihad",
+          "opponent_short": "ITT",
           "venue": "A",
-          "kickoff_ms": 1805328000000,
+          "kickoff_ms": 1806620400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 25,
+          "opponent": "Abha",
+          "opponent_short": "ABH",
+          "venue": "H",
+          "kickoff_ms": 1807138800000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 26,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "A",
+          "kickoff_ms": 1807743600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 27,
+          "opponent": "Al Shabab",
+          "opponent_short": "SHB",
+          "venue": "H",
+          "kickoff_ms": 1808002800000,
           "fdr": 3,
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "far"
         },
         {
-          "gw": 24,
+          "gw": 28,
           "opponent": "Al Nassr",
           "opponent_short": "NAS",
           "venue": "A",
-          "kickoff_ms": 1806620400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 5,
-          "tier": "far"
-        },
-        {
-          "gw": 25,
-          "opponent": "Al Ettifaq",
-          "opponent_short": "ETT",
-          "venue": "H",
-          "kickoff_ms": 1807138800000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 26,
-          "opponent": "Al Fayha",
-          "opponent_short": "FYH",
-          "venue": "A",
-          "kickoff_ms": 1807743600000,
-          "fdr": 4,
-          "def_fdr": 4,
-          "att_fdr": 3,
-          "tier": "far"
-        },
-        {
-          "gw": 27,
-          "opponent": "Al Fateh",
-          "opponent_short": "FAT",
-          "venue": "H",
-          "kickoff_ms": 1808002800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 28,
-          "opponent": "Al Ahli",
-          "opponent_short": "AHL",
-          "venue": "H",
           "kickoff_ms": 1808348400000,
           "fdr": 5,
           "def_fdr": 5,
@@ -4972,72 +4392,362 @@
         },
         {
           "gw": 29,
-          "opponent": "Al Hazem",
-          "opponent_short": "HAZ",
-          "venue": "A",
+          "opponent": "Al Fayha",
+          "opponent_short": "FYH",
+          "venue": "H",
           "kickoff_ms": 1808953200000,
-          "fdr": 4,
-          "def_fdr": 4,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
         {
           "gw": 30,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "H",
-          "kickoff_ms": 1809558000000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 31,
-          "opponent": "Al Ittihad",
-          "opponent_short": "ITT",
-          "venue": "A",
-          "kickoff_ms": 1810076400000,
-          "fdr": 5,
-          "def_fdr": 5,
-          "att_fdr": 4,
-          "tier": "far"
-        },
-        {
-          "gw": 32,
-          "opponent": "Al Faisaly",
-          "opponent_short": "FSL",
-          "venue": "H",
-          "kickoff_ms": 1810767600000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 2,
-          "tier": "far"
-        },
-        {
-          "gw": 33,
           "opponent": "Al Diriyah",
           "opponent_short": "DIR",
           "venue": "A",
-          "kickoff_ms": 1811113200000,
+          "kickoff_ms": 1809558000000,
           "fdr": 3,
           "def_fdr": 3,
           "att_fdr": 5,
           "tier": "far"
         },
         {
+          "gw": 31,
+          "opponent": "Al Ahli",
+          "opponent_short": "AHL",
+          "venue": "H",
+          "kickoff_ms": 1810076400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 32,
+          "opponent": "Al Khaleej",
+          "opponent_short": "KLJ",
+          "venue": "A",
+          "kickoff_ms": 1810767600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 33,
+          "opponent": "Al Taawoun",
+          "opponent_short": "TWN",
+          "venue": "H",
+          "kickoff_ms": 1811113200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
           "gw": 34,
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
+          "venue": "A",
+          "kickoff_ms": 1811458800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        }
+      ],
+      "next_avg_cs_pct": 21.7,
+      "next_avg_fdr": 3.86,
+      "next_n": 7
+    },
+    {
+      "name": "Al Hazem",
+      "short": "HAZ",
+      "fixtures": [
+        {
+          "gw": 10,
+          "opponent": "Al Hilal",
+          "opponent_short": "HIL",
+          "venue": "A",
+          "kickoff_ms": 1792432800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 5.7
+        },
+        {
+          "gw": 11,
+          "opponent": "Al Fayha",
+          "opponent_short": "FYH",
+          "venue": "H",
+          "kickoff_ms": 1792676400000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 37.3
+        },
+        {
+          "gw": 12,
+          "opponent": "Al Khaleej",
+          "opponent_short": "KLJ",
+          "venue": "A",
+          "kickoff_ms": 1793284500000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 25.0
+        },
+        {
+          "gw": 13,
+          "opponent": "Al Nassr",
+          "opponent_short": "NAS",
+          "venue": "H",
+          "kickoff_ms": 1793836800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 9.3
+        },
+        {
+          "gw": 14,
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
+          "venue": "A",
+          "kickoff_ms": 1795132800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 32.5
+        },
+        {
+          "gw": 15,
+          "opponent": "Al Ettifaq",
+          "opponent_short": "ETT",
+          "venue": "A",
+          "kickoff_ms": 1795651200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 20.5
+        },
+        {
+          "gw": 16,
           "opponent": "Al Qadsiah",
           "opponent_short": "QAD",
           "venue": "H",
-          "kickoff_ms": 1811458800000,
+          "kickoff_ms": 1796256000000,
           "fdr": 5,
           "def_fdr": 5,
           "att_fdr": 4,
           "tier": "far"
+        },
+        {
+          "gw": 17,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "A",
+          "kickoff_ms": 1796860800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 18,
+          "opponent": "Abha",
+          "opponent_short": "ABH",
+          "venue": "H",
+          "kickoff_ms": 1797206400000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 19,
+          "opponent": "Al Diriyah",
+          "opponent_short": "DIR",
+          "venue": "A",
+          "kickoff_ms": 1802304000000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 20,
+          "opponent": "Al Ittihad",
+          "opponent_short": "ITT",
+          "venue": "H",
+          "kickoff_ms": 1802908800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 21,
+          "opponent": "Al Shabab",
+          "opponent_short": "SHB",
+          "venue": "A",
+          "kickoff_ms": 1803513600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 22,
+          "opponent": "Al Faisaly",
+          "opponent_short": "FSL",
+          "venue": "H",
+          "kickoff_ms": 1804723200000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 23,
+          "opponent": "Al Taawoun",
+          "opponent_short": "TWN",
+          "venue": "A",
+          "kickoff_ms": 1805328000000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 24,
+          "opponent": "Al Ahli",
+          "opponent_short": "AHL",
+          "venue": "H",
+          "kickoff_ms": 1806620400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 25,
+          "opponent": "Neom SC",
+          "opponent_short": "NEO",
+          "venue": "A",
+          "kickoff_ms": 1807138800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 26,
+          "opponent": "Al Fateh",
+          "opponent_short": "FAT",
+          "venue": "A",
+          "kickoff_ms": 1807743600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 27,
+          "opponent": "Al Hilal",
+          "opponent_short": "HIL",
+          "venue": "H",
+          "kickoff_ms": 1808002800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 28,
+          "opponent": "Al Fayha",
+          "opponent_short": "FYH",
+          "venue": "A",
+          "kickoff_ms": 1808348400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 29,
+          "opponent": "Al Khaleej",
+          "opponent_short": "KLJ",
+          "venue": "H",
+          "kickoff_ms": 1808953200000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 30,
+          "opponent": "Al Nassr",
+          "opponent_short": "NAS",
+          "venue": "A",
+          "kickoff_ms": 1809558000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 31,
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
+          "venue": "H",
+          "kickoff_ms": 1810076400000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 32,
+          "opponent": "Al Ettifaq",
+          "opponent_short": "ETT",
+          "venue": "H",
+          "kickoff_ms": 1810767600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 33,
+          "opponent": "Al Qadsiah",
+          "opponent_short": "QAD",
+          "venue": "A",
+          "kickoff_ms": 1811113200000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 34,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "H",
+          "kickoff_ms": 1811458800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
+          "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 21.9,
+      "next_avg_cs_pct": 21.7,
       "next_avg_fdr": 3.83,
       "next_n": 6
     },
@@ -5055,7 +4765,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 29.9
+          "cs_pct": 29.2
         },
         {
           "gw": 11,
@@ -5067,7 +4777,7 @@
           "def_fdr": 3,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 29.7
+          "cs_pct": 29.4
         },
         {
           "gw": 12,
@@ -5079,7 +4789,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 5.2
+          "cs_pct": 5.1
         },
         {
           "gw": 13,
@@ -5091,7 +4801,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 29.9
+          "cs_pct": 29.5
         },
         {
           "gw": 14,
@@ -5103,7 +4813,7 @@
           "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 24.7
+          "cs_pct": 24.6
         },
         {
           "gw": 15,
@@ -5115,7 +4825,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 7.7
+          "cs_pct": 7.6
         },
         {
           "gw": 16,
@@ -5167,9 +4877,9 @@
           "opponent_short": "FSL",
           "venue": "H",
           "kickoff_ms": 1802908800000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -5180,7 +4890,7 @@
           "kickoff_ms": 1803513600000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 5,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -5288,8 +4998,8 @@
           "opponent_short": "FYH",
           "venue": "H",
           "kickoff_ms": 1810076400000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -5312,7 +5022,7 @@
           "kickoff_ms": 1811113200000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 3,
+          "att_fdr": 2,
           "tier": "far"
         },
         {
@@ -5327,8 +5037,298 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 21.2,
+      "next_avg_cs_pct": 20.9,
       "next_avg_fdr": 3.83,
+      "next_n": 6
+    },
+    {
+      "name": "Al Khaleej",
+      "short": "KLJ",
+      "fixtures": [
+        {
+          "gw": 10,
+          "opponent": "Al Fateh",
+          "opponent_short": "FAT",
+          "venue": "A",
+          "kickoff_ms": 1792346400000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 24.4
+        },
+        {
+          "gw": 11,
+          "opponent": "Al Ahli",
+          "opponent_short": "AHL",
+          "venue": "A",
+          "kickoff_ms": 1792692000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "near",
+          "cs_pct": 4.3
+        },
+        {
+          "gw": 12,
+          "opponent": "Al Hazem",
+          "opponent_short": "HAZ",
+          "venue": "H",
+          "kickoff_ms": 1793284500000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
+          "tier": "near",
+          "cs_pct": 29.9
+        },
+        {
+          "gw": 13,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "A",
+          "kickoff_ms": 1793836800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 2,
+          "tier": "near",
+          "cs_pct": 22.5
+        },
+        {
+          "gw": 14,
+          "opponent": "Al Ittihad",
+          "opponent_short": "ITT",
+          "venue": "H",
+          "kickoff_ms": 1795132800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "near",
+          "cs_pct": 14.9
+        },
+        {
+          "gw": 15,
+          "opponent": "Al Faisaly",
+          "opponent_short": "FSL",
+          "venue": "A",
+          "kickoff_ms": 1795651200000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "near",
+          "cs_pct": 27.6
+        },
+        {
+          "gw": 16,
+          "opponent": "Al Diriyah",
+          "opponent_short": "DIR",
+          "venue": "H",
+          "kickoff_ms": 1796256000000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 17,
+          "opponent": "Al Qadsiah",
+          "opponent_short": "QAD",
+          "venue": "A",
+          "kickoff_ms": 1796860800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 18,
+          "opponent": "Al Taawoun",
+          "opponent_short": "TWN",
+          "venue": "H",
+          "kickoff_ms": 1797206400000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 19,
+          "opponent": "Al Shabab",
+          "opponent_short": "SHB",
+          "venue": "A",
+          "kickoff_ms": 1802304000000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 20,
+          "opponent": "Abha",
+          "opponent_short": "ABH",
+          "venue": "H",
+          "kickoff_ms": 1802908800000,
+          "fdr": 2,
+          "def_fdr": 2,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 21,
+          "opponent": "Al Hilal",
+          "opponent_short": "HIL",
+          "venue": "A",
+          "kickoff_ms": 1803513600000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 22,
+          "opponent": "Neom SC",
+          "opponent_short": "NEO",
+          "venue": "H",
+          "kickoff_ms": 1804723200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 23,
+          "opponent": "Al Riyadh",
+          "opponent_short": "RIY",
+          "venue": "A",
+          "kickoff_ms": 1805328000000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 24,
+          "opponent": "Al Nassr",
+          "opponent_short": "NAS",
+          "venue": "A",
+          "kickoff_ms": 1806620400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 25,
+          "opponent": "Al Ettifaq",
+          "opponent_short": "ETT",
+          "venue": "H",
+          "kickoff_ms": 1807138800000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 26,
+          "opponent": "Al Fayha",
+          "opponent_short": "FYH",
+          "venue": "A",
+          "kickoff_ms": 1807743600000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 27,
+          "opponent": "Al Fateh",
+          "opponent_short": "FAT",
+          "venue": "H",
+          "kickoff_ms": 1808002800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 28,
+          "opponent": "Al Ahli",
+          "opponent_short": "AHL",
+          "venue": "H",
+          "kickoff_ms": 1808348400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 29,
+          "opponent": "Al Hazem",
+          "opponent_short": "HAZ",
+          "venue": "A",
+          "kickoff_ms": 1808953200000,
+          "fdr": 4,
+          "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 30,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "H",
+          "kickoff_ms": 1809558000000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 31,
+          "opponent": "Al Ittihad",
+          "opponent_short": "ITT",
+          "venue": "A",
+          "kickoff_ms": 1810076400000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        },
+        {
+          "gw": 32,
+          "opponent": "Al Faisaly",
+          "opponent_short": "FSL",
+          "venue": "H",
+          "kickoff_ms": 1810767600000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 2,
+          "tier": "far"
+        },
+        {
+          "gw": 33,
+          "opponent": "Al Diriyah",
+          "opponent_short": "DIR",
+          "venue": "A",
+          "kickoff_ms": 1811113200000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 34,
+          "opponent": "Al Qadsiah",
+          "opponent_short": "QAD",
+          "venue": "H",
+          "kickoff_ms": 1811458800000,
+          "fdr": 5,
+          "def_fdr": 5,
+          "att_fdr": 4,
+          "tier": "far"
+        }
+      ],
+      "next_avg_cs_pct": 20.6,
+      "next_avg_fdr": 4.0,
       "next_n": 6
     },
     {
@@ -5345,7 +5345,7 @@
           "def_fdr": 2,
           "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 36.1
+          "cs_pct": 33.5
         },
         {
           "gw": 11,
@@ -5355,9 +5355,9 @@
           "kickoff_ms": 1792854300000,
           "fdr": 4,
           "def_fdr": 4,
-          "att_fdr": 2,
+          "att_fdr": 3,
           "tier": "near",
-          "cs_pct": 17.5
+          "cs_pct": 16.9
         },
         {
           "gw": 12,
@@ -5369,7 +5369,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 4.6
+          "cs_pct": 4.1
         },
         {
           "gw": 13,
@@ -5381,7 +5381,7 @@
           "def_fdr": 3,
           "att_fdr": 2,
           "tier": "near",
-          "cs_pct": 26.2
+          "cs_pct": 24.8
         },
         {
           "gw": 14,
@@ -5389,11 +5389,11 @@
           "opponent_short": "NEO",
           "venue": "A",
           "kickoff_ms": 1795132800000,
-          "fdr": 5,
-          "def_fdr": 5,
+          "fdr": 4,
+          "def_fdr": 4,
           "att_fdr": 4,
           "tier": "near",
-          "cs_pct": 15.9
+          "cs_pct": 17.7
         },
         {
           "gw": 15,
@@ -5405,7 +5405,7 @@
           "def_fdr": 5,
           "att_fdr": 5,
           "tier": "near",
-          "cs_pct": 4.7
+          "cs_pct": 4.3
         },
         {
           "gw": 16,
@@ -5437,7 +5437,7 @@
           "kickoff_ms": 1797206400000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -5479,8 +5479,8 @@
           "opponent_short": "FYH",
           "venue": "H",
           "kickoff_ms": 1804723200000,
-          "fdr": 3,
-          "def_fdr": 3,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -5534,8 +5534,8 @@
           "opponent_short": "ABH",
           "venue": "H",
           "kickoff_ms": 1808002800000,
-          "fdr": 2,
-          "def_fdr": 2,
+          "fdr": 3,
+          "def_fdr": 3,
           "att_fdr": 2,
           "tier": "far"
         },
@@ -5558,7 +5558,7 @@
           "kickoff_ms": 1808953200000,
           "fdr": 5,
           "def_fdr": 5,
-          "att_fdr": 4,
+          "att_fdr": 5,
           "tier": "far"
         },
         {
@@ -5617,8 +5617,8 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 17.5,
-      "next_avg_fdr": 4.0,
+      "next_avg_cs_pct": 16.9,
+      "next_avg_fdr": 3.83,
       "next_n": 6
     }
   ],
@@ -5632,13 +5632,13 @@
       "away": "Al Khaleej",
       "home_short": "FAT",
       "away_short": "KLJ",
-      "xg_home": 1.404,
-      "xg_away": 1.206,
-      "p_home_win": 0.3926,
-      "p_draw": 0.3074,
-      "p_away_win": 0.3,
-      "cs_home_pct": 29.9,
-      "cs_away_pct": 24.6,
+      "xg_home": 1.41,
+      "xg_away": 1.231,
+      "p_home_win": 0.3893,
+      "p_draw": 0.3045,
+      "p_away_win": 0.3061,
+      "cs_home_pct": 29.2,
+      "cs_away_pct": 24.4,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -5655,16 +5655,16 @@
       "away": "Al Ahli",
       "home_short": "FYH",
       "away_short": "AHL",
-      "xg_home": 0.868,
-      "xg_away": 1.7,
-      "p_home_win": 0.1694,
-      "p_draw": 0.2805,
-      "p_away_win": 0.5501,
-      "cs_home_pct": 18.3,
-      "cs_away_pct": 42.0,
-      "fdr_home": 4,
-      "def_fdr_home": 4,
-      "att_fdr_home": 4,
+      "xg_home": 0.857,
+      "xg_away": 1.718,
+      "p_home_win": 0.1651,
+      "p_draw": 0.277,
+      "p_away_win": 0.5579,
+      "cs_home_pct": 17.9,
+      "cs_away_pct": 42.5,
+      "fdr_home": 5,
+      "def_fdr_home": 5,
+      "att_fdr_home": 5,
       "fdr_away": 1,
       "def_fdr_away": 1,
       "att_fdr_away": 2
@@ -5678,15 +5678,15 @@
       "away": "Al Kholood",
       "home_short": "ABH",
       "away_short": "KLD",
-      "xg_home": 1.02,
-      "xg_away": 1.257,
-      "p_home_win": 0.2759,
-      "p_draw": 0.331,
-      "p_away_win": 0.3931,
-      "cs_home_pct": 28.5,
-      "cs_away_pct": 36.1,
-      "fdr_home": 4,
-      "def_fdr_home": 4,
+      "xg_home": 1.093,
+      "xg_away": 1.251,
+      "p_home_win": 0.2982,
+      "p_draw": 0.3263,
+      "p_away_win": 0.3755,
+      "cs_home_pct": 28.6,
+      "cs_away_pct": 33.5,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
@@ -5701,13 +5701,13 @@
       "away": "Al Hazem",
       "home_short": "HIL",
       "away_short": "HAZ",
-      "xg_home": 2.74,
-      "xg_away": 0.681,
-      "p_home_win": 0.7927,
-      "p_draw": 0.1511,
-      "p_away_win": 0.0562,
-      "cs_home_pct": 50.6,
-      "cs_away_pct": 6.5,
+      "xg_home": 2.869,
+      "xg_away": 0.687,
+      "p_home_win": 0.8087,
+      "p_draw": 0.1396,
+      "p_away_win": 0.0517,
+      "cs_home_pct": 50.3,
+      "cs_away_pct": 5.7,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -5724,13 +5724,13 @@
       "away": "Al Faisaly",
       "home_short": "SHB",
       "away_short": "FSL",
-      "xg_home": 1.823,
-      "xg_away": 1.01,
-      "p_home_win": 0.5445,
-      "p_draw": 0.2681,
-      "p_away_win": 0.1874,
-      "cs_home_pct": 36.4,
-      "cs_away_pct": 16.2,
+      "xg_home": 1.901,
+      "xg_away": 1.131,
+      "p_home_win": 0.5348,
+      "p_draw": 0.2599,
+      "p_away_win": 0.2052,
+      "cs_home_pct": 32.3,
+      "cs_away_pct": 14.9,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 1,
@@ -5747,13 +5747,13 @@
       "away": "Al Riyadh",
       "home_short": "DIR",
       "away_short": "RIY",
-      "xg_home": 0.908,
-      "xg_away": 0.781,
-      "p_home_win": 0.3414,
-      "p_draw": 0.3887,
-      "p_away_win": 0.2699,
-      "cs_home_pct": 45.8,
-      "cs_away_pct": 40.3,
+      "xg_home": 0.949,
+      "xg_away": 0.783,
+      "p_home_win": 0.3549,
+      "p_draw": 0.3819,
+      "p_away_win": 0.2631,
+      "cs_home_pct": 45.7,
+      "cs_away_pct": 38.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 4,
@@ -5770,13 +5770,13 @@
       "away": "Al Qadsiah",
       "home_short": "TWN",
       "away_short": "QAD",
-      "xg_home": 0.859,
-      "xg_away": 2.256,
-      "p_home_win": 0.1125,
-      "p_draw": 0.2137,
-      "p_away_win": 0.6737,
-      "cs_home_pct": 10.5,
-      "cs_away_pct": 42.3,
+      "xg_home": 0.869,
+      "xg_away": 2.246,
+      "p_home_win": 0.1154,
+      "p_draw": 0.2146,
+      "p_away_win": 0.67,
+      "cs_home_pct": 10.6,
+      "cs_away_pct": 41.9,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -5793,13 +5793,13 @@
       "away": "Al Ittihad",
       "home_short": "ETT",
       "away_short": "ITT",
-      "xg_home": 1.277,
-      "xg_away": 1.721,
-      "p_home_win": 0.2646,
-      "p_draw": 0.2768,
-      "p_away_win": 0.4586,
-      "cs_home_pct": 17.9,
-      "cs_away_pct": 27.9,
+      "xg_home": 1.267,
+      "xg_away": 1.632,
+      "p_home_win": 0.277,
+      "p_draw": 0.284,
+      "p_away_win": 0.4391,
+      "cs_home_pct": 19.5,
+      "cs_away_pct": 28.2,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 3,
@@ -5816,13 +5816,13 @@
       "away": "Neom SC",
       "home_short": "NAS",
       "away_short": "NEO",
-      "xg_home": 2.132,
-      "xg_away": 0.834,
-      "p_home_win": 0.6556,
-      "p_draw": 0.2263,
-      "p_away_win": 0.1181,
-      "cs_home_pct": 43.4,
-      "cs_away_pct": 11.9,
+      "xg_home": 2.102,
+      "xg_away": 0.811,
+      "p_home_win": 0.6555,
+      "p_draw": 0.2278,
+      "p_away_win": 0.1167,
+      "cs_home_pct": 44.4,
+      "cs_away_pct": 12.2,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -5839,13 +5839,13 @@
       "away": "Al Fayha",
       "home_short": "HAZ",
       "away_short": "FYH",
-      "xg_home": 1.242,
-      "xg_away": 0.996,
-      "p_home_win": 0.3942,
-      "p_draw": 0.3339,
-      "p_away_win": 0.2719,
-      "cs_home_pct": 36.9,
-      "cs_away_pct": 28.9,
+      "xg_home": 1.314,
+      "xg_away": 0.986,
+      "p_home_win": 0.418,
+      "p_draw": 0.3252,
+      "p_away_win": 0.2568,
+      "cs_home_pct": 37.3,
+      "cs_away_pct": 26.9,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 3,
@@ -5862,13 +5862,13 @@
       "away": "Al Shabab",
       "home_short": "FAT",
       "away_short": "SHB",
-      "xg_home": 1.275,
-      "xg_away": 1.213,
-      "p_home_win": 0.3559,
-      "p_draw": 0.3177,
-      "p_away_win": 0.3264,
-      "cs_home_pct": 29.7,
-      "cs_away_pct": 27.9,
+      "xg_home": 1.306,
+      "xg_away": 1.223,
+      "p_home_win": 0.363,
+      "p_draw": 0.3135,
+      "p_away_win": 0.3236,
+      "cs_home_pct": 29.4,
+      "cs_away_pct": 27.1,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 3,
@@ -5885,13 +5885,13 @@
       "away": "Al Khaleej",
       "home_short": "AHL",
       "away_short": "KLJ",
-      "xg_home": 3.222,
-      "xg_away": 0.748,
-      "p_home_win": 0.8378,
-      "p_draw": 0.1171,
-      "p_away_win": 0.0451,
-      "cs_home_pct": 47.3,
-      "cs_away_pct": 4.0,
+      "xg_home": 3.144,
+      "xg_away": 0.753,
+      "p_home_win": 0.8289,
+      "p_draw": 0.1227,
+      "p_away_win": 0.0484,
+      "cs_home_pct": 47.1,
+      "cs_away_pct": 4.3,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -5908,13 +5908,13 @@
       "away": "Al Nassr",
       "home_short": "FSL",
       "away_short": "NAS",
-      "xg_home": 0.581,
-      "xg_away": 2.355,
-      "p_home_win": 0.0607,
-      "p_draw": 0.1813,
-      "p_away_win": 0.758,
-      "cs_home_pct": 9.5,
-      "cs_away_pct": 55.9,
+      "xg_home": 0.772,
+      "xg_away": 2.465,
+      "p_home_win": 0.0834,
+      "p_draw": 0.1848,
+      "p_away_win": 0.7318,
+      "cs_home_pct": 8.5,
+      "cs_away_pct": 46.2,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -5931,19 +5931,19 @@
       "away": "Al Diriyah",
       "home_short": "ITT",
       "away_short": "DIR",
-      "xg_home": 1.223,
-      "xg_away": 0.89,
-      "p_home_win": 0.4142,
-      "p_draw": 0.341,
-      "p_away_win": 0.2448,
-      "cs_home_pct": 41.0,
-      "cs_away_pct": 29.4,
+      "xg_home": 1.221,
+      "xg_away": 0.894,
+      "p_home_win": 0.4132,
+      "p_draw": 0.3401,
+      "p_away_win": 0.2467,
+      "cs_home_pct": 40.9,
+      "cs_away_pct": 29.5,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 3,
       "fdr_away": 4,
       "def_fdr_away": 4,
-      "att_fdr_away": 4
+      "att_fdr_away": 5
     },
     {
       "gameweek": 11,
@@ -5954,19 +5954,19 @@
       "away": "Al Hilal",
       "home_short": "QAD",
       "away_short": "HIL",
-      "xg_home": 1.511,
-      "xg_away": 1.807,
-      "p_home_win": 0.3064,
-      "p_draw": 0.2632,
-      "p_away_win": 0.4304,
-      "cs_home_pct": 16.4,
-      "cs_away_pct": 22.1,
+      "xg_home": 1.491,
+      "xg_away": 1.819,
+      "p_home_win": 0.3001,
+      "p_draw": 0.2622,
+      "p_away_win": 0.4377,
+      "cs_home_pct": 16.2,
+      "cs_away_pct": 22.5,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 2,
       "fdr_away": 3,
       "def_fdr_away": 3,
-      "att_fdr_away": 2
+      "att_fdr_away": 1
     },
     {
       "gameweek": 11,
@@ -5977,13 +5977,13 @@
       "away": "Abha",
       "home_short": "NEO",
       "away_short": "ABH",
-      "xg_home": 1.621,
-      "xg_away": 0.758,
-      "p_home_win": 0.5592,
-      "p_draw": 0.2883,
-      "p_away_win": 0.1525,
-      "cs_home_pct": 46.9,
-      "cs_away_pct": 19.8,
+      "xg_home": 1.428,
+      "xg_away": 0.775,
+      "p_home_win": 0.5036,
+      "p_draw": 0.3147,
+      "p_away_win": 0.1816,
+      "cs_home_pct": 46.1,
+      "cs_away_pct": 24.0,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 2,
@@ -6000,18 +6000,18 @@
       "away": "Al Ettifaq",
       "home_short": "KLD",
       "away_short": "ETT",
-      "xg_home": 1.328,
-      "xg_away": 1.741,
-      "p_home_win": 0.2737,
-      "p_draw": 0.2738,
-      "p_away_win": 0.4525,
-      "cs_home_pct": 17.5,
-      "cs_away_pct": 26.5,
+      "xg_home": 1.281,
+      "xg_away": 1.779,
+      "p_home_win": 0.2571,
+      "p_draw": 0.2707,
+      "p_away_win": 0.4723,
+      "cs_home_pct": 16.9,
+      "cs_away_pct": 27.8,
       "fdr_home": 4,
       "def_fdr_home": 4,
-      "att_fdr_home": 2,
-      "fdr_away": 3,
-      "def_fdr_away": 3,
+      "att_fdr_home": 3,
+      "fdr_away": 2,
+      "def_fdr_away": 2,
       "att_fdr_away": 2
     },
     {
@@ -6023,13 +6023,13 @@
       "away": "Al Taawoun",
       "home_short": "RIY",
       "away_short": "TWN",
-      "xg_home": 1.035,
-      "xg_away": 1.407,
-      "p_home_win": 0.254,
-      "p_draw": 0.3144,
-      "p_away_win": 0.4317,
-      "cs_home_pct": 24.5,
-      "cs_away_pct": 35.5,
+      "xg_home": 1.038,
+      "xg_away": 1.404,
+      "p_home_win": 0.2558,
+      "p_draw": 0.3135,
+      "p_away_win": 0.4307,
+      "cs_home_pct": 24.6,
+      "cs_away_pct": 35.4,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 4,
@@ -6046,13 +6046,13 @@
       "away": "Al Faisaly",
       "home_short": "ABH",
       "away_short": "FSL",
-      "xg_home": 0.887,
-      "xg_away": 1.034,
-      "p_home_win": 0.279,
-      "p_draw": 0.3641,
-      "p_away_win": 0.3569,
-      "cs_home_pct": 35.6,
-      "cs_away_pct": 41.2,
+      "xg_home": 0.963,
+      "xg_away": 1.12,
+      "p_home_win": 0.2857,
+      "p_draw": 0.3479,
+      "p_away_win": 0.3665,
+      "cs_home_pct": 32.6,
+      "cs_away_pct": 38.2,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 4,
@@ -6069,18 +6069,18 @@
       "away": "Al Hazem",
       "home_short": "KLJ",
       "away_short": "HAZ",
-      "xg_home": 1.273,
-      "xg_away": 1.22,
-      "p_home_win": 0.3541,
-      "p_draw": 0.3174,
-      "p_away_win": 0.3285,
-      "cs_home_pct": 29.5,
-      "cs_away_pct": 28.0,
+      "xg_home": 1.386,
+      "xg_away": 1.206,
+      "p_home_win": 0.3881,
+      "p_draw": 0.3079,
+      "p_away_win": 0.3039,
+      "cs_home_pct": 29.9,
+      "cs_away_pct": 25.0,
       "fdr_home": 3,
       "def_fdr_home": 3,
-      "att_fdr_home": 3,
-      "fdr_away": 3,
-      "def_fdr_away": 3,
+      "att_fdr_home": 2,
+      "fdr_away": 4,
+      "def_fdr_away": 4,
       "att_fdr_away": 3
     },
     {
@@ -6092,13 +6092,13 @@
       "away": "Al Kholood",
       "home_short": "NAS",
       "away_short": "KLD",
-      "xg_home": 3.086,
-      "xg_away": 0.796,
-      "p_home_win": 0.8142,
-      "p_draw": 0.1308,
-      "p_away_win": 0.055,
-      "cs_home_pct": 45.1,
-      "cs_away_pct": 4.6,
+      "xg_home": 3.197,
+      "xg_away": 0.817,
+      "p_home_win": 0.8233,
+      "p_draw": 0.1236,
+      "p_away_win": 0.0531,
+      "cs_home_pct": 44.2,
+      "cs_away_pct": 4.1,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -6115,13 +6115,13 @@
       "away": "Al Qadsiah",
       "home_short": "RIY",
       "away_short": "QAD",
-      "xg_home": 0.755,
-      "xg_away": 2.68,
-      "p_home_win": 0.0686,
-      "p_draw": 0.1627,
-      "p_away_win": 0.7687,
-      "cs_home_pct": 6.9,
-      "cs_away_pct": 47.0,
+      "xg_home": 0.764,
+      "xg_away": 2.659,
+      "p_home_win": 0.0711,
+      "p_draw": 0.1649,
+      "p_away_win": 0.764,
+      "cs_home_pct": 7.0,
+      "cs_away_pct": 46.6,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -6138,19 +6138,19 @@
       "away": "Al Ittihad",
       "home_short": "ABH",
       "away_short": "ITT",
-      "xg_home": 0.719,
-      "xg_away": 1.821,
-      "p_home_win": 0.1229,
-      "p_draw": 0.2591,
-      "p_away_win": 0.618,
-      "cs_home_pct": 16.2,
-      "cs_away_pct": 48.7,
+      "xg_home": 0.742,
+      "xg_away": 1.746,
+      "p_home_win": 0.1358,
+      "p_draw": 0.2696,
+      "p_away_win": 0.5946,
+      "cs_home_pct": 17.5,
+      "cs_away_pct": 47.6,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
       "fdr_away": 1,
       "def_fdr_away": 1,
-      "att_fdr_away": 1
+      "att_fdr_away": 2
     },
     {
       "gameweek": 12,
@@ -6161,19 +6161,19 @@
       "away": "Neom SC",
       "home_short": "DIR",
       "away_short": "NEO",
-      "xg_home": 0.653,
-      "xg_away": 0.871,
-      "p_home_win": 0.2337,
-      "p_draw": 0.4059,
-      "p_away_win": 0.3604,
-      "cs_home_pct": 41.9,
-      "cs_away_pct": 52.1,
+      "xg_home": 0.672,
+      "xg_away": 0.853,
+      "p_home_win": 0.2443,
+      "p_draw": 0.4061,
+      "p_away_win": 0.3496,
+      "cs_home_pct": 42.6,
+      "cs_away_pct": 51.1,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 5,
       "fdr_away": 2,
       "def_fdr_away": 2,
-      "att_fdr_away": 4
+      "att_fdr_away": 5
     },
     {
       "gameweek": 12,
@@ -6184,13 +6184,13 @@
       "away": "Al Ahli",
       "home_short": "SHB",
       "away_short": "AHL",
-      "xg_home": 1.171,
-      "xg_away": 1.752,
-      "p_home_win": 0.2346,
-      "p_draw": 0.2757,
-      "p_away_win": 0.4897,
-      "cs_home_pct": 17.3,
-      "cs_away_pct": 31.0,
+      "xg_home": 1.165,
+      "xg_away": 1.741,
+      "p_home_win": 0.2352,
+      "p_draw": 0.276,
+      "p_away_win": 0.4888,
+      "cs_home_pct": 17.5,
+      "cs_away_pct": 31.2,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 3,
@@ -6207,18 +6207,18 @@
       "away": "Al Ettifaq",
       "home_short": "TWN",
       "away_short": "ETT",
-      "xg_home": 1.213,
-      "xg_away": 1.409,
-      "p_home_win": 0.3012,
-      "p_draw": 0.3066,
-      "p_away_win": 0.3923,
-      "cs_home_pct": 24.4,
-      "cs_away_pct": 29.7,
+      "xg_home": 1.161,
+      "xg_away": 1.396,
+      "p_home_win": 0.2899,
+      "p_draw": 0.3092,
+      "p_away_win": 0.4009,
+      "cs_home_pct": 24.7,
+      "cs_away_pct": 31.3,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 3,
-      "fdr_away": 3,
-      "def_fdr_away": 3,
+      "fdr_away": 2,
+      "def_fdr_away": 2,
       "att_fdr_away": 2
     },
     {
@@ -6230,13 +6230,13 @@
       "away": "Al Faisaly",
       "home_short": "FYH",
       "away_short": "FSL",
-      "xg_home": 1.351,
-      "xg_away": 0.98,
-      "p_home_win": 0.4292,
-      "p_draw": 0.3224,
-      "p_away_win": 0.2483,
-      "cs_home_pct": 37.5,
-      "cs_away_pct": 25.9,
+      "xg_home": 1.398,
+      "xg_away": 1.116,
+      "p_home_win": 0.4113,
+      "p_draw": 0.3111,
+      "p_away_win": 0.2777,
+      "cs_home_pct": 32.7,
+      "cs_away_pct": 24.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -6253,13 +6253,13 @@
       "away": "Al Fateh",
       "home_short": "HIL",
       "away_short": "FAT",
-      "xg_home": 2.949,
-      "xg_away": 0.636,
-      "p_home_win": 0.8282,
-      "p_draw": 0.1289,
-      "p_away_win": 0.0429,
-      "cs_home_pct": 53.0,
-      "cs_away_pct": 5.2,
+      "xg_home": 2.982,
+      "xg_away": 0.696,
+      "p_home_win": 0.8207,
+      "p_draw": 0.1309,
+      "p_away_win": 0.0484,
+      "cs_home_pct": 49.9,
+      "cs_away_pct": 5.1,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -6276,15 +6276,15 @@
       "away": "Al Shabab",
       "home_short": "ABH",
       "away_short": "SHB",
-      "xg_home": 0.878,
-      "xg_away": 1.187,
-      "p_home_win": 0.2475,
-      "p_draw": 0.346,
-      "p_away_win": 0.4065,
-      "cs_home_pct": 30.5,
-      "cs_away_pct": 41.5,
-      "fdr_home": 4,
-      "def_fdr_home": 4,
+      "xg_home": 0.91,
+      "xg_away": 1.143,
+      "p_home_win": 0.2656,
+      "p_draw": 0.3486,
+      "p_away_win": 0.3858,
+      "cs_home_pct": 31.9,
+      "cs_away_pct": 40.2,
+      "fdr_home": 3,
+      "def_fdr_home": 3,
       "att_fdr_home": 4,
       "fdr_away": 2,
       "def_fdr_away": 2,
@@ -6299,12 +6299,12 @@
       "away": "Al Taawoun",
       "home_short": "AHL",
       "away_short": "TWN",
-      "xg_home": 2.748,
-      "xg_away": 0.818,
-      "p_home_win": 0.7655,
-      "p_draw": 0.1611,
+      "xg_home": 2.745,
+      "xg_away": 0.815,
+      "p_home_win": 0.7658,
+      "p_draw": 0.1606,
       "p_away_win": 0.0735,
-      "cs_home_pct": 44.1,
+      "cs_home_pct": 44.2,
       "cs_away_pct": 6.4,
       "fdr_home": 1,
       "def_fdr_home": 1,
@@ -6322,13 +6322,13 @@
       "away": "Al Hilal",
       "home_short": "ETT",
       "away_short": "HIL",
-      "xg_home": 0.96,
-      "xg_away": 2.552,
-      "p_home_win": 0.1069,
-      "p_draw": 0.1887,
-      "p_away_win": 0.7043,
-      "cs_home_pct": 7.8,
-      "cs_away_pct": 38.3,
+      "xg_home": 0.955,
+      "xg_away": 2.429,
+      "p_home_win": 0.1158,
+      "p_draw": 0.2,
+      "p_away_win": 0.6842,
+      "cs_home_pct": 8.8,
+      "cs_away_pct": 38.5,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 4,
@@ -6345,19 +6345,19 @@
       "away": "Al Diriyah",
       "home_short": "FSL",
       "away_short": "DIR",
-      "xg_home": 0.607,
-      "xg_away": 1.099,
-      "p_home_win": 0.18,
-      "p_draw": 0.3688,
-      "p_away_win": 0.4512,
-      "cs_home_pct": 33.3,
-      "cs_away_pct": 54.5,
+      "xg_home": 0.812,
+      "xg_away": 1.159,
+      "p_home_win": 0.2332,
+      "p_draw": 0.3516,
+      "p_away_win": 0.4152,
+      "cs_home_pct": 31.4,
+      "cs_away_pct": 44.4,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 5,
-      "fdr_away": 1,
-      "def_fdr_away": 1,
-      "att_fdr_away": 4
+      "fdr_away": 2,
+      "def_fdr_away": 2,
+      "att_fdr_away": 3
     },
     {
       "gameweek": 13,
@@ -6368,13 +6368,13 @@
       "away": "Al Riyadh",
       "home_short": "FAT",
       "away_short": "RIY",
-      "xg_home": 1.423,
-      "xg_away": 1.207,
-      "p_home_win": 0.3975,
-      "p_draw": 0.3057,
-      "p_away_win": 0.2969,
-      "cs_home_pct": 29.9,
-      "cs_away_pct": 24.1,
+      "xg_home": 1.458,
+      "xg_away": 1.221,
+      "p_home_win": 0.404,
+      "p_draw": 0.301,
+      "p_away_win": 0.295,
+      "cs_home_pct": 29.5,
+      "cs_away_pct": 23.3,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -6391,13 +6391,13 @@
       "away": "Al Nassr",
       "home_short": "HAZ",
       "away_short": "NAS",
-      "xg_home": 0.829,
-      "xg_away": 2.264,
-      "p_home_win": 0.1064,
-      "p_draw": 0.211,
-      "p_away_win": 0.6826,
-      "cs_home_pct": 10.4,
-      "cs_away_pct": 43.6,
+      "xg_home": 0.861,
+      "xg_away": 2.377,
+      "p_home_win": 0.1038,
+      "p_draw": 0.2,
+      "p_away_win": 0.6962,
+      "cs_home_pct": 9.3,
+      "cs_away_pct": 42.3,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -6414,13 +6414,13 @@
       "away": "Neom SC",
       "home_short": "ITT",
       "away_short": "NEO",
-      "xg_home": 1.45,
-      "xg_away": 1.054,
-      "p_home_win": 0.4393,
-      "p_draw": 0.3091,
-      "p_away_win": 0.2516,
-      "cs_home_pct": 34.9,
-      "cs_away_pct": 23.5,
+      "xg_home": 1.418,
+      "xg_away": 1.023,
+      "p_home_win": 0.4382,
+      "p_draw": 0.3125,
+      "p_away_win": 0.2492,
+      "cs_home_pct": 36.0,
+      "cs_away_pct": 24.2,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -6437,13 +6437,13 @@
       "away": "Al Khaleej",
       "home_short": "KLD",
       "away_short": "KLJ",
-      "xg_home": 1.511,
-      "xg_away": 1.339,
-      "p_home_win": 0.3927,
-      "p_draw": 0.2921,
-      "p_away_win": 0.3152,
-      "cs_home_pct": 26.2,
-      "cs_away_pct": 22.1,
+      "xg_home": 1.493,
+      "xg_away": 1.395,
+      "p_home_win": 0.3772,
+      "p_draw": 0.2895,
+      "p_away_win": 0.3332,
+      "cs_home_pct": 24.8,
+      "cs_away_pct": 22.5,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -6460,13 +6460,13 @@
       "away": "Al Fayha",
       "home_short": "QAD",
       "away_short": "FYH",
-      "xg_home": 2.383,
-      "xg_away": 0.703,
-      "p_home_win": 0.7338,
-      "p_draw": 0.1889,
-      "p_away_win": 0.0774,
-      "cs_home_pct": 49.5,
-      "cs_away_pct": 9.2,
+      "xg_home": 2.394,
+      "xg_away": 0.67,
+      "p_home_win": 0.7434,
+      "p_draw": 0.1844,
+      "p_away_win": 0.0721,
+      "cs_home_pct": 51.2,
+      "cs_away_pct": 9.1,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -6483,13 +6483,13 @@
       "away": "Al Faisaly",
       "home_short": "AHL",
       "away_short": "FSL",
-      "xg_home": 2.956,
-      "xg_away": 0.656,
-      "p_home_win": 0.8251,
-      "p_draw": 0.1301,
-      "p_away_win": 0.0448,
-      "cs_home_pct": 51.9,
-      "cs_away_pct": 5.2,
+      "xg_home": 3.081,
+      "xg_away": 0.733,
+      "p_home_win": 0.8253,
+      "p_draw": 0.126,
+      "p_away_win": 0.0487,
+      "cs_home_pct": 48.1,
+      "cs_away_pct": 4.6,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -6506,13 +6506,13 @@
       "away": "Al Fateh",
       "home_short": "FYH",
       "away_short": "FAT",
-      "xg_home": 1.398,
-      "xg_away": 1.003,
-      "p_home_win": 0.4371,
-      "p_draw": 0.3164,
-      "p_away_win": 0.2466,
-      "cs_home_pct": 36.7,
-      "cs_away_pct": 24.7,
+      "xg_home": 1.401,
+      "xg_away": 1.117,
+      "p_home_win": 0.4119,
+      "p_draw": 0.3107,
+      "p_away_win": 0.2774,
+      "cs_home_pct": 32.7,
+      "cs_away_pct": 24.6,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -6529,12 +6529,12 @@
       "away": "Al Diriyah",
       "home_short": "HIL",
       "away_short": "DIR",
-      "xg_home": 1.908,
-      "xg_away": 0.669,
-      "p_home_win": 0.6509,
-      "p_draw": 0.2443,
-      "p_away_win": 0.1049,
-      "cs_home_pct": 51.2,
+      "xg_home": 1.912,
+      "xg_away": 0.674,
+      "p_home_win": 0.6511,
+      "p_draw": 0.2432,
+      "p_away_win": 0.1058,
+      "cs_home_pct": 51.0,
       "cs_away_pct": 14.8,
       "fdr_home": 1,
       "def_fdr_home": 1,
@@ -6552,13 +6552,13 @@
       "away": "Al Ittihad",
       "home_short": "KLJ",
       "away_short": "ITT",
-      "xg_home": 1.073,
-      "xg_away": 1.959,
-      "p_home_win": 0.1847,
-      "p_draw": 0.2542,
-      "p_away_win": 0.5611,
-      "cs_home_pct": 14.1,
-      "cs_away_pct": 34.2,
+      "xg_home": 1.108,
+      "xg_away": 1.903,
+      "p_home_win": 0.1998,
+      "p_draw": 0.2596,
+      "p_away_win": 0.5405,
+      "cs_home_pct": 14.9,
+      "cs_away_pct": 33.0,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 4,
@@ -6575,13 +6575,13 @@
       "away": "Al Qadsiah",
       "home_short": "NAS",
       "away_short": "QAD",
-      "xg_home": 1.822,
-      "xg_away": 1.556,
-      "p_home_win": 0.425,
-      "p_draw": 0.2607,
-      "p_away_win": 0.3143,
-      "cs_home_pct": 21.1,
-      "cs_away_pct": 16.2,
+      "xg_home": 1.845,
+      "xg_away": 1.541,
+      "p_home_win": 0.4337,
+      "p_draw": 0.2588,
+      "p_away_win": 0.3075,
+      "cs_home_pct": 21.4,
+      "cs_away_pct": 15.8,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 1,
@@ -6598,13 +6598,13 @@
       "away": "Al Hazem",
       "home_short": "RIY",
       "away_short": "HAZ",
-      "xg_home": 1.071,
-      "xg_away": 1.236,
-      "p_home_win": 0.294,
-      "p_draw": 0.3302,
-      "p_away_win": 0.3758,
-      "cs_home_pct": 29.0,
-      "cs_away_pct": 34.3,
+      "xg_home": 1.124,
+      "xg_away": 1.247,
+      "p_home_win": 0.3077,
+      "p_draw": 0.3248,
+      "p_away_win": 0.3675,
+      "cs_home_pct": 28.7,
+      "cs_away_pct": 32.5,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 4,
@@ -6621,13 +6621,13 @@
       "away": "Al Ettifaq",
       "home_short": "SHB",
       "away_short": "ETT",
-      "xg_home": 1.746,
-      "xg_away": 1.5,
-      "p_home_win": 0.4182,
-      "p_draw": 0.268,
-      "p_away_win": 0.3138,
-      "cs_home_pct": 22.3,
-      "cs_away_pct": 17.4,
+      "xg_home": 1.664,
+      "xg_away": 1.482,
+      "p_home_win": 0.4026,
+      "p_draw": 0.2735,
+      "p_away_win": 0.3239,
+      "cs_home_pct": 22.7,
+      "cs_away_pct": 18.9,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 2,
@@ -6644,13 +6644,13 @@
       "away": "Abha",
       "home_short": "TWN",
       "away_short": "ABH",
-      "xg_home": 1.283,
-      "xg_away": 0.887,
-      "p_home_win": 0.4327,
-      "p_draw": 0.3336,
-      "p_away_win": 0.2337,
-      "cs_home_pct": 41.2,
-      "cs_away_pct": 27.7,
+      "xg_home": 1.241,
+      "xg_away": 0.925,
+      "p_home_win": 0.4116,
+      "p_draw": 0.3362,
+      "p_away_win": 0.2522,
+      "cs_home_pct": 39.6,
+      "cs_away_pct": 28.9,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 3,
@@ -6667,18 +6667,18 @@
       "away": "Al Kholood",
       "home_short": "NEO",
       "away_short": "KLD",
-      "xg_home": 1.839,
-      "xg_away": 0.985,
-      "p_home_win": 0.5542,
-      "p_draw": 0.266,
-      "p_away_win": 0.1797,
-      "cs_home_pct": 37.3,
-      "cs_away_pct": 15.9,
+      "xg_home": 1.732,
+      "xg_away": 0.998,
+      "p_home_win": 0.526,
+      "p_draw": 0.2774,
+      "p_away_win": 0.1966,
+      "cs_home_pct": 36.9,
+      "cs_away_pct": 17.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
-      "att_fdr_home": 1,
-      "fdr_away": 5,
-      "def_fdr_away": 5,
+      "att_fdr_home": 2,
+      "fdr_away": 4,
+      "def_fdr_away": 4,
       "att_fdr_away": 4
     },
     {
@@ -6690,13 +6690,13 @@
       "away": "Al Riyadh",
       "home_short": "ABH",
       "away_short": "RIY",
-      "xg_home": 0.981,
-      "xg_away": 1.181,
-      "p_home_win": 0.2786,
-      "p_draw": 0.3412,
-      "p_away_win": 0.3802,
-      "cs_home_pct": 30.7,
-      "cs_away_pct": 37.5,
+      "xg_home": 1.016,
+      "xg_away": 1.141,
+      "p_home_win": 0.2972,
+      "p_draw": 0.342,
+      "p_away_win": 0.3607,
+      "cs_home_pct": 32.0,
+      "cs_away_pct": 36.2,
       "fdr_home": 3,
       "def_fdr_home": 3,
       "att_fdr_home": 4,
@@ -6713,13 +6713,13 @@
       "away": "Al Hazem",
       "home_short": "ETT",
       "away_short": "HAZ",
-      "xg_home": 1.515,
-      "xg_away": 1.072,
-      "p_home_win": 0.4525,
-      "p_draw": 0.3017,
-      "p_away_win": 0.2458,
-      "cs_home_pct": 34.2,
-      "cs_away_pct": 22.0,
+      "xg_home": 1.585,
+      "xg_away": 1.035,
+      "p_home_win": 0.4801,
+      "p_draw": 0.2938,
+      "p_away_win": 0.2261,
+      "cs_home_pct": 35.5,
+      "cs_away_pct": 20.5,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
@@ -6736,18 +6736,18 @@
       "away": "Al Khaleej",
       "home_short": "FSL",
       "away_short": "KLJ",
-      "xg_home": 0.988,
-      "xg_away": 1.165,
-      "p_home_win": 0.2839,
-      "p_draw": 0.3425,
-      "p_away_win": 0.3736,
-      "cs_home_pct": 31.2,
-      "cs_away_pct": 37.2,
+      "xg_home": 1.288,
+      "xg_away": 1.228,
+      "p_home_win": 0.357,
+      "p_draw": 0.3146,
+      "p_away_win": 0.3285,
+      "cs_home_pct": 29.3,
+      "cs_away_pct": 27.6,
       "fdr_home": 3,
       "def_fdr_home": 3,
-      "att_fdr_home": 4,
-      "fdr_away": 2,
-      "def_fdr_away": 2,
+      "att_fdr_home": 3,
+      "fdr_away": 3,
+      "def_fdr_away": 3,
       "att_fdr_away": 3
     },
     {
@@ -6759,18 +6759,18 @@
       "away": "Al Ahli",
       "home_short": "ITT",
       "away_short": "AHL",
-      "xg_home": 1.173,
-      "xg_away": 1.434,
-      "p_home_win": 0.286,
-      "p_draw": 0.3062,
-      "p_away_win": 0.4077,
-      "cs_home_pct": 23.8,
-      "cs_away_pct": 30.9,
+      "xg_home": 1.163,
+      "xg_away": 1.42,
+      "p_home_win": 0.2865,
+      "p_draw": 0.307,
+      "p_away_win": 0.4065,
+      "cs_home_pct": 24.2,
+      "cs_away_pct": 31.2,
       "fdr_home": 4,
       "def_fdr_home": 4,
       "att_fdr_home": 3,
-      "fdr_away": 3,
-      "def_fdr_away": 3,
+      "fdr_away": 2,
+      "def_fdr_away": 2,
       "att_fdr_away": 2
     },
     {
@@ -6782,13 +6782,13 @@
       "away": "Al Hilal",
       "home_short": "KLD",
       "away_short": "HIL",
-      "xg_home": 0.844,
-      "xg_away": 3.062,
-      "p_home_win": 0.0615,
-      "p_draw": 0.1362,
-      "p_away_win": 0.8023,
-      "cs_home_pct": 4.7,
-      "cs_away_pct": 43.0,
+      "xg_home": 0.85,
+      "xg_away": 3.151,
+      "p_home_win": 0.0585,
+      "p_draw": 0.1293,
+      "p_away_win": 0.8121,
+      "cs_home_pct": 4.3,
+      "cs_away_pct": 42.7,
       "fdr_home": 5,
       "def_fdr_home": 5,
       "att_fdr_home": 5,
@@ -6805,12 +6805,12 @@
       "away": "Al Shabab",
       "home_short": "NAS",
       "away_short": "SHB",
-      "xg_home": 2.658,
-      "xg_away": 0.752,
-      "p_home_win": 0.7662,
-      "p_draw": 0.1646,
-      "p_away_win": 0.0692,
-      "cs_home_pct": 47.2,
+      "xg_home": 2.662,
+      "xg_away": 0.746,
+      "p_home_win": 0.7682,
+      "p_draw": 0.1633,
+      "p_away_win": 0.0686,
+      "cs_home_pct": 47.4,
       "cs_away_pct": 7.0,
       "fdr_home": 1,
       "def_fdr_home": 1,
@@ -6828,13 +6828,13 @@
       "away": "Al Fateh",
       "home_short": "QAD",
       "away_short": "FAT",
-      "xg_home": 2.569,
-      "xg_away": 0.708,
-      "p_home_win": 0.7623,
-      "p_draw": 0.1699,
-      "p_away_win": 0.0679,
-      "cs_home_pct": 49.3,
-      "cs_away_pct": 7.7,
+      "xg_home": 2.571,
+      "xg_away": 0.785,
+      "p_home_win": 0.746,
+      "p_draw": 0.175,
+      "p_away_win": 0.079,
+      "cs_home_pct": 45.6,
+      "cs_away_pct": 7.6,
       "fdr_home": 1,
       "def_fdr_home": 1,
       "att_fdr_home": 1,
@@ -6851,13 +6851,13 @@
       "away": "Al Fayha",
       "home_short": "DIR",
       "away_short": "FYH",
-      "xg_home": 0.79,
-      "xg_away": 0.694,
-      "p_home_win": 0.3209,
-      "p_draw": 0.4148,
-      "p_away_win": 0.2644,
-      "cs_home_pct": 50.0,
-      "cs_away_pct": 45.4,
+      "xg_home": 0.84,
+      "xg_away": 0.657,
+      "p_home_win": 0.3486,
+      "p_draw": 0.4096,
+      "p_away_win": 0.2418,
+      "cs_home_pct": 51.8,
+      "cs_away_pct": 43.2,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 5,
@@ -6874,13 +6874,13 @@
       "away": "Al Taawoun",
       "home_short": "NEO",
       "away_short": "TWN",
-      "xg_home": 1.488,
-      "xg_away": 1.011,
-      "p_home_win": 0.4595,
-      "p_draw": 0.3061,
-      "p_away_win": 0.2344,
-      "cs_home_pct": 36.4,
-      "cs_away_pct": 22.6,
+      "xg_home": 1.359,
+      "xg_away": 0.994,
+      "p_home_win": 0.429,
+      "p_draw": 0.3199,
+      "p_away_win": 0.2511,
+      "cs_home_pct": 37.0,
+      "cs_away_pct": 25.7,
       "fdr_home": 2,
       "def_fdr_home": 2,
       "att_fdr_home": 2,
