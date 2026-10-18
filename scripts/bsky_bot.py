@@ -764,6 +764,76 @@ def cmd_should_think(force: bool) -> int:
     return 0
 
 
+def _load_messages(path: Path) -> list:
+    """claude-code-actionin execution_file: JSON-lista tai JSONL."""
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, list) else [data]
+    except json.JSONDecodeError:
+        out = []
+        for line in raw.splitlines():
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return out
+
+
+def brain_trace(messages: list) -> tuple[list[str], str]:
+    """Aivoajon kulku ilman sisaltoa: tyokalun nimi + ok/VIRHE (+ kirjoittiko Write queue.jsoniin).
+
+    Ajoloki on julkinen ja sisalto voi sisaltaa syotteen tekstia, siksi tekstia, polkuja tai
+    tyokalujen tuloksia ei tulosteta. Palauttaa (askeleet, tulosrivi).
+    """
+    calls: dict[str, str] = {}
+    order: list[str] = []
+    errors: set[str] = set()
+    summary = "tulos puuttuu"
+    for m in messages:
+        if not isinstance(m, dict):
+            continue
+        content = (m.get("message") or {}).get("content")
+        if m.get("type") == "assistant" and isinstance(content, list):
+            for c in content:
+                if isinstance(c, dict) and c.get("type") == "tool_use":
+                    name = str(c.get("name") or "?")
+                    if name == "Write":
+                        target = str((c.get("input") or {}).get("file_path") or "")
+                        name = "Write(queue.json)" if target.endswith("queue.json") else "Write(muu)"
+                    calls[c.get("id") or str(len(order))] = name
+                    order.append(c.get("id") or str(len(order)))
+        elif m.get("type") == "user" and isinstance(content, list):
+            for c in content:
+                if isinstance(c, dict) and c.get("type") == "tool_result" and c.get("is_error"):
+                    errors.add(c.get("tool_use_id"))
+        elif m.get("type") == "result":
+            summary = f"{m.get('subtype')}, {m.get('num_turns')} vuoroa, is_error={m.get('is_error')}"
+    steps = [f"{calls[i]} {'VIRHE' if i in errors else 'ok'}" for i in order]
+    return steps, summary
+
+
+def cmd_brain_trace(exec_path: Path, queue_path: Path) -> int:
+    """18.10: aivot ajoivat 17.10 onnistuneesti mutta queue.json puuttui, ja julkaisu luki sen
+    'ei postattavaa' (vihrea, 0 postausta). Ohje vaatii [] kun mitaan ei postata, joten puuttuva
+    tai rikkinainen jono on virhe eika hiljainen nolla."""
+    steps, summary = brain_trace(_load_messages(exec_path))
+    print(f"aivot: {summary}")
+    print("kulku: " + (", ".join(steps) if steps else "ei tyokalukutsuja"))
+    if not queue_path.exists():
+        print(f"::error::Aivot ajoivat mutta {queue_path.name} puuttuu (ohje vaatii [] jos ei postattavaa).")
+        return 1
+    queue = load_json(queue_path, None)
+    if not isinstance(queue, list):
+        print(f"::error::{queue_path.name} ei ole JSON-lista.")
+        return 1
+    print(f"jonossa {len(queue)} ehdotusta")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -777,6 +847,9 @@ def main(argv=None) -> int:
     st.add_argument("--force", action="store_true")
     sub.add_parser("perf")
     sub.add_parser("x-mirror", help="julkaistuista postauksista X-versio issueksi Villelle")
+    bt = sub.add_parser("brain-trace", help="aivoajon kulku (vain tyokalujen nimet) + puuttuva jono = virhe")
+    bt.add_argument("--exec", required=True)
+    bt.add_argument("--queue", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "context":
         return cmd_context(Path(a.out))
@@ -786,6 +859,8 @@ def main(argv=None) -> int:
         return cmd_should_think(a.force)
     if a.cmd == "x-mirror":
         return cmd_x_mirror()
+    if a.cmd == "brain-trace":
+        return cmd_brain_trace(Path(a.exec), Path(a.queue))
     return cmd_perf()
 
 

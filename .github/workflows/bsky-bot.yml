@@ -62,6 +62,7 @@ jobs:
         run: python -m scripts.bsky_bot context --out /tmp/bsky
 
       - name: Aivot ehdottavat
+        id: aivot_run
         if: steps.paata.outputs.think == 'true'
         uses: anthropics/claude-code-action@v1
         with:
@@ -121,6 +122,15 @@ jobs:
             5. REVIEW. Give your items to the bsky-tarkistaja subagent (Task tool). Drop every BLOCK, or apply its
                small fix and review again. Then write the final JSON array to /tmp/bsky/queue.json with the Write
                tool. Write [] if nothing passes.
+
+      # 18.10: aivot ajoivat 17.10 17:33 onnistuneesti, mutta queue.json puuttui ja julkaisu luki sen "ei
+      # postattavaa" (vihrea, 0 postausta). Puuttuva jono on nyt punainen ajo. Lokiin vain tyokalujen nimet:
+      # loki on julkinen ja sisalto voi sisaltaa syotteen tekstia. Julkaise-job ajaa silti (varapostaukset).
+      - name: Aivojen tulos
+        if: steps.paata.outputs.think == 'true'
+        env:
+          EXEC_FILE: ${{ steps.aivot_run.outputs.execution_file }}
+        run: python -m scripts.bsky_bot brain-trace --exec "$EXEC_FILE" --queue /tmp/bsky/queue.json
 
       - uses: actions/upload-artifact@v4
         if: steps.paata.outputs.think == 'true'

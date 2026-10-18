@@ -464,3 +464,53 @@ def test_julkaisu_tallentaa_linkin_ja_tyonkulku_ajaa_x_jonon():
     nimet = [s.get("name") for s in job["steps"]]
     assert nimet.index(askel[0]["name"]) > nimet.index("Julkaise (portti jokaiselle)")
     assert nimet.index(askel[0]["name"]) < nimet.index("Tila mainiin")
+
+
+# 18.10: aivot ajoivat 17.10 onnistuneesti mutta queue.json puuttui -> julkaisu luki "ei postattavaa", ajo vihrea.
+_SALAISUUS = "ghp_" + "x" * 8 + "SALAINEN"
+
+
+def _exec(tmp_path, write_target=None, error=False):
+    msgs = [
+        {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "t1", "name": "Read", "input": {"file_path": "/proc/self/environ"}}]}},
+        {"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "t1", "content": _SALAISUUS, "is_error": error}]}},
+    ]
+    if write_target:
+        msgs.append({"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "t2", "name": "Write", "input": {"file_path": write_target, "content": _SALAISUUS}}]}})
+    msgs.append({"type": "result", "subtype": "success", "num_turns": 3, "is_error": False})
+    p = tmp_path / "exec.json"
+    p.write_text(__import__("json").dumps(msgs), encoding="utf-8")
+    return p
+
+
+def test_puuttuva_jono_on_virhe_ei_hiljainen_nolla(tmp_path, capsys):
+    rc = bot.cmd_brain_trace(_exec(tmp_path), tmp_path / "queue.json")
+    out = capsys.readouterr().out
+    assert rc == 1 and "::error::" in out
+
+
+@pytest.mark.parametrize("sisalto,odotus", [("[]", 0), ('[{"kind": "post"}]', 0), ('{"kind": "post"}', 1), ("rikki", 1)])
+def test_jonon_muoto(tmp_path, sisalto, odotus):
+    q = tmp_path / "queue.json"
+    q.write_text(sisalto, encoding="utf-8")
+    assert bot.cmd_brain_trace(_exec(tmp_path, write_target=str(q)), q) == odotus
+
+
+def test_kulku_nayttaa_vain_tyokalujen_nimet(tmp_path, capsys):
+    q = tmp_path / "queue.json"
+    q.write_text("[]", encoding="utf-8")
+    bot.cmd_brain_trace(_exec(tmp_path, write_target="/tmp/bsky/queue.json", error=True), q)
+    out = capsys.readouterr().out
+    assert "Read VIRHE" in out and "Write(queue.json) ok" in out
+    assert _SALAISUUS not in out and "environ" not in out
+
+
+def test_workflow_ajaa_kulun_aivojen_jalkeen():
+    wf = (Path(__file__).resolve().parents[1] / ".github/workflows/bsky-bot.yml").read_text(encoding="utf-8")
+    assert "id: aivot_run" in wf
+    assert "python -m scripts.bsky_bot brain-trace --exec \"$EXEC_FILE\" --queue /tmp/bsky/queue.json" in wf
+    assert "steps.aivot_run.outputs.execution_file" in wf
+    assert wf.index("id: aivot_run") < wf.index("brain-trace") < wf.index("upload-artifact")
