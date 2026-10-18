@@ -56,6 +56,20 @@ SALLITUT = {
     ),
     "cada jugador con datos": "sama rivi es-ES:ssa, sama rajaus.",
     "cada jogador com dados": "sama rivi pt-BR:ssa, sama rajaus.",
+    # 18.10.2026 (iOS 1.0.10, julkaisutarkistaja): pelaajahaun ilmainen osa on
+    # VAIN saatavuusuutiset, ja ne ovat jokaisella pelaajalla: maskattu
+    # /api/fantasy/xp palauttaa pool-rivit (news, status) kaikille ~480:lle,
+    # vaikka p_start ja set_pieces ovat vain top 10:lla (siksi ne siirrettiin
+    # Premium-riville). Avain sisaltaa seuraavan rivin alun, ettei sama
+    # kvanttori kelpaa muualla.
+    "every player - player leaders": "pelaajahaun saatavuusuutiset, mitattu 18.10.",
+    "cada jugador - líderes": "sama rivi es-ES:ssa, sama mittaus.",
+    "cada jogador - líderes": "sama rivi pt-BR:ssa, sama mittaus.",
+    # Rate my teamin taysi analyysi: kentta nayttaa projektion KAYTTAJAN
+    # joukkueen jokaiselle pelaajalle (15), ei koko pelaajajoukolle.
+    "each player's projection - rate my draft": "oman joukkueen 15 pelaajaa.",
+    "cada jugador - evalúa mi borrador": "sama rivi es-ES:ssa, oman joukkueen pelaajat.",
+    "cada jogador - avalie meu rascunho": "sama rivi pt-BR:ssa, oman joukkueen pelaajat.",
 }
 
 

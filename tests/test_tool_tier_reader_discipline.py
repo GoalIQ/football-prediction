@@ -232,18 +232,9 @@ ALLOWED: dict[str, list[Poikkeus]] = {
             ),
             free=("price-watch",),
         ),
-        Poikkeus(
-            ote="Premium</a> projects clean sheets and expected points for every gameweek",
-            reason=(
-                "🔴 Tama EI vaita clean-sheets-tyokalua maksulliseksi, ja siksi "
-                "`free`-kentta on tahallaan tyhja: lause vertaa YHTA kierrosta "
-                "(tama ilmainen sivu, ja rekisterin `clean-sheets` vastaa "
-                "kysymykseen 'this week') KOKO IKKUNAAN, joka on Premiumin "
-                "puolella. Vaite on horisontista, ei tyokalusta. Jos "
-                "clean-sheets joskus muuttuu maksulliseksi, tama lause pysyy "
-                "totena eika sen kuulu kaataa porttia."
-            ),
-        ),
+        # 18.10.2026: poistettu poikkeus "Premium</a> projects clean sheets
+        # ... for every gameweek": linkki vei ilmaiseen clean-sheets-
+        # tyokaluun, joka kattaa valitut kierrokset (sivustoaudit 18.10).
         Poikkeus(
             ote="Open GoalIQ Premium: per-gameweek xP and captain ranker",
             reason=(

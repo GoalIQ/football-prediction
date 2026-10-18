@@ -683,7 +683,7 @@ def render_match_page(comp: str, e: dict) -> str:
         f'{escape((e.get("logged_at") or "")[:10])} and will be graded in our '
         f'<a href="/predictions">public track record</a>, hits and misses included.</div>'
         f'<div class="cta-row">'
-        f'<a class="btn" href="https://pro.goaliq.app/">Run your own prediction</a>'
+        f'<a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
         f'<a class="btn ghost" href="/predictions/{cfg["slug"]}/">More {escape(cfg["name"])} predictions</a>'
         f"</div>"
         f'<p class="note">{DISCLAIMER}</p>'
@@ -740,14 +740,14 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
     hero = (
         f"<h1>{escape(cfg['name'])} predictions</h1>"
         f'<p class="lede">The GoalIQ match model predicts upcoming '
-        f"{escape(cfg['name'])} fixtures: win probability for each side, expected "
-        f"goals and scoreline probabilities. Predictions are logged before kickoff "
-        f"and graded in a public track record.</p>"
+        f"{escape(cfg['name'])} fixtures: win probability for each side, free, with "
+        f"expected goals and scoreline probabilities in GoalIQ Premium. Predictions "
+        f"are logged before kickoff and graded in a public track record.</p>"
     )
     body = (
         f'<div class="card">{"".join(items)}</div>'
         f'<div class="cta-row">'
-        f'<a class="btn" href="https://pro.goaliq.app/">Run your own prediction</a>'
+        f'<a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
         f'<a class="btn ghost" href="/predictions">All football predictions</a>'
         f"</div>"
         f'<p class="note">Updated {now.strftime("%d %b %Y %H:%M UTC")} · {DISCLAIMER}</p>'

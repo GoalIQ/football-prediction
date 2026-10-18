@@ -391,7 +391,7 @@ def free_window_block(now=None) -> str:
     # Ikkuna kiinni: ei ilmaislupausta, CTA takaisin ostoon, hinta preesensissa.
     kiinni = (
         f'<div class="cta-row">\n'
-        f'  <a class="cta" href="{PRO_URL}" data-cta="fpl-premium">'
+        f'  <a class="cta" href="{PRO_TAB_URL}" data-cta="fpl-premium">'
         f'Get Premium</a>\n'
         f'</div>\n'
         f'<p class="price-note">\u20ac{PC.SEASON} a year, which is under '
@@ -867,7 +867,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             "Does GoalIQ give betting tips?",
             (
                 "No. GoalIQ publishes model predictions and analytics, not betting "
-                "advice. It is not a gambling service and has no odds or bookmaker links."
+                "advice. It is not a gambling service and has no bookmaker odds or links."
             ),
         ),
         (
@@ -2647,11 +2647,11 @@ same probability over the run in the grid below, so one good fixture and a good
 run are not the same column.</p>
 {cs_table}
 <p class="note">{_strength_basis_note(c)}</p>
-<p class="inline-up">This is Gameweek {c["next_gw"]} alone.
-<a href="https://pro.goaliq.app/players/clean-sheets?src=fpl-cs&amp;srcp=fpl" data-cta="inline-cs">GoalIQ
-Premium</a> projects clean sheets and expected points for every gameweek in the
-window, so you can see whether a defender is worth buying for one weekend or for
-the run.</p>
+<p class="inline-up">This is Gameweek {c["next_gw"]} alone. The grid below runs the
+same probability over the next six gameweeks, and the free
+<a href="https://pro.goaliq.app/players/clean-sheets?src=fpl-cs&amp;srcp=fpl" data-cta="inline-cs">clean
+sheet tool</a> averages it over the gameweeks you pick, so you can see whether a
+defender is worth buying for one weekend or for the run.</p>
 
 <h2 id="fixture-difficulty">Fixture difficulty for the next six gameweeks</h2>
 <p>Each cell is the opponent, venue and the model's clean sheet probability

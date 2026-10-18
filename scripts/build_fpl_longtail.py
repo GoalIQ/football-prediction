@@ -925,12 +925,12 @@ def render_differentials(diff: dict, now: datetime) -> str | None:
         "</tr></thead>"
         f"<tbody>{rows}</tbody></table></div>"
         f'<p class="note">All {len(players)} shown, free and without an '
-        f"account. Ownership is FPL's own number. <em>xP/GW</em> is the "
+        f"account. Ownership is FPL's own number. <em>xP/GW</em> is "
         f"{hz_note}, not a "
         f'single-gameweek number: for one gameweek alone see '
         f'<a href="{BASE}/fpl/expected-points#gw-xp">expected points</a>. '
-        f"Give the web tools your entry ID and the players you already own "
-        f"drop off this list.</p>"
+        f"With GoalIQ Premium, give the web tools your entry ID and the "
+        f"players you already own drop off this list.</p>"
         f"{UPSELL}{_cta()}"
         f'<p class="note">Updated {now.strftime("%d %b %Y")} · {DISCLAIMER}</p>'
     )
@@ -2040,8 +2040,8 @@ def render_defcon(leaders: dict, now: datetime) -> str | None:
         f'<div class="stat-row">{top3}</div>'
         f'<p class="note">{escape(basis_note)}</p>'
         + (
-            f'<p class="note">Also in the top 10: {rest}. Hit rates, DC per '
-            f"game and position filters are on GoalIQ Premium.</p>"
+            f'<p class="note">Also in the top 10: {rest}. The full '
+            f"leaderboard with position filters is on GoalIQ Premium.</p>"
             if rest
             else ""
         )
@@ -4348,8 +4348,8 @@ def render_club_page(short: str, players: list[dict], meta: dict,
             '<th class="n">Price</th><th class="n">Start</th></tr></thead>'
             f"<tbody>{xi}</tbody></table></div>"
             '<p class="note">This table answers one question: who starts. '
-            "Projected points for the same players are in GoalIQ Premium, "
-            "along with the tools that use them. "
+            "Per-gameweek projected points for every player are in GoalIQ "
+            "Premium, along with the tools that use them. "
             "Start is our projected chance of starting, not a "
             "lineup leak. We do not watch press conferences. The shape is the "
             "highest-probability starter at each position, so it will not "
@@ -5012,7 +5012,8 @@ def render_expected_points(xp: dict, now: datetime) -> str | None:
         + "</p>"
         + f"{UPSELL}{_cta()}"
         + f'<p class="note">Updated {now.strftime("%d %b %Y")} · '
-        + f'{escape(str(meta.get("caveat") or ""))[:300]} · {DISCLAIMER}</p>'
+        + (f'{escape(str(meta["caveat"]))[:300]} · ' if meta.get("caveat") else "")
+        + f"{DISCLAIMER}</p>"
     )
     jsonld = [{
         "@context": "https://schema.org", "@type": "WebPage",
