@@ -514,3 +514,14 @@ def test_workflow_ajaa_kulun_aivojen_jalkeen():
     assert "python -m scripts.bsky_bot brain-trace --exec \"$EXEC_FILE\" --queue /tmp/bsky/queue.json" in wf
     assert "steps.aivot_run.outputs.execution_file" in wf
     assert wf.index("id: aivot_run") < wf.index("brain-trace") < wf.index("upload-artifact")
+
+
+def test_aivot_eivat_kayta_aliagenttia():
+    """18.10: aivot antoivat ehdotukset bsky-tarkistaja-aliagentille (Task/Agent), joka ajoi taustalla; ajo paattyi
+    ennen vastausta eika queue.json syntynyt koskaan (17.10 ja 18.10 09 UTC). Tarkistus tehdaan samassa ajossa."""
+    wf = (Path(__file__).resolve().parents[1] / ".github/workflows/bsky-bot.yml").read_text(encoding="utf-8")
+    allowed = wf.split("--allowedTools", 1)[1].split("\n", 1)[0]
+    assert "Task" not in allowed and "Agent" not in allowed
+    prompt = wf.split("prompt: |", 1)[1]
+    assert "(Task tool)" not in prompt and "subagent (" not in prompt
+    assert ".claude/agents/bsky-tarkistaja.md" in prompt and "Write [] if nothing passes" in prompt

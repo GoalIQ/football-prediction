@@ -3,7 +3,7 @@
 #   aivot     Claude (Max-tilauksen OAuth-token, 0 e) lukee ennakoivan tilannekuvan (scripts/bsky_bot.py
 #             context: tarkistetut luvut, FPL:n hinta- ja statussignaalit, tupla/tyhjat kierrokset,
 #             Blueskyn ja X:n FPL-keskustelu tykkayksineen, omat tulokset) ja ehdottaa 0-4 postausta tai
-#             vastausta. bsky-tarkistaja (.claude/agents) tarkistaa ne. Ajetaan 09 ja 17 UTC seka
+#             vastausta. Aivot tarkistavat ne itse bsky-tarkistajan (.claude/agents) porteilla (18.10: aliagentti ajoi taustalla, ajo paattyi ennen vastausta). Ajetaan 09 ja 17 UTC seka
 #             deadlinea edeltavat 6 h (kiintio). Lukuoikeus, EI Bluesky-tunnusta: tulos on pelkka queue.json.
 #   julkaise  Joka tunti: mentioihin vastaukset, aivojen ehdotukset ja pohjapostaukset (deadline, tulos)
 #             src/marketing/bsky_gate.py:n lapi, kortti sivun omasta jakokortista, postaus, mittaus,
@@ -75,7 +75,7 @@ jobs:
           claude_args: >-
             --max-turns 60
             --add-dir /tmp/bsky
-            --allowedTools "Read,Write,Glob,Grep,WebSearch,WebFetch,Task"
+            --allowedTools "Read,Write,Glob,Grep,WebSearch,WebFetch"
           prompt: |
             You are the brain of @goaliqapp, GoalIQ's account on Bluesky. GoalIQ is a football model. Free on
             goaliq.app: match predictions, clean sheet chances, the expected points pages and the model's track
@@ -119,9 +119,11 @@ jobs:
                with their keys; a post with numbers links to the `page` of those numbers (one page per post);
                at most one number in a reply, two in a post; no link and no product name in a
                reply; no em or en dash; no betting words; never claim to be human or deny automation.
-            5. REVIEW. Give your items to the bsky-tarkistaja subagent (Task tool). Drop every BLOCK, or apply its
-               small fix and review again. Then write the final JSON array to /tmp/bsky/queue.json with the Write
-               tool. Write [] if nothing passes.
+            5. REVIEW yourself: read .claude/agents/bsky-tarkistaja.md and apply every gate in it to every item,
+               default verdict BLOCK. Drop every BLOCK, or apply a small fix and review again. Do not start a
+               subagent: it runs in the background and this run ends before it answers. Then write the final
+               JSON array to /tmp/bsky/queue.json with the Write tool. Write [] if nothing passes. Writing the
+               file is the last step and is required even when the answer is [].
 
       # 18.10: aivot ajoivat 17.10 17:33 onnistuneesti, mutta queue.json puuttui ja julkaisu luki sen "ei
       # postattavaa" (vihrea, 0 postausta). Puuttuva jono on nyt punainen ajo. Lokiin vain tyokalujen nimet:
