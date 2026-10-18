@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-18T09:53:27+00:00",
+    "generated_at": "2026-10-18T12:56:23+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -160,7 +160,7 @@
       "promoted_prior_players": 225,
       "promoted_prior_method": "Players at any club with no Premier League minutes this season: minutes come from a role prior built on FPL price order within club and position (XI slots 1/4/4/2; top p_start 0.38, next two 0.16, rest 0.096) times the FPL availability gate, unless a manual override sets the start chance. Goal and assist rates follow data_basis like every other row. minutes_method=promoted_price_prior.",
       "player_basis_counts": {
-        "pl_history": 281,
+        "pl_history": 282,
         "limited_history": 138,
         "no_history": 60
       },
@@ -193,14 +193,14 @@
     ],
     "horizon_gw": 6,
     "min_xp_total": 1.0,
-    "n_players": 479,
-    "n_excluded": 188,
+    "n_players": 480,
+    "n_excluded": 187,
     "last_season_block": {
-      "hidden": 401,
+      "hidden": 402,
       "new_club": 37,
       "short_season": 74,
       "thin_sample": 54,
-      "no_projection": 101
+      "no_projection": 100
     },
     "excluded_note": "excluded[] lists FPL players who are not in the projection (availability flag i/s/u/n, or horizon xP below 1.0). The rows exist for search and the player card: in_projection=false, with no xP/xmins/p_start fields. Older clients can ignore the list.",
     "excluded_note_code": "fpl_xp.excluded_note.v1",
@@ -2266,7 +2266,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 40.0,
+      "owned_pct": 40.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -3831,7 +3831,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 12.3,
+      "owned_pct": 12.4,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -6907,7 +6907,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 5.7,
+      "owned_pct": 5.8,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -18162,7 +18162,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 0.8,
+      "owned_pct": 0.9,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -30991,7 +30991,7 @@
       "predicted_starts": 0.0,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 2.5,
+      "owned_pct": 2.4,
       "status": "s",
       "news": "Suspended until 31 Oct",
       "chance_next": 0,
@@ -47412,6 +47412,164 @@
       "minutes_basis_flag": "short_season",
       "last_season_show": true,
       "last_season_reason": "short_season"
+    },
+    {
+      "id": 223,
+      "web_name": "Mateta",
+      "full_name": "Jean-Philippe Mateta",
+      "team": "Crystal Palace",
+      "team_short": "CRY",
+      "pos": "FWD",
+      "xmins": 18.4,
+      "predicted_starts": 32.7,
+      "minutes_confidence": "med",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
+      "data_basis": "pl_history",
+      "owned_pct": 1.1,
+      "status": "a",
+      "news": "",
+      "chance_next": 100,
+      "yellows": 0,
+      "price": 6.3,
+      "team_code": 31,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 31,
+        "team_name": "Crystal Palace",
+        "minutes": 2210,
+        "starts": 25,
+        "goals": 12,
+        "assists": 0,
+        "xg": 14.42,
+        "xa": 1.32,
+        "cs": 8,
+        "points": 114,
+        "per90": {
+          "goals": 0.49,
+          "assists": 0.0,
+          "xgi": 0.64
+        }
+      },
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 62,
+        "xgi": 0.72,
+        "per90": {
+          "xgi": 1.05
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 8,
+        "n": 2000,
+        "mean": 1.2,
+        "p_haul": 0.03,
+        "p_blank": 0.846,
+        "p10": 0,
+        "median": 0,
+        "p90": 6,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.327,
+      "p_cameo": 0.0,
+      "p_bench": 0.673,
+      "set_pieces": {
+        "pens": 1,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.12,
+      "xp_per_gw": 1.03,
+      "xp_per_90": 4.89,
+      "xp_horizon_total": 6.17,
+      "gameweeks": [
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "BHA",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.93,
+          "xmins": 18.4
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "NEW",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.17,
+          "xmins": 18.4
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "TOT",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.98,
+          "xmins": 18.4
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "LIV",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.03,
+          "xmins": 18.4
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "COV",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.04,
+          "xmins": 18.4
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "HUL",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.02,
+          "xmins": 18.4
+        }
+      ],
+      "components": {
+        "appearance": 0.44,
+        "goals": 0.58,
+        "assists": 0.04,
+        "clean_sheet": 0.0,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.0,
+        "yellows": -0.02,
+        "bonus": 0.14
+      },
+      "components_gw": 8,
+      "last_season_show": false
     },
     {
       "id": 3,
@@ -67947,7 +68105,7 @@
       "minutes_source": "override",
       "minutes_override_reason": "Tottenham's backup keeper. Kinsky played every minute of GW1-5 in FPL's match data, so Dubravka's start chance is set low",
       "data_basis": "pl_history",
-      "owned_pct": 16.7,
+      "owned_pct": 16.6,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -70546,6 +70704,166 @@
       "last_season_show": false
     },
     {
+      "id": 422,
+      "web_name": "Mazraoui",
+      "full_name": "Noussair Mazraoui",
+      "team": "Manchester United",
+      "team_short": "MUN",
+      "pos": "DEF",
+      "xmins": 7.3,
+      "predicted_starts": 17.4,
+      "minutes_confidence": "high",
+      "minutes_source": "price_blend",
+      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
+      "data_basis": "pl_history",
+      "owned_pct": 0.4,
+      "status": "a",
+      "news": "",
+      "chance_next": 100,
+      "yellows": 0,
+      "price": 4.3,
+      "team_code": 1,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 1,
+        "team_name": "Man Utd",
+        "minutes": 977,
+        "starts": 11,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.19,
+        "xa": 0.35,
+        "cs": 5,
+        "points": 53,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.0,
+          "xgi": 0.05
+        }
+      },
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 97,
+        "xgi": 0.28,
+        "per90": {
+          "xgi": 0.26
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 8,
+        "n": 2000,
+        "mean": 0.38,
+        "p_haul": 0.002,
+        "p_blank": 0.965,
+        "p10": 0,
+        "median": 0,
+        "p90": 1,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.1735,
+      "p_cameo": 0.1181,
+      "p_bench": 0.7084,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.03,
+      "xp_per_gw": 0.39,
+      "xp_per_90": 3.43,
+      "xp_horizon_total": 2.32,
+      "gameweeks": [
+        {
+          "gw": 7,
+          "opponents": [
+            {
+              "opp": "LEE",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.37,
+          "xmins": 7.3
+        },
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "BOU",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.4,
+          "xmins": 7.3
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "CHE",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.34,
+          "xmins": 7.3
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "AVL",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.43,
+          "xmins": 7.3
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "LIV",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.36,
+          "xmins": 7.3
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "BRE",
+              "venue": "H"
+            }
+          ],
+          "xp": 0.42,
+          "xmins": 7.3
+        }
+      ],
+      "components": {
+        "appearance": 0.28,
+        "goals": 0.03,
+        "assists": 0.01,
+        "clean_sheet": 0.07,
+        "conceded": -0.04,
+        "saves": 0.0,
+        "defensive_contribution": 0.02,
+        "yellows": -0.02,
+        "bonus": 0.03
+      },
+      "components_gw": 8,
+      "minutes_basis_flag": "short_season",
+      "last_season_show": true,
+      "last_season_reason": "short_season"
+    },
+    {
       "id": 269,
       "web_name": "Sessegnon",
       "full_name": "Ryan Sessegnon",
@@ -72811,166 +73129,6 @@
       "last_season_show": false
     },
     {
-      "id": 422,
-      "web_name": "Mazraoui",
-      "full_name": "Noussair Mazraoui",
-      "team": "Manchester United",
-      "team_short": "MUN",
-      "pos": "DEF",
-      "xmins": 1.8,
-      "predicted_starts": 4.3,
-      "minutes_confidence": "high",
-      "minutes_source": "price_blend",
-      "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
-      "data_basis": "pl_history",
-      "owned_pct": 0.4,
-      "status": "d",
-      "news": "Back injury - 25% chance of playing",
-      "chance_next": 25,
-      "yellows": 0,
-      "price": 4.3,
-      "team_code": 1,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 1,
-        "team_name": "Man Utd",
-        "minutes": 977,
-        "starts": 11,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.19,
-        "xa": 0.35,
-        "cs": 5,
-        "points": 53,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.0,
-          "xgi": 0.05
-        }
-      },
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 97,
-        "xgi": 0.28,
-        "per90": {
-          "xgi": 0.26
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 8,
-        "n": 2000,
-        "mean": 0.07,
-        "p_haul": 0.0,
-        "p_blank": 0.994,
-        "p10": 0,
-        "median": 0,
-        "p90": 0,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.0434,
-      "p_cameo": 0.0342,
-      "p_bench": 0.9225,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.01,
-      "xp_per_gw": 0.26,
-      "xp_per_90": 3.43,
-      "xp_horizon_total": 1.56,
-      "gameweeks": [
-        {
-          "gw": 7,
-          "opponents": [
-            {
-              "opp": "LEE",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.09,
-          "xmins": 1.8
-        },
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "BOU",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.1,
-          "xmins": 1.8
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "CHE",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.27,
-          "xmins": 5.7
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "AVL",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.36,
-          "xmins": 6.2
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "LIV",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.34,
-          "xmins": 6.9
-        },
-        {
-          "gw": 12,
-          "opponents": [
-            {
-              "opp": "BRE",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.4,
-          "xmins": 6.9
-        }
-      ],
-      "components": {
-        "appearance": 0.07,
-        "goals": 0.01,
-        "assists": 0.0,
-        "clean_sheet": 0.02,
-        "conceded": -0.01,
-        "saves": 0.0,
-        "defensive_contribution": 0.01,
-        "yellows": -0.0,
-        "bonus": 0.01
-      },
-      "components_gw": 8,
-      "minutes_basis_flag": "short_season",
-      "last_season_show": true,
-      "last_season_reason": "short_season"
-    },
-    {
       "id": 364,
       "web_name": "Tsimikas",
       "full_name": "Kostas Tsimikas",
@@ -74383,53 +74541,6 @@
           "goals": 0.61,
           "assists": 0.11,
           "xgi": 0.52
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
-      "id": 223,
-      "web_name": "Mateta",
-      "full_name": "Jean-Philippe Mateta",
-      "team": "Crystal Palace",
-      "team_short": "CRY",
-      "pos": "FWD",
-      "price": 6.3,
-      "owned_pct": 1.1,
-      "status": "i",
-      "news": "Hamstring injury - Expected back 18 Oct",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": 1,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 31,
-        "team_name": "Crystal Palace",
-        "minutes": 2210,
-        "starts": 25,
-        "goals": 12,
-        "assists": 0,
-        "xg": 14.42,
-        "xa": 1.32,
-        "cs": 8,
-        "points": 114,
-        "per90": {
-          "goals": 0.49,
-          "assists": 0.0,
-          "xgi": 0.64
         }
       },
       "form": {

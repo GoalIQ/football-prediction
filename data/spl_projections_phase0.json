@@ -4,7 +4,7 @@
     "available": true,
     "phase": 0,
     "league": "SAU-Saudi Pro League",
-    "generated_at": "2026-10-18T09:53:46",
+    "generated_at": "2026-10-18T12:56:45",
     "season": "2026/27",
     "source": "spl-fantasy-api",
     "fixture_source": "RSL Fantasy official API (fantasy.spl.com.sa)",
@@ -2390,18 +2390,6 @@
       "short": "ABH",
       "fixtures": [
         {
-          "gw": 10,
-          "opponent": "Al Kholood",
-          "opponent_short": "KLD",
-          "venue": "H",
-          "kickoff_ms": 1792423200000,
-          "fdr": 3,
-          "def_fdr": 3,
-          "att_fdr": 4,
-          "tier": "near",
-          "cs_pct": 28.6
-        },
-        {
           "gw": 11,
           "opponent": "Neom SC",
           "opponent_short": "NEO",
@@ -2482,6 +2470,17 @@
           "fdr": 5,
           "def_fdr": 5,
           "att_fdr": 5,
+          "tier": "far"
+        },
+        {
+          "gw": 16,
+          "opponent": "Al Kholood",
+          "opponent_short": "KLD",
+          "venue": "H",
+          "kickoff_ms": 1796650800000,
+          "fdr": 3,
+          "def_fdr": 3,
+          "att_fdr": 4,
           "tier": "far"
         },
         {
@@ -2683,9 +2682,9 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 27.9,
-      "next_avg_fdr": 3.57,
-      "next_n": 7
+      "next_avg_cs_pct": 27.8,
+      "next_avg_fdr": 3.67,
+      "next_n": 6
     },
     {
       "name": "Al Fayha",
@@ -5336,18 +5335,6 @@
       "short": "KLD",
       "fixtures": [
         {
-          "gw": 10,
-          "opponent": "Abha",
-          "opponent_short": "ABH",
-          "venue": "A",
-          "kickoff_ms": 1792423200000,
-          "fdr": 2,
-          "def_fdr": 2,
-          "att_fdr": 3,
-          "tier": "near",
-          "cs_pct": 33.5
-        },
-        {
           "gw": 11,
           "opponent": "Al Ettifaq",
           "opponent_short": "ETT",
@@ -5415,6 +5402,17 @@
           "kickoff_ms": 1796256000000,
           "fdr": 4,
           "def_fdr": 4,
+          "att_fdr": 3,
+          "tier": "far"
+        },
+        {
+          "gw": 16,
+          "opponent": "Abha",
+          "opponent_short": "ABH",
+          "venue": "A",
+          "kickoff_ms": 1796650800000,
+          "fdr": 2,
+          "def_fdr": 2,
           "att_fdr": 3,
           "tier": "far"
         },
@@ -5617,9 +5615,9 @@
           "tier": "far"
         }
       ],
-      "next_avg_cs_pct": 16.9,
-      "next_avg_fdr": 3.83,
-      "next_n": 6
+      "next_avg_cs_pct": 13.6,
+      "next_avg_fdr": 4.2,
+      "next_n": 5
     }
   ],
   "fixtures": [
@@ -5668,29 +5666,6 @@
       "fdr_away": 1,
       "def_fdr_away": 1,
       "att_fdr_away": 2
-    },
-    {
-      "gameweek": 10,
-      "kickoff": "Mon 19 Oct 2026, 15:20 UTC",
-      "kickoff_ms": 1792423200000,
-      "finished": false,
-      "home": "Abha",
-      "away": "Al Kholood",
-      "home_short": "ABH",
-      "away_short": "KLD",
-      "xg_home": 1.093,
-      "xg_away": 1.251,
-      "p_home_win": 0.2982,
-      "p_draw": 0.3263,
-      "p_away_win": 0.3755,
-      "cs_home_pct": 28.6,
-      "cs_away_pct": 33.5,
-      "fdr_home": 3,
-      "def_fdr_home": 3,
-      "att_fdr_home": 4,
-      "fdr_away": 2,
-      "def_fdr_away": 2,
-      "att_fdr_away": 3
     },
     {
       "gameweek": 10,
