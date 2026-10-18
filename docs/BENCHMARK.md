@@ -20,7 +20,7 @@ Edellinen kierros 16.10.2026. Kausi 2026/27, GW7 pelattu (deadline la 17.10.), G
 - Opta Analyst: kausisimulaatio julkaistu 14.8. (10 000 simulaatiota, ajettu 13.8.): Arsenal 38,0 % mestaruus, City 20,5 %, Liverpool 9,2 %; putoamisriski Hull 38,7 %, Ipswich 31,2 %. Syötteenä vedonlyöntikertoimet, joten GoalIQ ei voi kopioida syötettä, vain tuotteen. Sivu ei ilmoita uusia ominaisuuksia. [P5]
 - FPL Rogue: työkalut jaettu Free, Lite ja Pro. Pro: Player Rotation Planner, Projected Points, Chip Planner, Captain Picker, Differentials. Free: FDR, ennustetut avaukset, erikoistilanteet. Lite: EO ja eliittimanagerien trendit. Ei "uusi"-merkintöjä. [F20]
 - Fix: uudet tuotesivut ChatFPL (NEW), Assistant Manager (AI-siirrot), Team Reveal Live, Pre-Season Pack; hintamuutosblogit päivittäin (16.-18.10.). Ei päivämääriä tuotteille. [F10]
-- FFH: ei changelogia eikä lokakuun ominaisuusjulkistusta löytynyt; Announcements-sivulla "User Data Breach" -viesti (otsikko, päivä 10.10., vuosi varmistamatta). [F37]
+- FFH: ei changelogia eikä lokakuun ominaisuusjulkistusta löytynyt. [F37]
 - FPL Guru (403) ja FPL Review (sivu ilman runkotekstiä): ei päivitystä, merkitty "?".
 - Uusia merkittäviä palveluja ei löytynyt tällä kierroksella; hauissa nousi vain pieniä sovelluksia ilman todennettua tarkkuutta (ForecastLabs, Scorepredict) [P14].
 
@@ -308,7 +308,7 @@ Luettu 16.10.2026, ellei toisin mainita. "h" = hakukoneen tiivistelmä, sivua ei
 - [G12] `data/fpl_xp_frozen/gw7.json` (jäädytetyt kentät)
 - [G13] sisäinen ominaisuusanalyysi 25.7.2026 (ei tässä repossa)
 - [G14] `data/fpl_xp_gw_accuracy.json` (GW1-GW6 gradattu, luettu 18.10.2026), `data/accuracy.json` (updated_at 2026-10-18T06:42:39Z)
-- [G15] `data/fpl_schema_snapshot.json` (ensimmäinen tilannekuva 18.10.2026), `/tmp/fpl-schema-diff.md`
+- [G15] `data/fpl_schema_snapshot.json` (ensimmäinen tilannekuva 18.10.2026)
 
 **FPL-kilpailijat ja virallinen peli**
 - [F1] Fantasy Football Hub, etusivu ja navigaatio: https://www.fantasyfootballhub.co.uk/

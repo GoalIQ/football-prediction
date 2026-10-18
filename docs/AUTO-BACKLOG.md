@@ -85,7 +85,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   virheen (±1.17 p), FPL Pulse antaa ennustetut pisteet seuraavalle kierrokselle ilmaiseksi ja lupaa chip-ajoituksen
   myöhemmin kaudella, ScoreGPT myy 7/14/30 pv:n KPI-ikkunoita Pro-tasolla. (lähde: https://fplxi.com/ , https://www.fplpulse.com/ , https://scoregpt.app/)
 - 2026-10: FPL-skeemavahdin ensimmäinen tilannekuva tallennettiin 18.10. (`data/fpl_schema_snapshot.json`), joten
-  skeemamuutosta ei vielä voi todeta. Seuraava viikko antaa ensimmäisen diffin. (lähde: /tmp/fpl-schema-diff.md)
+  skeemamuutosta ei vielä voi todeta. Seuraava viikko antaa ensimmäisen diffin. (lähde: data/fpl_schema_snapshot.json)
 
 ## Avoimet
 
