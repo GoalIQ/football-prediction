@@ -73,6 +73,11 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-10: Mobiilin hintahälytys (`schedulePriceAlerts`) lukee yhä tallennetun watchlistin myös ilmaiselta, vaikka
   watchlist on 17.10 alkaen Premiumia. Ei lupaa mitään julkisesti, mutta lukko ja hälytys ovat eri mieltä. Mobiili on
   ihmisen työ (OTA).
+- 2026-10: Ilmaiskäyttäjän pelaajakortti sanoo top 10:n ulkopuoliselle pelaajalle "Not on the club's set-piece lists
+  right now", myös erikoistilanteiden hoitajalle: maskattu `/api/fantasy/xp` palauttaa `pool`-rivit ilman `set_pieces`-
+  ja `p_start`-kenttiä, ja kortti tulkitsee puuttuvan kentän tyhjäksi listaksi (mobiili `PlayerSheet.tsx`
+  `cardPlayerFor`). Puuttuva kenttä on "ei dataa" tai lukko, ei epätosi väite. Tarkista SPA:n pelaajakortti samasta
+  syystä. Mobiili on ihmisen työ (OTA). (lähde: julkaisutarkistaja 18.10, App Store 1.0.10 -kuvaus)
 - 2026-10: Championship-ennusteiden Brier on 0.674 (n=129, osuma 40.3 %), eli tasajakaumaa (0.667) huonompi, ja
   Premier League 0.628 (n=65). Liukuva Brier (100 ottelua) heikkeni 0.555:stä 0.582:een kahdessa päivässä, vaikka osuma
   nousi 59 %:iin. Vanhentuneet ennusteet (lead yli 48 h) osuvat 44.2 % (n=138) vs tuoreet 53.1 % (n=644).
