@@ -2041,7 +2041,7 @@ def render_defcon(leaders: dict, now: datetime) -> str | None:
         f'<p class="note">{escape(basis_note)}</p>'
         + (
             f'<p class="note">Also in the top 10: {rest}. The full '
-            f"leaderboard with position filters is on GoalIQ Premium.</p>"
+            f"leaderboard with price filters and sorting is on GoalIQ Premium.</p>"
             if rest
             else ""
         )

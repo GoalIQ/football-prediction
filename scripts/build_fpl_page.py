@@ -867,7 +867,7 @@ def build_faq(c: dict) -> list[tuple[str, str]]:
             "Does GoalIQ give betting tips?",
             (
                 "No. GoalIQ publishes model predictions and analytics, not betting "
-                "advice. It is not a gambling service and has no bookmaker odds or links."
+                "advice. It is not a gambling service and has no bookmaker prices or links."
             ),
         ),
         (
@@ -1845,10 +1845,10 @@ def jsonld_blocks(c: dict, faq: list[tuple[str, str]]) -> str:
             "the scoring rate per 90 minutes and expected minutes separately "
             "so a high rate on low minutes reads as a bench risk and not a "
             "bargain, a DefCon (defensive contribution) tracker, "
-            "and transfer suggestions with apply. On the web it "
-            "also shows upcoming fixtures and league tables. Also predicts "
-            "any match - win probability, expected goals (xG) and scoreline "
-            "probabilities - using a Dixon-Coles model. Analytics, not betting."
+            "and transfer suggestions with apply. Free on the web: upcoming "
+            "fixtures and league tables. Also predicts any match with a "
+            "Dixon-Coles model: win probability free, expected goals (xG) and "
+            "scoreline probabilities with Premium. Analytics, not betting."
         ),
         "url": BASE + "/",
         "downloadUrl": [PLAY_URL, APPSTORE_URL],
