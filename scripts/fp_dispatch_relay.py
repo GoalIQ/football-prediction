@@ -89,6 +89,9 @@ TARGETS: list[dict] = [
     # 18.10.2026: uudet tilit MailerLiten tervetuloryhmaan. Idempotentti: upsert ei lisaa olemassa olevaa
     # uudelleen eika automaatio laukea toista kertaa samalle tilaajalle.
     {"workflow": "tervetulo-synkka.yml", "slots": None},
+    # 18.10.2026: automerge riskiluokan mukaan. Idempotentti: mergetty PR ei ole enaa avoin, ja
+    # odottaa-go- ja automerge-punainen-labelit estavat toistuvat kommentit.
+    {"workflow": "auto-merge.yml", "slots": None},
 ]
 
 # S14-mittarin (goaliq-app scripts/autopilot/cron_realization.py) ikkuna ja

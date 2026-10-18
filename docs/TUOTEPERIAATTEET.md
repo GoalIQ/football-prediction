@@ -170,7 +170,10 @@ Jokaisen avoimen rivin alle tulee kaksi kenttää omille riveilleen:
   uusiksi riveiksi. Jos uutuus 2 -riviä ei ole, agentti ideoi sellaisen teemoista ja BENCHMARK.md:stä.
 - **Signaali muuttuu riviksi.** Alle 30 päivää vanhasta havainnosta, jolla ei ole merkintää "→ backlog",
   agentti kirjoittaa enintään yhden rivin ajoa kohden ja merkitsee havainnon.
-- Enintään kaksi avointa auto-PR:ää kerrallaan. Ihminen mergeää (squash, otsikko säilyy `auto:`-alkuisena).
+- Enintään kaksi avointa auto-PR:ää kerrallaan. Ihminen mergeää (squash, otsikko säilyy `auto:`-alkuisena),
+  paitsi sisäisen muutoksen (ylläpitäjän päätös 18.10.2026): `auto-merge.yml` mergeää PR:n, joka muuttaa vain
+  backlogia, benchmarkia, skeeman tilannekuvaa tai lisää UUSIA testitiedostoja (`.github/auto-kehitys/riskiluokka.py`),
+  kun kieltoportti on läpi eikä testeihin tule uusia punaisia. Muut saavat labelin `odottaa-go`. Veto: `ei-automergea`.
 
 ## Automaation omat rajat (ylläpitäjän päätös 18.10.2026)
 

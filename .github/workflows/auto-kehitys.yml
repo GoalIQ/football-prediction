@@ -269,6 +269,8 @@ jobs:
           gh workflow run tests.yml --ref "$HAARA"
           # 18.10 (Villen GO): julkaisutarkistaja ajetaan CI:ssä heti, tulos PR:ään kommenttina ja labelina.
           gh workflow run julkaisutarkistus.yml --ref main -f pr="${url##*/}"
+          # 18.10 (Villen päätös): riskiluokka. Sisäinen mergetään, muu saa labelin odottaa-go.
+          gh workflow run auto-merge.yml --ref main
           echo "PR $url avattu; testit ja julkaisutarkistus käynnistetty haaralle $HAARA"
 
       # SPA:lle ei ole PR-CI:tä (pro-spa-deploy on vain käsin). Tarkistus ajetaan tässä, ja tulos kommentoidaan PR:ään.

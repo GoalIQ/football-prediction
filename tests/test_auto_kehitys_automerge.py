@@ -10,6 +10,7 @@ Automerge nojaa kolmeen päätökseen, joista jokainen voisi hiljaa päästää 
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -111,3 +112,72 @@ def test_esisuodatus():
     assert am.esisuodata(_pr(isDraft=True))
     assert am.esisuodata(_pr(labels=[{"name": "ei-automergea"}]))
     assert am.esisuodata(_pr(labels=[{"name": "automerge-punainen"}]))
+
+
+# ------------------------------------------------------------------ työnkulku (Villen päätös 18.10)
+
+import yaml  # noqa: E402
+
+WF = JUURI / ".github" / "workflows"
+
+
+def _am():
+    teksti = (WF / "auto-merge.yml").read_text(encoding="utf-8")
+    return teksti, yaml.safe_load(teksti)
+
+
+def _runit(job):
+    return "\n".join(str(s.get("run", "")) for s in job.get("steps", []))
+
+
+def test_pr_koodia_ajetaan_vain_lukuoikeuksin():
+    """testaa ja jalkitesti ajavat PR:n koodia (pytest): ei kirjoitusoikeutta, ei tunnuksia gitissä."""
+    _, doc = _am()
+    for nimi in ("luokittele", "testaa", "jalkitesti"):
+        job = doc["jobs"][nimi]
+        assert all(v in ("read", "none") for v in job["permissions"].values()), nimi
+        for s in job["steps"]:
+            if str(s.get("uses", "")).startswith("actions/checkout"):
+                assert s["with"]["persist-credentials"] is False, nimi
+    for nimi in ("mergea", "peru"):
+        assert "pytest" not in _runit(doc["jobs"][nimi]), f"{nimi}: kirjoitusoikeudella ei ajeta PR:n koodia"
+
+
+def test_portit_mainista_ennen_mergea_tyopuuhun():
+    _, doc = _am()
+    run = _runit(doc["jobs"]["testaa"])
+    assert 'git show "origin/main:.github/auto-kehitys/$f"' in run
+    assert run.index("git show") < run.index("git merge")
+    assert "riskiluokka.py\" --profiili" in run and "guard.py\" --profile" in run
+
+
+def test_merge_vain_testatusta_commitista_ja_squashina():
+    _, doc = _am()
+    run = _runit(doc["jobs"]["mergea"])
+    merget = [r for r in run.splitlines() if "gh pr merge" in r]
+    assert merget and all("--match-head-commit" in r and "--squash" in r for r in merget)
+    assert "ok/pr-$n.json" in run, "merge vain, kun testaa-työ kirjoitti vihreän tuloksen"
+
+
+def test_ainoa_push_mainiin_on_revert():
+    teksti, doc = _am()
+    for nimi, job in doc["jobs"].items():
+        run = _runit(job)
+        if "git push" in run:
+            assert nimi == "peru" and "git revert" in run, nimi
+    assert "claude-code-action" not in teksti
+    assert set(re.findall(r"secrets\.([A-Za-z0-9_]+)", teksti)) <= {"GITHUB_TOKEN"}
+
+
+def test_veto_ja_punainen_kunnioitetaan():
+    assert am.VETO == "ei-automergea" and am.PUNAINEN == "automerge-punainen"
+    run = _runit(_am()[1]["jobs"]["luokittele"])
+    assert "automerge.py luokittele" in run
+
+
+def test_aallonharja_ja_auto_kehitys_kaynnistavat_automergen():
+    for nimi in ("aallonharja.yml", "auto-kehitys.yml"):
+        doc = yaml.safe_load((WF / nimi).read_text(encoding="utf-8"))
+        run = _runit(doc["jobs"]["julkaise"])
+        assert "gh workflow run auto-merge.yml" in run, nimi
+        assert run.index("gh pr create") < run.index("gh workflow run auto-merge.yml"), nimi

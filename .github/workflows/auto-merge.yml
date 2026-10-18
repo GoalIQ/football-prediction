@@ -1,0 +1,297 @@
+# Automerge riskiluokan mukaan (Villen päätös 18.10.2026: "automerge-päätös on kyllä").
+#
+# Sisäinen auto- tai aallonharja-PR mergetään ilman ihmistä, kaikki muu odottaa GO:ta ("Annan luvan:
+# merge fp #N"). Sisäinen = vain backlog, benchmark, FPL-skeeman tilannekuva ja UUDET testitiedostot
+# (.github/auto-kehitys/riskiluokka.py). Mikään niistä ei deployaa: Renderin ignoredPaths kattaa
+# docs/*.md, data/** ja tests/**, eikä hub-deploy tai pro-spa-deploy reagoi niihin. Tuotanto ei siis voi
+# muuttua tällä työnkululla.
+#
+#   luokittele  vain luku. Luokittelee avoimet PR:t riskiluokka.py:llä (työnkulku ajaa mainia).
+#   testaa      vain luku, ei tunnuksia. PR yhdistetään mainiin paikallisesti, kieltoportti mainin
+#               versiosta, nopea testisarja; PR:n punaiset ajetaan mainissa uudelleen, ja vain PR:n
+#               TUOMAT punaiset estävät mergen (mainissa voi olla ennestään punaisia, esim. live-FPL 503).
+#   mergea      squash-merge --match-head-commit (testattu commit, ei mitään sen jälkeen pushattua).
+#               PR:n koodia ei ajeta tässä työssä, jolla on kirjoitusoikeus.
+#   jalkitesti  vain luku: testit mergen jälkeisessä mainissa vs ennen mergeä.
+#   peru        jos merge toi uusia punaisia mainiin: git revert ja issue. Ainoa push mainiin.
+#
+# Veto: label `ei-automergea`. Uusi yritys punaisen jälkeen: poista label `automerge-punainen`.
+# 0 euroa: ei Claudea, julkinen repo. Portti: tests/test_auto_kehitys_automerge.py.
+
+name: auto-merge
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '29 */4 * * *'
+
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
+
+jobs:
+  luokittele:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      ehdokkaat: ${{ steps.l.outputs.ehdokkaat }}
+      maara: ${{ steps.l.outputs.maara }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Luokittele avoimet auto- ja aallonharja-PR:t
+        id: l
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh pr list --state open --limit 50 \
+            --json number,title,headRefName,headRefOid,author,labels,isDraft > "$RUNNER_TEMP/prt.json"
+          python .github/auto-kehitys/automerge.py luokittele --prt "$RUNNER_TEMP/prt.json" \
+            --out-dir "$RUNNER_TEMP/am" | tee "$RUNNER_TEMP/am.log"
+          grep -E '^(ehdokkaat|maara)=' "$RUNNER_TEMP/am.log" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: automerge-luokitus
+          path: ${{ runner.temp }}/am
+          retention-days: 7
+
+  testaa:
+    needs: luokittele
+    if: needs.luokittele.outputs.maara != '0' && needs.luokittele.outputs.maara != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        pr: ${{ fromJson(needs.luokittele.outputs.ehdokkaat) }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Riippuvuudet
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+
+      # Portit kopioidaan mainista ENNEN kuin PR yhdistetään työpuuhun.
+      - name: Yhdistä PR mainiin paikallisesti ja aja portit
+        env:
+          PR: ${{ matrix.pr.number }}
+          SHA: ${{ matrix.pr.sha }}
+          PROFIILI: ${{ matrix.pr.profiili }}
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/portit"
+          for f in guard.py testivertailu.py riskiluokka.py; do
+            git show "origin/main:.github/auto-kehitys/$f" > "$RUNNER_TEMP/portit/$f"
+          done
+          git rev-parse origin/main > "$RUNNER_TEMP/main-ennen.txt"
+          git fetch -q origin "pull/$PR/head"
+          if [ "$(git rev-parse FETCH_HEAD)" != "$SHA" ]; then
+            echo "::error::PR #$PR head muuttui luokittelun jälkeen"; exit 1
+          fi
+          python "$RUNNER_TEMP/portit/guard.py" --profile "$PROFIILI" --base origin/main --head "$SHA"
+          python "$RUNNER_TEMP/portit/riskiluokka.py" --profiili "$PROFIILI" --base origin/main --head "$SHA"
+          git config user.name "goaliq-auto[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -q --detach origin/main
+          git merge -q --no-ff --no-edit "$SHA"
+
+      - name: Testit PR:n kanssa
+        run: pytest -m "not slow" -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/pr.xml" || true
+
+      - name: PR:n punaiset mainissa
+        run: |
+          set -e
+          python "$RUNNER_TEMP/portit/testivertailu.py" tiedostot --junit "$RUNNER_TEMP/pr.xml" > "$RUNNER_TEMP/punaiset.txt"
+          if [ -s "$RUNNER_TEMP/punaiset.txt" ]; then
+            git checkout -q -f --detach "$(cat "$RUNNER_TEMP/main-ennen.txt")"
+            pytest -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/main.xml" $(cat "$RUNNER_TEMP/punaiset.txt") || true
+          fi
+
+      - name: Toiko PR uusia punaisia
+        env:
+          PR: ${{ matrix.pr.number }}
+          SHA: ${{ matrix.pr.sha }}
+        run: |
+          set -e
+          main_xml=""
+          [ -f "$RUNNER_TEMP/main.xml" ] && main_xml="--main $RUNNER_TEMP/main.xml"
+          python "$RUNNER_TEMP/portit/testivertailu.py" vertaa --pr "$RUNNER_TEMP/pr.xml" $main_xml
+          mkdir -p "$RUNNER_TEMP/ok"
+          printf '{"number": %s, "sha": "%s"}\n' "$PR" "$SHA" > "$RUNNER_TEMP/ok/pr-$PR.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: automerge-ok-${{ matrix.pr.number }}
+          path: ${{ runner.temp }}/ok
+          retention-days: 7
+
+  mergea:
+    needs: [luokittele, testaa]
+    if: ${{ !cancelled() && needs.luokittele.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: write
+    outputs:
+      mergetyt: ${{ steps.m.outputs.mergetyt }}
+      main_ennen: ${{ steps.m.outputs.main_ennen }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: automerge-luokitus
+          path: ${{ runner.temp }}/am
+
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: automerge-ok-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/ok
+
+      - name: Merge vihreät, merkitse muut
+        id: m
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+        run: |
+          set -e
+          gh label create odottaa-go -R "$R" --color FBCA04 --description "Auto-PR odottaa ylläpitäjän GO:ta" --force
+          gh label create automerge-punainen -R "$R" --color B60205 --description "Automerge: PR toi uusia punaisia testejä" --force
+          gh label create ei-automergea -R "$R" --color 5319E7 --description "Ylläpitäjän veto automergelle" --force
+          echo "main_ennen=$(gh api "repos/$R/commits/main" --jq .sha)" >> "$GITHUB_OUTPUT"
+          mergetyt=""
+          python3 -c "import json,sys; [print(f\"{e['number']}:{e['sha']}\") for e in json.load(open(sys.argv[1]))]" \
+            "$RUNNER_TEMP/am/ehdokkaat.json" > "$RUNNER_TEMP/ehdokkaat.txt"
+          while IFS=: read -r n sha; do
+            [ -n "$n" ] || continue
+            if [ -f "$RUNNER_TEMP/ok/pr-$n.json" ]; then
+              otsikko=$(gh pr view "$n" -R "$R" --json title --jq .title)
+              gh pr merge "$n" -R "$R" --squash --match-head-commit "$sha" --subject "$otsikko (#$n)" --delete-branch
+              gh pr comment "$n" -R "$R" --body "Automerge: sisäinen muutos (vain backlog, benchmark, skeeman tilannekuva tai uusi testi), kieltoportti läpi eikä testeihin tullut uusia punaisia. Ajo: $GITHUB_SERVER_URL/$R/actions/runs/$GITHUB_RUN_ID"
+              mergetyt="$mergetyt $n"
+            else
+              gh pr edit "$n" -R "$R" --add-label automerge-punainen
+              gh pr comment "$n" -R "$R" --body "Automerge ohitettu: testiajo epäonnistui tai toi uusia punaisia testejä. Ajo: $GITHUB_SERVER_URL/$R/actions/runs/$GITHUB_RUN_ID. Uusi yritys: poista label automerge-punainen."
+            fi
+          done < "$RUNNER_TEMP/ehdokkaat.txt"
+          python3 -c "import json,sys; [print(str(g['number']) + chr(9) + '; '.join(g['syyt'][:5])) for g in json.load(open(sys.argv[1])) if not g.get('merkitty')]" \
+            "$RUNNER_TEMP/am/go.json" > "$RUNNER_TEMP/go.txt"
+          while IFS=$'\t' read -r n syyt; do
+            [ -n "$n" ] || continue
+            gh pr edit "$n" -R "$R" --add-label odottaa-go
+            gh pr comment "$n" -R "$R" --body "Riskiluokka: go. Merge vaatii ylläpitäjän GO:n (merge on tuotantodeploy tai portin muutos). Syyt: $syyt"
+          done < "$RUNNER_TEMP/go.txt"
+          echo "mergetyt=$(echo $mergetyt)" >> "$GITHUB_OUTPUT"
+          if [ -n "$mergetyt" ]; then
+            gh workflow run tests.yml -R "$R" --ref main
+          fi
+
+  jalkitesti:
+    needs: mergea
+    if: ${{ !cancelled() && needs.mergea.outputs.mergetyt != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    outputs:
+      peru: ${{ steps.v.outputs.peru }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Riippuvuudet
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+
+      - name: Testit mergen jälkeen vs ennen
+        id: v
+        env:
+          ENNEN: ${{ needs.mergea.outputs.main_ennen }}
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/portit"
+          git show "origin/main:.github/auto-kehitys/testivertailu.py" > "$RUNNER_TEMP/portit/testivertailu.py"
+          pytest -m "not slow" -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/jalkeen.xml" || true
+          python "$RUNNER_TEMP/portit/testivertailu.py" tiedostot --junit "$RUNNER_TEMP/jalkeen.xml" > "$RUNNER_TEMP/punaiset.txt"
+          if [ -s "$RUNNER_TEMP/punaiset.txt" ]; then
+            git checkout -q -f --detach "$ENNEN"
+            pytest -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/ennen.xml" $(cat "$RUNNER_TEMP/punaiset.txt") || true
+          fi
+          ennen=""
+          [ -f "$RUNNER_TEMP/ennen.xml" ] && ennen="--main $RUNNER_TEMP/ennen.xml"
+          if python "$RUNNER_TEMP/portit/testivertailu.py" vertaa --pr "$RUNNER_TEMP/jalkeen.xml" $ennen; then
+            echo "peru=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "peru=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  peru:
+    needs: [mergea, jalkitesti]
+    if: ${{ !cancelled() && needs.jalkitesti.outputs.peru == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Peru automerget ja avaa issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+          MERGETYT: ${{ needs.mergea.outputs.mergetyt }}
+        run: |
+          set -e
+          git config user.name "goaliq-auto[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          for n in $MERGETYT; do
+            c=$(gh pr view "$n" -R "$R" --json mergeCommit --jq .mergeCommit.oid)
+            git revert --no-edit "$c"
+          done
+          for i in 1 2 3; do
+            if git push origin HEAD:main; then break; fi
+            git pull -q --rebase origin main
+          done
+          gh issue create -R "$R" --assignee Veikkoville --title "Automerge peruttu: uusia punaisia testejä mainissa" \
+            --body "Automerge mergesi PR:t $MERGETYT, mutta mergen jälkeinen testiajo toi uusia punaisia. Muutokset peruttiin (git revert). Ajo: $GITHUB_SERVER_URL/$R/actions/runs/$GITHUB_RUN_ID"
+          exit 1

@@ -225,6 +225,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write   # 18.10: auto-merge.yml:n käynnistys
     steps:
       - uses: actions/checkout@v5
         with:
@@ -265,3 +266,6 @@ jobs:
           [ -s "$runko" ] || printf 'Riskiluokka: docs\n\nAgentti ei kirjoittanut PR:n kuvausta.\n' > "$runko"
           git push origin "refs/heads/$HAARA:refs/heads/$HAARA"
           gh pr create --base main --head "$HAARA" --title "$otsikko" --body-file "$runko"
+          # 18.10 (Villen päätös): sisäinen PR mergetään automaattisesti (auto-merge.yml luokittelee ja testaa),
+          # jotta maanantain auto-kehitys näkee sunnuntain backlog-rivit ja mittareiden tulokset.
+          gh workflow run auto-merge.yml --ref main
