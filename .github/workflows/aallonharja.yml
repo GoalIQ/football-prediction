@@ -156,6 +156,9 @@ jobs:
                Kirjaa Muutokset-lohkoon konversioväli ja muutos edelliseen viikkoon, tai "ei saatavilla" syineen.
                Jos "vertailukelpoinen" on false, sano se. Vähintään yksi uusista riveistä on konversio- tai
                hankintapolulla (rekisteröityminen, Premium-esikatselu, hakukoneliikenne, kanava-attribuutio).
+               Kirjaa myös ostopolku (posthog.json "ostopolku", 19.10): napautus lukosta ja osto napautuksesta
+               alustoittain sekä lukot, joilla napautusosuus on pienin, nyt vs edellinen jakso. pieni_otos = true
+               tarkoittaa, että suhde ei kanna johtopäätöstä: sano se, älä tee siitä riviä yksinään.
             0c. HAKUKONE. Jos /tmp/mittausdata/gsc.json on "ok": etsi sivut, joilla on paljon näyttöjä (pieni
                nayttosija) mutta matala CTR tai sijainti 5-15, ja haut, joihin mikään sivu ei vastaa hyvin. Tee
                niistä Signaaleja ja enintään yksi backlog-rivi, jonka Mittari on GSC:n CTR tai sijainti kyseiselle

@@ -292,6 +292,57 @@ def test_posthog_viikkokayttajat_ilman_maaria(monkeypatch):
         assert f": {maara}" not in teksti and f"[{maara}" not in teksti
 
 
+def test_ostopolku_suhdeluvut_ilman_maaria(monkeypatch):
+    """19.10.2026: lukko -> napautus -> osto lähteittäin ja alustoittain, vain kokoluokat ja suhteet."""
+    import json
+    import types
+
+    lahteet = [["fantasy_manager", "web", 412, 37, 0, 300, 21, 0],
+               ["predict_screen", "mobiili", 6, 2, 1, 4, 0, 0]]
+    alustat = [["mobiili", 58, 11, 3, 61, 9, 2], ["web", 530, 44, 2, 410, 30, 1]]
+
+    def post(_url, headers, json, timeout):
+        q = json["query"]["query"]
+        tulos = lahteet if "GROUP BY lahde, alusta" in q else alustat if "GROUP BY alusta" in q else []
+        return types.SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"results": tulos})
+
+    monkeypatch.setattr(md.requests, "post", post)
+    p = md.hae_posthog("avain")
+    assert p["tila"] == "ok", p
+    o = p["ostopolku"]
+    web = o["lahteittain"][0]
+    assert web["lahde"] == "fantasy_manager" and web["alusta"] == "web"
+    assert web["nyt"] == {"lukko": "100-999", "napautus": "10-99", "osto": "0", "napautus_lukosta_pct": 9.0,
+                          "osto_napautuksesta_pct": 0.0, "pieni_otos": False}
+    assert o["lahteittain"][1]["nyt"]["pieni_otos"] is True
+    assert o["alustoittain"][0]["nyt"]["osto_napautuksesta_pct"] == 27.3
+    assert o["lahteittain"][0]["ennen"]["napautus_lukosta_pct"] == 7.0
+    teksti = json.dumps(o)
+    for maara in ("412", "37", "530", "44", "300", "410"):
+        assert f": {maara}" not in teksti and f"[{maara}" not in teksti, maara
+    for kysely in (md.HOGQL_OSTOPOLKU_LAHTEET, md.HOGQL_OSTOPOLKU_ALUSTAT):
+        assert "uniqIf(distinct_id, event = 'paywall_shown'" in kysely and "purchase_completed" in kysely
+
+
+def test_ostopolun_lahde_siivotaan():
+    (r,) = md.siivoa_ostopolku([["<script>x</script>" * 5, 1, 0, 0, 0, 0, 0]], ("lahde",))
+    assert "<" not in r["lahde"] and len(r["lahde"]) <= 40
+    assert r["nyt"]["napautus_lukosta_pct"] == 0.0 and r["nyt"]["osto_napautuksesta_pct"] is None
+
+
+def test_konversio_kuljettaa_entry_id_osuuden():
+    s = md.siivoa_konversio({"conversion_pct_min": 2.0, "entry_id_share_pct_free": 41.3,
+                             "entry_id_share_pct_premium": 88.2})
+    assert s["entry_id_osuus_pct_ilmainen"] == 41.3 and s["entry_id_osuus_pct_premium"] == 88.2
+    assert md.siivoa_konversio({})["entry_id_osuus_pct_ilmainen"] is None, "puuttuva on None, ei nolla"
+
+
+def test_aallonharja_kirjaa_ostopolun():
+    doc = yaml.safe_load((JUURI / ".github" / "workflows" / "aallonharja.yml").read_text(encoding="utf-8"))
+    prompt = next(s for s in doc["jobs"]["agentti"]["steps"] if "claude-code-action" in str(s.get("uses")))["with"]["prompt"]
+    assert '"ostopolku"' in prompt and "pieni_otos" in prompt
+
+
 def test_aallonharja_sulkee_mittarit_ja_tarkistaa_ne_mainin_versiolla():
     doc = yaml.safe_load((JUURI / ".github" / "workflows" / "aallonharja.yml").read_text(encoding="utf-8"))
     agentti = doc["jobs"]["agentti"]

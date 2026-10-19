@@ -83,6 +83,9 @@ def siivoa_konversio(doc: dict) -> dict:
         "tarkka": bool(doc.get("conversion_exact")),
         "vertailukelpoinen": doc.get("comparable"),
         "ilmaisikkuna_paalla": doc.get("window_active"),
+        # 19.10.2026 (backlog-rivi "Entry ID -osuus konversioaggregaattiin"): None, kunnes API palauttaa kentät.
+        "entry_id_osuus_pct_ilmainen": doc.get("entry_id_share_pct_free"),
+        "entry_id_osuus_pct_premium": doc.get("entry_id_share_pct_premium"),
     }
 
 
@@ -278,6 +281,48 @@ ORDER BY viikko
 """
 
 
+# 19.10.2026 (ylläpitäjän päätös, automaatio myynnin palvelukseen): ostopolku lukosta ostoon lähteittäin ja
+# alustoittain. Web ja mobiili lähettävät samat tapahtumat (paywall_shown, upgrade_tapped, purchase_completed),
+# ja source kertoo lukon. Uniikit käyttäjät, ei tapahtumia: sama käyttäjä voi nähdä saman lukon kymmeniä kertoja.
+# Webin purchase_completed kantaa lähteen "web", joten osto per lukko luetaan alustoittaisesta rivistä.
+OSTOPOLKU_VAIHEET = ("lukko", "napautus", "osto")
+PIENI_OTOS = 10
+_OSTOPOLKU_SARAKKEET = """
+       uniqIf(distinct_id, event = 'paywall_shown' AND timestamp > now() - INTERVAL 28 DAY) AS lukko_nyt,
+       uniqIf(distinct_id, event = 'upgrade_tapped' AND timestamp > now() - INTERVAL 28 DAY) AS napautus_nyt,
+       uniqIf(distinct_id, event = 'purchase_completed' AND timestamp > now() - INTERVAL 28 DAY) AS osto_nyt,
+       uniqIf(distinct_id, event = 'paywall_shown' AND timestamp <= now() - INTERVAL 28 DAY) AS lukko_ennen,
+       uniqIf(distinct_id, event = 'upgrade_tapped' AND timestamp <= now() - INTERVAL 28 DAY) AS napautus_ennen,
+       uniqIf(distinct_id, event = 'purchase_completed' AND timestamp <= now() - INTERVAL 28 DAY) AS osto_ennen
+FROM events
+WHERE event IN ('paywall_shown', 'upgrade_tapped', 'purchase_completed') AND timestamp > now() - INTERVAL 56 DAY"""
+_ALUSTA = "if(properties.$lib = 'posthog-react-native', 'mobiili', 'web')"
+HOGQL_OSTOPOLKU_LAHTEET = (f"SELECT coalesce(toString(properties.source), '?') AS lahde, {_ALUSTA} AS alusta,"
+                           f"{_OSTOPOLKU_SARAKKEET}\nGROUP BY lahde, alusta\nORDER BY lukko_nyt DESC\nLIMIT 60")
+HOGQL_OSTOPOLKU_ALUSTAT = f"SELECT {_ALUSTA} AS alusta,{_OSTOPOLKU_SARAKKEET}\nGROUP BY alusta"
+
+
+def _suhde_pct(osoittaja: float, nimittaja: float) -> float | None:
+    return round(osoittaja / nimittaja * 100, 1) if nimittaja else None
+
+
+def siivoa_ostopolku(rivit: list[list], avaimet: tuple[str, ...]) -> list[dict]:
+    """Rivi -> vaiheiden kokoluokat ja suhdeluvut (napautus/lukko, osto/napautus) kummallekin jaksolle."""
+    sarakkeet = avaimet + tuple(f"{v}_{j}" for j in ("nyt", "ennen") for v in OSTOPOLKU_VAIHEET)
+    out = []
+    for r in rivit:
+        d = dict(zip(sarakkeet, r))
+        rivi = {k: re.sub(r"[^A-Za-z0-9_:.-]", "", str(d[k]))[:40] for k in avaimet}
+        for j in ("nyt", "ennen"):
+            lukko, napautus, osto = (int(d.get(f"{v}_{j}") or 0) for v in OSTOPOLKU_VAIHEET)
+            rivi[j] = {"lukko": kokoluokka(lukko), "napautus": kokoluokka(napautus), "osto": kokoluokka(osto),
+                       "napautus_lukosta_pct": _suhde_pct(napautus, lukko),
+                       "osto_napautuksesta_pct": _suhde_pct(osto, napautus),
+                       "pieni_otos": lukko < PIENI_OTOS}
+        out.append(rivi)
+    return out
+
+
 def siivoa_viikot(rivit: list[list]) -> list[dict]:
     """Viikkorivit -> kokoluokka ja muutos edelliseen viikkoon pinnoittain, ei määriä."""
     out, edellinen = [], None
@@ -320,6 +365,13 @@ def hae_posthog(avain: str | None) -> dict:
             "viikkokayttajat": siivoa_viikot(kysy(HOGQL_VIIKOT)),
             "tapahtumat": siivoa_posthog(kysy(HOGQL_TAPAHTUMAT), ["tapahtuma", "nyt", "ennen"]),
             "sivut": siivoa_posthog(kysy(HOGQL_SIVUT), ["isanta", "polku", "nyt", "ennen"]),
+            "ostopolku": {
+                "selite": ("uniikit käyttäjät: lukko = paywall_shown, napautus = upgrade_tapped, osto = "
+                           "purchase_completed; webin osto kantaa lähteen 'web', joten osto lukkoa kohden "
+                           f"luetaan alustoittain; pieni_otos = alle {PIENI_OTOS} lukon näkijää, suhde ei kanna"),
+                "lahteittain": siivoa_ostopolku(kysy(HOGQL_OSTOPOLKU_LAHTEET), ("lahde", "alusta")),
+                "alustoittain": siivoa_ostopolku(kysy(HOGQL_OSTOPOLKU_ALUSTAT), ("alusta",)),
+            },
         }
     except Exception as e:  # noqa: BLE001
         return _virhe(e)
