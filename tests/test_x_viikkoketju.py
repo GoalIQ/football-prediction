@@ -44,8 +44,9 @@ def _bootstrap(gw7_valmis=True, gw8_deadline="2026-10-23T17:30:00Z"):
 HISTORIA = {"current": [
     {"event": 6, "points": 57, "total_points": 382, "overall_rank": 2_730_030, "event_transfers_cost": 0,
      "overall_rank_percentage": 25},
+    # 14 eikä 15: rank / total = 14,5 %, joten oma kaava (ceil tai round) antaisi 15. Erotteleva fikstuuri.
     {"event": 7, "points": 81, "total_points": 459, "overall_rank": 1_618_187, "event_transfers_cost": 4,
-     "overall_rank_percentage": 15},
+     "overall_rank_percentage": 14},
 ]}
 PICKS = {"active_chip": "bboost", "picks": [{"element": 2, "is_captain": False, "multiplier": 1},
                                             {"element": 1, "is_captain": True, "multiplier": 2}]}
@@ -76,7 +77,7 @@ def test_kauden_ero_ja_top_prosentti_fpl_n_luvuista():
     d = xk.kokoa(7, b, historia, PICKS, LIVE)
     assert d["kokonais"] == 459 and d["keskiarvo_summa"] == 50 + 81 + 51 + 69 + 48 + 58 + 55
     assert d["hitti"] == 4 and d["chip"] == "Bench Boost"
-    assert d["top_pct"] == 15, "FPL:n overall_rank_percentage, ei rank/total-kaavaa"
+    assert d["top_pct"] == 14, "FPL:n overall_rank_percentage, ei rank/total-kaavaa"
     assert (d["kapteeni"], d["kapteeni_pisteet"], d["kapteeni_minuutit"], d["kerroin"]) == ("Haaland", 13, 90, 2)
     ilman = {"current": [{**HISTORIA["current"][1], "overall_rank_percentage": None}, HISTORIA["current"][0]]}
     assert xk.kokoa(7, _bootstrap(), ilman, PICKS, LIVE)["top_pct"] is None, "puuttuva on None, ei laskettu"
@@ -119,8 +120,9 @@ def test_pelaamaton_ja_estolistan_kapteeni_eivat_nay():
 
 
 def test_viimeinen_kierros_ilman_cta_ta_ja_triple_captain():
-    viestit = xk.ketju(_d(gw=38, seuraava=None))
-    assert "goaliq.app" not in " ".join(viestit) and "None" not in " ".join(viestit)
+    for gw in (36, 37, 38):  # kaikki kolme pohjaa
+        viestit = xk.ketju(_d(gw=gw, seuraava=None))
+        assert "goaliq.app" not in " ".join(viestit) and "None" not in " ".join(viestit), gw
     assert "Triple Captain on Haaland: 39." in " ".join(xk.ketju(_d(kerroin=3, chip="Triple Captain")))
 
 
