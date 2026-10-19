@@ -110,6 +110,23 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   siitä kopioita: Search Console (12.10) listaa 125 parametrillista juuren URL:ia ilman valittua ensisijaista
   osoitetta, ja osa näkyy hakutuloksissa omina sivuinaan. Alireiteillä (esim. /spl) canonical on jo. Juuri saa
   canonicalin ilman kyselyparametreja samalla lukijalla kuin alireitit, ja testi kaatuu jos se puuttuu.
+- 2026-10: Myyvä todiste on FPL:n itse tarkistettava luku, mutta sitä ei käytetä. Mallin oma joukkue (entry 116920)
+  on FPL:n entry history -rajapinnan mukaan GW1-6 yhteensä +25 pistettä FPL:n keskiarvon yläpuolella (chipit
+  mukana), ja GW7:n alustavilla luvuilla kokonaissijoitus on noin top 15 %. `data/gw_recap.json` sisältää kaksi
+  sarjaa: `running` (jäädytetty mallijoukkue ilman chippejä, -15 viidellä kierroksella, ei ilmaispinnalla) ja
+  `entry_series` (FPL:n oma luku). Recap-PR käytti ensimmäistä, ja julkaisutarkistaja blokkasi sen, koska lukua ei
+  löydy ilmaispinnalta. SPA:n neljässä lukkokomponentissa (`Paywall`, `LockedToolPreview`, `PersonalLock`,
+  `PremiumPreview`) ei ole yhtään viittausta track recordiin tai tarkkuuteen (grep 19.10), eli ostohetkellä ei näy
+  todistetta. Ylläpitäjä päätti 19.10: todiste ilmaispinnalle ja jokaiseen lukkoon. → backlog 2026-10-19
+- 2026-10: Ensimmäisen puoliskon chipit vanhenevat GW19:n deadlinessa (2.1.2027). Jokaisella managerilla, jolla on
+  chippejä käyttämättä, on päätös edessä marras-joulukuussa, ja chip timing on Premiumissa. Ilmaista näkymää "mitkä
+  chipit minulla on jäljellä ja kuinka kauan" ei ole (grep web/pro-spa 19.10). Ylläpitäjä päätti 19.10:
+  chip-tarkistin ilmaiseksi, ajoitussuunnitelma lukon takana. → backlog 2026-10-19
+- 2026-10: IHMISEN PROJEKTI (ei agentille): henkilökohtainen deadline-viesti nykyisille ilmaistileille (oman joukkueen
+  kapteeni ja lukittu siirtoehdotus xP-hyötyineen). Massalähetys ei toiminut (GW5-deadlineviesti 18.9: avattu
+  7,2 %, klikkejä 0), mutta viesti omasta joukkueesta ei ole massalähetys. `profiles.fpl_entry_id` on olemassa,
+  push_tokens-taulussa entry ID:tä ei ole. Kanava (push vai sähköposti) on ylläpitäjän päätös, ja sitä varten
+  mitataan ensin, kuinka suurella osalla tileistä entry ID on tallessa. → backlog 2026-10-19 (vain mittaus)
 
 ## Avoimet
 
@@ -136,14 +153,48 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   `data/fpl_xp_projections.json` Danso GW12 xp 0. (ylläpitäjän signaali 2026-10, lähde: Signaalit, docs/BENCHMARK.md) (PR, 2026-10-16)
       Pisteet: (lukittu) arvo 3/3 · kiire 2/3 · työ M · myynti 1/3 · uutuus 0/2 = 7
       Mittari: data/fpl_xp_projections.json Danso GW12 xp 0.0 ja testit vihreät · tarkistus 2026-10-26
-- [ ] xP-jäädytys päivittyy deadlineen asti (ylläpitäjän päätös 2026-10-16): `scripts/freeze_fpl_xp_gw.py`
-  kirjoittaa kierroksen jäädytyksen uudelleen jokaisella ajolla niin kauan kuin kierroksen deadline ei ole mennyt, ja
-  deadlinen jälkeen ei koskaan (immutable). Nyt olemassa olevaa ei ylikirjoiteta, joten jäädytys on noin vuorokauden
-  vanha ja gameweek calls (päivittyy deadlineen asti) eroaa siitä (GW6 0.93). fpl_reference_gate säilyy (ep_next vain
-  ennen deadlinea haetusta bootstrapista, is_next = kierros). Vaihetesti: ennen deadlinea päivittyy, deadlinen jälkeen
-  ei muutu, puuttuva luodaan; testi kaatuu jos deadline-ehto poistetaan. (ylläpitäjän signaali 2026-10, lähde: Signaalit)
-      Pisteet: (lukittu) arvo 3/3 · kiire 3/3 · työ M · myynti 1/3 · uutuus 0/2 = 9
-      Mittari: tests/test_points_frozen_vs_calls.py: GW8 kutsujen ja jäädytyksen ero alle 0.05 · tarkistus 2026-10-26
+- [ ] Mallin oman FPL-joukkueen kirjanpito ilmaispinnalle (ylläpitäjän päätös 2026-10-19): `data/gw_recap.json`
+  `entry_series` (entry 116920, FPL:n omat pisteet chipit mukaan ja FPL:n `average_entry_score`) näkyy
+  goaliq.app/fpl-sivulla omana osionaan `#model-entry`: kierroksittain pisteet, FPL-keskiarvo, ero ja juokseva ero,
+  sekä kokonaissijoitus ja managerien määrä. Sijoitus ja managerien määrä tulevat FPL:n entry history- ja
+  bootstrap-rajapinnasta samalla haulla, ja `scripts/build_gw_recap.py` lisää ne sarjaan (`overall_rank`,
+  `total_players`). Vain lopullisesti gradatut kierrokset (FPL `finished` ja `data_checked`): kesken oleva kierros ei
+  näy lukuna. Peruste näkyy tekstissä (FPL:n pisteet ennen siirtohittejä, chipit mukana) ja hitit omana
+  sarakkeenaan. Linkki FPL:n entry-sivulle, josta lukija tarkistaa saman luvun. Yksi lukija (esim.
+  `src/models/model_squad_scores.py: model_entry_ledger()`), jota sivu ja API käyttävät, ja sama lukija syöttää
+  seuraavan rivin lukot. Vaihetesti: kesken oleva kierros ei näy, gradattu näkyy, uusi kausi ei peri edellisen
+  sarjaa; testi kaatuu, jos gradausehto poistetaan. Builder, regeneroitu sivu ja llms.txt samassa PR:ssä. PR:n
+  Julkinen teksti -osioon otsikko ja lauseet sanatarkasti. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
+      Mittari: goaliq.app/fpl#model-entry näyttää jokaisen gradatun kierroksen, ja luvut täsmäävät FPL:n entry history -rajapintaan (testi ja live) · tarkistus 2026-11-02
+- [ ] Todiste jokaiseen lukkoon (ylläpitäjän päätös 2026-10-19): SPA:n lukkokomponentit (`Paywall.svelte`,
+  `LockedToolPreview.svelte`, `PersonalLock.svelte`, `PremiumPreview.svelte`) näyttävät yhden todisterivin
+  edellisen rivin lukijasta: mallin oman joukkueen juokseva ero FPL-keskiarvoon ja kokonaissijoitus viimeisimmän
+  gradatun kierroksen jälkeen, ja linkit /fpl#model-entry-osioon ja FPL:n entry-sivulle. Luku näytetään sellaisenaan
+  myös silloin, kun ero on negatiivinen: testi kaatuu, jos rivin näkyminen riippuu luvun etumerkistä. Puuttuva sarja
+  tarkoittaa, että riviä ei näytetä (ei nollaa). Premium-lupauksen teksti, hinnat ja ostopainikkeet eivät muutu.
+  Testi kaatuu, jos todisterivi puuttuu yhdestäkin neljästä komponentista. PR:n Julkinen teksti -osioon rivi
+  sanatarkasti. Riippuu edellisestä rivistä. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
+      Mittari: kaikki neljä lukkoa näyttävät todisterivin (testi), ja mittausdatan ostopolussa upgrade_tapped/paywall_shown-suhde 28 vrk ei ole pienempi kuin edellisen 28 vrk:n · tarkistus 2026-11-23
+- [ ] Chip-tarkistin: ensimmäisen puoliskon chipit ennen GW19:ää (ylläpitäjän päätös 2026-10-19): ilmainen työkalu,
+  joka kertoo entry ID:llä, mitkä chipit ovat käyttämättä, mihin kierrokseen asti kukin on käytettävissä ja montako
+  kierrosta on jäljellä. Chip-ikkunat luetaan FPL:n bootstrapin `chips`-listasta (`start_event`, `stop_event`)
+  yhdellä lukijalla, ei kovakoodattua GW19:ää, ja käytetyt chipit entryn historiasta. Mallin ehdotus kierrokseksi on
+  Premiumin chip timing: ilmaisversio näyttää lukitun kortin, joka avaa sen (ominaisuus ei siirry rajan yli).
+  Pinnat: API ja SPA:n ToolsHome. PostHog-tapahtuma `chips_left_checked` sekä lukon `paywall_shown` ja
+  `upgrade_tapped` lähteellä `chips_left`. Vaihetesti: ennen ensimmäisen ikkunan loppua, ikkunan viimeinen kierros,
+  ikkunan jälkeen (toisen puoliskon chipit), chip jo käytetty, tuplakierros; testi kaatuu, jos ikkuna kovakoodataan.
+  PR:n Julkinen teksti -osioon merkkijonot sanatarkasti. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ M · myynti 3/3 · uutuus 2/2 = 13
+      Mittari: mittausdatan PostHog-tapahtumissa chips_left_checked näkyy, ja ostopolussa on lähde chips_left · tarkistus 2026-11-23
+- [ ] Entry ID -osuus konversioaggregaattiin (ylläpitäjän päätös 2026-10-19): `/api/admin/conversion` palauttaa
+  lisäksi kentät `entry_id_share_pct_free` ja `entry_id_share_pct_premium`, eli kuinka suurella osalla ilmais- ja
+  Premium-tileistä `profiles.fpl_entry_id` on tallessa. Ei määriä eikä käyttäjärivejä vastauksessa. Tarvitaan
+  päätökseen henkilökohtaisesta deadline-viestistä (ihmisen projekti, Signaalit). Testi synteettisillä profiileilla:
+  osuus oikein, tyhjä profiilijoukko antaa null eikä nollaa. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 1/3 · kiire 3/3 · työ S · myynti 3/3 · uutuus 0/2 = 11
+      Mittari: mittausdatan konversio-osiossa on entry ID -osuus ilmais- ja Premium-tileille · tarkistus 2026-11-02
 - [ ] Kanava-attribuutio hubista sovellukseen: `ref-bridge.js` kuljettaa `utm_source`, `utm_medium`, `utm_campaign` ja
   `utm_content` jokaiseen pro.goaliq.app-linkkiin samalla tavalla kuin `ref`in (ensimmainen kosketus pysyy), ja SPA
   (`web/pro-spa/src/lib/partnerAttribution.ts`) tallentaa tilille avaimen `channel` = {source, campaign, content}
@@ -152,14 +203,6 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   (yllapitajan signaali 2026-10-16: botin pitaa tietaa mitka postaukset saavat asiakkaita, lahde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · tyo M · myynti 3/3 · uutuus 1/2 = 10
       Mittari: uuden tilin raw_user_meta_data.channel.source = bluesky Bluesky-linkista tulleella · tarkistus 2026-11-01
-- [ ] Konversio kanavittain: `/api/admin/conversion` palauttaa lisaksi aggregaatin `by_channel` (tilit ja Premiumit
-  kanavan source ja campaign mukaan, myos `partner`-avaimesta), ei sahkoposteja eika kayttajarivejä. Sitten
-  `scripts/bsky_bot.py perf` lukee sen ADMIN_TOKENilla ja kirjoittaa data/bsky_performance.json:iin `customers`-
-  osion aiheittain (utm_campaign = aihe). Testit: aggregaatti synteettisilla kayttajilla, ei henkilotietoja vastauksessa.
-  Tyonkulun bsky-bot.yml perf-askel tarvitsee ADMIN_TOKEN-envin: lisataan kasin mergen yhteydessa.
-  (yllapitajan signaali 2026-10-16, lahde: Signaalit; riippuu edellisesta rivista)
-      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · tyo M · myynti 3/3 · uutuus 1/2 = 9
-      Mittari: data/bsky_performance.json customers-osio ei tyhja kun kanavalta on tili · tarkistus 2026-11-15
 - [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
   ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
   (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
@@ -174,6 +217,22 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   tuloslauseet sanatarkasti (julkaisutarkistaja ennen mergeä). (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ L · myynti 3/3 · uutuus 1/2 = 11
       Mittari: pelattu ottelusivu palauttaa 200 ennusteen ja tuloksen kanssa, ja gsc.json:n sivut-listalla on vähintään 20 ottelusivua (19.10: 9) · tarkistus 2026-12-14
+- [ ] xP-jäädytys päivittyy deadlineen asti (ylläpitäjän päätös 2026-10-16): `scripts/freeze_fpl_xp_gw.py`
+  kirjoittaa kierroksen jäädytyksen uudelleen jokaisella ajolla niin kauan kuin kierroksen deadline ei ole mennyt, ja
+  deadlinen jälkeen ei koskaan (immutable). Nyt olemassa olevaa ei ylikirjoiteta, joten jäädytys on noin vuorokauden
+  vanha ja gameweek calls (päivittyy deadlineen asti) eroaa siitä (GW6 0.93). fpl_reference_gate säilyy (ep_next vain
+  ennen deadlinea haetusta bootstrapista, is_next = kierros). Vaihetesti: ennen deadlinea päivittyy, deadlinen jälkeen
+  ei muutu, puuttuva luodaan; testi kaatuu jos deadline-ehto poistetaan. (ylläpitäjän signaali 2026-10, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 3/3 · kiire 3/3 · työ M · myynti 1/3 · uutuus 0/2 = 9
+      Mittari: tests/test_points_frozen_vs_calls.py: GW8 kutsujen ja jäädytyksen ero alle 0.05 · tarkistus 2026-10-26
+- [ ] Konversio kanavittain: `/api/admin/conversion` palauttaa lisaksi aggregaatin `by_channel` (tilit ja Premiumit
+  kanavan source ja campaign mukaan, myos `partner`-avaimesta), ei sahkoposteja eika kayttajarivejä. Sitten
+  `scripts/bsky_bot.py perf` lukee sen ADMIN_TOKENilla ja kirjoittaa data/bsky_performance.json:iin `customers`-
+  osion aiheittain (utm_campaign = aihe). Testit: aggregaatti synteettisilla kayttajilla, ei henkilotietoja vastauksessa.
+  Tyonkulun bsky-bot.yml perf-askel tarvitsee ADMIN_TOKEN-envin: lisataan kasin mergen yhteydessa.
+  (yllapitajan signaali 2026-10-16, lahde: Signaalit; riippuu edellisesta rivista)
+      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · tyo M · myynti 3/3 · uutuus 1/2 = 9
+      Mittari: data/bsky_performance.json customers-osio ei tyhja kun kanavalta on tili · tarkistus 2026-11-15
 - [ ] Jakokortin PIL-generaattori uuteen ulkoasuun: `scripts/gen_share_card.py` piirtää saman asettelun
   kuin SPA:n ja sivujen kortti (`scripts/share_card_js.py`, web/pro-spa). Todennus: `tests/test_share_card_*.py`
   vihreä ja uusi testi, joka vertaa kortin rivien järjestyksen ja otsikot JS-kortin sopimukseen.
