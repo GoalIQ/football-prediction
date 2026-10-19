@@ -218,6 +218,99 @@ def deadline_message(gw: int, remaining_h: float) -> tuple[str, str]:
     return title, body
 
 
+# --------------------------------------------------------------------------
+# Henkilokohtainen deadline-push (19.10.2026, yllapitajan paatos)
+# --------------------------------------------------------------------------
+# Massalahetys ei toiminut (GW5-sahkoposti 18.9: avattu 7,2 %, 0 klikkia), mutta viesti omasta joukkueesta ei
+# ole massalahetys. 24 h -ikkunassa laite, jonka tililla on FPL entry ID, saa saman siirtosuunnitelman kuin
+# sovellus (`fpl_planner.plan_transfers`: yksi lukija, ei toista laskentaa). Ilmaiselle vain suunnitelman
+# xP-hyoty, koska siirrot ovat Premiumia (`api.premium.personal_tools_enforced`); Premiumille siirto ja
+# kapteeni. Kaikki virheet -> yleinen viesti: henkilokohtainen on lisa, se ei saa estaa muistutusta.
+PERSONAL_KINDS = frozenset({"deadline_24h"})
+PERSONAL_MAX_ENTRIES = 300   # ajoaika: yksi FPL-haku entrya kohden
+
+
+def personal_body(plan: dict, gw: int, is_premium: bool, enforced: bool) -> str | None:
+    """Henkilokohtainen runko suunnitelmasta, tai None -> yleinen viesti.
+
+    None, jos suunnitelma ei ala tasta kierroksesta (artefakti laahaa), jos ilmaiselle ei voi luvata
+    Premiumia (lukitus ei ole alkanut) tai jos ilmaisen suunnitelma on hold (pelkka hold on jo neuvo).
+    """
+    hv = plan.get("hold_verdict") or {}
+    rows = plan.get("plan") or []
+    if not rows or rows[0].get("gw") != gw or hv.get("gw_from") != gw:
+        return None
+    gw_to = hv.get("gw_to") or gw
+    span = f"GW{gw}-GW{gw_to}" if gw_to != gw else f"GW{gw}"
+    cap = ((rows[0].get("captain") or {}).get("web_name") or "").strip()
+    gain = hv.get("best_move_gain_xp")
+    if hv.get("verdict") == "transfer" and isinstance(gain, (int, float)) and gain > 0:
+        if not is_premium:
+            if not enforced:
+                return None
+            return (f"The model checked your team: its transfer plan adds {gain:.1f} xP over {span}. "
+                    "The moves are in GoalIQ Premium.")
+        moves = rows[0].get("transfers") or []
+        if not moves:
+            return (f"The model's plan for your team adds {gain:.1f} xP over {span}, with no transfer "
+                    f"this gameweek." + (f" Captain: {cap}." if cap else ""))
+        m = moves[0]
+        lisa = f" (+{len(moves) - 1} more)" if len(moves) > 1 else ""
+        return (f"Your GW{gw} move: {m['out']['web_name']} out, {m['in']['web_name']} in{lisa}. "
+                f"The plan adds {gain:.1f} xP over {span}." + (f" Captain: {cap}." if cap else ""))
+    if is_premium and cap:
+        return f"The model would roll your transfer this gameweek. Captain: {cap}."
+    return None
+
+
+def plan_for_entry(entry: int) -> dict:
+    """Sama suunnitelma kuin sovelluksen Transfers-nakyma (oletushorisontti, 1 vapaa siirto)."""
+    from src.models import fpl_planner
+    return fpl_planner.plan_transfers(entry=int(entry))
+
+
+def tools_enforced(now: _dt.datetime) -> bool:
+    from api.premium import personal_tools_enforced
+    return personal_tools_enforced(now)
+
+
+def deadline_bodies(rows: list[dict], gw: int, default_body: str,
+                    now: _dt.datetime) -> tuple[list[str], dict]:
+    """Runko jokaiselle riville: henkilokohtainen kun mahdollista, muuten yleinen.
+
+    Palauttaa (rungot, tilasto). Tilastossa vain maarat, ei entry ID:ita (ajoloki on julkinen).
+    """
+    try:
+        enforced = tools_enforced(now)
+    except Exception:  # noqa: BLE001 - ilman kytkinta ei luvata Premiumia ilmaiselle
+        enforced = False
+    cache: dict[int, dict | None] = {}
+    bodies, stats = [], {"personal": 0, "errors": 0, "with_entry": 0}
+    for r in rows:
+        body = default_body
+        eid = r.get("fpl_entry_id")
+        if isinstance(eid, int) and not isinstance(eid, bool) and eid > 0:
+            stats["with_entry"] += 1
+            if eid not in cache and len(cache) < PERSONAL_MAX_ENTRIES:
+                try:
+                    cache[eid] = plan_for_entry(eid)
+                except Exception:  # noqa: BLE001 - FPL- tai suunnitelmavirhe: yleinen viesti
+                    cache[eid] = None
+                    stats["errors"] += 1
+            plan = cache.get(eid)
+            oma = personal_body(plan, gw, bool(r.get("is_premium")), enforced) if plan else None
+            if oma:
+                body = oma
+                stats["personal"] += 1
+        bodies.append(body)
+    return bodies, stats
+
+
+def size_class(n: int) -> str:
+    """Julkiseen ajolokiin vain kokoluokka (sama jako kuin mittausdatassa)."""
+    return "0" if n <= 0 else "1-9" if n < 10 else "10-99" if n < 100 else "100+"
+
+
 def new_price_risers(watch: dict, already_alerted: dict,
                      today: str) -> list[dict]:
     """Pelaajat jotka ovat NYT rising_soon eivatka ole jo halytettyja.
@@ -654,8 +747,17 @@ def main() -> int:
         save_state(state)
 
         title, body = deadline_message(w["gw"], w["remaining_h"])
-        msgs = [build_message(r, title, body, w["kind"], CHANNEL_DEADLINE,
-                              {"gw": w["gw"]}) for r in rows]
+        if w["kind"] in PERSONAL_KINDS:
+            bodies, stats = deadline_bodies(rows, w["gw"], body, now)
+            print(f"  henkilokohtaisia: {size_class(stats['personal'])} "
+                  f"(entry ID:llisia {size_class(stats['with_entry'])}, virheita {size_class(stats['errors'])})")
+            posthog_capture("push_personal", {"kind": w["kind"], "gw": w["gw"], **stats,
+                                              "n_targets": len(rows)})
+        else:
+            bodies = [body] * len(rows)
+        msgs = [build_message(r, title, b, w["kind"], CHANNEL_DEADLINE,
+                              {"gw": w["gw"], "personal": b != body})
+                for r, b in zip(rows, bodies)]
         n_sent += deliver(msgs, rows, w["kind"], state)
         save_state(state)
 

@@ -4255,11 +4255,14 @@ def push_targets(request: Request):
     user_ids = sorted({r["user_id"] for r in rows if r.get("user_id")})
     premium: set[str] = set()
     watchlists: dict[str, list] = {}
+    # 19.10.2026 (henkilokohtainen deadline-push): tilin FPL entry ID runnerille, jotta se voi laskea
+    # saman siirtosuunnitelman kuin sovellus. Vain kokonaisluku tai None; ei muuta profiilidataa.
+    entry_ids: dict[str, int] = {}
     for i in range(0, len(user_ids), 100):
         ids = ",".join(f'"{u}"' for u in user_ids[i:i + 100])
         prof = requests.get(
             f"{SUPABASE_URL}/rest/v1/profiles?id=in.({ids})"
-            f"&select=id,is_premium,fpl_prefs",
+            f"&select=id,is_premium,fpl_prefs,fpl_entry_id",
             headers=sb_headers, timeout=30,
         ).json()
         for p in prof if isinstance(prof, list) else []:
@@ -4269,6 +4272,9 @@ def push_targets(request: Request):
             wl = prefs.get("watchlist") if isinstance(prefs, dict) else None
             if isinstance(wl, list):
                 watchlists[str(p["id"])] = wl
+            eid = p.get("fpl_entry_id")
+            if isinstance(eid, int) and not isinstance(eid, bool) and eid > 0:
+                entry_ids[str(p["id"])] = eid
 
     targets = []
     for r in rows:
@@ -4277,6 +4283,7 @@ def push_targets(request: Request):
             **r,
             "is_premium": bool(uid and uid in premium),
             "watchlist": watchlists.get(uid or "", []),
+            "fpl_entry_id": entry_ids.get(uid or ""),
         })
     return {"targets": targets, "n": len(targets)}
 
