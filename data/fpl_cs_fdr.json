@@ -1,7 +1,7 @@
 {
   "meta": {
     "product": "GoalIQ FPL Phase 0 — clean sheet % + model FDR",
-    "generated_at": "2026-10-19T18:54:12",
+    "generated_at": "2026-10-19T21:20:07",
     "season": "2026/27",
     "fixture_source": "premierleague.com (pulselive) compSeason 841, julkaistu 2026-06-15",
     "team_strength_source": "GoalIQ Dixon-Coles, Understat PL ['2526', '2627'] (sama fit-config kuin /api/predict: decay=0.0035, bayes=2.0)",
@@ -20,106 +20,106 @@
     "sanity_gate": "PASS",
     "phase": "Phase 0 — pohjatyö, EI shipattava feature"
   },
-  "teams_next6_horizon": "GW7-GW12",
+  "teams_next6_horizon": "GW8-GW13",
   "teams_next6": {
+    "Ipswich Town": {
+      "next6_avg_cs_pct": 14.5,
+      "next6_avg_fdr": 4.5,
+      "next6_fixtures": 6
+    },
+    "Nottingham Forest": {
+      "next6_avg_cs_pct": 19.6,
+      "next6_avg_fdr": 3.67,
+      "next6_fixtures": 6
+    },
+    "Aston Villa": {
+      "next6_avg_cs_pct": 25.3,
+      "next6_avg_fdr": 2.67,
+      "next6_fixtures": 6
+    },
+    "Manchester City": {
+      "next6_avg_cs_pct": 35.0,
+      "next6_avg_fdr": 1.67,
+      "next6_fixtures": 6
+    },
+    "Arsenal": {
+      "next6_avg_cs_pct": 39.7,
+      "next6_avg_fdr": 1.33,
+      "next6_fixtures": 6
+    },
     "Everton": {
       "next6_avg_cs_pct": 22.1,
       "next6_avg_fdr": 3.83,
       "next6_fixtures": 6
     },
-    "Chelsea": {
-      "next6_avg_cs_pct": 26.8,
-      "next6_avg_fdr": 2.17,
-      "next6_fixtures": 6
-    },
-    "Brentford": {
-      "next6_avg_cs_pct": 20.7,
-      "next6_avg_fdr": 3.5,
-      "next6_fixtures": 6
-    },
-    "Liverpool": {
-      "next6_avg_cs_pct": 24.3,
-      "next6_avg_fdr": 2.83,
+    "Coventry City": {
+      "next6_avg_cs_pct": 24.8,
+      "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
     "Fulham": {
-      "next6_avg_cs_pct": 23.8,
-      "next6_avg_fdr": 2.83,
+      "next6_avg_cs_pct": 22.2,
+      "next6_avg_fdr": 3.17,
       "next6_fixtures": 6
     },
-    "Hull City": {
-      "next6_avg_cs_pct": 24.5,
-      "next6_avg_fdr": 3.5,
+    "Chelsea": {
+      "next6_avg_cs_pct": 27.3,
+      "next6_avg_fdr": 1.83,
       "next6_fixtures": 6
     },
-    "Manchester City": {
-      "next6_avg_cs_pct": 34.4,
-      "next6_avg_fdr": 1.67,
-      "next6_fixtures": 6
-    },
-    "Ipswich Town": {
-      "next6_avg_cs_pct": 12.5,
-      "next6_avg_fdr": 4.67,
-      "next6_fixtures": 6
-    },
-    "Newcastle United": {
-      "next6_avg_cs_pct": 18.2,
-      "next6_avg_fdr": 4.0,
-      "next6_fixtures": 6
-    },
-    "Aston Villa": {
-      "next6_avg_cs_pct": 23.2,
+    "Tottenham Hotspur": {
+      "next6_avg_cs_pct": 26.0,
       "next6_avg_fdr": 3.0,
       "next6_fixtures": 6
     },
-    "Bournemouth": {
-      "next6_avg_cs_pct": 24.5,
-      "next6_avg_fdr": 2.67,
-      "next6_fixtures": 6
-    },
-    "Sunderland": {
-      "next6_avg_cs_pct": 21.5,
-      "next6_avg_fdr": 3.67,
-      "next6_fixtures": 6
-    },
-    "Brighton & Hove Albion": {
-      "next6_avg_cs_pct": 28.6,
-      "next6_avg_fdr": 2.17,
-      "next6_fixtures": 6
-    },
     "Crystal Palace": {
-      "next6_avg_cs_pct": 22.7,
+      "next6_avg_cs_pct": 22.6,
       "next6_avg_fdr": 3.33,
       "next6_fixtures": 6
     },
-    "Leeds United": {
+    "Newcastle United": {
+      "next6_avg_cs_pct": 17.5,
+      "next6_avg_fdr": 4.17,
+      "next6_fixtures": 6
+    },
+    "Hull City": {
+      "next6_avg_cs_pct": 24.6,
+      "next6_avg_fdr": 3.33,
+      "next6_fixtures": 6
+    },
+    "Brentford": {
+      "next6_avg_cs_pct": 20.3,
+      "next6_avg_fdr": 3.67,
+      "next6_fixtures": 6
+    },
+    "Liverpool": {
       "next6_avg_cs_pct": 27.6,
+      "next6_avg_fdr": 2.33,
+      "next6_fixtures": 6
+    },
+    "Brighton & Hove Albion": {
+      "next6_avg_cs_pct": 26.2,
       "next6_avg_fdr": 2.67,
       "next6_fixtures": 6
     },
     "Manchester United": {
-      "next6_avg_cs_pct": 25.1,
+      "next6_avg_cs_pct": 24.4,
       "next6_avg_fdr": 2.33,
       "next6_fixtures": 6
     },
-    "Nottingham Forest": {
-      "next6_avg_cs_pct": 18.5,
-      "next6_avg_fdr": 4.0,
+    "Bournemouth": {
+      "next6_avg_cs_pct": 22.6,
+      "next6_avg_fdr": 3.0,
       "next6_fixtures": 6
     },
-    "Arsenal": {
-      "next6_avg_cs_pct": 43.1,
-      "next6_avg_fdr": 1.17,
+    "Sunderland": {
+      "next6_avg_cs_pct": 22.0,
+      "next6_avg_fdr": 3.67,
       "next6_fixtures": 6
     },
-    "Tottenham Hotspur": {
-      "next6_avg_cs_pct": 26.3,
-      "next6_avg_fdr": 2.83,
-      "next6_fixtures": 6
-    },
-    "Coventry City": {
-      "next6_avg_cs_pct": 25.7,
-      "next6_avg_fdr": 3.33,
+    "Leeds United": {
+      "next6_avg_cs_pct": 25.2,
+      "next6_avg_fdr": 3.0,
       "next6_fixtures": 6
     }
   },
