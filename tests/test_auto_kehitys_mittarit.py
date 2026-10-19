@@ -353,6 +353,7 @@ def test_konversio_kuljettaa_entry_id_osuuden():
                              "entry_id_share_pct_premium": 88.2})
     assert s["entry_id_osuus_pct_ilmainen"] == 41.3 and s["entry_id_osuus_pct_premium"] == 88.2
     assert md.siivoa_konversio({})["entry_id_osuus_pct_ilmainen"] is None, "puuttuva on None, ei nolla"
+    assert md.siivoa_konversio({"push_reach_pct": 37.5})["push_tavoitettavuus_pct"] == 37.5
 
 
 def test_aallonharja_kirjaa_ostopolun():
