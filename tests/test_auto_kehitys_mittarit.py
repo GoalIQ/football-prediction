@@ -4,7 +4,7 @@ Ennen tätä backlog-rivien mittareita ei luettu koskaan takaisin. Portti kaatuu
   * erääntynyt mittari voi jäädä ilman tulosta tai agentti voi muuttaa vanhoja pisteitä, mittareita
     tai tuloksia ilman että aallonharjan julkaisu hylkää haaran,
   * valinta ei noudata kaavaa (2 x arvo + kiire + 2 x myynti + uutuus - työ + näyttö), lukitusta,
-    varauksia tai kärkivuoroa,
+    varauksia tai myyntivuoroa,
   * näyttö ei rankaise lähdettä, jonka mittarit epäonnistuvat,
   * mittausdata vuotaa julkiseen repoon tilien, Premiumien, käyntien tai tapahtumien määriä.
 """
@@ -101,9 +101,9 @@ def test_valinta_lukitut_ensin_listan_jarjestyksessa_sitten_kaava():
         _rivi("Lukittu 1", lukko="(lukittu) "),
         _rivi("Lukittu 2", lukko="(lukittu) ", a=3, m=3),
     )
-    v = mt.valitse(mt.jasenna(t), [], karki=False)
+    v = mt.valitse(mt.jasenna(t), [], myynti=False)
     assert v["valittu"]["otsikko"] == "Lukittu 1"
-    v = mt.valitse(mt.jasenna(t), ["Lukittu 1", "Lukittu 2"], karki=False)
+    v = mt.valitse(mt.jasenna(t), ["Lukittu 1", "Lukittu 2"], myynti=False)
     assert v["valittu"]["otsikko"] == "Iso piste"
     assert v["valittu"]["piste"] == 2 * 3 + 3 + 2 * 3 + 2 - 0
 
@@ -111,17 +111,35 @@ def test_valinta_lukitut_ensin_listan_jarjestyksessa_sitten_kaava():
 def test_myynti_painaa_kaksinkertaisesti():
     t = _backlog(_rivi("Arvo", a=3, m=1), _rivi("Myynti", a=2, m=3))
     # Arvo: 6+1+2+1-1 = 9; Myynti: 4+1+6+1-1 = 11
-    assert mt.valitse(mt.jasenna(t), [], karki=False)["valittu"]["otsikko"] == "Myynti"
+    assert mt.valitse(mt.jasenna(t), [], myynti=False)["valittu"]["otsikko"] == "Myynti"
 
 
-def test_karkivuoro_ja_kysymys():
-    t = _backlog(_rivi("Korkea vanha", a=3, k=3, u=1),
-                 _rivi("Uusi kyky", u=2) + "\n  - ⚠️ EHDOTUS/KYSYMYS: hinta?",
-                 _rivi("Toinen uusi", u=2, k=2))
-    v = mt.valitse(mt.jasenna(t), [], karki=True)
-    assert v["valittu"]["otsikko"] == "Toinen uusi", "kysymysrivi ohitetaan, kärkivuoro vaatii uutuus 2"
-    v = mt.valitse(mt.jasenna(t), [], karki=False)
+def test_myyntivuoro_ja_kysymys():
+    # 19.10.2026: kärkivuoro (uutuus 2) vaihtui myyntivuoroksi (vain myynti 3 -rivit).
+    t = _backlog(_rivi("Korkea vanha", a=3, k=3, u=2, m=2),
+                 _rivi("Myyvä kysymys", m=3) + "\n  - ⚠️ EHDOTUS/KYSYMYS: hinta?",
+                 _rivi("Myyvä", m=3, a=1, k=1))
+    # Korkea vanha: 6+3+4+2-1 = 14; Myyvä: 2+1+6+1-1 = 9
+    v = mt.valitse(mt.jasenna(t), [], myynti=True)
+    assert v["valittu"]["otsikko"] == "Myyvä", "kysymysrivi ohitetaan, myyntivuoro vaatii myynti 3"
+    assert v["syy"].startswith("myyntivuoro")
+    v = mt.valitse(mt.jasenna(t), [], myynti=False)
     assert v["valittu"]["otsikko"] == "Korkea vanha"
+
+
+def test_myyntivuoro_ilman_myyvaa_riviä_ideoi_ja_lukitut_ensin():
+    t = _backlog(_rivi("Ei myy", m=2, a=3, k=3))
+    v = mt.valitse(mt.jasenna(t), [], myynti=True)
+    assert v["valittu"] is None and "ideoi" in v["syy"]
+    t = _backlog(_rivi("Myyvä", m=3), _rivi("Lukittu", lukko="(lukittu) ", m=1))
+    assert mt.valitse(mt.jasenna(t), [], myynti=True)["valittu"]["otsikko"] == "Lukittu"
+
+
+def test_tyonkulku_kayttaa_myyntivuoroa():
+    """Kutsupaikka: auto-kehitys.yml antaa valinnalle --myyntivuoro (ei vanhaa --karki-lippua)."""
+    teksti = (JUURI / ".github" / "workflows" / "auto-kehitys.yml").read_text(encoding="utf-8")
+    assert '--myyntivuoro "$myyntivuoro"' in teksti
+    assert "--karki" not in teksti
 
 
 def test_naytto_rankaisee_epaonnistuvaa_lahdetta():
@@ -131,7 +149,7 @@ def test_naytto_rankaisee_epaonnistuvaa_lahdetta():
                  _rivi("Ylläpitäjän", lahde="(ylläpitäjän signaali)", a=2, m=2), tehdyt=tehdyt)
     rivit = mt.jasenna(t)
     assert mt.naytto(rivit)["aallonharja"] == -1
-    v = mt.valitse(rivit, [], karki=False)
+    v = mt.valitse(rivit, [], myynti=False)
     assert v["valittu"]["otsikko"] == "Ylläpitäjän"
     assert "näyttö -1" in v["top"][1]["erittely"]
 

@@ -11,6 +11,7 @@ tekee kolme asiaa deterministisesti, jotta ne eivät ole kielimallin muistin tai
                komponenteista (rivin "= N" ei ole lähde), ja siihen tulee näyttötermi: jos saman lähteen
                (aallonharja, agentin ehdotus, ylläpitäjä) kaksi viimeistä mitattua tulosta kolmesta
                epäonnistui, -1; jos kaksi onnistui, +1. Näin rivityyppi, joka ei liikuta mittaria, putoaa.
+               Myyntivuorolla (joka kolmas ajo, 19.10.2026) vain myynti 3 -rivit ovat ehdolla.
   kooste       onnistumiset lähteittäin aallonharjan raporttiin
 
 Piste = 2 x arvo + kiire + 2 x myynti + uutuus - työ (S 0, M 1, L 2) + näyttö (docs/TUOTEPERIAATTEET.md).
@@ -166,7 +167,7 @@ def piste(r: Rivi, naytot: dict[str, int]) -> tuple[int, str] | None:
     return arvo, erittely
 
 
-def valitse(rivit: list[Rivi], varatut: list[str], karki: bool) -> dict:
+def valitse(rivit: list[Rivi], varatut: list[str], myynti: bool) -> dict:
     naytot = naytto(rivit)
     varatut_avaimet = {v.strip()[:OTSIKON_PITUUS] for v in varatut if v.strip()}
     avoimet = [r for r in rivit if not r.tehty]
@@ -183,10 +184,12 @@ def valitse(rivit: list[Rivi], varatut: list[str], karki: bool) -> dict:
     jarjestys = sorted(ehdokkaat, key=lambda e: (0, e[0].nro, 0) if e[0].lukittu else (1, -e[1], e[0].nro))
     if lukitut:
         valittu, syy = lukitut[0], "lukittu rivi listan järjestyksessä"
-    elif karki:
-        uudet = [e for e in jarjestys if (e[0].komponentit() or {}).get("uutuus") == 2]
-        valittu = uudet[0] if uudet else None
-        syy = "kärkivuoro: suurin piste, uutuus 2/2" if uudet else "kärkivuoro: ei uutuus 2 -riviä, ideoi"
+    elif myynti:
+        # 19.10.2026 (ylläpitäjän päätös): kärkivuoro (uutuus 2) vaihtui myyntivuoroksi. Ensisijainen mittari
+        # on maksajat, joten joka kolmas ajo tekee myyntipolun rivin, vaikka uudempi kyky saisi suuremman pisteen.
+        myyvat = [e for e in jarjestys if (e[0].komponentit() or {}).get("myynti") == 3]
+        valittu = myyvat[0] if myyvat else None
+        syy = "myyntivuoro: suurin piste, myynti 3/3" if myyvat else "myyntivuoro: ei myynti 3 -riviä, ideoi"
     elif jarjestys:
         valittu, syy = jarjestys[0], "suurin piste"
     else:
@@ -262,7 +265,7 @@ def main(argv=None) -> int:
         s.add_argument("--out")
         if nimi == "valitse":
             s.add_argument("--varatut-tiedosto")
-            s.add_argument("--karki", default="false")
+            s.add_argument("--myyntivuoro", default="false")
     t = sub.add_parser("tarkista")
     t.add_argument("--pohja", required=True)
     t.add_argument("--uusi", required=True)
@@ -288,7 +291,7 @@ def main(argv=None) -> int:
         varatut = []
         if a.varatut_tiedosto and Path(a.varatut_tiedosto).is_file():
             varatut = Path(a.varatut_tiedosto).read_text(encoding="utf-8").splitlines()
-        tulos = valitse(rivit, varatut, a.karki == "true")
+        tulos = valitse(rivit, varatut, a.myyntivuoro == "true")
     else:
         tulos = kooste(rivit)
     teksti = json.dumps(tulos, ensure_ascii=False, indent=2)

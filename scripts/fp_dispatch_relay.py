@@ -92,6 +92,10 @@ TARGETS: list[dict] = [
     # 18.10.2026: automerge riskiluokan mukaan. Idempotentti: mergetty PR ei ole enaa avoin, ja
     # odottaa-go- ja automerge-punainen-labelit estavat toistuvat kommentit.
     {"workflow": "auto-merge.yml", "slots": None},
+    # 19.10.2026 (yllapitajan paatos): auto-kehitys oli poikkeus, koska tupla-ajo olisi tehnyt toisen PR:n.
+    # Pe 17.10 ajastettu ajo puuttui kokonaan. Tyonkulun vuoro-tyo tekee siita nyt idempotentin: toinen
+    # ajo samana UTC-paivana (rele + myohassa tuleva cron) ei aja agenttia eika kuluta Claude-kiintiota.
+    {"workflow": "auto-kehitys.yml", "slots": None},
 ]
 
 # S14-mittarin (goaliq-app scripts/autopilot/cron_realization.py) ikkuna ja
@@ -127,9 +131,6 @@ EXCEPTIONS: dict[str, tuple[str, str]] = {
                                                    "(MM-pudotuspelit), ohi"),
     "affiliate-attrib-watch.yml": ("alle_s14_kynnyksen", "viikoittainen (1 slotti / 7 vrk); "
                                                          "issue-vahti sietaa viiveen"),
-    "auto-kehitys.yml": ("alle_s14_kynnyksen", "3 slottia / 7 vrk (ma, ke, pe). Lisaksi ei "
-                                               "idempotentti: tupla-ajo tekisi toisen PR:n ja "
-                                               "kuluttaisi Claude-kiintiota kahdesti"),
     "aallonharja.yml": ("alle_s14_kynnyksen", "viikoittainen (1 slotti / 7 vrk); avoin "
                                               "aallonharja-PR estaa toisen ajon"),
     "free-window-watch.yml": ("ei_idempotentti", "lisaa rivin free_window_log.jsonl:iin ja "
