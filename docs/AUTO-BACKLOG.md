@@ -91,6 +91,23 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   myöhemmin kaudella, ScoreGPT myy 7/14/30 pv:n KPI-ikkunoita Pro-tasolla. (lähde: https://fplxi.com/ , https://www.fplpulse.com/ , https://scoregpt.app/)
 - 2026-10: FPL-skeemavahdin ensimmäinen tilannekuva tallennettiin 18.10. (`data/fpl_schema_snapshot.json`), joten
   skeemamuutosta ei vielä voi todeta. Seuraava viikko antaa ensimmäisen diffin. (lähde: data/fpl_schema_snapshot.json)
+- 2026-10: Hakukone ei ole ollut hankintakanava tällä kaudella, eikä 18.10 mitattu Search Consolen -83,5 % ollut
+  pudotus: vertailujakson näytöistä 54 % tuli kolmena päivänä (kauden alun piikki 21.8), päivämediaanin muutos oli
+  -69 % ja klikkien -22 %, ja hakuriveihin kirjatuista klikeistä valtaosa on brändihakuja. Käytön oikea pudotus
+  alkoi viikolla 14.9, kun ilmainen Premium-ikkuna sulkeutui 12.9: uusien tilien viikkomäärä noin -80 %,
+  sovelluksen ja työkalujen uniikit viikkokäyttäjät noin -65...-70 %. Hankintapolun rivien mittari kannattaa
+  sitoa rekisteröitymisiin tai viikkokäyttäjiin, ei hakunäyttöihin. (lähde: Search Console päiväsarja, PostHog
+  viikkokäyttäjät, mittausdata.py 19.10)
+- 2026-10: Ottelusivut eivät pääse Googlen hakemistoon. `scripts/build_prediction_pages.py` poistaa ottelusivun
+  kickoffissa ja URL palauttaa 404:n, joten sivu elää muutaman päivän, lyhyemmän ajan kuin indeksointi kestää.
+  Search Consolessa (12.10) "Löydetty, ei toistaiseksi indeksoitu" -luokassa on 347 URL:ia, lähes kaikki
+  ottelusivuja, ja ottelusivujen näytöt ovat olleet lähes nolla 22.8 alkaen. Vaihtoehto on pysyvä tulossivu
+  (ennen kickoffia kirjattu ennuste ja toteuma samasta lokista kuin track record). Se muuttaa sivuston
+  rakennetta, joten päätös on ylläpitäjän ennen riviä.
+- 2026-10: pro.goaliq.app-juuri ei anna canonical-tagia, joten seurantaparametrit (`src`, `srcp`, `tab`) tekevät
+  siitä kopioita: Search Console (12.10) listaa 125 parametrillista juuren URL:ia ilman valittua ensisijaista
+  osoitetta, ja osa näkyy hakutuloksissa omina sivuinaan. Alireiteillä (esim. /spl) canonical on jo. Juuri saa
+  canonicalin ilman kyselyparametreja samalla lukijalla kuin alireitit, ja testi kaatuu jos se puuttuu.
 
 ## Avoimet
 

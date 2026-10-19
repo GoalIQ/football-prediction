@@ -160,6 +160,9 @@ jobs:
                nayttosija) mutta matala CTR tai sijainti 5-15, ja haut, joihin mikään sivu ei vastaa hyvin. Tee
                niistä Signaaleja ja enintään yksi backlog-rivi, jonka Mittari on GSC:n CTR tai sijainti kyseiselle
                sivulle (tarkistus 28 vrk päähän). Jos gsc tai posthog puuttuu, kirjaa se Muutokset-lohkoon.
+               Tason muutos: kirjaa GSC:stä naytot_mediaani_muutos_pct ja yhteensa.tulkinta sanatarkasti, älä
+               pelkkää kokonaismuutosta (18.10 -83,5 % oli piikin loppu, ei pudotus). Käytön tason muutos luetaan
+               posthog.json:n viikkokayttajat-sarjasta (uniikit käyttäjät pinnoittain), ei tapahtumamääristä.
 
             1. MALLIN OMAT MITTARIT. Lue data/fpl_xp_gw_accuracy.json (GoalIQ xP vs FPL:n ep_next samoilla riveillä)
                ja data/accuracy.json (1X2-osuma, Brier, kalibraatio). Kirjaa luvut ja muutos edelliseen kierrokseen.
