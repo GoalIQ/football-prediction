@@ -116,22 +116,25 @@ def ketju(d: dict) -> list[str]:
     else:
         sana = "tripled" if d["kerroin"] == 3 else "doubled"
         kapt = f"Captain: {d['kapteeni']}, {_p(d['kapteeni_pisteet'])} {sana} to {d['kapteeni_pisteet'] * d['kerroin']}."
-    chip = f" Chip: {d['chip']}." if d["chip"] else ""
+    # Chipit ovat meidän päätöksiämme, eivät mallin: "model's own FPL team" on hylätty 29.9
+    # (data/rejected_phrases.json). Sanamuodot alla ovat hylkäyslistan hyväksyttyjä korvaajia.
+    chip = f" We played {d['chip']}." if d["chip"] else ""
     kausi = (f"Season: {d['kokonais']} points, {_ero(ero)} the sum of FPL's gameweek averages. "
              f"Overall rank {d['sijoitus']:,} of {_milj(d['managereita'])}, top {d['top_pct']}%.")
-    tarkistus = f"Every number here is on FPL's own site, entry {ENTRY}. Picks are locked before each deadline: {FPL_SIVU}"
+    tarkistus = (f"The model's squad is frozen before each deadline, and entry {ENTRY} plays it with our own calls. "
+                 f"Every number here is on FPL's site: {FPL_SIVU}")
     seuraava = f"GW{d['seuraava']}" if d["seuraava"] else "the next gameweek"
     cta = f"The model's {seuraava} picks and xP for every player: {_linkki(gw)}"
     pohja = gw % 3
     if pohja == 0:
-        viestit = [f"Our model runs its own FPL team in public. GW{gw}: {kierros}, against an average of {d['keskiarvo']}.",
-                   f"{kapt}{chip}", kausi, f"{tarkistus}\n\n{cta}"]
+        viestit = [f"We play our model's squad in FPL (entry {ENTRY}). GW{gw}: {kierros}, against an average of "
+                   f"{d['keskiarvo']}.", f"{kapt}{chip}", kausi, f"{tarkistus}\n\n{cta}"]
     elif pohja == 1:
-        viestit = [f"GW{gw} for the model's FPL team: {kierros}. The average manager scored {d['keskiarvo']}.{chip}",
+        viestit = [f"GW{gw} for our model's squad in FPL: {kierros}. The average manager scored {d['keskiarvo']}.{chip}",
                    kausi, f"{kapt} {tarkistus}", cta]
     else:
-        viestit = [f"How the model's own FPL team did in GW{gw}, in four posts.",
-                   f"{kierros.capitalize()}, average {d['keskiarvo']}. {kapt}{chip}", kausi, f"{tarkistus}\n\n{cta}"]
+        viestit = [f"How our model's squad did in FPL in GW{gw}: {kierros}, average {d['keskiarvo']}.",
+                   f"{kapt}{chip}", kausi, f"{tarkistus}\n\n{cta}"]
     for v in viestit:
         if x_pituus(v) > X_MAX or "—" in v or "–" in v:
             raise ValueError(f"viesti ei kelpaa X:ään ({x_pituus(v)} merkkiä): {v[:60]}")
