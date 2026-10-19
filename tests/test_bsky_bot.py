@@ -423,6 +423,13 @@ def test_x_jonoon_vain_tuoreet_oikeat_postaukset():
     assert [r["uri"] for r in got] == ["at://did:plc:abc/app.bsky.feed.post/3mxzcg"]
 
 
+def test_kierroskatsaus_ei_x_jonoon_koska_x_viikkoketju_tekee_sen():
+    """19.10: muuten samasta kierroksesta tulisi X-jonoon kaksi katsausta (julkaisutarkistaja)."""
+    rows = [_row(topic="recap", uri="at://d/app.bsky.feed.post/recap"), _row()]
+    got = bot.pending_x_mirror(rows, {}, NOW)
+    assert [r["uri"] for r in got] == ["at://did:plc:abc/app.bsky.feed.post/3mxzcg"]
+
+
 def test_x_issue_osoitettu_villelle_ja_linkki_blueskyhyn():
     p = bot.x_issue(_row(), bot.x_version(_row()))
     assert p["assignees"] == ["Veikkoville"] and p["labels"] == ["x-jono"]

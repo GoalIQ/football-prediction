@@ -83,6 +83,9 @@ TARGETS: list[dict] = [
     # aivojen viimeisin ajo) on mainissa ja concurrency-ryhma sarjallistaa, joten cron-tupla
     # ei postaa toista kertaa eika aja aivoja uudelleen alle 2 h:ssa.
     {"workflow": "bsky-bot.yml", "slots": None},
+    # 19.10.2026: X-viikkoketju. Idempotentti: sama kierros ei saa toista issueta (otsikko haetaan myos
+    # suljetuista), joten cron-tupla ei tee mitaan uutta.
+    {"workflow": "x-viikkoketju.yml", "slots": None},
     # 18.10.2026: fpl-why-refresh on nyt deterministinen (maksullinen polku poistettu tyonkulusta), ja
     # skripti diffaa komponenttihashin, joten cron-tupla ei kirjoita mitaan uutta.
     {"workflow": "fpl-why-refresh.yml", "slots": None},

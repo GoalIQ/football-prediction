@@ -621,6 +621,8 @@ def pending_x_mirror(log_rows: list[dict], state: dict, now: datetime) -> list[d
     for r in log_rows:
         if r.get("kind") != "post" or r.get("dry_run") or not r.get("uri") or r["uri"] in done:
             continue
+        if r.get("topic") == "recap":
+            continue  # X saa kierroskatsauksen scripts/x_viikkoketju.py:sta (19.10), ei kahta samasta kierroksesta
         try:
             at = datetime.fromisoformat(str(r.get("at")))
         except ValueError:
