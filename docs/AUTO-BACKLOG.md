@@ -132,6 +132,9 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   7,2 %, klikkejä 0), mutta viesti omasta joukkueesta ei ole massalähetys. `profiles.fpl_entry_id` on olemassa,
   push_tokens-taulussa entry ID:tä ei ole. Kanava (push vai sähköposti) on ylläpitäjän päätös, ja sitä varten
   mitataan ensin, kuinka suurella osalla tileistä entry ID on tallessa. → backlog 2026-10-19 (vain mittaus)
+  Ylläpitäjä valitsi 19.10 pushin (osto onnistuu sovelluksessa, sähköposti ei toiminut). Rakennettu käsin:
+  `scripts/push_dispatch.py` lähettää 24 h -ikkunassa henkilökohtaisen rungon samasta siirtosuunnitelmasta kuin
+  sovellus, ja PostHog-tapahtuma `push_personal` kertoo tavoitettavuuden (entry ID:lliset ja henkilökohtaiset).
 
 ## Avoimet
 
@@ -199,7 +202,9 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   lisäksi kentät `entry_id_share_pct_free` ja `entry_id_share_pct_premium`, eli kuinka suurella osalla ilmais- ja
   Premium-tileistä `profiles.fpl_entry_id` on tallessa. Ei määriä eikä käyttäjärivejä vastauksessa. Tarvitaan
   päätökseen henkilökohtaisesta deadline-viestistä (ihmisen projekti, Signaalit). Testi synteettisillä profiileilla:
-  osuus oikein, tyhjä profiilijoukko antaa null eikä nollaa. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+  osuus oikein, tyhjä profiilijoukko antaa null eikä nollaa. Lisäksi `push_reach_pct`: kuinka suurella osalla
+  deadline-muistutuksen kytkeneistä laitteista on tili ja entry ID (sama liitos kuin `/api/admin/push-targets`),
+  koska henkilökohtainen push tavoittaa vain ne. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
       Pisteet: (lukittu) arvo 1/3 · kiire 3/3 · työ S · myynti 3/3 · uutuus 0/2 = 11
       Mittari: mittausdatan konversio-osiossa on entry ID -osuus ilmais- ja Premium-tileille · tarkistus 2026-11-02
 - [ ] Kanava-attribuutio hubista sovellukseen: `ref-bridge.js` kuljettaa `utm_source`, `utm_medium`, `utm_campaign` ja

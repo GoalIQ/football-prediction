@@ -86,6 +86,8 @@ def siivoa_konversio(doc: dict) -> dict:
         # 19.10.2026 (backlog-rivi "Entry ID -osuus konversioaggregaattiin"): None, kunnes API palauttaa kentät.
         "entry_id_osuus_pct_ilmainen": doc.get("entry_id_share_pct_free"),
         "entry_id_osuus_pct_premium": doc.get("entry_id_share_pct_premium"),
+        # Henkilokohtainen deadline-push tavoittaa vain laitteet, joilla on tili ja entry ID (19.10).
+        "push_tavoitettavuus_pct": doc.get("push_reach_pct"),
     }
 
 
