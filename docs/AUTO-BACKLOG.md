@@ -91,9 +91,10 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   myöhemmin kaudella, ScoreGPT myy 7/14/30 pv:n KPI-ikkunoita Pro-tasolla. (lähde: https://fplxi.com/ , https://www.fplpulse.com/ , https://scoregpt.app/)
 - 2026-10: FPL-skeemavahdin ensimmäinen tilannekuva tallennettiin 18.10. (`data/fpl_schema_snapshot.json`), joten
   skeemamuutosta ei vielä voi todeta. Seuraava viikko antaa ensimmäisen diffin. (lähde: data/fpl_schema_snapshot.json)
-- 2026-10: Hakukone ei ole ollut hankintakanava tällä kaudella, eikä 18.10 mitattu Search Consolen -83,5 % ollut
-  pudotus: vertailujakson näytöistä 54 % tuli kolmena päivänä (kauden alun piikki 21.8), päivämediaanin muutos oli
-  -69 % ja klikkien -22 %, ja hakuriveihin kirjatuista klikeistä valtaosa on brändihakuja. Käytön oikea pudotus
+- 2026-10: Hakukone ei ole ollut hankintakanava tällä kaudella. Search Consolen näyttöjen päivämediaani laski noin
+  -67 % (elo-syyskuun taso palasi heinäkuun tasolle 16.9 alkaen), mutta klikkien päivämediaani ei muuttunut ja
+  hakuriveihin kirjatut klikit ovat brändihakuja (19.10: 100 %). 18.10:n -83,5 %:ia liioitteli kauden alun piikki
+  21.8 (54 % vertailujakson näytöistä kolmena päivänä). Näyttöjen lasku ei näy kävijöissä. Käytön oikea pudotus
   alkoi viikolla 14.9, kun ilmainen Premium-ikkuna sulkeutui 12.9: uusien tilien viikkomäärä noin -80 %,
   sovelluksen ja työkalujen uniikit viikkokäyttäjät noin -65...-70 %. Taso on nyt myös alempi kuin ennen
   ikkunaa (heinä-elokuu), joten ikkuna ei selitä kaikkea. Hankintapolun rivien mittari kannattaa
