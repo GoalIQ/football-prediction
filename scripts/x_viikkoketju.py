@@ -2,7 +2,7 @@
 
 X:ään ei postata automaattisesti (maksullinen API ja X:n automaatiosäännöt). Kun kierros on FPL:ssä lopullinen
 (`finished` ja `data_checked`), tämä tekee ylläpitäjälle issuen (label x-jono, sama kanava kuin Bluesky-botin
-X-jono), jossa on valmis 4 viestin ketju. Ylläpitäjä postaa sen itse.
+X-jono), jossa on valmis 2-3 viestin ketju. Ylläpitäjä postaa sen itse.
 
 Miksi juuri tämä luku: entry 116920 on FPL:n oma, kenen tahansa tarkistettava luku (FPL:n sivulla), eikä sitä
 voi muokata jälkikäteen. Se on ainoa todiste, jonka lukija voi tarkistaa ilman meidän sivujamme.
@@ -13,8 +13,10 @@ Säännöt (CLAUDE.md 6a: väärä vaihtoehto mahdottomaksi):
   * Kauden ero lasketaan FPL:n kokonaispisteistä (hitit vähennetty) FPL:n julkaisemien kierroskeskiarvojen
     summaa vastaan. Jos keskiarvo on ennen hittejä, ero on meille epäedullinen, ei edullinen.
   * Idempotentti: sama kierros ei saa toista issueta (otsikko haetaan olemassa olevista, myös suljetuista).
-  * Kolme pohjaa vuorotellen (sama runko joka viikko on AI-tunnusmerkki). Pohjat ovat julkaisutarkistajan
-    hyväksymät 19.10; muutos pohjaan = uusi tarkistus ennen mergeä.
+  * Kolme pohjaa vuorotellen (sama runko joka viikko on AI-tunnusmerkki). Julkaisutarkistaja blokkasi
+    ensimmäiset pohjat 19.10; nämä ovat sen korjaamat versiot sellaisenaan. Muutos pohjaan = uusi tarkistus
+    ennen mergeä.
+  * Kapteenia ei mainita, jos hän ei pelannut tai on julkaisuportin estolistalla (scripts/publish_blocklist.json).
 
 Ajo: python scripts/x_viikkoketju.py [--kuiva]   (GH_TOKEN ympäristössä; ilman sitä kuiva)
 """
@@ -22,13 +24,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import re
 import sys
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+
+from scripts import publish_gate
 
 ENTRY = 116920
 FPL = "https://fantasy.premierleague.com/api"
@@ -76,15 +79,18 @@ def kokoa(gw: int, bootstrap: dict, historia: dict, picks: dict, live: dict) -> 
     keskiarvot = [events[g]["average_entry_score"] for g in sorted(rivit) if g <= gw]
     kapteeni = next(p for p in picks["picks"] if p.get("is_captain"))
     pelaajat = {e["id"]: e["web_name"] for e in bootstrap["elements"]}
-    kapt_pisteet = next((e["stats"]["total_points"] for e in live["elements"] if e["id"] == kapteeni["element"]), None)
+    kapt_live = next((e["stats"] for e in live["elements"] if e["id"] == kapteeni["element"]), None)
     managereita = int(bootstrap["total_players"])
     return {
         "gw": gw, "pisteet": int(r["points"]), "hitti": int(r.get("event_transfers_cost") or 0),
         "keskiarvo": int(events[gw]["average_entry_score"]),
         "kokonais": int(r["total_points"]), "keskiarvo_summa": int(sum(keskiarvot)),
         "sijoitus": int(r["overall_rank"]), "managereita": managereita,
-        "top_pct": math.ceil(int(r["overall_rank"]) / managereita * 100),
-        "kapteeni": pelaajat.get(kapteeni["element"], "?"), "kapteeni_pisteet": kapt_pisteet,
+        # FPL:n oma % Rank -luku (sama kuin entry history -sivulla), ei omaa kaavaa (julkaisutarkistaja 19.10).
+        "top_pct": int(r["overall_rank_percentage"]) if str(r.get("overall_rank_percentage") or "").isdigit() else None,
+        "kapteeni": pelaajat.get(kapteeni["element"], "?"),
+        "kapteeni_pisteet": kapt_live.get("total_points") if kapt_live else None,
+        "kapteeni_minuutit": kapt_live.get("minutes", 0) if kapt_live else 0,
         "kerroin": int(kapteeni.get("multiplier") or 2), "chip": CHIPIT.get(picks.get("active_chip") or ""),
         "seuraava": gw + 1 if (gw + 1) in events else None,
     }
@@ -94,50 +100,63 @@ def _p(n: int) -> str:
     return f"{n} point" if abs(n) == 1 else f"{n} points"
 
 
-def _ero(n: int) -> str:
-    return f"{_p(n)} above" if n > 0 else f"{_p(-n)} below" if n < 0 else "level with"
-
-
-def _milj(n: int) -> str:
-    return f"{n / 1_000_000:.1f} million"
-
-
 def _linkki(gw: int) -> str:
     q = urllib.parse.urlencode({"utm_source": "x", "utm_medium": "partner", "utm_campaign": "model_entry",
                                 "utm_content": f"gw{gw}"})
-    return f"{SITE}/fpl?{q}"
+    return f"{SITE}/fpl/best-captain?{q}"
+
+
+def _estetty(nimi: str) -> bool:
+    """Sama estolista kuin julkaisuportilla ja korteilla (scripts/publish_blocklist.json), ei omaa listaa."""
+    return bool(publish_gate.blocked_names(nimi, publish_gate.load_blocklist()))
 
 
 def ketju(d: dict) -> list[str]:
+    # Julkaisutarkistajan 19.10 korjaama versio sellaisenaan. Ei "model's own FPL team" (hylätty 29.9: chipit
+    # ovat meidän), ei "every player" (xP kaikille on Premium), ei "locked" (rivi on muuttunut käsin).
     gw, ero = d["gw"], d["kokonais"] - d["keskiarvo_summa"]
-    kierros = _p(d["pisteet"]) + (f" before a {d['hitti']}-point hit" if d["hitti"] else "")
-    if d["kapteeni_pisteet"] is None:
-        kapt = f"Captain: {d['kapteeni']}."
+    vko = d["pisteet"] - d["hitti"] - d["keskiarvo"]
+    pist = _p(d["pisteet"]) + (f" (minus {d['hitti']} for transfers)" if d["hitti"] else "")
+    ero_txt = f"{ero:,} more than" if ero > 0 else f"{-ero:,} fewer than" if ero < 0 else "the same as"
+    top = d["top_pct"]
+    taso = f"Top {top}% overall." if top is not None and top <= 50 else f"Overall rank {d['sijoitus']:,}."
+    k, kp = d["kapteeni"], d["kapteeni_pisteet"]
+    if kp is None or not d["kapteeni_minuutit"] or _estetty(k):
+        kapt = ""
+    elif d["kerroin"] == 3:
+        kapt = f"Triple Captain on {k}, and he blanked." if kp <= 2 else f"Triple Captain on {k}: {kp * 3}."
     else:
-        sana = "tripled" if d["kerroin"] == 3 else "doubled"
-        kapt = f"Captain: {d['kapteeni']}, {_p(d['kapteeni_pisteet'])} {sana} to {d['kapteeni_pisteet'] * d['kerroin']}."
-    # Chipit ovat meidän päätöksiämme, eivät mallin: "model's own FPL team" on hylätty 29.9
-    # (data/rejected_phrases.json). Sanamuodot alla ovat hylkäyslistan hyväksyttyjä korvaajia.
-    chip = f" We played {d['chip']}." if d["chip"] else ""
-    kausi = (f"Season: {d['kokonais']} points, {_ero(ero)} the sum of FPL's gameweek averages. "
-             f"Overall rank {d['sijoitus']:,} of {_milj(d['managereita'])}, top {d['top_pct']}%.")
-    tarkistus = (f"The model's squad is frozen before each deadline, and entry {ENTRY} plays it with our own calls. "
-                 f"Every number here is on FPL's site: {FPL_SIVU}")
-    seuraava = f"GW{d['seuraava']}" if d["seuraava"] else "the next gameweek"
-    cta = f"The model's {seuraava} picks and xP for every player: {_linkki(gw)}"
+        kapt = f"{k} blanked with the armband." if kp <= 2 else f"{k} with the armband: {kp * 2}."
+    chip = {"Bench Boost": "We played the Bench Boost.", "Wildcard": "We played the Wildcard.",
+            "Free Hit": "We played the Free Hit."}.get(d["chip"] or "", "")
+    alku = " ".join(x for x in (kapt, chip) if x)
+    tuomio = "Good week." if vko >= 4 else "Not our week." if vko <= -4 else "Average week, near enough."
+    seur, linkki = d["seuraava"], _linkki(gw)
     pohja = gw % 3
     if pohja == 0:
-        viestit = [f"We play our model's squad in FPL (entry {ENTRY}). GW{gw}: {kierros}, against an average of "
-                   f"{d['keskiarvo']}.", f"{kapt}{chip}", kausi, f"{tarkistus}\n\n{cta}"]
+        cta = f"\n\nThe model's GW{seur} captain pick is free on our site: {linkki}" if seur else ""
+        viestit = [f"{tuomio} The model's squad got {pist} in GW{gw}, and FPL's average was {d['keskiarvo']}.",
+                   f"{alku} The season's on {d['kokonais']:,}, {ero_txt} scoring the average every week. {taso}".strip(),
+                   f"We play the model's squad in FPL as entry {ENTRY}, so the points and rank are public: {FPL_SIVU}{cta}"]
     elif pohja == 1:
-        viestit = [f"GW{gw} for our model's squad in FPL: {kierros}. The average manager scored {d['keskiarvo']}.{chip}",
-                   kausi, f"{kapt} {tarkistus}", cta]
+        cta = f"\n\nWho the model would captain in GW{seur}, free: {linkki}" if seur else ""
+        tulos = f"The model's squad finished GW{gw} on {pist}, with FPL's average at {d['keskiarvo']}."
+        viestit = [f"{alku or tuomio} {tulos}",
+                   f"{d['kokonais']:,} for the season. {taso} Scoring the FPL average every week would've got you "
+                   f"{d['keskiarvo_summa']:,}. We play the squad in FPL, entry {ENTRY}: {FPL_SIVU}{cta}"]
     else:
-        viestit = [f"How our model's squad did in FPL in GW{gw}: {kierros}, average {d['keskiarvo']}.",
-                   f"{kapt}{chip}", kausi, f"{tarkistus}\n\n{cta}"]
+        cta = f"\n\nGW{seur} captain pick from the same model, free: {linkki}" if seur else ""
+        viikko = "Above the average" if vko >= 4 else "Below the average" if vko <= -4 else "Close to the average"
+        kausi = "ahead of it" if ero > 0 else "behind it" if ero < 0 else "level with it"
+        viestit = [f"{viikko} in GW{gw}, {kausi} over the season.",
+                   f"The model's squad got {pist}, FPL's average was {d['keskiarvo']}. {alku}".strip(),
+                   f"{d['kokonais']:,} after {gw} gameweeks, {ero_txt} scoring the average every week. "
+                   f"The squad is FPL entry {ENTRY}, open to anyone: {FPL_SIVU}{cta}"]
     for v in viestit:
-        if x_pituus(v) > X_MAX or "—" in v or "–" in v:
+        if x_pituus(v) > X_MAX or "\u2014" in v or "\u2013" in v or "\u2019" in v:
             raise ValueError(f"viesti ei kelpaa X:ään ({x_pituus(v)} merkkiä): {v[:60]}")
+        if publish_gate.blocked_names(v, publish_gate.load_blocklist()):
+            raise ValueError(f"estolistan nimi viestissä: {v[:60]}")
     return viestit
 
 

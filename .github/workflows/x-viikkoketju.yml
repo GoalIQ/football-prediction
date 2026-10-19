@@ -2,7 +2,8 @@
 # ylläpitäjälle tulee issue (label x-jono -> Gmail), jossa on valmis ketju mallin oman joukkueen
 # (entry 116920) luvuista. Ylläpitäjä postaa itse: X:n API on maksullinen ja automaatiosäännöt kieltävät
 # skriptatun postauksen. Ei Claudea, ei salaisuuksia: luvut FPL:n julkisesta rajapinnasta, pohjat
-# julkaisutarkistajan hyväksymät (scripts/x_viikkoketju.py).
+# julkaisutarkistajan korjaamat (19.10) sellaisenaan (scripts/x_viikkoketju.py). Bluesky-botin oma
+# kierroskatsaus (topic recap) ei mene X-jonoon, ettei samasta kierroksesta tule kahta.
 #
 # Idempotentti: sama kierros ei saa toista issueta (otsikko haetaan myös suljetuista), joten rele ja
 # myöhässä tuleva cron eivät tuplaa (scripts/fp_dispatch_relay.py TARGETS).

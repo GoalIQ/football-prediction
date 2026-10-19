@@ -1,13 +1,17 @@
-"""X-viikkoketju (19.10.2026): mallin oman FPL-joukkueen kierroskatsaus X-jonoon.
+"""X-viikkoketju (19.10.2026): entry 116920:n kierroskatsaus X-jonoon.
 
 Portti kaatuu, jos
   * ketju syntyy kierrokselle, joka ei ole finished ja data_checked, tai seuraavan deadlinen jälkeen,
-  * kauden ero lasketaan muusta kuin FPL:n kokonaispisteistä keskiarvojen summaa vastaan,
-  * viesti ylittää X:n rajan tai sisältää em- tai en-viivan, tai pohjia on vähemmän kuin kolme,
+  * kauden ero lasketaan muusta kuin FPL:n kokonaispisteistä keskiarvojen summaa vastaan, tai top-% tulee
+    muualta kuin FPL:n omasta overall_rank_percentage-kentästä,
+  * viesti ylittää X:n rajan, sisältää em- tai en-viivan, pohjat toistavat samaa lausetta tai teksti palaa
+    julkaisutarkistajan 19.10 blokkaamiin lupauksiin ("every player", "Every number", "locked"),
+  * pelaamaton tai estolistan kapteeni mainitaan, tai CTA jää kauden viimeiselle kierrokselle,
   * sama kierros saa toisen issuen, tai työnkulku tai rele lakkaa kutsumasta generaattoria.
 """
 from __future__ import annotations
 
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +20,7 @@ import yaml
 
 JUURI = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(JUURI))
+from scripts import publish_gate  # noqa: E402
 from scripts import x_viikkoketju as xk  # noqa: E402
 
 NYT = datetime(2026, 10, 20, 12, tzinfo=timezone.utc)
@@ -37,12 +42,19 @@ def _bootstrap(gw7_valmis=True, gw8_deadline="2026-10-23T17:30:00Z"):
 
 
 HISTORIA = {"current": [
-    {"event": 6, "points": 57, "total_points": 382, "overall_rank": 2_730_030, "event_transfers_cost": 0},
-    {"event": 7, "points": 81, "total_points": 459, "overall_rank": 1_618_187, "event_transfers_cost": 4},
+    {"event": 6, "points": 57, "total_points": 382, "overall_rank": 2_730_030, "event_transfers_cost": 0,
+     "overall_rank_percentage": 25},
+    {"event": 7, "points": 81, "total_points": 459, "overall_rank": 1_618_187, "event_transfers_cost": 4,
+     "overall_rank_percentage": 15},
 ]}
 PICKS = {"active_chip": "bboost", "picks": [{"element": 2, "is_captain": False, "multiplier": 1},
                                             {"element": 1, "is_captain": True, "multiplier": 2}]}
-LIVE = {"elements": [{"id": 1, "stats": {"total_points": 13}}, {"id": 2, "stats": {"total_points": 2}}]}
+LIVE = {"elements": [{"id": 1, "stats": {"total_points": 13, "minutes": 90}},
+                     {"id": 2, "stats": {"total_points": 2, "minutes": 90}}]}
+
+
+def _d(**muutos):
+    return {**xk.kokoa(7, _bootstrap(), HISTORIA, PICKS, LIVE), **muutos}
 
 
 def test_vain_lopullinen_kierros_ennen_seuraavaa_deadlinea():
@@ -54,35 +66,66 @@ def test_vain_lopullinen_kierros_ennen_seuraavaa_deadlinea():
     assert xk.lopullinen_kierros(b, NYT) is None, "finished ilman data_checked ei ole lopullinen"
 
 
-def test_kauden_ero_fpl_kokonaispisteista_keskiarvojen_summaa_vastaan():
+def test_kauden_ero_ja_top_prosentti_fpl_n_luvuista():
     b = _bootstrap()
     historia = {"current": [{"event": g, "points": 50, "total_points": 50 * g, "overall_rank": 1,
-                             "event_transfers_cost": 0} for g in range(1, 6)] + HISTORIA["current"]}
+                             "event_transfers_cost": 0, "overall_rank_percentage": 1} for g in range(1, 6)]
+                + HISTORIA["current"]}
     for g, ka in zip(range(1, 6), (50, 81, 51, 69, 48)):
         b["events"].append({"id": g, "finished": True, "data_checked": True, "average_entry_score": ka})
     d = xk.kokoa(7, b, historia, PICKS, LIVE)
     assert d["kokonais"] == 459 and d["keskiarvo_summa"] == 50 + 81 + 51 + 69 + 48 + 58 + 55
-    assert d["hitti"] == 4 and d["top_pct"] == 15 and d["chip"] == "Bench Boost"
-    assert (d["kapteeni"], d["kapteeni_pisteet"], d["kerroin"]) == ("Haaland", 13, 2)
+    assert d["hitti"] == 4 and d["chip"] == "Bench Boost"
+    assert d["top_pct"] == 15, "FPL:n overall_rank_percentage, ei rank/total-kaavaa"
+    assert (d["kapteeni"], d["kapteeni_pisteet"], d["kapteeni_minuutit"], d["kerroin"]) == ("Haaland", 13, 90, 2)
+    ilman = {"current": [{**HISTORIA["current"][1], "overall_rank_percentage": None}, HISTORIA["current"][0]]}
+    assert xk.kokoa(7, _bootstrap(), ilman, PICKS, LIVE)["top_pct"] is None, "puuttuva on None, ei laskettu"
 
 
-def test_viestit_mahtuvat_eivatka_sisalla_viivoja_ja_pohjia_on_kolme():
-    b = _bootstrap()
-    d = xk.kokoa(7, b, HISTORIA, PICKS, LIVE)
-    rungot = set()
+# Kapteeni-, chip- ja tasolause ovat datapaloja, jotka pohjat jakavat tarkoituksella (julkaisutarkistajan
+# 19.10 korjaama rakenne). Runko eli pohjan oma lause ei saa toistua.
+DATAPALAT = re.compile(r"^(#\.?|Top #% overall\.|Overall rank #\.|We played the [A-Za-z ]+\.|"
+                       r".+ with the armband:|.+ blanked with the armband\.|Triple Captain on .+)$")
+
+
+def _lauseet(viestit):
+    teksti = re.sub(r"https?://\S+|\d[\d,]*", "#", " ".join(viestit))
+    return {s.strip() for s in re.split(r"(?<=[.:])\s+", teksti) if s.strip() and not DATAPALAT.match(s.strip())}
+
+
+def test_pohjat_mahtuvat_eivat_toista_lauseita_eivatka_lupaa_blokattua():
+    viesteja, lauseet = {}, {}
     for gw in (6, 7, 8):
-        viestit = xk.ketju({**d, "gw": gw, "seuraava": gw + 1})
-        assert len(viestit) == 4
+        viestit = xk.ketju(_d(gw=gw, seuraava=gw + 1))
+        viesteja[gw % 3] = len(viestit)
         for v in viestit:
-            assert xk.x_pituus(v) <= xk.X_MAX and "—" not in v and "–" not in v
-        assert "116920" in "".join(viestit) and "utm_source=x" in viestit[-1], "CTA ja tarkistus mukana"
-        rungot.add(viestit[0].split(":")[0][:20])
-    assert len(rungot) == 3, "sama runko joka viikko on AI-tunnusmerkki"
+            assert xk.x_pituus(v) <= xk.X_MAX and "—" not in v and "–" not in v and "’" not in v
+        koko = " ".join(viestit)
+        assert "116920" in koko and "utm_source=x" in viestit[-1] and "/fpl/best-captain?" in viestit[-1]
+        for kielletty in ("every player", "Every number", "locked", "model's own FPL team", "in public"):
+            assert kielletty not in koko, kielletty
+        for s in _lauseet(viestit):
+            lauseet.setdefault(s, set()).add(gw % 3)
+    assert viesteja == {0: 3, 1: 2, 2: 3}
+    toistuvat = [s for s, pohjat in lauseet.items() if len(pohjat) > 1]
+    assert not toistuvat, f"sama lause useassa pohjassa: {toistuvat}"
 
 
-def test_yksikko_ja_ero_molempiin_suuntiin():
+def test_pelaamaton_ja_estolistan_kapteeni_eivat_nay():
+    assert "Haaland" in " ".join(xk.ketju(_d()))
+    assert "Haaland" not in " ".join(xk.ketju(_d(kapteeni_minuutit=0, kapteeni_pisteet=0)))
+    estetty = publish_gate.load_blocklist()[0]["name"]
+    assert estetty not in " ".join(xk.ketju(_d(kapteeni=estetty)))
+
+
+def test_viimeinen_kierros_ilman_cta_ta_ja_triple_captain():
+    viestit = xk.ketju(_d(gw=38, seuraava=None))
+    assert "goaliq.app" not in " ".join(viestit) and "None" not in " ".join(viestit)
+    assert "Triple Captain on Haaland: 39." in " ".join(xk.ketju(_d(kerroin=3, chip="Triple Captain")))
+
+
+def test_yksikko():
     assert xk._p(1) == "1 point" and xk._p(2) == "2 points"
-    assert xk._ero(-9) == "9 points below" and xk._ero(1) == "1 point above" and xk._ero(0) == "level with"
 
 
 def test_sama_kierros_ei_saa_toista_issueta(monkeypatch):
