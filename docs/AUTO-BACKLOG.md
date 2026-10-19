@@ -104,7 +104,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   Search Consolessa (12.10) "Löydetty, ei toistaiseksi indeksoitu" -luokassa on 347 URL:ia, lähes kaikki
   ottelusivuja, ja ottelusivujen näytöt ovat olleet lähes nolla 22.8 alkaen. Vaihtoehto on pysyvä tulossivu
   (ennen kickoffia kirjattu ennuste ja toteuma samasta lokista kuin track record). Se muuttaa sivuston
-  rakennetta, joten päätös on ylläpitäjän ennen riviä.
+  rakennetta, joten päätös on ylläpitäjän ennen riviä. Ylläpitäjä päätti 19.10: pysyvä tulossivu. → backlog 2026-10-19
 - 2026-10: pro.goaliq.app-juuri ei anna canonical-tagia, joten seurantaparametrit (`src`, `srcp`, `tab`) tekevät
   siitä kopioita: Search Console (12.10) listaa 125 parametrillista juuren URL:ia ilman valittua ensisijaista
   osoitetta, ja osa näkyy hakutuloksissa omina sivuinaan. Alireiteillä (esim. /spl) canonical on jo. Juuri saa
@@ -159,6 +159,20 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   (yllapitajan signaali 2026-10-16, lahde: Signaalit; riippuu edellisesta rivista)
       Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · tyo M · myynti 3/3 · uutuus 1/2 = 9
       Mittari: data/bsky_performance.json customers-osio ei tyhja kun kanavalta on tili · tarkistus 2026-11-15
+- [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
+  ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
+  (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
+  `result`, muuten tilan "result pending", ja linkin /predictions#record. Sama maskaus kuin nyt (vain 1X2-%).
+  Kauden jo poistetut sivut syntyvät uudelleen samasta lokista samalla slug-logiikalla (esim.
+  /predictions/la-liga/real-madrid-vs-real-sociedad palaa 404:stä). Julkaistu URL ei koskaan vaihdu: jos myöhempi
+  ottelu saisi saman slugin, se saa päivämääräsuffiksin. Liigahub listaa tulevien rinnalla viimeisen 7 päivän
+  pelatut, ja sivustokartta sisältää pelatut (lastmod = tuloksen päivä). Vaihetesti samalla rivillä: ennen
+  kickoffia, kickoffin jälkeen ilman tulosta, tuloksen jälkeen; ennusteluvut ja URL identtiset kaikissa
+  vaiheissa, ja testi kaatuu jos poisto (`unlink`) palaa tai luku tulee muualta kuin lokista. Cloudflare Pagesin
+  20 000 tiedoston raja tarkistetaan builderissa. PR:n Julkinen teksti -osioon pelatun sivun otsikko ja
+  tuloslauseet sanatarkasti (julkaisutarkistaja ennen mergeä). (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ L · myynti 3/3 · uutuus 1/2 = 11
+      Mittari: pelattu ottelusivu palauttaa 200 ennusteen ja tuloksen kanssa, ja gsc.json:n sivut-listalla on vähintään 20 ottelusivua (19.10: 9) · tarkistus 2026-12-14
 - [ ] Jakokortin PIL-generaattori uuteen ulkoasuun: `scripts/gen_share_card.py` piirtää saman asettelun
   kuin SPA:n ja sivujen kortti (`scripts/share_card_js.py`, web/pro-spa). Todennus: `tests/test_share_card_*.py`
   vihreä ja uusi testi, joka vertaa kortin rivien järjestyksen ja otsikot JS-kortin sopimukseen.
