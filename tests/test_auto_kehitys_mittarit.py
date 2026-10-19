@@ -176,6 +176,122 @@ def test_puuttuva_avain_on_puuttuu_ei_nolla():
     assert md.hae_gsc(None, None)["tila"] == "puuttuu"
 
 
+# ------------------------------------------------------------------ mittausdata: piikki ei ole tason muutos
+# Search Consolen päivänäytöt 18.10 ajon jaksoilta (sc-domain:goaliq.app, luettu 19.10). GSC jättää
+# nollapäivät pois, siksi 26.9 puuttuu nykyjaksosta.
+GSC_ENNEN = dict(zip(
+    [f"2026-08-{d:02d}" for d in range(21, 32)] + [f"2026-09-{d:02d}" for d in range(1, 18)],
+    [586, 19, 10, 16, 17, 11, 15, 12, 10, 22, 15, 34, 26, 29, 46, 23, 39, 39, 20, 49, 35, 73, 61, 42, 47, 21, 7, 18]))
+GSC_NYT = dict(zip(
+    [f"2026-09-{d:02d}" for d in range(18, 26)] + [f"2026-09-{d:02d}" for d in range(27, 31)]
+    + [f"2026-10-{d:02d}" for d in range(1, 16)],
+    [11, 10, 4, 7, 5, 6, 18, 11, 3, 8, 3, 18, 7, 2, 7, 6, 7, 5, 7, 2, 10, 15, 8, 10, 16, 6, 9]))
+GSC_DIMENSIOT = {
+    "date": lambda alku: [{"keys": [p], "impressions": n, "clicks": 1}
+                          for p, n in (GSC_NYT if alku >= "2026-09-18" else GSC_ENNEN).items()],
+    "page": lambda alku: ([{"keys": ["https://goaliq.app/"], "impressions": 150, "clicks": 30}]
+                          + ([] if alku >= "2026-09-18" else
+                             [{"keys": ["https://goaliq.app/predictions/la-liga/a-vs-b"], "impressions": 431, "clicks": 0}])),
+    "query": lambda alku: [{"keys": ["goaliq"], "impressions": 120, "clicks": 30},
+                           {"keys": ["fpl tools"], "impressions": 40, "clicks": 3}],
+}
+
+
+def _vale_gsc(monkeypatch):
+    import types
+
+    class Istunto:
+        def __init__(self, _cr):
+            pass
+
+        def post(self, _url, json, timeout):
+            dims = json.get("dimensions")
+            if dims:
+                rivit = GSC_DIMENSIOT[dims[0]](json["startDate"])
+            else:
+                lahde = GSC_NYT if json["startDate"] >= "2026-09-18" else GSC_ENNEN
+                rivit = [{"impressions": sum(lahde.values()), "clicks": 35, "ctr": 0.158, "position": 14.1}]
+            return types.SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"rows": rivit})
+
+    tr = types.ModuleType("google.auth.transport.requests")
+    tr.AuthorizedSession = Istunto
+    sa = types.ModuleType("google.oauth2.service_account")
+    sa.Credentials = types.SimpleNamespace(from_service_account_info=lambda info, scopes: object())
+    for nimi, moduuli in (("google", types.ModuleType("google")), ("google.auth", types.ModuleType("google.auth")),
+                          ("google.auth.transport", types.ModuleType("google.auth.transport")),
+                          ("google.auth.transport.requests", tr),
+                          ("google.oauth2", types.ModuleType("google.oauth2")),
+                          ("google.oauth2.service_account", sa)):
+        monkeypatch.setitem(sys.modules, nimi, moduuli)
+    monkeypatch.setattr(sys.modules["google.oauth2"], "service_account", sa, raising=False)
+    monkeypatch.setattr(sys.modules["google.auth.transport"], "requests", tr, raising=False)
+
+
+def test_gsc_piikki_vertailujaksossa_saa_tulkinnan_ja_mediaanin(monkeypatch):
+    import datetime as dt
+    import json
+
+    _vale_gsc(monkeypatch)
+    g = md.hae_gsc("{}", dt.date(2026, 10, 18))
+    assert g["tila"] == "ok", g
+    y = g["yhteensa"]
+    assert y["naytot_muutos_pct"] == -83.5  # 18.10:n luku, joka luettiin pudotukseksi
+    assert y["piikki_vertailujaksossa"] is True and y["huippu3_osuus_pct"]["ennen"] >= md.PIIKKI_RAJA_PCT
+    assert "2026-08-21" in y["tulkinta"] and "mediaanimuutosta" in y["tulkinta"]
+    # Päivämediaani 22.5 -> 7: taso laski (kauden alun ja ilmaisikkunan aikainen taso), mutta ei -83,5 %.
+    assert y["naytot_mediaani_muutos_pct"] == -68.9
+    assert y["brandihaut_klikeista_pct"] == 90.9
+    kadonnut = [s for s in g["sivut_vertailujaksossa"] if "a-vs-b" in s["sivu"]]
+    assert kadonnut and kadonnut[0]["naytot_muutos_pct"] == -100.0
+    assert not [s for s in g["sivut"] if "a-vs-b" in s["sivu"]], "nykyjakson lista ei näytä kadonnutta sivua"
+    teksti = json.dumps(g)
+    for maara in ("586", "1342", "221", "431"):
+        assert maara not in teksti, f"absoluuttinen määrä {maara} vuotaa tuotokseen"
+
+
+def test_gsc_ilman_piikkia_kokonaismuutos_on_vertailukelpoinen():
+    import datetime as dt
+
+    a, b = dt.date(2026, 9, 1), dt.date(2026, 9, 28)
+    tasainen = [{"keys": [(a + dt.timedelta(days=i)).isoformat()], "impressions": 10, "clicks": 1} for i in range(28)]
+    t = md.gsc_paivatunnusluvut(tasainen, tasainen, a, b, a, b)
+    assert t["piikki_vertailujaksossa"] is False and t["piikki_tassa_jaksossa"] is False
+    assert "vertailukelpoisia" in t["tulkinta"] and t["naytot_mediaani_muutos_pct"] == 0.0
+
+
+def test_gsc_puuttuva_paiva_on_nolla_ei_pois_mediaanista():
+    import datetime as dt
+
+    a, b = dt.date(2026, 9, 1), dt.date(2026, 9, 4)
+    # Kaksi päivää neljästä puuttuu: oikea mediaani on 2.5 (0, 0, 5, 10), ilman täyttöä 7.5.
+    nyt = [{"keys": ["2026-09-01"], "impressions": 5}, {"keys": ["2026-09-02"], "impressions": 10}]
+    ennen = [{"keys": [(a + dt.timedelta(days=i)).isoformat()], "impressions": 5} for i in range(4)]
+    assert md.gsc_paivatunnusluvut(nyt, ennen, a, b, a, b)["naytot_mediaani_muutos_pct"] == -50.0
+
+
+def test_posthog_viikkokayttajat_ilman_maaria(monkeypatch):
+    import json
+    import types
+
+    viikot = [["2026-09-07T00:00:00Z", 65, 34, 355, 7], ["2026-09-14T00:00:00Z", 39, 13, 290, 9]]
+
+    def post(_url, headers, json, timeout):
+        q = json["query"]["query"]
+        tulos = viikot if "toStartOfWeek" in q else [["paywall_shown", 955, 800]] if "GROUP BY event" in q else []
+        return types.SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"results": tulos})
+
+    monkeypatch.setattr(md.requests, "post", post)
+    p = md.hae_posthog("avain")
+    assert p["tila"] == "ok", p
+    eka, toka = p["viikkokayttajat"]
+    assert eka["sovellus"] == {"kayttajia": "10-99", "muutos_edellisesta_pct": None}
+    assert toka["viikko"] == "2026-09-14" and toka["sovellus"]["muutos_edellisesta_pct"] == -40.0
+    assert "toStartOfWeek(now(), 1)" in md.HOGQL_VIIKOT, "kesken oleva viikko näyttäisi pudotukselta"
+    teksti = json.dumps(p["viikkokayttajat"])
+    for maara in ("65", "34", "355", "39", "290"):
+        assert f": {maara}" not in teksti and f"[{maara}" not in teksti
+
+
 def test_aallonharja_sulkee_mittarit_ja_tarkistaa_ne_mainin_versiolla():
     doc = yaml.safe_load((JUURI / ".github" / "workflows" / "aallonharja.yml").read_text(encoding="utf-8"))
     agentti = doc["jobs"]["agentti"]
