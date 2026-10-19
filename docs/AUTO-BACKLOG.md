@@ -110,8 +110,8 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   siitä kopioita: Search Console (12.10) listaa 125 parametrillista juuren URL:ia ilman valittua ensisijaista
   osoitetta, ja osa näkyy hakutuloksissa omina sivuinaan. Alireiteillä (esim. /spl) canonical on jo. Juuri saa
   canonicalin ilman kyselyparametreja samalla lukijalla kuin alireitit, ja testi kaatuu jos se puuttuu.
-- 2026-10: Myyvä todiste on FPL:n itse tarkistettava luku, mutta sitä ei käytetä. Mallin oma joukkue (entry 116920)
-  on FPL:n entry history -rajapinnan mukaan GW1-6 yhteensä +25 pistettä FPL:n keskiarvon yläpuolella (chipit
+- 2026-10: Myyvä todiste on FPL:n itse tarkistettava luku, mutta sitä ei käytetä. Mallin rungolla pelattava joukkue
+  (entry 116920; runko tulee mallista, chipit ovat ylläpitäjän päätöksiä) on FPL:n entry history -rajapinnan mukaan GW1-6 yhteensä +25 pistettä FPL:n keskiarvon yläpuolella (chipit
   mukana), ja GW7:n alustavilla luvuilla kokonaissijoitus on noin top 15 %. `data/gw_recap.json` sisältää kaksi
   sarjaa: `running` (jäädytetty mallijoukkue ilman chippejä, -15 viidellä kierroksella, ei ilmaispinnalla) ja
   `entry_series` (FPL:n oma luku). Recap-PR käytti ensimmäistä, ja julkaisutarkistaja blokkasi sen, koska lukua ei
@@ -153,7 +153,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   `data/fpl_xp_projections.json` Danso GW12 xp 0. (ylläpitäjän signaali 2026-10, lähde: Signaalit, docs/BENCHMARK.md) (PR, 2026-10-16)
       Pisteet: (lukittu) arvo 3/3 · kiire 2/3 · työ M · myynti 1/3 · uutuus 0/2 = 7
       Mittari: data/fpl_xp_projections.json Danso GW12 xp 0.0 ja testit vihreät · tarkistus 2026-10-26
-- [ ] Mallin oman FPL-joukkueen kirjanpito ilmaispinnalle (ylläpitäjän päätös 2026-10-19): `data/gw_recap.json`
+- [ ] Entry 116920:n kirjanpito ilmaispinnalle (ylläpitäjän päätös 2026-10-19): `data/gw_recap.json`
   `entry_series` (entry 116920, FPL:n omat pisteet chipit mukaan ja FPL:n `average_entry_score`) näkyy
   goaliq.app/fpl-sivulla omana osionaan `#model-entry`: kierroksittain pisteet, FPL-keskiarvo, ero ja juokseva ero,
   sekä kokonaissijoitus ja managerien määrä. Sijoitus ja managerien määrä tulevat FPL:n entry history- ja
@@ -163,13 +163,15 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   sarakkeenaan. Linkki FPL:n entry-sivulle, josta lukija tarkistaa saman luvun. Yksi lukija (esim.
   `src/models/model_squad_scores.py: model_entry_ledger()`), jota sivu ja API käyttävät, ja sama lukija syöttää
   seuraavan rivin lukot. Vaihetesti: kesken oleva kierros ei näy, gradattu näkyy, uusi kausi ei peri edellisen
-  sarjaa; testi kaatuu, jos gradausehto poistetaan. Builder, regeneroitu sivu ja llms.txt samassa PR:ssä. PR:n
+  sarjaa; testi kaatuu, jos gradausehto poistetaan. Builder, regeneroitu sivu ja llms.txt samassa PR:ssä. Julkinen
+  sanamuoto: "We play our model's squad in FPL (entry 116920)", ja chipit mainitaan meidän päätöksinämme;
+  "model's own FPL team" on hylätty (`data/rejected_phrases.json`, 29.9), koska chipit eivät tule mallista. PR:n
   Julkinen teksti -osioon otsikko ja lauseet sanatarkasti. (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
       Mittari: goaliq.app/fpl#model-entry näyttää jokaisen gradatun kierroksen, ja luvut täsmäävät FPL:n entry history -rajapintaan (testi ja live) · tarkistus 2026-11-02
 - [ ] Todiste jokaiseen lukkoon (ylläpitäjän päätös 2026-10-19): SPA:n lukkokomponentit (`Paywall.svelte`,
   `LockedToolPreview.svelte`, `PersonalLock.svelte`, `PremiumPreview.svelte`) näyttävät yhden todisterivin
-  edellisen rivin lukijasta: mallin oman joukkueen juokseva ero FPL-keskiarvoon ja kokonaissijoitus viimeisimmän
+  edellisen rivin lukijasta: entry 116920:n juokseva ero FPL-keskiarvoon ja kokonaissijoitus viimeisimmän
   gradatun kierroksen jälkeen, ja linkit /fpl#model-entry-osioon ja FPL:n entry-sivulle. Luku näytetään sellaisenaan
   myös silloin, kun ero on negatiivinen: testi kaatuu, jos rivin näkyminen riippuu luvun etumerkistä. Puuttuva sarja
   tarkoittaa, että riviä ei näytetä (ei nollaa). Premium-lupauksen teksti, hinnat ja ostopainikkeet eivät muutu.
