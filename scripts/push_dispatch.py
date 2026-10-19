@@ -222,51 +222,58 @@ def deadline_message(gw: int, remaining_h: float) -> tuple[str, str]:
 # Henkilokohtainen deadline-push (19.10.2026, yllapitajan paatos)
 # --------------------------------------------------------------------------
 # Massalahetys ei toiminut (GW5-sahkoposti 18.9: avattu 7,2 %, 0 klikkia), mutta viesti omasta joukkueesta ei
-# ole massalahetys. 24 h -ikkunassa laite, jonka tililla on FPL entry ID, saa saman siirtosuunnitelman kuin
-# sovellus (`fpl_planner.plan_transfers`: yksi lukija, ei toista laskentaa). Ilmaiselle vain suunnitelman
-# xP-hyoty, koska siirrot ovat Premiumia (`api.premium.personal_tools_enforced`); Premiumille siirto ja
-# kapteeni. Kaikki virheet -> yleinen viesti: henkilokohtainen on lisa, se ei saa estaa muistutusta.
+# ole massalahetys. 24 h -ikkunassa laite, jonka tililla on FPL entry ID, saa saman vastauksen kuin
+# sovelluksen This week, johon push avautuu (`fpl_rate_team.rate_team`: yksi lukija). Ilmaiselle vain
+# parhaan siirron xP-hyoty, koska siirrot ovat Premiumia (`api.premium.personal_tools_enforced`);
+# Premiumille siirto ja kapteeni. Kaikki virheet -> yleinen viesti: henkilokohtainen on lisa, se ei saa estaa muistutusta.
 PERSONAL_KINDS = frozenset({"deadline_24h"})
 PERSONAL_MAX_ENTRIES = 300   # ajoaika: yksi FPL-haku entrya kohden
 
 
-def personal_body(plan: dict, gw: int, is_premium: bool, enforced: bool) -> str | None:
-    """Henkilokohtainen runko suunnitelmasta, tai None -> yleinen viesti.
+def personal_body(rt: dict, gw: int, is_premium: bool, enforced: bool) -> str | None:
+    """Henkilokohtainen runko rate-teamista, tai None -> yleinen viesti.
 
-    None, jos suunnitelma ei ala tasta kierroksesta (artefakti laahaa), jos ilmaiselle ei voi luvata
-    Premiumia (lukitus ei ole alkanut) tai jos ilmaisen suunnitelma on hold (pelkka hold on jo neuvo).
+    Julkaisutarkistajan 19.10 korjaama versio sellaisenaan. Lahde on rate-team, koska push avaa This week
+    -nakyman, joka lukee samaa (`gw_deadline` -> 'week'); planner oli eri mielta siirrosta, luvusta ja
+    kapteenista. Runko on aina edellisen kierroksen (FPL ei julkaise tulevaa ennen deadlinea), siksi etuliite.
     """
-    hv = plan.get("hold_verdict") or {}
-    rows = plan.get("plan") or []
-    if not rows or rows[0].get("gw") != gw or hv.get("gw_from") != gw:
+    meta = rt.get("meta") or {}
+    tr = rt.get("transfers") or {}
+    hv = tr.get("hold_verdict") or {}
+    if hv.get("gw_from") != gw or meta.get("captain_gw") != gw:
         return None
+    if meta.get("freehit_reverted_from") is not None:
+        return None
+    src_gw = meta.get("picks_gw")
+    if not (meta.get("picks_outdated") is True and isinstance(src_gw, int)):
+        return None
+    pre = f"From your GW{src_gw} squad"
     gw_to = hv.get("gw_to") or gw
     span = f"GW{gw}-GW{gw_to}" if gw_to != gw else f"GW{gw}"
-    cap = ((rows[0].get("captain") or {}).get("web_name") or "").strip()
-    gain = hv.get("best_move_gain_xp")
-    if hv.get("verdict") == "transfer" and isinstance(gain, (int, float)) and gain > 0:
+    cap = (((rt.get("captain") or {}).get("pick") or {}).get("web_name") or "").strip()
+    sug = (tr.get("suggestions") or [None])[0]
+    if hv.get("verdict") == "transfer" and tr.get("hold") is False and sug:
+        delta = sug.get("delta_xp_horizon")
+        if not isinstance(delta, (int, float)) or delta <= 0:
+            return None
         if not is_premium:
             if not enforced:
                 return None
-            return (f"The model checked your team: its transfer plan adds {gain:.1f} xP over {span}. "
-                    "The moves are in GoalIQ Premium.")
-        moves = rows[0].get("transfers") or []
-        if not moves:
-            return (f"The model's plan for your team adds {gain:.1f} xP over {span}, with no transfer "
-                    f"this gameweek." + (f" Captain: {cap}." if cap else ""))
-        m = moves[0]
-        lisa = f" (+{len(moves) - 1} more)" if len(moves) > 1 else ""
-        return (f"Your GW{gw} move: {m['out']['web_name']} out, {m['in']['web_name']} in{lisa}. "
-                f"The plan adds {gain:.1f} xP over {span}." + (f" Captain: {cap}." if cap else ""))
-    if is_premium and cap:
-        return f"The model would roll your transfer this gameweek. Captain: {cap}."
+            return (f"{pre}, the model found a transfer worth +{delta:.1f} xP over {span}. "
+                    "It's in GoalIQ Premium.")
+        return (f"{pre}: {sug['out']['web_name']} out, {sug['in']['web_name']} in, "
+                f"+{delta:.1f} xP over {span}." + (f" Captain: {cap}." if cap else ""))
+    if hv.get("verdict") == "hold" and tr.get("hold") is True and is_premium and cap:
+        return f"{pre}, the model would roll your transfer this gameweek. Captain: {cap}."
     return None
 
 
 def plan_for_entry(entry: int) -> dict:
-    """Sama suunnitelma kuin sovelluksen Transfers-nakyma (oletushorisontti, 1 vapaa siirto)."""
-    from src.models import fpl_planner
-    return fpl_planner.plan_transfers(entry=int(entry))
+    """Sama vastaus kuin sovelluksen This week -nakymalla (/api/fantasy/rate-team?entry=, ft oletus 1).
+
+    Maskaamaton: runner ei ole HTTP-pyynto, ja ilmaisen tekstiin paatyy vain luku (personal_body)."""
+    from src.models import fpl_rate_team
+    return fpl_rate_team.rate_team(entry=int(entry))
 
 
 def tools_enforced(now: _dt.datetime) -> bool:
