@@ -122,6 +122,11 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   chippejä käyttämättä, on päätös edessä marras-joulukuussa, ja chip timing on Premiumissa. Ilmaista näkymää "mitkä
   chipit minulla on jäljellä ja kuinka kauan" ei ole (grep web/pro-spa 19.10). Ylläpitäjä päätti 19.10:
   chip-tarkistin ilmaiseksi, ajoitussuunnitelma lukon takana. → backlog 2026-10-19
+- 2026-10: X-linkkien kanava ei tallennu tilille: `utm_source=x` ja `utm_medium=partner` hylätään, koska
+  `web/pro-spa/src/lib/partnerAttribution.ts`:n `PARTNER_RE = /^[a-z0-9_-]{2,32}$/` vaatii vähintään kaksi merkkiä.
+  Koskee X-viikkoketjua ja Bluesky-botin X-peilausta, eli X:stä tulleita tilejä ei voi erottaa. Kuuluu
+  kanava-attribuutiorivin testeihin: lähde `x` tallentuu, ja testi kaatuu, jos yhden merkin lähde hylätään.
+  (julkaisutarkistaja 19.10)
 - 2026-10: IHMISEN PROJEKTI (ei agentille): henkilökohtainen deadline-viesti nykyisille ilmaistileille (oman joukkueen
   kapteeni ja lukittu siirtoehdotus xP-hyötyineen). Massalähetys ei toiminut (GW5-deadlineviesti 18.9: avattu
   7,2 %, klikkejä 0), mutta viesti omasta joukkueesta ei ole massalähetys. `profiles.fpl_entry_id` on olemassa,
