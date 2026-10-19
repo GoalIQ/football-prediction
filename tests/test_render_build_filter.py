@@ -70,6 +70,14 @@ FPL_REFRESH_BOT = [
     "fpl/club/arsenal.html",
     "fpl.html",
     "sitemap-fpl.xml",
+    # 19.10.2026: tuotannon bottikommitin (a18613cb74, "daily projections refresh (availability)") oikeat
+    # polut. Vanha fikstuuri ei sisaltanyt niita, joten testi oli vihrea vaikka 35/50 lokakuun
+    # commit-deploysta tuli juuri naista (muisti: testisyote mitataan tuotannosta).
+    "assets/cards/cards.json",
+    "assets/cards/gameweek-card.webp",
+    "assets/cards/gameweek-card-450.webp",
+    "assets/cards/projected-xi-card.webp",
+    "assets/cards/projected-xi-card-450.webp",
 ]
 GEO_BOT = [
     "fpl.html",
@@ -98,6 +106,18 @@ def test_koodimuutos_laukaisee_buildin_yha():
     for path in ("api/main.py", "src/models/fpl_rate_team.py",
                  "requirements-api.txt", "render.yaml"):
         assert not _build_skipped([path]), f"{path} EI saa olla ignoroitu"
+
+
+def test_ignoroidut_kortit_eivat_ole_apin_luettavia():
+    """assets/cards/** on ignoroitu VAIN koska API ei lue sita. Jos api/ tai src/ alkaa lukea korttia,
+    ignorointi jattaisi API:n vanhaan korttiin ilman virhetta: poista silloin rivi render.yamlista."""
+    assert any(_matches("assets/cards/cards.json", p) for p in _ignored_paths())
+    lukijat = [str(f.relative_to(RENDER_YAML.parent)) for juuri in ("api", "src")
+               for f in (RENDER_YAML.parent / juuri).rglob("*.py")
+               if "assets/cards" in f.read_text(encoding="utf-8", errors="replace")]
+    assert not lukijat, f"API lukee assets/cards/:ia, ignorointi ei ole enaa turvallinen: {lukijat}"
+    # Negatiivinen kontrolli: muu assets/ (brand) ei ole ignoroitu.
+    assert not _build_skipped(["assets/brand/goaliq-wordmark-teletext.png"])
 
 
 def test_sekakommitti_laukaisee_buildin():
