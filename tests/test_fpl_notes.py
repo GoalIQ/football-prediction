@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -98,6 +98,10 @@ def test_muistio_linkittaa_tarkistussivulle():
 # paasi vain alatunnisteen kautta — kirjoitettu sisalto oli kaytannossa
 # nakymatonta, eli sen kirjoittaminen oli hukkaan heitettya tyota.
 
+#: Elokuun fikstuurien "tanaan". Nosto kayttaa tuoreusrajaa (20.10.2026).
+ELO = date(2026, 8, 16)
+
+
 def test_etusivun_lohko_ilman_dataa_on_tyhja():
     from scripts.build_fpl_page import latest_articles_block
     assert latest_articles_block(None) == ""
@@ -115,11 +119,12 @@ def test_etusivun_lohko_nayttaa_VAIN_uusimman():
         {"slug": "uusi", "date": "2026-08-15", "title": "Uusi",
          "paragraphs": ["B."]},
     ]
-    html = latest_articles_block({"notes": notes})
+    html = latest_articles_block({"notes": notes}, today=ELO)
     assert "Uusi" in html
     assert "Vanha" not in html, "featured-lohkossa on useampi kuin yksi kortti"
     # Jarjestys on silti uusin ensin, mikä nakyy kun rajaa nostetaan.
-    kaksi = latest_articles_block({"notes": notes}, limit=2)
+    notes[0]["date"] = "2026-08-10"
+    kaksi = latest_articles_block({"notes": notes}, limit=2, today=ELO)
     assert kaksi.index("Uusi") < kaksi.index("Vanha")
 
 
@@ -132,7 +137,8 @@ def test_etusivun_lohko_linkittaa_artikkelin_omaan_urliin():
     `og:url`:n mukaan. Vaatimus on sama, kohde tarkempi."""
     from scripts.build_fpl_page import latest_articles_block
     html = latest_articles_block({"notes": [
-        {"slug": "abc", "date": "2026-08-15", "title": "T", "paragraphs": ["A."]}]})
+        {"slug": "abc", "date": "2026-08-15", "title": "T", "paragraphs": ["A."]}]},
+        today=ELO)
     assert 'href="/fpl/note/abc"' in html
     # Kortti ei saa osoittaa pelkkaan kokoomasivuun: se on "sivun ylaosa".
     assert 'class="note-card" href="/fpl/notes"' not in html
@@ -144,7 +150,8 @@ def test_etusivun_lohko_ei_katkaise_ledea():
     from scripts.build_fpl_page import latest_articles_block
     lede = "Ensimmainen kappale joka on tarkoituksella melko pitka jotta katkaisu nakyisi."
     html = latest_articles_block({"notes": [
-        {"slug": "a", "date": "2026-08-15", "title": "T", "paragraphs": [lede]}]})
+        {"slug": "a", "date": "2026-08-15", "title": "T", "paragraphs": [lede]}]},
+        today=ELO)
     assert lede in html
     assert "…" not in html and "..." not in html
 
@@ -174,17 +181,22 @@ def test_etusivun_lohko_on_SAMA_kuin_notes_json():
     Korjaus on yksi komento samaan committiin:
 
         .venv/Scripts/python.exe -c "from scripts.build_fpl_page import             sync_index_articles; sync_index_articles()"
+
+    20.10.2026: tyhja lohko on myos vertailukelpoinen tulos. Ennen tata
+    testi skippasi tyhjan, joten vanhentunut kortti ei nakynyt missaan.
+    Vuorokauden armo: muistio voi ylittaa tuoreusrajan keskiyolla, ja
+    ajastettu refresh kirjoittaa lohkon seuraavalla ajollaan.
     """
     from scripts.build_fpl_page import latest_articles_block, _load_json, NOTES_PATH
-    odotettu = latest_articles_block(_load_json(NOTES_PATH))
-    if not odotettu:  # pragma: no cover - muistioita ei ole
-        pytest.skip("data/fpl_notes.json on tyhja")
+    tanaan = datetime.now(timezone.utc).date()
+    sallitut = {latest_articles_block(_load_json(NOTES_PATH), today=d)
+                for d in (tanaan, tanaan - timedelta(days=1))}
     idx = (ROOT / "index.html").read_text(encoding="utf-8")
     alku = idx.index("<!-- GEN:LATEST-ARTICLES-START -->") + len(
         "<!-- GEN:LATEST-ARTICLES-START -->")
     loppu = idx.index("<!-- GEN:LATEST-ARTICLES-END -->")
     livena = idx[alku:loppu]
-    assert livena == odotettu, (
+    assert livena in sallitut, (
         "etusivun featured-lohko ei vastaa data/fpl_notes.json:ia — uusi "
         "muistio ei ole etusivulla. Aja samaan committiin: "
         "sync_index_articles() (scripts/build_fpl_page.py)")
@@ -329,3 +341,72 @@ def test_jokainen_muistio_on_fpl_sitemapissa():
     assert not puuttuu, (
         f"muistio(t) puuttuu sitemap-fpl.xml:sta: {puuttuu}. Lisaa <url>-lohko "
         "(sama muoto kuin muilla /fpl/note/-riveilla) tai aja build_fpl_longtail.")
+
+
+# ---------------------------------------------------------------------------
+# 20.10.2026 (Villen havainto): etusivu nosti 2.10 muistiota 18 vrk myohemmin,
+# koska muistioita ei enaa kirjoiteta ja lohko valitsi aina uusimman.
+# Invariantti mitataan useassa vaiheessa (CLAUDE.md 6a kohta 3), ei vain tanaan.
+
+def test_etusivun_nosto_vanhenee_tuoreusrajalla():
+    from scripts.build_fpl_page import (FEATURED_NOTE_MAX_AGE_DAYS,
+                                        latest_articles_block)
+    doc = {"notes": [{"slug": "m", "date": "2026-10-02", "title": "Muistio",
+                      "paragraphs": ["Kappale."]}]}
+    julkaistu = date(2026, 10, 2)
+    for ika in (0, 1, FEATURED_NOTE_MAX_AGE_DAYS):
+        assert "Muistio" in latest_articles_block(
+            doc, today=julkaistu + timedelta(days=ika)), ika
+    for ika in (FEATURED_NOTE_MAX_AGE_DAYS + 1, 18, 200):
+        assert latest_articles_block(
+            doc, today=julkaistu + timedelta(days=ika)) == "", ika
+
+
+def test_vanhentunut_ei_nosta_tilalle_vanhempaa_eika_paivayksetonta():
+    """Rajan takaa ei kaiveta seuraavaa: kaikki vanhat ovat yhta vanhoja.
+    Paivayksetonta muistiota ei voi mitata, joten se ei paase nostoon."""
+    from scripts.build_fpl_page import latest_articles_block
+    doc = {"notes": [
+        {"slug": "a", "date": "2026-09-01", "title": "Syyskuu", "paragraphs": ["A."]},
+        {"slug": "b", "date": "2026-10-02", "title": "Lokakuu", "paragraphs": ["B."]},
+        {"slug": "c", "title": "Ilman paivaa", "paragraphs": ["C."]},
+        {"slug": "d", "date": "ei-paiva", "title": "Rikkinainen", "paragraphs": ["D."]},
+    ]}
+    assert latest_articles_block(doc, limit=4, today=date(2026, 10, 20)) == ""
+    kaksi = latest_articles_block(doc, limit=4, today=date(2026, 10, 10))
+    assert "Lokakuu" in kaksi
+    for pois in ("Syyskuu", "Ilman paivaa", "Rikkinainen"):
+        assert pois not in kaksi
+
+
+def test_sync_tyhjentaa_vanhentuneen_kortin(tmp_path, monkeypatch):
+    """Kutsupaikka, ei vain funktio: ennen 20.10 molemmat kirjoittajat
+    ohittivat tyhjan lohkon, joten vanha kortti jai sivulle."""
+    import scripts.build_fpl_page as bfp
+    idx = tmp_path / "index.html"
+    idx.write_text(
+        "<p>alku</p><!-- GEN:LATEST-ARTICLES-START --><a class=\"note-card\">"
+        "VANHA KORTTI</a><!-- GEN:LATEST-ARTICLES-END --><p>loppu</p>",
+        encoding="utf-8")
+    notes = tmp_path / "fpl_notes.json"
+    notes.write_text(json.dumps({"notes": [
+        {"slug": "x", "date": "2026-01-01", "title": "Vanha", "paragraphs": ["A."]}]}),
+        encoding="utf-8")
+    monkeypatch.setattr(bfp, "INDEX_PATH", idx)
+    monkeypatch.setattr(bfp, "NOTES_PATH", notes)
+    assert bfp.sync_index_articles() is True
+    assert idx.read_text(encoding="utf-8") == (
+        "<p>alku</p><!-- GEN:LATEST-ARTICLES-START -->"
+        "<!-- GEN:LATEST-ARTICLES-END --><p>loppu</p>")
+    # Toinen ajo ei muuta mitaan.
+    assert bfp.sync_index_articles() is False
+
+
+def test_update_index_kayttaa_samaa_kirjoittajaa():
+    """update_index ei saa splissata lohkoa omalla koodillaan: oma koodi oli
+    se joka ohitti tyhjan lohkon. Yksi kirjoittaja, tarkistettu lahteesta."""
+    import inspect
+    import scripts.build_fpl_page as bfp
+    lahde = inspect.getsource(bfp.update_index)
+    assert "splice_latest_articles(" in lahde
+    assert "latest_articles_block(" not in lahde
