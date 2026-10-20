@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-10-20T15:30:11+00:00",
+  "updated_at": "2026-10-20T18:54:34+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2462,
+  "pending": 2460,
   "voided": 57,
   "all_time": {
-    "n": 815,
-    "correct_1x2": 421,
-    "pct_1x2": 0.5166,
-    "draw_n": 208,
-    "pct_draw": 0.2552,
-    "decisive_n": 607,
-    "decisive_correct": 421,
-    "pct_decisive": 0.6936,
-    "exact_n": 815,
+    "n": 817,
+    "correct_1x2": 422,
+    "pct_1x2": 0.5165,
+    "draw_n": 209,
+    "pct_draw": 0.2558,
+    "decisive_n": 608,
+    "decisive_correct": 422,
+    "pct_decisive": 0.6941,
+    "exact_n": 817,
     "exact_correct": 94,
-    "pct_exact": 0.1153,
-    "brier": 0.587,
-    "brier_n": 815
+    "pct_exact": 0.1151,
+    "brier": 0.5873,
+    "brier_n": 817
   },
   "rolling": {
     "n": 100,
     "correct_1x2": 58,
     "pct_1x2": 0.58,
-    "draw_n": 16,
-    "pct_draw": 0.16,
-    "decisive_n": 84,
+    "draw_n": 17,
+    "pct_draw": 0.17,
+    "decisive_n": 83,
     "decisive_correct": 58,
-    "pct_decisive": 0.6905,
+    "pct_decisive": 0.6988,
     "exact_n": 100,
     "exact_correct": 6,
     "pct_exact": 0.06,
-    "brier": 0.5761,
+    "brier": 0.5699,
     "brier_n": 100,
     "window": 100
   },
@@ -67,19 +67,19 @@
       "brier_n": 127
     },
     "CL": {
-      "n": 27,
-      "correct_1x2": 18,
-      "pct_1x2": 0.6667,
-      "draw_n": 2,
-      "pct_draw": 0.0741,
-      "decisive_n": 25,
-      "decisive_correct": 18,
-      "pct_decisive": 0.72,
-      "exact_n": 27,
+      "n": 29,
+      "correct_1x2": 19,
+      "pct_1x2": 0.6552,
+      "draw_n": 3,
+      "pct_draw": 0.1034,
+      "decisive_n": 26,
+      "decisive_correct": 19,
+      "pct_decisive": 0.7308,
+      "exact_n": 29,
       "exact_correct": 2,
       "pct_exact": null,
       "brier": null,
-      "brier_n": 27
+      "brier_n": 29
     },
     "DED": {
       "n": 70,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 759,
-      "correct_1x2": 386,
-      "pct_1x2": 0.5086,
-      "draw_n": 193,
-      "pct_draw": 0.2543,
-      "decisive_n": 566,
-      "decisive_correct": 386,
-      "pct_decisive": 0.682,
-      "exact_n": 759,
+      "n": 761,
+      "correct_1x2": 387,
+      "pct_1x2": 0.5085,
+      "draw_n": 194,
+      "pct_draw": 0.2549,
+      "decisive_n": 567,
+      "decisive_correct": 387,
+      "pct_decisive": 0.6825,
+      "exact_n": 761,
       "exact_correct": 83,
-      "pct_exact": 0.1094,
-      "brier": 0.594,
-      "brier_n": 759,
+      "pct_exact": 0.1091,
+      "brier": 0.5943,
+      "brier_n": 761,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 677,
-      "correct_1x2": 360,
-      "pct_1x2": 0.5318,
-      "draw_n": 158,
-      "pct_draw": 0.2334,
-      "decisive_n": 519,
-      "decisive_correct": 360,
-      "pct_decisive": 0.6936,
-      "exact_n": 677,
+      "n": 679,
+      "correct_1x2": 361,
+      "pct_1x2": 0.5317,
+      "draw_n": 159,
+      "pct_draw": 0.2342,
+      "decisive_n": 520,
+      "decisive_correct": 361,
+      "pct_decisive": 0.6942,
+      "exact_n": 679,
       "exact_correct": 73,
-      "pct_exact": 0.1078,
-      "brier": 0.5816,
-      "brier_n": 677
+      "pct_exact": 0.1075,
+      "brier": 0.582,
+      "brier_n": 679
     },
     "stale": {
       "n": 138,
@@ -293,16 +293,16 @@
       "n": 60
     },
     {
-      "bin_mid": 0.1612,
-      "predicted": 0.1612,
-      "actual": 0.142,
-      "n": 317
+      "bin_mid": 0.1613,
+      "predicted": 0.1613,
+      "actual": 0.1442,
+      "n": 319
     },
     {
-      "bin_mid": 0.2541,
-      "predicted": 0.2541,
-      "actual": 0.2631,
-      "n": 916
+      "bin_mid": 0.254,
+      "predicted": 0.254,
+      "actual": 0.2625,
+      "n": 918
     },
     {
       "bin_mid": 0.3411,
@@ -319,14 +319,14 @@
     {
       "bin_mid": 0.5466,
       "predicted": 0.5466,
-      "actual": 0.5638,
-      "n": 188
+      "actual": 0.5661,
+      "n": 189
     },
     {
       "bin_mid": 0.6455,
       "predicted": 0.6455,
-      "actual": 0.7222,
-      "n": 108
+      "actual": 0.7156,
+      "n": 109
     },
     {
       "bin_mid": 0.7393,
@@ -348,6 +348,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-20",
+      "home_team": "Fenerbahçe SK",
+      "away_team": "SK Slavia Praha",
+      "predicted_winner": "home",
+      "p_winner": 0.6491,
+      "lead_h": 1.3,
+      "most_likely_score": "2-1",
+      "actual_score": "2-2",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-10-20",
+      "home_team": "Sabah FK",
+      "away_team": "Borussia Dortmund",
+      "predicted_winner": "away",
+      "p_winner": 0.5592,
+      "lead_h": 1.3,
+      "most_likely_score": "1-1",
+      "actual_score": "1-2",
+      "actual_outcome": "away",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-19",
       "home_team": "Corinthians",
@@ -615,36 +645,6 @@
       "actual_outcome": "away",
       "hit_1x2": false,
       "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-18",
-      "home_team": "Paris FC",
-      "away_team": "Stade Rennais FC 1901",
-      "predicted_winner": "home",
-      "p_winner": 0.5234,
-      "lead_h": 2.4,
-      "most_likely_score": "1-1",
-      "actual_score": "4-3",
-      "actual_outcome": "home",
-      "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-18",
-      "home_team": "Nottingham Forest",
-      "away_team": "Arsenal",
-      "predicted_winner": "away",
-      "p_winner": 0.6018,
-      "lead_h": 2.6,
-      "most_likely_score": "0-1",
-      "actual_score": "0-1",
-      "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": true,
       "duration": null,
       "regular_score": null
     }
