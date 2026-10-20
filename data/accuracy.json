@@ -1,37 +1,37 @@
 {
-  "updated_at": "2026-10-20T00:16:28+00:00",
+  "updated_at": "2026-10-20T03:53:58+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2463,
+  "pending": 2462,
   "voided": 57,
   "all_time": {
-    "n": 814,
+    "n": 815,
     "correct_1x2": 421,
-    "pct_1x2": 0.5172,
-    "draw_n": 207,
-    "pct_draw": 0.2543,
+    "pct_1x2": 0.5166,
+    "draw_n": 208,
+    "pct_draw": 0.2552,
     "decisive_n": 607,
     "decisive_correct": 421,
     "pct_decisive": 0.6936,
-    "exact_n": 814,
-    "exact_correct": 93,
-    "pct_exact": 0.1143,
-    "brier": 0.5868,
-    "brier_n": 814
+    "exact_n": 815,
+    "exact_correct": 94,
+    "pct_exact": 0.1153,
+    "brier": 0.587,
+    "brier_n": 815
   },
   "rolling": {
     "n": 100,
-    "correct_1x2": 59,
-    "pct_1x2": 0.59,
-    "draw_n": 15,
-    "pct_draw": 0.15,
-    "decisive_n": 85,
-    "decisive_correct": 59,
-    "pct_decisive": 0.6941,
+    "correct_1x2": 58,
+    "pct_1x2": 0.58,
+    "draw_n": 16,
+    "pct_draw": 0.16,
+    "decisive_n": 84,
+    "decisive_correct": 58,
+    "pct_decisive": 0.6905,
     "exact_n": 100,
-    "exact_correct": 5,
-    "pct_exact": 0.05,
-    "brier": 0.5715,
+    "exact_correct": 6,
+    "pct_exact": 0.06,
+    "brier": 0.5761,
     "brier_n": 100,
     "window": 100
   },
@@ -52,19 +52,19 @@
       "brier_n": 54
     },
     "BSA": {
-      "n": 126,
+      "n": 127,
       "correct_1x2": 59,
-      "pct_1x2": 0.4683,
-      "draw_n": 38,
-      "pct_draw": 0.3016,
+      "pct_1x2": 0.4646,
+      "draw_n": 39,
+      "pct_draw": 0.3071,
       "decisive_n": 88,
       "decisive_correct": 59,
       "pct_decisive": 0.6705,
-      "exact_n": 126,
-      "exact_correct": 18,
-      "pct_exact": 0.1429,
-      "brier": 0.6029,
-      "brier_n": 126
+      "exact_n": 127,
+      "exact_correct": 19,
+      "pct_exact": 0.1496,
+      "brier": 0.6038,
+      "brier_n": 127
     },
     "CL": {
       "n": 27,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 758,
+      "n": 759,
       "correct_1x2": 386,
-      "pct_1x2": 0.5092,
-      "draw_n": 192,
-      "pct_draw": 0.2533,
+      "pct_1x2": 0.5086,
+      "draw_n": 193,
+      "pct_draw": 0.2543,
       "decisive_n": 566,
       "decisive_correct": 386,
       "pct_decisive": 0.682,
-      "exact_n": 758,
-      "exact_correct": 82,
-      "pct_exact": 0.1082,
-      "brier": 0.5939,
-      "brier_n": 758,
+      "exact_n": 759,
+      "exact_correct": 83,
+      "pct_exact": 0.1094,
+      "brier": 0.594,
+      "brier_n": 759,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 676,
+      "n": 677,
       "correct_1x2": 360,
-      "pct_1x2": 0.5325,
-      "draw_n": 157,
-      "pct_draw": 0.2322,
+      "pct_1x2": 0.5318,
+      "draw_n": 158,
+      "pct_draw": 0.2334,
       "decisive_n": 519,
       "decisive_correct": 360,
       "pct_decisive": 0.6936,
-      "exact_n": 676,
-      "exact_correct": 72,
-      "pct_exact": 0.1065,
-      "brier": 0.5814,
-      "brier_n": 676
+      "exact_n": 677,
+      "exact_correct": 73,
+      "pct_exact": 0.1078,
+      "brier": 0.5816,
+      "brier_n": 677
     },
     "stale": {
       "n": 138,
@@ -301,20 +301,20 @@
     {
       "bin_mid": 0.2541,
       "predicted": 0.2541,
-      "actual": 0.2634,
-      "n": 915
+      "actual": 0.2631,
+      "n": 916
     },
     {
-      "bin_mid": 0.3412,
-      "predicted": 0.3412,
-      "actual": 0.3174,
-      "n": 482
+      "bin_mid": 0.3411,
+      "predicted": 0.3411,
+      "actual": 0.3188,
+      "n": 483
     },
     {
       "bin_mid": 0.4466,
       "predicted": 0.4466,
-      "actual": 0.4385,
-      "n": 301
+      "actual": 0.4371,
+      "n": 302
     },
     {
       "bin_mid": 0.5466,
@@ -348,6 +348,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-19",
+      "home_team": "Corinthians",
+      "away_team": "Vitoria",
+      "predicted_winner": "home",
+      "p_winner": 0.4415,
+      "lead_h": 1.6,
+      "most_likely_score": "1-1",
+      "actual_score": "1-1",
+      "actual_outcome": "draw",
+      "hit_1x2": false,
+      "exact_hit": true,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-19",
       "home_team": "Getafe CF",
@@ -630,21 +645,6 @@
       "actual_outcome": "away",
       "hit_1x2": true,
       "exact_hit": true,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-18",
-      "home_team": "Groningen",
-      "away_team": "Ajax",
-      "predicted_winner": "away",
-      "p_winner": 0.4142,
-      "lead_h": 1.9,
-      "most_likely_score": "1-1",
-      "actual_score": "2-5",
-      "actual_outcome": "away",
-      "hit_1x2": true,
-      "exact_hit": false,
       "duration": null,
       "regular_score": null
     }
