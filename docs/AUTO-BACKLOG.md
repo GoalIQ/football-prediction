@@ -142,6 +142,14 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   20.10: ennusteet takaisin näkyviin kokeiluna GW10-katsaukseen asti, ja tulos luetaan ostopolusta tuotteittain
   (mittausdata `ostopolku.tuotteittain`, lisätty käsin 20.10). Store-tekstit eivät muutu ennen kuin iOS-version
   ikärajapäätös on tehty. → backlog 2026-10-20
+- 2026-10: Julkisessa View Sourcessa on suomea: `<!-- GEN:FREE-...-START  check_free_window.py --fix renderoi
+  taman; ala muokkaa kasin -->` etusivulla neljästi (index.html, merkit FREE-BAND, FREE-CTA, FREE-HERO-PRICE ja
+  yksi sivun alempana) ja /predictions-sivulla kerran. `tests/test_viewsource_comments.py`:n `FINNISH`-sanalista ei
+  tunne sanoja renderoi, taman, ala muokkaa ja kasin, joten portti on vihreä. `scripts/check_free_window.py`
+  tunnistaa merkin regexillä `GEN:{key}-START[^>]*-->`, joten merkin perään voi kirjoittaa englanniksi (esim.
+  "rendered by check_free_window.py --fix; do not edit by hand") skriptiin koskematta, ja sanalista laajenee samassa
+  muutoksessa. Huom: index.html on agentilta kielletty (myyntilupaus), joten etusivun merkit vaihtaa ihminen
+  mergen yhteydessä. (julkaisutarkistaja 20.10)
 
 ## Avoimet
 
