@@ -159,6 +159,12 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   (a) `--thought` vain kun aivojen askel onnistui (työnkulun ehto, käsin mergen yhteydessä) ja/tai
   `cmd_publish` ei kirjaa `last_think_at`:ia ilman jonoa; (b) aivojen kaatuminen avaa tai päivittää
   yhden issuen ylläpitäjälle (sama kanava kuin X-jono, ei uutta issueta joka tunti).
+- 2026-10: X-jonon issuet (label `x-jono`) jäävät auki: 20.10 auki 9, vanhimmat 18.10 ("tonight" -hintapostauksia,
+  jotka vanhenevat samana päivänä). Issuen teksti pyytää sulkemaan käsin, mutta mikään ei lue tilaa
+  (x_viikkoketju tarkistaa otsikot myös suljetuista). Ylläpitäjä kysyi 20.10, pitääkö ne sulkea erikseen.
+  Ehdotus: `bsky_bot x-mirror` ja `x_viikkoketju` sulkevat omat issuensa, kun ne vanhenevat (bsky-peili 24 h,
+  kierrosketju seuraavan deadlinen jälkeen) kommentilla "vanhentunut, ei postattu tai postattu käsin";
+  issuen tekstistä pois sulkemispyyntö. Kummallakin askeleella on jo `issues: write`, joten työnkulkuun ei koskea.
 
 ## Avoimet
 
