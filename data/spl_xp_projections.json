@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-10-20T14:07:36",
+  "generated_at": "2026-10-20T15:32:03",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -685,6 +685,105 @@
       }
      ],
      "xp": 6.48
+    }
+   ]
+  },
+  {
+   "id": 471,
+   "web_name": "Retegui",
+   "full_name": "Mateo Retegui",
+   "team": "Al Qadsiah",
+   "team_short": "QAD",
+   "pos": "FWD",
+   "price": 9.1,
+   "owned_pct": 12.6,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 6,
+   "xmins": 75.6,
+   "predicted_starts": 87.9,
+   "minutes_confidence": "med",
+   "p_start": 0.8792,
+   "p_cameo": 0.0,
+   "p_bench": 0.1208,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 2337,
+    "goals": 16,
+    "assists": 4,
+    "cs": 9,
+    "points": 189,
+    "per90": {
+     "goals": 0.6,
+     "assists": 0.16
+    }
+   },
+   "xp_per_gw": 5.88,
+   "xp_per_90": 7.1,
+   "xp_horizon_total": 35.27,
+   "gameweeks": [
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "A"
+      }
+     ],
+     "xp": 6.01
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "H"
+      }
+     ],
+     "xp": 4.97
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "A"
+      }
+     ],
+     "xp": 6.58
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "H"
+      }
+     ],
+     "xp": 6.21
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "NAS",
+       "venue": "A"
+      }
+     ],
+     "xp": 5.04
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "H"
+      }
+     ],
+     "xp": 6.46
     }
    ]
   },
@@ -5740,7 +5839,7 @@
    "team_short": "SHB",
    "pos": "MID",
    "price": 5.5,
-   "owned_pct": 5.0,
+   "owned_pct": 5.1,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -7598,105 +7697,6 @@
       }
      ],
      "xp": 3.45
-    }
-   ]
-  },
-  {
-   "id": 471,
-   "web_name": "Retegui",
-   "full_name": "Mateo Retegui",
-   "team": "Al Qadsiah",
-   "team_short": "QAD",
-   "pos": "FWD",
-   "price": 9.1,
-   "owned_pct": 12.6,
-   "status": "d",
-   "news": "Doubtful - مشكوك في مشاركته",
-   "chance_next": 50,
-   "yellows": 6,
-   "xmins": 37.8,
-   "predicted_starts": 44.0,
-   "minutes_confidence": "med",
-   "p_start": 0.4396,
-   "p_cameo": 0.0,
-   "p_bench": 0.5604,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 2337,
-    "goals": 16,
-    "assists": 4,
-    "cs": 9,
-    "points": 189,
-    "per90": {
-     "goals": 0.6,
-     "assists": 0.16
-    }
-   },
-   "xp_per_gw": 2.81,
-   "xp_per_90": 7.1,
-   "xp_horizon_total": 16.86,
-   "gameweeks": [
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.87
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.36
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.16
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.98
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "NAS",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.39
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.1
     }
    ]
   },
@@ -13060,6 +13060,105 @@
    "p_bench": 0.208,
    "data_basis": "no_history",
    "last_season": null,
+   "xp_per_gw": 2.23,
+   "xp_per_90": 4.7,
+   "xp_horizon_total": 13.37,
+   "gameweeks": [
+    {
+     "gw": 10,
+     "opponents": [
+      {
+       "opp": "DIR",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.54
+    },
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.22
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.47
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "FAT",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.22
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "HAZ",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.36
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "ABH",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.56
+    }
+   ]
+  },
+  {
+   "id": 655,
+   "web_name": "H. Majrashi",
+   "full_name": "Hussam Shami Ali Jarshbi Majrashi",
+   "team": "Al Riyadh",
+   "team_short": "RIY",
+   "pos": "DEF",
+   "price": 4.0,
+   "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 0,
+   "xmins": 50.0,
+   "predicted_starts": 51.7,
+   "minutes_confidence": "low",
+   "p_start": 0.517,
+   "p_cameo": 0.275,
+   "p_bench": 0.208,
+   "data_basis": "no_history",
+   "last_season": {
+    "season": "2024/25",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.04,
+     "assists": 0.07
+    }
+   },
    "xp_per_gw": 2.23,
    "xp_per_90": 4.7,
    "xp_horizon_total": 13.37,
@@ -21961,7 +22060,7 @@
    "team_short": "QAD",
    "pos": "MID",
    "price": 7.3,
-   "owned_pct": 19.1,
+   "owned_pct": 19.2,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -26652,105 +26751,6 @@
       }
      ],
      "xp": 0.96
-    }
-   ]
-  },
-  {
-   "id": 655,
-   "web_name": "H. Majrashi",
-   "full_name": "Hussam Shami Ali Jarshbi Majrashi",
-   "team": "Al Riyadh",
-   "team_short": "RIY",
-   "pos": "DEF",
-   "price": 4.0,
-   "owned_pct": 0.1,
-   "status": "d",
-   "news": "Doubtful - مشكوك في مشاركته",
-   "chance_next": 50,
-   "yellows": 0,
-   "xmins": 27.7,
-   "predicted_starts": 25.9,
-   "minutes_confidence": "low",
-   "p_start": 0.2585,
-   "p_cameo": 0.275,
-   "p_bench": 0.4665,
-   "data_basis": "no_history",
-   "last_season": {
-    "season": "2024/25",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.04,
-     "assists": 0.07
-    }
-   },
-   "xp_per_gw": 1.09,
-   "xp_per_90": 4.7,
-   "xp_horizon_total": 6.55,
-   "gameweeks": [
-    {
-     "gw": 10,
-     "opponents": [
-      {
-       "opp": "DIR",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.25
-    },
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.09
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.69
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "FAT",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.09
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "HAZ",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.16
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "ABH",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.27
     }
    ]
   },
