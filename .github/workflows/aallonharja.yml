@@ -159,6 +159,8 @@ jobs:
                Kirjaa myös ostopolku (posthog.json "ostopolku", 19.10): napautus lukosta ja osto napautuksesta
                alustoittain sekä lukot, joilla napautusosuus on pienin, nyt vs edellinen jakso. pieni_otos = true
                tarkoittaa, että suhde ei kanna johtopäätöstä: sano se, älä tee siitä riviä yksinään.
+               Kirjaa lisäksi "tuotteittain" (20.10, ennustekokeilu GW10-katsaukseen asti): napautus lukosta
+               ennusteelle ja FPL:lle alustoittain, nyt vs edellinen jakso, yhdellä rivillä kumpaakin.
             0c. HAKUKONE. Jos /tmp/mittausdata/gsc.json on "ok": etsi sivut, joilla on paljon näyttöjä (pieni
                nayttosija) mutta matala CTR tai sijainti 5-15, ja haut, joihin mikään sivu ei vastaa hyvin. Tee
                niistä Signaaleja ja enintään yksi backlog-rivi, jonka Mittari on GSC:n CTR tai sijainti kyseiselle

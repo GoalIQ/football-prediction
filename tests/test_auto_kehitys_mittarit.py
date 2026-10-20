@@ -342,6 +342,34 @@ def test_ostopolku_suhdeluvut_ilman_maaria(monkeypatch):
         assert "uniqIf(distinct_id, event = 'paywall_shown'" in kysely and "purchase_completed" in kysely
 
 
+def test_ostopolku_tuotteittain(monkeypatch):
+    """20.10.2026: ennuste vs FPL samoilla suhdeluvuilla, eikä fixtures ole FPL:n lukko."""
+    import json
+    import types
+
+    tuotteet = [["ennuste", "mobiili", 444, 34, 0, 300, 20, 0], ["fpl", "mobiili", 351, 13, 0, 280, 12, 0]]
+
+    def post(_url, headers, json, timeout):
+        q = json["query"]["query"]
+        return types.SimpleNamespace(raise_for_status=lambda: None,
+                                     json=lambda: {"results": tuotteet if "GROUP BY tuote, alusta" in q else []})
+
+    monkeypatch.setattr(md.requests, "post", post)
+    o = md.hae_posthog("avain")["ostopolku"]
+    ennuste, fpl = o["tuotteittain"]
+    assert (ennuste["tuote"], ennuste["alusta"]) == ("ennuste", "mobiili")
+    assert ennuste["nyt"]["napautus_lukosta_pct"] == 7.7 and fpl["nyt"]["napautus_lukosta_pct"] == 3.7
+    teksti = json.dumps(o)
+    for maara in ("444", "351", "34", "300", "280"):
+        assert f": {maara}" not in teksti and f"[{maara}" not in teksti, maara
+    assert "fixtures" in md.TUOTE_ENNUSTE and "fixtures" not in md.TUOTE_FPL
+    assert not set(md.TUOTE_ENNUSTE) & set(md.TUOTE_FPL)
+    assert not any(s.startswith(md.TUOTE_FPL_ETULIITE) for s in md.TUOTE_ENNUSTE)
+    for s in md.TUOTE_ENNUSTE + md.TUOTE_FPL:
+        assert repr(s) in md.HOGQL_OSTOPOLKU_TUOTTEET, s
+    assert "uniqIf(distinct_id, event = 'paywall_shown'" in md.HOGQL_OSTOPOLKU_TUOTTEET
+
+
 def test_ostopolun_lahde_siivotaan():
     (r,) = md.siivoa_ostopolku([["<script>x</script>" * 5, 1, 0, 0, 0, 0, 0]], ("lahde",))
     assert "<" not in r["lahde"] and len(r["lahde"]) <= 40
@@ -359,7 +387,7 @@ def test_konversio_kuljettaa_entry_id_osuuden():
 def test_aallonharja_kirjaa_ostopolun():
     doc = yaml.safe_load((JUURI / ".github" / "workflows" / "aallonharja.yml").read_text(encoding="utf-8"))
     prompt = next(s for s in doc["jobs"]["agentti"]["steps"] if "claude-code-action" in str(s.get("uses")))["with"]["prompt"]
-    assert '"ostopolku"' in prompt and "pieni_otos" in prompt
+    assert '"ostopolku"' in prompt and "pieni_otos" in prompt and '"tuotteittain"' in prompt
 
 
 def test_aallonharja_sulkee_mittarit_ja_tarkistaa_ne_mainin_versiolla():
