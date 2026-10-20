@@ -135,9 +135,39 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   Ylläpitäjä valitsi 19.10 pushin (osto onnistuu sovelluksessa, sähköposti ei toiminut). Rakennettu käsin:
   `scripts/push_dispatch.py` lähettää 24 h -ikkunassa henkilökohtaisen rungon samasta siirtosuunnitelmasta kuin
   sovellus, ja PostHog-tapahtuma `push_personal` kertoo tavoitettavuuden (entry ID:lliset ja henkilökohtaiset).
+- 2026-10: Ennusteet ovat pimennetty tuote. Sovelluksessa ennustenäkymällä on vähintään yhtä paljon käyttäjiä kuin
+  FPL-näkymällä, ja ennusteiden lukot tuottavat napautuksia noin kaksinkertaisesti FPL-lukkoihin verrattuna
+  (PostHog 1.7.2026 alkaen, uniikit käyttäjät, mobiili). Silti kaikki jakelu on FPL:ää: Bluesky-botin
+  `briefing.numbers` ei sisällä yhtään ottelun lukua, ja aivojen ohje puhuu vain FPL-managereille. Ylläpitäjä päätti
+  20.10: ennusteet takaisin näkyviin kokeiluna GW10-katsaukseen asti, ja tulos luetaan ostopolusta tuotteittain
+  (mittausdata `ostopolku.tuotteittain`, lisätty käsin 20.10). Store-tekstit eivät muutu ennen kuin iOS-version
+  ikärajapäätös on tehty. → backlog 2026-10-20
+- 2026-10: Julkisessa View Sourcessa on suomea: `<!-- GEN:FREE-...-START  check_free_window.py --fix renderoi
+  taman; ala muokkaa kasin -->` etusivulla neljästi (index.html, merkit FREE-BAND, FREE-CTA, FREE-HERO-PRICE ja
+  yksi sivun alempana) ja /predictions-sivulla kerran. `tests/test_viewsource_comments.py`:n `FINNISH`-sanalista ei
+  tunne sanoja renderoi, taman, ala muokkaa ja kasin, joten portti on vihreä. `scripts/check_free_window.py`
+  tunnistaa merkin regexillä `GEN:{key}-START[^>]*-->`, joten merkin perään voi kirjoittaa englanniksi (esim.
+  "rendered by check_free_window.py --fix; do not edit by hand") skriptiin koskematta, ja sanalista laajenee samassa
+  muutoksessa. Huom: index.html on agentilta kielletty (myyntilupaus), joten etusivun merkit vaihtaa ihminen
+  mergen yhteydessä. (julkaisutarkistaja 20.10)
 
 ## Avoimet
 
+- [ ] Ottelun ennuste Bluesky-botin aiheeksi, kokeilu GW10-katsaukseen asti (ylläpitäjän päätös 2026-10-20): botti
+  ei voi nyt postata ottelun lukua, koska reply-moduulissa ei ole ottelukohtaista osiota. Lisää
+  `src/marketing/reply_sections.py`:hin osio `matches`: seuraavien 72 tunnin ottelut, joilla on julkaistu
+  ottelusivu, ja niiden 1X2-todennäköisyydet samasta lähteestä ja samalla muotoilulla kuin ottelusivulla
+  (`data/prediction_log.json`; `scripts/build_prediction_pages.py`:n `_upcoming_by_comp` ja `_fmt_pct` siirretään
+  yhdeksi lukijaksi, jota sivu ja osio kutsuvat). Jokaisen luvun `page` on ottelusivun URL, ja track record -osion
+  sivu on /predictions#record. Ottelu ilman julkaistua sivua ei tule osioon. Vaihetesti: ennen kickoffia mukana,
+  kickoffin jälkeen ei; testi kaatuu, jos osion luku eroaa sivun luvusta tai jos kutsupaikka poistetaan.
+  `bsky_gate` hylkää vedonlyöntisanat myös ennusteaiheessa (testi ennusteaiheen tekstillä). Työnkulun muutos
+  tehdään käsin mergen yhteydessä: `bsky-bot.yml`:n aivojen ohjeeseen ennusteaihe kokeilun ajaksi (noin joka
+  kolmas item aiheella prediction tai track_record); ohjeen ehdotus PR:n Julkaisu-osioon. PR:n Julkinen teksti
+  -osioon kolme esimerkkipostausta sanatarkasti (julkaisutarkistaja ennen mergeä). (ylläpitäjän signaali
+  2026-10-20, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
+      Mittari: data/bsky_performance.json by_topic.prediction n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-08
 - [ ] Automaattinen kierrosrecap goaliq.app/fpl/notes-sivulle (ylläpitäjän päätös 2026-10-17): muistioita ei enää
   kirjoiteta käsin, joten sivustolle ei tule uutta sisältöä. Uusi `scripts/build_fpl_recap_note.py` lisää
   `data/fpl_notes.json`:iin yhden recap-muistion kierrosta kohden samaan muotoon kuin nykyiset (slug, date, title,

@@ -303,6 +303,21 @@ HOGQL_OSTOPOLKU_LAHTEET = (f"SELECT coalesce(toString(properties.source), '?') A
                            f"{_OSTOPOLKU_SARAKKEET}\nGROUP BY lahde, alusta\nORDER BY lukko_nyt DESC\nLIMIT 60")
 HOGQL_OSTOPOLKU_ALUSTAT = f"SELECT {_ALUSTA} AS alusta,{_OSTOPOLKU_SARAKKEET}\nGROUP BY alusta"
 
+# 20.10.2026 (ylläpitäjän päätös, ennusteet takaisin näkyviin GW10-katsaukseen asti): ostopolku tuotteittain.
+# Lukon lähde kertoo tuotteen. fixtures on molemmilla alustoilla tulevien otteluiden lista, joka avaa
+# ennustenäkymän, ei FPL:n ottelutaulukko (20.10 käsin tehty analyysi luokitteli sen ensin väärin).
+# Luettelematon lähde menee luokkaan "muu" ja näkyy yhä lahteittain-listassa nimellään.
+TUOTE_ENNUSTE = ("scoreline", "parlay", "adjust_match", "predict", "fixtures", "card", "soft_prompt")
+TUOTE_FPL = ("pro_web_tool_lock", "personal_lock", "decision_transfer_lock", "chips_left")
+TUOTE_FPL_ETULIITE = "fantasy"
+_LAHDE = "toString(properties.source)"
+_TUOTE = ("multiIf("
+          f"{_LAHDE} IN ({', '.join(repr(s) for s in TUOTE_ENNUSTE)}), 'ennuste', "
+          f"startsWith({_LAHDE}, '{TUOTE_FPL_ETULIITE}') OR {_LAHDE} IN ({', '.join(repr(s) for s in TUOTE_FPL)}), "
+          "'fpl', 'muu')")
+HOGQL_OSTOPOLKU_TUOTTEET = (f"SELECT {_TUOTE} AS tuote, {_ALUSTA} AS alusta,"
+                            f"{_OSTOPOLKU_SARAKKEET}\nGROUP BY tuote, alusta\nORDER BY tuote, alusta")
+
 
 def _suhde_pct(osoittaja: float, nimittaja: float) -> float | None:
     return round(osoittaja / nimittaja * 100, 1) if nimittaja else None
@@ -370,9 +385,12 @@ def hae_posthog(avain: str | None) -> dict:
             "ostopolku": {
                 "selite": ("uniikit käyttäjät: lukko = paywall_shown, napautus = upgrade_tapped, osto = "
                            "purchase_completed; webin osto kantaa lähteen 'web', joten osto lukkoa kohden "
-                           f"luetaan alustoittain; pieni_otos = alle {PIENI_OTOS} lukon näkijää, suhde ei kanna"),
+                           f"luetaan alustoittain; pieni_otos = alle {PIENI_OTOS} lukon näkijää, suhde ei kanna; "
+                           "tuotteittain = lukon lähde luokiteltuna ennusteeseen, FPL:ään tai muuhun, ja webin "
+                           "osto näkyy siinä luokassa muu"),
                 "lahteittain": siivoa_ostopolku(kysy(HOGQL_OSTOPOLKU_LAHTEET), ("lahde", "alusta")),
                 "alustoittain": siivoa_ostopolku(kysy(HOGQL_OSTOPOLKU_ALUSTAT), ("alusta",)),
+                "tuotteittain": siivoa_ostopolku(kysy(HOGQL_OSTOPOLKU_TUOTTEET), ("tuote", "alusta")),
             },
         }
     except Exception as e:  # noqa: BLE001
