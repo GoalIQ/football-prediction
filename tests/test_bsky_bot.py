@@ -552,6 +552,32 @@ def test_kulku_nayttaa_vain_tyokalujen_nimet(tmp_path, capsys):
     assert _SALAISUUS not in out and "environ" not in out
 
 
+def test_kulku_kestaa_actionin_init_rivin(tmp_path, capsys):
+    """20.10: claude-code-action@v1 (db77d4d) kirjoitti execution_fileen init-rivin, jonka message on
+    merkkijono. Kulku kaatui AttributeErroriin, ja aivojen jono jai siirtamatta (0 postausta).
+    Rivi on sanatarkasti tuotannon ajosta 39466306906."""
+    import json
+    p = _exec(tmp_path, write_target="/tmp/bsky/queue.json")
+    msgs = json.loads(p.read_text(encoding="utf-8"))
+    msgs.insert(0, {"type": "system", "subtype": "init", "message": "Claude Code initialized",
+                    "model": "claude-sonnet-5-5"})
+    p.write_text(json.dumps(msgs), encoding="utf-8")
+    q = tmp_path / "queue.json"
+    q.write_text("[]", encoding="utf-8")
+    assert bot.cmd_brain_trace(p, q) == 0
+    assert "Write(queue.json) ok" in capsys.readouterr().out
+
+
+def test_jono_siirretaan_vaikka_kulku_kaatuisi():
+    """Kulku on diagnostiikkaa. Sen kaatuminen ei saa pudottaa aivojen jonoa: 20.10 upload-artifact
+    skippautui kaatuneen kulun takia ja julkaisu ei saanut mitaan."""
+    _t, doc = _wf()
+    askel = [s for s in doc["jobs"]["aivot"]["steps"] if str(s.get("uses", "")).startswith("actions/upload-artifact")]
+    assert len(askel) == 1
+    ehto = str(askel[0].get("if"))
+    assert "!cancelled()" in ehto and "steps.paata.outputs.think == 'true'" in ehto
+
+
 def test_workflow_ajaa_kulun_aivojen_jalkeen():
     wf = (Path(__file__).resolve().parents[1] / ".github/workflows/bsky-bot.yml").read_text(encoding="utf-8")
     assert "id: aivot_run" in wf
