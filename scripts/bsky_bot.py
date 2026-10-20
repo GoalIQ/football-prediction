@@ -834,7 +834,10 @@ def brain_trace(messages: list) -> tuple[list[str], str]:
     for m in messages:
         if not isinstance(m, dict):
             continue
-        content = (m.get("message") or {}).get("content")
+        # 20.10: claude-code-action@v1 (db77d4d) kirjoittaa init-riviin "message": "Claude Code initialized"
+        # (merkkijono). .get() kaatui siihen, ja kaatunut kulku esti jonon siirron julkaisuun.
+        msg = m.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
         if m.get("type") == "assistant" and isinstance(content, list):
             for c in content:
                 if isinstance(c, dict) and c.get("type") == "tool_use":
