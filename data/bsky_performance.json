@@ -2,10 +2,17 @@
  "by_topic": {
   "captain": {
    "engaged": 1,
-   "engaged_rate_bayes": 0.667,
-   "mean_engagement": 1.0,
-   "n": 1,
+   "engaged_rate_bayes": 0.5,
+   "mean_engagement": 0.5,
+   "n": 2,
    "sum": 1
+  },
+  "clean_sheets": {
+   "engaged": 0,
+   "engaged_rate_bayes": 0.333,
+   "mean_engagement": 0.0,
+   "n": 1,
+   "sum": 0
   },
   "injury": {
    "engaged": 0,
@@ -509,7 +516,11 @@
   {
    "at": "2026-10-20T17:52:01+00:00",
    "n": 5
+  },
+  {
+   "at": "2026-10-20T17:56:11+00:00",
+   "n": 5
   }
  ],
- "updated_at": "2026-10-20T17:52:01+00:00"
+ "updated_at": "2026-10-20T17:56:11+00:00"
 }
