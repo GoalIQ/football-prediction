@@ -3526,6 +3526,11 @@ def render_notes(notes_doc: dict, now: datetime) -> str | None:
     Teksti tulee siis `data/fpl_notes.json`:sta kasin kirjoitettuna kierrosta
     varten ja julkaisutarkistajan lapaisemana; tama funktio vain lataa sen.
 
+    POIKKEUS 21.10 (yllapitajan paatos 17.10): kierrosrecap (`recap-gwN`,
+    GW7 alkaen) generoidaan `scripts/build_fpl_recap_note.py`:lla. Sen kolme
+    pohjaa ajettiin julkaisutarkistajan lapi kerran, ei muistio kerrallaan,
+    ja sivun ingressi kertoo recapin olevan automaattinen.
+
     🔴 EI KUITENKAAN "ihmisen kirjoittama". Kirjoitin llms.txt:aan 15.8
     rivin "Written by a person, not generated" ja se oli VALHE: tekstin
     kirjoitti tama assistentti. Villen huomio samana paivana. Ero jota
@@ -3579,17 +3584,22 @@ def render_notes(notes_doc: dict, now: datetime) -> str | None:
 
     latest = notes[0]
     title = "FPL notes from the model | GoalIQ"
+    # 21.10: lupaukset "written when the numbers say something worth saying" ja
+    # "every figure is our own model output" lakkasivat pitamasta, kun
+    # kierrosrecap (build_fpl_recap_note) alkoi syntya joka kierros FPL:n
+    # pisteista. Julkaisutarkistajan 21.10 korvaava teksti.
     desc = (
-        "Short gameweek notes where every number comes from our own match "
-        "model and every one of them is on a free page you can open. Latest: "
+        "Short FPL gameweek notes, with an automatic recap of our calls and "
+        "projection error after each gameweek. Every figure is on a free page "
+        "you can open. Latest: "
         + str(latest.get("title") or "")
     )
     hero = (
         "<h1>Notes from the model</h1>"
-        '<p class="lede">Short notes, one per gameweek, written when the '
-        "numbers say something worth saying. Every figure here is our own "
-        "model output and every one of them sits on a free page you can open "
-        "and check. No sign-in.</p>"
+        '<p class="lede">Short gameweek notes. From gameweek 7 on, a recap is '
+        "added automatically once FPL confirms each gameweek, built from the "
+        "calls table and the accuracy table on goaliq.app/fpl. Every figure "
+        "sits on a free page you can open and check. No sign-in.</p>"
     )
     body = (
         "".join(blocks)

@@ -25,6 +25,12 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts import publish_gate  # noqa: E402
+from src.models.fpl_gw_xp import excluded  # noqa: E402
+
 RECAP_PATH = ROOT / "data" / "gw_recap.json"
 ACCURACY_PATH = ROOT / "data" / "fpl_xp_gw_accuracy.json"
 NOTES_PATH = ROOT / "data" / "fpl_notes.json"
@@ -82,8 +88,26 @@ def _pts(n: int) -> str:
     return f"{n} point" if abs(n) == 1 else f"{n} points"
 
 
-def _calls_facts(calls: dict) -> tuple[list[str], list[str], list[str]]:
-    """(osuneet, huteja, nimetyt luvut) vain kutsuista joilla on tulos."""
+_COUNT = {0: "none", 1: "one", 2: "two", 3: "three", 4: "four"}
+
+#: Sarakkeiden nimet kuten /fpl#xp-accuracy-taulukon otsikoissa, jotta lukija
+#: löytää jokaisen termin taulukosta.
+EP_NEXT, FORM = "FPL ep_next", "FPL form"
+
+
+def _count(n: int) -> str:
+    return _COUNT.get(n, str(n))
+
+
+def _cap(s: str) -> str:
+    return s[:1].upper() + s[1:]
+
+
+def _calls_facts(calls: dict) -> tuple[list[tuple[str, str, int]],
+                                       list[tuple[str, str, int]], list[str]]:
+    """(osuneet, huteja, nimetyt luvut) vain kutsuista joilla on tulos.
+    Rivi = (nimilappu, pelaaja, pisteet); muotoilu tehdään pohjakohtaisesti,
+    jottei sama 'Hit: ... Missed: ...' -runko toistu joka muistiossa."""
     hits, misses, nums = [], [], []
     for c in calls.get("calls") or []:
         if c.get("call") == "model_captain" or c.get("met") is None:
@@ -92,8 +116,7 @@ def _calls_facts(calls: dict) -> tuple[list[str], list[str], list[str]]:
         pts = c.get("points")
         if pts is None or not c.get("web_name"):
             continue
-        text = f"{label} {c['web_name']} ({_pts(pts)})"
-        (hits if c["met"] else misses).append(text)
+        (hits if c["met"] else misses).append((label, c["web_name"], pts))
         nums.append(str(pts))
     return hits, misses, nums
 
@@ -104,51 +127,107 @@ def _join(items: list[str]) -> str:
     return ", ".join(items[:-1]) + " and " + items[-1]
 
 
+def _items(rows: list[tuple[str, str, int]], tone: int) -> str:
+    out = []
+    for i, (label, name, pts) in enumerate(rows):
+        if tone == 0:
+            out.append(f"{label} {name} ({_pts(pts)})")
+        elif tone == 1:
+            out.append(f"{label} {name} on {pts}")
+        else:
+            out.append(f"{label} {name} with {_pts(pts) if i == 0 else pts}")
+    return _join(out)
+
+
 def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
+    """Osumat ja hudit samalla painolla. Lukumäärät sanoina; kaikki osuivat /
+    kaikki hutivat saavat oman lauseen ("4 of our 4" ja "0 didn't" eivät synny).
+    Alle kaksi pisteytettyä nostoa -> ei kappaletta.
+
+    Nimiesto fail-closed: loki (gw_calls) ei suodata nimiä tarkoituksella, mutta
+    muistio on julkaisu kuten X-ketju, joten sama estolista kuin korteilla
+    (EXCLUDED_NAMES + scripts/publish_blocklist.json). Estetty nimi -> ei
+    kutsukappaletta lainkaan, jottei luku "four" ja nimetyt nostot eroa."""
     hits, misses, nums = _calls_facts(calls)
-    if not hits and not misses:
+    if len(hits) + len(misses) < 2:
         return None, []
-    total = len(hits) + len(misses)
-    parts = []
-    if hits:
-        parts.append(f"Hit: {_join(hits)}.")
-    if misses:
-        parts.append(f"Missed: {_join(misses)}.")
-    lead = {
-        0: f"Of the {total} standout picks we made before the deadline, "
-           f"{len(hits)} came off and {len(misses)} didn't.",
-        1: f"The calls table scores our {total} standout picks for this "
-           f"gameweek: {len(hits)} hit, {len(misses)} missed.",
-        2: f"{len(hits)} of our {total} standout picks landed.",
-    }[tone]
-    return lead + " " + " ".join(parts), nums
+    estolista = publish_gate.load_blocklist()
+    if any(excluded(name, estolista) for _, name, _ in hits + misses):
+        return None, []
+    t, h, m = _count(len(hits) + len(misses)), _count(len(hits)), _count(len(misses))
+    hs, ms = _items(hits, tone), _items(misses, tone)
+    if tone == 0:
+        picks = "standout picks we made before the deadline"
+        if not misses:
+            return f"All {t} {picks} came off: {hs}.", nums
+        if not hits:
+            return f"None of the {t} {picks} came off: {ms}.", nums
+        return (f"Of the {t} {picks}, {h} came off and {m} didn't. "
+                f"Hit: {hs}. Missed: {ms}."), nums
+    if tone == 1:
+        lead = f"The calls table scores our {t} standout picks for this gameweek."
+        if not misses:
+            return f"{lead} All {t} hit: {hs}.", nums
+        if not hits:
+            return f"{lead} All {t} missed: {ms}.", nums
+        return f"{lead} {_cap(ms)} missed. {_cap(hs)} hit.", nums
+    if not misses:
+        return f"All {t} of our standout picks landed: {hs}.", nums
+    if not hits:
+        return f"None of our {t} standout picks landed: {ms}.", nums
+    return f"{_cap(h)} of our {t} standout picks landed: {hs}. {_cap(ms)} didn't.", nums
 
 
 def _accuracy_paragraph(comp: dict | None, tone: int) -> tuple[str | None, list[str]]:
     """Luvut kahdella desimaalilla kuten julkinen taulukko; verdikti lasketaan
-    samoista pyöristetyistä luvuista, jotta teksti ei ole ristiriidassa taulukon kanssa."""
+    samoista pyöristetyistä luvuista, jotta teksti ei ole ristiriidassa taulukon kanssa.
+    Verdikti on pohjakohtainen ja nimeää tasapelin vastapuolen."""
     if not comp:
         return None, []
     mae = comp["mae"]
     g, e, f = (_num(mae[k]) for k in ("goaliq", "fpl_ep_next", "form_baseline"))
     gv, ev, fv = float(g), float(e), float(f)
     claims = [g, e, f]
+    tied = better = worse = ""
     if gv < min(ev, fv):
-        verdict = "we were closest of the three"
+        kind = "closest"
     elif gv > max(ev, fv):
-        verdict = "we were furthest off of the three"
+        kind = "furthest"
+    elif gv == ev == fv:
+        kind = "level"
     elif gv in (ev, fv):
-        verdict = "we were level with at least one of the other two"
+        tied = EP_NEXT if gv == ev else FORM
+        kind = "tie_best" if gv < (fv if gv == ev else ev) else "tie_worst"
     else:
-        verdict = "we landed between the other two"
+        kind = "between"
+        better, worse = (EP_NEXT, FORM) if ev < fv else (FORM, EP_NEXT)
+    verdict = {
+        0: {"closest": "we were closest of the three",
+            "furthest": "we were furthest off of the three",
+            "level": "all three were level",
+            "tie_best": f"we tied with {tied} for closest",
+            "tie_worst": f"we tied with {tied} for furthest off",
+            "between": f"{better} beat us and we beat {worse}"},
+        1: {"closest": "We beat both FPL columns on projection error",
+            "furthest": "Both FPL columns beat us on projection error",
+            "level": "All three columns were level on projection error",
+            "tie_best": f"We tied with {tied} for the smallest projection error",
+            "tie_worst": f"We tied with {tied} for the biggest projection error",
+            "between": f"{better} beat us on projection error and we beat {worse}"},
+        2: {"closest": "ours was the smallest miss",
+            "furthest": "ours was the biggest miss",
+            "level": "all three missed by the same",
+            "tie_best": f"we shared the smallest miss with {tied}",
+            "tie_worst": f"we shared the biggest miss with {tied}",
+            "between": f"we came in behind {better} and ahead of {worse}"},
+    }[tone][kind]
     text = {
         0: f"On the xP accuracy table the average miss per player was {g} "
-           f"points for GoalIQ, {e} for FPL's ep_next and {f} for plain form, "
+           f"points for GoalIQ, {e} for {EP_NEXT} and {f} for {FORM}, "
            f"so {verdict}.",
-        1: f"Projection error, in points per player: GoalIQ {g}, FPL ep_next "
-           f"{e}, form {f}. By that measure {verdict}.",
+        1: f"{verdict}: GoalIQ {g} points per player, {EP_NEXT} {e}, {FORM} {f}.",
         2: f"Our xP was off by {g} points per player on average, against {e} "
-           f"for FPL's ep_next and {f} for form, so {verdict}.",
+           f"for {EP_NEXT} and {f} for {FORM}, so {verdict}.",
     }[tone]
     return text, claims
 
@@ -183,7 +262,7 @@ def build_note(gw_entry: dict, recap_doc: dict, accuracy_doc: dict,
         return None
 
     title = {
-        0: f"Gameweek {gw}: our calls, hits and misses",
+        0: f"Gameweek {gw}: how our calls held up",
         1: f"Gameweek {gw} recap: our calls against what happened",
         2: f"What we called before gameweek {gw} and what happened",
     }[tone]

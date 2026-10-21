@@ -100,7 +100,8 @@ def test_tappio_ja_huti_kerrotaan_voiton_rinnalla():
     teksti = note_plain_text(build_note(_gw(), _recap(_gw()), _acc(), TODAY))
     assert "FPL average" not in teksti and "model squad" not in teksti
     assert "across" not in teksti and "1.612" not in teksti
-    assert "Hit:" in teksti and "Missed:" in teksti
+    # Osunut ja hudannut nimetään kaikissa pohjissa (muoto vaihtelee, ks. alla).
+    assert "Haaland" in teksti and "Fernandes" in teksti
 
 
 def test_pohjat_vaihtuvat_kierroksen_mukaan_eika_sisalla_em_dashia():
@@ -148,7 +149,7 @@ def test_tasatilanne_pyoristetyissa_luvuissa_ei_vaita_johtoa():
     acc["gameweeks"][0]["comparison"]["mae"] = {
         "goaliq": 1.614, "fpl_ep_next": 1.606, "form_baseline": 1.644}
     teksti = note_plain_text(build_note(_gw(), _recap(_gw()), acc, TODAY))
-    assert "closest" not in teksti and "level with" in teksti
+    assert "closest" not in teksti and "tied with" in teksti
 
 
 def test_ei_takautuvia_muistioita_ennen_ensimmaista_kierrosta():
@@ -168,3 +169,55 @@ def test_pohjissa_ei_yhteenvetolausetta_eika_perustelua():
         teksti = note_plain_text(build_note(g, _recap(g), _acc(gw), TODAY))
         for kielletty in ("Short version", "did not", "because", "Picks first"):
             assert kielletty not in teksti, (gw, kielletty)
+
+
+def _kutsut(*tulokset: bool) -> list[dict]:
+    lajit = ("captain_pick", "ceiling", "safest", "gamble")
+    nimet = ("Haaland", "Salah", "Saka", "Barry")
+    return [{"call": lajit[i], "web_name": nimet[i], "points": 10 + i, "met": m}
+            for i, m in enumerate(tulokset)]
+
+
+def test_kaikki_osuivat_tai_kaikki_hutivat_ei_tuota_nollalauseita():
+    # Julkaisutarkistus 21.10 (B4): "0 didn't", "4 of our 4", "0 hit" eivät saa syntyä.
+    for tulokset in ((True,) * 4, (False,) * 4):
+        for gw in (6, 7, 8):
+            g = _gw(gw)
+            g["calls"]["calls"] = _kutsut(*tulokset)
+            teksti = note_plain_text(build_note(g, _recap(g), _acc(gw), TODAY))
+            for kielletty in ("0 didn't", "0 hit", "0 missed", "4 of our 4", "none came", "at least one"):
+                assert kielletty not in teksti, (gw, tulokset, kielletty)
+            assert ("All four" in teksti) or ("None of" in teksti), teksti
+
+
+def test_pohjat_eivat_jaa_samaa_runkoa_eika_samaa_verdiktia():
+    # Julkaisutarkistus 21.10 (B1): "Hit: ... Missed:" vain pohjassa 0, verdikti eri sanoin joka pohjassa.
+    tekstit = {}
+    for gw in (6, 7, 8):
+        g = _gw(gw)
+        tekstit[gw % 3] = note_plain_text(build_note(g, _recap(g), _acc(gw), TODAY))
+    assert "Hit:" in tekstit[0]
+    assert "Hit:" not in tekstit[1] and "Hit:" not in tekstit[2]
+    assert "closest of the three" in tekstit[0]
+    assert "closest of the three" not in tekstit[1] and "closest of the three" not in tekstit[2]
+    assert "smallest miss" in tekstit[2] and "beat both FPL columns" in tekstit[1]
+
+
+def test_tasapeli_nimeaa_vastapuolen_sarakkeen_nimella():
+    acc = _acc()
+    acc["gameweeks"][0]["comparison"]["mae"] = {
+        "goaliq": 1.701, "fpl_ep_next": 1.698, "form_baseline": 1.60}
+    teksti = note_plain_text(build_note(_gw(), _recap(_gw()), acc, TODAY))
+    # 1.70 = 1.70 > 1.60: jaettu viimeinen sija, ei "at least one".
+    assert "FPL ep_next" in teksti and "biggest" in teksti and "at least one" not in teksti
+
+
+def test_estetty_nimi_poistaa_kutsukappaleen():
+    # Villen 10.8 sääntö: estolistan nimeä ei nosteta julkaisussa. Loki ei suodata (gw_calls), muistio suodattaa.
+    g = _gw()
+    g["calls"]["calls"] = _kutsut(True, False, True, False)
+    g["calls"]["calls"][1]["web_name"] = "Thiaw"
+    n = build_note(g, _recap(g), _acc(), TODAY)
+    teksti = note_plain_text(n) if n else ""
+    assert "Thiaw" not in teksti
+    assert n is not None and "1.61" in teksti  # tarkkuuskappale jää

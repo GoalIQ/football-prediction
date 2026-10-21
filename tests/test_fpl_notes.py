@@ -78,10 +78,13 @@ def test_uusin_muistio_on_ensin():
     assert html.index('id="uusi"') < html.index('id="vanha"')
 
 
-def test_sivu_sanoo_etta_luvut_ovat_omia_ja_tarkistettavissa():
+def test_sivu_kertoo_recapin_olevan_automaattinen_ja_luvut_tarkistettavissa():
+    # 21.10: kierrosrecap syntyy joka kierros FPL:n pisteistä, joten vanhat lupaukset
+    # ("written when the numbers say something worth saying", "our own model output") olivat epätosia.
     html = render_notes(_doc(), NOW)
-    assert "our own model output" in html
+    assert "added automatically" in html
     assert "free page you can open" in html
+    assert "our own model output" not in html and "worth saying" not in html
 
 
 def test_muistio_linkittaa_tarkistussivulle():
