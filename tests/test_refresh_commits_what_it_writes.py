@@ -50,6 +50,9 @@ KIRJOITTAJAT = {
     # Ilman committia kortti paivittyisi runnerin levylle ja sivu jaisi
     # edelliseen kierrokseen - tasan se vika jonka askel korjaa.
     "refresh_site_cards": "assets/cards/cards.json",
+    # 21.10 KIERROSRECAP (PR #6): muistio /fpl/notes-sivulle. Ilman committia
+    # longtail renderoi sen samassa ajossa, mutta seuraava ajo ei enaa nae sita.
+    "build_fpl_recap_note": "data/fpl_notes.json",
 }
 
 # POIKKEUSLISTA: tiedosto jota refresh EI committaa, perusteluineen.

@@ -365,6 +365,16 @@ jobs:
         continue-on-error: true
         run: python -m scripts.build_gw_recap
 
+      # KIERROSRECAP (21.10, PR #6): lisaa data/fpl_notes.json:iin muistion
+      # lopullisesti gradatusta kierroksesta (idempotentti slug recap-gwN).
+      # gw_recap.json:n JALKEEN ja ennen longtail-bakea, joka renderoi
+      # /fpl/notes-sivun. continue-on-error samasta syysta kuin recap.
+      - name: Add gameweek recap note
+        id: recap_note
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        run: python -m scripts.build_fpl_recap_note
+
       - name: Freeze next gameweek xP at deadline window
         id: freeze_xp
         if: steps.guard.outputs.proceed == 'true'
@@ -625,6 +635,7 @@ jobs:
             assets/cards/projected-xi-card.webp
             assets/cards/projected-xi-card-450.webp
             data/gw_recap.json fpl/player-gw.json data/push_state.json
+            data/fpl_notes.json
           CI_PUSH_PAGES: >-
             fpl.html sitemap.xml sitemap-core.xml index.html fpl/
             sitemap-fpl.xml predictions.html world-cup-2026-predictions.html
@@ -719,6 +730,7 @@ jobs:
           [ "${{ steps.grade_squad.outcome }}" = "failure" ] && { echo "::error::grade_model_squad_gw FAILAA (mallirivin gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.grade_calls.outcome }}" = "failure" ] && { echo "::error::grade_gw_calls FAILAA (kutsujen gradaus jaa tekematta; projektiot pushattu)"; fail=1; }
           [ "${{ steps.build_recap.outcome }}" = "failure" ] && { echo "::error::build_gw_recap FAILAA (viikkorecapin luvut jaavat vanhoiksi)"; fail=1; }
+          [ "${{ steps.recap_note.outcome }}" = "failure" ] && { echo "::error::build_fpl_recap_note FAILAA (kierroksen muistio jaa /fpl/notes-sivulta)"; fail=1; }
           [ "${{ steps.build_confidence.outcome }}" = "failure" ] && { echo "::error::build_team_confidence FAILAA (nousijaliput ja vaihtuvuusluvut jaavat vanhoiksi)"; fail=1; }
           [ "${{ steps.build_defcon_gw.outcome }}" = "failure" ] && { echo "::error::build_fpl_defcon_gw FAILAA (DefCon-arkiston pelaajalista vanhenee)"; fail=1; }
           [ "${{ steps.grade_price_watch.outcome }}" = "failure" ] && { echo "::error::grade_price_watch FAILAA (edellisen yon hintaennuste jaa gradaamatta)"; fail=1; }

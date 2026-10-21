@@ -37,6 +37,13 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   mutta `predicted_starts` ja minuuttijakauma (p_start, p_cameo, p_bench) tulevat yhä minuuttimallista, eli sama rivi
   sanoo "0 minuuttia" ja "aloittaa todennäköisesti". Ensimmäinen osuma xP-listan pelaajalla 17.10 mitattuna: GW12
   (GW8:n estopelaaja on excluded-listalla). (b) Tuplakierroksella este koskee vain emoseuraa vastaan pelattavaa ottelua, mutta PR nollaa koko kierroksen.
+- 2026-10: Kierrosrecapista (`scripts/build_fpl_recap_note.py`, PR #6) puuttuu tulos-kappale: joukkueen pisteet
+  FPL:n keskiarvoa vastaan. Ylläpitäjän ohje 19.10: lähde on `data/gw_recap.json`:n `entry_series` (entry 116920,
+  FPL:n omat pisteet ennen siirtokuluja, chipit mukaan, ja FPL:n `average_entry_score`), ei `running`-sarja.
+  Tarkistuslinkki on FPL:n kierrossivu `https://fantasy.premierleague.com/entry/116920/event/{gw}` ja juoksevalle
+  erolle `https://fantasy.premierleague.com/entry/116920/history`. Sanamuoto "We play our model's squad in FPL
+  (entry 116920)", ja kierroksella pelattu chip kerrotaan meidän valintanamme. Muistioformaatissa on yksi
+  `check_url` (/fpl), joten tulos-kappale tarvitsee oman linkin tekstissä tai oman muistion.
   FPL:n kentässä ei ole vastustajaa, se on vain notes-tekstissä ("face their parent club").
 - 2026-10: Mallijoukkue jäi GW1-6 FPL-keskiarvosta 15 p, ja kapteenivalinta selittää koko eron (eniten kapteenoitu
   olisi tuonut 16 p lisää). Jäädytetyn xP:n yläpää: jokaisen kierroksen 20 suurinta xP:ta, toteuma miinus xP,
@@ -183,7 +190,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   2026-10-20, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
       Mittari: data/bsky_performance.json by_topic.prediction n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-08
-- [ ] Automaattinen kierrosrecap goaliq.app/fpl/notes-sivulle (ylläpitäjän päätös 2026-10-17): muistioita ei enää
+- [x] Automaattinen kierrosrecap goaliq.app/fpl/notes-sivulle (ylläpitäjän päätös 2026-10-17): muistioita ei enää (PR #6, 2026-10-21, osittain: kutsut ja tarkkuus; tulos-kappale Signaaleissa)
   kirjoiteta käsin, joten sivustolle ei tule uutta sisältöä. Uusi `scripts/build_fpl_recap_note.py` lisää
   `data/fpl_notes.json`:iin yhden recap-muistion kierrosta kohden samaan muotoon kuin nykyiset (slug, date, title,
   paragraphs, claims, check_url, cta), ja nykyinen `build_fpl_longtail.py` renderöi sen. Luvut VAIN artefakteista:
