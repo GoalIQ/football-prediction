@@ -9,7 +9,7 @@
       "historical_median_pct": 13.0,
       "method": "share of last season's minutes played by players no longer at the club; ratings are fitted on results and cannot see the transfer window",
       "note": "Descriptive, not predictive. The flag says a rating is built on weaker information; it does not say which way that moves the projection.",
-      "n_flagged_players": 176,
+      "n_flagged_players": 175,
       "teams": {
         "Arsenal": {
           "flag": null,
@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-21T12:41:20+00:00",
+    "generated_at": "2026-10-21T14:17:16+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -160,8 +160,8 @@
       "promoted_prior_players": 219,
       "promoted_prior_method": "Players at any club with no Premier League minutes this season: minutes come from a role prior built on FPL price order within club and position (XI slots 1/4/4/2; top p_start 0.38, next two 0.16, rest 0.096) times the FPL availability gate, unless a manual override sets the start chance. Goal and assist rates follow data_basis like every other row. minutes_method=promoted_price_prior.",
       "player_basis_counts": {
-        "pl_history": 286,
-        "limited_history": 143,
+        "pl_history": 287,
+        "limited_history": 142,
         "no_history": 58
       },
       "basis_threshold_minutes": 450.0,
@@ -197,10 +197,10 @@
     "n_players": 487,
     "n_excluded": 181,
     "last_season_block": {
-      "hidden": 402,
+      "hidden": 403,
       "new_club": 36,
       "short_season": 77,
-      "thin_sample": 54,
+      "thin_sample": 53,
       "no_projection": 99
     },
     "excluded_note": "excluded[] lists FPL players who are not in the projection (availability flag i/s/u/n, or horizon xP below 1.0). The rows exist for search and the player card: in_projection=false, with no xP/xmins/p_start fields. Older clients can ignore the list.",
@@ -2085,7 +2085,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 23.3,
+      "owned_pct": 23.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -2243,7 +2243,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 72.8,
+      "owned_pct": 72.9,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -5996,7 +5996,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 8.4,
+      "owned_pct": 8.3,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -17820,7 +17820,7 @@
       "predicted_starts": 87.7,
       "minutes_confidence": "high",
       "data_basis": "pl_history",
-      "owned_pct": 7.5,
+      "owned_pct": 7.4,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -36509,6 +36509,165 @@
         "defensive_contribution": 0.0,
         "yellows": -0.07,
         "bonus": 0.13
+      },
+      "components_gw": 8,
+      "last_season_show": false
+    },
+    {
+      "id": 78,
+      "web_name": "Kroupi.Jr",
+      "full_name": "Junior Kroupi",
+      "team": "Bournemouth",
+      "team_short": "BOU",
+      "pos": "MID",
+      "xmins": 17.4,
+      "predicted_starts": 19.0,
+      "minutes_confidence": "low",
+      "minutes_source": "price_prior",
+      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
+      "data_basis": "pl_history",
+      "owned_pct": 0.2,
+      "status": "d",
+      "news": "Foot injury - 50% chance of playing",
+      "chance_next": 50,
+      "yellows": 0,
+      "price": 7.3,
+      "team_code": 91,
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 91,
+        "team_name": "Bournemouth",
+        "minutes": 1663,
+        "starts": 21,
+        "goals": 13,
+        "assists": 0,
+        "xg": 8.31,
+        "xa": 1.51,
+        "cs": 10,
+        "points": 113,
+        "per90": {
+          "goals": 0.7,
+          "assists": 0.0,
+          "xgi": 0.53
+        }
+      },
+      "this_season": {
+        "season": "2026/27",
+        "minutes": 0,
+        "xgi": 0.0,
+        "per90": {
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "xp_dist": {
+        "gw": 8,
+        "n": 2000,
+        "mean": 0.86,
+        "p_haul": 0.006,
+        "p_blank": 0.9,
+        "p10": 0,
+        "median": 0,
+        "p90": 2,
+        "haul_pts": 10,
+        "blank_pts": 2
+      },
+      "p_start": 0.19,
+      "p_cameo": 0.1417,
+      "p_bench": 0.6683,
+      "set_pieces": {
+        "pens": 1,
+        "corners": null,
+        "fk": null
+      },
+      "e_bonus": 0.1,
+      "xp_per_gw": 1.62,
+      "xp_per_90": 4.74,
+      "xp_horizon_total": 9.74,
+      "gameweeks": [
+        {
+          "gw": 8,
+          "opponents": [
+            {
+              "opp": "MUN",
+              "venue": "A"
+            }
+          ],
+          "xp": 0.89,
+          "xmins": 17.4
+        },
+        {
+          "gw": 9,
+          "opponents": [
+            {
+              "opp": "LEE",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.57,
+          "xmins": 26.6
+        },
+        {
+          "gw": 10,
+          "opponents": [
+            {
+              "opp": "IPS",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.88,
+          "xmins": 28.8
+        },
+        {
+          "gw": 11,
+          "opponents": [
+            {
+              "opp": "NFO",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.89,
+          "xmins": 31.7
+        },
+        {
+          "gw": 12,
+          "opponents": [
+            {
+              "opp": "FUL",
+              "venue": "A"
+            }
+          ],
+          "xp": 1.74,
+          "xmins": 31.7
+        },
+        {
+          "gw": 13,
+          "opponents": [
+            {
+              "opp": "BHA",
+              "venue": "H"
+            }
+          ],
+          "xp": 1.77,
+          "xmins": 31.7
+        }
+      ],
+      "minutes_method": "promoted_price_prior",
+      "components": {
+        "appearance": 0.49,
+        "goals": 0.27,
+        "assists": 0.05,
+        "clean_sheet": 0.02,
+        "conceded": 0.0,
+        "saves": 0.0,
+        "defensive_contribution": 0.02,
+        "yellows": -0.04,
+        "bonus": 0.09
       },
       "components_gw": 8,
       "last_season_show": false
@@ -68352,163 +68511,6 @@
       "last_season_reason": "short_season"
     },
     {
-      "id": 38,
-      "web_name": "A.García",
-      "full_name": "Andrés García",
-      "team": "Aston Villa",
-      "team_short": "AVL",
-      "pos": "DEF",
-      "xmins": 10.7,
-      "predicted_starts": 9.6,
-      "minutes_confidence": "low",
-      "minutes_source": "price_prior",
-      "minutes_override_reason": "no Premier League minutes this season yet, expected role estimated from where the player is priced in his club's squad",
-      "data_basis": "limited_history",
-      "owned_pct": 1.4,
-      "status": "a",
-      "news": "",
-      "chance_next": null,
-      "yellows": 0,
-      "price": 4.0,
-      "team_code": 7,
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 7,
-        "team_name": "Aston Villa",
-        "minutes": 83,
-        "starts": 1,
-        "goals": 0,
-        "assists": 0,
-        "xg": 0.0,
-        "xa": 0.01,
-        "cs": 0,
-        "points": 5,
-        "per90": null
-      },
-      "this_season": {
-        "season": "2026/27",
-        "minutes": 0,
-        "xgi": 0.0,
-        "per90": {
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "xp_dist": {
-        "gw": 8,
-        "n": 2000,
-        "mean": 0.45,
-        "p_haul": 0.001,
-        "p_blank": 0.961,
-        "p10": 0,
-        "median": 0,
-        "p90": 1,
-        "haul_pts": 10,
-        "blank_pts": 2
-      },
-      "p_start": 0.096,
-      "p_cameo": 0.1808,
-      "p_bench": 0.7232,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "e_bonus": 0.02,
-      "xp_per_gw": 0.5,
-      "xp_per_90": 3.64,
-      "xp_horizon_total": 2.98,
-      "gameweeks": [
-        {
-          "gw": 8,
-          "opponents": [
-            {
-              "opp": "MCI",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.43,
-          "xmins": 10.7
-        },
-        {
-          "gw": 9,
-          "opponents": [
-            {
-              "opp": "FUL",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.57,
-          "xmins": 10.7
-        },
-        {
-          "gw": 10,
-          "opponents": [
-            {
-              "opp": "MUN",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.39,
-          "xmins": 10.7
-        },
-        {
-          "gw": 11,
-          "opponents": [
-            {
-              "opp": "SUN",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.55,
-          "xmins": 10.7
-        },
-        {
-          "gw": 12,
-          "opponents": [
-            {
-              "opp": "IPS",
-              "venue": "A"
-            }
-          ],
-          "xp": 0.52,
-          "xmins": 10.7
-        },
-        {
-          "gw": 13,
-          "opponents": [
-            {
-              "opp": "EVE",
-              "venue": "H"
-            }
-          ],
-          "xp": 0.52,
-          "xmins": 10.7
-        }
-      ],
-      "minutes_method": "promoted_price_prior",
-      "components": {
-        "appearance": 0.36,
-        "goals": 0.03,
-        "assists": 0.02,
-        "clean_sheet": 0.05,
-        "conceded": -0.08,
-        "saves": 0.0,
-        "defensive_contribution": 0.04,
-        "yellows": -0.02,
-        "bonus": 0.02
-      },
-      "components_gw": 8,
-      "team_flag": "high_turnover",
-      "last_season_show": true,
-      "last_season_reason": "thin_sample"
-    },
-    {
       "id": 424,
       "web_name": "Amass",
       "full_name": "Harry Amass",
@@ -74922,7 +74924,7 @@
       "team_short": "LIV",
       "pos": "MID",
       "price": 6.8,
-      "owned_pct": 19.1,
+      "owned_pct": 19.0,
       "status": "i",
       "news": "Hamstring injury - Unknown return date",
       "chance_next": 0,
@@ -75159,53 +75161,6 @@
       "last_season_show": false
     },
     {
-      "id": 28,
-      "web_name": "Martinez",
-      "full_name": "Emiliano Martínez Romero",
-      "team": "Chelsea",
-      "team_short": "CHE",
-      "pos": "GKP",
-      "price": 5.0,
-      "owned_pct": 4.2,
-      "status": "i",
-      "news": "Head injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 7,
-        "team_name": "Aston Villa",
-        "minutes": 2835,
-        "starts": 32,
-        "goals": 0,
-        "assists": 1,
-        "xg": 0.0,
-        "xa": 0.08,
-        "cs": 7,
-        "points": 120,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.03,
-          "xgi": 0.0
-        }
-      },
-      "form": {
-        "value": 5.5,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 142,
       "web_name": "James",
       "full_name": "Reece James",
@@ -75253,6 +75208,53 @@
       "last_season_reason": "no_projection"
     },
     {
+      "id": 28,
+      "web_name": "Martinez",
+      "full_name": "Emiliano Martínez Romero",
+      "team": "Chelsea",
+      "team_short": "CHE",
+      "pos": "GKP",
+      "price": 5.0,
+      "owned_pct": 4.1,
+      "status": "i",
+      "news": "Head injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 7,
+        "team_name": "Aston Villa",
+        "minutes": 2835,
+        "starts": 32,
+        "goals": 0,
+        "assists": 1,
+        "xg": 0.0,
+        "xa": 0.08,
+        "cs": 7,
+        "points": 120,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.03,
+          "xgi": 0.0
+        }
+      },
+      "form": {
+        "value": 5.5,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
       "id": 69,
       "web_name": "Scott",
       "full_name": "Alex Scott",
@@ -75262,7 +75264,7 @@
       "price": 6.0,
       "owned_pct": 2.8,
       "status": "i",
-      "news": "Thigh injury - Unknown return date",
+      "news": "Thigh injury - Expected back 8 Nov",
       "chance_next": 0,
       "yellows": 1,
       "set_pieces": {
@@ -75432,6 +75434,49 @@
       },
       "form": {
         "value": 1.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 38,
+      "web_name": "A.García",
+      "full_name": "Andrés García",
+      "team": "Aston Villa",
+      "team_short": "AVL",
+      "pos": "DEF",
+      "price": 4.0,
+      "owned_pct": 1.4,
+      "status": "u",
+      "news": "Has joined Getafe on loan for the rest of the season",
+      "chance_next": 0,
+      "yellows": 0,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 7,
+        "team_name": "Aston Villa",
+        "minutes": 83,
+        "starts": 1,
+        "goals": 0,
+        "assists": 0,
+        "xg": 0.0,
+        "xa": 0.01,
+        "cs": 0,
+        "points": 5,
+        "per90": null
+      },
+      "form": {
+        "value": 0.0,
         "gws": 2,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
@@ -75680,7 +75725,7 @@
       "price": 4.0,
       "owned_pct": 0.9,
       "status": "u",
-      "news": "Has joined Leyton Orient on loan for the rest of the season",
+      "news": "not included in squad.",
       "chance_next": 0,
       "yellows": 0,
       "set_pieces": {
@@ -76504,53 +76549,6 @@
           "goals": 0.12,
           "assists": 0.19,
           "xgi": 0.17
-        }
-      },
-      "form": {
-        "value": 0.0,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
-      "id": 78,
-      "web_name": "Kroupi.Jr",
-      "full_name": "Junior Kroupi",
-      "team": "Bournemouth",
-      "team_short": "BOU",
-      "pos": "MID",
-      "price": 7.3,
-      "owned_pct": 0.2,
-      "status": "i",
-      "news": "Foot injury - Expected back 7 Nov",
-      "chance_next": 0,
-      "yellows": 0,
-      "set_pieces": {
-        "pens": 1,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 91,
-        "team_name": "Bournemouth",
-        "minutes": 1663,
-        "starts": 21,
-        "goals": 13,
-        "assists": 0,
-        "xg": 8.31,
-        "xa": 1.51,
-        "cs": 10,
-        "points": 113,
-        "per90": {
-          "goals": 0.7,
-          "assists": 0.0,
-          "xgi": 0.53
         }
       },
       "form": {
@@ -80884,7 +80882,7 @@
       "price": 4.9,
       "owned_pct": 0.0,
       "status": "i",
-      "news": "Thigh injury - Unknown return date",
+      "news": "Thigh injury - Expected back 8 Nov",
       "chance_next": 0,
       "yellows": 0,
       "set_pieces": {
