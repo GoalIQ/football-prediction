@@ -48,6 +48,11 @@ services:
         - fpl/**                # player-gw.json + FPL-sivut; API lukee ne, daily-deploy vie
         - predictions/**        # generoidut ottelusivut (Cloudflare Pages, ei Render)
         - outputs/**            # kortit ja generoidut kuvat
+        # 19.10.2026 mitattu Renderin API:sta: lokakuun 50 commit-deploysta 35 (90 min / 19 vrk, noin
+        # 145 min/kk 500:n kiintiöstä) tuli fpl-data-refreshin kommiteista, joiden AINOA ei-ignoroitu
+        # polku oli assets/cards/ (hubin jakokortit, Cloudflare Pages). API ei lue niitä (portti
+        # tests/test_render_build_filter.py kaatuu, jos api/ tai src/ alkaa lukea assets/cards/).
+        - assets/cards/**       # hubin jakokortit + cards.json, eivät API:n
         - "*.html"              # JUURITASO: index, fpl, predictions, spl, career, faq...
         - "**/*.html"           # alihakemistot; Renderin FastAPI ei servaa yhtään HTML:ää
         - "*.md"

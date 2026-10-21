@@ -218,6 +218,106 @@ def deadline_message(gw: int, remaining_h: float) -> tuple[str, str]:
     return title, body
 
 
+# --------------------------------------------------------------------------
+# Henkilokohtainen deadline-push (19.10.2026, yllapitajan paatos)
+# --------------------------------------------------------------------------
+# Massalahetys ei toiminut (GW5-sahkoposti 18.9: avattu 7,2 %, 0 klikkia), mutta viesti omasta joukkueesta ei
+# ole massalahetys. 24 h -ikkunassa laite, jonka tililla on FPL entry ID, saa saman vastauksen kuin
+# sovelluksen This week, johon push avautuu (`fpl_rate_team.rate_team`: yksi lukija). Ilmaiselle vain
+# parhaan siirron xP-hyoty, koska siirrot ovat Premiumia (`api.premium.personal_tools_enforced`);
+# Premiumille siirto ja kapteeni. Kaikki virheet -> yleinen viesti: henkilokohtainen on lisa, se ei saa estaa muistutusta.
+PERSONAL_KINDS = frozenset({"deadline_24h"})
+PERSONAL_MAX_ENTRIES = 300   # ajoaika: yksi FPL-haku entrya kohden
+
+
+def personal_body(rt: dict, gw: int, is_premium: bool, enforced: bool) -> str | None:
+    """Henkilokohtainen runko rate-teamista, tai None -> yleinen viesti.
+
+    Julkaisutarkistajan 19.10 korjaama versio sellaisenaan. Lahde on rate-team, koska push avaa This week
+    -nakyman, joka lukee samaa (`gw_deadline` -> 'week'); planner oli eri mielta siirrosta, luvusta ja
+    kapteenista. Runko on aina edellisen kierroksen (FPL ei julkaise tulevaa ennen deadlinea), siksi etuliite.
+    """
+    meta = rt.get("meta") or {}
+    tr = rt.get("transfers") or {}
+    hv = tr.get("hold_verdict") or {}
+    if hv.get("gw_from") != gw or meta.get("captain_gw") != gw:
+        return None
+    if meta.get("freehit_reverted_from") is not None:
+        return None
+    src_gw = meta.get("picks_gw")
+    if not (meta.get("picks_outdated") is True and isinstance(src_gw, int)):
+        return None
+    pre = f"From your GW{src_gw} squad"
+    gw_to = hv.get("gw_to") or gw
+    span = f"GW{gw}-GW{gw_to}" if gw_to != gw else f"GW{gw}"
+    cap = (((rt.get("captain") or {}).get("pick") or {}).get("web_name") or "").strip()
+    sug = (tr.get("suggestions") or [None])[0]
+    if hv.get("verdict") == "transfer" and tr.get("hold") is False and sug:
+        delta = sug.get("delta_xp_horizon")
+        if not isinstance(delta, (int, float)) or delta <= 0:
+            return None
+        if not is_premium:
+            if not enforced:
+                return None
+            return (f"{pre}, the model found a transfer worth +{delta:.1f} xP over {span}. "
+                    "It's in GoalIQ Premium.")
+        return (f"{pre}: {sug['out']['web_name']} out, {sug['in']['web_name']} in, "
+                f"+{delta:.1f} xP over {span}." + (f" Captain: {cap}." if cap else ""))
+    if hv.get("verdict") == "hold" and tr.get("hold") is True and is_premium and cap:
+        return f"{pre}, the model would roll your transfer this gameweek. Captain: {cap}."
+    return None
+
+
+def plan_for_entry(entry: int) -> dict:
+    """Sama vastaus kuin sovelluksen This week -nakymalla (/api/fantasy/rate-team?entry=, ft oletus 1).
+
+    Maskaamaton: runner ei ole HTTP-pyynto, ja ilmaisen tekstiin paatyy vain luku (personal_body)."""
+    from src.models import fpl_rate_team
+    return fpl_rate_team.rate_team(entry=int(entry))
+
+
+def tools_enforced(now: _dt.datetime) -> bool:
+    from api.premium import personal_tools_enforced
+    return personal_tools_enforced(now)
+
+
+def deadline_bodies(rows: list[dict], gw: int, default_body: str,
+                    now: _dt.datetime) -> tuple[list[str], dict]:
+    """Runko jokaiselle riville: henkilokohtainen kun mahdollista, muuten yleinen.
+
+    Palauttaa (rungot, tilasto). Tilastossa vain maarat, ei entry ID:ita (ajoloki on julkinen).
+    """
+    try:
+        enforced = tools_enforced(now)
+    except Exception:  # noqa: BLE001 - ilman kytkinta ei luvata Premiumia ilmaiselle
+        enforced = False
+    cache: dict[int, dict | None] = {}
+    bodies, stats = [], {"personal": 0, "errors": 0, "with_entry": 0}
+    for r in rows:
+        body = default_body
+        eid = r.get("fpl_entry_id")
+        if isinstance(eid, int) and not isinstance(eid, bool) and eid > 0:
+            stats["with_entry"] += 1
+            if eid not in cache and len(cache) < PERSONAL_MAX_ENTRIES:
+                try:
+                    cache[eid] = plan_for_entry(eid)
+                except Exception:  # noqa: BLE001 - FPL- tai suunnitelmavirhe: yleinen viesti
+                    cache[eid] = None
+                    stats["errors"] += 1
+            plan = cache.get(eid)
+            oma = personal_body(plan, gw, bool(r.get("is_premium")), enforced) if plan else None
+            if oma:
+                body = oma
+                stats["personal"] += 1
+        bodies.append(body)
+    return bodies, stats
+
+
+def size_class(n: int) -> str:
+    """Julkiseen ajolokiin vain kokoluokka (sama jako kuin mittausdatassa)."""
+    return "0" if n <= 0 else "1-9" if n < 10 else "10-99" if n < 100 else "100+"
+
+
 def new_price_risers(watch: dict, already_alerted: dict,
                      today: str) -> list[dict]:
     """Pelaajat jotka ovat NYT rising_soon eivatka ole jo halytettyja.
@@ -654,8 +754,17 @@ def main() -> int:
         save_state(state)
 
         title, body = deadline_message(w["gw"], w["remaining_h"])
-        msgs = [build_message(r, title, body, w["kind"], CHANNEL_DEADLINE,
-                              {"gw": w["gw"]}) for r in rows]
+        if w["kind"] in PERSONAL_KINDS:
+            bodies, stats = deadline_bodies(rows, w["gw"], body, now)
+            print(f"  henkilokohtaisia: {size_class(stats['personal'])} "
+                  f"(entry ID:llisia {size_class(stats['with_entry'])}, virheita {size_class(stats['errors'])})")
+            posthog_capture("push_personal", {"kind": w["kind"], "gw": w["gw"], **stats,
+                                              "n_targets": len(rows)})
+        else:
+            bodies = [body] * len(rows)
+        msgs = [build_message(r, title, b, w["kind"], CHANNEL_DEADLINE,
+                              {"gw": w["gw"], "personal": b != body})
+                for r, b in zip(rows, bodies)]
         n_sent += deliver(msgs, rows, w["kind"], state)
         save_state(state)
 

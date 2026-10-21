@@ -156,10 +156,18 @@ jobs:
                Kirjaa Muutokset-lohkoon konversioväli ja muutos edelliseen viikkoon, tai "ei saatavilla" syineen.
                Jos "vertailukelpoinen" on false, sano se. Vähintään yksi uusista riveistä on konversio- tai
                hankintapolulla (rekisteröityminen, Premium-esikatselu, hakukoneliikenne, kanava-attribuutio).
+               Kirjaa myös ostopolku (posthog.json "ostopolku", 19.10): napautus lukosta ja osto napautuksesta
+               alustoittain sekä lukot, joilla napautusosuus on pienin, nyt vs edellinen jakso. pieni_otos = true
+               tarkoittaa, että suhde ei kanna johtopäätöstä: sano se, älä tee siitä riviä yksinään.
+               Kirjaa lisäksi "tuotteittain" (20.10, ennustekokeilu GW10-katsaukseen asti): napautus lukosta
+               ennusteelle ja FPL:lle alustoittain, nyt vs edellinen jakso, yhdellä rivillä kumpaakin.
             0c. HAKUKONE. Jos /tmp/mittausdata/gsc.json on "ok": etsi sivut, joilla on paljon näyttöjä (pieni
                nayttosija) mutta matala CTR tai sijainti 5-15, ja haut, joihin mikään sivu ei vastaa hyvin. Tee
                niistä Signaaleja ja enintään yksi backlog-rivi, jonka Mittari on GSC:n CTR tai sijainti kyseiselle
                sivulle (tarkistus 28 vrk päähän). Jos gsc tai posthog puuttuu, kirjaa se Muutokset-lohkoon.
+               Tason muutos: kirjaa GSC:stä naytot_mediaani_muutos_pct ja yhteensa.tulkinta sanatarkasti, älä
+               pelkkää kokonaismuutosta (18.10 -83,5 % oli piikin loppu, ei pudotus). Käytön tason muutos luetaan
+               posthog.json:n viikkokayttajat-sarjasta (uniikit käyttäjät pinnoittain), ei tapahtumamääristä.
 
             1. MALLIN OMAT MITTARIT. Lue data/fpl_xp_gw_accuracy.json (GoalIQ xP vs FPL:n ep_next samoilla riveillä)
                ja data/accuracy.json (1X2-osuma, Brier, kalibraatio). Kirjaa luvut ja muutos edelliseen kierrokseen.

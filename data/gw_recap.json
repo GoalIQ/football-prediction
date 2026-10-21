@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generated_at": "2026-10-19T07:01:03+00:00",
+  "generated_at": "2026-10-21T09:59:31+00:00",
   "sources": {
    "gw_calls": true,
    "model_squad_gw_scores": true,
@@ -9,18 +9,19 @@
   "complete": true
  },
  "running": {
-  "gameweeks": 5,
+  "gameweeks": 6,
   "basis": "model points before its own transfer hits, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
   "gw_list": [
    1,
    2,
    3,
    5,
-   6
+   6,
+   7
   ],
-  "total_diff": -15,
-  "avg_diff": -3.0,
-  "beat_average": 1,
+  "total_diff": 7,
+  "avg_diff": 1.2,
+  "beat_average": 2,
   "below_average": 4,
   "per_gw": [
    {
@@ -62,6 +63,14 @@
     "transfer_cost": 0,
     "average": 58,
     "diff": -1
+   },
+   {
+    "gw": 7,
+    "points": 81,
+    "points_net": 81,
+    "transfer_cost": 0,
+    "average": 59,
+    "diff": 22
    }
   ]
  },
@@ -439,6 +448,91 @@
     "bias": -0.105
    },
    "headline_miss": null
+  },
+  {
+   "gw": 7,
+   "provisional": false,
+   "squad": {
+    "points": 81,
+    "points_net": 81,
+    "average": 59,
+    "diff": 22,
+    "bench_points": 4,
+    "transfer_cost": 0,
+    "chip": null,
+    "captain_id": 411,
+    "captain_points_added": 13,
+    "graded_at": "2026-10-20T18:59:59Z",
+    "transfer_cost_verified": true
+   },
+   "calls": {
+    "logged_at": "2026-10-16T04:00:34Z",
+    "deadline_utc": "2026-10-17T10:00:00Z",
+    "logged_before_deadline": true,
+    "graded": true,
+    "provisional": false,
+    "hits": 2,
+    "misses": 2,
+    "ungraded": 1,
+    "calls": [
+     {
+      "call": "model_captain",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "captain return, points doubled",
+      "predicted": 7.99,
+      "points": 13,
+      "started": true,
+      "met": null
+     },
+     {
+      "call": "captain_pick",
+      "web_name": "Haaland",
+      "team_short": "MCI",
+      "criterion": "10+ pts",
+      "predicted": 0.323,
+      "points": 13,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "ceiling",
+      "web_name": "Cherki",
+      "team_short": "MCI",
+      "criterion": "reached p90",
+      "predicted": 11,
+      "points": 0,
+      "started": false,
+      "met": false
+     },
+     {
+      "call": "safest",
+      "web_name": "Saka",
+      "team_short": "ARS",
+      "criterion": "3+ pts",
+      "predicted": 0.816,
+      "points": 3,
+      "started": true,
+      "met": true
+     },
+     {
+      "call": "gamble",
+      "web_name": "Barry",
+      "team_short": "EVE",
+      "criterion": "10+ pts",
+      "predicted": 0.097,
+      "points": 2,
+      "started": true,
+      "met": false
+     }
+    ]
+   },
+   "accuracy": {
+    "mae": 1.608,
+    "n": 489,
+    "bias": -0.177
+   },
+   "headline_miss": null
   }
  ],
  "unscored_gws": [
@@ -464,7 +558,7 @@
  "entry_series": {
   "entry_id": 116920,
   "running": {
-   "gameweeks": 6,
+   "gameweeks": 7,
    "basis": "FPL entry points before transfer hits, chips included, against FPL's published average_entry_score as-is (we have not established whether FPL's figure is before or after hits)",
    "gw_list": [
     1,
@@ -472,11 +566,12 @@
     3,
     4,
     5,
-    6
+    6,
+    7
    ],
-   "total_diff": 25,
-   "avg_diff": 4.2,
-   "beat_average": 2,
+   "total_diff": 51,
+   "avg_diff": 7.3,
+   "beat_average": 3,
    "below_average": 4,
    "per_gw": [
     {
@@ -526,6 +621,14 @@
      "transfer_cost": 0,
      "average": 58,
      "diff": -1
+    },
+    {
+     "gw": 7,
+     "points": 85,
+     "points_net": 85,
+     "transfer_cost": 0,
+     "average": 59,
+     "diff": 26
     }
    ]
   },
@@ -583,6 +686,15 @@
     "average": 58,
     "diff": -1,
     "chip": null
+   },
+   {
+    "gw": 7,
+    "provisional": false,
+    "points": 85,
+    "points_net": 85,
+    "average": 59,
+    "diff": 26,
+    "chip": "bboost"
    }
   ]
  }

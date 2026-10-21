@@ -369,3 +369,173 @@ def test_message_routes_with_the_shipped_app_vocabulary():
         assert msg["data"]["type"] == expect
         assert msg["data"]["kind"] == kind
         assert msg["data"]["source"] == "server"
+
+
+# --------------------------------------------------------------------------
+# Henkilokohtainen deadline-push (19.10.2026)
+# --------------------------------------------------------------------------
+# Portti kaatuu, jos ilmaiselle paljastuu Premiumin siirto, jos Premiumia luvataan ennen lukitusta, jos
+# pushin luku tai siirto eroaa This week -nakymasta johon push avautuu (rate-team; julkaisutarkistaja 19.10
+# blokkasi plannerin juuri tasta), jos runkoa vaitetaan tamanhetkiseksi, jos vanhentunut tai Free Hit
+# -palautettu vastaus menee viestiin, jos yksi virhe estaa muistutuksen, jos 2 h -muistutus muuttuu
+# henkilokohtaiseksi tai jos entry ID paatyy julkiseen ajolokiin.
+
+def _rt(gw=8, verdict="transfer", hold=False, delta=6.77, out="Rogers", inn="Mbeumo", cap="Gabriel",
+        picks_gw=7, outdated=True, fh=None, captain_gw=None, gw_to=12):
+    """Tuotannon rate-teamin muoto (fpl_rate_team.rate_team, mitattu 19.10 entryilla 4089628 ja 116920)."""
+    return {
+        "meta": {"captain_gw": captain_gw or gw, "picks_gw": picks_gw, "picks_outdated": outdated,
+                 "freehit_reverted_from": fh},
+        "transfers": {
+            "hold": hold,
+            "hold_verdict": {"verdict": verdict, "gw_from": gw, "gw_to": gw_to, "best_move_gain_xp": delta},
+            "suggestions": [{"out": {"web_name": out}, "in": {"web_name": inn}, "delta_xp_horizon": delta}],
+        },
+        "captain": {"pick": {"web_name": cap}},
+    }
+
+
+def test_personal_free_gets_the_this_week_number_without_names():
+    b = pd.personal_body(_rt(), 8, is_premium=False, enforced=True)
+    assert b == ("From your GW7 squad, the model found a transfer worth +6.8 xP over GW8-GW12. "
+                 "It's in GoalIQ Premium.")
+    assert "Rogers" not in b and "Mbeumo" not in b and "Gabriel" not in b
+
+
+def test_personal_premium_gets_move_and_captain_from_the_same_answer():
+    assert pd.personal_body(_rt(), 8, True, True) == \
+        "From your GW7 squad: Rogers out, Mbeumo in, +6.8 xP over GW8-GW12. Captain: Gabriel."
+    assert pd.personal_body(_rt(verdict="hold", hold=True, delta=0.14, cap="B.Fernandes"), 8, True, True) == \
+        "From your GW7 squad, the model would roll your transfer this gameweek. Captain: B.Fernandes."
+
+
+def test_personal_generic_when_hold_before_lock_or_no_gain():
+    holdi = _rt(verdict="hold", hold=True, delta=0.14)
+    assert pd.personal_body(holdi, 8, False, True) is None, "ilmaisen hold = yleinen (teaser vain siirrolle)"
+    assert pd.personal_body(_rt(), 8, False, enforced=False) is None, "ennen lukitusta ei luvata Premiumia"
+    assert pd.personal_body(_rt(delta=0.0), 8, True, True) is None
+    ristiriita = _rt()
+    ristiriita["transfers"]["hold"] = True   # verdikti ja hold eri mielta: ei viestia
+    assert pd.personal_body(ristiriita, 8, True, True) is None
+
+
+def test_personal_phase_guards():
+    """Vaiheet: artefakti laahaa (eri kierros), runko ei ole edellisen kierroksen, Free Hit -palautus."""
+    assert pd.personal_body(_rt(gw=7), 8, True, True) is None
+    assert pd.personal_body(_rt(captain_gw=9), 8, True, True) is None
+    assert pd.personal_body(_rt(outdated=False), 8, True, True) is None
+    assert pd.personal_body(_rt(picks_gw=None), 8, True, True) is None
+    assert pd.personal_body(_rt(fh=6), 8, True, True) is None
+
+
+def test_personal_texts_have_no_dashes():
+    for premium in (False, True):
+        for kw in ({}, {"verdict": "hold", "hold": True}):
+            b = pd.personal_body(_rt(**kw), 8, premium, True) or ""
+            assert "\u2014" not in b and "\u2013" not in b and "\u2019" not in b
+
+
+def _rivi(token, entry=None, premium=False):
+    return {"expo_token": token, "user_id": "u" if entry else None, "fpl_entry_id": entry,
+            "is_premium": premium, "opted_in_deadline": True}
+
+
+def test_deadline_bodies_uses_this_week_number_fallback_cache_and_stats(monkeypatch):
+    kutsut = []
+
+    def vastaus(entry):
+        kutsut.append(entry)
+        if entry == 666:
+            raise RuntimeError("FPL 503")
+        return _rt()
+
+    monkeypatch.setattr(pd, "plan_for_entry", vastaus)
+    monkeypatch.setattr(pd, "tools_enforced", lambda now: True)
+    rivit = [_rivi("a"), _rivi("b", 111), _rivi("c", 111), _rivi("d", 222, premium=True), _rivi("e", 666),
+             {**_rivi("f", True)}]
+    rungot, stats = pd.deadline_bodies(rivit, 8, "GENERIC", _dt_utc("2026-10-22T17:00:00Z"))
+    assert rungot[0] == "GENERIC" and rungot[4] == "GENERIC" and rungot[5] == "GENERIC"
+    luku = f"+{_rt()['transfers']['suggestions'][0]['delta_xp_horizon']:.1f} xP"
+    assert luku in rungot[1] and luku in rungot[3], "pushin luku = This weekin suggestions[0].delta_xp_horizon"
+    assert rungot[1] == rungot[2] and "Rogers out" in rungot[3] and "Rogers" not in rungot[1]
+    assert sorted(kutsut) == [111, 222, 666], "sama entry lasketaan kerran, bool ei ole entry ID"
+    assert stats == {"personal": 3, "errors": 1, "with_entry": 4}
+
+
+def test_source_is_rate_team_like_the_screen_the_push_opens():
+    """Kutsupaikka: plan_for_entry kutsuu rate-teamia (This week), ei planneria."""
+    import inspect
+    lahde = inspect.getsource(pd.plan_for_entry)
+    assert "fpl_rate_team.rate_team(entry=int(entry))" in lahde and "fpl_planner" not in lahde
+    assert pd.ROUTE_TYPE["deadline_24h"] == "gw_deadline", "push avaa This weekin (gw_deadline -> week)"
+
+
+def test_lock_switch_is_read_from_premium_module():
+    """Kutsupaikka: lukituksen hetki tulee api.premiumin kytkimesta, ei omasta paivamaarasta."""
+    from api.premium import PERSONAL_TOOLS_ENFORCE_FROM
+    assert pd.tools_enforced(PERSONAL_TOOLS_ENFORCE_FROM) is True
+    assert pd.tools_enforced(PERSONAL_TOOLS_ENFORCE_FROM - _dt.timedelta(seconds=1)) is False
+
+
+@pytest.fixture
+def wired_personal(wired, monkeypatch):
+    monkeypatch.setattr(pd, "fetch_push_targets", lambda: [
+        {"expo_token": "ExponentPushToken[bbbbbbbbbbbbbbbb]", "user_id": "u1", "platform": "ios",
+         "locale": "en-GB", "opted_in_deadline": True, "opted_in_price": False, "opted_in_picks": False,
+         "is_premium": False, "watchlist": [], "fpl_entry_id": 4089628},
+    ])
+    monkeypatch.setattr(pd, "plan_for_entry", lambda entry: _rt(gw=1, picks_gw=0, gw_to=6))
+    monkeypatch.setattr(pd, "tools_enforced", lambda now: True)
+    return wired
+
+
+def test_24h_window_is_personal_and_2h_stays_generic(wired_personal, monkeypatch, capsys):
+    _at(monkeypatch, "2026-08-20T17:00:00Z")     # 24 h -ikkuna
+    pd.main()
+    _at(monkeypatch, "2026-08-21T15:45:00Z")     # 2 h -ikkuna
+    pd.main()
+    eka, toka = wired_personal[0][0], wired_personal[1][0]
+    assert eka["data"]["kind"] == "deadline_24h" and eka["data"]["personal"] is True
+    assert "transfer worth +6.8 xP over GW1-GW6" in eka["body"]
+    assert toka["data"]["kind"] == "deadline_2h" and toka["data"]["personal"] is False
+    assert toka["body"].startswith("Check your lineup")
+    assert "4089628" not in capsys.readouterr().out, "entry ID ei saa paatya julkiseen ajolokiin"
+
+
+def test_plan_failure_still_sends_the_reminder(wired_personal, monkeypatch):
+    def rikki(entry):
+        raise RuntimeError("FPL down")
+    monkeypatch.setattr(pd, "plan_for_entry", rikki)
+    _at(monkeypatch, "2026-08-20T17:00:00Z")
+    assert pd.main() == 0
+    (msg,) = wired_personal[0]
+    assert msg["body"].startswith("Check your lineup") and msg["data"]["personal"] is False
+
+
+def test_push_targets_attaches_entry_id_only_as_positive_int(client, monkeypatch):
+    import api.main as m
+    monkeypatch.setenv("ADMIN_TOKEN", "right")
+    monkeypatch.setattr(m, "SUPABASE_URL", "https://x.supabase.co")
+    monkeypatch.setattr(m, "SUPABASE_SERVICE_ROLE_KEY", "svc")
+
+    class _Resp:
+        def __init__(self, payload):
+            self._p = payload
+
+        def json(self):
+            return self._p
+
+    def fake_get(url, **kw):
+        if "push_tokens" in url:
+            return _Resp([{"expo_token": t, "user_id": u, "platform": "ios", "locale": None,
+                           "opted_in_deadline": True, "opted_in_price": False, "opted_in_picks": False}
+                          for t, u in (("t1", "u1"), ("t2", "u2"), ("t3", None))])
+        assert "fpl_entry_id" in url, "profiilihaku ei pyyda entry ID:ta"
+        return _Resp([{"id": "u1", "is_premium": False, "fpl_entry_id": 4089628},
+                      {"id": "u2", "is_premium": False, "fpl_entry_id": True}])
+
+    monkeypatch.setattr(m.requests, "get", fake_get)
+    t = {r["expo_token"]: r for r in client.get("/api/admin/push-targets",
+                                                headers={"X-Admin-Token": "right"}).json()["targets"]}
+    assert t["t1"]["fpl_entry_id"] == 4089628
+    assert t["t2"]["fpl_entry_id"] is None and t["t3"]["fpl_entry_id"] is None

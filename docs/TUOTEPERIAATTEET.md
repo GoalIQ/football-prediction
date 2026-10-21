@@ -163,11 +163,21 @@ Jokaisen avoimen rivin alle tulee kaksi kenttää omille riveilleen:
   muutosprosentit ja kokoluokat. Tilien, Premium-tilaajien, käyntien ja tapahtumien absoluuttisia määriä ei
   kirjoiteta (mittausdata antaa agentille vain sallitut muodot).
 
-### Kärkivuoro ja signaalit
+### Myyntivuoro ja signaalit
 
-- **Joka kolmas ajo on kärkivuoro.** Työnkulku laskee mainin `auto:`-commitit. Kärkivuorolla agentti
-  valitsee suurimman pisteen rivin, jonka uutuus on 2. L-rivistä tehdään vaihe 1 ja loput kirjoitetaan
-  uusiksi riveiksi. Jos uutuus 2 -riviä ei ole, agentti ideoi sellaisen teemoista ja BENCHMARK.md:stä.
+- **Joka kolmas ajo on myyntivuoro** (ylläpitäjän päätös 19.10.2026, korvasi kärkivuoron). Työnkulku laskee
+  mainin `auto:`-commitit. Lukitut tehdään silti ensin. Muuten myyntivuorolla agentti valitsee suurimman
+  pisteen rivin, jonka myynti on 3 (`.github/auto-kehitys/mittarit.py valitse --myyntivuoro`). L-rivistä
+  tehdään vaihe 1 ja loput kirjoitetaan uusiksi riveiksi. Jos myynti 3 -riviä ei ole, agentti ideoi sellaisen
+  ostopolulta: lukko ja Premium-esikatselu, rekisteröityminen, todiste ostohetkellä tai ajoitettu ostosyy
+  (esimerkiksi chip-ikkuna).
+- **Korjauskierros ennen uutta riviä** (ylläpitäjän päätös 19.10.2026). Jos julkaisutarkistus on blokannut
+  auto-PR:n, ajo korjaa vanhimman blokatun PR:n samalla haaralla tarkistajan BLOKKAAVAT-listan ja ylläpitäjän
+  PR-kommenttien mukaan (`.github/auto-kehitys/korjaus.py`), ja tarkistus ajetaan uudelleen. Enintään kaksi
+  kierrosta, sitten label `tarvitsee-ihmisen`. Agentille päätyvät vain CI-tarkistajan verdikti ja ylläpitäjän
+  (OWNER tai MEMBER) kommentit; muiden kommentit eivät. Veto: label `ei-automaattikorjausta`.
+- **Yksi ajo päivässä.** Rele laukaisee auto-kehityksen, jos GitHubin cron ei ehdi, ja toinen ajo samana
+  päivänä ei aja agenttia (`pakota`-syöte ohittaa käsin).
 - **Signaali muuttuu riviksi.** Alle 30 päivää vanhasta havainnosta, jolla ei ole merkintää "→ backlog",
   agentti kirjoittaa enintään yhden rivin ajoa kohden ja merkitsee havainnon.
 - Enintään kaksi avointa auto-PR:ää kerrallaan. Ihminen mergeää (squash, otsikko säilyy `auto:`-alkuisena),

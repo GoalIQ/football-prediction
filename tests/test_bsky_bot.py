@@ -423,6 +423,13 @@ def test_x_jonoon_vain_tuoreet_oikeat_postaukset():
     assert [r["uri"] for r in got] == ["at://did:plc:abc/app.bsky.feed.post/3mxzcg"]
 
 
+def test_kierroskatsaus_ei_x_jonoon_koska_x_viikkoketju_tekee_sen():
+    """19.10: muuten samasta kierroksesta tulisi X-jonoon kaksi katsausta (julkaisutarkistaja)."""
+    rows = [_row(topic="recap", uri="at://d/app.bsky.feed.post/recap"), _row()]
+    got = bot.pending_x_mirror(rows, {}, NOW)
+    assert [r["uri"] for r in got] == ["at://did:plc:abc/app.bsky.feed.post/3mxzcg"]
+
+
 def test_x_issue_osoitettu_villelle_ja_linkki_blueskyhyn():
     p = bot.x_issue(_row(), bot.x_version(_row()))
     assert p["assignees"] == ["Veikkoville"] and p["labels"] == ["x-jono"]
@@ -543,6 +550,32 @@ def test_kulku_nayttaa_vain_tyokalujen_nimet(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "Read VIRHE" in out and "Write(queue.json) ok" in out
     assert _SALAISUUS not in out and "environ" not in out
+
+
+def test_kulku_kestaa_actionin_init_rivin(tmp_path, capsys):
+    """20.10: claude-code-action@v1 (db77d4d) kirjoitti execution_fileen init-rivin, jonka message on
+    merkkijono. Kulku kaatui AttributeErroriin, ja aivojen jono jai siirtamatta (0 postausta).
+    Rivi on sanatarkasti tuotannon ajosta 39466306906."""
+    import json
+    p = _exec(tmp_path, write_target="/tmp/bsky/queue.json")
+    msgs = json.loads(p.read_text(encoding="utf-8"))
+    msgs.insert(0, {"type": "system", "subtype": "init", "message": "Claude Code initialized",
+                    "model": "claude-sonnet-5-5"})
+    p.write_text(json.dumps(msgs), encoding="utf-8")
+    q = tmp_path / "queue.json"
+    q.write_text("[]", encoding="utf-8")
+    assert bot.cmd_brain_trace(p, q) == 0
+    assert "Write(queue.json) ok" in capsys.readouterr().out
+
+
+def test_jono_siirretaan_vaikka_kulku_kaatuisi():
+    """Kulku on diagnostiikkaa. Sen kaatuminen ei saa pudottaa aivojen jonoa: 20.10 upload-artifact
+    skippautui kaatuneen kulun takia ja julkaisu ei saanut mitaan."""
+    _t, doc = _wf()
+    askel = [s for s in doc["jobs"]["aivot"]["steps"] if str(s.get("uses", "")).startswith("actions/upload-artifact")]
+    assert len(askel) == 1
+    ehto = str(askel[0].get("if"))
+    assert "!cancelled()" in ehto and "steps.paata.outputs.think == 'true'" in ehto
 
 
 def test_workflow_ajaa_kulun_aivojen_jalkeen():

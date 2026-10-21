@@ -2294,7 +2294,12 @@ vertical-align:top}
 """
 
 
-def latest_articles_block(notes_doc: dict | None, limit: int = 1) -> str:
+#: Etusivun nosto nayttaa vain taman ikaisia muistioita (ks. latest_articles_block).
+FEATURED_NOTE_MAX_AGE_DAYS = 14
+
+
+def latest_articles_block(notes_doc: dict | None, limit: int = 1,
+                          today: _dt.date | None = None) -> str:
     """Etusivun "Latest from the model" -lohko (15.8.2026, Villen pyynto).
 
     MIKSI. Ville: FFScoutilla on etusivulla "latest articles" ja "featured
@@ -2322,8 +2327,25 @@ def latest_articles_block(notes_doc: dict | None, limit: int = 1) -> str:
     kantamaan itsenaisesti.
 
     Tyhja tai puuttuva data -> tyhja merkkijono -> koko lohko jaa pois.
+
+    🔴 TUOREUSRAJA (20.10.2026, Villen havainto). Muistioita ei kirjoiteta
+    17.10 jalkeen, ja kortti nosti 2.10 muistiota viela 18 vrk myohemmin:
+    "FPL's own numbers have beaten ours two weeks running", vaikka GW6:ssa
+    GoalIQ oli jo lahempana (1.61 vs 1.63). Lohko valitsi aina uusimman,
+    oli se kuinka vanha tahansa. Nyt yli FEATURED_NOTE_MAX_AGE_DAYS vanha tai
+    paivaykseton muistio ei paase nostoon, ja ilman tuoretta muistiota lohko
+    on tyhja. `today` on parametri vain testeja varten.
     """
-    notes = ((notes_doc or {}).get("notes") or [])
+    today = today or _dt.datetime.now(_dt.timezone.utc).date()
+    raja = today - _dt.timedelta(days=FEATURED_NOTE_MAX_AGE_DAYS)
+
+    def _tuore(n: dict) -> bool:
+        try:
+            return _dt.date.fromisoformat(str(n.get("date") or "")[:10]) >= raja
+        except ValueError:
+            return False
+
+    notes = [n for n in ((notes_doc or {}).get("notes") or []) if _tuore(n)]
     # 🔴 TASATILANNE RATKAISTAAN JARJESTYSNUMEROLLA. Pelkka paivays ei riita:
     # 15.8 kirjoitettiin kaksi muistiota samalle paivalle, vakaa lajittelu
     # sailytti alkuperaisen jarjestyksen ja etusivun nosto jai nayttamaan
@@ -3921,11 +3943,22 @@ def sync_index_articles() -> bool:
 
     Palauttaa True kun tiedosto muuttui.
     """
-    idx = ROOT / "index.html"
-    s = idx.read_text(encoding="utf-8")
-    block = latest_articles_block(_load_json(NOTES_PATH))
-    if not block:
+    s = INDEX_PATH.read_text(encoding="utf-8")
+    new = splice_latest_articles(s)
+    if new == s:
         return False
+    INDEX_PATH.write_text(new, encoding="utf-8", newline="\n")
+    return True
+
+
+def splice_latest_articles(s: str, today: _dt.date | None = None) -> str:
+    """Kirjoittaa featured-lohkon index.html:n markerien valiin, MYOS TYHJANA.
+
+    20.10.2026: molemmat kutsupaikat ohittivat tyhjan lohkon (`if not block`),
+    jolloin vanhentunut kortti jai sivulle ikuisesti. Yksi kirjoittaja, jolla
+    ei ole ohitushaaraa: tyhja lohko poistaa kortin kuten kumppanikortissa.
+    """
+    block = latest_articles_block(_load_json(NOTES_PATH), today=today)
     new, n = re.subn(
         r"(<!-- GEN:LATEST-ARTICLES-START -->).*?(<!-- GEN:LATEST-ARTICLES-END -->)",
         lambda m: m.group(1) + block + m.group(2), s, flags=re.S)
@@ -3933,10 +3966,7 @@ def sync_index_articles() -> bool:
         raise RuntimeError(
             f"index.html GEN:LATEST-ARTICLES: odotettiin 1 markerilohko, "
             f"loytyi {n}")
-    if new == s:
-        return False
-    idx.write_text(new, encoding="utf-8", newline="\n")
-    return True
+    return new
 
 
 def update_index(c: dict, xp: dict | None = None,
@@ -4103,15 +4133,7 @@ def update_index(c: dict, xp: dict | None = None,
                 f"index.html GEN:NEXT-MATCHES: odotettiin 1 markerilohko, "
                 f"loytyi {n_nm}")
 
-    articles_block = latest_articles_block(_load_json(NOTES_PATH))
-    if articles_block:
-        new, n_art = re.subn(
-            r"(<!-- GEN:LATEST-ARTICLES-START -->).*?(<!-- GEN:LATEST-ARTICLES-END -->)",
-            lambda m: m.group(1) + articles_block + m.group(2), new, flags=re.S)
-        if n_art != 1:
-            raise RuntimeError(
-                f"index.html GEN:LATEST-ARTICLES: odotettiin 1 markerilohko, "
-                f"loytyi {n_art}")
+    new = splice_latest_articles(new, today=now.date())
 
     # 28.9: kumppanikortti heron oikeaan sarakkeeseen (src/partners.py
     # kertoo miksi). Lohko kirjoitetaan AINA, myos tyhjana: kumppanuuden

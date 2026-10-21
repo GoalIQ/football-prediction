@@ -134,8 +134,10 @@ jobs:
           EXEC_FILE: ${{ steps.aivot_run.outputs.execution_file }}
         run: python -m scripts.bsky_bot brain-trace --exec "$EXEC_FILE" --queue /tmp/bsky/queue.json
 
+      # 20.10: kulun kaatuminen (action vaihtoi lokimuotoa) skippasi taman askeleen, ja aivojen jono katosi
+      # (0 postausta). Jono siirretaan aina kun aivot ajettiin; julkaisu tarkistaa sen silti portilla.
       - uses: actions/upload-artifact@v4
-        if: steps.paata.outputs.think == 'true'
+        if: ${{ !cancelled() && steps.paata.outputs.think == 'true' }}
         with:
           name: bsky-queue
           path: /tmp/bsky/queue.json
