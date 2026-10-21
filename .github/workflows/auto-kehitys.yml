@@ -206,6 +206,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # 21.10: rele (fp #11) dispatchaa taman GITHUB_TOKENilla (actor github-actions[bot]); ilman tata
+          # action hylkasi ajon ennen mallia ja ke 21.10 korjauskierros jai tekematta. Vain tama yksi botti.
+          allowed_bots: 'github-actions'
           claude_args: >-
             --max-turns 80
             --add-dir /tmp
