@@ -117,8 +117,8 @@ def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
     lead = {
         0: f"Of the {total} standout picks we made before the deadline, "
            f"{len(hits)} came off and {len(misses)} didn't.",
-        1: f"The calls table scores {total} picks for this gameweek: "
-           f"{len(hits)} hit, {len(misses)} missed.",
+        1: f"The calls table scores our {total} standout picks for this "
+           f"gameweek: {len(hits)} hit, {len(misses)} missed.",
         2: f"{len(hits)} of our {total} standout picks landed.",
     }[tone]
     return lead + " " + " ".join(parts), nums
