@@ -5,8 +5,8 @@ Lisää `data/fpl_notes.json`:iin yhden muistion kierrosta kohden samaan muotoon
 kuin käsin kirjoitetut (slug, date, title, paragraphs, claims, check_url, cta).
 `build_fpl_longtail.py` renderöi ne.
 
-Luvut tulevat VAIN artefakteista: `data/gw_recap.json` (mallijoukkue vs FPL:n
-keskiarvo, juokseva ero, kutsut) ja `data/fpl_xp_gw_accuracy.json` comparison
+Luvut tulevat VAIN artefakteista ja vain sellaisina kuin ne näkyvät ilmaisella
+/fpl-sivulla: `data/gw_recap.json` (kutsut) ja `data/fpl_xp_gw_accuracy.json` comparison
 (GoalIQ xP vs FPL ep_next vs form). Mitään lukua ei arvata: jos lähde puuttuu,
 muistiota ei synny. Tappiot kerrotaan samalla painolla kuin voitot.
 
@@ -72,27 +72,8 @@ def _comparison(accuracy_doc: dict, gw: int) -> dict | None:
     return None
 
 
-def _running(recap_doc: dict, gw: int) -> tuple[int, int, int] | None:
-    """(kierroksia, juokseva ero, kierroksia keskiarvon yli) kierrokseen asti."""
-    rows = [r for r in ((recap_doc.get("running") or {}).get("per_gw") or [])
-            if r.get("gw") is not None and r["gw"] <= gw
-            and r.get("diff") is not None]
-    if not rows:
-        return None
-    return (len(rows), sum(r["diff"] for r in rows),
-            sum(1 for r in rows if r["diff"] > 0))
-
-
-def _gw_phrase(n: int) -> str:
-    return "gameweek" if n == 1 else "gameweeks"
-
-
 def _pts(n: int) -> str:
     return f"{n} point" if abs(n) == 1 else f"{n} points"
-
-
-def _signed(n: int) -> str:
-    return f"+{n}" if n > 0 else str(n)
 
 
 def _calls_facts(calls: dict) -> tuple[list[str], list[str], list[str]]:
@@ -117,43 +98,6 @@ def _join(items: list[str]) -> str:
     return ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def _result_paragraph(gw: int, squad: dict, run: tuple[int, int, int] | None,
-                      tone: int) -> tuple[str, list[str]]:
-    pts, avg, diff = squad["points"], squad["average"], squad["points"] - squad["average"]
-    claims = [str(pts), str(avg)]
-    if diff > 0:
-        verdict = f"{_pts(diff)} above"
-    elif diff < 0:
-        verdict = f"{_pts(-diff)} below"
-    else:
-        verdict = "level with"
-    if tone == 0:
-        text = (f"Our model squad scored {pts} points in gameweek {gw}. The FPL "
-                f"average was {avg}, so we finished {verdict} it."
-                if diff else
-                f"Our model squad scored {pts} points in gameweek {gw}, level "
-                f"with the FPL average of {avg}.")
-    elif tone == 1:
-        text = (f"Gameweek {gw}: {pts} for the model squad against an FPL average "
-                f"of {avg}, which is {verdict} the average."
-                if diff else
-                f"Gameweek {gw}: {pts} for the model squad against an FPL "
-                f"average of {avg}, level.")
-    else:
-        text = (f"The average manager got {avg} in gameweek {gw}. Our model "
-                f"squad got {pts}, {verdict} that."
-                if diff else
-                f"The average manager got {avg} in gameweek {gw}. Our model "
-                f"squad got the same, {pts}.")
-    if run:
-        n, total, beat = run
-        claims += [_signed(total), str(n)]
-        text += (f" Over {n} scored {_gw_phrase(n)} the running gap to the "
-                 f"average is {_signed(total)} points. We were above it in "
-                 f"{beat} of the {n}.")
-    return text, claims
-
-
 def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
     hits, misses, nums = _calls_facts(calls)
     if not hits and not misses:
@@ -176,36 +120,37 @@ def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
 
 
 def _accuracy_paragraph(comp: dict | None, tone: int) -> tuple[str | None, list[str]]:
+    """Luvut kahdella desimaalilla kuten julkinen taulukko; verdikti lasketaan
+    samoista pyöristetyistä luvuista, jotta teksti ei ole ristiriidassa taulukon kanssa."""
     if not comp:
         return None, []
     mae = comp["mae"]
-    g, e, f = mae["goaliq"], mae["fpl_ep_next"], mae["form_baseline"]
-    n = comp.get("n")
-    claims = [_num(g), _num(e), _num(f)]
-    if g < min(e, f):
+    g, e, f = (_num(mae[k]) for k in ("goaliq", "fpl_ep_next", "form_baseline"))
+    gv, ev, fv = float(g), float(e), float(f)
+    claims = [g, e, f]
+    if gv < min(ev, fv):
         verdict = "we were closest of the three"
-    elif g > max(e, f):
+    elif gv > max(ev, fv):
         verdict = "we were furthest off of the three"
+    elif gv in (ev, fv):
+        verdict = "we were level with at least one of the other two"
     else:
         verdict = "we landed between the other two"
-    size = f" across {n} players" if n else ""
-    if n:
-        claims.append(str(n))
     text = {
-        0: f"On the xP accuracy table the average miss per player{size} was "
-           f"{_num(g)} points for GoalIQ, {_num(e)} for FPL's ep_next and "
-           f"{_num(f)} for plain form, so {verdict}.",
-        1: f"Projection error, in points per player{size}: GoalIQ {_num(g)}, "
-           f"FPL ep_next {_num(e)}, form {_num(f)}. By that measure {verdict}.",
-        2: f"On the same players{size}, GoalIQ's xP missed by {_num(g)} "
-           f"points on average, FPL's ep_next by {_num(e)} and form by "
-           f"{_num(f)}. Short version: {verdict}.",
+        0: f"On the xP accuracy table the average miss per player was {g} "
+           f"points for GoalIQ, {e} for FPL's ep_next and {f} for plain form, "
+           f"so {verdict}.",
+        1: f"Projection error, in points per player: GoalIQ {g}, FPL ep_next "
+           f"{e}, form {f}. By that measure {verdict}.",
+        2: f"On the xP accuracy table, GoalIQ's xP missed by {g} points per "
+           f"player on average, FPL's ep_next by {e} and form by {f}. "
+           f"Short version: {verdict}.",
     }[tone]
     return text, claims
 
 
 def _num(x: float) -> str:
-    return f"{x:.3f}".rstrip("0").rstrip(".") if isinstance(x, float) else str(x)
+    return f"{float(x):.2f}"
 
 
 def build_note(gw_entry: dict, recap_doc: dict, accuracy_doc: dict,
@@ -215,18 +160,14 @@ def build_note(gw_entry: dict, recap_doc: dict, accuracy_doc: dict,
         return None
     gw = gw_entry["gw"]
     tone = gw % 3
-    squad = gw_entry["squad"]
     claims: list[str] = []
     paragraphs: list[str] = []
 
-    res, c = _result_paragraph(gw, squad, _running(recap_doc, gw), tone)
     calls_p, cc = _calls_paragraph(gw_entry["calls"], tone)
     acc_p, ac = _accuracy_paragraph(_comparison(accuracy_doc, gw), tone)
-    order = [(res, c), (calls_p, cc), (acc_p, ac)]
-    if tone == 2 and calls_p:  # pohja 3 aloittaa kutsuista
-        order = [(calls_p, cc), (res, c), (acc_p, ac)]
-    elif tone == 1 and acc_p:  # pohja 2 aloittaa tarkkuudesta
-        order = [(acc_p, ac), (res, c), (calls_p, cc)]
+    order = [(calls_p, cc), (acc_p, ac)]
+    if tone == 1:  # pohja 2 aloittaa tarkkuudesta
+        order = [(acc_p, ac), (calls_p, cc)]
     for text, cl in order:
         if text:
             paragraphs.append(text)
@@ -237,18 +178,14 @@ def build_note(gw_entry: dict, recap_doc: dict, accuracy_doc: dict,
     if len(claims) < 3:
         return None
 
-    diff = squad["points"] - squad["average"]
     title = {
-        0: f"Gameweek {gw}: the numbers, wins and misses together",
-        1: f"Gameweek {gw} recap: {squad['points']} against an average of {squad['average']}",
+        0: f"Gameweek {gw}: our calls, hits and misses",
+        1: f"Gameweek {gw} recap: our calls against what happened",
         2: f"What we called before gameweek {gw} and what happened",
     }[tone]
-    if diff and tone == 0:
-        title = (f"Gameweek {gw}: {_pts(abs(diff))} "
-                 f"{'above' if diff > 0 else 'below'} the FPL average")
     return {
         "slug": slug_for(gw),
-        "date": (squad.get("graded_at") or "")[:10] or today.isoformat(),
+        "date": ((gw_entry.get("squad") or {}).get("graded_at") or "")[:10] or today.isoformat(),
         "title": title,
         "check_url": CHECK_URL,
         "cta": CTA,

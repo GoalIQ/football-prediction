@@ -91,13 +91,14 @@ def test_jokainen_claim_on_tekstissa_ja_kentat_ovat_olemassa():
     assert n["check_url"] and n["cta"] and len(n["claims"]) >= 3
     teksti = note_plain_text(n)
     assert [c for c in n["claims"] if c not in teksti] == []
-    for luku in ("57", "58", "1.612", "1.626", "1.644"):
+    for luku in ("1.61", "1.63", "1.64"):
         assert luku in n["claims"]
 
 
 def test_tappio_ja_huti_kerrotaan_voiton_rinnalla():
     teksti = note_plain_text(build_note(_gw(), _recap(_gw()), _acc(), TODAY))
-    assert "1 point below" in teksti
+    assert "FPL average" not in teksti and "model squad" not in teksti
+    assert "across" not in teksti and "1.612" not in teksti
     assert "Hit:" in teksti and "Missed:" in teksti
 
 
@@ -112,9 +113,14 @@ def test_pohjat_vaihtuvat_kierroksen_mukaan_eika_sisalla_em_dashia():
 
 
 def test_ilman_tarkkuusdataa_muistio_syntyy_ilman_keksittya_lukua():
-    n = build_note(_gw(), _recap(_gw()), {"gameweeks": []}, TODAY)
+    g = _gw()
+    g["calls"]["calls"].append({"call": "ceiling", "web_name": "Salah",
+                                "points": 9, "criterion": "8+ pts", "met": True})
+    n = build_note(g, _recap(g), {"gameweeks": []}, TODAY)
     assert n is not None
     assert "ep_next" not in note_plain_text(n)
+    # kahdella kutsun luvulla ilman tarkkuutta ei synny muistiota (alle 3 claimia)
+    assert build_note(_gw(), _recap(_gw()), {"gameweeks": []}, TODAY) is None
 
 
 def test_muistio_renderoituu_notes_sivulle():
@@ -126,3 +132,11 @@ def test_muistio_renderoituu_notes_sivulle():
 from datetime import datetime, timezone  # noqa: E402
 
 TODAY_DT = datetime(2026, 10, 19, tzinfo=timezone.utc)
+
+
+def test_tasatilanne_pyoristetyissa_luvuissa_ei_vaita_johtoa():
+    acc = _acc()
+    acc["gameweeks"][0]["comparison"]["mae"] = {
+        "goaliq": 1.614, "fpl_ep_next": 1.606, "form_baseline": 1.644}
+    teksti = note_plain_text(build_note(_gw(), _recap(_gw()), acc, TODAY))
+    assert "closest" not in teksti and "level with" in teksti
