@@ -150,6 +150,21 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   "rendered by check_free_window.py --fix; do not edit by hand") skriptiin koskematta, ja sanalista laajenee samassa
   muutoksessa. Huom: index.html on agentilta kielletty (myyntilupaus), joten etusivun merkit vaihtaa ihminen
   mergen yhteydessä. (julkaisutarkistaja 20.10)
+- 2026-10: Bluesky-botin kaatunut aivoajo kuluttaa aikaikkunan. 20.10 09 UTC Claude-kutsu palautti virheen
+  (tilauksen katkos, 0 tokenia), mutta julkaise-job ajoi `publish --thought`, joka kirjaa `last_think_at`:n
+  aina kun `think == 'true'`, eikä katso aivojen tulosta. Seuraava aivoajo oli vasta 17 UTC, eli päivän
+  ensimmäinen ikkuna meni ilman uusintaa. Lisäksi punaisesta bsky-ajosta ei tule kenellekään ilmoitusta:
+  ajon käynnistää fp-dispatch-relay (github-actions[bot]), joten GitHubin epäonnistumisviesti menee botille.
+  Ylläpitäjä huomasi katkoksen vain siitä, että X-jonon issueita ei tullut. Korjaus kahdessa osassa:
+  (a) `--thought` vain kun aivojen askel onnistui (työnkulun ehto, käsin mergen yhteydessä) ja/tai
+  `cmd_publish` ei kirjaa `last_think_at`:ia ilman jonoa; (b) aivojen kaatuminen avaa tai päivittää
+  yhden issuen ylläpitäjälle (sama kanava kuin X-jono, ei uutta issueta joka tunti).
+- 2026-10: X-jonon issuet (label `x-jono`) jäävät auki: 20.10 auki 9, vanhimmat 18.10 ("tonight" -hintapostauksia,
+  jotka vanhenevat samana päivänä). Issuen teksti pyytää sulkemaan käsin, mutta mikään ei lue tilaa
+  (x_viikkoketju tarkistaa otsikot myös suljetuista). Ylläpitäjä kysyi 20.10, pitääkö ne sulkea erikseen.
+  Ehdotus: `bsky_bot x-mirror` ja `x_viikkoketju` sulkevat omat issuensa, kun ne vanhenevat (bsky-peili 24 h,
+  kierrosketju seuraavan deadlinen jälkeen) kommentilla "vanhentunut, ei postattu tai postattu käsin";
+  issuen tekstistä pois sulkemispyyntö. Kummallakin askeleella on jo `issues: write`, joten työnkulkuun ei koskea.
 
 ## Avoimet
 
