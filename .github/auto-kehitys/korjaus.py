@@ -8,8 +8,13 @@ TARVITSEE_IHMISEN, eikä sitä enää korjata automaattisesti.
 
 Luottamusraja (repo on julkinen, kuka tahansa voi kommentoida): agentti saa vain
   * CI-julkaisutarkistajan oman verdiktin (kirjoittaja github-actions, alkaa "Julkaisutarkistus (CI"), ja
-  * ylläpitäjän kommentit (authorAssociation OWNER tai MEMBER, ei botti).
+  * ylläpitäjän kommentit (kirjautumisnimi YLLAPITAJAN_LOGINIT tai authorAssociation OWNER/MEMBER, ei botti).
 Muiden kommentit eivät päädy agentille lainkaan.
+
+Miksi kirjautumisnimi (21.10.2026): ylläpitäjän jäsenyys orgissa on yksityinen, eikä CI:n GITHUB_TOKEN näe
+sitä, joten authorAssociation ei ollut OWNER/MEMBER. PR #6:n molemmat korjauskierrokset saivat 0 ylläpitäjän
+kommenttia, vaikka niitä oli kolme, ja agentti toimi pelkän verdiktin varassa. Kirjautumisnimi on yksilöllinen
+eikä riipu näkyvyydestä.
 
   valitse  avoimet PR:t (gh pr list --json number,headRefName,labels) -> korjattava ja merkittävät
   ohjeet   PR:n kommentit ja runko (gh pr view --json comments,body) -> /tmp/korjaus/*.md
@@ -33,6 +38,7 @@ VERDIKTIN_ALKU = "Julkaisutarkistus (CI"
 KORJAUKSEN_ALKU = "Korjauskierros "  # auto-kehitys.yml julkaise kirjoittaa tämän pushin jälkeen
 EI_VERDIKTIA = 3
 YLLAPITAJA = {"OWNER", "MEMBER"}
+YLLAPITAJAN_LOGINIT = {"Veikkoville"}
 YLLAPITAJAN_KOMMENTTEJA = 5
 KOMMENTIN_PITUUS = 3000
 
@@ -80,7 +86,9 @@ def poimi_ohjeet(doc: dict) -> dict:
     if verdikti and pushit and str(verdikti.get("createdAt", "")) < str(pushit[-1].get("createdAt", "")):
         verdikti = None  # edellinen korjaus on uudempi kuin verdikti: tuoretta verdiktiä ei ole
     yllapitaja = [k for k in kommentit
-                  if str(k.get("authorAssociation", "")).upper() in YLLAPITAJA and not _on_botti(k)]
+                  if (str((k.get("author") or {}).get("login", "")) in YLLAPITAJAN_LOGINIT
+                      or str(k.get("authorAssociation", "")).upper() in YLLAPITAJA)
+                  and not _on_botti(k)]
     return {
         "verdikti": str(verdikti["body"]) if verdikti else None,
         "yllapitaja": [str(k.get("body", ""))[:KOMMENTIN_PITUUS] for k in yllapitaja[-YLLAPITAJAN_KOMMENTTEJA:]],
