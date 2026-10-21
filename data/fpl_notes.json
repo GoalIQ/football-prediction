@@ -1,481 +1,501 @@
 {
- "_comment": [
-  "Kierrosmuistiot /fpl/notes-sivulle. YKSI URL joka kertyy, ei erillisia",
-  "sivuja per muistio: erillinen sivu jaisi orvoksi sisaisessa linkityksessa",
-  "(mitattu ongelma 15.8, ks. _TOOL_LINKS-kommentti build_fpl_longtail.py:ssa).",
-  "",
-  "JOKAINEN yksittain kirjoitettu merkinta on kaynyt julkaisutarkistajan lapi ENNEN lisaamista, ja",
-  "sen luvut on ajettu uudelleen julkaisuhetkella. `claims` on lista niista",
-  "merkkijonoista jotka lukijan on loydettava `check_url`-sivulta.",
-  "scripts/check_claim_route.py ajaa sen, ja tests/test_fpl_notes.py vaatii",
-  "etta kentat ovat olemassa.",
-  "",
-  "Yksittain kirjoitettua tekstia EI generoida. 15.8:n portti blokkasi koneelta kuulostavan",
-  "version neljalla tyylitunnusmerkilla; generaattori tuottaisi tasan ne.",
-  "POIKKEUS 21.10: kierrosrecap (slug recap-gwN, GW7 alkaen) generoidaan",
-  "scripts/build_fpl_recap_note.py:lla fpl-data-refreshissa. Sen kolme pohjaa on ajettu",
-  "julkaisutarkistajan lapi kerran, ei merkinta kerrallaan.",
-  "",
-  "THIAW-POIKKEUS (kirjattu 15.8, julkaisutarkistajan suositus). Villen 10.8:n",
-  "saanto kieltaa Thiawin nostamisen nimena ja suosituksena. Erikoistilanne-",
-  "artikkelin taulukossa han on silti mukana, ja peruste on kolmiosainen:",
-  "1) han ei ole otsikossa eika og-kortissa, 2) vaite on paattynyt",
-  "historiatilasto (5.90 / 5.38) eika projektio, ja 10.8:n vastalause koski",
-  "hanen xG:nsa projisointia eteenpain, 3) han on koko liigan #1 set-piece",
-  "xG:lla, joten hanen poistamisensa olisi tarkistettavissa oleva puute",
-  "sivulla jonka koko lupaus on 'avaa ilmaissivu ja tarkista'.",
-  "",
-  "og_exclude: nimet jotka jatetaan pois JAKOKORTISTA vaikka ne ovat",
-  "artikkelin taulukossa. Kortti on markkinointikuva jossa nimi on nostettu,",
-  "taulukkorivi on dataa jonka lukija tarkistaa. Thiaw on kortissa poissa",
-  "10.8:n saannon takia mutta taulukossa mukana, ks. THIAW-POIKKEUS yllä."
- ],
- "notes": [
-  {
-   "slug": "arsenal-defence-price",
-   "date": "2026-08-21",
-   "title": "Everyone's buying the Arsenal defence. Read the minutes column first.",
-   "check_url": "https://goaliq.app/fpl/expected-points",
-   "claims": [
-    "Gabriel",
-    "30.1",
-    "8.0",
-    "29.7",
-    "83",
-    "84",
-    "Tarkowski",
-    "27.5",
-    "90",
-    "93",
-    "Senesi",
-    "89",
-    "98",
-    "Kadıoğlu",
-    "96",
-    "6.0",
-    "Hincapie",
-    "63",
-    "58"
-   ],
-   "og_exclude": [
-    "Hincapie"
-   ],
-   "paragraphs": [
-    "Everyone's landed on the same read this week: Arsenal's defence is the thing to own. Our board agrees on the player. Gabriel is the highest projected defender we have, 30.1 points over the next six gameweeks, at £8.0m and 29.7% owned.",
-    "The minutes column is the part I'd read twice. Gabriel projects at 83 minutes a game with an 84% chance of starting. Tarkowski is on 90 and 93%, Senesi on 89 and 98%, Kadıoğlu on 89 and 96%. Three defenders at £6.0m or under, every one of them likelier to play than the £8.0m man.",
-    "Tarkowski projects 27.5 over the same six gameweeks, so the whole premium is 2.6 points for £2.0m, and you can do that subtraction on the page yourself. If your squad has the money spare, the model won't argue with Gabriel. The question is what the £2.0m funds instead at the top of the midfield table.",
-    "If the plan is Arsenal clean sheets on a budget, our numbers say no. Hincapie is the only other Arsenal defender who makes the top-100 page at all, at a 63% start chance and 58 expected minutes. That's rotation, and a cheap clean sheet punt doesn't survive rotation.",
-    "A lot of this week's case cites Sunday at Wembley. Our model never saw that match. The Community Shield isn't a league fixture, so it sits outside the data the model is fitted on, and it didn't move a single number above.",
-    "One caveat we'd rather say than have you find: expected minutes are built from last season's starts, so they're slower than the transfer market. Where that matters, the page flags the row."
-   ],
-   "cta": "Every number here, free, no sign-in"
-  },
-  {
-   "slug": "gw1-team-news-75-percent-flag",
-   "date": "2026-08-15",
-   "title": "GW1 team news: a 75% flag is not a sell signal",
-   "check_url": "https://goaliq.app/fpl/team-news",
-   "claims": [
-    "61",
-    "15",
-    "Mukiele",
-    "4.3%",
-    "17.0",
-    "2.1%",
-    "11.3",
-    "Kroupi",
-    "Tavernier",
-    "26.1"
-   ],
-   "paragraphs": [
-    "61 players are ruled out for the GW1 deadline and 15 are doubtful. Only two of the doubtful are owned by more than 1%, so most of that list isn't your problem.",
-    "Mukiele is the one I'd look at. FPL has him 75% to play, 4.3% own him, and he's still the best six-gameweek projection on the entire doubtful list at 17.0, with the 75% already taken out of the number. The flag costs him less than the panic around it does.",
-    "Šeško is the other one over 1%. Same 75%, 2.1% owned, 11.3.",
-    "Kroupi is the most owned player who can't play at all, and Bournemouth's cover for him is Tavernier on 26.1. I'd move him and stop reading about it."
-   ],
-   "cta": "Full list, free, no sign-in"
-  },
-  {
-   "slug": "set-piece-xg-is-not-open-play-xg",
-   "date": "2026-08-15",
-   "title": "The DEF column hides two different jobs",
-   "check_url": "https://goaliq.app/fpl/stats",
-   "cta": "Open the stats page and check any of these",
-   "claims": [
-    "0.11",
-    "0.31",
-    "0.61",
-    "0.87",
-    "1.45",
-    "2.05",
-    "2.17",
-    "2.19",
-    "2.45",
-    "2.61",
-    "2.62",
-    "2.71",
-    "2.86",
-    "2.87",
-    "2.97",
-    "3.01",
-    "3.15",
-    "4.50",
-    "4.65",
-    "5.38",
-    "5.90",
-    "6.73",
-    "Dalot",
-    "Gabriel",
-    "Haaland",
-    "Hume",
-    "Lacroix",
-    "Mbeumo",
-    "Muñoz",
-    "O'Reilly",
-    "Sessegnon",
-    "Struijk",
-    "Tarkowski",
-    "Thiaw",
-    "Van de Ven"
-   ],
-   "paragraphs": [
-    "Everyone knows a centre-back's goals come from corners. That part isn't interesting. What I didn't expect is that the share is sharp enough to tell you which defenders are centre-backs in the first place.",
-    "Take the 23 defenders with at least 2.0 non-penalty xG. Ten are above 80% set pieces, six are below 50%, and the split is the one FPL doesn't draw for you. The ten are centre-backs. The six are full-backs and wing-backs. Nobody at all sits between 40% and 51%.",
-    "The neighbouring column says the same thing. Those ten centre-backs took between 8 and 26 headed shots last season. Five of the six full-backs took seven or fewer.",
-    "The one that breaks the pattern is also the one worth knowing. O'Reilly has the highest non-penalty xG of any defender in the league, 6.73, and only 22% of it is set pieces. The best attacking defender in the DEF column is on the wrong side of the stereotype.",
+  "_comment": [
+    "Kierrosmuistiot /fpl/notes-sivulle. YKSI URL joka kertyy, ei erillisia",
+    "sivuja per muistio: erillinen sivu jaisi orvoksi sisaisessa linkityksessa",
+    "(mitattu ongelma 15.8, ks. _TOOL_LINKS-kommentti build_fpl_longtail.py:ssa).",
+    "",
+    "JOKAINEN yksittain kirjoitettu merkinta on kaynyt julkaisutarkistajan lapi ENNEN lisaamista, ja",
+    "sen luvut on ajettu uudelleen julkaisuhetkella. `claims` on lista niista",
+    "merkkijonoista jotka lukijan on loydettava `check_url`-sivulta.",
+    "scripts/check_claim_route.py ajaa sen, ja tests/test_fpl_notes.py vaatii",
+    "etta kentat ovat olemassa.",
+    "",
+    "Yksittain kirjoitettua tekstia EI generoida. 15.8:n portti blokkasi koneelta kuulostavan",
+    "version neljalla tyylitunnusmerkilla; generaattori tuottaisi tasan ne.",
+    "POIKKEUS 21.10: kierrosrecap (slug recap-gwN, GW7 alkaen) generoidaan",
+    "scripts/build_fpl_recap_note.py:lla fpl-data-refreshissa. Sen kolme pohjaa on ajettu",
+    "julkaisutarkistajan lapi kerran, ei merkinta kerrallaan.",
+    "",
+    "THIAW-POIKKEUS (kirjattu 15.8, julkaisutarkistajan suositus). Villen 10.8:n",
+    "saanto kieltaa Thiawin nostamisen nimena ja suosituksena. Erikoistilanne-",
+    "artikkelin taulukossa han on silti mukana, ja peruste on kolmiosainen:",
+    "1) han ei ole otsikossa eika og-kortissa, 2) vaite on paattynyt",
+    "historiatilasto (5.90 / 5.38) eika projektio, ja 10.8:n vastalause koski",
+    "hanen xG:nsa projisointia eteenpain, 3) han on koko liigan #1 set-piece",
+    "xG:lla, joten hanen poistamisensa olisi tarkistettavissa oleva puute",
+    "sivulla jonka koko lupaus on 'avaa ilmaissivu ja tarkista'.",
+    "",
+    "og_exclude: nimet jotka jatetaan pois JAKOKORTISTA vaikka ne ovat",
+    "artikkelin taulukossa. Kortti on markkinointikuva jossa nimi on nostettu,",
+    "taulukkorivi on dataa jonka lukija tarkistaa. Thiaw on kortissa poissa",
+    "10.8:n saannon takia mutta taulukossa mukana, ks. THIAW-POIKKEUS yllä."
+  ],
+  "notes": [
     {
-     "h2": "The set-piece end"
-    },
-    {
-     "head": [
-      "Player",
-      "npxG",
-      "Set-piece xG",
-      "Share"
-     ],
-     "rows": [
-      [
-       "Gabriel",
-       "4.65",
-       "4.50",
-       "97%"
+      "slug": "recap-gw7",
+      "date": "2026-10-20",
+      "title": "Gameweek 7 recap: our calls against what happened",
+      "check_url": "https://goaliq.app/fpl",
+      "cta": "The gameweek calls and the accuracy table, free, no sign-in",
+      "claims": [
+        "1.61",
+        "1.74",
+        "1.75",
+        "13",
+        "0",
+        "3",
+        "2"
       ],
-      [
-       "Lacroix",
-       "3.01",
-       "2.86",
-       "95%"
-      ],
-      [
-       "Thiaw",
-       "5.90",
-       "5.38",
-       "91%"
-      ],
-      [
-       "Tarkowski",
-       "2.87",
-       "2.61",
-       "91%"
-      ],
-      [
-       "Van de Ven",
-       "2.45",
-       "2.17",
-       "89%"
-      ],
-      [
-       "Struijk",
-       "2.97",
-       "2.62",
-       "88%"
+      "paragraphs": [
+        "We beat both FPL columns on projection error: GoalIQ 1.61 points per player, FPL ep_next 1.74, FPL form 1.75.",
+        "The calls table scores our four standout picks for this gameweek. Ceiling pick Cherki on 0 and boom-or-bust pick Barry on 2 missed. Captain pick Haaland on 13 and safest pick Saka on 3 hit."
       ]
-     ]
     },
     {
-     "h2": "The open-play end"
+      "slug": "arsenal-defence-price",
+      "date": "2026-08-21",
+      "title": "Everyone's buying the Arsenal defence. Read the minutes column first.",
+      "check_url": "https://goaliq.app/fpl/expected-points",
+      "claims": [
+        "Gabriel",
+        "30.1",
+        "8.0",
+        "29.7",
+        "83",
+        "84",
+        "Tarkowski",
+        "27.5",
+        "90",
+        "93",
+        "Senesi",
+        "89",
+        "98",
+        "Kadıoğlu",
+        "96",
+        "6.0",
+        "Hincapie",
+        "63",
+        "58"
+      ],
+      "og_exclude": [
+        "Hincapie"
+      ],
+      "paragraphs": [
+        "Everyone's landed on the same read this week: Arsenal's defence is the thing to own. Our board agrees on the player. Gabriel is the highest projected defender we have, 30.1 points over the next six gameweeks, at £8.0m and 29.7% owned.",
+        "The minutes column is the part I'd read twice. Gabriel projects at 83 minutes a game with an 84% chance of starting. Tarkowski is on 90 and 93%, Senesi on 89 and 98%, Kadıoğlu on 89 and 96%. Three defenders at £6.0m or under, every one of them likelier to play than the £8.0m man.",
+        "Tarkowski projects 27.5 over the same six gameweeks, so the whole premium is 2.6 points for £2.0m, and you can do that subtraction on the page yourself. If your squad has the money spare, the model won't argue with Gabriel. The question is what the £2.0m funds instead at the top of the midfield table.",
+        "If the plan is Arsenal clean sheets on a budget, our numbers say no. Hincapie is the only other Arsenal defender who makes the top-100 page at all, at a 63% start chance and 58 expected minutes. That's rotation, and a cheap clean sheet punt doesn't survive rotation.",
+        "A lot of this week's case cites Sunday at Wembley. Our model never saw that match. The Community Shield isn't a league fixture, so it sits outside the data the model is fitted on, and it didn't move a single number above.",
+        "One caveat we'd rather say than have you find: expected minutes are built from last season's starts, so they're slower than the transfer market. Where that matters, the page flags the row."
+      ],
+      "cta": "Every number here, free, no sign-in"
     },
     {
-     "head": [
-      "Player",
-      "npxG",
-      "Set-piece xG",
-      "Share"
-     ],
-     "rows": [
-      [
-       "Dalot",
-       "2.19",
-       "0.87",
-       "40%"
+      "slug": "gw1-team-news-75-percent-flag",
+      "date": "2026-08-15",
+      "title": "GW1 team news: a 75% flag is not a sell signal",
+      "check_url": "https://goaliq.app/fpl/team-news",
+      "claims": [
+        "61",
+        "15",
+        "Mukiele",
+        "4.3%",
+        "17.0",
+        "2.1%",
+        "11.3",
+        "Kroupi",
+        "Tavernier",
+        "26.1"
       ],
-      [
-       "O'Reilly",
-       "6.73",
-       "1.45",
-       "22%"
+      "paragraphs": [
+        "61 players are ruled out for the GW1 deadline and 15 are doubtful. Only two of the doubtful are owned by more than 1%, so most of that list isn't your problem.",
+        "Mukiele is the one I'd look at. FPL has him 75% to play, 4.3% own him, and he's still the best six-gameweek projection on the entire doubtful list at 17.0, with the 75% already taken out of the number. The flag costs him less than the panic around it does.",
+        "Šeško is the other one over 1%. Same 75%, 2.1% owned, 11.3.",
+        "Kroupi is the most owned player who can't play at all, and Bournemouth's cover for him is Tavernier on 26.1. I'd move him and stop reading about it."
       ],
-      [
-       "Muñoz",
-       "3.15",
-       "0.61",
-       "19%"
+      "cta": "Full list, free, no sign-in"
+    },
+    {
+      "slug": "set-piece-xg-is-not-open-play-xg",
+      "date": "2026-08-15",
+      "title": "The DEF column hides two different jobs",
+      "check_url": "https://goaliq.app/fpl/stats",
+      "cta": "Open the stats page and check any of these",
+      "claims": [
+        "0.11",
+        "0.31",
+        "0.61",
+        "0.87",
+        "1.45",
+        "2.05",
+        "2.17",
+        "2.19",
+        "2.45",
+        "2.61",
+        "2.62",
+        "2.71",
+        "2.86",
+        "2.87",
+        "2.97",
+        "3.01",
+        "3.15",
+        "4.50",
+        "4.65",
+        "5.38",
+        "5.90",
+        "6.73",
+        "Dalot",
+        "Gabriel",
+        "Haaland",
+        "Hume",
+        "Lacroix",
+        "Mbeumo",
+        "Muñoz",
+        "O'Reilly",
+        "Sessegnon",
+        "Struijk",
+        "Tarkowski",
+        "Thiaw",
+        "Van de Ven"
       ],
-      [
-       "Hume",
-       "2.71",
-       "0.31",
-       "11%"
+      "paragraphs": [
+        "Everyone knows a centre-back's goals come from corners. That part isn't interesting. What I didn't expect is that the share is sharp enough to tell you which defenders are centre-backs in the first place.",
+        "Take the 23 defenders with at least 2.0 non-penalty xG. Ten are above 80% set pieces, six are below 50%, and the split is the one FPL doesn't draw for you. The ten are centre-backs. The six are full-backs and wing-backs. Nobody at all sits between 40% and 51%.",
+        "The neighbouring column says the same thing. Those ten centre-backs took between 8 and 26 headed shots last season. Five of the six full-backs took seven or fewer.",
+        "The one that breaks the pattern is also the one worth knowing. O'Reilly has the highest non-penalty xG of any defender in the league, 6.73, and only 22% of it is set pieces. The best attacking defender in the DEF column is on the wrong side of the stereotype.",
+        {
+          "h2": "The set-piece end"
+        },
+        {
+          "head": [
+            "Player",
+            "npxG",
+            "Set-piece xG",
+            "Share"
+          ],
+          "rows": [
+            [
+              "Gabriel",
+              "4.65",
+              "4.50",
+              "97%"
+            ],
+            [
+              "Lacroix",
+              "3.01",
+              "2.86",
+              "95%"
+            ],
+            [
+              "Thiaw",
+              "5.90",
+              "5.38",
+              "91%"
+            ],
+            [
+              "Tarkowski",
+              "2.87",
+              "2.61",
+              "91%"
+            ],
+            [
+              "Van de Ven",
+              "2.45",
+              "2.17",
+              "89%"
+            ],
+            [
+              "Struijk",
+              "2.97",
+              "2.62",
+              "88%"
+            ]
+          ]
+        },
+        {
+          "h2": "The open-play end"
+        },
+        {
+          "head": [
+            "Player",
+            "npxG",
+            "Set-piece xG",
+            "Share"
+          ],
+          "rows": [
+            [
+              "Dalot",
+              "2.19",
+              "0.87",
+              "40%"
+            ],
+            [
+              "O'Reilly",
+              "6.73",
+              "1.45",
+              "22%"
+            ],
+            [
+              "Muñoz",
+              "3.15",
+              "0.61",
+              "19%"
+            ],
+            [
+              "Hume",
+              "2.71",
+              "0.31",
+              "11%"
+            ],
+            [
+              "Sessegnon",
+              "2.05",
+              "0.11",
+              "5%"
+            ]
+          ]
+        },
+        {
+          "h2": "Why it matters"
+        },
+        "xG gets treated as one currency. You compare two players, the higher number wins, and for most of the league that's fine. Haaland's non-penalty xG is 10% set pieces. Mbeumo's is 2%.",
+        "For the defenders at the top of that first table the number comes from somewhere else. It depends on how many set pieces the team wins and on who is delivering them. Neither of those moves with the things that normally move a team's attack.",
+        "Take a club that sells its main striker. Open-play creation drops and the rating should drop with it. But the number of set pieces barely changes, and the centre-back who scores off them keeps scoring as long as the delivery is still there.",
+        {
+          "h2": "How I'd use it"
+        },
+        "If you're comparing two defenders on xG, look at what the xG is made of before you trust the gap. A 3.0 that's 90% set pieces and a 3.0 that's 30% set pieces are different bets, and the second one is closer to a normal attacking return.",
+        "And if a club changes who takes its corners, that's the transfer that should worry you about a set-piece defender, more than the striker leaving. The same view on the stats page lists the corner and free-kick taker order, so you can check who is on them now. I don't have a clean number for how much delivery quality matters, and I'd rather say that than invent one.",
+        {
+          "h2": "What this doesn't show"
+        },
+        "The shot data is 2025/26, not the season about to start, and some of the shares sit on thin samples. Van de Ven's 89% comes off 2.45 npxG, about two goals' worth of chances, and I wouldn't lean on it the way I'd lean on Gabriel's 4.65.",
+        "Set piece here means corners and free kicks, not corners alone, and the column doesn't split them. The centre-back and full-back labels are mine, not a column in the data.",
+        "Both columns are on our free stats page, no sign-in, but they sit in different views. Easiest route: type the name into \"Search player\", then switch between \"Goal threat\" for npxG and headed shots and \"Set pieces\" for Set-piece xG. If you want to sort the whole list instead, press \"Show all players\" first, because the table opens on the top 100 and several of the names above sit outside it on npxG. Basis is 2025/26, 400 players in this season's FPL squads.",
+        "goaliq.app/fpl/stats"
       ],
-      [
-       "Sessegnon",
-       "2.05",
-       "0.11",
-       "5%"
+      "og_headline": [
+        "The best attacking defender",
+        "in FPL is 22% set pieces."
+      ],
+      "og_sub": "The DEF column hides two different jobs.",
+      "og_exclude": [
+        "Thiaw"
+      ],
+      "og_pin": [
+        "O'Reilly"
       ]
-     ]
     },
     {
-     "h2": "Why it matters"
-    },
-    "xG gets treated as one currency. You compare two players, the higher number wins, and for most of the league that's fine. Haaland's non-penalty xG is 10% set pieces. Mbeumo's is 2%.",
-    "For the defenders at the top of that first table the number comes from somewhere else. It depends on how many set pieces the team wins and on who is delivering them. Neither of those moves with the things that normally move a team's attack.",
-    "Take a club that sells its main striker. Open-play creation drops and the rating should drop with it. But the number of set pieces barely changes, and the centre-back who scores off them keeps scoring as long as the delivery is still there.",
-    {
-     "h2": "How I'd use it"
-    },
-    "If you're comparing two defenders on xG, look at what the xG is made of before you trust the gap. A 3.0 that's 90% set pieces and a 3.0 that's 30% set pieces are different bets, and the second one is closer to a normal attacking return.",
-    "And if a club changes who takes its corners, that's the transfer that should worry you about a set-piece defender, more than the striker leaving. The same view on the stats page lists the corner and free-kick taker order, so you can check who is on them now. I don't have a clean number for how much delivery quality matters, and I'd rather say that than invent one.",
-    {
-     "h2": "What this doesn't show"
-    },
-    "The shot data is 2025/26, not the season about to start, and some of the shares sit on thin samples. Van de Ven's 89% comes off 2.45 npxG, about two goals' worth of chances, and I wouldn't lean on it the way I'd lean on Gabriel's 4.65.",
-    "Set piece here means corners and free kicks, not corners alone, and the column doesn't split them. The centre-back and full-back labels are mine, not a column in the data.",
-    "Both columns are on our free stats page, no sign-in, but they sit in different views. Easiest route: type the name into \"Search player\", then switch between \"Goal threat\" for npxG and headed shots and \"Set pieces\" for Set-piece xG. If you want to sort the whole list instead, press \"Show all players\" first, because the table opens on the top 100 and several of the names above sit outside it on npxG. Basis is 2025/26, 400 players in this season's FPL squads.",
-    "goaliq.app/fpl/stats"
-   ],
-   "og_headline": [
-    "The best attacking defender",
-    "in FPL is 22% set pieces."
-   ],
-   "og_sub": "The DEF column hides two different jobs.",
-   "og_exclude": [
-    "Thiaw"
-   ],
-   "og_pin": [
-    "O'Reilly"
-   ]
-  },
-  {
-   "slug": "we-measured-our-own-worst-column",
-   "date": "2026-08-19",
-   "title": "We measured our own worst column",
-   "check_url": "https://goaliq.app/fpl/minutes-accuracy",
-   "cta": "The full measurement, every group and every setting",
-   "claims": [
-    "415",
-    "303",
-    "112",
-    "20.7",
-    "9.4",
-    "21.8"
-   ],
-   "paragraphs": [
-    "Every projection we publish rests on a guess about how long someone will be on the pitch. Before this season started we went back and checked how good that guess has been.",
-    "Take the prior built from 2024/25, use it to predict the first six gameweeks of 2025/26, compare it to what happened. 415 players had enough history to qualify. Mean absolute error: 21 minutes. That's a fifth of a match, per player, per game, and it sits underneath every expected points total we publish. We ran the same test on the two summers before that and got 20.9 and 21.2, so it isn't one bad year.",
-    {
-     "h2": "Where the error isn't"
-    },
-    "We went in assuming we hand out minutes too freely across the board. That's not what the split says.",
-    "For the 303 players who actually got on the pitch in those six gameweeks we sit 1.8 minutes under on average, though the miss itself is still 21.8 minutes. The entire positive bias comes from 112 players who never appeared at all. We gave them an average of 20.7 minutes each. They played none.",
-    "The column can't see one thing, and it's the thing you most want to know in August: is this player in the team at all? Once someone is in the team we're close. Deciding whether he is belongs to a manager, and we don't have one.",
-    "That blindness is worst exactly where you'd use it. Narrow to the 124 players the prior expected to start, 60 minutes or more, and the error is 25 minutes with a 16 minute overshoot. Even the 111 of those who did play came in 9.4 minutes under our estimate. Across all three summers that starter overshoot runs between 5.4 and 9.4 minutes. The caveat on our expected points page is the short version of this, measured at 80+ minutes rather than 60+, which is where the 10 minutes quoted there comes from.",
-    "So treat our expected minutes as a good estimate for players you already believe are starting, and as close to no information for players you're unsure about.",
-    {
-     "h2": "We already checked the decay constant"
-    },
-    "The obvious response is that we weight last season too heavily or not heavily enough. We tested nine settings from very sharp to no decay at all. The best scores 21.332, we run 21.457, and the flat weighting everyone starts with is 22.291. A tenth of a minute between us and the best available.",
-    "Twenty one minutes is what this method costs. Moving the dial doesn't buy it back, so we'd rather say so than imply precision the number doesn't have.",
-    {
-     "h2": "Where these numbers come from"
-    },
-    "Every number above is on goaliq.app/fpl/minutes-accuracy, with the three summer version and the whole decay range next to it. Both ends are FPL's own published data, and the page says what the prior is and who qualified, so the method is there if you want to argue with it. The figures here are the prior on its own, before the squad constraint pass; the page carries both.",
-    "It's the weakest number we produce. If you cut the same six gameweeks yourself and get something else, we want to hear it."
-   ]
-  },
-  {
-   "slug": "the-best-clean-sheet-this-week-is-not-the-best-run",
-   "date": "2026-09-03",
-   "title": "The best clean sheet this week is not the best run",
-   "check_url": "https://goaliq.app/fpl",
-   "cta": "The clean sheet table, every club and both columns",
-   "claims": [
-    "41.3%",
-    "38.8%",
-    "37.7%",
-    "47%",
-    "33%",
-    "22%",
-    "17%",
-    "18%",
-    "48%",
-    "4%",
-    "Arsenal",
-    "Brentford",
-    "Coventry",
-    "Next 6 CS%"
-   ],
-   "paragraphs": [
-    "Man City have the best clean sheet chance in Gameweek 3, 41.3% at home to Coventry. Arsenal are 38.8% against Chelsea, Brentford 37.7% against Sunderland. If you're buying a defender for one weekend, that's the order.",
-    "There's a new column next to those numbers, Next 6 CS%, and it doesn't agree. It averages the same probability over the six fixtures in the grid below. Arsenal come out at 47%, the best run on the page. City 33%, Brentford 22%.",
-    "City's 33% hides a wide swing. United away in GW4 is 18%, Sunderland at home in GW5 is 48%, which is higher than this weekend. I posted on Wednesday that City's 41% was really about the Coventry fixture. The full run says Coventry at home isn't even their best one.",
-    {
-     "head": [
-      "Club",
-      "GW3 clean sheet",
-      "Next 6 CS%"
-     ],
-     "rows": [
-      [
-       "Arsenal",
-       "38.8%",
-       "47%"
+      "slug": "we-measured-our-own-worst-column",
+      "date": "2026-08-19",
+      "title": "We measured our own worst column",
+      "check_url": "https://goaliq.app/fpl/minutes-accuracy",
+      "cta": "The full measurement, every group and every setting",
+      "claims": [
+        "415",
+        "303",
+        "112",
+        "20.7",
+        "9.4",
+        "21.8"
       ],
-      [
-       "Man City",
-       "41.3%",
-       "33%"
-      ],
-      [
-       "Brentford",
-       "37.7%",
-       "22%"
-      ],
-      [
-       "Coventry",
-       "4%",
-       "17%"
+      "paragraphs": [
+        "Every projection we publish rests on a guess about how long someone will be on the pitch. Before this season started we went back and checked how good that guess has been.",
+        "Take the prior built from 2024/25, use it to predict the first six gameweeks of 2025/26, compare it to what happened. 415 players had enough history to qualify. Mean absolute error: 21 minutes. That's a fifth of a match, per player, per game, and it sits underneath every expected points total we publish. We ran the same test on the two summers before that and got 20.9 and 21.2, so it isn't one bad year.",
+        {
+          "h2": "Where the error isn't"
+        },
+        "We went in assuming we hand out minutes too freely across the board. That's not what the split says.",
+        "For the 303 players who actually got on the pitch in those six gameweeks we sit 1.8 minutes under on average, though the miss itself is still 21.8 minutes. The entire positive bias comes from 112 players who never appeared at all. We gave them an average of 20.7 minutes each. They played none.",
+        "The column can't see one thing, and it's the thing you most want to know in August: is this player in the team at all? Once someone is in the team we're close. Deciding whether he is belongs to a manager, and we don't have one.",
+        "That blindness is worst exactly where you'd use it. Narrow to the 124 players the prior expected to start, 60 minutes or more, and the error is 25 minutes with a 16 minute overshoot. Even the 111 of those who did play came in 9.4 minutes under our estimate. Across all three summers that starter overshoot runs between 5.4 and 9.4 minutes. The caveat on our expected points page is the short version of this, measured at 80+ minutes rather than 60+, which is where the 10 minutes quoted there comes from.",
+        "So treat our expected minutes as a good estimate for players you already believe are starting, and as close to no information for players you're unsure about.",
+        {
+          "h2": "We already checked the decay constant"
+        },
+        "The obvious response is that we weight last season too heavily or not heavily enough. We tested nine settings from very sharp to no decay at all. The best scores 21.332, we run 21.457, and the flat weighting everyone starts with is 22.291. A tenth of a minute between us and the best available.",
+        "Twenty one minutes is what this method costs. Moving the dial doesn't buy it back, so we'd rather say so than imply precision the number doesn't have.",
+        {
+          "h2": "Where these numbers come from"
+        },
+        "Every number above is on goaliq.app/fpl/minutes-accuracy, with the three summer version and the whole decay range next to it. Both ends are FPL's own published data, and the page says what the prior is and who qualified, so the method is there if you want to argue with it. The figures here are the prior on its own, before the squad constraint pass; the page carries both.",
+        "It's the weakest number we produce. If you cut the same six gameweeks yourself and get something else, we want to hear it."
       ]
-     ]
     },
-    "Coventry's 4% at City is the lowest clean sheet number in Gameweek 3, and their next six still average 17%, ahead of Hull and Ipswich. Coventry, Hull and Ipswich only came up this summer, so those three ratings rest on two Premier League matches and move a lot with every result. The table marks the rows."
-   ],
-   "og_headline": [
-    "The best clean sheet",
-    "this week is not",
-    "the best run."
-   ],
-   "og_sub": "Arsenal are second this weekend and first over six.",
-   "og_chart_label": "Next 6 CS%, GW3 top 3 + Coventry"
-  },
-  {
-   "slug": "fpl-ep-next-against-our-xp-gw3",
-   "date": "2026-09-09",
-   "title": "We froze FPL's own numbers next to ours. They beat us on the players who never played.",
-   "check_url": "https://goaliq.app/fpl",
-   "cta": "The calls table and the accuracy table, no sign-in",
-   "claims": [
-    "501",
-    "1.54",
-    "1.69",
-    "195",
-    "0.52",
-    "0.95",
-    "Isak",
-    "82%"
-   ],
-   "paragraphs": [
-    "This was the first gameweek we froze FPL's own expected points next to ours, so the two get graded on the same 501 players. Ours missed by 1.54 points a player, FPL's ep_next by 1.69. Thinner than I expected after a summer of fitting.",
-    "Underneath it's worse. On the 195 players who never got on the pitch FPL was closer, 0.52 against our 0.95, and closer again on the 13 hauls. We only take the middle back, the blanks and the 3 to 9 point rows. The two ends are where you actually pick players.",
-    "The card calls went one from four. Isak was the ceiling pick at 11 and got 13. Fernandes is the one I'd argue with: 82% to reach 3, and he got 2."
-   ]
-  },
-  {
-   "slug": "gw4-clean-sheet-column-is-the-opponent",
-   "date": "2026-09-10",
-   "title": "Leeds have a better clean sheet chance than Liverpool this week. The new line under the opponent shows why.",
-   "check_url": "https://goaliq.app/fpl",
-   "cta": "Open the table and check any row, free, no sign-in",
-   "claims": [
-    "38.6%",
-    "37.2%",
-    "1.77",
-    "0.95",
-    "1.94",
-    "0.99",
-    "51%",
-    "0.67",
-    "1.64",
-    "1.20",
-    "1.19",
-    "30.6%",
-    "30%"
-   ],
-   "paragraphs": [
-    "Leeds have a better clean sheet chance this week than Liverpool. 38.6% against 37.2%, and the reason isn't Leeds. From today the clean sheet table carries a second line under each opponent: the goals our match model projects for both teams. Leeds 1.77 v Newcastle 0.95, Liverpool 1.94 v Fulham 0.99. The clean sheet number doesn't care what Leeds or Liverpool do at the other end. It reads the opponent's figure and nothing else.",
-    "Arsenal at Sunderland is still the biggest one on the board at 51%, and now you can see the whole of it. Sunderland 0.67. Arsenal's own 1.64 never enters the number.",
-    "The game I'd actually use the new line on is Tottenham v Everton. Everton 1.20, Spurs 1.19, so the clean sheet chances land at 30.6% and 30%. The match page won't call it either: 34% Spurs, 35% Everton, one point apart. There is no defensive edge to buy in that game on either side.",
-    "What the line doesn't do is tell you who plays. It's a team number, so it prices the fixture and not the rotation, and at 30% either way the rotation is the part I'd worry about."
-   ]
-  },
-  {
-   "slug": "brentford-favourite-against-chelsea-gw5",
-   "date": "2026-09-16",
-   "title": "Brentford are the favourite against Chelsea on Friday. I'd have guessed that one wrong.",
-   "check_url": "https://goaliq.app/predictions#record",
-   "cta": "The prediction record with the result, free, no sign-in",
-   "claims": [
-    "48%",
-    "23%",
-    "29%",
-    "28%"
-   ],
-   "paragraphs": [
-    "Brentford 48%, draw 23%, Chelsea 29%, at home on Friday night. The page doesn't push the call either. It flags this one as lower confidence, because 28% of the minutes Chelsea played last season belong to players who have since left, and the rating is fitted on results, so it hasn't priced that in yet. We can't tell you which way that moves the number.",
-    "On the gameweek 5 expected points list Brentford have two in the top ten, Thiago second at 5.6 and Schade seventh at 5.1. Chelsea's best is João Pedro in 14th. It's the same model underneath, so read it as one number twice. The page gives penalties as the reason under both Brentford names. goaliq.app/fpl/expected-points#gw-xp"
-   ]
-  },
-  {
-   "slug": "bruno-four-twos-and-a-23-gw6",
-   "date": "2026-09-24",
-   "title": "Bruno has blanked in four gameweeks out of five and the model gives him a 9% chance of a fifth",
-   "check_url": "https://goaliq.app/fpl/expected-points",
-   "cta": "The gameweek 6 list, free, no sign-in",
-   "claims": [
-    "6.8",
-    "21%",
-    "9%",
-    "97"
-   ],
-   "paragraphs": [
-    "Across five gameweeks Bruno Fernandes has more points than we projected, and he's been worth owning in one of them. He got 23 in gameweek 2 and 2 in each of the other four, weeks where we had him above 5 every time.",
-    "I wouldn't call the 2-pointers bad luck. His xG didn't reach 0.3 in any of those four games, and in the 23-point game it was 2.02. He hasn't been getting the chances. Every gameweek is on goaliq.app/fpl/points, projected against actual, with his xG in the same row.",
-    "For gameweek 6 the model has him first anyway. 6.8 at home to Spurs, a 21% chance of 10 or more and a 9% chance of 2 or fewer. Both are the best in the top 100. He's on penalties, corners and free kicks and 97% likely to start.",
-    "I don't trust the 9%. He's scored exactly 2 in four of five, and I said the same after gameweek 3, when the model called him the safest pick on the board, 82% to get 3 or more. He got 2. That call is still on goaliq.app/fpl with the miss next to it. Five games might be too few to read anything into. It might also be that his role has changed and the model is slow to see it. I don't know which yet."
-   ]
-  },
-  {
-   "slug": "fpl-numbers-closer-two-weeks-running",
-   "date": "2026-10-02",
-   "title": "FPL's own numbers have beaten ours two weeks running",
-   "check_url": "https://goaliq.app/fpl",
-   "cta": "The calls table and the accuracy table, free, no sign-in",
-   "claims": [
-    "1.65",
-    "1.68",
-    "1.59",
-    "1.62",
-    "1.54",
-    "1.69",
-    "7%",
-    "31%",
-    "23"
-   ],
-   "paragraphs": [
-    "On goaliq.app/fpl there's a table that grades every player we projected against FPL's own expected points, frozen at the same time as ours. That number comes from FPL's data feed. You won't find it on the FPL website. We were closer in gameweek 3, and I wrote about that on 9 September. FPL has been closer in both gameweeks since.",
-    "It was 1.65 against our 1.68 in gameweek 4 and 1.59 against our 1.62 in gameweek 5. That's 0.03 a player, which isn't much to lose by. It's still two weeks running. Over the three we're ahead, and all of that comes from gameweek 3, 1.54 against 1.69. Plain FPL form, the number on every player card, is in the same table, and it beat us in gameweeks 4 and 5 too.",
-    "The calls above that table I'm happier with, for now. Eight of them were 10-point calls, the captain pick and the boom-or-bust pick each week, printed at 7% to 31%. All eight add up to 113%, so about one haul between them, and there's been one: Bruno Fernandes, 23 points in gameweek 2."
-   ]
-  }
- ]
+    {
+      "slug": "the-best-clean-sheet-this-week-is-not-the-best-run",
+      "date": "2026-09-03",
+      "title": "The best clean sheet this week is not the best run",
+      "check_url": "https://goaliq.app/fpl",
+      "cta": "The clean sheet table, every club and both columns",
+      "claims": [
+        "41.3%",
+        "38.8%",
+        "37.7%",
+        "47%",
+        "33%",
+        "22%",
+        "17%",
+        "18%",
+        "48%",
+        "4%",
+        "Arsenal",
+        "Brentford",
+        "Coventry",
+        "Next 6 CS%"
+      ],
+      "paragraphs": [
+        "Man City have the best clean sheet chance in Gameweek 3, 41.3% at home to Coventry. Arsenal are 38.8% against Chelsea, Brentford 37.7% against Sunderland. If you're buying a defender for one weekend, that's the order.",
+        "There's a new column next to those numbers, Next 6 CS%, and it doesn't agree. It averages the same probability over the six fixtures in the grid below. Arsenal come out at 47%, the best run on the page. City 33%, Brentford 22%.",
+        "City's 33% hides a wide swing. United away in GW4 is 18%, Sunderland at home in GW5 is 48%, which is higher than this weekend. I posted on Wednesday that City's 41% was really about the Coventry fixture. The full run says Coventry at home isn't even their best one.",
+        {
+          "head": [
+            "Club",
+            "GW3 clean sheet",
+            "Next 6 CS%"
+          ],
+          "rows": [
+            [
+              "Arsenal",
+              "38.8%",
+              "47%"
+            ],
+            [
+              "Man City",
+              "41.3%",
+              "33%"
+            ],
+            [
+              "Brentford",
+              "37.7%",
+              "22%"
+            ],
+            [
+              "Coventry",
+              "4%",
+              "17%"
+            ]
+          ]
+        },
+        "Coventry's 4% at City is the lowest clean sheet number in Gameweek 3, and their next six still average 17%, ahead of Hull and Ipswich. Coventry, Hull and Ipswich only came up this summer, so those three ratings rest on two Premier League matches and move a lot with every result. The table marks the rows."
+      ],
+      "og_headline": [
+        "The best clean sheet",
+        "this week is not",
+        "the best run."
+      ],
+      "og_sub": "Arsenal are second this weekend and first over six.",
+      "og_chart_label": "Next 6 CS%, GW3 top 3 + Coventry"
+    },
+    {
+      "slug": "fpl-ep-next-against-our-xp-gw3",
+      "date": "2026-09-09",
+      "title": "We froze FPL's own numbers next to ours. They beat us on the players who never played.",
+      "check_url": "https://goaliq.app/fpl",
+      "cta": "The calls table and the accuracy table, no sign-in",
+      "claims": [
+        "501",
+        "1.54",
+        "1.69",
+        "195",
+        "0.52",
+        "0.95",
+        "Isak",
+        "82%"
+      ],
+      "paragraphs": [
+        "This was the first gameweek we froze FPL's own expected points next to ours, so the two get graded on the same 501 players. Ours missed by 1.54 points a player, FPL's ep_next by 1.69. Thinner than I expected after a summer of fitting.",
+        "Underneath it's worse. On the 195 players who never got on the pitch FPL was closer, 0.52 against our 0.95, and closer again on the 13 hauls. We only take the middle back, the blanks and the 3 to 9 point rows. The two ends are where you actually pick players.",
+        "The card calls went one from four. Isak was the ceiling pick at 11 and got 13. Fernandes is the one I'd argue with: 82% to reach 3, and he got 2."
+      ]
+    },
+    {
+      "slug": "gw4-clean-sheet-column-is-the-opponent",
+      "date": "2026-09-10",
+      "title": "Leeds have a better clean sheet chance than Liverpool this week. The new line under the opponent shows why.",
+      "check_url": "https://goaliq.app/fpl",
+      "cta": "Open the table and check any row, free, no sign-in",
+      "claims": [
+        "38.6%",
+        "37.2%",
+        "1.77",
+        "0.95",
+        "1.94",
+        "0.99",
+        "51%",
+        "0.67",
+        "1.64",
+        "1.20",
+        "1.19",
+        "30.6%",
+        "30%"
+      ],
+      "paragraphs": [
+        "Leeds have a better clean sheet chance this week than Liverpool. 38.6% against 37.2%, and the reason isn't Leeds. From today the clean sheet table carries a second line under each opponent: the goals our match model projects for both teams. Leeds 1.77 v Newcastle 0.95, Liverpool 1.94 v Fulham 0.99. The clean sheet number doesn't care what Leeds or Liverpool do at the other end. It reads the opponent's figure and nothing else.",
+        "Arsenal at Sunderland is still the biggest one on the board at 51%, and now you can see the whole of it. Sunderland 0.67. Arsenal's own 1.64 never enters the number.",
+        "The game I'd actually use the new line on is Tottenham v Everton. Everton 1.20, Spurs 1.19, so the clean sheet chances land at 30.6% and 30%. The match page won't call it either: 34% Spurs, 35% Everton, one point apart. There is no defensive edge to buy in that game on either side.",
+        "What the line doesn't do is tell you who plays. It's a team number, so it prices the fixture and not the rotation, and at 30% either way the rotation is the part I'd worry about."
+      ]
+    },
+    {
+      "slug": "brentford-favourite-against-chelsea-gw5",
+      "date": "2026-09-16",
+      "title": "Brentford are the favourite against Chelsea on Friday. I'd have guessed that one wrong.",
+      "check_url": "https://goaliq.app/predictions#record",
+      "cta": "The prediction record with the result, free, no sign-in",
+      "claims": [
+        "48%",
+        "23%",
+        "29%",
+        "28%"
+      ],
+      "paragraphs": [
+        "Brentford 48%, draw 23%, Chelsea 29%, at home on Friday night. The page doesn't push the call either. It flags this one as lower confidence, because 28% of the minutes Chelsea played last season belong to players who have since left, and the rating is fitted on results, so it hasn't priced that in yet. We can't tell you which way that moves the number.",
+        "On the gameweek 5 expected points list Brentford have two in the top ten, Thiago second at 5.6 and Schade seventh at 5.1. Chelsea's best is João Pedro in 14th. It's the same model underneath, so read it as one number twice. The page gives penalties as the reason under both Brentford names. goaliq.app/fpl/expected-points#gw-xp"
+      ]
+    },
+    {
+      "slug": "bruno-four-twos-and-a-23-gw6",
+      "date": "2026-09-24",
+      "title": "Bruno has blanked in four gameweeks out of five and the model gives him a 9% chance of a fifth",
+      "check_url": "https://goaliq.app/fpl/expected-points",
+      "cta": "The gameweek 6 list, free, no sign-in",
+      "claims": [
+        "6.8",
+        "21%",
+        "9%",
+        "97"
+      ],
+      "paragraphs": [
+        "Across five gameweeks Bruno Fernandes has more points than we projected, and he's been worth owning in one of them. He got 23 in gameweek 2 and 2 in each of the other four, weeks where we had him above 5 every time.",
+        "I wouldn't call the 2-pointers bad luck. His xG didn't reach 0.3 in any of those four games, and in the 23-point game it was 2.02. He hasn't been getting the chances. Every gameweek is on goaliq.app/fpl/points, projected against actual, with his xG in the same row.",
+        "For gameweek 6 the model has him first anyway. 6.8 at home to Spurs, a 21% chance of 10 or more and a 9% chance of 2 or fewer. Both are the best in the top 100. He's on penalties, corners and free kicks and 97% likely to start.",
+        "I don't trust the 9%. He's scored exactly 2 in four of five, and I said the same after gameweek 3, when the model called him the safest pick on the board, 82% to get 3 or more. He got 2. That call is still on goaliq.app/fpl with the miss next to it. Five games might be too few to read anything into. It might also be that his role has changed and the model is slow to see it. I don't know which yet."
+      ]
+    },
+    {
+      "slug": "fpl-numbers-closer-two-weeks-running",
+      "date": "2026-10-02",
+      "title": "FPL's own numbers have beaten ours two weeks running",
+      "check_url": "https://goaliq.app/fpl",
+      "cta": "The calls table and the accuracy table, free, no sign-in",
+      "claims": [
+        "1.65",
+        "1.68",
+        "1.59",
+        "1.62",
+        "1.54",
+        "1.69",
+        "7%",
+        "31%",
+        "23"
+      ],
+      "paragraphs": [
+        "On goaliq.app/fpl there's a table that grades every player we projected against FPL's own expected points, frozen at the same time as ours. That number comes from FPL's data feed. You won't find it on the FPL website. We were closer in gameweek 3, and I wrote about that on 9 September. FPL has been closer in both gameweeks since.",
+        "It was 1.65 against our 1.68 in gameweek 4 and 1.59 against our 1.62 in gameweek 5. That's 0.03 a player, which isn't much to lose by. It's still two weeks running. Over the three we're ahead, and all of that comes from gameweek 3, 1.54 against 1.69. Plain FPL form, the number on every player card, is in the same table, and it beat us in gameweeks 4 and 5 too.",
+        "The calls above that table I'm happier with, for now. Eight of them were 10-point calls, the captain pick and the boom-or-bust pick each week, printed at 7% to 31%. All eight add up to 113%, so about one haul between them, and there's been one: Bruno Fernandes, 23 points in gameweek 2."
+      ]
+    }
+  ]
 }
