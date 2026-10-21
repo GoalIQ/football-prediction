@@ -109,11 +109,11 @@ def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
     if misses:
         parts.append(f"Missed: {_join(misses)}.")
     lead = {
-        0: f"Of the {total} graded calls we made before the deadline, "
+        0: f"Of the {total} standout picks we made before the deadline, "
            f"{len(hits)} came off and {len(misses)} did not.",
-        1: f"The calls table has {total} graded rows for this gameweek: "
+        1: f"The calls table scores {total} picks for this gameweek: "
            f"{len(hits)} hit, {len(misses)} missed.",
-        2: f"Calls first, because they are logged before the deadline: "
+        2: f"Picks first, because they are logged before the deadline: "
            f"{len(hits)} of {total} landed.",
     }[tone]
     return lead + " " + " ".join(parts), nums

@@ -112,6 +112,14 @@ def test_pohjat_vaihtuvat_kierroksen_mukaan_eika_sisalla_em_dashia():
     assert len(rungot) == 3
 
 
+def test_kutsuluku_koskee_picks_ei_taulukon_rivimaaraa():
+    for gw in (3, 4, 5):
+        g = _gw(gw)
+        teksti = note_plain_text(build_note(g, _recap(g), _acc(gw), TODAY))
+        assert "graded rows" not in teksti and "graded calls" not in teksti
+        assert "picks" in teksti.lower()
+
+
 def test_ilman_tarkkuusdataa_muistio_syntyy_ilman_keksittya_lukua():
     g = _gw()
     g["calls"]["calls"].append({"call": "ceiling", "web_name": "Salah",
