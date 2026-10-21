@@ -103,22 +103,30 @@ def _cap(s: str) -> str:
     return s[:1].upper() + s[1:]
 
 
+#: Weekly standouts card -nostot. Muut rivit (model_captain, projected_xi,
+#: tulevat lajit) eivät kuulu laskuriin.
+STANDOUT = ("captain_pick", "ceiling", "safest", "gamble")
+
+
 def _calls_facts(calls: dict) -> tuple[list[tuple[str, str, int]],
-                                       list[tuple[str, str, int]], list[str]]:
-    """(osuneet, huteja, nimetyt luvut) vain kutsuista joilla on tulos.
+                                       list[tuple[str, str, int]], list[str], bool]:
+    """(osuneet, huteja, nimetyt luvut, vajaa) standout-nostoista.
     Rivi = (nimilappu, pelaaja, pisteet); muotoilu tehdään pohjakohtaisesti,
-    jottei sama 'Hit: ... Missed: ...' -runko toistu joka muistiossa."""
-    hits, misses, nums = [], [], []
+    jottei sama 'Hit: ... Missed: ...' -runko toistu joka muistiossa.
+    vajaa = jokin standout-rivi on taulukossa ilman tulosta, jolloin tekstin
+    lukumäärä ei täsmäisi taulukon rivien kanssa."""
+    hits, misses, nums, vajaa = [], [], [], False
     for c in calls.get("calls") or []:
-        if c.get("call") == "model_captain" or c.get("met") is None:
+        if c.get("call") not in STANDOUT:
             continue
-        label = CALL_LABEL.get(c.get("call"), str(c.get("call")))
         pts = c.get("points")
-        if pts is None or not c.get("web_name"):
+        if c.get("met") is None or pts is None or not c.get("web_name"):
+            vajaa = True
             continue
+        label = CALL_LABEL[c["call"]]
         (hits if c["met"] else misses).append((label, c["web_name"], pts))
         nums.append(str(pts))
-    return hits, misses, nums
+    return hits, misses, nums, vajaa
 
 
 def _join(items: list[str]) -> str:
@@ -148,8 +156,8 @@ def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
     muistio on julkaisu kuten X-ketju, joten sama estolista kuin korteilla
     (EXCLUDED_NAMES + scripts/publish_blocklist.json). Estetty nimi -> ei
     kutsukappaletta lainkaan, jottei luku "four" ja nimetyt nostot eroa."""
-    hits, misses, nums = _calls_facts(calls)
-    if len(hits) + len(misses) < 2:
+    hits, misses, nums, vajaa = _calls_facts(calls)
+    if vajaa or len(hits) + len(misses) < 2:
         return None, []
     estolista = publish_gate.load_blocklist()
     if any(excluded(name, estolista) for _, name, _ in hits + misses):
@@ -247,6 +255,8 @@ def build_note(gw_entry: dict, recap_doc: dict, accuracy_doc: dict,
     paragraphs: list[str] = []
 
     calls_p, cc = _calls_paragraph(gw_entry["calls"], tone)
+    if calls_p is None:
+        return None  # kaikki kolme otsikkoa lupaavat kutsut
     acc_p, ac = _accuracy_paragraph(_comparison(accuracy_doc, gw), tone)
     order = [(calls_p, cc), (acc_p, ac)]
     if tone == 1:  # pohja 2 aloittaa tarkkuudesta

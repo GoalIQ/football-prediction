@@ -217,7 +217,15 @@ def test_estetty_nimi_poistaa_kutsukappaleen():
     g = _gw()
     g["calls"]["calls"] = _kutsut(True, False, True, False)
     g["calls"]["calls"][1]["web_name"] = "Thiaw"
-    n = build_note(g, _recap(g), _acc(), TODAY)
-    teksti = note_plain_text(n) if n else ""
-    assert "Thiaw" not in teksti
-    assert n is not None and "1.61" in teksti  # tarkkuuskappale jää
+    # Otsikko lupaa kutsut, joten ilman kutsukappaletta ei synny muistiota (julkaisutarkistus 21.10 B6).
+    assert build_note(g, _recap(g), _acc(), TODAY) is None
+
+
+def test_gradaamaton_standout_rivi_estaa_muistion():
+    # Rivi näkyy taulukossa ilman tulosta: "three standout picks" ei täsmäisi neljään riviin.
+    g = _gw()
+    g["calls"]["calls"] = _kutsut(True, False, True, False)
+    g["calls"]["calls"][2]["met"] = None
+    assert build_note(g, _recap(g), _acc(), TODAY) is None
+    g["calls"]["calls"][2]["met"] = True
+    assert build_note(g, _recap(g), _acc(), TODAY) is not None

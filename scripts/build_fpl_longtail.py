@@ -3527,7 +3527,8 @@ def render_notes(notes_doc: dict, now: datetime) -> str | None:
     varten ja julkaisutarkistajan lapaisemana; tama funktio vain lataa sen.
 
     POIKKEUS 21.10 (yllapitajan paatos 17.10): kierrosrecap (`recap-gwN`,
-    GW7 alkaen) generoidaan `scripts/build_fpl_recap_note.py`:lla. Sen kolme
+    GW7 alkaen) generoidaan `scripts/build_fpl_recap_note.py`:lla; muut
+    muistiot kirjoitetaan yksittain kuten ennen. Sen kolme
     pohjaa ajettiin julkaisutarkistajan lapi kerran, ei muistio kerrallaan,
     ja sivun ingressi kertoo recapin olevan automaattinen.
 
