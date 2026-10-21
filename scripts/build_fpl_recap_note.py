@@ -10,8 +10,9 @@ Luvut tulevat VAIN artefakteista ja vain sellaisina kuin ne näkyvät ilmaisella
 (GoalIQ xP vs FPL ep_next vs form). Mitään lukua ei arvata: jos lähde puuttuu,
 muistiota ei synny. Tappiot kerrotaan samalla painolla kuin voitot.
 
-Muistio syntyy vain kun kierros on lopullisesti gradattu (ei provisional) ja
-täsmälleen kerran (slug recap-gwN, idempotentti). Pohjia on kolme ja ne
+Muistio syntyy vain kun kierros on lopullisesti gradattu (ei provisional),
+täsmälleen kerran (slug recap-gwN, idempotentti) ja vain kierroksesta
+ENSIMMAINEN_RECAP_GW alkaen. Pohjia on kolme ja ne
 vaihtuvat kierrosnumeron mukaan, jottei sama runko toistu viikosta toiseen.
 
 Aja: python scripts/build_fpl_recap_note.py
@@ -31,6 +32,11 @@ NOTES_PATH = ROOT / "data" / "fpl_notes.json"
 BASE = "https://goaliq.app"
 CHECK_URL = f"{BASE}/fpl"
 CTA = "The gameweek calls and the accuracy table, free, no sign-in"
+
+#: Ei takautuvia muistioita (ylläpitäjän ohje 21.10): ensimmäinen ajo lisäisi muuten
+#: viisi samanrunkoista muistiota kerralla (GW2-GW7), ja uudelleengradattu GW2 saisi
+#: päiväyksen 21.9. Recap alkaa kierroksesta, joka oli uusin gradattu käyttöönotossa.
+ENSIMMAINEN_RECAP_GW = 7
 
 CALL_LABEL = {
     "captain_pick": "captain pick",
@@ -110,11 +116,10 @@ def _calls_paragraph(calls: dict, tone: int) -> tuple[str | None, list[str]]:
         parts.append(f"Missed: {_join(misses)}.")
     lead = {
         0: f"Of the {total} standout picks we made before the deadline, "
-           f"{len(hits)} came off and {len(misses)} did not.",
+           f"{len(hits)} came off and {len(misses)} didn't.",
         1: f"The calls table scores {total} picks for this gameweek: "
            f"{len(hits)} hit, {len(misses)} missed.",
-        2: f"Picks first, because they are logged before the deadline: "
-           f"{len(hits)} of {total} landed.",
+        2: f"{len(hits)} of our {total} standout picks landed.",
     }[tone]
     return lead + " " + " ".join(parts), nums
 
@@ -142,9 +147,8 @@ def _accuracy_paragraph(comp: dict | None, tone: int) -> tuple[str | None, list[
            f"so {verdict}.",
         1: f"Projection error, in points per player: GoalIQ {g}, FPL ep_next "
            f"{e}, form {f}. By that measure {verdict}.",
-        2: f"On the xP accuracy table, GoalIQ's xP missed by {g} points per "
-           f"player on average, FPL's ep_next by {e} and form by {f}. "
-           f"Short version: {verdict}.",
+        2: f"Our xP was off by {g} points per player on average, against {e} "
+           f"for FPL's ep_next and {f} for form, so {verdict}.",
     }[tone]
     return text, claims
 
@@ -203,6 +207,8 @@ def add_recaps(notes_doc: dict, recap_doc: dict, accuracy_doc: dict,
     for g in sorted((recap_doc or {}).get("gameweeks") or [],
                     key=lambda x: x.get("gw") or 0):
         if not isinstance(g.get("gw"), int) or slug_for(g["gw"]) in have:
+            continue
+        if g["gw"] < ENSIMMAINEN_RECAP_GW:
             continue
         note = build_note(g, recap_doc, accuracy_doc, today)
         if note:

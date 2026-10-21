@@ -14,12 +14,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.build_fpl_longtail import note_plain_text, render_notes  # noqa: E402
-from scripts.build_fpl_recap_note import add_recaps, build_note, slug_for  # noqa: E402
+from scripts.build_fpl_recap_note import (  # noqa: E402
+    ENSIMMAINEN_RECAP_GW, add_recaps, build_note, slug_for)
 
 TODAY = date(2026, 10, 19)
 
 
-def _gw(gw: int = 6, provisional: bool = False, graded: bool = True) -> dict:
+def _gw(gw: int = 7, provisional: bool = False, graded: bool = True) -> dict:
     return {
         "gw": gw,
         "provisional": provisional,
@@ -43,7 +44,7 @@ def _recap(*gws: dict) -> dict:
     return {"gameweeks": list(gws), "running": {"per_gw": per_gw}}
 
 
-def _acc(gw: int = 6) -> dict:
+def _acc(gw: int = 7) -> dict:
     return {"gameweeks": [{"gw": gw, "comparison": {
         "n": 483,
         "mae": {"goaliq": 1.612, "fpl_ep_next": 1.626, "form_baseline": 1.644},
@@ -53,7 +54,7 @@ def _acc(gw: int = 6) -> dict:
 def test_gradattu_kierros_tuottaa_tasan_yhden_muistion():
     doc = {"notes": []}
     added = add_recaps(doc, _recap(_gw()), _acc(), TODAY)
-    assert added == [slug_for(6)]
+    assert added == [slug_for(7)]
     assert len(doc["notes"]) == 1
 
 
@@ -134,7 +135,7 @@ def test_ilman_tarkkuusdataa_muistio_syntyy_ilman_keksittya_lukua():
 def test_muistio_renderoituu_notes_sivulle():
     n = build_note(_gw(), _recap(_gw()), _acc(), TODAY)
     html = render_notes({"notes": [n]}, TODAY_DT)
-    assert html and 'id="recap-gw6"' in html
+    assert html and 'id="recap-gw7"' in html
 
 
 from datetime import datetime, timezone  # noqa: E402
@@ -148,3 +149,22 @@ def test_tasatilanne_pyoristetyissa_luvuissa_ei_vaita_johtoa():
         "goaliq": 1.614, "fpl_ep_next": 1.606, "form_baseline": 1.644}
     teksti = note_plain_text(build_note(_gw(), _recap(_gw()), acc, TODAY))
     assert "closest" not in teksti and "level with" in teksti
+
+
+def test_ei_takautuvia_muistioita_ennen_ensimmaista_kierrosta():
+    # Ylläpitäjän ohje 21.10: muuten ensimmäinen ajo lisäisi GW2-GW7 kerralla.
+    assert ENSIMMAINEN_RECAP_GW == 7
+    doc = {"notes": []}
+    vanhat = [_gw(gw) for gw in (2, 3, 5, 6)]
+    acc = {"gameweeks": [g for gw in (2, 3, 5, 6, 7, 8) for g in _acc(gw)["gameweeks"]]}
+    assert add_recaps(doc, _recap(*vanhat), acc, TODAY) == []
+    assert add_recaps(doc, _recap(*vanhat, _gw(7), _gw(8)), acc, TODAY) == [slug_for(7), slug_for(8)]
+
+
+def test_pohjissa_ei_yhteenvetolausetta_eika_perustelua():
+    # CI-julkaisutarkistus 21.10 (portti 2): "Short version:", "did not", "because they are logged".
+    for gw in (6, 7, 8):
+        g = _gw(gw)
+        teksti = note_plain_text(build_note(g, _recap(g), _acc(gw), TODAY))
+        for kielletty in ("Short version", "did not", "because", "Picks first"):
+            assert kielletty not in teksti, (gw, kielletty)
