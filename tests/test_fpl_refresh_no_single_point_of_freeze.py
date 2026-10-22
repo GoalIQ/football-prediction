@@ -88,6 +88,9 @@ SALLITTU_VAROITUS_VAIN: dict[str, str] = {
         "SPL ei saa punata FPL-refreshia (Villen ehto 7.8).",
     "Sync SPL page data basis from the artefact":
         "SPL ei saa punata FPL-refreshia (Villen ehto 7.8).",
+    "TLS library for Understat (authenticated)":
+        "Fail-open tarkoituksella (22.10.2026): skripti varoittaa itse, ja jos Understat ei silti vastaa, "
+        "vaadi_understat kaataa phase0:n, jonka health-rivi punaa ajon.",
 }
 
 

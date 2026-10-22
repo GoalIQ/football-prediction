@@ -72,8 +72,9 @@ def test_same_fixture_same_clean_sheet_pct_in_both_artifacts():
     assert loydetty >= 10 and not puuttuu, (
         f"{len(puuttuu)} /fpl-sivun ottelua puuttuu cs_fdr:sta: {puuttuu[:10]}")
     assert not erot, (
-        "Sama ottelu, eri CS% (raja %.1f %%-yks.). /fpl-sivu ja cs_fdr:n "
-        "lukijat (wildcard, chip-EV) kertovat eri tarinaa:\n  " % RAJA_PP
+        # 22.10.2026: %-muotoilu kaatui "CS% ("-kohtaan (ValueError), joten oikea ero ei koskaan nakynyt.
+        f"Sama ottelu, eri CS% (raja {RAJA_PP:.1f} %-yks.). /fpl-sivu ja cs_fdr:n "
+        f"lukijat (wildcard, chip-EV) kertovat eri tarinaa ({len(erot)} eroa):\n  "
         + "\n  ".join(erot[:20]))
 
 

@@ -46,7 +46,7 @@ from scripts.build_fpl_phase0 import (
     short_name,
 )
 from src.data import fpl_api
-from src.data.loader import lataa_otteludata
+from src.data.loader import lataa_otteludata, vaadi_understat
 from src.models import fpl_gameweek as fplgw
 from src.models import fpl_xp as xp
 from src.models.fpl_context import (
@@ -1015,7 +1015,8 @@ def main(argv: list[str] | None = None) -> int:
     # PL-kauden joukkueet) + koti-avaus-buusti + manuaaliset yliajot.
     y = int(SEASON_LABEL[:4])
     prev_key = f"{(y - 1) % 100:02d}{y % 100:02d}"
-    prev_matches = lataa_otteludata(["ENG-Premier League"], [prev_key])
+    # Varalahteen nimilla vakiintunut seura luettaisiin nousijaksi (22.10.2026, src/data/loader.vaadi_understat).
+    prev_matches = vaadi_understat(lataa_otteludata(["ENG-Premier League"], [prev_key]), "edellisen PL-kauden joukkueet")
     promoted = promoted_teams(set(fixture_teams), set(prev_matches["home_team"]))
     model_fixtures = [{"gameweek": f["gameweek"], "home": map_name(f["home"]),
                        "away": map_name(f["away"])}
