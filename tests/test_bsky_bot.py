@@ -677,3 +677,15 @@ def test_julkaisu_levittaa_aivojen_postaukset_ja_jono_vanhenee(monkeypatch, tmp_
     assert aja(10.1) == [] and _PostausSessio.postit == [a, b]            # d vanheni (yli 6 h)
     ajat = [datetime.fromisoformat(json.loads(r)["at"]) for r in (tmp_path / "posted.jsonl").read_text().splitlines()]
     assert ajat[1] - ajat[0] >= gate.MIN_POST_GAP
+
+
+def test_postausvali_alkaa_lokista_kun_tilassa_ei_ole_aikaa(monkeypatch, tmp_path):
+    """Ennen 22.10 tilaan ei kirjattu postausaikaa: ensimmainen ajo ei saa postata heti edellisen perään."""
+    import json
+    monkeypatch.setattr(bot, "STATE_PATH", tmp_path / "state.json")
+    monkeypatch.setattr(bot, "LOG_PATH", tmp_path / "posted.jsonl")
+    rivit = [{"at": "2026-10-22T11:52:02+00:00", "kind": "post", "uri": "at://goaliq/1"},
+             {"at": "2026-10-22T12:10:00+00:00", "kind": "mention_reply", "uri": "at://goaliq/2"},
+             {"at": "2026-10-22T12:20:00+00:00", "kind": "post", "uri": None}]   # kuivaharjoitus
+    (tmp_path / "posted.jsonl").write_text("\n".join(json.dumps(r) for r in rivit) + "\n", encoding="utf-8")
+    assert bot.load_state()["last_post_at"] == "2026-10-22T11:52:02+00:00"
