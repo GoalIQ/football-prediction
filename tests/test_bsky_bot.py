@@ -312,6 +312,28 @@ def test_tyylikiellot(teksti):
 
 
 @pytest.mark.parametrize("teksti", [
+    # 21.10 julkaistu sellaisenaan: luettiin myyntikehotukseksi (malli piti hanta GW8:n FWD #3:na).
+    "Pedro at that price is a hard sell for me. The model has him on 4.4 for GW8, fine but not a must-have.",
+    "Vuskovic is getting the best-value pick treatment today and I buy it.",
+    "Still not sold on Delap.",
+    "Saka at that price is a tough sell.",
+])
+def test_siirtoverbi_kuvaannollisena_hylataan(teksti):
+    probs = chk({"kind": "post", "text": teksti, "keys": []})
+    assert any("siirtoverbi" in p for p in probs), probs
+
+
+@pytest.mark.parametrize("teksti", [
+    "Saka owners, waiting is the cheap move. Selling now only makes sense if you already wanted out.",
+    "Not at that price for me. Who's buying Pedro this week?",
+    "Holding Bruno into GW8.",
+])
+def test_kirjaimellinen_siirtokieli_paasee(teksti):
+    probs = chk({"kind": "post", "text": teksti, "keys": []})
+    assert not any("siirtoverbi" in p for p in probs), probs
+
+
+@pytest.mark.parametrize("teksti", [
     "Rate my team is free on goaliq.app.",
     "Free mini-league tool with head-to-head odds for your league.",
     "Track three players on the watchlist, no sign-in needed.",
