@@ -69,8 +69,12 @@ def load_state() -> dict:
     s = load_json(STATE_PATH, {})
     for k, v in (("posted_slots", []), ("replied_uris", []), ("replied_roots", []),
                  ("author_last_reply", {}), ("daily", {}), ("recent_texts", []),
-                 ("handled_notifications", [])):
+                 ("handled_notifications", []), ("pending_posts", [])):
         s.setdefault(k, v)
+    if "last_post_at" not in s:
+        # Ennen 22.10 tilaan ei kirjattu postausaikaa: postausvali alkaa lokin viimeisesta oikeasta postauksesta.
+        s["last_post_at"] = next((r["at"] for r in reversed(read_log())
+                                  if r.get("kind") == "post" and r.get("uri")), None)
     return s
 
 
@@ -435,11 +439,18 @@ def cmd_context(out_dir: Path) -> int:
 
 # ---------------------------------------------------------------- julkaisu
 
+# Aivojen postaus joka ei mahtunut postausvaliin (gate.MIN_POST_GAP) odottaa tilassa seuraaviin ajoihin ja kulkee
+# portin lapi uudelleen julkaisuhetkella. Se vanhenee 6 h:ssa tai kun aivot kirjoittavat uuden jonon.
+PENDING_MAX_AGE = timedelta(hours=6)
+
+
 def _mark(state: dict, item: dict, now: datetime) -> None:
     day = now.date().isoformat()
     d = state["daily"].setdefault(day, {})
     key = "post" if item["kind"] == "post" else ("reply" if item["kind"] == "reply" else "mention")
     d[key] = d.get(key, 0) + 1
+    if item["kind"] == "post":
+        state["last_post_at"] = now.isoformat()
     state["daily"] = {k: v for k, v in state["daily"].items() if k >= (now.date() - timedelta(days=14)).isoformat()}
     if item.get("slot"):
         state["posted_slots"] = (state["posted_slots"] + [item["slot"]])[-200:]
@@ -471,8 +482,8 @@ def prepare(item: dict, content_id: str) -> tuple[str, dict]:
     return text.replace("LINK", "").strip(), links
 
 
-def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> int:
-    now = datetime.now(timezone.utc)
+def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: datetime | None = None) -> int:
+    now = now or datetime.now(timezone.utc)
     state = load_state()
     blocked, phrases = blocklist(), gate.rejected_phrases()
     tmp = Path(tempfile.mkdtemp(prefix="bsky_mod_"))
@@ -494,23 +505,35 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> in
             print(f"botti-merkinta epaonnistui: {e!r}")
     if session and mod and state.get("bot_label_at"):
         items += mention_items(session, mod, values, state)
-    if queue_path and queue_path.exists():
+    # Uusi jono korvaa odottavat: aivot paattivat uudelleen tuoreemmalla tilannekuvalla.
+    new_queue = bool(queue_path and queue_path.exists())
+    expired = [p for p in state["pending_posts"]
+               if new_queue or now - datetime.fromisoformat(p["queued_at"]) > PENDING_MAX_AGE]
+    items += [p for p in state["pending_posts"] if p not in expired]
+    if new_queue:
         for it in load_json(queue_path, []):
             if isinstance(it, dict) and it.get("kind") in ("post", "reply"):
                 it["source"] = "brain"
+                it["queued_at"] = now.isoformat()
                 items.append(it)
     if mod:
         taken = {i.get("slot") for i in items if i.get("slot")}
         items += [i for i in fallback_items(mod, values, now, state) if i.get("slot") not in taken]
 
     gw = int(mod["gw"]) if mod else None
-    published, rejected = 0, []
+    published, rejected, waiting = 0, [], []
     log_rows = []
+    state["pending_posts"] = []
     for it in items:
         cid = f"{now:%Y%m%d%H}-{published}"
         text, links = prepare(it, cid)
-        it = {**it, "text": text}
+        orig, it = it, {**it, "text": text}
         probs = gate.check(it, values=values, gw=gw, now=now, state=state, blocklist=blocked, phrases=phrases)
+        if probs and all(p.startswith(gate.GAP_PROBLEM) for p in probs):
+            waiting.append(text)
+            if it.get("source") == "brain":   # varapostaukset syntyvat joka ajossa uudelleen
+                state["pending_posts"].append(orig)
+            continue
         if probs:
             rejected.append({"text": text, "why": probs, "source": it.get("source", "rule")})
             continue
@@ -558,17 +581,25 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False) -> in
         s = load_state()
         s["last_think_at"] = now.isoformat()
         save_json(STATE_PATH, s)
-    print(f"julkaistu {published}, hylatty {len(rejected)}, kuiva={dry}")
+    print(f"julkaistu {published}, hylatty {len(rejected)}, odottaa {len(waiting)}, vanheni {len(expired)}, "
+          f"kuiva={dry}")
     for r in rejected:
         print(f"  HYLATTY ({r['source']}): {r['text'][:120]} -> {'; '.join(r['why'])[:300]}")
+    for t in waiting:
+        print(f"  ODOTTAA (postausvali): {t[:120]}")
+    for p in expired:
+        print(f"  VANHENI: {p['text'][:120]}")
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with open(summary, "a", encoding="utf-8") as f:
-            f.write(f"### Bluesky: julkaistu {published}, hylatty {len(rejected)}, kuiva {dry}\n")
+            f.write(f"### Bluesky: julkaistu {published}, hylatty {len(rejected)}, odottaa {len(waiting)}, "
+                    f"kuiva {dry}\n")
             for r in log_rows:
                 f.write(f"- {r['kind']}/{r['topic']}: {r['text']}\n")
             for r in rejected:
                 f.write(f"- HYLATTY: {r['text'][:140]} ({'; '.join(r['why'])[:200]})\n")
+            for t in waiting:
+                f.write(f"- ODOTTAA (postausvali): {t[:140]}\n")
     return 0
 
 
