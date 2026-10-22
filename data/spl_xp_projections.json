@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-10-22T14:21:15",
+  "generated_at": "2026-10-22T17:16:31",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -1694,7 +1694,7 @@
    "team_short": "QAD",
    "pos": "DEF",
    "price": 7.0,
-   "owned_pct": 46.9,
+   "owned_pct": 47.0,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -3373,7 +3373,7 @@
    "team_short": "FSL",
    "pos": "FWD",
    "price": 5.5,
-   "owned_pct": 5.3,
+   "owned_pct": 5.4,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -5158,7 +5158,7 @@
    "team_short": "FSL",
    "pos": "DEF",
    "price": 4.6,
-   "owned_pct": 7.0,
+   "owned_pct": 7.1,
    "status": "a",
    "news": "",
    "chance_next": null,
@@ -5661,7 +5661,7 @@
    "team_short": "ABH",
    "pos": "GKP",
    "price": 4.4,
-   "owned_pct": 1.0,
+   "owned_pct": 1.1,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -6141,105 +6141,6 @@
       }
      ],
      "xp": 2.81
-    }
-   ]
-  },
-  {
-   "id": 136,
-   "web_name": "Saadane",
-   "full_name": "Marwane Saadane",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.9,
-   "owned_pct": 0.5,
-   "status": "a",
-   "news": "",
-   "chance_next": 100,
-   "yellows": 7,
-   "xmins": 71.4,
-   "predicted_starts": 83.0,
-   "minutes_confidence": "med",
-   "p_start": 0.8304,
-   "p_cameo": 0.0,
-   "p_bench": 0.1696,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 2493,
-    "goals": 0,
-    "assists": 1,
-    "cs": 5,
-    "points": 121,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.04
-    }
-   },
-   "xp_per_gw": 3.29,
-   "xp_per_90": 4.74,
-   "xp_horizon_total": 19.77,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.79
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.38
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.89
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 3.47
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.56
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 3.68
     }
    ]
   },
@@ -7725,6 +7626,105 @@
       }
      ],
      "xp": 3.47
+    }
+   ]
+  },
+  {
+   "id": 136,
+   "web_name": "Saadane",
+   "full_name": "Marwane Saadane",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.9,
+   "owned_pct": 0.5,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 7,
+   "xmins": 66.7,
+   "predicted_starts": 77.5,
+   "minutes_confidence": "med",
+   "p_start": 0.7752,
+   "p_cameo": 0.0,
+   "p_bench": 0.2248,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 2493,
+    "goals": 0,
+    "assists": 1,
+    "cs": 5,
+    "points": 121,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.04
+    }
+   },
+   "xp_per_gw": 3.0,
+   "xp_per_90": 4.74,
+   "xp_horizon_total": 18.01,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 3.46
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.15
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 3.56
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 3.17
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.31
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 3.36
     }
    ]
   },
@@ -15253,7 +15253,7 @@
    "team_short": "NAS",
    "pos": "GKP",
    "price": 5.5,
-   "owned_pct": 7.7,
+   "owned_pct": 7.8,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -18514,7 +18514,7 @@
    "team_short": "AHL",
    "pos": "DEF",
    "price": 4.4,
-   "owned_pct": 2.8,
+   "owned_pct": 2.7,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -21785,267 +21785,6 @@
    ]
   },
   {
-   "id": 135,
-   "web_name": "Boateng",
-   "full_name": "Kennedy Boateng",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.5,
-   "owned_pct": 0.4,
-   "status": "a",
-   "news": "",
-   "chance_next": 100,
-   "yellows": 0,
-   "xmins": 44.2,
-   "predicted_starts": 45.8,
-   "minutes_confidence": "low",
-   "p_start": 0.4578,
-   "p_cameo": 0.2435,
-   "p_bench": 0.2987,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 1.73,
-   "xp_per_90": 4.42,
-   "xp_horizon_total": 10.41,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.05
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.13
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.12
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.84
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.25
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.02
-    }
-   ]
-  },
-  {
-   "id": 617,
-   "web_name": "Kelder",
-   "full_name": "Robin Kelder",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.5,
-   "owned_pct": 0.2,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 44.2,
-   "predicted_starts": 45.8,
-   "minutes_confidence": "low",
-   "p_start": 0.4578,
-   "p_cameo": 0.2435,
-   "p_bench": 0.2987,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 1.73,
-   "xp_per_90": 4.42,
-   "xp_horizon_total": 10.41,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.05
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.13
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.12
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.84
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.25
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.02
-    }
-   ]
-  },
-  {
-   "id": 704,
-   "web_name": "Alamine",
-   "full_name": "Ali Alamine Ali",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.5,
-   "owned_pct": 0.0,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 44.2,
-   "predicted_starts": 45.8,
-   "minutes_confidence": "low",
-   "p_start": 0.4578,
-   "p_cameo": 0.2435,
-   "p_bench": 0.2987,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 1.73,
-   "xp_per_90": 4.42,
-   "xp_horizon_total": 10.41,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.05
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.13
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.12
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.84
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.25
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 2.02
-    }
-   ]
-  },
-  {
    "id": 66,
    "web_name": "Colley",
    "full_name": "Omar Colley",
@@ -23459,6 +23198,267 @@
       }
      ],
      "xp": 1.43
+    }
+   ]
+  },
+  {
+   "id": 135,
+   "web_name": "Boateng",
+   "full_name": "Kennedy Boateng",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.5,
+   "owned_pct": 0.4,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 0,
+   "xmins": 41.3,
+   "predicted_starts": 42.7,
+   "minutes_confidence": "low",
+   "p_start": 0.4273,
+   "p_cameo": 0.2273,
+   "p_bench": 0.3454,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 1.59,
+   "xp_per_90": 4.42,
+   "xp_horizon_total": 9.55,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.88
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.03
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.95
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.69
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.14
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.86
+    }
+   ]
+  },
+  {
+   "id": 617,
+   "web_name": "Kelder",
+   "full_name": "Robin Kelder",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.5,
+   "owned_pct": 0.2,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 41.3,
+   "predicted_starts": 42.7,
+   "minutes_confidence": "low",
+   "p_start": 0.4273,
+   "p_cameo": 0.2273,
+   "p_bench": 0.3454,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 1.59,
+   "xp_per_90": 4.42,
+   "xp_horizon_total": 9.55,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.88
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.03
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.95
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.69
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.14
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.86
+    }
+   ]
+  },
+  {
+   "id": 704,
+   "web_name": "Alamine",
+   "full_name": "Ali Alamine Ali",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.5,
+   "owned_pct": 0.0,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 41.3,
+   "predicted_starts": 42.7,
+   "minutes_confidence": "low",
+   "p_start": 0.4273,
+   "p_cameo": 0.2273,
+   "p_bench": 0.3454,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 1.59,
+   "xp_per_90": 4.42,
+   "xp_horizon_total": 9.55,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.88
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.03
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.95
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.69
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.14
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.86
     }
    ]
   },
@@ -24951,7 +24951,7 @@
    "team_short": "QAD",
    "pos": "MID",
    "price": 7.3,
-   "owned_pct": 21.0,
+   "owned_pct": 21.1,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -25941,6 +25941,105 @@
    ]
   },
   {
+   "id": 134,
+   "web_name": "Al Jari",
+   "full_name": "Ziyad Al Jari",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.3,
+   "owned_pct": 0.0,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 6,
+   "xmins": 45.8,
+   "predicted_starts": 53.2,
+   "minutes_confidence": "med",
+   "p_start": 0.532,
+   "p_cameo": 0.0,
+   "p_bench": 0.468,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 1711,
+    "goals": 0,
+    "assists": 0,
+    "cs": 5,
+    "points": 72,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.01
+    }
+   },
+   "xp_per_gw": 1.38,
+   "xp_per_90": 3.63,
+   "xp_horizon_total": 8.27,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.69
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.81
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.75
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 1.49
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.92
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.61
+    }
+   ]
+  },
+  {
    "id": 423,
    "web_name": "Al Asmari",
    "full_name": "Ali Al Asmari",
@@ -26320,7 +26419,7 @@
    "team_short": "HAZ",
    "pos": "MID",
    "price": 4.4,
-   "owned_pct": 9.4,
+   "owned_pct": 9.3,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -31206,105 +31305,6 @@
    ]
   },
   {
-   "id": 122,
-   "web_name": "Al Suwailem",
-   "full_name": "Abdulaziz Al Suwailem",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.5,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": 100,
-   "yellows": 6,
-   "xmins": 33.7,
-   "predicted_starts": 39.2,
-   "minutes_confidence": "med",
-   "p_start": 0.3921,
-   "p_cameo": 0.0,
-   "p_bench": 0.6079,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 1177,
-    "goals": 0,
-    "assists": 0,
-    "cs": 5,
-    "points": 52,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.02
-    }
-   },
-   "xp_per_gw": 0.97,
-   "xp_per_90": 4.04,
-   "xp_horizon_total": 5.8,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.2
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.54
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.24
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.05
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.62
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.15
-    }
-   ]
-  },
-  {
    "id": 561,
    "web_name": "A. Al Shanqiti",
    "full_name": "Abdullah Ahmed Al Shanqiti",
@@ -32762,105 +32762,6 @@
    ]
   },
   {
-   "id": 90,
-   "web_name": "A. Al Khaibari",
-   "full_name": "Abdulelah Al Khaibari",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.5,
-   "owned_pct": 0.2,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 5,
-   "xmins": 32.9,
-   "predicted_starts": 38.2,
-   "minutes_confidence": "med",
-   "p_start": 0.3821,
-   "p_cameo": 0.0,
-   "p_bench": 0.6179,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 1147,
-    "goals": 0,
-    "assists": 0,
-    "cs": 1,
-    "points": 39,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.02
-    }
-   },
-   "xp_per_gw": 0.88,
-   "xp_per_90": 3.85,
-   "xp_horizon_total": 5.3,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.11
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.47
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.15
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.96
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.55
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.06
-    }
-   ]
-  },
-  {
    "id": 97,
    "web_name": "M. Al Mutairi",
    "full_name": "Meshal Al Mutairi",
@@ -33055,6 +32956,105 @@
       }
      ],
      "xp": 1.01
+    }
+   ]
+  },
+  {
+   "id": 122,
+   "web_name": "Al Suwailem",
+   "full_name": "Abdulaziz Al Suwailem",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.5,
+   "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 6,
+   "xmins": 31.5,
+   "predicted_starts": 36.6,
+   "minutes_confidence": "med",
+   "p_start": 0.366,
+   "p_cameo": 0.0,
+   "p_bench": 0.634,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 1177,
+    "goals": 0,
+    "assists": 0,
+    "cs": 5,
+    "points": 52,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.02
+    }
+   },
+   "xp_per_gw": 0.87,
+   "xp_per_90": 4.04,
+   "xp_horizon_total": 5.24,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.09
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.48
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.13
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.95
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.55
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.04
     }
    ]
   },
@@ -34037,105 +34037,6 @@
    ]
   },
   {
-   "id": 594,
-   "web_name": "A. Al Khaibari",
-   "full_name": "Abdulrahman Al Khaibari",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.0,
-   "owned_pct": 0.4,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 1,
-   "xmins": 31.5,
-   "predicted_starts": 36.7,
-   "minutes_confidence": "med",
-   "p_start": 0.3667,
-   "p_cameo": 0.0,
-   "p_bench": 0.6333,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 1101,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 35,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.02
-    }
-   },
-   "xp_per_gw": 0.82,
-   "xp_per_90": 3.58,
-   "xp_horizon_total": 4.93,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.04
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.42
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.08
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.9
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.5
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.99
-    }
-   ]
-  },
-  {
    "id": 569,
    "web_name": "N. Al Bishri",
    "full_name": "Nawaf Al Bishri",
@@ -34429,6 +34330,105 @@
       }
      ],
      "xp": 0.85
+    }
+   ]
+  },
+  {
+   "id": 90,
+   "web_name": "A. Al Khaibari",
+   "full_name": "Abdulelah Al Khaibari",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.5,
+   "owned_pct": 0.2,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 5,
+   "xmins": 30.7,
+   "predicted_starts": 35.7,
+   "minutes_confidence": "med",
+   "p_start": 0.3567,
+   "p_cameo": 0.0,
+   "p_bench": 0.6433,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 1147,
+    "goals": 0,
+    "assists": 0,
+    "cs": 1,
+    "points": 39,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.02
+    }
+   },
+   "xp_per_gw": 0.8,
+   "xp_per_90": 3.85,
+   "xp_horizon_total": 4.78,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.01
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.41
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 1.05
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.87
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.48
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.96
     }
    ]
   },
@@ -35007,105 +35007,6 @@
    ]
   },
   {
-   "id": 121,
-   "web_name": "M. Al Shaqaq",
-   "full_name": "Muntathir Al Shaqaq",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 3.9,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 22.5,
-   "predicted_starts": 20.5,
-   "minutes_confidence": "low",
-   "p_start": 0.2045,
-   "p_cameo": 0.2435,
-   "p_bench": 0.552,
-   "data_basis": "no_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.04,
-     "assists": 0.07
-    }
-   },
-   "xp_per_gw": 0.77,
-   "xp_per_90": 4.42,
-   "xp_horizon_total": 4.59,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.92
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.47
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.95
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.82
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.53
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.9
-    }
-   ]
-  },
-  {
    "id": 425,
    "web_name": "Al Hammami",
    "full_name": "Hammam Al-Hammami",
@@ -35601,6 +35502,105 @@
    ]
   },
   {
+   "id": 594,
+   "web_name": "A. Al Khaibari",
+   "full_name": "Abdulrahman Al Khaibari",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 4.0,
+   "owned_pct": 0.4,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 1,
+   "xmins": 29.4,
+   "predicted_starts": 34.2,
+   "minutes_confidence": "med",
+   "p_start": 0.3424,
+   "p_cameo": 0.0,
+   "p_bench": 0.6576,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 1101,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 35,
+    "per90": {
+     "goals": 0.01,
+     "assists": 0.02
+    }
+   },
+   "xp_per_gw": 0.74,
+   "xp_per_90": 3.58,
+   "xp_horizon_total": 4.45,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.94
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.37
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.98
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.82
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.44
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.9
+    }
+   ]
+  },
+  {
    "id": 485,
    "web_name": "Al Muhaysin",
    "full_name": "Abgullah Almuhaysin",
@@ -36092,6 +36092,105 @@
       }
      ],
      "xp": 0.76
+    }
+   ]
+  },
+  {
+   "id": 121,
+   "web_name": "M. Al Shaqaq",
+   "full_name": "Muntathir Al Shaqaq",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 3.9,
+   "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 21.0,
+   "predicted_starts": 19.1,
+   "minutes_confidence": "low",
+   "p_start": 0.1909,
+   "p_cameo": 0.2273,
+   "p_bench": 0.5818,
+   "data_basis": "no_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.04,
+     "assists": 0.07
+    }
+   },
+   "xp_per_gw": 0.71,
+   "xp_per_90": 4.42,
+   "xp_horizon_total": 4.28,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.85
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.44
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.89
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.76
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.5
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.84
     }
    ]
   },
@@ -40899,105 +40998,6 @@
       }
      ],
      "xp": 0.36
-    }
-   ]
-  },
-  {
-   "id": 134,
-   "web_name": "Al Jari",
-   "full_name": "Ziyad Al Jari",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 4.3,
-   "owned_pct": 0.0,
-   "status": "d",
-   "news": "Doubtful - مشكوك في مشاركته",
-   "chance_next": 50,
-   "yellows": 6,
-   "xmins": 24.5,
-   "predicted_starts": 28.5,
-   "minutes_confidence": "med",
-   "p_start": 0.285,
-   "p_cameo": 0.0,
-   "p_bench": 0.715,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 1711,
-    "goals": 0,
-    "assists": 0,
-    "cs": 5,
-    "points": 72,
-    "per90": {
-     "goals": 0.01,
-     "assists": 0.01
-    }
-   },
-   "xp_per_gw": 0.55,
-   "xp_per_90": 3.63,
-   "xp_horizon_total": 3.3,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.72
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.24
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.75
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.61
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.3
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.68
     }
    ]
   },
@@ -45923,7 +45923,7 @@
    "team_short": "SHB",
    "pos": "FWD",
    "price": 4.3,
-   "owned_pct": 0.3,
+   "owned_pct": 0.2,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -53827,105 +53827,6 @@
    ]
   },
   {
-   "id": 116,
-   "web_name": "Al Hudaybi",
-   "full_name": "Ammar Al Hudaybi",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 3.9,
-   "owned_pct": 0.1,
-   "status": "u",
-   "news": "Unregistered - غير مقيّد",
-   "chance_next": 0,
-   "yellows": 0,
-   "xmins": 4.9,
-   "predicted_starts": 0.0,
-   "minutes_confidence": "low",
-   "p_start": 0.0,
-   "p_cameo": 0.2435,
-   "p_bench": 0.7565,
-   "data_basis": "no_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 0,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 0,
-    "per90": {
-     "goals": 0.04,
-     "assists": 0.07
-    }
-   },
-   "xp_per_gw": 0.24,
-   "xp_per_90": 4.42,
-   "xp_horizon_total": 1.44,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.26
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.2
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.26
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.25
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.21
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.26
-    }
-   ]
-  },
-  {
    "id": 170,
    "web_name": "A. Al Ghamdi",
    "full_name": "Abdulelah bin Saeed Al Ghamdi",
@@ -55110,6 +55011,105 @@
       }
      ],
      "xp": 0.23
+    }
+   ]
+  },
+  {
+   "id": 116,
+   "web_name": "Al Hudaybi",
+   "full_name": "Ammar Al Hudaybi",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 3.9,
+   "owned_pct": 0.1,
+   "status": "u",
+   "news": "Unregistered - غير مقيّد",
+   "chance_next": 0,
+   "yellows": 0,
+   "xmins": 4.5,
+   "predicted_starts": 0.0,
+   "minutes_confidence": "low",
+   "p_start": 0.0,
+   "p_cameo": 0.2273,
+   "p_bench": 0.7727,
+   "data_basis": "no_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 0,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 0,
+    "per90": {
+     "goals": 0.04,
+     "assists": 0.07
+    }
+   },
+   "xp_per_gw": 0.22,
+   "xp_per_90": 4.42,
+   "xp_horizon_total": 1.35,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.24
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.19
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.25
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.23
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.2
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.24
     }
    ]
   },
@@ -56591,105 +56591,6 @@
    ]
   },
   {
-   "id": 118,
-   "web_name": "S. Tambakti",
-   "full_name": "Sattam Tambakti",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 3.9,
-   "owned_pct": 0.4,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 2,
-   "xmins": 7.7,
-   "predicted_starts": 9.0,
-   "minutes_confidence": "low",
-   "p_start": 0.0896,
-   "p_cameo": 0.0,
-   "p_bench": 0.9104,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 269,
-    "goals": 0,
-    "assists": 0,
-    "cs": 1,
-    "points": 17,
-    "per90": {
-     "goals": 0.02,
-     "assists": 0.04
-    }
-   },
-   "xp_per_gw": 0.2,
-   "xp_per_90": 4.01,
-   "xp_horizon_total": 1.21,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.25
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.1
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.27
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.22
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.12
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.25
-    }
-   ]
-  },
-  {
    "id": 400,
    "web_name": "Haraj",
    "full_name": "Amjad Haraj",
@@ -56789,6 +56690,105 @@
    ]
   },
   {
+   "id": 118,
+   "web_name": "S. Tambakti",
+   "full_name": "Sattam Tambakti",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 3.9,
+   "owned_pct": 0.4,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 2,
+   "xmins": 7.2,
+   "predicted_starts": 8.4,
+   "minutes_confidence": "low",
+   "p_start": 0.0836,
+   "p_cameo": 0.0,
+   "p_bench": 0.9164,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 269,
+    "goals": 0,
+    "assists": 0,
+    "cs": 1,
+    "points": 17,
+    "per90": {
+     "goals": 0.02,
+     "assists": 0.04
+    }
+   },
+   "xp_per_gw": 0.19,
+   "xp_per_90": 4.01,
+   "xp_horizon_total": 1.12,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.24
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.09
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.25
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.2
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.11
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.23
+    }
+   ]
+  },
+  {
    "id": 463,
    "web_name": "Al Kassar",
    "full_name": "Ahmed Al Kassar",
@@ -56884,105 +56884,6 @@
       }
      ],
      "xp": 0.2
-    }
-   ]
-  },
-  {
-   "id": 119,
-   "web_name": "F. Darisi",
-   "full_name": "Faisal Mohammed Darisi",
-   "team": "Al Fateh",
-   "team_short": "FAT",
-   "pos": "DEF",
-   "price": 3.9,
-   "owned_pct": 0.1,
-   "status": "a",
-   "news": "",
-   "chance_next": null,
-   "yellows": 0,
-   "xmins": 6.6,
-   "predicted_starts": 7.6,
-   "minutes_confidence": "low",
-   "p_start": 0.0763,
-   "p_cameo": 0.0,
-   "p_bench": 0.9237,
-   "data_basis": "spl_history",
-   "last_season": {
-    "season": "2025/26",
-    "league": "Saudi Pro League",
-    "minutes": 229,
-    "goals": 0,
-    "assists": 0,
-    "cs": 0,
-    "points": 6,
-    "per90": {
-     "goals": 0.02,
-     "assists": 0.05
-    }
-   },
-   "xp_per_gw": 0.18,
-   "xp_per_90": 4.07,
-   "xp_horizon_total": 1.09,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "SHB",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.23
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "HIL",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.09
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "RIY",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.24
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.2
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "QAD",
-       "venue": "A"
-      }
-     ],
-     "xp": 0.11
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "KLD",
-       "venue": "H"
-      }
-     ],
-     "xp": 0.22
     }
    ]
   },
@@ -57379,6 +57280,105 @@
       }
      ],
      "xp": 0.16
+    }
+   ]
+  },
+  {
+   "id": 119,
+   "web_name": "F. Darisi",
+   "full_name": "Faisal Mohammed Darisi",
+   "team": "Al Fateh",
+   "team_short": "FAT",
+   "pos": "DEF",
+   "price": 3.9,
+   "owned_pct": 0.1,
+   "status": "a",
+   "news": "",
+   "chance_next": null,
+   "yellows": 0,
+   "xmins": 6.1,
+   "predicted_starts": 7.1,
+   "minutes_confidence": "low",
+   "p_start": 0.0712,
+   "p_cameo": 0.0,
+   "p_bench": 0.9288,
+   "data_basis": "spl_history",
+   "last_season": {
+    "season": "2025/26",
+    "league": "Saudi Pro League",
+    "minutes": 229,
+    "goals": 0,
+    "assists": 0,
+    "cs": 0,
+    "points": 6,
+    "per90": {
+     "goals": 0.02,
+     "assists": 0.05
+    }
+   },
+   "xp_per_gw": 0.17,
+   "xp_per_90": 4.07,
+   "xp_horizon_total": 1.02,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "SHB",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.21
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "HIL",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.09
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "RIY",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.22
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.19
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "QAD",
+       "venue": "A"
+      }
+     ],
+     "xp": 0.1
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "KLD",
+       "venue": "H"
+      }
+     ],
+     "xp": 0.21
     }
    ]
   }
