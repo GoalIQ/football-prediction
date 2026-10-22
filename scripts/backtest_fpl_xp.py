@@ -307,9 +307,8 @@ def run_backtest(force_refresh: bool = False, use_context: bool = True,
      pts_by_round, starts_by_round) = build_structures(boot, fixtures, summaries)
 
     # Pelaajakohtainen kierrosuniversumi = sama kuin tuotanto-builderissa:
-    # pelaajan omat rivit, ei joukkueen fixture-listaa. Kesken kautta
-    # siirtyneellä tämä on vain hänen PL-jaksonsa.
-    prounds_by_player = {pid: sorted(m) for pid, m in mins_by_round.items()}
+    # pelaajan omat rivit (xp.window_minutes), ei joukkueen fixture-listaa.
+    # Kesken kautta siirtyneellä tämä on vain hänen PL-jaksonsa.
 
     newcomer_by_pid, newcomer_src = _newcomer_by_pid(boot, season_key)
     if newcomer_by_pid:
@@ -436,9 +435,12 @@ def run_backtest(force_refresh: bool = False, use_context: bool = True,
                 # 43 → 74 min tuotannossa eikä gaten luvuissa muuttunut
                 # yksikään desimaali. Walk-forward säilyy: rounds-lista on
                 # rajattu kohde-GW:tä edeltäviin.
-                prounds = [r for r in prounds_by_player[pid] if r < g]
-                mm = xp.minutes_model(mins_by_round[pid], starts_by_round[pid],
-                                      prounds, n_last=MM_WINDOW)
+                # PELIKIELTO-IKKUNA (22.10): sama lukija kuin builderissa,
+                # kieltokierrokset pois ikkunasta. Vain kierrokset < g.
+                mr_g, sr_g = xp.window_minutes(
+                    [r for rnd, rows in rows_by_round[pid].items() if rnd < g
+                     for r in rows])
+                mm = xp.minutes_model(mr_g, sr_g, sorted(mr_g), n_last=MM_WINDOW)
                 xmins, p60, p1_59 = mm["xmins"], mm["p60"], mm["p1_59"]
             comps = [xp.xp_components(pos, rates, xmins, p60, p1_59, c)
                      for c in ctxs]

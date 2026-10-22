@@ -30,6 +30,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import re
+from collections import defaultdict
 from pathlib import Path
 
 import config
@@ -627,6 +628,104 @@ def recompute_minutes(mm: dict) -> dict:
         if _CONF_RANK[cand] < _CONF_RANK[mm["confidence"]]:
             mm["confidence"] = cand
     return mm
+
+
+# PELIKIELTO-IKKUNA (22.10.2026). Minuutti-ikkuna luki istutun pelikiellon
+# valinnaksi: pelaaja sai punaisen GW4:lla (22 min), istui GW5-6 (0 min) ja
+# palasi avaukseen GW7:lla, mutta ikkuna GW2-7 painoi kieltokierroksia 9/21
+# ja antoi p_start_raw 0.48 / xMins 31 (ilman niita 0.80 / 55). Eteenpain
+# kielto hoidetaan statuksella `s` ja paluupaivalla (suspension_round_factor),
+# taaksepain ei mitenkaan.
+#
+# Kieltokierros = pelaajan oman joukkueen kierros, jolla hanella on 0 min
+# HETI laukaisijan jalkeen (putki katkeaa ensimmaiseen peliminuuttiin), enintaan
+# laukaisijan kieltopituus. FPL-historia ei kerro kiellon pituutta eika
+# cup-otteluita, joissa osa kiellosta voi kulua, joten katto on mitattu:
+# scripts/measure_xp_ban_rounds.py. Kierros jaa pois ikkunasta kuten blank
+# gameweek: ei osoittajaan eika nimittajaan.
+#
+# Tama EI ole 9.8:n "0-putki pois" (mitattu ja hylatty, varamaalivahdin nollat
+# ovat signaali): poisto vaatii laukaisijan (punainen tai keltaisten raja).
+#
+# MITATTU 22.10 (walk-forward, n_last=6, kaudet 22/23-25/26 + 26/27 GW1-7,
+# n = 61 326 pelaaja-kierrosta, kohdekierroksena ei kieltojaksoa koska
+# tuotannossa sen rajaa status s). Otos jossa ikkuna muuttuu, n = 1 778,
+# xMins MAE / P(start) Brier:
+#     nyt (raaka summaus)          27.13 / 0.1764
+#     punainen katto 1             22.45 / 0.1575
+#     punainen katto 2  <- tama    21.88 / 0.1551
+#     punainen katto 3             21.77 / 0.1573
+#     katto 3 ilman keltaisia      24.63 / 0.1670
+#     katto 3 + laukaisija pois    21.66 / 0.1644
+# Katto 2 on paras tai lahes paras JOKA kaudella (myos 26/27, n = 8) ja
+# molemmilla rajauksilla (vain ensimmainen kieltokierros rajattu: 24.04 /
+# 0.1777 vs nyt 27.52 / 0.1795). Koko pooli 21.14 -> 20.98. Laukaisijan
+# poisto huonontaa Brieria joka kaudella: aloitus on valintatieto.
+BAN_RED_MAX_ROUNDS = 2
+# PL:n keltaisten rajat: (kortteja, viimeinen kierros jolla raja laukeaa,
+# kiellon pituus otteluina). 5 ennen 20. ottelua -> 1, 10 ennen 33. -> 2.
+# Suurin osa hyodysta tulee naista (ks. "ilman keltaisia" yllä).
+BAN_YELLOW_RULES: tuple[tuple[int, int, int], ...] = ((5, 19, 1), (10, 32, 2))
+BAN_DROP_TRIGGER_ROUND = False
+
+
+def served_ban_rounds(rows: list[dict], red_max: int = BAN_RED_MAX_ROUNDS,
+                      drop_trigger: bool = BAN_DROP_TRIGGER_ROUND,
+                      yellow_rules: tuple[tuple[int, int, int], ...] = BAN_YELLOW_RULES,
+                      ) -> set[int]:
+    """Kierrokset jotka pelaaja istui pelikieltoa (ja laukaisija, jos drop_trigger).
+
+    rows = element-summaryn historiarivit (ottelu per rivi: round, minutes,
+    red_cards, yellow_cards). Tuplakierros summataan kierrokseksi. Vain
+    rivilliset kierrokset ovat ehdokkaita, joten blank gameweek ei kuluta
+    kieltoa.
+    """
+    mins: dict[int, float] = defaultdict(float)
+    reds: dict[int, int] = defaultdict(int)
+    ycs: dict[int, int] = defaultdict(int)
+    for r in rows:
+        rnd = r.get("round")
+        if rnd is None:
+            continue
+        mins[rnd] += r.get("minutes", 0) or 0
+        reds[rnd] += r.get("red_cards", 0) or 0
+        ycs[rnd] += r.get("yellow_cards", 0) or 0
+    rounds = sorted(mins)
+    out: set[int] = set()
+    yellows = 0
+    for i, rnd in enumerate(rounds):
+        length = red_max if reds[rnd] > 0 else 0
+        before, yellows = yellows, yellows + ycs[rnd]
+        for count, last_round, ban in yellow_rules:
+            if before < count <= yellows and rnd <= last_round:
+                length = max(length, ban)
+        if length <= 0:
+            continue
+        if drop_trigger:
+            out.add(rnd)
+        for nxt in rounds[i + 1:i + 1 + length]:
+            if mins[nxt] > 0:
+                break
+            out.add(nxt)
+    return out
+
+
+def window_minutes(rows: list[dict], **ban_kwargs) -> tuple[dict[int, float], dict[int, int]]:
+    """Minuutit ja aloitukset kierroksittain minuuttimallille, kieltokierrokset pois.
+
+    YKSI lukija live-kauden ikkunalle (build_fpl_xp). Raaka summaus ilman
+    tata palauttaa istutun kiellon valintana, ks. PELIKIELTO-IKKUNA.
+    """
+    banned = served_ban_rounds(rows, **ban_kwargs)
+    mr: dict[int, float] = defaultdict(float)
+    sr: dict[int, int] = defaultdict(int)
+    for r in rows:
+        rnd = r.get("round")
+        if rnd is None or rnd in banned:
+            continue
+        mr[rnd] += r.get("minutes", 0) or 0
+        sr[rnd] += r.get("starts", 0) or 0
+    return dict(mr), dict(sr)
 
 
 def availability_factor(status: str, chance) -> float:

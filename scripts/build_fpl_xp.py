@@ -931,14 +931,9 @@ def main(argv: list[str] | None = None) -> int:
         cur_mins_by_player[pid] = float(acc.get("mins", 0.0) or 0.0)
         acc = xp.carry_prev_season(acc, (prev_b or {}).get("acc"))
         acc_by_player[pid] = acc
-        mr: dict[int, float] = defaultdict(float)
-        sr: dict[int, int] = defaultdict(int)
-        for r in hist:
-            if r.get("round") is not None:
-                mr[r["round"]] += r.get("minutes", 0) or 0
-                sr[r["round"]] += r.get("starts", 0) or 0
-        mins_by_round[pid] = dict(mr)
-        starts_by_round[pid] = dict(sr)
+        # PELIKIELTO-IKKUNA (22.10): istuttu kielto ei ole valinta, joten
+        # kieltokierrokset jaavat ikkunasta pois kuten blank gameweek.
+        mins_by_round[pid], starts_by_round[pid] = xp.window_minutes(hist)
         # XP-SEASON-CARRY: esikausiarvio minuuteille (koko arkistokausi,
         # half-life) sekoitetaan kuluvan kauden ikkunaan alla (blend_minutes).
         if prev_b and prev_b.get("mins_by_round"):
