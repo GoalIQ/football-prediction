@@ -143,6 +143,7 @@ jobs:
       # vakiintuneesta seurasta nousijoita julkiselle sivulle). Fail-open: vaadi_understat kieltaytyy itse.
       - name: TLS library for Understat (authenticated)
         if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/ci_tls_library.sh
