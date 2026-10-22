@@ -39,6 +39,7 @@ NAME_MAP: dict[str, str] = {
     # FPL-API (bootstrap-static team.name)
     "Man City": "Manchester City",
     "Man Utd": "Manchester United",
+    "Man United": "Manchester United",   # football-data.co.uk (22.10.2026: nimiristiriidan tunnistus)
     "Spurs": "Tottenham",
     "Nott'm Forest": "Nottingham Forest",
     "Newcastle": "Newcastle United",
