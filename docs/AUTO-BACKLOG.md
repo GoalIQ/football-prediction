@@ -185,6 +185,11 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   Ehdotus: `bsky_bot x-mirror` ja `x_viikkoketju` sulkevat omat issuensa, kun ne vanhenevat (bsky-peili 24 h,
   kierrosketju seuraavan deadlinen jälkeen) kommentilla "vanhentunut, ei postattu tai postattu käsin";
   issuen tekstistä pois sulkemispyyntö. Kummallakin askeleella on jo `issues: write`, joten työnkulkuun ei koskea.
+- 2026-10: docs/bsky/AANI.md kieltää aivoja kirjoittamasta hashtageja (julkaisu lisää #FPL:n itse), mutta mikään ei
+  valvo sitä: aivojen kirjoittama "#GW8" saa `tag_facets`-facetin ja menee portin läpi. Ehdotus: `bsky_gate` hylkää
+  kirjaimella alkavan tunnisteen muualla kuin julkaisun lisäämänä #FPL:nä (omat postaukset) ja kokonaan vastauksista;
+  numerolla alkava "#3" (sijoitus, käytössä vastauksissa 22.10) sallitaan. Testi positiivisella ja negatiivisella
+  kontrollilla. (julkaisutarkistaja 22.10, PR #37)
 
 ## Avoimet
 

@@ -471,7 +471,7 @@ def bsky_gate_page(url) -> str | None:
 # (goodfeeds "FPL", 138 tykkaysta) 180 postauksesta 114 kantaa #fpl:n, omista 18:sta ei yksikaan. Avainsanasyotteet
 # loytavat botin jo linkin "goaliq.app/fpl" kautta; tunniste tuo lisaksi hashtag-sivun ja #-syotteet.
 POST_HASHTAG = "#FPL"
-_HASHTAG_RE = re.compile(r"(?:^|\s)#\w")
+_HASHTAG_RE = re.compile(r"(?:^|\s)#[A-Za-z]")   # "#3" on sijoitus, ei tunniste (julkaisutarkistaja 22.10)
 
 
 def prepare(item: dict, content_id: str) -> tuple[str, dict]:

@@ -721,6 +721,7 @@ def test_tunniste_vain_omaan_postaukseen_ja_kun_mahtuu():
     assert bot.prepare({"kind": "reply", "text": "Arsenal again."}, "c")[0] == "Arsenal again."
     assert bot.prepare({"kind": "mention_reply", "text": "Arsenal again."}, "c")[0] == "Arsenal again."
     assert bot.prepare({"kind": "post", "text": "Arsenal again. #GW8"}, "c")[0] == "Arsenal again. #GW8"
+    assert bot.prepare({"kind": "post", "text": "Saka is the #2 captain."}, "c")[0] == "Saka is the #2 captain. #FPL"
     taysi = "a" * (gate.MAX_CHARS - 4)
     assert bot.prepare({"kind": "post", "text": taysi}, "c")[0] == taysi      # ei ylita 300:aa, ei kaada postausta
 
