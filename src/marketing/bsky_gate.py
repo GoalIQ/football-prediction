@@ -46,6 +46,14 @@ STYLE_TELLS = (
     "game-changer", "game changer", "it's worth noting", "as you spotted", "great question",
     "betting", " odds", "tips", "lock of the week",
 )
+# 22.10.2026: FPL:ssa buy/sell/dump luetaan siirtoneuvoksi. Botin vastaus "Pedro at that price is a hard
+# sell for me" (21.10) tarkoitti "en ostaisi", mutta luettiin myyntikehotukseksi, vaikka malli piti
+# pelaajaa kierroksen kolmantena hyokkaajana, ja kohde kysyi "Are you AI?". Siirtoverbi vain
+# kirjaimellisessa merkityksessa (docs/bsky/AANI.md).
+TRANSFER_IDIOMS = (
+    "hard sell", "tough sell", "easy sell", "an easy buy", "i buy it", "i'm buying it", "not buying it",
+    "i'm sold", "not sold on", "sold on him", "sold on the",
+)
 # 17.10.2026 (Villen paatos, goaliq-app cos-reports/2026-10-17-tyokalut-maksumuuriin-spec.md): henkilokohtaiset
 # FPL-tyokalut ovat Premiumia. Botti ei saa luvata niita ilmaiseksi. Ilmaista on sisalto: ennusteet, clean sheet
 # -taulukot, expected points -sivut, track record ja artikkelit. Saanto: tyokalun nimi ja ilmaisuussana samassa
@@ -129,6 +137,9 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
     for tell in STYLE_TELLS:
         if tell in low:
             probs.append(f"tyylikielto: {tell.strip()!r}")
+    for idiom in TRANSFER_IDIOMS:
+        if idiom in low:
+            probs.append(f"tyylikielto: siirtoverbi kuvaannollisena {idiom!r} (luetaan siirtoneuvoksi)")
     if re.search(r"\b(?:is|are|was)n't [^.,;]{1,40}, (?:it|they|he|she)(?:'s| is| are)\b", low):
         probs.append("tyylikielto: negatiivinen parallelismi (ei X, vaan Y)")
     if text.count("!") > 1:
