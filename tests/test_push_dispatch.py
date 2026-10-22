@@ -539,3 +539,33 @@ def test_push_targets_attaches_entry_id_only_as_positive_int(client, monkeypatch
                                                 headers={"X-Admin-Token": "right"}).json()["targets"]}
     assert t["t1"]["fpl_entry_id"] == 4089628
     assert t["t2"]["fpl_entry_id"] is None and t["t3"]["fpl_entry_id"] is None
+
+
+# --------------------------------------------------------------------------
+# PostHog-mittaus (22.10.2026): EU-oletus + puuttuva secret = 0 tapahtumaa kahteen kuukauteen, eika kukaan nahnyt
+# --------------------------------------------------------------------------
+
+class _Vastaus:
+    def __init__(self, status):
+        self.status_code, self.ok = status, 200 <= status < 300
+
+
+def test_posthog_capture_lahettaa_us_projektiin(monkeypatch, capsys):
+    osoitteet = []
+    monkeypatch.setenv("POSTHOG_API_KEY", "phc_testi")
+    monkeypatch.delenv("POSTHOG_HOST", raising=False)
+    monkeypatch.setattr(pd.requests, "post", lambda url, **kw: osoitteet.append(url) or _Vastaus(200))
+    pd.posthog_capture("push_personal", {"gw": 8})
+    assert osoitteet == ["https://us.i.posthog.com/capture/"]
+    assert "::warning::" not in capsys.readouterr().out
+
+
+def test_posthog_puuttuva_avain_ja_hylkays_nakyvat_lokissa(monkeypatch, capsys):
+    kutsut = []
+    monkeypatch.setattr(pd.requests, "post", lambda url, **kw: kutsut.append(url) or _Vastaus(401))
+    monkeypatch.delenv("POSTHOG_API_KEY", raising=False)
+    pd.posthog_capture("push_sent", {})
+    assert kutsut == [] and "::warning::POSTHOG_API_KEY puuttuu: push_sent" in capsys.readouterr().out
+    monkeypatch.setenv("POSTHOG_API_KEY", "phc_testi")
+    pd.posthog_capture("push_sent", {})
+    assert "::warning::PostHog hylkasi push_sent: HTTP 401" in capsys.readouterr().out
