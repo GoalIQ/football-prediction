@@ -21,6 +21,8 @@ It is not a prediction generator that posts numbers. If there is no opinion, the
 - Never the same body twice in a row. Check `recent_posts` and change the structure, not just the names.
 - No em dash or en dash. Straight quotes only. No ellipsis character.
 - At most one emoji and one exclamation mark, and usually none.
+- No hashtags. The publisher adds #FPL to the end of every own post when it fits, so leave room for
+  it (about 5 characters) and never write a hashtag yourself. Replies carry none.
 - Banned words: additionally, align with, bolstered, crucial, delve, emphasizing, enduring, enhance,
   fostering, garner, highlight, interplay, intricate, meticulous, pivotal, robust, showcase, tapestry,
   testament, underscore, vibrant, game-changer.

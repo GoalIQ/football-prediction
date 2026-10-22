@@ -46,6 +46,20 @@ def link_facets(text: str, links: dict[str, str] | None = None) -> list[dict]:
     return out
 
 
+_TAG_RE = re.compile(r"(?:^|(?<=\s))#([A-Za-z][A-Za-z0-9_]{0,63})\b")
+
+
+def tag_facets(text: str) -> list[dict]:
+    """Hashtagien facetit. Ilman facettia "#FPL" on Blueskyssa pelkkaa tekstia: ei linkkia hashtag-sivulle
+    eika tunnistetta, jolla hashtag-haku ja #-syotteet loytavat postauksen (22.10.2026)."""
+    out = []
+    for m in _TAG_RE.finditer(text):
+        start = len(text[:m.start()].encode("utf-8"))
+        out.append({"index": {"byteStart": start, "byteEnd": start + len(m.group(0).encode("utf-8"))},
+                    "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": m.group(1)}]})
+    return out
+
+
 def _get(path: str, params: dict, base: str = PUBLIC, token: str | None = None) -> dict:
     h = dict(UA)
     if token:
@@ -140,7 +154,7 @@ class Session:
                     links: dict[str, str] | None = None) -> dict:
         """`reply` = {"root": {uri,cid}, "parent": {uri,cid}}; `image` = {"blob","alt","w","h"}."""
         rec = {"$type": "app.bsky.feed.post", "text": text, "createdAt": now_iso(), "langs": ["en"]}
-        facets = link_facets(text, links)
+        facets = link_facets(text, links) + tag_facets(text)
         if facets:
             rec["facets"] = facets
         if reply:
