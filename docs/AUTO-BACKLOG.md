@@ -193,6 +193,20 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 
 ## Avoimet
 
+- [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
+  ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
+  (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
+  `result`, muuten tilan "result pending", ja linkin /predictions#record. Sama maskaus kuin nyt (vain 1X2-%).
+  Kauden jo poistetut sivut syntyvät uudelleen samasta lokista samalla slug-logiikalla (esim.
+  /predictions/la-liga/real-madrid-vs-real-sociedad palaa 404:stä). Julkaistu URL ei koskaan vaihdu: jos myöhempi
+  ottelu saisi saman slugin, se saa päivämääräsuffiksin. Liigahub listaa tulevien rinnalla viimeisen 7 päivän
+  pelatut, ja sivustokartta sisältää pelatut (lastmod = tuloksen päivä). Vaihetesti samalla rivillä: ennen
+  kickoffia, kickoffin jälkeen ilman tulosta, tuloksen jälkeen; ennusteluvut ja URL identtiset kaikissa
+  vaiheissa, ja testi kaatuu jos poisto (`unlink`) palaa tai luku tulee muualta kuin lokista. Cloudflare Pagesin
+  20 000 tiedoston raja tarkistetaan builderissa. PR:n Julkinen teksti -osioon pelatun sivun otsikko ja
+  tuloslauseet sanatarkasti (julkaisutarkistaja ennen mergeä). (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ L · myynti 3/3 · uutuus 1/2 = 11
+      Mittari: pelattu ottelusivu palauttaa 200 ennusteen ja tuloksen kanssa, ja gsc.json:n sivut-listalla on vähintään 20 ottelusivua (19.10: 9) · tarkistus 2026-12-14
 - [ ] Ottelun ennuste Bluesky-botin aiheeksi, kokeilu GW10-katsaukseen asti (ylläpitäjän päätös 2026-10-20): botti
   ei voi nyt postata ottelun lukua, koska reply-moduulissa ei ole ottelukohtaista osiota. Lisää
   `src/marketing/reply_sections.py`:hin osio `matches`: seuraavien 72 tunnin ottelut, joilla on julkaistu
@@ -293,20 +307,6 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   (yllapitajan signaali 2026-10-16: botin pitaa tietaa mitka postaukset saavat asiakkaita, lahde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · tyo M · myynti 3/3 · uutuus 1/2 = 10
       Mittari: uuden tilin raw_user_meta_data.channel.source = bluesky Bluesky-linkista tulleella · tarkistus 2026-11-01
-- [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
-  ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
-  (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
-  `result`, muuten tilan "result pending", ja linkin /predictions#record. Sama maskaus kuin nyt (vain 1X2-%).
-  Kauden jo poistetut sivut syntyvät uudelleen samasta lokista samalla slug-logiikalla (esim.
-  /predictions/la-liga/real-madrid-vs-real-sociedad palaa 404:stä). Julkaistu URL ei koskaan vaihdu: jos myöhempi
-  ottelu saisi saman slugin, se saa päivämääräsuffiksin. Liigahub listaa tulevien rinnalla viimeisen 7 päivän
-  pelatut, ja sivustokartta sisältää pelatut (lastmod = tuloksen päivä). Vaihetesti samalla rivillä: ennen
-  kickoffia, kickoffin jälkeen ilman tulosta, tuloksen jälkeen; ennusteluvut ja URL identtiset kaikissa
-  vaiheissa, ja testi kaatuu jos poisto (`unlink`) palaa tai luku tulee muualta kuin lokista. Cloudflare Pagesin
-  20 000 tiedoston raja tarkistetaan builderissa. PR:n Julkinen teksti -osioon pelatun sivun otsikko ja
-  tuloslauseet sanatarkasti (julkaisutarkistaja ennen mergeä). (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
-      Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ L · myynti 3/3 · uutuus 1/2 = 11
-      Mittari: pelattu ottelusivu palauttaa 200 ennusteen ja tuloksen kanssa, ja gsc.json:n sivut-listalla on vähintään 20 ottelusivua (19.10: 9) · tarkistus 2026-12-14
 - [ ] xP-jäädytys päivittyy deadlineen asti (ylläpitäjän päätös 2026-10-16): `scripts/freeze_fpl_xp_gw.py`
   kirjoittaa kierroksen jäädytyksen uudelleen jokaisella ajolla niin kauan kuin kierroksen deadline ei ole mennyt, ja
   deadlinen jälkeen ei koskaan (immutable). Nyt olemassa olevaa ei ylikirjoiteta, joten jäädytys on noin vuorokauden
