@@ -1173,6 +1173,116 @@
      }
     }
    }
+  },
+  {
+   "gw": 8,
+   "deadline_utc": "2026-10-23T17:30:00Z",
+   "logged_at": "2026-10-22T12:58:15Z",
+   "updated_at": "2026-10-22T12:58:15Z",
+   "source": {
+    "freeze_frozen_at": "2026-10-22T12:58:15Z",
+    "projection_generated_at": "2026-10-22T12:53:55+00:00"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 426,
+     "web_name": "B.Fernandes",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "gw_xp",
+     "value": 5.93,
+     "frozen_value": 5.93,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 426,
+     "web_name": "B.Fernandes",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "p_haul",
+     "value": 0.153,
+     "criterion": "10+ pts",
+     "gw_xp": 5.93,
+     "xp_dist": {
+      "p_haul": 0.153,
+      "p_blank": 0.15,
+      "p10": 2,
+      "median": 5,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 427,
+     "web_name": "Mbeumo",
+     "team_short": "MUN",
+     "pos": "MID",
+     "metric": "p90",
+     "value": 11,
+     "criterion": "reached p90",
+     "gw_xp": 5.63,
+     "xp_dist": {
+      "p_haul": 0.145,
+      "p_blank": 0.218,
+      "p10": 2,
+      "median": 5,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p_3plus",
+     "value": 0.847,
+     "criterion": "3+ pts",
+     "gw_xp": 5.63,
+     "xp_dist": {
+      "p_haul": 0.14,
+      "p_blank": 0.153,
+      "p10": 2,
+      "median": 5,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 480,
+     "web_name": "Gibbs-White",
+     "team_short": "NFO",
+     "pos": "MID",
+     "metric": "p_haul",
+     "value": 0.12,
+     "criterion": "10+ pts",
+     "gw_xp": 4.67,
+     "xp_dist": {
+      "p_haul": 0.12,
+      "p_blank": 0.361,
+      "p10": 0,
+      "median": 3,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [],
+   "entry_actual": null,
+   "graded": null
   }
  ]
 }
