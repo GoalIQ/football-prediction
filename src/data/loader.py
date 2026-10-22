@@ -342,6 +342,23 @@ def lataa_otteludata(liigat: Iterable[str], kaudet: Iterable[str]) -> pd.DataFra
     return tulos.data
 
 
+def vaadi_understat(df: pd.DataFrame, kuvaus: str) -> pd.DataFrame:
+    """Julkinen PL-malli on Understatin xG-fitti; muusta lahteesta sita ei julkaista.
+
+    22.10.2026 15:41: Understatin TLS-kirjaston lataus kaatui, haku putosi football-data.co.uk:hon, jonka nimet
+    ("Man City", "Nott'm Forest") eivat kohdanneet FPL-nimikarttaa, ja neljasta vakiintuneesta seurasta tuli
+    "nousijoita" goaliq.app/fpl-sivulle (60 ottelun CS%, Villa v City 16 % -> 36 %). Varalahde on oikea valinta
+    ennusteille, mutta julkiselle xG-mallille se on eri malli eri nimin. Jokaisen rivin lahde on oltava
+    Understat, muuten SystemExit: rakentaja ei kirjoita, ja edellinen artefakti jaa voimaan.
+    """
+    lahde = df["lahde"] if "lahde" in df.columns else pd.Series([None] * len(df), dtype=object)
+    if df.empty or (lahde != "Understat").any():
+        muut = sorted({str(x) for x in lahde if x != "Understat"}) if len(df) else ["ei dataa"]
+        raise SystemExit(f"VIRHE: {kuvaus}: otteludata ei ole kokonaan Understatia (muut lahteet: {muut}). "
+                         "Ei kirjoiteta; edellinen artefakti jaa voimaan.")
+    return df
+
+
 def viimeisin_diagnoosi(
     liigat: Iterable[str], kaudet: Iterable[str]
 ) -> tuple[dict[str, str], dict[str, str]]:

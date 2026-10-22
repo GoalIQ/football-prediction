@@ -138,6 +138,16 @@ jobs:
             "statsmodels>=0.14" "requests>=2.31" "soccerdata>=1.8" \
             "python-dotenv>=1.0" "tqdm>=4.66" "pillow>=10"
 
+      # 22.10.2026: Understatin TLS-kirjasto tunnistautuneena ENNEN rakentajia. Ilman tata tls_requests haki
+      # kirjaston tunnistautumatta, raja tayttyi ajoittain ja 15:41 phase0 sai varalahteen datan (neljasta
+      # vakiintuneesta seurasta nousijoita julkiselle sivulle). Fail-open: vaadi_understat kieltaytyy itse.
+      - name: TLS library for Understat (authenticated)
+        if: steps.guard.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci_tls_library.sh
+
       # 17.8: PAATTYNEEN 25/26-KAUDEN ARKISTO RUNNERILLE.
       #
       # MIKSI: kolme cronin askelta lukee `data/raw/fpl/`-hakemistosta jota EI

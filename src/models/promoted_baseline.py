@@ -430,6 +430,14 @@ def add_promoted_baseline(
     """
     trio = [t for t in reference if t in dc.attack]
     needed = [t for t in needed if t not in dc.attack]
+    # 22.10.2026: "nousija", joka on fitissa toisella nimella ("Man City" vs "Manchester City"), ei ole nousija vaan
+    # lahteen nimiristiriita. Baseline antaisi kauden karkiseuralle nousijan voiman julkiselle sivulle.
+    from src.models.fpl_team_names import NAME_MAP
+    eri_nimella = {NAME_MAP[t]: t for t in dc.attack if NAME_MAP.get(t, t) != t}
+    ristiriidat = [f"{t} (fitissa {eri_nimella[t]!r})" for t in needed if t in eri_nimella]
+    if ristiriidat:
+        raise ValueError(f"VIRHE: nousijaksi tulkittu joukkue on fitissa toisella nimella: {ristiriidat}. "
+                         "Baselinea ei anneta; korjaa lahteen nimet (src/data/loader.vaadi_understat).")
     if not needed:
         return {"trio_used": trio, "applied_to": []}
     if not trio and not allow_frozen:

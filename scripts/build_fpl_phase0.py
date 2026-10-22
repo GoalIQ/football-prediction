@@ -44,7 +44,7 @@ import numpy as np
 import requests
 
 import config
-from src.data.loader import lataa_otteludata
+from src.data.loader import lataa_otteludata, vaadi_understat
 from src.models.dixon_coles import DixonColesModel
 
 # ---------------------------------------------------------------------------
@@ -291,9 +291,8 @@ def fetch_source() -> dict:
 # ---------------------------------------------------------------------------
 def fit_model() -> tuple[DixonColesModel, list[str]]:
     seasons = config.current_season_pair()
-    df = lataa_otteludata(["ENG-Premier League"], seasons)
-    if df.empty:
-        raise SystemExit("PL-otteludata tyhjä — ei voi sovittaa mallia.")
+    # 22.10.2026: xP, cs_fdr ja tama sivu kayttavat tata fittia; varalahteen data (tai tyhja) ei paase mihinkaan niista.
+    df = vaadi_understat(lataa_otteludata(["ENG-Premier League"], seasons), "PL-fitti")
     dc = DixonColesModel(per_team_home_adv=True).fit(
         df,
         home_team_col="home_team",
@@ -435,7 +434,8 @@ def context_cfg(source_teams, source_fixtures) -> tuple[dict, set[str]]:
 
     y = int(SEASON_LABEL[:4])
     prev_key = f"{(y - 1) % 100:02d}{y % 100:02d}"
-    prev_matches = _lataa(["ENG-Premier League"], [prev_key])
+    # Varalahteen nimilla edellisen kauden joukkueet eivat kohtaa, ja vakiintunut seura luetaan nousijaksi (22.10).
+    prev_matches = vaadi_understat(_lataa(["ENG-Premier League"], [prev_key]), "edellisen PL-kauden joukkueet")
     fixture_team_names = {map_name(t) for t in source_teams}
     promoted = promoted_teams(fixture_team_names, set(prev_matches["home_team"]))
     model_fixtures = [{"gameweek": f["gameweek"], "home": map_name(f["home"]),
