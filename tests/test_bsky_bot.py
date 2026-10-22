@@ -662,6 +662,9 @@ def test_julkaisu_levittaa_aivojen_postaukset_ja_jono_vanhenee(monkeypatch, tmp_
     q = tmp_path / "queue.json"
     t0 = datetime(2026, 10, 16, 9, 50, tzinfo=timezone.utc)
 
+    def _tag(*xs):
+        return [f"{x} {bot.POST_HASHTAG}" for x in xs]   # julkaisu lisaa tunnisteen (22.10)
+
     def aja(h, jono=None):
         if jono is not None:
             q.write_text(json.dumps([{"kind": "post", "topic": "player", "text": x} for x in jono]), encoding="utf-8")
@@ -670,11 +673,11 @@ def test_julkaisu_levittaa_aivojen_postaukset_ja_jono_vanhenee(monkeypatch, tmp_
         bot.cmd_publish(q, dry=False, thought=jono is not None, now=t0 + timedelta(hours=h))
         return [p["text"] for p in bot.load_state()["pending_posts"]]
 
-    assert aja(0, [a, b, c]) == [b, c] and _PostausSessio.postit == [a]
-    assert aja(1) == [b, c] and _PostausSessio.postit == [a]              # alle 3 h: ei mitaan
-    assert aja(3) == [c] and _PostausSessio.postit == [a, b]
-    assert aja(4, [d]) == [d] and _PostausSessio.postit == [a, b]         # uusi jono korvaa c:n, d odottaa valia
-    assert aja(10.1) == [] and _PostausSessio.postit == [a, b]            # d vanheni (yli 6 h)
+    assert aja(0, [a, b, c]) == [b, c] and _PostausSessio.postit == _tag(a)
+    assert aja(1) == [b, c] and _PostausSessio.postit == _tag(a)              # alle 3 h: ei mitaan
+    assert aja(3) == [c] and _PostausSessio.postit == _tag(a, b)
+    assert aja(4, [d]) == [d] and _PostausSessio.postit == _tag(a, b)         # uusi jono korvaa c:n, d odottaa valia
+    assert aja(10.1) == [] and _PostausSessio.postit == _tag(a, b)            # d vanheni (yli 6 h)
     ajat = [datetime.fromisoformat(json.loads(r)["at"]) for r in (tmp_path / "posted.jsonl").read_text().splitlines()]
     assert ajat[1] - ajat[0] >= gate.MIN_POST_GAP
 
@@ -689,3 +692,41 @@ def test_postausvali_alkaa_lokista_kun_tilassa_ei_ole_aikaa(monkeypatch, tmp_pat
              {"at": "2026-10-22T12:20:00+00:00", "kind": "post", "uri": None}]   # kuivaharjoitus
     (tmp_path / "posted.jsonl").write_text("\n".join(json.dumps(r) for r in rivit) + "\n", encoding="utf-8")
     assert bot.load_state()["last_post_at"] == "2026-10-22T11:52:02+00:00"
+
+
+def test_tunniste_saa_tag_facetin_tavuoffseteilla():
+    """Ilman facettia #FPL on pelkkaa tekstia: ei hashtag-sivua eika #-syotteita (22.10)."""
+    t = "Groß is the pick. goaliq.app/fpl/expected-points #FPL"
+    f = bsky.tag_facets(t)
+    assert len(f) == 1 and f[0]["features"] == [{"$type": "app.bsky.richtext.facet#tag", "tag": "FPL"}]
+    b = t.encode("utf-8")
+    assert b[f[0]["index"]["byteStart"]:f[0]["index"]["byteEnd"]] == b"#FPL"
+    assert bsky.tag_facets("goaliq.app/fpl#clean-sheets and C# code") == []
+
+
+def test_create_post_kirjoittaa_tunnisteen_facetin(monkeypatch):
+    s = object.__new__(bsky.Session)
+    s.did = "did:plc:goaliq"
+    kirjattu = {}
+    monkeypatch.setattr(s, "_post", lambda path, **kw: kirjattu.update(kw["json"]["record"]) or {"uri": "u"})
+    s.create_post("Arsenal again. goaliq.app/fpl #FPL", links={"goaliq.app/fpl": "https://goaliq.app/fpl?utm_source=bluesky"})
+    tyypit = [x["features"][0]["$type"] for x in kirjattu["facets"]]
+    assert tyypit == ["app.bsky.richtext.facet#link", "app.bsky.richtext.facet#tag"]
+
+
+def test_tunniste_vain_omaan_postaukseen_ja_kun_mahtuu():
+    assert bot.prepare({"kind": "post", "text": "Arsenal again."}, "c")[0] == "Arsenal again. #FPL"
+    assert bot.prepare({"kind": "post", "text": "Arsenal LINK again.", "link": "/fpl"}, "c")[0] == \
+        "Arsenal goaliq.app/fpl again. #FPL"
+    assert bot.prepare({"kind": "reply", "text": "Arsenal again."}, "c")[0] == "Arsenal again."
+    assert bot.prepare({"kind": "mention_reply", "text": "Arsenal again."}, "c")[0] == "Arsenal again."
+    assert bot.prepare({"kind": "post", "text": "Arsenal again. #GW8"}, "c")[0] == "Arsenal again. #GW8"
+    taysi = "a" * (gate.MAX_CHARS - 4)
+    assert bot.prepare({"kind": "post", "text": taysi}, "c")[0] == taysi      # ei ylita 300:aa, ei kaada postausta
+
+
+def test_x_versio_pudottaa_tunnisteen_jos_raja_ylittyy():
+    teksti = "a" * 254 + " goaliq.app/fpl/expected-points #FPL"
+    x = bot.x_version(_row(text=teksti))
+    assert x is not None and not x.endswith("#FPL") and x.endswith(_LINK.replace("utm_source=bluesky", "utm_source=x"))
+    assert bot.x_version(_row(text="Arsenal again. goaliq.app/fpl/expected-points #FPL")).endswith(" #FPL")

@@ -467,9 +467,17 @@ def bsky_gate_page(url) -> str | None:
     return gate.page_of(str(url)) if url else None
 
 
+# 22.10.2026 (Villen GO, kokeilu): Blueskyn FPL-yhteison tunniste. Mitattu 22.10: suosituimman FPL-syotteen
+# (goodfeeds "FPL", 138 tykkaysta) 180 postauksesta 114 kantaa #fpl:n, omista 18:sta ei yksikaan. Avainsanasyotteet
+# loytavat botin jo linkin "goaliq.app/fpl" kautta; tunniste tuo lisaksi hashtag-sivun ja #-syotteet.
+POST_HASHTAG = "#FPL"
+_HASHTAG_RE = re.compile(r"(?:^|\s)#\w")
+
+
 def prepare(item: dict, content_id: str) -> tuple[str, dict]:
     """LINK-paikkamerkki -> lyhyt nayttoteksti; palauttaa (teksti, {nayttoteksti: uri}).
-    goaliq.app-polku saa utm:t (kanava tilille asti); ulkoinen osoite (FPL:n entry-sivu) ei."""
+    goaliq.app-polku saa utm:t (kanava tilille asti); ulkoinen osoite (FPL:n entry-sivu) ei.
+    Omaan postaukseen lisataan POST_HASHTAG, jos se mahtuu eika tekstissa ole jo hashtagia."""
     text, links = item["text"], {}
     if item.get("link") and item["kind"] == "post":
         link = str(item["link"])
@@ -479,7 +487,11 @@ def prepare(item: dict, content_id: str) -> tuple[str, dict]:
             disp, uri = utm_link(link, item.get("topic") or "post", content_id)
         text = text.replace("LINK", disp) if "LINK" in text else f"{text} {disp}"
         links[disp] = uri
-    return text.replace("LINK", "").strip(), links
+    text = text.replace("LINK", "").strip()
+    if (item["kind"] == "post" and not _HASHTAG_RE.search(text)
+            and len(text) + 1 + len(POST_HASHTAG) <= gate.MAX_CHARS):
+        text = f"{text} {POST_HASHTAG}"
+    return text, links
 
 
 def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: datetime | None = None) -> int:
@@ -643,6 +655,8 @@ def x_version(row: dict) -> str | None:
         if "goaliq.app" in uri:
             uri = uri.replace("utm_source=bluesky", "utm_source=x")
         text = text.replace(disp, uri)
+    if x_length(text) > X_MAX and text.endswith(" " + POST_HASHTAG):
+        text = text[:-len(" " + POST_HASHTAG)]   # tunniste on lisa, ei syy pudottaa postaus X-jonosta
     return text if x_length(text) <= X_MAX else None
 
 
