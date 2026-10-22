@@ -606,21 +606,30 @@ def check_receipts(state: dict) -> None:
     state["receipts"] = []
 
 
+# 22.10.2026: projekti 427890 on US Cloudissa (goaliq-app eas.json, web/pro/analytics.py). Oletus oli EU-alueen
+# osoite, eika POSTHOG_API_KEY-secretia ollut: push_sent ja push_personal eivat tallentuneet kertaakaan (0 tapahtumaa
+# 1.8 alkaen), ja hiljaisuus naytti onnistumiselta. Portti: tests/test_posthog_region.py.
+POSTHOG_HOST = "https://us.i.posthog.com"
+
+
 def posthog_capture(event: str, props: dict) -> None:
-    """Fail-soft: mittaus ei saa koskaan kaataa toimitusta."""
+    """Fail-soft: mittaus ei saa koskaan kaataa toimitusta, mutta sen puuttuminen nakyy ajolokissa."""
     key = os.environ.get("POSTHOG_API_KEY", "")
     if not key:
+        print(f"::warning::POSTHOG_API_KEY puuttuu: {event} jai tallentamatta (repo-secret, projektin phc-avain)")
         return
-    host = os.environ.get("POSTHOG_HOST", "https://eu.i.posthog.com")
+    host = os.environ.get("POSTHOG_HOST") or POSTHOG_HOST
     try:
-        requests.post(f"{host}/capture/", timeout=10, json={
+        r = requests.post(f"{host}/capture/", timeout=10, json={
             "api_key": key,
             "event": event,
             "distinct_id": "backend-push-dispatch",
             "properties": {**props, "$lib": "goaliq-push-dispatch"},
         })
-    except requests.RequestException:
-        pass
+        if not r.ok:
+            print(f"::warning::PostHog hylkasi {event}: HTTP {r.status_code} ({host})")
+    except requests.RequestException as e:
+        print(f"::warning::PostHog-lahetys {event} epaonnistui: {type(e).__name__}")
 
 
 def fetch_bootstrap() -> dict:
