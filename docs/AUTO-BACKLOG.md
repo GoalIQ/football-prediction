@@ -50,6 +50,19 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   FWD +0.55 (n 19), DEF -0.37 (n 41), MID -0.53 (n 55). Viikkobenchmarkista puuttuu yläpään kalibrointi
   pelipaikoittain ja mallin kapteenin ero eniten kapteenoituun (liukuva koko kausi). Parametrimuutos ei kuulu
   agentille (ylläpitäjän päätös); mittari kuuluu.
+  Mitattu 22.10 (ylläpitäjän päätös: korjataan, jos mittaus tukee): parametrimuutosta EI tehty. Deadline-hetken
+  projektiossa (viimeinen mainin `data/fpl_xp_projections.json` ennen deadlinea, `components` vs FPL:n explain,
+  GW2-7) MID top-10 -0.18 (SE 0.57, n 60), top-20 +0.06 (SE 0.37, n 120), kaikki MID -0.09 (SE 0.06, n 1330).
+  Yllä oleva -0.53 on jäädytetystä xP:stä (noin vuorokausi ennen deadlinea, GW1 mukana), ja yksi pelaaja tuo
+  siitä noin puolet. `PREV_SEASON_CARRY` ei siirrä kärjen harhaa: MID top-20 xGI/90 harha +0.03 (0.0) … +0.01
+  (0.7), ja koko joukon MAE paranee painon kasvaessa (0.189 -> 0.179). Mittariin kuuluu siis myös ero
+  jäädytetyn ja deadline-projektion välillä. Seurattava: FWD-syötöt toteuma - ennuste +0.16 (SE 0.05, n 306)
+  ja FWD-maalit -0.18 (SE 0.09), kuusi kierrosta.
+- 2026-10: Ylläpitäjä kysyi 22.10, miksi kärjen keskikenttäpelaajan ennuste on korkea, vaikka kauden tulos on
+  heikko. Vastaus löytyi vain repon datasta: kuluvan kauden xGI/90 (ilman yhtä ottelua) on alle puolet viime
+  kauden tasosta, ja viime kausi kantaa noin 60 % vauhdista (`PREV_SEASON_CARRY` 0.5). Pelaajakortti ei näytä
+  kumpaakaan. Sama kenttä kuin yllä (`players[].this_season` + `last_season`, autopilot S9): kortille kuluvan ja
+  viime kauden xGI/90 rinnakkain, jotta lukija näkee mihin luku nojaa.
 - 2026-10: /fpl#xp-accuracy pyöristää yhdistetyt rivit kahdesti: `src/models/fpl_xp_accuracy.py` `pool_groups`
   tekee `round(.., 3)` ja `scripts/build_fpl_page.py` `_mae_cell` vielä `:.2f`. Did not play -rivin GoalIQ-arvo
   0.9653 näkyy "0.96" (yksi pyöristys antaisi 0.97). Korjaus vaihtaa julkisen luvun; julkaistu teksti voi
