@@ -203,6 +203,14 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   2026-10-20, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 1/2 = 13
       Mittari: data/bsky_performance.json by_topic.prediction n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-08
+- [x] Bluesky-botin omat postaukset noin 3 h välein ja #FPL-tunniste tag-facetilla, kokeilu (ylläpitäjän päätös 2026-10-22, tehty
+  käsin PR #36 ja tunnisteen PR): 16.-21.10 viitenä päivänä kaksi omaa postausta 0-5 s välein. Mitattu 22.10: suosituimman
+  FPL-syötteen 180 postauksesta 114 kantaa #fpl:n, omista 18:sta ei yksikään. Avainsanasyötteet löytävät botin jo linkin
+  "goaliq.app/fpl" kautta (syöte keräsi ennen 21.10 vain 3-34 postausta vuorokaudessa, sen jälkeen noin 150). Tilikuratoituun
+  FPL-syötteeseen tunniste ei vie: se vaatii pyynnön kuraattorille (julkaisu, ylläpitäjän GO). Mittari mittaa välin ja
+  tunnisteen yhdessä.
+      Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
+      Mittari: data/bsky_performance.json followers viimeisin vähintään 10 (2026-10-22: 5) tai omien postausten tykkäyksiä keskimäärin yli 0,25 per postaus 2026-10-23 alkaen (16.-22.10: 4 tykkäystä 16 postauksesta) · tarkistus 2026-11-06
 - [x] Automaattinen kierrosrecap goaliq.app/fpl/notes-sivulle (ylläpitäjän päätös 2026-10-17): muistioita ei enää (PR #6, 2026-10-21, osittain: kutsut ja tarkkuus; tulos-kappale Signaaleissa)
   kirjoiteta käsin, joten sivustolle ei tule uutta sisältöä. Uusi `scripts/build_fpl_recap_note.py` lisää
   `data/fpl_notes.json`:iin yhden recap-muistion kierrosta kohden samaan muotoon kuin nykyiset (slug, date, title,
