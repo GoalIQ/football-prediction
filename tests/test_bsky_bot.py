@@ -112,6 +112,15 @@ def test_kiintiot():
     assert any("kiintio" in p for p in chk(_reply("Model has Haaland at 8.0 for GW7.", OK_KEYS[:1]), state=full))
 
 
+def test_postausvali_koskee_omia_postauksia():
+    """22.10: omat postaukset lahtivat pareina 0-5 s valein. Vali ei koske vastauksia."""
+    lahella = _state(last_post_at=(NOW - timedelta(minutes=5)).isoformat())
+    probs = chk(_post(OK_TEXT, OK_KEYS), state=lahella)
+    assert probs and all(p.startswith(gate.GAP_PROBLEM) for p in probs), probs
+    assert chk(_post(OK_TEXT, OK_KEYS), state=_state(last_post_at=(NOW - gate.MIN_POST_GAP).isoformat())) == []
+    assert chk(_reply("Model has Haaland at 8.0 for GW7.", OK_KEYS[:1]), state=lahella) == []
+
+
 def test_toisto_hylataan():
     s = _state(recent_texts=[OK_TEXT])
     assert any("toisto" in p for p in chk(_post(OK_TEXT, OK_KEYS), state=s))
@@ -617,3 +626,66 @@ def test_aivot_eivat_kayta_aliagenttia():
     prompt = wf.split("prompt: |", 1)[1]
     assert "(Task tool)" not in prompt and "subagent (" not in prompt
     assert ".claude/agents/bsky-tarkistaja.md" in prompt and "Write [] if nothing passes" in prompt
+
+
+class _PostausSessio:
+    postit: list[str] = []
+
+    def __init__(self, *a, **k):
+        pass
+
+    def create_post(self, text, **kw):
+        _PostausSessio.postit.append(text)
+        return {"uri": f"at://goaliq/{len(_PostausSessio.postit)}", "cid": "c"}
+
+
+def test_julkaisu_levittaa_aivojen_postaukset_ja_jono_vanhenee(monkeypatch, tmp_path):
+    """22.10: aivot ehdottivat 2-3 postausta ja julkaisu postasi ne samalla sekunnilla. Nyt ajo postaa yhden,
+    loput odottavat tilassa seuraaviin tunnin ajoihin, uusi aivojen jono korvaa odottavat ja odottava vanhenee."""
+    import json
+    monkeypatch.setattr(bot, "STATE_PATH", tmp_path / "state.json")
+    monkeypatch.setattr(bot, "LOG_PATH", tmp_path / "posted.jsonl")
+    monkeypatch.setattr(bot, "fresh_module", lambda out: ({"gw": 7}, V, ""))
+    monkeypatch.setattr(bot, "mention_items", lambda *a: [])
+    monkeypatch.setattr(bot, "fallback_items", lambda *a: [])
+    monkeypatch.setattr(bot, "blocklist", lambda: set())
+    monkeypatch.setattr(gate, "rejected_phrases", lambda: [])
+    monkeypatch.setattr(bsky, "Session", _PostausSessio)
+    monkeypatch.setenv("BLUESKY_APP_PASSWORD", "x")
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+    monkeypatch.setattr(_PostausSessio, "postit", [])
+    (tmp_path / "state.json").write_text(json.dumps({"bot_label_at": "2026-10-16T00:00:00+00:00"}), encoding="utf-8")
+    a, b, c, d = ("Arsenal are the clean sheet everyone is circling this week.",
+                  "Nobody mentions Brentford at home and they should.",
+                  "The template keeper is about to lose his place to a cheaper option.",
+                  "Midfield is where the armband debate gets interesting this time.")
+    q = tmp_path / "queue.json"
+    t0 = datetime(2026, 10, 16, 9, 50, tzinfo=timezone.utc)
+
+    def aja(h, jono=None):
+        if jono is not None:
+            q.write_text(json.dumps([{"kind": "post", "topic": "player", "text": x} for x in jono]), encoding="utf-8")
+        elif q.exists():
+            q.unlink()
+        bot.cmd_publish(q, dry=False, thought=jono is not None, now=t0 + timedelta(hours=h))
+        return [p["text"] for p in bot.load_state()["pending_posts"]]
+
+    assert aja(0, [a, b, c]) == [b, c] and _PostausSessio.postit == [a]
+    assert aja(1) == [b, c] and _PostausSessio.postit == [a]              # alle 3 h: ei mitaan
+    assert aja(3) == [c] and _PostausSessio.postit == [a, b]
+    assert aja(4, [d]) == [d] and _PostausSessio.postit == [a, b]         # uusi jono korvaa c:n, d odottaa valia
+    assert aja(10.1) == [] and _PostausSessio.postit == [a, b]            # d vanheni (yli 6 h)
+    ajat = [datetime.fromisoformat(json.loads(r)["at"]) for r in (tmp_path / "posted.jsonl").read_text().splitlines()]
+    assert ajat[1] - ajat[0] >= gate.MIN_POST_GAP
+
+
+def test_postausvali_alkaa_lokista_kun_tilassa_ei_ole_aikaa(monkeypatch, tmp_path):
+    """Ennen 22.10 tilaan ei kirjattu postausaikaa: ensimmainen ajo ei saa postata heti edellisen perään."""
+    import json
+    monkeypatch.setattr(bot, "STATE_PATH", tmp_path / "state.json")
+    monkeypatch.setattr(bot, "LOG_PATH", tmp_path / "posted.jsonl")
+    rivit = [{"at": "2026-10-22T11:52:02+00:00", "kind": "post", "uri": "at://goaliq/1"},
+             {"at": "2026-10-22T12:10:00+00:00", "kind": "mention_reply", "uri": "at://goaliq/2"},
+             {"at": "2026-10-22T12:20:00+00:00", "kind": "post", "uri": None}]   # kuivaharjoitus
+    (tmp_path / "posted.jsonl").write_text("\n".join(json.dumps(r) for r in rivit) + "\n", encoding="utf-8")
+    assert bot.load_state()["last_post_at"] == "2026-10-22T11:52:02+00:00"

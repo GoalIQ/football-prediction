@@ -13,7 +13,7 @@ Mita mitataan (kaikki kaatavat):
   4. vastaus: ei linkkia eika tuotenimea (C1: vastaus antaa luvun, ei mainosta), kohdepostaus alle
      4 h vanha, kohdetili ei estolistalla, samaan ketjuun ei kahdesti, tekijalle tauko 48 h.
   5. toisto: ei lahes samaa tekstia kuin 40 viimeisessa (Blueskyn yhteisoohje 3.1: spammi).
-  6. kiintiot: omia postauksia 3/vrk, vastauksia muiden postauksiin 4/vrk.
+  6. kiintiot: omia postauksia 3/vrk ja noin 3 h valein, vastauksia muiden postauksiin 4/vrk.
 """
 from __future__ import annotations
 
@@ -29,6 +29,12 @@ from scripts.public_text import BANNED
 
 MAX_CHARS = 300
 POSTS_PER_DAY = 3
+# 22.10.2026 (Villen GO): aivot ehdottavat 0-4 kohdetta ja julkaisu postasi kaikki samassa ajossa, joten omat
+# postaukset lahtivat pareina 0-5 s valein (16.-21.10 viitena paivana). Seurattujen syotteessa pari kilpailee
+# itsensa kanssa. Tavoite on noin 3 h: ajot ovat tunnin valein (:37) ja aivoajon julkaisu lahtee ~15 min
+# myohemmin, joten 2 h 30 min raja paastaa postauksen kolmannen tunnin ajossa eika siirra sita neljanteen.
+MIN_POST_GAP = timedelta(hours=2, minutes=30)
+GAP_PROBLEM = "postausvali"
 # Pyytamattomat vastaukset muiden postauksiin. OLETUS 0 (16.10.2026): atproto-botin opas: "please only
 # interact (like, repost, reply, etc.) if the user has tagged the bot account ... or your bot may be flagged
 # for spam". Ville paattaa: repo-muuttuja BSKY_OUTBOUND_REPLIES_PER_DAY (tyonkulku valittaa sen).
@@ -214,6 +220,10 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
     counts = (state.get("daily") or {}).get(day) or {}
     if kind == "post" and counts.get("post", 0) >= POSTS_PER_DAY:
         probs.append(f"omien postausten kiintio {POSTS_PER_DAY}/vrk taynna")
+    last_post = state.get("last_post_at")
+    if kind == "post" and last_post and now - datetime.fromisoformat(last_post) < MIN_POST_GAP:
+        mins = int((now - datetime.fromisoformat(last_post)).total_seconds() // 60)
+        probs.append(f"{GAP_PROBLEM}: edellisesta omasta postauksesta {mins} min (raja {MIN_POST_GAP})")
     if kind == "reply" and counts.get("reply", 0) >= OUTBOUND_REPLIES_PER_DAY:
         probs.append(f"vastauskiintio {OUTBOUND_REPLIES_PER_DAY}/vrk taynna")
     if kind == "mention_reply" and counts.get("mention", 0) >= MENTION_REPLIES_PER_DAY:
