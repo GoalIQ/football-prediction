@@ -151,6 +151,13 @@ def _calls(path: str, func: str) -> list[ast.Call]:
             and ast.unparse(n.func) == func]
 
 
+@pytest.mark.parametrize("path", ["scripts/build_fpl_xp.py", "scripts/backtest_fpl_xp.py"])
+def test_kutsupaikka_kayttaa_mitattuja_oletuksia(path):
+    """Avainsana-argumentti (red_max=0, yellow_rules=()) ohittaisi mittauksen hiljaa."""
+    calls = _calls(path, "xp.window_minutes")
+    assert calls and all(not c.keywords and len(c.args) == 1 for c in calls), path
+
+
 def test_builder_kokoaa_ikkunan_yhdella_lukijalla():
     assert _calls("scripts/build_fpl_xp.py", "xp.window_minutes"), \
         "build_fpl_xp ei kokoa live-kauden ikkunaa window_minutesilla"
