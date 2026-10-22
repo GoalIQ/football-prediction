@@ -1,7 +1,24 @@
 {
  "last_price_push": {},
  "price_alerted": {},
- "receipts": [],
+ "receipts": [
+  {
+   "id": "01a1644f-ee48-712d-b254-bfab001ac005",
+   "token": "ExponentPushToken[2nU-IDG0ooUgYHJCsHoNX_]"
+  },
+  {
+   "id": "01a1644f-ee8e-70a5-ad3d-61819fa0488a",
+   "token": "ExponentPushToken[r2uGEOLSkAr-n_WwSYVfH2]"
+  },
+  {
+   "id": "01a1644f-ee49-7038-a431-e021d451a774",
+   "token": "ExponentPushToken[PYwy0LKPyDBSC3C9JZbJPD]"
+  },
+  {
+   "id": "01a1644f-ee92-744f-b9cf-d507434493bf",
+   "token": "ExponentPushToken[vnBcUqA_3Zc_Inca-MTfy4]"
+  }
+ ],
  "sent": {
   "deadline_24h:gw6": {
    "at": "2026-10-09T09:44:50Z",
@@ -12,6 +29,11 @@
    "at": "2026-10-16T10:01:30Z",
    "n_targets": 3,
    "remaining_h": 23.97
+  },
+  "deadline_24h:gw8": {
+   "at": "2026-10-22T15:51:58Z",
+   "n_targets": 4,
+   "remaining_h": 25.63
   },
   "deadline_2h:gw6": {
    "at": "2026-10-10T07:02:34Z",
@@ -32,8 +54,13 @@
    "at": "2026-10-16T10:01:30Z",
    "n_targets": 0,
    "player": "Thiago"
+  },
+  "picks:gw8": {
+   "at": "2026-10-22T15:51:58Z",
+   "n_targets": 0,
+   "player": "Thomas"
   }
  },
- "updated_at": "2026-10-22T14:21:36Z",
+ "updated_at": "2026-10-22T15:52:02Z",
  "v": 1
 }
