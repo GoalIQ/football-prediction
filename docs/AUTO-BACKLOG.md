@@ -201,6 +201,38 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 
 ## Avoimet
 
+- [ ] Ylläpitäjän kanta Bluesky-botin raaka-aineeksi, kokeilu GW9-GW11 (ylläpitäjän päätös 2026-10-23): botti
+  muodostaa nyt mielipiteet itse, ja 22.10 yksi vastaus luettiin väärin niin, että ylläpitäjä korjasi sen käsin. Uusi
+  `scripts/bsky_kanta.py`: (a) `ask` avaa kerran kierroksessa noin 48 tuntia ennen deadlinea ylläpitäjälle issuen
+  (label `kanta`, idempotentti otsikko `Kanta GW<N>`, sama issue-rajapinta kuin X-jonolla) ja siinä kolme kysymystä:
+  kenet kapteenoit ja miksi, missä olet eri mieltä mallin kanssa, mikä meni pieleen viime kierroksella. Ylläpitäjä
+  vastaa sähköpostilla, ja vastaus tulee issueen kommenttina. (b) `read` palauttaa vain kuluvan kierroksen issuen
+  kommentit, joiden author_association on OWNER tai MEMBER (sama sääntö kuin `.github/auto-kehitys/korjaus.py`), ja
+  `scripts/bsky_bot.py` `cmd_context` lisää ne briefingiin kenttään `owner_take` (gw, teksti, aika); ilman vastausta
+  kenttä on tyhjä. Uusi aihe `owner_take` TOPICS-listaan. `src/marketing/bsky_gate.py` hylkää `owner_take`-itemin,
+  jos briefingissä ei ole saman kierroksen vastausta (botti ei voi keksiä ylläpitäjän kantaa), vaatii tekstiin
+  ilmaisun, joka kertoo kannan olevan tilin takana olevan ihmisen eikä mallin (sallitut ilmaisut portissa), ja
+  hylkää tekstin, joka väittää postauksen olevan ihmisen kirjoittama. Luvut yhä vain reply-moduulista, ja
+  automaatiomaininta biossa säilyy. Vaihetesti: ei issueta yli 48 tuntia ennen deadlinea, issue tasan kerran
+  kierroksessa, deadlinen jälkeen vastausta ei käytetä; testi kaatuu, jos OWNER/MEMBER-suodatus tai portin
+  kierrosehto poistetaan. Työnkulun muutos tehdään käsin mergen yhteydessä: `ask` bsky-bot.yml:n tuntiajoon ja
+  aivojen ohjeeseen yksi kohta (kun `owner_take` on, vähintään yksi item rakentuu sen ympärille, mallin luku
+  todisteena). PR:n Julkinen teksti -osioon kolme esimerkkipostausta sanatarkasti (julkaisutarkistaja ennen mergeä).
+  (ylläpitäjän signaali 2026-10-23, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 2/2 = 14
+      Mittari: data/bsky_performance.json by_topic.owner_take n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-22
+- [ ] X-jonoon yhden napautuksen postaus ja enintään yksi issue päivässä (ylläpitäjän päätös 2026-10-23): X-jono teki
+  18.-22.10 viidessä päivässä 15 issueta, ja ylläpitäjä kopioi jokaisen tekstin X:ään käsin. `scripts/bsky_bot.py`
+  `x_issue` lisää runkoon X:n oman jakolinkin `https://x.com/intent/tweet?text=` + `x_version` urlenkoodattuna:
+  ylläpitäjä napauttaa, X avautuu teksti valmiina ja hän painaa itse Post (ei rajapintaa eikä automaatiota). Kuvaa
+  jakolinkki ei tue, joten kortin kuva ja sen linkki säilyvät rungossa. `cmd_x_mirror` tekee päivässä (UTC) enintään
+  yhden issuen: ensin `owner_take`-aiheinen postaus, muuten päivän ensimmäinen (aivot listaavat parhaan ensin). Muut
+  merkitään `x_skipped`-listaan, ja ohitettujen määrä tulostetaan ajon lokiin. `scripts/x_viikkoketju.py` saa saman
+  linkin ketjun ensimmäiselle postaukselle. Testi: linkin dekoodattu teksti on täsmälleen `x_version`, toista issueta
+  ei synny samana päivänä, ja testi kaatuu, jos kattoehto poistetaan. (ylläpitäjän signaali 2026-10-23, lähde:
+  Signaalit)
+      Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
+      Mittari: label x-jono -issueita enintään yksi päivässä 2026-10-26 alkaen, ja jokaisen rungossa on x.com/intent-linkki (github.com/GoalIQ/football-prediction/issues?q=label:x-jono) · tarkistus 2026-11-08
 - [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
   ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
   (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
@@ -393,38 +425,6 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
       Pisteet: arvo 2/3 · kiire 1/3 · työ S · myynti 2/3 · uutuus 1/2 = 8
       Mittari: /api/accuracy sisältää ikkunat ja /predictions näyttää samat n:t; testit vihreät · tarkistus 2026-11-30
 
-- [ ] Ylläpitäjän kanta Bluesky-botin raaka-aineeksi, kokeilu GW9-GW11 (ylläpitäjän päätös 2026-10-23): botti
-  muodostaa nyt mielipiteet itse, ja 22.10 yksi vastaus luettiin väärin niin, että ylläpitäjä korjasi sen käsin. Uusi
-  `scripts/bsky_kanta.py`: (a) `ask` avaa kerran kierroksessa noin 48 tuntia ennen deadlinea ylläpitäjälle issuen
-  (label `kanta`, idempotentti otsikko `Kanta GW<N>`, sama issue-rajapinta kuin X-jonolla) ja siinä kolme kysymystä:
-  kenet kapteenoit ja miksi, missä olet eri mieltä mallin kanssa, mikä meni pieleen viime kierroksella. Ylläpitäjä
-  vastaa sähköpostilla, ja vastaus tulee issueen kommenttina. (b) `read` palauttaa vain kuluvan kierroksen issuen
-  kommentit, joiden author_association on OWNER tai MEMBER (sama sääntö kuin `.github/auto-kehitys/korjaus.py`), ja
-  `scripts/bsky_bot.py` `cmd_context` lisää ne briefingiin kenttään `owner_take` (gw, teksti, aika); ilman vastausta
-  kenttä on tyhjä. Uusi aihe `owner_take` TOPICS-listaan. `src/marketing/bsky_gate.py` hylkää `owner_take`-itemin,
-  jos briefingissä ei ole saman kierroksen vastausta (botti ei voi keksiä ylläpitäjän kantaa), vaatii tekstiin
-  ilmaisun, joka kertoo kannan olevan tilin takana olevan ihmisen eikä mallin (sallitut ilmaisut portissa), ja
-  hylkää tekstin, joka väittää postauksen olevan ihmisen kirjoittama. Luvut yhä vain reply-moduulista, ja
-  automaatiomaininta biossa säilyy. Vaihetesti: ei issueta yli 48 tuntia ennen deadlinea, issue tasan kerran
-  kierroksessa, deadlinen jälkeen vastausta ei käytetä; testi kaatuu, jos OWNER/MEMBER-suodatus tai portin
-  kierrosehto poistetaan. Työnkulun muutos tehdään käsin mergen yhteydessä: `ask` bsky-bot.yml:n tuntiajoon ja
-  aivojen ohjeeseen yksi kohta (kun `owner_take` on, vähintään yksi item rakentuu sen ympärille, mallin luku
-  todisteena). PR:n Julkinen teksti -osioon kolme esimerkkipostausta sanatarkasti (julkaisutarkistaja ennen mergeä).
-  (ylläpitäjän signaali 2026-10-23, lähde: Signaalit)
-      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 2/2 = 14
-      Mittari: data/bsky_performance.json by_topic.owner_take n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-22
-- [ ] X-jonoon yhden napautuksen postaus ja enintään yksi issue päivässä (ylläpitäjän päätös 2026-10-23): X-jono teki
-  18.-22.10 viidessä päivässä 15 issueta, ja ylläpitäjä kopioi jokaisen tekstin X:ään käsin. `scripts/bsky_bot.py`
-  `x_issue` lisää runkoon X:n oman jakolinkin `https://x.com/intent/tweet?text=` + `x_version` urlenkoodattuna:
-  ylläpitäjä napauttaa, X avautuu teksti valmiina ja hän painaa itse Post (ei rajapintaa eikä automaatiota). Kuvaa
-  jakolinkki ei tue, joten kortin kuva ja sen linkki säilyvät rungossa. `cmd_x_mirror` tekee päivässä (UTC) enintään
-  yhden issuen: ensin `owner_take`-aiheinen postaus, muuten päivän ensimmäinen (aivot listaavat parhaan ensin). Muut
-  merkitään `x_skipped`-listaan, ja ohitettujen määrä tulostetaan ajon lokiin. `scripts/x_viikkoketju.py` saa saman
-  linkin ketjun ensimmäiselle postaukselle. Testi: linkin dekoodattu teksti on täsmälleen `x_version`, toista issueta
-  ei synny samana päivänä, ja testi kaatuu, jos kattoehto poistetaan. (ylläpitäjän signaali 2026-10-23, lähde:
-  Signaalit)
-      Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
-      Mittari: label x-jono -issueita enintään yksi päivässä 2026-10-26 alkaen, ja jokaisen rungossa on x.com/intent-linkki (github.com/GoalIQ/football-prediction/issues?q=label:x-jono) · tarkistus 2026-11-08
 - [ ] Pelaajakortille kuluvan ja viime kauden xGI/90 rinnakkain (ylläpitäjän päätös 2026-10-23): ylläpitäjä kysyi
   22.10, miksi kärjen keskikenttäpelaajan ennuste on korkea, vaikka kausi on heikko, ja vastaus löytyi vain repon
   datasta. Kortti näyttää viime kauden per 90 -luvut (`last_season`, `last_season_show`), mutta kuluvan kauden
