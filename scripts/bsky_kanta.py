@@ -82,10 +82,14 @@ def _req(url: str, token: str, data: dict | None = None):
 
 
 def _find_issue(token: str, gw: int) -> dict | None:
-    q = urllib.parse.urlencode({"labels": ISSUE_LABEL, "state": "all", "per_page": 30})
-    for i in _req(f"https://api.github.com/repos/{ISSUE_REPO}/issues?{q}", token):
-        if i.get("title") == title(gw) and "pull_request" not in i:
-            return i
+    # Label ensin, sitten tuoreimmat ilman labelia: jos label puuttuu repossa tai pudotetaan, pelkka
+    # label-haku ei loytaisi issueta ja `ask` avaisi uuden joka tunti koko 48 h ikkunan (CoS 23.10).
+    for params in ({"labels": ISSUE_LABEL, "state": "all", "per_page": 30},
+                   {"state": "all", "per_page": 100, "sort": "created", "direction": "desc"}):
+        q = urllib.parse.urlencode(params)
+        for i in _req(f"https://api.github.com/repos/{ISSUE_REPO}/issues?{q}", token):
+            if i.get("title") == title(gw) and "pull_request" not in i:
+                return i
     return None
 
 

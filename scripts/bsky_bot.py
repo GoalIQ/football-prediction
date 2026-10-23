@@ -75,7 +75,19 @@ def load_state() -> dict:
         # Ennen 22.10 tilaan ei kirjattu postausaikaa: postausvali alkaa lokin viimeisesta oikeasta postauksesta.
         s["last_post_at"] = next((r["at"] for r in reversed(read_log())
                                   if r.get("kind") == "post" and r.get("uri")), None)
+    if "own_posts" not in s:
+        # Ennen 23.10 tilaan ei kirjattu omia postauksia aiheineen: toistoportti alkaa lokista (rivit ilman
+        # kierrosta, gate.gw_posts laskee ne kuluvaan kierrokseen 7 vrk ajan).
+        s["own_posts"] = [_own_post(r, r.get("gw"), r.get("at")) for r in read_log()
+                          if r.get("kind") == "post" and r.get("uri")][-OWN_POSTS_KEEP:]
     return s
+
+
+OWN_POSTS_KEEP = 60
+
+
+def _own_post(item: dict, gw, at) -> dict:
+    return {"at": at, "gw": gw, "topic": item.get("topic"), "card": item.get("card"), "slot": item.get("slot")}
 
 
 def read_log() -> list[dict]:
@@ -434,8 +446,11 @@ def cmd_context(out_dir: Path) -> int:
     brief["owner_take"] = owner_takes(mod, now)
     brief["social"] = social_signals(now, state, blocklist())
     brief["performance"] = load_json(PERF_PATH, {}).get("by_topic") or {}
-    brief["recent_posts"] = [{k: r.get(k) for k in ("at", "kind", "topic", "text", "engagement")}
+    brief["recent_posts"] = [{k: r.get(k) for k in ("at", "kind", "topic", "card", "text", "engagement")}
                              for r in read_log()[-15:]]
+    done = gate.gw_posts(state["own_posts"], brief.get("gw"), now)
+    brief["used_this_gw"] = {"topics": sorted({p["topic"] for p in done if p.get("topic")}),
+                             "cards": sorted({p["card"] for p in done if p.get("card")})}
     day = (state["daily"].get(now.date().isoformat()) or {})
     brief["caps_left_today"] = {"post": gate.POSTS_PER_DAY - day.get("post", 0),
                                 "reply": gate.OUTBOUND_REPLIES_PER_DAY - day.get("reply", 0)}
@@ -454,13 +469,15 @@ def cmd_context(out_dir: Path) -> int:
 PENDING_MAX_AGE = timedelta(hours=6)
 
 
-def _mark(state: dict, item: dict, now: datetime) -> None:
+def _mark(state: dict, item: dict, now: datetime, gw: int | None = None) -> None:
     day = now.date().isoformat()
     d = state["daily"].setdefault(day, {})
     key = "post" if item["kind"] == "post" else ("reply" if item["kind"] == "reply" else "mention")
     d[key] = d.get(key, 0) + 1
     if item["kind"] == "post":
         state["last_post_at"] = now.isoformat()
+        # Pyydetty kortti kirjataan, vaikka kuva epaonnistuisi: varovainen suunta (gate: sama kuva kerran).
+        state["own_posts"] = (state.get("own_posts", []) + [_own_post(item, gw, now.isoformat())])[-OWN_POSTS_KEEP:]
     state["daily"] = {k: v for k, v in state["daily"].items() if k >= (now.date() - timedelta(days=14)).isoformat()}
     if item.get("slot"):
         state["posted_slots"] = (state["posted_slots"] + [item["slot"]])[-200:]
@@ -582,10 +599,11 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: 
             res = {"uri": None, "cid": None}
         else:
             res = session.create_post(text, reply=reply, image=image, links=links)
-        _mark(state, it, now)
+        _mark(state, it, now, gw)
         published += 1
         log_rows.append({"at": now.isoformat(timespec="seconds"), "uri": res.get("uri"), "cid": res.get("cid"),
-                         "kind": it["kind"], "topic": it.get("topic"), "slot": it.get("slot"), "text": text,
+                         "kind": it["kind"], "topic": it.get("topic"), "slot": it.get("slot"), "gw": gw,
+                         "text": text,
                          "keys": it.get("keys") or [], "utm_content": cid if links else None,
                          "links": links or None,
                          "card": it.get("card") if image else None, "source": it.get("source", "rule"),

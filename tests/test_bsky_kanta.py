@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from scripts import bsky_bot as bot
 from scripts import bsky_kanta as kanta
@@ -43,29 +44,86 @@ def test_context_kayttaa_kantaa(monkeypatch):
     assert bot.owner_takes(mod, DL)[0]["gw"] == 9
 
 
-def _check(text, take):
-    it = {"kind": "post", "topic": "owner_take", "text": text, "keys": []}
-    return gate.check(it, values={}, gw=GW, now=DL - timedelta(hours=5), state={}, blocklist=set(), phrases=[],
-                      owner_take=take)
+PAGE = "https://goaliq.app/fpl/expected-points#gw-xp"
+VALUES = {"player_lookup.haaland-mci.gw_xp": {"text": "6.1", "public_url": PAGE},
+          "player_lookup.salah-liv.gw_xp": {"text": "5.2", "public_url": "https://goaliq.app/fpl/team-news"}}
+KEY = ["player_lookup.haaland-mci.gw_xp"]
 
 
-GOOD = "The human running this account is on Haaland for GW9, and the model leaves room for that call."
+def _check(text, take, keys=KEY, kind="post", link="/fpl/expected-points#gw-xp"):
+    it = {"kind": kind, "topic": "owner_take", "text": text, "keys": keys, "link": link}
+    return gate.check(it, values=VALUES, gw=GW, now=DL - timedelta(hours=5), state={}, blocklist=set(),
+                      phrases=[], owner_take=take)
+
+
+GOOD = ("The human running this account is on Haaland for GW9. The model has him on 6.1 expected points. "
+        "goaliq.app/fpl/expected-points")
 TAKE = [{"gw": 9, "text": "Haaland", "at": None}]
 
 
 def test_portti_owner_take():
     assert _check(GOOD, TAKE) == []
-    assert any("ilman" in p for p in _check(GOOD, []))
-    assert any("ilman" in p for p in _check(GOOD, None))
-    assert any("ilman" in p for p in _check(GOOD, [{"gw": 8, "text": "old", "at": None}]))
-    assert any("ihmisen" in p for p in _check("Haaland is the captain pick for GW9.", TAKE))
+    assert any("ylläpitäjän vastausta" in p for p in _check(GOOD, []))
+    assert any("ylläpitäjän vastausta" in p for p in _check(GOOD, None))
+    assert any("ylläpitäjän vastausta" in p for p in _check(GOOD, [{"gw": 8, "text": "old", "at": None}]))
+    assert any("ihmisen" in p for p in _check("Haaland is the captain pick for GW9. 6.1 for the model.", TAKE))
     assert any("kirjoittamaksi" in p for p in _check(GOOD + " I wrote this myself.", TAKE))
 
 
+def test_owner_take_vaatii_mallin_luvun_ja_linkin():
+    """Julkaisutarkistaja 23.10 (fp #44): 'the model leaves room for that call' meni lapi ilman todistetta."""
+    tyhja = "The human running this account is on Haaland for GW9, and the model leaves room for that call."
+    assert any("mallin lukua" in p for p in _check(tyhja, TAKE))
+    assert any("mallin lukua" in p for p in _check(tyhja, TAKE, keys=[]))   # avain ilman lukua tekstissa
+    assert any("ilman linkkia" in p for p in _check(GOOD, TAKE, link=None))
+    vaara_sivu = GOOD.replace("Haaland", "Salah").replace("6.1", "5.2")
+    assert any("linkki vie" in p for p in _check(vaara_sivu, TAKE, keys=["player_lookup.salah-liv.gw_xp"]))
+    assert any("omana postauksena" in p for p in _check(GOOD, TAKE, kind="reply"))
+
+
 def test_portti_ei_vaadi_kantaa_muilta_aiheilta():
-    it = {"kind": "post", "topic": "captain", "text": "Haaland is the model captain pick for GW9.", "keys": []}
+    it = {"kind": "post", "topic": "player", "text": "Haaland is the model pick for GW9.", "keys": []}
     assert gate.check(it, values={}, gw=GW, now=DL, state={}, blocklist=set(), phrases=[]) == []
 
 
 def test_topics_sisaltaa_owner_take():
     assert "owner_take" in bot.TOPICS
+
+
+def test_issue_loytyy_vaikka_label_puuttuu(monkeypatch):
+    """Jos label pudotetaan, label-haku on tyhja: ilman toista hakua ask avaisi issuen joka tunti."""
+    haut = []
+
+    def req(url, token, data=None):
+        haut.append(url)
+        if "labels=kanta" in url:
+            return []
+        return [{"title": "Kanta GW8", "number": 1}, {"title": "Kanta GW9", "number": 2, "pull_request": {}},
+                {"title": "Kanta GW9", "number": 3}]
+    monkeypatch.setattr(kanta, "_req", req)
+    assert kanta._find_issue("t", 9)["number"] == 3
+    assert len(haut) == 2
+    luodut = []
+    assert kanta.ask(GW, DL, DL - timedelta(hours=10), lambda t: kanta._find_issue("t", GW), luodut.append) \
+        == "jo-olemassa" and luodut == []
+
+
+def test_tyonkulku_kytkee_kannan():
+    """Ilman tokenia current_takes palauttaa tyhjan ja owner_take ei koskaan toimi (hiljainen vika)."""
+    import yaml
+    doc = yaml.safe_load((Path(__file__).resolve().parents[1] / ".github" / "workflows" / "bsky-bot.yml")
+                         .read_text(encoding="utf-8"))
+    aivot, julkaise = doc["jobs"]["aivot"], doc["jobs"]["julkaise"]
+    assert aivot["permissions"].get("issues") == "read"
+    assert julkaise["permissions"].get("issues") == "write"
+
+    def askel(job, ajo):
+        return next(s for s in job["steps"] if ajo in str(s.get("run") or ""))
+    assert "GH_TOKEN" in askel(aivot, "bsky_bot context")["env"]
+    assert "GH_TOKEN" in askel(julkaise, "bsky_bot publish")["env"]
+    kysy = askel(julkaise, "bsky_kanta ask")
+    assert "GH_TOKEN" in kysy["env"] and kysy.get("continue-on-error") is True
+    nimet = [s.get("name") for s in julkaise["steps"]]
+    assert nimet.index(kysy["name"]) < nimet.index(askel(julkaise, "bsky_bot publish")["name"])
+    ohje = next(s for s in aivot["steps"] if "claude-code-action" in str(s.get("uses", "")))["with"]["prompt"]
+    assert "owner_take" in ohje and "used_this_gw" in ohje
