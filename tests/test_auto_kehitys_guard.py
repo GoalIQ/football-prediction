@@ -79,6 +79,22 @@ def test_tavallinen_rivi_lapi():
     assert guard.tarkista_rivit({"src/x.py": ["xp = round(p * 2, 1)  # £7.5m budget"]}) == []
 
 
+ALATUNNISTE = '<footer>© 2026 GoalIQ · <a href="/predictions">Free</a> · Premium is 3.99 €/month</footer>'
+
+
+def test_generoidun_sivun_mainissa_oleva_rivi_ei_ole_uutta_tekstia():
+    """23.10.2026: ottelusivurivin ajo hylättiin, koska uudelleen luoduilla sivuilla oli mainin
+    sivujen oma hinnallinen alatunniste."""
+    assert guard.tarkista_rivit({"predictions/serie-a/a-vs-b.html": [ALATUNNISTE]}, {ALATUNNISTE}) == []
+    # Negatiivinen kontrolli: ilman mainin vastinetta sama rivi kaatuu.
+    assert guard.tarkista_rivit({"predictions/serie-a/a-vs-b.html": [ALATUNNISTE]})
+    # Pohja tarkistetaan aina, vaikka sama teksti olisi mainissa.
+    assert guard.tarkista_rivit({"scripts/build_prediction_pages.py": [ALATUNNISTE]}, {ALATUNNISTE})
+    # Muutettu hinta generoidulla sivulla on uutta tekstiä.
+    assert guard.tarkista_rivit({"predictions/serie-a/a-vs-b.html": [ALATUNNISTE.replace("3.99", "4.99")]},
+                                {ALATUNNISTE})
+
+
 def test_koko_raja_ei_laske_generoituja():
     assert guard.tarkista_koko("kehitys", {"src/x.py": 200, "fpl/x.html": 5000, "fpl.html": 900}) == []
     assert guard.tarkista_koko("kehitys", {"src/x.py": 600, "api/main.py": 400})
@@ -116,6 +132,39 @@ def test_main_mittaa_oikeaa_haaraa(tmp_path, monkeypatch):
     _git(tmp_path, "add", ".")
     _git(tmp_path, "commit", "-q", "-m", "kielletty")
     assert guard.main(["--profile", "kehitys", "--base", "main", "--head", "auto/tyhja"]) == 1
+
+
+def test_main_sallii_mainin_alatunnisteen_uudella_generoidulla_sivulla(tmp_path, monkeypatch):
+    """Kutsupaikka: main() hakee mainin rivit git grepillä ja antaa ne rivikiellolle. Tiedostot tavuina:
+    Windowsin write_text kirjoittaisi CRLF:n, jolloin git grep -x ei osu (CI ajaa Linuxilla)."""
+    for k in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR"):
+        monkeypatch.delenv(k, raising=False)
+    _git(tmp_path, "init", "-q", "-b", "main")
+    _git(tmp_path, "config", "user.email", "t@t")
+    _git(tmp_path, "config", "user.name", "t")
+    sivut = tmp_path / "predictions" / "serie-a"
+    sivut.mkdir(parents=True)
+    (sivut / "a-vs-b.html").write_bytes(f"<h1>A v B</h1>\n{ALATUNNISTE}\n".encode("utf-8"))
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-q", "-m", "base")
+    monkeypatch.chdir(tmp_path)
+    _git(tmp_path, "checkout", "-q", "-b", "auto/sivut")
+    (sivut / "c-vs-d.html").write_bytes(f"<h1>C v D</h1>\n{ALATUNNISTE}\n".encode("utf-8"))
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-q", "-m", "sama alatunniste")
+    assert guard.main(["--profile", "kehitys", "--base", "main", "--head", "auto/sivut"]) == 0
+    # Osa mainin rivistä ei ole sama rivi: git grep -F osuisi, koko rivin vertailu ei.
+    (sivut / "g-vs-h.html").write_bytes("Premium is 3.99 €/month\n".encode("utf-8"))
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-q", "-m", "osa rivista")
+    assert guard.main(["--profile", "kehitys", "--base", "main", "--head", "auto/sivut"]) == 1
+    _git(tmp_path, "rm", "-q", str(sivut / "g-vs-h.html"))
+    _git(tmp_path, "commit", "-q", "-m", "pois")
+    (sivut / "e-vs-f.html").write_bytes(
+        f"<h1>E v F</h1>\n{ALATUNNISTE.replace('3.99', '4.99')}\n".encode("utf-8"))
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-q", "-m", "uusi hinta")
+    assert guard.main(["--profile", "kehitys", "--base", "main", "--head", "auto/sivut"]) == 1
 
 
 BOOT = {
