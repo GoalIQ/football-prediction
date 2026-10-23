@@ -1,10 +1,10 @@
 {
  "meta": {
-  "picks_gameweek": 7,
-  "rank_after_gw": 6,
+  "picks_gameweek": 8,
+  "rank_after_gw": 7,
   "circular": false,
   "circular_note": null,
-  "generated_at": "2026-10-17T11:02:00+00:00",
+  "generated_at": "2026-10-23T18:55:00+00:00",
   "source": "FPL overall league 314 standings + entry picks",
   "metric": "EO = mean multiplier x 100 (bench 0, playing 1, captain 2, triple captain 3), taken straight from the official picks payload.",
   "sample": {
@@ -12,32 +12,27 @@
     "n_sampled": 200,
     "n_missing": 0,
     "chips": {
-     "none": 167,
-     "3xc": 28,
+     "none": 197,
      "bboost": 2,
-     "freehit": 2,
-     "wildcard": 1
+     "3xc": 1
     }
    },
    "top10k": {
     "n_sampled": 200,
     "n_missing": 0,
     "chips": {
-     "none": 172,
-     "3xc": 22,
-     "wildcard": 2,
-     "bboost": 4
+     "none": 197,
+     "freehit": 2,
+     "bboost": 1
     }
    },
    "top100k": {
     "n_sampled": 200,
     "n_missing": 0,
     "chips": {
-     "none": 163,
-     "3xc": 28,
-     "bboost": 3,
-     "freehit": 2,
-     "wildcard": 4
+     "none": 198,
+     "wildcard": 1,
+     "bboost": 1
     }
    }
   },
@@ -50,22 +45,22 @@
    "team": "MCI",
    "pos": "FWD",
    "price": 15.7,
-   "overall_pct": 76.4,
+   "overall_pct": 77.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 98.0,
-     "eo_pct": 204.5,
-     "captain_pct": 93.0
+     "owned_pct": 100.0,
+     "eo_pct": 168.5,
+     "captain_pct": 68.5
     },
     "top10k": {
-     "owned_pct": 98.0,
-     "eo_pct": 202.0,
-     "captain_pct": 93.0
+     "owned_pct": 100.0,
+     "eo_pct": 168.0,
+     "captain_pct": 68.0
     },
     "top100k": {
-     "owned_pct": 96.5,
-     "eo_pct": 202.5,
-     "captain_pct": 92.0
+     "owned_pct": 99.5,
+     "eo_pct": 163.5,
+     "captain_pct": 64.5
     }
    }
   },
@@ -74,23 +69,23 @@
    "web_name": "João Pedro",
    "team": "CHE",
    "pos": "FWD",
-   "price": 7.8,
-   "overall_pct": 72.4,
+   "price": 7.9,
+   "overall_pct": 73.8,
    "tiers": {
     "top1k": {
      "owned_pct": 98.0,
-     "eo_pct": 101.0,
-     "captain_pct": 3.5
+     "eo_pct": 118.5,
+     "captain_pct": 20.5
     },
     "top10k": {
-     "owned_pct": 98.0,
-     "eo_pct": 99.0,
-     "captain_pct": 1.0
+     "owned_pct": 99.0,
+     "eo_pct": 120.0,
+     "captain_pct": 21.0
     },
     "top100k": {
      "owned_pct": 98.5,
-     "eo_pct": 100.0,
-     "captain_pct": 2.5
+     "eo_pct": 122.5,
+     "captain_pct": 24.0
     }
    }
   },
@@ -99,73 +94,23 @@
    "web_name": "Calafiori",
    "team": "ARS",
    "pos": "DEF",
-   "price": 5.9,
-   "overall_pct": 53.3,
+   "price": 6.0,
+   "overall_pct": 54.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 96.5,
-     "eo_pct": 96.5,
+     "owned_pct": 97.0,
+     "eo_pct": 97.0,
      "captain_pct": 0.0
     },
     "top10k": {
+     "owned_pct": 97.5,
+     "eo_pct": 98.5,
+     "captain_pct": 1.0
+    },
+    "top100k": {
      "owned_pct": 94.0,
      "eo_pct": 94.0,
      "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 95.5,
-     "eo_pct": 95.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 124,
-   "web_name": "Groß",
-   "team": "BHA",
-   "pos": "MID",
-   "price": 6.1,
-   "overall_pct": 44.2,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 94.5,
-     "eo_pct": 95.5,
-     "captain_pct": 1.0
-    },
-    "top10k": {
-     "owned_pct": 94.5,
-     "eo_pct": 95.0,
-     "captain_pct": 0.5
-    },
-    "top100k": {
-     "owned_pct": 88.0,
-     "eo_pct": 89.5,
-     "captain_pct": 2.0
-    }
-   }
-  },
-  {
-   "id": 115,
-   "web_name": "De Cuyper",
-   "team": "BHA",
-   "pos": "DEF",
-   "price": 5.2,
-   "overall_pct": 40.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 91.0,
-     "eo_pct": 91.5,
-     "captain_pct": 0.5
-    },
-    "top10k": {
-     "owned_pct": 89.5,
-     "eo_pct": 90.5,
-     "captain_pct": 1.0
-    },
-    "top100k": {
-     "owned_pct": 80.0,
-     "eo_pct": 79.5,
-     "captain_pct": 0.5
     }
    }
   },
@@ -174,23 +119,23 @@
    "web_name": "Rogers",
    "team": "CHE",
    "pos": "MID",
-   "price": 7.9,
-   "overall_pct": 47.3,
+   "price": 8.0,
+   "overall_pct": 49.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 86.0,
-     "eo_pct": 86.0,
-     "captain_pct": 0.0
+     "owned_pct": 89.5,
+     "eo_pct": 90.5,
+     "captain_pct": 1.0
     },
     "top10k": {
      "owned_pct": 85.0,
-     "eo_pct": 85.0,
-     "captain_pct": 1.0
+     "eo_pct": 85.5,
+     "captain_pct": 0.5
     },
     "top100k": {
-     "owned_pct": 73.0,
-     "eo_pct": 73.0,
-     "captain_pct": 0.0
+     "owned_pct": 83.5,
+     "eo_pct": 83.5,
+     "captain_pct": 0.5
     }
    }
   },
@@ -199,47 +144,47 @@
    "web_name": "Palmer",
    "team": "CHE",
    "pos": "MID",
-   "price": 9.7,
-   "overall_pct": 26.1,
+   "price": 9.8,
+   "overall_pct": 28.5,
    "tiers": {
     "top1k": {
-     "owned_pct": 64.0,
-     "eo_pct": 64.5,
-     "captain_pct": 0.5
+     "owned_pct": 71.5,
+     "eo_pct": 78.5,
+     "captain_pct": 7.0
     },
     "top10k": {
-     "owned_pct": 66.5,
-     "eo_pct": 67.0,
-     "captain_pct": 0.5
+     "owned_pct": 75.0,
+     "eo_pct": 84.5,
+     "captain_pct": 9.5
     },
     "top100k": {
-     "owned_pct": 50.0,
-     "eo_pct": 50.5,
-     "captain_pct": 0.5
+     "owned_pct": 65.0,
+     "eo_pct": 74.0,
+     "captain_pct": 9.0
     }
    }
   },
   {
-   "id": 1,
-   "web_name": "Raya",
-   "team": "ARS",
-   "pos": "GKP",
-   "price": 6.1,
-   "overall_pct": 43.8,
+   "id": 124,
+   "web_name": "Groß",
+   "team": "BHA",
+   "pos": "MID",
+   "price": 6.2,
+   "overall_pct": 46.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 46.5,
-     "eo_pct": 44.0,
+     "owned_pct": 91.5,
+     "eo_pct": 77.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 42.5,
-     "eo_pct": 41.0,
+     "owned_pct": 93.0,
+     "eo_pct": 81.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 50.5,
-     "eo_pct": 47.5,
+     "owned_pct": 90.0,
+     "eo_pct": 77.5,
      "captain_pct": 0.0
     }
    }
@@ -250,21 +195,246 @@
    "team": "ARS",
    "pos": "DEF",
    "price": 4.6,
-   "overall_pct": 17.4,
+   "overall_pct": 18.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 49.5,
-     "eo_pct": 41.0,
+     "owned_pct": 78.0,
+     "eo_pct": 74.5,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 64.5,
-     "eo_pct": 50.5,
+     "owned_pct": 71.5,
+     "eo_pct": 69.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 45.5,
-     "eo_pct": 36.5,
+     "owned_pct": 64.0,
+     "eo_pct": 62.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 1,
+   "web_name": "Raya",
+   "team": "ARS",
+   "pos": "GKP",
+   "price": 6.1,
+   "overall_pct": 45.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 65.5,
+     "eo_pct": 66.0,
+     "captain_pct": 0.5
+    },
+    "top10k": {
+     "owned_pct": 61.5,
+     "eo_pct": 61.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 62.0,
+     "eo_pct": 61.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 115,
+   "web_name": "De Cuyper",
+   "team": "BHA",
+   "pos": "DEF",
+   "price": 5.3,
+   "overall_pct": 42.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 93.5,
+     "eo_pct": 54.0,
+     "captain_pct": 0.5
+    },
+    "top10k": {
+     "owned_pct": 84.0,
+     "eo_pct": 49.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 82.0,
+     "eo_pct": 46.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 427,
+   "web_name": "Mbeumo",
+   "team": "MUN",
+   "pos": "MID",
+   "price": 7.9,
+   "overall_pct": 21.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 35.0,
+     "eo_pct": 35.0,
+     "captain_pct": 0.5
+    },
+    "top10k": {
+     "owned_pct": 32.5,
+     "eo_pct": 31.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 29.5,
+     "eo_pct": 29.0,
+     "captain_pct": 0.5
+    }
+   }
+  },
+  {
+   "id": 346,
+   "web_name": "Calvert-Lewin",
+   "team": "LEE",
+   "pos": "FWD",
+   "price": 6.1,
+   "overall_pct": 22.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 49.0,
+     "eo_pct": 32.0,
+     "captain_pct": 0.5
+    },
+    "top10k": {
+     "owned_pct": 52.5,
+     "eo_pct": 36.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 44.0,
+     "eo_pct": 33.0,
+     "captain_pct": 0.5
+    }
+   }
+  },
+  {
+   "id": 334,
+   "web_name": "Muharemović",
+   "team": "LEE",
+   "pos": "DEF",
+   "price": 5.0,
+   "overall_pct": 5.5,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 32.5,
+     "eo_pct": 29.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 22.5,
+     "eo_pct": 18.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 21.0,
+     "eo_pct": 18.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 68,
+   "web_name": "Tavernier",
+   "team": "BOU",
+   "pos": "MID",
+   "price": 6.2,
+   "overall_pct": 13.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 29.5,
+     "eo_pct": 25.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 20.5,
+     "eo_pct": 17.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 20.5,
+     "eo_pct": 19.0,
+     "captain_pct": 0.5
+    }
+   }
+  },
+  {
+   "id": 399,
+   "web_name": "Cherki",
+   "team": "MCI",
+   "pos": "MID",
+   "price": 8.0,
+   "overall_pct": 39.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 28.5,
+     "eo_pct": 25.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 28.5,
+     "eo_pct": 27.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 30.0,
+     "eo_pct": 29.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 480,
+   "web_name": "Gibbs-White",
+   "team": "NFO",
+   "pos": "MID",
+   "price": 7.9,
+   "overall_pct": 12.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 25.0,
+     "eo_pct": 25.5,
+     "captain_pct": 0.5
+    },
+    "top10k": {
+     "owned_pct": 23.0,
+     "eo_pct": 22.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 23.0,
+     "eo_pct": 22.5,
+     "captain_pct": 0.5
+    }
+   }
+  },
+  {
+   "id": 449,
+   "web_name": "Hall",
+   "team": "NEW",
+   "pos": "DEF",
+   "price": 5.3,
+   "overall_pct": 20.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 39.0,
+     "eo_pct": 23.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 36.0,
+     "eo_pct": 25.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 42.5,
+     "eo_pct": 23.5,
      "captain_pct": 0.0
     }
    }
@@ -275,47 +445,47 @@
    "team": "BHA",
    "pos": "GKP",
    "price": 4.6,
-   "overall_pct": 22.4,
+   "overall_pct": 22.6,
    "tiers": {
     "top1k": {
-     "owned_pct": 57.5,
-     "eo_pct": 38.5,
+     "owned_pct": 37.5,
+     "eo_pct": 21.5,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 53.0,
-     "eo_pct": 39.0,
+     "owned_pct": 42.5,
+     "eo_pct": 26.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 49.0,
-     "eo_pct": 32.0,
+     "owned_pct": 43.5,
+     "eo_pct": 25.5,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 399,
-   "web_name": "Cherki",
-   "team": "MCI",
+   "id": 94,
+   "web_name": "Schade",
+   "team": "BRE",
    "pos": "MID",
-   "price": 7.9,
-   "overall_pct": 37.1,
+   "price": 6.2,
+   "overall_pct": 15.0,
    "tiers": {
     "top1k": {
-     "owned_pct": 32.0,
-     "eo_pct": 32.5,
-     "captain_pct": 0.5
+     "owned_pct": 18.5,
+     "eo_pct": 18.5,
+     "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 28.0,
-     "eo_pct": 29.5,
-     "captain_pct": 1.5
+     "owned_pct": 24.0,
+     "eo_pct": 21.5,
+     "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 35.0,
-     "eo_pct": 35.0,
-     "captain_pct": 1.0
+     "owned_pct": 23.5,
+     "eo_pct": 23.0,
+     "captain_pct": 0.0
     }
    }
   },
@@ -325,171 +495,21 @@
    "team": "MCI",
    "pos": "DEF",
    "price": 5.8,
-   "overall_pct": 29.0,
+   "overall_pct": 27.6,
    "tiers": {
     "top1k": {
-     "owned_pct": 32.5,
-     "eo_pct": 31.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 32.5,
-     "eo_pct": 30.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 38.5,
-     "eo_pct": 37.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 346,
-   "web_name": "Calvert-Lewin",
-   "team": "LEE",
-   "pos": "FWD",
-   "price": 6.0,
-   "overall_pct": 22.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 32.5,
-     "eo_pct": 26.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 26.0,
-     "eo_pct": 19.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 38.5,
-     "eo_pct": 29.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 12,
-   "web_name": "Saka",
-   "team": "ARS",
-   "pos": "MID",
-   "price": 9.6,
-   "overall_pct": 17.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 20.5,
-     "eo_pct": 21.0,
-     "captain_pct": 0.5
-    },
-    "top10k": {
-     "owned_pct": 24.0,
-     "eo_pct": 24.5,
-     "captain_pct": 0.5
-    },
-    "top100k": {
-     "owned_pct": 23.0,
-     "eo_pct": 23.5,
-     "captain_pct": 0.5
-    }
-   }
-  },
-  {
-   "id": 249,
-   "web_name": "Barry",
-   "team": "EVE",
-   "pos": "FWD",
-   "price": 5.7,
-   "overall_pct": 8.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 24.5,
-     "eo_pct": 16.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 28.5,
-     "eo_pct": 20.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 14.5,
-     "eo_pct": 10.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 449,
-   "web_name": "Hall",
-   "team": "NEW",
-   "pos": "DEF",
-   "price": 5.3,
-   "overall_pct": 20.2,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 37.0,
-     "eo_pct": 16.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 43.0,
-     "eo_pct": 17.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 31.0,
-     "eo_pct": 19.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 427,
-   "web_name": "Mbeumo",
-   "team": "MUN",
-   "pos": "MID",
-   "price": 7.8,
-   "overall_pct": 19.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 15.5,
-     "eo_pct": 14.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 19.0,
-     "eo_pct": 16.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 22.5,
-     "eo_pct": 22.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 496,
-   "web_name": "Kinsky",
-   "team": "TOT",
-   "pos": "GKP",
-   "price": 4.5,
-   "overall_pct": 15.6,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 33.5,
-     "eo_pct": 13.5,
+     "eo_pct": 11.5,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 33.5,
-     "eo_pct": 15.0,
+     "owned_pct": 23.0,
+     "eo_pct": 18.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 40.5,
-     "eo_pct": 17.5,
+     "owned_pct": 25.5,
+     "eo_pct": 20.0,
      "captain_pct": 0.0
     }
    }
@@ -500,96 +520,21 @@
    "team": "NEW",
    "pos": "MID",
    "price": 6.1,
-   "overall_pct": 8.0,
+   "overall_pct": 7.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 14.5,
-     "eo_pct": 12.5,
+     "owned_pct": 12.5,
+     "eo_pct": 9.5,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 14.0,
-     "eo_pct": 8.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 13.0,
-     "eo_pct": 10.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 397,
-   "web_name": "Semenyo",
-   "team": "MCI",
-   "pos": "MID",
-   "price": 8.3,
-   "overall_pct": 14.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 10.5,
-     "eo_pct": 11.0,
-     "captain_pct": 0.5
-    },
-    "top10k": {
-     "owned_pct": 14.5,
-     "eo_pct": 14.5,
-     "captain_pct": 0.5
-    },
-    "top100k": {
-     "owned_pct": 16.0,
-     "eo_pct": 17.0,
-     "captain_pct": 1.0
-    }
-   }
-  },
-  {
-   "id": 15,
-   "web_name": "Ødegaard",
-   "team": "ARS",
-   "pos": "MID",
-   "price": 6.8,
-   "overall_pct": 19.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 13.0,
-     "eo_pct": 10.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 12.0,
-     "eo_pct": 10.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 17.5,
-     "eo_pct": 15.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 334,
-   "web_name": "Muharemović",
-   "team": "LEE",
-   "pos": "DEF",
-   "price": 5.0,
-   "overall_pct": 4.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 20.0,
-     "eo_pct": 10.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 23.0,
-     "eo_pct": 12.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 19.5,
+     "owned_pct": 11.0,
      "eo_pct": 8.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 9.5,
+     "eo_pct": 6.0,
      "captain_pct": 0.0
     }
    }
@@ -600,71 +545,21 @@
    "team": "FUL",
    "pos": "FWD",
    "price": 6.1,
-   "overall_pct": 7.2,
+   "overall_pct": 6.5,
    "tiers": {
     "top1k": {
-     "owned_pct": 11.0,
-     "eo_pct": 10.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 14.0,
-     "eo_pct": 13.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 13.5,
-     "eo_pct": 12.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 68,
-   "web_name": "Tavernier",
-   "team": "BOU",
-   "pos": "MID",
-   "price": 6.1,
-   "overall_pct": 7.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 9.0,
+     "owned_pct": 10.5,
      "eo_pct": 8.5,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 8.5,
-     "eo_pct": 6.5,
+     "owned_pct": 7.5,
+     "eo_pct": 6.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 7.0,
-     "eo_pct": 5.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 229,
-   "web_name": "Tarkowski",
-   "team": "EVE",
-   "pos": "DEF",
-   "price": 6.2,
-   "overall_pct": 18.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 19.5,
-     "eo_pct": 8.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 15.5,
-     "eo_pct": 6.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 13.0,
-     "eo_pct": 8.0,
+     "owned_pct": 11.5,
+     "eo_pct": 9.5,
      "captain_pct": 0.0
     }
    }
@@ -675,91 +570,16 @@
    "team": "FUL",
    "pos": "MID",
    "price": 5.6,
-   "overall_pct": 4.9,
+   "overall_pct": 4.6,
    "tiers": {
     "top1k": {
-     "owned_pct": 8.5,
-     "eo_pct": 7.5,
+     "owned_pct": 9.0,
+     "eo_pct": 8.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 7.5,
-     "eo_pct": 5.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 10.5,
+     "owned_pct": 11.5,
      "eo_pct": 9.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 426,
-   "web_name": "B.Fernandes",
-   "team": "MUN",
-   "pos": "MID",
-   "price": 11.8,
-   "overall_pct": 30.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 7.5,
-     "eo_pct": 7.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 4.5,
-     "eo_pct": 4.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 10.0,
-     "eo_pct": 10.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 464,
-   "web_name": "Wissa",
-   "team": "NEW",
-   "pos": "FWD",
-   "price": 6.2,
-   "overall_pct": 15.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 11.0,
-     "eo_pct": 6.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 12.0,
-     "eo_pct": 9.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 8.5,
-     "eo_pct": 4.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 236,
-   "web_name": "Dewsbury-Hall",
-   "team": "EVE",
-   "pos": "MID",
-   "price": 6.6,
-   "overall_pct": 6.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 7.0,
-     "eo_pct": 6.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 14.0,
-     "eo_pct": 10.5,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -770,12 +590,12 @@
    }
   },
   {
-   "id": 504,
-   "web_name": "Vuskovic",
-   "team": "BHA",
-   "pos": "DEF",
-   "price": 5.1,
-   "overall_pct": 5.1,
+   "id": 15,
+   "web_name": "Ødegaard",
+   "team": "ARS",
+   "pos": "MID",
+   "price": 6.8,
+   "overall_pct": 18.4,
    "tiers": {
     "top1k": {
      "owned_pct": 6.0,
@@ -783,13 +603,63 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 7.0,
+     "owned_pct": 9.0,
+     "eo_pct": 8.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 10.0,
+     "eo_pct": 10.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 87,
+   "web_name": "Ajer",
+   "team": "BRE",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 4.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 6.5,
+     "eo_pct": 5.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 11.0,
      "eo_pct": 7.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 6.5,
+     "owned_pct": 9.0,
+     "eo_pct": 6.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 173,
+   "web_name": "Thomas",
+   "team": "COV",
+   "pos": "DEF",
+   "price": 4.0,
+   "overall_pct": 9.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 15.5,
      "eo_pct": 5.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 18.0,
+     "eo_pct": 8.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 17.0,
+     "eo_pct": 10.5,
      "captain_pct": 0.0
     }
    }
@@ -808,8 +678,8 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
-     "eo_pct": 2.0,
+     "owned_pct": 5.0,
+     "eo_pct": 5.0,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -820,12 +690,12 @@
    }
   },
   {
-   "id": 112,
-   "web_name": "Van Hecke",
-   "team": "TOT",
-   "pos": "DEF",
-   "price": 4.9,
-   "overall_pct": 7.0,
+   "id": 379,
+   "web_name": "Isak",
+   "team": "LIV",
+   "pos": "FWD",
+   "price": 9.0,
+   "overall_pct": 13.9,
    "tiers": {
     "top1k": {
      "owned_pct": 4.0,
@@ -833,24 +703,24 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 7.0,
-     "eo_pct": 6.0,
+     "owned_pct": 3.0,
+     "eo_pct": 3.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 6.5,
-     "eo_pct": 5.5,
+     "owned_pct": 2.5,
+     "eo_pct": 2.5,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 106,
-   "web_name": "Thiago",
-   "team": "BRE",
+   "id": 79,
+   "web_name": "Evanilson",
+   "team": "BOU",
    "pos": "FWD",
-   "price": 7.8,
-   "overall_pct": 8.9,
+   "price": 6.1,
+   "overall_pct": 5.9,
    "tiers": {
     "top1k": {
      "owned_pct": 3.5,
@@ -858,13 +728,13 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.5,
+     "owned_pct": 2.5,
      "eo_pct": 1.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.5,
+     "owned_pct": 3.5,
+     "eo_pct": 3.0,
      "captain_pct": 0.0
     }
    }
@@ -875,21 +745,146 @@
    "team": "BHA",
    "pos": "FWD",
    "price": 5.7,
-   "overall_pct": 9.2,
+   "overall_pct": 10.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 3.5,
+     "owned_pct": 5.5,
      "eo_pct": 3.5,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
+     "owned_pct": 5.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 4.0,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 229,
+   "web_name": "Tarkowski",
+   "team": "EVE",
+   "pos": "DEF",
+   "price": 6.2,
+   "overall_pct": 18.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 11.0,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 12.0,
      "eo_pct": 1.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 6.5,
-     "eo_pct": 4.5,
+     "owned_pct": 10.5,
+     "eo_pct": 2.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 330,
+   "web_name": "Bogle",
+   "team": "LEE",
+   "pos": "DEF",
+   "price": 4.7,
+   "overall_pct": 10.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 5.0,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 5.0,
+     "eo_pct": 4.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 4.0,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 385,
+   "web_name": "Trafford",
+   "team": "LEE",
+   "pos": "GKP",
+   "price": 5.0,
+   "overall_pct": 6.0,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 4.5,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 4.0,
+     "eo_pct": 2.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 4.0,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 469,
+   "web_name": "N.Williams",
+   "team": "NFO",
+   "pos": "DEF",
+   "price": 5.0,
+   "overall_pct": 6.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 4.0,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 5.5,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 7.0,
+     "eo_pct": 5.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 53,
+   "web_name": "Manzambi",
+   "team": "AVL",
+   "pos": "MID",
+   "price": 6.0,
+   "overall_pct": 3.0,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 9.5,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 10.0,
+     "eo_pct": 2.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 9.5,
+     "eo_pct": 3.5,
      "captain_pct": 0.0
     }
    }
@@ -900,46 +895,221 @@
    "team": "MCI",
    "pos": "MID",
    "price": 5.8,
-   "overall_pct": 5.5,
+   "overall_pct": 5.4,
    "tiers": {
     "top1k": {
      "owned_pct": 3.5,
-     "eo_pct": 3.5,
+     "eo_pct": 3.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
-     "eo_pct": 1.5,
+     "owned_pct": 4.5,
+     "eo_pct": 2.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 4.0,
-     "eo_pct": 2.5,
+     "owned_pct": 2.0,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 368,
-   "web_name": "Szoboszlai",
-   "team": "LIV",
+   "id": 400,
+   "web_name": "Doku",
+   "team": "MCI",
    "pos": "MID",
-   "price": 6.8,
-   "overall_pct": 21.6,
+   "price": 7.5,
+   "overall_pct": 3.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 11.5,
-     "eo_pct": 3.5,
+     "owned_pct": 3.5,
+     "eo_pct": 3.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 14.5,
+     "owned_pct": 2.5,
+     "eo_pct": 2.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 5.0,
+     "eo_pct": 5.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 426,
+   "web_name": "B.Fernandes",
+   "team": "MUN",
+   "pos": "MID",
+   "price": 11.8,
+   "overall_pct": 26.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.5,
+     "eo_pct": 3.0,
+     "captain_pct": 0.5
+    },
+    "top10k": {
+     "owned_pct": 1.5,
      "eo_pct": 1.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 20.0,
-     "eo_pct": 5.5,
+     "owned_pct": 7.0,
+     "eo_pct": 7.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 504,
+   "web_name": "Vuskovic",
+   "team": "BHA",
+   "pos": "DEF",
+   "price": 5.1,
+   "overall_pct": 6.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 11.5,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 10.5,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 8.0,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 82,
+   "web_name": "Kelleher",
+   "team": "BRE",
+   "pos": "GKP",
+   "price": 5.0,
+   "overall_pct": 6.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 3.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 88,
+   "web_name": "Kayode",
+   "team": "BRE",
+   "pos": "DEF",
+   "price": 4.6,
+   "overall_pct": 7.0,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.5,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 106,
+   "web_name": "Thiago",
+   "team": "BRE",
+   "pos": "FWD",
+   "price": 7.8,
+   "overall_pct": 8.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 249,
+   "web_name": "Barry",
+   "team": "EVE",
+   "pos": "FWD",
+   "price": 5.7,
+   "overall_pct": 7.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 18.5,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 10.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 14.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 464,
+   "web_name": "Wissa",
+   "team": "NEW",
+   "pos": "FWD",
+   "price": 6.1,
+   "overall_pct": 12.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 3.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 8.0,
+     "eo_pct": 5.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 9.0,
+     "eo_pct": 6.0,
      "captain_pct": 0.0
     }
    }
@@ -953,93 +1123,18 @@
    "overall_pct": 4.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 3.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 53,
-   "web_name": "Manzambi",
-   "team": "AVL",
-   "pos": "MID",
-   "price": 5.9,
-   "overall_pct": 2.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 4.0,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.0,
+     "owned_pct": 2.0,
      "eo_pct": 1.5,
      "captain_pct": 0.0
     },
-    "top100k": {
-     "owned_pct": 4.0,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 87,
-   "web_name": "Ajer",
-   "team": "BRE",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 3.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 10.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
     "top10k": {
-     "owned_pct": 9.0,
-     "eo_pct": 0.5,
+     "owned_pct": 2.5,
+     "eo_pct": 2.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 9.0,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 94,
-   "web_name": "Schade",
-   "team": "BRE",
-   "pos": "MID",
-   "price": 6.2,
-   "overall_pct": 13.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 23.0,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 20.0,
-     "eo_pct": 4.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 22.0,
-     "eo_pct": 6.0,
+     "owned_pct": 2.0,
+     "eo_pct": 1.0,
      "captain_pct": 0.0
     }
    }
@@ -1050,21 +1145,196 @@
    "team": "BHA",
    "pos": "MID",
    "price": 5.0,
-   "overall_pct": 3.6,
+   "overall_pct": 4.0,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.5,
-     "eo_pct": 2.5,
+     "owned_pct": 5.5,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     },
     "top10k": {
+     "owned_pct": 4.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 5.0,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 201,
+   "web_name": "Muñoz",
+   "team": "NFO",
+   "pos": "DEF",
+   "price": 5.3,
+   "overall_pct": 4.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 250,
+   "web_name": "Leno",
+   "team": "FUL",
+   "pos": "GKP",
+   "price": 4.5,
+   "overall_pct": 4.5,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 2.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 4.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 496,
+   "web_name": "Kinsky",
+   "team": "TOT",
+   "pos": "GKP",
+   "price": 4.5,
+   "overall_pct": 14.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 24.0,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 23.0,
+     "eo_pct": 3.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 23.0,
+     "eo_pct": 2.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 542,
+   "web_name": "E.Le Fée",
+   "team": "SUN",
+   "pos": "MID",
+   "price": 5.7,
+   "overall_pct": 2.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
      "owned_pct": 2.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 565,
+   "web_name": "M.Sangaré",
+   "team": "BRE",
+   "pos": "MID",
+   "price": 5.5,
+   "overall_pct": 6.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 6.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 7.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 9.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 572,
+   "web_name": "Tzolakis",
+   "team": "HUL",
+   "pos": "GKP",
+   "price": 4.7,
+   "overall_pct": 14.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 4.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 4.5,
      "eo_pct": 2.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 6.5,
-     "eo_pct": 5.5,
+     "owned_pct": 3.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 156,
+   "web_name": "Neto",
+   "team": "CHE",
+   "pos": "MID",
+   "price": 6.5,
+   "overall_pct": 3.5,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -1078,234 +1348,9 @@
    "overall_pct": 4.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.0,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
      "owned_pct": 1.5,
      "eo_pct": 1.0,
      "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 286,
-   "web_name": "Belloumi",
-   "team": "HUL",
-   "pos": "MID",
-   "price": 5.2,
-   "overall_pct": 9.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 3.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 5.5,
-     "eo_pct": 4.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 4.0,
-     "eo_pct": 3.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 388,
-   "web_name": "Guéhi",
-   "team": "MCI",
-   "pos": "DEF",
-   "price": 6.0,
-   "overall_pct": 18.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 2.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.5,
-     "eo_pct": 3.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 480,
-   "web_name": "Gibbs-White",
-   "team": "NFO",
-   "pos": "MID",
-   "price": 8.0,
-   "overall_pct": 12.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 16.0,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 18.0,
-     "eo_pct": 4.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 11.5,
-     "eo_pct": 3.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 226,
-   "web_name": "Pickford",
-   "team": "EVE",
-   "pos": "GKP",
-   "price": 5.5,
-   "overall_pct": 8.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 3.5,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 526,
-   "web_name": "Solanke",
-   "team": "TOT",
-   "pos": "FWD",
-   "price": 5.8,
-   "overall_pct": 1.6,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 2.0,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.5,
-     "eo_pct": 4.0,
-     "captain_pct": 0.5
-    },
-    "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 173,
-   "web_name": "Thomas",
-   "team": "COV",
-   "pos": "DEF",
-   "price": 4.0,
-   "overall_pct": 9.2,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 20.0,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 25.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 19.0,
-     "eo_pct": 4.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 330,
-   "web_name": "Bogle",
-   "team": "LEE",
-   "pos": "DEF",
-   "price": 4.7,
-   "overall_pct": 9.6,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 6.0,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.0,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 6.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 542,
-   "web_name": "E.Le Fée",
-   "team": "SUN",
-   "pos": "MID",
-   "price": 5.7,
-   "overall_pct": 3.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 4.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 2.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 79,
-   "web_name": "Evanilson",
-   "team": "BOU",
-   "pos": "FWD",
-   "price": 6.1,
-   "overall_pct": 3.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
     },
     "top10k": {
      "owned_pct": 2.0,
@@ -1313,108 +1358,8 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 113,
-   "web_name": "F.Kadıoğlu",
-   "team": "BHA",
-   "pos": "DEF",
-   "price": 4.4,
-   "overall_pct": 1.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 155,
-   "web_name": "Enzo",
-   "team": "MCI",
-   "pos": "MID",
-   "price": 6.9,
-   "overall_pct": 4.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 4.0,
-     "eo_pct": 4.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 204,
-   "web_name": "Mitchell",
-   "team": "CRY",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 5.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 3.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 233,
-   "web_name": "Mykolenko",
-   "team": "EVE",
-   "pos": "DEF",
-   "price": 4.6,
-   "overall_pct": 2.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 4.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 3.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 7.5,
-     "eo_pct": 1.0,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     }
    }
@@ -1425,7 +1370,7 @@
    "team": "LEE",
    "pos": "DEF",
    "price": 4.5,
-   "overall_pct": 2.0,
+   "overall_pct": 2.2,
    "tiers": {
     "top1k": {
      "owned_pct": 1.5,
@@ -1433,558 +1378,8 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 350,
-   "web_name": "A.Becker",
-   "team": "LIV",
-   "pos": "GKP",
-   "price": 5.5,
-   "overall_pct": 4.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 2.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
      "owned_pct": 0.5,
      "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 384,
-   "web_name": "Donnarumma",
-   "team": "MCI",
-   "pos": "GKP",
-   "price": 5.5,
-   "overall_pct": 7.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 387,
-   "web_name": "O'Reilly",
-   "team": "MCI",
-   "pos": "DEF",
-   "price": 6.3,
-   "overall_pct": 9.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 390,
-   "web_name": "Rúben",
-   "team": "MCI",
-   "pos": "DEF",
-   "price": 5.5,
-   "overall_pct": 2.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 403,
-   "web_name": "Sávio",
-   "team": "TOT",
-   "pos": "MID",
-   "price": 6.5,
-   "overall_pct": 1.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.0,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 418,
-   "web_name": "Maguire",
-   "team": "MUN",
-   "pos": "DEF",
-   "price": 4.8,
-   "overall_pct": 6.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 2.5,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 512,
-   "web_name": "Kudus",
-   "team": "TOT",
-   "pos": "MID",
-   "price": 6.5,
-   "overall_pct": 0.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 627,
-   "web_name": "Barcola",
-   "team": "LIV",
-   "pos": "MID",
-   "price": 8.0,
-   "overall_pct": 2.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 650,
-   "web_name": "Affengruber",
-   "team": "FUL",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 0.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.5,
-     "eo_pct": 2.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 14,
-   "web_name": "Eze",
-   "team": "ARS",
-   "pos": "MID",
-   "price": 6.2,
-   "overall_pct": 1.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 41,
-   "web_name": "Buendía",
-   "team": "AVL",
-   "pos": "MID",
-   "price": 5.9,
-   "overall_pct": 1.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 45,
-   "web_name": "McGinn",
-   "team": "AVL",
-   "pos": "MID",
-   "price": 5.4,
-   "overall_pct": 2.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 116,
-   "web_name": "Dunk",
-   "team": "BHA",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 1.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 238,
-   "web_name": "Grealish",
-   "team": "EVE",
-   "pos": "MID",
-   "price": 6.5,
-   "overall_pct": 0.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 244,
-   "web_name": "Armstrong",
-   "team": "EVE",
-   "pos": "MID",
-   "price": 5.0,
-   "overall_pct": 0.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 257,
-   "web_name": "Bassey",
-   "team": "FUL",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 1.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 264,
-   "web_name": "Bobb",
-   "team": "FUL",
-   "pos": "MID",
-   "price": 5.5,
-   "overall_pct": 0.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 269,
-   "web_name": "Sessegnon",
-   "team": "FUL",
-   "pos": "DEF",
-   "price": 4.3,
-   "overall_pct": 0.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 277,
-   "web_name": "Egan",
-   "team": "HUL",
-   "pos": "DEF",
-   "price": 4.1,
-   "overall_pct": 7.2,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 12.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 14.5,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 12.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 316,
-   "web_name": "Emersonn",
-   "team": "IPS",
-   "pos": "FWD",
-   "price": 5.6,
-   "overall_pct": 3.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 338,
-   "web_name": "Ampadu",
-   "team": "LEE",
-   "pos": "MID",
-   "price": 5.4,
-   "overall_pct": 0.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 356,
-   "web_name": "Virgil",
-   "team": "LIV",
-   "pos": "DEF",
-   "price": 6.5,
-   "overall_pct": 15.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.0,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -2000,171 +1395,71 @@
    "team": "LIV",
    "pos": "MID",
    "price": 7.2,
-   "overall_pct": 5.0,
+   "overall_pct": 5.1,
    "tiers": {
     "top1k": {
      "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 379,
-   "web_name": "Isak",
-   "team": "LIV",
-   "pos": "FWD",
-   "price": 9.0,
-   "overall_pct": 11.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 5.5,
-     "eo_pct": 1.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 385,
-   "web_name": "Trafford",
-   "team": "LEE",
-   "pos": "GKP",
-   "price": 5.0,
-   "overall_pct": 5.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 2.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 389,
-   "web_name": "Matheus N.",
-   "team": "MCI",
-   "pos": "DEF",
-   "price": 5.9,
-   "overall_pct": 1.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 400,
-   "web_name": "Doku",
-   "team": "MCI",
-   "pos": "MID",
-   "price": 7.4,
-   "overall_pct": 1.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 428,
-   "web_name": "Cunha",
-   "team": "MUN",
-   "pos": "MID",
-   "price": 7.9,
-   "overall_pct": 6.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.0,
      "eo_pct": 1.0,
      "captain_pct": 0.0
     },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
     "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 3.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 455,
-   "web_name": "Tonali",
-   "team": "TOT",
-   "pos": "MID",
-   "price": 5.3,
-   "overall_pct": 1.8,
+   "id": 384,
+   "web_name": "Donnarumma",
+   "team": "MCI",
+   "pos": "GKP",
+   "price": 5.5,
+   "overall_pct": 7.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.5,
+     "owned_pct": 1.5,
+     "eo_pct": 1.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 388,
+   "web_name": "Guéhi",
+   "team": "MCI",
+   "pos": "DEF",
+   "price": 6.0,
+   "overall_pct": 17.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 4.5,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 4.0,
+     "eo_pct": 3.5,
      "captain_pct": 0.0
     }
    }
@@ -2175,70 +1470,45 @@
    "team": "TOT",
    "pos": "GKP",
    "price": 4.0,
-   "overall_pct": 16.7,
+   "overall_pct": 16.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 14.5,
-     "eo_pct": 0.5,
+     "owned_pct": 19.5,
+     "eo_pct": 1.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 12.5,
-     "eo_pct": 0.0,
+     "owned_pct": 21.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 17.0,
+     "owned_pct": 20.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 552,
-   "web_name": "Brobbey",
-   "team": "SUN",
-   "pos": "FWD",
-   "price": 5.7,
-   "overall_pct": 5.6,
+   "id": 627,
+   "web_name": "Barcola",
+   "team": "LIV",
+   "pos": "MID",
+   "price": 8.0,
+   "overall_pct": 3.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 11,
-   "web_name": "Mosquera",
-   "team": "ARS",
-   "pos": "DEF",
-   "price": 5.2,
-   "overall_pct": 1.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
+     "eo_pct": 1.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2250,16 +1520,291 @@
    "team": "ARS",
    "pos": "MID",
    "price": 7.3,
-   "overall_pct": 10.9,
+   "overall_pct": 12.0,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top10k": {
      "owned_pct": 0.5,
      "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.5,
+     "eo_pct": 2.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 110,
+   "web_name": "Rushworth",
+   "team": "COV",
+   "pos": "GKP",
+   "price": 4.5,
+   "overall_pct": 0.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 112,
+   "web_name": "Van Hecke",
+   "team": "TOT",
+   "pos": "DEF",
+   "price": 4.9,
+   "overall_pct": 6.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 4.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 6.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 8.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 155,
+   "web_name": "Enzo",
+   "team": "MCI",
+   "pos": "MID",
+   "price": 6.9,
+   "overall_pct": 3.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 176,
+   "web_name": "Dasilva",
+   "team": "COV",
+   "pos": "DEF",
+   "price": 4.0,
+   "overall_pct": 1.5,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 183,
+   "web_name": "Rudoni",
+   "team": "COV",
+   "pos": "MID",
+   "price": 4.9,
+   "overall_pct": 0.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 2.0,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 204,
+   "web_name": "Mitchell",
+   "team": "CRY",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 5.5,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 226,
+   "web_name": "Pickford",
+   "team": "EVE",
+   "pos": "GKP",
+   "price": 5.5,
+   "overall_pct": 8.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 236,
+   "web_name": "Dewsbury-Hall",
+   "team": "EVE",
+   "pos": "MID",
+   "price": 6.6,
+   "overall_pct": 5.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 11.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 8.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 9.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 258,
+   "web_name": "Castagne",
+   "team": "FUL",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 1.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 259,
+   "web_name": "Diop",
+   "team": "IPS",
+   "pos": "DEF",
+   "price": 3.9,
+   "overall_pct": 10.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 6.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 10.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 12.0,
+     "eo_pct": 3.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 261,
+   "web_name": "Iwobi",
+   "team": "FUL",
+   "pos": "MID",
+   "price": 5.4,
+   "overall_pct": 1.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -2270,12 +1815,487 @@
    }
   },
   {
-   "id": 25,
-   "web_name": "Gyökeres",
-   "team": "ARS",
-   "pos": "FWD",
+   "id": 277,
+   "web_name": "Egan",
+   "team": "HUL",
+   "pos": "DEF",
+   "price": 4.1,
+   "overall_pct": 7.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 15.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 15.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 13.0,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 279,
+   "web_name": "Ajayi",
+   "team": "HUL",
+   "pos": "DEF",
+   "price": 4.2,
+   "overall_pct": 13.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 4.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 2.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 3.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 286,
+   "web_name": "Belloumi",
+   "team": "HUL",
+   "pos": "MID",
+   "price": 5.2,
+   "overall_pct": 9.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 5.5,
+     "eo_pct": 4.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 6.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 335,
+   "web_name": "Stach",
+   "team": "LEE",
+   "pos": "MID",
+   "price": 6.0,
+   "overall_pct": 2.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 350,
+   "web_name": "A.Becker",
+   "team": "LIV",
+   "pos": "GKP",
+   "price": 5.5,
+   "overall_pct": 4.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 367,
+   "web_name": "Gakpo",
+   "team": "LIV",
+   "pos": "MID",
    "price": 7.1,
-   "overall_pct": 3.3,
+   "overall_pct": 6.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 368,
+   "web_name": "Szoboszlai",
+   "team": "LIV",
+   "pos": "MID",
+   "price": 6.8,
+   "overall_pct": 16.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 4.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 4.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 4.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 398,
+   "web_name": "Foden",
+   "team": "MCI",
+   "pos": "MID",
+   "price": 6.8,
+   "overall_pct": 2.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 418,
+   "web_name": "Maguire",
+   "team": "MUN",
+   "pos": "DEF",
+   "price": 4.7,
+   "overall_pct": 6.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 445,
+   "web_name": "Thiaw",
+   "team": "NEW",
+   "pos": "DEF",
+   "price": 5.0,
+   "overall_pct": 1.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 447,
+   "web_name": "Botman",
+   "team": "NEW",
+   "pos": "DEF",
+   "price": 5.0,
+   "overall_pct": 0.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 481,
+   "web_name": "Anderson",
+   "team": "MCI",
+   "pos": "MID",
+   "price": 6.3,
+   "overall_pct": 3.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.0,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 533,
+   "web_name": "Mukiele",
+   "team": "SUN",
+   "pos": "DEF",
+   "price": 5.4,
+   "overall_pct": 1.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 541,
+   "web_name": "Meunier",
+   "team": "SUN",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 0.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 560,
+   "web_name": "Penders",
+   "team": "CHE",
+   "pos": "GKP",
+   "price": 4.4,
+   "overall_pct": 0.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 593,
+   "web_name": "Dedić",
+   "team": "NEW",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 1.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 599,
+   "web_name": "Cherif",
+   "team": "COV",
+   "pos": "FWD",
+   "price": 5.0,
+   "overall_pct": 0.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 650,
+   "web_name": "Affengruber",
+   "team": "FUL",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 0.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 2.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 12,
+   "web_name": "Saka",
+   "team": "ARS",
+   "pos": "MID",
+   "price": 9.6,
+   "overall_pct": 10.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 2.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.0,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 16,
+   "web_name": "Madueke",
+   "team": "ARS",
+   "pos": "MID",
+   "price": 6.2,
+   "overall_pct": 0.4,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2284,7 +2304,7 @@
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -2300,7 +2320,7 @@
    "team": "ARS",
    "pos": "FWD",
    "price": 7.5,
-   "overall_pct": 6.5,
+   "overall_pct": 6.0,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2325,40 +2345,15 @@
    "team": "CHE",
    "pos": "GKP",
    "price": 5.0,
-   "overall_pct": 4.6,
+   "overall_pct": 3.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 29,
-   "web_name": "M.Bizot",
-   "team": "AVL",
-   "pos": "GKP",
-   "price": 4.5,
-   "overall_pct": 0.1,
-   "tiers": {
-    "top1k": {
      "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -2375,7 +2370,7 @@
    "team": "AVL",
    "pos": "DEF",
    "price": 4.4,
-   "overall_pct": 4.2,
+   "overall_pct": 4.1,
    "tiers": {
     "top1k": {
      "owned_pct": 0.5,
@@ -2383,24 +2378,49 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.5,
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 36,
-   "web_name": "Maatsen",
+   "id": 41,
+   "web_name": "Buendía",
    "team": "AVL",
-   "pos": "DEF",
-   "price": 4.4,
-   "overall_pct": 0.4,
+   "pos": "MID",
+   "price": 5.9,
+   "overall_pct": 1.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 45,
+   "web_name": "McGinn",
+   "team": "AVL",
+   "pos": "MID",
+   "price": 5.4,
+   "overall_pct": 2.7,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2414,7 +2434,7 @@
     },
     "top100k": {
      "owned_pct": 1.0,
-     "eo_pct": 0.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     }
    }
@@ -2425,7 +2445,7 @@
    "team": "AVL",
    "pos": "MID",
    "price": 4.5,
-   "overall_pct": 0.9,
+   "overall_pct": 0.8,
    "tiers": {
     "top1k": {
      "owned_pct": 1.0,
@@ -2458,12 +2478,12 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
+     "owned_pct": 1.5,
      "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.5,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2478,17 +2498,17 @@
    "overall_pct": 3.5,
    "tiers": {
     "top1k": {
-     "owned_pct": 3.5,
+     "owned_pct": 4.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 3.5,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 3.0,
+     "owned_pct": 2.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2503,7 +2523,7 @@
    "overall_pct": 0.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -2513,19 +2533,19 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 61,
-   "web_name": "Truffert",
+   "id": 60,
+   "web_name": "Hill",
    "team": "BOU",
    "pos": "DEF",
-   "price": 5.4,
-   "overall_pct": 2.7,
+   "price": 5.5,
+   "overall_pct": 0.8,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2533,12 +2553,12 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
+     "owned_pct": 1.0,
      "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2550,7 +2570,7 @@
    "team": "BOU",
    "pos": "MID",
    "price": 6.0,
-   "overall_pct": 3.1,
+   "overall_pct": 2.6,
    "tiers": {
     "top1k": {
      "owned_pct": 0.5,
@@ -2559,32 +2579,7 @@
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
      "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 82,
-   "web_name": "Kelleher",
-   "team": "BRE",
-   "pos": "GKP",
-   "price": 5.0,
-   "overall_pct": 6.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -2600,7 +2595,7 @@
    "team": "BRE",
    "pos": "MID",
    "price": 5.5,
-   "overall_pct": 1.5,
+   "overall_pct": 1.9,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2608,62 +2603,12 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 88,
-   "web_name": "Kayode",
-   "team": "BRE",
-   "pos": "DEF",
-   "price": 4.6,
-   "overall_pct": 7.1,
-   "tiers": {
-    "top1k": {
      "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 93,
-   "web_name": "Schuster",
-   "team": "BRE",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 0.5,
-   "tiers": {
-    "top1k": {
      "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2675,21 +2620,21 @@
    "team": "BRE",
    "pos": "MID",
    "price": 5.0,
-   "overall_pct": 2.5,
+   "overall_pct": 1.9,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 1.0,
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 0.5,
+     "owned_pct": 1.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -2700,7 +2645,7 @@
    "team": "CHE",
    "pos": "MID",
    "price": 4.9,
-   "overall_pct": 0.8,
+   "overall_pct": 1.4,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2713,47 +2658,47 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
+     "owned_pct": 2.0,
+     "eo_pct": 2.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 102,
-   "web_name": "Yarmoliuk",
+   "id": 105,
+   "web_name": "Anthony",
    "team": "BRE",
    "pos": "MID",
-   "price": 4.8,
+   "price": 5.9,
+   "overall_pct": 0.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 107,
+   "web_name": "Furo",
+   "team": "BRE",
+   "pos": "FWD",
+   "price": 4.5,
    "overall_pct": 0.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 110,
-   "web_name": "Rushworth",
-   "team": "COV",
-   "pos": "GKP",
-   "price": 4.5,
-   "overall_pct": 0.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -2775,32 +2720,57 @@
    "team": "BHA",
    "pos": "GKP",
    "price": 4.0,
-   "overall_pct": 3.8,
+   "overall_pct": 3.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.0,
+     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
+     "owned_pct": 3.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 3.5,
+     "owned_pct": 4.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 125,
-   "web_name": "Georginio",
+   "id": 114,
+   "web_name": "Boscagli",
    "team": "BHA",
-   "pos": "FWD",
-   "price": 5.3,
-   "overall_pct": 0.5,
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 0.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 116,
+   "web_name": "Dunk",
+   "team": "BHA",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 1.4,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2808,12 +2778,37 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 123,
+   "web_name": "Hinshelwood",
+   "team": "BHA",
+   "pos": "MID",
+   "price": 5.9,
+   "overall_pct": 0.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
      "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2825,20 +2820,20 @@
    "team": "CHE",
    "pos": "DEF",
    "price": 4.5,
-   "overall_pct": 0.6,
+   "overall_pct": 0.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2851,31 +2846,6 @@
    "pos": "DEF",
    "price": 4.8,
    "overall_pct": 0.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 162,
-   "web_name": "Andrey Santos",
-   "team": "MUN",
-   "pos": "MID",
-   "price": 4.7,
-   "overall_pct": 0.5,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -2903,17 +2873,17 @@
    "overall_pct": 1.9,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -2925,32 +2895,7 @@
    "team": "COV",
    "pos": "GKP",
    "price": 4.0,
-   "overall_pct": 0.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 174,
-   "web_name": "Kitching",
-   "team": "COV",
-   "pos": "DEF",
-   "price": 4.0,
-   "overall_pct": 0.3,
+   "overall_pct": 0.8,
    "tiers": {
     "top1k": {
      "owned_pct": 0.5,
@@ -2958,7 +2903,7 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -2975,10 +2920,10 @@
    "team": "COV",
    "pos": "DEF",
    "price": 3.9,
-   "overall_pct": 7.5,
+   "overall_pct": 7.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 8.0,
+     "owned_pct": 3.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -2988,52 +2933,27 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 5.5,
-     "eo_pct": 0.5,
+     "owned_pct": 9.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 176,
-   "web_name": "Dasilva",
-   "team": "COV",
-   "pos": "DEF",
-   "price": 4.0,
-   "overall_pct": 1.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 183,
-   "web_name": "Rudoni",
+   "id": 189,
+   "web_name": "Shepherd",
    "team": "COV",
    "pos": "MID",
-   "price": 4.9,
+   "price": 4.4,
    "overall_pct": 0.2,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3050,7 +2970,7 @@
    "team": "COV",
    "pos": "FWD",
    "price": 5.0,
-   "overall_pct": 0.9,
+   "overall_pct": 1.0,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -3059,81 +2979,6 @@
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 195,
-   "web_name": "Simms",
-   "team": "COV",
-   "pos": "FWD",
-   "price": 4.9,
-   "overall_pct": 0.7,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 198,
-   "web_name": "Henderson",
-   "team": "CRY",
-   "pos": "GKP",
-   "price": 4.9,
-   "overall_pct": 1.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 199,
-   "web_name": "Benitez",
-   "team": "CRY",
-   "pos": "GKP",
-   "price": 4.5,
-   "overall_pct": 0.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3153,38 +2998,13 @@
    "overall_pct": 6.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
      "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 201,
-   "web_name": "Muñoz",
-   "team": "NFO",
-   "pos": "DEF",
-   "price": 5.3,
-   "overall_pct": 4.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -3203,7 +3023,7 @@
    "overall_pct": 0.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3213,7 +3033,7 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3224,21 +3044,21 @@
    "web_name": "Hughes",
    "team": "CRY",
    "pos": "MID",
-   "price": 4.4,
-   "overall_pct": 6.3,
+   "price": 4.3,
+   "overall_pct": 6.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
+     "owned_pct": 2.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 2.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 4.5,
+     "owned_pct": 3.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3253,7 +3073,7 @@
    "overall_pct": 0.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3265,6 +3085,31 @@
     "top100k": {
      "owned_pct": 0.5,
      "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 222,
+   "web_name": "Strand Larsen",
+   "team": "CRY",
+   "pos": "FWD",
+   "price": 6.0,
+   "overall_pct": 0.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -3278,54 +3123,54 @@
    "overall_pct": 2.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 0.5,
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 242,
-   "web_name": "George",
+   "id": 233,
+   "web_name": "Mykolenko",
+   "team": "EVE",
+   "pos": "DEF",
+   "price": 4.6,
+   "overall_pct": 2.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 3.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 3.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 244,
+   "web_name": "Armstrong",
    "team": "EVE",
    "pos": "MID",
-   "price": 5.5,
-   "overall_pct": 0.6,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 248,
-   "web_name": "Beto",
-   "team": "EVE",
-   "pos": "FWD",
-   "price": 5.4,
-   "overall_pct": 0.5,
+   "price": 5.0,
+   "overall_pct": 0.3,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -3340,31 +3185,6 @@
     "top100k": {
      "owned_pct": 0.5,
      "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 250,
-   "web_name": "Leno",
-   "team": "FUL",
-   "pos": "GKP",
-   "price": 4.5,
-   "overall_pct": 4.2,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 2.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 4.5,
-     "eo_pct": 1.0,
      "captain_pct": 0.0
     }
    }
@@ -3378,29 +3198,54 @@
    "overall_pct": 1.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.5,
+     "owned_pct": 3.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.0,
+     "owned_pct": 3.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 2.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 258,
-   "web_name": "Castagne",
+   "id": 254,
+   "web_name": "Robinson",
+   "team": "FUL",
+   "pos": "DEF",
+   "price": 4.4,
+   "overall_pct": 1.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 257,
+   "web_name": "Bassey",
    "team": "FUL",
    "pos": "DEF",
    "price": 4.5,
-   "overall_pct": 1.2,
+   "overall_pct": 1.1,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -3413,44 +3258,19 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "owned_pct": 3.0,
+     "eo_pct": 3.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 259,
-   "web_name": "Diop",
-   "team": "IPS",
-   "pos": "DEF",
-   "price": 4.0,
-   "overall_pct": 11.1,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 6.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 7.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 14.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 261,
-   "web_name": "Iwobi",
+   "id": 264,
+   "web_name": "Bobb",
    "team": "FUL",
    "pos": "MID",
-   "price": 5.4,
-   "overall_pct": 0.8,
+   "price": 5.5,
+   "overall_pct": 0.3,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -3458,13 +3278,13 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     }
    }
@@ -3478,7 +3298,7 @@
    "overall_pct": 0.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3488,7 +3308,7 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3500,20 +3320,20 @@
    "team": "FUL",
    "pos": "FWD",
    "price": 4.4,
-   "overall_pct": 5.1,
+   "overall_pct": 4.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.5,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
+     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 5.0,
+     "owned_pct": 3.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3525,7 +3345,7 @@
    "team": "HUL",
    "pos": "GKP",
    "price": 4.0,
-   "overall_pct": 1.4,
+   "overall_pct": 1.3,
    "tiers": {
     "top1k": {
      "owned_pct": 1.0,
@@ -3533,7 +3353,7 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.0,
+     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3545,26 +3365,26 @@
    }
   },
   {
-   "id": 279,
-   "web_name": "Ajayi",
+   "id": 280,
+   "web_name": "Coyle",
    "team": "HUL",
    "pos": "DEF",
-   "price": 4.2,
-   "overall_pct": 13.6,
+   "price": 4.0,
+   "overall_pct": 0.6,
    "tiers": {
     "top1k": {
-     "owned_pct": 4.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 0.5,
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 5.5,
-     "eo_pct": 1.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -3575,21 +3395,46 @@
    "team": "HUL",
    "pos": "DEF",
    "price": 4.0,
-   "overall_pct": 3.0,
+   "overall_pct": 2.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 3.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
+     "owned_pct": 2.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
      "owned_pct": 2.0,
-     "eo_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 288,
+   "web_name": "Dowell",
+   "team": "HUL",
+   "pos": "MID",
+   "price": 4.4,
+   "overall_pct": 0.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -3603,17 +3448,17 @@
    "overall_pct": 0.6,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3625,46 +3470,21 @@
    "team": "HUL",
    "pos": "MID",
    "price": 4.5,
-   "overall_pct": 5.0,
+   "overall_pct": 4.8,
    "tiers": {
     "top1k": {
+     "owned_pct": 13.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 10.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
      "owned_pct": 12.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 8.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 7.0,
      "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 295,
-   "web_name": "McBurnie",
-   "team": "HUL",
-   "pos": "FWD",
-   "price": 5.5,
-   "overall_pct": 1.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -3675,7 +3495,7 @@
    "team": "IPS",
    "pos": "GKP",
    "price": 4.0,
-   "overall_pct": 3.7,
+   "overall_pct": 3.6,
    "tiers": {
     "top1k": {
      "owned_pct": 5.5,
@@ -3683,12 +3503,12 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 7.0,
+     "owned_pct": 6.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 4.5,
+     "owned_pct": 5.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3703,17 +3523,17 @@
    "overall_pct": 0.6,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
+     "owned_pct": 3.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 4.5,
+     "owned_pct": 2.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.5,
+     "owned_pct": 4.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3725,20 +3545,20 @@
    "team": "IPS",
    "pos": "DEF",
    "price": 4.0,
-   "overall_pct": 2.6,
+   "overall_pct": 2.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 10.0,
+     "owned_pct": 4.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 5.0,
-     "eo_pct": 0.0,
+     "owned_pct": 5.5,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 8.5,
+     "owned_pct": 6.5,
      "eo_pct": 0.5,
      "captain_pct": 0.0
     }
@@ -3750,21 +3570,21 @@
    "team": "IPS",
    "pos": "DEF",
    "price": 4.0,
-   "overall_pct": 7.5,
+   "overall_pct": 7.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 6.5,
+     "owned_pct": 4.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 9.0,
-     "eo_pct": 0.0,
+     "owned_pct": 5.0,
+     "eo_pct": 1.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 5.5,
-     "eo_pct": 0.5,
+     "owned_pct": 8.0,
+     "eo_pct": 2.0,
      "captain_pct": 0.0
     }
    }
@@ -3775,32 +3595,32 @@
    "team": "IPS",
    "pos": "DEF",
    "price": 3.9,
-   "overall_pct": 1.2,
+   "overall_pct": 1.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 308,
-   "web_name": "Furlong",
+   "id": 320,
+   "web_name": "Akpom",
    "team": "IPS",
-   "pos": "DEF",
-   "price": 3.9,
-   "overall_pct": 0.6,
+   "pos": "FWD",
+   "price": 5.0,
+   "overall_pct": 1.0,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -3825,115 +3645,65 @@
    "team": "IPS",
    "pos": "FWD",
    "price": 4.5,
-   "overall_pct": 3.4,
+   "overall_pct": 3.2,
    "tiers": {
     "top1k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 3.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 329,
-   "web_name": "Rodon",
-   "team": "LEE",
-   "pos": "DEF",
-   "price": 4.3,
-   "overall_pct": 0.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
      "owned_pct": 2.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 335,
-   "web_name": "Stach",
-   "team": "LEE",
-   "pos": "MID",
-   "price": 6.0,
-   "overall_pct": 2.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
+    },
+    "top10k": {
+     "owned_pct": 2.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
-    "top10k": {
+    "top100k": {
      "owned_pct": 1.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 1.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 336,
-   "web_name": "Okafor",
+   "id": 323,
+   "web_name": "McAteer",
+   "team": "IPS",
+   "pos": "MID",
+   "price": 4.4,
+   "overall_pct": 0.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 338,
+   "web_name": "Ampadu",
    "team": "LEE",
    "pos": "MID",
-   "price": 5.8,
-   "overall_pct": 0.4,
+   "price": 5.3,
+   "overall_pct": 0.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 349,
-   "web_name": "Mateo Joseph",
-   "team": "LEE",
-   "pos": "FWD",
-   "price": 4.5,
-   "overall_pct": 0.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
     "top10k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -3963,7 +3733,132 @@
      "captain_pct": 0.0
     },
     "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 354,
+   "web_name": "Jaros",
+   "team": "LIV",
+   "pos": "GKP",
+   "price": 4.0,
+   "overall_pct": 0.0,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
      "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 355,
+   "web_name": "Davies",
+   "team": "LIV",
+   "pos": "GKP",
+   "price": 4.0,
+   "overall_pct": 0.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 356,
+   "web_name": "Virgil",
+   "team": "LIV",
+   "pos": "DEF",
+   "price": 6.4,
+   "overall_pct": 15.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 358,
+   "web_name": "Kerkez",
+   "team": "LIV",
+   "pos": "DEF",
+   "price": 5.3,
+   "overall_pct": 1.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 361,
+   "web_name": "Lucky",
+   "team": "LIV",
+   "pos": "DEF",
+   "price": 4.0,
+   "overall_pct": 0.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -3974,36 +3869,11 @@
    "web_name": "Jacquet",
    "team": "LIV",
    "pos": "DEF",
-   "price": 5.0,
-   "overall_pct": 3.9,
+   "price": 5.1,
+   "overall_pct": 4.2,
    "tiers": {
     "top1k": {
      "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 367,
-   "web_name": "Gakpo",
-   "team": "LIV",
-   "pos": "MID",
-   "price": 7.1,
-   "overall_pct": 6.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 2.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4013,8 +3883,8 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.5,
-     "eo_pct": 0.0,
+     "owned_pct": 1.5,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     }
    }
@@ -4045,62 +3915,12 @@
    }
   },
   {
-   "id": 377,
-   "web_name": "Munoz",
+   "id": 382,
+   "web_name": "Danns",
    "team": "LIV",
-   "pos": "MID",
-   "price": 6.5,
-   "overall_pct": 0.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 398,
-   "web_name": "Foden",
-   "team": "MCI",
-   "pos": "MID",
-   "price": 6.8,
-   "overall_pct": 1.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 401,
-   "web_name": "Marmoush",
-   "team": "TOT",
    "pos": "FWD",
-   "price": 7.0,
-   "overall_pct": 2.0,
+   "price": 4.5,
+   "overall_pct": 0.3,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4114,170 +3934,20 @@
     },
     "top100k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 412,
-   "web_name": "Lammens",
-   "team": "MUN",
-   "pos": "GKP",
-   "price": 4.9,
+   "id": 387,
+   "web_name": "O'Reilly",
+   "team": "MCI",
+   "pos": "DEF",
+   "price": 6.3,
    "overall_pct": 8.8,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 423,
-   "web_name": "Shaw",
-   "team": "MUN",
-   "pos": "DEF",
-   "price": 4.3,
-   "overall_pct": 5.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 2.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 4.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 441,
-   "web_name": "Obi",
-   "team": "MUN",
-   "pos": "FWD",
-   "price": 4.5,
-   "overall_pct": 0.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 445,
-   "web_name": "Thiaw",
-   "team": "NEW",
-   "pos": "DEF",
-   "price": 5.0,
-   "overall_pct": 2.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 447,
-   "web_name": "Botman",
-   "team": "NEW",
-   "pos": "DEF",
-   "price": 5.0,
-   "overall_pct": 0.8,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 452,
-   "web_name": "Bruno G.",
-   "team": "ARS",
-   "pos": "MID",
-   "price": 6.7,
-   "overall_pct": 2.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 454,
-   "web_name": "Elanga",
-   "team": "NEW",
-   "pos": "MID",
-   "price": 6.0,
-   "overall_pct": 2.7,
-   "tiers": {
-    "top1k": {
      "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
@@ -4288,56 +3958,6 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 460,
-   "web_name": "Willock",
-   "team": "NEW",
-   "pos": "MID",
-   "price": 5.0,
-   "overall_pct": 0.6,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 467,
-   "web_name": "Sels",
-   "team": "NFO",
-   "pos": "GKP",
-   "price": 5.0,
-   "overall_pct": 1.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
      "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
@@ -4345,34 +3965,9 @@
    }
   },
   {
-   "id": 469,
-   "web_name": "N.Williams",
-   "team": "NFO",
-   "pos": "DEF",
-   "price": 5.0,
-   "overall_pct": 6.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 6.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 6.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 6.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 472,
-   "web_name": "Murillo",
-   "team": "NFO",
+   "id": 390,
+   "web_name": "Rúben",
+   "team": "MCI",
    "pos": "DEF",
    "price": 5.5,
    "overall_pct": 2.0,
@@ -4395,12 +3990,187 @@
    }
   },
   {
-   "id": 473,
-   "web_name": "Aina",
-   "team": "NFO",
+   "id": 397,
+   "web_name": "Semenyo",
+   "team": "MCI",
+   "pos": "MID",
+   "price": 8.3,
+   "overall_pct": 8.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 3.0,
+     "eo_pct": 2.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 401,
+   "web_name": "Marmoush",
+   "team": "TOT",
+   "pos": "FWD",
+   "price": 7.0,
+   "overall_pct": 1.9,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 403,
+   "web_name": "Sávio",
+   "team": "TOT",
+   "pos": "MID",
+   "price": 6.5,
+   "overall_pct": 0.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 412,
+   "web_name": "Lammens",
+   "team": "MUN",
+   "pos": "GKP",
+   "price": 4.9,
+   "overall_pct": 8.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 2.5,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 414,
+   "web_name": "Heaton",
+   "team": "MUN",
+   "pos": "GKP",
+   "price": 4.0,
+   "overall_pct": 0.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 422,
+   "web_name": "Mazraoui",
+   "team": "MUN",
    "pos": "DEF",
-   "price": 4.4,
-   "overall_pct": 1.8,
+   "price": 4.3,
+   "overall_pct": 0.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 423,
+   "web_name": "Shaw",
+   "team": "MUN",
+   "pos": "DEF",
+   "price": 4.3,
+   "overall_pct": 4.8,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 2.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 3.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 428,
+   "web_name": "Cunha",
+   "team": "MUN",
+   "pos": "MID",
+   "price": 7.9,
+   "overall_pct": 6.4,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4409,6 +4179,181 @@
     },
     "top10k": {
      "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 438,
+   "web_name": "Fletcher",
+   "team": "MUN",
+   "pos": "MID",
+   "price": 4.4,
+   "overall_pct": 0.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 454,
+   "web_name": "Elanga",
+   "team": "NEW",
+   "pos": "MID",
+   "price": 6.0,
+   "overall_pct": 2.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 460,
+   "web_name": "Willock",
+   "team": "NEW",
+   "pos": "MID",
+   "price": 5.0,
+   "overall_pct": 0.6,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 466,
+   "web_name": "Neave",
+   "team": "NEW",
+   "pos": "FWD",
+   "price": 4.5,
+   "overall_pct": 0.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 467,
+   "web_name": "Sels",
+   "team": "NFO",
+   "pos": "GKP",
+   "price": 5.0,
+   "overall_pct": 1.4,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 472,
+   "web_name": "Murillo",
+   "team": "NFO",
+   "pos": "DEF",
+   "price": 5.5,
+   "overall_pct": 2.2,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 1.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 473,
+   "web_name": "Aina",
+   "team": "NFO",
+   "pos": "DEF",
+   "price": 4.3,
+   "overall_pct": 1.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4433,38 +4378,13 @@
      "captain_pct": 0.0
     },
     "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 481,
-   "web_name": "Anderson",
-   "team": "MCI",
-   "pos": "MID",
-   "price": 6.3,
-   "overall_pct": 3.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 1.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.5,
-     "eo_pct": 1.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     }
    }
@@ -4475,7 +4395,7 @@
    "team": "NFO",
    "pos": "MID",
    "price": 5.5,
-   "overall_pct": 0.6,
+   "overall_pct": 0.7,
    "tiers": {
     "top1k": {
      "owned_pct": 0.5,
@@ -4488,19 +4408,19 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 488,
-   "web_name": "I.Sangaré",
+   "id": 489,
+   "web_name": "Yates",
    "team": "NFO",
    "pos": "MID",
-   "price": 4.8,
-   "overall_pct": 0.3,
+   "price": 4.4,
+   "overall_pct": 1.1,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4508,7 +4428,7 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4525,10 +4445,10 @@
    "team": "NFO",
    "pos": "FWD",
    "price": 5.7,
-   "overall_pct": 1.6,
+   "overall_pct": 1.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4538,7 +4458,7 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -4553,7 +4473,7 @@
    "overall_pct": 1.0,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4575,7 +4495,7 @@
    "team": "TOT",
    "pos": "DEF",
    "price": 5.3,
-   "overall_pct": 5.1,
+   "overall_pct": 4.7,
    "tiers": {
     "top1k": {
      "owned_pct": 0.5,
@@ -4583,7 +4503,7 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4600,10 +4520,10 @@
    "team": "TOT",
    "pos": "DEF",
    "price": 4.4,
-   "overall_pct": 2.2,
+   "overall_pct": 2.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4613,19 +4533,44 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 503,
-   "web_name": "Van de Ven",
+   "id": 508,
+   "web_name": "Davies",
    "team": "TOT",
    "pos": "DEF",
-   "price": 5.0,
-   "overall_pct": 3.7,
+   "price": 3.9,
+   "overall_pct": 1.0,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 512,
+   "web_name": "Kudus",
+   "team": "TOT",
+   "pos": "MID",
+   "price": 6.5,
+   "overall_pct": 0.4,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4639,7 +4584,7 @@
     },
     "top100k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
@@ -4670,25 +4615,50 @@
    }
   },
   {
+   "id": 526,
+   "web_name": "Solanke",
+   "team": "TOT",
+   "pos": "FWD",
+   "price": 5.8,
+   "overall_pct": 1.5,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
    "id": 529,
    "web_name": "Roefs",
    "team": "SUN",
    "pos": "GKP",
    "price": 4.9,
-   "overall_pct": 2.2,
+   "overall_pct": 2.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
-    "top100k": {
+    "top10k": {
      "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -4700,20 +4670,20 @@
    "team": "SUN",
    "pos": "DEF",
    "price": 4.8,
-   "overall_pct": 1.4,
+   "overall_pct": 1.2,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
      "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
+    "top10k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
     "top100k": {
-     "owned_pct": 1.5,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -4725,21 +4695,21 @@
    "team": "SUN",
    "pos": "DEF",
    "price": 4.3,
-   "overall_pct": 2.1,
+   "overall_pct": 2.0,
    "tiers": {
     "top1k": {
-     "owned_pct": 3.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.5,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 3.5,
-     "eo_pct": 0.5,
+     "owned_pct": 2.5,
+     "eo_pct": 1.0,
      "captain_pct": 0.0
     }
    }
@@ -4750,7 +4720,7 @@
    "team": "SUN",
    "pos": "DEF",
    "price": 3.9,
-   "overall_pct": 2.5,
+   "overall_pct": 2.4,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4758,7 +4728,7 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4775,7 +4745,7 @@
    "team": "SUN",
    "pos": "MID",
    "price": 5.4,
-   "overall_pct": 3.2,
+   "overall_pct": 3.1,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4788,19 +4758,19 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 553,
-   "web_name": "Isidor",
+   "id": 552,
+   "web_name": "Brobbey",
    "team": "SUN",
    "pos": "FWD",
-   "price": 5.5,
-   "overall_pct": 1.1,
+   "price": 5.7,
+   "overall_pct": 5.2,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4809,7 +4779,7 @@
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -4838,31 +4808,6 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 556,
-   "web_name": "Targett",
-   "team": "HUL",
-   "pos": "DEF",
-   "price": 3.9,
-   "overall_pct": 1.4,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
      "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
@@ -4875,10 +4820,10 @@
    "team": "ARS",
    "pos": "MID",
    "price": 6.2,
-   "overall_pct": 5.2,
+   "overall_pct": 4.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -4908,38 +4853,13 @@
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 565,
-   "web_name": "M.Sangaré",
-   "team": "BRE",
-   "pos": "MID",
-   "price": 5.5,
-   "overall_pct": 7.5,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 7.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 9.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 9.5,
-     "eo_pct": 1.0,
      "captain_pct": 0.0
     }
    }
@@ -4950,21 +4870,21 @@
    "team": "BOU",
    "pos": "DEF",
    "price": 5.0,
-   "overall_pct": 0.6,
+   "overall_pct": 0.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
+     "owned_pct": 3.0,
+     "eo_pct": 1.5,
      "captain_pct": 0.0
     }
    }
@@ -4975,7 +4895,57 @@
    "team": "NEW",
    "pos": "GKP",
    "price": 5.0,
-   "overall_pct": 1.4,
+   "overall_pct": 1.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 570,
+   "web_name": "Palacios",
+   "team": "FUL",
+   "pos": "MID",
+   "price": 5.3,
+   "overall_pct": 0.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 579,
+   "web_name": "Araujo",
+   "team": "LIV",
+   "pos": "DEF",
+   "price": 5.4,
+   "overall_pct": 3.2,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -4995,36 +4965,11 @@
    }
   },
   {
-   "id": 572,
-   "web_name": "Tzolakis",
-   "team": "HUL",
-   "pos": "GKP",
-   "price": 4.7,
-   "overall_pct": 14.0,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 3.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 5.5,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 3.0,
-     "eo_pct": 1.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 583,
-   "web_name": "Chavarria",
-   "team": "CHE",
-   "pos": "DEF",
-   "price": 4.9,
+   "id": 582,
+   "web_name": "Madjo",
+   "team": "AVL",
+   "pos": "FWD",
+   "price": 5.4,
    "overall_pct": 0.2,
    "tiers": {
     "top1k": {
@@ -5034,7 +4979,7 @@
     },
     "top10k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
@@ -5050,20 +4995,70 @@
    "team": "HUL",
    "pos": "DEF",
    "price": 4.1,
-   "overall_pct": 5.8,
+   "overall_pct": 5.2,
    "tiers": {
     "top1k": {
-     "owned_pct": 5.5,
+     "owned_pct": 7.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 6.0,
+     "owned_pct": 9.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 4.5,
+     "owned_pct": 2.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 588,
+   "web_name": "Khalaili",
+   "team": "CRY",
+   "pos": "DEF",
+   "price": 5.0,
+   "overall_pct": 0.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 1.0,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 591,
+   "web_name": "Enciso",
+   "team": "IPS",
+   "pos": "MID",
+   "price": 5.5,
+   "overall_pct": 0.7,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
      "eo_pct": 0.5,
      "captain_pct": 0.0
     }
@@ -5075,32 +5070,7 @@
    "team": "IPS",
    "pos": "DEF",
    "price": 4.0,
-   "overall_pct": 0.9,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 593,
-   "web_name": "Dedić",
-   "team": "NEW",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 1.3,
+   "overall_pct": 1.0,
    "tiers": {
     "top1k": {
      "owned_pct": 0.5,
@@ -5113,7 +5083,7 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -5125,21 +5095,46 @@
    "team": "AVL",
    "pos": "GKP",
    "price": 5.0,
-   "overall_pct": 1.9,
+   "overall_pct": 2.1,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.5,
-     "eo_pct": 0.5,
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.0,
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
+   "id": 598,
+   "web_name": "Elvedi",
+   "team": "LEE",
+   "pos": "DEF",
+   "price": 4.5,
+   "overall_pct": 0.1,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.5,
      "captain_pct": 0.0
     }
    }
@@ -5150,10 +5145,10 @@
    "team": "BHA",
    "pos": "MID",
    "price": 4.5,
-   "overall_pct": 3.6,
+   "overall_pct": 3.3,
    "tiers": {
     "top1k": {
-     "owned_pct": 4.5,
+     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -5163,44 +5158,19 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 2.0,
-     "eo_pct": 0.5,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 611,
-   "web_name": "Wan-Bissaka",
-   "team": "AVL",
-   "pos": "DEF",
-   "price": 4.5,
-   "overall_pct": 0.2,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
+     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
    }
   },
   {
-   "id": 613,
-   "web_name": "Ahoka",
-   "team": "SUN",
+   "id": 619,
+   "web_name": "Palacios",
+   "team": "IPS",
    "pos": "MID",
-   "price": 4.5,
-   "overall_pct": 0.2,
+   "price": 5.0,
+   "overall_pct": 0.1,
    "tiers": {
     "top1k": {
      "owned_pct": 0.0,
@@ -5228,17 +5198,17 @@
    "overall_pct": 1.0,
    "tiers": {
     "top1k": {
-     "owned_pct": 4.5,
+     "owned_pct": 11.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 8.5,
+     "owned_pct": 9.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 3.5,
+     "owned_pct": 8.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -5253,12 +5223,12 @@
    "overall_pct": 0.2,
    "tiers": {
     "top1k": {
-     "owned_pct": 2.0,
+     "owned_pct": 1.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 1.0,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -5278,17 +5248,17 @@
    "overall_pct": 0.7,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.5,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 2.0,
+     "owned_pct": 1.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -5320,6 +5290,31 @@
    }
   },
   {
+   "id": 643,
+   "web_name": "Chilwell",
+   "team": "CRY",
+   "pos": "DEF",
+   "price": 4.4,
+   "overall_pct": 0.3,
+   "tiers": {
+    "top1k": {
+     "owned_pct": 0.5,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top10k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    },
+    "top100k": {
+     "owned_pct": 0.0,
+     "eo_pct": 0.0,
+     "captain_pct": 0.0
+    }
+   }
+  },
+  {
    "id": 649,
    "web_name": "Maitland-Niles",
    "team": "EVE",
@@ -5328,7 +5323,7 @@
    "overall_pct": 1.5,
    "tiers": {
     "top1k": {
-     "owned_pct": 1.5,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
@@ -5338,7 +5333,7 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -5363,57 +5358,7 @@
      "captain_pct": 0.0
     },
     "top100k": {
-     "owned_pct": 1.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 661,
-   "web_name": "Balcombe",
-   "team": "BRE",
-   "pos": "GKP",
-   "price": 4.0,
-   "overall_pct": 0.1,
-   "tiers": {
-    "top1k": {
      "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    }
-   }
-  },
-  {
-   "id": 664,
-   "web_name": "Salia",
-   "team": "NEW",
-   "pos": "FWD",
-   "price": 4.5,
-   "overall_pct": 0.3,
-   "tiers": {
-    "top1k": {
-     "owned_pct": 0.5,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top10k": {
-     "owned_pct": 0.0,
-     "eo_pct": 0.0,
-     "captain_pct": 0.0
-    },
-    "top100k": {
-     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     }
@@ -5425,15 +5370,15 @@
    "team": "AVL",
    "pos": "GKP",
    "price": 4.0,
-   "overall_pct": 0.3,
+   "overall_pct": 0.4,
    "tiers": {
     "top1k": {
-     "owned_pct": 0.5,
+     "owned_pct": 0.0,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
     "top10k": {
-     "owned_pct": 0.0,
+     "owned_pct": 0.5,
      "eo_pct": 0.0,
      "captain_pct": 0.0
     },
