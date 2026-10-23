@@ -201,7 +201,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 
 ## Avoimet
 
-- [ ] Ylläpitäjän kanta Bluesky-botin raaka-aineeksi, kokeilu GW9-GW11 (ylläpitäjän päätös 2026-10-23): botti
+- [x] Ylläpitäjän kanta Bluesky-botin raaka-aineeksi, kokeilu GW9-GW11 (ylläpitäjän päätös 2026-10-23): botti
   muodostaa nyt mielipiteet itse, ja 22.10 yksi vastaus luettiin väärin niin, että ylläpitäjä korjasi sen käsin. Uusi
   `scripts/bsky_kanta.py`: (a) `ask` avaa kerran kierroksessa noin 48 tuntia ennen deadlinea ylläpitäjälle issuen
   (label `kanta`, idempotentti otsikko `Kanta GW<N>`, sama issue-rajapinta kuin X-jonolla) ja siinä kolme kysymystä:
@@ -218,7 +218,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   kierrosehto poistetaan. Työnkulun muutos tehdään käsin mergen yhteydessä: `ask` bsky-bot.yml:n tuntiajoon ja
   aivojen ohjeeseen yksi kohta (kun `owner_take` on, vähintään yksi item rakentuu sen ympärille, mallin luku
   todisteena). PR:n Julkinen teksti -osioon kolme esimerkkipostausta sanatarkasti (julkaisutarkistaja ennen mergeä).
-  (ylläpitäjän signaali 2026-10-23, lähde: Signaalit)
+  (ylläpitäjän signaali 2026-10-23, lähde: Signaalit) (PR, 2026-10-23)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 2/2 = 14
       Mittari: data/bsky_performance.json by_topic.owner_take n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-22
 - [ ] X-jonoon yhden napautuksen postaus ja enintään yksi issue päivässä (ylläpitäjän päätös 2026-10-23): X-jono teki

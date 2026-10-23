@@ -47,7 +47,7 @@ TARGETS_PATH = DATA / "bsky_targets.json"
 BLOCK_PATH = DATA / "bsky_blocklist.json"
 SITE = "https://goaliq.app"
 TOPICS = ("captain", "clean_sheets", "differential", "template", "recap", "track_record", "injury",
-          "price", "fixtures", "prediction", "player", "reply_question", "mention")
+          "price", "fixtures", "prediction", "player", "reply_question", "mention", "owner_take")
 SIGNAL_MAX_AGE = timedelta(hours=12)
 BOT_BIO = " Posts and replies are automated."   # julkaisutarkistaja 16.10, ehto mention-vastauksille
 
@@ -394,6 +394,15 @@ def social_signals(now: datetime, state: dict, blocked: set[str]) -> dict:
             "x_read_only": sorted(xs, key=lambda x: -x["likes"])[:25], "errors": errs}
 
 
+def owner_takes(mod: dict | None, now: datetime) -> list[dict]:
+    """Ylläpitäjän kanta kuluvalta kierrokselta (issue `Kanta GW<N>`); ilman vastausta tyhjä lista."""
+    if not mod:
+        return []
+    from scripts import bsky_kanta
+    dl = datetime.fromisoformat(str(mod["deadline_utc"]).replace("Z", "+00:00"))
+    return bsky_kanta.current_takes(int(mod["gw"]), dl, now)
+
+
 def cmd_context(out_dir: Path) -> int:
     now = datetime.now(timezone.utc)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -422,6 +431,7 @@ def cmd_context(out_dir: Path) -> int:
             brief["fixtures_double_blank"] = fixture_signals(gw)
         except Exception as e:  # noqa: BLE001
             brief["fpl_error"] = repr(e)[:300]
+    brief["owner_take"] = owner_takes(mod, now)
     brief["social"] = social_signals(now, state, blocklist())
     brief["performance"] = load_json(PERF_PATH, {}).get("by_topic") or {}
     brief["recent_posts"] = [{k: r.get(k) for k in ("at", "kind", "topic", "text", "engagement")}
@@ -533,6 +543,7 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: 
         items += [i for i in fallback_items(mod, values, now, state) if i.get("slot") not in taken]
 
     gw = int(mod["gw"]) if mod else None
+    takes = owner_takes(mod, now) if any(i.get("topic") == "owner_take" for i in items) else []
     published, rejected, waiting = 0, [], []
     log_rows = []
     state["pending_posts"] = []
@@ -540,7 +551,8 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: 
         cid = f"{now:%Y%m%d%H}-{published}"
         text, links = prepare(it, cid)
         orig, it = it, {**it, "text": text}
-        probs = gate.check(it, values=values, gw=gw, now=now, state=state, blocklist=blocked, phrases=phrases)
+        probs = gate.check(it, values=values, gw=gw, now=now, state=state, blocklist=blocked, phrases=phrases,
+                           owner_take=takes)
         if probs and all(p.startswith(gate.GAP_PROBLEM) for p in probs):
             waiting.append(text)
             if it.get("source") == "brain":   # varapostaukset syntyvat joka ajossa uudelleen

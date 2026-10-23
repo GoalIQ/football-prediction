@@ -73,6 +73,18 @@ PREMIUM_TOOL_TERMS = (
 _FREE_CLAIM_RE = re.compile(
     r"\bfree\b(?!\s*(?:hit|transfers?|kicks?|agents?))|no sign[- ]?in|no log[- ]?in|no account|without an account",
     re.I)
+# 23.10.2026 (ylläpitäjän päätös): owner_take-aihe rakentuu ylläpitäjän omasta kannasta (scripts/bsky_kanta.py).
+# Teksti kertoo kannan olevan tilin takana olevan ihmisen eikä mallin, mutta ei väitä postausta ihmisen kirjoittamaksi
+# (tili on automaatio, bio sanoo sen).
+OWNER_TAKE_TOPIC = "owner_take"
+OWNER_TAKE_PHRASES = (
+    "the person behind this account", "the human behind this account", "the human running this account",
+    "the person running this account",
+)
+HUMAN_AUTHORED_CLAIMS = (
+    "i wrote", "i'm writing", "written by a human", "written by me", "human-written", "human written",
+    "hand-written", "handwritten", "not automated", "not a bot", "i'm a human", "i am a human", "no bot",
+)
 TARGET_MAX_AGE = timedelta(hours=4)
 AUTHOR_COOLDOWN = timedelta(hours=48)
 SIMILAR = 0.8
@@ -127,8 +139,10 @@ def similar(a: str, b: str) -> bool:
 
 
 def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
-          state: dict, blocklist: set[str], phrases: list[str]) -> list[str]:
-    """Palauttaa ongelmat. `item`: {kind: post|reply|mention_reply, text, keys, target?}."""
+          state: dict, blocklist: set[str], phrases: list[str],
+          owner_take: list[dict] | None = None) -> list[str]:
+    """Palauttaa ongelmat. `item`: {kind: post|reply|mention_reply, text, keys, target?}.
+    `owner_take`: kuluvan kierroksen ylläpitäjän kommentit (bsky_kanta.read); owner_take-aihe vaatii niitä."""
     text = str(item.get("text") or "")
     kind = item.get("kind")
     probs: list[str] = []
@@ -154,6 +168,14 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         tyokalu = next((t for t in PREMIUM_TOOL_TERMS if t in lause), None)
         if tyokalu and _FREE_CLAIM_RE.search(lause):
             probs.append(f"lupaa Premium-tyokalun ilmaiseksi: {tyokalu!r}")
+    if item.get("topic") == OWNER_TAKE_TOPIC:
+        if gw is None or not any(t.get("gw") == gw and str(t.get("text") or "").strip() for t in owner_take or []):
+            probs.append("owner_take ilman tämän kierroksen ylläpitäjän vastausta")
+        if not any(ph in low for ph in OWNER_TAKE_PHRASES):
+            probs.append("owner_take ei kerro kannan olevan tilin takana olevan ihmisen")
+        for claim in HUMAN_AUTHORED_CLAIMS:
+            if claim in low:
+                probs.append(f"väittää postauksen ihmisen kirjoittamaksi: {claim!r}")
     for ph in phrases:
         if ph and ph in low:
             probs.append(f"hylatty sanamuoto: {ph!r}")
