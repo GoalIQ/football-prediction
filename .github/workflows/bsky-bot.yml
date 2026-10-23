@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 40
     permissions:
       contents: read
+      issues: read   # 23.10 kanta: Villen vastaus issueen `Kanta GW<N>` (scripts/bsky_kanta.py read)
     outputs:
       think: ${{ steps.paata.outputs.think }}
     steps:
@@ -59,6 +60,7 @@ jobs:
         if: steps.paata.outputs.think == 'true'
         env:
           BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # vain kanta-issuen luku (issues: read)
         run: python -m scripts.bsky_bot context --out /tmp/bsky
 
       - name: Aivot ehdottavat
@@ -105,9 +107,17 @@ jobs:
                Posts go out one at a time, about 3 hours apart, in the order you list them, and a post still
                waiting after 6 hours or at your next run is dropped. List the best post first, and do not write
                a post that is only true for the next hour.
+               Do not repeat yourself within a gameweek. The captain topic and the "best-captain" card belong
+               only to the pre-deadline post (slot "deadline:gw<N>"), which goes out once. Each card goes out at
+               most once per gameweek, and the topics captain, owner_take and recap at most once per gameweek.
+               briefing.used_this_gw lists what this gameweek has already used: pick something else.
+               When briefing.owner_take is not empty, build one post around it (topic "owner_take"): say
+               plainly that the take belongs to the human running this account, not the model, give one model
+               number from briefing.numbers next to it as evidence and link that number's page. Never invent a
+               take, never write the post as if the human typed it.
             3. ITEM FORMAT (JSON object):
                {"kind": "post"|"reply", "topic": one of captain, clean_sheets, differential, template, recap,
-                track_record, injury, price, fixtures, prediction, player, reply_question,
+                track_record, injury, price, fixtures, prediction, player, reply_question, owner_take,
                 "slot": "deadline:gw<N>" for the pre-deadline captain post or "recap:gw<N-1>" for the result
                 post (so the fallback template is not posted twice), otherwise omit,
                 "text": the text; in posts put the word LINK where the short link goes,
@@ -178,10 +188,19 @@ jobs:
           name: bsky-queue
           path: /tmp/bsky
 
+      # Villen paatos 23.10: kanta kerran kierroksessa. Issue `Kanta GW<N>` Villelle, kun deadlineen on enintaan
+      # 48 h (idempotentti otsikolla); Villen sahkopostivastaus tulee kommentiksi ja aivot saavat sen briefingiin.
+      - name: Kanta-issue (Ville)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m scripts.bsky_kanta ask
+
       - name: Julkaise (portti jokaiselle)
         env:
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # owner_take-portti lukee kannan samasta issuesta
         run: python -m scripts.bsky_bot publish --queue /tmp/bsky/queue.json ${{ needs.aivot.outputs.think == 'true' && '--thought' || '' }}
 
       # Villen paatos 17.10: X-versio issueksi (osoitettu Villelle -> push + sahkoposti), ei X-automaatiota.
