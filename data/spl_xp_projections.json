@@ -3,7 +3,7 @@
   "product": "GoalIQ SPL Fantasy - expected points (xP)",
   "available": true,
   "league": "SAU-Saudi Pro League",
-  "generated_at": "2026-10-23T12:21:06",
+  "generated_at": "2026-10-23T14:06:30",
   "season": "2026/27",
   "source": "spl-fantasy-api",
   "scoring": "RSL Fantasy rules (goals FWD/MID +5 DEF/GK +6, CS 5/4/1, saves /2, micro-stats: tackles/def actions/shots/passes/big chances)",
@@ -597,7 +597,7 @@
    "team_short": "QAD",
    "pos": "FWD",
    "price": 9.1,
-   "owned_pct": 12.6,
+   "owned_pct": 12.7,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -5859,7 +5859,7 @@
    "team_short": "ABH",
    "pos": "GKP",
    "price": 4.4,
-   "owned_pct": 1.0,
+   "owned_pct": 1.1,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -8220,6 +8220,97 @@
       }
      ],
      "xp": 3.87
+    }
+   ]
+  },
+  {
+   "id": 26,
+   "web_name": "Seoane",
+   "full_name": "Jaime Seoane",
+   "team": "Al Faisaly",
+   "team_short": "FSL",
+   "pos": "MID",
+   "price": 5.0,
+   "owned_pct": 0.2,
+   "status": "a",
+   "news": "",
+   "chance_next": 100,
+   "yellows": 0,
+   "xmins": 50.0,
+   "predicted_starts": 51.7,
+   "minutes_confidence": "low",
+   "p_start": 0.517,
+   "p_cameo": 0.275,
+   "p_bench": 0.208,
+   "data_basis": "no_history",
+   "last_season": null,
+   "xp_per_gw": 2.95,
+   "xp_per_90": 5.18,
+   "xp_horizon_total": 17.67,
+   "gameweeks": [
+    {
+     "gw": 11,
+     "opponents": [
+      {
+       "opp": "NAS",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.23
+    },
+    {
+     "gw": 12,
+     "opponents": [
+      {
+       "opp": "ABH",
+       "venue": "A"
+      },
+      {
+       "opp": "FYH",
+       "venue": "A"
+      }
+     ],
+     "xp": 5.42
+    },
+    {
+     "gw": 13,
+     "opponents": [
+      {
+       "opp": "DIR",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.35
+    },
+    {
+     "gw": 14,
+     "opponents": [
+      {
+       "opp": "AHL",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.26
+    },
+    {
+     "gw": 15,
+     "opponents": [
+      {
+       "opp": "KLJ",
+       "venue": "H"
+      }
+     ],
+     "xp": 2.79
+    },
+    {
+     "gw": 16,
+     "opponents": [
+      {
+       "opp": "TWN",
+       "venue": "A"
+      }
+     ],
+     "xp": 2.62
     }
    ]
   },
@@ -18415,7 +18506,7 @@
    "team_short": "AHL",
    "pos": "DEF",
    "price": 5.6,
-   "owned_pct": 23.8,
+   "owned_pct": 23.7,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -23280,7 +23371,7 @@
    "team_short": "HAZ",
    "pos": "DEF",
    "price": 4.0,
-   "owned_pct": 7.7,
+   "owned_pct": 7.8,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -23368,97 +23459,6 @@
       }
      ],
      "xp": 1.17
-    }
-   ]
-  },
-  {
-   "id": 26,
-   "web_name": "Seoane",
-   "full_name": "Jaime Seoane",
-   "team": "Al Faisaly",
-   "team_short": "FSL",
-   "pos": "MID",
-   "price": 5.0,
-   "owned_pct": 0.2,
-   "status": "d",
-   "news": "Doubtful - مشكوك في مشاركته",
-   "chance_next": 50,
-   "yellows": 0,
-   "xmins": 27.7,
-   "predicted_starts": 25.9,
-   "minutes_confidence": "low",
-   "p_start": 0.2585,
-   "p_cameo": 0.275,
-   "p_bench": 0.4665,
-   "data_basis": "no_history",
-   "last_season": null,
-   "xp_per_gw": 1.61,
-   "xp_per_90": 5.18,
-   "xp_horizon_total": 9.65,
-   "gameweeks": [
-    {
-     "gw": 11,
-     "opponents": [
-      {
-       "opp": "NAS",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.22
-    },
-    {
-     "gw": 12,
-     "opponents": [
-      {
-       "opp": "ABH",
-       "venue": "A"
-      },
-      {
-       "opp": "FYH",
-       "venue": "A"
-      }
-     ],
-     "xp": 2.96
-    },
-    {
-     "gw": 13,
-     "opponents": [
-      {
-       "opp": "DIR",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.28
-    },
-    {
-     "gw": 14,
-     "opponents": [
-      {
-       "opp": "AHL",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.24
-    },
-    {
-     "gw": 15,
-     "opponents": [
-      {
-       "opp": "KLJ",
-       "venue": "H"
-      }
-     ],
-     "xp": 1.52
-    },
-    {
-     "gw": 16,
-     "opponents": [
-      {
-       "opp": "TWN",
-       "venue": "A"
-      }
-     ],
-     "xp": 1.43
     }
    ]
   },
@@ -41710,7 +41710,7 @@
    "team_short": "KLD",
    "pos": "DEF",
    "price": 4.1,
-   "owned_pct": 4.2,
+   "owned_pct": 4.1,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -45725,7 +45725,7 @@
    "team_short": "SHB",
    "pos": "FWD",
    "price": 4.3,
-   "owned_pct": 0.3,
+   "owned_pct": 0.2,
    "status": "a",
    "news": "",
    "chance_next": 100,
@@ -52147,7 +52147,7 @@
    "team_short": "ITT",
    "pos": "DEF",
    "price": 4.1,
-   "owned_pct": 5.2,
+   "owned_pct": 5.1,
    "status": "u",
    "news": "Loan to Bevern - إعارة الى بيفيرين",
    "chance_next": 0,
