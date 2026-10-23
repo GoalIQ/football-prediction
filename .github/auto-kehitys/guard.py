@@ -108,12 +108,19 @@ def tarkista_polut(profiili: str, polut: list[str]) -> list[str]:
     return virheet
 
 
-def tarkista_rivit(lisatyt: dict[str, list[str]]) -> list[str]:
+def tarkista_rivit(lisatyt: dict[str, list[str]], mainissa: set[str] | frozenset = frozenset()) -> list[str]:
+    """Rivikielto koskee uutta tekstiä. Generoidun sivun rivi, joka on jo sellaisenaan mainin generoiduilla
+    sivuilla (`mainissa`), ei ole uutta: 23.10.2026 ottelusivurivin ajo hylättiin, koska uudelleen luoduilla
+    sivuilla oli sama hinnallinen alatunniste kuin mainin 2 454 sivulla. Pohjan koodi (.py) tarkistetaan
+    aina, joten uusi hinta pohjassa jää yhä kiinni."""
     virheet = []
     for polku, rivit in lisatyt.items():
         if _osuu(polku, RIVIPORTISTA_VAPAAT):
             continue
+        generoitu = _osuu(polku, GENEROIDUT) is not None
         for rivi in rivit:
+            if generoitu and rivi in mainissa:
+                continue
             for kuvio, syy in KIELLETYT_RIVIT:
                 if kuvio.search(rivi):
                     virheet.append(f"{polku}: lisätty rivi osuu kieltoon ({syy}): {rivi.strip()[:120]}")
@@ -129,10 +136,31 @@ def tarkista_koko(profiili: str, muutokset: dict[str, int]) -> list[str]:
 
 
 def tarkista(profiili: str, polut: list[str], lisatyt: dict[str, list[str]],
-             muutokset: dict[str, int]) -> list[str]:
+             muutokset: dict[str, int], mainissa: set[str] | frozenset = frozenset()) -> list[str]:
     if profiili not in SALLITUT:
         return [f"tuntematon profiili {profiili}"]
-    return tarkista_polut(profiili, polut) + tarkista_rivit(lisatyt) + tarkista_koko(profiili, muutokset)
+    return (tarkista_polut(profiili, polut) + tarkista_rivit(lisatyt, mainissa)
+            + tarkista_koko(profiili, muutokset))
+
+
+def generoidut_kieltorivit(lisatyt: dict[str, list[str]]) -> set[str]:
+    """Generoitujen sivujen lisätyt rivit, jotka osuvat johonkin rivikieltoon."""
+    return {r for polku, rivit in lisatyt.items()
+            if _osuu(polku, GENEROIDUT) and not _osuu(polku, RIVIPORTISTA_VAPAAT)
+            for r in rivit if any(k.search(r) for k, _ in KIELLETYT_RIVIT)}
+
+
+def mainissa_jo(base: str, rivit: set[str]) -> set[str]:
+    """Rivit, jotka löytyvät täsmälleen samoina `base`n generoiduilta sivuilta. Virhe tai puuttuva
+    ref = ei löytynyt, jolloin kielto pätee. git grepissä ei ole -x:ää, joten koko rivin vertailu
+    tehdään tässä (-h jättää pois ref:polku-etuliitteen)."""
+    out = set()
+    for rivi in rivit:
+        r = subprocess.run(("git", "grep", "-h", "-F", "-e", rivi, base, "--", *GENEROIDUT),
+                           capture_output=True)
+        if r.returncode == 0 and rivi in r.stdout.decode("utf-8", "replace").splitlines():
+            out.add(rivi)
+    return out
 
 
 def jasenna_diff(diff: str) -> dict[str, list[str]]:
@@ -180,7 +208,8 @@ def main(argv=None) -> int:
         return 3
     lisatyt = jasenna_diff(_git("diff", "-U0", "--no-renames", vali))
     muutokset = jasenna_numstat(_git("diff", "--numstat", "--no-renames", vali))
-    virheet = tarkista(a.profile, polut, lisatyt, muutokset)
+    mainissa = mainissa_jo(a.base, generoidut_kieltorivit(lisatyt))
+    virheet = tarkista(a.profile, polut, lisatyt, muutokset, mainissa)
     if virheet:
         print(f"PORTTI HYLKÄSI ({len(virheet)}):")
         for v in virheet:
