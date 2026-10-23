@@ -32,7 +32,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-10: `data/fpl_xp_projections.json` `players[].this_season` (kuluvan kauden PL-minuutit, xGI ja xGI/90 FPL:n
   bootstrapista) on täytetty 100 %:lle pelaajista, mutta SPA ja mobiili eivät lue sitä: pelaajakortti näyttää
   kuluvan kauden luvun vain why-lauseessa, jonka `scripts/build_fpl_why.py` laskee omasta lähteestään. Autopilot S9
-  nostaa kentän joka aamu (17.10).
+  nostaa kentän joka aamu (17.10). → backlog 2026-10-23
 - 2026-10: Lainaesteen PR:n (#1) jatko, kaksi vaihetta: (a) jos otsikkokierros on estokierros, rivin `xmins` on 0
   mutta `predicted_starts` ja minuuttijakauma (p_start, p_cameo, p_bench) tulevat yhä minuuttimallista, eli sama rivi
   sanoo "0 minuuttia" ja "aloittaa todennäköisesti". Ensimmäinen osuma xP-listan pelaajalla 17.10 mitattuna: GW12
@@ -62,7 +62,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   heikko. Vastaus löytyi vain repon datasta: kuluvan kauden xGI/90 (ilman yhtä ottelua) on alle puolet viime
   kauden tasosta, ja viime kausi kantaa noin 60 % vauhdista (`PREV_SEASON_CARRY` 0.5). Pelaajakortti ei näytä
   kumpaakaan. Sama kenttä kuin yllä (`players[].this_season` + `last_season`, autopilot S9): kortille kuluvan ja
-  viime kauden xGI/90 rinnakkain, jotta lukija näkee mihin luku nojaa.
+  viime kauden xGI/90 rinnakkain, jotta lukija näkee mihin luku nojaa. → backlog 2026-10-23
 - 2026-10: /fpl#xp-accuracy pyöristää yhdistetyt rivit kahdesti: `src/models/fpl_xp_accuracy.py` `pool_groups`
   tekee `round(.., 3)` ja `scripts/build_fpl_page.py` `_mae_cell` vielä `:.2f`. Did not play -rivin GoalIQ-arvo
   0.9653 näkyy "0.96" (yksi pyöristys antaisi 0.97). Korjaus vaihtaa julkisen luvun; julkaistu teksti voi
@@ -190,6 +190,14 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   kirjaimella alkavan tunnisteen muualla kuin julkaisun lisäämänä #FPL:nä (omat postaukset) ja kokonaan vastauksista;
   numerolla alkava "#3" (sijoitus, käytössä vastauksissa 22.10) sallitaan. Testi positiivisella ja negatiivisella
   kontrollilla. (julkaisutarkistaja 22.10, PR #37)
+
+- 2026-10: Ylläpitäjä 23.10: Bluesky-botti muodostaa mielipiteet itse, eikä niitä omista kukaan. 22.10 yksi botin
+  vastaus luettiin väärin, ja ylläpitäjä korjasi sen käsin. Kanta tulee ylläpitäjältä kerran kierroksessa, ja botti
+  käyttää mallin lukua sen todisteena. → backlog 2026-10-23
+- 2026-10: Ylläpitäjä 23.10: X-jono teki 18.-22.10 viidessä päivässä 15 issueta, ja jokainen teksti kopioitiin X:ään
+  käsin. Hyväksynnän on oltava helpompaa kuin ohittamisen, ja X:ään menee päivän paras postaus. → backlog 2026-10-23
+- 2026-10: Ylläpitäjä 23.10: kun ylläpitäjän kanta on botin raaka-aineena, kierroksen tulos voi verrata ylläpitäjän ja
+  mallin kapteenia FPL:n omilla pisteillä. Toistuva asetelma antaa syyn seurata tiliä. Riippuu kanta-rivistä.
 
 ## Avoimet
 
@@ -384,5 +392,50 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   PR:ssä. (aallonharja 2026-10-18, lähde: https://scoregpt.app/)
       Pisteet: arvo 2/3 · kiire 1/3 · työ S · myynti 2/3 · uutuus 1/2 = 8
       Mittari: /api/accuracy sisältää ikkunat ja /predictions näyttää samat n:t; testit vihreät · tarkistus 2026-11-30
+
+- [ ] Ylläpitäjän kanta Bluesky-botin raaka-aineeksi, kokeilu GW9-GW11 (ylläpitäjän päätös 2026-10-23): botti
+  muodostaa nyt mielipiteet itse, ja 22.10 yksi vastaus luettiin väärin niin, että ylläpitäjä korjasi sen käsin. Uusi
+  `scripts/bsky_kanta.py`: (a) `ask` avaa kerran kierroksessa noin 48 tuntia ennen deadlinea ylläpitäjälle issuen
+  (label `kanta`, idempotentti otsikko `Kanta GW<N>`, sama issue-rajapinta kuin X-jonolla) ja siinä kolme kysymystä:
+  kenet kapteenoit ja miksi, missä olet eri mieltä mallin kanssa, mikä meni pieleen viime kierroksella. Ylläpitäjä
+  vastaa sähköpostilla, ja vastaus tulee issueen kommenttina. (b) `read` palauttaa vain kuluvan kierroksen issuen
+  kommentit, joiden author_association on OWNER tai MEMBER (sama sääntö kuin `.github/auto-kehitys/korjaus.py`), ja
+  `scripts/bsky_bot.py` `cmd_context` lisää ne briefingiin kenttään `owner_take` (gw, teksti, aika); ilman vastausta
+  kenttä on tyhjä. Uusi aihe `owner_take` TOPICS-listaan. `src/marketing/bsky_gate.py` hylkää `owner_take`-itemin,
+  jos briefingissä ei ole saman kierroksen vastausta (botti ei voi keksiä ylläpitäjän kantaa), vaatii tekstiin
+  ilmaisun, joka kertoo kannan olevan tilin takana olevan ihmisen eikä mallin (sallitut ilmaisut portissa), ja
+  hylkää tekstin, joka väittää postauksen olevan ihmisen kirjoittama. Luvut yhä vain reply-moduulista, ja
+  automaatiomaininta biossa säilyy. Vaihetesti: ei issueta yli 48 tuntia ennen deadlinea, issue tasan kerran
+  kierroksessa, deadlinen jälkeen vastausta ei käytetä; testi kaatuu, jos OWNER/MEMBER-suodatus tai portin
+  kierrosehto poistetaan. Työnkulun muutos tehdään käsin mergen yhteydessä: `ask` bsky-bot.yml:n tuntiajoon ja
+  aivojen ohjeeseen yksi kohta (kun `owner_take` on, vähintään yksi item rakentuu sen ympärille, mallin luku
+  todisteena). PR:n Julkinen teksti -osioon kolme esimerkkipostausta sanatarkasti (julkaisutarkistaja ennen mergeä).
+  (ylläpitäjän signaali 2026-10-23, lähde: Signaalit)
+      Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 2/2 = 14
+      Mittari: data/bsky_performance.json by_topic.owner_take n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-22
+- [ ] X-jonoon yhden napautuksen postaus ja enintään yksi issue päivässä (ylläpitäjän päätös 2026-10-23): X-jono teki
+  18.-22.10 viidessä päivässä 15 issueta, ja ylläpitäjä kopioi jokaisen tekstin X:ään käsin. `scripts/bsky_bot.py`
+  `x_issue` lisää runkoon X:n oman jakolinkin `https://x.com/intent/tweet?text=` + `x_version` urlenkoodattuna:
+  ylläpitäjä napauttaa, X avautuu teksti valmiina ja hän painaa itse Post (ei rajapintaa eikä automaatiota). Kuvaa
+  jakolinkki ei tue, joten kortin kuva ja sen linkki säilyvät rungossa. `cmd_x_mirror` tekee päivässä (UTC) enintään
+  yhden issuen: ensin `owner_take`-aiheinen postaus, muuten päivän ensimmäinen (aivot listaavat parhaan ensin). Muut
+  merkitään `x_skipped`-listaan, ja ohitettujen määrä tulostetaan ajon lokiin. `scripts/x_viikkoketju.py` saa saman
+  linkin ketjun ensimmäiselle postaukselle. Testi: linkin dekoodattu teksti on täsmälleen `x_version`, toista issueta
+  ei synny samana päivänä, ja testi kaatuu, jos kattoehto poistetaan. (ylläpitäjän signaali 2026-10-23, lähde:
+  Signaalit)
+      Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
+      Mittari: label x-jono -issueita enintään yksi päivässä 2026-10-26 alkaen, ja jokaisen rungossa on x.com/intent-linkki (github.com/GoalIQ/football-prediction/issues?q=label:x-jono) · tarkistus 2026-11-08
+- [ ] Pelaajakortille kuluvan ja viime kauden xGI/90 rinnakkain (ylläpitäjän päätös 2026-10-23): ylläpitäjä kysyi
+  22.10, miksi kärjen keskikenttäpelaajan ennuste on korkea, vaikka kausi on heikko, ja vastaus löytyi vain repon
+  datasta. Kortti näyttää viime kauden per 90 -luvut (`last_season`, `last_season_show`), mutta kuluvan kauden
+  xGI/90:n vain silloin, kun why-lause valitsee sen (mitattu 23.10: 85 lauseessa 150:stä). Lisää palvelimella
+  laskettu `xgi_this_per90` pelaajan payloadiin samalla lukijalla kuin why-lause (`src/models/fpl_xp.py`
+  `xgi_per90(player)["this"]`, minuuttiraja `XGI_SEASON_MIN_MINUTES`), ja
+  `web/pro-spa/src/lib/components/PlayerCard.svelte` näyttää sen viime kauden xGI/90:n vieressä (this season / last
+  season). Alle minuuttirajan kortti näyttää syyn eikä lukua, eikä SPA laske lukua itse. Testi: payloadin luku on
+  sama kuin `xgi_per90`:n, ja testi kaatuu, jos kutsupaikka poistetaan; vitest: kortti näyttää molemmat luvut ja alle
+  rajan syyn. Mobiilin vastaava kohta on ihmisen työ (OTA). (ylläpitäjän signaali 2026-10-22, lähde: Signaalit)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 3/3 · uutuus 1/2 = 11
+      Mittari: PlayerCard.svelte renderöi xgi_this_per90:n viime kauden xGI/90:n vieressä ja payload-testi on vihreä · tarkistus 2026-11-08
 
 ## Tehdyt
