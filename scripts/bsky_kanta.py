@@ -3,6 +3,11 @@
 `ask` avaa kerran kierroksessa noin 48 h ennen deadlinea issuen `Kanta GW<N>` ylläpitäjälle, `read` palauttaa
 kuluvan kierroksen issuen OWNER/MEMBER-kommentit ennen deadlinea. Botti ei voi keksiä kantaa: portti
 (src/marketing/bsky_gate.py) hylkää `owner_take`-aiheen, jos tässä ei ole saman kierroksen vastausta.
+
+24.10.2026: GW8:n issue avautui 38 min ennen deadlinea (ominaisuus mergettiin 16:39Z), ylläpitäjä vastasi
+17:03Z, ja seuraava julkaisuajo oli 17:50Z eli deadlinen jälkeen: vastaus ei voinut ehtiä postaukseen, vaikka
+sitä pyydettiin. Nyt issue avataan vain, kun vastaukselle jää aikaa (`MIN_ASK_LEAD`), se kertoo takarajan
+(`ANSWER_LEAD` ennen deadlinea), ja tuore vastaus käynnistää aivot seuraavassa tuntiajossa (`new_take_since`).
 """
 from __future__ import annotations
 
@@ -17,6 +22,10 @@ ISSUE_REPO = "GoalIQ/football-prediction"
 ISSUE_ASSIGNEE = "Veikkoville"
 ISSUE_LABEL = "kanta"
 ASK_WINDOW = timedelta(hours=48)
+# Vastaus tarvitsee tuntiajon (aivot + julkaisu, ~1 h 15 min) ja postausvälin (2 h 30 min) ennen deadlinea.
+ANSWER_LEAD = timedelta(hours=3)
+# Alle tämän ei kysytä lainkaan: ylläpitäjältä ei pyydetä vastausta, jota ei ehditä käyttää.
+MIN_ASK_LEAD = timedelta(hours=12)
 OWNER_ASSOCIATIONS = {"OWNER", "MEMBER"}     # sama sääntö kuin .github/auto-kehitys/korjaus.py
 MAX_TAKE_CHARS = 1500
 
@@ -25,12 +34,29 @@ def title(gw: int) -> str:
     return f"Kanta GW{gw}"
 
 
-def body(gw: int) -> str:
-    return (f"GW{gw}:n deadline lähestyy. Vastaa tähän sähköpostilla (vastaus tulee issueen kommenttina), "
-            f"niin botti voi rakentaa yhden postauksen kantasi ympärille.\n\n"
+WEEKDAYS_FI = ("ma", "ti", "ke", "to", "pe", "la", "su")
+
+
+def answer_by(deadline: datetime) -> datetime:
+    return deadline - ANSWER_LEAD
+
+
+def finnish_time(t: datetime) -> str:
+    """'pe 30.10. klo 10.00 Suomen aikaa'; ilman aikavyöhyketietoa UTC (ei arvata kesäaikaa)."""
+    try:
+        from zoneinfo import ZoneInfo
+        local, zone = t.astimezone(ZoneInfo("Europe/Helsinki")), "Suomen aikaa"
+    except Exception:  # noqa: BLE001 - Windowsilla ilman tzdataa
+        local, zone = t.astimezone(timezone.utc), "UTC"
+    return f"{WEEKDAYS_FI[local.weekday()]} {local.day}.{local.month}. klo {local:%H.%M} {zone}"
+
+
+def body(gw: int, deadline: datetime) -> str:
+    return (f"GW{gw}:n deadline on {finnish_time(deadline)}. Vastaa tähän sähköpostilla (vastaus tulee issueen "
+            f"kommenttina) viimeistään {finnish_time(answer_by(deadline))}, niin botti rakentaa yhden "
+            f"postauksen kantasi ympärille ennen deadlinea. Vastaus käynnistää botin seuraavassa tuntiajossa.\n\n"
             f"1. Kenet kapteenoit ja miksi?\n2. Missä olet eri mieltä mallin kanssa?\n"
-            f"3. Mikä meni pieleen viime kierroksella?\n\n"
-            f"Vain tämän kierroksen deadlinea edeltävät vastaukset otetaan mukaan.")
+            f"3. Mikä meni pieleen viime kierroksella?")
 
 
 def hours_to_deadline(deadline: datetime, now: datetime) -> float:
@@ -38,8 +64,9 @@ def hours_to_deadline(deadline: datetime, now: datetime) -> float:
 
 
 def ask_due(deadline: datetime, now: datetime) -> bool:
-    """Issue avataan vain, kun deadlineen on enintään 48 h eikä se ole jo mennyt."""
-    return timedelta(0) < deadline - now <= ASK_WINDOW
+    """Issue avataan, kun deadlineen on enintään 48 h mutta vähintään `MIN_ASK_LEAD`: myöhemmin avattu issue
+    pyytäisi vastausta, joka ei ehdi postaukseen (GW8 24.10)."""
+    return MIN_ASK_LEAD <= deadline - now <= ASK_WINDOW
 
 
 def ask(gw: int, deadline: datetime, now: datetime, find, create) -> str:
@@ -48,7 +75,8 @@ def ask(gw: int, deadline: datetime, now: datetime, find, create) -> str:
         return "ei-aika"
     if find(title(gw)):
         return "jo-olemassa"
-    create({"title": title(gw), "body": body(gw), "assignees": [ISSUE_ASSIGNEE], "labels": [ISSUE_LABEL]})
+    create({"title": title(gw), "body": body(gw, deadline), "assignees": [ISSUE_ASSIGNEE],
+            "labels": [ISSUE_LABEL]})
     return "luotu"
 
 
@@ -105,6 +133,23 @@ def current_takes(gw: int, deadline: datetime, now: datetime, token: str | None 
         return read(gw, deadline, now, _req(f"{issue['comments_url']}?per_page=100", token))
     except Exception:  # noqa: BLE001
         return []
+
+
+def new_take_since(takes: list[dict], last_think: str | None) -> bool:
+    """Onko kannassa kommentti, jota aivot eivät ole vielä nähneet (kirjoitettu viimeisen aivoajon jälkeen).
+    `takes` tulee `read`istä, joten deadlinen jälkeen lista on tyhjä eikä mikään käynnistä aivoja."""
+    if not takes:
+        return False
+    if not last_think:
+        return True
+    seen = datetime.fromisoformat(last_think.replace("Z", "+00:00"))
+    for t in takes:
+        try:
+            if datetime.fromisoformat(str(t.get("at")).replace("Z", "+00:00")) > seen:
+                return True
+        except ValueError:
+            return True   # aika puuttuu: aivot ajetaan (varovainen suunta, kanta ei jää käyttämättä)
+    return False
 
 
 def cmd_ask(gw: int, deadline: datetime, now: datetime) -> int:

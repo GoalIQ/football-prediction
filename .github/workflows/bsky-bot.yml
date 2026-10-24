@@ -33,6 +33,7 @@ jobs:
       issues: read   # 23.10 kanta: Villen vastaus issueen `Kanta GW<N>` (scripts/bsky_kanta.py read)
     outputs:
       think: ${{ steps.paata.outputs.think }}
+      context_at: ${{ steps.tilannekuva.outputs.context_at }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -44,8 +45,12 @@ jobs:
           cache: pip
 
       # 16.10 ensimmainen ajo: "No module named 'requests'" -> paatos tarvitsee botin importit.
+      # 24.10: Villen vastaus Kanta-issueen kaynnistaa aivot seuraavassa tuntiajossa (GW8:n vastaus 17:03Z jai
+      # kayttamatta, koska seuraava aivoajo olisi ollut deadlinen jalkeen). Token vain issuen lukuun.
       - name: Ajetaanko aivot
         id: paata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python -m pip install --quiet requests
           python -m scripts.bsky_bot should-think ${{ github.event.inputs.think == 'kylla' && '--force' || '' }}
@@ -57,6 +62,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Tilannekuva
+        id: tilannekuva
         if: steps.paata.outputs.think == 'true'
         env:
           BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
@@ -201,7 +207,7 @@ jobs:
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           BSKY_OUTBOUND_REPLIES_PER_DAY: ${{ vars.BSKY_OUTBOUND_REPLIES_PER_DAY }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # owner_take-portti lukee kannan samasta issuesta
-        run: python -m scripts.bsky_bot publish --queue /tmp/bsky/queue.json ${{ needs.aivot.outputs.think == 'true' && '--thought' || '' }}
+        run: python -m scripts.bsky_bot publish --queue /tmp/bsky/queue.json ${{ needs.aivot.outputs.think == 'true' && format('--thought --think-at={0}', needs.aivot.outputs.context_at) || '' }}
 
       # Villen paatos 17.10: X-versio issueksi (osoitettu Villelle -> push + sahkoposti), ei X-automaatiota.
       - name: X-jono (issue Villelle)

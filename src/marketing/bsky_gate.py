@@ -12,6 +12,7 @@ Mita mitataan (kaikki kaatavat):
   3. pituus: 300 merkkia (Blueskyn raja on 300 grafeemia; merkkimaara on tiukempi tai sama).
   4. vastaus: ei linkkia eika tuotenimea (C1: vastaus antaa luvun, ei mainosta), kohdepostaus alle
      4 h vanha, kohdetili ei estolistalla, samaan ketjuun ei kahdesti, tekijalle tauko 48 h.
+     Pyytamaton vastaus tuo mallin luvun eika koske vammoja, ei vastauksessa eika kohteessa (24.10).
   5. toisto: ei lahes samaa tekstia kuin 40 viimeisessa (Blueskyn yhteisoohje 3.1: spammi).
   6. kiintiot: omia postauksia 3/vrk ja noin 3 h valein, vastauksia muiden postauksiin 4/vrk.
   7. toisto aiheena ja kuvana: kapteeni ja best-captain-kortti vain deadline-slotissa, sama slot kerran,
@@ -87,6 +88,14 @@ HUMAN_AUTHORED_CLAIMS = (
     "i wrote", "i'm writing", "written by a human", "written by me", "human-written", "human written",
     "hand-written", "handwritten", "not automated", "not a bot", "i'm a human", "i am a human", "no bot",
 )
+# 24.10.2026 (yllapitaja: "Ei tallaisia"): botti vastasi pyytamatta fpl.pagen loukkaantumisuutiseen (Saka:
+# "another MRI ... fluid in the area") arvailulla ja kysymyksella "moving him or sitting tight?", vaikka FPL oli
+# merkinnyt hanet 21.10 tilaan 0 % "Unknown return date". Vastauksessa ei ollut mallin lukua, joten lukuportti ei
+# nahnyt mitaan. Pyytamaton vastaus tuo mallin luvun (C1: vastaus antaa luvun) eika koske vammoja: mallilla ei
+# ole niihin lisattavaa. Kohdepostauksen teksti on pakollinen, jotta vamma-aihe nakyy myos siita.
+INJURY_RE = re.compile(
+    r"\b(?:injur(?:y|ies|ed)|scans?|mri|fluid|hamstring|thigh|knee|ankle|groin|calf|knock|strain|fracture|"
+    r"surgery|setback|illness|medical|specialist|fitness|ruled out|return date|out for)\b", re.I)
 TARGET_MAX_AGE = timedelta(hours=4)
 AUTHOR_COOLDOWN = timedelta(hours=48)
 SIMILAR = 0.8
@@ -275,6 +284,16 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
         last = (state.get("author_last_reply") or {}).get(handle)
         if kind == "reply" and last and now - datetime.fromisoformat(last) < AUTHOR_COOLDOWN:
             probs.append(f"tekijalle vastattu alle 48 h sitten: {handle}")
+    if kind == "reply":   # pyytamaton vastaus; mentioon vastataan, vaikka kysyja kysyisi vammasta
+        if not any(n in ok_nums or n.rstrip("%") in ok_nums for n in nums if n != "10+"):
+            probs.append("pyytamaton vastaus ilman mallin lukua (keys): vastaus antaa luvun tai jaa pois")
+        tgt_text = str((item.get("target") or {}).get("text") or "")
+        if not tgt_text.strip():
+            probs.append("pyytamattoman vastauksen kohdepostauksen teksti puuttuu")
+        for where, t in (("vastaus", text), ("kohdepostaus", tgt_text)):
+            m = INJURY_RE.search(t)
+            if m:
+                probs.append(f"pyytamaton vastaus loukkaantumisuutiseen ({where}: {m.group(0)!r})")
 
     day = now.date().isoformat()
     counts = (state.get("daily") or {}).get(day) or {}

@@ -456,6 +456,12 @@ def cmd_context(out_dir: Path) -> int:
                                 "reply": gate.OUTBOUND_REPLIES_PER_DAY - day.get("reply", 0)}
     brief["posted_slots"] = state["posted_slots"][-20:]
     save_json(out_dir / "briefing.json", brief)
+    # Julkaisu kirjaa aivojen ajohetkeksi tilannekuvan hetken, ei omaa hetkeaan: kanta, joka tulee aivoajon
+    # aikana, ei ollut briefingissa, joten sen pitaa kaynnistaa seuraava ajo (bsky_kanta.new_take_since).
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a", encoding="utf-8") as f:
+            f.write(f"context_at={now.isoformat()}\n")
     print(f"briefing: gw={brief.get('gw')} numerot={len(brief.get('numbers') or {})} "
           f"bsky={len(brief['social']['bluesky'])} x={len(brief['social']['x_read_only'])} "
           f"virheet={len(brief['social']['errors'])} moduuli={err or 'ok'}")
@@ -463,6 +469,15 @@ def cmd_context(out_dir: Path) -> int:
 
 
 # ---------------------------------------------------------------- julkaisu
+
+def _think_mark(think_at: str | None, now: datetime) -> str:
+    """Aivojen tilannekuvan hetki (`aivot`-jobin context_at); puuttuva tai viallinen = julkaisuhetki."""
+    try:
+        t = datetime.fromisoformat(str(think_at).replace("Z", "+00:00"))
+    except ValueError:
+        return now.isoformat()
+    return t.isoformat() if t.tzinfo and t <= now else now.isoformat()
+
 
 # Aivojen postaus joka ei mahtunut postausvaliin (gate.MIN_POST_GAP) odottaa tilassa seuraaviin ajoihin ja kulkee
 # portin lapi uudelleen julkaisuhetkella. Se vanhenee 6 h:ssa tai kun aivot kirjoittavat uuden jonon.
@@ -521,8 +536,10 @@ def prepare(item: dict, content_id: str) -> tuple[str, dict]:
     return text, links
 
 
-def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: datetime | None = None) -> int:
+def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: datetime | None = None,
+                think_at: str | None = None) -> int:
     now = now or datetime.now(timezone.utc)
+    think_mark = _think_mark(think_at, now)
     state = load_state()
     blocked, phrases = blocklist(), gate.rejected_phrases()
     tmp = Path(tempfile.mkdtemp(prefix="bsky_mod_"))
@@ -611,7 +628,7 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: 
                          "target_uri": (it.get("target") or {}).get("uri"), "dry_run": dry,
                          "why": it.get("why"), "anticipation": it.get("anticipation")})
     if thought:
-        state["last_think_at"] = now.isoformat()
+        state["last_think_at"] = think_mark
     if not dry:
         with LOG_PATH.open("a", encoding="utf-8") as f:
             for r in log_rows:
@@ -621,7 +638,7 @@ def cmd_publish(queue_path: Path | None, dry: bool, thought: bool = False, now: 
         # Kuivana postauksia ei kirjata, mutta aivojen ajohetki kylla: muuten kiintiota kuluu
         # joka tunti niin kauan kuin Bluesky-salasana puuttuu.
         s = load_state()
-        s["last_think_at"] = now.isoformat()
+        s["last_think_at"] = think_mark
         save_json(STATE_PATH, s)
     print(f"julkaistu {published}, hylatty {len(rejected)}, odottaa {len(waiting)}, vanheni {len(expired)}, "
           f"kuiva={dry}")
@@ -851,9 +868,16 @@ THINK_DEADLINE_WINDOW = timedelta(hours=6)
 THINK_MIN_GAP = timedelta(hours=2)
 
 
-def should_think(now: datetime, state: dict, deadline: datetime | None, force: bool = False) -> bool:
-    """Ajetaanko aivot (Claude, kuluttaa tilauksen kiintiota) tassa ajossa."""
+def should_think(now: datetime, state: dict, deadline: datetime | None, force: bool = False,
+                 new_take: bool = False) -> bool:
+    """Ajetaanko aivot (Claude, kuluttaa tilauksen kiintiota) tassa ajossa.
+
+    `new_take`: yllapitaja vastasi Kanta-issueen viimeisen aivoajon jalkeen (bsky_kanta.new_take_since). Se ohittaa
+    kellon ja 2 h valin: GW8:n vastaus 17:03Z odotti seuraavaa aivoajoa, joka olisi ollut deadlinen jalkeen (24.10).
+    Kerran per vastaus, koska aivoajo siirtaa last_think_at vastauksen ohi."""
     if force:
+        return True
+    if new_take and deadline and deadline > now:
         return True
     last = state.get("last_think_at")
     if last and now - datetime.fromisoformat(last) < THINK_MIN_GAP:
@@ -868,12 +892,18 @@ def cmd_should_think(force: bool) -> int:
     meta = (load_json(DATA / "fpl_xp_projections.json", {}) or {}).get("meta") or {}
     dl = meta.get("deadline_utc")
     deadline = datetime.fromisoformat(dl.replace("Z", "+00:00")) if dl else None
-    think = should_think(now, load_state(), deadline, force)
+    state = load_state()
+    new_take = False
+    if deadline and meta.get("deadline_gameweek") is not None:
+        from scripts import bsky_kanta
+        takes = bsky_kanta.current_takes(int(meta["deadline_gameweek"]), deadline, now)
+        new_take = bsky_kanta.new_take_since(takes, state.get("last_think_at"))
+    think = should_think(now, state, deadline, force, new_take)
     out = os.environ.get("GITHUB_OUTPUT")
     if out:
         with open(out, "a", encoding="utf-8") as f:
             f.write("think=" + ("true" if think else "false") + "\n")
-    print(f"aivot: {think} (klo {now:%H} UTC, deadline {dl})")
+    print(f"aivot: {think} (klo {now:%H} UTC, deadline {dl}, uusi kanta {new_take})")
     return 0
 
 
@@ -959,6 +989,7 @@ def main(argv=None) -> int:
     p.add_argument("--queue")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--thought", action="store_true", help="aivot ajettiin tassa ajossa (kirjaa tilaan)")
+    p.add_argument("--think-at", default=None, help="aivojen tilannekuvan hetki (aivot-jobin context_at)")
     st = sub.add_parser("should-think")
     st.add_argument("--force", action="store_true")
     sub.add_parser("perf")
@@ -970,7 +1001,7 @@ def main(argv=None) -> int:
     if a.cmd == "context":
         return cmd_context(Path(a.out))
     if a.cmd == "publish":
-        return cmd_publish(Path(a.queue) if a.queue else None, a.dry_run, a.thought)
+        return cmd_publish(Path(a.queue) if a.queue else None, a.dry_run, a.thought, think_at=a.think_at)
     if a.cmd == "should-think":
         return cmd_should_think(a.force)
     if a.cmd == "x-mirror":

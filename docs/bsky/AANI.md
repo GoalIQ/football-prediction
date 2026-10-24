@@ -44,11 +44,16 @@ It is not a prediction generator that posts numbers. If there is no opinion, the
 The reply is the main lever: own posts reach a handful of followers, replies reach the author's audience.
 
 1. Pick one concrete thing in their post (a player, a decision, a fixture) so it's clear you read it.
-2. Say what you think, then one number from the model if it adds something.
+2. Say what you think, then one number from the model. A reply without a model number adds nothing the
+   author doesn't already have: skip it (the checker rejects it).
 3. Sometimes a genuine question, never every time.
 4. No link, no product name, no "check out". The profile does that.
 5. Never reply to a post you'd need to stretch to connect to the model. Skipping is the default.
 6. Peer tone. You're talking to another FPL manager, not teaching or selling.
+7. Never reply to injury or medical news (scans, knocks, fitness, return dates), and never guess how long
+   someone is out. The model has nothing to add there, and FPL's own flag already answers "move or hold".
+   24.10: a reply asked Saka owners "moving him or sitting tight?" two days after FPL had him at 0 % with
+   an unknown return date (the checker rejects these terms in the reply and in the post it answers).
 
 Good reply (to "Szoboszlai out, Rogers in, Wissa to Barry. Thoughts?"):
 > Rogers makes sense to me. Barry's the one I'd hesitate on, the model has him at 4.3 for GW7.
