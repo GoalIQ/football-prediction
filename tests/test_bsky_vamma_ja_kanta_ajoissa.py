@@ -178,18 +178,30 @@ def test_aivojen_hetki_on_tilannekuvan_hetki():
     assert bot._think_mark("2026-10-30T14:00:00+00:00", now) == now.isoformat()   # tulevaisuus ei kelpaa
 
 
-def test_julkaisu_kirjaa_tilannekuvan_hetken(monkeypatch, tmp_path):
+class _Sessio:
+    def __init__(self, *a, **k):
+        pass
+
+
+@pytest.mark.parametrize("live", [False, True], ids=["kuiva", "live"])
+def test_julkaisu_kirjaa_tilannekuvan_hetken(monkeypatch, tmp_path, live):
     import json
+    from src.marketing import bsky
     monkeypatch.setattr(bot, "STATE_PATH", tmp_path / "state.json")
     monkeypatch.setattr(bot, "LOG_PATH", tmp_path / "posted.jsonl")
     monkeypatch.setattr(bot, "fresh_module", lambda out: (None, {}, "testi"))
     monkeypatch.setattr(bot, "blocklist", lambda: set())
     monkeypatch.setattr(gate, "rejected_phrases", lambda: [])
-    monkeypatch.delenv("BLUESKY_APP_PASSWORD", raising=False)
+    monkeypatch.setattr(bsky, "Session", _Sessio)
+    if live:
+        monkeypatch.setenv("BLUESKY_APP_PASSWORD", "x")
+    else:
+        monkeypatch.delenv("BLUESKY_APP_PASSWORD", raising=False)
     monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
-    (tmp_path / "state.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "state.json").write_text(json.dumps({"bot_label_at": "2026-10-16T00:00:00+00:00"}),
+                                         encoding="utf-8")
     now = datetime(2026, 10, 30, 13, 5, tzinfo=timezone.utc)
-    bot.cmd_publish(None, dry=True, thought=True, now=now, think_at="2026-10-30T12:40:00+00:00")
+    bot.cmd_publish(None, dry=False, thought=True, now=now, think_at="2026-10-30T12:40:00+00:00")
     assert json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))["last_think_at"] \
         == "2026-10-30T12:40:00+00:00"
 
