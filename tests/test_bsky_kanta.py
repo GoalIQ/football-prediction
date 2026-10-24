@@ -104,7 +104,7 @@ def test_issue_loytyy_vaikka_label_puuttuu(monkeypatch):
     assert kanta._find_issue("t", 9)["number"] == 3
     assert len(haut) == 2
     luodut = []
-    assert kanta.ask(GW, DL, DL - timedelta(hours=10), lambda t: kanta._find_issue("t", GW), luodut.append) \
+    assert kanta.ask(GW, DL, DL - timedelta(hours=20), lambda t: kanta._find_issue("t", GW), luodut.append) \
         == "jo-olemassa" and luodut == []
 
 

@@ -41,8 +41,9 @@ def _vastaukset_paalla(monkeypatch):
     monkeypatch.setattr(gate, "OUTBOUND_REPLIES_PER_DAY", 4)
 
 
-def _reply(text, keys, age_h=1.0, handle="fpl.page", uri="at://x/1", **kw):
-    t = {"uri": uri, "cid": "c1", "handle": handle,
+def _reply(text, keys, age_h=1.0, handle="fpl.page", uri="at://x/1",
+           target_text="Haaland or Salah for the armband this week?", **kw):
+    t = {"uri": uri, "cid": "c1", "handle": handle, "text": target_text,
          "created_at": (NOW - timedelta(hours=age_h)).isoformat()}
     return {"kind": "reply", "text": text, "keys": keys, "target": t, **kw}
 

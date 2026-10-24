@@ -26,7 +26,8 @@ BUDJETTI = {
     "auto-kehitys.yml": (3, 80, "ma/ke/pe yksi backlog-rivi tai korjauskierros (19.10); päiväportti estää releen "
                                 "ja myöhässä tulevan cronin tuplan; ei ajoa, kun 2 auto-PR:ää on auki eikä korjattavaa"),
     "aallonharja.yml": (1, 90, "su benchmark ja mittareiden sulku; avoin aallonharja-PR estää ajon"),
-    "bsky-bot.yml": (14, 60, "aivot vain should-think-päätöksellä, noin 2 kertaa vuorokaudessa"),
+    "bsky-bot.yml": (15, 60, "aivot vain should-think-päätöksellä, noin 2 kertaa vuorokaudessa, + kerran kun "
+                             "ylläpitäjä vastaa kierroksen Kanta-issueen (24.10)"),
     "julkaisutarkistus.yml": (3, 30, "vain auto-PR, jonka julkinen teksti muuttuu: uusi PR tai korjauskierros, "
                                      "yhteensä enintään auto-kehityksen 3 ajoa viikossa; ei tekstiä -> ei Claudea"),
 }
