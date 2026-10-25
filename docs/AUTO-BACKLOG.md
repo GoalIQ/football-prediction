@@ -198,6 +198,21 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   käsin. Hyväksynnän on oltava helpompaa kuin ohittamisen, ja X:ään menee päivän paras postaus. → backlog 2026-10-23
 - 2026-10: Ylläpitäjä 23.10: kun ylläpitäjän kanta on botin raaka-aineena, kierroksen tulos voi verrata ylläpitäjän ja
   mallin kapteenia FPL:n omilla pisteillä. Toistuva asetelma antaa syyn seurata tiliä. Riippuu kanta-rivistä.
+- 2026-10: xP voitti FPL:n ep_nextin GW7:llä (MAE 1.608 vs 1.735) ja kolmella viidestä vertailukierroksesta (GW3, GW6, GW7;
+  GW4 ja GW5 hävisi niukasti). Heikkoudet toistuvat: pelaamattomat (0.993 vs 0.558), maalivahdit (1.293 vs 1.055) ja
+  isot pisteet (7.977 vs 7.091, n 11) häviävät yhä, kun taas DEF, MID ja FWD voittavat GW7:llä. Mallin muutos on
+  ylläpitäjän päätös; kilpailijoiden julkinen virhe (FPLXI ±1.07 p GW7:llä) mitataan eri otoksella. (lähde: data/fpl_xp_gw_accuracy.json,
+  https://fplxi.com/)
+- 2026-10: Hakukone, 28 vrk (25.9.-22.10.): näyttöjen päivämediaani -62.8 %, klikkien päivämediaani 0.0 %, brändihakujen
+  osuus klikeistä 100 %; Search Consolen tulkinta: "Kummassakaan jaksossa ei ole piikkiä: kokonaismuutos ja
+  mediaanimuutos ovat vertailukelpoisia." /fpl on sijalla 8.6 mutta CTR 0 %, /faq sijalla 3.6 ja CTR 0 %. Tulos viittaa
+  siihen, että tason lasku on todellinen eikä piikin loppu. (lähde: Search Console, https://goaliq.app/fpl)
+- 2026-10: Ostopolku, ennuste vs FPL (mobiili, napautus lukosta, nyt vs edellinen 28 vrk): ennuste 18.9 % (13.6 %), FPL
+  0.0 % (0.8 %); webissä FPL 3.4 % (12.5 %), ennusteen web-otos on pieni. Ostoja kummallakin mobiilituotteella 0. Ennustelukot
+  kasvattavat napautusosuutta samalla kun FPL-lukot eivät. (lähde: mittausdata ostopolku.tuotteittain)
+- 2026-10: Kilpailijat täyttävät chip- ja mallijoukkueaukkoa: FPL Pulse listaa "Chip Timing Suggestions" yhä kohdassa
+  tulossa myöhemmin kaudella, FPL Rogue myy Chip Planneria ja Template Team -näkymää Pro-tasolla. GW19-deadline la 2.1.2027 on ensimmäinen ikkuna, jossa chip-ajoituksella on aikaraja. (lähde: https://www.fplpulse.com/ ,
+  https://www.fplrogue.com/tools)
 
 ## Avoimet
 
@@ -437,5 +452,31 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   rajan syyn. Mobiilin vastaava kohta on ihmisen työ (OTA). (ylläpitäjän signaali 2026-10-22, lähde: Signaalit)
       Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 3/3 · uutuus 1/2 = 11
       Mittari: PlayerCard.svelte renderöi xgi_this_per90:n viime kauden xGI/90:n vieressä ja payload-testi on vihreä · tarkistus 2026-11-08
+- [ ] /fpl-sivun hakutulos: `scripts/build_fpl_page.py` (noin rivi 2525) kirjoittaa meta-descriptionin, joka on noin 172
+  merkkiä, vaikka builderin oma kommentti tavoittelee alle 160 (hakutulos katkaisee lauseen lopun). Search Consolen mukaan
+  /fpl on keskimäärin sijalla 8.6 ja CTR 0 %, ja näyttöjä on kymmeniä, joten katkeava kuvaus on ainoa hakutuloksen osa, jonka
+  agentti voi muuttaa. Lyhennä kuvaus alle 160 merkkiin niin, että sijoitus ja ilmainen "no sign-in" säilyvät ja Premium-lupaus
+  ei muutu (copy julkaisutarkistajan kautta); regeneroitu fpl.html ja llms.txt samassa PR:ssä. Testi mittaa pituuden
+  builderin tuloksesta (ei kovakoodattua merkkijonoa) ja kaatuu, jos raja ylittyy. PR:n Julkinen teksti -osioon uusi kuvaus
+  sanatarkasti. (aallonharja 2026-10-25, lähde: Search Console https://goaliq.app/fpl , Signaalit)
+      Pisteet: arvo 1/3 · kiire 1/3 · työ S · myynti 3/3 · uutuus 0/2 = 9
+      Mittari: gsc.json:n sivut-listalla goaliq.app/fpl CTR yli 0 % tai sijainti alle 8.6 · tarkistus 2026-11-22
+- [ ] Template-XI rank-tasoittain /fpl-sivulle: `data/fpl_elite_ownership.json` kertoo jo, mitä top 1k, 10k ja 100k
+  -otos omistaa. Lisää EO-osion viereen kullekin tasolle XI (11 omistetuinta pelaajaa, joiden muoto on kelvollinen),
+  yleisin kapteeni ja otoskoko samasta artefaktista kuin EO-taulukon sarakeotsikossa. Yksi lukija, jota sivu käyttää;
+  puuttuva taso on "ei dataa", ei tyhjä XI. Free/Premium-sijoitus ehdotetaan PR:n rungossa (ehdotus: ilmainen, koska EO
+  rank-tasoittain on jo ilmainen), ihminen päättää. Vaihetesti: ennen deadlinea, kesken kierroksen, gradauksen jälkeen
+  (otos kuuluu aina edelliseen gradattuun kierrokseen ja se sanotaan); testi kaatuu, jos kutsupaikka poistetaan. Builder,
+  regeneroitu sivu ja llms.txt samassa PR:ssä. (aallonharja 2026-10-25, lähde: https://www.fplrogue.com/tools)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 10
+      Mittari: /fpl näyttää template-XI:n ja otoskoon jokaiselle kolmelle tasolle ja testi on vihreä · tarkistus 2026-11-30
+- [ ] Ennusteen ikä näkyviin track recordissa: `/api/accuracy` jakaa jo ennusteet tuoreisiin (lead enintään 48 h) ja
+  vanhentuneisiin (`by_lead`), ja vanhentuneet osuvat selvästi huonommin (44.2 % vs 53.3 %, Brier 0.613 vs 0.583). Näytä
+  /predictions-sivun track record -osiossa molemmat osuudet ja Brierit samalla n:llä kuin API, ja ottelusivulla ennusteen
+  kirjausaika ("Predicted <n> h before kickoff"). Luku luetaan artefaktista, ei lasketa sivulla; ei muokkaa kirjattuja
+  ennusteita. llms.txt samassa PR:ssä. PR:n Julkinen teksti -osioon rivit sanatarkasti. (aallonharja 2026-10-25, lähde:
+  data/accuracy.json, https://scoregpt.app/)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 10
+      Mittari: /predictions näyttää fresh- ja stale-osuudet samalla n:llä kuin /api/accuracy by_lead (testi) · tarkistus 2026-11-30
 
 ## Tehdyt
