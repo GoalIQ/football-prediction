@@ -1281,8 +1281,52 @@
     }
    ],
    "model_transfers": [],
-   "entry_actual": null,
-   "graded": null
+   "entry_actual": {
+    "transfers": 0,
+    "transfers_cost": 0,
+    "chip": null,
+    "captain": 426,
+    "made": []
+   },
+   "graded": {
+    "graded_at": "2026-10-25T18:59:32Z",
+    "provisional": true,
+    "by_call": {
+     "model_captain": {
+      "points": 0,
+      "minutes": 0,
+      "met": null,
+      "started": false,
+      "captain_total": 0,
+      "captain_multiplier": 2,
+      "captain_is_entry_captain": true
+     },
+     "captain_pick": {
+      "points": 0,
+      "minutes": 0,
+      "met": false,
+      "started": false
+     },
+     "ceiling": {
+      "points": 2,
+      "minutes": 90,
+      "met": false,
+      "started": true
+     },
+     "safest": {
+      "points": 8,
+      "minutes": 90,
+      "met": true,
+      "started": true
+     },
+     "gamble": {
+      "points": 2,
+      "minutes": 90,
+      "met": false,
+      "started": true
+     }
+    }
+   }
   }
  ]
 }
