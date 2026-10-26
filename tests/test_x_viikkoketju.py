@@ -156,3 +156,13 @@ def test_tyonkulku_ja_rele_kutsuvat_generaattoria():
     assert "secrets." not in yaml.safe_dump(doc), "ei salaisuuksia: FPL on julkinen"
     from scripts import fp_dispatch_relay as relay
     assert "x-viikkoketju.yml" in {t["workflow"] for t in relay.TARGETS}
+
+
+def test_ketjun_issue_sisaltaa_x_jakolinkin_ensimmaiselle_viestille():
+    """23.10: yhden napautuksen postaus. Linkin dekoodattu teksti on täsmälleen ensimmäinen viesti."""
+    import urllib.parse
+    viestit = xk.ketju(_d(gw=7, seuraava=8))
+    body = xk.issue(_d(gw=7, seuraava=8), viestit)["body"]
+    m = re.search(r"\(https://x\.com/intent/tweet\?text=([^)\s]+)\)", body)
+    assert m and urllib.parse.unquote(m.group(1)) == viestit[0]
+    assert body.count("x.com/intent/tweet") == 1

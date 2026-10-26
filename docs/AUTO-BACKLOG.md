@@ -236,7 +236,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   (ylläpitäjän signaali 2026-10-23, lähde: Signaalit) (PR, 2026-10-23)
       Pisteet: (lukittu) arvo 2/3 · kiire 3/3 · työ M · myynti 3/3 · uutuus 2/2 = 14
       Mittari: data/bsky_performance.json by_topic.owner_take n vähintään 3 ja engaged_rate_bayes vähintään muiden aiheiden mediaani · tarkistus 2026-11-22
-- [ ] X-jonoon yhden napautuksen postaus ja enintään yksi issue päivässä (ylläpitäjän päätös 2026-10-23): X-jono teki
+- [x] X-jonoon yhden napautuksen postaus ja enintään yksi issue päivässä (ylläpitäjän päätös 2026-10-23): X-jono teki
   18.-22.10 viidessä päivässä 15 issueta, ja ylläpitäjä kopioi jokaisen tekstin X:ään käsin. `scripts/bsky_bot.py`
   `x_issue` lisää runkoon X:n oman jakolinkin `https://x.com/intent/tweet?text=` + `x_version` urlenkoodattuna:
   ylläpitäjä napauttaa, X avautuu teksti valmiina ja hän painaa itse Post (ei rajapintaa eikä automaatiota). Kuvaa
@@ -245,7 +245,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   merkitään `x_skipped`-listaan, ja ohitettujen määrä tulostetaan ajon lokiin. `scripts/x_viikkoketju.py` saa saman
   linkin ketjun ensimmäiselle postaukselle. Testi: linkin dekoodattu teksti on täsmälleen `x_version`, toista issueta
   ei synny samana päivänä, ja testi kaatuu, jos kattoehto poistetaan. (ylläpitäjän signaali 2026-10-23, lähde:
-  Signaalit)
+  Signaalit) (PR, 2026-10-26)
       Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
       Mittari: label x-jono -issueita enintään yksi päivässä 2026-10-26 alkaen, ja jokaisen rungossa on x.com/intent-linkki (github.com/GoalIQ/football-prediction/issues?q=label:x-jono) · tarkistus 2026-11-08
 - [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
