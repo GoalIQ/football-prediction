@@ -277,6 +277,59 @@
     "vice_match": false
    },
    "fpl_average": 59
+  },
+  {
+   "gw": 8,
+   "points": 55,
+   "points_before_captain": 47,
+   "captain_id": 411,
+   "captain_reason": "vice",
+   "captain_points_added": 8,
+   "autosubs": [
+    {
+     "out": 426,
+     "in": 569,
+     "pos": 4
+    }
+   ],
+   "bench_points": 4,
+   "xi_ids": [
+    572,
+    4,
+    8,
+    388,
+    173,
+    115,
+    569,
+    427,
+    68,
+    411,
+    346
+   ],
+   "graded_at": "2026-10-26T15:47:41Z",
+   "frozen_at": "2026-10-22T12:58:15Z",
+   "source": "frozen_squad",
+   "provenance": "entry_verified",
+   "transfer_cost": 0,
+   "transfer_cost_source": "no_transfers",
+   "entry_diverged": true,
+   "entry_diff": {
+    "common": 15,
+    "missing": [],
+    "extra": [],
+    "xi_only_frozen": [
+     346,
+     426
+    ],
+    "xi_only_entry": [
+     290,
+     569
+    ],
+    "bench_order_match": false,
+    "captain_match": true,
+    "vice_match": true
+   },
+   "fpl_average": 45
   }
  ],
  "unscored": [
