@@ -134,7 +134,7 @@
       }
     },
     "phase": 1,
-    "generated_at": "2026-10-26T06:54:01+00:00",
+    "generated_at": "2026-10-26T08:20:12+00:00",
     "season": "2026/27",
     "overrides_applied": 2,
     "fixture_source": "FPL official API (fantasy.premierleague.com)",
@@ -3675,7 +3675,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 14.9,
+      "owned_pct": 15.0,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -3835,7 +3835,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 1.6,
+      "owned_pct": 1.7,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -5050,7 +5050,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 19.7,
+      "owned_pct": 19.8,
       "status": "a",
       "news": "",
       "chance_next": 100,
@@ -13855,7 +13855,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 53.2,
+      "owned_pct": 53.1,
       "status": "d",
       "news": "Hip injury - 75% chance of playing",
       "chance_next": 75,
@@ -18051,7 +18051,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 27.2,
+      "owned_pct": 27.1,
       "status": "a",
       "news": "",
       "chance_next": null,
@@ -22522,7 +22522,7 @@
       "minutes_source": "price_blend",
       "minutes_override_reason": "under 900 Premier League minutes this season, so part of the expected role comes from where the player is priced",
       "data_basis": "pl_history",
-      "owned_pct": 71.8,
+      "owned_pct": 71.7,
       "status": "d",
       "news": "Unspecified injury - 75% chance of playing",
       "chance_next": 75,
@@ -75705,53 +75705,6 @@
       "last_season_reason": "no_projection"
     },
     {
-      "id": 357,
-      "web_name": "Frimpong",
-      "full_name": "Jeremie Frimpong",
-      "team": "Liverpool",
-      "team_short": "LIV",
-      "pos": "DEF",
-      "price": 5.2,
-      "owned_pct": 1.4,
-      "status": "i",
-      "news": "Hamstring injury - Unknown return date",
-      "chance_next": 0,
-      "yellows": 1,
-      "set_pieces": {
-        "pens": null,
-        "corners": null,
-        "fk": null
-      },
-      "last_season": {
-        "season": "2025/26",
-        "league": "Premier League",
-        "team_code": 14,
-        "team_name": "Liverpool",
-        "minutes": 1032,
-        "starts": 12,
-        "goals": 0,
-        "assists": 5,
-        "xg": 0.5,
-        "xa": 1.55,
-        "cs": 5,
-        "points": 63,
-        "per90": {
-          "goals": 0.0,
-          "assists": 0.44,
-          "xgi": 0.18
-        }
-      },
-      "form": {
-        "value": 0.7,
-        "gws": 2,
-        "basis": "FPL form: average score per match the player's club played in the last 30 days"
-      },
-      "in_projection": false,
-      "excluded_reason": "unavailable",
-      "last_season_show": true,
-      "last_season_reason": "no_projection"
-    },
-    {
       "id": 38,
       "web_name": "A.García",
       "full_name": "Andrés García",
@@ -75786,6 +75739,53 @@
       },
       "form": {
         "value": 0.0,
+        "gws": 2,
+        "basis": "FPL form: average score per match the player's club played in the last 30 days"
+      },
+      "in_projection": false,
+      "excluded_reason": "unavailable",
+      "last_season_show": true,
+      "last_season_reason": "no_projection"
+    },
+    {
+      "id": 357,
+      "web_name": "Frimpong",
+      "full_name": "Jeremie Frimpong",
+      "team": "Liverpool",
+      "team_short": "LIV",
+      "pos": "DEF",
+      "price": 5.2,
+      "owned_pct": 1.3,
+      "status": "i",
+      "news": "Hamstring injury - Unknown return date",
+      "chance_next": 0,
+      "yellows": 1,
+      "set_pieces": {
+        "pens": null,
+        "corners": null,
+        "fk": null
+      },
+      "last_season": {
+        "season": "2025/26",
+        "league": "Premier League",
+        "team_code": 14,
+        "team_name": "Liverpool",
+        "minutes": 1032,
+        "starts": 12,
+        "goals": 0,
+        "assists": 5,
+        "xg": 0.5,
+        "xa": 1.55,
+        "cs": 5,
+        "points": 63,
+        "per90": {
+          "goals": 0.0,
+          "assists": 0.44,
+          "xgi": 0.18
+        }
+      },
+      "form": {
+        "value": 0.7,
         "gws": 2,
         "basis": "FPL form: average score per match the player's club played in the last 30 days"
       },
