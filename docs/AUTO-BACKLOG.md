@@ -213,6 +213,16 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
 - 2026-10: Kilpailijat täyttävät chip- ja mallijoukkueaukkoa: FPL Pulse listaa "Chip Timing Suggestions" yhä kohdassa
   tulossa myöhemmin kaudella, FPL Rogue myy Chip Planneria ja Template Team -näkymää Pro-tasolla. GW19-deadline la 2.1.2027 on ensimmäinen ikkuna, jossa chip-ajoituksella on aikaraja. (lähde: https://www.fplpulse.com/ ,
   https://www.fplrogue.com/tools)
+- 2026-10: Bluesky-botin portti (`src/marketing/bsky_gate.py`) tarkistaa luvut mutta ei pelaajan roolia. 26.10 klo 09 UTC
+  postaus (`data/bsky_posted.jsonl`, at 2026-10-26T09:54:16) tarjosi puolustajaa joukkueensa hyökkäyksen halvempana
+  vaihtoehtona. Luvut täsmäsivät sivuun, rooli ei: pelaajan xP tulee puhtaan pelin todennäköisyydestä, ja sivu näyttää
+  hänet DEF-rivinä. Reply-moduulin pelaajariveillä on `pos`, mutta portti ei lue sitä. Samassa postauksessa vertailu
+  "on the same number" läpäisi, vaikka avaimissa oli toiselle pelaajalle vain hinta (`captain_top5.<slug>.price`) eikä
+  xP:tä: implisiittinen luku ei ole numero, joten `allowed_numbers` ei näe sitä. Puuttuu kaksi tarkistusta: (a) DEF- tai
+  GKP-pelaajaa ei kuvata samassa lauseessa hyökkäyssanoilla (attack, attacker, forward, striker, up front) eikä FWD- tai
+  MID-pelaajaa puolustussanoilla; (b) jokaisella pelaajalla, johon lause liittää luvun tai vertailun (same number,
+  level with, matches), on oma `gw_xp`-avain. Testi kummallekin tämän postauksen muodolla ja negatiivinen kontrolli
+  (sama lause ilman roolisanaa menee läpi). (lähde: data/bsky_posted.jsonl, https://goaliq.app/fpl/expected-points)
 
 ## Avoimet
 
