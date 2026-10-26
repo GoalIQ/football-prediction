@@ -223,6 +223,14 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   MID-pelaajaa puolustussanoilla; (b) jokaisella pelaajalla, johon lause liittää luvun tai vertailun (same number,
   level with, matches), on oma `gw_xp`-avain. Testi kummallekin tämän postauksen muodolla ja negatiivinen kontrolli
   (sama lause ilman roolisanaa menee läpi). (lähde: data/bsky_posted.jsonl, https://goaliq.app/fpl/expected-points)
+- 2026-10: Bluesky-botin CS-postaus 26.10 klo 17 UTC (`data/bsky_posted.jsonl`, at 2026-10-26T17:54:05) antoi kaksi
+  puhtaan pelin lukua, mutta vastustajan vain ensimmäiselle ("38.1% to keep a clean sheet against Fulham ... with Arsenal
+  next on 37%"). Ylläpitäjä luki toisen luvun kahdesti ensimmäisen joukkueen luvuksi (ensin edellisen kierroksen
+  vastustajaa, sitten Arsenalia vastaan). Luvut olivat oikein ja sivun FAQ:n mukaisia, mutta lause ei kertonut, kenen
+  luku ja mitä ottelua vastaan. Puuttuu portin tarkistus: jokaisen `cs_top.<joukkue>.cs_pct`-luvun lauseessa on
+  joukkueen vastustaja (reply-moduulin rivillä on ottelu ja koti/vieras), esimerkiksi "Arsenal next on 37% at
+  Liverpool". Testi tämän postauksen muodolla ja negatiivinen kontrolli (vastustajan kanssa menee läpi).
+  (lähde: data/bsky_posted.jsonl, https://goaliq.app/fpl)
 
 ## Avoimet
 
