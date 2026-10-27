@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-10-27T21:33:36+00:00",
+  "updated_at": "2026-10-27T22:07:32+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2355,
+  "pending": 2353,
   "voided": 57,
   "all_time": {
-    "n": 922,
-    "correct_1x2": 477,
-    "pct_1x2": 0.5174,
+    "n": 924,
+    "correct_1x2": 479,
+    "pct_1x2": 0.5184,
     "draw_n": 233,
-    "pct_draw": 0.2527,
-    "decisive_n": 689,
-    "decisive_correct": 477,
-    "pct_decisive": 0.6923,
-    "exact_n": 922,
+    "pct_draw": 0.2522,
+    "decisive_n": 691,
+    "decisive_correct": 479,
+    "pct_decisive": 0.6932,
+    "exact_n": 924,
     "exact_correct": 110,
-    "pct_exact": 0.1193,
-    "brier": 0.5887,
-    "brier_n": 922
+    "pct_exact": 0.119,
+    "brier": 0.588,
+    "brier_n": 924
   },
   "rolling": {
     "n": 100,
@@ -31,7 +31,7 @@
     "exact_n": 100,
     "exact_correct": 15,
     "pct_exact": 0.15,
-    "brier": 0.6086,
+    "brier": 0.6066,
     "brier_n": 100,
     "window": 100
   },
@@ -172,19 +172,19 @@
       "brier_n": 70
     },
     "SA": {
-      "n": 81,
-      "correct_1x2": 51,
-      "pct_1x2": 0.6296,
+      "n": 83,
+      "correct_1x2": 53,
+      "pct_1x2": 0.6386,
       "draw_n": 14,
-      "pct_draw": 0.1728,
-      "decisive_n": 67,
-      "decisive_correct": 51,
-      "pct_decisive": 0.7612,
-      "exact_n": 81,
+      "pct_draw": 0.1687,
+      "decisive_n": 69,
+      "decisive_correct": 53,
+      "pct_decisive": 0.7681,
+      "exact_n": 83,
       "exact_correct": 10,
-      "pct_exact": 0.1235,
-      "brier": 0.5156,
-      "brier_n": 81
+      "pct_exact": 0.1205,
+      "brier": 0.5093,
+      "brier_n": 83
     },
     "WC": {
       "n": 56,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 866,
-      "correct_1x2": 442,
-      "pct_1x2": 0.5104,
+      "n": 868,
+      "correct_1x2": 444,
+      "pct_1x2": 0.5115,
       "draw_n": 218,
-      "pct_draw": 0.2517,
-      "decisive_n": 648,
-      "decisive_correct": 442,
-      "pct_decisive": 0.6821,
-      "exact_n": 866,
+      "pct_draw": 0.2512,
+      "decisive_n": 650,
+      "decisive_correct": 444,
+      "pct_decisive": 0.6831,
+      "exact_n": 868,
       "exact_correct": 99,
-      "pct_exact": 0.1143,
-      "brier": 0.595,
-      "brier_n": 866,
+      "pct_exact": 0.1141,
+      "brier": 0.5942,
+      "brier_n": 868,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 784,
-      "correct_1x2": 416,
-      "pct_1x2": 0.5306,
+      "n": 786,
+      "correct_1x2": 418,
+      "pct_1x2": 0.5318,
       "draw_n": 183,
-      "pct_draw": 0.2334,
-      "decisive_n": 601,
-      "decisive_correct": 416,
-      "pct_decisive": 0.6922,
-      "exact_n": 784,
+      "pct_draw": 0.2328,
+      "decisive_n": 603,
+      "decisive_correct": 418,
+      "pct_decisive": 0.6932,
+      "exact_n": 786,
       "exact_correct": 89,
-      "pct_exact": 0.1135,
-      "brier": 0.5844,
-      "brier_n": 784
+      "pct_exact": 0.1132,
+      "brier": 0.5835,
+      "brier_n": 786
     },
     "stale": {
       "n": 138,
@@ -295,14 +295,14 @@
     {
       "bin_mid": 0.1615,
       "predicted": 0.1615,
-      "actual": 0.1398,
-      "n": 372
+      "actual": 0.139,
+      "n": 374
     },
     {
       "bin_mid": 0.2536,
       "predicted": 0.2536,
-      "actual": 0.2681,
-      "n": 1037
+      "actual": 0.2676,
+      "n": 1039
     },
     {
       "bin_mid": 0.3418,
@@ -317,16 +317,16 @@
       "n": 338
     },
     {
-      "bin_mid": 0.5474,
-      "predicted": 0.5474,
-      "actual": 0.5392,
-      "n": 217
+      "bin_mid": 0.5472,
+      "predicted": 0.5472,
+      "actual": 0.5413,
+      "n": 218
     },
     {
-      "bin_mid": 0.6476,
-      "predicted": 0.6476,
-      "actual": 0.7252,
-      "n": 131
+      "bin_mid": 0.6479,
+      "predicted": 0.6479,
+      "actual": 0.7273,
+      "n": 132
     },
     {
       "bin_mid": 0.7409,
@@ -348,6 +348,36 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-27",
+      "home_team": "Torino FC",
+      "away_team": "Como 1907",
+      "predicted_winner": "away",
+      "p_winner": 0.5128,
+      "lead_h": 0.9,
+      "most_likely_score": "1-1",
+      "actual_score": "1-3",
+      "actual_outcome": "away",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-10-27",
+      "home_team": "AS Roma",
+      "away_team": "Cagliari Calcio",
+      "predicted_winner": "home",
+      "p_winner": 0.6915,
+      "lead_h": 0.9,
+      "most_likely_score": "2-0",
+      "actual_score": "4-2",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-27",
       "home_team": "US Sassuolo Calcio",
@@ -614,36 +644,6 @@
       "actual_score": "0-0",
       "actual_outcome": "draw",
       "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-25",
-      "home_team": "Angers SCO",
-      "away_team": "FC Lorient",
-      "predicted_winner": "away",
-      "p_winner": 0.4255,
-      "lead_h": 0.2,
-      "most_likely_score": "1-1",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-25",
-      "home_team": "Stade Rennais FC 1901",
-      "away_team": "RC Strasbourg Alsace",
-      "predicted_winner": "home",
-      "p_winner": 0.4482,
-      "lead_h": 0.2,
-      "most_likely_score": "2-1",
-      "actual_score": "3-0",
-      "actual_outcome": "home",
-      "hit_1x2": true,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
