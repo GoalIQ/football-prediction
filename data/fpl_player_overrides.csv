@@ -88,6 +88,13 @@
 # (mins <= 0, ks. ylla). Uusi paiva molemmille 2026-10-28 (GW8:n jalkeen).
 # 27.9: rivin 351 reason kirjoitettu uudelleen julkaisutarkistajan kautta
 #   (vanha viittasi poistettuun Alisson-riviin id 350).
+# 🔴 UUSINTAMITTAUS 2026-10-27 (portti: molempien review_by 2026-10-28 < 3 vrk,
+# tests.yml punainen 25.10 alkaen). FPL bootstrap GW1-GW8:
+#   LIV: A.Becker 720 min / 8 starttia, Mamardashvili 0 / 0, status a.
+#   TOT: Kinsky 720 min / 8 starttia, Dubravka 0 / 0, status a.
+# Peruste pitaa yha, hintapriori-ansa samoin. Uusi paiva molemmille 2026-11-25
+# (GW11:n jalkeen, ennen GW12:n deadlinea 27.11). reason ennallaan: "GW1-5"
+# on yha totta, eika julkista tekstia muutettu.
 player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #
 # HARKITTU JA HYLÄTTY — Havertz (ARS, 7.5M, p_start 0.25, xmins 15.5), 27.7:
@@ -102,5 +109,5 @@ player_id,web_name,p_start,reason,review_by,xg_mult,until_available
 #   Ohitus vaatisi keksityn luvun jolle ei ole mitattua perustetta, ja jokainen
 #   ohitus syö todennettavuuslupausta. Kapea ero ei ole sen arvoinen.
 #   Hintapriori korjaa tämän aikanaan oikeaa kautta.
-497,Dubravka,0.08,"Tottenham's backup keeper. Kinsky played every minute of GW1-5 in FPL's match data, so Dubravka's start chance is set low",2026-10-28
-351,Mamardashvili,0.15,"Liverpool's backup keeper. Alisson played every minute of GW1-5 in FPL's match data, so Mamardashvili's start chance is set low",2026-10-28
+497,Dubravka,0.08,"Tottenham's backup keeper. Kinsky played every minute of GW1-5 in FPL's match data, so Dubravka's start chance is set low",2026-11-25
+351,Mamardashvili,0.15,"Liverpool's backup keeper. Alisson played every minute of GW1-5 in FPL's match data, so Mamardashvili's start chance is set low",2026-11-25
