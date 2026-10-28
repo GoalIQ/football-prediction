@@ -38,6 +38,7 @@ if str(ROOT) not in sys.path:
 import config  # noqa: E402
 from src.marketing import bsky  # noqa: E402
 from src.marketing import bsky_gate as gate  # noqa: E402
+from src.marketing.x_share import x_intent_url  # noqa: E402
 
 DATA = config.DATA_DIR
 STATE_PATH = DATA / "bsky_state.json"
@@ -709,9 +710,10 @@ def x_version(row: dict) -> str | None:
 
 def pending_x_mirror(log_rows: list[dict], state: dict, now: datetime) -> list[dict]:
     done = set(state.get("x_mirrored") or [])
+    skipped = set(state.get("x_skipped") or [])
     out = []
     for r in log_rows:
-        if r.get("kind") != "post" or r.get("dry_run") or not r.get("uri") or r["uri"] in done:
+        if r.get("kind") != "post" or r.get("dry_run") or not r.get("uri") or r["uri"] in done | skipped:
             continue
         if r.get("topic") == "recap":
             continue  # X saa kierroskatsauksen scripts/x_viikkoketju.py:sta (19.10), ei kahta samasta kierroksesta
@@ -765,8 +767,9 @@ def x_issue(row: dict, x_text: str | None, image_url: str | None = None) -> dict
         body = (f"Bluesky-postaus ylittaa X:n {X_MAX} merkkia linkki mukaan laskettuna, joten X-versiota ei tehty.\n\n"
                 f"Bluesky: {web}\n\n```\n{row.get('text')}\n```\n\n{kuva}")
     else:
-        body = (f"Kopioi X:aan (postaat itse). {x_length(x_text)}/{X_MAX} merkkia, linkki tuo sivun "
-                f"esikatselukortin.\n\n```\n{x_text}\n```\n\n{kuva}Bluesky-alkuperainen: {web}\n\n"
+        body = (f"[Avaa X valmiilla tekstilla]({x_intent_url(x_text)}) ja paina itse Post. "
+                f"{x_length(x_text)}/{X_MAX} merkkia, linkki tuo sivun esikatselukortin. "
+                f"Kuvaa jakolinkki ei tue.\n\n```\n{x_text}\n```\n\n{kuva}Bluesky-alkuperainen: {web}\n\n"
                 f"Aihe {row.get('topic')} · lahde {row.get('source', 'rule')} · julkaistu {row.get('at')}. "
                 f"Sulje issue kun postattu tai ohitettu.\n")
     return {"title": f"X: {(row.get('text') or '')[:70]}", "body": body,
@@ -783,30 +786,42 @@ def _create_issue(payload: dict, token: str) -> str:
         return json.loads(r.read().decode("utf-8")).get("html_url", "")
 
 
+def pick_x_post(rows_: list[dict]) -> dict | None:
+    """Paivan X-postaus: ensin owner_take, muuten ensimmainen (aivot listaavat parhaan ensin)."""
+    return next((r for r in rows_ if r.get("topic") == "owner_take"), rows_[0] if rows_ else None)
+
+
 def cmd_x_mirror(now: datetime | None = None, create=None, image_fetch=None) -> int:
+    """Enintaan yksi X-jonon issue paivassa (UTC, 23.10.2026): loput odottavat merkitaan x_skipped-listaan."""
     now = now or datetime.now(timezone.utc)
     token = os.environ.get("GH_TOKEN", "").strip()
     if create is None and token:
         create = lambda p: _create_issue(p, token)  # noqa: E731
     state = load_state()
     rows_ = pending_x_mirror(read_log(), state, now)
+    today = now.date().isoformat()
+    valittu = None if state.get("x_issue_day") == today else pick_x_post(rows_)
     made = 0
-    for r in rows_:
-        kuva = card_image_url(r.get("uri"), fetch=image_fetch) if r.get("card") else None
-        payload = x_issue(r, x_version(r), kuva)
+    if valittu is not None:
+        kuva = card_image_url(valittu.get("uri"), fetch=image_fetch) if valittu.get("card") else None
+        payload = x_issue(valittu, x_version(valittu), kuva)
         if create is None:
             print(f"[KUIVA, ei GH_TOKENia] issue: {payload['title']}")
-            continue
-        try:
-            print(f"X-jono: {create(payload)}")
-        except Exception as e:  # noqa: BLE001 - seuraava ajo yrittaa uudelleen (ei merkita tehdyksi)
-            print(f"X-jono epaonnistui: {e!r}")
-            continue
-        state["x_mirrored"] = (list(state.get("x_mirrored") or []) + [r["uri"]])[-500:]
-        made += 1
-    if made:
+        else:
+            try:
+                print(f"X-jono: {create(payload)}")
+                state["x_mirrored"] = (list(state.get("x_mirrored") or []) + [valittu["uri"]])[-500:]
+                state["x_issue_day"] = today
+                made = 1
+            except Exception as e:  # noqa: BLE001 - seuraava ajo yrittaa uudelleen (ei merkita tehdyksi)
+                print(f"X-jono epaonnistui: {e!r}")
+    ohitettu = []
+    if create is not None and (made or state.get("x_issue_day") == today):
+        ohitettu = [r["uri"] for r in rows_ if r is not valittu or not made]
+        state["x_skipped"] = (list(state.get("x_skipped") or []) + ohitettu)[-500:]
+    if made or ohitettu:
         save_json(STATE_PATH, state)
-    print(f"X-jono: {made} issueta, odottavia {len(rows_)}")
+    print(f"X-jono: {made} issueta, ohitettuja {len(ohitettu)}, odottavia {len(rows_)}")
     return 0
 
 

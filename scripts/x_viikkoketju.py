@@ -32,6 +32,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 from scripts import publish_gate
+from src.marketing.x_share import x_intent_url
 
 ENTRY = 116920
 FPL = "https://fantasy.premierleague.com/api"
@@ -164,6 +165,8 @@ def issue(d: dict, viestit: list[str]) -> dict:
     osat = [f"Kopioi X:ään ketjuna (@goaliqapp): ensimmäinen viesti ensin, loput vastauksina edelliseen. "
             f"Luvut FPL:n rajapinnasta {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC (GW{d['gw']} finished ja "
             f"data_checked). Postaa ennen GW{d['seuraava'] or '?'}-deadlinea tai sulje ohitettuna."]
+    osat.append(f"[Avaa X valmiilla ensimmaisella viestilla]({x_intent_url(viestit[0])}) ja paina itse Post, "
+                f"loput viestit lisaat vastauksina.")
     for i, v in enumerate(viestit, 1):
         osat.append(f"**{i}/{len(viestit)}** ({x_pituus(v)}/{X_MAX})\n\n```\n{v}\n```")
     osat.append(f"Tarkistus: {FPL_SIVU} · Sulje issue, kun postattu tai ohitettu.")
