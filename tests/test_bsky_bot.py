@@ -5,7 +5,9 @@ positiivinen ja negatiivinen kontrolli: portti joka ei koskaan hylkaa on yhta ar
 """
 from __future__ import annotations
 
+import re
 import subprocess
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -732,3 +734,65 @@ def test_x_versio_pudottaa_tunnisteen_jos_raja_ylittyy():
     x = bot.x_version(_row(text=teksti))
     assert x is not None and not x.endswith("#FPL") and x.endswith(_LINK.replace("utm_source=bluesky", "utm_source=x"))
     assert bot.x_version(_row(text="Arsenal again. goaliq.app/fpl/expected-points #FPL")).endswith(" #FPL")
+
+
+def _intent_teksti(body):
+    m = re.search(r"\(https://x\.com/intent/tweet\?text=([^)\s]+)\)", body)
+    return urllib.parse.unquote(m.group(1)) if m else None
+
+
+def test_x_issue_jakolinkin_teksti_on_tasmalleen_x_version():
+    """23.10: yhden napautuksen postaus. Linkin dekoodattu teksti on x_version, ei mitään muuta."""
+    teksti = bot.x_version(_row())
+    p = bot.x_issue(_row(), teksti)
+    assert _intent_teksti(p["body"]) == teksti
+    # Ylipitkä postaus ei saa jakolinkkiä (katkaistu luku olisi eri vaite).
+    assert "x.com/intent" not in bot.x_issue(_row(), None)["body"]
+
+
+def _x_ajo(monkeypatch, rivit, state):
+    monkeypatch.setattr(bot, "load_state", lambda: state)
+    monkeypatch.setattr(bot, "read_log", lambda: rivit)
+    monkeypatch.setattr(bot, "save_json", lambda path, obj: None)
+    tehdyt = []
+    return tehdyt, lambda now: bot.cmd_x_mirror(now, create=lambda p: tehdyt.append(p) or "url")
+
+
+def test_x_mirror_enintaan_yksi_issue_paivassa_ja_loput_ohitetaan(monkeypatch):
+    a = _row(uri="at://d/app.bsky.feed.post/a", text="A goaliq.app/fpl")
+    b = _row(uri="at://d/app.bsky.feed.post/b", text="B goaliq.app/fpl")
+    state = _state()
+    tehdyt, aja = _x_ajo(monkeypatch, [a, b], state)
+    aja(NOW)
+    assert len(tehdyt) == 1 and tehdyt[0]["title"].startswith("X: A")
+    assert state["x_skipped"] == [b["uri"]]
+    # Toinen ajo samana päivänä: uusi tuore postaus ei tee toista issueta.
+    c = _row(uri="at://d/app.bsky.feed.post/c")
+    tehdyt2, aja2 = _x_ajo(monkeypatch, [a, b, c], state)
+    aja2(NOW + timedelta(hours=1))
+    assert tehdyt2 == [] and c["uri"] in state["x_skipped"]
+    # Seuraavana päivänä (UTC) issue syntyy taas.
+    d = _row(uri="at://d/app.bsky.feed.post/d", at=(NOW + timedelta(days=1)).isoformat())
+    tehdyt3, aja3 = _x_ajo(monkeypatch, [a, b, c, d], state)
+    aja3(NOW + timedelta(days=1, hours=1))
+    assert len(tehdyt3) == 1
+
+
+def test_x_mirror_owner_take_ennen_paivan_ensimmaista(monkeypatch):
+    eka = _row(uri="at://d/app.bsky.feed.post/eka", text="Eka goaliq.app/fpl")
+    kanta = _row(uri="at://d/app.bsky.feed.post/kanta", topic="owner_take", text="Kanta goaliq.app/fpl")
+    tehdyt, aja = _x_ajo(monkeypatch, [eka, kanta], _state())
+    aja(NOW)
+    assert len(tehdyt) == 1 and tehdyt[0]["title"].startswith("X: Kanta")
+
+
+def test_x_mirror_epaonnistunut_issue_ei_kuluta_paivaa_eika_ohita_muita(monkeypatch):
+    state = _state()
+    monkeypatch.setattr(bot, "load_state", lambda: state)
+    monkeypatch.setattr(bot, "read_log", lambda: [_row(), _row(uri="at://d/app.bsky.feed.post/b")])
+    monkeypatch.setattr(bot, "save_json", lambda path, obj: None)
+
+    def kaatuu(p):
+        raise RuntimeError("403")
+    bot.cmd_x_mirror(NOW, create=kaatuu)
+    assert not state.get("x_issue_day") and not state.get("x_skipped")
