@@ -29,8 +29,9 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 
@@ -52,6 +53,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 from src.site_identity import publisher_node  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
 from scripts.slugs import fold_ascii, slug
+from scripts import site_output
 
 # #119b: KAIKKI generoidut sivut (hubit + ottelusivut) omaan lapsi-sitemapiin,
 # jonka sitemap.xml-index listaa. Wholesale-kirjoitus joka ajolla → poistuneet
@@ -460,6 +462,54 @@ def _upcoming_by_comp(log: dict, now: datetime) -> dict[str, list[dict]]:
     return out
 
 
+def _played_by_comp(log: dict, now: datetime) -> dict[str, list[dict]]:
+    """Kickoffin ohittaneet ottelut: sivu pysyy samassa URLissa (28.10.2026).
+
+    Rivi on se, joka kirjattiin ennen kickoffia (`prediction_log.json`, sama
+    kuin track recordissa); lukuja ei lasketa uudelleen. Tulos on rivillä
+    vasta kun se on gradattu, muuten sivu sanoo "result pending".
+    """
+    out: dict[str, list[dict]] = {}
+    for e in log["predictions"]:
+        comp = e.get("competition")
+        if comp not in LEAGUES or e.get("p_home") is None:
+            continue
+        if _kickoff_dt(e) is None:
+            continue
+        if e.get("result") is None and not _kicked_off(e, now):
+            continue
+        out.setdefault(comp, []).append(e)
+    return out
+
+
+def _kickoff_dt(entry: dict) -> datetime | None:
+    try:
+        return datetime.fromisoformat((entry.get("kickoff") or "").replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def _kicked_off(entry: dict, now: datetime) -> bool:
+    ko = _kickoff_dt(entry)
+    return ko is not None and ko <= now
+
+
+def _assign_filenames(rows: list[dict]) -> list[str]:
+    """Anna jokaiselle liigan riville `_file`. Aikaisin kickoff pitää perusslugin,
+    myöhempi saman parin ottelu saa päiväsuffiksin, joten julkaistu URL ei
+    vaihdu. Palauttaa edelleen törmäävät nimet (tyhjä = ok)."""
+    seen: set[str] = set()
+    clashes: list[str] = []
+    for e in sorted(rows, key=lambda r: r.get("kickoff") or ""):
+        base = f"{_slug(e['home_team'])}-vs-{_slug(e['away_team'])}"
+        name = base if f"{base}.html" not in seen else f"{base}-{(e.get('kickoff') or '')[:10]}"
+        if f"{name}.html" in seen:
+            clashes.append(f"{name}.html")
+        seen.add(f"{name}.html")
+        e["_file"] = f"{name}.html"
+    return clashes
+
+
 def _within_horizon(entry: dict, now: datetime) -> bool:
     """Onko ottelu SITEMAP_HORIZON_DAYS:n sisalla? Ks. vakion perustelu."""
     try:
@@ -467,6 +517,12 @@ def _within_horizon(entry: dict, now: datetime) -> bool:
     except Exception:
         return False
     return (ko - now).days <= SITEMAP_HORIZON_DAYS
+
+
+def _result_date(entry: dict) -> str:
+    """Sivustokartan lastmod pelatulle: tuloksen päivä, muuten kickoffin päivä."""
+    res = entry.get("result") or {}
+    return (res.get("reconciled_at") or entry.get("kickoff") or "")[:10]
 
 
 def _apply_display_names(by_comp: dict[str, list[dict]]) -> tuple[set, set]:
@@ -531,6 +587,8 @@ def _attach_confidence(by_comp: dict[str, list[dict]]) -> int:
 
 
 def _match_filename(e: dict) -> str:
+    if e.get("_file"):
+        return e["_file"]
     return f"{_slug(e['home_team'])}-vs-{_slug(e['away_team'])}.html"
 
 
@@ -630,8 +688,39 @@ def _too_close_sentence(home: str, away: str, ph: float, pa: float, call: dict) 
     )
 
 
-def render_match_page(comp: str, e: dict) -> str:
+_OUTCOME_WORD = {"home": "home win", "draw": "draw", "away": "away win"}
+
+
+def _played_state(e: dict, now: datetime | None) -> str:
+    """"upcoming" | "pending" (kickoff mennyt, ei tulosta) | "final"."""
+    if e.get("result") is not None:
+        return "final"
+    if now is not None and _kicked_off(e, now):
+        return "pending"
+    return "upcoming"
+
+
+def _result_html(e: dict, state: str) -> str:
+    """Tuloslause pelatulle sivulle. Luvut tulevat lokirivin result-kentästä."""
+    link = '<a href="/predictions#record">public track record</a>'
+    if state == "pending":
+        return (f'<div class="rec"><strong>Result pending.</strong> Kick-off has passed. '
+                f"The score is added here once the match is graded in our {link}.</div>")
+    res = e["result"]
+    outcome = _OUTCOME_WORD.get(res.get("actual_outcome") or "", "")
+    return (
+        f'<div class="rec"><strong>Full time: {escape(e["home_team"])} '
+        f'{res.get("home_score")}-{res.get("away_score")} {escape(e["away_team"])}'
+        f'{" (" + outcome + ")" if outcome else ""}.</strong> '
+        f"The prediction above is the one logged before kick-off and graded in our {link}, "
+        f"hits and misses included.</div>"
+    )
+
+
+def render_match_page(comp: str, e: dict, now: datetime | None = None) -> str:
     cfg = LEAGUES[comp]
+    state = _played_state(e, now)
+    played = state != "upcoming"
     home, away = e["home_team"], e["away_team"]
     ph, pd_, pa = e["p_home"], e["p_draw"], e["p_away"]
     # 10.9.2026: suosikki vain kun ero ylittaa mitatun marginaalin.
@@ -642,6 +731,8 @@ def render_match_page(comp: str, e: dict) -> str:
     fav, fav_pct = _favourite_label(e, call)
     url = f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}"
     title = f"{home} vs {away} Prediction: {cfg['name']} | GoalIQ"
+    if state == "final":
+        title = f"{home} vs {away} Prediction and Result: {cfg['name']} | GoalIQ"
     # 2.8.2026 PREMIUM-VUOTO KIINNI: raaka xG on premium-dataa (PredictScreen
     # #92: "siita johtaa total goals + BTTS + scoreline", XgStat locked=
     # !isPremium), mutta se julkaistiin 1 930 indeksoidulla sivulla ilmaiseksi.
@@ -656,7 +747,8 @@ def render_match_page(comp: str, e: dict) -> str:
             f"public track record and graded after the match."
         )
         lede_claim = (
-            f"The GoalIQ match model makes <strong>{escape(fav)}</strong> the favourite "
+            f"The GoalIQ match model {'made' if played else 'makes'} "
+            f"<strong>{escape(fav)}</strong> the favourite "
             f"at <strong>{fav_pct}</strong> to win."
         )
     else:
@@ -679,10 +771,11 @@ def render_match_page(comp: str, e: dict) -> str:
         f'<a href="https://pro.goaliq.app/?tab=premium&amp;src=predict-page&amp;srcp=predictions">GoalIQ Premium</a></span></div>'
         f"</div>"
         + _confidence_block(e)
-        + f'<div class="rec">This prediction was logged before kickoff on '
-        f'{escape((e.get("logged_at") or "")[:10])} and will be graded in our '
-        f'<a href="/predictions">public track record</a>, hits and misses included.</div>'
-        f'<div class="cta-row">'
+        + (_result_html(e, state) if played else
+           f'<div class="rec">This prediction was logged before kickoff on '
+           f'{escape((e.get("logged_at") or "")[:10])} and will be graded in our '
+           f'<a href="/predictions">public track record</a>, hits and misses included.</div>')
+        + f'<div class="cta-row">'
         f'<a class="btn" href="https://pro.goaliq.app/matches/predict">Run your own prediction</a>'
         f'<a class="btn ghost" href="/predictions/{cfg["slug"]}/">More {escape(cfg["name"])} predictions</a>'
         f"</div>"
@@ -712,7 +805,29 @@ def render_match_page(comp: str, e: dict) -> str:
     return _page(title, desc, url, hero, body, jsonld)
 
 
-def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
+def _hub_row(cfg: dict, e: dict, played: bool) -> str:
+    fav, fav_pct = _favourite_label(
+        e, call_state(e["p_home"], e["p_draw"], e["p_away"]))
+    pick_html = (
+        f'<span class="pick">{escape(fav)} {fav_pct}</span>' if fav
+        else f'<span class="pick close">{TOO_CLOSE_LABEL}</span>'
+    )
+    meta = _fmt_kickoff(e.get("kickoff") or "")
+    if played:
+        res = e.get("result")
+        meta += (f" · full time {res.get('home_score')}-{res.get('away_score')}"
+                 if res else " · result pending")
+    return (
+        f'<div class="mrow"><div>'
+        f'<a href="/predictions/{cfg["slug"]}/{_match_filename(e)[:-5]}">'
+        f'{escape(e["home_team"])} vs {escape(e["away_team"])}</a>'
+        f'<div class="meta">{meta}</div></div>'
+        f'{pick_html}</div>'
+    )
+
+
+def render_league_hub(comp: str, rows: list[dict], now: datetime,
+                      recent: list[dict] | tuple = ()) -> str:
     cfg = LEAGUES[comp]
     url = f"{BASE}/predictions/{cfg['slug']}/"
     title = f"{cfg['name']} Predictions This Week: Win Probability | GoalIQ"
@@ -721,22 +836,10 @@ def render_league_hub(comp: str, rows: list[dict], now: datetime) -> str:
         f"prediction is logged before kickoff in GoalIQ's public track record "
         f"and graded after the match, hits and misses included."
     )
-    items = []
-    for e in rows:
-        fname = _match_filename(e)
-        fav, fav_pct = _favourite_label(
-            e, call_state(e["p_home"], e["p_draw"], e["p_away"]))
-        pick_html = (
-            f'<span class="pick">{escape(fav)} {fav_pct}</span>' if fav
-            else f'<span class="pick close">{TOO_CLOSE_LABEL}</span>'
-        )
-        items.append(
-            f'<div class="mrow"><div>'
-            f'<a href="/predictions/{cfg["slug"]}/{fname[:-5]}">'
-            f'{escape(e["home_team"])} vs {escape(e["away_team"])}</a>'
-            f'<div class="meta">{_fmt_kickoff(e.get("kickoff") or "")}</div></div>'
-            f'{pick_html}</div>'
-        )
+    items = [_hub_row(cfg, e, False) for e in rows]
+    if recent:
+        items.append('<div class="meta"><strong>Played in the last 7 days</strong></div>')
+        items.extend(_hub_row(cfg, e, True) for e in recent)
     hero = (
         f"<h1>{escape(cfg['name'])} predictions</h1>"
         f'<p class="lede">The GoalIQ match model predicts upcoming '
@@ -847,8 +950,8 @@ def update_predictions_hub_links(live: list[str]) -> bool:
         intro = ("No league is mid-season right now. Every league below is in "
                  "the public track record and pages return with the fixtures.")
     note = ("A league gets pages here once its next fixtures are logged, and "
-            "each page comes down when that match kicks off. The prediction "
-            "itself stays in the record either way.")
+            "each page stays up after kick-off with the prediction as logged "
+            "and the result once it is graded.")
     blocks = {
         "PRED-LEAGUES": links or
         '<span class="cta-note">League pages return with the new seasons.</span>',
@@ -955,10 +1058,31 @@ def update_llms_txt(counts: dict[str, int], sitemap_urls: list[str]) -> bool:
     return False
 
 
+CF_FILE_LIMIT = 20000
+
+
+def _deploy_file_count() -> int:
+    """Julkaistavien tiedostojen maara: Cloudflare Pagesin 20 000 tiedoston
+    raja. Pelatut sivut kasvattavat maaraa joka kauden.
+
+    Sama suodatin kuin stagingissa (scripts/site_output.py), ei repon
+    hakemistokavely: lokaali .venv on yksin ~41 000 tiedostoa ja kaatoi
+    ajon (28.10). Seuraamattomat mutta ei-ignoroidut mukana, koska tama ajo
+    kirjoittaa uudet sivut ennen committia."""
+    out = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "-z", "--cached", "--others",
+         "--exclude-standard"],
+        capture_output=True, check=True,
+    ).stdout.decode("utf-8")
+    paths = sorted({p for p in out.split("\0") if p})
+    return sum(1 for p in site_output.site_paths(paths) if (ROOT / p).is_file())
+
+
 def main() -> int:
     now = datetime.now(timezone.utc)
     log = acc.load_log()
     by_comp = _upcoming_by_comp(log, now)
+    played_by_comp = _played_by_comp(log, now)
     # JARJESTYS ON PAKOLLINEN: luottamuslippu haetaan raaoilla mallinimilla
     # ENNEN nayttonimien vaihtoa (ks. _attach_confidence).
     n_conf = _attach_confidence(by_comp)
@@ -972,6 +1096,10 @@ def main() -> int:
         return 1
 
     mapped, unmapped = _apply_display_names(by_comp)
+    # Pelatut samalla kartalla, jotta niiden slug on sama kuin ennen kickoffia.
+    mapped_p, unmapped_p = _apply_display_names(played_by_comp)
+    mapped |= mapped_p
+    unmapped |= unmapped_p
     total_names = len(mapped) + len(unmapped)
     print(f"DISPLAY_NAMES: {len(mapped)}/{total_names} osumaa, "
           f"{len(unmapped)} ilman karttaa"
@@ -984,48 +1112,68 @@ def main() -> int:
     total_pages = 0
     today = now.strftime("%Y-%m-%d")
 
+    played_entries: list[tuple[str, str, str, str]] = []
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=SITEMAP_HORIZON_DAYS)
     for comp, cfg in LEAGUES.items():
         rows = by_comp.get(comp) or []
+        done = played_by_comp.get(comp) or []
         out_dir = OUT_ROOT / cfg["slug"]
-        if not rows:
-            # Off-season/ei dataa → ei hubia; siivoa mahdolliset vanhat sivut
+        if not rows and not done:
+            # Ei dataa lainkaan → ei sivuja; siivoa mahdolliset vanhat sivut
             if out_dir.exists():
                 for f in out_dir.glob("*.html"):
                     f.unlink()
-            print(f"{comp}: 0 tulevaa ottelua — ohitetaan (template valmiina).")
+            print(f"{comp}: 0 ottelua lokissa, ohitetaan (template valmiina).")
             continue
         out_dir.mkdir(parents=True, exist_ok=True)
         # Slug-tormays: kaksi eri ottelua samaan tiedostonimeen tarkoittaa etta
         # nayttonimikartta on vienyt kaksi joukkuetta samaan sluginiin. Ilman
         # tata tarkistusta jalkimmainen kirjoittaa edellisen yli ja sivumaara
-        # putoaa HILJAA — juuri se vikaluokka jota vastaan tama koko commit on.
-        names = [_match_filename(e) for e in rows]
-        if len(set(names)) != len(names):
-            dupes = sorted({n for n in names if names.count(n) > 1})
-            print(f"VIRHE {comp}: slug-tormays {len(names) - len(set(names))} "
-                  f"sivulla -> {dupes}", file=sys.stderr)
+        # putoaa HILJAA. Saman parin myohempi ottelu saa paivasuffiksin
+        # (_assign_filenames); vasta suffiksinkin jalkeen tormays on virhe.
+        clashes = _assign_filenames(rows + done)
+        if clashes:
+            print(f"VIRHE {comp}: slug-tormays -> {sorted(set(clashes))}",
+                  file=sys.stderr)
             return 1
-        # Siivoa vanhentuneet ottelusivut (kickoff mennyt / pariutus muuttui)
+        names = [_match_filename(e) for e in rows + done]
+        # Siivoa vain sivut joita lokissa ei ole (pariutus muuttui). Pelattu
+        # ottelu EI ole vanhentunut: sivu jaa paikalleen.
         keep = {"index.html"} | set(names)
         for f in out_dir.glob("*.html"):
             if f.name not in keep:
                 f.unlink()
-        (out_dir / "index.html").write_text(
-            render_league_hub(comp, rows, now), encoding="utf-8"
-        )
-        for e in rows:
-            (out_dir / _match_filename(e)).write_text(
-                render_match_page(comp, e), encoding="utf-8"
+        recent = [e for e in done
+                  if (_kickoff_dt(e) or now) >= week_ago][::-1]
+        if rows or recent:
+            (out_dir / "index.html").write_text(
+                render_league_hub(comp, rows, now, recent), encoding="utf-8"
             )
+            sitemap_entries.append(
+                (f"{BASE}/predictions/{cfg['slug']}/", today, "daily", "0.8")
+            )
+        elif (out_dir / "index.html").exists():
+            (out_dir / "index.html").unlink()
+        for e in rows + done:
+            (out_dir / _match_filename(e)).write_text(
+                render_match_page(comp, e, now), encoding="utf-8"
+            )
+        played_entries.extend(
+            (f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}",
+             _result_date(e), "monthly", "0.5")
+            for e in done if (_kickoff_dt(e) or now) >= month_ago
+        )
+        total_pages += len(rows) + len(done) + (1 if (rows or recent) else 0)
+        # llms.txt: sivuston ottelusivujen maara levylla, pelatut mukana.
+        match_counts[comp] = len(rows) + len(done)
+        if not rows:
+            print(f"{comp}: ei tulevia, {len(done)} pelattua sivua sailytetty.")
+            continue
         live_hubs.append(comp)
-        match_counts[comp] = len(rows)
-        total_pages += 1 + len(rows)
-        # Hubi aina sitemapiin; ottelusivut vain lahihorisontista (ks.
+        # Hubi on jo sitemapissa; ottelusivut vain lahihorisontista (ks.
         # SITEMAP_HORIZON_DAYS). Sivut itse on jo kirjoitettu levylle yllä —
         # tämä rajaa vain sen mitä Googlelle tarjotaan ryömittäväksi.
-        sitemap_entries.append(
-            (f"{BASE}/predictions/{cfg['slug']}/", today, "daily", "0.8")
-        )
         near = [e for e in rows if _within_horizon(e, now)]
         sitemap_entries.extend(
             (f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}",
@@ -1035,6 +1183,14 @@ def main() -> int:
         sitemap_skipped += len(rows) - len(near)
         print(f"{comp}: hub + {len(rows)} ottelusivua → predictions/{cfg['slug']}/")
 
+    # Pelatut (tulos- tai pending-sivut) horisontin sisalta, lastmod = tuloksen
+    # paiva. Perakkain tulevien jalkeen, jotta llms-esimerkki on tuleva ottelu.
+    sitemap_entries.extend(played_entries)
+    n_files = _deploy_file_count()
+    print(f"Julkaisutiedostoja {n_files} (Cloudflare Pages: {CF_FILE_LIMIT})")
+    if n_files > CF_FILE_LIMIT:
+        print(f"VIRHE: tiedostoja {n_files} > {CF_FILE_LIMIT}", file=sys.stderr)
+        return 1
     write_urlset(SITEMAP_PRED_PATH, sitemap_entries)
     print(f"sitemap-predictions.xml: {len(sitemap_entries)} URL:ia "
           f"({sitemap_skipped} ottelusivua jatetty pois, kickoff yli "

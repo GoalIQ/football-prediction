@@ -266,7 +266,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   Signaalit)
       Pisteet: (lukittu) arvo 1/3 · kiire 2/3 · työ S · myynti 1/3 · uutuus 1/2 = 7
       Mittari: label x-jono -issueita enintään yksi päivässä 2026-10-26 alkaen, ja jokaisen rungossa on x.com/intent-linkki (github.com/GoalIQ/football-prediction/issues?q=label:x-jono) · tarkistus 2026-11-08
-- [ ] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py`
+- [x] Ottelusivu pysyy kickoffin jälkeen tulossivuna (ylläpitäjän päätös 2026-10-19): `scripts/build_prediction_pages.py` (PR, 2026-10-28)
   ei enää poista ottelusivua, vaan sivu jää samaan URL:iin ja näyttää ennen kickoffia kirjatun ennusteen
   (`data/prediction_log.json`, sama rivi kuin track recordissa, lukuja ei lasketa uudelleen), toteuman kun rivillä on
   `result`, muuten tilan "result pending", ja linkin /predictions#record. Sama maskaus kuin nyt (vain 1X2-%).
