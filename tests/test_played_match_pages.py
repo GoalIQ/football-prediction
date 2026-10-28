@@ -88,7 +88,9 @@ def test_main_keeps_played_page_and_sitemap(sandbox, monkeypatch):
     now = datetime.now(timezone.utc)
     rows = [_entry(3, now=now),
             _entry(-2, RESULT, home="Everton FC", away="Fulham FC", now=now),
-            _entry(-1, None, home="Leeds United", away="Brentford FC", now=now)]
+            _entry(-1, None, home="Leeds United", away="Brentford FC", now=now),
+            # siirretty ottelu: kickoff 17 vrk sitten, ei gradattu koskaan
+            _entry(-17, None, home="Wolves", away="Burnley FC", now=now)]
     monkeypatch.setattr(bpp, "_attach_confidence", lambda by_comp: 1)
     monkeypatch.setattr(bpp.acc, "load_log", lambda: {"predictions": rows})
     assert bpp.main() == 0
@@ -96,7 +98,10 @@ def test_main_keeps_played_page_and_sitemap(sandbox, monkeypatch):
     played = out / "everton-fc-vs-fulham-fc.html"
     assert played.exists() and "Full time" in played.read_text(encoding="utf-8")
     assert "Result pending" in (out / "leeds-united-vs-brentford-fc.html").read_text(encoding="utf-8")
+    # "Kick-off has passed" ei saa jaada siirretylle ottelulle
+    assert not (out / "wolves-vs-burnley-fc.html").exists()
     sm = (sandbox / "sitemap.xml").read_text(encoding="utf-8")
+    assert "wolves-vs-burnley-fc" not in sm
     assert "everton-fc-vs-fulham-fc" in sm and "<lastmod>2026-10-27</lastmod>" in sm
     # toinen ajo ei poista pelattua
     assert bpp.main() == 0 and played.exists()

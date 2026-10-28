@@ -467,19 +467,29 @@ def _played_by_comp(log: dict, now: datetime) -> dict[str, list[dict]]:
 
     Rivi on se, joka kirjattiin ennen kickoffia (`prediction_log.json`, sama
     kuin track recordissa); lukuja ei lasketa uudelleen. Tulos on rivillä
-    vasta kun se on gradattu, muuten sivu sanoo "result pending".
+    vasta kun se on gradattu, muuten sivu sanoo "result pending" enintaan
+    PENDING_MAX_DAYS kickoffin jalkeen.
     """
     out: dict[str, list[dict]] = {}
     for e in log["predictions"]:
         comp = e.get("competition")
         if comp not in LEAGUES or e.get("p_home") is None:
             continue
-        if _kickoff_dt(e) is None:
+        ko = _kickoff_dt(e)
+        if ko is None:
             continue
-        if e.get("result") is None and not _kicked_off(e, now):
+        if e.get("result") is None and (
+                ko > now or now - ko > timedelta(days=PENDING_MAX_DAYS)):
             continue
         out.setdefault(comp, []).append(e)
     return out
+
+
+# Gradaamaton rivi kickoffin jalkeen on siirretty ottelu, ei hidas gradaus
+# (28.10: yhdeksan rivia 17-90 vrk vanhoja, gradaus ajaa 3 h valein).
+# Niille "Kick-off has passed" olisi epatosi, joten sivua ei tehda, kuten
+# ennen 28.10. Siirretty ottelu saa sivun uudesta lokirivista.
+PENDING_MAX_DAYS = 3
 
 
 def _kickoff_dt(entry: dict) -> datetime | None:
