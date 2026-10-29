@@ -231,6 +231,16 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   joukkueen vastustaja (reply-moduulin rivillä on ottelu ja koti/vieras), esimerkiksi "Arsenal next on 37% at
   Liverpool". Testi tämän postauksen muodolla ja negatiivinen kontrolli (vastustajan kanssa menee läpi).
   (lähde: data/bsky_posted.jsonl, https://goaliq.app/fpl)
+- 2026-10: Minuuttimallin aloitustodennäköisyyden yläpää on ylivarma. Deadline-hetken projektio (viimeinen mainin
+  `data/fpl_xp_projections.json` ennen deadlinea, `p_start` riveillä joiden `xp_dist.gw` on kierros) vs FPL:n
+  `event/{gw}/live` `starts`, GW2-8: `p_start` >= 0.99 aloitti 90/99 (0.91), 0.95-0.99 aloitti 106/113 (0.94).
+  Alempana kalibrointi pitää: 0.80-0.90 0.87 (n 425), 0.90-0.95 0.92 (n 414), 0.50-0.80 0.73 (n 466). Huteja
+  >= 0.99 -luokassa oli jokaisella kierroksella GW2-8. Myöhäinen ottelu ei selitä eroa: kun joukkueen ottelu alkoi
+  yli 24 h deadlinen jälkeen, >= 0.99 aloitti 27/29. Vaikutus kapteeniin: GW8:lla mallin kapteenin `p_start` oli
+  1.0 ja xP 5.93, eniten kapteenoidun 0.925 ja 5.63, ja mallin kapteeni ei pelannut. Yläpään 9 prosenttiyksikön
+  harha on sillä rivillä noin 0.5 xP, ero eniten kapteenoituun 0.30. Parametrimuutos on ylläpitäjän päätös;
+  agentille kuuluu mittari: `p_start`-kalibrointi luokittain viikkobenchmarkiin deadline-projektiosta.
+  (lähde: data/fpl_xp_projections.json git-historia, data/gw_calls.json gw 8, https://goaliq.app/fpl#gw-calls)
 
 ## Avoimet
 
