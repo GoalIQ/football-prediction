@@ -241,6 +241,18 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   harha on sillä rivillä noin 0.5 xP, ero eniten kapteenoituun 0.30. Parametrimuutos on ylläpitäjän päätös;
   agentille kuuluu mittari: `p_start`-kalibrointi luokittain viikkobenchmarkiin deadline-projektiosta.
   (lähde: data/fpl_xp_projections.json git-historia, data/gw_calls.json gw 8, https://goaliq.app/fpl#gw-calls)
+- 2026-10: Kanta-issuen vastaus ei ole päässyt botille kertaakaan. `scripts/bsky_kanta.py` `read()` hyväksyy vain
+  kommentit, joiden `author_association` on OWNER tai MEMBER, mutta ylläpitäjän jäsenyys orgissa on yksityinen, ja
+  ulkopuolinen näkymä antaa samalle kommentille CONTRIBUTOR. GW9-issueen vastattiin 29.10 klo 15:10 UTC. Jokainen
+  bsky-bot-ajo sen jälkeen kirjasi "uusi kanta False", ja klo 17 UTC aivoajo (`last_think_at` 17:51) teki
+  player-postauksen ilman owner_takea. Sama vika korjattiin `.github/auto-kehitys/korjaus.py`:ssä 21.10
+  kirjautumisnimellä (`YLLAPITAJAN_LOGINIT`), mutta 23.10 kirjoitettu `bsky_kanta.py` kopioi vanhan säännön, ja
+  `current_takes` nielee virheet hiljaa (`except Exception: return []`). Puuttuu: (a) `read()` hyväksyy
+  ylläpitäjän kirjautumisnimen samasta joukosta kuin korjaus.py (yksi lähde, ei kopiota); (b) should-think ja
+  context tulostavat, montako kommenttia luettiin ja montako hylättiin millä syyllä; (c) testi, jossa kommentin
+  association on CONTRIBUTOR ja kirjautumisnimi ylläpitäjän (menee läpi), ja negatiivinen kontrolli (muu
+  kirjautumisnimi CONTRIBUTOR-tasolla ei mene). (lähde: https://api.github.com/repos/GoalIQ/football-prediction/issues/64/comments
+  ilman tunnusta: author_association CONTRIBUTOR; https://api.github.com/orgs/GoalIQ/public_members tyhjä)
 
 ## Avoimet
 
