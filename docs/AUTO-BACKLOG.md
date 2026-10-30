@@ -253,6 +253,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   association on CONTRIBUTOR ja kirjautumisnimi ylläpitäjän (menee läpi), ja negatiivinen kontrolli (muu
   kirjautumisnimi CONTRIBUTOR-tasolla ei mene). (lähde: https://api.github.com/repos/GoalIQ/football-prediction/issues/64/comments
   ilman tunnusta: author_association CONTRIBUTOR; https://api.github.com/orgs/GoalIQ/public_members tyhjä)
+  → korjattu käsin 2026-10-30 ylläpitäjän pyynnöstä (a, b ja c), ei riviä agentille.
 
 ## Avoimet
 

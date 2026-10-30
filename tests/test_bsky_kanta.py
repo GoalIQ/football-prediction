@@ -1,6 +1,7 @@
-"""Ylläpitäjän kanta botin raaka-aineeksi (23.10.2026): issue kerran kierroksessa, vain OWNER/MEMBER, portti."""
+"""Ylläpitäjän kanta botin raaka-aineeksi (23.10.2026): issue kerran kierroksessa, vain ylläpitäjä, portti."""
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from src.marketing import bsky_gate as gate
 
 DL = datetime(2026, 10, 24, 17, 30, tzinfo=timezone.utc)
 GW = 9
+JUURI = Path(__file__).resolve().parents[1]
 
 
 def _c(assoc, body="Captain Haaland, model too low on Salah.", **kw):
@@ -33,6 +35,72 @@ def test_read_suodattaa_omistajan_ja_deadlinen():
     assert [t["text"] for t in kanta.read(GW, DL, now, kommentit)] == [kommentit[0]["body"], "second"]
     assert kanta.read(GW, DL, now, kommentit)[0]["gw"] == GW
     assert kanta.read(GW, DL, DL + timedelta(minutes=1), kommentit) == []
+
+
+# Issue #64:n kommentti sellaisena kuin botin token sen näkee (30.10: jäsenyys orgissa yksityinen).
+GW9_VASTAUS = {"user": {"login": "Veikkoville", "type": "User"}, "author_association": "CONTRIBUTOR",
+               "body": "1. Haaland. Kotona Brightonia vastaan.", "created_at": "2026-10-29T15:10:51Z"}
+
+
+def test_read_tunnistaa_yllapitajan_kirjautumisnimesta_vaikka_jasenyys_on_yksityinen():
+    """GW9: vastaus oli CONTRIBUTOR, ja jokainen ajo 29.10 15:10Z jälkeen kirjasi 'uusi kanta False'."""
+    now = datetime(2026, 10, 30, 15, 0, tzinfo=timezone.utc)
+    dl = datetime(2026, 10, 31, 11, 0, tzinfo=timezone.utc)
+    assert [t["text"] for t in kanta.read(9, dl, now, [GW9_VASTAUS])] == [GW9_VASTAUS["body"]]
+    # Negatiivinen kontrolli: sama kommentti muulta kirjautumisnimeltä ei ole ylläpitäjän kanta.
+    vieras = {**GW9_VASTAUS, "user": {"login": "Veikkoville2", "type": "User"}}
+    hylatyt = Counter()
+    assert kanta.read(9, dl, now, [vieras], hylatyt) == []
+    assert hylatyt == {"kirjoittaja CONTRIBUTOR": 1}
+    # Botti ei ole ylläpitäjä, vaikka sen association olisi MEMBER.
+    botti = {**GW9_VASTAUS, "author_association": "MEMBER", "user": {"login": "github-actions[bot]", "type": "Bot"}}
+    assert kanta.read(9, dl, now, [botti]) == []
+
+
+def test_kirjautumisnimet_yhdesta_lahteesta(monkeypatch, tmp_path):
+    """Kopio oli vian syy: korjaus.py korjattiin 21.10, bsky_kanta.py kopioi 23.10 vanhan säännön. Lähteen
+    vaihto vaihtaa tuloksen, eli bsky_kanta.py:ssä ei ole omaa joukkoa."""
+    assert kanta.LOGIN_SOURCE == JUURI / ".github" / "auto-kehitys" / "korjaus.py"
+    assert "Veikkoville" in kanta.maintainer_logins()
+    toinen = tmp_path / "korjaus.py"
+    toinen.write_text('YLLAPITAJAN_LOGINIT = {"Toinen"}\n', encoding="utf-8")
+    monkeypatch.setattr(kanta, "LOGIN_SOURCE", toinen)
+    kanta.maintainer_logins.cache_clear()
+    try:
+        now, dl = DL - timedelta(hours=5), DL
+        toisen = {**GW9_VASTAUS, "user": {"login": "Toinen", "type": "User"}}
+        assert len(kanta.read(9, dl, now, [toisen])) == 1
+        assert kanta.read(9, dl, now, [GW9_VASTAUS]) == []
+    finally:
+        kanta.maintainer_logins.cache_clear()
+
+
+def _verkko(monkeypatch, kommentit):
+    def req(url, token, data=None):
+        if "/comments" in url:
+            return kommentit
+        return [{"title": "Kanta GW9", "number": 64,
+                 "comments_url": "https://api.github.com/repos/GoalIQ/football-prediction/issues/64/comments"}]
+    monkeypatch.setattr(kanta, "_req", req)
+
+
+def test_current_takes_kertoo_luvun_ja_hylkayssyyt_stderriin(monkeypatch, capsys):
+    now = datetime(2026, 10, 30, 15, 0, tzinfo=timezone.utc)
+    dl = datetime(2026, 10, 31, 11, 0, tzinfo=timezone.utc)
+    _verkko(monkeypatch, [GW9_VASTAUS, _c("NONE", "random")])
+    assert len(kanta.current_takes(9, dl, now, token="t")) == 1
+    out = capsys.readouterr()
+    assert out.out == ""   # `read`-komennon stdout on JSONia
+    assert "kanta GW9: kommentteja 2, hyväksytty 1, hylätty {'kirjoittaja NONE': 1}" in out.err
+
+    def rikki(url, token, data=None):
+        raise OSError("403")
+    monkeypatch.setattr(kanta, "_req", rikki)
+    assert kanta.current_takes(9, dl, now, token="t") == []
+    assert "virhe OSError('403')" in capsys.readouterr().err
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    assert kanta.current_takes(9, dl, now) == []
+    assert "ei GH_TOKENia" in capsys.readouterr().err
 
 
 def test_context_kayttaa_kantaa(monkeypatch):
