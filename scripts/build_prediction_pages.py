@@ -34,6 +34,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
+from typing import NamedTuple
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -602,6 +603,38 @@ def _match_filename(e: dict) -> str:
     return f"{_slug(e['home_team'])}-vs-{_slug(e['away_team'])}.html"
 
 
+class Feed(NamedTuple):
+    """Julkaistavien ottelusivujen lahde: SAMA lukija sivuille ja Bluesky-
+    reply-moduulin `matches`-osiolle (src/marketing/reply_sections.py)."""
+    upcoming: dict[str, list[dict]]
+    played: dict[str, list[dict]]
+    n_conf: int
+    mapped: set
+    unmapped: set
+
+
+def load_feed(log: dict, now: datetime) -> Feed:
+    """Tulevat ja pelatut ottelut sellaisina kuin sivut ne julkaisevat.
+
+    JARJESTYS ON PAKOLLINEN: luottamuslippu haetaan raaoilla mallinimilla
+    ENNEN nayttonimien vaihtoa (ks. _attach_confidence). Tiedostonimet
+    (`_file`) annetaan nayttonimilla, pelatut samalla kartalla kuin tulevat,
+    jotta URL on sama ennen kickoffia ja sen jalkeen.
+    """
+    upcoming = _upcoming_by_comp(log, now)
+    played = _played_by_comp(log, now)
+    n_conf = _attach_confidence(upcoming)
+    mapped, unmapped = _apply_display_names(upcoming)
+    mapped_p, unmapped_p = _apply_display_names(played)
+    for comp, rows in upcoming.items():
+        _assign_filenames(rows + (played.get(comp) or []))
+    return Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p)
+
+
+def match_page_url(comp: str, e: dict) -> str:
+    return f"{BASE}/predictions/{LEAGUES[comp]['slug']}/{_match_filename(e)[:-5]}"
+
+
 def _prob_block(e: dict) -> str:
     ph, pd_, pa = e["p_home"], e["p_draw"], e["p_away"]
     return (
@@ -1091,11 +1124,9 @@ def _deploy_file_count() -> int:
 def main() -> int:
     now = datetime.now(timezone.utc)
     log = acc.load_log()
-    by_comp = _upcoming_by_comp(log, now)
-    played_by_comp = _played_by_comp(log, now)
-    # JARJESTYS ON PAKOLLINEN: luottamuslippu haetaan raaoilla mallinimilla
-    # ENNEN nayttonimien vaihtoa (ks. _attach_confidence).
-    n_conf = _attach_confidence(by_comp)
+    feed = load_feed(log, now)
+    by_comp, played_by_comp = feed.upcoming, feed.played
+    n_conf = feed.n_conf
     pl_rows = len(by_comp.get("PL") or [])
     print(f"Luottamuslippu: {n_conf} ottelusivulle (PL-otteluita {pl_rows})")
     if pl_rows and not n_conf:
@@ -1105,11 +1136,7 @@ def main() -> int:
               "mallinimien haku on rikki", file=sys.stderr)
         return 1
 
-    mapped, unmapped = _apply_display_names(by_comp)
-    # Pelatut samalla kartalla, jotta niiden slug on sama kuin ennen kickoffia.
-    mapped_p, unmapped_p = _apply_display_names(played_by_comp)
-    mapped |= mapped_p
-    unmapped |= unmapped_p
+    mapped, unmapped = feed.mapped, feed.unmapped
     total_names = len(mapped) + len(unmapped)
     print(f"DISPLAY_NAMES: {len(mapped)}/{total_names} osumaa, "
           f"{len(unmapped)} ilman karttaa"

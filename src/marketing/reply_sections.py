@@ -435,3 +435,51 @@ def track_record(acc: dict | None, xp_acc: dict | None) -> dict:
                                               [("xp_accuracy", (int(g["gw"]), "players"))])
         out["available"] = True
     return out
+
+
+# ---------------------------------------------------------------------------
+# Ottelut: seuraavien 72 h ottelut joilla on julkaistu ottelusivu
+# ---------------------------------------------------------------------------
+MATCH_WINDOW_HOURS = 72
+
+
+def matches(log: dict, now) -> dict:
+    """1X2-luvut ottelusivun omalla lukijalla ja muotoilulla.
+
+    `build_prediction_pages.load_feed` ja `_fmt_pct` ovat SAMAT joita sivu
+    kayttaa, joten luku ei voi erota sivusta. Ottelu ilman sivua (liiga ei
+    ole LEAGUES:ssa, ennuste puuttuu) ei tule mukaan. Kickoff 00:00 on
+    feedin paikkamerkki (sivu sanoo "time to be confirmed"), joten sen
+    kuulumista 72 h ikkunaan ei tiedeta: pois. Kickoffin jalkeen ottelu ei
+    ole enaa tuleva, joten se putoaa pois itsestaan.
+    """
+    from datetime import timedelta
+    from scripts import build_prediction_pages as bpp
+    feed = bpp.load_feed(log, now)
+    end = now + timedelta(hours=MATCH_WINDOW_HOURS)
+    found = []
+    for comp, rows in feed.upcoming.items():
+        for e in rows:
+            ko = bpp._kickoff_dt(e)
+            if ko is None or ko > end or (ko.hour == 0 and ko.minute == 0):
+                continue
+            found.append((ko, comp, e))
+    found.sort(key=lambda t: (t[0], t[1], t[2]["_file"]))
+    out = []
+    for _ko, comp, e in found:
+        url = bpp.match_page_url(comp, e)
+        key = f"{comp.lower()}-{e['_file'][:-5]}"
+        vals = {}
+        for field, who in (("p_home", e["home_team"]), ("p_draw", "Draw"),
+                           ("p_away", e["away_team"])):
+            t = bpp._fmt_pct(e[field])
+            vals[field] = {"value": int(t.rstrip("%")), "text": t, "unit": "%",
+                           "src": "prediction_log", "label": who, "page": url,
+                           "routes": [["match_pages", [key]]]}
+        out.append({"key": key, "competition": comp, "home": e["home_team"],
+                    "away": e["away_team"], "kickoff": e["kickoff"], "page": url,
+                    "values": vals})
+    reason = None if out else (f"no published match page kicks off in the next "
+                               f"{MATCH_WINDOW_HOURS} hours")
+    return {"available": bool(out), "window_hours": MATCH_WINDOW_HOURS,
+            "reason": reason, "rows": out}

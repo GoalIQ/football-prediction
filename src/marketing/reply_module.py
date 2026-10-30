@@ -49,6 +49,7 @@ LOCAL_SOURCES = {
     "accuracy": ("accuracy.json", ("updated_at",)),
     "xp_accuracy": ("fpl_xp_gw_accuracy.json", None),
     "gw_calls": ("gw_calls.json", None),
+    "prediction_log": ("prediction_log.json", None),
 }
 
 # Osiot joiden riveissa on nimetty pelaaja (c).
@@ -130,6 +131,9 @@ def surface_lookup(pages: dict, sid: str, key: list, field: str, gw: int,
     p = pages.get(sid)
     if p is None:
         return None
+    if sid == "match_pages":
+        row = (p.get("rows") or {}).get(key[0])
+        return (row["url"], row.get(field)) if row else (None, None)
     if sid == "fpl_entry":
         return p["url"], (p.get(key[0]) if p.get(key[0]) is not None else None)
     rows = p.get("rows") or {}
@@ -213,7 +217,7 @@ def resolve_routes(sections: dict, pages: dict, gw: int, verified_at: str,
 
 # Pinnat jotka generaattori hakee aina (points_gw vain kun sita tarvitaan).
 ALL_SURFACES = ("gw_xp", "top100", "clean_sheets", "gw_calls", "xp_accuracy",
-                "track_record", "eo", "differentials", "clubs")
+                "track_record", "eo", "differentials", "clubs", "match_pages")
 _PAGE_OF = {"gw_xp": "https://goaliq.app/fpl/expected-points",
             "top100": "https://goaliq.app/fpl/expected-points",
             "clean_sheets": "https://goaliq.app/fpl", "gw_calls": "https://goaliq.app/fpl",
@@ -286,6 +290,14 @@ def fetch_surfaces(needed, gw: int, fetch=None) -> tuple[dict, dict, list[str]]:
             h = get(rs.club_url(slug))
             if h:
                 pages["clubs"][slug] = ps.club_table(h)
+    if "match_pages" in needed:
+        # Ei verkkoa: ottelusivun luvut tulevat samasta lukijasta jonka builder
+        # kayttaa sivujen kirjoittamiseen (lokista), ei sivun HTML:sta.
+        from src.models import accuracy as acc
+        sec = rs.matches(acc.load_log(), datetime.now(timezone.utc))
+        pages["match_pages"] = {"url": None, "gw": None, "rows": {
+            r["key"]: {"url": r["page"], **{f: v["text"] for f, v in r["values"].items()}}
+            for r in sec["rows"]}}
     if "points_gw" in needed:
         u = f"https://goaliq.app/fpl/points/gw{gw}"
         h = get(u)
@@ -322,7 +334,8 @@ def source_stamp(name: str, data_dir: Path | None = None) -> str | None:
     return _stamp(_read(p), where)
 
 
-def recompute_sections(module: dict, names: set[str], data_dir: Path | None = None) -> dict:
+def recompute_sections(module: dict, names: set[str], data_dir: Path | None = None,
+                       now: datetime | None = None) -> dict:
     """Aja samat osiofunktiot tuoreella paikallisella datalla."""
     from src.marketing import reply_sections as rs
     from src.models.fpl_xp import attach_horizon_total_actionable, load_xp_actionable
@@ -340,6 +353,9 @@ def recompute_sections(module: dict, names: set[str], data_dir: Path | None = No
         out["xp_top5"] = rs.xp_top5(xp, gw, load_blocklist())
     if "player_lookup" in names or "differentials" in names:
         out["player_lookup"] = rs.player_lookup(xp, gw, load_blocklist())
+    if "matches" in names:
+        from src.models import accuracy as acc
+        out["matches"] = rs.matches(acc.load_log(dd / "prediction_log.json"), now or datetime.now(timezone.utc))
     if "cs_top" in names:
         out["cs_top"] = rs.cs_top(_read(dd / "fpl_projections_phase0.json"), gw)
     if "track_record" in names:
@@ -443,6 +459,14 @@ def load_reply_module(gw: int, *, sections=None, keys=None, now: datetime | None
 
     chosen, keys = _select(module, sections, keys)
 
+    # (a2) ottelu jonka kickoff on mennyt ei ole enaa ennuste. Lokin tiiviste
+    # (b) ei muutu kickoffin ylittyessa, joten tama tarkistetaan erikseen.
+    started = [f"{r['key']} ({r['kickoff']})" for r in (chosen.get("matches") or {}).get("rows") or []
+               if (_parse_ts(r.get("kickoff")) or now) <= now]
+    if started:
+        raise ReplyModuleRefused(
+            f"GW{gw} matches already kicked off: {', '.join(started[:8])}. Rebuild the module.")
+
     # (b) regeneroitu lahde + muuttunut nayttoteksti
     srcs = module.get("sources") or {}
     used_srcs = {v.get("src") for _k, v, _r, _s in iter_values(chosen)}
@@ -453,7 +477,7 @@ def load_reply_module(gw: int, *, sections=None, keys=None, now: datetime | None
     if changed:
         affected = {sname for _k, v, _r, sname in iter_values(chosen)
                     if v.get("src") in changed or (v.get("src") == "differentials" and "xp" in changed)}
-        fresh = recompute_sections(module, affected, data_dir)
+        fresh = recompute_sections(module, affected, data_dir, now)
         fresh_idx = value_index(fresh)
         diffs = []
         for key, v, _r, sname in iter_values(chosen):

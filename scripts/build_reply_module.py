@@ -45,6 +45,7 @@ import config  # noqa: E402
 from src.marketing import public_surface as ps  # noqa: E402
 from src.marketing import reply_module as rm  # noqa: E402
 from src.marketing import reply_sections as rs  # noqa: E402
+from src.models import accuracy as acc_mod  # noqa: E402
 
 API = "https://api.goaliq.app"
 FPL = "https://fantasy.premierleague.com/api"
@@ -159,6 +160,7 @@ def build(gw_arg: int | None, dry_run: bool, out_dir: Path | None = None, strict
         "model_vs_template": rs.model_vs_template(frozen, elite, frozen_xp, gw),
         "last_gw": rs.last_gw(entry_event, events, gw_calls, gw, live_points, cap_mult),
         "track_record": rs.track_record(acc, xp_acc),
+        "matches": rs.matches(acc_mod.load_log(), datetime.now(timezone.utc)),
     }
     for n, s in sections.items():
         print(f"      {n}: {'ok' if s.get('available') else 'EI: ' + str(s.get('reason'))}")
@@ -196,6 +198,8 @@ def build(gw_arg: int | None, dry_run: bool, out_dir: Path | None = None, strict
                           "fetched_at": now_iso},
         "gw_calls": _src("data/gw_calls.json", config.DATA_DIR / "gw_calls.json", None,
                          "gw_calls"),
+        "prediction_log": _src("data/prediction_log.json",
+                               config.DATA_DIR / "prediction_log.json", None, "prediction_log"),
         "accuracy": _src("data/accuracy.json", config.DATA_DIR / "accuracy.json",
                          (acc or {}).get("updated_at"), "accuracy"),
         "xp_accuracy": _src("data/fpl_xp_gw_accuracy.json",
