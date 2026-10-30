@@ -1327,6 +1327,131 @@
      }
     }
    }
+  },
+  {
+   "gw": 9,
+   "deadline_utc": "2026-10-31T11:00:00Z",
+   "logged_at": "2026-10-30T07:00:52Z",
+   "updated_at": "2026-10-30T07:00:52Z",
+   "source": {
+    "freeze_frozen_at": "2026-10-30T07:00:51Z",
+    "projection_generated_at": "2026-10-30T06:54:32+00:00"
+   },
+   "calls": [
+    {
+     "call": "model_captain",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "gw_xp",
+     "value": 6.17,
+     "frozen_value": 6.17,
+     "criterion": "captain return, points doubled"
+    },
+    {
+     "call": "captain_pick",
+     "player_id": 411,
+     "web_name": "Haaland",
+     "team_short": "MCI",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.175,
+     "criterion": "10+ pts",
+     "gw_xp": 6.17,
+     "xp_dist": {
+      "p_haul": 0.175,
+      "p_blank": 0.117,
+      "p10": 2,
+      "median": 6,
+      "p90": 11,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "ceiling",
+     "player_id": 106,
+     "web_name": "Thiago",
+     "team_short": "BRE",
+     "pos": "FWD",
+     "metric": "p90",
+     "value": 10,
+     "criterion": "reached p90",
+     "gw_xp": 5.09,
+     "xp_dist": {
+      "p_haul": 0.13,
+      "p_blank": 0.31,
+      "p10": 2,
+      "median": 5,
+      "p90": 10,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "safest",
+     "player_id": 572,
+     "web_name": "Tzolakis",
+     "team_short": "HUL",
+     "pos": "GKP",
+     "metric": "p_3plus",
+     "value": 0.784,
+     "criterion": "3+ pts",
+     "gw_xp": 4.51,
+     "xp_dist": {
+      "p_haul": 0.007,
+      "p_blank": 0.216,
+      "p10": 2,
+      "median": 4,
+      "p90": 7,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    },
+    {
+     "call": "gamble",
+     "player_id": 295,
+     "web_name": "McBurnie",
+     "team_short": "HUL",
+     "pos": "FWD",
+     "metric": "p_haul",
+     "value": 0.095,
+     "criterion": "10+ pts",
+     "gw_xp": 4.29,
+     "xp_dist": {
+      "p_haul": 0.095,
+      "p_blank": 0.371,
+      "p10": 1,
+      "median": 3,
+      "p90": 9,
+      "haul_pts": 10,
+      "blank_pts": 2,
+      "n": 2000
+     }
+    }
+   ],
+   "model_transfers": [
+    {
+     "out": 8,
+     "out_name": "Calafiori",
+     "in": 566,
+     "in_name": "Silva",
+     "hit": false
+    },
+    {
+     "out": 388,
+     "out_name": "Guéhi",
+     "in": 229,
+     "in_name": "Tarkowski",
+     "hit": false
+    }
+   ],
+   "entry_actual": null,
+   "graded": null
   }
  ]
 }
