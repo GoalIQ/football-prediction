@@ -290,7 +290,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   tuloslauseet sanatarkasti (julkaisutarkistaja ennen mergeä). (ylläpitäjän signaali 2026-10-19, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ L · myynti 3/3 · uutuus 1/2 = 11
       Mittari: pelattu ottelusivu palauttaa 200 ennusteen ja tuloksen kanssa, ja gsc.json:n sivut-listalla on vähintään 20 ottelusivua (19.10: 9) · tarkistus 2026-12-14
-- [ ] Ottelun ennuste Bluesky-botin aiheeksi, kokeilu GW10-katsaukseen asti (ylläpitäjän päätös 2026-10-20): botti
+- [x] Ottelun ennuste Bluesky-botin aiheeksi, kokeilu GW10-katsaukseen asti (ylläpitäjän päätös 2026-10-20): botti (PR, 2026-10-30)
   ei voi nyt postata ottelun lukua, koska reply-moduulissa ei ole ottelukohtaista osiota. Lisää
   `src/marketing/reply_sections.py`:hin osio `matches`: seuraavien 72 tunnin ottelut, joilla on julkaistu
   ottelusivu, ja niiden 1X2-todennäköisyydet samasta lähteestä ja samalla muotoilulla kuin ottelusivulla
