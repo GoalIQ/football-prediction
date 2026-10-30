@@ -427,17 +427,13 @@ def cmd_context(out_dir: Path) -> int:
         dl = datetime.fromisoformat(str(mod["deadline_utc"]).replace("Z", "+00:00"))
         brief.update({"gw": gw, "deadline_utc": mod["deadline_utc"],
                       "hours_to_deadline": round((dl - now).total_seconds() / 3600, 1)})
-        compact = {}
-        for k, v in values.items():
-            sec = k.split(".", 1)[0]
-            if sec == "player_lookup" and not k.endswith((".gw_xp", ".xp_6gw")):
-                continue
-            compact[k] = {"text": v.get("text"), "page": bsky_gate_page(v.get("public_url"))}
-        brief["numbers"] = compact
+        brief["numbers"] = brief_numbers(values)
         brief["numbers_note"] = ("ONLY these numbers may appear in text, exactly as written, and every one "
                                  "must be listed in the item's keys. A post that uses numbers must link to the "
                                  "page where they appear (`page`), and all its numbers must come from that one "
-                                 "page. Text without numbers is also fine.")
+                                 "page. A number with a `label` belongs to that team or to the draw: write the "
+                                 "label exactly as given, in the same sentence and closer to its number than any "
+                                 "other team. Text without numbers is also fine.")
         try:
             boot = _fpl_bootstrap()
             brief["fpl"] = fpl_signals(boot, now, gw)
@@ -508,6 +504,21 @@ def _mark(state: dict, item: dict, now: datetime, gw: int | None = None) -> None
 
 def bsky_gate_page(url) -> str | None:
     return gate.page_of(str(url)) if url else None
+
+
+def brief_numbers(values: dict) -> dict:
+    """Aivojen luvut. Ottelun luvulla on mukana `label` (joukkue tai Draw), koska portti vaatii sen luvun
+    viereen (bsky_gate.match_label_problems): ilman sita aivot paattelisivat joukkueen avaimen p_home/p_away-
+    osasta, ja 26.10 roolivirhe syntyi juuri paattelysta (luku oikein, rooli vaara)."""
+    compact = {}
+    for k, v in values.items():
+        sec = k.split(".", 1)[0]
+        if sec == "player_lookup" and not k.endswith((".gw_xp", ".xp_6gw")):
+            continue
+        compact[k] = {"text": v.get("text"), "page": bsky_gate_page(v.get("public_url"))}
+        if v.get("label"):
+            compact[k]["label"] = v["label"]
+    return compact
 
 
 # 22.10.2026 (Villen GO, kokeilu): Blueskyn FPL-yhteison tunniste. Mitattu 22.10: suosituimman FPL-syotteen

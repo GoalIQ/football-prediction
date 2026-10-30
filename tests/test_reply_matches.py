@@ -204,3 +204,104 @@ def test_portti_hylkaa_vedonlyontisanan_ennusteaiheessa():
     assert not any("betting" in p or "sanamuoto" in p for p in clean), clean
     dirty = probs("Betting tips: Arsenal at 46% to beat Leeds. goaliq.app/predictions/premier-league/arsenal-fc-vs-leeds-united")
     assert dirty and any("betting" in p.lower() or "tips" in p.lower() for p in dirty), dirty
+
+
+# ---- joukkue ja luku (CoS 30.10) -------------------------------------------
+# 26.10 roolivirhe: luku oikein, rooli vaara. Ottelussa sama vika on "Liverpool 46%", kun 46 % on Arsenalin.
+# Portti vaatii, etta luvun lahin nimi samassa lauseessa on sen oma label, ja briefi antaa labelin aivoille.
+LIV, ARS = "Liverpool FC", "Arsenal FC"
+
+
+def _gate_values(*entries):
+    """Arvot sellaisina kuin botti antaa ne portille: moduulin arvo + julkinen reitti."""
+    vals = {}
+    for r in rs.matches(_log(*entries), NOW)["rows"]:
+        for f, v in r["values"].items():
+            vals[f"matches.{r['key']}.{f}"] = dict(v, public_url=v["page"])
+    return vals
+
+
+def _key(vals, match, field):
+    return next(k for k in vals if k.startswith(f"matches.{match}") and k.endswith(f".{field}"))
+
+
+def _gate(text, keys, vals):
+    page = vals[keys[0]]["public_url"]
+    item = {"kind": "post", "text": f"{text} {page.replace('https://', '')}", "keys": keys,
+            "link": page, "topic": "prediction"}
+    return gate.check(item, values=vals, gw=9, now=NOW, state={
+        "posted_slots": [], "replied_uris": [], "replied_roots": [], "author_last_reply": {},
+        "daily": {}, "recent_texts": [], "handled_notifications": []}, blocklist=set(), phrases=[])
+
+
+def _label_probs(probs):
+    return [p for p in probs if "lahin nimi" in p or "(label)" in p]
+
+
+@pytest.fixture
+def liv_ars():
+    vals = _gate_values(_e(LIV, ARS, 20, p=(0.25, 0.30, 0.46)))
+    return vals, _key(vals, "pl-liverpool", "p_home"), _key(vals, "pl-liverpool", "p_away")
+
+
+def test_portti_paastaa_luvun_oman_joukkueen_vieressa(liv_ars):
+    vals, home, away = liv_ars
+    assert _gate(f"{LIV} 25%, {ARS} 46% in the model for Sunday.", [home, away], vals) == []
+    # vieras ensin ja koti perassa: lahin nimi ratkaisee, ei jarjestys
+    assert _gate(f"{ARS} 46% at {LIV} in our model.", [away], vals) == []
+
+
+def test_portti_hylkaa_vaihdetut_joukkueet(liv_ars):
+    vals, home, away = liv_ars
+    probs = _label_probs(_gate(f"{ARS} 25%, {LIV} 46% in the model for Sunday.", [home, away], vals))
+    assert len(probs) == 2, probs
+
+
+def test_portti_hylkaa_luvun_ilman_joukkuetta(liv_ars):
+    vals, _home, away = liv_ars
+    assert _label_probs(_gate("46% in the model for Sunday.", [away], vals))
+
+
+def test_portti_ei_lue_nimea_edellisesta_lauseesta(liv_ars):
+    vals, home, away = liv_ars
+    # nimi edellisessa lauseessa ei omista lukua; oma nimi samassa lauseessa omistaa
+    assert _gate(f"Big one on Sunday. {ARS} 46% at Anfield.", [away], vals) == []
+    assert _label_probs(_gate(f"Watch {ARS} on Sunday. 46% in the model for the away side.", [away], vals))
+
+
+def test_portti_tasapeli_ja_sama_luku_kahdesti():
+    vals = _gate_values(_e("Tottenham Hotspur", "Crystal Palace", 20, p=(0.42, 0.29, 0.29)))
+    draw, away = (_key(vals, "pl-tottenham", f) for f in ("p_draw", "p_away"))
+    assert _gate("Crystal Palace 29% and draw 29% in the model.", [away, draw], vals) == []
+    assert _label_probs(_gate("Draw 29% in the model.", [away], vals))
+
+
+def test_portti_hylkaa_toisen_ottelun_joukkueen_luvun_vieressa():
+    vals = _gate_values(_e(LIV, ARS, 20, p=(0.25, 0.30, 0.46)),
+                        _e("Bayern Munich", "Borussia Dortmund", 22, comp="BL1", p=(0.67, 0.18, 0.15)))
+    away = _key(vals, "pl-liverpool", "p_away")
+    # oma nimi on lauseessa, mutta kauempana: lahin on toisen ottelun joukkue, jonka luku 46 % ei ole
+    assert _label_probs(_gate(f"Bayern Munich 46% in the model, the same as {ARS}.", [away], vals))
+    assert _gate(f"{ARS} 46% in the model, on the day Bayern Munich play at home.", [away], vals) == []
+
+
+def test_pidempi_nimi_voittaa_lyhyemman():
+    spans = gate._name_spans("AC Milan 32% at home", {"AC Milan", "Milan"})
+    assert [n for _s, _e, n in spans] == ["ac milan"]
+
+
+def test_briefi_antaa_ottelun_luvulle_nimen(liv_ars):
+    from scripts import bsky_bot as bot
+    vals, _home, away = liv_ars
+    brief = bot.brief_numbers(vals)
+    assert brief[away] == {"text": "46%", "page": bot.bsky_gate_page(vals[away]["public_url"]), "label": ARS}
+    # osio ilman labelia pysyy ennallaan
+    other = {"xp_top5.haaland-mci.gw_xp": {"text": "6.1", "public_url": "https://goaliq.app/fpl/expected-points"}}
+    assert set(bot.brief_numbers(other)["xp_top5.haaland-mci.gw_xp"]) == {"text", "page"}
+    # kutsupaikka: aivojen briefi rakennetaan taman kautta
+    assert "brief_numbers(" in inspect.getsource(bot.cmd_context)
+
+
+def test_portti_ei_arvaa_kun_kaksi_nimea_yhta_lahella(liv_ars):
+    vals, _home, away = liv_ars
+    assert _label_probs(_gate(f"{LIV} 46% {ARS} in the model.", [away], vals))

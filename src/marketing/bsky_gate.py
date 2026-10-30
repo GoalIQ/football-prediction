@@ -17,6 +17,7 @@ Mita mitataan (kaikki kaatavat):
   6. kiintiot: omia postauksia 3/vrk ja noin 3 h valein, vastauksia muiden postauksiin 4/vrk.
   7. toisto aiheena ja kuvana: kapteeni ja best-captain-kortti vain deadline-slotissa, sama slot kerran,
      sama kortti ja kerran-aiheet (captain, owner_take, recap) kerran kierroksessa.
+  8. ottelun luku (matches.*): lahin nimi samassa lauseessa on luvun oma joukkue tai "draw" (30.10).
 """
 from __future__ import annotations
 
@@ -115,6 +116,64 @@ LEGACY_GW_WINDOW = timedelta(days=7)
 _NUM_RE = re.compile(r"(?<![\d.,])\d+(?:[.,]\d+)?%?\+?")
 _GW_RE = re.compile(r"\b(?:GW|Gameweek\s*)(\d{1,2})\b", re.I)
 _URL_RE = re.compile(r"https?://\S+|\b[\w-]+\.(?:app|com|net|org|io|co|uk)\b\S*", re.I)
+
+
+# 30.10.2026 (CoS, fp #67): ottelun luku kuuluu yhdelle joukkueelle tai tasapelille. 26.10 luvut olivat oikein
+# ja rooli vaara; ottelussa sama vika on "Liverpool 46%", kun 46 % on Arsenalin. Luvun lahin nimi samassa
+# lauseessa on sen oma `label` (reply-moduulin matches-rivilta), muuten hylkays.
+MATCH_PREFIX = "matches."
+_SENTENCE_END = re.compile(r"[.!?\n]")
+
+
+def _name_spans(text: str, names: set[str]) -> list[tuple[int, int, str]]:
+    """Nimien esiintymat (alku, loppu, nimi pienilla). Pidempi nimi voittaa: 'AC Milan' ei ole myos 'Milan'."""
+    low = text.lower()
+    spans: list[tuple[int, int, str]] = []
+    for name in sorted({n.lower() for n in names if n}, key=len, reverse=True):
+        for m in re.finditer(r"(?<!\w)" + re.escape(name) + r"(?!\w)", low):
+            if not any(s <= m.start() and m.end() <= e for s, e, _ in spans):
+                spans.append((m.start(), m.end(), name))
+    return spans
+
+
+def _nearest_name(text: str, spans: list[tuple[int, int, str]], start: int, end: int) -> str | None:
+    """Lahin nimi samassa lauseessa; tasapeli kahden eri nimen valilla = ei nimea (ei arvata)."""
+    best: list[tuple[int, str]] = []
+    for s, e, name in spans:
+        between = text[e:start] if e <= start else text[end:s] if s >= end else None
+        if between is None or _SENTENCE_END.search(between):
+            continue
+        best.append((len(between), name))
+    if not best:
+        return None
+    gap = min(g for g, _ in best)
+    names = {n for g, n in best if g == gap}
+    return names.pop() if len(names) == 1 else None
+
+
+def match_label_problems(body: str, used: dict[str, dict], values: dict[str, dict]) -> list[str]:
+    """Jokainen tekstissa nakyva ottelun luku on lahinna omaa nimeaan. Ehdokkaina kaikkien moduulin
+    otteluiden nimet, joten toisen ottelun joukkue luvun vieressa kaataa myos."""
+    mine = {k: v for k, v in used.items() if k.startswith(MATCH_PREFIX)}
+    if not mine:
+        return []
+    spans = _name_spans(body, {str(v.get("label") or "") for k, v in values.items()
+                               if k.startswith(MATCH_PREFIX)})
+    probs = []
+    for k, v in mine.items():
+        t = str(v.get("text") or "")
+        hits = [m for m in _NUM_RE.finditer(body) if t and m.group(0).rstrip("%") == t.rstrip("%")]
+        if not hits:
+            continue
+        label = str(v.get("label") or "")
+        if not label:
+            probs.append(f"ottelun luvulta {k} puuttuu nimi (label): kenen luku, ei voi tarkistaa")
+            continue
+        near = [_nearest_name(body, spans, m.start(), m.end()) for m in hits]
+        if label.lower() not in near:
+            probs.append(f"ottelun luku {t} ({k}) kuuluu nimelle {label!r}, mutta lahin nimi samassa "
+                         f"lauseessa on {near[0]!r}")
+    return probs
 
 
 def rejected_phrases(path: Path | None = None) -> list[str]:
@@ -240,6 +299,7 @@ def check(item: dict, *, values: dict[str, dict], gw: int | None, now: datetime,
     cap_n = MAX_NUMBERS.get(kind, 1)
     if len([n for n in nums if n != "10+"]) > cap_n:
         probs.append(f"liikaa lukuja ({len(nums)} > {cap_n}): yksi luku tukee kantaa")
+    probs.extend(match_label_problems(body, used, values))
 
     # 6a (julkaisutarkistaja 16.10): luvun on nayttava sivulla, jolle postaus linkittaa. Ensimmaiset pohjat
     # linkittivat best-captain-sivulle, jolla 8.0 ei nay. Postaus jossa on lukuja tarvitsee linkin.
