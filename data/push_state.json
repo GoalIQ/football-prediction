@@ -1,7 +1,20 @@
 {
  "last_price_push": {},
  "price_alerted": {},
- "receipts": [],
+ "receipts": [
+  {
+   "id": "01a18c16-4809-76ab-b42f-4f6d3ab2ad50",
+   "token": "ExponentPushToken[r2uGEOLSkAr-n_WwSYVfH2]"
+  },
+  {
+   "id": "01a18c16-47dc-7417-b08b-84e8dbe9b77d",
+   "token": "ExponentPushToken[PYwy0LKPyDBSC3C9JZbJPD]"
+  },
+  {
+   "id": "01a18c16-480d-711e-8459-6450639d2d15",
+   "token": "ExponentPushToken[vnBcUqA_3Zc_Inca-MTfy4]"
+  }
+ ],
  "sent": {
   "deadline_24h:gw6": {
    "at": "2026-10-09T09:44:50Z",
@@ -17,6 +30,11 @@
    "at": "2026-10-22T15:51:58Z",
    "n_targets": 4,
    "remaining_h": 25.63
+  },
+  "deadline_24h:gw9": {
+   "at": "2026-10-30T09:13:49Z",
+   "n_targets": 3,
+   "remaining_h": 25.77
   },
   "deadline_2h:gw6": {
    "at": "2026-10-10T07:02:34Z",
@@ -47,8 +65,13 @@
    "at": "2026-10-22T15:51:58Z",
    "n_targets": 0,
    "player": "Thomas"
+  },
+  "picks:gw9": {
+   "at": "2026-10-30T09:13:49Z",
+   "n_targets": 0,
+   "player": "Thiago"
   }
  },
- "updated_at": "2026-10-30T07:01:10Z",
+ "updated_at": "2026-10-30T09:13:53Z",
  "v": 1
 }
