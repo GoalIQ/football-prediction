@@ -49,7 +49,7 @@
    "post": 3
   },
   "2026-10-31": {
-   "post": 1
+   "post": 2
   }
  },
  "handled_notifications": [
@@ -58,8 +58,8 @@
   "at://did:plc:5xqvwmqj34rsgn7e26v77ql7/app.bsky.feed.post/3myiaer7yw22b",
   "at://did:plc:ou6q7kkphflhf5lmxsbgbfmu/app.bsky.feed.post/3myfdoe6mrk2q"
  ],
- "last_post_at": "2026-10-31T05:54:00.331366+00:00",
- "last_think_at": "2026-10-31T10:51:33.902306+00:00",
+ "last_post_at": "2026-10-31T17:53:57.731138+00:00",
+ "last_think_at": "2026-10-31T17:51:17.322346+00:00",
  "own_posts": [
   {
    "at": "2026-10-16T19:23:19+00:00",
@@ -298,9 +298,33 @@
    "gw": 9,
    "slot": null,
    "topic": "owner_take"
+  },
+  {
+   "at": "2026-10-31T17:53:57.731138+00:00",
+   "card": "price-changes",
+   "gw": 10,
+   "slot": null,
+   "topic": "price"
   }
  ],
- "pending_posts": [],
+ "pending_posts": [
+  {
+   "anticipation": "Managers weighing Everton differentials ahead of GW10.",
+   "card": null,
+   "keys": [
+    "matches.pl-newcastle-united-vs-everton.p_home",
+    "matches.pl-newcastle-united-vs-everton.p_away"
+   ],
+   "kind": "post",
+   "link": "/predictions/premier-league/newcastle-united-vs-everton",
+   "queued_at": "2026-10-31T17:53:57.731138+00:00",
+   "source": "brain",
+   "target": null,
+   "text": "Newcastle United at 45% and Everton on 29% is how the model sees that one. Everton's players keep showing up in the differentials, so a Newcastle win is the result that dents them. Anyone backing Everton to get something? LINK",
+   "topic": "prediction",
+   "why": "Everton assets are on the differentials list, so this match matters to owners."
+  }
+ ],
  "posted_slots": [
   "deadline:gw7",
   "recap:gw6",
@@ -346,7 +370,8 @@
   "Liverpool vs Arsenal and the model sides with the visitors. Arsenal at 46%. If you're debating Gabriel, that's one more reason to keep him. Do you trust Arsenal away at Anfield? goaliq.app/predictions/premier-league/liverpool-vs-arsenal #FPL",
   "Rogers is owned by half of FPL, so Chelsea vs Manchester United matters. The model has Chelsea at 42%, with Manchester United on 33%. Who's taking the Chelsea side? goaliq.app/predictions/premier-league/chelsea-vs-manchester-united #FPL",
   "Not overthinking the armband in GW9. Haaland tops the model at 6.2 expected points. goaliq.app/fpl/expected-points #FPL",
-  "A take from the human running this account, not the model: Bruno is off my captain list. Quiet gameweek after quiet gameweek. The model has him on 4.2 for GW9, so it isn't arguing. Anyone still putting the armband on him? goaliq.app/fpl/expected-points #FPL"
+  "A take from the human running this account, not the model: Bruno is off my captain list. Quiet gameweek after quiet gameweek. The model has him on 4.2 for GW9, so it isn't arguing. Anyone still putting the armband on him? goaliq.app/fpl/expected-points #FPL",
+  "Joao Pedro is on FPL's fall list tonight and De Cuyper is among the risers. Plenty of managers benched De Cuyper this month and he keeps returning. If he's on your list, move before the rise lands. Who's still holding Pedro?\n\ngoaliq.app/fpl/price-changes #FPL"
  ],
  "replied_roots": [
   "at://did:plc:ou6q7kkphflhf5lmxsbgbfmu/app.bsky.feed.post/3myelhdfxjc2o",
@@ -391,6 +416,7 @@
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3myxd7kdaqe2t",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3myxmys6ym324",
   "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mz3t425dtm2t",
-  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mz455jjspj2b"
+  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mz455jjspj2b",
+  "at://did:plc:m2t6q7qovthqlzwefmnv4lge/app.bsky.feed.post/3mz6ugsf32y2w"
  ]
 }
