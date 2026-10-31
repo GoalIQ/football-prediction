@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-10-31T00:54:26+00:00",
+  "updated_at": "2026-10-31T03:54:27+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2332,
+  "pending": 2331,
   "voided": 57,
   "all_time": {
-    "n": 945,
-    "correct_1x2": 491,
-    "pct_1x2": 0.5196,
+    "n": 946,
+    "correct_1x2": 492,
+    "pct_1x2": 0.5201,
     "draw_n": 236,
-    "pct_draw": 0.2497,
-    "decisive_n": 709,
-    "decisive_correct": 491,
-    "pct_decisive": 0.6925,
-    "exact_n": 945,
+    "pct_draw": 0.2495,
+    "decisive_n": 710,
+    "decisive_correct": 492,
+    "pct_decisive": 0.693,
+    "exact_n": 946,
     "exact_correct": 111,
-    "pct_exact": 0.1175,
+    "pct_exact": 0.1173,
     "brier": 0.5872,
-    "brier_n": 945
+    "brier_n": 946
   },
   "rolling": {
     "n": 100,
@@ -31,7 +31,7 @@
     "exact_n": 100,
     "exact_correct": 15,
     "pct_exact": 0.15,
-    "brier": 0.5784,
+    "brier": 0.5795,
     "brier_n": 100,
     "window": 100
   },
@@ -52,19 +52,19 @@
       "brier_n": 64
     },
     "BSA": {
-      "n": 145,
-      "correct_1x2": 69,
-      "pct_1x2": 0.4759,
+      "n": 146,
+      "correct_1x2": 70,
+      "pct_1x2": 0.4795,
       "draw_n": 43,
-      "pct_draw": 0.2966,
-      "decisive_n": 102,
-      "decisive_correct": 69,
-      "pct_decisive": 0.6765,
-      "exact_n": 145,
+      "pct_draw": 0.2945,
+      "decisive_n": 103,
+      "decisive_correct": 70,
+      "pct_decisive": 0.6796,
+      "exact_n": 146,
       "exact_correct": 21,
-      "pct_exact": 0.1448,
+      "pct_exact": 0.1438,
       "brier": 0.5944,
-      "brier_n": 145
+      "brier_n": 146
     },
     "CL": {
       "n": 45,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 889,
-      "correct_1x2": 456,
-      "pct_1x2": 0.5129,
+      "n": 890,
+      "correct_1x2": 457,
+      "pct_1x2": 0.5135,
       "draw_n": 221,
-      "pct_draw": 0.2486,
-      "decisive_n": 668,
-      "decisive_correct": 456,
-      "pct_decisive": 0.6826,
-      "exact_n": 889,
+      "pct_draw": 0.2483,
+      "decisive_n": 669,
+      "decisive_correct": 457,
+      "pct_decisive": 0.6831,
+      "exact_n": 890,
       "exact_correct": 100,
-      "pct_exact": 0.1125,
+      "pct_exact": 0.1124,
       "brier": 0.5932,
-      "brier_n": 889,
+      "brier_n": 890,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 807,
-      "correct_1x2": 430,
-      "pct_1x2": 0.5328,
+      "n": 808,
+      "correct_1x2": 431,
+      "pct_1x2": 0.5334,
       "draw_n": 186,
-      "pct_draw": 0.2305,
-      "decisive_n": 621,
-      "decisive_correct": 430,
-      "pct_decisive": 0.6924,
-      "exact_n": 807,
+      "pct_draw": 0.2302,
+      "decisive_n": 622,
+      "decisive_correct": 431,
+      "pct_decisive": 0.6929,
+      "exact_n": 808,
       "exact_correct": 90,
-      "pct_exact": 0.1115,
+      "pct_exact": 0.1114,
       "brier": 0.5827,
-      "brier_n": 807
+      "brier_n": 808
     },
     "stale": {
       "n": 138,
@@ -305,10 +305,10 @@
       "n": 1058
     },
     {
-      "bin_mid": 0.3419,
-      "predicted": 0.3419,
-      "actual": 0.316,
-      "n": 538
+      "bin_mid": 0.3418,
+      "predicted": 0.3418,
+      "actual": 0.3161,
+      "n": 541
     },
     {
       "bin_mid": 0.4462,
@@ -348,6 +348,21 @@
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-30",
+      "home_team": "Corinthians",
+      "away_team": "Mirassol",
+      "predicted_winner": "home",
+      "p_winner": 0.3767,
+      "lead_h": 0.8,
+      "most_likely_score": "1-1",
+      "actual_score": "2-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
     {
       "date": "2026-10-30",
       "home_team": "Casa Pia",
@@ -629,21 +644,6 @@
       "actual_score": "0-2",
       "actual_outcome": "away",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-28",
-      "home_team": "Parma Calcio 1913",
-      "away_team": "Udinese Calcio",
-      "predicted_winner": "away",
-      "p_winner": 0.4636,
-      "lead_h": 1.6,
-      "most_likely_score": "0-1",
-      "actual_score": "0-0",
-      "actual_outcome": "draw",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
