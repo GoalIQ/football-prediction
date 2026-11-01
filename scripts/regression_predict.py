@@ -46,7 +46,8 @@ CASES = [
 NUMERIC_FIELDS = [
     "expected_goals_home", "expected_goals_away",
     "p_home_win", "p_draw", "p_away_win",
-    "fair_odds_home", "fair_odds_draw", "fair_odds_away",
+    # fair_odds_* poistettu API:sta 1.11.2026 (ulkoasu WP1). Ne olivat
+    # 1 / p_*, joten vertailu ei menettanyt mitaan mitattavaa.
     "p_over_2_5", "p_under_2_5",
     "p_btts_yes", "p_btts_no",
 ]

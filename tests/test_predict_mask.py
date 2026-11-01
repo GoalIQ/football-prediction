@@ -242,8 +242,7 @@ def test_masked_body_carries_no_premium_value(pm_client, monkeypatch, path,
     text = json.dumps(masked)
     numbers =[full[k] for k in ("expected_goals_home", "expected_goals_away",
                                  "p_over_2_5", "p_under_2_5", "p_btts_yes",
-                                 "p_btts_no", "fair_odds_home",
-                                 "fair_odds_away")]
+                                 "p_btts_no")]
     # Numerorajat: 0.531 ei saa osua lukuun 0.5312 tai 10.531.
     found = [n for n in numbers
              if re.search(r"(?<![\d.])" + re.escape(json.dumps(n)) + r"(?!\d)",

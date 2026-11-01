@@ -14,7 +14,11 @@
 	 * uudelleen: pariteetti on Villen sääntö, ja eri raja kahdella pinnalla on
 	 * uusi vika eikä puolikas työ.
 	 *   free    : 1X2 + todennäköisin tulos (top 5)
-	 *   premium : xG, top 10, over/under 2.5, BTTS, mallin fair value
+	 *   premium : xG, top 10, over/under 2.5, BTTS
+	 *
+	 * 1.11.2026 (ulkoasu WP1): desimaalikertoimet (1 / todennäköisyys) poistettu
+	 * näkymästä ja API:sta. Ne olivat tuotteen ainoa vedonlyönniltä näyttävä luku.
+	 * Portti: tests/test_ei_kertoimia.py.
 	 */
 	import { untrack } from 'svelte';
 	import {
@@ -455,14 +459,6 @@
 					</div>
 				{/if}
 			</div>
-			{#if data.fair_odds_home != null}
-				<p class="muted hint">
-					Model fair value: {data.fair_odds_home.toFixed(2)} / {data.fair_odds_draw?.toFixed(
-						2
-					)} / {data.fair_odds_away?.toFixed(2)}. This is 1 divided by the model's
-					probability, not a bookmaker line.
-				</p>
-			{/if}
 		{:else}
 			<!-- Paywall kertoo mitä puuttuu, ei piilota sitä että jotain puuttuu.
 			     Sama rajaus kuin mobiilissa. -->
