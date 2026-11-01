@@ -1,23 +1,23 @@
 {
-  "updated_at": "2026-11-01T00:03:34+00:00",
+  "updated_at": "2026-11-01T00:53:13+00:00",
   "logged_total": 3334,
   "logged_with_timestamp": 3286,
-  "pending": 2291,
+  "pending": 2290,
   "voided": 57,
   "all_time": {
-    "n": 986,
-    "correct_1x2": 517,
-    "pct_1x2": 0.5243,
+    "n": 987,
+    "correct_1x2": 518,
+    "pct_1x2": 0.5248,
     "draw_n": 242,
-    "pct_draw": 0.2454,
-    "decisive_n": 744,
-    "decisive_correct": 517,
-    "pct_decisive": 0.6949,
-    "exact_n": 986,
+    "pct_draw": 0.2452,
+    "decisive_n": 745,
+    "decisive_correct": 518,
+    "pct_decisive": 0.6953,
+    "exact_n": 987,
     "exact_correct": 112,
-    "pct_exact": 0.1136,
-    "brier": 0.586,
-    "brier_n": 986
+    "pct_exact": 0.1135,
+    "brier": 0.5854,
+    "brier_n": 987
   },
   "rolling": {
     "n": 100,
@@ -157,19 +157,19 @@
       "brier_n": 88
     },
     "PPL": {
-      "n": 72,
-      "correct_1x2": 42,
-      "pct_1x2": 0.5833,
+      "n": 73,
+      "correct_1x2": 43,
+      "pct_1x2": 0.589,
       "draw_n": 13,
-      "pct_draw": 0.1806,
-      "decisive_n": 59,
-      "decisive_correct": 42,
-      "pct_decisive": 0.7119,
-      "exact_n": 72,
+      "pct_draw": 0.1781,
+      "decisive_n": 60,
+      "decisive_correct": 43,
+      "pct_decisive": 0.7167,
+      "exact_n": 73,
       "exact_correct": 10,
-      "pct_exact": 0.1389,
-      "brier": 0.5471,
-      "brier_n": 72
+      "pct_exact": 0.137,
+      "brier": 0.5405,
+      "brier_n": 73
     },
     "SA": {
       "n": 93,
@@ -204,19 +204,19 @@
   },
   "by_model": {
     "club": {
-      "n": 930,
-      "correct_1x2": 482,
-      "pct_1x2": 0.5183,
+      "n": 931,
+      "correct_1x2": 483,
+      "pct_1x2": 0.5188,
       "draw_n": 227,
-      "pct_draw": 0.2441,
-      "decisive_n": 703,
-      "decisive_correct": 482,
-      "pct_decisive": 0.6856,
-      "exact_n": 930,
+      "pct_draw": 0.2438,
+      "decisive_n": 704,
+      "decisive_correct": 483,
+      "pct_decisive": 0.6861,
+      "exact_n": 931,
       "exact_correct": 101,
-      "pct_exact": 0.1086,
-      "brier": 0.5917,
-      "brier_n": 930,
+      "pct_exact": 0.1085,
+      "brier": 0.5911,
+      "brier_n": 931,
       "logged_with_timestamp": 3230
     },
     "national": {
@@ -239,19 +239,19 @@
   },
   "by_lead": {
     "fresh": {
-      "n": 848,
-      "correct_1x2": 456,
-      "pct_1x2": 0.5377,
+      "n": 849,
+      "correct_1x2": 457,
+      "pct_1x2": 0.5383,
       "draw_n": 192,
-      "pct_draw": 0.2264,
-      "decisive_n": 656,
-      "decisive_correct": 456,
-      "pct_decisive": 0.6951,
-      "exact_n": 848,
+      "pct_draw": 0.2261,
+      "decisive_n": 657,
+      "decisive_correct": 457,
+      "pct_decisive": 0.6956,
+      "exact_n": 849,
       "exact_correct": 91,
-      "pct_exact": 0.1073,
-      "brier": 0.5815,
-      "brier_n": 848
+      "pct_exact": 0.1072,
+      "brier": 0.5809,
+      "brier_n": 849
     },
     "stale": {
       "n": 138,
@@ -289,14 +289,14 @@
     {
       "bin_mid": 0.0728,
       "predicted": 0.0728,
-      "actual": 0.0694,
-      "n": 72
+      "actual": 0.0685,
+      "n": 73
     },
     {
-      "bin_mid": 0.1613,
-      "predicted": 0.1613,
-      "actual": 0.1411,
-      "n": 404
+      "bin_mid": 0.1612,
+      "predicted": 0.1612,
+      "actual": 0.1407,
+      "n": 405
     },
     {
       "bin_mid": 0.2536,
@@ -329,10 +329,10 @@
       "n": 138
     },
     {
-      "bin_mid": 0.7402,
-      "predicted": 0.7402,
-      "actual": 0.7903,
-      "n": 62
+      "bin_mid": 0.741,
+      "predicted": 0.741,
+      "actual": 0.7937,
+      "n": 63
     },
     {
       "bin_mid": 0.8392,
@@ -371,6 +371,21 @@
       "p_winner": 0.4848,
       "lead_h": 0.8,
       "most_likely_score": "1-1",
+      "actual_score": "4-0",
+      "actual_outcome": "home",
+      "hit_1x2": true,
+      "exact_hit": false,
+      "duration": null,
+      "regular_score": null
+    },
+    {
+      "date": "2026-10-31",
+      "home_team": "Porto",
+      "away_team": "Estoril",
+      "predicted_winner": "home",
+      "p_winner": 0.7908,
+      "lead_h": 1.3,
+      "most_likely_score": "2-0",
       "actual_score": "4-0",
       "actual_outcome": "home",
       "hit_1x2": true,
@@ -629,21 +644,6 @@
       "actual_score": "2-3",
       "actual_outcome": "away",
       "hit_1x2": true,
-      "exact_hit": false,
-      "duration": null,
-      "regular_score": null
-    },
-    {
-      "date": "2026-10-31",
-      "home_team": "West Ham",
-      "away_team": "West Brom",
-      "predicted_winner": "home",
-      "p_winner": 0.7141,
-      "lead_h": 2.9,
-      "most_likely_score": "2-0",
-      "actual_score": "1-3",
-      "actual_outcome": "away",
-      "hit_1x2": false,
       "exact_hit": false,
       "duration": null,
       "regular_score": null
