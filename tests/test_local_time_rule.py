@@ -71,6 +71,20 @@ def test_ottelusivu_ja_liigahub_kayttavat_saantoa():
     assert LT.LOCAL_TIME_JS not in bpp._page("t", "d", "https://goaliq.app/x", "<h1>x</h1>", "<p>y</p>", [])
 
 
+def test_ottelusivun_ja_liigahubin_kutsupaikat():
+    """KUTSUPAIKAT: oikea ottelusivu ja liigahubin rivi, ei vain apufunktio."""
+    from scripts import build_prediction_pages as bpp
+    e = {"home_team": "Liverpool", "away_team": "Arsenal", "kickoff": "2026-11-01T16:30:00Z",
+         "p_home": 0.25, "p_draw": 0.29, "p_away": 0.46, "competition": "PL",
+         "match_id": "x1", "logged_at": "2026-10-31T09:00:00+00:00"}
+    tag = '<time datetime="2026-11-01T16:30:00Z" data-giq-local>Sun 01 Nov 2026, 16:30 UTC</time>'
+    rivi = bpp._hub_row(bpp.LEAGUES["PL"], e, False)
+    assert tag in rivi
+    sivu = bpp.render_match_page("PL", e, dt.datetime(2026, 10, 31, 12, tzinfo=dt.timezone.utc))
+    assert f"kickoff {tag}." in sivu
+    assert LT.LOCAL_TIME_JS in sivu
+
+
 def test_etusivun_ottelutaulukko_kayttaa_saantoa():
     from scripts import build_fpl_page as b
     src = b.next_matches_block.__code__.co_names
