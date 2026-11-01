@@ -162,7 +162,13 @@ def test_koko_lokin_summa_vain_nimettyna_dataset_kuvauksessa(built):
         nakyva = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", html)
         assert all_pct not in nakyva, f"{name}: koko lokin {all_pct} nakyvassa tekstissa"
         if name != "fpl" or "Dataset" in ld:
-            assert f"{all_pct} across all {at['n']} completed matches, all competitions" in ld, name
+            # Julkaisutarkistaja 1.11 (PR #75): rajaus ENNEN lukua, jottei koko
+            # lokin luku lue maajoukkuemallin lukuna ("N national-team matches
+            # from a separate model: X%" -> X luettiin maajoukkueiden luvuksi).
+            extra = at["n"] - built["head"]["n"]
+            assert (f"All competitions, including {extra} national-team matches from a "
+                    f"separate model: {all_pct} across {at['n']} completed matches.") in ld, name
+            assert "also holds" not in ld, name
 
 
 def test_negatiivinen_kontrolli_vanha_hero_kaatuisi(built):

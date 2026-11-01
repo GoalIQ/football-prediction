@@ -12,6 +12,7 @@
 	import { FIXTURE_LEAGUES } from '$lib/leagues';
 	import { capture } from '$lib/analytics';
 	import { formatDeadline } from '$lib/gameweek';
+	import { fmtDayKey, groupByLocalDay } from '$lib/fixtureDays';
 
 	// WP2 (1.11.2026): yksi aikasaanto. SPA nayttaa ajat lukijan vyohykkeella
 	// ja NIMEAA vyohykkeen (kuten deadline-rivi "Fri 6 Nov, 20:30 EET"); hub
@@ -69,15 +70,9 @@
 	});
 
 	/** Ryhmittely päivittäin, järjestys säilyy (API palauttaa aikajärjestyksessä). */
-	let days = $derived.by(() => {
-		const map = new Map<string, FixtureRow[]>();
-		for (const f of all) {
-			const k = f.date;
-			if (!map.has(k)) map.set(k, []);
-			map.get(k)!.push(f);
-		}
-		return [...map.entries()];
-	});
+	// Julkaisutarkistaja 1.11 (PR #75): paiva lukijan vyohykkeessa, kuten kellonaika
+	// (lib/fixtureDays.ts). Ennen UTC-paiva: lauantain ottelu perjantain alla New Yorkissa.
+	let days = $derived(groupByLocalDay(all));
 
 	let visible = $derived(premium ? days : days.slice(0, 1));
 	let hiddenDays = $derived(days.length - visible.length);
@@ -89,14 +84,6 @@
 	// ajassaan.
 	const LOCALE = 'en-GB';
 
-	function fmtDay(iso: string): string {
-		const d = new Date(`${iso}T00:00:00Z`);
-		return d.toLocaleDateString(LOCALE, {
-			weekday: 'long',
-			day: 'numeric',
-			month: 'long'
-		});
-	}
 
 	function fmtTime(iso: string): string {
 		if (!iso) return '';
@@ -144,7 +131,7 @@
 {:else}
 	{#if tzLabel}<p class="muted tz-note">Kick-off times are in your time zone ({tzLabel}).</p>{/if}
 	{#each visible as [date, list] (date)}
-		<h3 class="dayhead">{fmtDay(date)}</h3>
+		<h3 class="dayhead">{fmtDayKey(date)}</h3>
 		<ul class="fx">
 			{#each list as f (f.datetime + f.home_team)}
 				<li>

@@ -1972,9 +1972,13 @@ def _dataset_figure_sentence(c: dict) -> str:
     s = f"Current figure: {h['pct_text']} correct 1X2 results across {h['n']} {h['label']}."
     extra = (c.get("acc_n") or 0) - h["n"]
     if h["scope"] == "club" and extra > 0:
-        s += (f" The full log also holds {extra} national-team matches from a separate "
-              f"model: {fmt_pct(c['acc_pct_1x2'])} across all {c['acc_n']} completed "
-              f"matches, all competitions.")
+        # Julkaisutarkistaja 1.11 (PR #75): "The full log also holds N
+        # national-team matches from a separate model: X% across all ..."
+        # luettiin maajoukkuemallin luvuksi (todellinen 62.5 %, 35/56). Rajaus
+        # ensin, sitten luku: luku kuuluu koko lokille, ei maajoukkueille.
+        s += (f" All competitions, including {extra} national-team matches from a "
+              f"separate model: {fmt_pct(c['acc_pct_1x2'])} across {c['acc_n']} "
+              f"completed matches.")
     return s
 
 
