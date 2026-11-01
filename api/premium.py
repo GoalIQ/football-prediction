@@ -673,9 +673,8 @@ def mask_compare_payload(payload: dict) -> dict:
 PREDICTION_PREMIUM_FIELDS: dict[str, object] = {
     "expected_goals_home": 0.0,
     "expected_goals_away": 0.0,
-    "fair_odds_home": 0.0,
-    "fair_odds_draw": 0.0,
-    "fair_odds_away": 0.0,
+    # fair_odds_* poistettu vastauksesta kokonaan 1.11.2026 (ulkoasu WP1,
+    # perustelu api/main.py PredictionResponse).
     "p_over_2_5": 0.0,
     "p_under_2_5": 0.0,
     "p_btts_yes": 0.0,
@@ -737,8 +736,7 @@ def mask_prediction_payload(payload: dict) -> dict:
     meta["premium_fields"] = masked
     meta["mask"] = ("1X2 probabilities only (free preview - GoalIQ Premium "
                     "unlocks expected goals, scorelines, over/under 2.5, both "
-                    "teams to score, fair value, form and the head-to-head "
-                    "record)")
+                    "teams to score, form and the head-to-head record)")
     out["meta"] = meta
     return out
 

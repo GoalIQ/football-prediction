@@ -1614,9 +1614,13 @@ class PredictionResponse(BaseModel):
     p_home_win: float
     p_draw: float
     p_away_win: float
-    fair_odds_home: float
-    fair_odds_draw: float
-    fair_odds_away: float
+    # 1.11.2026 (ulkoasu WP1): fair_odds_* (1 / todennakoisyys) POISTETTU
+    # kaikilta kutsujilta. Desimaalikerroin oli tuotteen ainoa vedonlyonnilta
+    # nayttava luku, ja App Storen ikaraja on 4+; "simulated gambling" toisi
+    # 18+:n joka estaa myynnin 10 maassa. Mobiilin PredictScreen vahtii
+    # kenttaa `!= null`:lla, joten puuttuva avain piilottaa osion eika kaada.
+    # Portti: tests/test_ei_kertoimia.py (ei "odds"-avainta skeemassa eika
+    # vastauksessa, ei kerroinnayttoa SPA:n lahteessa).
     p_over_2_5: float
     p_under_2_5: float
     p_btts_yes: float
@@ -2663,9 +2667,6 @@ def predict(req: PredictionRequest, request: Request):
         p_draw=round(p_1x2["draw"], 4),
         p_away_win=round(p_1x2["away"], 4),
         call=call_state(p_1x2["home"], p_1x2["draw"], p_1x2["away"]),
-        fair_odds_home=round(1.0 / max(p_1x2["home"], 0.001), 2),
-        fair_odds_draw=round(1.0 / max(p_1x2["draw"], 0.001), 2),
-        fair_odds_away=round(1.0 / max(p_1x2["away"], 0.001), 2),
         p_over_2_5=round(p_ou["over"], 4),
         p_under_2_5=round(p_ou["under"], 4),
         p_btts_yes=round(p_btts["btts_yes"], 4),
@@ -2865,9 +2866,6 @@ def predict_wc(req: PredictWCRequest, request: Request):
         p_away_win=round(p_1x2["away"], 4),
         # 23.9: raja seuralokista, maajoukkueita ei kirjata -> ei osumaprosenttia
         call=call_state_national(p_1x2["home"], p_1x2["draw"], p_1x2["away"]),
-        fair_odds_home=round(1.0 / max(p_1x2["home"], 0.001), 2),
-        fair_odds_draw=round(1.0 / max(p_1x2["draw"], 0.001), 2),
-        fair_odds_away=round(1.0 / max(p_1x2["away"], 0.001), 2),
         p_over_2_5=round(p_ou["over"], 4),
         p_under_2_5=round(p_ou["under"], 4),
         p_btts_yes=round(p_btts["btts_yes"], 4),

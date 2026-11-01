@@ -442,9 +442,6 @@ export interface PredictResponse {
 	p_home_win: number;
 	p_draw: number;
 	p_away_win: number;
-	fair_odds_home?: number;
-	fair_odds_draw?: number;
-	fair_odds_away?: number;
 	p_over_2_5?: number;
 	p_under_2_5?: number;
 	p_btts_yes?: number;
