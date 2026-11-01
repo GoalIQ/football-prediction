@@ -357,6 +357,7 @@ border:1px solid var(--line);font-family:var(--mono);font-size:14px;color:var(--
 .lock-txt{font-size:15px;margin:4px 0 14px;}
 .btn.solid{display:inline-block;background:var(--amber);color:var(--cream);border-color:var(--amber);}
 .btn.solid:hover{background:var(--gold);}
+@media (max-width:520px){.btn.solid{display:block;}}
 .form-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;
 border-bottom:1px solid var(--line);}
 .form-row:last-of-type{border-bottom:0;}
@@ -374,6 +375,7 @@ border-left:4px solid var(--muted);font-size:15px;}
 .verdict.hit{border-left-color:var(--green);} .verdict.miss{border-left-color:var(--ember);}
 .verdict b{font-family:var(--mono);color:var(--ink);}
 .verdict .sep{color:var(--muted);}
+.verdict a b{color:var(--teal);}
 .v-note{font-size:13px;color:var(--muted);margin-top:6px;}
 .share{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:22px 0 0;}
 .share .lbl{font-size:13px;color:var(--muted);margin-right:4px;}
@@ -880,6 +882,9 @@ def _scoreline_lock(e: dict) -> str:
 
 
 FORM_N = 5
+# Alle kolmen tuloksen "form" ei kerro mitaan (Mestarien liigan alku: 1-2
+# ottelua lokissa), joten lohko jaa pois.
+FORM_MIN = 3
 
 
 def team_form(team: str, history: list[dict] | tuple, before: datetime | None,
@@ -919,12 +924,12 @@ _FORM_WORD = {"W": "win", "D": "draw", "L": "loss"}
 
 def _form_block(comp: str, e: dict, history) -> str:
     """Form-nauha molemmille. Sama maara molemmille (lyhyemman mukaan), jotta
-    otsikon luku on tosi kummallekin; 0 -> ei lohkoa."""
+    otsikon luku on tosi kummallekin; alle FORM_MIN -> ei lohkoa."""
     before = _kickoff_dt(e)
     fh = team_form(e["home_team"], history, before)
     fa = team_form(e["away_team"], history, before)
     n = min(len(fh), len(fa))
-    if n == 0:
+    if n < FORM_MIN:
         return ""
     fh, fa = fh[-n:], fa[-n:]
 

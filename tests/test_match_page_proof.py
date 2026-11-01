@@ -496,3 +496,17 @@ def test_refresh_kirjoittaa_ylimman_tuloksen_todennakoisyyden():
     assert paivitetyt == 1
     assert e["most_likely_score_p"] == rivi["most_likely_score_p"] > 0
     assert "most_likely_score_p" in ap.REFRESH_FIELDS
+
+
+def test_form_vaatii_vahintaan_kolme_tulosta_molemmille():
+    hist = [_graded(-9, 1, 0, home="Arsenal", away="Fulham"),
+            _graded(-16, 1, 0, home="Arsenal", away="Leeds"),
+            _graded(-23, 1, 0, home="Arsenal", away="Wolves"),
+            _graded(-9, 1, 0, home="Liverpool", away="Spurs"),
+            _graded(-16, 1, 0, home="Liverpool", away="Everton")]
+    html = bpp.render_match_page("PL", _entry(2), NOW, history=hist)
+    assert "Form, last" not in html          # Liverpoolilla vain 2
+    hist.append(_graded(-23, 0, 0, home="Liverpool", away="Brentford"))
+    html = bpp.render_match_page("PL", _entry(2), NOW, history=hist)
+    assert "Form, last 3 Premier League results" in html
+    assert _form(html, "Liverpool") == "DWW" and _form(html, "Arsenal") == "WWW"
