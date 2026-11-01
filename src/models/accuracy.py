@@ -677,16 +677,25 @@ def empty_aggregate() -> dict:
     }
 
 
-def pending_rows(limit: int | None = None, path: Path = LOG_PATH) -> list[dict]:
+def pending_rows(limit: int | None = None, path: Path = LOG_PATH,
+                 competition: str | None = None) -> list[dict]:
     """#131: logatut, pelaamattomat ennusteet (result == null) mobiilin
     pending-lohkoon — SAMA lähde kuin webin #129-taulu (prediction_log).
     Lähin kickoff ensin. Kevyt riviformaatti; EI vaikuta aggregaattiin
-    (headline-% ja by_competition lasketaan vain gradatuista)."""
+    (headline-% ja by_competition lasketaan vain gradatuista).
+
+    1.11.2026 (ulkoasu WP9 / B3): rivilla on myos `p_home`/`p_draw`/`p_away`,
+    jotta sovelluksen Fixtures-lista nayttaa jokaiselle riville saman
+    kirjatun 1X2-ennusteen kuin liigahub (build_prediction_pages lukee
+    samat kentat samasta lokista). 1X2 on ilmainen kaikilla pinnoilla
+    (api.premium.PREDICTION_FREE_FIELDS). `competition` rajaa yhteen
+    kilpailukoodiin, jottei Fixtures lataa koko kauden ~2 300 rivia."""
     log = load_log(path)
     # `void` = ottelua ei pelattu (siirretty/peruttu). Ilman tata suodatinta
     # ne nousevat listan karkeen, koska jarjestys on kickoff nousevasti ja
     # siirretyn ottelun paivamaara jaa menneisyyteen.
-    rows = [e for e in log.get("predictions", []) if is_pending(e)]
+    rows = [e for e in log.get("predictions", []) if is_pending(e)
+            and (competition is None or e.get("competition") == competition)]
     rows.sort(key=lambda e: e.get("kickoff") or e.get("date") or "9999")
     out = []
     for e in rows[: limit if limit else len(rows)]:
@@ -704,6 +713,9 @@ def pending_rows(limit: int | None = None, path: Path = LOG_PATH) -> list[dict]:
             "date": e.get("date"),
             "predicted_winner": w,
             "p_winner": p_winner,
+            "p_home": e.get("p_home"),
+            "p_draw": e.get("p_draw"),
+            "p_away": e.get("p_away"),
             "logged_at": e.get("logged_at"),
         })
     return out
