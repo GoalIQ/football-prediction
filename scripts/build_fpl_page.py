@@ -1064,7 +1064,9 @@ def _pick_pct(e: dict) -> str:
          "away": e.get("p_away")}.get(w)
     if p is None:
         return ""
-    return f" &middot; {p * 100:.0f}%"
+    # Julkaisutarkistaja 1.11 (PR #76): `.0f` on puoliparillinen, ottelusivu
+    # `pct_int` (puoli ylos) -> Lincoln-Burnley 46 % vs 47 %. Yksi pyoristys.
+    return f" &middot; {pct_int(p)}%"
 
 
 #: Montako gradattua rivia jaa suoraan DOM:iin; loput <template>-elementtiin.

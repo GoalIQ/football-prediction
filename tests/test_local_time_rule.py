@@ -79,9 +79,11 @@ def test_ottelusivun_ja_liigahubin_kutsupaikat():
          "match_id": "x1", "logged_at": "2026-10-31T09:00:00+00:00"}
     tag = '<time datetime="2026-11-01T16:30:00Z" data-giq-local>Sun 01 Nov 2026, 16:30 UTC</time>'
     rivi = bpp._hub_row(bpp.LEAGUES["PL"], e, False)
-    assert tag in rivi
+    # WP11: hubin rivin paiva on ryhman otsikossa, joten UTC-varateksti on lyhyt;
+    # sama elementti ja sama skripti (selaimessa sama muoto kuin muualla).
+    assert '<time datetime="2026-11-01T16:30:00Z" data-giq-local>16:30 UTC</time>' in rivi
     sivu = bpp.render_match_page("PL", e, dt.datetime(2026, 10, 31, 12, tzinfo=dt.timezone.utc))
-    assert f"kickoff {tag}." in sivu
+    assert f"kickoff {tag}" in sivu
     assert LT.LOCAL_TIME_JS in sivu
 
 
