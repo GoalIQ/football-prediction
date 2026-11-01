@@ -5234,6 +5234,9 @@ def revenuecat_config():
 def model_accuracy(
     response: Response,
     include: str | None = Query(default=None, pattern="^(pending)$"),
+    competition: str | None = Query(
+        default=None, pattern="^[A-Z0-9]{2,4}$",
+        description="With include=pending: only this competition code (e.g. PL)"),
 ):
     """Mallin verifioitava tarkkuus-track-record (#100).
 
@@ -5259,8 +5262,10 @@ def model_accuracy(
     # "logged, awaiting result" -lohkoon (#129-web-pariteetti). Oletusvastaus
     # ennallaan → vanhat klientit eivät muutu; headline/by_competition
     # lasketaan edelleen vain gradatuista.
+    # 1.11.2026 (ulkoasu WP9 / B3): `competition` rajaa pending-rivit yhteen
+    # kilpailuun (sovelluksen Fixtures hakee vain valitun liigan rivit).
     if include == "pending":
-        agg = {**agg, "pending_predictions": pending_rows()}
+        agg = {**agg, "pending_predictions": pending_rows(competition=competition)}
     return agg
 
 

@@ -192,8 +192,10 @@ _COPY: dict[str, ToolCopy] = {
         cap=NoCap(
             "Ei kattoa lauseessa. Tyokalu on rekisterissa ilmainen, mutta "
             "/api/fantasy/rate-team maskaa ilmaiselta kaiken paitsi "
-            "arvosanan (17.10.2026: mask_rate_team_preview_payload, kytkin "
-            "21.10; tests/test_premium_enforcement.py PARTIAL). Kattoa ei "
+            "arvosanan ja oman XI:n kapteenin (17.10.2026: "
+            "mask_rate_team_preview_payload, kytkin 21.10; kapteeni auki "
+            "1.11.2026 ulkoasu WP9; tests/test_premium_enforcement.py "
+            "PARTIAL). Kattoa ei "
             "tarvita, koska fraasi itse rajaa vaitteen arvosanaan: lause "
             "sanoo ilmaiseksi vain sen minka palvelin antaa ilmaiseksi, eika "
             "lupaa analyysia lainkaan."
