@@ -575,3 +575,16 @@ def test_record_ja_sivu_pyoristavat_samoin_tasan_puolikkaassa(p):
     want = cm.pct_int(p)
     assert rec == f" &middot; {want}%", (p, rec)
     assert f"Model said Liverpool <b>{want}%</b>" in page or f"Liverpool {want}%" in page
+
+
+def test_void_rivit_saavat_samat_nayttonimet_kuin_sivu():
+    """Tuotannon tapaus 1.11: lokissa 'Athletic Club', sivulla 'Athletic Bilbao'.
+    Ilman nimimuunnosta void-rivi ei osu sivun joukkueeseen ja vajaa nauha jaa."""
+    log = {"predictions": [
+        dict(_entry(-11, home="Levante UD", away="Athletic Club"), competition="PD", void="POSTPONED"),
+        dict(_entry(2, home="Athletic Club", away="Real Sociedad de Fútbol"), competition="PD"),
+    ]}
+    feed = bpp.load_feed(log, NOW)
+    page_team = feed.upcoming["PD"][0]["home_team"]
+    assert page_team == "Athletic Bilbao"
+    assert page_team in (feed.voided["PD"][0]["home_team"], feed.voided["PD"][0]["away_team"])
