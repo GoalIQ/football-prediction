@@ -56,6 +56,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 # Ylapalkki ja julkaisijasolmu yhdesta lahteesta (22.9, web-audit T5 + T7).
 from src.site_identity import publisher_node  # noqa: E402
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
+from src.local_time import time_tag, with_local_time_script  # WP2  # noqa: E402
 from scripts.slugs import fold_ascii, slug
 from scripts import site_output
 
@@ -464,21 +465,20 @@ def _fmt_kickoff(iso: str) -> str:
 
 
 def _kickoff_html(iso: str, short: bool = False) -> str:
-    """Kickoff <time>-elementtina: UTC HTML:ssa, PAGE_JS vaihtaa kavijan aikaan.
-
-    Paikkamerkki-kickoff (00:00, ks. _fmt_kickoff) jaa pelkaksi tekstiksi:
-    sita ei muunneta, koska "aika vahvistamatta" ei ole kellonaika.
-    `short` = hubin rivi, jonka paiva on jo ryhman otsikossa.
+    """Kickoff `<time>`-elementtina YHDELLA saannolla (src/local_time.py, WP2):
+    staattinen teksti on UTC (oikein ilman JS:aa), selain vaihtaa lukijan aikaan
+    samaan muotoon kuin SPA. Vahvistamaton aika (00:00-paikkamerkki) ja
+    jasentymaton arvo jaavat tekstiksi: niissa ei ole kellonaikaa lokalisoitavaksi.
+    `short` = hubin rivi, jonka paiva on jo ryhman otsikossa (ilman JS:aa "16:30 UTC").
     """
+    txt = _fmt_kickoff(iso)
     try:
         dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
     except Exception:
-        return escape(iso)
-    if dt.hour == 0 and dt.minute == 0:
-        return escape(_fmt_kickoff(iso))
-    text = dt.strftime("%H:%M UTC") if short else _fmt_kickoff(iso)
-    return (f'<time datetime="{dt.strftime("%Y-%m-%dT%H:%M:%SZ")}" '
-            f'data-ko="{"short" if short else "full"}">{text}</time>')
+        return escape(txt)
+    if not txt.endswith(" UTC"):
+        return escape(txt)
+    return time_tag(dt, dt.strftime("%H:%M UTC") if short else txt)
 
 
 def _logged_stamp(e: dict) -> str:
@@ -486,7 +486,8 @@ def _logged_stamp(e: dict) -> str:
 
     Fail-closed: ilman kirjausaikaa tai jos se EI ole ennen kickoffia, vaitetta
     ei tehda lainkaan. Aika on se jolla rivi on lokissa (viimeisin paivitys
-    ennen kickoffia, sama jonka track record gradaa), ei laskettu.
+    ennen kickoffia, sama jonka track record gradaa), ei laskettu. Sama
+    aikasaanto kuin kickoffilla (src/local_time.py time_tag).
     """
     ko = _kickoff_dt(e)
     try:
@@ -496,11 +497,9 @@ def _logged_stamp(e: dict) -> str:
     if ko is None or logged.tzinfo is None or not logged < ko:
         return ""
     logged = logged.astimezone(timezone.utc)
-    return (
-        '<p class="stamp">Logged before kick-off: '
-        f'<b><time datetime="{logged.strftime("%Y-%m-%dT%H:%M:%SZ")}" data-ko="full">'
-        f'{logged.strftime("%a %d %b %Y, %H:%M UTC")}</time></b></p>'
-    )
+    return ('<p class="stamp">Logged before kick-off: <b>'
+            + time_tag(logged, logged.strftime("%a %d %b %Y, %H:%M UTC"))
+            + "</b></p>")
 
 
 SOCIAL_IMAGE = f"{BASE}/assets/brand/goaliq-social-1200x630.png"
@@ -562,7 +561,8 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         f'<div class="wrap hero">\n{hero}\n</div>\n</header>\n'
         f'<div class="wrap content">\n{body}\n'
         f"{FOOTER}"
-        "</div>\n" + MOBILE_COLS_JS + PAGE_JS + "</body>\n</html>\n"
+        "</div>\n" + MOBILE_COLS_JS + with_local_time_script(hero + body) + PAGE_JS
+        + "</body>\n</html>\n"
     )
 
 
@@ -572,13 +572,6 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
 # vain kun leikepoyta on kaytettavissa (ilman JS:aa nappi ei tekisi mitaan).
 PAGE_JS = """<script>
 (function(){
-var full,short;
-try{full=new Intl.DateTimeFormat('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
-short=new Intl.DateTimeFormat('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit',timeZoneName:'short'});}catch(err){full=null;}
-if(full){var ts=document.querySelectorAll('time[data-ko]');
-for(var i=0;i<ts.length;i++){var t=ts[i],d=new Date(t.getAttribute('datetime'));
-if(isNaN(d.getTime()))continue;t.title=t.textContent;
-t.textContent=(t.getAttribute('data-ko')==='short'?short:full).format(d);}}
 var bs=document.querySelectorAll('button[data-copy]');
 for(var j=0;j<bs.length;j++){(function(b){if(!navigator.clipboard)return;b.hidden=false;
 b.addEventListener('click',function(){navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){b.textContent='Link copied';});});})(bs[j]);}

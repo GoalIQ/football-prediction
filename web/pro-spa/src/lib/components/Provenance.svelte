@@ -2,15 +2,24 @@
 	// #50: mallin alkuperä-rivi FPL-työkalualueen yläreunassa (free + pro).
 	//
 	// 26.9 (PROVENANCE-LUKU-SIVULLE, julkaisutarkistajan versio A): luku
-	// SEURAMALLIN lohkosta (by_model.club), samassa muodossa kuin
-	// goaliq.app/predictions#record -sivun "All club matches" -summarivi
-	// (fmt_pct / fmtPct), jotta lukija loytaa sen linkin takaa sellaisenaan.
-	// Blended all-time sisaltaa MM-kisojen maajoukkuemallin rivit, eika sita
-	// saa kayttaa lauseessa joka vaittaa "the same match model".
-	// Fail-closed: ilman by_model-lohkoa lause ilman lukua.
-	// Portti: tests/test_accuracy_by_model.py + fmt.test.ts.
+	// SEURAMALLIN lohkosta, samassa muodossa kuin goaliq.app/predictions#record
+	// -sivun "All club matches" -summarivi. Blended all-time sisaltaa MM-kisojen
+	// maajoukkuemallin rivit, eika sita saa kayttaa lauseessa joka vaittaa
+	// "the same match model".
+	//
+	// WP2 (1.11.2026): luku tulee /api/accuracy:n `headline`-kentasta, jonka
+	// backend laskee samalla funktiolla kuin hub-sivujen luvut
+	// (src/models/accuracy.public_headline). SPA ei valitse rajausta eika
+	// muotoile prosenttia itse: `pct_text` naytetaan sellaisenaan. Lauseen
+	// "the same match model" -vaite on tosi vain seuramallille, joten luku
+	// naytetaan vain kun `scope === 'club'`.
+	// Fail-closed: ilman headlinea lause ilman lukua.
+	// Portti: tests/test_track_record_one_number.py + tests/test_accuracy_by_model.py.
 	import { fetchAccuracy, type AccuracyResponse } from '$lib/api';
-	import { fmtPct } from '$lib/fmt';
+
+	/** /api/accuracy:n `headline` (WP2). Tyyppi tassa, koska api.ts:n
+	 *  AccuracyResponse sallii lisakentat (`[key: string]: unknown`). */
+	type Headline = { scope: 'club' | 'all'; n: number; pct_text: string };
 
 	let acc = $state<AccuracyResponse | null>(null);
 
@@ -21,14 +30,14 @@
 	});
 
 	let track = $derived.by(() => {
-		const club = acc?.by_model?.club;
-		if (club?.n && club?.pct_1x2 != null) return { n: club.n, pct: fmtPct(club.pct_1x2 * 100) };
+		const h = acc?.headline as Headline | null | undefined;
+		if (h && h.scope === 'club' && h.n && h.pct_text) return { n: h.n, pct: h.pct_text };
 		return null;
 	});
 </script>
 
 <!-- Tarkistusreitti: /predictions#record, ensimmainen rivi "All club matches"
-     samasta lahteesta (by_model.club). MM erikseen omalla rivillaan. -->
+     samasta lahteesta (headline = by_model.club). MM erikseen omalla rivillaan. -->
 <p class="provenance">
 	Powered by the same match model behind our published, pre-match-logged club
 	predictions{#if track}: {track.pct} correct

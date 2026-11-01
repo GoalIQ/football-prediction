@@ -15,7 +15,7 @@
 	 * osto- ja checkout-paluulogiikka siirtyi ProView'sta tänne sellaisenaan.
 	 */
 	import { onMount } from 'svelte';
-	import { auth, refreshSubscription, freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW, FREE_PREMIUM_GWS } from '$lib/auth.svelte';
+	import { auth, refreshSubscription, FREE_PREMIUM_UNTIL_DAY, FREE_PREMIUM_UNTIL_GW } from '$lib/auth.svelte';
 	import { fetchXp, type XpResponse } from '$lib/api';
 	import { capture } from '$lib/analytics';
 	import { loadProfileEntry } from '$lib/fplEntry.svelte';
@@ -338,35 +338,6 @@
 	{/if}
 {/if}
 
-<!-- 🔴 IKKUNAILMOITUS LASKEUTUMISNAKYMAAN (16.8, portin loydos).
-     Ilmoitus oli vain `PremiumPreview`-komponentissa, joka renderoityy
-     VASTA kun `upgradeOpen` on tosi eli `?tab=premium`-parametrilla tai
-     Upgrade-klikilla. Kirjautumaton kavija joka tuli suoraan
-     pro.goaliq.appiin ei nahnyt ikkunasta mitaan - ja juuri se on se URL
-     jonka annoimme luojille heidan ref-linkkiinsa. Heidan liikenteensa
-     olisi laskeutunut sivulle joka ei kerro tarjouksesta.
-     🔴 POISTA 12.9.2026 12:30 UTC jalkeen. -->
-<!-- 5.9: `&& !showsProductIntro(...)`. Juuressa kirjautumattomalle
-     ProductIntro kertoo saman tarjouksen ja tarjoaa saman napin, joten
-     ilman tata ehtoa sivulla oli kaksi "Create a free account" -nappia ja
-     sama teksti kahdesti. Kortti jaa muille reiteille (/players, /tools,
-     ...), joissa esittelya ei ole. -->
-{#if freePremiumWindowActive() && !auth.user && !showsProductIntro(group, auth.sessionResolved, !!auth.user)}
-	<!-- 🔴 Villen havainto 16.8: "missa ohjeistus". Tama oli kappale jonka
-	     sisassa sisaankaynti oli tekstilinkkina, eli sivun tarkein teko nakyi
-	     samankokoisena kuin sen ymparilla oleva selitys. -->
-	<div class="free-card">
-		<h2>Premium is free until {FREE_PREMIUM_UNTIL_DAY}</h2>
-		<p>
-			That is {FREE_PREMIUM_GWS}. Create a free account and every Premium tool switches on straight
-			away. No card, nothing to cancel, and nothing happens when the window closes unless you
-			decide to keep it.
-		</p>
-		<button type="button" class="free-card-cta" onclick={goUpgrade}>
-			Create a free account
-		</button>
-	</div>
-{/if}
 
 {#if upgradeOpen && !paidPremium}
 	<!-- Upgrade-näkymä: ei enää oma ylätabi vaan päällekkäinen tila, josta
@@ -378,18 +349,8 @@
 	{#if !auth.sessionResolved}
 		<p class="muted">Checking session…</p>
 	{:else if !auth.user}
-		<!-- 🔴 Ikkunan aikana lomake ENNEN ominaisuuslistaa: teko ensin, myynti
-		     perassa. Normaalisti jarjestys on oikein pain, koska silloin
-		     kavijan pitaa vakuuttua ennen kuin tili on hanelle mitaan arvoinen
-		     - ikkunan aikana tili on ilmainen eika vakuuttelua tarvita.
-		     🔴 PALAUTA ALKUPERAINEN JARJESTYS 12.9.2026 12:30 UTC jalkeen. -->
-		{#if freePremiumWindowActive()}
-			<LoginBox />
-			<PremiumPreview />
-		{:else}
-			<PremiumPreview />
-			<LoginBox />
-		{/if}
+		<PremiumPreview />
+		<LoginBox />
 	{:else if auth.subLoading && auth.sub === undefined}
 		<p class="muted">Checking subscription…</p>
 	{:else}
@@ -666,37 +627,6 @@
 	.upgrade-anchor {
 		display: block;
 		scroll-margin-top: 72px;
-	}
-	/* 🔴 POISTA 12.9.2026 12:30 UTC jalkeen yhdessa .free-card-lohkon kanssa. */
-	.free-card {
-		border: 2px solid var(--accent);
-		border-radius: var(--radius);
-		background: var(--surface);
-		padding: var(--s-3);
-		margin-bottom: var(--s-4);
-	}
-	.free-card h2 {
-		margin: 0 0 var(--s-2);
-		font-size: var(--step-2);
-		line-height: 1.15;
-	}
-	.free-card p {
-		margin: 0 0 var(--s-3);
-		max-width: 60ch;
-	}
-	.free-card-cta {
-		background: var(--accent);
-		border: 2px solid var(--accent);
-		border-radius: var(--radius);
-		color: var(--surface);
-		font: inherit;
-		font-weight: 700;
-		padding: 12px 22px;
-		cursor: pointer;
-	}
-	.free-card-cta:hover {
-		background: transparent;
-		color: var(--accent);
 	}
 	.back-link {
 		display: inline-block;

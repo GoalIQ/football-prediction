@@ -36,7 +36,7 @@ import json
 from pathlib import Path
 
 from src.models.fmt import fmt_pct
-from src.models.fpl_gameweek import actionable_gameweek, display_gameweek
+from src.models.fpl_gameweek import actionable_gameweek, clean_sheet_table_gameweek
 from src.models.fpl_xp import XGI_SEASON_MIN_MINUTES, driver_facts, xgi_headline
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -140,7 +140,8 @@ def page_gameweek(path: Path = PHASE0_PATH) -> int | None:
     """Kierros jonka `/fpl#clean-sheets` renderoi.
 
     Luetaan SAMASTA dokumentista ja SAMALLA funktiolla kuin sivu
-    (`build_fpl_page.display_gw` -> `fpl_gameweek.display_gameweek`).
+    (`build_fpl_page.build_context` -> `fpl_gameweek.clean_sheet_table_gameweek`;
+    WP2 1.11.2026, ennen `display_gameweek`, joka piti kesken olevan kierroksen).
     Sivun otsikko on kirjaimellisesti "Gameweek N clean sheet probabilities",
     eli N on julkista tekstia, ja tama funktio on ainoa paikka jossa siihen
     vastataan kortin puolella.
@@ -149,7 +150,7 @@ def page_gameweek(path: Path = PHASE0_PATH) -> int | None:
         doc = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    return display_gameweek(doc.get("meta") or {}, doc.get("fixtures"))
+    return clean_sheet_table_gameweek(doc.get("meta") or {}, doc.get("fixtures"))
 
 
 def fact_context(xp_doc: dict) -> dict:

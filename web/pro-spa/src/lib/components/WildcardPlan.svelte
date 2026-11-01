@@ -254,7 +254,7 @@
 		border: 1px solid currentColor;
 	}
 	.verdict.go {
-		color: var(--ok, #2e7d32);
+		color: var(--ok);
 	}
 	.verdict.hold {
 		color: var(--text-muted);

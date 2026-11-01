@@ -1,5 +1,7 @@
 <script lang="ts">
-	// M29: julkinen "Beat the Model | GoalIQ" -miniliiga (classic league).
+	// M29: julkinen "Beat the Model | GoalIQ" -miniliiga (classic league; nimi FPL:ssa).
+	// WP2 (1.11.2026): otsikkona nimi luki vuotaneena HTML-titlena, joten kortti
+	// sanoo "Beat the Model mini-league" kuten /fpl. Portti: lib/titleLeak.gate.test.ts.
 	// Koodi on julkinen ja sama kaikilla pinnoilla (X/mobiili/web).
 	import { capture } from '$lib/analytics';
 
@@ -15,7 +17,7 @@
 	onclick={() => capture('league_join_tapped', { source: 'pro_spa_banner' })}
 >
 	<span class="body">
-		<strong>Beat the Model | GoalIQ</strong>
+		<strong>Beat the Model mini-league</strong>
 		<span class="text">
 			The model's squad is frozen before every deadline, and we play it in FPL as entry 116920
 			with our own calls. Join our public mini-league and try to outdraft it. Season winner gets a

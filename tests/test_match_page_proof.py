@@ -431,7 +431,8 @@ def test_vaiheinvariantit(vaihe):
     assert "Form, last 5 Premier League results" in html
     # jako ja kickoff kaikissa vaiheissa
     assert html.count('class="share-btn"') == 3
-    assert re.search(r'kickoff <time datetime="[^"]+Z" data-ko="full">[^<]+UTC</time>', html)
+    # Yksi aikasaanto (src/local_time.py, WP2): time_tag + LOCAL_TIME_JS.
+    assert re.search(r'kickoff <time datetime="[^"]+Z" data-giq-local>[^<]+UTC</time>', html)
 
 
 def test_form_ei_lue_omaa_eika_myohempaa_tulosta():
@@ -456,13 +457,15 @@ def test_kirjausleima_vain_jos_kirjattu_ennen_kickoffia():
 
 def test_kickoff_paikallisena_utc_varalla_ja_vahvistamaton_aika_ennallaan():
     html = bpp.render_match_page("PL", _entry(2), NOW)
-    assert '<time datetime="2026-11-03T12:00:00Z" data-ko="full">Tue 03 Nov 2026, 12:00 UTC</time>' in html
-    assert "Intl.DateTimeFormat" in html and "time[data-ko]" in html
+    assert '<time datetime="2026-11-03T12:00:00Z" data-giq-local>Tue 03 Nov 2026, 12:00 UTC</time>' in html
+    from src import local_time as LT
+    assert LT.LOCAL_TIME_JS in html
+    assert "time[data-ko]" not in html          # toinen aikasaanto ei palaa
     tbc = _entry(2)
     tbc["kickoff"] = "2026-11-03T00:00:00Z"
     h2 = bpp.render_match_page("PL", tbc, NOW)
     assert "kick-off time to be confirmed" in h2
-    assert 'data-ko="full">Tue 03 Nov 2026, kick' not in h2
+    assert 'data-giq-local>Tue 03 Nov 2026, kick' not in h2
     assert not re.search(r'kickoff <time', h2)
 
 

@@ -1309,7 +1309,7 @@
 		background: none;
 		border: 0;
 		padding: 0;
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		font: inherit;
 		font-weight: 700;
 		cursor: pointer;

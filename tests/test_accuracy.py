@@ -952,3 +952,59 @@ def test_draw_share_counts_90min_result_not_the_displayed_score():
     assert at["draw_n"] == 1
     assert at["decisive_n"] == 0
     assert at["draw_n"] + at["decisive_n"] == at["n"]
+
+
+# ---------------------------------------------------------------------------
+# 1.11.2026 (ulkoasu WP9 / B3): pending-rivit kantavat 1X2:n Fixturesille
+# ---------------------------------------------------------------------------
+def _pending_log(tmp_path):
+    import json
+    log = acc.empty_log()
+    e1 = _entry("p1", "home", p=(0.46, 0.27, 0.27), date="2026-11-08")
+    e1["competition"] = "PL"
+    e1["kickoff"] = "2026-11-08T15:00:00Z"
+    e2 = _entry("p2", "away", p=(0.2, 0.25, 0.55), date="2026-11-08")
+    e2["competition"] = "PD"
+    e2["kickoff"] = "2026-11-08T20:00:00Z"
+    for e in (e1, e2):
+        acc.upsert_prediction(log, e)
+    path = tmp_path / "prediction_log.json"
+    path.write_text(json.dumps(log), encoding="utf-8")
+    return path
+
+
+def test_pending_rows_kantavat_kolme_todennakoisyytta(tmp_path):
+    """Sovelluksen Fixtures-rivi piirtaa 3-osaisen palkin samasta kirjatusta
+    ennusteesta kuin liigahub (build_prediction_pages lukee samat kentat)."""
+    rows = acc.pending_rows(path=_pending_log(tmp_path))
+    pl = next(r for r in rows if r["competition"] == "PL")
+    assert (pl["p_home"], pl["p_draw"], pl["p_away"]) == (0.46, 0.27, 0.27)
+    assert pl["p_winner"] == 0.46, "vanha kentta ennallaan (vanhat klientit)"
+    assert pl["kickoff"] == "2026-11-08T15:00:00Z"
+
+
+def test_pending_rows_competition_rajaa(tmp_path):
+    path = _pending_log(tmp_path)
+    assert {r["competition"] for r in acc.pending_rows(path=path)} == {"PL", "PD"}
+    assert [r["competition"] for r in acc.pending_rows(path=path, competition="PL")] == ["PL"]
+    assert acc.pending_rows(path=path, competition="BL1") == []
+
+
+def test_accuracy_endpoint_competition_parametri(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+    import api.main as m
+    path = _pending_log(tmp_path)
+    monkeypatch.setattr(acc, "LOG_PATH", path)
+    orig = acc.pending_rows
+    monkeypatch.setattr(acc, "pending_rows",
+                        lambda limit=None, path=path, competition=None:
+                        orig(limit=limit, path=path, competition=competition))
+    c = TestClient(m.app)
+    d = c.get("/api/accuracy?include=pending&competition=PL").json()
+    assert [r["competition"] for r in d["pending_predictions"]] == ["PL"]
+    assert d["pending_predictions"][0]["p_draw"] == 0.27
+    kaikki = c.get("/api/accuracy?include=pending").json()["pending_predictions"]
+    assert {r["competition"] for r in kaikki} == {"PL", "PD"}
+    # Ilman include=pendingia vastaus on ennallaan (ei rivilistaa).
+    assert "pending_predictions" not in c.get("/api/accuracy?competition=PL").json()
+    assert c.get("/api/accuracy?include=pending&competition=pl;drop").status_code == 422
