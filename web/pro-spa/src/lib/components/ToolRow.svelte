@@ -161,9 +161,14 @@
 		color: var(--text);
 		text-decoration: none;
 	}
+	/* WP2 (1.11.2026): valittu segmentti oli amber-tayttona, vaikka theme.css
+	   sallii sivulle YHDEN tayttonapin (ostotoiminto). Navigaation valinta on
+	   tila, ei toiminto: kirkas teksti, pinta askelta ylempana ja amber-viiva
+	   alla. Portti: tests/test_spa_colour_roles.py. */
 	.seg a.active {
-		color: var(--accent-contrast);
-		background: var(--accent);
+		color: var(--text);
+		background: var(--surface-2);
+		box-shadow: inset 0 -3px 0 var(--accent);
 	}
 
 	.presets {

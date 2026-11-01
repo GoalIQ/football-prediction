@@ -80,6 +80,15 @@
 	--accent-contrast: var(--giq-ink);
 	--positive: #5fd97a;
 	--negative: #ff8a5c;
+	/* WP2 (1.11.2026): --ok / --bad olivat KAYTOSSA (GwReview, WildcardPlan,
+	   embed/fdr, spl) mutta maarittelematta, joten selain renderoi vaalean
+	   teeman fallbackit #2e7d32 (3.55:1 kortilla #171512) ja #b3261e (2.79:1),
+	   eli AA:n alle. Nyt ne ovat --positive/--negative-aliaksia (mitattu WCAG
+	   2.1): --ok #5FD97A 11.01 / 10.15 / 9.35:1 ja --bad #FF8A5C 8.52 / 7.85 /
+	   7.23:1 pinnoilla --bg / --surface / --surface-2. Komponentit eivat kanna
+	   omaa fallbackia (portti: tests/test_spa_status_tokens.py). */
+	--ok: var(--positive);
+	--bad: var(--negative);
 	--warn-text: #f5c542;
 
 	/* FDR 1-5 brändiasteikko; käytetään ~14-18 % tint-taustoina, joten

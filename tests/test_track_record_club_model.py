@@ -25,12 +25,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 BLENDED = {"acc_logged": 3286, "acc_n": 609, "acc_pct_1x2": 49.43, "acc_dec_n": 445,
            "acc_dec_c": 301, "acc_pct_dec": 67.64}
+# WP2 (1.11.2026): otsikkoluvut tulevat acc_headista (accuracy.public_headline).
+# Vanhan skeeman artefakti ilman by_modelia -> blended-rajaus nimettyna.
+HEAD_VANHA = acc.public_headline({"all_time": {"n": 609, "correct_1x2": 301, "pct_1x2": 0.4943}})
 
 
 @pytest.fixture
 def club():
     agg = acc.compute_aggregate(acc.load_log())
     return b._club_block(agg["by_model"]["club"])
+
+
+@pytest.fixture
+def head():
+    return acc.public_headline(acc.compute_aggregate(acc.load_log()))
 
 
 def test_seuramallin_lohko_oikeasta_lokista(club):
@@ -40,8 +48,8 @@ def test_seuramallin_lohko_oikeasta_lokista(club):
     assert club["logged"] < agg["logged_with_timestamp"]
 
 
-def test_lauseet_seuramallista_ja_mm_erikseen(club):
-    c = {**BLENDED, "acc_club": club}
+def test_lauseet_seuramallista_ja_mm_erikseen(club, head):
+    c = {**BLENDED, "acc_club": club, "acc_head": head}
     teksti = " ".join(b.track_record_sentences(c))
     assert "The GoalIQ club model's predictions" in teksti
     # Tarkistaja B1: kirjattujen maara (sis. pelaamattomat) ei ole ilmaispinnalla.
@@ -59,12 +67,12 @@ def _luvut(teksti: str) -> set[str]:
     return set(re.findall(r"\d+(?:\.\d+)?%?", teksti.replace("1X2", "")))
 
 
-def test_jokainen_track_record_luku_loytyy_kilpailulohkosta(club):
+def test_jokainen_track_record_luku_loytyy_kilpailulohkosta(club, head):
     # Tarkistaja B2 (saanto 6a, yksi lukija): lause ei saa sisaltaa lukua jota
     # linkin takana oleva kilpailulohko ei nayta. "2026" on vuosiluku.
     rivi = {"code": "WC", "name": "World Cup 2026", "n": 56, "correct": 35,
             "pct": 62.5, "dec_n": 0, "dec_c": 0, "pct_dec": 0.0, "draw_n": 0}
-    c = {**BLENDED, "acc_club": club, "by_comp": [rivi]}
+    c = {**BLENDED, "acc_club": club, "acc_head": head, "by_comp": [rivi]}
     lohko = b.by_comp_html(c)
     puuttuu = {x for x in _luvut(" ".join(b.track_record_sentences(c))) if x != "2026"
                and x not in lohko}
@@ -74,14 +82,14 @@ def test_jokainen_track_record_luku_loytyy_kilpailulohkosta(club):
 def test_fallbackin_luvut_ovat_chipin_luvut():
     # Tarkistaja B3: vanhan skeeman lauseissa vain luvut jotka chip nayttaa
     # ("49.4% ... across 609 completed matches, all competitions").
-    c = {**BLENDED, "acc_club": None}
+    c = {**BLENDED, "acc_club": None, "acc_head": HEAD_VANHA}
     sallitut = {str(c["acc_n"]), b.fmt_pct(c["acc_pct_1x2"]), "2026"}
     assert _luvut(" ".join(b.track_record_sentences(c))) <= sallitut
     assert _luvut(b.acc_trust_sentence(c)) <= sallitut
 
 
 def test_vanha_skeema_ei_nimea_blended_lukua_malliksi():
-    c = {**BLENDED, "acc_club": None}
+    c = {**BLENDED, "acc_club": None, "acc_head": HEAD_VANHA}
     lauseet = b.track_record_sentences(c)
     teksti = " ".join(lauseet)
     assert "all competitions" in teksti
@@ -91,8 +99,8 @@ def test_vanha_skeema_ei_nimea_blended_lukua_malliksi():
     assert "Built on a model" not in b.acc_trust_sentence(c)
 
 
-def test_trust_lause_seuramallista(club):
-    c = {**BLENDED, "acc_club": club}
+def test_trust_lause_seuramallista(club, head):
+    c = {**BLENDED, "acc_club": club, "acc_head": head}
     assert b.acc_trust_sentence(c) == (
         f"Built on a model with {b.fmt_pct(club['pct'])} correct 1X2 results "
         f"across {club['n']} completed club matches, every one logged before kick-off."

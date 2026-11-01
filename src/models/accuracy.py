@@ -721,6 +721,61 @@ def pending_rows(limit: int | None = None, path: Path = LOG_PATH,
     return out
 
 
+# ---------------------------------------------------------------------------
+# YKSI JULKINEN TARKKUUSLUKU (ulkoasuohjelma WP2, 1.11.2026)
+# ---------------------------------------------------------------------------
+# Mitattu 1.11: samana paivana neljä lukua. Landingin hero 52.5 % / 988,
+# hintapaneeli 51.9 % / 932, SPA 51.9 % / 931, record-sivu "52 % / 987".
+# Juurisyy ei ollut laskenta vaan VALINTA joka pinnalla erikseen:
+#   (1) kaksi rajausta: hero, ticker ja proof lukivat `all_time`a (sisaltaa
+#       56 MM-kisojen ennustetta erillisesta maajoukkuemallista), hintapaneeli
+#       ja SPA `by_model.club`ia. Kumpikin oli nimetty, mutta lukijalle ne
+#       olivat kaksi eri vaitetta samasta mallista.
+#   (2) kaksi hetkea: hub on paistettu kuva kunkin putkiajon artefaktista
+#       (1.11 klo 00:53 987/931, klo 03:53 988/932), SPA lukee elavan API:n.
+#       Eri aikaan katsottuna sama rajaus nayttaa eri n:n.
+# Korjaus (saanto 6a, mekanismi 1): rajauksen ja muotoilun paattaa TAMA
+# funktio. Hub-builderi kutsuu sita, /api/accuracy palauttaa sen tuloksen
+# kentassa `headline`, ja SPA/sovellus nayttavat `pct_text`:n sellaisenaan.
+# Seuramalli on kanoninen: FPL-tyokalut ja otteluennusteet ajavat sita, ja
+# "Built on a model with" / "the same match model" on tosi vain sille.
+HEADLINE_LABELS = {
+    "club": "completed club matches",
+    # Vain vanha artefakti ilman by_modelia (putki ei ole viela ajanut).
+    "all": "completed matches, all competitions",
+}
+
+
+def public_headline(agg: dict) -> dict | None:
+    """Julkinen track record -luku. None jos gradattuja ei ole.
+
+    `pct` 0..100 (float), `pct_text` valmiiksi muotoiltu `fmt_pct`:lla
+    (Decimal half-up, sama kuin SPA:n fmtPct), `label` rajauksen nimi
+    juoksevaan tekstiin ("932 completed club matches").
+    """
+    from src.models.fmt import fmt_pct
+
+    agg = agg or {}
+    club = (agg.get("by_model") or {}).get("club") or {}
+    if club.get("n") and club.get("pct_1x2") is not None:
+        scope, m = "club", club
+    else:
+        at = agg.get("all_time") or {}
+        if not at.get("n") or at.get("pct_1x2") is None:
+            return None
+        scope, m = "all", at
+    pct = float(m["pct_1x2"]) * 100
+    return {
+        "scope": scope,
+        "n": int(m["n"]),
+        "correct": int(m.get("correct_1x2") or 0),
+        "pct": pct,
+        "pct_text": fmt_pct(pct),
+        "label": HEADLINE_LABELS[scope],
+        "updated_at": agg.get("updated_at"),
+    }
+
+
 def load_aggregate(path: Path = AGGREGATE_PATH) -> dict:
     if not path.exists():
         return empty_aggregate()

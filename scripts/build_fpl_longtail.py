@@ -66,6 +66,7 @@ from scripts.mobile_css import MOBILE_COLS_JS, MOBILE_CSS
 # Ylapalkki yhdesta lahteesta (22.9, web-audit T5): FPL-alasivun palkki vei
 # ennen ottelu-ennusteisiin ("All predictions") eika takaisin /fpl:aan.
 from src.site_nav import SITE_NAV_CSS, site_nav_html  # noqa: E402
+from src.local_time import time_tag, with_local_time_script  # WP2  # noqa: E402
 from scripts.site_output import public_data_url  # "Source:"-linkit, yksi lukija
 from src.models.fpl_why_drivers import PAGE_LEGEND, fact_context, fact_text_ctx  # todiste: yksi lukija
 from scripts.share_card_js import SHARE_CARD_JS
@@ -623,7 +624,8 @@ def _page(title: str, desc: str, canonical: str, hero: str, body: str,
         # portin mielessa (`tests/test_ucl_no_projection.py::_kuvaileva`), ja
         # rajaus on /ucl-sivujen herossa (`build_ucl_page.UCL_SCOPE`).
         f'<a href="/privacy">Privacy</a><br>{DISCLAIMER}</footer>\n'
-        "</main>\n" + MOBILE_COLS_JS + "</body>\n</html>\n"
+        "</main>\n" + MOBILE_COLS_JS + with_local_time_script(hero + body)
+        + "</body>\n</html>\n"
     )
 
 
@@ -4676,8 +4678,10 @@ def _gw_xp_section(xp: dict) -> str:
             if t.tzinfo is None:
                 t = t.replace(tzinfo=timezone.utc)
             t = t.astimezone(timezone.utc)
+            # WP2 (1.11.2026): UTC jaa HTML:aan, selain lokalisoi (src/local_time.py).
             dl_teksti = (f" The gameweek {gw} deadline is "
-                         f"{t.strftime('%a')} {t.day} {t.strftime('%b %H:%M')} UTC.")
+                         + time_tag(t, f"{t.strftime('%a')} {t.day} "
+                                       f"{t.strftime('%b %H:%M')} UTC") + ".")
         except ValueError:
             dl_teksti = ""
     ctx = fact_context(xp)

@@ -5258,6 +5258,11 @@ def model_accuracy(
     # välimuistitasot, korjaus tulee voimaan ilman app-buildia.
     response.headers["Cache-Control"] = "no-store"
     agg = load_aggregate()
+    # WP2 (1.11.2026): YKSI julkinen luku, sama funktio kuin hub-builderilla.
+    # SPA ja sovellus nayttavat `headline.pct_text`:n sellaisenaan eivatka
+    # valitse rajausta itse (src/models/accuracy.public_headline).
+    from src.models.accuracy import public_headline
+    agg = {**agg, "headline": public_headline(agg)}
     # #131: additiivinen pending-rivilista (?include=pending) mobiilin
     # "logged, awaiting result" -lohkoon (#129-web-pariteetti). Oletusvastaus
     # ennallaan → vanhat klientit eivät muutu; headline/by_competition

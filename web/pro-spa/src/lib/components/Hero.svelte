@@ -17,7 +17,7 @@
 	 */
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { auth, sendPasswordReset, signOut, freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY } from '$lib/auth.svelte';
+	import { auth, sendPasswordReset, signOut } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { fetchFantasy, openCustomerPortal } from '$lib/api';
 	import { actionableGameweek, checkedText, formatDeadline, parseGeneratedAt } from '$lib/gameweek';
@@ -155,10 +155,8 @@
 	}
 	const planLabel = $derived(
 		auth.sub?.plan === 'gw1-3-free'
-			// 12.9.2026: leima oli ainoa ilmaisikkunan lupaus SPA:ssa jota mikaan
-			// ei vartioinut ajassa. Ikkunan sulkeuduttua se olisi lukenut
-			// "Premium, free until 12 September" 12. syyskuuta jalkeen.
-			? (freePremiumWindowActive() ? `Premium, free until ${FREE_PREMIUM_UNTIL_DAY}` : 'Premium')
+			// WP2 (1.11.2026): ikkunan aikainen leima poistettu, ikkuna paattyi 12.9.
+			? 'Premium'
 			: auth.sub
 				? 'Premium'
 				: auth.sub === null
@@ -486,7 +484,7 @@
 		border: none;
 		padding: 0;
 		margin: 0;
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 		font-size: var(--step--1);
 		font-weight: 700;
 		text-decoration: underline;

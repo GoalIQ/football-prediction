@@ -171,10 +171,10 @@
 		font-size: 11px;
 	}
 	.is-easy {
-		color: var(--ok, #2e7d32);
+		color: var(--ok);
 	}
 	.is-hard {
-		color: var(--bad, #c62828);
+		color: var(--bad);
 	}
 	.legend {
 		margin: 6px 0 0;

@@ -1086,7 +1086,7 @@
 		cursor: pointer;
 	}
 	.sortbtn:hover {
-		color: var(--giq-rust);
+		color: var(--giq-teal);
 	}
 	.window-row select {
 		flex: 0 0 auto;

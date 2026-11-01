@@ -24,7 +24,6 @@
 	import { fetchXp, gwXp, type XpResponse } from '$lib/api';
 	import { xpHorizon } from '$lib/xpHorizon';
 	import { actionableGameweek } from '$lib/gameweek';
-	import { freePremiumWindowActive, FREE_PREMIUM_UNTIL_DAY } from '$lib/auth.svelte';
 	import { capture } from '$lib/analytics';
 	import { planApprox } from '$lib/billing';
 	import { loadPricing, webCheckoutBlocked } from '$lib/pricing.svelte';
@@ -79,13 +78,6 @@
 	});
 	const horizon = $derived(xpHorizon(xp?.meta));
 
-	/**
-	 * Ikkunan aikana kutsu on "luo tili", koska maksaminen nyt ostaisi viikkoja
-	 * jotka kayttaja saa ilmaiseksi (sama perustelu kuin Paywallissa). Ikkunan
-	 * jalkeen sama nappi myy tilauksen. Yksi haara, ei kahta copya joista
-	 * toinen vanhenee.
-	 */
-	const inWindow = $derived(freePremiumWindowActive());
 
 	/**
 	 * Euro on hinnoittelun valuutta ja se sanotaan aina. `planApprox` on
@@ -202,13 +194,6 @@
 		     "See plans" -napin tilalle ($lib/region). Muut maat ennallaan. -->
 		{#if webCheckoutBlocked()}
 			<StoreOnlyNotice source="pro_web_root" compact />
-		{:else if inWindow}
-			<button type="button" class="primary" onclick={onUpgrade}>Create a free account</button>
-			<p class="act-note muted">
-				Premium is free until {FREE_PREMIUM_UNTIL_DAY}. No card, nothing to cancel. After that it is
-				€3.99 a month or €25 for the season{#if approxMonthly}
-					({approxMonthly}, {approxSeason}){/if}.
-			</p>
 		{:else}
 			<button type="button" class="primary" onclick={onUpgrade}>See plans</button>
 			<p class="act-note muted">
