@@ -254,6 +254,23 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   kirjautumisnimi CONTRIBUTOR-tasolla ei mene). (lähde: https://api.github.com/repos/GoalIQ/football-prediction/issues/64/comments
   ilman tunnusta: author_association CONTRIBUTOR; https://api.github.com/orgs/GoalIQ/public_members tyhjä)
   → korjattu käsin 2026-10-30 ylläpitäjän pyynnöstä (a, b ja c), ei riviä agentille.
+- 2026-11: Konversiovälin keskipiste laski noin 37 % viikossa (2,07-2,48 % → 1,23-1,65 %, vertailukelpoinen, ei tarkka).
+  Ostopolun napautusosuus lukosta on ennallaan (web 13,2 % vs 12,8 %, mobiili 13,2 % vs 14,4 %), mutta FPL-lukkojen
+  napautusosuus on 0,0 % sekä mobiilissa (1,4 %) että webissä (12,5 %), kun ennustelukot napauttavat 21,9 % (19,2 %).
+  (lähde: mittausdata konversio ja ostopolku.tuotteittain, docs/BENCHMARK.md Muutokset 1.11.2026)
+- 2026-11: Search Console 2.-29.10.: näyttöjen päivämediaani -58,3 %, klikkien päivämediaani 0,0 %, ei piikkiä. /fpl/stats on
+  sijalla 2,9 ja CTR 0 %. Sivun meta-description on yli 160 merkkiä ja kertoo sarakkeista, ei syytä avata. → backlog 2026-11-01
+  (lähde: Search Console https://goaliq.app/fpl/stats)
+- 2026-11: xP voitti FPL:n ep_nextin GW8:lla (MAE 1,670 vs 1,795) ja neljällä kuudesta vertailukierroksesta. Pelaamattomat
+  (0,988 vs 0,511) ja maalivahdit (1,546 vs 1,055) häviävät yhä, isot pisteet tasan (8,086 vs 8,100, n 15). Mallin
+  muutos on ylläpitäjän päätös. (lähde: data/fpl_xp_gw_accuracy.json)
+- 2026-11: ScoreGPT ryhmittelee ottelut varmuusluokkiin (High, Medium, Low) ja myy luokkien tarkkuuden Pro-tasolla. GoalIQ:n
+  kalibraatio kertoo, missä todennäköisyys on epävarma: 0,65-lokero aliarvioi (0,648 vs 0,717, n 138), 0,84-lokero yliarvioi
+  (0,839 vs 0,762, n 21). Lukija ei näe tätä ottelusivulla. → backlog 2026-11-01
+  (lähde: data/accuracy.json, https://scoregpt.app/)
+- 2026-11: Chip Timing -työkalua ei ole vielä FPL Pulsella (merkitty tulossa), Fixin Premiumilla eikä FFH:lla (vain opas).
+  GW19-deadline la 2.1.2027 on 62 päivän päässä. Jo avoin chip-tarkistinrivi kattaa ilmaisen puolen.
+  (lähde: https://www.fplpulse.com/ , https://www.fantasyfootballfix.com/premium/)
 
 ## Avoimet
 
@@ -341,6 +358,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   (gradauksen jälkeen fpl-data-refreshiin) lisätään käsin mergen yhteydessä. (ylläpitäjän signaali 2026-10, lähde: Signaalit)
       Pisteet: (lukittu) arvo 2/3 · kiire 2/3 · työ M · myynti 1/3 · uutuus 1/2 = 8
       Mittari: /fpl/notes näyttää GW8-recapin 48 tunnin sisällä GW8:n gradauksesta · tarkistus 2026-10-30
+      Tulos 2026-11-01: ✅ data/fpl_xp_gw_accuracy.json: GW8 graded_at 2026-10-26T15:47:40Z, data/fpl_notes.json: recap-gw8 päivätty 2026-10-26, eli samana päivänä; PostHog näyttää sivun /fpl/note/recap-gw8 käyntejä pienessä kokoluokassa
 - [x] Lainaeste xP:hen: lue `elements[].scout_risks` (property `loan_ineligible`, `gameweek`) yhdellä lukijalla
   (esim. `src/models/fpl_xp.py: loan_ineligible_gws(element) -> set[int]`) ja aseta xP-putkessa
   (`scripts/build_fpl_xp.py`) pelaajan `gameweeks[].xp` ja `xmins` nollaksi niillä kierroksilla; horisonttisumma ja
@@ -349,6 +367,7 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   `data/fpl_xp_projections.json` Danso GW12 xp 0. (ylläpitäjän signaali 2026-10, lähde: Signaalit, docs/BENCHMARK.md) (PR, 2026-10-16)
       Pisteet: (lukittu) arvo 3/3 · kiire 2/3 · työ M · myynti 1/3 · uutuus 0/2 = 7
       Mittari: data/fpl_xp_projections.json Danso GW12 xp 0.0 ja testit vihreät · tarkistus 2026-10-26
+      Tulos 2026-11-01: ➖ data/fpl_xp_projections.json: Danso GW12 xp 0.0 ja xmins 0.0 (täyttyy), mutta testien vihreyttä ei voinut mitata, koska pytest-ajo ei ollut sallittu tässä ajossa
 - [ ] Entry 116920:n kirjanpito ilmaispinnalle (ylläpitäjän päätös 2026-10-19): `data/gw_recap.json`
   `entry_series` (entry 116920, FPL:n omat pisteet chipit mukaan ja FPL:n `average_entry_score`) näkyy
   goaliq.app/fpl-sivulla omana osionaan `#model-entry`: kierroksittain pisteet, FPL-keskiarvo, ero ja juokseva ero,
@@ -519,5 +538,26 @@ nimiä, ei sitaatteja, ei hintoja. Merkintä "→ backlog <pvm>" kertoo, että h
   data/accuracy.json, https://scoregpt.app/)
       Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 10
       Mittari: /predictions näyttää fresh- ja stale-osuudet samalla n:llä kuin /api/accuracy by_lead (testi) · tarkistus 2026-11-30
+- [ ] /fpl/stats-sivun hakutulos: `scripts/build_fpl_longtail.py` (noin rivi 2561)
+  kirjoittaa meta-descriptionin, joka on yli 160 merkkiä ja luettelee sarakkeet (shots, key passes, tackles ...), joten
+  hakutulos katkaisee sen ennen kuin syy avata tulee esiin. Search Consolen mukaan sivu on sijalla 2,9 ja CTR 0 %.
+  Lyhennä kuvaus alle 160 merkkiin niin, että "free, no sign-in", "filterable", "CSV" ja pelaajamäärä säilyvät
+  ja luku tulee builderin omasta lukijasta (ei kovakoodattua määrää). Ei Premium-lupauksia. Regeneroitu fpl/stats.html ja
+  llms.txt samassa PR:ssä. Testi mittaa pituuden builderin tuloksesta ja kaatuu, jos raja ylittyy. PR:n Julkinen teksti
+  -osioon uusi kuvaus sanatarkasti. (aallonharja 2026-11-01, lähde: Search Console https://goaliq.app/fpl/stats , Signaalit)
+      Pisteet: arvo 1/3 · kiire 1/3 · työ S · myynti 3/3 · uutuus 0/2 = 9
+      Mittari: gsc.json:n sivut-listalla goaliq.app/fpl/stats CTR yli 0 % tai sijainti alle 2,9 · tarkistus 2026-11-29
+- [ ] Ottelun varmuusluokka ja luokan oma osuus: ottelusivulle ja /predictions-sivun track record -osioon kolme luokkaa
+  (esimerkiksi matala, keskitaso, korkea) voittajan todennäköisyyden mukaan, ja jokaiselle luokalle sen oma toteutunut
+  osuus ja n samasta lokista kuin `/api/accuracy` (`data/prediction_log.json`, ei lasketa sivulla uudelleen). Rajat
+  kirjoitetaan koodiin ennen mittausta ja pysyvät, eikä niitä virit jälkikäteen luokan osuuden perusteella. Näkyviin
+  myös, missä luokassa malli aliarvioi tai yliarvioi (kalibraatiolokerot 0,65 ja 0,84). Ei kertoimia eikä panoksia.
+  Yksi luokittelija, jota sivu ja API käyttävät; puuttuva todennäköisyys on "ei dataa". Vaihetesti: ennen kickoffia,
+  kickoffin jälkeen ilman tulosta, tuloksen jälkeen (luokka ei muutu); testi kaatuu, jos kutsupaikka poistetaan tai luokka
+  lasketaan sivulla uudelleen. Builder, regeneroitu sivu ja llms.txt samassa PR:ssä. Free/Premium-sijoitus ehdotetaan PR:n
+  rungossa (ehdotus: ilmainen, koska 1X2 on ilmainen), ihminen päättää. PR:n Julkinen teksti -osioon merkkijonot
+  sanatarkasti. (aallonharja 2026-11-01, lähde: https://scoregpt.app/ , data/accuracy.json)
+      Pisteet: arvo 2/3 · kiire 1/3 · työ M · myynti 2/3 · uutuus 2/2 = 10
+      Mittari: /predictions näyttää kolme luokkaa ja niiden osuudet samalla n:llä kuin /api/accuracy (testi) · tarkistus 2026-12-06
 
 ## Tehdyt
