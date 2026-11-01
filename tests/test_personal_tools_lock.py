@@ -185,7 +185,9 @@ def _rate_team_full() -> dict:
                  "horizon_total_from": 8, "horizon_total_gw": 5,
                  "note_code": "rate_team.note.model_projections"},
         "team": {"players": [{"id": 1, "web_name": "Pelaaja Yksi",
-                              "xp_per_gw": 6.1, "is_captain": True}],
+                              "xp_per_gw": 6.1, "is_captain": True},
+                             {"id": 3, "web_name": "Kentta Vuoto",
+                              "xp_per_gw": 4.2, "is_captain": False}],
                  "missing_ids": [99], "bank": 1.5},
         "last_finished": {"gw": 7, "players": [{"id": 1, "points": 12}]},
         "season_rank": {"overall_rank": 123456},
@@ -195,8 +197,14 @@ def _rate_team_full() -> dict:
                    "optimal_proven": True, "optimal_team_xp": 333.3,
                    "gap_to_optimal_xp": 43.2, "strongest_line": "MID",
                    "weakest_line": "DEF"},
-        "captain": {"pick": {"id": 1, "web_name": "Pelaaja Yksi", "gw_xp": 7.7},
-                    "alternative": None},
+        # 1.11.2026 (WP9 / B1): pick on tarkoituksella auki, mutta vain
+        # RATE_TEAM_FREE_CAPTAIN_FIELDS. `reason` ja vaihtoehto ovat
+        # vuotokontrolleja (niiden nimet eivat saa nakya lukitussa).
+        "captain": {"pick": {"id": 1, "web_name": "Pelaaja Yksi",
+                             "team_short": "AAA", "gw_xp": 7.7,
+                             "reason": "Perustelu Vuoto"},
+                    "alternative": {"id": 2, "web_name": "Vaihto Vuoto",
+                                    "team_short": "BBB", "gw_xp": 7.1}},
         "transfers": {"suggestions": [{"out": {"web_name": "Pelaaja Kaksi"},
                                        "in": {"web_name": "Pelaaja Kolme"},
                                        "delta_xp_horizon": 4.4}],
@@ -219,7 +227,11 @@ def test_rate_team_esimaku_kentat():
         assert r[f] == p, f
     assert set(r) == set(full["rating"])
     assert out["team"] == {"players": [], "missing_ids": [], "bank": 1.5}
-    assert out["captain"] is None and out["last_finished"] is None
+    # WP9 / B1: oman XI:n kapteeni auki (vain neljan kentan pick), vaihtoehto ei.
+    assert out["captain"] == {"pick": {"id": 1, "web_name": "Pelaaja Yksi",
+                                       "team_short": "AAA", "gw_xp": 7.7},
+                              "alternative": None}
+    assert out["last_finished"] is None
     assert out["season_rank"] == full["season_rank"]
     assert out["transfers"] == {"suggestions": [], "hold": None,
                                 "window_gws": [], "note": None,
@@ -228,9 +240,71 @@ def test_rate_team_esimaku_kentat():
     assert m["masked"] is True and m["locked_tool"] == "rate-my-team"
     assert m["entry"] == 424242 and m["chips"] == full["meta"]["chips"]
     assert "rating.team_xp_gw" in m["premium_fields"]
-    assert "captain" in m["premium_fields"]
+    assert "captain.alternative" in m["premium_fields"]
+    assert "captain" not in m["premium_fields"]
+    assert m["free_open"] == ["captain.pick"]
+    assert m["hidden_counts"] == {"captain_alternative": 1, "transfer_options": 1}
     # Alkuperaista ei mutatoida (premium-kutsut jakavat saman olion).
     assert full == _rate_team_full()
+
+
+def _oikeat_lehdet(x, polku=""):
+    """Lukitun vastauksen OIKEAT arvot polkuina: kaikki lehdet jotka eivat ole
+    None, tyhja lista/dict tai Premium-paikanpitaja. Lista -> "polku[]"."""
+    if isinstance(x, dict):
+        out = set()
+        for k, v in x.items():
+            out |= _oikeat_lehdet(v, f"{polku}.{k}" if polku else k)
+        return out
+    if isinstance(x, list):
+        out = set()
+        for v in x:
+            out |= _oikeat_lehdet(v, f"{polku}[]")
+        return out
+    return set() if x is None else {polku}
+
+
+def test_rate_team_esimaku_TASAN_nama_kentat_ovat_oikeita():
+    """WP9 / B1: anonyymille ja ilmaiselle oikeita ovat TASAN arvosanan nelja
+    kenttaa, oman XI:n kapteenin nelja pick-kenttaa, season_rank, team.bank ja
+    meta (FPL:n julkiset tunnistetiedot + lukon kuvaus). Kaikki muu on None,
+    tyhja tai Premium-paikanpitaja. Uusi oikea kentta kaataa taman testin, eli
+    avaus on aina tietoinen diffi eika vuoto."""
+    out = prem.mask_rate_team_preview_payload(_rate_team_full())
+    oikeat = {p for p in _oikeat_lehdet(out) if not p.startswith("meta.")}
+    paikanpitajat = {f"rating.{f}" for f, v in
+                     prem.RATE_TEAM_PREMIUM_RATING_FIELDS.items() if v is not None}
+    assert oikeat - paikanpitajat == {
+        "rating.rating", "rating.rating_max", "rating.percentile",
+        "rating.beats_benchmark",
+        "captain.pick.id", "captain.pick.web_name", "captain.pick.team_short",
+        "captain.pick.gw_xp",
+        "season_rank.overall_rank",
+        "team.bank",
+    }
+    # Paikanpitajat ovat paikanpitajia (0.0 / False), eivat lahdearvoja.
+    for f in paikanpitajat:
+        k = f.split(".", 1)[1]
+        assert out["rating"][k] == prem.RATE_TEAM_PREMIUM_RATING_FIELDS[k], f
+    # hidden_counts on pelkkia lukuja, ei nimia.
+    assert all(isinstance(v, int) for v in out["meta"]["hidden_counts"].values())
+    for vuoto in ("Vaihto Vuoto", "Perustelu Vuoto", "Kentta Vuoto",
+                  "Pelaaja Kaksi", "Pelaaja Kolme", "worth a transfer", "DEF"):
+        assert vuoto not in repr(out), vuoto
+
+
+def test_rate_team_esimaku_ilman_kapteenia_ei_avaa_mitaan():
+    """Builder ilman kelvollista pickia -> captain None, free_open [] (ei
+    tyhjaa pick-oliota jota klientti luulisi avatuksi)."""
+    for cap in (None, {}, {"pick": None, "alternative": None},
+                {"pick": {"web_name": "Ei Id"}, "alternative": None}):
+        full = _rate_team_full()
+        full["captain"] = cap
+        out = prem.mask_rate_team_preview_payload(full)
+        assert out["captain"] is None, cap
+        assert out["meta"]["free_open"] == []
+        assert "captain" in out["meta"]["premium_fields"]
+        assert "Ei Id" not in repr(out)
 
 
 def test_rate_team_esimaku_typistaa_uuden_kentan_oletuksena():
@@ -438,7 +512,12 @@ def _fake_differentials(monkeypatch, kutsut: list):
 # reitti -> (URL, fake, tarkistus maskatulle, tarkistus taydelle)
 
 def _tarkista_rate_team_maski(d):
-    assert d["team"]["players"] == [] and d["captain"] is None
+    assert d["team"]["players"] == []
+    # WP9 / B1: oman XI:n kapteeni on tarkoituksella auki, vaihtoehto ei.
+    assert d["captain"]["pick"]["web_name"] == "Pelaaja Yksi"
+    assert d["captain"]["alternative"] is None
+    assert d["meta"]["free_open"] == ["captain.pick"]
+    assert d["meta"]["hidden_counts"]["transfer_options"] == 1
     assert d["transfers"]["suggestions"] == []
     assert d["transfers"]["hold_verdict"] is None
     assert d["rating"]["rating"] == 87 and d["rating"]["weakest_line"] is None
@@ -456,7 +535,8 @@ REITIT = {
     "/api/fantasy/rate-team": (
         "/api/fantasy/rate-team?entry=424242", _fake_rate_team,
         "rate-my-team", _tarkista_rate_team_maski, _tarkista_rate_team_taysi,
-        ("Pelaaja Yksi", "Pelaaja Kolme")),
+        # "Pelaaja Yksi" on 1.11.2026 alkaen tarkoituksella auki (kapteeni).
+        ("Pelaaja Kolme", "Kentta Vuoto", "Vaihto Vuoto", "Perustelu Vuoto")),
     "/api/fantasy/model-squad": (
         "/api/fantasy/model-squad", _fake_model_squad, "rate-my-team",
         lambda d: (d["players"] == []

@@ -945,13 +945,52 @@ def lock_personal_tool_payload(payload: dict, slug: str, text: str,
     return out
 
 
+#: Rate-teamin esimaun YKSI auki oleva oma tulos (ulkoasu WP9 / B1, Villen
+#: paatos 1.11.2026 "lukko nayttaa kayttajan oman tuloksen"): mallin kapteeni
+#: kayttajan OMALLE XI:lle. Vain nama kentat kopioidaan, eli builderin uusi
+#: pick-kentta (perustelu, vastustaja, todennakoisyys) ei vuoda unohduksen
+#: takia (6a kohta 1). Vaihtoehto, siirrot ja hold-verdikti jaavat lukkoon.
+RATE_TEAM_FREE_CAPTAIN_FIELDS = ("id", "web_name", "team_short", "gw_xp")
+
+#: Klientille kerrottu lista tarkoituksella avatuista kentista. Klientti avaa
+#: lukossa VAIN taman listan kentat (goaliq-app lib/personalLock.ts
+#: thisWeekOpenItem), joten fail-open-Premium-tarkistuksen tayden vastauksen
+#: muut kentat eivat paase lukkonakymaan.
+RATE_TEAM_FREE_OPEN = ("captain.pick",)
+
+
+def _free_captain(value) -> dict | None:
+    """`captain` lukittuun muotoon: `pick` (vain RATE_TEAM_FREE_CAPTAIN_FIELDS)
+    + `alternative: None`. Ilman kelvollista pickia -> None (kuten ennen)."""
+    pick = value.get("pick") if isinstance(value, dict) else None
+    if not isinstance(pick, dict) or pick.get("id") is None:
+        return None
+    return {"pick": {f: pick.get(f) for f in RATE_TEAM_FREE_CAPTAIN_FIELDS},
+            "alternative": None}
+
+
+def _hidden_counts(payload: dict) -> dict:
+    """Lukossa piilotettujen kohtien MAARA (ei sisaltoa): klientin lukko
+    kertoo "3 transfer options" nayttamatta yhtakaan. Vain lukumaaria."""
+    cap = payload.get("captain") if isinstance(payload.get("captain"), dict) else {}
+    tr = payload.get("transfers") if isinstance(payload.get("transfers"), dict) else {}
+    sugg = tr.get("suggestions")
+    return {
+        "captain_alternative": 1 if isinstance(cap.get("alternative"), dict) else 0,
+        "transfer_options": len(sugg) if isinstance(sugg, list) else 0,
+    }
+
+
 def mask_rate_team_preview_payload(payload: dict) -> dict:
     """/api/fantasy/rate-team ei-Premiumille kytkimen jalkeen: arvosana-esimaku.
 
     JAA (spec-taulukko rivi 1, "arvosana ja joukkueen tunnistetiedot"):
     `rating`in nelja kenttaa, `meta` (entry, kierros, chipit, siirrot =
     FPL:n julkista tietoa), `season_rank` (FPL:n oma sijoitus), `team.bank`.
-    LAHTEE: pitch (`team.players`), kapteeni + vaihtoehto, hold-verdikti,
+    1.11.2026 (ulkoasu WP9 / B1): myos `captain.pick` (oman XI:n kapteeni,
+    RATE_TEAM_FREE_CAPTAIN_FIELDS) on auki, ja `meta.free_open` nimeaa sen.
+    `meta.hidden_counts` kertoo piilotettujen kohtien maaran, ei sisaltoa.
+    LAHTEE: pitch (`team.players`), kapteenin vaihtoehto, hold-verdikti,
     siirrot, heikoin/vahvin linja, paattyneen kierroksen tulos
     (`last_finished`), xP-summat.
     """
@@ -959,6 +998,8 @@ def mask_rate_team_preview_payload(payload: dict) -> dict:
     for k, v in payload.items():
         if k in RATE_TEAM_PREVIEW_KEEP:
             out[k] = v
+        elif k == "captain":
+            out[k] = _free_captain(v)
         elif k == "rating":
             src = v if isinstance(v, dict) else {}
             r = {f: src.get(f) for f in RATE_TEAM_PREVIEW_RATING_FIELDS}
@@ -974,7 +1015,7 @@ def mask_rate_team_preview_payload(payload: dict) -> dict:
             out[k] = {f: (val if f == "bank" else _blank_leaf(val))
                       for f, val in src.items()}
         else:
-            # captain, last_finished -> None; transfers -> {suggestions: [],
+            # last_finished -> None; transfers -> {suggestions: [],
             # hold: None, window_gws: [], note: None, hold_verdict: None}.
             # `transfers.note` lahtee myos: sen sanamuoto kertoo verdiktin
             # ("holding is a fine play").
@@ -983,13 +1024,19 @@ def mask_rate_team_preview_payload(payload: dict) -> dict:
     meta = dict(payload.get("meta") or {})
     meta["masked"] = True
     meta["locked_tool"] = "rate-my-team"
+    captain_open = out.get("captain") is not None
     meta["premium_fields"] = sorted(
         ["rating." + f for f in RATE_TEAM_PREMIUM_RATING_FIELDS]
         + [k for k in payload if k not in RATE_TEAM_PREVIEW_KEEP
-           and k not in ("rating", "team")]
+           and k not in ("rating", "team", "captain")]
+        + (["captain.alternative"] if captain_open
+           else (["captain"] if "captain" in payload else []))
         + ["team.players", "team.missing_ids"])
-    meta["mask"] = ("rating only (free preview - GoalIQ Premium unlocks the "
-                    "pitch, captain, transfers and hold verdict)")
+    meta["free_open"] = list(RATE_TEAM_FREE_OPEN) if captain_open else []
+    meta["hidden_counts"] = _hidden_counts(payload)
+    meta["mask"] = ("rating and your captain (free preview - GoalIQ Premium "
+                    "unlocks the pitch, the alternative captain, transfers "
+                    "and the hold verdict)")
     out["meta"] = meta
     return out
 
