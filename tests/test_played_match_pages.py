@@ -50,9 +50,12 @@ def test_phases_keep_numbers_and_url():
     assert "Full time: Arsenal FC 3-1 Chelsea FC (home win)" in final
     assert "/predictions#record" in pending and "/predictions#record" in final
     assert "Result pending" not in before and "Full time" not in before
-    # Lukko ennallaan joka vaiheessa (WP11: ylin tulos auki, loput lukossa)
-    for h in (before, pending, final):
-        assert "scorelines and expected goals in Premium." in h
+    # Lukko: tuleva sivu lupaa loput tulokset; pelattu ei (ruudukkoa ei ole
+    # tallessa), vaan ohjaa tuleviin otteluihin (julkaisutarkistaja 1.11).
+    assert "scorelines and expected goals in Premium." in before
+    for h in (pending, final):
+        assert "Scorelines and expected goals for upcoming matches are in Premium." in h
+        assert "more scorelines" not in h
 
 
 def test_numbers_come_from_log_row_only():

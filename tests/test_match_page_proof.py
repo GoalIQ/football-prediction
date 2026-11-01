@@ -154,7 +154,8 @@ def test_gradatun_rivin_xg_ei_paady_sivulle():
     html = bpp.render_match_page("PL", e, NOW)
     for muoto in ("1.734", "1.73", "0.619", "0.62", "1.7 ", "0.6 "):
         assert muoto not in _body(html), muoto
-    assert not re.search(r"\d", _lock(html))
+    # Pelattu sivu: ei ruudukkoa lainkaan (julkaisutarkistaja 1.11, PR #76).
+    assert '<div class="lock-grid"' not in html
 
 
 def test_ylimman_tuloksen_prosentti_vain_lokista():
@@ -310,8 +311,8 @@ def test_tuomio_jatkoajalla_kertoo_90_min_tuloksen():
 def test_too_close_tuomio_selittaa_recordin_nimeaman_puolen():
     e = _graded(-1, 1, 0, ph=0.405, pd_=0.24, pa=0.355)
     html = bpp.render_match_page("PL", e, NOW)
-    assert "Too close to call" in html
-    assert "The track record always names the more likely side" in html
+    assert "Too close to call" not in html          # pelattu: ei tulkintaa (neutraali lause)
+    assert "even when the pre-match page called it too close." in html
     selva = bpp.render_match_page("PL", _graded(-1, 1, 0), NOW)
     assert "always names the more likely side" not in selva
 
@@ -393,7 +394,7 @@ def _historia() -> list[dict]:
     # myohempi: tulos ei saa nakya ottelusivulla joka on ennen sita
     h.append(_graded(5, 0, 4, home="Arsenal", away="Brentford"))
     # siirretty ottelu ei ole tulos
-    h.append(dict(_graded(-5, 9, 0, home="Arsenal", away="Burnley"), void="POSTPONED"))
+    h.append(dict(_entry(10, home="Arsenal", away="Burnley"), void="POSTPONED"))
     return h
 
 
@@ -410,8 +411,14 @@ def test_vaiheinvariantit(vaihe):
     # luvut ja URL eivat riipu vaiheesta
     assert [p for _, p in _p3(html)] == ["62%", "21%", "17%"]
     assert 'rel="canonical" href="https://goaliq.app/predictions/premier-league/arsenal-vs-liverpool"' in html
-    # lukko: ei numeroita missaan vaiheessa
-    assert not re.search(r"\d", _lock(html))
+    # lukko: tulevalla sivulla ruudukko ilman numeroita; pelatulla ei ruudukkoa
+    # eika "N more" -lupausta (ruudukkoa ei ole tallessa)
+    if vaihe == "upcoming":
+        assert not re.search(r"\d", _lock(html))
+    else:
+        assert '<div class="lock-grid"' not in html
+        assert "more scorelines" not in html
+        assert "Scorelines and expected goals for upcoming matches are in Premium." in html
     # tuomio vain gradattuna, "pending" vain gradaamattomana kickoffin jalkeen
     assert (_page_verdict(html) is not None) == (vaihe == "final")
     assert ("Result pending" in html) == (vaihe == "pending")
@@ -510,3 +517,61 @@ def test_form_vaatii_vahintaan_kolme_tulosta_molemmille():
     html = bpp.render_match_page("PL", _entry(2), NOW, history=hist)
     assert "Form, last 3 Premier League results" in html
     assert _form(html, "Liverpool") == "DWW" and _form(html, "Arsenal") == "WWW"
+
+
+# ---------------------------------------------------------------------------
+# Julkaisutarkistaja 1.11 (PR #76), korjauskierros 1
+# ---------------------------------------------------------------------------
+def test_form_siirretty_ottelu_ennen_tata_piilottaa_nauhan():
+    """Uusintaa ei kirjata lokiin (void jaa voidiksi), joten void-rivi ennen tata
+    ottelua = emme tieda puuttuuko tulos -> ei nauhaa (fail-closed).
+    Tuotannon tapaus: Athletic W D D D W, oikea D D D L W."""
+    e = _entry(2)
+    hist = _historia()
+    assert _form(bpp.render_match_page("PL", e, NOW, history=hist), "Arsenal") == "WWDLW"
+    hist.append(dict(_entry(-20, home="Burnley", away="Arsenal"), void="POSTPONED"))
+    html = bpp.render_match_page("PL", e, NOW, history=hist)
+    assert "Form, last" not in html
+    # Toisen joukkueen void piilottaa myos (lohko on kummallekin sama)
+    hist2 = _historia() + [dict(_entry(-20, home="Liverpool", away="Everton"), void="CANCELLED")]
+    assert "Form, last" not in bpp.render_match_page("PL", e, NOW, history=hist2)
+
+
+def test_form_kutsupaikka_antaa_void_rivit_ika_rajaamatta():
+    """`_played_by_comp` pudottaa yli 3 vrk vanhat gradaamattomat rivit, joten
+    void-rivien on tultava erikseen (Feed.voided)."""
+    log = {"predictions": [
+        dict(_entry(-30, home="Burnley", away="Arsenal"), competition="PL", void="POSTPONED"),
+        dict(_entry(2), competition="PL"),
+    ]}
+    feed = bpp.load_feed(log, NOW)
+    assert [r["home_team"] for r in feed.voided.get("PL", [])] == ["Burnley"]
+    assert all(not r.get("void") for r in feed.played.get("PL", []))
+    src = Path(bpp.__file__).read_text(encoding="utf-8")
+    assert "history=done + (feed.voided.get(comp) or [])" in src
+
+
+def test_pelattu_sivu_ei_vaita_suosikkia_jalkikateen():
+    """call_state lasketaan taman paivan marginaalilla; pelattu sivu nayttaa
+    kirjatun ennusteen sellaisenaan eika korosta suosikkia."""
+    e = _graded(-1, 2, 0)
+    html = bpp.render_match_page("PL", e, NOW)
+    assert "Logged prediction: Arsenal 62%, draw 21%, Liverpool 17%." in html
+    assert "the favourite" not in _body(html)
+    assert 'class="p3c fav"' not in html
+    tuleva = bpp.render_match_page("PL", _entry(2), NOW)
+    assert "the favourite" in _body(tuleva)        # erotteleva: ennen kickoffia suosikki nimetaan
+
+
+@pytest.mark.parametrize("p", [0.465, 0.425, 0.445, 0.505])
+def test_record_ja_sivu_pyoristavat_samoin_tasan_puolikkaassa(p):
+    """Julkaisutarkistaja 1.11 (PR #76): record `.0f` (puoliparillinen) vs sivu
+    `pct_int` (puoli ylos) -> Lincoln-Burnley 46 % recordissa, 47 % sivulla.
+    Nyt molemmat pct_int. Tasan .5 -arvot ovat erottelevia (half-even != half-up)."""
+    from scripts import build_fpl_page as bfp
+    e = _graded(-1, 0, 1, ph=round(1 - p - 0.2, 4), pd_=0.2, pa=p)
+    rec = bfp._pick_pct(e)
+    page = bpp.render_match_page("PL", e, NOW)
+    want = cm.pct_int(p)
+    assert rec == f" &middot; {want}%", (p, rec)
+    assert f"Model said Liverpool <b>{want}%</b>" in page or f"Liverpool {want}%" in page

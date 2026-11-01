@@ -756,6 +756,10 @@ class Feed(NamedTuple):
     n_conf: int
     mapped: set
     unmapped: set
+    #: Siirretyt/perutut (`void`) rivit nayttonimilla, ika rajaamatta: form-
+    #: nauhan lukija tarvitsee ne (team_form). `_played_by_comp` pudottaa yli
+    #: PENDING_MAX_DAYS vanhat gradaamattomat rivit, joten ne eivat ole `played`issa.
+    voided: dict = {}
 
 
 def load_feed(log: dict, now: datetime) -> Feed:
@@ -768,12 +772,31 @@ def load_feed(log: dict, now: datetime) -> Feed:
     """
     upcoming = _upcoming_by_comp(log, now)
     played = _played_by_comp(log, now)
+    voided = _void_by_comp(log)
     n_conf = _attach_confidence(upcoming)
     mapped, unmapped = _apply_display_names(upcoming)
     mapped_p, unmapped_p = _apply_display_names(played)
+    _apply_display_names(voided)
     for comp, rows in upcoming.items():
         _assign_filenames(rows + (played.get(comp) or []))
-    return Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p)
+    return Feed(upcoming, played, n_conf, mapped | mapped_p, unmapped | unmapped_p,
+                voided)
+
+
+def _void_by_comp(log: dict) -> dict[str, list[dict]]:
+    """Siirretyt/perutut ottelut (`void`) kilpailuittain, ika rajaamatta.
+
+    Julkaisutarkistaja 1.11.2026 (PR #76): siirretty ottelu jaa lokiin void-
+    rivina eika uusintaa kirjata (sama FD-id, upsert ei lisaa rivia, reconcile
+    ei koske void-riveihin). Form ohitti siksi pelatun ottelun: Athletic
+    Bilbaon sivulla W D D D W, oikea D D D L W (tappio Levantelle 21.10 puuttui).
+    """
+    out: dict[str, list[dict]] = {}
+    for e in log["predictions"]:
+        comp = e.get("competition")
+        if comp in LEAGUES and e.get("void"):
+            out.setdefault(comp, []).append(e)
+    return out
 
 
 def match_page_url(comp: str, e: dict) -> str:
@@ -818,7 +841,17 @@ def _prob_block(e: dict, call: dict) -> str:
 def _prob_sentence(e: dict, call: dict, played: bool) -> str:
     """Yksi lause todennakoisyyksista. Malli EI simuloi otteluita: 1X2 on
     Dixon-Coles-tulosmatriisin summa (src/models/dixon_coles.predict_1x2),
-    joten lause ei puhu simulaatioista. Too close -> vanha mitattu lause."""
+    joten lause ei puhu simulaatioista. Too close -> vanha mitattu lause.
+
+    PELATTU SIVU (julkaisutarkistaja 1.11, PR #76): ei suosikkia. `call_state`
+    lasketaan TAMAN PAIVAN marginaalilla (16 -> 8 pp 25.10), joten 82 pelattua
+    sivua olisi sanonut "made X the favourite", vaikka sama URL sanoi ennen
+    ottelua "too close". Kirjattu ennuste sellaisenaan, ei tulkintaa."""
+    if played:
+        return (
+            f"Logged prediction: {escape(e['home_team'])} {_fmt_pct(e['p_home'])}, "
+            f"draw {_fmt_pct(e['p_draw'])}, {escape(e['away_team'])} {_fmt_pct(e['p_away'])}."
+        )
     fav = call.get("favourite")
     if fav not in ("home", "away"):
         return _too_close_sentence(e["home_team"], e["away_team"],
@@ -845,8 +878,14 @@ def _secbar(label: str, tone: str = "") -> str:
             f"<span>&#9612; {label}</span></div>")
 
 
-def _scoreline_lock(e: dict) -> str:
+def _scoreline_lock(e: dict, played: bool = False) -> str:
     """Ylin tulos ilmaiseksi (Villen paatos 1.11) + sumennettu ruudukko.
+
+    🔴 PELATTU SIVU (julkaisutarkistaja 1.11, PR #76): ottelun ennakkoruudukkoa
+    ja xG:ta ei ole tallessa (lokissa vain ylin tulos, xG nollataan ennen
+    ottelua), joten "9 more scorelines ... in Premium" ei toteutuisi tasta
+    ottelusta. Pelatulla sivulla ei ruudukkoa eika maaraa, vain ylin tulos ja
+    lause tulevista otteluista.
 
     🔴 RUUDUKOSSA EI OLE OIKEITA LUKUJA. CSS-sumennus ei piilota mitaan
     DOM:sta, joten solut ovat paikkamerkkeja ("?-?", "?%"). Builder lukee
@@ -866,6 +905,15 @@ def _scoreline_lock(e: dict) -> str:
                if isinstance(p, (int, float)) and 0 < p < 1 else "")
             + "</div>"
         )
+    button = (f'<a class="btn solid" href="{CHECKOUT_URL}" data-cta="match-page-premium">'
+              f"Start Premium, {PC.season()} a year</a>")
+    if played:
+        return (
+            _secbar("Scorelines", "teal")
+            + '<div class="card">' + top
+            + '<p class="lock-txt"><strong>Scorelines and expected goals for upcoming '
+            "matches are in Premium.</strong></p>" + button + "</div>"
+        )
     hidden = PREMIUM_TOP_SCORES - (1 if shown else 0)
     # 3 x 3 paikkamerkkia + xG-rivi: esikatselu, ei dataa.
     cells = '<span><i>?-?</i><i>?%</i></span>' * 9
@@ -876,8 +924,7 @@ def _scoreline_lock(e: dict) -> str:
         _secbar("Scorelines", "teal")
         + '<div class="card">' + top + grid
         + f'<p class="lock-txt"><strong>{what} and expected goals in Premium.</strong></p>'
-        + f'<a class="btn solid" href="{CHECKOUT_URL}" data-cta="match-page-premium">'
-        f"Start Premium, {PC.season()} a year</a></div>"
+        + button + "</div>"
     )
 
 
@@ -895,7 +942,18 @@ def team_form(team: str, history: list[dict] | tuple, before: datetime | None,
     ottelun sivu ei koskaan nayta omaa tai myohempaa tulostaan (vaihe-
     invariantti). Lahde on sama loki kuin sivun ennuste (sama kilpailu,
     nayttonimet samasta kartasta); ei uutta hakua. Void-rivi ei ole tulos.
+
+    🔴 FAIL-CLOSED SIIRRETYLLE OTTELULLE (julkaisutarkistaja 1.11): jos
+    joukkueella on samassa kilpailussa void-rivi ennen `before`a, palautetaan
+    tyhja. Uusintaa ei kirjata lokiin, joten emme tieda puuttuuko tulos
+    nauhasta; vajaa nauha olisi vaara vaite (W D D D W vs oikea D D D L W).
     """
+    for r in history:
+        if not r.get("void") or team not in (r.get("home_team"), r.get("away_team")):
+            continue
+        ko = _kickoff_dt(r)
+        if ko is not None and before is not None and ko < before:
+            return []
     rows = []
     for r in history:
         res = r.get("result")
@@ -945,7 +1003,7 @@ def _form_block(comp: str, e: dict, history) -> str:
     return (
         _secbar(f"Form, last {n} {escape(league)} {'result' if n == 1 else 'results'}", "dim")
         + '<div class="card">' + row(e["home_team"], fh) + row(e["away_team"], fa)
-        + '<p class="form-note">Oldest on the left. W win, D draw, L loss. '
+        + '<p class="form-note">Oldest on the left. '
         "From the results in our prediction log.</p></div>"
     )
 
@@ -993,7 +1051,7 @@ def _verdict_html(e: dict, call: dict) -> str:
         cls, tail = "", "Not counted in the track record"
     sep = '<span class="sep" aria-hidden="true">&middot;</span>'
     note = ('<p class="v-note">The track record always names the more likely side, '
-            "even when this page calls a match too close.</p>"
+            "even when the pre-match page called it too close.</p>"
             if v["counted"] and call.get("favourite") not in ("home", "away") else "")
     return (f'<div class="verdict {cls}"><span>Model said <b>{said}</b></span>{sep}'
             f"<span>Result <b>{score}</b></span>{sep}"
@@ -1142,6 +1200,9 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
     # `else away` -haara olisi renderoinut minka tahansa muun arvon kuin
     # "home" vierasjoukkueeksi.
     call = call_state(ph, pd_, pa)
+    # Pelatulla sivulla palkki ei korosta suosikkia (sama syy kuin
+    # _prob_sentence: tamanhetkinen marginaali ei ole ottelua edeltava).
+    shown_call = {**call, "favourite": None} if played else call
     fav, fav_pct = _favourite_label(e, call)
     url = f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}"
     title = f"{home} vs {away} Prediction: {cfg['name']} | GoalIQ"
@@ -1179,10 +1240,10 @@ def render_match_page(comp: str, e: dict, now: datetime | None = None,
     body = (
         (_verdict_html(e, call) if state == "final" else "")
         + _secbar("Win probability", "amber")
-        + f'<div class="card big">{_prob_block(e, call)}'
+        + f'<div class="card big">{_prob_block(e, shown_call)}'
         f'<p class="p-say">{_prob_sentence(e, call, played)}</p></div>'
         + _confidence_block(e)
-        + _scoreline_lock(e)
+        + _scoreline_lock(e, played)
         + _form_block(comp, e, history)
         + (_result_html(e, state) if played else
            f'<div class="rec">This prediction was logged before kickoff on '
@@ -1641,7 +1702,9 @@ def main() -> int:
             (out_dir / "index.html").unlink()
         for e in rows + done:
             (out_dir / _match_filename(e)).write_text(
-                render_match_page(comp, e, now, history=done), encoding="utf-8"
+                render_match_page(comp, e, now,
+                                  history=done + (feed.voided.get(comp) or [])),
+                encoding="utf-8"
             )
         played_entries.extend(
             (f"{BASE}/predictions/{cfg['slug']}/{_match_filename(e)[:-5]}",
